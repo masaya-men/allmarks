@@ -18,27 +18,11 @@ type Props = {
   /** Snap-jump to a specific card index when the user releases a scrub. */
   readonly onJump?: (index: number) => void
   /** When true, render the meter even with total ≤ 1 (single-card decks).
-   *  Default false: the Lightbox itself hides the meter when there's
-   *  nothing to navigate. PiP overrides this so the meter stays visible
-   *  as part of the always-on bottom chrome regardless of card count. */
+   *  Default false: callers (= the original Lightbox use case) hid the
+   *  meter when there's nothing to navigate. PiP overrides this so the
+   *  meter stays visible as part of the always-on bottom chrome regardless
+   *  of card count. */
   readonly alwaysShow?: boolean
-  /** Counter render style. Default `'index-decimal'` keeps the historical
-   *  PiP look (`[ NNNN.MMMM / TTTT.0000 ]` with a slot-machine decimal).
-   *  `'range'` switches to the ScrollMeter look (`N1 — N2 / TOTAL`) so the
-   *  board-level Lightbox meter visually matches the always-on ScrollMeter
-   *  in the same canvas slot — opening/closing the Lightbox becomes a
-   *  pure crossfade with no counter-format jump.
-   *
-   *  When `'range'`, `n1` / `n2` props are read instead of `current`. For
-   *  the Lightbox-on-board case we wire `n1 === n2 === currentIndex+1` so
-   *  the meter reads "you're zoomed into card #X of TOTAL". */
-  readonly counterFormat?: 'index-decimal' | 'range'
-  /** Range-format left number (= first visible card index, 1-based). Only
-   *  read when `counterFormat === 'range'`. */
-  readonly n1?: number
-  /** Range-format middle number (= last visible card index, 1-based). Only
-   *  read when `counterFormat === 'range'`. */
-  readonly n2?: number
 }
 
 function pad4(n: number): string {
@@ -53,39 +37,6 @@ const TICK_COUNT = 150
 /** Counter slot-machine animation duration on card change. */
 const COUNTER_ANIM_MS = 600
 
-/** Range-format scramble windows. Kept in lockstep with `ScrollMeter.tsx`'s
- *  identical constants — the two meters share the same canvas slot via
- *  crossfade (session 39, B-#20), so their counter cadences MUST stay
- *  identical or the eye reads the swap as a "jitter" instead of a fade.
- *  Range numerals (n1, n2) scramble 600ms; total scrambles 1500ms so the
- *  headline number gets the longest read time. */
-const SCRAMBLE_MS_RANGE = 600
-const SCRAMBLE_MS_TOTAL = 1500
-
-/** Per-frame ±1 jitter probability on settled values — keeps the counter
- *  "alive" even when nothing is changing. Total jitters slightly more than
- *  the range pair (matches ScrollMeter). */
-const JITTER_PROB_RANGE = 0.06
-const JITTER_PROB_TOTAL = 0.10
-
-/** Periodic full-scramble: every 5-15s, pick one of the three digit groups
- *  and re-arm its scramble deadline for 600-1500ms. Same parameters as
- *  ScrollMeter so the two meters feel like one continuous device. */
-const PERIODIC_INTERVAL_MIN_MS = 5000
-const PERIODIC_INTERVAL_MAX_MS = 15000
-const PERIODIC_SCRAMBLE_MIN_MS = 600
-const PERIODIC_SCRAMBLE_MAX_MS = 1500
-
-function nextPeriodicDelay(): number {
-  return PERIODIC_INTERVAL_MIN_MS
-    + Math.random() * (PERIODIC_INTERVAL_MAX_MS - PERIODIC_INTERVAL_MIN_MS)
-}
-
-function nextScrambleDuration(): number {
-  return PERIODIC_SCRAMBLE_MIN_MS
-    + Math.random() * (PERIODIC_SCRAMBLE_MAX_MS - PERIODIC_SCRAMBLE_MIN_MS)
-}
-
 /** Spring stiffness driving the swell-position chase between cards. With
  *  critical damping (DAMPING = 2√k) settle time ≈ 4/√k ≈ 225 ms — snappy
  *  enough to feel direct on a single ±1 card move, slow enough to read as
@@ -93,61 +44,28 @@ function nextScrambleDuration(): number {
 const SWELL_STIFFNESS = 320
 const SWELL_DAMPING = 2 * Math.sqrt(SWELL_STIFFNESS)
 
-export function LightboxNavMeter({
-  current,
-  total,
-  onJump,
-  alwaysShow,
-  counterFormat = 'index-decimal',
-  n1 = 0,
-  n2 = 0,
-}: Props): ReactElement | null {
+/**
+ * Card-position meter for the PiP carousel.
+ *
+ * Counter readout is `[ NNNN.MMMM / TTTT.0000 ]` slot-machine style:
+ * integer part = current card index (1-based), decimal part scrambles for
+ * 600ms after each card change then settles to .0000. Swell on the
+ * waveform chases the active-card tick via critically-damped spring so
+ * card-to-card moves read as a smooth slide.
+ *
+ * Drag scrub triggers live page-flip — as the pointer crosses card-index
+ * boundaries, `onJump` fires per frame (rAF-throttled) so the lightbox /
+ * carousel content tracks the pointer in real-time.
+ *
+ * (Session 39 history: this component used to drive both the PiP meter
+ * AND the board-level Lightbox meter via a counterFormat='range' branch.
+ * Phase 6 refactor extracted the board Lightbox meter into the unified
+ * ScrollMeter; this file is now PiP-only and the branch was removed.)
+ */
+export function LightboxNavMeter({ current, total, onJump, alwaysShow }: Props): ReactElement | null {
   const trackRef = useRef<HTMLDivElement>(null)
   const tickRefs = useRef<HTMLDivElement[]>([])
   const counterRef = useRef<HTMLSpanElement>(null)
-  // Range-format spans (counterFormat === 'range'). Mirror ScrollMeter's
-  // N1 / N2 / TOTAL layout so the board-level Lightbox meter renders an
-  // identical readout to the always-on ScrollMeter underneath. Named
-  // `*SpanRef` to distinguish from the existing numeric refs below.
-  const n1SpanRef = useRef<HTMLSpanElement>(null)
-  const n2SpanRef = useRef<HTMLSpanElement>(null)
-  const totalSpanRef = useRef<HTMLSpanElement>(null)
-  // Settled values + scramble deadlines, ref-stored so the rAF loop reads
-  // them per-frame without triggering React re-renders. Mirrors
-  // ScrollMeter's approach exactly so the two meters share visual cadence.
-  const n1SettledRef = useRef<number>(n1)
-  const n2SettledRef = useRef<number>(n2)
-  const totalSettledRef = useRef<number>(total)
-  const n1ScrambleUntilRef = useRef<number>(0)
-  const n2ScrambleUntilRef = useRef<number>(0)
-  const totalScrambleUntilRef = useRef<number>(0)
-  const nextPeriodicAtRef = useRef<number>(0)
-  // Stable mode flag the rAF loop reads each frame.
-  const counterFormatRef = useRef<'index-decimal' | 'range'>(counterFormat)
-  useEffect(() => { counterFormatRef.current = counterFormat }, [counterFormat])
-
-  // Re-arm scramble deadlines on prop changes (range format only).
-  useEffect(() => {
-    if (counterFormat !== 'range') return
-    if (n1 !== n1SettledRef.current) {
-      n1SettledRef.current = n1
-      n1ScrambleUntilRef.current = performance.now() + SCRAMBLE_MS_RANGE
-    }
-  }, [n1, counterFormat])
-  useEffect(() => {
-    if (counterFormat !== 'range') return
-    if (n2 !== n2SettledRef.current) {
-      n2SettledRef.current = n2
-      n2ScrambleUntilRef.current = performance.now() + SCRAMBLE_MS_RANGE
-    }
-  }, [n2, counterFormat])
-  useEffect(() => {
-    if (counterFormat !== 'range') return
-    if (total !== totalSettledRef.current) {
-      totalSettledRef.current = total
-      totalScrambleUntilRef.current = performance.now() + SCRAMBLE_MS_TOTAL
-    }
-  }, [total, counterFormat])
 
   // Refs that the rAF loop reads each frame. Updates here never trigger
   // React re-renders, so layout stays perfectly stable.
@@ -281,13 +199,7 @@ export function LightboxNavMeter({
       }
 
       // ---- Counter text ----
-      // Branch by counterFormat: legacy 'index-decimal' (PiP) keeps the
-      // slot-machine `[ NNNN.MMMM / TTTT.0000 ]` look; new 'range' mode
-      // (board-level Lightbox meter, session 39 B-#20) mirrors
-      // ScrollMeter's `N1 — N2 / TOTAL` exactly — same scramble +
-      // jitter + periodic cadence — so the canvas-slot crossfade
-      // between ScrollMeter and this meter shows zero counter drift.
-      if (counterFormatRef.current === 'index-decimal' && counterRef.current) {
+      if (counterRef.current) {
         const isAnimating = now < animUntilRef.current
         // While scrubbing, show the card the user is about to land on.
         const showingIdx = scrubTick !== null
@@ -305,46 +217,6 @@ export function LightboxNavMeter({
           : '0000'
         const totalStr = pad4(tot)
         counterRef.current.textContent = `${intPart}.${decPart} / ${totalStr}.0000`
-      } else if (counterFormatRef.current === 'range') {
-        // Periodic full-scramble trigger — random 5-15s interval picks
-        // one of the three digit groups and re-arms its scramble window.
-        // Identical to ScrollMeter so the two meters feel like one device.
-        if (nextPeriodicAtRef.current === 0) {
-          nextPeriodicAtRef.current = now + nextPeriodicDelay()
-        } else if (now >= nextPeriodicAtRef.current) {
-          const target = Math.floor(Math.random() * 3)
-          const until = now + nextScrambleDuration()
-          if (target === 0) {
-            n1ScrambleUntilRef.current = Math.max(n1ScrambleUntilRef.current, until)
-          } else if (target === 1) {
-            n2ScrambleUntilRef.current = Math.max(n2ScrambleUntilRef.current, until)
-          } else {
-            totalScrambleUntilRef.current = Math.max(totalScrambleUntilRef.current, until)
-          }
-          nextPeriodicAtRef.current = now + nextPeriodicDelay()
-        }
-
-        const writeDigit = (
-          node: HTMLSpanElement | null,
-          settled: number,
-          scrambleUntil: number,
-          jitterProb: number,
-        ): void => {
-          if (!node) return
-          let value: number
-          if (now < scrambleUntil) {
-            value = Math.floor(Math.random() * 10000)
-          } else if (Math.random() < jitterProb) {
-            const delta = Math.random() < 0.5 ? -1 : 1
-            value = Math.max(0, settled + delta)
-          } else {
-            value = settled
-          }
-          node.textContent = pad4(value)
-        }
-        writeDigit(n1SpanRef.current, n1SettledRef.current, n1ScrambleUntilRef.current, JITTER_PROB_RANGE)
-        writeDigit(n2SpanRef.current, n2SettledRef.current, n2ScrambleUntilRef.current, JITTER_PROB_RANGE)
-        writeDigit(totalSpanRef.current, totalSettledRef.current, totalScrambleUntilRef.current, JITTER_PROB_TOTAL)
       }
       raf = requestAnimationFrame(loop)
     }
@@ -411,27 +283,13 @@ export function LightboxNavMeter({
   return (
     <div className={styles.meterWrap} aria-hidden="true">
       <div className={styles.meterStack}>
-        {counterFormat === 'range' ? (
-          <div className={styles.meterCounter} data-counter-format="range">
-            <span ref={n1SpanRef}>{pad4(n1)}</span>
-            {' '}
-            <span className={styles.meterDim}>—</span>
-            {' '}
-            <span ref={n2SpanRef}>{pad4(n2)}</span>
-            {' '}
-            <span className={styles.meterDim}>/</span>
-            {' '}
-            <span ref={totalSpanRef}>{pad4(total)}</span>
-          </div>
-        ) : (
-          <div className={styles.meterCounter}>
-            <span className={styles.meterBracket}>[</span>
-            {' '}
-            <span ref={counterRef}>0001.0000 / 0001.0000</span>
-            {' '}
-            <span className={styles.meterBracket}>]</span>
-          </div>
-        )}
+        <div className={styles.meterCounter}>
+          <span className={styles.meterBracket}>[</span>
+          {' '}
+          <span ref={counterRef}>0001.0000 / 0001.0000</span>
+          {' '}
+          <span className={styles.meterBracket}>]</span>
+        </div>
         <div
           className={styles.meterTrack}
           ref={trackRef}

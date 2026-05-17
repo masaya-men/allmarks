@@ -11,7 +11,10 @@ import {
 } from 'react'
 import styles from './ScrollMeter.module.css'
 
-/** Match LightboxNavMeter so the two meters read as a matched set. */
+/** Number of tick marks rendered on the ruler. Decoupled from any external
+ *  count — the meter is a pure visual waveform, with current scroll OR
+ *  active-card position shown as a localized amplitude swell on top of
+ *  the global flow. */
 const TICK_COUNT = 150
 
 /** D ハイブリッド scramble windows (spec §1-2): the visible-range numerals
@@ -45,16 +48,20 @@ function nextScrambleDuration(): number {
     + Math.random() * (PERIODIC_SCRAMBLE_MAX_MS - PERIODIC_SCRAMBLE_MIN_MS)
 }
 
-/** Glide tween duration + easing for the session 39 phase 3 (B-#20
- *  close-side polish) swell hand-off. Tween (NOT spring) chosen because
- *  a critically-damped spring peaks velocity at t=0 when the error is
- *  largest, which user (2026-05-17 phase 3 feedback) described as
- *  "急に動いた感じ" — they want a "ぬったりぬるっと" feel where the bulge
- *  eases out of the Lightbox position AND into the scroll position.
- *  ease-in-out-cubic gives the symmetric "luxurious arc" the user also
- *  asked for on the meter scroll-jump (= same vocabulary as
- *  BoardRoot's handleScrollMeterJump). 1200ms is ~5× slower than the
- *  initial 225ms spring settle time. */
+/** Glide tween duration + easing for swell hand-off between modes AND for
+ *  every swell change in lightbox mode (= card-to-card slide).
+ *
+ *  Session 39 design history:
+ *    - phase 3: spring damping (stiffness 320) — felt "急に動いた" (peak
+ *      velocity at t=0 when error is largest)
+ *    - phase 4: switched to ease-in-out-cubic tween (1200ms) — symmetric
+ *      "ぬったりぬるっと" soft start AND soft end
+ *    - phase 6 (refactor): same tween, now drives ALL swell motion in
+ *      lightbox mode AND the mode-change hand-off
+ *
+ *  Board mode swell still snaps directly to swellFraction (= scroll feels
+ *  1:1 with the finger); the glide path is only used for mode changes
+ *  and lightbox-mode-internal card swaps. */
 const GLIDE_DURATION_MS = 1200
 
 function easeInOutCubic(t: number): number {
@@ -64,35 +71,37 @@ function easeInOutCubic(t: number): number {
 }
 
 type Props = {
-  /** Total scrollable content height of the board (cards + padding). */
-  readonly contentHeight: number
-  /** Current viewport y offset within the board's coordinate space. */
-  readonly viewportY: number
-  /** Visible viewport height. */
-  readonly viewportHeight: number
-  /** Scroll the board to the given y (called on click / drag). */
-  readonly onScrollTo: (y: number) => void
-  /** First visible card index (1-based) for the counter readout.
-   *  0 when there are no cards. */
-  readonly visibleRangeStart: number
-  /** Last visible card index (1-based). 0 when no cards. */
-  readonly visibleRangeEnd: number
-  /** Total card count for the counter readout. */
-  readonly totalCount: number
-  /** Fade the meter out (opacity 0 + pointer-events none) while the
-   *  Lightbox is open — LightboxNavMeter occupies the same pixel spot,
-   *  so this lets the two meters cleanly "swap". */
-  readonly hidden?: boolean
-  /** Session 39 phase 3 (B-#20 close-side polish): when set, snap the
-   *  displayed swell to this 0..1 fraction of the meter and let the
-   *  spring slide it toward the natural scroll-fraction target. Used by
-   *  BoardRoot to carry the Lightbox swell position over on close so the
-   *  bulge visually "travels home" instead of teleporting. The actual
-   *  scroll position does NOT change — only the meter's swell visuals
-   *  glide. Set to a new number on each close (BoardRoot resets to
-   *  undefined after the glide should be complete) so back-to-back
-   *  opens/closes of the same card re-trigger the glide. */
-  readonly glideFromFraction?: number
+  /** Which "device" the meter is acting as right now:
+   *   - 'board': bulge follows scroll fraction directly (1:1 with finger);
+   *     drag-scrub maps to scroll position via `onScrub`.
+   *   - 'lightbox': bulge glides to swellFraction (= active card position)
+   *     with an ease-in-out tween for smooth card-to-card slides;
+   *     drag-scrub maps to card jumps via `onScrub`.
+   *   On mode change either direction, the bulge eases from its current
+   *   displayed position to the new swellFraction (= "swell travels home"
+   *   on Lightbox close, "swell zooms onto the card you opened" on open). */
+  readonly mode: 'board' | 'lightbox'
+  /** Counter left number (= visible range start in board mode, current card
+   *  index +1 in lightbox mode). */
+  readonly n1: number
+  /** Counter middle number (= visible range end in board mode, also current
+   *  card index +1 in lightbox mode — for `N — N / TOTAL` "you're zoomed
+   *  in to card N" readout). */
+  readonly n2: number
+  /** Counter right number (= total card count, same in both modes). */
+  readonly total: number
+  /** Swell center as a 0..1 fraction of the meter. Parent computes from
+   *  mode-specific logic:
+   *   - board: cy / (contentHeight - viewportHeight)
+   *   - lightbox: currentIndex / (total - 1) */
+  readonly swellFraction: number
+  /** Called when the user clicks or drags on the meter track. Receives a
+   *  0..1 fraction; parent translates to:
+   *   - board: scroll to (fraction * scrollableHeight)
+   *   - lightbox: jump to round(fraction * (total - 1))
+   *  rAF-throttled (= max once per frame), so the parent can call expensive
+   *  state setters without per-pointer-event flooding. */
+  readonly onScrub: (fraction: number) => void
 }
 
 function pad4(n: number): string {
@@ -100,34 +109,37 @@ function pad4(n: number): string {
 }
 
 /**
- * Live scroll-position meter — direct port of `LightboxNavMeter`'s waveform
- * algorithm, adapted to drive its swell from the board's scroll position
- * instead of the active card index.
+ * Unified live meter for the board canvas — single component covers both
+ * "show scroll position" (board mode) and "show active card" (lightbox
+ * mode) so opening / closing the Lightbox is a pure content swap with NO
+ * crossfade between two physical meters. The bulge eases between modes
+ * via an ease-in-out-cubic tween, so it visually "travels home" rather
+ * than teleporting.
  *
  * Three superposed sinusoids per tick (low / mid / high frequency, each
  * phase-shifted per tick index) give an audio-waveform "音の波形" feel.
- * On top, a localized Gaussian amplitude swell centered on the current
- * scroll fraction makes the meter "notice" itself there — the swell IS
- * the position indicator (no separate playhead or bookend lines needed).
+ * On top, a localized Gaussian amplitude swell centered on `displayed`
+ * makes the meter "notice" itself at the active position.
  *
- * Counter readout stacks above the waveform, mirroring the LightboxNavMeter
- * `meterStack` layout. Range numbers (N1, N2) scramble for 600ms after a
- * change; the total scrambles for 1500ms (it's the headline number — gets
- * the longest read time). Both jitter slightly even when settled so the
- * meter feels alive. Critically, the waveform swell IGNORES the scrambled
- * values entirely (uses scroll fraction) — the spec calls for the
- * "数字は うるさい / 波形は 静か" split so motion stays legible.
+ * Counter readout stacks above the waveform with format `N1 — N2 / TOTAL`.
+ * Range numbers (N1, N2) scramble for 600ms after a change; the total
+ * scrambles for 1500ms (it's the headline number — gets the longest read
+ * time). Both jitter slightly even when settled so the meter feels alive.
+ * Critically, the waveform swell IGNORES the scrambled values entirely
+ * (uses `displayed` tick index) — the spec calls for the "数字は うるさい
+ * / 波形は 静か" split so motion stays legible.
+ *
+ * Drag-scrub uses an rAF-throttled fire of `onScrub(fraction)` so heavy
+ * parent-side state updates (= per-card jump in lightbox mode) stay at
+ * frame rate, no matter how fast the user flicks the pointer.
  */
 export function ScrollMeter({
-  contentHeight,
-  viewportY,
-  viewportHeight,
-  onScrollTo,
-  visibleRangeStart,
-  visibleRangeEnd,
-  totalCount,
-  hidden,
-  glideFromFraction,
+  mode,
+  n1,
+  n2,
+  total,
+  swellFraction,
+  onScrub,
 }: Props): ReactElement {
   const trackRef = useRef<HTMLDivElement>(null)
   const tickRefs = useRef<HTMLDivElement[]>([])
@@ -135,63 +147,73 @@ export function ScrollMeter({
   const n2Ref = useRef<HTMLSpanElement>(null)
   const totalSpanRef = useRef<HTMLSpanElement>(null)
 
-  const viewportYRef = useRef<number>(viewportY)
-  const viewportHRef = useRef<number>(viewportHeight)
-  const contentHRef = useRef<number>(contentHeight)
-  useEffect(() => { viewportYRef.current = viewportY }, [viewportY])
-  useEffect(() => { viewportHRef.current = viewportHeight }, [viewportHeight])
-  useEffect(() => { contentHRef.current = contentHeight }, [contentHeight])
+  // Mirror props into refs so the rAF loop reads the latest values each
+  // frame without restarting the loop / triggering re-renders.
+  const modeRef = useRef<'board' | 'lightbox'>(mode)
+  const swellFractionRef = useRef<number>(swellFraction)
+  const onScrubRef = useRef<typeof onScrub>(onScrub)
+  useEffect(() => { modeRef.current = mode }, [mode])
+  useEffect(() => { swellFractionRef.current = swellFraction }, [swellFraction])
+  useEffect(() => { onScrubRef.current = onScrub }, [onScrub])
 
-  // Session 39 phase 3: optional ease-in-out-cubic tween "glide" mode for
-  // the swell. Default behavior is unchanged — the swell snaps to the
-  // scroll-fraction target every frame (= board scroll feels 1:1 with
-  // the finger). Glide mode is only armed when a `glideFromFraction` prop
-  // arrives, runs for GLIDE_DURATION_MS, then auto-disarms.
-  //
-  // Tween picked over spring (user feedback on phase 3 v1): a spring's
-  // velocity peaks at t=0 when the error is largest, so the bulge "jumped
-  // out" of the Lightbox position; ease-in-out gives the symmetric soft
-  // start AND soft end the user wanted ("ぬったりぬるっと").
-  const displayedTickIdxRef = useRef<number>(0)
+  // ---- Swell state ----
+  // `displayedTickIdxRef` is what the rAF actually paints each frame. It's
+  // updated by one of three paths each frame:
+  //   1. Drag scrub: pointer-driven, snap to scrub fraction
+  //   2. Active glide: ease-in-out tween from start tick to target tick
+  //   3. Direct follow (board mode, no scrub, no glide): snap to swell target
+  const displayedTickIdxRef = useRef<number>(swellFraction * (TICK_COUNT - 1))
+  const glideActiveRef = useRef<boolean>(false)
   const glideStartTimeRef = useRef<number>(0)
   const glideStartTickRef = useRef<number>(0)
   const glideTargetTickRef = useRef<number>(0)
-  const glideActiveRef = useRef<boolean>(false)
 
-  // Arm a new glide on each `glideFromFraction` non-undefined update.
-  // BoardRoot resets to undefined after the glide window so back-to-back
-  // closes of the same card index re-trigger this effect (undefined →
-  // number → undefined cycle).
-  //
-  // Target is LOCKED at arm time (= the scroll fraction the user had when
-  // they opened the Lightbox). If the user somehow scrolls during the
-  // 1.2s glide (rare — Lightbox just closed, no immediate scroll gesture),
-  // the displayed will snap to the live target after the glide completes.
-  // That tradeoff is preferable to a target-following tween, which would
-  // visibly jump mid-flight on scroll.
+  // ---- Drag scrub state ----
+  // Pointer-down captures into scrubFractionRef; pointermove updates it.
+  // The rAF loop reads it once per frame, fires onScrub at most once per
+  // frame, and renders displayed = scrubFraction (not glide, not direct).
+  const scrubFractionRef = useRef<number | null>(null)
+  const lastFiredScrubRef = useRef<number>(NaN)
+  const [isDragging, setIsDragging] = useState(false)
+
+  // ---- Glide arm logic ----
+  // Glide fires (= arms a new tween from current displayed to target) when:
+  //   - mode changes (board ↔ lightbox)
+  //   - in lightbox mode, swellFraction changes (= card-to-card swap)
+  // Skip if currently scrubbing (= pointer is the source of truth).
+  // Board mode swellFraction changes (= scroll) do NOT arm glide — board
+  // scroll is direct follow.
+  const prevModeRef = useRef<'board' | 'lightbox'>(mode)
   useEffect(() => {
-    if (glideFromFraction === undefined) return
-    const clamped = Math.max(0, Math.min(1, glideFromFraction))
-    const startTick = clamped * (TICK_COUNT - 1)
-    const cy = viewportYRef.current
-    const ch = viewportHRef.current
-    const total = contentHRef.current
-    const scrollableH = Math.max(0, total - ch)
-    const targetFraction = scrollableH > 0 ? cy / scrollableH : 0
-    const targetTick = targetFraction * (TICK_COUNT - 1)
-    glideStartTickRef.current = startTick
-    glideTargetTickRef.current = targetTick
-    displayedTickIdxRef.current = startTick
-    glideStartTimeRef.current = performance.now()
-    glideActiveRef.current = true
-  }, [glideFromFraction])
+    if (scrubFractionRef.current !== null) {
+      // Pointer-driven; don't arm glide. prevMode tracking still updates
+      // so a mode change during scrub arms once the user releases.
+      prevModeRef.current = mode
+      return
+    }
+    const isModeChange = prevModeRef.current !== mode
+    const isLightboxSwellChange = mode === 'lightbox'
+    if (isModeChange || isLightboxSwellChange) {
+      const start = displayedTickIdxRef.current
+      const target = Math.max(0, Math.min(1, swellFraction)) * (TICK_COUNT - 1)
+      // No-op if already at target — avoids a 1.2s "glide to where I am" tween.
+      if (Math.abs(target - start) > 0.5) {
+        glideStartTickRef.current = start
+        glideTargetTickRef.current = target
+        glideStartTimeRef.current = performance.now()
+        glideActiveRef.current = true
+      }
+    }
+    prevModeRef.current = mode
+  }, [mode, swellFraction])
 
+  // ---- Counter scramble bookkeeping ----
   // Settled values + scramble deadlines for the counter rAF loop. The loop
   // reads these refs every frame — React state would cause re-renders,
   // which is exactly what we don't want for a 60Hz number display.
-  const n1SettledRef = useRef<number>(visibleRangeStart)
-  const n2SettledRef = useRef<number>(visibleRangeEnd)
-  const totalSettledRef = useRef<number>(totalCount)
+  const n1SettledRef = useRef<number>(n1)
+  const n2SettledRef = useRef<number>(n2)
+  const totalSettledRef = useRef<number>(total)
   const n1ScrambleUntilRef = useRef<number>(0)
   const n2ScrambleUntilRef = useRef<number>(0)
   const totalScrambleUntilRef = useRef<number>(0)
@@ -200,57 +222,52 @@ export function ScrollMeter({
   const nextPeriodicAtRef = useRef<number>(0)
 
   useEffect(() => {
-    if (visibleRangeStart !== n1SettledRef.current) {
-      n1SettledRef.current = visibleRangeStart
+    if (n1 !== n1SettledRef.current) {
+      n1SettledRef.current = n1
       n1ScrambleUntilRef.current = performance.now() + SCRAMBLE_MS_RANGE
     }
-  }, [visibleRangeStart])
+  }, [n1])
   useEffect(() => {
-    if (visibleRangeEnd !== n2SettledRef.current) {
-      n2SettledRef.current = visibleRangeEnd
+    if (n2 !== n2SettledRef.current) {
+      n2SettledRef.current = n2
       n2ScrambleUntilRef.current = performance.now() + SCRAMBLE_MS_RANGE
     }
-  }, [visibleRangeEnd])
+  }, [n2])
   useEffect(() => {
-    if (totalCount !== totalSettledRef.current) {
-      totalSettledRef.current = totalCount
+    if (total !== totalSettledRef.current) {
+      totalSettledRef.current = total
       totalScrambleUntilRef.current = performance.now() + SCRAMBLE_MS_TOTAL
     }
-  }, [totalCount])
+  }, [total])
 
   const [hoverFrac, setHoverFrac] = useState<number | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
 
+  // ---- The rAF loop: swell render + counter render + scrub fire ----
   useEffect(() => {
     let raf = 0
     const loop = (): void => {
       const now = performance.now()
       const t = now / 1000
-      const cy = viewportYRef.current
-      const ch = viewportHRef.current
-      const total = contentHRef.current
 
-      // ---- Waveform swell ----
-      // Default path (board normal scroll): swell center snaps directly
-      // to the scroll-fraction target each frame — keeps board scroll
-      // feeling 1:1 with the finger (spec §1-1: the waveform stays
-      // calm while the numbers scramble, the contrast is the design).
-      //
-      // Glide path (session 39 phase 3, B-#20): when a Lightbox close
-      // armed glide mode, displayed swell tweens from the locked start
-      // tick (= Lightbox swell position) to the locked target tick (=
-      // scroll fraction at arm time) over GLIDE_DURATION_MS with
-      // ease-in-out-cubic. Disarms when progress reaches 1, returning
-      // to direct follow.
-      const scrollableH = Math.max(0, total - ch)
-      const fraction = scrollableH > 0 ? cy / scrollableH : 0
-      const targetTickIdx = fraction * (TICK_COUNT - 1)
-
+      // ---- Resolve displayed swell center for this frame ----
+      const scrub = scrubFractionRef.current
+      const liveSwellFraction = Math.max(0, Math.min(1, swellFractionRef.current))
+      const liveTargetTick = liveSwellFraction * (TICK_COUNT - 1)
       let centerTickIdx: number
-      if (!glideActiveRef.current) {
-        displayedTickIdxRef.current = targetTickIdx
-        centerTickIdx = targetTickIdx
-      } else {
+
+      if (scrub !== null) {
+        // Drag: pointer is truth. Snap displayed, kill any in-flight glide.
+        const scrubTick = scrub * (TICK_COUNT - 1)
+        displayedTickIdxRef.current = scrubTick
+        centerTickIdx = scrubTick
+        glideActiveRef.current = false
+        // rAF-throttled onScrub fire: parent only sees changes at frame rate.
+        if (scrub !== lastFiredScrubRef.current) {
+          onScrubRef.current(scrub)
+          lastFiredScrubRef.current = scrub
+        }
+      } else if (glideActiveRef.current) {
+        // Active ease-in-out tween from glideStartTick to glideTargetTick.
         const elapsed = now - glideStartTimeRef.current
         const progress = Math.min(1, Math.max(0, elapsed / GLIDE_DURATION_MS))
         const eased = easeInOutCubic(progress)
@@ -258,21 +275,29 @@ export function ScrollMeter({
         const target = glideTargetTickRef.current
         const displayed = start + (target - start) * eased
         if (progress >= 1) {
-          // Glide complete — disarm and snap to LIVE target (= picks up
-          // any scroll the user did during the 1.2s glide). Visible jump
-          // here only if user actually scrolled.
-          displayedTickIdxRef.current = targetTickIdx
+          // Glide complete — snap to the LIVE target (= picks up any
+          // swellFraction shift that happened mid-tween, e.g. user scroll
+          // during the 1.2s glide back to board mode).
+          displayedTickIdxRef.current = liveTargetTick
           glideActiveRef.current = false
-          centerTickIdx = targetTickIdx
+          centerTickIdx = liveTargetTick
         } else {
           displayedTickIdxRef.current = displayed
           centerTickIdx = displayed
         }
+      } else if (modeRef.current === 'board') {
+        // Board direct follow — keeps scroll 1:1 with the finger.
+        displayedTickIdxRef.current = liveTargetTick
+        centerTickIdx = liveTargetTick
+      } else {
+        // Lightbox mode at rest (= settled at the active card position).
+        displayedTickIdxRef.current = liveTargetTick
+        centerTickIdx = liveTargetTick
       }
 
+      // ---- Tick heights: flowing sinusoid waveform + amplitude swell ----
       const swellSigma = TICK_COUNT / 32
       const swellGain = 3.4
-
       for (let i = 0; i < TICK_COUNT; i++) {
         const el = tickRefs.current[i]
         if (!el) continue
@@ -338,6 +363,10 @@ export function ScrollMeter({
     return (): void => cancelAnimationFrame(raf)
   }, [])
 
+  // ---- Pointer handlers ----
+  // Pointer events update scrubFractionRef; the actual onScrub fire happens
+  // in the rAF loop above so we throttle to one fire per frame max (= safe
+  // for lightbox mode where each fire triggers a per-card React update).
   const fracFromPointer = useCallback((clientX: number): number => {
     const el = trackRef.current
     if (!el) return 0
@@ -346,32 +375,32 @@ export function ScrollMeter({
     return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   }, [])
 
-  const scrollableHeight = Math.max(0, contentHeight - viewportHeight)
-
-  const scrollToFrac = useCallback((frac: number): void => {
-    onScrollTo(Math.max(0, frac * scrollableHeight))
-  }, [onScrollTo, scrollableHeight])
-
   const handlePointerDown = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     e.preventDefault()
     const el = trackRef.current
     if (!el) return
     if (typeof el.setPointerCapture === 'function') el.setPointerCapture(e.pointerId)
+    const frac = fracFromPointer(e.clientX)
+    scrubFractionRef.current = frac
+    lastFiredScrubRef.current = NaN
     setIsDragging(true)
-    scrollToFrac(fracFromPointer(e.clientX))
-  }, [fracFromPointer, scrollToFrac])
+  }, [fracFromPointer])
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     const frac = fracFromPointer(e.clientX)
     setHoverFrac(frac)
-    if (isDragging) scrollToFrac(frac)
-  }, [fracFromPointer, isDragging, scrollToFrac])
+    if (scrubFractionRef.current !== null) {
+      scrubFractionRef.current = frac
+    }
+  }, [fracFromPointer])
 
   const handlePointerUp = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     const el = trackRef.current
     if (el && typeof el.hasPointerCapture === 'function' && el.hasPointerCapture(e.pointerId)) {
       el.releasePointerCapture(e.pointerId)
     }
+    scrubFractionRef.current = null
+    lastFiredScrubRef.current = NaN
     setIsDragging(false)
   }, [])
 
@@ -383,24 +412,23 @@ export function ScrollMeter({
 
   const hoverPct = hoverFrac !== null ? hoverFrac * 100 : null
   const ticks = useMemo(() => Array.from({ length: TICK_COUNT }, (_, i) => i), [])
-
-  const wrapClassName = hidden
-    ? `${styles.meterWrap} ${styles.hidden}`
-    : styles.meterWrap
+  const swellPct = Math.round(
+    Math.max(0, Math.min(1, swellFraction)) * 100,
+  )
 
   return (
-    <div className={wrapClassName} aria-hidden={hidden ? 'true' : undefined}>
+    <div className={styles.meterWrap}>
       <div className={styles.meterStack}>
         <div className={styles.meterCounter} aria-hidden="true">
-          <span ref={n1Ref}>{pad4(visibleRangeStart)}</span>
+          <span ref={n1Ref}>{pad4(n1)}</span>
           {' '}
           <span className={styles.meterDim}>—</span>
           {' '}
-          <span ref={n2Ref}>{pad4(visibleRangeEnd)}</span>
+          <span ref={n2Ref}>{pad4(n2)}</span>
           {' '}
           <span className={styles.meterDim}>/</span>
           {' '}
-          <span ref={totalSpanRef}>{pad4(totalCount)}</span>
+          <span ref={totalSpanRef}>{pad4(total)}</span>
         </div>
         <div
           ref={trackRef}
@@ -411,11 +439,12 @@ export function ScrollMeter({
           onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerLeave}
           role="slider"
-          aria-label="Scroll position"
+          aria-label={mode === 'lightbox' ? 'Card position' : 'Scroll position'}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={Math.round((scrollableHeight > 0 ? viewportY / scrollableHeight : 0) * 100)}
+          aria-valuenow={swellPct}
           data-testid="scroll-meter"
+          data-mode={mode}
           data-dragging={isDragging || undefined}
         >
           <div className={styles.baseline} aria-hidden="true" />

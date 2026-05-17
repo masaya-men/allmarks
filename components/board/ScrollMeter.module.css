@@ -16,21 +16,14 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  /* Session 39 (B-#20): bumped 90 → 400 to match
-   * `BoardRoot.module.css` `.lightboxMeterSlot` z-index. Both meters
-   * share the same canvas-bottom slot now and crossfade between board
-   * and Lightbox modes — same z-index prevents any "stack-pop" effect
-   * mid-fade. Still above the canvas bottom scrim (z 80) so legibility
-   * vs cards behind is preserved. */
+  /* z 400 sits above Lightbox `.stage` (z 300) so the meter renders ON
+   * TOP of the lightbox backdrop. Session 39 phase 6: meter is now ALWAYS
+   * visible (single unified meter swaps content via mode prop) — the
+   * earlier opacity hide / crossfade was removed because there's no
+   * second meter to swap with anymore. */
   z-index: 400;
   pointer-events: none;
   user-select: none;
-  transition: opacity 0.25s ease;
-}
-
-.hidden {
-  opacity: 0;
-  pointer-events: none;
 }
 
 /* Counter on top of the waveform, mirroring LightboxNavMeter.meterStack. */

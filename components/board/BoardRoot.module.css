@@ -72,41 +72,11 @@
   overflow: hidden;
 }
 
-/* Session 39 (B-#20): Shared bottom-center "meter slot" — ScrollMeter and
- * LightboxNavMeter both live here so opening / closing the Lightbox
- * becomes a pure opacity crossfade in the SAME pixel slot instead of a
- * cross-stacking-context jump (= the "ガチャガチャ" symptom user reported
- * 2026-05-17). Mirrors ScrollMeter.module.css `.meterWrap` position
- * exactly so the slot itself is invisible in board-only mode.
- *
- * z-index 400 sits above Lightbox `.stage` (z 300) so the meter renders
- * ON TOP of the lightbox backdrop while the lightbox is open. Both
- * meters share this slot via the BoardRoot render — see `BoardRoot.tsx`. */
-.lightboxMeterSlot {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 400;
-  pointer-events: none;
-  user-select: none;
-  transition: opacity 0.25s ease;
-}
-
-/* Neutralize LightboxNavMeter's internal `.meterWrap` positioning so the
- * slot above controls the placement. Same pattern as PipStack's `.meter`
- * wrapper (see PipStack.module.css). */
-.lightboxMeterSlot > div {
-  position: static !important;
-  transform: none !important;
-  bottom: auto !important;
-  left: auto !important;
-}
-
-.lightboxMeterSlot.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
+/* Session 39 phase 6 (B-#20 refactor): the LightboxMeterSlot wrapper +
+ * crossfade machinery was removed when ScrollMeter became the single
+ * unified meter for both board and lightbox states. The meter now lives
+ * in ScrollMeter.module.css `.meterWrap` (z 400) and swaps its content
+ * via the `mode` prop — see ScrollMeter.tsx. */
 
 /* Session 28 Apple v3 chrome: text-only Share label with a thin paint-order
    stroke for legibility. No pill bg / border — sits floating over the

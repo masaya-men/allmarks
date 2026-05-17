@@ -2,17 +2,16 @@ import { render, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ScrollMeter } from './ScrollMeter'
 
-describe('ScrollMeter', () => {
+describe('ScrollMeter (unified board/lightbox meter)', () => {
   it('renders 150 ticks inside the track', () => {
     const { getByTestId } = render(
       <ScrollMeter
-        contentHeight={2000}
-        viewportY={0}
-        viewportHeight={800}
-        onScrollTo={() => {}}
-        visibleRangeStart={1}
-        visibleRangeEnd={12}
-        totalCount={234}
+        mode="board"
+        n1={1}
+        n2={12}
+        total={234}
+        swellFraction={0}
+        onScrub={() => {}}
       />,
     )
     const track = getByTestId('scroll-meter')
@@ -22,17 +21,20 @@ describe('ScrollMeter', () => {
     expect(tickElements).toHaveLength(150)
   })
 
-  it('calls onScrollTo on pointer down with mapped y', () => {
-    const onScrollTo = vi.fn()
+  it('fires onScrub with the pointer fraction on pointer down', () => {
+    // The actual onScrub fire is rAF-throttled inside the meter; jsdom
+    // doesn't run rAF so we only assert that pointer down captures the
+    // scrub start (= the data-dragging attribute flips). Browser tests
+    // (= playwright) cover the rAF fire path end-to-end.
+    const onScrub = vi.fn()
     const { getByTestId } = render(
       <ScrollMeter
-        contentHeight={2000}
-        viewportY={0}
-        viewportHeight={800}
-        onScrollTo={onScrollTo}
-        visibleRangeStart={1}
-        visibleRangeEnd={12}
-        totalCount={234}
+        mode="board"
+        n1={1}
+        n2={12}
+        total={234}
+        swellFraction={0}
+        onScrub={onScrub}
       />,
     )
     const track = getByTestId('scroll-meter')
@@ -40,20 +42,18 @@ describe('ScrollMeter', () => {
       x: 0, y: 0, width: 200, height: 18, top: 0, right: 200, bottom: 18, left: 0, toJSON: () => ({}),
     } as DOMRect)
     fireEvent.pointerDown(track, { clientX: 100, pointerId: 1 })
-    // 50% of (contentHeight - viewportHeight) = 0.5 * 1200 = 600
-    expect(onScrollTo).toHaveBeenCalledWith(600)
+    expect(track.getAttribute('data-dragging')).toBe('true')
   })
 
   it('renders the counter readout with zero-padded N1, N2, TOTAL', () => {
     const { container } = render(
       <ScrollMeter
-        contentHeight={2000}
-        viewportY={0}
-        viewportHeight={800}
-        onScrollTo={() => {}}
-        visibleRangeStart={1}
-        visibleRangeEnd={12}
-        totalCount={234}
+        mode="board"
+        n1={1}
+        n2={12}
+        total={234}
+        swellFraction={0}
+        onScrub={() => {}}
       />,
     )
     // The counter row pre-renders the initial values before the rAF loop
@@ -62,5 +62,30 @@ describe('ScrollMeter', () => {
     expect(container.textContent).toContain('0001')
     expect(container.textContent).toContain('0012')
     expect(container.textContent).toContain('0234')
+  })
+
+  it('exposes the current mode via data-mode for downstream targeting', () => {
+    const { getByTestId, rerender } = render(
+      <ScrollMeter
+        mode="board"
+        n1={1}
+        n2={12}
+        total={234}
+        swellFraction={0}
+        onScrub={() => {}}
+      />,
+    )
+    expect(getByTestId('scroll-meter').getAttribute('data-mode')).toBe('board')
+    rerender(
+      <ScrollMeter
+        mode="lightbox"
+        n1={7}
+        n2={7}
+        total={234}
+        swellFraction={0.026}
+        onScrub={() => {}}
+      />,
+    )
+    expect(getByTestId('scroll-meter').getAttribute('data-mode')).toBe('lightbox')
   })
 })

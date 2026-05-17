@@ -36,7 +36,6 @@ import { GapSlider } from './GapSlider'
 import { WidthGapResetButton } from './WidthGapResetButton'
 import { ResetAllButton } from './ResetAllButton'
 import { ScrollMeter } from './ScrollMeter'
-import { LightboxNavMeter } from './LightboxNavMeter'
 import { BoardChrome } from './BoardChrome'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
 import { BookmarkletPill } from '@/components/bookmarklet/BookmarkletPill'
@@ -644,58 +643,6 @@ export function BoardRoot() {
   )
   const lightboxItem = lightboxIndex >= 0 ? filteredItems[lightboxIndex] : null
 
-  // Session 39 phase 2 (B-#20 close-side fix): cache the last "Lightbox open"
-  // index + total so the canvas-slot LightboxNavMeter doesn't see a violent
-  // prop jump on close (lightboxIndex N → -1) that would trigger:
-  //   - waveform spring overshooting back to tick 0 mid-fade ("raging" swell)
-  //   - counter scramble re-firing on n1/n2 (N → 0)
-  // both visible WHILE the slot is fading out. Freezing the props at the
-  // last live values lets the meter exit cleanly with no internal motion.
-  const lastLightboxIndexRef = useRef<number>(0)
-  const lastLightboxTotalRef = useRef<number>(0)
-  useEffect(() => {
-    if (lightboxItemId !== null && lightboxIndex >= 0) {
-      lastLightboxIndexRef.current = lightboxIndex
-      lastLightboxTotalRef.current = filteredItems.length
-    }
-  }, [lightboxItemId, lightboxIndex, filteredItems.length])
-  const meterIndex = lightboxItemId !== null && lightboxIndex >= 0
-    ? lightboxIndex
-    : lastLightboxIndexRef.current
-  const meterTotal = lightboxItemId !== null
-    ? filteredItems.length
-    : (lastLightboxTotalRef.current || filteredItems.length)
-
-  // Session 39 phase 3 (B-#20 close-side polish): when the Lightbox closes,
-  // hand the LightboxNavMeter's current swell position over to ScrollMeter
-  // so the bulge visually travels home (= eases from "card N of total"
-  // position to "scroll fraction" position) instead of teleporting at the
-  // moment of crossfade. Page scroll position is untouched — only the
-  // meter visuals glide. ScrollMeter resets glideFromFraction to undefined
-  // internally once the spring converges; we additionally reset the React
-  // state after the same window so back-to-back closes re-trigger.
-  const [scrollMeterGlideFromFraction, setScrollMeterGlideFromFraction] =
-    useState<number | undefined>(undefined)
-  const prevLightboxItemIdRef = useRef<string | null>(null)
-  useEffect(() => {
-    const prev = prevLightboxItemIdRef.current
-    if (prev !== null && lightboxItemId === null) {
-      // Lightbox just closed — capture where the swell was riding.
-      const total = lastLightboxTotalRef.current
-      const idx = lastLightboxIndexRef.current
-      if (total > 1) {
-        const fraction = Math.max(0, Math.min(1, idx / (total - 1)))
-        setScrollMeterGlideFromFraction(fraction)
-        // Clear after the tween duration (= 1200ms inside ScrollMeter)
-        // + safety margin so React state matches the meter's internal
-        // disarm. 1400ms is long enough that the tween finishes, short
-        // enough that the next open's glide arm re-fires cleanly.
-        window.setTimeout(() => setScrollMeterGlideFromFraction(undefined), 1400)
-      }
-    }
-    prevLightboxItemIdRef.current = lightboxItemId
-  }, [lightboxItemId])
-
   const handleLightboxNav = useCallback((dir: -1 | 1): void => {
     if (filteredItems.length === 0 || lightboxIndex < 0) return
     const next = ((lightboxIndex + dir) % filteredItems.length + filteredItems.length) % filteredItems.length
@@ -955,6 +902,34 @@ export function BoardRoot() {
     }
   }, [filteredItems, layout.positions, viewport.y, viewport.h])
 
+  // Session 39 phase 6 (B-#20 refactor): compute everything ScrollMeter needs
+  // from the current Lightbox / scroll state. Single source of truth for the
+  // meter's mode + content — ScrollMeter just renders.
+  // `lightboxIndex < 0` (= the open card vanished from the current filter)
+  // falls back to board mode so the meter doesn't show stale lightbox data.
+  const isLightboxMode = lightboxItemId !== null && lightboxIndex >= 0
+  const meterMode: 'board' | 'lightbox' = isLightboxMode ? 'lightbox' : 'board'
+  const meterN1 = isLightboxMode ? lightboxIndex + 1 : visibleRange.start
+  const meterN2 = isLightboxMode ? lightboxIndex + 1 : visibleRange.end
+  const meterScrollableHeight = Math.max(0, contentBounds.height - viewport.h)
+  const meterSwellFraction = isLightboxMode
+    ? (filteredItems.length > 1 ? lightboxIndex / (filteredItems.length - 1) : 0)
+    : (meterScrollableHeight > 0 ? viewport.y / meterScrollableHeight : 0)
+
+  // Parent-side scrub translator: ScrollMeter sends a 0..1 fraction at most
+  // once per frame; we translate to mode-appropriate action (= scroll-to-y
+  // in board mode, jump-to-card in lightbox mode).
+  const handleMeterScrub = useCallback((fraction: number): void => {
+    if (isLightboxMode) {
+      const lastIdx = Math.max(0, filteredItems.length - 1)
+      const idx = Math.max(0, Math.min(lastIdx, Math.round(fraction * lastIdx)))
+      handleLightboxJump(idx)
+    } else {
+      const y = Math.max(0, fraction * meterScrollableHeight)
+      handleScrollMeterJump(y)
+    }
+  }, [isLightboxMode, filteredItems.length, handleLightboxJump, handleScrollMeterJump, meterScrollableHeight])
+
   return (
     <div className={styles.outerFrame}>
       {/* Outer-frame chrome — wordmark (top-left) + link strip (bottom).
@@ -1086,49 +1061,22 @@ export function BoardRoot() {
             <EmptyStateWelcome onOpenModal={handleOpenBookmarkletModal} />
           )}
         </div>
-        {/* Session 28: ScrollMeter relocated from the TopHeader instrument
-            slot to the canvas bottom (mirroring LightboxNavMeter's pixel
-            position). Sibling of canvasWrap so it lives inside the same
-            rounded-canvas stacking context as the cards behind it, but
-            above the bottom edge scrim band. Hidden via the same prop
-            mechanism as TopHeader so the meter cleanly swaps with
-            LightboxNavMeter when the user opens a card. */}
+        {/* Session 39 phase 6 (B-#20 refactor): single unified meter for
+            both board and Lightbox states. Earlier multi-component +
+            crossfade approach (phase 1-5) collapsed into ONE ScrollMeter
+            that swaps its content via mode prop. The bulge eases between
+            scroll-fraction and card-fraction targets via ease-in-out tween
+            on mode change AND on lightbox-mode card swaps. No slot
+            wrapper, no freeze refs, no glide-arm React state — all the
+            transition logic lives inside ScrollMeter itself. */}
         <ScrollMeter
-          contentHeight={contentBounds.height}
-          viewportY={viewport.y}
-          viewportHeight={viewport.h}
-          onScrollTo={handleScrollMeterJump}
-          visibleRangeStart={visibleRange.start}
-          visibleRangeEnd={visibleRange.end}
-          totalCount={filteredItems.length}
-          hidden={!!lightboxItemId}
-          glideFromFraction={scrollMeterGlideFromFraction}
+          mode={meterMode}
+          n1={meterN1}
+          n2={meterN2}
+          total={filteredItems.length}
+          swellFraction={meterSwellFraction}
+          onScrub={handleMeterScrub}
         />
-        {/* Session 39 (B-#20): LightboxNavMeter relocated from inside
-            Lightbox `.stage` to this canvas-level slot so it shares the
-            EXACT same bottom-center pixel slot as ScrollMeter above.
-            Opening / closing the Lightbox is now a pure opacity crossfade
-            in the slot (was a position jump from canvas-bottom 24px to
-            viewport-bottom 24px = the "ガチャガチャ" symptom).
-            `counterFormat='range'` makes the counter render as
-            `0007 — 0007 / 0120` (n1=n2=current+1) matching ScrollMeter's
-            `0005 — 0019 / 0120` typography exactly. `alwaysShow` keeps
-            the meter visible even on single-card decks so the slot
-            never disappears mid-fade. */}
-        <div
-          className={`${styles.lightboxMeterSlot} ${lightboxItemId ? '' : styles.hidden}`.trim()}
-        >
-          <LightboxNavMeter
-            current={meterIndex}
-            total={meterTotal}
-            cardKey={lightboxItemId ?? ''}
-            onJump={handleLightboxJump}
-            alwaysShow
-            counterFormat="range"
-            n1={meterIndex + 1}
-            n2={meterIndex + 1}
-          />
-        </div>
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
             canvasWrap. This way its backdrop (position: absolute; inset: 0)
             fills the FULL canvas — including the TopHeader band — so the
