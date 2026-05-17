@@ -89,3 +89,36 @@ describe('TuneTrigger — close on mouseleave', () => {
     expect(btn.getAttribute('aria-expanded')).toBe('true')
   })
 })
+
+describe('TuneTrigger — drag-scrub', () => {
+  it('pointerdown + pointermove on a W num cell calls onChangeWidth with delta', async () => {
+    const onChangeWidth = vi.fn()
+    const { getByTestId, container } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={onChangeWidth}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    fireEvent.mouseEnter(btn)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+
+    // Find the first .num cell tagged for W
+    const numCells = container.querySelectorAll('[data-cell-kind="num-w"]')
+    expect(numCells.length).toBeGreaterThan(0)
+    const target = numCells[0] as HTMLElement
+
+    fireEvent.pointerDown(target, { pointerId: 1, clientX: 100, clientY: 100 })
+    fireEvent.pointerMove(target, { pointerId: 1, clientX: 200, clientY: 100, movementX: 100 })
+    fireEvent.pointerUp(target, { pointerId: 1, clientX: 200, clientY: 100 })
+
+    expect(onChangeWidth).toHaveBeenCalled()
+    // ratio = (max - min) / 10000 = (720 - 120) / 10000 = 0.06
+    // delta = 100 * 0.06 = 6 → next = 267.84 + 6 = 273.84
+    const lastCall = onChangeWidth.mock.calls[onChangeWidth.mock.calls.length - 1]
+    expect(lastCall[0]).toBeCloseTo(273.84, 1)
+  })
+})

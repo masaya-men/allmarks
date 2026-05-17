@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react'
 import { SCRAMBLE_CHARS, pickRandomChar } from '@/lib/board/scramble'
+import { BOARD_SLIDERS } from '@/lib/board/constants'
 import styles from './TuneTrigger.module.css'
 
 /** v4-inplace timing (= spec §2-3). */
@@ -10,8 +11,13 @@ const SCRAMBLE_MIN_MS = 125
 const SCRAMBLE_MAX_MS = 190
 const LEAVE_GRACE_MS = 180
 
+/** Drag-scrub math mirrors PrecisionSlider.tsx exactly. */
+const MOUSE_PX_FOR_FULL_RANGE = 10000
+const SHIFT_SPEED_MULTIPLIER = 10
+
 type CellKind = 'label' | 'num' | 'dim'
-type Cell = { ch: string; kind: CellKind }
+type CellScope = 'w' | 'g' | 'reset' | null
+type Cell = { ch: string; kind: CellKind; scope?: CellScope }
 type AnimatedCell = Cell & { settleAt: number }
 
 type Phase = 'idle-tune' | 'opening' | 'idle-readout' | 'closing'
@@ -19,18 +25,18 @@ type Phase = 'idle-tune' | 'opening' | 'idle-readout' | 'closing'
 function buildReadoutCells(widthPx: number, gapPx: number): Cell[] {
   const wStr = widthPx.toFixed(2)
   const gStr = gapPx.toFixed(2)
-  const parts: { text: string; kind: CellKind }[] = [
+  const parts: { text: string; kind: CellKind; scope?: CellScope }[] = [
     { text: 'W ', kind: 'label' },
-    { text: wStr, kind: 'num' },
+    { text: wStr, kind: 'num', scope: 'w' },
     { text: ' · ', kind: 'dim' },
     { text: 'G ', kind: 'label' },
-    { text: gStr, kind: 'num' },
+    { text: gStr, kind: 'num', scope: 'g' },
     { text: ' · ', kind: 'dim' },
-    { text: '↺', kind: 'label' },
+    { text: '↺', kind: 'label', scope: 'reset' },
   ]
   const cells: Cell[] = []
   for (const p of parts) {
-    for (const ch of [...p.text]) cells.push({ ch, kind: p.kind })
+    for (const ch of [...p.text]) cells.push({ ch, kind: p.kind, scope: p.scope ?? null })
   }
   return cells
 }
@@ -47,9 +53,9 @@ type Props = {
 export function TuneTrigger({
   widthPx,
   gapPx,
-  onChangeWidth: _onChangeWidth,
-  onChangeGap: _onChangeGap,
-  onReset: _onReset,
+  onChangeWidth,
+  onChangeGap,
+  onReset: _onReset,  // still unused until Task 6
   label,
 }: Props): ReactElement {
   const visibleLabel = label ?? 'TUNE'
@@ -64,6 +70,14 @@ export function TuneTrigger({
   // Suppress unused import warning — SCRAMBLE_CHARS is used by Tasks 4-6
   void SCRAMBLE_CHARS
 
+  // Refs kept in sync with props each render (same pattern as PrecisionSlider.tsx
+  // line 105-106). writeIdleReadout reads from these refs instead of closing over
+  // prop values — fixes stale-closure bug when props change mid-animation.
+  const widthRef = useRef(widthPx)
+  const gapRef = useRef(gapPx)
+  widthRef.current = widthPx
+  gapRef.current = gapPx
+
   const writeIdleTune = useCallback((): void => {
     const el = btnRef.current
     if (!el) return
@@ -75,11 +89,14 @@ export function TuneTrigger({
   const writeIdleReadout = useCallback((): void => {
     const el = btnRef.current
     if (!el) return
-    const cells = buildReadoutCells(widthPx, gapPx)
+    const cells = buildReadoutCells(widthRef.current, gapRef.current)
     el.innerHTML = cells
-      .map((c) => `<span class="${styles.cell} ${styles[c.kind]}">${c.ch}</span>`)
+      .map((c, i) => {
+        const dk = c.kind === 'num' ? `num-${c.scope}` : c.scope === 'reset' ? 'reset' : c.kind
+        return `<span class="${styles.cell} ${styles[c.kind]}" data-cell-kind="${dk}" data-cell-idx="${i}">${c.ch}</span>`
+      })
       .join('')
-  }, [widthPx, gapPx])
+  }, [])
 
   const tick = useCallback((): void => {
     const el = btnRef.current
@@ -91,10 +108,11 @@ export function TuneTrigger({
     if (phase === 'opening') {
       let allSettled = true
       const html = cellsRef.current
-        .map((cell) => {
+        .map((cell, i) => {
           const ch = elapsed < cell.settleAt ? pickRandomChar() : cell.ch
           if (elapsed < cell.settleAt) allSettled = false
-          return `<span class="${styles.cell} ${styles[cell.kind]}">${ch}</span>`
+          const dk = cell.kind === 'num' ? `num-${cell.scope}` : cell.scope === 'reset' ? 'reset' : cell.kind
+          return `<span class="${styles.cell} ${styles[cell.kind]}" data-cell-kind="${dk}" data-cell-idx="${i}">${ch}</span>`
         })
         .join('')
       el.innerHTML = html
@@ -110,10 +128,11 @@ export function TuneTrigger({
 
   const startOpen = useCallback((): void => {
     if (phaseRef.current === 'opening' || phaseRef.current === 'idle-readout') return
-    const target = buildReadoutCells(widthPx, gapPx)
+    const target = buildReadoutCells(widthRef.current, gapRef.current)
     cellsRef.current = target.map((c, i) => ({
       ch: c.ch,
       kind: c.kind,
+      scope: c.scope ?? null,
       settleAt:
         i * STAGGER_MS +
         SCRAMBLE_MIN_MS +
@@ -124,7 +143,7 @@ export function TuneTrigger({
     setExpanded(true)
     if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
     tick()
-  }, [widthPx, gapPx, tick])
+  }, [tick])
 
   const closingTick = useCallback((): void => {
     const el = btnRef.current
@@ -133,11 +152,12 @@ export function TuneTrigger({
     const elapsed = now - phaseStartRef.current
     let anyVisible = false
     const html = cellsRef.current
-      .map((cell) => {
+      .map((cell, i) => {
         if (elapsed < cell.settleAt) {
           anyVisible = true
           const ch = pickRandomChar()
-          return `<span class="${styles.cell} ${styles[cell.kind]}">${ch}</span>`
+          const dk = cell.kind === 'num' ? `num-${cell.scope}` : cell.scope === 'reset' ? 'reset' : cell.kind
+          return `<span class="${styles.cell} ${styles[cell.kind]}" data-cell-kind="${dk}" data-cell-idx="${i}">${ch}</span>`
         }
         return '' // cell consumed → empty
       })
@@ -155,11 +175,12 @@ export function TuneTrigger({
 
   const startClose = useCallback((): void => {
     if (phaseRef.current === 'closing' || phaseRef.current === 'idle-tune') return
-    const target = buildReadoutCells(widthPx, gapPx)
+    const target = buildReadoutCells(widthRef.current, gapRef.current)
     const n = target.length
     cellsRef.current = target.map((c, i) => ({
       ch: c.ch,
       kind: c.kind,
+      scope: c.scope ?? null,
       // Reverse stagger: rightmost cell finishes scrambling (empties) first.
       settleAt:
         (n - 1 - i) * STAGGER_MS +
@@ -170,7 +191,7 @@ export function TuneTrigger({
     phaseStartRef.current = performance.now()
     if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
     closingTick()
-  }, [widthPx, gapPx, closingTick])
+  }, [closingTick])
 
   // Initial idle render on mount.
   useEffect(() => {
@@ -197,6 +218,56 @@ export function TuneTrigger({
     }, LEAVE_GRACE_MS)
   }, [startClose])
 
+  // ── Drag-scrub ────────────────────────────────────────────────────────────
+  const dragScopeRef = useRef<'w' | 'g' | null>(null)
+
+  const handlePointerDown = useCallback((e: PointerEvent<HTMLButtonElement>): void => {
+    const target = e.target as HTMLElement
+    const kind = target.dataset.cellKind
+    if (kind !== 'num-w' && kind !== 'num-g') return
+    e.preventDefault()
+    e.stopPropagation()
+    dragScopeRef.current = kind === 'num-w' ? 'w' : 'g'
+    if (typeof e.currentTarget.setPointerCapture === 'function') {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    }
+  }, [])
+
+  const handlePointerMove = useCallback((e: PointerEvent<HTMLButtonElement>): void => {
+    const scope = dragScopeRef.current
+    if (scope === null) return
+    if (scope === 'w') {
+      const range = BOARD_SLIDERS.CARD_WIDTH_MAX_PX - BOARD_SLIDERS.CARD_WIDTH_MIN_PX
+      const ratio = range / MOUSE_PX_FOR_FULL_RANGE
+      const eff = e.shiftKey ? ratio * SHIFT_SPEED_MULTIPLIER : ratio
+      const next = Math.max(
+        BOARD_SLIDERS.CARD_WIDTH_MIN_PX,
+        Math.min(BOARD_SLIDERS.CARD_WIDTH_MAX_PX, widthRef.current + e.movementX * eff),
+      )
+      if (next !== widthRef.current) onChangeWidth(next)
+    } else {
+      const range = BOARD_SLIDERS.CARD_GAP_MAX_PX - BOARD_SLIDERS.CARD_GAP_MIN_PX
+      const ratio = range / MOUSE_PX_FOR_FULL_RANGE
+      const eff = e.shiftKey ? ratio * SHIFT_SPEED_MULTIPLIER : ratio
+      const next = Math.max(
+        BOARD_SLIDERS.CARD_GAP_MIN_PX,
+        Math.min(BOARD_SLIDERS.CARD_GAP_MAX_PX, gapRef.current + e.movementX * eff),
+      )
+      if (next !== gapRef.current) onChangeGap(next)
+    }
+  }, [onChangeWidth, onChangeGap])
+
+  const handlePointerUp = useCallback((e: PointerEvent<HTMLButtonElement>): void => {
+    if (dragScopeRef.current === null) return
+    dragScopeRef.current = null
+    if (
+      typeof e.currentTarget.hasPointerCapture === 'function' &&
+      e.currentTarget.hasPointerCapture(e.pointerId)
+    ) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+  }, [])
+
   return (
     <button
       ref={btnRef}
@@ -207,6 +278,10 @@ export function TuneTrigger({
       aria-expanded={expanded}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
       {visibleLabel}
     </button>
