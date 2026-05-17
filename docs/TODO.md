@@ -20,12 +20,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-17 セッション 39 — meter slot 統一 + 帰り側 polish 完成、 B-#20 完全解消)
+### 直近の状態 (2026-05-17 セッション 39 — B-#20 完全解消、 最終的に unified ScrollMeter refactor まで到達)
 
-session 38 直後に user が prod で気づいた「ScrollMeter がガチャガチャ動く」 を 3 phase で完全解消:
-- **phase 1**: containing block 統一 (canvas-bottom 24px に集約) + counter format 統一 (`N1 — N2 / TOTAL`) + opacity crossfade。 行き (= open) はこれで smooth に
-- **phase 2** (= user 報告で着手): close 後の counter scramble 凍結 — lightboxIndex の N→-1 jump で n1/n2 が暴れるのを ref キャッシュで凍結
-- **phase 3** (= user 仮説どおり): swell 引き継ぎ glide — ScrollMeter に spring damping 追加、 close 時に Lightbox swell 位置を引き継いで scroll fraction 位置へ eased で滑る。 page scroll は触らない
+session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6 phase で完全解消、 最終的に user 提案で 1 component に統合する綺麗な設計に到達:
+- **phase 1**: containing block 統一 (canvas-bottom 24px に集約) + counter format 統一 (`N1 — N2 / TOTAL`) + opacity crossfade
+- **phase 2**: close 後の counter scramble 凍結 (lightboxIndex N→-1 jump 対策、 ref キャッシュ)
+- **phase 3**: swell 引き継ぎ glide (= user 仮説どおり、 ScrollMeter に spring damping + Lightbox 位置引き継ぎ)
+- **phase 4**: spring → ease-in-out-cubic tween 1200ms (= 「もっとぬるっと」)
+- **phase 5**: TopHeader hidden 中の `.group` pointer-events fix (= 「カードの上らへんで close 効かない」 真犯人)
+- **phase 6** (= user の正しい設計提案で refactor): ScrollMeter を unified 1 component に統合、 mode prop で content swap、 LightboxNavMeter は PiP 専用に戻す。 **正味 -200 行**、 phase 1-5 の workaround 全部消えてスッキリ
 
 - [BoardRoot.module.css](components/board/BoardRoot.module.css) に `.lightboxMeterSlot` 新設 (z 400、 ScrollMeter wrapper と完全同位置)
 - [LightboxNavMeter.tsx](components/board/LightboxNavMeter.tsx) に `counterFormat='range'` + `n1`/`n2` props 追加、 ScrollMeter と同じ scramble cadence
@@ -38,8 +41,8 @@ session 38 直後に user が prod で気づいた「ScrollMeter がガチャガ
 - 検証: playwright at user viewport 1489×679 で position Δ全部 0.00px、 close 連続フレームで swell が `149 → 129 → 100 → 67 → ... → 4` と smooth に glide 確認、 chrome 干渉なし、 tsc clean / vitest 493/493 / prod deploy 済 → `https://booklage.pages.dev`
 - **phase 4** (= phase 3 deploy 後の user feedback「まだ急に動いた」): spring → ease-in-out-cubic tween (1200ms) に置換、 「ぬったりぬるっと」 達成
 - **phase 5** (= 別件報告「カードの上らへんで close 判定効かない」): TopHeader が hidden 中も `.group` の `pointer-events: auto` で透明 click を吸ってた → `.hidden .group { pointer-events: none }` 1 行追加で fix
-- 残課題: 周期 full-scramble が Lightbox open / close anim 中に firing することがある (= phase 2 freeze は post-close 区間のみ)。 体感頻度は 20% 程度、 user 観察で「うるさい」 と言えば phase 6 で対応
-- 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 39 セクション (phase 1+2+3+4+5)
+- **phase 6** (= user の根本的に正しい設計提案による refactor): 「ScrollMeter の数字を書き換えるだけでいい」 = 1 component + mode prop の unified 設計。 LightboxNavMeter は PiP 専用に戻し、 BoardRoot から slot wrapper / freeze refs / glide arm 全削除。 **正味 -200 行**、 概念的にも実装的にもスッキリ。 体験は phase 1-5 と同じ
+- 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 39 セクション (phase 1-6)
 
 ### 次セッション (= 40) でやること
 

@@ -1886,3 +1886,73 @@ PrecisionSlider__row (= 透明) が click を吸って、 backdrop の close ハ
 - fix(meter): session 39 phase 4 — glide ease-in-out tween 1200ms
 - fix(lightbox): session 39 phase 5 — TopHeader hidden pointer-events
 - prod deploys: `a41dd270` (phase 4) → `5d1622c4` (phase 5) → `https://booklage.pages.dev`
+
+### phase 6 (= 同セッション、 user の根本的に正しい設計提案による refactor)
+
+phase 5 まで終わった後に user から:
+
+> 「スクロールメーターの数字をライトボックス時に該当のものに書き換える →
+>  ライトボックス終わったらさっきの数字に戻す。 だけでシンプルになります?
+>  素人考えなんですが。」
+
+という提案を受けた。 完全にド正解で、 phase 1-5 で組んでた「2 component
+を同 slot に並べて crossfade」 は LightboxNavMeter の内部 (drag-scrub +
+spring + scramble) を refactor したくないリスク回避策にすぎなかったことを
+率直に user に伝えた上で、 **「user 案で書き直す」 を選択 → refactor 着手**。
+
+設計:
+- **ScrollMeter が単一の「板の楽器」 になる**。 mode prop ('board' |
+  'lightbox') で content swap、 物理的な位置は不変、 crossfade なし
+- 新 API:
+  - `mode: 'board' | 'lightbox'`
+  - `n1`, `n2`, `total` — counter content (= ScrollMeter は描画するだけ、
+    意味付けは parent が決定)
+  - `swellFraction: number` (0..1) — swell 中心位置、 parent が mode に
+    応じて計算
+  - `onScrub: (fraction) => void` — rAF throttled で 1 frame 1 回 fire、
+    parent が mode に応じて scroll-to-y or jump-to-card に translate
+- 内部:
+  - board mode: swell が swellFraction を毎フレーム直接追従 (= scroll 1:1)
+  - lightbox mode: swell 変化時 (= card 切替 含む) に ease-in-out-cubic
+    tween で glide
+  - mode 切替: 現在 displayed → 新 swellFraction へ同 tween で glide
+    (= phase 3+4 で実現した「swell が家に帰る」 体験はそのまま)
+  - drag scrub: scrubFractionRef を pointer events で更新、 rAF loop で
+    onScrub fire (= 1 frame 1 fire のスロットル)
+
+LightboxNavMeter は phase 1 で追加した counterFormat='range' + n1/n2 props +
+range scramble logic を全部 revert → **PiP 専用の index-decimal シンプル版**
+に戻した。 PipStack 側は無修正。
+
+削除されたもの:
+- BoardRoot.tsx: slot wrapper render / lastLightboxIndex/Total freeze refs /
+  scrollMeterGlideFromFraction state / glide arm useEffect / LightboxNavMeter import
+- BoardRoot.module.css: `.lightboxMeterSlot` + neutralize override + `.hidden`
+- Lightbox.module.css: `data-counter-format='range'` typography override + `.meterDim`
+- ScrollMeter.module.css: `.hidden` (= もう fade out しない)
+- ScrollMeter / LightboxNavMeter から各種 phase 1-3 の複雑性
+
+検証 (= playwright at user viewport):
+- (A) 位置完全一致 (board ↔ lightbox): Δtop=0.00 Δleft=0.00 ✅
+- (B) Counter 中身 swap: `0001-0005/0005` ↔ `0005-0005/0005` ↔ 戻る ✅
+- (C) Open glide: swell 2 → 147 を ~1000ms で smooth glide ✅
+- (D) Close glide: swell 146 → 5 を ~600ms で smooth glide (max Δ=20、
+  teleport なし) ✅
+- (E) Phase 5 close 判定 fix 維持 ✅
+
+**正味 -200 行** (+332 / -532)、 tsc clean、 vitest 494/494 pass。
+
+### commits (phase 6)
+
+- refactor(meter): session 39 phase 6 — board/Lightbox を unified ScrollMeter に統合 (user 案、 -200 行)
+- prod deploy: `de27033d` → `https://booklage.pages.dev`
+
+### user feedback の教訓
+
+私が「リスク回避」 のために 2 component path を選んだ時、 user が「素人考え
+ですが」 と前置きしつつ提案した道が技術的にも実装的にも綺麗だった。 私が
+細部に没入してた一方で user は「概念の単純性」 を保持していた。
+
+→ 次以降の brainstorming で、 「リスク回避策」 を提案する前に「もっとシンプル
+な道はないか」 を 1 段深く考える。 user 提案を「素人考え」 と謙遜されても、
+それが真に正しいかもしれないと聞き直す姿勢を持つ。
