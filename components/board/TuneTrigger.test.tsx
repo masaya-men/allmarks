@@ -122,3 +122,67 @@ describe('TuneTrigger — drag-scrub', () => {
     expect(lastCall[0]).toBeCloseTo(273.84, 1)
   })
 })
+
+describe('TuneTrigger — reset and sticky', () => {
+  it('clicking the ↺ cell calls onReset', async () => {
+    const onReset = vi.fn()
+    const { getByTestId, container } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={onReset}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    fireEvent.mouseEnter(btn)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+
+    const resetCell = container.querySelector('[data-cell-kind="reset"]') as HTMLElement
+    expect(resetCell).toBeTruthy()
+    fireEvent.click(resetCell)
+    expect(onReset).toHaveBeenCalledOnce()
+  })
+
+  it('clicking the TUNE button toggles sticky open (mouseleave does not close)', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+
+    fireEvent.mouseEnter(btn)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    fireEvent.click(btn)
+    // Sticky now ON — leave should NOT close
+    fireEvent.mouseLeave(btn)
+    await new Promise<void>((resolve) => setTimeout(resolve, 700))
+    expect(btn.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('ESC closes a sticky-open readout', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    fireEvent.mouseEnter(btn)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    fireEvent.click(btn)
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await new Promise<void>((resolve) => setTimeout(resolve, 700))
+    expect(btn.getAttribute('aria-expanded')).toBe('false')
+    expect(btn.textContent).toBe('TUNE')
+  })
+})

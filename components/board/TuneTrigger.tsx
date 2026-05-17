@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement } from 'react'
 import { SCRAMBLE_CHARS, pickRandomChar } from '@/lib/board/scramble'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import styles from './TuneTrigger.module.css'
@@ -55,7 +55,7 @@ export function TuneTrigger({
   gapPx,
   onChangeWidth,
   onChangeGap,
-  onReset: _onReset,  // still unused until Task 6
+  onReset,
   label,
 }: Props): ReactElement {
   const visibleLabel = label ?? 'TUNE'
@@ -211,11 +211,57 @@ export function TuneTrigger({
   }, [startOpen])
 
   const handleMouseLeave = useCallback((): void => {
+    if (stickyOpenRef.current) return
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
     leaveTimerRef.current = setTimeout(() => {
       startClose()
       leaveTimerRef.current = null
     }, LEAVE_GRACE_MS)
+  }, [startClose])
+
+  // ── Sticky open + reset ──────────────────────────────────────────────────
+  const stickyOpenRef = useRef(false)
+
+  const handleClick = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
+    const target = e.target as HTMLElement
+    const kind = target.dataset.cellKind
+    if (kind === 'reset') {
+      e.preventDefault()
+      e.stopPropagation()
+      onReset()
+      return
+    }
+    // Click on any other cell or TUNE label: toggle sticky
+    stickyOpenRef.current = !stickyOpenRef.current
+    if (!stickyOpenRef.current) {
+      // Sticky turned off; close immediately
+      startClose()
+    }
+  }, [onReset, startClose])
+
+  // ESC handler
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape' && stickyOpenRef.current) {
+        stickyOpenRef.current = false
+        startClose()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return (): void => window.removeEventListener('keydown', onKeyDown)
+  }, [startClose])
+
+  // Outside-click handler
+  useEffect(() => {
+    const onDocClick = (e: globalThis.MouseEvent): void => {
+      if (!stickyOpenRef.current) return
+      if (!btnRef.current?.contains(e.target as Node)) {
+        stickyOpenRef.current = false
+        startClose()
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return (): void => document.removeEventListener('mousedown', onDocClick)
   }, [startClose])
 
   // ── Drag-scrub ────────────────────────────────────────────────────────────
@@ -282,6 +328,7 @@ export function TuneTrigger({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      onClick={handleClick}
     >
       {visibleLabel}
     </button>
