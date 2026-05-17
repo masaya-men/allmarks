@@ -1677,3 +1677,94 @@ session 36 + 37 の積み重ねで「ライトボックスは title だけ伸び
 - session 38 phase 1 fix(lightbox): show X favicon + domain in Lightbox text view + clone (close jump 解消)
 - session 38 docs: narrative + TODO 更新 + CURRENT_GOAL 次セッション用
 - prod deploys: `4b01a066` → `1c1fbbf4` → `d262bb34` → `https://booklage.pages.dev`
+
+---
+
+## セッション 39 (2026-05-17) — ScrollMeter / LightboxNavMeter slot 統一 (B-#20 ガチャガチャ解消)
+
+### user 報告された症状
+
+板 → カード open → Lightbox 表示 → close の流れで、 bottom-center にいる
+meter が「ガチャガチャ動いて」 落ち着かない。 board / Lightbox で表示位置と
+書き方が違うのが目に付く。
+
+### 根本原因 (= 探索でつかんだ事実)
+
+両 meter とも `bottom: 24px; left: 50%; transform: translateX(-50%)` で配置
+されているが、 containing block が異なる:
+
+- ScrollMeter → `.canvas` (`position: relative`、 canvas frame 内側)
+- LightboxNavMeter → `.stage` (`position: fixed; inset: 0`、 viewport 全面)
+
+canvas の外側に白い frame padding があるので、 「同じ bottom 24px」 でも
+viewport pixel 位置が縦にズレる。 開閉のたびに meter が viewport 縦軸を
+ジャンプ = 「ガチャガチャ」 の正体。 副次的に counter format も違う
+(板: `N1 — N2 / TOTAL` / Lightbox: `[ NNNN.MMMM / TTTT.0000 ]`) のと、
+LightboxNavMeter が `nav.total > 1` でしか render されない件もあった。
+
+### user 合意 (= brainstorming で 1 質問ずつ refine)
+
+- (a) 場所は完全固定で、 中身だけ swap (text format も含めて crossfade)
+- 書き方は板の `0007 — 0007 / 0120` (N1=N2=current+1 で「今この 1 枚に
+  ズーム」 を表現)
+- 実装 approach は **案 A (共通 slot wrapper + 2 component 並存)** 採用 —
+  内部 logic 全保持、 改修範囲局所的、 リグレッション risk 最小
+
+### 実装内容
+
+- **`LightboxNavMeter.tsx`** に props 追加:
+  - `counterFormat?: 'index-decimal' | 'range'` (default 'index-decimal' で
+    PiP backwards compat)
+  - `n1?: number`, `n2?: number` (range mode 用)
+  - rAF loop 内で counterFormat 分岐、 range mode では ScrollMeter と
+    同じ scramble + jitter + 周期 full-scramble を実装 (=  cadence drift ゼロ)
+- **`Lightbox.module.css`** に `.meterDim` + `data-counter-format='range'`
+  selector を追加。 range mode 時は ScrollMeter と同じ font-size 11px +
+  --chrome-text-color + text-stroke + text-shadow で typography 完全一致
+- **`BoardRoot.module.css`** に `.lightboxMeterSlot` 新設:
+  ScrollMeter wrapper と同じ bottom 24px / left 50% / translateX(-50%) /
+  z 400 (Lightbox `.stage` z 300 より上)、 PipStack 同様の `> *` で内側
+  `.meterWrap` の position を中和、 `.hidden` で opacity 0 + pointer-events
+  none、 transition 0.25s ease で crossfade
+- **`BoardRoot.tsx`**: ScrollMeter の sibling として LightboxNavMeter 追加。
+  両者 `lightboxItemId` で hidden 反転、 同時 mount で真の crossfade を実現。
+  LightboxNavMeter は `counterFormat='range'`, `n1=n2=lightboxIndex+1`,
+  `total=filteredItems.length`, `alwaysShow` で配線
+- **`Lightbox.tsx`**: LightboxNavMeter の render + import を削除、 chevrons
+  だけ残置
+- **`ScrollMeter.module.css`** の z-index を 90 → 400 に bump、 両 meter を
+  同じ stacking layer に揃えて crossfade mid に「stack-pop」 が起きないように
+
+### 検証 (= playwright at user viewport 1489×679 / DPR 2.58)
+
+- board mode ScrollMeter wrap rect vs Lightbox mode LightboxNavMeter slot
+  rect: `Δleft=0.00px Δtop=0.00px Δwidth=0.00px Δheight=0.00px` ✅
+- pre-open vs post-close ScrollMeter: `Δleft=0.00px Δtop=0.00px` ✅
+- 中間フレーム (= 125ms 時点) screenshot で位置 jump なし、 2 つの meter が
+  同じ slot で重畳しながら crossfade
+- chevrons (`<` / `>`) は viewport 左右端、 close button (`×`) は frame
+  top-right → 中央 bottom slot と無干渉確認 ✅
+- tsc clean / vitest 493/493 pass
+
+### deploy
+
+- commit `<HEAD>` (= fix(meter): session 39 phase 1)
+- prod deploy: `https://7627d27d.booklage.pages.dev` → `booklage.pages.dev`
+  (ハードリロードで反映)
+- user 確認待ち
+
+### 残課題 / 次セッション以降
+
+- session 38 で取り残された候補 (multi-playback / テキストカード Lightbox
+  構造再設計 / B-#3 重複 URL サムネ / B-#13 TopHeader brushup) は今回も
+  繰り越し。 必要なら次セッション着手
+
+### memory 更新
+
+- なし (新規 pattern なし、 既存 component への局所 prop 追加)
+
+### commits
+
+- `<HEAD>` fix(meter): session 39 phase 1 — board/Lightbox の meter slot 統一 (B-#20 ガチャガチャ解消)
+- (このセッション close-out で) docs: session 39 narrative + TODO + CURRENT_GOAL
+- prod deploys: `7627d27d` → `https://booklage.pages.dev`
