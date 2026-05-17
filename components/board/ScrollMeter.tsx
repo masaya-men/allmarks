@@ -45,15 +45,23 @@ function nextScrambleDuration(): number {
     + Math.random() * (PERIODIC_SCRAMBLE_MAX_MS - PERIODIC_SCRAMBLE_MIN_MS)
 }
 
-/** Spring parameters for the optional "glide" mode (session 39 phase 3,
- *  B-#20 close-side polish). Same values as LightboxNavMeter's swell
- *  spring so the visual cadence reads as one continuous device when the
- *  swell baton-passes from the Lightbox meter back to the board meter.
- *  Critical damping (DAMPING = 2√k) gives a settle time of ~225ms — long
- *  enough for the eye to read "the swell traveled to its new home",
- *  short enough that it doesn't overlap the next scroll gesture. */
-const SWELL_STIFFNESS = 320
-const SWELL_DAMPING = 2 * Math.sqrt(SWELL_STIFFNESS)
+/** Glide tween duration + easing for the session 39 phase 3 (B-#20
+ *  close-side polish) swell hand-off. Tween (NOT spring) chosen because
+ *  a critically-damped spring peaks velocity at t=0 when the error is
+ *  largest, which user (2026-05-17 phase 3 feedback) described as
+ *  "急に動いた感じ" — they want a "ぬったりぬるっと" feel where the bulge
+ *  eases out of the Lightbox position AND into the scroll position.
+ *  ease-in-out-cubic gives the symmetric "luxurious arc" the user also
+ *  asked for on the meter scroll-jump (= same vocabulary as
+ *  BoardRoot's handleScrollMeterJump). 1200ms is ~5× slower than the
+ *  initial 225ms spring settle time. */
+const GLIDE_DURATION_MS = 1200
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5
+    ? 4 * t * t * t
+    : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
 
 type Props = {
   /** Total scrollable content height of the board (cards + padding). */
@@ -134,26 +142,47 @@ export function ScrollMeter({
   useEffect(() => { viewportHRef.current = viewportHeight }, [viewportHeight])
   useEffect(() => { contentHRef.current = contentHeight }, [contentHeight])
 
-  // Session 39 phase 3: optional spring-damped "glide" mode for the swell.
-  // Default behavior is unchanged — the swell snaps to the scroll-fraction
-  // target every frame (= board scroll feels 1:1 with finger). Glide mode
-  // is only armed when a `glideFromFraction` prop arrives, lasts until
-  // the spring converges, then auto-disarms back to direct follow.
+  // Session 39 phase 3: optional ease-in-out-cubic tween "glide" mode for
+  // the swell. Default behavior is unchanged — the swell snaps to the
+  // scroll-fraction target every frame (= board scroll feels 1:1 with
+  // the finger). Glide mode is only armed when a `glideFromFraction` prop
+  // arrives, runs for GLIDE_DURATION_MS, then auto-disarms.
+  //
+  // Tween picked over spring (user feedback on phase 3 v1): a spring's
+  // velocity peaks at t=0 when the error is largest, so the bulge "jumped
+  // out" of the Lightbox position; ease-in-out gives the symmetric soft
+  // start AND soft end the user wanted ("ぬったりぬるっと").
   const displayedTickIdxRef = useRef<number>(0)
-  const swellVelRef = useRef<number>(0)
-  const lastFrameTimeRef = useRef<number>(0)
+  const glideStartTimeRef = useRef<number>(0)
+  const glideStartTickRef = useRef<number>(0)
+  const glideTargetTickRef = useRef<number>(0)
   const glideActiveRef = useRef<boolean>(false)
 
   // Arm a new glide on each `glideFromFraction` non-undefined update.
   // BoardRoot resets to undefined after the glide window so back-to-back
   // closes of the same card index re-trigger this effect (undefined →
   // number → undefined cycle).
+  //
+  // Target is LOCKED at arm time (= the scroll fraction the user had when
+  // they opened the Lightbox). If the user somehow scrolls during the
+  // 1.2s glide (rare — Lightbox just closed, no immediate scroll gesture),
+  // the displayed will snap to the live target after the glide completes.
+  // That tradeoff is preferable to a target-following tween, which would
+  // visibly jump mid-flight on scroll.
   useEffect(() => {
     if (glideFromFraction === undefined) return
     const clamped = Math.max(0, Math.min(1, glideFromFraction))
-    displayedTickIdxRef.current = clamped * (TICK_COUNT - 1)
-    swellVelRef.current = 0
-    lastFrameTimeRef.current = 0
+    const startTick = clamped * (TICK_COUNT - 1)
+    const cy = viewportYRef.current
+    const ch = viewportHRef.current
+    const total = contentHRef.current
+    const scrollableH = Math.max(0, total - ch)
+    const targetFraction = scrollableH > 0 ? cy / scrollableH : 0
+    const targetTick = targetFraction * (TICK_COUNT - 1)
+    glideStartTickRef.current = startTick
+    glideTargetTickRef.current = targetTick
+    displayedTickIdxRef.current = startTick
+    glideStartTimeRef.current = performance.now()
     glideActiveRef.current = true
   }, [glideFromFraction])
 
@@ -208,9 +237,11 @@ export function ScrollMeter({
       // calm while the numbers scramble, the contrast is the design).
       //
       // Glide path (session 39 phase 3, B-#20): when a Lightbox close
-      // armed glide mode, displayed swell springs from the Lightbox-side
-      // position to the scroll-fraction target. Disarms automatically
-      // when the spring converges, returning to direct follow.
+      // armed glide mode, displayed swell tweens from the locked start
+      // tick (= Lightbox swell position) to the locked target tick (=
+      // scroll fraction at arm time) over GLIDE_DURATION_MS with
+      // ease-in-out-cubic. Disarms when progress reaches 1, returning
+      // to direct follow.
       const scrollableH = Math.max(0, total - ch)
       const fraction = scrollableH > 0 ? cy / scrollableH : 0
       const targetTickIdx = fraction * (TICK_COUNT - 1)
@@ -220,28 +251,22 @@ export function ScrollMeter({
         displayedTickIdxRef.current = targetTickIdx
         centerTickIdx = targetTickIdx
       } else {
-        const dt = lastFrameTimeRef.current === 0
-          ? 1 / 60
-          : Math.min(0.05, (now - lastFrameTimeRef.current) / 1000)
-        lastFrameTimeRef.current = now
-
-        const displayed = displayedTickIdxRef.current
-        const error = targetTickIdx - displayed
-        const accel = SWELL_STIFFNESS * error - SWELL_DAMPING * swellVelRef.current
-        swellVelRef.current += accel * dt
-        const next = displayed + swellVelRef.current * dt
-
-        if (Math.abs(error) < 0.02 && Math.abs(swellVelRef.current) < 0.5) {
-          // Glide complete — snap to target and return to direct follow
-          // so subsequent scrolls don't trail behind via the spring.
+        const elapsed = now - glideStartTimeRef.current
+        const progress = Math.min(1, Math.max(0, elapsed / GLIDE_DURATION_MS))
+        const eased = easeInOutCubic(progress)
+        const start = glideStartTickRef.current
+        const target = glideTargetTickRef.current
+        const displayed = start + (target - start) * eased
+        if (progress >= 1) {
+          // Glide complete — disarm and snap to LIVE target (= picks up
+          // any scroll the user did during the 1.2s glide). Visible jump
+          // here only if user actually scrolled.
           displayedTickIdxRef.current = targetTickIdx
-          swellVelRef.current = 0
-          lastFrameTimeRef.current = 0
           glideActiveRef.current = false
           centerTickIdx = targetTickIdx
         } else {
-          displayedTickIdxRef.current = next
-          centerTickIdx = next
+          displayedTickIdxRef.current = displayed
+          centerTickIdx = displayed
         }
       }
 

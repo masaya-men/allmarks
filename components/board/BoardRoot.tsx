@@ -686,11 +686,11 @@ export function BoardRoot() {
       if (total > 1) {
         const fraction = Math.max(0, Math.min(1, idx / (total - 1)))
         setScrollMeterGlideFromFraction(fraction)
-        // Clear after the spring's natural settle window (~225ms) + a
-        // safety margin so React state matches the meter's internal
-        // disarm. 600ms is long enough that even a slow spring finishes,
-        // short enough that the next open's glide arm re-fires cleanly.
-        window.setTimeout(() => setScrollMeterGlideFromFraction(undefined), 600)
+        // Clear after the tween duration (= 1200ms inside ScrollMeter)
+        // + safety margin so React state matches the meter's internal
+        // disarm. 1400ms is long enough that the tween finishes, short
+        // enough that the next open's glide arm re-fires cleanly.
+        window.setTimeout(() => setScrollMeterGlideFromFraction(undefined), 1400)
       }
     }
     prevLightboxItemIdRef.current = lightboxItemId
