@@ -1,7 +1,6 @@
-import { render } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
+import { fireEvent, render } from '@testing-library/react'
 import { TuneTrigger } from './TuneTrigger'
-import { fireEvent } from '@testing-library/react'
 
 describe('TuneTrigger — skeleton', () => {
   it('renders TUNE as a button with proper data-testid in idle state', () => {
