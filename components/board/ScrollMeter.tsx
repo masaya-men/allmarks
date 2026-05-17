@@ -45,6 +45,16 @@ function nextScrambleDuration(): number {
     + Math.random() * (PERIODIC_SCRAMBLE_MAX_MS - PERIODIC_SCRAMBLE_MIN_MS)
 }
 
+/** Spring parameters for the optional "glide" mode (session 39 phase 3,
+ *  B-#20 close-side polish). Same values as LightboxNavMeter's swell
+ *  spring so the visual cadence reads as one continuous device when the
+ *  swell baton-passes from the Lightbox meter back to the board meter.
+ *  Critical damping (DAMPING = 2√k) gives a settle time of ~225ms — long
+ *  enough for the eye to read "the swell traveled to its new home",
+ *  short enough that it doesn't overlap the next scroll gesture. */
+const SWELL_STIFFNESS = 320
+const SWELL_DAMPING = 2 * Math.sqrt(SWELL_STIFFNESS)
+
 type Props = {
   /** Total scrollable content height of the board (cards + padding). */
   readonly contentHeight: number
@@ -65,6 +75,16 @@ type Props = {
    *  Lightbox is open — LightboxNavMeter occupies the same pixel spot,
    *  so this lets the two meters cleanly "swap". */
   readonly hidden?: boolean
+  /** Session 39 phase 3 (B-#20 close-side polish): when set, snap the
+   *  displayed swell to this 0..1 fraction of the meter and let the
+   *  spring slide it toward the natural scroll-fraction target. Used by
+   *  BoardRoot to carry the Lightbox swell position over on close so the
+   *  bulge visually "travels home" instead of teleporting. The actual
+   *  scroll position does NOT change — only the meter's swell visuals
+   *  glide. Set to a new number on each close (BoardRoot resets to
+   *  undefined after the glide should be complete) so back-to-back
+   *  opens/closes of the same card re-trigger the glide. */
+  readonly glideFromFraction?: number
 }
 
 function pad4(n: number): string {
@@ -99,6 +119,7 @@ export function ScrollMeter({
   visibleRangeEnd,
   totalCount,
   hidden,
+  glideFromFraction,
 }: Props): ReactElement {
   const trackRef = useRef<HTMLDivElement>(null)
   const tickRefs = useRef<HTMLDivElement[]>([])
@@ -112,6 +133,29 @@ export function ScrollMeter({
   useEffect(() => { viewportYRef.current = viewportY }, [viewportY])
   useEffect(() => { viewportHRef.current = viewportHeight }, [viewportHeight])
   useEffect(() => { contentHRef.current = contentHeight }, [contentHeight])
+
+  // Session 39 phase 3: optional spring-damped "glide" mode for the swell.
+  // Default behavior is unchanged — the swell snaps to the scroll-fraction
+  // target every frame (= board scroll feels 1:1 with finger). Glide mode
+  // is only armed when a `glideFromFraction` prop arrives, lasts until
+  // the spring converges, then auto-disarms back to direct follow.
+  const displayedTickIdxRef = useRef<number>(0)
+  const swellVelRef = useRef<number>(0)
+  const lastFrameTimeRef = useRef<number>(0)
+  const glideActiveRef = useRef<boolean>(false)
+
+  // Arm a new glide on each `glideFromFraction` non-undefined update.
+  // BoardRoot resets to undefined after the glide window so back-to-back
+  // closes of the same card index re-trigger this effect (undefined →
+  // number → undefined cycle).
+  useEffect(() => {
+    if (glideFromFraction === undefined) return
+    const clamped = Math.max(0, Math.min(1, glideFromFraction))
+    displayedTickIdxRef.current = clamped * (TICK_COUNT - 1)
+    swellVelRef.current = 0
+    lastFrameTimeRef.current = 0
+    glideActiveRef.current = true
+  }, [glideFromFraction])
 
   // Settled values + scramble deadlines for the counter rAF loop. The loop
   // reads these refs every frame — React state would cause re-renders,
@@ -157,12 +201,49 @@ export function ScrollMeter({
       const ch = viewportHRef.current
       const total = contentHRef.current
 
-      // ---- Waveform swell driven by scroll fraction (spec §1-1: do not
-      // change this calc — the waveform stays calm while the numbers
-      // scramble, that contrast is the whole point of the design). ----
+      // ---- Waveform swell ----
+      // Default path (board normal scroll): swell center snaps directly
+      // to the scroll-fraction target each frame — keeps board scroll
+      // feeling 1:1 with the finger (spec §1-1: the waveform stays
+      // calm while the numbers scramble, the contrast is the design).
+      //
+      // Glide path (session 39 phase 3, B-#20): when a Lightbox close
+      // armed glide mode, displayed swell springs from the Lightbox-side
+      // position to the scroll-fraction target. Disarms automatically
+      // when the spring converges, returning to direct follow.
       const scrollableH = Math.max(0, total - ch)
       const fraction = scrollableH > 0 ? cy / scrollableH : 0
-      const centerTickIdx = fraction * (TICK_COUNT - 1)
+      const targetTickIdx = fraction * (TICK_COUNT - 1)
+
+      let centerTickIdx: number
+      if (!glideActiveRef.current) {
+        displayedTickIdxRef.current = targetTickIdx
+        centerTickIdx = targetTickIdx
+      } else {
+        const dt = lastFrameTimeRef.current === 0
+          ? 1 / 60
+          : Math.min(0.05, (now - lastFrameTimeRef.current) / 1000)
+        lastFrameTimeRef.current = now
+
+        const displayed = displayedTickIdxRef.current
+        const error = targetTickIdx - displayed
+        const accel = SWELL_STIFFNESS * error - SWELL_DAMPING * swellVelRef.current
+        swellVelRef.current += accel * dt
+        const next = displayed + swellVelRef.current * dt
+
+        if (Math.abs(error) < 0.02 && Math.abs(swellVelRef.current) < 0.5) {
+          // Glide complete — snap to target and return to direct follow
+          // so subsequent scrolls don't trail behind via the spring.
+          displayedTickIdxRef.current = targetTickIdx
+          swellVelRef.current = 0
+          lastFrameTimeRef.current = 0
+          glideActiveRef.current = false
+          centerTickIdx = targetTickIdx
+        } else {
+          displayedTickIdxRef.current = next
+          centerTickIdx = next
+        }
+      }
 
       const swellSigma = TICK_COUNT / 32
       const swellGain = 3.4

@@ -644,6 +644,58 @@ export function BoardRoot() {
   )
   const lightboxItem = lightboxIndex >= 0 ? filteredItems[lightboxIndex] : null
 
+  // Session 39 phase 2 (B-#20 close-side fix): cache the last "Lightbox open"
+  // index + total so the canvas-slot LightboxNavMeter doesn't see a violent
+  // prop jump on close (lightboxIndex N → -1) that would trigger:
+  //   - waveform spring overshooting back to tick 0 mid-fade ("raging" swell)
+  //   - counter scramble re-firing on n1/n2 (N → 0)
+  // both visible WHILE the slot is fading out. Freezing the props at the
+  // last live values lets the meter exit cleanly with no internal motion.
+  const lastLightboxIndexRef = useRef<number>(0)
+  const lastLightboxTotalRef = useRef<number>(0)
+  useEffect(() => {
+    if (lightboxItemId !== null && lightboxIndex >= 0) {
+      lastLightboxIndexRef.current = lightboxIndex
+      lastLightboxTotalRef.current = filteredItems.length
+    }
+  }, [lightboxItemId, lightboxIndex, filteredItems.length])
+  const meterIndex = lightboxItemId !== null && lightboxIndex >= 0
+    ? lightboxIndex
+    : lastLightboxIndexRef.current
+  const meterTotal = lightboxItemId !== null
+    ? filteredItems.length
+    : (lastLightboxTotalRef.current || filteredItems.length)
+
+  // Session 39 phase 3 (B-#20 close-side polish): when the Lightbox closes,
+  // hand the LightboxNavMeter's current swell position over to ScrollMeter
+  // so the bulge visually travels home (= eases from "card N of total"
+  // position to "scroll fraction" position) instead of teleporting at the
+  // moment of crossfade. Page scroll position is untouched — only the
+  // meter visuals glide. ScrollMeter resets glideFromFraction to undefined
+  // internally once the spring converges; we additionally reset the React
+  // state after the same window so back-to-back closes re-trigger.
+  const [scrollMeterGlideFromFraction, setScrollMeterGlideFromFraction] =
+    useState<number | undefined>(undefined)
+  const prevLightboxItemIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    const prev = prevLightboxItemIdRef.current
+    if (prev !== null && lightboxItemId === null) {
+      // Lightbox just closed — capture where the swell was riding.
+      const total = lastLightboxTotalRef.current
+      const idx = lastLightboxIndexRef.current
+      if (total > 1) {
+        const fraction = Math.max(0, Math.min(1, idx / (total - 1)))
+        setScrollMeterGlideFromFraction(fraction)
+        // Clear after the spring's natural settle window (~225ms) + a
+        // safety margin so React state matches the meter's internal
+        // disarm. 600ms is long enough that even a slow spring finishes,
+        // short enough that the next open's glide arm re-fires cleanly.
+        window.setTimeout(() => setScrollMeterGlideFromFraction(undefined), 600)
+      }
+    }
+    prevLightboxItemIdRef.current = lightboxItemId
+  }, [lightboxItemId])
+
   const handleLightboxNav = useCallback((dir: -1 | 1): void => {
     if (filteredItems.length === 0 || lightboxIndex < 0) return
     const next = ((lightboxIndex + dir) % filteredItems.length + filteredItems.length) % filteredItems.length
@@ -1050,6 +1102,7 @@ export function BoardRoot() {
           visibleRangeEnd={visibleRange.end}
           totalCount={filteredItems.length}
           hidden={!!lightboxItemId}
+          glideFromFraction={scrollMeterGlideFromFraction}
         />
         {/* Session 39 (B-#20): LightboxNavMeter relocated from inside
             Lightbox `.stage` to this canvas-level slot so it shares the
@@ -1066,14 +1119,14 @@ export function BoardRoot() {
           className={`${styles.lightboxMeterSlot} ${lightboxItemId ? '' : styles.hidden}`.trim()}
         >
           <LightboxNavMeter
-            current={lightboxIndex}
-            total={filteredItems.length}
+            current={meterIndex}
+            total={meterTotal}
             cardKey={lightboxItemId ?? ''}
             onJump={handleLightboxJump}
             alwaysShow
             counterFormat="range"
-            n1={lightboxIndex + 1}
-            n2={lightboxIndex + 1}
+            n1={meterIndex + 1}
+            n2={meterIndex + 1}
           />
         </div>
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
