@@ -110,16 +110,26 @@ export function PrecisionSlider({
   // inline style via ref each frame (= no React re-render per pointermove,
   // smooth follow). The CSS `:hover` selector handles opacity (= zero
   // logic on visibility, the browser handles it instantly).
+  //
+  // Positioning matches the extension's `.booklage-pill` vocabulary:
+  // 12px to the right of the cursor, and 12px above the cursor row when
+  // there's vertical room above (= "右上に浮く" feel). When the cursor is
+  // near the top of the viewport (= our header-mounted sliders), flips to
+  // 12px below so the pill never gets clipped by the viewport top edge.
   const updateTooltipPosition = useCallback((clientX: number, clientY: number): void => {
     const tooltip = tooltipRef.current
     const track = trackRef.current
     if (!tooltip || !track) return
     const rect = track.getBoundingClientRect()
-    // Position relative to .track (= tooltip's positioned ancestor).
-    // +18px y offset puts the pill below the cursor so it never sits
-    // under the pointer (= hover target stays visible / hit-testable).
-    tooltip.style.left = `${clientX - rect.left}px`
-    tooltip.style.top = `${clientY - rect.top + 18}px`
+    const pillH = tooltip.offsetHeight || 30
+    // Need room above for pill + 12px gap + 4px safety; else flip below.
+    const wantAbove = clientY > pillH + 16
+    const xRel = clientX - rect.left + 12
+    const yRel = wantAbove
+      ? clientY - rect.top - 12 - pillH
+      : clientY - rect.top + 12
+    tooltip.style.left = `${xRel}px`
+    tooltip.style.top = `${yRel}px`
   }, [])
 
   const ratio = (max - min) / MOUSE_PX_FOR_FULL_RANGE

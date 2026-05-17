@@ -117,14 +117,13 @@
  */
 .tooltip {
   position: absolute;
-  /* `left` + `top` are set per-frame by JS (mouse follow). Initial values
-   * here just keep it off-screen until the first pointermove arrives. */
-  left: 0;
+  /* `left` + `top` are set per-frame by JS (mouse follow). JS computes
+   * absolute corner coordinates (not centered) — matches the extension's
+   * `.booklage-pill` positioning vocabulary where left/top are the pill's
+   * top-left corner relative to its containing block. Initial values
+   * keep it off-screen until the first pointermove arrives. */
+  left: -9999px;
   top: 0;
-  /* Center the pill horizontally on the cursor. translateX-only so the
-   * vertical offset (= +18px in JS) lands the pill exactly below the
-   * cursor not centered on it. */
-  transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
   gap: 6px;
