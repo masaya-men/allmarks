@@ -21,9 +21,18 @@ import styles from './PrecisionSlider.module.css'
  *    (Width) に落として 2 decimal が smooth に動くようにした。
  *  - 副作用: MIN→MAX 全範囲を一気に drag するには 10000 px (= 大画面 7 つ
  *    分) 必要。 Gap / Width は一度設定したら基本動かさない値なので許容範囲、
- *    急ぎ大ジャンプしたい場合は `Home` (= MIN) / `End` (= MAX) / `Arrow`
- *    (= ±1) のキーボードショートカットが使える (= 既存)。 */
+ *    急ぎ大ジャンプしたい場合は (a) track click で フラクション ジャンプ、
+ *    (b) Shift+drag で SHIFT_SPEED_MULTIPLIER 倍速、 (c) Home (= MIN) /
+ *    End (= MAX) / Arrow (= ±1) の キーボードショートカットが使える。 */
 const MOUSE_PX_FOR_FULL_RANGE = 10000
+
+/** Shift キー押下中の drag 速度倍率。 業界一般慣習 (= Shift = 精密) の逆で
+ *  「Shift = 速い」 を採用 (user 提案 2026-05-17 session 39)。 normal drag
+ *  が既に slow precise (= 1 px で 0.03-0.06 単位の細かい変化) なので、
+ *  Shift 押下中だけ「昔の速い感覚」 (= 1 px で 0.3-0.6 単位) に戻して
+ *  大ジャンプを許す。 10 = MOUSE_PX_FOR_FULL_RANGE が 10× 増えた分を
+ *  ちょうど打ち消す係数。 */
+const SHIFT_SPEED_MULTIPLIER = 10
 
 /** Format the slider's internal float value into a `NNNN` integer string
  *  + `NN` two-digit decimal string. PrecisionSlider's value model is float
@@ -133,7 +142,10 @@ export function PrecisionSlider({
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     if (!draggingRef.current) return
-    const next = clamp(valueRef.current + e.movementX * ratio, min, max)
+    // Shift = 速い (= 業界慣習の逆)。 normal drag が slow precise なので、
+    // shift 押下中だけ 10× 速くして大ジャンプを許す。 user 提案 session 39。
+    const effectiveRatio = e.shiftKey ? ratio * SHIFT_SPEED_MULTIPLIER : ratio
+    const next = clamp(valueRef.current + e.movementX * effectiveRatio, min, max)
     if (next !== valueRef.current) {
       onChange(next)
     }
@@ -187,6 +199,7 @@ export function PrecisionSlider({
         aria-valuemax={max}
         aria-valuenow={Math.round(safeValue)}
         aria-label={ariaLabel ?? label}
+        title="クリック = ジャンプ / ドラッグ = 精密 / Shift+ドラッグ = 高速"
         data-testid={testId}
         data-dragging={dragging || undefined}
         onPointerDown={handlePointerDown}

@@ -58,6 +58,27 @@ describe('PrecisionSlider', () => {
     fireEvent.pointerUp(track, { pointerId: 1 })
   })
 
+  it('moves 10× faster when Shift is held during drag (= reverse-industry: shift = fast)', () => {
+    const onChange = vi.fn()
+    const { getByTestId } = render(
+      <PrecisionSlider
+        label="W"
+        min={120}
+        max={720}
+        value={280}
+        onChange={onChange}
+        testId="t-slider"
+      />,
+    )
+    const track = getByTestId('t-slider')
+    fireEvent.pointerDown(track, { pointerId: 1, clientX: 50 })
+    // ratio = 0.06, shift multiplier = 10 → effective 0.6
+    // movementX 100 → +60 → next = 340
+    fireEvent.pointerMove(track, { pointerId: 1, movementX: 100, shiftKey: true })
+    expect(onChange).toHaveBeenLastCalledWith(340)
+    fireEvent.pointerUp(track, { pointerId: 1 })
+  })
+
   it('clamps the value at max when overshooting', () => {
     const onChange = vi.fn()
     const { getByTestId } = render(
