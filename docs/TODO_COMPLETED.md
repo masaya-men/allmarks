@@ -1844,8 +1844,45 @@ Escape で close、 30ms 間隔で連続キャプチャ:
   close anim 中の周期 scramble は今も visible。 頻度は 20% 程度なので
   user 観察次第で「うるさい」 なら close 中 freeze prop を追加検討
 
-### commits
+### commits (phase 1〜3)
 
-- `<HEAD~2>` fix(meter): session 39 phase 1 — slot 統一
-- `<HEAD~1>` fix(meter): session 39 phase 2+3 — counter freeze + swell glide
-- prod deploys: `7627d27d` (phase 1) → `e33be206` (phase 2+3) → `https://booklage.pages.dev`
+- fix(meter): session 39 phase 1 — slot 統一
+- fix(meter): session 39 phase 2+3 — counter freeze + swell glide
+- prod deploys: `7627d27d` (phase 1) → `e33be206` (phase 2+3)
+
+### phase 4 (= 同セッション、 phase 3 deploy 後の user feedback 「まだ急に動いた感じがする」)
+
+phase 3 の spring damping は critical 減衰でも error 最大時 (= glide 開始
+直後) に velocity peak が来るため、 user 報告「最初に急に動いた感じ」 が
+残った。
+
+修正: **spring → tween 置換**:
+- `ScrollMeter.tsx` の swell glide ロジックを spring から **ease-in-out-cubic
+  tween** に書き換え
+- `GLIDE_DURATION_MS = 1200ms` (= phase 3 の ~225ms から 5× ゆったり)
+- start tick + target tick を arm 時に lock (= 1.2s 中の scroll で target
+  shift しない、 完了時に live target に snap)
+- BoardRoot 側 glide reset を 600ms → 1400ms に伸長 (= tween + 安全マージン)
+- 「ぬったりぬるっと」 (= symmetric soft start AND soft end) を達成
+
+### phase 5 (= 同セッション、 user 別件報告「カードの上らへんのライトボックス閉じる判定が少し効かない」)
+
+Playwright probe で **TopHeader の `.group` 内側 chrome が `.hidden` 中も
+`pointer-events: auto` を保ったまま invisible に click を catch** してたことを
+特定。 user は frame の上 ~10px のエリアを狙ってたが、 そこに置いてあった
+PrecisionSlider__row (= 透明) が click を吸って、 backdrop の close ハンドラ
+まで届かなかった。
+
+修正: `TopHeader.module.css` に **`.hidden .group { pointer-events: none }`
+1 行追加**。 Lightbox open 中は header lane 全体が完全に click-through に。
+
+検証 (= dy=-10 / -5 / 0 / +5 / +10 / +15 / +25 / +50 を centered で probe):
+- BEFORE: dy=-10 → STAYED OPEN (target=PrecisionSlider)
+- AFTER:  dy=-10 → CLOSED (target=backdrop) ✅
+- 板に乗った click (= dy=+0 以降) は引き続き STAYED OPEN、 design 通り
+
+### commits (phase 4+5)
+
+- fix(meter): session 39 phase 4 — glide ease-in-out tween 1200ms
+- fix(lightbox): session 39 phase 5 — TopHeader hidden pointer-events
+- prod deploys: `a41dd270` (phase 4) → `5d1622c4` (phase 5) → `https://booklage.pages.dev`

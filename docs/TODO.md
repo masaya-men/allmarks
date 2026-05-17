@@ -36,8 +36,10 @@ session 38 直後に user が prod で気づいた「ScrollMeter がガチャガ
 - [ScrollMeter.tsx](components/board/ScrollMeter.tsx) に spring damping (= LightboxNavMeter と同じ stiffness 320 / 臨界減衰) + `glideFromFraction?` prop 追加。 デフォルト挙動 (= scroll 直接追随) は不変
 - PiP の LightboxNavMeter 利用は `counterFormat` default 'index-decimal' で backwards compat 維持
 - 検証: playwright at user viewport 1489×679 で position Δ全部 0.00px、 close 連続フレームで swell が `149 → 129 → 100 → 67 → ... → 4` と smooth に glide 確認、 chrome 干渉なし、 tsc clean / vitest 493/493 / prod deploy 済 → `https://booklage.pages.dev`
-- 残課題: 周期 full-scramble が Lightbox open / close anim 中に firing することがある (= phase 2 freeze は post-close 区間のみ)。 体感頻度は 20% 程度、 user 観察で「うるさい」 と言えば phase 4 で対応
-- 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 39 セクション (phase 1 + phase 2+3)
+- **phase 4** (= phase 3 deploy 後の user feedback「まだ急に動いた」): spring → ease-in-out-cubic tween (1200ms) に置換、 「ぬったりぬるっと」 達成
+- **phase 5** (= 別件報告「カードの上らへんで close 判定効かない」): TopHeader が hidden 中も `.group` の `pointer-events: auto` で透明 click を吸ってた → `.hidden .group { pointer-events: none }` 1 行追加で fix
+- 残課題: 周期 full-scramble が Lightbox open / close anim 中に firing することがある (= phase 2 freeze は post-close 区間のみ)。 体感頻度は 20% 程度、 user 観察で「うるさい」 と言えば phase 6 で対応
+- 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 39 セクション (phase 1+2+3+4+5)
 
 ### 次セッション (= 40) でやること
 
