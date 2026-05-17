@@ -50,10 +50,11 @@ describe('PrecisionSlider', () => {
     )
     const track = getByTestId('t-slider')
     fireEvent.pointerDown(track, { pointerId: 1, clientX: 50 })
-    // ratio = (720 - 120) / 1000 = 0.6
-    // movementX 100 → +60 → next = 340
+    // ratio = (720 - 120) / 10000 = 0.06 (session 39 slowdown — see
+    // MOUSE_PX_FOR_FULL_RANGE comment for why we slow it 10×).
+    // movementX 100 → +6 → next = 286
     fireEvent.pointerMove(track, { pointerId: 1, movementX: 100 })
-    expect(onChange).toHaveBeenLastCalledWith(340)
+    expect(onChange).toHaveBeenLastCalledWith(286)
     fireEvent.pointerUp(track, { pointerId: 1 })
   })
 

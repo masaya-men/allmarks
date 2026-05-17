@@ -10,9 +10,20 @@ import {
 } from 'react'
 import styles from './PrecisionSlider.module.css'
 
-/** マウス N px で min→max を移動する基準値。 spec §1-2: N=1000 でスタート、
- *  実機で 800-1500 の範囲で調整想定。 大きいほど slider が「遅く動く」 = 細かく狙える。 */
-const MOUSE_PX_FOR_FULL_RANGE = 1000
+/** マウス N px で min→max を移動する基準値。 大きいほど slider が「遅く動く」
+ *  = 細かく狙える。
+ *
+ *  Session 39 (= NNNN.NN 表示化と同時にチューニング):
+ *  - 1000 だった (spec §1-2 では 800-1500 の範囲想定) のを 10000 に増量。
+ *  - 理由: NNNN.NN 表示にしたら、 元の 1000 では 1 px drag = 0.3 (Gap) /
+ *    0.6 (Width) の値変化 = 表示の 2nd decimal が 「30 / 60 ずつ」 jump して
+ *    user 報告「2-3 刻みでうまく動かせない」 に。 1 px = 0.03 (Gap) / 0.06
+ *    (Width) に落として 2 decimal が smooth に動くようにした。
+ *  - 副作用: MIN→MAX 全範囲を一気に drag するには 10000 px (= 大画面 7 つ
+ *    分) 必要。 Gap / Width は一度設定したら基本動かさない値なので許容範囲、
+ *    急ぎ大ジャンプしたい場合は `Home` (= MIN) / `End` (= MAX) / `Arrow`
+ *    (= ±1) のキーボードショートカットが使える (= 既存)。 */
+const MOUSE_PX_FOR_FULL_RANGE = 10000
 
 /** Format the slider's internal float value into a `NNNN` integer string
  *  + `NN` two-digit decimal string. PrecisionSlider's value model is float
