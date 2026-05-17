@@ -118,12 +118,17 @@ export const COLUMN_MASONRY = {
  *  透過」 に転換。 W は据置 267 (= カード 1 枚の親密感は維持)、
  *  G を 18 → 97 に拡大して 4 列 gallery 密度に。 ミッション 「整理ツール
  *  ではなく 表現ツール」 (CLAUDE.md) を default で体現する転換。
- *  Reset button restores both to these defaults. */
+ *
+ *  Session 39 (= NNNN.NN slider 表示 + 10× slowdown と同時): user が
+ *  prod で精密に dial して 「これがぴったり」 と決めた 2 decimal default
+ *  (= W 267.84 / G 97.21) に更新。 Reset button restores both to these.
+ *  実値の物理的な意味は変わらないが、 user が見て「default」 とラベル
+ *  された数字を正確に再現できるようになる。 */
 export const BOARD_SLIDERS = {
-  CARD_WIDTH_DEFAULT_PX: 267,
+  CARD_WIDTH_DEFAULT_PX: 267.84,
   CARD_WIDTH_MIN_PX: 120,
   CARD_WIDTH_MAX_PX: 720,
-  CARD_GAP_DEFAULT_PX: 97,
+  CARD_GAP_DEFAULT_PX: 97.21,
   CARD_GAP_MIN_PX: 0,
   CARD_GAP_MAX_PX: 300,
 } as const

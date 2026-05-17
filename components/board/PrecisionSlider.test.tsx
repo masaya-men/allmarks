@@ -95,6 +95,53 @@ describe('PrecisionSlider', () => {
     expect(onChange).toHaveBeenLastCalledWith(120)
   })
 
+  it('jumps to the click fraction when pointerdown lands on the track (not thumb)', () => {
+    const onChange = vi.fn()
+    const { getByTestId } = render(
+      <PrecisionSlider
+        label="W"
+        min={120}
+        max={720}
+        value={280}
+        onChange={onChange}
+        testId="t-slider"
+      />,
+    )
+    const track = getByTestId('t-slider')
+    track.getBoundingClientRect = (): DOMRect => ({
+      x: 0, y: 0, width: 200, height: 32, top: 0, right: 200, bottom: 32, left: 0, toJSON: () => ({}),
+    } as DOMRect)
+    // Click at 50% of track → value jumps to (120 + 0.5 * 600) = 420.
+    fireEvent.pointerDown(track, { pointerId: 1, clientX: 100, target: track })
+    expect(onChange).toHaveBeenLastCalledWith(420)
+  })
+
+  it('does NOT jump when pointerdown lands on the thumb itself', () => {
+    const onChange = vi.fn()
+    const { container, getByTestId } = render(
+      <PrecisionSlider
+        label="W"
+        min={120}
+        max={720}
+        value={280}
+        onChange={onChange}
+        testId="t-slider"
+      />,
+    )
+    const track = getByTestId('t-slider')
+    track.getBoundingClientRect = (): DOMRect => ({
+      x: 0, y: 0, width: 200, height: 32, top: 0, right: 200, bottom: 32, left: 0, toJSON: () => ({}),
+    } as DOMRect)
+    // The thumb is the only DOM element with a `left: NN%` inline style
+    // among the track's children — find it that way (CSS module class
+    // names are hashed in tests).
+    const thumb = [...container.querySelectorAll('div')].find((el) => /^\d/.test(el.style.left))
+    expect(thumb).toBeDefined()
+    fireEvent.pointerDown(track, { pointerId: 1, clientX: 100, target: thumb })
+    // pointerdown on the thumb just starts the drag — no jump fires.
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   it('does NOT change value on pointermove without prior pointerdown', () => {
     const onChange = vi.fn()
     const { getByTestId } = render(

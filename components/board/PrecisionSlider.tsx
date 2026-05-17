@@ -89,6 +89,7 @@ export function PrecisionSlider({
   ariaLabel,
 }: Props): ReactElement {
   const trackRef = useRef<HTMLDivElement>(null)
+  const thumbRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
   const valueRef = useRef(value)
   valueRef.current = value
@@ -103,9 +104,32 @@ export function PrecisionSlider({
     if (typeof el.setPointerCapture === 'function') {
       el.setPointerCapture(e.pointerId)
     }
+
+    // Click-to-jump (session 39 user request): if the pointer-down lands
+    // on the bare track (= NOT the thumb), jump the value to that
+    // fraction so user can land roughly where they want with one click,
+    // then continue dragging for fine adjustment. Clicking ON the thumb
+    // skips the jump — the thumb is the "precision drag" affordance,
+    // the rest of the track is the "fast travel" affordance.
+    //
+    // jsdom guards: skip when rect width is 0 (= no layout, test env)
+    // so existing drag tests don't accidentally trigger jumps.
+    const isThumbClick = e.target === thumbRef.current
+    if (!isThumbClick) {
+      const rect = el.getBoundingClientRect()
+      if (rect.width > 0) {
+        const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+        const next = clamp(min + frac * (max - min), min, max)
+        if (next !== valueRef.current) {
+          valueRef.current = next
+          onChange(next)
+        }
+      }
+    }
+
     draggingRef.current = true
     setDragging(true)
-  }, [])
+  }, [min, max, onChange])
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     if (!draggingRef.current) return
@@ -173,6 +197,7 @@ export function PrecisionSlider({
       >
         <div className={styles.trackLine} aria-hidden="true" />
         <div
+          ref={thumbRef}
           className={styles.thumb}
           aria-hidden="true"
           style={{ left: `${clampedPct}%` }}
