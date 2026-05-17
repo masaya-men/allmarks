@@ -33,6 +33,18 @@
   pointer-events: none;
 }
 
+/* Session 39 phase 5: descendant `.group` islands have `pointer-events: auto`
+ * (re-enabling clicks on the chrome controls). When the whole header is
+ * `.hidden` (= Lightbox open), those islands STILL captured clicks despite
+ * the header being visually invisible — user (2026-05-17 session 39) reported
+ * "カードの上らへんで close 判定が効かない" because the invisible
+ * PrecisionSlider row was sitting just above the lightbox frame, eating
+ * close clicks meant for the backdrop. Force descendant pointer-events off
+ * when hidden so the entire header lane is truly click-through. */
+.hidden .group {
+  pointer-events: none;
+}
+
 .group {
   display: flex;
   align-items: center;
