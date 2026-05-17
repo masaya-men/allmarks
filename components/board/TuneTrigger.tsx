@@ -8,6 +8,7 @@ import styles from './TuneTrigger.module.css'
 const STAGGER_MS = 11
 const SCRAMBLE_MIN_MS = 125
 const SCRAMBLE_MAX_MS = 190
+const LEAVE_GRACE_MS = 180
 
 type CellKind = 'label' | 'num' | 'dim'
 type Cell = { ch: string; kind: CellKind }
@@ -57,6 +58,7 @@ export function TuneTrigger({
   const cellsRef = useRef<AnimatedCell[]>([])
   const phaseStartRef = useRef<number>(0)
   const rafIdRef = useRef<number | null>(null)
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [expanded, setExpanded] = useState(false)
 
   // Suppress unused import warning — SCRAMBLE_CHARS is used by Tasks 4-6
@@ -124,17 +126,76 @@ export function TuneTrigger({
     tick()
   }, [widthPx, gapPx, tick])
 
+  const closingTick = useCallback((): void => {
+    const el = btnRef.current
+    if (!el) return
+    const now = performance.now()
+    const elapsed = now - phaseStartRef.current
+    let anyVisible = false
+    const html = cellsRef.current
+      .map((cell) => {
+        if (elapsed < cell.settleAt) {
+          anyVisible = true
+          const ch = pickRandomChar()
+          return `<span class="${styles.cell} ${styles[cell.kind]}">${ch}</span>`
+        }
+        return '' // cell consumed → empty
+      })
+      .join('')
+    el.innerHTML = html
+    if (anyVisible) {
+      rafIdRef.current = requestAnimationFrame(closingTick)
+    } else {
+      phaseRef.current = 'idle-tune'
+      setExpanded(false)
+      writeIdleTune()
+      rafIdRef.current = null
+    }
+  }, [writeIdleTune])
+
+  const startClose = useCallback((): void => {
+    if (phaseRef.current === 'closing' || phaseRef.current === 'idle-tune') return
+    const target = buildReadoutCells(widthPx, gapPx)
+    const n = target.length
+    cellsRef.current = target.map((c, i) => ({
+      ch: c.ch,
+      kind: c.kind,
+      // Reverse stagger: rightmost cell finishes scrambling (empties) first.
+      settleAt:
+        (n - 1 - i) * STAGGER_MS +
+        SCRAMBLE_MIN_MS +
+        Math.random() * (SCRAMBLE_MAX_MS - SCRAMBLE_MIN_MS),
+    }))
+    phaseRef.current = 'closing'
+    phaseStartRef.current = performance.now()
+    if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
+    closingTick()
+  }, [widthPx, gapPx, closingTick])
+
   // Initial idle render on mount.
   useEffect(() => {
     writeIdleTune()
     return (): void => {
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
     }
   }, [writeIdleTune])
 
   const handleMouseEnter = useCallback((): void => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
     startOpen()
   }, [startOpen])
+
+  const handleMouseLeave = useCallback((): void => {
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    leaveTimerRef.current = setTimeout(() => {
+      startClose()
+      leaveTimerRef.current = null
+    }, LEAVE_GRACE_MS)
+  }, [startClose])
 
   return (
     <button
@@ -145,6 +206,7 @@ export function TuneTrigger({
       aria-haspopup="dialog"
       aria-expanded={expanded}
       onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {visibleLabel}
     </button>
