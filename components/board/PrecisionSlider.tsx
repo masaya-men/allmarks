@@ -199,7 +199,6 @@ export function PrecisionSlider({
         aria-valuemax={max}
         aria-valuenow={Math.round(safeValue)}
         aria-label={ariaLabel ?? label}
-        title="クリック = ジャンプ / ドラッグ = 精密 / Shift+ドラッグ = 高速"
         data-testid={testId}
         data-dragging={dragging || undefined}
         onPointerDown={handlePointerDown}
@@ -215,6 +214,25 @@ export function PrecisionSlider({
           aria-hidden="true"
           style={{ left: `${clampedPct}%` }}
         />
+        {/* Session 39: custom hover tooltip (= 拡張機能 booklage-pill と
+            同じ visual vocabulary: dark glass + backdrop-blur + rounded
+            + subtle border + soft drop shadow)。 native title="" は遅延
+            (~1-2秒) で「業界水準で一番早い」 ではなかったので、 CSS
+            :hover でほぼ瞬間 (= 80ms fade-in) に出す。 pointer-events:
+            none で hover の親判定を絶対に邪魔しない。 */}
+        <div className={styles.tooltip} role="tooltip" aria-hidden="true">
+          <span className={styles.tooltipKey}>クリック</span>
+          <span className={styles.tooltipSep}>=</span>
+          <span className={styles.tooltipVal}>ジャンプ</span>
+          <span className={styles.tooltipDot}>·</span>
+          <span className={styles.tooltipKey}>ドラッグ</span>
+          <span className={styles.tooltipSep}>=</span>
+          <span className={styles.tooltipVal}>精密</span>
+          <span className={styles.tooltipDot}>·</span>
+          <span className={styles.tooltipKey}>Shift+ドラッグ</span>
+          <span className={styles.tooltipSep}>=</span>
+          <span className={styles.tooltipVal}>高速</span>
+        </div>
       </div>
       <span className={styles.value}>
         {(() => {
