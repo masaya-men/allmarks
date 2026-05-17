@@ -69,7 +69,6 @@ export function BoardRoot() {
     persistSoftDelete,
     persistCustomWidth,
     resetCustomWidth,
-    resetAllCustomWidths,
     reload,
     persistLinkStatus,
   } = useBoardData()
