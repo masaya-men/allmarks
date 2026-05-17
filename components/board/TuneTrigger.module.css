@@ -1,0 +1,46 @@
+/* TuneTrigger — Apple v3 chrome label, identical typographic profile to
+   POP OUT / SHARE / FilterPill: 11px monospace ALL CAPS, no background,
+   thin black stroke for legibility over canvas content. The cell-based
+   readout (W 267.84 · G 97.21 · ↺) shares the same font cascade and
+   only differs via per-kind color (label / num / dim). */
+
+.trigger {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
+  paint-order: stroke fill;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, transform 0.15s;
+}
+.trigger:hover {
+  color: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+}
+.trigger:focus-visible {
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.cell {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+.cell.num { color: rgba(255, 200, 120, 0.95); }
+.cell.dim { color: rgba(255, 255, 255, 0.30); }
+.cell.reset {
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 2px;
+}
+.cell.num {
+  cursor: ew-resize;
+}
