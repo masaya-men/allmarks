@@ -20,7 +20,26 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 40 — edge auto-scroll + Ctrl+Z undo/redo、 全部 prod 反映済)
+### 直近の状態 (2026-05-18 セッション 41 — TopHeader 右クラスタ brushup TUNE トリガー + Matrix scramble、 全部 prod 反映済)
+
+session 41 で B-#13 TopHeader 右側 brushup 完了:
+
+- 既存 6 要素 (PopOut icon / SizeSlider / GapSlider / WidthGapReset / ResetAll / Share-with-arrow) → 3 テキスト label (TUNE / POP OUT / SHARE) に整理
+- **TUNE ホバー** → Matrix 風 scramble で `W 267.84 · G 97.21 · ↺` readout に展開 (v4-inplace、 stagger 11ms / scramble 125-190ms / open 完了 ~430ms)
+- 数字 cell drag で W/G slider 操作 (= PrecisionSlider と同じ math)、 末尾 `↺` で default 戻し
+- TUNE click で sticky open (mouseleave しても閉じない)、 ESC + outside click で close
+- ResetAll は廃止 (= Ctrl+Z で代替)
+- chrome は完全に文字のみ (background / border ゼロ、 11px monospace、 paint-order stroke で legibility)
+- i18n: 15 言語に `board.chrome.{tune,popout,share}` + `board.tune.{width,gap,reset_tooltip}` 追加
+- 新 file: [components/board/TuneTrigger.tsx](../components/board/TuneTrigger.tsx) + `.module.css` + `.test.tsx` (8 tests)、 [lib/board/scramble.ts](../lib/board/scramble.ts) (= 共有 utility)
+- 削除した DOM: PopOutButton / SizeSlider / GapSlider / WidthGapResetButton / ResetAllButton の参照は BoardRoot から消えた (file 自体は orphan で残置、 将来復活余地)
+- vitest 507/507 / tsc clean / build 成功 / `https://booklage.pages.dev` 反映済
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 41 セクション
+
+---
+
+### 旧情報 (2026-05-18 セッション 40 — edge auto-scroll + Ctrl+Z undo/redo、 全部 prod 反映済)
 
 session 40 で 2 機能を完遂:
 
@@ -70,13 +89,14 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 - **phase 6** (= user の根本的に正しい設計提案による refactor): 「ScrollMeter の数字を書き換えるだけでいい」 = 1 component + mode prop の unified 設計。 LightboxNavMeter は PiP 専用に戻し、 BoardRoot から slot wrapper / freeze refs / glide arm 全削除。 **正味 -200 行**、 概念的にも実装的にもスッキリ。 体験は phase 1-5 と同じ
 - 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 39 セクション (phase 1-6)
 
-### 次セッション (= 41) でやること
+### 次セッション (= 42) でやること
 
 **user 指定なし** — backlog から優先度順:
-1. **B-#13 TopHeader 上部 chrome brushup** (= session 40 で取り組む予定だったが、 user 要望で edge auto-scroll + undo system に変更されて持ち越し)
-2. multi-playback vision の board card autoplay 着手
-3. B-#3 重複 URL でサムネ等が出ない問題
-4. 候補 2 「テキストカード Lightbox 構造再設計」 は session 30-38 で根本解決済、 backlog から外す
+1. **multi-playback vision の board card autoplay 着手** (= 差別化 core 機能、 memory `project_allmarks_vision_multiplayback.md`)
+2. **B-#3 重複 URL でサムネ等が出ない問題** (= 古めの未解決、 真因未調査)
+3. TopHeader 残課題: テーマ vocab map (TUNE → CALIBRATE 等) は別 sprint (= テーマ system 着手時)
+4. PopOut オンボーディング (= 初見ユーザーへの「PiP 機能だよ」 案内) は別 task
+5. mobile (≤640px) の TUNE / POP OUT 表示は B-#10 モバイル UX 本格チューニング に合流
 
 ### foundation 3 本柱 (= セッション 32 以降)
 
@@ -144,9 +164,9 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 ### TopHeader / chrome
 
-- **B-#13 TopHeader brushup** (memory `project_board_header_brushup.md` 参照)
-   - session 39 で「ScrollMeter を下配置 + Lightbox と表現統一」 部分は実現済 (B-#20 解消)
-   - 残: TopHeader 上部 chrome (filter pill / size slider / share 等) のレイアウト全体 brushup
+- ~~**B-#13 TopHeader brushup**~~ ✅ session 41 で完了 (TUNE トリガー + 文字 chrome 化)
+   - session 39 で ScrollMeter 下配置 + Lightbox 表現統一 (B-#20 解消)
+   - session 41 で残りの上部 chrome (filter pill 以外) を TUNE / POP OUT / SHARE に整理 + scramble アニメで polish
 
 ---
 
