@@ -864,6 +864,29 @@
   color: rgba(255, 255, 255, 0.25);
 }
 
+/* Range-mode counter typography override (= `counterFormat="range"`
+ * branch in LightboxNavMeter, used by the board-level Lightbox meter for
+ * session-39 B-#20 canvas-slot crossfade). Mirror
+ * `ScrollMeter.module.css` `.meterCounter` exactly so the swap between
+ * ScrollMeter (always-on) and LightboxNavMeter (Lightbox-open) shows
+ * zero typography drift — otherwise the user would still read a
+ * "jitter" on open/close even though the slot itself is pixel-stable. */
+.meterCounter[data-counter-format='range'] {
+  font-size: 11px;
+  color: var(--chrome-text-color);
+  -webkit-text-stroke: var(--chrome-text-stroke-width) var(--chrome-text-stroke-color);
+  paint-order: stroke fill;
+  text-shadow: var(--chrome-text-shadow);
+  white-space: nowrap;
+}
+
+/* Dim glyphs (em-dash, slash) between the range numerals. Matches
+ * ScrollMeter.module.css `.meterDim` so the inline visual rhythm of
+ * `NNNN — NNNN / NNNN` reads identically across the two meters. */
+.meterDim {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .meterTrack {
   position: relative;
   width: var(--lightbox-meter-w, 360px);

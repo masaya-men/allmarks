@@ -16,7 +16,13 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  z-index: 90;
+  /* Session 39 (B-#20): bumped 90 → 400 to match
+   * `BoardRoot.module.css` `.lightboxMeterSlot` z-index. Both meters
+   * share the same canvas-bottom slot now and crossfade between board
+   * and Lightbox modes — same z-index prevents any "stack-pop" effect
+   * mid-fade. Still above the canvas bottom scrim (z 80) so legibility
+   * vs cards behind is preserved. */
+  z-index: 400;
   pointer-events: none;
   user-select: none;
   transition: opacity 0.25s ease;

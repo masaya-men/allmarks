@@ -36,6 +36,7 @@ import { GapSlider } from './GapSlider'
 import { WidthGapResetButton } from './WidthGapResetButton'
 import { ResetAllButton } from './ResetAllButton'
 import { ScrollMeter } from './ScrollMeter'
+import { LightboxNavMeter } from './LightboxNavMeter'
 import { BoardChrome } from './BoardChrome'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
 import { BookmarkletPill } from '@/components/bookmarklet/BookmarkletPill'
@@ -1050,6 +1051,31 @@ export function BoardRoot() {
           totalCount={filteredItems.length}
           hidden={!!lightboxItemId}
         />
+        {/* Session 39 (B-#20): LightboxNavMeter relocated from inside
+            Lightbox `.stage` to this canvas-level slot so it shares the
+            EXACT same bottom-center pixel slot as ScrollMeter above.
+            Opening / closing the Lightbox is now a pure opacity crossfade
+            in the slot (was a position jump from canvas-bottom 24px to
+            viewport-bottom 24px = the "ガチャガチャ" symptom).
+            `counterFormat='range'` makes the counter render as
+            `0007 — 0007 / 0120` (n1=n2=current+1) matching ScrollMeter's
+            `0005 — 0019 / 0120` typography exactly. `alwaysShow` keeps
+            the meter visible even on single-card decks so the slot
+            never disappears mid-fade. */}
+        <div
+          className={`${styles.lightboxMeterSlot} ${lightboxItemId ? '' : styles.hidden}`.trim()}
+        >
+          <LightboxNavMeter
+            current={lightboxIndex}
+            total={filteredItems.length}
+            cardKey={lightboxItemId ?? ''}
+            onJump={handleLightboxJump}
+            alwaysShow
+            counterFormat="range"
+            n1={lightboxIndex + 1}
+            n2={lightboxIndex + 1}
+          />
+        </div>
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
             canvasWrap. This way its backdrop (position: absolute; inset: 0)
             fills the FULL canvas — including the TopHeader band — so the

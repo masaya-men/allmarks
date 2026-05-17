@@ -15,7 +15,6 @@ import { cleanTitle } from '@/lib/embed/clean-title'
 import { pickTextCardColor } from '@/lib/embed/text-card-color'
 import { getFaviconUrl, hostnameFromUrl } from '@/lib/embed/favicon'
 import { LightboxNavChevron } from './LightboxNavChevron'
-import { LightboxNavMeter } from './LightboxNavMeter'
 import { useSmoothWheelScroll } from '@/lib/scroll/use-smooth-wheel-scroll'
 import type { LightboxFlipSceneProps } from './LightboxFlipScene'
 import {
@@ -1243,12 +1242,15 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
         <>
           <LightboxNavChevron dir="prev" onClick={() => nav.onNav(-1)} />
           <LightboxNavChevron dir="next" onClick={() => nav.onNav(1)} />
-          <LightboxNavMeter
-            current={nav.currentIndex}
-            total={nav.total}
-            cardKey={identity ?? ''}
-            onJump={nav.onJump}
-          />
+          {/* Session 39 (B-#20): LightboxNavMeter was rendered HERE inside
+              `.stage` (viewport-fixed); it lived at viewport-bottom 24px
+              center while ScrollMeter sat at canvas-bottom 24px center —
+              two different containing blocks meant the meter "jumped"
+              positions on open/close (the "ガチャガチャ" symptom). The
+              meter is now rendered by `BoardRoot` in a shared canvas-
+              bottom slot alongside ScrollMeter, with opacity crossfade.
+              Chevrons stay here since they belong to viewport-edge nav
+              hot-zones, not the meter slot. */}
         </>
       )}
       {/* Session 33: Layer 1 (= 全面 close zone)。 frame 自体のどこを
