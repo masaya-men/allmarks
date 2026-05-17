@@ -20,15 +20,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-17 セッション 39 — B-#20 完全解消、 最終的に unified ScrollMeter refactor まで到達)
+### 直近の状態 (2026-05-17 セッション 39 — B-#20 解消 + PrecisionSlider 大改修、 全部 prod 反映済)
 
-session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6 phase で完全解消、 最終的に user 提案で 1 component に統合する綺麗な設計に到達:
-- **phase 1**: containing block 統一 (canvas-bottom 24px に集約) + counter format 統一 (`N1 — N2 / TOTAL`) + opacity crossfade
-- **phase 2**: close 後の counter scramble 凍結 (lightboxIndex N→-1 jump 対策、 ref キャッシュ)
-- **phase 3**: swell 引き継ぎ glide (= user 仮説どおり、 ScrollMeter に spring damping + Lightbox 位置引き継ぎ)
-- **phase 4**: spring → ease-in-out-cubic tween 1200ms (= 「もっとぬるっと」)
-- **phase 5**: TopHeader hidden 中の `.group` pointer-events fix (= 「カードの上らへんで close 効かない」 真犯人)
-- **phase 6** (= user の正しい設計提案で refactor): ScrollMeter を unified 1 component に統合、 mode prop で content swap、 LightboxNavMeter は PiP 専用に戻す。 **正味 -200 行**、 phase 1-5 の workaround 全部消えてスッキリ
+session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6 phase で完全解消 → さらに PrecisionSlider (= W / G slider) を 6 phase で改修:
+
+**Meter side (phase 1-6, B-#20)**:
+- 1: slot 統一 + crossfade、 2: close counter freeze、 3: swell glide 引き継ぎ、 4: ease-in-out-cubic 1200ms ぬるっと、 5: TopHeader hidden 中 click 透過 fix、 6: **user 提案で unified ScrollMeter に refactor (= 正味 -200 行)**
+
+**Slider side (phase 7-12)**:
+- 7: NNNN.NN 表示 (= 小数部 dim)、 8: 10× slow で 2 decimal smooth、 9: track click ジャンプ + W=267.84/G=97.21 default 化、 10: Shift+drag = 高速 (業界の逆)、 11: 拡張機能 booklage-pill vocabulary の custom glass tooltip + i18n 全 15 言語、 12: tooltip 位置を 拡張機能と同じ「右側」 anchor に
 
 - [BoardRoot.module.css](components/board/BoardRoot.module.css) に `.lightboxMeterSlot` 新設 (z 400、 ScrollMeter wrapper と完全同位置)
 - [LightboxNavMeter.tsx](components/board/LightboxNavMeter.tsx) に `counterFormat='range'` + `n1`/`n2` props 追加、 ScrollMeter と同じ scramble cadence
