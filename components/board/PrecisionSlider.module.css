@@ -21,11 +21,22 @@
 }
 
 .value {
-  min-width: 36px;
+  /* Bumped from 36px (= 4-char `NNNN`) to ~64px (= 7-char `NNNN.NN`) when
+   * the display became `NNNN.NN` to show sub-integer drag precision
+   * (user feedback, session 39). tabular-nums keeps the digits at a
+   * fixed slot so the row layout doesn't shift as the value scrubs. */
+  min-width: 64px;
   text-align: right;
   letter-spacing: 0;
   font-variant-numeric: tabular-nums;
   color: var(--chrome-text-color);
+}
+
+/* Decimal portion is dimmed (= integer reads as the "headline", decimals
+ * available for precision but never compete for attention). Same alpha
+ * vocabulary as the ScrollMeter counter's em-dash / slash dim glyphs. */
+.valueDim {
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .track {

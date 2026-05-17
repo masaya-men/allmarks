@@ -14,8 +14,22 @@ import styles from './PrecisionSlider.module.css'
  *  実機で 800-1500 の範囲で調整想定。 大きいほど slider が「遅く動く」 = 細かく狙える。 */
 const MOUSE_PX_FOR_FULL_RANGE = 1000
 
-function pad4(n: number): string {
-  return Math.max(0, Math.min(9999, Math.round(n))).toString().padStart(4, '0')
+/** Format the slider's internal float value into a `NNNN` integer string
+ *  + `NN` two-digit decimal string. PrecisionSlider's value model is float
+ *  (mouse pixel movements are scaled by a sub-1 ratio), so users want to
+ *  see the actual sub-integer value rather than a rounded display that
+ *  hides the live drag motion (user feedback 2026-05-17, session 39).
+ *
+ *  Returns: { intStr: '0098', decStr: '34' } for input 98.345 → "0098.34". */
+function formatPrecisionValue(n: number): { intStr: string; decStr: string } {
+  const safe = Number.isFinite(n) ? n : 0
+  const clamped = Math.max(0, Math.min(9999.99, safe))
+  const fixed = clamped.toFixed(2)
+  const [intRaw, decRaw] = fixed.split('.')
+  return {
+    intStr: (intRaw ?? '0').padStart(4, '0'),
+    decStr: decRaw ?? '00',
+  }
 }
 
 function clamp(n: number, min: number, max: number): number {
@@ -153,7 +167,17 @@ export function PrecisionSlider({
           style={{ left: `${clampedPct}%` }}
         />
       </div>
-      <span className={styles.value}>{pad4(safeValue)}</span>
+      <span className={styles.value}>
+        {(() => {
+          const { intStr, decStr } = formatPrecisionValue(safeValue)
+          return (
+            <>
+              {intStr}
+              <span className={styles.valueDim}>.{decStr}</span>
+            </>
+          )
+        })()}
+      </span>
     </label>
   )
 }

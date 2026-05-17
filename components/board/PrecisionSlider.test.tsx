@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { PrecisionSlider } from './PrecisionSlider'
 
 describe('PrecisionSlider', () => {
-  it('renders the label and 4-digit zero-padded value', () => {
+  it('renders the label and `NNNN.NN` zero-padded value with decimals', () => {
     const { container, getByTestId } = render(
       <PrecisionSlider
         label="W"
@@ -15,11 +15,13 @@ describe('PrecisionSlider', () => {
       />,
     )
     expect(container.textContent).toContain('W')
-    expect(container.textContent).toContain('0280')
+    // Integer values render as `NNNN.00` (= 2-decimal display, session 39
+    // user feedback — sub-integer precision must be visible).
+    expect(container.textContent).toContain('0280.00')
     expect(getByTestId('t-slider')).toBeDefined()
   })
 
-  it('rounds floats for display and zero-pads small values', () => {
+  it('renders floats with 2-decimal precision (= sub-integer drag visible)', () => {
     const { container } = render(
       <PrecisionSlider
         label="G"
@@ -30,8 +32,8 @@ describe('PrecisionSlider', () => {
         testId="t-slider"
       />,
     )
-    // 18.4 → rounded → '0018'
-    expect(container.textContent).toContain('0018')
+    // 18.4 → `0018.40` (= the slider's true value, NOT a rounded integer).
+    expect(container.textContent).toContain('0018.40')
   })
 
   it('moves the value by movementX × ratio during drag', () => {
@@ -162,8 +164,8 @@ describe('PrecisionSlider', () => {
         testId="t-slider"
       />,
     )
-    // falls back to min (= 120) for display
-    expect(container.textContent).toContain('0120')
+    // falls back to min (= 120) for display, rendered as `0120.00`.
+    expect(container.textContent).toContain('0120.00')
   })
 
   it('sets aria attributes on the track', () => {
