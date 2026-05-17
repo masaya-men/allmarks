@@ -78,37 +78,34 @@
  * in ScrollMeter.module.css `.meterWrap` (z 400) and swaps its content
  * via the `mode` prop — see ScrollMeter.tsx. */
 
-/* Session 28 Apple v3 chrome: text-only Share label with a thin paint-order
-   stroke for legibility. No pill bg / border — sits floating over the
-   canvas edge scrim alongside the rest of the actions group. */
-.sharePill {
-  background: transparent;
-  border: 0;
-  color: var(--chrome-text-color);
-  padding: 10px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  font-family: inherit;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  -webkit-text-stroke: var(--chrome-text-stroke-width) var(--chrome-text-stroke-color);
+/* Session 41: text-only chrome buttons (POP OUT / SHARE) — monospace label style. */
+.chromeButton {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
   paint-order: stroke fill;
-  text-shadow: var(--chrome-text-shadow);
-  transition:
-    color 0.15s ease,
-    transform 0.15s ease,
-    -webkit-text-stroke-color 0.15s ease;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, transform 0.15s;
 }
-
-.sharePill:hover {
-  color: var(--chrome-text-color-hover);
-  -webkit-text-stroke-color: var(--chrome-text-stroke-color-hover);
+.chromeButton:hover {
+  color: rgba(255, 255, 255, 1);
   transform: translateY(-1px);
 }
-
-.sharePill:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.4);
-  outline-offset: 4px;
-  border-radius: 4px;
+.chromeButton:disabled {
+  color: rgba(255, 255, 255, 0.30);
+  cursor: not-allowed;
+  transform: none;
+}
+.chromeButton:focus-visible {
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
 }
 

@@ -31,10 +31,7 @@ import { CardsLayer } from './CardsLayer'
 import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
-import { SizeSlider } from './SizeSlider'
-import { GapSlider } from './GapSlider'
-import { WidthGapResetButton } from './WidthGapResetButton'
-import { ResetAllButton } from './ResetAllButton'
+import { TuneTrigger } from './TuneTrigger'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
 import { UndoToast, type UndoToastInput } from './UndoToast'
@@ -44,7 +41,6 @@ import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletIns
 import { BookmarkletPill } from '@/components/bookmarklet/BookmarkletPill'
 import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
 import { Lightbox } from './Lightbox'
-import { PopOutButton } from './PopOutButton'
 import { PipPortal } from '@/components/pip/PipPortal'
 import { PipCompanion } from '@/components/pip/PipCompanion'
 import { usePipWindow } from '@/lib/board/pip-window'
@@ -292,15 +288,6 @@ export function BoardRoot() {
     [resetCustomWidth],
   )
 
-  const handleResetAllCustomWidths = useCallback((): void => {
-    setLiveResize(null)
-    void resetAllCustomWidths()
-  }, [resetAllCustomWidths])
-
-  const customWidthCount = useMemo(
-    () => Object.keys(persistentCustomWidths).length,
-    [persistentCustomWidths],
-  )
   // Ref points at the inner dark canvas — viewport.w/h reflect the canvas's
   // inner dimensions (window minus the outer-frame margin), so masonry layout
   // and culling all work in canvas-local coordinates.
@@ -1256,28 +1243,29 @@ export function BoardRoot() {
           }
           actions={
             <>
-              <PopOutButton
-                onClick={() => { void pip.open() }}
-                disabled={!pip.isSupported}
-              />
-              <SizeSlider value={cardWidthPx} onChange={handleCardWidthChange} />
-              <GapSlider value={cardGapPx} onChange={handleCardGapChange} />
-              <WidthGapResetButton
+              <TuneTrigger
                 widthPx={cardWidthPx}
                 gapPx={cardGapPx}
+                onChangeWidth={handleCardWidthChange}
+                onChangeGap={handleCardGapChange}
                 onReset={handleResetWidthGap}
-              />
-              <ResetAllButton
-                count={customWidthCount}
-                onClick={handleResetAllCustomWidths}
               />
               <button
                 type="button"
-                className={styles.sharePill}
+                className={styles.chromeButton}
+                onClick={() => { void pip.open() }}
+                disabled={!pip.isSupported}
+                data-testid="pop-out-button"
+              >
+                {t('board.chrome.popout')}
+              </button>
+              <button
+                type="button"
+                className={styles.chromeButton}
                 onClick={(): void => setShareComposerOpen(true)}
                 data-testid="share-pill"
               >
-                Share ↗
+                {t('board.chrome.share')}
               </button>
             </>
           }
