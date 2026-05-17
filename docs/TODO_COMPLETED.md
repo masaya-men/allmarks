@@ -2013,3 +2013,111 @@ session 39 で meter side が完成してから、 user が PrecisionSlider (= b
 
 - LightboxNavMeter 周期 full-scramble が Lightbox open 中に firing して見えることがある (= phase 2 fix は post-close 区間のみ)。 体感頻度 ~20%、 user が「うるさい」 と感じたら対応
 - PrecisionSlider tooltip の `:focus-visible` 状態 (= keyboard Tab focus) でも mouse-follow 用 ref が seed されてないので、 tooltip が初期位置 (left: -9999px) のまま invisible-ish になる可能性。 keyboard user 重視するなら focus 時に default 位置 (= track center 下) で seed する fallback 要
+
+---
+
+## セッション 40 (2026-05-17 / 18) — edge auto-scroll + Ctrl+Z undo/redo system
+
+### 概要
+
+user 起点で 2 機能を 1 セッションで完遂:
+1. **カードを掴んで viewport 端まで持っていくと page が auto-scroll** する機能
+2. **Ctrl+Z / Ctrl+Shift+Z で undo / redo** する業界水準の機能 (= 6 種類の mutating action 対象)
+
+開始時 user 指示「1, 3, 4 全部やりたいけど edge auto-scroll も付けて」 → 私の提案で edge auto-scroll → TopHeader brushup の順を推奨 → user 同意。 ただし途中で user が「Ctrl+Z 戻し機能」 を発意 → 業界水準で全部戻せる方針合意 → undo system を実装。 TopHeader brushup は session 41 に持ち越し。
+
+### Phase 1: edge auto-scroll while dragging card
+
+**brainstorming**:
+- 速度 feel: A. 定速 / B. 線形ランプ (推奨) / C. ease 曲線 → **B**
+- band 幅 + 最高速度: A. 控えめ / B. 標準 (推奨) / C. 速め → 初期 **B (80px / 600 px/sec)**
+- Shift で高速化: A. なし (推奨、 YAGNI) / B / C → **A**
+
+**初期実装 (失敗)**: `window.scrollBy` で document scroll する想定 → board の `outerFrame` / `canvas` / `canvasWrap` が全部 `overflow: hidden` で **document も DOM container も native scroll を使ってない** ことが判明。 user 報告「スクロールしない」 から発覚。
+
+**正しい architecture 理解**: board は InteractionLayer が wheel/pointer を listen、 `onScroll(dx, dy)` callback で BoardRoot の `viewport.y` state を update、 子 div を `transform: translate3d(-x, -y, 0)` で動かす方式。 native scroll は完全に殺してる。
+
+**修正実装** ([components/board/use-card-reorder-drag.ts](components/board/use-card-reorder-drag.ts)):
+- `useCardReorderDrag` props に `onPanY?: (requestedDy: number) => number` 追加 (= return actualDy after clamp)
+- rAF tick で band 判定 → `onPanY(requestedDy)` 呼び出し → 戻り値 `actualDy` で `startClientY -= actualDy` 補正 → 既存式 `cardWorldY = startPos.y + (clientY - startClientY)` が再評価され、 card が pointer に追随
+- 速度 max を超える pointer 位置 (= viewport 外) で `Math.min(1, ratio)` clamp 追加
+
+**BoardRoot 側** ([components/board/BoardRoot.tsx](components/board/BoardRoot.tsx)):
+- `viewportRef` = useRef(viewport)、 毎 render で sync (= rAF tick が stale closure を見ないよう)
+- `handlePanY` callback = ref ベースで `viewport.y + dy` を `contentBounds.height - v.h` で clamp、 `actualDy` を return
+
+**CardsLayer 経由** ([components/board/CardsLayer.tsx](components/board/CardsLayer.tsx)): `onPanY` を pass-through。 ShareFrame caller (= share view) は `onPanY` 未渡しで auto-scroll 無効化。
+
+**速度 fine-tune**: 初期 600 px/sec で deploy → user 「ちょっと遅すぎ」 → **1200 px/sec (2x)** に bump。 1489×679 viewport で band 内最深部から ~1 秒で画面高さ分進む。
+
+**verify**: playwright at 1489×679、 40 件 seed bookmark、 pointer at y=650 で 1.5 秒保持 → `viewport.y` が 0 → 575px (= 理論計算 574px と一致)。
+
+### Phase 2: Ctrl+Z undo/redo for 4 action types
+
+**brainstorming** (= user 「全部戻せる、 業界水準だよね」 から 1 メッセージで合意):
+- 対象 4 種: reorder / delete / resize / add (= ブックマークレット or paste で新規追加)
+- キー: Ctrl+Z (= 戻す) / Ctrl+Shift+Z (= redo)、 Mac は Cmd 系
+- 深さ: 30 操作
+- 視覚 feedback: 画面下に glass pill toast (= slider tooltip 同トンマナ) 1.5 秒
+- in-memory only (= リロードでクリア、 Figma 方式)
+- input/textarea focus 中は ネイティブ undo 尊重
+
+**新規 file**:
+- [lib/board/undo-stack.ts](lib/board/undo-stack.ts): `UndoEntry` discriminated union + `pushBounded` helper + `MAX_UNDO_STACK = 30`
+- [components/board/UndoToast.tsx](components/board/UndoToast.tsx) + [.module.css](components/board/UndoToast.module.css): portal で document.body に出る fixed bottom 80px glass pill、 PrecisionSlider tooltip の数値 (bg `rgba(18,18,22,0.92)` + blur 14px saturate 140% + 999px + 同 border / shadow / font) を verbatim copy
+
+**BoardRoot 統合**:
+- state: `undoStack` / `redoStack` / `toast` + 各 ref (= keydown listener が stale 値見ない)
+- `pushUndo` helper: 新規 user action ごとに redoStack clear (= 「分岐」 ルール)
+- 各 mutating handler (handleDropOrder / handleCardDelete / handleCardResizeEnd) に push 仕込み
+- add detection useEffect: `prevItemIdsRef` で id 集合 diff、 初回 hydrate と applying-undo 中は suppress
+- `applyEntry(entry, direction)` async: switch で 4 種類 apply、 inverse snapshot を反対 stack に push、 toast set
+- keydown listener (= window): Ctrl+Z / Ctrl+Shift+Z 捕捉、 INPUT / TEXTAREA / contenteditable focus 中は ignore
+
+**i18n key 構造**: top-level `"undo"` / `"redo"` セクション、 配下に `reorder` / `delete` / `resize` / `add` 各 key。 全 15 言語 (ar / de / en / es / fr / it / ja / ko / nl / pt / ru / th / tr / vi / zh) に翻訳 phrase を入れて launch 時 i18n wire 後に自動で全言語対応。 python script で一括追加 (`test-results/add-undo-i18n.py`)。
+
+**ついでに直したバグ** ([lib/storage/use-board-data.ts](lib/storage/use-board-data.ts)):
+- 既存 `persistSoftDelete(id, false)` は「現セッション反映なし、 reload 必須」 仕様だった
+- undo 削除復活には致命 → IDB から bookmark + card record を read して `toItem()` で変換、 setItems に sorted insertion で push
+- これで Ctrl+Z 削除復活が即座に画面反映
+
+**verify** (playwright at 1489×679):
+- delete + Ctrl+Z: 6 → 5 → 6 件復活 ✓ + toast「削除を戻しました」 ✓
+- drag-drop + Ctrl+Z: order [r-0 .. r-5] → [r-1, r-2, r-0, r-3, r-4, r-5] → 完全に元通り ✓
+
+### Phase 3: Size / Gap slider undo with 500ms debounce
+
+user 「上のサイズ・ギャップスライダーも戻せた方がいいかも？」 → 追加。
+
+**実装**:
+- `UndoEntry` 型に `'cardWidth'` / `'cardGap'` の 2 case 追加
+- `handleCardWidthChange` / `handleCardGapChange` を BoardRoot に追加: burst 開始時に値を snap (= snapshotRef)、 connection 中は再 snap しない、 500ms 静止で 1 entry commit (= Figma / Sketch 方式)
+- SizeSlider / GapSlider の onChange を新 handler に差し替え
+- `applyEntry` に 2 case 追加 (setCardWidthPx / setCardGapPx + clamp + toast)
+- 15 言語 i18n 追加 (`add-slider-undo-i18n.py`)
+
+verify は core mechanism (= push + apply + setState) が delete/reorder と同じ shape なので playwright skip、 prod deploy → user 確認。
+
+### commits / deploys
+
+- feat(drag): edge auto-scroll while dragging card
+- fix(drag): scroll canvasWrap container (= 1 回目 misfix、 後に revert)
+- fix(drag): edge auto-scroll via viewport.y pan callback (= 正しい実装)
+- tune(drag): raise edge auto-scroll max speed 600 → 1200 px/sec
+- feat(board): Ctrl+Z undo/redo for reorder/delete/resize/add with glass toast
+- feat(board): undo for size/gap sliders with 500ms debounce
+- prod deploys: 4 回 (`bfe4d7f1` → `9411fd97` → `92185f29` → `b3cf3b43` → `d920474d` → `3058d331`)
+
+### 残課題 / 次セッション以降
+
+- session 41 候補: B-#13 TopHeader 上部 chrome brushup / B-#3 重複 URL バグ / multi-playback autoplay
+- slider undo は debounce 500ms、 user 体感で「速すぎ / 遅すぎ」 あれば調整
+- toast 位置 bottom 80px は ScrollMeter chrome 上に出る、 user 体感で「邪魔」 ならば top に移動
+- 他 14 言語の翻訳は ja / en 以外は機械翻訳近似、 polish task (= 言語ネイティブ確認) は別 sprint
+- redo を一度も使ったことのない user は existence を知らない可能性、 onboarding / hint で告知すべきか検討
+
+### 学び
+
+- **architecture 仮定を疑う**: 「board は web page だから window.scrollBy で動く」 と思い込んだ。 実際は viewport.y state + transform pan で native scroll は完全に殺してる。 user の「スクロールしない」 報告から 5 分で発見できたが、 deploy 前の playwright 実機 verify をしていれば未然に防げた。 次回は dev で必ず動かしてから deploy する
+- **persistSoftDelete の「reload 必須」 spec**: 既存コメントに明示されてたが、 undo 機能の前提を壊す bug 同然だった。 仕様変更で in-session revive 反映に。 「コメントは古くなる、 実装の前提が壊れたら spec を直す」
+- **debounce timing 500ms** は slider drag → release 後の commit に適切。 短すぎると drag を途中で割ってしまう、 長すぎると user が「変わってない」 と感じる

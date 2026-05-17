@@ -20,7 +20,33 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-17 セッション 39 — B-#20 解消 + PrecisionSlider 大改修、 全部 prod 反映済)
+### 直近の状態 (2026-05-18 セッション 40 — edge auto-scroll + Ctrl+Z undo/redo、 全部 prod 反映済)
+
+session 40 で 2 機能を完遂:
+
+**1. edge auto-scroll while dragging card**:
+- card を掴んで viewport 上下端 80px band に入れたら page を自動 scroll
+- 線形ランプ 0 → **1200 px/sec** (band 境界=0、 viewport 端=max)
+- `useCardReorderDrag` に `onPanY` callback を渡す方式、 board の viewport.y state を update (= native scroll は board で殺されてるため)
+- ShareFrame caller では `onPanY` 未渡しで auto-scroll 無効化
+- playwright at 1489×679 で実機 verify (delta 575px、 理論 574px と一致)
+
+**2. Ctrl+Z / Ctrl+Shift+Z undo/redo system (= 6 種類)**:
+- 対象: reorder / delete / resize / add (= 新規ブクマ追加) / cardWidth slider / cardGap slider
+- 業界水準 (= Cmd 系も同等、 input/textarea focus 中はネイティブ undo 尊重)
+- in-memory stack 30 操作 / リロードでクリア (= Figma 方式)
+- 視覚 feedback: 画面下に glass pill toast (= slider tooltip 同トンマナ、 PrecisionSlider tooltip 数値 verbatim copy)
+- slider drag は **500ms debounce** で 1 entry に集約 (= 60Hz spam 防止)
+- 15 言語 i18n に `undo.*` / `redo.*` セクション追加 (ja / en は完全、 他 13 言語は短い翻訳 phrase、 polish は別 sprint)
+- `persistSoftDelete` を「in-session revive 反映」 に改修 (= 既存「reload 必須」 spec を破棄、 IDB から bookmark + card read → setItems push)
+- playwright verify: delete + Ctrl+Z 復活 ✓ / reorder + Ctrl+Z 復元 ✓
+- 新規 file: [lib/board/undo-stack.ts](../lib/board/undo-stack.ts), [components/board/UndoToast.tsx](../components/board/UndoToast.tsx), [.module.css](../components/board/UndoToast.module.css)
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 40 セクション
+
+---
+
+### 旧情報 (= 2026-05-17 セッション 39 — B-#20 解消 + PrecisionSlider 大改修、 全部 prod 反映済)
 
 session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6 phase で完全解消 → さらに PrecisionSlider (= W / G slider) を 6 phase で改修:
 
@@ -44,13 +70,13 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 - **phase 6** (= user の根本的に正しい設計提案による refactor): 「ScrollMeter の数字を書き換えるだけでいい」 = 1 component + mode prop の unified 設計。 LightboxNavMeter は PiP 専用に戻し、 BoardRoot から slot wrapper / freeze refs / glide arm 全削除。 **正味 -200 行**、 概念的にも実装的にもスッキリ。 体験は phase 1-5 と同じ
 - 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 39 セクション (phase 1-6)
 
-### 次セッション (= 40) でやること
+### 次セッション (= 41) でやること
 
 **user 指定なし** — backlog から優先度順:
-1. multi-playback vision の board card autoplay 着手
-2. テキストカード Lightbox 構造再設計
+1. **B-#13 TopHeader 上部 chrome brushup** (= session 40 で取り組む予定だったが、 user 要望で edge auto-scroll + undo system に変更されて持ち越し)
+2. multi-playback vision の board card autoplay 着手
 3. B-#3 重複 URL でサムネ等が出ない問題
-4. B-#13 TopHeader brushup (= 「ScrollMeter を下配置」 メモは既に session 39 で実現済、 残りは TopHeader 上部 chrome の brushup)
+4. 候補 2 「テキストカード Lightbox 構造再設計」 は session 30-38 で根本解決済、 backlog から外す
 
 ### foundation 3 本柱 (= セッション 32 以降)
 
