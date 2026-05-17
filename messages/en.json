@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "Dotted Notebook",
       "gridPaper": "Grid Paper"
+    },
+    "slider": {
+      "tooltipClick": "Click to jump",
+      "tooltipShift": "Shift for fast"
     }
   },
   "share": {

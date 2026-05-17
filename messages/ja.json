@@ -72,6 +72,10 @@
     "lightbox": {
       "close": "閉じる",
       "openSource": "元ページを開く"
+    },
+    "slider": {
+      "tooltipClick": "クリックでジャンプ",
+      "tooltipShift": "Shiftで高速"
     }
   },
   "share": {

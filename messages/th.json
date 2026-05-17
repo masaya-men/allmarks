@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "สมุดจุดประ",
       "gridPaper": "กระดาษกราฟ"
+    },
+    "slider": {
+      "tooltipClick": "คลิกเพื่อกระโดด",
+      "tooltipShift": "Shift เพื่อเร็ว"
     }
   },
   "share": {

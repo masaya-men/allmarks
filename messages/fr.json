@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "Carnet Pointillé",
       "gridPaper": "Papier Quadrillé"
+    },
+    "slider": {
+      "tooltipClick": "Clic pour sauter",
+      "tooltipShift": "Shift pour rapide"
     }
   },
   "share": {

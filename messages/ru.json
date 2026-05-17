@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "Точечная Тетрадь",
       "gridPaper": "Миллиметровая Бумага"
+    },
+    "slider": {
+      "tooltipClick": "Клик — прыжок",
+      "tooltipShift": "Shift — быстро"
     }
   },
   "share": {

@@ -8,6 +8,7 @@ import {
   type PointerEvent,
   type ReactElement,
 } from 'react'
+import { t } from '@/lib/i18n/t'
 import styles from './PrecisionSlider.module.css'
 
 /** マウス N px で min→max を移動する基準値。 大きいほど slider が「遅く動く」
@@ -99,10 +100,27 @@ export function PrecisionSlider({
 }: Props): ReactElement {
   const trackRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
+  const tooltipRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
   const valueRef = useRef(value)
   valueRef.current = value
   const [dragging, setDragging] = useState(false)
+
+  // Mouse-following tooltip: position is written directly to the tooltip's
+  // inline style via ref each frame (= no React re-render per pointermove,
+  // smooth follow). The CSS `:hover` selector handles opacity (= zero
+  // logic on visibility, the browser handles it instantly).
+  const updateTooltipPosition = useCallback((clientX: number, clientY: number): void => {
+    const tooltip = tooltipRef.current
+    const track = trackRef.current
+    if (!tooltip || !track) return
+    const rect = track.getBoundingClientRect()
+    // Position relative to .track (= tooltip's positioned ancestor).
+    // +18px y offset puts the pill below the cursor so it never sits
+    // under the pointer (= hover target stays visible / hit-testable).
+    tooltip.style.left = `${clientX - rect.left}px`
+    tooltip.style.top = `${clientY - rect.top + 18}px`
+  }, [])
 
   const ratio = (max - min) / MOUSE_PX_FOR_FULL_RANGE
 
@@ -141,6 +159,10 @@ export function PrecisionSlider({
   }, [min, max, onChange])
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLDivElement>): void => {
+    // Always update tooltip position so the pill smoothly follows the
+    // cursor across the track (= mouse-follow tooltip, user request).
+    updateTooltipPosition(e.clientX, e.clientY)
+    // Value movement only fires while actually dragging.
     if (!draggingRef.current) return
     // Shift = 速い (= 業界慣習の逆)。 normal drag が slow precise なので、
     // shift 押下中だけ 10× 速くして大ジャンプを許す。 user 提案 session 39。
@@ -149,7 +171,13 @@ export function PrecisionSlider({
     if (next !== valueRef.current) {
       onChange(next)
     }
-  }, [min, max, ratio, onChange])
+  }, [min, max, ratio, onChange, updateTooltipPosition])
+
+  const handlePointerEnter = useCallback((e: PointerEvent<HTMLDivElement>): void => {
+    // Seed tooltip position on first frame of hover so it appears at the
+    // cursor (not a stale position from the previous hover).
+    updateTooltipPosition(e.clientX, e.clientY)
+  }, [updateTooltipPosition])
 
   const handlePointerUp = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     const el = trackRef.current
@@ -201,6 +229,7 @@ export function PrecisionSlider({
         aria-label={ariaLabel ?? label}
         data-testid={testId}
         data-dragging={dragging || undefined}
+        onPointerEnter={handlePointerEnter}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -214,24 +243,27 @@ export function PrecisionSlider({
           aria-hidden="true"
           style={{ left: `${clampedPct}%` }}
         />
-        {/* Session 39: custom hover tooltip (= 拡張機能 booklage-pill と
-            同じ visual vocabulary: dark glass + backdrop-blur + rounded
-            + subtle border + soft drop shadow)。 native title="" は遅延
-            (~1-2秒) で「業界水準で一番早い」 ではなかったので、 CSS
-            :hover でほぼ瞬間 (= 80ms fade-in) に出す。 pointer-events:
-            none で hover の親判定を絶対に邪魔しない。 */}
-        <div className={styles.tooltip} role="tooltip" aria-hidden="true">
-          <span className={styles.tooltipKey}>クリック</span>
-          <span className={styles.tooltipSep}>=</span>
-          <span className={styles.tooltipVal}>ジャンプ</span>
+        {/* Session 39: custom hover tooltip — visual vocabulary copied from
+            the extension's `booklage-pill` (= dark glass, backdrop blur,
+            rounded pill, subtle border, soft drop shadow).
+            - Position: mouse-follow via inline style set per pointermove
+              (user request: cursor-anchored pill, not centered on track)
+            - Visibility: CSS `:hover` (= zero JS, instant browser-native
+              show/hide, fastest possible response)
+            - Content: only the non-obvious bindings (= click-to-jump and
+              shift-to-fast). Plain drag is intentionally not listed —
+              "drag a slider" is universal.
+            - i18n: text via `t()` keys so the 15-language launch handles
+              this surface automatically. */}
+        <div
+          ref={tooltipRef}
+          className={styles.tooltip}
+          role="tooltip"
+          aria-hidden="true"
+        >
+          <span className={styles.tooltipText}>{t('board.slider.tooltipClick')}</span>
           <span className={styles.tooltipDot}>·</span>
-          <span className={styles.tooltipKey}>ドラッグ</span>
-          <span className={styles.tooltipSep}>=</span>
-          <span className={styles.tooltipVal}>精密</span>
-          <span className={styles.tooltipDot}>·</span>
-          <span className={styles.tooltipKey}>Shift+ドラッグ</span>
-          <span className={styles.tooltipSep}>=</span>
-          <span className={styles.tooltipVal}>高速</span>
+          <span className={styles.tooltipText}>{t('board.slider.tooltipShift')}</span>
         </div>
       </div>
       <span className={styles.value}>

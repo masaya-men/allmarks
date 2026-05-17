@@ -104,25 +104,33 @@
 
 /* Custom hover tooltip — visual vocabulary copied from the extension's
  * `.booklage-pill` (= dark glass pill, backdrop blur, subtle border, soft
- * drop shadow) so the app feels like one design family. Native `title=""`
- * was tried first but its 1-2s browser delay didn't fit user's "業界水準で
- * 一番早い" request, so we render our own pill and toggle via :hover with
- * a 80ms fade. pointer-events:none so the tooltip never blocks pointer
- * events on the underlying track. */
+ * drop shadow) so the app feels like one design family.
+ *
+ * Behavior:
+ *  - Position: follows the cursor (= inline `left`/`top` written by JS per
+ *    pointermove, centered horizontally on cursor via translateX(-50%)).
+ *  - Visibility: CSS `:hover` on the track (= zero JS, instant browser-
+ *    native show/hide for "業界水準で一番早い"). 80ms fade only on opacity.
+ *  - Pointer-events: none — the tooltip never blocks events on the track
+ *    itself, so the hover state is preserved when cursor moves over the
+ *    tooltip's space.
+ */
 .tooltip {
   position: absolute;
-  /* Below the track in the empty band between header and cards, so it
-   * never escapes the viewport top on small screens. */
-  top: calc(100% + 6px);
-  left: 50%;
+  /* `left` + `top` are set per-frame by JS (mouse follow). Initial values
+   * here just keep it off-screen until the first pointermove arrives. */
+  left: 0;
+  top: 0;
+  /* Center the pill horizontally on the cursor. translateX-only so the
+   * vertical offset (= +18px in JS) lands the pill exactly below the
+   * cursor not centered on it. */
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 7px 12px;
   border-radius: 999px;
-  /* booklage-pill background + blur + border + shadow verbatim — keeps the
-   * design family coherent across surfaces. */
+  /* booklage-pill background + blur + border + shadow verbatim. */
   background: rgba(18, 18, 22, 0.92);
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -140,8 +148,7 @@
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  /* "業界水準で一番早い" — appears immediately on hover (no delay), fades
-   * in over 80ms so it doesn't pop jarringly. Hide is symmetric. */
+  /* Instant show on hover, gentle 80ms fade so it doesn't pop jarringly. */
   transition: opacity 80ms ease-out;
   z-index: 1000;
 }
@@ -151,19 +158,8 @@
   opacity: 1;
 }
 
-/* Tooltip key/value typography: key bright, sep + dot dim, val bright. */
-.tooltipKey {
+.tooltipText {
   color: rgba(255, 255, 255, 0.94);
-}
-
-.tooltipSep {
-  color: rgba(255, 255, 255, 0.42);
-  margin: 0 -2px;
-}
-
-.tooltipVal {
-  color: rgba(255, 255, 255, 0.94);
-  font-weight: 600;
 }
 
 .tooltipDot {

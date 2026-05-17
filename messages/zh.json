@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "点线笔记本",
       "gridPaper": "方格纸"
+    },
+    "slider": {
+      "tooltipClick": "点击跳转",
+      "tooltipShift": "Shift 快速"
     }
   },
   "share": {

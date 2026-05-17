@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "Noktalı Defter",
       "gridPaper": "Kareli Kağıt"
+    },
+    "slider": {
+      "tooltipClick": "Tıkla, atla",
+      "tooltipShift": "Shift, hızlı"
     }
   },
   "share": {

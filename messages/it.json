@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "Quaderno Puntinato",
       "gridPaper": "Carta Quadrettata"
+    },
+    "slider": {
+      "tooltipClick": "Clic per saltare",
+      "tooltipShift": "Shift per veloce"
     }
   },
   "share": {

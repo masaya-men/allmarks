@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "دفتر منقط",
       "gridPaper": "ورق مربعات"
+    },
+    "slider": {
+      "tooltipClick": "انقر للقفز",
+      "tooltipShift": "Shift للسرعة"
     }
   },
   "share": {

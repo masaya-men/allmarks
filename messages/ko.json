@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "점선 노트",
       "gridPaper": "모눈종이"
+    },
+    "slider": {
+      "tooltipClick": "클릭으로 점프",
+      "tooltipShift": "Shift로 빠르게"
     }
   },
   "share": {

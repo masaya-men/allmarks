@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "Stippennotitieboek",
       "gridPaper": "Ruitjespapier"
+    },
+    "slider": {
+      "tooltipClick": "Klik om te springen",
+      "tooltipShift": "Shift voor snel"
     }
   },
   "share": {

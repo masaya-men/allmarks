@@ -16,6 +16,10 @@
     "theme": {
       "dottedNotebook": "Sổ Tay Chấm Bi",
       "gridPaper": "Giấy Kẻ Ô"
+    },
+    "slider": {
+      "tooltipClick": "Nhấn để nhảy",
+      "tooltipShift": "Shift để nhanh"
     }
   },
   "share": {
