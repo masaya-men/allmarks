@@ -76,6 +76,16 @@
     "slider": {
       "tooltipClick": "クリックでジャンプ",
       "tooltipShift": "Shiftで高速"
+    },
+    "chrome": {
+      "tune": "TUNE",
+      "popout": "POP OUT",
+      "share": "SHARE"
+    },
+    "tune": {
+      "width": "W",
+      "gap": "G",
+      "reset_tooltip": "初期値に戻す"
     }
   },
   "share": {

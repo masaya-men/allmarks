@@ -20,6 +20,16 @@
     "slider": {
       "tooltipClick": "Clique para pular",
       "tooltipShift": "Shift para rápido"
+    },
+    "chrome": {
+      "tune": "TUNE",
+      "popout": "POP OUT",
+      "share": "SHARE"
+    },
+    "tune": {
+      "width": "W",
+      "gap": "G",
+      "reset_tooltip": "Redefinir valores"
     }
   },
   "share": {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement } from 'react'
 import { SCRAMBLE_CHARS, pickRandomChar } from '@/lib/board/scramble'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
+import { t } from '@/lib/i18n/t'
 import styles from './TuneTrigger.module.css'
 
 /** v4-inplace timing (= spec §2-3). */
@@ -58,7 +59,7 @@ export function TuneTrigger({
   onReset,
   label,
 }: Props): ReactElement {
-  const visibleLabel = label ?? 'TUNE'
+  const visibleLabel = label ?? t('board.chrome.tune')
   const btnRef = useRef<HTMLButtonElement>(null)
   const phaseRef = useRef<Phase>('idle-tune')
   const cellsRef = useRef<AnimatedCell[]>([])

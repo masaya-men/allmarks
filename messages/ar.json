@@ -20,6 +20,16 @@
     "slider": {
       "tooltipClick": "انقر للقفز",
       "tooltipShift": "Shift للسرعة"
+    },
+    "chrome": {
+      "tune": "TUNE",
+      "popout": "POP OUT",
+      "share": "SHARE"
+    },
+    "tune": {
+      "width": "W",
+      "gap": "G",
+      "reset_tooltip": "إعادة تعيين القيم"
     }
   },
   "share": {

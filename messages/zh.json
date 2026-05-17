@@ -20,6 +20,16 @@
     "slider": {
       "tooltipClick": "点击跳转",
       "tooltipShift": "Shift 快速"
+    },
+    "chrome": {
+      "tune": "TUNE",
+      "popout": "POP OUT",
+      "share": "SHARE"
+    },
+    "tune": {
+      "width": "W",
+      "gap": "G",
+      "reset_tooltip": "重置为默认值"
     }
   },
   "share": {

@@ -20,6 +20,16 @@
     "slider": {
       "tooltipClick": "Клик — прыжок",
       "tooltipShift": "Shift — быстро"
+    },
+    "chrome": {
+      "tune": "TUNE",
+      "popout": "POP OUT",
+      "share": "SHARE"
+    },
+    "tune": {
+      "width": "W",
+      "gap": "G",
+      "reset_tooltip": "Сбросить к значениям по умолчанию"
     }
   },
   "share": {

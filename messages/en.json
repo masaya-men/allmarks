@@ -20,6 +20,16 @@
     "slider": {
       "tooltipClick": "Click to jump",
       "tooltipShift": "Shift for fast"
+    },
+    "chrome": {
+      "tune": "TUNE",
+      "popout": "POP OUT",
+      "share": "SHARE"
+    },
+    "tune": {
+      "width": "W",
+      "gap": "G",
+      "reset_tooltip": "Reset to defaults"
     }
   },
   "share": {
