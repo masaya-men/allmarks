@@ -11,7 +11,7 @@
 
 ## 開始時の動き
 
-1. user と挨拶 + session 39 close-out 確認 (= `booklage.pages.dev` をハードリロードして、 Lightbox 開閉時に bottom-center の meter が「ぴたっと固定」 で crossfade してるか目視確認)
+1. user と挨拶 + session 39 close-out 確認 (= `booklage.pages.dev` をハードリロードして、 Lightbox 開閉時に meter が「場所固定 + close 時に swell が glide で家に帰る」 体験になってるか目視確認)
 2. 候補 1〜4 のどれをやるか user に聞く
 3. 決まったタスクの spec / plan / memory を読む
 4. 提案 → 合意 → 実装 → tsc + vitest → prod deploy → user 確認

@@ -20,19 +20,24 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-17 セッション 39 — ScrollMeter / LightboxNavMeter slot 統一、 B-#20 解消)
+### 直近の状態 (2026-05-17 セッション 39 — meter slot 統一 + 帰り側 polish 完成、 B-#20 完全解消)
 
-session 38 直後に user が prod で気づいた「ScrollMeter がガチャガチャ動く」 を解消。 根本原因は ScrollMeter (canvas-bottom 24px) と LightboxNavMeter (viewport-bottom 24px) の containing block 差で、 開閉のたびに meter が縦に jump していた。 user 仮説 (= 場所固定 + crossfade) をベースに、 案 A (= 共通 slot wrapper + 2 component 並存) で実装。
+session 38 直後に user が prod で気づいた「ScrollMeter がガチャガチャ動く」 を 3 phase で完全解消:
+- **phase 1**: containing block 統一 (canvas-bottom 24px に集約) + counter format 統一 (`N1 — N2 / TOTAL`) + opacity crossfade。 行き (= open) はこれで smooth に
+- **phase 2** (= user 報告で着手): close 後の counter scramble 凍結 — lightboxIndex の N→-1 jump で n1/n2 が暴れるのを ref キャッシュで凍結
+- **phase 3** (= user 仮説どおり): swell 引き継ぎ glide — ScrollMeter に spring damping 追加、 close 時に Lightbox swell 位置を引き継いで scroll fraction 位置へ eased で滑る。 page scroll は触らない
 
 - [BoardRoot.module.css](components/board/BoardRoot.module.css) に `.lightboxMeterSlot` 新設 (z 400、 ScrollMeter wrapper と完全同位置)
 - [LightboxNavMeter.tsx](components/board/LightboxNavMeter.tsx) に `counterFormat='range'` + `n1`/`n2` props 追加、 ScrollMeter と同じ scramble cadence
 - [Lightbox.module.css](components/board/Lightbox.module.css) に `.meterDim` + `data-counter-format='range'` typography override 追加 (font-size / color / text-stroke / text-shadow を ScrollMeter と一致)
-- [BoardRoot.tsx](components/board/BoardRoot.tsx) で ScrollMeter sibling に LightboxNavMeter 配置、 `lightboxItemId` で hidden 反転 = 真の crossfade
+- [BoardRoot.tsx](components/board/BoardRoot.tsx) で ScrollMeter sibling に LightboxNavMeter 配置、 `lightboxItemId` で hidden 反転 = 真の crossfade。 phase 2 で `lastLightboxIndexRef/lastLightboxTotalRef` 追加 (= close 後 freeze 値)、 phase 3 で `scrollMeterGlideFromFraction` state 追加 (= ScrollMeter に swell 引き継ぎヒント送る)
 - [Lightbox.tsx](components/board/Lightbox.tsx) の LightboxNavMeter render + import 削除 (chevrons は残置)
 - [ScrollMeter.module.css](components/board/ScrollMeter.module.css) z-index 90 → 400 bump (両 meter 同 stacking layer)
+- [ScrollMeter.tsx](components/board/ScrollMeter.tsx) に spring damping (= LightboxNavMeter と同じ stiffness 320 / 臨界減衰) + `glideFromFraction?` prop 追加。 デフォルト挙動 (= scroll 直接追随) は不変
 - PiP の LightboxNavMeter 利用は `counterFormat` default 'index-decimal' で backwards compat 維持
-- 検証: playwright at user viewport 1489×679 で position Δ全部 0.00px、 mid-crossfade screenshot で jump なし、 chrome 干渉なし、 tsc clean / vitest 493/493 / prod deploy 済 → `https://booklage.pages.dev`
-- 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 39 セクション
+- 検証: playwright at user viewport 1489×679 で position Δ全部 0.00px、 close 連続フレームで swell が `149 → 129 → 100 → 67 → ... → 4` と smooth に glide 確認、 chrome 干渉なし、 tsc clean / vitest 493/493 / prod deploy 済 → `https://booklage.pages.dev`
+- 残課題: 周期 full-scramble が Lightbox open / close anim 中に firing することがある (= phase 2 freeze は post-close 区間のみ)。 体感頻度は 20% 程度、 user 観察で「うるさい」 と言えば phase 4 で対応
+- 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 39 セクション (phase 1 + phase 2+3)
 
 ### 次セッション (= 40) でやること
 
