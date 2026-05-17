@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "Tôi đã tạo một bức cắt dán từ dấu trang và nó tuyệt vời ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "Hoàn tác sắp xếp",
+    "delete": "Hoàn tác xóa",
+    "resize": "Hoàn tác đổi cỡ",
+    "add": "Hoàn tác thêm",
+    "cardWidth": "Hoàn tác cỡ",
+    "cardGap": "Hoàn tác khoảng cách"
+  },
+  "redo": {
+    "reorder": "Làm lại sắp xếp",
+    "delete": "Làm lại xóa",
+    "resize": "Làm lại đổi cỡ",
+    "add": "Làm lại thêm",
+    "cardWidth": "Làm lại cỡ",
+    "cardGap": "Làm lại khoảng cách"
   }
 }

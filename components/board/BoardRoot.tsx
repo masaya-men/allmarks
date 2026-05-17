@@ -37,6 +37,9 @@ import { WidthGapResetButton } from './WidthGapResetButton'
 import { ResetAllButton } from './ResetAllButton'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
+import { UndoToast, type UndoToastInput } from './UndoToast'
+import { type UndoEntry, MAX_UNDO_STACK, pushBounded } from '@/lib/board/undo-stack'
+import { t } from '@/lib/i18n/t'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
 import { BookmarkletPill } from '@/components/bookmarklet/BookmarkletPill'
 import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
@@ -88,6 +91,35 @@ export function BoardRoot() {
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
   const [viewport, setViewport] = useState({ x: 0, y: 0, w: 1200, h: 800 })
+  // Mirror viewport in a ref so the edge auto-scroll rAF tick (which fires
+  // outside React's render cycle) can read the latest scroll position
+  // without going through stale closures.
+  const viewportRef = useRef(viewport)
+  viewportRef.current = viewport
+
+  // Undo / redo: in-memory only (clears on reload, matches Figma / Notion
+  // industry-standard behaviour). Each mutating board action pushes a
+  // snapshot of the pre-action state to undoStack; Ctrl/Cmd+Z applies the
+  // top entry and pushes an inverse snapshot to redoStack. Any new
+  // mutating action clears redoStack.
+  const [undoStack, setUndoStack] = useState<readonly UndoEntry[]>([])
+  const [redoStack, setRedoStack] = useState<readonly UndoEntry[]>([])
+  const [toast, setToast] = useState<UndoToastInput>(null)
+  // Ref mirrors so the keydown listener — registered once at mount — reads
+  // the latest stacks without re-binding every render.
+  const undoStackRef = useRef(undoStack)
+  undoStackRef.current = undoStack
+  const redoStackRef = useRef(redoStack)
+  redoStackRef.current = redoStack
+  // When true, the next items-diff effect should swallow the change instead
+  // of pushing a synthetic 'add' undo entry. Used while applying an undo /
+  // redo so the resulting items mutation does not register as a new user
+  // action.
+  const suppressItemDetectRef = useRef<boolean>(false)
+  // Previous items id set, populated lazily once the first non-loading
+  // render arrives. Null = "we have not seen items yet" so the initial
+  // hydrate does NOT count as user adds.
+  const prevItemIdsRef = useRef<Set<string> | null>(null)
   // Lifted from InteractionLayer so CardsLayer can also observe Space-held
   // state and bail its pointerdown handler — letting the event bubble up to
   // InteractionLayer where pan engagement lives.
@@ -124,6 +156,62 @@ export function BoardRoot() {
     if (!Number.isFinite(v)) return BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
     return Math.min(BOARD_SLIDERS.CARD_GAP_MAX_PX, Math.max(BOARD_SLIDERS.CARD_GAP_MIN_PX, v))
   }, [])
+  // Push a snapshot to the undo stack. New user actions clear redoStack
+  // (= the "branch when you mutate after an undo" rule, matching every
+  // desktop editor).
+  const pushUndo = useCallback((entry: UndoEntry, clearRedo: boolean = true): void => {
+    setUndoStack((prev) => pushBounded(prev, entry, MAX_UNDO_STACK))
+    if (clearRedo) setRedoStack([])
+  }, [])
+
+  // Debounced undo capture for the Size / Gap sliders. Continuous drags
+  // would spam 60 entries per second otherwise — we instead snapshot the
+  // value at the START of a burst and commit one entry after 500ms of
+  // quiet, matching how Figma / Sketch coalesce a slider drag into a
+  // single undo step.
+  const cardWidthDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cardWidthSnapshotRef = useRef<number | null>(null)
+  const cardGapDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cardGapSnapshotRef = useRef<number | null>(null)
+
+  const handleCardWidthChange = useCallback(
+    (next: number): void => {
+      if (cardWidthSnapshotRef.current === null) {
+        cardWidthSnapshotRef.current = cardWidthPx
+      }
+      setCardWidthPx(clampCardWidth(next))
+      if (cardWidthDebounceRef.current) clearTimeout(cardWidthDebounceRef.current)
+      cardWidthDebounceRef.current = setTimeout(() => {
+        const snap = cardWidthSnapshotRef.current
+        if (snap !== null) {
+          pushUndo({ kind: 'cardWidth', prevWidthPx: snap })
+        }
+        cardWidthSnapshotRef.current = null
+        cardWidthDebounceRef.current = null
+      }, 500)
+    },
+    [cardWidthPx, clampCardWidth, pushUndo],
+  )
+
+  const handleCardGapChange = useCallback(
+    (next: number): void => {
+      if (cardGapSnapshotRef.current === null) {
+        cardGapSnapshotRef.current = cardGapPx
+      }
+      setCardGapPx(clampCardGap(next))
+      if (cardGapDebounceRef.current) clearTimeout(cardGapDebounceRef.current)
+      cardGapDebounceRef.current = setTimeout(() => {
+        const snap = cardGapSnapshotRef.current
+        if (snap !== null) {
+          pushUndo({ kind: 'cardGap', prevGapPx: snap })
+        }
+        cardGapSnapshotRef.current = null
+        cardGapDebounceRef.current = null
+      }, 500)
+    },
+    [cardGapPx, clampCardGap, pushUndo],
+  )
+
   const handleResetWidthGap = useCallback((): void => {
     setCardWidthPx(BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX)
     setCardGapPx(BOARD_SLIDERS.CARD_GAP_DEFAULT_PX)
@@ -175,13 +263,25 @@ export function BoardRoot() {
 
   const handleCardResizeEnd = useCallback(
     (bookmarkId: string, finalWidth: number): void => {
+      // Snapshot the pre-resize width so Ctrl+Z can restore it. When the
+      // card was using the default size-slider width (customCardWidth=false),
+      // undo means "go back to default", not "set this exact pixel value".
+      const cur = items.find((it) => it.bookmarkId === bookmarkId)
+      if (cur) {
+        pushUndo({
+          kind: 'resize',
+          bookmarkId,
+          prevWidth: cur.cardWidth,
+          prevCustom: cur.customCardWidth,
+        })
+      }
       // Clearing liveResize and queueing the optimistic items update
       // in the same task lets React batch them — no flicker between
       // the live drag and the persisted state taking over.
       setLiveResize(null)
       void persistCustomWidth(bookmarkId, finalWidth)
     },
-    [persistCustomWidth],
+    [persistCustomWidth, items, pushUndo],
   )
 
   const handleCardResetSize = useCallback(
@@ -378,6 +478,25 @@ export function BoardRoot() {
       })
     },
     [contentBounds.width, contentBounds.height],
+  )
+
+  // Edge auto-scroll hook for useCardReorderDrag. Returns the delta we
+  // actually applied after clamping to the content range, so the hook can
+  // compensate its worldY formula and keep the dragged card pinned to the
+  // pointer while the canvas pans underneath.
+  const handlePanY = useCallback(
+    (requestedDy: number): number => {
+      const v = viewportRef.current
+      const maxY = Math.max(0, contentBounds.height - v.h)
+      const nextY = Math.min(Math.max(v.y + requestedDy, 0), maxY)
+      const actualDy = nextY - v.y
+      if (actualDy !== 0) {
+        viewportRef.current = { ...v, y: nextY }
+        setViewport((prev) => ({ ...prev, y: nextY }))
+      }
+      return actualDy
+    },
+    [contentBounds.height],
   )
 
   // ScrollMeter click/drag → animated scroll-to-y. requestAnimationFrame loop
@@ -592,8 +711,9 @@ export function BoardRoot() {
   // hides anything with isDeleted=true so the card disappears from
   // the board the moment persistSoftDelete returns.
   const handleCardDelete = useCallback((bookmarkId: string): void => {
+    pushUndo({ kind: 'delete', bookmarkId })
     void persistSoftDelete(bookmarkId, true)
-  }, [persistSoftDelete])
+  }, [persistSoftDelete, pushUndo])
 
   // Card width and gap are board-wide preferences, not per-card data.
   // localStorage is sufficient (recovers on next visit, cross-device sync
@@ -664,10 +784,186 @@ export function BoardRoot() {
 
   const handleDropOrder = useCallback(
     (orderedBookmarkIds: readonly string[]): void => {
+      // Snapshot the pre-drop order so Ctrl+Z restores it.
+      const prevOrder = items.map((it) => ({
+        id: it.bookmarkId,
+        orderIndex: it.orderIndex,
+      }))
+      pushUndo({ kind: 'reorder', prev: prevOrder })
       void persistOrderBatch(orderedBookmarkIds)
     },
-    [persistOrderBatch],
+    [persistOrderBatch, items, pushUndo],
   )
+
+  // ---- Undo / Redo system ----
+  //
+  // Detect user-added bookmarks by diffing the items id set against the
+  // previous render. Initial hydrate (prevItemIdsRef === null) is not
+  // counted as a user action. Suppressed while applying an undo / redo
+  // so the resulting items mutation does not register as a new add.
+  useEffect(() => {
+    if (loading) return
+    const curIds = new Set(items.map((it) => it.bookmarkId))
+    if (prevItemIdsRef.current === null) {
+      prevItemIdsRef.current = curIds
+      return
+    }
+    if (suppressItemDetectRef.current) {
+      prevItemIdsRef.current = curIds
+      return
+    }
+    const prev = prevItemIdsRef.current
+    const added: string[] = []
+    for (const id of curIds) {
+      if (!prev.has(id)) added.push(id)
+    }
+    if (added.length > 0) {
+      pushUndo({ kind: 'add', bookmarkIds: added })
+    }
+    prevItemIdsRef.current = curIds
+  }, [items, loading, pushUndo])
+
+  const applyEntry = useCallback(
+    async (entry: UndoEntry, direction: 'undo' | 'redo'): Promise<void> => {
+      suppressItemDetectRef.current = true
+      let inverse: UndoEntry | null = null
+      let messageKey = ''
+
+      try {
+        switch (entry.kind) {
+          case 'reorder': {
+            const cur = items.map((it) => ({
+              id: it.bookmarkId,
+              orderIndex: it.orderIndex,
+            }))
+            inverse = { kind: 'reorder', prev: cur }
+            // Filter out ids no longer in items (e.g. deleted since the
+            // snapshot was taken) so persistOrderBatch sees a valid list.
+            const liveIds = new Set(items.map((it) => it.bookmarkId))
+            const ordered = [...entry.prev]
+              .filter((p) => liveIds.has(p.id))
+              .sort((a, b) => a.orderIndex - b.orderIndex)
+              .map((p) => p.id)
+            if (ordered.length > 0) await persistOrderBatch(ordered)
+            messageKey = `${direction}.reorder`
+            break
+          }
+          case 'delete': {
+            inverse = { kind: 'delete', bookmarkId: entry.bookmarkId }
+            await persistSoftDelete(entry.bookmarkId, false)
+            messageKey = `${direction}.delete`
+            break
+          }
+          case 'resize': {
+            const curItem = items.find(
+              (it) => it.bookmarkId === entry.bookmarkId,
+            )
+            if (curItem) {
+              inverse = {
+                kind: 'resize',
+                bookmarkId: entry.bookmarkId,
+                prevWidth: curItem.cardWidth,
+                prevCustom: curItem.customCardWidth,
+              }
+            }
+            if (entry.prevCustom) {
+              await persistCustomWidth(entry.bookmarkId, entry.prevWidth)
+            } else {
+              await resetCustomWidth(entry.bookmarkId)
+            }
+            messageKey = `${direction}.resize`
+            break
+          }
+          case 'add': {
+            inverse = { kind: 'add', bookmarkIds: entry.bookmarkIds }
+            for (const id of entry.bookmarkIds) {
+              await persistSoftDelete(id, true)
+            }
+            messageKey = `${direction}.add`
+            break
+          }
+          case 'cardWidth': {
+            inverse = { kind: 'cardWidth', prevWidthPx: cardWidthPx }
+            setCardWidthPx(clampCardWidth(entry.prevWidthPx))
+            messageKey = `${direction}.cardWidth`
+            break
+          }
+          case 'cardGap': {
+            inverse = { kind: 'cardGap', prevGapPx: cardGapPx }
+            setCardGapPx(clampCardGap(entry.prevGapPx))
+            messageKey = `${direction}.cardGap`
+            break
+          }
+        }
+      } finally {
+        // Re-enable add detection after the items mutation has had a
+        // chance to flow through. 200ms is generous — the IDB writes
+        // above are usually < 30ms.
+        setTimeout(() => {
+          suppressItemDetectRef.current = false
+        }, 200)
+      }
+
+      const inv = inverse
+      if (inv) {
+        if (direction === 'undo') {
+          setRedoStack((prev) => pushBounded(prev, inv, MAX_UNDO_STACK))
+        } else {
+          setUndoStack((prev) => pushBounded(prev, inv, MAX_UNDO_STACK))
+        }
+      }
+
+      if (messageKey) {
+        setToast({ message: t(messageKey), nonce: Date.now() })
+      }
+    },
+    [
+      items,
+      persistOrderBatch,
+      persistSoftDelete,
+      persistCustomWidth,
+      resetCustomWidth,
+      cardWidthPx,
+      cardGapPx,
+      clampCardWidth,
+      clampCardGap,
+    ],
+  )
+
+  // Global Ctrl/Cmd+Z (undo) and Ctrl/Cmd+Shift+Z (redo). Ignored when the
+  // user is typing in an input/textarea/contenteditable so native browser
+  // undo still works for text fields.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!(e.metaKey || e.ctrlKey)) return
+      if (e.key.toLowerCase() !== 'z') return
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      e.preventDefault()
+      if (e.shiftKey) {
+        const stack = redoStackRef.current
+        if (stack.length === 0) return
+        const entry = stack[stack.length - 1]!
+        setRedoStack((prev) => prev.slice(0, -1))
+        void applyEntry(entry, 'redo')
+      } else {
+        const stack = undoStackRef.current
+        if (stack.length === 0) return
+        const entry = stack[stack.length - 1]!
+        setUndoStack((prev) => prev.slice(0, -1))
+        void applyEntry(entry, 'undo')
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [applyEntry])
 
   const handleDisplayModeChange = useCallback((m: DisplayMode): void => {
     setDisplayMode(m)
@@ -964,8 +1260,8 @@ export function BoardRoot() {
                 onClick={() => { void pip.open() }}
                 disabled={!pip.isSupported}
               />
-              <SizeSlider value={cardWidthPx} onChange={(v): void => setCardWidthPx(clampCardWidth(v))} />
-              <GapSlider value={cardGapPx} onChange={(v): void => setCardGapPx(clampCardGap(v))} />
+              <SizeSlider value={cardWidthPx} onChange={handleCardWidthChange} />
+              <GapSlider value={cardGapPx} onChange={handleCardGapChange} />
               <WidthGapResetButton
                 widthPx={cardWidthPx}
                 gapPx={cardGapPx}
@@ -1054,6 +1350,7 @@ export function BoardRoot() {
                 onCardResizeEnd={handleCardResizeEnd}
                 onCardResetSize={handleCardResetSize}
                 sourceCardId={lightboxSourceItemId}
+                onPanY={handlePanY}
               />
             </div>
           </InteractionLayer>
@@ -1140,6 +1437,7 @@ export function BoardRoot() {
           onCardClick={handleCardClickFromPip}
         />
       </PipPortal>
+      <UndoToast input={toast} />
     </div>
   )
 }

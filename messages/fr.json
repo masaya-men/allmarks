@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "J'ai fait un collage de signets et c'est magnifique ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "Réorganisation annulée",
+    "delete": "Suppression annulée",
+    "resize": "Redimensionnement annulé",
+    "add": "Ajout annulé",
+    "cardWidth": "Taille annulée",
+    "cardGap": "Écart annulé"
+  },
+  "redo": {
+    "reorder": "Réorganisation rétablie",
+    "delete": "Suppression rétablie",
+    "resize": "Redimensionnement rétabli",
+    "add": "Ajout rétabli",
+    "cardWidth": "Taille rétablie",
+    "cardGap": "Écart rétabli"
   }
 }

@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "Made a bookmark collage and it's amazing ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "Reorder undone",
+    "delete": "Delete undone",
+    "resize": "Resize undone",
+    "add": "Add undone",
+    "cardWidth": "Size undone",
+    "cardGap": "Gap undone"
+  },
+  "redo": {
+    "reorder": "Reorder redone",
+    "delete": "Delete redone",
+    "resize": "Resize redone",
+    "add": "Add redone",
+    "cardWidth": "Size redone",
+    "cardGap": "Gap redone"
   }
 }

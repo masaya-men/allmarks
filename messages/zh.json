@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "用书签做了一个拼贴画，太棒了 ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "已撤销排序",
+    "delete": "已撤销删除",
+    "resize": "已撤销大小调整",
+    "add": "已撤销添加",
+    "cardWidth": "已撤销大小",
+    "cardGap": "已撤销间距"
+  },
+  "redo": {
+    "reorder": "已重做排序",
+    "delete": "已重做删除",
+    "resize": "已重做大小调整",
+    "add": "已重做添加",
+    "cardWidth": "已重做大小",
+    "cardGap": "已重做间距"
   }
 }

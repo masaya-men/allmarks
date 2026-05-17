@@ -94,6 +94,10 @@ type CardsLayerProps = {
    *  of the layout does not jitter, and the slot stays available as the
    *  visual home for the close-FLIP return. (B-#11)  */
   readonly sourceCardId?: string | null
+  /** Edge auto-scroll callback for drag-to-reorder. Forwarded straight
+   *  through to useCardReorderDrag. Optional so the share-view caller
+   *  (which currently has no scroll) can omit it. */
+  readonly onPanY?: (requestedDy: number) => number
 }
 
 export function CardsLayer({
@@ -116,6 +120,7 @@ export function CardsLayer({
   onCardResizeEnd,
   onCardResetSize,
   sourceCardId,
+  onPanY,
 }: CardsLayerProps): ReactNode {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
@@ -388,6 +393,7 @@ export function CardsLayer({
       },
       [onDrop, virtualOrderedIds, items, viewportWidth, cardGapPx, buildSkylineCard],
     ),
+    onPanY,
   })
 
   // Keep dragStateRef in sync so useLayoutEffect can read the dragged id

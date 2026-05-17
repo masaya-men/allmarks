@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "북마크로 콜라주를 만들었는데 최고예요 ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "정렬 취소됨",
+    "delete": "삭제 취소됨",
+    "resize": "크기 변경 취소됨",
+    "add": "추가 취소됨",
+    "cardWidth": "크기 취소됨",
+    "cardGap": "간격 취소됨"
+  },
+  "redo": {
+    "reorder": "정렬 다시 실행",
+    "delete": "삭제 다시 실행",
+    "resize": "크기 변경 다시 실행",
+    "add": "추가 다시 실행",
+    "cardWidth": "크기 다시 실행",
+    "cardGap": "간격 다시 실행"
   }
 }

@@ -8,6 +8,16 @@ import type { CardPosition } from '@/lib/board/types'
 const CLICK_THRESHOLD_PX = 5
 const CLICK_MAX_MS = 200
 
+// Edge auto-scroll while dragging a card. When the pointer enters the top
+// or bottom band of the viewport, drive a vertical pan via the caller-
+// supplied onPanY callback so users can drop cards beyond the visible
+// region without releasing the pointer. The board does not use native
+// scroll — it owns a `viewport.y` state and translates content with a CSS
+// transform — so the hook cannot just call scrollBy on an element.
+const EDGE_SCROLL_BAND_PX = 80
+const EDGE_SCROLL_MAX_SPEED_PX_PER_SEC = 1200
+const EDGE_SCROLL_MAX_DT_SEC = 0.05
+
 export type ReorderDragState = {
   readonly bookmarkId: string
   readonly currentX: number
@@ -30,13 +40,22 @@ export type UseReorderDragParams = {
     pointerWorldY: number,
   ) => void
   readonly onDrop: (orderedBookmarkIds: readonly string[]) => void
+  /** Edge auto-scroll hook. Receives the requested vertical pan delta (in
+   *  pixels, positive = scroll down / content moves up) and must return
+   *  the delta the caller actually applied after clamping to its scroll
+   *  range. When omitted, edge auto-scroll is disabled (share view). */
+  readonly onPanY?: (requestedDy: number) => number
 }
 
 export function useCardReorderDrag(params: UseReorderDragParams): {
   dragState: ReorderDragState | null
   handleCardPointerDown: (e: PointerEvent<HTMLDivElement>, bookmarkId: string) => void
 } {
-  const { items, positions, spaceHeld, onClick, onDragMove, onDrop } = params
+  const { items, positions, spaceHeld, onClick, onDragMove, onDrop, onPanY } = params
+  // Mirror onPanY in a ref so the rAF tick reads the latest closure
+  // without re-binding handleCardPointerDown every render.
+  const onPanYRef = useRef<typeof onPanY>(onPanY)
+  onPanYRef.current = onPanY
   const [dragState, setDragState] = useState<ReorderDragState | null>(null)
   // Mirror latest state + params in a ref so handlers registered on the element
   // see the latest values without rebinding every render.
@@ -68,13 +87,16 @@ export function useCardReorderDrag(params: UseReorderDragParams): {
       el.setPointerCapture(pointerId)
 
       const startClientX = e.clientX
-      const startClientY = e.clientY
+      // startClientY is mutated by the edge auto-scroll loop. Each time the
+      // page scrolls by N pixels while dragging, we subtract N from
+      // startClientY so the existing worldY formula
+      //   cardWorldY = startPos.y + (clientY - startClientY)
+      // re-evaluates to a position that follows the now-scrolled page.
+      let startClientY = e.clientY
       const startTime = performance.now()
       let dragStarted = false
 
       // Compute delta from client space to world space once on pointerdown.
-      // This delta is constant throughout the drag (we don't support panning
-      // while dragging).
       const startPos = stateRef.current.positions[bookmarkId]
       const rect = el.getBoundingClientRect()
 
@@ -82,7 +104,72 @@ export function useCardReorderDrag(params: UseReorderDragParams): {
       const deltaClientToWorldX = startPos ? startPos.x - rect.left : 0
       const deltaClientToWorldY = startPos ? startPos.y - rect.top : 0
 
+      // Edge auto-scroll state. The rAF loop only spins while a drag is
+      // actually in progress (dragStarted=true).
+      let latestClientX = e.clientX
+      let latestClientY = e.clientY
+      let lastTickMs: number | null = null
+      let rafId: number | null = null
+
+      const applyReflow = (clientX: number, clientY: number): void => {
+        const cardWorldX = (startPos?.x ?? 0) + (clientX - startClientX)
+        const cardWorldY = (startPos?.y ?? 0) + (clientY - startClientY)
+        const pointerWorldX = clientX + deltaClientToWorldX
+        const pointerWorldY = clientY + deltaClientToWorldY
+        setDragState({ bookmarkId, currentX: clientX, currentY: clientY })
+        stateRef.current.onDragMove(bookmarkId, cardWorldX, cardWorldY, pointerWorldX, pointerWorldY)
+      }
+
+      const autoScrollTick = (now: number): void => {
+        if (!dragStarted) {
+          rafId = null
+          return
+        }
+        const dt =
+          lastTickMs === null
+            ? 0
+            : Math.min((now - lastTickMs) / 1000, EDGE_SCROLL_MAX_DT_SEC)
+        lastTickMs = now
+
+        const panY = onPanYRef.current
+        let speed = 0
+        if (panY) {
+          // Band judgement is viewport-relative — the board's outer frame
+          // covers the entire viewport, so window.innerHeight is the
+          // correct height reference.
+          const vh = window.innerHeight
+          const y = latestClientY
+          if (y < EDGE_SCROLL_BAND_PX) {
+            const ratio = Math.min(1, 1 - y / EDGE_SCROLL_BAND_PX)
+            speed = -EDGE_SCROLL_MAX_SPEED_PX_PER_SEC * ratio
+          } else if (y > vh - EDGE_SCROLL_BAND_PX) {
+            const ratio = Math.min(1, 1 - (vh - y) / EDGE_SCROLL_BAND_PX)
+            speed = EDGE_SCROLL_MAX_SPEED_PX_PER_SEC * ratio
+          }
+
+          if (speed !== 0 && dt > 0) {
+            const requestedDy = speed * dt
+            const actualDy = panY(requestedDy)
+            if (actualDy !== 0) {
+              // viewport.y advanced by actualDy → the canvas content
+              // (including this card) slid up by actualDy on screen.
+              // Compensating startClientY by actualDy makes the existing
+              // worldY formula re-evaluate to (cardWorldY += actualDy),
+              // which counteracts the visual slide and keeps the card
+              // pinned to the pointer.
+              startClientY -= actualDy
+              applyReflow(latestClientX, latestClientY)
+            }
+          }
+        }
+
+        rafId = requestAnimationFrame(autoScrollTick)
+      }
+
       const move = (ev: globalThis.PointerEvent): void => {
+        latestClientX = ev.clientX
+        latestClientY = ev.clientY
+
         const dx = ev.clientX - startClientX
         const dy = ev.clientY - startClientY
         const distance = Math.hypot(dx, dy)
@@ -91,22 +178,18 @@ export function useCardReorderDrag(params: UseReorderDragParams): {
         if (!dragStarted) {
           if (distance < CLICK_THRESHOLD_PX && elapsed < CLICK_MAX_MS) return
           dragStarted = true
+          lastTickMs = null
+          rafId = requestAnimationFrame(autoScrollTick)
         }
 
-        // Compute card's new world-space top-left:
-        // startPos (world) + delta from original pointer position
-        const cardWorldX = (startPos?.x ?? 0) + (ev.clientX - startClientX)
-        const cardWorldY = (startPos?.y ?? 0) + (ev.clientY - startClientY)
-
-        // Pointer's world position
-        const pointerWorldX = ev.clientX + deltaClientToWorldX
-        const pointerWorldY = ev.clientY + deltaClientToWorldY
-
-        setDragState({ bookmarkId, currentX: ev.clientX, currentY: ev.clientY })
-        stateRef.current.onDragMove(bookmarkId, cardWorldX, cardWorldY, pointerWorldX, pointerWorldY)
+        applyReflow(ev.clientX, ev.clientY)
       }
 
       const up = (ev: globalThis.PointerEvent): void => {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId)
+          rafId = null
+        }
         el.removeEventListener('pointermove', move)
         el.removeEventListener('pointerup', up)
         el.removeEventListener('pointercancel', up)

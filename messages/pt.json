@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "Fiz uma colagem de favoritos e ficou incrível ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "Reordenação desfeita",
+    "delete": "Exclusão desfeita",
+    "resize": "Redimensionamento desfeito",
+    "add": "Adição desfeita",
+    "cardWidth": "Tamanho desfeito",
+    "cardGap": "Espaço desfeito"
+  },
+  "redo": {
+    "reorder": "Reordenação refeita",
+    "delete": "Exclusão refeita",
+    "resize": "Redimensionamento refeito",
+    "add": "Adição refeita",
+    "cardWidth": "Tamanho refeito",
+    "cardGap": "Espaço refeito"
   }
 }

@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "Ik heb een bladwijzercollage gemaakt en het is geweldig ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "Sortering ongedaan gemaakt",
+    "delete": "Verwijderen ongedaan gemaakt",
+    "resize": "Formaat ongedaan gemaakt",
+    "add": "Toevoeging ongedaan gemaakt",
+    "cardWidth": "Grootte ongedaan gemaakt",
+    "cardGap": "Tussenruimte ongedaan gemaakt"
+  },
+  "redo": {
+    "reorder": "Sortering opnieuw uitgevoerd",
+    "delete": "Verwijderen opnieuw uitgevoerd",
+    "resize": "Formaat opnieuw uitgevoerd",
+    "add": "Toevoeging opnieuw uitgevoerd",
+    "cardWidth": "Grootte opnieuw uitgevoerd",
+    "cardGap": "Tussenruimte opnieuw uitgevoerd"
   }
 }

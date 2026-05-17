@@ -360,17 +360,25 @@ export function useBoardData(): {
       if (!db || !bookmarkId) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
-      await db.put('bookmarks', {
+      const updated: BookmarkRecord = {
         ...existing,
         isDeleted,
         deletedAt: isDeleted ? new Date().toISOString() : undefined,
-      })
-      // Remove from live items immediately when deleted.
-      // Restore is NOT reflected in the current session; the item only
-      // reappears after the next hook mount (page reload or remount).
+      }
+      await db.put('bookmarks', updated)
+      if (isDeleted) {
+        setItems((prev) => prev.filter(it => it.bookmarkId !== bookmarkId))
+        return
+      }
+      // Restore — fetch the matching card record and re-insert into items
+      // so Ctrl+Z reflects in the live session without a reload. Cards are
+      // a small store (1:1 with bookmarks) so getAll is acceptable.
+      const allCards = (await db.getAll('cards')) as CardRecord[]
+      const card = allCards.find((c) => c.bookmarkId === bookmarkId)
+      const revived = toItem(updated, card)
       setItems((prev) => {
-        if (isDeleted) return prev.filter(it => it.bookmarkId !== bookmarkId)
-        return prev
+        if (prev.some((it) => it.bookmarkId === bookmarkId)) return prev
+        return [...prev, revived].sort((a, b) => a.orderIndex - b.orderIndex)
       })
     },
     [],

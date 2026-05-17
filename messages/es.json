@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "Hice un collage de marcadores y quedó increíble ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "Reordenación deshecha",
+    "delete": "Eliminación deshecha",
+    "resize": "Redimensionamiento deshecho",
+    "add": "Adición deshecha",
+    "cardWidth": "Tamaño deshecho",
+    "cardGap": "Espacio deshecho"
+  },
+  "redo": {
+    "reorder": "Reordenación rehecha",
+    "delete": "Eliminación rehecha",
+    "resize": "Redimensionamiento rehecho",
+    "add": "Adición rehecha",
+    "cardWidth": "Tamaño rehecho",
+    "cardGap": "Espacio rehecho"
   }
 }

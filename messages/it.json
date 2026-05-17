@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "Ho creato un collage di segnalibri ed è fantastico ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "Riordino annullato",
+    "delete": "Eliminazione annullata",
+    "resize": "Ridimensionamento annullato",
+    "add": "Aggiunta annullata",
+    "cardWidth": "Dimensione annullata",
+    "cardGap": "Spazio annullato"
+  },
+  "redo": {
+    "reorder": "Riordino ripristinato",
+    "delete": "Eliminazione ripristinata",
+    "resize": "Ridimensionamento ripristinato",
+    "add": "Aggiunta ripristinata",
+    "cardWidth": "Dimensione ripristinata",
+    "cardGap": "Spazio ripristinato"
   }
 }

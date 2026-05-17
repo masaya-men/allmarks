@@ -24,5 +24,21 @@
   },
   "share": {
     "defaultText": "Habe eine Lesezeichen-Collage erstellt und sie ist großartig ✨ #AllMarks"
+  },
+  "undo": {
+    "reorder": "Sortierung rückgängig gemacht",
+    "delete": "Löschen rückgängig gemacht",
+    "resize": "Größenänderung rückgängig gemacht",
+    "add": "Hinzufügen rückgängig gemacht",
+    "cardWidth": "Größe rückgängig gemacht",
+    "cardGap": "Abstand rückgängig gemacht"
+  },
+  "redo": {
+    "reorder": "Sortierung wiederhergestellt",
+    "delete": "Löschen wiederhergestellt",
+    "resize": "Größenänderung wiederhergestellt",
+    "add": "Hinzufügen wiederhergestellt",
+    "cardWidth": "Größe wiederhergestellt",
+    "cardGap": "Abstand wiederhergestellt"
   }
 }
