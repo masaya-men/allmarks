@@ -175,6 +175,35 @@ export function usePipWindow(): PipWindowApi {
     }
   }, [pipWindow])
 
+  // Always-on-top emulation. Chrome's Document PiP has no API to force the
+  // window above its opener; by default the PiP slips behind the parent tab
+  // whenever it gains focus, and once buried it does not auto-resurface on
+  // tab/app switches. We compensate by calling focus() on the PiP window
+  // every time the parent's visibility or focus state changes — covers the
+  // AllMarks tab → other tab, tab → app, and minimize → restore transitions.
+  // Out of reach: when Chrome itself is fully behind another OS window, no
+  // amount of focus() can lift the PiP above it.
+  useEffect(() => {
+    if (!pipWindow || pipWindow.closed) return
+    const refocus = (): void => {
+      if (pipWindow && !pipWindow.closed) {
+        try {
+          pipWindow.focus()
+        } catch {
+          // focus() can throw on stale references; the next event will retry.
+        }
+      }
+    }
+    window.addEventListener('focus', refocus)
+    window.addEventListener('blur', refocus)
+    document.addEventListener('visibilitychange', refocus)
+    return () => {
+      window.removeEventListener('focus', refocus)
+      window.removeEventListener('blur', refocus)
+      document.removeEventListener('visibilitychange', refocus)
+    }
+  }, [pipWindow])
+
   return {
     window: pipWindow,
     isSupported,
