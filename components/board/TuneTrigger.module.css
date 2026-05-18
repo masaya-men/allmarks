@@ -1,8 +1,10 @@
 /* TuneTrigger — Apple v3 chrome label, identical typographic profile to
    POP OUT / SHARE / FilterPill: 11px monospace ALL CAPS, no background,
-   thin black stroke for legibility over canvas content. The cell-based
-   readout (W 267.84 · G 97.21 · ↺) shares the same font cascade and
-   only differs via per-kind color (label / num / dim). */
+   thin black stroke for legibility over canvas content.
+
+   Amendment 1 (session 41 後半): readout は短いピル track + 黒 chip の
+   number-as-handle 形式。 chip 内 digit cell は scramble 対象、 chip
+   位置は value に応じて track 上を slide する。 */
 
 .trigger {
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
@@ -32,7 +34,7 @@
 .cell {
   display: inline-block;
   font-variant-numeric: tabular-nums;
-  vertical-align: top;
+  vertical-align: middle;
 }
 .cell.num { color: rgba(255, 200, 120, 0.95); }
 .cell.dim { color: rgba(255, 255, 255, 0.30); }
@@ -41,6 +43,44 @@
   padding: 0 4px;
   margin-left: 2px;
 }
-.cell.num {
+
+/* === Amendment 1: pill track + chip number-as-handle === */
+
+.sliderWrap {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+  height: 18px;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 1px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.chip {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 3px;
   cursor: ew-resize;
+  white-space: nowrap;
+  z-index: 1;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.15s;
+}
+.chip:hover {
+  background: rgba(0, 0, 0, 0.95);
 }

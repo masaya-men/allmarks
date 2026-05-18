@@ -1,20 +1,28 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement } from 'react'
-import { SCRAMBLE_CHARS, pickRandomChar } from '@/lib/board/scramble'
+import { pickRandomChar } from '@/lib/board/scramble'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { t } from '@/lib/i18n/t'
 import styles from './TuneTrigger.module.css'
 
-/** v4-inplace timing (= spec §2-3). */
+/** v4-inplace scramble timing. */
 const STAGGER_MS = 11
 const SCRAMBLE_MIN_MS = 125
 const SCRAMBLE_MAX_MS = 190
 const LEAVE_GRACE_MS = 180
 
-/** Drag-scrub math mirrors PrecisionSlider.tsx exactly. */
-const MOUSE_PX_FOR_FULL_RANGE = 10000
+/** Amendment 1: super-precision drag math. 30000 = 3× more precise than
+ *  PrecisionSlider's 10000 — 1 mouse pixel ≈ 0.02 W unit / 0.01 G unit.
+ *  Full-range drag requires 30000 px (≈ 16 user screens); Shift+drag is
+ *  10× faster for jumps. */
+const MOUSE_PX_FOR_FULL_RANGE = 30000
 const SHIFT_SPEED_MULTIPLIER = 10
+
+/** Pill track length + chip half-inset so the chip doesn't visually clip
+ *  the track endpoints. Mirrors the Visual Companion demo. */
+const TRACK_WIDTH_PX = 100
+const CHIP_INSET_PX = 18
 
 type CellKind = 'label' | 'num' | 'dim'
 type CellScope = 'w' | 'g' | 'reset' | null
@@ -26,11 +34,11 @@ type Phase = 'idle-tune' | 'opening' | 'idle-readout' | 'closing'
 function buildReadoutCells(widthPx: number, gapPx: number): Cell[] {
   const wStr = widthPx.toFixed(2)
   const gStr = gapPx.toFixed(2)
+  // Amendment 1: dropped 'W ' and 'G ' labels — chip number alone communicates,
+  // user discovers function by drag interaction.
   const parts: { text: string; kind: CellKind; scope?: CellScope }[] = [
-    { text: 'W ', kind: 'label' },
     { text: wStr, kind: 'num', scope: 'w' },
     { text: ' · ', kind: 'dim' },
-    { text: 'G ', kind: 'label' },
     { text: gStr, kind: 'num', scope: 'g' },
     { text: ' · ', kind: 'dim' },
     { text: '↺', kind: 'label', scope: 'reset' },
@@ -40,6 +48,64 @@ function buildReadoutCells(widthPx: number, gapPx: number): Cell[] {
     for (const ch of [...p.text]) cells.push({ ch, kind: p.kind, scope: p.scope ?? null })
   }
   return cells
+}
+
+function chipLeftPx(value: number, min: number, max: number): number {
+  const range = max - min
+  const fraction = range > 0 ? Math.max(0, Math.min(1, (value - min) / range)) : 0
+  const travel = TRACK_WIDTH_PX - CHIP_INSET_PX
+  return CHIP_INSET_PX / 2 + fraction * travel
+}
+
+/** Emit HTML for the readout. Consecutive `scope='w' | 'g'` cells are
+ *  wrapped in a pill-track + chip. Other cells render as flat spans. The
+ *  `getCh` callback returns the character to display for each cell — for
+ *  open animation it returns scrambled chars before settle, for close it
+ *  returns null when a cell is consumed (causing it to be omitted). */
+function emitReadoutHtml(
+  cells: ReadonlyArray<AnimatedCell | Cell>,
+  getCh: (cell: AnimatedCell | Cell, idx: number) => string | null,
+  widthPx: number,
+  gapPx: number,
+): { html: string; anyContent: boolean } {
+  let html = ''
+  let anyContent = false
+  let i = 0
+  while (i < cells.length) {
+    const cell = cells[i]
+    if (cell.scope === 'w' || cell.scope === 'g') {
+      const scope = cell.scope
+      let groupHtml = ''
+      let hasContent = false
+      while (i < cells.length && cells[i].scope === scope) {
+        const ch = getCh(cells[i], i)
+        if (ch !== null) {
+          hasContent = true
+          anyContent = true
+          groupHtml += `<span class="${styles.cell} ${styles.num}">${ch}</span>`
+        }
+        i++
+      }
+      if (!hasContent) continue
+      const value = scope === 'w' ? widthPx : gapPx
+      const min = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MIN_PX : BOARD_SLIDERS.CARD_GAP_MIN_PX
+      const max = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MAX_PX : BOARD_SLIDERS.CARD_GAP_MAX_PX
+      const left = chipLeftPx(value, min, max)
+      html += `<span class="${styles.sliderWrap}">`
+      html += `<span class="${styles.track}"></span>`
+      html += `<span class="${styles.chip}" data-cell-kind="num-${scope}" data-scope="${scope}" style="left:${left}px">${groupHtml}</span>`
+      html += `</span>`
+    } else {
+      const ch = getCh(cell, i)
+      if (ch !== null) {
+        anyContent = true
+        const dk = cell.scope === 'reset' ? 'reset' : cell.kind
+        html += `<span class="${styles.cell} ${styles[cell.kind]}" data-cell-kind="${dk}">${ch}</span>`
+      }
+      i++
+    }
+  }
+  return { html, anyContent }
 }
 
 type Props = {
@@ -66,14 +132,13 @@ export function TuneTrigger({
   const phaseStartRef = useRef<number>(0)
   const rafIdRef = useRef<number | null>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stickyOpenRef = useRef(false)
+  const dragScopeRef = useRef<'w' | 'g' | null>(null)
   const [expanded, setExpanded] = useState(false)
 
-  // Suppress unused import warning — SCRAMBLE_CHARS is used by Tasks 4-6
-  void SCRAMBLE_CHARS
-
-  // Refs kept in sync with props each render (same pattern as PrecisionSlider.tsx
-  // line 105-106). writeIdleReadout reads from these refs instead of closing over
-  // prop values — fixes stale-closure bug when props change mid-animation.
+  // Refs kept in sync with props each render (PrecisionSlider pattern).
+  // Used by both drag math and the HTML emitters so an in-flight rAF chain
+  // always reads the latest value, not a stale closure capture.
   const widthRef = useRef(widthPx)
   const gapRef = useRef(gapPx)
   widthRef.current = widthPx
@@ -91,12 +156,8 @@ export function TuneTrigger({
     const el = btnRef.current
     if (!el) return
     const cells = buildReadoutCells(widthRef.current, gapRef.current)
-    el.innerHTML = cells
-      .map((c, i) => {
-        const dk = c.kind === 'num' ? `num-${c.scope}` : c.scope === 'reset' ? 'reset' : c.kind
-        return `<span class="${styles.cell} ${styles[c.kind]}" data-cell-kind="${dk}" data-cell-idx="${i}">${c.ch}</span>`
-      })
-      .join('')
+    const { html } = emitReadoutHtml(cells, (c) => c.ch, widthRef.current, gapRef.current)
+    el.innerHTML = html
   }, [])
 
   const tick = useCallback((): void => {
@@ -104,26 +165,28 @@ export function TuneTrigger({
     if (!el) return
     const now = performance.now()
     const elapsed = now - phaseStartRef.current
-    const phase = phaseRef.current
-
-    if (phase === 'opening') {
-      let allSettled = true
-      const html = cellsRef.current
-        .map((cell, i) => {
-          const ch = elapsed < cell.settleAt ? pickRandomChar() : cell.ch
-          if (elapsed < cell.settleAt) allSettled = false
-          const dk = cell.kind === 'num' ? `num-${cell.scope}` : cell.scope === 'reset' ? 'reset' : cell.kind
-          return `<span class="${styles.cell} ${styles[cell.kind]}" data-cell-kind="${dk}" data-cell-idx="${i}">${ch}</span>`
-        })
-        .join('')
-      el.innerHTML = html
-      if (!allSettled) {
-        rafIdRef.current = requestAnimationFrame(tick)
-      } else {
-        phaseRef.current = 'idle-readout'
-        writeIdleReadout()
-        rafIdRef.current = null
-      }
+    if (phaseRef.current !== 'opening') return
+    let allSettled = true
+    const { html } = emitReadoutHtml(
+      cellsRef.current,
+      (c) => {
+        const cell = c as AnimatedCell
+        if (elapsed < cell.settleAt) {
+          allSettled = false
+          return pickRandomChar()
+        }
+        return cell.ch
+      },
+      widthRef.current,
+      gapRef.current,
+    )
+    el.innerHTML = html
+    if (!allSettled) {
+      rafIdRef.current = requestAnimationFrame(tick)
+    } else {
+      phaseRef.current = 'idle-readout'
+      writeIdleReadout()
+      rafIdRef.current = null
     }
   }, [writeIdleReadout])
 
@@ -151,20 +214,18 @@ export function TuneTrigger({
     if (!el) return
     const now = performance.now()
     const elapsed = now - phaseStartRef.current
-    let anyVisible = false
-    const html = cellsRef.current
-      .map((cell, i) => {
-        if (elapsed < cell.settleAt) {
-          anyVisible = true
-          const ch = pickRandomChar()
-          const dk = cell.kind === 'num' ? `num-${cell.scope}` : cell.scope === 'reset' ? 'reset' : cell.kind
-          return `<span class="${styles.cell} ${styles[cell.kind]}" data-cell-kind="${dk}" data-cell-idx="${i}">${ch}</span>`
-        }
-        return '' // cell consumed → empty
-      })
-      .join('')
+    const { html, anyContent } = emitReadoutHtml(
+      cellsRef.current,
+      (c) => {
+        const cell = c as AnimatedCell
+        if (elapsed < cell.settleAt) return pickRandomChar()
+        return null
+      },
+      widthRef.current,
+      gapRef.current,
+    )
     el.innerHTML = html
-    if (anyVisible) {
+    if (anyContent) {
       rafIdRef.current = requestAnimationFrame(closingTick)
     } else {
       phaseRef.current = 'idle-tune'
@@ -182,7 +243,6 @@ export function TuneTrigger({
       ch: c.ch,
       kind: c.kind,
       scope: c.scope ?? null,
-      // Reverse stagger: rightmost cell finishes scrambling (empties) first.
       settleAt:
         (n - 1 - i) * STAGGER_MS +
         SCRAMBLE_MIN_MS +
@@ -220,9 +280,6 @@ export function TuneTrigger({
     }, LEAVE_GRACE_MS)
   }, [startClose])
 
-  // ── Sticky open + reset ──────────────────────────────────────────────────
-  const stickyOpenRef = useRef(false)
-
   const handleClick = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
     const target = e.target as HTMLElement
     const kind = target.dataset.cellKind
@@ -232,15 +289,13 @@ export function TuneTrigger({
       onReset()
       return
     }
-    // Click on any other cell or TUNE label: toggle sticky
+    // Don't toggle sticky when click lands inside a chip (= part of drag UX).
+    if (target.closest(`.${styles.chip}`)) return
     stickyOpenRef.current = !stickyOpenRef.current
-    if (!stickyOpenRef.current) {
-      // Sticky turned off; close immediately
-      startClose()
-    }
+    if (!stickyOpenRef.current) startClose()
   }, [onReset, startClose])
 
-  // ESC handler
+  // ESC closes sticky-open readout.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape' && stickyOpenRef.current) {
@@ -252,7 +307,7 @@ export function TuneTrigger({
     return (): void => window.removeEventListener('keydown', onKeyDown)
   }, [startClose])
 
-  // Outside-click handler
+  // Outside-click closes sticky-open readout.
   useEffect(() => {
     const onDocClick = (e: globalThis.MouseEvent): void => {
       if (!stickyOpenRef.current) return
@@ -265,16 +320,17 @@ export function TuneTrigger({
     return (): void => document.removeEventListener('mousedown', onDocClick)
   }, [startClose])
 
-  // ── Drag-scrub ────────────────────────────────────────────────────────────
-  const dragScopeRef = useRef<'w' | 'g' | null>(null)
-
+  // Drag-scrub. pointerdown anywhere inside a chip (= digit cell or chip
+  // wrapper) starts a drag. The scope is read from the chip's data-scope.
   const handlePointerDown = useCallback((e: PointerEvent<HTMLButtonElement>): void => {
     const target = e.target as HTMLElement
-    const kind = target.dataset.cellKind
-    if (kind !== 'num-w' && kind !== 'num-g') return
+    const chip = target.closest<HTMLElement>(`.${styles.chip}`)
+    if (!chip) return
+    const scope = chip.dataset.scope
+    if (scope !== 'w' && scope !== 'g') return
     e.preventDefault()
     e.stopPropagation()
-    dragScopeRef.current = kind === 'num-w' ? 'w' : 'g'
+    dragScopeRef.current = scope
     if (typeof e.currentTarget.setPointerCapture === 'function') {
       e.currentTarget.setPointerCapture(e.pointerId)
     }
@@ -314,6 +370,17 @@ export function TuneTrigger({
       e.currentTarget.releasePointerCapture(e.pointerId)
     }
   }, [])
+
+  // While the readout is rendered, value changes from drag-scrub must reflow
+  // chip positions immediately. We re-render idle-readout when props change
+  // and we're in idle-readout phase (= the chip is sitting still). During
+  // opening/closing the tick loop re-emits HTML every frame so it picks up
+  // ref changes naturally.
+  useEffect(() => {
+    if (phaseRef.current === 'idle-readout') {
+      writeIdleReadout()
+    }
+  }, [widthPx, gapPx, writeIdleReadout])
 
   return (
     <button

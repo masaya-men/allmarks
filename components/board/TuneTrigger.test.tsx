@@ -40,7 +40,7 @@ describe('TuneTrigger — hover open', () => {
 
     expect(btn.getAttribute('aria-expanded')).toBe('true')
     // Settled readout text (whitespace-collapsed cells together)
-    expect(btn.textContent).toBe('W 267.84 · G 97.21 · ↺')
+    expect(btn.textContent).toBe('267.84 · 97.21 · ↺')
   })
 })
 
@@ -59,7 +59,7 @@ describe('TuneTrigger — close on mouseleave', () => {
 
     fireEvent.mouseEnter(btn)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
-    expect(btn.textContent).toBe('W 267.84 · G 97.21 · ↺')
+    expect(btn.textContent).toBe('267.84 · 97.21 · ↺')
 
     fireEvent.mouseLeave(btn)
     // Wait grace (180ms) + close animation (≈ 21*11 + 190 = 421ms) = ~700ms safe
@@ -116,10 +116,10 @@ describe('TuneTrigger — drag-scrub', () => {
     fireEvent.pointerUp(target, { pointerId: 1, clientX: 200, clientY: 100 })
 
     expect(onChangeWidth).toHaveBeenCalled()
-    // ratio = (max - min) / 10000 = (720 - 120) / 10000 = 0.06
-    // delta = 100 * 0.06 = 6 → next = 267.84 + 6 = 273.84
+    // Amendment 1: ratio = (max - min) / 30000 = (720 - 120) / 30000 = 0.02
+    // delta = 100 * 0.02 = 2 → next = 267.84 + 2 = 269.84
     const lastCall = onChangeWidth.mock.calls[onChangeWidth.mock.calls.length - 1]
-    expect(lastCall[0]).toBeCloseTo(273.84, 1)
+    expect(lastCall[0]).toBeCloseTo(269.84, 1)
   })
 })
 
