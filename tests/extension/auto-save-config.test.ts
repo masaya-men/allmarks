@@ -9,6 +9,9 @@ describe('auto-save-config', () => {
     expect(configKeyForSource('yt-watch-later')).toBe('autoSaveYouTubeWatchLater')
     expect(configKeyForSource('tiktok-like')).toBe('autoSaveTikTokLike')
     expect(configKeyForSource('tiktok-favorite')).toBe('autoSaveTikTokFavorite')
+    expect(configKeyForSource('note-like')).toBe('autoSaveNoteLike')
+    expect(configKeyForSource('pixiv-bookmark')).toBe('autoSavePixivBookmark')
+    expect(configKeyForSource('pixiv-like')).toBe('autoSavePixivLike')
   })
 
   it('returns null for unknown sources', () => {

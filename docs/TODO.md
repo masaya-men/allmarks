@@ -20,27 +20,39 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 45 — PiP 常に最前面化 + TikTok ボタン連動 ship、 全部 prod 反映済)
+### 直近の状態 (2026-05-18 セッション 46 — note + Pixiv 連動 ship + Extension context invalidated 防御を 5 file 一斉投入、 全部 prod 反映済)
+
+session 45 close 後、 user に「PiP / TikTok 連動の動作で気になることは?」 と聞いたら X タブで `Uncaught Error: Extension context invalidated.` ([twitter.js:71](../extension/twitter.js)) の screenshot 報告。 拡張機能を再読込した時の既知挙動 (= 古い content script が死んだ context を握ったまま) と説明 → user 判断「**入れると決めたやつぜんぶ** + **適度に区切って** + **途中で聞かなくていい**」。 → 既存 3 file 防御 + note / Pixiv 2 サイト追加で今セッション区切り。
+
+**ship 済 (= prod 反映済、 user 実機検証は次セッション以降)**:
+- **5 file 全部に Extension context invalidated 防御コード** (= [twitter.js](../extension/twitter.js) / [youtube.js](../extension/youtube.js) / [tiktok.js](../extension/tiktok.js) / [note.js](../extension/note.js) / [pixiv.js](../extension/pixiv.js)): `isExtensionAlive()` helper + click listener の sendMessage 直前で sync check + `try-catch` で race の sync throw 吸収。 共通 helper 外出しは見送り (= manifest を module 化する副作用回避)、 inline 8 行 × 5 file で重複許容
+- **note 連動** (= [extension/note.js](../extension/note.js) 新規): `note.com/{user}/n/{noteId}` のみ捕捉、 スキ button を aria-label or text で検知。 ON / OFF 区別なし dedupe で「即取り消し」 吸収
+- **Pixiv 連動** (= [extension/pixiv.js](../extension/pixiv.js) 新規): `/artworks/{id}` (locale prefix も) のみ捕捉、 ブクマ / いいね を locale 横断正規表現 (= 日英中韓) で検知
+
+**新規 file**: `extension/note.js`、 `extension/pixiv.js`
+
+**変更 file**: `extension/twitter.js`、 `extension/youtube.js`、 `extension/tiktok.js`、 `extension/manifest.json`、 `extension/lib/auto-save-config.js`、 `extension/options.html`、 `extension/options.js`、 `tests/extension/auto-save-config.test.ts`
+
+**配信先サイト 5 → 7 に拡張**:
+- 既存: X / YouTube / TikTok
+- 追加: note / Pixiv
+- 残り 6 サイト (= Vimeo / SoundCloud / Bluesky / Threads / Reddit / Pinterest) は次セッション以降に 1-2 サイトずつ
+- Instagram は引き続き諦め
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 46 セクション
+
+**次セッション (= 47) の goal**: Vimeo + SoundCloud 連動 (= multi-playback vision と相性良いペア) + TikTok / note / Pixiv の user 実機検証結果反映、 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
+
+---
+
+### 旧情報 (2026-05-18 セッション 45 — PiP 常に最前面化 + TikTok ボタン連動 ship、 全部 prod 反映済)
 
 session 44 close 後、 user 指定なしモードで開始。 user 報告で **PiP が裏に行く問題** が判明 → 「業界水準が常に最前面ならそうしてほしい」 と意思決定。 加えて拡張機能の対応サイト議論で 9 サイト追加方針確定 + Instagram 諦め判断、 TikTok ボタン連動を 1 サイト目として ship。
 
-**ship 済 (= prod 反映済、 user テスト確認済 / TikTok のみ user 実機検証 未)**:
-- **PiP 常に最前面化** (= [lib/board/pip-window.ts](../lib/board/pip-window.ts) に focus 復帰ロジック 29 行追加): 親 window の `focus` / `blur` / `visibilitychange` 各イベントで PiP を `focus()` し直す。 AllMarks タブ → 別タブ → 別アプリ の各遷移で PiP が前面に復帰 (= 限界: Chrome 本体が完全に裏のときは OS 制約で救えない)
-- **TikTok ボタン連動** (= `extension/tiktok.js` 新規): いいね / 保存 (favorite) ボタン click を `data-e2e` 属性で検知 → 自動保存。 manifest matches に `www.tiktok.com` / `tiktok.com` / `m.tiktok.com` 追加、 auto-save-config に 2 source 追加 (`tiktok-like` / `tiktok-favorite`)、 options UI に 2 トグル追加
-
-**新規 file**: `extension/tiktok.js`
-
-**変更 file**: `lib/board/pip-window.ts`、 `extension/manifest.json`、 `extension/lib/auto-save-config.js`、 `extension/options.html`、 `extension/options.js`、 `tests/extension/auto-save-config.test.ts`
-
-**永続化した決定 (詳細 `docs/private/IDEAS.md` (I-05) (I-08) (I-09))**:
-- 拡張機能の対応サイト追加リスト 9 件 (= note / Pixiv / Vimeo / SoundCloud / Bluesky / Threads / Reddit / Pinterest、 +Instagram は諦め)
-- (I-08) 画面右端 floating ボタン追加案 (= content.js が右端 fixed inject、 設定で ON/OFF + 位置)
-- (I-09) cursor pill 音波化 + テーマ連動設計 (= CSS 変数抽象化 + 将来 `chrome.storage.sync` 経由で theme query)
-- B-#21 縦動画の横カード問題: **受容** (= 翌ボードセッションで backfill が直す)
+- **PiP 常に最前面化** ([lib/board/pip-window.ts](../lib/board/pip-window.ts) に 29 行): 親 window の `focus` / `blur` / `visibilitychange` で PiP を `focus()` 復帰
+- **TikTok ボタン連動** (= `extension/tiktok.js`): `data-e2e` 属性ベース、 manifest + auto-save-config + options UI + test 全部更新
 
 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 45 セクション
-
-**次セッション (= 46) の goal**: TikTok 実機検証 + note 連動追加 を念頭に [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
 
 ---
 
@@ -251,8 +263,8 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 SNS ボタン連動を 1 サイトずつ追加。 各セッションで 1-2 サイト目安。
 
-- 🔜 **note** スキ連動 (= 日本クリエイター、 自動翻訳で海外読者も)
-- 🔜 **Pixiv** ブクマ連動 (= イラスト / 漫画、 日本特化)
+- ✅ **note** スキ連動 (= session 46 で ship、 user 実機検証次セッション以降)
+- ✅ **Pixiv** ブクマ / いいね連動 (= session 46 で ship、 user 実機検証次セッション以降)
 - 🔜 **Vimeo** like / watch later 連動 (= multi-playback vision と相性)
 - 🔜 **SoundCloud** like 連動 (= 同上)
 - 🔜 **Bluesky** like / repost 連動 (= X 代替)

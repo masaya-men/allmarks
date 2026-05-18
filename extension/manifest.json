@@ -75,6 +75,20 @@
       ],
       "js": ["tiktok.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://note.com/*"
+      ],
+      "js": ["note.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.pixiv.net/*"
+      ],
+      "js": ["pixiv.js"],
+      "run_at": "document_idle"
     }
   ],
   "default_locale": "en"

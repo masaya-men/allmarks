@@ -12,6 +12,14 @@
 const DEDUPE_WINDOW_MS = 5000
 const recentlySent = new Map()
 
+// Extension reloads invalidate this script's chrome.* handle; touching
+// chrome.runtime.sendMessage afterwards throws synchronously, which the
+// .catch() below can't trap. Probe chrome.runtime.id first — it's undefined
+// in an invalidated context — and wrap the call in try/catch for races.
+function isExtensionAlive() {
+  try { return !!(chrome && chrome.runtime && chrome.runtime.id) } catch (_) { return false }
+}
+
 function pruneRecent(now) {
   for (const [k, t] of recentlySent) {
     if (now - t > DEDUPE_WINDOW_MS) recentlySent.delete(k)
@@ -79,9 +87,14 @@ document.addEventListener('click', (event) => {
   if (recentlySent.has(dedupeKey)) return
   recentlySent.set(dedupeKey, now)
   const ogp = extractVideoOgp(url)
-  chrome.runtime.sendMessage({
-    type: 'booklage:auto-save',
-    source: kind === 'like' ? 'yt-like' : 'yt-watch-later',
-    ogp,
-  }).catch(() => {})
+  if (!isExtensionAlive()) return
+  try {
+    chrome.runtime.sendMessage({
+      type: 'booklage:auto-save',
+      source: kind === 'like' ? 'yt-like' : 'yt-watch-later',
+      ogp,
+    }).catch(() => {})
+  } catch (_) {
+    // Extension context invalidated mid-send; drop silently.
+  }
 }, true)

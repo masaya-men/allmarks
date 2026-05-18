@@ -8,6 +8,9 @@ export const AUTO_SAVE_DEFAULTS = {
   autoSaveYouTubeWatchLater: true,
   autoSaveTikTokLike: true,
   autoSaveTikTokFavorite: true,
+  autoSaveNoteLike: true,
+  autoSavePixivBookmark: true,
+  autoSavePixivLike: true,
 }
 
 export const SOURCE_TO_KEY = {
@@ -17,6 +20,9 @@ export const SOURCE_TO_KEY = {
   'yt-watch-later': 'autoSaveYouTubeWatchLater',
   'tiktok-like': 'autoSaveTikTokLike',
   'tiktok-favorite': 'autoSaveTikTokFavorite',
+  'note-like': 'autoSaveNoteLike',
+  'pixiv-bookmark': 'autoSavePixivBookmark',
+  'pixiv-like': 'autoSavePixivLike',
 }
 
 export function configKeyForSource(source) {
