@@ -67,19 +67,50 @@ function extractVideoOgp(url) {
 
 function getButtonKind(target) {
   if (!target || !target.closest) return null
-  // Tag-agnostic match — Vimeo's player chrome historically used <button>
-  // but newer layouts wrap actions in <div role="button">. Limiting to
-  // <button> made session 49's user verification fail on both Like and
-  // Watch Later. Same pattern as twitter.js post-X-fix.
-  const btn = target.closest('button, [role="button"]')
+  // Tag-agnostic match — Vimeo's player chrome wraps actions in <button> on
+  // most layouts but newer ones use <div role="button"> / <a role="button">.
+  const btn = target.closest('button, [role="button"], a[role="button"]')
   if (!btn) return null
-  const label = (btn.getAttribute('aria-label') || '').toLowerCase()
-  const title = (btn.getAttribute('title') || '').toLowerCase()
-  const hay = label + ' ' + title
-  // Watch Later first — "add to watch later" contains the substring
-  // "later", which Like does not, avoiding a Like false positive.
-  if (/watch\s*later/.test(hay)) return 'watch-later'
-  if (/(^|\s)like(\s|$|\sthis|\sit)/.test(hay) || /\blike this video\b/.test(hay)) return 'like'
+  const cls = (btn.className && btn.className.toString && btn.className.toString()) || ''
+  const label = (btn.getAttribute('aria-label') || '') + ' ' + (btn.getAttribute('title') || '')
+  // OFF action exclusion FIRST — Vimeo localises both ON and OFF aria-labels
+  // and the OFF strings ("『後で見る』 から削除" / "Remove from Watch Later" /
+  // "Unlike" / "Unfollow" / etc.) contain stems we'd otherwise match. We
+  // intentionally do NOT save on OFF (= taking away a like / WL would
+  // trigger unwanted saves).
+  if (/\bunlike\b|\bremove\b|\bundo\b/i.test(label)) return null
+  if (/取り消|から削除|削除|취소|에서\s*제거|从.*删除|移除/i.test(label)) return null
+  // Tier 1: class hint (= locale-proof, survives translation). Vimeo's
+  // React components keep human-readable prefixes in classNames even after
+  // hashing (e.g. "LikeButton_likeButton__xxx", "WatchLater_button__xxx").
+  if (/watch.?later/i.test(cls)) return 'watch-later'
+  if (/(^|[^a-z])Like([^a-z]|$)/i.test(cls)) return 'like'
+  // Tier 2: localised aria-label / title fallback. Vimeo ships in ~17
+  // languages — cover the major ones. Watch Later FIRST because Vimeo's
+  // "Add to Watch Later" / "後で見る に追加" strings do not contain stems
+  // that overlap with Like.
+  if (
+    /watch\s*later/i.test(label) ||                       // en
+    /後で見る/.test(label) ||                              // ja
+    /나중에\s*보|나중에\s*볼/.test(label) ||                // ko
+    /稍后观看|稍後觀看/.test(label) ||                       // zh-CN / zh-TW
+    /ver\s*más\s*tarde|ver\s*mas\s*tarde/i.test(label) || // es
+    /regarder\s*plus\s*tard|à\s*voir\s*plus\s*tard/i.test(label) || // fr
+    /später\s*(an)?sehen/i.test(label) ||                 // de
+    /assistir\s*mais\s*tarde/i.test(label) ||             // pt
+    /guarda(re)?\s*più\s*tardi/i.test(label)              // it
+  ) return 'watch-later'
+  if (
+    /\blike\b/i.test(label) ||                            // en
+    /いいね/.test(label) ||                                // ja
+    /좋아/.test(label) ||                                  // ko
+    /喜欢|喜歡|赞/.test(label) ||                           // zh
+    /me\s*gusta/i.test(label) ||                          // es
+    /j['']aime/i.test(label) ||                           // fr
+    /gefällt\s*mir|liken/i.test(label) ||                 // de
+    /gostei|curtir/i.test(label) ||                       // pt
+    /mi\s*piace/i.test(label)                             // it
+  ) return 'like'
   return null
 }
 

@@ -64,18 +64,36 @@ function extractTrackOgp(url) {
 
 function getButtonKind(target) {
   if (!target || !target.closest) return null
-  // Tag-agnostic match — SoundCloud uses <button> on most surfaces but
-  // some current chrome wraps the Like action in <div role="button">.
-  // Limiting to <button> made session 49's user verification fail.
-  // Same pattern as twitter.js / vimeo.js post-fix.
-  const btn = target.closest('button, [role="button"]')
+  // Tag-agnostic match — SoundCloud uses <button> on most surfaces but the
+  // bottom mini-player sometimes wraps actions in <a role="button">.
+  const btn = target.closest('button, [role="button"], a[role="button"]')
   if (!btn) return null
-  const label = (btn.getAttribute('aria-label') || '').toLowerCase()
-  const title = (btn.getAttribute('title') || '').toLowerCase()
-  const cls = (btn.className || '').toString().toLowerCase()
-  if (/\blike\b/.test(label) || /\blike\b/.test(title) || /sc-button-like/.test(cls)) {
-    return 'like'
-  }
+  const cls = (btn.className && btn.className.toString && btn.className.toString()) || ''
+  const label = (btn.getAttribute('aria-label') || '') + ' ' + (btn.getAttribute('title') || '')
+  // Class `sc-button-like` is on every SoundCloud Like button — track
+  // detail toolbar AND .playbackSoundBadge bottom mini-player. Stable
+  // across all locales (= SoundCloud doesn't localise this class).
+  const hasLikeClass = /\bsc-button-like\b/.test(cls)
+  // OFF action — when the track is already Liked, SoundCloud adds
+  // `sc-button-selected` and flips aria-label to "Unlike" / locale variant.
+  // We skip OFF to avoid saving when the user is unliking.
+  if (hasLikeClass && /\bsc-button-selected\b/.test(cls)) return null
+  if (/\bunlike\b/i.test(label)) return null
+  if (/取り消|좋아요\s*취소|取消喜欢|取消讚/i.test(label)) return null
+  if (hasLikeClass) return 'like'
+  // Fallback for users on logged-in localised SoundCloud where class hint
+  // may be missing (rare). Covers ja / en / ko / zh / es / fr / de / pt / it.
+  if (
+    /\blike\b/i.test(label) ||           // en
+    /いいね/.test(label) ||                // ja
+    /좋아요|좋아/.test(label) ||            // ko
+    /喜欢|喜歡|赞/.test(label) ||          // zh
+    /me\s*gusta/i.test(label) ||         // es
+    /j['']aime/i.test(label) ||          // fr
+    /gefällt\s*mir|liken/i.test(label) || // de
+    /gostei|curtir/i.test(label) ||      // pt
+    /mi\s*piace/i.test(label)            // it
+  ) return 'like'
   return null
 }
 
