@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import type { BoardFilter } from '@/lib/board/types'
 import type { MoodRecord } from '@/lib/storage/indexeddb'
-import { t } from '@/lib/i18n/t'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import styles from './FilterPill.module.css'
 
@@ -14,10 +13,12 @@ type Props = {
   readonly counts: { readonly all: number; readonly inbox: number; readonly archive: number; readonly dead: number }
 }
 
+/** Chrome label vocab — fixed English across all 15 languages
+ *  (= session 42 chrome-English policy, AllMarks branding aligned). */
 function label(f: BoardFilter, moods: ReadonlyArray<MoodRecord>): string {
-  if (f === 'all') return t('board.filter.all')
-  if (f === 'inbox') return t('board.filter.inbox')
-  if (f === 'archive') return t('board.filter.archive')
+  if (f === 'all') return 'ALL'
+  if (f === 'inbox') return 'INBOX'
+  if (f === 'archive') return 'ARCHIVE'
   if (f === 'dead') return 'DEAD LINKS'
   const moodId = f.slice(5)
   return moods.find((m) => m.id === moodId)?.name ?? '—'
@@ -72,7 +73,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
             className={`${styles.item} ${value === 'all' ? styles.active : ''}`.trim()}
             onClick={() => select('all')}
           >
-            {t('board.filter.all')}
+            ALL
             <span style={{ marginLeft: 'auto', color: 'var(--text-meta)' }}>{counts.all}</span>
           </button>
           <button
@@ -80,7 +81,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
             className={`${styles.item} ${value === 'inbox' ? styles.active : ''}`.trim()}
             onClick={() => select('inbox')}
           >
-            {t('board.filter.inbox')}
+            INBOX
             <span style={{ marginLeft: 'auto', color: 'var(--text-meta)' }}>{counts.inbox}</span>
           </button>
           <button
@@ -88,7 +89,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
             className={`${styles.item} ${value === 'archive' ? styles.active : ''}`.trim()}
             onClick={() => select('archive')}
           >
-            {t('board.filter.archive')}
+            ARCHIVE
             <span style={{ marginLeft: 'auto', color: 'var(--text-meta)' }}>{counts.archive}</span>
           </button>
           {counts.dead > 0 && (
@@ -98,7 +99,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
               onClick={() => select('dead')}
             >
               <span className={styles.deadDot} />
-              リンク切れ
+              DEAD LINKS
               <span style={{ marginLeft: 'auto', color: 'rgba(220,80,80,0.85)' }}>{counts.dead}</span>
             </button>
           )}

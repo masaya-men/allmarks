@@ -121,7 +121,7 @@
 }
 
 .drawer[data-open='true'] {
-  max-height: 200px;
+  max-height: 320px;
   padding: 22px 24px 24px;
   pointer-events: auto;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
