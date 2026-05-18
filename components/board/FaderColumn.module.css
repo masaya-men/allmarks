@@ -1,0 +1,98 @@
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.unit {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.fader {
+  position: relative;
+  width: 22px;
+  height: 110px;
+}
+
+.track {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 2px;
+  background: linear-gradient(to top, #333 0%, #555 50%, #333 100%);
+  border-radius: 1px;
+}
+
+.defaultMark {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.42);
+  pointer-events: none;
+}
+
+.handle {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 7px;
+  background: #ff9d3f;
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(255, 157, 63, 0.6),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background-image:
+    linear-gradient(to bottom,
+      transparent 0%,
+      transparent 25%,
+      rgba(0, 0, 0, 0.35) 25%,
+      rgba(0, 0, 0, 0.35) calc(25% + 1px),
+      transparent calc(25% + 1px),
+      transparent 75%,
+      rgba(0, 0, 0, 0.35) 75%,
+      rgba(0, 0, 0, 0.35) calc(75% + 1px),
+      transparent calc(75% + 1px),
+      transparent 100%);
+  pointer-events: none;
+}
+
+.ruler {
+  position: relative;
+  width: 18px;
+  height: 110px;
+}
+
+.tick {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  height: 1px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.tick.minor { width: 6px; background: #444; }
+.tick.major { width: 12px; background: #777; }
+.tick.centerMajor { width: 14px; background: #aaa; }
+.tick.hi {
+  background: #ff9d3f !important;
+  box-shadow: 0 0 4px rgba(255, 157, 63, 0.6);
+}
+
+.label {
+  color: rgba(255, 255, 255, 0.55);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
