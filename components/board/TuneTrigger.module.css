@@ -22,10 +22,12 @@
   white-space: nowrap;
   transition: color 0.15s, transform 0.15s;
   /* idle/expanded で button 高さを固定 (= .sliderWrap 18px 分を idle でも確保)
-     → hover 時に POP OUT / SHARE が縦にズレるのを防ぐ。 */
+     → hover 時に POP OUT / SHARE が縦にズレるのを防ぐ。
+     box-sizing: border-box (グローバル既定) のため、 min-height は padding
+     込みの総高さ。 expanded 状態の実測 34px に揃える (= padding 16 + sliderWrap 18)。 */
   display: inline-flex;
   align-items: center;
-  min-height: 18px;
+  min-height: 34px;
 }
 .trigger:hover {
   color: rgba(255, 255, 255, 1);
