@@ -42,30 +42,58 @@ function buildReadoutCells(widthPx: number, gapPx: number): Cell[] {
   return cells
 }
 
-/** Emit HTML for the readout. All cells render as flat spans. W/G number
- *  cells use .num color; the 'reset' (= DEFAULT) cells get .reset class +
- *  state-based grey when both values are at default. `getCh` returns the
- *  character to display, or null to omit (= used during close animation). */
+/** Emit HTML for the readout. When `wrapNumGroups` is true (= settled
+ *  idle-readout phase), consecutive scope='w' or 'g' cells are wrapped in
+ *  a `.numGroup` span carrying a `data-glitch-text` of the group's text.
+ *  CSS attaches `::before/::after` RGB ghosts to that wrapper so the
+ *  glitch ghost width matches each number block (~50px) instead of the
+ *  full expanded button (~195px). During opening/closing animation we
+ *  keep wrapNumGroups=false so the scramble re-renders are cheap flat
+ *  spans without constantly recreating numGroup boundaries. */
 function emitReadoutHtml(
   cells: ReadonlyArray<AnimatedCell | Cell>,
   getCh: (cell: AnimatedCell | Cell, idx: number) => string | null,
   widthPx: number,
   gapPx: number,
+  wrapNumGroups: boolean = false,
 ): { html: string; anyContent: boolean } {
+  const isStateDefault =
+    Math.abs(widthPx - BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX) < 0.005 &&
+    Math.abs(gapPx - BOARD_SLIDERS.CARD_GAP_DEFAULT_PX) < 0.005
+
   let html = ''
   let anyContent = false
-  for (let i = 0; i < cells.length; i++) {
+  let i = 0
+  while (i < cells.length) {
     const cell = cells[i]
+
+    if (wrapNumGroups && (cell.scope === 'w' || cell.scope === 'g')) {
+      const scope = cell.scope
+      let groupHtml = ''
+      let groupText = ''
+      while (i < cells.length && cells[i].scope === scope) {
+        const ch = getCh(cells[i], i)
+        if (ch !== null) {
+          anyContent = true
+          groupHtml += `<span class="${styles.cell} ${styles.num}">${ch}</span>`
+          groupText += ch
+        }
+        i++
+      }
+      if (groupText.length > 0) {
+        html += `<span class="${styles.numGroup}" data-glitch-text="${groupText}">${groupHtml}</span>`
+      }
+      continue
+    }
+
     const ch = getCh(cell, i)
-    if (ch === null) continue
+    if (ch === null) { i++; continue }
     anyContent = true
     if (cell.scope === 'w' || cell.scope === 'g') {
       html += `<span class="${styles.cell} ${styles.num}">${ch}</span>`
+      i++
       continue
     }
-    const isStateDefault =
-      Math.abs(widthPx - BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX) < 0.005 &&
-      Math.abs(gapPx - BOARD_SLIDERS.CARD_GAP_DEFAULT_PX) < 0.005
     const dk = cell.scope === 'reset' ? 'reset' : cell.kind
     const kindClass = cell.scope === 'reset' ? styles.reset : styles[cell.kind]
     const cls =
@@ -73,6 +101,7 @@ function emitReadoutHtml(
         ? `${styles.cell} ${kindClass} ${styles.resetIdle}`
         : `${styles.cell} ${kindClass}`
     html += `<span class="${cls}" data-cell-kind="${dk}">${ch}</span>`
+    i++
   }
   return { html, anyContent }
 }
@@ -125,7 +154,7 @@ export function TuneTrigger({
     const el = btnRef.current
     if (!el) return
     const cells = buildReadoutCells(widthRef.current, gapRef.current)
-    const { html } = emitReadoutHtml(cells, (c) => c.ch, widthRef.current, gapRef.current)
+    const { html } = emitReadoutHtml(cells, (c) => c.ch, widthRef.current, gapRef.current, true)
     el.innerHTML = html
   }, [])
 
@@ -386,9 +415,7 @@ export function TuneTrigger({
         aria-haspopup="dialog"
         aria-expanded={expanded}
         onClick={handleClick}
-        data-glitch-text={expanded
-          ? `${widthPx.toFixed(2)} · ${gapPx.toFixed(2)} · DEFAULT`
-          : visibleLabel}
+        data-glitch-text={visibleLabel}
       >
         {visibleLabel}
       </button>

@@ -48,19 +48,59 @@
   color: rgba(255, 255, 255, 1);
 }
 
-.trigger:hover::before {
+/* Idle TUNE hover (= aria-expanded='false'): button-wide ghost on the 4-char
+   "TUNE" label, comparable width to POPOUT/SHARE. When expanded, this rule
+   doesn't match → button ghost suppressed → only the per-numGroup ghosts
+   below fire, keeping the visual glitch width comparable to other chrome
+   (~50px per number block instead of ~195px for the full readout). */
+.trigger[aria-expanded='false']:hover::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.trigger:hover::after {
+.trigger[aria-expanded='false']:hover::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 700ms steps(7, end);
+}
+
+/* Expanded TUNE: glitch ghost lives on each W/G number group (= "267.84" and
+   "97.21" each get their own ::before/::after RGB copy). The " · " separators
+   and "DEFAULT" label stay static — only the digits glitch. */
+.numGroup {
+  position: relative;
+  display: inline-block;
+}
+
+.numGroup::before,
+.numGroup::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  display: inline-block;
+  pointer-events: none;
+  opacity: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  -webkit-text-stroke: 0;
+  paint-order: fill;
+  white-space: nowrap;
+}
+
+.trigger:hover .numGroup::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 700ms steps(7, end);
+}
+
+.trigger:hover .numGroup::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trigger:hover::before,
-  .trigger:hover::after {
+  .trigger[aria-expanded='false']:hover::before,
+  .trigger[aria-expanded='false']:hover::after,
+  .trigger:hover .numGroup::before,
+  .trigger:hover .numGroup::after {
     animation: none;
     opacity: 0;
   }
