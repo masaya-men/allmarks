@@ -71,8 +71,13 @@ function extractTweetOgp(article, url) {
 
 function getButtonKind(target) {
   if (!target || !target.closest) return null
-  if (target.closest('button[data-testid="like"]')) return 'like'
-  if (target.closest('button[data-testid="bookmark"]')) return 'bookmark'
+  // Tag-agnostic match — X's like button is a <button> today but the
+  // surrounding A/B layouts and userscripts in the wild use plain
+  // [data-testid="like"] for resilience against div role=button rewrites.
+  // OFF actions ("unlike" / "removeBookmark") have different testids and
+  // are intentionally not captured here.
+  if (target.closest('[data-testid="like"]')) return 'like'
+  if (target.closest('[data-testid="bookmark"]')) return 'bookmark'
   return null
 }
 
