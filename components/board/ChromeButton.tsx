@@ -1,7 +1,7 @@
 'use client'
 
 import { type ReactElement } from 'react'
-import { useIdleMicroScramble } from '@/lib/board/use-idle-scramble'
+import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import styles from './ChromeButton.module.css'
 
 type Props = {
@@ -19,7 +19,7 @@ export function ChromeButton({
   className,
   'data-testid': dataTestId,
 }: Props): ReactElement {
-  const displayText = useIdleMicroScramble(label)
+  const { display, triggerBurst } = useChromeScramble(label)
   const cls = className ? `${styles.btn} ${className}` : styles.btn
 
   return (
@@ -27,10 +27,11 @@ export function ChromeButton({
       type="button"
       className={cls}
       onClick={onClick}
+      onMouseEnter={triggerBurst}
       disabled={disabled}
       data-testid={dataTestId}
     >
-      {displayText}
+      {display}
     </button>
   )
 }

@@ -24,7 +24,7 @@
 .pill:hover {
   color: var(--chrome-text-color-hover);
   -webkit-text-stroke-color: var(--chrome-text-stroke-color-hover);
-  animation: glitch-chrome 220ms steps(8, end);
+  animation: glitch-chrome 300ms steps(10, end);
 }
 
 @media (prefers-reduced-motion: reduce) {

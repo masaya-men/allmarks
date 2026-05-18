@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactElement } from 'react'
 import type { BoardFilter } from '@/lib/board/types'
 import type { MoodRecord } from '@/lib/storage/indexeddb'
 import { t } from '@/lib/i18n/t'
-import { useIdleMicroScramble } from '@/lib/board/use-idle-scramble'
+import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import styles from './FilterPill.module.css'
 
 type Props = {
@@ -34,7 +34,7 @@ function countFor(f: BoardFilter, counts: { all: number; inbox: number; archive:
 export function FilterPill({ value, onChange, moods, counts }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const displayLabel = useIdleMicroScramble(label(value, moods))
+  const { display: displayLabel, triggerBurst } = useChromeScramble(label(value, moods))
 
   useEffect(() => {
     if (!open) return
@@ -56,6 +56,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
         type="button"
         className={styles.pill}
         onClick={() => setOpen((v) => !v)}
+        onMouseEnter={triggerBurst}
         aria-haspopup="menu"
         aria-expanded={open}
         data-testid="filter-pill"

@@ -24,7 +24,7 @@
 }
 .trigger:hover {
   color: rgba(255, 255, 255, 1);
-  animation: glitch-chrome 220ms steps(8, end);
+  animation: glitch-chrome 300ms steps(10, end);
 }
 .trigger:focus-visible {
   outline: 1px dashed rgba(255, 255, 255, 0.5);
@@ -98,4 +98,37 @@
   display: flex;
   gap: 28px;
   align-items: flex-end;
+}
+
+/* Session 43: 機械の注意書き風 operations legend。 audio mixer / oscilloscope
+   の刻印ラベルを真似て、 9px monospace + 強い letter-spacing + 薄い grey で
+   「機材の側面に印刷された説明」 のトーン。 */
+.opsLegend {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.10);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.32);
+  white-space: nowrap;
+}
+
+.opsLabel {
+  color: rgba(255, 157, 63, 0.55);
+  letter-spacing: 0.20em;
+}
+
+.opsRow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.opsSep {
+  color: rgba(255, 255, 255, 0.14);
 }

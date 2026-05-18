@@ -18,7 +18,7 @@
 
 .btn:hover {
   color: rgba(255, 255, 255, 1);
-  animation: glitch-chrome 220ms steps(8, end);
+  animation: glitch-chrome 300ms steps(10, end);
 }
 
 .btn:disabled {

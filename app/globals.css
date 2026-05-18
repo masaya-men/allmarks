@@ -677,30 +677,39 @@ ol {
 }
 
 /* Session 43: glitch hover effect — RGB shift + horizontal clip-tear,
-   used by TUNE / POPOUT / SHARE / FilterPill chrome on :hover.
-   Palette: white shadow + black shadow (= digital signal corruption look). */
+   used by TUNE / POPOUT / SHARE / FilterPill chrome on :hover. Palette:
+   bright white shadow + brand orange shadow (= visible digital corruption
+   on dark canvas). Hover burst (= JS-driven char scramble) plays at the
+   same time, so this CSS layer adds the spatial / chromatic shift while
+   the char scramble does the textual noise. */
 @keyframes glitch-chrome {
-  0%   { transform: none; text-shadow: none; clip-path: none; }
-  15%  { transform: translate(-2px, 0);
-         text-shadow: 2px 0 rgba(255, 255, 255, 0.7), -2px 0 rgba(0, 0, 0, 0.6); }
-  30%  { transform: translate(2px, 0);
-         text-shadow: -2px 0 rgba(255, 255, 255, 0.6), 2px 0 rgba(0, 0, 0, 0.5);
-         clip-path: inset(40% 0 30% 0); }
-  45%  { transform: translate(-1px, 0);
-         text-shadow: 1px 0 rgba(255, 255, 255, 0.5);
-         clip-path: inset(5% 0 65% 0); }
-  60%  { transform: translate(1.5px, 0);
-         text-shadow: -1.5px 0 rgba(255, 255, 255, 0.5);
-         clip-path: none; }
-  75%  { transform: translate(-0.5px, 0);
-         text-shadow: none;
-         clip-path: inset(65% 0 10% 0); }
-  100% { transform: none; text-shadow: none; clip-path: none; }
+  0%   { transform: none;
+         text-shadow: none; }
+  10%  { transform: translate(-3px, 0) skewX(-2deg);
+         text-shadow: 3px 0 rgba(255, 255, 255, 0.95),
+                      -3px 0 rgba(255, 157, 63, 0.85); }
+  20%  { transform: translate(4px, 0) skewX(3deg);
+         text-shadow: -3px 0 rgba(255, 255, 255, 0.85),
+                      3px 0 rgba(255, 157, 63, 0.8); }
+  30%  { transform: translate(-2px, 1px);
+         text-shadow: 2px 0 rgba(255, 255, 255, 0.7),
+                      -2px 0 rgba(255, 157, 63, 0.6); }
+  40%  { transform: translate(3px, -1px) skewX(-1deg);
+         text-shadow: -3px 0 rgba(255, 255, 255, 0.95),
+                      3px 0 rgba(255, 157, 63, 0.9); }
+  50%  { transform: translate(-2px, 0);
+         text-shadow: 2px 0 rgba(255, 255, 255, 0.6); }
+  65%  { transform: translate(2px, 0);
+         text-shadow: -2px 0 rgba(255, 157, 63, 0.7); }
+  80%  { transform: translate(-1px, 0);
+         text-shadow: 1px 0 rgba(255, 255, 255, 0.5); }
+  100% { transform: none;
+         text-shadow: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   @keyframes glitch-chrome {
-    0%, 100% { transform: none; text-shadow: none; clip-path: none; }
+    0%, 100% { transform: none; text-shadow: none; }
   }
 }
 

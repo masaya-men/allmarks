@@ -411,6 +411,18 @@ export function TuneTrigger({
             label="G"
           />
         </div>
+        <div className={styles.opsLegend} aria-hidden="true">
+          <span className={styles.opsLabel}>OPERATIONS</span>
+          <span className={styles.opsRow}>
+            <span>DRAG TO TUNE</span>
+            <span className={styles.opsSep}>·</span>
+            <span>SHIFT FOR FAST</span>
+            <span className={styles.opsSep}>·</span>
+            <span>CLICK TO JUMP</span>
+            <span className={styles.opsSep}>·</span>
+            <span>CTRL+Z TO UNDO</span>
+          </span>
+        </div>
       </div>
     </span>
   )
