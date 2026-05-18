@@ -50,9 +50,12 @@
   -webkit-text-stroke: var(--chrome-text-stroke-width) var(--chrome-text-stroke-color);
   paint-order: stroke fill;
   text-shadow: var(--chrome-text-shadow);
-  /* Session 43: glitch ghost positioning — same pattern as chrome buttons. */
+  /* Session 43: glitch ghost positioning — same pattern as chrome buttons.
+     pointer-events: auto so :hover fires (= meterWrap が pointer-events:
+     none で hover を殺してるのを counter スコープで上書き)。 */
   position: relative;
   display: inline-block;
+  pointer-events: auto;
 }
 
 .meterCounter::before,
@@ -75,21 +78,23 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* Session 43: glitch on meter hover — unified with chrome buttons
-   (= same glitch-shift-a/b keyframes / 700ms / steps(7) / ±4-5px shift). */
-.meterWrap:hover .meterCounter::before {
+/* Session 43: glitch on counter hover — unified with chrome buttons
+   (= same glitch-shift-a/b keyframes / 700ms / steps(7) / ±4-5px shift).
+   Trigger zone は counter 自身 (= meterWrap は pointer-events: none で
+   click-through を維持しつつ、 counter にだけ hover を許可)。 */
+.meterCounter:hover::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.meterWrap:hover .meterCounter::after {
+.meterCounter:hover::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .meterWrap:hover .meterCounter::before,
-  .meterWrap:hover .meterCounter::after {
+  .meterCounter:hover::before,
+  .meterCounter:hover::after {
     animation: none;
     opacity: 0;
   }
