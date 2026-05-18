@@ -10,7 +10,7 @@ import styles from './TuneTrigger.module.css'
 const STAGGER_MS = 11
 const SCRAMBLE_MIN_MS = 125
 const SCRAMBLE_MAX_MS = 190
-const LEAVE_GRACE_MS = 180
+const LEAVE_GRACE_MS = 1000
 
 /** Amendment 1: super-precision drag math. 30000 = 3× more precise than
  *  PrecisionSlider's 10000 — 1 mouse pixel ≈ 0.02 W unit / 0.01 G unit.

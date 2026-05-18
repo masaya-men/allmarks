@@ -45,7 +45,7 @@ describe('TuneTrigger — hover open', () => {
 })
 
 describe('TuneTrigger — close on mouseleave', () => {
-  it('mouseleave after 180ms grace returns to idle TUNE label', async () => {
+  it('mouseleave after 1000ms grace returns to idle TUNE label', async () => {
     const { getByTestId } = render(
       <TuneTrigger
         widthPx={267.84}
@@ -62,8 +62,8 @@ describe('TuneTrigger — close on mouseleave', () => {
     expect(btn.textContent).toBe('267.84 · 97.21 · DEFAULT')
 
     fireEvent.mouseLeave(btn)
-    // Wait grace (180ms) + close animation (≈ 21*11 + 190 = 421ms) = ~700ms safe
-    await new Promise<void>((resolve) => setTimeout(resolve, 700))
+    // Wait grace (1000ms) + close animation (≈ 21*11 + 190 = 421ms) = ~1500ms safe
+    await new Promise<void>((resolve) => setTimeout(resolve, 1500))
     expect(btn.getAttribute('aria-expanded')).toBe('false')
     expect(btn.textContent).toBe('TUNE')
   })
