@@ -146,6 +146,7 @@ export function ScrollMeter({
   const n1Ref = useRef<HTMLSpanElement>(null)
   const n2Ref = useRef<HTMLSpanElement>(null)
   const totalSpanRef = useRef<HTMLSpanElement>(null)
+  const counterWrapRef = useRef<HTMLDivElement>(null)
 
   // Mirror props into refs so the rAF loop reads the latest values each
   // frame without restarting the loop / triggering re-renders.
@@ -357,6 +358,17 @@ export function ScrollMeter({
       writeDigit(n2Ref.current, n2SettledRef.current, n2ScrambleUntilRef.current, JITTER_PROB_RANGE)
       writeDigit(totalSpanRef.current, totalSettledRef.current, totalScrambleUntilRef.current, JITTER_PROB_TOTAL)
 
+      // Session 43: keep meterCounter's data-glitch-text in sync with the
+      // currently-rendered digits so the ::before / ::after RGB ghosts
+      // mirror what the user sees (= same glitch language as chrome buttons).
+      const cw = counterWrapRef.current
+      if (cw) {
+        const a = n1Ref.current?.textContent ?? ''
+        const b = n2Ref.current?.textContent ?? ''
+        const c = totalSpanRef.current?.textContent ?? ''
+        cw.setAttribute('data-glitch-text', `${a} — ${b} / ${c}`)
+      }
+
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
@@ -422,7 +434,12 @@ export function ScrollMeter({
         {/* Session 43: 操作ヒントは TUNE drawer の opsLegend に集約済 (= 機械の
             注意書き的に readout panel 内へ移動)。 ScrollMeter は数値 counter
             + track のみのミニマム表示に戻す。 */}
-        <div className={styles.meterCounter} aria-hidden="true">
+        <div
+          ref={counterWrapRef}
+          className={styles.meterCounter}
+          aria-hidden="true"
+          data-glitch-text=""
+        >
           <span ref={n1Ref}>{pad4(n1)}</span>
           {' '}
           <span className={styles.meterDim}>—</span>
