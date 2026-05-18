@@ -64,7 +64,11 @@ function extractTrackOgp(url) {
 
 function getButtonKind(target) {
   if (!target || !target.closest) return null
-  const btn = target.closest('button')
+  // Tag-agnostic match — SoundCloud uses <button> on most surfaces but
+  // some current chrome wraps the Like action in <div role="button">.
+  // Limiting to <button> made session 49's user verification fail.
+  // Same pattern as twitter.js / vimeo.js post-fix.
+  const btn = target.closest('button, [role="button"]')
   if (!btn) return null
   const label = (btn.getAttribute('aria-label') || '').toLowerCase()
   const title = (btn.getAttribute('title') || '').toLowerCase()

@@ -2844,3 +2844,38 @@ session 49 close の引き継ぎメッセージで全 11 サイト × 全 18 ボ
 - **data-test-id 優先 + aria-label fallback の二段戦略** (= Pinterest が初の本格適用) は React 製サイト全般で安定。 aria-label は locale 化されると追加対応が必要だが、 data-test-id は内部 stable なので長期的に強い。 既存サイト (= TikTok の `data-e2e`) と同じ思想で、 今後新しい React サイトを追加する時はまず data-test-id を最優先で探す方針が確立
 - **flaky テスト (= BroadcastChannel async)**: vitest 全件並列実行時に `tests/lib/channel.test.ts` が 1 件 fail することが session 49 で初観測。 単体再実行で PASS なので並列タイミング依存。 触れた領域外なので今回は記録のみ、 将来 channel.test.ts に触る session で `await vi.runAllTimersAsync()` or fake timer 化で固める方針 (= 今すぐは不要)
 
+### Phase 5: user 実機検証 → 大幅 scope 削減 + selector tag-agnostic 化 (= session 49 後半)
+
+sprint 完走の引き継ぎで全 11 サイト × 18 ボタンのチェックシートを 1 度提示 → user 実機検証結果:
+- **動いた (4)**: X ブクマ / YouTube 高評価 / YouTube 後で見る / note スキ
+- **動かなかった (7)**: X いいね / Pixiv 両方 / Vimeo 両方 / SoundCloud / Pinterest
+- **未検証 (7)**: TikTok / Bluesky / Threads / Reddit (= user アカウントなし or 操作不明)
+
+途中で **Extension context invalidated** error (= booklage.pages.dev/board の content.js L138 PiP reporter) と **ブックマーレット沈黙** 報告 → session 46 で 5 file に入れた防御コードが content.js に未適用と判明、 content.js L125 (ブックマーレット連動) + L138 (PiP reporter) の sendMessage 2 箇所に `isExtensionAlive()` ガード + try/catch wrap 追加で fix。
+
+**X いいね fix の分析**: ブクマ ○ / いいね × の split から、 selector の **`button[data-testid="like"]` の `button` タグ依存** が A/B test layout で取れない仮説が浮上。 general-purpose subagent で Playwright 実機 + 2024-2025 active な userscript 群の selector 標準を調査 → 業界標準は **タグ非依存 `[data-testid="like"]` / `[data-testid="bookmark"]`** で書く。 修正 → user 再検証で X いいね ○ 確定。
+
+**user 判断で大幅 scope 削減**: 「動かないものを 11 サイト並べるより品質担保」 を方針合意。 user 質問「Vimeo / SoundCloud はどれくらい使われてる?」 に対し、 Vimeo (= 3000 万 MAU、 クリエイター層) + SoundCloud (= 7600 万 MAU、 インディー音楽) は AllMarks の memory 永続化済「multi-playback vision」 (= 複数動画 / 音楽を board 上で同時再生) と直結、 残す価値ある旨を端的に説明。 user 確定:
+
+**最終 scope (= 5 サイト 8 ボタン)**:
+- ✅ 残す: X (2) / YouTube (2) / note (1) / Vimeo (2) / SoundCloud (1)
+- ❌ 削除: TikTok (2) / Bluesky (2) / Threads (1) / Reddit (2) / Pixiv (2) / Pinterest (1) = **6 file 11 source 削除**
+
+**削除 sprint**: 6 file 削除 (`tiktok.js` / `bluesky.js` / `threads.js` / `reddit.js` / `pixiv.js` / `pinterest.js`)、 manifest から 6 content_scripts entry 削除、 auto-save-config から 11 source + 11 default 削除 (= 18 → 8 source)、 options から 11 toggle 削除、 test を 11 expect → 8 expect に再構成 (+ 削除済 source が null を返すテスト追加)。
+
+**Vimeo + SoundCloud fix**: `target.closest('button')` → `target.closest('button, [role="button"]')` でタグ非依存化 (= X いいね と同じパターン)。 既存の aria-label / title / className 検知ロジックは温存、 button selector のみ拡張。
+
+**検証**: tsc clean / vitest auto-save-config 6/6 PASS / build 成功 / wrangler deploy 済。 commit `7bc4498c` deploy で `https://booklage.pages.dev` 反映。
+
+**重要原則の明文化**: 削除サイトでも **全 URL 保存経路** (= ショートカット Ctrl+Shift+B / 右クリック → Save to AllMarks / 拡張機能アイコン click / ブックマーレット) は **生きたまま**。 削除したのは「ボタン押すだけで自動保存」 という追加連動だけ。 user 確認質問「切り捨てサイトも普通に右クリック保存とブックマーレットでもいけますよね?」 → Yes、 を明確化して合意。
+
+**TODO に積んだ追加 bug (= B-#22)**: X いいね 動作確認の際に user が報告した「長文文章 tweet の Lightbox 表示で冒頭欠落、 末尾部分だけ表示」 (= 例 `https://x.com/yurinel0602/status/2056212099488235790`)。 ボードカードでは冒頭から長文表示されるが、 Lightbox を開くと末尾部分だけ。 ボードカード末尾「良...」 直後の文「いじゃん。 ファンが見たら...」 が Lightbox 内に表示される接合関係。 user 補足「経路を話しただけ、 拡張が原因かは未確定」。 経路調査が必要 (= 拡張機能の twitter.js text 抽出か、 Lightbox の react-tweet 描画か、 backfill 経路か) → TODO.md の §未対応バグ §表示・サムネ系 に B-#22 として永続化。
+
+### 学び (= Phase 5 追加分)
+
+- **「ship 完走」 後の user 実機検証で大幅 scope 縮小は健全**: session 49 前半で 8 追加サイト sprint「完走」 と narrative に書いた直後、 user 検証で 11 サイト中 4 ボタンのみ ○ という現実。 「完走」 = コード書いて deploy できた、 という意味でしかなく、 「user が日常的に使えるか」 は別の question。 sprint 完走 narrative の後に必ず user 実機検証フェーズを置く workflow が機能した
+- **未検証アカウントは「使うかもしれない」 ではなく「使うかどうか user に直接聞く」**: TikTok / Bluesky / Threads / Reddit はアカウント検証不能だが、 user 視点で「アカウント作ってまで使う気はない」 サイトは検証不能 = 切り捨て対象。 私から「Bluesky は招待制じゃないですよ」 と誤認補足したが、 user の「使う意思」 自体が変わらなかった。 「技術的に動くか」 と「user の使用意思」 は別、 後者が優先
+- **selector タグ非依存化は SNS 連動の汎用 fix pattern**: X / Vimeo / SoundCloud の 3 サイトで同じ「button タグ依存 → [role="button"] 含めて捕捉」 で fix。 今後新規サイト追加時は最初から `target.closest('button, [role="button"]')` で書く。 既存の note.js / youtube.js は同じ pattern かは未検証だが、 動いてるので触らない (= 動いてる side は触らない原則)
+- **scope 削減は記録残せば後でも復活可能**: 削除した 6 サイトの code は git history (= `b75e88f` ~ `0a72d3a` 周辺の sprint 完走 commit) に残ってる。 将来 user の使用パターンが変わったら復活可能。 TODO_COMPLETED.md の sprint narrative に削除理由も書いたので「なぜ消したか」 が記録されてる
+- **B-#22 長文 tweet Lightbox bug の経路特定が次の調査ネタ**: user 報告のスクショから「拡張機能側 (= twitter.js の text 抽出) か Lightbox 側 (= react-tweet 描画) かのどちらか」 までしか絞れていない。 切り分け方法 = (a) ブックマーレット経由で同じ tweet を保存して比較、 (b) 拡張機能経由保存の IDB データを直接 dump して description フィールドの実値を見る、 (c) Lightbox で React DevTools の component tree を見る、 等が候補
+

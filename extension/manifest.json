@@ -69,25 +69,9 @@
     },
     {
       "matches": [
-        "https://www.tiktok.com/*",
-        "https://tiktok.com/*",
-        "https://m.tiktok.com/*"
-      ],
-      "js": ["tiktok.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
         "https://note.com/*"
       ],
       "js": ["note.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://www.pixiv.net/*"
-      ],
-      "js": ["pixiv.js"],
       "run_at": "document_idle"
     },
     {
@@ -104,42 +88,6 @@
         "https://www.soundcloud.com/*"
       ],
       "js": ["soundcloud.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://bsky.app/*",
-        "https://www.bsky.app/*"
-      ],
-      "js": ["bluesky.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://www.threads.com/*",
-        "https://threads.com/*",
-        "https://www.threads.net/*",
-        "https://threads.net/*"
-      ],
-      "js": ["threads.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://www.reddit.com/*",
-        "https://reddit.com/*",
-        "https://new.reddit.com/*"
-      ],
-      "js": ["reddit.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://www.pinterest.com/*",
-        "https://pinterest.com/*",
-        "https://jp.pinterest.com/*"
-      ],
-      "js": ["pinterest.js"],
       "run_at": "document_idle"
     }
   ],

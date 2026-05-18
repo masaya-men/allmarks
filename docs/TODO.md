@@ -20,9 +20,41 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 49 — Reddit + Pinterest 連動 ship = 8 追加サイト sprint 完了、 配信先 **11 サイト** 到達)
+### 直近の状態 (2026-05-18 セッション 49 — 配信先を **5 サイト 8 ボタン** に絞り込み、 user 実機検証で確定した動く範囲のみ維持)
 
-session 48 close 後、 user 指示通り Reddit + Pinterest 2 サイトを 1 セッションで写経完走。 量産レシピ 7 step (= 写経 + URL pattern + button 検知の 3 領域のみ書き換え) を踏襲、 sprint 全完走。 8 追加サイト sprint 完了で **配信先 9 → 11 サイト**、 **内部 source 数 15 → 18** (= 検知ボタン 18 個)。
+session 49 後半、 user 実機検証で 11 サイト中 4 ボタンのみ ○、 7 ボタン ×、 7 ボタン未検証 (= アカウントなし) 判明。 user 判断「動かないものを並べるより品質担保」 で **大幅 scope 削減**:
+
+**最終構成 (= 5 サイト 8 ボタン)**:
+- ✅ X いいね + ブクマ (= いいねは session 49 後半 fix、 selector タグ非依存化)
+- ✅ YouTube 高評価 + 後で見る (= user 検証 ○)
+- ✅ note スキ (= user 検証 ○)
+- 🔧 Vimeo Like + Watch Later (= session 49 後半 fix、 selector タグ非依存化、 user 再検証待ち)
+- 🔧 SoundCloud Like (= 同上)
+
+**削除した 6 サイト 11 ボタン (= ファイルごと削除、 manifest / config / options / test から全部除去)**:
+- TikTok いいね + Favorite (= user アカウントなし)
+- Bluesky Like + Repost (= user アカウントなし、 「招待制」 と user 誤認だったが解消後も使用予定なし)
+- Threads いいね (= user アカウントなし)
+- Reddit Upvote + Save (= user 操作不明、 URL 保存で十分)
+- Pixiv ブクマ + いいね (= user 使わない)
+- Pinterest Save (= user 使わない)
+
+**重要原則**: 削除したのは「ボタン押すだけで自動保存」 という追加連動だけ。 全 URL 保存経路 (= ショートカット Ctrl+Shift+B / 右クリック → Save to AllMarks / 拡張機能アイコン click / ブックマーレット) は **全サイトで生きたまま**。 ユーザーは削除サイトでも従来通り URL 保存可能。
+
+**新規 file**: なし
+
+**削除 file**: `extension/tiktok.js`、 `extension/bluesky.js`、 `extension/threads.js`、 `extension/reddit.js`、 `extension/pixiv.js`、 `extension/pinterest.js`
+
+**変更 file**: `extension/manifest.json` (= 6 content_scripts entry 削除)、 `extension/lib/auto-save-config.js` (= 11 source 削除、 source 数 18 → 8)、 `extension/options.html` (= 11 トグル削除)、 `extension/options.js` (= 11 key 削除)、 `tests/extension/auto-save-config.test.ts` (= 11 expect → 8 expect、 + 削除済 source が null を返すテスト追加)、 `extension/twitter.js` (= L74-77 selector タグ非依存化、 button → button + [role="button"])、 `extension/vimeo.js` (= L70 同上)、 `extension/soundcloud.js` (= L67 同上)、 `extension/content.js` (= PiP reporter + ブックマーレット連動の sendMessage 2 箱所に isExtensionAlive ガード追加、 session 46 で 5 file に入れた防御コードの漏れを今回 fix)
+
+**session 49 narrative の全体構造**:
+1. **前半 (= sprint 完走)**: Reddit + Pinterest ship で 8 追加サイト sprint 完走、 配信先 11 サイト × 検知 18 ボタンに到達 → user 実機検証チェックシート提示
+2. **中盤 (= user 検証で大幅 ×)**: 動いた 4 / 動かない 7 / 未検証 7 → user 判断で削除 6 サイト確定 + Vimeo / SoundCloud 修正方針
+3. **後半 (= scope 削減 + 修正 sprint)**: 6 サイト file ごと削除、 X いいね + Vimeo + SoundCloud の selector タグ非依存化、 1 deploy で本番反映
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 49 セクション
+
+**次セッション (= 50) の goal**: user 再検証で Vimeo Like + Watch Later + SoundCloud Like が動くか確認。 OK なら拡張機能 sprint 完全 close → 磨きフェーズ ((I-08) 画面右端 floating ボタン or (I-09) cursor pill 音波化) へ。 NG なら DOM 詳細を user 環境で見て個別 debug。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
 
 **ship 済 (= prod 反映済、 user 実機検証は本セッションで全 18 ボタン分まとめて出す)**:
 - **Reddit 連動** (= [extension/reddit.js](../extension/reddit.js) 新規 110 行): canonical `og:url` 第一優先 + pathname `/r/{sub}/comments/{id}(/{slug})?/` マッチ。 **scope 判定の二段構え** (= `.closest('shreddit-comment')` ヒットなら早期 return、 `.closest('shreddit-post')` 必須) でコメント側 Upvote / Save の誤発火を防御。 Upvote + Save 検知 (= aria-label lowercase 化、 まず `\bdownvote\b` を完全除外、 次に OFF `\bremove\b` / `\bunsave\b` を除外してから ON `\bupvote\b` / `\bsave\b` を `\b` 付きで判定)。 Save は kebab menu 内 `role="menuitem"` でも発火するので closest selector に追加
@@ -235,6 +267,7 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 ### 表示・サムネ系
 
+- **B-#22 長文文章 tweet の Lightbox 表示で冒頭欠落、 末尾部分だけ表示** (= session 49 user 報告) — 拡張機能経由 (= X いいね) で保存した長文 tweet を例: [https://x.com/yurinel0602/status/2056212099488235790](https://x.com/yurinel0602/status/2056212099488235790)。 ボードカードでは冒頭から長文表示されるが、 Lightbox を開くと **ツイート末尾部分だけ** が表示される。 ボードカード末尾「良...」 直後の文「いじゃん。 ファンが見たら...」 が Lightbox 内に表示される接合関係。 経路調査が必要 (= 拡張機能の twitter.js text 抽出か、 Lightbox の react-tweet 描画か、 backfill 経路か)。 user 補足「経路を話しただけ、 拡張が原因かどうかは未確定」
 - **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
 - **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)
 - **Task 12: 全件再 check 設定 UI** — viewport revalidation で日常運用は OK だが、 ユーザーが 「いま全件チェック」 を 1 クリックで kick できる設定パネル。 設定パネル自体が未実装なので別 spec 立ち上げ要
@@ -277,19 +310,17 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 - ~~**B-#21 縦動画 tweet の card 縦横比**~~ ✅ session 45 で **(c) 受容** に user 判断確定 (= 翌ボードセッションで [lib/board/tweet-backfill.ts](../lib/board/tweet-backfill.ts) + [lib/board/backfill-queue.ts](../lib/board/backfill-queue.ts) が再取得して mediaSlots を更新するので直る前提)
 
-### 拡張機能 追加 backlog (= 8 追加サイト sprint **完走 session 49**、 詳細 `docs/private/IDEAS.md` (I-05))
+### 拡張機能 連動の最終構成 (= session 49 user 検証後の確定 scope、 5 サイト 8 ボタン)
 
-- ✅ **note** スキ連動 (= session 46 で ship)
-- ✅ **Pixiv** ブクマ / いいね連動 (= session 46 で ship)
-- ✅ **Vimeo** like / watch later 連動 (= session 47 で ship)
-- ✅ **SoundCloud** like 連動 (= session 47 で ship)
-- ✅ **Bluesky** like / repost 連動 (= session 48 で ship)
-- ✅ **Threads** いいね連動 (= session 48 で ship)
-- ✅ **Reddit** upvote / save 連動 (= session 49 で ship)
-- ✅ **Pinterest** save 連動 (= session 49 で ship)
-- ❌ **Instagram** 諦め (= ログイン壁 + CORS でサムネ取得不可、 価値見合わず)
+- ✅ **X (Twitter)** いいね + ブクマ
+- ✅ **YouTube** 高評価 + 後で見る
+- ✅ **note** スキ
+- 🔧 **Vimeo** Like + Watch Later (= session 49 後半 fix、 user 再検証待ち)
+- 🔧 **SoundCloud** Like (= session 49 後半 fix、 user 再検証待ち)
+- ❌ **Instagram** 諦め (= ログイン壁 + CORS でサムネ取得不可)
+- ❌ **TikTok / Bluesky / Threads / Reddit / Pixiv / Pinterest** 削除 (= session 49 で user 判断、 アカウントなし or 使用頻度低、 URL 保存経路は維持)
 
-**配信先サイト 11 到達** (= 既存 X / YouTube / TikTok 3 + sprint 追加 8)、 **検知ボタン 18 個**。 session 49 close で user 実機検証チェックシートを 1 度提示、 結果次第で修正 or 磨きフェーズへ。
+**重要原則**: 削除サイトでも 全 URL 保存経路 (= ショートカット Ctrl+Shift+B / 右クリック → Save to AllMarks / 拡張機能アイコン click / ブックマーレット) は **生きたまま**。 削除したのは「ボタン押すだけで自動保存」 連動だけ。
 
 ### 拡張機能 磨きフェーズ (= 9 サイト追加が終わった後、 詳細 IDEAS.md (I-08) (I-09))
 

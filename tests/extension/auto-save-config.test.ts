@@ -7,25 +7,22 @@ describe('auto-save-config', () => {
     expect(configKeyForSource('x-bookmark')).toBe('autoSaveXBookmark')
     expect(configKeyForSource('yt-like')).toBe('autoSaveYouTubeLike')
     expect(configKeyForSource('yt-watch-later')).toBe('autoSaveYouTubeWatchLater')
-    expect(configKeyForSource('tiktok-like')).toBe('autoSaveTikTokLike')
-    expect(configKeyForSource('tiktok-favorite')).toBe('autoSaveTikTokFavorite')
     expect(configKeyForSource('note-like')).toBe('autoSaveNoteLike')
-    expect(configKeyForSource('pixiv-bookmark')).toBe('autoSavePixivBookmark')
-    expect(configKeyForSource('pixiv-like')).toBe('autoSavePixivLike')
     expect(configKeyForSource('vimeo-like')).toBe('autoSaveVimeoLike')
     expect(configKeyForSource('vimeo-watch-later')).toBe('autoSaveVimeoWatchLater')
     expect(configKeyForSource('soundcloud-like')).toBe('autoSaveSoundCloudLike')
-    expect(configKeyForSource('bluesky-like')).toBe('autoSaveBlueskyLike')
-    expect(configKeyForSource('bluesky-repost')).toBe('autoSaveBlueskyRepost')
-    expect(configKeyForSource('threads-like')).toBe('autoSaveThreadsLike')
-    expect(configKeyForSource('reddit-upvote')).toBe('autoSaveRedditUpvote')
-    expect(configKeyForSource('reddit-save')).toBe('autoSaveRedditSave')
-    expect(configKeyForSource('pinterest-save')).toBe('autoSavePinterestSave')
   })
 
   it('returns null for unknown sources', () => {
     expect(configKeyForSource('unknown')).toBeNull()
     expect(configKeyForSource('')).toBeNull()
+    // Sources for sites whose button-detection was removed in session 49.
+    expect(configKeyForSource('tiktok-like')).toBeNull()
+    expect(configKeyForSource('pixiv-bookmark')).toBeNull()
+    expect(configKeyForSource('bluesky-like')).toBeNull()
+    expect(configKeyForSource('threads-like')).toBeNull()
+    expect(configKeyForSource('reddit-upvote')).toBeNull()
+    expect(configKeyForSource('pinterest-save')).toBeNull()
   })
 
   it('defaults every toggle to ON', () => {

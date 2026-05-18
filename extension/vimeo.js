@@ -67,7 +67,11 @@ function extractVideoOgp(url) {
 
 function getButtonKind(target) {
   if (!target || !target.closest) return null
-  const btn = target.closest('button')
+  // Tag-agnostic match — Vimeo's player chrome historically used <button>
+  // but newer layouts wrap actions in <div role="button">. Limiting to
+  // <button> made session 49's user verification fail on both Like and
+  // Watch Later. Same pattern as twitter.js post-X-fix.
+  const btn = target.closest('button, [role="button"]')
   if (!btn) return null
   const label = (btn.getAttribute('aria-label') || '').toLowerCase()
   const title = (btn.getAttribute('title') || '').toLowerCase()

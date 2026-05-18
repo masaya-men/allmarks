@@ -1,25 +1,19 @@
-// Defaults + lookup for the four "auto-save on SNS button" toggles.
+// Defaults + lookup for the "auto-save on SNS button" toggles.
 // Source of truth — imported by background.js and tests/extension/auto-save-config.test.ts.
+//
+// Scope (= session 49 で確定): X / YouTube / note / Vimeo / SoundCloud の 5 site のみ
+// ボタン連動を維持。 他サイトは「URL 保存」 経路 (= ショートカット / 右クリック /
+// 拡張アイコン / ブックマーレット) で対応。
 
 export const AUTO_SAVE_DEFAULTS = {
   autoSaveXLike: true,
   autoSaveXBookmark: true,
   autoSaveYouTubeLike: true,
   autoSaveYouTubeWatchLater: true,
-  autoSaveTikTokLike: true,
-  autoSaveTikTokFavorite: true,
   autoSaveNoteLike: true,
-  autoSavePixivBookmark: true,
-  autoSavePixivLike: true,
   autoSaveVimeoLike: true,
   autoSaveVimeoWatchLater: true,
   autoSaveSoundCloudLike: true,
-  autoSaveBlueskyLike: true,
-  autoSaveBlueskyRepost: true,
-  autoSaveThreadsLike: true,
-  autoSaveRedditUpvote: true,
-  autoSaveRedditSave: true,
-  autoSavePinterestSave: true,
 }
 
 export const SOURCE_TO_KEY = {
@@ -27,20 +21,10 @@ export const SOURCE_TO_KEY = {
   'x-bookmark': 'autoSaveXBookmark',
   'yt-like': 'autoSaveYouTubeLike',
   'yt-watch-later': 'autoSaveYouTubeWatchLater',
-  'tiktok-like': 'autoSaveTikTokLike',
-  'tiktok-favorite': 'autoSaveTikTokFavorite',
   'note-like': 'autoSaveNoteLike',
-  'pixiv-bookmark': 'autoSavePixivBookmark',
-  'pixiv-like': 'autoSavePixivLike',
   'vimeo-like': 'autoSaveVimeoLike',
   'vimeo-watch-later': 'autoSaveVimeoWatchLater',
   'soundcloud-like': 'autoSaveSoundCloudLike',
-  'bluesky-like': 'autoSaveBlueskyLike',
-  'bluesky-repost': 'autoSaveBlueskyRepost',
-  'threads-like': 'autoSaveThreadsLike',
-  'reddit-upvote': 'autoSaveRedditUpvote',
-  'reddit-save': 'autoSaveRedditSave',
-  'pinterest-save': 'autoSavePinterestSave',
 }
 
 export function configKeyForSource(source) {
