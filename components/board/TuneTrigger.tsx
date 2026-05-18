@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactEl
 import { pickRandomChar } from '@/lib/board/scramble'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { t } from '@/lib/i18n/t'
+import { FaderColumn } from './FaderColumn'
 import styles from './TuneTrigger.module.css'
 
 /** v4-inplace scramble timing. */
@@ -320,7 +321,26 @@ export function TuneTrigger({
         data-open={expanded ? 'true' : 'false'}
         aria-hidden={!expanded}
       >
-        {/* Task 5 で FaderColumn × 2 を入れる */}
+        <div className={styles.faderGroup}>
+          <FaderColumn
+            scope="w"
+            value={widthPx}
+            min={BOARD_SLIDERS.CARD_WIDTH_MIN_PX}
+            max={BOARD_SLIDERS.CARD_WIDTH_MAX_PX}
+            def={BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX}
+            onChange={onChangeWidth}
+            label="W"
+          />
+          <FaderColumn
+            scope="g"
+            value={gapPx}
+            min={BOARD_SLIDERS.CARD_GAP_MIN_PX}
+            max={BOARD_SLIDERS.CARD_GAP_MAX_PX}
+            def={BOARD_SLIDERS.CARD_GAP_DEFAULT_PX}
+            onChange={onChangeGap}
+            label="G"
+          />
+        </div>
       </div>
     </span>
   )

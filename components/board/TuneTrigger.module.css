@@ -101,3 +101,9 @@
     transition: none;
   }
 }
+
+.faderGroup {
+  display: flex;
+  gap: 28px;
+  align-items: flex-end;
+}

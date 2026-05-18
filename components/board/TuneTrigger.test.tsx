@@ -133,6 +133,49 @@ describe('TuneTrigger — close on mouseleave', () => {
   })
 })
 
+describe('TuneTrigger — drawer with FaderColumns', () => {
+  it('drawer contains W and G FaderColumns when expanded', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    )
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    const drawer = getByTestId('tune-drawer')
+    expect(drawer.getAttribute('data-open')).toBe('true')
+    expect(drawer.querySelector('[data-scope="w"]')).not.toBeNull()
+    expect(drawer.querySelector('[data-scope="g"]')).not.toBeNull()
+  })
+
+  it('drag on W FaderColumn calls onChangeWidth', async () => {
+    const onChangeWidth = vi.fn()
+    const { container, getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={onChangeWidth}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    )
+    fireEvent.mouseEnter(getByTestId('tune-wrap'))
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    const wUnit = container.querySelector('[data-scope="w"] > div') as HTMLElement
+    vi.spyOn(wUnit, 'getBoundingClientRect').mockReturnValue({
+      top: 0, bottom: 110, left: 0, right: 40, width: 40, height: 110,
+      x: 0, y: 0, toJSON: () => ({}),
+    } as DOMRect)
+    fireEvent.pointerDown(wUnit, { clientX: 20, clientY: 0, pointerId: 1 })
+    expect(onChangeWidth).toHaveBeenCalled()
+  })
+})
+
 describe('TuneTrigger — reset and sticky', () => {
   it('clicking the ↺ cell calls onReset', async () => {
     const onReset = vi.fn()
