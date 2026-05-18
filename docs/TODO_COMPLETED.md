@@ -2201,3 +2201,28 @@ scramble 中のランダム文字も同じ kind の color を維持 (= color は
 - **stale closure on props in rAF chain**: 既に動いてる rAF が古い props を closure に持ってるケース、 ref 同期 (= `widthRef.current = widthPx` を render 毎に inline で書く) で対応 (= PrecisionSlider 同パターン)
 - **subagent review の calibration**: Haiku reviewer が plan に存在しない translation を「expected」 と hallucination した事例 (= 実装は正しく plan を follow してた)。 controller (= 私) が plan の原本を確認して reviewer の指摘を棄却する判断必要
 - **deploy 前の verification**: tsc + vitest + build の 3 段を必ず通す。 これがなければ Task 8 の orphan destructure (= tsc は通るが ESLint 警告レベル) を見逃してた可能性
+
+### 続報: Amendment 1 — chip number-as-handle + 超精密 30000
+
+ship 直後の user feedback「ホバーで出てくるのスライダーにできる？短めでいいから超精密、 ハンドルを数字に」 + 「W と G ラベルも書かなくていい、 触って気付いてもらおう、 敢えて情報削って」 を受けて即時改訂。
+
+**Visual Companion で 4 案ライブデモ** (= ピル track + chip / アンダーラインのみ / プログレストレイル / ブラケット [] ) → user 「A (ピル+黒 chip)」 即承認。
+
+**変更点**:
+- `buildReadoutCells` から `'W '` / `'G '` ラベル削除 (= cell 22 個 → 18 個)
+- 新 helper `emitReadoutHtml` で `scope='w'|'g'` の連続 cell を `.sliderWrap > .track + .chip` 構造に group。 他 cell (`·` / `↺`) はフラット span のまま
+- `.sliderWrap` = 100px 幅 + 1.5px 中央 track + 黒 chip ナンバー (`rgba(0,0,0,0.85)` 背景、 padding `2px 4px`、 `border-radius: 3px`)
+- chip 位置 = `(value - min) / range × travel` を `left: ${px}px` 直書きで計算 (= `chipLeftPx` helper)
+- `MOUSE_PX_FOR_FULL_RANGE` = 10000 → **30000** に bump (= 3× 精密)
+- `handlePointerDown` を chip 検出に書き換え: `target.closest('.chip')` で walk-up → `dataset.scope` 読む。 chip 直接でも内部 digit cell でも drag が始まる
+- `handleClick` に chip 内クリックを sticky toggle から除外 (= drag UX 保護)
+- `useEffect([widthPx, gapPx])` を idle-readout 中の re-render に追加 (= 他経路で値が変わった時 chip 位置が即追従)
+- scramble は維持。 chip 内 digit cell が個別 scramble、 chip 位置は target value で固定 (= 数字がガリガリ動いても chip が暴れない)
+- close 中も chip wrap 維持、 cell が全部 consumed されたら chip 自体を skip して draining 感
+
+**テスト更新**:
+- hover open assertion: `'W 267.84 · G 97.21 · ↺'` → `'267.84 · 97.21 · ↺'`
+- drag-scrub expected delta: ratio 0.06 → 0.02、 next 273.84 → 269.84
+
+vitest 507/507 / tsc clean / build 成功 / deploy → 同 URL に反映。
+

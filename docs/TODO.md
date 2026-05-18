@@ -20,19 +20,21 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 41 — TopHeader 右クラスタ brushup TUNE トリガー + Matrix scramble、 全部 prod 反映済)
+### 直近の状態 (2026-05-18 セッション 41 — TopHeader 右クラスタ brushup + Amendment 1 (chip slider)、 全部 prod 反映済)
 
-session 41 で B-#13 TopHeader 右側 brushup 完了:
+session 41 で B-#13 TopHeader 右側 brushup + 後半 Amendment 1:
 
-- 既存 6 要素 (PopOut icon / SizeSlider / GapSlider / WidthGapReset / ResetAll / Share-with-arrow) → 3 テキスト label (TUNE / POP OUT / SHARE) に整理
-- **TUNE ホバー** → Matrix 風 scramble で `W 267.84 · G 97.21 · ↺` readout に展開 (v4-inplace、 stagger 11ms / scramble 125-190ms / open 完了 ~430ms)
-- 数字 cell drag で W/G slider 操作 (= PrecisionSlider と同じ math)、 末尾 `↺` で default 戻し
-- TUNE click で sticky open (mouseleave しても閉じない)、 ESC + outside click で close
-- ResetAll は廃止 (= Ctrl+Z で代替)
-- chrome は完全に文字のみ (background / border ゼロ、 11px monospace、 paint-order stroke で legibility)
+- 既存 6 要素 → 3 テキスト label (TUNE / POP OUT / SHARE)
+- **TUNE ホバー** → Matrix scramble で readout 展開 (v4-inplace、 stagger 11ms / scramble 125-190ms)
+- **Amendment 1**: readout は「短いピル track 100px + 黒 chip 数字」 形式、 W/G ラベル削除 (= 触って気付かせる方針)、 数字 chip 自体が drag ハンドル、 chip 位置は value fraction で track 上を slide
+- **超精密**: MOUSE_PX_FOR_FULL_RANGE = 30000 (= 1 マウス px ≈ 0.02 W 単位、 PrecisionSlider の 3× 精密)、 Shift+drag で 10× 速い
+- 末尾 `↺` で W/G default 戻し (Ctrl+Z で undo 可)
+- TUNE click で sticky open、 ESC + outside click で close
+- ResetAll 廃止 (= Ctrl+Z で代替)
+- chrome は完全に文字 + 黒 chip のみ、 background / border は chip のみ (= 11px monospace、 paint-order stroke で legibility)
 - i18n: 15 言語に `board.chrome.{tune,popout,share}` + `board.tune.{width,gap,reset_tooltip}` 追加
-- 新 file: [components/board/TuneTrigger.tsx](../components/board/TuneTrigger.tsx) + `.module.css` + `.test.tsx` (8 tests)、 [lib/board/scramble.ts](../lib/board/scramble.ts) (= 共有 utility)
-- 削除した DOM: PopOutButton / SizeSlider / GapSlider / WidthGapResetButton / ResetAllButton の参照は BoardRoot から消えた (file 自体は orphan で残置、 将来復活余地)
+- 新 file: [components/board/TuneTrigger.tsx](../components/board/TuneTrigger.tsx) + `.module.css` + `.test.tsx` (8 tests)、 [lib/board/scramble.ts](../lib/board/scramble.ts)
+- 削除した DOM: PopOutButton / SizeSlider / GapSlider / WidthGapResetButton / ResetAllButton (file 自体は orphan で残置)
 - vitest 507/507 / tsc clean / build 成功 / `https://booklage.pages.dev` 反映済
 
 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 41 セクション
