@@ -53,9 +53,28 @@ function buildReadoutCells(widthPx: number, gapPx: number): Cell[] {
   return cells
 }
 
-function chipLeftPx(value: number, min: number, max: number): number {
-  const range = max - min
-  const fraction = range > 0 ? Math.max(0, Math.min(1, (value - min) / range)) : 0
+/** Default-centered piecewise-linear position mapping (Amendment 1 revision):
+ *  default value → 50% (track center), min → 0%, max → 100%.
+ *  Visually natural — chip "rests" at center when value = default, and the
+ *  user can see at-a-glance whether they've moved above or below default. */
+function valueToFraction(value: number, min: number, max: number, def: number): number {
+  if (value <= def) {
+    const below = def - min
+    return below > 0 ? ((value - min) / below) * 0.5 : 0
+  }
+  const above = max - def
+  return above > 0 ? 0.5 + ((value - def) / above) * 0.5 : 1
+}
+
+/** Inverse of valueToFraction — for click-to-jump on the track. */
+function fractionToValue(fraction: number, min: number, max: number, def: number): number {
+  const f = Math.max(0, Math.min(1, fraction))
+  if (f <= 0.5) return min + (f / 0.5) * (def - min)
+  return def + ((f - 0.5) / 0.5) * (max - def)
+}
+
+function chipLeftPx(value: number, min: number, max: number, def: number): number {
+  const fraction = valueToFraction(value, min, max, def)
   const travel = TRACK_WIDTH_PX - CHIP_INSET_PX
   return CHIP_INSET_PX / 2 + fraction * travel
 }
@@ -93,8 +112,9 @@ function emitReadoutHtml(
       const value = scope === 'w' ? widthPx : gapPx
       const min = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MIN_PX : BOARD_SLIDERS.CARD_GAP_MIN_PX
       const max = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MAX_PX : BOARD_SLIDERS.CARD_GAP_MAX_PX
-      const left = chipLeftPx(value, min, max)
-      html += `<span class="${styles.sliderWrap}">`
+      const def = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX : BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
+      const left = chipLeftPx(value, min, max, def)
+      html += `<span class="${styles.sliderWrap}" data-scope="${scope}">`
       html += `<span class="${styles.track}"></span>`
       html += `<span class="${styles.chip}" data-cell-kind="num-${scope}" data-scope="${scope}" style="left:${left}px">${groupHtml}</span>`
       html += `</span>`
@@ -323,21 +343,50 @@ export function TuneTrigger({
     return (): void => document.removeEventListener('mousedown', onDocClick)
   }, [startClose])
 
-  // Drag-scrub. pointerdown anywhere inside a chip (= digit cell or chip
-  // wrapper) starts a drag. The scope is read from the chip's data-scope.
+  // Drag-scrub + click-to-jump. pointerdown on chip = drag from current
+  // value. pointerdown on bare track (= sliderWrap minus chip) = jump value
+  // to clicked fraction, then continue drag from there. PrecisionSlider-style.
   const handlePointerDown = useCallback((e: PointerEvent<HTMLButtonElement>): void => {
     const target = e.target as HTMLElement
     const chip = target.closest<HTMLElement>(`.${styles.chip}`)
-    if (!chip) return
-    const scope = chip.dataset.scope
+    if (chip) {
+      const scope = chip.dataset.scope
+      if (scope !== 'w' && scope !== 'g') return
+      e.preventDefault()
+      e.stopPropagation()
+      dragScopeRef.current = scope
+      if (typeof e.currentTarget.setPointerCapture === 'function') {
+        e.currentTarget.setPointerCapture(e.pointerId)
+      }
+      return
+    }
+    // Track click — jump value to fraction, then start drag mode
+    const wrap = target.closest<HTMLElement>(`.${styles.sliderWrap}`)
+    if (!wrap) return
+    const scope = wrap.dataset.scope
     if (scope !== 'w' && scope !== 'g') return
     e.preventDefault()
     e.stopPropagation()
+    const rect = wrap.getBoundingClientRect()
+    if (rect.width > 0) {
+      // Map click x → fraction. Subtract CHIP_INSET_PX/2 so click at the
+      // visual center of the track maps to fraction 0.5 (= default).
+      const clickX = e.clientX - rect.left
+      const adjustedX = clickX - CHIP_INSET_PX / 2
+      const travel = TRACK_WIDTH_PX - CHIP_INSET_PX
+      const fraction = Math.max(0, Math.min(1, adjustedX / travel))
+      const min = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MIN_PX : BOARD_SLIDERS.CARD_GAP_MIN_PX
+      const max = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MAX_PX : BOARD_SLIDERS.CARD_GAP_MAX_PX
+      const def = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX : BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
+      const value = fractionToValue(fraction, min, max, def)
+      if (scope === 'w') onChangeWidth(value)
+      else onChangeGap(value)
+    }
     dragScopeRef.current = scope
     if (typeof e.currentTarget.setPointerCapture === 'function') {
       e.currentTarget.setPointerCapture(e.pointerId)
     }
-  }, [])
+  }, [onChangeWidth, onChangeGap])
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLButtonElement>): void => {
     const scope = dragScopeRef.current
