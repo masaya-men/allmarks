@@ -12,13 +12,43 @@
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.15s, transform 0.15s;
+  transition: color 0.15s;
   position: relative;
+}
+
+/* RGB ghost copies for glitch hover. The original button text stays in
+   place; ghosts only appear during the :hover animation. */
+.btn::before,
+.btn::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  -webkit-text-stroke: 0;
+  paint-order: fill;
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
 }
 
 .btn:hover {
   color: rgba(255, 255, 255, 1);
-  animation: glitch-chrome 300ms steps(10, end);
+}
+
+.btn:hover::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 380ms steps(10, end);
+}
+
+.btn:hover::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 380ms steps(10, end);
 }
 
 .btn:disabled {
@@ -26,8 +56,10 @@
   cursor: not-allowed;
 }
 
-.btn:disabled:hover {
+.btn:disabled:hover::before,
+.btn:disabled:hover::after {
   animation: none;
+  opacity: 0;
 }
 
 .btn:focus-visible {
@@ -36,9 +68,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn,
-  .btn:hover {
+  .btn:hover::before,
+  .btn:hover::after {
     animation: none;
-    transition: color 0.15s;
+    opacity: 0;
   }
 }

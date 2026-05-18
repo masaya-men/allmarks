@@ -21,10 +21,49 @@
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.15s;
+  position: relative;
 }
+
+/* RGB ghost copies for glitch hover (= same pattern as ChromeButton). */
+.trigger::before,
+.trigger::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  -webkit-text-stroke: 0;
+  paint-order: fill;
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+}
+
 .trigger:hover {
   color: rgba(255, 255, 255, 1);
-  animation: glitch-chrome 300ms steps(10, end);
+}
+
+.trigger:hover::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 380ms steps(10, end);
+}
+
+.trigger:hover::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 380ms steps(10, end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger:hover::before,
+  .trigger:hover::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 .trigger:focus-visible {
   outline: 1px dashed rgba(255, 255, 255, 0.5);
@@ -100,35 +139,55 @@
   align-items: flex-end;
 }
 
-/* Session 43: 機械の注意書き風 operations legend。 audio mixer / oscilloscope
-   の刻印ラベルを真似て、 9px monospace + 強い letter-spacing + 薄い grey で
-   「機材の側面に印刷された説明」 のトーン。 */
+/* Session 43 round 3: AG03 audio mixer 風 LED + label panel。
+   ゲインフェーダー横幅程度に収めて縦に並べる、 各行は
+   小さい LED ドット + 短い大文字テキスト。 */
 .opsLegend {
-  margin-top: 14px;
-  padding-top: 10px;
+  margin-top: 16px;
+  padding-top: 12px;
   border-top: 1px dashed rgba(255, 255, 255, 0.10);
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.32);
-  white-space: nowrap;
-}
-
-.opsLabel {
-  color: rgba(255, 157, 63, 0.55);
-  letter-spacing: 0.20em;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
 }
 
 .opsRow {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
-.opsSep {
-  color: rgba(255, 255, 255, 0.14);
+/* LED dot — 小さい円、 currentColor を box-shadow で発光させてリアル感。 */
+.led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  background: currentColor;
+  box-shadow: 0 0 4px currentColor;
+  animation: led-pulse 2.4s ease-in-out infinite;
+}
+.led[data-color="orange"] { color: #ff9d3f; }
+.led[data-color="yellow"] { color: #ffd84a; animation-delay: 0.6s; }
+.led[data-color="green"]  { color: #4cd56a; animation-delay: 1.2s; }
+.led[data-color="red"]    { color: #ff5050; animation-delay: 1.8s; }
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
+  50%      { opacity: 0.55; box-shadow: 0 0 2px currentColor; }
+}
+
+.opsText {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .led { animation: none; }
 }

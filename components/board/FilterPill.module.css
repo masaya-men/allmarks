@@ -24,13 +24,6 @@
 .pill:hover {
   color: var(--chrome-text-color-hover);
   -webkit-text-stroke-color: var(--chrome-text-stroke-color-hover);
-  animation: glitch-chrome 300ms steps(10, end);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pill:hover {
-    animation: none;
-  }
 }
 
 .pill:focus-visible {
@@ -44,6 +37,43 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  position: relative;
+  display: inline-block;
+}
+
+/* RGB ghost copies for glitch hover (= same pattern as ChromeButton). */
+.label::before,
+.label::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  display: inline-block;
+  pointer-events: none;
+  opacity: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  -webkit-text-stroke: 0;
+  paint-order: fill;
+  white-space: nowrap;
+}
+
+.pill:hover .label::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 380ms steps(10, end);
+}
+
+.pill:hover .label::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 380ms steps(10, end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill:hover .label::before,
+  .pill:hover .label::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* Session 29: `·` is the lone structural separator between label and

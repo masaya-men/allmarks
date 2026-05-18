@@ -382,6 +382,7 @@ export function TuneTrigger({
         aria-haspopup="dialog"
         aria-expanded={expanded}
         onClick={handleClick}
+        data-glitch-text={visibleLabel}
       >
         {visibleLabel}
       </button>
@@ -412,16 +413,22 @@ export function TuneTrigger({
           />
         </div>
         <div className={styles.opsLegend} aria-hidden="true">
-          <span className={styles.opsLabel}>OPERATIONS</span>
-          <span className={styles.opsRow}>
-            <span>DRAG TO TUNE</span>
-            <span className={styles.opsSep}>·</span>
-            <span>SHIFT FOR FAST</span>
-            <span className={styles.opsSep}>·</span>
-            <span>CLICK TO JUMP</span>
-            <span className={styles.opsSep}>·</span>
-            <span>CTRL+Z TO UNDO</span>
-          </span>
+          <div className={styles.opsRow}>
+            <span className={styles.led} data-color="orange" />
+            <span className={styles.opsText}>DRAG</span>
+          </div>
+          <div className={styles.opsRow}>
+            <span className={styles.led} data-color="yellow" />
+            <span className={styles.opsText}>SHIFT FAST</span>
+          </div>
+          <div className={styles.opsRow}>
+            <span className={styles.led} data-color="green" />
+            <span className={styles.opsText}>JUMP</span>
+          </div>
+          <div className={styles.opsRow}>
+            <span className={styles.led} data-color="red" />
+            <span className={styles.opsText}>UNDO Z</span>
+          </div>
         </div>
       </div>
     </span>

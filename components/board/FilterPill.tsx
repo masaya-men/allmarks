@@ -61,7 +61,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
         aria-expanded={open}
         data-testid="filter-pill"
       >
-        <span className={styles.label}>{displayLabel}</span>
+        <span className={styles.label} data-glitch-text={label(value, moods)}>{displayLabel}</span>
         <span className={styles.separator}>·</span>
         <span className={styles.count}>{countFor(value, counts)}</span>
       </button>

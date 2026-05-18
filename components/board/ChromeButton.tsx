@@ -30,6 +30,7 @@ export function ChromeButton({
       onMouseEnter={triggerBurst}
       disabled={disabled}
       data-testid={dataTestId}
+      data-glitch-text={label}
     >
       {display}
     </button>
