@@ -20,7 +20,33 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 41 — TopHeader brushup + Amendment 1 + 続報 1-4、 polish 2 件持ち越し)
+### 直近の状態 (2026-05-18 セッション 42 — B-#13 polish 多発 + DEFAULT state grey + 操作 hint 移行 + 音波テーマ確定)
+
+session 42 で session 41 持ち越しから着手 → user feedback で scope 拡大 → 6 deploy + 3 件次セッション持ち越し:
+
+**ship 済 (= prod 反映済):**
+- TUNE hover の縦ガタつき解消 (= `.trigger` min-height 34px、 border-box 考慮)
+- chip 内 letter-spacing 0 (= 末尾トレーリング 1.1px 除去、 math 上完全対称)
+- Shift drag 速度 4 倍化 (= `SHIFT_SPEED_MULTIPLIER` 20 → 40、 short drag で大ジャンプ)
+- 「DEFAULT」 文字列 state ベース grey (= 値全部 default → grey、 動かしたら通常の白)
+- `.cell.reset` dead code bug fix (= scope='reset' cell に正しく `.reset` class 付与)
+- ScrollMeter 上に常時表示の操作ヒント追加 (`CLICK TO JUMP · SHIFT FOR FAST`)、 旧 TUNE tooltip 路線廃止
+- 全 15 言語 chrome 英語固定 + content 翻訳の hybrid 方針確定 (= Linear / Figma / Notion 方式)
+- 黒+白 minimal + 音波 motif テーマ確定 → memory `project_theme_sound_wave.md` に永続化
+
+**持ち越し 3 件 (= session 43):**
+1. **chip 中央配置の視覚補正** — user 指定値で chip position シフト:
+   - W (左 slider): 数値 `302.92` 相当位置 (= +3.18px 右)
+   - G (右 slider): 数値 `100.92` 相当位置 (= +0.75px 右)
+   - **デフォルト値そのものは変えない**、 chip 表示位置だけ補正
+2. **hover leave grace 長め化** — 現 `LEAVE_GRACE_MS = 180` を 800-1000ms に
+3. **思い切った redesign** — スライダー自体を音波メーター / ラジオダイヤル / サウンドミキサーつまみ / マイクゲイン縦スライダー風に。 数値 readout は別位置 (= ガタガタしない場所) に。 brainstorming skill 必須
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 42 セクション (5 phase + 学び)
+
+---
+
+### 旧情報 (2026-05-18 セッション 41 — TopHeader brushup + Amendment 1 + 続報 1-4、 polish 2 件持ち越し)
 
 session 41 で B-#13 TopHeader 右側 brushup + 後半 Amendment 1 + ship 後 user feedback 4 連 polish:
 
@@ -38,10 +64,6 @@ session 41 で B-#13 TopHeader 右側 brushup + 後半 Amendment 1 + ship 後 us
 - 新 file: [components/board/TuneTrigger.tsx](../components/board/TuneTrigger.tsx) + `.module.css` + `.test.tsx` (8 tests)、 [lib/board/scramble.ts](../lib/board/scramble.ts)
 - 削除した DOM: PopOutButton / SizeSlider / GapSlider / WidthGapResetButton / ResetAllButton (file 自体は orphan で残置)
 - vitest 507/507 / tsc clean / build 成功 / `https://booklage.pages.dev` 反映済
-
-**持ち越し 2 件 (= session 42):**
-1. **chip ハンドルの中心ずれ** — 計算は正しいはずだが visually 30-40% 位置に見える user 報告。 layout (flex item + inline-block width enforcement) を疑う、 dev で要 verify
-2. **ツールチップ復活** — 試作した `<span class="wrap">` 方式は alignment regression で revert、 cells inner ref か React portal で再実装する
 
 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 41 セクション
 
