@@ -32,6 +32,7 @@ import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
 import { TuneTrigger } from './TuneTrigger'
+import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
 import { UndoToast, type UndoToastInput } from './UndoToast'
@@ -1249,23 +1250,17 @@ export function BoardRoot() {
                 onChangeGap={handleCardGapChange}
                 onReset={handleResetWidthGap}
               />
-              <button
-                type="button"
-                className={styles.chromeButton}
+              <ChromeButton
+                label={t('board.chrome.popout')}
                 onClick={() => { void pip.open() }}
                 disabled={!pip.isSupported}
                 data-testid="pop-out-button"
-              >
-                {t('board.chrome.popout')}
-              </button>
-              <button
-                type="button"
-                className={styles.chromeButton}
+              />
+              <ChromeButton
+                label={t('board.chrome.share')}
                 onClick={(): void => setShareComposerOpen(true)}
                 data-testid="share-pill"
-              >
-                {t('board.chrome.share')}
-              </button>
+              />
             </>
           }
         />
