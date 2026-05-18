@@ -131,10 +131,14 @@ function emitReadoutHtml(
           Math.abs(widthPx - BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX) < 0.005 &&
           Math.abs(gapPx - BOARD_SLIDERS.CARD_GAP_DEFAULT_PX) < 0.005
         const dk = cell.scope === 'reset' ? 'reset' : cell.kind
+        // scope=reset の cell は CSS module 上の .reset class を当てる
+        // (= kind='label' のまま styles[cell.kind] を引くと styles.label が
+        // undefined で .cell.reset CSS rule がマッチしないバグを修正)。
+        const kindClass = cell.scope === 'reset' ? styles.reset : styles[cell.kind]
         const cls =
           cell.scope === 'reset' && isStateDefault
-            ? `${styles.cell} ${styles[cell.kind]} ${styles.resetIdle}`
-            : `${styles.cell} ${styles[cell.kind]}`
+            ? `${styles.cell} ${kindClass} ${styles.resetIdle}`
+            : `${styles.cell} ${kindClass}`
         html += `<span class="${cls}" data-cell-kind="${dk}">${ch}</span>`
       }
       i++
