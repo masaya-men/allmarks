@@ -100,3 +100,10 @@
 .chip:hover {
   filter: brightness(1.15);
 }
+
+/* Default state (= 値未調整) は数字をグレーに、 1 cent でも動かしたら
+   元の orange に戻る。 「触ってないので default のまま」 と user が一目で
+   分かるようにする視覚 cue。 */
+.chip.chipDefault .num {
+  color: rgba(255, 255, 255, 0.45);
+}

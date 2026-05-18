@@ -17,10 +17,10 @@ const LEAVE_GRACE_MS = 180
  *  Full-range drag requires 30000 px (≈ 16 user screens); Shift+drag is
  *  10× faster for jumps. */
 const MOUSE_PX_FOR_FULL_RANGE = 30000
-/** Amendment 1 revision: 10 → 20 per user feedback (= 2× faster Shift jump
+/** Amendment 1 revision: 10 → 20 → 40 per user feedback (= 4× faster Shift jump
  *  on top of the 3× more precise base). With base ratio 0.02 W/px,
- *  Shift+drag = 0.40 W/px. */
-const SHIFT_SPEED_MULTIPLIER = 20
+ *  Shift+drag = 0.80 W/px. */
+const SHIFT_SPEED_MULTIPLIER = 40
 
 /** Pill track length + chip half-inset so the chip doesn't visually clip
  *  the track endpoints. Mirrors the Visual Companion demo. */
@@ -100,6 +100,12 @@ function emitReadoutHtml(
     const cell = cells[i]
     if (cell.scope === 'w' || cell.scope === 'g') {
       const scope = cell.scope
+      const value = scope === 'w' ? widthPx : gapPx
+      const min = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MIN_PX : BOARD_SLIDERS.CARD_GAP_MIN_PX
+      const max = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MAX_PX : BOARD_SLIDERS.CARD_GAP_MAX_PX
+      const def = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX : BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
+      // default 値そのまま (= 未調整) なら数字は dim grey、 1 cent でも動かしたら orange。
+      const isDefault = Math.abs(value - def) < 0.005
       let groupHtml = ''
       let hasContent = false
       while (i < cells.length && cells[i].scope === scope) {
@@ -112,14 +118,11 @@ function emitReadoutHtml(
         i++
       }
       if (!hasContent) continue
-      const value = scope === 'w' ? widthPx : gapPx
-      const min = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MIN_PX : BOARD_SLIDERS.CARD_GAP_MIN_PX
-      const max = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MAX_PX : BOARD_SLIDERS.CARD_GAP_MAX_PX
-      const def = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX : BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
       const left = chipLeftPx(value, min, max, def)
+      const chipClass = isDefault ? `${styles.chip} ${styles.chipDefault}` : styles.chip
       html += `<span class="${styles.sliderWrap}" data-scope="${scope}">`
       html += `<span class="${styles.track}"></span>`
-      html += `<span class="${styles.chip}" data-cell-kind="num-${scope}" data-scope="${scope}" style="left:${left}px">${groupHtml}</span>`
+      html += `<span class="${chipClass}" data-cell-kind="num-${scope}" data-scope="${scope}" style="left:${left}px">${groupHtml}</span>`
       html += `</span>`
     } else {
       const ch = getCh(cell, i)
