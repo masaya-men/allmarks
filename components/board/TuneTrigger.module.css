@@ -21,6 +21,11 @@
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.15s, transform 0.15s;
+  /* idle/expanded で button 高さを固定 (= .sliderWrap 18px 分を idle でも確保)
+     → hover 時に POP OUT / SHARE が縦にズレるのを防ぐ。 */
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
 }
 .trigger:hover {
   color: rgba(255, 255, 255, 1);
@@ -85,6 +90,10 @@
   user-select: none;
   -webkit-user-select: none;
   transition: filter 0.15s;
+  /* 親 (.trigger) の letter-spacing 0.10em を override。 末尾 cell の
+     トレーリング 1.1px が消えて、 visible 数字が chip box の中で完全対称
+     = track 左右の余白も完全対称になる。 */
+  letter-spacing: 0;
 }
 .chip:hover {
   filter: brightness(1.15);
