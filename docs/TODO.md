@@ -20,22 +20,28 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 41 — TopHeader 右クラスタ brushup + Amendment 1 (chip slider)、 全部 prod 反映済)
+### 直近の状態 (2026-05-18 セッション 41 — TopHeader brushup + Amendment 1 + 続報 1-4、 polish 2 件持ち越し)
 
-session 41 で B-#13 TopHeader 右側 brushup + 後半 Amendment 1:
+session 41 で B-#13 TopHeader 右側 brushup + 後半 Amendment 1 + ship 後 user feedback 4 連 polish:
 
 - 既存 6 要素 → 3 テキスト label (TUNE / POP OUT / SHARE)
 - **TUNE ホバー** → Matrix scramble で readout 展開 (v4-inplace、 stagger 11ms / scramble 125-190ms)
-- **Amendment 1**: readout は「短いピル track 100px + 黒 chip 数字」 形式、 W/G ラベル削除 (= 触って気付かせる方針)、 数字 chip 自体が drag ハンドル、 chip 位置は value fraction で track 上を slide
-- **超精密**: MOUSE_PX_FOR_FULL_RANGE = 30000 (= 1 マウス px ≈ 0.02 W 単位、 PrecisionSlider の 3× 精密)、 Shift+drag で 10× 速い
-- 末尾 `↺` で W/G default 戻し (Ctrl+Z で undo 可)
+- **Amendment 1 + 続報 2**: readout は「短いピル track 100px + 透明 chip + オレンジ数字 = handle」 形式、 W/G ラベル削除、 数字テキストそのまま track 上の handle、 chip 位置は value fraction で track 上を slide
+- **超精密**: MOUSE_PX_FOR_FULL_RANGE = 30000、 SHIFT_SPEED_MULTIPLIER 20 (= shift+drag で 2x 速い)
+- **続報 3**: default-center piecewise マッピング (= default 値 → fraction 0.5) + track 空クリックでジャンプ復活 (PrecisionSlider 二段使い)
+- 末尾 `DEFAULT` (= 7 文字、 全文字 click で reset 発火) で W/G default 戻し (Ctrl+Z で undo 可)
 - TUNE click で sticky open、 ESC + outside click で close
 - ResetAll 廃止 (= Ctrl+Z で代替)
-- chrome は完全に文字 + 黒 chip のみ、 background / border は chip のみ (= 11px monospace、 paint-order stroke で legibility)
+- TUNE のみ hover lift 削除 (= POP OUT / SHARE は維持)
+- chrome は完全に文字のみ (background / border は chip すらナシ、 11px monospace、 paint-order stroke で legibility)
 - i18n: 15 言語に `board.chrome.{tune,popout,share}` + `board.tune.{width,gap,reset_tooltip}` 追加
 - 新 file: [components/board/TuneTrigger.tsx](../components/board/TuneTrigger.tsx) + `.module.css` + `.test.tsx` (8 tests)、 [lib/board/scramble.ts](../lib/board/scramble.ts)
 - 削除した DOM: PopOutButton / SizeSlider / GapSlider / WidthGapResetButton / ResetAllButton (file 自体は orphan で残置)
 - vitest 507/507 / tsc clean / build 成功 / `https://booklage.pages.dev` 反映済
+
+**持ち越し 2 件 (= session 42):**
+1. **chip ハンドルの中心ずれ** — 計算は正しいはずだが visually 30-40% 位置に見える user 報告。 layout (flex item + inline-block width enforcement) を疑う、 dev で要 verify
+2. **ツールチップ復活** — 試作した `<span class="wrap">` 方式は alignment regression で revert、 cells inner ref か React portal で再実装する
 
 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 41 セクション
 
