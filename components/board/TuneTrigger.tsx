@@ -41,7 +41,10 @@ function buildReadoutCells(widthPx: number, gapPx: number): Cell[] {
     { text: ' · ', kind: 'dim' },
     { text: gStr, kind: 'num', scope: 'g' },
     { text: ' · ', kind: 'dim' },
-    { text: '↺', kind: 'label', scope: 'reset' },
+    // 'DEFAULT' (= 旧 WidthGapResetButton と同じ語彙) に戻して click target を拡張、
+    // ↺ 1 文字は user 報告「押しづらい」 で却下。 7 文字 = 全部 data-cell-kind="reset"
+    // で click 受ける。
+    { text: 'DEFAULT', kind: 'label', scope: 'reset' },
   ]
   const cells: Cell[] = []
   for (const p of parts) {

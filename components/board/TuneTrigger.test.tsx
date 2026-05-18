@@ -40,7 +40,7 @@ describe('TuneTrigger — hover open', () => {
 
     expect(btn.getAttribute('aria-expanded')).toBe('true')
     // Settled readout text (whitespace-collapsed cells together)
-    expect(btn.textContent).toBe('267.84 · 97.21 · ↺')
+    expect(btn.textContent).toBe('267.84 · 97.21 · DEFAULT')
   })
 })
 
@@ -59,7 +59,7 @@ describe('TuneTrigger — close on mouseleave', () => {
 
     fireEvent.mouseEnter(btn)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
-    expect(btn.textContent).toBe('267.84 · 97.21 · ↺')
+    expect(btn.textContent).toBe('267.84 · 97.21 · DEFAULT')
 
     fireEvent.mouseLeave(btn)
     // Wait grace (180ms) + close animation (≈ 21*11 + 190 = 421ms) = ~700ms safe

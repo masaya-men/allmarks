@@ -40,8 +40,10 @@
 .cell.dim { color: rgba(255, 255, 255, 0.30); }
 .cell.reset {
   cursor: pointer;
-  padding: 0 4px;
-  margin-left: 2px;
+  transition: color 0.15s;
+}
+.cell.reset:hover {
+  color: rgba(255, 255, 255, 1);
 }
 
 /* === Amendment 1: pill track + chip number-as-handle === */
@@ -67,20 +69,22 @@
   pointer-events: none;
 }
 
+/* Amendment 1 revision: chip background removed — the orange number text
+   IS the visible handle on the pill track. Padding kept for click-target
+   width; transparent background so the track shows through behind chars. */
 .chip {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  padding: 2px 4px;
-  background: rgba(0, 0, 0, 0.85);
-  border-radius: 3px;
+  padding: 2px 6px;
+  background: transparent;
   cursor: ew-resize;
   white-space: nowrap;
   z-index: 1;
   user-select: none;
   -webkit-user-select: none;
-  transition: background 0.15s;
+  transition: filter 0.15s;
 }
 .chip:hover {
-  background: rgba(0, 0, 0, 0.95);
+  filter: brightness(1.15);
 }
