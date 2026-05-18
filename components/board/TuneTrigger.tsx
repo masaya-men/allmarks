@@ -438,33 +438,22 @@ export function TuneTrigger({
   }, [widthPx, gapPx, writeIdleReadout])
 
   return (
-    <span className={styles.wrap}>
-      <button
-        ref={btnRef}
-        type="button"
-        data-testid="tune-trigger"
-        className={styles.trigger}
-        aria-haspopup="dialog"
-        aria-expanded={expanded}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onClick={handleClick}
-      >
-        {visibleLabel}
-      </button>
-      <span
-        className={styles.tooltip}
-        data-visible={expanded ? 'true' : 'false'}
-        aria-hidden="true"
-      >
-        {t('board.slider.tooltipClick')}
-        <span className={styles.tooltipSep}>·</span>
-        {t('board.slider.tooltipShift')}
-      </span>
-    </span>
+    <button
+      ref={btnRef}
+      type="button"
+      data-testid="tune-trigger"
+      className={styles.trigger}
+      aria-haspopup="dialog"
+      aria-expanded={expanded}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onClick={handleClick}
+    >
+      {visibleLabel}
+    </button>
   )
 }
