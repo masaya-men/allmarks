@@ -76,6 +76,30 @@
   }
 }
 
+/* Module-scoped keyframes (see ChromeButton.module.css for the same defs
+   and the reason — CSS Modules scopes animation-name references). */
+@keyframes glitch-shift-a {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  8%   { opacity: 1; transform: translate(-5px, 0); clip-path: inset(0 0 65% 0); }
+  20%  { transform: translate(4px, -1px); clip-path: inset(35% 0 35% 0); }
+  35%  { transform: translate(-6px, 0); clip-path: inset(70% 0 8% 0); }
+  50%  { transform: translate(5px, 0); clip-path: inset(8% 0 75% 0); }
+  65%  { transform: translate(-3px, 0); clip-path: inset(50% 0 20% 0); }
+  80%  { opacity: 0.7; transform: translate(2px, 0); clip-path: inset(20% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+@keyframes glitch-shift-b {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  8%   { opacity: 1; transform: translate(5px, 0); clip-path: inset(0 0 65% 0); }
+  20%  { transform: translate(-4px, 1px); clip-path: inset(35% 0 35% 0); }
+  35%  { transform: translate(6px, 0); clip-path: inset(70% 0 8% 0); }
+  50%  { transform: translate(-5px, 0); clip-path: inset(8% 0 75% 0); }
+  65%  { transform: translate(3px, 0); clip-path: inset(50% 0 20% 0); }
+  80%  { opacity: 0.7; transform: translate(-2px, 0); clip-path: inset(20% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
 /* Session 29: `·` is the lone structural separator between label and
    count — kept dim so the bright label/count read as the data. */
 .separator {
