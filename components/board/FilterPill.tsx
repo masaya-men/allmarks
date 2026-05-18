@@ -66,7 +66,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
       >
         <span className={styles.label} data-glitch-text={label(value, moods)}>{displayLabel}</span>
         <span className={styles.separator}>·</span>
-        <span className={styles.count}>{displayCount}</span>
+        <span className={styles.count} data-glitch-text={countFor(value, counts)}>{displayCount}</span>
       </button>
       {open && (
         <div className={styles.menu} role="menu">
