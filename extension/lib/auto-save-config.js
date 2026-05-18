@@ -17,6 +17,9 @@ export const AUTO_SAVE_DEFAULTS = {
   autoSaveBlueskyLike: true,
   autoSaveBlueskyRepost: true,
   autoSaveThreadsLike: true,
+  autoSaveRedditUpvote: true,
+  autoSaveRedditSave: true,
+  autoSavePinterestSave: true,
 }
 
 export const SOURCE_TO_KEY = {
@@ -35,6 +38,9 @@ export const SOURCE_TO_KEY = {
   'bluesky-like': 'autoSaveBlueskyLike',
   'bluesky-repost': 'autoSaveBlueskyRepost',
   'threads-like': 'autoSaveThreadsLike',
+  'reddit-upvote': 'autoSaveRedditUpvote',
+  'reddit-save': 'autoSaveRedditSave',
+  'pinterest-save': 'autoSavePinterestSave',
 }
 
 export function configKeyForSource(source) {

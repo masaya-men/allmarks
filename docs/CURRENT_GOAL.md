@@ -1,80 +1,60 @@
-# 次セッションのゴール (= セッション 49)
+# 次セッションのゴール (= セッション 50)
 
 ## ゴール
 
-**拡張機能の対応サイト追加 sprint 4 セッション目 (= 最終): Reddit + Pinterest 連動**。 session 48 で Bluesky + Threads を ship 済、 配信先サイトは現時点で 9 サイト。 session 49 で 2 つ追加して **11 サイト = 8 追加サイト sprint 完了**。 完了直後、 全 11 サイトの user 実機検証チェックシートを 1 度出す。
+**user 実機検証チェックシートの結果次第で 2 方向**:
+
+- **(A) 検証で問題発覚** → 該当サイトの button 検知 / OFF 除外 / URL 抽出 を修正、 再 deploy。 通常 1-2 サイトの fix で済む見込み
+- **(B) 全 11 サイト × 18 ボタン OK** → 拡張機能の磨きフェーズへ。 **(I-08) 画面右端 floating ボタン** か **(I-09) cursor pill 音波化 + テーマ連動設計** のどちらから着手するか user と相談
+
+session 49 で 8 追加サイト sprint 完走。 配信先 11 サイト / 検知 18 ボタン / 内部 source 18。 検証シートは session 49 close メッセージで提示済 (= 引き継ぎメッセージ参照)。
 
 ## 開始時の動き
 
-1. **user に前 session の動作確認は問わない** (= memory `feedback_batch_extension_verification.md`、 sprint 完了時に 1 度まとめて検証シート出す方針)
-2. Reddit 着手 → 完成 → 本番反映 → Pinterest も同セッションで完成 → 全 ship 完了の引き継ぎ前に **検証シート提示**
-3. user から自発的に「これまでに ship した 9 サイトの連動うまくいかない」 等の報告が来たら最優先で修正、 こちらから問わない
+1. user から「全部 OK」 「X サイトで動かない」 等の検証結果が来るのを待つ (= 自発的に検証は問わない、 user が報告 or 「次へ進めて」 と言ってくる)
+2. (A) 問題報告ありなら、 該当 file (= `extension/{site}.js`) を読んで原因究明 + 修正 + 再 deploy
+3. (B) 全 OK なら、 (I-08) (I-09) のどちらから着手するか聞く
 
-## このセッションでやること (= 2 サイト追加 + sprint 完了)
+## (A) パスの判断材料
 
-### Reddit 連動 (= 第 1 目標)
+- aria-label 系のミスマッチ (= 検知が走らない) → DOM 構造を user 環境で確認、 lowercase / locale stem / OFF 除外を patch
+- 誤発火 (= 関係ない button でも保存される) → scope 判定を強化 (= 例: Reddit の shreddit-comment 除外パターンを他サイトに横展開)
+- URL 抽出が間違う (= 別 URL に紐付く) → og:url shape verify を厳密化、 fallback pathname pattern を強化
 
-- **URL pattern**: `https://www.reddit.com/r/{subreddit}/comments/{postId}/{slug}/` (= 投稿詳細 URL)、 fallback で `og:url` (Reddit は canonical 設定済)
-- **検知対象 button**: 「Upvote」 (= 上矢印) + 「Save」 (= 「Save」 menu item)
-- **DOM 構造の hint**: Reddit は新 UI (shreddit-post web component) と旧 UI (.thing) が混在。 新 UI は `shreddit-post` element に attribute あり、 button は `aria-label="upvote"` (lowercase) / `aria-label="Save"`。 mid-toggle で「Upvoted」 / 「Saved」 に変化するので OFF action は最初に除外
-- **scope**: post 詳細ページのみ (= /r/{sub}/comments/{id}/...)。 feed (/r/{sub}/) 上の同 button は extractPostUrl null return で実質除外。 comment 上の Upvote は post の Upvote とぶつかるので button が post root に紐づくかチェック (= `closest('shreddit-post')` の有無)
-- **OGP**: Reddit は `og:title` / `og:description` / `og:image` 揃ってる、 meta 直接抽出 OK
-- **manifest matches**: `https://www.reddit.com/*` + `https://reddit.com/*` + `https://new.reddit.com/*` (= old.reddit.com は別 UI なので scope 外)
+## (B) パスの選択肢
 
-### Pinterest 連動 (= 第 2 目標)
+### (I-08) 画面右端 floating ボタン
+- 実装難度: 低 (= 50 行くらい)
+- 影響範囲: `extension/content.js` + `extension/content.css` + options.html / options.js (= ON/OFF + 位置切替)
+- メリット: 全 URL 1 click 保存の 4 番目の経路 (= ショートカット / 右クリック / 拡張アイコン に加わる)。 mouse 派ユーザーへ最も近い操作距離
+- 懸念: 一部サイトの右端 UI (= Slack / Notion / 動画サイト controls) と干渉、 設定で位置切替可能にすることで mitigate
 
-- **URL pattern**: `https://www.pinterest.com/pin/{pinId}/` (= 投稿詳細 URL)、 fallback で `og:url`
-- **検知対象 button**: 「Save」 (= board に保存)
-- **DOM 構造の hint**: Pinterest は React、 Save ボタンは `data-test-id="pin-action-save"` or 類似 attribute あり (要確認)。 fallback で aria-label に "Save" / 「保存」 含む button を loose match。 Pinterest は Save 直後に board 選択 popover を出すので、 「Save」 ボタン押下時点で URL 抽出 → ON 判定する設計で OK
-- **OGP**: Pinterest は `og:*` 揃ってる、 meta 直接抽出 OK
-- **manifest matches**: `https://www.pinterest.com/*` + `https://pinterest.com/*` + `https://jp.pinterest.com/*` (= 各国 subdomain あり、 今回は jp + 無印で MVP scope、 他国は要望が来たら追加)
+### (I-09) cursor pill 音波化 + テーマ連動設計
+- 実装難度: 中 (= 音波 keyframes 設計 + CSS 変数受け口の抽象化)
+- 影響範囲: `extension/content.css` (= keyframes 書き換え) + 将来テーマ system の受け口 (= CSS 変数経由)
+- メリット: AllMarks default theme (= 黒+白 minimal + 音波 motif) と extension の見た目統一、 将来テーマ system 拡張時に拡張機能側も連動可能な設計を今のうちに仕込める
+- 懸念: 「将来テーマ system」 自体がまだ不在、 receptive 設計だけ仕込む形になる
 
-### 共通の量産レシピ (= 7 step、 session 46 確立、 session 47-48 で写経再利用済)
-
-1. `extension/{site}.js` 作成 — `isExtensionAlive()` helper 8 行 + click 検知 + URL 抽出 + OGP 抽出 + dedupe + `try/catch` で sendMessage wrap
-2. `extension/manifest.json` の content_scripts に matches 追加
-3. `extension/lib/auto-save-config.js` の `AUTO_SAVE_DEFAULTS` + `SOURCE_TO_KEY` に 1-2 source 追加 (= デフォルト ON)
-4. `extension/options.html` + `extension/options.js` にトグル 1-2 個追加
-5. `tests/extension/auto-save-config.test.ts` の source → key mapping テストに行追加
-6. tsc + vitest + `pnpm build` + `wrangler pages deploy out/ --project-name=booklage --branch=master --commit-dirty=true --commit-message="..."`
-7. TODO.md / TODO_COMPLETED.md / CURRENT_GOAL.md 更新 + commit
-
-## 全サイト ship 完了時 (= session 49 後半) の動き
-
-memory `feedback_batch_extension_verification.md` 通り、 全 8 追加サイト (= note / Pixiv / Vimeo / SoundCloud / Bluesky / Threads / Reddit / Pinterest) + 既存 3 サイト (= X / YouTube / TikTok) ship 完了時に、 user に以下を含むチェックリストを 1 度だけ提示:
-
-- 各サイト × 各 button (= 全 17 ボタン目安、 site 11 + button 8 追加 + 既存 6) の検知可否
-- console エラー有無 (= 全 11 file の防御コード効いてるか)
-- TikTok 含む既存 3 サイトの動作も再確認 (= 友達アカウント検証込み)
-
-検証シート提示後 user が「OK」 と確認したら、 次は **(I-08) 画面右端 floating ボタン** か **(I-09) cursor pill 音波化** の磨きフェーズに進む。 user 判断待ち。
-
-## 残り backlog (= sprint 完了後の磨き)
-
-- 🔜 **(I-08) 画面右端 floating ボタン** (= 磨きフェーズ、 sprint 完了後の最有力候補)
-- 🔜 **(I-09) cursor pill 音波化 + テーマ連動設計** (= 同上)
+両方の詳細は `docs/private/IDEAS.md` (I-08) (I-09) セクション参照。
 
 ## 月末リマインダー (= 約 2 週間後 2026-05-31)
 
-`allmarks.app` ドメイン取得確認。 取得済なら 拡張機能の Chrome Web Store submit + 本体 rebrand sprint に進む。 拡張に追加サイト連動全部入った状態で submit すれば「対応サイト 11 + 全 URL 4 経路 + 連動 17 ボタン」 の機能リッチな v1.0 として出せる。
+`allmarks.app` ドメイン取得確認。 取得済なら 拡張機能の Chrome Web Store submit + 本体 rebrand sprint に進む。 拡張に **11 サイト × 18 ボタン連動 + (I-08) (I-09) 磨き** が入った状態で submit すれば、 機能リッチな v1.0 として出せる。
 
 ## 引き継ぎ resources
 
-- [docs/TODO.md](docs/TODO.md) — active backlog (= 「現在の状態」 が session 48 narrative)
-- [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) — session 48 narrative
-- [docs/private/IDEAS.md](docs/private/IDEAS.md) — (I-05) (I-08) (I-09) に拡張機能の追加サイト計画 / 磨き計画 永続化済
-- memory `feedback_batch_extension_verification.md` (= sprint 中は user 検証問わない、 最後に 1 度まとめ)
+- [docs/TODO.md](docs/TODO.md) — active backlog (= 「現在の状態」 が session 49 narrative)
+- [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) — session 49 narrative
+- [docs/private/IDEAS.md](docs/private/IDEAS.md) — (I-08) (I-09) の磨きフェーズ詳細
+- memory `feedback_batch_extension_verification.md` (= 検証は user から自発報告を待つ、 こちらから問わない)
 - memory `feedback_read_ideas_first.md` (= 拡張機能関連は IDEAS.md 優先で読む)
 - memory `feedback_jargon_in_japanese.md` (= 横文字を日本語応答に混ぜない)
-- session 45 narrative: [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) セッション 45 セクション (= TikTok = 量産レシピ確立 1 件目)
-- session 46 narrative: [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) セッション 46 セクション (= 防御コードパターン + note / Pixiv 量産 2 件目)
-- session 47 narrative: [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) セッション 47 セクション (= Vimeo / SoundCloud 量産 3 件目)
-- session 48 narrative: [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) セッション 48 セクション (= Bluesky / Threads 量産 4 件目)
+- session 49 narrative: [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) セッション 49 セクション (= 8 追加サイト sprint 完走 narrative)
 
-## session 48 で確定したこと (= 永続)
+## session 49 で確定したこと (= 永続)
 
-- **OFF action 除外を最初に走らせる pattern が安定**: aria-label が ON / OFF で文字列分岐するサイト (= Bluesky / Threads / Reddit 全部) は、 ON pattern を緩く match させると OFF も拾うので、 「最初に OFF を弾く → 次に ON を判定」 の二段構えが標準。 `\b` word boundary も併用 (= "Unlike" に "like" がマッチしない単語境界の性質を活用)
-- **複数 locale の aria-label は OR 正規表現で十分**: Pixiv / Threads は同じ手法でカバー (= ja / en / zh / ko の stem を `|` で繋ぐ)。 Reddit は en のみ、 Pinterest は jp + en のみで OK
-- **写経速度の上限が見えてきた**: bluesky.js / threads.js は 95% 写経。 残り 2 サイト (= Reddit / Pinterest) も同ペースで session 49 内に収まる見込み
-- **配信先サイト 9**: X / YouTube / TikTok / note / Pixiv / Vimeo / SoundCloud / Bluesky / Threads (= ship 済) + 残り Reddit / Pinterest = **session 49 で sprint 完了**
-- **sprint 完了時に検証シート提示**: 全 11 サイト × 全 17 ボタン目安 + console エラー有無のチェックリストを 1 度だけ出す
+- **量産レシピは Reddit / Pinterest で写経完成 — 卒業段階に到達**: bluesky.js / threads.js / vimeo.js / soundcloud.js / note.js / pixiv.js / reddit.js / pinterest.js の構造は完全に固まった。 違いは URL pattern (= 2-3 行) と button 検知ロジック (= 5-10 行) の 2 箇所のみ。 8 追加サイト sprint で 1 セッション 2 サイトのペースを安定維持
+- **scope 判定の `.closest()` 二段構え** (= NOT inside X + IS inside Y) は Reddit が初の本格適用、 将来「コメント階層を持つサイト全般」 に応用可能
+- **data-test-id 優先 + aria-label fallback の二段戦略** (= Pinterest が初の本格適用) は React 製サイト全般で安定。 TikTok の `data-e2e` と同じ思想で、 今後新規 React サイト追加時は data-test-id を最優先で探す
+- **配信先サイト 11**: X / YouTube / TikTok / note / Pixiv / Vimeo / SoundCloud / Bluesky / Threads / Reddit / Pinterest (= ship 済、 sprint 完走)
+- **検知ボタン 18 個**: 全 18 source、 デフォルト全 ON、 options で個別 ON/OFF 可能

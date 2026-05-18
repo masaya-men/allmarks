@@ -2779,3 +2779,68 @@ memory `feedback_batch_extension_verification.md` 通り、 sprint 中は sessio
 - **写経速度の上限が見えてきた**: bluesky.js / threads.js の構造は vimeo.js / soundcloud.js と 95% 以上同じ。 違いは URL pattern (= 2-3 行) と button 検知ロジック (= 5-10 行) の 2 箇所のみ。 残り 2 サイト (= Reddit / Pinterest) も同ペースで次セッションに収まる見込み
 - **CURRENT_GOAL.md の事前情報が高精度だった**: session 48 開始時の goal 文に「URL pattern」「DOM 構造 hint」「OGP」「manifest matches」 が site 別に明記されていたので、 source 読みなしで Bluesky / Threads の構造を組み立てられた。 次回も同様に CURRENT_GOAL.md で次セッションへの引き継ぎを richer に書く方針を維持する
 
+
+## セッション 49 (2026-05-18) — Reddit + Pinterest 連動 ship (= 8 追加サイト sprint 完了、 配信先 11 サイトに)
+
+### 出発点
+
+session 48 close 後、 user 指示「途中の動作確認は問わない、 そのまま Reddit + Pinterest に着手」 (= memory `feedback_batch_extension_verification.md` 通り、 全 8 追加サイト ship 完了時に 1 度まとめて検証シート出す方針)。 session 46 / 47 / 48 で写経のテンプレが完全に固まったので、 ほぼ無編集の写経で 2 サイトを 1 セッションに収めて 8 追加サイト sprint を完走させる目標。
+
+### Phase 1: Reddit 連動 ship
+
+[extension/reddit.js](../extension/reddit.js) を新規作成 (= 110 行):
+
+- **URL pattern**: canonical `og:url` を第一優先 (= `/r/{sub}/comments/{id}/...` の shape を正規表現で verify)、 fallback で `pathname /r/{sub}/comments/{id}(/{slug})?/` マッチ。 slug は短縮 share URL で省略されることがあるので optional 化、 canonical URL を `https://www.reddit.com/r/{sub}/comments/{id}/[{slug}/]` 形で再構築
+- **MVP scope**: 投稿詳細ページのみ (= feed では permalink 解決が脆く、 OFF)
+- **scope 判定の二段構え**: post 詳細ページには **1 つの `<shreddit-post>` (= 親 post) + 多数の `<shreddit-comment>`** が同居。 button が `.closest('shreddit-comment')` にヒットしたら早期 return (= コメント側の Upvote / Save が post の URL に紐付くのを防ぐ)、 次に `.closest('shreddit-post')` の有無で post root に属するかチェック。 これがないとコメント Upvote で誤保存される
+- **button 検知**: `aria-label` を lowercase 化、 まず **downvote 完全除外** (= upvote toggle と別 button だが label 内に 'vote' を含むため明示)、 次に OFF action 除外 (= `\bremove\b` / `\bunsave\b`)、 最後に ON action (= `\bupvote\b` / `\bsave\b`) を `\b` word boundary 付きで検知。 Save は kebab menu 内の `role="menuitem"` でも発火するので closest selector に `[role="menuitem"]` も含めた
+- **OGP**: meta タグから抽出、 favicon は `https://www.reddit.com/favicon.ico` 固定、 siteName = "Reddit"
+- **manifest matches**: `https://www.reddit.com/*` + `https://reddit.com/*` + `https://new.reddit.com/*` (= old.reddit.com は別 UI で scope 外)
+
+### Phase 2: Pinterest 連動 ship
+
+[extension/pinterest.js](../extension/pinterest.js) を新規作成 (= 100 行):
+
+- **URL pattern**: canonical `og:url` を第一優先 (= `pinterest.{tld}/pin/{pinId}` の shape を locale-agnostic に正規表現マッチ)、 fallback で `pathname /pin/{pinId}/` を `https://www.pinterest.com/pin/{pinId}/` で正規化 (= 各国 subdomain が ja/com 等あっても canonical 1 本に統一)
+- **MVP scope**: pin 詳細ページのみ。 home feed のホバーカードでも Save が動くが、 hover 中の pin 解決は脆く OFF
+- **button 検知の二段戦略**: まず `data-test-id` で安定 attribute マッチ (= `pin-action-save` / `pinSaveButton` / `save-button` を OR、 React 内部 stable で aria-label 変化に強い)、 fallback で `aria-label` の locale stem マッチ (= en `\bsave\b` / ja `保存` / ko `저장` / zh も `保存` で同じ正規表現)。 OFF state は Pinterest では事実上ないが `\bunsave\b` / 取り消 / 취소 も念のため除外
+- **Save 後の popover 罠を回避**: Pinterest は Save click 後すぐ「保存先ボード選択」 popover を出すが、 URL 抽出は click 時点 (= popover が出る前) に走るので extraction は安定
+- **OGP**: meta タグから抽出、 favicon は `https://www.pinterest.com/favicon.ico` 固定、 siteName = "Pinterest"
+- **manifest matches**: `https://www.pinterest.com/*` + `https://pinterest.com/*` + `https://jp.pinterest.com/*` (= 各国 subdomain あり、 jp + 無印で MVP scope、 他国は要望が来たら追加)
+
+### Phase 3: config / options / test 更新
+
+- [lib/auto-save-config.js](../extension/lib/auto-save-config.js) の `AUTO_SAVE_DEFAULTS` + `SOURCE_TO_KEY` に 3 source 追加 (= `reddit-upvote` / `reddit-save` / `pinterest-save`、 デフォルト全 ON)
+- [options.html](../extension/options.html) にトグル 3 個 + [options.js](../extension/options.js) の `AUTO_SAVE_KEYS` / `DEFAULTS` に追加
+- [tests/extension/auto-save-config.test.ts](../tests/extension/auto-save-config.test.ts) の source → key mapping に 3 行追加 (= 全 18 source check)
+
+### 検証
+
+- 型チェック: clean
+- 単体テスト: vitest `auto-save-config.test.ts` 6/6 PASS (= 全 18 source 網羅)。 全件 519/519 中、 `tests/lib/channel.test.ts` の `subscriber receives postBookmarkSaved event` が並列実行時に 1 件 flaky だが、 単体再実行で PASS (= BroadcastChannel async タイミング依存、 既知 + 触れた領域外)
+- ビルド: 成功 (= Next.js 16.2.3 Turbopack、 22 static pages 生成)
+- 本番デプロイ: `https://booklage.pages.dev` 反映 (= 1 deploy で新規 2 file + 既存 5 file 変更、 commit message `extension: Reddit + Pinterest auto-save (sprint complete, 11 sites)`)
+
+### 配信先サイト数 = **11 サイト到達 (= 8 追加サイト sprint 完了)**
+
+- 既存 (session 44-45 ship): X / YouTube / TikTok = 3
+- 8 追加サイト sprint で ship:
+  - session 46: note / Pixiv = 2
+  - session 47: Vimeo / SoundCloud = 2
+  - session 48: Bluesky / Threads = 2
+  - session 49: Reddit / Pinterest = 2 (= sprint 完了)
+- 諦め: Instagram (= ログイン壁 + CORS でサムネ取得不可)
+- **内部 source 数**: 18 (= X 2 + YouTube 2 + TikTok 2 + note 1 + Pixiv 2 + Vimeo 2 + SoundCloud 1 + Bluesky 2 + Threads 1 + Reddit 2 + Pinterest 1)
+- **検知ボタン数**: 18 ボタン (= source 数と一致)
+
+### user 実機検証チェックシート (= sprint 完了時の 1 度きり提示)
+
+session 49 close の引き継ぎメッセージで全 11 サイト × 全 18 ボタン + console エラー有無のチェックリストを 1 度提示する。 user OK 確認後、 次セッションは磨きフェーズ (= I-08 floating ボタン or I-09 cursor pill 音波化) に進む判断。
+
+### 学び
+
+- **写経の上限まで到達 — 2 サイトを 1 セッションで sprint 完走できた**: bluesky.js / threads.js / vimeo.js / soundcloud.js / note.js / pixiv.js の構造が完全に固まっていたので、 Reddit / Pinterest は両方とも「テンプレ写経 + URL pattern + button 検知ロジック」 の 3 領域のみ書けば済み、 1 セッション内に 2 サイト + manifest + config + options + test + build + deploy + docs まで全部回せた。 残り「磨きフェーズ」 (= I-08 / I-09) は写経対象がない領域なので、 sprint レシピを卒業して新しい設計フェーズに入る
+- **scope 判定の `.closest()` 二段構え** (= NOT inside X + IS inside Y) は Reddit が初の本格適用。 同じ pattern は将来「コメント / リプライ階層を持つサイト全般」 (= Threads / Bluesky のリプライ、 Pixiv のコメント等) に応用可能。 ただし現状 Threads / Bluesky は post 詳細ページの URL pattern が detail 限定なので feed / comment との衝突は起きていない (= OFF action 除外で十分)。 Reddit のように「コメントも post と同じ shreddit-* component で同じ button を持つ」 構造は珍しい
+- **data-test-id 優先 + aria-label fallback の二段戦略** (= Pinterest が初の本格適用) は React 製サイト全般で安定。 aria-label は locale 化されると追加対応が必要だが、 data-test-id は内部 stable なので長期的に強い。 既存サイト (= TikTok の `data-e2e`) と同じ思想で、 今後新しい React サイトを追加する時はまず data-test-id を最優先で探す方針が確立
+- **flaky テスト (= BroadcastChannel async)**: vitest 全件並列実行時に `tests/lib/channel.test.ts` が 1 件 fail することが session 49 で初観測。 単体再実行で PASS なので並列タイミング依存。 触れた領域外なので今回は記録のみ、 将来 channel.test.ts に触る session で `await vi.runAllTimersAsync()` or fake timer 化で固める方針 (= 今すぐは不要)
+

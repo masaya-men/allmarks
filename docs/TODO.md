@@ -20,27 +20,32 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 48 — Bluesky + Threads 連動 ship、 全部 prod 反映済)
+### 直近の状態 (2026-05-18 セッション 49 — Reddit + Pinterest 連動 ship = 8 追加サイト sprint 完了、 配信先 **11 サイト** 到達)
 
-session 47 close 後、 user 指示「途中の動作確認は問わない、 そのまま Bluesky + Threads に着手」 (= memory `feedback_batch_extension_verification.md` 通り、 全 8 サイト ship 完了時に 1 度まとめて検証シート出す方針)。 量産レシピ 7 step (= 防御コード込み) を踏襲して 2 サイトを写経ベースで追加。 配信先サイトは 7 → 9 サイトに拡張。
+session 48 close 後、 user 指示通り Reddit + Pinterest 2 サイトを 1 セッションで写経完走。 量産レシピ 7 step (= 写経 + URL pattern + button 検知の 3 領域のみ書き換え) を踏襲、 sprint 全完走。 8 追加サイト sprint 完了で **配信先 9 → 11 サイト**、 **内部 source 数 15 → 18** (= 検知ボタン 18 個)。
 
-**ship 済 (= prod 反映済、 user 実機検証は最終セッションでまとめて)**:
-- **Bluesky 連動** (= [extension/bluesky.js](../extension/bluesky.js) 新規 100 行): canonical `og:url` 第一優先 + pathname `/profile/{handle}/post/{postId}` マッチ (= handle は domain-style と DID 両対応)、 feed page は extractPostUrl null return で実質的に detail page 限定。 Like + Repost 検知 (= aria-label を lowercase 化、 OFF (`unlike` / `undo` / 「取り消」 / 「취소」) を最初に除外してから ON (`like` / 「いいね」 / 「좋아」、 `repost(s)?` / 「リポスト」) を `\b` word boundary 付きで判定)
-- **Threads 連動** (= [extension/threads.js](../extension/threads.js) 新規 95 行): canonical `og:url` 第一優先 + pathname `/@{user}/post/{postId}` マッチ (= 4 host 対応で `location.origin` 使用)。 Like 検知 (= Pixiv 同様 locale 化される aria-label に対し en `\blike\b` / ja 「いいね」 / ko 「좋아」 / zh 「喜欢」「赞」 を OR 正規表現でカバー)
+**ship 済 (= prod 反映済、 user 実機検証は本セッションで全 18 ボタン分まとめて出す)**:
+- **Reddit 連動** (= [extension/reddit.js](../extension/reddit.js) 新規 110 行): canonical `og:url` 第一優先 + pathname `/r/{sub}/comments/{id}(/{slug})?/` マッチ。 **scope 判定の二段構え** (= `.closest('shreddit-comment')` ヒットなら早期 return、 `.closest('shreddit-post')` 必須) でコメント側 Upvote / Save の誤発火を防御。 Upvote + Save 検知 (= aria-label lowercase 化、 まず `\bdownvote\b` を完全除外、 次に OFF `\bremove\b` / `\bunsave\b` を除外してから ON `\bupvote\b` / `\bsave\b` を `\b` 付きで判定)。 Save は kebab menu 内 `role="menuitem"` でも発火するので closest selector に追加
+- **Pinterest 連動** (= [extension/pinterest.js](../extension/pinterest.js) 新規 100 行): canonical `og:url` 第一優先 + pathname `/pin/{pinId}/` マッチ。 **button 検知の二段戦略** = まず `data-test-id` で安定 attribute マッチ (= `pin-action-save` / `pinSaveButton` / `save-button`、 React 内部 stable)、 fallback で aria-label の locale stem (= en `\bsave\b` / ja `保存` / ko `저장` / zh `保存`) マッチ。 Save 後の「保存先ボード選択」 popover が出る前 (= click 時点) に URL 抽出するので popover swap 罠は回避
 
-**新規 file**: `extension/bluesky.js`、 `extension/threads.js`
+**新規 file**: `extension/reddit.js`、 `extension/pinterest.js`
 
 **変更 file**: `extension/manifest.json`、 `extension/lib/auto-save-config.js`、 `extension/options.html`、 `extension/options.js`、 `tests/extension/auto-save-config.test.ts`
 
-**配信先サイト 7 → 9 に拡張**:
-- 既存: X / YouTube / TikTok / note / Pixiv / Vimeo / SoundCloud
-- 追加: Bluesky / Threads (= 計 9 サイト)
-- 残り 2 サイト (= Reddit / Pinterest) は次セッションで一気に追加して 8 sprint 完了予定
-- Instagram は引き続き諦め
+**配信先サイト 9 → 11 に拡張 (= 8 追加サイト sprint 完走)**:
+- 既存 (session 44-45): X / YouTube / TikTok = 3
+- session 46-49 で追加: note / Pixiv / Vimeo / SoundCloud / Bluesky / Threads / Reddit / Pinterest = 8
+- 諦め: Instagram (= ログイン壁 + CORS でサムネ取得不可)
 
-詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 48 セクション
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 49 セクション
 
-**次セッション (= 49) の goal**: Reddit + Pinterest 連動 (= 8 追加サイト sprint の最終セッション)。 全 ship 完了時に user 実機検証シートを 1 度まとめて出す。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
+**次セッション (= 50) の goal**: user 実機検証チェックシートの結果を元に必要があれば修正、 問題なければ磨きフェーズ ((I-08) 画面右端 floating ボタン or (I-09) cursor pill 音波化 + テーマ連動設計) に進む判断。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
+
+---
+
+### 旧情報 (2026-05-18 セッション 48 — Bluesky + Threads 連動 ship、 全部 prod 反映済)
+
+session 47 close 後、 量産レシピ 7 step を踏襲して 2 サイト (= Bluesky / Threads) を写経ベースで追加。 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 48 セクション
 
 ---
 
@@ -272,19 +277,19 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 - ~~**B-#21 縦動画 tweet の card 縦横比**~~ ✅ session 45 で **(c) 受容** に user 判断確定 (= 翌ボードセッションで [lib/board/tweet-backfill.ts](../lib/board/tweet-backfill.ts) + [lib/board/backfill-queue.ts](../lib/board/backfill-queue.ts) が再取得して mediaSlots を更新するので直る前提)
 
-### 拡張機能 追加 backlog (= session 45 で確定、 詳細 `docs/private/IDEAS.md` (I-05))
+### 拡張機能 追加 backlog (= 8 追加サイト sprint **完走 session 49**、 詳細 `docs/private/IDEAS.md` (I-05))
 
-SNS ボタン連動を 1 サイトずつ追加。 各セッションで 1-2 サイト目安。
-
-- ✅ **note** スキ連動 (= session 46 で ship、 user 実機検証は最終セッションで一括)
-- ✅ **Pixiv** ブクマ / いいね連動 (= session 46 で ship、 user 実機検証は最終セッションで一括)
-- ✅ **Vimeo** like / watch later 連動 (= session 47 で ship、 user 実機検証は最終セッションで一括)
-- ✅ **SoundCloud** like 連動 (= session 47 で ship、 user 実機検証は最終セッションで一括)
-- ✅ **Bluesky** like / repost 連動 (= session 48 で ship、 user 実機検証は最終セッションで一括)
-- ✅ **Threads** いいね連動 (= session 48 で ship、 user 実機検証は最終セッションで一括)
-- 🔜 **Reddit** upvote / save 連動 (= 海外大、 次セッションで sprint 完了予定)
-- 🔜 **Pinterest** save 連動 (= 次セッションで sprint 完了予定)
+- ✅ **note** スキ連動 (= session 46 で ship)
+- ✅ **Pixiv** ブクマ / いいね連動 (= session 46 で ship)
+- ✅ **Vimeo** like / watch later 連動 (= session 47 で ship)
+- ✅ **SoundCloud** like 連動 (= session 47 で ship)
+- ✅ **Bluesky** like / repost 連動 (= session 48 で ship)
+- ✅ **Threads** いいね連動 (= session 48 で ship)
+- ✅ **Reddit** upvote / save 連動 (= session 49 で ship)
+- ✅ **Pinterest** save 連動 (= session 49 で ship)
 - ❌ **Instagram** 諦め (= ログイン壁 + CORS でサムネ取得不可、 価値見合わず)
+
+**配信先サイト 11 到達** (= 既存 X / YouTube / TikTok 3 + sprint 追加 8)、 **検知ボタン 18 個**。 session 49 close で user 実機検証チェックシートを 1 度提示、 結果次第で修正 or 磨きフェーズへ。
 
 ### 拡張機能 磨きフェーズ (= 9 サイト追加が終わった後、 詳細 IDEAS.md (I-08) (I-09))
 

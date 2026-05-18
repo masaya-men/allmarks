@@ -123,6 +123,24 @@
       ],
       "js": ["threads.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.reddit.com/*",
+        "https://reddit.com/*",
+        "https://new.reddit.com/*"
+      ],
+      "js": ["reddit.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.pinterest.com/*",
+        "https://pinterest.com/*",
+        "https://jp.pinterest.com/*"
+      ],
+      "js": ["pinterest.js"],
+      "run_at": "document_idle"
     }
   ],
   "default_locale": "en"

@@ -18,6 +18,9 @@ describe('auto-save-config', () => {
     expect(configKeyForSource('bluesky-like')).toBe('autoSaveBlueskyLike')
     expect(configKeyForSource('bluesky-repost')).toBe('autoSaveBlueskyRepost')
     expect(configKeyForSource('threads-like')).toBe('autoSaveThreadsLike')
+    expect(configKeyForSource('reddit-upvote')).toBe('autoSaveRedditUpvote')
+    expect(configKeyForSource('reddit-save')).toBe('autoSaveRedditSave')
+    expect(configKeyForSource('pinterest-save')).toBe('autoSavePinterestSave')
   })
 
   it('returns null for unknown sources', () => {

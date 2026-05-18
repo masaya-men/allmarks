@@ -15,6 +15,9 @@ const AUTO_SAVE_KEYS = [
   'autoSaveBlueskyLike',
   'autoSaveBlueskyRepost',
   'autoSaveThreadsLike',
+  'autoSaveRedditUpvote',
+  'autoSaveRedditSave',
+  'autoSavePinterestSave',
 ]
 const DEFAULTS = {
   autoOpenPip: false,
@@ -34,6 +37,9 @@ const DEFAULTS = {
   autoSaveBlueskyLike: true,
   autoSaveBlueskyRepost: true,
   autoSaveThreadsLike: true,
+  autoSaveRedditUpvote: true,
+  autoSaveRedditSave: true,
+  autoSavePinterestSave: true,
 }
 
 async function load() {
