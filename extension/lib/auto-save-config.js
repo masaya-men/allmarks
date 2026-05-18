@@ -11,6 +11,9 @@ export const AUTO_SAVE_DEFAULTS = {
   autoSaveNoteLike: true,
   autoSavePixivBookmark: true,
   autoSavePixivLike: true,
+  autoSaveVimeoLike: true,
+  autoSaveVimeoWatchLater: true,
+  autoSaveSoundCloudLike: true,
 }
 
 export const SOURCE_TO_KEY = {
@@ -23,6 +26,9 @@ export const SOURCE_TO_KEY = {
   'note-like': 'autoSaveNoteLike',
   'pixiv-bookmark': 'autoSavePixivBookmark',
   'pixiv-like': 'autoSavePixivLike',
+  'vimeo-like': 'autoSaveVimeoLike',
+  'vimeo-watch-later': 'autoSaveVimeoWatchLater',
+  'soundcloud-like': 'autoSaveSoundCloudLike',
 }
 
 export function configKeyForSource(source) {

@@ -12,6 +12,9 @@ describe('auto-save-config', () => {
     expect(configKeyForSource('note-like')).toBe('autoSaveNoteLike')
     expect(configKeyForSource('pixiv-bookmark')).toBe('autoSavePixivBookmark')
     expect(configKeyForSource('pixiv-like')).toBe('autoSavePixivLike')
+    expect(configKeyForSource('vimeo-like')).toBe('autoSaveVimeoLike')
+    expect(configKeyForSource('vimeo-watch-later')).toBe('autoSaveVimeoWatchLater')
+    expect(configKeyForSource('soundcloud-like')).toBe('autoSaveSoundCloudLike')
   })
 
   it('returns null for unknown sources', () => {

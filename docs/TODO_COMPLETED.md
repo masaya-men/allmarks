@@ -2664,3 +2664,59 @@ try {
 - **「途中で聞かなくていい」 は scope 確定後の signal**: user が「ぜんぶ」 + 「適度に区切って」 で scope (= 5 file 防御 + note + Pixiv) を確定した後、 「途中で聞かなくていい」 は scope 内では裁量任せの意味。 1 file ずつ確認しに行かない、 けど scope 外 (= Vimeo に手を出す) は別問題。 区切りの定義が明確だと dispatch スピードが上がる
 - **note の「スキ」 と like の英語 source 名**: 内部 source 名 (= `note-like`) と UI 表示 (= 「note — スキ button」) を別物に保つことで、 コード上は英語統一、 UI は user 語彙という分業ができる。 同じ判断は将来の Reddit `upvote` (= source 名 `reddit-upvote`) や Bluesky `repost` でも使える
 - **build 出力に out/ がリストされないが exists**: `pnpm build` で生成された out/ は build 出力ログには表示されないが ls で確認可能 (= memory `reference_pnpm_build_required.md` 通り、 必ず ls 確認する)
+
+
+## セッション 47 (2026-05-18) — Vimeo + SoundCloud 連動 ship (= 配信先 9 サイトに拡張)
+
+### 出発点
+
+session 46 close 後、 user 指示「途中の動作確認は問わない、 そのまま Vimeo + SoundCloud に着手」 (= memory `feedback_batch_extension_verification.md` 通り全 8 サイト ship 完了時に 1 度まとめて検証シート出す方針)。 session 46 で確立した量産レシピ 7 step (= 防御コード込み) を踏襲して 2 サイトをそのまま追加。
+
+### Phase 1: Vimeo 連動 ship
+
+[extension/vimeo.js](../extension/vimeo.js) を新規作成 (= 105 行):
+
+- **URL pattern**: canonical `og:url` を第一優先 (= Vimeo は全 watch page で `og:url` を確実に設定)、 fallback で `pathname` の strict 正規表現マッチ (= `/{id}` / `/channels/{ch}/{id}` / `/groups/{g}/videos/{id}` / `/showcase/{s}/video/{id}`)。 creator dashboard (`/manage/...`) と review link (`/{user}/review/...`) は意図的に除外
+- **button 検知**: `aria-label` と `title` を結合して loose match。 **Watch Later を Like より先に判定** (= "add to watch later" が "later" を含むため "like" 判定で false positive が出ないように)
+- **OGP**: meta タグから `og:title` / `og:description` / `og:image` 抽出、 favicon は固定値、 siteName = "Vimeo"
+- **manifest matches**: `https://vimeo.com/*` + `https://player.vimeo.com/*` (= 埋め込み player は通常 click 対象外だが念のため)
+
+### Phase 2: SoundCloud 連動 ship
+
+[extension/soundcloud.js](../extension/soundcloud.js) を新規作成 (= 99 行):
+
+- **URL pattern**: pathname を直接マッチ + 予約語除外。 `/{user}/{slug}` (= 2 segment) のみ受け入れ、 second segment が `sets` / `likes` / `followers` / `following` / `tracks` / `reposts` / `comments` / `popular-tracks` / `albums` / `stations` / `info` / `network` の場合は除外。 first segment も `you` / `discover` / `feed` / `upload` / `charts` / `pages` の予約 surface は除外
+- **mini-player は scope 外**: 画面下端の常時 mini-player で Like を押した場合、 location.pathname が track URL でないので捕捉しない。 MVP は track 詳細ページのみ
+- **button 検知**: `aria-label` / `title` の "like" word boundary match + `sc-button-like` class 名 fallback (= SoundCloud の Ember.js 命名規則)
+- **OGP**: meta タグから抽出、 favicon 固定、 siteName = "SoundCloud"
+- **manifest matches**: `https://soundcloud.com/*` + `https://www.soundcloud.com/*`
+
+### Phase 3: config / options / test 更新
+
+- [lib/auto-save-config.js](../extension/lib/auto-save-config.js) の `AUTO_SAVE_DEFAULTS` + `SOURCE_TO_KEY` に 3 source 追加 (= `vimeo-like` / `vimeo-watch-later` / `soundcloud-like`、 デフォルト全 ON)
+- [options.html](../extension/options.html) にトグル 3 個 + [options.js](../extension/options.js) の `AUTO_SAVE_KEYS` / `DEFAULTS` に追加
+- [tests/extension/auto-save-config.test.ts](../tests/extension/auto-save-config.test.ts) の source → key mapping に 3 行追加 (= 全 12 source check)
+
+### 検証
+
+- 型チェック: clean
+- 単体テスト: vitest `auto-save-config.test.ts` 6/6 PASS
+- ビルド: 成功 (= Next.js 16.2.3 Turbopack、 22 static pages 生成)
+- 本番デプロイ: `https://booklage.pages.dev` 反映 (= 1 deploy で新規 2 file + 既存 5 file 変更)
+
+### user 実機検証 (= 全 8 サイト ship 完了時にまとめて)
+
+memory `feedback_batch_extension_verification.md` 通り、 sprint 中は session ごとの user 実機検証は問わない。 残り 4 サイト (= Bluesky / Threads / Reddit / Pinterest) が ship 完了したセッションで初めて、 全 8 サイト × 全ボタン (= 13 ボタン目安) + console エラー有無のチェックリストを 1 度出す。
+
+### 配信先サイト数
+
+- 既存: X / YouTube / TikTok / note / Pixiv = 5
+- session 47 追加: Vimeo / SoundCloud = **2 (= 計 7 サイト)**
+
+待って、 内部 source は 12 個になった (= X 2 + YouTube 2 + TikTok 2 + note 1 + Pixiv 2 + Vimeo 2 + SoundCloud 1)、 サイトは 7 個 (= ボタン数とサイト数が違う)。 (= CURRENT_GOAL.md / TODO.md では「サイト数」 を主軸にカウント = 7 が正)
+
+### 学び
+
+- **量産レシピが「ほぼ無編集の写経」 で済む段階に到達**: vimeo.js / soundcloud.js の構造は note.js / pixiv.js と 95% 同じ (= dedupe + isExtensionAlive + extractUrl + extractOgp + getButtonKind + click listener)。 違いは URL pattern と button 検知ロジックの 2 箇所だけ。 session 数を重ねるごとに「写経 + サイト固有 2 関数」 の dispatch スピードが上がっていて、 残り 4 サイトも同じペースで進められる見込み
+- **canonical URL 戦略は 2 通り使い分け**: Vimeo は `og:url` 第一優先 (= 全 watch page で確実、 短くて canonical)、 SoundCloud は pathname 直接マッチ (= og:url を信用すると mini-player Like を track 詳細ページでなく現在 URL に紐付けてしまう罠あり)。 「og:url か pathname か」 はサイトの URL 設計次第で機械的には決まらない、 1 つずつ判断する
+- **second segment 予約語除外パターンの再利用性**: SoundCloud で `RESERVED_SECOND_SEGMENT` set を使った設計は、 user / track の URL shape が衝突する SNS 全般に応用できる (= Bluesky / Threads / Reddit でも `/{user}/profile` 等の予約 surface を除外する手法として写経できる)

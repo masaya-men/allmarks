@@ -20,28 +20,35 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 46 — note + Pixiv 連動 ship + Extension context invalidated 防御を 5 file 一斉投入、 全部 prod 反映済)
+### 直近の状態 (2026-05-18 セッション 47 — Vimeo + SoundCloud 連動 ship、 全部 prod 反映済)
 
-session 45 close 後、 user に「PiP / TikTok 連動の動作で気になることは?」 と聞いたら X タブで `Uncaught Error: Extension context invalidated.` ([twitter.js:71](../extension/twitter.js)) の screenshot 報告。 拡張機能を再読込した時の既知挙動 (= 古い content script が死んだ context を握ったまま) と説明 → user 判断「**入れると決めたやつぜんぶ** + **適度に区切って** + **途中で聞かなくていい**」。 → 既存 3 file 防御 + note / Pixiv 2 サイト追加で今セッション区切り。
+session 46 close 後、 user 指示「途中の動作確認は問わない、 そのまま Vimeo + SoundCloud に着手」 (= memory `feedback_batch_extension_verification.md` 通り、 全 8 サイト ship 完了時に 1 度まとめて検証シート出す方針)。 量産レシピ 7 step (= 防御コード込み) を踏襲して 2 サイトを写経ベースで追加。 配信先サイトは 5 → 7 サイトに拡張。
 
-**ship 済 (= prod 反映済、 user 実機検証は次セッション以降)**:
-- **5 file 全部に Extension context invalidated 防御コード** (= [twitter.js](../extension/twitter.js) / [youtube.js](../extension/youtube.js) / [tiktok.js](../extension/tiktok.js) / [note.js](../extension/note.js) / [pixiv.js](../extension/pixiv.js)): `isExtensionAlive()` helper + click listener の sendMessage 直前で sync check + `try-catch` で race の sync throw 吸収。 共通 helper 外出しは見送り (= manifest を module 化する副作用回避)、 inline 8 行 × 5 file で重複許容
-- **note 連動** (= [extension/note.js](../extension/note.js) 新規): `note.com/{user}/n/{noteId}` のみ捕捉、 スキ button を aria-label or text で検知。 ON / OFF 区別なし dedupe で「即取り消し」 吸収
-- **Pixiv 連動** (= [extension/pixiv.js](../extension/pixiv.js) 新規): `/artworks/{id}` (locale prefix も) のみ捕捉、 ブクマ / いいね を locale 横断正規表現 (= 日英中韓) で検知
+**ship 済 (= prod 反映済、 user 実機検証は最終セッションでまとめて)**:
+- **Vimeo 連動** (= [extension/vimeo.js](../extension/vimeo.js) 新規 105 行): canonical `og:url` 第一優先 + pathname 4 shape マッチ (= bare / channels / groups / showcase)、 dashboard と review link は除外。 Like + Watch Later 検知 (= `aria-label` + `title` loose match、 Watch Later 先判定で Like false positive 回避)
+- **SoundCloud 連動** (= [extension/soundcloud.js](../extension/soundcloud.js) 新規 99 行): pathname 2-segment マッチ + 予約語除外 (= `sets` / `likes` / `followers` / `following` / `tracks` / `reposts` / `comments` / `popular-tracks` / `albums` / `stations` / `info` / `network`)、 mini-player は MVP scope 外。 Like 検知 (= `aria-label` + `title` + `sc-button-like` class)
 
-**新規 file**: `extension/note.js`、 `extension/pixiv.js`
+**新規 file**: `extension/vimeo.js`、 `extension/soundcloud.js`
 
-**変更 file**: `extension/twitter.js`、 `extension/youtube.js`、 `extension/tiktok.js`、 `extension/manifest.json`、 `extension/lib/auto-save-config.js`、 `extension/options.html`、 `extension/options.js`、 `tests/extension/auto-save-config.test.ts`
+**変更 file**: `extension/manifest.json`、 `extension/lib/auto-save-config.js`、 `extension/options.html`、 `extension/options.js`、 `tests/extension/auto-save-config.test.ts`
 
-**配信先サイト 5 → 7 に拡張**:
-- 既存: X / YouTube / TikTok
-- 追加: note / Pixiv
-- 残り 6 サイト (= Vimeo / SoundCloud / Bluesky / Threads / Reddit / Pinterest) は次セッション以降に 1-2 サイトずつ
+**配信先サイト 7 → 7 に拡張**:
+- 既存: X / YouTube / TikTok / note / Pixiv
+- 追加: Vimeo / SoundCloud (= 計 7 サイト)
+- 残り 4 サイト (= Bluesky / Threads / Reddit / Pinterest) は次セッション以降に 1-2 サイトずつ
 - Instagram は引き続き諦め
 
-詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 46 セクション
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 47 セクション
 
-**次セッション (= 47) の goal**: Vimeo + SoundCloud 連動 (= multi-playback vision と相性良いペア) + TikTok / note / Pixiv の user 実機検証結果反映、 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
+**次セッション (= 48) の goal**: Bluesky + Threads 連動 (= X 系 microblogging ペア、 button 構造が X に近いので量産レシピ写経で進めやすい)、 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
+
+---
+
+### 旧情報 (2026-05-18 セッション 46 — note + Pixiv 連動 ship + Extension context invalidated 防御を 5 file 一斉投入、 全部 prod 反映済)
+
+session 45 close 後、 user に「PiP / TikTok 連動の動作で気になることは?」 と聞いたら X タブで `Uncaught Error: Extension context invalidated.` ([twitter.js:71](../extension/twitter.js)) の screenshot 報告。 拡張機能を再読込した時の既知挙動 (= 古い content script が死んだ context を握ったまま) と説明 → user 判断「**入れると決めたやつぜんぶ** + **適度に区切って** + **途中で聞かなくていい**」。 → 既存 3 file 防御 + note / Pixiv 2 サイト追加で session 46 区切り。
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 46 セクション
 
 ---
 
@@ -263,10 +270,10 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 SNS ボタン連動を 1 サイトずつ追加。 各セッションで 1-2 サイト目安。
 
-- ✅ **note** スキ連動 (= session 46 で ship、 user 実機検証次セッション以降)
-- ✅ **Pixiv** ブクマ / いいね連動 (= session 46 で ship、 user 実機検証次セッション以降)
-- 🔜 **Vimeo** like / watch later 連動 (= multi-playback vision と相性)
-- 🔜 **SoundCloud** like 連動 (= 同上)
+- ✅ **note** スキ連動 (= session 46 で ship、 user 実機検証は最終セッションで一括)
+- ✅ **Pixiv** ブクマ / いいね連動 (= session 46 で ship、 user 実機検証は最終セッションで一括)
+- ✅ **Vimeo** like / watch later 連動 (= session 47 で ship、 user 実機検証は最終セッションで一括)
+- ✅ **SoundCloud** like 連動 (= session 47 で ship、 user 実機検証は最終セッションで一括)
 - 🔜 **Bluesky** like / repost 連動 (= X 代替)
 - 🔜 **Threads** いいね連動 (= Meta の X 代替)
 - 🔜 **Reddit** upvote / save 連動 (= 海外大)

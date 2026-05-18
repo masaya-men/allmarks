@@ -89,6 +89,22 @@
       ],
       "js": ["pixiv.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://vimeo.com/*",
+        "https://player.vimeo.com/*"
+      ],
+      "js": ["vimeo.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://soundcloud.com/*",
+        "https://www.soundcloud.com/*"
+      ],
+      "js": ["soundcloud.js"],
+      "run_at": "document_idle"
     }
   ],
   "default_locale": "en"

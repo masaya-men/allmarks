@@ -9,6 +9,9 @@ const AUTO_SAVE_KEYS = [
   'autoSaveNoteLike',
   'autoSavePixivBookmark',
   'autoSavePixivLike',
+  'autoSaveVimeoLike',
+  'autoSaveVimeoWatchLater',
+  'autoSaveSoundCloudLike',
 ]
 const DEFAULTS = {
   autoOpenPip: false,
@@ -22,6 +25,9 @@ const DEFAULTS = {
   autoSaveNoteLike: true,
   autoSavePixivBookmark: true,
   autoSavePixivLike: true,
+  autoSaveVimeoLike: true,
+  autoSaveVimeoWatchLater: true,
+  autoSaveSoundCloudLike: true,
 }
 
 async function load() {
