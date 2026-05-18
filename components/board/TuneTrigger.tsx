@@ -451,22 +451,35 @@ export function TuneTrigger({
   }, [widthPx, gapPx, writeIdleReadout])
 
   return (
-    <button
-      ref={btnRef}
-      type="button"
-      data-testid="tune-trigger"
-      className={styles.trigger}
-      aria-haspopup="dialog"
-      aria-expanded={expanded}
+    <span
+      className={styles.wrap}
+      data-testid="tune-wrap"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onClick={handleClick}
     >
-      {visibleLabel}
-    </button>
+      <button
+        ref={btnRef}
+        type="button"
+        data-testid="tune-trigger"
+        className={styles.trigger}
+        aria-haspopup="dialog"
+        aria-expanded={expanded}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onClick={handleClick}
+      >
+        {visibleLabel}
+      </button>
+      <div
+        className={styles.drawer}
+        data-testid="tune-drawer"
+        data-open={expanded ? 'true' : 'false'}
+        aria-hidden={!expanded}
+      >
+        {/* Task 5 で FaderColumn × 2 を入れる */}
+      </div>
+    </span>
   )
 }

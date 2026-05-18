@@ -19,6 +19,25 @@ describe('TuneTrigger — skeleton', () => {
     expect(btn.getAttribute('aria-haspopup')).toBe('dialog')
     expect(btn.getAttribute('aria-expanded')).toBe('false')
   })
+
+  it('renders a wrap span with button and empty drawer slot when collapsed', () => {
+    const { getByTestId, container } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    const wrap = container.querySelector('[data-testid="tune-wrap"]')
+    expect(wrap).not.toBeNull()
+    expect(wrap?.contains(btn)).toBe(true)
+    const drawer = wrap?.querySelector('[data-testid="tune-drawer"]')
+    expect(drawer).not.toBeNull()
+    expect(drawer?.getAttribute('data-open')).toBe('false')
+  })
 })
 
 describe('TuneTrigger — hover open', () => {
@@ -33,8 +52,9 @@ describe('TuneTrigger — hover open', () => {
       />,
     )
     const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
 
-    fireEvent.mouseEnter(btn)
+    fireEvent.mouseEnter(wrap)
     // Wait for full settle (≈ 21*11ms + 190ms = 421ms), pad to 500ms
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
 
@@ -56,12 +76,13 @@ describe('TuneTrigger — close on mouseleave', () => {
       />,
     )
     const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
 
-    fireEvent.mouseEnter(btn)
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
     expect(btn.textContent).toBe('267.84 · 97.21 · DEFAULT')
 
-    fireEvent.mouseLeave(btn)
+    fireEvent.mouseLeave(wrap)
     // Wait grace (1000ms) + close animation (≈ 21*11 + 190 = 421ms) = ~1500ms safe
     await new Promise<void>((resolve) => setTimeout(resolve, 1500))
     expect(btn.getAttribute('aria-expanded')).toBe('false')
@@ -79,12 +100,13 @@ describe('TuneTrigger — close on mouseleave', () => {
       />,
     )
     const btn = getByTestId('tune-trigger')
-    fireEvent.mouseEnter(btn)
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
-    fireEvent.mouseLeave(btn)
+    fireEvent.mouseLeave(wrap)
     // Re-enter during grace
     await new Promise<void>((resolve) => setTimeout(resolve, 50))
-    fireEvent.mouseEnter(btn)
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 200))
     expect(btn.getAttribute('aria-expanded')).toBe('true')
   })
@@ -103,7 +125,8 @@ describe('TuneTrigger — drag-scrub', () => {
       />,
     )
     const btn = getByTestId('tune-trigger')
-    fireEvent.mouseEnter(btn)
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
 
     // Find the first .num cell tagged for W
@@ -136,7 +159,8 @@ describe('TuneTrigger — reset and sticky', () => {
       />,
     )
     const btn = getByTestId('tune-trigger')
-    fireEvent.mouseEnter(btn)
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
 
     const resetCell = container.querySelector('[data-cell-kind="reset"]') as HTMLElement
@@ -156,12 +180,13 @@ describe('TuneTrigger — reset and sticky', () => {
       />,
     )
     const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
 
-    fireEvent.mouseEnter(btn)
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
     fireEvent.click(btn)
     // Sticky now ON — leave should NOT close
-    fireEvent.mouseLeave(btn)
+    fireEvent.mouseLeave(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 700))
     expect(btn.getAttribute('aria-expanded')).toBe('true')
   })
@@ -177,7 +202,8 @@ describe('TuneTrigger — reset and sticky', () => {
       />,
     )
     const btn = getByTestId('tune-trigger')
-    fireEvent.mouseEnter(btn)
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
     fireEvent.click(btn)
     fireEvent.keyDown(window, { key: 'Escape' })
