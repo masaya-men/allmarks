@@ -2334,3 +2334,97 @@ user 「このデフォルトのデザインだけどこの黒と白のミニマ
 - **dead code 検出**: 既存 `.cell.reset` CSS rule が `styles[cell.kind]` (= kind='label' → undefined) のせいで 全くマッチしてなかった。 後追い CSS rule (= 私の `resetIdle`) を書いて初めて発覚。 `data-cell-kind` で animation 中の DOM 識別はしてたが class とは別系統で生きてた。 既存 CSS rule が「効いてるか」 は CSS modules の rendered class 名と DOM の className を突き合わせて確認するべき
 - **box-sizing global 影響**: `min-height` 設定時は必ず globals.css の `box-sizing` 確認、 content-box / border-box で挙動が真逆。 memory に永続化済
 
+
+## セッション 43 (2026-05-18) — TUNE chrome 音 motif redesign + glitch 統一 (= マラソン)
+
+### 全体像
+
+session 42 持ち越し 3 件で開始 → user が「思い切った redesign の方が良い」 と即決して ① skip (= chip 自体廃止)、 ② grace 延長は ship、 ③ slider redesign が session 43 の core になる。 ③ は brainstorming → spec → 9-task implementation plan → inline execution → user feedback で 7 ラウンドの polish を回す長丁場 (= deploy 約 11 回)。
+
+### 確定した core 設計 (= TUNE chrome 音 motif)
+
+1. **TUNE button は位置不変**、 hover で TopHeader 下に drawer がスライド展開 (500ms cubic-bezier)
+2. **drawer 内**: W / G の縦 fader (= マイクゲインスライダー風) + 各 fader 横にラジオダイヤル目盛 (= 22 tick、 handle 近辺のオレンジ点灯、 中央 default の大目盛)
+3. **drawer 下部**: AG03 audio mixer 風の LED panel (= 5 行、 色付き LED ドット + 短い大文字ラベル、 stagger pulse)
+   - 🟠 DRAG TO TUNE (fader 操作)
+   - 🟠 SHIFT FOR FAST (= fader 同 family)
+   - 🟢 CLICK TO JUMP (= track 操作)
+   - 🔴 CTRL+Z UNDO (= history)
+   - 🔴 CTRL+SHIFT+Z REDO (= history 同 family)
+4. **数値 readout は既存 TopHeader 行内挙動継承** (= 位置・scramble・整数 bright + 小数 dim、 ガタつかない)
+5. **chip / 数字-as-handle 完全廃止** (= session 41 で導入した旧形式 retired)
+
+### 並列して TopHeader 全体音 motif 化 (= scope C)
+
+- 新 `useChromeScramble` hook を作成 (= idle 1 文字 wobble + hover 全文字 burst を mode machine で内包)
+- ChromeButton (= POPOUT / SHARE 用、 scramble + glitch 内包) を新設、 BoardRoot の inline button から置換
+- FilterPill .label / .count に hook + ::before/::after glitch 適用
+- ScrollMeter counter に同じ glitch 適用 (= meter wrap pointer-events: none を counter で override)
+- ScrollMeter の操作ヒント (= 「CLICK TO JUMP · SHIFT FOR FAST」) を TUNE drawer の LED legend に移管
+- FilterPill ラベルを 'ALL' → **'AllMarks'** (= ブランド mixed-case、 .label の text-transform: uppercase 除去 + monospace 化で scramble 中の幅 jitter 解消)
+
+### 9-task implementation plan + 7 round polish
+
+**Implementation (Task 1-9)**:
+1. TuneTrigger を wrap span + drawer slot 構造に refactor
+2. chip / track / drag-scrub を button から削除
+3. FaderColumn component 新設 (= 縦 fader + ラジオダイヤル目盛)
+4. FaderColumn の drag / click / Shift / tick highlight test
+5. TuneTrigger drawer に W/G FaderColumn 2 本を mount
+6. ChromeButton 新設 (= scramble + crackle 内包)
+7. BoardRoot POPOUT/SHARE を ChromeButton に置換
+8. session 41 から orphan の component file 10 個を物理削除 (= -354 行)
+9. 全体 vitest + tsc + pnpm build で最終検証
+
+**Polish (round 1-7)**:
+- R1: drawer border 削除 / min-height 撤去 / idle wobble / crackle keyframe
+- R2: ops legend を ScrollMeter から TUNE drawer に移管 / hover burst 追加 / glitch 強化
+- R3: AG03 風 LED panel / `::before/::after` RGB ghost 方式に切り替え
+- R4: grace 1000 → 700ms / TUNE 展開時 glitch を readout 全文に / `AllMarks` brand case / count animation / ScrollMeter glitch / operations legend 5 行に拡張 + REDO 追加
+- R5: glitch 振幅を全 chrome で控えめに統一 (±9-10px → ±4-5px) + count に glitch ghost + label monospace 化
+- R6: ScrollMeter glitch を chrome 4 ヶ所と完全一致に統一 (= meter-glitch keyframe 撤去、 glitch-shift-a/b に統一)
+- R7: TUNE expanded の glitch ghost を「数字 グループ単位」 に絞る (= 195px → 各 40-50px、 user 「幅広」 解消)
+
+### 重要な technical 発見
+
+- **CSS Modules の animation-name scoping bug**: globals.css に `@keyframes` 定義しても `.module.css` 内の `animation: keyframeName` が module-scoped name (= `Module-module__xyz__keyframeName`) に変換されてマッチしない。 keyframes は使う側の module 内に同一定義を置く必要がある。 playwright getComputedStyle で発覚 (= animation-name が scoped で keyframe が見つからず animation 効かず)
+- **データドリブン検証の重要性**: user 「自分で確認するまでやって」 を受けて playwright で computed style + bounding rect 実測する習慣を確立。 「動いてるはず」 ではなく「動いてる証拠」 を取る
+- **TUNE expanded の glitch 幅問題**: button width が hover で 52px → 195px に 3.7x 膨らむため、 ::before/::after の inset:0 ghost も 195px に。 解決: emitReadoutHtml に wrapNumGroups: boolean 追加、 writeIdleReadout のみ true で渡し、 settled 状態で W/G 各数字を `.numGroup` span にラップ。 `::before/::after` を numGroup に当て、 button の `::before/::after` は `aria-expanded='false'` 限定で発火に変更。 結果: 各数字 ghost ~40-50px (= 他 chrome と同スケール)
+
+### 統一後の glitch 仕様 (= 4 ヶ所完全同一)
+
+- duration: **700ms**
+- timing: **steps(7, end)**
+- 方式: **::before/::after RGB ghost** (= content attr(data-glitch-text))
+- 色: 橙 **#ff9d3f** + 水色 **#50c8ff**
+- shift 振幅: **±4-5px peak**
+- keyframe: `glitch-shift-a` / `glitch-shift-b` (= 各 module 内に同一定義)
+
+### 新規 file
+
+- [components/board/FaderColumn.tsx](../components/board/FaderColumn.tsx) + `.module.css` + `.test.tsx` (= 7 tests)
+- [components/board/ChromeButton.tsx](../components/board/ChromeButton.tsx) + `.module.css` + `.test.tsx` (= 3 tests)
+- [lib/board/use-idle-scramble.ts](../lib/board/use-idle-scramble.ts) (= useChromeScramble hook、 mode machine: idle / wobble / burst)
+- [docs/superpowers/specs/2026-05-18-tune-audio-redesign-design.md](superpowers/specs/2026-05-18-tune-audio-redesign-design.md)
+- [docs/superpowers/plans/2026-05-18-tune-audio-redesign.md](superpowers/plans/2026-05-18-tune-audio-redesign.md)
+
+### 削除 file (= -354 行)
+
+session 41 から orphan のまま残置の 10 個:
+- PopOutButton.tsx + .test.tsx + .module.css
+- WidthGapResetButton.tsx + .module.css
+- ResetAllButton.tsx + .test.tsx + .module.css
+- SizeSlider.tsx
+- GapSlider.tsx
+
+### IDEAS.md に保存 (= 将来 sprint)
+
+- §I「背景タイポグラフィー上での局所グリッチ」 (= マウス周辺の AllMarks ロゴだけ RGB シフトする演出。 CSS mask MVP → shader 強化 → Three.js は overkill の選択順)
+
+### 学び
+
+- **CSS Modules で global keyframe を引き合いに出すとき**: `@keyframes` は使う module 内に書く。 globals.css の `@keyframes` を `.module.css` から `animation-name` で参照すると scoping で繋がらない。 やりたい場合は `:global(name)` 修飾子が必要 (= 試してない、 今回は各 module duplication で対応)
+- **「動いてる」 は computed style + bounding rect 実測まで取る**: code が正しく見えても CSS が scoping で効かない、 disabled state で animation がブロックされる、 hover state が pointer-events で受からない等の理由で「実際は動かない」 ケースが多い。 user に「動いてます」 と報告する前に playwright getComputedStyle で確証取る
+- **user の素人考えは正解への近道**: 「素人考えなんですが、 TUNE で広がった後にでる数字そのものがちゃんとグリッチしてくれればいい」 → numGroup wrap で実装、 ±195px の ghost を ±40-50px の per-number ghost に再構成して問題解消。 私が「ghost width をクリップ」 「shift 振幅を変える」 等の複雑解で迷走しかけたところを user の simple proposal が正解を示した (= memory `feedback_layman_simple_path.md` 再確認)
+- **deploy 11 回 / round 7 polish の意義**: ship → user 実機検証 → feedback → 直す のループを fast iteration で回す価値が高い。 一発で正解を当てに行くより、 雑に試して即修正の方が音 motif のような「感覚に依存する設計」 では収束が早い
+
