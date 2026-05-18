@@ -54,53 +54,6 @@
   color: rgba(255, 255, 255, 1);
 }
 
-/* === Amendment 1: pill track + chip number-as-handle === */
-
-.sliderWrap {
-  position: relative;
-  display: inline-block;
-  width: 100px;
-  height: 18px;
-  vertical-align: middle;
-  margin: 0 2px;
-}
-
-.track {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 1px;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-/* Amendment 1 revision: chip background removed — the orange number text
-   IS the visible handle on the pill track. Padding kept for click-target
-   width; transparent background so the track shows through behind chars. */
-.chip {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  padding: 2px 6px;
-  background: transparent;
-  cursor: ew-resize;
-  white-space: nowrap;
-  z-index: 1;
-  user-select: none;
-  -webkit-user-select: none;
-  transition: filter 0.15s;
-  /* 親 (.trigger) の letter-spacing 0.10em を override。 末尾 cell の
-     トレーリング 1.1px が消えて、 visible 数字が chip box の中で完全対称
-     = track 左右の余白も完全対称になる。 */
-  letter-spacing: 0;
-}
-.chip:hover {
-  filter: brightness(1.15);
-}
-
 /* "DEFAULT" 文字列は W も G も default 値のまま (= reset 不要) のとき grey、
    どちらか動いてたら通常の白。 reset の意味があるかどうかが一目で分かる視覚 cue。 */
 .cell.reset.resetIdle {

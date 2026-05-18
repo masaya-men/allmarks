@@ -40,6 +40,27 @@ describe('TuneTrigger — skeleton', () => {
   })
 })
 
+describe('TuneTrigger — flat readout', () => {
+  it('settled readout has flat number spans, not chip or sliderWrap', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    expect(btn.querySelector('[data-cell-kind^="num-"]')).toBeNull()
+    expect(btn.querySelector('[data-scope]')).toBeNull()
+    expect(btn.textContent).toBe('267.84 · 97.21 · DEFAULT')
+  })
+})
+
 describe('TuneTrigger — hover open', () => {
   it('on mouseenter, expands aria-expanded=true and renders the W/G readout', async () => {
     const { getByTestId } = render(
@@ -109,40 +130,6 @@ describe('TuneTrigger — close on mouseleave', () => {
     fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 200))
     expect(btn.getAttribute('aria-expanded')).toBe('true')
-  })
-})
-
-describe('TuneTrigger — drag-scrub', () => {
-  it('pointerdown + pointermove on a W num cell calls onChangeWidth with delta', async () => {
-    const onChangeWidth = vi.fn()
-    const { getByTestId, container } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={onChangeWidth}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-      />,
-    )
-    const btn = getByTestId('tune-trigger')
-    const wrap = getByTestId('tune-wrap')
-    fireEvent.mouseEnter(wrap)
-    await new Promise<void>((resolve) => setTimeout(resolve, 500))
-
-    // Find the first .num cell tagged for W
-    const numCells = container.querySelectorAll('[data-cell-kind="num-w"]')
-    expect(numCells.length).toBeGreaterThan(0)
-    const target = numCells[0] as HTMLElement
-
-    fireEvent.pointerDown(target, { pointerId: 1, clientX: 100, clientY: 100 })
-    fireEvent.pointerMove(target, { pointerId: 1, clientX: 200, clientY: 100, movementX: 100 })
-    fireEvent.pointerUp(target, { pointerId: 1, clientX: 200, clientY: 100 })
-
-    expect(onChangeWidth).toHaveBeenCalled()
-    // Amendment 1: ratio = (max - min) / 30000 = (720 - 120) / 30000 = 0.02
-    // delta = 100 * 0.02 = 2 → next = 267.84 + 2 = 269.84
-    const lastCall = onChangeWidth.mock.calls[onChangeWidth.mock.calls.length - 1]
-    expect(lastCall[0]).toBeCloseTo(269.84, 1)
   })
 })
 
