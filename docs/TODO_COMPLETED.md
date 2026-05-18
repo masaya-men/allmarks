@@ -2428,3 +2428,66 @@ session 41 から orphan のまま残置の 10 個:
 - **user の素人考えは正解への近道**: 「素人考えなんですが、 TUNE で広がった後にでる数字そのものがちゃんとグリッチしてくれればいい」 → numGroup wrap で実装、 ±195px の ghost を ±40-50px の per-number ghost に再構成して問題解消。 私が「ghost width をクリップ」 「shift 振幅を変える」 等の複雑解で迷走しかけたところを user の simple proposal が正解を示した (= memory `feedback_layman_simple_path.md` 再確認)
 - **deploy 11 回 / round 7 polish の意義**: ship → user 実機検証 → feedback → 直す のループを fast iteration で回す価値が高い。 一発で正解を当てに行くより、 雑に試して即修正の方が音 motif のような「感覚に依存する設計」 では収束が早い
 
+
+---
+
+## セッション 44 (2026-05-18) — 拡張機能を SNS ボタン連動拡張に進化
+
+### コンテキスト
+
+session 43 で TUNE 音 motif redesign + chrome glitch 統一マラソンを完遂。 session 44 は CURRENT_GOAL.md で「拡張機能を sideload 用に完成させる」 を掲げて開始。 私 (Claude) は spec ファイルを読み込んで「現状実装の audit」 から入り、 user に scope A/B/C を提示するなど **完全に方向ズレ** した。 user の本来の希望は IDEAS.md の (I-05) に書いてある「**X のいいね/ブクマ・YouTube の高評価/後で見るボタンに反応して自動保存**」 だった。
+
+### 開始時の失敗 → 軌道修正 → 着手
+
+- 私は spec ファイル (`2026-05-09-chrome-extension-v0-design.md`) を起点に、 cursor pill のアニメ統一・古い `chrome-extension/` フォルダ削除・autoOpenPip 未実装などの「現状磨き候補」 を 15 項目並べてしまった
+- user が「何言ってるかわからない」 「拡張機能としてやりたかったこと記録してある? YouTube のいいねと後で見る、 X のいいねとブクマに反応する拡張にしたい」 と指摘
+- IDEAS.md の (I-05) を grep して **やっと user の本命希望を発見**
+- 反省点を memory 2 件として永続化:
+  - `feedback_jargon_in_japanese.md` (= audit / scope / spec / polish 等を日本語応答に混ぜない)
+  - `feedback_read_ideas_first.md` (= 拡張作業は IDEAS.md の (I-05) を最初に読む、 spec より優先)
+
+### 実装内容
+
+**新規ファイル**:
+- `extension/twitter.js` — X (x.com / twitter.com) の content script。 `[data-testid="like"]` と `[data-testid="bookmark"]` の click を capture phase で捕まえる。 tweet article から status URL を `<a><time></time></a>` 経由で抽出。 OGP は tweet 内 DOM から組み立て (= title = "ユーザー名: ツイート冒頭 80 字"、 description = 全文 200 字、 image = media img → video poster → amplify thumb の優先順位、 favicon = abs.twimg.com)
+- `extension/youtube.js` — YouTube の content script。 `like-button-view-model button` で高評価検知。 「後で見る」 は popup 内 button の text content に「後で見る」 / 「Watch later」 を含むかで fuzzy match (= locale + DOM shape の変化に強い)。 video URL は `location.pathname === '/watch'` 時の `?v=` から再構築。 OGP は meta tag (og:title / og:image / description) から
+- `extension/lib/auto-save-config.js` — 4 種類のトグル設定の defaults + 設定 key 引き当て + chrome.storage.sync からの読み出しヘルパー (= 全部 ON が default)
+- `tests/extension/auto-save-config.test.ts` — 6 件の単体テスト (source → key mapping / default 全 ON / 設定値の honor / 不明 source の null 返却)
+
+**既存ファイル変更**:
+- `extension/manifest.json` — content_scripts に twitter.js (x.com / twitter.com / mobile.*) と youtube.js (www.youtube.com / m.*) を追加
+- `extension/background.js` — `booklage:auto-save` メッセージハンドラ追加。 source ('x-like' / 'x-bookmark' / 'yt-like' / 'yt-watch-later') から chrome.storage.sync の対応 key を引いて ON なら dispatchSave を `trigger: 'auto-' + source` で呼ぶ
+- `extension/lib/dispatch.js` — `trigger.startsWith('auto-')` の場合は envelope.payload に `skipIfDuplicate: true` を載せる + 成功 pill を出さない (= 失敗時のみ表示、 ユーザーは X / YouTube 操作中で pill が浮かぶと邪魔)
+- `extension/options.html / .js / .css` — 4 トグル UI 追加。 `chrome.storage.sync.set({ [key]: checked })` で即保存。 lede 文言で「同じ URL は静かにスキップ」 を案内
+- `app/save-iframe/SaveIframeClient.tsx` — payload.skipIfDuplicate が true で既存 bookmark あれば `ok: true, skipped: true` で reply (= 拡張は黙ってスキップ扱いで終了)
+- `lib/utils/save-message.ts` — SaveMessagePayload に `skipIfDuplicate: z.boolean().optional()` 追加、 SaveMessageResult success variant に `skipped?: true` 追加
+
+### user 報告 2 件の fix (= 1 ラウンド目 deploy 後)
+
+**(1) 削除 URL の再いいねが弾かれる**:
+- 私の初期実装で `getAllBookmarks(db).find((b) => b.url === payload.url)` という雑な重複チェックを書いていた
+- AllMarks は **soft delete** (= `isDeleted: true` + `deletedAt` を立てるだけで IDB に残る) 設計だった (= memory `project_idb_irreversibility.md` の延長で、 schema bump 等で「削除 = 完全消去」 にしてない)
+- 結果: ゴミ箱送りした tweet をもう一度いいねしても「既存」 として黙ってスキップされ続けた
+- fix: 重複判定を `!b.isDeleted` 条件付きに変更。 削除済みは「未保存」 扱いで再保存可能に
+
+**(2) 縦動画ツイートが横カードで取り込まれる**:
+- 初期 twitter.js は `img[src*="pbs.twimg.com/media"]` だけ拾っていた = 動画ツイートでは img が無いので image='' を渡してた
+- AllMarks 側は image='' でも card 自体は描画するが、 当然サムネは出ない + tweet 描画の aspect 推定が後追い API 取得待ちに依存
+- fix: extractTweetOgp で `video[poster]` と `amplify_video_thumb` / `ext_tw_video_thumb` の img も fallback 順で拾うように追加
+- user テストでは縦動画が縦カードで取り込めるようになった
+- ただし「拡張からだけ aspect が崩れる」 根本的な仕組みではなく、 既存の mediaSlots fetch pipeline (= 保存後に fetchTweetMeta が走って X の syndication API から video aspect 取って persist) がタイミング的に間に合ってる結果。 まれに board が早すぎて間に合わず横カードになる可能性は残る (= 別タスクで保守要)
+
+### 検証
+
+- 型チェック: clean
+- 単体テスト: 519/519 PASS (= 既存 513 + 新規 6)
+- ビルド: 成功
+- 本番デプロイ: 2 回 (= 初回 + user 報告 2 件 fix 後)
+- user 実機テスト: ✅ 4 種ボタンとも自動保存動作、 削除 URL 再いいね で再保存、 縦動画も縦カードで取り込み確認
+
+### 学び
+
+- **IDEAS.md は spec より優先で読むべき**: 拡張機能セッションで spec (= 技術的設計書) を起点にしたが、 user の本命希望はずっと IDEAS.md 側に書いてあった。 memory `feedback_read_ideas_first.md` として永続化
+- **日本語応答に横文字を混ぜない**: 「audit」 「scope」 「polish」 「sideload」 等を平気で使い、 user に「何言ってるかわからない」 と苛立たれた。 既存 memory `feedback_japanese_only.md` があったのに、 「現状確認 = audit」 みたいに自分の中では「正当な技術用語」 として使ってしまっていた。 厳格に置換 (= 「現状確認」 「やる範囲」 「磨き」 「自分で読み込む」 等) で memory `feedback_jargon_in_japanese.md` 追加
+- **soft delete 認識の重要性**: 重複チェックを書くとき、 削除済み bookmark の存在を忘れた。 memory `project_duplicate_url_policy.md` に「削除済みは別扱い」 と書いてあったが、 私はそれを「user が削除した bookmark の URL は重複と扱わずに済む」 意味で読み損なっていた。 IDB schema に `isDeleted` flag があれば即チェックすべき
+- **拡張機能の DOM hook は fuzzy match に頼る**: X の data-testid は安定、 YouTube の like-button-view-model も比較的安定。 だが YouTube の「後で見る」 は popup 内動的要素なので text content match に頼った (= locale 「後で見る」 / 「Watch later」 を or 連結)。 これで多言語にも対応

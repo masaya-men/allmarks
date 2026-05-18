@@ -20,25 +20,34 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 43 — TUNE chrome 音 motif redesign + glitch 統一、 全部 prod 反映済)
+### 直近の状態 (2026-05-18 セッション 44 — 拡張機能を SNS ボタン連動拡張に進化、 全部 prod 反映済)
 
-session 42 持ち越し 3 件で開始 → user が「思い切った redesign の方が良い」 と即決 → 9-task implementation + 7 round polish の大マラソン。 deploy 約 11 回。 全部 prod 反映済。
+session 開始時、 私 (Claude) は spec ファイル経由で「現状確認」 から入って完全に方向ズレ。 user の本命希望は IDEAS.md の (I-05) に書いてあった「**X いいね / X ブクマ / YouTube 高評価 / YouTube 後で見る ボタンを検知して AllMarks に自動保存**」 だった。 user が指摘して軌道修正、 そのまま実装着手 → 完成 → user 実機テスト OK で session 44 close。
 
-**core 仕様 (= ship 済)**:
-- TUNE chrome 完全 redesign: chip 廃止 → 縦 fader (= マイクゲイン風) + ラジオダイヤル目盛 (= 22 tick) の drawer。 TUNE hover で TopHeader 下にスライド展開 (500ms cubic-bezier)
-- drawer 下部に AG03 audio mixer 風 LED panel (5 行、 色付き LED + ラベル、 stagger pulse): 🟠 DRAG TO TUNE / 🟠 SHIFT FOR FAST / 🟢 CLICK TO JUMP / 🔴 CTRL+Z UNDO / 🔴 CTRL+SHIFT+Z REDO
-- TopHeader 全 chrome (TUNE / POPOUT / SHARE / FilterPill / ScrollMeter counter) を音 motif で統一: `useChromeScramble` hook で idle 1 文字 wobble + hover 全文字 burst、 `::before/::after` RGB ghost (橙+水色) で hover glitch (700ms steps(7), ±4-5px peak)
-- ScrollMeter の操作ヒント (= 旧「CLICK TO JUMP · SHIFT FOR FAST」 行) を TUNE drawer の LED legend に移管
-- FilterPill ラベル: 'ALL' → **'AllMarks'** (= ブランド mixed-case、 monospace + tabular-nums で scramble 中の幅 jitter ゼロ)
-- TUNE expanded 時の glitch を「数字グループ単位」 に局所化: `.numGroup` span で W「267.84」 と G「97.21」 を各 40-50px ghost にラップ、 button 全体 (= 195px) には乗らない。 他 chrome と同スケール感
-- hover leave grace 1000 → 700ms に短縮
-- session 41 orphan の component file 10 個物理削除 (-354 行)
+**ship 済 (= prod 反映済、 user テスト確認済)**:
+- X (x.com / twitter.com) の **いいねボタン + ブクマボタン** click を content script で検知 → 自動保存
+- YouTube (www.youtube.com) の **高評価ボタン + 後で見るボタン** click を検知 → 自動保存
+- OGP は tweet article DOM / video meta tag から組み立て (= 動画 tweet も `video[poster]` 経由でサムネ取得)
+- 設定画面に 4 種類の ON / OFF トグル (= デフォルト全 ON、 個別 OFF 可能)
+- 重複 URL は黙ってスキップ (= 既保存なら無視、 ただし**削除済 (`isDeleted: true`) は別扱い** で再保存可能)
+- 自動連動経由の保存は cursor pill 非表示 (= 失敗時のみ表示、 X / YouTube 操作中の邪魔を避ける)
+- 単体テスト 6 件追加 (= 519/519 PASS)、 型 clean、 build 成功、 deploy 2 回
 
-**新規 file**: `FaderColumn.tsx` + module/test、 `ChromeButton.tsx` + module/test、 `lib/board/use-idle-scramble.ts`、 spec `2026-05-18-tune-audio-redesign-design.md`、 plan `2026-05-18-tune-audio-redesign.md`
+**新規 file**: `extension/twitter.js`、 `extension/youtube.js`、 `extension/lib/auto-save-config.js`、 `tests/extension/auto-save-config.test.ts`
 
-詳細 narrative + 学び (= CSS Modules animation-name scoping bug、 「動いてる」 は computed style 実測まで取る習慣、 user の素人考えは正解への近道): [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 43 セクション
+**永続化した教訓 memory**:
+- `feedback_jargon_in_japanese.md` (= audit / scope / polish / sideload 等のカタカナ多用禁止、 日本語に置換)
+- `feedback_read_ideas_first.md` (= 拡張機能関連は IDEAS.md の (I-05) を spec より優先で読む)
 
-**次セッション (= 44) の goal**: 拡張機能 (= AllMarks 拡張) を user 個人 sideload 用に完成させる (= ストア submit はドメイン取得 2026-05-31 後の AllMarks v1.0 として 1 回だけ)。 [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 44 セクション
+
+**次セッション (= 45) の goal**: user 指定なし。 [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) に backlog 候補列挙
+
+---
+
+### 旧情報 (2026-05-18 セッション 43 — TUNE chrome 音 motif redesign + glitch 統一)
+
+session 42 持ち越し 3 件で開始 → user が「思い切った redesign の方が良い」 と即決 → 9-task implementation + 7 round polish の大マラソン。 deploy 約 11 回。 全部 prod 反映済。 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 43 セクション
 
 ---
 
@@ -211,6 +220,13 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 - ~~**B-#13 TopHeader brushup**~~ ✅ session 41 で完了 (TUNE トリガー + 文字 chrome 化)
    - session 39 で ScrollMeter 下配置 + Lightbox 表現統一 (B-#20 解消)
    - session 41 で残りの上部 chrome (filter pill 以外) を TUNE / POP OUT / SHARE に整理 + scramble アニメで polish
+
+### 拡張機能関連 (= session 44 で SNS ボタン連動 ship 後の残課題)
+
+- **B-#21 縦動画 tweet の card 縦横比** (session 44 で観察) — 拡張のいいね経由で縦動画を保存したとき、 mediaSlots fetch のタイミング次第で稀に横カードになる可能性
+   - 仮説: card 描画が早すぎて X syndication API からの video aspect 取得 (= fetchTweetMeta) が間に合わないと「16:9 デフォ」 で描画される
+   - 対策候補: (a) tweet card 初期描画を「仮表示状態」 にして mediaSlots persist 待ち / (b) 拡張側でも tweet card DOM から video aspect を hint として渡す / (c) 受容 (現状の確率的挙動を許す)
+   - 観察され次第 session で着手
 
 ---
 
