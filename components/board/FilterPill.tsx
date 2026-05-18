@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactElement } from 'react'
 import type { BoardFilter } from '@/lib/board/types'
 import type { MoodRecord } from '@/lib/storage/indexeddb'
 import { t } from '@/lib/i18n/t'
+import { useIdleMicroScramble } from '@/lib/board/use-idle-scramble'
 import styles from './FilterPill.module.css'
 
 type Props = {
@@ -33,6 +34,7 @@ function countFor(f: BoardFilter, counts: { all: number; inbox: number; archive:
 export function FilterPill({ value, onChange, moods, counts }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const displayLabel = useIdleMicroScramble(label(value, moods))
 
   useEffect(() => {
     if (!open) return
@@ -58,7 +60,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
         aria-expanded={open}
         data-testid="filter-pill"
       >
-        <span className={styles.label}>{label(value, moods)}</span>
+        <span className={styles.label}>{displayLabel}</span>
         <span className={styles.separator}>·</span>
         <span className={styles.count}>{countFor(value, counts)}</span>
       </button>

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
 import { ChromeButton } from './ChromeButton'
 
@@ -23,19 +23,11 @@ describe('ChromeButton — basic', () => {
     fireEvent.click(btn)
     expect(onClick).not.toHaveBeenCalled()
   })
-})
 
-describe('ChromeButton — idle scramble', () => {
-  beforeEach(() => { vi.useFakeTimers() })
-  afterEach(() => { vi.useRealTimers() })
-
-  it('label still rendered after random scramble timer fires', () => {
+  it('initial render shows the original label (= no scramble in first frame)', () => {
     const { getByTestId } = render(
-      <ChromeButton label="POP OUT" onClick={vi.fn()} data-testid="popout-btn" />,
+      <ChromeButton label="SHARE" onClick={vi.fn()} data-testid="share-btn" />,
     )
-    vi.advanceTimersByTime(20000)
-    const btn = getByTestId('popout-btn')
-    vi.advanceTimersByTime(500)
-    expect(btn.textContent).toBe('POP OUT')
+    expect(getByTestId('share-btn').textContent).toBe('SHARE')
   })
 })

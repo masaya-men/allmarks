@@ -676,6 +676,34 @@ ol {
   to   { opacity: 1; }
 }
 
+/* Session 43: glitch hover effect — RGB shift + horizontal clip-tear,
+   used by TUNE / POPOUT / SHARE / FilterPill chrome on :hover.
+   Palette: white shadow + black shadow (= digital signal corruption look). */
+@keyframes glitch-chrome {
+  0%   { transform: none; text-shadow: none; clip-path: none; }
+  15%  { transform: translate(-2px, 0);
+         text-shadow: 2px 0 rgba(255, 255, 255, 0.7), -2px 0 rgba(0, 0, 0, 0.6); }
+  30%  { transform: translate(2px, 0);
+         text-shadow: -2px 0 rgba(255, 255, 255, 0.6), 2px 0 rgba(0, 0, 0, 0.5);
+         clip-path: inset(40% 0 30% 0); }
+  45%  { transform: translate(-1px, 0);
+         text-shadow: 1px 0 rgba(255, 255, 255, 0.5);
+         clip-path: inset(5% 0 65% 0); }
+  60%  { transform: translate(1.5px, 0);
+         text-shadow: -1.5px 0 rgba(255, 255, 255, 0.5);
+         clip-path: none; }
+  75%  { transform: translate(-0.5px, 0);
+         text-shadow: none;
+         clip-path: inset(65% 0 10% 0); }
+  100% { transform: none; text-shadow: none; clip-path: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes glitch-chrome {
+    0%, 100% { transform: none; text-shadow: none; clip-path: none; }
+  }
+}
+
 /* ── Dead-link card state ───────────────────────────────────── */
 /* Applied via data-link-status='gone' on the outer card wrapper in
    CardsLayer.tsx.  Visually demotes broken-link cards so they are

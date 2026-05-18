@@ -231,6 +231,76 @@ export function TuneTrigger({
     }
   }, [writeIdleTune])
 
+  // Idle micro-scramble (= ScrollMeter-style single-char wobble) while
+  // collapsed. Picks a random non-space index every 3-6s, scrambles that
+  // char for 100-160ms, then resets. Suspended when expanded (= hover/
+  // sticky open: the reveal scramble owns the button content). Respects
+  // prefers-reduced-motion.
+  useEffect(() => {
+    if (expanded) return
+    const mql = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)')
+      : null
+    if (mql?.matches) return
+
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+    let rafId: number | null = null
+
+    const writeChars = (chars: string[]): void => {
+      const el = btnRef.current
+      if (!el) return
+      el.innerHTML = chars
+        .map((c) => `<span class="${styles.cell} ${styles.label}">${c}</span>`)
+        .join('')
+    }
+
+    const schedule = (): void => {
+      if (cancelled) return
+      const delay = 3000 + Math.random() * 3000
+      timer = setTimeout(run, delay)
+    }
+
+    const run = (): void => {
+      if (cancelled) return
+      const chars = [...visibleLabel]
+      const validIndices: number[] = []
+      for (let i = 0; i < chars.length; i++) {
+        if (chars[i] !== ' ') validIndices.push(i)
+      }
+      if (validIndices.length === 0) {
+        schedule()
+        return
+      }
+      const idx = validIndices[Math.floor(Math.random() * validIndices.length)]
+      const start = performance.now()
+      const duration = 100 + Math.random() * 60
+      const tick = (): void => {
+        if (cancelled) return
+        const elapsed = performance.now() - start
+        if (elapsed < duration) {
+          const out = chars.slice()
+          out[idx] = pickRandomChar()
+          writeChars(out)
+          rafId = requestAnimationFrame(tick)
+        } else {
+          writeChars(chars)
+          rafId = null
+          schedule()
+        }
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+
+    schedule()
+
+    return (): void => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
+  }, [expanded, visibleLabel])
+
   const handleMouseEnter = useCallback((): void => {
     if (leaveTimerRef.current) {
       clearTimeout(leaveTimerRef.current)

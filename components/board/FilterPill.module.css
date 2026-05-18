@@ -24,7 +24,13 @@
 .pill:hover {
   color: var(--chrome-text-color-hover);
   -webkit-text-stroke-color: var(--chrome-text-stroke-color-hover);
-  transform: translateY(-1px);
+  animation: glitch-chrome 220ms steps(8, end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill:hover {
+    animation: none;
+  }
 }
 
 .pill:focus-visible {

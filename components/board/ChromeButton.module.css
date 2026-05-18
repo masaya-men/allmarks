@@ -18,29 +18,16 @@
 
 .btn:hover {
   color: rgba(255, 255, 255, 1);
-  transform: translateY(-1px);
-  animation: crackle 100ms steps(4, end);
-}
-
-@keyframes crackle {
-  0%   { transform: translate(0, -1px); filter: none; text-shadow: none; }
-  25%  { transform: translate(-0.7px, -1px); filter: blur(0.4px);
-         text-shadow: 1px 0 rgba(255, 255, 255, 0.4); }
-  50%  { transform: translate(0.8px, -1.2px); filter: none;
-         text-shadow: -1px 0 rgba(255, 255, 255, 0.3); }
-  75%  { transform: translate(-0.4px, -1px); filter: blur(0.3px); text-shadow: none; }
-  100% { transform: translate(0, -1px); filter: none; text-shadow: none; }
+  animation: glitch-chrome 220ms steps(8, end);
 }
 
 .btn:disabled {
   color: rgba(255, 255, 255, 0.30);
   cursor: not-allowed;
-  transform: none;
 }
 
 .btn:disabled:hover {
   animation: none;
-  transform: none;
 }
 
 .btn:focus-visible {
@@ -53,6 +40,5 @@
   .btn:hover {
     animation: none;
     transition: color 0.15s;
-    transform: none;
   }
 }

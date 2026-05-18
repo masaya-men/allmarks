@@ -20,19 +20,11 @@
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.15s, transform 0.15s;
-  /* idle/expanded で button 高さを固定 (= .sliderWrap 18px 分を idle でも確保)
-     → hover 時に POP OUT / SHARE が縦にズレるのを防ぐ。
-     box-sizing: border-box (グローバル既定) のため、 min-height は padding
-     込みの総高さ。 expanded 状態の実測 34px に揃える (= padding 16 + sliderWrap 18)。 */
-  display: inline-flex;
-  align-items: center;
-  min-height: 34px;
+  transition: color 0.15s;
 }
 .trigger:hover {
   color: rgba(255, 255, 255, 1);
-  /* Amendment 1 revision: translateY removed — adjacent POP OUT / SHARE
-     stay still, so a hover-lift on TUNE alone made the row look uneven. */
+  animation: glitch-chrome 220ms steps(8, end);
 }
 .trigger:focus-visible {
   outline: 1px dashed rgba(255, 255, 255, 0.5);
@@ -76,7 +68,7 @@
   top: 100%;
   right: 0;
   background: rgba(10, 10, 10, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 0;
   border-radius: 8px;
   padding: 0 24px;
   max-height: 0;
@@ -85,7 +77,6 @@
               padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   z-index: 50;
   pointer-events: none;
 }
@@ -94,6 +85,7 @@
   max-height: 200px;
   padding: 22px 24px 24px;
   pointer-events: auto;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
 @media (prefers-reduced-motion: reduce) {
