@@ -6,6 +6,8 @@ export const AUTO_SAVE_DEFAULTS = {
   autoSaveXBookmark: true,
   autoSaveYouTubeLike: true,
   autoSaveYouTubeWatchLater: true,
+  autoSaveTikTokLike: true,
+  autoSaveTikTokFavorite: true,
 }
 
 export const SOURCE_TO_KEY = {
@@ -13,6 +15,8 @@ export const SOURCE_TO_KEY = {
   'x-bookmark': 'autoSaveXBookmark',
   'yt-like': 'autoSaveYouTubeLike',
   'yt-watch-later': 'autoSaveYouTubeWatchLater',
+  'tiktok-like': 'autoSaveTikTokLike',
+  'tiktok-favorite': 'autoSaveTikTokFavorite',
 }
 
 export function configKeyForSource(source) {

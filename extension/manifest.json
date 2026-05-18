@@ -66,6 +66,15 @@
       ],
       "js": ["youtube.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.tiktok.com/*",
+        "https://tiktok.com/*",
+        "https://m.tiktok.com/*"
+      ],
+      "js": ["tiktok.js"],
+      "run_at": "document_idle"
     }
   ],
   "default_locale": "en"

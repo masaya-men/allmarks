@@ -7,6 +7,8 @@ describe('auto-save-config', () => {
     expect(configKeyForSource('x-bookmark')).toBe('autoSaveXBookmark')
     expect(configKeyForSource('yt-like')).toBe('autoSaveYouTubeLike')
     expect(configKeyForSource('yt-watch-later')).toBe('autoSaveYouTubeWatchLater')
+    expect(configKeyForSource('tiktok-like')).toBe('autoSaveTikTokLike')
+    expect(configKeyForSource('tiktok-favorite')).toBe('autoSaveTikTokFavorite')
   })
 
   it('returns null for unknown sources', () => {

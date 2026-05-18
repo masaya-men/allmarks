@@ -4,6 +4,8 @@ const AUTO_SAVE_KEYS = [
   'autoSaveXBookmark',
   'autoSaveYouTubeLike',
   'autoSaveYouTubeWatchLater',
+  'autoSaveTikTokLike',
+  'autoSaveTikTokFavorite',
 ]
 const DEFAULTS = {
   autoOpenPip: false,
@@ -12,6 +14,8 @@ const DEFAULTS = {
   autoSaveXBookmark: true,
   autoSaveYouTubeLike: true,
   autoSaveYouTubeWatchLater: true,
+  autoSaveTikTokLike: true,
+  autoSaveTikTokFavorite: true,
 }
 
 async function load() {
