@@ -9,6 +9,14 @@ function pillStateView(state) {
 
 const MIN_SAVING_MS = 500
 
+// Extension reloads invalidate this script's chrome.* handle; touching
+// chrome.runtime.sendMessage afterwards throws synchronously, which the
+// .catch() below can't trap. Probe chrome.runtime.id first — it's undefined
+// in an invalidated context — and wrap each call site in try/catch for races.
+function isExtensionAlive() {
+  try { return !!(chrome && chrome.runtime && chrome.runtime.id) } catch (_) { return false }
+}
+
 // Marker for the bookmarklet IIFE: when present, the bookmarklet skips its
 // popup/toast path and routes through the extension instead (silent save).
 if (document.documentElement) {
@@ -122,10 +130,15 @@ window.addEventListener('message', (event) => {
     if (seenBookmarkletNonces.has(nonce)) return
     seenBookmarkletNonces.set(nonce, now)
   }
-  chrome.runtime.sendMessage({
-    type: 'booklage:dispatch-bookmarklet',
-    ogp: msg.ogp || null,
-  }).catch(() => {})
+  if (!isExtensionAlive()) return
+  try {
+    chrome.runtime.sendMessage({
+      type: 'booklage:dispatch-bookmarklet',
+      ogp: msg.ogp || null,
+    }).catch(() => {})
+  } catch (_) {
+    // Extension context invalidated mid-send; drop silently.
+  }
 })
 
 // === PiP state reporter (booklage tab only) ===
@@ -135,7 +148,12 @@ window.addEventListener('message', (event) => {
 if (location.hostname === 'booklage.pages.dev') {
   const reportPip = () => {
     const active = document.documentElement.dataset.booklagePip === 'active'
-    chrome.runtime.sendMessage({ type: 'booklage:pip-state', active }).catch(() => {})
+    if (!isExtensionAlive()) return
+    try {
+      chrome.runtime.sendMessage({ type: 'booklage:pip-state', active }).catch(() => {})
+    } catch (_) {
+      // Extension context invalidated mid-send; drop silently.
+    }
   }
   reportPip()
   new MutationObserver(reportPip).observe(document.documentElement, {
