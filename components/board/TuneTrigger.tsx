@@ -100,12 +100,6 @@ function emitReadoutHtml(
     const cell = cells[i]
     if (cell.scope === 'w' || cell.scope === 'g') {
       const scope = cell.scope
-      const value = scope === 'w' ? widthPx : gapPx
-      const min = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MIN_PX : BOARD_SLIDERS.CARD_GAP_MIN_PX
-      const max = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MAX_PX : BOARD_SLIDERS.CARD_GAP_MAX_PX
-      const def = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX : BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
-      // default 値そのまま (= 未調整) なら数字は dim grey、 1 cent でも動かしたら orange。
-      const isDefault = Math.abs(value - def) < 0.005
       let groupHtml = ''
       let hasContent = false
       while (i < cells.length && cells[i].scope === scope) {
@@ -118,18 +112,30 @@ function emitReadoutHtml(
         i++
       }
       if (!hasContent) continue
+      const value = scope === 'w' ? widthPx : gapPx
+      const min = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MIN_PX : BOARD_SLIDERS.CARD_GAP_MIN_PX
+      const max = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_MAX_PX : BOARD_SLIDERS.CARD_GAP_MAX_PX
+      const def = scope === 'w' ? BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX : BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
       const left = chipLeftPx(value, min, max, def)
-      const chipClass = isDefault ? `${styles.chip} ${styles.chipDefault}` : styles.chip
       html += `<span class="${styles.sliderWrap}" data-scope="${scope}">`
       html += `<span class="${styles.track}"></span>`
-      html += `<span class="${chipClass}" data-cell-kind="num-${scope}" data-scope="${scope}" style="left:${left}px">${groupHtml}</span>`
+      html += `<span class="${styles.chip}" data-cell-kind="num-${scope}" data-scope="${scope}" style="left:${left}px">${groupHtml}</span>`
       html += `</span>`
     } else {
       const ch = getCh(cell, i)
       if (ch !== null) {
         anyContent = true
+        // 'reset' cells (= "DEFAULT" 文字列) は state ベースで色を変える:
+        // W も G も default 値のまま → grey、 どちらか動いてたら通常の白。
+        const isStateDefault =
+          Math.abs(widthPx - BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX) < 0.005 &&
+          Math.abs(gapPx - BOARD_SLIDERS.CARD_GAP_DEFAULT_PX) < 0.005
         const dk = cell.scope === 'reset' ? 'reset' : cell.kind
-        html += `<span class="${styles.cell} ${styles[cell.kind]}" data-cell-kind="${dk}">${ch}</span>`
+        const cls =
+          cell.scope === 'reset' && isStateDefault
+            ? `${styles.cell} ${styles[cell.kind]} ${styles.resetIdle}`
+            : `${styles.cell} ${styles[cell.kind]}`
+        html += `<span class="${cls}" data-cell-kind="${dk}">${ch}</span>`
       }
       i++
     }

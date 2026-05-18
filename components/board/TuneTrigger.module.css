@@ -101,9 +101,11 @@
   filter: brightness(1.15);
 }
 
-/* Default state (= 値未調整) は数字をグレーに、 1 cent でも動かしたら
-   元の orange に戻る。 「触ってないので default のまま」 と user が一目で
-   分かるようにする視覚 cue。 */
-.chip.chipDefault .num {
-  color: rgba(255, 255, 255, 0.45);
+/* "DEFAULT" 文字列は W も G も default 値のまま (= reset 不要) のとき grey、
+   どちらか動いてたら通常の白。 reset の意味があるかどうかが一目で分かる視覚 cue。 */
+.cell.reset.resetIdle {
+  color: rgba(255, 255, 255, 0.35);
+}
+.cell.reset.resetIdle:hover {
+  color: rgba(255, 255, 255, 0.85);
 }
