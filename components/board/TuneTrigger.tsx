@@ -17,7 +17,10 @@ const LEAVE_GRACE_MS = 180
  *  Full-range drag requires 30000 px (≈ 16 user screens); Shift+drag is
  *  10× faster for jumps. */
 const MOUSE_PX_FOR_FULL_RANGE = 30000
-const SHIFT_SPEED_MULTIPLIER = 10
+/** Amendment 1 revision: 10 → 20 per user feedback (= 2× faster Shift jump
+ *  on top of the 3× more precise base). With base ratio 0.02 W/px,
+ *  Shift+drag = 0.40 W/px. */
+const SHIFT_SPEED_MULTIPLIER = 20
 
 /** Pill track length + chip half-inset so the chip doesn't visually clip
  *  the track endpoints. Mirrors the Visual Companion demo. */
@@ -435,22 +438,33 @@ export function TuneTrigger({
   }, [widthPx, gapPx, writeIdleReadout])
 
   return (
-    <button
-      ref={btnRef}
-      type="button"
-      data-testid="tune-trigger"
-      className={styles.trigger}
-      aria-haspopup="dialog"
-      aria-expanded={expanded}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onClick={handleClick}
-    >
-      {visibleLabel}
-    </button>
+    <span className={styles.wrap}>
+      <button
+        ref={btnRef}
+        type="button"
+        data-testid="tune-trigger"
+        className={styles.trigger}
+        aria-haspopup="dialog"
+        aria-expanded={expanded}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onClick={handleClick}
+      >
+        {visibleLabel}
+      </button>
+      <span
+        className={styles.tooltip}
+        data-visible={expanded ? 'true' : 'false'}
+        aria-hidden="true"
+      >
+        {t('board.slider.tooltipClick')}
+        <span className={styles.tooltipSep}>·</span>
+        {t('board.slider.tooltipShift')}
+      </span>
+    </span>
   )
 }

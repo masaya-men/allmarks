@@ -97,7 +97,8 @@
 }
 .chromeButton:hover {
   color: rgba(255, 255, 255, 1);
-  transform: translateY(-1px);
+  /* Session 41 amendment: translateY removed — keeps the chrome row
+     visually stable when hovering any one button. */
 }
 .chromeButton:disabled {
   color: rgba(255, 255, 255, 0.30);
