@@ -15,6 +15,9 @@ describe('auto-save-config', () => {
     expect(configKeyForSource('vimeo-like')).toBe('autoSaveVimeoLike')
     expect(configKeyForSource('vimeo-watch-later')).toBe('autoSaveVimeoWatchLater')
     expect(configKeyForSource('soundcloud-like')).toBe('autoSaveSoundCloudLike')
+    expect(configKeyForSource('bluesky-like')).toBe('autoSaveBlueskyLike')
+    expect(configKeyForSource('bluesky-repost')).toBe('autoSaveBlueskyRepost')
+    expect(configKeyForSource('threads-like')).toBe('autoSaveThreadsLike')
   })
 
   it('returns null for unknown sources', () => {

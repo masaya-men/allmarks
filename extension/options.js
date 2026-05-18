@@ -12,6 +12,9 @@ const AUTO_SAVE_KEYS = [
   'autoSaveVimeoLike',
   'autoSaveVimeoWatchLater',
   'autoSaveSoundCloudLike',
+  'autoSaveBlueskyLike',
+  'autoSaveBlueskyRepost',
+  'autoSaveThreadsLike',
 ]
 const DEFAULTS = {
   autoOpenPip: false,
@@ -28,6 +31,9 @@ const DEFAULTS = {
   autoSaveVimeoLike: true,
   autoSaveVimeoWatchLater: true,
   autoSaveSoundCloudLike: true,
+  autoSaveBlueskyLike: true,
+  autoSaveBlueskyRepost: true,
+  autoSaveThreadsLike: true,
 }
 
 async function load() {

@@ -105,6 +105,24 @@
       ],
       "js": ["soundcloud.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://bsky.app/*",
+        "https://www.bsky.app/*"
+      ],
+      "js": ["bluesky.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.threads.com/*",
+        "https://threads.com/*",
+        "https://www.threads.net/*",
+        "https://threads.net/*"
+      ],
+      "js": ["threads.js"],
+      "run_at": "document_idle"
     }
   ],
   "default_locale": "en"

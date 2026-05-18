@@ -2720,3 +2720,62 @@ memory `feedback_batch_extension_verification.md` 通り、 sprint 中は sessio
 - **量産レシピが「ほぼ無編集の写経」 で済む段階に到達**: vimeo.js / soundcloud.js の構造は note.js / pixiv.js と 95% 同じ (= dedupe + isExtensionAlive + extractUrl + extractOgp + getButtonKind + click listener)。 違いは URL pattern と button 検知ロジックの 2 箇所だけ。 session 数を重ねるごとに「写経 + サイト固有 2 関数」 の dispatch スピードが上がっていて、 残り 4 サイトも同じペースで進められる見込み
 - **canonical URL 戦略は 2 通り使い分け**: Vimeo は `og:url` 第一優先 (= 全 watch page で確実、 短くて canonical)、 SoundCloud は pathname 直接マッチ (= og:url を信用すると mini-player Like を track 詳細ページでなく現在 URL に紐付けてしまう罠あり)。 「og:url か pathname か」 はサイトの URL 設計次第で機械的には決まらない、 1 つずつ判断する
 - **second segment 予約語除外パターンの再利用性**: SoundCloud で `RESERVED_SECOND_SEGMENT` set を使った設計は、 user / track の URL shape が衝突する SNS 全般に応用できる (= Bluesky / Threads / Reddit でも `/{user}/profile` 等の予約 surface を除外する手法として写経できる)
+
+
+## セッション 48 (2026-05-18) — Bluesky + Threads 連動 ship (= 配信先 9 サイトに拡張)
+
+### 出発点
+
+session 47 close 後、 user 指示「途中の動作確認は問わない、 そのまま Bluesky + Threads に着手」 (= memory `feedback_batch_extension_verification.md` 通り、 全 8 追加サイト ship 完了時に 1 度まとめて検証シート出す方針)。 session 46 / 47 で確立した量産レシピ 7 step (= 防御コード込み) を踏襲して 2 サイトをほぼ写経で追加。
+
+### Phase 1: Bluesky 連動 ship
+
+[extension/bluesky.js](../extension/bluesky.js) を新規作成 (= 100 行):
+
+- **URL pattern**: canonical `og:url` を第一優先 (= Bluesky は post 詳細ページで `og:url` を設定)、 fallback で `pathname /profile/{handle}/post/{postId}` 正規表現マッチ。 handle は domain-style (foo.bsky.social) と DID (did:plc:xxx) の両方を `[^/]+` で受ける (= DID は colon を含むが slash は含まないので OK)
+- **MVP scope**: 投稿詳細ページのみ。 feed (= timeline) 上の Like / Repost ボタンも button 自体は同じ DOM だが、 `extractPostUrl()` が detail pattern にマッチしない時は早期 return する設計で実質的に detail page 限定になる
+- **button 検知**: `aria-label` を lowercase 化し、 OFF action (= `unlike` / `undo` / 「取り消」 / 「취소」) を最初に除外してから、 ON action (= `like` / 「いいね」 / 「좋아」、 `repost(s)?` / 「リポスト」) を word boundary 付き正規表現で検知。 `\blike\b` が "Unlike" にマッチしない原則を活用
+- **OGP**: meta タグから抽出、 favicon は `https://bsky.app/favicon.ico` 固定、 siteName = "Bluesky"
+- **manifest matches**: `https://bsky.app/*` + `https://www.bsky.app/*` (= www. variant は使われていないが念のため)
+
+### Phase 2: Threads 連動 ship
+
+[extension/threads.js](../extension/threads.js) を新規作成 (= 95 行):
+
+- **URL pattern**: canonical `og:url` を第一優先、 fallback で `pathname /@{user}/post/{postId}` マッチ。 4 host (= `www.threads.com` / `threads.com` / `www.threads.net` / `threads.net`) を 1 file で扱うため `location.origin` を URL 組み立てに使う
+- **button 検知**: Pixiv 同様、 Meta が aria-label を locale 化するので **複数言語の stem を正規表現で OR**。 en `\blike\b` / ja 「いいね」 / ko 「좋아」 / zh 「喜欢」「赞」 をサポート。 OFF action (= `unlike` / 「取り消」「取消」「취소」) は最初に除外
+- **OGP**: meta タグから抽出、 favicon は `https://www.threads.com/favicon.ico` 固定、 siteName = "Threads"
+- **manifest matches**: 4 host (= `https://www.threads.com/*` + `https://threads.com/*` + `https://www.threads.net/*` + `https://threads.net/*`)
+
+### Phase 3: config / options / test 更新
+
+- [lib/auto-save-config.js](../extension/lib/auto-save-config.js) の `AUTO_SAVE_DEFAULTS` + `SOURCE_TO_KEY` に 3 source 追加 (= `bluesky-like` / `bluesky-repost` / `threads-like`、 デフォルト全 ON)
+- [options.html](../extension/options.html) にトグル 3 個 + [options.js](../extension/options.js) の `AUTO_SAVE_KEYS` / `DEFAULTS` に追加
+- [tests/extension/auto-save-config.test.ts](../tests/extension/auto-save-config.test.ts) の source → key mapping に 3 行追加 (= 全 15 source check)
+
+### 検証
+
+- 型チェック: clean
+- 単体テスト: vitest 全件 519/519 PASS (= auto-save-config.test.ts 6/6 PASS)
+- ビルド: 成功 (= Next.js 16.2.3 Turbopack、 22 static pages 生成)
+- 本番デプロイ: `https://booklage.pages.dev` 反映 (= 1 deploy で新規 2 file + 既存 5 file 変更)
+
+### user 実機検証 (= 全 8 サイト ship 完了時にまとめて)
+
+memory `feedback_batch_extension_verification.md` 通り、 sprint 中は session ごとの user 実機検証は問わない。 残り 2 サイト (= Reddit / Pinterest) が ship 完了したセッションで初めて、 全 8 サイト × 全ボタン (= 15 ボタン目安) + console エラー有無のチェックリストを 1 度出す。
+
+### 配信先サイト数
+
+- 既存: X / YouTube / TikTok / note / Pixiv / Vimeo / SoundCloud = 7
+- session 48 追加: Bluesky / Threads = **2 (= 計 9 サイト)**
+- 内部 source 数: 12 → **15** (= +3、 bluesky-like / bluesky-repost / threads-like)
+
+残り 2 サイト (= Reddit / Pinterest) を次セッションで追加すれば、 8 追加サイト sprint 完了。
+
+### 学び
+
+- **OFF action 除外を最初に走らせる pattern が安定**: Bluesky / Threads の aria-label は ON / OFF で文字列が分岐する (= "Like" → "Unlike" / 「いいね」 → 「いいねを取り消す」)。 ON pattern を緩く match させると OFF も拾ってしまうので、 「最初に OFF を弾く → 次に ON を判定」 の二段構えが安定。 `\b` word boundary も併用すると "Unlike" に "like" がマッチしない (= 文字 transition がない単語境界の性質を活用)
+- **複数 locale の aria-label は OR 正規表現で十分**: Pixiv が先例 (= ja / en / zh / ko の stem を `|` で繋ぐ) で、 Threads も同じ手法でカバー。 Meta が将来 locale を追加した場合は memory `reference_pixiv_button_aria_locale.md` 系で patch すれば良い (= 今は未作成、 必要になったら永続化)
+- **写経速度の上限が見えてきた**: bluesky.js / threads.js の構造は vimeo.js / soundcloud.js と 95% 以上同じ。 違いは URL pattern (= 2-3 行) と button 検知ロジック (= 5-10 行) の 2 箇所のみ。 残り 2 サイト (= Reddit / Pinterest) も同ペースで次セッションに収まる見込み
+- **CURRENT_GOAL.md の事前情報が高精度だった**: session 48 開始時の goal 文に「URL pattern」「DOM 構造 hint」「OGP」「manifest matches」 が site 別に明記されていたので、 source 読みなしで Bluesky / Threads の構造を組み立てられた。 次回も同様に CURRENT_GOAL.md で次セッションへの引き継ぎを richer に書く方針を維持する
+

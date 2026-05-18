@@ -14,6 +14,9 @@ export const AUTO_SAVE_DEFAULTS = {
   autoSaveVimeoLike: true,
   autoSaveVimeoWatchLater: true,
   autoSaveSoundCloudLike: true,
+  autoSaveBlueskyLike: true,
+  autoSaveBlueskyRepost: true,
+  autoSaveThreadsLike: true,
 }
 
 export const SOURCE_TO_KEY = {
@@ -29,6 +32,9 @@ export const SOURCE_TO_KEY = {
   'vimeo-like': 'autoSaveVimeoLike',
   'vimeo-watch-later': 'autoSaveVimeoWatchLater',
   'soundcloud-like': 'autoSaveSoundCloudLike',
+  'bluesky-like': 'autoSaveBlueskyLike',
+  'bluesky-repost': 'autoSaveBlueskyRepost',
+  'threads-like': 'autoSaveThreadsLike',
 }
 
 export function configKeyForSource(source) {
