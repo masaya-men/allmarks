@@ -1,0 +1,87 @@
+// extension/youtube.js
+// Auto-save to AllMarks when the user likes a video or adds it to "Watch later".
+// Two configurable triggers:
+//   - Like button: like-button-view-model button
+//   - Watch later: any button whose text matches "後で見る" / "Watch later"
+// We do NOT hook dislike, share, or the parent "Save" button itself.
+//
+// Duplicate URLs are filtered out by the save-iframe layer (skipIfDuplicate),
+// so even if the user un-toggles "Watch later" and the click re-fires, no
+// duplicate bookmark is created.
+
+const DEDUPE_WINDOW_MS = 5000
+const recentlySent = new Map()
+
+function pruneRecent(now) {
+  for (const [k, t] of recentlySent) {
+    if (now - t > DEDUPE_WINDOW_MS) recentlySent.delete(k)
+  }
+}
+
+function extractVideoUrl() {
+  // We only auto-save from /watch?v=... pages. Channel pages and the homepage
+  // would require per-thumbnail URL extraction which is out of scope here.
+  if (location.pathname !== '/watch') return null
+  const params = new URLSearchParams(location.search)
+  const v = params.get('v')
+  if (!v) return null
+  return 'https://www.youtube.com/watch?v=' + v
+}
+
+function extractVideoOgp(url) {
+  const m = (s) => {
+    const e = document.querySelector(s)
+    return e ? e.getAttribute('content') || '' : ''
+  }
+  const title = m('meta[property="og:title"]') || document.title || url
+  const description = (
+    m('meta[property="og:description"]') || m('meta[name="description"]') || ''
+  ).slice(0, 200)
+  const image = m('meta[property="og:image"]') || ''
+  return {
+    url,
+    title,
+    description,
+    image,
+    favicon: 'https://www.youtube.com/s/desktop/favicon.ico',
+    siteName: 'YouTube',
+  }
+}
+
+function buttonTextLower(btn) {
+  return (btn.innerText || btn.textContent || '').trim().toLowerCase()
+}
+
+function getButtonKind(target) {
+  if (!target || !target.closest) return null
+  // Like — sits inside a <like-button-view-model> custom element.
+  if (target.closest('like-button-view-model button')) return 'like'
+  // Watch later — popup option inside the Save dropdown. Match by visible text
+  // so locale + DOM shape changes don't break us.
+  const btn = target.closest('button, tp-yt-paper-checkbox, ytd-playlist-add-to-option-renderer')
+  if (btn) {
+    const text = buttonTextLower(btn)
+    if (text.includes('後で見る') || text.includes('watch later')) {
+      return 'watch-later'
+    }
+  }
+  return null
+}
+
+document.addEventListener('click', (event) => {
+  const kind = getButtonKind(event.target)
+  if (!kind) return
+  const url = extractVideoUrl()
+  if (!url) return
+  const now = Date.now()
+  pruneRecent(now)
+  const dedupeKey = kind + ':' + url
+  if (recentlySent.has(dedupeKey)) return
+  recentlySent.set(dedupeKey, now)
+  const ogp = extractVideoOgp(url)
+  chrome.runtime.sendMessage({
+    type: 'booklage:auto-save',
+    source: kind === 'like' ? 'yt-like' : 'yt-watch-later',
+    ogp,
+  }).catch(() => {})
+}, true)

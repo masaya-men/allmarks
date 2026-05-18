@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { initDB, addBookmark, persistMediaSlots } from '@/lib/storage/indexeddb'
+import { initDB, addBookmark, persistMediaSlots, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
 import { postBookmarkSaved } from '@/lib/board/channel'
@@ -97,6 +97,22 @@ export function SaveIframeClient(): ReactElement {
 
       try {
         const db = await initDB()
+        if (payload.skipIfDuplicate) {
+          const all = await getAllBookmarks(db)
+          // soft-deleted bookmarks (= ユーザーがゴミ箱送り済み) は重複扱いしない:
+          // 削除した tweet をもう一度いいねしたら再保存されるべき。
+          const existing = all.find((b) => b.url === payload.url && !b.isDeleted)
+          if (existing) {
+            reply({
+              type: 'booklage:save:result',
+              nonce: payload.nonce,
+              ok: true,
+              bookmarkId: existing.id,
+              skipped: true,
+            })
+            return
+          }
+        }
         const bm = await addBookmark(db, {
           url: payload.url,
           title: payload.title || payload.url,

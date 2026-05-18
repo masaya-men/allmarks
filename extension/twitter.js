@@ -1,0 +1,89 @@
+// extension/twitter.js
+// Auto-save to AllMarks when the user likes or bookmarks a tweet.
+// Hooked: data-testid="like" / data-testid="bookmark" (= turning ON).
+// Not hooked: data-testid="unlike" / "removeBookmark" (= undoing).
+
+const DEDUPE_WINDOW_MS = 5000
+const recentlySent = new Map()
+
+function pruneRecent(now) {
+  for (const [k, t] of recentlySent) {
+    if (now - t > DEDUPE_WINDOW_MS) recentlySent.delete(k)
+  }
+}
+
+function findTweetArticle(el) {
+  return el && el.closest ? el.closest('article[data-testid="tweet"]') : null
+}
+
+function extractTweetUrl(article) {
+  // The timestamp <time> sits inside an <a href="/{handle}/status/{id}"> that
+  // uniquely identifies the tweet. There are other status links (quoted, replies),
+  // so we pin to the one wrapping <time>.
+  const timeEl = article.querySelector('a[href*="/status/"] time')
+  const link = timeEl ? timeEl.closest('a') : null
+  if (!link) return null
+  const href = link.getAttribute('href')
+  if (!href) return null
+  return new URL(href, location.origin).href
+}
+
+function extractTweetOgp(article, url) {
+  const textEl = article.querySelector('[data-testid="tweetText"]')
+  const text = (textEl && textEl.innerText ? textEl.innerText : '').trim()
+  const userNameEl = article.querySelector('[data-testid="User-Name"]')
+  const userNameRaw = userNameEl && userNameEl.innerText ? userNameEl.innerText : ''
+  const userName = userNameRaw.split('\n')[0].trim()
+  // Image priority for aspect-correct card layout:
+  //   1) media image (静止画 tweet)
+  //   2) video[poster] (= 縦動画ふくむ動画 tweet。 ここを抜くと横デフォになる)
+  //   3) amplify_video / ext_tw_video_thumb の img (たまに ある)
+  let image = ''
+  const mediaImg = article.querySelector('img[src*="pbs.twimg.com/media"]')
+  if (mediaImg) image = mediaImg.getAttribute('src') || ''
+  if (!image) {
+    const videoEl = article.querySelector('video[poster]')
+    if (videoEl) image = videoEl.getAttribute('poster') || ''
+  }
+  if (!image) {
+    const ampImg = article.querySelector('img[src*="amplify_video_thumb"], img[src*="ext_tw_video_thumb"]')
+    if (ampImg) image = ampImg.getAttribute('src') || ''
+  }
+  const head = text.length > 80 ? text.slice(0, 80) + '…' : text
+  const title = userName && head ? userName + ': ' + head : (head || userName || url)
+  return {
+    url,
+    title,
+    description: text.slice(0, 200),
+    image,
+    favicon: 'https://abs.twimg.com/favicons/twitter.3.ico',
+    siteName: 'X',
+  }
+}
+
+function getButtonKind(target) {
+  if (!target || !target.closest) return null
+  if (target.closest('button[data-testid="like"]')) return 'like'
+  if (target.closest('button[data-testid="bookmark"]')) return 'bookmark'
+  return null
+}
+
+document.addEventListener('click', (event) => {
+  const kind = getButtonKind(event.target)
+  if (!kind) return
+  const article = findTweetArticle(event.target)
+  if (!article) return
+  const url = extractTweetUrl(article)
+  if (!url) return
+  const now = Date.now()
+  pruneRecent(now)
+  const dedupeKey = kind + ':' + url
+  if (recentlySent.has(dedupeKey)) return
+  recentlySent.set(dedupeKey, now)
+  const ogp = extractTweetOgp(article, url)
+  chrome.runtime.sendMessage({
+    type: 'booklage:auto-save',
+    source: kind === 'like' ? 'x-like' : 'x-bookmark',
+    ogp,
+  }).catch(() => {})
+}, true)

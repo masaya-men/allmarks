@@ -66,15 +66,20 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
   await ensureOffscreen()
   const ogp = await extractOgpFromTab(tabId, linkUrl, ogpFromBookmarklet)
   const nonce = makeNonce('e')
+  // Auto-save (SNS button hook) paths should be silent no-ops when the URL is
+  // already saved — the user might be re-liking an old tweet, and creating
+  // a duplicate behind their back is hostile. Manual triggers always insert.
+  const skipIfDuplicate = typeof trigger === 'string' && trigger.startsWith('auto-')
   const envelope = {
     type: 'booklage:save',
-    payload: { ...ogp, nonce },
+    payload: { ...ogp, nonce, skipIfDuplicate },
   }
-  // Cursor pill on the source tab. While PiP is open on a AllMarks tab,
-  // the new-card slide-in animation is sufficient feedback — suppress
-  // saving/saved pills to avoid double UI. Errors still surface a pill
-  // because PiP can't report failures.
-  const skipSuccessPill = !!isPipActive
+  // Cursor pill on the source tab. Two cases suppress the success pill:
+  //   1) PiP open on a AllMarks tab — the slide-in animation already shows the save.
+  //   2) Auto-save from SNS button hook — the user is interacting with X/YouTube,
+  //      not asking AllMarks for feedback; a pill floating over the tweet is intrusive.
+  // Errors always surface a pill so the user notices silent failures.
+  const skipSuccessPill = !!isPipActive || skipIfDuplicate
   if (!skipSuccessPill) {
     chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: 'saving' }).catch(() => {})
   }

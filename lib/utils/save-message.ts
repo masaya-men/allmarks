@@ -8,6 +8,9 @@ const SaveMessagePayload = z.object({
   favicon: z.string(),
   siteName: z.string(),
   nonce: z.string().min(1),
+  // Auto-save (SNS like/bookmark hook) path opts in: silently no-op if the URL
+  // is already saved. Manual save paths leave this undefined and always insert.
+  skipIfDuplicate: z.boolean().optional(),
 })
 
 const SaveMessage = z.object({
@@ -31,7 +34,7 @@ export function parseSaveMessage(input: unknown): ParseResult<SaveMessageInput> 
 }
 
 export type SaveMessageResult =
-  | { type: 'booklage:save:result'; nonce: string; ok: true; bookmarkId: string }
+  | { type: 'booklage:save:result'; nonce: string; ok: true; bookmarkId: string; skipped?: true }
   | { type: 'booklage:save:result'; nonce: string; ok: false; error: string }
 
 const ProbeMessage = z.object({

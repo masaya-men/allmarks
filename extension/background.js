@@ -1,4 +1,5 @@
 import { dispatchSave } from './lib/dispatch.js'
+import { isAutoSaveEnabled } from './lib/auto-save-config.js'
 
 // In-memory PiP state. Reported from any booklage tab's content script via
 // MutationObserver. dispatch.js reads this to decide whether to suppress
@@ -64,6 +65,19 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
       { trigger: 'bookmarklet', tabId, ogpFromBookmarklet: msg.ogp || null },
       tabId,
     )
+    return
+  }
+  if (msg.type === 'booklage:auto-save') {
+    const tabId = sender.tab?.id
+    if (!tabId) return
+    void (async () => {
+      const enabled = await isAutoSaveEnabled(msg.source, chrome.storage.sync)
+      if (!enabled) return
+      await safeDispatch(
+        { trigger: 'auto-' + msg.source, tabId, ogpFromBookmarklet: msg.ogp || null },
+        tabId,
+      )
+    })()
     return
   }
 })
