@@ -1,0 +1,58 @@
+.btn {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
+  paint-order: stroke fill;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, transform 0.15s;
+  position: relative;
+}
+
+.btn:hover {
+  color: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+  animation: crackle 100ms steps(4, end);
+}
+
+@keyframes crackle {
+  0%   { transform: translate(0, -1px); filter: none; text-shadow: none; }
+  25%  { transform: translate(-0.7px, -1px); filter: blur(0.4px);
+         text-shadow: 1px 0 rgba(255, 255, 255, 0.4); }
+  50%  { transform: translate(0.8px, -1.2px); filter: none;
+         text-shadow: -1px 0 rgba(255, 255, 255, 0.3); }
+  75%  { transform: translate(-0.4px, -1px); filter: blur(0.3px); text-shadow: none; }
+  100% { transform: translate(0, -1px); filter: none; text-shadow: none; }
+}
+
+.btn:disabled {
+  color: rgba(255, 255, 255, 0.30);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  animation: none;
+  transform: none;
+}
+
+.btn:focus-visible {
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .btn:hover {
+    animation: none;
+    transition: color 0.15s;
+    transform: none;
+  }
+}
