@@ -419,6 +419,11 @@ export function ScrollMeter({
   return (
     <div className={styles.meterWrap}>
       <div className={styles.meterStack}>
+        {/* 常時表示の操作ヒント (session 42)。 chrome 英語固定方針に従い全言語英語。
+            TUNE drag + meter scrub どちらにも当てはまる統一語彙。 */}
+        <div className={styles.hint} aria-hidden="true">
+          CLICK TO JUMP <span className={styles.hintSep}>·</span> SHIFT FOR FAST
+        </div>
         <div className={styles.meterCounter} aria-hidden="true">
           <span ref={n1Ref}>{pad4(n1)}</span>
           {' '}
