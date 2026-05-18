@@ -50,12 +50,12 @@
 
 .trigger:hover::before {
   color: #ff9d3f;
-  animation: glitch-shift-a 380ms steps(10, end);
+  animation: glitch-shift-a 700ms steps(7, end);
 }
 
 .trigger:hover::after {
   color: #50c8ff;
-  animation: glitch-shift-b 380ms steps(10, end);
+  animation: glitch-shift-b 700ms steps(7, end);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -70,23 +70,23 @@
    and the reason — CSS Modules scopes animation-name references). */
 @keyframes glitch-shift-a {
   0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
-  8%   { opacity: 1; transform: translate(-5px, 0); clip-path: inset(0 0 65% 0); }
-  20%  { transform: translate(4px, -1px); clip-path: inset(35% 0 35% 0); }
-  35%  { transform: translate(-6px, 0); clip-path: inset(70% 0 8% 0); }
-  50%  { transform: translate(5px, 0); clip-path: inset(8% 0 75% 0); }
-  65%  { transform: translate(-3px, 0); clip-path: inset(50% 0 20% 0); }
-  80%  { opacity: 0.7; transform: translate(2px, 0); clip-path: inset(20% 0 55% 0); }
+  5%   { opacity: 1; transform: translate(-9px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(7px, -2px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(-10px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(8px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(-6px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(4px, 0); clip-path: inset(15% 0 55% 0); }
   100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
 }
 
 @keyframes glitch-shift-b {
   0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
-  8%   { opacity: 1; transform: translate(5px, 0); clip-path: inset(0 0 65% 0); }
-  20%  { transform: translate(-4px, 1px); clip-path: inset(35% 0 35% 0); }
-  35%  { transform: translate(6px, 0); clip-path: inset(70% 0 8% 0); }
-  50%  { transform: translate(-5px, 0); clip-path: inset(8% 0 75% 0); }
-  65%  { transform: translate(3px, 0); clip-path: inset(50% 0 20% 0); }
-  80%  { opacity: 0.7; transform: translate(-2px, 0); clip-path: inset(20% 0 55% 0); }
+  5%   { opacity: 1; transform: translate(9px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(-7px, 2px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(10px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(-8px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(6px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(-4px, 0); clip-path: inset(15% 0 55% 0); }
   100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
 }
 .trigger:focus-visible {
