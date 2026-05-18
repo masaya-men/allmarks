@@ -11,7 +11,7 @@ import styles from './TuneTrigger.module.css'
 const STAGGER_MS = 11
 const SCRAMBLE_MIN_MS = 125
 const SCRAMBLE_MAX_MS = 190
-const LEAVE_GRACE_MS = 1000
+const LEAVE_GRACE_MS = 700
 
 type CellKind = 'label' | 'num' | 'dim'
 type CellScope = 'w' | 'g' | 'reset' | null
@@ -96,6 +96,7 @@ export function TuneTrigger({
 }: Props): ReactElement {
   const visibleLabel = label ?? t('board.chrome.tune')
   const btnRef = useRef<HTMLButtonElement>(null)
+  const wrapRef = useRef<HTMLSpanElement>(null)
   const phaseRef = useRef<Phase>('idle-tune')
   const cellsRef = useRef<AnimatedCell[]>([])
   const phaseStartRef = useRef<number>(0)
@@ -343,11 +344,13 @@ export function TuneTrigger({
     return (): void => window.removeEventListener('keydown', onKeyDown)
   }, [startClose])
 
-  // Outside-click closes sticky-open readout.
+  // Outside-click closes sticky-open readout. Checks wrap (= button + drawer)
+  // so a click inside the drawer (fader, LED legend) doesn't get treated as
+  // an outside-click and force a close.
   useEffect(() => {
     const onDocClick = (e: globalThis.MouseEvent): void => {
       if (!stickyOpenRef.current) return
-      if (!btnRef.current?.contains(e.target as Node)) {
+      if (!wrapRef.current?.contains(e.target as Node)) {
         stickyOpenRef.current = false
         startClose()
       }
@@ -369,6 +372,7 @@ export function TuneTrigger({
 
   return (
     <span
+      ref={wrapRef}
       className={styles.wrap}
       data-testid="tune-wrap"
       onMouseEnter={handleMouseEnter}
@@ -382,7 +386,9 @@ export function TuneTrigger({
         aria-haspopup="dialog"
         aria-expanded={expanded}
         onClick={handleClick}
-        data-glitch-text={visibleLabel}
+        data-glitch-text={expanded
+          ? `${widthPx.toFixed(2)} · ${gapPx.toFixed(2)} · DEFAULT`
+          : visibleLabel}
       >
         {visibleLabel}
       </button>
@@ -415,19 +421,23 @@ export function TuneTrigger({
         <div className={styles.opsLegend} aria-hidden="true">
           <div className={styles.opsRow}>
             <span className={styles.led} data-color="orange" />
-            <span className={styles.opsText}>DRAG</span>
+            <span className={styles.opsText}>DRAG TO TUNE</span>
           </div>
           <div className={styles.opsRow}>
-            <span className={styles.led} data-color="yellow" />
-            <span className={styles.opsText}>SHIFT FAST</span>
+            <span className={styles.led} data-color="orange" />
+            <span className={styles.opsText}>SHIFT FOR FAST</span>
           </div>
           <div className={styles.opsRow}>
             <span className={styles.led} data-color="green" />
-            <span className={styles.opsText}>JUMP</span>
+            <span className={styles.opsText}>CLICK TO JUMP</span>
           </div>
           <div className={styles.opsRow}>
             <span className={styles.led} data-color="red" />
-            <span className={styles.opsText}>UNDO Z</span>
+            <span className={styles.opsText}>CTRL+Z UNDO</span>
+          </div>
+          <div className={styles.opsRow}>
+            <span className={styles.led} data-color="red" />
+            <span className={styles.opsText}>CTRL+SHIFT+Z REDO</span>
           </div>
         </div>
       </div>

@@ -36,7 +36,8 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
+  /* text-transform 削除: 'AllMarks' のブランド mixed-case を保ち、
+     INBOX / ARCHIVE / DEAD LINKS 等は label 関数側で既に uppercase。 */
   position: relative;
   display: inline-block;
 }
@@ -52,7 +53,6 @@
   opacity: 0;
   font: inherit;
   letter-spacing: inherit;
-  text-transform: inherit;
   -webkit-text-stroke: 0;
   paint-order: fill;
   white-space: nowrap;

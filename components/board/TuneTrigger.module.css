@@ -194,9 +194,18 @@
   animation: led-pulse 2.4s ease-in-out infinite;
 }
 .led[data-color="orange"] { color: #ff9d3f; }
-.led[data-color="yellow"] { color: #ffd84a; animation-delay: 0.6s; }
-.led[data-color="green"]  { color: #4cd56a; animation-delay: 1.2s; }
-.led[data-color="red"]    { color: #ff5050; animation-delay: 1.8s; }
+.led[data-color="yellow"] { color: #ffd84a; }
+.led[data-color="green"]  { color: #4cd56a; }
+.led[data-color="red"]    { color: #ff5050; }
+
+/* Stagger pulse phases by row position so colors don't sync visually
+   even when two rows share a color (= orange × 2 fader actions, red × 2
+   history actions). */
+.opsRow:nth-child(1) .led { animation-delay: 0s; }
+.opsRow:nth-child(2) .led { animation-delay: 0.5s; }
+.opsRow:nth-child(3) .led { animation-delay: 1.0s; }
+.opsRow:nth-child(4) .led { animation-delay: 1.5s; }
+.opsRow:nth-child(5) .led { animation-delay: 2.0s; }
 
 @keyframes led-pulse {
   0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }

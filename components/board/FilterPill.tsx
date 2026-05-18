@@ -14,9 +14,10 @@ type Props = {
 }
 
 /** Chrome label vocab — fixed English across all 15 languages
- *  (= session 42 chrome-English policy, AllMarks branding aligned). */
+ *  (= session 42 chrome-English policy, AllMarks branding aligned).
+ *  The 'all' filter doubles as the brand mark — AllMarks. */
 function label(f: BoardFilter, moods: ReadonlyArray<MoodRecord>): string {
-  if (f === 'all') return 'ALL'
+  if (f === 'all') return 'AllMarks'
   if (f === 'inbox') return 'INBOX'
   if (f === 'archive') return 'ARCHIVE'
   if (f === 'dead') return 'DEAD LINKS'
@@ -36,6 +37,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const { display: displayLabel, triggerBurst } = useChromeScramble(label(value, moods))
+  const { display: displayCount } = useChromeScramble(countFor(value, counts))
 
   useEffect(() => {
     if (!open) return
@@ -64,7 +66,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
       >
         <span className={styles.label} data-glitch-text={label(value, moods)}>{displayLabel}</span>
         <span className={styles.separator}>·</span>
-        <span className={styles.count}>{countFor(value, counts)}</span>
+        <span className={styles.count}>{displayCount}</span>
       </button>
       {open && (
         <div className={styles.menu} role="menu">

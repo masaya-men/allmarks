@@ -56,6 +56,34 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* Session 43: subtle glitch on meter hover (= chrome family consistency).
+   No clip-path / smaller text-shadow vs the chrome button glitch — meter
+   stays readable while showing brief RGB shift. Triggered by hovering the
+   meter wrap (= when user reaches for the scrubber). */
+.meterWrap:hover .meterCounter {
+  animation: meter-glitch 420ms steps(6, end);
+}
+
+@keyframes meter-glitch {
+  0%   { transform: translate(0, 0); text-shadow: var(--chrome-text-shadow); }
+  20%  { transform: translate(-2px, 0);
+         text-shadow: 2px 0 rgba(255, 157, 63, 0.85),
+                      -2px 0 rgba(80, 200, 255, 0.7); }
+  40%  { transform: translate(2px, 0);
+         text-shadow: -2px 0 rgba(255, 157, 63, 0.7),
+                      2px 0 rgba(80, 200, 255, 0.85); }
+  60%  { transform: translate(-1px, 0);
+         text-shadow: 1px 0 rgba(255, 255, 255, 0.5); }
+  80%  { transform: translate(1px, 0); text-shadow: none; }
+  100% { transform: translate(0, 0); text-shadow: var(--chrome-text-shadow); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meterWrap:hover .meterCounter {
+    animation: none;
+  }
+}
+
 /* session 42 — 常時表示の操作ヒント (= 旧 TUNE tooltip を廃止して
    meter の上にチームの operation vocab を集約)。 chrome 英語固定、
    counter より一段小さく dim でひそやかに、 でも常に読める。 */
