@@ -6,12 +6,9 @@
 
 ## 開始時の動き
 
-1. user に「session 46 で ship した **note / Pixiv 連動** と **既存 3 file の防御コード** で気になることありました?」 と聞く
-2. user 実機検証結果次第:
-   - **動作 OK** → そのまま Vimeo 着手
-   - **note / Pixiv の検知失敗** (= スキ / ブクマ / いいね button 押しても保存されない) → selector 修正を優先
-   - **TikTok 検証もまだ** → user が友達アカウント探した結果次第で並行修正
-3. Vimeo 着手 → 完成 → 本番反映 → 時間あれば SoundCloud も同セッションで
+1. **user に前 session の動作確認は問わない** (= memory `feedback_batch_extension_verification.md`、 全 8 サイト ship 完了時に 1 度だけまとめて検証シート出す方針)
+2. Vimeo 着手 → 完成 → 本番反映 → 時間あれば SoundCloud も同セッションで
+3. user から自発的に「note の検知うまくいかない」 等の報告が来たら最優先で修正、 こちらから問わない
 
 ## このセッションでやること (= 2 サイト追加)
 
@@ -48,6 +45,16 @@
 - 🔜 **(I-08) 画面右端 floating ボタン** (= 磨きフェーズ、 残り 4 サイト ship 後)
 - 🔜 **(I-09) cursor pill 音波化 + テーマ連動設計** (= 同上)
 
+## 全サイト ship 完了時 (= 最後のセッション) の動き
+
+memory `feedback_batch_extension_verification.md` 通り、 全 8 追加サイト (note / Pixiv / Vimeo / SoundCloud / Bluesky / Threads / Reddit / Pinterest) が ship 完了したセッションで、 user に以下を含むチェックリストを 1 度だけ提示:
+
+- 各サイト × 各 button (= 全 13 ボタン目安) の検知可否
+- console エラー有無 (= 全 5+ file の防御コード効いてるか)
+- TikTok 含む既存 3 サイトの動作も再確認 (= 友達アカウント検証込み)
+
+それまでは session ごとの確認依頼は出さない。
+
 ## 月末リマインダー (= 約 2 週間後 2026-05-31)
 
 `allmarks.app` ドメイン取得確認。 取得済なら 拡張機能の Chrome Web Store submit + 本体 rebrand sprint に進む。 拡張に追加サイト連動全部入った状態で submit すれば「対応サイト 11 + 全 URL 4 経路 + 連動 13 ボタン」 の機能リッチな v1.0 として出せる。
@@ -57,6 +64,7 @@
 - [docs/TODO.md](docs/TODO.md) — active backlog (= 「現在の状態」 が session 46 narrative)
 - [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) — session 46 narrative
 - [docs/private/IDEAS.md](docs/private/IDEAS.md) — (I-05) (I-08) (I-09) に拡張機能の追加サイト計画 / 磨き計画 永続化済
+- memory `feedback_batch_extension_verification.md` (= sprint 中は user 検証問わない、 最後に 1 度まとめ)
 - memory `feedback_read_ideas_first.md` (= 拡張機能関連は IDEAS.md 優先で読む)
 - memory `feedback_jargon_in_japanese.md` (= 横文字を日本語応答に混ぜない)
 - session 45 narrative: [docs/TODO_COMPLETED.md](docs/TODO_COMPLETED.md) セッション 45 セクション (= TikTok = 量産レシピ確立 1 件目)
@@ -68,3 +76,4 @@
 - **共通 helper 外出しは見送り**: 既存 manifest は classic script、 module 化の副作用回避のため inline 重複許容
 - **配信先サイト 7**: X / YouTube / TikTok / note / Pixiv (= ship 済) + 残り Vimeo / SoundCloud / Bluesky / Threads / Reddit / Pinterest
 - **note の「スキ」 と内部 source 名**: 内部 = 英語統一 (`note-like`)、 UI = user 語彙 (= 「note — スキ button」)。 同じ判断は Reddit / Bluesky 等の locale 専用ワードでも使う
+- **sprint 中は user 実機検証を問わない**: 全 8 サイト ship 完了時に 1 度まとめて検証シート出す (= memory `feedback_batch_extension_verification.md`)
