@@ -3156,3 +3156,81 @@ session 51 で残した 4 候補 (B-#22 / 音波テーマ sprint / multi-playbac
 
 詳細 commit: 末尾。
 
+---
+
+## セッション 53 (2026-05-19) — (I-08) フローティング保存ボタン ship + 重複「Already saved」 優しいフィードバック + AllMarks 削除 → 拡張 mirror 同期 + A モチーフ確定
+
+session 52 持ち越し 4 候補から user **(I-08) フローティングボタン** を選択。 「邪魔にならずかといって押しにくくもないところが良いよね」 「他にも良いアイデア」 「ベストプラクティス徹底調査」 と注文 → 業界調査 (= snap-to-edge、 4 隅は他 widget 聖地で衝突、 右端中央が無人地帯) → user 提供 SVG (= 黒 A + 緑チェック) → 設計合意 → 実装 + commit + push + sideload 案内 → user 検証 → 追加対応 (= B 番重複 / 4 番削除) → ship → deploy 2 回。
+
+### ship 済 (= prod 反映済、 user round 1 OK、 round 2 は user 再検証待ち)
+
+**(I-08) フローティングボタン本体** (= [extension/floating-button.js](../extension/floating-button.js) 新 ~370 行 + [extension/floating-button.css](../extension/floating-button.css) 新 ~150 行):
+- 5 つ目の保存経路 (= 既存 4 経路: shortcut / 右クリック / 拡張アイコン / ブクマレット に追加)
+- 全 URL 右端の縦中央に常駐 (= snap-to-edge、 業界調査結論 + Fitts's Law の edge ピンニング有効)
+- 長押し 300ms → drag → release で左右 snap (= 縦完全自由、 横は端 snap)、 release 時に 200ms 磁石 pulse
+- 既保存ページは緑チェック永続表示 (= chrome.storage.local の savedUrlsMirror から判定)
+- アイドル時 30% 透明 → hover で 100% 実体化 + 1.08x 拡大
+- click → spinner ring overlay → 緑チェック clip-path reveal (= 480ms 左→右お絵かき風) + 3 段 green glow halo (= 既存 cursor pill と同じ drop-shadow recipe)
+- video 全画面中は自動で隠れる (= fullscreenchange listener)
+- per-domain で個別 OFF list (= 設定 UI 動的 list、 ドメイン正規化 + Enter キー追加 + Remove ボタン)
+- 設定: 全体 ON/OFF / アイドル透明度 5 段階 / 位置リセット / 個別 OFF list
+- aria-label / Tab focus + Enter / prefers-reduced-motion 対応
+- **AllMarks 本体 (= booklage.pages.dev) では非表示** (= 自分のサイトに不要)
+- 全設定が `storage.onChanged` で **リロードなしで即時反映** (= user round 1 検証 OK)
+
+**A モチーフ確定** (= [extension/icons/floating-button-mark.svg](../extension/icons/floating-button-mark.svg)):
+- user 提供 Figma 製ベクター。 黒 A 形 + 緑チェック (`#28F100`) overlay の 2 path 分離型 SVG
+- fill 形式なので reveal は clip-path で対応 (= stroke 形式の cursor pill check とは別レシピだが視覚は等価)
+- **AllMarks のロゴモチーフは「A」** 確定 (= 私が当初「X 形」 と誤認していたのを user 訂正)
+
+**B 番 重複弾く + 「Already saved」 優しいフィードバック** (= user 注文「エラーみたいに絶対しない」 「重複してる (すでに保存してあるよ！) て感じで優しく」、 全保存経路で適用):
+- dispatch.js: `skipIfDuplicate` を **常に true**、 result.skipped を `'duplicate'` finalState に translate
+- cursor pill 新 state `duplicate` (= 緑チェック + 「Already saved」 label + 2000ms autoHide + pop-gentle アニメ、 saved の overshoot より穏やか)
+- floating button: duplicate も saved と同じ flash 経路 (= 緑チェック reveal + 3 段 glow、 視覚は完全同一)
+- 全 6 保存経路 (= shortcut / 右クリック / 拡張アイコン / ブクマレット / floating / SNS auto-save) で同じ semantic 統一
+
+**4 番 AllMarks 削除 → 拡張 mirror 同期** (= 緑チェックが削除済 URL に出続けないように):
+- 本体 [use-board-data.ts](../lib/storage/use-board-data.ts) の `persistSoftDelete` で `window.postMessage({type: 'allmarks:url-deleted', url})` 発火
+- extension/content.js (= booklage.pages.dev 限定 listener) で receive → background.js へ転送
+- background.js が `saved-urls-mirror.removeUrl` で chrome.storage.local から削除
+- floating button の state machine に `mirror-miss` event 追加、 `storage.onChanged` で URL が消えたら即 savedFlag=false に戻す (= 緑チェック即消える)
+- 既存 PiP 内 card の削除追従は `setItems` 経路で動作する前提 (= BoardRoot.tsx の全削除経路が persistSoftDelete を経由)、 user 再検証で確認
+
+### 業界調査での確定方針
+
+| 項目 | 採用 | 理由 |
+|---|---|---|
+| 初期位置 | 右端の縦中央 | 4 隅は chat widget / cookie banner / 動画 controls の聖地で衝突、 右中央は無人地帯。 Fitts's Law の edge ピンニング有効 |
+| drag 方式 | snap-to-edge (縦自由 + 横 snap) | 完全自由は「中途半端な位置で取り残されて邪魔」 が業界共通の苦情 |
+| 背景パネル | なし | user 提供 SVG が形を持っているので、 ガラス pill 背景は不要。 黒 A マーク自体がボタン |
+| 既保存判定 | chrome.storage.local mirror | cross-origin で IDB 直アクセス不可、 本体保存時に拡張 storage に URL を mirror (= 50000 entries で 10% pruning) |
+| 動画 fullscreen | 自動非表示 | 業界 Web Clipper の苦情「動画上でも消えない」 を回避 |
+
+### 変更 file (= 計 21、 session 全体)
+
+新規 (9): [floating-button.js](../extension/floating-button.js) / [floating-button.css](../extension/floating-button.css) / [icons/floating-button-mark.svg](../extension/icons/floating-button-mark.svg) / [lib/floating-button-state.js](../extension/lib/floating-button-state.js) / [lib/saved-urls-mirror.js](../extension/lib/saved-urls-mirror.js) / [tests/extension/floating-button-state.test.ts](../tests/extension/floating-button-state.test.ts) / [tests/extension/saved-urls-mirror.test.ts](../tests/extension/saved-urls-mirror.test.ts) / [docs/specs/2026-05-19-floating-button-design.md](./specs/2026-05-19-floating-button-design.md)
+
+変更 (12): [manifest.json](../extension/manifest.json) / [background.js](../extension/background.js) / [lib/dispatch.js](../extension/lib/dispatch.js) / [lib/pill-state-machine.js](../extension/lib/pill-state-machine.js) / [content.js](../extension/content.js) / [content.css](../extension/content.css) / [options.html](../extension/options.html) / [options.js](../extension/options.js) / [lib/storage/use-board-data.ts](../lib/storage/use-board-data.ts) / [tests/extension/pill-state-machine.test.ts](../tests/extension/pill-state-machine.test.ts) + 上記 spec の reword
+
+### deploy / commit
+
+- commit: `35893ab feat(extension): (I-08) floating save button on every page` (= 初回 ship)
+- commit: round 2 (= 重複 gentle + 削除 mirror 同期 + A モチーフ reword)
+- deploy: Cloudflare Pages `booklage.pages.dev` に reflect 済 (= 本体 build に use-board-data 変更含む)
+- 拡張機能は user の re-sideload で反映
+
+### 永続化した教訓 (= memory 候補)
+
+- **AllMarks visual identity = 黒 A モチーフ + 緑チェック (`#28F100`) + 3 段 green glow halo** で確定。 既存 cursor pill と完全に同じ visual language で「成功緑 / spinner 白 / エラー赤」 の trio 完成
+- **重複保存は弾く + 「Already saved」 で優しくフィードバック** = AllMarks の UX policy 確定 (= 「エラーみたいに絶対しない」)
+- **本体 ↔ 拡張 の双方向同期パターン**: 保存 = chrome.storage.local mirror + storage.onChanged、 削除 = postMessage 発火 + content.js receive。 今後の同期需要 (= 例: tag schema 変更通知、 共有 URL 同期等) も同じ pattern で足せる
+- **業界 Web Clipper の苦情パターン** = (a)「動画上に出続けて OFF できない」 (b)「ロードしない / 死ぬ」 (c)「邪魔位置で固まる」 の 3 つが代表。 AllMarks 拡張機能は (a) fullscreenchange listener、 (b) `isExtensionAlive` 防御 (= session 46 既存)、 (c) snap-to-edge 方式 で全部回避済
+
+### 残課題 (= 次セッション)
+
+- **A 番 X 長文 tweet + 画像 で画像のみ表示 bug** (= user 仕様希望「文字と画像の時は画像が左、 文字が右エリアに出る」 split layout): session 52 系の本体 board task、 別 sprint で着手
+- **4 番 d) PiP 内 card 削除追従**: 既存 `setItems` 経路で動くはずだが user 実機未確認、 次セッションで再検証 + 必要なら修正
+- **10 番 有名サイト pre-set OFF list**: per-domain OFF list の polish、 YouTube / Notion / Slack 等を「外すだけ」 で OFF 可能な事前 list、 ~50 行
+- **音波テーマ世界観 sprint** (= H + J + K + I-09 + I-10): 大 task、 session 53 では着手せず、 session 54 以降の候補
+
+

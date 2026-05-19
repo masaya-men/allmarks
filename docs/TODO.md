@@ -20,33 +20,49 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-19 セッション 52 — B-#22 完遂 + TextCard 透明グラス redesign + scroll-aware 全面化 + title backfill 開通)
+### 直近の状態 (2026-05-19 セッション 53 — (I-08) フローティング保存ボタン ship + 重複「Already saved」 優しい feedback + AllMarks 削除 → 拡張 mirror 同期 + A モチーフ確定)
+
+session 52 持ち越し 4 候補から user **(I-08) フローティングボタン** を選択。 ベストプラクティス調査 (= snap-to-edge、 右端中央が業界 conflict 無人地帯、 Fitts's Law edge ピンニング有効) → user 提供 SVG (= 黒 A + 緑チェック) → 設計合意 → 実装 + ship → user 検証 round 1 → round 2 で B (= 重複弾く gentle) + 4 (= 削除追従) + A 訂正を追加 ship → deploy 2 回。
+
+**ship 済 (= prod 反映済、 round 1 OK、 round 2 は user 再検証待ち)**:
+- **(I-08) フローティング保存ボタン本体**: 全 URL 右端中央常駐、 5 つ目の保存経路。 既保存ページは緑チェック永続表示。 長押し drag → 左右 snap (縦自由)、 アイドル 30% 透明 / hover で実体化、 video fullscreen で自動非表示、 per-domain OFF list、 chrome.storage.local mirror で既保存判定 (50000 entries pruning)、 設定 5 項目すべて `storage.onChanged` でリロードなし即時反映
+- **A モチーフ確定**: AllMarks のロゴモチーフは **「A」** (= 私が「X」 と誤認、 user 訂正)。 黒 A 形 + 緑チェック (`#28F100`) の 2 path 分離型 SVG、 fill 形式 + clip-path reveal アニメ
+- **B 番 重複弾く + 「Already saved」 優しい feedback**: 全 6 保存経路で重複は弾く、 cursor pill 新 state `duplicate` (= 緑チェック + 「Already saved」 label + 2000ms autoHide + 穏やか pop)、 floating button は saved と同じ flash 経路。 user 原則「エラーみたいに絶対しない」
+- **4 番 AllMarks 削除 → 拡張 mirror 同期**: 本体 persistSoftDelete で postMessage 発火 → content.js receive → background.js が mirror.removeUrl → storage.onChanged で floating button の savedFlag=false 即時反映 (= 緑チェック消える)
+
+**変更 file** (21): 新規 9 (= floating-button.{js,css} + lib 2 + icon SVG + test 2 + spec) / 変更 12 (= manifest / background / dispatch / pill-state-machine / content.{js,css} / options.{html,js} / use-board-data.ts / pill test)
+
+**deploy 回数**: 2
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 53 セクション
+
+**次セッション (= 54) の goal**: user round 2 再検証 (= 重複 gentle / AllMarks 削除追従 / PiP サムネ同期) → 残課題:
+- 🐛 A 番 X 長文 tweet + 画像 で画像のみ表示 → split layout (= 画像左 / 文字右) 仕様希望
+- 🟡 10 番 有名サイト pre-set OFF list (= 拡張 polish、 ~50 行)
+- 🟡 音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10 集中投下)
+- 🟡 multi-playback vision board card autoplay (= AllMarks core 差別化)
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
+
+---
+
+### 旧情報 (2026-05-19 セッション 52 — B-#22 完遂 + TextCard 透明グラス redesign + scroll-aware 全面化 + title backfill 開通)
 
 session 51 持ち越し 4 候補から user 「推奨どおり」 で B-#22 着手 → cleanTitle bug fix 完了 → user 発案で TextCard 全面 redesign (= 透明 + 縁グロー + scroll + 底フェード) に拡張 → 5 deploy + iterative ブレストで密度高く消化。
 
 **ship 済 (= prod 反映済、 user 実機 OK)**:
 - **B-#22 長文 tweet Lightbox bug fix**: cleanTitle の `/「([\s\S]+)」/` 過剰マッチを `/さん[::]\s*「(…)」/` に厳格化 → user-content 「」 の誤マッチ撲滅、 19 unit test 追加
-- **TextCard 全面 redesign**: 白/黒 destefanis variant 廃止、 透明 + 縁グロー (`linear-gradient border-box` + 32px box-shadow) + scroll-aware 底フェード (= 一番下まで scroll した時は fade が消えて last line 完全可読) + native scrollable に統一
-- **wheel scroll-chaining**: 板の InteractionLayer + Lightbox の window wheel listener が wheel を取り上げて card 内 scroll を奪う問題を、 card 側で「scroll 余地あり時のみ stopPropagation」 + Lightbox 側で「`[data-card-scroll]` element 上で defer」 の二段で解消
-- **font jump 解消**: Lightbox text-only tweet の `fakeBoardItem.title` を `meta?.text` → `item.title` に変更 (= 板と同じ source, 同じ typography, FLIP morph 無差)
-- **tweet-backfill に persistTitle 開通**: syndication API の `meta.text` を IDB title に上書き、 既存の長文 tweet も板を開いた瞬間に full text に更新される連動。 [TweetBackfillHooks](../lib/board/tweet-backfill.ts) を拡張、 [use-board-data](../lib/storage/use-board-data.ts) に idempotent な persistTitle callback、 [BoardRoot](../components/board/BoardRoot.tsx) で wire-up
-- **extension/twitter.js**: title の 80 文字 slice 撤廃、 新規保存 tweet は最初から full text + prefix。 cleanTitle が render 時に prefix を剥がす設計
-
-**glitch 試行 → 撤去**: session 中盤に ScrollMeter glitch-shift-a/b を TextCard 底辺に流用してみたが user 「グリッチが難しさの元」 で完全撤去。 「カード = 静かな透明グラス + 静かな底フェード」 で確定
+- **TextCard 全面 redesign**: 白/黒 destefanis variant 廃止、 透明 + 縁グロー (`linear-gradient border-box` + 32px box-shadow) + scroll-aware 底フェード + native scrollable に統一
+- **wheel scroll-chaining**: card 側で「scroll 余地あり時のみ stopPropagation」 + Lightbox 側で「`[data-card-scroll]` element 上で defer」 の二段
+- **font jump 解消**: Lightbox text-only tweet の `fakeBoardItem.title` を `item.title` に変更
+- **tweet-backfill に persistTitle 開通**: syndication API の `meta.text` を IDB title に上書き
+- **extension/twitter.js**: title の 80 文字 slice 撤廃、 cleanTitle が render 時に prefix を剥がす設計
 
 **変更 file** (9): clean-title.ts / TextCard.tsx / TextCard.module.css / Lightbox.tsx / BoardRoot.tsx / tweet-backfill.ts / use-board-data.ts / extension/twitter.js / tests/lib/clean-title.test.ts (新規)
 
 **deploy 回数**: 5
 
 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 52 セクション
-
-**次セッション (= 53) の goal**: B-#22 落ち着いた、 残候補から:
-- 🟡 音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10 集中投下)
-- 🟡 multi-playback vision board card autoplay (= AllMarks core 差別化)
-- 🟡 (I-08) 拡張機能 floating ボタン (= 50 行、 軽い完結タスク)
-- 🐛 B-#3 重複 URL でサムネ等が出ない問題 (= 古い未解決)
-
-詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
 
 ---
 
