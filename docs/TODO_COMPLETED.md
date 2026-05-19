@@ -3162,7 +3162,9 @@ session 51 で残した 4 候補 (B-#22 / 音波テーマ sprint / multi-playbac
 
 session 52 持ち越し 4 候補から user **(I-08) フローティングボタン** を選択。 「邪魔にならずかといって押しにくくもないところが良いよね」 「他にも良いアイデア」 「ベストプラクティス徹底調査」 と注文 → 業界調査 (= snap-to-edge、 4 隅は他 widget 聖地で衝突、 右端中央が無人地帯) → user 提供 SVG (= 黒 A + 緑チェック) → 設計合意 → 実装 + commit + push + sideload 案内 → user 検証 → 追加対応 (= B 番重複 / 4 番削除) → ship → deploy 2 回。
 
-### ship 済 (= prod 反映済、 user round 1 OK、 round 2 は user 再検証待ち)
+### ship 済 / 動作確認結果 (= prod 反映済、 user round 1 OK、 round 2 で B 番 + PiP 同期は ❌ 判明)
+
+⚠️ session 53 後の user 検証で **B 番 重複弾き** と **PiP サムネ消し** が動かないと判明。 deploy 自体は完了、 拡張側 mirror 同期は OK、 ただし上記 2 件は **session 54 で真因調査 + fix が必要**。 私 (Claude) が user 実機検証前に「ship 済」 と書いたのが事実誤認。
 
 **(I-08) フローティングボタン本体** (= [extension/floating-button.js](../extension/floating-button.js) 新 ~370 行 + [extension/floating-button.css](../extension/floating-button.css) 新 ~150 行):
 - 5 つ目の保存経路 (= 既存 4 経路: shortcut / 右クリック / 拡張アイコン / ブクマレット に追加)
@@ -3183,18 +3185,14 @@ session 52 持ち越し 4 候補から user **(I-08) フローティングボタ
 - fill 形式なので reveal は clip-path で対応 (= stroke 形式の cursor pill check とは別レシピだが視覚は等価)
 - **AllMarks のロゴモチーフは「A」** 確定 (= 私が当初「X 形」 と誤認していたのを user 訂正)
 
-**B 番 重複弾く + 「Already saved」 優しいフィードバック** (= user 注文「エラーみたいに絶対しない」 「重複してる (すでに保存してあるよ！) て感じで優しく」、 全保存経路で適用):
-- dispatch.js: `skipIfDuplicate` を **常に true**、 result.skipped を `'duplicate'` finalState に translate
-- cursor pill 新 state `duplicate` (= 緑チェック + 「Already saved」 label + 2000ms autoHide + pop-gentle アニメ、 saved の overshoot より穏やか)
-- floating button: duplicate も saved と同じ flash 経路 (= 緑チェック reveal + 3 段 glow、 視覚は完全同一)
-- 全 6 保存経路 (= shortcut / 右クリック / 拡張アイコン / ブクマレット / floating / SNS auto-save) で同じ semantic 統一
+**B 番 重複弾く + 「Already saved」 優しいフィードバック** (= ❌ user 実機で動かなかった、 session 54 で fix):
+- 実装した変更: dispatch.js で `skipIfDuplicate` を **常に true**、 result.skipped を `'duplicate'` finalState に translate / cursor pill 新 state `duplicate` (= 緑チェック + 「Already saved」 label + 2000ms autoHide + pop-gentle アニメ) / floating button は saved と同じ flash 経路
+- ❌ user 実機: AlreadySaved 出ない、 重複保存できる、 修正計画と効果が一致しない
+- **真因仮説 (= session 54 で検証)**: (A) dispatch.js → offscreen relay で `skipIfDuplicate` が落ちる / (B) SaveIframeClient.tsx の `reply({skipped: true})` が dispatch.js まで戻らない / (C) result.skipped を cursor pill state に渡す経路が断線 / (D) 拡張機能 sideload 更新が完全反映してない
 
-**4 番 AllMarks 削除 → 拡張 mirror 同期** (= 緑チェックが削除済 URL に出続けないように):
-- 本体 [use-board-data.ts](../lib/storage/use-board-data.ts) の `persistSoftDelete` で `window.postMessage({type: 'allmarks:url-deleted', url})` 発火
-- extension/content.js (= booklage.pages.dev 限定 listener) で receive → background.js へ転送
-- background.js が `saved-urls-mirror.removeUrl` で chrome.storage.local から削除
-- floating button の state machine に `mirror-miss` event 追加、 `storage.onChanged` で URL が消えたら即 savedFlag=false に戻す (= 緑チェック即消える)
-- 既存 PiP 内 card の削除追従は `setItems` 経路で動作する前提 (= BoardRoot.tsx の全削除経路が persistSoftDelete を経由)、 user 再検証で確認
+**4 番 AllMarks 削除 → 拡張 mirror 同期** (= ✅ 拡張側 OK、 ❌ PiP 同期は NG):
+- ✅ 拡張機能側 (= user 実機 OK): 本体 [use-board-data.ts](../lib/storage/use-board-data.ts) の `persistSoftDelete` で `window.postMessage({type: 'allmarks:url-deleted', url})` 発火 → extension/content.js receive → background.js が `saved-urls-mirror.removeUrl` → floating button が `mirror-miss` event → 緑チェック即消える、 経路全部動作
+- ❌ PiP 内 card 削除追従 (= session 54 で fix): 「既存 setItems で動く前提」 と判断していたが user 実機では消えない。 PiP window が独立 React tree (= Document Picture-in-Picture API) なので items state が共有されてない可能性
 
 ### 業界調査での確定方針
 

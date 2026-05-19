@@ -24,11 +24,14 @@
 
 session 52 持ち越し 4 候補から user **(I-08) フローティングボタン** を選択。 ベストプラクティス調査 (= snap-to-edge、 右端中央が業界 conflict 無人地帯、 Fitts's Law edge ピンニング有効) → user 提供 SVG (= 黒 A + 緑チェック) → 設計合意 → 実装 + ship → user 検証 round 1 → round 2 で B (= 重複弾く gentle) + 4 (= 削除追従) + A 訂正を追加 ship → deploy 2 回。
 
-**ship 済 (= prod 反映済、 round 1 OK、 round 2 は user 再検証待ち)**:
+**ship 済 (= prod 反映済、 user 実機 OK)**:
 - **(I-08) フローティング保存ボタン本体**: 全 URL 右端中央常駐、 5 つ目の保存経路。 既保存ページは緑チェック永続表示。 長押し drag → 左右 snap (縦自由)、 アイドル 30% 透明 / hover で実体化、 video fullscreen で自動非表示、 per-domain OFF list、 chrome.storage.local mirror で既保存判定 (50000 entries pruning)、 設定 5 項目すべて `storage.onChanged` でリロードなし即時反映
 - **A モチーフ確定**: AllMarks のロゴモチーフは **「A」** (= 私が「X」 と誤認、 user 訂正)。 黒 A 形 + 緑チェック (`#28F100`) の 2 path 分離型 SVG、 fill 形式 + clip-path reveal アニメ
-- **B 番 重複弾く + 「Already saved」 優しい feedback**: 全 6 保存経路で重複は弾く、 cursor pill 新 state `duplicate` (= 緑チェック + 「Already saved」 label + 2000ms autoHide + 穏やか pop)、 floating button は saved と同じ flash 経路。 user 原則「エラーみたいに絶対しない」
-- **4 番 AllMarks 削除 → 拡張 mirror 同期**: 本体 persistSoftDelete で postMessage 発火 → content.js receive → background.js が mirror.removeUrl → storage.onChanged で floating button の savedFlag=false 即時反映 (= 緑チェック消える)
+- **4 番 AllMarks 削除 → 拡張 mirror 同期 (拡張側のみ)**: 本体 persistSoftDelete で postMessage 発火 → content.js receive → background.js が mirror.removeUrl → storage.onChanged で floating button の savedFlag=false 即時反映 (= 緑チェック消える)。 user 実機 OK
+
+**deploy 済だが user 実機で動かなかった (= session 54 で真因調査 + fix)**:
+- ❌ **B 番 重複弾き + 「Already saved」**: 実装したが user 実機では AlreadySaved が出ず、 重複保存もできてしまう。 dispatch.js → offscreen → SaveIframeClient の payload リレー、 または result.skipped の戻り経路、 または cursor pill state 描画のどこかで断線。 session 54 最優先で console.log デバッグ + fix
+- ❌ **PiP 内 card 削除追従**: 本体 board で削除しても PiP window 内の card が消えない。 PiP が同じ items state を共有しているか、 別経路で IDB read しているかから調査必要
 
 **変更 file** (21): 新規 9 (= floating-button.{js,css} + lib 2 + icon SVG + test 2 + spec) / 変更 12 (= manifest / background / dispatch / pill-state-machine / content.{js,css} / options.{html,js} / use-board-data.ts / pill test)
 
@@ -36,7 +39,11 @@ session 52 持ち越し 4 候補から user **(I-08) フローティングボタ
 
 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 53 セクション
 
-**次セッション (= 54) の goal**: user round 2 再検証 (= 重複 gentle / AllMarks 削除追従 / PiP サムネ同期) → 残課題:
+**次セッション (= 54) の goal**: **session 53 で「ship 済」 と claim したが user 実機で動かなかった 2 件を最優先で fix**:
+- 🔴 **B 番 重複弾き + 「Already saved」 が動かない** (= 真因調査 + console.log デバッグ + fix)
+- 🔴 **PiP 内 card 削除追従が動かない** (= PiP が同じ React tree / items state を共有しているか調査)
+
+その後の候補:
 - 🐛 A 番 X 長文 tweet + 画像 で画像のみ表示 → split layout (= 画像左 / 文字右) 仕様希望
 - 🟡 10 番 有名サイト pre-set OFF list (= 拡張 polish、 ~50 行)
 - 🟡 音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10 集中投下)
