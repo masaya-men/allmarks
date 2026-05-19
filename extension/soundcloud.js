@@ -10,12 +10,6 @@
 const DEDUPE_WINDOW_MS = 5000
 const recentlySent = new Map()
 
-// Second-segment values that are SoundCloud surfaces, not track slugs.
-const RESERVED_SECOND_SEGMENT = new Set([
-  'sets', 'likes', 'followers', 'following', 'tracks', 'reposts',
-  'comments', 'popular-tracks', 'albums', 'stations', 'info', 'network',
-])
-
 // Extension reloads invalidate this script's chrome.* handle; touching
 // chrome.runtime.sendMessage afterwards throws synchronously, which the
 // .catch() below can't trap. Probe chrome.runtime.id first — it's undefined
@@ -35,16 +29,19 @@ function readMeta(selector) {
   return e ? e.getAttribute('content') || '' : ''
 }
 
-// Resolve which page-level surface this click belongs to:
-// - track detail  /{user}/{slug}      (= 2 segments, slug not reserved)
-// - playlist      /{user}/sets/{slug} (= 3 segments)
-// - mini-player   any page, but the click target sits inside .playbackSoundBadge
-//                 → read .playbackSoundBadge__titleLink for the now-playing
-//                 track's own URL (decoupled from page URL).
+// Resolve a saveable URL from a SoundCloud Like click. The user's mental
+// model is "heart click = save to AllMarks", so we honor every press
+// except on pages where the URL itself carries no meaning (= system pages
+// like /feed, /charts where the URL doesn't identify a track or playlist).
 //
-// Session 49 user verification revealed plain track-detail was too narrow:
-// user pressed Like on a playlist page + the persistent mini-player, both
-// previously returned null and silently no-op'd.
+// Surfaces supported:
+//   - mini-player          → resolve via .playbackSoundBadge__titleLink
+//   - track detail         /{user}/{slug}
+//   - regular playlist     /{user}/sets/{slug}
+//   - personalised playlist /discover/sets/personalized-tracks::...
+//     (URL is user-specific and may show different tracks later, but the
+//      user pressed the heart so we save the moment.)
+//   - any other deep path  → save as-is
 function extractTrackUrl(btn) {
   // Case A: mini-player Like (= bottom persistent badge). Always resolve
   // via the badge's title link, independent of page URL.
@@ -52,31 +49,27 @@ function extractTrackUrl(btn) {
     const titleLink = document.querySelector('.playbackSoundBadge__titleLink')
     const href = titleLink && titleLink.getAttribute('href')
     if (!href) return null
-    const m = href.match(/^\/([^/?#]+)\/([^/?#]+)/)
-    if (!m) return null
-    if (RESERVED_SECOND_SEGMENT.has(m[2])) return null
     return 'https://soundcloud.com' + href.split('?')[0].split('#')[0].replace(/\/$/, '')
   }
-  // Case B / C: page-level Like — derive from location.pathname.
+  // Case B: page-level Like — save the current location unless it's a
+  // bookmark-meaningless system page.
   const p = location.pathname.replace(/\/$/, '')
   const parts = p.split('/').filter(Boolean)
-  // Bail on root-level / feed-style surfaces.
   const first = parts[0] || ''
-  if (!first || first.startsWith('you') || first === 'discover' || first === 'feed' || first === 'upload' || first === 'charts' || first === 'pages') return null
-  // Case B: track detail /{user}/{slug}
-  if (parts.length === 2) {
-    const [user, slug] = parts
-    if (!user || !slug) return null
-    if (RESERVED_SECOND_SEGMENT.has(slug)) return null
-    return 'https://soundcloud.com/' + user + '/' + slug
-  }
-  // Case C: playlist /{user}/sets/{slug}
-  if (parts.length === 3 && parts[1] === 'sets') {
-    const [user, , slug] = parts
-    if (!user || !slug) return null
-    return 'https://soundcloud.com/' + user + '/sets/' + slug
-  }
-  return null
+  if (!first) return null
+  // System pages with no meaningful saveable content.
+  if (first === 'feed' || first === 'upload' || first === 'charts' || first === 'pages' || first === 'settings' || first === 'imprint' || first === 'jobs' || first === 'mobile') return null
+  // /you/* — the user's own library; treat as personal collection that
+  // shouldn't go into AllMarks (would essentially be saving a link to
+  // one's own SoundCloud Likes page).
+  if (first.startsWith('you')) return null
+  // Everything else is saveable. Includes:
+  //   /{user}              (= artist profile)
+  //   /{user}/{slug}       (= track detail)
+  //   /{user}/sets/{slug}  (= playlist)
+  //   /discover/sets/...   (= personalised playlist)
+  //   etc.
+  return 'https://soundcloud.com' + p
 }
 
 function extractTrackOgp(url) {
