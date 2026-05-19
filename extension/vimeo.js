@@ -161,13 +161,15 @@ document.addEventListener('click', (event) => {
     const clsDbg = (btnDbg.className && btnDbg.className.toString && btnDbg.className.toString()) || ''
     const labelDbg = (btnDbg.getAttribute('aria-label') || '') + ' / ' + (btnDbg.getAttribute('title') || '')
     if (/like|watch|後で見る|いいね|좋아|喜欢|gefällt|piace|gostei|gusta/i.test(clsDbg + ' ' + labelDbg)) {
-      console.log('[allmarks-vimeo]', {
+      // JSON.stringify so Chrome's deferred-eval doesn't elide the attrs
+      // object when the user copies the console transcript out as text.
+      console.log('[allmarks-vimeo] ' + JSON.stringify({
         tag: btnDbg.tagName,
         attrs: dumpAttrs(btnDbg),
         parentTag: btnDbg.parentElement && btnDbg.parentElement.tagName,
         parentAttrs: dumpAttrs(btnDbg.parentElement),
         text: (btnDbg.innerText || btnDbg.textContent || '').slice(0, 80),
-      })
+      }))
     }
   }
   const kind = getButtonKind(event.target)

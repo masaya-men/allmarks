@@ -84,7 +84,9 @@ document.addEventListener('click', (event) => {
     const text = (btnDbg.innerText || btnDbg.textContent || '')
     const labelDbg = btnDbg.getAttribute('aria-label') || ''
     if (text.includes('スキ') || labelDbg.includes('スキ') || /like/i.test(labelDbg + ' ' + text)) {
-      console.log('[allmarks-note]', {
+      // JSON.stringify so Chrome's deferred-eval doesn't elide the attrs
+      // object when the user copies the console transcript out as text.
+      console.log('[allmarks-note] ' + JSON.stringify({
         tag: btnDbg.tagName,
         attrs: dumpAttrs(btnDbg),
         parentTag: btnDbg.parentElement && btnDbg.parentElement.tagName,
@@ -92,7 +94,7 @@ document.addEventListener('click', (event) => {
         grandparentTag: btnDbg.parentElement && btnDbg.parentElement.parentElement && btnDbg.parentElement.parentElement.tagName,
         grandparentAttrs: btnDbg.parentElement ? dumpAttrs(btnDbg.parentElement.parentElement) : null,
         text: text.slice(0, 80),
-      })
+      }))
     }
   }
   const kind = getButtonKind(event.target)
