@@ -46,10 +46,20 @@
 .booklage-pill[data-state="saved"] .booklage-pill__icon {
   animation: booklage-pill-pop 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+/* === duplicate: gentle, no overshoot. User already saved this; we just
+       want a quiet acknowledgement that nothing new was created. The check
+       still strokes in below (same .check rule covers it). === */
+.booklage-pill[data-state="duplicate"] .booklage-pill__icon {
+  animation: booklage-pill-pop-gentle 0.36s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
 @keyframes booklage-pill-pop {
   0%   { transform: scale(0.4); }
   55%  { transform: scale(1.2); }
   78%  { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+@keyframes booklage-pill-pop-gentle {
+  0%   { transform: scale(0.85); }
   100% { transform: scale(1); }
 }
 .booklage-pill .check {

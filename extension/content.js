@@ -1,9 +1,10 @@
 // MV3 content_scripts don't support ES module imports — keep pillStateView inline.
 // Source of truth for tests: extension/lib/pill-state-machine.js (must stay in sync).
 function pillStateView(state) {
-  if (state === 'saving') return { label: 'Saving', icon: 'ring',  autoHideMs: null }
-  if (state === 'saved')  return { label: 'Saved',  icon: 'check', autoHideMs: 1700 }
-  if (state === 'error')  return { label: 'Failed', icon: 'bang',  autoHideMs: 2400 }
+  if (state === 'saving')    return { label: 'Saving',        icon: 'ring',  autoHideMs: null }
+  if (state === 'saved')     return { label: 'Saved',         icon: 'check', autoHideMs: 1700 }
+  if (state === 'duplicate') return { label: 'Already saved', icon: 'check', autoHideMs: 2000 }
+  if (state === 'error')     return { label: 'Failed',        icon: 'bang',  autoHideMs: 2400 }
   return null
 }
 
@@ -185,5 +186,22 @@ if (location.hostname === 'booklage.pages.dev') {
   new MutationObserver(reportPip).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-booklage-pip'],
+  })
+
+  // Listen for "URL deleted" notifications from the AllMarks React app and
+  // forward them to the background SW so it can drop the URL from the
+  // saved-urls mirror (= keeps the floating button's "already saved" state
+  // in sync with what's actually in the user's AllMarks).
+  window.addEventListener('message', (event) => {
+    if (event.source !== window) return
+    const msg = event.data
+    if (!msg || msg.type !== 'allmarks:url-deleted') return
+    if (typeof msg.url !== 'string' || !msg.url) return
+    if (!isExtensionAlive()) return
+    try {
+      chrome.runtime.sendMessage({ type: 'booklage:url-deleted', url: msg.url }).catch(() => {})
+    } catch (_) {
+      // Context invalidated; drop silently.
+    }
   })
 }

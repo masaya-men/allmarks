@@ -30,6 +30,17 @@ export async function addUrl(url, storageArea, now = Date.now()) {
   await storageArea.set({ [STORAGE_KEY]: next })
 }
 
+// Invalidate the floating button's "already saved" state for a URL. Called
+// after the user deletes the bookmark in AllMarks — without this, the
+// floating button would keep showing a misleading green check on revisit.
+export async function removeUrl(url, storageArea) {
+  if (!url) return
+  const mirror = await loadMirror(storageArea)
+  if (!Object.prototype.hasOwnProperty.call(mirror, url)) return
+  delete mirror[url]
+  await storageArea.set({ [STORAGE_KEY]: mirror })
+}
+
 // Pure (no IO) so tests can exercise it directly.
 export function maybePrune(mirror) {
   const entries = Object.entries(mirror)

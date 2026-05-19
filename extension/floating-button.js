@@ -44,6 +44,9 @@
         return state
       case 'mirror-hit':
         return { ...state, savedFlag: true }
+      case 'mirror-miss':
+        if (!state.savedFlag) return state
+        return { ...state, savedFlag: false }
       default:
         return state
     }
@@ -294,7 +297,10 @@
   if (isExtensionAlive()) {
     chrome.runtime.onMessage.addListener((msg) => {
       if (!msg || msg.type !== 'booklage:floating-button-state') return
-      if (msg.state === 'saved') dispatch({ type: 'save-success' })
+      // saved + duplicate both mean "this URL is in AllMarks now" — same
+      // visual (green check + glow). Only difference is intent; the user
+      // got identical feedback either way.
+      if (msg.state === 'saved' || msg.state === 'duplicate') dispatch({ type: 'save-success' })
       else if (msg.state === 'error') dispatch({ type: 'save-error' })
     })
   }
@@ -314,12 +320,14 @@
         if (!shouldShow()) unmount()
         else { mount(); render() }
       }
-      // Mirror live-update: if local mirror added the current URL, flip to saved.
+      // Mirror live-update.
+      // - URL appeared in mirror (= saved from elsewhere): flip to savedFlag=true
+      // - URL gone from mirror (= deleted in AllMarks): flip back to savedFlag=false
       if (area === 'local' && changes.savedUrlsMirror) {
         const next = changes.savedUrlsMirror.newValue || {}
-        if (next[location.href] && !state.savedFlag) {
-          dispatch({ type: 'mirror-hit' })
-        }
+        const inMirror = !!next[location.href]
+        if (inMirror && !state.savedFlag) dispatch({ type: 'mirror-hit' })
+        else if (!inMirror && state.savedFlag) dispatch({ type: 'mirror-miss' })
       }
     })
   }

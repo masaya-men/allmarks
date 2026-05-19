@@ -37,8 +37,13 @@ export function nextState(state, event) {
       if (state.pillState === 'error') return { ...state, pillState: 'idle' }
       return state
     case 'mirror-hit':
-      // Startup check found this URL in the saved-urls mirror.
+      // Startup or live update found this URL in the saved-urls mirror.
       return { ...state, savedFlag: true }
+    case 'mirror-miss':
+      // Live update: the user deleted this bookmark in AllMarks, so the
+      // mirror entry is gone. Drop the saved indicator (= green check).
+      if (!state.savedFlag) return state
+      return { ...state, savedFlag: false }
     default:
       return state
   }

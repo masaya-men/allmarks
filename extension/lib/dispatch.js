@@ -68,13 +68,13 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
   await ensureOffscreen()
   const ogp = await extractOgpFromTab(tabId, linkUrl, ogpFromBookmarklet)
   const nonce = makeNonce('e')
-  // Auto-save (SNS button hook) paths should be silent no-ops when the URL is
-  // already saved — the user might be re-liking an old tweet, and creating
-  // a duplicate behind their back is hostile. Manual triggers always insert.
-  const skipIfDuplicate = typeof trigger === 'string' && trigger.startsWith('auto-')
+  // Every trigger uses skipIfDuplicate now — duplicates aren't an error,
+  // they're a recognised "already saved" outcome surfaced gently to the user.
+  // The offscreen iframe replies with { ok: true, skipped: true } when the URL
+  // exists; we translate that into a `duplicate` pill state below.
   const envelope = {
     type: 'booklage:save',
-    payload: { ...ogp, nonce, skipIfDuplicate },
+    payload: { ...ogp, nonce, skipIfDuplicate: true },
   }
   // Cursor pill on the source tab. PiP being open on a AllMarks tab is the
   // only suppression — its slide-in animation already shows the save, and
@@ -91,12 +91,15 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
   }
 
   const result = await postToOffscreen(envelope, nonce)
-  const finalState = result?.ok ? 'saved' : 'error'
+  let finalState
+  if (!result?.ok) finalState = 'error'
+  else if (result.skipped) finalState = 'duplicate'
+  else finalState = 'saved'
 
   // Mirror successful saves into chrome.storage.local so the floating button
-  // can render "already saved" on revisit. Best-effort — failures are silent
-  // since the save itself already succeeded.
-  if (finalState === 'saved' && ogp && ogp.url) {
+  // can render "already saved" on revisit. Both `saved` and `duplicate` mean
+  // the URL is in AllMarks now, so both populate the mirror.
+  if ((finalState === 'saved' || finalState === 'duplicate') && ogp && ogp.url) {
     try { await mirrorAddUrl(ogp.url, chrome.storage.local) } catch (_) {}
   }
 

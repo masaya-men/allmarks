@@ -114,7 +114,7 @@ describe('nextState — timers', () => {
   })
 })
 
-describe('nextState — mirror-hit (startup)', () => {
+describe('nextState — mirror-hit (startup or live)', () => {
   it('sets savedFlag on mirror-hit and keeps pillState', () => {
     const s = nextState({ savedFlag: false, pillState: 'idle' }, { type: 'mirror-hit' })
     expect(s).toEqual({ savedFlag: true, pillState: 'idle' })
@@ -123,6 +123,23 @@ describe('nextState — mirror-hit (startup)', () => {
   it('mirror-hit during hover keeps hover', () => {
     const s = nextState({ savedFlag: false, pillState: 'hover' }, { type: 'mirror-hit' })
     expect(s).toEqual({ savedFlag: true, pillState: 'hover' })
+  })
+})
+
+describe('nextState — mirror-miss (live invalidation)', () => {
+  it('clears savedFlag on mirror-miss', () => {
+    const s = nextState({ savedFlag: true, pillState: 'idle' }, { type: 'mirror-miss' })
+    expect(s).toEqual({ savedFlag: false, pillState: 'idle' })
+  })
+
+  it('mirror-miss during hover keeps hover', () => {
+    const s = nextState({ savedFlag: true, pillState: 'hover' }, { type: 'mirror-miss' })
+    expect(s).toEqual({ savedFlag: false, pillState: 'hover' })
+  })
+
+  it('mirror-miss when already unsaved is no-op', () => {
+    const s = nextState({ savedFlag: false, pillState: 'idle' }, { type: 'mirror-miss' })
+    expect(s).toEqual({ savedFlag: false, pillState: 'idle' })
   })
 })
 

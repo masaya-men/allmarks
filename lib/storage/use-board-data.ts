@@ -374,6 +374,13 @@ export function useBoardData(): {
       await db.put('bookmarks', updated)
       if (isDeleted) {
         setItems((prev) => prev.filter(it => it.bookmarkId !== bookmarkId))
+        // Tell the AllMarks extension (if installed) that this URL is gone so
+        // it can invalidate its saved-urls mirror. Without this the floating
+        // save button would keep showing a misleading green check on revisit.
+        // Best-effort; the extension may not be installed.
+        try {
+          window.postMessage({ type: 'allmarks:url-deleted', url: existing.url }, '*')
+        } catch { /* ignore */ }
         return
       }
       // Restore — fetch the matching card record and re-insert into items

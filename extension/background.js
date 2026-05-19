@@ -1,5 +1,6 @@
 import { dispatchSave } from './lib/dispatch.js'
 import { isAutoSaveEnabled } from './lib/auto-save-config.js'
+import { removeUrl as mirrorRemoveUrl } from './lib/saved-urls-mirror.js'
 
 // In-memory PiP state. Reported from any booklage tab's content script via
 // MutationObserver. dispatch.js reads this to decide whether to suppress
@@ -84,6 +85,11 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     const tabId = sender.tab?.id
     if (!tabId) return
     void safeDispatch({ trigger: 'floating-button', tabId }, tabId)
+    return
+  }
+  if (msg.type === 'booklage:url-deleted') {
+    if (typeof msg.url !== 'string' || !msg.url) return
+    void mirrorRemoveUrl(msg.url, chrome.storage.local).catch(() => {})
     return
   }
 })

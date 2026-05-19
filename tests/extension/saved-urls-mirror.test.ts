@@ -5,6 +5,7 @@ import {
   loadMirror,
   hasUrl,
   addUrl,
+  removeUrl,
   maybePrune,
 } from '../../extension/lib/saved-urls-mirror.js'
 
@@ -82,6 +83,33 @@ describe('addUrl', () => {
     await addUrl('', storage, 1)
     await addUrl(null, storage, 1)
     expect(storage._peek()[STORAGE_KEY]).toBeUndefined()
+  })
+})
+
+describe('removeUrl', () => {
+  it('removes an existing url', async () => {
+    const storage = makeFakeStorage({ [STORAGE_KEY]: { 'https://a.com': 1, 'https://b.com': 2 } })
+    await removeUrl('https://a.com', storage)
+    const mirror = storage._peek()[STORAGE_KEY] as Record<string, number>
+    expect(mirror['https://a.com']).toBeUndefined()
+    expect(mirror['https://b.com']).toBe(2)
+  })
+
+  it('is a no-op for missing url', async () => {
+    const storage = makeFakeStorage({ [STORAGE_KEY]: { 'https://a.com': 1 } })
+    await removeUrl('https://b.com', storage)
+    const mirror = storage._peek()[STORAGE_KEY] as Record<string, number>
+    expect(mirror['https://a.com']).toBe(1)
+    // set should not have been called for a no-op
+    expect(storage.set).not.toHaveBeenCalled()
+  })
+
+  it('ignores empty/null url', async () => {
+    const storage = makeFakeStorage({ [STORAGE_KEY]: { 'https://a.com': 1 } })
+    await removeUrl('', storage)
+    await removeUrl(null, storage)
+    const mirror = storage._peek()[STORAGE_KEY] as Record<string, number>
+    expect(mirror['https://a.com']).toBe(1)
   })
 })
 
