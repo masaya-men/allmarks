@@ -74,12 +74,13 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
     type: 'booklage:save',
     payload: { ...ogp, nonce, skipIfDuplicate },
   }
-  // Cursor pill on the source tab. Two cases suppress the success pill:
-  //   1) PiP open on a AllMarks tab — the slide-in animation already shows the save.
-  //   2) Auto-save from SNS button hook — the user is interacting with X/YouTube,
-  //      not asking AllMarks for feedback; a pill floating over the tweet is intrusive.
+  // Cursor pill on the source tab. PiP being open on a AllMarks tab is the
+  // only suppression — its slide-in animation already shows the save, and
+  // floating a pill in addition would be redundant. Auto-save from SNS
+  // button hooks used to be silent too, but session 49 user feedback was
+  // "I can't tell whether the save actually happened" — feedback always on.
   // Errors always surface a pill so the user notices silent failures.
-  const skipSuccessPill = !!isPipActive || skipIfDuplicate
+  const skipSuccessPill = !!isPipActive
   if (!skipSuccessPill) {
     chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: 'saving' }).catch(() => {})
   }
