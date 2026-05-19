@@ -62,16 +62,51 @@ function buttonTextLower(btn) {
 
 function getButtonKind(target) {
   if (!target || !target.closest) return null
-  // Like — sits inside a <like-button-view-model> custom element.
-  if (target.closest('like-button-view-model button')) return 'like'
-  // Watch later — popup option inside the Save dropdown. Match by visible text
-  // so locale + DOM shape changes don't break us.
+  // Like — sits inside a <like-button-view-model> custom element. The
+  // selector is language-neutral by design (= YouTube's component name).
+  // OFF state (= already liked, click would un-like) is signalled via
+  // aria-pressed="true" on the inner button.
+  const likeBtn = target.closest('like-button-view-model button')
+  if (likeBtn) {
+    if (likeBtn.getAttribute('aria-pressed') === 'true') return null
+    return 'like'
+  }
+  // Watch later — popup option inside the Save dropdown. The dropdown
+  // surfaces this as a paper-checkbox or button with localised label.
+  // We support major locales for the "Watch later" string + exclude OFF
+  // state via aria-checked / aria-pressed / locale OFF stems.
   const btn = target.closest('button, tp-yt-paper-checkbox, ytd-playlist-add-to-option-renderer')
   if (btn) {
     const text = buttonTextLower(btn)
-    if (text.includes('後で見る') || text.includes('watch later')) {
-      return 'watch-later'
-    }
+    const label = (btn.getAttribute('aria-label') || '').toLowerCase()
+    const hay = text + ' ' + label
+    const isWatchLater = (
+      /watch\s*later/i.test(hay) ||              // en
+      /後で見る/.test(hay) ||                     // ja
+      /나중에\s*보|나중에\s*볼/.test(hay) ||       // ko
+      /稍后观看|稍後觀看/.test(hay) ||             // zh-CN / zh-TW
+      /ver\s*más\s*tarde|ver\s*mas\s*tarde/i.test(hay) || // es
+      /regarder\s*plus\s*tard/i.test(hay) ||     // fr
+      /später\s*ansehen/i.test(hay) ||           // de
+      /assistir\s*mais\s*tarde/i.test(hay) ||    // pt
+      /guarda(re)?\s*più\s*tardi/i.test(hay)     // it
+    )
+    if (!isWatchLater) return null
+    // OFF state — already in Watch Later list. The dropdown row uses
+    // aria-checked (checkbox semantics); a plain button might use aria-pressed.
+    if (btn.getAttribute('aria-checked') === 'true') return null
+    if (btn.getAttribute('aria-pressed') === 'true') return null
+    // Locale OFF stems — "Remove from Watch later" / "後で見るから削除" etc.
+    if (/\bremove\b|\bundo\b/i.test(hay)) return null
+    if (/から削除|削除|取り消|取消/.test(hay)) return null
+    if (/취소|제거|해제|에서\s*제거/.test(hay)) return null
+    if (/删除|刪除|移除/.test(hay)) return null
+    if (/quitar|eliminar/i.test(hay)) return null
+    if (/retirer|supprimer|annuler/i.test(hay)) return null
+    if (/entfernen|aufheben/i.test(hay)) return null
+    if (/remover|desfazer/i.test(hay)) return null
+    if (/rimuovere|annullare/i.test(hay)) return null
+    return 'watch-later'
   }
   return null
 }

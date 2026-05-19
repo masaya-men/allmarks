@@ -150,39 +150,7 @@ function getButtonKind(target) {
   return null
 }
 
-// Temporary diagnostic — dumps every attribute of the clicked button and
-// its parent so we can find a language-neutral OFF-state signal (= an
-// internal data-* / class / aria-* that flips between ON and OFF, present
-// in every locale). Stripped in the next commit once the signal is found.
-function dumpAttrs(el) {
-  if (!el || !el.attributes) return null
-  const out = {}
-  for (let i = 0; i < el.attributes.length; i++) {
-    const a = el.attributes[i]
-    out[a.name] = a.value && a.value.length > 100 ? a.value.slice(0, 100) + '…' : a.value
-  }
-  return out
-}
-
 document.addEventListener('click', (event) => {
-  const btnDbg = event.target && event.target.closest
-    ? event.target.closest('button, [role="button"], a[role="button"]')
-    : null
-  if (btnDbg) {
-    const clsDbg = (btnDbg.className && btnDbg.className.toString && btnDbg.className.toString()) || ''
-    const labelDbg = (btnDbg.getAttribute('aria-label') || '') + ' / ' + (btnDbg.getAttribute('title') || '')
-    if (/like|watch|後で見る|いいね|좋아|喜欢|gefällt|piace|gostei|gusta/i.test(clsDbg + ' ' + labelDbg)) {
-      // JSON.stringify so Chrome's deferred-eval doesn't elide the attrs
-      // object when the user copies the console transcript out as text.
-      console.log('[allmarks-vimeo] ' + JSON.stringify({
-        tag: btnDbg.tagName,
-        attrs: dumpAttrs(btnDbg),
-        parentTag: btnDbg.parentElement && btnDbg.parentElement.tagName,
-        parentAttrs: dumpAttrs(btnDbg.parentElement),
-        text: (btnDbg.innerText || btnDbg.textContent || '').slice(0, 80),
-      }))
-    }
-  }
   const kind = getButtonKind(event.target)
   if (!kind) return
   const url = extractVideoUrl()
