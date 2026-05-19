@@ -22,6 +22,7 @@ import {
 } from './indexeddb'
 import type { MediaSlot } from '@/lib/embed/types'
 import { presetToCardWidth } from '@/lib/board/size-migration'
+import { postBookmarkDeleted } from '@/lib/board/channel'
 
 export type BoardItem = {
   readonly bookmarkId: string
@@ -381,6 +382,10 @@ export function useBoardData(): {
         try {
           window.postMessage({ type: 'allmarks:url-deleted', url: existing.url }, '*')
         } catch { /* ignore */ }
+        // Notify any open PiP companion so it drops the card from its
+        // session buffer (otherwise the user sees a "saved" card in PiP
+        // for something they just deleted on the board).
+        postBookmarkDeleted({ bookmarkId })
         return
       }
       // Restore — fetch the matching card record and re-insert into items

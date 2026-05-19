@@ -121,7 +121,10 @@ export function PipStack({ cards, onCardClick, stageStyle }: PipStackProps): Rea
     const len = cards.length
     const prev = prevLenRef.current
     prevLenRef.current = len
-    if (len === 0) return
+    if (len === 0) {
+      if (activeIdx !== 0) setActiveIdx(0)
+      return
+    }
     if (len > prev) {
       // Both the first card and every subsequent append slide in from
       // the right with the same ease — at mount scrollLeft is 0, the
@@ -130,8 +133,20 @@ export function PipStack({ cards, onCardClick, stageStyle }: PipStackProps): Rea
       // "card glides in from the right" feel as later additions.
       scrollToIdx(len - 1, 'smooth')
       setActiveIdx(len - 1)
+      return
     }
-  }, [cards.length, scrollToIdx])
+    if (len < prev) {
+      // Card was removed from elsewhere (= board delete → BroadcastChannel
+      // fires bookmark-deleted → PipCompanion filters it out of cards[]).
+      // Without re-centring, the scroller's scrollLeft still points at the
+      // vacated slot's old offsetLeft, leaving the neighbouring card stuck
+      // half-scrolled in the viewport. Clamp activeIdx + smooth-scroll to
+      // it so the carousel settles cleanly on the now-current item.
+      const clamped = Math.min(activeIdx, len - 1)
+      if (clamped !== activeIdx) setActiveIdx(clamped)
+      scrollToIdx(clamped, 'smooth')
+    }
+  }, [cards.length, scrollToIdx, activeIdx])
 
   const handleScroll = useCallback((): void => {
     // Suppress active-index recomputation while a programmatic animation

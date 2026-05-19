@@ -22,10 +22,86 @@
 .booklage-pill.is-visible { opacity: 1; }
 .booklage-pill__brand { font-weight: 600; letter-spacing: 0.01em; }
 .booklage-pill__sep { opacity: 0.45; }
+
+/* State label container. position:relative anchors the RGB chromatic-
+   aberration ghost layers (::before / ::after). overflow:hidden +
+   overflow-clip-margin:10px clips the per-char slide-in from below but lets
+   the post-slide glitch ghosts shift sideways without being snipped. */
 .booklage-pill__state {
   font-weight: 400; opacity: 0.85;
-  transition: opacity 0.18s ease;
+  transition: opacity 0.18s ease, color 0.24s ease;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  overflow-clip-margin: 10px;
+  white-space: pre;
+  line-height: 1.15;
+  vertical-align: middle;
 }
+/* Per-character rise. Each char slides up from below the row with a 22ms-
+   stepped delay, giving a typewriter-wave reveal. After the slide, content.js
+   morphs the spans back to a single text node and toggles .is-glitching for
+   the RGB chromatic-aberration pulse. */
+.booklage-pill__char {
+  display: inline-block;
+  transform: translateY(110%);
+  opacity: 0;
+  animation: booklage-pill-char-rise 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes booklage-pill-char-rise {
+  to { transform: translateY(0); opacity: 1; }
+}
+/* State text colours — green (= new save) / amber (= already saved) /
+   red (= failed). Icon carries the glow halo; text only shifts colour. */
+.booklage-pill[data-state="saved"]     .booklage-pill__state { color: rgba(134, 239, 172, 0.96); }
+.booklage-pill[data-state="duplicate"] .booklage-pill__state { color: rgba(252, 211, 77, 0.96); }
+.booklage-pill[data-state="error"]     .booklage-pill__state { color: rgba(255, 130, 130, 0.96); }
+
+/* RGB chromatic-aberration glitch — port of the AllMarks chrome button
+   hover effect (= ChromeButton.module.css). Two absolutely-positioned ghost
+   copies of the label (orange + cyan) shift sideways with clip-path strip
+   cuts. Ghosts live on ::before / ::after so the pill width stays rock-
+   solid for the full 700ms — no horizontal jitter. */
+.booklage-pill__state::before,
+.booklage-pill__state::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+}
+.booklage-pill__state.is-glitching::before {
+  color: #ff9d3f;
+  animation: booklage-pill-glitch-a 700ms steps(7, end);
+}
+.booklage-pill__state.is-glitching::after {
+  color: #50c8ff;
+  animation: booklage-pill-glitch-b 700ms steps(7, end);
+}
+@keyframes booklage-pill-glitch-a {
+  0%   { opacity: 0;    transform: translate(0, 0);     clip-path: none; }
+  5%   { opacity: 1;    transform: translate(-4px, 0);  clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1;    transform: translate(3px, -1px);clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1;    transform: translate(-5px, 0);  clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1;    transform: translate(4px, 0);   clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1;    transform: translate(-3px, 0);  clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(2px, 0);   clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0;    transform: translate(0, 0);     clip-path: none; }
+}
+@keyframes booklage-pill-glitch-b {
+  0%   { opacity: 0;    transform: translate(0, 0);     clip-path: none; }
+  5%   { opacity: 1;    transform: translate(4px, 0);   clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1;    transform: translate(-3px, 1px);clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1;    transform: translate(5px, 0);   clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1;    transform: translate(-4px, 0);  clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1;    transform: translate(3px, 0);   clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(-2px, 0);  clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0;    transform: translate(0, 0);     clip-path: none; }
+}
+
 .booklage-pill__icon {
   width: 16px; height: 16px;
   display: flex; align-items: center; justify-content: center;
@@ -46,9 +122,8 @@
 .booklage-pill[data-state="saved"] .booklage-pill__icon {
   animation: booklage-pill-pop 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
-/* === duplicate: gentle, no overshoot. User already saved this; we just
-       want a quiet acknowledgement that nothing new was created. The check
-       still strokes in below (same .check rule covers it). === */
+/* === duplicate: gentle pop, no overshoot. Quiet acknowledgement that the
+       URL was already saved; nothing new was created. === */
 .booklage-pill[data-state="duplicate"] .booklage-pill__icon {
   animation: booklage-pill-pop-gentle 0.36s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
@@ -64,25 +139,59 @@
 }
 .booklage-pill .check {
   width: 14px; height: 14px;
-  /* Success green — pairs with the existing error red (.bang) so the
-     three states form a recognisable semantic trio: white spinner / green
-     check / red bang. Bright enough to read on the dark pill background. */
+  /* Shared icon styling. Stroke colour + glow are overridden per state
+     (saved = green / duplicate = amber). */
   stroke: rgba(74, 222, 128, 0.98);
   stroke-width: 2.6;
   fill: none;
   stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 24;
-  stroke-dashoffset: 24;
-  animation: booklage-pill-check-stroke 0.48s cubic-bezier(0.65, 0, 0.35, 1) 0.06s forwards;
   /* Three-layer glow halo: bright inner core + saturated mid bloom + wide
-     outer ring so the success check feels luminous rather than just tinted.
+     outer ring so the icon feels luminous rather than just tinted.
      GPU-cheap because drop-shadow operates on the rasterised stroke. */
   filter:
     drop-shadow(0 0 3px rgba(134, 239, 172, 0.95))
     drop-shadow(0 0 8px rgba(74, 222, 128, 0.75))
     drop-shadow(0 0 16px rgba(34, 197, 94, 0.55));
 }
+/* Single check (= saved): the SVG has one direct <path> child which
+   inherits the dasharray + animation from the SVG element. */
+.booklage-pill .check:not(.check-warn) {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: booklage-pill-check-stroke 0.48s cubic-bezier(0.65, 0, 0.35, 1) 0.06s forwards;
+}
+/* Warning triangle (= duplicate): the triangle outline strokes in first,
+   then the exclamation line, then the dot fades in. */
+.booklage-pill .check-warn .warn-tri {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: booklage-pill-check-stroke 0.44s cubic-bezier(0.65, 0, 0.35, 1) 0.04s forwards;
+}
+.booklage-pill .check-warn .warn-bang {
+  stroke-dasharray: 5;
+  stroke-dashoffset: 5;
+  animation: booklage-pill-check-stroke 0.18s cubic-bezier(0.65, 0, 0.35, 1) 0.36s forwards;
+}
+.booklage-pill .check-warn .warn-dot {
+  fill: currentColor;
+  stroke: none;
+  opacity: 0;
+  animation: booklage-pill-warn-dot 0.14s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards;
+}
 @keyframes booklage-pill-check-stroke { to { stroke-dashoffset: 0; } }
+@keyframes booklage-pill-warn-dot { to { opacity: 1; } }
+
+/* === duplicate: amber stroke on triangle + amber halo + amber fill on
+       the dot (via currentColor). Same 3-layer glow recipe as success
+       green; only the colour shifts to warm gold. === */
+.booklage-pill[data-state="duplicate"] .check {
+  stroke: rgba(252, 211, 77, 0.98);
+  color: rgba(252, 211, 77, 0.98);
+  filter:
+    drop-shadow(0 0 3px rgba(254, 240, 138, 0.95))
+    drop-shadow(0 0 8px rgba(250, 204, 21, 0.78))
+    drop-shadow(0 0 16px rgba(234, 179, 8, 0.55));
+}
 
 /* === error: small horizontal shake === */
 .booklage-pill[data-state="error"] .booklage-pill__icon {
@@ -108,8 +217,20 @@
   .booklage-pill__icon,
   .booklage-pill .ring,
   .booklage-pill .check,
-  .booklage-pill__state {
+  .booklage-pill .check-warn .warn-tri,
+  .booklage-pill .check-warn .warn-bang,
+  .booklage-pill .check-warn .warn-dot,
+  .booklage-pill__state,
+  .booklage-pill__char {
     transition: none;
+    animation: none;
+    transform: none;
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+  .booklage-pill__state::before,
+  .booklage-pill__state::after {
+    opacity: 0;
     animation: none;
   }
 }

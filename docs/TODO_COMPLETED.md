@@ -3232,3 +3232,90 @@ session 52 持ち越し 4 候補から user **(I-08) フローティングボタ
 - **音波テーマ世界観 sprint** (= H + J + K + I-09 + I-10): 大 task、 session 53 では着手せず、 session 54 以降の候補
 
 
+---
+
+## セッション 54 (2026-05-20) — session 53 持ち越し 2 件 + 追加発覚 2 件、 拡張機能 + PiP まわり完全 close
+
+session 53 持ち越しの B 番重複弾き + PiP サムネ消しを起点に、 4 ポイント console.log でリレー実測 → B 番は session 53 時点から実は動いていた (= 真因は緑チェック「Saved」 と緑チェック「Already saved」 の視覚的差別化不足) と判明 → 重複ピル全面 redesign に方向転換。 続けて user 実機で発覚した 2 件 (= site .js 設定 OFF 時に pill ぐるぐる、 PiP open + auto-save で pill 無限) も完遂。 7 deploy で session 53 + 追加全消化。
+
+### ship 済 (= prod 反映済、 user 実機 OK)
+
+**重複ピル 視覚 redesign** (= AllMarks 3 段意味体系完成):
+- ✓ 緑 (= 新規 saved) / ⚠ アンバー (= 重複) / ! 赤 (= error) の trio
+- stroke + 3 段 drop-shadow glow halo は全状態共通 recipe、 色のみ差し替え
+- ⚠ アイコン: triangle outline stroke-in → ! line stroke-in → dot fade-in の 3 段アニメ (= doubleCheck 案は user「重複なら ⚠」 で却下)
+- state テキストにも subtle 色 (= 緑/アンバー/赤、 グローなし)、 アイコンの glow と組み合わせて意味が読まずに分かる
+
+**テキストアニメ refactor** (= scramble → RGB chromatic aberration):
+- per-char slide-in (= 22ms stagger × 320ms anim) で「下からポンッ」 と出る
+- 完了後に **単一テキストノードに morph**、 `data-glitch-text` 属性 + `::before` / `::after` の orange / cyan ghost が clip-path strip で 7 step 700ms 帯状ずれ
+- AllMarks ChromeButton hover effect (= SHARE / TUNE / POP OUT) と同じ recipe を流用、 視覚言語統一
+- ghost は absolute なので **ピル幅完全固定** 達成 (= scramble 時の伸び縮みは解消)
+
+**5 site .js に設定キャッシュ + storage.onChanged**:
+- twitter / youtube / note / vimeo / soundcloud に inline cache
+- OFF source は click 検知段階で早期 return → pill 発火 + sendMessage 両方 skip
+- 拡張 sideload 後 storage.onChanged で即反映 (= リロード不要)
+- 「YT いいねを OFF にしたら pill が出てぐるぐるして時間経過で消える」 完全解消
+
+**「PiP open + auto-save で pill 無限 spinning」 bug fix**:
+- 真因: `dispatch.js` の `skipSuccessPill = !!isPipActive || isFloatingButton` で PiP active 時に dispatch が pill 全部 skip、 でも site .js は session 50 即時化以降 独自で `pill-saving` 投げる → 不整合
+- 修正: PiP 抑制ルール完全削除、 floating-button のみ pill 抑制継続 (= 自前 state machine あり)
+- background.js の `pipActive` state + `isPipActive` 関数 + `booklage:pip-state` リスナー + content.js の PiP reporter (MutationObserver) を全削除 (= dead code)
+- 副次効果: 手動保存 (shortcut / 右クリック / ブクマレット) + PiP open でも pill 完走するように (= 以前は pill 全く出なかった)
+
+**PiP サムネ削除追従** (= BroadcastChannel に bookmark-deleted 追加):
+- `lib/board/channel.ts` に `postBookmarkDeleted` / `subscribeBookmarkDeleted` 追加 (= 既存 `bookmark-saved` の対称形)
+- `persistSoftDelete` で isDeleted=true 時に `postBookmarkDeleted({ bookmarkId })` 発火 (= 既存 extension 連携の postMessage と並列)
+- PipCompanion で `subscribeBookmarkDeleted` 購読、 cards state から id で filter
+
+**PiP delete スライド 中途半端 bug fix**:
+- 原因: cards.length 減少時に PipStack の scrollLeft が削除済 slot の offsetLeft に残る → 残ったカードが半端な位置
+- 修正: useLayoutEffect で len < prev 検知 → activeIdx を len-1 に clamp + scrollToIdx 700ms ease-out-quart smooth-scroll で再センター
+- len=0 で activeIdx を 0 リセット (= 全削除後の状態クリーンアップ)
+
+### 変更 file (= 計 15)
+
+- 新規 0
+- 変更 15: [extension/manifest.json](../extension/manifest.json) / [extension/content.js](../extension/content.js) / [extension/content.css](../extension/content.css) / [extension/lib/dispatch.js](../extension/lib/dispatch.js) / [extension/lib/pill-state-machine.js](../extension/lib/pill-state-machine.js) / [extension/background.js](../extension/background.js) / [extension/twitter.js](../extension/twitter.js) / [extension/youtube.js](../extension/youtube.js) / [extension/note.js](../extension/note.js) / [extension/vimeo.js](../extension/vimeo.js) / [extension/soundcloud.js](../extension/soundcloud.js) / [lib/board/channel.ts](../lib/board/channel.ts) / [lib/storage/use-board-data.ts](../lib/storage/use-board-data.ts) / [components/pip/PipCompanion.tsx](../components/pip/PipCompanion.tsx) / [components/pip/PipStack.tsx](../components/pip/PipStack.tsx)
+- テスト変更 4: [tests/extension/pill-state-machine.test.ts](../tests/extension/pill-state-machine.test.ts) (warn icon) / [tests/lib/channel.test.ts](../tests/lib/channel.test.ts) (+2 delete subscriber tests) / [components/pip/PipCompanion.test.tsx](../components/pip/PipCompanion.test.tsx) (delete sync test + mock 更新) / [components/pip/PipStack.test.tsx](../components/pip/PipStack.test.tsx) (re-center on shrink test)
+
+### 新規テスト + 実行結果
+
+- 604 → **608 PASS** (= +4 new tests)
+- tsc clean、 build 成功
+
+### deploy 回数: 7
+
+1. dispatch / offscreen / iframe に 4 ポイント console.log (= B 番 真因調査用)
+2. 真因確定後 (= logic 正常、 視覚問題)、 ログ撤去 + duplicate を amber check + amber glow に
+3. ダブルチェック試作 → user「重複なら ⚠ では」 → ⚠ triangle + ! + RGB glitch redesign
+4. site .js 設定キャッシュ (= 設定 OFF 時 pill 出さない)
+5. pill always-on (= dispatch.js から PiP 抑制削除 + background dead code 削除)
+6. PiP 削除同期 (= BroadcastChannel bookmark-deleted + PipCompanion 購読)
+7. PiP carousel re-center on length shrink
+
+### manifest version: 0.1.0 → **0.1.6**
+
+拡張 user re-sideload 必須。 1 セッションで 6 bump は多いが個別検証サイクルが必要だった (= debug log → 撤去 → 視覚版 1 → 視覚版 2 → 設定キャッシュ → pill always-on)。
+
+### 永続化した教訓 / パターン
+
+- **session 53 で「ship 済」 と claim したが user 実機検証なし → session 54 で 1 件 (B 番) は実は動いてた + 1 件 (PiP) は本当に壊れてた**。 verify-before-claim 教訓を session 17 / 53 / 54 と 3 回踏んだ。 memory `feedback_verify_before_claiming.md` 既存
+- **bug 切り分け = 4 ポイント console.log でリレー実測** (= dispatch send / offscreen forward / iframe handle / dispatch result) が定番、 systematic-debugging skill と一致
+- **AllMarks pill 視覚 = ✓ 緑 / ⚠ アンバー / ! 赤 の 3 段意味体系** が確定。 今後 pill 状態追加時もこの語彙
+- **RGB chromatic aberration glitch** は AllMarks の text feedback 共通言語 (= ChromeButton hover / pill state)、 将来追加要素も同じ recipe で実装
+- **5 site .js が共通する「設定キャッシュ + storage.onChanged」 パターン** は今後サイト追加時の標準。 storage.sync 1 回 get + onChanged listen の組み合わせで race window ~10ms 以内
+- **「片方が知らない context で分岐するな」 教訓**: site .js が PiP 状態を知らないのに background が PiP で分岐していて不整合。 同じ feedback channel に 2 つ 経路がある場合は無条件統一化が正解
+- **BroadcastChannel pattern** は bookmark lifecycle 全般に拡張可能。 saved → deleted の対称形を採用、 将来 tags 変更 / title 変更等も同じ pipe で足せる
+- **PiP は独立 React tree** (= Document Picture-in-Picture API)。 main board の state を直接共有できない、 BroadcastChannel か postMessage 経由が必須
+
+### 残課題 (= 次セッション)
+
+- **A 番 X 長文 tweet + 画像 で画像のみ表示 bug**: split layout (= 画像左 / 文字右) 仕様で fix、 別 sprint
+- **B-#3 重複 URL でサムネ等が出ない**: 古めの未解決、 session 54 で 重複ピル fix したので関連で再調査の機会
+- **10 番 有名サイト pre-set OFF list**: 拡張 polish、 ~50 行
+- **音波テーマ世界観 sprint** (= H + J + K + I-09 + I-10): 大 task。 session 54 で重複ピルに RGB glitch + ⚠ 入れたので I-09 (= cursor pill 音波化) は一部消化済とも言える
+- **multi-playback vision board card autoplay**: 大、 AllMarks 差別化 core
+
+

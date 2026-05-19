@@ -1,10 +1,10 @@
 // MV3 content_scripts don't support ES module imports — keep pillStateView inline.
 // Source of truth for tests: extension/lib/pill-state-machine.js (must stay in sync).
 function pillStateView(state) {
-  if (state === 'saving')    return { label: 'Saving',        icon: 'ring',  autoHideMs: null }
-  if (state === 'saved')     return { label: 'Saved',         icon: 'check', autoHideMs: 1700 }
-  if (state === 'duplicate') return { label: 'Already saved', icon: 'check', autoHideMs: 2000 }
-  if (state === 'error')     return { label: 'Failed',        icon: 'bang',  autoHideMs: 2400 }
+  if (state === 'saving')    return { label: 'Saving',        icon: 'ring',        autoHideMs: null }
+  if (state === 'saved')     return { label: 'Saved',         icon: 'check',       autoHideMs: 1700 }
+  if (state === 'duplicate') return { label: 'Already saved', icon: 'warn',        autoHideMs: 2000 }
+  if (state === 'error')     return { label: 'Failed',        icon: 'bang',        autoHideMs: 2400 }
   return null
 }
 
@@ -60,7 +60,54 @@ function positionPill() {
 const ICONS = {
   ring: '<span class="ring"></span>',
   check: '<svg viewBox="0 0 24 24" class="check"><path d="M5 12 L10 17 L19 7"/></svg>',
+  // Warning triangle for the "already saved" state. Industry-standard
+  // "this isnt an error but pay attention" glyph. Triangle outline strokes
+  // in first, then the bang line, then the dot fades in.
+  warn: '<svg viewBox="0 0 24 24" class="check check-warn"><path class="warn-tri" d="M12 3 L22 20 L2 20 Z"/><path class="warn-bang" d="M12 9 L12 14"/><circle class="warn-dot" cx="12" cy="17.2" r="1.3"/></svg>',
   bang: '<span class="bang">!</span>',
+}
+
+// Label animation: per-char slide-in (= typewriter-wave reveal), then morph
+// the span structure back into a single text node + trigger an RGB
+// chromatic-aberration glitch matching the AllMarks SHARE / TUNE / POP-OUT
+// chrome button hover effect (see components/board/ChromeButton.module.css).
+// The ghosts live on ::before / ::after with position:absolute so the pill
+// width stays rock-solid during the glitch.
+let labelAnimToken = 0
+let labelMorphTimer = null
+let labelGlitchEndTimer = null
+const GLITCH_MS = 700
+
+function setLabelAnimated(stateEl, finalText) {
+  const token = ++labelAnimToken
+  if (labelMorphTimer)     { clearTimeout(labelMorphTimer);     labelMorphTimer = null }
+  if (labelGlitchEndTimer) { clearTimeout(labelGlitchEndTimer); labelGlitchEndTimer = null }
+  stateEl.classList.remove('is-glitching')
+  stateEl.setAttribute('data-glitch-text', finalText)
+  stateEl.innerHTML = ''
+  for (let i = 0; i < finalText.length; i++) {
+    const raw = finalText[i]
+    const ch = raw === ' ' ? ' ' : raw
+    const span = document.createElement('span')
+    span.className = 'booklage-pill__char'
+    span.textContent = ch
+    span.style.animationDelay = (i * 22) + 'ms'
+    stateEl.appendChild(span)
+  }
+  // Slide-in stagger: each char rises 320ms after a 22ms-stepped delay.
+  // After the last char settles, swap the span structure for a single text
+  // node so the RGB ghosts (= ::before / ::after fed by data-glitch-text)
+  // line up with the rendered glyphs pixel-perfectly.
+  const slideEnd = (finalText.length - 1) * 22 + 320
+  labelMorphTimer = setTimeout(() => {
+    if (token !== labelAnimToken) return
+    stateEl.textContent = finalText
+    stateEl.classList.add('is-glitching')
+    labelGlitchEndTimer = setTimeout(() => {
+      if (token !== labelAnimToken) return
+      stateEl.classList.remove('is-glitching')
+    }, GLITCH_MS)
+  }, slideEnd + 40)
 }
 
 function applyState(state) {
@@ -70,7 +117,7 @@ function applyState(state) {
   positionPill()
   const stateEl = p.querySelector('[data-role="state"]')
   const iconEl = p.querySelector('[data-role="icon"]')
-  if (stateEl) stateEl.textContent = view.label
+  if (stateEl) setLabelAnimated(stateEl, view.label)
   if (iconEl) iconEl.innerHTML = ICONS[view.icon] || ''
   // Force CSS animation to restart even if same state re-applied.
   p.dataset.state = ''
@@ -168,30 +215,12 @@ window.addEventListener('message', (event) => {
   }
 })
 
-// === PiP state reporter (booklage tab only) ===
-// AllMarks's React app toggles <html data-booklage-pip="active"> when the
-// PiP window is open. We watch that attribute and notify the background SW
-// so it can suppress the cursor pill while PiP is providing visual feedback.
+// === URL-deleted forwarder (booklage tab only) ===
+// Listen for "URL deleted" notifications from the AllMarks React app and
+// forward them to the background SW so it can drop the URL from the
+// saved-urls mirror (= keeps the floating button's "already saved" state
+// in sync with what's actually in the user's AllMarks).
 if (location.hostname === 'booklage.pages.dev') {
-  const reportPip = () => {
-    const active = document.documentElement.dataset.booklagePip === 'active'
-    if (!isExtensionAlive()) return
-    try {
-      chrome.runtime.sendMessage({ type: 'booklage:pip-state', active }).catch(() => {})
-    } catch (_) {
-      // Extension context invalidated mid-send; drop silently.
-    }
-  }
-  reportPip()
-  new MutationObserver(reportPip).observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['data-booklage-pip'],
-  })
-
-  // Listen for "URL deleted" notifications from the AllMarks React app and
-  // forward them to the background SW so it can drop the URL from the
-  // saved-urls mirror (= keeps the floating button's "already saved" state
-  // in sync with what's actually in the user's AllMarks).
   window.addEventListener('message', (event) => {
     if (event.source !== window) return
     const msg = event.data

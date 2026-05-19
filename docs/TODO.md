@@ -20,34 +20,34 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-19 セッション 53 — (I-08) フローティング保存ボタン ship + 重複「Already saved」 優しい feedback + AllMarks 削除 → 拡張 mirror 同期 + A モチーフ確定)
+### 直近の状態 (2026-05-20 セッション 54 — session 53 持ち越し 2 件 + 追加発覚 2 件、 拡張機能 + PiP まわり完全 close)
 
-session 52 持ち越し 4 候補から user **(I-08) フローティングボタン** を選択。 ベストプラクティス調査 (= snap-to-edge、 右端中央が業界 conflict 無人地帯、 Fitts's Law edge ピンニング有効) → user 提供 SVG (= 黒 A + 緑チェック) → 設計合意 → 実装 + ship → user 検証 round 1 → round 2 で B (= 重複弾く gentle) + 4 (= 削除追従) + A 訂正を追加 ship → deploy 2 回。
+session 53 持ち越しの B 番重複弾き + PiP サムネ消しを起点に、 4 ポイント console.log でリレー実測 → B 番は session 53 時点から実は動いていた (= 真因は緑「Saved」 と緑「Already saved」 の視覚差別化不足) と判明 → 重複ピル全面 redesign に方向転換。 続けて user 実機で発覚した 2 件 (= site .js 設定 OFF 時 pill ぐるぐる、 PiP open + auto-save で pill 無限) も完遂。 7 deploy で session 53 + 追加全消化。
 
 **ship 済 (= prod 反映済、 user 実機 OK)**:
-- **(I-08) フローティング保存ボタン本体**: 全 URL 右端中央常駐、 5 つ目の保存経路。 既保存ページは緑チェック永続表示。 長押し drag → 左右 snap (縦自由)、 アイドル 30% 透明 / hover で実体化、 video fullscreen で自動非表示、 per-domain OFF list、 chrome.storage.local mirror で既保存判定 (50000 entries pruning)、 設定 5 項目すべて `storage.onChanged` でリロードなし即時反映
-- **A モチーフ確定**: AllMarks のロゴモチーフは **「A」** (= 私が「X」 と誤認、 user 訂正)。 黒 A 形 + 緑チェック (`#28F100`) の 2 path 分離型 SVG、 fill 形式 + clip-path reveal アニメ
-- **4 番 AllMarks 削除 → 拡張 mirror 同期 (拡張側のみ)**: 本体 persistSoftDelete で postMessage 発火 → content.js receive → background.js が mirror.removeUrl → storage.onChanged で floating button の savedFlag=false 即時反映 (= 緑チェック消える)。 user 実機 OK
+- **重複ピル 視覚 redesign**: ✓ 緑 / ⚠ アンバー / ! 赤 の 3 段意味体系完成。 stroke + 3 段 glow halo 共通 recipe、 色のみ差し替え。 ⚠ は triangle outline → ! line → dot fade の 3 段ストロークアニメ
+- **state テキスト着色** (緑/アンバー/赤 subtle)、 **per-char slide-in + RGB chromatic aberration glitch**: AllMarks ChromeButton hover effect (= SHARE / TUNE / POP OUT) と同じ orange / cyan ghost recipe を流用、 `::before` / `::after` で **ピル幅完全固定**
+- **5 site .js (twitter / youtube / note / vimeo / soundcloud) に設定キャッシュ + storage.onChanged**: OFF source は click 検知で早期 return → pill 発火 + sendMessage skip。 storage.onChanged で即反映 (= リロード不要)
+- **PiP open + auto-save で pill 無限 spinning bug fix**: dispatch.js の `skipSuccessPill = !!isPipActive` を完全削除 (= site .js の独自 pill 経路と不整合だった)、 floating-button のみ pill 抑制継続。 background.js の pipActive state + content.js の PiP reporter dead code 撤去。 副次効果: 手動保存 (shortcut / 右クリック / ブクマレット) + PiP open でも pill 完走するように
+- **PiP サムネ削除追従**: lib/board/channel.ts に `postBookmarkDeleted` / `subscribeBookmarkDeleted` 追加、 persistSoftDelete で発火、 PipCompanion で購読 + cards から id filter
+- **PiP delete スライド 中途半端 bug fix**: cards.length 減少時に PipStack の activeIdx を len-1 に clamp + scrollToIdx 700ms ease で再センター、 len=0 で activeIdx を 0 リセット
 
-**deploy 済だが user 実機で動かなかった (= session 54 で真因調査 + fix)**:
-- ❌ **B 番 重複弾き + 「Already saved」**: 実装したが user 実機では AlreadySaved が出ず、 重複保存もできてしまう。 dispatch.js → offscreen → SaveIframeClient の payload リレー、 または result.skipped の戻り経路、 または cursor pill state 描画のどこかで断線。 session 54 最優先で console.log デバッグ + fix
-- ❌ **PiP 内 card 削除追従**: 本体 board で削除しても PiP window 内の card が消えない。 PiP が同じ items state を共有しているか、 別経路で IDB read しているかから調査必要
+**変更 file** (15): extension 11 (= manifest / content.{js,css} / dispatch / pill-state-machine / background / 5 site .js) + lib/board/channel.ts + lib/storage/use-board-data.ts + components/pip/{PipCompanion,PipStack}.tsx
 
-**変更 file** (21): 新規 9 (= floating-button.{js,css} + lib 2 + icon SVG + test 2 + spec) / 変更 12 (= manifest / background / dispatch / pill-state-machine / content.{js,css} / options.{html,js} / use-board-data.ts / pill test)
+**テスト変更 4** (= 604 → 608 PASS): pill-state-machine (warn) / channel (+2 delete) / PipCompanion (delete sync) / PipStack (re-center)
 
-**deploy 回数**: 2
+**deploy 回数**: 7
 
-詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 53 セクション
+**manifest version**: 0.1.0 → **0.1.6** (= 拡張 user re-sideload 必須)
 
-**次セッション (= 54) の goal**: **session 53 で「ship 済」 と claim したが user 実機で動かなかった 2 件を最優先で fix**:
-- 🔴 **B 番 重複弾き + 「Already saved」 が動かない** (= 真因調査 + console.log デバッグ + fix)
-- 🔴 **PiP 内 card 削除追従が動かない** (= PiP が同じ React tree / items state を共有しているか調査)
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 54 セクション
 
-その後の候補:
-- 🐛 A 番 X 長文 tweet + 画像 で画像のみ表示 → split layout (= 画像左 / 文字右) 仕様希望
+**次セッション (= 55) の goal**: backlog から user 選択。 候補:
+- 🐛 A 番 X 長文 tweet + 画像 で画像のみ表示 → split layout (= 画像左 / 文字右)
 - 🟡 10 番 有名サイト pre-set OFF list (= 拡張 polish、 ~50 行)
-- 🟡 音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10 集中投下)
+- 🟡 音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10、 ただし session 54 で重複ピルに RGB glitch + ⚠ 入れたので I-09 一部消化済)
 - 🟡 multi-playback vision board card autoplay (= AllMarks core 差別化)
+- 🐛 B-#3 重複 URL でサムネ等が出ない (= 古めの未解決、 重複ピル fix で関連調査の機会)
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
 

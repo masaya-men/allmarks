@@ -14,6 +14,34 @@ function isExtensionAlive() {
   try { return !!(chrome && chrome.runtime && chrome.runtime.id) } catch (_) { return false }
 }
 
+// Auto-save settings cache. Site .js fires the pill BEFORE the background
+// round-trip checks the same setting via isAutoSaveEnabled — without this
+// guard, an OFF source still shows a 'saving' pill that lingers for 8s
+// before the stuck-saving timeout hides it. Reading the cache is sync at
+// click time + kept fresh via chrome.storage.onChanged.
+const SETTING_DEFAULTS = { autoSaveXLike: true, autoSaveXBookmark: true }
+const settingsCache = { ...SETTING_DEFAULTS }
+if (isExtensionAlive()) {
+  try {
+    chrome.storage.sync.get(SETTING_DEFAULTS).then((stored) => {
+      Object.assign(settingsCache, stored)
+    }).catch(() => {})
+  } catch (_) {}
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync') return
+      for (const k of Object.keys(SETTING_DEFAULTS)) {
+        if (changes[k]) settingsCache[k] = changes[k].newValue
+      }
+    })
+  } catch (_) {}
+}
+function isSourceEnabled(source) {
+  if (source === 'x-like')     return settingsCache.autoSaveXLike     !== false
+  if (source === 'x-bookmark') return settingsCache.autoSaveXBookmark !== false
+  return false
+}
+
 function pruneRecent(now) {
   for (const [k, t] of recentlySent) {
     if (now - t > DEDUPE_WINDOW_MS) recentlySent.delete(k)
@@ -90,6 +118,9 @@ function getButtonKind(target) {
 document.addEventListener('click', (event) => {
   const kind = getButtonKind(event.target)
   if (!kind) return
+  const source = kind === 'like' ? 'x-like' : 'x-bookmark'
+  // Bail out before pill / DOM walks if the user toggled this source OFF.
+  if (!isSourceEnabled(source)) return
   const article = findTweetArticle(event.target)
   if (!article) return
   const url = extractTweetUrl(article)
@@ -109,7 +140,7 @@ document.addEventListener('click', (event) => {
   try {
     chrome.runtime.sendMessage({
       type: 'booklage:auto-save',
-      source: kind === 'like' ? 'x-like' : 'x-bookmark',
+      source,
       ogp,
     }).catch(() => {})
   } catch (_) {

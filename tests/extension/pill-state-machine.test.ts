@@ -12,9 +12,9 @@ describe('pillStateView', () => {
     expect(v).toEqual({ label: 'Saved', icon: 'check', autoHideMs: 1700 })
   })
 
-  it('returns Already saved / check / 2000ms for duplicate', () => {
+  it('returns Already saved / warn / 2000ms for duplicate', () => {
     const v = pillStateView('duplicate')
-    expect(v).toEqual({ label: 'Already saved', icon: 'check', autoHideMs: 2000 })
+    expect(v).toEqual({ label: 'Already saved', icon: 'warn', autoHideMs: 2000 })
   })
 
   it('returns Failed / bang / 2400ms for error', () => {

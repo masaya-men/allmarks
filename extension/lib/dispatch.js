@@ -64,7 +64,7 @@ async function postToOffscreen(envelope, nonce) {
   })
 }
 
-export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet, isPipActive }) {
+export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet }) {
   await ensureOffscreen()
   const ogp = await extractOgpFromTab(tabId, linkUrl, ogpFromBookmarklet)
   const nonce = makeNonce('e')
@@ -76,17 +76,17 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
     type: 'booklage:save',
     payload: { ...ogp, nonce, skipIfDuplicate: true },
   }
-  // Cursor pill on the source tab. PiP being open on a AllMarks tab is the
-  // only suppression — its slide-in animation already shows the save, and
-  // floating a pill in addition would be redundant. Auto-save from SNS
-  // button hooks used to be silent too, but session 49 user feedback was
-  // "I can't tell whether the save actually happened" — feedback always on.
-  // Errors always surface a pill so the user notices silent failures.
-  // Floating-button trigger has its own state machine on the button itself,
-  // so the cursor pill is suppressed there too to avoid dual indicators.
+  // Cursor pill on the source tab. The pill always fires for every trigger
+  // except floating-button — that button has its own visual state machine
+  // (green check + glow) and a parallel cursor pill would be dual feedback.
+  // We previously also suppressed the pill when PiP was open (= PiP slide-
+  // in shows the save), but site .js (twitter / youtube / note / vimeo /
+  // soundcloud) fires its own immediate `pill-saving` postMessage before
+  // the background round-trip starts — it doesn't know about PiP state.
+  // So when PiP was open + auto-save fired, the saving pill would spin
+  // forever (no final state arrived). Pill always-on resolves that.
   const isFloatingButton = trigger === 'floating-button'
-  const skipSuccessPill = !!isPipActive || isFloatingButton
-  if (!skipSuccessPill) {
+  if (!isFloatingButton) {
     chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: 'saving' }).catch(() => {})
   }
 
@@ -103,7 +103,7 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
     try { await mirrorAddUrl(ogp.url, chrome.storage.local) } catch (_) {}
   }
 
-  if (finalState === 'error' || !skipSuccessPill) {
+  if (!isFloatingButton) {
     chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: finalState }).catch(() => {})
   }
   if (isFloatingButton) {

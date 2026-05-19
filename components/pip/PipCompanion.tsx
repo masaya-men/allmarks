@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, type ReactElement } from 'react'
 import { initDB } from '@/lib/storage/indexeddb'
-import { subscribeBookmarkSaved } from '@/lib/board/channel'
+import { subscribeBookmarkSaved, subscribeBookmarkDeleted } from '@/lib/board/channel'
 import { broadcastPipOpen, broadcastPipClosed, subscribePipPresence } from '@/lib/board/pip-presence'
 import { resolveThumbnail } from '@/lib/pip/resolve-thumbnail'
 import { PipEmptyState } from './PipEmptyState'
@@ -49,6 +49,16 @@ export function PipCompanion({ onCardClick }: PipCompanionProps): ReactElement {
       if (resolved && resolved !== initial.thumbnail) {
         setCards((prev) => prev.map((c) => (c.id === bm.id ? { ...c, thumbnail: resolved } : c)))
       }
+    })
+    return unsub
+  }, [])
+
+  // Drop the card from the PiP buffer when the main board soft-deletes the
+  // bookmark. Without this, a card the user just deleted still floats in PiP
+  // for the rest of the session.
+  useEffect(() => {
+    const unsub = subscribeBookmarkDeleted(({ bookmarkId }) => {
+      setCards((prev) => prev.filter((c) => c.id !== bookmarkId))
     })
     return unsub
   }, [])

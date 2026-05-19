@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { PipStack } from './PipStack'
 
 const cards = [
@@ -40,5 +40,21 @@ describe('PipStack', () => {
     // Card '1' is the oldest — not active, click should scroll-to-centre.
     fireEvent.click(screen.getByTestId('pip-card-1'))
     expect(onCardClick).not.toHaveBeenCalled()
+  })
+
+  it('clamps activeIdx and re-centres when the last card is removed', async () => {
+    const { rerender } = render(<PipStack cards={cards} onCardClick={() => {}} />)
+    // Sanity: latest card (idx 2) is the active centred slot.
+    expect(screen.getByTestId('pip-stack').getAttribute('data-active-idx')).toBe('2')
+    // Re-render with the last card removed (= board delete fires
+    // bookmark-deleted → PipCompanion drops the card from its buffer).
+    const shorter = cards.slice(0, 2)
+    rerender(<PipStack cards={shorter} onCardClick={() => {}} />)
+    // activeIdx 2 was out of bounds — must clamp to len-1 = 1 so the
+    // carousel resettles on the now-last card instead of staying parked
+    // at the deleted slot's vacated offsetLeft.
+    await waitFor(() => {
+      expect(screen.getByTestId('pip-stack').getAttribute('data-active-idx')).toBe('1')
+    })
   })
 })

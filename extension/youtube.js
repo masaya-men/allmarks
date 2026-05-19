@@ -20,6 +20,32 @@ function isExtensionAlive() {
   try { return !!(chrome && chrome.runtime && chrome.runtime.id) } catch (_) { return false }
 }
 
+// Auto-save settings cache. See twitter.js for the rationale (= pill is
+// fired here BEFORE background round-trip, so we need a sync source-of-
+// truth to suppress it when the user has toggled OFF).
+const SETTING_DEFAULTS = { autoSaveYouTubeLike: true, autoSaveYouTubeWatchLater: true }
+const settingsCache = { ...SETTING_DEFAULTS }
+if (isExtensionAlive()) {
+  try {
+    chrome.storage.sync.get(SETTING_DEFAULTS).then((stored) => {
+      Object.assign(settingsCache, stored)
+    }).catch(() => {})
+  } catch (_) {}
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync') return
+      for (const k of Object.keys(SETTING_DEFAULTS)) {
+        if (changes[k]) settingsCache[k] = changes[k].newValue
+      }
+    })
+  } catch (_) {}
+}
+function isSourceEnabled(source) {
+  if (source === 'yt-like')         return settingsCache.autoSaveYouTubeLike        !== false
+  if (source === 'yt-watch-later')  return settingsCache.autoSaveYouTubeWatchLater !== false
+  return false
+}
+
 function pruneRecent(now) {
   for (const [k, t] of recentlySent) {
     if (now - t > DEDUPE_WINDOW_MS) recentlySent.delete(k)
@@ -114,6 +140,9 @@ function getButtonKind(target) {
 document.addEventListener('click', (event) => {
   const kind = getButtonKind(event.target)
   if (!kind) return
+  const source = kind === 'like' ? 'yt-like' : 'yt-watch-later'
+  // Bail out before pill / DOM walks if the user toggled this source OFF.
+  if (!isSourceEnabled(source)) return
   const url = extractVideoUrl()
   if (!url) return
   const now = Date.now()
@@ -131,7 +160,7 @@ document.addEventListener('click', (event) => {
   try {
     chrome.runtime.sendMessage({
       type: 'booklage:auto-save',
-      source: kind === 'like' ? 'yt-like' : 'yt-watch-later',
+      source,
       ogp,
     }).catch(() => {})
   } catch (_) {

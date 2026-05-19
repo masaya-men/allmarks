@@ -4,6 +4,7 @@ import { PipCompanion } from './PipCompanion'
 import { broadcastPipOpen, broadcastPipClosed } from '@/lib/board/pip-presence'
 
 let savedHandler: ((msg: { bookmarkId: string }) => void) | null = null
+let deletedHandler: ((msg: { bookmarkId: string }) => void) | null = null
 
 vi.mock('@/lib/storage/indexeddb', () => ({
   initDB: vi.fn().mockResolvedValue({
@@ -18,6 +19,10 @@ vi.mock('@/lib/board/channel', () => ({
     savedHandler = handler
     return () => { savedHandler = null }
   }),
+  subscribeBookmarkDeleted: vi.fn((handler: (msg: { bookmarkId: string }) => void) => {
+    deletedHandler = handler
+    return () => { deletedHandler = null }
+  }),
 }))
 
 vi.mock('@/lib/board/pip-presence', () => ({
@@ -29,6 +34,7 @@ vi.mock('@/lib/board/pip-presence', () => ({
 describe('PipCompanion', () => {
   beforeEach(() => {
     savedHandler = null
+    deletedHandler = null
     vi.clearAllMocks()
   })
 
@@ -58,6 +64,29 @@ describe('PipCompanion', () => {
     expect(broadcastPipClosed).not.toHaveBeenCalled()
     unmount()
     expect(broadcastPipClosed).toHaveBeenCalledOnce()
+  })
+
+  it('drops the matching card when a bookmark-deleted event arrives', async () => {
+    render(<PipCompanion onClose={() => {}} />)
+    expect(savedHandler).toBeTruthy()
+    expect(deletedHandler).toBeTruthy()
+    // Seed two cards into the PiP buffer
+    await act(async () => {
+      await savedHandler?.({ bookmarkId: 'b1' })
+      await savedHandler?.({ bookmarkId: 'b2' })
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('pip-card-b1')).toBeTruthy()
+      expect(screen.getByTestId('pip-card-b2')).toBeTruthy()
+    })
+    // Fire delete for b1 — b2 should remain
+    await act(async () => {
+      deletedHandler?.({ bookmarkId: 'b1' })
+    })
+    await waitFor(() => {
+      expect(screen.queryByTestId('pip-card-b1')).toBeNull()
+      expect(screen.getByTestId('pip-card-b2')).toBeTruthy()
+    })
   })
 
 })

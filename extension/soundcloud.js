@@ -18,6 +18,28 @@ function isExtensionAlive() {
   try { return !!(chrome && chrome.runtime && chrome.runtime.id) } catch (_) { return false }
 }
 
+// Auto-save settings cache. See twitter.js for the rationale.
+const SETTING_DEFAULTS = { autoSaveSoundCloudLike: true }
+const settingsCache = { ...SETTING_DEFAULTS }
+if (isExtensionAlive()) {
+  try {
+    chrome.storage.sync.get(SETTING_DEFAULTS).then((stored) => {
+      Object.assign(settingsCache, stored)
+    }).catch(() => {})
+  } catch (_) {}
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync') return
+      for (const k of Object.keys(SETTING_DEFAULTS)) {
+        if (changes[k]) settingsCache[k] = changes[k].newValue
+      }
+    })
+  } catch (_) {}
+}
+function isSoundCloudLikeEnabled() {
+  return settingsCache.autoSaveSoundCloudLike !== false
+}
+
 function pruneRecent(now) {
   for (const [k, t] of recentlySent) {
     if (now - t > DEDUPE_WINDOW_MS) recentlySent.delete(k)
@@ -125,6 +147,8 @@ document.addEventListener('click', (event) => {
     : null
   const kind = getButtonKind(event.target)
   if (!kind) return
+  // Bail out before pill / DOM walks if the user toggled this source OFF.
+  if (!isSoundCloudLikeEnabled()) return
   const url = extractTrackUrl(btn)
   if (!url) return
   const now = Date.now()
