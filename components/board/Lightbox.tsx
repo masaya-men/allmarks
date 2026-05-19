@@ -1601,17 +1601,24 @@ function isTweetTextOnly(meta: TweetMeta | null, slots: readonly MediaSlot[]): b
 
 /** Right panel の tweet body を抑制するか。
  *
- *  Session 52 (B-#22 follow-up redesign): 全 tweet で body 非表示に統一。
- *  左カラム (= text-only tweet なら LargeTextCardScaler、 media tweet なら画像 / 動画)
- *  が「カード」、 右カラムは「著者 + 元ページボタン」 だけ、 という役割分担。
- *  text-only tweet が長文の時は新しい透明カードの底フェード + ホバー RGB グリッチが
- *  「もっと下にも続く」 シグナルになり、 ユーザーは元ページボタン → X 本家で続きを読む。
+ *  Session 55 (A 番 fix): 「全 tweet 本文非表示」 だった session 52 判断を撤回し、
+ *  ツイート種別ごとに表示要否を判定する。 user 報告 (= 画像 + 本文ツイートで本文が
+ *  行方不明 bug) の root cause が session 52 の一律非表示だったため。
  *
- *  ※ 旧実装 (sessions 32, 51): 短文 text-only のみ body 非表示、 長文 / media 付きは body
- *    表示で重複していた。 user 発案の新カード redesign では LEFT がそのまま「読む場所」 に
- *    なるので RIGHT body は常に重複扱い → 完全廃止。 */
-function shouldHideTweetBody(_meta: TweetMeta | null, _slots: readonly MediaSlot[]): boolean {
-  return true
+ *  - text-only tweet: 本文は左カラムの LargeTextCardScaler が描画済みなので、
+ *    右カラム本文は重複 → 非表示維持 (= session 52 の正当な部分は残す)
+ *  - media tweet で meta 未到着: 本文 fallback の item.title は OGP boilerplate
+ *    (「Xユーザーの〜さん:「本文」 / X」) を含む生文字列なので、 syndication API
+ *    fetch 完了まで body は隠す
+ *  - media tweet で meta.text が空 (= 画像のみツイート / 動画のみツイート):
+ *    空 `<p>` を出さない
+ *  - それ以外 (= media + 本文あり): 右カラムに本文表示 = 新規 (= session 52 以前 + 改良) */
+function shouldHideTweetBody(meta: TweetMeta | null, slots: readonly MediaSlot[]): boolean {
+  if (isTweetTextOnly(meta, slots)) return true
+  if (!meta) return true
+  const text = (meta.text ?? '').trim()
+  if (text === '') return true
+  return false
 }
 
 /** Dot indicator for Lightbox carousel. Larger and more clickable than the
