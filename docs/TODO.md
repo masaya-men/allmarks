@@ -20,7 +20,34 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 54 — session 53 持ち越し 2 件 + 追加発覚 2 件、 拡張機能 + PiP まわり完全 close)
+### 直近の状態 (2026-05-20 セッション 55 — A 番 fix + TextCard 統一化)
+
+session 54 直後、 backlog から「A 番 X 長文 tweet + 画像 で画像のみ表示 bug」 を user 選択。 spec 起こし時に root cause 判明: session 52 で `shouldHideTweetBody()` を「全 tweet で本文非表示」 に変更した副作用で、 画像 + 本文ツイートの本文も消えていた。 1 関数書き換えで完了。 user 確認で文字のみツイートの「短文と長文で見た目が違う」 質問発覚 → 統一化 sprint に拡張、 user reference 画像 + 数値 1 段調整 (= 16px + 5:4) で確定。
+
+**ship 済 (= prod 反映済、 user 実機 OK)**:
+- **A 番 fix**: [Lightbox.tsx](../components/board/Lightbox.tsx) の `shouldHideTweetBody` を判定ベースに書き換え (= text-only / meta 未到着 / 本文空 → 隠す、 それ以外 → 表示)。 既存 2 カラム構造 / TweetText / TextCard / ImageCard 全て不変
+- **TextCard 統一化**: [pickTitleTypography](../lib/embed/title-typography.ts) + [measureTextCardLayout](../lib/embed/text-card-measure.ts) を constant 返却に簡略化。 全 TextCard が **16px 文字 + 5:4 横長 (= aspect 1.25) + 上端サイトアイコン + scroll** で統一。 LargeTextCardScaler 経由で Lightbox text-only も自動追従。 文字数による 3 モード分岐 + CJK 幅計算 + pretext natural height + 9:16 clamp 全部廃止
+
+**変更 file** (4): [Lightbox.tsx](../components/board/Lightbox.tsx) + [title-typography.ts](../lib/embed/title-typography.ts) + [text-card-measure.ts](../lib/embed/text-card-measure.ts) + [title-typography.test.ts](../lib/embed/title-typography.test.ts)
+
+**テスト**: 608 → 604 PASS (= title-typography 6 → 2 統合のため減数)
+
+**deploy 回数**: 3 (= A 番 1 + TextCard 統一化 18px/1.0 1 + 16px/1.25 調整 1)
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 55 セクション
+
+**次セッション (= 56) の goal**: backlog から user 選択。 候補:
+- 🟡 10 番 有名サイト pre-set OFF list (= 拡張 polish、 ~50 行)
+- 🟡 音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10、 session 54 で I-09 一部消化済)
+- 🟡 multi-playback vision board card autoplay (= AllMarks core 差別化)
+- 🐛 B-#3 重複 URL でサムネ等が出ない (= 古めの未解決)
+- 🧹 TextCard 統一化の dead code 清掃 (= .headline / .index CSS、 pretext import、 短工数)
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
+
+---
+
+### 旧情報 (2026-05-20 セッション 54 — session 53 持ち越し 2 件 + 追加発覚 2 件、 拡張機能 + PiP まわり完全 close)
 
 session 53 持ち越しの B 番重複弾き + PiP サムネ消しを起点に、 4 ポイント console.log でリレー実測 → B 番は session 53 時点から実は動いていた (= 真因は緑「Saved」 と緑「Already saved」 の視覚差別化不足) と判明 → 重複ピル全面 redesign に方向転換。 続けて user 実機で発覚した 2 件 (= site .js 設定 OFF 時 pill ぐるぐる、 PiP open + auto-save で pill 無限) も完遂。 7 deploy で session 53 + 追加全消化。
 
