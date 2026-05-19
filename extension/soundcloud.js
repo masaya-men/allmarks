@@ -98,8 +98,32 @@ function getButtonKind(target) {
 }
 
 document.addEventListener('click', (event) => {
+  // Temporary debug (session 49 SoundCloud non-detection investigation) —
+  // outputs the resolved button's class / aria-label at click time so we
+  // can confirm whether our listener is reached and what the actual DOM
+  // looks like. user's pasted outerHTML matched our regex; if no log
+  // appears here, the listener isn't reached → root cause is elsewhere.
+  const btnDbg = event.target && event.target.closest
+    ? event.target.closest('button, [role="button"], a[role="button"]')
+    : null
+  if (btnDbg) {
+    const clsDbg = (btnDbg.className && btnDbg.className.toString && btnDbg.className.toString()) || ''
+    const labelDbg = (btnDbg.getAttribute('aria-label') || '') + ' / ' + (btnDbg.getAttribute('title') || '')
+    if (/like|heart|いいね|좋아|喜欢|sc-button/i.test(clsDbg + ' ' + labelDbg)) {
+      console.log('[allmarks-sc]', {
+        cls: clsDbg.slice(0, 140),
+        label: labelDbg.slice(0, 80),
+      })
+    }
+  }
   const kind = getButtonKind(event.target)
-  if (!kind) return
+  if (!kind) {
+    if (btnDbg && /sc-button-like/.test((btnDbg.className && btnDbg.className.toString && btnDbg.className.toString()) || '')) {
+      console.log('[allmarks-sc] sc-button-like MATCHED but getButtonKind returned null — selected state?')
+    }
+    return
+  }
+  console.log('[allmarks-sc] DETECTED kind=', kind)
   const url = extractTrackUrl()
   if (!url) return
   const now = Date.now()
@@ -108,14 +132,18 @@ document.addEventListener('click', (event) => {
   if (recentlySent.has(dedupeKey)) return
   recentlySent.set(dedupeKey, now)
   const ogp = extractTrackOgp(url)
-  if (!isExtensionAlive()) return
+  if (!isExtensionAlive()) {
+    console.log('[allmarks-sc] sendMessage SKIPPED — extension context dead, reload tab')
+    return
+  }
+  console.log('[allmarks-sc] sendMessage url=', url)
   try {
     chrome.runtime.sendMessage({
       type: 'booklage:auto-save',
       source: 'soundcloud-like',
       ogp,
-    }).catch(() => {})
-  } catch (_) {
-    // Extension context invalidated mid-send; drop silently.
+    }).catch((err) => console.log('[allmarks-sc] sendMessage failed:', err && err.message))
+  } catch (e) {
+    console.log('[allmarks-sc] sendMessage threw:', e && e.message)
   }
 }, true)

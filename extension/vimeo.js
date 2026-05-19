@@ -73,13 +73,22 @@ function getButtonKind(target) {
   if (!btn) return null
   const cls = (btn.className && btn.className.toString && btn.className.toString()) || ''
   const label = (btn.getAttribute('aria-label') || '') + ' ' + (btn.getAttribute('title') || '')
+  const pressed = btn.getAttribute('aria-pressed') === 'true'
   // OFF action exclusion FIRST — Vimeo localises both ON and OFF aria-labels
   // and the OFF strings ("『後で見る』 から削除" / "Remove from Watch Later" /
   // "Unlike" / "Unfollow" / etc.) contain stems we'd otherwise match. We
   // intentionally do NOT save on OFF (= taking away a like / WL would
   // trigger unwanted saves).
-  if (/\bunlike\b|\bremove\b|\bundo\b/i.test(label)) return null
-  if (/取り消|から削除|削除|취소|에서\s*제거|从.*删除|移除/i.test(label)) return null
+  //
+  // aria-pressed="true" — Vimeo's toggle buttons advertise their current
+  // state via ARIA. If the button is currently pressed, clicking it would
+  // OFF-toggle. Session 49 user-reported regression: Vimeo Like got saved
+  // on un-like because the aria-label didn't contain any of the verb stems
+  // below (Vimeo writes a noun-state label like "Liked"/"いいね済"). The
+  // aria-pressed check is the locale-proof OFF guard.
+  if (pressed) return null
+  if (/\bunlike\b|\bremove\b|\bundo\b|\bliked\b/i.test(label)) return null
+  if (/取り消|から削除|削除|취소|에서\s*제거|从.*删除|移除|いいね済|いいねしました/i.test(label)) return null
   // Tier 1: class hint (= locale-proof, survives translation). Vimeo's
   // React components keep human-readable prefixes in classNames even after
   // hashing (e.g. "LikeButton_likeButton__xxx", "WatchLater_button__xxx").
@@ -115,6 +124,23 @@ function getButtonKind(target) {
 }
 
 document.addEventListener('click', (event) => {
+  // Temporary debug (session 49 OFF-action investigation) — outputs the
+  // resolved button's class / aria-label / aria-pressed at click time so
+  // we can confirm what Vimeo writes when the button is in OFF state.
+  const btnDbg = event.target && event.target.closest
+    ? event.target.closest('button, [role="button"], a[role="button"]')
+    : null
+  if (btnDbg) {
+    const clsDbg = (btnDbg.className && btnDbg.className.toString && btnDbg.className.toString()) || ''
+    const labelDbg = (btnDbg.getAttribute('aria-label') || '') + ' / ' + (btnDbg.getAttribute('title') || '')
+    if (/like|watch|後で見る|いいね|좋아|喜欢|gefällt|piace|gostei|gusta/i.test(clsDbg + ' ' + labelDbg)) {
+      console.log('[allmarks-vimeo]', {
+        cls: clsDbg.slice(0, 120),
+        label: labelDbg.slice(0, 120),
+        pressed: btnDbg.getAttribute('aria-pressed'),
+      })
+    }
+  }
   const kind = getButtonKind(event.target)
   if (!kind) return
   const url = extractVideoUrl()
