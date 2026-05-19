@@ -29,19 +29,21 @@ function readMeta(selector) {
   return e ? e.getAttribute('content') || '' : ''
 }
 
-// Resolve a saveable URL from a SoundCloud Like click. The user's mental
-// model is "heart click = save to AllMarks", so we honor every press
-// except on pages where the URL itself carries no meaning (= system pages
-// like /feed, /charts where the URL doesn't identify a track or playlist).
+// Resolve a saveable URL from a SoundCloud Like click. The user's intent
+// is "this song is good, save it" — but only if it can be played back
+// later. Personalised discover URLs can't be reproduced, so we exclude
+// them (= user reconfirmed this in session 49 round 2).
 //
 // Surfaces supported:
 //   - mini-player          → resolve via .playbackSoundBadge__titleLink
 //   - track detail         /{user}/{slug}
 //   - regular playlist     /{user}/sets/{slug}
-//   - personalised playlist /discover/sets/personalized-tracks::...
-//     (URL is user-specific and may show different tracks later, but the
-//      user pressed the heart so we save the moment.)
-//   - any other deep path  → save as-is
+//   - artist profile       /{user}
+//
+// Excluded:
+//   - /discover/*  (= personalised, URL won't reproduce same content later)
+//   - /feed /upload /charts /pages /settings /imprint /jobs /mobile (= system)
+//   - /you/*       (= user's own library)
 function extractTrackUrl(btn) {
   // Case A: mini-player Like (= bottom persistent badge). Always resolve
   // via the badge's title link, independent of page URL.
@@ -52,23 +54,17 @@ function extractTrackUrl(btn) {
     return 'https://soundcloud.com' + href.split('?')[0].split('#')[0].replace(/\/$/, '')
   }
   // Case B: page-level Like — save the current location unless it's a
-  // bookmark-meaningless system page.
+  // bookmark-meaningless or non-reproducible page.
   const p = location.pathname.replace(/\/$/, '')
   const parts = p.split('/').filter(Boolean)
   const first = parts[0] || ''
   if (!first) return null
   // System pages with no meaningful saveable content.
   if (first === 'feed' || first === 'upload' || first === 'charts' || first === 'pages' || first === 'settings' || first === 'imprint' || first === 'jobs' || first === 'mobile') return null
-  // /you/* — the user's own library; treat as personal collection that
-  // shouldn't go into AllMarks (would essentially be saving a link to
-  // one's own SoundCloud Likes page).
+  // /you/* — the user's own library; treat as personal collection.
   if (first.startsWith('you')) return null
-  // Everything else is saveable. Includes:
-  //   /{user}              (= artist profile)
-  //   /{user}/{slug}       (= track detail)
-  //   /{user}/sets/{slug}  (= playlist)
-  //   /discover/sets/...   (= personalised playlist)
-  //   etc.
+  // /discover/* — personalised feeds whose URLs won't replay later.
+  if (first === 'discover') return null
   return 'https://soundcloud.com' + p
 }
 
@@ -124,55 +120,27 @@ function getButtonKind(target) {
 }
 
 document.addEventListener('click', (event) => {
-  // Temporary debug (session 49 SoundCloud non-detection investigation) —
-  // outputs the resolved button's class / aria-label at click time so we
-  // can confirm whether our listener is reached and what the actual DOM
-  // looks like. user's pasted outerHTML matched our regex; if no log
-  // appears here, the listener isn't reached → root cause is elsewhere.
-  const btnDbg = event.target && event.target.closest
+  const btn = event.target && event.target.closest
     ? event.target.closest('button, [role="button"], a[role="button"]')
     : null
-  if (btnDbg) {
-    const clsDbg = (btnDbg.className && btnDbg.className.toString && btnDbg.className.toString()) || ''
-    const labelDbg = (btnDbg.getAttribute('aria-label') || '') + ' / ' + (btnDbg.getAttribute('title') || '')
-    if (/like|heart|いいね|좋아|喜欢|sc-button/i.test(clsDbg + ' ' + labelDbg)) {
-      console.log('[allmarks-sc]', {
-        cls: clsDbg.slice(0, 140),
-        label: labelDbg.slice(0, 80),
-      })
-    }
-  }
   const kind = getButtonKind(event.target)
-  if (!kind) {
-    if (btnDbg && /sc-button-like/.test((btnDbg.className && btnDbg.className.toString && btnDbg.className.toString()) || '')) {
-      console.log('[allmarks-sc] sc-button-like MATCHED but getButtonKind returned null — selected state?')
-    }
-    return
-  }
-  console.log('[allmarks-sc] DETECTED kind=', kind)
-  const url = extractTrackUrl(btnDbg)
-  if (!url) {
-    console.log('[allmarks-sc] url=null, page may not be a track/playlist/badge — pathname=', location.pathname)
-    return
-  }
+  if (!kind) return
+  const url = extractTrackUrl(btn)
+  if (!url) return
   const now = Date.now()
   pruneRecent(now)
   const dedupeKey = kind + ':' + url
   if (recentlySent.has(dedupeKey)) return
   recentlySent.set(dedupeKey, now)
   const ogp = extractTrackOgp(url)
-  if (!isExtensionAlive()) {
-    console.log('[allmarks-sc] sendMessage SKIPPED — extension context dead, reload tab')
-    return
-  }
-  console.log('[allmarks-sc] sendMessage url=', url)
+  if (!isExtensionAlive()) return
   try {
     chrome.runtime.sendMessage({
       type: 'booklage:auto-save',
       source: 'soundcloud-like',
       ogp,
-    }).catch((err) => console.log('[allmarks-sc] sendMessage failed:', err && err.message))
-  } catch (e) {
-    console.log('[allmarks-sc] sendMessage threw:', e && e.message)
+    }).catch(() => {})
+  } catch (_) {
+    // Extension context invalidated mid-send; drop silently.
   }
 }, true)

@@ -74,6 +74,11 @@ function getButtonKind(target) {
   const cls = (btn.className && btn.className.toString && btn.className.toString()) || ''
   const label = (btn.getAttribute('aria-label') || '') + ' ' + (btn.getAttribute('title') || '')
   const pressed = btn.getAttribute('aria-pressed') === 'true'
+  // Vimeo's React components expose locale-proof data attributes for their
+  // primary actions (= verified via session 49 user console dump:
+  // data-like-button="true"). Watch later may use the same convention.
+  const isLikeByData = btn.getAttribute('data-like-button') === 'true'
+  const isWatchLaterByData = btn.getAttribute('data-watch-later-button') === 'true'
   // OFF action exclusion FIRST — Vimeo localises both ON and OFF aria-labels
   // and the OFF strings ("『後で見る』 から削除" / "Remove from Watch Later" /
   // "Unlike" / "Unfollow" / etc.) contain stems we'd otherwise match. We
@@ -105,6 +110,12 @@ function getButtonKind(target) {
   if (/remover|desfazer|descurtir|já\s*curtido/i.test(label)) return null
   // Italian OFF (= rimuovere / annullare / piaciuto state)
   if (/rimuovere|annullare|già\s*piaciuto/i.test(label)) return null
+  // Tier 0: data-* attribute identification — most reliable, locale-proof.
+  // Confirmed via session 49 console dump: data-like-button="true".
+  // data-watch-later-button is unverified but if Vimeo follows convention
+  // it'll match too. Falls through to class hint / aria-label if absent.
+  if (isWatchLaterByData) return 'watch-later'
+  if (isLikeByData) return 'like'
   // Tier 1: class hint (= locale-proof, survives translation). Vimeo's
   // React components keep human-readable prefixes in classNames even after
   // hashing (e.g. "LikeButton_likeButton__xxx", "WatchLater_button__xxx").

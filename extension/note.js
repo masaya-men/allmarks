@@ -53,50 +53,27 @@ function getButtonKind(target) {
   if (!target || !target.closest) return null
   const btn = target.closest('button')
   if (!btn) return null
-  // note's スキ button doesn't expose a stable data-testid; we match by either
-  // aria-label or visible text. Both forms appear depending on locale and
-  // surface (article footer vs. inline reaction widget).
+  // Skip the "スキ count" button (o-noteLikeV3__count) — that opens a list
+  // of users who liked, not the like toggle itself. Its aria-label also
+  // contains "スキ" so naive matching false-positives here.
+  const clsList = btn.classList
+  if (clsList && clsList.contains('o-noteLikeV3__count')) return null
+  // note's actual スキ toggle exposes aria-pressed for ON/OFF state.
+  // This is language-neutral — no need for localised OFF stems.
+  // - aria-pressed="false" + aria-label="スキ"            → ON click
+  // - aria-pressed="true"  + aria-label="スキを取り消す"  → OFF click
+  const pressed = btn.getAttribute('aria-pressed')
+  if (pressed === 'true') return null  // OFF action, skip
+  // Identify the like toggle by either:
+  //   - the stable class o-noteLikeV3__iconButton, or
+  //   - "スキ" substring in aria-label (= covers older layouts without the class)
+  if (clsList && clsList.contains('o-noteLikeV3__iconButton')) return 'like'
   const label = btn.getAttribute('aria-label') || ''
-  const text = (btn.innerText || btn.textContent || '').trim()
-  if (label.includes('スキ') || /^スキ(\s|$)/.test(text)) return 'like'
+  if (label.includes('スキ')) return 'like'
   return null
 }
 
-// Temporary diagnostic — dumps the clicked button + 2 ancestors so we can
-// find whether note's スキ button has a language-neutral ON/OFF state
-// signal (the file's existing comment says "no distinction needed, dedupe
-// covers it", but user wants OFF strictly skipped if possible).
-function dumpAttrs(el) {
-  if (!el || !el.attributes) return null
-  const out = {}
-  for (let i = 0; i < el.attributes.length; i++) {
-    const a = el.attributes[i]
-    out[a.name] = a.value && a.value.length > 100 ? a.value.slice(0, 100) + '…' : a.value
-  }
-  return out
-}
-
 document.addEventListener('click', (event) => {
-  const btnDbg = event.target && event.target.closest
-    ? event.target.closest('button, [role="button"], a[role="button"]')
-    : null
-  if (btnDbg) {
-    const text = (btnDbg.innerText || btnDbg.textContent || '')
-    const labelDbg = btnDbg.getAttribute('aria-label') || ''
-    if (text.includes('スキ') || labelDbg.includes('スキ') || /like/i.test(labelDbg + ' ' + text)) {
-      // JSON.stringify so Chrome's deferred-eval doesn't elide the attrs
-      // object when the user copies the console transcript out as text.
-      console.log('[allmarks-note] ' + JSON.stringify({
-        tag: btnDbg.tagName,
-        attrs: dumpAttrs(btnDbg),
-        parentTag: btnDbg.parentElement && btnDbg.parentElement.tagName,
-        parentAttrs: dumpAttrs(btnDbg.parentElement),
-        grandparentTag: btnDbg.parentElement && btnDbg.parentElement.parentElement && btnDbg.parentElement.parentElement.tagName,
-        grandparentAttrs: btnDbg.parentElement ? dumpAttrs(btnDbg.parentElement.parentElement) : null,
-        text: text.slice(0, 80),
-      }))
-    }
-  }
   const kind = getButtonKind(event.target)
   if (!kind) return
   const url = extractArticleUrl()

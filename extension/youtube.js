@@ -96,7 +96,12 @@ document.addEventListener('click', (event) => {
   if (btnDbg) {
     const text = (btnDbg.innerText || btnDbg.textContent || '').toLowerCase()
     const labelDbg = (btnDbg.getAttribute('aria-label') || '').toLowerCase()
-    if (/like|watch|後で見る|いいね|좋아|좋아요|喜欢|gefällt|piace|gostei|gusta|j['']aime/i.test(text + ' ' + labelDbg)) {
+    // Filter expanded for session 49 round 2: YouTube Like button on
+    // localised UIs writes domain-specific verbs (= 高評価 in ja, 좋아요 in
+    // ko, 喜欢 in zh, etc.) which the previous "いいね" filter missed.
+    // Watch later equivalents (= 後で見る in ja, 保存 in many locales) added
+    // so the dropdown menu items get dumped too.
+    if (/like|watch|後で見る|いいね|高評価|保存|좋아|좋아요|저장|喜欢|喜歡|稍后|稍後|保存|me\s*gusta|guardar|j['']aime|enregistrer|gefällt|speichern|piace|gostei|salvar/i.test(text + ' ' + labelDbg)) {
       // JSON.stringify so Chrome's deferred-eval doesn't elide the attrs
       // object when the user copies the console transcript out as text.
       console.log('[allmarks-yt] ' + JSON.stringify({
