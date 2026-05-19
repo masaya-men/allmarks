@@ -33,6 +33,8 @@ let pill = null
 let hideTimer = null
 let savingShownAt = 0
 let pendingFinalize = null
+let stuckSavingTimer = null
+const STUCK_SAVING_TIMEOUT_MS = 8000
 
 function ensurePill() {
   if (pill) return pill
@@ -88,10 +90,23 @@ function setState(state) {
       clearTimeout(pendingFinalize)
       pendingFinalize = null
     }
+    // Stuck-saving safety net: if no final state (saved/error) lands within
+    // 8s — e.g., site .js fired the immediate pill but background dropped
+    // the auto-save because the source is toggled off — hide the pill
+    // silently so it doesn't look frozen.
+    if (stuckSavingTimer) clearTimeout(stuckSavingTimer)
+    stuckSavingTimer = setTimeout(() => {
+      stuckSavingTimer = null
+      if (pill) pill.classList.remove('is-visible')
+    }, STUCK_SAVING_TIMEOUT_MS)
     applyState(state)
     return
   }
   // saved / error: ensure ring (saving) was visible long enough to be perceived.
+  if (stuckSavingTimer) {
+    clearTimeout(stuckSavingTimer)
+    stuckSavingTimer = null
+  }
   const elapsed = performance.now() - savingShownAt
   const remaining = MIN_SAVING_MS - elapsed
   if (savingShownAt > 0 && remaining > 0) {
@@ -110,16 +125,27 @@ chrome.runtime.onMessage.addListener((msg) => {
   setState(msg.state)
 })
 
-// === Bookmarklet hand-off ===
+// === Bookmarklet hand-off + immediate pill trigger ===
 // The bookmarklet IIFE detects the marker (data-booklage-extension) and
 // posts here instead of opening its popup. We forward to background which
 // runs the regular dispatchSave flow against this tab. Same nonce arriving
 // twice within a short window is ignored (defensive against duplicates).
+//
+// Site .js scripts (twitter / youtube / note / vimeo / soundcloud) also
+// post a {source:'booklage-extension', type:'pill-saving'} message right
+// before their chrome.runtime.sendMessage call so the pill appears within
+// ~10ms instead of the ~100-300ms it took when waiting for the background
+// round-trip. The background flow still fires 'saved' / 'error' as usual.
 const seenBookmarkletNonces = new Map()
 window.addEventListener('message', (event) => {
   if (event.source !== window) return
   const msg = event.data
-  if (!msg || msg.type !== 'booklage:save-via-extension') return
+  if (!msg) return
+  if (msg.source === 'booklage-extension' && msg.type === 'pill-saving') {
+    setState('saving')
+    return
+  }
+  if (msg.type !== 'booklage:save-via-extension') return
   const nonce = typeof msg.nonce === 'string' ? msg.nonce : null
   if (nonce) {
     const now = Date.now()

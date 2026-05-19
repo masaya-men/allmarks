@@ -134,6 +134,11 @@ document.addEventListener('click', (event) => {
   recentlySent.set(dedupeKey, now)
   const ogp = extractTrackOgp(url)
   if (!isExtensionAlive()) return
+  // Fire the pill immediately via same-window postMessage so content.js
+  // can show "Saving" within ~10ms instead of waiting for the background
+  // round-trip (~100-300ms). content.js falls back to a stuck-saving
+  // timeout if no final state (saved/error) follows.
+  try { window.postMessage({ source: 'booklage-extension', type: 'pill-saving' }, '*') } catch (_) {}
   try {
     chrome.runtime.sendMessage({
       type: 'booklage:auto-save',

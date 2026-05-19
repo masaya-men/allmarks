@@ -2908,3 +2908,117 @@ session 49 後半に user 指摘「多言語対応必須だからそんな危な
   - **B-#22 長文 tweet Lightbox fix + 全文表示 enhancement** = bug fix + user 要望「ライトボックスで全部見れた方が良い」 をセット対応 (= 高優先度)
   - **I-08 拡張機能 floating ボタン** / **I-09 cursor pill 音波化** = 磨きフェーズ
 
+---
+
+## セッション 50 (2026-05-19) — B-#24 cursor pill 即時化 + ✓ 緑 glow + 設計議論 3 件 + B-#25 ドロップ
+
+session 49 終了直前 user 4 要望 (= B-#24 / B-#25 / I-10 / I-08) を CURRENT_GOAL に永続化した状態で開始。 user 「おすすめ順で OK」 で B-#24 → 設計議論 → B-#25 の流れ。
+
+### Phase 1: B-#24 cursor pill 即時化 (= ~30 分)
+
+**問題**: 拡張機能経由保存時、 click → background → tab 経由で cursor pill 表示まで 100-300ms 遅延。 session 49 終了直前に user 報告。
+
+**修正**: site-specific .js (= twitter / youtube / note / vimeo / soundcloud の 5 file) に **`window.postMessage({source:'booklage-extension', type:'pill-saving'}, '*')` を `chrome.runtime.sendMessage` 直前に追加**。 同 window 内 postMessage は ~1ms で content.js に届き、 既存 window message listener を拡張して受信時に即 `setState('saving')` 発火 → pill 表示までの体感遅延を 100-300ms から ~10ms に短縮。
+
+**stuck-saving safety net**: 即時 pill 発火後に background が auto-save トグル OFF で drop する edge case (= source 別 trigger OFF 時) → pill が「Saving」 で固まる risk。 [content.js](../extension/content.js) に **8 秒の stuck-saving safety timeout** 追加、 final state (saved/error) 来なければ silent hide。 backward compat = saving/saved/error の通常 flow には影響ゼロ (= timeout は saved/error が来た瞬間 clear)
+
+**変更 file**: 6 file
+- [extension/content.js](../extension/content.js): window message listener 拡張 + `stuckSavingTimer` + `STUCK_SAVING_TIMEOUT_MS=8000` + setState の saving/finalize branch 両方で timer 管理
+- [extension/twitter.js](../extension/twitter.js), [youtube.js](../extension/youtube.js), [note.js](../extension/note.js), [vimeo.js](../extension/vimeo.js), [soundcloud.js](../extension/soundcloud.js): `isExtensionAlive()` check 後 + `chrome.runtime.sendMessage` 前に postMessage 1 行追加
+
+**検証**: vitest 519/519 PASS / tsc clean / build 成功 / wrangler deploy 完了 / user 実機テスト OK
+
+### Phase 2: cursor pill ✓ icon 緑化 + glow halo (= ~20 分)
+
+**user 要望**: 「pill の中のチェックマークだけ緑色？にしない？ わかりやすくするために」。 既存の error 赤 (`.bang` = `#ff5a5a`) と semantic 揃って成功 緑 / spinner 白 の trio で意味体系完成。
+
+**色選定**: `rgba(74, 222, 128, 0.98)` (= Tailwind green-400)。 暗背景 + 細 stroke でしっかり読める明度、 既存 error 赤と vibrancy match。
+
+**user 「もっと強く光らせて」 で 3 段 drop-shadow halo**: [content.css](../extension/content.css) の `.check` に `filter` 追加:
+```css
+filter:
+  drop-shadow(0 0 3px rgba(134, 239, 172, 0.95))  /* 内核 = 明緑 */
+  drop-shadow(0 0 8px rgba(74, 222, 128, 0.75))   /* 中 bloom = メイン緑 */
+  drop-shadow(0 0 16px rgba(34, 197, 94, 0.55));  /* 外 halo = 深緑 */
+```
+GPU accelerated (= drop-shadow は rasterised stroke に動く)、 perf 0 cost。 この 3 段レシピは AllMarks 全体の「success state visual language」 として永続化、 後続の TUNE 物理ボタン preset LED でも同じ recipe を流用予定 (= IDEAS.md J section に明文化)。
+
+### Phase 3: 「unlike で自動削除？」 議論 = 不採用確定 + 楽しい削除フロー IDEAS.md 記録
+
+**user 質問**: 「ブクマを消したらムードボード上からも消えるって設定にしたら？」 → opt-in 設定で安全じゃない？
+
+**Claude reply**: 3 つの懸念 = (1) like→unlike→like 連打の dedupe 罠 / (2) ブックマーレット由来カードの誤削除 / (3) 多言語 OFF stem の維持コスト。 加えて「I-10 設定画面刷新と同時 sprint」 提案。
+
+**user 確定**: 「やっぱりいいか入れなくて。 バグの温床になりそう」 → **不採用**
+
+**代替提案**: 削除は AllMarks 本体側で「ぱっと消せる楽しいフロー」 として設計、 既に foundation 柱 2 (= manual tag schema) に「タグ一括削除」 が確定済。 user 同意 → [docs/private/IDEAS.md](../docs/private/IDEAS.md) に「楽しい削除フロー + タグ一括削除との連携」 section 追加。 削除アニメ 5 種類案 (= swipe / 紙吹雪 / 音波 / disintegrate / 吸い込み) を記録、 実装時 prototype 試作で選ぶ方針。
+
+### Phase 4: 構造理解 = outerFrame / canvas / ThemeLayer の 3 層、 SF軍事テーマで作りやすいか確認
+
+**user 質問**: 「`BoardRoot-module__sFpQHG__outerFrame` って上下左右にマージンがあるだけの表示？ ユニコーンガンダム的な SF軍事テーマで全体デザインしにくい構造になってない？」
+
+**Claude 説明**:
+- `.outerFrame` (= position:fixed inset:0) は viewport 全体を覆う 1 枚の paintable div、 `padding: var(--canvas-margin)` でマージン band を作って中央に `.canvas` を inset 配置
+- 今は `--bg-outer = --bg-dark = #0a0a0a` で同色なので「マージンだけ」 に見えるが、 outerFrame 側に絵 / パネル / デカール / 警告マークを描き込むことは完全に可能
+- 既存の `<ThemeLayer themeId={...} />` component が canvas 内部の scroll 追従背景アート専用レイヤとして存在
+- ユニコーンガンダム的テーマでは 3 階層 (= 外周パネル + 内側スクリーン + scroll 追従の内部装飾) で奥行きある世界観を作れる、 CSS 変数 (`--bg-outer` / `--bg-dark` / `--canvas-margin` / `--canvas-radius`) で 1 行レベル theme swap 可能
+
+**user 反応**: 構造理解で OK、 IDEAS.md への保存は今回パス、 進む。
+
+### Phase 5: TUNE 物理ボタン preset 設計議論 + IDEAS.md J section 永続化
+
+**user 提案**: Yamaha AG03 mixer の物理ボタン部 (= COMP/EQ / REVERB / MUTE スタック、 各ボタン横に LED dot) を reference 画像で提示 → 「TUNE drawer に物理スイッチ風 preset 3-5 個。 押したら横の LED が光る。 カードサイズ (W) + ギャップ (G) の組み合わせを 1 タップで適用」
+
+**Claude 評価**: AllMarks 既定テーマ (= 音波 motif、 memory `project_theme_sound_wave.md`) + mixer UI 語彙の整合性が完璧。 H section (= スライダー本体 redesign 5 案) と完全相補 = スライダー本体 (= 細かい調整) + preset ボタン (= 一発 snap) の 2 系統で TUNE drawer が完成する。
+
+**提案内容** (= 全部 IDEAS.md J section に永続化):
+- 3 ボタン案 (= TIGHT / DEFAULT / WIDE、 ship 早い) と 5 ボタン案 (= TREBLE / MID / DEFAULT / BASS / SUB、 音響 EQ band 名 で AG03 直結)
+- 物理ボタン feel = `box-shadow 0 2px 0` で浮かせて `:active translateY(1px)` で凹む
+- LED dot 8px = OFF 時暗灰 / ON 時緑 + 3 段 drop-shadow halo (= Phase 2 で確立した success green recipe を流用)
+- Alt 案: LED 色を周波数 spectrum で分ける (= TREBLE 黄 / MID 緑 / DEFAULT 白 / BASS 橙 / SUB 赤)
+- Undo system 統合 (= session 40 stack に乗せる)
+- 推奨実装タイミング: H (= スライダー redesign) + J (= preset ボタン) + I-09 (= cursor pill 音波化) + I-10 (= 設定画面刷新) を「音波テーマ世界観確立 sprint」 で 1 集中 polish
+
+**user 確定**: 「C ね」 = 設計だけ記録、 今 session 50 では実装せず、 後の集中 sprint で polish。 [docs/private/IDEAS.md](../docs/private/IDEAS.md) J section に詳細記録完了。
+
+### Phase 6: B-#25 PiP 自動表示 = 確認 → 死にコード判明 → user 判断でドロップ + cleanup
+
+**確認結果**: options.html のトグル UI + chrome.storage.sync 書き込みは存在、 **autoOpenPip を読み出して実際に PiP を開く logic は完全に未実装**。 トグルは session 44 で plan されて lipstick だけ作られて中身が放置された状態。
+
+**実装上の制約 (= Chrome の Document PiP API)**: `documentPictureInPicture.requestWindow()` は **user gesture が必須**。 タブ訪問しただけでは Chrome が `NotAllowedError` 出して開けない (= セキュリティ制約)。 代替案 = AllMarks タブ上の「最初の click で auto-open」 / shortcut key / 拡張アイコン click のいずれも user 操作 1 回が必須。
+
+**user 質問**: 「設定 ON にしたら、 PC 電源 OFF にしても明日また AllMarks 開いた瞬間に自動で PiP 開くようになる？」
+
+**Claude 答**: 設定は `chrome.storage.sync` 永続 (= PC 電源 OFF でも消えない、 Google アカウント同期されてれば別 PC でも引き継ぐ)。 ただし PiP を開く瞬間は user 操作 1 回が必須 (= タブ訪問のみで開くのは技術的に不可能、 Chrome の制約)。
+
+**user 判断**: 「それなら結局 PiP ボタン押すわけだからこの機能要らないね。 POP OUT ボタンを押すのと変わんない」 → **B-#25 ドロップ確定**
+
+**死にコード除去**: トグルが残ったまま (= 押しても何も起きない) は最悪の UX → 即時 cleanup
+- [extension/options.html](../extension/options.html): 「Auto-open PiP on AllMarks tab」 section 削除
+- [extension/options.js](../extension/options.js): DEFAULTS の `autoOpenPip` + load 内の `$('autoOpenPip').checked = ...` + change listener 削除
+
+**検証**: vitest 519/519 PASS / tsc clean
+
+### session 50 narrative の全体構造
+
+1. **Phase 1**: B-#24 cursor pill 即時化 (= 6 file 変更、 体感遅延 100-300ms → ~10ms)
+2. **Phase 2**: ✓ icon 緑化 + 3 段 drop-shadow halo (= AllMarks success green visual language 確立)
+3. **Phase 3**: 「unlike で自動削除」 議論 → 不採用、 楽しい削除フローを IDEAS.md 記録
+4. **Phase 4**: outerFrame / canvas 構造理解、 SF軍事テーマで設計しやすいことを user と共有
+5. **Phase 5**: TUNE 物理ボタン preset 議論 → IDEAS.md J section に永続化、 集中 sprint で実装
+6. **Phase 6**: B-#25 ドロップ + 死にコード除去 (= autoOpenPip トグル削除)
+
+### session 50 で確定した教訓 (= 永続)
+
+- **「Chrome API の制約」 を user に説明する時は scenarios で見せる**: B-#25 を user に説明する時、 「Document PiP API は user gesture 必須」 という抽象説明だけでは伝わらず、 「明日 PC 起動 → AllMarks 開く → 1 click で開く」 という具体シナリオで「click 1 回必要なら POP OUT ボタンと変わらない」 まで user 自身に気付いてもらえた。 抽象説明 → 具体シナリオ → user 判断 の 3 step
+- **死にコードは即時 cleanup**: B-#25 を「やらない」 と判断した時点で options.html / .js から該当 UI を除去 (= 残すと user が「ON にしたのに動かない」 と混乱する)。 「やらない判断」 と「dead code cleanup」 は同じ session でやる
+- **success green の 3 段 halo recipe**: `drop-shadow(0 0 3px / 8px / 16px)` × `rgba(134/74/34, 239/222/197, 172/128/94, 0.95/0.75/0.55)` の三層は AllMarks 全体で再利用する visual language として確立。 cursor pill ✓ + 将来の TUNE preset LED + 将来の success toast 等で同じ recipe を流用
+- **「重い feature 1 つより、 軽い feature × 5 + 設計記録 × 2 + drop × 1」 の方が体感生産性高い**: session 50 は cursor pill 速度改善 + 色 + glow + 構造説明 + 削除議論 + preset 設計 + B-#25 drop と「実装 2 件 + 議論 3 件 + drop 1 件」 を 1 session で消化、 user が「次に何やる」 を見失わずに密度高く進めた
+
+### 次セッション (= 51) 候補 (= 永続記録)
+
+- 🔴 **B-#23 Vimeo / SoundCloud Lightbox 再生対応** = 公開コンテンツは login 不要 iframe embed 可、 AllMarks Lightbox に detector + iframe 追加すべき。 user 体験の根幹に効く高優先度
+- 🔴 **B-#22 長文 tweet Lightbox bug + 全文表示** = bug fix + user 要望「ライトボックスで全部見れた方が良い」 をセット対応 (= 中〜大規模)
+- 🟡 **音波テーマ世界観確立 sprint** = H (= スライダー redesign) + J (= TUNE 物理ボタン preset) + I-09 (= cursor pill 音波化) + I-10 (= 設定画面刷新) を 1 集中 sprint で polish。 session 50 IDEAS.md に詳細設計あり
+- 🟡 **I-08 拡張機能 floating ボタン** = 50 行、 単独で完結する小タスク
+

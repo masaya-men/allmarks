@@ -20,7 +20,40 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-18 セッション 49 — 配信先を **5 サイト 8 ボタン** に絞り込み、 user 実機検証で確定した動く範囲のみ維持)
+### 直近の状態 (2026-05-19 セッション 50 — cursor pill 即時化 + ✓ 緑 glow + 設計議論 3 件 + B-#25 ドロップ)
+
+session 49 終了直前 user 4 要望 (= B-#24 / B-#25 / I-10 / I-08) を CURRENT_GOAL に永続化した状態で開始。 user 「おすすめ順で OK」 で B-#24 → 設計議論 → B-#25 の流れで密度高く消化。
+
+**ship 済 (= prod 反映済、 user 実機 OK)**:
+- **B-#24 cursor pill 即時化** (= 体感遅延 100-300ms → ~10ms): site-specific .js 5 file に `window.postMessage({source:'booklage-extension', type:'pill-saving'}, '*')` を追加、 content.js の既存 window message listener を拡張して即 `setState('saving')` 発火。 加えて 8 秒の stuck-saving safety timeout を content.js に追加 (= 即時 pill 発火後に background が auto-save トグル OFF で drop する edge case の safety net)
+- **cursor pill ✓ icon 緑化 + 3 段 drop-shadow glow halo** (= AllMarks success green visual language 確立): stroke `rgba(74, 222, 128, 0.98)` + `filter: drop-shadow(0 0 3px / 8px / 16px)` 3 層 halo。 既存 error 赤 (`#ff5a5a`) と semantic 揃って成功 緑 / spinner 白 の trio で意味体系完成。 この 3 段 glow recipe は AllMarks 全体で再利用予定 (= 将来の TUNE preset LED 等)
+- **B-#25 ドロップ + 死にコード除去**: 確認の結果 `autoOpenPip` トグルは UI + storage 書き込みは存在、 読み出して PiP を開く logic は完全に未実装。 Chrome の Document PiP API は user gesture 必須なので「タブ訪問で自動 open」 は技術的に不可能、 「1 click で open」 にしても POP OUT ボタン 1 click と変わらず価値ゼロ → user 判断でドロップ + options.html / .js から該当 UI 即時 cleanup
+
+**設計記録 (= IDEAS.md に永続化、 実装は後)**:
+- **楽しい削除フロー + タグ一括削除との連携** (= unlike 自動削除案を user 不採用にした代替): foundation 柱 2 (= manual tag schema) と統合する fun deletion sprint、 5 種類のアニメ案 (= swipe / 紙吹雪 / 音波 / disintegrate / 吸い込み) を [docs/private/IDEAS.md](../docs/private/IDEAS.md) に記録
+- **TUNE drawer 物理ボタン preset (= IDEAS.md J section)**: Yamaha AG03 mixer の reference 画像で user 提案、 3 ボタン案 / 5 ボタン案 + 物理ボタン feel + LED dot + 集中 sprint (= H + J + I-09 + I-10 を「音波テーマ世界観確立 sprint」) で polish 方針確定
+- **outerFrame / canvas / ThemeLayer 3 層構造の説明** (= user の SF軍事テーマ質問対応): 「マージン band じゃなくて 1 枚の paintable div、 ユニコーンガンダム的テーマで 3 階層の奥行き作れる」 確認、 IDEAS.md 保存は今回パス
+
+**変更 file**: 9 file
+- [extension/content.js](../extension/content.js): window message listener 拡張 + stuck-saving safety timer
+- [extension/content.css](../extension/content.css): `.check` の stroke 緑化 + 3 段 drop-shadow halo
+- [extension/twitter.js](../extension/twitter.js), [youtube.js](../extension/youtube.js), [note.js](../extension/note.js), [vimeo.js](../extension/vimeo.js), [soundcloud.js](../extension/soundcloud.js): postMessage 1 行追加
+- [extension/options.html](../extension/options.html): 「Auto-open PiP on AllMarks tab」 section 削除
+- [extension/options.js](../extension/options.js): `autoOpenPip` の DEFAULTS / load / change listener 削除
+
+**新規 file**: なし
+
+**削除 file**: なし (= options.html / .js から該当 section 削除のみ)
+
+**deploy 回数**: 4 回 (= 即時化、 緑 ✓ 追加、 glow 強化、 cleanup)
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 50 セクション
+
+**次セッション (= 51) の goal**: B-#23 Vimeo / SoundCloud Lightbox 再生対応 (= user 体験の根幹) を最優先。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
+
+---
+
+### 旧情報 (2026-05-18 セッション 49 — 配信先を **5 サイト 8 ボタン** に絞り込み、 user 実機検証で確定した動く範囲のみ維持)
 
 session 49 後半、 user 実機検証で 11 サイト中 4 ボタンのみ ○、 7 ボタン ×、 7 ボタン未検証 (= アカウントなし) 判明。 user 判断「動かないものを並べるより品質担保」 で **大幅 scope 削減**:
 
@@ -264,14 +297,6 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 ## 🐛 未対応バグ・改善 (active backlog)
 
 完了済バグは TODO_COMPLETED.md に移動済。 ここはアクティブのみ。
-
-### 拡張機能 後続 task (= session 49 終了時 user 要望、 永続化)
-
-- **B-#24 拡張機能経由保存の cursor pill 速度改善** (= user 報告「ボタン押してすぐに反応しない、 ピル出るのが遅い」) — 現状 click → background → tab 経由で 100-300ms 遅延。 修正案: site-specific .js (= twitter / youtube / note / vimeo / soundcloud) から `window.postMessage({source:'booklage-extension', type:'pill-saving'}, '*')` で content.js に即時通知 → click 検知後 ~10ms 以内に pill 表示。 5 file + content.js に window.postMessage listener 追加、 工数小 (= 10 分)
-- **B-#25 PiP 自動表示動作確認** (= user 質問「拡張入ってる時に PiP が自動で出るやつできない？」) — 実は既に [extension/options.html](../extension/options.html) に「Auto-open PiP on AllMarks tab」 トグル存在 + DEFAULTS で `autoOpenPip: false`。 実装が完了してるか動作確認していない。 次セッションで:
-  - 動作確認 → 動かないなら fix (= background.js or content.js で実装漏れ)
-  - 動くなら user に伝えてトグル ON にしてもらうだけ
-  - 参考 memory: `reference_document_pip_api_gotchas.md` (= resizeTo/moveTo 無視、 outerWidth lies、 preferInitialWindowPlacement 使用)
 
 ### 表示・サムネ系
 

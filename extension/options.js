@@ -10,7 +10,6 @@ const AUTO_SAVE_KEYS = [
   'autoSaveSoundCloudLike',
 ]
 const DEFAULTS = {
-  autoOpenPip: false,
   cursorPillFallbackPosition: 'cursor',
   autoSaveXLike: true,
   autoSaveXBookmark: true,
@@ -24,7 +23,6 @@ const DEFAULTS = {
 
 async function load() {
   const stored = await chrome.storage.sync.get(DEFAULTS)
-  $('autoOpenPip').checked = stored.autoOpenPip
   for (const key of AUTO_SAVE_KEYS) {
     $(key).checked = stored[key]
   }
@@ -33,10 +31,6 @@ async function load() {
   )
   if (pillPosInput) pillPosInput.checked = true
 }
-
-$('autoOpenPip').addEventListener('change', () => {
-  chrome.storage.sync.set({ autoOpenPip: $('autoOpenPip').checked })
-})
 
 for (const key of AUTO_SAVE_KEYS) {
   $(key).addEventListener('change', () => {
