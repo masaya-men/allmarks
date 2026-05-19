@@ -267,7 +267,12 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 ### 表示・サムネ系
 
-- **B-#22 長文文章 tweet の Lightbox 表示で冒頭欠落、 末尾部分だけ表示** (= session 49 user 報告) — 拡張機能経由 (= X いいね) で保存した長文 tweet を例: [https://x.com/yurinel0602/status/2056212099488235790](https://x.com/yurinel0602/status/2056212099488235790)。 ボードカードでは冒頭から長文表示されるが、 Lightbox を開くと **ツイート末尾部分だけ** が表示される。 ボードカード末尾「良...」 直後の文「いじゃん。 ファンが見たら...」 が Lightbox 内に表示される接合関係。 経路調査が必要 (= 拡張機能の twitter.js text 抽出か、 Lightbox の react-tweet 描画か、 backfill 経路か)。 user 補足「経路を話しただけ、 拡張が原因かどうかは未確定」
+- **B-#23 Vimeo / SoundCloud のボード / Lightbox 内 iframe 再生未対応** (= session 49 user 報告) — 保存したカードを開いても **サムネが大きくなるだけで再生できない**。 user 例: [https://vimeo.com/1188880707](https://vimeo.com/1188880707) と [https://soundcloud.com/nippamusic/sumn-serious-slizzy-mix](https://soundcloud.com/nippamusic/sumn-serious-slizzy-mix)。 両サイトとも公開動画 / トラックは login 不要で iframe embed 再生可能:
+   - Vimeo: `https://player.vimeo.com/video/{videoId}`
+   - SoundCloud: `https://w.soundcloud.com/player/?url={trackUrl}`
+   - AllMarks 本体の Lightbox component に Vimeo / SoundCloud detector + iframe embed を追加すべき
+   - 「保存しても再生できないなら意味ない」 = user 体験の根幹に効く問題
+- **B-#22 長文文章 tweet の Lightbox 表示で冒頭欠落、 末尾部分だけ表示 + 全文表示 enhancement** (= session 49 user 報告) — 拡張機能経由 (= X いいね) で保存した長文 tweet を例: [https://x.com/yurinel0602/status/2056212099488235790](https://x.com/yurinel0602/status/2056212099488235790)。 ボードカードでは冒頭から長文表示されるが、 Lightbox を開くと **ツイート末尾部分だけ** が表示される。 ボードカード末尾「良...」 直後の文「いじゃん。 ファンが見たら...」 が Lightbox 内に表示される接合関係。 経路調査が必要 (= 拡張機能の twitter.js text 抽出か、 Lightbox の react-tweet 描画か、 backfill 経路か)。 user 補足「経路を話しただけ、 拡張が原因かどうかは未確定」。 **enhancement**: 長文 tweet は Lightbox で全文表示できるべき (= user 要望「長文の時、 ライトボックスで全部見れた方が良いと思わない？」)、 bug fix と一緒に対応
 - **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
 - **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)
 - **Task 12: 全件再 check 設定 UI** — viewport revalidation で日常運用は OK だが、 ユーザーが 「いま全件チェック」 を 1 クリックで kick できる設定パネル。 設定パネル自体が未実装なので別 spec 立ち上げ要

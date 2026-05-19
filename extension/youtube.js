@@ -111,45 +111,7 @@ function getButtonKind(target) {
   return null
 }
 
-// Temporary diagnostic — dumps the clicked button + 2 ancestors so we can
-// find a language-neutral OFF-state signal for both Like and Watch Later.
-// Stripped in the next commit once the signal is found.
-function dumpAttrs(el) {
-  if (!el || !el.attributes) return null
-  const out = {}
-  for (let i = 0; i < el.attributes.length; i++) {
-    const a = el.attributes[i]
-    out[a.name] = a.value && a.value.length > 100 ? a.value.slice(0, 100) + '…' : a.value
-  }
-  return out
-}
-
 document.addEventListener('click', (event) => {
-  const btnDbg = event.target && event.target.closest
-    ? event.target.closest('button, [role="button"], a[role="button"], tp-yt-paper-checkbox, ytd-playlist-add-to-option-renderer, ytd-toggle-button-renderer')
-    : null
-  if (btnDbg) {
-    const text = (btnDbg.innerText || btnDbg.textContent || '').toLowerCase()
-    const labelDbg = (btnDbg.getAttribute('aria-label') || '').toLowerCase()
-    // Filter expanded for session 49 round 2: YouTube Like button on
-    // localised UIs writes domain-specific verbs (= 高評価 in ja, 좋아요 in
-    // ko, 喜欢 in zh, etc.) which the previous "いいね" filter missed.
-    // Watch later equivalents (= 後で見る in ja, 保存 in many locales) added
-    // so the dropdown menu items get dumped too.
-    if (/like|watch|後で見る|いいね|高評価|保存|좋아|좋아요|저장|喜欢|喜歡|稍后|稍後|保存|me\s*gusta|guardar|j['']aime|enregistrer|gefällt|speichern|piace|gostei|salvar/i.test(text + ' ' + labelDbg)) {
-      // JSON.stringify so Chrome's deferred-eval doesn't elide the attrs
-      // object when the user copies the console transcript out as text.
-      console.log('[allmarks-yt] ' + JSON.stringify({
-        tag: btnDbg.tagName,
-        attrs: dumpAttrs(btnDbg),
-        parentTag: btnDbg.parentElement && btnDbg.parentElement.tagName,
-        parentAttrs: dumpAttrs(btnDbg.parentElement),
-        grandparentTag: btnDbg.parentElement && btnDbg.parentElement.parentElement && btnDbg.parentElement.parentElement.tagName,
-        grandparentAttrs: btnDbg.parentElement ? dumpAttrs(btnDbg.parentElement.parentElement) : null,
-        text: (btnDbg.innerText || btnDbg.textContent || '').slice(0, 80),
-      }))
-    }
-  }
   const kind = getButtonKind(event.target)
   if (!kind) return
   const url = extractVideoUrl()
