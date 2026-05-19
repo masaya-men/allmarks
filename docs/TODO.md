@@ -20,7 +20,37 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-19 セッション 51 — B-#23 完遂 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダー + ScrollMeter 波形 glitch)
+### 直近の状態 (2026-05-19 セッション 52 — B-#22 完遂 + TextCard 透明グラス redesign + scroll-aware 全面化 + title backfill 開通)
+
+session 51 持ち越し 4 候補から user 「推奨どおり」 で B-#22 着手 → cleanTitle bug fix 完了 → user 発案で TextCard 全面 redesign (= 透明 + 縁グロー + scroll + 底フェード) に拡張 → 5 deploy + iterative ブレストで密度高く消化。
+
+**ship 済 (= prod 反映済、 user 実機 OK)**:
+- **B-#22 長文 tweet Lightbox bug fix**: cleanTitle の `/「([\s\S]+)」/` 過剰マッチを `/さん[::]\s*「(…)」/` に厳格化 → user-content 「」 の誤マッチ撲滅、 19 unit test 追加
+- **TextCard 全面 redesign**: 白/黒 destefanis variant 廃止、 透明 + 縁グロー (`linear-gradient border-box` + 32px box-shadow) + scroll-aware 底フェード (= 一番下まで scroll した時は fade が消えて last line 完全可読) + native scrollable に統一
+- **wheel scroll-chaining**: 板の InteractionLayer + Lightbox の window wheel listener が wheel を取り上げて card 内 scroll を奪う問題を、 card 側で「scroll 余地あり時のみ stopPropagation」 + Lightbox 側で「`[data-card-scroll]` element 上で defer」 の二段で解消
+- **font jump 解消**: Lightbox text-only tweet の `fakeBoardItem.title` を `meta?.text` → `item.title` に変更 (= 板と同じ source, 同じ typography, FLIP morph 無差)
+- **tweet-backfill に persistTitle 開通**: syndication API の `meta.text` を IDB title に上書き、 既存の長文 tweet も板を開いた瞬間に full text に更新される連動。 [TweetBackfillHooks](../lib/board/tweet-backfill.ts) を拡張、 [use-board-data](../lib/storage/use-board-data.ts) に idempotent な persistTitle callback、 [BoardRoot](../components/board/BoardRoot.tsx) で wire-up
+- **extension/twitter.js**: title の 80 文字 slice 撤廃、 新規保存 tweet は最初から full text + prefix。 cleanTitle が render 時に prefix を剥がす設計
+
+**glitch 試行 → 撤去**: session 中盤に ScrollMeter glitch-shift-a/b を TextCard 底辺に流用してみたが user 「グリッチが難しさの元」 で完全撤去。 「カード = 静かな透明グラス + 静かな底フェード」 で確定
+
+**変更 file** (9): clean-title.ts / TextCard.tsx / TextCard.module.css / Lightbox.tsx / BoardRoot.tsx / tweet-backfill.ts / use-board-data.ts / extension/twitter.js / tests/lib/clean-title.test.ts (新規)
+
+**deploy 回数**: 5
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 52 セクション
+
+**次セッション (= 53) の goal**: B-#22 落ち着いた、 残候補から:
+- 🟡 音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10 集中投下)
+- 🟡 multi-playback vision board card autoplay (= AllMarks core 差別化)
+- 🟡 (I-08) 拡張機能 floating ボタン (= 50 行、 軽い完結タスク)
+- 🐛 B-#3 重複 URL でサムネ等が出ない問題 (= 古い未解決)
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
+
+---
+
+### 旧情報 (2026-05-19 セッション 51 — B-#23 完遂 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダー + ScrollMeter 波形 glitch)
 
 session 50 が残した 4 候補から user が「おすすめどおり」 で B-#23 (= Vimeo / SoundCloud 再生対応) を選択。 着手 → SoundCloud 音量問題発覚 → 全 embed 共通 50% デフォルト + SoundCloud 自前スライダーへスコープ拡張 → そこから「ボード全体音量つまみ」 構想 (= IDEAS.md K) + ScrollMeter glitch 拡張 (= 4 段階 tuning) という流れで 1 session 7 deploy で密度高く消化。
 
@@ -323,7 +353,7 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 ### 表示・サムネ系
 
 - ~~**B-#23 Vimeo / SoundCloud Lightbox 再生未対応**~~ ✅ session 51 で完遂 (= 専用 Embed コンポーネント追加 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダーまで波及)
-- **B-#22 長文文章 tweet の Lightbox 表示で冒頭欠落、 末尾部分だけ表示 + 全文表示 enhancement** (= session 49 user 報告) — 拡張機能経由 (= X いいね) で保存した長文 tweet を例: [https://x.com/yurinel0602/status/2056212099488235790](https://x.com/yurinel0602/status/2056212099488235790)。 ボードカードでは冒頭から長文表示されるが、 Lightbox を開くと **ツイート末尾部分だけ** が表示される。 ボードカード末尾「良...」 直後の文「いじゃん。 ファンが見たら...」 が Lightbox 内に表示される接合関係。 経路調査が必要 (= 拡張機能の twitter.js text 抽出か、 Lightbox の react-tweet 描画か、 backfill 経路か)。 user 補足「経路を話しただけ、 拡張が原因かどうかは未確定」。 **enhancement**: 長文 tweet は Lightbox で全文表示できるべき (= user 要望「長文の時、 ライトボックスで全部見れた方が良いと思わない？」)、 bug fix と一緒に対応
+- ~~**B-#22 長文 tweet Lightbox 末尾だけ表示 bug + 全文表示 enhancement**~~ ✅ session 52 で完遂 (= cleanTitle 過剰マッチ修正 + TextCard 透明グラス redesign + scroll + persistTitle backfill 開通 + font jump 解消、 9 file 変更 / 5 deploy / 19 unit test 追加)
 - **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
 - **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)
 - **Task 12: 全件再 check 設定 UI** — viewport revalidation で日常運用は OK だが、 ユーザーが 「いま全件チェック」 を 1 クリックで kick できる設定パネル。 設定パネル自体が未実装なので別 spec 立ち上げ要

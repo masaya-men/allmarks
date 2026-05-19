@@ -14,6 +14,12 @@ export type TweetBackfillHooks = {
   readonly persistThumbnail: (bookmarkId: string, url: string, force: boolean) => Promise<void>
   readonly persistVideoFlag: (bookmarkId: string, hasVideo: boolean) => Promise<void>
   readonly persistMediaSlots: (bookmarkId: string, slots: readonly MediaSlot[]) => Promise<void>
+  /** Optional: replace the bookmark title with the full tweet body from
+   *  `meta.text`. The extension stores a truncated `userName: + slice(0,80) + …`
+   *  title; backfilling the full text lets the board card scroll through the
+   *  whole tweet body and lets the Lightbox card share the same content so
+   *  the FLIP open animation morphs identical typography on both sides. */
+  readonly persistTitle?: (bookmarkId: string, title: string) => Promise<void>
 }
 
 /** Fetch tweet meta once and write through to all three persisted fields.
@@ -62,6 +68,21 @@ export async function backfillTweetMeta(
   if (meta.mediaSlots && meta.mediaSlots.length > 0) {
     try {
       await hooks.persistMediaSlots(target.bookmarkId, meta.mediaSlots)
+    } catch {
+      /* swallow */
+    }
+  }
+  if (signal.aborted) return
+
+  // Title (B-#22 follow-up, session 52). Replace the extension's truncated
+  // title with the full tweet body so the board card + Lightbox card share
+  // identical text content (= same pickTitleTypography output, no font jump
+  // during the FLIP open animation) and the board card scroll surfaces the
+  // full text instead of stopping at the 80-char extension slice. Hook is
+  // optional so legacy callers (= unit tests) keep working without it.
+  if (hooks.persistTitle && meta.text) {
+    try {
+      await hooks.persistTitle(target.bookmarkId, meta.text)
     } catch {
       /* swallow */
     }

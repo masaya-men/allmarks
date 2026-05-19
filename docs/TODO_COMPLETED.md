@@ -3095,3 +3095,64 @@ user の TUNE chrome glitch (= session 43) を ScrollMeter にも展開する着
 - 🟡 **I-08 拡張機能 floating ボタン** = 50 行、 単独で完結する小タスク
 - 🟡 **multi-playback vision の board card autoplay 着手** = AllMarks core 差別化、 着手すれば K 項 (= ボード全体音量つまみ) も自動で必要になる連動関係
 
+
+
+## セッション 52 (2026-05-19) — B-#22 long tweet bug fix + 透明グラスカード redesign + scroll-aware 全面化
+
+session 51 で残した 4 候補 (B-#22 / 音波テーマ sprint / multi-playback / I-08) から user 「推奨どおり」 で B-#22 着手。 当初は cleanTitle bug fix + Lightbox 右パネル全文表示 enhancement で完結予定だったが、 user 発案で「TextCard 全部を透明 + 縁グロー + スクロール + フェード or グリッチ」 の大きな redesign に拡張。 iterative なブレスト → 実装 → user feedback → 再実装の cycle を 5 deploy 通して密度高く消化。
+
+**ship 済 (= prod 反映済、 user 実機 OK)**:
+
+- **B-#22 cleanTitle 過剰マッチ bug fix**: [lib/embed/clean-title.ts:23](../lib/embed/clean-title.ts#L23) の regex を `/「([\s\S]+)」/` → `/さん[::]\s*「([\s\S]+)」/` に厳格化。 X の OGP boilerplate (= "Xユーザーのほげさん: 「本文」 / X") のみマッチし、 tweet 本文中の「否定意見...考えようよ」 のような user-content 「」 は誤マッチしなくなった。 [tests/lib/clean-title.test.ts](../tests/lib/clean-title.test.ts) を新規作成、 19 件の unit test (= OGP boilerplate / user-content quote / prefix strip / full-width colon variant) すべて pass
+
+- **extension/[name]: prefix の strip ロジック追加**: 拡張機能 ([extension/twitter.js](../extension/twitter.js)) は title を `userName + ': ' + 本文` で組むので、 板カードに「ユライネル: マジで...」 と前置きが出てしまっていた。 cleanTitle に第 2 分岐 `/^([^:：\n]{1,50})(?::\s+|：\s*)/` を追加 (= ASCII colon は space 必須で URL port (`example.com:8080`) と区別、 全角 `：` は space optional)。 板カードから userName prefix が消えて Lightbox の左カードと一致
+
+- **TextCard 全面 redesign (= 白 / 黒 destefanis variant 廃止)**:
+  - 背景: `linear-gradient padding-box` (= 真っ黒の中身) + 135° の `linear-gradient border-box` (= 縁だけ光るグラスエッジ) の二層 background-clip 手法
+  - ホバー: `box-shadow` を強化 (32px → 48px) で「電源入った」 感
+  - 底フェード: `mask-image: linear-gradient(to bottom, black 0%, black 75%, transparent 100%)` で「...」 ELLIPSIS じゃなく文字が物理的に溶けて消える
+  - **scroll-aware mask**: `data-at-bottom='false'` の時だけ mask 適用 → 一番下まで scroll した時は fade が消えて last line を完全に読める (= user 「フェード掛かってるからもっとスクロールできないとちゃんと読めない」 を fix)
+  - 中の text: `overflow-y: auto` で wheel scroll 可能、 hairline scrollbar は hover で表示
+
+- **glitch 試行 → 撤去**: session 中盤、 ScrollMeter counter の RGB chromatic split (`glitch-shift-a/b` keyframes + orange `#ff9d3f` / cyan `#50c8ff` の ::before/::after ghost) を TextCard 底辺に流用してみたが、 user 「グリッチが難しさの元」 の判断で完全撤去。 「カード = 静かな透明グラス + 静か な底フェード」 で confirm
+
+- **wheel scroll-chaining 実装** (= 板でも Lightbox でも wheel が card 内 scroll を見つけて優先):
+  - **TextCard 側**: `onWheel` で `stopPropagation()` を「card がその方向に scroll 余地あり」 の時だけ条件付き発火 → board の `InteractionLayer.handleWheel` が wheel を取り上げて board pan に使ってしまう問題を解消
+  - **Lightbox 側**: window-level wheel listener ([Lightbox.tsx:749](../components/board/Lightbox.tsx#L749)) に「event.target.closest('[data-card-scroll]') が scroll 余地ありなら defer」 logic を追加 → カード上 wheel が card nav に消費される問題を解消
+  - card 端まで scroll しきると wheel は自然に親に bubble (= board pan / Lightbox nav) するので「スクロール端の使い分け」 が直感的
+
+- **font jump 解消**: Lightbox の text-only tweet 分岐 ([Lightbox.tsx:1523](../components/board/Lightbox.tsx#L1523)) の `fakeBoardItem.title` を `meta?.text` → `item.title` に変更。 板の TextCard と同じ source、 同じ `cleanTitle` 経由、 同じ `pickTitleTypography` 結果 → FLIP open animation 中に文字サイズが変わる jump が消える
+
+- **tweet-backfill に persistTitle hook 追加** (= 長文 tweet を板でも Lightbox でも scroll で読めるようにする本命): syndication API で取れた `meta.text` を IDB の bookmark.title に上書き保存。 [lib/board/tweet-backfill.ts](../lib/board/tweet-backfill.ts) に optional hook、 [lib/storage/use-board-data.ts](../lib/storage/use-board-data.ts) に persistTitle callback (= idempotent、 同じ値なら no-op で React re-render 抑制)、 [BoardRoot.tsx](../components/board/BoardRoot.tsx) で wire-up。 既存 tweet (= 拡張機能の 80 文字 slice で truncate された title) が次の board ページ open 時に backfill 経由で full text に更新される
+
+- **extension/twitter.js も full text 保存に変更**: `text.slice(0, 80) + '…'` の slice を撤廃して `userName + ': ' + 本文丸ごと`。 新規保存 tweet は backfill 待たずに最初から full text。 cleanTitle が render 時に prefix を剥がす設計と組み合わせて IDB は「prefix 付きの full text」 を保持、 表示は「prefix なしの full text」
+
+**変更 file (9)**:
+- [lib/embed/clean-title.ts](../lib/embed/clean-title.ts) — regex 厳格化 (boilerplate + prefix-strip の 2 分岐)
+- [components/board/cards/TextCard.tsx](../components/board/cards/TextCard.tsx) — overflow / at-bottom 検出 + wheel handler + data-card-scroll 属性
+- [components/board/cards/TextCard.module.css](../components/board/cards/TextCard.module.css) — 透明 + 縁グロー + scroll-aware mask、 glitch 関連 CSS / keyframes 全削除
+- [components/board/Lightbox.tsx](../components/board/Lightbox.tsx) — wheel handler defer + cleanTweetTitle 厳格化 + LargeTextCardScaler に item.title 使用 + 全 tweet で body 非表示
+- [components/board/BoardRoot.tsx](../components/board/BoardRoot.tsx) — persistTitle を useBoardData から destructure + tweet backfill hooks に渡す
+- [lib/board/tweet-backfill.ts](../lib/board/tweet-backfill.ts) — TweetBackfillHooks に optional persistTitle 追加 + meta.text が取れたら呼び出し
+- [lib/storage/use-board-data.ts](../lib/storage/use-board-data.ts) — persistTitle callback 実装 (= idempotent、 IDB put + setItems)
+- [extension/twitter.js](../extension/twitter.js) — title 80 文字 slice を full text に変更
+- [tests/lib/clean-title.test.ts](../tests/lib/clean-title.test.ts) (新規) — 19 件の unit test
+
+**deploy 回数**: 5
+
+**永続化した教訓 (= memory に書く候補)**:
+- 「板 → Lightbox 拡大 → 戻る」 の FLIP animation は user の不可侵制約。 board と Lightbox で card の content / typography を変える変更は ALL JUMP を生む → Lightbox は item.title を board と同じ source として食わせるのが唯一の正解
+- scroll container が React tree の中で親 wheel handler (= board の InteractionLayer、 Lightbox の window listener) に囲まれてる時、 native overflow:auto だけでは wheel が親に消費される。 「card がその方向に scroll 余地あり」 を判定して条件付き `stopPropagation()` する必要がある
+- IDB title backfill 経路を syndication API meta で開通。 今後 tweet 関連の新フィールド (= translation / transcript 等) を IDB に書きたい時は同じ TweetBackfillHooks を optional で拡張するパターンで足せる
+
+**carryover**:
+- cleanTitle prefix-strip の false-positive edge case (= meta.text が偶然「田中さん: こんにちは」 で始まると prefix と誤判定して strip する) は稀だが理論上あり、 v1 受容
+- 既存の長文 tweet は backfill 走った瞬間に title の長さが変わるので `pickTitleTypography` が再計算され、 font mode が一回 flip する (= 一時的なちらつき)。 受容
+
+**user 発案で session 中に重ね合わせた知見** (= 都度の design 議論で確定した方向性、 永続化しないとロスする):
+- TextCard は theme system の hook 受け口になる (= デフォルト = 静かなフェード、 将来の音波テーマで底辺グリッチ追加、 別テーマで blur や別 motif の差し替え可能、 CSS 変数 `--card-decay-mode` 設計案あり)
+- LiquidGlass / glassmorphism はユーザー好み (= memory `feedback_glassmorphism.md` 既存)。 縁グローの「B-medium」 = `linear-gradient` border-box + 32px box-shadow が AllMarks の「グラスカード」 規範になる
+- 「カードがそのまま大きくなる」 FLIP の理解 = LargeTextCardScaler の zoom 方式は維持、 アニメーション側はもう触らない
+
+詳細 commit: 末尾。
+

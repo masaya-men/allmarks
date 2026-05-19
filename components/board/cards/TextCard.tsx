@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type WheelEvent as ReactWheelEvent } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import { getFaviconUrl, hostnameFromUrl } from '@/lib/embed/favicon'
@@ -19,9 +19,7 @@ type Props = {
   readonly displayMode: DisplayMode
   /** Session 36: Lightbox の `.media` (LargeTextCardScaler) では URL 行を非表示にして
    *  title だけが伸び伸び拡大される (= session 35 で確定した「テキストカードがそのまま拡大」
-   *  の核心仕様)。 board の通常描画では omitMeta は付けない。
-   *  なお swap 時の title font ジャンプ対策として、 アニメ clone 側でも metaTop/
-   *  metaBottom 要素を DOM strip して同じ layout を作る (= wrapCloneWithScaleHost)。 */
+   *  の核心仕様)。 board の通常描画では omitMeta は付けない。 */
   readonly omitMeta?: boolean
 }
 
@@ -43,17 +41,9 @@ export function TextCard({
   const title = cleanTitle(rawTitle, item.url)
   const typography = pickTitleTypography({ title, cardWidth, cardHeight })
 
-  // Deterministic color variant from cardId. Locked at card creation time —
-  // the same cardId always resolves to the same variant across sessions.
   const colorVariant = useMemo(() => pickTextCardColor(item.cardId), [item.cardId])
 
-  // Resolve the visible line count via pretext measurement. When the title's
-  // natural height would exceed the 9:16 ceiling, `maxLines` is clamped and
-  // `clamped` flips to true — the title then renders with -webkit-line-clamp
-  // ellipsis truncation. pretext is synchronous (~1ms typical) so we run it
-  // during render and treat the SSR null branch as "use typography defaults."
   const layoutResult = measureTextCardLayout({ title, cardWidth, typography })
-  const displayMaxLines = layoutResult?.maxLines ?? typography.maxLines
 
   const lastMeasuredKeyRef = useRef<string>('')
   useEffect(() => {
@@ -69,10 +59,59 @@ export function TextCard({
     void persistMeasuredAspect?.(item.cardId, aspect)
   }, [item.cardId, item.bookmarkId, item.aspectRatio, title, cardWidth, typography, layoutResult, persistMeasuredAspect, reportIntrinsicHeight])
 
+  // Overflow detection — mask + scroll only kick in when title overflows the
+  // card vertically. Short titles render as plain text with no decoration.
+  const titleScrollRef = useRef<HTMLDivElement>(null)
+  const [hasOverflow, setHasOverflow] = useState<boolean>(false)
+  // `atBottom` controls the fade mask — we hide the fade when the user has
+  // scrolled to the end so the last line of text is fully legible (without
+  // this, the bottom 30% gradient permanently veiled the last line).
+  const [atBottom, setAtBottom] = useState<boolean>(false)
+
+  const updateScrollState = useCallback((): void => {
+    const el = titleScrollRef.current
+    if (!el) return
+    const overflow = el.scrollHeight > el.clientHeight + 1
+    setHasOverflow(overflow)
+    if (!overflow) {
+      setAtBottom(false)
+      return
+    }
+    // 2px tolerance — Chromium sub-pixel rounding makes "exactly at bottom"
+    // land at scrollTop + clientHeight slightly less than scrollHeight.
+    setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 2)
+  }, [])
+
+  useEffect(() => {
+    updateScrollState()
+    const el = titleScrollRef.current
+    if (!el) return
+    const observer = new ResizeObserver(updateScrollState)
+    observer.observe(el)
+    return (): void => observer.disconnect()
+  }, [title, cardWidth, cardHeight, typography.fontSize, typography.lineHeight, updateScrollState])
+
+  // Wheel scroll-chaining: when the card has room to scroll in the wheel
+  // direction, eat the event so the surrounding InteractionLayer (board)
+  // and Lightbox window-level handlers don't steal it for board pan / nav.
+  // When the card is at its scroll edge, let the wheel bubble normally so
+  // board pan / nav still feel responsive.
+  const handleCardWheel = useCallback((e: ReactWheelEvent<HTMLDivElement>): void => {
+    if (!hasOverflow) return
+    const el = titleScrollRef.current
+    if (!el) return
+    const dy = e.deltaY
+    if (dy === 0) return
+    const atTop = el.scrollTop <= 0
+    const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+    if ((dy > 0 && !atEnd) || (dy < 0 && !atTop)) {
+      e.stopPropagation()
+    }
+  }, [hasOverflow])
+
   const titleStyle: CSSProperties = {
     fontSize: `${typography.fontSize}px`,
     lineHeight: `${typography.lineHeight}px`,
-    WebkitLineClamp: displayMaxLines,
   }
 
   return (
@@ -84,8 +123,18 @@ export function TextCard({
         </div>
       )}
 
-      <div className={styles.title} style={titleStyle}>
-        {title}
+      <div
+        ref={titleScrollRef}
+        className={styles.titleScroll}
+        data-overflow={hasOverflow ? 'true' : 'false'}
+        data-at-bottom={atBottom ? 'true' : 'false'}
+        data-card-scroll="true"
+        onScroll={updateScrollState}
+        onWheel={handleCardWheel}
+      >
+        <div className={styles.titleInner} style={titleStyle}>
+          {title}
+        </div>
       </div>
 
       {faviconUrl && typography.mode === 'headline' && !omitMeta && (

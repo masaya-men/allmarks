@@ -157,6 +157,12 @@ export function useBoardData(): {
    *  already what we'd write (avoids a setItems re-render storm).
    */
   persistVideoFlag: (bookmarkId: string, hasVideo: boolean) => Promise<void>
+  /** Replace the bookmark.title field. Used by the tweet syndication backfill
+   *  to upgrade the extension's truncated `userName + ': ' + slice(0,80)` title
+   *  to the full tweet body from `meta.text`, so the board card + Lightbox
+   *  card scroll on the same content (= matching font, no FLIP-time jump).
+   *  No-op when the title is already the same string. */
+  persistTitle: (bookmarkId: string, title: string) => Promise<void>
   /** Persist the multi-image photo URL array for a bookmark. Pass an empty
    *  array to clear back to single-image. I-07 Phase 1. */
   persistPhotos: (bookmarkId: string, photos: readonly string[]) => Promise<void>
@@ -405,6 +411,24 @@ export function useBoardData(): {
     [],
   )
 
+  const persistTitle = useCallback(
+    async (bookmarkId: string, title: string): Promise<void> => {
+      const db = dbRef.current
+      if (!db || !bookmarkId) return
+      if (!title) return
+      const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
+      if (!existing) return
+      if (existing.title === title) return
+      await db.put('bookmarks', { ...existing, title })
+      setItems((prev) =>
+        prev.map((it) =>
+          it.bookmarkId === bookmarkId ? { ...it, title } : it,
+        ),
+      )
+    },
+    [],
+  )
+
   const persistPhotos = useCallback(
     async (bookmarkId: string, photos: readonly string[]): Promise<void> => {
       const db = dbRef.current
@@ -579,6 +603,7 @@ export function useBoardData(): {
     persistMeasuredAspect,
     persistThumbnail,
     persistVideoFlag,
+    persistTitle,
     persistPhotos,
     persistMediaSlots,
     persistTags,

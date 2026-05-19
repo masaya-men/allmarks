@@ -57,8 +57,14 @@ function extractTweetOgp(article, url) {
     const ampImg = article.querySelector('img[src*="amplify_video_thumb"], img[src*="ext_tw_video_thumb"]')
     if (ampImg) image = ampImg.getAttribute('src') || ''
   }
-  const head = text.length > 80 ? text.slice(0, 80) + '…' : text
-  const title = userName && head ? userName + ': ' + head : (head || userName || url)
+  // Session 52 (B-#22 follow-up): save the full tweet body in title so the
+  // board card scroll surfaces the entire content. The "userName: " prefix
+  // is stripped at render time by `cleanTitle` (lib/embed/clean-title.ts)
+  // for X URLs, so the user-visible title is the raw body. For existing
+  // bookmarks saved before this change, the syndication backfill
+  // (lib/board/tweet-backfill.ts → persistTitle) upgrades the truncated
+  // title to the full text after the first meta fetch.
+  const title = userName && text ? userName + ': ' + text : (text || userName || url)
   return {
     url,
     title,

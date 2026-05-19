@@ -1,3 +1,10 @@
+/* Session 52 (B-#22 follow-up) — transparent + B-medium glow card with
+   scrollable body. The earlier RGB chromatic glitch on the bottom edge
+   was removed (user request: "グリッチが難しさの元") so the card is now
+   a clean glass surface: transparent fill, iridescent edge gradient,
+   subtle bottom fade indicating overflow, and native scroll inside the
+   card when content overflows. */
+
 .textCard {
   position: relative;
   width: 100%;
@@ -7,17 +14,31 @@
   border-radius: var(--card-radius);
   overflow: hidden;
   padding: 20px 22px;
+  color: rgba(255, 255, 255, 0.92);
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)) padding-box,
+    linear-gradient(135deg,
+      rgba(255, 255, 255, 0.25),
+      rgba(255, 255, 255, 0.05) 30%,
+      rgba(255, 255, 255, 0.05) 70%,
+      rgba(255, 255, 255, 0.25)) border-box;
+  border: 1px solid transparent;
+  box-shadow:
+    0 0 32px rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  transition: box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Color variants — session 31. Two patterns are assigned deterministically
- * by cardId hash so the same card keeps the same look between sessions.
- * Off-black (#0a0a0a) sits ~4% above the board's pure-black background so the
- * card edge stays visible without losing the destefanis-system depth. */
-.textCard.white {
-  background: var(--card-white);
+/* Color variants kept as no-op aliases so existing JSX still compiles. */
+.white,
+.black {
+  /* unified visual — variant labels reserved for future theme work */
 }
-.textCard.black {
-  background: #0a0a0a;
+
+.textCard:hover {
+  box-shadow:
+    0 0 48px rgba(255, 255, 255, 0.10),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .metaTop,
@@ -27,15 +48,10 @@
   gap: 8px;
   font-size: 12px;
   letter-spacing: 0.01em;
-}
-
-.textCard.white .metaTop,
-.textCard.white .metaBottom {
-  color: rgba(0, 0, 0, 0.55);
-}
-.textCard.black .metaTop,
-.textCard.black .metaBottom {
   color: rgba(255, 255, 255, 0.55);
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
 }
 
 .metaTop {
@@ -53,14 +69,8 @@
   border-radius: 3px;
   user-select: none;
   -webkit-user-drag: none;
-}
-
-/* Black variant: favicons published on white backgrounds clash with the
- * dark card. Surround with a soft tint and tone down the saturation so it
- * reads as a quiet inline mark rather than a popping color block. */
-.textCard.black .favicon {
   background: rgba(255, 255, 255, 0.08);
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
 .domain {
@@ -69,40 +79,76 @@
   text-overflow: ellipsis;
 }
 
-.title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* Scrollable title area — fills remaining vertical space, scrolls
+   internally when title overflows. */
+.titleScroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Hide native scrollbar by default — show on hover. */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.18s ease;
+}
+.titleScroll:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+.titleScroll::-webkit-scrollbar {
+  width: 4px;
+}
+.titleScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.titleScroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.18s ease;
+}
+.titleScroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Bottom fade — replaces the "..." ellipsis. Anchored to the SCROLL
+   VIEWPORT, so it stays at the bottom of the visible area regardless
+   of scroll position. Disabled when scrolled to the end so the last
+   line is fully readable. */
+.titleScroll[data-overflow='true'][data-at-bottom='false'] {
+  -webkit-mask-image: linear-gradient(to bottom,
+    black 0%,
+    black 75%,
+    rgba(0, 0, 0, 0.5) 90%,
+    transparent 100%);
+          mask-image: linear-gradient(to bottom,
+    black 0%,
+    black 75%,
+    rgba(0, 0, 0, 0.5) 90%,
+    transparent 100%);
+}
+
+/* Scrolls with the container's content; inherits font properties from
+   inline `style` so `.titleText` doesn't need to redeclare them. */
+.titleInner {
+  position: relative;
   word-break: break-word;
+  white-space: pre-wrap;
+  color: rgba(255, 255, 255, 0.92);
 }
 
-.textCard.white .title {
-  color: #0a0a0a;
-}
-.textCard.black .title {
-  color: #fafafa;
-}
-
-/* Headline: large display, takes most of the card */
-.headline .title {
+/* Typography variants. */
+.headline .titleInner {
   font-family: var(--font-sans);
   font-weight: 700;
   letter-spacing: -0.02em;
-  flex: 1;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  align-items: flex-start;
 }
 
-/* Editorial: regular sans, multi-line */
-.editorial .title {
+.editorial .titleInner {
   font-family: var(--font-sans);
   font-weight: 500;
   letter-spacing: -0.01em;
 }
 
-/* Index: monospace small, many lines */
-.index .title {
+.index .titleInner {
   font-family: var(--font-mono);
   font-weight: 400;
 }

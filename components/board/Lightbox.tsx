@@ -753,6 +753,23 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       // lightbox. Without this guard the wheel handler would invoke
       // nav.onNav() and a flash of next/prev card animation slips in.
       if (closingRef.current) return
+      // Defer to in-card scroll when the wheel originates over a scrollable
+      // card (= TextCard's `[data-card-scroll]` element) that still has room
+      // to scroll in the wheel direction. Without this, the window-level
+      // handler would consume every wheel as nav, making it impossible to
+      // scroll long text-only tweet bodies inside the lightbox card.
+      const target = e.target as Element | null
+      if (target) {
+        const scroller = target.closest<HTMLElement>('[data-card-scroll="true"]')
+        if (scroller) {
+          const dyRaw = e.deltaY
+          const atTop = scroller.scrollTop <= 0
+          const atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1
+          if ((dyRaw > 0 && !atEnd) || (dyRaw < 0 && !atTop)) {
+            return  // native scroll handles the wheel; no nav, no preventDefault
+          }
+        }
+      }
       const dx = e.deltaX
       const dy = e.deltaY
       const dominant = Math.abs(dx) > Math.abs(dy) ? dx : dy
@@ -1316,7 +1333,11 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
         </div>
         <div ref={textRef} className={styles.text}>
           {tweetId
-            ? <TweetText item={view} meta={tweetMeta} hideBody={isTweetTextOnly(tweetMeta, tweetSlots)} />
+            ? <TweetText
+                item={view}
+                meta={tweetMeta}
+                hideBody={shouldHideTweetBody(tweetMeta, tweetSlots)}
+              />
             : <DefaultText item={view} host={host} />}
         </div>
       </div>
@@ -1499,7 +1520,16 @@ function TweetMedia({
   // は profile pic / embedded card preview を photoUrl に入れて返すことがあるので、
   // photoUrl 真値の有無では判定せず、 hasPhoto / hasVideo フラグで text-only を確定する。
   if (isTweetTextOnly(meta, slots)) {
-    const text = meta?.text ?? cleanTweetTitle(item.title)
+    // Session 52 (B-#22 follow-up): use item.title (= the same source the
+    // board's TextCard renders) instead of meta.text. The board and the
+    // Lightbox both flow this through cleanTitle + pickTitleTypography, so
+    // identical input guarantees identical font / line-clamp output and
+    // the FLIP open animation morphs between two card visuals with the
+    // same typography (no font jump on open). When item.title is empty
+    // for some reason, fall back to meta.text or the cleaned title path
+    // for legacy data. Full-text legibility is delivered via the tweet
+    // backfill (= updates item.title with meta.text after fetch).
+    const text = item.title || meta?.text || cleanTweetTitle(item.title ?? '')
     const aspect = item.aspectRatio ?? TEXT_CARD_MIN_ASPECT
     const fakeBoardItem: BoardItem = {
       bookmarkId: item.bookmarkId ?? item.url,
@@ -1545,9 +1575,13 @@ function TweetMedia({
 /** X の OGP `og:title` は "Xユーザーの 〜 さん:「本文」 / X" のような
  *  boilerplate 付き format。 syndication API が meta.text を返さなかった時の
  *  fallback で item.title を素のまま表示すると boilerplate が出てしまうので、
- *  「」 内の本文だけ抜き出す。 match しない (= 旧 format 等) はそのまま返す。 */
+ *  「」 内の本文だけ抜き出す。 match しない (= 旧 format 等) はそのまま返す。
+ *
+ *  「」 マッチは `さん[:：]` 直後限定 (B-#22 regression fix)。 ユーザー本文中の
+ *  引用 「...」 を boilerplate 誤検知して冒頭・末尾を消す bug を防ぐ。 詳細は
+ *  `lib/embed/clean-title.ts` の同種 fix を参照。 */
 function cleanTweetTitle(rawTitle: string): string {
-  const m = rawTitle.match(/「([\s\S]+)」/)
+  const m = rawTitle.match(/さん[:：]\s*「([\s\S]+)」/)
   if (m) return m[1].trim()
   return rawTitle
 }
@@ -1562,6 +1596,21 @@ function isTweetTextOnly(meta: TweetMeta | null, slots: readonly MediaSlot[]): b
   if (slots.length > 0) return false
   if (meta?.hasVideo) return false
   if (meta?.hasPhoto) return false
+  return true
+}
+
+/** Right panel の tweet body を抑制するか。
+ *
+ *  Session 52 (B-#22 follow-up redesign): 全 tweet で body 非表示に統一。
+ *  左カラム (= text-only tweet なら LargeTextCardScaler、 media tweet なら画像 / 動画)
+ *  が「カード」、 右カラムは「著者 + 元ページボタン」 だけ、 という役割分担。
+ *  text-only tweet が長文の時は新しい透明カードの底フェード + ホバー RGB グリッチが
+ *  「もっと下にも続く」 シグナルになり、 ユーザーは元ページボタン → X 本家で続きを読む。
+ *
+ *  ※ 旧実装 (sessions 32, 51): 短文 text-only のみ body 非表示、 長文 / media 付きは body
+ *    表示で重複していた。 user 発案の新カード redesign では LEFT がそのまま「読む場所」 に
+ *    なるので RIGHT body は常に重複扱い → 完全廃止。 */
+function shouldHideTweetBody(_meta: TweetMeta | null, _slots: readonly MediaSlot[]): boolean {
   return true
 }
 
