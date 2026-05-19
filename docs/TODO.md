@@ -20,7 +20,29 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-19 セッション 50 — cursor pill 即時化 + ✓ 緑 glow + 設計議論 3 件 + B-#25 ドロップ)
+### 直近の状態 (2026-05-19 セッション 51 — B-#23 完遂 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダー + ScrollMeter 波形 glitch)
+
+session 50 が残した 4 候補から user が「おすすめどおり」 で B-#23 (= Vimeo / SoundCloud 再生対応) を選択。 着手 → SoundCloud 音量問題発覚 → 全 embed 共通 50% デフォルト + SoundCloud 自前スライダーへスコープ拡張 → そこから「ボード全体音量つまみ」 構想 (= IDEAS.md K) + ScrollMeter glitch 拡張 (= 4 段階 tuning) という流れで 1 session 7 deploy で密度高く消化。
+
+**ship 済 (= prod 反映済、 user 実機 OK)**:
+- **B-#23 Vimeo / SoundCloud Lightbox 再生対応**: URL 種別判定に 2 種類追加 + `extractVimeoId()` 関数 + `VimeoEmbed` (= 16:9) / `SoundCloudEmbed` (= 1:1 visual) 2 コンポーネント新設 + ShareCardType 拡張。 SoundCloud は iframe `allow` 属性を YouTube と同じ 7 属性集合に拡張で「再生押せるけど音出ない」 問題解決 (= encrypted-media が必要だった)
+- **全 embed 共通デフォルト音量 50% スプリント**: `lib/embed/default-volume.ts` を立ち上げ (= localStorage + React hook + カスタムイベント同期)、 SoundCloud (= Widget API + Twitter 風自前スライダー右下 overlay) + YouTube (= Player API postMessage) + Vimeo (= Player API postMessage) + Twitter X 動画 (= HTML5 video ref) + TikTok Tier 1 (= 同上) すべてに 50% デフォルト + user 調整時 cross-card 同期。 TikTok Tier 2 (= iframe) は外部 API 制御不可で対象外
+- **ScrollMeter 波形 glitch 拡張**: counter glitch (= session 43 既存) を維持しつつ、 波形 (= 150 tick) にも 720ms burst パターン (= 10% drop + 0.40-1.65x mult) を 4 トリガー (= track hover / counter hover / click / Lightbox open-close) で連動。 何もしてない時は完全 calm sinusoid 維持、 user の「常時暴れ」 試行は revert (= うるさかった)、 最終形は「触った瞬間だけ短く暴れる」 で確定
+
+**設計記録 (= IDEAS.md に永続化)**:
+- **K section 新規**: ボード全体音量ロータリーノブ — オーディオミキサー POT 風 + 円弧 LED 列で現在値が光る + 既存 `defaultVolume` global state に直結。 multi-playback vision sprint と同時 or 直後着手、 詳細仕様は [docs/private/IDEAS.md](../docs/private/IDEAS.md) K 項 (= 配置 4 案 + 操作 7 種類 + 工数 ~380 行)
+
+**変更 file** (12): 新規 3 (`lib/embed/default-volume.ts`、 `lib/embed/soundcloud-widget.ts`、 `tests/lib/default-volume.test.ts`)、 変更 9 ([Lightbox.tsx](../components/board/Lightbox.tsx) / [Lightbox.module.css](../components/board/Lightbox.module.css) / [ScrollMeter.tsx](../components/board/ScrollMeter.tsx) / [ScrollMeter.module.css](../components/board/ScrollMeter.module.css) / [url.ts](../lib/utils/url.ts) / [aspect-ratio.ts](../lib/board/aspect-ratio.ts) / [share/types.ts](../lib/share/types.ts) / [url.test.ts](../tests/lib/url.test.ts) / [TODO.md](./TODO.md))
+
+**deploy 回数**: 7
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 51 セクション
+
+**次セッション (= 52) の goal**: B-#22 (= 長文 tweet Lightbox 末尾だけ表示 bug + 全文表示 enhancement) が最有力。 または音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10) の集中投下。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) 参照
+
+---
+
+### 旧情報 (2026-05-19 セッション 50 — cursor pill 即時化 + ✓ 緑 glow + 設計議論 3 件 + B-#25 ドロップ)
 
 session 49 終了直前 user 4 要望 (= B-#24 / B-#25 / I-10 / I-08) を CURRENT_GOAL に永続化した状態で開始。 user 「おすすめ順で OK」 で B-#24 → 設計議論 → B-#25 の流れで密度高く消化。
 
@@ -300,11 +322,7 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 ### 表示・サムネ系
 
-- **B-#23 Vimeo / SoundCloud のボード / Lightbox 内 iframe 再生未対応** (= session 49 user 報告) — 保存したカードを開いても **サムネが大きくなるだけで再生できない**。 user 例: [https://vimeo.com/1188880707](https://vimeo.com/1188880707) と [https://soundcloud.com/nippamusic/sumn-serious-slizzy-mix](https://soundcloud.com/nippamusic/sumn-serious-slizzy-mix)。 両サイトとも公開動画 / トラックは login 不要で iframe embed 再生可能:
-   - Vimeo: `https://player.vimeo.com/video/{videoId}`
-   - SoundCloud: `https://w.soundcloud.com/player/?url={trackUrl}`
-   - AllMarks 本体の Lightbox component に Vimeo / SoundCloud detector + iframe embed を追加すべき
-   - 「保存しても再生できないなら意味ない」 = user 体験の根幹に効く問題
+- ~~**B-#23 Vimeo / SoundCloud Lightbox 再生未対応**~~ ✅ session 51 で完遂 (= 専用 Embed コンポーネント追加 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダーまで波及)
 - **B-#22 長文文章 tweet の Lightbox 表示で冒頭欠落、 末尾部分だけ表示 + 全文表示 enhancement** (= session 49 user 報告) — 拡張機能経由 (= X いいね) で保存した長文 tweet を例: [https://x.com/yurinel0602/status/2056212099488235790](https://x.com/yurinel0602/status/2056212099488235790)。 ボードカードでは冒頭から長文表示されるが、 Lightbox を開くと **ツイート末尾部分だけ** が表示される。 ボードカード末尾「良...」 直後の文「いじゃん。 ファンが見たら...」 が Lightbox 内に表示される接合関係。 経路調査が必要 (= 拡張機能の twitter.js text 抽出か、 Lightbox の react-tweet 描画か、 backfill 経路か)。 user 補足「経路を話しただけ、 拡張が原因かどうかは未確定」。 **enhancement**: 長文 tweet は Lightbox で全文表示できるべき (= user 要望「長文の時、 ライトボックスで全部見れた方が良いと思わない？」)、 bug fix と一緒に対応
 - **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
 - **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)
@@ -377,6 +395,7 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 - PiP 内広告
 - SNS Share ボタン連携 (X / YouTube)
 - ブラウザ完結 AI 自動タグ付け
+- **ボード全体音量ロータリーノブ (= IDEAS.md K section、 session 51 user 発案)** — multi-playback vision で同時再生が立ち上がった瞬間に必要になる「ボード上の全カード音量を一括変更するつまみ」。 オーディオミキサー POT 風 + 円弧 LED 列で現在値が光る、 既存 `defaultVolume` global state (= session 51 で立ち上げ済) に直結。 multi-playback sprint と同時 or 直後に着手
 - ✅ 複数画像 / 動画ホバー切替 (mediaSlots 実装中、 セッション 17 deploy 済)
 
 ---

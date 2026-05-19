@@ -13,6 +13,7 @@ export type AspectRatioSource =
   | { type: 'instagram-reels' }
   | { type: 'tweet'; hasImage: boolean; textLength: number; ogImageRatio?: number }
   | { type: 'pinterest' }
+  | { type: 'vimeo' }
   | { type: 'soundcloud' | 'spotify' }
   | { type: 'image'; intrinsicRatio?: number }
   | { type: 'generic'; ogImageRatio?: number }
@@ -39,6 +40,8 @@ export function estimateAspectRatio(source: AspectRatioSource): number {
       return 3 / 4
     case 'pinterest':
       return 2 / 3
+    case 'vimeo':
+      return 16 / 9
     case 'soundcloud':
     case 'spotify':
       return 1
@@ -89,7 +92,8 @@ export function detectAspectRatioSource(input: DetectInput): AspectRatioSource {
 
   if (PINTEREST_RE.test(url)) return { type: 'pinterest' }
 
-  if (/soundcloud\.com/i.test(url)) return { type: 'soundcloud' }
+  if (urlType === 'vimeo') return { type: 'vimeo' }
+  if (urlType === 'soundcloud') return { type: 'soundcloud' }
   if (/open\.spotify\.com/i.test(url)) return { type: 'spotify' }
 
   if (IMAGE_URL_RE.test(url)) {

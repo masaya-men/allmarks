@@ -1,5 +1,5 @@
 /** Supported URL types for bookmark categorization */
-export type UrlType = 'tweet' | 'youtube' | 'tiktok' | 'instagram' | 'website'
+export type UrlType = 'tweet' | 'youtube' | 'tiktok' | 'instagram' | 'vimeo' | 'soundcloud' | 'website'
 
 /**
  * Validates whether the input string is a valid HTTP or HTTPS URL.
@@ -26,6 +26,8 @@ export function detectUrlType(url: string): UrlType {
   if (lower.includes('youtube.com') || lower.includes('youtu.be')) return 'youtube'
   if (lower.includes('tiktok.com')) return 'tiktok'
   if (lower.includes('instagram.com')) return 'instagram'
+  if (lower.includes('vimeo.com')) return 'vimeo'
+  if (lower.includes('soundcloud.com')) return 'soundcloud'
   return 'website'
 }
 
@@ -71,6 +73,24 @@ export function isYoutubeShorts(url: string): boolean {
 export function extractTikTokVideoId(url: string): string | null {
   const match = url.match(/\/video\/(\d+)/)
   return match?.[1] ?? null
+}
+
+/**
+ * Extracts the numeric video ID from a Vimeo URL.
+ * Supports vimeo.com/{id}, vimeo.com/channels/{name}/{id}, player.vimeo.com/video/{id}.
+ * Only public videos with numeric IDs are supported (private / login-walled videos
+ * won't play in an embedded iframe regardless).
+ * @param url - The Vimeo URL
+ * @returns The numeric video ID string, or null if not found
+ */
+export function extractVimeoId(url: string): string | null {
+  const playerMatch = url.match(/player\.vimeo\.com\/video\/(\d+)/)
+  if (playerMatch) return playerMatch[1]
+  const channelMatch = url.match(/vimeo\.com\/(?:channels\/[^/]+|groups\/[^/]+\/videos)\/(\d+)/)
+  if (channelMatch) return channelMatch[1]
+  const canonicalMatch = url.match(/vimeo\.com\/(\d+)/)
+  if (canonicalMatch) return canonicalMatch[1]
+  return null
 }
 
 /**

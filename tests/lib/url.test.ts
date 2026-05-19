@@ -5,6 +5,7 @@ import {
   extractTikTokVideoId,
   extractTweetId,
   extractUrlFromText,
+  extractVimeoId,
   isValidUrl,
 } from '@/lib/utils/url'
 
@@ -35,8 +36,32 @@ describe('detectUrlType', () => {
   it('detects Instagram', () => {
     expect(detectUrlType('https://www.instagram.com/p/abc123/')).toBe('instagram')
   })
+  it('detects Vimeo', () => {
+    expect(detectUrlType('https://vimeo.com/1188880707')).toBe('vimeo')
+    expect(detectUrlType('https://player.vimeo.com/video/1188880707')).toBe('vimeo')
+  })
+  it('detects SoundCloud', () => {
+    expect(detectUrlType('https://soundcloud.com/nippamusic/sumn-serious-slizzy-mix')).toBe('soundcloud')
+    expect(detectUrlType('https://m.soundcloud.com/artist/track')).toBe('soundcloud')
+  })
   it('defaults to website', () => {
     expect(detectUrlType('https://example.com')).toBe('website')
+  })
+})
+
+describe('extractVimeoId', () => {
+  it('extracts numeric ID from canonical Vimeo URL', () => {
+    expect(extractVimeoId('https://vimeo.com/1188880707')).toBe('1188880707')
+  })
+  it('extracts ID from player.vimeo.com URL', () => {
+    expect(extractVimeoId('https://player.vimeo.com/video/123456789')).toBe('123456789')
+  })
+  it('extracts ID from channel URL', () => {
+    expect(extractVimeoId('https://vimeo.com/channels/staffpicks/987654321')).toBe('987654321')
+  })
+  it('returns null for non-numeric Vimeo paths', () => {
+    expect(extractVimeoId('https://vimeo.com/user/profile')).toBeNull()
+    expect(extractVimeoId('https://example.com')).toBeNull()
   })
 })
 

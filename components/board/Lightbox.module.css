@@ -230,11 +230,121 @@
   border-radius: var(--lightbox-media-radius);
   overflow: hidden;
 }
+/* Square frame for SoundCloud's visual player. Width-led with a height
+   cap so it never blows past the shared media envelope on tall windows.
+   The 720px hard cap matches the 9:16 vertical embed's so a square track
+   doesn't tower over a vertical video in side-by-side comparisons. */
+.iframeWrap1x1 {
+  position: relative;
+  width: min(560px, 50vw, var(--lightbox-media-max-h), 720px);
+  aspect-ratio: 1 / 1;
+  max-height: var(--lightbox-media-max-h);
+  background: black;
+  border-radius: var(--lightbox-media-radius);
+  overflow: hidden;
+}
 .iframe {
   width: 100%;
   height: 100%;
   border: 0;
   display: block;
+}
+
+/* SoundCloud custom volume control overlay — auto-hides on mouse leave.
+   Positioned bottom-right of the square iframe wrap to match X (Twitter)
+   video controls, which is the placement most users expect. Visible only
+   when `data-visible='true'` (hover state); pointer-events are also gated
+   on visibility so a hidden pill doesn't intercept clicks meant for the
+   player chrome behind it. The dark pill is intentionally Twitter-flavored
+   rather than full AllMarks theming because the user prefers default-
+   looking media controls (the AllMarks visual language stays for chrome
+   like ScrollMeter and cursor pill where it's distinctive).
+   The control sits OUTSIDE the iframe (inside the wrap, sibling to the
+   iframe element) because the SoundCloud iframe is cross-origin and we
+   can't inject DOM into it; the wrap's overflow:hidden is fine — the
+   control stays within the wrap by design. */
+.volumeControl {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.62);
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+  pointer-events: none;
+}
+.volumeControl[data-visible='true'] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.volumeSlider {
+  /* Native range input. The fill on the left of the thumb is faked via
+     a linear-gradient driven by the inline --fill CSS var (= volume%) so
+     WebKit, which has no ::-webkit-slider-runnable-track progress side,
+     still shows a filled bar like Firefox does natively. */
+  appearance: none;
+  -webkit-appearance: none;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    white 0%,
+    white var(--fill, 50%),
+    rgba(255, 255, 255, 0.3) var(--fill, 50%),
+    rgba(255, 255, 255, 0.3) 100%
+  );
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+}
+.volumeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 0;
+}
+.volumeSlider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 0;
+}
+.volumeSlider:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 4px;
+}
+.volumeMute {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+.volumeMute svg {
+  width: 20px;
+  height: 20px;
+}
+.volumeMute:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Pre-play poster wrap used for every embed type (YouTube / TikTok /

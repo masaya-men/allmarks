@@ -81,20 +81,29 @@
 /* Session 43: glitch on counter hover — unified with chrome buttons
    (= same glitch-shift-a/b keyframes / 700ms / steps(7) / ±4-5px shift).
    Trigger zone は counter 自身 (= meterWrap は pointer-events: none で
-   click-through を維持しつつ、 counter にだけ hover を許可)。 */
-.meterCounter:hover::before {
+   click-through を維持しつつ、 counter にだけ hover を許可)。
+   Session 51: hover に加え `.glitchBurst` クラスでも同じ glitch を発火。
+   JS が click-jump 瞬間 / Lightbox open-close 瞬間に classList へ追加 →
+   force reflow → 700ms 後に外す、 で一回限りのパルス glitch になる。
+   常時 glitch (= うっとうしい) は避け、 インタラクションの「節目」 だけ
+   音波 motif と同調するスパイクで効かせる。 */
+.meterCounter:hover::before,
+.meterCounter.glitchBurst::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.meterCounter:hover::after {
+.meterCounter:hover::after,
+.meterCounter.glitchBurst::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .meterCounter:hover::before,
-  .meterCounter:hover::after {
+  .meterCounter:hover::after,
+  .meterCounter.glitchBurst::before,
+  .meterCounter.glitchBurst::after {
     animation: none;
     opacity: 0;
   }

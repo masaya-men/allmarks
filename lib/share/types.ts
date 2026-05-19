@@ -1,7 +1,7 @@
 // lib/share/types.ts
 
 export type ShareAspect = 'free' | '1:1' | '9:16' | '16:9'
-export type ShareCardType = 'tweet' | 'youtube' | 'tiktok' | 'instagram' | 'image' | 'website'
+export type ShareCardType = 'tweet' | 'youtube' | 'tiktok' | 'instagram' | 'vimeo' | 'soundcloud' | 'image' | 'website'
 export type ShareSize = 'S' | 'M' | 'L'
 
 /** Schema version (bumps require backward-compatible decoder). */

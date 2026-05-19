@@ -48,6 +48,15 @@ function nextScrambleDuration(): number {
     + Math.random() * (PERIODIC_SCRAMBLE_MAX_MS - PERIODIC_SCRAMBLE_MIN_MS)
 }
 
+/** Session 51: one-shot glitch burst duration. Triggered on (a) click /
+ *  drag-start on the meter track and (b) Lightbox open/close mode change.
+ *  Matches the 700ms `glitch-shift-a/b` keyframes in the CSS module so
+ *  the class can be cleared right at animation end. We don't run glitch
+ *  continuously — at-rest meter is intentionally calm — but firing it
+ *  at interaction inflection points (and sustaining while the pointer
+ *  hovers the meter) reinforces the sound-wave / mixer-rack theme. */
+const GLITCH_BURST_MS = 720
+
 /** Glide tween duration + easing for swell hand-off between modes AND for
  *  every swell change in lightbox mode (= card-to-card slide).
  *
@@ -243,6 +252,79 @@ export function ScrollMeter({
 
   const [hoverFrac, setHoverFrac] = useState<number | null>(null)
 
+  // ---- One-shot glitch burst (session 51) ----
+  // Add the .glitchBurst class to counterWrap, force a synchronous reflow so
+  // the animation truly restarts from frame 0 (without the reflow, adding the
+  // same class twice in quick succession is a no-op — the prior animation
+  // would just keep its in-progress timeline), then schedule a class removal
+  // after the keyframe duration. Single ref-driven timer ensures rapid bursts
+  // (= user clicks the meter twice in 200ms) restart cleanly rather than
+  // queueing up. Use raw DOM manipulation rather than React state because
+  // we don't want a render cycle in the middle of a 60Hz rAF loop.
+  //
+  // The waveform also gets a synchronous "audio static" effect for the same
+  // 720ms — each tick's per-frame height is multiplied by a fresh random
+  // factor, so the calm sinusoid flow degenerates into noise then snaps
+  // back. This is what makes the Lightbox open/close trigger actually
+  // *perceptible*: the counter alone is too small to register peripherally
+  // when the user's gaze is on the opening card, but the 360px-wide
+  // waveform shimmering across the screen-bottom catches the eye.
+  const glitchBurstTimerRef = useRef<number | null>(null)
+  const glitchBurstActiveRef = useRef<boolean>(false)
+  const fireGlitchBurst = useCallback((): void => {
+    const el = counterWrapRef.current
+    if (!el) return
+    el.classList.remove(styles.glitchBurst)
+    // Force reflow — read a layout property to flush the class removal.
+    void el.offsetWidth
+    el.classList.add(styles.glitchBurst)
+    glitchBurstActiveRef.current = true
+    if (glitchBurstTimerRef.current !== null) {
+      window.clearTimeout(glitchBurstTimerRef.current)
+    }
+    glitchBurstTimerRef.current = window.setTimeout(() => {
+      counterWrapRef.current?.classList.remove(styles.glitchBurst)
+      glitchBurstActiveRef.current = false
+      glitchBurstTimerRef.current = null
+    }, GLITCH_BURST_MS)
+  }, [])
+  // Cleanup the burst timer if the meter unmounts mid-pulse.
+  useEffect(() => {
+    return (): void => {
+      if (glitchBurstTimerRef.current !== null) {
+        window.clearTimeout(glitchBurstTimerRef.current)
+      }
+    }
+  }, [])
+
+  // Respect prefers-reduced-motion for the waveform jitter the same way the
+  // CSS module does for the counter's RGB ghost animation. The match is read
+  // once on mount because reduced-motion preference changes are extremely
+  // rare during a session and the cost of a per-frame matchMedia check would
+  // add up over a 60Hz rAF.
+  const reducedMotionRef = useRef<boolean>(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    }
+  }, [])
+
+  // Mode transitions (= Lightbox open / close) fire one burst. Skip the
+  // first effect run so opening the page itself isn't visually noisy —
+  // the prevModeRef-style sentinel ensures we only react to genuine
+  // changes after initial mount.
+  const prevModeForGlitchRef = useRef<'board' | 'lightbox' | null>(null)
+  useEffect(() => {
+    if (prevModeForGlitchRef.current === null) {
+      prevModeForGlitchRef.current = mode
+      return
+    }
+    if (prevModeForGlitchRef.current !== mode) {
+      prevModeForGlitchRef.current = mode
+      fireGlitchBurst()
+    }
+  }, [mode, fireGlitchBurst])
+
   // ---- The rAF loop: swell render + counter render + scrub fire ----
   useEffect(() => {
     let raf = 0
@@ -297,6 +379,21 @@ export function ScrollMeter({
       }
 
       // ---- Tick heights: flowing sinusoid waveform + amplitude swell ----
+      // At-rest: pure sinusoid + swell — calm, wave-like, no noise. This
+      // is the "落ち着いた波" the user asked for.
+      // During a burst (720ms one-shot fired on click, Lightbox open/close,
+      // OR pointer-enter on track / counter) or an active drag-scrub, every
+      // tick gets noise: ~10% drop probability + a 0.4–1.65x random height
+      // multiplier per frame. Hover behaves like the other triggers — a
+      // brief audio-static pulse rather than a sustained chaos, matching
+      // the counter's RGB ghost shift idiom. Intensity dialed back from
+      // the earlier 18% / 0.2–2.1x range because that read as "too loud"
+      // even as a one-shot. Skipped under prefers-reduced-motion.
+      const reducedMotion = reducedMotionRef.current
+      const isInteracting = !reducedMotion && (
+        glitchBurstActiveRef.current
+        || scrubFractionRef.current !== null
+      )
       const swellSigma = TICK_COUNT / 32
       const swellGain = 3.4
       for (let i = 0; i < TICK_COUNT; i++) {
@@ -313,7 +410,14 @@ export function ScrollMeter({
         const swell = 1
           + swellGain * Math.exp(-(dist * dist) / (2 * swellSigma * swellSigma))
 
-        const h = baseH * swell
+        let h = baseH * swell
+        if (isInteracting) {
+          if (Math.random() < 0.10) {
+            h = 1
+          } else {
+            h = h * (0.40 + Math.random() * 1.25)
+          }
+        }
         el.style.height = `${Math.max(1, h).toFixed(1)}px`
       }
 
@@ -396,7 +500,12 @@ export function ScrollMeter({
     scrubFractionRef.current = frac
     lastFiredScrubRef.current = NaN
     setIsDragging(true)
-  }, [fracFromPointer])
+    // session 51: fire a one-shot glitch on click — same trigger whether
+    // the user just taps (= jump-to-position) or starts a drag-scrub.
+    // Bursts during the drag itself are intentionally suppressed (= only
+    // pointer-down fires) so a long drag doesn't strobe the counter.
+    fireGlitchBurst()
+  }, [fracFromPointer, fireGlitchBurst])
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     const frac = fracFromPointer(e.clientX)
@@ -405,6 +514,13 @@ export function ScrollMeter({
       scrubFractionRef.current = frac
     }
   }, [fracFromPointer])
+
+  // Pointer-enter fires a one-shot burst — matches the brief pulse fired by
+  // click and Lightbox open/close, rather than sustaining chaos for the
+  // duration of the hover (which felt overwhelming in the prior iteration).
+  const handlePointerEnter = useCallback((): void => {
+    fireGlitchBurst()
+  }, [fireGlitchBurst])
 
   const handlePointerUp = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     const el = trackRef.current
@@ -419,6 +535,13 @@ export function ScrollMeter({
   const handlePointerLeave = useCallback((): void => {
     setHoverFrac(null)
   }, [])
+
+  // Counter hover entry also fires the one-shot burst so the waveform
+  // pulses along with the counter's own RGB ghost shift (which the CSS
+  // module triggers on :hover). Same brief duration, same idiom.
+  const handleCounterEnter = useCallback((): void => {
+    fireGlitchBurst()
+  }, [fireGlitchBurst])
 
   useEffect(() => (): void => setHoverFrac(null), [])
 
@@ -439,6 +562,7 @@ export function ScrollMeter({
           className={styles.meterCounter}
           aria-hidden="true"
           data-glitch-text=""
+          onPointerEnter={handleCounterEnter}
         >
           <span ref={n1Ref}>{pad4(n1)}</span>
           {' '}
@@ -457,6 +581,7 @@ export function ScrollMeter({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
+          onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
           role="slider"
           aria-label={mode === 'lightbox' ? 'Card position' : 'Scroll position'}
