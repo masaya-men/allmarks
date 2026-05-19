@@ -7,11 +7,11 @@ import type { TitleTypographyResult } from './types'
 
 /**
  * 既存 import 互換のため `TEXT_CARD_MIN_ASPECT` 名は残置。 session 55 から
- * 値は 1.0 (= 正方形) で固定。 名前は「MIN」 だが現在は唯一の値。
+ * 値は 1.25 (= 5:4 横長) で固定。 名前は「MIN」 だが現在は唯一の値。
  * 改名は別 task (= Lightbox.tsx の 2 箇所 import を同時更新する必要があるため、
  * 本変更の scope 外)。
  */
-export const TEXT_CARD_MIN_ASPECT = 1.0
+export const TEXT_CARD_MIN_ASPECT = 1.25
 
 export type TextCardLayout = {
   readonly aspectRatio: number
@@ -30,7 +30,7 @@ export function measureTextCardLayout(input: {
 }): TextCardLayout | null {
   if (!input.title) return null
   return {
-    aspectRatio: 1.0,
+    aspectRatio: 1.25,
     maxLines: 999,
     clamped: false,
   }

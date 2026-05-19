@@ -18,8 +18,8 @@ type Input = {
 export function pickTitleTypography(_input: Input): TitleTypographyResult {
   return {
     mode: 'editorial',
-    fontSize: 18,
-    lineHeight: 27, // 18 × 1.5
+    fontSize: 16,
+    lineHeight: 24, // 16 × 1.5
     maxLines: 999,  // 実質無制限、 オーバーフローはスクロールで処理
   }
 }
