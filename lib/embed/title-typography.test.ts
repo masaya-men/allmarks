@@ -1,48 +1,27 @@
 import { describe, it, expect } from 'vitest'
 import { pickTitleTypography } from './title-typography'
 
-describe('pickTitleTypography', () => {
+describe('pickTitleTypography (session 55 unified)', () => {
   const baseInput = { cardWidth: 280, cardHeight: 360 }
 
-  it('picks headline mode for short title (≤ 24 chars)', () => {
-    const result = pickTitleTypography({ ...baseInput, title: 'Dispersion' })
-    expect(result.mode).toBe('headline')
-    // Session 31 redesign: base headline sizes shrunk ~40% so they read as
-    // "reference-image faithful" typography rather than the previous oversized
-    // display. The smallest headline tier (>= 25 units) lands at 24px.
-    expect(result.fontSize).toBeGreaterThanOrEqual(24)
+  it('always returns the unified typography regardless of title length', () => {
+    const short = pickTitleTypography({ ...baseInput, title: 'short' })
+    const medium = pickTitleTypography({ ...baseInput, title: 'a medium-length title with some characters' })
+    const long = pickTitleTypography({ ...baseInput, title: 'a very long title '.repeat(20) })
+
+    for (const r of [short, medium, long]) {
+      expect(r.mode).toBe('editorial')
+      expect(r.fontSize).toBe(18)
+      expect(r.lineHeight).toBe(27)
+      expect(r.maxLines).toBe(999)
+    }
   })
 
-  it('picks editorial mode for medium title (25-80 chars)', () => {
-    const title = 'Refraction, dispersion, and other shader light effects'
-    const result = pickTitleTypography({ ...baseInput, title })
-    expect(result.mode).toBe('editorial')
-    expect(result.fontSize).toBeLessThanOrEqual(28)
-  })
-
-  it('picks index mode for long title (>160 units)', () => {
-    const title = 'A very long page title that goes on and on with detail covering many topics in great depth across multiple lines of text for comprehensive information display and archival purposes here'
-    const result = pickTitleTypography({ ...baseInput, title })
-    expect(result.mode).toBe('index')
-  })
-
-  it('treats CJK characters as full-width (counts as longer)', () => {
-    // 30 Japanese chars ≈ 60 visual half-width units
-    const title = 'これは日本語のタイトルでまあまあ長いものです測定確認用'
-    const result = pickTitleTypography({ ...baseInput, title })
-    expect(result.mode).toBe('editorial')
-  })
-
-  it('handles emoji-only title gracefully', () => {
-    const result = pickTitleTypography({ ...baseInput, title: '🎨🌈✨' })
-    expect(result.mode).toBe('headline')
-    expect(result.fontSize).toBeGreaterThan(0)
-  })
-
-  it('returns sane defaults for empty title', () => {
-    const result = pickTitleTypography({ ...baseInput, title: '' })
-    expect(result.mode).toBe('headline')
-    expect(result.fontSize).toBeGreaterThan(0)
-    expect(result.maxLines).toBeGreaterThanOrEqual(1)
+  it('handles empty / emoji / CJK titles with the same unified values', () => {
+    for (const title of ['', '🎨🌈✨', 'これは日本語のタイトルです']) {
+      const r = pickTitleTypography({ ...baseInput, title })
+      expect(r.fontSize).toBe(18)
+      expect(r.mode).toBe('editorial')
+    }
   })
 })
