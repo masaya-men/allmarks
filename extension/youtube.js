@@ -76,7 +76,38 @@ function getButtonKind(target) {
   return null
 }
 
+// Temporary diagnostic — dumps the clicked button + 2 ancestors so we can
+// find a language-neutral OFF-state signal for both Like and Watch Later.
+// Stripped in the next commit once the signal is found.
+function dumpAttrs(el) {
+  if (!el || !el.attributes) return null
+  const out = {}
+  for (let i = 0; i < el.attributes.length; i++) {
+    const a = el.attributes[i]
+    out[a.name] = a.value && a.value.length > 100 ? a.value.slice(0, 100) + '…' : a.value
+  }
+  return out
+}
+
 document.addEventListener('click', (event) => {
+  const btnDbg = event.target && event.target.closest
+    ? event.target.closest('button, [role="button"], a[role="button"], tp-yt-paper-checkbox, ytd-playlist-add-to-option-renderer, ytd-toggle-button-renderer')
+    : null
+  if (btnDbg) {
+    const text = (btnDbg.innerText || btnDbg.textContent || '').toLowerCase()
+    const labelDbg = (btnDbg.getAttribute('aria-label') || '').toLowerCase()
+    if (/like|watch|後で見る|いいね|좋아|좋아요|喜欢|gefällt|piace|gostei|gusta|j['']aime/i.test(text + ' ' + labelDbg)) {
+      console.log('[allmarks-yt]', {
+        tag: btnDbg.tagName,
+        attrs: dumpAttrs(btnDbg),
+        parentTag: btnDbg.parentElement && btnDbg.parentElement.tagName,
+        parentAttrs: dumpAttrs(btnDbg.parentElement),
+        grandparentTag: btnDbg.parentElement && btnDbg.parentElement.parentElement && btnDbg.parentElement.parentElement.tagName,
+        grandparentAttrs: btnDbg.parentElement ? dumpAttrs(btnDbg.parentElement.parentElement) : null,
+        text: (btnDbg.innerText || btnDbg.textContent || '').slice(0, 80),
+      })
+    }
+  }
   const kind = getButtonKind(event.target)
   if (!kind) return
   const url = extractVideoUrl()

@@ -35,15 +35,48 @@ function readMeta(selector) {
   return e ? e.getAttribute('content') || '' : ''
 }
 
-function extractTrackUrl() {
+// Resolve which page-level surface this click belongs to:
+// - track detail  /{user}/{slug}      (= 2 segments, slug not reserved)
+// - playlist      /{user}/sets/{slug} (= 3 segments)
+// - mini-player   any page, but the click target sits inside .playbackSoundBadge
+//                 → read .playbackSoundBadge__titleLink for the now-playing
+//                 track's own URL (decoupled from page URL).
+//
+// Session 49 user verification revealed plain track-detail was too narrow:
+// user pressed Like on a playlist page + the persistent mini-player, both
+// previously returned null and silently no-op'd.
+function extractTrackUrl(btn) {
+  // Case A: mini-player Like (= bottom persistent badge). Always resolve
+  // via the badge's title link, independent of page URL.
+  if (btn && btn.closest && btn.closest('.playbackSoundBadge')) {
+    const titleLink = document.querySelector('.playbackSoundBadge__titleLink')
+    const href = titleLink && titleLink.getAttribute('href')
+    if (!href) return null
+    const m = href.match(/^\/([^/?#]+)\/([^/?#]+)/)
+    if (!m) return null
+    if (RESERVED_SECOND_SEGMENT.has(m[2])) return null
+    return 'https://soundcloud.com' + href.split('?')[0].split('#')[0].replace(/\/$/, '')
+  }
+  // Case B / C: page-level Like — derive from location.pathname.
   const p = location.pathname.replace(/\/$/, '')
   const parts = p.split('/').filter(Boolean)
-  if (parts.length !== 2) return null
-  const [user, slug] = parts
-  if (!user || !slug) return null
-  if (user.startsWith('you') || user === 'discover' || user === 'feed' || user === 'upload' || user === 'charts' || user === 'pages') return null
-  if (RESERVED_SECOND_SEGMENT.has(slug)) return null
-  return 'https://soundcloud.com/' + user + '/' + slug
+  // Bail on root-level / feed-style surfaces.
+  const first = parts[0] || ''
+  if (!first || first.startsWith('you') || first === 'discover' || first === 'feed' || first === 'upload' || first === 'charts' || first === 'pages') return null
+  // Case B: track detail /{user}/{slug}
+  if (parts.length === 2) {
+    const [user, slug] = parts
+    if (!user || !slug) return null
+    if (RESERVED_SECOND_SEGMENT.has(slug)) return null
+    return 'https://soundcloud.com/' + user + '/' + slug
+  }
+  // Case C: playlist /{user}/sets/{slug}
+  if (parts.length === 3 && parts[1] === 'sets') {
+    const [user, , slug] = parts
+    if (!user || !slug) return null
+    return 'https://soundcloud.com/' + user + '/sets/' + slug
+  }
+  return null
 }
 
 function extractTrackOgp(url) {
@@ -124,8 +157,11 @@ document.addEventListener('click', (event) => {
     return
   }
   console.log('[allmarks-sc] DETECTED kind=', kind)
-  const url = extractTrackUrl()
-  if (!url) return
+  const url = extractTrackUrl(btnDbg)
+  if (!url) {
+    console.log('[allmarks-sc] url=null, page may not be a track/playlist/badge — pathname=', location.pathname)
+    return
+  }
   const now = Date.now()
   pruneRecent(now)
   const dedupeKey = kind + ':' + url

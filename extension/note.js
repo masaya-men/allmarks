@@ -62,7 +62,39 @@ function getButtonKind(target) {
   return null
 }
 
+// Temporary diagnostic — dumps the clicked button + 2 ancestors so we can
+// find whether note's スキ button has a language-neutral ON/OFF state
+// signal (the file's existing comment says "no distinction needed, dedupe
+// covers it", but user wants OFF strictly skipped if possible).
+function dumpAttrs(el) {
+  if (!el || !el.attributes) return null
+  const out = {}
+  for (let i = 0; i < el.attributes.length; i++) {
+    const a = el.attributes[i]
+    out[a.name] = a.value && a.value.length > 100 ? a.value.slice(0, 100) + '…' : a.value
+  }
+  return out
+}
+
 document.addEventListener('click', (event) => {
+  const btnDbg = event.target && event.target.closest
+    ? event.target.closest('button, [role="button"], a[role="button"]')
+    : null
+  if (btnDbg) {
+    const text = (btnDbg.innerText || btnDbg.textContent || '')
+    const labelDbg = btnDbg.getAttribute('aria-label') || ''
+    if (text.includes('スキ') || labelDbg.includes('スキ') || /like/i.test(labelDbg + ' ' + text)) {
+      console.log('[allmarks-note]', {
+        tag: btnDbg.tagName,
+        attrs: dumpAttrs(btnDbg),
+        parentTag: btnDbg.parentElement && btnDbg.parentElement.tagName,
+        parentAttrs: dumpAttrs(btnDbg.parentElement),
+        grandparentTag: btnDbg.parentElement && btnDbg.parentElement.parentElement && btnDbg.parentElement.parentElement.tagName,
+        grandparentAttrs: btnDbg.parentElement ? dumpAttrs(btnDbg.parentElement.parentElement) : null,
+        text: text.slice(0, 80),
+      })
+    }
+  }
   const kind = getButtonKind(event.target)
   if (!kind) return
   const url = extractArticleUrl()

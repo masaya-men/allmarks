@@ -87,8 +87,24 @@ function getButtonKind(target) {
   // below (Vimeo writes a noun-state label like "Liked"/"いいね済"). The
   // aria-pressed check is the locale-proof OFF guard.
   if (pressed) return null
-  if (/\bunlike\b|\bremove\b|\bundo\b|\bliked\b/i.test(label)) return null
-  if (/取り消|から削除|削除|취소|에서\s*제거|从.*删除|移除|いいね済|いいねしました/i.test(label)) return null
+  // English OFF verbs + state
+  if (/\bunlike\b|\bremove\b|\bundo\b|\bliked\b|\bunfavorite\b/i.test(label)) return null
+  // Japanese OFF verbs + state (= 解除 / 取り消 / 済 / しました)
+  if (/解除|取り消|取消|いいね済|いいねしました|から削除|削除/.test(label)) return null
+  // Korean OFF (= 취소 cancel / 제거 remove / 해제 release)
+  if (/취소|제거|해제|에서\s*제거|좋아요됨/.test(label)) return null
+  // Chinese OFF (zh-CN / zh-TW)
+  if (/取消|删除|刪除|移除|从.*删除|已喜欢|已喜歡|已收藏/.test(label)) return null
+  // Spanish OFF (= quitar / eliminar / desfavorecer + state "ya te gusta")
+  if (/quitar|eliminar|desfavorecer|ya\s*te\s*gusta/i.test(label)) return null
+  // French OFF (= retirer / supprimer / annuler / aimé state)
+  if (/retirer|supprimer|annuler|déjà\s*aimé/i.test(label)) return null
+  // German OFF (= entfernen / aufheben)
+  if (/entfernen|aufheben|nicht\s*mehr\s*gefällt/i.test(label)) return null
+  // Portuguese OFF (= remover / desfazer / curtido state)
+  if (/remover|desfazer|descurtir|já\s*curtido/i.test(label)) return null
+  // Italian OFF (= rimuovere / annullare / piaciuto state)
+  if (/rimuovere|annullare|già\s*piaciuto/i.test(label)) return null
   // Tier 1: class hint (= locale-proof, survives translation). Vimeo's
   // React components keep human-readable prefixes in classNames even after
   // hashing (e.g. "LikeButton_likeButton__xxx", "WatchLater_button__xxx").
@@ -123,10 +139,21 @@ function getButtonKind(target) {
   return null
 }
 
+// Temporary diagnostic — dumps every attribute of the clicked button and
+// its parent so we can find a language-neutral OFF-state signal (= an
+// internal data-* / class / aria-* that flips between ON and OFF, present
+// in every locale). Stripped in the next commit once the signal is found.
+function dumpAttrs(el) {
+  if (!el || !el.attributes) return null
+  const out = {}
+  for (let i = 0; i < el.attributes.length; i++) {
+    const a = el.attributes[i]
+    out[a.name] = a.value && a.value.length > 100 ? a.value.slice(0, 100) + '…' : a.value
+  }
+  return out
+}
+
 document.addEventListener('click', (event) => {
-  // Temporary debug (session 49 OFF-action investigation) — outputs the
-  // resolved button's class / aria-label / aria-pressed at click time so
-  // we can confirm what Vimeo writes when the button is in OFF state.
   const btnDbg = event.target && event.target.closest
     ? event.target.closest('button, [role="button"], a[role="button"]')
     : null
@@ -135,9 +162,11 @@ document.addEventListener('click', (event) => {
     const labelDbg = (btnDbg.getAttribute('aria-label') || '') + ' / ' + (btnDbg.getAttribute('title') || '')
     if (/like|watch|後で見る|いいね|좋아|喜欢|gefällt|piace|gostei|gusta/i.test(clsDbg + ' ' + labelDbg)) {
       console.log('[allmarks-vimeo]', {
-        cls: clsDbg.slice(0, 120),
-        label: labelDbg.slice(0, 120),
-        pressed: btnDbg.getAttribute('aria-pressed'),
+        tag: btnDbg.tagName,
+        attrs: dumpAttrs(btnDbg),
+        parentTag: btnDbg.parentElement && btnDbg.parentElement.tagName,
+        parentAttrs: dumpAttrs(btnDbg.parentElement),
+        text: (btnDbg.innerText || btnDbg.textContent || '').slice(0, 80),
       })
     }
   }
