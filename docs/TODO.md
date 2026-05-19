@@ -265,6 +265,14 @@ session 38 直後 user 報告「ScrollMeter がガチャガチャ動く」 を 6
 
 完了済バグは TODO_COMPLETED.md に移動済。 ここはアクティブのみ。
 
+### 拡張機能 後続 task (= session 49 終了時 user 要望、 永続化)
+
+- **B-#24 拡張機能経由保存の cursor pill 速度改善** (= user 報告「ボタン押してすぐに反応しない、 ピル出るのが遅い」) — 現状 click → background → tab 経由で 100-300ms 遅延。 修正案: site-specific .js (= twitter / youtube / note / vimeo / soundcloud) から `window.postMessage({source:'booklage-extension', type:'pill-saving'}, '*')` で content.js に即時通知 → click 検知後 ~10ms 以内に pill 表示。 5 file + content.js に window.postMessage listener 追加、 工数小 (= 10 分)
+- **B-#25 PiP 自動表示動作確認** (= user 質問「拡張入ってる時に PiP が自動で出るやつできない？」) — 実は既に [extension/options.html](../extension/options.html) に「Auto-open PiP on AllMarks tab」 トグル存在 + DEFAULTS で `autoOpenPip: false`。 実装が完了してるか動作確認していない。 次セッションで:
+  - 動作確認 → 動かないなら fix (= background.js or content.js で実装漏れ)
+  - 動くなら user に伝えてトグル ON にしてもらうだけ
+  - 参考 memory: `reference_document_pip_api_gotchas.md` (= resizeTo/moveTo 無視、 outerWidth lies、 preferInitialWindowPlacement 使用)
+
 ### 表示・サムネ系
 
 - **B-#23 Vimeo / SoundCloud のボード / Lightbox 内 iframe 再生未対応** (= session 49 user 報告) — 保存したカードを開いても **サムネが大きくなるだけで再生できない**。 user 例: [https://vimeo.com/1188880707](https://vimeo.com/1188880707) と [https://soundcloud.com/nippamusic/sumn-serious-slizzy-mix](https://soundcloud.com/nippamusic/sumn-serious-slizzy-mix)。 両サイトとも公開動画 / トラックは login 不要で iframe embed 再生可能:
