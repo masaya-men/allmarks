@@ -1,3 +1,5 @@
+import { addUrl as mirrorAddUrl } from './saved-urls-mirror.js'
+
 const OFFSCREEN_PATH = 'offscreen.html'
 
 async function ensureOffscreen() {
@@ -80,14 +82,28 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
   // button hooks used to be silent too, but session 49 user feedback was
   // "I can't tell whether the save actually happened" — feedback always on.
   // Errors always surface a pill so the user notices silent failures.
-  const skipSuccessPill = !!isPipActive
+  // Floating-button trigger has its own state machine on the button itself,
+  // so the cursor pill is suppressed there too to avoid dual indicators.
+  const isFloatingButton = trigger === 'floating-button'
+  const skipSuccessPill = !!isPipActive || isFloatingButton
   if (!skipSuccessPill) {
     chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: 'saving' }).catch(() => {})
   }
 
   const result = await postToOffscreen(envelope, nonce)
   const finalState = result?.ok ? 'saved' : 'error'
+
+  // Mirror successful saves into chrome.storage.local so the floating button
+  // can render "already saved" on revisit. Best-effort — failures are silent
+  // since the save itself already succeeded.
+  if (finalState === 'saved' && ogp && ogp.url) {
+    try { await mirrorAddUrl(ogp.url, chrome.storage.local) } catch (_) {}
+  }
+
   if (finalState === 'error' || !skipSuccessPill) {
     chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: finalState }).catch(() => {})
+  }
+  if (isFloatingButton) {
+    chrome.tabs.sendMessage(tabId, { type: 'booklage:floating-button-state', state: finalState }).catch(() => {})
   }
 }

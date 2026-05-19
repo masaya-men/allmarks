@@ -50,6 +50,12 @@
       "run_at": "document_idle"
     },
     {
+      "matches": ["<all_urls>"],
+      "js": ["floating-button.js"],
+      "css": ["floating-button.css"],
+      "run_at": "document_idle"
+    },
+    {
       "matches": [
         "https://x.com/*",
         "https://twitter.com/*",

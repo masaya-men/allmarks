@@ -80,4 +80,10 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     })()
     return
   }
+  if (msg.type === 'booklage:floating-button-save') {
+    const tabId = sender.tab?.id
+    if (!tabId) return
+    void safeDispatch({ trigger: 'floating-button', tabId }, tabId)
+    return
+  }
 })

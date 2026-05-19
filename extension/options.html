@@ -48,6 +48,34 @@
     <label class="row"><input type="radio" name="pillPos" value="bottom-right" /> Bottom-right corner</label>
   </section>
   <section>
+    <h2>Floating save button</h2>
+    <p class="lede">A small mark sits on the edge of every page. Click to save the page to AllMarks. Long-press to drag and release — it snaps to the nearest left or right edge. Already-saved pages show a permanent green check.</p>
+    <label class="row">
+      <input type="checkbox" id="floatingButtonEnabled" />
+      <span>Show floating save button on all pages</span>
+    </label>
+    <label class="row">
+      <span>Idle opacity</span>
+      <select id="floatingButtonIdleOpacity">
+        <option value="0">0% (hidden until hover)</option>
+        <option value="0.2">20%</option>
+        <option value="0.3">30% (default)</option>
+        <option value="0.4">40%</option>
+        <option value="0.6">60%</option>
+      </select>
+    </label>
+    <div class="row">
+      <button type="button" id="floatingButtonResetPosition">Reset position to right edge, middle</button>
+    </div>
+    <h2 style="margin-top:18px;">Hide on specific sites</h2>
+    <p class="lede">Add a domain (e.g. <code>example.com</code>) to hide the floating button on that site only. Other save shortcuts still work.</p>
+    <div id="floatingButtonDisabledList"></div>
+    <div class="row">
+      <input type="text" id="floatingButtonAddDomain" placeholder="example.com" />
+      <button type="button" id="floatingButtonAddDomainBtn">Add</button>
+    </div>
+  </section>
+  <section>
     <h2>Keyboard shortcut</h2>
     <p>Default: <kbd>Ctrl+Shift+B</kbd> (Mac: <kbd>Cmd+Shift+B</kbd>)</p>
     <a href="#" id="shortcuts-link">Customize shortcuts</a>
