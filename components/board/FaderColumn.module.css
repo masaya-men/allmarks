@@ -17,7 +17,7 @@
 
 .fader {
   position: relative;
-  width: 26px;
+  width: 24px;
   height: 110px;
 }
 
@@ -64,74 +64,79 @@
   pointer-events: none;
 }
 
-/* Tall 3-D fader cap, modeled on real audio interface thumb-grips.
-   Iteration 6: height grown from 9 → 22 px so the grip ridges are
-   readable and the cap reads as a chunky physical knob you'd thumb
-   up and down. Width expanded to 26 px so it overhangs the 6 px rail.
-   The top-to-bottom gradient sells the curved plastic face (bright
-   top highlight, saturated orange body, deep base shadow). */
+/* Tall vertical 3-D fader cap, modeled on real audio mixer thumb-grips.
+   Iteration 7: rotated from a wide horizontal cap (26×22) to a tall
+   vertical cap (20×34) per the user's reference. The taller profile
+   makes room for ~12 grip ridges, reads as a chunky thumb-grip you'd
+   slide up and down, and matches the proportions of high-end audio
+   interface caps (Yamaha, Behringer, Mackie). The top-to-bottom gradient
+   sells the curved plastic face. */
 .handle {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 26px;
-  height: 22px;
-  border-radius: 2.5px;
+  width: 20px;
+  height: 34px;
+  border-radius: 3px;
   background: linear-gradient(180deg,
     #ffd9a4 0%,
-    #ffb066 12%,
-    #ff8a25 35%,
-    #f0741a 55%,
+    #ffb066 10%,
+    #ff8a25 30%,
+    #f0741a 52%,
     #b9540f 78%,
     #5a2c06 100%);
   box-shadow:
-    /* Raised drop shadow + ambient glow */
+    /* Raised drop shadow + ambient orange glow */
     0 1px 0 rgba(0, 0, 0, 0.85),
-    0 3px 7px rgba(0, 0, 0, 0.6),
-    0 0 10px rgba(255, 157, 63, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.62),
+    0 0 12px rgba(255, 157, 63, 0.4),
     /* Edge bevels: bright top, dark bottom, subtle side highlights */
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
-    inset 1px 0 0 rgba(255, 255, 255, 0.24),
-    inset -1px 0 0 rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+    inset 1px 0 0 rgba(255, 255, 255, 0.26),
+    inset -1px 0 0 rgba(0, 0, 0, 0.38);
   pointer-events: none;
 }
 
-/* Grip ridges on the cap face — 7-8 fine horizontal striations stacked
-   via repeating-linear-gradient, sized to read as machined grooves at
-   the 22 px tall cap. The central groove sits a touch wider via a small
-   absolute marker that reads as the "index line" on real mixer knobs. */
+/* Grip ridges on the cap face — ~12 fine horizontal striations stacked
+   via repeating-linear-gradient. The 2.4 px cycle (1.0 transparent +
+   0.6 dark + 0.8 light) reads as densely machined thumb grooves at the
+   34 px tall scale. Inset shrinks the ridge area so the ridges don't
+   touch the bevel edges — a subtle convention from real injection-molded
+   plastic caps. */
 .handle::before {
   content: '';
   position: absolute;
-  inset: 3px 3px;
+  inset: 4px 3px;
   background: repeating-linear-gradient(
     0deg,
     transparent 0,
-    transparent 1.4px,
-    rgba(0, 0, 0, 0.34) 1.4px,
-    rgba(0, 0, 0, 0.34) 1.9px,
-    rgba(255, 255, 255, 0.20) 1.9px,
-    rgba(255, 255, 255, 0.20) 2.4px
+    transparent 1.0px,
+    rgba(0, 0, 0, 0.38) 1.0px,
+    rgba(0, 0, 0, 0.38) 1.6px,
+    rgba(255, 255, 255, 0.22) 1.6px,
+    rgba(255, 255, 255, 0.22) 2.4px
   );
   border-radius: 1.5px;
-  opacity: 0.6;
+  opacity: 0.68;
   pointer-events: none;
 }
 
-/* Index line — the central "this is where the value is" pointer mark,
-   slightly bolder than the surrounding grip ridges. Sits across the
-   vertical midpoint of the cap. */
+/* Index line — the "this is the value" pointer mark, deeper than the
+   surrounding grip ridges and a touch wider so the eye reads it as the
+   center reference of the cap. Sits across the vertical midpoint. */
 .handle::after {
   content: '';
   position: absolute;
-  left: 1px;
-  right: 1px;
+  left: 0;
+  right: 0;
   top: 50%;
-  height: 1px;
+  height: 1.5px;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.82);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28),
+    0 -1px 0 rgba(0, 0, 0, 0.4);
   pointer-events: none;
 }
 

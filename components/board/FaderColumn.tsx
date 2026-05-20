@@ -25,6 +25,15 @@ const TICK_POSITIONS = Array.from({ length: 42 }, (_, i) => (i / 41) * 100)
 const MOUSE_PX_FOR_FULL_RANGE = 30000
 const SHIFT_SPEED_MULTIPLIER = 40
 
+// Long-press threshold for "jump to clicked position". A plain pointer-down
+// no longer jumps — that was hostile to fine-tuning, since clicking on the
+// rail to start a drag would snap the value before the user could move. Now
+// the pointer must stay roughly still for LONG_PRESS_MS to trigger the jump.
+// If the pointer moves more than MOVE_THRESHOLD_PX before the timer fires, we
+// cancel the jump and treat it as a normal drag from the current value.
+const LONG_PRESS_MS = 350
+const MOVE_THRESHOLD_PX = 4
+
 type Props = {
   readonly scope: 'w' | 'g'
   readonly value: number
@@ -59,35 +68,84 @@ export function FaderColumn({
   const isMajor = (i: number): boolean => i % 5 === 0 || i === 41
   const isCenterMajor = (i: number): boolean => i === 20 || i === 21
 
+  // Long-press jump state. The timer is armed on pointerdown and fired
+  // after LONG_PRESS_MS unless the pointer has moved MOVE_THRESHOLD_PX or
+  // already been released. pointerStartRef holds the data the jump needs
+  // (= the click Y position relative to the unit rect).
+  const jumpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pointerStartRef = useRef<{
+    x: number
+    y: number
+    rectTop: number
+    rectHeight: number
+    clickY: number
+  } | null>(null)
+
+  const cancelJumpTimer = useCallback((): void => {
+    if (jumpTimerRef.current) {
+      clearTimeout(jumpTimerRef.current)
+      jumpTimerRef.current = null
+    }
+  }, [])
+
   const handlePointerDown = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     e.preventDefault()
     e.stopPropagation()
     const target = e.currentTarget
     const rect = target.getBoundingClientRect()
-    if (rect.height > 0) {
-      const clickY = e.clientY - rect.top
-      const fr = Math.max(0, Math.min(1, 1 - clickY / rect.height))
-      onChange(fractionToValue(fr, min, max, def))
+    const clickY = e.clientY - rect.top
+
+    pointerStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      rectTop: rect.top,
+      rectHeight: rect.height,
+      clickY,
     }
+
+    cancelJumpTimer()
+    jumpTimerRef.current = setTimeout(() => {
+      const start = pointerStartRef.current
+      if (start && start.rectHeight > 0) {
+        const fr = Math.max(0, Math.min(1, 1 - start.clickY / start.rectHeight))
+        onChange(fractionToValue(fr, min, max, def))
+      }
+      jumpTimerRef.current = null
+    }, LONG_PRESS_MS)
+
     draggingRef.current = true
     if (typeof target.setPointerCapture === 'function') {
       target.setPointerCapture(e.pointerId)
     }
-  }, [onChange, min, max, def])
+  }, [onChange, min, max, def, cancelJumpTimer])
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     if (!draggingRef.current) return
+
+    // A meaningful pointer move cancels the long-press jump — the user is
+    // dragging, so we shouldn't snap the value out from under them.
+    const start = pointerStartRef.current
+    if (start && jumpTimerRef.current) {
+      const dx = e.clientX - start.x
+      const dy = e.clientY - start.y
+      if (Math.abs(dx) > MOVE_THRESHOLD_PX || Math.abs(dy) > MOVE_THRESHOLD_PX) {
+        cancelJumpTimer()
+      }
+    }
+
     const range = max - min
     const ratio = range / MOUSE_PX_FOR_FULL_RANGE
     const eff = e.shiftKey ? ratio * SHIFT_SPEED_MULTIPLIER : ratio
     const delta = -e.movementY * eff
     const next = Math.max(min, Math.min(max, valueRef.current + delta))
     if (next !== valueRef.current) onChange(next)
-  }, [onChange, min, max])
+  }, [onChange, min, max, cancelJumpTimer])
 
   const handlePointerUp = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     if (!draggingRef.current) return
     draggingRef.current = false
+    cancelJumpTimer()
+    pointerStartRef.current = null
     const target = e.currentTarget
     if (
       typeof target.hasPointerCapture === 'function' &&
@@ -95,7 +153,7 @@ export function FaderColumn({
     ) {
       target.releasePointerCapture(e.pointerId)
     }
-  }, [])
+  }, [cancelJumpTimer])
 
   return (
     <div className={styles.column} data-scope={scope}>

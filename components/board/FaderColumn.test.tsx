@@ -113,7 +113,7 @@ describe('FaderColumn — drag', () => {
     expect(Math.abs(shiftDelta / noShiftDelta - 40)).toBeLessThan(0.5)
   })
 
-  it('pointerdown at top of column jumps to max value', () => {
+  it('pointerdown alone does NOT jump (click-to-jump moved to long-press)', () => {
     const onChange = vi.fn()
     const { container } = render(
       <FaderColumn scope="g" value={97.21} min={20} max={200} def={97.21}
@@ -122,7 +122,42 @@ describe('FaderColumn — drag', () => {
     const unit = container.querySelector('[data-scope="g"] > div') as HTMLElement
     mockRect(unit)
     fireEvent.pointerDown(unit, { clientX: 20, clientY: 0, pointerId: 1 })
+    // Immediate jump removed in iteration 7 — pointer-down arms a long-press
+    // timer but does not call onChange. The timer fires after 350 ms.
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('long-press (≥350 ms) at top of column jumps to max value', () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    const { container } = render(
+      <FaderColumn scope="g" value={97.21} min={20} max={200} def={97.21}
+        onChange={onChange} label="G" />,
+    )
+    const unit = container.querySelector('[data-scope="g"] > div') as HTMLElement
+    mockRect(unit)
+    fireEvent.pointerDown(unit, { clientX: 20, clientY: 0, pointerId: 1 })
+    vi.advanceTimersByTime(360)
     expect(onChange).toHaveBeenCalledWith(200)
+    vi.useRealTimers()
+  })
+
+  it('pointer move before long-press fires cancels the jump', () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    const { container } = render(
+      <FaderColumn scope="g" value={97.21} min={20} max={200} def={97.21}
+        onChange={onChange} label="G" />,
+    )
+    const unit = container.querySelector('[data-scope="g"] > div') as HTMLElement
+    mockRect(unit)
+    fireEvent.pointerDown(unit, { clientX: 20, clientY: 0, pointerId: 1 })
+    // Move > 4 px before the timer fires — should cancel the jump.
+    fireEvent.pointerMove(unit, { clientX: 20, clientY: 10, movementY: 10, pointerId: 1 })
+    vi.advanceTimersByTime(400)
+    // The drag-delta change may have fired, but never the jump-to-max (200).
+    expect(onChange.mock.calls.find((c) => c[0] === 200)).toBeUndefined()
+    vi.useRealTimers()
   })
 })
 

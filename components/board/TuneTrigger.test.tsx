@@ -179,7 +179,10 @@ describe('TuneTrigger — drawer with FaderColumns', () => {
       top: 0, bottom: 110, left: 0, right: 40, width: 40, height: 110,
       x: 0, y: 0, toJSON: () => ({}),
     } as DOMRect)
-    fireEvent.pointerDown(wUnit, { clientX: 20, clientY: 0, pointerId: 1 })
+    // Iteration 7: pointerDown alone no longer jumps. A pointerMove with
+    // a non-zero movementY is required to fire onChange via the drag path.
+    fireEvent.pointerDown(wUnit, { clientX: 20, clientY: 50, pointerId: 1 })
+    fireEvent.pointerMove(wUnit, { clientX: 20, clientY: 40, movementY: -10, pointerId: 1 })
     expect(onChangeWidth).toHaveBeenCalled()
   })
 })
