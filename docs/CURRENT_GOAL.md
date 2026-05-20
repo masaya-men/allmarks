@@ -4,7 +4,8 @@
 
 session 59 で **拡張機能を 0.1.7 → 0.1.8 → 0.1.9 → 0.1.10 と 3 回 ship**:
 
-- **v0.1.10** (= session 59 最終): X (Twitter) の SPA navigation を最後の保険として 500ms 定期チェックで拾う。 業界標準 (Toby / Raindrop 等) と同じ方式、 install prompt 権限追加なし。 user 第 3 弾検証で出た「X 一覧 → tweet 個別ページで緑にならない」 を解消狙い
+- **v0.1.10** (= session 59 第 4 弾): X (Twitter) の SPA navigation を最後の保険として 500ms 定期チェックで拾う。 業界標準 (Toby / Raindrop 等) と同じ方式、 install prompt 権限追加なし
+- **v0.1.11** (= session 59 第 5 弾): YouTube で「特定の動画で Watch Later 検出失敗」 (= https://www.youtube.com/watch?v=C4wfr7XxYBk 等) → セレクタに `ytd-menu-service-item-renderer` + `[role="menuitem"]` を追加 + 検出失敗時に DOM 構造を console に出力する診断ログ追加 → 仮に v0.1.11 で取り逃しが残っても、 user が console screenshot で次回真因を共有できる仕組み
 
 - **v0.1.8** (前半): 構造的修正 3 件 + 全サイトに防御層共通投入 = floating-button inline ↔ source 再同期、 ミラー防御層 5 サイト、 YouTube 一覧 ︙ メニュー対応
 - **v0.1.9** (後半): user 第 2 弾実機検証で出た問題 2 件を修正 = 黄ピル復活 (全サイト)、 SPA navigation で mirror 再チェック (= 動画/tweet を SPA 移動で開いた瞬間に緑表示)
@@ -15,7 +16,7 @@ user の素朴提案「フローティングボタン = AllMarks 保存状態イ
 
 **拡張機能 v0.1.9 の実機検証**。 user に以下を依頼してから次の task に進む:
 
-1. **chrome://extensions** を開く → AllMarks (= バージョン **0.1.10**) のリロードボタン押下
+1. **chrome://extensions** を開く → AllMarks (= バージョン **0.1.11**) のリロードボタン押下
 2. **booklage.pages.dev** のタブがあったらハードリロード (= Ctrl + Shift + R)
 
 ### 検証チェック (= v0.1.8 で残った問題が v0.1.9 で直ったか)

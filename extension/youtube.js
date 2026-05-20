@@ -227,16 +227,19 @@ function getButtonKind(target) {
     return 'like'
   }
   // Watch later — popup option inside the Save dropdown. YouTube ships at
-  // least two layouts in rotation:
+  // least three layouts in rotation:
   //   - legacy:  <button> / <tp-yt-paper-checkbox> / <ytd-playlist-add-to-option-renderer>
   //   - new MV:  <yt-list-item-view-model> with class `ytListItemViewModel*`
-  //              (= surfaced via session 58 user report, role="option" on row)
-  // The new MV variant wraps the "Watch later" text in a span with class
-  // ytListItemViewModelTitle and uses role="option" on the row. We accept
-  // both shapes here. OFF state still excluded via aria-checked / aria-pressed.
+  //              (= session 58 user report — role="option" on row)
+  //   - context menu (thumbnail ︙ + watch-page Save dropdown 3rd variant):
+  //              <ytd-menu-service-item-renderer> + role="menuitem"
+  //              (= session 59 round-3 user report — specific videos fail)
+  // OFF state still excluded via aria-checked / aria-pressed below.
   const btn = target.closest(
     'button, tp-yt-paper-checkbox, ytd-playlist-add-to-option-renderer, ' +
-    'yt-list-item-view-model, [class*="ytListItemViewModel"], [role="option"]'
+    'ytd-menu-service-item-renderer, ' +
+    'yt-list-item-view-model, [class*="ytListItemViewModel"], ' +
+    '[role="option"], [role="menuitem"]'
   )
   if (btn) {
     const text = buttonTextLower(btn)
@@ -282,7 +285,53 @@ document.addEventListener('click', (event) => {
   captureVideoFromTile(event.target)
 
   const kind = getButtonKind(event.target)
-  if (!kind) return
+  if (!kind) {
+    // Diagnostic — clicks inside YouTube popups/menus that we failed to
+    // detect, where the surrounding text looks like Watch Later. Captures
+    // the DOM so we can spot novel layouts and update the selector.
+    // (Session 59 round-3: specific videos misdetected even after the
+    // session 58 selector expansion.)
+    try {
+      const inMenu = event.target && event.target.closest
+        ? event.target.closest('ytd-menu-popup-renderer, ytd-popup-container, yt-list-view-model, ytd-popup-container-renderer, tp-yt-paper-dialog')
+        : null
+      if (inMenu) {
+        const wrap = event.target.closest(
+          '[role="menuitem"], [role="option"], button, ' +
+          'yt-list-item-view-model, ytd-menu-service-item-renderer, ' +
+          'ytd-playlist-add-to-option-renderer, tp-yt-paper-checkbox'
+        ) || event.target
+        const wrapText = ((wrap.innerText || wrap.textContent || '') + '').trim().slice(0, 160)
+        const wrapLabel = wrap.getAttribute ? (wrap.getAttribute('aria-label') || '') : ''
+        const hay = (wrapText + ' ' + wrapLabel).toLowerCase()
+        const suspect = (
+          /watch\s*later/.test(hay) ||
+          /後で見る/.test(wrapText + wrapLabel) ||
+          /나중에\s*보|나중에\s*볼/.test(hay) ||
+          /稍后观看|稍後觀看/.test(wrapText + wrapLabel) ||
+          /ver\s*más\s*tarde|ver\s*mas\s*tarde/.test(hay) ||
+          /regarder\s*plus\s*tard/.test(hay) ||
+          /später/.test(hay) ||
+          /assistir\s*mais\s*tarde/.test(hay) ||
+          /guarda(re)?\s*più\s*tardi/.test(hay)
+        )
+        if (suspect) {
+          console.debug('[AllMarks] YouTube Watch Later click NOT detected — please share this log', {
+            url: location.href,
+            wrapTag: wrap.tagName,
+            wrapText,
+            wrapLabel,
+            wrapRole: wrap.getAttribute ? wrap.getAttribute('role') : null,
+            wrapAriaChecked: wrap.getAttribute ? wrap.getAttribute('aria-checked') : null,
+            wrapAriaPressed: wrap.getAttribute ? wrap.getAttribute('aria-pressed') : null,
+            wrapClass: (wrap.className && wrap.className.toString && wrap.className.toString().slice(0, 200)) || null,
+            wrapOuterHtml: (wrap.outerHTML || '').slice(0, 800),
+          })
+        }
+      }
+    } catch (_) {}
+    return
+  }
   const source = kind === 'like' ? 'yt-like' : 'yt-watch-later'
   // Bail out before pill / DOM walks if the user toggled this source OFF.
   if (!isSourceEnabled(source)) return
