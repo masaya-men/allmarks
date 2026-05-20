@@ -20,19 +20,36 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.10 X SPA 検知保険追加)
+### 直近の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.7 → 0.1.14 全 7 ship 完遂、 sprint クローズ)
 
-v0.1.9 で user 第 3 弾実機検証 → YouTube 完璧 OK / X だけ「一覧画面で Bookmark click → tweet click で個別ページ移動 → フローティングボタン緑にならない」 と報告。 X の React Router が `pushState` フックを擦り抜けるパスを使っている。 業界標準 (= Toby, Raindrop, mymind 等) と同じく**定期チェック方式** (= 500ms 間隔で `location.href` 文字列比較) を保険として追加。 webNavigation API 案も検討したが「閲覧履歴読み取り」 という重そうな権限が install prompt に出るので user 獲得ハードルが上がる、 polling 方式は実コスト無視できる + 審査リスクなし。 v0.1.9 → 0.1.10。
+session 58 の v0.1.7 が user 検証で多数の症状判明 → 構造的修正 + 全サイト防御層投入 + SPA navigation 検知 + YouTube DOM 変動追跡を **1 session で 7 回 ship** で対応。 user 最終確認 (Twitter ブクマ + YouTube 高評価 + 後で見る C4wfr7XxYBk) で全て OK、 sprint クローズ。
 
-**ship 済**:
+**7 回 ship の整理**:
 
-- [extension/floating-button.js](../extension/floating-button.js) に `setInterval(onMaybeUrlChange, 500)` 追加。 既存の pushState フック + popstate + yt-navigate-finish の 3 段に加えて 4 段目の保険。 99% のチェックは `location.href === lastUrl` で即 return = ほぼ無コスト
+| version | 変更 | 解決した問題 |
+|---|---|---|
+| v0.1.8 | 構造的修正 3 件 + 全サイト防御層 | floating-button inline↔source 再同期、 ミラー防御 5 サイト、 YouTube 一覧 ︙ メニュー対応 |
+| v0.1.9 | 黄ピル復活 + SPA navigation で mirror 再チェック | 「保存済 URL 再 click で何も出ない」 + 「動画/tweet SPA 移動でフローティングボタン緑にならない」 |
+| v0.1.10 | X SPA 検知の保険 (500ms 定期チェック) | X 一覧→ tweet 個別ページで緑にならない |
+| v0.1.11 | YouTube セレクタに 2 種追加 + 検出失敗時 DOM 診断ログ | 特定動画 (C4wfr7XxYBk 等) で Watch Later 検出失敗 |
+| v0.1.12 | 診断ログを `console.debug` → `console.log` + 「auto-save fired」 ログ追加 | user の console で diag が見えなかった |
+| v0.1.13 | Like 検出にテキストガード | `<like-button-view-model>` が Watch later option ラップするケース |
+| v0.1.14 | セレクタから `[class*="ytListItemViewModel"]` 削除 | 内側 span にマッチして text 読み違える bug (= outerHTML から真因特定) |
 
-**変更 file (1 modified)**: extension/floating-button.js (+ extension/manifest.json + docs)
+**業界の現実 (= session 確定)**:
+- 競合 (Pocket / Raindrop / mymind / Toby / Notion Web Clipper) **誰も** YouTube Watch Later 自動検知してない
+- AllMarks の自動検知は差別化機能だが**ベストエフォート**位置付け
+- 100% 確実な保存経路は 4 つ: Ctrl+Shift+B / フローティングボタン / 右クリック / 拡張アイコン
 
-**テスト**: 633 PASS、 tsc clean、 build OK、 deploy 1 回
+**変更 file (累計 11 modified)**: extension/{content, floating-button, manifest, youtube, twitter, vimeo, soundcloud, note}.js (+ docs/{CURRENT_GOAL, TODO, TODO_COMPLETED}.md)
 
-**manifest**: 0.1.9 → **0.1.10**
+**テスト**: 633 PASS 維持 (= 全 7 ship), tsc clean、 next build OK
+
+**deploy 回数**: 7 (= 1 日 16 回上限内、 余裕)
+
+**manifest version**: 0.1.7 → **0.1.14** (= user は chrome://extensions で都度リロード必須、 今は最終版 0.1.14)
+
+**次セッション (= 60) の goal**: オンボーディング案内画面の draft (= 高精度 / ベストエフォート / 100% の 3 段階ラベルで自動保存機能を user に正直に案内する画面)。 memory `project_onboarding_stance.md` 参照。 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 59 セクション
 
 ---
 

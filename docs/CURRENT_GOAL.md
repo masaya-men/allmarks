@@ -2,63 +2,61 @@
 
 ## 状況
 
-session 59 で **拡張機能を 0.1.7 → 0.1.8 → 0.1.9 → 0.1.10 と 3 回 ship**:
+session 59 で **拡張機能を 0.1.7 → 0.1.14 と 7 回 ship**、 全 user 検証 OK で締め:
 
-- **v0.1.10** (= session 59 第 4 弾): X (Twitter) の SPA navigation を最後の保険として 500ms 定期チェックで拾う。 業界標準 (Toby / Raindrop 等) と同じ方式、 install prompt 権限追加なし
-- **v0.1.11** (= session 59 第 5 弾): YouTube で「特定の動画で Watch Later 検出失敗」 (= https://www.youtube.com/watch?v=C4wfr7XxYBk 等) → セレクタに `ytd-menu-service-item-renderer` + `[role="menuitem"]` を追加 + 検出失敗時に DOM 構造を console に出力する診断ログ追加 → 仮に v0.1.11 で取り逃しが残っても、 user が console screenshot で次回真因を共有できる仕組み
+- **v0.1.8**: 構造的修正 3 件 + 全サイト防御層 = floating-button inline↔source 再同期 + ミラー防御層 5 サイト + YouTube 一覧 ︙ メニュー対応
+- **v0.1.9**: 黄ピル復活 (全サイト) + SPA navigation で mirror 再チェック (= 動画/tweet 直開きで即緑表示)
+- **v0.1.10**: X SPA 検知の保険として 500ms 定期チェック追加 (= 競合 Toby と同方式)
+- **v0.1.11**: YouTube セレクタに `ytd-menu-service-item-renderer` + `[role="menuitem"]` 追加 + 検出失敗時 DOM 診断ログ
+- **v0.1.12**: 診断ログ表示レベルを `console.debug` → `console.log` (= user の console で見える化) + 「auto-save fired」 ログ追加
+- **v0.1.13**: Like 検出にテキストガード追加 (= `<like-button-view-model>` が Watch later option ラップするケース対応)
+- **v0.1.14**: セレクタから `[class*="ytListItemViewModel"]` 削除 (= 内側 span にマッチしないように、 真因 outerHTML から特定)
 
-- **v0.1.8** (前半): 構造的修正 3 件 + 全サイトに防御層共通投入 = floating-button inline ↔ source 再同期、 ミラー防御層 5 サイト、 YouTube 一覧 ︙ メニュー対応
-- **v0.1.9** (後半): user 第 2 弾実機検証で出た問題 2 件を修正 = 黄ピル復活 (全サイト)、 SPA navigation で mirror 再チェック (= 動画/tweet を SPA 移動で開いた瞬間に緑表示)
+user 最終確認: Twitter ブクマ + YouTube 高評価 + 後で見る (C4wfr7XxYBk) で全て動作 ✓
 
-user の素朴提案「フローティングボタン = AllMarks 保存状態インジケーター」 がそのまま設計に取り込まれた sprint。
+## ⚠️ 次セッション開始時にすぐ取り掛かるべきタスク
 
-## ⚠️ 次セッション開始時にすぐ user に確認すべきこと
+### 最優先: オンボーディング案内画面の draft
 
-**拡張機能 v0.1.9 の実機検証**。 user に以下を依頼してから次の task に進む:
+user 提案: 「YouTube 高評価は精度高い、 後で見るは仕様限界、 フローティング/右クリック/ショートカット使ってください」 と最初から user に正直に案内したい。
 
-1. **chrome://extensions** を開く → AllMarks (= バージョン **0.1.11**) のリロードボタン押下
-2. **booklage.pages.dev** のタブがあったらハードリロード (= Ctrl + Shift + R)
+memory `project_onboarding_stance.md` に方針確定済 (= 高精度 / ベストエフォート / 100% の 3 段階ラベル)。
 
-### 検証チェック (= v0.1.8 で残った問題が v0.1.9 で直ったか)
+next session でやる作業:
+1. **どこに案内を出すか決定**: 拡張機能 popup の最初の画面? 本体 LP の「拡張機能の使い方」 セクション? それともインストール直後の welcome page を新設?
+2. **draft 文章作成**: 上の 3 段階ラベル + 4 つの 100% 経路の解説 (日英 2 言語)
+3. **実装**: HTML / Markdown / 拡張機能の welcome page (= manifest の chrome_url_overrides or 別途 newtab 画面)
 
-| # | テスト | 期待 (= v0.1.9) | 旧 (= v0.1.8) |
-|---|---|---|---|
-| ① | 保存済の動画ページで「後で見る」 ボタンをもう 1 度押す | ⚠ 黄ピル「Already saved」 が出る | 何も出なかった |
-| ② | 保存済の tweet で Bookmark を押す | 同じく ⚠ 黄ピル | 出なかった |
-| ③ | YouTube ホーム → 動画タイル click で SPA 遷移 → 動画ページ着 | フローティングボタンが即座に緑チェック (= リロード不要) | リロード必須だった |
-| ④ | **X 一覧画面で保存済 tweet を click → 個別ページ移動** | 即緑チェック (= v0.1.10 で 500ms 定期チェック保険追加) | v0.1.9 では緑にならなかった |
-| ⑤ | 未保存の動画ページに移動 (= 保存済ページから別動画へ) | 緑から灰色に切り替わる | 緑のままだった可能性 |
-
-### 検証 OK だったら
-
-拡張安定化 sprint 完全クローズ → user に backlog から次を選んでもらう:
+### その他の元 backlog (= ドメイン待ちタスクと並列で選択可)
 
 | 優先度 | task | 工数 |
 |---|---|---|
-| 🔧 | **deploy 数取得 script setup** (= user の CF API token 発行 ~3 分 + `.env.local` 追記 + 動作確認) | 小 |
+| 🔧 | **deploy 数取得 script setup** (= CF API token 発行 ~3 分 + .env.local 追記) | 小 |
 | 🟢 | **dead UI cursorPillFallbackPosition の削除 or 実装** | 小 |
 | 🟡 | **10 番 有名サイト pre-set OFF list** (= 拡張 polish、 ~50 行) | 小 |
-| 🟡 | **音波テーマ世界観確立 sprint** (= H + J + K + I-09 + I-10) | 大 |
-| 🟡 | **multi-playback vision board card autoplay** (= AllMarks core 差別化) | 大 |
-| 🐛 | **B-#3 重複 URL でサムネ等が出ない** (= 古めの未解決) | 中 |
+| 🟡 | **音波テーマ世界観確立 sprint** (H + J + K + I-09 + I-10) | 大 |
+| 🟡 | **multi-playback vision board card autoplay** (AllMarks core 差別化) | 大 |
+| 🐛 | **B-#3 重複 URL でサムネ等が出ない** (古めの未解決) | 中 |
 
-### もしまだ問題が残ったら
+## 月末リマインダー (2026-05-31)
 
-devtools の Console を開いてもらえれば `[AllMarks] auto-save suppressed` の console.debug が出ているはず → DOM 構造把握。 また SPA navigation 問題が残る場合は、 該当サイトの URL 変化検出方法 (= 各サイト独自の navigation イベント) を追加調査。
+`allmarks.app` ドメイン取得確認。 取得済なら拡張機能の Chrome Web Store submit + 本体 rebrand sprint へ進む。
 
-## session 59 で確定した重要な事
+**Developer Account**: user が前作った既存 account あり (= $5 払い済、 ログインだけで OK)。
 
-- **「save dispatch スキップ ≠ pill スキップ」**: ミラー防御で save 発火を止める時、 user フィードバックは別経路で残す必要がある (= postMessage で直接 pill 発火)。 「保存処理」 と「user 通知」 は別レイヤー
-- **SPA navigation 検知が拡張機能の基本要件**: 単一ページアプリ (= YouTube / X / Vimeo / SoundCloud etc) では `history.pushState` フック + `popstate` + サイト独自イベント (= `yt-navigate-finish`) の 3 段構えが堅い。 これは memory 化に値する
-- **フローティングボタン = URL インジケーター**: その時点で表示されている URL が AllMarks に保存されているかを常時可視化する indicator。 ミラー lookup は瞬時 (= マイクロ秒)、 重くない。 競合 (Pocket / Raindrop / mymind) と同等の標準動作
+## session 59 で確定した重要な事 (= 前提として保持)
+
+- **YouTube DOM は予測不能に変わる**: 1 session で 7 回 ship 追跡したが、 100% は構造的不可能。 競合 (Pocket / Raindrop / mymind / Toby / Notion Web Clipper) も誰も YouTube Watch Later 自動検知してない。 自動保存は**ベストエフォート機能**として位置付ける
+- **確実な経路は 4 つの manual 経路**: Ctrl+Shift+B / フローティングボタン / 右クリック / 拡張アイコン
+- **「save dispatch スキップ ≠ pill スキップ」 原則**: ミラー防御で save 抑止する時、 pill だけは別経路 (postMessage) で出して user フィードバック残す
+- **SPA navigation 検知は 3 段 + polling の 4 段構え**: pushState フック / popstate / サイト独自イベント (= `yt-navigate-finish`) / 500ms 定期チェック。 X だけは polling 不可欠
+- **inline ↔ source の drift 警告**: floating-button.js の inline state machine は test がカバーしない、 source と必ず同期
 
 ## 引き継ぎ resources
 
-- [docs/TODO.md](./TODO.md) — active backlog (= 「現在の状態」 が session 59 後半用に更新済)
-- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 59 narrative (前半 + 後半)
+- [docs/TODO.md](./TODO.md) — active backlog (= 現在の状態が session 59 全 7 ship 用に更新済)
+- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 59 narrative
 - [docs/private/IDEAS.md](./private/IDEAS.md) — H / J / K / I-08 / I-09 / I-10 セクション
-- memory `feedback_layman_simple_path.md` (= session 56/57/58/59 で 6 回再確認、 user 素朴提案を 1 段重く受け取る)
-
-## 月末リマインダー (= 2026-05-31)
-
-`allmarks.app` ドメイン取得確認。 取得済なら 拡張機能の Chrome Web Store submit + 本体 rebrand sprint へ進む。
+- memory `project_onboarding_stance.md` (session 59 確定、 案内方針)
+- memory `reference_spa_navigation_detection.md` (session 59 確定、 4 段構え)
+- memory `feedback_layman_simple_path.md` (= session 56/57/58/59 で 7 回再確認)
