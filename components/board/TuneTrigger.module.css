@@ -190,19 +190,23 @@
 
 /* Thin engraved divider between the preset column and the fader group.
    Reads like the inset metal-on-metal separators on audio interface
-   chassis: a dark line plus a thin bright highlight to the right of it,
-   so the eye reads it as a recessed groove rather than a flat line.
-   Fades at both ends so it doesn't bleed into the drawer borders. */
+   chassis: a deep dark line with adjacent thin bright highlights on
+   both sides, so the eye reads it as a recessed groove rather than a
+   flat line. Fades at both ends so it doesn't bleed into the drawer
+   borders. Iteration 5: tighter margins for higher information density,
+   stronger contrast for better visibility. */
 .drawerDivider {
   flex: 0 0 1px;
   align-self: stretch;
-  margin: 4px 6px;
+  margin: 4px 2px;
   background: linear-gradient(180deg,
     rgba(0, 0, 0, 0) 0%,
-    rgba(0, 0, 0, 0.65) 12%,
-    rgba(0, 0, 0, 0.65) 88%,
+    rgba(0, 0, 0, 0.88) 10%,
+    rgba(0, 0, 0, 0.88) 90%,
     rgba(0, 0, 0, 0) 100%);
-  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.05);
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.12),
+    -1px 0 0 rgba(255, 255, 255, 0.04);
 }
 
 .drawerRight {
@@ -250,15 +254,34 @@
   gap: 7px;
 }
 
-/* LED dot — 小さい円、 currentColor を box-shadow で発光させてリアル感。 */
+/* Domed status lamp for the ops legend rows. Iteration 5: matched to the
+   preset column LEDs so all status indicators in the drawer share one
+   visual language. Stacks two background layers on top of currentColor:
+     1. A small off-center bright reflection (= panel light on the dome)
+     2. A subtle outer darkening (= the dome's far-edge curvature)
+   plus an inset border for the bezel and a soft outer halo to keep the
+   "lit" feel. The pulse animation modulates opacity only, so the dome
+   shape is preserved through the cycle. */
 .led {
-  width: 6px;
-  height: 6px;
+  position: relative;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
-  background: currentColor;
-  box-shadow: 0 0 4px currentColor;
+  background-color: currentColor;
+  background-image:
+    radial-gradient(circle at 30% 28%,
+      rgba(255, 255, 255, 0.65) 0%,
+      rgba(255, 255, 255, 0) 36%),
+    radial-gradient(circle at 50% 60%,
+      rgba(0, 0, 0, 0) 55%,
+      rgba(0, 0, 0, 0.32) 100%);
+  background-repeat: no-repeat;
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.5),
+    0 0 3px currentColor,
+    0 0 7px color-mix(in srgb, currentColor 60%, transparent);
   animation: led-pulse 2.4s ease-in-out infinite;
 }
 .led[data-color="orange"] { color: #ff9d3f; }
@@ -276,8 +299,8 @@
 .opsRow:nth-child(5) .led { animation-delay: 2.0s; }
 
 @keyframes led-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
-  50%      { opacity: 0.55; box-shadow: 0 0 2px currentColor; }
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
 }
 
 .opsText {

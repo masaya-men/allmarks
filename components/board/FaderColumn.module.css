@@ -21,49 +21,90 @@
   height: 110px;
 }
 
+/* Recessed channel that the handle rides in. Iteration 5: widened from
+   a 2 px flat line to a 4 px slot with inset shadow at top and bottom
+   so the slot reads as having real depth. Side walls picked out with
+   thin inset highlights to sell the "machined groove" feel. */
 .track {
   position: absolute;
   left: 50%;
   top: 0;
   bottom: 0;
   transform: translateX(-50%);
-  width: 2px;
-  background: linear-gradient(to top, #333 0%, #555 50%, #333 100%);
-  border-radius: 1px;
+  width: 4px;
+  background: linear-gradient(180deg,
+    #050507 0%,
+    #15151a 12%,
+    #181820 50%,
+    #15151a 88%,
+    #050507 100%);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 2px 3px rgba(0, 0, 0, 0.9),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.9),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04);
 }
 
 .defaultMark {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 12px;
+  width: 14px;
   height: 1px;
   background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
   pointer-events: none;
 }
 
+/* 3-D fader cap. Multi-stop top-to-bottom gradient renders the curved
+   plastic face (highlight at top, saturated orange in the middle,
+   shadow at the bottom). Outer drop shadow + glow place it above the
+   track; inset highlights sharpen the top edge so the cap reads as
+   raised rather than painted on. Iteration 5: taller (7 → 9 px) so the
+   relief is readable and the grip ridges have room. */
 .handle {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 22px;
-  height: 7px;
-  background: #ff9d3f;
+  height: 9px;
   border-radius: 2px;
-  box-shadow: 0 1px 4px rgba(255, 157, 63, 0.6),
-              inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  background-image:
-    linear-gradient(to bottom,
-      transparent 0%,
-      transparent 25%,
-      rgba(0, 0, 0, 0.35) 25%,
-      rgba(0, 0, 0, 0.35) calc(25% + 1px),
-      transparent calc(25% + 1px),
-      transparent 75%,
-      rgba(0, 0, 0, 0.35) 75%,
-      rgba(0, 0, 0, 0.35) calc(75% + 1px),
-      transparent calc(75% + 1px),
-      transparent 100%);
+  background: linear-gradient(180deg,
+    #ffd29a 0%,
+    #ffa852 22%,
+    #ff8a25 50%,
+    #c66514 80%,
+    #6b3608 100%);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 3px 6px rgba(0, 0, 0, 0.55),
+    0 0 8px rgba(255, 157, 63, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    inset 1px 0 0 rgba(255, 255, 255, 0.22),
+    inset -1px 0 0 rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+/* Grip ridges on the cap face — three fine horizontal striations,
+   placed via repeating-linear-gradient so they read as machined grooves
+   at the small scale rather than printed lines. */
+.handle::before {
+  content: '';
+  position: absolute;
+  inset: 1.5px 2px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 1.6px,
+    rgba(0, 0, 0, 0.32) 1.6px,
+    rgba(0, 0, 0, 0.32) 2.1px,
+    rgba(255, 255, 255, 0.18) 2.1px,
+    rgba(255, 255, 255, 0.18) 2.6px
+  );
+  border-radius: 1px;
+  opacity: 0.55;
   pointer-events: none;
 }
 
