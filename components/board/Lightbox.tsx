@@ -10,7 +10,7 @@ import { t } from '@/lib/i18n/t'
 import { normalizeItem, type LightboxItem } from '@/lib/share/lightbox-item'
 import type { ShareCard } from '@/lib/share/types'
 import { TextCard, MinimalCard, pickCard } from './cards'
-import { TEXT_CARD_MIN_ASPECT } from '@/lib/embed/text-card-measure'
+import { TEXT_CARD_ASPECT } from '@/lib/embed/text-card-measure'
 import { cleanTitle } from '@/lib/embed/clean-title'
 import { pickTextCardColor } from '@/lib/embed/text-card-color'
 import { getFaviconUrl, hostnameFromUrl } from '@/lib/embed/favicon'
@@ -1523,7 +1523,7 @@ function TweetMedia({
     // for legacy data. Full-text legibility is delivered via the tweet
     // backfill (= updates item.title with meta.text after fetch).
     const text = item.title || meta?.text || cleanTweetTitle(item.title ?? '')
-    const aspect = item.aspectRatio ?? TEXT_CARD_MIN_ASPECT
+    const aspect = item.aspectRatio ?? TEXT_CARD_ASPECT
     const fakeBoardItem: BoardItem = {
       bookmarkId: item.bookmarkId ?? item.url,
       cardId: item.cardId ?? item.url,
@@ -1945,7 +1945,7 @@ function LightboxMedia({ item }: { readonly item: LightboxItem }): ReactNode {
   // TextCard に fallback。 thumbnail 自体無いなら最初から TextCard。
   // (session 32 の「全部 TextCard」 判断を覆して board ImageCard / TextCard と
   // 同じ routing に揃える。)
-  const textAspect = aspectRatio ?? TEXT_CARD_MIN_ASPECT
+  const textAspect = aspectRatio ?? TEXT_CARD_ASPECT
   // session 35: cardWidth は toBoardShapeForFallback の `item.cardWidth ?? 280` を
   // 使う (= source board card の実 width)。 以前ここに `cardWidth: 280` 上書きが
   // あり、 source typography (source 実 width で選択) と .media typography (280 で

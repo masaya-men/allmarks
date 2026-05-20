@@ -115,8 +115,8 @@ export function TextCard({
   }
 
   return (
-    <div className={`${styles.textCard} ${styles[typography.mode]} ${styles[colorVariant]}`}>
-      {faviconUrl && typography.mode !== 'headline' && !omitMeta && (
+    <div className={`${styles.textCard} ${styles[colorVariant]}`}>
+      {faviconUrl && !omitMeta && (
         <div className={styles.metaTop}>
           <img src={faviconUrl} alt="" className={styles.favicon} draggable={false} />
           <span className={styles.domain}>{hostname}</span>
@@ -136,13 +136,6 @@ export function TextCard({
           {title}
         </div>
       </div>
-
-      {faviconUrl && typography.mode === 'headline' && !omitMeta && (
-        <div className={styles.metaBottom}>
-          <img src={faviconUrl} alt="" className={styles.favicon} draggable={false} />
-          <span className={styles.domain}>{hostname}</span>
-        </div>
-      )}
     </div>
   )
 }

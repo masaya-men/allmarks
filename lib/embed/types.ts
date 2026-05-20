@@ -77,11 +77,10 @@ export type TikTokPlayback = {
   readonly cookieString: string
 }
 
-/** Title typography auto-mode pick. */
-export type TitleMode = 'headline' | 'editorial' | 'index'
-
+/** Session 55 unified — `mode` is now fixed to 'editorial'. Field is kept for
+ *  signature compatibility with existing call sites. */
 export type TitleTypographyResult = {
-  readonly mode: TitleMode
+  readonly mode: 'editorial'
   readonly fontSize: number    // px
   readonly lineHeight: number  // px
   readonly maxLines: number

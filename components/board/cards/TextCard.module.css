@@ -1,9 +1,8 @@
-/* Session 52 (B-#22 follow-up) — transparent + B-medium glow card with
-   scrollable body. The earlier RGB chromatic glitch on the bottom edge
-   was removed (user request: "グリッチが難しさの元") so the card is now
-   a clean glass surface: transparent fill, iridescent edge gradient,
-   subtle bottom fade indicating overflow, and native scroll inside the
-   card when content overflows. */
+/* Session 56 — fully transparent body + 1px gradient ring (mask-composite),
+   scrollable interior with bottom fade for overflow. Old box-shadow glow
+   surface was replaced with a clean 1px iridescent edge that traces only
+   the card outline. metaTop uses opaque grey to avoid alpha-overlap white
+   flash during close-morph (= source clone overlap bug). */
 
 .textCard {
   position: relative;
@@ -139,29 +138,14 @@
     transparent 100%);
 }
 
-/* Scrolls with the container's content; inherits font properties from
-   inline `style` so `.titleText` doesn't need to redeclare them. */
+/* Scrolls with the container's content; inherits font-size / line-height
+   from the inline `style` set by TextCard.tsx (driven by pickTitleTypography). */
 .titleInner {
   position: relative;
   word-break: break-word;
   white-space: pre-wrap;
   color: rgba(255, 255, 255, 0.92);
-}
-
-/* Typography variants. */
-.headline .titleInner {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.editorial .titleInner {
   font-family: var(--font-sans);
   font-weight: 500;
   letter-spacing: -0.01em;
-}
-
-.index .titleInner {
-  font-family: var(--font-mono);
-  font-weight: 400;
 }
