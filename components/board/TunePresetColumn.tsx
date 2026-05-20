@@ -19,23 +19,29 @@ export function TunePresetColumn({ widthPx, gapPx, onApply }: Props): ReactEleme
         {PRESETS.map((preset) => {
           const isActive = preset.id === activeId
           return (
-            <div key={preset.id} className={styles.presetRow}>
+            <button
+              key={preset.id}
+              type="button"
+              role="radio"
+              aria-checked={isActive}
+              aria-label={preset.label}
+              className={styles.presetRow}
+              onClick={(): void => {
+                if (!isActive) onApply(preset.id)
+              }}
+            >
+              <span className={styles.label}>{preset.label}</span>
+              <span
+                className={`${styles.lever} ${isActive ? styles.leverDown : ''}`}
+                aria-hidden="true"
+              >
+                <span className={styles.handle} />
+              </span>
               <span
                 className={`${styles.led} ${isActive ? styles.ledOn : ''}`}
                 aria-hidden="true"
               />
-              <button
-                type="button"
-                role="radio"
-                aria-checked={isActive}
-                className={`${styles.button} ${isActive ? styles.buttonActive : ''}`}
-                onClick={(): void => {
-                  if (!isActive) onApply(preset.id)
-                }}
-              >
-                {preset.label}
-              </button>
-            </div>
+            </button>
           )
         })}
       </div>
