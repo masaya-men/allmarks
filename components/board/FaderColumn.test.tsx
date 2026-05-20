@@ -20,7 +20,7 @@ describe('FaderColumn — render', () => {
     expect(container.querySelector('[data-testid="fader-default-mark"]')).not.toBeNull()
     const ruler = container.querySelector('[data-testid="radio-ruler"]')
     expect(ruler).not.toBeNull()
-    expect(ruler!.querySelectorAll('[data-tick]').length).toBe(22)
+    expect(ruler!.querySelectorAll('[data-tick]').length).toBe(42)
     expect(getByText('W')).toBeTruthy()
   })
 
@@ -137,6 +137,8 @@ describe('FaderColumn — ruler tick highlight', () => {
       (t as HTMLElement).className.includes('hi'),
     )
     expect(hiTicks.length).toBeGreaterThan(0)
-    expect(hiTicks.length).toBeLessThanOrEqual(7)
+    // 42 ticks × ±10 % window = up to ~9 ticks within range, bumped from 7
+    // to keep the assertion accurate after the tick density doubled.
+    expect(hiTicks.length).toBeLessThanOrEqual(11)
   })
 })

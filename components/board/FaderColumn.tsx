@@ -21,7 +21,7 @@ function fractionToValue(fraction: number, min: number, max: number, def: number
   return def + ((f - 0.5) / 0.5) * (max - def)
 }
 
-const TICK_POSITIONS = Array.from({ length: 22 }, (_, i) => (i / 21) * 100)
+const TICK_POSITIONS = Array.from({ length: 42 }, (_, i) => (i / 41) * 100)
 const MOUSE_PX_FOR_FULL_RANGE = 30000
 const SHIFT_SPEED_MULTIPLIER = 40
 
@@ -56,8 +56,8 @@ export function FaderColumn({
     return Math.abs(tickFraction - fraction) <= 0.10
   }
 
-  const isMajor = (i: number): boolean => i % 5 === 0 || i === 21
-  const isCenterMajor = (i: number): boolean => i === 10 || i === 11
+  const isMajor = (i: number): boolean => i % 5 === 0 || i === 41
+  const isCenterMajor = (i: number): boolean => i === 20 || i === 21
 
   const handlePointerDown = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     e.preventDefault()

@@ -198,7 +198,11 @@
 .drawerDivider {
   flex: 0 0 1px;
   align-self: stretch;
-  margin: 4px 2px;
+  /* Asymmetric margins: small left margin keeps the divider close to the
+     preset column (preserves the tightened look), larger right margin
+     leaves the fader area properly breathing room from the engraved
+     groove. Iteration 6: right pushed from 2 → 10 px. */
+  margin: 4px 10px 4px 2px;
   background: linear-gradient(180deg,
     rgba(0, 0, 0, 0) 0%,
     rgba(0, 0, 0, 0.88) 10%,
@@ -282,26 +286,15 @@
     inset 0 0 0 0.5px rgba(0, 0, 0, 0.5),
     0 0 3px currentColor,
     0 0 7px color-mix(in srgb, currentColor 60%, transparent);
-  animation: led-pulse 2.4s ease-in-out infinite;
 }
 .led[data-color="orange"] { color: #ff9d3f; }
 .led[data-color="yellow"] { color: #ffd84a; }
 .led[data-color="green"]  { color: #4cd56a; }
 .led[data-color="red"]    { color: #ff5050; }
 
-/* Stagger pulse phases by row position so colors don't sync visually
-   even when two rows share a color (= orange × 2 fader actions, red × 2
-   history actions). */
-.opsRow:nth-child(1) .led { animation-delay: 0s; }
-.opsRow:nth-child(2) .led { animation-delay: 0.5s; }
-.opsRow:nth-child(3) .led { animation-delay: 1.0s; }
-.opsRow:nth-child(4) .led { animation-delay: 1.5s; }
-.opsRow:nth-child(5) .led { animation-delay: 2.0s; }
-
-@keyframes led-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.55; }
-}
+/* Iteration 6: pulse animation removed at user request — the dome
+   already provides the "alive" feel without the rhythmic opacity
+   breathing, which competed with the active preset's tactile snap. */
 
 .opsText {
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
@@ -312,6 +305,3 @@
   white-space: nowrap;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .led { animation: none; }
-}
