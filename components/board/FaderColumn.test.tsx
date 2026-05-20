@@ -87,7 +87,7 @@ describe('FaderColumn — drag', () => {
     expect(lastCall[0]).toBeGreaterThan(267.84)
   })
 
-  it('Shift+pointermove applies SHIFT_SPEED_MULTIPLIER factor', () => {
+  it('plain drag is FAST_SPEED_MULTIPLIER (40×) faster than Shift+drag (fine mode)', () => {
     const onChangeNoShift = vi.fn()
     const onChangeShift = vi.fn()
     const { container: c1 } = render(
@@ -110,7 +110,9 @@ describe('FaderColumn — drag', () => {
     const lastShift = onChangeShift.mock.calls[onChangeShift.mock.calls.length - 1][0] as number
     const noShiftDelta = lastNo - 300
     const shiftDelta = lastShift - 300
-    expect(Math.abs(shiftDelta / noShiftDelta - 40)).toBeLessThan(0.5)
+    // Iteration 8: speeds inverted — plain drag is now the fast mode,
+    // Shift drops to the slow base ratio, so plain ÷ shift ≈ 40.
+    expect(Math.abs(noShiftDelta / shiftDelta - 40)).toBeLessThan(0.5)
   })
 
   it('pointerdown alone does NOT jump (click-to-jump moved to long-press)', () => {

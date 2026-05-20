@@ -508,11 +508,11 @@ export function TuneTrigger({
             </div>
             <div className={styles.opsRow}>
               <span className={styles.led} data-color="orange" />
-              <span className={styles.opsText}>SHIFT FOR FAST</span>
+              <span className={styles.opsText}>SHIFT FOR FINE</span>
             </div>
             <div className={styles.opsRow}>
               <span className={styles.led} data-color="green" />
-              <span className={styles.opsText}>CLICK TO JUMP</span>
+              <span className={styles.opsText}>HOLD TO JUMP</span>
             </div>
             <div className={styles.opsRow}>
               <span className={styles.led} data-color="red" />

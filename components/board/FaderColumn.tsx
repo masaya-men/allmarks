@@ -23,7 +23,13 @@ function fractionToValue(fraction: number, min: number, max: number, def: number
 
 const TICK_POSITIONS = Array.from({ length: 42 }, (_, i) => (i / 41) * 100)
 const MOUSE_PX_FOR_FULL_RANGE = 30000
-const SHIFT_SPEED_MULTIPLIER = 40
+
+// Iteration 8: drag speeds inverted at user request. Plain drag is now the
+// fast mode (= ratio × FAST_SPEED_MULTIPLIER) so navigation is quick by
+// default; holding Shift drops back to the slow base ratio for precise
+// fine-tuning. This matches the convention from most pro audio software
+// (= Shift = precision / fine, plain = coarse / fast).
+const FAST_SPEED_MULTIPLIER = 40
 
 // Long-press threshold for "jump to clicked position". A plain pointer-down
 // no longer jumps — that was hostile to fine-tuning, since clicking on the
@@ -135,7 +141,7 @@ export function FaderColumn({
 
     const range = max - min
     const ratio = range / MOUSE_PX_FOR_FULL_RANGE
-    const eff = e.shiftKey ? ratio * SHIFT_SPEED_MULTIPLIER : ratio
+    const eff = e.shiftKey ? ratio : ratio * FAST_SPEED_MULTIPLIER
     const delta = -e.movementY * eff
     const next = Math.max(min, Math.min(max, valueRef.current + delta))
     if (next !== valueRef.current) onChange(next)
