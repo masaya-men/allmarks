@@ -20,7 +20,23 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.9 黄ピル復活 + SPA 連動)
+### 直近の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.10 X SPA 検知保険追加)
+
+v0.1.9 で user 第 3 弾実機検証 → YouTube 完璧 OK / X だけ「一覧画面で Bookmark click → tweet click で個別ページ移動 → フローティングボタン緑にならない」 と報告。 X の React Router が `pushState` フックを擦り抜けるパスを使っている。 業界標準 (= Toby, Raindrop, mymind 等) と同じく**定期チェック方式** (= 500ms 間隔で `location.href` 文字列比較) を保険として追加。 webNavigation API 案も検討したが「閲覧履歴読み取り」 という重そうな権限が install prompt に出るので user 獲得ハードルが上がる、 polling 方式は実コスト無視できる + 審査リスクなし。 v0.1.9 → 0.1.10。
+
+**ship 済**:
+
+- [extension/floating-button.js](../extension/floating-button.js) に `setInterval(onMaybeUrlChange, 500)` 追加。 既存の pushState フック + popstate + yt-navigate-finish の 3 段に加えて 4 段目の保険。 99% のチェックは `location.href === lastUrl` で即 return = ほぼ無コスト
+
+**変更 file (1 modified)**: extension/floating-button.js (+ extension/manifest.json + docs)
+
+**テスト**: 633 PASS、 tsc clean、 build OK、 deploy 1 回
+
+**manifest**: 0.1.9 → **0.1.10**
+
+---
+
+### 1 つ前の状態 (2026-05-20 セッション 59 後半 — 拡張機能 v0.1.9 黄ピル復活 + SPA 連動)
 
 session 59 後半で user 第 2 弾実機検証 → v0.1.8 の問題発見 = (1) 黄ピルが**全 5 サイトで出なくなった** (= 保存済 URL で再 click しても何のフィードバックも返らない) / (2) **動画ページを SPA navigation で開いただけ**ではフローティングボタン緑にならず、 リロード必須。 user 提案「フローティングボタンは AllMarks の保存状態インジケーターであるべき」 が正解と確認 → 設計修正。 v0.1.8 → 0.1.9。
 

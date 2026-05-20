@@ -447,6 +447,17 @@
   // and-suspenders (= some YouTube layouts dispatch yt-navigate-finish
   // BEFORE history is updated in a tick the listener above can catch).
   window.addEventListener('yt-navigate-finish', onMaybeUrlChange)
+  // Final safety net — 500ms polling. Some SPAs (= X / Twitter's React
+  // Router in particular) navigate through code paths the pushState hooks
+  // above don't catch (= they call history APIs in a microtask the wrap
+  // boundary misses). String compare on location.href is sub-microsecond,
+  // so the steady-state cost is invisible: 99% of ticks early-return at
+  // the first line of onMaybeUrlChange. Industry-standard fallback —
+  // Toby, Raindrop, mymind all use polling either alone or alongside
+  // webNavigation API. We pick polling-only to avoid the "Read your
+  // browsing history" install prompt that the webNavigation permission
+  // adds (= deters non-technical users).
+  setInterval(onMaybeUrlChange, 500)
 
   // === Startup ===
   async function start() {
