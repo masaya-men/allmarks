@@ -479,6 +479,7 @@ export function TuneTrigger({
           gapPx={gapPx}
           onApply={onApplyPreset}
         />
+        <span className={styles.drawerDivider} aria-hidden="true" />
         <div className={styles.drawerRight}>
           <div className={styles.faderGroup}>
             <FaderColumn

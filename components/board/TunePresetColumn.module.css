@@ -28,7 +28,7 @@
    covers all 3 for a wide click target; visually they remain separate. */
 .presetRow {
   display: grid;
-  grid-template-columns: 8px 18px 1fr;
+  grid-template-columns: 10px 18px 1fr;
   align-items: center;
   gap: 10px;
   padding: 2px 4px;
@@ -46,26 +46,53 @@
   border-radius: 2px;
 }
 
-/* Status lamp: small recessed LED on the far left of the row. OFF = a
-   dim "hole in the panel" with faint inner shadow. ON = saturated green
-   with the same 3-stop halo recipe used by the ✓ pill / cursor pill, so
-   the active feedback reads as part of the same visual language. */
+/* Status lamp: small domed LED on the far left of the row. Built as a
+   real-feeling lens via stacked radial gradients:
+     1. The dome — radial gradient from dark-grey at top-left to near-black
+        at the outer edge, simulating a curved plastic lens cap.
+     2. The reflection — a small bright off-center hot spot at the upper
+        left, where a panel light would hit the dome.
+     3. The bezel — a 1 px inset ring of pure black, so the lens looks
+        seated into the chassis instead of floating on it.
+   ON state replaces the dark dome with a saturated green core + tight
+   bright reflection, and adds the 3-stop outer halo (= same recipe as
+   the ✓ pill / cursor pill, keeping the active feedback consistent
+   across the app). */
 .led {
-  width: 6px;
-  height: 6px;
+  position: relative;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.7);
+  background:
+    radial-gradient(circle at 30% 28%,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0) 32%) no-repeat,
+    radial-gradient(circle at 50% 50%,
+      #2c2c32 0%,
+      #14141a 55%,
+      #08080c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.95),
+    0 1px 0 rgba(255, 255, 255, 0.05);
   transition: background 80ms ease-out, box-shadow 120ms ease-out;
   justify-self: center;
 }
 
 .ledOn {
-  background: rgba(74, 222, 128, 0.98);
+  background:
+    radial-gradient(circle at 30% 28%,
+      rgba(255, 255, 255, 0.75) 0%,
+      rgba(255, 255, 255, 0) 35%) no-repeat,
+    radial-gradient(circle at 50% 50%,
+      #d4f8dc 0%,
+      #6cea9a 28%,
+      #3fbf6d 60%,
+      #186236 100%);
   box-shadow:
+    inset 0 0 0 0.5px rgba(0, 80, 30, 0.6),
     0 0 3px rgba(134, 239, 172, 0.95),
-    0 0 6px rgba(74, 222, 128, 0.65),
-    0 0 12px rgba(34, 197, 94, 0.4);
+    0 0 6px rgba(74, 222, 128, 0.7),
+    0 0 12px rgba(34, 197, 94, 0.45);
 }
 
 /* Mini breaker / SPDT toggle: detailed dark slotted track with a metallic
