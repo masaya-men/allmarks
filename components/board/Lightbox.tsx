@@ -2212,11 +2212,13 @@ function LargeTextCardScaler({
           left: 0,
           width: `${boardW}px`,
           height: `${boardH}px`,
-          // session 34: inner TextCard の var(--card-radius) (= board 24px) が
-          // 拡大されると外側 .imageBox の 20px clip より大きくなり 「20 より丸い」
-          // 視覚になる。 0 上書きで inner を矩形化し、 .imageBox の overflow:hidden +
-          // 20px radius が最終形を決める (= LargeBoardCardClone と同じ手)。
-          ['--card-radius' as string]: '0',
+          // session 56 Step 1: session 34 当時の `--card-radius: '0'` 上書きを撤廃。
+          // 当時は --card-radius=24px / --lightbox-media-radius=20px の不一致対策
+          // だったが、 session 22 で両方 20px に揃ったので不要。 inner は :root から
+          // --card-radius:20px を継承し、 zoom 後の視覚 radius が board と同じ proportion
+          // (= 50px 視覚) になる。 結果として ::before の枠線が 4 隅まで連続する。
+          // 副作用: 外 .imageBox の 20px clip と中 body の 50px curve の差で角に三日月の
+          // 透けゾーンが出る可能性あり (= 実機確認待ち)。
         } as React.CSSProperties}
       >
         <TextCard
