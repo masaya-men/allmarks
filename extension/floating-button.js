@@ -6,6 +6,13 @@
 // MV3 content_scripts don't allow ES module imports, so the pure
 // state-machine and mirror logic are inlined below. Source of truth lives
 // at extension/lib/floating-button-state.js + extension/lib/saved-urls-mirror.js.
+//
+// ⚠ When editing the inline state-machine below, ALSO update the source-of-
+// truth file with the same event cases. Tests run against the source-of-
+// truth; if the inline copy drifts, the button silently breaks at runtime
+// while tests still pass green. (= session 58 bug — mirror-hit-live /
+// mirror-hit-initial were added in source but not copied to inline,
+// causing saves via auto-save to never light up the button.)
 
 ;(function () {
   // === Early exits ===
@@ -42,8 +49,17 @@
       case 'error-elapsed':
         if (state.pillState === 'error') return { ...state, pillState: 'idle' }
         return state
-      case 'mirror-hit':
+      case 'mirror-hit-initial':
+        // Page load: URL was already in the mirror from a past visit.
+        // Light up savedFlag silently (no flash) — nothing was just triggered.
         return { ...state, savedFlag: true }
+      case 'mirror-hit-live':
+        // Live update: URL appeared in the mirror via a non-click save path
+        // (= site auto-save / shortcut / context menu / bookmarklet). Run
+        // the flash animation so the user gets the same confirmation a
+        // floating-button click would have given them.
+        if (state.savedFlag) return state
+        return { ...state, savedFlag: true, pillState: 'flash' }
       case 'mirror-miss':
         if (!state.savedFlag) return state
         return { ...state, savedFlag: false }

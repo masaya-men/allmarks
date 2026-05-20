@@ -52,9 +52,46 @@ function pruneRecent(now) {
   }
 }
 
+// === Mirror snapshot — sync-readable cache of "URLs already in AllMarks".
+// Source of truth: chrome.storage.local key `savedUrlsMirror` (written by
+// lib/dispatch.js after every successful save). Mirror keys are normalized
+// URLs; the URLs we extract on this page are already in canonical form
+// (= `https://www.youtube.com/watch?v={id}` with no list/t/etc), so a raw
+// Set lookup is sufficient.
+//
+// Purpose: suppress auto-save fires when the URL is already saved. Two
+// failure modes this guards against:
+//   1. OFF-toggle clicks that slip past per-site DOM guards (= YouTube
+//      Watch Later text/aria fragility reported session 59).
+//   2. Toggle churn after a save just landed (= user un-toggles then
+//      re-toggles within the dedupe window).
+// Side effect: the user won't get a cursor pill on already-saved pages.
+// The floating button is already green there, so it's not blind feedback.
+const savedUrlMirror = new Set()
+function refreshMirrorSnapshot(mirror) {
+  savedUrlMirror.clear()
+  if (!mirror) return
+  for (const k of Object.keys(mirror)) savedUrlMirror.add(k)
+}
+if (isExtensionAlive()) {
+  try {
+    chrome.storage.local.get({ savedUrlsMirror: {} }).then((stored) => {
+      refreshMirrorSnapshot(stored.savedUrlsMirror)
+    }).catch(() => {})
+  } catch (_) {}
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local' || !changes.savedUrlsMirror) return
+      refreshMirrorSnapshot(changes.savedUrlsMirror.newValue)
+    })
+  } catch (_) {}
+}
+function isUrlAlreadySaved(url) {
+  return savedUrlMirror.has(url)
+}
+
 function extractVideoUrl() {
-  // We only auto-save from /watch?v=... pages. Channel pages and the homepage
-  // would require per-thumbnail URL extraction which is out of scope here.
+  // /watch?v=... — auto-save from the current video page directly.
   if (location.pathname !== '/watch') return null
   const params = new URLSearchParams(location.search)
   const v = params.get('v')
@@ -80,6 +117,98 @@ function extractVideoOgp(url) {
     favicon: 'https://www.youtube.com/s/desktop/favicon.ico',
     siteName: 'YouTube',
   }
+}
+
+// === Pending video capture — list / channel / home page ︙ menu path.
+// On these pages location.pathname is not /watch, so extractVideoUrl() returns
+// null. But the ︙ menu on a video tile exposes "[後で見る] に保存" — the same
+// action as the watch-page Save dropdown. The popup is mounted in a global
+// container, NOT inside the tile's DOM tree, so when the option is clicked we
+// can't walk back from the option to the tile.
+//
+// Workaround: on every click, look up to see if the click originated inside a
+// known YouTube video tile. If so, capture the tile's video URL + display
+// metadata. When a watch-later option is then clicked from the global popup
+// within PENDING_VIDEO_MAX_AGE_MS, the click handler falls back to this.
+//
+// The tile metadata (title, thumbnail, channel) becomes the bookmark's OGP
+// because we have no way to fetch the video page's meta tags from here.
+const PENDING_VIDEO_MAX_AGE_MS = 5000
+
+const VIDEO_TILE_SELECTOR = [
+  'ytd-rich-item-renderer',
+  'ytd-rich-grid-media',
+  'ytd-grid-video-renderer',
+  'ytd-compact-video-renderer',
+  'ytd-video-renderer',
+  'ytd-playlist-video-renderer',
+  'ytd-playlist-panel-video-renderer',
+  'yt-lockup-view-model',
+  'ytm-shelf-renderer ytm-media-item',
+].join(', ')
+
+let pendingVideo = null  // { url, ogp, at } | null
+
+function canonicalizeWatchHref(href) {
+  if (!href) return null
+  try {
+    const u = new URL(href, 'https://www.youtube.com/')
+    if (u.pathname !== '/watch') return null
+    const v = u.searchParams.get('v')
+    if (!v) return null
+    return 'https://www.youtube.com/watch?v=' + v
+  } catch (_) {
+    return null
+  }
+}
+
+function extractTileOgp(tile, url) {
+  if (!tile) return null
+  const titleEl = tile.querySelector(
+    '#video-title, [id="video-title"], .yt-lockup-metadata-view-model-wiz__title, ' +
+    'h3 .yt-core-attributed-string, h3 a, h3'
+  )
+  const title = ((titleEl ? (titleEl.innerText || titleEl.textContent || '') : '') || '').trim() || url
+  const imgEl = tile.querySelector('img')
+  const image = imgEl ? (imgEl.src || imgEl.getAttribute('src') || '') : ''
+  const channelEl = tile.querySelector(
+    'ytd-channel-name a, ytd-video-meta-block ytd-channel-name a, ' +
+    '.yt-lockup-metadata-view-model-wiz__metadata-row a, ' +
+    '.yt-content-metadata-view-model-wiz__metadata-row a'
+  )
+  const channelName = channelEl ? ((channelEl.innerText || channelEl.textContent || '').trim()) : ''
+  return {
+    url,
+    title,
+    description: channelName ? channelName + ' • YouTube' : '',
+    image,
+    favicon: 'https://www.youtube.com/s/desktop/favicon.ico',
+    siteName: 'YouTube',
+  }
+}
+
+function captureVideoFromTile(target) {
+  if (!target || !target.closest) return
+  const tile = target.closest(VIDEO_TILE_SELECTOR)
+  if (!tile) return
+  // Tile may host multiple anchors (overlay, title, channel). Prefer the
+  // canonical thumbnail link (a#thumbnail) and fall back to any /watch anchor.
+  const link = tile.querySelector(
+    'a#thumbnail[href*="/watch"], a.yt-simple-endpoint[href*="/watch"], a[href*="/watch"]'
+  )
+  const href = link ? link.getAttribute('href') : null
+  const url = canonicalizeWatchHref(href)
+  if (!url) return
+  pendingVideo = { url, ogp: extractTileOgp(tile, url), at: Date.now() }
+}
+
+function resolvePendingVideo() {
+  if (!pendingVideo) return null
+  if (Date.now() - pendingVideo.at > PENDING_VIDEO_MAX_AGE_MS) {
+    pendingVideo = null
+    return null
+  }
+  return pendingVideo
 }
 
 function buttonTextLower(btn) {
@@ -145,19 +274,69 @@ function getButtonKind(target) {
 }
 
 document.addEventListener('click', (event) => {
+  // Capture pending video URL from the originating tile, if any. Runs
+  // unconditionally so that ︙-button clicks (= which then open a global
+  // popup detached from the tile) leave us with the URL to use when the
+  // user selects "[後で見る] に保存" from that popup. Cheap — bails fast
+  // when the click isn't inside a tile.
+  captureVideoFromTile(event.target)
+
   const kind = getButtonKind(event.target)
   if (!kind) return
   const source = kind === 'like' ? 'yt-like' : 'yt-watch-later'
   // Bail out before pill / DOM walks if the user toggled this source OFF.
   if (!isSourceEnabled(source)) return
-  const url = extractVideoUrl()
-  if (!url) return
+
+  // URL resolution. /watch page → directly from location. Other pages
+  // (= home / channel / search / playlist list view) → fall back to the
+  // pending video URL captured from the most recent tile click.
+  const directUrl = extractVideoUrl()
+  let url
+  let ogp
+  if (directUrl) {
+    url = directUrl
+    ogp = extractVideoOgp(url)
+  } else if (kind === 'watch-later') {
+    const pending = resolvePendingVideo()
+    if (!pending) return
+    url = pending.url
+    ogp = pending.ogp
+    // Consume the pending capture — a second watch-later click on the same
+    // popup would land on a different tile's option (popup closes between).
+    pendingVideo = null
+  } else {
+    // Like outside /watch — no fallback (Like only exists on the watch page).
+    return
+  }
+
+  // Mirror defense — URL is already in AllMarks. The click is most likely:
+  //   (a) an OFF-toggle (= "Remove from Watch later") that slipped past the
+  //       text-stem OFF guard in getButtonKind, or
+  //   (b) a no-op re-save the user shouldn't see a pill for.
+  // Either way: no save dispatch, no pill. Floating button is already green.
+  if (isUrlAlreadySaved(url)) {
+    try {
+      const btn = event.target && event.target.closest
+        ? event.target.closest('button, yt-list-item-view-model, [class*="ytListItemViewModel"], [role="option"]')
+        : null
+      console.debug('[AllMarks] YouTube auto-save suppressed — URL already in mirror', {
+        url,
+        kind,
+        btnText: btn ? (btn.innerText || '').trim().slice(0, 80) : null,
+        btnAriaLabel: btn ? btn.getAttribute('aria-label') : null,
+        btnAriaChecked: btn ? btn.getAttribute('aria-checked') : null,
+        btnAriaPressed: btn ? btn.getAttribute('aria-pressed') : null,
+        btnRole: btn ? btn.getAttribute('role') : null,
+        btnClass: btn ? (btn.className && btn.className.toString && btn.className.toString().slice(0, 120)) : null,
+      })
+    } catch (_) {}
+    return
+  }
   const now = Date.now()
   pruneRecent(now)
   const dedupeKey = kind + ':' + url
   if (recentlySent.has(dedupeKey)) return
   recentlySent.set(dedupeKey, now)
-  const ogp = extractVideoOgp(url)
   if (!isExtensionAlive()) return
   // Fire the pill immediately via same-window postMessage so content.js
   // can show "Saving" within ~10ms instead of waiting for the background

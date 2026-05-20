@@ -20,7 +20,32 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 58 — apple-touch-icon 更新 + 拡張機能不安定 root cause 修正 sprint)
+### 直近の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.8 全サイト構造的修正 sprint)
+
+session 59 で user 実機検証の結果、 v0.1.7 で 4 つの問題が報告 = ① 一覧 ︙ メニューから「後で見るに保存」 で拾えない / ② 「後で見るから削除」 で誤発火 + エラー / ③ 保存後フローティングボタン緑にならない / ④ 保存済再 click で黄ピル。 拡張 5 サイト全部の OFF ガード方式を監査 → 4/5 サイトは ARIA / class ベースで構造的に堅い、 **YouTube Watch Later だけ** が文字列依存だった事実が判明。 構造的修正 3 件 + 全サイトに防御層共通投入。 v0.1.7 → 0.1.8。
+
+**ship 済 (= prod 反映済、 user 再 sideload 必要)**:
+
+1. **floating-button.js inline 状態機械を source of truth と同期** ([extension/floating-button.js](../extension/floating-button.js)): session 58 で source ([extension/lib/floating-button-state.js](../extension/lib/floating-button-state.js)) を `mirror-hit-initial` / `mirror-hit-live` の 2 つに分けたが、 floating-button.js の **inline コピーを更新し忘れていた** = 旧 `mirror-hit` のままで default に落ちて何もしなかった + `save-success` も `pillState === 'saving'` guard で外経路保存をブロック。 これが ③「他経路保存でフローティングボタン緑にならない」 root cause。 inline を source と 1:1 で再同期 + ファイル冒頭に「inline 編集時は source も同期しろ」 警告 comment 追加
+2. **全 5 site (= youtube / twitter / vimeo / soundcloud / note) にミラー防御層を共通投入**: chrome.storage.local の savedUrlsMirror を sync-readable Set にキャッシュ、 click handler で「URL が既に AllMarks に保存済なら save 発火を抑止」。 YouTube Watch Later の文字列依存問題を構造的に殺すと同時に、 全サイトの toggle-OFF slip + churn の保険になる。 storage.onChanged で live update。 診断 console.debug 付き
+3. **YouTube 一覧 ︙ メニュー経由保存対応** ([extension/youtube.js](../extension/youtube.js)): ホーム / チャンネル / 検索結果 / プレイリストの video tile (= `ytd-rich-item-renderer`, `yt-lockup-view-model` 等 9 selector) を click capture、 thumbnail の `a[href*="/watch"]` から URL を canonicalize + tile から OGP (title / image / channel) 抽出 → pending capture (5s TTL)。 popup の「後で見るに保存」 click 時に extractVideoUrl が null なら pending を fallback として使う → ① ユーザー視点での「同じ操作」 動作を実現
+4. **session 58 反省点記載**: 「徹底調査」 と言いつつ実機の「解除」 状態の DOM を一度も capture しなかったのが mistake。 文字列ステム列挙だけでは locale 非依存にならない。 今回は構造的防御 (= ミラー Set) に切り替えた
+
+**変更 file (8 modified)**: extension/{floating-button, manifest, youtube, twitter, vimeo, soundcloud, note}.js (+ docs/CURRENT_GOAL, TODO, TODO_COMPLETED.md)
+
+**テスト**: 633 PASS 維持 (= 新規追加なし、 inline 同期の verification は既存 mirror-hit-initial / live / miss テストでカバー)、 tsc clean、 next build OK
+
+**deploy 回数**: 1 (= session 59 build + deploy)
+
+**manifest version**: 0.1.7 → **0.1.8** (= 拡張 user リロード必須)
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 59 セクション
+
+**次セッション (= 60) の goal**: user 実機検証 (= 拡張 v0.1.8 リロード後、 YouTube 一覧 ︙ メニュー / 後で見る解除 / フローティングボタン緑連動 / 黄ピル抑止)。 OK なら元 backlog (= deploy 数 script setup / 10 番 / 音波 sprint / multi-playback / B-#3) に戻る
+
+---
+
+### 1 つ前の状態 (2026-05-20 セッション 58 — apple-touch-icon 更新 + 拡張機能不安定 root cause 修正 sprint)
 
 session 57 close-out 直後、 推奨どおり **apple-touch-icon (iOS ホーム画面用)** を 新ロゴ (= 黒 A + 緑チェック) で再生成 + deploy で完了。 その後 user が拡張機能の不安定を報告 (= YouTube 後で見るが動かない動画、 フローティングボタンが緑にならない、 他経路保存時のアニメ無しで唐突な緑チェック)。 拡張機能の全 file (= background / content / floating-button / dispatch / 5 site .js / lib 全部) を熟読 audit → 確定バグ 2 件 + UX 不整合 1 件 を特定 → 一気に修正 + テスト追加 + v0.1.6 → 0.1.7 で manifest bump。 1 deploy。
 

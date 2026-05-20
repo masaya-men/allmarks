@@ -43,6 +43,32 @@ function pruneRecent(now) {
   }
 }
 
+// === Mirror snapshot — sync-readable cache of "URLs already in AllMarks".
+// Source of truth: chrome.storage.local key `savedUrlsMirror`. Suppress
+// auto-save when URL is already saved. See youtube.js for the rationale.
+const savedUrlMirror = new Set()
+function refreshMirrorSnapshot(mirror) {
+  savedUrlMirror.clear()
+  if (!mirror) return
+  for (const k of Object.keys(mirror)) savedUrlMirror.add(k)
+}
+if (isExtensionAlive()) {
+  try {
+    chrome.storage.local.get({ savedUrlsMirror: {} }).then((stored) => {
+      refreshMirrorSnapshot(stored.savedUrlsMirror)
+    }).catch(() => {})
+  } catch (_) {}
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local' || !changes.savedUrlsMirror) return
+      refreshMirrorSnapshot(changes.savedUrlsMirror.newValue)
+    })
+  } catch (_) {}
+}
+function isUrlAlreadySaved(url) {
+  return savedUrlMirror.has(url)
+}
+
 function extractArticleUrl() {
   // note article URLs are /{username}/n/{noteId} (= note short id).
   // Magazine / membership pages have other shapes; we skip them.
@@ -105,6 +131,13 @@ document.addEventListener('click', (event) => {
   if (!isNoteLikeEnabled()) return
   const url = extractArticleUrl()
   if (!url) return
+  // Mirror defense — see youtube.js for rationale.
+  if (isUrlAlreadySaved(url)) {
+    try {
+      console.debug('[AllMarks] note auto-save suppressed — URL already in mirror', { url, kind })
+    } catch (_) {}
+    return
+  }
   const now = Date.now()
   pruneRecent(now)
   const dedupeKey = kind + ':' + url
