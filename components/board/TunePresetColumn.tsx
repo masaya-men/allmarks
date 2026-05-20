@@ -14,29 +14,33 @@ export function TunePresetColumn({ widthPx, gapPx, onApply }: Props): ReactEleme
   const activeId = findActivePreset(widthPx, gapPx)
 
   return (
-    <div className={styles.column} role="radiogroup" aria-label="Board density presets">
-      {PRESETS.map((preset) => {
-        const isActive = preset.id === activeId
-        return (
-          <button
-            key={preset.id}
-            type="button"
-            role="radio"
-            aria-checked={isActive}
-            className={`${styles.row} ${isActive ? styles.active : ''}`}
-            onClick={(): void => {
-              if (!isActive) onApply(preset.id)
-            }}
-          >
-            <span className={styles.led} aria-hidden="true" />
-            <span className={styles.label}>{preset.label}</span>
-          </button>
-        )
-      })}
-      <div className={styles.plate} aria-hidden="true">
-        ALLMARKS
-        <br />
-        MK-1
+    <div className={styles.column}>
+      <div className={styles.presets} role="radiogroup" aria-label="Board density presets">
+        {PRESETS.map((preset) => {
+          const isActive = preset.id === activeId
+          return (
+            <div key={preset.id} className={styles.presetRow}>
+              <span
+                className={`${styles.led} ${isActive ? styles.ledOn : ''}`}
+                aria-hidden="true"
+              />
+              <button
+                type="button"
+                role="radio"
+                aria-checked={isActive}
+                className={`${styles.button} ${isActive ? styles.buttonActive : ''}`}
+                onClick={(): void => {
+                  if (!isActive) onApply(preset.id)
+                }}
+              >
+                {preset.label}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      <div className={styles.maker} aria-hidden="true">
+        ALLMARKS · MK-1
       </div>
     </div>
   )
