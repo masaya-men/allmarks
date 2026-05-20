@@ -15,18 +15,34 @@
   overflow: hidden;
   padding: 20px 22px;
   color: rgba(255, 255, 255, 0.92);
-  /* session 56: 縁の表現を box-shadow (= 拡大時に太くなる外 glow) から
-     border-box gradient line に切り替え。 1px の細線で白 → 黒の
-     diagonal gradient を描く (= 左上が光って右下が落ちる立体感)。
-     Lightbox の scale-up でも 1px が 2.6px 程度にしかならず、 旧 glow
-     (32px → 83px) のような派手な太化を起こさない。 */
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)) padding-box,
-    linear-gradient(135deg,
-      rgba(255, 255, 255, 0.7),
-      rgba(0, 0, 0, 0.7)
-    ) border-box;
-  border: 1px solid transparent;
+  /* session 56: card 本体は完全透明 (= 背景が透けて見える)。 縁の
+     1px gradient line だけを ::before の mask-composite trick で描く。
+     旧 border-box 技法は padding-box の 40% 不透明黒で内側を塗っており、
+     残り 60% 分の gradient が透けて「card 全体に gradient が乗る」 状態
+     だった。 user 要望で完全透明 + 1px 線だけに改修。 */
+  background: transparent;
+}
+
+/* session 56: 1px の gradient 線だけを描く ring。
+   inset:0 で card 領域を覆い、 padding:1px で外側 1px を残し、
+   mask-composite で内側を切り抜くことで「中身は透明、 外周 1px 線のみ
+   gradient」 を実現。 z-index を指定しないので children (z-index:1) が
+   上に重なる。 pointer-events:none で click を奪わない。 */
+.textCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.7),
+    rgba(0, 0, 0, 0.7));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
 }
 
 /* Color variants kept as no-op aliases so existing JSX still compiles. */
