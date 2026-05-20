@@ -20,28 +20,36 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 55 — A 番 fix + TextCard 統一化)
+### 直近の状態 (2026-05-20 セッション 56 — TextCard 視覚 polish + Lightbox 角丸連続化 + close white flash 対策)
 
-session 54 直後、 backlog から「A 番 X 長文 tweet + 画像 で画像のみ表示 bug」 を user 選択。 spec 起こし時に root cause 判明: session 52 で `shouldHideTweetBody()` を「全 tweet で本文非表示」 に変更した副作用で、 画像 + 本文ツイートの本文も消えていた。 1 関数書き換えで完了。 user 確認で文字のみツイートの「短文と長文で見た目が違う」 質問発覚 → 統一化 sprint に拡張、 user reference 画像 + 数値 1 段調整 (= 16px + 5:4) で確定。
+session 55 close-out 直後、 user の Antigravity 不意 update で会話履歴消失 → memory + docs + commit log で文脈復元。 backlog ではなく **user が突発的に気づいた違和感**を一つずつ深堀りで攻める形に。 7 deploy で 6 件の視覚 polish + 1 件の挙動修正を ship、 全 user 実機 OK。
 
 **ship 済 (= prod 反映済、 user 実機 OK)**:
-- **A 番 fix**: [Lightbox.tsx](../components/board/Lightbox.tsx) の `shouldHideTweetBody` を判定ベースに書き換え (= text-only / meta 未到着 / 本文空 → 隠す、 それ以外 → 表示)。 既存 2 カラム構造 / TweetText / TextCard / ImageCard 全て不変
-- **TextCard 統一化**: [pickTitleTypography](../lib/embed/title-typography.ts) + [measureTextCardLayout](../lib/embed/text-card-measure.ts) を constant 返却に簡略化。 全 TextCard が **16px 文字 + 5:4 横長 (= aspect 1.25) + 上端サイトアイコン + scroll** で統一。 LargeTextCardScaler 経由で Lightbox text-only も自動追従。 文字数による 3 モード分岐 + CJK 幅計算 + pretext natural height + 9:16 clamp 全部廃止
+1. **favicon 装飾全廃止** (= border-radius + 薄白下地 全削除)、 `.media img[class*="favicon"]` override で円化バグ root fix
+2. **TextCard 縁の根本再設計** (= box-shadow glow 撤廃、 `::before` mask-composite で 1px 白黒 gradient 線に置換、 scale 拡大時の太化問題消失)
+3. **TextCard body 完全透明化** (= 旧 padding-box 黒塗りやめ、 mask-composite で 1px 線のみ描画)
+4. **Lightbox 角丸の連続化 Step 1 + Step 2** (= session 34 当時の `--card-radius:0` dead workaround を `LargeTextCardScaler` + `wrapCloneWithScaleHost` から撤廃、 board と Lightbox で 4 隅まで連続)
+5. **close 時の white flash 消失** (= `.metaTop` の半透明白を不透明 `rgb(140,140,140)` に置換、 alpha 合成バグ root fix)
+6. **wheel over text card で nav 発動しない** (= `[data-card-scroll]` 上の wheel は端でも常に defer)
 
-**変更 file** (4): [Lightbox.tsx](../components/board/Lightbox.tsx) + [title-typography.ts](../lib/embed/title-typography.ts) + [text-card-measure.ts](../lib/embed/text-card-measure.ts) + [title-typography.test.ts](../lib/embed/title-typography.test.ts)
+**変更 file** (4): [TextCard.module.css](../components/board/cards/TextCard.module.css) + [Lightbox.module.css](../components/board/Lightbox.module.css) + [Lightbox.tsx](../components/board/Lightbox.tsx) + [scripts/count-deploys.mjs](../scripts/count-deploys.mjs) (new)
 
-**テスト**: 608 → 604 PASS (= title-typography 6 → 2 統合のため減数)
+**テスト**: 604 / 604 PASS 維持
 
-**deploy 回数**: 3 (= A 番 1 + TextCard 統一化 18px/1.0 1 + 16px/1.25 調整 1)
+**deploy 回数**: 7
 
-詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 55 セクション
+**deploy 数取得 script** (= 未 setup): `scripts/count-deploys.mjs` 作成。 user が CF API token 発行 + `.env.local` に `CLOUDFLARE_API_TOKEN=...` 追記 → `node scripts/count-deploys.mjs` で月次 deploy 数取得可
 
-**次セッション (= 56) の goal**: backlog から user 選択。 候補:
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 56 セクション
+
+**次セッション (= 57) の goal**: backlog から user 選択。 候補:
+- 🔧 **deploy 数取得 script setup** (= user の API token 発行 ~3 分 + 動作確認)
+- 🐛 **7 URL サムネ消失調査** (= pushmatrix / 1042 studio / kawai-text-animation / joel.plus / pacomepertant / lovart / threejswaterpro、 session 56 で user 提示、 「見た目に関わる bug が一番ダメージ大きい」 と user 強調)
+- 🧹 **TextCard 統一化 + session 56 縁 redesign の dead code 清掃** (= 旧 .headline / .index CSS、 pretext import、 旧 box-shadow 系コメント、 旧 `_input` ignored arg、 `TEXT_CARD_MIN_ASPECT` 改名)
 - 🟡 10 番 有名サイト pre-set OFF list (= 拡張 polish、 ~50 行)
-- 🟡 音波テーマ世界観確立 sprint (= H + J + K + I-09 + I-10、 session 54 で I-09 一部消化済)
+- 🟡 音波テーマ世界観確立 sprint
 - 🟡 multi-playback vision board card autoplay (= AllMarks core 差別化)
-- 🐛 B-#3 重複 URL でサムネ等が出ない (= 古めの未解決)
-- 🧹 TextCard 統一化の dead code 清掃 (= .headline / .index CSS、 pretext import、 短工数)
+- 🐛 B-#3 重複 URL でサムネ等が出ない
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
 

@@ -1,38 +1,44 @@
-# 次セッションのゴール (= セッション 56)
+# 次セッションのゴール (= セッション 57)
 
 ## 状況
 
-session 55 で **2 件 ship 完了**:
-- **A 番 fix** (= 画像 + 本文ツイートで Lightbox 右本文復活、 1 関数書き換え)
-- **TextCard 統一化** (= 全 TextCard で 16px + 5:4 横長 + scroll に揃える、 2 関数 + テスト書き換え、 -123 行)
-- 3 deploy、 604/604 PASS、 user 実機 OK
+session 56 で **7 deploy 6 件 + 1 件 ship 完了**:
+- favicon 装飾全廃止 (= 角丸 + 薄白下地)
+- TextCard 縁を 1px 白黒 gradient 線に再設計 (= box-shadow glow 撤廃)
+- TextCard body 完全透明化 (= ::before + mask-composite)
+- Lightbox 角丸の連続化 Step 1 + Step 2 (= session 34 dead workaround 撤廃)
+- close 時の white flash 消失 (= metaTop 不透明グレー化)
+- wheel over text card で nav 発動しない
+- 604/604 PASS、 全 user 実機 OK
 
 ## 次の選択肢 (= backlog から user 選択)
 
 | 優先度 | task | 工数 |
 |---|---|---|
-| 🟡 | **10 番 有名サイト pre-set OFF list** (= 拡張 polish、 YouTube / Notion / Slack 等を「外すだけ」 で OFF できる事前リスト) | 小 (~50 行) |
-| 🧹 | **TextCard 統一化の dead code 清掃** (= .headline / .index CSS、 pretext import、 `_input` ignored arg、 `TEXT_CARD_MIN_ASPECT` 改名) | 小 (~30 行) |
-| 🟡 | **音波テーマ世界観確立 sprint** (= H + J + K + I-09 + I-10) ※ session 54 で I-09 一部消化済 | 大 |
+| 🐛 | **7 URL サムネ消失調査** (= pushmatrix.github.io / 1042.studio / kawai-text-animation / joel.plus / pacomepertant.com / lovart.ai / threejswaterpro)。 user 「こういう見た目に関わるのが一番ダメージでかい」 と session 56 で強調済 | 中〜大 |
+| 🔧 | **deploy 数取得 script setup** (= user の API token 発行 + 動作確認)。 `scripts/count-deploys.mjs` は code 完成済、 setup 手順は引き継ぎメッセージ参照 | 小 |
+| 🧹 | **session 55 + 56 の dead code 清掃** (= .headline / .index CSS、 pretext import、 旧 box-shadow 系コメント、 `_input` ignored arg、 `TEXT_CARD_MIN_ASPECT` 改名) | 小 |
+| 🟡 | **10 番 有名サイト pre-set OFF list** (= 拡張 polish、 ~50 行) | 小 |
+| 🟡 | **音波テーマ世界観確立 sprint** (= H + J + K + I-09 + I-10、 session 54 で I-09 一部消化済) | 大 |
 | 🟡 | **multi-playback vision board card autoplay** (= AllMarks core 差別化) | 大 |
-| 🐛 | **B-#3 重複 URL でサムネ等が出ない** (= 古めの未解決、 session 54 で重複ピル fix した今が再調査の機会) | 中 |
+| 🐛 | **B-#3 重複 URL でサムネ等が出ない** (= 古めの未解決) | 中 |
 
-## session 55 で確定した事 (= 前提として保持)
+## session 56 で確定した事 (= 前提として保持)
 
-- **「最小修正」 の探求順序**: 新規 component 提案 → user 仕様確認 → 既存実装 read → 1-2 関数で済むことが多い
-- **A 番 fix**: `shouldHideTweetBody` を「全 tweet 非表示」 から「種別判定」 に戻した (= text-only のみ非表示、 media + 本文ありは表示)
-- **TextCard 統一化**: pickTitleTypography + measureTextCardLayout が constant 返却、 全カード **16px / lineHeight 24 / aspect 1.25 (5:4 横長) / maxLines 999** に固定。 オーバーフローは TextCard 側 scroll + 底フェードで処理
-- **ジャーゴン禁止再徹底**: 「メタ」 「favicon」 等を avoid、 「上のラベル」 「サイトアイコン」 等に置換 (= memory `feedback_jargon_in_japanese.md`)
+- **TextCard の縁**: `::before + mask-composite` で 1px gradient line を描く方式に確定。 box-shadow glow は廃止
+- **TextCard の body**: 完全透明 (= 背景透けて見える) に確定
+- **Lightbox 角丸**: `--card-radius` を `:root` から継承させる方針確定 (= 過去の `--card-radius: '0'` 上書きは dead workaround として撤廃)
+- **半透明 → 不透明 への defensive 置換**: 重なり得る要素 (= close アニメ中の source-clone 重なり等) では `rgba(...,0.X)` ではなく不透明色 `rgb(N,N,N)` を使う。 `.metaTop` で実証済
+- **scripts/count-deploys.mjs**: code 完成、 user の CF API token 発行 + `.env.local` 追記で動く
 
 ## 引き継ぎ resources
 
 - [docs/TODO.md](./TODO.md) — active backlog
-- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 55 narrative (= A 番 + 統一化 + 学び)
+- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 56 narrative (= 6 つの修正詳細 + 7 個目の wheel 修正 + 学び)
 - [docs/private/IDEAS.md](./private/IDEAS.md) — H / J / K / I-08 / I-09 / I-10 セクション
-- [docs/superpowers/specs/2026-05-20-tweet-image-body-split-design.md](./superpowers/specs/2026-05-20-tweet-image-body-split-design.md) — A 番 spec
-- [docs/superpowers/specs/2026-05-20-textcard-uniform-design.md](./superpowers/specs/2026-05-20-textcard-uniform-design.md) — TextCard 統一化 spec
-- memory `feedback_user_observation_reveals_intent.md` (= user 観察で軌道修正)
-- memory `feedback_jargon_in_japanese.md` (= ジャーゴン禁止、 平易な日本語)
+- [scripts/count-deploys.mjs](../scripts/count-deploys.mjs) — deploy 数取得 script (= setup 手順は次 session 開始時に user に提示)
+- memory `feedback_layman_simple_path.md` (= session 56 で 3 回再確認、 user の素朴提案を 1 段重く受け取る)
+- memory `reference_transparent_ui_alpha_overlap.md` (= session 56 で新規追加、 透明 UI の overlap 注意)
 
 ## 月末リマインダー (= 2026-05-31)
 

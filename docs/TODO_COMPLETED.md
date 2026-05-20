@@ -3371,3 +3371,48 @@ session 54 close 後、 backlog 5 候補から user 「おすすめどおり」 
 - **fast iterate サイクル (= deploy → 実機確認 → 1 段調整 → 再 deploy) で commit せず連投できる**: 18px/1.0 → 16px/1.25 の 1 段調整は再 build + deploy だけで完了。 spec / plan 更新せずに値だけ書き換え可能 (= commit message に「tune」 prefix で履歴明示)
 
 
+---
+
+## セッション 56 (2026-05-20) — TextCard 視覚 polish + Lightbox 角丸連続化 + close white flash 対策
+
+session 55 close-out 直後、 user の Google Antigravity が不意の update で会話履歴が消失した状態で再開。 memory + docs + commit log + spec ファイルで本質的な文脈はほぼ復元可能と確認。 user の発話 (= 「テキストカードのちょっとした修正」) を起点に、 backlog ではなく **user が突発的に気づいた違和感を一つずつ深堀り**する流れに。 7 deploy で 6 件の視覚 polish + 1 件の挙動修正を ship、 全 user 実機 OK。
+
+### ship 済 (= 7 deploy、 全部 user 実機 OK)
+
+1. **favicon の装飾全廃止** (`f324b53`) — TextCard / Lightbox の `.favicon`, `.lightboxTextFavicon` から `border-radius: 3px/4px` + `background: rgba(255,255,255,0.08)` (= 薄白下地) を全削除。 各サイトの favicon が制作者デザインそのままで表示される。 旧 `.lightboxTextCard_black .lightboxTextFavicon` の白タイル処理も撤去。 副次的に `Lightbox.module.css` の `.media img { border-radius: var(--lightbox-media-radius) }` が cloned TextCard 内の favicon を 円化させていた問題も `.media img[class*="favicon"] { border-radius: 0 }` 追加で完全四角に固定 (= attribute selector で CSS Module hash 非依存)
+
+2. **TextCard 縁の根本再設計** (`f324b53`) — 旧 `box-shadow: 0 0 32px` の外 glow + `box-shadow: ... inset` の内 hairline + iridescent border-box gradient を **全廃止**。 Lightbox scale 拡大時に box-shadow が 32px → 83px に膨張する根本問題が消失。 縁の表現を `border: 1px solid transparent` + `linear-gradient(135deg, rgba(255,255,255,0.7), rgba(0,0,0,0.7)) border-box` (= 1px の白黒対角 gradient) に置き換え
+
+3. **TextCard body 完全透明化** (`c87571c`) — 旧 padding-box の `rgba(0,0,0,0.4)` 黒塗りは「半透明」 だったので、 残り 60% 分の border-box gradient が中身全体に薄く透けて「カード全体にグラデーション」 と user 報告。 `::before` + `mask-composite: exclude` パターンに切り替えて 1px 線だけを描画、 中身は完全透明 (= 背景が card body を通して見える状態) に
+
+4. **Lightbox 角丸の連続化 Step 1** (`4522099`) — `LargeTextCardScaler` の JSX inline `--card-radius: '0'` を撤廃。 session 34 当時の 24 vs 20 不一致対策で書かれたが、 session 22 で両方 20px に統一されて以来 dead workaround として残存。 撤廃で inner が `--card-radius: 20px` を継承、 zoom 2.5x で視覚 50px = board の 7.14% proportion に一致。 静止画状態で枠線が 4 隅まで連続
+
+5. **Lightbox 角丸の連続化 Step 2** (`eae5b55`) — `wrapCloneWithScaleHost` の同じ `--card-radius: '0'` も撤廃。 morph アニメ中も同じ計算になり、 morph → 静止画の境目で snap が出ない (= Step 1 単独では morph 中だけ矩形のままで、 着地の瞬間に kaku っと 50px 視覚に jump する snap が出ていた)
+
+6. **close 時の white flash 修正** (`c58a49b`) — `.metaTop, .metaBottom` の color を `rgba(255,255,255,0.55)` → `rgb(140,140,140)` 不透明グレーに置換。 close アニメ中、 source card と clone card が 0.10 秒同じ位置で重なる時、 半透明白 × 半透明白で alpha 合成が 0.80 相当に化け、 ファビコン横のドメイン文字が一瞬白く光る現象を完全消失。 暗背景上で視覚的に同じグレーに見える不透明値を選定したので、 見た目はほぼ変化なし
+
+7. **wheel over text card で nav 一切発動なし** (`00c4809`) — Lightbox の wheel handler の `[data-card-scroll]` 上の wheel 判定を「スクロール余地ある時のみ defer」 から「常に defer」 に変更。 user 「長文 text card で読み切って端まで来た後も wheel し続けて勝手に next/prev に飛ぶの嫌」 への対応。 left/right nav は矢印キー / chevron に集約
+
+### 変更 file (4)
+
+- [components/board/cards/TextCard.module.css](../components/board/cards/TextCard.module.css) — favicon 装飾廃止、 縁グラデ化、 body 透明化、 metaTop 色不透明化
+- [components/board/Lightbox.module.css](../components/board/Lightbox.module.css) — favicon 装飾廃止、 `.media img[class*="favicon"]` override 追加
+- [components/board/Lightbox.tsx](../components/board/Lightbox.tsx) — Step 1 + Step 2 の `--card-radius:0` 撤廃 (= LargeTextCardScaler + wrapCloneWithScaleHost)、 wheel handler の 端判定撤去
+- [scripts/count-deploys.mjs](../scripts/count-deploys.mjs) (new) — CF API 経由で月次 deploy 数取得 (= user の CLOUDFLARE_API_TOKEN setup 待ち)
+
+### テスト
+
+604/604 PASS 維持 (= CSS のみ + Lightbox.tsx 軽微変更で test 影響なし)
+
+### deploy 回数
+
+7 (= favicon + 縁グラデ / body 透明 / Step 1 / Step 2 / white flash / wheel over)
+
+### 重要な学び
+
+- **「透明 UI」 は overlap を visible にする**: 旧 design (= 不透明黒 body) では close アニメ中の source-clone 重なりが clone の body で遮蔽されていた。 body 透明化の副作用として、 source の半透明白文字が clone の透明 body 越しに見え、 alpha 合成で一瞬白く光った。 → 重なり得る要素は **半透明ではなく不透明色** を使うのが defensive 対策。 memory `reference_transparent_ui_alpha_overlap.md` 追加
+- **「dead workaround」 を fix の機会に整理する**: `--card-radius: 0` は session 34 の 24/20 不一致対策、 session 22 で前提が消えたのに残っていた。 user 「角で線が消える」 + 「ライトボックスで角が違って見える」 という別々の症状の **両方とも同じ dead workaround が原因**だった。 修正時は「この古い対策コードは今も必要か」 を毎回確認
+- **useLayoutEffect で CSS 変数を上書きする fix は snap を生む**: 私の最初の修正 (= `inner.style.setProperty('--card-radius', `${20/scale}px`)` を useLayoutEffect 内で) は、 JSX inline 初期値 `'0'` → effect 適用後の 7.66px の 1-frame jump = user 「カクっと 20px に補正された」 と認識。 正解は inline 初期値を消して CSS 継承に任せること。 useLayoutEffect で動的補正する fix を考えたら、 まず「inline 初期値と相反しないか」 を確認
+- **「素人考えですが」 は的を射ている確率高い**: user 「ファビコンに角丸充てなければ解決しないですか？」 「カードを縁なしにすればどう？」 「他のカードと同じくクローンを拡大するだけで良い」 — 全部正解ベース。 私が複雑に考えがちな所で user の素朴な提案が本質を突いていた (= memory `feedback_layman_simple_path.md` を session 56 で 3 回再確認)
+- **fast user feedback loop**: 6 件の修正を 7 deploy で消化、 各 deploy 後 ~1 分で user 実機確認 → 次の修正へ。 user が「ひとつずつ丁寧にやるので」 と宣言してくれたのが効いた。 段階的修正 + 個別 deploy + 個別 user 確認 = 失敗しても 1 個分しか revert しなくて済む安全運用
+- **API token 仕事は user 委ね**: deploy 数 script は code は完成、 token 発行は user しか出来ない。 setup 手順を session 中に伝達済、 次 session で setup できれば月次 deploy 数を即取得可能に
