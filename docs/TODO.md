@@ -20,36 +20,34 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 56 — TextCard 視覚 polish + Lightbox 角丸連続化 + close white flash 対策)
+### 直近の状態 (2026-05-20 セッション 57 — favicon リブランド + 9 URL サムネ消失調査 + session 55/56 dead code 清掃)
 
-session 55 close-out 直後、 user の Antigravity 不意 update で会話履歴消失 → memory + docs + commit log で文脈復元。 backlog ではなく **user が突発的に気づいた違和感**を一つずつ深堀りで攻める形に。 7 deploy で 6 件の視覚 polish + 1 件の挙動修正を ship、 全 user 実機 OK。
+session 56 close-out 直後、 推奨どおり **7 URL サムネ消失調査**から着手。 user 雑談で favicon (= 三角形のまま) を session 53 確定の「黒 A + 緑チェック」 ロゴに変えたいと判明 → 先に 5 分仕事で片付け。 9 URL の OGP 並列調査で「source 側に og:image なし」 = booklage の bug ではないと確定 (= fix 不要)。 後半で **session 55/56 dead code 清掃** を scope C (= 最も綺麗な状態) で一気に消化、 2 deploy で全完了。
 
 **ship 済 (= prod 反映済、 user 実機 OK)**:
-1. **favicon 装飾全廃止** (= border-radius + 薄白下地 全削除)、 `.media img[class*="favicon"]` override で円化バグ root fix
-2. **TextCard 縁の根本再設計** (= box-shadow glow 撤廃、 `::before` mask-composite で 1px 白黒 gradient 線に置換、 scale 拡大時の太化問題消失)
-3. **TextCard body 完全透明化** (= 旧 padding-box 黒塗りやめ、 mask-composite で 1px 線のみ描画)
-4. **Lightbox 角丸の連続化 Step 1 + Step 2** (= session 34 当時の `--card-radius:0` dead workaround を `LargeTextCardScaler` + `wrapCloneWithScaleHost` から撤廃、 board と Lightbox で 4 隅まで連続)
-5. **close 時の white flash 消失** (= `.metaTop` の半透明白を不透明 `rgb(140,140,140)` に置換、 alpha 合成バグ root fix)
-6. **wheel over text card で nav 発動しない** (= `[data-card-scroll]` 上の wheel は端でも常に defer)
+1. **favicon を 三角形 → 黒 A + 緑チェック (= AllMarks ロゴ)** (`app/icon.svg` 新規、 Next.js 自動 link 注入)
+2. **9 URL サムネ消失 → 原因確定 (= fix 不要)**: A 群 7 個 (= liquid-dom-showcase / threejswaterpro / pacomepertant / google labs / joel.plus / kawai-text / pushmatrix) は source 側に og:image 無し、 B 群 2 個 (= github / lovart) は一時 blip 説で観察対象
+3. **session 55/56 dead code 清掃 (= 7 file -37 行 net、 視覚 0 影響)**: dead `metaBottom` JSX 削除 / `.headline` `.index` variant 削除 / `.editorial` を base 統合 / `TitleMode` union 削除 + mode type narrow / `TEXT_CARD_MIN_ASPECT` → `TEXT_CARD_ASPECT` 改名 / `@chenglou/pretext` 依存削除 / cleanup-related comment 更新
 
-**変更 file** (4): [TextCard.module.css](../components/board/cards/TextCard.module.css) + [Lightbox.module.css](../components/board/Lightbox.module.css) + [Lightbox.tsx](../components/board/Lightbox.tsx) + [scripts/count-deploys.mjs](../scripts/count-deploys.mjs) (new)
+**変更 file** (8): [app/icon.svg](../app/icon.svg) (new) + [TextCard.tsx](../components/board/cards/TextCard.tsx) + [TextCard.module.css](../components/board/cards/TextCard.module.css) + [Lightbox.tsx](../components/board/Lightbox.tsx) + [types.ts](../lib/embed/types.ts) + [text-card-measure.ts](../lib/embed/text-card-measure.ts) + [package.json](../package.json) + pnpm-lock.yaml
 
-**テスト**: 604 / 604 PASS 維持
+**テスト**: 604 / 604 PASS 維持、 tsc clean、 next build OK
 
-**deploy 回数**: 7
+**deploy 回数**: 2
 
-**deploy 数取得 script** (= 未 setup): `scripts/count-deploys.mjs` 作成。 user が CF API token 発行 + `.env.local` に `CLOUDFLARE_API_TOKEN=...` 追記 → `node scripts/count-deploys.mjs` で月次 deploy 数取得可
+**deploy 数取得 script** (= 未 setup、 持ち越し): [scripts/count-deploys.mjs](../scripts/count-deploys.mjs)。 user が CF API token 発行 + `.env.local` に `CLOUDFLARE_API_TOKEN=...` 追記 → `node scripts/count-deploys.mjs` で月次 deploy 数取得可
 
-詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 56 セクション
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 57 セクション
 
-**次セッション (= 57) の goal**: backlog から user 選択。 候補:
+**次セッション (= 58) の goal**: backlog から user 選択。 候補:
 - 🔧 **deploy 数取得 script setup** (= user の API token 発行 ~3 分 + 動作確認)
-- 🐛 **7 URL サムネ消失調査** (= pushmatrix / 1042 studio / kawai-text-animation / joel.plus / pacomepertant / lovart / threejswaterpro、 session 56 で user 提示、 「見た目に関わる bug が一番ダメージ大きい」 と user 強調)
-- 🧹 **TextCard 統一化 + session 56 縁 redesign の dead code 清掃** (= 旧 .headline / .index CSS、 pretext import、 旧 box-shadow 系コメント、 旧 `_input` ignored arg、 `TEXT_CARD_MIN_ASPECT` 改名)
-- 🟡 10 番 有名サイト pre-set OFF list (= 拡張 polish、 ~50 行)
-- 🟡 音波テーマ世界観確立 sprint
-- 🟡 multi-playback vision board card autoplay (= AllMarks core 差別化)
-- 🐛 B-#3 重複 URL でサムネ等が出ない
+- 🟡 **10 番 有名サイト pre-set OFF list** (= 拡張 polish、 ~50 行)
+- 🟡 **音波テーマ世界観確立 sprint** (= H + J + K + I-09 + I-10、 session 54 で I-09 一部消化済)
+- 🟡 **multi-playback vision board card autoplay** (= AllMarks core 差別化)
+- 🐛 **B-#3 重複 URL でサムネ等が出ない** (= 古めの未解決)
+- 🎨 **iOS ホーム画面用 apple-touch-icon (= 192px PNG)** を新ロゴに更新 (= 現在 `/icon-192.png` 古い、 session 57 で持ち越し)
+
+🔴 **月末リマインダー (= 2026-05-31 頃)**: allmarks.app ドメイン取得確認
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
 
