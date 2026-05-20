@@ -41,7 +41,8 @@
     "resize": "已撤销大小调整",
     "add": "已撤销添加",
     "cardWidth": "已撤销大小",
-    "cardGap": "已撤销间距"
+    "cardGap": "已撤销间距",
+    "tunePreset": "已撤销预设"
   },
   "redo": {
     "reorder": "已重做排序",
@@ -49,6 +50,7 @@
     "resize": "已重做大小调整",
     "add": "已重做添加",
     "cardWidth": "已重做大小",
-    "cardGap": "已重做间距"
+    "cardGap": "已重做间距",
+    "tunePreset": "已重做预设"
   }
 }

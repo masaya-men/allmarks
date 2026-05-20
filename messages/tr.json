@@ -41,7 +41,8 @@
     "resize": "Boyutlandırma geri alındı",
     "add": "Ekleme geri alındı",
     "cardWidth": "Boyut geri alındı",
-    "cardGap": "Boşluk geri alındı"
+    "cardGap": "Boşluk geri alındı",
+    "tunePreset": "Ön ayar geri alındı"
   },
   "redo": {
     "reorder": "Sıralama yinelendi",
@@ -49,6 +50,7 @@
     "resize": "Boyutlandırma yinelendi",
     "add": "Ekleme yinelendi",
     "cardWidth": "Boyut yinelendi",
-    "cardGap": "Boşluk yinelendi"
+    "cardGap": "Boşluk yinelendi",
+    "tunePreset": "Ön ayar yinelendi"
   }
 }

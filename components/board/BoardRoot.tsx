@@ -37,6 +37,7 @@ import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
 import { UndoToast, type UndoToastInput } from './UndoToast'
 import { type UndoEntry, MAX_UNDO_STACK, pushBounded } from '@/lib/board/undo-stack'
+import { PRESETS, type PresetId } from '@/lib/board/tune-presets'
 import { t } from '@/lib/i18n/t'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
 import { BookmarkletPill } from '@/components/bookmarklet/BookmarkletPill'
@@ -213,6 +214,25 @@ export function BoardRoot() {
     setCardWidthPx(BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX)
     setCardGapPx(BOARD_SLIDERS.CARD_GAP_DEFAULT_PX)
   }, [])
+
+  // Jump both W and G to a preset (DENSE / TIGHT / DEFAULT / OPEN / AMBIENT).
+  // Captures a single undo entry holding both prior values so Ctrl+Z restores
+  // them together in one step.
+  const onApplyPreset = useCallback(
+    (id: PresetId): void => {
+      const preset = PRESETS.find((p) => p.id === id)
+      if (!preset) return
+      pushUndo({
+        kind: 'tunePreset',
+        prevWidthPx: cardWidthPx,
+        prevGapPx: cardGapPx,
+      })
+      setCardWidthPx(clampCardWidth(preset.w))
+      setCardGapPx(clampCardGap(preset.g))
+    },
+    [cardWidthPx, cardGapPx, clampCardWidth, clampCardGap, pushUndo],
+  )
+
   const pip = usePipWindow()
   const handleCardClickFromPip = useCallback((cardId: string) => {
     if (typeof window !== 'undefined') {
@@ -882,6 +902,17 @@ export function BoardRoot() {
             messageKey = `${direction}.cardGap`
             break
           }
+          case 'tunePreset': {
+            inverse = {
+              kind: 'tunePreset',
+              prevWidthPx: cardWidthPx,
+              prevGapPx: cardGapPx,
+            }
+            setCardWidthPx(clampCardWidth(entry.prevWidthPx))
+            setCardGapPx(clampCardGap(entry.prevGapPx))
+            messageKey = `${direction}.tunePreset`
+            break
+          }
         }
       } finally {
         // Re-enable add detection after the items mutation has had a
@@ -1251,6 +1282,7 @@ export function BoardRoot() {
                 onChangeWidth={handleCardWidthChange}
                 onChangeGap={handleCardGapChange}
                 onReset={handleResetWidthGap}
+                onApplyPreset={onApplyPreset}
               />
               <ChromeButton
                 label={t('board.chrome.popout')}

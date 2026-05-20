@@ -41,7 +41,8 @@
     "resize": "크기 변경 취소됨",
     "add": "추가 취소됨",
     "cardWidth": "크기 취소됨",
-    "cardGap": "간격 취소됨"
+    "cardGap": "간격 취소됨",
+    "tunePreset": "프리셋 취소됨"
   },
   "redo": {
     "reorder": "정렬 다시 실행",
@@ -49,6 +50,7 @@
     "resize": "크기 변경 다시 실행",
     "add": "추가 다시 실행",
     "cardWidth": "크기 다시 실행",
-    "cardGap": "간격 다시 실행"
+    "cardGap": "간격 다시 실행",
+    "tunePreset": "프리셋 다시 실행"
   }
 }

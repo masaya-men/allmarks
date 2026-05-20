@@ -41,7 +41,8 @@
     "resize": "Redimensionnement annulé",
     "add": "Ajout annulé",
     "cardWidth": "Taille annulée",
-    "cardGap": "Écart annulé"
+    "cardGap": "Écart annulé",
+    "tunePreset": "Préréglage annulé"
   },
   "redo": {
     "reorder": "Réorganisation rétablie",
@@ -49,6 +50,7 @@
     "resize": "Redimensionnement rétabli",
     "add": "Ajout rétabli",
     "cardWidth": "Taille rétablie",
-    "cardGap": "Écart rétabli"
+    "cardGap": "Écart rétabli",
+    "tunePreset": "Préréglage rétabli"
   }
 }

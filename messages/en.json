@@ -41,7 +41,8 @@
     "resize": "Resize undone",
     "add": "Add undone",
     "cardWidth": "Size undone",
-    "cardGap": "Gap undone"
+    "cardGap": "Gap undone",
+    "tunePreset": "Preset undone"
   },
   "redo": {
     "reorder": "Reorder redone",
@@ -49,6 +50,7 @@
     "resize": "Resize redone",
     "add": "Add redone",
     "cardWidth": "Size redone",
-    "cardGap": "Gap redone"
+    "cardGap": "Gap redone",
+    "tunePreset": "Preset redone"
   }
 }

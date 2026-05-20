@@ -41,7 +41,8 @@
     "resize": "Hoàn tác đổi cỡ",
     "add": "Hoàn tác thêm",
     "cardWidth": "Hoàn tác cỡ",
-    "cardGap": "Hoàn tác khoảng cách"
+    "cardGap": "Hoàn tác khoảng cách",
+    "tunePreset": "Hoàn tác cài đặt sẵn"
   },
   "redo": {
     "reorder": "Làm lại sắp xếp",
@@ -49,6 +50,7 @@
     "resize": "Làm lại đổi cỡ",
     "add": "Làm lại thêm",
     "cardWidth": "Làm lại cỡ",
-    "cardGap": "Làm lại khoảng cách"
+    "cardGap": "Làm lại khoảng cách",
+    "tunePreset": "Làm lại cài đặt sẵn"
   }
 }

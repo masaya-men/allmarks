@@ -41,7 +41,8 @@
     "resize": "Ridimensionamento annullato",
     "add": "Aggiunta annullata",
     "cardWidth": "Dimensione annullata",
-    "cardGap": "Spazio annullato"
+    "cardGap": "Spazio annullato",
+    "tunePreset": "Preset annullato"
   },
   "redo": {
     "reorder": "Riordino ripristinato",
@@ -49,6 +50,7 @@
     "resize": "Ridimensionamento ripristinato",
     "add": "Aggiunta ripristinata",
     "cardWidth": "Dimensione ripristinata",
-    "cardGap": "Spazio ripristinato"
+    "cardGap": "Spazio ripristinato",
+    "tunePreset": "Preset ripristinato"
   }
 }

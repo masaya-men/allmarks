@@ -41,7 +41,8 @@
     "resize": "Formaat ongedaan gemaakt",
     "add": "Toevoeging ongedaan gemaakt",
     "cardWidth": "Grootte ongedaan gemaakt",
-    "cardGap": "Tussenruimte ongedaan gemaakt"
+    "cardGap": "Tussenruimte ongedaan gemaakt",
+    "tunePreset": "Voorinstelling ongedaan gemaakt"
   },
   "redo": {
     "reorder": "Sortering opnieuw uitgevoerd",
@@ -49,6 +50,7 @@
     "resize": "Formaat opnieuw uitgevoerd",
     "add": "Toevoeging opnieuw uitgevoerd",
     "cardWidth": "Grootte opnieuw uitgevoerd",
-    "cardGap": "Tussenruimte opnieuw uitgevoerd"
+    "cardGap": "Tussenruimte opnieuw uitgevoerd",
+    "tunePreset": "Voorinstelling opnieuw uitgevoerd"
   }
 }

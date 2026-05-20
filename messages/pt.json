@@ -41,7 +41,8 @@
     "resize": "Redimensionamento desfeito",
     "add": "Adição desfeita",
     "cardWidth": "Tamanho desfeito",
-    "cardGap": "Espaço desfeito"
+    "cardGap": "Espaço desfeito",
+    "tunePreset": "Predefinição desfeita"
   },
   "redo": {
     "reorder": "Reordenação refeita",
@@ -49,6 +50,7 @@
     "resize": "Redimensionamento refeito",
     "add": "Adição refeita",
     "cardWidth": "Tamanho refeito",
-    "cardGap": "Espaço refeito"
+    "cardGap": "Espaço refeito",
+    "tunePreset": "Predefinição refeita"
   }
 }

@@ -41,7 +41,8 @@
     "resize": "Größenänderung rückgängig gemacht",
     "add": "Hinzufügen rückgängig gemacht",
     "cardWidth": "Größe rückgängig gemacht",
-    "cardGap": "Abstand rückgängig gemacht"
+    "cardGap": "Abstand rückgängig gemacht",
+    "tunePreset": "Voreinstellung rückgängig gemacht"
   },
   "redo": {
     "reorder": "Sortierung wiederhergestellt",
@@ -49,6 +50,7 @@
     "resize": "Größenänderung wiederhergestellt",
     "add": "Hinzufügen wiederhergestellt",
     "cardWidth": "Größe wiederhergestellt",
-    "cardGap": "Abstand wiederhergestellt"
+    "cardGap": "Abstand wiederhergestellt",
+    "tunePreset": "Voreinstellung wiederhergestellt"
   }
 }

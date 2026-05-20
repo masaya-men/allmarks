@@ -41,7 +41,8 @@
     "resize": "Redimensionamiento deshecho",
     "add": "Adición deshecha",
     "cardWidth": "Tamaño deshecho",
-    "cardGap": "Espacio deshecho"
+    "cardGap": "Espacio deshecho",
+    "tunePreset": "Preajuste deshecho"
   },
   "redo": {
     "reorder": "Reordenación rehecha",
@@ -49,6 +50,7 @@
     "resize": "Redimensionamiento rehecho",
     "add": "Adición rehecha",
     "cardWidth": "Tamaño rehecho",
-    "cardGap": "Espacio rehecho"
+    "cardGap": "Espacio rehecho",
+    "tunePreset": "Preajuste rehecho"
   }
 }

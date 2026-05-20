@@ -11,6 +11,7 @@ describe('TuneTrigger — skeleton', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
@@ -28,6 +29,7 @@ describe('TuneTrigger — skeleton', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
@@ -49,6 +51,7 @@ describe('TuneTrigger — flat readout', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
@@ -70,6 +73,7 @@ describe('TuneTrigger — hover open', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
@@ -94,6 +98,7 @@ describe('TuneTrigger — close on mouseleave', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
@@ -118,6 +123,7 @@ describe('TuneTrigger — close on mouseleave', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
@@ -142,6 +148,7 @@ describe('TuneTrigger — drawer with FaderColumns', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const wrap = getByTestId('tune-wrap')
@@ -162,6 +169,7 @@ describe('TuneTrigger — drawer with FaderColumns', () => {
         onChangeWidth={onChangeWidth}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     fireEvent.mouseEnter(getByTestId('tune-wrap'))
@@ -186,6 +194,7 @@ describe('TuneTrigger — reset and sticky', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={onReset}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
@@ -207,6 +216,7 @@ describe('TuneTrigger — reset and sticky', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
@@ -229,6 +239,7 @@ describe('TuneTrigger — reset and sticky', () => {
         onChangeWidth={vi.fn()}
         onChangeGap={vi.fn()}
         onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
       />,
     )
     const btn = getByTestId('tune-trigger')
