@@ -20,7 +20,7 @@ export type TunePreset = {
 
 export const PRESETS: readonly TunePreset[] = [
   { id: 'dense', label: 'DENSE', w: 207.80, g: 23.21 },
-  { id: 'tight', label: 'TIGHT', w: 220.03, g: 65.70 },
+  { id: 'tight', label: 'TIGHT', w: 243.57, g: 36.17 },
   { id: 'default', label: 'DEFAULT', w: 267.84, g: 97.21 },
   { id: 'open', label: 'OPEN', w: 412.74, g: 62.38 },
   { id: 'ambient', label: 'AMBIENT', w: 607.56, g: 147.87 },

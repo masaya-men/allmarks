@@ -30,17 +30,17 @@ export function TunePresetColumn({ widthPx, gapPx, onApply }: Props): ReactEleme
                 if (!isActive) onApply(preset.id)
               }}
             >
-              <span className={styles.label}>{preset.label}</span>
+              <span
+                className={`${styles.led} ${isActive ? styles.ledOn : ''}`}
+                aria-hidden="true"
+              />
               <span
                 className={`${styles.lever} ${isActive ? styles.leverDown : ''}`}
                 aria-hidden="true"
               >
                 <span className={styles.handle} />
               </span>
-              <span
-                className={`${styles.led} ${isActive ? styles.ledOn : ''}`}
-                aria-hidden="true"
-              />
+              <span className={styles.label}>{preset.label}</span>
             </button>
           )
         })}

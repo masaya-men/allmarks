@@ -1,11 +1,12 @@
 /* Two-region column: top = preset radiogroup (= fills vertical area),
-   bottom = maker mark. The column itself stretches to match the drawer
-   height (= via align-items: stretch on the drawer flex parent), and the
-   inner regions split via space-between. */
+   bottom = maker mark. The column stretches to drawer height via
+   align-items: stretch on the parent flex; inner regions split via
+   space-between. Compact sizing per iteration 3 — smaller fonts and a
+   tighter overall footprint that matches the user's reference image. */
 .column {
   display: flex;
   flex-direction: column;
-  min-width: 156px;
+  min-width: 130px;
   padding: 4px 0;
 }
 
@@ -17,20 +18,20 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
   min-height: 200px;
 }
 
-/* Per-row layout: 3 distinct elements in a horizontal track, like a real
-   pro mixer panel — printed name on the panel face, the physical lever
-   itself, and a status lamp. The button wrapper covers all 3 for a wide
-   click target; visually they read as separate hardware components. */
+/* Per-row layout reads LEFT → RIGHT as: status lamp, physical lever,
+   printed panel name. This mirrors how pro mixer panels actually read
+   (= indicator first, control second, label last). The button wrapper
+   covers all 3 for a wide click target; visually they remain separate. */
 .presetRow {
   display: grid;
-  grid-template-columns: 1fr 16px 8px;
+  grid-template-columns: 8px 18px 1fr;
   align-items: center;
-  gap: 14px;
-  padding: 4px 6px;
+  gap: 10px;
+  padding: 2px 4px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -45,75 +46,13 @@
   border-radius: 2px;
 }
 
-/* Panel label: printed name of the control, sits to the LEFT of the lever.
-   Not interactive on its own — just engraved text on the chassis. Cream
-   typeface, wide letter-spacing, classic mixer-panel typography. */
-.label {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: rgba(232, 227, 216, 0.78);
-  text-align: right;
-  transition: color 140ms ease-out;
-}
-
-.presetRow:hover .label {
-  color: rgba(232, 227, 216, 0.95);
-}
-
-/* Mini breaker / SPDT toggle: dark slotted track with a metallic handle
-   that slides between top (off) and bottom (on) positions. Pure CSS —
-   no SVG, no 3-D, no images. The slot reads "machined" via inset shadow;
-   the handle reads "metallic" via three-stop gradient + top highlight. */
-.lever {
-  position: relative;
-  width: 16px;
-  height: 26px;
-  background: linear-gradient(180deg, #0a0a0b 0%, #15151a 50%, #0a0a0b 100%);
-  border: 1px solid rgba(0, 0, 0, 0.95);
-  border-radius: 2px;
-  box-shadow:
-    inset 0 0 3px rgba(0, 0, 0, 0.75),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 1px 0 rgba(255, 255, 255, 0.04);
-  flex-shrink: 0;
-  justify-self: center;
-}
-
-/* The metallic actuator. Slides via top transition between two positions:
-   - default (off): top: 2px  — handle pulled UP
-   - .leverDown (on): top: 12px — handle pushed DOWN */
-.handle {
-  position: absolute;
-  left: 1px;
-  right: 1px;
-  height: 10px;
-  top: 2px;
-  background: linear-gradient(180deg,
-    #e8e0c8 0%,
-    #c4bda6 30%,
-    #8a8472 70%,
-    #4f4a3e 100%);
-  border-radius: 1px;
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
-  transition: top 220ms cubic-bezier(0.5, 0, 0.15, 1);
-}
-
-.lever.leverDown .handle {
-  top: 12px;
-}
-
-/* Status lamp: small recessed LED on the far right of the row. OFF = a
+/* Status lamp: small recessed LED on the far left of the row. OFF = a
    dim "hole in the panel" with faint inner shadow. ON = saturated green
    with the same 3-stop halo recipe used by the ✓ pill / cursor pill, so
    the active feedback reads as part of the same visual language. */
 .led {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.7);
@@ -129,17 +68,156 @@
     0 0 12px rgba(34, 197, 94, 0.4);
 }
 
+/* Mini breaker / SPDT toggle: detailed dark slotted track with a metallic
+   handle that slides between top (off) and bottom (on) positions.
+   Pure CSS — no SVG, no 3-D, no images.
+
+   Track depth is built up in three layers:
+   1. The outer shell (`.lever`) carries the chassis gradient + outer rim.
+   2. `::before` paints the recessed channel that the handle rides in,
+      with deep inset shadow at top and bottom for visible "depth".
+   3. `::after` lays the position tick marks (= small notches at the top
+      and bottom of the channel) to indicate the off / on stops. */
+.lever {
+  position: relative;
+  width: 18px;
+  height: 34px;
+  background: linear-gradient(180deg, #050507 0%, #16161a 50%, #050507 100%);
+  border: 1px solid rgba(0, 0, 0, 1);
+  border-radius: 2px;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.06),
+    inset -1px 0 0 rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.7),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+  justify-self: center;
+  flex-shrink: 0;
+}
+
+/* The recessed channel — gives the lever a believable "well" for the
+   handle to ride in. Stronger inset shadow at the unoccupied position
+   (= the dark space above or below the handle) sells the depth. */
+.lever::before {
+  content: '';
+  position: absolute;
+  inset: 2px 5px;
+  background: linear-gradient(180deg,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0.25) 35%,
+    rgba(0, 0, 0, 0.25) 65%,
+    rgba(0, 0, 0, 0.65) 100%);
+  border-radius: 1px;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.85),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+/* Tick marks: tiny horizontal lines at the top and bottom of the chassis,
+   indicating the two valid stop positions. Like the I / O marks on a
+   real breaker housing. */
+.lever::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.20) 38%,
+      rgba(255, 255, 255, 0.20) 62%,
+      transparent 62%) 0 3px / 100% 1px no-repeat,
+    linear-gradient(90deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.20) 38%,
+      rgba(255, 255, 255, 0.20) 62%,
+      transparent 62%) 0 calc(100% - 4px) / 100% 1px no-repeat;
+  pointer-events: none;
+}
+
+/* The metallic actuator. Slides via top transition between two positions:
+   - default (off): top: 3 px  — handle pulled UP
+   - .leverDown (on): top: 18 px — handle pushed DOWN (movement is 15 px,
+     larger than iteration 2's 10 px so the position change is clearly
+     readable even against the dark drawer background). */
+.handle {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  height: 13px;
+  top: 3px;
+  background: linear-gradient(180deg,
+    #f4ecd2 0%,
+    #d9d0b3 20%,
+    #b0a78c 50%,
+    #7a7361 80%,
+    #4a4538 100%);
+  border-radius: 1.5px;
+  box-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.85),
+    0 1px 0 rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    inset 1px 0 0 rgba(255, 255, 255, 0.18),
+    inset -1px 0 0 rgba(0, 0, 0, 0.3);
+  transition: top 240ms cubic-bezier(0.55, 0, 0.15, 1);
+}
+
+/* Grip ridges: fine horizontal striations on the handle face. Sold as
+   "you can feel where to push" with no real interaction. The repeating
+   1 px dark/light pattern reads as machined ridges at this size. */
+.handle::before {
+  content: '';
+  position: absolute;
+  inset: 2px 1px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 1.5px,
+    rgba(0, 0, 0, 0.28) 1.5px,
+    rgba(0, 0, 0, 0.28) 2px,
+    rgba(255, 255, 255, 0.10) 2px,
+    rgba(255, 255, 255, 0.10) 2.5px
+  );
+  border-radius: 1px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.lever.leverDown .handle {
+  top: 18px;
+}
+
+/* Panel label: printed name of the control, sits to the RIGHT of the
+   lever. Not interactive on its own — just engraved text on the chassis.
+   Smaller (9 px) than iteration 2 to match the user's reference image;
+   left-aligned because it now follows the lever rather than precedes it. */
+.label {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: rgba(232, 227, 216, 0.78);
+  text-align: left;
+  transition: color 140ms ease-out;
+}
+
+.presetRow:hover .label {
+  color: rgba(232, 227, 216, 0.95);
+}
+
 /* Maker mark: free-floating engraved text at the bottom-left. No box, no
    border, no fill — just etched panel text that establishes the drawer
-   as a piece of hardware without competing with the controls above. */
+   as a piece of hardware without competing with the controls above.
+   Restored to a visible white tone per iteration 3 feedback. */
 .maker {
-  margin-top: 16px;
+  margin-top: 14px;
   padding-left: 2px;
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 600;
   letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.45);
   text-shadow:
     0 1px 0 rgba(0, 0, 0, 0.55),
     0 -1px 0 rgba(255, 255, 255, 0.04);

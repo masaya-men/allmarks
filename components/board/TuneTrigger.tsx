@@ -3,10 +3,21 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react'
 import { pickRandomChar } from '@/lib/board/scramble'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
+import { PRESETS, findActivePreset } from '@/lib/board/tune-presets'
 import { t } from '@/lib/i18n/t'
 import { FaderColumn } from './FaderColumn'
 import { TunePresetColumn } from './TunePresetColumn'
 import styles from './TuneTrigger.module.css'
+
+/** Header label shown when current W/G doesn't match any of the 5 presets. */
+const CUSTOM_LABEL = 'CUSTOM'
+
+function getActiveLabel(widthPx: number, gapPx: number): string {
+  const id = findActivePreset(widthPx, gapPx)
+  if (!id) return CUSTOM_LABEL
+  const preset = PRESETS.find((p) => p.id === id)
+  return preset?.label ?? CUSTOM_LABEL
+}
 
 /** v4-inplace scramble timing. */
 const STAGGER_MS = 11
@@ -21,20 +32,20 @@ type AnimatedCell = Cell & { settleAt: number }
 
 type Phase = 'idle-tune' | 'opening' | 'idle-readout' | 'closing'
 
-function buildReadoutCells(widthPx: number, gapPx: number): Cell[] {
+function buildReadoutCells(widthPx: number, gapPx: number, activeLabel: string): Cell[] {
   const wStr = widthPx.toFixed(2)
   const gStr = gapPx.toFixed(2)
   // Amendment 1: dropped 'W ' and 'G ' labels — chip number alone communicates,
   // user discovers function by drag interaction.
+  // Iteration 3 (session 60): the trailing label tracks the active preset
+  // (DENSE / TIGHT / DEFAULT / OPEN / AMBIENT) instead of always reading
+  // 'DEFAULT'. CUSTOM is shown when W/G don't match any preset.
   const parts: { text: string; kind: CellKind; scope?: CellScope }[] = [
     { text: wStr, kind: 'num', scope: 'w' },
     { text: ' · ', kind: 'dim' },
     { text: gStr, kind: 'num', scope: 'g' },
     { text: ' · ', kind: 'dim' },
-    // 'DEFAULT' (= 旧 WidthGapResetButton と同じ語彙) に戻して click target を拡張、
-    // ↺ 1 文字は user 報告「押しづらい」 で却下。 7 文字 = 全部 data-cell-kind="reset"
-    // で click 受ける。
-    { text: 'DEFAULT', kind: 'label', scope: 'reset' },
+    { text: activeLabel, kind: 'label', scope: 'reset' },
   ]
   const cells: Cell[] = []
   for (const p of parts) {
@@ -58,9 +69,10 @@ function emitReadoutHtml(
   gapPx: number,
   wrapNumGroups: boolean = false,
 ): { html: string; anyContent: boolean } {
-  const isStateDefault =
-    Math.abs(widthPx - BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX) < 0.005 &&
-    Math.abs(gapPx - BOARD_SLIDERS.CARD_GAP_DEFAULT_PX) < 0.005
+  // Treat any preset match (= not just DEFAULT) as "static status" so the
+  // reset label renders without the active-clickable affordance when the
+  // current W/G corresponds to an explicit preset row.
+  const isStateDefault = findActivePreset(widthPx, gapPx) !== null
 
   let html = ''
   let anyContent = false
@@ -145,6 +157,13 @@ export function TuneTrigger({
   widthRef.current = widthPx
   gapRef.current = gapPx
 
+  // Active preset label tracks the current W/G against the 5-preset
+  // catalogue. Updates on every render so emitters always pick up the
+  // latest label even mid-scramble.
+  const activeLabel = getActiveLabel(widthPx, gapPx)
+  const activeLabelRef = useRef(activeLabel)
+  activeLabelRef.current = activeLabel
+
   const writeIdleTune = useCallback((): void => {
     const el = btnRef.current
     if (!el) return
@@ -156,7 +175,7 @@ export function TuneTrigger({
   const writeIdleReadout = useCallback((): void => {
     const el = btnRef.current
     if (!el) return
-    const cells = buildReadoutCells(widthRef.current, gapRef.current)
+    const cells = buildReadoutCells(widthRef.current, gapRef.current, activeLabelRef.current)
     const { html } = emitReadoutHtml(cells, (c) => c.ch, widthRef.current, gapRef.current, true)
     el.innerHTML = html
   }, [])
@@ -193,7 +212,7 @@ export function TuneTrigger({
 
   const startOpen = useCallback((): void => {
     if (phaseRef.current === 'opening' || phaseRef.current === 'idle-readout') return
-    const target = buildReadoutCells(widthRef.current, gapRef.current)
+    const target = buildReadoutCells(widthRef.current, gapRef.current, activeLabelRef.current)
     cellsRef.current = target.map((c, i) => ({
       ch: c.ch,
       kind: c.kind,
@@ -238,7 +257,7 @@ export function TuneTrigger({
 
   const startClose = useCallback((): void => {
     if (phaseRef.current === 'closing' || phaseRef.current === 'idle-tune') return
-    const target = buildReadoutCells(widthRef.current, gapRef.current)
+    const target = buildReadoutCells(widthRef.current, gapRef.current, activeLabelRef.current)
     const n = target.length
     cellsRef.current = target.map((c, i) => ({
       ch: c.ch,
@@ -401,6 +420,33 @@ export function TuneTrigger({
       writeIdleReadout()
     }
   }, [widthPx, gapPx, writeIdleReadout])
+
+  // When the active preset label changes (= user pressed a preset, or
+  // dragged into/out of a preset's ±0.5 px window), re-trigger the scramble
+  // cycle on the open readout so the label change reads as a glitch
+  // animation rather than an instantaneous text swap. Only fires while
+  // the drawer is in the settled idle-readout phase — opening/closing
+  // phases own their own scramble and shouldn't be interrupted.
+  const prevActiveLabelRef = useRef(activeLabel)
+  useEffect(() => {
+    if (prevActiveLabelRef.current === activeLabel) return
+    prevActiveLabelRef.current = activeLabel
+    if (phaseRef.current !== 'idle-readout') return
+    const target = buildReadoutCells(widthRef.current, gapRef.current, activeLabel)
+    cellsRef.current = target.map((c, i) => ({
+      ch: c.ch,
+      kind: c.kind,
+      scope: c.scope ?? null,
+      settleAt:
+        i * STAGGER_MS +
+        SCRAMBLE_MIN_MS +
+        Math.random() * (SCRAMBLE_MAX_MS - SCRAMBLE_MIN_MS),
+    }))
+    phaseRef.current = 'opening'
+    phaseStartRef.current = performance.now()
+    if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
+    tick()
+  }, [activeLabel, tick])
 
   return (
     <span
