@@ -180,7 +180,7 @@ document.addEventListener('click', (event) => {
   // Mirror defense — see youtube.js for rationale.
   if (isUrlAlreadySaved(url)) {
     try {
-      console.debug('[AllMarks] SoundCloud auto-save suppressed — URL already in mirror', { url, kind })
+      console.log('[AllMarks] SoundCloud auto-save suppressed — URL already in mirror', { url, kind })
     } catch (_) {}
     try { window.postMessage({ source: 'booklage-extension', type: 'pill-duplicate' }, '*') } catch (_) {}
     return

@@ -316,7 +316,7 @@ document.addEventListener('click', (event) => {
           /guarda(re)?\s*più\s*tardi/.test(hay)
         )
         if (suspect) {
-          console.debug('[AllMarks] YouTube Watch Later click NOT detected — please share this log', {
+          console.log('[AllMarks] YouTube Watch Later click NOT detected — please share this log', {
             url: location.href,
             wrapTag: wrap.tagName,
             wrapText,
@@ -369,7 +369,7 @@ document.addEventListener('click', (event) => {
       const btn = event.target && event.target.closest
         ? event.target.closest('button, yt-list-item-view-model, [class*="ytListItemViewModel"], [role="option"]')
         : null
-      console.debug('[AllMarks] YouTube auto-save suppressed — URL already in mirror', {
+      console.log('[AllMarks] YouTube auto-save suppressed — URL already in mirror', {
         url,
         kind,
         btnText: btn ? (btn.innerText || '').trim().slice(0, 80) : null,
@@ -389,6 +389,9 @@ document.addEventListener('click', (event) => {
   if (recentlySent.has(dedupeKey)) return
   recentlySent.set(dedupeKey, now)
   if (!isExtensionAlive()) return
+  try {
+    console.log('[AllMarks] YouTube auto-save fired', { kind, source, url })
+  } catch (_) {}
   // Fire the pill immediately via same-window postMessage so content.js
   // can show "Saving" within ~10ms instead of waiting for the background
   // round-trip (~100-300ms). content.js falls back to a stuck-saving
