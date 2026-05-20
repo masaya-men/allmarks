@@ -261,10 +261,21 @@ function getButtonKind(target) {
   //              <ytd-menu-service-item-renderer> + role="menuitem"
   //              (= session 59 round-3 user report — specific videos fail)
   // OFF state still excluded via aria-checked / aria-pressed below.
+  //
+  // ⚠ Selector is restricted to actual interactive elements (button, role=
+  // option/menuitem, custom-element wrappers). We deliberately exclude
+  // [class*="ytListItemViewModel"] — that wildcard matched inner spans
+  // (e.g. <span class="...ytListItemViewModelTitle">Watch later</span> or
+  // <span class="...ytListItemViewModelSubtitle">非公開</span>) closer to
+  // the click target than the wrapping <button>. closest() then returned
+  // the wrong element, and reading text from just one inner span lost the
+  // "Watch later" stem (= session 59 round-3 user report — DOM outerHTML
+  // confirmation). Button-level matching guarantees we get the full
+  // innerText "Watch later\n非公開" and the button's aria-pressed.
   const btn = target.closest(
     'button, tp-yt-paper-checkbox, ytd-playlist-add-to-option-renderer, ' +
     'ytd-menu-service-item-renderer, ' +
-    'yt-list-item-view-model, [class*="ytListItemViewModel"], ' +
+    'yt-list-item-view-model, ' +
     '[role="option"], [role="menuitem"]'
   )
   if (btn) {
