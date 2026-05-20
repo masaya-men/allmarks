@@ -14,11 +14,10 @@ import styles from './BoardBackgroundTypography.module.css'
  * having to refactor the host component or its wire-up in BoardRoot.
  *
  * Note: as of 2026-05-21, the `'static'` variant includes a mouse-following
- * chromatic-aberration glitch that decorates the type within ~80 px of the
- * cursor. The label is kept for backward compatibility — it means "no
- * large-scale motion of the type body", and the cursor-local glitch is the
- * resting behaviour. A `'static-pure'` variant may be added later for
- * users who want no glitch at all.
+ * chromatic-aberration glitch (orange + cyan ghosts, chrome-matching
+ * horizontal-band clip animation) within ~80 px of the cursor. The label
+ * is kept for backward compatibility — it means "no large-scale motion of
+ * the type body", and the cursor-local glitch is the resting behaviour.
  *
  * Reserved variants:
  *   - 'dvd-bounce' — 4-corner pong like the classic idle-DVD screensaver
@@ -91,17 +90,17 @@ export function BoardBackgroundTypography({
   const text = deriveBoardBgTypoText(activeFilter, moods)
   const hostRef = useRef<HTMLDivElement>(null)
 
-  // Mouse tracker: pointermove anywhere over the host's positioned ancestor
-  // (= board canvas) is captured, rAF-throttled, and written into two CSS
-  // custom properties on the host. The ghost layers read those properties
-  // through their mask-image radial gradient, so the chromatic-aberration
-  // spotlight appears to follow the cursor live. Falls back to document
-  // when no positioned ancestor exists (= tests in detached containers).
+  // Mouse tracker: pointermove anywhere on the document is captured (the
+  // host has pointer-events: none, so it cannot receive moves of its own;
+  // listening on the document and converting via host.getBoundingClientRect
+  // keeps the math correct regardless of board pan or canvas transforms).
+  // Writes are rAF-throttled and target two CSS custom properties on the
+  // host element. Since the glitch layers fill the host exactly (inset: 0),
+  // their mask-image radial-gradient coordinate space matches the host's,
+  // so pixel values translate cleanly.
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
-    const tracked = host.offsetParent as HTMLElement | null
-    const target: HTMLElement | Document = tracked ?? document
     let rafId: number | null = null
     let pendingX = 0
     let pendingY = 0
@@ -120,9 +119,9 @@ export function BoardBackgroundTypography({
       if (rafId === null) rafId = requestAnimationFrame(flush)
     }
 
-    target.addEventListener('pointermove', onMove as EventListener)
+    document.addEventListener('pointermove', onMove as EventListener)
     return (): void => {
-      target.removeEventListener('pointermove', onMove as EventListener)
+      document.removeEventListener('pointermove', onMove as EventListener)
       if (rafId !== null) cancelAnimationFrame(rafId)
     }
   }, [])
@@ -138,8 +137,12 @@ export function BoardBackgroundTypography({
       aria-hidden="true"
     >
       <span className={styles.text}>{text}</span>
-      <span className={styles.glitchRed} aria-hidden="true">{text}</span>
-      <span className={styles.glitchCyan} aria-hidden="true">{text}</span>
+      <div className={styles.glitchLayer} aria-hidden="true">
+        <span className={styles.glitchText + ' ' + styles.glitchTextA}>{text}</span>
+      </div>
+      <div className={styles.glitchLayer} aria-hidden="true">
+        <span className={styles.glitchText + ' ' + styles.glitchTextB}>{text}</span>
+      </div>
     </div>
   )
 }

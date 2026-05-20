@@ -2,13 +2,19 @@
  * and the cards, displaying the active filter's name (or "AllMarks" for
  * the all-bookmarks view) at hero scale. Cards float on top and occlude
  * the type as they scroll. Iteration 2026-05-21: adds a mouse-following
- * chromatic-aberration glitch that decorates the type only in a small
- * radius around the cursor.
+ * chromatic-aberration glitch matching the chrome (TuneTrigger / others)
+ * glitch language — orange + cyan RGB ghost copies with horizontal
+ * clip-band animation running infinitely, masked to a radial spotlight
+ * around the cursor.
  *
- * Position is viewport-bound rather than world-bound: the type stays in
- * the centre of the visible canvas while the user pans the board, so the
- * background reads as a "stage backdrop" the cards travel across rather
- * than a label glued to a particular spot on the canvas. */
+ * Z-index policy: NO explicit z-index anywhere in this module. Adding any
+ * positive z-index to internal elements escapes to the parent stacking
+ * context and beats the cards-wrapper sibling (which uses translate3d
+ * to make its own stacking context but has no explicit z-index of its
+ * own). The earlier iteration tried `z-index: 1/2` on the layers and
+ * caused the typography to render on top of the cards — fixed by relying
+ * on DOM order alone for both host-vs-cards stacking and inner layer
+ * stacking. */
 .host {
   position: absolute;
   inset: 0;
@@ -18,28 +24,24 @@
   pointer-events: none;
   overflow: hidden;
 
-  /* CSS custom properties — theme stylesheets or future variants can
-   * override any of these to retint or resize the glitch without forking
-   * the component. JS writes --bg-typo-glitch-mx / --my via pointermove. */
-  --bg-typo-glitch-radius: 60px;
-  --bg-typo-glitch-falloff: 100px;
-  --bg-typo-glitch-offset: 2px;
-  --bg-typo-glitch-red: rgba(255, 80, 90, 0.85);
-  --bg-typo-glitch-cyan: rgba(80, 220, 255, 0.85);
+  /* CSS custom properties — theme stylesheets / future variants can
+   * override any of these. JS writes --bg-typo-glitch-mx / --my via
+   * pointermove on the board canvas. Mouse coords are in pixels relative
+   * to the host's top-left, matching the mask-image's coordinate space
+   * (= the glitch layers are inset: 0 so they share host's box). */
+  --bg-typo-glitch-radius: 80px;
+  --bg-typo-glitch-falloff: 130px;
+  --bg-typo-glitch-orange: #ff9d3f;
+  --bg-typo-glitch-cyan: #50c8ff;
   --bg-typo-glitch-mx: 50%;
   --bg-typo-glitch-my: 50%;
-
-  /* No explicit z-index: the cards-wrapper sibling that follows in DOM
-   * order establishes its own stacking context via translate3d, which
-   * already lifts CardsLayer above this typography. */
 }
 
-/* Shared typography block — the three layers must occupy identical box
- * geometry so the ghosts overlay the base perfectly. Only color, transform,
- * and mask differ between them. */
+/* Shared typography — all three layers (base + 2 glitch ghosts) must
+ * share font / size / spacing exactly so the ghosts overlay the base
+ * with pixel-precise alignment. */
 .text,
-.glitchRed,
-.glitchCyan {
+.glitchText {
   font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 600;
   font-size: clamp(72px, 17vw, 260px);
@@ -52,23 +54,20 @@
 
 .text {
   color: rgba(255, 255, 255, 0.95);
-  position: relative;
-  z-index: 1;
-  /* Slight de-saturation against the dark stage keeps cards readable
-   * when they overlap. 0.95 alpha softens the headline without losing
-   * its presence. */
 }
 
-/* Red and cyan ghosts: same text, shifted left / right by the glitch
- * offset, masked to a radial spotlight around the cursor, blended
- * additively so where the colored ghosts land on the white base the
- * result reads as proper chromatic aberration rather than a flat overlay. */
-.glitchRed,
-.glitchCyan {
+/* Each glitch layer is a host-sized flex container that holds one
+ * color-shifted copy of the headline. The MASK lives on the layer (which
+ * shares its coordinate system with the host), NOT on the text element
+ * inside — that's why mouse-position pixel coordinates work. The text
+ * is centered inside the layer via flex; the animation transforms /
+ * clip-paths apply to the text without disturbing the mask. */
+.glitchLayer {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 2;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
   mix-blend-mode: screen;
   -webkit-mask-image: radial-gradient(
@@ -85,27 +84,61 @@
   );
 }
 
-.glitchRed {
-  color: var(--bg-typo-glitch-red);
-  transform: translate(calc(-50% + var(--bg-typo-glitch-offset)), -50%);
+.glitchTextA {
+  color: var(--bg-typo-glitch-orange);
+  animation: bg-typo-glitch-a 1400ms steps(7, end) infinite;
 }
 
-.glitchCyan {
+.glitchTextB {
   color: var(--bg-typo-glitch-cyan);
-  transform: translate(calc(-50% - var(--bg-typo-glitch-offset)), -50%);
+  animation: bg-typo-glitch-b 1400ms steps(7, end) infinite;
+}
+
+/* Keyframes mirror the chrome (TuneTrigger / ChromeButton) glitch
+ * language — 7-step staircase animation that translates the ghost on
+ * the X axis and applies a clip-path inset to expose a different
+ * horizontal band each step. The result reads as the classic "じじじ"
+ * VHS / signal-noise flicker. CSS Modules scopes animation-name to the
+ * module, so the names are repeated here verbatim and don't clash with
+ * the chrome module's identical keyframes. */
+@keyframes bg-typo-glitch-a {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(3px, -1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(-5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(-3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+@keyframes bg-typo-glitch-b {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(-3px, 1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitchTextA,
+  .glitchTextB {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* ─── Variants ────────────────────────────────────────────────────────────
  *
- * Each future motion treatment hangs off a `data-variant=...` selector
- * below. Adding a new one is purely additive: declare the keyframes /
- * transforms here, no host-component refactor required. JS-driven
- * variants (card-wind physics, marquee infinite scroll) can read the
- * same data-variant attribute and animate the `.text` child directly.
+ * Adding a new variant is purely additive: declare keyframes / transforms
+ * below, no host-component refactor required.
  *
- * Baseline — type is centred, mouse glitch active (iteration 2026-05-21).
- * The 'static' label now means "no large-scale motion of the type itself";
- * the per-cursor glitch is the new resting behaviour. */
+ * Baseline — type is centred, mouse-following chromatic-aberration glitch
+ * active (iteration 2026-05-21). The 'static' label means "no large-scale
+ * motion of the type body"; the per-cursor glitch is the resting behaviour. */
 .host[data-variant='static'] .text {
   /* no-op — matches the shared declaration above */
 }
