@@ -753,22 +753,15 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       // lightbox. Without this guard the wheel handler would invoke
       // nav.onNav() and a flash of next/prev card animation slips in.
       if (closingRef.current) return
-      // Defer to in-card scroll when the wheel originates over a scrollable
-      // card (= TextCard's `[data-card-scroll]` element) that still has room
-      // to scroll in the wheel direction. Without this, the window-level
-      // handler would consume every wheel as nav, making it impossible to
-      // scroll long text-only tweet bodies inside the lightbox card.
+      // Wheel over a text-card's scroll area never triggers Lightbox nav, even
+      // at scroll edges. session 56 user feedback: たとえ端まで読み切っても、
+      // user はそのまま wheel し続けて勝手にカードが next/prev に飛ぶのが嫌、
+      // という指摘。 端の判定を撤去して「テキスト上での wheel = nav 一切発動なし」
+      // に統一。 left/right ナビは矢印キーや chevron に集約。
       const target = e.target as Element | null
       if (target) {
         const scroller = target.closest<HTMLElement>('[data-card-scroll="true"]')
-        if (scroller) {
-          const dyRaw = e.deltaY
-          const atTop = scroller.scrollTop <= 0
-          const atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1
-          if ((dyRaw > 0 && !atEnd) || (dyRaw < 0 && !atTop)) {
-            return  // native scroll handles the wheel; no nav, no preventDefault
-          }
-        }
+        if (scroller) return
       }
       const dx = e.deltaX
       const dy = e.deltaY
