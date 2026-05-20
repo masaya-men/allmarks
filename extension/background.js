@@ -1,6 +1,7 @@
 import { dispatchSave } from './lib/dispatch.js'
 import { isAutoSaveEnabled } from './lib/auto-save-config.js'
 import { removeUrl as mirrorRemoveUrl } from './lib/saved-urls-mirror.js'
+import { normalizeUrl } from './lib/normalize-url.js'
 
 async function safeDispatch(args, tabId) {
   try {
@@ -75,7 +76,9 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   }
   if (msg.type === 'booklage:url-deleted') {
     if (typeof msg.url !== 'string' || !msg.url) return
-    void mirrorRemoveUrl(msg.url, chrome.storage.local).catch(() => {})
+    // AllMarks sends the raw URL it had in IDB; mirror keys are normalized,
+    // so we normalize the incoming URL too before remove.
+    void mirrorRemoveUrl(normalizeUrl(msg.url), chrome.storage.local).catch(() => {})
     return
   }
 })

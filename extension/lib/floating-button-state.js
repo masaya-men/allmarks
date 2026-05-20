@@ -36,9 +36,22 @@ export function nextState(state, event) {
     case 'error-elapsed':
       if (state.pillState === 'error') return { ...state, pillState: 'idle' }
       return state
-    case 'mirror-hit':
-      // Startup or live update found this URL in the saved-urls mirror.
+    case 'mirror-hit-initial':
+      // Page load: the URL was already in the mirror from a past visit.
+      // Light up the saved indicator silently — no flash animation, since
+      // the user did not just trigger anything.
       return { ...state, savedFlag: true }
+    case 'mirror-hit-live':
+      // Live update: the URL appeared in the mirror because the user just
+      // saved this page via some non-click path (= site .js auto-save,
+      // keyboard shortcut, context menu, bookmarklet). Run the flash
+      // animation so the user gets the same visual confirmation as a
+      // floating-button click would have given them. Without this the
+      // green check would just appear suddenly at the idle opacity (= 30%),
+      // which user feedback in session 58 called out as "30% 不可視で
+      // 緑チェックされる" — disorienting because there is no transition.
+      if (state.savedFlag) return state
+      return { ...state, savedFlag: true, pillState: 'flash' }
     case 'mirror-miss':
       // Live update: the user deleted this bookmark in AllMarks, so the
       // mirror entry is gone. Drop the saved indicator (= green check).

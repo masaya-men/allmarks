@@ -73,7 +73,10 @@ function extractArticleOgp(url) {
 
 function getButtonKind(target) {
   if (!target || !target.closest) return null
-  const btn = target.closest('button')
+  // Tag-agnostic match — note's React app is <button> today but newer
+  // surfaces sometimes ship <div role="button"> / <a role="button">.
+  // Hardened in session 58 alongside the YouTube selector audit.
+  const btn = target.closest('button, [role="button"], a[role="button"]')
   if (!btn) return null
   // Skip the "スキ count" button (o-noteLikeV3__count) — that opens a list
   // of users who liked, not the like toggle itself. Its aria-label also

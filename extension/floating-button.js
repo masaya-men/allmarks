@@ -61,6 +61,53 @@
     return 'idle'
   }
 
+  // === Inlined: normalize-url.js ===
+  // Keep in sync with extension/lib/normalize-url.js (source of truth for tests).
+  const GLOBAL_TRACKING_PREFIXES = ['utm_', 'mc_', '_ga', '_gl']
+  const GLOBAL_TRACKING_EXACT = new Set([
+    'fbclid', 'gclid', 'dclid', 'gbraid', 'wbraid', 'msclkid', 'yclid',
+    'igshid', 'vero_id', 'mkt_tok', 'oly_anon_id', 'oly_enc_id',
+    'trk', 'trkCampaign', 'sc_campaign', 'sc_channel',
+  ])
+  const PER_HOST_DROP = {
+    'youtube.com': new Set(['list', 'index', 't', 'pp', 'si', 'feature', 'ab_channel', 'start_radio', 'kid', 'themeRefresh', 'app']),
+    'm.youtube.com': new Set(['list', 'index', 't', 'pp', 'si', 'feature', 'ab_channel', 'start_radio', 'kid', 'themeRefresh', 'app']),
+    'x.com': new Set(['ref_src', 's', 't', 'cn']),
+    'twitter.com': new Set(['ref_src', 's', 't', 'cn']),
+    'mobile.x.com': new Set(['ref_src', 's', 't', 'cn']),
+    'mobile.twitter.com': new Set(['ref_src', 's', 't', 'cn']),
+  }
+  function shouldDropParam(host, name) {
+    if (GLOBAL_TRACKING_EXACT.has(name)) return true
+    for (const prefix of GLOBAL_TRACKING_PREFIXES) {
+      if (name.startsWith(prefix)) return true
+    }
+    const perHost = PER_HOST_DROP[host]
+    if (perHost && perHost.has(name)) return true
+    return false
+  }
+  function normalizeUrl(input) {
+    if (!input || typeof input !== 'string') return input
+    let url
+    try { url = new URL(input) } catch (_) { return input }
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return input
+    url.hostname = url.hostname.toLowerCase()
+    if ((url.protocol === 'https:' && url.port === '443') || (url.protocol === 'http:' && url.port === '80')) {
+      url.port = ''
+    }
+    const host = url.hostname.replace(/^www\./, '')
+    const keep = []
+    for (const [name, value] of url.searchParams) {
+      if (!shouldDropParam(host, name)) keep.push([name, value])
+    }
+    url.search = ''
+    for (const [name, value] of keep) url.searchParams.append(name, value)
+    if (url.pathname.length > 1 && url.pathname.endsWith('/')) {
+      url.pathname = url.pathname.replace(/\/+$/, '')
+    }
+    return url.toString()
+  }
+
   // === Inlined: saved-urls-mirror.js (read-only here) ===
   async function mirrorHas(url) {
     if (!url) return false
@@ -325,8 +372,9 @@
       // - URL gone from mirror (= deleted in AllMarks): flip back to savedFlag=false
       if (area === 'local' && changes.savedUrlsMirror) {
         const next = changes.savedUrlsMirror.newValue || {}
-        const inMirror = !!next[location.href]
-        if (inMirror && !state.savedFlag) dispatch({ type: 'mirror-hit' })
+        const lookupKey = normalizeUrl(location.href)
+        const inMirror = !!next[lookupKey]
+        if (inMirror && !state.savedFlag) dispatch({ type: 'mirror-hit-live' })
         else if (!inMirror && state.savedFlag) dispatch({ type: 'mirror-miss' })
       }
     })
@@ -345,8 +393,8 @@
     }
     if (!shouldShow()) return
     mount()
-    const hit = await mirrorHas(location.href)
-    if (hit) dispatch({ type: 'mirror-hit' })
+    const hit = await mirrorHas(normalizeUrl(location.href))
+    if (hit) dispatch({ type: 'mirror-hit-initial' })
   }
 
   start()

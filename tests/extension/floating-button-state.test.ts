@@ -114,15 +114,37 @@ describe('nextState — timers', () => {
   })
 })
 
-describe('nextState — mirror-hit (startup or live)', () => {
-  it('sets savedFlag on mirror-hit and keeps pillState', () => {
-    const s = nextState({ savedFlag: false, pillState: 'idle' }, { type: 'mirror-hit' })
+describe('nextState — mirror-hit-initial (page load)', () => {
+  it('sets savedFlag silently on mirror-hit-initial', () => {
+    const s = nextState({ savedFlag: false, pillState: 'idle' }, { type: 'mirror-hit-initial' })
     expect(s).toEqual({ savedFlag: true, pillState: 'idle' })
   })
 
-  it('mirror-hit during hover keeps hover', () => {
-    const s = nextState({ savedFlag: false, pillState: 'hover' }, { type: 'mirror-hit' })
+  it('mirror-hit-initial during hover keeps hover (no flash)', () => {
+    const s = nextState({ savedFlag: false, pillState: 'hover' }, { type: 'mirror-hit-initial' })
     expect(s).toEqual({ savedFlag: true, pillState: 'hover' })
+  })
+})
+
+describe('nextState — mirror-hit-live (saved via another path on this page)', () => {
+  it('sets savedFlag AND triggers flash so the user sees a transition', () => {
+    const s = nextState({ savedFlag: false, pillState: 'idle' }, { type: 'mirror-hit-live' })
+    expect(s).toEqual({ savedFlag: true, pillState: 'flash' })
+  })
+
+  it('mirror-hit-live during hover still runs the flash (= primary visual feedback)', () => {
+    // hover -> flash transition, so the user sees the reveal animation even
+    // if their cursor was hovering the button when the save happened.
+    const s = nextState({ savedFlag: false, pillState: 'hover' }, { type: 'mirror-hit-live' })
+    expect(s).toEqual({ savedFlag: true, pillState: 'flash' })
+  })
+
+  it('mirror-hit-live when already saved is a no-op', () => {
+    // Re-saving the same URL (= dispatch flips savedUrlsMirror entry's
+    // timestamp) must not re-flash, or every dedupe save would replay the
+    // animation on revisit.
+    const s = nextState({ savedFlag: true, pillState: 'idle' }, { type: 'mirror-hit-live' })
+    expect(s).toEqual({ savedFlag: true, pillState: 'idle' })
   })
 })
 

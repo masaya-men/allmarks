@@ -97,11 +97,18 @@ function getButtonKind(target) {
     if (likeBtn.getAttribute('aria-pressed') === 'true') return null
     return 'like'
   }
-  // Watch later — popup option inside the Save dropdown. The dropdown
-  // surfaces this as a paper-checkbox or button with localised label.
-  // We support major locales for the "Watch later" string + exclude OFF
-  // state via aria-checked / aria-pressed / locale OFF stems.
-  const btn = target.closest('button, tp-yt-paper-checkbox, ytd-playlist-add-to-option-renderer')
+  // Watch later — popup option inside the Save dropdown. YouTube ships at
+  // least two layouts in rotation:
+  //   - legacy:  <button> / <tp-yt-paper-checkbox> / <ytd-playlist-add-to-option-renderer>
+  //   - new MV:  <yt-list-item-view-model> with class `ytListItemViewModel*`
+  //              (= surfaced via session 58 user report, role="option" on row)
+  // The new MV variant wraps the "Watch later" text in a span with class
+  // ytListItemViewModelTitle and uses role="option" on the row. We accept
+  // both shapes here. OFF state still excluded via aria-checked / aria-pressed.
+  const btn = target.closest(
+    'button, tp-yt-paper-checkbox, ytd-playlist-add-to-option-renderer, ' +
+    'yt-list-item-view-model, [class*="ytListItemViewModel"], [role="option"]'
+  )
   if (btn) {
     const text = buttonTextLower(btn)
     const label = (btn.getAttribute('aria-label') || '').toLowerCase()

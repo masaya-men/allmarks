@@ -1,4 +1,5 @@
 import { addUrl as mirrorAddUrl } from './saved-urls-mirror.js'
+import { normalizeUrl } from './normalize-url.js'
 
 const OFFSCREEN_PATH = 'offscreen.html'
 
@@ -99,8 +100,13 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
   // Mirror successful saves into chrome.storage.local so the floating button
   // can render "already saved" on revisit. Both `saved` and `duplicate` mean
   // the URL is in AllMarks now, so both populate the mirror.
+  //
+  // We store the *normalized* URL so the same content saved from different
+  // surfaces (= youtube.js builds `?v=abc`, keyboard shortcut sends
+  // `?v=abc&list=...`) maps to one mirror entry. The lookup side
+  // (floating-button.js) normalizes location.href the same way.
   if ((finalState === 'saved' || finalState === 'duplicate') && ogp && ogp.url) {
-    try { await mirrorAddUrl(ogp.url, chrome.storage.local) } catch (_) {}
+    try { await mirrorAddUrl(normalizeUrl(ogp.url), chrome.storage.local) } catch (_) {}
   }
 
   if (!isFloatingButton) {
