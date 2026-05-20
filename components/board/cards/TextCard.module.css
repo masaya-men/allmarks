@@ -58,7 +58,12 @@
   gap: 8px;
   font-size: 12px;
   letter-spacing: 0.01em;
-  color: rgba(255, 255, 255, 0.55);
+  /* session 56: 旧色 rgba(255,255,255,0.55) は close アニメ中に source card と
+     clone card が同じ位置で重なると alpha が二重に乗って 0.80 相当に化け、
+     一瞬「白く光った」 ように見える bug (= user 報告) の原因。 暗背景上で同じ
+     視覚グレーになる不透明値 rgb(140,140,140) に置換。 重なり時も同色なので
+     alpha 合成が発生せず flash が出ない。 */
+  color: rgb(140, 140, 140);
   position: relative;
   z-index: 1;
   flex: 0 0 auto;
