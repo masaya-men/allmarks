@@ -34,6 +34,13 @@ export type UndoEntry =
   | { readonly kind: 'add'; readonly bookmarkIds: readonly string[] }
   | { readonly kind: 'cardWidth'; readonly prevWidthPx: number }
   | { readonly kind: 'cardGap'; readonly prevGapPx: number }
+  | {
+      /** Single undo entry capturing both W and G prior to a preset jump,
+       *  so Ctrl+Z restores both values in a single action. */
+      readonly kind: 'tunePreset'
+      readonly prevWidthPx: number
+      readonly prevGapPx: number
+    }
 
 export function pushBounded<T>(
   stack: readonly T[],
