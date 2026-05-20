@@ -1,9 +1,9 @@
 /* Background typography layer — sits between the dark theme background
  * and the cards, displaying the active filter's name (or "AllMarks" for
  * the all-bookmarks view) at hero scale. Cards float on top and occlude
- * the type as they scroll, the way Apple TV+ / Disney+ / Spotify category
- * heroes do — except here the user's own card arrangement is what reveals
- * or hides the headline.
+ * the type as they scroll. Iteration 2026-05-21: adds a mouse-following
+ * chromatic-aberration glitch that decorates the type only in a small
+ * radius around the cursor.
  *
  * Position is viewport-bound rather than world-bound: the type stays in
  * the centre of the visible canvas while the user pans the board, so the
@@ -17,29 +17,82 @@
   justify-content: center;
   pointer-events: none;
   overflow: hidden;
+
+  /* CSS custom properties — theme stylesheets or future variants can
+   * override any of these to retint or resize the glitch without forking
+   * the component. JS writes --bg-typo-glitch-mx / --my via pointermove. */
+  --bg-typo-glitch-radius: 60px;
+  --bg-typo-glitch-falloff: 100px;
+  --bg-typo-glitch-offset: 2px;
+  --bg-typo-glitch-red: rgba(255, 80, 90, 0.85);
+  --bg-typo-glitch-cyan: rgba(80, 220, 255, 0.85);
+  --bg-typo-glitch-mx: 50%;
+  --bg-typo-glitch-my: 50%;
+
   /* No explicit z-index: the cards-wrapper sibling that follows in DOM
    * order establishes its own stacking context via translate3d, which
-   * already lifts CardsLayer above this typography. Adding a z-index
-   * here would actually put the typography on top of the cards (z-index
-   * only compares within the same stacking context, and a positive
-   * z-index here outranks the cards-wrapper's auto). DOM order alone
-   * gives us: theme bg → this typography → cards, which is what we want. */
+   * already lifts CardsLayer above this typography. */
 }
 
-.text {
+/* Shared typography block — the three layers must occupy identical box
+ * geometry so the ghosts overlay the base perfectly. Only color, transform,
+ * and mask differ between them. */
+.text,
+.glitchRed,
+.glitchCyan {
   font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600; /* Semibold —太め + 無機質、 Apple SF Pro よりやや角立つ */
+  font-weight: 600;
   font-size: clamp(72px, 17vw, 260px);
   line-height: 1;
   letter-spacing: -0.035em;
-  color: rgba(255, 255, 255, 0.95);
   text-align: center;
   white-space: nowrap;
   user-select: none;
-  /* Slight de-saturation of the text against the dark stage keeps the
-   * cards readable when they overlap. The cards are full-bleed media, so
-   * a pure-white background type can flash too brightly through their
-   * gaps; 0.95 alpha softens that without losing the type's presence. */
+}
+
+.text {
+  color: rgba(255, 255, 255, 0.95);
+  position: relative;
+  z-index: 1;
+  /* Slight de-saturation against the dark stage keeps cards readable
+   * when they overlap. 0.95 alpha softens the headline without losing
+   * its presence. */
+}
+
+/* Red and cyan ghosts: same text, shifted left / right by the glitch
+ * offset, masked to a radial spotlight around the cursor, blended
+ * additively so where the colored ghosts land on the white base the
+ * result reads as proper chromatic aberration rather than a flat overlay. */
+.glitchRed,
+.glitchCyan {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(
+    circle at var(--bg-typo-glitch-mx) var(--bg-typo-glitch-my),
+    black 0,
+    black var(--bg-typo-glitch-radius),
+    transparent var(--bg-typo-glitch-falloff)
+  );
+  mask-image: radial-gradient(
+    circle at var(--bg-typo-glitch-mx) var(--bg-typo-glitch-my),
+    black 0,
+    black var(--bg-typo-glitch-radius),
+    transparent var(--bg-typo-glitch-falloff)
+  );
+}
+
+.glitchRed {
+  color: var(--bg-typo-glitch-red);
+  transform: translate(calc(-50% + var(--bg-typo-glitch-offset)), -50%);
+}
+
+.glitchCyan {
+  color: var(--bg-typo-glitch-cyan);
+  transform: translate(calc(-50% - var(--bg-typo-glitch-offset)), -50%);
 }
 
 /* ─── Variants ────────────────────────────────────────────────────────────
@@ -50,9 +103,11 @@
  * variants (card-wind physics, marquee infinite scroll) can read the
  * same data-variant attribute and animate the `.text` child directly.
  *
- * Baseline — type is centred, motionless. */
+ * Baseline — type is centred, mouse glitch active (iteration 2026-05-21).
+ * The 'static' label now means "no large-scale motion of the type itself";
+ * the per-cursor glitch is the new resting behaviour. */
 .host[data-variant='static'] .text {
-  /* no-op — matches the default declaration above */
+  /* no-op — matches the shared declaration above */
 }
 
 /* Reserved selector slots for future variants. Empty for now; left in
