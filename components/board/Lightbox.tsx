@@ -307,10 +307,10 @@ function wrapCloneWithScaleHost(
   if (!isTextCard) return null
   if (sourceW <= 0 || sourceH <= 0) return null
 
-  // 内側の --card-radius は 0 に上書き。 視覚 radius は外側 clone の overflow:hidden
-  // + border-radius (= --lightbox-media-radius) で確定させる (= LargeBoardCardClone
-  // と同じ戦略)。
-  clone.style.setProperty('--card-radius', '0')
+  // session 56 Step 2: session 34 当時の `--card-radius: '0'` 上書きを撤廃 (=
+  // LargeTextCardScaler 側の撤廃と同期)。 当時の不一致 (24 vs 20) は session 22 で
+  // 解消済みなのに上書きだけ残っていた。 撤廃すると morph 中も静止画と同じく
+  // inner が --card-radius:20px を継承し、 ::before の枠線が 4 隅まで連続する。
 
   // session 38: session 36 の metaTop/metaBottom DOM strip を撤去。 user 提案で
   // Lightbox 側 LargeTextCardScaler の omitMeta も外し、 板 → 開く → Lightbox →
