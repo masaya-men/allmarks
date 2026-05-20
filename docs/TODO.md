@@ -20,7 +20,35 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 57 — favicon リブランド + 9 URL サムネ消失調査 + session 55/56 dead code 清掃)
+### 直近の状態 (2026-05-20 セッション 58 — apple-touch-icon 更新 + 拡張機能不安定 root cause 修正 sprint)
+
+session 57 close-out 直後、 推奨どおり **apple-touch-icon (iOS ホーム画面用)** を 新ロゴ (= 黒 A + 緑チェック) で再生成 + deploy で完了。 その後 user が拡張機能の不安定を報告 (= YouTube 後で見るが動かない動画、 フローティングボタンが緑にならない、 他経路保存時のアニメ無しで唐突な緑チェック)。 拡張機能の全 file (= background / content / floating-button / dispatch / 5 site .js / lib 全部) を熟読 audit → 確定バグ 2 件 + UX 不整合 1 件 を特定 → 一気に修正 + テスト追加 + v0.1.6 → 0.1.7 で manifest bump。 1 deploy。
+
+**ship 済 (= prod 反映済、 user 再 sideload 必要)**:
+
+1. **apple-touch-icon (192px) + maskable PWA icon (512px) を新ロゴへ更新**: SVG → PNG 変換スクリプト [scripts/gen-icons.mjs](../scripts/gen-icons.mjs) を新設 (= 再利用可能、 20% safe-zone padding で PWA Maskable spec 準拠、 白背景 + 中央配置)
+2. **URL 正規化 layer 新設** ([extension/lib/normalize-url.js](../extension/lib/normalize-url.js) + [tests/extension/normalize-url.test.ts](../tests/extension/normalize-url.test.ts) 26 test): tracking query (= utm_*, fbclid, gclid 等) + YouTube 専用 (= list, index, t, pp, si, feature 等) + X 専用 (= ref_src, s, t, cn) を strip、 末尾スラッシュ削除、 hostname 小文字化、 idempotent。 [extension/lib/dispatch.js](../extension/lib/dispatch.js) で mirror 保存時 normalize、 [extension/floating-button.js](../extension/floating-button.js) で検索時 normalize、 [extension/background.js](../extension/background.js) で url-deleted message も normalize してから remove。 → user 観察「フローティングボタンが緑にならない」 root cause 解消 (= 保存される URL と検索される URL の query 不一致が原因だった)
+3. **YouTube selector を新 DOM 対応に拡張** ([extension/youtube.js](../extension/youtube.js)): `yt-list-item-view-model`, `[class*="ytListItemViewModel"]`, `[role="option"]` を closest selector に追加。 user 報告「動画によっては『後で見る』 で動かない」 → YouTube が A/B test で旧 `<tp-yt-paper-checkbox>` と新 `<yt-list-item-view-model>` を混在配信していた、 旧 selector しか拾えてなかったのが root cause
+4. **note.js selector 予防拡張** ([extension/note.js](../extension/note.js)): `button` → `button, [role="button"], a[role="button"]` (= 将来 React app の DOM 変更で button が消えても拾える)
+5. **floating-button visual 整合性 fix** ([extension/lib/floating-button-state.js](../extension/lib/floating-button-state.js)): 旧 `mirror-hit` event を 2 つに分離。 `mirror-hit-initial` (= page load 時、 静かに savedFlag だけ立てる) + `mirror-hit-live` (= 他経路で保存された時、 **flash アニメ通す**)。 → user 観察「click 経路はアニメ流れるけど他経路では 30% 不可視で唐突に緑チェック」 解消、 全保存経路で同じ視覚体験
+
+**dead UI (= 報告のみ、 今回は削除しない)**: `cursorPillFallbackPosition` 設定 (= options.html に UI あり、 content.js で未使用) → 次回判断
+
+**変更 file (10 modified + 3 new)**: extension/{background, floating-button, lib/dispatch, lib/floating-button-state, manifest, note, youtube}.js + tests/extension/floating-button-state.test.ts + public/icon-{192,512}.png + 新 extension/lib/normalize-url.js + tests/extension/normalize-url.test.ts + scripts/gen-icons.mjs
+
+**テスト**: 604 → **633 PASS** (+29 件、 normalize-url 26 + floating-button mirror-hit 3)、 tsc clean、 next build OK
+
+**deploy 回数**: 1 (= apple-touch-icon)。 拡張の修正は本体 deploy 不要 (= ユーザーが chrome://extensions で「リロード」 必須)
+
+**manifest version**: 0.1.6 → **0.1.7** (= 拡張 user リロード必須)
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 58 セクション
+
+**次セッション (= 59) の goal**: user 実機検証 (= 拡張機能リロード後、 YouTube / X / Vimeo / SoundCloud / note の全 button 連動 + フローティングボタン緑チェック)。 もし不安定残ったら「保存通知 dropped 時の mirror-hit salvage」 (= 仕様限界 D) の追加対策へ。 OK なら元 backlog (= deploy 数 script setup / 10 番 / 音波 sprint / multi-playback / B-#3) に戻る
+
+---
+
+### 旧情報 (2026-05-20 セッション 57 — favicon リブランド + 9 URL サムネ消失調査 + session 55/56 dead code 清掃)
 
 session 56 close-out 直後、 推奨どおり **7 URL サムネ消失調査**から着手。 user 雑談で favicon (= 三角形のまま) を session 53 確定の「黒 A + 緑チェック」 ロゴに変えたいと判明 → 先に 5 分仕事で片付け。 9 URL の OGP 並列調査で「source 側に og:image なし」 = booklage の bug ではないと確定 (= fix 不要)。 後半で **session 55/56 dead code 清掃** を scope C (= 最も綺麗な状態) で一気に消化、 2 deploy で全完了。
 
