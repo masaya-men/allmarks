@@ -309,11 +309,12 @@ document.addEventListener('click', (event) => {
     return
   }
 
-  // Mirror defense — URL is already in AllMarks. The click is most likely:
-  //   (a) an OFF-toggle (= "Remove from Watch later") that slipped past the
-  //       text-stem OFF guard in getButtonKind, or
-  //   (b) a no-op re-save the user shouldn't see a pill for.
-  // Either way: no save dispatch, no pill. Floating button is already green.
+  // Mirror defense — URL is already in AllMarks. Skip the save dispatch (no
+  // point hitting the offscreen iframe) but fire the duplicate pill so the
+  // user still gets "Already saved" feedback. Covers both:
+  //   (a) OFF-toggle clicks ("Remove from Watch later") that slipped past
+  //       the text-stem OFF guard in getButtonKind,
+  //   (b) deliberate re-clicks on already-saved videos.
   if (isUrlAlreadySaved(url)) {
     try {
       const btn = event.target && event.target.closest
@@ -330,6 +331,7 @@ document.addEventListener('click', (event) => {
         btnClass: btn ? (btn.className && btn.className.toString && btn.className.toString().slice(0, 120)) : null,
       })
     } catch (_) {}
+    try { window.postMessage({ source: 'booklage-extension', type: 'pill-duplicate' }, '*') } catch (_) {}
     return
   }
   const now = Date.now()

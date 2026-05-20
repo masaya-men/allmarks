@@ -398,6 +398,56 @@
 
   document.addEventListener('fullscreenchange', onFullscreenChange)
 
+  // === SPA navigation tracking ===
+  // YouTube / X / Vimeo / SoundCloud — and most modern sites — navigate via
+  // history.pushState without a full page reload, so floating-button's
+  // initial start() only runs once per real page load. Without this, when
+  // the user clicks a video tile to open /watch?v=..., or scrolls a
+  // SoundCloud track into focus, the button keeps the grey state from the
+  // landing URL even when the new URL is in the mirror.
+  //
+  // Hook history.pushState / replaceState + popstate, debounce-fire a
+  // re-check whenever location.href actually changes. The recheck uses
+  // mirror-hit-initial (silent — no flash) since URL change is a passive
+  // user action, not a save event the button is reacting to.
+  let lastUrl = location.href
+  let urlRecheckTimer = null
+  async function recheckMirrorForCurrentUrl() {
+    if (!isExtensionAlive()) return
+    const key = normalizeUrl(location.href)
+    let hit = false
+    try { hit = await mirrorHas(key) } catch (_) {}
+    if (hit && !state.savedFlag) dispatch({ type: 'mirror-hit-initial' })
+    else if (!hit && state.savedFlag) dispatch({ type: 'mirror-miss' })
+  }
+  function onMaybeUrlChange() {
+    if (location.href === lastUrl) return
+    lastUrl = location.href
+    // Debounce — pushState often fires back-to-back during SPA navigation
+    // (= replaceState for query updates, then pushState for the route).
+    if (urlRecheckTimer) clearTimeout(urlRecheckTimer)
+    urlRecheckTimer = setTimeout(recheckMirrorForCurrentUrl, 50)
+  }
+  try {
+    const origPushState = history.pushState
+    const origReplaceState = history.replaceState
+    history.pushState = function () {
+      const ret = origPushState.apply(this, arguments)
+      try { onMaybeUrlChange() } catch (_) {}
+      return ret
+    }
+    history.replaceState = function () {
+      const ret = origReplaceState.apply(this, arguments)
+      try { onMaybeUrlChange() } catch (_) {}
+      return ret
+    }
+  } catch (_) {}
+  window.addEventListener('popstate', onMaybeUrlChange)
+  // YouTube emits its own navigation lifecycle events — listen as a belt-
+  // and-suspenders (= some YouTube layouts dispatch yt-navigate-finish
+  // BEFORE history is updated in a tick the listener above can catch).
+  window.addEventListener('yt-navigate-finish', onMaybeUrlChange)
+
   // === Startup ===
   async function start() {
     if (!isExtensionAlive()) return

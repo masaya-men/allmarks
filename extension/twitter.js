@@ -158,6 +158,7 @@ document.addEventListener('click', (event) => {
     try {
       console.debug('[AllMarks] X auto-save suppressed — URL already in mirror', { url, kind })
     } catch (_) {}
+    try { window.postMessage({ source: 'booklage-extension', type: 'pill-duplicate' }, '*') } catch (_) {}
     return
   }
   const now = Date.now()

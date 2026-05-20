@@ -193,6 +193,13 @@ window.addEventListener('message', (event) => {
     setState('saving')
     return
   }
+  // Site-script mirror defense fires this when the URL is already in the
+  // user's AllMarks (= no save dispatch happens, but the user still gets
+  // gentle "Already saved" feedback instead of silent suppression).
+  if (msg.source === 'booklage-extension' && msg.type === 'pill-duplicate') {
+    setState('duplicate')
+    return
+  }
   if (msg.type !== 'booklage:save-via-extension') return
   const nonce = typeof msg.nonce === 'string' ? msg.nonce : null
   if (nonce) {

@@ -20,7 +20,30 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.8 全サイト構造的修正 sprint)
+### 直近の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.9 黄ピル復活 + SPA 連動)
+
+session 59 後半で user 第 2 弾実機検証 → v0.1.8 の問題発見 = (1) 黄ピルが**全 5 サイトで出なくなった** (= 保存済 URL で再 click しても何のフィードバックも返らない) / (2) **動画ページを SPA navigation で開いただけ**ではフローティングボタン緑にならず、 リロード必須。 user 提案「フローティングボタンは AllMarks の保存状態インジケーターであるべき」 が正解と確認 → 設計修正。 v0.1.8 → 0.1.9。
+
+**ship 済 (= prod 反映済、 user 再 sideload 必要)**:
+
+1. **Phase A — 黄ピル復活**: v0.1.8 で「ミラー防御 = save 発火スキップ」 にしたが、 save スキップすると当然黄ピルも消える設計ミス。 修正は「save dispatch は引き続きスキップ (= 余計な通信は避ける) + content.js に新メッセージ `pill-duplicate` を直接 postMessage → 即座に「Already saved」 ⚠ ピルを出す」 に変更。 全 5 サイト (youtube / twitter / vimeo / soundcloud / note) で適用 + [extension/content.js](../extension/content.js) に `pill-duplicate` リスナー追加
+2. **Phase B — SPA navigation で mirror 再チェック**: YouTube / X / Vimeo 等は `history.pushState` で URL を書き換える SPA。 v0.1.8 までは floating-button.js が初回 page load 時にしかミラーチェックしなかったため、 動画 click で /watch に SPA 移動した時に緑にならなかった。 [extension/floating-button.js](../extension/floating-button.js) に `history.pushState` / `replaceState` のフック + `popstate` + `yt-navigate-finish` リスナー追加、 URL 変化検知後 50ms debounce で `mirrorHas(normalizeUrl(location.href))` 再実行 → 保存済 URL に SPA 移動した瞬間に緑 (silent mirror-hit-initial)、 未保存 URL なら灰色 (mirror-miss)。 user の「フローティングボタン = AllMarks 保存状態インジケーター」 提案がそのまま実現
+
+**変更 file (8 modified)**: extension/{content, floating-button, manifest, youtube, twitter, vimeo, soundcloud, note}.js (+ docs/CURRENT_GOAL.md / TODO.md / TODO_COMPLETED.md)
+
+**テスト**: 633 PASS 維持、 tsc clean、 next build OK
+
+**deploy 回数**: 1 (= session 59 後半 build + deploy)
+
+**manifest version**: 0.1.8 → **0.1.9** (= 拡張 user リロード必須)
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 59 後半セクション
+
+**次セッション (= 60) の goal**: user 実機検証 (= 拡張 v0.1.9 リロード後、 黄ピル復活 + 動画 SPA 移動で緑表示)。 OK なら元 backlog (= deploy 数 script setup / 10 番 / 音波 sprint / multi-playback / B-#3) に戻る
+
+---
+
+### 1 つ前の状態 (2026-05-20 セッション 59 前半 — 拡張機能 v0.1.8 全サイト構造的修正 sprint)
 
 session 59 で user 実機検証の結果、 v0.1.7 で 4 つの問題が報告 = ① 一覧 ︙ メニューから「後で見るに保存」 で拾えない / ② 「後で見るから削除」 で誤発火 + エラー / ③ 保存後フローティングボタン緑にならない / ④ 保存済再 click で黄ピル。 拡張 5 サイト全部の OFF ガード方式を監査 → 4/5 サイトは ARIA / class ベースで構造的に堅い、 **YouTube Watch Later だけ** が文字列依存だった事実が判明。 構造的修正 3 件 + 全サイトに防御層共通投入。 v0.1.7 → 0.1.8。
 

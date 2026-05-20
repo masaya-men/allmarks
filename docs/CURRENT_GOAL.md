@@ -2,36 +2,33 @@
 
 ## 状況
 
-session 59 で **拡張機能 v0.1.7 → 0.1.8 全サイト構造的修正 sprint 完遂、 1 deploy**:
+session 59 で **拡張機能を 0.1.7 → 0.1.8 → 0.1.9 と 2 回 ship**:
 
-session 58 で「徹底調査」 と言いつつ実機の「解除」 状態の DOM を一度も capture しなかった反省を踏まえ、 今回は文字列依存ではなく**構造的防御**で全 4 問題を一気に潰した。
+- **v0.1.8** (前半): 構造的修正 3 件 + 全サイトに防御層共通投入 = floating-button inline ↔ source 再同期、 ミラー防御層 5 サイト、 YouTube 一覧 ︙ メニュー対応
+- **v0.1.9** (後半): user 第 2 弾実機検証で出た問題 2 件を修正 = 黄ピル復活 (全サイト)、 SPA navigation で mirror 再チェック (= 動画/tweet を SPA 移動で開いた瞬間に緑表示)
 
-**4 つの確定修正 (= 全 ship 済、 prod 反映済)**:
-
-1. **floating-button.js inline ↔ source 状態機械を再同期**: session 58 で source は `mirror-hit-initial` / `mirror-hit-live` 分離したが inline コピーを更新し忘れていた = 旧 `mirror-hit` のままで default に落ちて何もしない + `save-success` の `pillState === 'saving'` guard で外経路保存をブロックしていた。 これが「他経路保存でフローティングボタン緑にならない」 root cause
-2. **全 5 site (= youtube / twitter / vimeo / soundcloud / note) にミラー防御層を共通投入**: chrome.storage.local の savedUrlsMirror を sync-readable Set にキャッシュ、 「URL が既に AllMarks に保存済なら save 発火を抑止」。 YouTube Watch Later の文字列依存問題を構造的に殺すと同時に全サイトの保険
-3. **YouTube 一覧 ︙ メニュー経由保存対応**: ホーム / チャンネル / 検索結果 / プレイリストの video tile 9 selector を click capture、 thumbnail link から URL canonicalize + tile から OGP 抽出 → pending capture (5s TTL)、 popup の「後で見るに保存」 click 時に fallback
-4. **session 58 反省点を docs に記載**: 文字列ステム列挙だけでは locale 非依存にならない、 構造的防御 (= ARIA / class / ミラー Set) が正解
+user の素朴提案「フローティングボタン = AllMarks 保存状態インジケーター」 がそのまま設計に取り込まれた sprint。
 
 ## ⚠️ 次セッション開始時にすぐ user に確認すべきこと
 
-**拡張機能 v0.1.8 の実機検証**。 user に以下を依頼してから次の task に進む:
+**拡張機能 v0.1.9 の実機検証**。 user に以下を依頼してから次の task に進む:
 
-1. **chrome://extensions** を開く → AllMarks (= バージョン **0.1.8**) のリロードボタン押下
-2. **booklage.pages.dev** のタブが開いていたらハードリロード (= Ctrl + Shift + R)
+1. **chrome://extensions** を開く → AllMarks (= バージョン **0.1.9**) のリロードボタン押下
+2. **booklage.pages.dev** のタブがあったらハードリロード (= Ctrl + Shift + R)
 
-### 検証チェック (= user に実機で見てもらう、 4 つ全部 OK か)
+### 検証チェック (= v0.1.8 で残った問題が v0.1.9 で直ったか)
 
-| # | テスト | 期待 (= v0.1.8) | 旧 (= v0.1.7) |
+| # | テスト | 期待 (= v0.1.9) | 旧 (= v0.1.8) |
 |---|---|---|---|
-| ① | YouTube 一覧画面 (= ホーム / チャンネル / 検索結果) で ︙ → 「後で見るに保存」 | 保存される + フローティングボタン緑 | 何も起きなかった |
-| ② | YouTube 動画ページで「後で見るから削除」 を押す | 何も起きない (= AllMarks 側は既に保存済なのでミラー防御が抑止) | 誤発火 + エラー |
-| ③ | YouTube / X / Vimeo / SoundCloud / note の任意経路で保存後、 フローティングボタンを見る | flash アニメ流れて緑チェック | 連動せず |
-| ④ | ボードに保存済の状態で同じ button をもう一度押す | 何も起きない (= ミラー防御) | 黄ピル |
+| ① | 保存済の動画ページで「後で見る」 ボタンをもう 1 度押す | ⚠ 黄ピル「Already saved」 が出る | 何も出なかった |
+| ② | 保存済の tweet で Bookmark を押す | 同じく ⚠ 黄ピル | 出なかった |
+| ③ | YouTube ホーム → 動画タイル click で SPA 遷移 → 動画ページ着 | フローティングボタンが即座に緑チェック (= リロード不要) | リロード必須だった |
+| ④ | 別の保存済 tweet を X 上で開く | 同じく即緑チェック | リロード必須だった |
+| ⑤ | 未保存の動画ページに移動 (= 保存済ページから別動画へ) | 緑から灰色に切り替わる | 緑のままだった可能性 |
 
 ### 検証 OK だったら
 
-元 backlog から次の task を user に選んでもらう (= 拡張安定化 sprint クローズ):
+拡張安定化 sprint 完全クローズ → user に backlog から次を選んでもらう:
 
 | 優先度 | task | 工数 |
 |---|---|---|
@@ -44,21 +41,20 @@ session 58 で「徹底調査」 と言いつつ実機の「解除」 状態の 
 
 ### もしまだ問題が残ったら
 
-新症状の DOM 構造 (= devtools の Elements の状態) と console.debug ログを共有してもらう。 ミラー防御の console.debug 出力には btnText / btnAriaLabel / btnAriaChecked / btnAriaPressed / btnRole / btnClass が含まれる → これで真の DOM パターンを掴める
+devtools の Console を開いてもらえれば `[AllMarks] auto-save suppressed` の console.debug が出ているはず → DOM 構造把握。 また SPA navigation 問題が残る場合は、 該当サイトの URL 変化検出方法 (= 各サイト独自の navigation イベント) を追加調査。
 
-## session 59 で確定した事 (= 前提として保持)
+## session 59 で確定した重要な事
 
-- **構造的防御 > 文字列防御**: locale 非依存にしたいなら ARIA / class / data-* に頼る。 文字列ステム列挙は逃げ
-- **inline ↔ source の drift は static test だけでは検知できない**: floating-button.js の inline は source-of-truth のテストでカバーされない、 これからは inline 編集時に必ず source も同じ変更
-- **video tile pending capture パターン**: 「popup が global container にマウントされて源の DOM ツリーから外れる」 ケースで、 click capture phase で source 文脈を pending 保存 → popup option click で fallback、 という普遍パターン
+- **「save dispatch スキップ ≠ pill スキップ」**: ミラー防御で save 発火を止める時、 user フィードバックは別経路で残す必要がある (= postMessage で直接 pill 発火)。 「保存処理」 と「user 通知」 は別レイヤー
+- **SPA navigation 検知が拡張機能の基本要件**: 単一ページアプリ (= YouTube / X / Vimeo / SoundCloud etc) では `history.pushState` フック + `popstate` + サイト独自イベント (= `yt-navigate-finish`) の 3 段構えが堅い。 これは memory 化に値する
+- **フローティングボタン = URL インジケーター**: その時点で表示されている URL が AllMarks に保存されているかを常時可視化する indicator。 ミラー lookup は瞬時 (= マイクロ秒)、 重くない。 競合 (Pocket / Raindrop / mymind) と同等の標準動作
 
 ## 引き継ぎ resources
 
-- [docs/TODO.md](./TODO.md) — active backlog (= 「現在の状態」 セクションが session 59 用に更新済)
-- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 59 narrative
+- [docs/TODO.md](./TODO.md) — active backlog (= 「現在の状態」 が session 59 後半用に更新済)
+- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 59 narrative (前半 + 後半)
 - [docs/private/IDEAS.md](./private/IDEAS.md) — H / J / K / I-08 / I-09 / I-10 セクション
-- memory `feedback_layman_simple_path.md` (= session 56/57/58 で 5 回再確認、 user の素朴提案を 1 段重く受け取る)
-- memory `feedback_jargon_in_japanese.md` (= 業界用語は禁止)
+- memory `feedback_layman_simple_path.md` (= session 56/57/58/59 で 6 回再確認、 user 素朴提案を 1 段重く受け取る)
 
 ## 月末リマインダー (= 2026-05-31)
 
