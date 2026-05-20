@@ -1,42 +1,46 @@
-# 次セッションのゴール (= セッション 60)
+# 次セッションのゴール (= セッション 61)
 
 ## 状況
 
-session 59 で **拡張機能を 0.1.7 → 0.1.14 と 7 回 ship**、 全 user 検証 OK で締め:
+session 60 で大物 **J (TUNE preset 物理ボタン)** を 9 iteration の polish で完走 + production deploy 済。 その後 **I (背景文字 マウス追従グリッチ)** に着手したが、 user 最終確認で「思ったのと違う」 → 翌セッションに iteration 続行で締め。
 
-- **v0.1.8**: 構造的修正 3 件 + 全サイト防御層 = floating-button inline↔source 再同期 + ミラー防御層 5 サイト + YouTube 一覧 ︙ メニュー対応
-- **v0.1.9**: 黄ピル復活 (全サイト) + SPA navigation で mirror 再チェック (= 動画/tweet 直開きで即緑表示)
-- **v0.1.10**: X SPA 検知の保険として 500ms 定期チェック追加 (= 競合 Toby と同方式)
-- **v0.1.11**: YouTube セレクタに `ytd-menu-service-item-renderer` + `[role="menuitem"]` 追加 + 検出失敗時 DOM 診断ログ
-- **v0.1.12**: 診断ログ表示レベルを `console.debug` → `console.log` (= user の console で見える化) + 「auto-save fired」 ログ追加
-- **v0.1.13**: Like 検出にテキストガード追加 (= `<like-button-view-model>` が Watch later option ラップするケース対応)
-- **v0.1.14**: セレクタから `[class*="ytListItemViewModel"]` 削除 (= 内側 span にマッチしないように、 真因 outerHTML から特定)
+### session 60 で完了したもの
+- **J. TUNE drawer 5 個の物理 preset ボタン**: DENSE / TIGHT / DEFAULT / OPEN / AMBIENT、 user 自分で tune した値 (= TIGHT 243.57/36.17 等)、 LED 状態鏡 (= ±0.5px tolerance)、 Ctrl+Z で W/G 両方同時 undo、 i18n 15 言語、 ラッチング・トグルスイッチ視覚、 縦長ハンドル (= ミニブレーカー風)、 audio interface 風 divider、 ドーム型 LED、 立体スライダーレール + 縦長メタリックハンドル + 42 目盛り、 long-press 350ms ジャンプ、 ドラッグ速度入れ替え (= 普通=高速、 Shift=低速)、 説明テキスト `SHIFT TO SLOW` / `HOLD TO JUMP`、 ヘッダー label 動的化 + glitch、 ALLMARKS · MK-1 刻印プレート
+- **I. 背景文字 マウス追従グリッチ**: 初版 ship → user 報告 3 バグ (z-index で前面、 mask 座標ずれ、 chrome glitch 言語と不一致) → 修正版 ship → **まだ user 満足してない**
 
-user 最終確認: Twitter ブクマ + YouTube 高評価 + 後で見る (C4wfr7XxYBk) で全て動作 ✓
+### I がまだ満足してない部分 (= 次セッション最優先)
+- user 発言: 「うーんやっぱり思ったのと違うから明日続きやりましょう！」
+- 具体的にどこが違うかは未確認 → **次セッション開始時に user に具体的にヒアリング**してから修正方針確定
+- 想定される違和感ポイント:
+  - グリッチが見えにくい / 出てない (= animation の opacity 0% フレームで透明になる時間が長い)
+  - 範囲が広すぎる / 狭すぎる (= radius 80px / falloff 130px が体感と合わない)
+  - 色がオレンジ + シアンで chrome と揃えたが、 もっと違う色味が良いかも (= 例: 赤+青、 緑+マゼンタ)
+  - clip-path の水平バンドが小さすぎる or 動きすぎる
+  - マウス位置と glitch 位置がまだ何かずれてる (= 修正したつもりだが残バグの可能性)
 
 ## ⚠️ 次セッション開始時にすぐ取り掛かるべきタスク
 
-### 最優先: オンボーディング案内画面の draft
+### 最優先: I (背景文字グリッチ) の iteration 続行
 
-user 提案: 「YouTube 高評価は精度高い、 後で見るは仕様限界、 フローティング/右クリック/ショートカット使ってください」 と最初から user に正直に案内したい。
+1. **user に何が思ったのと違ったか具体的にヒアリング**
+2. 該当部分を修正 → deploy → 確認 のループ
+3. user 満足するまで polish
 
-memory `project_onboarding_stance.md` に方針確定済 (= 高精度 / ベストエフォート / 100% の 3 段階ラベル)。
+### その後の選択肢 (= I 完了後)
 
-next session でやる作業:
-1. **どこに案内を出すか決定**: 拡張機能 popup の最初の画面? 本体 LP の「拡張機能の使い方」 セクション? それともインストール直後の welcome page を新設?
-2. **draft 文章作成**: 上の 3 段階ラベル + 4 つの 100% 経路の解説 (日英 2 言語)
-3. **実装**: HTML / Markdown / 拡張機能の welcome page (= manifest の chrome_url_overrides or 別途 newtab 画面)
+- **multi-playback vision** (= board card autoplay、 AllMarks 核の差別化)
+- **タグ付け** (= 「最重要」 と user が言ってる大物、 IDB schema 変更 + UI + filter)
 
-### その他の元 backlog (= ドメイン待ちタスクと並列で選択可)
+memory `project_tagging_top_priority.md` 参照。
 
-| 優先度 | task | 工数 |
-|---|---|---|
-| 🔧 | **deploy 数取得 script setup** (= CF API token 発行 ~3 分 + .env.local 追記) | 小 |
-| 🟢 | **dead UI cursorPillFallbackPosition の削除 or 実装** | 小 |
-| 🟡 | **10 番 有名サイト pre-set OFF list** (= 拡張 polish、 ~50 行) | 小 |
-| 🟡 | **音波テーマ世界観確立 sprint** (H + J + K + I-09 + I-10) | 大 |
-| 🟡 | **multi-playback vision board card autoplay** (AllMarks core 差別化) | 大 |
-| 🐛 | **B-#3 重複 URL でサムネ等が出ない** (古めの未解決) | 中 |
+## session 60 で確定した重要な事 (= 前提として保持)
+
+- **メーター 662 PASS** 維持 (= 既存 633 + tune-preset 11 + TunePresetColumn 7 + FaderColumn 拡張 2 + BoardBackgroundTypography 9)
+- **タグ付けは最優先**: user 直接発言で格上げ、 multi-playback の後にすぐ着手 (memory `project_tagging_top_priority.md`)
+- **選択肢ラベルに ギリシャ文字使わない** (= memory `feedback_no_greek_labels.md`)
+- **UI 英語は globally-clear 優先**: 業界標準 `FINE` より `SLOW` (= memory `feedback_globally_clear_english.md`)
+- **z-index 注意**: BoardBackgroundTypography のような「DOM 順で stacking」 を意図する component で、 内側要素に z-index 付けると親 stacking context に escape して兄弟要素を超えてしまう罠 (= session 60 で 1 回踏んだ、 既存 CSS コメントが警告してたのに見落とした)
+- **CSS mask 座標系**: `radial-gradient(circle at <x> <y>)` の座標は**マスク適用される要素の box 内座標**、 親 host の座標じゃない。 ホスト相対マウス座標を渡したいなら、 マスクは host-sized wrapper に付ける必要あり (= session 60 で踏んだ)
 
 ## 月末リマインダー (2026-05-31)
 
@@ -44,19 +48,12 @@ next session でやる作業:
 
 **Developer Account**: user が前作った既存 account あり (= $5 払い済、 ログインだけで OK)。
 
-## session 59 で確定した重要な事 (= 前提として保持)
-
-- **YouTube DOM は予測不能に変わる**: 1 session で 7 回 ship 追跡したが、 100% は構造的不可能。 競合 (Pocket / Raindrop / mymind / Toby / Notion Web Clipper) も誰も YouTube Watch Later 自動検知してない。 自動保存は**ベストエフォート機能**として位置付ける
-- **確実な経路は 4 つの manual 経路**: Ctrl+Shift+B / フローティングボタン / 右クリック / 拡張アイコン
-- **「save dispatch スキップ ≠ pill スキップ」 原則**: ミラー防御で save 抑止する時、 pill だけは別経路 (postMessage) で出して user フィードバック残す
-- **SPA navigation 検知は 3 段 + polling の 4 段構え**: pushState フック / popstate / サイト独自イベント (= `yt-navigate-finish`) / 500ms 定期チェック。 X だけは polling 不可欠
-- **inline ↔ source の drift 警告**: floating-button.js の inline state machine は test がカバーしない、 source と必ず同期
-
 ## 引き継ぎ resources
 
-- [docs/TODO.md](./TODO.md) — active backlog (= 現在の状態が session 59 全 7 ship 用に更新済)
-- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 59 narrative
-- [docs/private/IDEAS.md](./private/IDEAS.md) — H / J / K / I-08 / I-09 / I-10 セクション
-- memory `project_onboarding_stance.md` (session 59 確定、 案内方針)
-- memory `reference_spa_navigation_detection.md` (session 59 確定、 4 段構え)
-- memory `feedback_layman_simple_path.md` (= session 56/57/58/59 で 7 回再確認)
+- [docs/TODO.md](./TODO.md) — active backlog (= session 60 narrative 反映済)
+- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 60 narrative 集約済 (J 9 iter + I 2 iter)
+- [docs/superpowers/specs/2026-05-20-tune-drawer-preset-design.md](./superpowers/specs/2026-05-20-tune-drawer-preset-design.md) — J 完成仕様
+- [docs/superpowers/specs/2026-05-21-bg-typography-mouse-glitch-design.md](./superpowers/specs/2026-05-21-bg-typography-mouse-glitch-design.md) — I 仕様 (= まだ user 不満足)
+- [docs/private/IDEAS.md](./private/IDEAS.md) §I, §J (= 元 brainstorming)
+- memory `feedback_globally_clear_english.md` (= session 60 新規)
+- memory `feedback_no_greek_labels.md` (= session 60 新規)

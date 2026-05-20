@@ -20,7 +20,33 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.7 → 0.1.14 全 7 ship 完遂、 sprint クローズ)
+### 直近の状態 (2026-05-21 セッション 60 — J 9 iter 完走 + I 着手中、 翌セッションへ持ち越し)
+
+session 60 は board 中心部の世界観強化 sprint。 大物 2 つ着手 (= J, I):
+
+- **J. TUNE drawer 物理 preset ボタン (= 完走 + 本番 deploy 済)**:
+  - 5 個の preset (DENSE / TIGHT 243.57/36.17 / DEFAULT / OPEN / AMBIENT)、 user が自分の 1489 viewport で tune した値
+  - レイアウト: LED → ミニブレーカーレバー (= 縦長 20×34px、 メタリックハンドル) → パネル文字 (cream label)
+  - 動作: ラッチング・トグル (押されたまま固定)、 LED 状態鏡 (±0.5px tolerance)、 Ctrl+Z で W/G 両方同時 undo、 i18n 15 言語、 audio interface 風 divider、 ドーム型 LED (= preset + ops 両方)、 ALLMARKS · MK-1 刻印プレート
+  - スライダー本体も同時 polish: 立体レール (= 6px 溝 + chamfer + inset)、 縦長メタリックハンドル (= グラデ + 12 グリップ溝 + index line)、 42 目盛り (= 22 から倍密)、 long-press 350ms ジャンプ (= click-to-jump 廃止で精密調整可能)、 ドラッグ速度入れ替え (= 普通=高速 ×40、 Shift=低速)、 ops 説明文 `DRAG TO TUNE` / `SHIFT TO SLOW` / `HOLD TO JUMP` / `CTRL+Z UNDO` / `CTRL+SHIFT+Z REDO`
+  - ヘッダー読み出しの動的化 + glitch: `267.84 · 97.21 · DEFAULT` → 選択中 preset 名に変わる、 変化時に既存 v4 scramble 再発火
+  - **9 iteration 一気に polish**: iter 1=設計実装、 iter 2-7=user feedback で見た目調整、 iter 8=速度入れ替え、 iter 9=FINE→SLOW 文言
+
+- **I. 背景文字 マウス追従グリッチ (= 翌セッションに iter 続行)**:
+  - 仕様: マウス近傍 80px 円形のみ AllMarks 文字に chromatic aberration glitch、 外は通常表示
+  - 初版 ship 後 user feedback: ① 背景が前面に出てる (= z-index 問題)、 ② マウス追従が離れた所に出る (= mask 座標系 mismatch)、 ③ glitch スタイルが chrome (TuneTrigger) と違う
+  - 3 バグ全て fix 版 ship 済 (commit `1f24c946`、 deploy 済): z-index 全削除 + .glitchLayer ラッパー (= host inset:0) + chrome 互換 keyframes (= 7-step clip-path inset 横線、 オレンジ + シアン、 1400ms infinite)
+  - **user 検証で「思ったのと違う」** → 翌セッションで具体ヒアリング + iteration 続行
+
+**テスト**: 633 → **662 PASS** (= J で +18 tune-presets / TunePresetColumn / FaderColumn 拡張 + I で +9 BoardBackgroundTypography 新規)、 tsc clean、 次 build OK
+
+**deploy 回数**: 11 (= J 9 + I 2、 1 日 16 回上限内)
+
+**変更 file (累計)**: J = lib/board/tune-presets.ts + components/board/TunePresetColumn.* + TuneTrigger.* + FaderColumn.* + BoardRoot.tsx + messages/*.json 15 lang。 I = components/board/BoardBackgroundTypography.* + .test.tsx 新規
+
+**次セッション (= 61) の goal**: I のグリッチを user 思う通りの見え方になるまで iteration。 開始時にまず**何が思ったのと違ったかヒアリング**してから方針確定。 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 60 セクション
+
+### 1 つ前の状態 (2026-05-20 セッション 59 — 拡張機能 v0.1.7 → 0.1.14 全 7 ship 完遂、 sprint クローズ)
 
 session 58 の v0.1.7 が user 検証で多数の症状判明 → 構造的修正 + 全サイト防御層投入 + SPA navigation 検知 + YouTube DOM 変動追跡を **1 session で 7 回 ship** で対応。 user 最終確認 (Twitter ブクマ + YouTube 高評価 + 後で見る C4wfr7XxYBk) で全て OK、 sprint クローズ。
 
