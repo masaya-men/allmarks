@@ -5,6 +5,7 @@ import { pickRandomChar } from '@/lib/board/scramble'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { t } from '@/lib/i18n/t'
 import { FaderColumn } from './FaderColumn'
+import { TunePresetColumn } from './TunePresetColumn'
 import styles from './TuneTrigger.module.css'
 
 /** v4-inplace scramble timing. */
@@ -112,6 +113,7 @@ type Props = {
   readonly onChangeWidth: (next: number) => void
   readonly onChangeGap: (next: number) => void
   readonly onReset: () => void
+  readonly onApplyPreset: (id: import('@/lib/board/tune-presets').PresetId) => void
   readonly label?: string
 }
 
@@ -121,6 +123,7 @@ export function TuneTrigger({
   onChangeWidth,
   onChangeGap,
   onReset,
+  onApplyPreset,
   label,
 }: Props): ReactElement {
   const visibleLabel = label ?? t('board.chrome.tune')
@@ -425,46 +428,53 @@ export function TuneTrigger({
         data-open={expanded ? 'true' : 'false'}
         aria-hidden={!expanded}
       >
-        <div className={styles.faderGroup}>
-          <FaderColumn
-            scope="w"
-            value={widthPx}
-            min={BOARD_SLIDERS.CARD_WIDTH_MIN_PX}
-            max={BOARD_SLIDERS.CARD_WIDTH_MAX_PX}
-            def={BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX}
-            onChange={onChangeWidth}
-            label="W"
-          />
-          <FaderColumn
-            scope="g"
-            value={gapPx}
-            min={BOARD_SLIDERS.CARD_GAP_MIN_PX}
-            max={BOARD_SLIDERS.CARD_GAP_MAX_PX}
-            def={BOARD_SLIDERS.CARD_GAP_DEFAULT_PX}
-            onChange={onChangeGap}
-            label="G"
-          />
-        </div>
-        <div className={styles.opsLegend} aria-hidden="true">
-          <div className={styles.opsRow}>
-            <span className={styles.led} data-color="orange" />
-            <span className={styles.opsText}>DRAG TO TUNE</span>
+        <TunePresetColumn
+          widthPx={widthPx}
+          gapPx={gapPx}
+          onApply={onApplyPreset}
+        />
+        <div className={styles.drawerRight}>
+          <div className={styles.faderGroup}>
+            <FaderColumn
+              scope="w"
+              value={widthPx}
+              min={BOARD_SLIDERS.CARD_WIDTH_MIN_PX}
+              max={BOARD_SLIDERS.CARD_WIDTH_MAX_PX}
+              def={BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX}
+              onChange={onChangeWidth}
+              label="W"
+            />
+            <FaderColumn
+              scope="g"
+              value={gapPx}
+              min={BOARD_SLIDERS.CARD_GAP_MIN_PX}
+              max={BOARD_SLIDERS.CARD_GAP_MAX_PX}
+              def={BOARD_SLIDERS.CARD_GAP_DEFAULT_PX}
+              onChange={onChangeGap}
+              label="G"
+            />
           </div>
-          <div className={styles.opsRow}>
-            <span className={styles.led} data-color="orange" />
-            <span className={styles.opsText}>SHIFT FOR FAST</span>
-          </div>
-          <div className={styles.opsRow}>
-            <span className={styles.led} data-color="green" />
-            <span className={styles.opsText}>CLICK TO JUMP</span>
-          </div>
-          <div className={styles.opsRow}>
-            <span className={styles.led} data-color="red" />
-            <span className={styles.opsText}>CTRL+Z UNDO</span>
-          </div>
-          <div className={styles.opsRow}>
-            <span className={styles.led} data-color="red" />
-            <span className={styles.opsText}>CTRL+SHIFT+Z REDO</span>
+          <div className={styles.opsLegend} aria-hidden="true">
+            <div className={styles.opsRow}>
+              <span className={styles.led} data-color="orange" />
+              <span className={styles.opsText}>DRAG TO TUNE</span>
+            </div>
+            <div className={styles.opsRow}>
+              <span className={styles.led} data-color="orange" />
+              <span className={styles.opsText}>SHIFT FOR FAST</span>
+            </div>
+            <div className={styles.opsRow}>
+              <span className={styles.led} data-color="green" />
+              <span className={styles.opsText}>CLICK TO JUMP</span>
+            </div>
+            <div className={styles.opsRow}>
+              <span className={styles.led} data-color="red" />
+              <span className={styles.opsText}>CTRL+Z UNDO</span>
+            </div>
+            <div className={styles.opsRow}>
+              <span className={styles.led} data-color="red" />
+              <span className={styles.opsText}>CTRL+SHIFT+Z REDO</span>
+            </div>
           </div>
         </div>
       </div>
