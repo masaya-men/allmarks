@@ -221,10 +221,36 @@ function getButtonKind(target) {
   // selector is language-neutral by design (= YouTube's component name).
   // OFF state (= already liked, click would un-like) is signalled via
   // aria-pressed="true" on the inner button.
+  //
+  // ⚠ Session 59 (v0.1.12) bug: YouTube reuses <like-button-view-model>
+  // as a toggle-button wrapper for the Save dropdown's Watch later option
+  // on certain videos. That mis-matched here — clicks on Watch later got
+  // captured by the Like branch and returned null (= aria-pressed semantics
+  // diverged from a real Like button). Text-content guard below filters
+  // that out: if the matched button's text says "Watch later" / "後で見る"
+  // / etc, it's NOT the player's Like button — fall through to the
+  // watch-later branch.
   const likeBtn = target.closest('like-button-view-model button')
   if (likeBtn) {
-    if (likeBtn.getAttribute('aria-pressed') === 'true') return null
-    return 'like'
+    const likeText = ((likeBtn.innerText || likeBtn.textContent || '') + '').toLowerCase()
+    const likeLabel = (likeBtn.getAttribute('aria-label') || '').toLowerCase()
+    const likeHay = likeText + ' ' + likeLabel
+    const isMisWrappedWatchLater = (
+      /watch\s*later/i.test(likeHay) ||                              // en
+      /後で見る/.test(likeText + likeLabel) ||                         // ja
+      /나중에\s*보|나중에\s*볼/.test(likeHay) ||                        // ko
+      /稍后观看|稍後觀看/.test(likeText + likeLabel) ||                  // zh
+      /ver\s*más\s*tarde|ver\s*mas\s*tarde/i.test(likeHay) ||         // es
+      /regarder\s*plus\s*tard|à\s*voir\s*plus\s*tard/i.test(likeHay) || // fr
+      /später\s*(an)?sehen/i.test(likeHay) ||                         // de
+      /assistir\s*mais\s*tarde/i.test(likeHay) ||                     // pt
+      /guarda(re)?\s*più\s*tardi/i.test(likeHay)                      // it
+    )
+    if (!isMisWrappedWatchLater) {
+      if (likeBtn.getAttribute('aria-pressed') === 'true') return null
+      return 'like'
+    }
+    // Fall through to watch-later detection below.
   }
   // Watch later — popup option inside the Save dropdown. YouTube ships at
   // least three layouts in rotation:
@@ -316,6 +342,16 @@ document.addEventListener('click', (event) => {
           /guarda(re)?\s*più\s*tardi/.test(hay)
         )
         if (suspect) {
+          const insideLikeBVM = !!(wrap.closest && wrap.closest('like-button-view-model'))
+          const p1 = wrap.parentElement
+          const p2 = p1 ? p1.parentElement : null
+          const p3 = p2 ? p2.parentElement : null
+          const tagOf = (el) => {
+            if (!el) return null
+            const tag = el.tagName ? el.tagName.toLowerCase() : ''
+            const cls = (el.className && el.className.toString && el.className.toString()) || ''
+            return cls ? tag + '.' + cls.slice(0, 60) : tag
+          }
           console.log('[AllMarks] YouTube Watch Later click NOT detected — please share this log', {
             url: location.href,
             wrapTag: wrap.tagName,
@@ -325,8 +361,10 @@ document.addEventListener('click', (event) => {
             wrapAriaChecked: wrap.getAttribute ? wrap.getAttribute('aria-checked') : null,
             wrapAriaPressed: wrap.getAttribute ? wrap.getAttribute('aria-pressed') : null,
             wrapClass: (wrap.className && wrap.className.toString && wrap.className.toString().slice(0, 200)) || null,
-            wrapOuterHtml: (wrap.outerHTML || '').slice(0, 800),
+            insideLikeButtonViewModel: insideLikeBVM,
+            parentChain: [tagOf(p1), tagOf(p2), tagOf(p3)],
           })
+          console.log('[AllMarks] DOM outerHTML:', (wrap.outerHTML || '').slice(0, 1200))
         }
       }
     } catch (_) {}
