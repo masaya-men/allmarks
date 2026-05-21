@@ -3,22 +3,23 @@
 import { useCallback, useRef, type PointerEvent, type ReactElement } from 'react'
 import styles from './FaderColumn.module.css'
 
-/** Default-centered piecewise-linear position mapping: default value → 50%
- *  (track center), min → 0%, max → 100%. Same as legacy TuneTrigger chip
- *  mapping (Amendment 1) but applied to vertical axis. */
-function valueToFraction(value: number, min: number, max: number, def: number): number {
-  if (value <= def) {
-    const below = def - min
-    return below > 0 ? ((value - min) / below) * 0.5 : 0
-  }
-  const above = max - def
-  return above > 0 ? 0.5 + ((value - def) / above) * 0.5 : 1
+/** Linear position mapping: value → fraction along the track, min → 0%,
+ *  max → 100%. The earlier mapping forced the default value to the track
+ *  center (50%), but that compressed the two halves at different value-scales
+ *  whenever the default wasn't the geometric midpoint of [min, max] — so the
+ *  same mouse travel moved the handle ~3× faster on the narrower (lower) half
+ *  (user report 2026-05-21: 「下方向だけ速い」). Going linear makes the handle
+ *  rest at its real value position (off-center is fine with the new ruler) and
+ *  keeps drag perfectly symmetric in both directions, because the drag itself
+ *  is already linear in value. The default value is still marked on the track
+ *  (see defaultMark) so reset keeps a visual reference. */
+function valueToFraction(value: number, min: number, max: number): number {
+  return max > min ? (value - min) / (max - min) : 0
 }
 
-function fractionToValue(fraction: number, min: number, max: number, def: number): number {
+function fractionToValue(fraction: number, min: number, max: number): number {
   const f = Math.max(0, Math.min(1, fraction))
-  if (f <= 0.5) return min + (f / 0.5) * (def - min)
-  return def + ((f - 0.5) / 0.5) * (max - def)
+  return min + f * (max - min)
 }
 
 const TICK_POSITIONS = Array.from({ length: 42 }, (_, i) => (i / 41) * 100)
@@ -63,8 +64,11 @@ export function FaderColumn({
   valueRef.current = value
   const draggingRef = useRef(false)
 
-  const fraction = valueToFraction(value, min, max, def)
+  const fraction = valueToFraction(value, min, max)
   const handleTopPct = (1 - fraction) * 100
+  // Default value's position on the track (top%), so the reset reference mark
+  // sits at the real default rather than a forced 50% center.
+  const defaultTopPct = (1 - valueToFraction(def, min, max)) * 100
 
   const isHi = (tickPct: number): boolean => {
     const tickFraction = 1 - tickPct / 100
@@ -114,7 +118,7 @@ export function FaderColumn({
       const start = pointerStartRef.current
       if (start && start.rectHeight > 0) {
         const fr = Math.max(0, Math.min(1, 1 - start.clickY / start.rectHeight))
-        onChange(fractionToValue(fr, min, max, def))
+        onChange(fractionToValue(fr, min, max))
       }
       jumpTimerRef.current = null
     }, LONG_PRESS_MS)
@@ -123,7 +127,7 @@ export function FaderColumn({
     if (typeof target.setPointerCapture === 'function') {
       target.setPointerCapture(e.pointerId)
     }
-  }, [onChange, min, max, def, cancelJumpTimer])
+  }, [onChange, min, max, cancelJumpTimer])
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLDivElement>): void => {
     if (!draggingRef.current) return
@@ -175,7 +179,7 @@ export function FaderColumn({
           <div
             className={styles.defaultMark}
             data-testid="fader-default-mark"
-            style={{ top: `50%` }}
+            style={{ top: `${defaultTopPct}%` }}
           />
           <div
             className={styles.handle}
