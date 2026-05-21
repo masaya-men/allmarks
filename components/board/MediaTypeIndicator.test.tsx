@@ -55,4 +55,20 @@ describe('MediaTypeIndicator', () => {
     const btn = container.querySelector('[data-testid="media-indicator"]') as HTMLElement
     expect(btn.getAttribute('data-active')).toBe('true')
   })
+
+  it('renders a stop glyph (not the media-type glyph) when active', () => {
+    const { container } = render(
+      <MediaTypeIndicator type="video" visible={true} onActivate={() => {}} active={true} />,
+    )
+    const btn = container.querySelector('[data-testid="media-indicator"]') as HTMLElement
+    expect(btn.getAttribute('data-icon')).toBe('stop')
+  })
+
+  it('renders the media-type glyph when not active', () => {
+    const { container } = render(
+      <MediaTypeIndicator type="video" visible={true} onActivate={() => {}} active={false} />,
+    )
+    const btn = container.querySelector('[data-testid="media-indicator"]') as HTMLElement
+    expect(btn.getAttribute('data-icon')).toBe('video')
+  })
 })

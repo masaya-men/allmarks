@@ -40,14 +40,21 @@ export function MediaTypeIndicator({
   if (type === null) return null
 
   const interactive = typeof onActivate === 'function'
+  // While active (playing) the control reads as "press to stop" → ■ glyph.
+  // Idle, it keeps the media-type glyph so the card still signals video vs audio.
+  const iconKind = active ? 'stop' : type === 'video' ? 'video' : type === 'audio' ? 'audio' : 'photo'
   const icon =
-    type === 'video' ? <VideoIcon /> : type === 'audio' ? <MusicIcon /> : <PhotoIcon />
+    iconKind === 'stop' ? <StopIcon />
+      : iconKind === 'video' ? <VideoIcon />
+        : iconKind === 'audio' ? <MusicIcon />
+          : <PhotoIcon />
 
   if (!interactive) {
     return (
       <div
         className={styles.indicator}
         data-testid="media-indicator"
+        data-icon={iconKind}
         data-visible={visible}
         aria-label={type}
       >
@@ -65,6 +72,7 @@ export function MediaTypeIndicator({
       type="button"
       className={styles.indicator + ' ' + styles.interactive}
       data-testid="media-indicator"
+      data-icon={iconKind}
       data-visible={visible}
       data-active={active ? 'true' : 'false'}
       aria-label={type === 'video' ? 'Play with sound' : type === 'audio' ? 'Play audio' : 'Play'}
@@ -78,6 +86,16 @@ export function MediaTypeIndicator({
     >
       {icon}
     </button>
+  )
+}
+
+/** Stop square — shown while a card is actively playing so the corner control
+ *  reads as "press to stop" rather than just glowing. */
+function StopIcon(): ReactElement {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="6" width="12" height="12" rx="2" />
+    </svg>
   )
 }
 
