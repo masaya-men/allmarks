@@ -490,7 +490,7 @@ export function CardsLayer({
                 )
               })()}
             </CardNode>
-            {audioActiveId === it.bookmarkId && canPlayInline(it.url) && (
+            {audioActiveId === it.bookmarkId && canPlayInline(it) && (
               // Tier 3 inline player overlay. stopPropagation on pointerdown
               // so interacting with the player (scrub, volume, fullscreen)
               // never engages the card's reorder-drag / open-lightbox gesture
@@ -511,14 +511,14 @@ export function CardsLayer({
                   justifyContent: 'center',
                 }}
               >
-                <InlineMediaPlayer item={it} aspectRatio={it.aspectRatio} />
+                <InlineMediaPlayer item={it} />
               </div>
             )}
             <MediaTypeIndicator
               type={deriveMediaType(it)}
               visible={hoveredBookmarkId === it.bookmarkId}
               onActivate={
-                canPlayInline(it.url)
+                canPlayInline(it)
                   ? (): void => onToggleAudio(it.bookmarkId)
                   : undefined
               }
