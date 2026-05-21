@@ -16,8 +16,9 @@ export function MotionToggle({
 }): ReactElement {
   return (
     <span className={styles.wrap} data-testid="motion-toggle-wrap">
-      <ChromeButton label="MOTION" onClick={onToggle} data-testid="motion-toggle" aria-pressed={enabled} />
       <StatusLed on={enabled} data-testid="motion-led" />
+      <span className={styles.divider} aria-hidden="true" />
+      <ChromeButton label="MOTION" onClick={onToggle} data-testid="motion-toggle" aria-pressed={enabled} />
     </span>
   )
 }

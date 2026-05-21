@@ -196,7 +196,10 @@ export function YouTubeEmbed({
         // mount, which is allowed because the click on our overlay
         // satisfies Chromium's user-gesture requirement for autoplay.
         // enablejsapi=1 lets us push the default volume in via postMessage.
-        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1${muted === true ? '&mute=1' : ''}`}
+        // Tier 1 (muted) is an ambient, non-interactive preview (the overlay is
+        // pointer-events:none), so hide the player chrome: controls=0 +
+        // modestbranding so it reads as motion, not a clickable player.
+        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1${muted === true ? '&mute=1&controls=0&modestbranding=1' : ''}`}
         title={title}
         className={styles.iframe}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

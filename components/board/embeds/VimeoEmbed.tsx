@@ -148,7 +148,9 @@ export function VimeoEmbed({
     <div className={styles.iframeWrap16x9}>
       <iframe
         ref={iframeRef}
-        src={`https://player.vimeo.com/video/${videoId}?autoplay=1${muted === true ? '&muted=1' : ''}`}
+        // Tier 1 (muted) ambient preview: hide Vimeo's chrome (controls=0) so it
+        // reads as motion, not a clickable player.
+        src={`https://player.vimeo.com/video/${videoId}?autoplay=1${muted === true ? '&muted=1&controls=0' : ''}`}
         title={title}
         className={styles.iframe}
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write"

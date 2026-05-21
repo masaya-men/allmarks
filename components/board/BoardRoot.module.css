@@ -9,6 +9,28 @@
   overflow: hidden;
 }
 
+/* MOTION switch + active-filter readout, placed in the outer frame's TOP BAND
+   (the empty margin above the dark canvas). Living here — outside the canvas,
+   which clips its own overflow — lets this chrome sit ABOVE the in-canvas
+   TUNE/POP OUT/SHARE row without ever shifting it. The right edge is aligned to
+   that row's SHARE button: canvas right inset (--canvas-margin) + the header's
+   own right padding (24px) from the viewport edge. */
+.frameTopChrome {
+  position: absolute;
+  top: 0;
+  right: calc(var(--canvas-margin) + 24px);
+  height: var(--canvas-margin);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 120; /* above in-canvas chrome (TOOLBAR 110); sits in the frame band */
+  transition: opacity 0.25s ease;
+}
+.frameTopChromeHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .canvas {
   position: relative;
   width: 100%;

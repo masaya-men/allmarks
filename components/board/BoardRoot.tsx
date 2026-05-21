@@ -1307,6 +1307,24 @@ export function BoardRoot() {
           pill into the browser bookmark bar to install AllMarks. Revisit
           once the marketing site handles install on its own. */}
       <BookmarkletPill />
+      {/* MOTION switch + active-filter readout live in the outer frame's TOP
+          BAND (the empty margin above the canvas), right edge aligned to the
+          canvas action row's SHARE button. Placing them here — OUTSIDE the
+          canvas, which clips its own overflow — lets them sit ABOVE the
+          TUNE/POP OUT/SHARE row without ever shifting it (user requirement).
+          Fades out with the rest of the chrome while the Lightbox is open. */}
+      <div
+        className={lightboxItemId ? `${styles.frameTopChrome} ${styles.frameTopChromeHidden}` : styles.frameTopChrome}
+        aria-hidden={lightboxItemId ? 'true' : undefined}
+      >
+        <MotionToggle enabled={motionEnabled} onToggle={handleToggleMotion} />
+        <FilterPill
+          value={activeFilter}
+          onChange={handleFilterChange}
+          moods={moods}
+          counts={sidebarCounts}
+        />
+      </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
           live inside, so cursor pan never escapes the rounded frame.
           Phase 1A: canvas is now a grid (auto / 1fr) — TopHeader at top,
@@ -1314,18 +1332,7 @@ export function BoardRoot() {
       <div className={styles.canvas}>
         <TopHeader
           hidden={!!lightboxItemId}
-          actionsTop={
-            <>
-              <MotionToggle enabled={motionEnabled} onToggle={handleToggleMotion} />
-              <FilterPill
-                value={activeFilter}
-                onChange={handleFilterChange}
-                moods={moods}
-                counts={sidebarCounts}
-              />
-            </>
-          }
-          actionsBottom={
+          actions={
             <>
               <TuneTrigger
                 widthPx={cardWidthPx}

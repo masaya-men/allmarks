@@ -201,10 +201,10 @@ export function TweetVideoEmbed({
         className={styles.tweetVideo}
         src={proxiedSrc}
         poster={source.posterUrl}
-        // Inline: native controls + autoplay (the indicator press is the
-        // gesture). Lightbox: controls gated on first interaction so no native
-        // loading panel stacks under the LiquidGlass disc.
-        controls={variant === 'inline' ? true : hasInteracted}
+        // Inline Tier 3 (sound): native controls. Tier 1 (muted) ambient preview:
+        // NO controls — it's a non-interactive motion overlay. Lightbox: controls
+        // gated on first interaction so no native loading panel stacks under the disc.
+        controls={muted === true ? false : variant === 'inline' ? true : hasInteracted}
         autoPlay={variant === 'inline' ? autoStart : false}
         muted={muted === true}
         playsInline

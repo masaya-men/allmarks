@@ -35,8 +35,10 @@ import { pickCard } from './cards'
  *  this, so its knob + button stay comfortably operable on tiny cards. */
 const MIN_CONTROL_BAR_WIDTH_PX = PRESETS.find((p) => p.id === 'dense')?.w ?? 207.8
 
-/** Maximum number of Tier 1 muted autoplay players active simultaneously. */
-const TIER1_CAP = 4
+/** Maximum number of Tier 1 muted autoplay players active simultaneously.
+ *  Experiment (session 65): set high so EVERY in-view video plays — the user
+ *  wants to feel the full effect first. Re-tune for 60fps once they've seen it. */
+const TIER1_CAP = 999
 
 /** Derive the media-type badge for a bookmark from existing fields — no
  *  new persisted data needed. Returns null for cards where a video/photo

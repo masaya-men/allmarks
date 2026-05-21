@@ -1,5 +1,14 @@
 .wrap {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+/* Vertical hairline tying the LED to the MOTION label (audio-interface divider
+   vocabulary, matching the TUNE drawer). Reads as "● │ MOTION". */
+.divider {
+  width: 1px;
+  height: 11px;
+  background: rgba(255, 255, 255, 0.28);
+  flex-shrink: 0;
 }
