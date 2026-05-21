@@ -89,6 +89,7 @@ export function BoardRoot() {
     if (raw && isBoardBgTypoVariant(raw)) setBgTypoVariant(raw)
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
+  const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
   const [viewport, setViewport] = useState({ x: 0, y: 0, w: 1200, h: 800 })
   // Mirror viewport in a ref so the edge auto-scroll rAF tick (which fires
   // outside React's render cycle) can read the latest scroll position
@@ -419,6 +420,12 @@ export function BoardRoot() {
       if (cancelled) return
       setActiveFilter(cfg.activeFilter)
       setDisplayMode(cfg.displayMode)
+      const prefersReduced =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+      const rawRecord = await db.get('settings', 'board-config') as { config?: { motionEnabled?: unknown } } | undefined
+      const hasPersisted = typeof rawRecord?.config?.motionEnabled === 'boolean'
+      setMotionEnabled(hasPersisted ? cfg.motionEnabled : !prefersReduced)
     })()
     return (): void => { cancelled = true }
   }, [])
@@ -1024,6 +1031,18 @@ export function BoardRoot() {
       const cfg = await loadBoardConfig(db)
       await saveBoardConfig(db, { ...cfg, activeFilter: f })
     })()
+  }, [])
+
+  const handleToggleMotion = useCallback((): void => {
+    setMotionEnabled((prev) => {
+      const next = !prev
+      void (async (): Promise<void> => {
+        const db = await initDB()
+        const cfg = await loadBoardConfig(db)
+        await saveBoardConfig(db, { ...cfg, motionEnabled: next })
+      })()
+      return next
+    })
   }, [])
 
   const handleOpenBookmarkletModal = useCallback((): void => {
