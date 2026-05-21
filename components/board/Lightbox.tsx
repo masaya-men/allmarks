@@ -204,6 +204,23 @@ function ensureCloneHost(): HTMLElement | null {
   return host
 }
 
+/** Remove every clone left in the host. The host should hold at most the ONE
+ *  proxy of the in-flight open/close morph; anything still there is an orphan
+ *  from a morph whose GSAP onComplete got bypassed by a rapid close/reopen.
+ *  Because the host lives OUTSIDE React (under .canvasWrap), such an orphan
+ *  would otherwise linger on the board showing a stale thumbnail forever
+ *  (user report: "前のサムネがずっと出続ける"). We sweep deterministically at the
+ *  start of every morph and whenever the lightbox fully closes, so a clone can
+ *  never survive into the next session regardless of interrupted animations. */
+function clearCloneHost(): void {
+  const host = document.getElementById('lightbox-clone-host')
+  if (!host) return
+  Array.from(host.children).forEach((c) => {
+    gsap.killTweensOf(c)
+    c.remove()
+  })
+}
+
 /** Build a visual proxy of a board card at a given rect. Strips all
  *  inline style (transform, visibility:hidden the board applies to the
  *  source card while Lightbox is open, etc.), then positions the clone
@@ -594,6 +611,8 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       let clone: HTMLElement | null = null
       let scaleHost: HTMLElement | null = null
       const host = liveSourceEl ? ensureCloneHost() : null
+      // Wipe any orphan from a prior interrupted morph before standing up ours.
+      if (host) clearCloneHost()
       const closeOriginHost = host ? toHostRelativeRect(closeOrigin, host) : null
       const mediaRectHost = host ? toHostRelativeRect(mediaRect, host) : null
       if (liveSourceEl && host && mediaRectHost && closeOriginHost) {
@@ -789,6 +808,18 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
     setTargetRectState(null)
   }, [identity])
 
+  // Sweep the clone host whenever the lightbox fully closes (identity → null),
+  // guarding against an interrupted close leaving its proxy clone orphaned on
+  // the board (stale thumbnail). Sweeps ONLY when closed — never on a
+  // card-to-card change — so it can't remove the open clone that the open
+  // useLayoutEffect creates for a fresh session.
+  useEffect(() => {
+    if (!identity) clearCloneHost()
+  }, [identity])
+  // Final safety net: sweep on unmount (clones live outside React, so a
+  // mid-morph unmount would otherwise strand one on the board).
+  useEffect(() => (): void => clearCloneHost(), [])
+
   // Fired by the R3F scene when the open tween reaches progress=1.
   // We unmount the scene (setSceneActive false) and reveal the actual
   // .frame with a brief opacity fade so the swap is imperceptible.
@@ -908,6 +939,8 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       // expressed relative to the canvasWrap.
       let clone: HTMLElement | null = null
       const host = sourceCard ? ensureCloneHost() : null
+      // Wipe any orphan from a prior interrupted morph before standing up ours.
+      if (host) clearCloneHost()
       const sourceRectHost = host ? toHostRelativeRect(sourceRect, host) : null
       const mediaRectHost = host ? toHostRelativeRect(mediaRect, host) : null
       let scaleHost: HTMLElement | null = null
