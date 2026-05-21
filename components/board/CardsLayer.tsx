@@ -21,6 +21,7 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
+import { InlineMediaPlayer, canPlayInline } from './embeds'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
@@ -58,6 +59,13 @@ type CardsLayerProps = {
    *  defaultCardWidth so changing the slider reflows cards live. */
   readonly cardGapPx: number
   readonly hoveredBookmarkId: string | null
+  /** Phase 1 multi-playback (Tier 3): id of the single card currently
+   *  playing with audio, or null. The matching card mounts an inline
+   *  player over its thumbnail and shows its media indicator as active. */
+  readonly audioActiveId: string | null
+  /** Toggle inline audio playback for a card (fired by its media
+   *  indicator). Switching to a new card moves the audio over to it. */
+  readonly onToggleAudio: (bookmarkId: string) => void
   readonly spaceHeld: boolean
   readonly onHoverChange: (id: string | null) => void
   readonly onClick: (bookmarkId: string, originRect: DOMRect) => void
@@ -106,6 +114,8 @@ export function CardsLayer({
   viewportWidth,
   cardGapPx,
   hoveredBookmarkId,
+  audioActiveId,
+  onToggleAudio,
   spaceHeld,
   onHoverChange,
   onClick,
@@ -477,9 +487,39 @@ export function CardsLayer({
                 )
               })()}
             </CardNode>
+            {audioActiveId === it.bookmarkId && canPlayInline(it.url) && (
+              // Tier 3 inline player overlay. stopPropagation on pointerdown
+              // so interacting with the player (scrub, volume, fullscreen)
+              // never engages the card's reorder-drag / open-lightbox gesture
+              // wired on the wrapper above.
+              <div
+                onPointerDown={(e: PointerEvent<HTMLDivElement>): void => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  // Above the card visual, below the resize handle (z 30),
+                  // media indicator (z 50) and corner actions so those stay
+                  // operable while the player is mounted.
+                  zIndex: 10,
+                  overflow: 'hidden',
+                  borderRadius: 'var(--card-radius, 20px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <InlineMediaPlayer item={it} aspectRatio={it.aspectRatio} />
+              </div>
+            )}
             <MediaTypeIndicator
               type={deriveMediaType(it)}
               visible={hoveredBookmarkId === it.bookmarkId}
+              onActivate={
+                canPlayInline(it.url)
+                  ? (): void => onToggleAudio(it.bookmarkId)
+                  : undefined
+              }
+              active={audioActiveId === it.bookmarkId}
             />
             {/* CardCornerActions renders BEFORE ResizeHandle so the corner
                 arcs can pick up button hover via the ~ sibling combinator

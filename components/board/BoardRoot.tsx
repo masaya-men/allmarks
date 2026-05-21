@@ -124,6 +124,14 @@ export function BoardRoot() {
   const [spaceHeld, setSpaceHeld] = useState<boolean>(false)
   const [bookmarkletModalOpen, setBookmarkletModalOpen] = useState<boolean>(false)
   const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null)
+  // Phase 1 multi-playback (Tier 3): the single card currently playing with
+  // audio. Pressing a card's media indicator toggles this; pressing a
+  // different card switches the audio over to it. The 4-slot pinned pool
+  // replaces this single-id model in Phase 2.
+  const [audioActiveId, setAudioActiveId] = useState<string | null>(null)
+  const handleToggleAudio = useCallback((bookmarkId: string): void => {
+    setAudioActiveId((cur) => (cur === bookmarkId ? null : bookmarkId))
+  }, [])
   const [lightboxItemId, setLightboxItemId] = useState<string | null>(null)
   // Identity of the card that originally opened the lightbox. Stays
   // pinned to the first click even when chevron-nav swaps the displayed
@@ -1352,6 +1360,8 @@ export function BoardRoot() {
                 viewportWidth={effectiveLayoutWidth}
                 cardGapPx={cardGapPx}
                 hoveredBookmarkId={hoveredBookmarkId}
+                audioActiveId={audioActiveId}
+                onToggleAudio={handleToggleAudio}
                 spaceHeld={spaceHeld}
                 onHoverChange={setHoveredBookmarkId}
                 onClick={handleCardClick}
