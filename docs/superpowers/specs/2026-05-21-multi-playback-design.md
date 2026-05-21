@@ -52,14 +52,16 @@ board のカードを「静止サムネ + クリックで Lightbox」 から、 
 - スクロール/パンで画面外に出たカードは Tier 1 モーションも停止 (= IntersectionObserver で viewport 判定)
 - 全体 ON/OFF (= §5) が OFF の時は Tier 1 も止まり、 全カード完全静止
 
-### Tier 2 — ホバーで本物ミュート再生 (最大 4 枚)
+### Tier 2 — ホバーで本物ミュート再生 (最大 3 枚)
 
 - カードに **300ms マウスを留める** (= hover-intent) と、 そのカードが本物のミュート再生に昇格
 - 乗った瞬間に **0.1 秒で視覚反応** (= 枠/scrim 等。 プレイヤー起動の待ちを感じさせない)
-- 本物再生は **最大 4 枚同時** (= `MAX_ACTIVE_PLAYERS = 4`)。 5 枚目を昇格させる時は、 **最も古い非ピン留めプレイヤーを停止して Tier 1 に戻す** (= LRU 退避)
-- マウスが離れても **2〜3 秒は再生キープ** (= 即座に unmount するとデコーダ再生成で thrash する)。 その後 LRU 退避の対象になる
+- 本物再生は **最大 3 枚同時** (= `MAX_HOVER_PLAYERS = 3`)。 4 枚目を昇格させる時は、 **最も古いプレイヤーを停止して Tier 1 に戻す** (= LRU 退避)
+- マウスが離れても **約 0.8 秒は再生キープ** (= 即座に unmount するとデコーダ再生成で thrash する。 user 体感は「乗ってる間だけ」 で、 余韻は意識されない長さ)。 その後停止
 - 再生は必ず `muted` + `playsinline` (= ブラウザ自動再生ポリシー必須要件)
 - ファストスクロール中は昇格を抑制 (= スクロール停止後 ~150ms debounce)
+
+> **Phase 2 実装確定 (session 64, 2026-05-21)**: user とのブレストで上限を **3 枚** (= マウスは 1 つなので普通は 1 枚、 素早い移動時の余韻重なりを捌く保険として 3)、 余韻を **0.8 秒** に確定。 元仕様の「4 枚 / 2〜3 秒」 は Tier 2 + Tier 3 統合後の全体ビジョン値で、 Tier 2 単独の今回はこの確定値を採用。 ホバー位置スクラブ (= storyboard シーク) は **今回もスコープ外** (= カード端で操作不能 + 本物再生と役割重複、 user 判断で見送り)。
 
 ### Tier 3 — アイコン押しで音 ON + ピン留め (最大 4 枚音つき)
 
@@ -109,11 +111,11 @@ active 表示は AllMarks の音波/pill 視覚言語 (= 緑系 glow 等、 `pro
 ### 中核: アクティブプレイヤープール
 
 新規 hook `usePlaybackPool` (= `lib/board/use-playback-pool.ts`):
-- アクティブな本物プレイヤーの集合を管理 (= 最大 `MAX_ACTIVE_PLAYERS = 4`)
+- アクティブな本物プレイヤーの集合を管理 (= Phase 2 では最大 `MAX_HOVER_PLAYERS = 3`。 Tier 3 統合時に pin 対応 + 上限再検討)
 - 各エントリ: `{ bookmarkId, tier: 2 | 3, lastActiveAt, pinned: boolean }`
 - API: `promote(bookmarkId, tier)` / `demote(bookmarkId)` / `pin(bookmarkId)` / `unpin(bookmarkId)` / `isActive(bookmarkId)`
 - LRU 退避ロジック: プールが満杯で新規 promote 時、 `pinned === false` の中で `lastActiveAt` 最古を demote
-- ピン留め (Tier 3) は退避対象外
+- ピン留め (Tier 3) は退避対象外。 Phase 2 では pin は常に false (= Tier 2 のみ)
 
 ### hover-intent
 
@@ -181,5 +183,7 @@ active 表示は AllMarks の音波/pill 視覚言語 (= 緑系 glow 等、 `pro
 - [x] トリガー = hover-intent 300ms、 本物再生 4 枚上限 + LRU、 音 ON はアイコン押し + ピン — user 承認
 - [x] 右下アイコンの操作化は既存 × ボタンパターン流用 + 内側拡大でリサイズ温存 — user 承認 (リサイズ死守が条件)
 - [x] その他は業界水準を守る/超える — user 承認
-- [ ] spec 全体の user review
-- [ ] 実装プラン (= writing-plans skill、 フェーズ分割)
+- [x] spec 全体の user review (= Phase 1 着手時)
+- [x] Phase 1 (Tier 3 単体) 実装プラン + 完遂 (session 62)
+- [x] **Phase 2 (Tier 2 hover) スコープ + 振る舞い確定 — user 承認 (session 64)**: 300ms 昇格 / 0.1s 視覚反応 / muted / 上限 3 枚 LRU / 離脱 0.8s 余韻 / スクラブなし
+- [ ] Phase 2 実装プラン (= writing-plans skill)
