@@ -4245,3 +4245,26 @@ session 64 で ship した Tier 2 (= ホバー300msでミュート本物再生) 
 **テスト**: 699 → **686 PASS** (= Tier 2 の 13 test 削除分)、 tsc clean、 build OK。 **deploy**: 1。
 
 **次 (= 65 続き or 66)**: user 本番で音量50% + ホバー無反応を確認 → OK なら次の大物 (Phase 3 = Tier 1 常時モーション / タグ付け) を選択。
+
+---
+
+## セッション 65 続き (2026-05-21〜22) — Tier 1 画面内自動再生 + MOTION マスタースイッチ
+
+Tier 2 撤去後、user と「ボードを生かす主役の層」をブレスト。元 spec の storyboard flipbook は「音のない小さな動画＝Tier2 と同じうるささ」かつ重い・不安定なので却下。代わりに user 提案の **「画面内に見えている動画を音なしで自動再生」** (= マウス無関係で予測可能、フィード自動再生と同じ正攻法) を採用。
+
+**確定した設計** (spec: `docs/superpowers/specs/2026-05-21-tier1-viewport-playback-design.md`):
+- 動画 (YouTube/Vimeo/ツイート動画) = 画面内で見えている順に上限 N=4 枚だけ音なし実再生、スクロール追従
+- 複数画像カード = 2.2 秒ごと hard-cut 巡回 (クロスフェードしない、user 確定)
+- 単一画像・テキスト = 静止 (加工なし、user 確定)
+- MOTION マスタースイッチ = 右上 2 段ヘッダー上段 (`MOTION ● + FilterPill`)、下段は TUNE/POP OUT/SHARE 不動、左上空、右端は SHARE と揃え。素テキスト ChromeButton 流用 (囲わない) + 立体ドーム LED 流用 (新規平ドット禁止、user 厳命)。既定 ON、reduced-motion 既定 OFF、IDB 永続化
+- 再生不可動画はサムネに静かにフォールバック (エラー文/CTA を出さない、user 確定)。TikTok (埋め込み自動再生不安定+CTA で検知不可) と SoundCloud (音楽=ミュートで無動) は自動再生対象外。手押し Tier 3 は全種そのまま
+
+**実装 (subagent-driven, TDD, 機能ブランチ `feat/tier1-viewport-playback` → master `0ced67f`)**:
+- A1 BoardConfig.motionEnabled 永続化 / A2 共有 StatusLed (TUNE ドーム LED 流用) / A3 MotionToggle / A4 BoardRoot state+hydrate+reduced-motion / A5 TopHeader 2 段化 (右端揃え実測 x=1417 一致、user 承認)
+- B1 embeds に muted prop 再導入 (a1fb7fe 再適用) / B2 純粋 selectActivePlayers (top-N) / B3 useViewportPlaybackPool (debounce + 安定参照) / B4 CardsLayer に IntersectionObserver + muted overlay 配線 / B5 canViewportAutoplay (TikTok/SoundCloud 除外) / B6 再生不可→サムネ fallback (YouTube onError / Vimeo error / native video error 検知)
+- C1 ImageCard autoCycle (hard-cut + MOTION OFF で先頭画像に戻す)
+- 各タスク 2 段レビュー (仕様準拠 → コード品質)。重大: B4 で render ループ (new Set 毎回 → 150ms 毎再レンダー→observer churn) を発見・修正 (安定参照 + 要素同一性ガード)。B6 listener churn も修正
+
+**検証**: ローカル preview (1489×2.58) で ON=4枚 overlay mount / OFF=0 / 再度ON=4枚復帰、埋め込み禁止 YouTube デモがサムネ復帰し「動画を再生できません」0 件、動くツイート動画は再生継続。**716 PASS** / tsc clean。**deploy 1** (`booklage.pages.dev`)。
+
+**次 (= 66)**: user 実機確認 + N (TIER1_CAP、今 4) を 60fps 見ながら調整。OK ならタグ付け着手。

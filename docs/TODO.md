@@ -20,13 +20,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21 セッション 65 — Tier 2 ホバー再生を撤去・本番反映済)
+### 直近の状態 (2026-05-21〜22 セッション 65 — Tier 2 撤去 + Tier 1 画面内自動再生 + MOTION スイッチ 本番反映済)
 
-**Tier 2 ホバー再生 (= ホバー300msでミュート本物再生) を撤去**。 user が本番で試して「これ要る機能か?」 と再考 → 撤去で合意。 理由: ボードはマウスを動かす画面なので通過しただけのカードが次々ミュート再生して**誤爆・うるさい**、 緑枠も**カードの角丸/トンマナ外** (= 後付けの症状)。 「ボードが生きてる」 感は Phase 3 (Tier 1 静かな常時モーション) に寄せ、 意図的な再生は Tier 3 (= 右下アイコン押し=音つき) に集約する判断。 撤去は Tier 2 の **5 コミットを git revert** (純粋プール logic / usePlaybackPool / useHoverIntent / embeds muted / CardsLayer 配線)、 embeds は **session 62 の既知良好状態 (= インライン既定音量 50%) に復帰**。 **686 PASS** (= 699 − Tier 2 の 13 test) / tsc clean / build OK / deploy 1 (commit `ea8b93f`)。
+**前半: Tier 2 ホバー再生を撤去** (user 再考で合意、 5 コミット git revert、 embeds を 50% 良好状態に復帰、 commit `ea8b93f`、 音量は SW クリアで 50% 復活確認済)。
 
-**user 本番確認待ち**: 音量50%復活 (= Tier 2 中に 50% でなくなった件、 撤去で session62 状態に戻したので回復見込み。 もし残るなら原因は localStorage `allmarks.player.defaultVolume` の永続化、 別途相談)。 ホバーで勝手に再生されないこと。
+**後半: Tier 1 = 画面内動画の音なし自動再生 + MOTION マスタースイッチ を実装・本番反映** (機能ブランチ → master マージ `0ced67f`)。
+- **画面内に見えている動画 (YouTube / Vimeo / ツイート動画) を音なし自動再生**。最も見えている順に**上限 N=4 枚** (viewport 駆動 debounce プール)、スクロール追従。**複数画像カードは 2.2 秒ごと hard-cut 巡回**。単一画像・テキストは静止。
+- **MOTION スイッチ**を右上 2 段ヘッダーに常設 (上段 `MOTION ● + AllMarks·件数`、下段 `TUNE/POP OUT/SHARE`、左上空、立体ドーム LED 流用、ChromeButton 流用)。OFF で全停止、IDB 永続化、reduced-motion 既定 OFF。
+- **再生不可動画 (埋め込み禁止 YouTube 等) はサムネに静かに戻る** (エラー文・CTA 出さない)。**TikTok / SoundCloud は自動再生対象外**、手押し Tier 3 は全種そのまま。
+- TDD で subagent-driven 実装 (A1-A5 / B1-B6 / C1)。**716 PASS** / tsc clean / preview 実測 (ON 4枚 / OFF 0 / 埋め込み禁止 YT サムネ復帰)。詳細: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 65。
 
-**次の優先候補**: ①**Phase 3 = Tier 1 常時 ambient モーション** (= 画面内の全カードが軽く動いて見える、 動画デコード 0 の軽量演出) ②**タグ付け機能** (= user 最優先発言)。 user 確認後に選択。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+**user 本番確認待ち**: 実ボードで音なし自動再生 / スクロール追従 / MOTION OFF 全停止 / 再生不可サムネ復帰。**同時再生数 N (今 4) を実機で一緒に調整**。
+
+**次の優先候補**: **タグ付け機能** (= user 最優先発言)。multi-playback (Tier1+Tier3+MOTION) ひと段落で着手好機。詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 

@@ -1,32 +1,35 @@
-# 次セッションのゴール (= セッション 65 続き) — Tier 2 撤去済、次の大物 (Phase 3 か タグ付け) を選択
+# 次セッションのゴール — Tier 1 画面内自動再生 本番確認 → N 調整 → 次はタグ付け
 
 ## 今のゴール (1 行)
 
-Tier 2 ホバー再生を **撤去して本番反映済**。 user が本番で音量50%復活を確認後、次の大物 (Phase 3 = Tier 1 常時モーション、 または タグ付け) を選んで着手する。
+session 65 で ship した **Tier 1 (画面内動画の音なし自動再生) + MOTION マスタースイッチ**を user が本番で確認し、同時再生数 N を実機で詰める。OK なら次の大物 = **タグ付け**へ。
 
-## 直前までの状態 (session 65)
+## 直前までの状態 (session 65、2026-05-21〜22)
 
-- **Tier 2 ホバー再生を撤去** (commit `ea8b93f`、 deploy 済)。 理由: ボードはマウスを動かす画面なので通過しただけのカードが次々ミュート再生して「うるさい・誤爆」、 緑枠もカードの角丸/トンマナ外。 「ボードが生きてる」 感は Phase 3 (Tier 1 静かな常時モーション) に寄せ、 意図的な再生は Tier 3 (アイコン押し=音つき) に集約する判断。
-- 撤去方法: Tier 2 の **5 コミットを git revert** (純粋プール logic / usePlaybackPool / useHoverIntent / embeds の muted 対応 / CardsLayer 配線)。 embeds は **session 62 の既知良好状態 (= インライン既定音量 50%) に復帰**。
-- **686 PASS** (= 699 − Tier 2 の 13 test) / tsc clean / build OK / deploy 1。
+- **Tier 1 = 画面内に見えている動画 (YouTube / Vimeo / ツイート動画) を音なしで自動再生**。最も見えている順に**上限 N=4 枚**だけ実再生 (viewport 駆動の debounce プール)、スクロールで追従。**複数画像カードは 2.2 秒ごとに瞬間切替 (hard cut) で巡回**。単一画像・テキストは静止。
+- **MOTION マスタースイッチ**を右上 2 段ヘッダーに常設 (上段 `MOTION ● + AllMarks·件数`、下段 `TUNE / POP OUT / SHARE`、左上は空、立体ドーム LED、ChromeButton 流用)。OFF で全停止＝静かな鑑賞モード。状態は IndexedDB に永続化、reduced-motion は既定 OFF。
+- **再生できない動画 (埋め込み禁止 YouTube 等) はサムネに静かに戻る** (エラー文・CTA を一切出さない)。TikTok と SoundCloud は自動再生対象外 (TikTok は埋め込み自動再生不安定＋CTA、SoundCloud は音楽でミュートだと無動)。**手で押す Tier 3 (音つき) は全種そのまま**。
+- 検証: ローカル preview で「ON で 4 枚オーバーレイ mount / OFF で 0 / 埋め込み禁止 YouTube はサムネに戻り『動画を再生できません』0 件」を実測。**716 テスト / tsc clean / 本番反映済 (`booklage.pages.dev`)**。
+- spec: [tier1-viewport-playback-design](./superpowers/specs/2026-05-21-tier1-viewport-playback-design.md)。plan: [tier1-viewport-playback](./superpowers/plans/2026-05-21-tier1-viewport-playback.md)。
 
-## セッション開始時 / 続行時にやること
+## セッション開始時にやること
 
-1. **user に本番で音量確認を依頼**: `booklage.pages.dev` ハードリロード → 動画/音楽カードの右下アイコンを押して音つき再生 → **音量が 50% で始まるか**。 ホバーで勝手に再生されなくなったことも確認。
-   - もし 50% でないなら、原因は Tier 2 ではなく **過去に Lightbox 等で音量を下げた値が localStorage `allmarks.player.defaultVolume` に保存されている** 可能性 (= 仕様上の永続化)。 その場合は「カード個別調整を global 既定として永続化すべきか」 を別途相談する。
-2. **OK なら次の大物を user と選択**:
-   - **Phase 3 = Tier 1 常時 ambient モーション**: 画面内の全カードが軽く動いて見える層 (= ストーリーボード / ゆっくりズーム / クロスフェード、 動画デコード 0 の軽量演出)。 spec [multi-playback-design](./superpowers/specs/2026-05-21-multi-playback-design.md) §3 Tier 1。 「ボードが常に生きてる」 を静かで設計された動きで完成させる
-   - **タグ付け機能**: user 最優先発言 (memory `project_tagging_top_priority`)。 multi-playback がひと段落したので着手の好機
+1. **user に本番確認を依頼**: `booklage.pages.dev` ハードリロード → 実際のボードで動画カードが音なしで動くか / スクロールで再生が追従するか / MOTION OFF で全部止まるか / 再生できない動画がサムネに戻る (エラー文出ない) か。
+2. **同時再生数 N (TIER1_CAP) を一緒に調整**: 今 `4` ([CardsLayer.tsx](../components/board/CardsLayer.tsx) の `TIER1_CAP`)。user の実機で 60fps を見ながら、カクついたら 3、余裕＆もっと動かしたいなら 5〜6。動画が多いボードで要計測。
+3. 巡回間隔 (複数画像 2.2 秒) / ホバー中の巡回競合など、気になれば微調整 ([ImageCard.tsx](../components/board/cards/ImageCard.tsx) の `cycleMs`)。
+4. OK なら次の大物 = **タグ付け機能** (memory `project_tagging_top_priority`)。multi-playback (Tier1+Tier3+MOTION) がひと段落したので着手の好機。
 
 ## このプロジェクトの user 対応で厳守すること
 
-- AskUserQuestion の質問箱を多用しない。 普通の chat で 1 問ずつ
-- 応答は日本語、 横文字カタカナ多用しない
-- 既存機能を壊さない: 触る前に依存を洗い、 task ごとに全テスト + preview 実機確認。 commit はこまめに、 deploy 前に tsc + vitest
-- ドキュメント更新 (TODO / CURRENT_GOAL / TODO_COMPLETED) を commit と同じ区切りで必ず行う
-- **preview の注意**: ローカル wrangler が古く compatibility date でコケるので `npx -y wrangler@latest pages dev out --port 8788 --ip 127.0.0.1` を使う
+- AskUserQuestion の質問箱を多用しない。普通の chat で 1 問ずつ
+- 応答は日本語、横文字カタカナ多用しない
+- 既存機能を壊さない: 触る前に依存を洗い、task ごとに全テスト + preview 実機確認。commit はこまめに、deploy 前に tsc + vitest
+- ドキュメント更新を commit と同じ区切りで必ず行う
+- preview: `npx -y wrangler@latest pages dev out --port 8788 --ip 127.0.0.1`、navigation は `waitUntil: 'domcontentloaded'` (自動再生で networkidle が来ない)
+- 既知 flake: `tests/lib/channel.test.ts` は並列フルランで稀に落ちる。単体では PASS
 
 ## backlog (この後)
 
-- multi-playback Phase 4 = master ON/OFF スイッチ (= 全 Tier 停止の「静かな鑑賞モード」)。 ※Tier 2 撤去で当面は Tier 3 のみ。 Phase 3 着手後に再検討
+- **タグ付け機能** (= 次の大物、user 最優先)
+- Tier 1 ホバー中の複数画像巡回の競合 (= ホバー scrub と interval が競合、気になれば hover 中 pause)
 - 月末 (2026-05-31): `allmarks.app` ドメイン取得確認
