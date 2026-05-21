@@ -173,3 +173,21 @@ mask-image: radial-gradient(
 - [x] variant 'static' を新デフォルトに上書き
 - [ ] 実装 plan (= writing-plans skill で作成、 別ファイル)
 - [ ] 実装 + ship + user 検証
+
+---
+
+## Iter 3 amendment (2026-05-21 session 61)
+
+User feedback on iter1+iter2 ship: 「効果範囲が合ってない」 + 「文字の一部が崩れる感じにしたいのに今全然ちがう」 + 「マウス追従が遅い・ずれる」。 The 2-ghost radial halo was too gentle. Iter3 redesigns the visual to fragmentation slicing + adds a click-burst playful trigger.
+
+### Replaces §4 (3-layer ghost spec)
+
+New layer model: 1 clean base text + 9 horizontal slice clones, each clipped to ~11.1 % of text height with `clip-path: inset()`, each translated by `calc(var(--slice-tx) * var(--bg-typo-glitch-amp))`. Colors rotate white / red `#ff5060` / cyan `#50c8ff` across slices. Slices animate via 3 keyframe families (`bg-typo-slice-a/b/c`) staggered by `animation-delay` so the slices break asynchronously — a living signal-noise feel.
+
+### Replaces §6 (mouse tracker + rAF throttle)
+
+`pointermove` writes `--bg-typo-glitch-mx` / `--my` synchronously on the host. Chrome already raf-coalesces `pointermove`, so rAF was a redundant layer of latency. Removing it tightens cursor follow.
+
+### New §11 — Click-burst
+
+The base text gets `pointer-events: auto`. Clicking it toggles `.burst` on the host for 800 ms via `setTimeout`. While `.burst` is set, a CSS keyframe `bg-typo-burst` animates the registered CSS properties `--bg-typo-glitch-amp` (1 → 2.5 → 3 → 1) and `--bg-typo-glitch-radius` (80 → 200 → 1500 → 80 px) over 800 ms. The 15 % stage hits the 2.5× radius / 2.5× amp (user-specified initial impact); the 40 % stage blooms to a 1500 px radius so the spotlight covers the entire headline ("文字全体に伝播"); then collapses back. Requires `@property` registration (Chrome 85+, Safari 16.4+, Firefox 128+); fallback for browsers without `@property` is a no-op — the burst simply does nothing visually, base behavior unaffected.
