@@ -24,6 +24,7 @@ import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
 import { InlineMediaPlayer, canPlayInline } from './embeds'
 import { PlaybackControlBar } from './PlaybackControlBar'
+import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
@@ -121,6 +122,8 @@ type CardsLayerProps = {
    *  through to useCardReorderDrag. Optional so the share-view caller
    *  (which currently has no scroll) can omit it. */
   readonly onPanY?: (requestedDy: number) => number
+  /** Tier 1 master switch — when false, no viewport autoplay. */
+  readonly motionEnabled: boolean
 }
 
 export function CardsLayer({
@@ -150,10 +153,33 @@ export function CardsLayer({
   onCardResetSize,
   sourceCardId,
   onPanY,
+  motionEnabled,
 }: CardsLayerProps): ReactNode {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
   const lastComputeRef = useRef<{ x: number; y: number } | null>(null)
+
+  // ── Tier 1 viewport autoplay ──
+  // Intersection-observed visibility drives a debounced pool of up to TIER1_CAP
+  // muted autoplay players. When motionEnabled is false the cap is 0, so the
+  // pool stays empty and no observers are attached.
+  const TIER1_CAP = 4
+  const pool = useViewportPlaybackPool(motionEnabled ? TIER1_CAP : 0)
+  const vizObservers = useRef<Map<string, IntersectionObserver>>(new Map())
+  const observeViz = useCallback((id: string) => {
+    return (el: HTMLElement | null): void => {
+      const existing = vizObservers.current.get(id)
+      if (existing) { existing.disconnect(); vizObservers.current.delete(id) }
+      if (!el || !motionEnabled) { pool.report(id, 0); return }
+      const obs = new IntersectionObserver(
+        (entries) => { for (const e of entries) pool.report(id, e.isIntersecting ? e.intersectionRatio : 0) },
+        { threshold: [0, 0.25, 0.5, 0.75, 1] },
+      )
+      obs.observe(el)
+      vizObservers.current.set(id, obs)
+    }
+  }, [motionEnabled, pool])
+  useEffect(() => () => { vizObservers.current.forEach((o) => o.disconnect()); vizObservers.current.clear() }, [])
 
   // Stage 2: virtual order during drag for live reflow preview.
   // null = no drag in progress (use real masonry order).
@@ -514,6 +540,7 @@ export function CardsLayer({
             key={it.bookmarkId}
             ref={(el): void => {
               cardRefs.current[it.bookmarkId] = el
+              if (canPlayInline(it)) observeViz(it.bookmarkId)(el)
             }}
             data-bookmark-id={it.bookmarkId}
             data-link-status={it.linkStatus ?? undefined}
@@ -584,6 +611,26 @@ export function CardsLayer({
                 }}
               >
                 <InlineMediaPlayer item={it} volume={audioVolume} paused={audioPaused} />
+              </div>
+            )}
+            {motionEnabled && pool.active.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canPlayInline(it) && (
+              // Tier 1 muted viewport autoplay. pointerEvents:none so it never blocks
+              // card clicks / resize. Excluded on the Tier 3 sound-on card.
+              <div
+                data-viewport-playback
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 10,
+                  overflow: 'hidden',
+                  borderRadius: 'var(--card-radius, 20px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                }}
+              >
+                <InlineMediaPlayer item={it} muted />
               </div>
             )}
             {barMount?.id === it.bookmarkId && canPlayInline(it) && (

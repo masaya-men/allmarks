@@ -1424,6 +1424,7 @@ export function BoardRoot() {
                 onCardResetSize={handleCardResetSize}
                 sourceCardId={lightboxSourceItemId}
                 onPanY={handlePanY}
+                motionEnabled={motionEnabled}
               />
             </div>
           </InteractionLayer>
