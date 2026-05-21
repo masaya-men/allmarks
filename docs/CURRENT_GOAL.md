@@ -7,7 +7,8 @@ session 65 で ship した **Tier 1 (画面内動画の音なし自動再生) + 
 ## 直前までの状態 (session 65、2026-05-21〜22)
 
 - **Tier 1 = 画面内に見えている動画 (YouTube / Vimeo / ツイート動画) を音なしで自動再生**。最も見えている順に**上限 N=4 枚**だけ実再生 (viewport 駆動の debounce プール)、スクロールで追従。**複数画像カードは 2.2 秒ごとに瞬間切替 (hard cut) で巡回**。単一画像・テキストは静止。
-- **MOTION マスタースイッチ**を右上 2 段ヘッダーに常設 (上段 `MOTION ● + AllMarks·件数`、下段 `TUNE / POP OUT / SHARE`、左上は空、立体ドーム LED、ChromeButton 流用)。OFF で全停止＝静かな鑑賞モード。状態は IndexedDB に永続化、reduced-motion は既定 OFF。
+- **MOTION マスタースイッチ**を**外枠の上帯**（canvas の上の余白、右端を SHARE に揃え）に常設 = `● │ MOTION  AllMarks·件数`（立体ドーム LED + 縦罫線 + ChromeButton 流用）。**TUNE/POP OUT/SHARE は元位置のまま不動**（canvas は overflow clip するので、その上に出すには外枠側に置く必要があった）。OFF で全停止、IDB 永続化、reduced-motion 既定 OFF。
+- **自動再生中はプレイヤーのコントロールを非表示**（YouTube/Vimeo `controls=0`、native `<video>` controls なし）＝ ambient な動きとして見せる。
 - **再生できない動画 (埋め込み禁止 YouTube 等) はサムネに静かに戻る** (エラー文・CTA を一切出さない)。TikTok と SoundCloud は自動再生対象外 (TikTok は埋め込み自動再生不安定＋CTA、SoundCloud は音楽でミュートだと無動)。**手で押す Tier 3 (音つき) は全種そのまま**。
 - 検証: ローカル preview で「ON で 4 枚オーバーレイ mount / OFF で 0 / 埋め込み禁止 YouTube はサムネに戻り『動画を再生できません』0 件」を実測。**716 テスト / tsc clean / 本番反映済 (`booklage.pages.dev`)**。
 - spec: [tier1-viewport-playback-design](./superpowers/specs/2026-05-21-tier1-viewport-playback-design.md)。plan: [tier1-viewport-playback](./superpowers/plans/2026-05-21-tier1-viewport-playback.md)。
@@ -15,7 +16,7 @@ session 65 で ship した **Tier 1 (画面内動画の音なし自動再生) + 
 ## セッション開始時にやること
 
 1. **user に本番確認を依頼**: `booklage.pages.dev` ハードリロード → 実際のボードで動画カードが音なしで動くか / スクロールで再生が追従するか / MOTION OFF で全部止まるか / 再生できない動画がサムネに戻る (エラー文出ない) か。
-2. **同時再生数 N (TIER1_CAP) を一緒に調整**: 今 `4` ([CardsLayer.tsx](../components/board/CardsLayer.tsx) の `TIER1_CAP`)。user の実機で 60fps を見ながら、カクついたら 3、余裕＆もっと動かしたいなら 5〜6。動画が多いボードで要計測。
+2. **同時再生数 N (TIER1_CAP) を一緒に調整**: 今 **`999`＝実質上限なし**（user が「まず一回突き抜けたい」と希望、[CardsLayer.tsx](../components/board/CardsLayer.tsx) の `TIER1_CAP`）。user の実機で全部再生の体感 + 60fps を見て、重ければ 4〜6 等に戻す。
 3. 巡回間隔 (複数画像 2.2 秒) / ホバー中の巡回競合など、気になれば微調整 ([ImageCard.tsx](../components/board/cards/ImageCard.tsx) の `cycleMs`)。
 4. OK なら次の大物 = **タグ付け機能** (memory `project_tagging_top_priority`)。multi-playback (Tier1+Tier3+MOTION) がひと段落したので着手の好機。
 
