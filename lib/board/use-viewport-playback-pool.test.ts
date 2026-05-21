@@ -27,4 +27,12 @@ describe('useViewportPlaybackPool', () => {
     act(() => { result.current.report('a', 0); vi.advanceTimersByTime(150) })
     expect(result.current.active.has('a')).toBe(false)
   })
+
+  it('keeps the same active Set reference when recompute yields identical ids (no churn)', () => {
+    const { result } = renderHook(() => useViewportPlaybackPool(3, 150))
+    act(() => { result.current.report('a', 0.9); vi.advanceTimersByTime(150) })
+    const first = result.current.active
+    act(() => { result.current.report('a', 0.95); vi.advanceTimersByTime(150) }) // ratio changed, same id set
+    expect(result.current.active).toBe(first) // same reference → no re-render churn
+  })
 })

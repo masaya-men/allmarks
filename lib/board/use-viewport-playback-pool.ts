@@ -16,7 +16,11 @@ export function useViewportPlaybackPool(cap: number, debounceMs = 150): Pool {
   const [active, setActive] = useState<ReadonlySet<string>>(new Set())
 
   const recompute = useCallback((): void => {
-    setActive(new Set(selectActivePlayers(ratiosRef.current, cap)))
+    setActive((prev) => {
+      const next = selectActivePlayers(ratiosRef.current, cap)
+      if (next.length === prev.size && next.every((id) => prev.has(id))) return prev
+      return new Set(next)
+    })
   }, [cap])
 
   const report = useCallback((id: string, ratio: number): void => {

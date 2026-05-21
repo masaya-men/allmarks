@@ -35,6 +35,9 @@ import { pickCard } from './cards'
  *  this, so its knob + button stay comfortably operable on tiny cards. */
 const MIN_CONTROL_BAR_WIDTH_PX = PRESETS.find((p) => p.id === 'dense')?.w ?? 207.8
 
+/** Maximum number of Tier 1 muted autoplay players active simultaneously. */
+const TIER1_CAP = 4
+
 /** Derive the media-type badge for a bookmark from existing fields — no
  *  new persisted data needed. Returns null for cards where a video/photo
  *  badge wouldn't add information (text-only items: the card itself
@@ -163,14 +166,17 @@ export function CardsLayer({
   // Intersection-observed visibility drives a debounced pool of up to TIER1_CAP
   // muted autoplay players. When motionEnabled is false the cap is 0, so the
   // pool stays empty and no observers are attached.
-  const TIER1_CAP = 4
   const pool = useViewportPlaybackPool(motionEnabled ? TIER1_CAP : 0)
   const vizObservers = useRef<Map<string, IntersectionObserver>>(new Map())
+  const vizElements = useRef<Map<string, HTMLElement>>(new Map())
   const observeViz = useCallback((id: string) => {
     return (el: HTMLElement | null): void => {
+      if (el !== null && vizElements.current.get(id) === el) return // same element — no churn
       const existing = vizObservers.current.get(id)
       if (existing) { existing.disconnect(); vizObservers.current.delete(id) }
+      vizElements.current.delete(id)
       if (!el || !motionEnabled) { pool.report(id, 0); return }
+      vizElements.current.set(id, el)
       const obs = new IntersectionObserver(
         (entries) => { for (const e of entries) pool.report(id, e.isIntersecting ? e.intersectionRatio : 0) },
         { threshold: [0, 0.25, 0.5, 0.75, 1] },
@@ -179,7 +185,11 @@ export function CardsLayer({
       vizObservers.current.set(id, obs)
     }
   }, [motionEnabled, pool])
-  useEffect(() => () => { vizObservers.current.forEach((o) => o.disconnect()); vizObservers.current.clear() }, [])
+  useEffect(() => () => {
+    vizObservers.current.forEach((o) => o.disconnect())
+    vizObservers.current.clear()
+    vizElements.current.clear()
+  }, [])
 
   // Stage 2: virtual order during drag for live reflow preview.
   // null = no drag in progress (use real masonry order).
