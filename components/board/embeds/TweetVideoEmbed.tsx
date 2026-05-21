@@ -66,14 +66,25 @@ export function TweetVideoEmbed({
   /** Controlled play/pause. */
   readonly paused?: boolean
 }): ReactNode {
-  const initial = sourceProp ?? resolveTweetVideoSource(item)
+  // The Lightbox reuses ONE TweetVideoEmbed instance across left/right card nav
+  // (its React key is the slot index, which stays `slot-0`), feeding a new
+  // card's mp4 through `source`/`item` props. So a prop-derivable source must be
+  // LIVE — read on every render — not snapshotted into state once at mount.
+  // The original bug seeded `source` into useState at mount and ignored later
+  // prop changes, so the left media kept showing the PREVIOUS card's video while
+  // the right text panel updated (session 63 stale-media bug). Only the
+  // self-fetch path (board card whose backfill hasn't landed) needs state.
+  const propSource = sourceProp ?? resolveTweetVideoSource(item)
   const tweetId = extractTweetId(item.url)
   // undefined = fetch in flight, null = no playable video, value = ready.
   // Seed null up front when there's nothing to resolve AND no id to fetch with,
   // so the effect never has to call setState synchronously.
-  const [source, setSource] = useState<TweetVideoSource | null | undefined>(
-    initial ?? (tweetId ? undefined : null),
+  const [fetchedSource, setFetchedSource] = useState<TweetVideoSource | null | undefined>(
+    propSource ? undefined : (tweetId ? undefined : null),
   )
+  // Prop-provided/resolvable source always wins and tracks the current card;
+  // fall back to the self-fetched source only when there's no prop source.
+  const source = propSource ?? fetchedSource
   const [videoFailed, setVideoFailed] = useState<boolean>(false)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   // Lightbox-only: gate native controls on first interaction so Chromium
@@ -87,25 +98,27 @@ export function TweetVideoEmbed({
   // we have a tweet id to fetch with. All setState here is async (inside the
   // promise), so the effect never triggers a synchronous re-render cascade.
   useEffect(() => {
-    if (initial || !tweetId) return
+    if (propSource || !tweetId) return
     let cancelled = false
     fetchTweetMeta(tweetId)
       .then((meta) => {
         if (cancelled) return
         if (meta?.videoUrl) {
-          setSource({ videoUrl: meta.videoUrl, posterUrl: meta.videoPosterUrl ?? item.thumbnail, aspect: meta.videoAspectRatio })
+          setFetchedSource({ videoUrl: meta.videoUrl, posterUrl: meta.videoPosterUrl ?? item.thumbnail, aspect: meta.videoAspectRatio })
         } else {
-          setSource(null)
+          setFetchedSource(null)
         }
       })
       .catch(() => {
-        if (!cancelled) setSource(null)
+        if (!cancelled) setFetchedSource(null)
       })
     return (): void => {
       cancelled = true
     }
-    // `initial` is derived from props that don't change for a mounted card.
-  }, [tweetId, item.thumbnail, initial])
+    // Re-run only when the playable identity changes. propSource is an object
+    // recreated each render, so depend on its videoUrl (primitive) to avoid
+    // churn while still re-evaluating when a prop source appears/changes.
+  }, [tweetId, item.thumbnail, propSource?.videoUrl])
 
   // Controlled (inline) per-card volume wins; otherwise sync to the global
   // default (Lightbox). Inline never writes the per-card value back to the
