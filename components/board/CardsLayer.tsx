@@ -367,6 +367,14 @@ export function CardsLayer({
     positions: masonryLayout.positions,
     spaceHeld,
     onClick,
+    onModifierClick: useCallback(
+      (id: string): void => {
+        // Ctrl/⌘ + click → open the bookmark's original URL in a new tab.
+        const it = items.find((b) => b.bookmarkId === id)
+        if (it?.url) window.open(it.url, '_blank', 'noopener,noreferrer')
+      },
+      [items],
+    ),
     onDragMove: useCallback(
       (
         id: string,

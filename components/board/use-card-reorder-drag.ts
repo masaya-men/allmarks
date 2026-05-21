@@ -32,6 +32,10 @@ export type UseReorderDragParams = {
    *  getBoundingClientRect() at the moment of pointer-up — used by the
    *  Lightbox to grow from the card's position (FLIP). */
   readonly onClick: (bookmarkId: string, originRect: DOMRect) => void
+  /** Called on a tap with Ctrl (Win/Linux) or ⌘ (Mac) held — the power-user
+   *  shortcut to open the card's original URL in a new tab. When it fires, the
+   *  normal onClick (open Lightbox) is suppressed. Optional. */
+  readonly onModifierClick?: (bookmarkId: string) => void
   readonly onDragMove: (
     bookmarkId: string,
     cardWorldX: number,
@@ -51,7 +55,7 @@ export function useCardReorderDrag(params: UseReorderDragParams): {
   dragState: ReorderDragState | null
   handleCardPointerDown: (e: PointerEvent<HTMLDivElement>, bookmarkId: string) => void
 } {
-  const { items, positions, spaceHeld, onClick, onDragMove, onDrop, onPanY } = params
+  const { items, positions, spaceHeld, onClick, onModifierClick, onDragMove, onDrop, onPanY } = params
   // Mirror onPanY in a ref so the rAF tick reads the latest closure
   // without re-binding handleCardPointerDown every render.
   const onPanYRef = useRef<typeof onPanY>(onPanY)
@@ -65,9 +69,10 @@ export function useCardReorderDrag(params: UseReorderDragParams): {
     positions: Readonly<Record<string, CardPosition>>
     onDrop: typeof onDrop
     onClick: typeof onClick
+    onModifierClick: typeof onModifierClick
     onDragMove: typeof onDragMove
-  }>({ state: null, items, positions, onDrop, onClick, onDragMove })
-  stateRef.current = { state: dragState, items, positions, onDrop, onClick, onDragMove }
+  }>({ state: null, items, positions, onDrop, onClick, onModifierClick, onDragMove })
+  stateRef.current = { state: dragState, items, positions, onDrop, onClick, onModifierClick, onDragMove }
 
   const handleCardPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>, bookmarkId: string): void => {
@@ -201,6 +206,13 @@ export function useCardReorderDrag(params: UseReorderDragParams): {
 
         if (!dragStarted || distance < CLICK_THRESHOLD_PX) {
           setDragState(null)
+          // Ctrl/⌘ + click = open the original URL in a new tab (power-user
+          // shortcut). Fired from this genuine pointer-up gesture so the new
+          // tab isn't popup-blocked. Suppresses the Lightbox-open onClick.
+          if ((ev.ctrlKey || ev.metaKey) && stateRef.current.onModifierClick) {
+            stateRef.current.onModifierClick(bookmarkId)
+            return
+          }
           // Capture the card's screen rect right now so Lightbox can
           // grow visually from this position (FLIP). Re-querying here
           // (vs. using the saved startPos) is correct: pan/scroll may
