@@ -9,12 +9,12 @@
    default theme. */
 .bar {
   /* themeable tokens (default theme) */
-  /* Glass slab matched to the TUNE drawer (TuneTrigger.module.css .drawer):
-     rgba(10,10,10,0.92) — the SAME fill the user reads as glassy on TUNE. The
-     transparency (8% see-through) is the "透明感"; lifting it toward opaque
-     just made the slab look material, so we keep TUNE's exact 0.92. The blur
-     adds a soft frost; the matched box-shadow below ties the two surfaces into
-     one family. */
+  /* Glass slab matched 1:1 to the TUNE drawer (TuneTrigger.module.css .drawer):
+     rgba(10,10,10,0.92) + blur(8px) + matched shadow. The drawer DOES blur in
+     Chrome — it ships `-webkit-backdrop-filter:blur(8px)` (the CSS minifier
+     drops the unprefixed name, which is why getComputedStyle().backdropFilter
+     reads "none"; the prefixed alias is what's live). So this bar keeps the
+     blur to read as the same frosted glass; the 0.92 fill is the "透明感". */
   --pc-bar-bg: rgba(10, 10, 10, 0.92);
   --pc-accent: #34e07a; /* fluorescent green volume fill — keep */
   --pc-track-empty: #202024;
@@ -34,6 +34,7 @@
   padding: 0 10px;
   border-radius: 8px;
   background: var(--pc-bar-bg);
+  /* webkit alias first so the build keeps the unprefixed name too (Firefox). */
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border: 0;
