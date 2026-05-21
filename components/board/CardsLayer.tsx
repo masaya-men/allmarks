@@ -22,7 +22,7 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
-import { InlineMediaPlayer, canPlayInline } from './embeds'
+import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
 import { PlaybackControlBar } from './PlaybackControlBar'
 import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
 import { ResizeHandle } from './ResizeHandle'
@@ -550,7 +550,7 @@ export function CardsLayer({
             key={it.bookmarkId}
             ref={(el): void => {
               cardRefs.current[it.bookmarkId] = el
-              if (canPlayInline(it)) observeViz(it.bookmarkId)(el)
+              if (canViewportAutoplay(it)) observeViz(it.bookmarkId)(el)
             }}
             data-bookmark-id={it.bookmarkId}
             data-link-status={it.linkStatus ?? undefined}
@@ -624,7 +624,7 @@ export function CardsLayer({
                 <InlineMediaPlayer item={it} volume={audioVolume} paused={audioPaused} />
               </div>
             )}
-            {motionEnabled && pool.active.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canPlayInline(it) && (
+            {motionEnabled && pool.active.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canViewportAutoplay(it) && (
               // Tier 1 muted viewport autoplay. pointerEvents:none so it never blocks
               // card clicks / resize. Excluded on the Tier 3 sound-on card.
               <div
