@@ -3,7 +3,7 @@
 import { type PointerEvent as ReactPointerEvent, type ReactElement } from 'react'
 import styles from './MediaTypeIndicator.module.css'
 
-export type MediaType = 'video' | 'photo'
+export type MediaType = 'video' | 'photo' | 'audio'
 
 type Props = {
   /** null hides the indicator entirely (e.g. text-only cards — the type
@@ -40,7 +40,8 @@ export function MediaTypeIndicator({
   if (type === null) return null
 
   const interactive = typeof onActivate === 'function'
-  const icon = type === 'video' ? <VideoIcon /> : <PhotoIcon />
+  const icon =
+    type === 'video' ? <VideoIcon /> : type === 'audio' ? <MusicIcon /> : <PhotoIcon />
 
   if (!interactive) {
     return (
@@ -48,7 +49,7 @@ export function MediaTypeIndicator({
         className={styles.indicator}
         data-testid="media-indicator"
         data-visible={visible}
-        aria-label={type === 'video' ? 'video' : 'photo'}
+        aria-label={type}
       >
         {icon}
       </div>
@@ -66,7 +67,7 @@ export function MediaTypeIndicator({
       data-testid="media-indicator"
       data-visible={visible}
       data-active={active ? 'true' : 'false'}
-      aria-label={type === 'video' ? 'Play with sound' : 'Play audio'}
+      aria-label={type === 'video' ? 'Play with sound' : type === 'audio' ? 'Play audio' : 'Play'}
       aria-pressed={active}
       onPointerDown={swallow}
       onMouseDown={swallow}
@@ -97,6 +98,28 @@ function VideoIcon(): ReactElement {
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="M3 9h2M3 15h2M19 9h2M19 15h2" />
       <path d="M10 9l5 3-5 3z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+/** Beamed eighth-note — universally read as "audio / music" (SoundCloud
+ *  and other audio cards), distinct from the video filmstrip. The note
+ *  heads are filled so the glyph stays legible at 12–18px. */
+function MusicIcon(): ReactElement {
+  return (
+    <svg
+      className={styles.icon}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 17V5l10-2v12" />
+      <circle cx="6" cy="17" r="3" fill="currentColor" stroke="none" />
+      <circle cx="16" cy="15" r="3" fill="currentColor" stroke="none" />
     </svg>
   )
 }

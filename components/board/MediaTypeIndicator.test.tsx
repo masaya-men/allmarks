@@ -38,6 +38,16 @@ describe('MediaTypeIndicator', () => {
     expect(stop).toHaveBeenCalled()
   })
 
+  it('renders an interactive button for an audio (soundcloud) card', () => {
+    const onActivate = vi.fn()
+    const { container } = render(
+      <MediaTypeIndicator type="audio" visible={true} onActivate={onActivate} active={false} />,
+    )
+    const btn = container.querySelector('[data-testid="media-indicator"]') as HTMLElement
+    expect(btn.tagName).toBe('BUTTON')
+    expect(btn.getAttribute('aria-label')).toBe('Play audio')
+  })
+
   it('reflects active state via data-active', () => {
     const { container } = render(
       <MediaTypeIndicator type="video" visible={true} onActivate={() => {}} active={true} />,

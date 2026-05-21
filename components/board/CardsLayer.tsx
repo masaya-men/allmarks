@@ -33,8 +33,11 @@ import { pickCard } from './cards'
  *  already reads as text). */
 function deriveMediaType(item: BoardItem): MediaType | null {
   const urlType = detectUrlType(item.url)
+  // SoundCloud is audio — show the music note, not a photo/video icon.
+  if (urlType === 'soundcloud') return 'audio'
   const isVideo =
     urlType === 'youtube' ||
+    urlType === 'vimeo' ||
     urlType === 'tiktok' ||
     (urlType === 'instagram' && isInstagramReel(item.url)) ||
     (urlType === 'tweet' && item.hasVideo === true)
