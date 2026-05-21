@@ -14,6 +14,8 @@ export function YouTubeEmbed({
   autoStart = false,
   volume,
   paused,
+  muted,
+  onUnplayable,
 }: {
   readonly videoId: string
   readonly title: string
@@ -29,9 +31,23 @@ export function YouTubeEmbed({
   readonly volume?: number
   /** Controlled play/pause for inline cards. */
   readonly paused?: boolean
+  /** Tier 1 viewport autoplay: start muted via `&mute=1` (no audio, autoplay-safe). */
+  readonly muted?: boolean
+  /** Tier 1 only: called once when YouTube reports an unplayable error (embed-
+   *  restricted, region-locked, deleted, etc.). The caller unmounts the overlay
+   *  so the card's thumbnail shows through. Never passed for Tier 3. */
+  readonly onUnplayable?: () => void
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  // Track whether we already fired onUnplayable to guarantee at-most-once.
+  const firedUnplayableRef = useRef<boolean>(false)
+  // "Latest callback" ref: always holds the current onUnplayable without
+  // making the detection effect depend on it (avoids per-render re-subscribe).
+  const onUnplayableRef = useRef(onUnplayable)
+  onUnplayableRef.current = onUnplayable
+  // Stable player id shared between the detection effect and handleIframeLoad.
+  const playerIdRef = useRef<string>(Math.random().toString(36).slice(2))
 
   // Inline external-control bridge: once the iframe is mounted, drive volume
   // and play/pause via the YouTube iframe API (enablejsapi=1). Volume changes
@@ -40,6 +56,7 @@ export function YouTubeEmbed({
     iframeRef.current?.contentWindow?.postMessage(JSON.stringify(msg), 'https://www.youtube.com')
   }
   useEffect(() => {
+    if (muted === true) return // muted hover playback: leave mute=1 untouched
     if (hasInteracted && typeof volume === 'number') post({ event: 'command', func: 'setVolume', args: [volume] })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [volume, hasInteracted])
@@ -48,6 +65,65 @@ export function YouTubeEmbed({
     post({ event: 'command', func: paused ? 'pauseVideo' : 'playVideo' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused, hasInteracted])
+
+  // Tier 1 only: detect unplayable videos (embed-restricted, deleted, etc.)
+  // via the YouTube IFrame API postMessage protocol. YouTube posts structured
+  // data events when enablejsapi=1 is in the src; error codes 2, 5, 100, 101,
+  // 150 all mean the video can't play in this context.
+  // We send a "listening" handshake to opt in to event messages, with retries
+  // since the player may not be ready immediately after iframe mount.
+  //
+  // The effect deps are [hasInteracted] ONLY. onUnplayable is read through
+  // onUnplayableRef so that a new inline arrow from the parent (e.g. during
+  // drag/scroll re-renders) does NOT tear down and re-add the listener.
+  useEffect(() => {
+    if (!onUnplayableRef.current || !hasInteracted) return
+    const iframe = iframeRef.current
+    if (!iframe?.contentWindow) return
+
+    // YouTube error codes that mean "can't play here": invalid id (2), HTML5
+    // error (5), not found/private (100), embed-disabled (101/150).
+    const UNPLAYABLE_CODES = new Set([2, 5, 100, 101, 150])
+    const stableId = playerIdRef.current
+
+    const sendListening = (): void => {
+      iframe.contentWindow?.postMessage(
+        JSON.stringify({ event: 'listening', id: stableId, channel: 'widget' }),
+        '*',
+      )
+    }
+    sendListening()
+    const t1 = window.setTimeout(sendListening, 300)
+    const t2 = window.setTimeout(sendListening, 1000)
+
+    const handleMessage = (e: MessageEvent): void => {
+      if (e.source !== iframe.contentWindow) return
+      if (typeof e.data !== 'string') return
+      let parsed: unknown
+      try { parsed = JSON.parse(e.data) } catch { return }
+      if (
+        parsed !== null &&
+        typeof parsed === 'object' &&
+        'event' in parsed &&
+        (parsed as Record<string, unknown>)['event'] === 'onError' &&
+        'info' in parsed &&
+        UNPLAYABLE_CODES.has(Number((parsed as Record<string, unknown>)['info']))
+      ) {
+        if (!firedUnplayableRef.current) {
+          firedUnplayableRef.current = true
+          onUnplayableRef.current?.()
+        }
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return (): void => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+      window.removeEventListener('message', handleMessage)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasInteracted])
+
   // YouTube CDN poster — used only as fallback when the bookmarklet
   // didn't capture an og:image. maxresdefault works for ~95% of videos;
   // hqdefault is the universal fallback if max isn't available, but we
@@ -67,6 +143,21 @@ export function YouTubeEmbed({
   // YouTube's own volume slider remains active inside the player chrome,
   // so users can override on a per-video basis if they want louder/quieter.
   const handleIframeLoad = (): void => {
+    if (muted === true) {
+      // Muted Tier 1: don't unmute via setVolume. But we do need to kick the
+      // listening handshake immediately on iframe load so the onError detection
+      // effect (which may have already run before this load fired) gets events.
+      // The effect itself also retries at 300ms/1000ms from mount, so this is
+      // just an additional "on load" send to cover the common case.
+      // Reuse playerIdRef so both sends share the same consistent player id.
+      if (onUnplayableRef.current) {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'listening', id: playerIdRef.current, channel: 'widget' }),
+          '*',
+        )
+      }
+      return
+    }
     const vol = getDefaultVolume()
     const send = (): void => {
       iframeRef.current?.contentWindow?.postMessage(
@@ -105,7 +196,7 @@ export function YouTubeEmbed({
         // mount, which is allowed because the click on our overlay
         // satisfies Chromium's user-gesture requirement for autoplay.
         // enablejsapi=1 lets us push the default volume in via postMessage.
-        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`}
+        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1${muted === true ? '&mute=1' : ''}`}
         title={title}
         className={styles.iframe}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

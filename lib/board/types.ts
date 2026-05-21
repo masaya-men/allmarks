@@ -82,6 +82,10 @@ export type BoardConfig = {
   readonly themeId: ThemeId
   readonly displayMode: DisplayMode
   readonly activeFilter: BoardFilter
+  /** Tier 1 viewport-playback master switch. true = in-view video cards
+   *  autoplay muted + multi-image cards cycle. Default true (reduced-motion
+   *  users default false, set at hydrate time in BoardRoot). */
+  readonly motionEnabled: boolean
 }
 
 export type SnapGuideLine =

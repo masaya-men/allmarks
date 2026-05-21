@@ -8,6 +8,6 @@ export { TweetVideoEmbed, resolveTweetVideoSource } from './TweetVideoEmbed'
 export type { TweetVideoItem, TweetVideoSource, MediaVariant } from './TweetVideoEmbed'
 // Task 3 switches the board over to the registry's item-based canPlayInline;
 // until then the barrel still re-exports the url-based one from InlineMediaPlayer.
-export { resolveInlinePlayer, resolveLightboxPlayer } from './media-players'
+export { resolveInlinePlayer, resolveLightboxPlayer, canViewportAutoplay } from './media-players'
 export type { PlayableItem } from './media-players'
 export { InlineMediaPlayer, canPlayInline } from './InlineMediaPlayer'

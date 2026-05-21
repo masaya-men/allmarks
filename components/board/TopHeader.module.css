@@ -1,15 +1,14 @@
 /* Apple iOS Photos / visionOS overlay-UI direction: the header itself is
    no longer a solid bar — it floats over the board as a row of text-only
    chrome elements, with legibility supplied by the canvas edge gradient
-   scrim (BoardRoot.module.css ::before). After Session 28 the instrument
-   slot is gone (ScrollMeter relocated to the canvas bottom), so the row
-   contains just nav (left) and actions (right) with space-between. */
+   scrim (BoardRoot.module.css ::before). Two-row right-aligned stack:
+   top row = MOTION + FilterPill; bottom row = TUNE / POP OUT / SHARE.
+   Left side is empty; justify-content: flex-end pushes the stack right. */
 
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: flex-start;
-  gap: 16px;
   position: absolute;
   top: 0;
   left: 0;
@@ -45,6 +44,14 @@
   pointer-events: none;
 }
 
+/* Two-row container, both rows right-aligned to the same edge. */
+.rightStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* both rows share the same right edge */
+  gap: 10px;
+}
+
 .group {
   display: flex;
   align-items: center;
@@ -54,14 +61,15 @@
   pointer-events: auto;
 }
 
-/* Mobile (≤640px): chrome row collapses to FilterPill (left) + Share (right)
-   only — same constraint as the previous solid header. */
+/* Mobile (≤640px): bottom row collapses to Share only; top row keeps compact gap. */
 @media (max-width: 640px) {
   .header {
     padding: 10px 12px 0;
-    gap: 8px;
   }
-  .group[data-group="actions"] > :not([data-testid="share-pill"]) {
+  .group[data-group="actions-bottom"] > :not([data-testid="share-pill"]) {
     display: none;
+  }
+  .group[data-group="actions-top"] {
+    gap: 8px;
   }
 }

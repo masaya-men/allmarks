@@ -32,6 +32,7 @@ import { CardsLayer } from './CardsLayer'
 import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
+import { MotionToggle } from './MotionToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
@@ -89,6 +90,7 @@ export function BoardRoot() {
     if (raw && isBoardBgTypoVariant(raw)) setBgTypoVariant(raw)
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
+  const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
   const [viewport, setViewport] = useState({ x: 0, y: 0, w: 1200, h: 800 })
   // Mirror viewport in a ref so the edge auto-scroll rAF tick (which fires
   // outside React's render cycle) can read the latest scroll position
@@ -419,6 +421,16 @@ export function BoardRoot() {
       if (cancelled) return
       setActiveFilter(cfg.activeFilter)
       setDisplayMode(cfg.displayMode)
+      const prefersReduced =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+      // A second raw read is intentional: loadBoardConfig spreads DEFAULT_BOARD_CONFIG,
+      // so a stored motionEnabled is indistinguishable from the default — only the raw
+      // record reveals whether the user ever explicitly persisted a value.
+      const rawRecord = await db.get('settings', 'board-config') as { config?: { motionEnabled?: unknown } } | undefined
+      if (cancelled) return
+      const hasPersisted = typeof rawRecord?.config?.motionEnabled === 'boolean'
+      setMotionEnabled(hasPersisted ? cfg.motionEnabled : !prefersReduced)
     })()
     return (): void => { cancelled = true }
   }, [])
@@ -1026,6 +1038,18 @@ export function BoardRoot() {
     })()
   }, [])
 
+  const handleToggleMotion = useCallback((): void => {
+    setMotionEnabled((prev) => {
+      const next = !prev
+      void (async (): Promise<void> => {
+        const db = await initDB()
+        const cfg = await loadBoardConfig(db)
+        await saveBoardConfig(db, { ...cfg, motionEnabled: next })
+      })()
+      return next
+    })
+  }, [])
+
   const handleOpenBookmarkletModal = useCallback((): void => {
     setBookmarkletModalOpen(true)
   }, [])
@@ -1290,15 +1314,18 @@ export function BoardRoot() {
       <div className={styles.canvas}>
         <TopHeader
           hidden={!!lightboxItemId}
-          nav={
-            <FilterPill
-              value={activeFilter}
-              onChange={handleFilterChange}
-              moods={moods}
-              counts={sidebarCounts}
-            />
+          actionsTop={
+            <>
+              <MotionToggle enabled={motionEnabled} onToggle={handleToggleMotion} />
+              <FilterPill
+                value={activeFilter}
+                onChange={handleFilterChange}
+                moods={moods}
+                counts={sidebarCounts}
+              />
+            </>
           }
-          actions={
+          actionsBottom={
             <>
               <TuneTrigger
                 widthPx={cardWidthPx}
@@ -1397,6 +1424,7 @@ export function BoardRoot() {
                 onCardResetSize={handleCardResetSize}
                 sourceCardId={lightboxSourceItemId}
                 onPanY={handlePanY}
+                motionEnabled={motionEnabled}
               />
             </div>
           </InteractionLayer>

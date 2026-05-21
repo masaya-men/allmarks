@@ -14,11 +14,15 @@ type Props = {
   readonly persistMeasuredAspect?: (cardId: string, aspectRatio: number) => Promise<void>
   readonly cardWidth?: number
   readonly cardHeight?: number
+  /** Tier 1: advance through mediaSlots on an interval (hard cut). */
+  readonly autoCycle?: boolean
+  /** Interval per image in ms (default 2200). */
+  readonly cycleMs?: number
 }
 
 const ASPECT_EPSILON = 0.005
 
-export function ImageCard({ item, persistMeasuredAspect }: Props): ReactNode {
+export function ImageCard({ item, persistMeasuredAspect, autoCycle = false, cycleMs = 2200 }: Props): ReactNode {
   const imgRef = useRef<HTMLImageElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [imageIdx, setImageIdx] = useState<number>(0)
@@ -51,6 +55,20 @@ export function ImageCard({ item, persistMeasuredAspect }: Props): ReactNode {
   const slots: readonly MediaSlot[] = item.mediaSlots
     ?? (item.photos ?? []).map((url): MediaSlot => ({ type: 'photo', url }))
   const hasMultiple = slots.length > 1
+
+  useEffect(() => {
+    if (!autoCycle || !hasMultiple) return
+    const id = setInterval(() => {
+      setImageIdx((prev) => (prev + 1) % slots.length)
+    }, cycleMs)
+    return () => clearInterval(id)
+  }, [autoCycle, hasMultiple, slots.length, cycleMs])
+
+  // Reset to the lead image when autoCycle turns off so the card is never
+  // left stranded mid-sequence.
+  useEffect(() => {
+    if (!autoCycle) setImageIdx(0)
+  }, [autoCycle])
 
   const handlePointerMove = useCallback(
     (e: PointerEvent<HTMLDivElement>): void => {

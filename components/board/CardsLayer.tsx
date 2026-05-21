@@ -22,8 +22,9 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
-import { InlineMediaPlayer, canPlayInline } from './embeds'
+import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
 import { PlaybackControlBar } from './PlaybackControlBar'
+import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
@@ -33,6 +34,9 @@ import { pickCard } from './cards'
  *  (207.80px). The bar tracks the active card's width but never shrinks below
  *  this, so its knob + button stay comfortably operable on tiny cards. */
 const MIN_CONTROL_BAR_WIDTH_PX = PRESETS.find((p) => p.id === 'dense')?.w ?? 207.8
+
+/** Maximum number of Tier 1 muted autoplay players active simultaneously. */
+const TIER1_CAP = 4
 
 /** Derive the media-type badge for a bookmark from existing fields — no
  *  new persisted data needed. Returns null for cards where a video/photo
@@ -121,6 +125,8 @@ type CardsLayerProps = {
    *  through to useCardReorderDrag. Optional so the share-view caller
    *  (which currently has no scroll) can omit it. */
   readonly onPanY?: (requestedDy: number) => number
+  /** Tier 1 master switch — when false, no viewport autoplay. */
+  readonly motionEnabled: boolean
 }
 
 export function CardsLayer({
@@ -150,10 +156,51 @@ export function CardsLayer({
   onCardResetSize,
   sourceCardId,
   onPanY,
+  motionEnabled,
 }: CardsLayerProps): ReactNode {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
   const lastComputeRef = useRef<{ x: number; y: number } | null>(null)
+
+  // ── Tier 1 viewport autoplay ──
+  // Intersection-observed visibility drives a debounced pool of up to TIER1_CAP
+  // muted autoplay players. When motionEnabled is false the cap is 0, so the
+  // pool stays empty and no observers are attached.
+  const pool = useViewportPlaybackPool(motionEnabled ? TIER1_CAP : 0)
+  const vizObservers = useRef<Map<string, IntersectionObserver>>(new Map())
+  const vizElements = useRef<Map<string, HTMLElement>>(new Map())
+  const observeViz = useCallback((id: string) => {
+    return (el: HTMLElement | null): void => {
+      if (el !== null && vizElements.current.get(id) === el) return // same element — no churn
+      const existing = vizObservers.current.get(id)
+      if (existing) { existing.disconnect(); vizObservers.current.delete(id) }
+      vizElements.current.delete(id)
+      if (!el || !motionEnabled) { pool.report(id, 0); return }
+      vizElements.current.set(id, el)
+      const obs = new IntersectionObserver(
+        (entries) => { for (const e of entries) pool.report(id, e.isIntersecting ? e.intersectionRatio : 0) },
+        { threshold: [0, 0.25, 0.5, 0.75, 1] },
+      )
+      obs.observe(el)
+      vizObservers.current.set(id, obs)
+    }
+  }, [motionEnabled, pool])
+  useEffect(() => () => {
+    vizObservers.current.forEach((o) => o.disconnect())
+    vizObservers.current.clear()
+    vizElements.current.clear()
+  }, [])
+
+  // ── Tier 1 unplayable tracking ──
+  // When an embed detects it cannot play (embed-restricted YouTube, broken mp4,
+  // etc.) it calls markUnplayable(id). The id is added to this set and excluded
+  // from the Tier 1 muted overlay render so the card's thumbnail shows through.
+  // The set persists for the session; motionEnabled OFF/ON does NOT clear it
+  // (keeping it simple — avoiding re-trying videos we already know are broken).
+  const [unplayableIds, setUnplayableIds] = useState<ReadonlySet<string>>(new Set())
+  const markUnplayable = useCallback((id: string): void => {
+    setUnplayableIds((prev) => prev.has(id) ? prev : new Set(prev).add(id))
+  }, [])
 
   // Stage 2: virtual order during drag for live reflow preview.
   // null = no drag in progress (use real masonry order).
@@ -514,6 +561,7 @@ export function CardsLayer({
             key={it.bookmarkId}
             ref={(el): void => {
               cardRefs.current[it.bookmarkId] = el
+              if (canViewportAutoplay(it)) observeViz(it.bookmarkId)(el)
             }}
             data-bookmark-id={it.bookmarkId}
             data-link-status={it.linkStatus ?? undefined}
@@ -558,6 +606,7 @@ export function CardsLayer({
                     cardWidth={p.w}
                     cardHeight={p.h}
                     displayMode={it.displayMode ?? displayMode}
+                    autoCycle={motionEnabled}
                   />
                 )
               })()}
@@ -584,6 +633,27 @@ export function CardsLayer({
                 }}
               >
                 <InlineMediaPlayer item={it} volume={audioVolume} paused={audioPaused} />
+              </div>
+            )}
+            {motionEnabled && pool.active.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canViewportAutoplay(it) && !unplayableIds.has(it.bookmarkId) && (
+              // Tier 1 muted viewport autoplay. pointerEvents:none so it never blocks
+              // card clicks / resize. Excluded on the Tier 3 sound-on card, and on
+              // cards that have been marked unplayable (embed-restricted etc.).
+              <div
+                data-viewport-playback
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 10,
+                  overflow: 'hidden',
+                  borderRadius: 'var(--card-radius, 20px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                }}
+              >
+                <InlineMediaPlayer item={it} muted onUnplayable={(): void => markUnplayable(it.bookmarkId)} />
               </div>
             )}
             {barMount?.id === it.bookmarkId && canPlayInline(it) && (

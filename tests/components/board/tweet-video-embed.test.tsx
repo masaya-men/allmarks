@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { resolveTweetVideoSource } from '@/components/board/embeds/TweetVideoEmbed'
+import { describe, it, expect, vi } from 'vitest'
+import { render, fireEvent } from '@testing-library/react'
+import { resolveTweetVideoSource, TweetVideoEmbed } from '@/components/board/embeds/TweetVideoEmbed'
 
 describe('resolveTweetVideoSource', () => {
   it('uses the video mediaSlot when present (no fetch needed)', () => {
@@ -31,5 +32,63 @@ describe('resolveTweetVideoSource', () => {
       mediaSlots: [{ type: 'photo', url: 'https://img/a.jpg' }],
     })
     expect(src).toBeNull()
+  })
+})
+
+describe('TweetVideoEmbed — onUnplayable (Tier 1 fallback)', () => {
+  it('calls onUnplayable when the <video> fires an error event', () => {
+    const onUnplayable = vi.fn()
+    const item = {
+      url: 'https://x.com/u/status/123',
+      title: 'Test tweet',
+      thumbnail: undefined,
+    }
+    const source = {
+      videoUrl: 'https://example.com/clip.mp4',
+      posterUrl: undefined,
+      aspect: 16 / 9,
+    }
+    const { container } = render(
+      <TweetVideoEmbed
+        item={item}
+        source={source}
+        variant="inline"
+        autoStart
+        muted
+        onUnplayable={onUnplayable}
+      />,
+    )
+    const video = container.querySelector('video')
+    expect(video).not.toBeNull()
+    // Simulate a network/decode error on the native <video> element.
+    fireEvent.error(video!)
+    expect(onUnplayable).toHaveBeenCalledOnce()
+  })
+
+  it('does NOT call onUnplayable when no prop is provided (Tier 3 behavior)', () => {
+    const item = {
+      url: 'https://x.com/u/status/123',
+      title: 'Test tweet',
+      thumbnail: undefined,
+    }
+    const source = {
+      videoUrl: 'https://example.com/clip.mp4',
+      posterUrl: undefined,
+      aspect: 16 / 9,
+    }
+    // Should render without throwing and show "Watch on X" on error instead.
+    const { container } = render(
+      <TweetVideoEmbed
+        item={item}
+        source={source}
+        variant="inline"
+        autoStart
+      />,
+    )
+    const video = container.querySelector('video')
+    expect(video).not.toBeNull()
+    // Fire error — no onUnplayable prop, expect "Watch on X" link appears.
+    fireEvent.error(video!)
+    expect(container.querySelector('a')).not.toBeNull()
   })
 })

@@ -23,6 +23,7 @@ export function SoundCloudEmbed({
   autoStart = false,
   volume: controlledVolume,
   paused,
+  muted,
 }: {
   readonly url: string
   readonly title: string
@@ -35,6 +36,9 @@ export function SoundCloudEmbed({
   readonly volume?: number
   /** Controlled play/pause for inline cards. */
   readonly paused?: boolean
+  /** Tier 1 viewport autoplay: keep the widget silent (setVolume(0)) and hide
+   *  the overlay slider (it isn't interactive under a muted autoplay preview). */
+  readonly muted?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -75,7 +79,7 @@ export function SoundCloudEmbed({
         widgetRef.current = widget
         widget.bind(SC.Widget.Events.READY, () => {
           if (cancelled) return
-          widget.setVolume(getDefaultVolume())
+          widget.setVolume(muted === true ? 0 : getDefaultVolume())
         })
       })
       .catch(() => {
@@ -87,7 +91,7 @@ export function SoundCloudEmbed({
       cancelled = true
       widgetRef.current = null
     }
-  }, [hasInteracted])
+  }, [hasInteracted, muted])
 
   const showControls = useCallback((): void => {
     setIsControlsVisible(true)
@@ -162,8 +166,9 @@ export function SoundCloudEmbed({
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       />
       {/* The embed's own volume overlay is hidden when an external control
-          bar drives the player (inline cards) — the bar replaces it. */}
-      {!controlled && (
+          bar drives the player (inline cards) — the bar replaces it — and
+          when this is a muted hover preview (no interactive audio). */}
+      {!controlled && muted !== true && (
       <div
         className={styles.volumeControl}
         data-visible={isControlsVisible}
