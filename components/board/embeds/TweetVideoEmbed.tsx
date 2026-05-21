@@ -66,7 +66,7 @@ export function TweetVideoEmbed({
   readonly volume?: number
   /** Controlled play/pause. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: mute the `<video>` so autoplay is allowed without
+  /** Tier 1 viewport autoplay: mute the `<video>` so autoplay is allowed without
    *  a user gesture (browser autoplay policy). */
   readonly muted?: boolean
 }): ReactNode {

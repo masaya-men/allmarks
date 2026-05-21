@@ -64,6 +64,12 @@ export function ImageCard({ item, persistMeasuredAspect, autoCycle = false, cycl
     return () => clearInterval(id)
   }, [autoCycle, hasMultiple, slots.length, cycleMs])
 
+  // Reset to the lead image when autoCycle turns off so the card is never
+  // left stranded mid-sequence.
+  useEffect(() => {
+    if (!autoCycle) setImageIdx(0)
+  }, [autoCycle])
+
   const handlePointerMove = useCallback(
     (e: PointerEvent<HTMLDivElement>): void => {
       if (!hasMultiple) return

@@ -42,4 +42,13 @@ describe('ImageCard auto-cycle', () => {
     act(() => { vi.advanceTimersByTime(3000) })
     expect(activeIndex(getAllByTestId('multi-image-dot'))).toBe(0)
   })
+
+  it('resets to the lead image when autoCycle turns off', () => {
+    const { getAllByTestId, rerender } = render(<ImageCard item={item} displayMode="visual" autoCycle cycleMs={1000} />)
+    act(() => { vi.advanceTimersByTime(2000) }) // now on index 2
+    const activeIndex = (): number => getAllByTestId('multi-image-dot').findIndex((d) => d.getAttribute('data-active') === 'true')
+    expect(activeIndex()).toBe(2)
+    rerender(<ImageCard item={item} displayMode="visual" autoCycle={false} cycleMs={1000} />)
+    expect(activeIndex()).toBe(0)
+  })
 })

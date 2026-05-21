@@ -56,7 +56,7 @@ export function TikTokEmbed({
   readonly volume?: number
   /** Controlled play/pause for inline (Tier-1 native video only). */
   readonly paused?: boolean
-  /** Tier 2 hover playback: mute the Tier-1 native video (the official iframe
+  /** Tier 1 viewport autoplay: mute the Tier-1 native video (the official iframe
    *  fallback can't be muted from outside — accepted limitation). */
   readonly muted?: boolean
 }): ReactNode {

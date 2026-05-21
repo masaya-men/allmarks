@@ -30,7 +30,7 @@ export function VimeoEmbed({
   readonly volume?: number
   /** Controlled play/pause for inline cards. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: start muted via `&muted=1` (no audio, autoplay-safe). */
+  /** Tier 1 viewport autoplay: start muted via `&muted=1` (no audio, autoplay-safe). */
   readonly muted?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)

@@ -36,8 +36,8 @@ export function SoundCloudEmbed({
   readonly volume?: number
   /** Controlled play/pause for inline cards. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: keep the widget silent (setVolume(0)) and hide
-   *  the overlay slider (it isn't interactive under a muted hover preview). */
+  /** Tier 1 viewport autoplay: keep the widget silent (setVolume(0)) and hide
+   *  the overlay slider (it isn't interactive under a muted autoplay preview). */
   readonly muted?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)

@@ -25,7 +25,7 @@ export function InlineMediaPlayer({
   readonly volume?: number
   /** Controlled play/pause. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: mount muted (no audio). */
+  /** Tier 1 viewport autoplay: mount muted (no audio). */
   readonly muted?: boolean
 }): ReactNode {
   return resolveInlinePlayer(item, { autoStart: true, volume, paused, muted })

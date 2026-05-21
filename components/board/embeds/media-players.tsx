@@ -33,7 +33,7 @@ type RenderOpts = {
   readonly volume?: number
   /** Controlled play/pause for inline cards. Undefined → uncontrolled. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: start muted (autoplay-policy compliant, no audio). */
+  /** Tier 1 viewport autoplay: start muted (autoplay-policy compliant, no audio). */
   readonly muted?: boolean
 }
 
@@ -162,7 +162,7 @@ export type InlinePlayerOpts = {
   readonly volume?: number
   /** Controlled play/pause. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: start muted (no audio). */
+  /** Tier 1 viewport autoplay: start muted (no audio). */
   readonly muted?: boolean
 }
 
