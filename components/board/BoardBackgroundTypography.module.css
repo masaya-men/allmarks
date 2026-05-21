@@ -1,20 +1,35 @@
 /* Background typography layer — sits between the dark theme background
  * and the cards, displaying the active filter's name (or "AllMarks" for
  * the all-bookmarks view) at hero scale. Cards float on top and occlude
- * the type as they scroll. Iteration 2026-05-21: adds a mouse-following
- * chromatic-aberration glitch matching the chrome (TuneTrigger / others)
- * glitch language — orange + cyan RGB ghost copies with horizontal
- * clip-band animation running infinitely, masked to a radial spotlight
- * around the cursor.
+ * the type as they scroll. Iter3 (2026-05-21): replaces the 2-ghost
+ * radial halo with a 9-slice fragmentation glitch + click-to-burst.
  *
  * Z-index policy: NO explicit z-index anywhere in this module. Adding any
  * positive z-index to internal elements escapes to the parent stacking
- * context and beats the cards-wrapper sibling (which uses translate3d
- * to make its own stacking context but has no explicit z-index of its
- * own). The earlier iteration tried `z-index: 1/2` on the layers and
- * caused the typography to render on top of the cards — fixed by relying
- * on DOM order alone for both host-vs-cards stacking and inner layer
- * stacking. */
+ * context and beats the cards-wrapper sibling. DOM order alone keeps the
+ * cards above the typography. */
+
+/* Registered animatable CSS custom properties — required so the keyframe
+ * `bg-typo-burst` can interpolate them. @property is Chrome 85+ / Safari
+ * 16.4+ / Firefox 128+. Older browsers silently ignore the registration
+ * and the burst keyframe becomes a no-op (base mouse-follow behavior
+ * still works). */
+@property --bg-typo-glitch-amp {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --bg-typo-glitch-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 80px;
+}
+@property --bg-typo-glitch-falloff {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 130px;
+}
+
 .host {
   position: absolute;
   inset: 0;
@@ -24,24 +39,20 @@
   pointer-events: none;
   overflow: hidden;
 
-  /* CSS custom properties — theme stylesheets / future variants can
-   * override any of these. JS writes --bg-typo-glitch-mx / --my via
-   * pointermove on the board canvas. Mouse coords are in pixels relative
-   * to the host's top-left, matching the mask-image's coordinate space
-   * (= the glitch layers are inset: 0 so they share host's box). */
+  --bg-typo-glitch-amp: 1;
   --bg-typo-glitch-radius: 80px;
   --bg-typo-glitch-falloff: 130px;
-  --bg-typo-glitch-orange: #ff9d3f;
+  --bg-typo-glitch-red: #ff5060;
   --bg-typo-glitch-cyan: #50c8ff;
   --bg-typo-glitch-mx: 50%;
   --bg-typo-glitch-my: 50%;
 }
 
-/* Shared typography — all three layers (base + 2 glitch ghosts) must
- * share font / size / spacing exactly so the ghosts overlay the base
- * with pixel-precise alignment. */
+/* Shared typography — both the base text and the 9 slice clones must
+ * use identical font / size / letter-spacing so the slice clones overlay
+ * the base pixel-perfectly. */
 .text,
-.glitchText {
+.slice {
   font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 600;
   font-size: clamp(72px, 17vw, 260px);
@@ -52,17 +63,21 @@
   user-select: none;
 }
 
+/* Base text — always visible everywhere, clean. pointer-events: auto so
+ * the user can click it to trigger a burst (despite the host being
+ * pointer-events: none for the board interactions). */
 .text {
   color: rgba(255, 255, 255, 0.95);
+  pointer-events: auto;
+  cursor: pointer;
 }
 
-/* Each glitch layer is a host-sized flex container that holds one
- * color-shifted copy of the headline. The MASK lives on the layer (which
- * shares its coordinate system with the host), NOT on the text element
- * inside — that's why mouse-position pixel coordinates work. The text
- * is centered inside the layer via flex; the animation transforms /
- * clip-paths apply to the text without disturbing the mask. */
-.glitchLayer {
+/* Mask wrapper — fills the host, applies the radial spotlight mask so
+ * the 9 slice clones inside are only visible near the cursor. The
+ * radius and falloff are registered properties so the burst keyframe
+ * can animate them, expanding the visible zone to cover the whole
+ * headline during a burst and collapsing it back. */
+.spotlightMask {
   position: absolute;
   inset: 0;
   display: flex;
@@ -70,6 +85,7 @@
   justify-content: center;
   pointer-events: none;
   mix-blend-mode: screen;
+  will-change: mask-image;
   -webkit-mask-image: radial-gradient(
     circle at var(--bg-typo-glitch-mx) var(--bg-typo-glitch-my),
     black 0,
@@ -84,68 +100,124 @@
   );
 }
 
-.glitchTextA {
-  color: var(--bg-typo-glitch-orange);
-  animation: bg-typo-glitch-a 1400ms steps(7, end) infinite;
+/* Each slice is absolutely positioned at the host center (matching the
+ * base text). clip-path crops it to 1/9 of the headline height so only
+ * one band of letters shows per slice. The translate displacement is
+ * driven by the per-slice CSS variables `--slice-tx` / `--slice-ty`,
+ * multiplied by --bg-typo-glitch-amp so the burst can triple it. */
+.slice {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform:
+    translate(-50%, -50%)
+    translate(
+      calc(var(--slice-tx, 0px) * var(--bg-typo-glitch-amp)),
+      calc(var(--slice-ty, 0px) * var(--bg-typo-glitch-amp))
+    );
+  will-change: transform;
 }
 
-.glitchTextB {
-  color: var(--bg-typo-glitch-cyan);
-  animation: bg-typo-glitch-b 1400ms steps(7, end) infinite;
+/* 9 slice bands — clip-path values divide the text vertically into 9
+ * equal strips (11.111 % each). The displacement values and colors are
+ * chosen for irregular signal-noise feel: alternating direction, varied
+ * magnitude, RGB tints on 4 of 9 slices, white on the other 5. */
+.slice0 { clip-path: inset(0%      0 88.889% 0); --slice-tx: -22px; --slice-ty: 0px;  color: rgba(255, 255, 255, 0.95); }
+.slice1 { clip-path: inset(11.111% 0 77.778% 0); --slice-tx: 28px;  --slice-ty: -1px; color: var(--bg-typo-glitch-red); }
+.slice2 { clip-path: inset(22.222% 0 66.667% 0); --slice-tx: -14px; --slice-ty: 0px;  color: rgba(255, 255, 255, 0.95); }
+.slice3 { clip-path: inset(33.333% 0 55.556% 0); --slice-tx: 30px;  --slice-ty: 1px;  color: var(--bg-typo-glitch-cyan); }
+.slice4 { clip-path: inset(44.444% 0 44.444% 0); --slice-tx: -8px;  --slice-ty: 0px;  color: rgba(255, 255, 255, 0.95); }
+.slice5 { clip-path: inset(55.556% 0 33.333% 0); --slice-tx: 24px;  --slice-ty: -1px; color: var(--bg-typo-glitch-red); }
+.slice6 { clip-path: inset(66.667% 0 22.222% 0); --slice-tx: -28px; --slice-ty: 1px;  color: rgba(255, 255, 255, 0.95); }
+.slice7 { clip-path: inset(77.778% 0 11.111% 0); --slice-tx: 20px;  --slice-ty: 0px;  color: var(--bg-typo-glitch-cyan); }
+.slice8 { clip-path: inset(88.889% 0 0%      0); --slice-tx: -18px; --slice-ty: 0px;  color: rgba(255, 255, 255, 0.95); }
+
+/* Slice animations — 3 step-based keyframes that scramble the per-slice
+ * displacement. Each slice picks one of the three families via class +
+ * an animation-delay that desyncs them. Step animation (not smooth
+ * tween) is intentional: it produces the discrete じじっじじっ glitch
+ * cadence, matching the chrome (TuneTrigger) glitch language. */
+.slice0, .slice3, .slice6 { animation: bg-typo-slice-a 900ms steps(6, end) infinite; }
+.slice1, .slice4, .slice7 { animation: bg-typo-slice-b 1100ms steps(6, end) infinite; }
+.slice2, .slice5, .slice8 { animation: bg-typo-slice-c 1300ms steps(6, end) infinite; }
+
+.slice1 { animation-delay: -120ms; }
+.slice2 { animation-delay: -240ms; }
+.slice3 { animation-delay: -360ms; }
+.slice4 { animation-delay: -480ms; }
+.slice5 { animation-delay: -600ms; }
+.slice6 { animation-delay: -720ms; }
+.slice7 { animation-delay: -840ms; }
+.slice8 { animation-delay: -960ms; }
+
+@keyframes bg-typo-slice-a {
+  0%   { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp)), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.95; }
+  16%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 1.4), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.9; }
+  33%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * -0.3), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 1; }
+  50%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 1.1), calc(var(--slice-ty) * var(--bg-typo-glitch-amp) * 2)); opacity: 0.85; }
+  66%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 0.6), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 1; }
+  83%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 1.2), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp)), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.95; }
 }
 
-/* Keyframes mirror the chrome (TuneTrigger / ChromeButton) glitch
- * language — 7-step staircase animation that translates the ghost on
- * the X axis and applies a clip-path inset to expose a different
- * horizontal band each step. The result reads as the classic "じじじ"
- * VHS / signal-noise flicker. CSS Modules scopes animation-name to the
- * module, so the names are repeated here verbatim and don't clash with
- * the chrome module's identical keyframes. */
-@keyframes bg-typo-glitch-a {
-  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
-  5%   { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 70% 0); }
-  20%  { opacity: 1; transform: translate(3px, -1px); clip-path: inset(25% 0 30% 0); }
-  35%  { opacity: 1; transform: translate(-5px, 0); clip-path: inset(60% 0 5% 0); }
-  50%  { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 75% 0); }
-  65%  { opacity: 1; transform: translate(-3px, 0); clip-path: inset(45% 0 20% 0); }
-  80%  { opacity: 0.85; transform: translate(2px, 0); clip-path: inset(15% 0 55% 0); }
-  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+@keyframes bg-typo-slice-b {
+  0%   { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp)), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.9; }
+  20%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * -0.5), calc(var(--slice-ty) * var(--bg-typo-glitch-amp) * 2)); opacity: 1; }
+  40%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 1.3), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.85; }
+  60%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 0.4), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 1; }
+  80%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 1.5), calc(var(--slice-ty) * var(--bg-typo-glitch-amp) * -1)); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp)), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.9; }
 }
 
-@keyframes bg-typo-glitch-b {
-  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
-  5%   { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 70% 0); }
-  20%  { opacity: 1; transform: translate(-3px, 1px); clip-path: inset(25% 0 30% 0); }
-  35%  { opacity: 1; transform: translate(5px, 0); clip-path: inset(60% 0 5% 0); }
-  50%  { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 75% 0); }
-  65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
-  80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
-  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+@keyframes bg-typo-slice-c {
+  0%   { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp)), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.95; }
+  25%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 1.2), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.85; }
+  50%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * -0.4), calc(var(--slice-ty) * var(--bg-typo-glitch-amp) * 1.5)); opacity: 1; }
+  75%  { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp) * 1.6), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) translate(calc(var(--slice-tx) * var(--bg-typo-glitch-amp)), calc(var(--slice-ty) * var(--bg-typo-glitch-amp))); opacity: 0.95; }
+}
+
+/* Burst — applied as a class on .host for 800 ms after the user clicks
+ * the base text. Animates the amplitude and mask radius so the glitch
+ * triples in displacement AND the spotlight blooms to cover the whole
+ * headline before collapsing back. Uses ease-out for the bloom and the
+ * collapse, matching a "shock wave" rhythm. */
+.host.burst {
+  animation: bg-typo-burst 800ms ease-out forwards;
+}
+
+@keyframes bg-typo-burst {
+  /* 0%: rest. 15%: initial impact — 2.5x radius (200px) + amp 2.5x.
+   * 40%: shock wave reaches the whole headline — radius 1500px (covers
+   * the entire text width at any reasonable viewport) + amp 3x. 100%:
+   * collapse back to rest. The 2.5x radius / 3x amp values are user-
+   * specified; the 1500px peak is the "propagate to entire text" stage. */
+  0%   { --bg-typo-glitch-amp: 1;   --bg-typo-glitch-radius: 80px;   --bg-typo-glitch-falloff: 130px;  }
+  15%  { --bg-typo-glitch-amp: 2.5; --bg-typo-glitch-radius: 200px;  --bg-typo-glitch-falloff: 280px;  }
+  40%  { --bg-typo-glitch-amp: 3;   --bg-typo-glitch-radius: 1500px; --bg-typo-glitch-falloff: 2000px; }
+  100% { --bg-typo-glitch-amp: 1;   --bg-typo-glitch-radius: 80px;   --bg-typo-glitch-falloff: 130px;  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glitchTextA,
-  .glitchTextB {
+  .slice {
     animation: none;
     opacity: 0;
+  }
+  .host.burst {
+    animation: none;
   }
 }
 
 /* ─── Variants ────────────────────────────────────────────────────────────
  *
- * Adding a new variant is purely additive: declare keyframes / transforms
- * below, no host-component refactor required.
- *
- * Baseline — type is centred, mouse-following chromatic-aberration glitch
- * active (iteration 2026-05-21). The 'static' label means "no large-scale
- * motion of the type body"; the per-cursor glitch is the resting behaviour. */
+ * Baseline — type centred, slice-fragmentation glitch active near cursor.
+ * The 'static' label means "no large-scale motion of the type body"; the
+ * cursor-local slice glitch is the resting behaviour. */
 .host[data-variant='static'] .text {
   /* no-op — matches the shared declaration above */
 }
 
-/* Reserved selector slots for future variants. Empty for now; left in
- * source so the wiring point is obvious next time we add motion.
- *
+/* Reserved selector slots for future variants. Empty for now.
 .host[data-variant='dvd-bounce'] .text { ... }
 .host[data-variant='glitch'] .text { ... }
 .host[data-variant='multi'] .text { ... }
