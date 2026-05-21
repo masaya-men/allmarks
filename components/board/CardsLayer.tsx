@@ -514,16 +514,19 @@ export function CardsLayer({
                 <InlineMediaPlayer item={it} />
               </div>
             )}
-            <MediaTypeIndicator
-              type={deriveMediaType(it)}
-              visible={hoveredBookmarkId === it.bookmarkId}
-              onActivate={
-                canPlayInline(it)
-                  ? (): void => onToggleAudio(it.bookmarkId)
-                  : undefined
-              }
-              active={audioActiveId === it.bookmarkId}
-            />
+            {/* Only playable cards (video / audio) get a corner indicator —
+                it's now a pressable play/audio toggle. Photo / text / non-
+                playable (e.g. Instagram link-out) cards show nothing on hover:
+                a non-pressable badge was just noise once the playable ones got
+                a clear button. */}
+            {canPlayInline(it) && (
+              <MediaTypeIndicator
+                type={deriveMediaType(it)}
+                visible={hoveredBookmarkId === it.bookmarkId}
+                onActivate={(): void => onToggleAudio(it.bookmarkId)}
+                active={audioActiveId === it.bookmarkId}
+              />
+            )}
             {/* CardCornerActions renders BEFORE ResizeHandle so the corner
                 arcs can pick up button hover via the ~ sibling combinator
                 (see ResizeHandle.module.css cross-module rules). Without
