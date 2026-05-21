@@ -11,6 +11,7 @@ export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   themeId: DEFAULT_THEME_ID,
   displayMode: 'visual',
   activeFilter: 'all',
+  motionEnabled: true,
 }
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */

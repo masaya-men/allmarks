@@ -32,4 +32,17 @@ describe('board config storage', () => {
     const loaded = await loadBoardConfig(db)
     expect(loaded).toEqual(saved)
   })
+
+  it('persists motionEnabled', async () => {
+    let loaded = await loadBoardConfig(db)
+    expect(loaded.motionEnabled).toBe(true)
+
+    const modified: BoardConfig = {
+      ...loaded,
+      motionEnabled: false,
+    }
+    await saveBoardConfig(db, modified)
+    loaded = await loadBoardConfig(db)
+    expect(loaded.motionEnabled).toBe(false)
+  })
 })
