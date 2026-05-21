@@ -30,9 +30,11 @@
 - **再生不可動画 (埋め込み禁止 YouTube 等) はサムネに静かに戻る** (エラー文・CTA 出さない)。**TikTok / SoundCloud は自動再生対象外**、手押し Tier 3 は全種そのまま。
 - TDD で subagent-driven 実装 (A1-A5 / B1-B6 / C1)。**716 PASS** / tsc clean / preview 実測 (ON 4枚 / OFF 0 / 埋め込み禁止 YT サムネ復帰)。詳細: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 65。
 
-**user 本番確認待ち**: 実ボードで音なし自動再生 / スクロール追従 / MOTION OFF 全停止 / 再生不可サムネ復帰。**同時再生数 N (今 4) を実機で一緒に調整**。
+**session 65 末の user フィードバックで 4 点 ship 済** (`5bbb249`、deploy 済): ①**同時再生の上限撤去** (`TIER1_CAP=999` 実質無制限) ②自動再生中コントロール非表示 ③MOTION を**外枠の上帯**へ移動 (TUNE/POP OUT/SHARE は元位置のまま不動、`.frameTopChrome`) ④`LED │ MOTION` 罫線デザイン。
 
-**次の優先候補**: **タグ付け機能** (= user 最優先発言)。multi-playback (Tier1+Tier3+MOTION) ひと段落で着手好機。詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+**session 66 でやること (= user 実機フィードバック)**: ①**滑らかな大量同時再生に本気で挑戦** (R&D 最優先、叶わねばカクつき許容。現状は全部再生でカクつくが操作は滑らか=デコードレーン分離。手法候補は `docs/private/IDEAS.md`「滑らかな大量同時再生」節) ②**短尺動画をループ再生** ③YouTube 再生開始時の大 ⏸ マーク除去 (優先低) ④`● │ MOTION` を視覚的に等間隔に。詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+**その後の大物**: **タグ付け機能** (= user 最優先)。
 
 ---
 
