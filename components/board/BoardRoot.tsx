@@ -423,7 +423,11 @@ export function BoardRoot() {
       const prefersReduced =
         typeof window !== 'undefined' &&
         window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+      // A second raw read is intentional: loadBoardConfig spreads DEFAULT_BOARD_CONFIG,
+      // so a stored motionEnabled is indistinguishable from the default — only the raw
+      // record reveals whether the user ever explicitly persisted a value.
       const rawRecord = await db.get('settings', 'board-config') as { config?: { motionEnabled?: unknown } } | undefined
+      if (cancelled) return
       const hasPersisted = typeof rawRecord?.config?.motionEnabled === 'boolean'
       setMotionEnabled(hasPersisted ? cfg.motionEnabled : !prefersReduced)
     })()
