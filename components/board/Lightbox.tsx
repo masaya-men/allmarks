@@ -770,15 +770,16 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       // lightbox. Without this guard the wheel handler would invoke
       // nav.onNav() and a flash of next/prev card animation slips in.
       if (closingRef.current) return
-      // Wheel over a text-card's scroll area never triggers Lightbox nav, even
-      // at scroll edges. session 56 user feedback: たとえ端まで読み切っても、
-      // user はそのまま wheel し続けて勝手にカードが next/prev に飛ぶのが嫌、
-      // という指摘。 端の判定を撤去して「テキスト上での wheel = nav 一切発動なし」
-      // に統一。 left/right ナビは矢印キーや chevron に集約。
+      // Wheel over the text panel swallows nav ONLY while that panel actually
+      // overflows (has a scrollbar) — then the wheel scrolls the text and never
+      // flips cards, even past the scroll edge (session 56: たとえ端まで読み切っても
+      // 勝手に next/prev に飛ぶのは嫌、という指摘). When the text fits (no scrollbar),
+      // there's nothing to scroll, so we fall through and let left/right flip
+      // cards over the text area as usual (session 63 user request).
       const target = e.target as Element | null
       if (target) {
         const scroller = target.closest<HTMLElement>('[data-card-scroll="true"]')
-        if (scroller) return
+        if (scroller && scroller.scrollHeight > scroller.clientHeight + 1) return
       }
       const dx = e.deltaX
       const dy = e.deltaY
