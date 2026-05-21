@@ -1,0 +1,293 @@
+/* タイポグラフィ・グリッチ・ラボ v4 CSS
+ * 構造: stage (host) の中に 2 レイヤー (両方 host サイズ inset:0):
+ *   - baseLayer   ベース白文字、 マウス位置に穴あけマスク (= 欠ける)
+ *   - glitchLayer chrome ボタンと同じ RGB 横スライス、 マウスゾーンだけ可視
+ * 両レイヤーが host と同サイズなので mask-image 座標が host-local px と一致。
+ *
+ * glitch-shift-a/b keyframes は ChromeButton.module.css と同一 (= 視覚言語統一)。
+ * 違いは steps(7) を 1 回ではなく infinite ループにして、 translate を
+ * --g-shift-scale で倍率調整できるようにした点。 */
+
+.root {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  background: #000;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+  --gx: 50%;
+  --gy: 50%;
+  --g-burst-radius-k: 1;
+  --g-burst-amp-k: 1;
+}
+
+.baseLayer,
+.glitchLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* 本番 BoardBackgroundTypography .text と同じスタイル (= サイズ完全一致) */
+.text {
+  font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  font-size: clamp(72px, 17vw, 260px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ─── ベース文字 (= 欠ける) ───────────────────────────────── */
+.baseLayer .text {
+  color: rgba(255, 255, 255, 0.95);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.baseLayer {
+  -webkit-mask-image: radial-gradient(
+    circle at var(--gx) var(--gy),
+    transparent 0,
+    transparent calc(var(--g-radius) * var(--g-burst-radius-k)),
+    black calc((var(--g-radius) + var(--g-falloff)) * var(--g-burst-radius-k))
+  );
+  mask-image: radial-gradient(
+    circle at var(--gx) var(--gy),
+    transparent 0,
+    transparent calc(var(--g-radius) * var(--g-burst-radius-k)),
+    black calc((var(--g-radius) + var(--g-falloff)) * var(--g-burst-radius-k))
+  );
+}
+
+/* ─── RGB ゴースト・スライス (= chrome ボタンと同言語) ──────── */
+.glitchLayer {
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(
+    circle at var(--gx) var(--gy),
+    black 0,
+    black calc(var(--g-radius) * var(--g-burst-radius-k)),
+    transparent calc((var(--g-radius) + var(--g-falloff)) * var(--g-burst-radius-k))
+  );
+  mask-image: radial-gradient(
+    circle at var(--gx) var(--gy),
+    black 0,
+    black calc(var(--g-radius) * var(--g-burst-radius-k)),
+    transparent calc((var(--g-radius) + var(--g-falloff)) * var(--g-burst-radius-k))
+  );
+}
+
+.ghostOrange,
+.ghostCyan {
+  position: absolute;
+  text-align: center;
+}
+
+.ghostOrange {
+  color: #ff9d3f;
+  animation: glitch-shift-a var(--g-anim-speed) steps(7, end) infinite;
+}
+
+.ghostCyan {
+  color: #50c8ff;
+  animation: glitch-shift-b var(--g-anim-speed) steps(7, end) infinite;
+}
+
+/* chrome ボタン (ChromeButton.module.css) と同一の keyframes。
+ * translate 値だけ calc(N * var(--g-shift-scale) * var(--g-burst-amp-k)) で
+ * 倍率調整可能にした (= chrome は固定値、 lab は調整したいので)。 */
+@keyframes glitch-shift-a {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(calc(-4px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(calc(3px * var(--g-shift-scale) * var(--g-burst-amp-k)), -1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(calc(-5px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(calc(4px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(calc(-3px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(calc(2px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+@keyframes glitch-shift-b {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(calc(4px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(calc(-3px * var(--g-shift-scale) * var(--g-burst-amp-k)), 1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(calc(5px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(calc(-4px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(calc(3px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(calc(-2px * var(--g-shift-scale) * var(--g-burst-amp-k)), 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghostOrange,
+  .ghostCyan {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.svgDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.hint {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+/* ─── サイドパネル ──────────────────────────────────────────*/
+
+.controls {
+  padding: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 12px;
+}
+
+.header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.02em;
+  margin: 0 0 10px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.btn:active {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.controls h3 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 16px 0 6px;
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: 130px 1fr 56px;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.sliderLabel {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.sliderValue {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: right;
+}
+
+.slider input[type='range'] {
+  width: 100%;
+  accent-color: rgba(255, 255, 255, 0.85);
+}
+
+.snapshot {
+  margin-top: 16px;
+  font-size: 11px;
+}
+
+.snapshot summary {
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 0;
+}
+
+.snapshot pre {
+  margin: 4px 0 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  overflow-x: auto;
+}
+
+.legend {
+  margin-top: 20px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.55;
+}
+
+.legend strong {
+  color: rgba(255, 255, 255, 0.9);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.legend ul {
+  margin: 4px 0 0;
+  padding: 0 0 0 14px;
+}
+
+.legend li {
+  margin: 2px 0;
+}
+
+.legend b {
+  color: rgba(255, 255, 255, 0.9);
+}
