@@ -453,36 +453,41 @@
   gap: 14px;
   max-height: var(--lightbox-media-max-h);
   overflow-y: auto;
-  /* Custom scrollbar — replaces the chunky default browser bar with a
-     hairline that matches the dark UI. Hidden until the panel is
-     hovered so it doesn't compete with the content for attention.
-     Firefox uses scrollbar-width/color; Chromium/Safari use the
-     ::-webkit-scrollbar pseudos below. The track is fully transparent
-     so the scrollbar visually "lives in" the text column rather than
-     carving out a strip. */
+  /* Custom scrollbar — a clean rounded hairline that matches the dark UI.
+     Kept SUBTLY VISIBLE whenever the text overflows (the old version was
+     transparent until hover, so there was no cue the panel scrolled at all),
+     then brightens on hover. Track is transparent so the bar "lives in" the
+     text column instead of carving out a strip. Firefox uses
+     scrollbar-width/color; Chromium/Safari use the ::-webkit pseudos below. */
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
   transition: scrollbar-color 0.18s ease;
 }
 .text:hover {
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.34) transparent;
 }
 .text::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
 }
 .text::-webkit-scrollbar-track {
   background: transparent;
 }
 .text::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 2px;
+  /* Inset rounded pill: 2px transparent border + background-clip keeps the
+     visible thumb ~4px wide and floated off the column edge. */
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
   transition: background 0.18s ease;
 }
 .text:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.34);
+  background-clip: padding-box;
 }
-.text:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.36);
+.text::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.52);
+  background-clip: padding-box;
 }
 @media (max-width: 900px) {
   .text { flex: 0 0 auto; }

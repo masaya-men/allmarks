@@ -1355,7 +1355,10 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
             />
           )}
         </div>
-        <div ref={textRef} className={styles.text}>
+        {/* data-card-scroll: the window wheel handler bails over this panel, so
+            the wheel scrolls the text natively and never flips to the prev/next
+            card — including when you wheel past the scroll edge (session 56). */}
+        <div ref={textRef} className={styles.text} data-card-scroll="true">
           {tweetId
             ? <TweetText
                 item={view}
