@@ -20,7 +20,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21 セッション 62 — multi-playback Phase 1 実装完遂 + 本番 deploy)
+### 直近の状態 (2026-05-21 セッション 62 — multi-playback Phase 1 + メディア再生の Lightbox↔ボード統一)
+
+session 61 の Phase 1 plan を実装完遂 + 本番 deploy 後、 user 検証で「ツイート動画もボードで再生できるべき / 将来追加も全部網羅すべき」 と指摘 → **media player 台帳 (registry) を新設してボードと Lightbox を単一の真実に統一**するリファクタまで実施。 **board のカード右下アイコンが「押せる再生トグル」、 押すと音つきインライン再生、 もう一度で停止** (= Tier 3 単体 1 枚)。 対応: YouTube / Vimeo / TikTok / SoundCloud / **X動画**。 リサイズ干渉も解決済。
+
+**メディア統一の核** ([plan](./superpowers/plans/2026-05-21-board-media-playback-unification.md)): [embeds/media-players.tsx](../components/board/embeds/media-players.tsx) の `ENTRIES` 配列が「どの item をどのプレイヤーで再生するか」の唯一の真実。 `canPlayInline` / `resolveInlinePlayer` / `resolveLightboxPlayer` を導出。 ボード = Lightbox の再生能力の鏡写し。 mp4 動画は mediaSlot 有無で platform 非依存に match → 将来 Bluesky 等も新規コードほぼ 0 で網羅。 `TweetVideoPlayer` も [embeds/TweetVideoEmbed.tsx](../components/board/embeds/TweetVideoEmbed.tsx) に抽出して両者共通化 (Lightbox 体験は無破壊で保持)。
+
+**検証**: `pnpm preview` (wrangler pages dev = 関数稼働) で実 mp4 再生まで確認。 ボード `<video>` mount + リサイズ 268→493、 Lightbox 再生ボタン+作者パネル維持 + Escape で停止。 **676 PASS** / tsc clean / lint 新規 error 0 / deploy 2。 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) 「セッション 62 続き」
+
+---
+
+### 旧 (2026-05-21 セッション 62 前半 — multi-playback Phase 1 実装完遂)
 
 session 61 で確立した Phase 1 plan (= 5 task TDD) を新鮮な状態から実装。 全 task 完遂 + 本番 deploy 済。 **board のカード右下アイコンが「押せる再生トグル」 になり、 押すと音つきでカード内インライン再生、 もう一度で停止** (= Tier 3 単体 1 枚)。 リサイズ干渉問題も解決済 (= 既存 × ボタンパターン流用 + 内側拡大)。
 
