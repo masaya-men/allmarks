@@ -35,6 +35,9 @@ type RenderOpts = {
   readonly paused?: boolean
   /** Tier 1 viewport autoplay: start muted (autoplay-policy compliant, no audio). */
   readonly muted?: boolean
+  /** Tier 1 only: called once when the embed detects it cannot play.
+   *  The overlay is unmounted so the card thumbnail shows. Never set for Tier 3. */
+  readonly onUnplayable?: () => void
 }
 
 /** True when the item carries a directly-playable mp4 video slot. Platform-
@@ -79,6 +82,7 @@ const ENTRIES: readonly MediaEntry[] = [
           volume={o.volume}
           paused={o.paused}
           muted={o.muted}
+          onUnplayable={o.onUnplayable}
         />
       ) : null
     },
@@ -99,6 +103,7 @@ const ENTRIES: readonly MediaEntry[] = [
           volume={o.volume}
           paused={o.paused}
           muted={o.muted}
+          onUnplayable={o.onUnplayable}
         />
       ) : null
     },
@@ -154,6 +159,7 @@ const ENTRIES: readonly MediaEntry[] = [
         volume={o.volume}
         paused={o.paused}
         muted={o.muted}
+        onUnplayable={o.onUnplayable}
       />
     ),
   },
@@ -182,6 +188,9 @@ export type InlinePlayerOpts = {
   readonly paused?: boolean
   /** Tier 1 viewport autoplay: start muted (no audio). */
   readonly muted?: boolean
+  /** Tier 1 only: called once when the embed detects it cannot play.
+   *  The overlay is unmounted so the card thumbnail shows. Never set for Tier 3. */
+  readonly onUnplayable?: () => void
 }
 
 /** Board inline player (autoplay; muted for Tier 2 hover, with sound for Tier 3).
@@ -189,7 +198,7 @@ export type InlinePlayerOpts = {
 export function resolveInlinePlayer(item: PlayableItem, opts: InlinePlayerOpts): ReactNode | null {
   const entry = ENTRIES.find((e) => e.playableInline && e.match(item))
   return entry
-    ? entry.render(item, { variant: 'inline', autoStart: opts.autoStart, volume: opts.volume, paused: opts.paused, muted: opts.muted })
+    ? entry.render(item, { variant: 'inline', autoStart: opts.autoStart, volume: opts.volume, paused: opts.paused, muted: opts.muted, onUnplayable: opts.onUnplayable })
     : null
 }
 

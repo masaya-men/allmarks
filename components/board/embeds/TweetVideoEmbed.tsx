@@ -55,6 +55,7 @@ export function TweetVideoEmbed({
   volume,
   paused,
   muted,
+  onUnplayable,
 }: {
   readonly item: TweetVideoItem
   /** When the caller already has the mp4 (Lightbox slot meta), pass it to skip resolution. */
@@ -69,6 +70,10 @@ export function TweetVideoEmbed({
   /** Tier 1 viewport autoplay: mute the `<video>` so autoplay is allowed without
    *  a user gesture (browser autoplay policy). */
   readonly muted?: boolean
+  /** Tier 1 only: called once when the native <video> fires an error event
+   *  (broken mp4, network failure, etc.). The caller unmounts the overlay so
+   *  the card's thumbnail shows through. Never passed for Tier 3. */
+  readonly onUnplayable?: () => void
 }): ReactNode {
   // The Lightbox reuses ONE TweetVideoEmbed instance across left/right card nav
   // (its React key is the slot index, which stays `slot-0`), feeding a new
@@ -207,7 +212,11 @@ export function TweetVideoEmbed({
         onPlay={(): void => setIsPlaying(true)}
         onPause={(): void => setIsPlaying(false)}
         onEnded={(): void => setIsPlaying(false)}
-        onError={(): void => setVideoFailed(true)}
+        onError={(): void => {
+          // Tier 1: signal caller to unmount the overlay (thumbnail shows through).
+          // Tier 3 / Lightbox: show the "Watch on X" CTA as before.
+          if (onUnplayable) { onUnplayable() } else { setVideoFailed(true) }
+        }}
         // Controlled inline volume must NOT bleed into the global default.
         onVolumeChange={controlled ? undefined : handleVolumeChange}
         style={variant === 'inline' ? FILL : undefined}

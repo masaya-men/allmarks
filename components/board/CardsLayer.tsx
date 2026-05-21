@@ -191,6 +191,17 @@ export function CardsLayer({
     vizElements.current.clear()
   }, [])
 
+  // ── Tier 1 unplayable tracking ──
+  // When an embed detects it cannot play (embed-restricted YouTube, broken mp4,
+  // etc.) it calls markUnplayable(id). The id is added to this set and excluded
+  // from the Tier 1 muted overlay render so the card's thumbnail shows through.
+  // The set persists for the session; motionEnabled OFF/ON does NOT clear it
+  // (keeping it simple — avoiding re-trying videos we already know are broken).
+  const [unplayableIds, setUnplayableIds] = useState<ReadonlySet<string>>(new Set())
+  const markUnplayable = useCallback((id: string): void => {
+    setUnplayableIds((prev) => prev.has(id) ? prev : new Set(prev).add(id))
+  }, [])
+
   // Stage 2: virtual order during drag for live reflow preview.
   // null = no drag in progress (use real masonry order).
   const [virtualOrderedIds, setVirtualOrderedIds] = useState<readonly string[] | null>(null)
@@ -624,9 +635,10 @@ export function CardsLayer({
                 <InlineMediaPlayer item={it} volume={audioVolume} paused={audioPaused} />
               </div>
             )}
-            {motionEnabled && pool.active.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canViewportAutoplay(it) && (
+            {motionEnabled && pool.active.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canViewportAutoplay(it) && !unplayableIds.has(it.bookmarkId) && (
               // Tier 1 muted viewport autoplay. pointerEvents:none so it never blocks
-              // card clicks / resize. Excluded on the Tier 3 sound-on card.
+              // card clicks / resize. Excluded on the Tier 3 sound-on card, and on
+              // cards that have been marked unplayable (embed-restricted etc.).
               <div
                 data-viewport-playback
                 style={{
@@ -641,7 +653,7 @@ export function CardsLayer({
                   pointerEvents: 'none',
                 }}
               >
-                <InlineMediaPlayer item={it} muted />
+                <InlineMediaPlayer item={it} muted onUnplayable={(): void => markUnplayable(it.bookmarkId)} />
               </div>
             )}
             {barMount?.id === it.bookmarkId && canPlayInline(it) && (

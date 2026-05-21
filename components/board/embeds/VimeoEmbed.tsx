@@ -19,6 +19,7 @@ export function VimeoEmbed({
   volume,
   paused,
   muted,
+  onUnplayable,
 }: {
   readonly videoId: string
   readonly title: string
@@ -32,9 +33,15 @@ export function VimeoEmbed({
   readonly paused?: boolean
   /** Tier 1 viewport autoplay: start muted via `&muted=1` (no audio, autoplay-safe). */
   readonly muted?: boolean
+  /** Tier 1 only: called once when Vimeo reports a playback error (private,
+   *  region-locked, etc.). The caller unmounts the overlay so the card's
+   *  thumbnail shows through. Never passed for Tier 3. */
+  readonly onUnplayable?: () => void
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  // Track whether we already fired onUnplayable to guarantee at-most-once.
+  const firedUnplayableRef = useRef<boolean>(false)
 
   // Inline external-control bridge via the Vimeo Player API postMessage.
   const post = (msg: object): void => {
@@ -51,12 +58,58 @@ export function VimeoEmbed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused, hasInteracted])
 
+  // Tier 1 only: detect unplayable Vimeo videos via the Vimeo Player API.
+  // After the iframe loads we subscribe to the 'error' event; Vimeo posts
+  // back { event: 'error', data: { message, method } } for private / region-
+  // locked / deleted videos.
+  useEffect(() => {
+    if (!onUnplayable || !hasInteracted) return
+    const iframe = iframeRef.current
+    if (!iframe?.contentWindow) return
+
+    // Subscribe to Vimeo error events.
+    iframe.contentWindow.postMessage(
+      JSON.stringify({ method: 'addEventListener', value: 'error' }),
+      'https://player.vimeo.com',
+    )
+
+    const handleMessage = (e: MessageEvent): void => {
+      if (e.source !== iframe.contentWindow) return
+      if (typeof e.data !== 'string') return
+      let parsed: unknown
+      try { parsed = JSON.parse(e.data) } catch { return }
+      if (
+        parsed !== null &&
+        typeof parsed === 'object' &&
+        'event' in parsed &&
+        (parsed as Record<string, unknown>)['event'] === 'error'
+      ) {
+        if (!firedUnplayableRef.current) {
+          firedUnplayableRef.current = true
+          onUnplayable()
+        }
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return (): void => {
+      window.removeEventListener('message', handleMessage)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasInteracted, onUnplayable])
+
   // Vimeo's Player API takes setVolume(0–1) via postMessage and accepts
   // commands the moment the player has booted, which is shortly after the
   // iframe `load` event. We use the same fire-and-forget retry approach
   // as YouTube — see that handler for rationale. Vimeo's chrome keeps its
   // own volume slider so users can adjust per video.
   const handleIframeLoad = (): void => {
+    // For Tier 1 (muted + onUnplayable): subscribe to error events on load.
+    if (onUnplayable) {
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ method: 'addEventListener', value: 'error' }),
+        'https://player.vimeo.com',
+      )
+    }
     if (muted === true) return // muted hover playback: don't unmute via setVolume
     const vol = getDefaultVolume() / 100
     const send = (): void => {
