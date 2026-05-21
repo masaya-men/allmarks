@@ -42,6 +42,12 @@ export function YouTubeEmbed({
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   // Track whether we already fired onUnplayable to guarantee at-most-once.
   const firedUnplayableRef = useRef<boolean>(false)
+  // "Latest callback" ref: always holds the current onUnplayable without
+  // making the detection effect depend on it (avoids per-render re-subscribe).
+  const onUnplayableRef = useRef(onUnplayable)
+  onUnplayableRef.current = onUnplayable
+  // Stable player id shared between the detection effect and handleIframeLoad.
+  const playerIdRef = useRef<string>(Math.random().toString(36).slice(2))
 
   // Inline external-control bridge: once the iframe is mounted, drive volume
   // and play/pause via the YouTube iframe API (enablejsapi=1). Volume changes
@@ -66,15 +72,19 @@ export function YouTubeEmbed({
   // 150 all mean the video can't play in this context.
   // We send a "listening" handshake to opt in to event messages, with retries
   // since the player may not be ready immediately after iframe mount.
+  //
+  // The effect deps are [hasInteracted] ONLY. onUnplayable is read through
+  // onUnplayableRef so that a new inline arrow from the parent (e.g. during
+  // drag/scroll re-renders) does NOT tear down and re-add the listener.
   useEffect(() => {
-    if (!onUnplayable || !hasInteracted) return
+    if (!onUnplayableRef.current || !hasInteracted) return
     const iframe = iframeRef.current
     if (!iframe?.contentWindow) return
 
     // YouTube error codes that mean "can't play here": invalid id (2), HTML5
     // error (5), not found/private (100), embed-disabled (101/150).
     const UNPLAYABLE_CODES = new Set([2, 5, 100, 101, 150])
-    const stableId = Math.random().toString(36).slice(2)
+    const stableId = playerIdRef.current
 
     const sendListening = (): void => {
       iframe.contentWindow?.postMessage(
@@ -101,7 +111,7 @@ export function YouTubeEmbed({
       ) {
         if (!firedUnplayableRef.current) {
           firedUnplayableRef.current = true
-          onUnplayable()
+          onUnplayableRef.current?.()
         }
       }
     }
@@ -112,7 +122,7 @@ export function YouTubeEmbed({
       window.removeEventListener('message', handleMessage)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasInteracted, onUnplayable])
+  }, [hasInteracted])
 
   // YouTube CDN poster — used only as fallback when the bookmarklet
   // didn't capture an og:image. maxresdefault works for ~95% of videos;
@@ -139,10 +149,10 @@ export function YouTubeEmbed({
       // effect (which may have already run before this load fired) gets events.
       // The effect itself also retries at 300ms/1000ms from mount, so this is
       // just an additional "on load" send to cover the common case.
-      if (onUnplayable) {
-        const stableId = Math.random().toString(36).slice(2)
+      // Reuse playerIdRef so both sends share the same consistent player id.
+      if (onUnplayableRef.current) {
         iframeRef.current?.contentWindow?.postMessage(
-          JSON.stringify({ event: 'listening', id: stableId, channel: 'widget' }),
+          JSON.stringify({ event: 'listening', id: playerIdRef.current, channel: 'widget' }),
           '*',
         )
       }

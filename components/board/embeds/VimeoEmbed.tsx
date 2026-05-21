@@ -42,6 +42,10 @@ export function VimeoEmbed({
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   // Track whether we already fired onUnplayable to guarantee at-most-once.
   const firedUnplayableRef = useRef<boolean>(false)
+  // "Latest callback" ref: always holds the current onUnplayable without
+  // making the detection effect depend on it (avoids per-render re-subscribe).
+  const onUnplayableRef = useRef(onUnplayable)
+  onUnplayableRef.current = onUnplayable
 
   // Inline external-control bridge via the Vimeo Player API postMessage.
   const post = (msg: object): void => {
@@ -62,8 +66,12 @@ export function VimeoEmbed({
   // After the iframe loads we subscribe to the 'error' event; Vimeo posts
   // back { event: 'error', data: { message, method } } for private / region-
   // locked / deleted videos.
+  //
+  // The effect deps are [hasInteracted] ONLY. onUnplayable is read through
+  // onUnplayableRef so that a new inline arrow from the parent (e.g. during
+  // drag/scroll re-renders) does NOT tear down and re-add the listener.
   useEffect(() => {
-    if (!onUnplayable || !hasInteracted) return
+    if (!onUnplayableRef.current || !hasInteracted) return
     const iframe = iframeRef.current
     if (!iframe?.contentWindow) return
 
@@ -86,7 +94,7 @@ export function VimeoEmbed({
       ) {
         if (!firedUnplayableRef.current) {
           firedUnplayableRef.current = true
-          onUnplayable()
+          onUnplayableRef.current?.()
         }
       }
     }
@@ -95,7 +103,7 @@ export function VimeoEmbed({
       window.removeEventListener('message', handleMessage)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasInteracted, onUnplayable])
+  }, [hasInteracted])
 
   // Vimeo's Player API takes setVolume(0–1) via postMessage and accepts
   // commands the moment the player has booted, which is shortly after the
@@ -104,7 +112,7 @@ export function VimeoEmbed({
   // own volume slider so users can adjust per video.
   const handleIframeLoad = (): void => {
     // For Tier 1 (muted + onUnplayable): subscribe to error events on load.
-    if (onUnplayable) {
+    if (onUnplayableRef.current) {
       iframeRef.current?.contentWindow?.postMessage(
         JSON.stringify({ method: 'addEventListener', value: 'error' }),
         'https://player.vimeo.com',
