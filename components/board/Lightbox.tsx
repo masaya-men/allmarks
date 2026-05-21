@@ -13,13 +13,13 @@ import { TEXT_CARD_ASPECT } from '@/lib/embed/text-card-measure'
 import { cleanTitle } from '@/lib/embed/clean-title'
 import { pickTextCardColor } from '@/lib/embed/text-card-color'
 import { getFaviconUrl, hostnameFromUrl } from '@/lib/embed/favicon'
-import { useDefaultVolume } from '@/lib/embed/default-volume'
 import {
   YouTubeEmbed,
   VimeoEmbed,
   SoundCloudEmbed,
   TikTokEmbed,
   InstagramEmbed,
+  TweetVideoEmbed,
 } from './embeds'
 import { LightboxNavChevron } from './LightboxNavChevron'
 import { useSmoothWheelScroll } from '@/lib/scroll/use-smooth-wheel-scroll'
@@ -1507,7 +1507,14 @@ function TweetMedia({
         videoPosterUrl: slot.url,
         videoAspectRatio: slot.aspect,
       }
-      return <TweetVideoPlayer key={`slot-${slotIdx}`} item={item} meta={slotMeta} />
+      return (
+        <TweetVideoEmbed
+          key={`slot-${slotIdx}`}
+          item={{ url: item.url, title: item.title, thumbnail: item.thumbnail ?? undefined, mediaSlots: slots }}
+          source={{ videoUrl: slot.videoUrl, posterUrl: slot.url, aspect: slot.aspect }}
+          variant="lightbox"
+        />
+      )
     }
     if (slot.type === 'photo') {
       return <img src={slot.url} alt={item.title} />
@@ -1558,7 +1565,13 @@ function TweetMedia({
 
   // Legacy fallbacks — slots が空 + hasPhoto/hasVideo は true のケース。
   if (meta?.videoUrl) {
-    return <TweetVideoPlayer item={item} meta={meta} />
+    return (
+      <TweetVideoEmbed
+        item={{ url: item.url, title: item.title, thumbnail: item.thumbnail ?? undefined }}
+        source={{ videoUrl: meta.videoUrl, posterUrl: meta.videoPosterUrl ?? item.thumbnail ?? undefined, aspect: meta.videoAspectRatio }}
+        variant="lightbox"
+      />
+    )
   }
   if (meta?.photoUrl) {
     return <img src={meta.photoUrl} alt={item.title} />
@@ -1650,184 +1663,6 @@ function LightboxImageDots({
           onClick={(): void => onJump(i)}
         />
       ))}
-    </div>
-  )
-}
-
-/** Inline mp4 player for tweet videos. Frames the clip at its actual
- *  aspect ratio (no 16:9 / 9:16 letterboxing) and shows a liquid-glass
- *  center play button whenever the video is paused — initial state and
- *  every subsequent pause. Once the user is playing, the overlay fades
- *  out and the native bottom controls handle pause/seek/volume. The
- *  overlay leaves the bottom 56px clear so the seek bar is reachable
- *  even from the paused state. If playback fails — CDN takedown,
- *  geo-block, proxy outage — falls back to a poster + "Watch on X"
- *  link so the user is never stuck on a dead element. */
-function TweetVideoPlayer({
-  item,
-  meta,
-}: {
-  readonly item: LightboxItem
-  readonly meta: TweetMeta
-}): ReactNode {
-  const [isPlaying, setIsPlaying] = useState<boolean>(false)
-  // `hasInteracted` is the actual fix for the "native spinner under play
-  // button" problem. While false, the <video> below renders WITHOUT the
-  // `controls` attribute, so Chromium draws no native chrome at all —
-  // including its loading panel. No spinner can possibly stack under our
-  // LiquidGlass play overlay because there's nothing native to stack.
-  // Once the user clicks play, we flip this to true so the native bottom
-  // bar (seek/volume/fullscreen) is available for the rest of the
-  // session, even after the user pauses. Modern Chromium's loading
-  // panel lives in a closed shadow DOM that CSS pseudo-elements cannot
-  // reach, so this controls-toggle is the only reliable way to suppress
-  // it. v34→v41 of the prior approaches all failed at this same point.
-  const [hasInteracted, setHasInteracted] = useState<boolean>(false)
-  const [videoFailed, setVideoFailed] = useState<boolean>(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [defaultVolume, setDefaultVolume] = useDefaultVolume()
-
-  // Sync the native <video> element's volume to the app-wide default
-  // preference. Runs on mount and whenever another card (e.g. a SoundCloud
-  // slider in another lightbox session) updates the preference. Setting
-  // volume on a video element with the same value is a no-op, so the
-  // resulting volumechange event will only fire when the value actually
-  // changes — no feedback loop.
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.volume = defaultVolume / 100
-    }
-  }, [defaultVolume])
-
-  // Persist user adjustments made through the video's native controls so
-  // they become the new global default — this is what makes "I always
-  // want 30% on X videos" stick across cards and reloads, matching how
-  // YouTube/Spotify behave.
-  const handleVolumeChange = (): void => {
-    const v = videoRef.current?.volume
-    if (typeof v === 'number') {
-      setDefaultVolume(Math.round(v * 100))
-    }
-  }
-
-  if (videoFailed) {
-    return (
-      <a
-        className={styles.tweetWatchOnX}
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <img src={meta.videoPosterUrl ?? item.thumbnail ?? undefined} alt={item.title} />
-        <span className={styles.tweetWatchOnXBadge}>Watch on X →</span>
-      </a>
-    )
-  }
-
-  // Use the syndication-reported aspect verbatim so the wrapper matches the
-  // video's natural proportions — eliminates the letterbox bars caused by
-  // forcing every clip into a 16:9 or 9:16 bucket. Caps come from viewport.
-  const aspect = meta.videoAspectRatio ?? 16 / 9
-  const isVertical = aspect < 1
-  // One explicit dimension is REQUIRED for the FLIP open animation to
-  // capture a non-zero .media rect at useLayoutEffect time. Without one,
-  // the wrapper falls back to <video>'s intrinsic 300×150 and in a flex
-  // container with min-width:0 ancestors can collapse to 0×0 before
-  // metadata loads — making startScale = originRect.width / 0 = Infinity.
-  // (Session 17 bug: the OLD render path showed <img src=poster> first
-  // and swapped to <TweetVideoPlayer> after meta arrived, so .media had
-  // a real img-intrinsic rect at open time. The mediaSlots refactor
-  // renders TweetVideoPlayer immediately when slot[0] is video, exposing
-  // this latent layout dependency.)
-  //
-  // To preserve aspect ratio for both horizontal AND vertical videos:
-  // - Horizontal (aspect ≥ 1): set explicit WIDTH bounded by horizontal
-  //   envelope and by maxHeight × aspect (so tall horizontals don't
-  //   exceed the vertical envelope). Browser derives height via
-  //   aspectRatio.
-  // - Vertical (aspect < 1): set explicit HEIGHT bounded by maxHeight
-  //   and by 50vw / aspect (so vertical videos don't get cut off on
-  //   narrow viewports). Browser derives width via aspectRatio.
-  // This keeps the wrapper at the video's natural aspect — no side
-  // black bars on vertical videos (regression reported by user).
-  const wrapperStyle: CSSProperties = isVertical
-    ? {
-        position: 'relative',
-        aspectRatio: aspect,
-        // Height-led: cap at the shared media envelope or what fits in 50vw width.
-        height: `min(var(--lightbox-media-max-h), calc(50vw / ${aspect}))`,
-        maxHeight: 'var(--lightbox-media-max-h)',
-        maxWidth: '50vw',
-        background: 'black',
-        borderRadius: 'var(--lightbox-media-radius)',
-        overflow: 'hidden',
-      }
-    : {
-        position: 'relative',
-        aspectRatio: aspect,
-        // Width-led: cap at horizontal envelope or what fits in maxHeight × aspect.
-        width: `min(920px, 60vw, calc(var(--lightbox-media-max-h) * ${aspect}))`,
-        maxHeight: 'var(--lightbox-media-max-h)',
-        maxWidth: 'min(920px, 60vw)',
-        background: 'black',
-        borderRadius: 'var(--lightbox-media-radius)',
-        overflow: 'hidden',
-      }
-  const proxiedSrc = `/api/tweet-video?url=${encodeURIComponent(meta.videoUrl ?? '')}`
-  const handleOverlayClick = (): void => {
-    setHasInteracted(true)
-    void videoRef.current?.play()
-  }
-
-  return (
-    <div style={wrapperStyle}>
-      <video
-        ref={videoRef}
-        className={styles.tweetVideo}
-        src={proxiedSrc}
-        poster={meta.videoPosterUrl ?? item.thumbnail ?? undefined}
-        // controls is gated on first interaction (see hasInteracted comment
-        // above). Before first click: no native chrome at all → no native
-        // loading spinner can appear under our LiquidGlass disc. After
-        // first click: native bottom bar (seek/volume/fullscreen) is
-        // available for the rest of the session.
-        controls={hasInteracted}
-        playsInline
-        // Preload metadata only — the user must explicitly click play, so
-        // there's no benefit to pre-fetching the entire stream up front.
-        // Keeps bandwidth lean and avoids the CDN warming up a stream the
-        // user might never watch (e.g. they open the lightbox just to read
-        // the tweet text on the right).
-        preload="metadata"
-        onPlay={(): void => setIsPlaying(true)}
-        onPause={(): void => setIsPlaying(false)}
-        onEnded={(): void => setIsPlaying(false)}
-        onError={(): void => setVideoFailed(true)}
-        onVolumeChange={handleVolumeChange}
-      />
-      {/* Single play button while paused — no separate loading state. The
-          button is always clickable; if the network is slow, the click
-          fires play() and the browser begins fetching at that moment. The
-          native bottom controls bar (which appears after the first click)
-          shows progress for any subsequent buffering, so the user always
-          knows what's happening once they've engaged with the player. */}
-      {!isPlaying && (
-        <button
-          type="button"
-          className={styles.playOverlay}
-          onClick={handleOverlayClick}
-          aria-label="Play video"
-        >
-          <span className={styles.playDisc} aria-hidden="true">
-            <svg viewBox="0 0 24 24" className={styles.playOverlayIcon} aria-hidden="true">
-              {/* Path is bbox-centered in viewBox; CSS adds 1.5px optical
-                  shift right (centroid lies left of bbox center for a
-                  right-pointing triangle). */}
-              <path d="M6.5 5v14l11-7z" />
-            </svg>
-          </span>
-        </button>
-      )}
     </div>
   )
 }
