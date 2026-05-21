@@ -13,6 +13,10 @@ type Props = {
    *  card OR the bar itself, and tucks back when it leaves. Defaults to true
    *  for standalone use. */
   readonly visible?: boolean
+  /** Bar width in px (set by CardsLayer to the active card's width, floored at
+   *  the DENSE preset width). The play/pause button stays fixed; the slider
+   *  flexes to fill the rest. Omit for intrinsic (content) width. */
+  readonly widthPx?: number
 }
 
 /**
@@ -33,6 +37,7 @@ export function PlaybackControlBar({
   onVolumeChange,
   onTogglePause,
   visible = true,
+  widthPx,
 }: Props): ReactElement {
   const swallow = (e: ReactPointerEvent<HTMLDivElement>): void => {
     e.stopPropagation()
@@ -42,6 +47,7 @@ export function PlaybackControlBar({
       className={styles.bar}
       data-testid="pc-bar"
       data-visible={visible ? 'true' : 'false'}
+      style={widthPx !== undefined ? ({ width: `${widthPx}px` } as CSSProperties) : undefined}
       onPointerDown={swallow}
       onMouseDown={swallow}
       onClick={(e): void => e.stopPropagation()}

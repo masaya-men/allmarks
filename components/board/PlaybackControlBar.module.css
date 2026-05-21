@@ -9,9 +9,14 @@
    default theme. */
 .bar {
   /* themeable tokens (default theme) */
-  /* Glass slab matched 1:1 to the TUNE drawer (TuneTrigger.module.css .drawer):
-     near-black at 0.92 + blur(8px) + no border. The "透明感" is the blur. */
-  --pc-bar-bg: rgba(10, 10, 10, 0.92);
+  /* Glass slab modelled on the TUNE drawer (TuneTrigger.module.css .drawer:
+     rgba(10,10,10,0.92) + blur(8px) + no border). The drawer reads as deep
+     black because it floats over the dark chrome; this bar floats over the
+     BUSY board (bright bg wordmark + bright cards), so the drawer's 0.92 lets
+     ~8% of that brightness bleed through the glass and the slab turned grey.
+     Lifting the fill to 0.97 keeps the blur's glassiness while reading as the
+     same deep black as the drawer regardless of what's behind it. */
+  --pc-bar-bg: rgba(10, 10, 10, 0.97);
   --pc-accent: #34e07a; /* fluorescent green volume fill — keep */
   --pc-track-empty: #202024;
   --pc-knob-top: #56565c;
@@ -33,41 +38,33 @@
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border: 0;
-  /* The drawer is anchored to chrome; this bar floats below a card, so it
-     gets a faint shadow purely for separation from the board (TUNE itself
-     uses none). */
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.38);
+  /* Same open-state shadow as the TUNE drawer (.drawer[data-open]) so the two
+     glass surfaces read as one family. */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 
-  /* Hover-reveal. Enter = keyframe pop (plays on the FIRST mount too). Exit =
-     the base rule below tucks + fades via transition, so disappearing is
-     animated as carefully as appearing. */
+  /* Hover-reveal, SYMMETRIC in/out. Hidden = tucked up INTO the card (which
+     sits directly above) + scaled down + faded. Both directions run on
+     transitions (not a one-way keyframe), so DISAPPEARING is animated as
+     carefully as appearing — the bar visibly retreats back into the card.
+     The shown state eases in with a springy overshoot (pop); the hidden state
+     eases out smoothly (tuck). A previous keyframe-on-show approach snapped on
+     exit because a transition can't fire off an animation's filled value. */
   transform-origin: top center;
   opacity: 0;
-  transform: translateY(-8px) scale(0.9);
+  transform: translateY(-10px) scale(0.84);
   transition:
-    opacity 150ms ease,
-    transform 190ms cubic-bezier(0.4, 0, 0.2, 1);
+    opacity 160ms ease,
+    transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 
 .bar[data-visible='true'] {
   opacity: 1;
+  transform: translateY(0) scale(1);
   pointer-events: auto;
-  animation: pcPop 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-@keyframes pcPop {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.84);
-  }
-  55% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  transition:
+    opacity 180ms ease,
+    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ---- Physical play/pause button (solid) ---- */
@@ -75,6 +72,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   width: 21px;
   height: 20px;
   padding: 0;
@@ -109,11 +107,14 @@
 }
 
 /* ---- Recessed groove + green fill (our own clipped elements) + 3D knob ---- */
+/* Flexes to fill the bar (CardsLayer sets the bar width to the card width);
+   74px is the floor so the groove never collapses below the standalone size. */
 .sliderWrap {
   position: relative;
   display: inline-flex;
   align-items: center;
-  width: 74px;
+  flex: 1 1 auto;
+  min-width: 74px;
   height: 18px;
 }
 

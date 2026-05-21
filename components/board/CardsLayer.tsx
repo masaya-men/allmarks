@@ -17,6 +17,7 @@ import {
   BOARD_Z_INDEX,
   CULLING,
 } from '@/lib/board/constants'
+import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { CardNode } from './CardNode'
@@ -27,6 +28,11 @@ import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
 import { pickCard } from './cards'
+
+/** Minimum width for the playback control bar = the DENSE preset card width
+ *  (207.80px). The bar tracks the active card's width but never shrinks below
+ *  this, so its knob + button stay comfortably operable on tiny cards. */
+const MIN_CONTROL_BAR_WIDTH_PX = PRESETS.find((p) => p.id === 'dense')?.w ?? 207.8
 
 /** Derive the media-type badge for a bookmark from existing fields — no
  *  new persisted data needed. Returns null for cards where a video/photo
@@ -164,6 +170,45 @@ export function CardsLayer({
       return { ...prev, [bookmarkId]: h }
     })
   }, [])
+
+  // ── Control-bar exit animation ──
+  // The bar must keep the SAME DOM node from active → closing → unmount, or its
+  // tuck-out transition can't fire (a freshly-mounted node starts already
+  // hidden, so there's nothing to animate from). So which card "owns" a bar is
+  // a separate piece of state, `barMount`, that lags behind audioActiveId:
+  //   - activate / switch → mount fresh for the new card (closing:false)
+  //   - deactivate (■ stop)→ keep the SAME card mounted, flip closing:true so
+  //     `visible` drops and the bar tucks back up into the card, then unmount
+  //     after the transition window.
+  // The InlineMediaPlayer overlay still keys off audioActiveId directly, so
+  // playback stops the instant ■ is pressed; only the bar lingers to animate.
+  const [barMount, setBarMount] = useState<{ id: string; closing: boolean } | null>(null)
+  const prevAudioActiveRef = useRef<string | null>(null)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    const prev = prevAudioActiveRef.current
+    prevAudioActiveRef.current = audioActiveId
+    if (audioActiveId) {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current)
+        closeTimerRef.current = null
+      }
+      setBarMount({ id: audioActiveId, closing: false })
+    } else if (prev) {
+      setBarMount({ id: prev, closing: true })
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = setTimeout(() => {
+        setBarMount(null)
+        closeTimerRef.current = null
+      }, 260) // ≥ the bar's hidden-state transform transition (200ms) + buffer
+    }
+  }, [audioActiveId])
+  useEffect(
+    () => (): void => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    },
+    [],
+  )
 
   // Session-2 per-card resize overrides — lifted to BoardRoot so the
   // scroll-range calculation there sees the same widths as the cards
@@ -474,7 +519,16 @@ export function CardsLayer({
               width: `${p.w}px`,
               height: `${p.h}px`,
               pointerEvents: sourceCardId === it.bookmarkId ? 'none' : 'auto',
-              zIndex: dragState?.bookmarkId === it.bookmarkId ? 1000 : undefined,
+              // Drag lifts highest (1000). The audio-active card (and thus its
+              // attached control bar) floats above sibling cards at 500 so the
+              // bar is never occluded by a later-painted neighbour. Idle cards
+              // stack by DOM order (undefined).
+              zIndex:
+                dragState?.bookmarkId === it.bookmarkId
+                  ? 1000
+                  : audioActiveId === it.bookmarkId || barMount?.id === it.bookmarkId
+                    ? 500
+                    : undefined,
               opacity: newlyAddedIds.has(it.bookmarkId) ? 0 : 1,
               visibility: sourceCardId === it.bookmarkId ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
@@ -524,13 +578,16 @@ export function CardsLayer({
                 <InlineMediaPlayer item={it} volume={audioVolume} paused={audioPaused} />
               </div>
             )}
-            {audioActiveId === it.bookmarkId && canPlayInline(it) && (
+            {barMount?.id === it.bookmarkId && canPlayInline(it) && (
               // Mixer-tone control bar attached to the active card's bottom.
-              // Kept mounted while active so its hover-reveal can animate in
-              // AND out; `visible` is driven by card-or-bar hover. Because the
-              // bar is a DOM descendant of the wrapper and touches the card
-              // (top:100%, no gap), moving the pointer card→bar stays "inside"
-              // the wrapper, so hoveredBookmarkId remains set over the bar too.
+              // Mounted by barMount (which lingers through the close so the
+              // node — and thus its tuck-out transition — survives). `visible`
+              // additionally requires the card to be active AND hovered, so on
+              // ■-stop visible flips false and the bar tucks back into the card
+              // before unmounting. Because the bar is a DOM descendant of the
+              // wrapper and touches the card (top:100%, no gap), moving the
+              // pointer card→bar stays "inside" the wrapper, so
+              // hoveredBookmarkId remains set over the bar too.
               <div
                 style={{
                   position: 'absolute',
@@ -545,7 +602,8 @@ export function CardsLayer({
                   paused={audioPaused}
                   onVolumeChange={onAudioVolumeChange}
                   onTogglePause={onAudioTogglePause}
-                  visible={hoveredBookmarkId === it.bookmarkId}
+                  visible={audioActiveId === it.bookmarkId && hoveredBookmarkId === it.bookmarkId}
+                  widthPx={Math.max(p.w, MIN_CONTROL_BAR_WIDTH_PX)}
                 />
               </div>
             )}
