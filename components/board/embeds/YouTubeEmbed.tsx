@@ -14,7 +14,6 @@ export function YouTubeEmbed({
   autoStart = false,
   volume,
   paused,
-  muted,
 }: {
   readonly videoId: string
   readonly title: string
@@ -30,8 +29,6 @@ export function YouTubeEmbed({
   readonly volume?: number
   /** Controlled play/pause for inline cards. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: start muted via `&mute=1` (no audio, autoplay-safe). */
-  readonly muted?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -43,7 +40,6 @@ export function YouTubeEmbed({
     iframeRef.current?.contentWindow?.postMessage(JSON.stringify(msg), 'https://www.youtube.com')
   }
   useEffect(() => {
-    if (muted === true) return // muted hover playback: leave mute=1 untouched
     if (hasInteracted && typeof volume === 'number') post({ event: 'command', func: 'setVolume', args: [volume] })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [volume, hasInteracted])
@@ -71,7 +67,6 @@ export function YouTubeEmbed({
   // YouTube's own volume slider remains active inside the player chrome,
   // so users can override on a per-video basis if they want louder/quieter.
   const handleIframeLoad = (): void => {
-    if (muted === true) return // muted hover playback: don't unmute via setVolume
     const vol = getDefaultVolume()
     const send = (): void => {
       iframeRef.current?.contentWindow?.postMessage(
@@ -110,7 +105,7 @@ export function YouTubeEmbed({
         // mount, which is allowed because the click on our overlay
         // satisfies Chromium's user-gesture requirement for autoplay.
         // enablejsapi=1 lets us push the default volume in via postMessage.
-        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1${muted === true ? '&mute=1' : ''}`}
+        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`}
         title={title}
         className={styles.iframe}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

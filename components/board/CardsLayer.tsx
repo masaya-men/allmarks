@@ -28,8 +28,6 @@ import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
 import { pickCard } from './cards'
-import { useHoverIntent } from '@/lib/board/use-hover-intent'
-import { usePlaybackPool } from '@/lib/board/use-playback-pool'
 
 /** Minimum width for the playback control bar = the DENSE preset card width
  *  (207.80px). The bar tracks the active card's width but never shrinks below
@@ -156,14 +154,6 @@ export function CardsLayer({
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
   const lastComputeRef = useRef<{ x: number; y: number } | null>(null)
-
-  // ── Tier 2 hover playback ──
-  // Dwell 300ms on a card → promote it to muted real playback (pool caps at 3,
-  // LRU-evicts the oldest). Leaving releases it after a 0.8s anti-thrash linger.
-  // This is a SEPARATE layer from audioActiveId (the single sound-on Tier 3
-  // card): a hover preview is muted and never steals the sound-on slot.
-  const pool = usePlaybackPool()
-  const hoverIntent = useHoverIntent((id) => pool.promote(id))
 
   // Stage 2: virtual order during drag for live reflow preview.
   // null = no drag in progress (use real masonry order).
@@ -519,9 +509,6 @@ export function CardsLayer({
       {visibleItems.map((it) => {
         const p = displayedPositions[it.bookmarkId]
         if (!p) return null
-        // Tier 2 muted hover playback is active for this card — but never on the
-        // sound-on (Tier 3) card, which shows its own player instead.
-        const hoverPlaying = pool.isActive(it.bookmarkId) && audioActiveId !== it.bookmarkId
         return (
           <div
             key={it.bookmarkId}
@@ -531,15 +518,8 @@ export function CardsLayer({
             data-bookmark-id={it.bookmarkId}
             data-link-status={it.linkStatus ?? undefined}
             onPointerDown={(e: PointerEvent<HTMLDivElement>): void => handleReorderPointerDown(e, it.bookmarkId)}
-            onPointerEnter={(): void => {
-              onHoverChange(it.bookmarkId)
-              if (canPlayInline(it)) hoverIntent.start(it.bookmarkId)
-            }}
-            onPointerLeave={(): void => {
-              onHoverChange(null)
-              hoverIntent.cancel()
-              pool.release(it.bookmarkId)
-            }}
+            onPointerEnter={(): void => onHoverChange(it.bookmarkId)}
+            onPointerLeave={(): void => onHoverChange(null)}
             style={{
               position: 'absolute',
               top: 0,
@@ -560,12 +540,6 @@ export function CardsLayer({
               opacity: newlyAddedIds.has(it.bookmarkId) ? 0 : 1,
               visibility: sourceCardId === it.bookmarkId ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
-              // Tier 2 promotion: instant (0.1s) green glow so the card reacts
-              // the moment it's promoted, before the real player has booted.
-              boxShadow: hoverPlaying
-                ? '0 0 0 1.5px rgba(74, 222, 128, 0.55), 0 0 16px rgba(74, 222, 128, 0.28)'
-                : undefined,
-              transition: 'box-shadow 0.1s ease-out',
               ['--card-radius' as string]: '20px',
             }}
           >
@@ -610,28 +584,6 @@ export function CardsLayer({
                 }}
               >
                 <InlineMediaPlayer item={it} volume={audioVolume} paused={audioPaused} />
-              </div>
-            )}
-            {hoverPlaying && canPlayInline(it) && (
-              // Tier 2 muted hover-playback overlay. pointerEvents:none so the
-              // muted preview never intercepts a card-body click (Lightbox) or
-              // the resize handle — hovering must stay frictionless. Suppressed
-              // on the Tier 3 card above (hoverPlaying already excludes it).
-              <div
-                data-hover-playback
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  zIndex: 10,
-                  overflow: 'hidden',
-                  borderRadius: 'var(--card-radius, 20px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  pointerEvents: 'none',
-                }}
-              >
-                <InlineMediaPlayer item={it} muted />
               </div>
             )}
             {barMount?.id === it.bookmarkId && canPlayInline(it) && (

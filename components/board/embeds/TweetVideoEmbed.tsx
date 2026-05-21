@@ -54,7 +54,6 @@ export function TweetVideoEmbed({
   autoStart = false,
   volume,
   paused,
-  muted,
 }: {
   readonly item: TweetVideoItem
   /** When the caller already has the mp4 (Lightbox slot meta), pass it to skip resolution. */
@@ -66,9 +65,6 @@ export function TweetVideoEmbed({
   readonly volume?: number
   /** Controlled play/pause. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: mute the `<video>` so autoplay is allowed without
-   *  a user gesture (browser autoplay policy). */
-  readonly muted?: boolean
 }): ReactNode {
   // The Lightbox reuses ONE TweetVideoEmbed instance across left/right card nav
   // (its React key is the slot index, which stays `slot-0`), feeding a new
@@ -129,13 +125,11 @@ export function TweetVideoEmbed({
   // global default — it stays ephemeral and isolated.
   const controlled = typeof volume === 'number'
   useEffect(() => {
-    if (muted === true) return // muted hover playback: the muted attr governs
     if (videoRef.current && controlled) videoRef.current.volume = (volume as number) / 100
-  }, [volume, controlled, source, muted])
+  }, [volume, controlled, source])
   useEffect(() => {
-    if (muted === true) return // muted hover playback: the muted attr governs
     if (videoRef.current && !controlled) videoRef.current.volume = defaultVolume / 100
-  }, [defaultVolume, controlled, source, muted])
+  }, [defaultVolume, controlled, source])
 
   // Apply controlled play/pause (inline). Keeps the player mounted (position
   // preserved) — the corner ■ toggle is the full stop/unmount.
@@ -201,7 +195,6 @@ export function TweetVideoEmbed({
         // loading panel stacks under the LiquidGlass disc.
         controls={variant === 'inline' ? true : hasInteracted}
         autoPlay={variant === 'inline' ? autoStart : false}
-        muted={muted === true}
         playsInline
         preload="metadata"
         onPlay={(): void => setIsPlaying(true)}

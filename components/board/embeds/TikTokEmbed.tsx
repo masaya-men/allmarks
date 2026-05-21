@@ -43,7 +43,6 @@ export function TikTokEmbed({
   autoStart = false,
   volume,
   paused,
-  muted,
 }: {
   readonly videoId: string
   readonly url: string
@@ -56,9 +55,6 @@ export function TikTokEmbed({
   readonly volume?: number
   /** Controlled play/pause for inline (Tier-1 native video only). */
   readonly paused?: boolean
-  /** Tier 2 hover playback: mute the Tier-1 native video (the official iframe
-   *  fallback can't be muted from outside — accepted limitation). */
-  readonly muted?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   // undefined = scrape in flight, null = scrape failed, value = success
@@ -74,13 +70,11 @@ export function TikTokEmbed({
   // Inline never writes back to the global default.
   const controlled = typeof volume === 'number'
   useEffect(() => {
-    if (muted === true) return // muted hover playback: the muted attr governs
     if (tier1VideoRef.current && controlled) tier1VideoRef.current.volume = (volume as number) / 100
-  }, [volume, controlled, tier, muted])
+  }, [volume, controlled, tier])
   useEffect(() => {
-    if (muted === true) return // muted hover playback: the muted attr governs
     if (tier1VideoRef.current && !controlled) tier1VideoRef.current.volume = defaultVolume / 100
-  }, [defaultVolume, controlled, tier, muted])
+  }, [defaultVolume, controlled, tier])
   // Controlled play/pause for the Tier-1 native video.
   useEffect(() => {
     const el = tier1VideoRef.current
@@ -167,7 +161,6 @@ export function TikTokEmbed({
           controls
           autoPlay
           playsInline
-          muted={muted === true}
           onVolumeChange={controlled ? undefined : handleTier1VolumeChange}
         />
       </div>

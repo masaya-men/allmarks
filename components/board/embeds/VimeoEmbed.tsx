@@ -18,7 +18,6 @@ export function VimeoEmbed({
   autoStart = false,
   volume,
   paused,
-  muted,
 }: {
   readonly videoId: string
   readonly title: string
@@ -30,8 +29,6 @@ export function VimeoEmbed({
   readonly volume?: number
   /** Controlled play/pause for inline cards. */
   readonly paused?: boolean
-  /** Tier 2 hover playback: start muted via `&muted=1` (no audio, autoplay-safe). */
-  readonly muted?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -41,7 +38,6 @@ export function VimeoEmbed({
     iframeRef.current?.contentWindow?.postMessage(JSON.stringify(msg), 'https://player.vimeo.com')
   }
   useEffect(() => {
-    if (muted === true) return // muted hover playback: leave muted=1 untouched
     if (hasInteracted && typeof volume === 'number') post({ method: 'setVolume', value: volume / 100 })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [volume, hasInteracted])
@@ -57,7 +53,6 @@ export function VimeoEmbed({
   // as YouTube — see that handler for rationale. Vimeo's chrome keeps its
   // own volume slider so users can adjust per video.
   const handleIframeLoad = (): void => {
-    if (muted === true) return // muted hover playback: don't unmute via setVolume
     const vol = getDefaultVolume() / 100
     const send = (): void => {
       iframeRef.current?.contentWindow?.postMessage(
@@ -87,7 +82,7 @@ export function VimeoEmbed({
     <div className={styles.iframeWrap16x9}>
       <iframe
         ref={iframeRef}
-        src={`https://player.vimeo.com/video/${videoId}?autoplay=1${muted === true ? '&muted=1' : ''}`}
+        src={`https://player.vimeo.com/video/${videoId}?autoplay=1`}
         title={title}
         className={styles.iframe}
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
