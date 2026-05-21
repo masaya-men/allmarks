@@ -595,6 +595,7 @@ export function CardsLayer({
                     cardWidth={p.w}
                     cardHeight={p.h}
                     displayMode={it.displayMode ?? displayMode}
+                    autoCycle={motionEnabled}
                   />
                 )
               })()}

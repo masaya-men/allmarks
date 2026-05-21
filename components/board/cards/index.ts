@@ -18,6 +18,8 @@ export type CardComponentProps = {
   readonly cardWidth?: number
   readonly cardHeight?: number
   readonly displayMode: DisplayMode
+  /** Tier 1: advance through mediaSlots on an interval (hard cut). Only consumed by ImageCard. */
+  readonly autoCycle?: boolean
 }
 
 export type CardComponent = ComponentType<CardComponentProps>
