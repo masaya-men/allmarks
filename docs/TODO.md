@@ -24,7 +24,9 @@
 
 **致命的バグ #4「ライトボックスで左右移動すると左の動画が前のカードのまま残る」を根治・本番反映済**。 真因は [TweetVideoEmbed.tsx](../components/board/embeds/TweetVideoEmbed.tsx) が再生 source を mount 時に useState へ取り込んだきり prop 変更を無視していたこと (ライトボックスは player を 1 インスタンス使い回す=React key が slot 番号で常に slot-0)。 画像は素の `<img src>` で追従するため動画ツイートだけ stale という症状と一致。 修正: source を毎レンダ prop から導出する live 値にし、自己フェッチ分のみ state 保持。 回帰テスト追加 (同一インスタンスを別 source で再描画→ src 更新)。 検証: 新ビルドの preview 実機 + verify スクリプトで **STALE MEDIA OCCURRENCES = 0**、 **684 PASS** / tsc clean / deploy 1。
 
-**残: コントロールバーのブラッシュアップ 4 項目** (session 62 から持ち越し、 [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) に詳細) = ①背景黒を TUNE と完全一致 (要 computed style 実測) ②他カードに隠れない z-index ③バー幅をカード幅に合わせ DENSE幅207.80を最小値に (実装可) ④消失も出現の逆でカードに帰るアニメ。 テストは `pnpm preview`。
+**コントロールバーのブラッシュアップ 4 項目は完了済** (commit `918b652` + 透明度追従 `9b07439`/`d342fb1`/`c422654`) = ①背景黒を TUNE と一致 ②他カードの上に lift する z-index ③バー幅をカード幅に合わせ DENSE幅を最小値に ④消失も出現の逆 (symmetric tuck) アニメ。 前セッションがドキュメント追記前に中断したため backlog に残っていたが、 コードには反映済 (user 確認 2026-05-21)。
+
+**次の優先: Phase 2 = Tier 2 hover プール** ([multi-playback-design](./superpowers/specs/2026-05-21-multi-playback-design.md) §3/§6) = `usePlaybackPool` 4枚LRU + `useHoverIntent` 300ms。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 
