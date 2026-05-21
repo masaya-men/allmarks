@@ -33,6 +33,8 @@ type RenderOpts = {
   readonly volume?: number
   /** Controlled play/pause for inline cards. Undefined → uncontrolled. */
   readonly paused?: boolean
+  /** Tier 2 hover playback: start muted (autoplay-policy compliant, no audio). */
+  readonly muted?: boolean
 }
 
 /** True when the item carries a directly-playable mp4 video slot. Platform-
@@ -70,6 +72,7 @@ const ENTRIES: readonly MediaEntry[] = [
           autoStart={o.variant === 'inline' && o.autoStart === true}
           volume={o.volume}
           paused={o.paused}
+          muted={o.muted}
         />
       ) : null
     },
@@ -88,6 +91,7 @@ const ENTRIES: readonly MediaEntry[] = [
           autoStart={o.variant === 'inline' && o.autoStart === true}
           volume={o.volume}
           paused={o.paused}
+          muted={o.muted}
         />
       ) : null
     },
@@ -107,6 +111,7 @@ const ENTRIES: readonly MediaEntry[] = [
           autoStart={o.variant === 'inline' && o.autoStart === true}
           volume={o.volume}
           paused={o.paused}
+          muted={o.muted}
         />
       ) : null
     },
@@ -123,6 +128,7 @@ const ENTRIES: readonly MediaEntry[] = [
         autoStart={o.variant === 'inline' && o.autoStart === true}
         volume={o.volume}
         paused={o.paused}
+        muted={o.muted}
       />
     ),
   },
@@ -137,6 +143,7 @@ const ENTRIES: readonly MediaEntry[] = [
         autoStart={o.variant === 'inline' && o.autoStart === true}
         volume={o.volume}
         paused={o.paused}
+        muted={o.muted}
       />
     ),
   },
@@ -155,13 +162,16 @@ export type InlinePlayerOpts = {
   readonly volume?: number
   /** Controlled play/pause. */
   readonly paused?: boolean
+  /** Tier 2 hover playback: start muted (no audio). */
+  readonly muted?: boolean
 }
 
-/** Board inline player (autoplay-with-sound). Null when not inline-playable. */
+/** Board inline player (autoplay; muted for Tier 2 hover, with sound for Tier 3).
+ *  Null when not inline-playable. */
 export function resolveInlinePlayer(item: PlayableItem, opts: InlinePlayerOpts): ReactNode | null {
   const entry = ENTRIES.find((e) => e.playableInline && e.match(item))
   return entry
-    ? entry.render(item, { variant: 'inline', autoStart: opts.autoStart, volume: opts.volume, paused: opts.paused })
+    ? entry.render(item, { variant: 'inline', autoStart: opts.autoStart, volume: opts.volume, paused: opts.paused, muted: opts.muted })
     : null
 }
 
