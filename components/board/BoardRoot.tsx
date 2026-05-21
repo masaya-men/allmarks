@@ -242,6 +242,9 @@ export function BoardRoot() {
   // Jump both W and G to a preset (DENSE / TIGHT / DEFAULT / OPEN / AMBIENT).
   // Captures a single undo entry holding both prior values so Ctrl+Z restores
   // them together in one step.
+  // Bumped only on a PRESET button press so CardsLayer can give that one
+  // reflow a richer settle (the live fader and add/remove keep the snappy ease).
+  const [presetReflowTick, setPresetReflowTick] = useState<number>(0)
   const onApplyPreset = useCallback(
     (id: PresetId): void => {
       const preset = PRESETS.find((p) => p.id === id)
@@ -253,6 +256,7 @@ export function BoardRoot() {
       })
       setCardWidthPx(clampCardWidth(preset.w))
       setCardGapPx(clampCardGap(preset.g))
+      setPresetReflowTick((t) => t + 1)
     },
     [cardWidthPx, cardGapPx, clampCardWidth, clampCardGap, pushUndo],
   )
@@ -1375,6 +1379,7 @@ export function BoardRoot() {
                 viewport={viewport}
                 viewportWidth={effectiveLayoutWidth}
                 cardGapPx={cardGapPx}
+                presetReflowTick={presetReflowTick}
                 hoveredBookmarkId={hoveredBookmarkId}
                 audioActiveId={audioActiveId}
                 onToggleAudio={handleToggleAudio}

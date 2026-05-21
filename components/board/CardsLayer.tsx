@@ -68,6 +68,11 @@ type CardsLayerProps = {
    *  toolbar. Threaded through the same skyline layout calls that use
    *  defaultCardWidth so changing the slider reflows cards live. */
   readonly cardGapPx: number
+  /** Bumped by BoardRoot each time a TUNE PRESET button is pressed (not the
+   *  live fader). When it changes, the masonry reflow plays a richer, longer
+   *  ease-out settle instead of the snappy default — so the board re-tiles with
+   *  a satisfying finish without slowing live fader drags or add/remove. */
+  readonly presetReflowTick?: number
   readonly hoveredBookmarkId: string | null
   /** Phase 1 multi-playback (Tier 3): id of the single card currently
    *  playing with audio, or null. The matching card mounts an inline
@@ -128,6 +133,7 @@ export function CardsLayer({
   viewport,
   viewportWidth,
   cardGapPx,
+  presetReflowTick,
   hoveredBookmarkId,
   audioActiveId,
   onToggleAudio,
@@ -300,8 +306,14 @@ export function CardsLayer({
   // dragState ref for use inside useLayoutEffect without triggering extra renders
   const dragStateRef = useRef<{ bookmarkId: string } | null>(null)
 
+  // Detect "this reflow was triggered by a TUNE preset button" by watching the
+  // tick BoardRoot bumps on press. Only that reflow gets the rich settle.
+  const lastPresetTickRef = useRef<number | undefined>(presetReflowTick)
+
   useLayoutEffect(() => {
     const draggedId = dragStateRef.current?.bookmarkId ?? null
+    const isPresetReflow = presetReflowTick !== lastPresetTickRef.current
+    lastPresetTickRef.current = presetReflowTick
 
     for (const it of visibleItems) {
       // Skip the card being dragged — the drag hook owns its transform.
@@ -319,16 +331,23 @@ export function CardsLayer({
         // gsap.to (not fromTo) continues from wherever the element is now —
         // avoids the per-tick snap-back to stored prev on fast pointer movement.
         const isLiveReflow = draggedId !== null
+        // Preset press: longer, expo-out settle = fast launch + rich glide into
+        // the new grid. Live drag / add-remove stay snappy as before.
         gsap.to(el, {
           x: p.x,
           y: p.y,
           width: p.w,
           height: p.h,
-          duration: isLiveReflow ? 0.18 : 0.15,
-          ease: 'power2.out',
+          duration: isPresetReflow ? 0.62 : isLiveReflow ? 0.18 : 0.15,
+          ease: isPresetReflow ? 'expo.out' : 'power2.out',
           overwrite: 'auto',
         })
-      } else {
+      } else if (!gsap.isTweening(el)) {
+        // Position unchanged since last run. Snap into place ONLY when nothing
+        // is animating — otherwise a follow-up render (common right after a
+        // preset press) would gsap.set the card onto its target and kill the
+        // in-flight settle tween, making the rich reflow snap. (Harmless for the
+        // short default reflow; essential for the longer preset one.)
         gsap.set(el, { x: p.x, y: p.y, width: p.w, height: p.h, overwrite: 'auto' })
       }
       prevPositionsRef.current[it.bookmarkId] = { x: p.x, y: p.y }
@@ -338,7 +357,7 @@ export function CardsLayer({
     for (const id of Object.keys(prevPositionsRef.current)) {
       if (!liveIds.has(id)) delete prevPositionsRef.current[id]
     }
-  }, [visibleItems, displayedPositions])
+  }, [visibleItems, displayedPositions, presetReflowTick])
 
   const {
     dragState,
