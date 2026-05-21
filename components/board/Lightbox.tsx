@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ComponentType, type ReactElement, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type ReactElement, type ReactNode } from 'react'
 import { gsap } from 'gsap'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { TweetMeta, MediaSlot } from '@/lib/embed/types'
@@ -14,12 +14,9 @@ import { cleanTitle } from '@/lib/embed/clean-title'
 import { pickTextCardColor } from '@/lib/embed/text-card-color'
 import { getFaviconUrl, hostnameFromUrl } from '@/lib/embed/favicon'
 import {
-  YouTubeEmbed,
-  VimeoEmbed,
-  SoundCloudEmbed,
-  TikTokEmbed,
   InstagramEmbed,
   TweetVideoEmbed,
+  resolveLightboxPlayer,
 } from './embeds'
 import { LightboxNavChevron } from './LightboxNavChevron'
 import { useSmoothWheelScroll } from '@/lib/scroll/use-smooth-wheel-scroll'
@@ -27,11 +24,7 @@ import type { LightboxFlipSceneProps } from './LightboxFlipScene'
 import {
   detectUrlType,
   extractInstagramShortcode,
-  extractTikTokVideoId,
   extractTweetId,
-  extractVimeoId,
-  extractYoutubeId,
-  isYoutubeShorts,
 } from '@/lib/utils/url'
 import styles from './Lightbox.module.css'
 
@@ -1489,24 +1482,8 @@ function TweetMedia({
   if (slots.length > 0) {
     const slot = slots[Math.min(slotIdx, slots.length - 1)]
     if (slot.type === 'video' && slot.videoUrl) {
-      // Construct a synthetic meta that points TweetVideoPlayer at this slot's
-      // mp4 + poster + aspect, irrespective of which slot meta.videoUrl points
-      // to. (For pure-video tweets these match anyway.)
-      const slotMeta: TweetMeta = {
-        ...(meta ?? {
-          id: '',
-          text: '',
-          hasPhoto: false,
-          hasVideo: true,
-          hasPoll: false,
-          hasQuotedTweet: false,
-          authorName: '',
-          authorHandle: '',
-        }),
-        videoUrl: slot.videoUrl,
-        videoPosterUrl: slot.url,
-        videoAspectRatio: slot.aspect,
-      }
+      // Point the shared player at THIS slot's mp4 + poster + aspect (mix
+      // tweets can have multiple slots; the carousel index picks one).
       return (
         <TweetVideoEmbed
           key={`slot-${slotIdx}`}
@@ -1718,65 +1695,34 @@ function TweetText({
 }
 
 function LightboxMedia({ item }: { readonly item: LightboxItem }): ReactNode {
-  const urlType = detectUrlType(item.url)
-
   // Embed components were typed against BoardItem's `string | undefined`
   // thumbnail. LightboxItem normalizes to `string | null`, so we coerce
-  // here at the call sites rather than weakening the embeds' prop types.
+  // here rather than weakening the embeds' prop types.
   const thumb = item.thumbnail ?? undefined
   // Board card's persisted aspect. Embeds render their pre-play poster at
   // this aspect so the lightbox grows the *same shape* the user clicked on,
   // hiding the clone→media swap (B-#17-#2). Undefined for share view.
   const aspectRatio = item.aspectRatio
 
-  if (urlType === 'youtube') {
-    const videoId = extractYoutubeId(item.url)
-    if (videoId) {
-      return (
-        <YouTubeEmbed
-          videoId={videoId}
-          title={item.title}
-          vertical={isYoutubeShorts(item.url)}
-          thumbnail={thumb}
-          aspectRatio={aspectRatio}
-        />
-      )
-    }
-  }
+  // The shared media-players registry is the single source of truth for
+  // "which player renders this item" — the same one the board uses. It
+  // handles youtube / tiktok / vimeo / soundcloud here (tweets render via
+  // TweetMedia upstream, not LightboxMedia; mediaSlots is therefore omitted).
+  // Output is identical to the old per-platform switch.
+  const player = resolveLightboxPlayer({
+    url: item.url,
+    title: item.title,
+    thumbnail: thumb,
+    aspectRatio,
+    mediaSlots: undefined,
+  })
+  if (player) return player
 
-  if (urlType === 'tiktok') {
-    const videoId = extractTikTokVideoId(item.url)
-    if (videoId) return <TikTokEmbed videoId={videoId} url={item.url} thumbnail={thumb} title={item.title} aspectRatio={aspectRatio} />
-  }
-
-  if (urlType === 'instagram') {
+  // Instagram is a link-out affordance (not an inline-playable registry
+  // entry), so it stays here after the registry returns null.
+  if (detectUrlType(item.url) === 'instagram') {
     const shortcode = extractInstagramShortcode(item.url)
     if (shortcode) return <InstagramEmbed shortcode={shortcode} thumbnail={thumb} title={item.title} aspectRatio={aspectRatio} />
-  }
-
-  if (urlType === 'vimeo') {
-    const videoId = extractVimeoId(item.url)
-    if (videoId) {
-      return (
-        <VimeoEmbed
-          videoId={videoId}
-          title={item.title}
-          thumbnail={thumb}
-          aspectRatio={aspectRatio}
-        />
-      )
-    }
-  }
-
-  if (urlType === 'soundcloud') {
-    return (
-      <SoundCloudEmbed
-        url={item.url}
-        title={item.title}
-        thumbnail={thumb}
-        aspectRatio={aspectRatio}
-      />
-    )
   }
 
   // 一般 webpage (= youtube / tiktok / instagram / tweet を除く)。

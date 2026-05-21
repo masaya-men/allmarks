@@ -60,8 +60,13 @@ export function TweetVideoEmbed({
   readonly autoStart?: boolean
 }): ReactNode {
   const initial = sourceProp ?? resolveTweetVideoSource(item)
+  const tweetId = extractTweetId(item.url)
   // undefined = fetch in flight, null = no playable video, value = ready.
-  const [source, setSource] = useState<TweetVideoSource | null | undefined>(initial ?? undefined)
+  // Seed null up front when there's nothing to resolve AND no id to fetch with,
+  // so the effect never has to call setState synchronously.
+  const [source, setSource] = useState<TweetVideoSource | null | undefined>(
+    initial ?? (tweetId ? undefined : null),
+  )
   const [videoFailed, setVideoFailed] = useState<boolean>(false)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   // Lightbox-only: gate native controls on first interaction so Chromium
@@ -71,16 +76,13 @@ export function TweetVideoEmbed({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [defaultVolume, setDefaultVolume] = useDefaultVolume()
 
-  // Self-fetch the mp4 only when we couldn't resolve it from props/slots.
+  // Self-fetch the mp4 only when we couldn't resolve it from props/slots and
+  // we have a tweet id to fetch with. All setState here is async (inside the
+  // promise), so the effect never triggers a synchronous re-render cascade.
   useEffect(() => {
-    if (initial) return
+    if (initial || !tweetId) return
     let cancelled = false
-    const id = extractTweetId(item.url)
-    if (!id) {
-      setSource(null)
-      return
-    }
-    fetchTweetMeta(id)
+    fetchTweetMeta(tweetId)
       .then((meta) => {
         if (cancelled) return
         if (meta?.videoUrl) {
@@ -96,7 +98,7 @@ export function TweetVideoEmbed({
       cancelled = true
     }
     // `initial` is derived from props that don't change for a mounted card.
-  }, [item.url, item.thumbnail, initial])
+  }, [tweetId, item.thumbnail, initial])
 
   // Keep the <video> volume synced to the app-wide default (mount + cross-card).
   useEffect(() => {
