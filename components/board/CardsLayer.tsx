@@ -525,13 +525,16 @@ export function CardsLayer({
               </div>
             )}
             {audioActiveId === it.bookmarkId && canPlayInline(it) && (
-              // Mixer-tone control bar anchored just below the active card, so
-              // even a small card stays easy to operate. Per-card ephemeral
-              // volume + play/pause (BoardRoot owns the state).
+              // Mixer-tone control bar attached to the active card's bottom.
+              // Kept mounted while active so its hover-reveal can animate in
+              // AND out; `visible` is driven by card-or-bar hover. Because the
+              // bar is a DOM descendant of the wrapper and touches the card
+              // (top:100%, no gap), moving the pointer card→bar stays "inside"
+              // the wrapper, so hoveredBookmarkId remains set over the bar too.
               <div
                 style={{
                   position: 'absolute',
-                  top: 'calc(100% + 8px)',
+                  top: '100%',
                   left: '50%',
                   transform: 'translateX(-50%)',
                   zIndex: 60,
@@ -542,6 +545,7 @@ export function CardsLayer({
                   paused={audioPaused}
                   onVolumeChange={onAudioVolumeChange}
                   onTogglePause={onAudioTogglePause}
+                  visible={hoveredBookmarkId === it.bookmarkId}
                 />
               </div>
             )}

@@ -32,6 +32,16 @@ describe('PlaybackControlBar', () => {
     expect(onVolumeChange).toHaveBeenCalledWith(20)
   })
 
+  it('reflects hover-reveal visibility via data-visible', () => {
+    const { container, rerender } = render(
+      <PlaybackControlBar volume={50} paused={false} onVolumeChange={() => {}} onTogglePause={() => {}} visible={false} />,
+    )
+    const root = container.querySelector('[data-testid="pc-bar"]') as HTMLElement
+    expect(root.getAttribute('data-visible')).toBe('false')
+    rerender(<PlaybackControlBar volume={50} paused={false} onVolumeChange={() => {}} onTogglePause={() => {}} visible={true} />)
+    expect(root.getAttribute('data-visible')).toBe('true')
+  })
+
   it('stops pointerdown propagation so the card drag never engages', () => {
     const { container } = render(
       <PlaybackControlBar volume={50} paused={false} onVolumeChange={() => {}} onTogglePause={() => {}} />,

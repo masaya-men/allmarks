@@ -9,16 +9,31 @@ type Props = {
   readonly paused: boolean
   readonly onVolumeChange: (next: number) => void
   readonly onTogglePause: () => void
+  /** Hover-reveal: the bar pops out of the card while the pointer is over the
+   *  card OR the bar itself, and tucks back when it leaves. Defaults to true
+   *  for standalone use. */
+  readonly visible?: boolean
 }
 
 /**
  * AllMarks audio-mixer styled control bar for the single active inline card.
- * Anchored just below the card (see CardsLayer). Fixed comfortable size so it
- * stays operable even when the card itself is small. Volume is per-card and
- * ephemeral (see BoardRoot). stopPropagation on pointer/click keeps the card's
- * reorder-drag / open-lightbox gesture from firing.
+ * Anchored attached to the card's bottom (see CardsLayer); pops in on hover.
+ * Fixed comfortable size so it stays operable even when the card is small.
+ * Volume is per-card and ephemeral (see BoardRoot). stopPropagation on
+ * pointer/click keeps the card's reorder-drag / open-lightbox gesture from
+ * firing.
+ *
+ * Theming: every colour/surface token is a CSS custom property declared on
+ * `.bar` (see the module CSS). A theme can override `--pc-*` to restyle — or
+ * later swap this whole component — without touching the markup.
  */
-export function PlaybackControlBar({ volume, paused, onVolumeChange, onTogglePause }: Props): ReactElement {
+export function PlaybackControlBar({
+  volume,
+  paused,
+  onVolumeChange,
+  onTogglePause,
+  visible = true,
+}: Props): ReactElement {
   const swallow = (e: ReactPointerEvent<HTMLDivElement>): void => {
     e.stopPropagation()
   }
@@ -26,6 +41,7 @@ export function PlaybackControlBar({ volume, paused, onVolumeChange, onTogglePau
     <div
       className={styles.bar}
       data-testid="pc-bar"
+      data-visible={visible ? 'true' : 'false'}
       onPointerDown={swallow}
       onMouseDown={swallow}
       onClick={(e): void => e.stopPropagation()}
