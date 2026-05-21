@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { act, fireEvent, render } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { render } from '@testing-library/react'
 import type { MoodRecord } from '@/lib/storage/indexeddb'
 import {
   BoardBackgroundTypography,
@@ -43,19 +43,16 @@ describe('isBoardBgTypoVariant', () => {
   })
 })
 
-describe('BoardBackgroundTypography — slice glitch + click burst', () => {
-  it('renders the base text + 9 slice spans (10 spans total) when text is non-empty', () => {
+describe('BoardBackgroundTypography — static wordmark', () => {
+  it('renders a single text span when text is non-empty', () => {
     const { container } = render(
       <BoardBackgroundTypography activeFilter="all" moods={[]} />,
     )
     const host = container.querySelector('[data-testid="board-bg-typography"]')
     expect(host).not.toBeNull()
     const spans = host!.querySelectorAll('span')
-    // 1 base text + 9 slice clones
-    expect(spans.length).toBe(10)
-    for (const span of spans) {
-      expect(span.textContent).toBe('AllMarks')
-    }
+    expect(spans.length).toBe(1)
+    expect(spans[0]!.textContent).toBe('AllMarks')
   })
 
   it('does NOT render anything when text resolves to empty', () => {
@@ -63,55 +60,5 @@ describe('BoardBackgroundTypography — slice glitch + click burst', () => {
       <BoardBackgroundTypography activeFilter="mood:nonexistent" moods={[]} />,
     )
     expect(container.querySelector('[data-testid="board-bg-typography"]')).toBeNull()
-  })
-
-  it('updates --bg-typo-glitch-mx / --my synchronously on pointermove (no rAF)', () => {
-    const { container } = render(
-      <BoardBackgroundTypography activeFilter="all" moods={[]} />,
-    )
-    const host = container.querySelector('[data-testid="board-bg-typography"]') as HTMLElement
-    fireEvent.pointerMove(document, { clientX: 100, clientY: 200 })
-    expect(host.style.getPropertyValue('--bg-typo-glitch-mx')).not.toBe('')
-    expect(host.style.getPropertyValue('--bg-typo-glitch-my')).not.toBe('')
-  })
-
-  it('toggles data-burst=true on click and clears it after 800ms', () => {
-    vi.useFakeTimers()
-    // The triggerBurst path uses requestAnimationFrame to re-arm the
-    // animation cleanly; make rAF synchronous so the burst class lands
-    // immediately under fake timers.
-    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-      cb(0)
-      return 0
-    })
-    try {
-      const { container } = render(
-        <BoardBackgroundTypography activeFilter="all" moods={[]} />,
-      )
-      const host = container.querySelector(
-        '[data-testid="board-bg-typography"]',
-      ) as HTMLElement
-      const textSpan = container.querySelector(
-        '[data-testid="board-bg-typography-text"]',
-      ) as HTMLElement
-
-      expect(host.getAttribute('data-burst')).toBe('false')
-
-      fireEvent.click(textSpan)
-      expect(host.getAttribute('data-burst')).toBe('true')
-
-      act(() => {
-        vi.advanceTimersByTime(799)
-      })
-      expect(host.getAttribute('data-burst')).toBe('true')
-
-      act(() => {
-        vi.advanceTimersByTime(2)
-      })
-      expect(host.getAttribute('data-burst')).toBe('false')
-    } finally {
-      rafSpy.mockRestore()
-      vi.useRealTimers()
-    }
   })
 })
