@@ -9,14 +9,13 @@
    default theme. */
 .bar {
   /* themeable tokens (default theme) */
-  /* Glass slab modelled on the TUNE drawer (TuneTrigger.module.css .drawer:
-     rgba(10,10,10,0.92) + blur(8px) + no border). The drawer reads as deep
-     black because it floats over the dark chrome; this bar floats over the
-     BUSY board (bright bg wordmark + bright cards), so the drawer's 0.92 lets
-     ~8% of that brightness bleed through the glass and the slab turned grey.
-     Lifting the fill to 0.97 keeps the blur's glassiness while reading as the
-     same deep black as the drawer regardless of what's behind it. */
-  --pc-bar-bg: rgba(10, 10, 10, 0.97);
+  /* Glass slab matched to the TUNE drawer (TuneTrigger.module.css .drawer):
+     rgba(10,10,10,0.92) — the SAME fill the user reads as glassy on TUNE. The
+     transparency (8% see-through) is the "透明感"; lifting it toward opaque
+     just made the slab look material, so we keep TUNE's exact 0.92. The blur
+     adds a soft frost; the matched box-shadow below ties the two surfaces into
+     one family. */
+  --pc-bar-bg: rgba(10, 10, 10, 0.92);
   --pc-accent: #34e07a; /* fluorescent green volume fill — keep */
   --pc-track-empty: #202024;
   --pc-knob-top: #56565c;
