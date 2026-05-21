@@ -1,59 +1,46 @@
-# 次セッションのゴール (= セッション 61)
+# 次セッションのゴール (= セッション 62)
 
 ## 状況
 
-session 60 で大物 **J (TUNE preset 物理ボタン)** を 9 iteration の polish で完走 + production deploy 済。 その後 **I (背景文字 マウス追従グリッチ)** に着手したが、 user 最終確認で「思ったのと違う」 → 翌セッションに iteration 続行で締め。
+session 61 で 2 つのことが起きた:
+1. **背景文字グリッチ (I) を断念** — 4 回作り直しても user 意図に届かず、 board から全撤去して**静止白文字に revert** + 本番 deploy 済。 再挑戦用に `/typo-glitch-lab` playground を残置
+2. **multi-playback (= カード上で複数同時再生)** に方向転換 — user 最優先機能。 2 本の web 調査 → spec → **Phase 1 plan まで確立**。 セッションが長くなったので実装は次セッション (= 今回) へ持ち越し
 
-### session 60 で完了したもの
-- **J. TUNE drawer 5 個の物理 preset ボタン**: DENSE / TIGHT / DEFAULT / OPEN / AMBIENT、 user 自分で tune した値 (= TIGHT 243.57/36.17 等)、 LED 状態鏡 (= ±0.5px tolerance)、 Ctrl+Z で W/G 両方同時 undo、 i18n 15 言語、 ラッチング・トグルスイッチ視覚、 縦長ハンドル (= ミニブレーカー風)、 audio interface 風 divider、 ドーム型 LED、 立体スライダーレール + 縦長メタリックハンドル + 42 目盛り、 long-press 350ms ジャンプ、 ドラッグ速度入れ替え (= 普通=高速、 Shift=低速)、 説明テキスト `SHIFT TO SLOW` / `HOLD TO JUMP`、 ヘッダー label 動的化 + glitch、 ALLMARKS · MK-1 刻印プレート
-- **I. 背景文字 マウス追従グリッチ**: 初版 ship → user 報告 3 バグ (z-index で前面、 mask 座標ずれ、 chrome glitch 言語と不一致) → 修正版 ship → **まだ user 満足してない**
+## 最優先タスク: multi-playback Phase 1 を実装
 
-### I がまだ満足してない部分 (= 次セッション最優先)
-- user 発言: 「うーんやっぱり思ったのと違うから明日続きやりましょう！」
-- 具体的にどこが違うかは未確認 → **次セッション開始時に user に具体的にヒアリング**してから修正方針確定
-- 想定される違和感ポイント:
-  - グリッチが見えにくい / 出てない (= animation の opacity 0% フレームで透明になる時間が長い)
-  - 範囲が広すぎる / 狭すぎる (= radius 80px / falloff 130px が体感と合わない)
-  - 色がオレンジ + シアンで chrome と揃えたが、 もっと違う色味が良いかも (= 例: 赤+青、 緑+マゼンタ)
-  - clip-path の水平バンドが小さすぎる or 動きすぎる
-  - マウス位置と glitch 位置がまだ何かずれてる (= 修正したつもりだが残バグの可能性)
+**まず読む**: [docs/superpowers/plans/2026-05-21-multi-playback-phase1.md](./superpowers/plans/2026-05-21-multi-playback-phase1.md) (= 5 task TDD plan)
+**設計背景**: [docs/superpowers/specs/2026-05-21-multi-playback-design.md](./superpowers/specs/2026-05-21-multi-playback-design.md) (= 3 段モデル全体 + 調査根拠)
 
-## ⚠️ 次セッション開始時にすぐ取り掛かるべきタスク
+Phase 1 の 5 task:
+1. **右下アイコンを押せるトグルボタン化** (= 既存 × ボタンの z-index 50 パターン流用 + ホバー内側拡大 + 緑 glow active)
+2. **Lightbox の埋め込みプレイヤーを `components/board/embeds/` に共通化** (= YouTube/Vimeo/SoundCloud/TikTok を verbatim 抽出、 Lightbox 動作維持)
+3. **InlineMediaPlayer ディスパッチャ** (= URL 種別で正しいプレイヤー選択)
+4. **board に audio-active state 配線** (= アイコン押し → カード内で音つき再生、 **単体 1 枚**。 4 枚プールは Phase 2)
+5. **build + playwright 検証 + deploy** ← **右下リサイズが効くこと必須チェック** (spec §4)
 
-### 最優先: I (背景文字グリッチ) の iteration 続行
+実行方法: executing-plans (= このセッションで順番に) か subagent-driven (= task ごと subagent)。 user に開始時 1 行で確認。
 
-1. **user に何が思ったのと違ったか具体的にヒアリング**
-2. 該当部分を修正 → deploy → 確認 のループ
-3. user 満足するまで polish
+## このプロジェクトの user 対応で厳守すること (= session 61 で確認)
 
-### その後の選択肢 (= I 完了後)
+- **AskUserQuestion の質問箱を多用しない**。 user は「決められた答えしかできなくて幅が狭い」 と 2 回明示。 探索的な詰めは普通の chat で 1 問ずつ会話する
+- **「徹底調査して」 = 推測で答えず実際に web 調査エージェントを回す**
+- **勝手に memory を増やさない** (= session 61 で「余計なメモリ追加しないで」 と言われた)。 design の一般論を memory 化するのは特に避ける
+- 応答は日本語、 横文字カタカナ多用しない
 
-- **multi-playback vision** (= board card autoplay、 AllMarks 核の差別化)
-- **タグ付け** (= 「最重要」 と user が言ってる大物、 IDB schema 変更 + UI + filter)
+## multi-playback の後 (= Phase 2 以降)
 
-memory `project_tagging_top_priority.md` 参照。
-
-## session 60 で確定した重要な事 (= 前提として保持)
-
-- **メーター 662 PASS** 維持 (= 既存 633 + tune-preset 11 + TunePresetColumn 7 + FaderColumn 拡張 2 + BoardBackgroundTypography 9)
-- **タグ付けは最優先**: user 直接発言で格上げ、 multi-playback の後にすぐ着手 (memory `project_tagging_top_priority.md`)
-- **選択肢ラベルに ギリシャ文字使わない** (= memory `feedback_no_greek_labels.md`)
-- **UI 英語は globally-clear 優先**: 業界標準 `FINE` より `SLOW` (= memory `feedback_globally_clear_english.md`)
-- **z-index 注意**: BoardBackgroundTypography のような「DOM 順で stacking」 を意図する component で、 内側要素に z-index 付けると親 stacking context に escape して兄弟要素を超えてしまう罠 (= session 60 で 1 回踏んだ、 既存 CSS コメントが警告してたのに見落とした)
-- **CSS mask 座標系**: `radial-gradient(circle at <x> <y>)` の座標は**マスク適用される要素の box 内座標**、 親 host の座標じゃない。 ホスト相対マウス座標を渡したいなら、 マスクは host-sized wrapper に付ける必要あり (= session 60 で踏んだ)
+- Phase 2 = Tier 2 hover プール (= `usePlaybackPool` 4枚LRU + `useHoverIntent` 300ms)
+- Phase 3 = Tier 1 ambient モーション (= storyboard sprite / Ken Burns / クロスフェード)
+- Phase 4 = 全体 ON/OFF master スイッチ (音波テーマ、 配置は要相談)
 
 ## 月末リマインダー (2026-05-31)
 
-`allmarks.app` ドメイン取得確認。 取得済なら拡張機能の Chrome Web Store submit + 本体 rebrand sprint へ進む。
-
-**Developer Account**: user が前作った既存 account あり (= $5 払い済、 ログインだけで OK)。
+`allmarks.app` ドメイン取得確認。 取得済なら拡張機能の Chrome Web Store submit + 本体 rebrand sprint。 Developer Account は既存 ($5 払い済)。
 
 ## 引き継ぎ resources
 
-- [docs/TODO.md](./TODO.md) — active backlog (= session 60 narrative 反映済)
-- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 60 narrative 集約済 (J 9 iter + I 2 iter)
-- [docs/superpowers/specs/2026-05-20-tune-drawer-preset-design.md](./superpowers/specs/2026-05-20-tune-drawer-preset-design.md) — J 完成仕様
-- [docs/superpowers/specs/2026-05-21-bg-typography-mouse-glitch-design.md](./superpowers/specs/2026-05-21-bg-typography-mouse-glitch-design.md) — I 仕様 (= まだ user 不満足)
-- [docs/private/IDEAS.md](./private/IDEAS.md) §I, §J (= 元 brainstorming)
-- memory `feedback_globally_clear_english.md` (= session 60 新規)
-- memory `feedback_no_greek_labels.md` (= session 60 新規)
+- [docs/TODO.md](./TODO.md) — active backlog (= session 61 反映済)
+- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 61 narrative 集約済
+- [docs/superpowers/plans/2026-05-21-multi-playback-phase1.md](./superpowers/plans/2026-05-21-multi-playback-phase1.md) — Phase 1 実装 plan
+- [docs/superpowers/specs/2026-05-21-multi-playback-design.md](./superpowers/specs/2026-05-21-multi-playback-design.md) — multi-playback 全体設計
+- memory `project_allmarks_vision_multiplayback.md` — multi-playback vision

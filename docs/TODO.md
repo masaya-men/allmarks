@@ -20,7 +20,25 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21 セッション 60 — J 9 iter 完走 + I 着手中、 翌セッションへ持ち越し)
+### 直近の状態 (2026-05-21 セッション 61 — 背景文字グリッチ断念+revert + multi-playback 設計確立、 Phase 1 plan まで)
+
+session 60 持ち越しの **I (背景文字グリッチ)** を 4 回作り直しても user 意図に届かず → **board から全撤去 (静止白文字に revert)** + 本番 deploy。 その後 user 最優先の **multi-playback (= カード上で複数同時再生)** に方向転換 → 2 本の web 調査 → spec → Phase 1 plan 確立。 セッション長のため Phase 1 実装は次セッションへ。
+
+**確定したこと**:
+- 背景文字 = 静止白文字 (= glitch 全撤去済、 本番反映済)。 再挑戦用に `/typo-glitch-lab` playground を残置
+- **multi-playback 3 段モデル** = Tier 1 常時軽量モーション (storyboard/Ken Burns/クロスフェード、 デコーダ0) / Tier 2 ホバー300msで本物ミュート再生 (4枚LRU) / Tier 3 右下アイコン押しで音ON+ピン留め (4枚ミックス)。 spec: [multi-playback-design](./superpowers/specs/2026-05-21-multi-playback-design.md)
+- **Phase 1 plan 確立** ([multi-playback-phase1](./superpowers/plans/2026-05-21-multi-playback-phase1.md)、 5 task TDD): 右下アイコン操作化 + 埋め込みプレイヤー共通化 + InlineMediaPlayer + audio-active 配線 (単体1枚) + 検証(brリサイズ死守)+deploy
+- **GSAP / motion-design skill を `~/.claude/skills/` に install 済** (= 今後の motion 作業で参照可)
+
+**重要な学び**: ①「壊れる/崩れる」 は減算の意味 (= 本体が欠ける) で使われがち、 ただし design 一般論として memory 化は user に否定された ②user は **AskUserQuestion 質問箱より自然な chat 対話を強く好む** (= 2 回明示) ③「徹底調査して」 = 実際に web 調査を回す
+
+**テスト**: 661 PASS、 tsc clean、 build OK。 **deploy**: 2 (iter3 + revert)
+
+**次セッション (= 62) goal**: multi-playback **Phase 1 を実装**。 plan の 5 task を新鮮な状態から。 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 61 セクション
+
+---
+
+### 旧情報 (2026-05-21 セッション 60 — J 9 iter 完走 + I 着手中、 翌セッションへ持ち越し)
 
 session 60 は board 中心部の世界観強化 sprint。 大物 2 つ着手 (= J, I):
 
