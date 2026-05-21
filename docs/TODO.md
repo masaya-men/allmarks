@@ -20,11 +20,13 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21 セッション 64 — multi-playback Phase 2 = Tier 2 ホバー再生 完遂・本番反映済)
+### 直近の状態 (2026-05-21 セッション 65 — Tier 2 ホバー再生を撤去・本番反映済)
 
-**Tier 2 ホバー再生を実装・本番反映済**。 board のカードに **300ms マウスを留めるとミュートで本物再生に昇格**、 外すと約 0.8 秒の余韻後に停止。 同時最大 3 枚 (LRU = 4 枚目で最古を停止)。 昇格 0.1 秒で緑 glow。 音つき Tier 3 (= 右下アイコン押し) とは別レイヤーで共存 (同一カードは音つき優先)。 新規 3 file (`lib/board/playback-pool.ts` 純粋ロジック + `use-playback-pool.ts`/`use-hover-intent.ts` hook、 TDD で 13 test)、 muted を inline player registry + 全 embed に開通 (iframe=`mute=1`/`muted=1`, native `<video>`=`muted` 属性)、 CardsLayer に配線。 検証: preview 実機で 300ms 昇格 / 0.8s 停止 / LRU 上限 3 / リサイズ 268→695px 存続。 **699 PASS** / tsc clean / deploy 1。 詳細: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 64。
+**Tier 2 ホバー再生 (= ホバー300msでミュート本物再生) を撤去**。 user が本番で試して「これ要る機能か?」 と再考 → 撤去で合意。 理由: ボードはマウスを動かす画面なので通過しただけのカードが次々ミュート再生して**誤爆・うるさい**、 緑枠も**カードの角丸/トンマナ外** (= 後付けの症状)。 「ボードが生きてる」 感は Phase 3 (Tier 1 静かな常時モーション) に寄せ、 意図的な再生は Tier 3 (= 右下アイコン押し=音つき) に集約する判断。 撤去は Tier 2 の **5 コミットを git revert** (純粋プール logic / usePlaybackPool / useHoverIntent / embeds muted / CardsLayer 配線)、 embeds は **session 62 の既知良好状態 (= インライン既定音量 50%) に復帰**。 **686 PASS** (= 699 − Tier 2 の 13 test) / tsc clean / build OK / deploy 1 (commit `ea8b93f`)。
 
-**次の優先候補**: ①**Phase 3 = Tier 1 常時 ambient モーション** (= 画面内の全カードが軽く動いて見える、 デコーダ 0 の軽量演出) ②**タグ付け機能** (= user 最優先発言、 multi-playback 完了後すぐ着手予定)。 user 本番検証後に選択。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+**user 本番確認待ち**: 音量50%復活 (= Tier 2 中に 50% でなくなった件、 撤去で session62 状態に戻したので回復見込み。 もし残るなら原因は localStorage `allmarks.player.defaultVolume` の永続化、 別途相談)。 ホバーで勝手に再生されないこと。
+
+**次の優先候補**: ①**Phase 3 = Tier 1 常時 ambient モーション** (= 画面内の全カードが軽く動いて見える、 動画デコード 0 の軽量演出) ②**タグ付け機能** (= user 最優先発言)。 user 確認後に選択。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 

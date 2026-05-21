@@ -4224,3 +4224,24 @@ session 63 完了後、 multi-playback の **Phase 2 (Tier 2 = カードに 300m
 
 **次セッション (= 65) の goal**: user 本番検証 (= `booklage.pages.dev` で動画カードにマウスを乗せ、 音なしで再生 → 外すと停止)。 OK なら **Phase 3 = Tier 1 常時 ambient モーション** (= 全カード軽量演出、 デコーダ 0) か **タグ付け機能** (= user 最優先発言) のどちらか。 詳細: [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+
+---
+
+## セッション 65 (2026-05-21) — Tier 2 ホバー再生を撤去 (機能再考の結論)
+
+session 64 で ship した Tier 2 (= ホバー300msでミュート本物再生) を user が本番で試し、「ホバー/停止は問題なく動くが、これ要る機能か?」 と再考。 私の率直な評価も**撤去寄り**で一致 → 撤去で合意。
+
+**撤去理由**:
+- ボードはマウスをあちこち動かす画面。 目的のボタンへ移動する途中で通過したカードが次々ミュート再生 → 嬉しさより**誤爆・うるさい**が勝つ
+- **ミュートだと得るものが小さい** (音なし・動きだけはプレビューに向かない)
+- **Phase 3 (Tier 1 静かな常時モーション) と役割が被る**。 「生きてる」 感はそちらの方が上手い
+- 本当の差別化は **Tier 3 (押して音、 複数混ぜる)** = 意図的なオプトイン。 価値はここに集中
+- user 指摘の**緑枠がトンマナ外** (= 角丸無し・実線) も「機能がボードに馴染んでいないサイン」 だった
+
+**撤去方法**: Tier 2 の **5 コミットを `git revert --no-commit`** (newest→oldest: 配線 ad5cef9 / embeds muted a1fb7fe / useHoverIntent 7a2a629 / usePlaybackPool cfe6a66 / 純粋プール logic 2f25bd1) → 1 commit `ea8b93f`。 6 file 削除 (3 hook + 3 test)、 CardsLayer + 7 embeds/registry が **session 62 の既知良好状態に byte 単位で復帰**。
+
+**音量50%バグ**: user が「既定音量が 50% でなくなった」 と報告。 コード調査では muted 対応は全て `if (muted === true) return` ガード付きで Tier 3 音量に影響しない作りだったが、 撤去で embeds が 50% 正常だった session62 状態に戻したので回復見込み。 残る場合の原因候補は localStorage `allmarks.player.defaultVolume` の永続化 (= 過去の音量調整値が既定として残る仕様) → user 確認後に別途相談。
+
+**テスト**: 699 → **686 PASS** (= Tier 2 の 13 test 削除分)、 tsc clean、 build OK。 **deploy**: 1。
+
+**次 (= 65 続き or 66)**: user 本番で音量50% + ホバー無反応を確認 → OK なら次の大物 (Phase 3 = Tier 1 常時モーション / タグ付け) を選択。
