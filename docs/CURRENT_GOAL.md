@@ -1,46 +1,50 @@
-# 次セッションのゴール (= セッション 62)
+# 次セッションのゴール (= セッション 63)
 
 ## 状況
 
-session 61 で 2 つのことが起きた:
-1. **背景文字グリッチ (I) を断念** — 4 回作り直しても user 意図に届かず、 board から全撤去して**静止白文字に revert** + 本番 deploy 済。 再挑戦用に `/typo-glitch-lab` playground を残置
-2. **multi-playback (= カード上で複数同時再生)** に方向転換 — user 最優先機能。 2 本の web 調査 → spec → **Phase 1 plan まで確立**。 セッションが長くなったので実装は次セッション (= 今回) へ持ち越し
+session 62 で **multi-playback Phase 1 を実装完遂 + 本番 deploy**。 board のカード右下アイコンが「押せる再生トグル」 になり、 押すと音つきでカード内インライン再生 (= Tier 3 単体 1 枚)、 もう一度で停止。 リサイズ干渉も解決 (= 右下角つまみは引き続き効く)。 playwright で全動作 + リサイズ死守を実機確認済。
 
-## 最優先タスク: multi-playback Phase 1 を実装
+## 最優先タスク: user 本番検証 → OK なら Phase 2
 
-**まず読む**: [docs/superpowers/plans/2026-05-21-multi-playback-phase1.md](./superpowers/plans/2026-05-21-multi-playback-phase1.md) (= 5 task TDD plan)
-**設計背景**: [docs/superpowers/specs/2026-05-21-multi-playback-design.md](./superpowers/specs/2026-05-21-multi-playback-design.md) (= 3 段モデル全体 + 調査根拠)
+**まず user に本番確認を促す**: `booklage.pages.dev` をハードリロードして —
+1. 動画カードにホバー → 右下アイコンが拡大して押せる
+2. 押すと音つきでカード内再生 (= 緑に光る)
+3. もう一度押すと止まる
+4. 右下の角をつまんでリサイズが効く
 
-Phase 1 の 5 task:
-1. **右下アイコンを押せるトグルボタン化** (= 既存 × ボタンの z-index 50 パターン流用 + ホバー内側拡大 + 緑 glow active)
-2. **Lightbox の埋め込みプレイヤーを `components/board/embeds/` に共通化** (= YouTube/Vimeo/SoundCloud/TikTok を verbatim 抽出、 Lightbox 動作維持)
-3. **InlineMediaPlayer ディスパッチャ** (= URL 種別で正しいプレイヤー選択)
-4. **board に audio-active state 配線** (= アイコン押し → カード内で音つき再生、 **単体 1 枚**。 4 枚プールは Phase 2)
-5. **build + playwright 検証 + deploy** ← **右下リサイズが効くこと必須チェック** (spec §4)
+(注: 検証で使った YouTube デモ動画は埋め込み再生禁止で「再生できません」 になる個体だったが、 仕組みは正常。 user の実ブクマで確認してもらう)
 
-実行方法: executing-plans (= このセッションで順番に) か subagent-driven (= task ごと subagent)。 user に開始時 1 行で確認。
+### 本番 OK なら → Phase 2 = Tier 2 ホバープール
 
-## このプロジェクトの user 対応で厳守すること (= session 61 で確認)
+設計: [multi-playback-design](./superpowers/specs/2026-05-21-multi-playback-design.md) §3 Tier 2 + §6
+- `lib/board/use-playback-pool.ts` (= `usePlaybackPool`、 最大 4 枚 LRU、 pin 退避対象外、 promote/demote/pin/unpin/isActive)
+- `lib/board/use-hover-intent.ts` (= `useHoverIntent(300)`、 onPointerEnter で 300ms タイマー → onIntent でミュート再生昇格)
+- ホバー 300ms で本物ミュート再生、 離脱 2-3s キープ後 LRU 退避、 5 枚目で最古非ピンが落ちる
+- Phase 1 の単体 `audioActiveId` を pool ベースに発展させる (= pin = Tier 3 音 ON)
 
-- **AskUserQuestion の質問箱を多用しない**。 user は「決められた答えしかできなくて幅が狭い」 と 2 回明示。 探索的な詰めは普通の chat で 1 問ずつ会話する
+### 本番 NG (= 直したい点あり) なら → Phase 1 polish
+
+候補: SoundCloud カードに ♪ 音楽アイコン (= 今は photo アイコン)、 インラインプレイヤーの letterbox 余白調整、 active glow の見え方調整 など user feedback ベースで。
+
+## このプロジェクトの user 対応で厳守すること
+
+- **AskUserQuestion の質問箱を多用しない**。 探索的な詰めは普通の chat で 1 問ずつ
 - **「徹底調査して」 = 推測で答えず実際に web 調査エージェントを回す**
-- **勝手に memory を増やさない** (= session 61 で「余計なメモリ追加しないで」 と言われた)。 design の一般論を memory 化するのは特に避ける
+- **勝手に memory を増やさない** (= design 一般論の memory 化は特に避ける)
 - 応答は日本語、 横文字カタカナ多用しない
 
-## multi-playback の後 (= Phase 2 以降)
+## Phase 3 以降 (= 参考)
 
-- Phase 2 = Tier 2 hover プール (= `usePlaybackPool` 4枚LRU + `useHoverIntent` 300ms)
-- Phase 3 = Tier 1 ambient モーション (= storyboard sprite / Ken Burns / クロスフェード)
+- Phase 3 = Tier 1 ambient モーション (= storyboard sprite / Ken Burns / クロスフェード、 デコーダ0)
 - Phase 4 = 全体 ON/OFF master スイッチ (音波テーマ、 配置は要相談)
 
 ## 月末リマインダー (2026-05-31)
 
-`allmarks.app` ドメイン取得確認。 取得済なら拡張機能の Chrome Web Store submit + 本体 rebrand sprint。 Developer Account は既存 ($5 払い済)。
+`allmarks.app` ドメイン取得確認。 取得済なら拡張機能の Chrome Web Store submit + 本体 rebrand sprint。 Developer Account は既存。
 
 ## 引き継ぎ resources
 
-- [docs/TODO.md](./TODO.md) — active backlog (= session 61 反映済)
-- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 61 narrative 集約済
-- [docs/superpowers/plans/2026-05-21-multi-playback-phase1.md](./superpowers/plans/2026-05-21-multi-playback-phase1.md) — Phase 1 実装 plan
-- [docs/superpowers/specs/2026-05-21-multi-playback-design.md](./superpowers/specs/2026-05-21-multi-playback-design.md) — multi-playback 全体設計
+- [docs/TODO.md](./TODO.md) — active backlog (= session 62 反映済)
+- [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) — session 62 narrative 集約済
+- [docs/superpowers/specs/2026-05-21-multi-playback-design.md](./superpowers/specs/2026-05-21-multi-playback-design.md) — multi-playback 全体設計 (Phase 2/3/4)
 - memory `project_allmarks_vision_multiplayback.md` — multi-playback vision

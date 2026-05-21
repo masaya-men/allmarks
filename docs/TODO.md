@@ -20,7 +20,28 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21 セッション 61 — 背景文字グリッチ断念+revert + multi-playback 設計確立、 Phase 1 plan まで)
+### 直近の状態 (2026-05-21 セッション 62 — multi-playback Phase 1 実装完遂 + 本番 deploy)
+
+session 61 で確立した Phase 1 plan (= 5 task TDD) を新鮮な状態から実装。 全 task 完遂 + 本番 deploy 済。 **board のカード右下アイコンが「押せる再生トグル」 になり、 押すと音つきでカード内インライン再生、 もう一度で停止** (= Tier 3 単体 1 枚)。 リサイズ干渉問題も解決済 (= 既存 × ボタンパターン流用 + 内側拡大)。
+
+**ship 済 (= prod 反映済、 booklage.pages.dev)**:
+1. **MediaTypeIndicator を押せるトグルボタン化** ([MediaTypeIndicator.tsx](../components/board/MediaTypeIndicator.tsx)): `onActivate` / `active` prop で `<div>` badge ↔ `<button>` 切替。 z-index 50 (= リサイズハンドル 30 の上) + ボタン本体のみ pointer-events + pointerdown 伝播停止 + 内側 (= bottom-right anchor) 拡大 22→34px + active 時 緑 glow (AllMarks success-green)。 photo カードは従来の passive badge のまま
+2. **Lightbox 埋め込みプレイヤーを `components/board/embeds/` に共通抽出** (= 8 file): YouTube / Vimeo / TikTok / Instagram / SoundCloud の 5 embed + 共有 `EmbedShell` (EmbedPosterBox / EmbedPlayButton) を Lightbox.tsx (2700 行) から verbatim 抽出。 CSS は `../Lightbox.module.css` を import して同一スコープ名維持 (= 視覚変化ゼロ)。 Lightbox は barrel から再 import、 未使用 import も整理。 全 666 テスト維持で挙動不変を実証
+3. **InlineMediaPlayer ディスパッチャ** ([embeds/InlineMediaPlayer.tsx](../components/board/embeds/InlineMediaPlayer.tsx)): URL 種別で正しい embed を選択 + `canPlayInline()` ガード (= youtube/vimeo/soundcloud/tiktok のみ true、 tweet/instagram は false)
+4. **board に audio-active state 配線** (= 単体 1 枚): BoardRoot に `audioActiveId` state + `handleToggleAudio` → CardsLayer に thread → カードラッパー内に InlineMediaPlayer オーバーレイ (= inset:0, z-index 10, pointerdown stopPropagation で reorder/Lightbox 誤発火防止) + indicator に props 配線
+5. **autoStart prop 追加** (= 検証で判明した修正): 抽出した embed はデフォルトで poster+再生ボタン (Lightbox 動作)。 Tier 3 はアイコン押し自体が user gesture なので、 InlineMediaPlayer が `autoStart` を渡して即 mount + 音つき autoplay。 Lightbox 側は false で従来動作維持
+
+**playwright 実機検証 (= 本人画面 1489×2.58)**: シード 6 枚 → 動画カードにホバーで右下が button 表示 → 押下で `data-active` true + iframe 1 個 mount → 再押下で false → **右下角つまみでリサイズ発火 (268→508px) = spec §4 必須チェック通過**
+
+**既知の小さな点 (= Phase 1 では許容、 後フェーズで調整)**: ①SoundCloud カードは今 photo アイコン表示 (= ♪ 音楽アイコンは後の装飾、 押せば再生は機能) ②検証デモの YouTube Short が「再生できません」 表示だったが、 これは当該動画が埋め込み再生禁止のため (= Lightbox でも同じ、 仕組み自体は正常)
+
+**テスト**: 661 → **668 PASS** (= MediaTypeIndicator 5 + inline-media-player 2)、 tsc clean、 build OK。 **deploy**: 1 (= multi-playback-phase1)
+
+**次セッション (= 63) goal**: user 本番検証 (= booklage.pages.dev でアイコン押下→再生→停止→リサイズ)。 OK なら **Phase 2 = Tier 2 hover プール** (`usePlaybackPool` 4枚LRU + `useHoverIntent` 300ms)。 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 62 セクション
+
+---
+
+### 1 つ前の状態 (2026-05-21 セッション 61 — 背景文字グリッチ断念+revert + multi-playback 設計確立、 Phase 1 plan まで)
 
 session 60 持ち越しの **I (背景文字グリッチ)** を 4 回作り直しても user 意図に届かず → **board から全撤去 (静止白文字に revert)** + 本番 deploy。 その後 user 最優先の **multi-playback (= カード上で複数同時再生)** に方向転換 → 2 本の web 調査 → spec → Phase 1 plan 確立。 セッション長のため Phase 1 実装は次セッションへ。
 
