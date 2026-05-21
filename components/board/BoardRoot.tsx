@@ -8,6 +8,7 @@ import {
   getThemeMeta,
 } from '@/lib/board/theme-registry'
 import { BOARD_INNER, BOARD_SLIDERS } from '@/lib/board/constants'
+import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
 import { useBoardData } from '@/lib/storage/use-board-data'
@@ -131,6 +132,21 @@ export function BoardRoot() {
   const [audioActiveId, setAudioActiveId] = useState<string | null>(null)
   const handleToggleAudio = useCallback((bookmarkId: string): void => {
     setAudioActiveId((cur) => (cur === bookmarkId ? null : bookmarkId))
+  }, [])
+  // Per-card ephemeral playback controls for the single active card. Volume is
+  // seeded from the global default and is NOT persisted (resets on reload / when
+  // another card becomes active) — this is the basis of the future multi-card
+  // mix where the user sets each card's level independently.
+  const [audioVolume, setAudioVolume] = useState<number>(50)
+  const [audioPaused, setAudioPaused] = useState<boolean>(false)
+  useEffect(() => {
+    if (audioActiveId) {
+      setAudioVolume(getDefaultVolume())
+      setAudioPaused(false)
+    }
+  }, [audioActiveId])
+  const handleAudioTogglePause = useCallback((): void => {
+    setAudioPaused((p) => !p)
   }, [])
   const [lightboxItemId, setLightboxItemId] = useState<string | null>(null)
   // Identity of the card that originally opened the lightbox. Stays
@@ -1362,6 +1378,10 @@ export function BoardRoot() {
                 hoveredBookmarkId={hoveredBookmarkId}
                 audioActiveId={audioActiveId}
                 onToggleAudio={handleToggleAudio}
+                audioVolume={audioVolume}
+                audioPaused={audioPaused}
+                onAudioVolumeChange={setAudioVolume}
+                onAudioTogglePause={handleAudioTogglePause}
                 spaceHeld={spaceHeld}
                 onHoverChange={setHoveredBookmarkId}
                 onClick={handleCardClick}

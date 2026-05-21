@@ -22,6 +22,7 @@ import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
 import { InlineMediaPlayer, canPlayInline } from './embeds'
+import { PlaybackControlBar } from './PlaybackControlBar'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
@@ -69,6 +70,11 @@ type CardsLayerProps = {
   /** Toggle inline audio playback for a card (fired by its media
    *  indicator). Switching to a new card moves the audio over to it. */
   readonly onToggleAudio: (bookmarkId: string) => void
+  /** Per-card ephemeral playback controls for the active card (PlaybackControlBar). */
+  readonly audioVolume: number
+  readonly audioPaused: boolean
+  readonly onAudioVolumeChange: (next: number) => void
+  readonly onAudioTogglePause: () => void
   readonly spaceHeld: boolean
   readonly onHoverChange: (id: string | null) => void
   readonly onClick: (bookmarkId: string, originRect: DOMRect) => void
@@ -119,6 +125,10 @@ export function CardsLayer({
   hoveredBookmarkId,
   audioActiveId,
   onToggleAudio,
+  audioVolume,
+  audioPaused,
+  onAudioVolumeChange,
+  onAudioTogglePause,
   spaceHeld,
   onHoverChange,
   onClick,
@@ -511,7 +521,28 @@ export function CardsLayer({
                   justifyContent: 'center',
                 }}
               >
-                <InlineMediaPlayer item={it} />
+                <InlineMediaPlayer item={it} volume={audioVolume} paused={audioPaused} />
+              </div>
+            )}
+            {audioActiveId === it.bookmarkId && canPlayInline(it) && (
+              // Mixer-tone control bar anchored just below the active card, so
+              // even a small card stays easy to operate. Per-card ephemeral
+              // volume + play/pause (BoardRoot owns the state).
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 60,
+                }}
+              >
+                <PlaybackControlBar
+                  volume={audioVolume}
+                  paused={audioPaused}
+                  onVolumeChange={onAudioVolumeChange}
+                  onTogglePause={onAudioTogglePause}
+                />
               </div>
             )}
             {/* Only playable cards (video / audio) get a corner indicator —
