@@ -32,6 +32,7 @@ import { CardsLayer } from './CardsLayer'
 import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
+import { MotionToggle } from './MotionToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
@@ -1313,15 +1314,18 @@ export function BoardRoot() {
       <div className={styles.canvas}>
         <TopHeader
           hidden={!!lightboxItemId}
-          nav={
-            <FilterPill
-              value={activeFilter}
-              onChange={handleFilterChange}
-              moods={moods}
-              counts={sidebarCounts}
-            />
+          actionsTop={
+            <>
+              <MotionToggle enabled={motionEnabled} onToggle={handleToggleMotion} />
+              <FilterPill
+                value={activeFilter}
+                onChange={handleFilterChange}
+                moods={moods}
+                counts={sidebarCounts}
+              />
+            </>
           }
-          actions={
+          actionsBottom={
             <>
               <TuneTrigger
                 widthPx={cardWidthPx}
