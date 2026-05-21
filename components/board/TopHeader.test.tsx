@@ -15,7 +15,7 @@ describe('TopHeader', () => {
   })
 
   it('renders the header root element', () => {
-    const { getByTestId } = render(
+    const { getByTestId, container } = render(
       <TopHeader
         actionsTop={<span data-testid="slot-top">T</span>}
         actionsBottom={<span data-testid="slot-bottom">B</span>}
@@ -26,7 +26,7 @@ describe('TopHeader', () => {
     expect(getByTestId('slot-bottom')).toBeTruthy()
 
     // Verify row order: actions-top comes before actions-bottom in DOM
-    const groups = document.querySelectorAll('[data-group]')
+    const groups = container.querySelectorAll('[data-group]')
     expect(groups.length).toBeGreaterThanOrEqual(2)
     expect((groups[0] as HTMLElement).dataset.group).toBe('actions-top')
     expect((groups[1] as HTMLElement).dataset.group).toBe('actions-bottom')

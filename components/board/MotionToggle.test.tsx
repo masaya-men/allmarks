@@ -18,4 +18,12 @@ describe('MotionToggle', () => {
     fireEvent.click(getByTestId('motion-toggle'))
     expect(onToggle).toHaveBeenCalledTimes(1)
   })
+  it('sets aria-pressed="true" when enabled', () => {
+    const { getByTestId } = render(<MotionToggle enabled onToggle={() => {}} />)
+    expect(getByTestId('motion-toggle').getAttribute('aria-pressed')).toBe('true')
+  })
+  it('sets aria-pressed="false" when not enabled', () => {
+    const { getByTestId } = render(<MotionToggle enabled={false} onToggle={() => {}} />)
+    expect(getByTestId('motion-toggle').getAttribute('aria-pressed')).toBe('false')
+  })
 })
