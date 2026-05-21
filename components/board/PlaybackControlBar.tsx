@@ -64,18 +64,25 @@ export function PlaybackControlBar({
           </svg>
         )}
       </button>
-      <input
-        type="range"
-        min="0"
-        max="100"
-        step="1"
-        value={volume}
-        className={styles.volume}
-        data-testid="pc-volume"
-        style={{ ['--fill' as string]: `${volume}%` } as CSSProperties}
-        onChange={(e): void => onVolumeChange(Number.parseInt(e.target.value, 10))}
-        aria-label="Volume"
-      />
+      <span className={styles.sliderWrap}>
+        {/* Recessed groove + green fill are our OWN clipped elements (the
+            native range track-gradient leaked an accent sliver at the right
+            end). The groove clips the fill, so the level can never bleed. */}
+        <span className={styles.groove} aria-hidden="true">
+          <span className={styles.fill} style={{ width: `${volume}%` } as CSSProperties} />
+        </span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={volume}
+          className={styles.volume}
+          data-testid="pc-volume"
+          onChange={(e): void => onVolumeChange(Number.parseInt(e.target.value, 10))}
+          aria-label="Volume"
+        />
+      </span>
     </div>
   )
 }
