@@ -2,13 +2,14 @@
 
 ## 状況
 
-session 62 で **multi-playback Phase 1 を実装 + 本番 deploy**、 その後 user 指摘を受けて **メディア再生を Lightbox↔ボードで統一**するリファクタまで完遂 (本番反映済)。 board のカード右下アイコンが「押せる再生トグル」 = 押すと音つきでカード内インライン再生、 もう一度で停止。 **対応: YouTube / Vimeo / TikTok / SoundCloud / X(ツイート)動画**。
+session 62 で **multi-playback Phase 1** → **メディア再生の Lightbox↔ボード統一** → **インライン再生コントロール** まで実装し全て本番反映済。 現状でボード上で動画/音楽カードを再生し、 カード真下のミキサー調バーで**カード個別の音量・一時停止**ができる。 対応: YouTube / Vimeo / TikTok / SoundCloud / X(ツイート)動画。
 
-統一の核 = [embeds/media-players.tsx](../components/board/embeds/media-players.tsx) の `ENTRIES` 台帳が「item → どのプレイヤー」の唯一の真実。 ボードと Lightbox の両方がここから導出。 mp4 動画は mediaSlot 有無で platform 非依存 match なので、 将来 Bluesky 等も新規コードほぼ 0 で網羅できる。
+統一の核 = [embeds/media-players.tsx](../components/board/embeds/media-players.tsx) の `ENTRIES` 台帳が「item → どのプレイヤー」の唯一の真実 (将来 Bluesky 等も mediaSlot で自動網羅)。 音量はカード個別・メモリのみ (リロードでデフォルトに戻る、 IDB 非保存) = Tier 3 ミックスの土台。
 
 ## 最優先タスク: user 本番検証 → OK なら Phase 2
 
 **まず user に本番確認を促す**: `booklage.pages.dev` をハードリロードして —
+0. 再生中カードの真下にバー → 音量スライダー / ⏸一時停止・再開ができる、 右下が■停止、 リロードで音量がデフォルトに戻る、 画像のみカードは右下アイコン無し
 1. 動画カード (YouTube/Vimeo/TikTok/SoundCloud/**X動画**) にホバー → 右下アイコンが拡大して押せる
 2. 押すと音つきでカード内再生 (緑に光る)
 3. もう一度押すと止まる

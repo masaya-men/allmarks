@@ -20,7 +20,13 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21 セッション 62 — multi-playback Phase 1 + メディア再生の Lightbox↔ボード統一)
+### 直近の状態 (2026-05-21 セッション 62 — Phase 1 + メディア統一 + インライン再生コントロール)
+
+session 62 後半でさらに 2 改善を本番反映: ①**画像のみカードは右下アイコン非表示**（再生できるカードだけ押せるボタン）+ Vimeo=動画/SoundCloud=♪音楽アイコン修正 ②**カード再生中に真下へ AllMarks ミキサー調のコントロールバー**（音量スライダー + ⏸再生/停止）。 音量は**カード個別 + メモリのみ（リロードでデフォルトに戻る、IDB非保存）** = multi-playback ミックスの土台。 右下アイコンは再生中**■停止**に切替。 全埋め込みに controlled volume/paused を inline 専用で追加（Lightbox は variant 温存=無破壊）。 plan: [inline-playback-controls](./superpowers/plans/2026-05-21-inline-playback-controls.md)。 検証: preview 実プロキシで音量反映/一時停止/リサイズ確認、 **682 PASS** / tsc clean / lint 新規0 / deploy 2。 詳細: [TODO_COMPLETED.md](./TODO_COMPLETED.md)「セッション 62 続き2」
+
+---
+
+### 旧 (2026-05-21 セッション 62 — multi-playback Phase 1 + メディア再生の Lightbox↔ボード統一)
 
 session 61 の Phase 1 plan を実装完遂 + 本番 deploy 後、 user 検証で「ツイート動画もボードで再生できるべき / 将来追加も全部網羅すべき」 と指摘 → **media player 台帳 (registry) を新設してボードと Lightbox を単一の真実に統一**するリファクタまで実施。 **board のカード右下アイコンが「押せる再生トグル」、 押すと音つきインライン再生、 もう一度で停止** (= Tier 3 単体 1 枚)。 対応: YouTube / Vimeo / TikTok / SoundCloud / **X動画**。 リサイズ干渉も解決済。
 
