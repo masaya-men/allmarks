@@ -9,13 +9,17 @@
    default theme. */
 .bar {
   /* themeable tokens (default theme) */
-  /* Glass slab matched 1:1 to the TUNE drawer (TuneTrigger.module.css .drawer):
-     rgba(10,10,10,0.92) + blur(8px) + matched shadow. The drawer DOES blur in
-     Chrome — it ships `-webkit-backdrop-filter:blur(8px)` (the CSS minifier
-     drops the unprefixed name, which is why getComputedStyle().backdropFilter
-     reads "none"; the prefixed alias is what's live). So this bar keeps the
-     blur to read as the same frosted glass; the 0.92 fill is the "透明感". */
-  --pc-bar-bg: rgba(10, 10, 10, 0.92);
+  /* Translucent slab — see-through like the TUNE drawer, but NO backdrop blur.
+     Why no blur: the cards sit inside a `transform: translate3d` + will-change
+     wrapper (BoardRoot), which forms a backdrop root. backdrop-filter only
+     samples WITHIN that root, so it can't reach the board background / hero
+     wordmark that live in sibling layers — measured: blur on vs off both read
+     ~rgb27 over the wordmark, i.e. the blur does nothing here. The see-through
+     instead comes from plain alpha (the wrapper group composites over the
+     board, so a low alpha reveals it). The drawer floats at chrome top-level,
+     so ITS blur is live and its big frosted panel reads very glassy; this small
+     unblurred bar needs a LOWER alpha (0.80) to read as transparent. */
+  --pc-bar-bg: rgba(10, 10, 10, 0.80);
   --pc-accent: #34e07a; /* fluorescent green volume fill — keep */
   --pc-track-empty: #202024;
   --pc-knob-top: #56565c;
@@ -34,9 +38,8 @@
   padding: 0 10px;
   border-radius: 8px;
   background: var(--pc-bar-bg);
-  /* webkit alias first so the build keeps the unprefixed name too (Firefox). */
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  /* No backdrop-filter: inert inside the transformed cards wrapper (see note
+     on --pc-bar-bg). Transparency is the low alpha alone. */
   border: 0;
   /* Same open-state shadow as the TUNE drawer (.drawer[data-open]) so the two
      glass surfaces read as one family. */
