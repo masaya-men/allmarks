@@ -18,12 +18,15 @@ export function InlineMediaPlayer({
   item,
   volume,
   paused,
+  muted,
 }: {
   readonly item: BoardItem
   /** Controlled per-card volume (0–100). */
   readonly volume?: number
   /** Controlled play/pause. */
   readonly paused?: boolean
+  /** Tier 2 hover playback: mount muted (no audio). */
+  readonly muted?: boolean
 }): ReactNode {
-  return resolveInlinePlayer(item, { autoStart: true, volume, paused })
+  return resolveInlinePlayer(item, { autoStart: true, volume, paused, muted })
 }
