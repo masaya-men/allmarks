@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactElement } from 'react'
+import { type PointerEvent as ReactPointerEvent, type ReactElement } from 'react'
 import styles from './MediaTypeIndicator.module.css'
 
 export type MediaType = 'video' | 'photo'
@@ -10,27 +10,73 @@ type Props = {
    *  is already obvious from the card content, no badge needed). */
   readonly type: MediaType | null
   readonly visible: boolean
+  /** When provided, the indicator becomes an interactive toggle button.
+   *  Pressing it activates inline playback-with-audio for the card.
+   *  Absent → the indicator stays a passive badge (photo cards, etc.). */
+  readonly onActivate?: () => void
+  /** True when this card is currently the audio-active card (Tier 3). */
+  readonly active?: boolean
 }
 
 /**
- * Tiny media-type pill rendered on the card on hover. Tells
- * the user at a glance whether the card under their cursor is video or
- * photo — useful both as a content cue and (later) when filter / multi-
- * playback features need to disambiguate. We INTENTIONALLY don't render
- * a play overlay on the card thumbnail itself anymore (every card looking
- * like a play button felt cheap); the indicator only appears on hover so
- * it never competes with the visual itself.
+ * Bottom-right card indicator. For photo (and non-playable) cards it stays a
+ * passive badge that only tells the user the media type on hover. For
+ * video/audio cards with `onActivate`, it becomes a clickable toggle that
+ * starts/stops inline playback-with-audio (multi-playback Tier 3).
+ *
+ * Interaction safety (mirrors CardCornerActions): the button sits at
+ * z-index 50 (above the resize handle's 30) but only consumes pointer
+ * events on its own footprint, and stops pointerdown propagation so the
+ * card reorder drag never engages. It is anchored 8px inside the corner
+ * and grows INWARD on hover, so the corner tip + outer ring stay free for
+ * the bottom-right resize handle.
  */
-export function MediaTypeIndicator({ type, visible }: Props): ReactElement | null {
+export function MediaTypeIndicator({
+  type,
+  visible,
+  onActivate,
+  active = false,
+}: Props): ReactElement | null {
   if (type === null) return null
+
+  const interactive = typeof onActivate === 'function'
+  const icon = type === 'video' ? <VideoIcon /> : <PhotoIcon />
+
+  if (!interactive) {
+    return (
+      <div
+        className={styles.indicator}
+        data-testid="media-indicator"
+        data-visible={visible}
+        aria-label={type === 'video' ? 'video' : 'photo'}
+      >
+        {icon}
+      </div>
+    )
+  }
+
+  const swallow = (e: ReactPointerEvent<HTMLButtonElement>): void => {
+    e.stopPropagation()
+  }
+
   return (
-    <div
-      className={styles.indicator}
+    <button
+      type="button"
+      className={styles.indicator + ' ' + styles.interactive}
+      data-testid="media-indicator"
       data-visible={visible}
-      aria-label={type === 'video' ? 'video' : 'photo'}
+      data-active={active ? 'true' : 'false'}
+      aria-label={type === 'video' ? 'Play with sound' : 'Play audio'}
+      aria-pressed={active}
+      onPointerDown={swallow}
+      onMouseDown={swallow}
+      onClick={(e): void => {
+        e.stopPropagation()
+        onActivate?.()
+      }}
     >
-      {type === 'video' ? <VideoIcon /> : <PhotoIcon />}
-    </div>
+      {icon}
+    </button>
   )
 }
 

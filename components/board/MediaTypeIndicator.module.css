@@ -1,6 +1,8 @@
-/* Hover-revealed pill anchored at bottom-right of the card. Dark glass +
-   1px white inset surface treatment. Width is content-driven (the icon)
-   so the pill stays compact whether the card is video or photo. */
+/* Hover-revealed indicator anchored at bottom-right of the card. Dark glass +
+   1px white inset surface treatment. For passive (photo) cards it is a compact
+   badge; for interactive (video/audio) cards it becomes a clickable toggle
+   that grows INWARD on hover so the corner tip stays free for the resize
+   handle. */
 .indicator {
   position: absolute;
   bottom: 8px;
@@ -19,13 +21,51 @@
   pointer-events: none;
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 160ms ease, transform 160ms ease;
-  z-index: 20;
+  transition: opacity 160ms ease, transform 160ms ease, width 140ms ease,
+    height 140ms ease, color 140ms ease, border-color 140ms ease,
+    box-shadow 140ms ease;
+  /* Above the resize handle (z 30) so clicks on the button win, mirroring
+     the × / ↺ corner actions (z 50). */
+  z-index: 50;
 }
 
 .indicator[data-visible='true'] {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Interactive variant — clickable, pointer cursor, grows inward on hover. */
+.interactive {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  /* Anchored bottom-right at 8px inset; increasing width/height grows the
+     box up-and-left (inward), never toward the corner tip. */
+  transform-origin: bottom right;
+}
+
+.interactive[data-visible='true']:hover {
+  width: 34px;
+  height: 34px;
+}
+
+.interactive .icon {
+  transition: width 140ms ease, height 140ms ease;
+}
+
+.interactive[data-visible='true']:hover .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Active (audio-on / pinned) — AllMarks success-green glow language. */
+.interactive[data-active='true'] {
+  color: rgba(74, 222, 128, 0.98);
+  border-color: rgba(74, 222, 128, 0.55);
+  box-shadow:
+    0 0 3px rgba(74, 222, 128, 0.5),
+    0 0 8px rgba(74, 222, 128, 0.35);
 }
 
 .icon {
