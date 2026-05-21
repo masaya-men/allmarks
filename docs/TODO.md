@@ -20,9 +20,11 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21 セッション 62 — Phase 1 + メディア統一 + インライン再生コントロール + バー作り込み中)
+### 直近の状態 (2026-05-21 セッション 63 — ライトボックス stale-media バグ #4 解決・本番反映済)
 
-**コントロールバーのブラッシュアップを継続中** (session 63 へ持ち越し)。 バーは TUNE 風ガラス + 70%サイズ + 立体ノブ + 物理ボタン + 出現ポップまで本番反映済。 **次セッションの 4 項目は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) に詳細転記済** = ①背景黒を TUNE と完全一致 (要 computed style 実測) ②他カードに隠れない z-index ③バー幅をカード幅に合わせ DENSE幅207.80を最小値に (実装可) ④消失も出現の逆でカードに帰るアニメ。 テストは `pnpm preview`。
+**致命的バグ #4「ライトボックスで左右移動すると左の動画が前のカードのまま残る」を根治・本番反映済**。 真因は [TweetVideoEmbed.tsx](../components/board/embeds/TweetVideoEmbed.tsx) が再生 source を mount 時に useState へ取り込んだきり prop 変更を無視していたこと (ライトボックスは player を 1 インスタンス使い回す=React key が slot 番号で常に slot-0)。 画像は素の `<img src>` で追従するため動画ツイートだけ stale という症状と一致。 修正: source を毎レンダ prop から導出する live 値にし、自己フェッチ分のみ state 保持。 回帰テスト追加 (同一インスタンスを別 source で再描画→ src 更新)。 検証: 新ビルドの preview 実機 + verify スクリプトで **STALE MEDIA OCCURRENCES = 0**、 **684 PASS** / tsc clean / deploy 1。
+
+**残: コントロールバーのブラッシュアップ 4 項目** (session 62 から持ち越し、 [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md) に詳細) = ①背景黒を TUNE と完全一致 (要 computed style 実測) ②他カードに隠れない z-index ③バー幅をカード幅に合わせ DENSE幅207.80を最小値に (実装可) ④消失も出現の逆でカードに帰るアニメ。 テストは `pnpm preview`。
 
 ---
 
