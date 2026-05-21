@@ -1,43 +1,38 @@
-# 次セッションのゴール (= セッション 64) — Phase 2: ホバーで本物再生 (Tier 2)
+# 次セッションのゴール (= セッション 65) — Phase 2 本番検証 → Phase 3 か タグ付けを選択
 
 ## 今のゴール (1 行)
 
-board のカードに **300ms マウスを留めると、そのカードが本物のミュート再生に昇格**する Tier 2 ホバープールを実装する (最大 4 枚 LRU)。
+session 64 で ship した **Tier 2 ホバー再生を user が本番で確認**し、OK なら次の大物 (Phase 3 = Tier 1 常時モーション、 または タグ付け) に進む。
 
-## 直前までの状態 (session 63 終了時点)
+## 直前までの状態 (session 64 終了時点)
 
-- **ライトボックス stale-media バグ #4 = 根治・本番反映済**。 真因は [TweetVideoEmbed.tsx](../components/board/embeds/TweetVideoEmbed.tsx) が再生 source を mount 時 useState に snapshot して prop 変更を無視していたこと。 source を毎レンダ prop 導出に変更して解決。 回帰テスト + verify スクリプト stale=0 で確認済。
-- **コントロールバーのブラッシュアップ 4 項目 = 完了済** (commit `918b652` 他)。 ドキュメントが前セッション中断で未追記だっただけ、 コードには反映済 (user 確認)。
-- 684 PASS / tsc clean / `booklage.pages.dev` 反映済。
+- **multi-playback Phase 2 (Tier 2 ホバー再生) = 完遂・本番反映済**。 board のカードに 300ms マウスを留めるとミュートで本物再生に昇格、 外すと約 0.8 秒後に停止。 同時最大 3 枚 (LRU)、 昇格 0.1 秒で緑 glow。 音つき Tier 3 (アイコン押し) と別レイヤーで共存。
+- 新規 file: [playback-pool.ts](../lib/board/playback-pool.ts) (純粋ロジック) / [use-playback-pool.ts](../lib/board/use-playback-pool.ts) / [use-hover-intent.ts](../lib/board/use-hover-intent.ts)。 muted を [media-players.tsx](../components/board/embeds/media-players.tsx) registry + 全 embed + [CardsLayer.tsx](../components/board/CardsLayer.tsx) に開通。
+- **699 PASS / tsc clean / `booklage.pages.dev` 反映済**。
+- spec: [multi-playback-design](./superpowers/specs/2026-05-21-multi-playback-design.md) §3 (Tier 2「Phase 2 実装確定」注記)。 plan: [multi-playback-phase2-hover](./superpowers/plans/2026-05-21-multi-playback-phase2-hover.md)。
 
-## やること (Tier 2 hover プール、 上から順に)
+## セッション開始時にやること
 
-仕様の真実は [multi-playback-design](./superpowers/specs/2026-05-21-multi-playback-design.md) §3 (Tier 2) / §6。 着手前に必ず読む。
+1. **user に本番検証を依頼**: `booklage.pages.dev` をハードリロード → 動画カード (YouTube / X動画 / Vimeo 等) にマウスを乗せたまま少し待つ → 音なしで再生が始まるか。 外すと止まるか。 右下アイコン押しの音つき再生 (Tier 3) と両立するか。
+2. **OK なら次の大物を user と選択**:
+   - **Phase 3 = Tier 1 常時 ambient モーション**: 画面内の全カードが軽く動いて見える層 (= ストーリーボード / Ken Burns / クロスフェード、 デコーダ 0 の軽量演出)。 spec §3 Tier 1。 「ボードが常に生きてる」 を完成させる
+   - **タグ付け機能**: user 最優先発言 (memory `project_tagging_top_priority`)。 multi-playback がひと段落したので着手の好機
+3. NG / 違和感あれば polish (= glow の色味・強さ、 余韻 0.8 秒の長さ、 300ms の感度などは実機で微調整可能)
 
-1. **`useHoverIntent` フック** = カードに 300ms マウスが留まったら発火。 離れたら 2〜3 秒は再生キープしてから退避対象に (即 unmount でデコーダ thrash を避ける)。 業界標準 300ms (NN/g・Baymard)。
-2. **`usePlaybackPool` フック** = 本物再生は **最大 4 枚同時** (`MAX_ACTIVE_PLAYERS = 4`)。 5 枚目昇格時は最も古い非ピン留めプレイヤーを停止して Tier 1 に戻す (LRU 退避、 Netflix 同時 4 と同思想 = デコーダ上限内)。
-3. **昇格時 0.1 秒で視覚反応** (枠 / scrim 等)。 プレイヤー起動の待ちを感じさせない。
-4. **ミュート再生**で昇格 (音は Tier 3 = アイコン押しの領分)。 既存の inline player 機構 ([embeds/media-players.tsx](../components/board/embeds/media-players.tsx) の registry) を流用、 新概念を増やさない。
+## Phase 2 で残した小さな点 (任意)
 
-## 設計上の前提 (調査済・厳守)
-
-- 同時本物再生のボトルネックは GPU ではなく**ハードウェアデコーダのセッション数**。 iframe (YouTube/Vimeo) は raw `<video>` より遥かに重い → **4 枚上限は物理制約**、 増やさない。
-- カード本体クリック = 従来どおり Lightbox を開く (変更しない)。 ホバー / アイコン押し / 本体クリックの 3 役割分離。
-
-## テスト方法
-
-- `pnpm preview` (= `next build && wrangler pages dev out`、 port 8788)。 ツイート動画も実再生で確認可。 **検証前に古い workerd を落として新ビルドで再起動**する (session 63 の教訓: stale サーバーを掴むと誤検証になる)。
-- カード投入: `http://127.0.0.1:8788/save?url=<encoded>`。 playwright で hover → 300ms 後に `<video>` mount を確認、 5 枚目で最古が停止する LRU を確認。
+- 緑 glow の色・強さは success-green 仮値 (`rgba(74,222,128,...)`)。 user が実機で見て調整希望あれば CardsLayer の boxShadow を変える
+- Tier 2 のミュート再生中、 SoundCloud / TikTok iframe フォールバックは外部制御不可 (= 既知の限界、 Tier 3 と同じ)
 
 ## このプロジェクトの user 対応で厳守すること
 
 - AskUserQuestion の質問箱を多用しない。 普通の chat で 1 問ずつ
 - 応答は日本語、 横文字カタカナ多用しない
 - 既存機能を壊さない: 触る前に依存を洗い、 task ごとに全テスト + preview 実機確認。 commit はこまめに、 deploy 前に tsc + vitest
-- ドキュメント更新 (TODO / CURRENT_GOAL / TODO_COMPLETED) を**コミットと同じ区切りで必ず行う** (session 63 で前セッションの未追記によるドキュメントズレが判明したため)
+- ドキュメント更新 (TODO / CURRENT_GOAL / TODO_COMPLETED) を commit と同じ区切りで必ず行う
+- **preview の注意**: ローカル wrangler が古く compatibility date でコケるので `npx -y wrangler@latest pages dev out --port 8788 --ip 127.0.0.1` を使う (session 64 の教訓)
 
-## backlog (Tier 2 の後)
+## backlog (この後)
 
-- Phase 3 = Tier 1 ambient モーション (全カード軽量演出、 デコーダ 0) / Phase 4 = master ON/OFF スイッチ
-- タグ付け機能 (= user 最優先発言、 multi-playback 完了後すぐ着手)
+- multi-playback Phase 4 = master ON/OFF スイッチ (= 全 Tier 停止の「静かな鑑賞モード」)
 - 月末 (2026-05-31): `allmarks.app` ドメイン取得確認

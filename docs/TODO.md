@@ -20,13 +20,11 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21 セッション 63 — ライトボックス stale-media バグ #4 解決・本番反映済)
+### 直近の状態 (2026-05-21 セッション 64 — multi-playback Phase 2 = Tier 2 ホバー再生 完遂・本番反映済)
 
-**致命的バグ #4「ライトボックスで左右移動すると左の動画が前のカードのまま残る」を根治・本番反映済**。 真因は [TweetVideoEmbed.tsx](../components/board/embeds/TweetVideoEmbed.tsx) が再生 source を mount 時に useState へ取り込んだきり prop 変更を無視していたこと (ライトボックスは player を 1 インスタンス使い回す=React key が slot 番号で常に slot-0)。 画像は素の `<img src>` で追従するため動画ツイートだけ stale という症状と一致。 修正: source を毎レンダ prop から導出する live 値にし、自己フェッチ分のみ state 保持。 回帰テスト追加 (同一インスタンスを別 source で再描画→ src 更新)。 検証: 新ビルドの preview 実機 + verify スクリプトで **STALE MEDIA OCCURRENCES = 0**、 **684 PASS** / tsc clean / deploy 1。
+**Tier 2 ホバー再生を実装・本番反映済**。 board のカードに **300ms マウスを留めるとミュートで本物再生に昇格**、 外すと約 0.8 秒の余韻後に停止。 同時最大 3 枚 (LRU = 4 枚目で最古を停止)。 昇格 0.1 秒で緑 glow。 音つき Tier 3 (= 右下アイコン押し) とは別レイヤーで共存 (同一カードは音つき優先)。 新規 3 file (`lib/board/playback-pool.ts` 純粋ロジック + `use-playback-pool.ts`/`use-hover-intent.ts` hook、 TDD で 13 test)、 muted を inline player registry + 全 embed に開通 (iframe=`mute=1`/`muted=1`, native `<video>`=`muted` 属性)、 CardsLayer に配線。 検証: preview 実機で 300ms 昇格 / 0.8s 停止 / LRU 上限 3 / リサイズ 268→695px 存続。 **699 PASS** / tsc clean / deploy 1。 詳細: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 64。
 
-**コントロールバーのブラッシュアップ 4 項目は完了済** (commit `918b652` + 透明度追従 `9b07439`/`d342fb1`/`c422654`) = ①背景黒を TUNE と一致 ②他カードの上に lift する z-index ③バー幅をカード幅に合わせ DENSE幅を最小値に ④消失も出現の逆 (symmetric tuck) アニメ。 前セッションがドキュメント追記前に中断したため backlog に残っていたが、 コードには反映済 (user 確認 2026-05-21)。
-
-**次の優先: Phase 2 = Tier 2 hover プール** ([multi-playback-design](./superpowers/specs/2026-05-21-multi-playback-design.md) §3/§6) = `usePlaybackPool` 4枚LRU + `useHoverIntent` 300ms。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+**次の優先候補**: ①**Phase 3 = Tier 1 常時 ambient モーション** (= 画面内の全カードが軽く動いて見える、 デコーダ 0 の軽量演出) ②**タグ付け機能** (= user 最優先発言、 multi-playback 完了後すぐ着手予定)。 user 本番検証後に選択。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 
