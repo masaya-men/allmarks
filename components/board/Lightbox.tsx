@@ -448,10 +448,15 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
   // in milliseconds. We render an item-level placeholder until it lands.
   const [tweetMeta, setTweetMeta] = useState<TweetMeta | null>(null)
   useEffect(() => {
-    if (!tweetId) {
-      setTweetMeta(null)
-      return
-    }
+    // Clear FIRST, every time the card changes: otherwise the previous card's
+    // meta (and thus its video/photo) stayed on screen until the new fetch
+    // resolved — on slow/failed fetches it never updated, so left/right nav
+    // showed the prior card's media while the text already changed (session 63
+    // stale-media bug). With this, the media falls back to the new card's own
+    // thumbnail immediately, then upgrades to its video/photo when the fetch
+    // lands.
+    setTweetMeta(null)
+    if (!tweetId) return
     let cancelled = false
     void fetchTweetMeta(tweetId).then((meta) => {
       if (cancelled) return
@@ -1332,14 +1337,19 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
              個別に hit を取るので機能維持。 */
           onClick={(e): void => e.stopPropagation()}
         >
+          {/* key={view.url}: remount the whole left-media subtree per card so a
+              reused <video>/<iframe> can't keep showing the previous card's
+              frame on left/right nav (the text panel updated fine, the media
+              didn't — session 63 stale-media bug). */}
           {tweetId
             ? <TweetMedia
+                key={view.url}
                 item={view}
                 meta={tweetMeta}
                 slots={tweetSlots}
                 slotIdx={tweetSlotIdx}
               />
-            : <LightboxMedia item={view} />}
+            : <LightboxMedia key={view.url} item={view} />}
           {/* I-07-#4 follow-up: multi-image dots live INSIDE .media as
               an absolutely-positioned child, centered horizontally on
               the media column (= the image itself), placed in the
@@ -1522,6 +1532,9 @@ function TweetMedia({
       // Point the shared player at THIS slot's mp4 + poster + aspect (mix
       // tweets can have multiple slots; the carousel index picks one).
       return (
+        // key by slot index so swapping images within ONE multi-media tweet
+        // remounts the <video>. Card-to-card remount is handled by the keyed
+        // <TweetMedia key={view.url}> upstream.
         <TweetVideoEmbed
           key={`slot-${slotIdx}`}
           item={{ url: item.url, title: item.title, thumbnail: item.thumbnail ?? undefined, mediaSlots: slots }}
