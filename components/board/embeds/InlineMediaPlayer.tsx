@@ -49,6 +49,7 @@ export function InlineMediaPlayer({
           vertical={isYoutubeShorts(item.url)}
           thumbnail={thumb}
           aspectRatio={aspectRatio}
+          autoStart
         />
       )
     }
@@ -56,11 +57,11 @@ export function InlineMediaPlayer({
   if (type === 'vimeo') {
     const id = extractVimeoId(item.url)
     if (id) {
-      return <VimeoEmbed videoId={id} title={item.title} thumbnail={thumb} aspectRatio={aspectRatio} />
+      return <VimeoEmbed videoId={id} title={item.title} thumbnail={thumb} aspectRatio={aspectRatio} autoStart />
     }
   }
   if (type === 'soundcloud') {
-    return <SoundCloudEmbed url={item.url} title={item.title} thumbnail={thumb} aspectRatio={aspectRatio} />
+    return <SoundCloudEmbed url={item.url} title={item.title} thumbnail={thumb} aspectRatio={aspectRatio} autoStart />
   }
   if (type === 'tiktok') {
     const id = extractTikTokVideoId(item.url)
@@ -72,6 +73,7 @@ export function InlineMediaPlayer({
           title={item.title}
           thumbnail={thumb}
           aspectRatio={aspectRatio}
+          autoStart
         />
       )
     }

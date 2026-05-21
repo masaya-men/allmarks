@@ -11,14 +11,20 @@ export function YouTubeEmbed({
   vertical,
   thumbnail,
   aspectRatio,
+  autoStart = false,
 }: {
   readonly videoId: string
   readonly title: string
   readonly vertical: boolean
   readonly thumbnail: string | undefined
   readonly aspectRatio: number | undefined
+  /** When true, skip the poster+play step and mount the player immediately.
+   *  Used for Tier 3 inline cards where the indicator press IS the user
+   *  gesture that satisfies the autoplay-with-sound policy. Lightbox leaves
+   *  it false so the poster→click experience is unchanged. */
+  readonly autoStart?: boolean
 }): ReactNode {
-  const [hasInteracted, setHasInteracted] = useState<boolean>(false)
+  const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   // YouTube CDN poster — used only as fallback when the bookmarklet
   // didn't capture an og:image. maxresdefault works for ~95% of videos;

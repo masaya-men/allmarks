@@ -40,14 +40,17 @@ export function TikTokEmbed({
   thumbnail,
   title,
   aspectRatio,
+  autoStart = false,
 }: {
   readonly videoId: string
   readonly url: string
   readonly thumbnail: string | undefined
   readonly title: string
   readonly aspectRatio: number | undefined
+  /** When true, skip the poster+play step (Tier 3 inline). See YouTubeEmbed. */
+  readonly autoStart?: boolean
 }): ReactNode {
-  const [hasInteracted, setHasInteracted] = useState<boolean>(false)
+  const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   // undefined = scrape in flight, null = scrape failed, value = success
   const [playback, setPlayback] = useState<TikTokPlayback | null | undefined>(undefined)
   // Once decided, this state is sticky — we don't switch tiers mid-stream

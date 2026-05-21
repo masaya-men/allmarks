@@ -20,13 +20,16 @@ export function SoundCloudEmbed({
   title,
   thumbnail,
   aspectRatio,
+  autoStart = false,
 }: {
   readonly url: string
   readonly title: string
   readonly thumbnail: string | undefined
   readonly aspectRatio: number | undefined
+  /** When true, mount the player immediately (Tier 3 inline). See YouTubeEmbed. */
+  readonly autoStart?: boolean
 }): ReactNode {
-  const [hasInteracted, setHasInteracted] = useState<boolean>(false)
+  const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const widgetRef = useRef<SoundCloudWidget | null>(null)
   const [volume, setVolume] = useDefaultVolume()
