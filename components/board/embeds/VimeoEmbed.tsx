@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import styles from '../Lightbox.module.css'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import { EmbedPosterBox, EmbedPlayButton } from './EmbedShell'
@@ -16,6 +16,8 @@ export function VimeoEmbed({
   thumbnail,
   aspectRatio,
   autoStart = false,
+  volume,
+  paused,
 }: {
   readonly videoId: string
   readonly title: string
@@ -23,9 +25,27 @@ export function VimeoEmbed({
   readonly aspectRatio: number | undefined
   /** When true, mount the player immediately (Tier 3 inline). See YouTubeEmbed. */
   readonly autoStart?: boolean
+  /** Controlled per-card volume (0–100) for inline cards. */
+  readonly volume?: number
+  /** Controlled play/pause for inline cards. */
+  readonly paused?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+
+  // Inline external-control bridge via the Vimeo Player API postMessage.
+  const post = (msg: object): void => {
+    iframeRef.current?.contentWindow?.postMessage(JSON.stringify(msg), 'https://player.vimeo.com')
+  }
+  useEffect(() => {
+    if (hasInteracted && typeof volume === 'number') post({ method: 'setVolume', value: volume / 100 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [volume, hasInteracted])
+  useEffect(() => {
+    if (!hasInteracted || typeof paused !== 'boolean') return
+    post({ method: paused ? 'pause' : 'play' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paused, hasInteracted])
 
   // Vimeo's Player API takes setVolume(0–1) via postMessage and accepts
   // commands the moment the player has booted, which is shortly after the

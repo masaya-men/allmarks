@@ -21,6 +21,8 @@ export function SoundCloudEmbed({
   thumbnail,
   aspectRatio,
   autoStart = false,
+  volume: controlledVolume,
+  paused,
 }: {
   readonly url: string
   readonly title: string
@@ -28,11 +30,26 @@ export function SoundCloudEmbed({
   readonly aspectRatio: number | undefined
   /** When true, mount the player immediately (Tier 3 inline). See YouTubeEmbed. */
   readonly autoStart?: boolean
+  /** Controlled per-card volume (0–100) for inline cards. When set, the
+   *  embed's own overlay slider is hidden (the external bar replaces it). */
+  readonly volume?: number
+  /** Controlled play/pause for inline cards. */
+  readonly paused?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const widgetRef = useRef<SoundCloudWidget | null>(null)
   const [volume, setVolume] = useDefaultVolume()
+  // Inline external-control: drive the widget volume/playback from the bar.
+  const controlled = typeof controlledVolume === 'number'
+  useEffect(() => {
+    if (controlled) widgetRef.current?.setVolume(controlledVolume as number)
+  }, [controlledVolume, controlled])
+  useEffect(() => {
+    if (typeof paused !== 'boolean') return
+    if (paused) widgetRef.current?.pause()
+    else widgetRef.current?.play()
+  }, [paused])
   const [isControlsVisible, setIsControlsVisible] = useState<boolean>(false)
   const [isDragging, setIsDragging] = useState<boolean>(false)
   const hideTimerRef = useRef<number | null>(null)
@@ -144,6 +161,9 @@ export function SoundCloudEmbed({
         // more reliably when the iframe's permission delegation is explicit.
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       />
+      {/* The embed's own volume overlay is hidden when an external control
+          bar drives the player (inline cards) — the bar replaces it. */}
+      {!controlled && (
       <div
         className={styles.volumeControl}
         data-visible={isControlsVisible}
@@ -187,6 +207,7 @@ export function SoundCloudEmbed({
           )}
         </button>
       </div>
+      )}
     </div>
   )
 }

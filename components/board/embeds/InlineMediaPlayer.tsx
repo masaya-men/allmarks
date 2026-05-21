@@ -16,8 +16,14 @@ export { canPlayInline }
  */
 export function InlineMediaPlayer({
   item,
+  volume,
+  paused,
 }: {
   readonly item: BoardItem
+  /** Controlled per-card volume (0–100). */
+  readonly volume?: number
+  /** Controlled play/pause. */
+  readonly paused?: boolean
 }): ReactNode {
-  return resolveInlinePlayer(item, true)
+  return resolveInlinePlayer(item, { autoStart: true, volume, paused })
 }

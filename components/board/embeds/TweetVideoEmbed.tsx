@@ -52,12 +52,19 @@ export function TweetVideoEmbed({
   source: sourceProp,
   variant,
   autoStart = false,
+  volume,
+  paused,
 }: {
   readonly item: TweetVideoItem
   /** When the caller already has the mp4 (Lightbox slot meta), pass it to skip resolution. */
   readonly source?: TweetVideoSource
   readonly variant: MediaVariant
   readonly autoStart?: boolean
+  /** Controlled per-card volume (0–100). When set, overrides the global
+   *  default and inline volume changes are NOT written back to it. */
+  readonly volume?: number
+  /** Controlled play/pause. */
+  readonly paused?: boolean
 }): ReactNode {
   const initial = sourceProp ?? resolveTweetVideoSource(item)
   const tweetId = extractTweetId(item.url)
@@ -100,10 +107,25 @@ export function TweetVideoEmbed({
     // `initial` is derived from props that don't change for a mounted card.
   }, [tweetId, item.thumbnail, initial])
 
-  // Keep the <video> volume synced to the app-wide default (mount + cross-card).
+  // Controlled (inline) per-card volume wins; otherwise sync to the global
+  // default (Lightbox). Inline never writes the per-card value back to the
+  // global default — it stays ephemeral and isolated.
+  const controlled = typeof volume === 'number'
   useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = defaultVolume / 100
-  }, [defaultVolume, source])
+    if (videoRef.current && controlled) videoRef.current.volume = (volume as number) / 100
+  }, [volume, controlled, source])
+  useEffect(() => {
+    if (videoRef.current && !controlled) videoRef.current.volume = defaultVolume / 100
+  }, [defaultVolume, controlled, source])
+
+  // Apply controlled play/pause (inline). Keeps the player mounted (position
+  // preserved) — the corner ■ toggle is the full stop/unmount.
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el || typeof paused !== 'boolean') return
+    if (paused) el.pause()
+    else void el.play().catch(() => { /* autoplay race; ignore */ })
+  }, [paused, source])
 
   const handleVolumeChange = (): void => {
     const v = videoRef.current?.volume
@@ -166,7 +188,8 @@ export function TweetVideoEmbed({
         onPause={(): void => setIsPlaying(false)}
         onEnded={(): void => setIsPlaying(false)}
         onError={(): void => setVideoFailed(true)}
-        onVolumeChange={handleVolumeChange}
+        // Controlled inline volume must NOT bleed into the global default.
+        onVolumeChange={controlled ? undefined : handleVolumeChange}
         style={variant === 'inline' ? FILL : undefined}
       />
       {showDisc && (

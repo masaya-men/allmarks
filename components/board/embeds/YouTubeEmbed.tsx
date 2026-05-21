@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import styles from '../Lightbox.module.css'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import { EmbedPosterBox, EmbedPlayButton } from './EmbedShell'
@@ -12,6 +12,8 @@ export function YouTubeEmbed({
   thumbnail,
   aspectRatio,
   autoStart = false,
+  volume,
+  paused,
 }: {
   readonly videoId: string
   readonly title: string
@@ -23,9 +25,29 @@ export function YouTubeEmbed({
    *  gesture that satisfies the autoplay-with-sound policy. Lightbox leaves
    *  it false so the poster→click experience is unchanged. */
   readonly autoStart?: boolean
+  /** Controlled per-card volume (0–100) for inline cards. */
+  readonly volume?: number
+  /** Controlled play/pause for inline cards. */
+  readonly paused?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+
+  // Inline external-control bridge: once the iframe is mounted, drive volume
+  // and play/pause via the YouTube iframe API (enablejsapi=1). Volume changes
+  // here are per-card and do not touch the global default.
+  const post = (msg: object): void => {
+    iframeRef.current?.contentWindow?.postMessage(JSON.stringify(msg), 'https://www.youtube.com')
+  }
+  useEffect(() => {
+    if (hasInteracted && typeof volume === 'number') post({ event: 'command', func: 'setVolume', args: [volume] })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [volume, hasInteracted])
+  useEffect(() => {
+    if (!hasInteracted || typeof paused !== 'boolean') return
+    post({ event: 'command', func: paused ? 'pauseVideo' : 'playVideo' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paused, hasInteracted])
   // YouTube CDN poster — used only as fallback when the bookmarklet
   // didn't capture an og:image. maxresdefault works for ~95% of videos;
   // hqdefault is the universal fallback if max isn't available, but we

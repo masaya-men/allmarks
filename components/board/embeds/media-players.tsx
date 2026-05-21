@@ -25,7 +25,15 @@ export type PlayableItem = {
   readonly mediaSlots?: readonly MediaSlot[]
 }
 
-type RenderOpts = { readonly variant: MediaVariant; readonly autoStart?: boolean }
+type RenderOpts = {
+  readonly variant: MediaVariant
+  readonly autoStart?: boolean
+  /** Controlled per-card volume (0–100) for inline cards. Undefined → the
+   *  embed uses the global default (Lightbox). */
+  readonly volume?: number
+  /** Controlled play/pause for inline cards. Undefined → uncontrolled. */
+  readonly paused?: boolean
+}
 
 /** True when the item carries a directly-playable mp4 video slot. Platform-
  *  agnostic: tweets today, and any future platform (e.g. Bluesky) that
@@ -60,6 +68,8 @@ const ENTRIES: readonly MediaEntry[] = [
           thumbnail={i.thumbnail}
           aspectRatio={i.aspectRatio}
           autoStart={o.variant === 'inline' && o.autoStart === true}
+          volume={o.volume}
+          paused={o.paused}
         />
       ) : null
     },
@@ -76,6 +86,8 @@ const ENTRIES: readonly MediaEntry[] = [
           thumbnail={i.thumbnail}
           aspectRatio={i.aspectRatio}
           autoStart={o.variant === 'inline' && o.autoStart === true}
+          volume={o.volume}
+          paused={o.paused}
         />
       ) : null
     },
@@ -93,6 +105,8 @@ const ENTRIES: readonly MediaEntry[] = [
           thumbnail={i.thumbnail}
           aspectRatio={i.aspectRatio}
           autoStart={o.variant === 'inline' && o.autoStart === true}
+          volume={o.volume}
+          paused={o.paused}
         />
       ) : null
     },
@@ -107,6 +121,8 @@ const ENTRIES: readonly MediaEntry[] = [
         thumbnail={i.thumbnail}
         aspectRatio={i.aspectRatio}
         autoStart={o.variant === 'inline' && o.autoStart === true}
+        volume={o.volume}
+        paused={o.paused}
       />
     ),
   },
@@ -119,6 +135,8 @@ const ENTRIES: readonly MediaEntry[] = [
         item={{ url: i.url, title: i.title, thumbnail: i.thumbnail, mediaSlots: i.mediaSlots }}
         variant={o.variant}
         autoStart={o.variant === 'inline' && o.autoStart === true}
+        volume={o.volume}
+        paused={o.paused}
       />
     ),
   },
@@ -130,10 +148,21 @@ export function canPlayInline(item: PlayableItem): boolean {
   return ENTRIES.some((e) => e.playableInline && e.match(item))
 }
 
+/** Options for the board inline player. */
+export type InlinePlayerOpts = {
+  readonly autoStart: boolean
+  /** Controlled per-card volume (0–100). */
+  readonly volume?: number
+  /** Controlled play/pause. */
+  readonly paused?: boolean
+}
+
 /** Board inline player (autoplay-with-sound). Null when not inline-playable. */
-export function resolveInlinePlayer(item: PlayableItem, autoStart: boolean): ReactNode | null {
+export function resolveInlinePlayer(item: PlayableItem, opts: InlinePlayerOpts): ReactNode | null {
   const entry = ENTRIES.find((e) => e.playableInline && e.match(item))
-  return entry ? entry.render(item, { variant: 'inline', autoStart }) : null
+  return entry
+    ? entry.render(item, { variant: 'inline', autoStart: opts.autoStart, volume: opts.volume, paused: opts.paused })
+    : null
 }
 
 /** Lightbox media component (no autostart). Null when no registry entry

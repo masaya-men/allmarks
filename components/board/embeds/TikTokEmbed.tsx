@@ -41,6 +41,8 @@ export function TikTokEmbed({
   title,
   aspectRatio,
   autoStart = false,
+  volume,
+  paused,
 }: {
   readonly videoId: string
   readonly url: string
@@ -49,6 +51,10 @@ export function TikTokEmbed({
   readonly aspectRatio: number | undefined
   /** When true, skip the poster+play step (Tier 3 inline). See YouTubeEmbed. */
   readonly autoStart?: boolean
+  /** Controlled per-card volume (0–100) for inline. Tier-2 iframe can't honor it. */
+  readonly volume?: number
+  /** Controlled play/pause for inline (Tier-1 native video only). */
+  readonly paused?: boolean
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   // undefined = scrape in flight, null = scrape failed, value = success
@@ -56,16 +62,26 @@ export function TikTokEmbed({
   // Once decided, this state is sticky — we don't switch tiers mid-stream
   // even if a slow scrape result lands after we already committed to Tier 2.
   const [tier, setTier] = useState<'poster' | 'video' | 'iframe'>('poster')
-  // Native-video Tier 1 honors the shared default-volume preference. Tier 2
-  // (= TikTok's official iframe) can't be controlled from outside, so the
-  // preference doesn't apply there — known limitation, accepted by user.
+  // Native-video Tier 1 honors volume. Tier 2 (= TikTok's official iframe)
+  // can't be controlled from outside — known limitation, accepted by user.
   const tier1VideoRef = useRef<HTMLVideoElement>(null)
   const [defaultVolume, setDefaultVolume] = useDefaultVolume()
+  // Controlled (inline) per-card volume wins; otherwise the global default.
+  // Inline never writes back to the global default.
+  const controlled = typeof volume === 'number'
   useEffect(() => {
-    if (tier1VideoRef.current) {
-      tier1VideoRef.current.volume = defaultVolume / 100
-    }
-  }, [defaultVolume, tier])
+    if (tier1VideoRef.current && controlled) tier1VideoRef.current.volume = (volume as number) / 100
+  }, [volume, controlled, tier])
+  useEffect(() => {
+    if (tier1VideoRef.current && !controlled) tier1VideoRef.current.volume = defaultVolume / 100
+  }, [defaultVolume, controlled, tier])
+  // Controlled play/pause for the Tier-1 native video.
+  useEffect(() => {
+    const el = tier1VideoRef.current
+    if (!el || typeof paused !== 'boolean') return
+    if (paused) el.pause()
+    else void el.play().catch(() => { /* autoplay race; ignore */ })
+  }, [paused, tier])
   const handleTier1VolumeChange = (): void => {
     const v = tier1VideoRef.current?.volume
     if (typeof v === 'number') {
@@ -145,7 +161,7 @@ export function TikTokEmbed({
           controls
           autoPlay
           playsInline
-          onVolumeChange={handleTier1VolumeChange}
+          onVolumeChange={controlled ? undefined : handleTier1VolumeChange}
         />
       </div>
     )
