@@ -23,6 +23,9 @@ import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
 import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
+import { CardSlideshow } from './CardSlideshow'
+import { resolveSlideshowFrames } from '@/lib/board/slideshow-frames'
+import { useReducedMotion } from '@/lib/board/use-reduced-motion'
 import { PlaybackControlBar } from './PlaybackControlBar'
 import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
 import { useSpotlightRotation } from '@/lib/board/use-spotlight-rotation'
@@ -54,15 +57,14 @@ const MIN_VISIBLE_RATIO = 0.3
  *  area (≈ three DENSE cards). Small cards → ~3 play; huge AMBIENT cards → ~1.
  *  The live set IS what's mounted (no crossfade overlap), so the simultaneously-
  *  PLAYING count never exceeds the cap. Tune the budget on real hardware. */
-const DENSE_CARD_W = PRESETS.find((p) => p.id === 'dense')?.w ?? 207.8
-const LIVE_AREA_BUDGET = 3 * DENSE_CARD_W * DENSE_CARD_W
-const MAX_LIVE = 6
-/** Target playtime per card. The rotation interval is derived as
- *  PER_CARD_MS / cap so a card plays ~this long regardless of how many share
- *  the spotlight (playtime ≈ cap × interval). Generous because a YouTube iframe
- *  spends ~2-3s starting up (hidden behind the thumbnail until it truly plays),
- *  so the visible window needs to be long enough to be worth it. */
-const PER_CARD_MS = 9000
+/** Exactly ONE video plays for real at a time (the "hero"). Everything else
+ *  in view runs the cheap still-frame slideshow (CardSlideshow), so the heavy
+ *  GPU compositing cost is a single playing region instead of several. */
+const HERO_CAP = 1
+/** How long the hero dwells on one card before the spotlight hands off to the
+ *  next in-view video card. Generous: a YouTube iframe spends ~2-3s starting
+ *  up (hidden behind the thumbnail until it truly plays). */
+const HERO_PER_CARD_MS = 15000
 const MIN_ROTATE_MS = 1500
 
 /** Derive the media-type badge for a bookmark from existing fields — no
@@ -188,6 +190,7 @@ export function CardsLayer({
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
   const lastComputeRef = useRef<{ x: number; y: number } | null>(null)
+  const reduceMotion = useReducedMotion()
 
   // ── Tier 1 viewport autoplay ──
   // Intersection-observed visibility drives a debounced pool of up to TIER1_CAP
@@ -393,18 +396,13 @@ export function CardsLayer({
     }
     return out
   }, [pool.active, itemById, unplayableIds])
-  // How many videos may play at once = how many of the current card size fit in
-  // the area budget (bigger cards → fewer). Interval keeps each card's playtime
-  // ~PER_CARD_MS regardless of the cap.
-  const liveCap = useMemo(() => {
-    const fit = Math.round(LIVE_AREA_BUDGET / (defaultCardWidth * defaultCardWidth))
-    return Math.max(1, Math.min(MAX_LIVE, fit))
-  }, [defaultCardWidth])
-  const rotateMs = Math.max(MIN_ROTATE_MS, Math.round(PER_CARD_MS / liveCap))
-  // Stop all ambient playback while the Lightbox is open (sourceCardId set): the
-  // board freezes to still thumbnails so the focused view isn't competing with
-  // motion behind it, and we don't burn GPU on hidden cards.
-  const spotlightCap = motionEnabled && !sourceCardId ? liveCap : 0
+  // Stop all ambient motion (hero video AND slideshow) while the Lightbox is
+  // open (sourceCardId set) or when the OS prefers reduced motion: the board
+  // freezes to still thumbnails so nothing competes with the focused view and
+  // we don't burn GPU on hidden cards.
+  const ambientOn = motionEnabled && !sourceCardId && !reduceMotion
+  const rotateMs = Math.max(MIN_ROTATE_MS, HERO_PER_CARD_MS)
+  const spotlightCap = ambientOn ? HERO_CAP : 0
   const playing = useSpotlightRotation(candidates, spotlightCap, rotateMs)
 
   // Previous-position ledger used to animate masonry reflows via FLIP.
@@ -727,6 +725,27 @@ export function CardsLayer({
                   muted
                   onUnplayable={(): void => markUnplayable(it.bookmarkId)}
                 />
+              </div>
+            )}
+            {ambientOn && candidates.has(it.bookmarkId) && !playing.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && (
+              // Ambient still-frame slideshow on in-view video cards that
+              // AREN'T the single hero (playing) and aren't the sound-on Tier 3
+              // card. Sits just below the hero/Tier-3 overlay (z 10) and is
+              // non-interactive so it never blocks card clicks / resize. When
+              // the card scrolls out of `candidates` or becomes the hero, this
+              // unmounts and the resting CardNode thumbnail shows through.
+              <div
+                data-card-slideshow
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 9,
+                  overflow: 'hidden',
+                  borderRadius: 'var(--card-radius, 20px)',
+                  pointerEvents: 'none',
+                }}
+              >
+                <CardSlideshow frames={resolveSlideshowFrames(it)} />
               </div>
             )}
             {barMount?.id === it.bookmarkId && canPlayInline(it) && (
