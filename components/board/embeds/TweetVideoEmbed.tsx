@@ -226,7 +226,11 @@ export function TweetVideoEmbed({
           if (onUnplayable) { onUnplayable() } else { setVideoFailed(true) }
         }}
         // Controlled inline volume must NOT bleed into the global default.
-        onVolumeChange={controlled ? undefined : handleVolumeChange}
+        // Muted Tier 1 viewport autoplay must NOT either: setting `muted`
+        // fires a volumechange while `.volume` is still the native 1.0, which
+        // would otherwise write 100 to the global default and make every
+        // player revert to MAX (the "default volume keeps resetting" bug).
+        onVolumeChange={controlled || muted === true ? undefined : handleVolumeChange}
         style={variant === 'inline' ? FILL : undefined}
       />
       {showDisc && (
