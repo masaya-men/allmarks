@@ -26,7 +26,6 @@ import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
 import { PlaybackControlBar } from './PlaybackControlBar'
 import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
 import { useSpotlightRotation } from '@/lib/board/use-spotlight-rotation'
-import { useSpotlightFade } from '@/lib/board/use-spotlight-fade'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
@@ -46,10 +45,14 @@ const TIER1_CAP = 999
  *  to the next. A board-full of simultaneous live videos is GPU-compositing-bound
  *  on high-DPR (4K) displays — fill-rate, not decode — so we cap the live set and
  *  rotate it: every visible video gets a turn while only N composite at a time.
- *  Uniform across devices on purpose so a 4K and an FHD machine feel identical
- *  (session 66). Tune on real hardware. */
+ *  Uniform across devices on purpose so a 4K and an FHD machine feel identical.
+ *  A card's playtime ≈ SPOTLIGHT_N × ROTATE_MS (promoted, then waits for the N-1
+ *  ahead of it to retire): 3 × 2000ms ≈ 6s per card (session 66). The live set IS
+ *  what's mounted (no crossfade overlap), so the number of simultaneously PLAYING
+ *  videos never exceeds N — a brief N+1 overlap during a fade was reintroducing
+ *  the 4K stutter at each handoff. Tune on real hardware. */
 const SPOTLIGHT_N = 3
-const SPOTLIGHT_ROTATE_MS = 6000
+const SPOTLIGHT_ROTATE_MS = 2000
 
 /** Derive the media-type badge for a bookmark from existing fields — no
  *  new persisted data needed. Returns null for cards where a video/photo
@@ -357,8 +360,12 @@ export function CardsLayer({
   // Candidates = every in-view card that may autoplay and isn't known-broken,
   // in the pool's most-visible-first order. The spotlight plays only SPOTLIGHT_N
   // of them at once and rotates the live set so the whole board cycles through;
-  // useSpotlightFade keeps a retiring card mounted briefly so the handoff is a
-  // crossfade, not a cut. `playing`/`fadingOut` drive the overlay render below.
+  // The live set IS what's mounted — no lingering crossfade, so the number of
+  // simultaneously PLAYING videos never exceeds SPOTLIGHT_N (a brief overlap
+  // would spike to N+1 and bring back the 4K stutter at each handoff). Entering
+  // cards fade in over their own thumbnail (ambientSpotIn); a retiring card
+  // unmounts at once, revealing the still thumbnail beneath. `playing` drives
+  // the overlay render below.
   const itemById = useMemo(() => {
     const m = new Map<string, (typeof visibleItems)[number]>()
     for (const it of visibleItems) m.set(it.bookmarkId, it)
@@ -372,8 +379,7 @@ export function CardsLayer({
     }
     return out
   }, [pool.active, itemById, unplayableIds])
-  const live = useSpotlightRotation(candidates, motionEnabled ? SPOTLIGHT_N : 0, SPOTLIGHT_ROTATE_MS)
-  const { mounted: playing, leaving: fadingOut } = useSpotlightFade(live)
+  const playing = useSpotlightRotation(candidates, motionEnabled ? SPOTLIGHT_N : 0, SPOTLIGHT_ROTATE_MS)
 
   // Previous-position ledger used to animate masonry reflows via FLIP.
   // Updated at the end of every effect run.
@@ -673,9 +679,9 @@ export function CardsLayer({
             {motionEnabled && playing.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canViewportAutoplay(it) && !unplayableIds.has(it.bookmarkId) && (
               // Tier 1 muted viewport autoplay (rotating spotlight). pointerEvents:none
               // so it never blocks card clicks / resize. Excluded on the Tier 3 sound-on
-              // card and on cards marked unplayable. Fades in on mount; when the spotlight
-              // rotates it out, `fadingOut` swaps to the fade-out so it eases away before
-              // unmount instead of cutting.
+              // card and on cards marked unplayable. Fades in on mount over its own
+              // thumbnail; when the spotlight rotates it out it simply unmounts (revealing
+              // the still thumbnail), so the live count never exceeds SPOTLIGHT_N.
               <div
                 data-viewport-playback
                 style={{
@@ -688,9 +694,7 @@ export function CardsLayer({
                   alignItems: 'center',
                   justifyContent: 'center',
                   pointerEvents: 'none',
-                  animation: fadingOut.has(it.bookmarkId)
-                    ? 'ambientSpotOut 0.55s ease forwards'
-                    : 'ambientSpotIn 0.55s ease both',
+                  animation: 'ambientSpotIn 0.55s ease both',
                 }}
               >
                 <InlineMediaPlayer item={it} muted onUnplayable={(): void => markUnplayable(it.bookmarkId)} />
