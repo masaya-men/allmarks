@@ -231,13 +231,6 @@ export function CardsLayer({
     setUnplayableIds((prev) => prev.has(id) ? prev : new Set(prev).add(id))
   }, [])
 
-  // Cards whose ambient player has reported it is GENUINELY playing. The overlay
-  // stays transparent (card thumbnail showing) until then, so loading + YouTube's
-  // big start-up glyph stay hidden and the video appears already in motion.
-  const [revealedIds, setRevealedIds] = useState<ReadonlySet<string>>(new Set())
-  const markRevealed = useCallback((id: string): void => {
-    setRevealedIds((prev) => prev.has(id) ? prev : new Set(prev).add(id))
-  }, [])
 
   // Stage 2: virtual order during drag for live reflow preview.
   // null = no drag in progress (use real masonry order).
@@ -408,17 +401,11 @@ export function CardsLayer({
     return Math.max(1, Math.min(MAX_LIVE, fit))
   }, [defaultCardWidth])
   const rotateMs = Math.max(MIN_ROTATE_MS, Math.round(PER_CARD_MS / liveCap))
-  const playing = useSpotlightRotation(candidates, motionEnabled ? liveCap : 0, rotateMs)
-  // Forget the "revealed" flag for cards that left the spotlight, so when one
-  // returns for its next turn it re-bridges (thumbnail until it plays again).
-  useEffect(() => {
-    setRevealedIds((prev) => {
-      let changed = false
-      const next = new Set<string>()
-      for (const id of prev) { if (playing.has(id)) next.add(id); else changed = true }
-      return changed ? next : prev
-    })
-  }, [playing])
+  // Stop all ambient playback while the Lightbox is open (sourceCardId set): the
+  // board freezes to still thumbnails so the focused view isn't competing with
+  // motion behind it, and we don't burn GPU on hidden cards.
+  const spotlightCap = motionEnabled && !sourceCardId ? liveCap : 0
+  const playing = useSpotlightRotation(candidates, spotlightCap, rotateMs)
 
   // Previous-position ledger used to animate masonry reflows via FLIP.
   // Updated at the end of every effect run.
@@ -718,9 +705,9 @@ export function CardsLayer({
             {motionEnabled && playing.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canViewportAutoplay(it) && !unplayableIds.has(it.bookmarkId) && (
               // Tier 1 muted viewport autoplay (rotating spotlight). pointerEvents:none
               // so it never blocks card clicks / resize. Excluded on the Tier 3 sound-on
-              // card and on cards marked unplayable. Fades in on mount over its own
-              // thumbnail; when the spotlight rotates it out it simply unmounts (revealing
-              // the still thumbnail), so the live count never exceeds SPOTLIGHT_N.
+              // card and on cards marked unplayable. Shown immediately (same as every
+              // other video — YouTube's brief start-up glyph is accepted); when the
+              // spotlight rotates it out it unmounts, revealing the still thumbnail.
               <div
                 data-viewport-playback
                 style={{
@@ -733,18 +720,12 @@ export function CardsLayer({
                   alignItems: 'center',
                   justifyContent: 'center',
                   pointerEvents: 'none',
-                  // Transparent (card thumbnail shows through) until the player
-                  // reports it is genuinely playing — hides loading + YouTube's
-                  // big start-up glyph — then fade the moving video in.
-                  opacity: revealedIds.has(it.bookmarkId) ? 1 : 0,
-                  transition: 'opacity 0.5s ease',
                 }}
               >
                 <InlineMediaPlayer
                   item={it}
                   muted
                   onUnplayable={(): void => markUnplayable(it.bookmarkId)}
-                  onPlaying={(): void => markRevealed(it.bookmarkId)}
                 />
               </div>
             )}
