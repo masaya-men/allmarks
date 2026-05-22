@@ -12,3 +12,12 @@
   background: rgba(255, 255, 255, 0.28);
   flex-shrink: 0;
 }
+
+/* The ChromeButton carries a 12px left padding (shared hit-area recipe with
+   TUNE/POP OUT/SHARE). That made the divider→"MOTION" text gap read ~20px while
+   the LED→divider gap is only 8px — visually lopsided. Pull the button left by
+   its padding so the *text* sits 8px from the divider (matching the LED side),
+   without shrinking the clickable area. */
+.motionBtn {
+  margin-left: -12px;
+}

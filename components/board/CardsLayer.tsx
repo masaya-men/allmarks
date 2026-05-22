@@ -25,6 +25,7 @@ import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
 import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
 import { PlaybackControlBar } from './PlaybackControlBar'
 import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
+import { useStaggeredReveal } from '@/lib/board/use-staggered-reveal'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
@@ -169,6 +170,9 @@ export function CardsLayer({
   // muted autoplay players. When motionEnabled is false the cap is 0, so the
   // pool stays empty and no observers are attached.
   const pool = useViewportPlaybackPool(motionEnabled ? TIER1_CAP : 0)
+  // Mount players one-at-a-time (stagger) so a scroll into a band of video cards
+  // ramps up instead of freezing the page with one big simultaneous-mount spike.
+  const playing = useStaggeredReveal(pool.active)
   const vizObservers = useRef<Map<string, IntersectionObserver>>(new Map())
   const vizElements = useRef<Map<string, HTMLElement>>(new Map())
   const observeViz = useCallback((id: string) => {
@@ -637,7 +641,7 @@ export function CardsLayer({
                 <InlineMediaPlayer item={it} volume={audioVolume} paused={audioPaused} />
               </div>
             )}
-            {motionEnabled && pool.active.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canViewportAutoplay(it) && !unplayableIds.has(it.bookmarkId) && (
+            {motionEnabled && playing.has(it.bookmarkId) && audioActiveId !== it.bookmarkId && canViewportAutoplay(it) && !unplayableIds.has(it.bookmarkId) && (
               // Tier 1 muted viewport autoplay. pointerEvents:none so it never blocks
               // card clicks / resize. Excluded on the Tier 3 sound-on card, and on
               // cards that have been marked unplayable (embed-restricted etc.).

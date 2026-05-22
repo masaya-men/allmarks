@@ -199,7 +199,10 @@ export function YouTubeEmbed({
         // Tier 1 (muted) is an ambient, non-interactive preview (the overlay is
         // pointer-events:none), so hide the player chrome: controls=0 +
         // modestbranding so it reads as motion, not a clickable player.
-        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1${muted === true ? '&mute=1&controls=0&modestbranding=1' : ''}`}
+        // Tier 1 (muted) ambient preview also loops: short clips restart instead
+        // of freezing on a final frame. YouTube only loops a single video when
+        // `playlist=<id>` is also present (loop=1 alone is a no-op for one video).
+        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1${muted === true ? `&mute=1&controls=0&modestbranding=1&loop=1&playlist=${videoId}` : ''}`}
         title={title}
         className={styles.iframe}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
