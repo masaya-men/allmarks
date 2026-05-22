@@ -676,6 +676,18 @@ ol {
   to   { opacity: 1; }
 }
 
+/* Rotating-spotlight crossfade for Tier 1 ambient autoplay overlays. Referenced
+   from CardsLayer inline styles (global scope, so a global @keyframes is correct
+   here — unlike module-scoped animation-name references). */
+@keyframes ambientSpotIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes ambientSpotOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 /* Session 43 round 3: glitch hover keyframes moved into each component's
    .module.css because CSS Modules scopes animation-name references — a
    global @keyframes here is invisible from inside a *.module.css consumer.
