@@ -20,19 +20,21 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-21〜22 セッション 65 — Tier 2 撤去 + Tier 1 画面内自動再生 + MOTION スイッチ 本番反映済)
+### 直近の状態 (2026-05-22 セッション 66 — 回転スポットライト再生 本番反映済)
 
-**前半: Tier 2 ホバー再生を撤去** (user 再考で合意、 5 コミット git revert、 embeds を 50% 良好状態に復帰、 commit `ea8b93f`、 音量は SW クリアで 50% 復活確認済)。
+**核心の発見 (実機計測)**: 大量同時再生の 4K カクつきは **デコードでなく合成 (fill-rate) 律速**。4K は decode 36-50% で暇なのにカクつき、FHD は decode 100% で滑らか。合成コストは画面の **物理ピクセル面積** で決まる (動画の元解像度は無関係)。詳細は memory `project_4k_composite_bound_playback` + `docs/private/IDEAS.md`。
 
-**後半: Tier 1 = 画面内動画の音なし自動再生 + MOTION マスタースイッチ を実装・本番反映** (機能ブランチ → master マージ `0ced67f`)。
-- **画面内に見えている動画 (YouTube / Vimeo / ツイート動画) を音なし自動再生**。最も見えている順に**上限 N=4 枚** (viewport 駆動 debounce プール)、スクロール追従。**複数画像カードは 2.2 秒ごと hard-cut 巡回**。単一画像・テキストは静止。
-- **MOTION スイッチ**を右上 2 段ヘッダーに常設 (上段 `MOTION ● + AllMarks·件数`、下段 `TUNE/POP OUT/SHARE`、左上空、立体ドーム LED 流用、ChromeButton 流用)。OFF で全停止、IDB 永続化、reduced-motion 既定 OFF。
-- **再生不可動画 (埋め込み禁止 YouTube 等) はサムネに静かに戻る** (エラー文・CTA 出さない)。**TikTok / SoundCloud は自動再生対象外**、手押し Tier 3 は全種そのまま。
-- TDD で subagent-driven 実装 (A1-A5 / B1-B6 / C1)。**716 PASS** / tsc clean / preview 実測 (ON 4枚 / OFF 0 / 埋め込み禁止 YT サムネ復帰)。詳細: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 65。
+**ship 済 (全て本番反映 + push)**:
+- **回転スポットライト**: 同時再生を **カード面積で予算配分** (DENSE≈3 / DEFAULT≈2 / OPEN・AMBIENT≈1)。1枚 ~9秒で別動画へランダム交代。同時再生数は cap を絶対超えない (フェード重なり廃止)。
+- **解像度下げ (DPR cap) は撤去** — 合成を減らさず無意味、画質劣化のみだったため。全部フル解像度。
+- **可視率 30% 未満は再生対象外** (画面端チラ見え除外)。
+- **短尺ループ** (YouTube `loop=1&playlist` / Vimeo `loop=1` / native `loop`)。
+- **MOTION の `● │ MOTION` 間隔を視覚的に均等化**。
+- **ライトボックスを開いている間はボード動画を全停止** (`sourceCardId` で cap 0、回転も停止 → 集中)。Tier 3 音あり再生は止めない。
+- YouTube 開始 ⏸ マーク: 隠す手段なし (cross-origin 内部) と判明 → user 合意で **諦めて最初から表示**。
+- **728 PASS** / tsc clean / preview 実機検証 (cap=3 / 回転 / 重なりゼロ / ライトボックス停止 1→0→1)。
 
-**session 65 末の user フィードバックで 4 点 ship 済** (`5bbb249`、deploy 済): ①**同時再生の上限撤去** (`TIER1_CAP=999` 実質無制限) ②自動再生中コントロール非表示 ③MOTION を**外枠の上帯**へ移動 (TUNE/POP OUT/SHARE は元位置のまま不動、`.frameTopChrome`) ④`LED │ MOTION` 罫線デザイン。
-
-**session 66 でやること (= user 実機フィードバック)**: ①**滑らかな大量同時再生に本気で挑戦** (R&D 最優先、叶わねばカクつき許容。現状は全部再生でカクつくが操作は滑らか=デコードレーン分離。手法候補は `docs/private/IDEAS.md`「滑らかな大量同時再生」節) ②**短尺動画をループ再生** ③YouTube 再生開始時の大 ⏸ マーク除去 (優先低) ④`● │ MOTION` を視覚的に等間隔に。詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+**未解決 (= session 67 最優先)**: **デフォルト音量が MAX に戻るバグ**。コード既定は 50 (`lib/embed/default-volume.ts`) だが実機で 100 で鳴る。原因候補: ①localStorage (`allmarks.player.defaultVolume`) に 100 が保存されている (キャッシュ/SW クリアでは localStorage は消えない！ サイトデータ削除が必要) ②`handleVolumeChange` の書き戻し競合で 100 が保存される ③setVolume(50) postMessage が届かずプラットフォーム既定 100 で鳴る。要実機調査 (localStorage 実値 + 再生時に 50 適用されるか)。
 
 **その後の大物**: **タグ付け機能** (= user 最優先)。
 
