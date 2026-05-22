@@ -41,18 +41,26 @@ const MIN_CONTROL_BAR_WIDTH_PX = PRESETS.find((p) => p.id === 'dense')?.w ?? 207
  *  play at once. */
 const TIER1_CAP = 999
 
-/** Rotating spotlight: how many videos move at once, and how often one hands off
- *  to the next. A board-full of simultaneous live videos is GPU-compositing-bound
- *  on high-DPR (4K) displays — fill-rate, not decode — so we cap the live set and
- *  rotate it: every visible video gets a turn while only N composite at a time.
- *  Uniform across devices on purpose so a 4K and an FHD machine feel identical.
- *  A card's playtime ≈ SPOTLIGHT_N × ROTATE_MS (promoted, then waits for the N-1
- *  ahead of it to retire): 3 × 2000ms ≈ 6s per card (session 66). The live set IS
- *  what's mounted (no crossfade overlap), so the number of simultaneously PLAYING
- *  videos never exceeds N — a brief N+1 overlap during a fade was reintroducing
- *  the 4K stutter at each handoff. Tune on real hardware. */
-const SPOTLIGHT_N = 3
-const SPOTLIGHT_ROTATE_MS = 2000
+/** Rotating spotlight. The 4K stutter is GPU-compositing-bound — fill-rate, not
+ *  decode — and fill cost scales with the on-screen PIXEL AREA of the live
+ *  videos, not their count. A big AMBIENT card (≈608px wide) covers ~8.5× the
+ *  area of a DENSE card (≈208px), so "3 videos" means wildly different load per
+ *  size. We therefore budget by area: how many live videos fit in a fixed total
+ *  area (≈ three DENSE cards). Small cards → ~3 play; huge AMBIENT cards → ~1.
+ *  The live set IS what's mounted (no crossfade overlap), so the simultaneously-
+ *  PLAYING count never exceeds the cap. Tune the budget on real hardware. */
+const DENSE_CARD_W = PRESETS.find((p) => p.id === 'dense')?.w ?? 207.8
+const LIVE_AREA_BUDGET = 3 * DENSE_CARD_W * DENSE_CARD_W
+const MAX_LIVE = 6
+/** Target playtime per card. The rotation interval is derived as
+ *  PER_CARD_MS / cap so a card plays ~this long regardless of how many share
+ *  the spotlight (playtime ≈ cap × interval). */
+const PER_CARD_MS = 6000
+const MIN_ROTATE_MS = 1500
+/** Hold the iframe behind its own thumbnail this long before fading the video
+ *  in, so YouTube's big start-up play/pause glyph plays out unseen (the card
+ *  thumbnail bridges it). */
+const AMBIENT_REVEAL_DELAY_MS = 900
 
 /** Derive the media-type badge for a bookmark from existing fields — no
  *  new persisted data needed. Returns null for cards where a video/photo
@@ -379,7 +387,15 @@ export function CardsLayer({
     }
     return out
   }, [pool.active, itemById, unplayableIds])
-  const playing = useSpotlightRotation(candidates, motionEnabled ? SPOTLIGHT_N : 0, SPOTLIGHT_ROTATE_MS)
+  // How many videos may play at once = how many of the current card size fit in
+  // the area budget (bigger cards → fewer). Interval keeps each card's playtime
+  // ~PER_CARD_MS regardless of the cap.
+  const liveCap = useMemo(() => {
+    const fit = Math.round(LIVE_AREA_BUDGET / (defaultCardWidth * defaultCardWidth))
+    return Math.max(1, Math.min(MAX_LIVE, fit))
+  }, [defaultCardWidth])
+  const rotateMs = Math.max(MIN_ROTATE_MS, Math.round(PER_CARD_MS / liveCap))
+  const playing = useSpotlightRotation(candidates, motionEnabled ? liveCap : 0, rotateMs)
 
   // Previous-position ledger used to animate masonry reflows via FLIP.
   // Updated at the end of every effect run.
@@ -694,7 +710,10 @@ export function CardsLayer({
                   alignItems: 'center',
                   justifyContent: 'center',
                   pointerEvents: 'none',
-                  animation: 'ambientSpotIn 0.55s ease both',
+                  // Hold transparent (card thumbnail shows through) for the
+                  // reveal delay so YouTube's start-up glyph plays out unseen,
+                  // then fade the video in.
+                  animation: `ambientSpotIn 0.55s ease ${AMBIENT_REVEAL_DELAY_MS}ms both`,
                 }}
               >
                 <InlineMediaPlayer item={it} muted onUnplayable={(): void => markUnplayable(it.bookmarkId)} />
