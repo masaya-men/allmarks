@@ -2657,6 +2657,35 @@ try {
 - **TikTok**: 引き続き友達アカウントで検証 (= session 45 持ち越し)
 - **既存 X / YouTube**: 防御コード追加で console エラー消える、 動作は変わらず
 
+---
+
+## セッション 67 (2026-05-22) — デフォルト音量 MAX バグ修正 + アンビエント・スライドショー Phase 1
+
+### 1. デフォルト音量が MAX(100) に戻るバグ — 根本原因確定 + 修正 (本番反映済)
+
+**根本原因** (systematic-debugging で特定、失敗テストで裏取り): session 66 で入った Tier 1 ミュート自動再生 (回転スポットライト) が、X (ツイート) 動画を画面内に映すたびにデフォルト音量を 100 に書き換えていた。
+
+- 機構: ミュート自動再生では `<video>` に `muted` プロパティをセット → HTML 仕様上 `volumechange` が発火。このとき `video.volume` は native 既定の **1.0 のまま** (muted と volume は独立)。[TweetVideoEmbed.tsx](../components/board/embeds/TweetVideoEmbed.tsx) の `onVolumeChange={controlled ? undefined : handleVolumeChange}` は `controlled` だけを除外し **`muted` を除外していなかった**ため、`handleVolumeChange` が 1.0 を読んで `setDefaultVolume(100)` を localStorage に書き込んでいた。音量適用 effect 群は `muted===true` で early return するので volume は 1.0 のまま放置されていた。
+- 「下げてもまた 100 に戻る」= X 動画が画面内に入るたびに再汚染 / 「キャッシュ削除で直らない」= localStorage はキャッシュ/SW クリアでは消えない、で全症状つじつまが合う。
+- **修正**: `onVolumeChange={controlled || muted === true ? undefined : handleVolumeChange}` (音量適用 effect の muted ガードに揃えた)。Lightbox の sticky-volume 書き戻し (session 51) は維持。回帰テスト 2 本追加 ([tweet-video-embed.test.tsx](../tests/components/board/tweet-video-embed.test.tsx))。
+- **user 実機確認**: localStorage の実値が `100` だったのを確認 (答え合わせ)。手動削除 → 以後 50 で鳴ることを確認済。
+- commit `fix(board): stop muted Tier 1 autoplay from corrupting default volume to MAX`。
+
+### 2. アンビエント・スライドショー + 単一ヒーロー再生 Phase 1 (本番反映済)
+
+session 66 で確定した「4K カクつき = 合成(fill-rate)律速」を受け、user 発案の 2 層モデルを設計→実装。複数同時のミュート動画再生を廃し、(A) 画面内の動画カードは静止画スライドショーで「生きてる感」をほぼ無料で出し、(B) 本物再生は常に 1 本だけ (ミュート・~15秒) に絞ってカクつきを削減。
+
+- **設計**: [spec](./superpowers/specs/2026-05-22-ambient-frame-slideshow-design.md) / **実装プラン**: [plan](./superpowers/plans/2026-05-22-ambient-slideshow-phase1.md)。brainstorming → writing-plans → subagent-driven-development で 5 タスク全て TDD + 2 段階レビュー (spec + 品質) + 最終レビュー通過。
+- **新規 file**: `lib/board/slideshow-frames.ts` (`resolveSlideshowFrames`: YouTube=ポスター+hq1(~25%)+hq2(~50%) の 3 枚 / それ以外=ポスター1枚、hq3 は意図的に除外=暗い終端回避) / `lib/board/use-reduced-motion.ts` / `lib/board/use-slideshow-cycle.ts` (カードごと乱数オフセットで不揃いにフェード) / `components/board/CardSlideshow.tsx` + `.module.css` (object-fit:cover でサムネと一致、画像エラー時 fallback URL へ一度切替)。
+- **変更 file**: [CardsLayer.tsx](../components/board/CardsLayer.tsx) — 面積予算 (`LIVE_AREA_BUDGET`/`MAX_LIVE`/`PER_CARD_MS`/`liveCap`) を撤去し `HERO_CAP=1` / `HERO_PER_CARD_MS=15000` に。`ambientOn = motionEnabled && !sourceCardId && !reduceMotion`。Tier1 ヒーロー枠の直後にスライドショー枠 (z9, pointerEvents:none) を追加。ゲートは hero(`playing.has`) / slideshow(`!playing.has`) / Tier3(`audioActiveId`) が相互排他 (最終レビューで検証済)。
+- **テスト**: 730 → **741 PASS** (新規 11: slideshow-frames 4 / use-reduced-motion 2 / use-slideshow-cycle 2 / card-slideshow 3)、tsc clean。既知 flake `channel.test.ts` は単体 PASS。
+- **deploy**: 2 (音量修正 + slideshow phase1)。
+- **user 実機検証 (4K)**: 7 項目全 OK (本再生1本 / 他カード揺らぎ / 画像静止 / ガタつき無し / MOTION OFF 静止 / Lightbox 停止 / カクつき改善)。
+- **user フィードバック (次回最優先)**: スライドショーが**たまに揃いすぎる** (複数枚画像ツイートの既存 autoCycle も同様)。もっとちゃんとずらしたい。
+
+### console ノイズ調査 (全て第三者由来、今回変更が原因のものは無し)
+YouTube postMessage origin 警告 (YouTube 自身の iframe script) / Instagram 画像 403 / animography Mixed Content / gstatic favicon 404 はすべて保存先サイト側。`manifest enctype` 警告と TUNE ドロワーの `aria-hidden` フォーカス警告は以前からある軽微なもの (次回磨き候補、`inert` 属性化など)。
+
 ### 学び
 
 - **「Uncaught Error: ... invalidated」 は 1 件出たら全 site file に同じ防御を入れるのが正解**: twitter.js でだけ修正しても、 youtube.js / tiktok.js も同じ構造で同じ罠を踏む。 1 site の問題と捉えると 1 file しか直さないが、 「拡張機能パターン全体の問題」 と捉えると全 file 一斉に直す。 量産レシピに含めることで次の 6 サイトも自動的に防御される

@@ -20,23 +20,21 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-22 セッション 66 — 回転スポットライト再生 本番反映済)
+### 直近の状態 (2026-05-22 セッション 67 — 音量バグ修正 + アンビエント・スライドショー Phase 1 本番反映済)
 
-**核心の発見 (実機計測)**: 大量同時再生の 4K カクつきは **デコードでなく合成 (fill-rate) 律速**。4K は decode 36-50% で暇なのにカクつき、FHD は decode 100% で滑らか。合成コストは画面の **物理ピクセル面積** で決まる (動画の元解像度は無関係)。詳細は memory `project_4k_composite_bound_playback` + `docs/private/IDEAS.md`。
+**ship 済 (全て本番反映 + push、user 実機 OK)**:
 
-**ship 済 (全て本番反映 + push)**:
-- **回転スポットライト**: 同時再生を **カード面積で予算配分** (DENSE≈3 / DEFAULT≈2 / OPEN・AMBIENT≈1)。1枚 ~9秒で別動画へランダム交代。同時再生数は cap を絶対超えない (フェード重なり廃止)。
-- **解像度下げ (DPR cap) は撤去** — 合成を減らさず無意味、画質劣化のみだったため。全部フル解像度。
-- **可視率 30% 未満は再生対象外** (画面端チラ見え除外)。
-- **短尺ループ** (YouTube `loop=1&playlist` / Vimeo `loop=1` / native `loop`)。
-- **MOTION の `● │ MOTION` 間隔を視覚的に均等化**。
-- **ライトボックスを開いている間はボード動画を全停止** (`sourceCardId` で cap 0、回転も停止 → 集中)。Tier 3 音あり再生は止めない。
-- YouTube 開始 ⏸ マーク: 隠す手段なし (cross-origin 内部) と判明 → user 合意で **諦めて最初から表示**。
-- **728 PASS** / tsc clean / preview 実機検証 (cap=3 / 回転 / 重なりゼロ / ライトボックス停止 1→0→1)。
+1. **デフォルト音量 MAX バグ修正**: 根本原因 = session 66 の Tier 1 ミュート自動再生が X 動画を映すたび localStorage の音量を 100 に汚染。`muted` 設定時の `volumechange` で `video.volume`(=1.0)を書き戻していた。[TweetVideoEmbed.tsx](../components/board/embeds/TweetVideoEmbed.tsx) の `onVolumeChange` ガードに `muted` 除外を追加して修正。user は localStorage 実値 `100` を確認・手動削除済 → 以後 50。回帰テスト 2 本追加。
 
-**未解決 (= session 67 最優先)**: **デフォルト音量が MAX に戻るバグ**。コード既定は 50 (`lib/embed/default-volume.ts`) だが実機で 100 で鳴る。原因候補: ①localStorage (`allmarks.player.defaultVolume`) に 100 が保存されている (キャッシュ/SW クリアでは localStorage は消えない！ サイトデータ削除が必要) ②`handleVolumeChange` の書き戻し競合で 100 が保存される ③setVolume(50) postMessage が届かずプラットフォーム既定 100 で鳴る。要実機調査 (localStorage 実値 + 再生時に 50 適用されるか)。
+2. **アンビエント・スライドショー + 単一ヒーロー再生 Phase 1**: 4K カクつき(合成律速、memory `project_4k_composite_bound_playback`)対策。複数同時再生を廃し、(A) 画面内の動画カードは静止画スライドショー(YouTube=ポスター+25%+50% / 他=ポスター1枚、カードごと不揃いフェード)、(B) 本物再生は常に1本だけ(ミュート・~15秒、`HERO_CAP=1` / `HERO_PER_CARD_MS=15000` in [CardsLayer.tsx](../components/board/CardsLayer.tsx))。画像/テキストカードは静止。MOTION OFF / Lightbox 中 / OS 視差効果オフ(`useReducedMotion`)で全停止。新規 file 5(`lib/board/slideshow-frames.ts` / `use-reduced-motion.ts` / `use-slideshow-cycle.ts` / `components/board/CardSlideshow.tsx` + `.module.css`)+ CardsLayer 改修。**741 PASS** / tsc clean。設計: [spec](./superpowers/specs/2026-05-22-ambient-frame-slideshow-design.md) / [plan](./superpowers/plans/2026-05-22-ambient-slideshow-phase1.md)。
+   - **user 4K 検証 7 項目全 OK**。
+   - **次回最優先の小修正**: スライドショーが**たまに揃いすぎる**(完全一致して見える瞬間がある、複数枚画像ツイートの既存 autoCycle も同様)。`useSlideshowCycle` の開始フレームをカードごとランダム化 + 間隔の幅を広げて、もっとちゃんとずらす。
 
-**その後の大物**: **タグ付け機能** (= user 最優先)。
+**次の大物の選択肢**:
+- **スライドショー Phase 2**: X 動画の本物コマ抽出(0/25/50% を canvas で切り出し+キャッシュ、X カードを 1→3 枚にリッチ化)。spec の Phase 2。
+- **タグ付け機能** (= user 最優先、memory `project_tagging_top_priority`)。
+
+**console ノイズ (今回原因でない、次回磨き候補)**: `manifest enctype` 警告 / TUNE ドロワーの `aria-hidden` フォーカス警告(`inert` 属性化)。他(YouTube postMessage / IG 403 / Mixed Content / favicon 404)は第三者由来で対応不要。
 
 ---
 
