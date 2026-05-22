@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import styles from '../Lightbox.module.css'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import { EmbedPosterBox, EmbedPlayButton } from './EmbedShell'
+import { useDevicePixelRatio } from '@/lib/board/use-device-pixel-ratio'
+import { ambientBackingScale } from '@/lib/board/ambient-backing-scale'
 
 /** Vimeo video — same poster→iframe pattern as YouTube. Public videos play
  *  via `player.vimeo.com/video/<id>` without authentication. Private /
@@ -46,6 +48,16 @@ export function VimeoEmbed({
   // making the detection effect depend on it (avoids per-render re-subscribe).
   const onUnplayableRef = useRef(onUnplayable)
   onUnplayableRef.current = onUnplayable
+
+  // Tier 1 ambient (muted) only: render the iframe at a fraction of its display
+  // box on high-DPR screens and scale it back up to fill — fewer pixels for the
+  // Vimeo document to decode + composite. See YouTubeEmbed for the rationale.
+  const dpr = useDevicePixelRatio()
+  const ambientScale = muted === true ? ambientBackingScale(dpr) : 1
+  const ambientStyle: CSSProperties | undefined =
+    ambientScale < 1
+      ? { width: `${ambientScale * 100}%`, height: `${ambientScale * 100}%`, transform: `scale(${1 / ambientScale})`, transformOrigin: 'top left' }
+      : undefined
 
   // Inline external-control bridge via the Vimeo Player API postMessage.
   const post = (msg: object): void => {
@@ -154,6 +166,7 @@ export function VimeoEmbed({
         src={`https://player.vimeo.com/video/${videoId}?autoplay=1${muted === true ? '&muted=1&controls=0&loop=1' : ''}`}
         title={title}
         className={styles.iframe}
+        style={ambientStyle}
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
         allowFullScreen
         onLoad={handleIframeLoad}

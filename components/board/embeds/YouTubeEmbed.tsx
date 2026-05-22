@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import styles from '../Lightbox.module.css'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import { EmbedPosterBox, EmbedPlayButton } from './EmbedShell'
+import { useDevicePixelRatio } from '@/lib/board/use-device-pixel-ratio'
+import { ambientBackingScale } from '@/lib/board/ambient-backing-scale'
 
 export function YouTubeEmbed({
   videoId,
@@ -48,6 +50,19 @@ export function YouTubeEmbed({
   onUnplayableRef.current = onUnplayable
   // Stable player id shared between the detection effect and handleIframeLoad.
   const playerIdRef = useRef<string>(Math.random().toString(36).slice(2))
+
+  // Tier 1 ambient (muted) only: lay the iframe out at a fraction of its display
+  // box on high-DPR screens, then scale it back up to fill. The YouTube document
+  // renders at the smaller CSS size → far fewer pixels to decode + composite,
+  // which is what keeps many simultaneous autoplay previews smooth on a 4K
+  // display. Re-evaluates live when the window moves to a monitor of a different
+  // density. No effect on Tier 3 (sound) or the Lightbox — those run at full res.
+  const dpr = useDevicePixelRatio()
+  const ambientScale = muted === true ? ambientBackingScale(dpr) : 1
+  const ambientStyle: CSSProperties | undefined =
+    ambientScale < 1
+      ? { width: `${ambientScale * 100}%`, height: `${ambientScale * 100}%`, transform: `scale(${1 / ambientScale})`, transformOrigin: 'top left' }
+      : undefined
 
   // Inline external-control bridge: once the iframe is mounted, drive volume
   // and play/pause via the YouTube iframe API (enablejsapi=1). Volume changes
@@ -205,6 +220,7 @@ export function YouTubeEmbed({
         src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1${muted === true ? `&mute=1&controls=0&modestbranding=1&loop=1&playlist=${videoId}` : ''}`}
         title={title}
         className={styles.iframe}
+        style={ambientStyle}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
         onLoad={handleIframeLoad}
