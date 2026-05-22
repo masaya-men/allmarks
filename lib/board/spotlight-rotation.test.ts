@@ -55,6 +55,20 @@ describe('rotateSpotlight', () => {
     expect(rotateSpotlight(prev, 0)).toBe(prev)
   })
 
+  it('promotes the picked waiting index (random in the hook) and never the just-retired card', () => {
+    const prev = { live: ['a', 'b', 'c'], waiting: ['d', 'e', 'f'] }
+    const s = rotateSpotlight(prev, 3, () => 2) // pick 'f' (index 2 of waiting)
+    expect(s.live).toEqual(['b', 'c', 'f']) // a retired, f promoted
+    expect(s.waiting).toEqual(['d', 'e', 'a']) // f removed, a appended at back
+    expect(s.live).not.toContain('a') // the retired card is never re-promoted this turn
+  })
+
+  it('clamps an out-of-range pick index safely', () => {
+    const prev = { live: ['a', 'b'], waiting: ['c', 'd'] }
+    const s = rotateSpotlight(prev, 2, () => 99)
+    expect(s.live).toEqual(['b', 'd']) // clamped to last waiting index
+  })
+
   it('cycles fairly over many turns: every candidate gets a turn', () => {
     let s = reconcileSpotlight(EMPTY_SPOTLIGHT, set('a', 'b', 'c', 'd', 'e'), 3)
     const seen = new Set<string>(s.live)

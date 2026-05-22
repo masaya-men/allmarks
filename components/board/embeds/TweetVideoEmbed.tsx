@@ -56,6 +56,7 @@ export function TweetVideoEmbed({
   paused,
   muted,
   onUnplayable,
+  onPlaying,
 }: {
   readonly item: TweetVideoItem
   /** When the caller already has the mp4 (Lightbox slot meta), pass it to skip resolution. */
@@ -74,6 +75,9 @@ export function TweetVideoEmbed({
    *  (broken mp4, network failure, etc.). The caller unmounts the overlay so
    *  the card's thumbnail shows through. Never passed for Tier 3. */
   readonly onUnplayable?: () => void
+  /** Tier 1 only: called once when the <video> actually starts playing, so the
+   *  caller reveals the overlay only then. */
+  readonly onPlaying?: () => void
 }): ReactNode {
   // The Lightbox reuses ONE TweetVideoEmbed instance across left/right card nav
   // (its React key is the slot index, which stays `slot-0`), feeding a new
@@ -213,6 +217,7 @@ export function TweetVideoEmbed({
         playsInline
         preload="metadata"
         onPlay={(): void => setIsPlaying(true)}
+        onPlaying={onPlaying}
         onPause={(): void => setIsPlaying(false)}
         onEnded={(): void => setIsPlaying(false)}
         onError={(): void => {

@@ -37,16 +37,25 @@ export function reconcileSpotlight(
   return { live, waiting }
 }
 
-/** Advance one slot: retire the oldest live card to the back of the queue and
- *  promote the front of the queue. No-op when there is nobody waiting or the
- *  live set isn't full (≤ cap candidates → everyone plays, nothing to rotate). */
-export function rotateSpotlight(prev: SpotlightState, cap: number): SpotlightState {
+/** Advance one slot: retire the oldest live card and promote a waiting one. The
+ *  card to promote is chosen by `pickIndex(waitingLength)` — defaults to 0 (the
+ *  front, i.e. deterministic round-robin, used by tests). The hook passes a
+ *  random index so the next-to-play feels unpredictable rather than a fixed
+ *  cycle. The retired card is appended to the back AFTER the pick, so it is never
+ *  the one promoted this turn (no instant repeat). No-op when nobody is waiting
+ *  or the live set isn't full (≤ cap candidates → everyone plays). */
+export function rotateSpotlight(
+  prev: SpotlightState,
+  cap: number,
+  pickIndex: (waitingLength: number) => number = () => 0,
+): SpotlightState {
   const n = Math.max(0, Math.floor(cap))
   if (prev.waiting.length === 0 || prev.live.length < n || n === 0) return prev
   const live = prev.live.slice()
   const waiting = prev.waiting.slice()
   const retired = live.shift() as string
-  const promoted = waiting.shift() as string
+  const i = Math.min(waiting.length - 1, Math.max(0, Math.floor(pickIndex(waiting.length))))
+  const promoted = waiting.splice(i, 1)[0] as string
   live.push(promoted)
   waiting.push(retired)
   return { live, waiting }

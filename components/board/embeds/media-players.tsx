@@ -38,6 +38,8 @@ type RenderOpts = {
   /** Tier 1 only: called once when the embed detects it cannot play.
    *  The overlay is unmounted so the card thumbnail shows. Never set for Tier 3. */
   readonly onUnplayable?: () => void
+  /** Tier 1 only: called once when the embed is genuinely playing. */
+  readonly onPlaying?: () => void
 }
 
 /** True when the item carries a directly-playable mp4 video slot. Platform-
@@ -83,6 +85,7 @@ const ENTRIES: readonly MediaEntry[] = [
           paused={o.paused}
           muted={o.muted}
           onUnplayable={o.onUnplayable}
+          onPlaying={o.onPlaying}
         />
       ) : null
     },
@@ -104,6 +107,7 @@ const ENTRIES: readonly MediaEntry[] = [
           paused={o.paused}
           muted={o.muted}
           onUnplayable={o.onUnplayable}
+          onPlaying={o.onPlaying}
         />
       ) : null
     },
@@ -160,6 +164,7 @@ const ENTRIES: readonly MediaEntry[] = [
         paused={o.paused}
         muted={o.muted}
         onUnplayable={o.onUnplayable}
+        onPlaying={o.onPlaying}
       />
     ),
   },
@@ -191,6 +196,8 @@ export type InlinePlayerOpts = {
   /** Tier 1 only: called once when the embed detects it cannot play.
    *  The overlay is unmounted so the card thumbnail shows. Never set for Tier 3. */
   readonly onUnplayable?: () => void
+  /** Tier 1 only: called once when the embed is genuinely playing. */
+  readonly onPlaying?: () => void
 }
 
 /** Board inline player (autoplay; muted for Tier 2 hover, with sound for Tier 3).
@@ -198,7 +205,7 @@ export type InlinePlayerOpts = {
 export function resolveInlinePlayer(item: PlayableItem, opts: InlinePlayerOpts): ReactNode | null {
   const entry = ENTRIES.find((e) => e.playableInline && e.match(item))
   return entry
-    ? entry.render(item, { variant: 'inline', autoStart: opts.autoStart, volume: opts.volume, paused: opts.paused, muted: opts.muted, onUnplayable: opts.onUnplayable })
+    ? entry.render(item, { variant: 'inline', autoStart: opts.autoStart, volume: opts.volume, paused: opts.paused, muted: opts.muted, onUnplayable: opts.onUnplayable, onPlaying: opts.onPlaying })
     : null
 }
 

@@ -34,7 +34,8 @@ export function useSpotlightRotation(
   useEffect(() => {
     if (cap <= 0 || intervalMs <= 0) return
     const t = setInterval(() => {
-      const next = rotateSpotlight(stateRef.current, cap)
+      // Random promotion so the next-to-play isn't a predictable cycle.
+      const next = rotateSpotlight(stateRef.current, cap, (len) => Math.floor(Math.random() * len))
       if (next === stateRef.current) return
       stateRef.current = next
       setLive((prev) => (sameIds(prev, next.live) ? prev : new Set(next.live)))

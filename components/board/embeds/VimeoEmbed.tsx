@@ -20,6 +20,7 @@ export function VimeoEmbed({
   paused,
   muted,
   onUnplayable,
+  onPlaying,
 }: {
   readonly videoId: string
   readonly title: string
@@ -37,6 +38,9 @@ export function VimeoEmbed({
    *  region-locked, etc.). The caller unmounts the overlay so the card's
    *  thumbnail shows through. Never passed for Tier 3. */
   readonly onUnplayable?: () => void
+  /** Tier 1 only: called once when Vimeo reports it is actually playing, so the
+   *  caller reveals the overlay only then (loading stays behind the thumbnail). */
+  readonly onPlaying?: () => void
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -46,6 +50,9 @@ export function VimeoEmbed({
   // making the detection effect depend on it (avoids per-render re-subscribe).
   const onUnplayableRef = useRef(onUnplayable)
   onUnplayableRef.current = onUnplayable
+  const onPlayingRef = useRef(onPlaying)
+  onPlayingRef.current = onPlaying
+  const firedPlayingRef = useRef<boolean>(false)
 
   // Inline external-control bridge via the Vimeo Player API postMessage.
   const post = (msg: object): void => {
@@ -71,27 +78,27 @@ export function VimeoEmbed({
   // onUnplayableRef so that a new inline arrow from the parent (e.g. during
   // drag/scroll re-renders) does NOT tear down and re-add the listener.
   useEffect(() => {
-    if (!onUnplayableRef.current || !hasInteracted) return
+    if ((!onUnplayableRef.current && !onPlayingRef.current) || !hasInteracted) return
     const iframe = iframeRef.current
     if (!iframe?.contentWindow) return
 
-    // Subscribe to Vimeo error events.
-    iframe.contentWindow.postMessage(
-      JSON.stringify({ method: 'addEventListener', value: 'error' }),
-      'https://player.vimeo.com',
-    )
+    // Subscribe to Vimeo error + play events.
+    iframe.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: 'error' }), 'https://player.vimeo.com')
+    iframe.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: 'play' }), 'https://player.vimeo.com')
 
     const handleMessage = (e: MessageEvent): void => {
       if (e.source !== iframe.contentWindow) return
       if (typeof e.data !== 'string') return
       let parsed: unknown
       try { parsed = JSON.parse(e.data) } catch { return }
-      if (
-        parsed !== null &&
-        typeof parsed === 'object' &&
-        'event' in parsed &&
-        (parsed as Record<string, unknown>)['event'] === 'error'
-      ) {
+      if (parsed === null || typeof parsed !== 'object' || !('event' in parsed)) return
+      const evName = (parsed as Record<string, unknown>)['event']
+      if ((evName === 'play' || evName === 'playing') && !firedPlayingRef.current) {
+        firedPlayingRef.current = true
+        onPlayingRef.current?.()
+        return
+      }
+      if (evName === 'error') {
         if (!firedUnplayableRef.current) {
           firedUnplayableRef.current = true
           onUnplayableRef.current?.()
@@ -99,7 +106,12 @@ export function VimeoEmbed({
       }
     }
     window.addEventListener('message', handleMessage)
+    // Fallback: reveal anyway if no play event arrives within 3s.
+    const tPlay = window.setTimeout(() => {
+      if (!firedPlayingRef.current) { firedPlayingRef.current = true; onPlayingRef.current?.() }
+    }, 3000)
     return (): void => {
+      window.clearTimeout(tPlay)
       window.removeEventListener('message', handleMessage)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

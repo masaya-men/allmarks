@@ -21,4 +21,8 @@ describe('selectActivePlayers', () => {
     const m = new Map([['y', 0.5], ['x', 0.5]])
     expect(selectActivePlayers(m, 1)).toEqual(['x'])
   })
+  it('excludes cards below minRatio (barely-visible slivers)', () => {
+    const m = new Map([['a', 0.1], ['b', 0.4], ['c', 0.29]])
+    expect(selectActivePlayers(m, 5, 0.3)).toEqual(['b']) // only b clears 30%
+  })
 })

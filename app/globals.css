@@ -676,15 +676,6 @@ ol {
   to   { opacity: 1; }
 }
 
-/* Rotating-spotlight fade-in for Tier 1 ambient autoplay overlays. A retiring
-   card just unmounts (revealing its thumbnail) so the live count never exceeds
-   the cap — no fade-out, which would overlap an extra playing video. Referenced
-   from CardsLayer inline styles (global scope, so a global @keyframes is correct
-   here — unlike module-scoped animation-name references). */
-@keyframes ambientSpotIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
 
 /* Session 43 round 3: glitch hover keyframes moved into each component's
    .module.css because CSS Modules scopes animation-name references — a

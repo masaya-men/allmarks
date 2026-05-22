@@ -16,6 +16,7 @@ export function YouTubeEmbed({
   paused,
   muted,
   onUnplayable,
+  onPlaying,
 }: {
   readonly videoId: string
   readonly title: string
@@ -37,6 +38,10 @@ export function YouTubeEmbed({
    *  restricted, region-locked, deleted, etc.). The caller unmounts the overlay
    *  so the card's thumbnail shows through. Never passed for Tier 3. */
   readonly onUnplayable?: () => void
+  /** Tier 1 only: called once when YouTube reports it is actually PLAYING, so the
+   *  caller can reveal the overlay only then (loading + the big start-up glyph
+   *  stay hidden behind the card thumbnail until real playback). */
+  readonly onPlaying?: () => void
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -46,6 +51,9 @@ export function YouTubeEmbed({
   // making the detection effect depend on it (avoids per-render re-subscribe).
   const onUnplayableRef = useRef(onUnplayable)
   onUnplayableRef.current = onUnplayable
+  const onPlayingRef = useRef(onPlaying)
+  onPlayingRef.current = onPlaying
+  const firedPlayingRef = useRef<boolean>(false)
   // Stable player id shared between the detection effect and handleIframeLoad.
   const playerIdRef = useRef<string>(Math.random().toString(36).slice(2))
 
@@ -77,7 +85,7 @@ export function YouTubeEmbed({
   // onUnplayableRef so that a new inline arrow from the parent (e.g. during
   // drag/scroll re-renders) does NOT tear down and re-add the listener.
   useEffect(() => {
-    if (!onUnplayableRef.current || !hasInteracted) return
+    if ((!onUnplayableRef.current && !onPlayingRef.current) || !hasInteracted) return
     const iframe = iframeRef.current
     if (!iframe?.contentWindow) return
 
@@ -95,30 +103,45 @@ export function YouTubeEmbed({
     sendListening()
     const t1 = window.setTimeout(sendListening, 300)
     const t2 = window.setTimeout(sendListening, 1000)
+    // Fallback: if no PLAYING event arrives within 3s (rare API hiccup), reveal
+    // anyway so the card never stays stuck on its thumbnail.
+    const tPlay = window.setTimeout(() => {
+      if (!firedPlayingRef.current) { firedPlayingRef.current = true; onPlayingRef.current?.() }
+    }, 3000)
 
     const handleMessage = (e: MessageEvent): void => {
       if (e.source !== iframe.contentWindow) return
       if (typeof e.data !== 'string') return
       let parsed: unknown
       try { parsed = JSON.parse(e.data) } catch { return }
-      if (
-        parsed !== null &&
-        typeof parsed === 'object' &&
-        'event' in parsed &&
-        (parsed as Record<string, unknown>)['event'] === 'onError' &&
-        'info' in parsed &&
-        UNPLAYABLE_CODES.has(Number((parsed as Record<string, unknown>)['info']))
-      ) {
+      if (parsed === null || typeof parsed !== 'object' || !('event' in parsed)) return
+      const ev = parsed as Record<string, unknown>
+      if (ev['event'] === 'onError' && UNPLAYABLE_CODES.has(Number(ev['info']))) {
         if (!firedUnplayableRef.current) {
           firedUnplayableRef.current = true
           onUnplayableRef.current?.()
         }
+        return
+      }
+      // PLAYING (playerState 1) — reported via onStateChange (info = number) or
+      // infoDelivery (info = { playerState }). Fire onPlaying once so the caller
+      // can reveal the overlay now that the start-up glyph has played out.
+      const info = ev['info']
+      const state =
+        ev['event'] === 'onStateChange' ? Number(info)
+          : ev['event'] === 'infoDelivery' && info !== null && typeof info === 'object'
+            ? Number((info as Record<string, unknown>)['playerState'])
+            : NaN
+      if (state === 1 && !firedPlayingRef.current) {
+        firedPlayingRef.current = true
+        onPlayingRef.current?.()
       }
     }
     window.addEventListener('message', handleMessage)
     return (): void => {
       window.clearTimeout(t1)
       window.clearTimeout(t2)
+      window.clearTimeout(tPlay)
       window.removeEventListener('message', handleMessage)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

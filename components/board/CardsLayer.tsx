@@ -41,6 +41,11 @@ const MIN_CONTROL_BAR_WIDTH_PX = PRESETS.find((p) => p.id === 'dense')?.w ?? 207
  *  play at once. */
 const TIER1_CAP = 999
 
+/** A card must be at least this visible (fraction of its area on screen) to be a
+ *  playback candidate. Without this, a card showing a 10% sliver at the screen
+ *  edge could claim a slot while the user sees nothing moving on screen. */
+const MIN_VISIBLE_RATIO = 0.3
+
 /** Rotating spotlight. The 4K stutter is GPU-compositing-bound — fill-rate, not
  *  decode — and fill cost scales with the on-screen PIXEL AREA of the live
  *  videos, not their count. A big AMBIENT card (≈608px wide) covers ~8.5× the
@@ -54,13 +59,11 @@ const LIVE_AREA_BUDGET = 3 * DENSE_CARD_W * DENSE_CARD_W
 const MAX_LIVE = 6
 /** Target playtime per card. The rotation interval is derived as
  *  PER_CARD_MS / cap so a card plays ~this long regardless of how many share
- *  the spotlight (playtime ≈ cap × interval). */
-const PER_CARD_MS = 6000
+ *  the spotlight (playtime ≈ cap × interval). Generous because a YouTube iframe
+ *  spends ~2-3s starting up (hidden behind the thumbnail until it truly plays),
+ *  so the visible window needs to be long enough to be worth it. */
+const PER_CARD_MS = 9000
 const MIN_ROTATE_MS = 1500
-/** Hold the iframe behind its own thumbnail this long before fading the video
- *  in, so YouTube's big start-up play/pause glyph plays out unseen (the card
- *  thumbnail bridges it). */
-const AMBIENT_REVEAL_DELAY_MS = 900
 
 /** Derive the media-type badge for a bookmark from existing fields — no
  *  new persisted data needed. Returns null for cards where a video/photo
@@ -190,7 +193,7 @@ export function CardsLayer({
   // Intersection-observed visibility drives a debounced pool of up to TIER1_CAP
   // muted autoplay players. When motionEnabled is false the cap is 0, so the
   // pool stays empty and no observers are attached.
-  const pool = useViewportPlaybackPool(motionEnabled ? TIER1_CAP : 0)
+  const pool = useViewportPlaybackPool(motionEnabled ? TIER1_CAP : 0, 150, MIN_VISIBLE_RATIO)
   const vizObservers = useRef<Map<string, IntersectionObserver>>(new Map())
   const vizElements = useRef<Map<string, HTMLElement>>(new Map())
   const observeViz = useCallback((id: string) => {
@@ -203,7 +206,9 @@ export function CardsLayer({
       vizElements.current.set(id, el)
       const obs = new IntersectionObserver(
         (entries) => { for (const e of entries) pool.report(id, e.isIntersecting ? e.intersectionRatio : 0) },
-        { threshold: [0, 0.25, 0.5, 0.75, 1] },
+        // Fine-grained around the MIN_VISIBLE_RATIO cutoff (0.3) so a card is
+        // promoted/dropped responsively as it scrolls past ~30% visible.
+        { threshold: [0, 0.15, 0.3, 0.45, 0.6, 0.8, 1] },
       )
       obs.observe(el)
       vizObservers.current.set(id, obs)
@@ -224,6 +229,14 @@ export function CardsLayer({
   const [unplayableIds, setUnplayableIds] = useState<ReadonlySet<string>>(new Set())
   const markUnplayable = useCallback((id: string): void => {
     setUnplayableIds((prev) => prev.has(id) ? prev : new Set(prev).add(id))
+  }, [])
+
+  // Cards whose ambient player has reported it is GENUINELY playing. The overlay
+  // stays transparent (card thumbnail showing) until then, so loading + YouTube's
+  // big start-up glyph stay hidden and the video appears already in motion.
+  const [revealedIds, setRevealedIds] = useState<ReadonlySet<string>>(new Set())
+  const markRevealed = useCallback((id: string): void => {
+    setRevealedIds((prev) => prev.has(id) ? prev : new Set(prev).add(id))
   }, [])
 
   // Stage 2: virtual order during drag for live reflow preview.
@@ -396,6 +409,16 @@ export function CardsLayer({
   }, [defaultCardWidth])
   const rotateMs = Math.max(MIN_ROTATE_MS, Math.round(PER_CARD_MS / liveCap))
   const playing = useSpotlightRotation(candidates, motionEnabled ? liveCap : 0, rotateMs)
+  // Forget the "revealed" flag for cards that left the spotlight, so when one
+  // returns for its next turn it re-bridges (thumbnail until it plays again).
+  useEffect(() => {
+    setRevealedIds((prev) => {
+      let changed = false
+      const next = new Set<string>()
+      for (const id of prev) { if (playing.has(id)) next.add(id); else changed = true }
+      return changed ? next : prev
+    })
+  }, [playing])
 
   // Previous-position ledger used to animate masonry reflows via FLIP.
   // Updated at the end of every effect run.
@@ -710,13 +733,19 @@ export function CardsLayer({
                   alignItems: 'center',
                   justifyContent: 'center',
                   pointerEvents: 'none',
-                  // Hold transparent (card thumbnail shows through) for the
-                  // reveal delay so YouTube's start-up glyph plays out unseen,
-                  // then fade the video in.
-                  animation: `ambientSpotIn 0.55s ease ${AMBIENT_REVEAL_DELAY_MS}ms both`,
+                  // Transparent (card thumbnail shows through) until the player
+                  // reports it is genuinely playing — hides loading + YouTube's
+                  // big start-up glyph — then fade the moving video in.
+                  opacity: revealedIds.has(it.bookmarkId) ? 1 : 0,
+                  transition: 'opacity 0.5s ease',
                 }}
               >
-                <InlineMediaPlayer item={it} muted onUnplayable={(): void => markUnplayable(it.bookmarkId)} />
+                <InlineMediaPlayer
+                  item={it}
+                  muted
+                  onUnplayable={(): void => markUnplayable(it.bookmarkId)}
+                  onPlaying={(): void => markRevealed(it.bookmarkId)}
+                />
               </div>
             )}
             {barMount?.id === it.bookmarkId && canPlayInline(it) && (

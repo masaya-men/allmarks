@@ -20,6 +20,7 @@ export function InlineMediaPlayer({
   paused,
   muted,
   onUnplayable,
+  onPlaying,
 }: {
   readonly item: BoardItem
   /** Controlled per-card volume (0–100). */
@@ -32,6 +33,10 @@ export function InlineMediaPlayer({
    *  embed-restricted YouTube). The caller should unmount this component so
    *  the card's normal thumbnail shows through. Never passed for Tier 3. */
   readonly onUnplayable?: () => void
+  /** Tier 1 only: called once when the embed is genuinely playing (not just
+   *  mounted/loading). The caller reveals the overlay then, so the loading +
+   *  YouTube start-up glyph stay hidden behind the card thumbnail. */
+  readonly onPlaying?: () => void
 }): ReactNode {
-  return resolveInlinePlayer(item, { autoStart: true, volume, paused, muted, onUnplayable })
+  return resolveInlinePlayer(item, { autoStart: true, volume, paused, muted, onUnplayable, onPlaying })
 }
