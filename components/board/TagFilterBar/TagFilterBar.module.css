@@ -1,0 +1,76 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+  pointer-events: auto;
+  font-size: 13px;
+}
+.chipScroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  max-width: 60vw;
+  scrollbar-width: none;
+}
+.chipScroll::-webkit-scrollbar { display: none; }
+.chip {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ddd;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transition: background 120ms, border-color 120ms, box-shadow 120ms;
+}
+.chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+.chip[data-selected="true"] {
+  background: rgba(40, 241, 0, 0.16);
+  border-color: rgba(40, 241, 0, 0.6);
+  color: #28F100;
+  box-shadow: 0 0 12px rgba(40, 241, 0, 0.3);
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modeToggle {
+  appearance: none;
+  background: rgba(40, 241, 0, 0.16);
+  border: 1px solid rgba(40, 241, 0, 0.6);
+  color: #28F100;
+  padding: 2px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.counter {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.clear {
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  width: 22px;
+  height: 22px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.clear:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
