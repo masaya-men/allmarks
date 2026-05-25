@@ -658,34 +658,37 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
       //              tagIds?, mode? }). Touches the single 'board-config'
       //              record in the settings store.
       //
-      // We inline the migration logic (= avoid pulling in a board-side
-      // import inside the storage module; upgrade callbacks should stay
-      // self-contained per existing convention). Idempotent on already-
-      // migrated object values, so re-runs are safe.
+      // We use direct get/put on the singleton record rather than a cursor
+      // because the v15 case above leaves a fire-and-forget cursor chain
+      // open on the moods store, and fake-indexeddb serializes cursor
+      // access per transaction — overlapping openCursor() calls abort the
+      // upgrade. Inline the migration logic (= avoid pulling in a board-
+      // side import; upgrade callbacks should stay self-contained per
+      // existing convention). Idempotent on already-migrated object values.
       if (oldVersion < 16) {
+        // Defensive: settings store is created in v3, so production always
+        // has it. But migration tests sometimes spin up at intermediate
+        // versions without seeding the full schema — skip cleanly in that
+        // case rather than aborting the whole upgrade transaction.
+        if (!db.objectStoreNames.contains('settings')) return
         const settingsStore = transaction.objectStore('settings')
-        void settingsStore.openCursor().then(function migrateFilter(
-          cursor: Awaited<ReturnType<typeof settingsStore.openCursor>>,
-        ): Promise<void> | undefined {
-          if (!cursor) return
-          if (cursor.key === 'board-config') {
-            const rec = cursor.value as { key: string; config?: Record<string, unknown> }
-            const legacy = rec.config?.activeFilter
-            let migrated: unknown = { kind: 'all' }
-            if (legacy && typeof legacy === 'object' && 'kind' in legacy) {
-              migrated = legacy
-            } else if (typeof legacy === 'string') {
-              if (legacy === 'all' || legacy === 'inbox' || legacy === 'archive' || legacy === 'dead') {
-                migrated = { kind: legacy }
-              } else if (legacy.startsWith('mood:')) {
-                const id = legacy.slice(5)
-                if (id.length > 0) migrated = { kind: 'tags', tagIds: [id], mode: 'and' }
-              }
+        void settingsStore.get('board-config').then((rec) => {
+          if (!rec) return
+          const r = rec as { key: string; config?: Record<string, unknown> }
+          const legacy = r.config?.activeFilter
+          let migrated: unknown = { kind: 'all' }
+          if (legacy && typeof legacy === 'object' && 'kind' in legacy) {
+            migrated = legacy
+          } else if (typeof legacy === 'string') {
+            if (legacy === 'all' || legacy === 'inbox' || legacy === 'archive' || legacy === 'dead') {
+              migrated = { kind: legacy }
+            } else if (legacy.startsWith('mood:')) {
+              const id = legacy.slice(5)
+              if (id.length > 0) migrated = { kind: 'tags', tagIds: [id], mode: 'and' }
             }
-            const nextConfig = { ...(rec.config ?? {}), activeFilter: migrated }
-            void cursor.update({ key: rec.key, config: nextConfig })
           }
-          return cursor.continue().then(migrateFilter)
+          const nextConfig = { ...(r.config ?? {}), activeFilter: migrated }
+          void settingsStore.put({ key: r.key, config: nextConfig } as never)
         })
       }
     },

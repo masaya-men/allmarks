@@ -20,7 +20,11 @@ import { createBackfillQueue } from '@/lib/board/backfill-queue'
 import { backfillTweetMeta } from '@/lib/board/tweet-backfill'
 import { fetchTikTokMeta } from '@/lib/embed/tiktok-meta'
 import { useTags } from '@/lib/storage/use-tags'
-import { useTagFilter } from '@/lib/board/use-tag-filter'
+import {
+  BOARD_FILTER_ALL,
+  isTagsFilter,
+  toggleTagInFilter,
+} from '@/lib/board/board-filter-helpers'
 import { initDB } from '@/lib/storage/indexeddb'
 import { loadBoardConfig, saveBoardConfig } from '@/lib/storage/board-config'
 import { ThemeLayer } from './ThemeLayer'
@@ -83,9 +87,8 @@ export function BoardRoot() {
     persistLinkStatus,
   } = useBoardData()
   const { tags, reload: reloadTags } = useTags()
-  const tagFilter = useTagFilter()
   const router = useRouter()
-  const [activeFilter, setActiveFilter] = useState<BoardFilter>('all')
+  const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
   // headline) is the only treatment wired up today; the URL query
   // `?bgtypo=...` lets us swap in future variants (dvd-bounce, glitch,
@@ -476,16 +479,19 @@ export function BoardRoot() {
   // and removes them from masonry input so the matched cards reflow naturally
   // via the existing GSAP-FLIP useLayoutEffect.
   const matchedBookmarkIds = useMemo<ReadonlySet<string> | null>(() => {
-    if (!tagFilter.isActive) return null
+    if (!isTagsFilter(activeFilter)) return null
+    if (activeFilter.tagIds.length === 0) return null
+    const tagIds = activeFilter.tagIds
+    const mode = activeFilter.mode
     const ids = new Set<string>()
     for (const it of filteredItems) {
-      const matches = tagFilter.mode === 'and'
-        ? tagFilter.selectedTagIds.every((tid) => it.tags.includes(tid))
-        : tagFilter.selectedTagIds.some((tid) => it.tags.includes(tid))
+      const matches = mode === 'and'
+        ? tagIds.every((tid) => it.tags.includes(tid))
+        : tagIds.some((tid) => it.tags.includes(tid))
       if (matches) ids.add(it.bookmarkId)
     }
     return ids
-  }, [filteredItems, tagFilter.isActive, tagFilter.mode, tagFilter.selectedTagIds])
+  }, [filteredItems, activeFilter])
 
   const themeMeta = getThemeMeta(DEFAULT_THEME_ID)
 
@@ -693,7 +699,7 @@ export function BoardRoot() {
   const focusCard = useCallback((cardId: string): void => {
     const pos = layout.positions[cardId]
     if (!pos) {
-      setActiveFilter('all')
+      setActiveFilter(BOARD_FILTER_ALL)
       setPendingFocusId(cardId)
       return
     }
@@ -1401,15 +1407,7 @@ export function BoardRoot() {
           onChange={handleFilterChange}
           tags={tags}
           counts={sidebarCounts}
-          overrideLabel={tagFilter.isActive ? (() => {
-            const names = tagFilter.selectedTagIds
-              .map((id) => tags.find((t) => t.id === id)?.name ?? '—')
-            if (names.length === 1) return names[0]
-            return `${names[0]} +${names.length - 1}`
-          })() : undefined}
-          overrideCount={tagFilter.isActive
-            ? String(matchedBookmarkIds?.size ?? 0).padStart(3, '0')
-            : undefined}
+          tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
         />
       </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
@@ -1432,15 +1430,16 @@ export function BoardRoot() {
               <BackupButton />
               <TagButton
                 onClick={(): void => {
-                  // Phase C1 (= session 72): cohort is inferred from the
-                  // active board filter so the user doesn't pick twice.
-                  // - all  → /triage (entry picker = "未分類 / 全部" 二択)
-                  // - mood:<id> → /triage?mode=tag:<id> (= 集合継承)
-                  // - inbox/archive/dead → /triage?mode=untagged (= 既定)
-                  if (activeFilter === 'all') {
+                  // Phase C1 (= session 72) + Phase 1.9 (= session 74):
+                  // cohort is inferred from the active board filter so the
+                  // user doesn't pick twice.
+                  // - all → /triage (entry picker = "未分類 / 全部" 二択)
+                  // - tags filter w/ single tag → /triage?mode=tag:<id>
+                  // - inbox/archive/dead/multi-tag → /triage?mode=untagged
+                  if (activeFilter.kind === 'all') {
                     router.push('/triage')
-                  } else if (activeFilter.startsWith('mood:')) {
-                    router.push(`/triage?mode=tag:${activeFilter.slice(5)}`)
+                  } else if (activeFilter.kind === 'tags' && activeFilter.tagIds.length === 1) {
+                    router.push(`/triage?mode=tag:${activeFilter.tagIds[0]}`)
                   } else {
                     router.push('/triage?mode=untagged')
                   }
@@ -1540,7 +1539,9 @@ export function BoardRoot() {
                 allTags={tags}
                 onTagToggle={handleTagToggle}
                 onTagCreate={handleTagCreate}
-                onTagFilterToggle={tagFilter.toggleTag}
+                onTagFilterToggle={(tagId): void => {
+                  handleFilterChange(toggleTagInFilter(activeFilter, tagId))
+                }}
                 isScrolling={isScrolling}
               />
             </div>
