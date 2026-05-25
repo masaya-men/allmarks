@@ -1,0 +1,27 @@
+.button {
+  appearance: none;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 6px 12px;
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 120ms;
+}
+
+.button:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.button[data-active="true"] {
+  color: #28F100;
+}
+
+.button[data-active="true"]:hover {
+  color: #28F100;
+}
