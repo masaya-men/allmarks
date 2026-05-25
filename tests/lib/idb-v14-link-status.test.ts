@@ -12,13 +12,15 @@ describe('IDB v14 migration', () => {
     }
   })
 
-  it('bumps DB_VERSION to 14', () => {
-    expect(DB_VERSION).toBe(14)
+  it('bumps DB_VERSION to at least 14', () => {
+    // Test name is historical (v14 spec); the constant marches forward with
+    // each migration. The v14 invariants below still hold post-bump.
+    expect(DB_VERSION).toBeGreaterThanOrEqual(14)
   })
 
   it('opens cleanly on cold start', async () => {
     const db = await initDB()
-    expect(db.version).toBe(14)
+    expect(db.version).toBe(DB_VERSION)
     db.close()
   })
 

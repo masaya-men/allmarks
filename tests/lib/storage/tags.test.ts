@@ -21,9 +21,9 @@ type TestDb = IDBPDatabase<any>
 async function makeDb(): Promise<TestDb> {
   return await openDB(TEST_DB, 1, {
     upgrade(db) {
-      // ⚠️ production と同じ store 名 'moods' で create
-      // (Task 5 の v14→v15 migration で 'tags' に切替予定)
-      db.createObjectStore('moods', { keyPath: 'id' })
+      // production と同じ store 名 'tags' で create
+      // (Task 5 の v14→v15 migration で 'moods' → 'tags' に切替済)
+      db.createObjectStore('tags', { keyPath: 'id' })
       const bs = db.createObjectStore('bookmarks', { keyPath: 'id' })
       bs.createIndex('by-tag', 'tags', { multiEntry: true })
     },

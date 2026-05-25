@@ -596,6 +596,61 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
       // sweep needed. Bumping the schema version still serves as a tripwire
       // so future migrations can assume the fields are observable when
       // oldVersion >= 14.
+
+      // ── v14 → v15: moods → tags rename + by-tag multiEntry index ──
+      // Tagging Phase 1, Task 5.
+      // 1. Create new `tags` store (same shape as moods + new optional fields).
+      // 2. Copy every existing moods record into tags, seeding `updatedAt` from
+      //    `createdAt` and defaulting `theme` to null (Phase 3 will populate).
+      // 3. Add a `by-tag` multiEntry index on bookmarks for fast tag filtering.
+      // 4. bookmark.dominantColor is schema-optional and stays undefined here;
+      //    a Phase 3 backfill will populate it from media analysis.
+      //
+      // The legacy `moods` store is intentionally left in place — keeping it
+      // gives us a read-only fallback for rollback safety, and the DBSchema
+      // declaration still lists `moods: TagRecord` so type checks stay happy.
+      if (oldVersion < 15) {
+        // Step 1: create the new tags store + ordered index.
+        if (!db.objectStoreNames.contains('tags')) {
+          const tagsStore = db.createObjectStore('tags', { keyPath: 'id' })
+          tagsStore.createIndex('by-order', 'order')
+        }
+
+        // Step 2: copy moods → tags (only when the user actually has a moods
+        // store from a previous upgrade — a brand-new install will not).
+        if (db.objectStoreNames.contains('moods')) {
+          const oldStore = transaction.objectStore('moods')
+          const newStore = transaction.objectStore('tags')
+          void oldStore.openCursor().then(function copyMoodToTag(
+            cursor: Awaited<ReturnType<typeof oldStore.openCursor>>,
+          ): Promise<void> | undefined {
+            if (!cursor) return
+            const m = cursor.value as TagRecord
+            const next: TagRecord = {
+              id: m.id,
+              name: m.name,
+              color: m.color,
+              order: m.order,
+              createdAt: m.createdAt,
+              // v15 additions: legacy rows had neither field; seed them so
+              // read paths can assume both are observable post-v15.
+              updatedAt: m.updatedAt ?? m.createdAt,
+              theme: m.theme ?? null,
+            }
+            void newStore.put(next)
+            return cursor.continue().then(copyMoodToTag)
+          })
+        }
+
+        // Step 3: add multiEntry index for tag-based bookmark filtering.
+        const bookmarkStore = transaction.objectStore('bookmarks')
+        if (!bookmarkStore.indexNames.contains('by-tag')) {
+          bookmarkStore.createIndex('by-tag', 'tags', { multiEntry: true })
+        }
+
+        // Step 4: bookmark.dominantColor remains undefined for legacy rows;
+        // Phase 3 backfill will fill values from media. No sweep here.
+      }
     },
   })
   // Reaching this point means the upgrade completed without being blocked,

@@ -15,9 +15,9 @@ function uuid(): string {
  * @param input - Tag data (name, color, order)
  * @returns The created TagRecord
  *
- * ⚠️ store 名は `'moods'` のまま (= Task 5 の v14→v15 migration で `'tags'` に
- * 切替予定)。 今この時点で `'tags'` に書き換えると runtime で `NotFoundError`
- * になるので絶対に触らない。
+ * store 名は `'tags'` (= Task 5 の v14→v15 migration で `'moods'` → `'tags'`
+ * に切替済み)。 legacy `moods` store は rollback safety のため物理的に残って
+ * いるが、 書き込みは全て `tags` に行う。
  */
 export async function addTag(db: DbLike, input: TagInput): Promise<TagRecord> {
   const now = Date.now()
@@ -30,7 +30,7 @@ export async function addTag(db: DbLike, input: TagInput): Promise<TagRecord> {
     updatedAt: now,
     theme: null,
   }
-  await db.put('moods', tag)
+  await db.put('tags', tag)
   return tag
 }
 
@@ -40,7 +40,7 @@ export async function addTag(db: DbLike, input: TagInput): Promise<TagRecord> {
  * @returns Array of TagRecord
  */
 export async function getAllTags(db: DbLike): Promise<TagRecord[]> {
-  const list = (await db.getAll('moods')) as TagRecord[]
+  const list = (await db.getAll('tags')) as TagRecord[]
   return list.sort((a, b) => a.order - b.order)
 }
 
@@ -56,9 +56,9 @@ export async function updateTag(
   id: string,
   updates: Partial<Omit<TagRecord, 'id' | 'createdAt'>>,
 ): Promise<void> {
-  const existing = (await db.get('moods', id)) as TagRecord | undefined
+  const existing = (await db.get('tags', id)) as TagRecord | undefined
   if (!existing) return
-  await db.put('moods', { ...existing, ...updates, updatedAt: Date.now() })
+  await db.put('tags', { ...existing, ...updates, updatedAt: Date.now() })
 }
 
 /**
@@ -67,7 +67,7 @@ export async function updateTag(
  * @param id - The tag ID to delete
  */
 export async function deleteTag(db: DbLike, id: string): Promise<void> {
-  await db.delete('moods', id)
+  await db.delete('tags', id)
 }
 
 /**
@@ -77,8 +77,8 @@ export async function deleteTag(db: DbLike, id: string): Promise<void> {
  * @param orderedIds - The new complete order by id
  */
 export async function reorderTags(db: DbLike, orderedIds: readonly string[]): Promise<void> {
-  const tx = db.transaction('moods', 'readwrite')
-  const store = tx.objectStore('moods')
+  const tx = db.transaction('tags', 'readwrite')
+  const store = tx.objectStore('tags')
   for (let i = 0; i < orderedIds.length; i++) {
     const existing = (await store.get(orderedIds[i])) as TagRecord | undefined
     if (!existing) continue
