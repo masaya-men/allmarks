@@ -44,33 +44,29 @@ export function isBoardBgTypoVariant(value: string): value is BoardBgTypoVariant
 /**
  * Resolve the headline string shown by the background typography layer
  * for the current filter. Special filters get a fixed label; tag filters
- * resolve via the tag id to the user-defined tag name.
+ * resolve via the first tag id to the user-defined name (with `+N-1` suffix
+ * for multi-tag filters, matching the FilterPill chrome).
  *
  * Returns an empty string when there is nothing to show (e.g. a tag id
  * the user has since deleted) — the host hides itself in that case.
- *
- * NOTE: `mood:` prefix in the filter literal is preserved as the IDB
- * persistence format (see BoardFilter type) — internal references use `tag`.
  */
 export function deriveBoardBgTypoText(
   filter: BoardFilter,
   tags: readonly TagRecord[],
 ): string {
-  switch (filter) {
-    case 'all':
-      return 'AllMarks'
-    case 'inbox':
-      return 'Inbox'
-    case 'archive':
-      return 'Archive'
-    case 'dead':
-      return 'Dead Links'
+  switch (filter.kind) {
+    case 'all': return 'AllMarks'
+    case 'inbox': return 'Inbox'
+    case 'archive': return 'Archive'
+    case 'dead': return 'Dead Links'
+    case 'tags': {
+      if (filter.tagIds.length === 0) return 'AllMarks'
+      const firstName = tags.find((t) => t.id === filter.tagIds[0])?.name
+      if (!firstName) return ''  // first tag id resolution failed → hide
+      if (filter.tagIds.length === 1) return firstName
+      return `${firstName} +${filter.tagIds.length - 1}`
+    }
   }
-  if (filter.startsWith('mood:')) {
-    const id = filter.slice('mood:'.length)
-    return tags.find((m) => m.id === id)?.name ?? ''
-  }
-  return ''
 }
 
 type Props = {
