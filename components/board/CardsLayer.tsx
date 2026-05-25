@@ -981,9 +981,15 @@ export function CardsLayer({
                     background: 'transparent',
                     border: 'none',
                     borderRadius: 0,
-                    color: hoveredBookmarkId === it.bookmarkId ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.85)',
-                    WebkitTextStroke: '0.5px rgba(0, 0, 0, 0.45)',
-                    paintOrder: 'stroke fill',
+                    color: 'rgba(255, 255, 255, 1)',
+                    // mix-blend-mode: difference + white text → readable on
+                    // every background (= dark thumbs invert to white, light
+                    // thumbs invert to black). Same treatment as the tag
+                    // indicator strip above so the two read as one
+                    // editorial-style affordance row. text-stroke was the
+                    // legacy "stamped" approach; the blend variant feels less
+                    // SaaS / less AI per user feedback in session 73.
+                    mixBlendMode: 'difference',
                     padding: '4px 6px',
                     fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
                     fontSize: 10,
@@ -991,7 +997,7 @@ export function CardsLayer({
                     textTransform: 'uppercase',
                     cursor: 'pointer',
                     opacity: hoveredBookmarkId === it.bookmarkId || popoverOpenFor === it.bookmarkId ? 1 : 0,
-                    transition: 'opacity 120ms, color 120ms',
+                    transition: 'opacity 120ms',
                     pointerEvents: hoveredBookmarkId === it.bookmarkId || popoverOpenFor === it.bookmarkId ? 'auto' : 'none',
                     zIndex: 40,
                   }}
