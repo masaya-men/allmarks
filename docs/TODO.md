@@ -20,7 +20,51 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-25 セッション 71 — タグ機能 Phase 1 完成 + ship 済、 user 視点で chip/CRT shutdown/reflow/popover が全部動く状態に到達)
+### 直近の状態 (2026-05-25 セッション 72 — タグ機能 Phase 2 = Triage 大改造完成 ship 済、 user 視点で MANAGE TAGS → 4 方向 swipe + 副タグ + 複数同時付与 + 背景うっすら + おすすめ + 削除 全部動く状態に到達)
+
+**ship 済 (= prod 反映済、 booklage.pages.dev、 session 内 5 deploy)**:
+
+1. **Polish (= session 開始時 user feedback 最小消化)**: chrome `TAG` → **`MANAGE TAGS`** (= 業界水準 action verb + noun)、 カード hover `+ TAG` → **`+ ADD TAG`**、 TagButton を ChromeButton wrapper 化 (= 四角枠削除 + scramble + RGB glitch 統一)、 TagAddPopover chip も四角枠削除 + monospace
+2. **Phase A = 4 方向 directional swipe MVP**: TagPicker 大改造で 4 方向 grid (= 上右下左)、 TriagePage に矢印キー + drag pointer event (= 60px threshold) + Esc 戻り、 TriageCard exit アニメ 4 方向、 BoardRoot の MANAGE TAGS onClick を `router.push('/triage')` に切替、 canvas 左上 TagFilterBar + SimpleTagList modal 完全撤去
+3. **Phase B1 = Shift 副タグ + 複数同時付与**: TagPicker 4 方向 DirChip を 2 段表示 (= 主 + 薄字副)、 Shift 押し中は active 入替 (= 副タグ 5-8 が前面)、 画面下 CoTagStrip = 全タグ chip 並び (= click + 数字キー 1-9 で toggle、 既存「即付与」 から仕様変更)、 入力 field で新規作成 → 自動 co-tag on、 swipe で「主 + 選択中 co-tags 全部」 を一括 persistTags、 Shift keydown/keyup + window blur で stuck 状態回避 — **業界未踏領域** (= Superhuman/Tinder/Gmail/Things のいずれも片方のみ)
+4. **Phase B2 = 背景うっすら + 「しゅっ」 polish**: BoardBackdrop 新規 (= 60 枚サムネ grid、 GSAP/Lightbox なし、 opacity 0.14 + blur 3px)、 TriagePage .root background rgba(8,8,10,0.88) 半透明 dim、 TriageCard exit アニメ 3 段化 (= 0% 静止 → 20% 反対方向 10px 反り + brightness 1.18 → 100% 飛び去り + scale 0.84 + brightness 0.72) 220ms cubic-bezier、 prefers-reduced-motion = fade only 120ms
+5. **Phase C = EntryPicker + 集合継承 + ハッシュタグ抽出 + タグ削除 UI + ja rename**:
+   - **C1**: TriagePage に `useSearchParams()` で mode 取得 + EntryPicker (= mode 無し時表示、 「未分類のみ (default) / 全部」 二択 + 数字キー 1/2 + ENTER 速選)、 BoardRoot の MANAGE TAGS onClick を activeFilter で分岐 (= all → /triage = picker、 mood:<id> → /triage?mode=tag:<id> 集合継承、 他 → /triage?mode=untagged)、 「all」 mode では persistMainPlusCo が既存 tags と union + swipe 後 index 手動 advance
+   - **C3**: HeuristicTagger に `extractHashtags()` 追加 (= `/#[\p{L}\p{N}_]+/gu` 多言語 Unicode 対応)、 hashtag exact match = confidence 0.95 (= domain 0.8 / keyword 0.5 より上)、 TagReason 型に 'hashtag' 追加
+   - **C4**: lib/storage/tags.ts に `deleteTagCascade` 追加 (= tag store + bookmarks 同 transaction で dangling ref scrub)、 use-tags.remove を切替、 EntryPicker に Manage tags inline 一覧 + 各 tag × Delete button + window.confirm
+   - **C5**: messages/ja.json の `newMood` / `moodNamePlaceholder` を「タグ」 表現に更新 (= 他 14 言語の文字列内 mood は Phase D 持ち越し)
+   - **C2 (中断再開)** は Phase D 持ち越し (= localStorage 設計 1 sprint 級、 他項目との独立性高い)
+   - 既存 `/triage` 実装 (= 過去 session で作られた T1 Linear MVP + HeuristicTagger ドメイン辞書 18 件 + keyword match) を base にして拡張、 完全書き直しは回避
+6. **Suspense fix** (= /triage build エラー対応): `useSearchParams()` が Static Generation 必須の Suspense boundary 要件、 app/(app)/triage/page.tsx で `<Suspense fallback={null}>` で wrap
+
+**user 視点**:
+- chrome 右上 `MANAGE TAGS` 押す → /triage 別 page に遷移 (= 裏に自分の board がサムネで薄く透ける)
+- AllMarks 中 = EntryPicker で「未分類 / 全部」 二択 + タグ削除一覧、 タグ絞り込み中 = 即その集合で swipe 開始
+- 中央にカード 1 枚、 上下左右に主タグ chip (= 各 chip 内に薄字で副タグ)、 Shift で主⇄副反転
+- 矢印キー or drag (= 60px) or chip click で swipe → アニメ「しゅっ」 (= 弾性 + brightness pulse + 飛び去り) → 主 + co-tags 一気に付与
+- 画面下 co-tags strip = click / 数字キー 1-9 / 入力で新規作成 → toggle on
+- 副タグ on のまま swipe で複数 tag 同時付与 = **業界未踏領域**
+- S = skip / Z = undo / Esc = /board 戻り
+- おすすめタグ (= HeuristicTagger): ハッシュタグ literal + ドメイン辞書 + title keyword で suggested 緑強調
+
+**テスト**: 全 804 PASS 維持 (= session 内 5 回連続 PASS、 既存 test 破壊なし)、 tsc 0 errors、 build success (= 25 routes static prerender)、 deploy 5 回
+
+**設計上の重要発見 (= 次セッション以降の保険)**:
+- **`useSearchParams()` の Suspense 要件**: Static Generation で `useSearchParams()` を使う component は `<Suspense fallback={...}>` で wrap 必須、 さもないと prerender error。 next/navigation の動的 hook は全部この制約 (= memory 候補)
+- **persistTags の semantics = 上書き**: 既存 tags array を引数のもので完全 replace (= 追加ではない)。 「all」 mode で既存 tags 保持したい場合は呼び出し側で merge する必要 (= persistMainPlusCo で main + co + existing を seen Set で dedupe 順序保持)
+- **deleteTag は dangling ref を残す**: tag store のみ削除、 bookmark の tags array は scrub されない。 cascade 削除には別 API (= deleteTagCascade) が必要、 単一 transaction で両 store 操作
+- **既存 T1 を捨てない判断**: 過去 session の T1 Linear MVP + HeuristicTagger が活きてた、 完全書き直しでなく拡張で済んだ (= 時間節約 + HeuristicTagger 即流用)
+
+**Phase D 持ち越し (= session 73 候補)**:
+- **D1 中断再開** = localStorage に completedBookmarkIds 保存、 続きから prompt
+- **D2 「しゅっ」 アニメ進化** = 紙折りたたみ / 光トレイル / 音波減衰 (= IDEAS.md 3+ 案から prototype 試作)
+- **D3 タグ削除 楽しい fx** = 「タグごと爆発」 / 「音波で消える」 (= 現状 window.confirm を inline + アニメに進化)
+- **D4 他 14 言語 i18n** = messages/{en/ar/de/es/fr/it/ko/nl/pt/ru/th/tr/vi/zh}.json の newMood / moodNamePlaceholder の mood 表現を各国 tag 語に
+- **D5 NewMoodInput → NewTagInput rename** = file + 内部識別子
+
+---
+
+### 旧情報 (2026-05-25 セッション 71 — タグ機能 Phase 1 完成 + ship 済、 user 視点で chip/CRT shutdown/reflow/popover が全部動く状態に到達)
 
 **ship 済 (= prod 反映済、 booklage.pages.dev で動作確認可能)**:
 
