@@ -5,6 +5,10 @@ import { LiquidGlass } from './LiquidGlass'
 import { BookmarkletInstall } from '@/components/bookmarklet/BookmarkletInstall'
 import { t } from '@/lib/i18n/t'
 import type { BoardFilter } from '@/lib/board/types'
+import {
+  BOARD_FILTER_ALL, BOARD_FILTER_INBOX, BOARD_FILTER_ARCHIVE,
+  boardFilterEquals, isTagsFilter,
+} from '@/lib/board/board-filter-helpers'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import styles from './Sidebar.module.css'
 
@@ -25,7 +29,9 @@ export function Sidebar({
   collapsed, onToggle, counts, activeFilter, onFilterChange,
   tags, tagCounts, onCreateTag, onOpenBookmarkletModal, onTriageStart,
 }: Props): ReactElement {
-  const isActive = (f: BoardFilter): boolean => activeFilter === f
+  const isActiveTag = (id: string): boolean =>
+    isTagsFilter(activeFilter) && activeFilter.tagIds.length === 1 && activeFilter.tagIds[0] === id
+
   return (
     <aside
       className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`.trim()}
@@ -52,20 +58,20 @@ export function Sidebar({
 
           <div className={styles.sectionHeader}>{t('board.sidebar.libraryHeader')}</div>
           <button type="button"
-            className={`${styles.navItem} ${isActive('all') ? styles.active : ''}`.trim()}
-            onClick={() => onFilterChange('all')}>
+            className={`${styles.navItem} ${boardFilterEquals(activeFilter, BOARD_FILTER_ALL) ? styles.active : ''}`.trim()}
+            onClick={() => onFilterChange(BOARD_FILTER_ALL)}>
             <span className={styles.navLabel}>{t('board.sidebar.all')}</span>
             <span className={styles.navCount}>{counts.all}</span>
           </button>
           <button type="button"
-            className={`${styles.navItem} ${isActive('inbox') ? styles.active : ''}`.trim()}
-            onClick={() => onFilterChange('inbox')}>
+            className={`${styles.navItem} ${boardFilterEquals(activeFilter, BOARD_FILTER_INBOX) ? styles.active : ''}`.trim()}
+            onClick={() => onFilterChange(BOARD_FILTER_INBOX)}>
             <span className={styles.navLabel}>{t('board.sidebar.inbox')}</span>
             <span className={`${styles.navCount} ${counts.inbox > 0 ? styles.navCountHot : ''}`.trim()}>{counts.inbox}</span>
           </button>
           <button type="button"
-            className={`${styles.navItem} ${isActive('archive') ? styles.active : ''}`.trim()}
-            onClick={() => onFilterChange('archive')}>
+            className={`${styles.navItem} ${boardFilterEquals(activeFilter, BOARD_FILTER_ARCHIVE) ? styles.active : ''}`.trim()}
+            onClick={() => onFilterChange(BOARD_FILTER_ARCHIVE)}>
             <span className={styles.navLabel}>{t('board.sidebar.archive')}</span>
             <span className={styles.navCount}>{counts.archive}</span>
           </button>
@@ -80,11 +86,8 @@ export function Sidebar({
 
           <div className={styles.sectionHeader}>{t('board.sidebar.moodsHeader')}</div>
           {tags.map((m) => {
-            // `mood:` filter literal は IDB に永続化される BoardFilter 表現
-            // (= board-config の activeFilter) なので既存 user 環境保護のため
-            // そのまま保持。 内部変数は `tag` に rename 済み。
-            const f: BoardFilter = `mood:${m.id}`
-            const active = activeFilter === f
+            const f: BoardFilter = { kind: 'tags', tagIds: [m.id], mode: 'and' }
+            const active = isActiveTag(m.id)
             return (
               <button key={m.id} type="button"
                 className={`${styles.navItem} ${active ? styles.active : ''}`.trim()}
