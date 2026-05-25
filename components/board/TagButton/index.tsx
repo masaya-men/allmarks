@@ -1,6 +1,7 @@
 'use client'
 
 import { type ReactElement } from 'react'
+import { ChromeButton } from '../ChromeButton'
 import styles from './TagButton.module.css'
 
 export interface TagButtonProps {
@@ -10,14 +11,12 @@ export interface TagButtonProps {
 
 export function TagButton({ onClick, active }: TagButtonProps): ReactElement {
   return (
-    <button
-      type="button"
-      className={styles.button}
-      data-active={active ? 'true' : 'false'}
+    <ChromeButton
+      label="MANAGE TAGS"
       onClick={onClick}
-      aria-label="Open tag management"
-    >
-      TAG
-    </button>
+      className={active ? styles.active : undefined}
+      data-testid="tag-button"
+      aria-pressed={active}
+    />
   )
 }

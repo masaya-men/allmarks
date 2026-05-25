@@ -951,21 +951,25 @@ export function CardsLayer({
                     top: 8,
                     left: 8,
                     appearance: 'none',
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    padding: '3px 8px',
-                    borderRadius: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 0,
+                    color: hoveredBookmarkId === it.bookmarkId ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.85)',
+                    WebkitTextStroke: '0.5px rgba(0, 0, 0, 0.45)',
+                    paintOrder: 'stroke fill',
+                    padding: '4px 6px',
+                    fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
                     fontSize: 10,
-                    letterSpacing: '0.08em',
+                    letterSpacing: '0.10em',
+                    textTransform: 'uppercase',
                     cursor: 'pointer',
                     opacity: hoveredBookmarkId === it.bookmarkId || popoverOpenFor === it.bookmarkId ? 1 : 0,
-                    transition: 'opacity 120ms',
+                    transition: 'opacity 120ms, color 120ms',
                     pointerEvents: hoveredBookmarkId === it.bookmarkId || popoverOpenFor === it.bookmarkId ? 'auto' : 'none',
                     zIndex: 40,
                   }}
                 >
-                  + TAG
+                  + ADD TAG
                 </button>
                 {popoverOpenFor === it.bookmarkId && (
                   <div

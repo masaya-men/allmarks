@@ -3,9 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { TagButton } from '@/components/board/TagButton'
 
 describe('TagButton', () => {
-  it('TAG ラベル表示', () => {
+  it('MANAGE TAGS ラベル表示', () => {
     render(<TagButton onClick={() => {}} />)
-    expect(screen.getByText('TAG')).toBeInTheDocument()
+    expect(screen.getByText('MANAGE TAGS')).toBeInTheDocument()
   })
 
   it('click で onClick 呼ばれる', () => {
@@ -15,16 +15,16 @@ describe('TagButton', () => {
     expect(fn).toHaveBeenCalled()
   })
 
-  it('active=true で data-active="true"', () => {
+  it('active=true で aria-pressed="true"', () => {
     render(<TagButton onClick={() => {}} active={true} />)
     const btn = screen.getByRole('button')
-    expect(btn.getAttribute('data-active')).toBe('true')
+    expect(btn.getAttribute('aria-pressed')).toBe('true')
   })
 
-  it('active=false or undefined で data-active="false"', () => {
+  it('active=false で aria-pressed="false"', () => {
     render(<TagButton onClick={() => {}} active={false} />)
     const btn = screen.getByRole('button')
-    expect(btn.getAttribute('data-active')).toBe('false')
+    expect(btn.getAttribute('aria-pressed')).toBe('false')
   })
 
   it('button 要素で type="button"', () => {

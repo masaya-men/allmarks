@@ -16,30 +16,33 @@
   flex-wrap: wrap;
   gap: 4px;
 }
+/* Chips align with the chrome button vocabulary (= no boxes, monospace, glitch-ready).
+   - default = white 0.85, hover brightens to 1.0
+   - data-has="true" = AllMarks success-green (= already-applied tag)
+   - chipNew = greenish (= "new tag suggestion") */
 .chip, .chipNew {
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
-  color: #ddd;
-  padding: 3px 8px;
-  border-radius: 2px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 4px 8px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11px;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: background 100ms, border-color 100ms;
+  transition: color 120ms;
 }
 .chip:hover, .chipNew:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
 }
 .chip[data-has="true"] {
-  background: rgba(40, 241, 0, 0.16);
-  border-color: rgba(40, 241, 0, 0.6);
   color: #28F100;
 }
 .chipNew {
-  border-style: dashed;
-  border-color: rgba(40, 241, 0, 0.4);
   color: rgba(40, 241, 0, 0.85);
+}
+.chipNew:hover {
+  color: #28F100;
 }
 .input {
   appearance: none;

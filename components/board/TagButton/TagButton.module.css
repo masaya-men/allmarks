@@ -1,22 +1,6 @@
-.button {
-  appearance: none;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.7);
-  padding: 6px 12px;
-  border-radius: 3px;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  transition: background 120ms, border-color 120ms, color 120ms;
-}
-.button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.24);
-  color: #fff;
-}
-.button[data-active="true"] {
-  background: rgba(40, 241, 0, 0.16);
-  border-color: rgba(40, 241, 0, 0.6);
+/* TagButton extends ChromeButton (= same scramble + RGB ghost recipe).
+   The only TagButton-specific affordance is the active-state green tint,
+   reused from the AllMarks success-green palette (= #28F100). */
+.active {
   color: #28F100;
 }
