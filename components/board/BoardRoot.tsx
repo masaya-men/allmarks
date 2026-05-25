@@ -1511,6 +1511,7 @@ export function BoardRoot() {
                 allTags={tags}
                 onTagToggle={handleTagToggle}
                 onTagCreate={handleTagCreate}
+                onTagFilterToggle={tagFilter.toggleTag}
               />
             </div>
           </InteractionLayer>

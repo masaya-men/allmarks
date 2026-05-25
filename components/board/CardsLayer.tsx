@@ -24,6 +24,7 @@ import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
 import { extractCandidatesFromBookmark } from '@/lib/board/tag-candidates'
 import type { TagRecord, BookmarkRecord } from '@/lib/storage/indexeddb'
 import { TagAddPopover } from './TagAddPopover'
+import { TagIndicatorStrip } from './TagIndicatorStrip'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
 import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
@@ -225,6 +226,9 @@ type CardsLayerProps = {
   /** Create a brand-new tag and immediately attach it to the bookmark.
    *  Implementation in BoardRoot dedupes by case-insensitive name. */
   readonly onTagCreate?: (bookmarkId: string, name: string) => Promise<void> | void
+  /** Toggle a tag in the board-wide filter (= clicking a per-card tag pill
+   *  reuses the chrome TagFilterBar's add/remove semantics). */
+  readonly onTagFilterToggle?: (tagId: string) => void
 }
 
 export function CardsLayer({
@@ -259,11 +263,18 @@ export function CardsLayer({
   allTags,
   onTagToggle,
   onTagCreate,
+  onTagFilterToggle,
 }: CardsLayerProps): ReactNode {
   // Which card currently has its add-tag popover open. Null = none.
   // Toggled by the + TAG corner button. Closed by Esc (handled inside
   // TagAddPopover) or by clicking + TAG again on the same card.
   const [popoverOpenFor, setPopoverOpenFor] = useState<string | null>(null)
+  // Per-render lookup so the per-card TagIndicatorStrip can resolve
+  // bookmark.tags[] (ids) into the TagRecord shape it needs in O(1).
+  const tagsById = useMemo<ReadonlyMap<string, TagRecord>>(
+    () => new Map((allTags ?? []).map((t) => [t.id, t])),
+    [allTags],
+  )
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
   const lastComputeRef = useRef<{ x: number; y: number } | null>(null)
@@ -755,7 +766,9 @@ export function CardsLayer({
                   ? 1000
                   : audioActiveId === it.bookmarkId || barMount?.id === it.bookmarkId
                     ? 500
-                    : undefined,
+                    : hoveredBookmarkId === it.bookmarkId
+                      ? 100
+                      : undefined,
               opacity: newlyAddedIds.has(it.bookmarkId) ? 0 : 1,
               visibility: sourceCardId === it.bookmarkId ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
@@ -928,6 +941,20 @@ export function CardsLayer({
               onResize={(nextW: number): void => onCardResize(it.bookmarkId, nextW)}
               onResizeEnd={(finalW: number): void => onCardResizeEnd(it.bookmarkId, finalW)}
             />
+            {/* Per-card tag pills, bleeding off the card's top-left corner.
+                Renders only when the bookmark actually has tags AND the card
+                is hovered (= silent-board principle — meta UI stays invisible
+                at rest). Pills click → toggle in the board-wide tag filter,
+                same semantics as the chrome TagFilterBar chips. */}
+            {!taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
+              <TagIndicatorStrip
+                tags={it.tags
+                  .map((tid) => tagsById.get(tid))
+                  .filter((t): t is TagRecord => t !== undefined)}
+                isHovered={hoveredBookmarkId === it.bookmarkId}
+                onTagClick={onTagFilterToggle}
+              />
+            )}
             {/* + TAG affordance — top-left corner, mirrors the visual language
                 of the existing × / ↺ corner buttons. Hidden by default;
                 fades in while the card is hovered OR while its popover is
@@ -969,7 +996,7 @@ export function CardsLayer({
                     zIndex: 40,
                   }}
                 >
-                  + ADD TAG
+                  + TAG
                 </button>
                 {popoverOpenFor === it.bookmarkId && (
                   <div
