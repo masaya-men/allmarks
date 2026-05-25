@@ -1402,7 +1402,20 @@ export function BoardRoot() {
                 onApplyPreset={onApplyPreset}
               />
               <TagButton
-                onClick={(): void => router.push('/triage')}
+                onClick={(): void => {
+                  // Phase C1 (= session 72): cohort is inferred from the
+                  // active board filter so the user doesn't pick twice.
+                  // - all  → /triage (entry picker = "未分類 / 全部" 二択)
+                  // - mood:<id> → /triage?mode=tag:<id> (= 集合継承)
+                  // - inbox/archive/dead → /triage?mode=untagged (= 既定)
+                  if (activeFilter === 'all') {
+                    router.push('/triage')
+                  } else if (activeFilter.startsWith('mood:')) {
+                    router.push(`/triage?mode=tag:${activeFilter.slice(5)}`)
+                  } else {
+                    router.push('/triage?mode=untagged')
+                  }
+                }}
               />
               <ChromeButton
                 label={t('board.chrome.popout')}

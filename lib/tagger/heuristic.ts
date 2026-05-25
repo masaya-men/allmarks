@@ -25,6 +25,14 @@ function hostname(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, '') } catch { return '' }
 }
 
+/** Hashtag literal extractor: `#xxx` patterns lifted out of title/desc/siteName.
+ *  Covers ASCII + Latin extended + CJK + most non-ASCII letters via Unicode
+ *  property escape `\p{L}`. Returns lowercased names without the `#`. */
+function extractHashtags(text: string): string[] {
+  const matches = text.match(/#([\p{L}\p{N}_]+)/gu) ?? []
+  return matches.map((m) => m.slice(1).toLowerCase())
+}
+
 export class HeuristicTagger implements BookmarkTagger {
   constructor(private ctx: BookmarkTaggerContext) {}
 
@@ -33,12 +41,19 @@ export class HeuristicTagger implements BookmarkTagger {
     const host = hostname(input.url)
     const haystack = (input.title + ' ' + input.description + ' ' + input.siteName).toLowerCase()
     const haystackWords = haystack.split(/\W+/).filter((w) => w.length >= 3)
+    const hashtagSet = new Set(extractHashtags(input.title + ' ' + input.description + ' ' + input.siteName))
 
     const domainKeywords = DOMAIN_TO_KEYWORD[host] ?? []
     const tags = this.ctx.tags
 
     for (const tag of tags) {
       const tagName = tag.name.toLowerCase()
+      // Hashtag exact match: highest confidence (= explicit user signal,
+      // e.g. a tweet body literally tagged `#design`)
+      if (hashtagSet.has(tagName)) {
+        suggestions.push({ tagId: tag.id, confidence: 0.95, reason: 'hashtag' })
+        continue
+      }
       // Domain match: high confidence
       if (domainKeywords.some((kw) => kw === tagName || tagName.includes(kw) || kw.includes(tagName))) {
         suggestions.push({ tagId: tag.id, confidence: 0.8, reason: 'domain' })

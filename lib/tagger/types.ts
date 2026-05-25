@@ -1,6 +1,6 @@
 import type { TagRecord } from '@/lib/storage/indexeddb'
 
-export type TagReason = 'domain' | 'keyword' | 'embedding' | 'llm'
+export type TagReason = 'domain' | 'keyword' | 'embedding' | 'llm' | 'hashtag'
 
 export interface TagSuggestion {
   readonly tagId: string

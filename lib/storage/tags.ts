@@ -71,6 +71,26 @@ export async function deleteTag(db: DbLike, id: string): Promise<void> {
 }
 
 /**
+ * Delete a tag AND scrub every bookmark's `tags[]` of the same id.
+ * Single transaction over both stores so we never leave dangling refs
+ * even if the user navigates / refreshes mid-write.
+ * @param db - The database instance
+ * @param tagId - The tag ID to delete and scrub
+ */
+export async function deleteTagCascade(db: DbLike, tagId: string): Promise<void> {
+  const tx = db.transaction(['tags', 'bookmarks'], 'readwrite')
+  await tx.objectStore('tags').delete(tagId)
+  const bookmarkStore = tx.objectStore('bookmarks')
+  const all = (await bookmarkStore.getAll()) as BookmarkRecord[]
+  for (const b of all) {
+    if (b.tags.includes(tagId)) {
+      await bookmarkStore.put({ ...b, tags: b.tags.filter((t: string) => t !== tagId) })
+    }
+  }
+  await tx.done
+}
+
+/**
  * Atomically rewrite tag order based on the supplied id sequence.
  * Each id receives its array index as its new order. Missing ids are skipped.
  * @param db - The database instance

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { IDBPDatabase } from 'idb'
 import type { TagRecord, TagInput } from './indexeddb'
 import { initDB } from './indexeddb'
-import { addTag, getAllTags, updateTag as updTag, deleteTag as delTag } from './tags'
+import { addTag, getAllTags, updateTag as updTag, deleteTagCascade as delTag } from './tags'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
