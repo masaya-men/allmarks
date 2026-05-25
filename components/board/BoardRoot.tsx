@@ -190,10 +190,10 @@ export function BoardRoot() {
   const [shareComposerOpen, setShareComposerOpen] = useState<boolean>(false)
   const [actionSheet, setActionSheet] = useState<{ pngDataUrl: string; shareUrl: string } | null>(null)
   // When focusCard is called for a bookmark not in the current filtered view
-  // (e.g. user is on `mood:foo` filter literal — IDB-persisted, see BoardFilter
-  // — but the PiP-clicked card has different tags),
-  // we clear the filter to 'all' and stash the cardId here. The retry useEffect
-  // below picks this up after filteredItems re-renders and completes the scroll.
+  // (e.g. user is on a tags filter but the PiP-clicked card has different
+  // tags), we clear the filter to BOARD_FILTER_ALL and stash the cardId here.
+  // The retry useEffect below picks this up after filteredItems re-renders
+  // and completes the scroll.
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null)
   const [cardWidthPx, setCardWidthPx] = useState<number>(BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX)
   const [cardGapPx, setCardGapPx] = useState<number>(BOARD_SLIDERS.CARD_GAP_DEFAULT_PX)
