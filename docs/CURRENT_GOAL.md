@@ -1,41 +1,65 @@
-# 次セッションのゴール (= セッション 69) — タグ付け機能の brainstorming → 仕様確定 → (時間あれば) 実装着手
+# 次セッションのゴール (= セッション 70) — タグ機能 Phase 1b + 1c 実装 (= filter state + tag-candidates + WAVE CRT shutdown + FLIP reflow)
 
 ## 今のゴール (1 行)
 
-**user 最優先の「タグ付け機能」を brainstorming skill から落ち着いて始める** (memory `project_tagging_top_priority`)。仕様確定までを 1 セッションの目標、実装は次セッションへ送って OK。
+**session 69 で完成した Phase 1a (= mood → tag rename + IDB migration) の上に、 Phase 1b (filter state + tag candidates) と Phase 1c (WAVE CRT shutdown CSS + FLIP reflow) を subagent-driven で実装する**。
 
-## 直前までの状態 (session 68、2026-05-25 本番反映済・user 実機 全 OK)
+## session 69 (= 直前) の到達点
 
-- **スライドショー揃いすぎ修正**: 動画カード [use-slideshow-cycle.ts](../lib/board/use-slideshow-cycle.ts) と画像ツイート [ImageCard.tsx](../components/board/cards/ImageCard.tsx) の両経路に desync (開始フレームランダム + 間隔バンド拡大 + 初回 offset 分散) を適用。
-- **アンビエント・スライドショー Phase 2 完遂**: X 動画カードが poster 1 枚 → **0/25/50% の 3 枚クロスフェード**にリッチ化。新規 [extract-video-frames.ts](../lib/board/extract-video-frames.ts) + [use-tweet-video-frames.ts](../lib/board/use-tweet-video-frames.ts) + [CardSlideshow.tsx](../components/board/CardSlideshow.tsx) 拡張。in-memory キャッシュのみ (IDB 不採用)、並列 1 本上限でカクつき回避。
-- **756 PASS** / tsc clean / 本番反映済。アンビエント・スライドショー 全体仕様 [spec](./superpowers/specs/2026-05-22-ambient-frame-slideshow-design.md) は 2 phase 共に完了。
+- **タグ機能の brainstorming + spec + plan + Phase 1a 実装 完遂**
+- spec: [tagging-design.md](./superpowers/specs/2026-05-25-tagging-design.md) 確定 (= 14 確定事項 A-T、 WAVE テーマ命名、 F6 CRT shutdown 採用、 mood リネーム前提、 カラーハント Phase 3 予約)
+- plan: [tagging-phase1.md](./superpowers/plans/2026-05-25-tagging-phase1.md) 22 タスク
+- **Phase 1a 完了 = 7 タスク (= 12 commits + 1 close commit)** 全 770 vitest PASS / tsc 0 errors / build success / 本番 deploy 済
+  - Task 1: 型 rename (`MoodRecord` → `TagRecord` 等)
+  - Task 2: `moods.ts` → `tags.ts` rename + 新規 API (`addTagToBookmark` / `removeTagFromBookmark` / `filterBookmarks`) + atomicity fix
+  - Task 3: tags.ts unit テスト 13 PASS
+  - Task 4: `use-moods.ts` → `use-tags.ts` rename
+  - Task 5: IDB schema bump 14→15 + migration + atomic 切替
+  - Task 6: v15 migration unit テスト 6 PASS
+  - Task 7: UI 10 file の mood → tag 参照 rename
+- user 検証: ブクマ全表示 ✓、 既存タグ無破壊 ✓、 `/triage` 旧 UI 動作確認 ✓
 
-## session 69 でやること
+## session 70 でやること
 
-1. **【最優先】タグ付け機能の brainstorming**:
-   - 必ず `superpowers:brainstorming` skill を invoke してから始める (memory ガイドあり)。
-   - user の意図ヒアリング: 何のためのタグ? (検索/フォルダ分け/共有/視覚演出?)、 タグ命名は手動/AI 提案/両方?、 タグ複数付け OK?、 board 上のどこに見せる?、 既存ブクマへの一括タグ付けはどう?
-   - 関連 memory を全て先読み: `project_tagging_top_priority` / `feedback_collaboration_style` (= 平易日本語、board のコード流用検討)、 IDEAS.md の foundation 柱 2 (= manual tag schema、削除フローと連携) も再読。
-   - 仕様確定したら `docs/superpowers/specs/2026-05-XX-tagging-design.md` に spec を書く → plan を書く → 余裕あれば実装着手。
-2. **(余裕があれば)**:
-   - console ノイズ磨き: `manifest enctype` 警告 / TUNE ドロワー `aria-hidden` フォーカス警告 (`inert` 化)。
+1. **Phase 1b 実装 (= plan Task 8-9)**:
+   - `lib/board/use-tag-filter.ts` (= filter state hook、 selectedTagIds + mode + toggle + clearAll)
+   - `lib/board/tag-candidates.ts` (= サイト情報からの候補抽出 + 既存ブクマからのスコアリング)
+   - 各 unit テスト
+2. **Phase 1c 実装 (= plan Task 10-12)**:
+   - `lib/animation/tag-shutdown/themes/wave.module.css` (= F6 CRT shutdown 全 keyframes + scanline + flicker + CSS 変数)
+   - `lib/animation/tag-shutdown/index.ts` (= `getShutdownAnimationClass(theme)` API)
+   - `lib/animation/tag-shutdown/reflow.ts` (= FLIP 移動 logic)
+   - unit テスト
+3. **時間あれば Phase 1d 着手** (= TagFilterBar、 TagAddPopover、 TagButton、 i18n 15 言語) — そうでなければ session 71 へ
+
+## subagent-driven の継続
+
+- ガイド: [`superpowers:subagent-driven-development`](C:/Users/masay/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/subagent-driven-development/)
+- 各 task: implementer dispatch → spec reviewer → code quality reviewer → fix loop
+- 不可逆 task (= IDB schema 変更) は無いので、 session 69 と同じ流れで safe
+
+## Phase 1a で発見された後フェーズ対応事項 (= session 70 着手前にメモ)
+
+session 69 Task 7 で code reviewer が指摘:
+
+1. **`BoardFilter` type の `mood:${string}` literal**: IDB `board-config.activeFilter` で永続化 → Phase 1b で migration 検討余地 (= 後フェーズで `tag:${string}` に揃えるか、 現状維持か)
+2. **`data-testid="mood-chip-..."`**: e2e test 依存、 Phase 1b で test 側も `tag-chip-` に更新する手あり
+3. **CSS Modules class 名 `.moodChip` / `.moodDot` 等**: 視覚不変保証のため Phase 1a で触らず、 後フェーズで一括 rename 候補
+4. **`NewMoodInput.tsx` ファイル名 + i18n key**: cosmetic sweep 候補
+5. **`indexeddb.ts` の v9 mood 関連 JSDoc comment (`/** v9: mood id array */`)**: `tag id array` に揃える軽微 fix
+6. **v16 で旧 moods store 削除 migration**: Phase 1+2+3 全部本番安定後、 rollback safety 不要になったら考える
+
+これらは session 70 着手前後に並列処理 OK。 ただし**最優先は Phase 1b / 1c の機能実装**。
+
+## Phase 2 brainstorm 時の重要メモ (= session 71 or 72 で扱う)
+
+session 69 user 発案: **Triage 別 route の背景に board うっすら見せる案** (= IDEAS.md に詳細記録)。 Phase 2 brainstorm 時に必ず検討。
 
 ## 確認事項・運用
 
-- 確認は常に `booklage.pages.dev` をハードリロード。応答は日本語、横文字カタカナ控える、AskUserQuestion 多用しない (memory `feedback_collaboration_style`)。
-- deploy 前に tsc + vitest。既知 flake: `tests/lib/channel.test.ts` は並列フルランで稀に落ちる (単体 PASS)。
-- deploy 手順: `pnpm build` → `npx wrangler pages deploy out/ --project-name=booklage --branch=master --commit-dirty=true --commit-message="<ASCII>"` (日本語 commit message は wrangler が reject)。
-- **使用量に注意**: session 67 終了時 99%。session 68 は短期 4 deploy で大物 2 件消化したが、69 は brainstorming 中心で消費少なめになる見込み。
-- 月末 (**2026-05-31**): `allmarks.app` ドメイン取得確認 (memory `project_allmarks_domain_reminder`)。
-
-## Phase 2 関連の調整ノブ (将来の polish 用)
-
-- [lib/board/use-tweet-video-frames.ts](../lib/board/use-tweet-video-frames.ts): `MAX_CONCURRENT`(=1、初回カクつき回避のため)。 抽出が遅すぎると感じたら 2 に戻す候補。
-- [lib/board/extract-video-frames.ts](../lib/board/extract-video-frames.ts): `maxWidth`(=640、JPEG 容量と画質のトレードオフ) / `quality`(=0.7) / `fractions`([0, 0.25, 0.5]、75% は意図的に不採用)。
-- 永続化したくなったら IDB schema bump (= 不可逆、memory `project_idb_irreversibility` 参照)。
-
-## ヒーロー/スライドショーの調整ノブ (session 67 から継続)
-
-- [CardsLayer.tsx](../components/board/CardsLayer.tsx): `HERO_CAP`(=1、本物再生の同時数) / `HERO_PER_CARD_MS`(=15000、1 本の再生秒数) / `MIN_ROTATE_MS`。
-- [use-slideshow-cycle.ts](../lib/board/use-slideshow-cycle.ts): `MIN_STEP_MS`(=2600) / `MAX_STEP_MS`(=6000)、フェード間隔。
-- [CardSlideshow.module.css](../components/board/CardSlideshow.module.css): `transition: opacity 800ms`(フェード速度)。
+- 確認は常に `booklage.pages.dev` をハードリロード
+- 応答は日本語、 横文字カタカナ控えめ、 AskUserQuestion 多用しない (memory `feedback_collaboration_style`)
+- deploy 前に tsc + vitest (= 既知 flake `tests/lib/channel.test.ts` は無視 OK、 単体 PASS)
+- deploy 手順: `pnpm build` → `npx wrangler pages deploy out/ --project-name=booklage --branch=master --commit-dirty=true --commit-message="<ASCII>"`
+- **月末 (2026-05-31)**: `allmarks.app` ドメイン取得確認 (memory `project_allmarks_domain_reminder`)
+- **使用量に注意**: session 69 は subagent dispatch 多用で消費中、 session 70 も同様の subagent 駆動 (= context は subagent 隔離されるので effective)

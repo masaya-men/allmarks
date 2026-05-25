@@ -20,7 +20,34 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-25 セッション 68 — スライドショー揃いすぎ修正 + Phase 2 X 動画コマ抽出 完遂、本番反映済)
+### 直近の状態 (2026-05-25 セッション 69 — タグ機能 brainstorming + spec + plan + Phase 1a 実装完遂、 本番反映済)
+
+**ship 済 (= prod 反映済 + 本人検証 ✓)**:
+
+1. **タグ機能 brainstorming 完遂** (= 確定事項 14 項目): WAVE テーマ命名 / F6 CRT shutdown 採用 / 既存 mood リネーム前提 / カラーハント Phase 3 予約 / 業界水準を超える絞り込みアニメ + テーマ連動構造 / Triage 別 route + WASD 4 方向 + Shift で 5-8 番候補
+2. **spec 書き** ([tagging-design.md](./superpowers/specs/2026-05-25-tagging-design.md)、 460 行)
+3. **plan 書き** ([tagging-phase1.md](./superpowers/plans/2026-05-25-tagging-phase1.md)、 2300 行 22 タスク、 TDD 完成形コード入り)
+4. **Phase 1a 実装 完遂 (= 7 タスク 12 commits、 subagent-driven)**:
+   - Task 1-7: 型 rename → moods.ts → tags.ts rename + 新規 API (atomicity fix) → tags.ts unit テスト 13 PASS → use-moods.ts → use-tags.ts rename → IDB schema bump 14→15 + migration atomic 切替 → v15 migration unit テスト 6 PASS → UI 10 file の mood → tag 参照 rename
+
+**user 検証**: ブクマ全表示 ✓、 既存タグ無破壊 ✓、 `/triage` 旧 UI 動作 ✓。
+
+**重要**: Phase 1a は **内部基盤 rename + migration only**、 新規 UI (= TagFilterBar / TagAddPopover / TagButton / CRT shutdown) は **Phase 1b/c/d で次セッション以降**。 user 視点では Phase 1a 前と見た目変わらない (= データ層完全 swap、 既存 UI 完全互換)。
+
+**テスト**: 既存 764 → **770 PASS** (= +13 tags.test.ts + 6 v15.test.ts - 13 旧 moods.test.ts = +6 net)、 tsc 0 errors、 build OK、 deploy 1 回。
+
+**user 発案 (= session 70+ 検討メモ)**:
+- **Phase 2 Triage 別 route の背景に board うっすら見せる案** → IDEAS.md に詳細記録、 Phase 2 brainstorm 時必須検討
+
+**次の大物**:
+- **Phase 1b** (= filter state hook + tag candidates、 plan Task 8-9) → session 70
+- **Phase 1c** (= WAVE CRT shutdown CSS + FLIP reflow、 plan Task 10-12) → session 70
+- **Phase 1d** (= TagFilterBar / TagAddPopover / TagButton / i18n、 plan Task 13-16) → session 71
+- **Phase 1e** (= BoardRoot 配線 + 視覚検証 + 本番 ship、 plan Task 17-22) → session 71
+
+---
+
+### 旧情報 (2026-05-25 セッション 68 — スライドショー揃いすぎ修正 + Phase 2 X 動画コマ抽出 完遂、本番反映済)
 
 **ship 済 (全て本番反映 + push、user 実機 OK)**:
 

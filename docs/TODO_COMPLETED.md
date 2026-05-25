@@ -4387,3 +4387,64 @@ session 67 のスライドショーが「ほぼ同時にフェード」「秒数
 - 変更 5: `lib/board/use-slideshow-cycle.ts` / `components/board/CardSlideshow.tsx` / `components/board/CardsLayer.tsx` / `components/board/cards/ImageCard.tsx` (+ 各テスト 3)
 
 **次セッション (= 69) 最優先**: **タグ付け機能** (= user 直接発言で最重要扱い、memory `project_tagging_top_priority`)。仕様未確定 → brainstorming skill から落ち着いて開始する。
+
+---
+
+## セッション 69 (2026-05-25) — タグ機能 brainstorming + spec + plan + Phase 1a 実装完遂
+
+session 68 close 後、 user 最優先のタグ付け機能を `superpowers:brainstorming` skill 起動で開始。 平易な日本語で対話を回し、 12+ クリア化質問で全方針を user と合意 → spec → plan → subagent-driven で Phase 1a (= 全体 22 タスク中 7 タスク) 実装完遂。
+
+### 1. brainstorming (= 質問 12 + 業界調査 + visual mockup 多数)
+
+- 目的 = タグ絞り込み、 重点 = ビジュアル遷移 + 複数タグ AND/OR (= 業界水準を超える、 業界は地味な再描画のみ)
+- フォルダ概念は廃止 (= タグの完全上位互換、 旧 B2 を吸収)
+- 通常モード = drag 付与 + 候補チップ + 手動入力、 Triage モード = 別 route (WASD 4 方向 + Shift で 5-8 番候補 全 8 個常時可視)
+- 絞り込みアニメ = user 提案「ブラウン管砂嵐 ぶつん」 を **F6 = lbebber 業界 best + AllMarks 緑 flash** で確定 (= web 調査 3 codepen + user 自身 lbebber CSS 共有)
+- 適用範囲厳守 = 非該当カードだけ・shutdown 0.4-0.55 秒だけ、 ボード背景 / 該当カード / 通常状態には一切何も乗らない
+- テーマ連動 = WAVE (= default テーマ命名)、 各テーマ用 shutdown は Phase 3 で揃える
+- カラーハント機能 (= dominant color 抽出 + 8 色軸絞り込み) を Phase 3 に追加、 dominantColor フィールドだけ Phase 1 で空欄予約
+- backfill UX = サイレント (= インジケータ閃いて汚いのを user 嫌う)
+
+### 2. spec 書き → revise → commit
+
+[docs/superpowers/specs/2026-05-25-tagging-design.md](./superpowers/specs/2026-05-25-tagging-design.md) 460 行。 plan 着手前のコード調査で**既存 mood 機能 (= タグ機能の骨格そのもの) を発見** → spec を「既存 mood リネーム + 拡張」 前提に書き直し + カラーハント Phase 3 追加 + dominantColor 予約 追加。 確定事項表 A-T、 Goals 8、 Non-goals、 Components & data flow、 Phasing 3 段階。
+
+### 3. plan 書き
+
+[docs/superpowers/plans/2026-05-25-tagging-phase1.md](./superpowers/plans/2026-05-25-tagging-phase1.md) 2300 行 22 タスク (= Phase 1a-1e 5 セクション)。 TDD パターン (= テスト書く → fail → 実装 → pass → commit) で完成形コード入り、 placeholder 無し、 spec coverage 全項目通過。 Task 1 完了直後 code reviewer が **「Task 2-5 間に store 名を `'moods'` → `'tags'` に切替えると runtime NotFoundError」 罠** を発見 → plan に注意書き追加 + commit (= Task 2 step 1 + Task 5 step 2)。
+
+### 4. subagent-driven で Phase 1a 実装完遂 (= 7 タスク 12 commits)
+
+**Task 1**: 型 rename in indexeddb.ts (`MoodRecord` → `TagRecord` + `theme?` + `updatedAt?`、 `MoodInput` → `TagInput`、 `BookmarkRecord.dominantColor?` 追加、 AllMarksDB に `tags` entry + 旧 `moods` entry も legacy 残し)。 tsc 10 errors (= 想定通り rename cascade)。 commit `d48caad`。 spec + quality review 通過 + code reviewer から runtime trap 警告 → plan 修正。
+
+**Task 2**: `lib/storage/moods.ts` → `lib/storage/tags.ts` rename + 新規 API 3 つ (`addTagToBookmark` / `removeTagFromBookmark` / `filterBookmarks`) + `addTag/updateTag` で updatedAt 自動更新。 **store 名は `'moods'` literal のまま残す** (= Task 5 で atomic 切替)。 commit `8ad78df`。 code reviewer 指摘 = atomicity 欠如 (= 同時 click race condition) → atomic transaction fix commit `96a4e77`。
+
+**Task 3**: `tests/lib/storage/tags.test.ts` (= 旧 moods.test.ts から rename) 13 tests 全 PASS (= 既存 CRUD 5 + 新規 API 3 + 各 idempotent / no-op / AND/OR / isDeleted exclusion)。 commit `84bcb9a`。
+
+**Task 4**: `lib/storage/use-moods.ts` → `lib/storage/use-tags.ts` rename (= `useMoods` → `useTags`、 内部 state / 型 / import 全部 tag ベース)。 commit `0b5a821`。 tsc 12 → 8。
+
+**Task 5 (= 最重要 / 不可逆)**: DB_VERSION 14→15 + `indexeddb.ts upgrade()` に v14→v15 migration 追記 (= 新 tags store + by-order index + 旧 moods から自動複製 [theme=null / updatedAt=createdAt で fill] + bookmarks.by-tag multiEntry index + 旧 moods store rollback safety で残し) + `tags.ts` 全 8 store ref を `'moods'` → `'tags'` 切替 + `tests/lib/storage/tags.test.ts` の fake-IDB store 名も切替 + bonus 5 file: `tests/lib/idb-v14-link-status.test.ts` の hardcoded 14 を `>= 14` に緩和。 全 5 file atomic 1 commit `c6b20bc`。 strict spec reviewer が「safe to deploy」 認定、 code quality reviewer も approved。
+
+**Task 6**: `tests/lib/storage/migrations/v15.test.ts` 新規 6 tests 全 PASS (= moods 複製 / bookmark.tags 維持 / by-tag index / 200 件 volume / v0→v15 cold start / 冪等)。 commit `f6285a9`。
+
+**Task 7**: 既存 UI / tagger / triage 10 file の mood → tag 参照 rename (= Sidebar / FilterPill / BoardBackgroundTypography {.tsx, .test.tsx} / BoardRoot / triage/TagPicker / triage/TriagePage / tagger/types / tagger/heuristic + tests)。 tsc 8 → 0 errors、 全 770 vitest PASS、 build success。 commit `57a276a`。 意図的に残した参照: `'mood:<id>'` filter literal (= IDB 永続化 BoardFilter type) / `data-testid="mood-chip-..."` (= e2e test 依存) / CSS Modules class 名 `.moodChip` 等 (= 視覚不変保証) — 全部後フェーズ cleanup 候補。
+
+### 5. Phase 1a build + deploy + user 視覚検証
+
+`rtk pnpm build` 成功 + `wrangler pages deploy out/` で本番反映 (`booklage.pages.dev`)。 user 検証: ブクマ全表示 ✓、 既存タグ無破壊 ✓、 `/triage` 旧 mood Triage UI 動作 ✓。
+
+### 6. user 発案 (= session 70+ 検討メモ)
+
+- **Phase 2 Triage 別 route の背景に board うっすら見せる案** (= 「別 route の没入感 + modal の context 維持」 のハイブリッド、 業界がやってない領域 = AllMarks 独自体験)。 IDEAS.md に詳細記録、 Phase 2 brainstorm 時必須検討。
+
+### 7. テスト + deploy
+
+- vitest: 既存 764 → **770 PASS** (= +13 tags.test.ts + 6 v15.test.ts - 13 旧 moods.test.ts = +6 net)
+- tsc: 0 errors
+- build: success
+- deploy: 1 回 (= phase1a-tagging-mood-to-tag-rename-migration)
+- 既知 flake `tests/lib/channel.test.ts` 影響なし (= 今回 fail せず)
+
+### 次セッション (= 70) goal
+
+Phase 1b (= plan Task 8-9 filter state hook + tag candidates) + Phase 1c (= plan Task 10-12 WAVE CRT shutdown CSS + FLIP reflow)。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
