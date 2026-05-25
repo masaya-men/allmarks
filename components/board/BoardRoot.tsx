@@ -1400,6 +1400,15 @@ export function BoardRoot() {
           onChange={handleFilterChange}
           tags={tags}
           counts={sidebarCounts}
+          overrideLabel={tagFilter.isActive ? (() => {
+            const names = tagFilter.selectedTagIds
+              .map((id) => tags.find((t) => t.id === id)?.name ?? '—')
+            if (names.length === 1) return names[0]
+            return `${names[0]} +${names.length - 1}`
+          })() : undefined}
+          overrideCount={tagFilter.isActive
+            ? String(matchedBookmarkIds?.size ?? 0).padStart(3, '0')
+            : undefined}
         />
       </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/

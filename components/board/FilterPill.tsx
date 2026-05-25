@@ -11,6 +11,15 @@ type Props = {
   readonly onChange: (f: BoardFilter) => void
   readonly tags: ReadonlyArray<TagRecord>
   readonly counts: { readonly all: number; readonly inbox: number; readonly archive: number; readonly dead: number }
+  /** When set, replaces the label derived from BoardFilter. Used by the
+   *  per-card tag-pill chip filter so the chrome reflects "I am currently
+   *  filtered by this tag", not the dropdown selection. The dropdown rows
+   *  remain governed by `value` so the menu still shows the BoardFilter
+   *  selection state unchanged. */
+  readonly overrideLabel?: string
+  /** Companion to overrideLabel — replaces the count digits (= matched
+   *  bookmark count under the tag chip filter). */
+  readonly overrideCount?: string
 }
 
 /** Chrome label vocab — fixed English across all 15 languages
@@ -34,11 +43,37 @@ function countFor(f: BoardFilter, counts: { all: number; inbox: number; archive:
   return '---'
 }
 
-export function FilterPill({ value, onChange, tags, counts }: Props): ReactElement {
+export function FilterPill({
+  value, onChange, tags, counts, overrideLabel, overrideCount,
+}: Props): ReactElement {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const { display: displayLabel, triggerBurst } = useChromeScramble(label(value, tags))
-  const { display: displayCount } = useChromeScramble(countFor(value, counts))
+  // Resolve effective label / count: override (= tag-chip filter active) wins,
+  // otherwise derive from BoardFilter as before.
+  const effectiveLabel = overrideLabel ?? label(value, tags)
+  const effectiveCount = overrideCount ?? countFor(value, counts)
+  const { display: displayLabel, triggerBurst } = useChromeScramble(effectiveLabel)
+  const { display: displayCount, triggerBurst: triggerCountBurst } = useChromeScramble(effectiveCount)
+
+  // Trigger the existing hover-style scramble + glitch burst whenever the
+  // effective label changes (= user toggled a tag-pill chip filter, or
+  // picked a different BoardFilter from the dropdown). Without this the
+  // chrome would instant-swap to the new text — visually jarring and
+  // disconnected from the rest of AllMarks' editorial motion language.
+  const prevLabelRef = useRef(effectiveLabel)
+  const prevCountRef = useRef(effectiveCount)
+  useEffect(() => {
+    if (prevLabelRef.current !== effectiveLabel) {
+      triggerBurst()
+      prevLabelRef.current = effectiveLabel
+    }
+  }, [effectiveLabel, triggerBurst])
+  useEffect(() => {
+    if (prevCountRef.current !== effectiveCount) {
+      triggerCountBurst()
+      prevCountRef.current = effectiveCount
+    }
+  }, [effectiveCount, triggerCountBurst])
 
   useEffect(() => {
     if (!open) return
@@ -65,9 +100,9 @@ export function FilterPill({ value, onChange, tags, counts }: Props): ReactEleme
         aria-expanded={open}
         data-testid="filter-pill"
       >
-        <span className={styles.label} data-glitch-text={label(value, tags)}>{displayLabel}</span>
+        <span className={styles.label} data-glitch-text={effectiveLabel}>{displayLabel}</span>
         <span className={styles.separator}>·</span>
-        <span className={styles.count} data-glitch-text={countFor(value, counts)}>{displayCount}</span>
+        <span className={styles.count} data-glitch-text={effectiveCount}>{displayCount}</span>
       </button>
       {open && (
         <div className={styles.menu} role="menu">
