@@ -75,7 +75,22 @@ export type FrameRatio =
 
 export type DisplayMode = 'visual' | 'editorial' | 'native'
 
-export type BoardFilter = 'all' | 'inbox' | 'archive' | 'dead' | `mood:${string}`
+export type FilterMode = 'and' | 'or'
+
+/** Filter applied to the board.
+ *  - all/inbox/archive/dead = the singleton-kind variants (no payload).
+ *  - tags = arbitrary set of tag ids combined by AND or OR.
+ *
+ *  Persisted in IDB as part of BoardConfig (= settings/board-config record).
+ *  Legacy v15 installs persisted a string union ('all'|...|`mood:${id}`);
+ *  the v15 → v16 migration in lib/storage/indexeddb.ts rewrites them to
+ *  this object shape so application code only ever sees the object form. */
+export type BoardFilter =
+  | { readonly kind: 'all' }
+  | { readonly kind: 'inbox' }
+  | { readonly kind: 'archive' }
+  | { readonly kind: 'dead' }
+  | { readonly kind: 'tags'; readonly tagIds: readonly string[]; readonly mode: FilterMode }
 
 export type BoardConfig = {
   readonly frameRatio: FrameRatio
