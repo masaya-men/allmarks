@@ -113,13 +113,15 @@ rtk git commit -m "refactor(storage): MoodRecord → TagRecord rename (型宣言
 
 - [ ] **Step 1: ファイル rename + 関数名 / 型参照を tag ベースに統一**
 
+> ⚠️ **重要**: 物理 store 名 `'moods'` は Task 5 (= migration) で `'tags'` に切替えます。 **このタスクでは store 名は `'moods'` のまま残してください**。 ここで `'tags'` に書き換えると、 Task 5 が走るまで runtime で `NotFoundError` になります (= code reviewer 指摘の罠)。 Task 5 で migration + 同時に tags.ts 内の store 名を `'moods'` → `'tags'` に置換します。
+
 `git mv lib/storage/moods.ts lib/storage/tags.ts` してから:
 - `addMood` → `addTag` (戻り値型 `MoodRecord` → `TagRecord`、 引数型 `MoodInput` → `TagInput`)
 - `getAllMoods` → `getAllTags`
 - `updateMood` → `updateTag`
 - `deleteMood` → `deleteTag`
 - `reorderMoods` → `reorderTags`
-- store 名 `'moods'` → `'tags'`
+- store 名 `'moods'` → **`'moods'` のまま残す** (= Task 5 で `'tags'` に切替)
 - `import type { MoodRecord, MoodInput }` → `import type { TagRecord, TagInput }`
 
 加えて、 `addTag` で `updatedAt: Date.now()` を初期値として書き込む (= 既存 createdAt と同じ値で OK)。
@@ -392,6 +394,8 @@ rtk git commit -m "refactor(storage): use-moods.ts → use-tags.ts rename + useM
 `lib/constants.ts` で `export const DB_VERSION = 14` を `15` に変更。
 
 - [ ] **Step 2: `indexeddb.ts` の `upgrade()` に v14 → v15 migration を追記**
+
+> ⚠️ **Task 2 step 1 で `lib/storage/tags.ts` 内の store 名は `'moods'` のままです**。 このタスクで migration の `db.createObjectStore('tags', ...)` 完了 + 旧 moods 全件複製が走ったら、 **同じ commit 内で `lib/storage/tags.ts` の store 名を `'moods'` → `'tags'` に sed/edit してください** (= migration と参照切替を atomic に)。 これで Task 5 commit 後の runtime で `'tags'` store が物理存在 + tags.ts が新 store を読む状態になります。
 
 `upgrade(db, oldVersion, _newVersion, transaction)` 内の末尾に追記:
 
