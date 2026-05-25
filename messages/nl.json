@@ -52,5 +52,14 @@
     "cardWidth": "Grootte opnieuw uitgevoerd",
     "cardGap": "Tussenruimte opnieuw uitgevoerd",
     "tunePreset": "Voorinstelling opnieuw uitgevoerd"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }

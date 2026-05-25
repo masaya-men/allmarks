@@ -52,5 +52,14 @@
     "cardWidth": "Boyut yinelendi",
     "cardGap": "Boşluk yinelendi",
     "tunePreset": "Ön ayar yinelendi"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }

@@ -52,5 +52,14 @@
     "cardWidth": "Tamaño rehecho",
     "cardGap": "Espacio rehecho",
     "tunePreset": "Preajuste rehecho"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }

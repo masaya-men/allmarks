@@ -52,5 +52,14 @@
     "cardWidth": "크기 다시 실행",
     "cardGap": "간격 다시 실행",
     "tunePreset": "프리셋 다시 실행"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }

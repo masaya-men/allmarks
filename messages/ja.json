@@ -127,5 +127,14 @@
     "cardWidth": "サイズをやり直しました",
     "cardGap": "ギャップをやり直しました",
     "tunePreset": "プリセットをやり直しました"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }

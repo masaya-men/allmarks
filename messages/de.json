@@ -52,5 +52,14 @@
     "cardWidth": "Größe wiederhergestellt",
     "cardGap": "Abstand wiederhergestellt",
     "tunePreset": "Voreinstellung wiederhergestellt"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }

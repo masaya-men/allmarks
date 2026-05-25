@@ -52,5 +52,14 @@
     "cardWidth": "已重做大小",
     "cardGap": "已重做间距",
     "tunePreset": "已重做预设"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }

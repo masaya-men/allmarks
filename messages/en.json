@@ -52,5 +52,14 @@
     "cardWidth": "Size redone",
     "cardGap": "Gap redone",
     "tunePreset": "Preset redone"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }

@@ -52,5 +52,14 @@
     "cardWidth": "Làm lại cỡ",
     "cardGap": "Làm lại khoảng cách",
     "tunePreset": "Làm lại cài đặt sẵn"
+  },
+  "tag": {
+    "addLabel": "+ TAG",
+    "newPlaceholder": "new tag…",
+    "filterClearAria": "Clear all filters",
+    "modeAnd": "AND",
+    "modeOr": "OR",
+    "buttonLabel": "TAG",
+    "buttonAria": "Open tag management"
   }
 }
