@@ -786,6 +786,13 @@ export function CardsLayer({
         if (!p) return null
         const taggedOut = matchedBookmarkIds != null && !matchedBookmarkIds.has(it.bookmarkId)
         const shutdownClass = taggedOut ? getShutdownAnimationClass('wave') : undefined
+        // When this card is the lightbox FLIP source, suppress all
+        // hover-revealed meta affordances (+TAG, tag pills, ×, ↺) so the
+        // morph clone captures the bare thumbnail. Without this they
+        // visibly enlarge with the card during the lightbox open
+        // transition — distracting per session 73 user feedback.
+        const isLightboxSource = sourceCardId === it.bookmarkId
+        const hoverActive = hoveredBookmarkId === it.bookmarkId && !isLightboxSource
         return (
           <div
             key={it.bookmarkId}
@@ -953,7 +960,7 @@ export function CardsLayer({
                   paused={audioPaused}
                   onVolumeChange={onAudioVolumeChange}
                   onTogglePause={onAudioTogglePause}
-                  visible={audioActiveId === it.bookmarkId && hoveredBookmarkId === it.bookmarkId}
+                  visible={audioActiveId === it.bookmarkId && hoverActive}
                   widthPx={Math.max(p.w, MIN_CONTROL_BAR_WIDTH_PX)}
                 />
               </div>
@@ -966,7 +973,7 @@ export function CardsLayer({
             {canPlayInline(it) && (
               <MediaTypeIndicator
                 type={deriveMediaType(it)}
-                visible={hoveredBookmarkId === it.bookmarkId}
+                visible={hoverActive}
                 onActivate={(): void => onToggleAudio(it.bookmarkId)}
                 active={audioActiveId === it.bookmarkId}
               />
@@ -977,7 +984,7 @@ export function CardsLayer({
                 this ordering, hovering × or ↺ silences the resize hint
                 arcs in the corners they cover. */}
             <CardCornerActions
-              hovered={hoveredBookmarkId === it.bookmarkId}
+              hovered={hoverActive}
               hasCustomWidth={it.customCardWidth}
               onDelete={(): void => onDelete(it.bookmarkId)}
               onResetSize={(): void => onCardResetSize(it.bookmarkId)}
@@ -999,7 +1006,7 @@ export function CardsLayer({
                 tags={it.tags
                   .map((tid) => tagsById.get(tid))
                   .filter((t): t is TagRecord => t !== undefined)}
-                isHovered={hoveredBookmarkId === it.bookmarkId}
+                isHovered={hoverActive}
                 onTagClick={onTagFilterToggle}
               />
             )}
@@ -1042,9 +1049,9 @@ export function CardsLayer({
                     letterSpacing: '0.10em',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
-                    opacity: hoveredBookmarkId === it.bookmarkId || popoverOpenFor === it.bookmarkId ? 1 : 0,
+                    opacity: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId) ? 1 : 0,
                     transition: 'opacity 120ms',
-                    pointerEvents: hoveredBookmarkId === it.bookmarkId || popoverOpenFor === it.bookmarkId ? 'auto' : 'none',
+                    pointerEvents: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId) ? 'auto' : 'none',
                     zIndex: 40,
                   }}
                 >
