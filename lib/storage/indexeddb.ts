@@ -651,6 +651,43 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
         // Step 4: bookmark.dominantColor remains undefined for legacy rows;
         // Phase 3 backfill will fill values from media. No sweep here.
       }
+
+      // ── v15 → v16: migrate BoardConfig.activeFilter from legacy string
+      //              ('all'|'inbox'|'archive'|'dead'|`mood:<id>`) to the new
+      //              BoardFilter object form ({ kind: 'all'|... |'tags',
+      //              tagIds?, mode? }). Touches the single 'board-config'
+      //              record in the settings store.
+      //
+      // We inline the migration logic (= avoid pulling in a board-side
+      // import inside the storage module; upgrade callbacks should stay
+      // self-contained per existing convention). Idempotent on already-
+      // migrated object values, so re-runs are safe.
+      if (oldVersion < 16) {
+        const settingsStore = transaction.objectStore('settings')
+        void settingsStore.openCursor().then(function migrateFilter(
+          cursor: Awaited<ReturnType<typeof settingsStore.openCursor>>,
+        ): Promise<void> | undefined {
+          if (!cursor) return
+          if (cursor.key === 'board-config') {
+            const rec = cursor.value as { key: string; config?: Record<string, unknown> }
+            const legacy = rec.config?.activeFilter
+            let migrated: unknown = { kind: 'all' }
+            if (legacy && typeof legacy === 'object' && 'kind' in legacy) {
+              migrated = legacy
+            } else if (typeof legacy === 'string') {
+              if (legacy === 'all' || legacy === 'inbox' || legacy === 'archive' || legacy === 'dead') {
+                migrated = { kind: legacy }
+              } else if (legacy.startsWith('mood:')) {
+                const id = legacy.slice(5)
+                if (id.length > 0) migrated = { kind: 'tags', tagIds: [id], mode: 'and' }
+              }
+            }
+            const nextConfig = { ...(rec.config ?? {}), activeFilter: migrated }
+            void cursor.update({ key: rec.key, config: nextConfig })
+          }
+          return cursor.continue().then(migrateFilter)
+        })
+      }
     },
   })
   // Reaching this point means the upgrade completed without being blocked,
