@@ -1,27 +1,22 @@
 .button {
   appearance: none;
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.7);
   padding: 6px 12px;
-  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  border-radius: 3px;
   font-size: 11px;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
-  line-height: 1;
   cursor: pointer;
-  white-space: nowrap;
-  transition: color 120ms;
+  transition: background 120ms, border-color 120ms, color 120ms;
 }
-
 .button:hover {
-  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
 }
-
 .button[data-active="true"] {
-  color: #28F100;
-}
-
-.button[data-active="true"]:hover {
+  background: rgba(40, 241, 0, 0.16);
+  border-color: rgba(40, 241, 0, 0.6);
   color: #28F100;
 }
