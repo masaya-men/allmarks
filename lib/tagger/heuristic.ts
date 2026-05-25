@@ -36,7 +36,12 @@ function extractHashtags(text: string): string[] {
 export class HeuristicTagger implements BookmarkTagger {
   constructor(private ctx: BookmarkTaggerContext) {}
 
-  async suggest(input: BookmarkTaggerInput): Promise<TagSuggestion[]> {
+  /** Synchronous variant — the body of suggest() has no I/O, so callers that
+   *  need the result during a React render (= TagAddPopover, popover open
+   *  state) can avoid the useEffect + async dance and call this directly.
+   *  suggest() below delegates here to keep the BookmarkTagger interface
+   *  open to future async engines (LLM, server). */
+  suggestSync(input: BookmarkTaggerInput): TagSuggestion[] {
     const suggestions: TagSuggestion[] = []
     const host = hostname(input.url)
     const haystack = (input.title + ' ' + input.description + ' ' + input.siteName).toLowerCase()
@@ -72,5 +77,9 @@ export class HeuristicTagger implements BookmarkTagger {
       if (!prev || prev.confidence < s.confidence) byId.set(s.tagId, s)
     }
     return Array.from(byId.values()).sort((a, b) => b.confidence - a.confidence)
+  }
+
+  async suggest(input: BookmarkTaggerInput): Promise<TagSuggestion[]> {
+    return this.suggestSync(input)
   }
 }

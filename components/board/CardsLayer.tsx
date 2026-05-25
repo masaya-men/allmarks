@@ -21,7 +21,9 @@ import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
-import { extractCandidatesFromBookmark } from '@/lib/board/tag-candidates'
+import { extractTypedCandidatesFromBookmark } from '@/lib/board/tag-candidates'
+import { HeuristicTagger } from '@/lib/tagger/heuristic'
+import type { SuggestionEntry } from './TagAddPopover'
 import type { TagRecord, BookmarkRecord } from '@/lib/storage/indexeddb'
 import { TagAddPopover } from './TagAddPopover'
 import { TagIndicatorStrip } from './TagIndicatorStrip'
@@ -89,10 +91,11 @@ function resolveTweetVideoExtraction(item: BoardItem): TweetVideoExtraction | un
 }
 
 /** Adapt a BoardItem into the BookmarkRecord shape that
- *  extractCandidatesFromBookmark expects. BoardItem omits siteName/type;
- *  we derive both from the URL so the popover can still surface a
- *  "+ YouTube" / "+ Vimeo" candidate even when OGP didn't fill siteName. */
-function extractCandidatesForItem(item: BoardItem): string[] {
+ *  extractTypedCandidatesFromBookmark and HeuristicTagger expect. BoardItem
+ *  omits siteName / type; we derive both from the URL so the popover can
+ *  still surface a "+ YouTube" / "+ Vimeo" candidate even when OGP didn't
+ *  fill siteName. */
+function buildBookmarkShape(item: BoardItem): BookmarkRecord {
   let siteName = ''
   try {
     const host = new URL(item.url).hostname.replace(/^www\./, '')
@@ -112,7 +115,7 @@ function extractCandidatesForItem(item: BoardItem): string[] {
   } catch {
     /* invalid URL — fall through with empty siteName */
   }
-  const shape: BookmarkRecord = {
+  return {
     id: item.bookmarkId,
     url: item.url,
     title: item.title,
@@ -125,7 +128,52 @@ function extractCandidatesForItem(item: BoardItem): string[] {
     ogpStatus: 'fetched',
     tags: [...item.tags],
   }
-  return extractCandidatesFromBookmark(shape)
+}
+
+/** Confidence levels for new-tag candidates (= those that don't yet exist
+ *  in the user's tag master). Hashtags are explicit user signal so they
+ *  rank near hashtag exact match in HeuristicTagger (0.95); siteName is
+ *  moderately relevant, between domain match (0.8) and keyword (0.5). */
+const NEW_CANDIDATE_CONFIDENCE: Record<'siteName' | 'hashtag', number> = {
+  hashtag: 0.9,
+  siteName: 0.65,
+}
+
+const SUGGESTED_MAX = 5
+
+/** Merge HeuristicTagger existing-tag suggestions with raw new-name
+ *  candidates, drop duplicates (case-insensitive name match against the
+ *  tag master), sort by confidence, and cap. Called only when the popover
+ *  is open for a card. */
+function computeSuggestedEntries(
+  item: BoardItem,
+  allTags: readonly TagRecord[],
+): readonly SuggestionEntry[] {
+  const shape = buildBookmarkShape(item)
+  const tagger = new HeuristicTagger({ tags: allTags })
+  const heuristic = tagger.suggestSync({
+    url: shape.url,
+    title: shape.title,
+    description: shape.description,
+    siteName: shape.siteName,
+  })
+  const typed = extractTypedCandidatesFromBookmark(shape)
+  const existingNames = new Set(allTags.map((t) => t.name.toLowerCase()))
+  const newCandidates = typed.filter((c) => !existingNames.has(c.name.toLowerCase()))
+
+  type Ranked = { readonly entry: SuggestionEntry; readonly confidence: number }
+  const ranked: Ranked[] = [
+    ...heuristic.map((s) => ({
+      entry: { kind: 'existing' as const, tagId: s.tagId },
+      confidence: s.confidence,
+    })),
+    ...newCandidates.map((c) => ({
+      entry: { kind: 'new' as const, name: c.name },
+      confidence: NEW_CANDIDATE_CONFIDENCE[c.source],
+    })),
+  ]
+  ranked.sort((a, b) => b.confidence - a.confidence)
+  return ranked.slice(0, SUGGESTED_MAX).map((r) => r.entry)
 }
 
 function deriveMediaType(item: BoardItem): MediaType | null {
@@ -1016,7 +1064,7 @@ export function CardsLayer({
                     <TagAddPopover
                       allTags={allTags}
                       currentTagIds={it.tags}
-                      siteCandidates={extractCandidatesForItem(it)}
+                      suggestedEntries={computeSuggestedEntries(it, allTags)}
                       onAddExisting={(tagId): void => { void onTagToggle(it.bookmarkId, tagId) }}
                       onAddNew={(name): void => {
                         void onTagCreate(it.bookmarkId, name)

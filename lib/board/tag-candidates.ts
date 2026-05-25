@@ -15,27 +15,41 @@ function hostnameOf(url: string): string {
   }
 }
 
+/** 候補の由来源 — TagAddPopover の SUGGESTED ranking で confidence 推定に使う。 */
+export type NewCandidateSource = 'siteName' | 'hashtag'
+
+export interface NewCandidate {
+  readonly name: string
+  readonly source: NewCandidateSource
+}
+
 /**
- * bookmark 単体から「初出のタグ候補」 を抽出。
- * - Twitter / X ならハッシュタグ
- * - OGP siteName があれば最初に
- * - YouTube / Vimeo 等の siteName も拾う
- * 重複は dedupe、 順序は (siteName, ハッシュタグ) の順。
+ * bookmark 単体から「初出のタグ候補」 を 由来付きで抽出。
+ * 旧 extractCandidatesFromBookmark のスーパーセット (= 同じ抽出ロジック、
+ * 戻り値だけ source ラベル付き)。
  */
-export function extractCandidatesFromBookmark(b: BookmarkRecord): string[] {
-  const out: string[] = []
-  const push = (s: string): void => {
-    if (s && !out.includes(s)) out.push(s)
+export function extractTypedCandidatesFromBookmark(b: BookmarkRecord): readonly NewCandidate[] {
+  const out: NewCandidate[] = []
+  const push = (name: string, source: NewCandidateSource): void => {
+    if (name && !out.some((c) => c.name === name)) out.push({ name, source })
   }
 
-  if (b.siteName) push(b.siteName)
+  if (b.siteName) push(b.siteName, 'siteName')
 
   if (b.type === 'tweet') {
-    extractHashtags(b.title).forEach(push)
-    extractHashtags(b.description).forEach(push)
+    extractHashtags(b.title).forEach((h) => push(h, 'hashtag'))
+    extractHashtags(b.description).forEach((h) => push(h, 'hashtag'))
   }
 
   return out
+}
+
+/**
+ * bookmark 単体から「初出のタグ候補」 を抽出 (= 名前のみ).
+ * extractTypedCandidatesFromBookmark の wrapper、 既存呼出元の後方互換用。
+ */
+export function extractCandidatesFromBookmark(b: BookmarkRecord): string[] {
+  return extractTypedCandidatesFromBookmark(b).map((c) => c.name)
 }
 
 /**

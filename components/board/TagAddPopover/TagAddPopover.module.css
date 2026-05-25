@@ -13,6 +13,19 @@
 }
 .section {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sectionHeader {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 0 4px;
+}
+.chipRow {
+  display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
