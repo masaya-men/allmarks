@@ -21,6 +21,9 @@ import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
+import { extractCandidatesFromBookmark } from '@/lib/board/tag-candidates'
+import type { TagRecord, BookmarkRecord } from '@/lib/storage/indexeddb'
+import { TagAddPopover } from './TagAddPopover'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
 import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
@@ -82,6 +85,46 @@ function resolveTweetVideoExtraction(item: BoardItem): TweetVideoExtraction | un
   const src = resolveTweetVideoSource(item)
   if (!src) return undefined
   return { bookmarkId: item.bookmarkId, videoUrl: src.videoUrl }
+}
+
+/** Adapt a BoardItem into the BookmarkRecord shape that
+ *  extractCandidatesFromBookmark expects. BoardItem omits siteName/type;
+ *  we derive both from the URL so the popover can still surface a
+ *  "+ YouTube" / "+ Vimeo" candidate even when OGP didn't fill siteName. */
+function extractCandidatesForItem(item: BoardItem): string[] {
+  let siteName = ''
+  try {
+    const host = new URL(item.url).hostname.replace(/^www\./, '')
+    const friendly: Record<string, string> = {
+      'youtube.com': 'YouTube',
+      'youtu.be': 'YouTube',
+      'x.com': 'X',
+      'twitter.com': 'X',
+      'vimeo.com': 'Vimeo',
+      'tiktok.com': 'TikTok',
+      'soundcloud.com': 'SoundCloud',
+      'instagram.com': 'Instagram',
+      'note.com': 'note',
+      'github.com': 'GitHub',
+    }
+    siteName = friendly[host] ?? host
+  } catch {
+    /* invalid URL — fall through with empty siteName */
+  }
+  const shape: BookmarkRecord = {
+    id: item.bookmarkId,
+    url: item.url,
+    title: item.title,
+    description: item.description ?? '',
+    thumbnail: item.thumbnail ?? '',
+    favicon: '',
+    siteName,
+    type: detectUrlType(item.url),
+    savedAt: '',
+    ogpStatus: 'fetched',
+    tags: [...item.tags],
+  }
+  return extractCandidatesFromBookmark(shape)
 }
 
 function deriveMediaType(item: BoardItem): MediaType | null {
@@ -174,6 +217,14 @@ type CardsLayerProps = {
    *  the CRT shutdown animation and drop out of the masonry input so the
    *  matched cards reflow naturally via the existing GSAP-FLIP useLayoutEffect. */
   readonly matchedBookmarkIds?: ReadonlySet<string> | null
+  /** All tags the user has created so far. Drives the popover's "existing tags"
+   *  list. */
+  readonly allTags?: readonly TagRecord[]
+  /** Toggle an existing tag on a bookmark — add if absent, remove if present. */
+  readonly onTagToggle?: (bookmarkId: string, tagId: string) => Promise<void> | void
+  /** Create a brand-new tag and immediately attach it to the bookmark.
+   *  Implementation in BoardRoot dedupes by case-insensitive name. */
+  readonly onTagCreate?: (bookmarkId: string, name: string) => Promise<void> | void
 }
 
 export function CardsLayer({
@@ -205,7 +256,14 @@ export function CardsLayer({
   onPanY,
   motionEnabled,
   matchedBookmarkIds,
+  allTags,
+  onTagToggle,
+  onTagCreate,
 }: CardsLayerProps): ReactNode {
+  // Which card currently has its add-tag popover open. Null = none.
+  // Toggled by the + TAG corner button. Closed by Esc (handled inside
+  // TagAddPopover) or by clicking + TAG again on the same card.
+  const [popoverOpenFor, setPopoverOpenFor] = useState<string | null>(null)
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
   const lastComputeRef = useRef<{ x: number; y: number } | null>(null)
@@ -868,6 +926,71 @@ export function CardsLayer({
               onResize={(nextW: number): void => onCardResize(it.bookmarkId, nextW)}
               onResizeEnd={(finalW: number): void => onCardResizeEnd(it.bookmarkId, finalW)}
             />
+            {/* + TAG affordance — top-left corner, mirrors the visual language
+                of the existing × / ↺ corner buttons. Hidden by default;
+                fades in while the card is hovered OR while its popover is
+                open (so the trigger stays anchored under the user's eye
+                while they're choosing a tag). pointerdown swallow so a
+                click doesn't engage the card-reorder drag underneath. */}
+            {!taggedOut && allTags !== undefined && onTagToggle !== undefined && onTagCreate !== undefined && (
+              <>
+                <button
+                  type="button"
+                  data-testid="card-add-tag-button"
+                  aria-label="Add tag"
+                  onPointerDown={(e: PointerEvent<HTMLButtonElement>): void => e.stopPropagation()}
+                  onMouseDown={(e): void => e.stopPropagation()}
+                  onClick={(e): void => {
+                    e.stopPropagation()
+                    setPopoverOpenFor((cur) => (cur === it.bookmarkId ? null : it.bookmarkId))
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    appearance: 'none',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    padding: '3px 8px',
+                    borderRadius: 2,
+                    fontSize: 10,
+                    letterSpacing: '0.08em',
+                    cursor: 'pointer',
+                    opacity: hoveredBookmarkId === it.bookmarkId || popoverOpenFor === it.bookmarkId ? 1 : 0,
+                    transition: 'opacity 120ms',
+                    pointerEvents: hoveredBookmarkId === it.bookmarkId || popoverOpenFor === it.bookmarkId ? 'auto' : 'none',
+                    zIndex: 40,
+                  }}
+                >
+                  + TAG
+                </button>
+                {popoverOpenFor === it.bookmarkId && (
+                  <div
+                    onPointerDown={(e: PointerEvent<HTMLDivElement>): void => e.stopPropagation()}
+                    onMouseDown={(e): void => e.stopPropagation()}
+                    style={{
+                      position: 'absolute',
+                      top: 36,
+                      left: 8,
+                      zIndex: 70,
+                    }}
+                  >
+                    <TagAddPopover
+                      allTags={allTags}
+                      currentTagIds={it.tags}
+                      siteCandidates={extractCandidatesForItem(it)}
+                      onAddExisting={(tagId): void => { void onTagToggle(it.bookmarkId, tagId) }}
+                      onAddNew={(name): void => {
+                        void onTagCreate(it.bookmarkId, name)
+                        setPopoverOpenFor(null)
+                      }}
+                      onClose={(): void => setPopoverOpenFor(null)}
+                    />
+                  </div>
+                )}
+              </>
+            )}
             </div>
           </div>
         )

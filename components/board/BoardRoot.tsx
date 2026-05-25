@@ -34,6 +34,9 @@ import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
 import { TagFilterBar } from './TagFilterBar'
+import { TagButton } from './TagButton'
+import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/tags'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 import { MotionToggle } from './MotionToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ChromeButton } from './ChromeButton'
@@ -57,6 +60,72 @@ import { getActiveWatermark } from '@/lib/share/watermark-config'
 import type { ShareData } from '@/lib/share/types'
 import styles from './BoardRoot.module.css'
 
+// Phase 1 placeholder modal for the TAG chrome button. Lists every tag the
+// user has created. Phase 2 replaces this with a full Triage UI (rename,
+// reorder, delete, swipe-assign etc.) — until then this is just a peek at
+// the underlying data so the TAG button isn't a dead end.
+function SimpleTagList({ tags, onClose }: { readonly tags: readonly TagRecord[]; readonly onClose: () => void }): React.ReactElement {
+  return (
+    <div
+      role="dialog"
+      aria-label="Tag list"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 200,
+      }}
+    >
+      <div
+        onClick={(e): void => e.stopPropagation()}
+        style={{
+          background: '#111',
+          padding: 24,
+          borderRadius: 6,
+          minWidth: 320,
+          maxWidth: 480,
+          maxHeight: '70vh',
+          overflowY: 'auto',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        }}
+      >
+        <h3 style={{ marginTop: 0, color: '#fff', fontSize: 14, letterSpacing: '0.12em' }}>TAGS</h3>
+        {tags.length === 0 ? (
+          <p style={{ color: '#888', fontSize: 12 }}>No tags yet. Hover a card and use the + TAG button to create one.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {tags.map((t) => (
+              <li key={t.id} style={{ padding: '6px 0', color: '#ddd', fontSize: 13 }}>{t.name}</li>
+            ))}
+          </ul>
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            marginTop: 16,
+            appearance: 'none',
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            color: '#ddd',
+            padding: '6px 12px',
+            borderRadius: 3,
+            fontSize: 11,
+            letterSpacing: '0.12em',
+            cursor: 'pointer',
+          }}
+        >
+          CLOSE
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // Visible breathing room above the board's first card, in CSS pixels.
 // Cards' world coords start at y=0 (masonry cursor); this offset is applied
 // in the cards wrapper's transform so the first row never kisses the Toolbar
@@ -79,8 +148,9 @@ export function BoardRoot() {
     reload,
     persistLinkStatus,
   } = useBoardData()
-  const { tags } = useTags()
+  const { tags, reload: reloadTags } = useTags()
   const tagFilter = useTagFilter()
+  const [tagPanelOpen, setTagPanelOpen] = useState<boolean>(false)
   const [activeFilter, setActiveFilter] = useState<BoardFilter>('all')
   // Background-typography animation variant. `'static'` (fixed centred
   // headline) is the only treatment wired up today; the URL query
@@ -780,6 +850,41 @@ export function BoardRoot() {
     void persistSoftDelete(bookmarkId, true)
   }, [persistSoftDelete, pushUndo])
 
+  // Tag mutation handlers. Phase 1: simple reload-after-mutation. A later
+  // pass can swap in optimistic state updates if perceived latency is bad
+  // on slow devices; for now ~50ms reload feels fine on desktop.
+  const handleTagToggle = useCallback(
+    async (bookmarkId: string, tagId: string): Promise<void> => {
+      const item = items.find((it) => it.bookmarkId === bookmarkId)
+      if (!item) return
+      const db = await initDB()
+      if (item.tags.includes(tagId)) {
+        await removeTagFromBookmark(db, bookmarkId, tagId)
+      } else {
+        await addTagToBookmark(db, bookmarkId, tagId)
+      }
+      await reload()
+    },
+    [items, reload],
+  )
+
+  const handleTagCreate = useCallback(
+    async (bookmarkId: string, name: string): Promise<void> => {
+      const trimmed = name.trim()
+      if (!trimmed) return
+      const db = await initDB()
+      // Reuse an existing tag with the same name if one already exists —
+      // case-insensitive — so the new-input pathway doesn't silently create
+      // duplicates of "YouTube" / "youtube" etc.
+      const existing = tags.find((t) => t.name.toLowerCase() === trimmed.toLowerCase())
+      const target = existing ?? (await addTag(db, { name: trimmed, color: '#28F100', order: tags.length }))
+      await addTagToBookmark(db, bookmarkId, target.id)
+      await reloadTags()
+      await reload()
+    },
+    [tags, reload, reloadTags],
+  )
+
   // Card width and gap are board-wide preferences, not per-card data.
   // localStorage is sufficient (recovers on next visit, cross-device sync
   // not in scope). On mount we hydrate from saved values once.
@@ -1363,6 +1468,10 @@ export function BoardRoot() {
                 onReset={handleResetWidthGap}
                 onApplyPreset={onApplyPreset}
               />
+              <TagButton
+                onClick={(): void => setTagPanelOpen(true)}
+                active={tagPanelOpen}
+              />
               <ChromeButton
                 label={t('board.chrome.popout')}
                 onClick={() => { void pip.open() }}
@@ -1454,6 +1563,9 @@ export function BoardRoot() {
                 onPanY={handlePanY}
                 motionEnabled={motionEnabled}
                 matchedBookmarkIds={matchedBookmarkIds}
+                allTags={tags}
+                onTagToggle={handleTagToggle}
+                onTagCreate={handleTagCreate}
               />
             </div>
           </InteractionLayer>
@@ -1526,6 +1638,9 @@ export function BoardRoot() {
         onClose={handleCloseBookmarkletModal}
         appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://booklage.pages.dev')}
       />
+      {tagPanelOpen && (
+        <SimpleTagList tags={tags} onClose={(): void => setTagPanelOpen(false)} />
+      )}
       {shareComposerOpen && (
         <ShareComposer
           open={shareComposerOpen}
