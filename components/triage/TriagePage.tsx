@@ -13,7 +13,7 @@ import styles from './TriagePage.module.css'
 
 type Direction = 'up' | 'right' | 'down' | 'left'
 
-const SWIPE_ANIM_MS = 180
+const SWIPE_ANIM_MS = 220
 const DRAG_THRESHOLD_PX = 60
 
 export function TriagePage(): ReactElement {

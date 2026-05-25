@@ -1,9 +1,13 @@
 .root {
   position: fixed; inset: 0;
-  background: var(--bg-dark);
+  /* Phase B2: semi-transparent dim so BoardBackdrop (= z-index 0) reads
+     through. The opacity is high enough that the foreground UI stays
+     readable, low enough that the user's actual board never disappears. */
+  background: rgba(8, 8, 10, 0.88);
   color: var(--text-primary);
   display: flex; flex-direction: column;
   padding: 24px 32px;
+  z-index: 1;
 }
 .header {
   display: flex; align-items: center; justify-content: space-between;
