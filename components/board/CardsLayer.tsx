@@ -437,6 +437,12 @@ export function CardsLayer({
     })
   }, [virtualOrderedIds, items, viewportWidth, cardGapPx, buildSkylineCard])
 
+  // Previous-position ledger used to animate masonry reflows via FLIP.
+  // Updated at the end of every effect run. Declared above displayedPositions
+  // so the useMemo below can read prevPositionsRef.current without hitting
+  // the TDZ when matchedBookmarkIds is active.
+  const prevPositionsRef = useRef<Record<string, { x: number; y: number }>>({})
+
   // During drag, use preview positions for non-dragged cards.
   // During drop/idle, use real masonry positions.
   // Tagged-out cards (= filter active, card not in match set) have no
@@ -506,10 +512,6 @@ export function CardsLayer({
   const rotateMs = Math.max(MIN_ROTATE_MS, HERO_PER_CARD_MS)
   const spotlightCap = ambientOn ? HERO_CAP : 0
   const playing = useSpotlightRotation(candidates, spotlightCap, rotateMs)
-
-  // Previous-position ledger used to animate masonry reflows via FLIP.
-  // Updated at the end of every effect run.
-  const prevPositionsRef = useRef<Record<string, { x: number; y: number }>>({})
 
   // dragState ref for use inside useLayoutEffect without triggering extra renders
   const dragStateRef = useRef<{ bookmarkId: string } | null>(null)
