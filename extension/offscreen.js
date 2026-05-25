@@ -18,7 +18,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'forward-to-iframe') {
     router.register(msg.nonce, { postMessage: sendResponse })
     iframe.contentWindow.postMessage(msg.envelope, BOOKLAGE_ORIGIN)
-    setTimeout(() => router.timeout(msg.nonce), 4000)
+    // 8s gives slow iframe loads / cold service worker wakeups headroom.
+    // dispatch.js auto-retries once with a fresh offscreen on timeout, so
+    // the worst case for the user is ~16s before the red pill — still
+    // recoverable, and the common case sees zero failures.
+    setTimeout(() => router.timeout(msg.nonce), 8000)
     return true // async
   }
   return false

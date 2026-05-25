@@ -91,7 +91,26 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
     chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: 'saving' }).catch(() => {})
   }
 
-  const result = await postToOffscreen(envelope, nonce)
+  let result = await postToOffscreen(envelope, nonce)
+  console.debug('[allmarks] save iframe result:', { trigger, result })
+
+  // Self-heal: a timeout almost always means the offscreen iframe is in a
+  // stuck state (= stale load after deploy, lost message listener, paused
+  // service worker that woke up mid-flight, etc). Close the stale offscreen,
+  // recreate it, and retry once with a fresh nonce. The user sees no error
+  // if the retry succeeds. Only if the retry also times out do we surface
+  // the red pill. The cost is up to ~8s extra latency on the rare stuck
+  // case; everyday saves are untouched.
+  if (!result?.ok && result?.error === 'timeout') {
+    console.debug('[allmarks] timeout; recreating offscreen and retrying once')
+    try { await chrome.offscreen.closeDocument() } catch (_) { /* no doc to close */ }
+    await ensureOffscreen()
+    const retryNonce = makeNonce('e-retry')
+    const retryEnvelope = { ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }
+    result = await postToOffscreen(retryEnvelope, retryNonce)
+    console.debug('[allmarks] save iframe retry result:', { trigger, result })
+  }
+
   let finalState
   if (!result?.ok) finalState = 'error'
   else if (result.skipped) finalState = 'duplicate'
