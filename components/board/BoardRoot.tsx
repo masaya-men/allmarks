@@ -20,6 +20,7 @@ import { createBackfillQueue } from '@/lib/board/backfill-queue'
 import { backfillTweetMeta } from '@/lib/board/tweet-backfill'
 import { fetchTikTokMeta } from '@/lib/embed/tiktok-meta'
 import { useTags } from '@/lib/storage/use-tags'
+import { useTagFilter } from '@/lib/board/use-tag-filter'
 import { initDB } from '@/lib/storage/indexeddb'
 import { loadBoardConfig, saveBoardConfig } from '@/lib/storage/board-config'
 import { ThemeLayer } from './ThemeLayer'
@@ -32,6 +33,7 @@ import { CardsLayer } from './CardsLayer'
 import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
+import { TagFilterBar } from './TagFilterBar'
 import { MotionToggle } from './MotionToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ChromeButton } from './ChromeButton'
@@ -78,6 +80,7 @@ export function BoardRoot() {
     persistLinkStatus,
   } = useBoardData()
   const { tags } = useTags()
+  const tagFilter = useTagFilter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>('all')
   // Background-typography animation variant. `'static'` (fixed centred
   // headline) is the only treatment wired up today; the URL query
@@ -448,6 +451,23 @@ export function BoardRoot() {
   }, [])
 
   const filteredItems = useMemo(() => applyFilter(items, activeFilter), [items, activeFilter])
+
+  // Tag filter overlay on top of filteredItems. null = no tag filter active
+  // (= every card matches). When set, cards whose id is NOT in the set are
+  // marked tagged-out: CardsLayer plays the CRT shutdown animation on them
+  // and removes them from masonry input so the matched cards reflow naturally
+  // via the existing GSAP-FLIP useLayoutEffect.
+  const matchedBookmarkIds = useMemo<ReadonlySet<string> | null>(() => {
+    if (!tagFilter.isActive) return null
+    const ids = new Set<string>()
+    for (const it of filteredItems) {
+      const matches = tagFilter.mode === 'and'
+        ? tagFilter.selectedTagIds.every((tid) => it.tags.includes(tid))
+        : tagFilter.selectedTagIds.some((tid) => it.tags.includes(tid))
+      if (matches) ids.add(it.bookmarkId)
+    }
+    return ids
+  }, [filteredItems, tagFilter.isActive, tagFilter.mode, tagFilter.selectedTagIds])
 
   const themeMeta = getThemeMeta(DEFAULT_THEME_ID)
 
@@ -1433,6 +1453,7 @@ export function BoardRoot() {
                 sourceCardId={lightboxSourceItemId}
                 onPanY={handlePanY}
                 motionEnabled={motionEnabled}
+                matchedBookmarkIds={matchedBookmarkIds}
               />
             </div>
           </InteractionLayer>
@@ -1456,6 +1477,24 @@ export function BoardRoot() {
           swellFraction={meterSwellFraction}
           onScrub={handleMeterScrub}
         />
+        {/* Tag filter chips strip — sits at the top-left of the canvas just
+            below the TopHeader action row. Fades out with the rest of the
+            chrome while the Lightbox is open. */}
+        <div
+          className={lightboxItemId ? `${styles.tagFilterHost} ${styles.tagFilterHostHidden}` : styles.tagFilterHost}
+          aria-hidden={lightboxItemId ? 'true' : undefined}
+        >
+          <TagFilterBar
+            tags={tags}
+            selectedTagIds={tagFilter.selectedTagIds}
+            mode={tagFilter.mode}
+            onToggle={tagFilter.toggleTag}
+            onModeChange={tagFilter.setMode}
+            onClearAll={tagFilter.clearAll}
+            totalCount={filteredItems.length}
+            matchCount={matchedBookmarkIds?.size ?? filteredItems.length}
+          />
+        </div>
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
             canvasWrap. This way its backdrop (position: absolute; inset: 0)
             fills the FULL canvas — including the TopHeader band — so the

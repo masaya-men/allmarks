@@ -100,6 +100,23 @@
  * in ScrollMeter.module.css `.meterWrap` (z 400) and swaps its content
  * via the `mode` prop — see ScrollMeter.tsx. */
 
+/* Tag filter chips strip — top-left of the canvas, below the TopHeader
+   action row. Sits at the same z-index as TOOLBAR so it's above the cards
+   but below modals / Lightbox. Pointer events auto so chips are clickable;
+   transitions match the header fade on Lightbox open/close. */
+.tagFilterHost {
+  position: absolute;
+  top: 14px;
+  left: 24px;
+  z-index: 110;
+  pointer-events: auto;
+  transition: opacity 0.25s ease;
+}
+.tagFilterHostHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Session 43: chromeButton rule は ChromeButton.module.css に移動
    (= scramble + crackle と一体運用)。 */
 

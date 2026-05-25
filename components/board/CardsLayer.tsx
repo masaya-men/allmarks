@@ -20,6 +20,7 @@ import {
 import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
+import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
 import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
@@ -168,6 +169,11 @@ type CardsLayerProps = {
   readonly onPanY?: (requestedDy: number) => number
   /** Tier 1 master switch — when false, no viewport autoplay. */
   readonly motionEnabled: boolean
+  /** Tag-filter match set. null = no tag filter active (every card matches).
+   *  When set, cards whose id is NOT in the set are "tagged out": they play
+   *  the CRT shutdown animation and drop out of the masonry input so the
+   *  matched cards reflow naturally via the existing GSAP-FLIP useLayoutEffect. */
+  readonly matchedBookmarkIds?: ReadonlySet<string> | null
 }
 
 export function CardsLayer({
@@ -198,6 +204,7 @@ export function CardsLayer({
   sourceCardId,
   onPanY,
   motionEnabled,
+  matchedBookmarkIds,
 }: CardsLayerProps): ReactNode {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
@@ -331,9 +338,18 @@ export function CardsLayer({
   )
 
 
+  // When a tag filter is active, masonry only considers matched cards so the
+  // remaining cards collapse into a compact grid. Tagged-out cards are still
+  // rendered (so the CRT shutdown animation can play); their position falls
+  // back to the cached prev position (see displayedPositions below).
+  const itemsForMasonry = useMemo(() => {
+    if (!matchedBookmarkIds) return items
+    return items.filter((it) => matchedBookmarkIds.has(it.bookmarkId))
+  }, [items, matchedBookmarkIds])
+
   const skylineCards = useMemo<SkylineCard[]>(
-    () => items.map(buildSkylineCard),
-    [items, buildSkylineCard],
+    () => itemsForMasonry.map(buildSkylineCard),
+    [itemsForMasonry, buildSkylineCard],
   )
 
   const masonryLayout = useMemo(
@@ -365,10 +381,26 @@ export function CardsLayer({
 
   // During drag, use preview positions for non-dragged cards.
   // During drop/idle, use real masonry positions.
-  const displayedPositions = useMemo<Readonly<Record<string, CardPosition>>>(
-    () => previewMasonry?.positions ?? masonryLayout.positions,
-    [previewMasonry, masonryLayout.positions],
-  )
+  // Tagged-out cards (= filter active, card not in match set) have no
+  // entry in masonryLayout.positions because itemsForMasonry excludes
+  // them. They still need a position so they can render the shutdown
+  // animation — we fall back to the cached prev position from the last
+  // render. prevPositionsRef is populated by the GSAP-FLIP useLayoutEffect
+  // and reflects the position the card had BEFORE the filter activated.
+  const displayedPositions = useMemo<Readonly<Record<string, CardPosition>>>(() => {
+    const fromMasonry = previewMasonry?.positions ?? masonryLayout.positions
+    if (!matchedBookmarkIds) return fromMasonry
+    const out: Record<string, CardPosition> = { ...fromMasonry }
+    for (const it of items) {
+      if (matchedBookmarkIds.has(it.bookmarkId)) continue
+      if (out[it.bookmarkId]) continue
+      const prev = prevPositionsRef.current[it.bookmarkId]
+      if (!prev) continue
+      const card = buildSkylineCard(it)
+      out[it.bookmarkId] = { x: prev.x, y: prev.y, w: card.width, h: card.height }
+    }
+    return out
+  }, [previewMasonry, masonryLayout.positions, matchedBookmarkIds, items, buildSkylineCard])
 
   const visibleItems = useMemo(() => {
     const bufferX = viewport.w * CULLING.BUFFER_SCREENS
@@ -633,6 +665,8 @@ export function CardsLayer({
       {visibleItems.map((it) => {
         const p = displayedPositions[it.bookmarkId]
         if (!p) return null
+        const taggedOut = matchedBookmarkIds != null && !matchedBookmarkIds.has(it.bookmarkId)
+        const shutdownClass = taggedOut ? getShutdownAnimationClass('wave') : undefined
         return (
           <div
             key={it.bookmarkId}
@@ -651,7 +685,7 @@ export function CardsLayer({
               left: 0,
               width: `${p.w}px`,
               height: `${p.h}px`,
-              pointerEvents: sourceCardId === it.bookmarkId ? 'none' : 'auto',
+              pointerEvents: sourceCardId === it.bookmarkId || taggedOut ? 'none' : 'auto',
               // Drag lifts highest (1000). The audio-active card (and thus its
               // attached control bar) floats above sibling cards at 500 so the
               // bar is never occluded by a later-painted neighbour. Idle cards
@@ -668,6 +702,17 @@ export function CardsLayer({
               ['--card-radius' as string]: '20px',
             }}
           >
+            {/* Tag-shutdown wrapper. The outer div above carries the GSAP
+                positioning transform, so the shutdown CSS keyframes
+                (which animate transform: scale/translate) must live on
+                this inner element to avoid clobbering the masonry position.
+                When the card is NOT tagged-out, this is a plain pass-through
+                div with no className. */}
+            <div
+              className={shutdownClass}
+              data-tagged-out={taggedOut ? 'true' : undefined}
+              style={{ position: 'absolute', inset: 0, borderRadius: 'var(--card-radius, 20px)' }}
+            >
             <CardNode
               id={it.bookmarkId}
               title={it.title}
@@ -823,6 +868,7 @@ export function CardsLayer({
               onResize={(nextW: number): void => onCardResize(it.bookmarkId, nextW)}
               onResizeEnd={(finalW: number): void => onCardResizeEnd(it.bookmarkId, finalW)}
             />
+            </div>
           </div>
         )
       })}
