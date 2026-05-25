@@ -27,6 +27,7 @@ export function TagAddPopover({
 }: TagAddPopoverProps): JSX.Element {
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -35,6 +36,20 @@ export function TagAddPopover({
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  // Click outside to close — industry-standard popover dismiss. The + TAG
+  // trigger button stops propagation on pointerdown/mousedown so re-clicking
+  // it toggles via its own onClick handler instead of triggering this and
+  // double-closing. Chip / input clicks land inside the ref and are skipped.
+  useEffect(() => {
+    function onPointerDownOutside(e: MouseEvent): void {
+      if (!popoverRef.current) return
+      if (popoverRef.current.contains(e.target as Node)) return
+      onClose()
+    }
+    document.addEventListener('mousedown', onPointerDownOutside)
+    return () => document.removeEventListener('mousedown', onPointerDownOutside)
   }, [onClose])
 
   function handleEnter(e: React.KeyboardEvent<HTMLInputElement>): void {
@@ -68,7 +83,7 @@ export function TagAddPopover({
   }
 
   return (
-    <div className={styles.popover} role="dialog">
+    <div ref={popoverRef} className={styles.popover} role="dialog">
       {suggestedEntries.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>SUGGESTED</div>
