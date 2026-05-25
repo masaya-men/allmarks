@@ -1,0 +1,135 @@
+/* WAVE テーマ用 CRT shutdown effect.
+   spec: docs/superpowers/specs/2026-05-25-tagging-design.md §「アニメ層設計」
+   触る数値は :root の CSS 変数経由のみ。 */
+
+:root {
+  --tag-shutdown-duration: 0.55s;
+  --tag-shutdown-stretch-y: 1.3;
+  --tag-shutdown-easing: cubic-bezier(0.230, 1.000, 0.320, 1.000);
+  --tag-shutdown-easing-end: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+  --tag-shutdown-flash-color: #28F100;
+  --tag-shutdown-stagger-step: 30ms;
+  --tag-shutdown-scanline-intensity: 0.4;
+  --tag-shutdown-flicker-intensity: 0.5;
+}
+
+/* 適用対象: [data-tagged-out="true"] のカードのみ。
+   通常状態 / 該当カード / ボード背景には一切影響させない。 */
+.shutdown {
+  animation: lbebber-green var(--tag-shutdown-duration) var(--tag-shutdown-easing) forwards;
+  transform-origin: center;
+  position: relative;
+}
+
+@keyframes lbebber-green {
+  0% {
+    transform: scale(1, 1);
+    filter: brightness(1);
+    opacity: 1;
+  }
+  /* warm glitch (= AllMarks 既存 chromatic aberration 言語) */
+  10% {
+    transform: translate(2px, -1px);
+    box-shadow: -2px 0 0 #ff3a5a, 2px 0 0 #5aefff;
+  }
+  15% {
+    transform: translate(-2px, 1px);
+    box-shadow: 2px 0 0 #ff3a5a, -2px 0 0 #5aefff;
+    opacity: 0.9;
+  }
+  /* 縦膨らみ */
+  25% {
+    transform: scale(1, var(--tag-shutdown-stretch-y));
+    filter: brightness(1.2);
+    background: #1f3a1f;
+    box-shadow: 0 0 8px rgba(40, 241, 0, 0.4);
+    opacity: 1;
+  }
+  /* 横膨らんで水平線 + 緑 flash */
+  50% {
+    transform: scale(1.3, 0.02);
+    filter: brightness(8) saturate(2);
+    background: var(--tag-shutdown-flash-color);
+    box-shadow: 0 0 24px var(--tag-shutdown-flash-color), 0 0 48px rgba(40, 241, 0, 0.6);
+    opacity: 1;
+    animation-timing-function: var(--tag-shutdown-easing-end);
+  }
+  /* 点化 */
+  75% {
+    transform: scale(0.001, 0.001);
+    filter: brightness(30);
+    background: var(--tag-shutdown-flash-color);
+    box-shadow: 0 0 12px var(--tag-shutdown-flash-color);
+    opacity: 1;
+  }
+  /* 消滅 */
+  100% {
+    transform: scale(0, 0);
+    opacity: 0;
+    filter: brightness(1);
+    box-shadow: none;
+  }
+}
+
+/* shutdown 中だけ可視の scanline overlay (= 該当カードや通常時には絶対乗らない) */
+.shutdown::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, calc(0.4 * var(--tag-shutdown-scanline-intensity))) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.12), rgba(0, 255, 0, 0.04), rgba(0, 0, 255, 0.12));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  z-index: 4;
+  border-radius: inherit;
+  opacity: 1;
+  animation: scanline-fade var(--tag-shutdown-duration) linear forwards;
+}
+
+@keyframes scanline-fade {
+  0%, 90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* shutdown 中だけ可視の flicker overlay (= aleclownes 業界正規値、 7Hz) */
+.shutdown::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+  z-index: 5;
+  border-radius: inherit;
+  opacity: 0;
+  animation: flicker-burst var(--tag-shutdown-duration) linear forwards;
+}
+
+@keyframes flicker-burst {
+  0% { opacity: 0; }
+  5% { opacity: calc(0.27 * var(--tag-shutdown-flicker-intensity)); }
+  10% { opacity: calc(0.88 * var(--tag-shutdown-flicker-intensity)); }
+  15% { opacity: calc(0.13 * var(--tag-shutdown-flicker-intensity)); }
+  25% { opacity: calc(0.67 * var(--tag-shutdown-flicker-intensity)); }
+  35% { opacity: calc(0.91 * var(--tag-shutdown-flicker-intensity)); }
+  45% { opacity: calc(0.07 * var(--tag-shutdown-flicker-intensity)); }
+  60% { opacity: calc(0.62 * var(--tag-shutdown-flicker-intensity)); }
+  75% { opacity: calc(0.55 * var(--tag-shutdown-flicker-intensity)); }
+  90%, 100% { opacity: 0; }
+}
+
+/* prefers-reduced-motion: 視覚過敏 user 配慮、 すべて単純フェードに置換 */
+@media (prefers-reduced-motion: reduce) {
+  .shutdown {
+    animation: simple-fade-out var(--tag-shutdown-duration) ease-out forwards;
+  }
+  .shutdown::before,
+  .shutdown::after {
+    animation: none;
+    opacity: 0;
+  }
+  @keyframes simple-fade-out {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.98); }
+  }
+}
