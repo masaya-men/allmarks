@@ -20,7 +20,46 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-25 セッション 73 — 保存バグ self-heal 完了 + ボード側タグ UI 7 polish 完遂、 Triage 側 polish は未着手のまま次セッションへ持ち越し)
+### 直近の状態 (2026-05-26 セッション 74 — BoardFilter 統合完遂、 タグ click が背景文字 / chrome / dropdown すべてを 1 つの source of truth で駆動 + リロード復元、 本番反映済)
+
+**ship 済 (= prod 反映済、 booklage.pages.dev、 session 内 2 deploy)**:
+
+0. **Phase 0 = JSON backup/restore リカバリ保険**: `lib/storage/backup.ts` 新規 (= `exportAllStores` / `importAllStores`、 全 IDB store dump + 復元、 store list は `db.objectStoreNames` でフィルタ = legacy `moods` / `folders` 残置も round-trip)、 `components/board/BackupButton.tsx` 新規 (= chrome `EXPORT` / `IMPORT` button、 TUNE 隣に配置、 JSON file download + 復元 confirm + 自動 reload)、 本番 deploy → user が 567 ブクマ + 5 tags の JSON を **`C:\Users\masay\Downloads\allmarks-backup-2026-05-25.json`** (817 KB) に保存完了 ← Phase 1 の安全網
+1. **Phase 1 = BoardFilter 型を discriminated union object 化** (= session 73 で発覚した「カードタグ click → chrome は変わるが背景文字 / dropdown は変わらない」 構造的 bug の core fix):
+   - 旧型 `'all' | 'inbox' | 'archive' | 'dead' | mood:${string}` → 新型 `{ kind: 'all' } | ... | { kind: 'tags', tagIds, mode: 'and'|'or' }` (= リッチな discriminated union)
+   - `lib/board/board-filter-helpers.ts` 新規 (= `BOARD_FILTER_ALL/INBOX/ARCHIVE/DEAD` 定数、 `makeTagsFilter`、 `isTagsFilter`、 `getActiveTagIds`、 `boardFilterEquals`、 `toggleTagInFilter`)
+   - `lib/board/board-filter-migration.ts` 新規 + IDB v15 → **v16** schema bump (= `lib/storage/indexeddb.ts` upgrade case で settings/board-config record の `activeFilter` を旧 string から新 object に automigrate、 defensive な settings store 存在チェック付き)
+   - `applyFilter` を新型対応 + AND/OR mode + empty tagIds fallback、 `useTagFilter` hook **完全廃止** (= file + test 削除)
+   - `FilterPill` の `overrideLabel` / `overrideCount` (= session 73 で追加した hack) 削除、 `tagsMatchCount` に置換 = native 配線
+   - `BoardBackgroundTypography` を新型対応 = 1 タグなら tag 名、 N タグなら `name +N-1` (= chrome と一致)、 これが**本 refactor の発端で user が指摘した「変わらない問題」 を直接解消**
+   - `Sidebar` を `boardFilterEquals` / 定数経由に
+   - `BoardRoot` 大改修: `useTagFilter` 削除、 `matchedBookmarkIds` を activeFilter 派生 useMemo に、 タグピル click → `toggleTagInFilter` 経由で `setActiveFilter` 呼び出し → IDB 永続化 (= **リロード復元が副産物として実装**)
+2. **Phase 2 = 検証 + 本番 deploy**: vitest **829 PASS** (= +23 net: helpers 10 + migration 8 + applyFilter +3 + bg typography +2 + board-config +1 + backup 3 + BackupButton 2 - useTagFilter 6) / tsc clean / build success (= 25 routes static prerender) / refactor branch を master に no-ff merge / 本番 deploy 完了
+
+**user 視点 (= 本 session 後の体験)**:
+- カードのタグピル click → 背景の AllMarks 文字が tag 名に変わる + chrome FilterPill が同じ tag 名に変わる + Sidebar の該当 tag 行が active 表示、 **全部同時に**
+- 複数タグ click → 背景文字 / chrome 両方が `Music +1` 形式に
+- リロード後も filter 状態が IDB から復元される
+- dropdown の既存 ALL / INBOX / ARCHIVE / 個別タグ切替も同じ source of truth で動く
+- chrome 上段に新規 **EXPORT / IMPORT** button (= TUNE と MANAGE TAGS の間)、 任意のタイミングで全 IDB を JSON dump 可能 = クロスデバイス引越 / リカバリ保険として永続価値
+
+**設計上の重要発見 (= 次セッション以降の保険)**:
+- **fake-indexeddb は同一 upgrade transaction での cursor 並列 access を abort する**: v15 case の `openCursor().then(...)` が fire-and-forget で pending な間に v16 case が `openCursor()` を呼ぶと AbortError → 全 upgrade 失敗。 v16 case は `get('board-config').then(put)` の直接 access に書き換えで解決
+- **IDB migration test の setup は production schema と乖離している**: v15 test setup は v14 minimal で `moods` + `bookmarks` のみ作る、 production の v3 で作られる `settings` store は存在しない → v16 case が `transaction.objectStore('settings')` を呼ぶと NotFoundError → upgrade abort。 `db.objectStoreNames.contains('settings')` の defensive check で test/prod 両対応
+- **preview URL deploy では実 user data 検証ができない**: 別 origin で別 IDB なので user の 567 ブクマが見えない → preview で「タグ click → 背景変化」 を試せない → 本番 deploy + JSON backup safety net の組み合わせが現実的
+- **session 73 の Polish 7 は「視覚だけ縛る hack」 だった**: FilterPill に override prop を付けて見せかけ連動させていたが、 真の state 統合ではなかった → user が「本質的に機能が一緒になってない」 と指摘 → Phase 1 で根本解決
+
+**未確認 (= user 実機検証待ち)**:
+- カードタグピル click → 背景文字 + chrome + Sidebar が同時連動するか
+- 複数タグ click → `Music +1` 形式表示
+- リロード後の filter 状態復元
+- v16 migration が 567 ブクマ + 5 tags の実 IDB で問題なく走るか (= 万一壊れたら IMPORT で完全復元可能)
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 74 セクション
+
+---
+
+### 旧情報 (2026-05-25 セッション 73 — 保存バグ self-heal 完了 + ボード側タグ UI 7 polish 完遂、 Triage 側 polish は未着手のまま次セッションへ持ち越し)
 
 **ship 済 (= prod 反映済、 booklage.pages.dev、 session 内 9 deploy)**:
 

@@ -4812,3 +4812,76 @@ user 質問への教育: 「これはよくある実装?」 → 教科書 scroll
 ### 次セッション (= 74) goal
 
 Triage 側 polish (a)-(h) + Phase D 必須 (D1-D5) を user 起点 1 個ずつ消化。 月末 (2026-05-31) まで残り 6 日で allmarks.app ドメイン取得確認も並行。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
+
+
+---
+
+## セッション 74 (2026-05-26) — BoardFilter 統合 refactor 完遂 (案 C 採用) + JSON backup 永続装置追加
+
+### 発端 = user の構造的指摘
+
+session 73 で「カードのタグピル click → chrome 右上は変わるが背景の AllMarks 文字が変わらない、 しかも変わる時と変わらない時がある、 本質的に機能がちゃんと一緒になっていないのでは？」 と user が指摘。 systematic-debugging Phase 1 で root cause 特定: `BoardFilter` 型 (= dropdown / IDB 永続) と `useTagFilter` hook の `selectedTagIds` (= memory のみ) が**並列 2 系統**、 session 73 で `FilterPill` だけ override で見せかけ連動させていたが他要素 (= 背景文字 / Sidebar) は不連動。 user 観察は構造的に正しかった。
+
+### 提案 2 案 → 案 C (= 真の機能統合) 採用
+
+- 案 B (軽): `BoardBackgroundTypography` に override prop を足して視覚だけ縛る (= session 73 と同じ pattern)
+- 案 C (重): `BoardFilter` 型を object 化して 2 系統を 1 つに統合、 IDB schema bump で永続化 → リロード復元も副産物として実装
+
+私が当初「案 B 推奨」 と書いたが、 user に「私に流されずプロとして」 と指摘されて訂正。 案 C が技術的正解と認め、 段取りで進めることに合意。
+
+### Phase 0 = リカバリ保険 (= JSON backup/restore 機能)
+
+IDB schema bump は不可逆 (= memory `project_idb_irreversibility`)、 万一の rollback 用に**先**に backup 機能を整備。 ついでに将来のクロスデバイス引越にも使える永続価値ある investment。
+
+1. `lib/storage/backup.ts` + test 新規 (= `exportAllStores` / `importAllStores`、 store list は `db.objectStoreNames` でフィルタ = 旧 `moods` / 旧 `folders` 残置も round-trip、 import は store ごとに transaction で clear + put = full replace semantics、 commit `a20db18`)
+2. `components/board/BackupButton.tsx` + test 新規 (= ChromeButton wrapper 2 個 = `EXPORT` / `IMPORT`、 EXPORT = JSON file download with date suffix、 IMPORT = file picker + confirm dialog + 自動 reload、 commit `90d1851`)
+3. BoardRoot に配線 (= TopHeader actions 内、 TUNE と MANAGE TAGS の間、 commit `c993855`)
+4. 本番 deploy → user が `C:\Users\masay\Downloads\allmarks-backup-2026-05-25.json` (817 KB、 567 bookmarks + 5 tags + activeFilter "all" baseline) を保存完了
+
+### Phase 1 = BoardFilter 型統合 (= 案 C 本体、 別 branch `refactor/board-filter-unification` で進行)
+
+1. **型 + helpers** (`types.ts` + `board-filter-helpers.ts` + test 10 件、 commit `e127663`): 旧型 `'all' | 'inbox' | 'archive' | 'dead' | mood:${string}` → 新型 discriminated union object `{ kind: 'all' } | ... | { kind: 'tags', tagIds, mode: 'and'|'or' }`。 helpers = `BOARD_FILTER_ALL/INBOX/ARCHIVE/DEAD` 定数 + `makeTagsFilter` + `isTagsFilter` + `getActiveTagIds` + `boardFilterEquals` (= 順序敏感 = toggle 順保持) + `toggleTagInFilter` (= 単一/複数 tag の append/remove ロジック、 last tag 削除で ALL に自動降格)
+2. **applyFilter** (`filter.ts` + test、 commit `f0477b5`): switch on filter.kind、 tags kind は AND/OR 両対応 + empty tagIds は all semantics fallback
+3. **migration helper** (`board-filter-migration.ts` + test 8 件、 commit `b336ffc`): legacy string `'all'|...|'mood:<id>'` → 新型 object、 idempotent on already-migrated input、 unknown/empty fallback `{ kind: 'all' }`
+4. **IDB schema v15 → v16** (`constants.ts` + `indexeddb.ts` upgrade case、 commit `0348adc`): settings/board-config record の activeFilter を旧 string から新 object に automigrate。 inline 実装 (= upgrade callback self-contained 原則)、 fake-indexeddb で並列 cursor abort 問題に当たって `openCursor` を `get('board-config').then(put)` に書き換え、 さらに migration test setup の minimal schema 対策で `db.objectStoreNames.contains('settings')` defensive check 追加 (= test/prod 両対応、 production は v3 で必ず作るので影響なし)
+5. **board-config** (`board-config.ts` + test 4 件、 commit `a4ddf92`): `DEFAULT_BOARD_CONFIG.activeFilter` を `BOARD_FILTER_ALL` constant に、 test も object round-trip 検証に書き換え
+6. **FilterPill** (commit `a2009db`): `overrideLabel` / `overrideCount` (= session 73 hack) 削除、 `tagsMatchCount` に置換 = native 配線、 label = `labelFor(filter, tags)` で tags kind は `name` or `name +N-1`、 count = tags kind なら tagsMatchCount、 他は counts[kind]、 dropdown items は `boardFilterEquals` で active 判定
+7. **BoardBackgroundTypography** (= 本 refactor の発端 fix、 commit `cf172e5`): `deriveBoardBgTypoText` を新型対応、 1 タグ → tag 名、 N タグ → `name +N-1` (= FilterPill と一致)、 first tag id resolution 失敗 → hide (= 削除タグ ref 残置を想定)、 test 10 件 (= 既存 6 + 新規 4)
+8. **Sidebar** (commit `3c0a3f6`): activeFilter 比較を `boardFilterEquals` + 定数経由に、 tag 行は `{ kind: 'tags', tagIds: [id], mode: 'and' }` 構築 + `isActiveTag(id)` helper
+9. **BoardRoot 大改修** (commit `9fc58b4`): `useTagFilter` import 削除 + hook 呼び出し削除、 `activeFilter` initial を `BOARD_FILTER_ALL` に、 `matchedBookmarkIds` useMemo を activeFilter 直接派生に書き換え、 `FilterPill` prop 簡素化 (= tagsMatchCount 1 個に)、 MANAGE TAGS routing を新型に対応 (= `activeFilter.kind === 'tags' && tagIds.length === 1` で `/triage?mode=tag:<id>` 経路)、 `CardsLayer` の `onTagFilterToggle` callback を `toggleTagInFilter` 経由 + `handleFilterChange` で IDB 永続化 + `focusCard` clear path を `BOARD_FILTER_ALL` 定数化
+10. **useTagFilter 削除 + residue cleanup** (commit `759f32c`): `lib/board/use-tag-filter.ts` + `tests/lib/board/use-tag-filter.test.ts` を git rm、 BoardRoot 内の stale `mood:foo` literal 言及コメントを新型表現に更新、 `tests/lib/filter-dead.test.ts` も新型に書き換え
+
+### Phase 2 = 検証 + 本番 deploy + docs 更新
+
+- vitest **829 PASS** (= +23 net: helpers 10 + migration 8 + applyFilter +3 + bg typography +2 + board-config +1 + backup 3 + BackupButton 2 - useTagFilter 6)
+- tsc 0 errors
+- pnpm build 成功 (= 25 routes static prerender)
+- `refactor/board-filter-unification` を master に `--no-ff` merge
+- `npx wrangler pages deploy out/ --branch=master` 完了 (= booklage.pages.dev に反映)
+
+### test 推移
+
+806 (session 73 終了時) → 811 (Phase 0 後) → 829 (Phase 1 完了後)
+
+### deploy 回数
+
+2 (= Phase 0 + Phase 1 本体)
+
+### 設計上の重要発見
+
+- **fake-indexeddb は同一 upgrade transaction での cursor 並列 access を abort する**: v15 case の `openCursor().then(...)` が fire-and-forget で pending な間に v16 case が `openCursor()` を呼ぶと AbortError → 全 upgrade 失敗。 v16 case は `get('board-config').then(put)` の直接 access に書き換えで解決
+- **IDB migration test の setup は production schema と乖離している**: v15 test setup は v14 minimal で `moods` + `bookmarks` のみ作る、 production の v3 で作られる `settings` store は存在しない → v16 case が NotFoundError → upgrade abort。 `db.objectStoreNames.contains('settings')` の defensive check で test/prod 両対応
+- **preview URL deploy では実 user data 検証ができない**: 別 origin で別 IDB なので user の 567 ブクマが見えない → preview で「タグ click → 背景変化」 を試せない → 本番 deploy + JSON backup safety net の組み合わせが現実的。 Plan の「preview deploy で user 確認」 部分は実用には不向きだった
+- **session 73 の Polish 7 は「視覚だけ縛る hack」 だった**: FilterPill に override prop を付けて見せかけ連動させていたが真の state 統合ではなかった → user が「本質的に機能が一緒になってない」 と指摘 → Phase 1 で根本解決。 user の構造的洞察は memory `feedback_layman_simple_path` の典型例
+
+### user 視点 (= 本 session 後の体験)
+
+- カードのタグピル click → 背景の AllMarks 文字が tag 名に変わる + chrome FilterPill が同じ tag 名に変わる + Sidebar の該当 tag 行が active 表示、 **全部同時に**
+- 複数タグ click → 背景文字 / chrome 両方が `Music +1` 形式
+- リロード後も filter 状態が IDB から復元される
+- chrome 上段に新規 **EXPORT / IMPORT** button (= TUNE と MANAGE TAGS の間)
+
+### 次セッション (= 75) goal
+
+Triage 側 polish (a)-(h) + Phase D 必須 (D1-D5) を user 起点 1 個ずつ消化 (= session 73 から持ち越し、 session 74 は当初予定の Triage polish から逸脱して BoardFilter 統合に深堀り)。 月末 (2026-05-31) まで残り 5 日で `allmarks.app` ドメイン取得確認も並行。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
+
