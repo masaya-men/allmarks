@@ -87,10 +87,16 @@ export interface BookmarkRecord {
   /** v14: 最後に link 健全性を再 scrape した Unix ms。 undefined = 未チェック。
    *  viewport 入場時に Date.now() - lastCheckedAt > 30 日なら再 check 候補。 */
   lastCheckedAt?: number
+  /** v15+: Phase 3 カラーハント (タグ別テーマ) 用のドミナントカラー hex。
+   *  Phase 1 では常に null/undefined。 backfill が走るまで未設定。 */
+  dominantColor?: string | null
 }
 
-/** Mood record (v9) — replaces the legacy folder concept. Stored in `moods` store. */
-export interface MoodRecord {
+/** Tag record (v15、 旧 MoodRecord をリネーム) — destefanis pivot の
+ *  「タグ = 軽量分類」概念をそのまま継承し、 Phase 3 の per-tag テーマ用
+ *  field (`theme`) と編集トラッキング用 (`updatedAt`) を新規追加。
+ *  物理 store 名は v15 migration (Task 5) で `moods` → `tags` に rename される。 */
+export interface TagRecord {
   /** UUID primary key */
   id: string
   /** Display name */
@@ -101,10 +107,14 @@ export interface MoodRecord {
   order: number
   /** Unix epoch milliseconds */
   createdAt: number
+  /** v15+: Phase 3 タグ別テーマ用、 Phase 1 では常に null */
+  theme?: string | null
+  /** v15+: rename / 編集トラッキング用 (Unix epoch ms) */
+  updatedAt?: number
 }
 
-/** Input for creating a new mood (id and createdAt are auto-generated) */
-export type MoodInput = Omit<MoodRecord, 'id' | 'createdAt'>
+/** Input for creating a new tag (id and createdAt are auto-generated) */
+export type TagInput = Pick<TagRecord, 'name' | 'color' | 'order'>
 
 /** Card record — visual position of a bookmark on the canvas */
 export interface CardRecord {
@@ -190,7 +200,13 @@ export type BookmarkInput = Omit<
 
 interface AllMarksDB {
   bookmarks: BookmarkRecord
-  moods: MoodRecord
+  /** Legacy store name (pre-v15). Physically still present until the
+   *  v14→v15 migration (Task 5) renames it to `tags`. Records have the
+   *  TagRecord shape (new optional fields are simply absent on legacy rows). */
+  moods: TagRecord
+  /** v15+ tag master. Created by the v14→v15 migration (Task 5).
+   *  Indexed by `by-order` on TagRecord.order for sorted reads. */
+  tags: TagRecord
   cards: CardRecord
   settings: SettingsRecord
   preferences: UserPreferencesRecord
@@ -493,7 +509,7 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
                   order?: number
                   createdAt?: string
                 }
-                const moodRec: MoodRecord = {
+                const moodRec: TagRecord = {
                   id: f.id,
                   name: f.name ?? 'Untitled',
                   color: f.color ?? '#7c5cfc',
