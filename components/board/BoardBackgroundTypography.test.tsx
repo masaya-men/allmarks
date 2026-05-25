@@ -6,27 +6,43 @@ import {
   deriveBoardBgTypoText,
   isBoardBgTypoVariant,
 } from './BoardBackgroundTypography'
+import {
+  BOARD_FILTER_ALL, BOARD_FILTER_INBOX, BOARD_FILTER_ARCHIVE, BOARD_FILTER_DEAD,
+  makeTagsFilter,
+} from '@/lib/board/board-filter-helpers'
 
 describe('deriveBoardBgTypoText', () => {
   it('returns "AllMarks" for the "all" filter', () => {
-    expect(deriveBoardBgTypoText('all', [])).toBe('AllMarks')
+    expect(deriveBoardBgTypoText(BOARD_FILTER_ALL, [])).toBe('AllMarks')
   })
 
   it('returns "Inbox" / "Archive" / "Dead Links" for their fixed filters', () => {
-    expect(deriveBoardBgTypoText('inbox', [])).toBe('Inbox')
-    expect(deriveBoardBgTypoText('archive', [])).toBe('Archive')
-    expect(deriveBoardBgTypoText('dead', [])).toBe('Dead Links')
+    expect(deriveBoardBgTypoText(BOARD_FILTER_INBOX, [])).toBe('Inbox')
+    expect(deriveBoardBgTypoText(BOARD_FILTER_ARCHIVE, [])).toBe('Archive')
+    expect(deriveBoardBgTypoText(BOARD_FILTER_DEAD, [])).toBe('Dead Links')
   })
 
-  it('resolves a tag filter to the tag name', () => {
+  it('resolves a single-tag filter to the tag name', () => {
     const tags: TagRecord[] = [
       { id: 'm1', name: 'Calm', color: '#abc', order: 0, createdAt: 0 } as TagRecord,
     ]
-    expect(deriveBoardBgTypoText('mood:m1', tags)).toBe('Calm')
+    expect(deriveBoardBgTypoText(makeTagsFilter(['m1'], 'and'), tags)).toBe('Calm')
   })
 
-  it('returns empty string when a tag id no longer exists', () => {
-    expect(deriveBoardBgTypoText('mood:gone', [])).toBe('')
+  it("returns 'name +N-1' for a multi-tag filter", () => {
+    const tags: TagRecord[] = [
+      { id: 'm1', name: 'Music', color: '#0f0', order: 0, createdAt: 0 } as TagRecord,
+      { id: 'm2', name: 'Art', color: '#f0f', order: 0, createdAt: 0 } as TagRecord,
+    ]
+    expect(deriveBoardBgTypoText(makeTagsFilter(['m1', 'm2'], 'and'), tags)).toBe('Music +1')
+  })
+
+  it('returns empty string when the first tag id no longer exists', () => {
+    expect(deriveBoardBgTypoText(makeTagsFilter(['gone'], 'and'), [])).toBe('')
+  })
+
+  it('returns AllMarks when tags filter has empty tagIds', () => {
+    expect(deriveBoardBgTypoText(makeTagsFilter([], 'and'), [])).toBe('AllMarks')
   })
 })
 
@@ -46,7 +62,7 @@ describe('isBoardBgTypoVariant', () => {
 describe('BoardBackgroundTypography — static wordmark', () => {
   it('renders a single text span when text is non-empty', () => {
     const { container } = render(
-      <BoardBackgroundTypography activeFilter="all" tags={[]} />,
+      <BoardBackgroundTypography activeFilter={BOARD_FILTER_ALL} tags={[]} />,
     )
     const host = container.querySelector('[data-testid="board-bg-typography"]')
     expect(host).not.toBeNull()
@@ -57,7 +73,7 @@ describe('BoardBackgroundTypography — static wordmark', () => {
 
   it('does NOT render anything when text resolves to empty', () => {
     const { container } = render(
-      <BoardBackgroundTypography activeFilter="mood:nonexistent" tags={[]} />,
+      <BoardBackgroundTypography activeFilter={makeTagsFilter(['nonexistent'], 'and')} tags={[]} />,
     )
     expect(container.querySelector('[data-testid="board-bg-typography"]')).toBeNull()
   })

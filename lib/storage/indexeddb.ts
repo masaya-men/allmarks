@@ -651,6 +651,46 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
         // Step 4: bookmark.dominantColor remains undefined for legacy rows;
         // Phase 3 backfill will fill values from media. No sweep here.
       }
+
+      // ── v15 → v16: migrate BoardConfig.activeFilter from legacy string
+      //              ('all'|'inbox'|'archive'|'dead'|`mood:<id>`) to the new
+      //              BoardFilter object form ({ kind: 'all'|... |'tags',
+      //              tagIds?, mode? }). Touches the single 'board-config'
+      //              record in the settings store.
+      //
+      // We use direct get/put on the singleton record rather than a cursor
+      // because the v15 case above leaves a fire-and-forget cursor chain
+      // open on the moods store, and fake-indexeddb serializes cursor
+      // access per transaction — overlapping openCursor() calls abort the
+      // upgrade. Inline the migration logic (= avoid pulling in a board-
+      // side import; upgrade callbacks should stay self-contained per
+      // existing convention). Idempotent on already-migrated object values.
+      if (oldVersion < 16) {
+        // Defensive: settings store is created in v3, so production always
+        // has it. But migration tests sometimes spin up at intermediate
+        // versions without seeding the full schema — skip cleanly in that
+        // case rather than aborting the whole upgrade transaction.
+        if (!db.objectStoreNames.contains('settings')) return
+        const settingsStore = transaction.objectStore('settings')
+        void settingsStore.get('board-config').then((rec) => {
+          if (!rec) return
+          const r = rec as { key: string; config?: Record<string, unknown> }
+          const legacy = r.config?.activeFilter
+          let migrated: unknown = { kind: 'all' }
+          if (legacy && typeof legacy === 'object' && 'kind' in legacy) {
+            migrated = legacy
+          } else if (typeof legacy === 'string') {
+            if (legacy === 'all' || legacy === 'inbox' || legacy === 'archive' || legacy === 'dead') {
+              migrated = { kind: legacy }
+            } else if (legacy.startsWith('mood:')) {
+              const id = legacy.slice(5)
+              if (id.length > 0) migrated = { kind: 'tags', tagIds: [id], mode: 'and' }
+            }
+          }
+          const nextConfig = { ...(r.config ?? {}), activeFilter: migrated }
+          void settingsStore.put({ key: r.key, config: nextConfig } as never)
+        })
+      }
     },
   })
   // Reaching this point means the upgrade completed without being blocked,

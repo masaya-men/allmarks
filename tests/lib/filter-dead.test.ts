@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { applyFilter } from '@/lib/board/filter'
+import { BOARD_FILTER_DEAD } from '@/lib/board/board-filter-helpers'
 
 const make = (id: string, opts: { linkStatus?: 'alive' | 'gone' | 'unknown'; isDeleted?: boolean }) =>
   ({
@@ -20,12 +21,12 @@ describe("applyFilter 'dead'", () => {
       make('d', { linkStatus: 'unknown' }),
       make('e', {}),
     ]
-    const out = applyFilter(items, 'dead')
+    const out = applyFilter(items, BOARD_FILTER_DEAD)
     expect(out.map((x) => x.bookmarkId)).toEqual(['b'])
   })
 
   it('returns empty array when no gone items exist', () => {
     const items = [make('a', { linkStatus: 'alive' }), make('b', {})]
-    expect(applyFilter(items, 'dead')).toEqual([])
+    expect(applyFilter(items, BOARD_FILTER_DEAD)).toEqual([])
   })
 })
