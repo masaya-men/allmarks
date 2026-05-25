@@ -26,19 +26,19 @@ const BLEED_LEFT_PX = 0
 // neighbor cards in the hover-lifted stacking context.
 const STRIP_Z_INDEX = 50
 
-// Shared text affordance — text-only, mix-blend-mode: difference for
-// any-background legibility. No pill chrome (= the editorial pivot user
-// chose to escape the "AI generated SaaS chip" look). Per-element opacity
-// (not wrapper opacity) so each glyph re-enters the difference blend
-// independently rather than rendering through an isolated layer mid-fade.
+// Shared text affordance — white text + 2-tier text-shadow. Matches the
+// CardCornerActions × glyph's drop-shadow recipe but for text instead of
+// SVG. Tight drop (0 1px 2px) grounds the glyph, soft halo (0 0 4px)
+// cushions it for any-background legibility. Same family across the
+// chrome (× , ↺ , tag pills, +TAG) so they read as one editorial set.
 const TEXT_STYLE: React.CSSProperties = {
   appearance: 'none',
   background: 'transparent',
   border: 'none',
   padding: 0,
   margin: 0,
-  color: 'rgba(255, 255, 255, 1)',
-  mixBlendMode: 'difference',
+  color: 'rgba(255, 255, 255, 0.94)',
+  textShadow: '0 1px 2px rgba(0, 0, 0, 0.65), 0 0 4px rgba(0, 0, 0, 0.35)',
   fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
   fontSize: 10,
   letterSpacing: '0.10em',
@@ -46,7 +46,6 @@ const TEXT_STYLE: React.CSSProperties = {
   cursor: 'pointer',
   whiteSpace: 'nowrap',
   lineHeight: 1.4,
-  transition: 'opacity 120ms ease-out',
 }
 
 export function TagIndicatorStrip({
@@ -61,8 +60,6 @@ export function TagIndicatorStrip({
   const hiddenCount = tags.length - visible.length
 
   const stopDragSeed = (e: PointerEvent<HTMLElement>): void => e.stopPropagation()
-  const itemOpacity = isHovered ? 1 : 0
-  const itemPointer = isHovered ? 'auto' : 'none'
 
   return (
     <div
@@ -75,9 +72,9 @@ export function TagIndicatorStrip({
         flexDirection: 'row',
         gap: 12,
         zIndex: STRIP_Z_INDEX,
-        // wrapper has no opacity — individual children fade so each one
-        // recovers full mix-blend-mode coverage the moment it hits opacity 1
-        pointerEvents: 'none',
+        opacity: isHovered ? 1 : 0,
+        pointerEvents: isHovered ? 'auto' : 'none',
+        transition: 'opacity 120ms ease-out',
       }}
     >
       {visible.map((tag) => (
@@ -91,11 +88,7 @@ export function TagIndicatorStrip({
             e.stopPropagation()
             onTagClick(tag.id)
           }}
-          style={{
-            ...TEXT_STYLE,
-            opacity: itemOpacity,
-            pointerEvents: itemPointer,
-          }}
+          style={TEXT_STYLE}
         >
           {tag.name}
         </button>
@@ -105,12 +98,7 @@ export function TagIndicatorStrip({
           data-testid="tag-pill-overflow"
           aria-label={`${hiddenCount} more tags`}
           onPointerDown={stopDragSeed}
-          style={{
-            ...TEXT_STYLE,
-            cursor: 'default',
-            opacity: itemOpacity,
-            pointerEvents: itemPointer,
-          }}
+          style={{ ...TEXT_STYLE, cursor: 'default' }}
         >
           +{hiddenCount}
         </span>

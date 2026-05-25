@@ -981,15 +981,13 @@ export function CardsLayer({
                     background: 'transparent',
                     border: 'none',
                     borderRadius: 0,
-                    color: 'rgba(255, 255, 255, 1)',
-                    // mix-blend-mode: difference + white text → readable on
-                    // every background (= dark thumbs invert to white, light
-                    // thumbs invert to black). Same treatment as the tag
-                    // indicator strip above so the two read as one
-                    // editorial-style affordance row. text-stroke was the
-                    // legacy "stamped" approach; the blend variant feels less
-                    // SaaS / less AI per user feedback in session 73.
-                    mixBlendMode: 'difference',
+                    color: 'rgba(255, 255, 255, 0.94)',
+                    // 2-tier text-shadow recipe shared with TagIndicatorStrip
+                    // and CardCornerActions (× / ↺ use the SVG filter variant).
+                    // Tight drop + soft halo = readable on any background.
+                    // Replaces the mix-blend Plan A which had per-photo
+                    // legibility hiccups (session 73 feedback).
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.65), 0 0 4px rgba(0, 0, 0, 0.35)',
                     padding: '4px 6px',
                     fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
                     fontSize: 10,
