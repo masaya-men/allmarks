@@ -1,9 +1,15 @@
 # Tagging — Design (Phase 1)
 
 **Date:** 2026-05-25 (session 69)
-**Status:** Approved (design), pending spec review → plan
+**Status:** Approved (design), revised after discovering existing `mood` implementation, ready for plan
 **Theme name introduced:** `WAVE` (= 旧称 default、 内部 ID `wave`、 表示名は将来変更可)
-**Context:** user 最重要機能 (memory `project_tagging_top_priority`)。 これまで TODO.md の foundation 柱 2 として概念のみ存在、 今回 brainstorming で全仕様確定。
+**Context:** user 最重要機能 (memory `project_tagging_top_priority`)。 plan 着手前のコード調査で **既存 `mood` 機能 (= タグ機能の骨格そのもの) を発見**、 spec を「既存 mood を `tag` にリネーム + 拡張」 前提に書き直した。
+**Existing assets discovered:**
+- `lib/storage/moods.ts` = CRUD API (`addMood / getAllMoods / updateMood / deleteMood / reorderMoods`)
+- `lib/storage/use-moods.ts` = React hook (`useMoods()`)
+- `MoodRecord` 型 = `{ id, name, color, order, createdAt }` (色フィールド既存)
+- `bookmark.tags: string[]` = v9 で追加済、 mood id 配列を保存中
+- UI 側参照: `components/board/{Sidebar, FilterPill, CardsLayer, BoardRoot, Lightbox}.tsx`
 
 ---
 
@@ -28,21 +34,25 @@
 
 ## Goals (Phase 1 で出すもの)
 
-1. ブクマに `tags: string[]` を持たせる + タグマスター CRUD
+1. **既存 mood 機能を `tag` にリネーム** (= 内部 ID / store 名 / 型名 / 変数名すべて `tag` ベース)、 既存 CRUD / hook / UI を流用 + 必要な機能を追記
 2. ボード上で複数タグの **AND/OR 絞り込み** が出来る (= chip click でトグル、 「アート ∩ ジャパン」 が 2 click)
 3. 絞り込み時、 **非該当カードに WAVE テーマの CRT shutdown** (= F6) アニメ + 該当カードが上に **reflow で詰まる** (= FLIP)
 4. 通常モードのタグ付与 = カード hover で `+ TAG` → 候補チップ click / drag 付与 / 手動入力
 5. テーマ連動の差し替え構造 (= Phase 1 では WAVE 用 CRT shutdown のみ実装、 他テーマ用は空欄)
-6. ヘッダー chrome に **`TAG` ボタン** (= Phase 2 の Triage 画面入口、 Phase 1 は placeholder か簡易タグ一覧)
+6. ヘッダー chrome に **`TAG` ボタン** (= Phase 2 の Triage 画面入口、 Phase 1 は既存 Sidebar 流用 or 簡易タグ一覧)
 7. タグごとに optional な `theme` フィールドを schema に空欄で予約 (= Phase 3 のタグ別テーマ切替用)
+8. **`dominantColor` フィールドを bookmark schema に空欄で予約** (= Phase 3 カラーハント機能用、 後から追加 migration 不要)
 
 ## Non-goals (Phase 2/3 にまわすもの、 やらないもの)
 
 - **Phase 2**: Triage モード本実装 (= 大量未タグ ブクマを WASD / 矢印 / 数字キー で高速振り分け、 カード中央表示)
-- **Phase 3**: タグ × multi-playback (= タグ全部同時再生)、 タグごとテーマ切替の本実装、 タグ削除の儀式アニメ、 Song Bottle 風タグ交換
+- **Phase 3**: タグ × multi-playback (= タグ全部同時再生)、 タグごとテーマ切替の本実装、 タグ削除の儀式アニメ、 Song Bottle 風タグ交換、 **カラーハント機能の本実装 (= 抽出処理 + 8 色軸 filter + backfill)**
 - AI を使ったタグ自動提案 (= 外部 API 課金が AllMarks ¥0 設計と合わない)。 「元サイト情報 + 既存ブクマからの候補提案」 で代替する
 - WAVE 以外のテーマ用 shutdown アニメ (= 拡張ポイント空欄、 各テーマ実装時に追加)
 - **エフェクトをボード全体 / 該当カード / 通常状態にかけること** = 厳禁。 CRT エフェクトは非該当カードの shutdown 0.4-0.55 秒間だけ
+- **mood と並列で別 tag system を作ること** = 既存 mood を rename + 拡張する (= 二重 schema 禁止)
+- **mood を完全廃止して tag を 0 から作ること** = 既存資産と user データを捨てない (= 既存 200 ブクマの mood id 参照は維持)
+- Phase 1 で `dominantColor` フィールドに値を入れること = 空欄 (undefined / null) のまま予約だけ、 抽出処理は Phase 3
 
 ---
 
@@ -66,60 +76,89 @@
 | N | エフェクトのテーマ連動 | Phase 1 = WAVE 用 CRT shutdown のみ実装、 他テーマ用は差し替え構造で空欄 |
 | O | プロジェクト全体方針 | 今後あらゆるエフェクト・表現は「テーマに沿った」 ものに、 default 専用は作らない |
 | P | IDB schema 鉄則 | 1 回で正解出す、 後から軽い気持ちで変えない (= memory `project_idb_irreversibility` 厳守) |
+| Q | 既存 mood の扱い | **`mood` → `tag` リネーム + 拡張**で進める (= mood と並列で別 tag を作らない、 mood を廃止して新規 0 から実装もしない、 既存資産を最大限活用) |
+| R | カラーハント機能 | **Phase 3 で追加**: bookmark の thumbnail からドミナントカラー抽出 (= `color-thief` / `vibrant.js` 系)、 8 色軸での絞り込み、 タグと並列の絞り込み軸 + 同じ CRT shutdown アニメ再利用 |
+| S | `dominantColor` 拡張ポイント | Phase 1 で **bookmark schema に `dominantColor` フィールドを空欄で予約** (= 後から追加 migration 不要)。 backfill / 抽出処理は Phase 3 で実装 |
+| T | backfill UX | サイレント (= インジケータ無し)。 公開時に user 1 人分は既に backfill 済、 新規 user は徐々に追加 = 大量 backfill が走らない |
 
 ---
 
 ## データ層設計
 
-### IDB スキーマ変更 (= 不可逆、 慎重に)
+### 既存資産の活用方針
 
-**bookmark テーブル** に `tags: string[]` フィールド追加:
+**現状** (= DB_VERSION = 14):
+- `bookmark.tags: string[]` は v9 で既に追加済、 **現在は mood id を保存している**
+- `moods` テーブル (= タグマスター相当) は既に存在、 `MoodRecord = { id, name, color, order, createdAt }`
+- `lib/storage/moods.ts` で CRUD API 完成済 (`addMood / getAllMoods / updateMood / deleteMood / reorderMoods`)
+- `lib/storage/use-moods.ts` で React hook 完成済 (`useMoods()`)
 
-```ts
-interface Bookmark {
-  id: string
-  url: string
-  // ...既存
-  tags: string[]   // ← 追加。 既存全件は migration で空配列で fill
-}
-```
+**Phase 1 で行うこと**:
 
-**新規 tags テーブル** (= タグマスター):
+1. **コード上の rename** (= store / 型 / 関数 / hook 全部):
+   - `moods` store → `tags` store
+   - `MoodRecord` 型 → `TagRecord` 型
+   - `MoodInput` → `TagInput`
+   - `lib/storage/moods.ts` → `lib/storage/tags.ts` (= rename + API 名統一: `addTag / getAllTags / updateTag / deleteTag / reorderTags`)
+   - `lib/storage/use-moods.ts` → `lib/storage/use-tags.ts` (= rename + `useTags()`)
+   - 既存 UI 参照 (`Sidebar.tsx` / `FilterPill.tsx` 等) も全部 `tag` 系に rename
 
-```ts
-interface TagMaster {
-  id: string              // 内部 unique ID (例: uuid)
-  name: string            // 表示名 (= user 入力、 ユニーク、 case-sensitive 仕様は要詰め)
-  theme: string | null    // ← Phase 3 用。 Phase 1 では常に null で書き込む
-  createdAt: number       // unix ms
-  updatedAt: number       // unix ms
-}
-```
+2. **IDB schema bump (= 15)** で `moods` store → `tags` store migration:
+   - 既存 `moods` データを `tags` store に複製 (= 同じ shape、 store 名のみ変更)
+   - `bookmark.tags: string[]` の中身は **そのまま (= 既存の id 参照は維持)**
+   - migration 後に `moods` store は削除
 
-**index 設定**: bookmark の tags 配列に対して `multiEntry: true` index を作る。 これで `bookmark.where('tags').anyOf(['アート', 'ジャパン'])` (= OR) / `allOf(...)` (= AND) が IDB native で高速実行できる。 全件スキャンしないので数百〜数千ブクマでも瞬時。
+3. **`TagRecord` 型の拡張**:
+   ```ts
+   interface TagRecord {
+     id: string             // 既存
+     name: string           // 既存
+     color: string          // 既存 (Phase 3 カラーハント機能と無関係、 タグ chip 装飾用)
+     order: number          // 既存
+     createdAt: number      // 既存
+     theme?: string | null  // ← Phase 1 で追加、 Phase 3 タグ別テーマ用、 常に null で書き込む
+     updatedAt?: number     // ← Phase 1 で追加 (rename トラッキング用)
+   }
+   ```
 
-**migration 戦略**:
-- schema バージョン番号を 1 つ上げる
-- 既存 bookmark 全件に `tags: []` を fill
-- 新規 tags テーブルは空で初期化
-- migration の安全テストは vitest で「旧 schema → 新 schema データ移行」 を unit テスト
+4. **`bookmark` 型に Phase 3 拡張ポイント追加**:
+   ```ts
+   interface BookmarkRecord {
+     // ...既存全フィールド
+     tags: string[]                  // 既存 (mood id → tag id、 中身そのまま)
+     dominantColor?: string | null   // ← Phase 1 で追加、 Phase 3 カラーハント用、 常に null で書き込む
+   }
+   ```
+
+### bookmark.tags が保持するのは「ID」 か「表示名」 か
+
+**現状の確認**: 既存実装は **ID 参照** (= `MoodRecord.id` を `bookmark.tags` に保存)。 これを維持する。
+
+理由:
+- 既存 user データ (= user 自分の 200 ブクマ) が既に ID 参照で保存されてる → migration で書き換える必要が無い
+- ID 参照だと rename が安全 (= 1 か所書き換えで全 bookmark に反映)
+- `TagRecord.id` を uuid で持つので衝突しない
+
+### multiEntry index
+
+**Phase 1 で追加**: `bookmark` store の `tags` 配列に `multiEntry: true` index を作成 (= 既存 index には未追加なら追加)。
+
+これで:
+- `db.bookmarks.index('by-tag').getAll(tagId)` で「そのタグが付いた全 bookmark」 を取得
+- AND/OR filter は複数 index 検索 + JS で交差 / 合併
+
+**Migration 戦略**:
+- DB_VERSION 14 → 15 で:
+  1. 新 `tags` store 作成
+  2. 既存 `moods` 全件を `tags` に複製 (= id / name / color / order / createdAt そのまま、 theme = null / updatedAt = createdAt を fill)
+  3. `bookmark.dominantColor` フィールドは undefined のまま (= 未定義 = null 扱い)
+  4. `bookmark.tags` 配列の index `by-tag` (multiEntry) を作成
+  5. 古い `moods` store を削除
 
 **鉄則** (= memory `project_idb_irreversibility`):
-- 一度 schema バージョンを上げて user ブラウザに反映すると、 古いバージョンに戻せない
-- 古いコードに戻すと「未来 schema 読めない」 エラーで全ブクマが画面に出てこない
-- 過去 session 17 でこの事故あり
-- → Phase 1 で「最初に決めた tags 構造」 で勝負、 後から変えるなら必ず追加 migration を慎重に書く
-
-### タグ参照は「表示名」 ではなく「マスター ID」 にすべきか?
-
-**判断: 表示名 (string) で持つ**。 理由:
-
-- ID 参照だと tag 名 rename 時にすべての bookmark 走査不要 = 設計がシンプル
-- でも「タグ名」 自体は uniqueness で識別 → 同じ名前の異なるタグマスターは作れない (= UNIQUE 制約)
-- rename したい場合は (1) 全 bookmark 走査 + tag 配列内文字列置換 (2) tags マスターの name 更新、 を atomic に行う。 数千ブクマでも数秒で完了
-- 表示名で持つ方が JSON エクスポート / 共有 URL 圧縮の互換性も高い
-
-(= 別案: 内部 ID 参照の正規化スキーマ。 これは Phase 1 では採用せず、 必要になったら Phase 3 で再評価)
+- 一度 schema バージョン 15 に上げると、 14 以下のコードは「未来 schema 読めない」 エラーで起動失敗
+- → migration テストは vitest で「既存 v14 データ → v15 移行後、 全 bookmark + 全 tag が読める」 を unit テスト
+- → 公開前に user 本人の実 IDB (= 200 ブクマ) で動作確認
 
 ---
 
@@ -273,28 +312,65 @@ lib/animation/tag-shutdown/
 
 ## Components & data flow
 
-1. **`lib/storage/tags.ts`** — タグマスター CRUD + bookmark の tags 配列 read/write API
-   - `createTag(name)`, `renameTag(id, newName)`, `deleteTag(id)`, `addTagToBookmark(bookmarkId, tagName)`, `removeTagFromBookmark(...)`, `filterBookmarks({ tags: [...], mode: 'and' | 'or' })`
-   - unit テスト必須 (= migration 含む)
+### rename + 拡張するファイル (= 既存資産流用)
 
-2. **`components/board/TagFilterBar/`** — chip 表示 + 絞り込み state
-   - props: 全タグ list、 現在の絞り込み state、 onChipClick callback
-   - state は BoardRoot or 専用 context に置く (= shutdown アニメに反映するため）
+1. **`lib/storage/tags.ts`** ← `lib/storage/moods.ts` から rename + API 名統一
+   - 既存: `addMood / getAllMoods / updateMood / deleteMood / reorderMoods`
+   - 新: `addTag / getAllTags / updateTag / deleteTag / reorderTags`
+   - **新規追加 API**: `addTagToBookmark(bookmarkId, tagId)`, `removeTagFromBookmark(bookmarkId, tagId)`, `filterBookmarks({ tagIds: [...], mode: 'and' | 'or' })`
+   - unit テスト必須 (= rename + 新規 API + migration 全部)
 
-3. **`components/board/TagAddPopover/`** — カード hover で出る `+ TAG` popover
-   - 候補チップ (既存 / 元サイト情報 / 新規入力欄)
-   - drag 付与は `react-dnd` or `@dnd-kit/core` (= 既存実装の有無で判断)
+2. **`lib/storage/use-tags.ts`** ← `lib/storage/use-moods.ts` から rename
+   - 既存: `useMoods()` → `useTags()`
+   - 既存挙動 (= moods/loading/create/rename/remove/reload) はそのまま、 名前のみ変更
 
-4. **`lib/animation/tag-shutdown/`** — F6 CRT shutdown CSS + FLIP reflow ロジック
-   - `getShutdownAnimation(themeId)` 公開 API
-   - GSAP FLIP プラグインの可否は plan で確認 (= 既に board で使ってる masonry FLIP があれば流用)
+3. **`lib/storage/indexeddb.ts`** 編集
+   - `MoodRecord` 型 → `TagRecord` 型 (= rename + `theme?: string \| null` + `updatedAt?` 追加)
+   - `MoodInput` → `TagInput`
+   - `moods` store → `tags` store
+   - `BookmarkRecord` に `dominantColor?: string \| null` 追加 (= Phase 3 用、 Phase 1 では undefined のまま)
+   - `bookmark.tags` 配列の `by-tag` multiEntry index 追加
+   - DB_VERSION 14 → 15、 migration を `upgrade()` に追記
 
-5. **`BoardRoot.tsx` 最小変更**:
-   - tag filter state を読む
-   - 非該当カードに `data-tagged-out="true"` 属性付与
-   - reflow 発火タイミングを shutdown 開始と同期
+4. **`components/board/{Sidebar, FilterPill, CardsLayer, BoardRoot, Lightbox}.tsx`** 編集
+   - `mood` 参照 → `tag` 参照に書き換え (= grep 全置換 + 型 import 更新)
+   - **既存挙動は維持** (= 既に動いてる UI を壊さない、 内部識別子のみ変更)
 
-6. **`lib/storage/migrations/{version}.ts`** — schema migration (= bookmark に tags: [] fill、 tags テーブル作成)
+### Phase 1 で新規追加するファイル
+
+5. **`components/board/TagFilterBar/`** ← 新規 (= 既存 `FilterPill.tsx` を発展させるか別 component か plan で判断)
+   - chip 表示 + 絞り込み state + AND/OR トグル + インジケータ
+   - props: 全タグ list (= `useTags()` から)、 現在の絞り込み state、 onChipClick callback
+
+6. **`components/board/TagAddPopover/`** ← 新規
+   - カード hover で出る `+ TAG` popover
+   - 候補チップ (= 既存タグ + 元サイト情報からの自動候補 + 新規入力欄)
+   - drag 付与は `react-dnd` or `@dnd-kit/core` (= 既存実装の有無を plan で確認)
+
+7. **`lib/animation/tag-shutdown/`** ← 新規
+   - `index.ts` = `getShutdownAnimation(themeId)` 公開 API
+   - `themes/wave.module.css` = F6 CRT shutdown CSS (= Phase 1 で実装)
+   - `reflow.ts` = FLIP reflow logic
+   - 既存 masonry FLIP の実装場所を plan で確認 (= 流用可能なら新規実装回避)
+
+8. **`lib/board/tag-candidates.ts`** ← 新規
+   - 元サイト情報からのタグ候補抽出 (= Twitter ハッシュタグ / YouTube チャンネル / OGP site_name パース)
+   - 既存ブクマからのタグ候補スコアリング (= 同ドメイン頻出タグ等)
+   - pure 関数、 unit テスト必須
+
+9. **`lib/board/use-tag-filter.ts`** ← 新規
+   - tag filter state hook (= 選択中タグ list + AND/OR mode + 切替 API)
+   - BoardRoot or 専用 context 経由で配線
+
+10. **`components/board/TagButton/`** ← 新規 (= 既存 `ChromeButton.tsx` 流用)
+    - 右上 chrome に追加、 TUNE / POP OUT / SHARE と並列配置
+    - click 時の挙動は Phase 2 Triage 入口 (= Phase 1 では `useTags()` で取得したタグ一覧 modal を出すか、 既存 `Sidebar.tsx` を流用)
+
+### `BoardRoot.tsx` 最小変更
+
+- tag filter state を `useTagFilter()` から読む
+- 非該当カードに `data-tagged-out="true"` 属性付与
+- reflow 発火タイミングを shutdown 開始と同期
 
 ---
 
@@ -370,14 +446,17 @@ lib/animation/tag-shutdown/
 ## Phasing
 
 - **Phase 1 (= 本 spec の scope、 1 sprint で完遂目標)**
-  - IDB schema bump (= tags 配列 + tags テーブル) + migration
-  - タグ CRUD + filter (AND/OR) API
-  - 通常モードの付与 UI (= カード hover `+ TAG` + 候補チップ + drag)
-  - filter bar (= chip 表示 + click トグル)
+  - **既存 mood → tag rename** (= store / 型 / 関数 / hook / UI 参照すべて、 IDB schema bump 14→15 + migration)
+  - **新規追加 API**: `addTagToBookmark / removeTagFromBookmark / filterBookmarks` (= AND/OR)
+  - **schema 拡張ポイント予約**: `TagRecord.theme` (Phase 3 用) + `BookmarkRecord.dominantColor` (Phase 3 カラーハント用)
+  - `bookmark.tags` 配列の `by-tag` multiEntry index 追加
+  - 通常モードの付与 UI (= カード hover `+ TAG` popover + 候補チップ + drag 付与)
+  - filter bar (= chip 表示 + click トグル + AND/OR + インジケータ)
   - WAVE CRT shutdown F6 + 並列 stagger + FLIP reflow
   - prefers-reduced-motion 対応
-  - テーマ連動の構造 (= wave.css のみ実装、 他テーマ用は空欄)
-  - `TAG` ボタン (= Phase 2 placeholder or 簡易タグ一覧)
+  - テーマ連動の構造 (= `lib/animation/tag-shutdown/themes/wave.module.css` のみ実装、 他テーマ用は空欄)
+  - `TAG` ボタン (= 既存 `Sidebar.tsx` 流用 or Phase 2 placeholder、 plan で詳細決定)
+  - 既存 UI 挙動を壊さない (= mood → tag rename で既存動作が回帰しないことを vitest + 視覚 検証)
   - Phase 1 ship + 本番反映 + user 検証
 
 - **Phase 2 (= Phase 1 検証後すぐ続けて出す)**
@@ -389,8 +468,16 @@ lib/animation/tag-shutdown/
   - Phase 2 ship + 本番反映 + user 検証
 
 - **Phase 3 (= 別 sprint、 他機能と合流するタイミング)**
+  - **カラーハント機能本実装**:
+    - `color-thief` or `vibrant.js` ライブラリ追加 (= ~20KB)
+    - bookmark の thumbnail からドミナントカラー抽出 → `dominantColor` フィールドに保存
+    - 既存ブクマへの **サイレント backfill** (= ボード mount 時にバックグラウンドで未抽出を順次処理、 5 並列 200ms/個)
+    - 新規ブクマは OGP fetch 完了 → thumbnail 確定直後に 1 回抽出
+    - 8 色軸 (= 青系 / 赤系 / 緑系 / ピンク系 / 黄系 / 黒系 / 白系 / グレー系) で分類
+    - 色 filter chip を filter bar に追加 (= タグと並列の絞り込み軸、 同じ CRT shutdown アニメ再利用)
+    - 「青 ∩ ジャパン」 みたいな視覚 + 意味のハイブリッド絞り込みが可能になる
   - タグ × multi-playback (= タグ全部同時再生)
-  - タグごとテーマ切替の本実装 (= schema に予約済 theme フィールドを読む)
+  - タグごとテーマ切替の本実装 (= schema に予約済 `TagRecord.theme` フィールドを読む)
   - 楽しい削除フロー (= タグ全削除アニメ、 IDEAS.md L102-108 5 案から prototype)
   - 各テーマ用 shutdown variant 追加 (= 上記テーマ表)
   - Song Bottle 風タグ交換 (= backend 必要、 別 spec)
@@ -429,14 +516,15 @@ lib/animation/tag-shutdown/
 
 (= 競合名直接記述は `docs/private/` のみに留め、 ここでは抽象化)
 
-| 機能 | 業界主流ツール | **AllMarks (Phase 1 後)** |
-|---|---|---|
-| タグ機能 | ✅ | ✅ 手動 + 半自動候補 |
-| 複数タグ絞り込み | △ list 操作中心 | **✅ chip 2 click で AND/OR** |
-| 絞り込みアニメ | ❌ 即再描画 | **✅ CRT shutdown ざざーー ぶつん** |
-| テーマ連動 | ❌ | **✅ Phase 3 で完全実装、 Phase 1 で構造準備** |
-| 高速振り分けモード | ❌ | **✅ Phase 2 で WASD + Shift 拡張** |
-| サーバー依存 | ✅ あり | **❌ なし (= IndexedDB 完結)** |
+| 機能 | 業界主流ツール | **AllMarks (Phase 1 後)** | **AllMarks (Phase 3 後)** |
+|---|---|---|---|
+| タグ機能 | ✅ | ✅ 手動 + 半自動候補 | ✅ 同左 |
+| 複数タグ絞り込み | △ list 操作中心 | **✅ chip 2 click で AND/OR** | ✅ 同左 |
+| 絞り込みアニメ | ❌ 即再描画 | **✅ CRT shutdown ざざーー ぶつん** | ✅ + テーマごとに別アニメ (= 葉ふわ / 水滴 / etc) |
+| テーマ連動 | ❌ | **✅ 構造準備** | ✅ 完全実装 |
+| 高速振り分けモード | ❌ | ❌ Phase 2 で実装 | ✅ WASD + Shift 拡張 |
+| **色での絞り込み (カラーハント)** | ❌ ほぼ無し | ❌ schema 予約のみ | **✅ 8 色軸 + タグと AND 組合せ可** |
+| サーバー依存 | ✅ あり | **❌ なし (= IndexedDB 完結)** | ❌ なし |
 
 ここまで踏み込めば、 タグ機能 1 つで「業界水準を踏襲しつつ、 視覚体験 + 操作快感 + テーマ世界観 で明確に超える」 ポジションを確立できる。
 
