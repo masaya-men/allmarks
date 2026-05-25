@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import { useRouter } from 'next/navigation'
 import { useBoardData } from '@/lib/storage/use-board-data'
 import { useTags } from '@/lib/storage/use-tags'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 import { t } from '@/lib/i18n/t'
 import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
@@ -24,16 +25,18 @@ export function TriagePage(): ReactElement {
   const [lastAction, setLastAction] = useState<{ bookmarkId: string; prev: readonly string[] } | null>(null)
   const [exitDirection, setExitDirection] = useState<Direction | null>(null)
 
+  // Phase B1: Shift flips primary <-> secondary; co-tags accumulate until swipe.
+  const [shiftHeld, setShiftHeld] = useState(false)
+  const [coTagIds, setCoTagIds] = useState<ReadonlySet<string>>(() => new Set())
+
   const current = queue[index] ?? null
   const total = queue.length
 
-  // Phase A: first 4 tags map to up/right/down/left. Phase B will gate this
-  // behind a user pick step when tags.length > 8 and add Shift to flip to 5-8.
-  const directional = useMemo<Record<Direction, typeof tags[number] | undefined>>(() => ({
-    up: tags[0],
-    right: tags[1],
-    down: tags[2],
-    left: tags[3],
+  const primaryDirectional = useMemo<Record<Direction, TagRecord | undefined>>(() => ({
+    up: tags[0], right: tags[1], down: tags[2], left: tags[3],
+  }), [tags])
+  const secondaryDirectional = useMemo<Record<Direction, TagRecord | undefined>>(() => ({
+    up: tags[4], right: tags[5], down: tags[6], left: tags[7],
   }), [tags])
 
   const [suggestedTagIds, setSuggestedTagIds] = useState<ReadonlyArray<string>>([])
@@ -53,28 +56,44 @@ export function TriagePage(): ReactElement {
     return (): void => { cancelled = true }
   }, [current, tags])
 
-  const handleTag = useCallback(async (tagId: string): Promise<void> => {
+  // Reset accumulated co-tags whenever the queue advances to a new card.
+  useEffect(() => {
+    setCoTagIds(new Set())
+  }, [current?.bookmarkId])
+
+  const toggleCoTag = useCallback((tagId: string): void => {
+    setCoTagIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(tagId)) next.delete(tagId)
+      else next.add(tagId)
+      return next
+    })
+  }, [])
+
+  /** Compose final tag list (main + co-tags, deduped, main-first) and persist. */
+  const persistMainPlusCo = useCallback(async (mainTagId: string): Promise<void> => {
     if (!current) return
     setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
-    await persistTags(current.bookmarkId, [tagId])
-    // Do NOT advance index: tagging removes the current item from the queue
-    // (its tags.length becomes > 0), so queue[index] naturally becomes the
-    // next unprocessed card after the useMemo recomputes.
-  }, [current, persistTags])
+    const composed: string[] = [mainTagId]
+    for (const id of coTagIds) if (id !== mainTagId) composed.push(id)
+    await persistTags(current.bookmarkId, composed)
+  }, [current, coTagIds, persistTags])
 
-  // Animated swipe: arrow keys + pointer-drag funnel through here. Sets the
-  // exit direction so the card slides out, then persists the tag once the
-  // animation has had time to play (= ~SWIPE_ANIM_MS).
+  /** Directional swipe: arrow key, drag, OR chip click all funnel through here.
+   *  Sets the exit direction so the card slides out, then persists main + co-tags
+   *  together once the animation has had time to play. */
   const handleSwipe = useCallback((dir: Direction): void => {
-    if (exitDirection) return // ignore re-entry mid-anim
-    const tag = directional[dir]
-    if (!tag) return // empty direction → no-op (Phase A: tags < 4 leaves slots empty)
+    if (exitDirection) return
+    const slot = shiftHeld ? secondaryDirectional : primaryDirectional
+    const mainTag = slot[dir]
+    if (!mainTag) return
     setExitDirection(dir)
     setTimeout((): void => {
-      void handleTag(tag.id)
-      setExitDirection(null)
+      void persistMainPlusCo(mainTag.id).finally((): void => {
+        setExitDirection(null)
+      })
     }, SWIPE_ANIM_MS)
-  }, [exitDirection, directional, handleTag])
+  }, [exitDirection, shiftHeld, primaryDirectional, secondaryDirectional, persistMainPlusCo])
 
   const handleSkip = useCallback((): void => {
     if (!current) return
@@ -89,14 +108,18 @@ export function TriagePage(): ReactElement {
     setIndex((i) => Math.max(0, i - 1))
   }, [lastAction, persistTags])
 
-  const handleNewTag = useCallback(async (name: string): Promise<void> => {
+  const handleCreateTagAddToCo = useCallback(async (name: string): Promise<void> => {
     const trimmed = name.trim()
     if (!trimmed) return
     const colors = ['#7c5cfc', '#e066d7', '#4ecdc4', '#f5a623', '#ff6b6b']
     const color = colors[tags.length % colors.length]
     const created = await create({ name: trimmed, color, order: tags.length })
-    await handleTag(created.id)
-  }, [tags.length, create, handleTag])
+    setCoTagIds((prev) => {
+      const next = new Set(prev)
+      next.add(created.id)
+      return next
+    })
+  }, [tags.length, create])
 
   const exit = useCallback((): void => { router.push('/board') }, [router])
 
@@ -115,9 +138,22 @@ export function TriagePage(): ReactElement {
     return (): void => window.removeEventListener('keydown', onKey)
   }, [exit, handleSwipe])
 
-  // Pointer-drag swipe. Only the central card zone receives drag events;
-  // TagPicker chips have pointer-events:auto on their own slots and stop
-  // propagation via click, so chip taps remain instant (no swipe anim).
+  // Shift tracking: keydown/keyup AND window blur (= avoid stuck-held state
+  // if the user alt-tabs while Shift is down).
+  useEffect(() => {
+    const onDown = (e: KeyboardEvent): void => { if (e.key === 'Shift') setShiftHeld(true) }
+    const onUp = (e: KeyboardEvent): void => { if (e.key === 'Shift') setShiftHeld(false) }
+    const onBlur = (): void => setShiftHeld(false)
+    window.addEventListener('keydown', onDown)
+    window.addEventListener('keyup', onUp)
+    window.addEventListener('blur', onBlur)
+    return (): void => {
+      window.removeEventListener('keydown', onDown)
+      window.removeEventListener('keyup', onUp)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [])
+
   const dragStartRef = useRef<{ x: number; y: number } | null>(null)
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     dragStartRef.current = { x: e.clientX, y: e.clientY }
@@ -170,10 +206,15 @@ export function TriagePage(): ReactElement {
         <TriageCard key={current.bookmarkId} item={current} exitDirection={exitDirection} />
         <TagPicker
           tags={tags}
-          onTag={handleTag}
+          primaryDirectional={primaryDirectional}
+          secondaryDirectional={secondaryDirectional}
+          shiftHeld={shiftHeld}
+          coTagIds={coTagIds}
+          onDirectionSwipe={handleSwipe}
+          onToggleCoTag={toggleCoTag}
           onSkip={handleSkip}
           onUndo={lastAction ? handleUndo : null}
-          onCreateTag={handleNewTag}
+          onCreateTagAddToCo={handleCreateTagAddToCo}
           suggestedTagIds={suggestedTagIds}
         />
       </div>

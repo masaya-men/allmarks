@@ -1,8 +1,10 @@
-/* Phase A directional MVP (session 72).
-   Picker fills the canvas as a 3x3 grid; corners are inert, top/right/bottom/
-   left slots hold the primary tag chips. The center slot stays empty so the
-   TriageCard renders through. Util row (skip/undo/new) sits as a bottom strip.
-   pointer-events:none on the root → only chip / util slots intercept clicks. */
+/* Phase B1 (session 72): 4-way primary/secondary chips with co-tag strip.
+   - Each DirChip stacks an "active" tag (= the one swipe will apply) on top
+     of a faint "sub" tag (= the Shift-flipped counterpart). Shift held by
+     TriagePage flips active <-> sub, so the chip body re-renders with the
+     other tag on top, keeping visual continuity.
+   - CoTagStrip sits at the bottom: chips for every tag (= toggle co-add),
+     plus skip/undo and a small "Shift = 5-8" hint. */
 .directionalRoot {
   position: absolute;
   inset: 0;
@@ -24,24 +26,31 @@
 .slotLeft  { grid-column: 1; grid-row: 2; }
 
 .dirChip {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.85);
   -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
   paint-order: stroke fill;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  padding: 12px 16px;
+  padding: 10px 14px;
   cursor: pointer;
   transition: color 120ms, transform 120ms;
 }
 .dirChip:hover { color: #fff; transform: scale(1.04); }
-.dirChip.suggested { color: #28F100; }
-.dirChip.suggested:hover { color: #5cff3c; }
+.dirChip.suggested .dirActive { color: #28F100; }
+.dirChip.coOn .dirActive { color: #28F100; }
+.dirChip.coOn::before {
+  content: '✓';
+  position: absolute;
+  margin-top: -2px;
+  margin-left: -14px;
+  color: #28F100;
+  font-size: 11px;
+}
 
 .dirHint {
   color: var(--text-meta);
@@ -50,18 +59,91 @@
   text-transform: uppercase;
   font-variant-numeric: tabular-nums;
 }
-.dirDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dirName { font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+.dirActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  position: relative;
+}
+.dirDot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.dirName { }
 
-.utilRow {
+.dirSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  -webkit-text-stroke: 0;
+  transition: color 120ms;
+}
+.dirChip:hover .dirSub { color: rgba(255, 255, 255, 0.55); }
+.dirSubDot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; opacity: 0.6; }
+.dirSubName { }
+
+/* Co-tag strip at the bottom of the canvas. Visible above the footer hint. */
+.coStrip {
   position: absolute;
-  bottom: 24px;
+  bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 20px;
+  flex-direction: column;
   align-items: center;
+  gap: 10px;
   pointer-events: auto;
+  max-width: 90vw;
+}
+.coChips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px 10px;
+}
+.coChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: color 120ms;
+}
+.coChip:hover { color: rgba(255, 255, 255, 0.95); }
+.coChipOn { color: #28F100; }
+.coChipOn:hover { color: #5cff3c; }
+.coChipSuggested { color: rgba(40, 241, 0, 0.7); }
+.coChipSuggested:hover { color: #28F100; }
+.coChipSuggested.coChipOn { color: #28F100; }
+
+.coDigit {
+  color: var(--text-meta);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+.coDot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.coName { }
+.coCheck { color: #28F100; font-size: 11px; }
+
+.utilRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 4px;
 }
 .util {
   background: transparent;
@@ -72,7 +154,7 @@
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 6px 10px;
+  padding: 4px 8px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -83,4 +165,11 @@
   color: rgba(255, 255, 255, 0.30);
   font-size: 10px;
   letter-spacing: 0.10em;
+}
+.coHint {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
 }
