@@ -2,30 +2,30 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { IDBPDatabase } from 'idb'
-import type { MoodRecord, MoodInput } from './indexeddb'
+import type { TagRecord, TagInput } from './indexeddb'
 import { initDB } from './indexeddb'
-import { addMood, getAllMoods, updateMood as updMood, deleteMood as delMood } from './moods'
+import { addTag, getAllTags, updateTag as updTag, deleteTag as delTag } from './tags'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
 
-export function useMoods(): {
-  moods: MoodRecord[]
+export function useTags(): {
+  tags: TagRecord[]
   loading: boolean
-  create: (input: MoodInput) => Promise<MoodRecord>
+  create: (input: TagInput) => Promise<TagRecord>
   rename: (id: string, name: string) => Promise<void>
   remove: (id: string) => Promise<void>
   reload: () => Promise<void>
 } {
-  const [moods, setMoods] = useState<MoodRecord[]>([])
+  const [tags, setTags] = useState<TagRecord[]>([])
   const [loading, setLoading] = useState(true)
   const dbRef = useRef<DbLike | null>(null)
 
   const reload = useCallback(async (): Promise<void> => {
     const db = dbRef.current
     if (!db) return
-    const list = await getAllMoods(db)
-    setMoods(list)
+    const list = await getAllTags(db)
+    setTags(list)
   }, [])
 
   useEffect(() => {
@@ -34,9 +34,9 @@ export function useMoods(): {
       const db = (await initDB()) as unknown as DbLike
       if (cancelled) return
       dbRef.current = db
-      const list = await getAllMoods(db)
+      const list = await getAllTags(db)
       if (cancelled) return
-      setMoods(list)
+      setTags(list)
       setLoading(false)
     })().catch(() => {
       if (!cancelled) setLoading(false)
@@ -44,27 +44,27 @@ export function useMoods(): {
     return (): void => { cancelled = true }
   }, [])
 
-  const create = useCallback(async (input: MoodInput): Promise<MoodRecord> => {
+  const create = useCallback(async (input: TagInput): Promise<TagRecord> => {
     const db = dbRef.current
-    if (!db) throw new Error('moods db not ready')
-    const created = await addMood(db, input)
-    setMoods((prev) => [...prev, created].sort((a, b) => a.order - b.order))
+    if (!db) throw new Error('tags db not ready')
+    const created = await addTag(db, input)
+    setTags((prev) => [...prev, created].sort((a, b) => a.order - b.order))
     return created
   }, [])
 
   const rename = useCallback(async (id: string, name: string): Promise<void> => {
     const db = dbRef.current
     if (!db) return
-    await updMood(db, id, { name })
-    setMoods((prev) => prev.map((m) => (m.id === id ? { ...m, name } : m)))
+    await updTag(db, id, { name })
+    setTags((prev) => prev.map((m) => (m.id === id ? { ...m, name } : m)))
   }, [])
 
   const remove = useCallback(async (id: string): Promise<void> => {
     const db = dbRef.current
     if (!db) return
-    await delMood(db, id)
-    setMoods((prev) => prev.filter((m) => m.id !== id))
+    await delTag(db, id)
+    setTags((prev) => prev.filter((m) => m.id !== id))
   }, [])
 
-  return { moods, loading, create, rename, remove, reload }
+  return { tags, loading, create, rename, remove, reload }
 }
