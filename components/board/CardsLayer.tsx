@@ -277,6 +277,9 @@ type CardsLayerProps = {
   /** Toggle a tag in the board-wide filter (= clicking a per-card tag pill
    *  reuses the chrome TagFilterBar's add/remove semantics). */
   readonly onTagFilterToggle?: (tagId: string) => void
+  /** True during an active scroll session — CardSlideshow defers new tweet-
+   *  video frame extractions when set, to keep the canvas smooth. */
+  readonly isScrolling?: boolean
 }
 
 export function CardsLayer({
@@ -312,6 +315,7 @@ export function CardsLayer({
   onTagToggle,
   onTagCreate,
   onTagFilterToggle,
+  isScrolling = false,
 }: CardsLayerProps): ReactNode {
   // Which card currently has its add-tag popover open. Null = none.
   // Toggled by the + TAG corner button. Closed by Esc (handled inside
@@ -933,6 +937,7 @@ export function CardsLayer({
                 <CardSlideshow
                   frames={resolveSlideshowFrames(it)}
                   tweetVideoExtraction={resolveTweetVideoExtraction(it)}
+                  scrollingActive={isScrolling}
                 />
               </div>
             )}

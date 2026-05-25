@@ -133,6 +133,20 @@ export function BoardRoot() {
   const [spaceHeld, setSpaceHeld] = useState<boolean>(false)
   const [bookmarkletModalOpen, setBookmarkletModalOpen] = useState<boolean>(false)
   const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null)
+  // True during an active scroll session (any source: wheel, drag, meter jump).
+  // Goes false 200ms after the last scroll delta. Consumers (CardSlideshow's
+  // tweet-video frame extraction) check this to defer expensive new work
+  // until the scroll settles — keeps the canvas smooth during fast scroll.
+  const [isScrolling, setIsScrolling] = useState<boolean>(false)
+  const scrollIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const markScrollActive = useCallback((): void => {
+    setIsScrolling((cur) => (cur ? cur : true))
+    if (scrollIdleTimerRef.current) clearTimeout(scrollIdleTimerRef.current)
+    scrollIdleTimerRef.current = setTimeout(() => setIsScrolling(false), 200)
+  }, [])
+  useEffect(() => () => {
+    if (scrollIdleTimerRef.current) clearTimeout(scrollIdleTimerRef.current)
+  }, [])
   // Phase 1 multi-playback (Tier 3): the single card currently playing with
   // audio. Pressing a card's media indicator toggles this; pressing a
   // different card switches the audio over to it. The 4-slot pinned pool
@@ -535,6 +549,7 @@ export function BoardRoot() {
 
   const handleScroll = useCallback(
     (dx: number, dy: number): void => {
+      markScrollActive()
       setViewport((v) => {
         const maxX = Math.max(0, contentBounds.width - v.w)
         const maxY = Math.max(0, contentBounds.height - v.h)
@@ -545,7 +560,7 @@ export function BoardRoot() {
         }
       })
     },
-    [contentBounds.width, contentBounds.height],
+    [contentBounds.width, contentBounds.height, markScrollActive],
   )
 
   // Edge auto-scroll hook for useCardReorderDrag. Returns the delta we
@@ -559,12 +574,13 @@ export function BoardRoot() {
       const nextY = Math.min(Math.max(v.y + requestedDy, 0), maxY)
       const actualDy = nextY - v.y
       if (actualDy !== 0) {
+        markScrollActive()
         viewportRef.current = { ...v, y: nextY }
         setViewport((prev) => ({ ...prev, y: nextY }))
       }
       return actualDy
     },
-    [contentBounds.height],
+    [contentBounds.height, markScrollActive],
   )
 
   // ScrollMeter click/drag → animated scroll-to-y. requestAnimationFrame loop
@@ -580,6 +596,7 @@ export function BoardRoot() {
     const now = performance.now()
     const isDragLike = now - lastJumpAtRef.current < 80
     lastJumpAtRef.current = now
+    markScrollActive()
     if (scrollAnimRef.current !== null) {
       cancelAnimationFrame(scrollAnimRef.current)
       scrollAnimRef.current = null
@@ -612,6 +629,7 @@ export function BoardRoot() {
     const tick = (t: number): void => {
       const p = Math.min(1, (t - start) / duration)
       const eased = easeInOutSlotExpo(p)
+      markScrollActive()
       setViewport((v) => ({
         ...v,
         y: Math.max(0, Math.min(startY + (targetY - startY) * eased, contentBounds.height - v.h)),
@@ -623,7 +641,7 @@ export function BoardRoot() {
       }
     }
     scrollAnimRef.current = requestAnimationFrame(tick)
-  }, [viewport.y, contentBounds.height])
+  }, [viewport.y, contentBounds.height, markScrollActive])
 
   // Inner scroll-and-glow primitive driven by the layout's stored position
   // for the card, NOT a DOM measurement. CardsLayer culls off-screen cards
@@ -1512,6 +1530,7 @@ export function BoardRoot() {
                 onTagToggle={handleTagToggle}
                 onTagCreate={handleTagCreate}
                 onTagFilterToggle={tagFilter.toggleTag}
+                isScrolling={isScrolling}
               />
             </div>
           </InteractionLayer>

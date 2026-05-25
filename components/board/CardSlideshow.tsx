@@ -25,17 +25,25 @@ export type TweetVideoExtraction = {
 export function CardSlideshow({
   frames,
   tweetVideoExtraction,
+  scrollingActive = false,
 }: {
   readonly frames: readonly SlideshowFrame[]
   readonly tweetVideoExtraction?: TweetVideoExtraction
+  /** When true, suppress new tweet-video frame extractions to keep the scroll
+   *  smooth. Existing in-flight extractions and the cached-frame display path
+   *  are unaffected — only new decoder spin-ups are deferred until idle. */
+  readonly scrollingActive?: boolean
 }): ReactElement | null {
   // Drive Phase 2 extraction when this card is an X video. The hook is a no-op
   // (returns []) when tweetVideoExtraction is undefined, so non-X cards pay no
   // cost. Until the extractor returns, `frames` (= poster only) is what shows.
+  // Gated by `scrollingActive` so a fast scroll doesn't queue dozens of
+  // simultaneous decoder spin-ups (= each = video decode + canvas + JPEG,
+  // session 73 user observed jank).
   const extracted = useTweetVideoFrames(
     tweetVideoExtraction?.bookmarkId ?? '',
     tweetVideoExtraction?.videoUrl,
-    Boolean(tweetVideoExtraction),
+    Boolean(tweetVideoExtraction) && !scrollingActive,
   )
   const effectiveFrames = useMemo<readonly SlideshowFrame[]>(
     () => (extracted.length > 0 ? extracted.map((src): SlideshowFrame => ({ src })) : frames),
