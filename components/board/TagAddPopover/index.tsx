@@ -38,18 +38,24 @@ export function TagAddPopover({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Click outside to close — industry-standard popover dismiss. The + TAG
-  // trigger button stops propagation on pointerdown/mousedown so re-clicking
-  // it toggles via its own onClick handler instead of triggering this and
-  // double-closing. Chip / input clicks land inside the ref and are skipped.
+  // Click outside to close — industry-standard popover dismiss. Listens on
+  // `pointerdown` rather than `mousedown` because the BoardRoot's
+  // InteractionLayer calls e.preventDefault() on bare-canvas pointerdown
+  // (= for pan-drag suppression) which spec-wise suppresses the compatibility
+  // mousedown event entirely. pointerdown still bubbles regardless of
+  // preventDefault so the document listener fires for every off-popover
+  // click. The + TAG trigger button stops propagation on its own
+  // pointerdown/mousedown so re-clicking it toggles via its own onClick
+  // handler instead of double-closing here. Chip / input clicks land inside
+  // the ref and are skipped.
   useEffect(() => {
-    function onPointerDownOutside(e: MouseEvent): void {
+    function onPointerDownOutside(e: PointerEvent): void {
       if (!popoverRef.current) return
       if (popoverRef.current.contains(e.target as Node)) return
       onClose()
     }
-    document.addEventListener('mousedown', onPointerDownOutside)
-    return () => document.removeEventListener('mousedown', onPointerDownOutside)
+    document.addEventListener('pointerdown', onPointerDownOutside)
+    return () => document.removeEventListener('pointerdown', onPointerDownOutside)
   }, [onClose])
 
   function handleEnter(e: React.KeyboardEvent<HTMLInputElement>): void {
