@@ -1,9 +1,19 @@
 'use client'
 
-import { useState, type ReactElement } from 'react'
+import { useMemo, useState, type ReactElement } from 'react'
 import styles from './CardSlideshow.module.css'
 import { useSlideshowCycle } from '@/lib/board/use-slideshow-cycle'
 import type { SlideshowFrame } from '@/lib/board/slideshow-frames'
+import { useTweetVideoFrames } from '@/lib/board/use-tweet-video-frames'
+
+/** Optional Phase 2 input: when set, the card is an X (Twitter) video and the
+ *  slideshow will swap its poster-only fallback for 3 canvas-extracted frames
+ *  (0% / 25% / 50% of duration) once the extractor finishes. While the extractor
+ *  runs the card stays on the poster (no flicker). */
+export type TweetVideoExtraction = {
+  readonly bookmarkId: string
+  readonly videoUrl: string
+}
 
 /**
  * Ambient still-frame crossfade for an in-view video card that is NOT the
@@ -12,21 +22,41 @@ import type { SlideshowFrame } from '@/lib/board/slideshow-frames'
  * active one in. With <2 frames it just shows the single still (no animation).
  * On image error it swaps to the frame's fallback url once.
  */
-export function CardSlideshow({ frames }: { readonly frames: readonly SlideshowFrame[] }): ReactElement | null {
-  const active = useSlideshowCycle(frames.length)
-  const [failed, setFailed] = useState<readonly boolean[]>(() => frames.map(() => false))
-  if (frames.length === 0) return null
+export function CardSlideshow({
+  frames,
+  tweetVideoExtraction,
+}: {
+  readonly frames: readonly SlideshowFrame[]
+  readonly tweetVideoExtraction?: TweetVideoExtraction
+}): ReactElement | null {
+  // Drive Phase 2 extraction when this card is an X video. The hook is a no-op
+  // (returns []) when tweetVideoExtraction is undefined, so non-X cards pay no
+  // cost. Until the extractor returns, `frames` (= poster only) is what shows.
+  const extracted = useTweetVideoFrames(
+    tweetVideoExtraction?.bookmarkId ?? '',
+    tweetVideoExtraction?.videoUrl,
+    Boolean(tweetVideoExtraction),
+  )
+  const effectiveFrames = useMemo<readonly SlideshowFrame[]>(
+    () => (extracted.length > 0 ? extracted.map((src): SlideshowFrame => ({ src })) : frames),
+    [extracted, frames],
+  )
+  const active = useSlideshowCycle(effectiveFrames.length)
+  // Key failures by src (not index) so the set survives Phase 2's poster→3-frame
+  // swap without going stale or losing entries.
+  const [failedSrcs, setFailedSrcs] = useState<ReadonlySet<string>>(() => new Set())
+  if (effectiveFrames.length === 0) return null
   return (
     <div className={styles.stack} aria-hidden="true">
-      {frames.map((f, i) => (
+      {effectiveFrames.map((f, i) => (
         <img
           key={f.src}
           className={styles.frame}
-          src={failed[i] && f.fallback ? f.fallback : f.src}
+          src={failedSrcs.has(f.src) && f.fallback ? f.fallback : f.src}
           alt=""
           style={{ opacity: i === active ? 1 : 0 }}
           onError={(): void =>
-            setFailed((prev) => (prev[i] ? prev : prev.map((v, j) => (j === i ? true : v))))
+            setFailedSrcs((prev) => (prev.has(f.src) ? prev : new Set(prev).add(f.src)))
           }
         />
       ))}

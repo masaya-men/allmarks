@@ -20,21 +20,20 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-22 セッション 67 — 音量バグ修正 + アンビエント・スライドショー Phase 1 本番反映済)
+### 直近の状態 (2026-05-25 セッション 68 — スライドショー揃いすぎ修正 + Phase 2 X 動画コマ抽出 完遂、本番反映済)
 
 **ship 済 (全て本番反映 + push、user 実機 OK)**:
 
-1. **デフォルト音量 MAX バグ修正**: 根本原因 = session 66 の Tier 1 ミュート自動再生が X 動画を映すたび localStorage の音量を 100 に汚染。`muted` 設定時の `volumechange` で `video.volume`(=1.0)を書き戻していた。[TweetVideoEmbed.tsx](../components/board/embeds/TweetVideoEmbed.tsx) の `onVolumeChange` ガードに `muted` 除外を追加して修正。user は localStorage 実値 `100` を確認・手動削除済 → 以後 50。回帰テスト 2 本追加。
+1. **スライドショー揃いすぎ修正 (動画カード + 画像ツイート両経路)**: session 67 の Phase 1 で残った「ほぼ同タイミングでフェード」「秒数も一定」を消化。動画側 [use-slideshow-cycle.ts](../lib/board/use-slideshow-cycle.ts) と画像ツイート autoCycle 側 [ImageCard.tsx](../components/board/cards/ImageCard.tsx) の両方に同じ desync を適用 = (a) 開始フレームをカードごとランダム化、(b) 間隔幅をランダムバンドに拡大、(c) 初回 offset をフルレンジに分散。user 実機で「個別バラバラの揺らぎ」OK。
+2. **アンビエント・スライドショー Phase 2 (X 動画コマ抽出)**: X 動画カードを poster 1 枚 → **0% / 25% / 50% の 3 枚クロスフェード**にリッチ化。新規 [extract-video-frames.ts](../lib/board/extract-video-frames.ts) (`computeSeekSeconds` pure + `extractVideoFrames` = off-screen `<video>` + canvas + JPEG quality 0.7 + maxWidth 640px、`/api/tweet-video` プロキシ経由で canvas tainted 回避) + 新規 [use-tweet-video-frames.ts](../lib/board/use-tweet-video-frames.ts) (in-memory キャッシュ + in-flight dedup + FIFO 待ち行列 + `enabled` ガード、IDB 永続化は不採用)。[CardSlideshow.tsx](../components/board/CardSlideshow.tsx) に prop 追加で配線。
+3. **Phase 2 並列上限調整 (2→1)**: 初回スクロール時の一時カクつきを観察 → 抽出 2 本並列 + ヒーロー 1 本 = 3 デコーダ同時の瞬間が原因 → `MAX_CONCURRENT` を 1 に下げて ヒーロー本物 + 抽出 1 本 = 2 デコーダ固定。user 実機「かくつかなくなった」OK。
 
-2. **アンビエント・スライドショー + 単一ヒーロー再生 Phase 1**: 4K カクつき(合成律速、memory `project_4k_composite_bound_playback`)対策。複数同時再生を廃し、(A) 画面内の動画カードは静止画スライドショー(YouTube=ポスター+25%+50% / 他=ポスター1枚、カードごと不揃いフェード)、(B) 本物再生は常に1本だけ(ミュート・~15秒、`HERO_CAP=1` / `HERO_PER_CARD_MS=15000` in [CardsLayer.tsx](../components/board/CardsLayer.tsx))。画像/テキストカードは静止。MOTION OFF / Lightbox 中 / OS 視差効果オフ(`useReducedMotion`)で全停止。新規 file 5(`lib/board/slideshow-frames.ts` / `use-reduced-motion.ts` / `use-slideshow-cycle.ts` / `components/board/CardSlideshow.tsx` + `.module.css`)+ CardsLayer 改修。**741 PASS** / tsc clean。設計: [spec](./superpowers/specs/2026-05-22-ambient-frame-slideshow-design.md) / [plan](./superpowers/plans/2026-05-22-ambient-slideshow-phase1.md)。
-   - **user 4K 検証 7 項目全 OK**。
-   - **次回最優先の小修正**: スライドショーが**たまに揃いすぎる**(完全一致して見える瞬間がある、複数枚画像ツイートの既存 autoCycle も同様)。`useSlideshowCycle` の開始フレームをカードごとランダム化 + 間隔の幅を広げて、もっとちゃんとずらす。
+**テスト**: 741 → **756 PASS** (+15)、tsc clean、deploy 3 回。
 
-**次の大物の選択肢**:
-- **スライドショー Phase 2**: X 動画の本物コマ抽出(0/25/50% を canvas で切り出し+キャッシュ、X カードを 1→3 枚にリッチ化)。spec の Phase 2。
-- **タグ付け機能** (= user 最優先、memory `project_tagging_top_priority`)。
+**次の大物**:
+- **タグ付け機能** (= user 直接発言で最重要、memory `project_tagging_top_priority`)。仕様未確定 → 次セッションで brainstorming から開始。
 
-**console ノイズ (今回原因でない、次回磨き候補)**: `manifest enctype` 警告 / TUNE ドロワーの `aria-hidden` フォーカス警告(`inert` 属性化)。他(YouTube postMessage / IG 403 / Mixed Content / favicon 404)は第三者由来で対応不要。
+**console ノイズ (磨き候補、いつでも可)**: `manifest enctype` 警告 / TUNE ドロワーの `aria-hidden` フォーカス警告(`inert` 属性化)。他は第三者由来で対応不要。
 
 ---
 

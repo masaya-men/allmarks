@@ -1,6 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
 import { CardSlideshow } from '@/components/board/CardSlideshow'
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('CardSlideshow', () => {
   it('renders nothing when there are no frames', () => {
@@ -9,6 +13,8 @@ describe('CardSlideshow', () => {
   })
 
   it('stacks all frames and shows the first one opaque', () => {
+    // Force deterministic initial index 0 (useSlideshowCycle randomizes it).
+    vi.spyOn(Math, 'random').mockReturnValue(0)
     const { container } = render(
       <CardSlideshow frames={[{ src: 'a.jpg' }, { src: 'b.jpg' }]} />,
     )

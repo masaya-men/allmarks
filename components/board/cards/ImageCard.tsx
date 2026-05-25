@@ -25,7 +25,19 @@ const ASPECT_EPSILON = 0.005
 export function ImageCard({ item, persistMeasuredAspect, autoCycle = false, cycleMs = 2200 }: Props): ReactNode {
   const imgRef = useRef<HTMLImageElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
-  const [imageIdx, setImageIdx] = useState<number>(0)
+
+  // I-07 + mix-tweet: prefer mediaSlots[] (v13) when present; fall back to
+  // photos[] (v12 legacy records) by widening each URL into a synthetic
+  // photo slot. Single-element / undefined results suppress dots + hover
+  // swap (= 既存挙動).
+  const slots: readonly MediaSlot[] = item.mediaSlots
+    ?? (item.photos ?? []).map((url): MediaSlot => ({ type: 'photo', url }))
+  const hasMultiple = slots.length > 1
+
+  // Random starting slot so cards mounted together don't all begin on slot 0.
+  const [imageIdx, setImageIdx] = useState<number>(() =>
+    autoCycle && hasMultiple ? Math.floor(Math.random() * slots.length) : 0,
+  )
   const [hasError, setHasError] = useState<boolean>(false)
 
   // Reset error state when the item's URL changes (e.g. card re-used for different bookmark)
@@ -48,20 +60,21 @@ export function ImageCard({ item, persistMeasuredAspect, autoCycle = false, cycl
   // the rogue printed icon underneath.
   const isReel = urlType === 'instagram' && isInstagramReel(item.url)
 
-  // I-07 + mix-tweet: prefer mediaSlots[] (v13) when present; fall back to
-  // photos[] (v12 legacy records) by widening each URL into a synthetic
-  // photo slot. Single-element / undefined results suppress dots + hover
-  // swap (= 既存挙動).
-  const slots: readonly MediaSlot[] = item.mediaSlots
-    ?? (item.photos ?? []).map((url): MediaSlot => ({ type: 'photo', url }))
-  const hasMultiple = slots.length > 1
-
   useEffect(() => {
     if (!autoCycle || !hasMultiple) return
-    const id = setInterval(() => {
+    // Per-card random interval band so cards never tick in lockstep — without
+    // this every multi-photo tweet on screen advances together every cycleMs.
+    const minMs = cycleMs * 0.6
+    const maxMs = cycleMs * 1.8
+    let timer: number
+    const step = (): number => minMs + Math.random() * (maxMs - minMs)
+    const tick = (): void => {
       setImageIdx((prev) => (prev + 1) % slots.length)
-    }, cycleMs)
-    return () => clearInterval(id)
+      timer = window.setTimeout(tick, step())
+    }
+    // Initial offset spread across the full cycle so cards desync immediately.
+    timer = window.setTimeout(tick, Math.random() * maxMs)
+    return (): void => window.clearTimeout(timer)
   }, [autoCycle, hasMultiple, slots.length, cycleMs])
 
   // Reset to the lead image when autoCycle turns off so the card is never

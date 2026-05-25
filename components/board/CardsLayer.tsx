@@ -23,8 +23,9 @@ import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { CardNode } from './CardNode'
 import { MediaTypeIndicator, type MediaType } from './MediaTypeIndicator'
 import { InlineMediaPlayer, canPlayInline, canViewportAutoplay } from './embeds'
-import { CardSlideshow } from './CardSlideshow'
+import { CardSlideshow, type TweetVideoExtraction } from './CardSlideshow'
 import { resolveSlideshowFrames } from '@/lib/board/slideshow-frames'
+import { resolveTweetVideoSource } from './embeds/TweetVideoEmbed'
 import { useReducedMotion } from '@/lib/board/use-reduced-motion'
 import { PlaybackControlBar } from './PlaybackControlBar'
 import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
@@ -71,6 +72,17 @@ const MIN_ROTATE_MS = 1500
  *  new persisted data needed. Returns null for cards where a video/photo
  *  badge wouldn't add information (text-only items: the card itself
  *  already reads as text). */
+/** Phase 2: turn an X (Twitter) video card into a Tweet-extraction request
+ *  for the slideshow. Returns undefined for everything else, including X cards
+ *  whose mediaSlots haven't been backfilled yet (the slideshow will sit on the
+ *  poster until the next session picks up the mp4). */
+function resolveTweetVideoExtraction(item: BoardItem): TweetVideoExtraction | undefined {
+  if (detectUrlType(item.url) !== 'tweet' || item.hasVideo !== true) return undefined
+  const src = resolveTweetVideoSource(item)
+  if (!src) return undefined
+  return { bookmarkId: item.bookmarkId, videoUrl: src.videoUrl }
+}
+
 function deriveMediaType(item: BoardItem): MediaType | null {
   const urlType = detectUrlType(item.url)
   // SoundCloud is audio — show the music note, not a photo/video icon.
@@ -745,7 +757,10 @@ export function CardsLayer({
                   pointerEvents: 'none',
                 }}
               >
-                <CardSlideshow frames={resolveSlideshowFrames(it)} />
+                <CardSlideshow
+                  frames={resolveSlideshowFrames(it)}
+                  tweetVideoExtraction={resolveTweetVideoExtraction(it)}
+                />
               </div>
             )}
             {barMount?.id === it.bookmarkId && canPlayInline(it) && (
