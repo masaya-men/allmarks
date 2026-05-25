@@ -92,7 +92,10 @@ export async function reorderTags(db: DbLike, orderedIds: readonly string[]): Pr
 // ---------------------------------------------------------------------------
 
 /**
- * 指定 bookmark にタグを 1 件追加する (= 重複は自動でスキップ)。
+ * 指定 bookmark にタグを 1 件追加する。
+ * 重複は自動でスキップ。 bookmark が存在しなければ no-op。
+ * get + put を単一の readwrite transaction でくくり、 同じ bookmark への
+ * 同時 click race condition (= 後勝ち上書きによる片方消失) を防ぐ。
  * @param db - The database instance
  * @param bookmarkId - The bookmark ID to mutate
  * @param tagId - The tag ID to attach
@@ -102,14 +105,26 @@ export async function addTagToBookmark(
   bookmarkId: string,
   tagId: string,
 ): Promise<void> {
-  const bookmark = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
-  if (!bookmark) return
-  if (bookmark.tags.includes(tagId)) return
-  await db.put('bookmarks', { ...bookmark, tags: [...bookmark.tags, tagId] })
+  const tx = db.transaction('bookmarks', 'readwrite')
+  const store = tx.objectStore('bookmarks')
+  const bookmark = (await store.get(bookmarkId)) as BookmarkRecord | undefined
+  if (!bookmark) {
+    await tx.done
+    return
+  }
+  if (bookmark.tags.includes(tagId)) {
+    await tx.done
+    return
+  }
+  await store.put({ ...bookmark, tags: [...bookmark.tags, tagId] })
+  await tx.done
 }
 
 /**
- * 指定 bookmark からタグを 1 件除去する (= 無ければ no-op)。
+ * 指定 bookmark からタグを 1 件除去する。
+ * 無ければ no-op (= tag 未付与 / bookmark 不在 両方)。
+ * get + put を単一の readwrite transaction でくくり、 同じ bookmark への
+ * 同時 click race condition (= 後勝ち上書きによる片方消失) を防ぐ。
  * @param db - The database instance
  * @param bookmarkId - The bookmark ID to mutate
  * @param tagId - The tag ID to detach
@@ -119,13 +134,22 @@ export async function removeTagFromBookmark(
   bookmarkId: string,
   tagId: string,
 ): Promise<void> {
-  const bookmark = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
-  if (!bookmark) return
-  if (!bookmark.tags.includes(tagId)) return
-  await db.put('bookmarks', {
+  const tx = db.transaction('bookmarks', 'readwrite')
+  const store = tx.objectStore('bookmarks')
+  const bookmark = (await store.get(bookmarkId)) as BookmarkRecord | undefined
+  if (!bookmark) {
+    await tx.done
+    return
+  }
+  if (!bookmark.tags.includes(tagId)) {
+    await tx.done
+    return
+  }
+  await store.put({
     ...bookmark,
     tags: bookmark.tags.filter((t: string) => t !== tagId),
   })
+  await tx.done
 }
 
 /** Filter mode for {@link filterBookmarks}. */
