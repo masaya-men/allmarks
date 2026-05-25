@@ -20,7 +20,65 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-25 セッション 72 — タグ機能 Phase 2 = Triage 大改造完成 ship 済、 user 視点で MANAGE TAGS → 4 方向 swipe + 副タグ + 複数同時付与 + 背景うっすら + おすすめ + 削除 全部動く状態に到達)
+### 直近の状態 (2026-05-25 セッション 73 — 保存バグ self-heal 完了 + ボード側タグ UI 7 polish 完遂、 Triage 側 polish は未着手のまま次セッションへ持ち越し)
+
+**ship 済 (= prod 反映済、 booklage.pages.dev、 session 内 9 deploy)**:
+
+0. **保存バグ脱線**: user 報告「ブクマレットでも拡張でも保存できない、 赤いエラー」 → 5 経路全部が拡張の background SW + offscreen iframe 経由なので 1 箇所詰まると全死亡という構造を特定。 拡張リロードで一発復活したので原因は SW + offscreen stuck state と推定。 再発防止に `extension/lib/dispatch.js` で timeout 検知 + offscreen 破棄 + ensureOffscreen + 1 回自動リトライ (= self-heal)、 `extension/offscreen.js` の timeout 4000 → 8000ms 延長、 診断ログ console.debug 降格。 manifest v0.1.14 → **v0.1.15**。 user リロード必須、 web 不要。 (commit `bad4062`)
+
+1. **Polish 1**: chrome カード hover `+ ADD TAG` → **`+ TAG`** (= ADD 冗長削除、 1 文字 literal 差替え、 i18n 無し)
+2. **Polish 2**: 新規 `components/board/TagIndicatorStrip.tsx`、 カード hover 時に左上から外にはみ出す既存タグ表示。 max 3 + `+N` overflow、 click で `useTagFilter.toggleTag` (= chrome chip と同挙動)、 z-index 50、 隣カード重なり対応で hover 時 wrapper z-index 100 lift。 trigger condition: `!taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined`
+3. **Polish 2b**: 視覚 = ピル枠全削除 + `mix-blend-mode: difference` (= editorial) で 1 deploy → user「読みづらい」 → **白文字 + 2 段 text-shadow** (= `0 1px 2px rgba(0,0,0,0.65), 0 0 4px rgba(0,0,0,0.35)`) に切替、 既存 CardCornerActions × ↺ の drop-shadow recipe と同家族 (= filter:drop-shadow 版 / text-shadow 版 で SVG/text 区別のみ)、 + TAG ボタンも同じ recipe に統一 (= 旧 WebkitTextStroke 廃止)
+4. **Polish 3**: TagAddPopover 全面 refactor、 `siteCandidates: string[]` prop を **`suggestedEntries: SuggestionEntry[]`** に置換。 SUGGESTED + ALL TAGS の 2 セクション構造 (= 業界準拠 Slack/Spotify autocomplete)、 上限 **5 個**。 HeuristicTagger 統合: `suggestSync` 追加 (= async interface 互換性維持しつつ React render 内同期呼出可)、 `extractTypedCandidatesFromBookmark` 新規 (= source: 'siteName' | 'hashtag' 付き、 既存 `extractCandidatesFromBookmark` は wrapper 残し)、 confidence 順 merge + 5 cap。 NEW_CANDIDATE_CONFIDENCE = { hashtag: 0.9, siteName: 0.65 } (= HeuristicTagger tier 0.95/0.8/0.5 と整合)。 emoji 全削除 (= user 明示却下)、 section header `SUGGESTED` `ALL TAGS` monospace 9px opacity 0.4
+5. **Polish 4**: popover クリック外で閉じる、 業界準拠 dismiss pattern。 初版 `mousedown` listener → user「画面端だけ反応」 → 原因 `InteractionLayer.handlePointerDown` の `e.preventDefault()` が後続 mousedown を spec 通り抑止していた → **`pointerdown` に切替** で解決 (= preventDefault は propagation 止めないので pointerdown は document まで bubble する)
+6. **Polish 5**: カード click でライトボックス morph 時、 + TAG / tag pills / × / ↺ / 再生ボタン 全 hover affordance を sourceCardId 判定で同時に opacity 0 → fade、 既存 wrapper visibility:hidden は FLIP clone 取得後発火だったので clone に affordance が baked in されていた問題を解消。 per-card render 冒頭で `isLightboxSource` + `hoverActive = (hover && !isLightboxSource)` を派生して 5 affordance に統一適用
+7. **Polish 6**: スクロール中 X 動画フレーム抽出 (= `useTweetVideoFrames` の Boolean(tweetVideoExtraction) gate) に **`scrollingActive` 条件追加**、 BoardRoot に `isScrolling` state + `markScrollActive` (= 200ms idle で false に)、 handleScroll / handlePanY / handleScrollMeterJump の 3 経路で markScrollActive 発火 (= meter スムーススクロールの tick 内でも)、 CardsLayer 経由 CardSlideshow に prop 伝搬。 user 体感「読み込みっぽい何か」 → 教科書「scroll-deferred loading」 パターン (= X/Instagram/Pinterest/YouTube/Google Photos も同じ)。 in-flight 抽出は cancel 不可なので 1 個分は残るが queue が積み上がらない
+8. **Polish 7**: chrome FilterPill が **tag chip filter 連動**。 `overrideLabel?` / `overrideCount?` prop 追加、 1 タグ = 名前のみ、 N タグ = `name +N-1`、 count = matchedBookmarkIds.size を 3 桁 0 詰め。 prevLabelRef + prevCountRef で前回値追跡 + 変化検出 `triggerBurst()` 発火 = 既存 hover scramble + glitch アニメと完全に同じ recipe を「filter 変化」 トリガで再利用。 副次効果: dropdown 経由 BoardFilter 切替も同じ scramble burst で動くようになった (= 前回は instant swap)
+
+**user 視点 (= 本 session の累積)**:
+- カード hover → 左上外に既存タグピル (白 + shadow) + + TAG ボタンが「すっ」 と出る (= 静かな mood board 哲学維持、 idle 時は完全 invisible)
+- + TAG → 2 セクション SUGGESTED / ALL TAGS popover、 自動推奨が一目で分かる、 click 外で閉じる、 Esc も効く
+- タグピル click → chrome 右上の AllMarks がスクランブル + グリッチで「YouTube · 012」 等に切替、 もう一度 click で逆遷移
+- カード click → ライトボックス morph 時 全 affordance が静かに消える、 morph 後はサムネだけが大きく開く
+- スクロール → 新規動画フレーム抽出が defer されるので体感かくつき軽減
+- ブクマレット / 右クリック / フローティングボタン / 拡張ポップアップ / ショートカット 全 5 経路保存復活、 timeout 8s + 自動リトライで詰まり時もユーザー無操作で蘇生
+
+**テスト**: 804 → **806 PASS** (= +2 TagAddPopover SUGGESTED / 既存 + ALL TAGS 重複防止 テスト)、 tsc 0 errors、 build success (= 25 routes static prerender)、 deploy 9 回 (= 月次枠余裕)
+
+**設計上の重要発見 (= 次セッション以降の保険)**:
+- **PointerEvent preventDefault は spec で compatibility mousedown を完全抑止**: document mousedown listener は preventDefault 領域内では発火しない、 click-outside 系は pointerdown listener を使え (= memory 候補)
+- **mix-blend-mode は小サイズでも photo 上で読みづらい**: 過去 session 60-61 で大型 typography で却下されていた、 今回小サイズで再試行も user 同様の判定。 「mix-blend = 編集的で美しいが legibility は不安定」 が確定見解。 将来 editorial テーマで切替式採用は残す
+- **useChromeScramble は label 変化で auto burst しない**: 即座 swap のみ、 burst は手動 triggerBurst 必要。 prevRef + useEffect で外部から検出する pattern が成立 (= 他の chrome 要素にも応用可能)
+- **HeuristicTagger は既存タグへの推奨のみ、 新規タグ生成しない**: tag-candidates との 2 階層構造、 TagAddPopover で merge する責任は caller (= CardsLayer.computeSuggestedEntries)
+- **scroll-deferred loading は業界標準**: X / Instagram / Pinterest / YouTube / Google Photos が同パターン採用、 `requestIdleCallback` / `scheduler.postTask` / React `useDeferredValue` 等 ブラウザ標準 API も用意されてる
+- **拡張の offscreen iframe + SW は stuck state を起こしうる**: timeout self-heal 必須 (= 既に v0.1.15 で導入済)、 Chrome Web Store 公開時には extension auto-update も別途必要
+
+**Triage 側 polish 候補 (= session 74 持ち越し)**:
+- (a) **「しゅっ」 アニメ気持ちよさ** — TriageCard 4 方向 exit、 現状 220ms cubic-bezier 3 段 (反り → 飛び去り)、 user 体感で派手 / 静か / 別メタファー (紙折りたたみ / 光トレイル / 音波減衰) 判定
+- (b) **タグ削除 UI** — EntryPicker の Manage tags inline、 今 `window.confirm` の OS ダイアログ、 mood board 世界観と乖離。 inline 確認 + 削除アニメに進化 (= Phase D3 の楽しい fx と関連)
+- (c) **EntryPicker 配置・トンマナ** — 「未分類のみ / 全部」 二択 + Manage tags 一覧の見え方
+- (d) **TagPicker 4 方向 2 段 chip** — 主 + 薄字副 の可読性
+- (e) **Shift で副タグ切替の体感** — 副タグ 5-8 へ即座切替の応答性 + 視覚反応
+- (f) **画面下 co-tags strip 余白・サイズ** — chip 並びの密度、 入力 field との距離
+- (g) **背景 board の透け度合い** — BoardBackdrop opacity 0.14 + blur 3px が user に「裏が自分のボード」 と読めてるか
+- (h) **「mood」 表記残り** — i18n 検索 (= D4 の他 14 言語と関連)
+
+**Phase D 必須項目 (= 機能追加、 polish より重い)**:
+- **D1** 中断再開 (= localStorage で completedBookmarkIds 永続 + 続きから prompt、 単独 1 sprint 級)
+- **D2** 「しゅっ」 アニメ進化 (= a と関連、 大改造案)
+- **D3** タグ削除 楽しい fx (= b と関連、 inline 確認 + 削除アニメ進化)
+- **D4** 他 14 言語の mood → tag rename (= messages/{en,ar,de,es,fr,it,ko,nl,pt,ru,th,tr,vi,zh}.json の `newMood` / `moodNamePlaceholder` 等)
+- **D5** NewMoodInput → NewTagInput rename (= file + 内部識別子)
+
+**未確認のもの (= user 検証待ち)**:
+- Polish 6 (= scroll jank 軽減) は user 「たぶん OK かな」 で確定保留、 体感ベース判定
+- Polish 7 (= chrome label 連動) は deploy 直後で user 検証未完
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 73 セクション
+
+---
+
+### 旧情報 (2026-05-25 セッション 72 — タグ機能 Phase 2 = Triage 大改造完成 ship 済、 user 視点で MANAGE TAGS → 4 方向 swipe + 副タグ + 複数同時付与 + 背景うっすら + おすすめ + 削除 全部動く状態に到達)
 
 **ship 済 (= prod 反映済、 booklage.pages.dev、 session 内 5 deploy)**:
 
