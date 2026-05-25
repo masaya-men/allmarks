@@ -20,7 +20,39 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-25 セッション 70 — タグ機能 Phase 1b + 1c + 1d 実装完遂、 本番反映済、 user 視点見た目変化なし [= Phase 1e 配線待ち])
+### 直近の状態 (2026-05-25 セッション 71 — タグ機能 Phase 1 完成 + ship 済、 user 視点で chip/CRT shutdown/reflow/popover が全部動く状態に到達)
+
+**ship 済 (= prod 反映済、 booklage.pages.dev で動作確認可能)**:
+
+1. **Task 17 = BoardRoot 配線**: `useTagFilter()` 呼び出し + `matchedBookmarkIds: ReadonlySet<string> | null` useMemo (= filter active 時のみ対象 bookmark id set、 inactive は null = 全件該当扱い)、 CardsLayer に prop 追加、 `TagFilterBar` を canvas top-left に絶対配置 (= 既存 frameTopChrome と並列のチェイン chrome、 Lightbox open 時 fade)、 BoardRoot.module.css に `.tagFilterHost` 追加 (commit `4f56a23`)
+2. **Task 17 = CardsLayer 配線**: `getShutdownAnimationClass('wave')` import、 `itemsForMasonry` (= matchedBookmarkIds で filter) を masonry 入力に流用 (= 既存 GSAP-FLIP が自動 reflow)、 `displayedPositions` で tagged-out カードに cached prev 位置を fallback (= shutdown 演出が定位置で再生)、 inner div wrapper (`position:absolute inset:0 borderRadius:var(--card-radius)`) を導入し GSAP の outer 位置 transform と CSS shutdown の transform を完全分離 (commit `4f56a23`)
+3. **Task 18 = + TAG button + popover 統合**: カード hover で top-left に `+ TAG` button (= z-index 40、 既存 × ↺ ボタンと corner 競合無し)、 click で `popoverOpenFor: string | null` state トグル、 `TagAddPopover` を絶対配置で render、 BoardRoot 側に `handleTagToggle` / `handleTagCreate` (= addTagToBookmark / removeTagFromBookmark / addTag + reloadTags + reload) を実装、 `extractCandidatesForItem` adapter (= BoardItem → BookmarkRecord 風オブジェクト、 hostname → friendly name マップ) で site 候補抽出 (commit `e2cd45c`)
+4. **Task 19 = TopHeader に TagButton + SimpleTagList placeholder**: chrome 内 TUNE の隣に `<TagButton>` 配置、 click で `tagPanelOpen` state を true → `SimpleTagList` (= 黒背景 modal、 全タグ列表示 + CLOSE ボタン、 Phase 2 Triage の placeholder) を render (commit `e2cd45c`)
+5. **Task 20 = FLIP reflow は既存 GSAP-FLIP に丸投げ**: 新規 `runFlipReflow` は呼ばない (= 計画書 Task 20 の新規 API はスキップ)、 Task 17 の `itemsForMasonry` filter で `masonryLayout.positions` が変化 → 既存 useLayoutEffect の `gsap.to(el, { x, y })` が matched カードを compact 位置へ自動 animate
+6. **Task 21 = preview 実機検証 + TDZ fix**: pnpm build + wrangler pages dev 8788 + playwright (= 本人画面 1489×2.58) で seed-demos → board → TagButton 表示 → + TAG → 「Test」 タグ作成 → 2 枚目カードにも付与 → chip click → 4/6 が data-tagged-out=true + matched 2 枚が top-left に compact reflow を確認。 **検証中に TDZ error 発見**: `displayedPositions` useMemo が `prevPositionsRef.current` を参照していたが `prevPositionsRef` の宣言が後にあって TDZ 違反 → `prevPositionsRef` を `displayedPositions` の直前に移動 (commit `c8e84cb`、 fix 後再検証 PASS)
+7. **Task 22 = ship + docs 更新**: `pnpm build` (= 24 routes static prerender) + `wrangler pages deploy out/` 完了、 本セッション内 deploy 2 回
+
+**user 視点**: ボード上で **タグ機能が完成形で動く**。 chip 押下で CRT shutdown + 緑 flash + scanline + flicker (= WAVE テーマ) → 非該当カード退出 → 該当カードが上に詰まる reflow。 hover の `+ TAG` ボタンで popover open、 既存タグの toggle + 新規タグ作成 + 元サイト候補 (= YouTube / X / Vimeo / TikTok / SoundCloud / Instagram / note / GitHub の friendly name) が表示。 TopHeader の `TAG` ボタンは Phase 1 placeholder modal (= タグ一覧のみ、 Phase 2 で Triage に進化)。 解除 (× button) で全カード復活 (= reverse アニメは Phase 2 で追加予定、 現状は瞬間表示)。
+
+**テスト**: 既存 804 PASS 維持、 tsc 0 errors、 build success、 deploy 2 回 (= preview build + ship build)。
+
+**設計上の重要発見 (= 次セッション以降の保険)**:
+- **TDZ trap in useMemo + ref**: useMemo callback が後方宣言の `useRef` を参照すると、 deps 変化で再評価される時に Temporal Dead Zone error。 必ず ref 宣言を useMemo より上に置く (= 今回 1 度踏んだ trap、 memory `reference_tdz_useref_after_usememo` 候補)
+- **GSAP transform vs CSS animation transform の衝突**: GSAP が `el.style.transform = matrix(...)` で位置を設定してる要素に CSS `@keyframes` で `transform: scale(...)` を当てると、 CSS が完全に上書きして位置情報が失われカードが (0,0) に飛ぶ。 inner wrapper div を挟んで responsibility 分離 (= outer = GSAP 位置、 inner = CSS 演出) が解
+- **既存 GSAP-FLIP は十分強力**: 計画書 Task 20 で新規 `runFlipReflow` API を作る予定だったが、 CardsLayer の既存 useLayoutEffect (= L520-555) が `displayedPositions` 変化を gsap.to で animate するので、 input (= itemsForMasonry) を絞るだけで reflow が自動発火。 重複実装回避できた
+
+**Phase 1a で発見された cleanup 候補 6 件 (= 全て Phase 2/3 並列 OK、 ship に影響なし)**: BoardFilter `mood:` literal / data-testid / CSS class 名 (.moodChip 等) / NewMoodInput ファイル名 / v9 JSDoc comment / v16 旧 moods store 削除 migration。
+
+**Phase 2 brainstorm 時必須メモ**: user 発案「Triage 別 route の背景に board うっすら見せる案」 (= IDEAS.md 記録済)。 SimpleTagList 廃止して Triage 本実装に進化させる。
+
+**次の大物 (= session 72 候補)**:
+- **Phase 2 brainstorm**: Triage UI (= タグ rename / reorder / delete / swipe-assign / 一括振り分け)、 reverse-fade-in アニメ (= 解除時の瞬間表示を polish)、 SimpleTagList → Triage 本実装、 tag color customization
+- **Phase 1 cleanup 並列**: mood→tag 一括 rename (= 6 件残)、 BoardFilter literal `mood:` → `tag:`、 .moodChip class 名 統一
+- **Phase 3 brainstorm**: per-tag theme (= dominantColor + ThemeLayer 切替)、 カラーハント、 ボード全体の音波 vs タグ別テーマ調和
+
+---
+
+### 旧情報 (2026-05-25 セッション 70 — タグ機能 Phase 1b + 1c + 1d 実装完遂、 本番反映済、 user 視点見た目変化なし [= Phase 1e 配線待ち])
 
 **ship 済 (= prod 反映済、 本番に dead code として存在、 user 視点は変化なし)**:
 

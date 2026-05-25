@@ -1,87 +1,56 @@
-# 次セッションのゴール (= セッション 71) — タグ機能 Phase 1e 配線 (= BoardRoot 統合 + 視覚検証 + 本番 ship + user 検証)
+# 次セッションのゴール (= セッション 72) — タグ機能 Phase 2 着手 or Phase 1 cleanup の優先順位を user と確認 + 着手
 
 ## 今のゴール (1 行)
 
-**session 70 で完成した Phase 1b/1c/1d (= 9 タスク 10 commits、 全部 dead code として bundle に存在) を BoardRoot.tsx / CardsLayer.tsx に配線して活性化、 user 視点で「タグ chip 押せる + CRT shutdown 発動 + reflow + popover」 が動く状態を本番に出す**。
+**session 71 で完成した Phase 1 (= chip 押下で CRT shutdown + reflow、 hover で + TAG popover、 chrome の TAG button + 簡易 list modal) を user に実機検証してもらい、 (a) Phase 2 (= Triage 本実装) ・ (b) Phase 1 polish (= reverse-fade-in アニメ、 mood → tag 一括 rename) ・ (c) 別 backlog (= multi-playback Tier 2 等) のどれを次に進めるか合意 → 着手**。
 
-## session 70 (= 直前) の到達点
+## session 71 (= 直前) の到達点
 
-- **Phase 1b/1c/1d 9 タスク完遂** (= 10 commits、 vitest 770 → **804 PASS** [+34]、 tsc 0 errors、 build success、 deploy 1)
-- 全部 subagent-driven (= 8 タスクは初回両 review PASS、 Task 15 のみ CSS divergence で 1 回 fix loop)
-- user 視点: **見た目変化なし** (= 配線が Phase 1e 残のため未活性、 dead code として bundle に同居)
-- 完成したもの:
-  - `lib/board/use-tag-filter.ts` (filter state hook)
-  - `lib/board/tag-candidates.ts` (siteName + ハッシュタグ + 同ドメイン頻出スコアリング)
-  - `lib/animation/tag-shutdown/themes/wave.module.css` (F6 CRT shutdown + scanline + flicker)
-  - `lib/animation/tag-shutdown/index.ts` (theme key → CSS class API)
-  - `lib/animation/tag-shutdown/reflow.ts` (Web Animations API translate FLIP)
-  - `components/board/TagFilterBar/` (chip + AND/OR + counter + 解除)
-  - `components/board/TagAddPopover/` (既存タグ + サイト候補 + 新規入力 + Esc、 click-only)
-  - `components/board/TagButton/` (chrome の TAG ボタン)
-  - i18n 15 言語 (`messages/{ar,de,en,es,fr,it,ja,ko,nl,pt,ru,th,tr,vi,zh}.json` の `tag.*` 7 keys 英語値統一)
+- **Phase 1 完成 + ship 済** (= 3 commits、 vitest 804 PASS 維持、 tsc 0 errors、 deploy 2 回)
+- 動くもの (= booklage.pages.dev で確認):
+  - カード hover で top-left に `+ TAG` ボタン
+  - 押すと popover: 既存タグ toggle (= ✓ 表示) + 元サイト候補 (= YouTube/X/Vimeo/TikTok/SoundCloud/Instagram/note/GitHub の friendly name + 同サイトの頻出タグ) + 新規入力 (= Enter で作成 + 即付与)
+  - chrome に `TAG` ボタン (= TUNE の隣)、 押すと SimpleTagList placeholder modal (= 全タグ列表示 + CLOSE、 Phase 2 で Triage 本実装に進化)
+  - タグが 1+ 件あれば canvas top-left に `TagFilterBar` (= chip + AND/OR + counter + ×、 Lightbox open 時 fade)
+  - chip click で非該当カードに CRT shutdown (= 緑 flash + scanline + flicker + 5 段 keyframes、 WAVE テーマ)、 該当カードが既存 GSAP-FLIP で compact 位置に reflow
+  - × で解除 (= 全カード復活、 reverse アニメは未実装、 Phase 2 polish 候補)
+- 重要な技術判断:
+  - 計画書 Task 20 の新規 `runFlipReflow` API はスキップ → CardsLayer の既存 GSAP-FLIP を流用 (= matchedBookmarkIds で itemsForMasonry を絞るだけで自動 reflow 発火、 重複実装回避)
+  - inner wrapper div 導入 (= outer = GSAP 位置 transform、 inner = CSS shutdown transform で responsibility 分離、 CSS transform が GSAP matrix を上書きしてカードが (0,0) に飛ぶ問題を解決)
+- 検証中に踏んだ trap (= 次回避):
+  - `displayedPositions` useMemo が `prevPositionsRef.current` を参照、 ref 宣言が後にあって TDZ ReferenceError → ref 宣言を useMemo より上に移動して fix (commit `c8e84cb`)
 
-## session 71 でやること (= plan Task 17-22)
+## session 72 でやること
 
-1. **Task 17: BoardRoot に tag filter state 配線** (= 最重要、 最初に着手)
-   - `useTagFilter()` 呼び出し
-   - 各カードに `data-tagged-out="true"` (= 非該当時) 属性付与
-   - `getShutdownAnimationClass('wave')` で取得した class を `data-tagged-out` カードに付与
-   - 視覚不変保証 (= 既存テスト 804 PASS 維持)
+1. **user に Phase 1 実機検証してもらう** (= 開始時にまず案内)
+   - `booklage.pages.dev` をハードリロード
+   - カードを hover → 左上に + TAG → click → popover で「Test」 タグ作成
+   - 別カードにも同じ「Test」 を付与
+   - canvas 左上の `Test` chip を click → 非該当カードに CRT shutdown + reflow を確認
+   - × で解除 → 全カード復活 (= 瞬間表示で違和感あるかもしれない、 reverse アニメ Phase 2 候補)
+   - chrome の TAG button → SimpleTagList modal の表示確認
 
-2. **Task 18: TagAddPopover を CardsLayer に統合**
-   - カード hover で右上に `+ TAG` アイコン (= MediaTypeIndicator / リサイズハンドルと被らない位置)
-   - click で popover open、 Esc / 外 click / 再度 click で close
-   - `addTagToBookmark` / `removeTagFromBookmark` (= Phase 1a の API) 呼び出しで IDB 永続化
-   - tag-candidates ([extractCandidatesFromBookmark](../lib/board/tag-candidates.ts)) で siteCandidates 算出して popover に渡す
+2. **検証 OK なら user に次の優先順位を聞く** (= AskUserQuestion 不要、 自然な対話で):
+   - (a) **Phase 2 = Triage 本実装** (= タグ rename / reorder / delete / swipe-assign / 一括振り分け、 SimpleTagList 廃止)。 user 発案「Triage 別 route の背景に board うっすら見せる案」 (= IDEAS.md 記録) も検討
+   - (b) **Phase 1 polish** = reverse-fade-in アニメ (= 解除時の瞬間表示問題)、 mood → tag 一括 rename (= 6 件、 cleanup 候補)、 SimpleTagList の見た目 polish
+   - (c) **別 backlog** = multi-playback Tier 2 / 音波テーマ sprint / その他
 
-3. **Task 19: TagButton を chrome に追加**
-   - 既存 TUNE / POP OUT / SHARE と並列配置 (= ScrollMeter の隣接エリア)
-   - click で Phase 1 用の簡易タグ管理 modal を出す or `Sidebar.tsx` 流用 (= plan で判断、 Phase 2 Triage 入口プレースホルダー)
+3. **検証で問題発見した場合**は個別対応 (= 想定: shutdown 演出の見え方違和感、 reflow タイミング ずれ、 popover 位置調整 等)
 
-4. **Task 20: FLIP reflow を BoardRoot に統合**
-   - shutdown 開始と同期して該当カードの新 masonry 位置計算
-   - `runFlipReflow` 呼び出し、 GSAP timeline と共存させるか
-   - **既存 [CardsLayer.tsx](../components/board/CardsLayer.tsx) に GSAP-FLIP 実装があるのを Task 12 implementer が発見** → ここで統合判断 (= 既存流用 or runFlipReflow で代替)
+## 重要な事前準備 (= session 72 着手時にまず読む)
 
-5. **Task 21: preview で全機能を実機検証**
-   - playwright + 本人画面 1489×2.58、 4K デバイス
-   - チェック項目: ①CRT shutdown 5 段階の見た目 ②stagger の波感 ③reflow なめらか + FLIP 詰まる位置のズレなし ④popover 出る位置正確 ⑤AND/OR トグル動作 ⑥50/200 ブクマでのパフォーマンス ⑦prefers-reduced-motion ON で simple-fade 置換
+1. [TODO.md](./TODO.md) の「直近の状態 (= session 71)」 セクション (= 全 ship 内容 + 技術判断記録)
+2. [docs/superpowers/specs/2026-05-25-tagging-design.md](./superpowers/specs/2026-05-25-tagging-design.md) (= Phase 2/3 設計の仕様詳細、 Triage UI スコープ)
+3. [docs/private/IDEAS.md](./private/IDEAS.md) の Phase 2 メモ (= user 発案「Triage 別 route の背景に board うっすら見せる案」)
 
-6. **Task 22: 本番 ship + user 検証案内**
-   - `pnpm build` + `wrangler pages deploy out/`
-   - user に「`booklage.pages.dev` ハードリロード」 案内
-   - user 検証チェックシート (= タグ作成 → chip click → CRT shutdown 確認 → reflow 確認 → 解除 → 別 chip click → AND/OR 切替 → popover で削除トグル 等)
+## Phase 1a で発見された cleanup 候補 6 件 (= Phase 2/3 並列 OK、 ship 影響なし)
 
-## 重要な事前準備 (= session 71 着手時にまず読む)
-
-1. **必ず [BoardRoot.tsx](../components/board/BoardRoot.tsx) を読んでから着手** (= 既存 chrome 配線パターン + ScrollMeter 周辺の隣接配置の流れを把握)
-2. [CardsLayer.tsx](../components/board/CardsLayer.tsx) も読む (= 既存 GSAP-FLIP の場所を確認、 統合方式を decide)
-3. plan の Task 17-22 詳細: [tagging-phase1.md](./superpowers/plans/2026-05-25-tagging-phase1.md) L1900-2255
-
-## subagent-driven 続行 or 直接実装の判断
-
-- Task 17 は BoardRoot.tsx (= 大きい既存 file) を modify するので、 **直接実装が安全** (= subagent は既存パターンを掴みにくい、 context 不足リスク)
-- Task 18-20 も既存 component と密結合、 直接実装推奨
-- Task 21 (preview 検証) は controller 自身が playwright で実行
-- Task 22 (ship) は controller 自身
-
-つまり session 71 は **subagent dispatch ≠ メインモード、 直接実装 + 適宜 subagent で TDD test 起こす** の混合戦略推奨。
-
-## Phase 1a で発見された cleanup 候補 6 件 (= Phase 1e と並列処理 OK)
-
-session 69 / 70 で code reviewer が指摘した cosmetic 残:
-1. `BoardFilter` type の `mood:${string}` literal (= IDB 永続化、 Phase 1e で `tag:${string}` 移行検討)
-2. `data-testid="mood-chip-..."` (= e2e test 依存、 Phase 1e で `tag-chip-` に更新)
-3. CSS Modules class 名 `.moodChip` / `.moodDot` 等 (= 視覚不変保証で Phase 1a で温存、 後フェーズ一括 rename 候補)
-4. `NewMoodInput.tsx` ファイル名 + i18n key (= cosmetic sweep 候補)
-5. `indexeddb.ts` の v9 `/** v9: mood id array */` JSDoc comment (= `tag id array` に揃える軽微 fix)
-6. v16 で旧 moods store 削除 migration (= Phase 1+2+3 全部本番安定後、 rollback safety 不要になったら)
-
-これらは Phase 1e 着手と並列処理 OK。 ただし**最優先は Phase 1e 配線**。
-
-## Phase 2 brainstorm 時の重要メモ
-
-session 69 user 発案: **Triage 別 route の背景に board うっすら見せる案** (= IDEAS.md に詳細記録)。 Phase 2 brainstorm 時に必ず検討。
+1. BoardFilter `mood:` literal → `tag:` rename
+2. data-testid `mood-chip-` → `tag-chip-` 更新 (= e2e test 依存箇所)
+3. CSS Modules class 名 `.moodChip` / `.moodDot` → `.tagChip` / `.tagDot` (= 視覚不変保証で温存中)
+4. `NewMoodInput.tsx` ファイル名 + i18n key
+5. `indexeddb.ts` v9 `/** v9: mood id array */` JSDoc → `tag id array`
+6. v16 旧 moods store 削除 migration (= Phase 1+2+3 全部本番安定後、 rollback safety 不要になったら)
 
 ## 確認事項・運用
 
@@ -90,4 +59,4 @@ session 69 user 発案: **Triage 別 route の背景に board うっすら見せ
 - deploy 前に tsc + vitest (= 既知 flake `tests/lib/channel.test.ts` 無視 OK、 単体 PASS)
 - deploy 手順: `pnpm build` → `npx wrangler pages deploy out/ --project-name=booklage --branch=master --commit-dirty=true --commit-message="<ASCII>"`
 - **月末 (2026-05-31) まで残り 6 日**: `allmarks.app` ドメイン取得確認 (memory `project_allmarks_domain_reminder`)
-- session 70 までで本セッション内 deploy は 1 (= 月次枠余裕、 1 日 16 deploy 上限内)
+- session 71 までで本セッション内 deploy は 2 (= 月次枠余裕、 1 日 16 deploy 上限内)

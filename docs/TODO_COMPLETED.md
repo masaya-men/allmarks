@@ -4519,3 +4519,81 @@ session 71 は **必ず BoardRoot.tsx を読んでから着手** (= 既存 chrom
 ### 次セッション (= 71) goal
 
 Phase 1e (= plan Task 17-22) BoardRoot.tsx 配線 + 視覚検証 + 本番 ship + user 検証。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+## セッション 71 (2026-05-25) — タグ機能 Phase 1e 配線 + ship 完遂 (= user 視点でタグ機能が動く形に到達)
+
+### 着手前の状況
+
+session 70 で Phase 1b/1c/1d 9 タスク 10 commits 完遂 (= subagent-driven)、 ただし配線が Phase 1e 残のため bundle に dead code として同居、 user 視点は変化なし。 session 71 のゴールは BoardRoot.tsx / CardsLayer.tsx に既存 dead code を配線して活性化、 視覚検証、 本番 ship、 user 検証案内。
+
+### 着手前の方針確認 (= ユーザーと合意した重要判断)
+
+計画書 Task 20 は「新規 `runFlipReflow` API (= Web Animations API ベース) を呼び出して reflow を実装」 となっていたが、 CardsLayer の既存 useLayoutEffect (= L520-555) には**既に GSAP-FLIP 実装が live で動いていた**。 タグ絞り込みで非該当カードが消えると `masonryLayout.positions` が自動で再計算される構造なので、 input を絞るだけで既存 GSAP-FLIP が reflow を動かしてくれる。 user と相談 → 「(a) 既存 GSAP-FLIP 流用」 で合意 (= 重複実装回避、 コード追加最小)。
+
+### 実装内容
+
+1. **Task 17 = BoardRoot 配線** ([commit 4f56a23](https://github.com/masaya-men/booklage/commit/4f56a23))
+   - `useTagFilter()` import + 状態取得 ([BoardRoot.tsx](../components/board/BoardRoot.tsx) L22, L82)
+   - `matchedBookmarkIds: ReadonlySet<string> | null` useMemo (= filter active 時のみ対象 set、 inactive は null = 全件該当扱い、 mode='and' / mode='or' で `every` vs `some`)
+   - `TagFilterBar` を canvas top-left に絶対配置 ([BoardRoot.module.css](../components/board/BoardRoot.module.css) に `.tagFilterHost` 追加、 z-index 110、 Lightbox open 時 fade)
+   - CardsLayer に `matchedBookmarkIds` prop 追加で渡す
+
+2. **Task 17 = CardsLayer 配線** (同 commit)
+   - `getShutdownAnimationClass('wave')` import ([CardsLayer.tsx](../components/board/CardsLayer.tsx) L21)
+   - `itemsForMasonry` (= matchedBookmarkIds で filter、 inactive は items そのまま) を masonry 入力に変更 → 既存 GSAP-FLIP が自動 reflow
+   - `displayedPositions` を augment: tagged-out カードに `prevPositionsRef.current[id]` cached prev 位置を fallback → shutdown 演出が定位置で再生
+   - **inner div wrapper** 導入 (`position:absolute inset:0 borderRadius:var(--card-radius)`、 className に shutdown class、 data-tagged-out 属性) → GSAP の outer 位置 transform と CSS shutdown の transform を完全分離 (= CSS transform が GSAP matrix を上書きしてカードが (0,0) に飛ぶ問題を defensive 解決)
+
+3. **Task 18 = + TAG button + popover 統合** ([commit e2cd45c](https://github.com/masaya-men/booklage/commit/e2cd45c))
+   - カード hover で top-left に `+ TAG` button (= z-index 40、 既存 × ↺ ボタンと corner 競合無し、 opacity fade 120ms、 pointerEvents 切替で非 hover 時クリック無視)
+   - click で `popoverOpenFor: string | null` state トグル
+   - `TagAddPopover` を絶対配置で render (= top:36 left:8 inside card)、 pointerDown / mouseDown swallow でカード reorder 誤発火防止
+   - `extractCandidatesForItem` adapter ([CardsLayer.tsx](../components/board/CardsLayer.tsx) L91-130): BoardItem → BookmarkRecord 風オブジェクト変換、 hostname → friendly name マップ (= YouTube/X/Vimeo/TikTok/SoundCloud/Instagram/note/GitHub) で site 候補抽出
+
+4. **Task 18 = BoardRoot 側 tag 操作ハンドラ** (同 commit)
+   - `handleTagToggle(bookmarkId, tagId)` = items.find → DB initDB → addTagToBookmark / removeTagFromBookmark → reload (= Phase 1 単純化、 後で optimistic 化可能)
+   - `handleTagCreate(bookmarkId, name)` = trim + 名前 case-insensitive 重複チェック → addTag (新規) または existing reuse → addTagToBookmark → reloadTags + reload
+
+5. **Task 19 = TopHeader に TagButton + SimpleTagList placeholder** (同 commit)
+   - chrome 内 TUNE の隣に `<TagButton onClick={() => setTagPanelOpen(true)} active={tagPanelOpen} />` 配置
+   - `SimpleTagList` 関数コンポーネント ([BoardRoot.tsx](../components/board/BoardRoot.tsx) 上部): 黒背景 modal (= role="dialog"、 zIndex 200、 click 外で onClose、 click 内 stopPropagation、 タグ無し時メッセージ、 タグ有り時 ul、 CLOSE ボタン)、 Phase 2 で Triage 本実装に進化させる予定の placeholder
+
+6. **Task 20 = FLIP reflow は既存 GSAP-FLIP に丸投げ** (= 新規実装なし)
+   - 計画書の `runFlipReflow` 呼び出し / `data-card-id` 属性追加 / useLayoutEffect 追加 はスキップ
+   - Task 17 の `itemsForMasonry` filter で `masonryLayout.positions` が変化 → CardsLayer 既存 useLayoutEffect の `gsap.to(el, { x, y })` が matched カードを compact 位置へ自動 animate
+   - 結果: 計画書より追加コード少なく、 既存挙動と整合性確保
+
+7. **Task 21 = preview 実機検証 + TDZ fix** ([commit c8e84cb](https://github.com/masaya-men/booklage/commit/c8e84cb))
+   - `pnpm build` (= 24 routes static prerender) + `wrangler pages dev out/ --port 8788` + playwright 自動検証 (= 本人画面 1489×2.58 viewport)
+   - 検証フロー: `/seed-demos` → `/board` → TagButton chrome 表示確認 → カード hover → + TAG button opacity 1 → click → popover open → 「Test」 タグ作成 → 別カードにも付与 → chip click → 4/6 が `data-tagged-out=true` + matched 2 枚が top-left に compact reflow
+   - **検証中に TDZ error 発見**: `displayedPositions` useMemo 内で `prevPositionsRef.current` を参照していたが、 `prevPositionsRef` の宣言が 60 行後にあって useMemo callback 評価時に Temporal Dead Zone ReferenceError 発火 (= 初回 render は早期 return で trap 回避、 chip click 後の再 render で trap)
+   - **fix**: `prevPositionsRef = useRef(...)` を `displayedPositions` useMemo の直前に移動 (= 宣言順を依存順と一致させる)
+   - 再検証 PASS、 vitest 804 全通 + tsc 0 errors
+
+8. **Task 22 = 本番 ship** + 本ファイル narrative + TODO.md / CURRENT_GOAL.md 更新
+
+### user 視点で動くもの (= booklage.pages.dev で確認可能)
+
+- ボード右上 chrome に `TAG` ボタン (= TUNE の隣) → click で SimpleTagList modal
+- カード hover → top-left に `+ TAG` button → click → TagAddPopover (= 既存タグ toggle + 元サイト候補 + 新規入力)
+- タグ 1+ 件あれば canvas top-left に `TagFilterBar` (= chip + AND/OR + counter + ×)
+- chip click → 非該当カードに CRT shutdown (= 緑 flash + scanline + flicker + 5 段 keyframes) → 該当カードが既存 GSAP-FLIP で compact 位置に reflow
+- × button で解除 → 全カード復活 (= 瞬間表示、 reverse アニメは Phase 2 polish 候補)
+- Lightbox open 中は chrome / TagFilterBar が opacity:0 で fade out
+
+### テスト + deploy
+
+- vitest 804 PASS 維持、 tsc 0 errors、 build success
+- deploy 2 回 (= preview 検証用 build + 最終 ship build)、 本番 URL: `https://booklage.pages.dev`、 deploy 短 URL: `https://3af3ae22.booklage.pages.dev`
+
+### 設計上の学び (= 次セッション以降の保険)
+
+- **TDZ trap in useMemo + ref**: useMemo callback が後方宣言の `useRef` を参照すると、 deps 変化で再評価される時に Temporal Dead Zone error。 必ず ref 宣言を useMemo より上に置く。 初回 render で trap を踏まない (= 早期 return path 等) と、 後の再 render で初めて発覚するので debug が分かりにくい。 memory `reference_tdz_useref_after_usememo` 候補
+- **GSAP transform vs CSS animation transform の衝突**: GSAP が `el.style.transform = matrix(...)` で位置を設定してる要素に CSS `@keyframes` で `transform: scale(...)` を当てると、 CSS が完全に上書きして位置情報が失われる。 inner wrapper div を挟んで responsibility 分離 (= outer = GSAP 位置、 inner = CSS 演出) が解
+- **既存 GSAP-FLIP は十分強力**: 計画書 Task 20 で新規 `runFlipReflow` API を作る予定だったが、 CardsLayer の既存 useLayoutEffect が `displayedPositions` 変化を gsap.to で animate するので、 input (= itemsForMasonry) を絞るだけで reflow が自動発火。 既存実装の力を再確認する習慣大事
+
+### 次セッション (= 72) goal
+
+user 実機検証 (= booklage.pages.dev でタグ機能を一通り触ってもらう) → 検証 OK なら (a) Phase 2 Triage 本実装 ・ (b) Phase 1 polish (= reverse-fade-in / mood→tag rename) ・ (c) 別 backlog (= multi-playback Tier 2 / 音波テーマ等) のどれを次に進めるか user 合意 → 着手。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)
