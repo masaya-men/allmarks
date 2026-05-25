@@ -4,11 +4,17 @@ import type { ReactElement } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import styles from './TriageCard.module.css'
 
-export function TriageCard({ item }: { item: BoardItem }): ReactElement {
+type Direction = 'up' | 'right' | 'down' | 'left'
+
+export function TriageCard({ item, exitDirection }: {
+  item: BoardItem
+  exitDirection?: Direction | null
+}): ReactElement {
   let host = ''
   try { host = new URL(item.url).hostname.replace(/^www\./, '') } catch { /* ignore */ }
+  const exitClass = exitDirection ? styles[`exit${exitDirection.charAt(0).toUpperCase()}${exitDirection.slice(1)}`] : ''
   return (
-    <div className={styles.card} data-testid="triage-card">
+    <div className={`${styles.card} ${exitClass}`.trim()} data-testid="triage-card">
       {item.thumbnail && (
         <div className={styles.image} style={{ backgroundImage: `url("${item.thumbnail.replace(/"/g, '%22')}")` }} />
       )}

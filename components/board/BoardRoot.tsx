@@ -33,10 +33,9 @@ import { CardsLayer } from './CardsLayer'
 import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
-import { TagFilterBar } from './TagFilterBar'
+import { useRouter } from 'next/navigation'
 import { TagButton } from './TagButton'
 import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/tags'
-import type { TagRecord } from '@/lib/storage/indexeddb'
 import { MotionToggle } from './MotionToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ChromeButton } from './ChromeButton'
@@ -59,72 +58,6 @@ import { encodeShareData } from '@/lib/share/encode'
 import { getActiveWatermark } from '@/lib/share/watermark-config'
 import type { ShareData } from '@/lib/share/types'
 import styles from './BoardRoot.module.css'
-
-// Phase 1 placeholder modal for the TAG chrome button. Lists every tag the
-// user has created. Phase 2 replaces this with a full Triage UI (rename,
-// reorder, delete, swipe-assign etc.) — until then this is just a peek at
-// the underlying data so the TAG button isn't a dead end.
-function SimpleTagList({ tags, onClose }: { readonly tags: readonly TagRecord[]; readonly onClose: () => void }): React.ReactElement {
-  return (
-    <div
-      role="dialog"
-      aria-label="Tag list"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 200,
-      }}
-    >
-      <div
-        onClick={(e): void => e.stopPropagation()}
-        style={{
-          background: '#111',
-          padding: 24,
-          borderRadius: 6,
-          minWidth: 320,
-          maxWidth: 480,
-          maxHeight: '70vh',
-          overflowY: 'auto',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        }}
-      >
-        <h3 style={{ marginTop: 0, color: '#fff', fontSize: 14, letterSpacing: '0.12em' }}>TAGS</h3>
-        {tags.length === 0 ? (
-          <p style={{ color: '#888', fontSize: 12 }}>No tags yet. Hover a card and use the + TAG button to create one.</p>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {tags.map((t) => (
-              <li key={t.id} style={{ padding: '6px 0', color: '#ddd', fontSize: 13 }}>{t.name}</li>
-            ))}
-          </ul>
-        )}
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            marginTop: 16,
-            appearance: 'none',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            color: '#ddd',
-            padding: '6px 12px',
-            borderRadius: 3,
-            fontSize: 11,
-            letterSpacing: '0.12em',
-            cursor: 'pointer',
-          }}
-        >
-          CLOSE
-        </button>
-      </div>
-    </div>
-  )
-}
 
 // Visible breathing room above the board's first card, in CSS pixels.
 // Cards' world coords start at y=0 (masonry cursor); this offset is applied
@@ -150,7 +83,7 @@ export function BoardRoot() {
   } = useBoardData()
   const { tags, reload: reloadTags } = useTags()
   const tagFilter = useTagFilter()
-  const [tagPanelOpen, setTagPanelOpen] = useState<boolean>(false)
+  const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>('all')
   // Background-typography animation variant. `'static'` (fixed centred
   // headline) is the only treatment wired up today; the URL query
@@ -1469,8 +1402,7 @@ export function BoardRoot() {
                 onApplyPreset={onApplyPreset}
               />
               <TagButton
-                onClick={(): void => setTagPanelOpen(true)}
-                active={tagPanelOpen}
+                onClick={(): void => router.push('/triage')}
               />
               <ChromeButton
                 label={t('board.chrome.popout')}
@@ -1589,24 +1521,6 @@ export function BoardRoot() {
           swellFraction={meterSwellFraction}
           onScrub={handleMeterScrub}
         />
-        {/* Tag filter chips strip — sits at the top-left of the canvas just
-            below the TopHeader action row. Fades out with the rest of the
-            chrome while the Lightbox is open. */}
-        <div
-          className={lightboxItemId ? `${styles.tagFilterHost} ${styles.tagFilterHostHidden}` : styles.tagFilterHost}
-          aria-hidden={lightboxItemId ? 'true' : undefined}
-        >
-          <TagFilterBar
-            tags={tags}
-            selectedTagIds={tagFilter.selectedTagIds}
-            mode={tagFilter.mode}
-            onToggle={tagFilter.toggleTag}
-            onModeChange={tagFilter.setMode}
-            onClearAll={tagFilter.clearAll}
-            totalCount={filteredItems.length}
-            matchCount={matchedBookmarkIds?.size ?? filteredItems.length}
-          />
-        </div>
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
             canvasWrap. This way its backdrop (position: absolute; inset: 0)
             fills the FULL canvas — including the TopHeader band — so the
@@ -1638,9 +1552,6 @@ export function BoardRoot() {
         onClose={handleCloseBookmarkletModal}
         appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://booklage.pages.dev')}
       />
-      {tagPanelOpen && (
-        <SimpleTagList tags={tags} onClose={(): void => setTagPanelOpen(false)} />
-      )}
       {shareComposerOpen && (
         <ShareComposer
           open={shareComposerOpen}

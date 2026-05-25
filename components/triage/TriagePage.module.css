@@ -3,16 +3,45 @@
   background: var(--bg-dark);
   color: var(--text-primary);
   display: flex; flex-direction: column;
-  padding: 32px;
+  padding: 24px 32px;
 }
 .header {
   display: flex; align-items: center; justify-content: space-between;
-  font-family: var(--font-sans);
-  color: var(--text-meta); font-size: 13px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: var(--text-meta); font-size: 12px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
 }
+/* Main now hosts BOTH the card (grid-centered) and the TagPicker
+   (absolute-overlay of directional slots). Pointer events on the main
+   surface itself drive drag-swipe; chip slots intercept their own clicks. */
 .main {
-  flex: 1; display: grid; place-items: center;
+  flex: 1;
+  position: relative;
+  display: grid;
+  place-items: center;
+  touch-action: none; /* allow drag-swipe without page-scroll fighting */
 }
-.footer { padding-top: 24px; color: var(--text-muted); font-size: 12px; text-align: center; }
+.footer {
+  padding-top: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: center;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  letter-spacing: 0.08em;
+}
 .empty { text-align: center; color: var(--text-body); }
-.backBtn { margin-top: 12px; color: var(--text-primary); text-decoration: underline; background: transparent; border: 0; cursor: pointer; font-size: 14px; }
+.backBtn {
+  margin-top: 12px;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  transition: color 120ms;
+}
+.backBtn:hover { color: #fff; }
