@@ -4448,3 +4448,74 @@ session 68 close 後、 user 最優先のタグ付け機能を `superpowers:brai
 ### 次セッション (= 70) goal
 
 Phase 1b (= plan Task 8-9 filter state hook + tag candidates) + Phase 1c (= plan Task 10-12 WAVE CRT shutdown CSS + FLIP reflow)。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+## セッション 70 (2026-05-25) — タグ機能 Phase 1b + 1c + 1d 実装完遂 (= 内部構築ブロック全部、 Phase 1e BoardRoot 配線は session 71 へ)
+
+### 概要
+
+session 69 で確立した plan ([tagging-phase1.md](./superpowers/plans/2026-05-25-tagging-phase1.md)、 2300 行 22 タスク) の Phase 1b/1c/1d を subagent-driven で一気に消化。 9 タスク 10 commits (= 8 機能 + 1 CSS fix + 1 i18n)、 vitest 770 → **804 PASS** (+34)、 tsc clean、 build OK。 user 視点では Phase 1a 同様**見た目変わらず** (= 新規 UI コンポーネント・hook・アニメ CSS は全部存在するが、 BoardRoot.tsx 配線が Phase 1e に残っているため未活性、 デッドコードとして合法的に bundle に同居)。
+
+### 1. Phase 1b — filter state + candidates (= Task 8-9)
+
+**Task 8: useTagFilter hook** ([lib/board/use-tag-filter.ts](../lib/board/use-tag-filter.ts) + [test](../tests/lib/board/use-tag-filter.test.ts)、 6 tests PASS、 commit `08d885c`)。 `'use client'` + useState + useCallback / useMemo。 公開 API: `selectedTagIds: readonly string[]` / `mode: FilterMode` / `toggleTag(id)` / `setMode(mode)` / `clearAll()` / `isActive`。 純粋メモリ専有 (= IDB 書き込まない、 board reload で reset の spec 通り)。 `FilterMode` は Phase 1a の `lib/storage/tags.ts:156` から import。
+
+**Task 9: tag-candidates pure functions** ([lib/board/tag-candidates.ts](../lib/board/tag-candidates.ts) + [test](../tests/lib/board/tag-candidates.test.ts)、 7 tests PASS、 commit `11909af`)。 `extractCandidatesFromBookmark(b)` (= siteName 先頭 + tweet なら # ハッシュタグ 抽出 + dedup) と `scoreSimilarBookmarks(target, corpus)` (= 同ドメイン頻出タグを weight 3、 他 weight 1 で sort desc、 target 自身と既タグ除外)。 **plan のバグ行 (`target.tags.includes(...(b.tags as string[]))` = `Array.includes` arity 違反 + dead code) は controller が dispatch 時に preemptive fix を指示、 implementer も正しく省略**。
+
+### 2. Phase 1c — アニメ層 (= Task 10-12)
+
+**Task 10: WAVE CRT shutdown CSS** ([lib/animation/tag-shutdown/themes/wave.module.css](../lib/animation/tag-shutdown/themes/wave.module.css)、 135 行、 CSS-only、 commit `182c83f`)。 **F6 lbebber 派生 + AllMarks 緑 flash (`#28F100`) を 5 段階 keyframes** (= 0% / 10-15% warm glitch + chromatic aberration / 25% 縦膨らみ / 50% 横膨らみ + brightness 8 緑フラッシュ / 75% 点化 / 100% 消滅、 ease-out-quint + ease-in-quint mix)。 `.shutdown::before` = scanline + chromatic 縦線 + `scanline-fade` keyframes、 `.shutdown::after` = 7Hz flicker burst (`flicker-burst` 12 stop)。 全 8 CSS 変数 (`--tag-shutdown-duration` 0.55s / `--tag-shutdown-stretch-y` / `--tag-shutdown-easing` / `--tag-shutdown-flash-color` / `--tag-shutdown-stagger-step` 30ms / `--tag-shutdown-scanline-intensity` / `--tag-shutdown-flicker-intensity` 等) を `:root` 公開で実装後 user 検証時に数値だけ調整可能。 `@media (prefers-reduced-motion: reduce)` で全アニメを `simple-fade-out` に置換 + pseudo-element も無効化 (= 視覚過敏 user 配慮)。 適用対象 selector は `.shutdown` のみ (= `[data-tagged-out="true"]` 結合は Task 17 で BoardRoot 側に持たせる)。
+
+**Task 11: getShutdownAnimationClass(theme)** ([lib/animation/tag-shutdown/index.ts](../lib/animation/tag-shutdown/index.ts) + [test](../tests/lib/animation/tag-shutdown/index.test.ts)、 2 tests PASS、 commit `1e244d7`)。 19 行の小 API。 `theme: string` 受け取って switch case で `'wave'` → `waveStyles.shutdown` を返す、 default は `undefined` (= 未対応テーマは shutdown アニメ無しのフォールバック、 BoardRoot 側で「アニメ無いなら即 display:none」 で対応)。 Phase 3 で他テーマ追加時は 1 ファイル足して switch case 1 行追加だけで完了する拡張ポイント設計。 `SupportedTheme = 'wave'` 型 union も export。
+
+**Task 12: runFlipReflow** ([lib/animation/tag-shutdown/reflow.ts](../lib/animation/tag-shutdown/reflow.ts) + [test](../tests/lib/animation/tag-shutdown/reflow.test.ts)、 2 tests PASS、 commit `8707abf`)。 Web Animations API (`el.animate(...)`) ベースの translate-only FLIP (= scale FLIP は memory `reference_flip_scale_compensation` に従って意図的不採用、 内容歪み回避)。 `(el, first, duration=400, easing='cubic-bezier(0.4, 0, 0.2, 1)')` で `dx/dy < 0.5px` 閾値で no-op スキップ。 implementer が既存 CardsLayer.tsx に GSAP-FLIP 実装あるのを発見・報告 (= Task 20 で統合判断する材料)。 GSAP 依存追加せず標準 Web Animations API で完結。
+
+### 3. Phase 1d — UI 層 (= Task 13-16)
+
+**Task 13: TagFilterBar** ([components/board/TagFilterBar/](../components/board/TagFilterBar/) + [test](../tests/components/board/TagFilterBar.test.tsx)、 6 tests PASS、 commit `d35ad08`)。 Pure presentation コンポーネント (= 内部 state なし、 props in / callbacks out)。 props: `tags / selectedTagIds / mode / onToggle / onModeChange / onClearAll / totalCount / matchCount`。 動作: タグ 0 件で `null` 返す / chip click で `onToggle(id)` / 選択中タグに `data-selected="true"` 属性 (= CSS の `.chip[data-selected="true"]` で緑 highlight `#28F100` + glow) / 絞り込み中だけ controls 表示 (AND/OR トグル + カウンタ `total/match` + × 解除) / AND/OR トグルは `selectedTagIds.length >= 2` の時だけ表示 (= 1 タグなら moot)。 CSS は 76 行で水平 chip scroll (= `max-width: 60vw` + `scrollbar-width: none`) + dark glass styling 60ms transition。 implementer が `vitest.setup.ts` に `import '@testing-library/jest-dom/vitest'` を +1 行追加 (= plan-prescribed test の `toBeInTheDocument()` matcher 要求、 RTL + Vitest 標準セットアップで合理的、 既存 770 tests に影響なし)。
+
+**Task 14: TagAddPopover** ([components/board/TagAddPopover/](../components/board/TagAddPopover/) + [test](../tests/components/board/TagAddPopover.test.tsx)、 6 tests PASS、 commit `0dde601`)。 Phase 1 = **click-only** (= 仕様のドラッグ付与は Phase 1 未実装、 Phase 2 以降)。 props: `allTags / currentTagIds / siteCandidates / onAddExisting / onAddNew / onClose`。 3 section: ①既存タグ chip (= 既に付いてるタグには `✓ ` prefix + 緑 active styling、 click で `onAddExisting(id)`) ②サイト候補 chip (= dashed border + 緑 hint、 既存タグ名と被るものは filter で除外、 click で `onAddNew(name)`) ③新規入力欄 (= mount で auto-focus、 Enter で trim 後 `onAddNew(value)`、 空文字 no-op)。 document-level keydown listener で Esc → `onClose()`、 unmount で cleanup。 role="dialog"、 backdrop-filter blur 12px + box-shadow 32px の dark glass popover。
+
+**Task 15: TagButton** ([components/board/TagButton/](../components/board/TagButton/) + [test](../tests/components/board/TagButton.test.tsx)、 最終 5 tests PASS、 commits `1a430d5` + `b38ec0e` fix)。 chrome の TAG ボタン、 既存 TUNE / POP OUT / SHARE と並列配置予定 (= Task 19 で配線)。 props: `onClick / active?`、 `data-active` 属性で CSS 緑切替。 **implementer の初回 commit `1a430d5` が CSS を spec verbatim ではなく独自 minimalist 化** (= background/border 削除、 monospace font / uppercase 追加) → spec reviewer が「significant divergence」 で needs revision 判定 → 同 subagent に fix dispatch、 25 行 verbatim CSS で `b38ec0e` 修正完了。 implementer の test 3 件追加 (= active 属性検証 + button type 検証) は接続契約検証で scope creep 認定せず、 合計 5 tests を保持。 教訓: subagent には verbatim CSS を必ず引用し、 「make it match TUNE pattern」 のような **解釈余地のある指示は避ける**。
+
+**Task 16: i18n 15 言語に tag keys 追加** ([messages/{ar,de,en,es,fr,it,ja,ko,nl,pt,ru,th,tr,vi,zh}.json](../messages/) 全 15 file modify、 commit `7c92c5c`)。 plan が想定した 15 言語 (= ja/en/ko/zh/zh-TW/es/fr/de/it/pt/ru/ar/hi/id/vi) と実 repo の 15 言語 (= ar/de/en/es/fr/it/ja/ko/nl/pt/ru/th/tr/vi/zh、 zh-TW/hi/id なし、 代わりに nl/th/tr あり) が違うことを controller が dispatch 前に発見 → 実 repo に合わせて指示。 7 keys (`tag.addLabel "+ TAG"` / `newPlaceholder "new tag…"` / `filterClearAria "Clear all filters"` / `modeAnd "AND"` / `modeOr "OR"` / `buttonLabel "TAG"` / `buttonAria "Open tag management"`) を 15 ファイル全部に**英語値統一**で追加 (= memory `feedback_ui_vocabulary` に従い globally-clear 英語語彙、 翻訳しない)。 spec reviewer 検証で 15/15 file に section 存在 + ja/ar/zh の 3 file spot-check で値一致確認 ✓。
+
+### 4. テスト・build・deploy 数値
+
+- vitest: **770 → 804 PASS** (= +6 use-tag-filter + 7 tag-candidates + 2 shutdown index + 2 reflow + 6 TagFilterBar + 6 TagAddPopover + 5 TagButton = **+34 net**)
+- tsc: 0 errors throughout
+- build: success (= 22 routes static prerender 確認)
+- 既知 flake `tests/lib/channel.test.ts` 影響なし
+- deploy: 1 (= session 70 close-out、 Phase 1b/c/d 全体を本番に同期、 user 視点で動作変化なし)
+
+### 5. subagent-driven 運用の所感 + 教訓
+
+10 dispatch (= 9 implementer + reviewer 群 + 1 fix) で 9 タスク完遂。 controller の責務:
+1. **plan の buggy code を preemptive fix で指示** (= Task 9 の dead `target.tags.includes(...)`)、 implementer 任せにせず先回り
+2. **plan の lang リストが repo 実体と乖離してる時の調整** (= Task 16 の zh-TW/hi/id ↔ nl/th/tr)、 dispatch 前に grep で実体確認
+3. **verbatim spec を CSS / TSX で必ず引用**、 implementer の解釈余地を消す (= Task 15 の divergence 教訓)
+4. **spec reviewer + code quality reviewer の 2 stage** を skip しない (= Task 15 の divergence は spec reviewer がキャッチしたから救えた、 implementer 自己申告だけでは見逃した)
+
+review 失敗→ fix → re-review のループが 1 回発生 (= Task 15 のみ)、 残り 8 タスクは初回で両 review PASS。 subagent-driven は plan の品質が高いほど効率良い (= 詳細な TDD コード + 制約条件が plan に書いてあれば、 controller は引用 + 文脈付与だけで良い)。
+
+### 6. Phase 1e (= session 71 で着手) のスコープ
+
+Plan Task 17-22 (= ~400 行)。 主に BoardRoot.tsx / CardsLayer.tsx の配線、 視覚検証 (= preview で実機確認)、 本番 ship + user 検証:
+- Task 17: BoardRoot に tag filter state 配線 + `data-tagged-out="true"` 属性付与 + getShutdownAnimationClass 呼び出し
+- Task 18: TagAddPopover を CardsLayer に統合 (= カード hover で右上に `+ TAG` アイコン + popover open / close 制御)
+- Task 19: TagButton を chrome に追加 (= TUNE / POP OUT / SHARE と並列)
+- Task 20: FLIP reflow を BoardRoot に統合 (= shutdown と同期して該当カード詰め)、 既存 CardsLayer の GSAP-FLIP との重複判断もここで
+- Task 21: preview で全機能を実機検証 (= playwright + 本人画面 1489×2.58 で CRT shutdown + reflow + popover + chrome ボタン)
+- Task 22: 本番 ship + user 検証案内
+
+session 71 は **必ず BoardRoot.tsx を読んでから着手** (= 既存 chrome 配線パターン + ScrollMeter 周辺の隣接配置の流れを把握、 配線方式を decide)。
+
+### 7. Phase 2/3 設計メモ (= session 71 以降 brainstorm 時材料)
+
+- **Phase 2 Triage 別 route の背景に board うっすら見せる案** (= session 69 user 発案、 IDEAS.md 記録済) — Phase 2 brainstorm 時必須検討
+- session 69 で code reviewer 指摘の cleanup 候補 6 件 (= BoardFilter `mood:` literal / data-testid / CSS class 名 / NewMoodInput ファイル名 / v9 JSDoc comment / v16 旧 moods store 削除 migration) — Phase 2/3 並列処理 OK、 ただし最優先は Phase 1e 配線
+
+### 次セッション (= 71) goal
+
+Phase 1e (= plan Task 17-22) BoardRoot.tsx 配線 + 視覚検証 + 本番 ship + user 検証。 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。

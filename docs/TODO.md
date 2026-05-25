@@ -20,30 +20,34 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-25 セッション 69 — タグ機能 brainstorming + spec + plan + Phase 1a 実装完遂、 本番反映済)
+### 直近の状態 (2026-05-25 セッション 70 — タグ機能 Phase 1b + 1c + 1d 実装完遂、 本番反映済、 user 視点見た目変化なし [= Phase 1e 配線待ち])
 
-**ship 済 (= prod 反映済 + 本人検証 ✓)**:
+**ship 済 (= prod 反映済、 本番に dead code として存在、 user 視点は変化なし)**:
 
-1. **タグ機能 brainstorming 完遂** (= 確定事項 14 項目): WAVE テーマ命名 / F6 CRT shutdown 採用 / 既存 mood リネーム前提 / カラーハント Phase 3 予約 / 業界水準を超える絞り込みアニメ + テーマ連動構造 / Triage 別 route + WASD 4 方向 + Shift で 5-8 番候補
-2. **spec 書き** ([tagging-design.md](./superpowers/specs/2026-05-25-tagging-design.md)、 460 行)
-3. **plan 書き** ([tagging-phase1.md](./superpowers/plans/2026-05-25-tagging-phase1.md)、 2300 行 22 タスク、 TDD 完成形コード入り)
-4. **Phase 1a 実装 完遂 (= 7 タスク 12 commits、 subagent-driven)**:
-   - Task 1-7: 型 rename → moods.ts → tags.ts rename + 新規 API (atomicity fix) → tags.ts unit テスト 13 PASS → use-moods.ts → use-tags.ts rename → IDB schema bump 14→15 + migration atomic 切替 → v15 migration unit テスト 6 PASS → UI 10 file の mood → tag 参照 rename
+1. **Phase 1b (Task 8-9)** = filter state + 候補抽出 (subagent-driven、 2 commits): `lib/board/use-tag-filter.ts` (= selectedTagIds + mode + toggle + clearAll + isActive、 commit `08d885c`、 6 tests PASS)、 `lib/board/tag-candidates.ts` (= siteName + tweet # ハッシュタグ抽出 + 同ドメイン頻出スコアリング、 commit `11909af`、 7 tests PASS、 plan の buggy `target.tags.includes(...spread)` 行は controller が preemptive fix で除外)
+2. **Phase 1c (Task 10-12)** = アニメ層 (subagent-driven、 3 commits): WAVE テーマ CRT shutdown CSS (= F6 lbebber 派生 + 緑 flash + 5 段 keyframes + scanline + flicker + 8 CSS 変数 + reduced-motion 対応、 commit `182c83f`)、 `getShutdownAnimationClass(theme)` API (= theme key → CSS class マップ、 Phase 3 拡張ポイント空欄、 commit `1e244d7`、 2 tests)、 `runFlipReflow` Web Animations API translate-only (= scale FLIP 不採用、 0.5px 閾値で no-op、 commit `8707abf`、 2 tests)
+3. **Phase 1d (Task 13-16)** = UI 層 (subagent-driven、 4 + 1 fix commits): `TagFilterBar` (= chip + AND/OR + counter + 解除、 commit `d35ad08`、 6 tests + vitest.setup.ts に jest-dom matcher 追加)、 `TagAddPopover` (= 既存タグ + サイト候補 + 新規入力 + Esc、 click-only、 commit `0dde601`、 6 tests)、 `TagButton` chrome (= commit `1a430d5` で CSS divergence → spec reviewer 検出 → 同 implementer の `b38ec0e` で verbatim CSS に修正、 5 tests)、 i18n 15 言語 (= ar/de/en/es/fr/it/ja/ko/nl/pt/ru/th/tr/vi/zh 全部に `tag` セクション英語値統一、 commit `7c92c5c`、 plan が想定した zh-TW/hi/id は repo 実体と乖離していたため controller が dispatch 前に修正)
 
-**user 検証**: ブクマ全表示 ✓、 既存タグ無破壊 ✓、 `/triage` 旧 UI 動作 ✓。
+**user 視点**: 見た目変化なし (= 全コンポーネント・hook・CSS は存在するが BoardRoot.tsx 配線が Phase 1e 残のため未活性、 dead code として bundle に同居)。
 
-**重要**: Phase 1a は **内部基盤 rename + migration only**、 新規 UI (= TagFilterBar / TagAddPopover / TagButton / CRT shutdown) は **Phase 1b/c/d で次セッション以降**。 user 視点では Phase 1a 前と見た目変わらない (= データ層完全 swap、 既存 UI 完全互換)。
+**テスト**: 既存 770 → **804 PASS** (= +6 use-tag-filter + 7 tag-candidates + 2 shutdown index + 2 reflow + 6 TagFilterBar + 6 TagAddPopover + 5 TagButton = +34 net)、 tsc 0 errors、 build success (= 22 routes static prerender)、 deploy 1 回。
 
-**テスト**: 既存 764 → **770 PASS** (= +13 tags.test.ts + 6 v15.test.ts - 13 旧 moods.test.ts = +6 net)、 tsc 0 errors、 build OK、 deploy 1 回。
+**subagent-driven 運用所感**: 10 dispatch (= 9 implementer + reviewers + 1 fix) で 9 タスク完遂。 review 失敗 → fix → re-review の loop は Task 15 (= TagButton CSS divergence) のみ 1 回発生、 残り 8 タスクは初回両 review PASS。 教訓: **verbatim CSS / TSX を必ず引用、 subagent に解釈余地を残す指示 (= 「TUNE pattern matching」 等) は避ける**。
 
-**user 発案 (= session 70+ 検討メモ)**:
-- **Phase 2 Triage 別 route の背景に board うっすら見せる案** → IDEAS.md に詳細記録、 Phase 2 brainstorm 時必須検討
+**次の大物 (= session 71 必須)**:
+- **Phase 1e (Task 17-22)** = BoardRoot.tsx 配線 + 視覚検証 + 本番 ship + user 検証:
+  - Task 17: BoardRoot に filter state 配線 + `data-tagged-out` 属性付与
+  - Task 18: TagAddPopover を CardsLayer に統合 (= カード hover で `+ TAG` アイコン + popover)
+  - Task 19: TagButton を chrome に追加 (= TUNE/POP OUT/SHARE と並列)
+  - Task 20: FLIP reflow を BoardRoot に統合 (= 既存 CardsLayer の GSAP-FLIP と統合判断)
+  - Task 21: preview で全機能を実機検証 (= playwright + 本人画面 1489×2.58)
+  - Task 22: 本番 ship + user 検証案内
 
-**次の大物**:
-- **Phase 1b** (= filter state hook + tag candidates、 plan Task 8-9) → session 70
-- **Phase 1c** (= WAVE CRT shutdown CSS + FLIP reflow、 plan Task 10-12) → session 70
-- **Phase 1d** (= TagFilterBar / TagAddPopover / TagButton / i18n、 plan Task 13-16) → session 71
-- **Phase 1e** (= BoardRoot 配線 + 視覚検証 + 本番 ship、 plan Task 17-22) → session 71
+**重要**: session 71 は **必ず BoardRoot.tsx を読んでから着手** (= 既存 chrome 配線パターン + ScrollMeter 周辺の隣接配置の流れを把握)。
+
+**Phase 1a で発見された cleanup 候補 6 件 (= Phase 2/3 並列 OK)**: BoardFilter `mood:` literal / data-testid / CSS class 名 (.moodChip 等) / NewMoodInput ファイル名 / v9 JSDoc comment / v16 旧 moods store 削除 migration。
+
+**Phase 2 brainstorm 時必須メモ**: user 発案「Triage 別 route の背景に board うっすら見せる案」 (= IDEAS.md 記録済)。
 
 ---
 
