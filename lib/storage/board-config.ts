@@ -1,6 +1,7 @@
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 import type { IDBPDatabase } from 'idb'
 import type { BoardConfig } from '@/lib/board/types'
+import { BOARD_FILTER_ALL } from '@/lib/board/board-filter-helpers'
 import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 import { DEFAULT_PRESET_ID } from '@/lib/board/frame-presets'
 
@@ -10,7 +11,7 @@ export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   frameRatio: { kind: 'preset', presetId: DEFAULT_PRESET_ID },
   themeId: DEFAULT_THEME_ID,
   displayMode: 'visual',
-  activeFilter: 'all',
+  activeFilter: BOARD_FILTER_ALL,
   motionEnabled: true,
 }
 

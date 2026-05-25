@@ -3,6 +3,7 @@ import 'fake-indexeddb/auto'
 import type { IDBPDatabase } from 'idb'
 import { initDB } from '@/lib/storage/indexeddb'
 import { DEFAULT_BOARD_CONFIG, loadBoardConfig, saveBoardConfig } from '@/lib/storage/board-config'
+import { BOARD_FILTER_ALL, BOARD_FILTER_INBOX, makeTagsFilter } from '@/lib/board/board-filter-helpers'
 
 let db: IDBPDatabase<unknown> | null = null
 
@@ -15,9 +16,9 @@ beforeEach(async () => {
 afterEach(() => { if (db) { db.close(); db = null } })
 
 describe('BoardConfig v9 extensions', () => {
-  it('defaults include displayMode=visual and activeFilter=all', () => {
+  it('defaults include displayMode=visual and activeFilter=ALL object', () => {
     expect(DEFAULT_BOARD_CONFIG.displayMode).toBe('visual')
-    expect(DEFAULT_BOARD_CONFIG.activeFilter).toBe('all')
+    expect(DEFAULT_BOARD_CONFIG.activeFilter).toEqual({ kind: 'all' })
   })
 
   it('round-trips displayMode and activeFilter', async () => {
@@ -26,21 +27,29 @@ describe('BoardConfig v9 extensions', () => {
     await saveBoardConfig(d, {
       ...DEFAULT_BOARD_CONFIG,
       displayMode: 'editorial',
-      activeFilter: 'inbox',
+      activeFilter: BOARD_FILTER_INBOX,
     })
     const loaded = await loadBoardConfig(d)
     expect(loaded.displayMode).toBe('editorial')
-    expect(loaded.activeFilter).toBe('inbox')
+    expect(loaded.activeFilter).toEqual(BOARD_FILTER_INBOX)
   })
 
-  it('round-trips mood filter', async () => {
+  it('round-trips tags filter (v16 object form)', async () => {
     const d = await initDB()
     db = d as unknown as IDBPDatabase<unknown>
     await saveBoardConfig(d, {
       ...DEFAULT_BOARD_CONFIG,
-      activeFilter: 'mood:abc123',
+      activeFilter: makeTagsFilter(['abc123'], 'and'),
     })
     const loaded = await loadBoardConfig(d)
-    expect(loaded.activeFilter).toBe('mood:abc123')
+    expect(loaded.activeFilter).toEqual({ kind: 'tags', tagIds: ['abc123'], mode: 'and' })
+  })
+
+  it('default ALL filter survives round-trip', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await saveBoardConfig(d, DEFAULT_BOARD_CONFIG)
+    const loaded = await loadBoardConfig(d)
+    expect(loaded.activeFilter).toEqual(BOARD_FILTER_ALL)
   })
 })
