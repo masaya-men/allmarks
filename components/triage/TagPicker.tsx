@@ -1,30 +1,30 @@
 'use client'
 
 import { useEffect, type ReactElement } from 'react'
-import type { MoodRecord } from '@/lib/storage/indexeddb'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 import { t } from '@/lib/i18n/t'
 import { NewMoodInput } from './NewMoodInput'
 import styles from './TagPicker.module.css'
 
 type Props = {
-  readonly moods: ReadonlyArray<MoodRecord>
-  readonly onTag: (moodId: string) => void
+  readonly tags: ReadonlyArray<TagRecord>
+  readonly onTag: (tagId: string) => void
   readonly onSkip: () => void
   readonly onUndo: (() => void) | null
-  readonly onCreateMood: (name: string) => void
-  readonly suggestedMoodIds?: ReadonlyArray<string>
+  readonly onCreateTag: (name: string) => void
+  readonly suggestedTagIds?: ReadonlyArray<string>
 }
 
-export function TagPicker({ moods, onTag, onSkip, onUndo, onCreateMood, suggestedMoodIds }: Props): ReactElement {
+export function TagPicker({ tags, onTag, onSkip, onUndo, onCreateTag, suggestedTagIds }: Props): ReactElement {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      const targetTagName = (e.target as HTMLElement).tagName
+      if (targetTagName === 'INPUT' || targetTagName === 'TEXTAREA') return
 
       if (e.key >= '1' && e.key <= '9') {
         const idx = Number(e.key) - 1
-        const mood = moods[idx]
-        if (mood) { e.preventDefault(); onTag(mood.id) }
+        const tag = tags[idx]
+        if (tag) { e.preventDefault(); onTag(tag.id) }
         return
       }
       if (e.key === 's' || e.key === 'S') { e.preventDefault(); onSkip(); return }
@@ -32,13 +32,13 @@ export function TagPicker({ moods, onTag, onSkip, onUndo, onCreateMood, suggeste
     }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
-  }, [moods, onTag, onSkip, onUndo])
+  }, [tags, onTag, onSkip, onUndo])
 
   return (
     <div className={styles.row} data-testid="tag-picker">
-      {moods.slice(0, 9).map((m, i) => (
+      {tags.slice(0, 9).map((m, i) => (
         <button key={m.id} type="button"
-          className={`${styles.chip} ${(suggestedMoodIds ?? []).includes(m.id) ? styles.suggested : ''}`.trim()}
+          className={`${styles.chip} ${(suggestedTagIds ?? []).includes(m.id) ? styles.suggested : ''}`.trim()}
           onClick={() => onTag(m.id)}
           data-testid={`mood-chip-${m.id}`}>
           <span className={styles.num}>{i + 1}</span>
@@ -46,7 +46,7 @@ export function TagPicker({ moods, onTag, onSkip, onUndo, onCreateMood, suggeste
           <span>{m.name}</span>
         </button>
       ))}
-      <NewMoodInput onCreate={onCreateMood} />
+      <NewMoodInput onCreate={onCreateTag} />
       <button type="button" className={styles.util} onClick={onSkip}>{t('triage.skip')}</button>
       {onUndo && <button type="button" className={styles.util} onClick={onUndo}>{t('triage.undo')}</button>}
     </div>

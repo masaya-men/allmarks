@@ -1,9 +1,9 @@
-import type { MoodRecord } from '@/lib/storage/indexeddb'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 
 export type TagReason = 'domain' | 'keyword' | 'embedding' | 'llm'
 
 export interface TagSuggestion {
-  readonly moodId: string
+  readonly tagId: string
   readonly confidence: number
   readonly reason: TagReason
 }
@@ -20,5 +20,5 @@ export interface BookmarkTagger {
 }
 
 export interface BookmarkTaggerContext {
-  readonly moods: ReadonlyArray<MoodRecord>
+  readonly tags: ReadonlyArray<TagRecord>
 }

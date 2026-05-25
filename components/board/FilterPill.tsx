@@ -2,27 +2,28 @@
 
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import type { BoardFilter } from '@/lib/board/types'
-import type { MoodRecord } from '@/lib/storage/indexeddb'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import styles from './FilterPill.module.css'
 
 type Props = {
   readonly value: BoardFilter
   readonly onChange: (f: BoardFilter) => void
-  readonly moods: ReadonlyArray<MoodRecord>
+  readonly tags: ReadonlyArray<TagRecord>
   readonly counts: { readonly all: number; readonly inbox: number; readonly archive: number; readonly dead: number }
 }
 
 /** Chrome label vocab — fixed English across all 15 languages
  *  (= session 42 chrome-English policy, AllMarks branding aligned).
  *  The 'all' filter doubles as the brand mark — AllMarks. */
-function label(f: BoardFilter, moods: ReadonlyArray<MoodRecord>): string {
+function label(f: BoardFilter, tags: ReadonlyArray<TagRecord>): string {
   if (f === 'all') return 'AllMarks'
   if (f === 'inbox') return 'INBOX'
   if (f === 'archive') return 'ARCHIVE'
   if (f === 'dead') return 'DEAD LINKS'
-  const moodId = f.slice(5)
-  return moods.find((m) => m.id === moodId)?.name ?? '—'
+  // `mood:<id>` literal は IDB 永続化フォーマット (= 互換のため保持)
+  const tagId = f.slice(5)
+  return tags.find((m) => m.id === tagId)?.name ?? '—'
 }
 
 function countFor(f: BoardFilter, counts: { all: number; inbox: number; archive: number; dead: number }): string {
@@ -33,10 +34,10 @@ function countFor(f: BoardFilter, counts: { all: number; inbox: number; archive:
   return '---'
 }
 
-export function FilterPill({ value, onChange, moods, counts }: Props): ReactElement {
+export function FilterPill({ value, onChange, tags, counts }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const { display: displayLabel, triggerBurst } = useChromeScramble(label(value, moods))
+  const { display: displayLabel, triggerBurst } = useChromeScramble(label(value, tags))
   const { display: displayCount } = useChromeScramble(countFor(value, counts))
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
         aria-expanded={open}
         data-testid="filter-pill"
       >
-        <span className={styles.label} data-glitch-text={label(value, moods)}>{displayLabel}</span>
+        <span className={styles.label} data-glitch-text={label(value, tags)}>{displayLabel}</span>
         <span className={styles.separator}>·</span>
         <span className={styles.count} data-glitch-text={countFor(value, counts)}>{displayCount}</span>
       </button>
@@ -105,10 +106,10 @@ export function FilterPill({ value, onChange, moods, counts }: Props): ReactElem
               <span style={{ marginLeft: 'auto', color: 'rgba(220,80,80,0.85)' }}>{counts.dead}</span>
             </button>
           )}
-          {moods.length > 0 && (
+          {tags.length > 0 && (
             <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '6px 4px' }} />
           )}
-          {moods.map((m) => {
+          {tags.map((m) => {
             const f: BoardFilter = `mood:${m.id}`
             return (
               <button

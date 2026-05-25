@@ -1,7 +1,7 @@
 'use client'
 
 import type { BoardFilter } from '@/lib/board/types'
-import type { MoodRecord } from '@/lib/storage/indexeddb'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 import styles from './BoardBackgroundTypography.module.css'
 
 /**
@@ -43,15 +43,18 @@ export function isBoardBgTypoVariant(value: string): value is BoardBgTypoVariant
 
 /**
  * Resolve the headline string shown by the background typography layer
- * for the current filter. Special filters get a fixed label; mood filters
- * resolve via the mood id to the user-defined tag name.
+ * for the current filter. Special filters get a fixed label; tag filters
+ * resolve via the tag id to the user-defined tag name.
  *
- * Returns an empty string when there is nothing to show (e.g. a mood id
+ * Returns an empty string when there is nothing to show (e.g. a tag id
  * the user has since deleted) — the host hides itself in that case.
+ *
+ * NOTE: `mood:` prefix in the filter literal is preserved as the IDB
+ * persistence format (see BoardFilter type) — internal references use `tag`.
  */
 export function deriveBoardBgTypoText(
   filter: BoardFilter,
-  moods: readonly MoodRecord[],
+  tags: readonly TagRecord[],
 ): string {
   switch (filter) {
     case 'all':
@@ -65,23 +68,23 @@ export function deriveBoardBgTypoText(
   }
   if (filter.startsWith('mood:')) {
     const id = filter.slice('mood:'.length)
-    return moods.find((m) => m.id === id)?.name ?? ''
+    return tags.find((m) => m.id === id)?.name ?? ''
   }
   return ''
 }
 
 type Props = {
   readonly activeFilter: BoardFilter
-  readonly moods: readonly MoodRecord[]
+  readonly tags: readonly TagRecord[]
   readonly variant?: BoardBgTypoVariant
 }
 
 export function BoardBackgroundTypography({
   activeFilter,
-  moods,
+  tags,
   variant = 'static',
 }: Props): React.ReactElement | null {
-  const text = deriveBoardBgTypoText(activeFilter, moods)
+  const text = deriveBoardBgTypoText(activeFilter, tags)
   if (!text) return null
 
   return (

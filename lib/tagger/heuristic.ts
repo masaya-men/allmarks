@@ -35,26 +35,26 @@ export class HeuristicTagger implements BookmarkTagger {
     const haystackWords = haystack.split(/\W+/).filter((w) => w.length >= 3)
 
     const domainKeywords = DOMAIN_TO_KEYWORD[host] ?? []
-    const moods = this.ctx.moods
+    const tags = this.ctx.tags
 
-    for (const mood of moods) {
-      const moodName = mood.name.toLowerCase()
+    for (const tag of tags) {
+      const tagName = tag.name.toLowerCase()
       // Domain match: high confidence
-      if (domainKeywords.some((kw) => kw === moodName || moodName.includes(kw) || kw.includes(moodName))) {
-        suggestions.push({ moodId: mood.id, confidence: 0.8, reason: 'domain' })
+      if (domainKeywords.some((kw) => kw === tagName || tagName.includes(kw) || kw.includes(tagName))) {
+        suggestions.push({ tagId: tag.id, confidence: 0.8, reason: 'domain' })
         continue
       }
-      // Keyword match in title/description/siteName (symmetric: word substring of mood or mood substring of haystack)
-      if (moodName.length >= 3 && (haystack.includes(moodName) || haystackWords.some((w) => moodName.includes(w)))) {
-        suggestions.push({ moodId: mood.id, confidence: 0.5, reason: 'keyword' })
+      // Keyword match in title/description/siteName (symmetric: word substring of tag name or tag name substring of haystack)
+      if (tagName.length >= 3 && (haystack.includes(tagName) || haystackWords.some((w) => tagName.includes(w)))) {
+        suggestions.push({ tagId: tag.id, confidence: 0.5, reason: 'keyword' })
       }
     }
 
-    // De-duplicate by moodId, keep highest confidence
+    // De-duplicate by tagId, keep highest confidence
     const byId = new Map<string, TagSuggestion>()
     for (const s of suggestions) {
-      const prev = byId.get(s.moodId)
-      if (!prev || prev.confidence < s.confidence) byId.set(s.moodId, s)
+      const prev = byId.get(s.tagId)
+      if (!prev || prev.confidence < s.confidence) byId.set(s.tagId, s)
     }
     return Array.from(byId.values()).sort((a, b) => b.confidence - a.confidence)
   }

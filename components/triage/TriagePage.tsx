@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { useBoardData } from '@/lib/storage/use-board-data'
-import { useMoods } from '@/lib/storage/use-moods'
+import { useTags } from '@/lib/storage/use-tags'
 import { t } from '@/lib/i18n/t'
 import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
@@ -13,7 +13,7 @@ import styles from './TriagePage.module.css'
 export function TriagePage(): ReactElement {
   const router = useRouter()
   const { items, persistTags, loading } = useBoardData()
-  const { moods, create } = useMoods()
+  const { tags, create } = useTags()
   const queue = useMemo(() => items.filter((it) => !it.isDeleted && it.tags.length === 0), [items])
   const [index, setIndex] = useState(0)
   const [lastAction, setLastAction] = useState<{ bookmarkId: string; prev: readonly string[] } | null>(null)
@@ -21,11 +21,11 @@ export function TriagePage(): ReactElement {
   const current = queue[index] ?? null
   const total = queue.length
 
-  const [suggestedMoodIds, setSuggestedMoodIds] = useState<ReadonlyArray<string>>([])
+  const [suggestedTagIds, setSuggestedTagIds] = useState<ReadonlyArray<string>>([])
   useEffect(() => {
-    if (!current) { setSuggestedMoodIds([]); return }
+    if (!current) { setSuggestedTagIds([]); return }
     let cancelled = false
-    const tagger = new HeuristicTagger({ moods })
+    const tagger = new HeuristicTagger({ tags })
     void (async (): Promise<void> => {
       const suggestions = await tagger.suggest({
         url: current.url,
@@ -33,15 +33,15 @@ export function TriagePage(): ReactElement {
         description: '',
         siteName: '',
       })
-      if (!cancelled) setSuggestedMoodIds(suggestions.map((s) => s.moodId))
+      if (!cancelled) setSuggestedTagIds(suggestions.map((s) => s.tagId))
     })()
     return (): void => { cancelled = true }
-  }, [current, moods])
+  }, [current, tags])
 
-  const handleTag = useCallback(async (moodId: string): Promise<void> => {
+  const handleTag = useCallback(async (tagId: string): Promise<void> => {
     if (!current) return
     setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
-    await persistTags(current.bookmarkId, [moodId])
+    await persistTags(current.bookmarkId, [tagId])
     // Do NOT advance index: tagging removes the current item from the queue
     // (its tags.length becomes > 0), so queue[index] naturally becomes the
     // next unprocessed card after the useMemo recomputes.
@@ -60,12 +60,12 @@ export function TriagePage(): ReactElement {
     setIndex((i) => Math.max(0, i - 1))
   }
 
-  const handleNewMood = async (name: string): Promise<void> => {
+  const handleNewTag = async (name: string): Promise<void> => {
     const trimmed = name.trim()
     if (!trimmed) return
     const colors = ['#7c5cfc', '#e066d7', '#4ecdc4', '#f5a623', '#ff6b6b']
-    const color = colors[moods.length % colors.length]
-    const created = await create({ name: trimmed, color, order: moods.length })
+    const color = colors[tags.length % colors.length]
+    const created = await create({ name: trimmed, color, order: tags.length })
     await handleTag(created.id)
   }
 
@@ -100,12 +100,12 @@ export function TriagePage(): ReactElement {
         <TriageCard key={current.bookmarkId} item={current} />
       </div>
       <TagPicker
-        moods={moods}
+        tags={tags}
         onTag={handleTag}
         onSkip={handleSkip}
         onUndo={lastAction ? handleUndo : null}
-        onCreateMood={handleNewMood}
-        suggestedMoodIds={suggestedMoodIds}
+        onCreateTag={handleNewTag}
+        suggestedTagIds={suggestedTagIds}
       />
       <div className={styles.footer}>{t('triage.hint')}</div>
     </div>

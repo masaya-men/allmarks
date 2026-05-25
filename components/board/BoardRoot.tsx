@@ -19,7 +19,7 @@ import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
 import { createBackfillQueue } from '@/lib/board/backfill-queue'
 import { backfillTweetMeta } from '@/lib/board/tweet-backfill'
 import { fetchTikTokMeta } from '@/lib/embed/tiktok-meta'
-import { useMoods } from '@/lib/storage/use-moods'
+import { useTags } from '@/lib/storage/use-tags'
 import { initDB } from '@/lib/storage/indexeddb'
 import { loadBoardConfig, saveBoardConfig } from '@/lib/storage/board-config'
 import { ThemeLayer } from './ThemeLayer'
@@ -77,7 +77,7 @@ export function BoardRoot() {
     reload,
     persistLinkStatus,
   } = useBoardData()
-  const { moods } = useMoods()
+  const { tags } = useTags()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>('all')
   // Background-typography animation variant. `'static'` (fixed centred
   // headline) is the only treatment wired up today; the URL query
@@ -166,7 +166,8 @@ export function BoardRoot() {
   const [shareComposerOpen, setShareComposerOpen] = useState<boolean>(false)
   const [actionSheet, setActionSheet] = useState<{ pngDataUrl: string; shareUrl: string } | null>(null)
   // When focusCard is called for a bookmark not in the current filtered view
-  // (e.g. user is on `mood:foo` but the PiP-clicked card has different tags),
+  // (e.g. user is on `mood:foo` filter literal — IDB-persisted, see BoardFilter
+  // — but the PiP-clicked card has different tags),
   // we clear the filter to 'all' and stash the cardId here. The retry useEffect
   // below picks this up after filteredItems re-renders and completes the scroll.
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null)
@@ -1321,7 +1322,7 @@ export function BoardRoot() {
         <FilterPill
           value={activeFilter}
           onChange={handleFilterChange}
-          moods={moods}
+          tags={tags}
           counts={sidebarCounts}
         />
       </div>
@@ -1388,7 +1389,7 @@ export function BoardRoot() {
                 alone keeps the cards above the typography. */}
             <BoardBackgroundTypography
               activeFilter={activeFilter}
-              moods={moods}
+              tags={tags}
               variant={bgTypoVariant}
             />
             {/* Cards — full-canvas-width with destefanis half-gap padding.

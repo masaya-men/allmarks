@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
-import type { MoodRecord } from '@/lib/storage/indexeddb'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 import {
   BoardBackgroundTypography,
   deriveBoardBgTypoText,
@@ -18,14 +18,14 @@ describe('deriveBoardBgTypoText', () => {
     expect(deriveBoardBgTypoText('dead', [])).toBe('Dead Links')
   })
 
-  it('resolves a mood filter to the mood name', () => {
-    const moods: MoodRecord[] = [
-      { id: 'm1', name: 'Calm', color: '#abc', createdAt: 0 } as MoodRecord,
+  it('resolves a tag filter to the tag name', () => {
+    const tags: TagRecord[] = [
+      { id: 'm1', name: 'Calm', color: '#abc', order: 0, createdAt: 0 } as TagRecord,
     ]
-    expect(deriveBoardBgTypoText('mood:m1', moods)).toBe('Calm')
+    expect(deriveBoardBgTypoText('mood:m1', tags)).toBe('Calm')
   })
 
-  it('returns empty string when a mood id no longer exists', () => {
+  it('returns empty string when a tag id no longer exists', () => {
     expect(deriveBoardBgTypoText('mood:gone', [])).toBe('')
   })
 })
@@ -46,7 +46,7 @@ describe('isBoardBgTypoVariant', () => {
 describe('BoardBackgroundTypography — static wordmark', () => {
   it('renders a single text span when text is non-empty', () => {
     const { container } = render(
-      <BoardBackgroundTypography activeFilter="all" moods={[]} />,
+      <BoardBackgroundTypography activeFilter="all" tags={[]} />,
     )
     const host = container.querySelector('[data-testid="board-bg-typography"]')
     expect(host).not.toBeNull()
@@ -57,7 +57,7 @@ describe('BoardBackgroundTypography — static wordmark', () => {
 
   it('does NOT render anything when text resolves to empty', () => {
     const { container } = render(
-      <BoardBackgroundTypography activeFilter="mood:nonexistent" moods={[]} />,
+      <BoardBackgroundTypography activeFilter="mood:nonexistent" tags={[]} />,
     )
     expect(container.querySelector('[data-testid="board-bg-typography"]')).toBeNull()
   })

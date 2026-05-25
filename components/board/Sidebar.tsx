@@ -5,7 +5,7 @@ import { LiquidGlass } from './LiquidGlass'
 import { BookmarkletInstall } from '@/components/bookmarklet/BookmarkletInstall'
 import { t } from '@/lib/i18n/t'
 import type { BoardFilter } from '@/lib/board/types'
-import type { MoodRecord } from '@/lib/storage/indexeddb'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 import styles from './Sidebar.module.css'
 
 type Props = {
@@ -14,16 +14,16 @@ type Props = {
   readonly counts: { readonly all: number; readonly inbox: number; readonly archive: number }
   readonly activeFilter: BoardFilter
   readonly onFilterChange: (f: BoardFilter) => void
-  readonly moods: ReadonlyArray<MoodRecord>
-  readonly moodCounts: Readonly<Record<string, number>>
-  readonly onCreateMood: () => void
+  readonly tags: ReadonlyArray<TagRecord>
+  readonly tagCounts: Readonly<Record<string, number>>
+  readonly onCreateTag: () => void
   readonly onOpenBookmarkletModal?: () => void
   readonly onTriageStart?: () => void
 }
 
 export function Sidebar({
   collapsed, onToggle, counts, activeFilter, onFilterChange,
-  moods, moodCounts, onCreateMood, onOpenBookmarkletModal, onTriageStart,
+  tags, tagCounts, onCreateTag, onOpenBookmarkletModal, onTriageStart,
 }: Props): ReactElement {
   const isActive = (f: BoardFilter): boolean => activeFilter === f
   return (
@@ -79,7 +79,10 @@ export function Sidebar({
           <BookmarkletInstall onClick={onOpenBookmarkletModal ?? (() => {})} />
 
           <div className={styles.sectionHeader}>{t('board.sidebar.moodsHeader')}</div>
-          {moods.map((m) => {
+          {tags.map((m) => {
+            // `mood:` filter literal は IDB に永続化される BoardFilter 表現
+            // (= board-config の activeFilter) なので既存 user 環境保護のため
+            // そのまま保持。 内部変数は `tag` に rename 済み。
             const f: BoardFilter = `mood:${m.id}`
             const active = activeFilter === f
             return (
@@ -88,11 +91,11 @@ export function Sidebar({
                 onClick={() => onFilterChange(f)}>
                 <span className={styles.moodDot} style={{ background: m.color }} />
                 <span className={styles.navLabel}>{m.name}</span>
-                <span className={styles.navCount}>{moodCounts[m.id] ?? 0}</span>
+                <span className={styles.navCount}>{tagCounts[m.id] ?? 0}</span>
               </button>
             )
           })}
-          <button type="button" className={styles.newMoodBtn} onClick={onCreateMood}>
+          <button type="button" className={styles.newMoodBtn} onClick={onCreateTag}>
             {t('board.sidebar.newMood')}
           </button>
 
