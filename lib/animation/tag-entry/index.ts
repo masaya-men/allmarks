@@ -39,29 +39,45 @@ function readCssVarRaw(name: string, fallback: string): string {
 export function getEntryAnimation(theme: string): EntryAnimation | undefined {
   switch (theme) {
     case 'wave': {
-      const duration = readCssVar('--tag-entry-duration', 420)
-      const easing = readCssVarRaw('--tag-entry-easing', 'cubic-bezier(0.16, 1, 0.3, 1)')
+      const duration = readCssVar('--tag-entry-duration', 380)
+      const easing = readCssVarRaw('--tag-entry-easing', 'cubic-bezier(0.0, 0.0, 0.2, 1)')
       const flash = readCssVarRaw('--tag-entry-flash-color', '#28F100')
-      const staggerStepMs = readCssVar('--tag-entry-stagger-step', 16)
-      const staggerCapMs = readCssVar('--tag-entry-stagger-cap', 400)
-      // CRT TV bootup sequence — shutdown の完全逆。
-      // 0   : 中央点 (= scale 0.001 + 緑 flash + brightness 30)
-      // 0.2 : 横線展開 (= scale 1.3 x 0.02、 緑 flash 弱まる)
-      // 0.45: 縦膨らみ (= scale 1 x 1.3、 brightness 1.5)
-      // 0.7 : 軽 glitch (= chromatic aberration の RGB shift)
-      // 1   : 通常表示 (= 全部 reset)
+      const bloomIntensity = readCssVar('--tag-entry-bloom-intensity', 1.6)
+      const glitchOffsetPx = readCssVar('--tag-entry-glitch-offset', 2)
+      const staggerStepMs = readCssVar('--tag-entry-stagger-step', 14)
+      const staggerCapMs = readCssVar('--tag-entry-stagger-cap', 350)
+      // CRT TV bootup sequence — 業界本流 (Aldlevine CRT Page Load /
+      // Old CRT TV reference / Material / Apple HIG ベース)。
+      // shutdown を機械的に reverse しただけだと「最初に強烈、 最後は地味」
+      // になり「画面が立ち上がる」 心理と逆方向。 本実装は bloom を最後の
+      // 山場 (offset 0.55) に置き、 「だんだん完成する」 演出を実現。
+      //
+      // 0    : 完全闇 (= scale 0, opacity 0)
+      // 0.12 : 中央点出現 (= 緑 flash brightness 30、 sub-100ms 爆発感)
+      // 0.28 : 横線最大展開 (= scale 1.3 x 0.02、 shutdown 50% の完全対称)
+      // 0.55 : 縦展開 + phosphor bloom 山場 ← 本案の核
+      // 0.78 : chromatic aberration glitch (= AllMarks 確定言語)
+      // 1.0  : 通常表示 (= 全部 reset)
       return {
         keyframes: [
           {
             offset: 0,
+            transform: 'scale(0, 0)',
+            opacity: '0',
+            filter: 'brightness(1)',
+            background: 'transparent',
+            boxShadow: 'none',
+          },
+          {
+            offset: 0.12,
             transform: 'scale(0.001, 0.001)',
             opacity: '1',
-            filter: 'brightness(30)',
+            filter: 'brightness(30) saturate(2)',
             background: flash,
             boxShadow: `0 0 12px ${flash}`,
           },
           {
-            offset: 0.2,
+            offset: 0.28,
             transform: 'scale(1.3, 0.02)',
             opacity: '1',
             filter: 'brightness(8) saturate(2)',
@@ -69,18 +85,18 @@ export function getEntryAnimation(theme: string): EntryAnimation | undefined {
             boxShadow: `0 0 24px ${flash}, 0 0 48px rgba(40, 241, 0, 0.6)`,
           },
           {
-            offset: 0.45,
-            transform: 'scale(1, 1.3)',
+            offset: 0.55,
+            transform: 'scale(1, 1.18)',
             opacity: '1',
-            filter: 'brightness(1.5)',
-            background: '#1f3a1f',
-            boxShadow: '0 0 8px rgba(40, 241, 0, 0.4)',
+            filter: `brightness(${bloomIntensity}) saturate(1.4)`,
+            background: 'rgba(40, 241, 0, 0.18)',
+            boxShadow: '0 0 16px rgba(40, 241, 0, 0.5)',
           },
           {
-            offset: 0.7,
-            transform: 'translate(-2px, 1px) scale(1, 1)',
-            opacity: '0.95',
-            filter: 'brightness(1.1)',
+            offset: 0.78,
+            transform: `translate(${-glitchOffsetPx}px, 1px) scale(1, 1)`,
+            opacity: '0.96',
+            filter: 'brightness(1.15)',
             background: 'transparent',
             boxShadow: '2px 0 0 #ff3a5a, -2px 0 0 #5aefff',
           },

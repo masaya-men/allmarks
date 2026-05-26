@@ -336,11 +336,22 @@ export function CardsLayer({
     if (!root) return
     const entryAnim = getEntryAnimation('wave')
     if (!entryAnim) return
+    const prefersReducedMotion = typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const targets = root.querySelectorAll<HTMLElement>('[data-tagged-out="false"]')
     targets.forEach((el, idx) => {
       const rawDelay = idx * entryAnim.staggerStepMs
       const delay = Math.min(rawDelay, entryAnim.staggerCapMs)
-      el.animate(entryAnim.keyframes, { ...entryAnim.options, delay })
+      if (prefersReducedMotion) {
+        // 視覚過敏 user 配慮: CRT bloom + glitch + scale 全部 skip、
+        // 単純 opacity fade のみ。 stagger は keep (= 復活の認知補助)。
+        el.animate(
+          [{ opacity: '0' }, { opacity: '1' }],
+          { duration: 180, easing: 'ease-out', fill: 'none', delay },
+        )
+      } else {
+        el.animate(entryAnim.keyframes, { ...entryAnim.options, delay })
+      }
     })
   }, [entryAnimCycle])
   // Which card currently has its add-tag popover open. Null = none.

@@ -15,9 +15,22 @@
    中央緑 flash → 横線展開 → 縦膨らみ → 軽 glitch → 通常表示。
    shutdown と同じ color / glitch 言語 を使うので motion 言語が揃う。 */
 :root {
-  --tag-entry-duration: 420; /* ms、 shutdown 550ms とほぼ対称 */
-  --tag-entry-easing: cubic-bezier(0.16, 1, 0.3, 1); /* easeOutExpo 系 */
+  /* 業界調査ベース (= Material Design / Apple HIG / Aldlevine CRT Page Load
+     / Old CRT TV reference) で決定:
+     - duration 380ms: shutdown 550ms より速い (= 「点く側は速い」 が本流)
+     - decelerate easing: Material の incoming elements 標準
+     - bloom (= phosphor 残光) を最後の山場に置く構造、 offset 0.55 が核 */
+  --tag-entry-duration: 380; /* ms */
+  --tag-entry-easing: cubic-bezier(0.0, 0.0, 0.2, 1); /* Material decelerate */
   --tag-entry-flash-color: #28F100; /* AllMarks success green、 shutdown と統一 */
-  --tag-entry-stagger-step: 16; /* ms */
-  --tag-entry-stagger-cap: 400; /* ms */
+  --tag-entry-stagger-step: 14; /* ms */
+  --tag-entry-stagger-cap: 350; /* ms */
+  --tag-entry-bloom-intensity: 1.6;
+  --tag-entry-glitch-offset: 2; /* px */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --tag-entry-duration: 180;
+  }
 }
