@@ -720,8 +720,11 @@ export function BoardRoot() {
   //   (2a) tags → 非 tags (= 絞り込み解除) + source 記憶あり → focusCard で
   //        click 元カードの元位置に scroll restore (= source-aware navigation、
   //        探索 mode から元の context に戻る UX pattern)
-  //   (2b) その他の filter 変化 → smooth scroll to top (= 該当カードが上に
-  //        reflow した時に viewport が下のままで「見えない」 問題の対処)
+  //   (2b) tags filter 適用 → 非該当カードの CRT shutdown 演出 (= 550ms +
+  //        stagger) を見せ終わってから smooth scroll to top。 即 scroll だと
+  //        viewport 外の演出が見えない問題 (session 76 user feedback) の対処。
+  //   (2c) その他の filter 変化 (= ALL/INBOX/ARCHIVE dropdown 切替等) → 即
+  //        scroll-to-top (shutdown 走らないので待ち不要)。
   // prevRef で初回 mount 時の発火を gate。
   const prevActiveFilterRef = useRef<BoardFilter>(activeFilter)
   const lastClickedSourceRef = useRef<string | null>(null)
@@ -739,6 +742,16 @@ export function BoardRoot() {
       focusCard(source)
       return
     }
+
+    // tags filter 適用なら shutdown 演出待ち (= 550ms duration + 50ms buffer)。
+    // 山場 = 50% 緑 flash 地点 (275ms) → 75% 点化 → 100% 消滅まで見える時間。
+    // 連続 filter 変化時は前の timer を cleanup で cancel。
+    const isApplyingTagsFilter = isTagsFilter(activeFilter)
+    if (isApplyingTagsFilter) {
+      const timer = window.setTimeout(() => handleScrollMeterJump(0), 600)
+      return () => window.clearTimeout(timer)
+    }
+
     handleScrollMeterJump(0)
   }, [activeFilter, handleScrollMeterJump, focusCard])
 
