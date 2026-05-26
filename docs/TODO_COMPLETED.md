@@ -5152,3 +5152,45 @@ onDrop handler 内の prevPositionsRef 書込 2 箇所も w/h 含む形に更新
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+---
+
+## セッション 78 (2026-05-26) — Liquid Glass 屈折の真因解明 + 校正グリッド戦略実証 + convex bezel は別 session に持ち越し
+
+### 着地: 屈折機能、 ただし「全体歪み」 タイプで「縁で曲がる convex bezel」 は未達
+
+**ship 済 (= 本番反映、 session 内多回 deploy)**:
+
+1. **CalibrationGrid component 新規 + 校正グリッド戦略実証**: 蛍光黄緑 32×32 SVG pattern + `?grid=1` URL gate で /triage に一時オーバーレイ、 user/Claude 両方が screenshot で「屈折効いてるか」 を客観評価可能に。 session 終了時に撤去
+2. **z-ladder strict 化** (= Desktop Claude 診断採用): `.root` に `isolation: isolate`、 AmbientBackdrop z 1 / CalibrationGrid z 2 / canvas z 3 / strips z 4 の strict 順位。 旧 z-index 0/0/1/2 は同 z + 独立 stacking context (= grid opacity + ambient filter) で順序戦争を引き起こしてた
+3. **`.canvas` のガラス装飾を `::before` 疑似要素に逃がす**: 旧 `.canvas` がガラス装飾 + カードコンテナを兼ねていたため、 TriageCard が `.canvas` の stacking context に閉じ込められて「カード > ガラス」 順位を確立できなかった。 `.canvas::before { content:""; position:absolute; inset:0; z-index:-1; background; border; box-shadow; backdrop-filter }` で「ガラスは ::before、 カードは本体」 構造に
+4. **🔴 真因解明: LightningCSS prefix collapse バグ** (= session 78 最大の収穫): 私が CSS に `backdrop-filter: url(#filter) blur saturate; -webkit-backdrop-filter: url(#filter) blur saturate` と prefix 両書きしてた → Next.js LightningCSS が「冗長」 判定で `-webkit-` only に collapse → modern Chromium が `-webkit-backdrop-filter` を受け入れず computed `none` (= 「ガラスが透明な板」)。 真因解明まで「@supports の `#test` filter ID が誤発動」 「feImage data URI が backdrop-filter で読めない」 等の仮説を 5-6 回試行錯誤して空振り。 `out/_next/static/chunks/*.css` を直接 grep して collapse 発見、 非 prefix だけ書いて LightningCSS の自動 prefix に任せる方式に変更で解決
+5. **SVG filter (`#triage-glass-refract`) 復元**: 既存 `/displacement/glass-001.png` (= board/LiquidGlass 流用、 proven な backdrop-filter source) + `feDisplacementMap scale 80`、 シンプル 2-primitive 構造
+6. **CSS の backdrop-filter から `blur(12px) saturate(160%)` 削除**: Desktop Claude 警告「`blur()` 併用は displacement の屈折感を打ち消す」 (= kube.io 参照)、 `backdrop-filter: url(#triage-glass-refract)` のみに簡素化
+7. **撤回: 既存 lib/glass/displacement-map.ts 流用 (= β 案、 convex bezel data URL 動的生成)**: `generateDisplacementMap` を triage canvas に流用試行 → 1265×576 パネル × dpr×4 super-sampling = 7300 万 pixel loop、 displacement + specular の data URL 2 枚で **タブが 2GB 到達**、 user が「怖い」 と報告 → 即撤回。 generateDisplacementMap は ~150px 用、 大パネルでは破綻
+
+**user 視点 (= session 78 後)**:
+- /triage で grid 線が canvas 内で **歪み・波打ち** で屈折機能 (= 「縁で曲がる convex bezel」 ではないが、 全体歪みタイプの屈折で user 「ちゃんとしてる!」)
+- メモリは健全 (= 静的 PNG file 方式、 ResizeObserver なし、 state なし)
+- 校正グリッドは撤去済で本番に痕跡なし
+
+**未達 (= session 79 持ち越し)**:
+- **convex bezel** (= 「ガラスの縁に沿って線が曲がる」 Apple Liquid Glass): 別アプローチ必要 (= Desktop Claude α 案、 pre-built PNG triplet + 11 段 SVG filter、 build script で displacement / specular / magnify を 1 度だけ生成)
+- 残り polish (a)(b)(c)(e)(f) は session 77 から持ち越し継続
+
+**テスト**: 829 PASS 維持 / tsc 0 / build success
+**deploy 回数**: session 内 10+ (= 月次枠余裕、 ただし 1 日 16 上限に近い、 後で wrangler dry-run 検討)
+
+**設計上の重要発見 (= memory 化済)**:
+- **LightningCSS prefix collapse**: backdrop-filter で prefix 両書きすると `-webkit-` only に collapse、 modern Chromium で computed none。 非 prefix だけ書いて LightningCSS の自動 prefix に任せる ([reference_lightningcss_prefix_collapse_backdrop_filter](memory))
+- **displacement-map は大パネルで OOM**: lib/glass/displacement-map は ~150px 用、 1265×576 パネル + dpr×4 で 2GB タブメモリ ([reference_displacement_map_large_pane_memory](memory))
+- **校正グリッド戦略 (= session 77 user 提案) は機能した**: 既存 memory `feedback_calibration_grid_for_visual_effects` の裏付け、 LightningCSS の不可視バグも視覚で気付ける
+- **Desktop Claude 診断は core 戦力**: session 78 で 3 回の追加診断 (= z-ladder ::before 化、 LightningCSS collapse 指摘、 convex bezel 案) が全部正鵠、 user 経由で diagnostic を貰う pattern が確立
+- **stacking context は容器を意識する**: `.canvas` が「装飾 + 子要素コンテナ」 を兼ねると子が外に出られない、 装飾を `::before` に逃がして「容器」 と「中身」 を分離する設計
+- **「縁で曲がる」 ≠ 「歪む」**: user の願望「ガラスの縁に沿って線が曲がる」 = convex bezel = 縁のみ強く屈折 + 中央素通り、 generateDisplacementMap がデフォルトで生成する pattern。 私が流用した PNG file は均一 displacement で「全体歪み」、 visual 別物
+
+### 次セッション (= 79) goal
+
+**残り polish (a)(b)(c)(e)(f) + Phase D 5 項目から着手** + **convex bezel 真挑戦は α 案 (= pre-built PNG triplet) で別アプローチ** + **2026-05-28 朝以降 allmarks.app ドメイン取得確認**。
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+

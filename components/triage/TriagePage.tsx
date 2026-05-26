@@ -10,7 +10,6 @@ import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
 import { DirChip, CoTagStrip, useTagPickerKeys } from './TagPicker'
 import { AmbientBackdrop } from './AmbientBackdrop'
-import { CalibrationGrid } from './CalibrationGrid'
 import styles from './TriagePage.module.css'
 
 type Direction = 'up' | 'right' | 'down' | 'left'
@@ -31,7 +30,6 @@ export function TriagePage(): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
   const mode = parseMode(searchParams.get('mode'))
-  const showCalibrationGrid = searchParams.get('grid') === '1'
   const { items, persistTags, loading, reload: reloadBookmarks } = useBoardData()
   const { tags, create, remove: removeTag } = useTags()
 
@@ -257,7 +255,6 @@ export function TriagePage(): ReactElement {
   return (
     <div className={styles.root} data-testid="triage-page">
       <AmbientBackdrop item={current} exitDirection={exitDirection} />
-      {showCalibrationGrid && <CalibrationGrid />}
 
       {/* ===== 4 edge chip strips ===== */}
       <div className={styles.stripTop}>
@@ -317,16 +314,29 @@ export function TriagePage(): ReactElement {
       </div>
 
       {/* ===== central canvas — strong-refraction Liquid Glass =====
-          Triage-only SVG filter (scale 80 vs board's scale 12) so the
-          edges actually warp the way Apple Liquid Glass does. The
-          displacement map is an inline SVG: two crossed gradients +
-          mid-grey + blur, the standard recipe from kube.io /
-          mycatwrotethis Liquid Glass tutorials. */}
+          Triage-only SVG filter. Reuses the same displacement PNG as
+          board/LiquidGlass (= proven to work as a backdrop-filter
+          source in Chromium), only the displacement scale is bumped
+          for a large refractive pane (board uses 12, triage tries 80).
+
+          Earlier (session 77) this filter used an inline `data:image/svg+xml`
+          feImage source; Chromium's backdrop-filter pipeline does NOT
+          sample data-URI SVG feImage reliably, so the displacement
+          silently produced zero refraction. A PNG file URL works. */}
+      {/* Frosted glass refraction filter — static PNG displacement.
+          Session 78: tried canvas-generated convex bezel via
+          lib/glass/displacement-map (β path) — the 1265×576 pane at
+          dpr×4 super-sampling pushed the tab past 2GB. Reverted.
+          Now: static /displacement/glass-001.png (= board/LiquidGlass's
+          map, proven cheap). The bezel won't bend lines at the rim like
+          Apple Liquid Glass, but the tab stays sane. Convex bezel can
+          be revisited later with the Desktop Claude α path (= pre-built
+          PNG triplet, no per-frame canvas work). */}
       <svg className={styles.glassFilterDefs} aria-hidden="true">
         <defs>
           <filter id="triage-glass-refract" x="0%" y="0%" width="100%" height="100%">
             <feImage
-              href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22gx%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%220%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23000%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f00%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22gy%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%220%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23000%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230f0%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23gx)%22%20style%3D%22mix-blend-mode%3Ascreen%22%2F%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23gy)%22%20style%3D%22mix-blend-mode%3Ascreen%22%2F%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23808080BB%22%20style%3D%22filter%3Ablur(10px)%22%2F%3E%3C%2Fsvg%3E"
+              href="/displacement/glass-001.png"
               result="dmap"
               preserveAspectRatio="none"
             />

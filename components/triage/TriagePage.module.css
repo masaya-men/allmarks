@@ -18,6 +18,9 @@
   );
   color: var(--text-primary);
   z-index: 1;
+  /* Seal the stack so children's z-index battles stay inside this
+     subtree and small integers (1/2/3/4) are all we need. */
+  isolation: isolate;
 }
 
 /* ============= 4 edge chip strips ============= */
@@ -30,7 +33,7 @@
      with rgba black drew a rectangular outline against the now-sharp
      ambient backdrop (the "thin white edge" the user reported). */
   background: transparent;
-  z-index: 2;
+  z-index: 4;
   display: grid;
   align-items: center;
 }
@@ -43,7 +46,7 @@
   top: 96px; bottom: 96px;
   width: 96px;
   background: transparent;
-  z-index: 2;
+  z-index: 4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,6 +105,17 @@
    appearance (not dark dim — that killed the refraction effect),
    strong SVG displacement on the backdrop (scale 80 in the filter),
    inset specular highlight, outer drop shadow for "floating" feel. */
+/* Central canvas — the "container" of the floating liquid glass pane.
+   IMPORTANT structural change (session 78, Desktop Claude diagnosis):
+   the glass decoration (background / border / shadow / backdrop-filter)
+   used to live directly on `.canvas`, which made the canvas double as
+   "the glass" AND "the card container". That coupling created a
+   stacking-context trap — TriageCard was a child of `.canvas` and
+   could never escape above the glass.
+
+   Now `.canvas` is just the box. The glass itself is painted by a
+   `::before` pseudo at `z-index: -1` so it sits under the card
+   inside `.canvas`'s own stacking context. */
 .canvas {
   position: fixed;
   top: 112px;
@@ -109,27 +123,8 @@
   bottom: 112px;
   left: 112px;
   border-radius: var(--card-radius);
-  z-index: 1;
-
-  /* White frosted glass. Mid-grey opacity (not solid) so the
-     refracted backdrop is still visible through it. */
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-
-  /* Specular highlights (top brighter, bottom dimmer) + outer
-     drop shadow so the pane reads as "floating glass". */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
-    0 24px 60px rgba(0, 0, 0, 0.35);
-
-  /* The actual liquid glass: SVG refraction first, then a soft
-     frost blur, then a saturation boost so the background colour
-     bleeds through cleanly. Chromium only — Safari/Firefox fall
-     back to plain blur via @supports below. */
-  backdrop-filter: url(#triage-glass-refract) blur(12px) saturate(160%);
-  -webkit-backdrop-filter: url(#triage-glass-refract) blur(12px) saturate(160%);
-
+  z-index: 3;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -139,16 +134,54 @@
   overflow: hidden;
 }
 
-@supports not (backdrop-filter: url(#test)) {
-  .canvas {
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
+.canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
+    0 24px 60px rgba(0, 0, 0, 0.35);
+
+  /* Pure SVG refraction. NO blur() / saturate() next to url() — kube.io
+     warns those kill the displacement feel by sampling the un-refracted
+     backdrop. The displacement map itself bends the lines; that IS the
+     glass. (Frosting can be added inside the SVG filter via feGaussianBlur
+     on `refracted` if needed.)
+
+     IMPORTANT: do NOT also write -webkit-backdrop-filter with the same
+     value here. LightningCSS (Next's CSS minifier) collapses identical
+     prefixed + non-prefixed declarations into a -webkit-only output,
+     and modern Chromium no longer recognises -webkit-backdrop-filter →
+     the result is computed `none`. session 78 hard-debugged this. */
+  backdrop-filter: url(#triage-glass-refract);
+}
+
+/* Fallback for browsers that can't apply an SVG filter via backdrop-filter
+   (= Safari, Firefox). MUST test the actual filter ID we use — testing
+   `url(#test)` (a non-existent filter) was making Chromium fall through
+   into this block, which silently replaced the refractive url() filter
+   with plain blur. */
+@supports not (backdrop-filter: url(#triage-glass-refract)) {
+  .canvas::before {
+    backdrop-filter: blur(16px) saturate(1.4);
+    background: rgba(255, 255, 255, 0.14);
   }
 }
 .canvasCardHost {
   /* TriageCard host: takes whatever vertical room is left after the
      co-tags strip and footer hint, so the card auto-shrinks to fit
-     the canvas — never overflows or crashes into the chip strip. */
+     the canvas — never overflows or crashes into the chip strip.
+     position: relative + z-index: 1 keeps the card on top of the
+     glass ::before pseudo (which lives at z-index: -1 inside .canvas). */
+  position: relative;
+  z-index: 1;
   flex: 1;
   min-height: 0;
   width: 100%;
@@ -161,6 +194,7 @@
   position: absolute;
   bottom: 12px;
   left: 0; right: 0;
+  z-index: 1; /* above .canvas::before glass layer */
   text-align: center;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11px;
