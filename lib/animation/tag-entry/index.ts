@@ -39,20 +39,59 @@ function readCssVarRaw(name: string, fallback: string): string {
 export function getEntryAnimation(theme: string): EntryAnimation | undefined {
   switch (theme) {
     case 'wave': {
-      const duration = readCssVar('--tag-entry-duration', 320)
+      const duration = readCssVar('--tag-entry-duration', 420)
       const easing = readCssVarRaw('--tag-entry-easing', 'cubic-bezier(0.16, 1, 0.3, 1)')
-      const opacityFrom = readCssVar('--tag-entry-opacity-from', 0)
-      const scaleFrom = readCssVar('--tag-entry-scale-from', 0.88)
-      const translateFromPx = readCssVar('--tag-entry-translate-from', 12)
+      const flash = readCssVarRaw('--tag-entry-flash-color', '#28F100')
       const staggerStepMs = readCssVar('--tag-entry-stagger-step', 16)
       const staggerCapMs = readCssVar('--tag-entry-stagger-cap', 400)
+      // CRT TV bootup sequence — shutdown の完全逆。
+      // 0   : 中央点 (= scale 0.001 + 緑 flash + brightness 30)
+      // 0.2 : 横線展開 (= scale 1.3 x 0.02、 緑 flash 弱まる)
+      // 0.45: 縦膨らみ (= scale 1 x 1.3、 brightness 1.5)
+      // 0.7 : 軽 glitch (= chromatic aberration の RGB shift)
+      // 1   : 通常表示 (= 全部 reset)
       return {
         keyframes: [
           {
-            opacity: String(opacityFrom),
-            transform: `translateY(${translateFromPx}px) scale(${scaleFrom})`,
+            offset: 0,
+            transform: 'scale(0.001, 0.001)',
+            opacity: '1',
+            filter: 'brightness(30)',
+            background: flash,
+            boxShadow: `0 0 12px ${flash}`,
           },
-          { opacity: '1', transform: 'translateY(0) scale(1)' },
+          {
+            offset: 0.2,
+            transform: 'scale(1.3, 0.02)',
+            opacity: '1',
+            filter: 'brightness(8) saturate(2)',
+            background: flash,
+            boxShadow: `0 0 24px ${flash}, 0 0 48px rgba(40, 241, 0, 0.6)`,
+          },
+          {
+            offset: 0.45,
+            transform: 'scale(1, 1.3)',
+            opacity: '1',
+            filter: 'brightness(1.5)',
+            background: '#1f3a1f',
+            boxShadow: '0 0 8px rgba(40, 241, 0, 0.4)',
+          },
+          {
+            offset: 0.7,
+            transform: 'translate(-2px, 1px) scale(1, 1)',
+            opacity: '0.95',
+            filter: 'brightness(1.1)',
+            background: 'transparent',
+            boxShadow: '2px 0 0 #ff3a5a, -2px 0 0 #5aefff',
+          },
+          {
+            offset: 1,
+            transform: 'translate(0, 0) scale(1, 1)',
+            opacity: '1',
+            filter: 'brightness(1)',
+            background: 'transparent',
+            boxShadow: 'none',
+          },
         ],
         options: { duration, easing, fill: 'none' },
         staggerStepMs,

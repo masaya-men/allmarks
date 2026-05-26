@@ -9,13 +9,15 @@
    ため、 getComputedStyle 経由で parseFloat すると 800ms → 0.8 になる
    (= 1000 倍小さい値を WAAPI に渡してしまう) という session 74 で踏んだ
    罠の回避。 単位なしの数値で書けば parseFloat が期待通り 800 を返す。
-   コメントに単位を明記して読者を助ける。 */
+   コメントに単位を明記して読者を助ける。
+
+   WAVE 用 entry = CRT TV bootup 演出 (= shutdown の完全逆 sequence):
+   中央緑 flash → 横線展開 → 縦膨らみ → 軽 glitch → 通常表示。
+   shutdown と同じ color / glitch 言語 を使うので motion 言語が揃う。 */
 :root {
-  --tag-entry-duration: 320; /* ms */
-  --tag-entry-easing: cubic-bezier(0.16, 1, 0.3, 1); /* easeOutExpo 系、 さわやか */
-  --tag-entry-opacity-from: 0;
-  --tag-entry-scale-from: 0.88;
-  --tag-entry-translate-from: 12; /* px、 下からふわっと上に出る motif */
+  --tag-entry-duration: 420; /* ms、 shutdown 550ms とほぼ対称 */
+  --tag-entry-easing: cubic-bezier(0.16, 1, 0.3, 1); /* easeOutExpo 系 */
+  --tag-entry-flash-color: #28F100; /* AllMarks success green、 shutdown と統一 */
   --tag-entry-stagger-step: 16; /* ms */
   --tag-entry-stagger-cap: 400; /* ms */
 }
