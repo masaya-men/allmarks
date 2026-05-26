@@ -36,12 +36,19 @@ export function useTagPickerKeys({
 
 /** Top tag strip: all tags as chips, click to toggle "armed" state.
  *  Armed tags get applied together when the user does a Yes swipe.
- *  Plus a NewMoodInput for inline tag creation. */
+ *  Plus a NewMoodInput for inline tag creation.
+ *
+ *  suggestedTagIds (optional): tags the HeuristicTagger flagged as
+ *  matching the current card (= hashtag / domain / keyword). Rendered
+ *  with a `chipSuggested` visual so the user sees "the system thinks
+ *  these apply" at a glance, even before clicking. Independent of
+ *  `armedTagIds` — a chip may be both suggested AND armed. */
 export function TopTagStrip({
-  tags, armedTagIds, onToggle, onCreate,
+  tags, armedTagIds, suggestedTagIds, onToggle, onCreate,
 }: {
   tags: ReadonlyArray<TagRecord>
   armedTagIds: ReadonlySet<string>
+  suggestedTagIds?: ReadonlySet<string>
   onToggle: (tagId: string) => void
   onCreate: (name: string) => void
 }): ReactElement {
@@ -49,11 +56,17 @@ export function TopTagStrip({
     <div className={styles.tagStrip} data-testid="top-tag-strip">
       {tags.map((tag, i) => {
         const armed = armedTagIds.has(tag.id)
+        const suggested = suggestedTagIds?.has(tag.id) ?? false
+        const cls = [
+          styles.chip,
+          armed && styles.chipArmed,
+          suggested && !armed && styles.chipSuggested,
+        ].filter(Boolean).join(' ')
         return (
           <button
             key={tag.id}
             type="button"
-            className={`${styles.chip} ${armed ? styles.chipArmed : ''}`.trim()}
+            className={cls}
             onClick={(): void => onToggle(tag.id)}
             data-testid={`tag-chip-${tag.id}`}
             aria-pressed={armed}
@@ -62,6 +75,7 @@ export function TopTagStrip({
             <span className={styles.chipDot} style={{ background: tag.color }} />
             <span className={styles.chipName}>{tag.name}</span>
             {armed && <span className={styles.chipCheck}>✓</span>}
+            {suggested && !armed && <span className={styles.chipSparkle}>✦</span>}
           </button>
         )
       })}

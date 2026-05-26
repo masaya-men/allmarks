@@ -5287,3 +5287,77 @@ user が並行プロジェクト LoPo (ハウジング機能) でも同じ仕組
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+---
+
+## セッション 80 — /triage polish 集中、 ガラス改善 + 連続スライド + 操作性 + Z 取り消し修正
+
+**前提**: session 79 で /triage を Yes/No swipe + 武装タグ multi 選択にリデザイン済。 本 session は user 実機評価を起点に 9 つの polish を一気に終わらせた。
+
+### ship 済 (= session 内多 deploy)
+
+1. **凸レンズ屈折 PNG 生成** (`scripts/generate-lens-edge-displacement.mjs`):
+   - 既存 `glass-001.png` (= 小レンズ用 smooth gradient) を大パネル (1265×800) に引き伸ばし → 中央に巨大な blob 状歪み、 「美しくない」 と user 報告
+   - 設計判断: radial r² curve + 凸レンズ方向 (= 中心向き) で **barrel distortion** PNG 新規生成
+   - 出力 `public/displacement/lens-edge.png` (= 512×512、 中心 R=G=128 灰、 r² で縁にいくほど色振れる)
+   - `feImage href` を差し替え → 中央うっすら拡大、 縁で強い屈折、 連続曲線。 凸レンズらしい挙動に着地
+2. **`.root` の radial vignette 削除**: 中央 45% 黒の vignette が凸レンズで magnify される中央コンテンツを更に暗くしてた、 削除で AmbientBackdrop の本来色が透ける
+3. **2 枚並走 slider (= continuous slide)**:
+   - 旧: card exit 完了後に next card mount → 360ms 暗黒間隙 + AmbientBackdrop の opacity 0 → 0.70 フェード
+   - 新: current + incoming を**同時 render**、 旧が左 (or 右) に出ながら新が反対側から並走、 opacity 1 維持
+   - 実装: TriagePage に incoming state、 TriageCard / AmbientBackdrop に `role + enterDirection` prop、 CSS は純粋 translateX、 canvasCardHost を `display: grid; grid-template-rows: 1fr; grid-template-columns: 1fr; place-items: center` で 2 枚同 cell スタック
+   - 効果: 1 枚の長い絵が横スクロールする感覚
+4. **カードのガラス overflow 修正**: user backup JSON (= session 74 保存の 567 ブクマ) を Playwright で IDB 注入してスキャン → sumy/Instagram カードが canvas (= 455px) を超えて 613px に膨らむ overflow 検出 → 原因 = `canvasCardHost` の `grid-template-rows: auto` で行が content height に拡張 → 修正 = `1fr` 明示で親 100% に clamp + child `min-height/width: 0` で flex 子の shrink 許可
+5. **mount-flash 修正**: animation-fill-mode `forwards` → **`both`** に変更 (= incoming カードが mount 直後の 1 フレーム素の状態で表示されてから 0% へ jump する flash を排除)
+6. **ガラス 10% 白オーバーレイ削除**: user 観察「これが原因かも」 で確認、 透明に変更でガラス越しの色がより鮮明に
+7. **スポットライト効果**:
+   - `.canvas::before` の box-shadow が `.canvas { overflow: hidden }` で内部に閉じ込められて effect ゼロ → 発見 = 「子要素の外向き shadow は親の overflow:hidden で clip される、 要素自身の shadow は clip されない」
+   - box-shadow を `::before` から `.canvas` 本体に移動
+   - 9999px spread shadow (= 0.62 黒) で外側を暗く + 4 段 bloom (= 12px / 48px / 140px / 280px の寒色寄り白) で「ガラス自体が光ってる」 効果
+   - 暖色 → 寒色 (= `255,245,225` → `180,210,255` で段階的に青味増す)
+8. **操作系 polish**:
+   - ヒント文字列簡素化 = 「→/D YES · ←/A NO · 1-9 タグ ON/OFF · Z 取り消し」 → **「1-9 タグ ON/OFF · Z 取り消し」** (= YES/NO はガラス上の常時表示で既出)
+   - canvasFooter 文字色: 0.55 → **0.92** (= ほぼ純白)
+   - Yes/No を `<div>` → **`<button>`** に変更、 onClick 配線、 hover で `brightness(1.30) + scale(1.06) + 中央から外側 4px translate`
+   - Yes/No をガラス内に絶対配置 (= viewport 端から `.canvas` 内 24px へ)
+9. **HeuristicTagger 統合 → 即撤去**: 一旦 triage に統合 (= TopTagStrip に suggestedTagIds prop + ✦ マーク + 寒色ハロ)。 user の実タグ (= YOUTUBE / TEST / X / CSS / DESIGN) が汎用英単語で keyword 部分一致 (= 0.5 confidence) が無差別誤爆、 user 「精度微妙すぎ」 で撤去判断。 機構自体 (`lib/tagger/heuristic.ts`) は残置、 将来 confidence ≥0.8 のみ表示等で再挑戦可能
+10. **Z 取り消し 3 バグ修正**:
+    - バグ A (race): handleYes の `setTimeout(360ms)` で persistTags が予約されてる間に Z 押すと、 undo の persistTags(prev) → original の persistTags(composed) の順で走り、 タグ付与が勝ってた → handleUndo で `exitDecision != null` 時は bail
+    - バグ B (state 喪失): handleNo / handleYes(武装ゼロ) が lastAction を null クリアしてた → No 連発で undo state 消える → クリア削除、 lastAction は最後の Yes-with-tags まで保持
+    - バグ C (index 復元): `setIndex(i-1)` 単純デクリメントでは untagged mode で queue が伸び縮みすると正しいカードに戻らない → undoTargetRef + useEffect on queue で `queue.findIndex(it => it.bookmarkId === target)` で正確に位置特定
+    - Playwright で end-to-end 検証 = ✅ titleA before/after Z 完全一致
+
+### user 視点 (= session 後の体験)
+
+- ガラス越しの背景が**凸レンズで自然に屈折** (= 中央うっすら拡大、 縁で強く曲がる、 1 枚の連続曲線)
+- swipe アニメが**並走 slider** (= 1 枚の長い絵が横スクロールする感覚)、 暗黒間隙ゼロ
+- 周囲が**暗くガラス自体が光って浮いてる**、 外周に寒色寄り白の bloom halo
+- カードがガラスから**はみ出さない** (= grid 1fr で物理 clamp)
+- Yes/No が**マウスクリックでも動く** (= 業界基準維持で右 = Yes)
+- **Z 取り消しが本当に機能** (= Playwright 検証済、 アニメ race + No 通過 + index 復元 すべて修正)
+
+### テスト
+
+829 PASS 維持、 tsc 0 errors、 build success (= 25 routes static prerender)、 deploy 多数 (= polish 1 つずつ ship verify cycle)
+
+### 設計上の重要発見 (= 次以降の保険、 memory 化候補)
+
+- **`.canvas { overflow: hidden }` は子要素の外向き box-shadow を clip する、 要素自身のは clip しない**: ガラスの spotlight 効果が出なかった真因。 「ガラスっぽさのために overflow:hidden は必須」 vs 「外向き shadow が必要」 のジレンマを「shadow を親要素に移す」 で解決。 memory 化候補 `reference_overflow_hidden_clips_pseudo_shadow`
+- **animation-fill-mode `forwards` → `both` の違い**: mount 直後の 1 フレーム素の状態 flash を防ぐには backwards 効果が必要、 forwards だけでは不十分。 memory 化候補 `reference_animation_fill_mode_mount_flash`
+- **CSS grid `place-items: center` + デフォルト auto-rows は親 height を無視する**: 行が content height に拡張して overflow 発生、 explicit `grid-template-rows: 1fr` で親に clamp 必須。 memory 化候補 `reference_grid_auto_rows_overflow`
+- **HeuristicTagger の keyword 部分一致 (0.5 confidence) は汎用英単語タグで誤爆爆発**: 「YOUTUBE」 タグが Instagram テキストの「You'll see…」 にも引っかかる等、 substring 比較は意味論理解しないのでブクマ多様化で破綻。 再挑戦時は ≥0.8 (= ハッシュタグ + ドメイン) のみで
+- **setTimeout で予約された state 変更は中断必須**: handleYes の 360ms wait で persistTags が予約された後の undo は race するので、 同期的に bail するか cancel 機構を入れる。 memory 化候補 `reference_settimeout_state_race`
+
+### 次セッション (= 81) goal
+
+同じ /triage 領域の polish 続き (= user が「まだ同じとこポリッシュしますが」 と明示)。 具体的に何を polish するかは user の実機評価次第。 候補:
+- ハロが強すぎ件 (= session 80 で「一旦 OK」 保留中、 4 段透明度を 0.5x に絞る可能性)
+- Phase D 残り (= D1 中断再開 / D4 14 言語 / D5 内部 rename)
+- convex bezel α 案 (= session 78 持ち越し)
+- チュートリアル (= 初回 onboarding、 「タグを選んでから振り分けるフロー」 の認知問題)
+- No 含めて巻き戻す undo 拡張 (= 現状 Yes-with-tags のみ)
+- そのほか user が触って気づいた点
+
+**🔴 ドメイン**: **2026-05-28 朝以降 `allmarks.app` 取得確認** が引き続き待機
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+

@@ -60,3 +60,24 @@
 .chipDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .chipName { /* tag name */ }
 .chipCheck { color: #28F100; font-size: 12px; }
+
+/* Suggested (= HeuristicTagger flagged this tag as matching the current
+   card). Only shown when NOT armed (the armed green takes priority).
+   Subtle cool-white halo + brighter text so the user notices the
+   recommendation at a glance, without competing with the armed green. */
+.chipSuggested {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(220, 235, 255, 0.08);
+  border-color: rgba(220, 235, 255, 0.40);
+  box-shadow: 0 0 10px rgba(220, 235, 255, 0.28);
+}
+.chipSuggested:hover {
+  color: #fff;
+  background: rgba(220, 235, 255, 0.14);
+  border-color: rgba(220, 235, 255, 0.55);
+}
+.chipSparkle {
+  color: rgba(220, 235, 255, 0.95);
+  font-size: 11px;
+  text-shadow: 0 0 6px rgba(220, 235, 255, 0.55);
+}

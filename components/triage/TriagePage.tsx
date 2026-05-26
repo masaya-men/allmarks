@@ -51,6 +51,16 @@ export function TriagePage(): ReactElement {
   const current = queue[index] ?? null
   const total = queue.length
 
+  /* Session 80 continuous-slide: while a swipe animation is playing
+     (exitDecision != null), render the NEXT card alongside the
+     current one. The incoming card enters from the side opposite to
+     the exit direction so the two appear as one continuous pan.
+       - Yes (= card exits right) → incoming enters from LEFT
+       - No  (= card exits left)  → incoming enters from RIGHT
+     */
+  const incoming = (exitDecision && queue[index + 1]) ? queue[index + 1] : null
+  const incomingDirection: 'from-right' | 'from-left' = exitDecision === 'yes' ? 'from-left' : 'from-right'
+
   const toggleArmed = useCallback((tagId: string): void => {
     setArmedTagIds((prev) => {
       const next = new Set(prev)
@@ -63,14 +73,16 @@ export function TriagePage(): ReactElement {
   /** Yes: apply ALL armed tags (union with the card's existing tags so we
    *  never silently strip pre-existing tags in `all` mode) + advance.
    *  Yes always advances; if nothing armed, it's equivalent to No (a skip),
-   *  which is clearer than swallowing the key silently. */
+   *  which is clearer than swallowing the key silently.
+   *
+   *  Only Yes-with-tags sets lastAction (= undo target). No swipes and
+   *  no-tag Yes swipes leave lastAction untouched so the user can still
+   *  undo their most recent tag application even after a few skips. */
   const handleYes = useCallback((): void => {
     if (!current || exitDecision) return
     const willApplyTags = armedTagIds.size > 0
     if (willApplyTags) {
       setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
-    } else {
-      setLastAction(null)
     }
     setExitDecision('yes')
     const composed: string[] = []
@@ -91,10 +103,11 @@ export function TriagePage(): ReactElement {
     }, SWIPE_ANIM_MS)
   }, [current, exitDecision, armedTagIds, persistTags, mode])
 
-  /** No: don't apply tags, just advance. Animation slides card left. */
+  /** No: don't apply tags, just advance. Animation slides card left.
+   *  lastAction is preserved so Z can still undo the last Yes-with-tags
+   *  action across several No skips. */
   const handleNo = useCallback((): void => {
     if (!current || exitDecision) return
-    setLastAction(null)
     setExitDecision('no')
     setTimeout((): void => {
       setExitDecision(null)
@@ -102,12 +115,34 @@ export function TriagePage(): ReactElement {
     }, SWIPE_ANIM_MS)
   }, [current, exitDecision])
 
+  /** Bookmark we want to jump back to after the queue re-derives from
+   *  the updated items list. Consumed in the useEffect below. */
+  const undoTargetRef = useRef<string | null>(null)
+
+  /** Undo: revert the most recent Yes-with-tags. Bails during the slide
+   *  animation (= exitDecision != null) because the pending setTimeout
+   *  in handleYes would race and re-apply the tags right after we revert.
+   *  Instead of blindly decrementing the index, we mark the bookmark id
+   *  and let the queue-watching effect re-locate it once IDB updates. */
   const handleUndo = useCallback(async (): Promise<void> => {
-    if (!lastAction) return
+    if (!lastAction || exitDecision) return
+    undoTargetRef.current = lastAction.bookmarkId
     await persistTags(lastAction.bookmarkId, lastAction.prev)
     setLastAction(null)
-    setIndex((i) => Math.max(0, i - 1))
-  }, [lastAction, persistTags])
+  }, [lastAction, exitDecision, persistTags])
+
+  /** After persistTags resolves and the items list / queue rebuilds,
+   *  locate the undone bookmark in the new queue and jump the cursor
+   *  there. Works across `all` / `untagged` / `tag:X` modes since each
+   *  computes its own queue. Falls through (= no setIndex) if the
+   *  bookmark isn't in the current mode's queue. */
+  useEffect(() => {
+    const target = undoTargetRef.current
+    if (!target) return
+    const idx = queue.findIndex((it) => it.bookmarkId === target)
+    if (idx >= 0) setIndex(idx)
+    undoTargetRef.current = null
+  }, [queue])
 
   const handleCreateTagAddArmed = useCallback(async (name: string): Promise<void> => {
     const trimmed = name.trim()
@@ -210,6 +245,14 @@ export function TriagePage(): ReactElement {
   return (
     <div className={styles.root} data-testid="triage-page">
       <AmbientBackdrop item={current} exitDecision={exitDecision} />
+      {incoming && (
+        <AmbientBackdrop
+          key={`incoming-bg-${incoming.bookmarkId}`}
+          item={incoming}
+          role="incoming"
+          enterDirection={incomingDirection}
+        />
+      )}
 
       {/* Outer chrome: progress (top-left) + tag strip (top-center) + ESC (top-right). */}
       <span className={styles.outerProgress}>{progressText}</span>
@@ -223,22 +266,12 @@ export function TriagePage(): ReactElement {
       </div>
       <button type="button" className={styles.outerBackBtn} onClick={exit}>ESC</button>
 
-      {/* Yes / No swipe hints (= left/right of pane, always visible). */}
-      <div className={`${styles.swipeHint} ${styles.noHint}`}>
-        <span className={styles.swipeArrow}>←</span>
-        <span className={styles.swipeVerdict}>NO</span>
-      </div>
-      <div className={`${styles.swipeHint} ${styles.yesHint}`}>
-        <span className={styles.swipeVerdict}>YES</span>
-        <span className={styles.swipeArrow}>→</span>
-      </div>
-
       {/* SVG defs for the glass refraction filter (= reused from session 78). */}
       <svg className={styles.glassFilterDefs} aria-hidden="true">
         <defs>
           <filter id="triage-glass-refract" x="0%" y="0%" width="100%" height="100%">
             <feImage
-              href="/displacement/glass-001.png"
+              href="/displacement/lens-edge.png"
               result="dmap"
               preserveAspectRatio="none"
             />
@@ -262,7 +295,40 @@ export function TriagePage(): ReactElement {
       >
         <div className={styles.canvasCardHost}>
           <TriageCard key={current.bookmarkId} item={current} exitDecision={exitDecision} />
+          {incoming && (
+            <TriageCard
+              key={`incoming-${incoming.bookmarkId}`}
+              item={incoming}
+              role="incoming"
+              enterDirection={incomingDirection}
+            />
+          )}
         </div>
+
+        {/* Yes / No swipe hints — sit on the glass pane (inside canvas).
+            Clickable buttons so mouse users have a direct path (= not
+            just swipe / keyboard). */}
+        <button
+          type="button"
+          className={`${styles.swipeHint} ${styles.noHint}`}
+          onClick={handleNo}
+          aria-label="No, skip this card"
+          data-testid="triage-no-button"
+        >
+          <span className={styles.swipeArrow}>←</span>
+          <span className={styles.swipeVerdict}>NO</span>
+        </button>
+        <button
+          type="button"
+          className={`${styles.swipeHint} ${styles.yesHint}`}
+          onClick={handleYes}
+          aria-label="Yes, apply armed tags"
+          data-testid="triage-yes-button"
+        >
+          <span className={styles.swipeVerdict}>YES</span>
+          <span className={styles.swipeArrow}>→</span>
+        </button>
+
         <div className={styles.canvasFooter}>{t('triage.hint')}</div>
       </div>
     </div>

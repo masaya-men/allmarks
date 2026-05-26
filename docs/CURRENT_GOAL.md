@@ -1,71 +1,66 @@
-# 次セッションのゴール (= セッション 80) — Yes/No swipe 動作確認 + サイズ・レイアウト brushup + ドメイン取得確認
+# 次セッションのゴール (= セッション 81) — /triage polish 続き + ドメイン取得確認
 
 ## 今のゴール (1 行)
 
-**session 79 で /triage を 4 方向 swipe → 武装タグ multi 選択 + Yes/No swipe + ワールドスライドに全面 redesign し ship 済 (booklage.pages.dev/triage)。 次は user の実機評価 → サイズ / レイアウト brushup → 必要に応じて snap → continuous slide 改修 + 2026-05-28 朝以降 allmarks.app ドメイン取得確認**。
+**session 80 で /triage の凸レンズ屈折 / 連続スライド / カード overflow 修正 / スポットライト効果 / Yes/No クリッカブル / Z 取り消し修正を全て ship 済 (booklage.pages.dev/triage)。 次は user の実機評価でまだ気になる polish を 1 つずつ。 開始日が 2026-05-28 以降なら allmarks.app 取得確認も**。
 
 ## 開始時の動き (= Claude の最初の発言)
 
-1. **🔴 allmarks.app ドメイン取得確認** (= 2026-05-28 朝以降 user 取得予定、 今日が 28 以降ならまず確認)
-2. user に「**Yes/No swipe model の実機評価**、 何が気持ち良くて何が気持ち悪いか教えてください」 と聞く (= user memory)
-3. brushup 候補を text + (必要なら) Visual Companion で提案 → 承認 → 実装 → 検証
+1. **🔴 allmarks.app ドメイン取得確認** (= 2026-05-28 朝以降 user 取得予定、 開始日次第)
+2. user に「**session 80 で ship した polish 9 項目の実機評価、 まだ気になる箇所**を教えてください」 と聞く (= 平文、 AskUserQuestion 使わない)
+3. brushup を 1 項目ずつ「現状確認 → 案提示 → 承認 → 実装 → 検証」 で進める
 
-## session 79 到達点 (= booklage.pages.dev/triage で動作中)
+## session 80 到達点 (= booklage.pages.dev/triage で動作中)
 
-### model 変更 (= 4 方向廃止)
+### ガラス周りの polish 9 つ
 
-- 4 方向 swipe + co-tag → **武装タグ multi 選択 (緑 + ✓) + Yes/No swipe**
-- カードはサイズ維持で translateX 360ms、 ガラスは固定窓で overflow:hidden clip
-- 背景 (AmbientBackdrop) も同方向に同期スライド
-- TopTagStrip 上中央固定、 1-9 + click で武装トグル、 + NEW で新規作成 (即武装 on)
-- → / D = Yes (= 武装タグ全部一括付与 + 次へ)
-- ← / A / Space = No、 Z = undo、 Esc = exit
+1. **凸レンズ屈折**: `scripts/generate-lens-edge-displacement.mjs` で barrel distortion PNG 生成、 中央うっすら拡大 + 縁で強い連続屈折
+2. **連続スライド**: 2 枚並走 slider、 旧 + 新 card 同時 render、 純粋 translateX で「1 枚の絵が横スクロール」 感、 暗黒間隙ゼロ
+3. **カード overflow 修正**: `canvasCardHost` を `grid-template-rows: 1fr` で親 height clamp、 長文 description カードもガラス内に収まる
+4. **mount-flash 修正**: animation-fill-mode `forwards` → `both` で 1 frame flash 排除
+5. **白オーバーレイ削除**: ガラスの 10% 白 transparent に変更
+6. **スポットライト効果**: 9999px spread shadow + 4 段 bloom halo (= 寒色寄り白)、 box-shadow を `::before` から `.canvas` 本体に移動 (= 子要素の外向き shadow が親 `overflow: hidden` で clip される問題を発見 + 解決)
+7. **操作系 polish**: ヒント「1-9 タグ ON/OFF · Z 取り消し」、 文字色 0.92 白、 Yes/No を `<button>` 化 (= マウスクリック可、 hover でリッチに反応)
+8. **HeuristicTagger 統合 → 即撤去**: user の汎用英単語タグ (= YOUTUBE / DESIGN 等) で keyword 部分一致 (0.5 confidence) が誤爆爆発、 撤去判断。 機構 (`lib/tagger/heuristic.ts`) は残置
+9. **Z 取り消し 3 バグ修正**: race (= 360ms wait 中の persistTags 競合) + state 喪失 (= No で lastAction クリア) + index 復元 (= queue.findIndex で正確位置)、 Playwright で end-to-end 検証済
 
-### 削除した遺物
+### 検証
 
-- DirChip component 完全削除
-- 4 方向 strip / chip wrapper の CSS 全部削除
-- TriageCard / AmbientBackdrop の上下左右 4 方向 exit アニメ削除 (= translateX Yes/No 2 種のみに)
-- Shift で副タグ 5-8 切替の機能廃止 (= 全タグが TopTagStrip で同列、 階層なし)
-
-### 副産物: Tweet 動画 pipeline memory 化
-
-- 新 memory `reference_tweet_video_frames_pipeline`: AllMarks の 6 ファイル + 4 落とし穴
-- user の並行プロジェクト LoPo (= ハウジング) に移植する時用のコピペ message を提供済
+- 829 PASS 維持、 tsc 0 errors、 build 25 routes static prerender 全 success
+- user backup JSON (= 567 ブクマ + 5 tags) を Playwright で IDB 注入してスキャン、 overflow / Z undo を end-to-end 検証
 
 ## 残課題 (= 次セッション議論)
 
-### 確実にやる
-- **🔴 2026-05-28 朝以降 allmarks.app ドメイン取得確認** ([project_allmarks_domain_reminder](memory))
-- **user 実機評価のヒアリング** = Yes/No swipe の体感、 武装タグ chip の操作感、 ワールドスライドの気持ちよさ、 全部
+### user 観察 (= polish 候補)
 
-### user 観察 (= 解消候補)
-- **ガラス中央の歪みが純黒タブでも見える**: displacement map (scale=80) が AmbientBackdrop の微妙な色グラデを歪めて blob shape 可視化。 user 「今は残し」 → 後で評価
-- **snap でカード退場 → 入場が繋がる**: 旧 card 退場アニメ中に新 card 並走しない (= 「continuous slide」 未実装)、 中規模追加工事 (= 2 枚並走 slider 実装)
-- **ガラスのサイズ / レイアウト brushup**: user 「もっとブラッシュアップしたい」 と発言、 具体的にどこをどう変えるか議論
+- **ハロが強すぎ件** (= session 80 で「一旦 OK」 保留): 4 段 bloom の透明度 (= 0.45 / 0.32 / 0.20 / 0.10) を 0.5x に絞る or 段数減らす
+- **チュートリアル** (= 初回 onboarding): 「タグを選んでから振り分けるフロー」 の認知問題、 user 自身が言及。 初回 only mini-tutorial overlay or 恒久ヒント文字 or 数秒だけ「タグをクリック → 右に振る」 のアニメ点滅、 等の案
+- **No 含めて巻き戻す undo 拡張**: 現状は Yes-with-tags のみ undo 可、 user が言及したら実装
 
-### Phase D 残り (= session 78 持ち越し + 79 の model 変更で意味変容)
-- **D1 中断再開** (= localStorage で完了 id 永続) — model 変わっても有効
-- **D4 他 14 言語 mood→tag rename** — まだ有効
+### Phase D 残り (= session 78 / 79 持ち越し継続)
+
+- **D1 中断再開** (= localStorage で完了 id 永続 + 続きから prompt) — model 変わっても有効
+- **D4 他 14 言語の mood → tag rename** — messages/{en,ar,de,es,fr,it,ko,nl,pt,ru,th,tr,vi,zh}.json の "newMood" / "moodNamePlaceholder" 等
 - **D5 NewMoodInput → NewTagInput rename** — internal name 改修
-- **D2 しゅっアニメ進化** / **D3 タグ削除 fx** — model 変更で意味が変わった、 再設計必要
 
 ### convex bezel (= session 78 から持ち越し)
+
 - α 案 = pre-built PNG triplet + build script
-- model 確定したのでガラス polish に注力するなら次以降
+- model 確定 + ガラス polish 着地したので polish に注力するなら次以降
 
-## 守ること (= user memory + session 79 反省 参照)
+## 守ること (= user memory + session 80 反省 参照)
 
-- **「対話で進める、 一括で 3 つも 4 つも変えない」** — session 77-79 通じて user 一貫主張
-- **「武装」 等の脳内ショートハンドを UI 文言に漏らさない** — memory `feedback_ui_vocabulary` 強化済、 視覚状態だけで semantics
-- **「verify before claiming it works」** — memory `feedback_verify_before_claiming`、 deploy 後自分で playwright で確認してから user に投げる
-- **大きい構造変更前は方針確認** — memory `feedback_consult_before_big_changes`
-- **AskUserQuestion で polish / design を聞かない** — memory `feedback_no_question_box_for_design`
-- **brainstorming skill 使ったら最後まで follow** — Visual Companion で mockup 比較 → 設計の根本 reframe ができる、 session 79 で実証
+- **「対話で進める、 一括で 3 つも 4 つも変えない」** — feedback_one_thing_at_a_time
+- **「武装」 等の脳内ショートハンドを UI 文言に漏らさない** — feedback_ui_vocabulary
+- **verify before claiming it works** — feedback_verify_before_claiming、 deploy 後 Playwright で確認してから user に投げる (= session 80 で Z undo は実際に Playwright で end-to-end 検証してから user 報告)
+- **大きい構造変更前は方針確認** — feedback_consult_before_big_changes
+- **AskUserQuestion で polish / design を聞かない** — feedback_no_question_box_for_design
+- **おすすめ系は精度問題で再挑戦時は慎重に** — substring 部分一致は誤爆爆発、 ハッシュタグ + ドメイン (= confidence ≥0.8) のみで attempt するなら可
+- **session 80 で見つけた CSS の罠は memory 化推奨** — overflow:hidden が子の外向き shadow を clip / grid auto-rows が親 height 無視 / animation-fill-mode forwards だけだと mount-flash
 
 ## 進め方 (= 候補、 user 指示優先)
 
-- 1 項目ずつ「現状確認 → 案提示 → user 承認 → 実装 → 検証」 の 4 ステップ
+- 1 項目ずつ「現状確認 → 案提示 → user 承認 → 実装 → 検証」
 - deploy は **Claude 判断で OK**、 ただし 1 日 16 deploy 上限を意識
 - 大きい構造変更 (= 100 行+ refactor) は事前相談、 brainstorm からやり直す
 
@@ -75,5 +70,5 @@
 - 応答は日本語、 横文字カタカナ控えめ、 AskUserQuestion 多用しない (= 特に design 系)
 - deploy 前に tsc + vitest (= 既知 flake `tests/lib/channel.test.ts` 単体 PASS 確認で OK)
 - deploy 手順: `pnpm build` → `npx wrangler pages deploy out/ --project-name=booklage --branch=master --commit-dirty=true --commit-message="<ASCII>"`
-- Visual Companion は `.superpowers/brainstorm/` に persist 済、 30 分無操作で auto-exit
+- user backup JSON は `C:\Users\masay\Downloads\allmarks-backup-2026-05-25.json` (= 835 KB)、 Playwright IDB 注入手順は `C:\Users\masay\AppData\Local\Temp\playwright-test-undo.js` 参照
 - **🔴 ドメイン (2026-05-28 朝以降)**: `allmarks.app` 取得確認 ([project_allmarks_domain_reminder](memory))

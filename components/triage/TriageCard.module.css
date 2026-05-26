@@ -16,20 +16,17 @@
      own subtle treatment so the central canvas dim still bleeds
      between them, matching the Lightbox feel. */
   background: transparent;
-  animation: triageIn 220ms cubic-bezier(0.20, 0.60, 0.20, 1);
 }
 
-@keyframes triageIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-/* Session 79: Yes/No exit. Card slides horizontally at NORMAL SIZE
-   toward the swipe direction (Yes = right, No = left). No scale,
-   no brightness — the glass pane has overflow:hidden so the card
-   visually clips at the pane edge as it slides off. */
-.card.exitYes { animation: triageExitYes 360ms cubic-bezier(0.40, 0, 0.30, 1) forwards; }
-.card.exitNo  { animation: triageExitNo  360ms cubic-bezier(0.40, 0, 0.30, 1) forwards; }
+/* Session 80: continuous slide. Both the exiting and the incoming card
+   are on screen at the same time; they translate together so the user
+   sees an unbroken horizontal pan rather than a fade-out / fade-in.
+   NO opacity changes anywhere — pure transform.
+   Glass pane has overflow:hidden so each card clips at the pane edge. */
+.card.exitYes      { animation: triageExitYes      360ms cubic-bezier(0.40, 0, 0.30, 1) both; }
+.card.exitNo       { animation: triageExitNo       360ms cubic-bezier(0.40, 0, 0.30, 1) both; }
+.card.enterFromRight { animation: triageEnterFromRight 360ms cubic-bezier(0.40, 0, 0.30, 1) both; }
+.card.enterFromLeft  { animation: triageEnterFromLeft  360ms cubic-bezier(0.40, 0, 0.30, 1) both; }
 
 @keyframes triageExitYes {
   0%   { transform: translateX(0); }
@@ -39,13 +36,21 @@
   0%   { transform: translateX(0); }
   100% { transform: translateX(-120%); }
 }
+@keyframes triageEnterFromRight {
+  0%   { transform: translateX(120%); }
+  100% { transform: translateX(0); }
+}
+@keyframes triageEnterFromLeft {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(0); }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .card.exitYes, .card.exitNo {
-    animation: triageExitFadeOnly 120ms linear forwards;
+  .card.exitYes, .card.exitNo,
+  .card.enterFromRight, .card.enterFromLeft {
+    animation: none;
   }
 }
-@keyframes triageExitFadeOnly { from { opacity: 1; } to { opacity: 0; } }
 
 /* ===== Media (left) — natural aspect, fills card height, width derived from aspect ===== */
 .media {

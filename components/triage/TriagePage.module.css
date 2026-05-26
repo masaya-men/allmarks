@@ -11,11 +11,6 @@
    ------------------------------------------------------------------ */
 .root {
   position: fixed; inset: 0;
-  background: radial-gradient(ellipse 75% 75% at center,
-    rgba(0, 0, 0, 0.45) 0%,
-    rgba(0, 0, 0, 0.10) 60%,
-    rgba(0, 0, 0, 0)    100%
-  );
   color: var(--text-primary);
   z-index: 1;
   /* Seal the stack so children's z-index battles stay inside this
@@ -77,21 +72,34 @@
 }
 .outerTagStrip::-webkit-scrollbar { display: none; }
 
-/* ============= Yes / No swipe hints (= left / right of viewport) ============= */
+/* ============= Yes / No swipe hints (= inside the glass canvas) =============
+   Sit on the glass pane itself (= absolute relative to .canvas), not the
+   viewport. They stay static during the world-slide (canvasCardHost +
+   AmbientBackdrop translate; these hints don't).
+   Session 80: now <button> elements — clickable for mouse users in
+   addition to swipe / keyboard. Pointer-events enabled, cursor pointer. */
 .swipeHint {
-  position: fixed;
+  position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 5;
+  z-index: 2; /* above .canvas::before glass body (-1) and card host (1) */
   display: flex;
   align-items: center;
   gap: 8px;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
+  background: transparent;
+  border: 0;
+  padding: 14px 10px;
+  cursor: pointer;
+  transition: filter 140ms ease, transform 140ms ease;
 }
-.noHint  { left: 32px;  color: #ff8c8c; }
-.yesHint { right: 32px; color: #6bcf7f; }
+.swipeHint:hover { filter: brightness(1.30); transform: translateY(-50%) scale(1.06); }
+.swipeHint:active { filter: brightness(0.85); }
+.noHint  { left: 24px;  color: #ff8c8c; }
+.yesHint { right: 24px; color: #6bcf7f; }
+.noHint:hover  { transform: translateY(-50%) translateX(-4px) scale(1.06); }
+.yesHint:hover { transform: translateY(-50%) translateX(4px)  scale(1.06); }
 .swipeArrow   { font-size: 28px; line-height: 1; }
 .swipeVerdict { font-size: 16px; font-weight: 700; letter-spacing: 0.18em; }
 
@@ -136,6 +144,32 @@
   gap: 18px;
   touch-action: none;
   overflow: hidden;
+
+  /* Box-shadows MUST live on .canvas itself, not on ::before — because
+     .canvas has overflow:hidden which clips the pseudo's outward
+     shadows. The element's OWN box-shadow paints around its own
+     border-box and is NOT clipped by its own overflow:hidden. */
+  box-shadow:
+    /* Inner edge highlights — polished glass top reflects light.
+       Slightly cool white for that "luminous lab glass" feel. */
+    inset 0 1px 0 rgba(235, 245, 255, 0.70),
+    inset 0 -1px 0 rgba(235, 245, 255, 0.18),
+
+    /* Multi-stage outer glow — real light bloom. Three shadows at
+       increasing blur create a continuous falloff that reads as the
+       glass actually emitting light, not just having a halo. */
+    0 0 12px  2px  rgba(235, 245, 255, 0.45),
+    0 0 48px  8px  rgba(220, 235, 255, 0.32),
+    0 0 140px 28px rgba(200, 225, 255, 0.20),
+    0 0 280px 60px rgba(180, 210, 255, 0.10),
+
+    /* Deep drop shadow — pane floats in front. */
+    0 28px 80px rgba(0, 0, 0, 0.55),
+
+    /* Spot-light effect: wide spread darkens everything outside
+       the glass pane. 0.62 = dark but not pitch-black, so the
+       surroundings are present but recede. */
+    0 0 0 9999px rgba(0, 0, 0, 0.62);
 }
 
 .canvas::before {
@@ -146,12 +180,10 @@
   border-radius: inherit;
   pointer-events: none;
 
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
-    0 24px 60px rgba(0, 0, 0, 0.35);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  /* box-shadow lives on .canvas itself (= not here) — see comment in
+     .canvas rule above. ::before is just the border + refraction. */
 
   /* Pure SVG refraction. NO blur() / saturate() next to url() — kube.io
      warns those kill the displacement feel by sampling the un-refracted
@@ -179,19 +211,32 @@
   }
 }
 .canvasCardHost {
-  /* TriageCard host: takes whatever vertical room is left after the
-     co-tags strip and footer hint, so the card auto-shrinks to fit
-     the canvas — never overflows or crashes into the chip strip.
-     position: relative + z-index: 1 keeps the card on top of the
-     glass ::before pseudo (which lives at z-index: -1 inside .canvas). */
+  /* TriageCard host. Session 80 continuous-slide: 2 cards may be on
+     screen at the same time (current exiting + incoming sliding in).
+     Stack them in one grid cell so they overlap and animate side by
+     side, each centred via place-items.
+
+     CRITICAL: grid-template-rows/columns MUST be 1fr (= "fill the
+     parent"). Without these, default `grid-auto-rows: auto` lets the
+     cell grow to fit the largest item — so a card with a long text
+     description blows past the canvas height and overflows the glass.
+     1fr clamps the cell to the host's own flex: 1 allocation. */
   position: relative;
   z-index: 1;
   flex: 1;
   min-height: 0;
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+  place-items: center;
+}
+.canvasCardHost > * {
+  grid-area: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
+  min-width: 0;
 }
 
 .canvasFooter {
@@ -202,9 +247,9 @@
   text-align: center;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.92);
   letter-spacing: 0.10em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
 }
 
 /* ============= entry picker / loading / empty (existing simple layout) ============= */

@@ -11,7 +11,6 @@
   opacity: 0.70;
   z-index: 1; /* strict z-ladder: ambient 1 → canvas 3 → chrome 5 */
   pointer-events: none;
-  animation: ambientIn 380ms cubic-bezier(0.20, 0.60, 0.20, 1);
 }
 
 .fallback {
@@ -22,32 +21,31 @@
   pointer-events: none;
 }
 
-@keyframes ambientIn {
-  from { opacity: 0; }
-  to   { opacity: 0.70; }
-}
-
-/* Session 79: Yes/No exit. Backdrop slides off the viewport in the same
-   direction as the card. Yes = slide right, No = slide left. The next
-   item's AmbientBackdrop re-mounts under it via React key and runs
-   ambientIn from zero, producing the "world slid past" feel. */
-.exitYes { animation: ambientExitYes 360ms cubic-bezier(0.40, 0, 0.30, 1) forwards; }
-.exitNo  { animation: ambientExitNo  360ms cubic-bezier(0.40, 0, 0.30, 1) forwards; }
+/* Session 80: continuous slide. Exit/enter both animate transform ONLY
+   (no opacity changes anywhere), so the exiting and incoming backdrops
+   move together as one continuous panorama. */
+.exitYes        { animation: ambientExitYes        360ms cubic-bezier(0.40, 0, 0.30, 1) both; }
+.exitNo         { animation: ambientExitNo         360ms cubic-bezier(0.40, 0, 0.30, 1) both; }
+.enterFromRight { animation: ambientEnterFromRight 360ms cubic-bezier(0.40, 0, 0.30, 1) both; }
+.enterFromLeft  { animation: ambientEnterFromLeft  360ms cubic-bezier(0.40, 0, 0.30, 1) both; }
 
 @keyframes ambientExitYes {
-  0%   { opacity: 0.70; transform: translateX(0);    }
-  100% { opacity: 0;    transform: translateX(40%);  }
+  0%   { transform: translateX(0);     }
+  100% { transform: translateX(100%);  }
 }
 @keyframes ambientExitNo {
-  0%   { opacity: 0.70; transform: translateX(0);    }
-  100% { opacity: 0;    transform: translateX(-40%); }
+  0%   { transform: translateX(0);     }
+  100% { transform: translateX(-100%); }
+}
+@keyframes ambientEnterFromRight {
+  0%   { transform: translateX(100%);  }
+  100% { transform: translateX(0);     }
+}
+@keyframes ambientEnterFromLeft {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(0);     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .layer { animation: none; opacity: 0.70; }
-  .exitYes, .exitNo { animation: ambientExitFade 120ms linear forwards; }
-}
-@keyframes ambientExitFade {
-  from { opacity: 0.70; }
-  to   { opacity: 0; }
+  .exitYes, .exitNo, .enterFromRight, .enterFromLeft { animation: none; }
 }
