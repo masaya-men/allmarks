@@ -5090,3 +5090,65 @@ onDrop handler 内の prevPositionsRef 書込 2 箇所も w/h 含む形に更新
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+---
+
+## セッション 77 (2026-05-26) — /triage 全面再設計 + Liquid Glass 屈折 + 校正グリッド戦略確立
+
+軽い polish 数個から入ったが、 user 大改造を要望 → Triage 画面の構造全部書き直し。 終盤で Liquid Glass 屈折を入れたが「効いてるかわからん」 問題が発覚、 user 提案の「校正グリッド」 で次セッションに client 渡し。
+
+### ship 順序 (= 内 14+ deploy)
+
+1. **EXPORT/IMPORT chrome ボタン削除**: session 74 の IDB v15→v16 移行保険、 user 確認後 撤去 (= backup.ts / BackupButton.tsx は file 残置)
+2. **ja.json**: sidebar の MOODS → TAGS、 「+ 新しい mood → + 新しいタグ」 (= 他 14 言語は D4 持ち越し)
+3. **背景 board 透け度** 14% → 22% に (= session 73 持ち越し g、 ただし後で BoardBackdrop 自体撤去で moot に)
+4. **キー操作改革**: 矢印 + WASD で 4 方向 swipe (= Shift 押し中は副タグ swipe)、 Space スキップ (= 旧 S は WASD-S と衝突)、 数字 1-9 は co-tag toggle のみ、 DirChip 表示 「↑ 1」 → 「↑ W」 (= 数字との混同解消)
+5. **TagPicker overhaul** (= user 「見た目悪い、 触れない、 配置汚い、 説明見づらい」 指摘): 白文字 + 2 段 text-shadow に統一 (= 既存 board recipe)、 chip 大 (= padding 10/14 → 18/28、 min 132×88)、 副タグ色強化、 co-tag chip pill 化 + min-height 36、 utilHint (= Space/Z) pill 化
+6. **AmbientBackdrop 初版**: 中央 card サムネを inset -10% / blur 80 / opacity 0.55 / saturate 1.25 で背景拡張、 swipe 連動で同方向 22% translate-out + 次カード mount で fade-in、 既存 BoardBackdrop (= 全 board grid 透け) を unmount (= file 残置)
+7. **全面 layout 再設計** (= user 図示「青箱 + 4 辺黄色帯 + 中央赤 2 枚」): TagPicker から DirChip / CoTagStrip / useTagPickerKeys を named export 化、 TriagePage で「4 辺 fixed strip 96px + 中央 fixed canvas inset 112」 構造に書き換え、 entry picker / loading / empty は simpleRoot class で分離維持
+8. **TriageCard を横並び 2 カラム** (= user 「赤 2 枚 = 1 枚の中の 2 カラム」): 縦長 4:5 白カードから、 左 = thumbnail 自然 aspect (= item.aspectRatio で動的)、 右 = 320px 固定 text panel (= Lightbox 視覚と完全同等: title 22px / weight 600 / -0.01em、 desc 15px / line-height 1.65、 hairline scrollbar、 dark theme)
+9. **canvas に card auto-fit**: canvasCardHost wrapper (= flex 1 + min-height 0) で「co-tags strip + footer hint 引いた残り高さ」 を card に渡す → 自動 shrink で canvas に納まる
+10. **AmbientBackdrop tuning**: 初版「強すぎ」 → blur 80 → 40 → 20 → 6、 opacity 0.55 → 0.45 → 0.55 → 0.70、 inset -10 → -5 → -3 → -2、 saturate 1.25 → 1.15 → 1.10。 user 「もっとくっきり」 連発で最終的に「ほぼ原寸 + 軽 blur」 に
+11. **canvas backdrop-filter blur 20** + 「白い縁無くす」 (= user 「白い四角い縁」 指摘 → 私 canvas border 削除)
+12. **canvas mask + box-shadow + radius 48 で「縁を消す」** = **私の解釈ミス**、 user は strip 帯の dim 縁を指摘してたのに canvas の縁と取り違え。 user 「全然見当違いのところ触ってませんか?」 → revert
+13. **Strip 帯 dim を transparent に** (= 真の「白い縁」 origin、 contrast 差で出てた)
+14. **Liquid Glass 流用 (= 弱屈折)**: 既存 components/board/LiquidGlass を triage canvas に wrap + dark theme override → user 「一切ガラス効果入ってない」 (= scale 12 + dark background で不可視)
+15. **Liquid Glass 強屈折 新規実装** (= user 「ちゃんと参考資料見直して」 + 「白っぽいすりガラス + 強い屈折」): kube.io / mycatwrotethis の Liquid Glass tutorial 調査、 新規 SVG filter `triage-glass-refract` で inline displacement map (= crossed gradients + screen blend + 中央 grey + 10px blur) + scale 80、 canvas は白 frosted (= rgba(255,255,255,0.10)) + border (= rgba(255,255,255,0.22)) + inset highlight (= 上 0.45 / 下 0.12) + outer drop shadow (= 24/60)、 backdrop-filter url + blur 12 + saturate 160%、 既存 LiquidGlass (= scale 12) は board 用に温存
+
+### user 視点 (= session 77 後の体験)
+
+- 整理画面 (/triage) = 中央に **大きい白 frosted Liquid Glass パネル**、 中に **横並び 2 カラム card** (= 左 thumbnail / 右 text panel)
+- 4 辺に **WASD ラベル付き chip** (= 「↑ W DESIGN」 等)、 strip 帯背景透明 (= 縁線なし)
+- 背景に **現カードサムネが拡大ぼかしで広がる** (= ambient backdrop)、 swipe で背景も同方向に流れる
+- 矢印 / WASD で swipe、 Space で skip、 数字 1-9 で co-tag toggle、 Z で undo
+- chrome から EXPORT/IMPORT 削除、 sidebar 「TAGS」 表示
+
+### 設計上の重要発見 (= memory 化済)
+
+- **Liquid Glass scale**: 12 (= board sidebar 用) は見えない、 80+ で初めて屈折 visible。 dark background は屈折効果を完全に殺す、 白 frosted (= rgba(255,255,255,0.10)) が正解。 displacement map は crossed gradients (= R 水平 / G 垂直) + mix-blend-mode:screen + 中央 grey + blur が定石 (kube.io / mycatwrotethis 参考)
+- **校正グリッド戦略** (= user 天才提案、 新 memory `feedback_calibration_grid_for_visual_effects`): 視覚効果 (= 屈折 / blur / 歪み) polish は背景に直線格子を一時配置で user / Claude 両方で客観評価 → 数値調整 → グリッド撤去 のサイクル
+- **AskUserQuestion で design 系を聞かない** (= 新 memory `feedback_no_question_box_for_design`): polish / 美学 / 数値調整は平文対話、 固定選択肢は user 思考を框で縛る
+- **strip 帯 dim 0 が正解**: 4 辺 chip 帯に rgba(0,0,0,0.22) dim を入れると ambient backdrop の明るい部分との contrast で「縁線」 visible
+- **解釈 mismatch 防止**: user 「白い縁」 = strip 帯 dim、 私が canvas border と取り違えて mask 追加 → 「全然見当違い」 と指摘。 user 言葉の対象を必ず HTML element まで具体化して確認
+- **「対話で進める、 一括で 3 つも 4 つも変えない」**: user 「一個ずつ進めたい、 怖い案出さないで」、 段階的 ship + user 確認のサイクル必須
+
+### 未確認 (= 次セッション最優先)
+
+- **屈折評価不能**: scale 80 で実装したが Claude/user 両方「屈折効いてるかわからん」 → user 提案の校正グリッド (= 蛍光色直線格子) を canvas 下に一時配置して可視化 → scale / blur / opacity 調整 → グリッド撤去
+- **fps カクつき**: backdrop-filter url() + scale 80 は user 環境 DPR 2.58 で性能 risk、 user 体感判定待ち
+- **canvas rectangular silhouette 残存**: strip 透明化で軽減、 校正グリッド評価後に再調整
+
+### 残課題 (= session 78 backlog)
+
+- **(a)** 「しゅっ」 アニメ気持ちよさ (= TriageCard 4 方向 exit 220ms 3 段)
+- **(b)** タグ削除 UI inline 化 (= window.confirm から)
+- **(c)** EntryPicker (= 「未分類のみ / 全部」 二択画面) トンマナ
+- **(e)** Shift 副タグ切替の体感
+- **(f)** co-tags strip 余白・密度 (= session 77 TagPicker overhaul で chip 大 + padding 拡大したが、 全面 layout 変更後の最終調整未済)
+- **Phase D 5 項目** (= D1 中断再開 / D2 アニメ進化 / D3 削除 fx / D4 14 言語 / D5 rename)
+
+### 次セッション (= 78) goal
+
+**校正グリッドで Liquid Glass 屈折を正しく評価 → 数値最適化** + **残り (a)(b)(c)(e)(f) polish** + **2026-05-28 朝以降 allmarks.app ドメイン取得確認**。
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
