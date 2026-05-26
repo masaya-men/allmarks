@@ -6,52 +6,23 @@ import { t } from '@/lib/i18n/t'
 import { NewMoodInput } from './NewMoodInput'
 import styles from './TagPicker.module.css'
 
-type Direction = 'up' | 'right' | 'down' | 'left'
+export type Direction = 'up' | 'right' | 'down' | 'left'
 
-type Props = {
-  readonly tags: ReadonlyArray<TagRecord>
-  /** First 4 tags map to up/right/down/left as primary slots. */
-  readonly primaryDirectional: Record<Direction, TagRecord | undefined>
-  /** Tags 5-8 (= tags[4..7]) map to up/right/down/left as secondary slots,
-   *  shown faintly under the primary chip and revealed (= swapped to front)
-   *  while Shift is held. */
-  readonly secondaryDirectional: Record<Direction, TagRecord | undefined>
-  readonly shiftHeld: boolean
-  /** Which tags are currently toggled as co-tags. Swipe persists main +
-   *  co-tags together. Toggle via chip click, digit keys 1-9, or new-tag
-   *  input field. */
-  readonly coTagIds: ReadonlySet<string>
-  /** Fired when user picks a direction (= arrow key already handled in
-   *  TriagePage; here it's chip click). TriagePage computes the actual
-   *  tag from shiftHeld + direction. */
-  readonly onDirectionSwipe: (dir: Direction) => void
-  readonly onToggleCoTag: (tagId: string) => void
-  readonly onSkip: () => void
-  readonly onUndo: (() => void) | null
-  readonly onCreateTagAddToCo: (name: string) => void
-  readonly suggestedTagIds?: ReadonlyArray<string>
-}
-
-export function TagPicker({
-  tags,
-  primaryDirectional,
-  secondaryDirectional,
-  shiftHeld,
-  coTagIds,
-  onDirectionSwipe,
-  onToggleCoTag,
-  onSkip,
-  onUndo,
-  onCreateTagAddToCo,
-  suggestedTagIds,
-}: Props): ReactElement {
-  // Number keys 1-9 toggle co-tags (= Phase B1 changed from instant-persist
-  // to multi-toggle). 1 = tags[0], 9 = tags[8]. Swipe applies them all.
+/** Keyboard handler hook for the 1-9 co-tag toggle, Space skip, Z undo.
+ *  Direction keys (Arrow / WASD) are handled in TriagePage itself
+ *  alongside Esc. Skips input/textarea targets. */
+export function useTagPickerKeys({
+  tags, onToggleCoTag, onSkip, onUndo,
+}: {
+  tags: ReadonlyArray<TagRecord>
+  onToggleCoTag: (tagId: string) => void
+  onSkip: () => void
+  onUndo: (() => void) | null
+}): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
-
       if (e.key >= '1' && e.key <= '9') {
         const idx = Number(e.key) - 1
         const tag = tags[idx]
@@ -64,73 +35,11 @@ export function TagPicker({
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
   }, [tags, onToggleCoTag, onSkip, onUndo])
-
-  const suggestedSet = new Set(suggestedTagIds ?? [])
-
-  return (
-    <div className={styles.directionalRoot} data-testid="tag-picker" data-shift={shiftHeld ? 'true' : 'false'}>
-      <div className={`${styles.slot} ${styles.slotUp}`}>
-        <DirChip
-          primary={primaryDirectional.up}
-          secondary={secondaryDirectional.up}
-          shifted={shiftHeld}
-          arrow="↑"
-          keyLabel="W"
-          coTagIds={coTagIds}
-          suggestedSet={suggestedSet}
-          onSwipe={(): void => onDirectionSwipe('up')}
-        />
-      </div>
-      <div className={`${styles.slot} ${styles.slotRight}`}>
-        <DirChip
-          primary={primaryDirectional.right}
-          secondary={secondaryDirectional.right}
-          shifted={shiftHeld}
-          arrow="→"
-          keyLabel="D"
-          coTagIds={coTagIds}
-          suggestedSet={suggestedSet}
-          onSwipe={(): void => onDirectionSwipe('right')}
-        />
-      </div>
-      <div className={`${styles.slot} ${styles.slotDown}`}>
-        <DirChip
-          primary={primaryDirectional.down}
-          secondary={secondaryDirectional.down}
-          shifted={shiftHeld}
-          arrow="↓"
-          keyLabel="S"
-          coTagIds={coTagIds}
-          suggestedSet={suggestedSet}
-          onSwipe={(): void => onDirectionSwipe('down')}
-        />
-      </div>
-      <div className={`${styles.slot} ${styles.slotLeft}`}>
-        <DirChip
-          primary={primaryDirectional.left}
-          secondary={secondaryDirectional.left}
-          shifted={shiftHeld}
-          arrow="←"
-          keyLabel="A"
-          coTagIds={coTagIds}
-          suggestedSet={suggestedSet}
-          onSwipe={(): void => onDirectionSwipe('left')}
-        />
-      </div>
-      <CoTagStrip
-        tags={tags}
-        coTagIds={coTagIds}
-        suggestedSet={suggestedSet}
-        onToggle={onToggleCoTag}
-        onCreate={onCreateTagAddToCo}
-        onSkip={onSkip}
-        onUndo={onUndo}
-      />
-    </div>
-  )
 }
 
-function DirChip({
+/** Direction chip used in the 4 edge strips. Stacks the active tag on
+ *  top with the Shift-flipped sub tag faint below. */
+export function DirChip({
   primary, secondary, shifted, arrow, keyLabel, coTagIds, suggestedSet, onSwipe,
 }: {
   primary: TagRecord | undefined
@@ -142,11 +51,9 @@ function DirChip({
   suggestedSet: ReadonlySet<string>
   onSwipe: () => void
 }): ReactElement | null {
-  // Which tag is the "active" (= will be applied on swipe)?
   const activeTag = shifted ? (secondary ?? primary) : (primary ?? secondary)
   const subTag = shifted ? primary : secondary
-  if (!activeTag) return null // nothing to assign in this direction
-
+  if (!activeTag) return null
   const activeIsCo = coTagIds.has(activeTag.id)
   const activeIsSuggested = suggestedSet.has(activeTag.id)
   return (
@@ -174,7 +81,10 @@ function DirChip({
   )
 }
 
-function CoTagStrip({
+/** Co-tag strip: chips for every tag, toggle co-add, plus skip/undo
+ *  buttons and the Shift hint. Rendered inside the canvas, below the
+ *  TriageCard. */
+export function CoTagStrip({
   tags, coTagIds, suggestedSet, onToggle, onCreate, onSkip, onUndo,
 }: {
   tags: ReadonlyArray<TagRecord>

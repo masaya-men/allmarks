@@ -1,24 +1,28 @@
+/* session 77: horizontal 2-column card (left thumbnail, right text).
+   Sits inside the centre canvas frame. Wide aspect so the body has
+   room for title + URL without cramping. */
 .card {
-  width: 320px;
-  max-width: 80vw;
-  aspect-ratio: 4 / 5;
+  width: min(1080px, 80vw);
+  height: min(600px, 60vh);
+  display: grid;
+  grid-template-columns: auto 1fr;
   background: var(--card-white);
   color: #1a1a1a;
   border-radius: var(--card-radius);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   overflow: hidden;
-  display: flex; flex-direction: column;
-  animation: triageIn 180ms ease-out;
+  animation: triageIn 220ms cubic-bezier(0.20, 0.60, 0.20, 1);
 }
-@keyframes triageIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+.cardTextOnly {
+  grid-template-columns: 1fr;
+}
+@keyframes triageIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
 
-/* Directional exit animations (= session 72 Phase B2 "しゅっ" polish).
-   3-stage flight per direction:
-     0%  : at rest
-     20% : a brief recoil + brightness pulse (= "the card winds up")
-    100% : flies out + scales down + dims (= "card is gone")
-   Distance kept under 140px so the card visually exits toward the chosen
-   chip slot. Reduced-motion disables the brightness/scale flourish. */
+/* Directional exit animations (= session 72 Phase B2 "しゅっ" polish,
+   preserved). 3-stage flight per direction, 220ms cubic-bezier. */
 .card.exitUp    { animation: triageExitUp    220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
 .card.exitRight { animation: triageExitRight 220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
 .card.exitDown  { animation: triageExitDown  220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
@@ -46,15 +50,76 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card.exitUp    { animation: triageExitFadeOnly 120ms linear forwards; }
-  .card.exitRight { animation: triageExitFadeOnly 120ms linear forwards; }
-  .card.exitDown  { animation: triageExitFadeOnly 120ms linear forwards; }
-  .card.exitLeft  { animation: triageExitFadeOnly 120ms linear forwards; }
+  .card.exitUp, .card.exitRight, .card.exitDown, .card.exitLeft {
+    animation: triageExitFadeOnly 120ms linear forwards;
+  }
 }
 @keyframes triageExitFadeOnly { from { opacity: 1; } to { opacity: 0; } }
 
-.image { flex: 1; background-size: cover; background-position: center; }
-.body { padding: 14px 16px; }
-.title { font-family: var(--font-sans); font-weight: 600; font-size: 18px; line-height: 1.35; color: #1a1a1a; letter-spacing: -0.01em; }
-.meta { margin-top: 8px; display: flex; gap: 6px; align-items: center; color: #7a7a7a; font-size: 12px; }
-.favicon { width: 14px; height: 14px; border-radius: 3px; }
+.thumbnail {
+  height: 100%;
+  aspect-ratio: 4 / 5;
+  background-size: cover;
+  background-position: center;
+  background-color: #0c0c10;
+}
+
+.body {
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow: hidden;
+  min-width: 0;
+}
+.title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
+  color: #1a1a1a;
+  /* Clamp long titles so they don't overflow the body. */
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.description {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  color: #555;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.meta {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #7a7a7a;
+  font-size: 13px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+/* Fallback display when no thumbnail exists: big hostname text on the
+   left half. Keeps the 2-column rhythm without an empty grey box. */
+.hostnamePanel {
+  height: 100%;
+  aspect-ratio: 4 / 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: #0c0c10;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  word-break: break-word;
+}

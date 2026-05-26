@@ -8,7 +8,7 @@ import type { TagRecord } from '@/lib/storage/indexeddb'
 import { t } from '@/lib/i18n/t'
 import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
-import { TagPicker } from './TagPicker'
+import { DirChip, CoTagStrip, useTagPickerKeys } from './TagPicker'
 import { AmbientBackdrop } from './AmbientBackdrop'
 import styles from './TriagePage.module.css'
 
@@ -101,7 +101,6 @@ export function TriagePage(): ReactElement {
     const composed: string[] = []
     const seen = new Set<string>()
     const push = (id: string): void => { if (!seen.has(id)) { seen.add(id); composed.push(id) } }
-    // main first, then co-tags, then existing tags (= preserves user-visible ordering of intent)
     push(mainTagId)
     for (const id of coTagIds) push(id)
     for (const id of current.tags) push(id)
@@ -117,9 +116,6 @@ export function TriagePage(): ReactElement {
     setTimeout((): void => {
       void persistMainPlusCo(mainTag.id).finally((): void => {
         setExitDirection(null)
-        // In untagged/tag modes the persisted card drops out of the queue
-        // automatically (= filter recomputes). In `all` mode the card stays
-        // in the queue, so we must advance the index manually.
         if (mode === 'all') setIndex((i) => i + 1)
       })
     }, SWIPE_ANIM_MS)
@@ -158,7 +154,7 @@ export function TriagePage(): ReactElement {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
       if (e.key === 'Escape') { e.preventDefault(); exit(); return }
-      if (!mode) return // entry-picker owns its own keys
+      if (!mode) return
       const lk = e.key.toLowerCase()
       if (e.key === 'ArrowUp'    || lk === 'w') { e.preventDefault(); handleSwipe('up'); return }
       if (e.key === 'ArrowRight' || lk === 'd') { e.preventDefault(); handleSwipe('right'); return }
@@ -183,6 +179,13 @@ export function TriagePage(): ReactElement {
     }
   }, [])
 
+  useTagPickerKeys({
+    tags,
+    onToggleCoTag: toggleCoTag,
+    onSkip: handleSkip,
+    onUndo: lastAction ? handleUndo : null,
+  })
+
   const dragStartRef = useRef<{ x: number; y: number } | null>(null)
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     dragStartRef.current = { x: e.clientX, y: e.clientY }
@@ -201,11 +204,15 @@ export function TriagePage(): ReactElement {
   }
   const onPointerCancel = (): void => { dragStartRef.current = null }
 
-  if (loading) return <div className={styles.root}><div>Loading…</div></div>
+  if (loading) {
+    return (
+      <div className={styles.simpleRoot}>
+        <div className={styles.main}><div>Loading…</div></div>
+      </div>
+    )
+  }
 
-  // Entry picker: shown when no `mode` query param. Lets the user pick the
-  // cohort they want to triage from the "AllMarks" entry point. Other entry
-  // points (= tag-filtered, inbox, etc.) hard-code a mode and skip this.
+  // Entry picker
   if (!mode) {
     return (
       <EntryPicker
@@ -225,7 +232,7 @@ export function TriagePage(): ReactElement {
 
   if (!current) {
     return (
-      <div className={styles.root}>
+      <div className={styles.simpleRoot}>
         <div className={styles.main}>
           <div className={styles.empty}>
             <div style={{ fontSize: 20, fontFamily: 'var(--font-sans)' }}>
@@ -240,35 +247,91 @@ export function TriagePage(): ReactElement {
     )
   }
 
+  const suggestedSet = new Set(suggestedTagIds)
+  const progressText = t('triage.progress')
+    .replace('{current}', String(index + 1))
+    .replace('{total}', String(total))
+
   return (
     <div className={styles.root} data-testid="triage-page">
       <AmbientBackdrop item={current} exitDirection={exitDirection} />
-      <div className={styles.header}>
-        <span>{t('triage.progress').replace('{current}', String(index + 1)).replace('{total}', String(total))}</span>
-        <button type="button" className={styles.backBtn} onClick={exit}>Esc</button>
+
+      {/* ===== 4 edge chip strips ===== */}
+      <div className={styles.stripTop}>
+        <span className={styles.stripProgress}>{progressText}</span>
+        <div className={styles.stripChipCenter}>
+          <DirChip
+            primary={primaryDirectional.up}
+            secondary={secondaryDirectional.up}
+            shifted={shiftHeld}
+            arrow="↑"
+            keyLabel="W"
+            coTagIds={coTagIds}
+            suggestedSet={suggestedSet}
+            onSwipe={(): void => handleSwipe('up')}
+          />
+        </div>
+        <button type="button" className={styles.stripBackBtn} onClick={exit}>ESC</button>
       </div>
+
+      <div className={styles.stripRight}>
+        <DirChip
+          primary={primaryDirectional.right}
+          secondary={secondaryDirectional.right}
+          shifted={shiftHeld}
+          arrow="→"
+          keyLabel="D"
+          coTagIds={coTagIds}
+          suggestedSet={suggestedSet}
+          onSwipe={(): void => handleSwipe('right')}
+        />
+      </div>
+
+      <div className={styles.stripBottom}>
+        <DirChip
+          primary={primaryDirectional.down}
+          secondary={secondaryDirectional.down}
+          shifted={shiftHeld}
+          arrow="↓"
+          keyLabel="S"
+          coTagIds={coTagIds}
+          suggestedSet={suggestedSet}
+          onSwipe={(): void => handleSwipe('down')}
+        />
+      </div>
+
+      <div className={styles.stripLeft}>
+        <DirChip
+          primary={primaryDirectional.left}
+          secondary={secondaryDirectional.left}
+          shifted={shiftHeld}
+          arrow="←"
+          keyLabel="A"
+          coTagIds={coTagIds}
+          suggestedSet={suggestedSet}
+          onSwipe={(): void => handleSwipe('left')}
+        />
+      </div>
+
+      {/* ===== central canvas (card + co-tags + footer hint) ===== */}
       <div
-        className={styles.main}
+        className={styles.canvas}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
         <TriageCard key={current.bookmarkId} item={current} exitDirection={exitDirection} />
-        <TagPicker
+        <CoTagStrip
           tags={tags}
-          primaryDirectional={primaryDirectional}
-          secondaryDirectional={secondaryDirectional}
-          shiftHeld={shiftHeld}
           coTagIds={coTagIds}
-          onDirectionSwipe={handleSwipe}
-          onToggleCoTag={toggleCoTag}
+          suggestedSet={suggestedSet}
+          onToggle={toggleCoTag}
+          onCreate={handleCreateTagAddToCo}
           onSkip={handleSkip}
           onUndo={lastAction ? handleUndo : null}
-          onCreateTagAddToCo={handleCreateTagAddToCo}
-          suggestedTagIds={suggestedTagIds}
         />
+        <div className={styles.canvasFooter}>{t('triage.hint')}</div>
       </div>
-      <div className={styles.footer}>{t('triage.hint')}</div>
     </div>
   )
 }
@@ -304,7 +367,7 @@ function EntryPicker({
   }
 
   return (
-    <div className={styles.root}>
+    <div className={styles.simpleRoot}>
       <div className={styles.header}>
         <span>Choose what to triage</span>
         <button type="button" className={styles.backBtn} onClick={onCancel}>Esc</button>

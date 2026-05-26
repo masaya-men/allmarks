@@ -1,18 +1,131 @@
+/* ------------------------------------------------------------------
+   /triage layout — session 77 user redesign.
+
+   The canvas is divided into:
+     - 4 edge strips (top/right/bottom/left)  → direction chips live here
+     - centre canvas frame                    → card + co-tags + hint
+
+   Ambient backdrop (z-index 0) sits behind everything. The .root
+   radial vignette darkens the centre and fades fully transparent at
+   the corners so the ambient blur reads cleanly through the edges.
+   ------------------------------------------------------------------ */
 .root {
   position: fixed; inset: 0;
-  /* session 77: ambient backdrop (z-index 0) shows the current card's
-     blurred thumbnail behind everything. The vignette darkens the centre
-     so the focus card pops, and fades to fully transparent at the edges
-     so the ambient blur reads cleanly through the four corners. */
   background: radial-gradient(ellipse 75% 75% at center,
     rgba(0, 0, 0, 0.45) 0%,
     rgba(0, 0, 0, 0.10) 60%,
     rgba(0, 0, 0, 0)    100%
   );
   color: var(--text-primary);
+  z-index: 1;
+}
+
+/* ============= 4 edge chip strips ============= */
+.stripTop,
+.stripBottom {
+  position: fixed;
+  left: 0; right: 0;
+  height: 96px;
+  background: rgba(0, 0, 0, 0.22);
+  z-index: 2;
+  display: grid;
+  align-items: center;
+}
+.stripTop    { top: 0;    grid-template-columns: 200px 1fr 200px; }
+.stripBottom { bottom: 0; grid-template-columns: 1fr; justify-items: center; }
+
+.stripLeft,
+.stripRight {
+  position: fixed;
+  top: 96px; bottom: 96px;
+  width: 96px;
+  background: rgba(0, 0, 0, 0.22);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stripLeft  { left: 0; }
+.stripRight { right: 0; }
+
+.stripChipCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Top strip metadata (= progress + Esc) */
+.stripProgress {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  padding-left: 28px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+.stripBackBtn {
+  justify-self: end;
+  margin-right: 28px;
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: color 120ms, background-color 120ms;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+.stripBackBtn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ============= central canvas frame ============= */
+.canvas {
+  position: fixed;
+  top: 112px;
+  right: 112px;
+  bottom: 112px;
+  left: 112px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--card-radius);
+  background: rgba(0, 0, 0, 0.18);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 40px 80px;
+  gap: 24px;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.canvasFooter {
+  position: absolute;
+  bottom: 12px;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.10em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+/* ============= entry picker / loading / empty (existing simple layout) ============= */
+.simpleRoot {
+  position: fixed; inset: 0;
+  background: rgba(8, 8, 10, 0.92);
+  color: var(--text-primary);
   display: flex; flex-direction: column;
   padding: 24px 32px;
-  z-index: 1;
+  z-index: 2;
 }
 .header {
   display: flex; align-items: center; justify-content: space-between;
@@ -21,15 +134,11 @@
   letter-spacing: 0.10em;
   text-transform: uppercase;
 }
-/* Main now hosts BOTH the card (grid-centered) and the TagPicker
-   (absolute-overlay of directional slots). Pointer events on the main
-   surface itself drive drag-swipe; chip slots intercept their own clicks. */
 .main {
   flex: 1;
   position: relative;
   display: grid;
   place-items: center;
-  touch-action: none; /* allow drag-swipe without page-scroll fighting */
 }
 .footer {
   padding-top: 12px;
@@ -55,9 +164,7 @@
 }
 .backBtn:hover { color: #fff; }
 
-/* Phase C1 entry picker (= AllMarks → "untagged / all" choice).
-   Stacked option rows in the chrome vocabulary: monospace, uppercase,
-   no boxes. Default option (= untagged) shows ENTER as the keyboard hint. */
+/* Entry picker (= AllMarks → "untagged / all" choice) */
 .entryOptions {
   display: flex;
   flex-direction: column;
@@ -111,9 +218,6 @@
   min-width: 48px;
   text-align: right;
 }
-
-/* Tag management inline list (= part of EntryPicker, shown when tags exist).
-   Phase D will replace this with the "tag explode" celebration animation. */
 .tagManagement {
   margin-top: 48px;
   min-width: 320px;
