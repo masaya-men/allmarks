@@ -633,15 +633,18 @@ export function BoardRoot() {
     // は最初 20% で 67% 進むので duration は短くて済む (= 旧 1800ms 基準
     // から大幅短縮)、 但し最後 40% の tail が「気持ちいい減速」 を出す。
     const duration = Math.min(1200, 500 + distance * 0.06)
-    // easeOutQuint: 1 - (1 - t)^5。 動き出し急、 終わり 5 次関数で深く減速。
-    const easeOutQuint = (p: number): number => {
+    // easeOutQuart: 1 - (1 - t)^4。 動き出し急、 終わり 4 次関数で深く減速。
+    // session 74 で easeOutQuint (= power 5) から quart (= power 4) に微下げ
+    // (user feedback 「動き出しがちょっと急すぎ」 への対応、 最初 20% で
+    // 67% → 59% に緩和、 tail keep)。
+    const easeOutQuart = (p: number): number => {
       if (p <= 0) return 0
       if (p >= 1) return 1
-      return 1 - Math.pow(1 - p, 5)
+      return 1 - Math.pow(1 - p, 4)
     }
     const tick = (t: number): void => {
       const p = Math.min(1, (t - start) / duration)
-      const eased = easeOutQuint(p)
+      const eased = easeOutQuart(p)
       markScrollActive()
       setViewport((v) => ({
         ...v,
