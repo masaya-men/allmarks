@@ -10,8 +10,8 @@
   grid-auto-rows: minmax(180px, 1fr);
   gap: 14px;
   padding: 24px;
-  opacity: 0.14;
-  filter: blur(3px) saturate(0.7);
+  opacity: 0.22;
+  filter: blur(2px) saturate(0.7);
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
@@ -30,5 +30,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .root { filter: none; opacity: 0.10; }
+  .root { filter: none; opacity: 0.16; }
 }
