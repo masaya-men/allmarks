@@ -96,30 +96,10 @@
   bottom: 112px;
   left: 112px;
   border: none;
-  border-radius: 48px;
-  /* No solid background — backdrop-filter does the work, and inset
-     box-shadow handles centre→edge dim falloff. */
-  background: transparent;
+  border-radius: var(--card-radius);
+  background: rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(24px) saturate(1.05);
   -webkit-backdrop-filter: blur(24px) saturate(1.05);
-  /* Edge softening: radial mask so the glass pane fades out at its
-     own border instead of revealing a hard rectangular edge against
-     the now-sharp ambient backdrop. */
-  -webkit-mask-image: radial-gradient(
-    ellipse 100% 100% at center,
-    black 55%,
-    rgba(0, 0, 0, 0.6) 80%,
-    transparent 100%
-  );
-  mask-image: radial-gradient(
-    ellipse 100% 100% at center,
-    black 55%,
-    rgba(0, 0, 0, 0.6) 80%,
-    transparent 100%
-  );
-  /* Soft inner shadow gives the glass a centre-bright / edge-dim
-     feel without a hard outline. */
-  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.35);
   z-index: 1;
   display: flex;
   flex-direction: column;
