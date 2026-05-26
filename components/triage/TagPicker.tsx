@@ -75,6 +75,7 @@ export function TagPicker({
           secondary={secondaryDirectional.up}
           shifted={shiftHeld}
           arrow="↑"
+          keyLabel="W"
           coTagIds={coTagIds}
           suggestedSet={suggestedSet}
           onSwipe={(): void => onDirectionSwipe('up')}
@@ -86,6 +87,7 @@ export function TagPicker({
           secondary={secondaryDirectional.right}
           shifted={shiftHeld}
           arrow="→"
+          keyLabel="D"
           coTagIds={coTagIds}
           suggestedSet={suggestedSet}
           onSwipe={(): void => onDirectionSwipe('right')}
@@ -97,6 +99,7 @@ export function TagPicker({
           secondary={secondaryDirectional.down}
           shifted={shiftHeld}
           arrow="↓"
+          keyLabel="S"
           coTagIds={coTagIds}
           suggestedSet={suggestedSet}
           onSwipe={(): void => onDirectionSwipe('down')}
@@ -108,6 +111,7 @@ export function TagPicker({
           secondary={secondaryDirectional.left}
           shifted={shiftHeld}
           arrow="←"
+          keyLabel="A"
           coTagIds={coTagIds}
           suggestedSet={suggestedSet}
           onSwipe={(): void => onDirectionSwipe('left')}
@@ -127,12 +131,13 @@ export function TagPicker({
 }
 
 function DirChip({
-  primary, secondary, shifted, arrow, coTagIds, suggestedSet, onSwipe,
+  primary, secondary, shifted, arrow, keyLabel, coTagIds, suggestedSet, onSwipe,
 }: {
   primary: TagRecord | undefined
   secondary: TagRecord | undefined
   shifted: boolean
   arrow: string
+  keyLabel: string
   coTagIds: ReadonlySet<string>
   suggestedSet: ReadonlySet<string>
   onSwipe: () => void
@@ -151,7 +156,10 @@ function DirChip({
       onClick={onSwipe}
       data-testid={`dir-chip-${activeTag.id}`}
     >
-      <span className={styles.dirHint}>{arrow}</span>
+      <span className={styles.dirHint}>
+        <span className={styles.dirArrow}>{arrow}</span>
+        <span className={styles.dirKey}>{keyLabel}</span>
+      </span>
       <span className={styles.dirActive}>
         <span className={styles.dirDot} style={{ background: activeTag.color }} />
         <span className={styles.dirName}>{activeTag.name}</span>
