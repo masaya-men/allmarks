@@ -700,15 +700,18 @@ export function BoardRoot() {
     }, scrollDuration + 60)
   }, [viewport.h, viewport.y, contentBounds.height, handleScrollMeterJump])
 
-  // Filter 変化 → smooth scroll to top。 user がボード下にいる時に絞り込みを
-  // かけると、 該当カードが上に reflow しても viewport が下のままで「カードが
-  // 見えない」 状態になる問題への対処。 prevRef で初回 mount 時に発火しないよう
-  // gate (= 初期値は activeFilter と同じ → boardFilterEquals true → skip)。
+  // Filter 変化 → (1) smooth scroll to top (= ボード下にいる時に絞り込みを
+  // かけると該当カードが上に reflow しても viewport が下のままで「カードが
+  // 見えない」 問題の対処)、 (2) entryAnimCycle bump で復活カードに fade-up
+  // entry アニメを再生 (CardsLayer の useEffect が拾う)。 prevRef で初回
+  // mount 時の発火を gate (= 初期値は activeFilter と同じ → equals true → skip)。
   const prevActiveFilterRef = useRef<BoardFilter>(activeFilter)
+  const [entryAnimCycle, setEntryAnimCycle] = useState(0)
   useEffect(() => {
     if (boardFilterEquals(prevActiveFilterRef.current, activeFilter)) return
     prevActiveFilterRef.current = activeFilter
     handleScrollMeterJump(0)
+    setEntryAnimCycle((k) => k + 1)
   }, [activeFilter, handleScrollMeterJump])
 
   // Focus a card by ID — used by ?focus=<cardId> URL param and PiP card click.
@@ -1563,6 +1566,7 @@ export function BoardRoot() {
                   handleFilterChange(toggleTagInFilter(activeFilter, tagId))
                 }}
                 isScrolling={isScrolling}
+                entryAnimCycle={entryAnimCycle}
               />
             </div>
           </InteractionLayer>

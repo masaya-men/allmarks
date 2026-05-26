@@ -21,6 +21,7 @@ import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
 import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
+import { getEntryAnimation } from '@/lib/animation/tag-entry'
 import { extractTypedCandidatesFromBookmark } from '@/lib/board/tag-candidates'
 import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import type { SuggestionEntry } from './TagAddPopover'
@@ -280,6 +281,11 @@ type CardsLayerProps = {
   /** True during an active scroll session — CardSlideshow defers new tweet-
    *  video frame extractions when set, to keep the canvas smooth. */
   readonly isScrolling?: boolean
+  /** Monotonically incrementing key bumped on every BoardFilter change.
+   *  Used to trigger the carded entry animation (= fade-up) on all
+   *  currently-matched cards once per filter change. 0 = initial mount
+   *  (no animation). */
+  readonly entryAnimCycle?: number
 }
 
 export function CardsLayer({
@@ -316,7 +322,27 @@ export function CardsLayer({
   onTagCreate,
   onTagFilterToggle,
   isScrolling = false,
+  entryAnimCycle = 0,
 }: CardsLayerProps): ReactNode {
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  // Filter 変化 → 復活してくる (= matched) カードに WAVE テーマの fade-up
+  // entry アニメを stagger 付きで適用。 inner wrapper (= shutdown が走る
+  // div、 GSAP-FLIP の outer transform とは別レイヤー) に WAAPI で当てる
+  // ので位置 matrix を壊さない。 初回 mount (cycle 0) は skip。
+  useEffect(() => {
+    if (entryAnimCycle === 0) return
+    const root = rootRef.current
+    if (!root) return
+    const entryAnim = getEntryAnimation('wave')
+    if (!entryAnim) return
+    const targets = root.querySelectorAll<HTMLElement>('[data-tagged-out="false"]')
+    targets.forEach((el, idx) => {
+      const rawDelay = idx * entryAnim.staggerStepMs
+      const delay = Math.min(rawDelay, entryAnim.staggerCapMs)
+      el.animate(entryAnim.keyframes, { ...entryAnim.options, delay })
+    })
+  }, [entryAnimCycle])
   // Which card currently has its add-tag popover open. Null = none.
   // Toggled by the + TAG corner button. Closed by Esc (handled inside
   // TagAddPopover) or by clicking + TAG again on the same card.
@@ -777,6 +803,7 @@ export function CardsLayer({
 
   return (
     <div
+      ref={rootRef}
       style={{
         position: 'absolute',
         top: 0,
@@ -842,7 +869,7 @@ export function CardsLayer({
                 div with no className. */}
             <div
               className={shutdownClass}
-              data-tagged-out={taggedOut ? 'true' : undefined}
+              data-tagged-out={taggedOut ? 'true' : 'false'}
               style={{ position: 'absolute', inset: 0, borderRadius: 'var(--card-radius, 20px)' }}
             >
             <CardNode

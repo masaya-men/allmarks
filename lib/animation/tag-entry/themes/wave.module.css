@@ -1,0 +1,14 @@
+/* WAVE テーマ用 carded entry effect (= 絞り込み解除 / filter 切替時に
+   復活してくるカードのためのアニメ)。 触る数値は :root の CSS 変数経由のみ。
+   実際の発火は WAAPI 経由 (= CardsLayer の useEffect)、 この file は
+   CSS 変数を export するためだけに存在する (= テーマごとの数値定義の
+   置き場 = shutdown と同じ pattern)。 */
+
+:root {
+  --tag-entry-duration: 200ms;
+  --tag-entry-easing: cubic-bezier(0.16, 1, 0.3, 1); /* easeOutExpo 系、 さわやか */
+  --tag-entry-opacity-from: 0;
+  --tag-entry-scale-from: 0.96;
+  --tag-entry-stagger-step: 10ms; /* カード 1 枚あたりずらす ms */
+  --tag-entry-stagger-cap: 240ms; /* 全カード合計ずらし上限 (= 540 枚でも 240ms で止まる) */
+}
