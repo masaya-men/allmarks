@@ -99,11 +99,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 32px 40px 80px;
-  gap: 24px;
+  padding: 28px 40px 72px;
+  gap: 18px;
   touch-action: none;
   overflow: hidden;
+}
+.canvasCardHost {
+  /* TriageCard host: takes whatever vertical room is left after the
+     co-tags strip and footer hint, so the card auto-shrinks to fit
+     the canvas — never overflows or crashes into the chip strip. */
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .canvasFooter {

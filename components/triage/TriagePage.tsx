@@ -320,7 +320,9 @@ export function TriagePage(): ReactElement {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
-        <TriageCard key={current.bookmarkId} item={current} exitDirection={exitDirection} />
+        <div className={styles.canvasCardHost}>
+          <TriageCard key={current.bookmarkId} item={current} exitDirection={exitDirection} />
+        </div>
         <CoTagStrip
           tags={tags}
           coTagIds={coTagIds}
