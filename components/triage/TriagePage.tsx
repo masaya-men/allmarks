@@ -10,6 +10,7 @@ import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
 import { DirChip, CoTagStrip, useTagPickerKeys } from './TagPicker'
 import { AmbientBackdrop } from './AmbientBackdrop'
+import { CalibrationGrid } from './CalibrationGrid'
 import styles from './TriagePage.module.css'
 
 type Direction = 'up' | 'right' | 'down' | 'left'
@@ -30,6 +31,7 @@ export function TriagePage(): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
   const mode = parseMode(searchParams.get('mode'))
+  const showCalibrationGrid = searchParams.get('grid') === '1'
   const { items, persistTags, loading, reload: reloadBookmarks } = useBoardData()
   const { tags, create, remove: removeTag } = useTags()
 
@@ -255,6 +257,7 @@ export function TriagePage(): ReactElement {
   return (
     <div className={styles.root} data-testid="triage-page">
       <AmbientBackdrop item={current} exitDirection={exitDirection} />
+      {showCalibrationGrid && <CalibrationGrid />}
 
       {/* ===== 4 edge chip strips ===== */}
       <div className={styles.stripTop}>
