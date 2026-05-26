@@ -58,7 +58,7 @@ export function TagPicker({
         if (tag) { e.preventDefault(); onToggleCoTag(tag.id) }
         return
       }
-      if (e.key === 's' || e.key === 'S') { e.preventDefault(); onSkip(); return }
+      if (e.key === ' ') { e.preventDefault(); onSkip(); return }
       if ((e.key === 'z' || e.key === 'Z') && onUndo) { e.preventDefault(); onUndo(); return }
     }
     window.addEventListener('keydown', onKey)
@@ -75,7 +75,6 @@ export function TagPicker({
           secondary={secondaryDirectional.up}
           shifted={shiftHeld}
           arrow="↑"
-          digit={1}
           coTagIds={coTagIds}
           suggestedSet={suggestedSet}
           onSwipe={(): void => onDirectionSwipe('up')}
@@ -87,7 +86,6 @@ export function TagPicker({
           secondary={secondaryDirectional.right}
           shifted={shiftHeld}
           arrow="→"
-          digit={2}
           coTagIds={coTagIds}
           suggestedSet={suggestedSet}
           onSwipe={(): void => onDirectionSwipe('right')}
@@ -99,7 +97,6 @@ export function TagPicker({
           secondary={secondaryDirectional.down}
           shifted={shiftHeld}
           arrow="↓"
-          digit={3}
           coTagIds={coTagIds}
           suggestedSet={suggestedSet}
           onSwipe={(): void => onDirectionSwipe('down')}
@@ -111,7 +108,6 @@ export function TagPicker({
           secondary={secondaryDirectional.left}
           shifted={shiftHeld}
           arrow="←"
-          digit={4}
           coTagIds={coTagIds}
           suggestedSet={suggestedSet}
           onSwipe={(): void => onDirectionSwipe('left')}
@@ -131,13 +127,12 @@ export function TagPicker({
 }
 
 function DirChip({
-  primary, secondary, shifted, arrow, digit, coTagIds, suggestedSet, onSwipe,
+  primary, secondary, shifted, arrow, coTagIds, suggestedSet, onSwipe,
 }: {
   primary: TagRecord | undefined
   secondary: TagRecord | undefined
   shifted: boolean
   arrow: string
-  digit: number
   coTagIds: ReadonlySet<string>
   suggestedSet: ReadonlySet<string>
   onSwipe: () => void
@@ -156,7 +151,7 @@ function DirChip({
       onClick={onSwipe}
       data-testid={`dir-chip-${activeTag.id}`}
     >
-      <span className={styles.dirHint}>{arrow} {digit}</span>
+      <span className={styles.dirHint}>{arrow}</span>
       <span className={styles.dirActive}>
         <span className={styles.dirDot} style={{ background: activeTag.color }} />
         <span className={styles.dirName}>{activeTag.name}</span>
@@ -208,7 +203,7 @@ function CoTagStrip({
       </div>
       <div className={styles.utilRow}>
         <button type="button" className={styles.util} onClick={onSkip}>
-          {t('triage.skip')} <span className={styles.utilHint}>S</span>
+          {t('triage.skip')} <span className={styles.utilHint}>Space</span>
         </button>
         {onUndo && (
           <button type="button" className={styles.util} onClick={onUndo}>

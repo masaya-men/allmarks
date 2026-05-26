@@ -102,7 +102,7 @@
     "progress": "{current} / {total}",
     "empty": "仕分ける bookmark がありません",
     "empty_cta": "/board に戻る",
-    "hint": "1-9 付与 · S スキップ · Z 取り消し",
+    "hint": "↑→↓← / WASD 付与 · Space スキップ · Z 取り消し · 1-9 切替",
     "newMood": "+ 新しいタグ",
     "moodNamePlaceholder": "タグ名",
     "skip": "Skip",

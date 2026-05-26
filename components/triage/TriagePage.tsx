@@ -158,10 +158,11 @@ export function TriagePage(): ReactElement {
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
       if (e.key === 'Escape') { e.preventDefault(); exit(); return }
       if (!mode) return // entry-picker owns its own keys
-      if (e.key === 'ArrowUp')    { e.preventDefault(); handleSwipe('up'); return }
-      if (e.key === 'ArrowRight') { e.preventDefault(); handleSwipe('right'); return }
-      if (e.key === 'ArrowDown')  { e.preventDefault(); handleSwipe('down'); return }
-      if (e.key === 'ArrowLeft')  { e.preventDefault(); handleSwipe('left'); return }
+      const lk = e.key.toLowerCase()
+      if (e.key === 'ArrowUp'    || lk === 'w') { e.preventDefault(); handleSwipe('up'); return }
+      if (e.key === 'ArrowRight' || lk === 'd') { e.preventDefault(); handleSwipe('right'); return }
+      if (e.key === 'ArrowDown'  || lk === 's') { e.preventDefault(); handleSwipe('down'); return }
+      if (e.key === 'ArrowLeft'  || lk === 'a') { e.preventDefault(); handleSwipe('left'); return }
     }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
