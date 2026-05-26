@@ -22,6 +22,7 @@ import { fetchTikTokMeta } from '@/lib/embed/tiktok-meta'
 import { useTags } from '@/lib/storage/use-tags'
 import {
   BOARD_FILTER_ALL,
+  boardFilterEquals,
   isTagsFilter,
   toggleTagInFilter,
 } from '@/lib/board/board-filter-helpers'
@@ -471,7 +472,15 @@ export function BoardRoot() {
     return (): void => window.removeEventListener('resize', update)
   }, [])
 
-  const filteredItems = useMemo(() => applyFilter(items, activeFilter), [items, activeFilter])
+  const filteredItems = useMemo(() => {
+    // Tags filter は CardsLayer 側で matchedBookmarkIds + CRT shutdown
+    // アニメ経由で表現する (= 非該当カードを items に残しておく → shutdown
+    // 演出 → GSAP-FLIP で該当カードが reflow)。 ここで除外してしまうと
+    // 演出を発火させる対象が消えるので、 tags の時は全件 (= non-deleted
+    // のみ) を通す。 他 kind は従来通り単純絞り込み。
+    if (activeFilter.kind === 'tags') return applyFilter(items, BOARD_FILTER_ALL)
+    return applyFilter(items, activeFilter)
+  }, [items, activeFilter])
 
   // Tag filter overlay on top of filteredItems. null = no tag filter active
   // (= every card matches). When set, cards whose id is NOT in the set are
@@ -690,6 +699,17 @@ export function BoardRoot() {
       requestAnimationFrame(tryGlow)
     }, scrollDuration + 60)
   }, [viewport.h, viewport.y, contentBounds.height, handleScrollMeterJump])
+
+  // Filter 変化 → smooth scroll to top。 user がボード下にいる時に絞り込みを
+  // かけると、 該当カードが上に reflow しても viewport が下のままで「カードが
+  // 見えない」 状態になる問題への対処。 prevRef で初回 mount 時に発火しないよう
+  // gate (= 初期値は activeFilter と同じ → boardFilterEquals true → skip)。
+  const prevActiveFilterRef = useRef<BoardFilter>(activeFilter)
+  useEffect(() => {
+    if (boardFilterEquals(prevActiveFilterRef.current, activeFilter)) return
+    prevActiveFilterRef.current = activeFilter
+    handleScrollMeterJump(0)
+  }, [activeFilter, handleScrollMeterJump])
 
   // Focus a card by ID — used by ?focus=<cardId> URL param and PiP card click.
   // If the card isn't in the current filter's layout (e.g. user is on a mood
