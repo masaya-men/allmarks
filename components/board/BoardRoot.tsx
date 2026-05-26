@@ -39,7 +39,6 @@ import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
 import { useRouter } from 'next/navigation'
-import { BackupButton } from './BackupButton'
 import { TagButton } from './TagButton'
 import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/tags'
 import { MotionToggle } from './MotionToggle'
@@ -1483,7 +1482,6 @@ export function BoardRoot() {
                 onReset={handleResetWidthGap}
                 onApplyPreset={onApplyPreset}
               />
-              <BackupButton />
               <TagButton
                 onClick={(): void => {
                   // Phase C1 (= session 72) + Phase 1.9 (= session 74):
