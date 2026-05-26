@@ -610,10 +610,14 @@ export function CardsLayer({
     return out
   }, [pool.active, itemById, unplayableIds])
   // Stop all ambient motion (hero video AND slideshow) while the Lightbox is
-  // open (sourceCardId set) or when the OS prefers reduced motion: the board
-  // freezes to still thumbnails so nothing competes with the focused view and
-  // we don't burn GPU on hidden cards.
-  const ambientOn = motionEnabled && !sourceCardId && !reduceMotion
+  // open (sourceCardId set), when the OS prefers reduced motion, or during an
+  // active scroll session: the board freezes to still thumbnails so nothing
+  // competes with the focused view and we don't burn GPU on hidden cards.
+  // scroll 中停止は session 76 で追加: メータークリックや wheel scroll の
+  // 走行中、 hero iframe の mount/unmount + CardSlideshow の crossfade mount
+  // が paint を集中させて jank。 isScrolling は markScrollActive で 200ms
+  // idle 後 false に戻るので、 scroll 終了から 200ms で ambient 自然復帰。
+  const ambientOn = motionEnabled && !sourceCardId && !reduceMotion && !isScrolling
   const rotateMs = Math.max(MIN_ROTATE_MS, HERO_PER_CARD_MS)
   const spotlightCap = ambientOn ? HERO_CAP : 0
   const playing = useSpotlightRotation(candidates, spotlightCap, rotateMs)
