@@ -600,9 +600,13 @@ export function BoardRoot() {
   )
 
   // ScrollMeter click/drag → animated scroll-to-y. requestAnimationFrame loop
-  // with ease-in-out cubic — soft start AND soft end so long jumps feel
-  // cinematic instead of slingshot. Duration scales with distance so tiny
-  // corrections stay snappy while big jumps get the full luxurious arc.
+  // with easeOutQuint (= 1 - (1-t)^5)。 動き出し即座、 終わりだけ深く
+  // 減速して「ふっと止まる」 luxury tail。 session 74 user 検証で「entry
+  // anim と同じ Material decelerate 系の curve が気持ちいい、 但し終わり
+  // 減速はもう少し強く」 と評価された結果、 cubic decelerate より tail が
+  // 強い quint に決定。 業界では Apple App Store 入場 / Stripe checkout
+  // slide-in 等で使われる pattern。 旧版 (= Power-30 両端 motionless) の
+  // ドラマチック演出は捨てる代わり、 動き出しまでの 540ms 待ちが消える。
   // While the user is actively dragging the meter (multiple onScrollTo
   // calls per frame) we cancel any in-flight tween and snap so the meter
   // tracks the pointer.
@@ -624,27 +628,20 @@ export function BoardRoot() {
     const startY = viewport.y
     const start = performance.now()
     const distance = Math.abs(targetY - startY)
-    // 750ms base + ~70ms per 1000px, capped at 1600ms. The Expo easing's
-    // soft tails need real time to register — anything under ~700ms feels
-    // abrupt no matter how extreme the curve is. With 750ms minimum, even
-    // tiny corrections get the slow-inhale-slow-settle "rich" feel; long
-    // jumps can stretch past a second of cinematic arc.
-    const duration = Math.min(3000, 1800 + distance * 0.07)
-    // Power-30 exponential easing — slot-machine pre-alignment feel.
-    // First ~30% and last ~30% of the duration are visibly motionless
-    // (sub-pixel motion over hundreds of ms); the middle ~40% covers
-    // ~95% of the distance. Symmetric, so both the inhale into motion
-    // and the settle to rest read as "almost stopping, almost there".
-    const easeInOutSlotExpo = (p: number): number => {
+    // 500ms base + ~60ms per 1000px, capped at 1200ms。 distance 0 → 500ms、
+    // distance 5000px → 800ms、 distance 12000px+ → 1200ms。 easeOutQuint
+    // は最初 20% で 67% 進むので duration は短くて済む (= 旧 1800ms 基準
+    // から大幅短縮)、 但し最後 40% の tail が「気持ちいい減速」 を出す。
+    const duration = Math.min(1200, 500 + distance * 0.06)
+    // easeOutQuint: 1 - (1 - t)^5。 動き出し急、 終わり 5 次関数で深く減速。
+    const easeOutQuint = (p: number): number => {
       if (p <= 0) return 0
       if (p >= 1) return 1
-      return p < 0.5
-        ? Math.pow(2, 30 * p - 15) / 2
-        : (2 - Math.pow(2, -30 * p + 15)) / 2
+      return 1 - Math.pow(1 - p, 5)
     }
     const tick = (t: number): void => {
       const p = Math.min(1, (t - start) / duration)
-      const eased = easeInOutSlotExpo(p)
+      const eased = easeOutQuint(p)
       markScrollActive()
       setViewport((v) => ({
         ...v,
@@ -678,7 +675,7 @@ export function BoardRoot() {
     // distance-scaled duration (see handleScrollMeterJump) and retry a few
     // frames in case React hasn't yet painted the newly-visible card.
     const distance = Math.abs(targetY - viewport.y)
-    const scrollDuration = Math.min(3000, 1800 + distance * 0.07)
+    const scrollDuration = Math.min(1200, 500 + distance * 0.06)
     // Glow fires AFTER the scroll fully settles — never during. Three
     // opacity blinks at 1800ms each (5400ms total) — opacity instead of
     // box-shadow because the latter is invisible on white cards. Tempo
