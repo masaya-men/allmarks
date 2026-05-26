@@ -745,11 +745,18 @@ export function BoardRoot() {
 
     // tags filter 適用なら shutdown 演出待ち (= 550ms duration + 50ms buffer)。
     // 山場 = 50% 緑 flash 地点 (275ms) → 75% 点化 → 100% 消滅まで見える時間。
-    // 連続 filter 変化時は前の timer を cleanup で cancel。
+    //
+    // cleanup を「返さない」 ことが意図的: filteredItems 変化で contentBounds 再計算
+    // → handleScrollMeterJump identity 変化 → この effect 再発火 → cleanup で
+    // 前 timer kill → 冒頭 boardFilterEquals で early return = scroll 永遠に
+    // 発火しないという race を回避する (= session 76 で 1 度踏んだ罠)。
+    // 連続 filter click は冒頭の boardFilterEquals で 2 重発火が抑止されるので、
+    // 並行 timer 1 個以上は通常発生しない。 仮に並行しても jump(0) が複数走る
+    // だけで、 内部 cancelAnimationFrame で最後の発火が勝つ = harmless。
     const isApplyingTagsFilter = isTagsFilter(activeFilter)
     if (isApplyingTagsFilter) {
-      const timer = window.setTimeout(() => handleScrollMeterJump(0), 600)
-      return () => window.clearTimeout(timer)
+      window.setTimeout(() => handleScrollMeterJump(0), 600)
+      return
     }
 
     handleScrollMeterJump(0)
