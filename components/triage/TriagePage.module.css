@@ -26,7 +26,10 @@
   position: fixed;
   left: 0; right: 0;
   height: 96px;
-  background: rgba(0, 0, 0, 0.22);
+  /* No dim — the chip itself is the visible target. Filling the strip
+     with rgba black drew a rectangular outline against the now-sharp
+     ambient backdrop (the "thin white edge" the user reported). */
+  background: transparent;
   z-index: 2;
   display: grid;
   align-items: center;
@@ -39,7 +42,7 @@
   position: fixed;
   top: 96px; bottom: 96px;
   width: 96px;
-  background: rgba(0, 0, 0, 0.22);
+  background: transparent;
   z-index: 2;
   display: flex;
   align-items: center;
