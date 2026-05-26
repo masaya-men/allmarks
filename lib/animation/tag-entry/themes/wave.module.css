@@ -4,12 +4,18 @@
    CSS 変数を export するためだけに存在する (= テーマごとの数値定義の
    置き場 = shutdown と同じ pattern)。 */
 
+/* 時間系の値 (duration / stagger) は単位を付けない (= 数値リテラル)。
+   理由: Chrome は custom property の `Nms` を `(N/1000)s` に正規化する
+   ため、 getComputedStyle 経由で parseFloat すると 800ms → 0.8 になる
+   (= 1000 倍小さい値を WAAPI に渡してしまう) という session 74 で踏んだ
+   罠の回避。 単位なしの数値で書けば parseFloat が期待通り 800 を返す。
+   コメントに単位を明記して読者を助ける。 */
 :root {
-  --tag-entry-duration: 320ms;
+  --tag-entry-duration: 320; /* ms */
   --tag-entry-easing: cubic-bezier(0.16, 1, 0.3, 1); /* easeOutExpo 系、 さわやか */
   --tag-entry-opacity-from: 0;
   --tag-entry-scale-from: 0.88;
-  --tag-entry-translate-from: 12px; /* px、 下からふわっと上に出る motif */
-  --tag-entry-stagger-step: 16ms; /* カード 1 枚あたりずらす ms */
-  --tag-entry-stagger-cap: 400ms; /* 全カード合計ずらし上限 (= 540 枚でも 400ms で止まる) */
+  --tag-entry-translate-from: 12; /* px、 下からふわっと上に出る motif */
+  --tag-entry-stagger-step: 16; /* ms */
+  --tag-entry-stagger-cap: 400; /* ms */
 }
