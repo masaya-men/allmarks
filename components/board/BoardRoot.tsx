@@ -700,20 +700,6 @@ export function BoardRoot() {
     }, scrollDuration + 60)
   }, [viewport.h, viewport.y, contentBounds.height, handleScrollMeterJump])
 
-  // Filter 変化 → (1) smooth scroll to top (= ボード下にいる時に絞り込みを
-  // かけると該当カードが上に reflow しても viewport が下のままで「カードが
-  // 見えない」 問題の対処)、 (2) entryAnimCycle bump で復活カードに fade-up
-  // entry アニメを再生 (CardsLayer の useEffect が拾う)。 prevRef で初回
-  // mount 時の発火を gate (= 初期値は activeFilter と同じ → equals true → skip)。
-  const prevActiveFilterRef = useRef<BoardFilter>(activeFilter)
-  const [entryAnimCycle, setEntryAnimCycle] = useState(0)
-  useEffect(() => {
-    if (boardFilterEquals(prevActiveFilterRef.current, activeFilter)) return
-    prevActiveFilterRef.current = activeFilter
-    handleScrollMeterJump(0)
-    setEntryAnimCycle((k) => k + 1)
-  }, [activeFilter, handleScrollMeterJump])
-
   // Focus a card by ID — used by ?focus=<cardId> URL param and PiP card click.
   // If the card isn't in the current filter's layout (e.g. user is on a mood
   // filter that excludes the bookmark), clear the filter to 'all' and stash
@@ -728,6 +714,33 @@ export function BoardRoot() {
     }
     doFocus(cardId, pos)
   }, [layout.positions, doFocus])
+
+  // Filter 変化 → 3 つの side-effect:
+  //   (1) entryAnimCycle bump で復活カードに CRT bootup アニメ
+  //   (2a) tags → 非 tags (= 絞り込み解除) + source 記憶あり → focusCard で
+  //        click 元カードの元位置に scroll restore (= source-aware navigation、
+  //        探索 mode から元の context に戻る UX pattern)
+  //   (2b) その他の filter 変化 → smooth scroll to top (= 該当カードが上に
+  //        reflow した時に viewport が下のままで「見えない」 問題の対処)
+  // prevRef で初回 mount 時の発火を gate。
+  const prevActiveFilterRef = useRef<BoardFilter>(activeFilter)
+  const lastClickedSourceRef = useRef<string | null>(null)
+  const [entryAnimCycle, setEntryAnimCycle] = useState(0)
+  useEffect(() => {
+    if (boardFilterEquals(prevActiveFilterRef.current, activeFilter)) return
+    const prev = prevActiveFilterRef.current
+    prevActiveFilterRef.current = activeFilter
+    setEntryAnimCycle((k) => k + 1)
+
+    const isTagsToNonTags = isTagsFilter(prev) && !isTagsFilter(activeFilter)
+    const source = lastClickedSourceRef.current
+    if (isTagsToNonTags && source) {
+      lastClickedSourceRef.current = null
+      focusCard(source)
+      return
+    }
+    handleScrollMeterJump(0)
+  }, [activeFilter, handleScrollMeterJump, focusCard])
 
   // Retry path — fires after a filter clear when pendingFocusId is set,
   // once layout.positions has the card. layout.positions is in deps so we
@@ -1562,7 +1575,13 @@ export function BoardRoot() {
                 allTags={tags}
                 onTagToggle={handleTagToggle}
                 onTagCreate={handleTagCreate}
-                onTagFilterToggle={(tagId): void => {
+                onTagFilterToggle={(tagId, sourceBookmarkId): void => {
+                  // カードのタグピル click 時の source bookmarkId を memo。
+                  // 解除時の useEffect で focusCard に渡して元 scroll 位置に
+                  // 戻す source-aware navigation を実現する (= dropdown 経由
+                  // の filter 変化は sourceBookmarkId undefined なので
+                  // scroll-to-top に流れる、 既存挙動と互換)。
+                  if (sourceBookmarkId) lastClickedSourceRef.current = sourceBookmarkId
                   handleFilterChange(toggleTagInFilter(activeFilter, tagId))
                 }}
                 isScrolling={isScrolling}

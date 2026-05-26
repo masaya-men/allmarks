@@ -276,8 +276,10 @@ type CardsLayerProps = {
    *  Implementation in BoardRoot dedupes by case-insensitive name. */
   readonly onTagCreate?: (bookmarkId: string, name: string) => Promise<void> | void
   /** Toggle a tag in the board-wide filter (= clicking a per-card tag pill
-   *  reuses the chrome TagFilterBar's add/remove semantics). */
-  readonly onTagFilterToggle?: (tagId: string) => void
+   *  reuses the chrome TagFilterBar's add/remove semantics). sourceBookmarkId
+   *  identifies which card the click originated from, used by BoardRoot to
+   *  restore the scroll position on filter clear (= source-aware navigation). */
+  readonly onTagFilterToggle?: (tagId: string, sourceBookmarkId?: string) => void
   /** True during an active scroll session — CardSlideshow defers new tweet-
    *  video frame extractions when set, to keep the canvas smooth. */
   readonly isScrolling?: boolean
@@ -1050,7 +1052,7 @@ export function CardsLayer({
                   .map((tid) => tagsById.get(tid))
                   .filter((t): t is TagRecord => t !== undefined)}
                 isHovered={hoverActive}
-                onTagClick={onTagFilterToggle}
+                onTagClick={(tagId): void => onTagFilterToggle?.(tagId, it.bookmarkId)}
               />
             )}
             {/* + TAG affordance — top-left corner, mirrors the visual language
