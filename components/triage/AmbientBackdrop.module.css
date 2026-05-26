@@ -4,11 +4,11 @@
 
 .layer {
   position: fixed;
-  inset: -3%;
+  inset: -2%;
   background-size: cover;
   background-position: center;
-  filter: blur(20px) saturate(1.15);
-  opacity: 0.55;
+  filter: blur(6px) saturate(1.10);
+  opacity: 0.70;
   z-index: 0;
   pointer-events: none;
   animation: ambientIn 380ms cubic-bezier(0.20, 0.60, 0.20, 1);
@@ -24,42 +24,42 @@
 
 @keyframes ambientIn {
   from { opacity: 0; }
-  to   { opacity: 0.55; }
+  to   { opacity: 0.70; }
 }
 
 /* Exit transitions: backdrop slides off in the same direction as the
    TriageCard swipe (220ms / cubic-bezier matches TriageCard.module.css).
    The next item's AmbientBackdrop re-mounts under it via React key and
    runs ambientIn from zero, producing a natural cross-cut feel. */
-.exitUp    { animation: ambientExitUp    220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
-.exitRight { animation: ambientExitRight 220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
-.exitDown  { animation: ambientExitDown  220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
-.exitLeft  { animation: ambientExitLeft  220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
+.exitUp    { animation: ambientExitUp    220ms cubic-bezier(0.70, 0, 0.30, 1) forwards; }
+.exitRight { animation: ambientExitRight 220ms cubic-bezier(0.70, 0, 0.30, 1) forwards; }
+.exitDown  { animation: ambientExitDown  220ms cubic-bezier(0.70, 0, 0.30, 1) forwards; }
+.exitLeft  { animation: ambientExitLeft  220ms cubic-bezier(0.70, 0, 0.30, 1) forwards; }
 
 @keyframes ambientExitUp {
-  0%   { opacity: 0.55; transform: translateY(0);    }
+  0%   { opacity: 0.70; transform: translateY(0);    }
   100% { opacity: 0;    transform: translateY(-12%); }
 }
 @keyframes ambientExitRight {
-  0%   { opacity: 0.55; transform: translateX(0);   }
+  0%   { opacity: 0.70; transform: translateX(0);   }
   100% { opacity: 0;    transform: translateX(12%); }
 }
 @keyframes ambientExitDown {
-  0%   { opacity: 0.55; transform: translateY(0);   }
+  0%   { opacity: 0.70; transform: translateY(0);   }
   100% { opacity: 0;    transform: translateY(12%); }
 }
 @keyframes ambientExitLeft {
-  0%   { opacity: 0.55; transform: translateX(0);    }
+  0%   { opacity: 0.70; transform: translateX(0);    }
   100% { opacity: 0;    transform: translateX(-12%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .layer { animation: none; opacity: 0.55; }
+  .layer { animation: none; opacity: 0.70; }
   .exitUp, .exitRight, .exitDown, .exitLeft {
     animation: ambientExitFade 120ms linear forwards;
   }
 }
 @keyframes ambientExitFade {
-  from { opacity: 0.55; }
+  from { opacity: 0.70; }
   to   { opacity: 0; }
 }
