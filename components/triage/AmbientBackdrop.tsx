@@ -4,22 +4,22 @@ import { type ReactElement } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import styles from './AmbientBackdrop.module.css'
 
-type Direction = 'up' | 'right' | 'down' | 'left'
+export type SwipeDecision = 'yes' | 'no'
 
 /** Apple-TV-style ambient blur of the current card's thumbnail. Sits
  *  behind everything in /triage so the bookmark's own color tone bleeds
  *  outward. Re-mounts on item change (= keyed by bookmarkId) so the
- *  enter animation runs naturally. exitDirection mirrors the TriageCard
- *  swipe so the backdrop "leaves with" the card. */
-export function AmbientBackdrop({ item, exitDirection }: {
+ *  enter animation runs naturally. exitDecision mirrors the TriageCard
+ *  swipe so the backdrop "leaves with" the card in the same direction. */
+export function AmbientBackdrop({ item, exitDecision }: {
   item: BoardItem | null
-  exitDirection?: Direction | null
+  exitDecision?: SwipeDecision | null
 }): ReactElement {
   if (!item?.thumbnail) {
     return <div className={styles.fallback} aria-hidden="true" />
   }
-  const exitClass = exitDirection
-    ? styles[`exit${exitDirection.charAt(0).toUpperCase()}${exitDirection.slice(1)}`] ?? ''
+  const exitClass = exitDecision === 'yes' ? styles.exitYes
+    : exitDecision === 'no' ? styles.exitNo
     : ''
   return (
     <div

@@ -1,198 +1,62 @@
-/* session 77 (full redesign): direction chips live in the 4 edge strips
-   rendered by TriagePage; the co-tag strip lives inside the central
-   canvas frame underneath the card. This file only defines the chip
-   visuals (DirChip / CoTagStrip). Layout positioning lives in
-   TriagePage.module.css. */
+/* Session 79 rebuild: 4-direction DirChip removed. Only the
+   TopTagStrip + NewMoodInput remain. Strip lives in TriagePage outer
+   chrome (top center), chips are click-to-toggle "armed" multi-select. */
 
-.dirChip {
-  position: relative;
+.tagStrip {
   display: flex;
-  flex-direction: column;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  padding: 18px 28px;
-  min-width: 132px;
-  min-height: 88px;
-  cursor: pointer;
-  transition: color 120ms, transform 120ms;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65), 0 0 4px rgba(0, 0, 0, 0.35);
-}
-.dirChip:hover { color: #fff; transform: scale(1.04); }
-.dirChip.suggested .dirActive { color: #28F100; }
-.dirChip.coOn .dirActive { color: #28F100; }
-.dirChip.coOn::before {
-  content: '✓';
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  color: #28F100;
-  font-size: 13px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  gap: 6px;
+  padding: 0 4px;
+  pointer-events: auto;
 }
 
-.dirHint {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.78);
-}
-.dirArrow {
-  font-size: 16px;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.95);
-}
-.dirKey {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.10);
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-  text-shadow: none;
-}
-.dirActive {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  position: relative;
-  color: rgba(255, 255, 255, 0.97);
-}
-.dirDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.dirName { }
-
-.dirSub {
+.chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-  transition: color 120ms;
-}
-.dirChip:hover .dirSub { color: rgba(255, 255, 255, 0.85); }
-.dirSubDot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; opacity: 0.75; }
-.dirSubName { }
-
-/* Co-tag strip sits inside the canvas, below the TriageCard. */
-.coStrip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  pointer-events: auto;
-  max-width: 92%;
-}
-.coChips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 8px 12px;
-}
-.coChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.78);
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 8px 14px;
-  min-height: 36px;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: color 120ms, background-color 120ms;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
-}
-.coChip:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
-}
-.coChipOn { color: #28F100; }
-.coChipOn:hover { color: #5cff3c; }
-.coChipSuggested { color: rgba(40, 241, 0, 0.78); }
-.coChipSuggested:hover { color: #28F100; }
-.coChipSuggested.coChipOn { color: #28F100; }
-
-.coDigit {
-  color: rgba(255, 255, 255, 0.55);
   font-size: 11px;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  min-height: 32px;
+  cursor: pointer;
+  transition: color 120ms, background-color 120ms, border-color 120ms, box-shadow 120ms;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.chip:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Armed (= will be applied on next Yes swipe). Green halo for unambiguous
+   "selected" state, matches AllMarks ✓ visual language. */
+.chipArmed {
+  background: rgba(40, 241, 0, 0.16);
+  border-color: #28F100;
+  color: #28F100;
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(40, 241, 0, 0.32);
+}
+.chipArmed:hover {
+  color: #5cff3c;
+  background: rgba(40, 241, 0, 0.22);
+}
+
+.chipKey {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
   text-shadow: none;
 }
-.coDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.coName { }
-.coCheck { color: #28F100; font-size: 12px; }
-
-.utilRow {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  margin-top: 6px;
-}
-.util {
-  background: transparent;
-  border: 0;
-  color: rgba(255, 255, 255, 0.78);
-  cursor: pointer;
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 12px;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  padding: 6px 12px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  transition: color 120ms, background-color 120ms;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
-}
-.util:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
-}
-.utilHint {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.10);
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-  text-shadow: none;
-}
-.coHint {
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 11px;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
-}
+.chipArmed .chipKey { color: #28F100; }
+.chipDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.chipName { /* tag name */ }
+.chipCheck { color: #28F100; font-size: 12px; }

@@ -6,16 +6,14 @@ import { useBoardData } from '@/lib/storage/use-board-data'
 import { useTags } from '@/lib/storage/use-tags'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { t } from '@/lib/i18n/t'
-import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
-import { DirChip, CoTagStrip, useTagPickerKeys } from './TagPicker'
-import { AmbientBackdrop } from './AmbientBackdrop'
+import { TopTagStrip, useTagPickerKeys } from './TagPicker'
+import { AmbientBackdrop, type SwipeDecision } from './AmbientBackdrop'
 import styles from './TriagePage.module.css'
 
-type Direction = 'up' | 'right' | 'down' | 'left'
 type TriageMode = 'untagged' | 'all' | { tagId: string }
 
-const SWIPE_ANIM_MS = 220
+const SWIPE_ANIM_MS = 360
 const DRAG_THRESHOLD_PX = 60
 
 function parseMode(raw: string | null): TriageMode | null {
@@ -47,43 +45,14 @@ export function TriagePage(): ReactElement {
 
   const [index, setIndex] = useState(0)
   const [lastAction, setLastAction] = useState<{ bookmarkId: string; prev: readonly string[] } | null>(null)
-  const [exitDirection, setExitDirection] = useState<Direction | null>(null)
-  const [shiftHeld, setShiftHeld] = useState(false)
-  const [coTagIds, setCoTagIds] = useState<ReadonlySet<string>>(() => new Set())
+  const [exitDecision, setExitDecision] = useState<SwipeDecision | null>(null)
+  const [armedTagIds, setArmedTagIds] = useState<ReadonlySet<string>>(() => new Set())
 
   const current = queue[index] ?? null
   const total = queue.length
 
-  const primaryDirectional = useMemo<Record<Direction, TagRecord | undefined>>(() => ({
-    up: tags[0], right: tags[1], down: tags[2], left: tags[3],
-  }), [tags])
-  const secondaryDirectional = useMemo<Record<Direction, TagRecord | undefined>>(() => ({
-    up: tags[4], right: tags[5], down: tags[6], left: tags[7],
-  }), [tags])
-
-  const [suggestedTagIds, setSuggestedTagIds] = useState<ReadonlyArray<string>>([])
-  useEffect(() => {
-    if (!current) { setSuggestedTagIds([]); return }
-    let cancelled = false
-    const tagger = new HeuristicTagger({ tags })
-    void (async (): Promise<void> => {
-      const suggestions = await tagger.suggest({
-        url: current.url,
-        title: current.title,
-        description: '',
-        siteName: '',
-      })
-      if (!cancelled) setSuggestedTagIds(suggestions.map((s) => s.tagId))
-    })()
-    return (): void => { cancelled = true }
-  }, [current, tags])
-
-  useEffect(() => {
-    setCoTagIds(new Set())
-  }, [current?.bookmarkId])
-
-  const toggleCoTag = useCallback((tagId: string): void => {
-    setCoTagIds((prev) => {
+  const toggleArmed = useCallback((tagId: string): void => {
+    setArmedTagIds((prev) => {
       const next = new Set(prev)
       if (next.has(tagId)) next.delete(tagId)
       else next.add(tagId)
@@ -91,41 +60,47 @@ export function TriagePage(): ReactElement {
     })
   }, [])
 
-  /** In `all` and `tag:<id>` modes, the card may already have tags. We MERGE
-   *  (= union, not replace) so the user can keep adding without losing what
-   *  was there. In `untagged`, the card has no tags, so this is just the
-   *  composed list. */
-  const persistMainPlusCo = useCallback(async (mainTagId: string): Promise<void> => {
-    if (!current) return
-    setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
+  /** Yes: apply ALL armed tags (union with the card's existing tags so we
+   *  never silently strip pre-existing tags in `all` mode) + advance.
+   *  Yes always advances; if nothing armed, it's equivalent to No (a skip),
+   *  which is clearer than swallowing the key silently. */
+  const handleYes = useCallback((): void => {
+    if (!current || exitDecision) return
+    const willApplyTags = armedTagIds.size > 0
+    if (willApplyTags) {
+      setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
+    } else {
+      setLastAction(null)
+    }
+    setExitDecision('yes')
     const composed: string[] = []
     const seen = new Set<string>()
     const push = (id: string): void => { if (!seen.has(id)) { seen.add(id); composed.push(id) } }
-    push(mainTagId)
-    for (const id of coTagIds) push(id)
+    for (const id of armedTagIds) push(id)
     for (const id of current.tags) push(id)
-    await persistTags(current.bookmarkId, composed)
-  }, [current, coTagIds, persistTags])
-
-  const handleSwipe = useCallback((dir: Direction): void => {
-    if (exitDirection) return
-    const slot = shiftHeld ? secondaryDirectional : primaryDirectional
-    const mainTag = slot[dir]
-    if (!mainTag) return
-    setExitDirection(dir)
+    const bookmarkId = current.bookmarkId
     setTimeout((): void => {
-      void persistMainPlusCo(mainTag.id).finally((): void => {
-        setExitDirection(null)
-        if (mode === 'all') setIndex((i) => i + 1)
+      void persistTags(bookmarkId, composed).finally((): void => {
+        setExitDecision(null)
+        // In `untagged` mode, applied tags auto-remove the card from the
+        // queue (= queue shrinks), so we don't advance. In every other
+        // case the queue length is stable, so we must advance the index.
+        const queueShrinks = mode === 'untagged' && willApplyTags
+        if (!queueShrinks) setIndex((i) => i + 1)
       })
     }, SWIPE_ANIM_MS)
-  }, [exitDirection, shiftHeld, primaryDirectional, secondaryDirectional, persistMainPlusCo, mode])
+  }, [current, exitDecision, armedTagIds, persistTags, mode])
 
-  const handleSkip = useCallback((): void => {
-    if (!current) return
+  /** No: don't apply tags, just advance. Animation slides card left. */
+  const handleNo = useCallback((): void => {
+    if (!current || exitDecision) return
     setLastAction(null)
-    setIndex((i) => i + 1)
-  }, [current])
+    setExitDecision('no')
+    setTimeout((): void => {
+      setExitDecision(null)
+      setIndex((i) => i + 1)
+    }, SWIPE_ANIM_MS)
+  }, [current, exitDecision])
 
   const handleUndo = useCallback(async (): Promise<void> => {
     if (!lastAction) return
@@ -134,13 +109,13 @@ export function TriagePage(): ReactElement {
     setIndex((i) => Math.max(0, i - 1))
   }, [lastAction, persistTags])
 
-  const handleCreateTagAddToCo = useCallback(async (name: string): Promise<void> => {
+  const handleCreateTagAddArmed = useCallback(async (name: string): Promise<void> => {
     const trimmed = name.trim()
     if (!trimmed) return
     const colors = ['#7c5cfc', '#e066d7', '#4ecdc4', '#f5a623', '#ff6b6b']
     const color = colors[tags.length % colors.length]
     const created = await create({ name: trimmed, color, order: tags.length })
-    setCoTagIds((prev) => {
+    setArmedTagIds((prev) => {
       const next = new Set(prev)
       next.add(created.id)
       return next
@@ -156,33 +131,17 @@ export function TriagePage(): ReactElement {
       if (e.key === 'Escape') { e.preventDefault(); exit(); return }
       if (!mode) return
       const lk = e.key.toLowerCase()
-      if (e.key === 'ArrowUp'    || lk === 'w') { e.preventDefault(); handleSwipe('up'); return }
-      if (e.key === 'ArrowRight' || lk === 'd') { e.preventDefault(); handleSwipe('right'); return }
-      if (e.key === 'ArrowDown'  || lk === 's') { e.preventDefault(); handleSwipe('down'); return }
-      if (e.key === 'ArrowLeft'  || lk === 'a') { e.preventDefault(); handleSwipe('left'); return }
+      if (e.key === 'ArrowRight' || lk === 'd') { e.preventDefault(); handleYes(); return }
+      if (e.key === 'ArrowLeft'  || lk === 'a') { e.preventDefault(); handleNo();  return }
     }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
-  }, [exit, handleSwipe, mode])
-
-  useEffect(() => {
-    const onDown = (e: KeyboardEvent): void => { if (e.key === 'Shift') setShiftHeld(true) }
-    const onUp = (e: KeyboardEvent): void => { if (e.key === 'Shift') setShiftHeld(false) }
-    const onBlur = (): void => setShiftHeld(false)
-    window.addEventListener('keydown', onDown)
-    window.addEventListener('keyup', onUp)
-    window.addEventListener('blur', onBlur)
-    return (): void => {
-      window.removeEventListener('keydown', onDown)
-      window.removeEventListener('keyup', onUp)
-      window.removeEventListener('blur', onBlur)
-    }
-  }, [])
+  }, [exit, handleYes, handleNo, mode])
 
   useTagPickerKeys({
     tags,
-    onToggleCoTag: toggleCoTag,
-    onSkip: handleSkip,
+    onToggleArmed: toggleArmed,
+    onNo: handleNo,
     onUndo: lastAction ? handleUndo : null,
   })
 
@@ -195,12 +154,9 @@ export function TriagePage(): ReactElement {
     dragStartRef.current = null
     if (!start) return
     const dx = e.clientX - start.x
-    const dy = e.clientY - start.y
-    if (Math.abs(dx) < DRAG_THRESHOLD_PX && Math.abs(dy) < DRAG_THRESHOLD_PX) return
-    const dir: Direction = Math.abs(dx) > Math.abs(dy)
-      ? (dx > 0 ? 'right' : 'left')
-      : (dy > 0 ? 'down' : 'up')
-    handleSwipe(dir)
+    if (Math.abs(dx) < DRAG_THRESHOLD_PX) return
+    if (dx > 0) handleYes()
+    else handleNo()
   }
   const onPointerCancel = (): void => { dragStartRef.current = null }
 
@@ -247,91 +203,37 @@ export function TriagePage(): ReactElement {
     )
   }
 
-  const suggestedSet = new Set(suggestedTagIds)
   const progressText = t('triage.progress')
     .replace('{current}', String(index + 1))
     .replace('{total}', String(total))
 
   return (
     <div className={styles.root} data-testid="triage-page">
-      <AmbientBackdrop item={current} exitDirection={exitDirection} />
+      <AmbientBackdrop item={current} exitDecision={exitDecision} />
 
-      {/* ===== 4 edge chip strips ===== */}
-      <div className={styles.stripTop}>
-        <span className={styles.stripProgress}>{progressText}</span>
-        <div className={styles.stripChipCenter}>
-          <DirChip
-            primary={primaryDirectional.up}
-            secondary={secondaryDirectional.up}
-            shifted={shiftHeld}
-            arrow="↑"
-            keyLabel="W"
-            coTagIds={coTagIds}
-            suggestedSet={suggestedSet}
-            onSwipe={(): void => handleSwipe('up')}
-          />
-        </div>
-        <button type="button" className={styles.stripBackBtn} onClick={exit}>ESC</button>
-      </div>
-
-      <div className={styles.stripRight}>
-        <DirChip
-          primary={primaryDirectional.right}
-          secondary={secondaryDirectional.right}
-          shifted={shiftHeld}
-          arrow="→"
-          keyLabel="D"
-          coTagIds={coTagIds}
-          suggestedSet={suggestedSet}
-          onSwipe={(): void => handleSwipe('right')}
+      {/* Outer chrome: progress (top-left) + tag strip (top-center) + ESC (top-right). */}
+      <span className={styles.outerProgress}>{progressText}</span>
+      <div className={styles.outerTagStrip}>
+        <TopTagStrip
+          tags={tags}
+          armedTagIds={armedTagIds}
+          onToggle={toggleArmed}
+          onCreate={handleCreateTagAddArmed}
         />
       </div>
+      <button type="button" className={styles.outerBackBtn} onClick={exit}>ESC</button>
 
-      <div className={styles.stripBottom}>
-        <DirChip
-          primary={primaryDirectional.down}
-          secondary={secondaryDirectional.down}
-          shifted={shiftHeld}
-          arrow="↓"
-          keyLabel="S"
-          coTagIds={coTagIds}
-          suggestedSet={suggestedSet}
-          onSwipe={(): void => handleSwipe('down')}
-        />
+      {/* Yes / No swipe hints (= left/right of pane, always visible). */}
+      <div className={`${styles.swipeHint} ${styles.noHint}`}>
+        <span className={styles.swipeArrow}>←</span>
+        <span className={styles.swipeVerdict}>NO</span>
+      </div>
+      <div className={`${styles.swipeHint} ${styles.yesHint}`}>
+        <span className={styles.swipeVerdict}>YES</span>
+        <span className={styles.swipeArrow}>→</span>
       </div>
 
-      <div className={styles.stripLeft}>
-        <DirChip
-          primary={primaryDirectional.left}
-          secondary={secondaryDirectional.left}
-          shifted={shiftHeld}
-          arrow="←"
-          keyLabel="A"
-          coTagIds={coTagIds}
-          suggestedSet={suggestedSet}
-          onSwipe={(): void => handleSwipe('left')}
-        />
-      </div>
-
-      {/* ===== central canvas — strong-refraction Liquid Glass =====
-          Triage-only SVG filter. Reuses the same displacement PNG as
-          board/LiquidGlass (= proven to work as a backdrop-filter
-          source in Chromium), only the displacement scale is bumped
-          for a large refractive pane (board uses 12, triage tries 80).
-
-          Earlier (session 77) this filter used an inline `data:image/svg+xml`
-          feImage source; Chromium's backdrop-filter pipeline does NOT
-          sample data-URI SVG feImage reliably, so the displacement
-          silently produced zero refraction. A PNG file URL works. */}
-      {/* Frosted glass refraction filter — static PNG displacement.
-          Session 78: tried canvas-generated convex bezel via
-          lib/glass/displacement-map (β path) — the 1265×576 pane at
-          dpr×4 super-sampling pushed the tab past 2GB. Reverted.
-          Now: static /displacement/glass-001.png (= board/LiquidGlass's
-          map, proven cheap). The bezel won't bend lines at the rim like
-          Apple Liquid Glass, but the tab stays sane. Convex bezel can
-          be revisited later with the Desktop Claude α path (= pre-built
-          PNG triplet, no per-frame canvas work). */}
+      {/* SVG defs for the glass refraction filter (= reused from session 78). */}
       <svg className={styles.glassFilterDefs} aria-hidden="true">
         <defs>
           <filter id="triage-glass-refract" x="0%" y="0%" width="100%" height="100%">
@@ -350,6 +252,8 @@ export function TriagePage(): ReactElement {
           </filter>
         </defs>
       </svg>
+
+      {/* Central glass canvas — overflow:hidden clips the card as it slides off. */}
       <div
         className={styles.canvas}
         onPointerDown={onPointerDown}
@@ -357,17 +261,8 @@ export function TriagePage(): ReactElement {
         onPointerCancel={onPointerCancel}
       >
         <div className={styles.canvasCardHost}>
-          <TriageCard key={current.bookmarkId} item={current} exitDirection={exitDirection} />
+          <TriageCard key={current.bookmarkId} item={current} exitDecision={exitDecision} />
         </div>
-        <CoTagStrip
-          tags={tags}
-          coTagIds={coTagIds}
-          suggestedSet={suggestedSet}
-          onToggle={toggleCoTag}
-          onCreate={handleCreateTagAddToCo}
-          onSkip={handleSkip}
-          onUndo={lastAction ? handleUndo : null}
-        />
         <div className={styles.canvasFooter}>{t('triage.hint')}</div>
       </div>
     </div>

@@ -5194,3 +5194,96 @@ onDrop handler 内の prevPositionsRef 書込 2 箇所も w/h 含む形に更新
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+---
+
+## セッション 79 (2026-05-26) — /triage タグ付け model 全面 redesign + ワールドスライド導入 + Tweet 動画 pipeline memory 化
+
+### 前半: chip 配置試行錯誤 (= user 意図と私の解釈のズレ収束)
+
+session 79 開始時、 4 方向の DirChip 配置を 3 回試行:
+
+1. 「ガラスの内側 flex 行構造」 (左 chip | カード | 右 chip + 上下 chip) — カード領域が圧迫されて「カードすら表示できてない」 user 報告で却下
+2. 「ガラスの外側 4 strip」 (= 元の session 72 layout 復元) — user mockup と全然違う、 「ガラスの上だよ俺が作ったのは」 と怒られた
+3. 「ガラス内に絶対配置で z 上層オーバーレイ」 — user mockup と一致したが、 user が根本問題に気づいた: 「4 方向振り分けってもう難しすぎでは?」
+
+### 中盤: brainstorming skill 起動 + Visual Companion で model 比較
+
+user 「4 方向振り分けっていうのがすでにちょっと難しすぎるとかそういうことはありますか？競合はどうやってタグ付けを高速化していますか？」 — 設計の根本 reframe を促す質問。
+
+**Visual Companion 起動** (= localhost:58851、 ~/.claude/plugins/.../superpowers/skills/brainstorming/scripts/start-server.sh、 `.superpowers/brainstorm/` に persist):
+
+- 競合 5 種比較 mockup を push: 数字キー (Lightroom/Gmail) / AI 推奨確定 (mymind) / type-to-tag (Things/Notion) / 2-3 方向 swipe (Tinder) / 4 方向 + co-tag (現状 AllMarks)
+- 結論: **4 方向は業界に類似なし、 「Music はどっち?」 の暗記コスト常時走る、 業界最速は全部「方向」 でなく「直接選択」**
+- 私の暫定推奨: 数字キー 1-9 を primary、 4 方向撤去、 視覚演出は別レイヤー
+
+user の対案: 「左右だけ残して 1 つだけピックアップしたタグを選ぶ。 左右は Yes/No だけ (マッチングアプリ)。 YouTube にとりあえずぶち込みたい時、 YouTube をピックして Yes/No でガンガン振り分け」 → **ピンタグ + Yes/No model**
+
+さらに refinement: 「ピックアップってより、 選択したタグをつけた状態で Yes/No すれば複数タグもその場でつけられる」 → **武装タグ multi 選択 + Yes/No** が確定 model
+
+### 動きの仕様 (= user 直接発言)
+
+「アニメーションについては、 やっぱりさっきの背景・ ガラス・ カードのままにしたい。 カードはさっきまで小さくなって消えるような感じになってたけどそうじゃなくて、 ガラスの端まで普通の大きさのまま単にスライドしていく、 ガラスからは出られないのでガラスからはみ出た分は見えないで消えていく。 背景も全く同じように同じ方向にスライドしてそのまま次のカードが同じようにスライドして入ってくる」
+
+→ **ワールドスライド** (= カード + 背景が同じ方向に等速 translateX、 ガラスは固定窓、 overflow:hidden で clip、 縮小 / フェード無し)
+
+### 命名の規律 (= user の鋭い指摘)
+
+「武装タグってなんですか？ その言葉遣いはいれないですよね？」 — 私の脳内ショートハンドが UI 寄りに漏れたのを user が即停止。 memory `feedback_ui_vocabulary` (= UI text は世界共通英語語彙のみ、 creative 表現は visual 側だけ) 再確認。 UI 上は**チップの視覚状態 (緑 + ✓) のみで表現、 ヘッダー文言不要**。
+
+### 実装 ship (= session 内 2 deploy)
+
+**変更ファイル 7 つ + memory 1 つ**:
+
+1. **`AmbientBackdrop.tsx` + `.module.css`**: `Direction` 型 (`'up' | 'right' | 'down' | 'left'`) → **`SwipeDecision` 型 (`'yes' | 'no'`)** にリネーム。 `exitYes` = translateX 40% + opacity 0、 `exitNo` = translateX -40% + opacity 0。 360ms easing
+2. **`TriageCard.tsx` + `.module.css`**: 同じく Yes/No 型に。 退場は **translate-only** (= 縮小 / brightness 無し)、 translateX ±120% で off-pane (= ガラスの overflow:hidden で clip)、 360ms
+3. **`TagPicker.tsx`**: **DirChip 完全削除**、 **TopTagStrip 新規 export** (= 全タグ chip 並ぶ + click で武装トグル + NewMoodInput inline + ✓ 緑強調)。 `useTagPickerKeys` 引数を `onToggleCoTag` → `onToggleArmed` / `onSkip` → `onNo` にリネーム
+4. **`TagPicker.module.css`**: DirChip 系スタイル全削除、 chip の armed state スタイル新規 (= rgba(40,241,0,0.16) bg + 緑 border + 緑 glow box-shadow)
+5. **`TriagePage.tsx`**: 全面書き換え (= 50 行+ 削減)
+   - `primaryDirectional` / `secondaryDirectional` / `shiftHeld` 状態削除、 4 方向ハンドラ削除
+   - `armedTagIds: ReadonlySet<string>` 状態追加、 `toggleArmed` callback
+   - `handleYes` = 武装タグ all union with 既存タグ → persist + advance (= 'untagged' モードで武装あり時のみ queue 自動収縮で advance スキップ)
+   - `handleNo` = 何もせず advance
+   - キーボード: → / D = Yes、 ← / A / Space = No、 1-9 = 武装トグル、 Z = undo、 Esc = exit
+   - ポインタドラッグ: dx > 60 = Yes、 dx < -60 = No (X 軸のみ判定)
+   - TopTagStrip を outer chrome の top-center 固定配置
+   - Y/N hint を viewport 左右に常時表示 (= 「NO ←」「YES →」)
+6. **`TriagePage.module.css`**: 旧 chip wrapper 系 (.glassChip* / .outerChip* / .canvasChip* / .canvasCardRow) 全削除、 `.outerTagStrip` / `.swipeHint` / `.noHint` / `.yesHint` / `.swipeArrow` / `.swipeVerdict` 新規。 `.canvas` padding / gap は元 (28px 40px 72px / 18px) に戻す
+7. **`messages/ja.json`**: hint string を「↑→↓← / WASD 付与 · Space スキップ · Z 取り消し · 1-9 切替」 → 「→/D YES · ←/A NO · 1-9 タグ ON/OFF · Z 取り消し」
+
+**テスト**: 829 PASS 維持 / tsc 0 / build success / deploy 2 回 (= preview + 修正版)
+
+### Twitter 動画 → 3 枚サムネ pipeline memory 化 (= LoPo 移植準備)
+
+user が並行プロジェクト LoPo (ハウジング機能) でも同じ仕組みを使いたいと相談。 過去セッションで Claude が AllMarks repo を「ない」 と返したらしいので、 確実に引き継ぎ:
+
+- **新 memory `reference_tweet_video_frames_pipeline`**: 6 ファイル全体図 + データフロー + 4 落とし穴 (CORS / token / Referer / tainted canvas) + ハードコード値の根拠
+- 6 ファイル: `functions/api/tweet-meta.ts` + `functions/api/tweet-video.ts` + `lib/embed/tweet-meta.ts` + `lib/board/extract-video-frames.ts` + `lib/board/use-tweet-video-frames.ts` + `components/board/CardSlideshow.tsx`
+- LoPo に貼るコピペ用ハンドオフメッセージを user に提供 (= 6 ファイルパス + 落とし穴 4 つ + 移植プラン要求の short form)
+
+### 残課題 (= 次セッション持ち越し)
+
+**user 観察 (= 解消候補)**:
+- **ガラス中央の歪みが純黒タブでも見える**: AmbientBackdrop が card サムネを blur up したもの (opacity 0.70) で微妙な色グラデが残る、 それを displacement map が歪めて blob shape として可視化。 user 「今はいったん歪み残しでお願いします」 で却下、 後で改善
+- **snap でカード退場 → 入場が繋がる**: 旧 card 退場アニメ中に新 card 並走しない (= 「continuous slide」 未実装)。 user mockup の理想形は 2 枚並走 slider、 中規模追加工事
+- **ガラスのサイズ / レイアウトもっと brushup**: user 「大きさとレイアウトはもっとブラッシュアップしたい」 と発言。 chip 位置 / カード中身 / Yes-No hint 表示タイミング等
+
+**session 78 持ち越し残**:
+- convex bezel α 案 (= pre-built PNG triplet)
+- Phase D 5 項目 (中断再開 / しゅっアニメ進化 / タグ削除 fx / 他 14 言語 mood→tag rename / NewMoodInput→NewTagInput rename) — model 変更で「しゅっアニメ」 は完全廃止、 「Yes/No スライド」 が代替演出
+
+**🔴 ドメイン**:
+- **2026-05-28 朝以降 `allmarks.app` 取得確認** が引き続き待機
+
+### 設計上の重要発見 (= 次以降の保険、 memory 化済)
+
+- **「武装」 等の創造的シンボルを UI に漏らさない**: 私の脳内ショートハンドは内部だけ。 UI text は世界共通英語語彙限定、 視覚状態だけで semantics 伝達 (= memory `feedback_ui_vocabulary` 強化)
+- **業界調査は brainstorm 早期に大きいリターン**: 4 方向 swipe の根本問題 (= 暗記コスト) は競合 5 種比較で 1 ターンで露見、 ここで方向転換できた価値が一番大きい
+- **user の casual な「素人考えですが」 提案は道筋を切る**: 「左右だけ残してピックアップ + Yes/No」 が私の「数字キー primary」 案より遥かに洗練、 物理メタファー + 速度 + 多重タグ全部一発で解いた (= memory `feedback_layman_simple_path` 再強化)
+- **動きの仕様は user 直接発言を引用**: 「ガラスの端まで普通の大きさのまま単にスライド、 はみ出た分は見えないで消えていく」 = 仕様文として実装に直結。 私が想像で「fade + scale」 で実装したら却下されてた
+
+### 次セッション (= 80) goal
+
+**動作確認 (= user による Yes/No swipe + 武装タグ multi 選択 + ワールドスライドの実機評価)** + **必要な brushup (= サイズ / レイアウト / Yes-No hint / snap 改善)** + **2026-05-28 朝以降 allmarks.app 取得確認**。
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+

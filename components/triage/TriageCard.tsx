@@ -2,18 +2,17 @@
 
 import type { CSSProperties, ReactElement } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
+import type { SwipeDecision } from './AmbientBackdrop'
 import styles from './TriageCard.module.css'
 
-type Direction = 'up' | 'right' | 'down' | 'left'
-
-export function TriageCard({ item, exitDirection }: {
+export function TriageCard({ item, exitDecision }: {
   item: BoardItem
-  exitDirection?: Direction | null
+  exitDecision?: SwipeDecision | null
 }): ReactElement {
   let host = ''
   try { host = new URL(item.url).hostname.replace(/^www\./, '') } catch { /* ignore */ }
-  const exitClass = exitDirection
-    ? styles[`exit${exitDirection.charAt(0).toUpperCase()}${exitDirection.slice(1)}`] ?? ''
+  const exitClass = exitDecision === 'yes' ? styles.exitYes
+    : exitDecision === 'no' ? styles.exitNo
     : ''
   const hasThumb = Boolean(item.thumbnail)
   const cardStyle = { ['--item-aspect' as string]: String(item.aspectRatio || 1) } as CSSProperties

@@ -23,56 +23,27 @@
   isolation: isolate;
 }
 
-/* ============= 4 edge chip strips ============= */
-.stripTop,
-.stripBottom {
+/* ============= outer chrome (progress + tag strip + ESC) =============
+   Session 79 rebuild: 4-direction swipe was removed in favor of Yes/No
+   + armed-tag multi-select. Top chrome holds progress (left), the tag
+   strip (center, overflow-scroll), and ESC (right). */
+.outerProgress {
   position: fixed;
-  left: 0; right: 0;
-  height: 96px;
-  /* No dim — the chip itself is the visible target. Filling the strip
-     with rgba black drew a rectangular outline against the now-sharp
-     ambient backdrop (the "thin white edge" the user reported). */
-  background: transparent;
-  z-index: 4;
-  display: grid;
-  align-items: center;
-}
-.stripTop    { top: 0;    grid-template-columns: 200px 1fr 200px; }
-.stripBottom { bottom: 0; grid-template-columns: 1fr; justify-items: center; }
-
-.stripLeft,
-.stripRight {
-  position: fixed;
-  top: 96px; bottom: 96px;
-  width: 96px;
-  background: transparent;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.stripLeft  { left: 0; }
-.stripRight { right: 0; }
-
-.stripChipCenter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Top strip metadata (= progress + Esc) */
-.stripProgress {
+  top: 28px;
+  left: 28px;
+  z-index: 5;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.65);
-  padding-left: 28px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
 }
-.stripBackBtn {
-  justify-self: end;
-  margin-right: 28px;
+.outerBackBtn {
+  position: fixed;
+  top: 24px;
+  right: 28px;
+  z-index: 5;
   background: transparent;
   border: 0;
   color: rgba(255, 255, 255, 0.85);
@@ -86,10 +57,43 @@
   transition: color 120ms, background-color 120ms;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
 }
-.stripBackBtn:hover {
+.outerBackBtn:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* Tag strip wrapper. Sits between progress and ESC, scrolls horizontally
+   if the tag list overflows. Cap the width so it doesn't bump into the
+   corner chrome. */
+.outerTagStrip {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 240px);
+  z-index: 5;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.outerTagStrip::-webkit-scrollbar { display: none; }
+
+/* ============= Yes / No swipe hints (= left / right of viewport) ============= */
+.swipeHint {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.noHint  { left: 32px;  color: #ff8c8c; }
+.yesHint { right: 32px; color: #6bcf7f; }
+.swipeArrow   { font-size: 28px; line-height: 1; }
+.swipeVerdict { font-size: 16px; font-weight: 700; letter-spacing: 0.18em; }
 
 /* ============= central canvas frame ============= */
 /* Hidden SVG defs container for the triage-specific glass refraction
