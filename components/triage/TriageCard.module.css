@@ -1,28 +1,29 @@
-/* session 77: horizontal 2-column card (left thumbnail, right text).
-   Sits inside the centre canvas frame. Wide aspect so the body has
-   room for title + URL without cramping. */
+/* session 77 (Lightbox-aligned): media + text panel pair, same visual
+   language as components/board/Lightbox.module.css so the user sees
+   a single "AllMarks card detail" treatment whether they opened a
+   bookmark from the board or are triaging it. Static image only (no
+   iframe / no video) — the card stays cheap for back-to-back swipes. */
+
 .card {
-  width: min(1080px, 80vw);
-  height: min(600px, 60vh);
-  display: grid;
-  grid-template-columns: auto 1fr;
-  background: var(--card-white);
-  color: #1a1a1a;
-  border-radius: var(--card-radius);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  max-width: min(94%, 1240px);
+  max-height: 100%;
+  /* Transparent wrapper: media + text panel each render with their
+     own subtle treatment so the central canvas dim still bleeds
+     between them, matching the Lightbox feel. */
+  background: transparent;
   animation: triageIn 220ms cubic-bezier(0.20, 0.60, 0.20, 1);
 }
-.cardTextOnly {
-  grid-template-columns: 1fr;
-}
+
 @keyframes triageIn {
   from { opacity: 0; transform: scale(0.96); }
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* Directional exit animations (= session 72 Phase B2 "しゅっ" polish,
-   preserved). 3-stage flight per direction, 220ms cubic-bezier. */
+/* Directional exit (= session 72 polish, preserved). */
 .card.exitUp    { animation: triageExitUp    220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
 .card.exitRight { animation: triageExitRight 220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
 .card.exitDown  { animation: triageExitDown  220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
@@ -56,61 +57,32 @@
 }
 @keyframes triageExitFadeOnly { from { opacity: 1; } to { opacity: 0; } }
 
-.thumbnail {
-  height: 100%;
-  aspect-ratio: 4 / 5;
+/* ===== Media (left) — natural aspect, capped by canvas envelope ===== */
+.media {
+  position: relative;
+  flex: 0 1 auto;
+  /* aspect-ratio is set inline via --item-aspect from BoardItem */
+  aspect-ratio: var(--item-aspect, 1);
+  width: min(
+    920px,
+    60vw,
+    calc(var(--item-aspect, 1) * 70vh)
+  );
+  max-height: 70vh;
+  border-radius: var(--lightbox-media-radius, var(--card-radius));
+  overflow: hidden;
   background-size: cover;
   background-position: center;
   background-color: #0c0c10;
 }
 
-.body {
-  padding: 40px 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  overflow: hidden;
-  min-width: 0;
-}
-.title {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: 28px;
-  line-height: 1.32;
-  letter-spacing: -0.01em;
-  color: #1a1a1a;
-  /* Clamp long titles so they don't overflow the body. */
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.description {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.55;
-  color: #555;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.meta {
-  margin-top: auto;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: #7a7a7a;
-  font-size: 13px;
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  letter-spacing: 0.04em;
-}
-
-/* Fallback display when no thumbnail exists: big hostname text on the
-   left half. Keeps the 2-column rhythm without an empty grey box. */
+/* Text-only card: no media, hostname panel takes its place. */
 .hostnamePanel {
-  height: 100%;
+  position: relative;
+  flex: 0 1 auto;
   aspect-ratio: 4 / 5;
+  width: min(480px, 50vw, calc(0.8 * 70vh));
+  max-height: 70vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,4 +94,78 @@
   letter-spacing: 0.04em;
   text-align: center;
   word-break: break-word;
+  border-radius: var(--lightbox-media-radius, var(--card-radius));
+}
+
+/* ===== Text panel (right) — fixed 320, Lightbox typography ===== */
+.text {
+  flex: 0 0 320px;
+  color: #e8e8e8;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 4px; /* leave room for scrollbar without text crowding */
+
+  /* Hairline scrollbar, same as Lightbox. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.text:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.34) transparent;
+}
+.text::-webkit-scrollbar { width: 8px; }
+.text::-webkit-scrollbar-track { background: transparent; }
+.text::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.18s ease;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  margin: 0;
+  color: var(--text-primary, #f5f5f5);
+  font-family: var(--font-sans);
+}
+
+.description {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-body, #cbcbcb);
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+.meta {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--text-meta, #888);
+  font-size: 13px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+/* Narrow viewport: stack media on top, text below, like Lightbox. */
+@media (max-width: 900px) {
+  .card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  .text { flex: 0 0 auto; max-height: none; }
+  .media, .hostnamePanel { max-height: 50vh; }
 }
