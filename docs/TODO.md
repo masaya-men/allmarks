@@ -20,7 +20,47 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-26 セッション 74 — BoardFilter 統合完遂、 タグ click が背景文字 / chrome / dropdown すべてを 1 つの source of truth で駆動 + リロード復元、 本番反映済)
+### 直近の状態 (2026-05-26 セッション 75 — タグ絞り込み体験の徹底 polish 完遂、 session 74 本体反映直後の regression 検出 → 業界調査ベース entry anim + source-aware scroll restore + scroll easing 全統一)
+
+**ship 済 (= 本番反映済、 booklage.pages.dev、 session 内 12 deploy)**:
+
+1. **session 74 動作検証**: user 朝起きて確認、 タグ click 背景文字変化 OK / リロード復元 OK / dropdown 切替 OK。 但し**絞り込み時 CRT shutdown アニメ消失**を報告。 systematic-debugging で root cause 特定: 「2 段絞り込み」 構造で session 74 統合により 1 段に吸収された結果、 非該当カードが CardsLayer に流入しなくなり shutdown trigger 消失。 修正: BoardRoot の `filteredItems` で tags kind 時のみ `BOARD_FILTER_ALL` 経由に下げる (= dropdown 経由のタグ filter も演出付きになる副次的 plus)
+2. **scroll-to-top on filter change**: ボード下にいる時の絞り込みで該当カードが上に reflow しても viewport 取り残される問題対処、 activeFilter 変化 useEffect で `handleScrollMeterJump(0)`。 prevRef で初回 mount gate
+3. **カード復活時 entry anim 試作 → 業界徹底調査 → v2 確定**:
+   - 初版 fade-up (= opacity 0→1 + scale 0.96→1、 200ms) → user 「分からない」 → 派手版 (= 320ms / translateY 12px / scale 0.88) → 依然「分からない」
+   - 診断 console.warn 仕込み deploy → **真の root cause 発見**: Chrome は custom property `Nms` を `(N/1000)s` に正規化、 `parseFloat("0.8s") === 0.8` で WAAPI に 0.8 ms (= 1000 倍小) が渡されて一瞬で完了していた → CSS variables から `ms` 単位除去で fix
+   - user 「徹底調査して一番いいもの」 依頼 → 専門 agent dispatch で web 調査 (= Aldlevine CRT Page Load / Lucas Bebber / Old CRT TV / Material Design / Apple HIG / NN/g / 2025 nostalgic UX trend 12 reference + 5 案比較) → **案 2 採用** = bloom (= phosphor 残光) を最後の山場 (offset 0.55) に置く 6 段階 sequence、 380ms、 Material decelerate easing、 prefers-reduced-motion 対応
+   - 結果: 「完全闇 → 中央点 (sub-100ms 爆発) → 横線最大展開 → bloom 山場 → glitch → 通常」 の CRT TV 起動演出。 shutdown と完全対称、 mood board 「表現ツール」 ミッションに合致、 user「結構気に入ってる」
+4. **source-aware scroll restore (= 解除時に click 元カードへ scroll 復帰)**: user 指摘「絞り込み解除時にクリックしたカードのところに戻るべき」 → `onTagFilterToggle` callback に sourceBookmarkId optional 追加、 BoardRoot で `lastClickedSourceRef` に memo、 tags → 非 tags transition + source あり → `focusCard(source)` で元位置 smooth scroll + glow。 dropdown 経由 filter 変化は sourceBookmarkId undefined なので scroll-to-top (= 既存挙動互換)
+5. **scroll easing 全統一 (= 全 scroll mechanism を easeOutQuart に)**: user 「サイドバー戻し時の動き出しが早く感じた」 → 距離 0 で scroll 走らず entry anim curve (= Material decelerate) を見ていたと判明 → user が好む curve = decelerate 系 → 全 scroll mechanism (= ScrollMeter click、 scroll-to-top、 source restore、 PiP focus、 ?focus=URL) を旧 Power-30 exponential ease-in-out (= 両端 motionless、 1800-3000ms) から `easeOutQuart` (= 動き出し急 + 終わり 4 次減速、 500-1200ms) に統一。 「動き出しまでの 540ms 待ち」 消滅、 「ふっと止まる」 luxury tail keep。 旧 dramatic 演出は CRT shutdown / entry anim 側で出してるので chrome 全体 motion 言語は損なわれない
+
+**user 視点 (= 本 session 後の体験)**:
+- カードタグピル click → CRT shutdown (= 緑 flash の業務用 TV 切れ) + 該当カード上 reflow + smooth scroll で上に追従
+- もう一度同じピル click → 元のカード位置に **scroll 復帰** (= user が探索 mode から元 context に戻る、 業界 UX pattern「source-aware navigation」)
+- サイドバー 戻し / dropdown 切替 → CRT bootup (= 「中央点 → 横線 → 縦展開 + 残光 bloom → glitch → 通常」 の TV 起動演出) で復活カード達がぱらぱらと
+- 全 scroll motion が「動き出し即座 + 終わりふっと止まる」 luxury curve (= 500-1200ms)、 旧 1800-3000ms から大幅短縮
+
+**テスト**: 829 PASS 維持 (= polish のみ、 unit test 追加なし)、 tsc 0 errors、 build 25 routes 全 success
+
+**deploy 回数**: 12 (= session 内、 1 日 16 上限内余裕)
+
+**設計上の重要発見 (= 次セッション以降の保険、 memory 候補)**:
+- **Chrome は custom property `Nms` を `(N/1000)s` に正規化する**: `getComputedStyle().getPropertyValue('--x')` で `"800ms"` を期待しても `"0.8s"` が返る、 `parseFloat` すると `0.8`。 time 値の CSS variable は単位なし数値リテラル + コメントに単位明記が安全 (= session 75 で踏んだ罠、 アニメが動いてるように見えて実は 1000 倍速で一瞬完了)
+- **2 段絞り込み構造を 1 段に統合する時は CardsLayer 側に「非該当カードを残しておく」 仕組みが要る**: 該当カードのみ流入させると shutdown / entry trigger が消える。 `filteredItems` で kind 別に semantic を分けるのが解
+- **「分からない / 効いてない」 ユーザー報告は 2 種類**: (a) subtle すぎ (= 数値増幅で解決)、 (b) 動いてない (= 別 root cause)。 派手化で改善しない時は console.warn or playwright で実測が先 (= memory `feedback_verify_before_claiming` の応用)
+- **業界調査 (= web 検索 + reference 比較) は entry anim 等の創造系 task で価値高い**: agent dispatch で 12 reference + 5 案比較を 5 分で取得、 推奨案を web.dev / Material / Apple HIG 根拠付きで決定可能
+- **easing 統一 vs 文脈別の判断軸**: user が「今後を考えると統一」 と発言 = motion 言語の simplicity を優先、 個別の演出 (= 旧 ScrollMeter ドラマチック) は捨てて代替の演出 (= CRT shutdown / entry anim) で出すという trade-off
+- **session 74 で残した console.warn 系の診断 deploy 経路は有効**: 短期間 diag 仕込み → user Console 確認 → 結果次第で revert、 という pattern が session 75 で root cause 特定の決め手になった (= 「派手版でも分からない」 → console で動作有無確定 → 1000 倍速の罠発見)
+
+**未確認 (= 次セッションで polish 候補)**:
+- **scroll 開始時 / 移動中の jank (= 動画読み込み + サムネ抽出 3 枚 が重い感じ)**: session 73 で「scroll-deferred 動画フレーム抽出」 既に実装したが、 まだ重い体感あり。 audit 必要 = (a) アンビエントスライドショー 3 枚抽出 (session 68 で実装) と scroll の競合、 (b) ImageCard hover swap の preload、 (c) hi-res image lazy load 等、 何が scroll 中に発火してるかを systematic 調査
+- Triage 側 polish 候補 8 個 + Phase D 必須 5 個 は session 73 から持ち越し継続
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 75 セクション
+
+---
+
+### 旧情報 (2026-05-26 セッション 74 — BoardFilter 統合完遂、 タグ click が背景文字 / chrome / dropdown すべてを 1 つの source of truth で駆動 + リロード復元、 本番反映済)
 
 **ship 済 (= prod 反映済、 booklage.pages.dev、 session 内 2 deploy)**:
 
