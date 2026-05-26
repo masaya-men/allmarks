@@ -8,9 +8,11 @@
 
 ---
 
-## 🔴 月末 (2026-05-31 頃) 必須リマインダー
+## 🔴 月末 (2026-05-28 朝以降) 必須リマインダー
 
 **ユーザーが「allmarks.app」 ドメインを取得したか確認する。**
+
+session 76 (2026-05-26) user 報告: 取得できても 2026-05-28 朝以降の見込み。
 
 - 取得方法: `https://dash.cloudflare.com/` → Domain Registration → allmarks.app → 約 ¥1,600/年
 - 取得済 → リブランド実装に進む (詳細は `docs/private/2026-05-11-allmarks-branding-spec.md`)
@@ -20,7 +22,42 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (2026-05-26 セッション 75 — タグ絞り込み体験の徹底 polish 完遂、 session 74 本体反映直後の regression 検出 → 業界調査ベース entry anim + source-aware scroll restore + scroll easing 全統一)
+### 直近の状態 (2026-05-26 セッション 76 — scroll polish 4 step 完遂、 メータークリック user 評価「許容範囲」、 booklage.pages.dev 反映済)
+
+**ship 済 (= 本番反映、 session 内 4 deploy)**:
+
+1. **scroll 中の gsap.set 嵐撲滅**: CardsLayer の `useLayoutEffect` で毎フレーム visible 全カード (= 約 90 個) に `gsap.set` 呼んでた。 `prevPositionsRef` に w/h 含めて「位置もサイズも不変なら no-op」 に。 毎秒 5400 回の無駄な GPU command を撲滅。 user 体感「軽くなった」
+2. **絞り込み時 shutdown 演出 wait + scroll-to-top sequencing**: session 75 の即 scroll-to-top が viewport 外に演出を追いやってた → 600ms wait (= shutdown duration 550ms + 50ms buffer) してから scroll。 dropdown 経由 ALL/INBOX 切替は即 scroll (= shutdown 走らない)
+3. **timer kill race fix**: 上記 wait の cleanup が deps identity cascade で再発火時 cancel + 早期 return で永久 lost を引き起こす罠を踏んだ → cleanup を削除。 連続 click 抑止は冒頭の prev ref 比較で代替
+4. **scroll 中 ambient 全停止**: メータークリック / wheel scroll 走行中、 hero iframe mount/unmount + CardSlideshow crossfade mount で paint 集中 = jank。 `ambientOn` に `!isScrolling` 追加で全停止、 scroll 終了 200ms 後に自然復帰。 user 評価「ほんの少しカクつくが許容範囲」
+
+**user 視点 (= 本 session 後の体験)**:
+- ゆっくりスクロール時の「裏で重い作業」 体感が消えた
+- タグ絞り込み時、 該当外カードの shutdown 演出 (= 緑 flash → 横線 → 点化) が viewport 内で見え終わってから scroll-to-top が始まる
+- メータークリックの瞬間移動、 jank ほぼ気にならない (= 完全 0 ではないが「許容範囲」)
+- scroll 中、 動画が一瞬静止画 → scroll 終了 200ms で自然復活、 違和感少なめ
+
+**テスト**: 829 PASS 維持 (= polish のみ、 unit test 追加なし)、 tsc 0 errors、 build 24 routes static prerender 全 success
+
+**deploy 回数**: 4 (= session 内、 1 日 16 上限内余裕)
+
+**設計上の重要発見**:
+- **`prevPositionsRef` に w/h 含めて差分判定 pattern**: useLayoutEffect 内の高頻度 reflow で「位置・サイズ不変なら no-op」 で大幅軽量化、 他の高頻度 effect にも応用可能
+- **setTimeout + cleanup の deps identity cascade race**: filter / 検索 / pagination 変化で deps identity が破れる場面で cleanup race により timer 永久 lost。 cleanup なし + 冒頭 early return の組み合わせが安全。 memory `settimeout-cleanup-race-on-deps-flip` に記録 (session 76 新)
+- **`isScrolling` gate pattern の拡張余地**: 既に動画フレーム抽出 (session 73) + ambient hero/slideshow (session 76) に適用、 他の重い処理 (= multi-photo lazy load) にも応用可能
+- **scroll polish は user 評価「許容範囲」 で着地が OK**: 「超サクサク」 まで追求する場合は Performance Recording で実測ベース、 default は許容範囲達成で別 polish に進む判断
+
+**未対策 (= 低優先、 user 評価「許容範囲」)**:
+- 視野センサーの数 (= 270 枚全部に IO 観察)
+- 動画 iframe mount cost (= hero 切替時)
+- multi-photo tweet の同時 load
+- これらは「もう一段詰めたい」 と user が言った時のみ着手
+
+詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 76 セクション
+
+---
+
+### 旧情報 (2026-05-26 セッション 75 — タグ絞り込み体験 polish + scroll easing 全統一、 [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 75 参照)
 
 **ship 済 (= 本番反映済、 booklage.pages.dev、 session 内 12 deploy)**:
 
