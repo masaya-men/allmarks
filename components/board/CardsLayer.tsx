@@ -543,7 +543,10 @@ export function CardsLayer({
   // Updated at the end of every effect run. Declared above displayedPositions
   // so the useMemo below can read prevPositionsRef.current without hitting
   // the TDZ when matchedBookmarkIds is active.
-  const prevPositionsRef = useRef<Record<string, { x: number; y: number }>>({})
+  // w/h も保存することで、 scroll 中 (= 位置もサイズも不変) の主経路で
+  // useLayoutEffect が gsap.set を呼ばずに済む = 毎秒数千回の無駄な
+  // GPU command を撲滅して scroll jank を解消する (session 76)。
+  const prevPositionsRef = useRef<Record<string, { x: number; y: number; w: number; h: number }>>({})
 
   // During drag, use preview positions for non-dragged cards.
   // During drop/idle, use real masonry positions.
@@ -632,6 +635,7 @@ export function CardsLayer({
 
       const prev = prevPositionsRef.current[it.bookmarkId]
       const positionMoved = prev && (prev.x !== p.x || prev.y !== p.y)
+      const sizeChanged = prev && (prev.w !== p.w || prev.h !== p.h)
       if (positionMoved) {
         // FLIP: animate from element's current live transform to new position.
         // gsap.to (not fromTo) continues from wherever the element is now —
@@ -646,10 +650,17 @@ export function CardsLayer({
           ease: 'power2.out',
           overwrite: 'auto',
         })
-      } else {
+      } else if (sizeChanged) {
+        // 位置不変 + サイズだけ変化 (= リサイズ、 hero 切替で intrinsic 変化、 等)。
+        // 位置 transform は触らず width/height のみ反映する。
+        gsap.set(el, { width: p.w, height: p.h, overwrite: 'auto' })
+      } else if (!prev) {
+        // 初期 mount (= prev 不在)。 位置 + サイズ両方を一発で set。
         gsap.set(el, { x: p.x, y: p.y, width: p.w, height: p.h, overwrite: 'auto' })
       }
-      prevPositionsRef.current[it.bookmarkId] = { x: p.x, y: p.y }
+      // else: 位置もサイズも不変 → no-op。 scroll 中の 99% はここに落ちる。
+      // 数百個 × 60fps の gsap.set を毎秒撲滅する主経路。
+      prevPositionsRef.current[it.bookmarkId] = { x: p.x, y: p.y, w: p.w, h: p.h }
     }
     // Garbage-collect stale entries (cards unmounted due to culling)
     const liveIds = new Set(visibleItems.map((it) => it.bookmarkId))
@@ -764,7 +775,7 @@ export function CardsLayer({
               scale: 1,
               overwrite: true,
             })
-            prevPositionsRef.current[id] = { x: p.x, y: p.y }
+            prevPositionsRef.current[id] = { x: p.x, y: p.y, w: p.w, h: p.h }
           }
         }
 
@@ -775,7 +786,17 @@ export function CardsLayer({
           if (el) {
             const currentX = Number(gsap.getProperty(el, 'x'))
             const currentY = Number(gsap.getProperty(el, 'y'))
-            prevPositionsRef.current[draggedId] = { x: currentX, y: currentY }
+            // w/h は finalMasonry の確定位置から取得 (= 落下後の slot サイズ)。
+            // fallback として既存 prev の値を使い、 無ければ 0 (= 初回 drop で
+            // prev 未登録の極端ケース、 実質発生しないが defensive)。
+            const draggedP = finalMasonry.positions[draggedId]
+            const prevDragged = prevPositionsRef.current[draggedId]
+            prevPositionsRef.current[draggedId] = {
+              x: currentX,
+              y: currentY,
+              w: draggedP?.w ?? prevDragged?.w ?? 0,
+              h: draggedP?.h ?? prevDragged?.h ?? 0,
+            }
             // Instant scale snap — no 0.22s shrink tween
             gsap.set(el, { scale: 1, overwrite: 'auto' })
           }
