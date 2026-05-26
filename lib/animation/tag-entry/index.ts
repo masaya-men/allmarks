@@ -39,16 +39,20 @@ function readCssVarRaw(name: string, fallback: string): string {
 export function getEntryAnimation(theme: string): EntryAnimation | undefined {
   switch (theme) {
     case 'wave': {
-      const duration = readCssVar('--tag-entry-duration', 200)
+      const duration = readCssVar('--tag-entry-duration', 320)
       const easing = readCssVarRaw('--tag-entry-easing', 'cubic-bezier(0.16, 1, 0.3, 1)')
       const opacityFrom = readCssVar('--tag-entry-opacity-from', 0)
-      const scaleFrom = readCssVar('--tag-entry-scale-from', 0.96)
-      const staggerStepMs = readCssVar('--tag-entry-stagger-step', 10)
-      const staggerCapMs = readCssVar('--tag-entry-stagger-cap', 240)
+      const scaleFrom = readCssVar('--tag-entry-scale-from', 0.88)
+      const translateFromPx = readCssVar('--tag-entry-translate-from', 12)
+      const staggerStepMs = readCssVar('--tag-entry-stagger-step', 16)
+      const staggerCapMs = readCssVar('--tag-entry-stagger-cap', 400)
       return {
         keyframes: [
-          { opacity: String(opacityFrom), transform: `scale(${scaleFrom})` },
-          { opacity: '1', transform: 'scale(1)' },
+          {
+            opacity: String(opacityFrom),
+            transform: `translateY(${translateFromPx}px) scale(${scaleFrom})`,
+          },
+          { opacity: '1', transform: 'translateY(0) scale(1)' },
         ],
         options: { duration, easing, fill: 'none' },
         staggerStepMs,

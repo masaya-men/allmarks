@@ -5,10 +5,11 @@
    置き場 = shutdown と同じ pattern)。 */
 
 :root {
-  --tag-entry-duration: 200ms;
+  --tag-entry-duration: 320ms;
   --tag-entry-easing: cubic-bezier(0.16, 1, 0.3, 1); /* easeOutExpo 系、 さわやか */
   --tag-entry-opacity-from: 0;
-  --tag-entry-scale-from: 0.96;
-  --tag-entry-stagger-step: 10ms; /* カード 1 枚あたりずらす ms */
-  --tag-entry-stagger-cap: 240ms; /* 全カード合計ずらし上限 (= 540 枚でも 240ms で止まる) */
+  --tag-entry-scale-from: 0.88;
+  --tag-entry-translate-from: 12px; /* px、 下からふわっと上に出る motif */
+  --tag-entry-stagger-step: 16ms; /* カード 1 枚あたりずらす ms */
+  --tag-entry-stagger-cap: 400ms; /* 全カード合計ずらし上限 (= 540 枚でも 400ms で止まる) */
 }
