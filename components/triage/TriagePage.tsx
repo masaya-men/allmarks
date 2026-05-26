@@ -10,7 +10,6 @@ import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
 import { DirChip, CoTagStrip, useTagPickerKeys } from './TagPicker'
 import { AmbientBackdrop } from './AmbientBackdrop'
-import { LiquidGlass } from '@/components/board/LiquidGlass'
 import styles from './TriagePage.module.css'
 
 type Direction = 'up' | 'right' | 'down' | 'left'
@@ -314,20 +313,36 @@ export function TriagePage(): ReactElement {
         />
       </div>
 
-      {/* ===== central canvas (card + co-tags + footer hint) =====
-          Wrapped in LiquidGlass so the backdrop-filter pipeline applies
-          real SVG refraction (feDisplacementMap) — Apple Liquid Glass
-          style. We pass dark theme overrides via CSS variables so the
-          underlying white .glass turns into a transparent dark pane. */}
-      <LiquidGlass
-        className={styles.canvasGlass}
+      {/* ===== central canvas — strong-refraction Liquid Glass =====
+          Triage-only SVG filter (scale 80 vs board's scale 12) so the
+          edges actually warp the way Apple Liquid Glass does. The
+          displacement map is an inline SVG: two crossed gradients +
+          mid-grey + blur, the standard recipe from kube.io /
+          mycatwrotethis Liquid Glass tutorials. */}
+      <svg className={styles.glassFilterDefs} aria-hidden="true">
+        <defs>
+          <filter id="triage-glass-refract" x="0%" y="0%" width="100%" height="100%">
+            <feImage
+              href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22gx%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%220%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23000%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f00%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22gy%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%220%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23000%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230f0%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23gx)%22%20style%3D%22mix-blend-mode%3Ascreen%22%2F%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23gy)%22%20style%3D%22mix-blend-mode%3Ascreen%22%2F%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23808080BB%22%20style%3D%22filter%3Ablur(10px)%22%2F%3E%3C%2Fsvg%3E"
+              result="dmap"
+              preserveAspectRatio="none"
+            />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="dmap"
+              scale="80"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+      </svg>
+      <div
+        className={styles.canvas}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
       >
-        <div
-          className={styles.canvas}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-        >
         <div className={styles.canvasCardHost}>
           <TriageCard key={current.bookmarkId} item={current} exitDirection={exitDirection} />
         </div>
@@ -341,8 +356,7 @@ export function TriagePage(): ReactElement {
           onUndo={lastAction ? handleUndo : null}
         />
         <div className={styles.canvasFooter}>{t('triage.hint')}</div>
-        </div>
-      </LiquidGlass>
+      </div>
     </div>
   )
 }
