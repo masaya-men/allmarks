@@ -9,6 +9,7 @@ import { t } from '@/lib/i18n/t'
 import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
 import { TagPicker } from './TagPicker'
+import { AmbientBackdrop } from './AmbientBackdrop'
 import styles from './TriagePage.module.css'
 
 type Direction = 'up' | 'right' | 'down' | 'left'
@@ -241,6 +242,7 @@ export function TriagePage(): ReactElement {
 
   return (
     <div className={styles.root} data-testid="triage-page">
+      <AmbientBackdrop item={current} exitDirection={exitDirection} />
       <div className={styles.header}>
         <span>{t('triage.progress').replace('{current}', String(index + 1)).replace('{total}', String(total))}</span>
         <button type="button" className={styles.backBtn} onClick={exit}>Esc</button>

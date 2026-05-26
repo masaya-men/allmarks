@@ -1,0 +1,65 @@
+/* Ambient backdrop = the current card's thumbnail, scaled up and heavily
+   blurred, so the bookmark's color tone bleeds across the canvas. Static
+   image only (no iframes / no video). Apple TV+ / Spotify pattern. */
+
+.layer {
+  position: fixed;
+  inset: -10%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(80px) saturate(1.25);
+  opacity: 0.55;
+  z-index: 0;
+  pointer-events: none;
+  animation: ambientIn 380ms cubic-bezier(0.20, 0.60, 0.20, 1);
+}
+
+.fallback {
+  position: fixed;
+  inset: 0;
+  background: #08080a;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes ambientIn {
+  from { opacity: 0; }
+  to   { opacity: 0.55; }
+}
+
+/* Exit transitions: backdrop slides off in the same direction as the
+   TriageCard swipe (220ms / cubic-bezier matches TriageCard.module.css).
+   The next item's AmbientBackdrop re-mounts under it via React key and
+   runs ambientIn from zero, producing a natural cross-cut feel. */
+.exitUp    { animation: ambientExitUp    220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
+.exitRight { animation: ambientExitRight 220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
+.exitDown  { animation: ambientExitDown  220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
+.exitLeft  { animation: ambientExitLeft  220ms cubic-bezier(0.55, 0, 0.30, 1) forwards; }
+
+@keyframes ambientExitUp {
+  0%   { opacity: 0.55; transform: translateY(0);    }
+  100% { opacity: 0;    transform: translateY(-22%); }
+}
+@keyframes ambientExitRight {
+  0%   { opacity: 0.55; transform: translateX(0);   }
+  100% { opacity: 0;    transform: translateX(22%); }
+}
+@keyframes ambientExitDown {
+  0%   { opacity: 0.55; transform: translateY(0);   }
+  100% { opacity: 0;    transform: translateY(22%); }
+}
+@keyframes ambientExitLeft {
+  0%   { opacity: 0.55; transform: translateX(0);    }
+  100% { opacity: 0;    transform: translateX(-22%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer { animation: none; opacity: 0.55; }
+  .exitUp, .exitRight, .exitDown, .exitLeft {
+    animation: ambientExitFade 120ms linear forwards;
+  }
+}
+@keyframes ambientExitFade {
+  from { opacity: 0.55; }
+  to   { opacity: 0; }
+}

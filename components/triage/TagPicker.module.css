@@ -8,21 +8,21 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: 1fr min(440px, 70vw) 1fr;
-  grid-template-rows: 1fr min(540px, 75vh) 1fr;
+  /* session 77: centre cell is locked to TriageCard size (320 x 400)
+     so the four direction chips sit immediately outside the box,
+     making "chip = the edge you push the card toward" obvious. */
+  grid-template-columns: 1fr 320px 1fr;
+  grid-template-rows: 1fr 400px 1fr;
   pointer-events: none;
 }
 .slot {
   display: flex;
-  align-items: center;
-  justify-content: center;
   pointer-events: auto;
-  padding: 28px;
 }
-.slotUp    { grid-column: 2; grid-row: 1; }
-.slotRight { grid-column: 3; grid-row: 2; }
-.slotDown  { grid-column: 2; grid-row: 3; }
-.slotLeft  { grid-column: 1; grid-row: 2; }
+.slotUp    { grid-column: 2; grid-row: 1; justify-content: center;    align-items: flex-end;   padding-bottom: 20px; }
+.slotRight { grid-column: 3; grid-row: 2; justify-content: flex-start; align-items: center;     padding-left: 20px; }
+.slotDown  { grid-column: 2; grid-row: 3; justify-content: center;    align-items: flex-start; padding-top: 20px; }
+.slotLeft  { grid-column: 1; grid-row: 2; justify-content: flex-end;   align-items: center;     padding-right: 20px; }
 
 .dirChip {
   position: relative;

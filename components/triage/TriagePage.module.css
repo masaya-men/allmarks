@@ -1,9 +1,14 @@
 .root {
   position: fixed; inset: 0;
-  /* Phase B2: semi-transparent dim so BoardBackdrop (= z-index 0) reads
-     through. The opacity is high enough that the foreground UI stays
-     readable, low enough that the user's actual board never disappears. */
-  background: rgba(8, 8, 10, 0.88);
+  /* session 77: ambient backdrop (z-index 0) shows the current card's
+     blurred thumbnail behind everything. The vignette darkens the centre
+     so the focus card pops, and fades to fully transparent at the edges
+     so the ambient blur reads cleanly through the four corners. */
+  background: radial-gradient(ellipse 75% 75% at center,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.10) 60%,
+    rgba(0, 0, 0, 0)    100%
+  );
   color: var(--text-primary);
   display: flex; flex-direction: column;
   padding: 24px 32px;
