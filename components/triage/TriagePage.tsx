@@ -10,6 +10,7 @@ import { HeuristicTagger } from '@/lib/tagger/heuristic'
 import { TriageCard } from './TriageCard'
 import { DirChip, CoTagStrip, useTagPickerKeys } from './TagPicker'
 import { AmbientBackdrop } from './AmbientBackdrop'
+import { LiquidGlass } from '@/components/board/LiquidGlass'
 import styles from './TriagePage.module.css'
 
 type Direction = 'up' | 'right' | 'down' | 'left'
@@ -313,13 +314,20 @@ export function TriagePage(): ReactElement {
         />
       </div>
 
-      {/* ===== central canvas (card + co-tags + footer hint) ===== */}
-      <div
-        className={styles.canvas}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
+      {/* ===== central canvas (card + co-tags + footer hint) =====
+          Wrapped in LiquidGlass so the backdrop-filter pipeline applies
+          real SVG refraction (feDisplacementMap) — Apple Liquid Glass
+          style. We pass dark theme overrides via CSS variables so the
+          underlying white .glass turns into a transparent dark pane. */}
+      <LiquidGlass
+        className={styles.canvasGlass}
       >
+        <div
+          className={styles.canvas}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+        >
         <div className={styles.canvasCardHost}>
           <TriageCard key={current.bookmarkId} item={current} exitDirection={exitDirection} />
         </div>
@@ -333,7 +341,8 @@ export function TriagePage(): ReactElement {
           onUndo={lastAction ? handleUndo : null}
         />
         <div className={styles.canvasFooter}>{t('triage.hint')}</div>
-      </div>
+        </div>
+      </LiquidGlass>
     </div>
   )
 }
