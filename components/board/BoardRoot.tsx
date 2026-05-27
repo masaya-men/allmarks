@@ -7,7 +7,7 @@ import {
   DEFAULT_THEME_ID,
   getThemeMeta,
 } from '@/lib/board/theme-registry'
-import { BOARD_INNER, BOARD_SLIDERS } from '@/lib/board/constants'
+import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
@@ -65,12 +65,6 @@ import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import styles from './BoardRoot.module.css'
-
-// Visible breathing room above the board's first card, in CSS pixels.
-// Cards' world coords start at y=0 (masonry cursor); this offset is applied
-// in the cards wrapper's transform so the first row never kisses the Toolbar
-// pill. Extends the scroll range via contentBounds.height.
-const BOARD_TOP_PAD_PX = 80
 
 export function BoardRoot() {
   const {
@@ -1770,6 +1764,7 @@ export function BoardRoot() {
           h: p.h,
         }))}
         bgViewportWidth={effectiveLayoutWidth}
+        bgCanvasWidth={viewport.w}
       />
       {trashConfirmOpen && (
         <TrashConfirmDialog

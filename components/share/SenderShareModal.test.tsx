@@ -47,6 +47,7 @@ const defaultMirrorProps = {
   items: makeItems(3),
   positions: makePositions(3),
   bgViewportWidth: 1200,
+  bgCanvasWidth: 1218,
 }
 
 beforeEach(() => {
@@ -87,6 +88,7 @@ describe('SenderShareModal', () => {
         items={makeItems(5)}
         positions={makePositions(5)}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
       />,
     )
     expect(queryByTestId('mirror-frame')).toBeTruthy()

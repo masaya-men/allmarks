@@ -33,8 +33,11 @@ type Props = {
   readonly items: ReadonlyArray<MirrorItem>
   /** Layout positions from bg board's skyline layout. */
   readonly positions: ReadonlyArray<MirrorPosition>
-  /** Bg board's CSS viewport width. Used to compute mirror scale. */
+  /** Bg board's card-area width = effectiveLayoutWidth = viewport.w - 18. */
   readonly bgViewportWidth: number
+  /** Bg board's canvas inner width = viewport.w. Used to compute mirror scale
+   *  against bg's full screen width (= viewport.w + 2 * CANVAS_MARGIN_PX). */
+  readonly bgCanvasWidth: number
 }
 
 export function SenderShareModal({
@@ -50,6 +53,7 @@ export function SenderShareModal({
   items,
   positions,
   bgViewportWidth,
+  bgCanvasWidth,
 }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
@@ -134,6 +138,7 @@ export function SenderShareModal({
             items={items}
             positions={positions}
             bgViewportWidth={bgViewportWidth}
+            bgCanvasWidth={bgCanvasWidth}
             activeTagNames={activeTagNames}
             totalBoardCount={totalBoardCount}
             sharedCardCount={sharedCardCount}

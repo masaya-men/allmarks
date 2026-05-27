@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, fireEvent } from '@testing-library/react'
 import { ShareMirror, type MirrorItem, type MirrorPosition } from './ShareMirror'
 
 function makeItems(n: number): MirrorItem[] {
@@ -28,6 +28,7 @@ describe('ShareMirror', () => {
         items={makeItems(5)}
         positions={makePositions(5)}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
         activeTagNames={[]}
         totalBoardCount={5}
         sharedCardCount={5}
@@ -46,6 +47,7 @@ describe('ShareMirror', () => {
         items={makeItems(3)}
         positions={makePositions(3)}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
         activeTagNames={[]}
         totalBoardCount={3}
         sharedCardCount={3}
@@ -65,6 +67,7 @@ describe('ShareMirror', () => {
         items={makeItems(3)}
         positions={makePositions(3)}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
         activeTagNames={[]}
         totalBoardCount={3}
         sharedCardCount={3}
@@ -82,6 +85,7 @@ describe('ShareMirror', () => {
         items={makeItems(3)}
         positions={makePositions(3)}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
         activeTagNames={[]}
         totalBoardCount={10}
         sharedCardCount={3}
@@ -99,6 +103,7 @@ describe('ShareMirror', () => {
         items={makeItems(2)}
         positions={makePositions(2)}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
         activeTagNames={['Music', 'Design']}
         totalBoardCount={2}
         sharedCardCount={2}
@@ -116,6 +121,7 @@ describe('ShareMirror', () => {
         items={makeItems(2)}
         positions={makePositions(2)}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
         activeTagNames={[]}
         totalBoardCount={2}
         sharedCardCount={2}
@@ -125,6 +131,39 @@ describe('ShareMirror', () => {
       />,
     )
     expect(queryByTestId('mirror-tag-strip')).toBeNull()
+  })
+
+  it('falls back to text body when an img fails to load (= CORS-blocked Twitter thumb case)', () => {
+    const { container } = render(
+      <ShareMirror
+        items={[{
+          id: 'tw-1',
+          url: 'https://x.com/foo/status/1',
+          title: 'tweet body that should show as wrapped text after img error',
+          thumbnailUrl: 'https://pbs.twimg.com/blocked-by-cors.jpg',
+        }]}
+        positions={[{ id: 'tw-1', x: 0, y: 0, w: 240, h: 180 }]}
+        bgViewportWidth={1200}
+        bgCanvasWidth={1218}
+        activeTagNames={[]}
+        totalBoardCount={1}
+        sharedCardCount={1}
+        scrollY={0}
+        contentHeight={500}
+        viewportHeight={400}
+      />,
+    )
+    // Pre-error: img path is taken
+    const img = container.querySelector('img[src*="pbs.twimg.com"]') as HTMLImageElement | null
+    expect(img).toBeTruthy()
+    expect(container.querySelector(`[class*="cardTextBody"]`)).toBeNull()
+
+    // Simulate img.onerror (= CORS rejection)
+    if (img) fireEvent.error(img)
+
+    // Post-error: text body path is taken
+    expect(container.querySelector('img[src*="pbs.twimg.com"]')).toBeNull()
+    expect(container.querySelector(`[class*="cardTextBody"]`)).toBeTruthy()
   })
 
   it('applies scroll transform when scrollY changes', () => {
@@ -145,6 +184,7 @@ describe('ShareMirror', () => {
         items={items}
         positions={positions}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
         activeTagNames={[]}
         totalBoardCount={60}
         sharedCardCount={60}
@@ -161,6 +201,7 @@ describe('ShareMirror', () => {
         items={items}
         positions={positions}
         bgViewportWidth={1200}
+        bgCanvasWidth={1218}
         activeTagNames={[]}
         totalBoardCount={60}
         sharedCardCount={60}

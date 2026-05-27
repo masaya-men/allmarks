@@ -19,6 +19,17 @@ export const BOARD_INNER = {
   SIDE_PADDING_PX: 9,
 } as const
 
+/** Top breathing room above the first row of cards inside the canvas (= keeps
+ *  cards from colliding with the toolbar pill / scrim). Matches the value
+ *  applied in BoardRoot's cards wrapper transform. */
+export const BOARD_TOP_PAD_PX = 80
+
+/** Outer frame padding around the inner dark canvas (= --canvas-margin in
+ *  globals.css). Kept here as a runtime constant so non-CSS consumers (e.g.
+ *  ShareMirror, which reproduces the bg structure at scale) can apply it
+ *  without parsing CSS vars. Must stay in sync with --canvas-margin. */
+export const CANVAS_MARGIN_PX = 48
+
 export const RESIZE = {
   MIN_PX: 80,
   MAX_PX: 1200,

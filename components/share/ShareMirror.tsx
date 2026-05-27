@@ -1,10 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type MutableRefObject, type ReactElement, type RefObject } from 'react'
+import { BOARD_INNER, BOARD_TOP_PAD_PX, CANVAS_MARGIN_PX } from '@/lib/board/constants'
 import styles from './ShareMirror.module.css'
-
-const MIRROR_FRAME_WIDTH = 1200    // logical OG width
-const MIRROR_FRAME_HEIGHT = 628    // 1200 / 1.91 ~= 628.27, floored to even
 
 export type MirrorItem = {
   readonly id: string         // = bookmarkId, for position lookup
@@ -24,11 +22,15 @@ export type MirrorPosition = {
 type Props = {
   /** Board items to render in the mirror (= filteredItems mapped). */
   readonly items: ReadonlyArray<MirrorItem>
-  /** Layout positions from bg board's skyline layout (= Record converted to Array). */
+  /** Layout positions from bg board's skyline layout. */
   readonly positions: ReadonlyArray<MirrorPosition>
-  /** Bg board's CSS viewport width. Used to compute scale = mirrorCssWidth / bgViewportWidth. */
+  /** Bg board's card-area width = effectiveLayoutWidth = viewport.w - 2 * SIDE_PADDING_PX.
+   *  Used as the cards layer width (= where cards live). */
   readonly bgViewportWidth: number
-  /** Active filter tag names for top brand strip (= "MUSIC · DESIGN"). Empty = no strip. */
+  /** Bg board's canvas INNER width = viewport.w = the dark canvas inside outerFrame.
+   *  Used (with viewportHeight) to size the canvas-replica + compute scale. */
+  readonly bgCanvasWidth: number
+  /** Active filter tag names for top brand strip. Empty = no strip. */
   readonly activeTagNames: ReadonlyArray<string>
   /** Total cards in the full board view (= for "N OF M" display). */
   readonly totalBoardCount: number
@@ -36,9 +38,9 @@ type Props = {
   readonly sharedCardCount: number
   /** Current bg-board scrollY (= bg board coords). 0 = top. */
   readonly scrollY: number
-  /** Bg board's full scrollable height (= contentBounds.height). Used to compute progress. */
+  /** Bg board's full scrollable height. Used as cardsLayer minimum height. */
   readonly contentHeight: number
-  /** Bg board's viewport height (= viewport.h). */
+  /** Bg board's viewport height = canvas inner height. Used for canvas-replica height. */
   readonly viewportHeight: number
   /** Forwarded ref to the frame DOM so capture-mirror.ts can read rects. Optional. */
   readonly frameRef?: RefObject<HTMLDivElement | null>
@@ -48,6 +50,7 @@ export function ShareMirror({
   items,
   positions,
   bgViewportWidth,
+  bgCanvasWidth,
   activeTagNames,
   totalBoardCount,
   sharedCardCount,
@@ -56,11 +59,13 @@ export function ShareMirror({
   viewportHeight,
   frameRef,
 }: Props): ReactElement {
-  // Scale: cardsLayer is laid out at bg board coords (bgViewportWidth logical px).
-  // The CSS frame renders at a smaller CSS px width. We measure the frame's
-  // actual CSS width via ResizeObserver and apply scale = cssWidth / bgViewportWidth.
-  // Default 0.5 = reasonable first-paint guess before measurement.
-  const [scale, setScale] = useState<number>(0.5)
+  // The bg-replica reproduces bg's full screen chrome:
+  //   outerFrame (48px padding) → canvas (viewport.w × viewport.h) →
+  //   cards wrapper (translate +9, +80 - scrollY) → cards at world (x, y).
+  // We scale that whole replica to fit the mirror frame width so the OG image
+  // looks like a mini-bg. Scale = mirror_frame_css_width / bg full screen width.
+  // Default 0.4 is a reasonable first-paint guess before ResizeObserver fires.
+  const [scale, setScale] = useState<number>(0.4)
   const internalFrameRef = useRef<HTMLDivElement | null>(null)
 
   const setFrameRef = useCallback((el: HTMLDivElement | null): void => {
@@ -70,6 +75,9 @@ export function ShareMirror({
     }
   }, [frameRef])
 
+  const bgFullScreenWidth = bgCanvasWidth + 2 * CANVAS_MARGIN_PX
+  const bgFullScreenHeight = viewportHeight + 2 * CANVAS_MARGIN_PX
+
   useEffect((): (() => void) => {
     const el = internalFrameRef.current
     if (!el) return (): void => undefined
@@ -77,20 +85,14 @@ export function ShareMirror({
       const entry = entries[0]
       if (entry) {
         const cssWidth = entry.contentRect.width
-        if (cssWidth > 0 && bgViewportWidth > 0) {
-          setScale(cssWidth / bgViewportWidth)
+        if (cssWidth > 0 && bgFullScreenWidth > 0) {
+          setScale(cssWidth / bgFullScreenWidth)
         }
       }
     })
     observer.observe(el)
     return (): void => observer.disconnect()
-  }, [bgViewportWidth])
-
-  // Scroll sync: the mirror's cardsLayer translates by -scrollY in bg board coords.
-  // CSS transform order: scale(s) translateY(-scrollY) means translateY is in
-  // pre-scale (bg board) coords. After scaling, visual offset = -scrollY * scale.
-  // This matches the bg board exactly: same card positions, just scaled down.
-  const frameHeight = MIRROR_FRAME_HEIGHT
+  }, [bgFullScreenWidth])
 
   const N = sharedCardCount
   const M = totalBoardCount
@@ -99,51 +101,51 @@ export function ShareMirror({
 
   return (
     <div className={styles.frame} ref={setFrameRef} data-testid="mirror-frame">
+      {/* Bg replica: outerFrame band + canvas + cards, scaled to fit frame width.
+          Anchored top-left so vertical overflow is clipped at the bottom. */}
+      <div
+        className={styles.outerBand}
+        data-testid="mirror-outer-band"
+        style={{
+          transformOrigin: '0 0',
+          transform: `scale(${scale})`,
+          width: bgFullScreenWidth,
+          height: bgFullScreenHeight,
+        }}
+      >
+        <div className={styles.canvasReplica}>
+          <div
+            className={styles.cardsLayer}
+            data-testid="mirror-cards-layer"
+            style={{
+              transform: `translate(${BOARD_INNER.SIDE_PADDING_PX}px, ${BOARD_TOP_PAD_PX - scrollY}px)`,
+              width: bgViewportWidth,
+              height: Math.max(contentHeight, viewportHeight),
+            }}
+          >
+            {items.map((item): ReactElement | null => {
+              const pos = positions.find((p) => p.id === item.id)
+              if (!pos) return null
+              return (
+                <div
+                  key={item.url}
+                  className={styles.card}
+                  data-mirror-card-id={item.url}
+                  style={{ left: pos.x, top: pos.y, width: pos.w, height: pos.h }}
+                >
+                  <MirrorCardContent item={item} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Brand strips overlay the bg-replica at frame edges (= they appear at
+          the OG image edges, regardless of bg-replica scaling). */}
       {activeTagNames.length > 0 ? (
         <div className={styles.tagStrip} data-testid="mirror-tag-strip">{tagText}</div>
       ) : null}
-
-      <div
-        className={styles.cardsLayer}
-        data-testid="mirror-cards-layer"
-        style={{
-          transformOrigin: '0 0',
-          // scale(s) translateY(-scrollY): translateY is in bg board coords.
-          // After scale, visual translate = -scrollY * scale CSS px.
-          transform: `scale(${scale}) translateY(${-scrollY}px)`,
-          width: bgViewportWidth,
-          height: Math.max(contentHeight, frameHeight / scale),
-        }}
-      >
-        {items.map((item): ReactElement | null => {
-          const pos = positions.find((p) => p.id === item.id)
-          if (!pos) return null
-          return (
-            <div
-              key={item.url}
-              className={styles.card}
-              data-mirror-card-id={item.url}
-              style={{ left: pos.x, top: pos.y, width: pos.w, height: pos.h }}
-            >
-              {item.thumbnailUrl ? (
-                <>
-                  <img
-                    src={item.thumbnailUrl}
-                    alt=""
-                    className={styles.cardThumb}
-                    crossOrigin="anonymous"
-                    loading="eager"
-                    draggable={false}
-                  />
-                  <div className={styles.cardTitle}>{item.title}</div>
-                </>
-              ) : (
-                <div className={styles.cardTextBody}>{item.title}</div>
-              )}
-            </div>
-          )
-        })}
-      </div>
 
       <div className={styles.bottomStrip}>
         <svg className={styles.brandLogo} viewBox="0 0 32 32" aria-hidden="true">
@@ -157,5 +159,34 @@ export function ShareMirror({
         </span>
       </div>
     </div>
+  )
+}
+
+/** Card content: picks img path vs text-body path per-card. img path falls
+ *  back to text-body if the image fails to load (= CORS-blocked Twitter
+ *  thumbnails are the dominant real-world case — pbs.twimg.com does not
+ *  respond with Access-Control-Allow-Origin so `crossOrigin="anonymous"`
+ *  requests fail to display). The OG capture pipeline already mirrors this
+ *  fallback (capture-mirror.ts: hasImage=false → drawWrappedText), so the
+ *  user sees the same WYSIWYG text-body in both preview and the final image. */
+function MirrorCardContent({ item }: { readonly item: MirrorItem }): ReactElement {
+  const [imgFailed, setImgFailed] = useState<boolean>(false)
+  const showText = !item.thumbnailUrl || imgFailed
+  if (showText) {
+    return <div className={styles.cardTextBody}>{item.title}</div>
+  }
+  return (
+    <>
+      <img
+        src={item.thumbnailUrl ?? ''}
+        alt=""
+        className={styles.cardThumb}
+        crossOrigin="anonymous"
+        loading="eager"
+        draggable={false}
+        onError={(): void => setImgFailed(true)}
+      />
+      <div className={styles.cardTitle}>{item.title}</div>
+    </>
   )
 }
