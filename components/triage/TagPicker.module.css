@@ -1,12 +1,13 @@
-/* Session 79 rebuild: 4-direction DirChip removed. Only the
-   TopTagStrip + NewMoodInput remain. Strip lives in TriagePage outer
-   chrome (top center), chips are click-to-toggle "armed" multi-select. */
+/* Session 81 rebuild: pill chrome removed. Chips are bare text — number
+   key + tag name + (when armed) green ✓ + green text-glow. No border, no
+   background fill, no color dot. Armed state read entirely from typography
+   color + glow, matching AllMarks editorial language. */
 
 .tagStrip {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 6px;
+  gap: 18px;
   padding: 0 4px;
   pointer-events: auto;
 }
@@ -16,38 +17,34 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.78);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: #fff;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 5px 12px;
+  padding: 5px 0;
   min-height: 32px;
   cursor: pointer;
-  transition: color 120ms, background-color 120ms, border-color 120ms, box-shadow 120ms;
+  transition: color 120ms, text-shadow 120ms;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 .chip:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.22);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* Armed (= will be applied on next Yes swipe). Green halo for unambiguous
-   "selected" state, matches AllMarks ✓ visual language. */
+/* Armed (= will be applied on next Yes swipe). Green text + ✓ + green
+   text-glow — no fill, no border. The glow reads as "this is alive". */
 .chipArmed {
-  background: rgba(40, 241, 0, 0.16);
-  border-color: #28F100;
   color: #28F100;
   font-weight: 600;
-  box-shadow: 0 0 12px rgba(40, 241, 0, 0.32);
+  text-shadow: 0 0 8px rgba(40, 241, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 .chipArmed:hover {
   color: #5cff3c;
-  background: rgba(40, 241, 0, 0.22);
+  text-shadow: 0 0 10px rgba(40, 241, 0, 0.70), 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .chipKey {
@@ -57,9 +54,7 @@
   text-shadow: none;
 }
 .chipArmed .chipKey { color: #28F100; }
-.chipDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .chipName { /* tag name */ }
-.chipCheck { color: #28F100; font-size: 12px; }
 
 /* Suggested (= HeuristicTagger flagged this tag as matching the current
    card). Only shown when NOT armed (the armed green takes priority).

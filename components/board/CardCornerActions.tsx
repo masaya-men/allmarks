@@ -16,6 +16,10 @@ type Props = {
    *  ResizeHandle. Reset (↺) is shown only in that state — it's the
    *  only case where it would do anything useful. */
   readonly hasCustomWidth: boolean
+  /** True when this card is rendered inside the TRASH view. Swaps the
+   *  × icon for a ↺ restore icon (caller already routes onDelete to
+   *  the restore-from-trash path). aria-label flips accordingly. */
+  readonly inTrash?: boolean
   /** Soft-delete handler. Replaces the right-click delete fallback for
    *  pointer users; right-click still works as a redundant shortcut on
    *  the card itself, but this button is the discoverable path. */
@@ -36,6 +40,7 @@ type Props = {
 export function CardCornerActions({
   hovered,
   hasCustomWidth,
+  inTrash = false,
   onDelete,
   onResetSize,
 }: Props): ReactElement {
@@ -57,7 +62,7 @@ export function CardCornerActions({
         className={styles.delete}
         data-visible={hovered}
         data-testid="card-delete-button"
-        aria-label="Delete bookmark"
+        aria-label={inTrash ? 'Restore from trash' : 'Delete bookmark'}
         onPointerDown={swallow}
         onMouseDown={swallow}
         onClick={(e): void => {
@@ -65,15 +70,35 @@ export function CardCornerActions({
           onDelete()
         }}
       >
-        <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
-          <path
-            d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            fill="none"
-          />
-        </svg>
+        {inTrash ? (
+          <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">
+            <path
+              d="M2.5 7a4.5 4.5 0 1 0 1.4-3.2"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M2.5 3v2.5h2.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
+            <path
+              d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </svg>
+        )}
       </button>
       {hasCustomWidth && (
         <button

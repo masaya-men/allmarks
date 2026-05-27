@@ -1,0 +1,141 @@
+/* Empty-trash confirmation. AllMarks tonality: black backdrop with blur,
+   monospace chrome labels for headings + microcopy, glitch-free panel. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  animation: backdropFadeIn 160ms ease-out both;
+}
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.panel {
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  background: rgba(20, 20, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  padding: 28px 32px 24px;
+  animation: panelIn 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.heading {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 14px;
+}
+.body {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 8px;
+}
+.warn {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* CANCEL — transparent with a thin white outline, neutral by design so
+   the DELETE button reads as the deliberate action. */
+.cancelBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.78);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+}
+.cancelBtn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+/* DELETE — red outline, fills with darker red as the user holds. The
+   actual hold mechanic lives in the component (rAF-driven CSS variable
+   --p set inline 0→1). Two-stop fill so the bar reads as "warning"
+   first and "committed" near completion. */
+.deleteBtn {
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1c;
+  border: 1px solid #dc4646;
+  color: #fff;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px 22px;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 168px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: box-shadow 120ms;
+}
+.deleteBtn:hover { box-shadow: 0 0 0 1px rgba(220, 70, 70, 0.50); }
+
+.deleteBtnFill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #dc4646 0%, #dc4646 70%, #a32020 100%);
+  transform-origin: left center;
+  transform: scaleX(var(--p, 0));
+  transition: transform 80ms linear;
+  pointer-events: none;
+}
+/* Snap fill back fast when the user lets go before completion. */
+.deleteBtnFillReleased {
+  transition: transform 200ms ease-out;
+}
+
+.deleteBtnLabel {
+  position: relative;
+  z-index: 1;
+}
+
+/* On hold, swap the label to "HOLD TO DELETE" so the gesture intent is
+   confirmed by the UI (the press itself is otherwise silent). */
+.deleteBtn[data-holding="true"] .deleteBtnLabel::before {
+  content: "HOLD TO DELETE";
+}
+.deleteBtn:not([data-holding="true"]) .deleteBtnLabel::before {
+  content: "DELETE";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop, .panel { animation: none; }
+  .deleteBtnFill { transition: none; }
+}

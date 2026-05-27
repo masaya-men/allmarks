@@ -1,52 +1,66 @@
 'use client'
 
-import { useState, type ReactElement } from 'react'
-import { t } from '@/lib/i18n/t'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
+import styles from './NewMoodInput.module.css'
 
 type Props = {
   readonly onCreate: (name: string) => void
 }
 
+/** Inline "+ TAG" trigger that toggles into an underline input field on
+ *  click. Label matches the board CardsLayer + TAG affordance so users
+ *  see one vocabulary across the app. Esc cancels, Enter commits, blur
+ *  also commits when the field has a value. */
 export function NewMoodInput({ onCreate }: Props): ReactElement {
-  const [active, setActive] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [value, setValue] = useState('')
-  if (!active) {
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  // Focus on expand. requestAnimationFrame is needed because React
+  // commits the <input> in the same frame and immediate focus() can
+  // race the animation-driven layout.
+  useEffect(() => {
+    if (!expanded) return
+    const id = requestAnimationFrame(() => inputRef.current?.focus())
+    return (): void => cancelAnimationFrame(id)
+  }, [expanded])
+
+  const commitAndClose = (): void => {
+    const trimmed = value.trim()
+    if (trimmed) onCreate(trimmed)
+    setValue('')
+    setExpanded(false)
+  }
+  const cancelAndClose = (): void => {
+    setValue('')
+    setExpanded(false)
+  }
+
+  if (expanded) {
     return (
-      <button type="button" onClick={() => setActive(true)} data-testid="new-mood-chip"
-        style={{
-          border: '1px dashed rgba(255,255,255,0.2)',
-          background: 'transparent',
-          color: 'var(--text-meta)',
-          padding: '8px 14px',
-          borderRadius: 100,
-          cursor: 'pointer',
-          fontSize: 13,
-        }}>
-        {t('triage.newMood')}
-      </button>
+      <input
+        ref={inputRef}
+        className={styles.input}
+        value={value}
+        onChange={(e): void => setValue(e.target.value)}
+        onBlur={commitAndClose}
+        onKeyDown={(e): void => {
+          if (e.key === 'Enter')  { e.preventDefault(); commitAndClose() }
+          if (e.key === 'Escape') { e.preventDefault(); cancelAndClose() }
+        }}
+        placeholder="TAG NAME"
+        data-testid="new-tag-input"
+      />
     )
   }
   return (
-    <input
-      autoFocus
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={() => { setActive(false); setValue('') }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') { onCreate(value); setValue(''); setActive(false) }
-        if (e.key === 'Escape') { setActive(false); setValue('') }
-      }}
-      placeholder={t('triage.moodNamePlaceholder')}
-      data-testid="new-mood-input"
-      style={{
-        background: 'rgba(255,255,255,0.06)',
-        color: 'var(--text-primary)',
-        border: '1px solid rgba(255,255,255,0.12)',
-        borderRadius: 100,
-        padding: '8px 14px',
-        fontSize: 13,
-        outline: 'none',
-      }}
-    />
+    <button
+      type="button"
+      className={styles.trigger}
+      onClick={(): void => setExpanded(true)}
+      data-testid="new-tag-trigger"
+    >
+      + TAG
+    </button>
   )
 }

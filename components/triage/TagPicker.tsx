@@ -72,9 +72,7 @@ export function TopTagStrip({
             aria-pressed={armed}
           >
             {i < 9 && <span className={styles.chipKey}>{i + 1}</span>}
-            <span className={styles.chipDot} style={{ background: tag.color }} />
             <span className={styles.chipName}>{tag.name}</span>
-            {armed && <span className={styles.chipCheck}>✓</span>}
             {suggested && !armed && <span className={styles.chipSparkle}>✦</span>}
           </button>
         )

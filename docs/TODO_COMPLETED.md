@@ -5361,3 +5361,187 @@ user が並行プロジェクト LoPo (ハウジング機能) でも同じ仕組
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+---
+
+## セッション 81 (2026-05-27) — /triage 装飾削減 + TRASH 機能復活 + editorial 大見出し + 質素ページ削除 + auto-mode + review-mode pre-arm
+
+session 80 で /triage の polish が一段落、 session 81 は user の実機評価ベースで「AI っぽい装飾削減 → 機能の意味回復 → editorial 強化」 を 1 つずつ ship。 deploy 7 回、 全 user 承認の polish のみ反映、 unit test 829 PASS 維持。
+
+### 1. /triage chip strip 装飾削減 (= 「AI っぽいピル」 撤去)
+
+user 指摘「文字を白に / ピル AI っぽいやめて / 色付き丸に意味ない (= board 右上 dropdown のも同じ)」 → 哲学揃えて 3 箇所同時消化:
+
+- **TopTagStrip chip** (`components/triage/TagPicker.module.css`): 丸ピル枠 (= `border-radius: 999px` + `border 1px` + 薄い背景塗り) を全削除、 chipDot (= 8px 色付き丸) も削除、 文字色を `rgba(255,255,255,0.78)` から完全白 `#fff` に。 hover は背景塗らず text-shadow glow のみ。 gap を 6px → 18px に広げて chip 間の境界感を担保
+- **armed (= 選択中) の表現**: 緑塗りピル + 緑枠 + ✓ + glow halo の盛り合わせ → **緑文字 + text-shadow glow (`#28F100`)** だけに。 ✓ も session 81 中盤に user 「緑とグロウで十分」 で削除
+- **board FilterPill dropdown** (`components/board/FilterPill.module.css`): `.dot` (= tag.color の 8px 色付き丸) JSX + CSS 削除。 `.deadDot` (= DEAD LINKS の警告赤丸) は「意味ある色」 として残置
+- **/triage 旧 EntryPicker の Manage tags 一覧** (`components/triage/TriagePage.tsx` + .module.css): `.tagManagementDot` も同様削除 (= 後で EntryPicker ごと撤去するが、 哲学合わせのため先行 cleanup)
+- **board dropdown の INBOX 行削除**: user 「INBOX 意味なさそう」、 機能的に `/triage` 「未分類のみ」 と完全被りなので dropdown 行のみ非表示 (= 機能本体 `kind: 'inbox'` は backward compat で残置)
+
+### 2. YES / NO 白黒化
+
+user 「Yes/No も白黒に」 → `.noHint` の `#ff8c8c` (赤) と `.yesHint` の `#6bcf7f` (緑) を両方とも `rgba(255, 255, 255, 0.92)` の完全白に。 矢印 ← / → と文字 NO / YES で意味は差別化、 色付けない。
+
+### 3. ARCHIVE → TRASH rename + 機能完全復活
+
+#### 隠れていた bug の発見
+user 「INBOX と ARCHIVE って何? 意味なさそう」 を契機に調査 → **ARCHIVE は dropdown には出るが事実上機能してない**ことが判明。 root cause: `useBoardData` の load 段階 (= L220) で `!isDeleted` をかけて active カードのみ items に load、 BoardRoot の sidebarCounts L1365 で `items.filter(i => i.isDeleted)` してたが items に削除済みは含まれてないので **archive count 常に 0** + ARCHIVE filter 選んでも空 = 「カードが × 削除されて soft-delete されるが UI から戻る経路がない / カウントも 0」 状態。 機能の半分が抜け落ちてた。
+
+#### user の期待整理 (= ゴミ箱メタファー)
+user 「アーカイブじゃなくて削除済みみたいな名前にできない? + そのタグの中で一括削除」 → 完全に Mac / Windows / Gmail の「Trash / ゴミ箱」 メタファー。 名前候補 (TRASH / DELETED / BIN) 提示 → user 「TRASH OK」 + 機能復活「余裕あるならやって」 で進行。
+
+#### データ層改修 (`lib/storage/use-board-data.ts`)
+- `BoardItem` に `deletedAt?: string` 追加 (= toItem で BookmarkRecord から拾う)
+- 新 state `deletedItems: BoardItem[]` 追加、 load + reload で `!isDeleted` / `isDeleted` の 2 系統に振り分け (= deletedAt 降順 sort)
+- `persistSoftDelete(id, true)`: items から remove + deletedItems に push (= newest-first)、 (id, false) で逆方向 (= 既存 restore ロジックを deletedItems からの pull に書き換え)
+- 新規 `emptyTrash(): Promise<number>` API: deletedItems 全件を IDB から hard-delete (= bookmark + 対応 card record 両方)、 拡張機能に url-deleted post message 通知、 state を [] に reset
+- return 型に `deletedItems` + `emptyTrash` 追加
+
+#### BoardRoot 側
+- useBoardData destructure に追加
+- `filteredItems` useMemo で `activeFilter.kind === 'archive'` 時は `deletedItems` を直接返す (= items に居ない、 ARCHIVE filter 時のみ別 source)
+- `sidebarCounts.archive` を `deletedItems.length` に修正 (= 旧 `items.filter(i => i.isDeleted)` は常に 0 だった)
+- `handleCardDelete` を context-aware に: TRASH 表示中なら `persistSoftDelete(false)` (= 戻す)、 それ以外は今まで通り soft-delete + undo entry
+- chrome に **EMPTY TRASH button** 追加 (= TRASH active + deletedItems.length > 0 時のみ表示、 ChromeButton で SHARE の右に配置)
+
+#### FilterPill
+- `labelFor` の `'archive' → 'TRASH'`
+- dropdown menu item の表示 ARCHIVE → TRASH
+
+#### Card affordance
+- `CardCornerActions` に新 prop `inTrash?: boolean`
+- inTrash 時、 × アイコンを ↺ Restore アイコンに swap (= 既存 reset svg path 流用)、 aria-label 「Delete bookmark」 → 「Restore from trash」
+- `CardsLayer` の型 + 分割代入に `inTrash` 中継、 `BoardRoot` で `activeFilter.kind === 'archive'` を pass
+
+### 4. カスタム TrashConfirmDialog (= 2 秒長押し)
+
+user 「window.confirm 系の OS ダイアログでなく AllMarks のトンマナにできないか? 削除は赤ボタンで、 不可逆だから長押しが良さそう?」 → editorial の見せ場として新規 component 作成。
+
+- **`components/board/TrashConfirmDialog.tsx` + `.module.css`** 新規
+- **Backdrop**: 黒 0.72 不透明 + `backdrop-filter: blur(8px)`、 160ms fade-in、 click outside / Esc で cancel
+- **Panel**: 420px / `rgba(20,20,22,0.92)` / 1px border / 12px radius / 20px box-shadow、 200ms cubic-bezier(0.2, 0.8, 0.2, 1) で 4px translate + 0.985 scale から入場
+- **Typography**: heading `EMPTY TRASH` を monospace uppercase 11px 0.18em letter-spacing 白 0.45 (= chrome label と完全一致)、 body 17px sans 白 0.95、 warn 「This cannot be undone.」 monospace 10px 0.14em letter-spacing 白 0.45
+- **CANCEL button**: 透明 + 1px 白枠 0.15 + 白文字 0.78、 hover で枠 0.30 (= 中立的、 DELETE が主役)
+- **DELETE button (= 長押し 2 秒)**: 赤枠 `#dc4646` + 白文字 + ::before の `.deleteBtnFill` (= linear-gradient `#dc4646 → #a32020` 0→70→100%) を `transform: scaleX(var(--p))` で fill。 rAF 駆動で進捗を `--p` CSS variable に inline 書き込み (= state 経由 re-render 回避)、 100% 到達で `onConfirm()` 発火 + firedRef 重複防止。 pointerup / pointerleave / pointercancel で `cancelHold(false)` → 200ms ease-out の `.deleteBtnFillReleased` クラス追加で fill が 0 に snap back、 直後 class 剥がして次の hold で linear 80ms に戻す
+- **ラベル**: `data-holding="true"` 時のみ `::before { content: "HOLD TO DELETE" }`、 idle 時は `"DELETE"`、 CSS 側で content swap (= JSX 上は ::before 空 span のみ、 元 user 期待「押してる時だけ意図文確認」)
+- `prefers-reduced-motion` 時は backdrop/panel animation off + fill transition なし
+
+実装中の判断ログ:
+- 長押し duration 2 秒 = user 選択 (= 候補 1.5 / 2.0 提示)、 業界範囲内 (Slack workspace delete 2.0s、 GitHub repo delete は文字入力強制)
+- `pointerLeave` で reset = 「指 / マウスがボタン外に出たら即停止」 安全側、 完了前リリースも同じ動き
+- 100% 到達で `firedRef` を立てて `onConfirm` 1 回のみ呼び出し、 rAF が再 schedule する race を防ぐ
+- BoardRoot 側で `setTrashConfirmOpen` state + `handleEmptyTrashRequest` / `handleEmptyTrashConfirm` 2 handler に分割 (= request で open、 confirm で実行 + close)、 既存 ShareComposer / ShareActionSheet と並ぶ位置に modal mount
+
+### 5. 「+ TAG」 新規タグトリガー (= board と語彙統一 + アニメ展開)
+
+user 「振り分け画面の『新しいタグ』 を board の + TAG に表記合わせて + ピル不要 + click でアニメして input field 出す」 → NewMoodInput 全面書き換え。
+
+- **`components/triage/NewMoodInput.tsx`** 書き換え (= file 名 rename は Phase D5 持ち越し、 内部参照壊さない)、 **`NewMoodInput.module.css`** 新規
+- collapsed: `+ TAG` 文字 button (= chip 完全互換装飾、 monospace 11px、 letter-spacing 0.06em、 uppercase、 padding 5px 0、 枠なし、 text-shadow halo recipe、 hover で text-shadow glow)
+- expanded: underline input field (= 同 font、 border-bottom 1px 白 0.30、 focus で 0.65、 placeholder 「TAG NAME」 白 0.35)
+- アニメ: `triggerIn` keyframe (= 200ms ease-out で opacity 0 + translateX -4px から)、 `inputIn` keyframe (= 220ms cubic-bezier(0.2, 0.7, 0.2, 1) で opacity 0 + translateX -4px + max-width 40 → 200px に展開)
+- expand state は `useState`、 commit 条件: Enter (= 値 trim 非空で create + 武装)、 blur (= 同様)、 Esc (= 破棄)
+- focus は `useEffect` + requestAnimationFrame (= input mount race 回避)
+- 旧 i18n key `triage.newMood` / `triage.moodNamePlaceholder` 使用箇所削除、 messages/*.json の key 自体は Phase D5 で cleanup 予定
+- e2e spec の testid `new-mood-chip` / `new-mood-input` → `new-tag-trigger` / `new-tag-input` も合わせて update
+
+### 6. editorial 大見出し 「TAG THIS.」 (= frontend-design skill 経由)
+
+user 「タグを付けようみたいな大きい instruction 出すのどう? デザインかなり良い感じにしてほしい、 最近スキル入れたよね?」 → `frontend-design` skill invoke して設計。
+
+#### 設計思想
+- board の `AllMarks · 301` 巨大背景文字と同じ editorial moodboard 系の「場の名前 + 動詞」 が AllMarks 哲学。 `/triage` でも同 visual 体系を継ぐ
+- 候補 (Tag this. / Triage. / Sort & Tag.) から user 承認の `TAG THIS.` (= 動詞 imperative、 2 単語、 中学英語、 全 user 共通)
+- 配置候補で「背景巨大」 案を user が「カード thumbnail blur で見えなくなる」 と即座に却下 → **画面上部 chip strip 帯にうまく内蔵**
+- chrome を **2 行構成**に再編 (= 上段 left に巨大 headline + 上段 right に進捗 + ESC、 下段に既存 chip strip)
+
+#### Typography 詳細 (`components/triage/TriagePage.module.css`)
+- `.outerHeading`: `font-size: clamp(34px, 4.2vw, 56px)` (= 1489px viewport で 56px 上限)、 `font-weight: 700`、 `letter-spacing: -0.02em` (= 詰めてブロック感)、 `line-height: 1`、 `text-shadow: 0 2px 8px rgba(0,0,0,0.55), 0 0 18px rgba(0,0,0,0.30)`
+- `.headingAccent` (= period `.`): `color: #28F100` (= AllMarks brand 緑、 armed と同色)、 keyframe `accentPulse` で text-shadow を 8px → 14px halo に 3.2s ease-in-out で拡縮 → 「ここは生きてる場所」 サイン + ガラスの spotlight 緑 halo と呼応する 2 光源
+- `.outerProgress`: 右上に `right: 96px` で配置、 zero-padded 「01 / 12」 表記 (= pad2 helper)
+- entrance stagger: `chromeEnter` keyframe (= opacity 0 + translateY 8px → 0、 380ms cubic-bezier(0.2, 0.7, 0.2, 1)) を heading 0ms → progress 80ms → ESC 160ms → chip strip 240ms で順次起動
+- `.canvas` の top を 112px → 148px に下げて heading 帯と接触させない (= chip strip 96px + 32px 高さ + 12px gap = 140px、 + 余裕 8px = 148px)
+- prefers-reduced-motion で全 chrome animation off
+
+### 7. 質素 EntryPicker 削除 + auto-mode + 「全部」 mode の review pre-arm
+
+user 「『未分類 / 全部』 二択 + Manage tags の質素ページなくても良いかも + 未分類 0 件で全部 mode、 + カードが流れるたびに付いてるタグが緑になる」 → 一気に redesign。 これが session 81 の核心体験変更。
+
+#### EntryPicker 削除
+- `if (!mode) return <EntryPicker ...>` block 削除、 EntryPicker function (= 80 行 程度) 全削除
+- 代わりに `useEffect` で **mode null 時 auto-redirect**: untaggedItems.length === 0 → `mode=all`、 そうでなければ `mode=untagged`。 `router.replace` (= push しないので戻る押した時の挙動が自然) で URL 更新
+- 既存 `untagged` mode の連続武装 (= session 79 design) は維持
+
+#### Review mode pre-arm 同期 (= 「カード流れるたびに付いてるタグが緑」)
+- `isReviewMode = mode === 'all' || (typeof mode === 'object')` を derive
+- `useEffect([currentBookmarkId, currentTagsKey, isReviewMode])` で `setArmedTagIds(new Set(current?.tags ?? []))` を発動。 `currentTagsKey = current?.tags.join(',')` が deps key (= tags 同一性のみで再 sync、 reference は無視)
+- これにより all / tag:X mode で次カードに進むと **そのカードに付いてるタグ全部が armed (= 緑グロウ)**、 user が chip 押せば外したり追加したり編集可能
+- untagged mode は current.tags = [] なので influence なし + 連続武装維持
+
+#### handleYes の persist semantics 変更
+- 旧: union (= `armedTagIds + current.tags`) を persistTags に渡す → 既存タグは絶対消えない (= union)
+- 新: `composed = Array.from(armedTagIds)` (= armed 単体)、 既存タグ削除を許容
+- 理由: review mode で armed が pre-arm された current.tags の編集結果として「最終状態」 を意味するようになった、 user が chip 外せば armed から落ちる → そのまま persist で削除発動 = 体験通り
+- untagged mode は current.tags = [] なので armed-only でも結果同じ
+- `tagsChanged` (= armed と current.tags の集合比較) で **変化があった時のみ lastAction 記録** → 何も変えないまま YES した時に undo target にしない
+
+#### MANAGE TAGS click 動線 (= BoardRoot.tsx)
+- 旧 3 分岐 (ALL → /triage / 1 タグ → ?mode=tag:X / 他 → ?mode=untagged) を**簡素化**
+- 1 タグ filter は今まで通り `?mode=tag:X`、 それ以外全部 `/triage` (= mode 無し)
+- TriagePage 側 useEffect が responsible で auto-redirect 走る = ALL / TRASH / 多タグ filter どこからでも「未分類あれば untagged、 なければ all」 で自然判定
+
+#### タグ削除経路の宙ぶらり
+- EntryPicker 内 Manage tags の × Delete button が削除経路の唯一だった = 一時的に削除手段なし
+- user 承認済 (= 「全部 mode で 1 枚ずつ外せば実質ゼロ」)、 タグ削除専用 UI は次 session 候補
+- 「使われなくなった `useTags.remove` / `useBoardData.reload` の destructure」 + 「`TagRecord` type import」 削除して TS 警告解消
+
+### 8. ガラス外 click で離脱
+
+user 「振り分けページ、 ガラスの外側でボタン以外のところを click でも閉じられるように」 → 1 ファイル diff。
+
+- AmbientBackdrop は既に `.layer` / `.fallback` 両方 `pointer-events: none` (= 装飾なので元から click 透過)
+- `.outerProgress` (= 進捗 「01 / 12」) も `pointer-events: none` 追加 (= ただの data label、 click target でない)
+- `.outerHeading` は元から `pointer-events: none` (= editorial decoration)
+- TriagePage root div に `onClick={(e) => { if (e.target === e.currentTarget) exit() }}` 追加 (= root 自身に直接 hit した click のみ exit を発動、 子要素 (= chip / button / strip / canvas / heading の text) は target が彼ら自身になるので動かない)
+- `type MouseEvent as ReactMouseEvent` を import 追加
+
+これで真っ黒な margin 余白 + heading 上 + progress 上 click で exit、 chip / + TAG / ESC / chip strip 隙間 / ガラス内 click は exit しない。 ESC キーも引き続き効く (= 既存 keydown listener)。
+
+### user 視点 (= 本 session 後の体験)
+
+- `/triage` 開くと巨大「**TAG THIS.**」 が左上、 緑 period パルス + chrome stagger 入場
+- chip strip がピル枠なしの素のテキスト並び、 文字白、 hover で text-shadow halo、 armed は緑文字 + glow 「だけ」
+- `+ TAG` 押すとフェードしながら underline input field がスライドイン、 Enter で 即 armed
+- 未分類カードを 1 枚ずつ振り分け中は session 79 の「武装維持」 連続スワイプ仕様維持
+- 未分類カード使い切ると、 板から再度 MANAGE TAGS 押した時 auto で「**全部**」 mode に → 既存タグ付きカードを review
+- 全部 mode では **カード切り替わるたびに付いてるタグが緑グロウ**、 user は chip 押して **外す / 追加** を直感操作、 YES で「緑になってる集合」 がそのままカードのタグになる
+- 板 dropdown の INBOX 行消滅、 ARCHIVE → **TRASH** rename、 タグ一覧 dropdown の色付き丸消滅
+- 板で × 削除 → TRASH に積まれる (= 旧仕様復活)、 TRASH 表示中はカードが見える + hover で ↺ Restore ボタン、 chrome 右側に **EMPTY TRASH** ボタンが追加されてる
+- EMPTY TRASH 押すと editorial 黒 backdrop の confirm dialog、 赤の DELETE button を **2 秒長押し**で赤 fill が走り切って永久削除実行、 完了前リリースで snap back
+- `/triage` ガラスの外、 chrome ボタン以外の真っ黒余白 click でも板に戻れる (= ESC と同じ)
+
+### 検証 + deploy
+
+- vitest **829 PASS** 維持 (= 既知 flake `channel.test.ts` は単体で常時 PASS、 CI flake のみ)
+- tsc 0 errors、 build 25 routes static prerender 全 success
+- deploy 7 回 (= 1 日 16 上限内余裕)
+- e2e spec の testid 更新済 (= triage-flow.spec.ts 内 new-mood-* → new-tag-* rename)
+
+### 設計上の重要発見 (= memory 候補)
+
+- **`pointer-events: none` で root onClick + e.target === e.currentTarget pattern**: 中央コンテンツの「枠外 click で閉じる」 を minimum diff で実現する canonical recipe。 子要素は target に上がり root とは一致しないので自然に除外、 装飾要素 (= heading / progress label / background ambient) は pointer-events: none で click 透過させて root に届ける
+- **rAF 駆動の長押し進捗 = state 経由 re-render 不要**: `--p` CSS variable を inline 書き込み + scaleX transition で smooth fill、 React state 使うと毎フレーム re-render で jank。 cleanup は unmount cancelAnimationFrame + firedRef で重複発火防止
+- **「Soft-delete システムは load 段階で active のみ filter すると死ぬ」**: useBoardData の L220 が削除済みを最初から除外してたため、 ARCHIVE filter 経由の表示 + sidebarCounts 両方とも常に空に。 active と deleted を別 state に分けるのが筋。 同類の隠れ bug の根は「単一 state に多状態混在 → context-aware filter」
+- **review mode pre-arm + armed-only persist の対称設計**: 「カード流れるたびに armed = current.tags」 と「YES で armed そのまま保存 (= union ではなく)」 はペア。 一方だけだと意味が崩れる (= pre-arm + union だと user が chip 外しても保存時に元タグ復活してしまう)
+- **AllMarks「データ表示なら pointer-events: none、 操作可能なものだけ auto」 の徹底**: progress 「01 / 12」 のような data label は意味的に「触れない」、 視覚的にもクリックターゲットに見えないので、 余白扱いで click 透過させる方が UX 整合
+
+### 未達 / 次セッション持ち越し
+
+- **タグ削除専用 UI** = EntryPicker 撤去で削除経路ゼロ、 user が必要と感じたら別 UI で復活
+- **ハロ強すぎ件** (= /triage 外周 4 段 bloom halo の 0.5x 絞り) = session 80 持ち越し継続
+- **No 含めて巻き戻す undo 拡張** = session 80 持ち越し継続
+- **Phase D 残り** (= D1 中断再開 / D4 14 言語 mood→tag rename / D5 NewMoodInput → NewTagInput 内部 rename)
+- **convex bezel α 案** (= session 78 持ち越し: pre-built PNG triplet + build script)
+- **🔴 ドメイン**: **2026-05-28 朝以降 `allmarks.app` 取得確認** が引き続き待機
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+

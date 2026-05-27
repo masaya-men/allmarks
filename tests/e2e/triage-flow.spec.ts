@@ -48,10 +48,10 @@ test('triage: 3 inbox cards tagged via numbered chips → board has mood filter'
   await expect(page).toHaveURL(/\/triage/)
   await expect(page.getByTestId('triage-page')).toBeVisible()
 
-  // Create a new mood on first card
-  await page.getByTestId('new-mood-chip').click()
-  await page.getByTestId('new-mood-input').fill('design')
-  await page.getByTestId('new-mood-input').press('Enter')
+  // Create a new tag on first card
+  await page.getByTestId('new-tag-trigger').click()
+  await page.getByTestId('new-tag-input').fill('design')
+  await page.getByTestId('new-tag-input').press('Enter')
 
   // Second card: use the now-existing chip via "1" key
   await page.waitForTimeout(250)

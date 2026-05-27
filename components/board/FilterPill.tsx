@@ -31,7 +31,7 @@ function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>): string {
   switch (f.kind) {
     case 'all': return 'AllMarks'
     case 'inbox': return 'INBOX'
-    case 'archive': return 'ARCHIVE'
+    case 'archive': return 'TRASH'
     case 'dead': return 'DEAD LINKS'
     case 'tags': {
       const names = f.tagIds.map((id) => tags.find((t) => t.id === id)?.name ?? '—')
@@ -127,18 +127,10 @@ export function FilterPill({
           </button>
           <button
             type="button"
-            className={`${styles.item} ${boardFilterEquals(value, BOARD_FILTER_INBOX) ? styles.active : ''}`.trim()}
-            onClick={() => select(BOARD_FILTER_INBOX)}
-          >
-            INBOX
-            <span style={{ marginLeft: 'auto', color: 'var(--text-meta)' }}>{counts.inbox}</span>
-          </button>
-          <button
-            type="button"
             className={`${styles.item} ${boardFilterEquals(value, BOARD_FILTER_ARCHIVE) ? styles.active : ''}`.trim()}
             onClick={() => select(BOARD_FILTER_ARCHIVE)}
           >
-            ARCHIVE
+            TRASH
             <span style={{ marginLeft: 'auto', color: 'var(--text-meta)' }}>{counts.archive}</span>
           </button>
           {counts.dead > 0 && (
@@ -165,7 +157,6 @@ export function FilterPill({
                 className={`${styles.item} ${active ? styles.active : ''}`.trim()}
                 onClick={() => select(f)}
               >
-                <span className={styles.dot} style={{ background: m.color }} />
                 {m.name}
               </button>
             )

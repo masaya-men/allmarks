@@ -1,0 +1,60 @@
+/* Session 81 rebuild: pill-on-pill chrome removed. The "+ TAG" trigger
+   matches the board's CardsLayer + TAG affordance (= bare text, text-
+   shadow halo). On click the trigger fades out and an underline input
+   field fades + slides in — same monospace voice as the chip strip. */
+
+.trigger {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 0;
+  min-height: 32px;
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  transition: text-shadow 120ms;
+  animation: triggerIn 200ms ease-out both;
+}
+.trigger:hover {
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.input {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.30);
+  color: #fff;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 4px 4px;
+  min-height: 32px;
+  min-width: 80px;
+  outline: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  animation: inputIn 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.10em;
+}
+.input:focus {
+  border-bottom-color: rgba(255, 255, 255, 0.65);
+}
+
+@keyframes triggerIn {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes inputIn {
+  from { opacity: 0; transform: translateX(-4px); max-width: 40px; }
+  to   { opacity: 1; transform: translateX(0); max-width: 200px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger, .input { animation: none; }
+}

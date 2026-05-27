@@ -228,6 +228,11 @@ type CardsLayerProps = {
    *  top-right corner. Right-click is intentionally NOT wired up so
    *  the gesture stays free for future affordances (selection, etc). */
   readonly onDelete: (bookmarkId: string) => void
+  /** True when the parent BoardRoot is rendering the TRASH view. Forwarded
+   *  to CardCornerActions so its × icon flips to a ↺ restore icon — the
+   *  onDelete handler in BoardRoot is already context-aware (= calls
+   *  persistSoftDelete(id, false) when this is true). */
+  readonly inTrash?: boolean
   readonly persistMeasuredAspect?: (cardId: string, aspectRatio: number) => Promise<void>
   readonly displayMode: DisplayMode
   readonly newlyAddedIds: ReadonlySet<string>
@@ -307,6 +312,7 @@ export function CardsLayer({
   onClick,
   onDrop,
   onDelete,
+  inTrash = false,
   persistMeasuredAspect,
   displayMode,
   newlyAddedIds,
@@ -1056,6 +1062,7 @@ export function CardsLayer({
             <CardCornerActions
               hovered={hoverActive}
               hasCustomWidth={it.customCardWidth}
+              inTrash={inTrash}
               onDelete={(): void => onDelete(it.bookmarkId)}
               onResetSize={(): void => onCardResetSize(it.bookmarkId)}
             />

@@ -38,6 +38,7 @@ import { CardsLayer } from './CardsLayer'
 import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
+import { TrashConfirmDialog } from './TrashConfirmDialog'
 import { useRouter } from 'next/navigation'
 import { TagButton } from './TagButton'
 import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/tags'
@@ -73,6 +74,7 @@ const BOARD_TOP_PAD_PX = 80
 export function BoardRoot() {
   const {
     items,
+    deletedItems,
     loading,
     persistOrderBatch,
     persistMeasuredAspect,
@@ -81,6 +83,7 @@ export function BoardRoot() {
     persistVideoFlag,
     persistTitle,
     persistSoftDelete,
+    emptyTrash,
     persistCustomWidth,
     resetCustomWidth,
     reload,
@@ -472,6 +475,10 @@ export function BoardRoot() {
   }, [])
 
   const filteredItems = useMemo(() => {
+    // TRASH (= archive) は items に居ない (soft-deleted は別 state)、
+    // deletedItems を直接返す。 これによりカード本体がレンダされる + ×
+    // ボタンの handler が BoardRoot 側で restore 意味になる。
+    if (activeFilter.kind === 'archive') return deletedItems
     // Tags filter は CardsLayer 側で matchedBookmarkIds + CRT shutdown
     // アニメ経由で表現する (= 非該当カードを items に残しておく → shutdown
     // 演出 → GSAP-FLIP で該当カードが reflow)。 ここで除外してしまうと
@@ -479,7 +486,7 @@ export function BoardRoot() {
     // のみ) を通す。 他 kind は従来通り単純絞り込み。
     if (activeFilter.kind === 'tags') return applyFilter(items, BOARD_FILTER_ALL)
     return applyFilter(items, activeFilter)
-  }, [items, activeFilter])
+  }, [items, deletedItems, activeFilter])
 
   // Tag filter overlay on top of filteredItems. null = no tag filter active
   // (= every card matches). When set, cards whose id is NOT in the set are
@@ -852,16 +859,33 @@ export function BoardRoot() {
     revalidateOnIntent(bookmarkId)
   }, [items, revalidateOnIntent])
 
-  // Right-click on a card → soft-delete. Pre-launch convenience: no
-  // confirmation dialog (the user wanted the fastest possible delete
-  // for solo iteration). isDeleted=true keeps the row in IndexedDB so
-  // a future "trash" UI can restore it; the masonry filter already
-  // hides anything with isDeleted=true so the card disappears from
-  // the board the moment persistSoftDelete returns.
+  // Card affordance handler. Meaning is context-aware:
+  //   - Normal views (ALL / INBOX / tags / DEAD): soft-delete + undo entry
+  //   - TRASH view (activeFilter.kind === 'archive'): restore from trash
+  // The CardCornerActions component already swaps its icon + label based
+  // on the same `inTrash` prop, so user intent and visual match up.
   const handleCardDelete = useCallback((bookmarkId: string): void => {
+    if (activeFilter.kind === 'archive') {
+      void persistSoftDelete(bookmarkId, false)
+      return
+    }
     pushUndo({ kind: 'delete', bookmarkId })
     void persistSoftDelete(bookmarkId, true)
-  }, [persistSoftDelete, pushUndo])
+  }, [persistSoftDelete, pushUndo, activeFilter])
+
+  // Empty Trash — irreversible bulk hard-delete of every item currently
+  // in TRASH. Opens TrashConfirmDialog, which requires a 2-second
+  // pointer hold on its DELETE button before the actual purge fires.
+  // No-op when the trash is already empty.
+  const [trashConfirmOpen, setTrashConfirmOpen] = useState(false)
+  const handleEmptyTrashRequest = useCallback((): void => {
+    if (deletedItems.length === 0) return
+    setTrashConfirmOpen(true)
+  }, [deletedItems.length])
+  const handleEmptyTrashConfirm = useCallback(async (): Promise<void> => {
+    setTrashConfirmOpen(false)
+    await emptyTrash()
+  }, [emptyTrash])
 
   // Tag mutation handlers. Phase 1: simple reload-after-mutation. A later
   // pass can swap in optimistic state updates if perceived latency is bad
@@ -1362,15 +1386,16 @@ export function BoardRoot() {
   }, [items])
 
   const sidebarCounts = useMemo(() => {
-    const active = items.filter((i) => !i.isDeleted)
-    const deleted = items.filter((i) => i.isDeleted)
+    // items is already the active (= non-deleted) set; deletedItems
+    // is the parallel TRASH-only state. Counting items.isDeleted would
+    // always yield 0 since useBoardData filters them out before render.
     return {
-      all: active.length,
-      inbox: active.filter((i) => i.tags.length === 0).length,
-      archive: deleted.length,
-      dead: active.filter((i) => i.linkStatus === 'gone').length,
+      all: items.length,
+      inbox: items.filter((i) => i.tags.length === 0).length,
+      archive: deletedItems.length,
+      dead: items.filter((i) => i.linkStatus === 'gone').length,
     }
-  }, [items])
+  }, [items, deletedItems])
 
   const contentWidth = Math.max(viewport.w, contentBounds.width)
   const contentHeight = Math.max(viewport.h, contentBounds.height)
@@ -1484,18 +1509,16 @@ export function BoardRoot() {
               />
               <TagButton
                 onClick={(): void => {
-                  // Phase C1 (= session 72) + Phase 1.9 (= session 74):
-                  // cohort is inferred from the active board filter so the
-                  // user doesn't pick twice.
-                  // - all → /triage (entry picker = "未分類 / 全部" 二択)
-                  // - tags filter w/ single tag → /triage?mode=tag:<id>
-                  // - inbox/archive/dead/multi-tag → /triage?mode=untagged
-                  if (activeFilter.kind === 'all') {
-                    router.push('/triage')
-                  } else if (activeFilter.kind === 'tags' && activeFilter.tagIds.length === 1) {
+                  // Session 81: entry picker removed. TriagePage now auto-
+                  // selects mode based on the untagged backlog (= empty
+                  // backlog → 'all' so the user can review existing tags,
+                  // otherwise → 'untagged'). A single-tag board filter
+                  // still passes through with its mode so the user keeps
+                  // their cohort context.
+                  if (activeFilter.kind === 'tags' && activeFilter.tagIds.length === 1) {
                     router.push(`/triage?mode=tag:${activeFilter.tagIds[0]}`)
                   } else {
-                    router.push('/triage?mode=untagged')
+                    router.push('/triage')
                   }
                 }}
               />
@@ -1510,6 +1533,13 @@ export function BoardRoot() {
                 onClick={(): void => setShareComposerOpen(true)}
                 data-testid="share-pill"
               />
+              {activeFilter.kind === 'archive' && deletedItems.length > 0 && (
+                <ChromeButton
+                  label="EMPTY TRASH"
+                  onClick={handleEmptyTrashRequest}
+                  data-testid="empty-trash-button"
+                />
+              )}
             </>
           }
         />
@@ -1578,6 +1608,7 @@ export function BoardRoot() {
                 onClick={handleCardClick}
                 onDrop={handleDropOrder}
                 onDelete={handleCardDelete}
+                inTrash={activeFilter.kind === 'archive'}
                 persistMeasuredAspect={persistMeasuredAspect}
                 displayMode={displayMode}
                 newlyAddedIds={newlyAddedIds}
@@ -1682,6 +1713,13 @@ export function BoardRoot() {
           pngDataUrl={actionSheet.pngDataUrl}
           shareUrl={actionSheet.shareUrl}
           onClose={(): void => setActionSheet(null)}
+        />
+      )}
+      {trashConfirmOpen && (
+        <TrashConfirmDialog
+          count={deletedItems.length}
+          onConfirm={(): void => { void handleEmptyTrashConfirm() }}
+          onCancel={(): void => setTrashConfirmOpen(false)}
         />
       )}
       <PipPortal pipWindow={pip.window}>

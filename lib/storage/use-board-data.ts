@@ -43,6 +43,9 @@ export type BoardItem = {
   readonly userOverridePos?: CardPosition  // legacy compat: same data as freePos for grid-side consumers
   readonly isRead: boolean
   readonly isDeleted: boolean
+  /** ISO 8601 timestamp set when isDeleted flipped to true. Used to sort
+   *  the TRASH view newest-first. undefined when never deleted. */
+  readonly deletedAt?: string
   readonly tags: readonly string[]
   readonly displayMode: 'visual' | 'editorial' | 'native' | null
   /** True when the bookmark's source is known to be a video. Drives the
@@ -124,6 +127,7 @@ function toItem(b: BookmarkRecord, c: CardRecord | undefined): BoardItem {
     userOverridePos: hasPlacement ? { x: c.x, y: c.y, w, h } : undefined,
     isRead: b.isRead ?? false,
     isDeleted: b.isDeleted ?? false,
+    deletedAt: b.deletedAt,
     tags: b.tags ?? [],
     displayMode: b.displayMode ?? null,
     hasVideo: b.hasVideo,
@@ -136,6 +140,11 @@ function toItem(b: BookmarkRecord, c: CardRecord | undefined): BoardItem {
 
 export function useBoardData(): {
   items: BoardItem[]
+  /** Soft-deleted bookmarks (= TRASH contents). Sorted newest-first by
+   *  `deletedAt`. Mutated in lockstep with `items` by persistSoftDelete /
+   *  emptyTrash so the BoardFilter `archive` view always reflects current
+   *  IDB state without a manual reload. */
+  deletedItems: BoardItem[]
   loading: boolean
   persistFreePosition: (cardId: string, pos: FreePosition) => Promise<void>
   persistGridIndex: (cardId: string, gridIndex: number) => Promise<void>
@@ -143,6 +152,10 @@ export function useBoardData(): {
   persistOrderBatch: (orderedBookmarkIds: readonly string[]) => Promise<void>
   persistReadFlag: (bookmarkId: string, isRead: boolean) => Promise<void>
   persistSoftDelete: (bookmarkId: string, isDeleted: boolean) => Promise<void>
+  /** Permanently delete every bookmark currently in TRASH — removes the
+   *  bookmark + card records from IDB and clears `deletedItems`. Returns
+   *  the number of bookmarks actually destroyed. Irreversible. */
+  emptyTrash: () => Promise<number>
   persistMeasuredAspect: (cardId: string, aspectRatio: number) => Promise<void>
   /** Backfill bookmark.thumbnail. By default no-op when a "real" thumbnail is
    *  already present (so we never destroy a good og:image the bookmarklet
@@ -192,6 +205,7 @@ export function useBoardData(): {
   persistLinkStatus: (bookmarkId: string, status: 'alive' | 'gone' | 'unknown', lastCheckedAt: number) => Promise<void>
 } {
   const [items, setItems] = useState<BoardItem[]>([])
+  const [deletedItems, setDeletedItems] = useState<BoardItem[]>([])
   const [loading, setLoading] = useState(true)
   const dbRef = useRef<DbLike | null>(null)
 
@@ -216,11 +230,16 @@ export function useBoardData(): {
       const cardByBookmark = new Map<string, CardRecord>()
       for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
       if (cancelled) return
-      const all = bookmarks
+      const active = bookmarks
         .filter(b => !b.isDeleted)
         .map((b) => toItem(b, cardByBookmark.get(b.id)))
         .sort((a, b) => a.orderIndex - b.orderIndex)
-      setItems(all)
+      const trashed = bookmarks
+        .filter(b => b.isDeleted)
+        .map((b) => toItem(b, cardByBookmark.get(b.id)))
+        .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
+      setItems(active)
+      setDeletedItems(trashed)
       setLoading(false)
     })().catch(() => {
       if (!cancelled) setLoading(false)
@@ -373,8 +392,18 @@ export function useBoardData(): {
         deletedAt: isDeleted ? new Date().toISOString() : undefined,
       }
       await db.put('bookmarks', updated)
+      // Get the card record once for the toItem reconstruction in both
+      // branches (used by deletedItems on delete, items on restore).
+      const allCards = (await db.getAll('cards')) as CardRecord[]
+      const card = allCards.find((c) => c.bookmarkId === bookmarkId)
+      const transformed = toItem(updated, card)
       if (isDeleted) {
         setItems((prev) => prev.filter(it => it.bookmarkId !== bookmarkId))
+        setDeletedItems((prev) => {
+          if (prev.some((it) => it.bookmarkId === bookmarkId)) return prev
+          return [transformed, ...prev]
+            .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
+        })
         // Tell the AllMarks extension (if installed) that this URL is gone so
         // it can invalidate its saved-urls mirror. Without this the floating
         // save button would keep showing a misleading green check on revisit.
@@ -388,19 +417,40 @@ export function useBoardData(): {
         postBookmarkDeleted({ bookmarkId })
         return
       }
-      // Restore — fetch the matching card record and re-insert into items
-      // so Ctrl+Z reflects in the live session without a reload. Cards are
-      // a small store (1:1 with bookmarks) so getAll is acceptable.
-      const allCards = (await db.getAll('cards')) as CardRecord[]
-      const card = allCards.find((c) => c.bookmarkId === bookmarkId)
-      const revived = toItem(updated, card)
+      // Restore — re-insert into items, drop from deletedItems so the
+      // TRASH view reflects current state without a manual reload.
       setItems((prev) => {
         if (prev.some((it) => it.bookmarkId === bookmarkId)) return prev
-        return [...prev, revived].sort((a, b) => a.orderIndex - b.orderIndex)
+        return [...prev, transformed].sort((a, b) => a.orderIndex - b.orderIndex)
       })
+      setDeletedItems((prev) => prev.filter((it) => it.bookmarkId !== bookmarkId))
     },
     [],
   )
+
+  /** Permanently destroy every bookmark currently in TRASH. Removes both
+   *  the bookmark record and its paired card record from IDB. Best-effort
+   *  notifies the AllMarks extension per URL so its saved-urls mirror stays
+   *  in sync. Irreversible — callers should confirm with the user first. */
+  const emptyTrash = useCallback(async (): Promise<number> => {
+    const db = dbRef.current
+    if (!db) return 0
+    const snapshot = deletedItems
+    if (snapshot.length === 0) return 0
+    const allCards = (await db.getAll('cards')) as CardRecord[]
+    for (const it of snapshot) {
+      // Card record deletion first, then bookmark — order doesn't matter
+      // for correctness but keeps cards orphan-free even on partial failures.
+      const card = allCards.find((c) => c.bookmarkId === it.bookmarkId)
+      if (card?.id) await db.delete('cards', card.id)
+      await db.delete('bookmarks', it.bookmarkId)
+      try {
+        window.postMessage({ type: 'allmarks:url-deleted', url: it.url }, '*')
+      } catch { /* ignore */ }
+    }
+    setDeletedItems([])
+    return snapshot.length
+  }, [deletedItems])
 
   const persistVideoFlag = useCallback(
     async (bookmarkId: string, hasVideo: boolean): Promise<void> => {
@@ -512,11 +562,16 @@ export function useBoardData(): {
     const cards = (await db.getAll('cards')) as CardRecord[]
     const cardByBookmark = new Map<string, CardRecord>()
     for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
-    const all = bookmarks
+    const active = bookmarks
       .filter((b) => !b.isDeleted)
       .map((b) => toItem(b, cardByBookmark.get(b.id)))
       .sort((a, b) => a.orderIndex - b.orderIndex)
-    setItems(all)
+    const trashed = bookmarks
+      .filter((b) => b.isDeleted)
+      .map((b) => toItem(b, cardByBookmark.get(b.id)))
+      .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
+    setItems(active)
+    setDeletedItems(trashed)
   }, [])
 
   const persistCustomWidth = useCallback(
@@ -605,6 +660,7 @@ export function useBoardData(): {
 
   return {
     items,
+    deletedItems,
     loading,
     persistFreePosition,
     persistGridIndex,
@@ -612,6 +668,7 @@ export function useBoardData(): {
     persistOrderBatch,
     persistReadFlag,
     persistSoftDelete,
+    emptyTrash,
     persistMeasuredAspect,
     persistThumbnail,
     persistVideoFlag,

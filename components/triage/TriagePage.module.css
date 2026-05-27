@@ -22,10 +22,46 @@
    Session 79 rebuild: 4-direction swipe was removed in favor of Yes/No
    + armed-tag multi-select. Top chrome holds progress (left), the tag
    strip (center, overflow-scroll), and ESC (right). */
-.outerProgress {
+/* Session 81: editorial 2-row chrome. Top row carries the dominant
+   "TAG THIS." headline + progress + ESC; second row is the existing
+   chip strip relocated. Entrance is a quiet stagger so the page feels
+   composed rather than busy. */
+.outerHeading {
   position: fixed;
   top: 28px;
   left: 28px;
+  z-index: 5;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: clamp(34px, 4.2vw, 56px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55), 0 0 18px rgba(0, 0, 0, 0.30);
+  pointer-events: none;
+  user-select: none;
+  animation: chromeEnter 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+/* Period accent — AllMarks brand green + slow halo pulse. The brightness
+   range is deliberately gentle so it reads as "alive" rather than
+   "blinking warning". Pairs visually with the green spotlight cool-white
+   halo on the central glass canvas (= two soft light sources). */
+.headingAccent {
+  display: inline-block;
+  color: #28F100;
+  animation:
+    chromeEnter 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+    accentPulse 3.2s ease-in-out infinite 380ms;
+}
+@keyframes accentPulse {
+  0%, 100% { text-shadow: 0 0  8px rgba(40, 241, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.55); }
+  50%      { text-shadow: 0 0 14px rgba(40, 241, 0, 0.70), 0 2px 8px rgba(0, 0, 0, 0.55); }
+}
+.outerProgress {
+  position: fixed;
+  top: 32px;
+  right: 96px;
   z-index: 5;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 12px;
@@ -33,10 +69,15 @@
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.65);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  font-variant-numeric: tabular-nums;
+  animation: chromeEnter 380ms cubic-bezier(0.2, 0.7, 0.2, 1) 80ms both;
+  /* Data label — not clickable. Pass clicks through to the root so the
+     "click outside the glass to exit" gesture covers this zone too. */
+  pointer-events: none;
 }
 .outerBackBtn {
   position: fixed;
-  top: 24px;
+  top: 28px;
   right: 28px;
   z-index: 5;
   background: transparent;
@@ -51,26 +92,53 @@
   border-radius: 4px;
   transition: color 120ms, background-color 120ms;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  animation: chromeEnter 380ms cubic-bezier(0.2, 0.7, 0.2, 1) 160ms both;
 }
 .outerBackBtn:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* Tag strip wrapper. Sits between progress and ESC, scrolls horizontally
-   if the tag list overflows. Cap the width so it doesn't bump into the
-   corner chrome. */
+/* Tag strip — second row, sits below the "TAG THIS." headline.
+   Left-aligned beneath the heading so the editorial column reads
+   top-to-bottom (headline → chips → glass). Scrolls horizontally
+   if the user has many tags. */
 .outerTagStrip {
   position: fixed;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: calc(100vw - 240px);
+  top: 96px;
+  left: 28px;
+  right: 28px;
   z-index: 5;
   overflow-x: auto;
   scrollbar-width: none;
+  animation: chromeEnter 380ms cubic-bezier(0.2, 0.7, 0.2, 1) 240ms both;
 }
 .outerTagStrip::-webkit-scrollbar { display: none; }
+
+/* Stagger keyframe shared by every top-chrome element above. Quiet
+   editorial fade — a sliver of vertical motion to suggest the page
+   settling rather than slamming in. */
+@keyframes chromeEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.headingAccent {
+  /* Override the default chromeEnter translate so the pulse animation
+     can own transform without fighting the entrance. */
+  animation:
+    chromeEnter 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+    accentPulse 3.2s ease-in-out infinite 380ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .outerHeading,
+  .headingAccent,
+  .outerProgress,
+  .outerBackBtn,
+  .outerTagStrip {
+    animation: none;
+  }
+}
 
 /* ============= Yes / No swipe hints (= inside the glass canvas) =============
    Sit on the glass pane itself (= absolute relative to .canvas), not the
@@ -96,8 +164,8 @@
 }
 .swipeHint:hover { filter: brightness(1.30); transform: translateY(-50%) scale(1.06); }
 .swipeHint:active { filter: brightness(0.85); }
-.noHint  { left: 24px;  color: #ff8c8c; }
-.yesHint { right: 24px; color: #6bcf7f; }
+.noHint  { left: 24px;  color: rgba(255, 255, 255, 0.92); }
+.yesHint { right: 24px; color: rgba(255, 255, 255, 0.92); }
 .noHint:hover  { transform: translateY(-50%) translateX(-4px) scale(1.06); }
 .yesHint:hover { transform: translateY(-50%) translateX(4px)  scale(1.06); }
 .swipeArrow   { font-size: 28px; line-height: 1; }
@@ -130,7 +198,7 @@
    inside `.canvas`'s own stacking context. */
 .canvas {
   position: fixed;
-  top: 112px;
+  top: 148px;
   right: 112px;
   bottom: 112px;
   left: 112px;
@@ -376,11 +444,6 @@
   gap: 12px;
   padding: 6px 4px;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-}
-.tagManagementDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
 }
 .tagManagementName {
   font-size: 13px;

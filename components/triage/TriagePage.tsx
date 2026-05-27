@@ -1,10 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useBoardData } from '@/lib/storage/use-board-data'
 import { useTags } from '@/lib/storage/use-tags'
-import type { TagRecord } from '@/lib/storage/indexeddb'
 import { t } from '@/lib/i18n/t'
 import { TriageCard } from './TriageCard'
 import { TopTagStrip, useTagPickerKeys } from './TagPicker'
@@ -28,11 +27,22 @@ export function TriagePage(): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
   const mode = parseMode(searchParams.get('mode'))
-  const { items, persistTags, loading, reload: reloadBookmarks } = useBoardData()
-  const { tags, create, remove: removeTag } = useTags()
+  const { items, persistTags, loading } = useBoardData()
+  const { tags, create } = useTags()
 
   const untaggedItems = useMemo(() => items.filter((it) => !it.isDeleted && it.tags.length === 0), [items])
   const allItems = useMemo(() => items.filter((it) => !it.isDeleted), [items])
+
+  // No mode in the URL = come straight from the board. Redirect into the
+  // appropriate triage mode: untagged backlog if there is one, otherwise
+  // fall through to "all" so the user can revisit existing tags on every
+  // card. The replace (not push) keeps the back button sensible.
+  useEffect(() => {
+    if (mode !== null) return
+    if (loading) return
+    const target = untaggedItems.length === 0 ? 'all' : 'untagged'
+    router.replace(`/triage?mode=${target}`)
+  }, [mode, loading, untaggedItems.length, router])
 
   const queue = useMemo(() => {
     if (mode === 'untagged') return untaggedItems
@@ -40,8 +50,17 @@ export function TriagePage(): ReactElement {
     if (mode && typeof mode === 'object') {
       return items.filter((it) => !it.isDeleted && it.tags.includes(mode.tagId))
     }
-    return [] // no mode = entry picker
+    return []
   }, [mode, untaggedItems, allItems, items])
+
+  // Review mode = the user is editing existing tag assignments (= 'all'
+  // or a single 'tag:X' filter), so pre-arm the chips with the current
+  // card's existing tags every time the cursor moves. The user can then
+  // remove / add chips and a Yes swipe stores the armed set as the new
+  // tag list. In 'untagged' mode this would defeat the rapid-fire combo
+  // feature (= keep your armed combo across cards while filling an
+  // empty backlog), so we skip the sync there.
+  const isReviewMode = mode === 'all' || (typeof mode === 'object' && mode !== null)
 
   const [index, setIndex] = useState(0)
   const [lastAction, setLastAction] = useState<{ bookmarkId: string; prev: readonly string[] } | null>(null)
@@ -60,6 +79,21 @@ export function TriagePage(): ReactElement {
      */
   const incoming = (exitDecision && queue[index + 1]) ? queue[index + 1] : null
   const incomingDirection: 'from-right' | 'from-left' = exitDecision === 'yes' ? 'from-left' : 'from-right'
+
+  // Pre-arm the chip strip with the current card's existing tags whenever
+  // the cursor moves into review mode (= 'all' or single 'tag:X'). The
+  // user can then toggle chips off (= remove a tag) or on (= add a tag),
+  // and a Yes swipe stores the armed set verbatim. Skipped in 'untagged'
+  // mode so the rapid-fire combo workflow keeps the armed set across
+  // cards (= session 79 design).
+  const currentBookmarkId = current?.bookmarkId
+  const currentTagsKey = current?.tags.join(',') ?? ''
+  useEffect(() => {
+    if (!isReviewMode) return
+    if (!currentBookmarkId) return
+    setArmedTagIds(new Set(current?.tags ?? []))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentBookmarkId, currentTagsKey, isReviewMode])
 
   const toggleArmed = useCallback((tagId: string): void => {
     setArmedTagIds((prev) => {
@@ -80,24 +114,27 @@ export function TriagePage(): ReactElement {
    *  undo their most recent tag application even after a few skips. */
   const handleYes = useCallback((): void => {
     if (!current || exitDecision) return
-    const willApplyTags = armedTagIds.size > 0
-    if (willApplyTags) {
+    // armed is now the SOURCE OF TRUTH for the card's new tag list. In
+    // review mode the strip starts pre-armed with current.tags, so this
+    // semantic lets the user *remove* a tag by un-arming the chip. In
+    // 'untagged' mode current.tags is empty, so armed-only is also union
+    // (= no behavior change for the rapid-fire combo workflow).
+    const tagsChanged =
+      armedTagIds.size !== current.tags.length ||
+      current.tags.some(t => !armedTagIds.has(t))
+    if (tagsChanged) {
       setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
     }
     setExitDecision('yes')
-    const composed: string[] = []
-    const seen = new Set<string>()
-    const push = (id: string): void => { if (!seen.has(id)) { seen.add(id); composed.push(id) } }
-    for (const id of armedTagIds) push(id)
-    for (const id of current.tags) push(id)
+    const composed: string[] = Array.from(armedTagIds)
     const bookmarkId = current.bookmarkId
     setTimeout((): void => {
       void persistTags(bookmarkId, composed).finally((): void => {
         setExitDecision(null)
-        // In `untagged` mode, applied tags auto-remove the card from the
-        // queue (= queue shrinks), so we don't advance. In every other
-        // case the queue length is stable, so we must advance the index.
-        const queueShrinks = mode === 'untagged' && willApplyTags
+        // In `untagged` mode, applying any tag auto-removes the card from
+        // the queue (= queue shrinks), so we don't advance. In every
+        // other case the queue length is stable, so we must advance.
+        const queueShrinks = mode === 'untagged' && armedTagIds.size > 0
         if (!queueShrinks) setIndex((i) => i + 1)
       })
     }, SWIPE_ANIM_MS)
@@ -203,21 +240,14 @@ export function TriagePage(): ReactElement {
     )
   }
 
-  // Entry picker
+  // mode === null is a transient state — the useEffect above will replace
+  // the URL on the next tick. Render a loading placeholder so we don't
+  // flash blank canvas during the redirect.
   if (!mode) {
     return (
-      <EntryPicker
-        onPickUntagged={(): void => router.replace('/triage?mode=untagged')}
-        onPickAll={(): void => router.replace('/triage?mode=all')}
-        untaggedCount={untaggedItems.length}
-        allCount={allItems.length}
-        onCancel={exit}
-        tagsForManagement={tags}
-        onRemoveTag={async (id: string): Promise<void> => {
-          await removeTag(id)
-          await reloadBookmarks()
-        }}
-      />
+      <div className={styles.simpleRoot}>
+        <div className={styles.main}><div>Loading…</div></div>
+      </div>
     )
   }
 
@@ -238,12 +268,28 @@ export function TriagePage(): ReactElement {
     )
   }
 
+  // Zero-pad to 2 digits so the chrome reads as the same "data plate"
+  // language as the FilterPill's 3-digit count (= "AllMarks · 042" etc.).
+  // 100+ items naturally overflows the padding, which is fine.
+  const pad2 = (n: number): string => String(n).padStart(2, '0')
   const progressText = t('triage.progress')
-    .replace('{current}', String(index + 1))
-    .replace('{total}', String(total))
+    .replace('{current}', pad2(index + 1))
+    .replace('{total}', pad2(total))
+
+  // Click outside the glass / chrome (= the bare black margin) closes the
+  // page, mirroring the ESC button. Buttons + chip strip stop the event
+  // at their own elements so e.target !== currentTarget there; the heading
+  // + progress are pointer-events:none so clicks fall through to root.
+  const handleRootClick = (e: ReactMouseEvent<HTMLDivElement>): void => {
+    if (e.target === e.currentTarget) exit()
+  }
 
   return (
-    <div className={styles.root} data-testid="triage-page">
+    <div
+      className={styles.root}
+      data-testid="triage-page"
+      onClick={handleRootClick}
+    >
       <AmbientBackdrop item={current} exitDecision={exitDecision} />
       {incoming && (
         <AmbientBackdrop
@@ -254,7 +300,12 @@ export function TriagePage(): ReactElement {
         />
       )}
 
-      {/* Outer chrome: progress (top-left) + tag strip (top-center) + ESC (top-right). */}
+      {/* Outer chrome — editorial 2-row layout (session 81):
+            Row 1: "TAG THIS." headline (left)  +  progress + ESC (right)
+            Row 2: chip strip (full width, beneath the headline) */}
+      <h1 className={styles.outerHeading} aria-label="Tag this card">
+        TAG THIS<span className={styles.headingAccent}>.</span>
+      </h1>
       <span className={styles.outerProgress}>{progressText}</span>
       <div className={styles.outerTagStrip}>
         <TopTagStrip
@@ -335,85 +386,3 @@ export function TriagePage(): ReactElement {
   )
 }
 
-function EntryPicker({
-  onPickUntagged, onPickAll, untaggedCount, allCount, onCancel,
-  tagsForManagement, onRemoveTag,
-}: {
-  onPickUntagged: () => void
-  onPickAll: () => void
-  untaggedCount: number
-  allCount: number
-  onCancel: () => void
-  tagsForManagement: ReadonlyArray<TagRecord>
-  onRemoveTag: (id: string) => Promise<void>
-}): ReactElement {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
-      if (e.key === 'Enter' || e.key === '1') { e.preventDefault(); onPickUntagged() }
-      if (e.key === '2')                      { e.preventDefault(); onPickAll() }
-      if (e.key === 'Escape')                 { e.preventDefault(); onCancel() }
-    }
-    window.addEventListener('keydown', onKey)
-    return (): void => window.removeEventListener('keydown', onKey)
-  }, [onPickUntagged, onPickAll, onCancel])
-
-  const handleRemove = (tag: TagRecord): void => {
-    const ok = window.confirm(`タグ "${tag.name}" を削除しますか?\nこのタグが付いているカードからもタグが外れます (= カード自体は残ります)。`)
-    if (!ok) return
-    void onRemoveTag(tag.id)
-  }
-
-  return (
-    <div className={styles.simpleRoot}>
-      <div className={styles.header}>
-        <span>Choose what to triage</span>
-        <button type="button" className={styles.backBtn} onClick={onCancel}>Esc</button>
-      </div>
-      <div className={styles.main}>
-        <div className={styles.entryOptions}>
-          <button type="button" className={styles.entryOption} onClick={onPickUntagged} data-default="true">
-            <span className={styles.entryDigit}>1</span>
-            <span className={styles.entryBody}>
-              <span className={styles.entryLabel}>未分類のみ</span>
-              <span className={styles.entryCount}>{untaggedCount}</span>
-            </span>
-            <span className={styles.entryHint}>ENTER</span>
-          </button>
-          <button type="button" className={styles.entryOption} onClick={onPickAll}>
-            <span className={styles.entryDigit}>2</span>
-            <span className={styles.entryBody}>
-              <span className={styles.entryLabel}>全部</span>
-              <span className={styles.entryCount}>{allCount}</span>
-            </span>
-            <span className={styles.entryHint}> </span>
-          </button>
-        </div>
-        {tagsForManagement.length > 0 && (
-          <div className={styles.tagManagement}>
-            <div className={styles.tagManagementHeader}>Manage tags</div>
-            <div className={styles.tagManagementList}>
-              {tagsForManagement.map((tag) => (
-                <div key={tag.id} className={styles.tagManagementRow}>
-                  <span className={styles.tagManagementDot} style={{ background: tag.color }} />
-                  <span className={styles.tagManagementName}>{tag.name}</span>
-                  <button
-                    type="button"
-                    className={styles.tagManagementRemove}
-                    onClick={(): void => handleRemove(tag)}
-                    aria-label={`Delete tag ${tag.name}`}
-                    data-testid={`remove-tag-${tag.id}`}
-                  >
-                    × Delete
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-      <div className={styles.footer}>1 / 2 で選択 · ENTER = 未分類 · ESC = 戻る</div>
-    </div>
-  )
-}
