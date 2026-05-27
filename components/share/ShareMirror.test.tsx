@@ -156,14 +156,17 @@ describe('ShareMirror', () => {
     // Pre-error: img path is taken
     const img = container.querySelector('img[src*="pbs.twimg.com"]') as HTMLImageElement | null
     expect(img).toBeTruthy()
-    expect(container.querySelector(`[class*="cardTextBody"]`)).toBeNull()
+    expect(container.querySelector(`[class*="cardPlaceholder"]`)).toBeNull()
 
     // Simulate img.onerror (= CORS rejection)
     if (img) fireEvent.error(img)
 
-    // Post-error: text body path is taken
+    // Post-error: placeholder image + centered title path is taken
     expect(container.querySelector('img[src*="pbs.twimg.com"]')).toBeNull()
-    expect(container.querySelector(`[class*="cardTextBody"]`)).toBeTruthy()
+    const placeholderEl = container.querySelector(`[class*="cardPlaceholder"]`) as HTMLElement | null
+    expect(placeholderEl).toBeTruthy()
+    // Placeholder bg should be wired to one of the /placeholders/ assets.
+    expect(placeholderEl?.style.backgroundImage ?? '').toMatch(/\/placeholders\//)
   })
 
   it('applies scroll transform when scrollY changes', () => {

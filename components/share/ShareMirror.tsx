@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type MutableRefObject, type ReactElement, type RefObject } from 'react'
 import { BOARD_INNER, BOARD_TOP_PAD_PX, CANVAS_MARGIN_PX } from '@/lib/board/constants'
+import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import styles from './ShareMirror.module.css'
 
 export type MirrorItem = {
@@ -158,18 +159,28 @@ export function ShareMirror({
   )
 }
 
-/** Card content: picks img path vs text-body path per-card. img path falls
- *  back to text-body if the image fails to load (= CORS-blocked Twitter
- *  thumbnails are the dominant real-world case — pbs.twimg.com does not
- *  respond with Access-Control-Allow-Origin so `crossOrigin="anonymous"`
- *  requests fail to display). The OG capture pipeline already mirrors this
- *  fallback (capture-mirror.ts: hasImage=false → drawWrappedText), so the
- *  user sees the same WYSIWYG text-body in both preview and the final image. */
+/** Card content: picks img path vs placeholder path per-card. img path falls
+ *  back to a placeholder bg + centered title if the image fails to load
+ *  (= CORS-blocked Twitter thumbnails are the dominant real-world case —
+ *  pbs.twimg.com does not respond with Access-Control-Allow-Origin so
+ *  `crossOrigin="anonymous"` requests fail to display). Placeholder = one of
+ *  the abstract images in public/placeholders/ picked deterministically by
+ *  URL hash, with the card's title centred over a dark scrim that fades at
+ *  the bottom edge so long tweet bodies trail off gracefully. */
 function MirrorCardContent({ item }: { readonly item: MirrorItem }): ReactElement {
   const [imgFailed, setImgFailed] = useState<boolean>(false)
-  const showText = !item.thumbnailUrl || imgFailed
-  if (showText) {
-    return <div className={styles.cardTextBody}>{item.title}</div>
+  const showPlaceholder = !item.thumbnailUrl || imgFailed
+  if (showPlaceholder) {
+    const placeholderUrl = pickPlaceholderImage(item.url)
+    return (
+      <div
+        className={styles.cardPlaceholder}
+        style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})` } : undefined}
+      >
+        <div className={styles.cardPlaceholderScrim} aria-hidden="true" />
+        <div className={styles.cardPlaceholderTitle}>{item.title}</div>
+      </div>
+    )
   }
   return (
     <>
