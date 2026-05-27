@@ -17,9 +17,13 @@ type Props = {
   readonly getShareData: () => ShareDataV2
   /** Lazy accessor: returns the HTMLElement to snapshot (= board canvas wrap). */
   readonly getCanvasElement: () => HTMLElement | null
+  /** Total cards visible in current board view (= filteredItems.length).
+   *  When this exceeds 100 (= SHARE_LIMITS_V2.MAX_CARDS) the modal shows the
+   *  trim so the user knows only the first 100 are being shared. */
+  readonly totalBoardCount: number
 }
 
-export function SenderShareModal({ open, onClose, getShareData, getCanvasElement }: Props): ReactElement | null {
+export function SenderShareModal({ open, onClose, getShareData, getCanvasElement, totalBoardCount }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'loading' })
   const [copied, setCopied] = useState<boolean>(false)
 
@@ -43,9 +47,14 @@ export function SenderShareModal({ open, onClose, getShareData, getCanvasElement
       setState({ kind: 'loading' })
       try {
         const canvas = getCanvasElement()
-        const thumb = await captureViewportWebP(canvas, { width: 600, quality: 0.7 })
-        const thumbDataUrl = thumb ?? 'data:image/webp;base64,'
         const share = getShareData()
+        const cardCount = share.cards.length
+        const thumb = await captureViewportWebP(canvas, {
+          width: 1200,
+          quality: 0.88,
+          captionRight: `${cardCount} CARDS`,
+        })
+        const thumbDataUrl = thumb ?? 'data:image/webp;base64,'
         const result = await createShare({ share, thumb: thumbDataUrl })
         if (!result.ok) {
           setState({ kind: 'error', message: result.message })
@@ -84,7 +93,9 @@ export function SenderShareModal({ open, onClose, getShareData, getCanvasElement
           )}
         </div>
         <p className={styles.meta}>
-          {cardCount} CARDS
+          {totalBoardCount > cardCount
+            ? `SHARING ${cardCount} OF ${totalBoardCount} CARDS · NEWEST FIRST`
+            : `${cardCount} CARDS`}
         </p>
         <div className={styles.actions}>
           <div className={styles.urlRow}>

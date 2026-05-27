@@ -1747,6 +1747,7 @@ export function BoardRoot() {
         onClose={(): void => setShareModalOpen(false)}
         getShareData={buildShareData}
         getCanvasElement={getCanvasEl}
+        totalBoardCount={filteredItems.length}
       />
       {trashConfirmOpen && (
         <TrashConfirmDialog
