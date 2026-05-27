@@ -14,6 +14,7 @@ beforeEach(() => {
     disconnect(): void {}
   }
   ;(globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = MockResizeObserver
+  window.history.replaceState({}, '', '/s/k3p9xv')
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => ({
@@ -29,12 +30,12 @@ beforeEach(() => {
 
 describe('ReceiverLanding', () => {
   it('shows loading state initially', () => {
-    render(<ReceiverLanding shareId="k3p9xv" />)
+    render(<ReceiverLanding />)
     expect(screen.getByText(/LOADING/i)).toBeInTheDocument()
   })
 
   it('renders shared cards after fetch succeeds', async () => {
-    render(<ReceiverLanding shareId="k3p9xv" />)
+    render(<ReceiverLanding />)
     await waitFor(() => expect(screen.getByText('Card A')).toBeInTheDocument())
   })
 
@@ -43,12 +44,12 @@ describe('ReceiverLanding', () => {
       ok: false, status: 404,
       json: async () => ({ error: 'not_found', message: 'expired' }),
     } as Response)
-    render(<ReceiverLanding shareId="k3p9xv" />)
+    render(<ReceiverLanding />)
     await waitFor(() => expect(screen.getAllByText(/expired/i).length).toBeGreaterThan(0))
   })
 
   it('renders bulk import + triage CTAs after fetch', async () => {
-    render(<ReceiverLanding shareId="k3p9xv" />)
+    render(<ReceiverLanding />)
     await waitFor(() => expect(screen.getByText(/IMPORT ALL/i)).toBeInTheDocument())
     expect(screen.getByText(/PICK ONE BY ONE/i)).toBeInTheDocument()
   })

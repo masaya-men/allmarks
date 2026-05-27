@@ -15,6 +15,7 @@ beforeEach(async () => {
   for (const dbInfo of databases) {
     if (dbInfo.name) fakeIndexedDB.deleteDatabase(dbInfo.name)
   }
+  window.history.replaceState({}, '', '/s/k3p9xv/triage')
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => ({
@@ -33,12 +34,12 @@ beforeEach(async () => {
 
 describe('ReceiverTriage', () => {
   it('shows queue progress (= 1 OF N) after fetch', async () => {
-    render(<ReceiverTriage shareId="k3p9xv" />)
+    render(<ReceiverTriage />)
     await waitFor(() => expect(screen.getByText(/1 OF 2/i)).toBeInTheDocument())
   })
 
   it('shows YES + NO buttons', async () => {
-    render(<ReceiverTriage shareId="k3p9xv" />)
+    render(<ReceiverTriage />)
     await waitFor(() => expect(screen.getByText(/YES/i)).toBeInTheDocument())
     expect(screen.getByText(/NO/i)).toBeInTheDocument()
   })

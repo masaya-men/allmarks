@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { fetchShare } from '@/lib/share/api-client'
 import { sanitizeShareDataV2 } from '@/lib/share/validate-v2'
 import { findDuplicates, convertSenderTagsForReceiver } from '@/lib/share/import'
+import { extractShareIdFromPathname } from '@/lib/share/extract-share-id'
 import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { getAllTags, addTag } from '@/lib/storage/tags'
 import { useTags } from '@/lib/storage/use-tags'
@@ -18,19 +19,28 @@ type TriageState =
   | { readonly kind: 'empty' }
   | { readonly kind: 'error'; readonly message: string }
 
-type Props = { readonly shareId: string }
-
-export function ReceiverTriage({ shareId }: Props): ReactElement {
+export function ReceiverTriage(): ReactElement {
   const router = useRouter()
   const [state, setState] = useState<TriageState>({ kind: 'loading' })
+  const [shareId, setShareId] = useState<string | null>(null)
   const [index, setIndex] = useState(0)
   const [savedCount, setSavedCount] = useState(0)
   const [armedTagIds, setArmedTagIds] = useState<ReadonlySet<string>>(() => new Set())
   const [showSummary, setShowSummary] = useState<boolean>(false)
   const { tags: receiverTags } = useTags()
 
+  useEffect((): void => {
+    const extracted = extractShareIdFromPathname(window.location.pathname)
+    if (!extracted.ok) {
+      setState({ kind: 'error', message: 'invalid share URL' })
+      return
+    }
+    setShareId(extracted.id)
+  }, [])
+
   // Fetch share + filter duplicates
   useEffect((): void => {
+    if (!shareId) return
     void (async (): Promise<void> => {
       const result = await fetchShare(shareId)
       if (!result.ok) {

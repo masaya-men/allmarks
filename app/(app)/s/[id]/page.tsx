@@ -28,6 +28,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SharePage({ params }: Props): Promise<ReactElement> {
-  const { id } = await params
-  return <ReceiverLanding shareId={id} />
+  await params
+  return <ReceiverLanding />
 }

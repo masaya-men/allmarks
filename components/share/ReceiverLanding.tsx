@@ -7,6 +7,7 @@ import type { ShareDataV2 } from '@/lib/share/types-v2'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { findDuplicates } from '@/lib/share/import'
+import { extractShareIdFromPathname } from '@/lib/share/extract-share-id'
 import { detectUrlType } from '@/lib/utils/url'
 import { BulkImportToast } from './BulkImportToast'
 import styles from './ReceiverLanding.module.css'
@@ -16,10 +17,9 @@ type LandingState =
   | { readonly kind: 'ready'; readonly data: ShareDataV2 }
   | { readonly kind: 'error'; readonly code: 'not_found' | 'expired' | 'invalid' | 'server'; readonly message: string }
 
-type Props = { readonly shareId: string }
-
-export function ReceiverLanding({ shareId }: Props): ReactElement {
+export function ReceiverLanding(): ReactElement {
   const [state, setState] = useState<LandingState>({ kind: 'loading' })
+  const [shareId, setShareId] = useState<string | null>(null)
   const router = useRouter()
   const containerRef = useRef<HTMLElement>(null)
   const [containerWidth, setContainerWidth] = useState<number>(1200)
@@ -83,6 +83,16 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
   }, [state])
 
   useEffect((): void => {
+    const extracted = extractShareIdFromPathname(window.location.pathname)
+    if (!extracted.ok) {
+      setState({ kind: 'error', code: 'invalid', message: 'invalid share URL' })
+      return
+    }
+    setShareId(extracted.id)
+  }, [])
+
+  useEffect((): void => {
+    if (!shareId) return
     void (async (): Promise<void> => {
       const result = await fetchShare(shareId)
       if (!result.ok) {
@@ -214,7 +224,7 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
         <button
           type="button"
           className={styles.ctaSecondary}
-          onClick={(): void => router.push(`/s/${shareId}/triage`)}
+          onClick={(): void => { if (shareId) router.push(`/s/${shareId}/triage`) }}
           data-testid="triage-btn"
         >PICK ONE BY ONE</button>
       </footer>
