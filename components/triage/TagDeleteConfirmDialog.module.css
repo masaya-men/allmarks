@@ -1,0 +1,159 @@
+/* Hold-to-delete confirmation for a single tag. Same AllMarks tonality
+   as TrashConfirmDialog (= editorial black, monospace chrome, 2-second
+   red fill) so the gesture vocabulary is consistent across the app.
+   The only additional element vs TrashConfirmDialog is `.tagName` —
+   the sans-serif display of the targeted tag name beneath the small
+   caps heading. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  animation: backdropFadeIn 160ms ease-out both;
+}
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.panel {
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  background: rgba(20, 20, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  padding: 28px 32px 24px;
+  animation: panelIn 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.heading {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 6px;
+}
+
+/* Display of the tag name, large + sans-serif so the user reads the
+   exact target at a glance — bigger than the heading and body. */
+.tagName {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 22px;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.96);
+  margin-bottom: 12px;
+  word-break: break-word;
+}
+
+.body {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 8px;
+}
+
+/* Reassurance line — explicitly tells the user the cascade is tag-only,
+   the bookmarks stay. Quieter than .body so it reads as a footnote
+   rather than a second equally-weighted statement. */
+.assure {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 12px;
+}
+.warn {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.78);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+}
+.cancelBtn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+.deleteBtn {
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1c;
+  border: 1px solid #dc4646;
+  color: #fff;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px 22px;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 168px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: box-shadow 120ms;
+}
+.deleteBtn:hover { box-shadow: 0 0 0 1px rgba(220, 70, 70, 0.50); }
+
+.deleteBtnFill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #dc4646 0%, #dc4646 70%, #a32020 100%);
+  transform-origin: left center;
+  transform: scaleX(var(--p, 0));
+  transition: transform 80ms linear;
+  pointer-events: none;
+}
+.deleteBtnFillReleased {
+  transition: transform 200ms ease-out;
+}
+
+.deleteBtnLabel {
+  position: relative;
+  z-index: 1;
+}
+
+.deleteBtn[data-holding="true"] .deleteBtnLabel::before {
+  content: "HOLD TO DELETE";
+}
+.deleteBtn:not([data-holding="true"]) .deleteBtnLabel::before {
+  content: "DELETE";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop, .panel { animation: none; }
+  .deleteBtnFill { transition: none; }
+}

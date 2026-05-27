@@ -1,7 +1,7 @@
-/* Session 28 Apple v3 chrome: stripped pill (no bg / border / radius) —
-   the label floats over the canvas with a thin paint-order stroke for
-   legibility against arbitrary card content. The dropdown menu retains
-   its own backdrop visual (it's a popover, not a chrome element). */
+/* Pill (= the chrome label "AllMarks · 042" sitting top-right) — unchanged
+   from session 28 Apple v3 spec: stripped of background / border, thin
+   stroke for legibility. Only the dropdown was rebuilt in session 82 to
+   match TUNE / TagContextMenu editorial tonality. */
 .pill {
   background: transparent;
   border: 0;
@@ -36,17 +36,12 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
-  /* text-transform 削除: 'AllMarks' のブランド mixed-case を保ち、
-     INBOX / ARCHIVE / DEAD LINKS 等は label 関数側で既に uppercase。 */
-  /* monospace 固定: scramble で 1 文字置換時に proportional font だと文字
-     幅が変動して隣の · と count がガタつく → 固定幅で位置安定。 */
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-variant-numeric: tabular-nums;
   position: relative;
   display: inline-block;
 }
 
-/* RGB ghost copies for glitch hover (= same pattern as ChromeButton). */
 .label::before,
 .label::after {
   content: attr(data-glitch-text);
@@ -80,8 +75,6 @@
   }
 }
 
-/* Module-scoped keyframes (see ChromeButton.module.css for the same defs
-   and the reason — CSS Modules scopes animation-name references). */
 @keyframes glitch-shift-a {
   0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
   5%   { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 70% 0); }
@@ -104,8 +97,6 @@
   100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
 }
 
-/* Session 29: `·` is the lone structural separator between label and
-   count — kept dim so the bright label/count read as the data. */
 .separator {
   color: rgba(255, 255, 255, 0.5);
   margin: 0 6px;
@@ -153,39 +144,204 @@
   }
 }
 
-/* Dropdown menu retains its own visual envelope — it's a popover, not a
-   floating-chrome label, so legibility depends on a real backdrop. */
+/* ───────── Session 82 dropdown — editorial monospace ─────────
+   Right-anchored so the panel opens leftward from the pill (= the pill
+   sits near the right edge of the chrome row). Viewport-clamped via
+   `max-width`. Animation matches TagContextMenu (= 100ms fade + 4px
+   slide). Panel background, border, and corner radius mirror the
+   editorial dialogs / context menus elsewhere. */
 .menu {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
-  background: rgba(30, 30, 30, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 8px;
-  min-width: 200px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  right: 0;
+  background: rgba(8, 8, 10, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 0;
+  min-width: 240px;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: rgba(255, 255, 255, 0.92);
+  animation: menuIn 100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px; border-radius: 14px;
-  cursor: pointer; color: var(--text-body);
-  border: 0; background: transparent; width: 100%; text-align: left;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 9px 14px;
   font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 100ms, color 100ms;
 }
-.item:hover { background: rgba(255, 255, 255, 0.06); }
-.item.active { background: rgba(255, 255, 255, 0.12); color: var(--text-primary); }
-.deadItem { color: rgba(220, 100, 100, 0.9); }
-.deadItem:hover { background: rgba(220, 80, 80, 0.08); }
-.deadItem.active { background: rgba(220, 80, 80, 0.15); color: rgba(240, 120, 120, 1); }
+.item:hover,
+.item:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  outline: none;
+}
+.item:active {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.itemLabel {
+  flex: 1;
+  /* Long tag names wrap rather than truncate so the dropdown stays
+     useful with editorial naming (= "Long-Form Articles" etc). */
+  white-space: normal;
+  word-break: break-word;
+}
+.itemCount {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.40);
+  letter-spacing: 0.12em;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Active row (= currently selected single-shot filter or tag in the
+   current OR set). Green underline accent on the label + brighter
+   text so the active state reads at a glance without competing with
+   the editorial muted tonality. */
+.item.active {
+  color: #fff;
+  background: rgba(40, 241, 0, 0.06);
+}
+.item.active .itemLabel {
+  box-shadow: inset 0 -1px 0 #28F100;
+}
+.item.active .itemCount {
+  color: rgba(255, 255, 255, 0.70);
+}
+
+/* TRASH — muted rose. Distinct from DEAD LINKS' bright warning red so
+   the user reads "destructive but routine" vs "broken, needs care". */
+.item.trashItem {
+  color: rgba(220, 130, 130, 0.78);
+}
+.item.trashItem:hover {
+  background: rgba(220, 130, 130, 0.10);
+  color: rgba(240, 160, 160, 0.95);
+}
+.item.trashItem.active {
+  background: rgba(220, 130, 130, 0.14);
+  color: rgba(240, 160, 160, 1);
+}
+.item.trashItem.active .itemLabel {
+  box-shadow: inset 0 -1px 0 rgba(220, 130, 130, 0.78);
+}
+
+/* DEAD LINKS — bright warning red kept from the old design (still
+   reads as "your bookmark is broken, action needed"). */
+.item.deadItem {
+  color: rgba(220, 100, 100, 0.9);
+}
+.item.deadItem:hover {
+  background: rgba(220, 80, 80, 0.10);
+}
+.item.deadItem.active {
+  background: rgba(220, 80, 80, 0.16);
+  color: rgba(240, 120, 120, 1);
+}
+.item.deadItem.active .itemLabel {
+  box-shadow: inset 0 -1px 0 rgba(220, 100, 100, 0.85);
+}
+.item.deadItem .itemCount {
+  color: rgba(220, 100, 100, 0.85);
+}
 .deadDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(220, 100, 100, 0.85);
+  flex-shrink: 0;
+}
+
+/* Tag rows — editorial dot indicator on the left. Inactive = hollow
+   outline circle, active = filled green so the OR multi-select state
+   reads as a row of switched-on lights. */
+.tagItem {
+  /* Same baseline as .item; specialisation lives in .tagItemActive. */
+}
+.tagItemActive {
+  color: #fff;
+}
+.tagItemActive:hover {
+  background: rgba(40, 241, 0, 0.10);
+}
+.tagDot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(200, 60, 60, 0.85);
   flex-shrink: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: background 100ms, border-color 100ms, box-shadow 100ms;
 }
+.tagDot[data-active='true'] {
+  background: #28F100;
+  border-color: #28F100;
+  box-shadow: 0 0 6px rgba(40, 241, 0, 0.55);
+}
+
+/* Right-click context menu target — red wash + red text. Stays on top
+   of any active styling so the user sees which row the menu is acting
+   on regardless of selection state. */
+.item.contextActive {
+  background: rgba(255, 59, 48, 0.10);
+  color: #FF5A52;
+}
+.item.contextActive:hover {
+  background: rgba(255, 59, 48, 0.16);
+  color: #FF5A52;
+}
+.item.contextActive .itemLabel {
+  box-shadow: none;
+}
+
+/* TAGS section header — quiet small caps acting as a visual divider
+   between the exclusive filters above and the multi-select tag list
+   below. The "N OF M · OR" hint shows the user how many tags are
+   currently selected and reminds them the mode is OR, not AND. */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 6px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+.sectionHeaderHint {
+  color: rgba(40, 241, 0, 0.55);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu { animation: none; }
+  .item, .tagDot { transition: none; }
+}
+
 .wrap { position: relative; }

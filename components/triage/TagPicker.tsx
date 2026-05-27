@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, type ReactElement } from 'react'
+import { useEffect, type MouseEvent as ReactMouseEvent, type ReactElement } from 'react'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { NewMoodInput } from './NewMoodInput'
 import styles from './TagPicker.module.css'
@@ -42,25 +42,41 @@ export function useTagPickerKeys({
  *  matching the current card (= hashtag / domain / keyword). Rendered
  *  with a `chipSuggested` visual so the user sees "the system thinks
  *  these apply" at a glance, even before clicking. Independent of
- *  `armedTagIds` — a chip may be both suggested AND armed. */
+ *  `armedTagIds` — a chip may be both suggested AND armed.
+ *
+ *  onChipContextMenu (optional): right-click handler. Receives the
+ *  pointer position (= clientX/clientY) so the parent can mount a
+ *  context menu near the chip. When supplied, the chip suppresses
+ *  the native browser menu.
+ *
+ *  activeContextTagId (optional): id of the chip whose context menu
+ *  is currently open. Rendered with a red outline halo so the user
+ *  sees which chip the menu is acting on. */
 export function TopTagStrip({
-  tags, armedTagIds, suggestedTagIds, onToggle, onCreate,
+  tags, armedTagIds, suggestedTagIds, onToggle, onCreate, onChipContextMenu, activeContextTagId,
 }: {
   tags: ReadonlyArray<TagRecord>
   armedTagIds: ReadonlySet<string>
   suggestedTagIds?: ReadonlySet<string>
   onToggle: (tagId: string) => void
   onCreate: (name: string) => void
+  onChipContextMenu?: (
+    e: ReactMouseEvent<HTMLButtonElement>,
+    tagId: string,
+  ) => void
+  activeContextTagId?: string | null
 }): ReactElement {
   return (
     <div className={styles.tagStrip} data-testid="top-tag-strip">
       {tags.map((tag, i) => {
         const armed = armedTagIds.has(tag.id)
         const suggested = suggestedTagIds?.has(tag.id) ?? false
+        const contextActive = activeContextTagId === tag.id
         const cls = [
           styles.chip,
           armed && styles.chipArmed,
           suggested && !armed && styles.chipSuggested,
+          contextActive && styles.chipContextActive,
         ].filter(Boolean).join(' ')
         return (
           <button
@@ -68,7 +84,13 @@ export function TopTagStrip({
             type="button"
             className={cls}
             onClick={(): void => onToggle(tag.id)}
+            onContextMenu={(e): void => {
+              if (!onChipContextMenu) return
+              e.preventDefault()
+              onChipContextMenu(e, tag.id)
+            }}
             data-testid={`tag-chip-${tag.id}`}
+            data-tag-id={tag.id}
             aria-pressed={armed}
           >
             {i < 9 && <span className={styles.chipKey}>{i + 1}</span>}

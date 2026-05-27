@@ -30,13 +30,19 @@ export function boardFilterEquals(a: BoardFilter, b: BoardFilter): boolean {
 }
 
 /** Toggle a tag in/out of an existing tags-filter.
- *  - Non-tags filter → new tags filter with this 1 tag, AND mode.
+ *  - Non-tags filter → new tags filter with this 1 tag, OR mode.
  *  - tags filter not containing id → append id.
  *  - tags filter containing id → remove id; if 0 left, return ALL filter.
- *  Mode is preserved when toggling within an existing tags filter. */
+ *  Mode is preserved when toggling within an existing tags filter.
+ *
+ *  Session 82: changed default from AND → OR. Reasoning: the only paths
+ *  that produce a tags filter today (= the chrome dropdown's multi-select
+ *  + the per-card pill click) both express "show me bookmarks that have
+ *  any of these tags". AND was a holdover from the single-select era,
+ *  and stayed AND through the discriminated-union rewrite by accident. */
 export function toggleTagInFilter(current: BoardFilter, tagId: string): BoardFilter {
   if (!isTagsFilter(current)) {
-    return { kind: 'tags', tagIds: [tagId], mode: 'and' }
+    return { kind: 'tags', tagIds: [tagId], mode: 'or' }
   }
   if (current.tagIds.includes(tagId)) {
     const next = current.tagIds.filter((id) => id !== tagId)

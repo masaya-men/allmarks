@@ -8,6 +8,8 @@ import { t } from '@/lib/i18n/t'
 import { TriageCard } from './TriageCard'
 import { TopTagStrip, useTagPickerKeys } from './TagPicker'
 import { AmbientBackdrop, type SwipeDecision } from './AmbientBackdrop'
+import { TagContextMenu } from './TagContextMenu'
+import { TagDeleteConfirmDialog } from './TagDeleteConfirmDialog'
 import styles from './TriagePage.module.css'
 
 type TriageMode = 'untagged' | 'all' | { tagId: string }
@@ -27,8 +29,8 @@ export function TriagePage(): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
   const mode = parseMode(searchParams.get('mode'))
-  const { items, persistTags, loading } = useBoardData()
-  const { tags, create } = useTags()
+  const { items, deletedItems, persistTags, reload: reloadBoardData, loading } = useBoardData()
+  const { tags, create, remove: removeTag } = useTags()
 
   const untaggedItems = useMemo(() => items.filter((it) => !it.isDeleted && it.tags.length === 0), [items])
   const allItems = useMemo(() => items.filter((it) => !it.isDeleted), [items])
@@ -66,6 +68,14 @@ export function TriagePage(): ReactElement {
   const [lastAction, setLastAction] = useState<{ bookmarkId: string; prev: readonly string[] } | null>(null)
   const [exitDecision, setExitDecision] = useState<SwipeDecision | null>(null)
   const [armedTagIds, setArmedTagIds] = useState<ReadonlySet<string>>(() => new Set())
+
+  /* Right-click / Shift+Delete context menu state. `tagId` is the chip
+     the menu acts on. `x`/`y` are viewport coordinates where the menu
+     will render. Null when the menu is closed. */
+  const [contextMenu, setContextMenu] = useState<{ tagId: string; x: number; y: number } | null>(null)
+  /* Hold-to-delete confirm state for that menu's DELETE row. Null when
+     the dialog is closed. */
+  const [deleteConfirm, setDeleteConfirm] = useState<{ tagId: string } | null>(null)
 
   const current = queue[index] ?? null
   const total = queue.length
@@ -109,9 +119,9 @@ export function TriagePage(): ReactElement {
    *  Yes always advances; if nothing armed, it's equivalent to No (a skip),
    *  which is clearer than swallowing the key silently.
    *
-   *  Only Yes-with-tags sets lastAction (= undo target). No swipes and
-   *  no-tag Yes swipes leave lastAction untouched so the user can still
-   *  undo their most recent tag application even after a few skips. */
+   *  Session 82: lastAction is recorded on every swipe (Yes-with-tags,
+   *  Yes-without-tags, No) so Z always means "give me the previous card
+   *  back" — tags revert if they were changed, no-op if they weren't. */
   const handleYes = useCallback((): void => {
     if (!current || exitDecision) return
     // armed is now the SOURCE OF TRUTH for the card's new tag list. In
@@ -119,12 +129,7 @@ export function TriagePage(): ReactElement {
     // semantic lets the user *remove* a tag by un-arming the chip. In
     // 'untagged' mode current.tags is empty, so armed-only is also union
     // (= no behavior change for the rapid-fire combo workflow).
-    const tagsChanged =
-      armedTagIds.size !== current.tags.length ||
-      current.tags.some(t => !armedTagIds.has(t))
-    if (tagsChanged) {
-      setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
-    }
+    setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
     setExitDecision('yes')
     const composed: string[] = Array.from(armedTagIds)
     const bookmarkId = current.bookmarkId
@@ -141,10 +146,11 @@ export function TriagePage(): ReactElement {
   }, [current, exitDecision, armedTagIds, persistTags, mode])
 
   /** No: don't apply tags, just advance. Animation slides card left.
-   *  lastAction is preserved so Z can still undo the last Yes-with-tags
-   *  action across several No skips. */
+   *  Session 82: also records lastAction so Z can step back to this
+   *  card with no tag mutation (= "give me the previous card back"). */
   const handleNo = useCallback((): void => {
     if (!current || exitDecision) return
+    setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
     setExitDecision('no')
     setTimeout((): void => {
       setExitDecision(null)
@@ -156,17 +162,24 @@ export function TriagePage(): ReactElement {
    *  the updated items list. Consumed in the useEffect below. */
   const undoTargetRef = useRef<string | null>(null)
 
-  /** Undo: revert the most recent Yes-with-tags. Bails during the slide
-   *  animation (= exitDecision != null) because the pending setTimeout
-   *  in handleYes would race and re-apply the tags right after we revert.
-   *  Instead of blindly decrementing the index, we mark the bookmark id
-   *  and let the queue-watching effect re-locate it once IDB updates. */
+  /** Undo: step back to the previous card. Reverts tag mutation if there
+   *  was one; if the previous swipe was a plain No, persistTags with the
+   *  unchanged array is a no-op (idempotent in the IDB layer) and we just
+   *  reposition the cursor. Bails during the slide animation because the
+   *  pending setTimeout in handleYes/handleNo would race the index after
+   *  we revert. */
   const handleUndo = useCallback(async (): Promise<void> => {
     if (!lastAction || exitDecision) return
-    undoTargetRef.current = lastAction.bookmarkId
-    await persistTags(lastAction.bookmarkId, lastAction.prev)
+    const targetId = lastAction.bookmarkId
+    undoTargetRef.current = targetId
+    await persistTags(targetId, lastAction.prev)
     setLastAction(null)
-  }, [lastAction, exitDecision, persistTags])
+    /* When tags didn't actually change, the queue identity is stable
+       and the queue-watching useEffect below won't fire — so reposition
+       here directly. Idempotent with the effect-driven path. */
+    const idx = queue.findIndex((it) => it.bookmarkId === targetId)
+    if (idx >= 0) setIndex(idx)
+  }, [lastAction, exitDecision, persistTags, queue])
 
   /** After persistTags resolves and the items list / queue rebuilds,
    *  locate the undone bookmark in the new queue and jump the cursor
@@ -196,11 +209,78 @@ export function TriagePage(): ReactElement {
 
   const exit = useCallback((): void => { router.push('/board') }, [router])
 
+  /* Open the right-click context menu near the pointer for the given
+     chip. Caller is the TopTagStrip's onContextMenu handler. */
+  const openChipContextMenu = useCallback(
+    (e: ReactMouseEvent<HTMLButtonElement>, tagId: string): void => {
+      setContextMenu({ tagId, x: e.clientX, y: e.clientY })
+    },
+    [],
+  )
+
+  /* Bookmark-count lookup used by both the context menu header and
+     the confirm dialog body. Walks both active items and TRASH so the
+     number reflects what deleteTagCascade will actually detach
+     (= scrubs the tag id from every bookmark regardless of soft-delete
+     state). */
+  const tagBookmarkCount = useCallback(
+    (tagId: string): number => {
+      let n = 0
+      for (const it of items) if (it.tags.includes(tagId)) n++
+      for (const it of deletedItems) if (it.tags.includes(tagId)) n++
+      return n
+    },
+    [items, deletedItems],
+  )
+
+  /* Run the actual cascade: scrub the tag from every bookmark + drop
+     it from the tags store, then refresh the board state so items'
+     tags[] no longer reference the dead id. Also un-arm the chip in
+     case it was armed at delete time so the next Yes swipe doesn't
+     try to re-attach a phantom id. */
+  const handleConfirmTagDelete = useCallback(
+    async (tagId: string): Promise<void> => {
+      await removeTag(tagId)
+      await reloadBoardData()
+      setArmedTagIds((prev) => {
+        if (!prev.has(tagId)) return prev
+        const next = new Set(prev)
+        next.delete(tagId)
+        return next
+      })
+      setDeleteConfirm(null)
+    },
+    [removeTag, reloadBoardData],
+  )
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
-      if (e.key === 'Escape') { e.preventDefault(); exit(); return }
+
+      /* Shift+Delete on a focused tag chip opens the context menu near
+         the chip's right edge. Mirrors the right-click flow so users
+         on physical keyboards / accessibility tools have an equal
+         path to tag deletion. Looked at before Esc so the keys never
+         compete (Esc still closes any open menu via its own listener). */
+      if (e.key === 'Delete' && e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const tagId = active?.getAttribute('data-tag-id')
+        if (tagId) {
+          e.preventDefault()
+          const rect = active!.getBoundingClientRect()
+          setContextMenu({ tagId, x: rect.right, y: rect.bottom + 4 })
+          return
+        }
+      }
+
+      if (e.key === 'Escape') {
+        /* Let an open context menu / delete dialog absorb Esc before
+           the page-level exit fires, otherwise pressing Esc to close
+           the menu would also yank the user back to /board. */
+        if (contextMenu || deleteConfirm) return
+        e.preventDefault(); exit(); return
+      }
       if (!mode) return
       const lk = e.key.toLowerCase()
       if (e.key === 'ArrowRight' || lk === 'd') { e.preventDefault(); handleYes(); return }
@@ -208,7 +288,7 @@ export function TriagePage(): ReactElement {
     }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
-  }, [exit, handleYes, handleNo, mode])
+  }, [exit, handleYes, handleNo, mode, contextMenu, deleteConfirm])
 
   useTagPickerKeys({
     tags,
@@ -281,6 +361,12 @@ export function TriagePage(): ReactElement {
   // at their own elements so e.target !== currentTarget there; the heading
   // + progress are pointer-events:none so clicks fall through to root.
   const handleRootClick = (e: ReactMouseEvent<HTMLDivElement>): void => {
+    /* While a chip context menu or the delete-confirm dialog is open,
+       any background pointerdown is consumed by the menu/dialog's own
+       outside-click handler to close itself — the subsequent click on
+       the bare margin must NOT also fire `exit()` and yank the user
+       off the page. */
+    if (contextMenu || deleteConfirm) return
     if (e.target === e.currentTarget) exit()
   }
 
@@ -313,6 +399,8 @@ export function TriagePage(): ReactElement {
           armedTagIds={armedTagIds}
           onToggle={toggleArmed}
           onCreate={handleCreateTagAddArmed}
+          onChipContextMenu={openChipContextMenu}
+          activeContextTagId={contextMenu?.tagId ?? deleteConfirm?.tagId ?? null}
         />
       </div>
       <button type="button" className={styles.outerBackBtn} onClick={exit}>ESC</button>
@@ -382,6 +470,45 @@ export function TriagePage(): ReactElement {
 
         <div className={styles.canvasFooter}>{t('triage.hint')}</div>
       </div>
+
+      {/* Tag right-click / Shift+Delete context menu. Looks up the
+          targeted tag by id from the current tags list — guards
+          against the rare case where the tag was deleted in another
+          tab between menu open and the next render. */}
+      {contextMenu && (() => {
+        const targetTag = tags.find((tg) => tg.id === contextMenu.tagId)
+        if (!targetTag) return null
+        return (
+          <TagContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            tagName={targetTag.name}
+            bookmarkCount={tagBookmarkCount(targetTag.id)}
+            onDelete={(): void => {
+              setDeleteConfirm({ tagId: targetTag.id })
+              setContextMenu(null)
+            }}
+            onClose={(): void => setContextMenu(null)}
+          />
+        )
+      })()}
+
+      {/* Hold-to-delete confirm dialog for the targeted tag. Mirrors
+          the empty-trash dialog's 2-second hold mechanic so the
+          gesture vocabulary is consistent across destructive
+          actions. */}
+      {deleteConfirm && (() => {
+        const targetTag = tags.find((tg) => tg.id === deleteConfirm.tagId)
+        if (!targetTag) return null
+        return (
+          <TagDeleteConfirmDialog
+            tagName={targetTag.name}
+            bookmarkCount={tagBookmarkCount(targetTag.id)}
+            onConfirm={(): void => { void handleConfirmTagDelete(targetTag.id) }}
+            onCancel={(): void => setDeleteConfirm(null)}
+          />
+        )
+      })()}
     </div>
   )
 }

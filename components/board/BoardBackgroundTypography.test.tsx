@@ -29,15 +29,26 @@ describe('deriveBoardBgTypoText', () => {
     expect(deriveBoardBgTypoText(makeTagsFilter(['m1'], 'and'), tags)).toBe('Calm')
   })
 
-  it("returns 'name +N-1' for a multi-tag filter", () => {
+  it('joins all tag names with " · " for a multi-tag filter (session 82)', () => {
     const tags: TagRecord[] = [
       { id: 'm1', name: 'Music', color: '#0f0', order: 0, createdAt: 0 } as TagRecord,
       { id: 'm2', name: 'Art', color: '#f0f', order: 0, createdAt: 0 } as TagRecord,
+      { id: 'm3', name: 'Code', color: '#00f', order: 0, createdAt: 0 } as TagRecord,
     ]
-    expect(deriveBoardBgTypoText(makeTagsFilter(['m1', 'm2'], 'and'), tags)).toBe('Music +1')
+    expect(deriveBoardBgTypoText(makeTagsFilter(['m1', 'm2', 'm3'], 'or'), tags))
+      .toBe('Music · Art · Code')
   })
 
-  it('returns empty string when the first tag id no longer exists', () => {
+  it('skips unresolved ids and only joins the ones that exist (session 82)', () => {
+    const tags: TagRecord[] = [
+      { id: 'm1', name: 'Music', color: '#0f0', order: 0, createdAt: 0 } as TagRecord,
+    ]
+    /* If one of three ids is gone (= deleted in another tab) we still
+       render the two that remain rather than hiding the wordmark entirely. */
+    expect(deriveBoardBgTypoText(makeTagsFilter(['m1', 'gone'], 'or'), tags)).toBe('Music')
+  })
+
+  it('returns empty string when EVERY tag id is unresolved', () => {
     expect(deriveBoardBgTypoText(makeTagsFilter(['gone'], 'and'), [])).toBe('')
   })
 

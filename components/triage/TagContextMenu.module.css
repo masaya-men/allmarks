@@ -1,0 +1,104 @@
+/* Tag right-click context menu — AllMarks editorial tonality:
+   near-black panel, faint hairline border, monospace small caps. Sits
+   above the triage chrome (= z 1500) but below the empty-trash dialog
+   (= z 2000). 80ms fade + 4px slide-in matches the rest of the chrome
+   micro-animations. */
+
+.panel {
+  position: fixed;
+  z-index: 1500;
+  min-width: 200px;
+  background: rgba(8, 8, 10, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  padding: 6px 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: menuIn 100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: rgba(255, 255, 255, 0.92);
+}
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Header — small caps tag name + faint "N USES" badge so the user
+   knows exactly which tag is targeted (= no ambiguity when several
+   chips are close together). */
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 4px;
+}
+.headerName {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 500;
+  /* Truncate long names; the right-side count is still visible. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.headerCount {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+/* Row — single-line action. The DELETE row is the only menuitem for
+   now; its color is the AllMarks warning red (= #FF3B30). On hover
+   the row gets a subtle red wash so it reads as "you are about to
+   trigger a destructive action". */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #FF3B30;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 100ms, color 100ms;
+}
+.row:hover,
+.row:focus-visible {
+  background: rgba(255, 59, 48, 0.10);
+  color: #FF5A52;
+  outline: none;
+}
+.row:active {
+  background: rgba(255, 59, 48, 0.18);
+}
+
+.rowIcon {
+  font-size: 12px;
+  color: #FFB020; /* amber warning glyph */
+  line-height: 1;
+  width: 14px;
+  display: inline-flex;
+  justify-content: center;
+}
+.rowLabel {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel { animation: none; }
+  .row { transition: none; }
+}

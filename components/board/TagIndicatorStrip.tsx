@@ -11,6 +11,13 @@ interface Props {
   readonly isHovered: boolean
   /** Triggered by clicking a tag pill — toggles board-wide tag filter. */
   readonly onTagClick: (tagId: string) => void
+  /** Right-click on a pill. Receives viewport coords so the parent can
+   *  open a context menu near the pill. When supplied, the pill
+   *  suppresses the native browser menu. */
+  readonly onTagContextMenu?: (e: { clientX: number; clientY: number }, tagId: string) => void
+  /** Id of the tag whose right-click menu is currently open — rendered
+   *  with a red text-glow so the user can locate the targeted pill. */
+  readonly activeContextTagId?: string | null
   /** Maximum pills rendered before collapsing the tail into a "+N" badge. */
   readonly maxVisible?: number
 }
@@ -52,6 +59,8 @@ export function TagIndicatorStrip({
   tags,
   isHovered,
   onTagClick,
+  onTagContextMenu,
+  activeContextTagId,
   maxVisible = 3,
 }: Props): ReactElement | null {
   if (tags.length === 0) return null
@@ -77,22 +86,42 @@ export function TagIndicatorStrip({
         transition: 'opacity 120ms ease-out',
       }}
     >
-      {visible.map((tag) => (
-        <button
-          key={tag.id}
-          type="button"
-          data-testid={`tag-pill-${tag.id}`}
-          onPointerDown={stopDragSeed}
-          onMouseDown={(e): void => e.stopPropagation()}
-          onClick={(e): void => {
-            e.stopPropagation()
-            onTagClick(tag.id)
-          }}
-          style={TEXT_STYLE}
-        >
-          {tag.name}
-        </button>
-      ))}
+      {visible.map((tag) => {
+        const isContextActive = activeContextTagId === tag.id
+        const pillStyle: React.CSSProperties = isContextActive
+          ? {
+              ...TEXT_STYLE,
+              color: '#FF3B30',
+              textShadow:
+                '0 0 8px rgba(255, 59, 48, 0.65),' +
+                ' 0 0 18px rgba(255, 59, 48, 0.25),' +
+                ' 0 1px 2px rgba(0, 0, 0, 0.65)',
+            }
+          : TEXT_STYLE
+        return (
+          <button
+            key={tag.id}
+            type="button"
+            data-testid={`tag-pill-${tag.id}`}
+            data-tag-id={tag.id}
+            onPointerDown={stopDragSeed}
+            onMouseDown={(e): void => e.stopPropagation()}
+            onClick={(e): void => {
+              e.stopPropagation()
+              onTagClick(tag.id)
+            }}
+            onContextMenu={(e): void => {
+              if (!onTagContextMenu) return
+              e.preventDefault()
+              e.stopPropagation()
+              onTagContextMenu({ clientX: e.clientX, clientY: e.clientY }, tag.id)
+            }}
+            style={pillStyle}
+          >
+            {tag.name}
+          </button>
+        )
+      })}
       {hiddenCount > 0 && (
         <span
           data-testid="tag-pill-overflow"

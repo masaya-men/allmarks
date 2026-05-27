@@ -44,11 +44,16 @@ export function isBoardBgTypoVariant(value: string): value is BoardBgTypoVariant
 /**
  * Resolve the headline string shown by the background typography layer
  * for the current filter. Special filters get a fixed label; tag filters
- * resolve via the first tag id to the user-defined name (with `+N-1` suffix
- * for multi-tag filters, matching the FilterPill chrome).
+ * expand to every active tag name joined by ` · ` so the wordmark mirrors
+ * the multi-select state directly (session 82 — replaces the old
+ * `name +N-1` chrome-mirroring abbreviation).
  *
- * Returns an empty string when there is nothing to show (e.g. a tag id
- * the user has since deleted) — the host hides itself in that case.
+ * The host CSS allows wrapping to two lines once the font hits its floor
+ * (= clamp min), so a long sequence of tags soft-folds rather than
+ * shrinking past the legible threshold.
+ *
+ * Returns an empty string when no tags resolve (= every id was deleted)
+ * so the host hides itself.
  */
 export function deriveBoardBgTypoText(
   filter: BoardFilter,
@@ -61,10 +66,11 @@ export function deriveBoardBgTypoText(
     case 'dead': return 'Dead Links'
     case 'tags': {
       if (filter.tagIds.length === 0) return 'AllMarks'
-      const firstName = tags.find((t) => t.id === filter.tagIds[0])?.name
-      if (!firstName) return ''  // first tag id resolution failed → hide
-      if (filter.tagIds.length === 1) return firstName
-      return `${firstName} +${filter.tagIds.length - 1}`
+      const names = filter.tagIds
+        .map((id) => tags.find((t) => t.id === id)?.name)
+        .filter((n): n is string => !!n)
+      if (names.length === 0) return ''
+      return names.join(' · ')
     }
   }
 }

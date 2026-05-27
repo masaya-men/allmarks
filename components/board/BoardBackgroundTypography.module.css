@@ -24,11 +24,20 @@
 .text {
   font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 600;
-  font-size: clamp(72px, 17vw, 260px);
-  line-height: 1;
+  /* Session 82: floor raised to 96px. The fluid mid-term (~14vw) stays
+     near the old 17vw mid-range; the cap holds at 260px. Once the type
+     stops shrinking at 96px, additional tags soft-fold onto a second
+     line instead of dwindling past the legibility threshold. */
+  font-size: clamp(96px, 14vw, 260px);
+  line-height: 1.0;
   letter-spacing: -0.035em;
   text-align: center;
-  white-space: nowrap;
+  /* Allow wrap once the floor is hit. text-wrap: balance distributes
+     the lines evenly so two-line filter lists read as a balanced block
+     rather than a long head + orphan tail. */
+  white-space: normal;
+  text-wrap: balance;
+  max-width: 95vw;
   user-select: none;
   color: rgba(255, 255, 255, 0.95);
 }

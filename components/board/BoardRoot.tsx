@@ -39,6 +39,8 @@ import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
 import { TrashConfirmDialog } from './TrashConfirmDialog'
+import { TagContextMenu } from '@/components/triage/TagContextMenu'
+import { TagDeleteConfirmDialog } from '@/components/triage/TagDeleteConfirmDialog'
 import { useRouter } from 'next/navigation'
 import { TagButton } from './TagButton'
 import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/tags'
@@ -89,7 +91,7 @@ export function BoardRoot() {
     reload,
     persistLinkStatus,
   } = useBoardData()
-  const { tags, reload: reloadTags } = useTags()
+  const { tags, reload: reloadTags, remove: removeTag } = useTags()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
@@ -878,6 +880,50 @@ export function BoardRoot() {
   // pointer hold on its DELETE button before the actual purge fires.
   // No-op when the trash is already empty.
   const [trashConfirmOpen, setTrashConfirmOpen] = useState(false)
+
+  /* Right-click context menu for tag deletion. Open targets either the
+     FilterPill dropdown's tag rows or the per-card TagIndicatorStrip
+     pills — both call openTagContextMenu with viewport coords. The
+     DELETE row hands off to tagDeleteConfirm, mirroring the same
+     hold-to-delete dialog used in /triage so the gesture vocabulary
+     is identical across the app. */
+  const [tagContextMenu, setTagContextMenu] = useState<{ tagId: string; x: number; y: number } | null>(null)
+  const [tagDeleteConfirm, setTagDeleteConfirm] = useState<{ tagId: string } | null>(null)
+
+  const openTagContextMenu = useCallback((e: { clientX: number; clientY: number }, tagId: string): void => {
+    setTagContextMenu({ tagId, x: e.clientX, y: e.clientY })
+  }, [])
+
+  /* Bookmark-count lookup for the menu header + dialog body. Counts
+     across both active items and TRASH so the number reflects the
+     full scope of deleteTagCascade (= scrubs the id regardless of
+     isDeleted state). */
+  const tagBookmarkCount = useCallback(
+    (tagId: string): number => {
+      let n = 0
+      for (const it of items) if (it.tags.includes(tagId)) n++
+      for (const it of deletedItems) if (it.tags.includes(tagId)) n++
+      return n
+    },
+    [items, deletedItems],
+  )
+
+  /* Run the cascade: scrub the tag from every bookmark + drop the tag
+     record itself, then reload the board state. If the deleted tag is
+     part of the active filter, snap back to ALL — keeping a filter
+     pinned to a deleted id would render an empty board with no way to
+     recover other than a manual dropdown selection. */
+  const handleConfirmTagDelete = useCallback(
+    async (tagId: string): Promise<void> => {
+      await removeTag(tagId)
+      await reload()
+      if (isTagsFilter(activeFilter) && activeFilter.tagIds.includes(tagId)) {
+        setActiveFilter(BOARD_FILTER_ALL)
+      }
+      setTagDeleteConfirm(null)
+    },
+    [removeTag, reload, activeFilter],
+  )
   const handleEmptyTrashRequest = useCallback((): void => {
     if (deletedItems.length === 0) return
     setTrashConfirmOpen(true)
@@ -1488,6 +1534,8 @@ export function BoardRoot() {
           tags={tags}
           counts={sidebarCounts}
           tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
+          onTagContextMenu={openTagContextMenu}
+          activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
         />
       </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
@@ -1633,6 +1681,8 @@ export function BoardRoot() {
                   if (sourceBookmarkId) lastClickedSourceRef.current = sourceBookmarkId
                   handleFilterChange(toggleTagInFilter(activeFilter, tagId))
                 }}
+                onTagContextMenu={openTagContextMenu}
+                activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
               />
@@ -1722,6 +1772,39 @@ export function BoardRoot() {
           onCancel={(): void => setTrashConfirmOpen(false)}
         />
       )}
+      {/* Tag right-click context menu (board side). Open from FilterPill
+          dropdown rows or per-card TagIndicatorStrip pills. Targeted tag
+          is looked up live so the menu vanishes if the tag is removed
+          from another tab while open. */}
+      {tagContextMenu && (() => {
+        const targetTag = tags.find((tg) => tg.id === tagContextMenu.tagId)
+        if (!targetTag) return null
+        return (
+          <TagContextMenu
+            x={tagContextMenu.x}
+            y={tagContextMenu.y}
+            tagName={targetTag.name}
+            bookmarkCount={tagBookmarkCount(targetTag.id)}
+            onDelete={(): void => {
+              setTagDeleteConfirm({ tagId: targetTag.id })
+              setTagContextMenu(null)
+            }}
+            onClose={(): void => setTagContextMenu(null)}
+          />
+        )
+      })()}
+      {tagDeleteConfirm && (() => {
+        const targetTag = tags.find((tg) => tg.id === tagDeleteConfirm.tagId)
+        if (!targetTag) return null
+        return (
+          <TagDeleteConfirmDialog
+            tagName={targetTag.name}
+            bookmarkCount={tagBookmarkCount(targetTag.id)}
+            onConfirm={(): void => { void handleConfirmTagDelete(targetTag.id) }}
+            onCancel={(): void => setTagDeleteConfirm(null)}
+          />
+        )
+      })()}
       <PipPortal pipWindow={pip.window}>
         <PipCompanion
           onClose={() => pip.close()}

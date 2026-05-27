@@ -37,11 +37,11 @@ describe('board-filter-helpers', () => {
     expect(getActiveTagIds(makeTagsFilter(['x', 'y'], 'and'))).toEqual(['x', 'y'])
   })
 
-  it('toggleTagInFilter promotes non-tags filter into single-tag AND', () => {
+  it('toggleTagInFilter promotes non-tags filter into single-tag OR (session 82 default)', () => {
     expect(toggleTagInFilter(BOARD_FILTER_ALL, 'a'))
-      .toEqual({ kind: 'tags', tagIds: ['a'], mode: 'and' })
+      .toEqual({ kind: 'tags', tagIds: ['a'], mode: 'or' })
     expect(toggleTagInFilter(BOARD_FILTER_INBOX, 'a'))
-      .toEqual({ kind: 'tags', tagIds: ['a'], mode: 'and' })
+      .toEqual({ kind: 'tags', tagIds: ['a'], mode: 'or' })
   })
 
   it('toggleTagInFilter appends a new tag id (preserves mode)', () => {

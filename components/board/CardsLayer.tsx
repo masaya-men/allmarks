@@ -285,6 +285,12 @@ type CardsLayerProps = {
    *  identifies which card the click originated from, used by BoardRoot to
    *  restore the scroll position on filter clear (= source-aware navigation). */
   readonly onTagFilterToggle?: (tagId: string, sourceBookmarkId?: string) => void
+  /** Right-click on a per-card tag pill. Forwarded to TagIndicatorStrip
+   *  so the parent can open a context menu near the pointer. */
+  readonly onTagContextMenu?: (e: { clientX: number; clientY: number }, tagId: string) => void
+  /** Id of the tag currently targeted by a right-click menu — pills
+   *  matching this id render with a red text-glow. */
+  readonly activeContextTagId?: string | null
   /** True during an active scroll session — CardSlideshow defers new tweet-
    *  video frame extractions when set, to keep the canvas smooth. */
   readonly isScrolling?: boolean
@@ -329,6 +335,8 @@ export function CardsLayer({
   onTagToggle,
   onTagCreate,
   onTagFilterToggle,
+  onTagContextMenu,
+  activeContextTagId,
   isScrolling = false,
   entryAnimCycle = 0,
 }: CardsLayerProps): ReactNode {
@@ -1085,6 +1093,8 @@ export function CardsLayer({
                   .filter((t): t is TagRecord => t !== undefined)}
                 isHovered={hoverActive}
                 onTagClick={(tagId): void => onTagFilterToggle?.(tagId, it.bookmarkId)}
+                onTagContextMenu={onTagContextMenu}
+                activeContextTagId={activeContextTagId}
               />
             )}
             {/* + TAG affordance — top-left corner, mirrors the visual language
