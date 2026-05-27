@@ -42,6 +42,7 @@
 .canvas {
   position: relative;
   width: 100%;
+  z-index: 1;
 }
 
 .card {
@@ -263,4 +264,24 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.bgTypo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 800;
+  font-size: clamp(96px, 14vw, 260px);
+  color: rgba(255, 255, 255, 0.024);
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  pointer-events: none;
+  z-index: 0;
+  text-wrap: balance;
+  max-width: 95vw;
+  text-align: center;
+  user-select: none;
 }

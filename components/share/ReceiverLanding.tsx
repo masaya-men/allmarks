@@ -162,6 +162,11 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
         )}
       </header>
       <main className={styles.boardArea} ref={containerRef}>
+        {state.data.filter && state.data.tags && (
+          <div className={styles.bgTypo} aria-hidden>
+            {state.data.filter.tagIds.map((id) => state.data.tags?.[id]?.n ?? '').filter(Boolean).join(' · ').toUpperCase()}
+          </div>
+        )}
         <div className={styles.canvas} style={{ height: layout?.totalHeight ?? 0 }}>
           {state.data.cards.map((c, idx) => {
             const pos = layout?.positions[c.u]
