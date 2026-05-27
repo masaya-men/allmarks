@@ -1746,8 +1746,16 @@ export function BoardRoot() {
         open={shareModalOpen}
         onClose={(): void => setShareModalOpen(false)}
         getShareData={buildShareData}
-        getCanvasElement={getCanvasEl}
         totalBoardCount={filteredItems.length}
+        scrollY={viewport.y}
+        contentHeight={contentBounds.height}
+        viewportHeight={viewport.h}
+        activeTagNames={isTagsFilter(activeFilter)
+          ? activeFilter.tagIds.flatMap((id): string[] => {
+              const tag = tags.find((t) => t.id === id)
+              return tag ? [tag.name] : []
+            })
+          : []}
       />
       {trashConfirmOpen && (
         <TrashConfirmDialog
