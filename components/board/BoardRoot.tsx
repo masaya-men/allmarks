@@ -1769,7 +1769,7 @@ export function BoardRoot() {
           w: p.w,
           h: p.h,
         }))}
-        bgViewportWidth={viewport.w}
+        bgViewportWidth={effectiveLayoutWidth}
       />
       {trashConfirmOpen && (
         <TrashConfirmDialog

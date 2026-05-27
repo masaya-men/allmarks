@@ -126,16 +126,20 @@ export function ShareMirror({
               style={{ left: pos.x, top: pos.y, width: pos.w, height: pos.h }}
             >
               {item.thumbnailUrl ? (
-                <img
-                  src={item.thumbnailUrl}
-                  alt=""
-                  className={styles.cardThumb}
-                  crossOrigin="anonymous"
-                  loading="eager"
-                  draggable={false}
-                />
-              ) : null}
-              <div className={styles.cardTitle}>{item.title}</div>
+                <>
+                  <img
+                    src={item.thumbnailUrl}
+                    alt=""
+                    className={styles.cardThumb}
+                    crossOrigin="anonymous"
+                    loading="eager"
+                    draggable={false}
+                  />
+                  <div className={styles.cardTitle}>{item.title}</div>
+                </>
+              ) : (
+                <div className={styles.cardTextBody}>{item.title}</div>
+              )}
             </div>
           )
         })}

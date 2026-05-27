@@ -95,22 +95,36 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     ctx.fillRect(cx, cy, cw, ch)
 
     // サムネ画像が取れれば drawImage
+    let hasImage = false
     if (item.thumbnailUrl) {
       try {
         const img = await loadCrossOriginImage(item.thumbnailUrl)
-        if (img) ctx.drawImage(img, cx, cy, cw, ch)
+        if (img) {
+          ctx.drawImage(img, cx, cy, cw, ch)
+          hasImage = true
+        }
       } catch {
         // 失敗時はベース塗りそのまま (= 上の灰色)
       }
     }
 
-    // タイトル text を 1〜2 行 (= card type 別に色分けはしない、 落ち着いた白)
+    // タイトル text: サムネあり → 小さく下端に、 サムネなし → 大きくカード全体に
     ctx.fillStyle = TEXT_MAIN
     ctx.textBaseline = 'top'
     ctx.textAlign = 'left'
-    const titleSize = Math.max(9, Math.round(ch * 0.09))
-    ctx.font = `500 ${titleSize}px "Geist Mono", ui-monospace, monospace`
-    drawClippedText(ctx, item.title, cx + 6, cy + ch - titleSize - 6, cw - 12)
+    if (hasImage) {
+      // 画像あり: 小さいタイトルを下端に
+      const titleSize = Math.max(9, Math.round(ch * 0.09))
+      ctx.font = `500 ${titleSize}px "Geist Mono", ui-monospace, monospace`
+      drawClippedText(ctx, item.title, cx + 6, cy + ch - titleSize - 6, cw - 12)
+    } else {
+      // 画像なし: 大きいタイトルをカード全体に
+      const titleSize = Math.max(10, Math.round(ch * 0.12))
+      ctx.font = `500 ${titleSize}px "Geist Mono", ui-monospace, monospace`
+      const lineHeight = titleSize * 1.3
+      const maxLines = Math.floor((ch - 16) / lineHeight)
+      drawWrappedText(ctx, item.title, cx + 8, cy + 8, cw - 16, lineHeight, Math.max(1, maxLines))
+    }
   }
 }
 
@@ -176,6 +190,37 @@ function drawALogo(ctx: CanvasRenderingContext2D, x: number, y: number, size: nu
   ctx.lineTo(size * 0.9, size * 0.62)
   ctx.stroke()
   ctx.restore()
+}
+
+function drawWrappedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines: number,
+): void {
+  const words = text.split(/\s+/)
+  let line = ''
+  let currentY = y
+  let lineCount = 0
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line === '' ? words[i] : `${line} ${words[i]}`
+    if (ctx.measureText(testLine).width > maxWidth && line !== '') {
+      ctx.fillText(line, x, currentY)
+      lineCount++
+      if (lineCount >= maxLines) return
+      line = words[i] ?? ''
+      currentY += lineHeight
+    } else {
+      line = testLine
+    }
+  }
+  if (line !== '' && lineCount < maxLines) {
+    ctx.fillText(line, x, currentY)
+  }
 }
 
 function drawClippedText(
