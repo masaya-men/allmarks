@@ -1,83 +1,72 @@
-# 次セッションのゴール (= セッション 86) — シェアの「サムネ + モーダル UX」 再設計
+# 次セッションのゴール (= セッション 87) — allmarks.app ドメイン確認 + 本番動作確認フォローアップ + 残 polish
 
 ## 今のゴール (1 行)
 
-**session 85 でシェア機能の本番 ship 完了 (= URL 生成 / 受信ページ / インタラクティブ 404 全部動く)、 ただしサムネが AllMarks ロゴだけのプレースホルダ + モーダル UI が薄い状態。 次セッションで業界標準 (= サーバーサイド OG 生成 + 縮小ミラー preview) に作り直し。**
+**session 86 でシェアモーダル UX 再設計を本番 ship 完了 (= ミラー + 同期スクロール + Canvas キャプチャ全部動く)、 次は allmarks.app ドメイン取得確認 + 本番ハードリロード後の user 体験フィードバック取りまとめ + minor 残 polish の片付け。**
 
 ## 開始時の動き (= Claude の最初の発言)
 
 1. **このファイル** ([docs/CURRENT_GOAL.md](./CURRENT_GOAL.md))、 **[docs/TODO.md](./TODO.md) 「現在の状態」** を読む
-2. **本番 (booklage.pages.dev) 確認** — 共有作成 + 受信 + 404 は動く、 サムネはロゴ placeholder
-3. **🔴 allmarks.app ドメイン取得確認** — 月末 (今日以降) 予定だった、 取得済か聞く
-4. シェア再設計の brainstorming + 着手
+2. **🔴 allmarks.app ドメイン取得確認** — 今日は 2026-05-28 以降、 取得予定だったので user に確認
+3. **本番 (booklage.pages.dev) 確認** — ハードリロードで session 86 ship 内容が映ってるか、 user の体感はどうだったか聞く
+4. minor 残 polish の優先順位を user と合意 → 1 つずつ片付ける
 
-## session 85 で何が ship されたか
+## session 86 で何が ship されたか
 
 ### 動いている (= 本番反映済)
-- **POST /api/share/create** — 共有 ID 発行 + KV 保存
-- **GET /s/<id>** — Cloudflare Pages Function が Next.js `/s.html` を取って OG メタタグだけ per-id に書き換えて返す (= hydration 維持)
-- **GET /s/<id>/triage** — 同上 + triage 用 og:url
-- **インタラクティブ 404** — 音波テーマ、 マウス近接で振動、 緑グロウ脈打つ。 テーマ複数化対応の registry あり (= wave 1 つだけ登録、 追加すれば自動的に 404 でランダム選択)
-- **ReceiverLanding / ReceiverTriage** — URL パスから ID 抽出する形に refactor 済
-- **重要バグ 3 件 fix** — ① encode/decode の ReadableStream constructor (= Workers 互換性問題)、 ② dom-to-image-more の iframe 自動再生 (= SHARE 押すと音楽鳴る)、 ③ 300 カードでメモリ 5GB 爆発
+- **モーダル内ライブミラー** — 1.91:1 frame、 MOTION OFF 状態のボードを縮小 live 表示、 サムネ + タイトル + 配置
+- **同期スクロール** — モーダル wheel が bg board の handlePanY に転送、 bg + mirror が proportional に動く
+- **Canvas API でキャプチャ** — SHARE NOW 押した瞬間にミラー DOM → WebP 直接生成、 ライブラリ依存ゼロ、 メモリ ~5MB ceiling
+- **ブランド帯 baked-in** — 左下 A ロゴ + 右下「N CARDS · NEWEST FIRST」 + 上端アクティブタグ
+- **OG プロキシ** — `/api/share/<id>/og.webp` で KV thumb を bytes 配信、 1h edge cache + 24h s-maxage
+- **summary_large_image カード** — X / Slack / LinkedIn 等で URL 貼ると AllMarks 受信ページに飛ぶ大きいカードプレビューが出る
 
-### **未達 (= 次セッションの中核)**: サムネ + モーダル UX の本格再設計
+### 検証済
+- vitest 896/896 PASS、 tsc 0 errors、 build 21 routes 成功
+- 本番 deploy 完遂 (= [`booklage.pages.dev`](https://booklage.pages.dev))
+- session 85 のメモリ 5GB OOM + iframe 自動再生問題は設計上回避済
 
-session 85 で 4 回サムネ実装を試行 (= dom-to-image-more / viewport filter / wireframe blocks / placeholder) どれもダメで、 user から「絶対にユーザー個人のボードが映らないとダメ」 と却下。 user 提案 (= 業界標準と一致):
+## 次セッション (= 87) の作業項目
 
-> モーダル内に board の縮小ミラーが live で映る。 モーダル外でスクロールすると bg ボードと一緒にミラーも動く。 スクロールを止めた瞬間がサムネに乗る。 URL 生成は裏で並行。
+### 1. **allmarks.app ドメイン取得確認** (最優先)
+- 取得済み → リブランド作業に着手 (= 新 Cloudflare Pages project / 301 redirect / repo rename / 拡張機能ストア submit)
+- 未取得 → 取得を促す
+- 詳細 spec: `docs/private/2026-05-11-allmarks-branding-spec.md` (gitignored)
 
-これに加えて user 不満点:
-- 「100 OF 300」 等の総数 / 共有数の関係が不明 (= 「100 CARDS」 だけだと意味不明)
-- 共有範囲 (= 何の 100 枚?) の説明なし
+### 2. **本番動作確認 user フィードバック**
+- ハードリロード (Ctrl+Shift+R) して以下を試したか + 体感を聞く:
+  - SHARE 押下 → モーダル open + ミラー live 表示
+  - 同期スクロール (= マウスホイールで bg + mirror 一緒に動く)
+  - SHARE NOW → 1-3 秒で URL 表示、 iframe 音鳴らない
+  - URL を X compose に貼って summary_large_image カード確認
+- 問題発覚 → 該当箇所 fix → 再 deploy
+- 問題なし → 残 polish に進む
 
-## 次セッション (= 86) の作業項目
+### 3. **minor 残 polish (= final review の非 Critical 指摘)**
+- **ロゴサイズ不一致** — CSS で 24px、 canvas で 32px。 ミラー実 element の getBoundingClientRect から capture 寸法導出に書き換え
+- **font サイズ不一致** — CSS 11px、 canvas 13px。 同様に統一
+- **thumb 上限超過 fallback** — 高画質ボードで 100KB base64 超過時に quality step-down (= 0.85 → 0.7 → 0.55) で retry loop
+- **dom-to-image-more 依存削除** — package.json から消す、 types/ もあれば削除 (= 実コードでは使ってない)
 
-### 1. **OG サムネはサーバーサイド動的生成に切替** (業界標準)
-- 現状: client で base64 サムネを送って KV に保存、 `og.ts` がそれを返す
-- 目標: client は **メタデータ (= カードの URL / サムネ URL / 配置 / タグ) だけ** 送る、 `og.ts` がリクエスト時に [workers-og](https://workers-og.pages.dev/) (= Satori + Resvg、 Cloudflare Workers 公式互換) で JSX → PNG 動的レンダリング
-- 利点: メモリ爆発しない、 一貫したブランド表現、 KV 容量大幅減 (= 30KB サムネ削除)、 X クローラに常に新鮮 OG
+### 4. **残課題リスト整理**
+- Phase D4 他 14 言語 mood → tag rename
+- Phase D5 NewMoodInput → NewTagInput rename
+- onboarding チュートリアル
+- 拡張機能 Chrome Web Store 公開準備
 
-### 2. **モーダル内 live ミラー** (user 発案、 業界標準)
-- 背景の本物ボードを CSS `transform: scale(0.25)` で縮小して clone 表示
-- DOM clone でなく live mirror (= 軽量、 メモリ問題なし、 cross-origin 画像も普通に表示)
-- 検討: clone vs `position: fixed; transform-origin` で同じ DOM を 2 箇所に映す方法
+## 守ること (= memory 振り返り + session 86 学習)
 
-### 3. **bg スクロール同期**
-- モーダル open 中、 モーダル背景の wheel event を bg board にバイパス
-- bg + mini が同じ scroll Y で動く
-- user が好きな絵を選んで止められる
-- 「スクロールが効いて画面ぐるぐる」 の AllMarks 的 polish
-
-### 4. **モーダル UX の言語化**
-- 「100 OF 300 CARDS · NEWEST FIRST」 のような明示 (= session 85 で暫定追加済、 本実装でも維持)
-- 「タグで絞ってから共有すると範囲を選べます」 的 hint
-- 「30 日間有効」 の expiry 表示
-
-### 5. **本実装後の placeholder 撤去**
-- `lib/share/snapshot.ts` の AllMarks 暫定ロゴ生成は段階的に撤去
-- client から send する base64 サムネ自体不要に (= server-side 生成に移行)
-
-## session 85 の総括 (= TODO_COMPLETED に詳細)
-
-- 21 commits + 6 本番デプロイ (= ship 4 + fix 3 = 7 deploy)
-- テスト 880 → 882 (= 拡張部 + UX 改善で +)
-- 中で踏んだ落とし穴: edge runtime + 静的 export 衝突、 ReadableStream 互換性、 iframe 自動再生、 dom-to-image メモリ爆発
-- pivot ポイント: 「自前 HTML 生成」 → 「Next.js 出力を patch」 に途中で切替 (= hydration 整合のため)
-
-## 守ること (= user memory + session 85 学習 参照)
-
-- **私から流されない**: user は「ベストプラクティス / 業界水準を調査して」 と明示。 dom-to-image-more みたいな半端なライブラリでなく、 workers-og / Satori 等の業界主流を採用する
-- **「100 of N」 のような UI 数値は user-friendly に**: 内部 ID や jargon 使わず、 自然な英文
-- **大変更前は方針確認** ([feedback_consult_before_big_changes](memory))
+- **「業界標準だから」 で user 発言を上書きしない** — session 86 で workers-og を当初推奨したが user 指摘で反転、 経緯を正直に説明できた。 同じ罠を踏まない
+- **大変更前は brainstorming → spec → plan → 実装の順を守る** ([feedback_consult_before_big_changes](memory))
+- **subagent-driven で context 汚染を避ける** — session 86 で 7 task + final review + fix を全部 subagent で実行、 controller が clean に最終判断できた
+- **preview deploy は IDB 分離で意味なし** — `--branch=master` 直で deploy が正解 (= CLAUDE.md 明記、 user 指摘で気付いた)
+- **AskUserQuestion ボックス禁止** ([feedback_no_question_box_for_decisions](memory))
 - **平易な日本語、 横文字カタカナ控えめ** ([feedback_jargon_in_japanese](memory))
 - **verify before claiming it works** ([feedback_verify_before_claiming](memory))
-- **AskUserQuestion ボックス禁止** ([feedback_no_question_box_for_decisions](memory))
 
-## 重要ドキュメント (= session 86 で読む順)
+## 重要ドキュメント (= session 87 で読む順)
 
 1. このファイル ([docs/CURRENT_GOAL.md](./CURRENT_GOAL.md))
-2. [docs/TODO.md](./TODO.md) 「現在の状態」 セクション
-3. [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 85 セクション (= 詳細 narrative)
-4. workers-og 公式 (= https://workers-og.pages.dev/) — 採用ライブラリ
-5. (= 必要時) [docs/superpowers/specs/2026-05-28-share-pages-function-design.md](./superpowers/specs/2026-05-28-share-pages-function-design.md) — session 85 で実装した Pages Function 設計
+2. [docs/TODO.md](./TODO.md) 「現在の状態」 セクション (= session 86 ship 一覧)
+3. [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 86 セクション (= 詳細 narrative + 設計判断)
+4. (= 必要時) [docs/superpowers/specs/2026-05-27-share-mirror-capture-design.md](./superpowers/specs/2026-05-27-share-mirror-capture-design.md) — session 86 で実装した spec

@@ -5992,3 +5992,120 @@ preview deploy (`phase-7-preview.booklage.pages.dev`) → 404 path 動作確認 
 - **clean-up**: `dom-to-image-more` package.json 依存削除 (= 実コードでは使ってない、 types/ 削除も)
 
 
+
+
+## セッション 86 (2026-05-27) — シェアモーダル UX 再設計、 ミラー + 同期スクロール + Canvas キャプチャ ship 完遂
+
+### 概要
+
+session 85 で「URL 発行 + 受信ページ + インタラクティブ 404」 は ship 済だったが、 サムネが AllMarks ロゴだけの placeholder で「user 個人のボードが映らない」 問題が残っていた。 user 却下後、 session 86 で**業界標準を確認した上で workers-og 案を user 検討で反転 → ミラー方式に決定**、 spec / plan 経由で subagent-driven 実装、 本番 ship まで完遂。
+
+### 設計判断の核心 (= brainstorming で決まった 5 つ)
+
+1. **OG 画像は client capture + KV 保存の薄プロキシで配信** (= workers-og 不採用)
+   - workers-og 案は Cloudflare Workers Satori で毎リクエスト動的生成だが、 KV 1 read で済む client capture の方が cost 健全 + 拡散しても線形料金にならない
+   - 既存 KV スキーマ `{share, thumb}` をそのまま流用、 thumb の中身が「ブランド placeholder」 から「ミラー由来 WebP」 に変わるだけ
+
+2. **ミラー = MOTION OFF 状態の board を別 DOM で再 render**
+   - bg board の CSS scale じゃダメな理由: 300 カードの DOM walk コストが残る、 capture 対象が無限定
+   - 別 DOM にすれば視界に映る ~15 カードだけの最小 DOM で済む、 iframe / 動画も含まない
+
+3. **キャプチャは Canvas API に直接 drawImage、 ライブラリ不使用**
+   - session 85 の dom-to-image-more 由来の 5GB OOM を完全回避
+   - cross-origin 画像は `crossOrigin="anonymous"` で取得、 失敗時は灰色塗り fallback
+
+4. **ブランド帯はミラー DOM の一部として組み込み**
+   - WYSIWYG: ミラーで見えてる構図 = そのまま OG 画像
+   - 左下 A ロゴ + 右下「N CARDS · NEWEST FIRST」 + 上端アクティブタグ
+
+5. **同期スクロール = bg + mirror が同じ scrollY で動く**
+   - モーダル wheel event を bg board の handlePanY に転送
+   - user がスクロールしてミラーで「ここ」 と決めた構図がそのまま画像になる (= 「ほんとにスクショ」 user 直観に近い)
+
+### user との認識合わせ (= 重要やりとり)
+
+- 当初私が (1) workers-og サーバ生成と (2) スクロール連動 client capture の二択を立てたが、 user が「2 ですよね？そういう話しましたよね？なぜ 1 を推奨したのか」 と指摘 → 私が業界標準・実装の楽さ・user 発言の軽視を流して (1) を推した経緯を正直に説明 + 推奨反転
+- user が「ほんとにただスクショするだけ」 と発想を平易に表現 → ブラウザに「画面そのまま画像化 API」 は無い、 DOM 走査必須なので bounded ミラー DOM で回避する説明を 3 ループでやっと噛み合った
+- 「ミラーって何？」 のところで私の用語雑さを user に指摘される → モーダルの中にボードの縮小版を live 表示するもの、 と絵入りで説明
+- MOTION ボタン OFF 相当の見た目を user 自身が提案 → 既存実装の流用方針が決まる
+
+### 実装フロー (= subagent-driven-development、 brainstorming → spec → plan → 7 tasks)
+
+**spec**: [docs/superpowers/specs/2026-05-27-share-mirror-capture-design.md](./superpowers/specs/2026-05-27-share-mirror-capture-design.md)
+
+**plan**: [docs/superpowers/plans/2026-05-27-share-mirror-capture.md](./superpowers/plans/2026-05-27-share-mirror-capture.md)
+
+**Task 1**: OG プロキシ Pages Function ([functions/api/share/[id]/og.ts](../functions/api/share/[id]/og.ts)) — KV thumb を bytes として配信、 1h edge cache + 24h s-maxage
+
+**Task 2**: capture-mirror.ts ([lib/share/capture-mirror.ts](../lib/share/capture-mirror.ts)) — Canvas API でミラー DOM → WebP、 brand strip baked、 cross-origin fallback、 jsdom テスト null 経路のみ
+
+**Task 3**: ShareMirror コンポーネント ([components/share/ShareMirror.tsx](../components/share/ShareMirror.tsx) + module.css + test.tsx) — 1.91:1 frame、 サムネ + タイトル + ブランド帯、 7 unit tests
+
+**Task 4**: SenderShareModal 再設計 ([components/share/SenderShareModal.tsx](../components/share/SenderShareModal.tsx)) — ミラー埋込 + SHARE NOW 確定 + capture-mirror 配線、 panel 480px → 720px、 patch-share-html.ts og:image:height 627 → 628、 6 tests (= +1 createShare-fail test for review fix)
+
+**Task 5**: BoardRoot 配線 ([components/board/BoardRoot.tsx](../components/board/BoardRoot.tsx)) — scrollY / contentHeight / viewportHeight / activeTagNames を JSX 経由で SenderShareModal に渡す
+
+**Task 6**: snapshot.ts 削除 + dead `getCanvasEl` useCallback 清掃 (= 159 行 + 1 行 削除)
+
+**Task 7**: 検証 + 本番 deploy
+
+### final code review が拾った Critical 3 件 + fix
+
+Task 6 完了後に opus で全体 review、 単体 review では見えない統合レベルの defect が 3 件出た:
+
+1. **ミラー座標系不一致** — cards が 1200 logical px で配置されてたが CSS frame は ~684 CSS px → 左 60% だけ表示、 右 40% は capture には乗るが user に見えない (= WYSIWYG 壊れ)
+2. **同期スクロール wheel forwarding 未実装** — spec Part D2/D3 で wheel event 転送が必須だったが SenderShareModal に onWheel handler 無し、 hint テキスト「SCROLL TO POSITION」 が嘘になってた
+3. **scroll math 座標系不一致** — `ESTIMATED_FRAME_CSS_HEIGHT = 220` (CSS px) を worldHeight (mirror coords) から引いてたので scroll 範囲が間違ってた
+
+fix commit ([a0bc84b](../../commits/a0bc84b)) で 3 件まとめて修正:
+- ShareMirror に `ResizeObserver` 追加 → frame 実 CSS 幅で scale 計算 → cardsLayer に `transform: scale(${scale}) translateY(...)` 適用
+- SenderShareModal に `onPanY` prop + backdrop の `onWheel` handler 追加
+- worldHeight - MIRROR_FRAME_HEIGHT (628) で scroll math 統一
+- BoardRoot に `onPanY={(dy): void => { handlePanY(dy) }}` 配線
+- 補助: vitest.setup.ts に no-op ResizeObserver stub、 ShareMirror.test.tsx の scroll-transform test を 60 縦長 cards に調整
+
+独立 re-review で 3 件すべて resolved 確認、 24/24 share tests + 896/896 global tests PASS。
+
+### 数値まとめ
+
+- **9 commits** (= spec/plan commit 1 + 7 task commits + 1 fix commit)
+- **新規ファイル 8**: og.ts, og.test.ts, capture-mirror.ts, capture-mirror.test.ts, ShareMirror.tsx, ShareMirror.module.css, ShareMirror.test.tsx, vitest.setup.ts 編集 (= ResizeObserver stub)
+- **改修ファイル 5**: SenderShareModal.tsx/css/test.tsx, BoardRoot.tsx, patch-share-html.ts
+- **削除ファイル 2**: snapshot.ts, snapshot.test.ts
+- **テスト**: 882 → 896 (= +14 net、 +18 new - 2 deleted snapshot - 0 regression)
+- **tsc**: 0 errors
+- **本番 deploy 1 回** (= preview 1 + production 1、 preview は IDB origin 分離問題で意味なし判明、 user 指摘で production 直行)
+
+### user 体験 (= ship 後)
+
+1. board の SHARE ボタン → モーダル open + 中央に 1.91:1 ミラー live 表示
+2. ミラーは MOTION OFF 相当 (= サムネ + タイトル + 配置のみ、 動画/iframe なし)
+3. 上端アクティブタグ + 下端「A ロゴ · N CARDS · NEWEST FIRST」 ブランド帯
+4. wheel スクロール → bg board + mirror が proportional に同期移動
+5. 「ここ」 で SHARE NOW → ~1-3 秒で URL 表示 (= 「CAPTURING…」 状態挟む)
+6. iframe 自動再生鳴らない (= session 85 のバグ消える)
+7. 300 カードでも tab メモリ大丈夫 (= 設計上 ~5MB ceiling)
+8. URL を X に貼ると summary_large_image カードが出る、 クリックで AllMarks 受信ページに飛ぶ (= og:url 標準動作)
+
+### 守った原則 (= memory 振り返り)
+
+- **「業界標準だから」 で user 発言を上書きしない** — workers-og を当初推奨したが user 指摘で反転、 経緯を正直に説明
+- **大変更前は方針確認 + brainstorming/spec/plan を順番に通す** ([feedback_consult_before_big_changes](memory))
+- **subagent-driven で context 汚染なし + 各 task に 2 段 review** — single context で全部やってたら同じ汚染を持ち越して final review の Critical 3 件を最後まで見落としてた可能性高い
+- **平易な日本語 + ASCII グリフ (= ✕/⚠) は project 慣例だが横文字カタカナ避ける** ([feedback_jargon_in_japanese](memory))
+- **preview と production の origin 違いで IDB 分離** = この project は master 直 deploy が正解 ([CLAUDE.md](../CLAUDE.md) `--branch=master` 必須の理由)、 user 指摘で気付いた
+
+### 残課題 (= 次セッション)
+
+- **🔴 allmarks.app ドメイン取得** (= 月末 2026-05-28 朝以降の見込み、 次セッション開始時に user 確認)
+- **本番動作確認 user フィードバック** (= ハードリロードして ship 通り動くか、 視覚 polish の余地ある箇所の洗い出し)
+- 視覚 minor 課題 (= final review が指摘した非 Critical):
+  - ロゴサイズ CSS 24px vs canvas 32px の不一致
+  - フォントサイズ 11px CSS vs 13px canvas の不一致
+  - 解決方針: ロゴ実 element の getBoundingClientRect から capture 寸法を導出する書き換え
+- thumb サイズ上限 (= 100KB base64) 超過時の quality step-down loop (= 高画質ボードで稀に発生)
+- **clean-up**: `dom-to-image-more` package.json 依存削除 (= 実コードでは使ってない、 types/ も)
+- Phase D4 他 14 言語 mood → tag rename
+- Phase D5 NewMoodInput → NewTagInput rename
+- onboarding チュートリアル
+- 拡張機能 Chrome Web Store 公開準備
