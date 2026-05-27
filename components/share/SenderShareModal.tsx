@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import styles from './SenderShareModal.module.css'
+import { captureViewportWebP } from '@/lib/share/snapshot'
+import { createShare } from '@/lib/share/api-client'
 
 type ModalState =
   | { readonly kind: 'loading' }
@@ -19,6 +21,7 @@ type Props = {
 
 export function SenderShareModal({ open, onClose, getShareData, getCanvasElement }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'loading' })
+  const [copied, setCopied] = useState<boolean>(false)
 
   // ESC + backdrop click handlers
   useEffect((): (() => void) | undefined => {
@@ -32,6 +35,30 @@ export function SenderShareModal({ open, onClose, getShareData, getCanvasElement
   useEffect((): void => {
     if (!open) setState({ kind: 'loading' })
   }, [open])
+
+  // Snapshot + POST /api/share/create on open
+  useEffect((): void => {
+    if (!open) return
+    void (async (): Promise<void> => {
+      setState({ kind: 'loading' })
+      try {
+        const canvas = getCanvasElement()
+        const thumb = await captureViewportWebP(canvas, { width: 600, quality: 0.7 })
+        const thumbDataUrl = thumb ?? 'data:image/webp;base64,'
+        const share = getShareData()
+        const result = await createShare({ share, thumb: thumbDataUrl })
+        if (!result.ok) {
+          setState({ kind: 'error', message: result.message })
+          return
+        }
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app'
+        const shareUrl = `${origin}/s/${result.data.id}`
+        setState({ kind: 'ready', shareUrl, thumbDataUrl })
+      } catch (e) {
+        setState({ kind: 'error', message: e instanceof Error ? e.message : 'unknown error' })
+      }
+    })()
+  }, [open, getShareData, getCanvasElement])
 
   const handleBackdrop = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
     if (e.target === e.currentTarget) onClose()
@@ -63,17 +90,23 @@ export function SenderShareModal({ open, onClose, getShareData, getCanvasElement
           <div className={styles.urlRow}>
             {state.kind === 'ready' ? (
               <code className={styles.url}>{state.shareUrl}</code>
+            ) : state.kind === 'error' ? (
+              <code className={styles.url} style={{ color: '#ff8888' }}>⚠ {state.message}</code>
             ) : (
-              <code className={styles.url}>{state.kind === 'loading' ? '⌗ preparing...' : '⌗ error'}</code>
+              <code className={styles.url}>⌗ preparing...</code>
             )}
             <button
               type="button"
               className={styles.copyBtn}
               disabled={state.kind !== 'ready'}
               onClick={(): void => {
-                if (state.kind === 'ready') void navigator.clipboard.writeText(state.shareUrl)
+                if (state.kind !== 'ready') return
+                void navigator.clipboard.writeText(state.shareUrl).then((): void => {
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 1500)
+                })
               }}
-            >COPY</button>
+            >{copied ? 'COPIED' : 'COPY'}</button>
           </div>
           <button
             type="button"
