@@ -1,7 +1,5 @@
 // functions/api/share/[id]/og.ts
-// GET /api/share/<id>/og.webp — OG image endpoint
-// SSR で <meta og:image> がこの URL を指す。 X / Discord / Slack のクローラが
-// fetch して URL preview を作る。
+// GET /api/share/<id>/og.webp — KV の thumb (base64 WebP dataURL) を bytes として返す薄いプロキシ
 import { isValidShareId } from '../../../../lib/share/kv-id'
 import { decodeKVPayload } from '../../../../lib/share/decode-v2'
 
@@ -19,57 +17,39 @@ interface PagesContext {
   params: { id: string }
 }
 
-// 1x1 black WebP — share が見つからない / 期限切れ / 失敗時の fallback。
-// 完全に preview が壊れるよりは小さい画像でも返す方がマシ。
-const PLACEHOLDER_WEBP_BASE64 = 'UklGRhwAAABXRUJQVlA4TBAAAAAvAAAAAAfQ//73v/+BiOh/AAA='
-
-function base64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64)
-  const out = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
-  return out
-}
-
-function placeholderResponse(cacheMaxAge: number): Response {
-  const bytes = base64ToBytes(PLACEHOLDER_WEBP_BASE64)
-  return new Response(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, {
-    status: 200,
-    headers: {
-      'Content-Type': 'image/webp',
-      'Cache-Control': `public, max-age=${cacheMaxAge}`,
-    },
-  })
-}
-
 export async function onRequestGet(ctx: PagesContext): Promise<Response> {
   const id = ctx.params.id
-
   if (!isValidShareId(id)) {
-    return placeholderResponse(300)
+    return new Response('not found', { status: 404 })
   }
 
   const encoded = await ctx.env.SHARE_KV.get(id)
   if (encoded === null) {
-    return placeholderResponse(60)
+    return new Response('not found', { status: 404 })
   }
 
   const decoded = await decodeKVPayload(encoded)
   if (!decoded.ok) {
-    return placeholderResponse(60)
+    return new Response('error', { status: 500 })
   }
 
   const thumb = decoded.data.thumb
-  const match = thumb.match(/^data:image\/\w+;base64,(.+)$/)
-  if (!match) {
-    return placeholderResponse(60)
+  const match = thumb.match(/^data:image\/webp;base64,(.+)$/)
+  if (!match || !match[1]) {
+    return new Response('invalid thumb', { status: 500 })
   }
 
-  const bytes = base64ToBytes(match[1])
-  return new Response(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, {
+  const binary = atob(match[1])
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+
+  return new Response(bytes, {
     status: 200,
     headers: {
       'Content-Type': 'image/webp',
-      'Cache-Control': 'public, max-age=86400, immutable',
+      'Cache-Control': 'public, max-age=3600, s-maxage=86400',
     },
   })
 }
