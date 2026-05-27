@@ -1,5 +1,4 @@
 // lib/share/snapshot.ts
-import domtoimage from 'dom-to-image-more'
 
 export type SnapshotOptions = {
   readonly width: number   // target output width (px)
@@ -29,6 +28,7 @@ export async function captureViewportWebP(
     const rect = element.getBoundingClientRect()
     if (rect.width === 0 || rect.height === 0) return null
     const scale = opts.width / rect.width
+    const { default: domtoimage } = await import('dom-to-image-more')
     const dataUrl = await domtoimage.toJpeg(element, {
       quality: opts.quality,
       width: opts.width,
