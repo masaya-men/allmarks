@@ -1,10 +1,14 @@
 'use client'
-import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchShare } from '@/lib/share/api-client'
 import { sanitizeShareDataV2 } from '@/lib/share/validate-v2'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
+import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
+import { findDuplicates } from '@/lib/share/import'
+import { detectUrlType } from '@/lib/utils/url'
+import { BulkImportToast } from './BulkImportToast'
 import styles from './ReceiverLanding.module.css'
 
 type LandingState =
@@ -19,6 +23,38 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
   const router = useRouter()
   const containerRef = useRef<HTMLElement>(null)
   const [containerWidth, setContainerWidth] = useState<number>(1200)
+  const [importResult, setImportResult] = useState<{ saved: number; skipped: number } | null>(null)
+  const [importing, setImporting] = useState<boolean>(false)
+
+  const handleBulkImport = useCallback(async (): Promise<void> => {
+    if (state.kind !== 'ready') return
+    setImporting(true)
+    try {
+      const db = await initDB()
+      const existing = await getAllBookmarks(db)
+      const existingUrls = new Set(existing.filter((b) => !b.isDeleted).map((b) => b.url))
+      const dups = findDuplicates(state.data.cards, existingUrls)
+
+      let saved = 0
+      for (const c of state.data.cards) {
+        if (dups.has(c.u)) continue
+        await addBookmark(db, {
+          url: c.u,
+          title: c.t,
+          description: c.d ?? '',
+          thumbnail: c.th ?? '',
+          favicon: '',
+          siteName: '',
+          type: detectUrlType(c.u),
+          tags: [],
+        })
+        saved++
+      }
+      setImportResult({ saved, skipped: dups.size })
+    } finally {
+      setImporting(false)
+    }
+  }, [state])
 
   useEffect((): void => {
     void (async (): Promise<void> => {
@@ -133,8 +169,14 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
         </div>
       </main>
       <footer className={styles.stickyCta}>
-        <button type="button" className={styles.ctaPrimary} data-testid="bulk-import-btn">
-          IMPORT ALL {state.data.cards.length}
+        <button
+          type="button"
+          className={styles.ctaPrimary}
+          disabled={importing}
+          onClick={(): void => { void handleBulkImport() }}
+          data-testid="bulk-import-btn"
+        >
+          {importing ? 'IMPORTING...' : `IMPORT ALL ${state.data.cards.length}`}
         </button>
         <button
           type="button"
@@ -143,6 +185,16 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
           data-testid="triage-btn"
         >PICK ONE BY ONE</button>
       </footer>
+      {importResult && (
+        <BulkImportToast
+          saved={importResult.saved}
+          skipped={importResult.skipped}
+          onDismiss={(): void => {
+            setImportResult(null)
+            router.push('/board')
+          }}
+        />
+      )}
     </div>
   )
 }
