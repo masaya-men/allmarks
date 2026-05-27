@@ -44,6 +44,18 @@ export async function captureViewportWebP(
         if (!(node instanceof Element)) return true
         const tag = node.tagName
         if (tag === 'IFRAME' || tag === 'VIDEO' || tag === 'AUDIO') return false
+        // Skip cards entirely outside the viewport so 300-card boards don't
+        // blow up the tab (= dom-to-image clones every descendant by default,
+        // burning gigabytes of memory and minutes of fetch time when most
+        // cards are scrolled off-screen).
+        if (node.hasAttribute('data-card-id')) {
+          const r = node.getBoundingClientRect()
+          const vw = window.innerWidth
+          const vh = window.innerHeight
+          if (r.bottom < 0 || r.top > vh || r.right < 0 || r.left > vw) {
+            return false
+          }
+        }
         return true
       },
     })
