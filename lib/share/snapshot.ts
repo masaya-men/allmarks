@@ -29,11 +29,23 @@ export async function captureViewportWebP(
     if (rect.width === 0 || rect.height === 0) return null
     const scale = opts.width / rect.width
     const { default: domtoimage } = await import('dom-to-image-more')
+    // Filter out iframe / video / audio: dom-to-image-more clones them into an
+    // off-screen image-render path, which on some embeds (SoundCloud, YouTube)
+    // triggers autoplay of the cloned iframe. The original embed is unaffected,
+    // but the user hears a phantom playback at SHARE time. Skipping them is
+    // safe — these embeds rendered as blank cross-origin frames in the
+    // snapshot anyway.
     const dataUrl = await domtoimage.toJpeg(element, {
       quality: opts.quality,
       width: opts.width,
       height: rect.height * scale,
       style: { transform: `scale(${scale})`, transformOrigin: 'top left' },
+      filter: (node: Node): boolean => {
+        if (!(node instanceof Element)) return true
+        const tag = node.tagName
+        if (tag === 'IFRAME' || tag === 'VIDEO' || tag === 'AUDIO') return false
+        return true
+      },
     })
     return await jpegToWebP(dataUrl, opts.quality)
   } catch (e) {

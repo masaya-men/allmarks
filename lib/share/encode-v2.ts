@@ -2,15 +2,13 @@
 import type { KVShareEntry } from './types-v2'
 
 async function gzip(bytes: Uint8Array): Promise<Uint8Array> {
-  // Use Blob.stream() instead of `new ReadableStream(...)` so this works in
-  // Cloudflare Workers without the `streams_enable_constructors` compatibility
-  // flag (= on by default for compat_date >= 2022-11-30, but our Pages project
-  // pins an older date via the dashboard).
-  // Cast: TS5 widens Uint8Array's buffer to ArrayBufferLike (includes
-  // SharedArrayBuffer) but Blob/Response APIs want a plain ArrayBuffer-backed
-  // view. Our `bytes` always comes from a fresh Uint8Array, so the cast is safe.
-  const inputStream = new Blob([bytes as Uint8Array<ArrayBuffer>]).stream()
-  const compressed = inputStream.pipeThrough(new CompressionStream('gzip'))
+  // Use `new Response(bytes).body` instead of `new ReadableStream(...)` to
+  // avoid Cloudflare Workers' streams_enable_constructors compat flag. Response
+  // constructor (and its body getter) work without that flag, and also work
+  // in jsdom (Blob.stream() does not).
+  const body = new Response(bytes as unknown as BodyInit).body
+  if (!body) throw new Error('gzip: Response body unexpectedly empty')
+  const compressed = body.pipeThrough(new CompressionStream('gzip'))
   const buf = await new Response(compressed).arrayBuffer()
   return new Uint8Array(buf)
 }
