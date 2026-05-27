@@ -1,0 +1,16 @@
+# wrangler.toml — Cloudflare Pages binding 設定
+# 既存 Pages 構成 (= ダッシュボードベース) と共存。 ここでは KV namespace
+# binding のみ宣言する。 compatibility_date / main / build 等は記載しない
+# (= Cloudflare Pages 自動検出の挙動を温存)。
+#
+# 本番 deploy 手順: `wrangler kv namespace create SHARE_KV` で namespace 作成
+# → 出力された ID を下記の `id` / `preview_id` に貼り付け → commit → deploy。
+# user 側の作成作業: docs/superpowers/plans/2026-05-27-share-rebuild.md Task 8
+
+name = "booklage"
+pages_build_output_dir = "out"
+
+[[kv_namespaces]]
+binding = "SHARE_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
