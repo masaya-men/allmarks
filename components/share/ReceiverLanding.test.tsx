@@ -8,6 +8,12 @@ vi.mock('next/navigation', () => ({
 }))
 
 beforeEach(() => {
+  class MockResizeObserver {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+  ;(globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = MockResizeObserver
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => ({

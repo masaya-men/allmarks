@@ -1,9 +1,10 @@
 'use client'
-import { useEffect, useState, type ReactElement } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchShare } from '@/lib/share/api-client'
 import { sanitizeShareDataV2 } from '@/lib/share/validate-v2'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
+import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import styles from './ReceiverLanding.module.css'
 
 type LandingState =
@@ -16,6 +17,8 @@ type Props = { readonly shareId: string }
 export function ReceiverLanding({ shareId }: Props): ReactElement {
   const [state, setState] = useState<LandingState>({ kind: 'loading' })
   const router = useRouter()
+  const containerRef = useRef<HTMLElement>(null)
+  const [containerWidth, setContainerWidth] = useState<number>(1200)
 
   useEffect((): void => {
     void (async (): Promise<void> => {
@@ -33,6 +36,31 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
       setState({ kind: 'ready', data: parsed.data })
     })()
   }, [shareId])
+
+  useEffect((): (() => void) | undefined => {
+    if (!containerRef.current) return undefined
+    const el = containerRef.current
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width
+      if (w && w > 0) setContainerWidth(w)
+    })
+    ro.observe(el)
+    return (): void => ro.disconnect()
+  }, [state.kind])
+
+  const layout = useMemo(() => {
+    if (state.kind !== 'ready') return null
+    const cards: SkylineCard[] = state.data.cards.map((c) => ({
+      id: c.u,
+      width: c.cw,
+      height: c.cw / c.a,
+    }))
+    return computeSkylineLayout({
+      cards,
+      containerWidth,
+      gap: 16,
+    })
+  }, [state, containerWidth])
 
   if (state.kind === 'loading') {
     return (
@@ -71,14 +99,38 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
           </span>
         )}
       </header>
-      <main className={styles.boardArea}>
-        {/* Task 18: real masonry layout here */}
-        {state.data.cards.map((c) => (
-          <div key={c.u} className={styles.tempCard}>
-            {c.th && <img src={c.th} alt="" />}
-            <p>{c.t}</p>
-          </div>
-        ))}
+      <main className={styles.boardArea} ref={containerRef}>
+        <div className={styles.canvas} style={{ height: layout?.totalHeight ?? 0 }}>
+          {state.data.cards.map((c) => {
+            const pos = layout?.positions[c.u]
+            if (!pos) return null
+            return (
+              <div
+                key={c.u}
+                className={styles.card}
+                style={{
+                  position: 'absolute',
+                  left: pos.x,
+                  top: pos.y,
+                  width: pos.w,
+                  height: pos.h,
+                }}
+              >
+                {c.th && <img src={c.th} alt="" className={styles.cardThumb} />}
+                <p className={styles.cardTitle}>{c.t}</p>
+                {c.tg && c.tg.length > 0 && state.data.tags && (
+                  <div className={styles.cardTags}>
+                    {c.tg.map((tid) => (
+                      <span key={tid} className={styles.cardTag}>
+                        {state.data.tags?.[tid]?.n ?? '?'}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </main>
       <footer className={styles.stickyCta}>
         <button type="button" className={styles.ctaPrimary} data-testid="bulk-import-btn">
