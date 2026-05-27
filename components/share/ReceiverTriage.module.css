@@ -180,3 +180,18 @@
   border-radius: 4px;
   cursor: pointer;
 }
+
+.tagLabelReceiver {
+  margin-top: 12px;
+}
+
+.tagChipReceiver {
+  color: rgba(255, 255, 255, 0.72);
+  opacity: 1;
+}
+
+.tagChipArmedReceiver {
+  background: rgba(40, 241, 0, 0.12);
+  border-color: #28F100;
+  color: #28F100;
+}

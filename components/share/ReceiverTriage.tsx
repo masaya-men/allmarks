@@ -6,6 +6,7 @@ import { sanitizeShareDataV2 } from '@/lib/share/validate-v2'
 import { findDuplicates, convertSenderTagsForReceiver } from '@/lib/share/import'
 import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { getAllTags, addTag } from '@/lib/storage/tags'
+import { useTags } from '@/lib/storage/use-tags'
 import { detectUrlType } from '@/lib/utils/url'
 import { BulkImportToast } from './BulkImportToast'
 import type { ShareDataV2, ShareCardV2 } from '@/lib/share/types-v2'
@@ -26,6 +27,7 @@ export function ReceiverTriage({ shareId }: Props): ReactElement {
   const [savedCount, setSavedCount] = useState(0)
   const [armedTagIds, setArmedTagIds] = useState<ReadonlySet<string>>(() => new Set())
   const [showSummary, setShowSummary] = useState<boolean>(false)
+  const { tags: receiverTags } = useTags()
 
   // Fetch share + filter duplicates
   useEffect((): void => {
@@ -161,35 +163,62 @@ export function ReceiverTriage({ shareId }: Props): ReactElement {
         </div>
       </main>
 
-      {senderTagsForCard.length > 0 && (
-        <div className={styles.tagSuggestions}>
-          <p className={styles.tagLabel}>SENDER&apos;S TAGS — TAP TO ACCEPT</p>
-          <div className={styles.tagStrip}>
-            {senderTagsForCard.map((tid) => {
-              const tag = senderTagDict[tid]
-              if (!tag) return null
-              const isArmed = armedTagIds.has(tid)
-              return (
-                <button
-                  key={tid}
-                  type="button"
-                  className={`${styles.tagChip} ${isArmed ? styles.tagChipArmed : ''}`}
-                  onClick={(): void => {
-                    setArmedTagIds((prev) => {
-                      const next = new Set(prev)
-                      if (next.has(tid)) next.delete(tid)
-                      else next.add(tid)
-                      return next
-                    })
-                  }}
-                >
-                  {tag.n}
-                </button>
-              )
-            })}
-          </div>
+      <div className={styles.tagSuggestions}>
+        {senderTagsForCard.length > 0 && (
+          <p className={styles.tagLabel}>SENDER&apos;S TAGS - TAP TO ACCEPT</p>
+        )}
+        <div className={styles.tagStrip}>
+          {senderTagsForCard.map((tid) => {
+            const tag = senderTagDict[tid]
+            if (!tag) return null
+            const isArmed = armedTagIds.has(tid)
+            return (
+              <button
+                key={`sender-${tid}`}
+                type="button"
+                className={`${styles.tagChip} ${isArmed ? styles.tagChipArmed : ''}`}
+                onClick={(): void => {
+                  setArmedTagIds((prev) => {
+                    const next = new Set(prev)
+                    if (next.has(tid)) next.delete(tid)
+                    else next.add(tid)
+                    return next
+                  })
+                }}
+              >
+                {tag.n}
+              </button>
+            )
+          })}
         </div>
-      )}
+        {receiverTags.length > 0 && (
+          <>
+            <p className={`${styles.tagLabel} ${styles.tagLabelReceiver}`}>YOUR TAGS</p>
+            <div className={styles.tagStrip}>
+              {receiverTags.map((t) => {
+                const isArmed = armedTagIds.has(t.id)
+                return (
+                  <button
+                    key={`receiver-${t.id}`}
+                    type="button"
+                    className={`${styles.tagChip} ${styles.tagChipReceiver} ${isArmed ? styles.tagChipArmedReceiver : ''}`}
+                    onClick={(): void => {
+                      setArmedTagIds((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(t.id)) next.delete(t.id)
+                        else next.add(t.id)
+                        return next
+                      })
+                    }}
+                  >
+                    {t.name}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
 
       <footer className={styles.actions}>
         <button type="button" className={styles.btnNo} onClick={handleNo}>NO · SKIP</button>
