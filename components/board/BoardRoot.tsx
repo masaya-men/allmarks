@@ -60,8 +60,10 @@ import { Lightbox } from './Lightbox'
 import { PipPortal } from '@/components/pip/PipPortal'
 import { PipCompanion } from '@/components/pip/PipCompanion'
 import { usePipWindow } from '@/lib/board/pip-window'
-import { ShareComposer } from '@/components/share/ShareComposer'
 import { ShareActionSheet } from '@/components/share/ShareActionSheet'
+import { SenderShareModal } from '@/components/share/SenderShareModal'
+import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
+import type { ShareDataV2 } from '@/lib/share/types-v2'
 import { encodeShareData } from '@/lib/share/encode'
 import { getActiveWatermark } from '@/lib/share/watermark-config'
 import type { ShareData } from '@/lib/share/types'
@@ -192,7 +194,7 @@ export function BoardRoot() {
   // via `data-bookmark-id` on close so pan/scroll during open are honoured.
   const [lightboxOriginRect, setLightboxOriginRect] = useState<DOMRect | null>(null)
   const [newlyAddedIds, setNewlyAddedIds] = useState<ReadonlySet<string>>(new Set())
-  const [shareComposerOpen, setShareComposerOpen] = useState<boolean>(false)
+  const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
   const [actionSheet, setActionSheet] = useState<{ pngDataUrl: string; shareUrl: string } | null>(null)
   // When focusCard is called for a bookmark not in the current filtered view
   // (e.g. user is on a tags filter but the PiP-clicked card has different
@@ -1279,11 +1281,36 @@ export function BoardRoot() {
       // (it reads `Node` at module evaluation time, crashing in node.js).
       const { exportFrameAsPng } = await import('@/lib/share/png-export')
       const pngDataUrl = await exportFrameAsPng(frameEl, getActiveWatermark())
-      setShareComposerOpen(false)
+      setShareModalOpen(false)
       setActionSheet({ pngDataUrl, shareUrl })
     },
     [],
   )
+
+  // Phase 3 share rebuild (Task 15): build the v2 share payload from the
+  // current board view (= filtered visible items + relevant tag dict +
+  // active tags filter). Called lazily by SenderShareModal on open.
+  const buildShareData = useCallback((): ShareDataV2 => {
+    return buildShareDataFromBoard({
+      items: filteredItems.map((it) => ({
+        bookmarkId: it.bookmarkId,
+        url: it.url,
+        title: it.title,
+        description: it.description ?? undefined,
+        thumbnail: it.thumbnail ?? undefined,
+        aspectRatio: it.aspectRatio,
+        tags: it.tags,
+        cardWidth: customWidths[it.bookmarkId] ?? cardWidthPx,
+      })),
+      tags: tags.map((tg) => ({ id: tg.id, name: tg.name, color: tg.color })),
+      filter: activeFilter.kind === 'tags'
+        ? { mode: activeFilter.mode, tagIds: activeFilter.tagIds }
+        : null,
+      now: Date.now(),
+    })
+  }, [filteredItems, tags, activeFilter, customWidths, cardWidthPx])
+
+  const getCanvasEl = useCallback((): HTMLElement | null => canvasRef.current, [])
 
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
@@ -1578,7 +1605,7 @@ export function BoardRoot() {
               />
               <ChromeButton
                 label={t('board.chrome.share')}
-                onClick={(): void => setShareComposerOpen(true)}
+                onClick={(): void => setShareModalOpen(true)}
                 data-testid="share-pill"
               />
               {activeFilter.kind === 'archive' && deletedItems.length > 0 && (
@@ -1739,25 +1766,12 @@ export function BoardRoot() {
         onClose={handleCloseBookmarkletModal}
         appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://booklage.pages.dev')}
       />
-      {shareComposerOpen && (
-        <ShareComposer
-          open={shareComposerOpen}
-          onClose={(): void => setShareComposerOpen(false)}
-          items={filteredItems.map((it) => ({
-            bookmarkId: it.bookmarkId,
-            url: it.url,
-            title: it.title,
-            description: it.description ?? '',
-            thumbnail: it.thumbnail ?? '',
-            type: detectUrlType(it.url),
-            cardWidth: cardWidthPx,
-            aspectRatio: it.aspectRatio,
-          }))}
-          positions={layout.positions}
-          viewport={viewport}
-          onConfirm={handleShareConfirm}
-        />
-      )}
+      <SenderShareModal
+        open={shareModalOpen}
+        onClose={(): void => setShareModalOpen(false)}
+        getShareData={buildShareData}
+        getCanvasElement={getCanvasEl}
+      />
       {actionSheet && (
         <ShareActionSheet
           pngDataUrl={actionSheet.pngDataUrl}
