@@ -1,31 +1,36 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
-import { ShareMirror } from './ShareMirror'
-import { SHARE_SCHEMA_VERSION_V2, type ShareDataV2 } from '@/lib/share/types-v2'
+import { ShareMirror, type MirrorItem, type MirrorPosition } from './ShareMirror'
 
-function makeShareData(n: number): ShareDataV2 {
-  return {
-    v: SHARE_SCHEMA_VERSION_V2,
-    cards: Array.from({ length: n }, (_, i) => ({
-      u: `https://example.com/c${i}`,
-      t: `card ${i}`,
-      ty: 'website' as const,
-      cw: 240,
-      a: 1.6,
-      th: `https://example.com/thumb${i}.webp`,
-    })),
-    createdAt: Date.now(),
-  }
+function makeItems(n: number): MirrorItem[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `bookmark-${i}`,
+    url: `https://example.com/c${i}`,
+    title: `card ${i}`,
+    thumbnailUrl: `https://example.com/thumb${i}.webp`,
+  }))
+}
+
+function makePositions(n: number): MirrorPosition[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `bookmark-${i}`,
+    x: (i % 3) * 260,
+    y: Math.floor(i / 3) * 200,
+    w: 240,
+    h: 180,
+  }))
 }
 
 describe('ShareMirror', () => {
-  it('renders one [data-mirror-card-id] element per card', () => {
-    const data = makeShareData(5)
+  it('renders one [data-mirror-card-id] element per item', () => {
     const { container } = render(
       <ShareMirror
-        shareData={data}
+        items={makeItems(5)}
+        positions={makePositions(5)}
+        bgViewportWidth={1200}
         activeTagNames={[]}
         totalBoardCount={5}
+        sharedCardCount={5}
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
@@ -36,12 +41,14 @@ describe('ShareMirror', () => {
   })
 
   it('does NOT render any iframe (MOTION OFF guarantee)', () => {
-    const data = makeShareData(3)
     const { container } = render(
       <ShareMirror
-        shareData={data}
+        items={makeItems(3)}
+        positions={makePositions(3)}
+        bgViewportWidth={1200}
         activeTagNames={[]}
         totalBoardCount={3}
+        sharedCardCount={3}
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
@@ -53,12 +60,14 @@ describe('ShareMirror', () => {
   })
 
   it('renders bottom brand strip with "N CARDS" when no trim', () => {
-    const data = makeShareData(3)
     const { getByText } = render(
       <ShareMirror
-        shareData={data}
+        items={makeItems(3)}
+        positions={makePositions(3)}
+        bgViewportWidth={1200}
         activeTagNames={[]}
         totalBoardCount={3}
+        sharedCardCount={3}
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
@@ -68,12 +77,14 @@ describe('ShareMirror', () => {
   })
 
   it('renders "N OF M CARDS · NEWEST FIRST" when trimmed', () => {
-    const data = makeShareData(3)
     const { getByText } = render(
       <ShareMirror
-        shareData={data}
+        items={makeItems(3)}
+        positions={makePositions(3)}
+        bgViewportWidth={1200}
         activeTagNames={[]}
         totalBoardCount={10}
+        sharedCardCount={3}
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
@@ -83,12 +94,14 @@ describe('ShareMirror', () => {
   })
 
   it('renders top tag strip when activeTagNames non-empty', () => {
-    const data = makeShareData(2)
     const { getByText } = render(
       <ShareMirror
-        shareData={data}
+        items={makeItems(2)}
+        positions={makePositions(2)}
+        bgViewportWidth={1200}
         activeTagNames={['Music', 'Design']}
         totalBoardCount={2}
+        sharedCardCount={2}
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
@@ -98,12 +111,14 @@ describe('ShareMirror', () => {
   })
 
   it('omits top tag strip when activeTagNames empty', () => {
-    const data = makeShareData(2)
     const { queryByTestId } = render(
       <ShareMirror
-        shareData={data}
+        items={makeItems(2)}
+        positions={makePositions(2)}
+        bgViewportWidth={1200}
         activeTagNames={[]}
         totalBoardCount={2}
+        sharedCardCount={2}
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
@@ -113,21 +128,26 @@ describe('ShareMirror', () => {
   })
 
   it('applies scroll transform when scrollY changes', () => {
-    // Use 60 portrait cards (a=0.5, clamped minimum) so each card is 160px tall.
-    // With 14 columns, ~5 cards per col → worldHeight ≈ 830px > MIRROR_FRAME_HEIGHT(628).
-    // mirrorScrollMax > 0, so translateY changes between scrollY=0 and scrollY=500.
-    const data: ShareDataV2 = {
-      v: SHARE_SCHEMA_VERSION_V2,
-      cards: Array.from({ length: 60 }, (_, i) => ({
-        u: `https://example.com/c${i}`, t: `card ${i}`, ty: 'website' as const, cw: 240, a: 0.5,
-      })),
-      createdAt: Date.now(),
-    }
+    // Use 60 items laid out in a tall grid. The cardsLayer has a large world height,
+    // so translateY changes between scrollY=0 and scrollY=500.
+    const items = makeItems(60)
+    // Arrange them in a 3-column grid, 20 rows → worldHeight = 20 * 200 = 4000px
+    const positions: MirrorPosition[] = Array.from({ length: 60 }, (_, i) => ({
+      id: `bookmark-${i}`,
+      x: (i % 3) * 260,
+      y: Math.floor(i / 3) * 200,
+      w: 240,
+      h: 180,
+    }))
+
     const { container, rerender } = render(
       <ShareMirror
-        shareData={data}
+        items={items}
+        positions={positions}
+        bgViewportWidth={1200}
         activeTagNames={[]}
         totalBoardCount={60}
+        sharedCardCount={60}
         scrollY={0}
         contentHeight={4000}
         viewportHeight={800}
@@ -138,9 +158,12 @@ describe('ShareMirror', () => {
 
     rerender(
       <ShareMirror
-        shareData={data}
+        items={items}
+        positions={positions}
+        bgViewportWidth={1200}
         activeTagNames={[]}
         totalBoardCount={60}
+        sharedCardCount={60}
         scrollY={500}
         contentHeight={4000}
         viewportHeight={800}

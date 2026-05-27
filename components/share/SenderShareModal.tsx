@@ -1,10 +1,10 @@
 'use client'
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import styles from './SenderShareModal.module.css'
 import { captureMirrorToWebP } from '@/lib/share/capture-mirror'
 import { createShare } from '@/lib/share/api-client'
-import { ShareMirror } from './ShareMirror'
+import { ShareMirror, type MirrorItem, type MirrorPosition } from './ShareMirror'
 
 type ModalState =
   | { readonly kind: 'idle' }
@@ -29,6 +29,12 @@ type Props = {
   readonly activeTagNames: ReadonlyArray<string>
   /** Forward wheel events to bg board's pan handler. Called with raw deltaY. */
   readonly onPanY: (deltaY: number) => void
+  /** Board items to display in the mirror (= filteredItems mapped from BoardRoot). */
+  readonly items: ReadonlyArray<MirrorItem>
+  /** Layout positions from bg board's skyline layout. */
+  readonly positions: ReadonlyArray<MirrorPosition>
+  /** Bg board's CSS viewport width. Used to compute mirror scale. */
+  readonly bgViewportWidth: number
 }
 
 export function SenderShareModal({
@@ -41,6 +47,9 @@ export function SenderShareModal({
   viewportHeight,
   activeTagNames,
   onPanY,
+  items,
+  positions,
+  bgViewportWidth,
 }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
@@ -68,13 +77,25 @@ export function SenderShareModal({
     onPanY(e.deltaY)
   }, [onPanY])
 
+  // Compute sharedCardCount once when modal is open (lazy, same as getShareData()).
+  // We derive it from getShareData() here so ShareMirror doesn't need to call it.
+  const sharedCardCount = useMemo((): number => {
+    if (!open) return 0
+    return getShareData().cards.length
+  }, [open, getShareData])
+
   const handleShareConfirm = useCallback(async (): Promise<void> => {
     setState({ kind: 'capturing' })
     try {
       const share = getShareData()
       const thumbDataUrl = await captureMirrorToWebP({
         mirrorFrame: mirrorFrameRef.current,
-        shareData: share,
+        items: items.map((it) => ({
+          url: it.url,
+          title: it.title,
+          thumbnailUrl: it.thumbnailUrl,
+        })),
+        sharedCardCount: share.cards.length,
         activeTagNames,
         totalBoardCount,
         width: 1200,
@@ -96,11 +117,9 @@ export function SenderShareModal({
     } catch (e) {
       setState({ kind: 'error', message: e instanceof Error ? e.message : 'unknown error' })
     }
-  }, [getShareData, activeTagNames, totalBoardCount])
+  }, [getShareData, items, activeTagNames, totalBoardCount])
 
   if (!open) return null
-
-  const shareData = getShareData()
 
   return (
     <div className={styles.backdrop} onClick={handleBackdrop} onWheel={handleWheel}>
@@ -112,9 +131,12 @@ export function SenderShareModal({
 
         <div className={styles.preview}>
           <ShareMirror
-            shareData={shareData}
+            items={items}
+            positions={positions}
+            bgViewportWidth={bgViewportWidth}
             activeTagNames={activeTagNames}
             totalBoardCount={totalBoardCount}
+            sharedCardCount={sharedCardCount}
             scrollY={scrollY}
             contentHeight={contentHeight}
             viewportHeight={viewportHeight}

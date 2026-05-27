@@ -2,20 +2,12 @@
 // 実描画の動作確認は playwright integration test で別途実施 (= Task 7)。
 import { describe, it, expect } from 'vitest'
 import { captureMirrorToWebP, type MirrorCaptureInput } from './capture-mirror'
-import { SHARE_SCHEMA_VERSION_V2, type ShareDataV2 } from './types-v2'
-
-const minimalShare: ShareDataV2 = {
-  v: SHARE_SCHEMA_VERSION_V2,
-  cards: [
-    { u: 'https://example.com/a', t: 'a', ty: 'website', cw: 240, a: 1.6 },
-  ],
-  createdAt: Date.now(),
-}
 
 const baseInput = {
-  shareData: minimalShare,
+  items: [],
+  sharedCardCount: 0,
   activeTagNames: [],
-  totalBoardCount: 1,
+  totalBoardCount: 0,
   width: 1200,
   height: 628,
   quality: 0.85,

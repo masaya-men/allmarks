@@ -63,6 +63,7 @@ import { usePipWindow } from '@/lib/board/pip-window'
 import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
+import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import styles from './BoardRoot.module.css'
 
 // Visible breathing room above the board's first card, in CSS pixels.
@@ -1755,6 +1756,20 @@ export function BoardRoot() {
             })
           : []}
         onPanY={(dy: number): void => { handlePanY(dy) }}
+        items={filteredItems.map((it): MirrorItem => ({
+          id: it.bookmarkId,
+          url: it.url,
+          title: it.title,
+          thumbnailUrl: it.thumbnail ?? null,
+        }))}
+        positions={Object.entries(layout.positions).map(([id, p]): MirrorPosition => ({
+          id,
+          x: p.x,
+          y: p.y,
+          w: p.w,
+          h: p.h,
+        }))}
+        bgViewportWidth={viewport.w}
       />
       {trashConfirmOpen && (
         <TrashConfirmDialog

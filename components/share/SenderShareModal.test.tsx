@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, fireEvent, waitFor, act } from '@testing-library/react'
 import { SenderShareModal } from './SenderShareModal'
 import { SHARE_SCHEMA_VERSION_V2, type ShareDataV2 } from '@/lib/share/types-v2'
+import type { MirrorItem, MirrorPosition } from './ShareMirror'
 
 vi.mock('@/lib/share/api-client', () => ({
   createShare: vi.fn(),
@@ -23,6 +24,31 @@ function makeShare(n: number): ShareDataV2 {
   }
 }
 
+function makeItems(n: number): MirrorItem[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `bookmark-${i}`,
+    url: `https://example.com/c${i}`,
+    title: `card ${i}`,
+    thumbnailUrl: null,
+  }))
+}
+
+function makePositions(n: number): MirrorPosition[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `bookmark-${i}`,
+    x: (i % 3) * 260,
+    y: Math.floor(i / 3) * 200,
+    w: 240,
+    h: 180,
+  }))
+}
+
+const defaultMirrorProps = {
+  items: makeItems(3),
+  positions: makePositions(3),
+  bgViewportWidth: 1200,
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
@@ -40,6 +66,7 @@ describe('SenderShareModal', () => {
         viewportHeight={800}
         activeTagNames={[]}
         onPanY={vi.fn()}
+        {...defaultMirrorProps}
       />,
     )
     expect(container.firstChild).toBeNull()
@@ -57,6 +84,9 @@ describe('SenderShareModal', () => {
         viewportHeight={800}
         activeTagNames={[]}
         onPanY={vi.fn()}
+        items={makeItems(5)}
+        positions={makePositions(5)}
+        bgViewportWidth={1200}
       />,
     )
     expect(queryByTestId('mirror-frame')).toBeTruthy()
@@ -81,6 +111,7 @@ describe('SenderShareModal', () => {
         viewportHeight={800}
         activeTagNames={[]}
         onPanY={vi.fn()}
+        {...defaultMirrorProps}
       />,
     )
     await act(async () => {
@@ -106,6 +137,7 @@ describe('SenderShareModal', () => {
         viewportHeight={800}
         activeTagNames={[]}
         onPanY={vi.fn()}
+        {...defaultMirrorProps}
       />,
     )
     await act(async () => {
@@ -133,6 +165,7 @@ describe('SenderShareModal', () => {
         viewportHeight={800}
         activeTagNames={[]}
         onPanY={vi.fn()}
+        {...defaultMirrorProps}
       />,
     )
     await act(async () => {
@@ -154,6 +187,7 @@ describe('SenderShareModal', () => {
         viewportHeight={800}
         activeTagNames={[]}
         onPanY={vi.fn()}
+        {...defaultMirrorProps}
       />,
     )
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -173,6 +207,7 @@ describe('SenderShareModal', () => {
         viewportHeight={800}
         activeTagNames={[]}
         onPanY={vi.fn()}
+        {...defaultMirrorProps}
       />,
     )
     const backdrop = container.firstChild as HTMLElement
@@ -193,6 +228,7 @@ describe('SenderShareModal', () => {
         viewportHeight={800}
         activeTagNames={[]}
         onPanY={onPanY}
+        {...defaultMirrorProps}
       />,
     )
     const backdrop = container.firstChild as HTMLElement

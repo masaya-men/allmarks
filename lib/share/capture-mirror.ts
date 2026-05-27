@@ -2,18 +2,24 @@
 //
 // 設計: lib/share/snapshot.ts (session 85 の placeholder) の置換。 dom-to-image-more の
 // メモリ爆発 + iframe 自動再生問題を回避するため、 DOM walk せず直接 canvas に
-// drawImage する方式。 入力は ShareMirror の DOM frame + share data。
+// drawImage する方式。 入力は ShareMirror の DOM frame + items リスト。
 //
 // jsdom 環境では canvas API が未対応のため、 null を返して safely fail する。
 // 実環境 (= ブラウザ) の動作は playwright で検証 (= Task 7)。
 
-import type { ShareDataV2, ShareCardV2 } from './types-v2'
+export type MirrorCaptureItem = {
+  readonly url: string
+  readonly title: string
+  readonly thumbnailUrl: string | null
+}
 
 export type MirrorCaptureInput = {
   /** ShareMirror のルート DOM (= 1.91:1 frame)。 null なら null を返す。 */
   readonly mirrorFrame: HTMLElement | null
-  /** 共有データ。 cards の URL / thumb / title を読む。 */
-  readonly shareData: ShareDataV2
+  /** ミラーに表示されているアイテム一覧。 data-mirror-card-id との照合に使う。 */
+  readonly items: ReadonlyArray<MirrorCaptureItem>
+  /** 共有カード数 (= "N OF M CARDS" の N 側)。 */
+  readonly sharedCardCount: number
   /** アクティブな tag 名 (= ブランド帯上部表示用、 空配列なら非表示)。 */
   readonly activeTagNames: ReadonlyArray<string>
   /** "N OF M CARDS" の M 側 (= ボード全体のカード数)。 */
@@ -81,17 +87,17 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     if (cx + cw < 0 || cy + ch < 0 || cx > input.width || cy > input.height) continue
 
     const cardId = el.dataset.mirrorCardId ?? ''
-    const card = input.shareData.cards.find((c): c is ShareCardV2 => indexedUrl(c) === cardId)
-    if (!card) continue
+    const item = input.items.find((it) => it.url === cardId)
+    if (!item) continue
 
     // カードの背景塗り (= 失敗時の fallback ベース、 cross-origin OK なら drawImage で上書き)
     ctx.fillStyle = '#1a1a1c'
     ctx.fillRect(cx, cy, cw, ch)
 
     // サムネ画像が取れれば drawImage
-    if (card.th) {
+    if (item.thumbnailUrl) {
       try {
-        const img = await loadCrossOriginImage(card.th)
+        const img = await loadCrossOriginImage(item.thumbnailUrl)
         if (img) ctx.drawImage(img, cx, cy, cw, ch)
       } catch {
         // 失敗時はベース塗りそのまま (= 上の灰色)
@@ -104,7 +110,7 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     ctx.textAlign = 'left'
     const titleSize = Math.max(9, Math.round(ch * 0.09))
     ctx.font = `500 ${titleSize}px "Geist Mono", ui-monospace, monospace`
-    drawClippedText(ctx, card.t, cx + 6, cy + ch - titleSize - 6, cw - 12)
+    drawClippedText(ctx, item.title, cx + 6, cy + ch - titleSize - 6, cw - 12)
   }
 }
 
@@ -127,7 +133,7 @@ function drawBrandStrip(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput
   drawALogo(ctx, padding, H - padding - 32, 32)
 
   // 右下 「N CARDS · NEWEST FIRST」 or「N OF M CARDS · NEWEST FIRST」
-  const N = input.shareData.cards.length
+  const N = input.sharedCardCount
   const M = input.totalBoardCount
   const captionText = M > N
     ? `${N} OF ${M} CARDS · NEWEST FIRST`
@@ -219,7 +225,3 @@ function canvasToWebP(canvas: HTMLCanvasElement, quality: number): Promise<strin
   })
 }
 
-/** Card identity for mirror DOM <-> share data linking. URL is unique per card. */
-function indexedUrl(card: ShareCardV2): string {
-  return card.u
-}
