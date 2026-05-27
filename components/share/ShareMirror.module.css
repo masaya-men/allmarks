@@ -105,14 +105,16 @@
   overflow: hidden;
 }
 
+/* Subtler scrim — minimal feel, image character shows through more.
+   Slightly heavier in the center band where text sits. */
 .cardPlaceholderScrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.25) 0%,
-    rgba(0, 0, 0, 0.55) 50%,
-    rgba(0, 0, 0, 0.25) 100%
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.42) 50%,
+    rgba(0, 0, 0, 0.18) 100%
   );
   pointer-events: none;
 }
@@ -120,30 +122,32 @@
 .cardPlaceholderTitle {
   position: absolute;
   inset: 0;
-  padding: 10% 8%;
+  padding: 16% 14%;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   font-family: 'Geist Mono', ui-monospace, monospace;
-  font-size: 11px;
-  line-height: 1.35;
-  color: rgba(255, 255, 255, 0.96);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
   /* Fade at top + bottom so long titles trail off into the image instead
      of hard-truncating. Mask works regardless of font-size scaling. */
   -webkit-mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    black 14%,
-    black 80%,
+    black 18%,
+    black 78%,
     transparent 100%
   );
   mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    black 14%,
-    black 80%,
+    black 18%,
+    black 78%,
     transparent 100%
   );
   overflow: hidden;

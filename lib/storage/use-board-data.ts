@@ -11,6 +11,7 @@ import {
   updateCard,
   updateBookmarkOrderIndex,
   updateBookmarkOrderBatch,
+  repairOrderIndexIfNeeded,
   persistCustomCardWidth,
   clearCustomCardWidth,
   clearAllCustomCardWidths,
@@ -225,15 +226,27 @@ export function useBoardData(): {
         console.warn('[allmarks] backfill failed (non-fatal):', e)
       }
       if (cancelled) return
+      // One-shot migration: collapses orderIndex collisions and aligns the
+      // store with the new DESC sort. Idempotent via settings flag — runs at
+      // most once per IDB instance, then no-ops.
+      try {
+        await repairOrderIndexIfNeeded(db as Parameters<typeof repairOrderIndexIfNeeded>[0])
+      } catch (e) {
+        console.warn('[allmarks] orderIndex repair failed (non-fatal):', e)
+      }
+      if (cancelled) return
       const bookmarks = await getAllBookmarks(db as Parameters<typeof getAllBookmarks>[0])
       const cards = (await db.getAll('cards')) as CardRecord[]
       const cardByBookmark = new Map<string, CardRecord>()
       for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
       if (cancelled) return
+      // DESC by orderIndex = newest-saved (= highest orderIndex) appears first
+      // on the board. Industry-standard "newest at top" matches Pocket /
+      // Raindrop / Instapaper / mymind etc.
       const active = bookmarks
         .filter(b => !b.isDeleted)
         .map((b) => toItem(b, cardByBookmark.get(b.id)))
-        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .sort((a, b) => b.orderIndex - a.orderIndex)
       const trashed = bookmarks
         .filter(b => b.isDeleted)
         .map((b) => toItem(b, cardByBookmark.get(b.id)))
@@ -317,15 +330,18 @@ export function useBoardData(): {
       const db = dbRef.current
       if (!db) return
       // Optimistic local update — produce items array in the new order with
-      // refreshed orderIndex fields, preserving other fields.
+      // refreshed orderIndex fields, preserving other fields. Board sort is
+      // DESC by orderIndex so the FIRST id in the visual top-down array
+      // receives the HIGHEST orderIndex (matches updateBookmarkOrderBatch).
       setItems((prev) => {
         const byId = new Map<string, BoardItem>()
         for (const it of prev) byId.set(it.bookmarkId, it)
         const reordered: BoardItem[] = []
-        for (let i = 0; i < orderedBookmarkIds.length; i++) {
+        const n = orderedBookmarkIds.length
+        for (let i = 0; i < n; i++) {
           const it = byId.get(orderedBookmarkIds[i])
           if (!it) continue
-          reordered.push({ ...it, orderIndex: i })
+          reordered.push({ ...it, orderIndex: n - 1 - i })
         }
         // Append items not mentioned (defensive) — preserve their current orderIndex
         for (const it of prev) {
@@ -421,7 +437,7 @@ export function useBoardData(): {
       // TRASH view reflects current state without a manual reload.
       setItems((prev) => {
         if (prev.some((it) => it.bookmarkId === bookmarkId)) return prev
-        return [...prev, transformed].sort((a, b) => a.orderIndex - b.orderIndex)
+        return [...prev, transformed].sort((a, b) => b.orderIndex - a.orderIndex)
       })
       setDeletedItems((prev) => prev.filter((it) => it.bookmarkId !== bookmarkId))
     },
@@ -562,10 +578,11 @@ export function useBoardData(): {
     const cards = (await db.getAll('cards')) as CardRecord[]
     const cardByBookmark = new Map<string, CardRecord>()
     for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
+    // DESC by orderIndex — see initial load comment for rationale.
     const active = bookmarks
       .filter((b) => !b.isDeleted)
       .map((b) => toItem(b, cardByBookmark.get(b.id)))
-      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .sort((a, b) => b.orderIndex - a.orderIndex)
     const trashed = bookmarks
       .filter((b) => b.isDeleted)
       .map((b) => toItem(b, cardByBookmark.get(b.id)))

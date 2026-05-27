@@ -175,6 +175,13 @@ export interface SettingsRecord {
   cardStyle?: string
   /** Custom background image URL */
   customImage?: string
+  /** One-shot migration completion flags. Each flag is set true after its
+   *  migration runs once successfully and is never cleared. Used by
+   *  repairOrderIndexIfNeeded etc. to avoid re-running on subsequent startups
+   *  (which would clobber user's drag-to-reorder customizations). */
+  migrationFlags?: {
+    readonly orderIndexRepairV1?: boolean
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -707,6 +714,100 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
 // ---------------------------------------------------------------------------
 
 /**
+ * Compute the next safe orderIndex for a new bookmark.
+ *
+ * Returns max(existing orderIndex) + 1, or 0 if no bookmarks exist. This is
+ * the collision-safe replacement for `db.count('bookmarks')` — count drops
+ * when EMPTY TRASH physically removes records, but the high-watermark
+ * orderIndex of the remaining records does not, so issuing `count` as the
+ * new orderIndex caused duplicates and "newly saved card scattered in the
+ * middle" (= session 87 bug).
+ *
+ * Cost: O(N) since IDB has no native "max indexed value" query and
+ * orderIndex is not separately indexed today. ~1ms for N=1000.
+ */
+export async function nextOrderIndex(db: IDBPDatabase<AllMarksDB>): Promise<number> {
+  const all = await db.getAll('bookmarks')
+  if (all.length === 0) return 0
+  let max = -1
+  for (const b of all) {
+    const o = b.orderIndex ?? -1
+    if (o > max) max = o
+  }
+  return max + 1
+}
+
+/**
+ * One-shot migration: rewrite orderIndex on existing bookmarks so the board's
+ * (new) DESC sort produces the same visual top-down order the user had under
+ * the (old) ASC sort, AND so every record has a unique orderIndex (= no more
+ * collisions from the count-vs-max bug).
+ *
+ * Guarded by a settings flag so it runs at most once per IDB instance: re-
+ * running on every startup would clobber the user's drag-to-reorder
+ * customizations. Empty stores are still flagged so first-time users skip
+ * the migration on subsequent launches.
+ *
+ * After this runs, the assignments are:
+ *   - sorted[0]  (= old top, lowest orderIndex)  →  new orderIndex = N-1
+ *   - sorted[N-1](= old bottom, highest orderIndex) → new orderIndex = 0
+ * Under the new DESC sort, the highest orderIndex displays first, so the
+ * old top still displays at the top.
+ */
+export async function repairOrderIndexIfNeeded(
+  db: IDBPDatabase<AllMarksDB>,
+): Promise<{ ran: boolean; updated: number }> {
+  const existingMigration = await db.get('settings', 'migration').catch(() => undefined)
+  if (existingMigration?.migrationFlags?.orderIndexRepairV1) {
+    return { ran: false, updated: 0 }
+  }
+
+  const all = await db.getAll('bookmarks')
+  let updated = 0
+
+  if (all.length > 0) {
+    // Sort by (orderIndex ASC, savedAt ASC) — this reproduces the user's
+    // OLD visual top-down order under the old ASC sort.
+    const sorted = [...all].sort((a, b) => {
+      const oa = a.orderIndex ?? 0
+      const ob = b.orderIndex ?? 0
+      if (oa !== ob) return oa - ob
+      return a.savedAt.localeCompare(b.savedAt)
+    })
+
+    const tx = db.transaction(['bookmarks', 'settings'], 'readwrite')
+    const store = tx.objectStore('bookmarks')
+    for (let i = 0; i < sorted.length; i++) {
+      const desired = sorted.length - 1 - i
+      if ((sorted[i].orderIndex ?? -1) !== desired) {
+        await store.put({ ...sorted[i], orderIndex: desired })
+        updated++
+      }
+    }
+    await tx.objectStore('settings').put({
+      key: 'migration',
+      ...existingMigration,
+      migrationFlags: {
+        ...(existingMigration?.migrationFlags ?? {}),
+        orderIndexRepairV1: true,
+      },
+    })
+    await tx.done
+  } else {
+    await db.put('settings', {
+      key: 'migration',
+      ...existingMigration,
+      migrationFlags: {
+        ...(existingMigration?.migrationFlags ?? {}),
+        orderIndexRepairV1: true,
+      },
+    })
+  }
+
+  return { ran: true, updated }
+}
+
+/**
  * Add a new bookmark and automatically create an associated card.
  * @param db - The database instance
  * @param input - Bookmark data
@@ -716,9 +817,12 @@ export async function addBookmark(
   db: IDBPDatabase<AllMarksDB>,
   input: BookmarkInput,
 ): Promise<BookmarkRecord> {
-  // Append to the end of the current bookmark list (board-wide ordering).
-  const existingCount = await db.count('bookmarks')
-  const nextOrder = existingCount
+  // Newest gets the highest orderIndex. Board sort is DESC by orderIndex so
+  // this card appears at the top. Using `max + 1` rather than `count`
+  // prevents collisions after EMPTY TRASH physically removes records (= the
+  // count drops below max, and `count` would re-issue an in-use orderIndex —
+  // the source of the "new bookmark scattered in the middle" bug).
+  const nextOrder = await nextOrderIndex(db)
 
   const bookmark: BookmarkRecord = {
     id: uuid(),
@@ -1051,7 +1155,12 @@ export async function updateBookmarkOrderIndex(
 
 /**
  * Atomically rewrite orderIndex for multiple bookmarks in one transaction.
- * Use for drag-to-reorder: caller supplies the new complete order by ID.
+ * Use for drag-to-reorder: caller supplies the new complete order by ID
+ * in VISUAL top-down order (= what the user just dragged into place).
+ *
+ * Board sort is DESC by orderIndex (newest first), so the FIRST id in the
+ * array becomes the visual top and must receive the HIGHEST orderIndex.
+ * Assignment: orderedBookmarkIds[i] → orderIndex = (length - 1 - i).
  */
 export async function updateBookmarkOrderBatch(
   db: IDBPDatabase<AllMarksDB>,
@@ -1059,11 +1168,12 @@ export async function updateBookmarkOrderBatch(
 ): Promise<void> {
   const tx = db.transaction('bookmarks', 'readwrite')
   const store = tx.objectStore('bookmarks')
-  for (let i = 0; i < orderedBookmarkIds.length; i++) {
+  const n = orderedBookmarkIds.length
+  for (let i = 0; i < n; i++) {
     const id = orderedBookmarkIds[i]
     const existing = await store.get(id)
     if (!existing) continue
-    await store.put({ ...existing, orderIndex: i })
+    await store.put({ ...existing, orderIndex: n - 1 - i })
   }
   await tx.done
 }
@@ -1116,7 +1226,8 @@ export async function addBookmarkBatch(
 
   // Seed the running offsets from the current store sizes once, then advance
   // them locally — keeps each per-batch transaction independent of the others.
-  let nextOrder = await db.count('bookmarks')
+  // nextOrder uses max+1 (not count) for collision-safety post-EMPTY-TRASH.
+  let nextOrder = await nextOrderIndex(db)
   let gridIndex = await db.count('cards')
 
   for (let i = 0; i < inputs.length; i += batchSize) {

@@ -4,6 +4,7 @@ import { type IDBPDatabase } from 'idb'
 import {
   initDB, addBookmark, getAllBookmarks, deleteBookmark, updateCard,
   updateBookmarkOrderIndex, updateBookmarkOrderBatch,
+  nextOrderIndex, repairOrderIndexIfNeeded,
 } from '@/lib/storage/indexeddb'
 
 let db: IDBPDatabase<unknown> | null = null
@@ -130,11 +131,119 @@ describe('v8 migration', () => {
       url: 'https://b.com', title: 'B', description: '',
       thumbnail: '', favicon: '', siteName: '', type: 'website', tags: [],
     })
-    // Reverse the order
+    // Visual top-down order = [bm2, bm1]. Board sort is DESC by orderIndex,
+    // so bm2 (the new top) must receive the HIGHEST orderIndex (= n-1 = 1)
+    // and bm1 (now bottom) gets 0.
     await updateBookmarkOrderBatch(database, [bm2.id, bm1.id])
     const bookmarks = await getAllBookmarks(database)
     const byId = Object.fromEntries(bookmarks.map((b) => [b.id, b]))
-    expect(byId[bm2.id].orderIndex).toBe(0)
-    expect(byId[bm1.id].orderIndex).toBe(1)
+    expect(byId[bm2.id].orderIndex).toBe(1)
+    expect(byId[bm1.id].orderIndex).toBe(0)
+  })
+})
+
+// Session 87: collision-safe orderIndex assignment + one-shot migration that
+// fixes user data scrambled by the older `count`-based assignment.
+describe('orderIndex collision-safe assignment (session 87)', () => {
+  it('nextOrderIndex returns 0 on an empty store', async () => {
+    const database = await initDB()
+    db = database as unknown as IDBPDatabase<unknown>
+    expect(await nextOrderIndex(database)).toBe(0)
+  })
+
+  it('nextOrderIndex returns max + 1, not count, so it survives EMPTY TRASH', async () => {
+    const database = await initDB()
+    db = database as unknown as IDBPDatabase<unknown>
+    // Add 3, then physically remove the middle one (= EMPTY TRASH semantics).
+    const a = await addBookmark(database, { url: 'https://a', title: 'A', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website', tags: [] })
+    const b = await addBookmark(database, { url: 'https://b', title: 'B', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website', tags: [] })
+    const c = await addBookmark(database, { url: 'https://c', title: 'C', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website', tags: [] })
+    // a=0, b=1, c=2. Now delete b → count=2 but max=2.
+    await deleteBookmark(database, b.id)
+    // BUG WAS: nextOrder = count = 2 → collides with c. FIX: max+1 = 3.
+    expect(await nextOrderIndex(database)).toBe(3)
+    // Adding here should issue 3, not 2.
+    const d = await addBookmark(database, { url: 'https://d', title: 'D', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website', tags: [] })
+    expect(d.orderIndex).toBe(3)
+    const all = await getAllBookmarks(database)
+    const orderIndices = all.map((bm) => bm.orderIndex).sort()
+    // No duplicate orderIndex despite the deletion + add sequence.
+    expect(new Set(orderIndices).size).toBe(orderIndices.length)
+    expect(orderIndices).toEqual([0, 2, 3])
+    void a; void c
+  })
+
+  it('addBookmark on empty store assigns orderIndex 0', async () => {
+    const database = await initDB()
+    db = database as unknown as IDBPDatabase<unknown>
+    const bm = await addBookmark(database, { url: 'https://a', title: 'A', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website', tags: [] })
+    expect(bm.orderIndex).toBe(0)
+  })
+})
+
+describe('repairOrderIndexIfNeeded (session 87 migration)', () => {
+  it('no-op on an empty store, marks flag so subsequent runs short-circuit', async () => {
+    const database = await initDB()
+    db = database as unknown as IDBPDatabase<unknown>
+    const r1 = await repairOrderIndexIfNeeded(database)
+    expect(r1.ran).toBe(true)
+    expect(r1.updated).toBe(0)
+    const r2 = await repairOrderIndexIfNeeded(database)
+    expect(r2.ran).toBe(false)  // flag set, skips
+  })
+
+  it('renumbers colliding orderIndices so DESC sort preserves old ASC visual order', async () => {
+    const database = await initDB()
+    db = database as unknown as IDBPDatabase<unknown>
+    // Seed 3 bookmarks via direct writes so savedAt is fully controlled —
+    // addBookmark() calls in quick succession can stamp identical millisecond
+    // savedAt values, making the (orderIndex, savedAt) tiebreaker
+    // non-deterministic in tests.
+    const baseSavedAt = '2026-05-28T00:00:00.'
+    const aRec = { id: 'a', url: 'https://a', title: 'A', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: `${baseSavedAt}001Z`, ogpStatus: 'fetched' as const, orderIndex: 0 }
+    const bRec = { id: 'b', url: 'https://b', title: 'B', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: `${baseSavedAt}002Z`, ogpStatus: 'fetched' as const, orderIndex: 1 }
+    // c collides with b (= the pre-fix scenario where EMPTY TRASH + new save
+    // re-issued an in-use orderIndex). c's savedAt > b's so tiebreaker puts
+    // b first in (orderIndex ASC, savedAt ASC) sort.
+    const cRec = { id: 'c', url: 'https://c', title: 'C', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: `${baseSavedAt}003Z`, ogpStatus: 'fetched' as const, orderIndex: 1 }
+    const tx = database.transaction('bookmarks', 'readwrite')
+    await tx.objectStore('bookmarks').put(aRec)
+    await tx.objectStore('bookmarks').put(bRec)
+    await tx.objectStore('bookmarks').put(cRec)
+    await tx.done
+
+    const result = await repairOrderIndexIfNeeded(database)
+    expect(result.ran).toBe(true)
+    expect(result.updated).toBeGreaterThan(0)
+
+    const after = await getAllBookmarks(database)
+    const byId = Object.fromEntries(after.map((bm) => [bm.id, bm]))
+    // Indices are unique and exactly 0..N-1.
+    const indices = after.map((bm) => bm.orderIndex).sort((x, y) => (x ?? 0) - (y ?? 0))
+    expect(new Set(indices).size).toBe(indices.length)
+    expect(indices).toEqual([0, 1, 2])
+    // Old ASC visual top-down was a, b, c. New DESC sort should put them in
+    // the same top-down order, so the OLD TOP (= a) gets the HIGHEST
+    // orderIndex (= 2 = visible first under DESC), and the OLD BOTTOM (= c)
+    // gets the LOWEST (= 0 = visible last).
+    expect(byId.a.orderIndex).toBe(2)
+    expect(byId.b.orderIndex).toBe(1)
+    expect(byId.c.orderIndex).toBe(0)
+  })
+
+  it('is idempotent (second run does not flip the order back)', async () => {
+    const database = await initDB()
+    db = database as unknown as IDBPDatabase<unknown>
+    await addBookmark(database, { url: 'https://a', title: 'A', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website', tags: [] })
+    await addBookmark(database, { url: 'https://b', title: 'B', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website', tags: [] })
+    await repairOrderIndexIfNeeded(database)
+    const first = await getAllBookmarks(database)
+    const firstSnapshot = Object.fromEntries(first.map((bm) => [bm.id, bm.orderIndex]))
+    const r2 = await repairOrderIndexIfNeeded(database)
+    expect(r2.ran).toBe(false)
+    const after = await getAllBookmarks(database)
+    for (const bm of after) {
+      expect(bm.orderIndex).toBe(firstSnapshot[bm.id])
+    }
   })
 })
