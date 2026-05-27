@@ -143,8 +143,13 @@ function drawBrandStrip(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput
     drawClippedText(ctx, text, padding, padding, W - padding * 2)
   }
 
-  // 左下 「A」 マーク (= 簡略表現、 32×32 px)
-  drawALogo(ctx, padding, H - padding - 32, 32)
+  // 左下 ALLMARKS wordmark (= 右下 caption と同 font / size / weight、
+  // 2 つで 1 つの chrome バンドに読める)
+  ctx.fillStyle = TEXT_MAIN
+  ctx.font = '500 13px "Geist Mono", ui-monospace, monospace'
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+  ctx.fillText('ALLMARKS', padding, H - padding - 16)
 
   // 右下 「N CARDS · NEWEST FIRST」 or「N OF M CARDS · NEWEST FIRST」
   const N = input.sharedCardCount
@@ -163,33 +168,6 @@ function drawBrandStrip(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput
   ctx.beginPath()
   ctx.arc(W - padding - ctx.measureText(captionText).width - 12, H - padding - 16, 3, 0, Math.PI * 2)
   ctx.fill()
-}
-
-function drawALogo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
-  ctx.save()
-  ctx.translate(x, y)
-  // 黒い背景は省略 (= 透明)、 白い A の縦線 + 横線
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.94)'
-  ctx.lineWidth = Math.max(2, size * 0.08)
-  ctx.lineCap = 'square'
-  ctx.beginPath()
-  ctx.moveTo(size * 0.18, size * 0.84)
-  ctx.lineTo(size * 0.5, size * 0.1)
-  ctx.lineTo(size * 0.82, size * 0.84)
-  ctx.stroke()
-  ctx.beginPath()
-  ctx.moveTo(size * 0.33, size * 0.58)
-  ctx.lineTo(size * 0.67, size * 0.58)
-  ctx.stroke()
-  // 緑チェック
-  ctx.strokeStyle = BRAND_GREEN
-  ctx.lineWidth = Math.max(1.5, size * 0.06)
-  ctx.beginPath()
-  ctx.moveTo(size * 0.62, size * 0.74)
-  ctx.lineTo(size * 0.72, size * 0.84)
-  ctx.lineTo(size * 0.9, size * 0.62)
-  ctx.stroke()
-  ctx.restore()
 }
 
 function drawWrappedText(

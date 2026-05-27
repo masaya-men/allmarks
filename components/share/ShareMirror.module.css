@@ -126,10 +126,17 @@
   pointer-events: none;
 }
 
-.brandLogo {
-  width: 24px;
-  height: 24px;
-  display: inline-block;
+/* AllMarks wordmark — left-side counterpart to the right-side "● N CARDS"
+   caption. Same monospace font + size + weight + color so the two strips
+   read as one chrome band at the OG image's bottom edge. */
+.wordmark {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  color: rgba(255, 255, 255, 0.92);
+  text-transform: uppercase;
+  line-height: 1;
 }
 
 .caption {

@@ -148,11 +148,7 @@ export function ShareMirror({
       ) : null}
 
       <div className={styles.bottomStrip}>
-        <svg className={styles.brandLogo} viewBox="0 0 32 32" aria-hidden="true">
-          <path d="M5.76 26.88L16 3.2l10.24 23.68" stroke="rgba(255,255,255,0.94)" strokeWidth="2.56" fill="none" strokeLinecap="square"/>
-          <path d="M10.56 18.56h10.88" stroke="rgba(255,255,255,0.94)" strokeWidth="2.56" fill="none" strokeLinecap="square"/>
-          <path d="M19.84 23.68l3.2 3.2 5.76-7.04" stroke="#28F100" strokeWidth="1.92" fill="none" strokeLinecap="square" strokeLinejoin="miter"/>
-        </svg>
+        <span className={styles.wordmark}>ALLMARKS</span>
         <span className={styles.caption}>
           <span className={styles.captionDot} aria-hidden="true" />
           {captionText}
