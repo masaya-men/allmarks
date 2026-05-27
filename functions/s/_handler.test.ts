@@ -4,16 +4,42 @@ import { handleShareRequest, type ShareHandlerContext } from './_handler'
 import { encodeKVPayload } from '../../lib/share/encode-v2'
 import { SHARE_SCHEMA_VERSION_V2, type KVShareEntry } from '../../lib/share/types-v2'
 
+const minimalTemplate =
+  `<!DOCTYPE html><html lang="ja"><head>` +
+  `<title>Booklage</title>` +
+  `<meta property="og:title" content="Booklage"/>` +
+  `<meta property="og:description" content="board app"/>` +
+  `<meta property="og:type" content="website"/>` +
+  `<script src="/_next/static/chunks/abc.js" async=""></script>` +
+  `</head><body>` +
+  `<script>self.__next_f.push([0])</script>` +
+  `</body></html>`
+
 function makeKV(store: Record<string, string | null>) {
   return {
     get: async (key: string): Promise<string | null> => store[key] ?? null,
   }
 }
 
-function makeCtx(id: string, store: Record<string, string | null>): ShareHandlerContext {
+function makeAssets(template: string, opts: { templateOk?: boolean } = {}) {
+  return {
+    fetch: async (): Promise<Response> => {
+      if (opts.templateOk === false) {
+        return new Response('not found', { status: 404 })
+      }
+      return new Response(template, { status: 200, headers: { 'Content-Type': 'text/html' } })
+    },
+  }
+}
+
+function makeCtx(
+  id: string,
+  store: Record<string, string | null>,
+  templateOpts: { templateOk?: boolean } = {},
+): ShareHandlerContext {
   return {
     request: new Request(`https://preview.booklage.pages.dev/s/${id}`),
-    env: { SHARE_KV: makeKV(store) },
+    env: { SHARE_KV: makeKV(store), ASSETS: makeAssets(minimalTemplate, templateOpts) },
     params: { id },
   }
 }
@@ -55,7 +81,14 @@ describe('handleShareRequest', () => {
     expect(res.status).toBe(404)
   })
 
-  it('returns 200 with share HTML when the KV value is a valid encoded payload (landing)', async () => {
+  it('returns 404 when the static template fetch fails', async () => {
+    const encoded = await encodeKVPayload(sampleEntry)
+    const ctx = makeCtx('abc123', { abc123: encoded }, { templateOk: false })
+    const res = await handleShareRequest(ctx, 'landing')
+    expect(res.status).toBe(404)
+  })
+
+  it('returns 200 with patched HTML when the KV value is a valid encoded payload (landing)', async () => {
     const encoded = await encodeKVPayload(sampleEntry)
     const ctx = makeCtx('abc123', { abc123: encoded })
     const res = await handleShareRequest(ctx, 'landing')
@@ -63,9 +96,11 @@ describe('handleShareRequest', () => {
     expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
     const body = await res.text()
     expect(body).toContain('<title>Shared collection on AllMarks</title>')
-    expect(body).toContain('og:image" content="https://preview.booklage.pages.dev/api/share/abc123/og.webp"')
-    expect(body).toContain('og:url" content="https://preview.booklage.pages.dev/s/abc123"')
+    expect(body).toContain('content="https://preview.booklage.pages.dev/api/share/abc123/og.webp"')
+    expect(body).toContain('content="https://preview.booklage.pages.dev/s/abc123"')
     expect(body).toMatch(/3 bookmarks/)
+    expect(body).toContain('self.__next_f.push([0])') // RSC data preserved
+    expect(body).toContain('<script src="/_next/static/chunks/abc.js"') // bundle preserved
   })
 
   it('returns 200 with triage og:url when page=triage', async () => {
@@ -74,10 +109,10 @@ describe('handleShareRequest', () => {
     const res = await handleShareRequest(ctx, 'triage')
     expect(res.status).toBe(200)
     const body = await res.text()
-    expect(body).toContain('og:url" content="https://preview.booklage.pages.dev/s/abc123/triage"')
+    expect(body).toContain('content="https://preview.booklage.pages.dev/s/abc123/triage"')
   })
 
-  it('marks the 404 response as no-store so a re-share with the same ID is not cached as gone', async () => {
+  it('marks the 404 response as no-store (= re-shared ID must not stay cached as gone)', async () => {
     const ctx = makeCtx('abc123', {})
     const res = await handleShareRequest(ctx, 'landing')
     expect(res.headers.get('Cache-Control')).toBe('no-store')

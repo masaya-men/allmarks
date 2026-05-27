@@ -1,19 +1,27 @@
 // functions/s/_handler.ts
 // /s/[id] および /s/[id]/triage が共通で使うハンドラロジック。
-// KV から共有データを取り出し、 成功時は renderShareHTML、 失敗時は 404 (= ランダムテーマ) を返す。
+// KV から共有データを取り出し、 成功時は Next.js が出力した /s.html を借りてきて
+// OG メタタグを per-id に書き換えて返す (= hydration を壊さないため自前 HTML 生成は不採用)。
+// 失敗時は 404 + ランダムテーマの 404 HTML を返す。
 
-import { renderShareHTML, renderShareNotFoundHTML } from './_template'
+import { renderShareNotFoundHTML } from './_template'
 import { pickTheme } from './_themes'
+import { patchShareHTML } from './patch-share-html'
 import { isValidShareId } from '../../lib/share/kv-id'
 import { decodeKVPayload } from '../../lib/share/decode-v2'
-import bundleManifest from './_bundle-manifest.json'
 
 interface KVNamespace {
   get(key: string, options?: { type?: 'text' | 'json' | 'arrayBuffer' }): Promise<string | null>
 }
 
+interface AssetFetcher {
+  fetch(input: Request | string | URL): Promise<Response>
+}
+
 export interface ShareHandlerEnv {
   readonly SHARE_KV: KVNamespace
+  /** Cloudflare Pages の静的アセット binding。 /s.html を取り出すのに使う。 */
+  readonly ASSETS: AssetFetcher
 }
 
 export interface ShareHandlerContext {
@@ -55,17 +63,24 @@ export async function handleShareRequest(
     return notFoundResponse()
   }
 
+  // /s.html (= Next.js export 出力) を静的アセットから取り出す。
+  // 同一プロジェクト内なので edge 内で完結 (= 外部ネットワーク往復なし)。
+  const templateRequest = new Request(`${baseUrl}/s`, { method: 'GET' })
+  const templateResponse = await ctx.env.ASSETS.fetch(templateRequest)
+  if (!templateResponse.ok) {
+    return notFoundResponse()
+  }
+  const template = await templateResponse.text()
+
   const cardCount = decoded.data.share.cards.length
-  const html = renderShareHTML({
+  const patched = patchShareHTML(template, {
     id,
     cardCount,
-    scripts: bundleManifest.scripts,
-    stylesheets: bundleManifest.stylesheets,
     baseUrl,
     page,
   })
 
-  return new Response(html, {
+  return new Response(patched, {
     status: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
