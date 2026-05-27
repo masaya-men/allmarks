@@ -1,33 +1,49 @@
 'use client'
-import { useCallback, useEffect, useState, type ReactElement } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import styles from './SenderShareModal.module.css'
-import { captureViewportWebP } from '@/lib/share/snapshot'
+import { captureMirrorToWebP } from '@/lib/share/capture-mirror'
 import { createShare } from '@/lib/share/api-client'
+import { ShareMirror } from './ShareMirror'
 
 type ModalState =
-  | { readonly kind: 'loading' }
-  | { readonly kind: 'ready'; readonly shareUrl: string; readonly thumbDataUrl: string }
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'capturing' }
+  | { readonly kind: 'ready'; readonly shareUrl: string }
   | { readonly kind: 'error'; readonly message: string }
 
 type Props = {
   readonly open: boolean
   readonly onClose: () => void
-  /** Lazy accessor: called once when modal opens to build the share payload. */
+  /** Lazy accessor: called when SHARE confirm pressed to build the share payload. */
   readonly getShareData: () => ShareDataV2
-  /** Lazy accessor: returns the HTMLElement to snapshot (= board canvas wrap). */
-  readonly getCanvasElement: () => HTMLElement | null
-  /** Total cards visible in current board view (= filteredItems.length).
-   *  When this exceeds 100 (= SHARE_LIMITS_V2.MAX_CARDS) the modal shows the
-   *  trim so the user knows only the first 100 are being shared. */
+  /** Total cards visible in current board view (= filteredItems.length). */
   readonly totalBoardCount: number
+  /** Bg board's current scrollY (= viewport.y). For mirror sync scroll. */
+  readonly scrollY: number
+  /** Bg board's full scrollable height (= contentBounds.height). */
+  readonly contentHeight: number
+  /** Bg board's viewport height (= viewport.h). */
+  readonly viewportHeight: number
+  /** Active filter tag names for mirror top strip. Empty = no filter. */
+  readonly activeTagNames: ReadonlyArray<string>
 }
 
-export function SenderShareModal({ open, onClose, getShareData, getCanvasElement, totalBoardCount }: Props): ReactElement | null {
-  const [state, setState] = useState<ModalState>({ kind: 'loading' })
+export function SenderShareModal({
+  open,
+  onClose,
+  getShareData,
+  totalBoardCount,
+  scrollY,
+  contentHeight,
+  viewportHeight,
+  activeTagNames,
+}: Props): ReactElement | null {
+  const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
+  const mirrorFrameRef = useRef<HTMLDivElement | null>(null)
 
-  // ESC + backdrop click handlers
+  // ESC handler
   useEffect((): (() => void) | undefined => {
     if (!open) return undefined
     const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') onClose() }
@@ -35,48 +51,48 @@ export function SenderShareModal({ open, onClose, getShareData, getCanvasElement
     return (): void => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  // Reset state when modal closes (so re-open starts fresh)
+  // Reset state on close
   useEffect((): void => {
-    if (!open) setState({ kind: 'loading' })
+    if (!open) setState({ kind: 'idle' })
   }, [open])
-
-  // Snapshot + POST /api/share/create on open
-  useEffect((): void => {
-    if (!open) return
-    void (async (): Promise<void> => {
-      setState({ kind: 'loading' })
-      try {
-        const canvas = getCanvasElement()
-        const share = getShareData()
-        const cardCount = share.cards.length
-        const thumb = await captureViewportWebP(canvas, {
-          width: 1200,
-          quality: 0.88,
-          captionRight: `${cardCount} CARDS`,
-        })
-        const thumbDataUrl = thumb ?? 'data:image/webp;base64,'
-        const result = await createShare({ share, thumb: thumbDataUrl })
-        if (!result.ok) {
-          setState({ kind: 'error', message: result.message })
-          return
-        }
-        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app'
-        const shareUrl = `${origin}/s/${result.data.id}`
-        setState({ kind: 'ready', shareUrl, thumbDataUrl })
-      } catch (e) {
-        setState({ kind: 'error', message: e instanceof Error ? e.message : 'unknown error' })
-      }
-    })()
-  }, [open, getShareData, getCanvasElement])
 
   const handleBackdrop = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
     if (e.target === e.currentTarget) onClose()
   }, [onClose])
 
+  const handleShareConfirm = useCallback(async (): Promise<void> => {
+    setState({ kind: 'capturing' })
+    try {
+      const share = getShareData()
+      const thumbDataUrl = await captureMirrorToWebP({
+        mirrorFrame: mirrorFrameRef.current,
+        shareData: share,
+        activeTagNames,
+        totalBoardCount,
+        width: 1200,
+        height: 628,
+        quality: 0.85,
+      })
+      if (!thumbDataUrl) {
+        setState({ kind: 'error', message: 'capture failed' })
+        return
+      }
+      const result = await createShare({ share, thumb: thumbDataUrl })
+      if (!result.ok) {
+        setState({ kind: 'error', message: result.message })
+        return
+      }
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app'
+      const shareUrl = `${origin}/s/${result.data.id}`
+      setState({ kind: 'ready', shareUrl })
+    } catch (e) {
+      setState({ kind: 'error', message: e instanceof Error ? e.message : 'unknown error' })
+    }
+  }, [getShareData, activeTagNames, totalBoardCount])
+
   if (!open) return null
 
   const shareData = getShareData()
-  const cardCount = shareData.cards.length
 
   return (
     <div className={styles.backdrop} onClick={handleBackdrop}>
@@ -85,50 +101,62 @@ export function SenderShareModal({ open, onClose, getShareData, getCanvasElement
           <span className={styles.title}>SHARE BOARD</span>
           <button type="button" className={styles.closeIcon} onClick={onClose} aria-label="Close">✕</button>
         </header>
+
         <div className={styles.preview}>
-          {state.kind === 'ready' ? (
-            <img src={state.thumbDataUrl} alt="Board preview" className={styles.thumb} />
-          ) : (
-            <div className={styles.thumbSkeleton} />
-          )}
+          <ShareMirror
+            shareData={shareData}
+            activeTagNames={activeTagNames}
+            totalBoardCount={totalBoardCount}
+            scrollY={scrollY}
+            contentHeight={contentHeight}
+            viewportHeight={viewportHeight}
+            frameRef={mirrorFrameRef}
+          />
         </div>
-        <p className={styles.meta}>
-          {totalBoardCount > cardCount
-            ? `SHARING ${cardCount} OF ${totalBoardCount} CARDS · NEWEST FIRST`
-            : `${cardCount} CARDS`}
+
+        <p className={styles.hint}>
+          SCROLL TO POSITION · PRESS CONFIRM WHEN READY
         </p>
+
         <div className={styles.actions}>
-          <div className={styles.urlRow}>
-            {state.kind === 'ready' ? (
-              <code className={styles.url}>{state.shareUrl}</code>
-            ) : state.kind === 'error' ? (
+          {state.kind === 'ready' ? (
+            <>
+              <div className={styles.urlRow}>
+                <code className={styles.url}>{state.shareUrl}</code>
+                <button
+                  type="button"
+                  className={styles.copyBtn}
+                  onClick={(): void => {
+                    void navigator.clipboard.writeText(state.shareUrl).then((): void => {
+                      setCopied(true)
+                      setTimeout((): void => setCopied(false), 1500)
+                    })
+                  }}
+                >{copied ? 'COPIED' : 'COPY'}</button>
+              </div>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                onClick={(): void => {
+                  const intent = `https://twitter.com/intent/tweet?url=${encodeURIComponent(state.shareUrl)}`
+                  window.open(intent, '_blank', 'noopener,noreferrer')
+                }}
+              >POST TO X</button>
+            </>
+          ) : state.kind === 'error' ? (
+            <>
               <code className={styles.url} style={{ color: '#ff8888' }}>⚠ {state.message}</code>
-            ) : (
-              <code className={styles.url}>⌗ preparing...</code>
-            )}
+              <button type="button" className={styles.primaryBtn} onClick={handleShareConfirm}>RETRY</button>
+            </>
+          ) : (
             <button
               type="button"
-              className={styles.copyBtn}
-              disabled={state.kind !== 'ready'}
-              onClick={(): void => {
-                if (state.kind !== 'ready') return
-                void navigator.clipboard.writeText(state.shareUrl).then((): void => {
-                  setCopied(true)
-                  setTimeout(() => setCopied(false), 1500)
-                })
-              }}
-            >{copied ? 'COPIED' : 'COPY'}</button>
-          </div>
-          <button
-            type="button"
-            className={styles.primaryBtn}
-            disabled={state.kind !== 'ready'}
-            onClick={(): void => {
-              if (state.kind !== 'ready') return
-              const intent = `https://twitter.com/intent/tweet?url=${encodeURIComponent(state.shareUrl)}`
-              window.open(intent, '_blank', 'noopener,noreferrer')
-            }}
-          >POST TO X</button>
+              className={styles.primaryBtn}
+              disabled={state.kind === 'capturing'}
+              onClick={handleShareConfirm}
+            >{state.kind === 'capturing' ? 'CAPTURING…' : 'SHARE NOW'}</button>
+          )}
+
           <button type="button" className={styles.secondaryBtn} onClick={onClose}>CLOSE</button>
         </div>
       </div>

@@ -1,47 +1,149 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, fireEvent, waitFor, act } from '@testing-library/react'
 import { SenderShareModal } from './SenderShareModal'
 import { SHARE_SCHEMA_VERSION_V2, type ShareDataV2 } from '@/lib/share/types-v2'
 
-const sampleShare: ShareDataV2 = {
-  v: SHARE_SCHEMA_VERSION_V2,
-  cards: [{ u: 'https://a.com', t: 'T', ty: 'website', cw: 200, a: 1 }],
-  createdAt: 1735000000000,
+vi.mock('@/lib/share/api-client', () => ({
+  createShare: vi.fn(),
+}))
+vi.mock('@/lib/share/capture-mirror', () => ({
+  captureMirrorToWebP: vi.fn(),
+}))
+
+import { createShare } from '@/lib/share/api-client'
+import { captureMirrorToWebP } from '@/lib/share/capture-mirror'
+
+function makeShare(n: number): ShareDataV2 {
+  return {
+    v: SHARE_SCHEMA_VERSION_V2,
+    cards: Array.from({ length: n }, (_, i) => ({
+      u: `https://example.com/c${i}`, t: `c${i}`, ty: 'website' as const, cw: 240, a: 1.6,
+    })),
+    createdAt: Date.now(),
+  }
 }
 
-const defaultProps = {
-  open: true,
-  onClose: () => {},
-  getShareData: () => sampleShare,
-  getCanvasElement: () => null,
-  totalBoardCount: 1,
-}
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe('SenderShareModal', () => {
-  it('renders nothing when open=false', () => {
-    render(<SenderShareModal {...defaultProps} open={false} />)
-    expect(screen.queryByText('SHARE BOARD')).toBeNull()
+  it('returns null when closed', () => {
+    const { container } = render(
+      <SenderShareModal
+        open={false}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+      />,
+    )
+    expect(container.firstChild).toBeNull()
   })
 
-  it('renders header when open=true', () => {
-    render(<SenderShareModal {...defaultProps} />)
-    expect(screen.getByText('SHARE BOARD')).toBeInTheDocument()
+  it('renders mirror + SHARE confirm button when open', () => {
+    const { getByText, queryByTestId } = render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(5)}
+        totalBoardCount={5}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+      />,
+    )
+    expect(queryByTestId('mirror-frame')).toBeTruthy()
+    expect(getByText(/SHARE NOW/i)).toBeTruthy()
   })
 
-  it('calls onClose when CLOSE button clicked', () => {
+  it('on SHARE NOW click: captures + createShare', async () => {
+    vi.mocked(captureMirrorToWebP).mockResolvedValue('data:image/webp;base64,XXXX')
+    vi.mocked(createShare).mockResolvedValue({
+      ok: true,
+      data: { id: 'abc123', expiresAt: Date.now() + 1000 * 86400 },
+    })
+
+    const { getByText, findByText } = render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+      />,
+    )
+    await act(async () => {
+      fireEvent.click(getByText(/SHARE NOW/i))
+    })
+    await waitFor(() => {
+      expect(captureMirrorToWebP).toHaveBeenCalled()
+      expect(createShare).toHaveBeenCalled()
+    })
+    await findByText(/COPY/)  // URL row appears
+  })
+
+  it('shows error state when capture returns null', async () => {
+    vi.mocked(captureMirrorToWebP).mockResolvedValue(null)
+    const { getByText, findByText } = render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+      />,
+    )
+    await act(async () => {
+      fireEvent.click(getByText(/SHARE NOW/i))
+    })
+    expect(await findByText(/⚠/)).toBeTruthy()
+  })
+
+  it('ESC closes modal', () => {
     const onClose = vi.fn()
-    render(<SenderShareModal {...defaultProps} onClose={onClose} />)
-    screen.getByText('CLOSE').click()
-    expect(onClose).toHaveBeenCalled()
+    render(
+      <SenderShareModal
+        open={true}
+        onClose={onClose}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+      />,
+    )
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('shows raw card count when total equals shared count', () => {
-    render(<SenderShareModal {...defaultProps} totalBoardCount={1} />)
-    expect(screen.getByText('1 CARDS')).toBeInTheDocument()
-  })
-
-  it('shows "SHARING X OF Y" when board has more cards than the share', () => {
-    render(<SenderShareModal {...defaultProps} totalBoardCount={300} />)
-    expect(screen.getByText(/SHARING 1 OF 300 CARDS · NEWEST FIRST/)).toBeInTheDocument()
+  it('backdrop click closes modal', () => {
+    const onClose = vi.fn()
+    const { container } = render(
+      <SenderShareModal
+        open={true}
+        onClose={onClose}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+      />,
+    )
+    const backdrop = container.firstChild as HTMLElement
+    fireEvent.click(backdrop)
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

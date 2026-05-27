@@ -12,7 +12,7 @@
 
 .panel {
   position: relative;
-  width: min(480px, calc(100vw - 32px));
+  width: min(720px, calc(100vw - 32px));
   background: rgba(8, 8, 10, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
@@ -94,6 +94,15 @@
   letter-spacing: 0.05em;
   color: #28F100;
   opacity: 0.85;
+}
+
+.hint {
+  margin: 0 18px 14px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.42);
+  text-align: center;
 }
 
 .actions {

@@ -50,7 +50,7 @@ export function patchShareHTML(template: string, vars: PatchShareHTMLVars): stri
     `<meta property="og:url" content="${ogUrl}"/>`,
     `<meta property="og:image" content="${ogImage}"/>`,
     `<meta property="og:image:width" content="1200"/>`,
-    `<meta property="og:image:height" content="627"/>`,
+    `<meta property="og:image:height" content="628"/>`,
     `<meta name="twitter:image" content="${ogImage}"/>`,
   ].join('')
   html = html.replace(
