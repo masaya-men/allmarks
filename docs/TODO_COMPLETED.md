@@ -5758,3 +5758,116 @@ user 報告「ファビコンと拡張フロートボタンに透明な箱が見
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+---
+
+## セッション 84 (2026-05-27) — シェア機能 Phase 3-6 実装 ship (= 送信側 modal + 受信側 landing + triage + 旧実装完全削除) / Phase 7 で architectural blocker、 次セッション Pages Function 化へ持ち越し
+
+### 経緯
+
+session 83 の close-out で Phase 1-2 (= データ層 + Cloudflare 基盤) まで完了、 user が `SHARE_KV` + `SHARE_KV_preview` namespace を作成 + ID を `wrangler.toml` に貼り付け済。 session 84 は Phase 3-7 を subagent-driven で進める方針でスタート。
+
+### 進め方
+
+`superpowers:subagent-driven-development` skill で 1 task ずつ:
+- implementer subagent dispatch (= fresh context、 plan の該当 task テキストを丸ごと prompt に埋め込む)
+- spec compliance review subagent
+- code quality review subagent
+- 完了 → 次 task
+
+trivial copy-paste task (= Task 16, 19, 22, 23, 25) は review 1 段に簡略化。 integration task (= Task 15, 17, 18, 20, 21, 24, 26) は二段 review。
+
+### このセッションで ship した範囲 (= Phase 3-6、 Tasks 12-30、 20 commits)
+
+**Phase 3 (Tasks 12-15): 送信側 SenderShareModal**:
+
+1. `lib/share/import.ts` — `findDuplicates` (= URL set 差分) + `convertSenderTagsForReceiver` (= sender tag ID → receiver tag ID name-based mapping)、 unit test 3 件 (commit `96fc833`)
+2. `components/share/SenderShareModal.tsx` + `.module.css` — skeleton (= state machine + render、 ESC/backdrop close)、 unit test 3 件 (commit `ebfed91`)
+3. SenderShareModal に snapshot + API 配線追加 — `captureViewportWebP` (lazy import に変更後述) + `createShare` POST + COPIED toast 1.5 秒 + error 表示 (commit `0e4b306`)
+4. BoardRoot.tsx の SHARE button を SenderShareModal に切替 — `shareComposerOpen` → `shareModalOpen` rename + `buildShareData` callback + `getCanvasEl` callback (commit `6efd632`)。 plan の変数名想定 (`filteredItems` の shape) と実コード差分 (= `BoardItemForShare` 型は明示 map 必要) を implementer が正しく adapt
+
+**Phase 4 (Tasks 16-22): 受信側 ReceiverLanding**:
+
+5. `/s/[id]/page.tsx` route + OG metadata + ReceiverLanding stub (commit `59a66dc`)
+6. ReceiverLanding fetch + state machine + tempCard grid、 unit test 4 件 (commit `f137d34`)。 `useRouter` mock を test に追加 + `getAllByText` で expired テスト調整
+7. ReceiverLanding masonry 化 — 既存 `lib/board/skyline-layout` 流用、 plan の interface 想定と実 API 差異 (`SkylineCard` / `cards` / `{x,y,w,h}` / `totalHeight`) を adapt + ResizeObserver class-based mock (commit `a18f9e0`)
+8. `BulkImportToast` component (= 12px "N CARDS SAVED" + 10px "M ALREADY SAVED"、 4 秒自動 dismiss)、 unit test 3 件 (commit `3cf9f86`)
+9. ReceiverLanding に bulk import 配線 — `initDB` + `getAllBookmarks` + `findDuplicates` + `addBookmark` ループ、 onDismiss で `/board` 遷移 (commit `4040ef2`)
+10. ReceiverLanding に inline Lightbox 追加 — ESC/←/→ keyboard nav + cardClick で index、 既存 board Lightbox を adapt せず inline 簡易版 (commit `0830f8e`)
+11. ReceiverLanding 背景タイポ追加 — sender filter tag 名を giant 透明文字、 `.canvas { z-index: 1 }` でカード上層 (commit `6498b01`)
+
+**Phase 5 (Tasks 23-26): 受信側 ReceiverTriage**:
+
+12. `/s/[id]/triage/page.tsx` route + ReceiverTriage stub (commit `d52b2ac`)
+13. ReceiverTriage 本実装 — `fetchShare` + `sanitizeShareDataV2` + dups フィルタ → queue、 YES/NO ボタン、 sender tag chip strip (= dimmed) + tap で armed/unarmed、 handleYes で `convertSenderTagsForReceiver` + receiver-side `addTag` for newly-created + `addBookmark` with finalTagIds、 unit test 2 件 + `fake-indexeddb/auto` 設定 (commit `309b5b5`)
+14. ReceiverTriage 完了 toast — `showSummary` state + 完了時 `BulkImportToast` 表示 + onDismiss で `/board` (commit `9c7305b`)
+15. ReceiverTriage に receiver 既存 tags も chip strip 表示 — `useTags` hook 流用、 `.tagChipReceiver` (full opacity) + `.tagChipArmedReceiver` (= 緑活性) (commit `cc58e00`)
+
+**Phase 6 (Tasks 27-30): 旧実装の完全削除**:
+
+16. 旧 ShareComposer + 関連 hook 削除 — 9 ファイル削除 (`ShareComposer`, `ShareSourceList`, `ShareAspectSwitcher`, `use-share-fullscreen`, `use-share-reorder-drag` 全 .tsx/.module.css/.test.ts)、 `ShareActionSheet` + `SharedView` + `ShareFrame` は Task 28-30 dependents として温存 (commit `e972681`)
+17. 旧 lib/share v1 modules 部分削除 — `aspect-presets` + `board-to-cards` + `composer-layout` の 6 ファイル削除、 残り 11 ファイルは alive caller あり保留 (commit `2d063b3`)
+18. 旧 `/share` route + SharedView/ShareFrame chain 削除 — plan は `app/share/page.tsx` 想定だったが実体は `app/(app)/share/page.tsx`、 SharedView/ShareFrame と一緒に decode/validate/relay-layout/schema 4 module も orphan 化して同時削除、 計 12 ファイル / 1200 行 (commit `26f8ec1`)
+19. BoardRoot final cleanup + 残り lib/share orphan 削除 — `handleShareConfirm` 18 行 + `actionSheet` state + ShareActionSheet JSX + 4 import + dynamic png-export import 全部削除 (31 行 BoardRoot から削除)、 `ShareActionSheet.tsx` + `encode.ts` + `png-export.ts` + `watermark-config.ts` + 旧 e2e test 削除。 `lib/share/types.ts` は `lightbox-item.ts` 経由で `Lightbox.tsx` が利用しているため温存判断、 `lightbox-item.ts` も board 用途で削除禁止扱い (commit `14f351b`)
+
+### 検証 (= Phase 3-6 完了時点)
+
+- **tsc**: 0 errors
+- **vitest**: 843 PASS / 123 test files (= session 83 終了時 881 から削除 test 分減少、 新規 +18 加算後の net)
+- **既存挙動への副作用**: 旧 SHARE ボタン → 新 SenderShareModal に切替済 (= 旧 ShareComposer は本番未反映なので user 体験変化なし)
+- **本番 (booklage.pages.dev)**: 旧コードのまま (= ship 前なので user 影響ゼロ)
+
+### Phase 7 architectural blocker (= 次セッション持ち越しの理由)
+
+`rtk pnpm build` 実行で 2 段階の問題:
+
+**問題 1 (修正済)**: `lib/share/snapshot.ts` が `dom-to-image-more` を top-level import → Next.js が `/board` の HTML shell を prerender する時に `ReferenceError: Node is not defined` で死亡。 dynamic import (= 関数内で `await import('dom-to-image-more')`) に変更で解決 (commit `9dd2379`)
+
+**問題 2 (未解決、 architectural)**: `app/(app)/s/[id]/page.tsx` が `runtime = 'edge'` + dynamic segment `[id]` + `dynamic = 'force-dynamic'` を使っているが、 プロジェクトは `next.config.ts` で `output: 'export'` (= 完全静的書き出し) を選択している。 これは「事前に全 HTML を作成して Cloudflare に配置」 方式。 動的セグメント `[id]` は build 時に全候補を `generateStaticParams()` で列挙する必要があるが、 シェア ID は user 操作で実行時生成されるため事前列挙不可能。 build worker が `Cannot find module 'app-edge-has-no-entrypoint'` で死亡。
+
+**根本原因**: session 83 設計時の判断ミス。 「per-id で動的 OG metadata を返したい」 から edge runtime を選んだが、 プロジェクトの基本姿勢 (= Cloudflare Pages に静的書き出し) を見落とした。 計画書は edge runtime 前提で書かれていて、 静的書き出しと整合しない。
+
+### 解決方針 (= 次セッションで実施、 user 判断 「B」 確定)
+
+**Plan B: Cloudflare Pages Function で `/s/[id]` HTML を直接返す方式**
+
+- `app/(app)/s/[id]/page.tsx` + `app/(app)/s/[id]/triage/page.tsx` を削除 (= Next.js route から外す)
+- 新規 `functions/s/[id].ts` (Pages Function) で:
+  - リクエスト時に KV から payload + thumb を fetch
+  - HTML を組み立てて返す (= per-id OG metadata + React app shell + JS bundle 参照)
+  - JS bundle は既存 build から流用 (= ReceiverLanding をブラウザ側で boot)
+- 同様に `functions/s/[id]/triage.ts` も Pages Function 化
+- 既存 `/api/share/[id]/og.webp` Pages Function はそのまま、 HTML 内の `<meta property="og:image">` で参照
+- ブラウザ側 React app shell は `window.location.pathname` から ID を抽出 → ReceiverLanding を描画
+
+利点: per-id OG image が X 投稿で正しく出る (= バイラル性の核を維持)、 `output: 'export'` のままで動く、 既存 `/api/share/*` Pages Functions と一貫性
+
+設計詳細は新規 spec [docs/superpowers/specs/2026-05-28-share-pages-function-design.md](./superpowers/specs/2026-05-28-share-pages-function-design.md) に集約。 次セッション開始時に読む。
+
+### 進捗サマリ
+
+- Phase 1-2 (session 83): 11 commits、 17 file 新規
+- **Phase 3-6 (session 84): 20 commits + 1 build fix commit**
+- Phase 7 (= 次セッション): Pages Function 設計 → preview deploy → 本番 ship
+
+### 設計上の重要発見 (= memory 候補)
+
+- **`output: 'export'` + dynamic segment + edge runtime は共存不可**: Next.js が build 時に edge runtime page の entrypoint を生成しようとして失敗 (`Cannot find module 'app-edge-has-no-entrypoint'`)。 動的 OG が必要なら Pages Function で HTML を返す方式が canonical
+- **client component import が SSR module evaluation で発火する罠**: `'use client'` を付けたコンポーネントでも、 Next.js は static HTML shell を prerender するために module を評価する。 top-level `import domtoimage from 'dom-to-image-more'` のように DOM globals (`Node`) を触る module を import するとそこで死ぬ。 lazy import (= 関数内 `await import()`) で回避
+- **subagent-driven development の現実コスト感**: 20 task を 1 session で完遂可能 (= 1 task ≈ 3-5 subagent dispatch、 大型 task は 8-10 dispatch)。 trivial copy-paste task (= plan に exact code がある) は spec/quality review を 1 段に簡略化することで全体 token を抑えられる
+- **plan の前提と実コードの差異は implementer が adapt するパターンが圧倒的に効率良い**: 例) skyline-layout の interface (`SkylineCard` / `{x,y,w,h}` / `totalHeight`) が plan 想定と異なっていたが、 implementer subagent が grep で実 export 確認 → 全 reference を adapt して ship。 controller (= 私) が事前に全 file 読んで plan 修正する作業を回避できた
+- **deletion task の dependency chain**: 旧資産削除は「下流から上流へ」 順番が崩れると tsc 破綻。 BoardRoot.tsx (= 最上流の consumer) は最後に処理する必要があり、 lib/share/types.ts のような共通 type 定義は最下流まで波及確認が必要。 Task 27-30 で 4 段階に分けたのは正解、 1 commit で全部やろうとすると tsc が一時的に red になる
+- **`lib/share/lightbox-item.ts` は board 機能 (= Lightbox.tsx の 14 利用箇所) の依存** で share-feature とは別物。 plan は「lib/share/* 全削除」 想定だったが、 board 機能を壊さないために温存判断。 同じく `lib/share/types.ts` (= `ShareCard` 型を export) も lightbox-item 経由で温存
+
+### user 対話で得た学び (= memory 候補)
+
+- **`AskUserQuestion` 選択肢 box は対話を一方通行にする**: 30 task 完遂後の Phase 7 blocker で 3 択を box で出したら user が「このボックスで聞くのやめて。 一方通行過ぎるから。 ちゃんと対話して常に一緒にブラッシュアップしたい」 と即否定。 design 系だけでなく engineering tradeoff の合意形成でも box 形式は user の思考を框で縛るので不適切。 平文で 1 個ずつ話す方式を維持
+- **複雑な状況説明は「1 個ずつ理解しながらすすめたい」 のペース**: 「OG image とは → 解決策 2 つ → どっち選ぶ」 を 1 message に詰め込むと user は処理しきれない。 「ここまで OK?」 で区切って 1 ブロックずつ進める方が user の判断品質高い
+
+### 次セッション (= 85) へ持ち越し
+
+- Phase 7 = Pages Function 化 + preview deploy + 本番 ship (= 詳細 spec: [docs/superpowers/specs/2026-05-28-share-pages-function-design.md](./superpowers/specs/2026-05-28-share-pages-function-design.md))
+- 完了後の release blocker は session 83 終了時から変わらず: allmarks.app ドメイン取得確認 (= 2026-05-28 朝以降) / Phase D4 他 14 言語 mood→tag rename / Phase D5 NewMoodInput rename / onboarding チュートリアル / Chrome Web Store 公開準備
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+
