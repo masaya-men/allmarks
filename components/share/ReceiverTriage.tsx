@@ -7,6 +7,7 @@ import { findDuplicates, convertSenderTagsForReceiver } from '@/lib/share/import
 import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { getAllTags, addTag } from '@/lib/storage/tags'
 import { detectUrlType } from '@/lib/utils/url'
+import { BulkImportToast } from './BulkImportToast'
 import type { ShareDataV2, ShareCardV2 } from '@/lib/share/types-v2'
 import styles from './ReceiverTriage.module.css'
 
@@ -24,6 +25,7 @@ export function ReceiverTriage({ shareId }: Props): ReactElement {
   const [index, setIndex] = useState(0)
   const [savedCount, setSavedCount] = useState(0)
   const [armedTagIds, setArmedTagIds] = useState<ReadonlySet<string>>(() => new Set())
+  const [showSummary, setShowSummary] = useState<boolean>(false)
 
   // Fetch share + filter duplicates
   useEffect((): void => {
@@ -104,10 +106,10 @@ export function ReceiverTriage({ shareId }: Props): ReactElement {
 
   useEffect((): void => {
     if (state.kind !== 'ready') return
-    if (index >= state.queue.length) {
-      router.push('/board')
+    if (index >= state.queue.length && !showSummary) {
+      setShowSummary(true)
     }
-  }, [state, index, router])
+  }, [state, index, showSummary])
 
   if (state.kind === 'loading') {
     return <div className={styles.shell}><p className={styles.status}>LOADING</p></div>
@@ -126,7 +128,18 @@ export function ReceiverTriage({ shareId }: Props): ReactElement {
 
   const current = state.queue[index]
   if (!current) {
-    return <div className={styles.shell}><p className={styles.status}>FINISHED · {savedCount} SAVED</p></div>
+    return (
+      <div className={styles.shell}>
+        <p className={styles.status}>FINISHED · {savedCount} SAVED</p>
+        {showSummary && (
+          <BulkImportToast
+            saved={savedCount}
+            skipped={0}
+            onDismiss={(): void => router.push('/board')}
+          />
+        )}
+      </div>
+    )
   }
 
   const senderTagsForCard = current.tg ?? []
