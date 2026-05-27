@@ -45,7 +45,7 @@ describe('SenderShareModal', () => {
   })
 
   it('renders mirror + SHARE confirm button when open', () => {
-    const { getByText, queryByTestId } = render(
+    const { getByRole, queryByTestId } = render(
       <SenderShareModal
         open={true}
         onClose={vi.fn()}
@@ -58,7 +58,7 @@ describe('SenderShareModal', () => {
       />,
     )
     expect(queryByTestId('mirror-frame')).toBeTruthy()
-    expect(getByText(/SHARE NOW/i)).toBeTruthy()
+    expect(getByRole('button', { name: /SHARE NOW/i })).toBeTruthy()
   })
 
   it('on SHARE NOW click: captures + createShare', async () => {
@@ -68,7 +68,7 @@ describe('SenderShareModal', () => {
       data: { id: 'abc123', expiresAt: Date.now() + 1000 * 86400 },
     })
 
-    const { getByText, findByText } = render(
+    const { getByRole, findByText } = render(
       <SenderShareModal
         open={true}
         onClose={vi.fn()}
@@ -81,7 +81,7 @@ describe('SenderShareModal', () => {
       />,
     )
     await act(async () => {
-      fireEvent.click(getByText(/SHARE NOW/i))
+      fireEvent.click(getByRole('button', { name: /SHARE NOW/i }))
     })
     await waitFor(() => {
       expect(captureMirrorToWebP).toHaveBeenCalled()
@@ -92,7 +92,7 @@ describe('SenderShareModal', () => {
 
   it('shows error state when capture returns null', async () => {
     vi.mocked(captureMirrorToWebP).mockResolvedValue(null)
-    const { getByText, findByText } = render(
+    const { getByRole, findByText } = render(
       <SenderShareModal
         open={true}
         onClose={vi.fn()}
@@ -105,9 +105,35 @@ describe('SenderShareModal', () => {
       />,
     )
     await act(async () => {
-      fireEvent.click(getByText(/SHARE NOW/i))
+      fireEvent.click(getByRole('button', { name: /SHARE NOW/i }))
     })
     expect(await findByText(/⚠/)).toBeTruthy()
+  })
+
+  it('shows error state when createShare fails', async () => {
+    vi.mocked(captureMirrorToWebP).mockResolvedValue('data:image/webp;base64,XXXX')
+    vi.mocked(createShare).mockResolvedValue({
+      ok: false,
+      error: 'rate_limit',
+      message: 'rate limit exceeded',
+    })
+
+    const { getByRole, findByText } = render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+      />,
+    )
+    await act(async () => {
+      fireEvent.click(getByRole('button', { name: /SHARE NOW/i }))
+    })
+    expect(await findByText(/rate limit exceeded/)).toBeTruthy()
   })
 
   it('ESC closes modal', () => {

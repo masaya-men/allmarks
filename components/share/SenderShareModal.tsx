@@ -115,7 +115,7 @@ export function SenderShareModal({
         </div>
 
         <p className={styles.hint}>
-          SCROLL TO POSITION · PRESS CONFIRM WHEN READY
+          SCROLL TO POSITION · PRESS SHARE NOW WHEN READY
         </p>
 
         <div className={styles.actions}>
