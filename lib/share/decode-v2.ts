@@ -2,13 +2,12 @@
 import type { KVShareEntry } from './types-v2'
 
 async function ungzip(bytes: Uint8Array): Promise<Uint8Array> {
-  const rs = new ReadableStream({
-    start(controller) {
-      controller.enqueue(new Uint8Array(bytes.buffer.slice(0)))
-      controller.close()
-    },
-  })
-  const decompressed = rs.pipeThrough(new DecompressionStream('gzip') as TransformStream<Uint8Array, Uint8Array>)
+  // Blob.stream() instead of `new ReadableStream(...)` so this works in
+  // Cloudflare Workers without the `streams_enable_constructors` compatibility
+  // flag (= on by default for compat_date >= 2022-11-30, but our Pages project
+  // pins an older date via the dashboard). See lib/share/encode-v2.ts.
+  const inputStream = new Blob([bytes as Uint8Array<ArrayBuffer>]).stream()
+  const decompressed = inputStream.pipeThrough(new DecompressionStream('gzip'))
   const buf = await new Response(decompressed).arrayBuffer()
   return new Uint8Array(buf)
 }
