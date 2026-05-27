@@ -25,6 +25,32 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
   const [containerWidth, setContainerWidth] = useState<number>(1200)
   const [importResult, setImportResult] = useState<{ saved: number; skipped: number } | null>(null)
   const [importing, setImporting] = useState<boolean>(false)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  const openCard = useCallback((idx: number): void => {
+    setLightboxIndex(idx)
+  }, [])
+
+  const closeLightbox = useCallback((): void => setLightboxIndex(null), [])
+
+  const nextCard = useCallback((): void => {
+    setLightboxIndex((i) => i === null ? null : Math.min(i + 1, (state.kind === 'ready' ? state.data.cards.length : 1) - 1))
+  }, [state])
+
+  const prevCard = useCallback((): void => {
+    setLightboxIndex((i) => i === null ? null : Math.max(i - 1, 0))
+  }, [])
+
+  useEffect((): (() => void) | undefined => {
+    if (lightboxIndex === null) return undefined
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') closeLightbox()
+      if (e.key === 'ArrowRight') nextCard()
+      if (e.key === 'ArrowLeft') prevCard()
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [lightboxIndex, closeLightbox, nextCard, prevCard])
 
   const handleBulkImport = useCallback(async (): Promise<void> => {
     if (state.kind !== 'ready') return
@@ -137,7 +163,7 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
       </header>
       <main className={styles.boardArea} ref={containerRef}>
         <div className={styles.canvas} style={{ height: layout?.totalHeight ?? 0 }}>
-          {state.data.cards.map((c) => {
+          {state.data.cards.map((c, idx) => {
             const pos = layout?.positions[c.u]
             if (!pos) return null
             return (
@@ -150,7 +176,9 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
                   top: pos.y,
                   width: pos.w,
                   height: pos.h,
+                  cursor: 'pointer',
                 }}
+                onClick={(): void => openCard(idx)}
               >
                 {c.th && <img src={c.th} alt="" className={styles.cardThumb} />}
                 <p className={styles.cardTitle}>{c.t}</p>
@@ -185,6 +213,32 @@ export function ReceiverLanding({ shareId }: Props): ReactElement {
           data-testid="triage-btn"
         >PICK ONE BY ONE</button>
       </footer>
+      {lightboxIndex !== null && state.kind === 'ready' && (
+        <div className={styles.lightboxBackdrop} onClick={closeLightbox}>
+          <div className={styles.lightboxPanel} onClick={(e): void => e.stopPropagation()}>
+            <a
+              href={state.data.cards[lightboxIndex].u}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.lightboxLink}
+            >
+              {state.data.cards[lightboxIndex].th && (
+                <img
+                  src={state.data.cards[lightboxIndex].th}
+                  alt={state.data.cards[lightboxIndex].t}
+                  className={styles.lightboxImg}
+                />
+              )}
+              <h2 className={styles.lightboxTitle}>{state.data.cards[lightboxIndex].t}</h2>
+              {state.data.cards[lightboxIndex].d && (
+                <p className={styles.lightboxDesc}>{state.data.cards[lightboxIndex].d}</p>
+              )}
+              <p className={styles.lightboxUrl}>{state.data.cards[lightboxIndex].u}</p>
+            </a>
+            <button type="button" className={styles.lightboxClose} onClick={closeLightbox}>✕</button>
+          </div>
+        </div>
+      )}
       {importResult && (
         <BulkImportToast
           saved={importResult.saved}
