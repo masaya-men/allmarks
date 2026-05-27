@@ -60,13 +60,9 @@ import { Lightbox } from './Lightbox'
 import { PipPortal } from '@/components/pip/PipPortal'
 import { PipCompanion } from '@/components/pip/PipCompanion'
 import { usePipWindow } from '@/lib/board/pip-window'
-import { ShareActionSheet } from '@/components/share/ShareActionSheet'
 import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
-import { encodeShareData } from '@/lib/share/encode'
-import { getActiveWatermark } from '@/lib/share/watermark-config'
-import type { ShareData } from '@/lib/share/types'
 import styles from './BoardRoot.module.css'
 
 // Visible breathing room above the board's first card, in CSS pixels.
@@ -195,7 +191,6 @@ export function BoardRoot() {
   const [lightboxOriginRect, setLightboxOriginRect] = useState<DOMRect | null>(null)
   const [newlyAddedIds, setNewlyAddedIds] = useState<ReadonlySet<string>>(new Set())
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
-  const [actionSheet, setActionSheet] = useState<{ pngDataUrl: string; shareUrl: string } | null>(null)
   // When focusCard is called for a bookmark not in the current filtered view
   // (e.g. user is on a tags filter but the PiP-clicked card has different
   // tags), we clear the filter to BOARD_FILTER_ALL and stash the cardId here.
@@ -1268,25 +1263,6 @@ export function BoardRoot() {
     setBookmarkletModalOpen(false)
   }, [])
 
-  const handleShareConfirm = useCallback(
-    async (data: ShareData, frameEl: HTMLElement | null): Promise<void> => {
-      if (!frameEl) return
-      const fragment = await encodeShareData(data)
-      const baseUrl =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/share`
-          : 'https://booklage.pages.dev/share'
-      const shareUrl = `${baseUrl}#d=${fragment}`
-      // Dynamic import keeps dom-to-image-more out of SSR module graph
-      // (it reads `Node` at module evaluation time, crashing in node.js).
-      const { exportFrameAsPng } = await import('@/lib/share/png-export')
-      const pngDataUrl = await exportFrameAsPng(frameEl, getActiveWatermark())
-      setShareModalOpen(false)
-      setActionSheet({ pngDataUrl, shareUrl })
-    },
-    [],
-  )
-
   // Phase 3 share rebuild (Task 15): build the v2 share payload from the
   // current board view (= filtered visible items + relevant tag dict +
   // active tags filter). Called lazily by SenderShareModal on open.
@@ -1772,13 +1748,6 @@ export function BoardRoot() {
         getShareData={buildShareData}
         getCanvasElement={getCanvasEl}
       />
-      {actionSheet && (
-        <ShareActionSheet
-          pngDataUrl={actionSheet.pngDataUrl}
-          shareUrl={actionSheet.shareUrl}
-          onClose={(): void => setActionSheet(null)}
-        />
-      )}
       {trashConfirmOpen && (
         <TrashConfirmDialog
           count={deletedItems.length}
