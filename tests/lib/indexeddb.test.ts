@@ -192,20 +192,18 @@ describe('repairOrderIndexIfNeeded (session 87 migration)', () => {
     expect(r2.ran).toBe(false)  // flag set, skips
   })
 
-  it('renumbers colliding orderIndices so DESC sort preserves old ASC visual order', async () => {
+  it('resorts by savedAt DESC: newest gets highest orderIndex (visible top under DESC sort)', async () => {
     const database = await initDB()
     db = database as unknown as IDBPDatabase<unknown>
-    // Seed 3 bookmarks via direct writes so savedAt is fully controlled —
-    // addBookmark() calls in quick succession can stamp identical millisecond
-    // savedAt values, making the (orderIndex, savedAt) tiebreaker
-    // non-deterministic in tests.
-    const baseSavedAt = '2026-05-28T00:00:00.'
-    const aRec = { id: 'a', url: 'https://a', title: 'A', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: `${baseSavedAt}001Z`, ogpStatus: 'fetched' as const, orderIndex: 0 }
-    const bRec = { id: 'b', url: 'https://b', title: 'B', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: `${baseSavedAt}002Z`, ogpStatus: 'fetched' as const, orderIndex: 1 }
-    // c collides with b (= the pre-fix scenario where EMPTY TRASH + new save
-    // re-issued an in-use orderIndex). c's savedAt > b's so tiebreaker puts
-    // b first in (orderIndex ASC, savedAt ASC) sort.
-    const cRec = { id: 'c', url: 'https://c', title: 'C', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: `${baseSavedAt}003Z`, ogpStatus: 'fetched' as const, orderIndex: 1 }
+    // Three bookmarks with EXPLICIT savedAt + scrambled pre-migration
+    // orderIndex (= mimics post-EMPTY-TRASH state where new save collided
+    // with an old surviving record). The migration's job is to ignore the
+    // junk orderIndex and re-sort strictly by savedAt DESC.
+    const aRec = { id: 'a-oldest',  url: 'https://a', title: 'A', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: '2026-05-26T00:00:00.000Z', ogpStatus: 'fetched' as const, orderIndex: 99 }
+    const bRec = { id: 'b-middle',  url: 'https://b', title: 'B', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: '2026-05-27T00:00:00.000Z', ogpStatus: 'fetched' as const, orderIndex: 5 }
+    // c is the NEWEST but its colliding low orderIndex would have buried it
+    // mid-board under the old ASC sort — exactly the user-reported scenario.
+    const cRec = { id: 'c-newest',  url: 'https://c', title: 'C', description: '', thumbnail: '', favicon: '', siteName: '', type: 'website' as const, tags: [], savedAt: '2026-05-28T00:00:00.000Z', ogpStatus: 'fetched' as const, orderIndex: 5 }
     const tx = database.transaction('bookmarks', 'readwrite')
     await tx.objectStore('bookmarks').put(aRec)
     await tx.objectStore('bookmarks').put(bRec)
@@ -222,13 +220,11 @@ describe('repairOrderIndexIfNeeded (session 87 migration)', () => {
     const indices = after.map((bm) => bm.orderIndex).sort((x, y) => (x ?? 0) - (y ?? 0))
     expect(new Set(indices).size).toBe(indices.length)
     expect(indices).toEqual([0, 1, 2])
-    // Old ASC visual top-down was a, b, c. New DESC sort should put them in
-    // the same top-down order, so the OLD TOP (= a) gets the HIGHEST
-    // orderIndex (= 2 = visible first under DESC), and the OLD BOTTOM (= c)
-    // gets the LOWEST (= 0 = visible last).
-    expect(byId.a.orderIndex).toBe(2)
-    expect(byId.b.orderIndex).toBe(1)
-    expect(byId.c.orderIndex).toBe(0)
+    // Newest savedAt (= c) gets HIGHEST orderIndex (= visible first under
+    // DESC). Oldest (= a) gets LOWEST (= visible last).
+    expect(byId['c-newest'].orderIndex).toBe(2)
+    expect(byId['b-middle'].orderIndex).toBe(1)
+    expect(byId['a-oldest'].orderIndex).toBe(0)
   })
 
   it('is idempotent (second run does not flip the order back)', async () => {

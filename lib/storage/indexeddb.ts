@@ -178,9 +178,15 @@ export interface SettingsRecord {
   /** One-shot migration completion flags. Each flag is set true after its
    *  migration runs once successfully and is never cleared. Used by
    *  repairOrderIndexIfNeeded etc. to avoid re-running on subsequent startups
-   *  (which would clobber user's drag-to-reorder customizations). */
+   *  (which would clobber user's drag-to-reorder customizations done after
+   *  the migration). v1 was a preserve-order repair that turned out to be the
+   *  wrong fix (= user complained "nothing changed visually" because v1
+   *  intentionally kept old positions); v2 resorts by savedAt DESC so the
+   *  newest bookmark always lands at the top — matches industry standard
+   *  (Pocket / Raindrop / Instapaper) and what the user actually wanted. */
   migrationFlags?: {
     readonly orderIndexRepairV1?: boolean
+    readonly orderIndexRepairV2?: boolean
   }
 }
 
@@ -738,27 +744,30 @@ export async function nextOrderIndex(db: IDBPDatabase<AllMarksDB>): Promise<numb
 }
 
 /**
- * One-shot migration: rewrite orderIndex on existing bookmarks so the board's
- * (new) DESC sort produces the same visual top-down order the user had under
- * the (old) ASC sort, AND so every record has a unique orderIndex (= no more
- * collisions from the count-vs-max bug).
+ * One-shot migration: rewrite orderIndex on existing bookmarks so the most-
+ * recently-saved bookmark lands at the visual TOP under the (new) DESC sort,
+ * AND so every record has a unique orderIndex (= no more collisions from the
+ * count-vs-max bug).
  *
- * Guarded by a settings flag so it runs at most once per IDB instance: re-
- * running on every startup would clobber the user's drag-to-reorder
- * customizations. Empty stores are still flagged so first-time users skip
- * the migration on subsequent launches.
+ * Assignment: bookmarks sorted by savedAt DESC (= newest first), assigned
+ * orderIndex N-1, N-2, ..., 0 in that order. Under DESC sort on orderIndex,
+ * the newest savedAt (= N-1) appears first → newest at top.
  *
- * After this runs, the assignments are:
- *   - sorted[0]  (= old top, lowest orderIndex)  →  new orderIndex = N-1
- *   - sorted[N-1](= old bottom, highest orderIndex) → new orderIndex = 0
- * Under the new DESC sort, the highest orderIndex displays first, so the
- * old top still displays at the top.
+ * Guarded by `migrationFlags.orderIndexRepairV2` so it runs at most once per
+ * IDB instance: re-running on every startup would clobber the user's drag-to-
+ * reorder customizations done after the migration. Empty stores are still
+ * flagged so first-time users skip the migration on subsequent launches.
+ *
+ * v1 (deprecated): preserved old visual order, which left scattered new
+ * bookmarks in their scattered positions — failed the user's actual ask
+ * ("newest at top"). Flag v1 may be present on users who already ran the
+ * earlier migration; we ignore it and check v2 only.
  */
 export async function repairOrderIndexIfNeeded(
   db: IDBPDatabase<AllMarksDB>,
 ): Promise<{ ran: boolean; updated: number }> {
   const existingMigration = await db.get('settings', 'migration').catch(() => undefined)
-  if (existingMigration?.migrationFlags?.orderIndexRepairV1) {
+  if (existingMigration?.migrationFlags?.orderIndexRepairV2) {
     return { ran: false, updated: 0 }
   }
 
@@ -766,18 +775,19 @@ export async function repairOrderIndexIfNeeded(
   let updated = 0
 
   if (all.length > 0) {
-    // Sort by (orderIndex ASC, savedAt ASC) — this reproduces the user's
-    // OLD visual top-down order under the old ASC sort.
+    // Sort by savedAt DESC (= newest first). Tiebreaker: id ASC for
+    // determinism when two bookmarks share an ISO-string timestamp.
     const sorted = [...all].sort((a, b) => {
-      const oa = a.orderIndex ?? 0
-      const ob = b.orderIndex ?? 0
-      if (oa !== ob) return oa - ob
-      return a.savedAt.localeCompare(b.savedAt)
+      const cmp = b.savedAt.localeCompare(a.savedAt)
+      if (cmp !== 0) return cmp
+      return a.id.localeCompare(b.id)
     })
 
     const tx = db.transaction(['bookmarks', 'settings'], 'readwrite')
     const store = tx.objectStore('bookmarks')
     for (let i = 0; i < sorted.length; i++) {
+      // sorted[0] is newest → gets HIGHEST orderIndex (= n-1) so it appears
+      // first under DESC sort on orderIndex.
       const desired = sorted.length - 1 - i
       if ((sorted[i].orderIndex ?? -1) !== desired) {
         await store.put({ ...sorted[i], orderIndex: desired })
@@ -789,7 +799,7 @@ export async function repairOrderIndexIfNeeded(
       ...existingMigration,
       migrationFlags: {
         ...(existingMigration?.migrationFlags ?? {}),
-        orderIndexRepairV1: true,
+        orderIndexRepairV2: true,
       },
     })
     await tx.done
@@ -799,7 +809,7 @@ export async function repairOrderIndexIfNeeded(
       ...existingMigration,
       migrationFlags: {
         ...(existingMigration?.migrationFlags ?? {}),
-        orderIndexRepairV1: true,
+        orderIndexRepairV2: true,
       },
     })
   }

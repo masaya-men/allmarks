@@ -226,11 +226,15 @@ export function useBoardData(): {
         console.warn('[allmarks] backfill failed (non-fatal):', e)
       }
       if (cancelled) return
-      // One-shot migration: collapses orderIndex collisions and aligns the
-      // store with the new DESC sort. Idempotent via settings flag — runs at
-      // most once per IDB instance, then no-ops.
+      // One-shot migration: resort bookmarks by savedAt DESC so the newest-
+      // saved lands at the top under the new DESC orderIndex sort. Idempotent
+      // via `orderIndexRepairV2` settings flag — runs once per IDB instance,
+      // then no-ops on subsequent startups.
       try {
-        await repairOrderIndexIfNeeded(db as Parameters<typeof repairOrderIndexIfNeeded>[0])
+        const r = await repairOrderIndexIfNeeded(db as Parameters<typeof repairOrderIndexIfNeeded>[0])
+        if (r.ran && r.updated > 0) {
+          console.info(`[allmarks] orderIndex migration v2: resorted ${r.updated} bookmarks by save date`)
+        }
       } catch (e) {
         console.warn('[allmarks] orderIndex repair failed (non-fatal):', e)
       }
