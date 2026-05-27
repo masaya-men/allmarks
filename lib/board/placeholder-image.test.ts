@@ -2,26 +2,27 @@ import { describe, it, expect } from 'vitest'
 import { pickPlaceholderImage, placeholderCount } from './placeholder-image'
 
 describe('pickPlaceholderImage', () => {
-  it('returns a path string when placeholders are registered', () => {
+  it('returns a {url, aspect} object when placeholders are registered', () => {
     expect(placeholderCount()).toBeGreaterThan(0)
-    const path = pickPlaceholderImage('https://x.com/foo/status/1')
-    expect(path).toBeTruthy()
-    expect(path).toMatch(/^\/placeholders\//)
+    const result = pickPlaceholderImage('https://x.com/foo/status/1')
+    expect(result).toBeTruthy()
+    expect(result?.url).toMatch(/^\/placeholders\//)
+    expect(typeof result?.aspect).toBe('number')
+    expect(result?.aspect).toBeGreaterThan(0)
   })
 
-  it('returns the same path for the same URL across calls (deterministic)', () => {
+  it('returns the same image for the same URL across calls (deterministic)', () => {
     const url = 'https://x.com/foo/status/42'
     const a = pickPlaceholderImage(url)
     const b = pickPlaceholderImage(url)
-    expect(a).toBe(b)
+    expect(a?.url).toBe(b?.url)
+    expect(a?.aspect).toBe(b?.aspect)
   })
 
-  it('different URLs may map to different slots', () => {
-    // With only 1 slot registered today they collide, but the hashing is
-    // distinct so this test mostly guards that the function doesn't crash
-    // on varied inputs.
-    const urls = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map(c => `https://x.com/foo/status/${c}`)
-    const paths = urls.map(pickPlaceholderImage)
-    expect(paths.every(p => p !== null)).toBe(true)
+  it('distributes varied URLs across multiple slots (= visual variety on the board)', () => {
+    // With 4 slots, 12 distinct URLs should hit at least 2 different ones.
+    const urls = Array.from({ length: 12 }, (_, i) => `https://x.com/foo/status/${i}`)
+    const slots = new Set(urls.map((u) => pickPlaceholderImage(u)?.url))
+    expect(slots.size).toBeGreaterThan(1)
   })
 })

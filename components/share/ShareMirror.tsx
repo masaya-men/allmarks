@@ -171,11 +171,11 @@ function MirrorCardContent({ item }: { readonly item: MirrorItem }): ReactElemen
   const [imgFailed, setImgFailed] = useState<boolean>(false)
   const showPlaceholder = !item.thumbnailUrl || imgFailed
   if (showPlaceholder) {
-    const placeholderUrl = pickPlaceholderImage(item.url)
+    const placeholder = pickPlaceholderImage(item.url)
     return (
       <div
         className={styles.cardPlaceholder}
-        style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})` } : undefined}
+        style={placeholder ? { backgroundImage: `url(${placeholder.url})` } : undefined}
       >
         <div className={styles.cardPlaceholderScrim} aria-hidden="true" />
         <div className={styles.cardPlaceholderTitle}>{item.title}</div>
