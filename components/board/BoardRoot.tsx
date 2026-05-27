@@ -1286,8 +1286,6 @@ export function BoardRoot() {
     })
   }, [filteredItems, tags, activeFilter, customWidths, cardWidthPx])
 
-  const getCanvasEl = useCallback((): HTMLElement | null => canvasRef.current, [])
-
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
   // new path also persists mediaSlots from the same fetchTweetMeta call
