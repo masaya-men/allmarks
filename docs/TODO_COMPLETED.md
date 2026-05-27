@@ -6156,3 +6156,120 @@ session 86 の close-out commit ([bd51c84](https://github.com/masaya-men/booklag
 - 本番 deploy 追加: 2 回 (= 計 session 86 で 3 deploy)
 - vitest: 882 → 896 維持 (= 2 fix とも regression 無し、 unit test ベースでは「健康」)
 - tsc: 0 errors 維持
+
+
+## セッション 87 (2026-05-27 〜 2026-05-28 深夜) — シェア完成 + watermark + AI placeholder + 致命的 orderIndex バグ修正
+
+session 86 の持ち越し 2 件 (= ミラー範囲ズレ / テキストカード空) を **playwright 実機実測ベース** で根本原因特定 + 修正。 そのまま同 session 内で polish (= watermark / AI placeholder 4 枚) + 致命的バグ (= 最新ブクが途中に紛れる) も発見 + 修正完遂。 5 commits / 5 deploy / vitest 906 PASS。
+
+### 前半: シェアミラーの 2 件残課題を playwright で根本特定
+
+#### ミラー範囲ズレ (= 残課題 ①)
+
+- session 86 で 3 回 fix 試行が全 NG だった件
+- 原因: ミラーは bg ボードの内部構造 (`.outerFrame` 48px padding + `.canvas` 内側 + `BOARD_TOP_PAD_PX` 80px + `SIDE_PADDING_PX` 9px) を**完全無視**して `cardsLayer` を 1.91:1 frame に直接貼ってた
+- user 発言「ムードボードは画面全体にカード表示してません。 4 辺に黒い枠が付いています。 これを無視していたりしませんか？」 が決定打 = user 自身が原因の核心を直感で当てた
+- fix: ミラー内に `outerBand` (= 48px padding 再現) → `canvasReplica` (= border-radius 再現) → `cardsLayer` (= 9px / 80px translate) の 3 段階構造を作って bg のミニチュアに
+- スケール: `bgFullScreenWidth = bgCanvasWidth + 2 × CANVAS_MARGIN_PX`、 `scale = mirror_css_width / bgFullScreenWidth`
+- 検証: playwright で bg cards の screen 座標 vs mirror cards の frame 内座標を実測 → ratio 0.458 = 想定 scale と一致
+
+#### テキストカード空黒矩形 (= 残課題 ②)
+
+- 原因: 実 Twitter サムネ URL (`pbs.twimg.com/...`) は CORS 拒否、 `<img crossOrigin="anonymous">` で load 失敗 → img 非表示 → cardTitle 小文字だけ残って「空に見える」
+- fix: `MirrorCardContent` サブ component で `img.onError` 検知 → `cardTextBody` (= 文字主体表示) に swap
+- 検証: playwright で 4 ケース (= 正常 URL load 成功 / pbs.twimg 風 CORS 失敗 / 存在しないホスト / 空文字) 全て fallback が正しく動くことを実測
+
+**commit**: [6c1...](https://github.com/masaya-men/booklage/commit/6c1) fix(share): mirror reproduces bg outerFrame + canvas chrome, img onError falls back to text body
+
+### 中盤: watermark `ALLMARKS` + placeholder system 構築
+
+- 旧: 24px の SVG A logo (= 米粒サイズ、 「あれ何」 になる)
+- 新: `ALLMARKS` テキスト wordmark (Geist Mono 13px、 右側 caption と対称、 同フォント・同サイズ・同 weight)
+- capture-mirror.ts 側も `drawALogo` 撤去 → `fillText('ALLMARKS', ...)` で OG 画像にも反映
+- domain `allmarks.app` 取得 (= 2026-05-31 予定) 後に wordmark に `allmarks.app` 形式へ更新予定
+
+**commit**: [feat(share): replace A-logo with ALLMARKS wordmark watermark]
+
+#### placeholder 画像 system
+
+- user 発言「画像が無いカードが気になる」 → 抽象画像 2-4 枚を URL ハッシュで割り当てる system を提案
+- 第 1 段: barcode SVG draft 1 枚を ship、 user 「この方向性 OK」 → AI 画像 3 枚追加生成依頼
+- プロンプト 4 種類作成 (= 黒系ぼかし人物 / 白系飴細工 / 華やか宝石色 / 静寂水面)
+- user が ChatGPT で 4 枚生成 → sharp で WebP 化 (= 元 PNG 1.7-2.2MB ずつ → 合計 156KB、 98% 削減)
+- `lib/board/placeholder-image.ts` = djb2 ハッシュ → 4 slot 決定論的配信、 各画像の aspect (1.0 / 1.777) を保持して board 拡張時に「サイズ感の差」 を作れるように
+- 適用先: ShareMirror の `MirrorCardContent` の no-thumb / onError fallback (= 画像 bg + 中央タイトル + 上下 mask fade)
+- user 仕様: タイトル中央寄せ、 長文ツイートは「入るだけ入れて下フェード」 (= スクロールなし、 全文は Lightbox で読む)
+
+**commits**:
+- feat(share): placeholder image bg for no-thumbnail cards in mirror
+- feat(share): swap barcode SVG placeholder for 4 AI-generated images
+
+### 後半: 致命的バグ「最新ブクが途中に紛れる」 発見 → 修正
+
+session 中、 user が「最近追加したブクマが board に見当たらない、 再追加しても duplicate と弾かれる」 と報告。 systematic-debugging で:
+
+1. **仮説 1**: preview URL と本番 URL の origin 違い (= 過去 CLAUDE.md に警告あり) → user 確認「本番 URL にいる」 で却下
+2. **仮説 2**: ソート順バグ → user 「最新ブクが途中に紛れてる、 たまたま 1 個見つけた」 で確定
+3. **根本原因特定**: [lib/storage/indexeddb.ts:720](lib/storage/indexeddb.ts#L720) で `nextOrder = await db.count('bookmarks')`。 EMPTY TRASH で物理削除すると count は下がるが max orderIndex は据置 → 新ブクが既存と衝突 → 非決定的ソートで「途中位置」 出現
+
+#### fix の中身
+
+- 新規 helper `nextOrderIndex(db)` = max(orderIndex) + 1 (= count NOT max を使う安全版)
+- `addBookmark` + `addBookmarkBatch` を helper 経由に
+- sort ASC → DESC に反転 (= 業界標準「最新が top」 = Pocket / Raindrop / Instapaper / mymind に揃える、 user 「業界に合わせる」 で同意)
+- `persistOrderBatch` + `updateBookmarkOrderBatch` の indexing も reverse (= 視覚 top の id = 最高 orderIndex を取得)
+- migration v1 (= 「並び順保持で衝突だけ直す」) を実装 → user 体感ゼロ (= 散らばってた最新ブクがそのまま散らばったまま) → 設計ミスと判明
+- **migration v2**: savedAt 降順に全 bookmark を resort、 newest が highest orderIndex を取得 → DESC sort で top に並ぶ
+- 設定 store flag `orderIndexRepairV2` で idempotent ガード (= 二度目以降は手動 drag を破壊しない)
+- console.info ログ追加 (= user が「動いた / 動いてない」 を console から判断できる)
+
+#### 設計ミス (= v1 → v2 の反省)
+
+- user 発言「並び順に拘りない」 を「衝突だけ直して既存順保持で OK」 と解釈 → v1 実装
+- 実際の user 期待: 「業界標準 (= 最新が top) に **completely** 合わせる」 → v2 で再修正
+- 教訓: migration の semantic (= 「user data の何を保持し / 何を上書きするか」) を user に 1 行確認してから実装するべきだった
+
+**commits**:
+- fix(board): collision-safe orderIndex + newest-at-top sort + one-shot repair migration
+- fix(board): migration v2 resorts by savedAt DESC (newest at top)
+
+### 追加: docs 更新
+
+- TODO.md release blocker から **Phase D1 中断再開 を削除** (= user 判断「manage button で事実上同等」 で不要決定、 session 87 で正式 confirm)
+- TODO.md release blocker に **拡張機能 設定画面整備 (= マネージダサい完了画面除去)** と **LP 整備 (= share / multi-playback / 拡張機能 言及更新)** を追加
+- private/IDEAS.md でも D1 strike-through で削除済明記
+
+### 数値まとめ
+
+- **commits**: 5 件 (= fix(share) ミラー構造 + onError、 watermark、 placeholder bg、 collision fix v1、 migration v2 + AI 画像 swap)
+- **本番 deploy**: 5 回 (= booklage.pages.dev)
+- **vitest**: 897 → 906 (= +9 net、 0 fail、 全部 idempotent)
+- **tsc**: 0 errors
+- **playwright 実機 verify**: 4 セッション (= bg/mirror 座標一致 / scroll sync ratio / onError fallback 4 ケース / AI 画像 4 枚分散)
+- **新規 lib**: `lib/board/placeholder-image.ts` (+ `.test.ts`)、 `public/placeholders/text-card-{dark,light,jewel,fog}.webp` (合計 156KB)
+- **撤去**: barcode SVG draft、 SVG A logo
+
+### 設計上の重要発見 (= memory 候補)
+
+- **「count vs max(orderIndex)」 の罠**: append-only と思ってる store でも EMPTY TRASH 等 物理削除があると count は不安定。 必ず max + 1 を使う
+- **「migration semantic 確認」 の必要性**: 「user の order を保持」 と「業界標準に合わせる」 は別物。 実装前に「何を保持し何を捨てるか」 を 1 行 user 確認するべき (= 今回 v1 → v2 で 1 回 redo)
+- **「user 直感で核心特定」 を信じる**: 「4 辺に黒い枠あります、 これ見落としてませんか？」 という user の素人提案発言が、 session 86 で 3 回 fix 試行が外した根本原因 (= bg の outerFrame + 内側 pad 構造の再現漏れ) を完全に当てた。 user 提案の直感は技術仮説より速いことがある
+- **「unit test 通った」 ≠ 「実機で動く」** (= [feedback_verify_before_claiming](memory) 再強化): session 86 で 3 回連続外したのと同じ原因が orderIndex バグでも別軸で出てた。 layout / 順序 / 動的計算は実機 verify 必須
+
+### user の重要発言 + 設計判断 (= session 87 で確定)
+
+- **「業界標準 = 最新が上」**: DESC sort 採用
+- **「並び順に拘りない」**: migration v2 が手動 reorder 上書きするのを同意
+- **bookmarklet 絵文字なし plain text**: 業界標準と揃える
+- **「画像が無いカードが気になる」**: AI placeholder 4 枚で対応
+- **「TextCard 統合 OK、 ボード上で動くコードがシンプルになる方が良い」**: 次 sprint で board の TextCard / MinimalCard / ImageCard-onError 統合 = 約 300 行削減予定
+- **「favicon 要らない、 サイト名は左上に小さく」**: PlaceholderCard 仕様 (= 次 sprint)
+- **D1 中断再開 不要**: release blocker から削除
+
+### 持ち越し (= session 88 でやる)
+
+🔴 user 確認 2 件:
+- orderIndex 修正 + sort 反転で「最新ブクが top に並ぶ」 体感確認
+- ミラー placeholder の AI 4 画像 + 文字読みやすさ確認 (= 白系画像 + 白文字埋もれてないか)
+
+→ OK なら **board の TextCard 削除 + PlaceholderCard 統合 + 左上ホスト名表示 + マネージ画面のダサい完了画面除去** に着手。

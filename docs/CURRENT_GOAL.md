@@ -1,96 +1,60 @@
-# 次セッションのゴール (= セッション 87) — シェアミラーの未解決問題を playwright で実機 verify してから直す
+# 次セッションのゴール (= セッション 88) — 朝確認 + OK なら board の TextCard 統合へ
 
 ## 今のゴール (1 行)
 
-**session 86 でシェア機能 (= ミラー / 同期スクロール / Canvas キャプチャ / OG プロキシ) は全部 ship したが、 ミラーの「表示範囲が bg と一致しない」 と「テキストカード空っぽ」 の 2 件が直っていない (= 2 回 fix 試行したが両方とも実機で効いてなかった、 unit test は通ってた)。 次セッションは playwright で実機検証してから直す。**
-
-## 🔴 開始時に必ず守ること
-
-**プロセス改善**: unit test 通っただけで「動いてる」 と user に言わない。 必ず以下の順:
-
-1. unit test (= vitest) で論理を verify
-2. **playwright で実 browser に load → スクショ → ピクセル位置/サイズを assertion で verify** ← これを抜かしてた
-3. それでも user 検証が必要なら本番 deploy
-
-session 86 の 2 fix は (1) で通って (2) を抜かして user に投げてしまい、 user 検証で両方 NG。 同じ轍を踏まない。
-
-参考 memory: [feedback_verify_before_claiming](memory) 「CSS animation/hover 系は playwright getComputedStyle で実測してから『動いてる』 と報告」。 今回は CSS animation じゃないが、 **layout / 位置計算 / scale** も同じ。 「ピクセルが正しい位置にあるか」 は jsdom じゃ計測できない。
-
-## 未解決問題 (= 次セッションの中核)
-
-### 問題 1: ミラーが bg と同じ範囲を映してない
-
-**症状**: user 報告 (= session 86 第 2 スクショ) で、 bg ボード上で見えてる 6 枚並びの最上段が、 ミラーでは 7 枚以上の異なる並び順に化けてる。 「ミラー = bg の縮小版」 になってない。
-
-**試した fix (= 効かなかった)**:
-
-- [a0bc84b](https://github.com/masaya-men/booklage/commit/a0bc84b) — ResizeObserver で scale 動的計算 + scroll math 修正 (= MIRROR_FRAME_HEIGHT 採用)
-- [535783f](https://github.com/masaya-men/booklage/commit/535783f) — 独自 column-stack 撤去、 bg の layout.positions を直接受ける構造に refactor
-- [85e01e9](https://github.com/masaya-men/booklage/commit/85e01e9) — `bgViewportWidth` を `viewport.w` から `effectiveLayoutWidth` に変更
-
-3 つやって全部 NG。 つまり問題の根本原因がまだ特定できてない。
-
-**未テスト仮説 (= 次セッションで playwright で実証から)**:
-
-1. `effectiveLayoutWidth` も実は bg が使ってる値と違う可能性 (= `BOARD_INNER.SIDE_PADDING_PX` の値 / scroll bar 幅 / gutter 等で何 px かズレてる)
-2. モーダル panel の CSS `width: min(720px, calc(100vw - 32px))` が user の viewport で 720 に効いてない可能性 (= スクショ見ると panel が画面の 90% 占めてる、 720 CSS px のはずなのに見た目変、 何かが override してる)
-3. ShareMirror の `cardsLayer` inline style `width: bgViewportWidth, height: ...` が CSS の `inset: 0` と競合して想定外の reflow / overflow 挙動になってる可能性
-4. ResizeObserver の callback が初回マウント時に発火タイミングが遅れて、 一瞬 default scale 0.5 で render → user スクショはその一瞬を捉えてる可能性 (= でも user は静止画なので可能性低い)
-5. bg ボードが本当に位置を確定する transform が、 `cardsLayer` の上にもう 1 段あって、 私が見えてない wrapper が `translate(SIDE_PADDING, TOP_PAD)` してる可能性 → [components/board/CardsLayer.tsx](../components/board/CardsLayer.tsx) と BoardRoot の JSX を最初から playwright で「描画後の各カードの screen 座標」 を計測して確認
-
-### 問題 2: テキストカードが空っぽ
-
-**症状**: tweet など `thumbnailUrl` 無いカードがミラーで空の黒矩形 + 下端に小さい title だけ。
-
-**試した fix (= 効かなかった)**:
-
-- [85e01e9](https://github.com/masaya-men/booklage/commit/85e01e9) — `<div className={styles.cardTextBody}>` で title をカード全体表示 + capture-mirror に `drawWrappedText` 追加
-
-user は実機で「直っていない」 と報告。 つまり:
-- 上記の `cardTextBody` div が描画されてないか
-- `thumbnailUrl` が null のはずなのに null じゃない値 (= 空文字、 undefined 文字列) で `<img>` 経路に入ってる可能性
-
-**playwright で確認すべき**:
-1. tweet card の `data-mirror-card-id` 要素を取得、 中の HTML を inspect (= `<img>` か `<div className=cardTextBody>` どちらが render されてるか)
-2. `filteredItems[i].thumbnail` の実値を console.log で確認 (= null なのか空文字なのか URL なのか)
-3. BoardRoot で `thumbnailUrl: it.thumbnail ?? null` の `it.thumbnail` の実値を確認 (= 別フィールド名の可能性)
-
-## ship 済 (= 動いてる)
-
-- POST /api/share/create + GET /api/share/:id (= URL 発行 + 取得、 session 85 から)
-- GET /api/share/:id/og.webp (= OG プロキシ、 session 86)
-- GET /s/:id + /s/:id/triage (= 受信ページ + triage、 Pages Function、 session 85)
-- 404 音波テーマ (= session 85)
-- summary_large_image カード生成 (= og:url で受信ページに飛ぶ)
-- モーダル open + SHARE NOW + URL 表示 + COPY + POST TO X (= UI fundamentals 動いてる)
-- 同期スクロール (= wheel が bg と mirror 両方に伝わる、 session 86 fix)
+**session 87 で「シェアミラー bg 構造再現 + onError fallback + ALLMARKS ウォーターマーク + placeholder 画像 4 枚 + orderIndex 衝突 fix + newest-at-top sort + migration v2 (= savedAt 再ソート)」 を全部 ship。 user 起床後に本番で「最新ブクが top に並ぶ」 と「ミラー placeholder の 4 種類画像 + 文字読みやすさ」 を確認してから、 OK なら board 本体の TextCard 削除 + PlaceholderCard 統合に着手。**
 
 ## 開始時の動き (= Claude の最初の発言)
 
-1. **このファイル** + **[docs/TODO.md](./TODO.md) 「現在の状態」** を読む
-2. **🔴 allmarks.app ドメイン取得確認** — 2026-05-28 朝以降の見込みだった、 user に状況聞く
-3. **playwright を /board に対して走らせる** — 以下を実測:
-   - bg の cards の screen 座標を全部取得 (= `el.getBoundingClientRect()`)
-   - モーダル open → mirror frame の screen 座標 + size を取得
-   - mirror の cards の screen 座標を全部取得
-   - bg cards.x vs mirror cards.x の比率を実測 → scale が一致してるか
-   - tweet card の HTML を outerHTML で取得 → `<img>` か `<div.cardTextBody>` か
-4. 実測値ベースで原因特定 + fix 設計 (= 推測で書かない)
-5. fix 後も同じ playwright で「以前と比較して 6 cards in row 1 になったか」 を assert (= 「動いた」 を主観で言わない)
+1. このファイル + [docs/TODO.md](./TODO.md) 「現在の状態」 を読む
+2. user に**確認 2 件**お願い:
+   - **(1) sort fix の体感**: 本番 https://booklage.pages.dev/board を開いて、 一番上に最新保存のブクマが並んでるか? console (F12) に `[allmarks] orderIndex migration v2: resorted N bookmarks by save date` 的なログが出てる?
+   - **(2) ミラー placeholder**: SHARE 押して、 thumbnail 無いカード (= tweet 等) に AI 画像 4 種 (dark / light / jewel / fog) がランダムに割り振られて見える? 文字の読みやすさは OK? (= 白系画像 + 白文字で埋もれてないか確認)
+3. 両方 OK なら → board 本体の TextCard / MinimalCard / ImageCard-onError も同じ placeholder pattern に統合する作業に進む
+4. 何か違和感あれば iterate (= scrim 強度 / 文字 size / 画像入替 / 等)
 
-## 重要ドキュメント (= session 87 で読む順)
+## 未解決 / 確認待ち (= 次セッション冒頭で扱う)
+
+### 🔴 user 確認待ち 2 件
+
+- **orderIndex 修正 + sort 反転**: migration v2 が user の 300+ ブクマを savedAt 降順で再配置 → 「最近保存したブクマが top に来る」 体感が出てるか? (= session 87 で v1 が「並び順保持」 設計だったため user 体感ゼロで再修正、 v2 で本来の挙動になったはず)
+- **ミラー placeholder 視認性**: 4 枚 AI 画像のうち白系 (= 飴細工) / 華やか系 (= 宝石色) で白文字読めるか? scrim 強度足りない可能性あり
+
+### 次の大きな作業 (= board の TextCard 統合)
+
+user OK 出たら以下を 1 sprint で:
+
+1. `components/board/cards/TextCard.tsx` + `.module.css` + 周辺 lib (= `pickTextCardColor` / `text-card-measure`) 削除
+2. 新規 `PlaceholderCard` (= ShareMirror の MirrorCardContent pattern を流用、 画像 bg + 中央タイトル + 上下 fade)
+3. `pickCard` 3 経路に整理: youtube/tiktok → VideoThumbCard / thumbnail あり → ImageCard / それ以外 → PlaceholderCard
+4. `ImageCard` の onError fallback を `<MinimalCard>` → `<PlaceholderCard>` に変更
+5. PlaceholderCard には **左上に小さくホスト名表示** (= `x.com` / `youtube.com` 等、 monospace 10-11px、 半透明白、 favicon は無し) — user 指定
+6. **マネージ画面の「ダサい完了画面」** (= components/triage/TriagePage.tsx:334-348) を「ボードに自動遷移」 に置換
+
+詳細設計は user 確認中に詰める (= aspect ratio をカードサイズに反映するか、 等)。
+
+## 重要: user の重要発言 + 設計判断 (= session 87 で確定)
+
+- **「業界標準 = 最新が上」** を採用 (= Pocket / Raindrop / Instapaper / mymind と同じ DESC sort)
+- **「並び順に拘りない」**: migration が user の手動 reorder を上書きすることに同意済 (= v2 で savedAt 再ソート、 既存 manual drag は壊れる、 でも問題なし)
+- **「業界に無いけど ブックマーレットに絵文字付けない」**: bookmarklet 名は plain text `AllMarks` (= 業界標準準拠、 絵文字使ってる例なし)
+- **「画像が無いカードが気になる」**: → AI placeholder 4 枚で対応、 統一 fallback pattern に
+- **「TextCard 統合 OK、 ボード上で動くコードがシンプルになる方が良い」**: board の TextCard / MinimalCard / ImageCard-onError 統合 = 約 300 行コード削除予定
+- **「favicon は要らない、 サイト名は左上に小さく」**: PlaceholderCard 仕様
+- **D1 中断再開 不要**: manage button で事実上同等 → release blocker から削除済
+
+## 重要ドキュメント (= session 88 で読む順)
 
 1. このファイル
-2. [docs/TODO.md](./TODO.md) 「現在の状態」
-3. [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 86 セクション (= 詳細 narrative)
-4. [docs/superpowers/specs/2026-05-27-share-mirror-capture-design.md](./superpowers/specs/2026-05-27-share-mirror-capture-design.md) — 元 spec
-5. (= 実コード) `components/share/ShareMirror.tsx` + `components/share/SenderShareModal.tsx` + `components/board/BoardRoot.tsx` (= line 516-540 と 1744-1773)
+2. [docs/TODO.md](./TODO.md) 「現在の状態」 — session 87 narrative + 残タスク
+3. [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 87 セクション — 詳細 narrative
+4. (= 実コード) `components/share/ShareMirror.tsx` + `lib/board/placeholder-image.ts` + `lib/storage/indexeddb.ts` (= nextOrderIndex / repairOrderIndexIfNeeded)
 
 ## 守ること (= 反省 + memory 振り返り)
 
-- **verify before claiming** ([feedback_verify_before_claiming](memory)) — unit test は logic 検証、 layout/位置検証は playwright 必須
-- **「直りました」 と user に投げる前に自分でスクショを比較する** — 今回これを抜かして 2 回失敗
-- **推測で fix dispatch しない** — 「仮説 1〜5」 を実コード読まずに dispatch すると今回みたいに空振りする。 まず playwright で実測 → 数値で根本原因確定 → ピンポイント fix
-- **大変更前は brainstorming → spec → plan** ([feedback_consult_before_big_changes](memory)) — 今回は brainstorming 経由したが、 fix dispatch は推測ベースで brainstorming スキップしてた
+- **fact-based** ([feedback_fact_based](memory)) — user 体感「動かない」 を主観で言われたら推測せず実コード/DB inspect で確証
+- **verify before claiming** ([feedback_verify_before_claiming](memory)) — unit test は logic、 layout / 位置 / ユーザー体感は実機 verify
 - **平易な日本語** ([feedback_jargon_in_japanese](memory))
 - **AskUserQuestion ボックス禁止** ([feedback_no_question_box_for_decisions](memory))
+- **migration v1 設計ミス再発防止** — 「並び順保持 vs 業界標準」 の解釈を確認せず実装、 user 体感ゼロで再 deploy。 user 発言「業界に合わせる」 を「user 既存 order 壊しても OK」 と読み取るべきだった。 次回は「migration が user データに影響する範囲」 を実装前に 1 行確認する
+- **約束したドキュメント更新は確実に**: session 87 開始時、 user は「前 session で D1 不要決定 → 更新するって言ってた」 を指摘 (= 実際残ってた)。 docs 更新コミットは「やる」 と言ったらその commit で実際に変更する
