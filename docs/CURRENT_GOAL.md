@@ -1,98 +1,83 @@
-# 次セッションのゴール (= セッション 85) — シェア機能 Phase 7 (= Pages Function 化 + 本番 ship)
+# 次セッションのゴール (= セッション 86) — シェアの「サムネ + モーダル UX」 再設計
 
 ## 今のゴール (1 行)
 
-**session 84 でシェア機能 Phase 3-6 (= 送信側 modal + 受信側 landing + triage + 旧実装完全削除) を 20 commits で master に ship 済。 Phase 7 は `output: 'export'` + edge runtime + 動的セグメントの架構衝突で blocker、 次セッションで Cloudflare Pages Function `functions/s/[id].ts` 化に切替えて本番 ship する。**
+**session 85 でシェア機能の本番 ship 完了 (= URL 生成 / 受信ページ / インタラクティブ 404 全部動く)、 ただしサムネが AllMarks ロゴだけのプレースホルダ + モーダル UI が薄い状態。 次セッションで業界標準 (= サーバーサイド OG 生成 + 縮小ミラー preview) に作り直し。**
 
 ## 開始時の動き (= Claude の最初の発言)
 
-1. **このファイル** ([docs/CURRENT_GOAL.md](./CURRENT_GOAL.md))、 **[docs/TODO.md](./TODO.md) 「現在の状態」**、 **[docs/superpowers/specs/2026-05-28-share-pages-function-design.md](./superpowers/specs/2026-05-28-share-pages-function-design.md)** (= Pages Function 設計 spec) を順に読む
-2. **本番 (booklage.pages.dev) 確認**: 旧コードのまま、 user 影響ゼロを再確認
-3. **🔴 allmarks.app ドメイン取得確認** — 取得済なら `docs/private/2026-05-11-allmarks-branding-spec.md` 計画開始は phase 1.5 で良い (= phase 1 シェア出してから)、 未取得なら取得促し
-4. Pages Function 化の実装に着手
+1. **このファイル** ([docs/CURRENT_GOAL.md](./CURRENT_GOAL.md))、 **[docs/TODO.md](./TODO.md) 「現在の状態」** を読む
+2. **本番 (booklage.pages.dev) 確認** — 共有作成 + 受信 + 404 は動く、 サムネはロゴ placeholder
+3. **🔴 allmarks.app ドメイン取得確認** — 月末 (今日以降) 予定だった、 取得済か聞く
+4. シェア再設計の brainstorming + 着手
 
-## session 84 到達点 (= Phase 3-6 ship、 21 commits)
+## session 85 で何が ship されたか
 
-### 完了 (= 全 21 commits、 master 反映済、 本番未反映)
+### 動いている (= 本番反映済)
+- **POST /api/share/create** — 共有 ID 発行 + KV 保存
+- **GET /s/<id>** — Cloudflare Pages Function が Next.js `/s.html` を取って OG メタタグだけ per-id に書き換えて返す (= hydration 維持)
+- **GET /s/<id>/triage** — 同上 + triage 用 og:url
+- **インタラクティブ 404** — 音波テーマ、 マウス近接で振動、 緑グロウ脈打つ。 テーマ複数化対応の registry あり (= wave 1 つだけ登録、 追加すれば自動的に 404 でランダム選択)
+- **ReceiverLanding / ReceiverTriage** — URL パスから ID 抽出する形に refactor 済
+- **重要バグ 3 件 fix** — ① encode/decode の ReadableStream constructor (= Workers 互換性問題)、 ② dom-to-image-more の iframe 自動再生 (= SHARE 押すと音楽鳴る)、 ③ 300 カードでメモリ 5GB 爆発
 
-20 commits の feat/chore + 1 commit の build fix。 詳細は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 84 セクション。 概略:
+### **未達 (= 次セッションの中核)**: サムネ + モーダル UX の本格再設計
 
-- **Phase 3** (Tasks 12-15): `lib/share/import.ts` + `SenderShareModal` + snapshot/API 配線 + BoardRoot SHARE button 切替
-- **Phase 4** (Tasks 16-22): `/s/[id]` route + `ReceiverLanding` (= fetch / masonry / bulk import / inline Lightbox / 背景タイポ) + `BulkImportToast`
-- **Phase 5** (Tasks 23-26): `/s/[id]/triage` route + `ReceiverTriage` (= queue + YES/NO + sender tag suggestions + receiver 既存 tags + completion toast)
-- **Phase 6** (Tasks 27-30): 旧 ShareComposer 系 + 旧 /share route + 旧 lib/share v1 modules + BoardRoot 残骸 全削除 (= 30 ファイル / 2500 行)
-- **build fix**: `lib/share/snapshot.ts` を dynamic import 化
+session 85 で 4 回サムネ実装を試行 (= dom-to-image-more / viewport filter / wireframe blocks / placeholder) どれもダメで、 user から「絶対にユーザー個人のボードが映らないとダメ」 と却下。 user 提案 (= 業界標準と一致):
 
-### 検証
+> モーダル内に board の縮小ミラーが live で映る。 モーダル外でスクロールすると bg ボードと一緒にミラーも動く。 スクロールを止めた瞬間がサムネに乗る。 URL 生成は裏で並行。
 
-- tsc 0 errors、 vitest 843 PASS、 既存テスト regression なし
-- 本番 (booklage.pages.dev) 未反映、 user の普段使いに影響なし
+これに加えて user 不満点:
+- 「100 OF 300」 等の総数 / 共有数の関係が不明 (= 「100 CARDS」 だけだと意味不明)
+- 共有範囲 (= 何の 100 枚?) の説明なし
 
-## Phase 7 architectural blocker (= 持ち越し理由)
+## 次セッション (= 86) の作業項目
 
-`pnpm build` が `Cannot find module 'app-edge-has-no-entrypoint'` で死亡。 原因:
+### 1. **OG サムネはサーバーサイド動的生成に切替** (業界標準)
+- 現状: client で base64 サムネを送って KV に保存、 `og.ts` がそれを返す
+- 目標: client は **メタデータ (= カードの URL / サムネ URL / 配置 / タグ) だけ** 送る、 `og.ts` がリクエスト時に [workers-og](https://workers-og.pages.dev/) (= Satori + Resvg、 Cloudflare Workers 公式互換) で JSX → PNG 動的レンダリング
+- 利点: メモリ爆発しない、 一貫したブランド表現、 KV 容量大幅減 (= 30KB サムネ削除)、 X クローラに常に新鮮 OG
 
-- `/s/[id]` route が `runtime = 'edge'` + 動的セグメント + `dynamic = 'force-dynamic'`
-- プロジェクトは `next.config.ts` で `output: 'export'` (= 完全静的書き出し)
-- 静的書き出しは 「事前に全 HTML を生成」 方式 → 動的セグメントは `generateStaticParams()` で事前列挙必要 → シェア ID は実行時生成 → 不可能
+### 2. **モーダル内 live ミラー** (user 発案、 業界標準)
+- 背景の本物ボードを CSS `transform: scale(0.25)` で縮小して clone 表示
+- DOM clone でなく live mirror (= 軽量、 メモリ問題なし、 cross-origin 画像も普通に表示)
+- 検討: clone vs `position: fixed; transform-origin` で同じ DOM を 2 箇所に映す方法
 
-**根本原因**: session 83 設計時に「per-id 動的 OG metadata が欲しい」 から edge runtime を選んだが、 プロジェクトの基本姿勢 (= 静的書き出し + Cloudflare Pages) を見落とした。
+### 3. **bg スクロール同期**
+- モーダル open 中、 モーダル背景の wheel event を bg board にバイパス
+- bg + mini が同じ scroll Y で動く
+- user が好きな絵を選んで止められる
+- 「スクロールが効いて画面ぐるぐる」 の AllMarks 的 polish
 
-## 解決方針 (= user 「B」 確定、 次セッション実施)
+### 4. **モーダル UX の言語化**
+- 「100 OF 300 CARDS · NEWEST FIRST」 のような明示 (= session 85 で暫定追加済、 本実装でも維持)
+- 「タグで絞ってから共有すると範囲を選べます」 的 hint
+- 「30 日間有効」 の expiry 表示
 
-**Cloudflare Pages Function で `/s/[id]` HTML を直接返す**
+### 5. **本実装後の placeholder 撤去**
+- `lib/share/snapshot.ts` の AllMarks 暫定ロゴ生成は段階的に撤去
+- client から send する base64 サムネ自体不要に (= server-side 生成に移行)
 
-1. `app/(app)/s/[id]/page.tsx` + `app/(app)/s/[id]/triage/page.tsx` を削除 (= Next.js route から外す)
-2. `functions/s/[id].ts` 新規実装:
-   - リクエスト時に KV から payload + thumb を fetch
-   - HTML を組み立てて返す (= per-id OG metadata を `<meta property="og:image">` 等に inline + React app shell + JS bundle 参照)
-3. 同様に `functions/s/[id]/triage.ts` も実装
-4. ReceiverLanding / ReceiverTriage を `window.location.pathname` から ID 抽出して boot するように修正 (= 現在は Next.js page から `params` prop 受け取り)
-5. 既存 `/api/share/[id]/og.webp` Pages Function はそのまま、 HTML 内の OG meta で参照
-6. preview deploy で動作確認
-7. 本番 ship
+## session 85 の総括 (= TODO_COMPLETED に詳細)
 
-詳細設計: [docs/superpowers/specs/2026-05-28-share-pages-function-design.md](./superpowers/specs/2026-05-28-share-pages-function-design.md)
+- 21 commits + 6 本番デプロイ (= ship 4 + fix 3 = 7 deploy)
+- テスト 880 → 882 (= 拡張部 + UX 改善で +)
+- 中で踏んだ落とし穴: edge runtime + 静的 export 衝突、 ReadableStream 互換性、 iframe 自動再生、 dom-to-image メモリ爆発
+- pivot ポイント: 「自前 HTML 生成」 → 「Next.js 出力を patch」 に途中で切替 (= hydration 整合のため)
 
-## 進め方 (= 推奨)
+## 守ること (= user memory + session 85 学習 参照)
 
-subagent-driven は task 数少ない (= 5-7 task) ので、 私 (controller) が直接実装でも OK。 ただし HTML テンプレート組み立ては慎重に (= per-id OG が肝)。 spec で「Pages Function HTML テンプレート」 を確定させてから実装に入る。
-
-## 公開向け残タスク (= session 83 終了時から変わらず)
-
-Phase 7 完了後の release blocker:
-
-1. ~~🔴 シェア機能完全作り直し~~ ← session 84 で Phase 3-6 完了、 session 85 で Phase 7 ship
-2. 🔴 allmarks.app ドメイン取得確認 (= 2026-05-28 朝以降)
-3. Phase D4 他 14 言語 mood → tag rename (= `messages/{en,ar,de,es,fr,it,ko,nl,pt,ru,th,tr,vi,zh}.json` の `newMood` / `moodNamePlaceholder`)
-4. Phase D5 NewMoodInput → NewTagInput 内部 rename
-5. onboarding チュートリアル (= 初回ユーザー向け)
-6. 拡張機能 Chrome Web Store 公開準備
-
-公開後でも OK (= 上澄み polish):
-- convex bezel 数値調整 / /triage 外周 4 段 bloom halo 0.5x 絞り / TagDeleteConfirmDialog 2 秒長押し feel / 「TAG THIS.」 サイズ + 緑パルス強度
-
-## 守ること (= user memory + session 84 学習 参照)
-
-- **`AskUserQuestion` ボックスで聞かない**: design だけでなく engineering tradeoff も含めて、 user が「一方通行過ぎる」 と即否定。 平文で 1 個ずつ対話 ([feedback_no_question_box_for_design](memory) を engineering tradeoff にも拡張)
-- **複雑な状況説明は「1 個ずつ理解しながらすすめたい」 のペース**: 「ここまで OK?」 で区切る ([feedback_one_thing_at_a_time](memory))
-- **大きい構造変更前は方針確認** ([feedback_consult_before_big_changes](memory))
-- **対話で進める、 一括で複数項目を勝手に変えない** ([feedback_one_thing_at_a_time](memory))
+- **私から流されない**: user は「ベストプラクティス / 業界水準を調査して」 と明示。 dom-to-image-more みたいな半端なライブラリでなく、 workers-og / Satori 等の業界主流を採用する
+- **「100 of N」 のような UI 数値は user-friendly に**: 内部 ID や jargon 使わず、 自然な英文
+- **大変更前は方針確認** ([feedback_consult_before_big_changes](memory))
 - **平易な日本語、 横文字カタカナ控えめ** ([feedback_jargon_in_japanese](memory))
 - **verify before claiming it works** ([feedback_verify_before_claiming](memory))
-- **plan の前提と実コードの差異は subagent が adapt するパターン**: implementer 側で grep + adapt が圧倒的に効率良い、 controller が事前に全 file 読んで plan 修正する作業は不要
+- **AskUserQuestion ボックス禁止** ([feedback_no_question_box_for_decisions](memory))
 
-## 確認事項・運用
-
-- 確認は常に `booklage.pages.dev` をハードリロード (= Ctrl+Shift+R)、 ただし session 85 では preview branch (= 例 `share-pages-function-preview`) でも検証
-- 応答は日本語、 横文字カタカナ控えめ、 AskUserQuestion 使わない
-- deploy 前に tsc + vitest (= 既知 flake `tests/lib/channel.test.ts` 単体 PASS 確認で OK)
-- deploy 手順: `pnpm build` → `npx wrangler pages deploy out/ --project-name=booklage --branch=master --commit-dirty=true --commit-message="<ASCII>"`
-- preview deploy: `--branch=<preview-branch-name>` で本番 URL に出さず別 URL で検証可能
-
-## 重要ドキュメント (= session 85 で読む順)
+## 重要ドキュメント (= session 86 で読む順)
 
 1. このファイル ([docs/CURRENT_GOAL.md](./CURRENT_GOAL.md))
 2. [docs/TODO.md](./TODO.md) 「現在の状態」 セクション
-3. [docs/superpowers/specs/2026-05-28-share-pages-function-design.md](./superpowers/specs/2026-05-28-share-pages-function-design.md) ← Pages Function 化の設計詳細
-4. (= 必要に応じて) [docs/superpowers/specs/2026-05-27-share-rebuild-design.md](./superpowers/specs/2026-05-27-share-rebuild-design.md) ← 元の rebuild design (= Phase 7 以外は ship 済の参考)
+3. [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 85 セクション (= 詳細 narrative)
+4. workers-og 公式 (= https://workers-og.pages.dev/) — 採用ライブラリ
+5. (= 必要時) [docs/superpowers/specs/2026-05-28-share-pages-function-design.md](./superpowers/specs/2026-05-28-share-pages-function-design.md) — session 85 で実装した Pages Function 設計

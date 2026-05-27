@@ -5870,4 +5870,125 @@ trivial copy-paste task (= Task 16, 19, 22, 23, 25) は review 1 段に簡略化
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+---
+
+## セッション 85 (2026-05-27) — Phase 7 (Pages Function) ship 完遂 + 主要バグ 3 件 fix / サムネ + モーダル UX の本格再設計は次セッション持ち越し
+
+### 前半: Pages Function 化の 5 task ship
+
+session 84 から持ち越した Phase 7 (= シェアの本番反映)。 `output: 'export'` + edge runtime + 動的セグメントの架構衝突を、 Cloudflare Pages Function 化で解消。
+
+**Task 1**: HTML テンプレート関数 (= `renderShareHTML`) + 11 unit tests
+- 当初 spec §4.4 通り「ゼロから HTML 組み立て」 方針で実装
+- per-id og:image / og:url / title / window.__SHARE_ID__ 注入 + scripts/stylesheets 配列受け取り
+- commit `30bb431`
+
+**Task 2**: post-build manifest script (= `scripts/build-share-manifest.mjs`) + 9 unit tests
+- ビルド後に `out/s/index.html` を scan して JS/CSS chunk 名を `_bundle-manifest.json` に出力
+- package.json build hook 配線
+- commit `dde6991`
+- **後に Task 5 で全削除** (= pivot 理由は後述)
+
+**Task 3**: Pages Function 本体 (= `functions/s/[id].ts` + `[id]/triage.ts` + `_handler.ts`) + 音波テーマ 404 + 10 unit tests
+- `_handler.ts` で共通化、 KV fetch → 成功時 `renderShareHTML`、 失敗時 `renderShareNotFoundHTML`
+- `_themes/wave404.ts` + `_themes/index.ts` — テーマレジストリ + `pickTheme(random)` でランダム選択 (= 今は wave 1 つ、 追加すれば自動的に 404 ローテーションに乗る)
+- wave404 = 「404」 数字 3 つが sin 波で揺れる + マウス近接で振幅増 + 緑グロウ脈打つ + `prefers-reduced-motion` 対応 + 自前 vanilla JS で軽量
+- baseUrl は `new URL(ctx.request.url).origin` で自動導出 (= preview / 本番どちらも config 不要)
+- commit `26e984a`
+
+**Task 4**: ReceiverLanding / ReceiverTriage の prop 廃止 + 8 unit tests
+- `lib/share/extract-share-id.ts` 新規 — `/^\/s\/([A-Za-z0-9]{6})(?:\/[A-Za-z]+)?\/?$/` で pathname から ID 抜き出す pure 関数
+- ReceiverLanding / ReceiverTriage が `shareId` prop 廃止、 `useEffect` で `window.location.pathname` 読んで自分で抽出
+- 旧 Next.js `/s/[id]` ページから prop 渡し削除
+- 既存テストを `window.history.replaceState` で path 仕込む形に更新
+- commit `af3c722`
+
+**Task 5**: 旧ページ削除 + bundle エントリ + 本番 ship — **ここで大きく pivot**
+
+最初の試行で旧 `/s/[id]/page.tsx` + `triage/page.tsx` を削除、 新規 `app/(app)/s/page.tsx` + `ShareEntry.tsx` 追加、 ビルド試行 → Next.js 出力 `out/s.html` を確認したところ:
+
+- Next.js 16 の static export は単純な HTML でなく、 大量の RSC streaming data (= `self.__next_f.push(...)`) を body に埋め込む構造
+- これが無いと React hydration が壊れる、 自前ひな型 HTML では再現不可能
+- → Task 1 (= `renderShareHTML`) + Task 2 (= manifest) では本物のページが起動しない
+
+**Pivot**: 「自前 HTML 生成」 → 「Next.js 出力を patch」 に方針変更
+- 新規 `functions/s/patch-share-html.ts` + 12 unit tests — 既存 HTML テンプレートを受け取って `<title>` / og:title / og:description を置換、 og:url / og:image / og:image:width / og:image:height / twitter:image を og:type 直後に注入、 `window.__SHARE_ID__` を `<head>` 直後に注入。 Next.js bundle `<script>` と RSC streaming data は**触らない**
+- `_handler.ts` を patch アプローチに書き換え (= `ctx.env.ASSETS.fetch('/s')` で Next.js HTML 取得 → `patchShareHTML` で per-id 値を埋め込む → response)
+- 不要になった `renderShareHTML` + `ShareTemplateInput` + `_bundle-manifest.json` + `scripts/build-share-manifest.mjs` + package.json build hook を全削除
+- handler test を `ASSETS.fetch` モック対応に書き換え
+- commit `eaff12f` (= 14 ファイル 262 行追加 / 374 行削除)
+
+preview deploy (`phase-7-preview.booklage.pages.dev`) → 404 path 動作確認 → 本番 ship (deployment `dc25fece`)。
+
+### 中盤: 本番 ship 直後に 3 件の致命バグ発見 + 即修正
+
+**バグ 1: encode/decode の Cloudflare 互換性問題** (= ship 直後に user テストで判明)
+
+- 症状: POST `/api/share/create` が **500 (Worker exception 1101)**
+- 原因: `lib/share/encode-v2.ts` の `gzip()` と `lib/share/decode-v2.ts` の `ungzip()` が `new ReadableStream(...)` を直接呼んでいた
+- Cloudflare Workers では `streams_enable_constructors` flag が必要 (= `compatibility_date >= 2022-11-30` で default on、 だが本プロジェクトは dashboard で古い date pin)
+- このバグは **session 83 から存在していた潜在バグ** (= encode-v2 は session 83 で実装)、 ただし旧 ShareComposer 経路では `/api/share/create` を呼ばないので発覚せず。 Phase 7 ship で初めて呼ばれて顕在化
+- wrangler tail でログ確認 → 「To use the new ReadableStream() constructor, enable the streams_enable_constructors compatibility flag」 で原因特定
+- 修正試行 1: `new Blob([bytes]).stream()` → jsdom が `Blob.stream()` 未実装でテスト落ち
+- 修正試行 2: `new Response(bytes as BodyInit).body!` → Workers / jsdom 両方で OK
+- commits `7e2a045` → `73c18c7` (= 試行 1 の Blob.stream() を Response.body に置換)
+
+**バグ 2: iframe 自動再生 (= SHARE 押すと音楽鳴る)**
+
+- 症状: SHARE 押すと **大音量で見知らぬ音楽が再生**、 user 報告
+- 原因: `lib/share/snapshot.ts` の `dom-to-image-more` が iframe を clone するときに SoundCloud / YouTube embed の autoplay が発火
+- 修正: filter callback で IFRAME / VIDEO / AUDIO ノードを除外 (= snapshot にはどっちみち cross-origin で映らないので影響なし)
+- commit `73c18c7` (= 上記バグ 1 と同時)
+
+**バグ 3: 300 カードでメモリ 5GB 爆発**
+
+- 症状: 300 ブクマあるボードで SHARE 押すと「ずっと preparing」、 tab メモリ 3GB → 4GB → 5GB と膨らんで停止寸前。 user 報告
+- 原因: `dom-to-image-more` が filter callback 実行前に subtree 全体を pre-process (= 全カードの画像 fetch + inline 試行) する仕様。 viewport filter を追加しても無効
+- 修正試行 1: viewport filter (= `data-card-id` 持つ要素が viewport 外なら skip) — **効かず**、 user 報告 3GB スタート
+- 修正試行 2: `dom-to-image-more` を完全廃止 → 自前 canvas 描画に置換。 画面内カードを `data-card-id` 列挙して `getBoundingClientRect` 取り、 `backgroundColor` でブロック塗り + 緑のふち + AllMarks ブランド帯
+- user 却下「グレーのブロックばかりで本物のボードじゃない」 → さらに改善案要求「業界水準を徹底調査して、 user 個人のボードが映る形に」
+- 最終 (= session 86 持ち越し前の暫定): canvas 描画を更にシンプル化、 AllMarks ブランド placeholder (= 「A」 マーク + 緑チェック + 微かな音波 motif + 中央 ALLMARKS + 右下 N CARDS) のみ。 メモリ bounded、 速度 < 10ms、 外部 fetch 一切無し、 クラッシュ防止優先
+- commits `b69e2e3` → `09f6e46` → `ddb6ce0`
+
+### 後半: モーダル UX 暫定改善 + session 86 持ち越し設計
+
+**SenderShareModal 改善**:
+- `totalBoardCount` prop 追加、 BoardRoot から `filteredItems.length` を渡す
+- 「100 OF 300 CARDS · NEWEST FIRST」 表示 (= cap 存在を user に明示、 silent truncation 解消)
+- card count 表示テスト 2 件追加
+
+**user feedback で得た本格再設計の方向性** (= session 86 で着手):
+1. **OG 画像はサーバーサイド動的生成** — [workers-og](https://workers-og.pages.dev/) (= Satori + Resvg、 Cloudflare Workers 公式互換) で JSX → PNG レンダリング、 client は base64 サムネ送らずメタデータだけ
+2. **モーダル内 live ミラー** (= user 発案、 業界標準) — 背景の本物ボードを CSS `transform: scale(0.25)` で縮小して live mirror、 DOM clone でなく軽量
+3. **bg スクロール同期** — モーダル open 中、 モーダル背景の wheel event を bg board にバイパス、 bg + mini が同じ scroll Y で動く
+4. **共有範囲 picker** — フィルター適用後の状態を共有 (= 既存設計と一致)、 「30 日間有効」 expiry 表示
+
+これは Linear / Notion / Figma 等の共有 UX と同水準。 session 86 で本格設計 + 実装。
+
+### session 85 ship 概要
+
+- **commits**: `30bb431` (Task 1) → `dde6991` (Task 2) → `26e984a` (Task 3) → `af3c722` (Task 4) → `eaff12f` (Task 5 = Pages Function patch pivot) → `7e2a045`/`73c18c7` (= encode/decode + iframe filter fix) → `b69e2e3` (= snapshot viewport filter、 効かず) → `09f6e46` (= snapshot 自前 canvas 置換) → `ddb6ce0` (= placeholder + 100 of N 表示)
+- **本番デプロイ**: 計 6 回 (= 初回 ship + 修正系 5)
+- **テスト**: 880 → 882 (= +12 patch / +10 handler / +8 extract-share-id / +4 themes / +2 modal UX / -11 旧 renderShareHTML / -9 build-manifest script)
+- **tsc 0 errors**、 build 23 routes 全 success
+- **本番 booklage.pages.dev**: 動いてる (= 共有作成 + 受信 + 404 全部、 サムネは placeholder)
+
+### 設計上の重要発見 (= memory 候補)
+
+- **`output: 'export'` + edge runtime + 動的セグメントは三者衝突**: 静的書き出しは全 HTML 事前生成、 edge runtime は実行時、 動的セグメントは `generateStaticParams` 列挙必要 → 全部両立不可能。 Pages Function 経路に逃がすのが正解
+- **Next.js 16 の static export は RSC streaming data を body に埋め込む**: 自前 HTML 生成は不可能、 Next.js 出力を patch するのが安全
+- **Cloudflare Workers の `new ReadableStream(...)` は compat flag 要求**: `new Response(bytes as BodyInit).body!` で代替、 jsdom でも動く
+- **`dom-to-image-more` は filter 実行前に subtree 全体を pre-process**: 大規模 DOM では使用不可、 サーバーサイド OG 生成 (= workers-og) が業界標準
+- **iframe / video / audio の autoplay が DOM clone で発火**: snapshot 系ライブラリでは要除外
+
+### 未達 (= 次セッション持ち越し)
+
+- 🔴 **サムネ + モーダル UX の本格再設計** (= session 86 中核、 詳細 [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md))
+- 🔴 **allmarks.app ドメイン取得確認** (= 月末 = 今日以降、 user 報告待ち)
+- Phase D4 他 14 言語 mood → tag rename
+- Phase D5 NewMoodInput → NewTagInput rename
+- onboarding チュートリアル
+- 拡張機能 Chrome Web Store 公開準備
+- **clean-up**: `dom-to-image-more` package.json 依存削除 (= 実コードでは使ってない、 types/ 削除も)
+
 
