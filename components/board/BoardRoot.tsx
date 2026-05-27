@@ -1754,6 +1754,7 @@ export function BoardRoot() {
               return tag ? [tag.name] : []
             })
           : []}
+        onPanY={(dy: number): void => { handlePanY(dy) }}
       />
       {trashConfirmOpen && (
         <TrashConfirmDialog

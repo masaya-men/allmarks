@@ -39,6 +39,7 @@ describe('SenderShareModal', () => {
         contentHeight={1000}
         viewportHeight={800}
         activeTagNames={[]}
+        onPanY={vi.fn()}
       />,
     )
     expect(container.firstChild).toBeNull()
@@ -55,6 +56,7 @@ describe('SenderShareModal', () => {
         contentHeight={1000}
         viewportHeight={800}
         activeTagNames={[]}
+        onPanY={vi.fn()}
       />,
     )
     expect(queryByTestId('mirror-frame')).toBeTruthy()
@@ -78,6 +80,7 @@ describe('SenderShareModal', () => {
         contentHeight={1000}
         viewportHeight={800}
         activeTagNames={[]}
+        onPanY={vi.fn()}
       />,
     )
     await act(async () => {
@@ -102,6 +105,7 @@ describe('SenderShareModal', () => {
         contentHeight={1000}
         viewportHeight={800}
         activeTagNames={[]}
+        onPanY={vi.fn()}
       />,
     )
     await act(async () => {
@@ -128,6 +132,7 @@ describe('SenderShareModal', () => {
         contentHeight={1000}
         viewportHeight={800}
         activeTagNames={[]}
+        onPanY={vi.fn()}
       />,
     )
     await act(async () => {
@@ -148,6 +153,7 @@ describe('SenderShareModal', () => {
         contentHeight={1000}
         viewportHeight={800}
         activeTagNames={[]}
+        onPanY={vi.fn()}
       />,
     )
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -166,10 +172,31 @@ describe('SenderShareModal', () => {
         contentHeight={1000}
         viewportHeight={800}
         activeTagNames={[]}
+        onPanY={vi.fn()}
       />,
     )
     const backdrop = container.firstChild as HTMLElement
     fireEvent.click(backdrop)
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('forwards wheel events to onPanY', () => {
+    const onPanY = vi.fn()
+    const { container } = render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+        onPanY={onPanY}
+      />,
+    )
+    const backdrop = container.firstChild as HTMLElement
+    fireEvent.wheel(backdrop, { deltaY: 100 })
+    expect(onPanY).toHaveBeenCalledWith(100)
   })
 })

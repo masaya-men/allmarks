@@ -113,12 +113,21 @@ describe('ShareMirror', () => {
   })
 
   it('applies scroll transform when scrollY changes', () => {
-    const data = makeShareData(20)
+    // Use 60 portrait cards (a=0.5, clamped minimum) so each card is 160px tall.
+    // With 14 columns, ~5 cards per col → worldHeight ≈ 830px > MIRROR_FRAME_HEIGHT(628).
+    // mirrorScrollMax > 0, so translateY changes between scrollY=0 and scrollY=500.
+    const data: ShareDataV2 = {
+      v: SHARE_SCHEMA_VERSION_V2,
+      cards: Array.from({ length: 60 }, (_, i) => ({
+        u: `https://example.com/c${i}`, t: `card ${i}`, ty: 'website' as const, cw: 240, a: 0.5,
+      })),
+      createdAt: Date.now(),
+    }
     const { container, rerender } = render(
       <ShareMirror
         shareData={data}
         activeTagNames={[]}
-        totalBoardCount={20}
+        totalBoardCount={60}
         scrollY={0}
         contentHeight={4000}
         viewportHeight={800}
@@ -131,7 +140,7 @@ describe('ShareMirror', () => {
       <ShareMirror
         shareData={data}
         activeTagNames={[]}
-        totalBoardCount={20}
+        totalBoardCount={60}
         scrollY={500}
         contentHeight={4000}
         viewportHeight={800}

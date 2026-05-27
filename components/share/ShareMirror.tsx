@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, type ReactElement, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactElement, type RefObject } from 'react'
 import type { ShareDataV2, ShareCardV2 } from '@/lib/share/types-v2'
 import styles from './ShareMirror.module.css'
 
@@ -78,13 +78,41 @@ export function ShareMirror({
     [shareData.cards],
   )
 
+  // Scale: cardsLayer is laid out at MIRROR_FRAME_WIDTH (1200 logical px).
+  // The CSS frame renders at a smaller CSS px width. We measure the frame's
+  // actual CSS width via ResizeObserver and apply scale = cssWidth / 1200.
+  // Default 0.6 = 720 / 1200 so first paint isn't completely clipped.
+  const [scale, setScale] = useState<number>(720 / MIRROR_FRAME_WIDTH)
+  const internalFrameRef = useRef<HTMLDivElement | null>(null)
+
+  const setFrameRef = useCallback((el: HTMLDivElement | null): void => {
+    internalFrameRef.current = el
+    if (frameRef) {
+      (frameRef as MutableRefObject<HTMLDivElement | null>).current = el
+    }
+  }, [frameRef])
+
+  useEffect((): (() => void) => {
+    const el = internalFrameRef.current
+    if (!el) return (): void => undefined
+    const observer = new ResizeObserver((entries): void => {
+      const entry = entries[0]
+      if (entry) {
+        const cssWidth = entry.contentRect.width
+        if (cssWidth > 0) {
+          setScale(cssWidth / MIRROR_FRAME_WIDTH)
+        }
+      }
+    })
+    observer.observe(el)
+    return (): void => observer.disconnect()
+  }, [])
+
   // Proportional scroll: bg progress 0..1 maps to mirror progress 0..1.
-  // Mirror frame height in CSS px is approximated to ESTIMATED_FRAME_CSS_HEIGHT
-  // (refined in implementation via ResizeObserver if needed -- see spec G3).
-  const ESTIMATED_FRAME_CSS_HEIGHT = 220
+  // Both sides are in mirror coords (MIRROR_FRAME_HEIGHT = 628).
   const bgScrollMax = Math.max(1, contentHeight - viewportHeight)
   const progress = Math.max(0, Math.min(1, scrollY / bgScrollMax))
-  const mirrorScrollMax = Math.max(0, worldHeight - ESTIMATED_FRAME_CSS_HEIGHT)
+  const mirrorScrollMax = Math.max(0, worldHeight - MIRROR_FRAME_HEIGHT)
   const mirrorScrollY = progress * mirrorScrollMax
 
   const N = shareData.cards.length
@@ -93,7 +121,7 @@ export function ShareMirror({
   const tagText = activeTagNames.map((s): string => s.toUpperCase()).join(' · ')
 
   return (
-    <div className={styles.frame} ref={frameRef} data-testid="mirror-frame">
+    <div className={styles.frame} ref={setFrameRef} data-testid="mirror-frame">
       {activeTagNames.length > 0 ? (
         <div className={styles.tagStrip} data-testid="mirror-tag-strip">{tagText}</div>
       ) : null}
@@ -103,7 +131,7 @@ export function ShareMirror({
         data-testid="mirror-cards-layer"
         style={{
           transformOrigin: '0 0',
-          transform: `translateY(${-mirrorScrollY}px)`,
+          transform: `scale(${scale}) translateY(${-mirrorScrollY}px)`,
         }}
       >
         {positions.map((p): ReactElement => (

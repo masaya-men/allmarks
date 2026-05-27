@@ -27,6 +27,8 @@ type Props = {
   readonly viewportHeight: number
   /** Active filter tag names for mirror top strip. Empty = no filter. */
   readonly activeTagNames: ReadonlyArray<string>
+  /** Forward wheel events to bg board's pan handler. Called with raw deltaY. */
+  readonly onPanY: (deltaY: number) => void
 }
 
 export function SenderShareModal({
@@ -38,6 +40,7 @@ export function SenderShareModal({
   contentHeight,
   viewportHeight,
   activeTagNames,
+  onPanY,
 }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
@@ -59,6 +62,11 @@ export function SenderShareModal({
   const handleBackdrop = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
     if (e.target === e.currentTarget) onClose()
   }, [onClose])
+
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>): void => {
+    e.preventDefault()
+    onPanY(e.deltaY)
+  }, [onPanY])
 
   const handleShareConfirm = useCallback(async (): Promise<void> => {
     setState({ kind: 'capturing' })
@@ -95,7 +103,7 @@ export function SenderShareModal({
   const shareData = getShareData()
 
   return (
-    <div className={styles.backdrop} onClick={handleBackdrop}>
+    <div className={styles.backdrop} onClick={handleBackdrop} onWheel={handleWheel}>
       <div className={styles.panel} role="dialog" aria-label="Share board">
         <header className={styles.header}>
           <span className={styles.title}>SHARE BOARD</span>
