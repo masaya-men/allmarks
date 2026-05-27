@@ -1,72 +1,96 @@
-# 次セッションのゴール (= セッション 87) — allmarks.app ドメイン確認 + 本番動作確認フォローアップ + 残 polish
+# 次セッションのゴール (= セッション 87) — シェアミラーの未解決問題を playwright で実機 verify してから直す
 
 ## 今のゴール (1 行)
 
-**session 86 でシェアモーダル UX 再設計を本番 ship 完了 (= ミラー + 同期スクロール + Canvas キャプチャ全部動く)、 次は allmarks.app ドメイン取得確認 + 本番ハードリロード後の user 体験フィードバック取りまとめ + minor 残 polish の片付け。**
+**session 86 でシェア機能 (= ミラー / 同期スクロール / Canvas キャプチャ / OG プロキシ) は全部 ship したが、 ミラーの「表示範囲が bg と一致しない」 と「テキストカード空っぽ」 の 2 件が直っていない (= 2 回 fix 試行したが両方とも実機で効いてなかった、 unit test は通ってた)。 次セッションは playwright で実機検証してから直す。**
+
+## 🔴 開始時に必ず守ること
+
+**プロセス改善**: unit test 通っただけで「動いてる」 と user に言わない。 必ず以下の順:
+
+1. unit test (= vitest) で論理を verify
+2. **playwright で実 browser に load → スクショ → ピクセル位置/サイズを assertion で verify** ← これを抜かしてた
+3. それでも user 検証が必要なら本番 deploy
+
+session 86 の 2 fix は (1) で通って (2) を抜かして user に投げてしまい、 user 検証で両方 NG。 同じ轍を踏まない。
+
+参考 memory: [feedback_verify_before_claiming](memory) 「CSS animation/hover 系は playwright getComputedStyle で実測してから『動いてる』 と報告」。 今回は CSS animation じゃないが、 **layout / 位置計算 / scale** も同じ。 「ピクセルが正しい位置にあるか」 は jsdom じゃ計測できない。
+
+## 未解決問題 (= 次セッションの中核)
+
+### 問題 1: ミラーが bg と同じ範囲を映してない
+
+**症状**: user 報告 (= session 86 第 2 スクショ) で、 bg ボード上で見えてる 6 枚並びの最上段が、 ミラーでは 7 枚以上の異なる並び順に化けてる。 「ミラー = bg の縮小版」 になってない。
+
+**試した fix (= 効かなかった)**:
+
+- [a0bc84b](https://github.com/masaya-men/booklage/commit/a0bc84b) — ResizeObserver で scale 動的計算 + scroll math 修正 (= MIRROR_FRAME_HEIGHT 採用)
+- [535783f](https://github.com/masaya-men/booklage/commit/535783f) — 独自 column-stack 撤去、 bg の layout.positions を直接受ける構造に refactor
+- [85e01e9](https://github.com/masaya-men/booklage/commit/85e01e9) — `bgViewportWidth` を `viewport.w` から `effectiveLayoutWidth` に変更
+
+3 つやって全部 NG。 つまり問題の根本原因がまだ特定できてない。
+
+**未テスト仮説 (= 次セッションで playwright で実証から)**:
+
+1. `effectiveLayoutWidth` も実は bg が使ってる値と違う可能性 (= `BOARD_INNER.SIDE_PADDING_PX` の値 / scroll bar 幅 / gutter 等で何 px かズレてる)
+2. モーダル panel の CSS `width: min(720px, calc(100vw - 32px))` が user の viewport で 720 に効いてない可能性 (= スクショ見ると panel が画面の 90% 占めてる、 720 CSS px のはずなのに見た目変、 何かが override してる)
+3. ShareMirror の `cardsLayer` inline style `width: bgViewportWidth, height: ...` が CSS の `inset: 0` と競合して想定外の reflow / overflow 挙動になってる可能性
+4. ResizeObserver の callback が初回マウント時に発火タイミングが遅れて、 一瞬 default scale 0.5 で render → user スクショはその一瞬を捉えてる可能性 (= でも user は静止画なので可能性低い)
+5. bg ボードが本当に位置を確定する transform が、 `cardsLayer` の上にもう 1 段あって、 私が見えてない wrapper が `translate(SIDE_PADDING, TOP_PAD)` してる可能性 → [components/board/CardsLayer.tsx](../components/board/CardsLayer.tsx) と BoardRoot の JSX を最初から playwright で「描画後の各カードの screen 座標」 を計測して確認
+
+### 問題 2: テキストカードが空っぽ
+
+**症状**: tweet など `thumbnailUrl` 無いカードがミラーで空の黒矩形 + 下端に小さい title だけ。
+
+**試した fix (= 効かなかった)**:
+
+- [85e01e9](https://github.com/masaya-men/booklage/commit/85e01e9) — `<div className={styles.cardTextBody}>` で title をカード全体表示 + capture-mirror に `drawWrappedText` 追加
+
+user は実機で「直っていない」 と報告。 つまり:
+- 上記の `cardTextBody` div が描画されてないか
+- `thumbnailUrl` が null のはずなのに null じゃない値 (= 空文字、 undefined 文字列) で `<img>` 経路に入ってる可能性
+
+**playwright で確認すべき**:
+1. tweet card の `data-mirror-card-id` 要素を取得、 中の HTML を inspect (= `<img>` か `<div className=cardTextBody>` どちらが render されてるか)
+2. `filteredItems[i].thumbnail` の実値を console.log で確認 (= null なのか空文字なのか URL なのか)
+3. BoardRoot で `thumbnailUrl: it.thumbnail ?? null` の `it.thumbnail` の実値を確認 (= 別フィールド名の可能性)
+
+## ship 済 (= 動いてる)
+
+- POST /api/share/create + GET /api/share/:id (= URL 発行 + 取得、 session 85 から)
+- GET /api/share/:id/og.webp (= OG プロキシ、 session 86)
+- GET /s/:id + /s/:id/triage (= 受信ページ + triage、 Pages Function、 session 85)
+- 404 音波テーマ (= session 85)
+- summary_large_image カード生成 (= og:url で受信ページに飛ぶ)
+- モーダル open + SHARE NOW + URL 表示 + COPY + POST TO X (= UI fundamentals 動いてる)
+- 同期スクロール (= wheel が bg と mirror 両方に伝わる、 session 86 fix)
 
 ## 開始時の動き (= Claude の最初の発言)
 
-1. **このファイル** ([docs/CURRENT_GOAL.md](./CURRENT_GOAL.md))、 **[docs/TODO.md](./TODO.md) 「現在の状態」** を読む
-2. **🔴 allmarks.app ドメイン取得確認** — 今日は 2026-05-28 以降、 取得予定だったので user に確認
-3. **本番 (booklage.pages.dev) 確認** — ハードリロードで session 86 ship 内容が映ってるか、 user の体感はどうだったか聞く
-4. minor 残 polish の優先順位を user と合意 → 1 つずつ片付ける
-
-## session 86 で何が ship されたか
-
-### 動いている (= 本番反映済)
-- **モーダル内ライブミラー** — 1.91:1 frame、 MOTION OFF 状態のボードを縮小 live 表示、 サムネ + タイトル + 配置
-- **同期スクロール** — モーダル wheel が bg board の handlePanY に転送、 bg + mirror が proportional に動く
-- **Canvas API でキャプチャ** — SHARE NOW 押した瞬間にミラー DOM → WebP 直接生成、 ライブラリ依存ゼロ、 メモリ ~5MB ceiling
-- **ブランド帯 baked-in** — 左下 A ロゴ + 右下「N CARDS · NEWEST FIRST」 + 上端アクティブタグ
-- **OG プロキシ** — `/api/share/<id>/og.webp` で KV thumb を bytes 配信、 1h edge cache + 24h s-maxage
-- **summary_large_image カード** — X / Slack / LinkedIn 等で URL 貼ると AllMarks 受信ページに飛ぶ大きいカードプレビューが出る
-
-### 検証済
-- vitest 896/896 PASS、 tsc 0 errors、 build 21 routes 成功
-- 本番 deploy 完遂 (= [`booklage.pages.dev`](https://booklage.pages.dev))
-- session 85 のメモリ 5GB OOM + iframe 自動再生問題は設計上回避済
-
-## 次セッション (= 87) の作業項目
-
-### 1. **allmarks.app ドメイン取得確認** (最優先)
-- 取得済み → リブランド作業に着手 (= 新 Cloudflare Pages project / 301 redirect / repo rename / 拡張機能ストア submit)
-- 未取得 → 取得を促す
-- 詳細 spec: `docs/private/2026-05-11-allmarks-branding-spec.md` (gitignored)
-
-### 2. **本番動作確認 user フィードバック**
-- ハードリロード (Ctrl+Shift+R) して以下を試したか + 体感を聞く:
-  - SHARE 押下 → モーダル open + ミラー live 表示
-  - 同期スクロール (= マウスホイールで bg + mirror 一緒に動く)
-  - SHARE NOW → 1-3 秒で URL 表示、 iframe 音鳴らない
-  - URL を X compose に貼って summary_large_image カード確認
-- 問題発覚 → 該当箇所 fix → 再 deploy
-- 問題なし → 残 polish に進む
-
-### 3. **minor 残 polish (= final review の非 Critical 指摘)**
-- **ロゴサイズ不一致** — CSS で 24px、 canvas で 32px。 ミラー実 element の getBoundingClientRect から capture 寸法導出に書き換え
-- **font サイズ不一致** — CSS 11px、 canvas 13px。 同様に統一
-- **thumb 上限超過 fallback** — 高画質ボードで 100KB base64 超過時に quality step-down (= 0.85 → 0.7 → 0.55) で retry loop
-- **dom-to-image-more 依存削除** — package.json から消す、 types/ もあれば削除 (= 実コードでは使ってない)
-
-### 4. **残課題リスト整理**
-- Phase D4 他 14 言語 mood → tag rename
-- Phase D5 NewMoodInput → NewTagInput rename
-- onboarding チュートリアル
-- 拡張機能 Chrome Web Store 公開準備
-
-## 守ること (= memory 振り返り + session 86 学習)
-
-- **「業界標準だから」 で user 発言を上書きしない** — session 86 で workers-og を当初推奨したが user 指摘で反転、 経緯を正直に説明できた。 同じ罠を踏まない
-- **大変更前は brainstorming → spec → plan → 実装の順を守る** ([feedback_consult_before_big_changes](memory))
-- **subagent-driven で context 汚染を避ける** — session 86 で 7 task + final review + fix を全部 subagent で実行、 controller が clean に最終判断できた
-- **preview deploy は IDB 分離で意味なし** — `--branch=master` 直で deploy が正解 (= CLAUDE.md 明記、 user 指摘で気付いた)
-- **AskUserQuestion ボックス禁止** ([feedback_no_question_box_for_decisions](memory))
-- **平易な日本語、 横文字カタカナ控えめ** ([feedback_jargon_in_japanese](memory))
-- **verify before claiming it works** ([feedback_verify_before_claiming](memory))
+1. **このファイル** + **[docs/TODO.md](./TODO.md) 「現在の状態」** を読む
+2. **🔴 allmarks.app ドメイン取得確認** — 2026-05-28 朝以降の見込みだった、 user に状況聞く
+3. **playwright を /board に対して走らせる** — 以下を実測:
+   - bg の cards の screen 座標を全部取得 (= `el.getBoundingClientRect()`)
+   - モーダル open → mirror frame の screen 座標 + size を取得
+   - mirror の cards の screen 座標を全部取得
+   - bg cards.x vs mirror cards.x の比率を実測 → scale が一致してるか
+   - tweet card の HTML を outerHTML で取得 → `<img>` か `<div.cardTextBody>` か
+4. 実測値ベースで原因特定 + fix 設計 (= 推測で書かない)
+5. fix 後も同じ playwright で「以前と比較して 6 cards in row 1 になったか」 を assert (= 「動いた」 を主観で言わない)
 
 ## 重要ドキュメント (= session 87 で読む順)
 
-1. このファイル ([docs/CURRENT_GOAL.md](./CURRENT_GOAL.md))
-2. [docs/TODO.md](./TODO.md) 「現在の状態」 セクション (= session 86 ship 一覧)
-3. [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 86 セクション (= 詳細 narrative + 設計判断)
-4. (= 必要時) [docs/superpowers/specs/2026-05-27-share-mirror-capture-design.md](./superpowers/specs/2026-05-27-share-mirror-capture-design.md) — session 86 で実装した spec
+1. このファイル
+2. [docs/TODO.md](./TODO.md) 「現在の状態」
+3. [docs/TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 86 セクション (= 詳細 narrative)
+4. [docs/superpowers/specs/2026-05-27-share-mirror-capture-design.md](./superpowers/specs/2026-05-27-share-mirror-capture-design.md) — 元 spec
+5. (= 実コード) `components/share/ShareMirror.tsx` + `components/share/SenderShareModal.tsx` + `components/board/BoardRoot.tsx` (= line 516-540 と 1744-1773)
+
+## 守ること (= 反省 + memory 振り返り)
+
+- **verify before claiming** ([feedback_verify_before_claiming](memory)) — unit test は logic 検証、 layout/位置検証は playwright 必須
+- **「直りました」 と user に投げる前に自分でスクショを比較する** — 今回これを抜かして 2 回失敗
+- **推測で fix dispatch しない** — 「仮説 1〜5」 を実コード読まずに dispatch すると今回みたいに空振りする。 まず playwright で実測 → 数値で根本原因確定 → ピンポイント fix
+- **大変更前は brainstorming → spec → plan** ([feedback_consult_before_big_changes](memory)) — 今回は brainstorming 経由したが、 fix dispatch は推測ベースで brainstorming スキップしてた
+- **平易な日本語** ([feedback_jargon_in_japanese](memory))
+- **AskUserQuestion ボックス禁止** ([feedback_no_question_box_for_decisions](memory))

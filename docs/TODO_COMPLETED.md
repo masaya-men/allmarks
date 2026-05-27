@@ -6109,3 +6109,50 @@ fix commit ([a0bc84b](../../commits/a0bc84b)) で 3 件まとめて修正:
 - Phase D5 NewMoodInput → NewTagInput rename
 - onboarding チュートリアル
 - 拡張機能 Chrome Web Store 公開準備
+
+
+### セッション 86 追補 (= 同日後半 fix 試行 + user 検証で 2 件未解決) — 2026-05-27
+
+session 86 の close-out commit ([bd51c84](https://github.com/masaya-men/booklage/commit/bd51c84)) 後、 user が本番をハードリロードして 2 件の不具合を報告:
+
+1. **ミラーの表示範囲が bg と一致しない** (= スクショで明確に違う並びになってた)
+2. **テキストカード (= tweet 等 thumbnail 無いカード) が空黒矩形 + 小 title だけ**
+
+これに対して 2 回 fix dispatch (= [535783f](https://github.com/masaya-men/booklage/commit/535783f) と [85e01e9](https://github.com/masaya-men/booklage/commit/85e01e9))、 各回とも unit test + tsc + build 通過させて user 検証に投げたが、 **両方とも実機では直っていなかった**。
+
+#### なぜ 2 回連続で外したか (= プロセスの失敗)
+
+- unit test (= vitest) で「prop の受け渡しが正しい」 「transform 文字列が変化する」 等の **論理的検証**は通っていた
+- しかし「**実 browser でどの座標にどう描画されるか**」 の検証 = playwright を経由していなかった
+- jsdom には実際の layout エンジンがないので、 ピクセル位置 / scale / 重なり / 親子要素の clipping は jsdom unit test では一切 verify できない
+- 「unit test 通ったから動いてる」 と short-cut した結果、 user に直接実機検証を任せて 2 回連続で空振り
+
+これは [feedback_verify_before_claiming](memory) に明確に違反する動き (= 同 memory は「CSS animation/hover 系は playwright getComputedStyle で実測してから『動いてる』 と報告」 だが、 layout/位置/scale も同種の「実機でしか分からない」 検証対象)。
+
+#### session 86 で ship 完了している部分 (= 動いてる)
+
+これらは session 87 以降も触らなくて良い:
+
+- POST /api/share/create + GET /api/share/:id (= URL 発行 + 取得、 session 85 から維持)
+- GET /api/share/:id/og.webp (= OG プロキシ、 [0abe462](https://github.com/masaya-men/booklage/commit/0abe462))
+- GET /s/:id + /s/:id/triage (= 受信ページ + triage、 session 85 から維持)
+- 404 音波テーマ (= session 85)
+- summary_large_image カード生成 (= patch-share-html.ts、 og:url で受信ページに飛ぶ、 session 85 + session 86 で height 627→628 修正)
+- モーダル open + SHARE NOW 確定ボタン + URL 表示 + COPY + POST TO X (= UI shell)
+- 同期スクロール (= wheel が bg と mirror 両方に伝わる、 [a0bc84b](https://github.com/masaya-men/booklage/commit/a0bc84b) で配線)
+- Canvas API 直接 drawImage キャプチャ機構そのもの (= dom-to-image-more 撤去、 メモリ ~5MB ceiling、 [06f0c57](https://github.com/masaya-men/booklage/commit/06f0c57))
+- snapshot.ts 削除 + getCanvasEl 清掃 (= [0f46436](https://github.com/masaya-men/booklage/commit/0f46436))
+- ShareMirror コンポーネントの基本骨格 (= [d526071](https://github.com/masaya-men/booklage/commit/d526071))
+
+#### 持ち越し (= session 87 でやる)
+
+- **ミラー表示範囲のズレ** の根本原因特定 + fix
+- **テキストカード描画** の根本原因特定 + fix
+- 両方とも **playwright で実機実測 → 数値ベースで原因特定 → ピンポイント fix → playwright で再度 verify** の手順厳守
+
+#### 数値まとめ (= 追補分)
+
+- 追加 commits: 3 件 ([535783f](https://github.com/masaya-men/booklage/commit/535783f), [85e01e9](https://github.com/masaya-men/booklage/commit/85e01e9), close-out 用 docs commit)
+- 本番 deploy 追加: 2 回 (= 計 session 86 で 3 deploy)
+- vitest: 882 → 896 維持 (= 2 fix とも regression 無し、 unit test ベースでは「健康」)
+- tsc: 0 errors 維持
