@@ -12,5 +12,5 @@ pages_build_output_dir = "out"
 
 [[kv_namespaces]]
 binding = "SHARE_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+id = "9c53f92e6cbf493f83c0ae2392dff2de"
+preview_id = "ee3ba0063888495e906a17f42d5a0138"

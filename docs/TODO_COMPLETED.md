@@ -5672,3 +5672,89 @@ user 報告「ファビコンと拡張フロートボタンに透明な箱が見
 
 詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
+---
+
+## セッション 83 (2026-05-27) — シェア機能の完全作り直し brainstorming + 設計仕様書 + 実装計画書 + Phase 1-2 (データ層 + Cloudflare 基盤) 実装
+
+### 経緯
+
+- session 82 終了時点、 トンマナ (= editorial 黒 + 緑 + monospace + convex bezel + 音波 motif) が固まったタイミングで、 user 発意「session 82 close-out で残った release blocker のうち、 言語 rename より先に **シェア機能の完全作り直し** をやりたい」 と方針転換
+- 旧 ShareComposer + PNG export 系は 2026-05-05 spec で実装したもの、 当時の AllMarks 視覚言語 (= 絵文字 + 日本語ボタン + generic action sheet) で書かれていて、 今のトンマナと完全乖離
+- 「コラージュ PNG を SNS に貼る」 主動線も user の現在の絵 (= ボードそのままを共有、 受信側でも同じ空間体験) と合わない
+
+### brainstorming 結果 (= 全 17 確定事項)
+
+詳細は [docs/superpowers/specs/2026-05-27-share-rebuild-design.md](./superpowers/specs/2026-05-27-share-rebuild-design.md) の「確定事項一覧」 表。 主要決定:
+
+1. **URL 短縮**: `allmarks.app/s/<6文字>` 形式、 Cloudflare KV ベース、 30 日 expiry。 旧 4KB fragment 制約による「実用 30 件上限」 を撤廃して 100 件まで届く
+2. **シェア範囲**: フィルタ後全件 (= スクロール先のカードも含む)、 上限 100
+3. **受信者着地**: 送信者ボードそのまま読み取り専用 + sticky CTA「全部取り込む」 / 「選びながら取り込む」
+4. **タグ取り込み**: sender's tags を payload に含めて受信者に提案表示 (= dimmed)、 receiver が tap で accept したものだけ実取り込み
+5. **送信側 UI**: 軽量 modal (= viewport snapshot プレビュー + URL コピー + X 投稿)、 AllMarks デフォルトテーマトンマナで作り直し
+6. **重複扱い**: bulk import は黙って skip + 完了 toast「N CARDS SAVED · M ALREADY SAVED」、 triage は queue から除外
+7. **既存 ShareComposer 系 / PNG export は全廃案** (= Phase 6 で完全削除)
+
+### コスト試算 (= 100 万 MAU 規模で約 ¥15,000/月)
+
+- 1 万 MAU: **¥0** (= 全部 Cloudflare 無料枠内)
+- 10 万 MAU: **¥800/月** (= Workers Paid 基本料金)
+- 100 万 MAU: **約 ¥15,000/月** (= KV read $20 + write $20 + storage $15 + Functions $25 + 基本 $5 + thumb 配信 $10)
+- 30 日 expiry でストレージ長期一定化 (= expiry なしだと 2 年で月¥36k に膨らむ)
+
+### 実装計画書
+
+[docs/superpowers/plans/2026-05-27-share-rebuild.md](./superpowers/plans/2026-05-27-share-rebuild.md) に 32 tasks × 7 Phase で起こす:
+- Phase 1 (Tasks 1-7): データ層 + スキーマ
+- Phase 2 (Tasks 8-11): Cloudflare Pages Functions
+- Phase 3 (Tasks 12-15): 送信側 SenderShareModal
+- Phase 4 (Tasks 16-22): 受信側 ReceiverLanding
+- Phase 5 (Tasks 23-26): 受信側 ReceiverTriage
+- Phase 6 (Tasks 27-30): 旧実装の完全削除
+- Phase 7 (Tasks 31-32): preview deploy + 本番 ship
+
+### このセッションで実装した範囲 (= Phase 1-2、 Tasks 1-11)
+
+**新規 17 ファイル、 11 commits**:
+
+1. `lib/share/types-v2.ts` — ShareDataV2 / ShareCardV2 / TagDict / KVShareEntry / 全制限定数
+2. `lib/share/validate-v2.ts` — Zod schema + strict/sanitize parse、 単体テスト 8 件
+3. `lib/share/kv-id.ts` — 6-char base62 ID 生成、 衝突確率 0.0009%、 単体テスト 5 件
+4. `lib/share/encode-v2.ts` + `decode-v2.ts` — gzip + base64 で KV payload encode/decode、 100 cards + 8KB thumb で 200KB 未満確認、 単体テスト 5 件
+5. `lib/share/snapshot.ts` — viewport WebP capture wrapper (= dom-to-image-more → canvas WebP)、 jsdom 制約で null 経路のみテスト 2 件
+6. `lib/share/board-to-share.ts` — board state → ShareDataV2 変換 + tagDict 自動生成 + 100 cards cap + title truncate、 単体テスト 5 件
+7. `lib/share/api-client.ts` — fetch wrapper for `/api/share/create` (POST) + `/api/share/<id>` (GET)、 単体テスト 4 件
+8. `wrangler.toml` — SHARE_KV namespace binding 宣言 (= ID placeholder のまま、 user が Cloudflare ダッシュボードで namespace 作成後に書き換え)
+9. `functions/api/share/create.ts` — POST /api/share/create Pages Function (= body size check + parseShareDataV2 + encode + ID alloc with collision retry + KV put with TTL)
+10. `functions/api/share/[id].ts` — GET /api/share/<id> Pages Function (= isValidShareId + KV get + decode + JSON response)
+11. `functions/api/share/[id]/og.ts` — GET /api/share/<id>/og.webp Pages Function (= placeholder fallback 1x1 black WebP for not_found / expired / decode failure、 1 日 immutable cache for valid response)
+
+### 検証
+
+- **tsc**: 0 errors (= Uint8Array → Response body の型変換で `bytes.buffer.slice(...)` パターンを採用)
+- **vitest**: 852 → **881 PASS** (= +29 新規 unit test、 全 127 ファイル pass)
+- **既存挙動への副作用**: ゼロ (= 旧 ShareComposer 系は触らず、 UI 配線 / BoardRoot は次セッション)
+
+### 設計上の重要発見 (= memory 候補)
+
+- **Cloudflare Pages Functions の既存パターン**: `functions/api/*.ts` は `PagesFunction<Env>` 型を import せず、 ファイル内で `interface PagesContext { request: Request; env: Env; params: ... }` を自前定義する flat 構造が canonical。 `@cloudflare/workers-types` 不要、 nested ディレクトリ (`functions/api/share/`) も file-based routing が自動認識
+- **wrangler.toml 不在プロジェクトに KV binding を後追い導入する手順**: 既存 deploy が動いている = ダッシュボード設定で動く構成。 `wrangler.toml` を新規作成する場合は最小構成 (= `name` + `pages_build_output_dir` + `kv_namespaces` のみ) で書く、 `compatibility_date` / `main` 等を書くと Cloudflare 自動検出と齟齬を起こす可能性。 ID は placeholder のまま commit で OK (= user が Cloudflare ダッシュボードで namespace 作って ID 貼る運用)
+- **`Uint8Array` を `Response` body に渡す型変換**: TypeScript strict + Next 16 のような環境で `new Response(uint8array, ...)` は `BodyInit` 型不一致。 `bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer` で明示的に ArrayBuffer 化するのが対策。 Pages Functions ランタイムでも互換
+- **30 日 KV TTL の長期コスト効果**: ストレージは「30 日分の在庫」 で常に同サイズ → コスト一定。 expiry なしだと 2 年で月¥36k に膨らむ
+- **「送信者のボードそのまま共有」 設計**: 旧設計 (= 別 modal でカード選択 + 並び替え + アスペクト切替 + PNG 出力) の複雑性は不要。 ボード状態 (= フィルタ + per-card サイズ + 並び順) がそのまま「個性」 として乗るので、 送信側 UI は確認 + 出口だけで足りる
+
+### 次セッション (= 84) へ持ち越し
+
+**user 操作待ち** (= session 83 close-out 後に user が実施):
+- Cloudflare ダッシュボードで `SHARE_KV` + `SHARE_KV_preview` namespace 作成 → ID を `wrangler.toml` に貼り付け
+
+**Phase 3 以降の実装** (= 次セッション):
+- Phase 3 (Tasks 12-15): 送信側 SenderShareModal + BoardRoot 配線
+- Phase 4 (Tasks 16-22): 受信側 ReceiverLanding (= 着地 + masonry + bulk import + Lightbox + 背景文字)
+- Phase 5 (Tasks 23-26): 受信側 ReceiverTriage (= 個別取り込み + sender tag suggestions)
+- Phase 6 (Tasks 27-30): 旧 ShareComposer / lib/share v1 / /share route 完全削除
+- Phase 7 (Tasks 31-32): preview deploy + 本番 ship
+
+次セッションは subagent-driven (= task ごとに subagent dispatch + review checkpoint) で進めると効率良し。
+
+詳細は [docs/CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
