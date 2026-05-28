@@ -6404,4 +6404,15 @@ user が本番で「リンク切れバッジついてました」 と確認 → 
 - **薄グレー化を子要素へ移設**: 旧は wrapper 自体に `opacity:0.55 + grayscale(60%)` → バッジ (wrapper の ::after) まで一緒に washed out していた。 `[data-link-status='gone'] > *` (実子要素のみ) に移すことで**本体は dimmed のままバッジは vivid な真っ赤**を維持。
 - **DEAD LINKS フィルター常時表示** ([FilterPill.tsx](../components/board/FilterPill.tsx)): 旧 `{counts.dead > 0 && (...)}` で 0 件時は非表示だった → 条件を外し TRASH と同様に**0 件でも常時表示**。
 - **検証**: tsc 0 / 全 925 tests pass (FilterPill テストなし、 regression なし) / 単体 HTML を playwright でスクショ実機検証 (真っ赤ウェッジ + 角丸 + アイコン + 本体 dimmed をピクセル確認) / 本番デプロイ済。
-- 変更 2 ファイル、 1 commit (`feat(board): dead-link corner-ribbon badge + always-show DEAD LINKS filter`) + 1 deploy。 **user の本番最終確認待ち**。
+- 変更 2 ファイル、 1 commit (`feat(board): dead-link corner-ribbon badge + always-show DEAD LINKS filter`) + 1 deploy。 user 本番確認「とてもいい」。
+
+### 追補 2: フィルターボタンを TUNE と同じホバー挙動 + アコーディオン開閉アニメに (= user 依頼、 同セッション内 ship)
+
+user 「フィルターボタンを TUNE と同じホバーアニメに、 出る時も消える時も」。 調査の結果、 ボタン文字の RGB グリッチ (色ズレ) は既に TUNE と同一実装と判明。 違いは 2 点: ①メニューの出現アニメが別物 (TUNE = `max-height` トランジションのアコーディオン / FilterPill = `menuIn` キーフレームのフェード+スケール pop)、 ②文字スクランブルが FilterPill は開く時だけ。 user 指摘で①を見落としていたのを認識 → 両方直す。 開くきっかけは user 選択で **(1) ホバーで開く完全 TUNE 一致**。 「存在に気付かない」 懸念に対し chevron 追加を提案したが user 却下 (「デザインは変えない」)。
+
+- **ホバーで開く + クリックでピン留め**（[FilterPill.tsx](../components/board/FilterPill.tsx)）: wrap の `onMouseEnter`/`onMouseLeave` で開閉 (離れて 0.7 秒で閉じる)、 click で sticky pin (TUNE 同様、 離れても開いたまま)、 outside-click/Esc/排他選択で sticky 解除。 menu は常時マウント (mount/unmount 廃止)。
+- **アコーディオン開閉アニメ**（[FilterPill.module.css](../components/board/FilterPill.module.css)）: keyframe pop を廃止し **grid `0fr`→`1fr` トランジション** (TUNE と同じ `cubic-bezier(0.16,1,0.3,1)`・出る 0.5s/閉じる)。 **grid 方式 = 中身の高さぴったりに伸縮**するので、 タグ数に関係なくアニメが全 duration を使って滑らか (固定 max-height だと短いリストで一瞬で開いてしまう問題を回避)。 内側に clip 用 `.menuInner` (overflow hidden + min-height 0) を 1 枚追加。
+- **閉じた時は完全 0 height** (border-width/box-shadow/padding を `[data-open]` に gate)。 当初 border 1px で 2px sliver、 inner padding で 12px 残る問題を、 padding を menu container 側に移して解決 (playwright で height 0→120→0 を実測確認)。
+- **文字スクランブルを出る/消える両方** (`burstAll` = label + count を hover enter/leave 両方で発火、 TUNE の開閉スクランブルに一致)。
+- **開いた時の panel デザインは不変** (bg/border/radius/shadow/中身そのまま)。
+- 検証: tsc 0 / 925 tests / playwright で実機 height + 開閉 + 開パネル見た目を確認 / build 24 routes / deploy 済。 変更 2 ファイル、 1 commit + 1 deploy。 **user の本番確認待ち**。
