@@ -12,6 +12,10 @@ type Props = {
   readonly item: BoardItem
   readonly displayMode: DisplayMode
   readonly persistMeasuredAspect?: (cardId: string, aspectRatio: number) => Promise<void>
+  /** Forwarded to the PlaceholderCard fallback so a dead-image card can
+   *  re-report its intrinsic height (= 1.25 aspect) and stop rendering at
+   *  the stale portrait height of the original (now-404) thumbnail. */
+  readonly reportIntrinsicHeight?: (cardId: string, heightPx: number) => void
   readonly cardWidth?: number
   readonly cardHeight?: number
   /** Tier 1: advance through mediaSlots on an interval (hard cut). */
@@ -22,7 +26,7 @@ type Props = {
 
 const ASPECT_EPSILON = 0.005
 
-export function ImageCard({ item, persistMeasuredAspect, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200 }: Props): ReactNode {
+export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200 }: Props): ReactNode {
   const imgRef = useRef<HTMLImageElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -145,6 +149,7 @@ export function ImageCard({ item, persistMeasuredAspect, cardWidth, cardHeight, 
           cardWidth={cardWidth}
           cardHeight={cardHeight}
           displayMode={displayMode}
+          reportIntrinsicHeight={reportIntrinsicHeight}
         />
       ) : slots.length > 0 ? (
         slots.map((slot, i) => (

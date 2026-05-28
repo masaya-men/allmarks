@@ -1439,6 +1439,21 @@ export function BoardRoot() {
     }
   }, [items, deletedItems])
 
+  // Per-tag bookmark count for the FilterPill dropdown rows. Counts the
+  // active (= non-deleted) set only, so the number matches what the user
+  // sees on the board when they pick that tag filter. Tags with 0 are kept
+  // (shown muted) so empty tags are visible for cleanup.
+  const tagCounts = useMemo<Readonly<Record<string, number>>>(() => {
+    const m: Record<string, number> = {}
+    for (const tag of tags) m[tag.id] = 0
+    for (const it of items) {
+      for (const tagId of it.tags) {
+        if (tagId in m) m[tagId] += 1
+      }
+    }
+    return m
+  }, [items, tags])
+
   const contentWidth = Math.max(viewport.w, contentBounds.width)
   const contentHeight = Math.max(viewport.h, contentBounds.height)
 
@@ -1529,6 +1544,7 @@ export function BoardRoot() {
           onChange={handleFilterChange}
           tags={tags}
           counts={sidebarCounts}
+          tagCounts={tagCounts}
           tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
           onTagContextMenu={openTagContextMenu}
           activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}

@@ -161,13 +161,61 @@
   min-width: 240px;
   max-width: min(320px, calc(100vw - 32px));
   max-height: calc(100vh - 120px);
-  overflow-y: auto;
+  /* session 88: flex column so ALL stays pinned at the top, the tag list
+     scrolls in the middle, and TRASH/DEAD LINKS stay pinned at the bottom.
+     The menu itself no longer scrolls (= overflow hidden); only .tagScroll
+     does. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   color: rgba(255, 255, 255, 0.92);
   animation: menuIn 100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Tag list — the only scrolling region. Raw scrollbar hidden (= house
+   rule: no plain scrollbars); a top/bottom fade mask driven by
+   data-scroll-edge signals "more tags above/below". The mask only kicks
+   in when the list actually overflows (edge !== 'none'), so short lists
+   stay crisp at both ends. */
+.tagScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* ~8 rows then scroll (= each row ≈ 33px). Keeps the dropdown a sensible
+     height even with dozens of tags; the menu's own max-height clamps it
+     further on short viewports. */
+  max-height: 264px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.tagScroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.tagScroll[data-scroll-edge='middle'] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 24px, black calc(100% - 24px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, black 24px, black calc(100% - 24px), transparent 100%);
+}
+.tagScroll[data-scroll-edge='top'] {
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 24px), transparent 100%);
+          mask-image: linear-gradient(to bottom, black calc(100% - 24px), transparent 100%);
+}
+.tagScroll[data-scroll-edge='bottom'] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 24px);
+          mask-image: linear-gradient(to bottom, transparent 0, black 24px);
+}
+
+/* TRASH + DEAD LINKS — pinned at the bottom of the menu, separated from
+   the scrolling tag list by a hairline so they're always reachable
+   without scrolling. */
+.bottomGroup {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 2px;
 }
 @keyframes menuIn {
   from { opacity: 0; transform: translateY(-4px); }

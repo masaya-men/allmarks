@@ -17,6 +17,9 @@ type Props = {
   readonly onChange: (f: BoardFilter) => void
   readonly tags: ReadonlyArray<TagRecord>
   readonly counts: { readonly all: number; readonly inbox: number; readonly archive: number; readonly dead: number }
+  /** Per-tag bookmark count (= active, non-deleted set), keyed by tag id.
+   *  Drives the digit shown on each tag row. Missing / 0 renders muted. */
+  readonly tagCounts?: Readonly<Record<string, number>>
   /** When the current filter is a tags filter, the parent should pass the
    *  matched bookmark count (= cardinality of the matched set) so the chrome
    *  digit reflects the active tag intersection rather than the total board
@@ -68,11 +71,26 @@ function countDigits(
 const LEAVE_GRACE_MS = 700
 
 export function FilterPill({
-  value, onChange, tags, counts, tagsMatchCount, onTagContextMenu, activeContextTagId,
+  value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  /* Tag list scroll affordance. When the tag list overflows its max-height
+     the raw scrollbar is hidden (= no-plain-scrollbar house rule) and a
+     top/bottom fade mask signals "more tags above / below" instead. */
+  const tagScrollRef = useRef<HTMLDivElement>(null)
+  const [tagScrollEdge, setTagScrollEdge] = useState<'none' | 'top' | 'middle' | 'bottom'>('none')
+  const updateTagScroll = useCallback((): void => {
+    const el = tagScrollRef.current
+    if (!el) { setTagScrollEdge('none'); return }
+    const canScroll = el.scrollHeight > el.clientHeight + 1
+    if (!canScroll) { setTagScrollEdge('none'); return }
+    const atTop = el.scrollTop <= 1
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+    setTagScrollEdge(atTop ? 'top' : atBottom ? 'bottom' : 'middle')
+  }, [])
   const effectiveLabel = labelFor(value, tags)
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
   const { display: displayLabel, triggerBurst } = useChromeScramble(effectiveLabel)
@@ -152,6 +170,13 @@ export function FilterPill({
     return (): void => clearLeaveTimer()
   }, [clearLeaveTimer])
 
+  /* Recompute the tag-list scroll affordance whenever the menu opens or
+     the tag set changes (= menu mounts the scroller fresh on open). */
+  useEffect(() => {
+    if (!open) return
+    updateTagScroll()
+  }, [open, tags, updateTagScroll])
+
   /* Exclusive selection (ALL / TRASH / DEAD): always closes. */
   const pickExclusive = (f: BoardFilter): void => {
     onChange(f)
@@ -202,6 +227,7 @@ export function FilterPill({
           role="menu"
           data-testid="filter-pill-menu"
         >
+          {/* ALL — pinned at the top, the default "everything" view. */}
           <button
             type="button"
             className={`${styles.item} ${boardFilterEquals(value, BOARD_FILTER_ALL) ? styles.active : ''}`.trim()}
@@ -210,25 +236,11 @@ export function FilterPill({
             <span className={styles.itemLabel}>ALL</span>
             <span className={styles.itemCount}>{String(counts.all).padStart(3, '0')}</span>
           </button>
-          <button
-            type="button"
-            className={`${styles.item} ${styles.trashItem} ${boardFilterEquals(value, BOARD_FILTER_ARCHIVE) ? styles.active : ''}`.trim()}
-            onClick={() => pickExclusive(BOARD_FILTER_ARCHIVE)}
-          >
-            <span className={styles.itemLabel}>TRASH</span>
-            <span className={styles.itemCount}>{String(counts.archive).padStart(3, '0')}</span>
-          </button>
-          {counts.dead > 0 && (
-            <button
-              type="button"
-              className={`${styles.item} ${styles.deadItem} ${boardFilterEquals(value, BOARD_FILTER_DEAD) ? styles.active : ''}`.trim()}
-              onClick={() => pickExclusive(BOARD_FILTER_DEAD)}
-            >
-              <span className={styles.deadDot} aria-hidden="true" />
-              <span className={styles.itemLabel}>DEAD LINKS</span>
-              <span className={styles.itemCount}>{String(counts.dead).padStart(3, '0')}</span>
-            </button>
-          )}
+
+          {/* TAGS — scrollable middle region. When the list grows past
+              MAX, it scrolls internally with a top/bottom fade mask (no
+              raw scrollbar) so ALL stays on top and TRASH/DEAD stay pinned
+              at the bottom regardless of how many tags exist. */}
           {tags.length > 0 && (
             <>
               <div className={styles.sectionHeader}>
@@ -239,37 +251,77 @@ export function FilterPill({
                   </span>
                 )}
               </div>
-              {tags.map((m) => {
-                const active = tagsActiveSet.has(m.id)
-                const contextActive = activeContextTagId === m.id
-                const cls = [
-                  styles.item,
-                  styles.tagItem,
-                  active && styles.tagItemActive,
-                  contextActive && styles.contextActive,
-                ].filter(Boolean).join(' ')
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className={cls}
-                    onClick={() => toggleTag(m.id)}
-                    onContextMenu={(e): void => {
-                      if (!onTagContextMenu) return
-                      e.preventDefault()
-                      e.stopPropagation()
-                      onTagContextMenu({ clientX: e.clientX, clientY: e.clientY }, m.id)
-                    }}
-                    aria-pressed={active}
-                    data-tag-id={m.id}
-                  >
-                    <span className={styles.tagDot} data-active={active ? 'true' : 'false'} aria-hidden="true" />
-                    <span className={styles.itemLabel}>{m.name}</span>
-                  </button>
-                )
-              })}
+              <div
+                ref={tagScrollRef}
+                className={styles.tagScroll}
+                data-card-scroll="true"
+                data-scroll-edge={tagScrollEdge}
+                onScroll={updateTagScroll}
+              >
+                {tags.map((m) => {
+                  const active = tagsActiveSet.has(m.id)
+                  const contextActive = activeContextTagId === m.id
+                  const n = tagCounts?.[m.id] ?? 0
+                  const cls = [
+                    styles.item,
+                    styles.tagItem,
+                    active && styles.tagItemActive,
+                    contextActive && styles.contextActive,
+                  ].filter(Boolean).join(' ')
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className={cls}
+                      onClick={() => toggleTag(m.id)}
+                      onContextMenu={(e): void => {
+                        if (!onTagContextMenu) return
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onTagContextMenu({ clientX: e.clientX, clientY: e.clientY }, m.id)
+                      }}
+                      aria-pressed={active}
+                      data-tag-id={m.id}
+                    >
+                      <span className={styles.tagDot} data-active={active ? 'true' : 'false'} aria-hidden="true" />
+                      <span className={styles.itemLabel}>{m.name}</span>
+                      <span
+                        className={styles.itemCount}
+                        data-empty={n === 0 ? 'true' : 'false'}
+                      >
+                        {String(n).padStart(3, '0')}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </>
           )}
+
+          {/* TRASH + DEAD LINKS — pinned at the bottom, always visible so
+              the user can see how many items are pending cleanup without
+              scrolling the tag list. */}
+          <div className={styles.bottomGroup}>
+            <button
+              type="button"
+              className={`${styles.item} ${styles.trashItem} ${boardFilterEquals(value, BOARD_FILTER_ARCHIVE) ? styles.active : ''}`.trim()}
+              onClick={() => pickExclusive(BOARD_FILTER_ARCHIVE)}
+            >
+              <span className={styles.itemLabel}>TRASH</span>
+              <span className={styles.itemCount}>{String(counts.archive).padStart(3, '0')}</span>
+            </button>
+            {counts.dead > 0 && (
+              <button
+                type="button"
+                className={`${styles.item} ${styles.deadItem} ${boardFilterEquals(value, BOARD_FILTER_DEAD) ? styles.active : ''}`.trim()}
+                onClick={() => pickExclusive(BOARD_FILTER_DEAD)}
+              >
+                <span className={styles.deadDot} aria-hidden="true" />
+                <span className={styles.itemLabel}>DEAD LINKS</span>
+                <span className={styles.itemCount}>{String(counts.dead).padStart(3, '0')}</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
