@@ -13,6 +13,7 @@ import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
 import { useBoardData } from '@/lib/storage/use-board-data'
 import { RevalidationQueue, defaultFetcher, shouldRevalidate } from '@/lib/board/revalidate'
+import { createCompositeFetcher } from '@/lib/board/tweet-liveness'
 import { subscribeBookmarkSaved } from '@/lib/board/channel'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
@@ -800,7 +801,7 @@ export function BoardRoot() {
   const revalidateQueueRef = useRef<RevalidationQueue | null>(null)
   if (revalidateQueueRef.current === null) {
     revalidateQueueRef.current = new RevalidationQueue({
-      fetcher: defaultFetcher,
+      fetcher: createCompositeFetcher(defaultFetcher),
       onResult: async (id, r) => {
         const now = Date.now()
         if (r.kind === 'alive') {
