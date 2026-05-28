@@ -1,5 +1,4 @@
-import type { RevalidationResult } from './revalidate'
-import type { Fetcher } from './revalidate'
+import type { RevalidationResult, Fetcher } from './revalidate'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 
 // The proxy that relays cdn.syndication.twimg.com (token computed server-side
