@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { checkTweetLiveness } from '@/lib/board/tweet-liveness'
+import { checkTweetLiveness, createCompositeFetcher } from '@/lib/board/tweet-liveness'
+import type { Fetcher } from '@/lib/board/revalidate'
 
 // Minimal response stub matching the LivenessFetch contract.
 const res = (status: number, body?: unknown) => ({
@@ -48,5 +49,38 @@ describe('checkTweetLiveness', () => {
     const fetchImpl = vi.fn().mockResolvedValue(res(200, { __typename: 'Tweet', id_str: '20' }))
     await checkTweetLiveness('20', fetchImpl)
     expect(fetchImpl).toHaveBeenCalledWith('/api/tweet-meta?id=20')
+  })
+})
+
+describe('createCompositeFetcher', () => {
+  const ogp: Fetcher = async () => ({ kind: 'alive', data: { title: 'ogp' } })
+
+  it('routes a tweet status URL to the liveness check, not OGP', async () => {
+    const ogpSpy = vi.fn(ogp)
+    const livenessFetch = vi.fn().mockResolvedValue(res(404))
+    const fetcher = createCompositeFetcher(ogpSpy, livenessFetch)
+    const result = await fetcher('https://x.com/jack/status/20')
+    expect(result).toEqual({ kind: 'gone' })
+    expect(ogpSpy).not.toHaveBeenCalled()
+    expect(livenessFetch).toHaveBeenCalledWith('/api/tweet-meta?id=20')
+  })
+
+  it('delegates a non-tweet URL to the OGP fetcher', async () => {
+    const ogpSpy = vi.fn(ogp)
+    const livenessFetch = vi.fn()
+    const fetcher = createCompositeFetcher(ogpSpy, livenessFetch)
+    const result = await fetcher('https://example.com/article')
+    expect(result).toEqual({ kind: 'alive', data: { title: 'ogp' } })
+    expect(ogpSpy).toHaveBeenCalledWith('https://example.com/article')
+    expect(livenessFetch).not.toHaveBeenCalled()
+  })
+
+  it('delegates an X URL with no tweet id (profile / home) to OGP', async () => {
+    const ogpSpy = vi.fn(ogp)
+    const livenessFetch = vi.fn()
+    const fetcher = createCompositeFetcher(ogpSpy, livenessFetch)
+    await fetcher('https://x.com/jack')
+    expect(ogpSpy).toHaveBeenCalledWith('https://x.com/jack')
+    expect(livenessFetch).not.toHaveBeenCalled()
   })
 })

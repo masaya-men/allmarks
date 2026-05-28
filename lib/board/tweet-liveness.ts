@@ -1,4 +1,6 @@
 import type { RevalidationResult } from './revalidate'
+import type { Fetcher } from './revalidate'
+import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 
 // The proxy that relays cdn.syndication.twimg.com (token computed server-side
 // in functions/api/tweet-meta.ts). 404 = deleted/nonexistent. 200 +
@@ -45,5 +47,21 @@ export async function checkTweetLiveness(
     return isLiveTweet(data) ? { kind: 'alive' } : { kind: 'gone' }
   } catch {
     return { kind: 'unknown' }
+  }
+}
+
+// Compose the existing OGP fetcher with a tweet-aware path. Tweet status URLs
+// go to the syndication liveness check; everything else (including X profile /
+// home URLs that carry no tweet id) delegates to the OGP fetcher unchanged.
+export function createCompositeFetcher(
+  ogpFetcher: Fetcher,
+  livenessFetch: LivenessFetch = defaultLivenessFetch,
+): Fetcher {
+  return async (url: string): Promise<RevalidationResult> => {
+    if (detectUrlType(url) === 'tweet') {
+      const id = extractTweetId(url)
+      if (id) return checkTweetLiveness(id, livenessFetch)
+    }
+    return ogpFetcher(url)
   }
 }
