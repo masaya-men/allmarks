@@ -155,35 +155,54 @@
   top: calc(100% + 8px);
   right: 0;
   background: rgba(8, 8, 10, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Border width is 0 while collapsed (→ a true 0-height panel, no sliver),
+     and 1px when open. Colour is set up front so only the width animates in. */
+  border: 0 solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  padding: 6px 0;
   min-width: 240px;
   max-width: min(320px, calc(100vw - 32px));
-  max-height: calc(100vh - 120px);
-  /* session 88: flex column so ALL stays pinned at the top, the tag list
-     scrolls in the middle, and TRASH/DEAD LINKS stay pinned at the bottom.
-     The menu itself no longer scrolls (= overflow hidden); only .tagScroll
-     does. */
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   color: rgba(255, 255, 255, 0.92);
-  /* Anchored at the top-right (= under the pill) so the panel grows out of
-     the pill on open and collapses back toward it on close, mirroring the
-     TUNE drawer's "comes from / returns to its trigger" feel. */
-  transform-origin: top right;
-  animation: menuIn 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* Collapsed accordion, same feel as the TUNE drawer: the grid row animates
+     0fr → content-height over the same easing/duration, so the panel grows
+     down out of the pill on hover and folds back into it on leave (both
+     directions animated). Using grid 0fr/1fr means it expands to the EXACT
+     content height — the motion fills the full duration regardless of how
+     many tags there are (a fixed max-height would finish early on a short
+     list). border + box-shadow are gated on [data-open] so the collapsed
+     panel is genuinely invisible. */
+  display: grid;
+  grid-template-rows: 0fr;
+  padding: 0;
+  pointer-events: none;
+  transition: grid-template-rows 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* Close animation — runs when data-closing flips to true. Slightly faster
-   than open (= snappier dismiss), eased-in so it accelerates away. The
-   onAnimationEnd handler unmounts the menu once this finishes. */
-.menu[data-closing='true'] {
-  animation: menuOut 130ms cubic-bezier(0.4, 0, 1, 1) both;
+.menu[data-open='true'] {
+  grid-template-rows: 1fr;
+  padding: 6px 0;
+  border-width: 1px;
+  pointer-events: auto;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+/* Inner clip: the grid row sizes this to 0 when collapsed; overflow:hidden
+   keeps the content from spilling, min-height:0 lets the row shrink fully.
+   The panel's vertical inset lives on .menu's padding (gated on [data-open])
+   — putting it here would stop the row collapsing below the padding height.
+   session 88: flex column so ALL stays pinned at the top, the tag list
+   scrolls in the middle, and TRASH/DEAD LINKS stay pinned at the bottom. */
+.menuInner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    transition: none;
+  }
 }
 
 /* Tag list — the only scrolling region. Raw scrollbar hidden (= house
@@ -227,15 +246,6 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding-top: 2px;
 }
-@keyframes menuIn {
-  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes menuOut {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to   { opacity: 0; transform: translateY(-6px) scale(0.97); }
-}
-
 .item {
   display: flex;
   align-items: center;
@@ -402,11 +412,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Open is instant (no animation). The CLOSE animation must still run —
-     even if only for 1ms — so onAnimationEnd fires and the menu unmounts.
-     Without this the menu would stay in the DOM forever on close. */
-  .menu { animation: none; }
-  .menu[data-closing='true'] { animation: menuOut 1ms linear both; }
   .item, .tagDot { transition: none; }
 }
 

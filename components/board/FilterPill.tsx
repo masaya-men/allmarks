@@ -74,11 +74,12 @@ export function FilterPill({
   value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
-  /* `render` keeps the menu in the DOM through its close animation. open
-     drives the in/out animation; when the close animation ends we drop
-     the menu from the DOM. Without this the menu would vanish instantly
-     on close (= no exit animation), unlike TUNE which animates both ways. */
-  const [render, setRender] = useState(false)
+  /* Sticky-open pin: a click on the pill latches the menu open so it stays
+     after the cursor leaves (mouse-leave is the soft path). Mirrors the
+     TUNE drawer's click-to-pin. The menu is always mounted now — its
+     max-height transition (see CSS) handles both the open and close
+     animation, so there's no mount/unmount dance. */
+  const stickyRef = useRef(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -100,6 +101,14 @@ export function FilterPill({
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
   const { display: displayLabel, triggerBurst } = useChromeScramble(effectiveLabel)
   const { display: displayCount, triggerBurst: triggerCountBurst } = useChromeScramble(effectiveCount)
+
+  /* Fire the label + count scramble together. Used on hover ENTER and LEAVE
+     so the chrome glitches in and out — matching the TUNE drawer, which
+     scrambles its readout open on hover and closed on mouse-leave. */
+  const burstAll = useCallback((): void => {
+    triggerBurst()
+    triggerCountBurst()
+  }, [triggerBurst, triggerCountBurst])
 
   /* Glitch burst when the effective label / count change (= filter
      toggled via card pill or dropdown). Without this the chrome would
@@ -148,6 +157,7 @@ export function FilterPill({
          right-click menu it spawned — that menu owns its own close. */
       if (target?.closest('[data-testid="tag-context-menu"]')) return
       if (target?.closest('[data-testid="tag-delete-confirm-dialog"]')) return
+      stickyRef.current = false
       setOpen(false)
     }
     document.addEventListener('pointerdown', onDoc)
@@ -164,6 +174,7 @@ export function FilterPill({
            they each handle their own close. */
         if (document.querySelector('[data-testid="tag-context-menu"]')) return
         if (document.querySelector('[data-testid="tag-delete-confirm-dialog"]')) return
+        stickyRef.current = false
         setOpen(false)
       }
     }
@@ -175,27 +186,18 @@ export function FilterPill({
     return (): void => clearLeaveTimer()
   }, [clearLeaveTimer])
 
-  /* Mount the menu as soon as it opens; unmount happens after the close
-     animation finishes (see onAnimationEnd below). */
-  useEffect(() => {
-    if (open) setRender(true)
-  }, [open])
-
-  const handleMenuAnimEnd = useCallback((e: { target: EventTarget; currentTarget: EventTarget }): void => {
-    if (e.target !== e.currentTarget) return
-    if (!open) setRender(false)
-  }, [open])
-
   /* Recompute the tag-list scroll affordance whenever the menu opens or
-     the tag set changes (= menu mounts the scroller fresh on open). */
+     the tag set changes. The menu is always mounted, so this just keys
+     off `open`. */
   useEffect(() => {
-    if (!render) return
+    if (!open) return
     updateTagScroll()
-  }, [render, open, tags, updateTagScroll])
+  }, [open, tags, updateTagScroll])
 
   /* Exclusive selection (ALL / TRASH / DEAD): always closes. */
   const pickExclusive = (f: BoardFilter): void => {
     onChange(f)
+    stickyRef.current = false
     setOpen(false)
   }
 
@@ -215,9 +217,14 @@ export function FilterPill({
     <div
       ref={wrapRef}
       className={styles.wrap}
-      onMouseEnter={clearLeaveTimer}
+      onMouseEnter={(): void => {
+        clearLeaveTimer()
+        if (!open) burstAll()
+        setOpen(true)
+      }}
       onMouseLeave={(): void => {
-        if (!open) return
+        if (stickyRef.current) return
+        burstAll()
         scheduleClose()
       }}
     >
@@ -226,9 +233,9 @@ export function FilterPill({
         className={styles.pill}
         onClick={() => {
           clearLeaveTimer()
-          setOpen((v) => !v)
+          stickyRef.current = !stickyRef.current
+          setOpen(stickyRef.current)
         }}
-        onMouseEnter={triggerBurst}
         aria-haspopup="menu"
         aria-expanded={open}
         data-testid="filter-pill"
@@ -237,14 +244,14 @@ export function FilterPill({
         <span className={styles.separator}>·</span>
         <span className={styles.count} data-glitch-text={effectiveCount}>{displayCount}</span>
       </button>
-      {render && (
-        <div
-          className={styles.menu}
-          role="menu"
-          data-testid="filter-pill-menu"
-          data-closing={open ? 'false' : 'true'}
-          onAnimationEnd={handleMenuAnimEnd}
-        >
+      <div
+        className={styles.menu}
+        role="menu"
+        data-testid="filter-pill-menu"
+        data-open={open ? 'true' : 'false'}
+        aria-hidden={!open}
+      >
+        <div className={styles.menuInner}>
           {/* ALL — pinned at the top, the default "everything" view. */}
           <button
             type="button"
@@ -339,7 +346,7 @@ export function FilterPill({
             </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
