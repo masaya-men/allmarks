@@ -13,6 +13,18 @@ export type SlideshowFrame = { readonly src: string; readonly fallback?: string 
  *  - Everything else (Vimeo, X-video in Phase 1, generic): the single poster.
  *  Returns [] when there's no usable image. Pure — unit tested. */
 export function resolveSlideshowFrames(item: PlayableItem): readonly SlideshowFrame[] {
+  // Mixed-media (X video + still photos): cycle the tweet's OWN photos and
+  // append the video poster, so a video+photo card gets a real multi-frame
+  // ambient slideshow WITHOUT running the canvas video-frame extractor (= video
+  // decode + canvas + JPEG, all skipped). The matching extraction skip lives in
+  // CardsLayer's resolveTweetVideoExtraction. Ported from the LoPo housing cards.
+  const photoSlots = item.mediaSlots?.filter((s) => s.type === 'photo') ?? []
+  if (photoSlots.length > 0) {
+    const frames: SlideshowFrame[] = photoSlots.map((s) => ({ src: s.url }))
+    const posterUrl = item.mediaSlots?.find((s) => s.type === 'video')?.url
+    if (posterUrl) frames.push({ src: posterUrl })
+    return frames
+  }
   if (detectUrlType(item.url) === 'youtube') {
     const id = extractYoutubeId(item.url)
     if (id) {

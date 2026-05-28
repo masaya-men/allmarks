@@ -36,4 +36,52 @@ describe('resolveSlideshowFrames', () => {
   it('returns [] when there is no usable image', () => {
     expect(resolveSlideshowFrames({ url: 'https://vimeo.com/12345', title: 'v', thumbnail: undefined })).toEqual([])
   })
+
+  // Mixed-media tweets (X video + still photos): the ambient slideshow uses the
+  // tweet's OWN photos (+ the video poster appended) instead of running the
+  // canvas video-frame extractor — pure cost saving, ported from the LoPo
+  // housing cards. The extraction skip itself lives in CardsLayer's
+  // resolveTweetVideoExtraction; here we only verify the frames it falls back to.
+  it('mixed-media (X video + photos): returns the still photos with the video poster appended', () => {
+    const frames = resolveSlideshowFrames({
+      url: 'https://x.com/u/status/1',
+      title: 'mix',
+      thumbnail: 'https://saved/x.jpg',
+      hasVideo: true,
+      mediaSlots: [
+        { type: 'video', url: 'https://poster.jpg', videoUrl: 'https://v.mp4' },
+        { type: 'photo', url: 'https://p1.jpg' },
+        { type: 'photo', url: 'https://p2.jpg' },
+      ],
+    })
+    expect(frames).toEqual([
+      { src: 'https://p1.jpg' },
+      { src: 'https://p2.jpg' },
+      { src: 'https://poster.jpg' },
+    ])
+  })
+
+  it('photo-only mediaSlots: returns the photos with no poster appended', () => {
+    const frames = resolveSlideshowFrames({
+      url: 'https://x.com/u/status/1',
+      title: 'photos',
+      thumbnail: 'https://saved/x.jpg',
+      mediaSlots: [
+        { type: 'photo', url: 'https://p1.jpg' },
+        { type: 'photo', url: 'https://p2.jpg' },
+      ],
+    })
+    expect(frames).toEqual([{ src: 'https://p1.jpg' }, { src: 'https://p2.jpg' }])
+  })
+
+  it('video-only mediaSlots (no photos): unchanged — single poster/thumbnail, so extraction still runs', () => {
+    const frames = resolveSlideshowFrames({
+      url: 'https://x.com/u/status/1',
+      title: 'vid',
+      thumbnail: 'https://saved/x.jpg',
+      hasVideo: true,
+      mediaSlots: [{ type: 'video', url: 'https://poster.jpg', videoUrl: 'https://v.mp4' }],
+    })
+    expect(frames).toEqual([{ src: 'https://saved/x.jpg' }])
+  })
 })

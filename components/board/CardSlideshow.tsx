@@ -5,15 +5,7 @@ import styles from './CardSlideshow.module.css'
 import { useSlideshowCycle } from '@/lib/board/use-slideshow-cycle'
 import type { SlideshowFrame } from '@/lib/board/slideshow-frames'
 import { useTweetVideoFrames } from '@/lib/board/use-tweet-video-frames'
-
-/** Optional Phase 2 input: when set, the card is an X (Twitter) video and the
- *  slideshow will swap its poster-only fallback for 3 canvas-extracted frames
- *  (0% / 25% / 50% of duration) once the extractor finishes. While the extractor
- *  runs the card stays on the poster (no flicker). */
-export type TweetVideoExtraction = {
-  readonly bookmarkId: string
-  readonly videoUrl: string
-}
+import type { TweetVideoExtraction } from '@/lib/board/tweet-video-extraction'
 
 /**
  * Ambient still-frame crossfade for an in-view video card that is NOT the
