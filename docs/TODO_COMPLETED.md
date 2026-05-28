@@ -6395,3 +6395,13 @@ user 報告「デッドリンクなのにバッジなし + カードが縦に伸
 ### 2 大タスクの状態
 - (1) 重い問題 / virtualization → session 89 で**クローズ** (culling 既に完璧)。
 - (2) X 削除ツイートの dead 検出 → **本セッションで完了 ship**。 → **2 大タスク両方完結**。
+
+### 追補: リンク切れバッジのリデザイン + DEAD LINKS フィルター常時表示 (= user が本番でバッジ確認後に依頼、 同セッション内 ship)
+
+user が本番で「リンク切れバッジついてました」 と確認 → 「もっとはっきり、 目立つ真っ赤、 左上角を三角形で覆うバッジ (角は丸く)」 と依頼。 UI-design ルールに従い現状確認 → 案提示 → 承認 → 実装。
+
+- **バッジ刷新** ([app/globals.css](../app/globals.css) `[data-link-status='gone']`): 旧 = くすんだ赤の角丸ピル「リンク切れ」 (文字)。 新 = **左上角を覆う真っ赤 (`#e01b1b`) の直角三角ウェッジ + 白い壊れたリンク (link_off) アイコン**、 外角はカード角丸 20px に沿わせる。 1 枚のインライン SVG (`::after` の background) で描画 = clip-path も追加 DOM も不要、 角丸も SVG path の arc で保証。
+- **薄グレー化を子要素へ移設**: 旧は wrapper 自体に `opacity:0.55 + grayscale(60%)` → バッジ (wrapper の ::after) まで一緒に washed out していた。 `[data-link-status='gone'] > *` (実子要素のみ) に移すことで**本体は dimmed のままバッジは vivid な真っ赤**を維持。
+- **DEAD LINKS フィルター常時表示** ([FilterPill.tsx](../components/board/FilterPill.tsx)): 旧 `{counts.dead > 0 && (...)}` で 0 件時は非表示だった → 条件を外し TRASH と同様に**0 件でも常時表示**。
+- **検証**: tsc 0 / 全 925 tests pass (FilterPill テストなし、 regression なし) / 単体 HTML を playwright でスクショ実機検証 (真っ赤ウェッジ + 角丸 + アイコン + 本体 dimmed をピクセル確認) / 本番デプロイ済。
+- 変更 2 ファイル、 1 commit (`feat(board): dead-link corner-ribbon badge + always-show DEAD LINKS filter`) + 1 deploy。 **user の本番最終確認待ち**。
