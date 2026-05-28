@@ -6326,3 +6326,35 @@ user 報告「デッドリンクなのにバッジなし + カードが縦に伸
 - PlaceholderCard は board/Lightbox/share で見た目共通 (画像 bg + scrim + 中央タイトル + 左上ホスト名)
 - デッドリンクの行き先は DEAD LINKS フィルター (検出だけが課題)
 - 2 大タスク = (1) 重い問題 virtualization / (2) X 削除ツイート検出。 どちらも 1 sprint 規模、 次セッションでどちらか着手
+
+---
+
+## セッション 89 (2026-05-28) — board 重さを実測→「枚数は主因でない」と判明し据え置き / LoPo の mixed-media tweet 抽出 skip 最適化を移植 ship
+
+### 前半: 「重い問題」 を実データで計測 → 据え置き
+
+2 大タスクの (1) 重い問題に着手。 systematic-debugging で「直す前に測る」 方針。
+
+- **計測手法**: ユーザーの実バックアップ (`allmarks-backup-2026-05-25.json`、 567 件 = tweet 288 / YouTube 87 / website 190、 実ネット画像サムネ 513) を playwright で IDB に取り込み、 **headed (実マシン GPU)** + 実 DPR 2.58 でスクロール FPS / jank / longtask を計測。
+- **判明 (= 予想を覆す)**: **culling (viewport 外カードの非 mount) は既に完璧**に実装済 ([CardsLayer.tsx](../components/board/CardsLayer.tsx) `visibleItems` + `CULLING.BUFFER_SCREENS`)。 567 件でも DOM 上は常時約 20 枚。 通常スクロール 54fps、 メインスレッド長時間ブロック 0ms、 高 DPR でも劣化なし。 → **「300+ 枚だから重い」 という前提は誤り、 virtualization は既に解決済み**。
+- **唯一の実害**: スクロールメーターで遠くへ一気にジャンプした時、 着地点カードが「空の黒箱」 で出て画像が 1〜2 秒遅れて埋まる (= cold な実画像のフェッチ/デコード) + 約 100〜280ms の mount ヒッチ (= 大量カードの一括 mount、 開発ビルドで誇張)。 reflow (位置再計算) ではない (実測 reflowMoves=0)。
+- **業界ベストプラクティス調査** (出典付き 3 領域並行リサーチ): ① 即プレースホルダ (dominant color / ThumbHash / BlurHash) ② ジャンプ先サムネの prefetch (iOS prefetchDataSource / Android preloader / Chrome の time-to-onscreen 優先) ③ 高速移動中の scroll-seek プレースホルダ (Virtuoso) ④ content-visibility / 共有 IO の仕上げ。
+- **user 判断 = 据え置き**: 発生は遠ジャンプ限定 (通常操作では起きない)・自己解消・遅延読み込みは業界標準挙動。 「現状で最適かも」。 → 研究と 4 層計画は `docs/private/IDEAS.md` に退避 (後で気が向いたら)。 検証用一時ファイルは全削除。
+
+### 後半: LoPo (FF14Sim) の mixed-media tweet 抽出 skip 最適化を移植 (ship 済)
+
+「LoPo (ハウジングシミュ、 lopoly.app、 source = `C:\Users\masay\Desktop\FF14Sim`) に AllMarks 知見を流し込んだら良いアイデアが出た」 と user。 LoPo `src/lib/housing/useHousingCardFrames.ts` のゲート (`shouldExtract = videoUrl && !hasSourceImages`) を逆輸入。
+
+- **発想**: **動画 + 静止画の両方を持つ mixed-media tweet** は、 動画から代表フレームを抽出 (= video decode + canvas + JPEG、 CORS/token/tainted canvas の落とし穴つき) しなくても、 **tweet が既に持つ静止画をそのまま ambient スライドショーに使えばいい**。 純粋なコスト削減、 挙動 (生きたカード) は不変。
+- **実装 (2 点)**:
+  1. ゲート: tweet で写真スロット (`mediaSlots` の `type==='photo'`) があれば抽出 skip。 純粋関数として [lib/board/tweet-video-extraction.ts](../lib/board/tweet-video-extraction.ts) に切り出し (CardsLayer の局所関数から移設、 ユニットテスト可能化)。
+  2. ambient: [lib/board/slideshow-frames.ts](../lib/board/slideshow-frames.ts) `resolveSlideshowFrames` が mixed なら写真群 + 動画ポスターを返す (= 抽出フレームの代替)。
+- **spotlight (hero 本再生) は別経路 (InlineMediaPlayer) で不変** — user 要件通り触らず。
+- **効果範囲 (実データ監査)**: mixed = **4 件** / video-only 151 (従来どおり抽出) / photo-only 50。 mixed tweet が増えるほど効く。
+- **検証の重要な教訓**: 実機ネットワーク計測を試みたが、 `/api/tweet-video` プロキシは**フレーム抽出と hero 本再生の両方が使う**ため、 リクエスト監視では両者を区別できない (= `?focus` で mixed を出すと hero 化して再生フェッチが出る → 偽陽性)。 → ゲート関数を lib 化して**実 mixed tweet の形状でユニットテスト**し、 抽出 skip を決定論的に証明。
+- **検証**: tsc clean、 全 **914 tests pass** (gate 5 + slideshow +3 追加)、 regression なし。
+- **変更ファイル**: 新規 2 (`lib/board/tweet-video-extraction.ts` + その test)、 変更 4 (`slideshow-frames.ts` / `CardsLayer.tsx` / `CardSlideshow.tsx` / slideshow-frames.test)。 1 commit (`perf(board): skip video-frame extraction for mixed-media tweets`) + 1 deploy、 本番 booklage.pages.dev 反映済。
+
+### memory 更新
+- `reference_lopo_ff14sim` (= LoPo の場所と AllMarks との系譜共有) 追加
+- `feedback_root_cause_over_masking` (= 根本修正 > 隠蔽、 軽微・限定的問題は据え置きも正解) 追加
