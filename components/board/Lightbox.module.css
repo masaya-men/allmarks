@@ -206,9 +206,8 @@
   /* .media img の max-* rule を上書き — wrapper が既に envelope 計算済なので
      img 自身は wrapper を fill するだけで良い。 cover でなく contain なのは
      persisted aspect と実画像 aspect がわずかにズレた時に画像を切らないため。
-     直接子のみに scope (session 37): LightboxTextDisplay の favicon (= 孫)
-     や LargeBoardCardClone の inner img (= 孫) まで巻き込んで巨大化させて
-     いた regression を防ぐ。 */
+     直接子のみに scope (session 37): LargeBoardCardClone の inner img (= 孫)
+     まで巻き込んで巨大化させていた regression を防ぐ。 */
   max-width: none;
   max-height: none;
   border-radius: 0;
@@ -670,74 +669,6 @@
   font-weight: 500;
   border-radius: 999px;
   letter-spacing: 0.01em;
-}
-
-/* Lightbox 専用テキストカード (session 32 user 提案):
-   board の TextCard を scale-up する複雑な方式 (clone / ResizeObserver) は
-   レイアウト崩れを引き起こした。 代わりに Lightbox サイズに合わせた専用
-   カードを新規描画する。 favicon + ドメイン (上、 控えめ) + タイトル (中央、 大)。 */
-.lightboxTextCard {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 40px 48px;
-  overflow: hidden;
-}
-/* session 37: board TextCard と同じ white / black variant (pickTextCardColor 由来)
-   を Lightbox 側でも再現。 同じ cardId なら board と Lightbox で同じ色になる。
-   _white は default、 _black は #0a0a0a (= board TextCard.black と同色) + 反転
-   text color。 cardId 不明時は white にフォールバック。 */
-.lightboxTextCard_white {
-  background: var(--card-white);
-}
-.lightboxTextCard_black {
-  background: #0a0a0a;
-}
-.lightboxTextMeta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
-  font-size: 16px;
-  color: rgba(0, 0, 0, 0.55);
-  font-family: var(--font-sans);
-}
-.lightboxTextCard_black .lightboxTextMeta {
-  color: rgba(255, 255, 255, 0.55);
-}
-.lightboxTextFavicon {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
-}
-/* session 56: 旧コードは dark variant の favicon に「薄いタイル + 彩度落とし」
-   を当てていたが、 user は「下地が邪魔」 と判断。 opacity だけ残して
-   各サイトの favicon を制作者デザインそのままで描画する方針に変更。 */
-.lightboxTextCard_black .lightboxTextFavicon {
-  opacity: 0.7;
-}
-.lightboxTextDomain {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.lightboxTextTitle {
-  flex: 1;
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: 40px;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  color: #0a0a0a;
-  word-break: break-word;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 10;
-}
-.lightboxTextCard_black .lightboxTextTitle {
-  color: rgba(255, 255, 255, 0.92);
 }
 
 /* Centerpiece for text-only tweets (no photo, no video). Body text becomes

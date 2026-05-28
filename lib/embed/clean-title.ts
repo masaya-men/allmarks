@@ -1,6 +1,6 @@
 /**
- * Title text cleaner shared by TextCard (board) and LightboxTextDisplay
- * (Lightbox). Two passes:
+ * Title text cleaner shared by PlaceholderCard (board) and Lightbox large
+ * text display. Two passes:
  *  1) Strip `http(s)://` prefix so raw-URL titles don't dominate display.
  *  2) For X / Twitter URLs, lift the body out of the OGP boilerplate
  *     ("Xユーザーの 〜 さん:「本文」 / X" → "本文").

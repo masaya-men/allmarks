@@ -8,11 +8,12 @@ import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
 import { t } from '@/lib/i18n/t'
 import { normalizeItem, type LightboxItem } from '@/lib/share/lightbox-item'
 import type { ShareCard } from '@/lib/share/types'
-import { TextCard, MinimalCard, pickCard } from './cards'
-import { TEXT_CARD_ASPECT } from '@/lib/embed/text-card-measure'
+import { PlaceholderCard, pickCard } from './cards'
 import { cleanTitle } from '@/lib/embed/clean-title'
-import { pickTextCardColor } from '@/lib/embed/text-card-color'
-import { getFaviconUrl, hostnameFromUrl } from '@/lib/embed/favicon'
+
+/** PlaceholderCard の固定 aspect ratio (= board 旧 TextCard と同じ 1.25)。
+ *  webpage の Lightbox 大表示で fallback として使う。 */
+const PLACEHOLDER_ASPECT = 1.25
 import {
   InstagramEmbed,
   TweetVideoEmbed,
@@ -317,21 +318,19 @@ function wrapCloneWithScaleHost(
   sourceH: number,
   initialScale: number,
 ): HTMLElement | null {
-  // text card 検出。 CSS modules でクラス名がハッシュ化されても "textCard" 部分は残る。
-  const isTextCard = clone.querySelector('[class*="textCard"]') !== null
-  if (!isTextCard) return null
+  // PlaceholderCard 検出。 CSS modules でクラス名がハッシュ化されても
+  // "placeholderCard" 部分は残る (= session 88 で旧 TextCard を統合した先)。
+  const isPlaceholderCard = clone.querySelector('[class*="placeholderCard"]') !== null
+  if (!isPlaceholderCard) return null
   if (sourceW <= 0 || sourceH <= 0) return null
 
-  // session 56 Step 2: session 34 当時の `--card-radius: '0'` 上書きを撤廃 (=
-  // LargeTextCardScaler 側の撤廃と同期)。 当時の不一致 (24 vs 20) は session 22 で
-  // 解消済みなのに上書きだけ残っていた。 撤廃すると morph 中も静止画と同じく
-  // inner が --card-radius:20px を継承し、 ::before の枠線が 4 隅まで連続する。
+  // session 56 Step 2 + session 88: --card-radius 上書きは撤廃済。 inner は
+  // :root から --card-radius を継承し、 ::before の枠線が 4 隅まで連続する。
 
-  // session 38: session 36 の metaTop/metaBottom DOM strip を撤去。 user 提案で
-  // Lightbox 側 LargeTextCardScaler の omitMeta も外し、 板 → 開く → Lightbox →
-  // 閉じる の全フローで X favicon + ドメイン行が一貫して見える方針に変更。
-  // strip ナシでも clone と .media は同じ TextCard (= 同じ DOM 構造) で
-  // layout 一致するため、 swap 瞬間の title jump は引き続き発生しない。
+  // session 38 + 88: omitMeta は外して、 板 → 開く → Lightbox → 閉じる の
+  // 全フローで hostname strip が一貫して見える方針。 strip 有無問わず clone と
+  // .media は同じ PlaceholderCard (= 同じ DOM 構造) で layout 一致するため、
+  // swap 瞬間の title jump は発生しない。
 
   const scaleHost = document.createElement('div')
   scaleHost.setAttribute('data-clone-scale-host', 'true')
@@ -1562,7 +1561,7 @@ function TweetMedia({
     // for legacy data. Full-text legibility is delivered via the tweet
     // backfill (= updates item.title with meta.text after fetch).
     const text = item.title || meta?.text || cleanTweetTitle(item.title ?? '')
-    const aspect = item.aspectRatio ?? TEXT_CARD_ASPECT
+    const aspect = item.aspectRatio ?? PLACEHOLDER_ASPECT
     const fakeBoardItem: BoardItem = {
       bookmarkId: item.bookmarkId ?? item.url,
       cardId: item.cardId ?? item.url,
@@ -1580,14 +1579,11 @@ function TweetMedia({
       tags: [],
       displayMode: null,
     }
-    // session 37 phase 3: text-only tweet も非ツイートのテキストカードと同じ
-    // LargeTextCardScaler 経路に統一。 clone (= 板の TextCard) と media が同じ
-    // component (= TextCard + omitMeta=true) になるので、 open swap の瞬間に発生
-    // していた「x.com 行が突然出現 + title 60px → 40px に縮む」 jump が原理的に
-    // 消える。 board の TextCard で動いている色 variant / typography / 文字 crisp
-    // 拡大の全ノウハウを継承。 LightboxTextDisplay は dead code 化したが defensive
-    // に残置 (= 別 spec で cleanup 予定)。
-    return <LargeTextCardScaler fakeItem={fakeBoardItem} aspect={aspect} />
+    // session 37 phase 3 + session 88 PlaceholderCard 統合: text-only tweet も
+    // 非ツイートのテキストカードと同じ LargePlaceholderCardScaler 経路。 board の
+    // PlaceholderCard と media が同じ component (= PlaceholderCard + omitMeta=true)
+    // になるので、 open swap の瞬間に font / hostname jump が原理的に消える。
+    return <LargePlaceholderCardScaler fakeItem={fakeBoardItem} aspect={aspect} />
   }
 
   // Legacy fallbacks — slots が空 + hasPhoto/hasVideo は true のケース。
@@ -1643,7 +1639,7 @@ function isTweetTextOnly(meta: TweetMeta | null, slots: readonly MediaSlot[]): b
  *  ツイート種別ごとに表示要否を判定する。 user 報告 (= 画像 + 本文ツイートで本文が
  *  行方不明 bug) の root cause が session 52 の一律非表示だったため。
  *
- *  - text-only tweet: 本文は左カラムの LargeTextCardScaler が描画済みなので、
+ *  - text-only tweet: 本文は左カラムの LargePlaceholderCardScaler が描画済みなので、
  *    右カラム本文は重複 → 非表示維持 (= session 52 の正当な部分は残す)
  *  - media tweet で meta 未到着: 本文 fallback の item.title は OGP boilerplate
  *    (「Xユーザーの〜さん:「本文」 / X」) を含む生文字列なので、 syndication API
@@ -1781,7 +1777,7 @@ function LightboxMedia({ item }: { readonly item: LightboxItem }): ReactNode {
   // TextCard に fallback。 thumbnail 自体無いなら最初から TextCard。
   // (session 32 の「全部 TextCard」 判断を覆して board ImageCard / TextCard と
   // 同じ routing に揃える。)
-  const textAspect = aspectRatio ?? TEXT_CARD_ASPECT
+  const textAspect = aspectRatio ?? PLACEHOLDER_ASPECT
   // session 35: cardWidth は toBoardShapeForFallback の `item.cardWidth ?? 280` を
   // 使う (= source board card の実 width)。 以前ここに `cardWidth: 280` 上書きが
   // あり、 source typography (source 実 width で選択) と .media typography (280 で
@@ -1802,14 +1798,14 @@ function LightboxMedia({ item }: { readonly item: LightboxItem }): ReactNode {
       />
     )
   }
-  return <LargeTextCardScaler fakeItem={fakeBoardItem} aspect={textAspect} />
+  return <LargePlaceholderCardScaler fakeItem={fakeBoardItem} aspect={textAspect} />
 }
 
 /** 右パネルで h1 を抑制すべきか — Lightbox で左に大 TextDisplay を描画する
  *  item では h1 と左カードの title が重複するので suppress。 session 32 user 決定:
  *  一般 webpage は OG image 有無に関わらず全部大 TextDisplay → 常に true。
  *  専用 embed (YouTube/TikTok/Instagram) と tweet は別経路なので false。 */
-function shouldRenderLargeTextCard(item: LightboxItem): boolean {
+function shouldRenderLargePlaceholderCard(item: LightboxItem): boolean {
   const urlType = detectUrlType(item.url)
   if (urlType === 'youtube' || urlType === 'tiktok' || urlType === 'instagram') return false
   if (urlType === 'vimeo' || urlType === 'soundcloud') return false
@@ -1841,60 +1837,10 @@ function toBoardShapeForFallback(item: LightboxItem, aspectRatio: number): Board
   }
 }
 
-/** Lightbox 専用テキストカード (session 32 user 提案 = 「カード自体に表示されている
- *  文字の見た目もテキストカードのようにしたらどうですか」)。
- *  board の TextCard を scale-up する複雑な方式 (= clone / ResizeObserver) は
- *  全部レイアウト崩れを起こした。 代わりに Lightbox サイズに合わせた専用カードを
- *  CSS だけで描画する。 構造: favicon + ドメイン (上、 控えめ) + 大タイトル (中央)。
- *  X ツイートのタイトルは cleanTitle 経由で OGP boilerplate を除く。
- *
- *  session 37: board の TextCard と同じ pickTextCardColor(cardId) hash で
- *  white / black variant を決める。 これで「board 上は黒地のテキストカードなのに
- *  Lightbox を開くと白地に変わる」 という user 報告を解消 (= 同じ cardId は
- *  board / Lightbox で同じ色)。 cardId が無い (= share view) のときは白で
- *  fallback。 */
-function LightboxTextDisplay({
-  title,
-  url,
-  aspect,
-  cardId,
-}: {
-  readonly title: string
-  readonly url: string
-  readonly aspect: number
-  readonly cardId?: string
-}): ReactElement {
-  const hostname = hostnameFromUrl(url) ?? ''
-  const favicon = hostname ? getFaviconUrl(hostname) : null
-  const colorVariant = pickTextCardColor(cardId ?? '')
-  const cardClassName = `${styles.lightboxTextCard} ${styles[`lightboxTextCard_${colorVariant}`] ?? ''}`
-  return (
-    <div
-      className={styles.imageBox}
-      style={{ ['--item-aspect' as string]: aspect } as React.CSSProperties}
-    >
-      <div className={cardClassName} data-variant={colorVariant}>
-        {favicon && (
-          <div className={styles.lightboxTextMeta}>
-            <img
-              src={favicon}
-              alt=""
-              className={styles.lightboxTextFavicon}
-              draggable={false}
-            />
-            <span className={styles.lightboxTextDomain}>{hostname}</span>
-          </div>
-        )}
-        <div className={styles.lightboxTextTitle}>{title}</div>
-      </div>
-    </div>
-  )
-}
-
 /** user 提案 (session 32) の clone 案: board の source card を cloneNode で
  *  そのままコピーし、 `.imageBox` の中に置いて transform:scale で拡大表示する。
  *  「写真のように board card を拡大」 を pixel identical で実現。 source card が
- *  DOM にない (= share view 等) 場合は LargeTextCardScaler に fallback。
+ *  DOM にない (= share view 等) 場合は LargePlaceholderCardScaler に fallback。
  *  inner の `--card-radius` を 0 上書きして、 scale で TextCard root の radius
  *  が拡大される問題 (= user 「丸さすら違う」 報告) を回避 — 視覚 radius は
  *  outer .imageBox の var(--lightbox-media-radius) と overflow:hidden で確定する。 */
@@ -1968,7 +1914,7 @@ function LargeBoardCardClone({
   }, [item.bookmarkId, useFallback])
 
   if (useFallback) {
-    return <LargeTextCardScaler fakeItem={fakeItem} aspect={aspect} />
+    return <LargePlaceholderCardScaler fakeItem={fakeItem} aspect={aspect} />
   }
 
   return (
@@ -1991,7 +1937,7 @@ function LargeBoardCardClone({
  *  typography mode (= pickTitleTypography の cardWidth ベース判定) が swap 瞬間に
  *  変わって title 「かくっ」 jump を生む (session 36 調査で根本原因と判明)。
  *  source DOM が無い (share view / culling) ときは fakeItem.cardWidth に fallback。 */
-function LargeTextCardScaler({
+function LargePlaceholderCardScaler({
   fakeItem,
   aspect,
 }: {
@@ -2050,7 +1996,7 @@ function LargeTextCardScaler({
           // 透けゾーンが出る可能性あり (= 実機確認待ち)。
         } as React.CSSProperties}
       >
-        <TextCard
+        <PlaceholderCard
           item={fakeItem}
           cardWidth={boardW}
           cardHeight={boardH}
@@ -2062,8 +2008,8 @@ function LargeTextCardScaler({
 }
 
 /** ImageCard 経路で thumbnail を <img> 描画するが、 load 失敗時 OR load 成功
- *  しても image が小さすぎる (= favicon / icon サイズ) 場合は大 TextCard へ
- *  fallback する。 board の ImageCard が MinimalCard に落ちる挙動と等価 +
+ *  しても image が小さすぎる (= favicon / icon サイズ) 場合は大 PlaceholderCard へ
+ *  fallback する。 board の ImageCard が PlaceholderCard に落ちる挙動と等価 +
  *  Lightbox 拡大時に荒い favicon が巨大表示される問題への対策。 */
 function LightboxImageWithFallback({
   item,
@@ -2093,7 +2039,7 @@ function LightboxImageWithFallback({
   )
 
   if (shouldFallback) {
-    return <LargeTextCardScaler fakeItem={fakeBoardItem} aspect={textAspect} />
+    return <LargePlaceholderCardScaler fakeItem={fakeBoardItem} aspect={textAspect} />
   }
   if (aspectRatio) {
     return (

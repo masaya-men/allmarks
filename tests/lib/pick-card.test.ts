@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickCard, VideoThumbCard, ImageCard, TextCard, MinimalCard } from '@/components/board/cards'
+import { pickCard, VideoThumbCard, ImageCard, PlaceholderCard } from '@/components/board/cards'
 
 const base = {
   bookmarkId: 'b',
@@ -17,14 +17,14 @@ const base = {
 } as const
 
 describe('pickCard', () => {
-  it('returns MinimalCard when title and thumbnail are both empty', () => {
+  it('returns PlaceholderCard when title and thumbnail are both empty', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(pickCard({ ...base, title: '', thumbnail: '' } as any)).toBe(MinimalCard)
+    expect(pickCard({ ...base, title: '', thumbnail: '' } as any)).toBe(PlaceholderCard)
   })
 
-  it('returns MinimalCard when title equals url and thumbnail empty', () => {
+  it('returns PlaceholderCard when title equals url and thumbnail empty', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(pickCard({ ...base, title: base.url, thumbnail: '' } as any)).toBe(MinimalCard)
+    expect(pickCard({ ...base, title: base.url, thumbnail: '' } as any)).toBe(PlaceholderCard)
   })
 
   it('returns ImageCard when thumbnail present (even if title empty)', () => {
@@ -32,9 +32,9 @@ describe('pickCard', () => {
     expect(pickCard({ ...base, title: '', thumbnail: 'https://cdn/x.jpg' } as any)).toBe(ImageCard)
   })
 
-  it('returns TextCard when title present but no thumbnail', () => {
+  it('returns PlaceholderCard when title present but no thumbnail', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(pickCard({ ...base, title: 'Hello', thumbnail: '' } as any)).toBe(TextCard)
+    expect(pickCard({ ...base, title: 'Hello', thumbnail: '' } as any)).toBe(PlaceholderCard)
   })
 
   it('returns VideoThumbCard for youtube URLs regardless of metadata', () => {
@@ -51,8 +51,8 @@ describe('pickCard', () => {
     ).toBe(VideoThumbCard)
   })
 
-  it('returns MinimalCard when title is undefined and thumbnail undefined', () => {
+  it('returns PlaceholderCard when title is undefined and thumbnail undefined', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(pickCard({ ...base } as any)).toBe(MinimalCard)
+    expect(pickCard({ ...base } as any)).toBe(PlaceholderCard)
   })
 })

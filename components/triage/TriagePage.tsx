@@ -209,6 +209,20 @@ export function TriagePage(): ReactElement {
 
   const exit = useCallback((): void => { router.push('/board') }, [router])
 
+  // session 88: 全カード処理完了 (= !current && total > 0) を観測したら board
+  // に自動遷移する。 旧コードはここで「All done. Back to board」 のダサい
+  // 完了画面を出していたが、 user 体感では「最後にもう 1 click」 だけだった。
+  // total === 0 (= 最初から空) のときは別パスで「Inbox 空」 メッセージを残す
+  // (= 自動遷移すると user は「triage を開いたら一瞬で消えた」 体験になる)。
+  useEffect((): void => {
+    if (loading) return
+    if (!mode) return
+    const current = queue[index]
+    if (current) return
+    if (queue.length === 0) return
+    exit()
+  }, [loading, mode, queue, index, exit])
+
   /* Open the right-click context menu near the pointer for the given
      chip. Caller is the TopTagStrip's onContextMenu handler. */
   const openChipContextMenu = useCallback(
@@ -332,20 +346,30 @@ export function TriagePage(): ReactElement {
   }
 
   if (!current) {
-    return (
-      <div className={styles.simpleRoot}>
-        <div className={styles.main}>
-          <div className={styles.empty}>
-            <div style={{ fontSize: 20, fontFamily: 'var(--font-sans)' }}>
-              {total === 0 ? t('triage.empty') : t('triage.done_title')}
+    // session 88: 「全部完了」 のときは静かに board に自動遷移する。 旧コードの
+    // ダサい done 画面 (= "All done. Back to board" ボタン) は user 体感が
+    // 「最後にもう 1 click 増える」 だけだったので削除。 total === 0 (= 初めから
+    // 空) のときだけは「キュー無し」 メッセージを残す (= 自動遷移すると user は
+    // 「triage を開いたら一瞬で消えた」 体験になるため)。
+    if (total === 0) {
+      return (
+        <div className={styles.simpleRoot}>
+          <div className={styles.main}>
+            <div className={styles.empty}>
+              <div style={{ fontSize: 20, fontFamily: 'var(--font-sans)' }}>
+                {t('triage.empty')}
+              </div>
+              <button type="button" className={styles.backBtn} onClick={exit}>
+                {t('triage.empty_cta')}
+              </button>
             </div>
-            <button type="button" className={styles.backBtn} onClick={exit}>
-              {total === 0 ? t('triage.empty_cta') : t('triage.done_back')}
-            </button>
           </div>
         </div>
-      </div>
-    )
+      )
+    }
+    // total > 0 で current 無し = 全カード処理完了 → 下の useEffect で board
+    // に自動遷移する。 ここでは遷移中のブランクだけ描画。
+    return <div className={styles.simpleRoot} />
   }
 
   // Zero-pad to 2 digits so the chrome reads as the same "data plate"

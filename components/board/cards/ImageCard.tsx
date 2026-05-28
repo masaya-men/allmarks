@@ -5,7 +5,7 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import type { MediaSlot } from '@/lib/embed/types'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
-import { MinimalCard } from './MinimalCard'
+import { PlaceholderCard } from './PlaceholderCard'
 import styles from './ImageCard.module.css'
 
 type Props = {
@@ -22,7 +22,7 @@ type Props = {
 
 const ASPECT_EPSILON = 0.005
 
-export function ImageCard({ item, persistMeasuredAspect, autoCycle = false, cycleMs = 2200 }: Props): ReactNode {
+export function ImageCard({ item, persistMeasuredAspect, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200 }: Props): ReactNode {
   const imgRef = useRef<HTMLImageElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -140,7 +140,12 @@ export function ImageCard({ item, persistMeasuredAspect, autoCycle = false, cycl
       onPointerLeave={handlePointerLeave}
     >
       {hasError ? (
-        <MinimalCard item={item} />
+        <PlaceholderCard
+          item={item}
+          cardWidth={cardWidth}
+          cardHeight={cardHeight}
+          displayMode={displayMode}
+        />
       ) : slots.length > 0 ? (
         slots.map((slot, i) => (
           <img

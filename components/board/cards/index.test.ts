@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickCard, VideoThumbCard, ImageCard, TextCard } from './index'
+import { pickCard, VideoThumbCard, ImageCard, PlaceholderCard } from './index'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 
 // vi.mock with primitive-string named exports stopped applying after the
@@ -44,9 +44,9 @@ describe('pickCard', () => {
     expect(r2).toBe(ImageCard)
   })
 
-  it('routes tweet without thumbnail → TextCard', () => {
+  it('routes tweet without thumbnail → PlaceholderCard', () => {
     const result = pickCard({ ...baseItem, url: 'https://x.com/u/status/1' })
-    expect(result).toBe(TextCard)
+    expect(result).toBe(PlaceholderCard)
   })
 
   it('routes generic with thumbnail → ImageCard', () => {
@@ -54,8 +54,8 @@ describe('pickCard', () => {
     expect(result).toBe(ImageCard)
   })
 
-  it('routes generic without thumbnail → TextCard (white card fix)', () => {
+  it('routes generic without thumbnail → PlaceholderCard', () => {
     const result = pickCard({ ...baseItem, url: 'https://r3f.maximeheckel.com/lens2' })
-    expect(result).toBe(TextCard)
+    expect(result).toBe(PlaceholderCard)
   })
 })

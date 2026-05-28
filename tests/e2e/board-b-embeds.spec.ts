@@ -97,7 +97,7 @@ test.describe('B-embeds card rendering', () => {
     await page.waitForTimeout(500)
   })
 
-  test('White-card source renders as TextCard (not blank)', async ({ page }) => {
+  test('No-thumbnail source renders as PlaceholderCard (not blank)', async ({ page }) => {
     await seedOne(
       page,
       { id: 'tc-bm-1', url: 'https://r3f.maximeheckel.com/lens2', title: 'Lens 2', thumbnail: '' },
@@ -112,9 +112,8 @@ test.describe('B-embeds card rendering', () => {
     // Title text rendered inside card
     await expect(card.getByText('Lens 2')).toBeVisible()
 
-    // Favicon from Google S2 service
-    const favicon = card.locator('img[src*="google.com/s2/favicons"]')
-    await expect(favicon).toBeVisible()
+    // Hostname strip shown at top-left (= PlaceholderCard 仕様、 favicon は廃止)
+    await expect(card.getByText('r3f.maximeheckel.com')).toBeVisible()
   })
 
   test('YouTube card renders thumbnail with play overlay', async ({ page }) => {

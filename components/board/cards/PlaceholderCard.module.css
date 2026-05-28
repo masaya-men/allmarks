@@ -1,0 +1,134 @@
+/* PlaceholderCard — 旧 TextCard / MinimalCard / ImageCard onError fallback の
+   統合先。 placeholder 画像 bg + scrim + 中央タイトル + 上下フェード + 左上に
+   小さいホスト名。 Lightbox の cloneNode + transform:scale で拡大されたとき
+   も同じ DOM がそのまま映る前提の構造。 */
+
+.placeholderCard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  /* bg image が読み込めない / 未配信時に黒板になる fallback 色。 ShareMirror
+     と同じ色感に揃える。 */
+  background-color: #1a1a1c;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* AI placeholder image layer. URL ハッシュで決定論的に 4 枚から 1 枚を選ぶ
+   (= pickPlaceholderImage)。 cover で card に fit、 中央 anchor。 */
+.bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+/* Scrim — 画像 bg の上に薄い暗幕。 白系画像 (= light / jewel) でも白タイトル
+   が読めるように中央を 0.42 重め、 上下を 0.18 軽めにして「画像の世界観は
+   見える + 文字は読める」 のバランス。 ShareMirror.module.css の同名 layer
+   と同じ値で揃え、 デザインを一貫させる。 */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.22) 0%,
+    rgba(0, 0, 0, 0.48) 50%,
+    rgba(0, 0, 0, 0.22) 100%
+  );
+  pointer-events: none;
+}
+
+/* Top-left hostname strip — user 指定: favicon なし、 monospace 10-11px、
+   半透明白。 「どこのサイトのブクマか」 が一目で分かる程度の控えめ表示。 */
+.hostname {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 2;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.62);
+  text-transform: lowercase;
+  pointer-events: none;
+  /* hostname は 1 行で truncate。 max-width はカードの 70% 程度に抑えて
+     右側に余白を残す (= 右側に他要素が後から増えても干渉しない)。 */
+  max-width: 70%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Scrollable title area — fills remaining vertical space, scrolls
+   internally when title overflows. */
+.titleScroll {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 上下に scrim と hostname 用の余白を残す。 左右は 22px = TextCard と同じ
+     感覚で文字が card 端に張り付かない。 */
+  padding: 28px 22px 22px;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.18s ease;
+}
+.titleScroll:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+.titleScroll::-webkit-scrollbar {
+  width: 4px;
+}
+.titleScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.titleScroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.18s ease;
+}
+.titleScroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Bottom fade — Title が overflow したときに、 スクロール底端で fade して
+   「続きがある」 ことを示す。 底まで scroll し切ったら fade を解除して、
+   最後の行を完全に読めるようにする。 旧 TextCard と同じ挙動。 */
+.titleScroll[data-overflow='true'][data-at-bottom='false'] {
+  -webkit-mask-image: linear-gradient(to bottom,
+    black 0%,
+    black 75%,
+    rgba(0, 0, 0, 0.5) 90%,
+    transparent 100%);
+          mask-image: linear-gradient(to bottom,
+    black 0%,
+    black 75%,
+    rgba(0, 0, 0, 0.5) 90%,
+    transparent 100%);
+}
+
+/* Title text — font-size + line-height は pickTitleTypography から inline
+   style で注入される (= card 内に typography 計算 ロジックを内包せず、
+   既存 TextCard と同じ helper を経由)。 中央寄せ + 改行可能 + word-break。 */
+.titleInner {
+  position: relative;
+  text-align: center;
+  word-break: break-word;
+  white-space: pre-wrap;
+  color: rgba(255, 255, 255, 0.94);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
