@@ -67,16 +67,19 @@
 }
 
 /* Scrollable title area — fills remaining vertical space, scrolls
-   internally when title overflows. */
+   internally when title overflows. title は上端から自然に流れ、 overflow
+   したら下端 fade で続き示唆 + scroll で全文 access 可。
+   session 88 修正: 当初 display: flex + align-items: center で「短い title は
+   中央寄せ」 を意図したが、 長い title で vertical center anchor になって
+   上端が overflow 領域に押し出される (= 冒頭が見えない) bug。 旧 TextCard
+   と同じ「block scroll + 上端 start」 挙動に統一。 横方向の text-align: center
+   は .titleInner 側で維持。 */
 .titleScroll {
   position: relative;
   z-index: 1;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   /* 上下に scrim と hostname 用の余白を残す。 左右は 22px = TextCard と同じ
      感覚で文字が card 端に張り付かない。 */
   padding: 28px 22px 22px;
