@@ -328,17 +328,15 @@ export function FilterPill({
               <span className={styles.itemLabel}>TRASH</span>
               <span className={styles.itemCount}>{String(counts.archive).padStart(3, '0')}</span>
             </button>
-            {counts.dead > 0 && (
-              <button
-                type="button"
-                className={`${styles.item} ${styles.deadItem} ${boardFilterEquals(value, BOARD_FILTER_DEAD) ? styles.active : ''}`.trim()}
-                onClick={() => pickExclusive(BOARD_FILTER_DEAD)}
-              >
-                <span className={styles.deadDot} aria-hidden="true" />
-                <span className={styles.itemLabel}>DEAD LINKS</span>
-                <span className={styles.itemCount}>{String(counts.dead).padStart(3, '0')}</span>
-              </button>
-            )}
+            <button
+              type="button"
+              className={`${styles.item} ${styles.deadItem} ${boardFilterEquals(value, BOARD_FILTER_DEAD) ? styles.active : ''}`.trim()}
+              onClick={() => pickExclusive(BOARD_FILTER_DEAD)}
+            >
+              <span className={styles.deadDot} aria-hidden="true" />
+              <span className={styles.itemLabel}>DEAD LINKS</span>
+              <span className={styles.itemCount}>{String(counts.dead).padStart(3, '0')}</span>
+            </button>
           </div>
         </div>
       )}

@@ -687,22 +687,26 @@ ol {
    CardsLayer.tsx.  Visually demotes broken-link cards so they are
    easy to spot and easy to delete, without blocking drag / resize. */
 
-[data-link-status='gone'] {
+/* Demote the card CONTENT (real child elements), not the wrapper itself, so
+   the corner badge below — a wrapper ::after pseudo-element — keeps its full
+   bright-red color instead of being washed out by the parent's opacity/grayscale. */
+[data-link-status='gone'] > * {
   opacity: 0.55;
   filter: grayscale(60%);
 }
 
+/* Bright-red corner ribbon: a right-triangle wedge draped over the card's
+   top-left corner, its outer corner rounded to match the card radius (20px),
+   with a small white broken-link glyph. Drawn as one inline SVG so the rounded
+   corner + icon need no extra DOM and the wedge stays vivid (not dimmed). */
 [data-link-status='gone']::after {
-  content: 'リンク切れ';
+  content: '';
   position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 3px 8px;
-  background: rgba(180, 60, 60, 0.85);
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: white;
-  z-index: 5;
+  top: 0;
+  left: 0;
+  width: 58px;
+  height: 58px;
+  z-index: 20;
   pointer-events: none;
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 58 58'><path d='M20 0 L58 0 L0 58 L0 20 A20 20 0 0 1 20 0 Z' fill='%23e01b1b'/><g transform='translate(8 8) scale(0.62)' fill='%23ffffff'><path d='M17 7h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1 0 1.43-.98 2.63-2.31 2.98l1.46 1.46C20.88 15.61 22 13.95 22 12c0-2.76-2.24-5-5-5zm-1 4h-2.19l2 2H16zM2 4.27l3.11 3.11C3.29 8.12 2 9.91 2 12c0 2.76 2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1 0-1.59 1.21-2.9 2.76-3.07L8.73 11H8v2h2.73L13 15.27V17h1.73l4.01 4.01 1.41-1.41L3.41 2.86 2 4.27zM11 9.9V8H9.1L11 9.9z'/></g></svg>") no-repeat top left / contain;
 }
