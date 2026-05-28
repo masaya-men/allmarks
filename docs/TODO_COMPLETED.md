@@ -6358,3 +6358,40 @@ user 報告「デッドリンクなのにバッジなし + カードが縦に伸
 ### memory 更新
 - `reference_lopo_ff14sim` (= LoPo の場所と AllMarks との系譜共有) 追加
 - `feedback_root_cause_over_masking` (= 根本修正 > 隠蔽、 軽微・限定的問題は据え置きも正解) 追加
+
+---
+
+## セッション 90 (2026-05-28) — X 削除ツイートのリンク切れ検出を実装 ship (2 大タスク完結)
+
+2 大タスクの残り片方「X 削除ツイートの dead 検出」に着手。 brainstorming → spec → plan → subagent-driven 実行の正攻法で完遂。
+
+### 背景 (= session 88 で出力側は完成済)
+
+カードの `linkStatus` フラグ / viewport+intent+7日経年の revalidation キュー / DEAD LINKS フィルター + 「リンク切れ」 バッジは session 88 で完成済。 **欠けていたのは検出だけ**。 現状のチェックは `/api/ogp` 経由で、 X は削除ツイートに 404/410 を返さない (生きてる風の 200) ため永遠に「生きてる」 と誤判定していた。
+
+### 設計 (= Approach A: チェック係をツイート対応に)
+
+- 既存の注入可能 `Fetcher` に**ツイート対応の振り分け**を足す。 ツイート URL は syndication 経由 (`/api/tweet-meta`) で存在確認、 それ以外は従来どおり `/api/ogp`。
+- **実測で前提を確認** (CLAUDE.md anti-speculation 遵守): syndication CDN を直接叩き、 生きてるツイート (id=20) = 200 + `__typename:"Tweet"` / 削除・架空 ID = **404** を確認。
+- **判定ルール**: 404 → gone / 200+`__typename==='Tweet'`+id_str → alive / それ以外の 200 (tombstone = 凍結・鍵アカ・年齢制限) → gone / 5xx・timeout → unknown (据え置き)。 **「生きてると確認できた時だけ alive、 それ以外は全部 gone」** の安全側述語。 user 合意「見られなくなる理由は全部まとめてリンク切れ扱い」 どおり。
+- **`parseTweetData` を流用しない**: media-only tweet 等で良性 null になり得るため、 `__typename` (react-tweet 正準シグナル) をキーにした独立述語に。
+- **(C) Lightbox 表示失敗を信号にする案は却下**: 今の Lightbox は保存済みスナップショット表示 (react-tweet 生表示は廃止) なので削除されても綺麗に表示され見逃す + 未開封カードを拾えない + 通信遅延を誤検知。 ただし user の「開いたら検出」 意図は (A) の既存 intent トリガー (`handleCardClick` → `revalidateOnIntent`) が syndication 経由になることで自動的に満たされる。
+- **DB 変更なし / Cloudflare 関数 改修なし**。 `/api/tweet-meta` は既に本番稼働中 (削除 404・tombstone 200・5xx 502 を既に正しく中継)。
+
+### 実装 (= subagent-driven、 TDD、 4 commits)
+
+- **新規** [lib/board/tweet-liveness.ts](../lib/board/tweet-liveness.ts) — `checkTweetLiveness` (純粋・fetch 注入) + `isLiveTweet` 述語 + `createCompositeFetcher` (URL 振り分け)。
+- **変更** [components/board/BoardRoot.tsx](../components/board/BoardRoot.tsx) — `fetcher: defaultFetcher` → `fetcher: createCompositeFetcher(defaultFetcher)` の 1 行 + import 1 行のみ。 `onResult` / キュー / トリガー / 並列度3 / 7日 guard は全て不変。
+- **テスト** [tests/lib/tweet-liveness.test.ts](../tests/lib/tweet-liveness.test.ts) — 11 tests (判定表全ケース + 振り分け: tweet→liveness / 非tweet→OGP / X profile→OGP)。
+- 進め方: Task1 (checker) → Task2 (composite) を haiku 実装 → 完成モジュールを sonnet で code-quality review (重複 import 1件指摘 → 即修正) → Task3 (BoardRoot 配線) を sonnet 実装 → 全体 final review (sonnet) で「Ready to ship: Yes、 Critical/Important 0」。
+
+### 検証
+
+- tsc 0 errors / 全 **925 tests pass** (914 + 11) / build 24 routes 成功。
+- **本番デプロイ済** (`booklage.pages.dev`)。 デプロイ後に本番 `/api/tweet-meta` を実測: alive id=20 → 200 `__typename=Tweet`、 削除 → 404。 実装の前提が本番でも成立することを確認。
+- final review が end-to-end チェーン (viewport/intent → queue の shouldRevalidate → composite fetcher → checkTweetLiveness → 404 → gone → onResult → persistLinkStatus → applyFilter 'dead') の全リンク存在をコードで確認。
+- **残り = user の実機確認**: 実 IndexedDB に残る削除ツイートのブクマを開く/画面に入れる → DEAD LINKS フィルターに「リンク切れ」 バッジで出るか (= user の実データで最終確認)。
+
+### 2 大タスクの状態
+- (1) 重い問題 / virtualization → session 89 で**クローズ** (culling 既に完璧)。
+- (2) X 削除ツイートの dead 検出 → **本セッションで完了 ship**。 → **2 大タスク両方完結**。
