@@ -74,6 +74,11 @@ export function FilterPill({
   value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
+  /* `render` keeps the menu in the DOM through its close animation. open
+     drives the in/out animation; when the close animation ends we drop
+     the menu from the DOM. Without this the menu would vanish instantly
+     on close (= no exit animation), unlike TUNE which animates both ways. */
+  const [render, setRender] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -170,12 +175,23 @@ export function FilterPill({
     return (): void => clearLeaveTimer()
   }, [clearLeaveTimer])
 
+  /* Mount the menu as soon as it opens; unmount happens after the close
+     animation finishes (see onAnimationEnd below). */
+  useEffect(() => {
+    if (open) setRender(true)
+  }, [open])
+
+  const handleMenuAnimEnd = useCallback((e: { target: EventTarget; currentTarget: EventTarget }): void => {
+    if (e.target !== e.currentTarget) return
+    if (!open) setRender(false)
+  }, [open])
+
   /* Recompute the tag-list scroll affordance whenever the menu opens or
      the tag set changes (= menu mounts the scroller fresh on open). */
   useEffect(() => {
-    if (!open) return
+    if (!render) return
     updateTagScroll()
-  }, [open, tags, updateTagScroll])
+  }, [render, open, tags, updateTagScroll])
 
   /* Exclusive selection (ALL / TRASH / DEAD): always closes. */
   const pickExclusive = (f: BoardFilter): void => {
@@ -221,11 +237,13 @@ export function FilterPill({
         <span className={styles.separator}>·</span>
         <span className={styles.count} data-glitch-text={effectiveCount}>{displayCount}</span>
       </button>
-      {open && (
+      {render && (
         <div
           className={styles.menu}
           role="menu"
           data-testid="filter-pill-menu"
+          data-closing={open ? 'false' : 'true'}
+          onAnimationEnd={handleMenuAnimEnd}
         >
           {/* ALL — pinned at the top, the default "everything" view. */}
           <button

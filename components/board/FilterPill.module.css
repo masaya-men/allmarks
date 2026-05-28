@@ -173,7 +173,17 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   color: rgba(255, 255, 255, 0.92);
-  animation: menuIn 100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* Anchored at the top-right (= under the pill) so the panel grows out of
+     the pill on open and collapses back toward it on close, mirroring the
+     TUNE drawer's "comes from / returns to its trigger" feel. */
+  transform-origin: top right;
+  animation: menuIn 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+/* Close animation — runs when data-closing flips to true. Slightly faster
+   than open (= snappier dismiss), eased-in so it accelerates away. The
+   onAnimationEnd handler unmounts the menu once this finishes. */
+.menu[data-closing='true'] {
+  animation: menuOut 130ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 /* Tag list — the only scrolling region. Raw scrollbar hidden (= house
@@ -218,8 +228,12 @@
   padding-top: 2px;
 }
 @keyframes menuIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes menuOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-6px) scale(0.97); }
 }
 
 .item {
@@ -388,7 +402,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Open is instant (no animation). The CLOSE animation must still run —
+     even if only for 1ms — so onAnimationEnd fires and the menu unmounts.
+     Without this the menu would stay in the DOM forever on close. */
   .menu { animation: none; }
+  .menu[data-closing='true'] { animation: menuOut 1ms linear both; }
   .item, .tagDot { transition: none; }
 }
 
