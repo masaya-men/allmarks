@@ -1,21 +1,13 @@
 /* Session 28: ScrollMeter is no longer embedded in the TopHeader instrument
-   slot. Session 91: it moved one level further out — from inside the dark
-   canvas to the outer frame's BOTTOM BAND (rendered as a sibling of
-   `.canvas` in BoardRoot, so canvas overflow:hidden no longer clips it). The
-   board's spatial chrome still reads as a matched pair: header text in the
-   top frame band, scroll/counter meter in the bottom frame band.
+   slot — it lives at the canvas bottom (mirroring LightboxNavMeter's
+   position) so the board's spatial chrome reads as a matched pair: header
+   text at the top of the dark stage, scroll/counter meter at the bottom.
 
    Visual contract:
-   - meterWrap is absolute within the outer frame; `bottom` is measured from
-     the viewport edge. 24px puts the whole stack in the bottom band: the
-     numbers land right at the card-clip line (~48px from edge) and the
-     clickable track sits fully below it, so cards never pass behind the
-     track — no bottom scrim needed, fewer mis-clicks. The track's painted
-     bottom ends ~16px from the viewport edge (its -8px margin/8px padding
-     drops it below the wrap box). Tunable on screen.
-   - horizontally centered
+   - meterWrap sits at canvas-bottom 24px, horizontally centered
    - lane is pointer-events: none so the empty area around it never
-     swallows clicks; only the track itself re-enables them for scrubbing */
+     swallows clicks; only the track itself re-enables them for scrubbing
+   - .hidden fades the whole meter out (Lightbox open swap), 0.25s ease */
 
 .meterWrap {
   position: absolute;
