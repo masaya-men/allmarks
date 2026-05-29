@@ -1705,22 +1705,6 @@ export function BoardRoot() {
             <EmptyStateWelcome onOpenModal={handleOpenBookmarkletModal} />
           )}
         </div>
-        {/* Session 39 phase 6 (B-#20 refactor): single unified meter for
-            both board and Lightbox states. Earlier multi-component +
-            crossfade approach (phase 1-5) collapsed into ONE ScrollMeter
-            that swaps its content via mode prop. The bulge eases between
-            scroll-fraction and card-fraction targets via ease-in-out tween
-            on mode change AND on lightbox-mode card swaps. No slot
-            wrapper, no freeze refs, no glide-arm React state — all the
-            transition logic lives inside ScrollMeter itself. */}
-        <ScrollMeter
-          mode={meterMode}
-          n1={meterN1}
-          n2={meterN2}
-          total={filteredItems.length}
-          swellFraction={meterSwellFraction}
-          onScrub={handleMeterScrub}
-        />
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
             canvasWrap. This way its backdrop (position: absolute; inset: 0)
             fills the FULL canvas — including the TopHeader band — so the
@@ -1745,6 +1729,25 @@ export function BoardRoot() {
           persistMediaSlots={persistMediaSlots}
         />
       </div>
+      {/* ScrollMeter (session 91): relocated OUT of the canvas into the
+          outer frame's BOTTOM BAND — a sibling of `.canvas`, which clips its
+          own overflow. Living here lets the meter sit in the dark margin
+          below the card area, so cards never pass behind it (the canvas
+          bottom scrim is gone) and the clickable track no longer overlaps
+          cards (= fewer mis-clicks). Still the single unified meter that
+          serves BOTH board and Lightbox states via the `mode` prop — moving
+          its container moves both modes together, so the two stay aligned by
+          construction. z-400 keeps it above the Lightbox backdrop (z-300).
+          (Earlier phase-6 history: collapsed from a multi-component +
+          crossfade rig into one ScrollMeter — see ScrollMeter.tsx.) */}
+      <ScrollMeter
+        mode={meterMode}
+        n1={meterN1}
+        n2={meterN2}
+        total={filteredItems.length}
+        swellFraction={meterSwellFraction}
+        onScrub={handleMeterScrub}
+      />
       {/* Modals stay viewport-level so they cover everything including
           the outer margin (different visual treatment from Lightbox). */}
       <BookmarkletInstallModal

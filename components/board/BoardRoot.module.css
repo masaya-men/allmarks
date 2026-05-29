@@ -68,25 +68,11 @@
   z-index: 80;
 }
 
-/* Mirror scrim at the bottom — same gradient flipped, so the relocated
-   ScrollMeter + counter readout (coming in the next commit) stays
-   legible against whatever cards sit directly behind it. */
-.canvas::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.32) 0%,
-    rgba(0, 0, 0, 0.16) 40%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 80;
-}
+/* Session 91: the bottom mirror scrim was removed. The ScrollMeter no longer
+   lives inside the canvas (it moved to the outer frame's bottom band), so
+   there's nothing here that needs to stay legible against cards — the scrim
+   was only ever there for the meter. One less overlay darkening the board's
+   bottom edge. (Top scrim `.canvas::before` stays — it backs the TopHeader.) */
 
 .canvasWrap {
   position: absolute;
