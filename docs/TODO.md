@@ -8,21 +8,31 @@
 
 ---
 
-## 🔴 月末 (2026-05-28 朝以降) 必須リマインダー
+## ドメイン allmarks.app (= 棚上げ中、 催促しない)
 
-**ユーザーが「allmarks.app」 ドメインを取得したか確認する。**
+**session 91 (2026-05-29): user が購入直前まで進んだが カード拒否で取得できず。 生活が落ち着くまで取得は棚上げ (急がない) で合意済。**
 
-session 76 (2026-05-26) user 報告: 取得できても 2026-05-28 朝以降の見込み。
-
-- 取得方法: `https://dash.cloudflare.com/` → Domain Registration → allmarks.app → 約 ¥1,600/年
-- 取得済 → リブランド実装に進む (詳細は `docs/private/2026-05-11-allmarks-branding-spec.md`)
-- 未取得 → 取得を促す
+- **毎セッション催促しない**。 user から「取れた」 と報告が来たら下記に進む。
+- 取得方法 (再掲): `https://dash.cloudflare.com/` → Domain Registration → allmarks.app → 約 $14.20 (¥2,200) /年
+- 取得済になったら: リブランド実装 (詳細 `docs/private/2026-05-11-allmarks-branding-spec.md`)。 一般公開・拡張ストア公開もこのタイミング以降 (= 上「現在の状態」 の origin 移行の理由参照)。
 
 ---
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 90 — X 削除ツイートのリンク切れ検出を実装 ship、 2 大タスク完結)
+### 直近の状態 (セッション 91 — master push 同期 + ScrollMeter 下帯移設を試作→revert + 右端アイデア記録)
+
+**確定 (= 本番反映済)**:
+- session 88-90 の 14 commits + 本 session の revert を **master push 済** (origin 同期完了)。
+- **フィルターのホバー開閉アニメ (session 90 ship)**: user 本番確認「OK」。
+- **ドメイン `allmarks.app`**: user が購入直前までいったが **カード拒否で取得できず**。生活が落ち着くまで **取得は棚上げ (急がない)** で合意。
+- **一般公開・拡張ストア公開は「ドメイン取得後」に確定**: 理由 = 全データがブラウザのローカル保存で **URL (origin) 単位**。今 `booklage.pages.dev` で公開して後で `allmarks.app` に移すと、ユーザーのブクマが新 URL に自動で移らない (バックアップ手動 export/import でしか運べない = [BackupButton.tsx](../components/board/BackupButton.tsx) は存在する)。**「ユーザーに手動移行を強いたくない」= 最初から最終 URL で公開する**、が user 判断。拡張も `booklage.pages.dev` を保存先に見ているので一蓮托生。なお Chrome 拡張の再審査中もユーザーは使用継続できる (審査でダウンタイムは出ない) ことは確認済。
+- **旧名 "Booklage" 残存**: 画面・拡張・LP・i18n の **見える表記はすべて AllMarks 済** (大文字 "Booklage" は app/components/extension/messages/lib で 0 件)。残る小文字 `booklage` は URL / DB 内部名 (`booklage-db`) / CSS クラス名等の **不可視な内部符号のみ**で、DB 名は変えると既存データ消失なので **意図的に維持**。ドメイン移行とセットで一括対応する。
+
+**試作→却下 (= 本番は元のまま)**: ScrollMeter (波形+数字) を canvas 内から **外枠の下帯へ移設 (B1)** を実装・本番確認したが、**下帯 48px では余白不足で窮屈** (波形下端 16px でも「あまり良い感じがしない」) → **revert 済** (本番は元の canvas 内・下24px+下スクリムに戻り済)。
+- 代わりに user 発案「**メーターを右端 (縦置き) に出す**」を [docs/private/IDEAS.md](private/IDEAS.md) §L に記録。次に board chrome を触るときの選択肢。
+
+### 一つ前 (セッション 90 — X 削除ツイートのリンク切れ検出を実装 ship、 2 大タスク完結)
 
 **ship 済 (= master + 本番 booklage.pages.dev 反映済、 4 commits + 1 deploy)**: 2 大タスクの残り片方「X 削除ツイートの dead 検出」を完了。 これで **2 大タスク (重い問題 / dead 検出) は両方クローズ**。
 
