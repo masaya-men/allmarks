@@ -16,9 +16,12 @@
 - **TITLE 出現エフェクト**: ON にするとカード出現と同じ CRT ブートアップ (緑フォスファー発光) が wordmark に流れる。テーマ駆動 (今後テーマ追加で自動変化)。
 - **🔴 安定化 (重要)**: 「ON なのに消える」不安定バグを根治。原因 = 可視性をアニメのライフサイクル (`fill:forwards` の保持 + `onfinish` での state 更新) に依存させていたため競合。→ **可視性は `enabled` の純粋関数 (`{bgTypoEnabled && <…>}` = マウント=表示)** に変更、出現エフェクトは **mount 時 1 回の飾り (`fill:'none'` で状態保持しない)** に。実機で 6 サイクル + 8 連打しても表示=トグル状態が常に一致。memory `feedback_visibility_never_from_animation`。
 
-### 残課題 / 次にやれること
-- **OFF のパワーダウン演出 (任意)**: 確実性優先で今は OFF = 即時非表示。アニメ付き退場が欲しければ **正式な enter/exit パターン** (React Transition Group / AnimatePresence 風の小さな状態機械) を入れる。手組みの `fill:forwards`+`onfinish` は二度とやらない (今回のバグ源)。
-- **TITLE 出現エフェクトの強さ調整**: 緑の発光量 / グリッチ量 / 速度は `lib/animation/tag-entry` の CSS 変数 (`--tag-entry-*`) で調整可。user が強すぎ/弱すぎと言ったらここ。
+### 🔴 次セッションで user と一緒に設計する (= 最優先、 勝手に実装しない)
+**TITLE の ON/OFF エフェクトは user と co-design するタスク。 session 94 で私が勝手に実装して怒られた (memory `feedback_stop_when_user_defers`)。 次は必ず方針を一緒に決めてから手を動かす。**
+- **OFF のパワーダウン演出は「必須」** (user 明言: 「消えるときの演出も当然必須」)。 現在の本番は確実性優先で OFF=即時非表示にしてあるが、 これは**未完成・要追加**。
+- 確実な作りは保ったまま退場演出を足す: **正式な enter/exit パターン** (React Transition Group / AnimatePresence 風の小さな状態機械、 または CSS animation + animationend で unmount)。 **手組みの `fill:forwards`+`onfinish` は二度とやらない** (今回のバグ源、 memory `feedback_visibility_never_from_animation`)。
+- 現状の本番: ON=CRT ブートアップ出現あり (安定)、 OFF=即時 (演出なし)。 ON で消えるバグは解消済。
+- **TITLE 出現エフェクトの強さ調整**: 緑の発光量 / グリッチ量 / 速度は `lib/animation/tag-entry` の CSS 変数 (`--tag-entry-*`)。
 - **共有 OG の角丸 (残)**: ミラー preview は角丸あり、OG 画像 ([capture-mirror.ts](../lib/share/capture-mirror.ts)) の drawCards が fillRect で角丸無し。
 
 ## 別タスク (繰越、単独で)
