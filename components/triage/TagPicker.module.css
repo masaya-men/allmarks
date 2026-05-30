@@ -120,26 +120,11 @@
 }
 .chipContextActive .chipKey { color: #FF3B30; }
 
-/* Drag-to-reorder grip handle (left of each chip). Muted; brightens on hover.
-   Stops its own pointer/click so click-to-arm is untouched. */
-.chipGrip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.24);
-  cursor: grab;
-  touch-action: none;
-  text-shadow: none;
-  transition: color 100ms;
-  margin-right: -2px;
-}
-.chipGrip:hover { color: rgba(255, 255, 255, 0.6); }
-.chipGrip:active { cursor: grabbing; }
+/* Direct drag-to-reorder: the whole chip is the handle (press + move past a
+   threshold). No grip glyph. */
 
 /* Grabbed chip lifts with the pointer (inline translateX drives position). */
-.chip[data-dragging="true"] { opacity: 0.92; }
+.chip[data-dragging="true"] { opacity: 0.92; cursor: grabbing; }
 /* Vertical green insertion line marking where the chip will drop. */
 .chip[data-drop-before="true"] { box-shadow: inset 2px 0 0 #28F100; }
 .chip[data-drop-after="true"]  { box-shadow: inset -2px 0 0 #28F100; }

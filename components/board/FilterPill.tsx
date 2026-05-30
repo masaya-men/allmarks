@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type ReactElement, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import type { BoardFilter } from '@/lib/board/types'
 import {
   isTagsFilter,
@@ -10,7 +10,7 @@ import {
 } from '@/lib/board/board-filter-helpers'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
-import { computeReorder } from '@/lib/board/reorder'
+import { useDragReorder } from '@/lib/board/use-drag-reorder'
 import { InlineTagRenameInput } from './InlineTagRenameInput'
 import styles from './FilterPill.module.css'
 
@@ -113,21 +113,12 @@ export function FilterPill({
     setTagScrollEdge(atTop ? 'top' : atBottom ? 'bottom' : 'middle')
   }, [])
 
-  /* Drag-to-reorder state for the tag rows (grip handle). `drag` is non-null
-     for the duration of a gesture: `offsetY` lifts the grabbed row with the
-     pointer; `gapIndex` is where the green insertion line sits [0..tags.length].
-     Other rows stay put — only a thin line shows the drop target — so the list
-     never churns mid-drag. */
-  const [drag, setDrag] = useState<{ id: string; offsetY: number; gapIndex: number } | null>(null)
-  const draggingRef = useRef(false)
-  const dragStartYRef = useRef(0)
-
   /* Inline-rename awareness for the auto-close guards. While a row is being
      renamed in place, the dropdown must not auto-close on mouse-leave, Esc, or
      outside-click — the input's own onBlur/Esc handle the commit/cancel. Mirror
      the prop into a ref so the long-lived window listeners read the live value. */
   const editingRef = useRef<string | null>(editingTagId ?? null)
-  editingRef.current = editingTagId ?? null
+  useEffect(() => { editingRef.current = editingTagId ?? null }, [editingTagId])
 
   const effectiveLabel = labelFor(value, tags)
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
@@ -176,61 +167,31 @@ export function FilterPill({
     }, LEAVE_GRACE_MS)
   }, [clearLeaveTimer])
 
-  /* --- Tag drag-to-reorder (grip handle) ------------------------------------
-     Window pointer listeners (attached for the gesture's lifetime) drive the
-     drag, so moves keep firing even when the pointer leaves the row / menu, and
-     it works WITHOUT setPointerCapture — which Playwright and some touch paths
-     reject. The grabbed row lifts with the pointer; a green insertion line marks
-     the drop slot; on release computeReorder yields the new order. */
-  const dragRef = useRef(drag)
-  dragRef.current = drag
-
-  const gapIndexAt = useCallback((clientY: number): number => {
-    const container = tagScrollRef.current
-    if (!container) return tags.length
-    const rows = Array.from(container.querySelectorAll<HTMLElement>('[data-tag-id]'))
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i].getBoundingClientRect()
-      if (clientY < r.top + r.height / 2) return i
-    }
-    return rows.length
-  }, [tags.length])
-
-  const startTagDrag = useCallback((id: string, e: ReactPointerEvent<HTMLElement>): void => {
-    if (e.button !== 0) return
-    e.preventDefault()
-    e.stopPropagation()
-    draggingRef.current = true
-    dragStartYRef.current = e.clientY
-    clearLeaveTimer()
-    setDrag({ id, offsetY: 0, gapIndex: tags.findIndex((t) => t.id === id) })
-  }, [clearLeaveTimer, tags])
-
-  const dragActive = drag !== null
+  /* --- Tag drag-to-reorder (direct, handle-less) ----------------------------
+     Press a tag row and move past a small threshold to reorder it; a press that
+     doesn't move stays a filter toggle. Pointer near the top/bottom edge of the
+     scrollable list auto-scrolls so rows pushed out of the ~8-row window are
+     reachable. The shared hook excludes the grabbed row from hit-testing, so
+     dragging DOWN reorders as reliably as dragging UP. */
+  const dr = useDragReorder({
+    axis: 'y',
+    ids: tags.map((t) => t.id),
+    onReorder,
+    getScrollEl: () => tagScrollRef.current,
+    getItemsEl: () => tagScrollRef.current,
+  })
+  const drag = dr.drag
+  const wasDraggingRef = useRef(false)
   useEffect(() => {
-    if (!dragActive) return
-    const onMove = (e: PointerEvent): void => {
-      setDrag((d) => (d ? { ...d, offsetY: e.clientY - dragStartYRef.current, gapIndex: gapIndexAt(e.clientY) } : d))
+    if (dr.isDragging) {
+      clearLeaveTimer()
+      wasDraggingRef.current = true
+    } else if (wasDraggingRef.current) {
+      wasDraggingRef.current = false
+      // After the drag ends, resume the normal mouse-leave close behaviour.
+      if (!stickyRef.current && !editingRef.current) scheduleClose()
     }
-    const onUp = (): void => {
-      const d = dragRef.current
-      draggingRef.current = false
-      setDrag(null)
-      if (d && onReorder) {
-        const ids = tags.map((t) => t.id)
-        const next = computeReorder(ids, d.id, d.gapIndex)
-        if (next.some((id, i) => id !== ids[i])) onReorder(next)
-      }
-      if (!stickyRef.current) scheduleClose()
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    return (): void => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dragActive])
+  }, [dr.isDragging, clearLeaveTimer, scheduleClose])
 
   /* Outside-click hard-closes (mouse-leave timer is a soft path). Uses
      pointerdown so the menu doesn't briefly stay open while the user
@@ -329,7 +290,7 @@ export function FilterPill({
         // Don't close while a drag is in flight — the pointer routinely leaves
         // the menu bounds as the grabbed row is dragged past the edge. Also keep
         // the menu open while a row is being renamed in place.
-        if (draggingRef.current || stickyRef.current || editingRef.current) return
+        if (dr.isDragging || stickyRef.current || editingRef.current) return
         burstAll()
         scheduleClose()
       }}
@@ -418,7 +379,11 @@ export function FilterPill({
                       key={m.id}
                       type="button"
                       className={cls}
-                      onClick={() => { if (!isEditing) toggleTag(m.id) }}
+                      onPointerDown={(e): void => { if (!isEditing) dr.onItemPointerDown(m.id, e) }}
+                      onClick={() => {
+                        if (dr.shouldSuppressClick()) return
+                        if (!isEditing) toggleTag(m.id)
+                      }}
                       onContextMenu={(e): void => {
                         if (!onTagContextMenu) return
                         e.preventDefault()
@@ -430,18 +395,8 @@ export function FilterPill({
                       data-dragging={isDragging ? 'true' : undefined}
                       data-drop-before={dropBefore ? 'true' : undefined}
                       data-drop-after={dropAfter ? 'true' : undefined}
-                      style={isDragging ? { transform: `translateY(${drag.offsetY}px)`, position: 'relative', zIndex: 3 } : undefined}
+                      style={isDragging && drag ? { transform: `translateY(${drag.offset}px)`, position: 'relative', zIndex: 3 } : undefined}
                     >
-                      {onReorder && (
-                        <span
-                          className={styles.grip}
-                          aria-hidden="true"
-                          onPointerDown={(e): void => startTagDrag(m.id, e)}
-                          onClick={(e): void => e.stopPropagation()}
-                        >
-                          ⠿
-                        </span>
-                      )}
                       <span className={styles.tagDot} data-active={active ? 'true' : 'false'} aria-hidden="true" />
                       {isEditing && onRenameSubmit && onRenameCancel ? (
                         <InlineTagRenameInput

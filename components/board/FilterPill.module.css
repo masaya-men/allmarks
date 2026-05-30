@@ -359,29 +359,12 @@
   text-transform: lowercase;
 }
 
-/* Drag-to-reorder grip handle (left of each tag row). Muted by default,
-   brightens on hover. The grip stops its own pointer/click from reaching the
-   row, so click-to-filter is untouched. */
-.grip {
-  flex-shrink: 0;
-  width: 12px;
-  margin-left: -4px;
-  margin-right: -2px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.26);
-  cursor: grab;
-  touch-action: none;
-  transition: color 100ms;
-}
-.grip:hover { color: rgba(255, 255, 255, 0.65); }
-.grip:active { cursor: grabbing; }
+/* Direct drag-to-reorder: the whole row is the handle (press + move past a
+   threshold). No grip glyph — keeps the row clean and discoverable. */
 
 /* Grabbed row lifts with the pointer (inline translateY drives the position). */
 .tagItem[data-dragging="true"] {
+  cursor: grabbing;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
