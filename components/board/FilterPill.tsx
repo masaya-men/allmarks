@@ -44,7 +44,9 @@ function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>): string {
     case 'archive': return 'TRASH'
     case 'dead': return 'DEAD LINKS'
     case 'tags': {
-      const names = f.tagIds.map((id) => tags.find((t) => t.id === id)?.name ?? '—')
+      // タグ名は常に小文字で表示 (= ユーザーが付けた中身)。 'AllMarks' や 'INBOX'
+      // 等のアプリ枠ラベルは大文字のまま、 タグ名の枝だけ toLowerCase で揃える。
+      const names = f.tagIds.map((id) => tags.find((t) => t.id === id)?.name.toLowerCase() ?? '—')
       if (names.length === 0) return 'AllMarks'
       if (names.length === 1) return names[0]
       return `${names[0]} +${names.length - 1}`

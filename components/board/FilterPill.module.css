@@ -352,6 +352,12 @@
 .tagItem {
   /* Same baseline as .item; specialisation lives in .tagItemActive. */
 }
+/* タグ名だけ小文字に上書きする。 .item は uppercase だが、 それは ALL / TRASH /
+   DEAD LINKS などのアプリ枠ラベル用。 ユーザーが付けたタグ名 (= .tagItem の行)
+   だけ小文字に統一する。 保存値は不変、 表示のみ。 */
+.tagItem .itemLabel {
+  text-transform: lowercase;
+}
 .tagItemActive {
   color: #fff;
 }

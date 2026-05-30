@@ -112,7 +112,8 @@ describe('ShareMirror', () => {
         viewportHeight={800}
       />,
     )
-    expect(getByText(/MUSIC · DESIGN/)).toBeTruthy()
+    // タグ名は常に小文字で表示する (= 'Music'/'Design' を渡しても 'music · design')。
+    expect(getByText(/music · design/)).toBeTruthy()
   })
 
   it('omits top tag strip when activeTagNames empty', () => {

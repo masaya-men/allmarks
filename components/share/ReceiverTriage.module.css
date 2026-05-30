@@ -96,7 +96,9 @@
 .tagChip {
   font-family: inherit;
   font-size: 11px;
-  text-transform: uppercase;
+  /* タグ名は常に小文字 (= ユーザーが付けた中身)。 送信者の提案タグ・受信者の既存タグ
+     どちらも .tagChip を使うので、 ここ 1 箇所で両方が小文字に揃う。 */
+  text-transform: lowercase;
   letter-spacing: 0.05em;
   padding: 6px 12px;
   background: transparent;

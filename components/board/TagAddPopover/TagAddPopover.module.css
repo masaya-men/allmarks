@@ -67,6 +67,8 @@
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11px;
   letter-spacing: 0.08em;
+  /* タグ名は常に小文字で表示 (= ユーザーが付けた中身)。 保存値は不変。 */
+  text-transform: lowercase;
   cursor: pointer;
   transition: color 120ms;
 }

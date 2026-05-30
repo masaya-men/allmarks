@@ -585,6 +585,24 @@ export function BoardRoot() {
     }
   }, [filteredItems, layout.positions, layout.totalWidth, layout.totalHeight, viewport.h])
 
+  // Layout for the share preview + payload. Under a tag filter the board keeps
+  // every card mounted (`filteredItems` = all, for the CRT shutdown animation)
+  // and shows only the matched set reflowed into a compact masonry via
+  // CardsLayer. `lightboxNavItems` is exactly that visible matched set. We
+  // recompute its compact layout with the SAME params as the board's full
+  // `layout` (containerWidth / gap / width) so the mirror matches what the board
+  // actually displays. No tag filter → identical to `layout`, so reuse it
+  // without recomputing.
+  const shareLayout = useMemo(() => {
+    if (matchedBookmarkIds == null) return layout
+    const cards: SkylineCard[] = lightboxNavItems.map((it) => {
+      const w = customWidths[it.bookmarkId] ?? cardWidthPx
+      const h = it.aspectRatio > 0 ? w / it.aspectRatio : w
+      return { id: it.bookmarkId, width: w, height: h }
+    })
+    return computeSkylineLayout({ cards, containerWidth: effectiveLayoutWidth, gap: cardGapPx })
+  }, [matchedBookmarkIds, layout, lightboxNavItems, customWidths, cardWidthPx, effectiveLayoutWidth, cardGapPx])
+
   const handleScroll = useCallback(
     (dx: number, dy: number): void => {
       markScrollActive()
@@ -1285,7 +1303,11 @@ export function BoardRoot() {
   // active tags filter). Called lazily by SenderShareModal on open.
   const buildShareData = useCallback((): ShareDataV2 => {
     return buildShareDataFromBoard({
-      items: filteredItems.map((it) => ({
+      // lightboxNavItems = the cards actually visible on the board (matched set
+      // under a tag filter, else the full filtered set). Sharing this — not the
+      // mounted-but-hidden `filteredItems` — keeps the payload to the narrowed
+      // view the user sees.
+      items: lightboxNavItems.map((it) => ({
         bookmarkId: it.bookmarkId,
         url: it.url,
         title: it.title,
@@ -1301,7 +1323,7 @@ export function BoardRoot() {
         : null,
       now: Date.now(),
     })
-  }, [filteredItems, tags, activeFilter, customWidths, cardWidthPx])
+  }, [lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx])
 
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
@@ -1777,9 +1799,11 @@ export function BoardRoot() {
         open={shareModalOpen}
         onClose={(): void => setShareModalOpen(false)}
         getShareData={buildShareData}
-        totalBoardCount={filteredItems.length}
+        totalBoardCount={lightboxNavItems.length}
         scrollY={viewport.y}
-        contentHeight={contentBounds.height}
+        contentHeight={matchedBookmarkIds == null
+          ? contentBounds.height
+          : shareLayout.totalHeight + BOARD_TOP_PAD_PX}
         viewportHeight={viewport.h}
         activeTagNames={isTagsFilter(activeFilter)
           ? activeFilter.tagIds.flatMap((id): string[] => {
@@ -1788,13 +1812,13 @@ export function BoardRoot() {
             })
           : []}
         onPanY={(dy: number): void => { handlePanY(dy) }}
-        items={filteredItems.map((it): MirrorItem => ({
+        items={lightboxNavItems.map((it): MirrorItem => ({
           id: it.bookmarkId,
           url: it.url,
           title: it.title,
           thumbnailUrl: it.thumbnail ?? null,
         }))}
-        positions={Object.entries(layout.positions).map(([id, p]): MirrorPosition => ({
+        positions={Object.entries(shareLayout.positions).map(([id, p]): MirrorPosition => ({
           id,
           x: p.x,
           y: p.y,

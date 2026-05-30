@@ -66,8 +66,10 @@ export function deriveBoardBgTypoText(
     case 'dead': return 'Dead Links'
     case 'tags': {
       if (filter.tagIds.length === 0) return 'AllMarks'
+      // タグ名は常に小文字で表示 (= ユーザーが付けた中身)。 'AllMarks' / 'Inbox' /
+      // 'Dead Links' 等のアプリ枠ラベルは TitleCase のまま、 タグ名だけ小文字に揃える。
       const names = filter.tagIds
-        .map((id) => tags.find((t) => t.id === id)?.name)
+        .map((id) => tags.find((t) => t.id === id)?.name.toLowerCase())
         .filter((n): n is string => !!n)
       if (names.length === 0) return ''
       return names.join(' · ')

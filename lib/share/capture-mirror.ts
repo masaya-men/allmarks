@@ -133,9 +133,10 @@ function drawBrandStrip(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput
   const H = input.height
   const padding = 18
 
-  // 上部 tag 帯 (= activeTagNames が空でなければ "MUSIC · DESIGN")
+  // 上部 tag 帯 (= activeTagNames が空でなければ "music · design")。 タグ名は常に
+  // 小文字で描画する (= ユーザーが付けた中身。 canvas なので CSS は効かず JS で小文字化)。
   if (input.activeTagNames.length > 0) {
-    const text = input.activeTagNames.map((s): string => s.toUpperCase()).join(' · ')
+    const text = input.activeTagNames.map((s): string => s.toLowerCase()).join(' · ')
     ctx.fillStyle = TEXT_SOFT
     ctx.font = '500 13px "Geist Mono", ui-monospace, monospace'
     ctx.textBaseline = 'top'

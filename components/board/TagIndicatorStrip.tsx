@@ -49,7 +49,9 @@ const TEXT_STYLE: React.CSSProperties = {
   fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
   fontSize: 10,
   letterSpacing: '0.10em',
-  textTransform: 'uppercase',
+  // タグ名は常に小文字で表示する (= ユーザーが付けた中身。 アプリの枠ラベルは
+  // 大文字のままで、 タグ名だけ小文字に統一して視覚的に区別する)。保存値は不変。
+  textTransform: 'lowercase',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
   lineHeight: 1.4,

@@ -276,7 +276,8 @@
   font-weight: 800;
   font-size: clamp(96px, 14vw, 260px);
   color: rgba(255, 255, 255, 0.024);
-  text-transform: uppercase;
+  /* タグ名は常に小文字 (= ユーザーが付けた中身)。 */
+  text-transform: lowercase;
   letter-spacing: -0.03em;
   pointer-events: none;
   z-index: 0;

@@ -22,30 +22,31 @@ describe('deriveBoardBgTypoText', () => {
     expect(deriveBoardBgTypoText(BOARD_FILTER_DEAD, [])).toBe('Dead Links')
   })
 
-  it('resolves a single-tag filter to the tag name', () => {
+  it('resolves a single-tag filter to the tag name (forced lowercase, session 93)', () => {
     const tags: TagRecord[] = [
       { id: 'm1', name: 'Calm', color: '#abc', order: 0, createdAt: 0 } as TagRecord,
     ]
-    expect(deriveBoardBgTypoText(makeTagsFilter(['m1'], 'and'), tags)).toBe('Calm')
+    // タグ名は常に小文字で表示する (= 'Calm' と保存されていても 'calm')。
+    expect(deriveBoardBgTypoText(makeTagsFilter(['m1'], 'and'), tags)).toBe('calm')
   })
 
-  it('joins all tag names with " · " for a multi-tag filter (session 82)', () => {
+  it('joins all tag names with " · " for a multi-tag filter, lowercase (session 82/93)', () => {
     const tags: TagRecord[] = [
       { id: 'm1', name: 'Music', color: '#0f0', order: 0, createdAt: 0 } as TagRecord,
       { id: 'm2', name: 'Art', color: '#f0f', order: 0, createdAt: 0 } as TagRecord,
       { id: 'm3', name: 'Code', color: '#00f', order: 0, createdAt: 0 } as TagRecord,
     ]
     expect(deriveBoardBgTypoText(makeTagsFilter(['m1', 'm2', 'm3'], 'or'), tags))
-      .toBe('Music · Art · Code')
+      .toBe('music · art · code')
   })
 
-  it('skips unresolved ids and only joins the ones that exist (session 82)', () => {
+  it('skips unresolved ids and only joins the ones that exist (session 82/93)', () => {
     const tags: TagRecord[] = [
       { id: 'm1', name: 'Music', color: '#0f0', order: 0, createdAt: 0 } as TagRecord,
     ]
     /* If one of three ids is gone (= deleted in another tab) we still
        render the two that remain rather than hiding the wordmark entirely. */
-    expect(deriveBoardBgTypoText(makeTagsFilter(['m1', 'gone'], 'or'), tags)).toBe('Music')
+    expect(deriveBoardBgTypoText(makeTagsFilter(['m1', 'gone'], 'or'), tags)).toBe('music')
   })
 
   it('returns empty string when EVERY tag id is unresolved', () => {

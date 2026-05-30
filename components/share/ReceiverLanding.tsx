@@ -167,14 +167,14 @@ export function ReceiverLanding(): ReactElement {
         <span className={styles.logo}>A</span>
         {state.data.filter && state.data.tags && (
           <span className={styles.filterContext}>
-            · FILTERED: {state.data.filter.tagIds.map((id) => state.data.tags?.[id]?.n ?? '?').join(' + ')}
+            · FILTERED: {state.data.filter.tagIds.map((id) => (state.data.tags?.[id]?.n ?? '?').toLowerCase()).join(' + ')}
           </span>
         )}
       </header>
       <main className={styles.boardArea} ref={containerRef}>
         {state.data.filter && state.data.tags && (
           <div className={styles.bgTypo} aria-hidden>
-            {state.data.filter.tagIds.map((id) => state.data.tags?.[id]?.n ?? '').filter(Boolean).join(' · ').toUpperCase()}
+            {state.data.filter.tagIds.map((id) => state.data.tags?.[id]?.n ?? '').filter(Boolean).join(' · ')}
           </div>
         )}
         <div className={styles.canvas} style={{ height: layout?.totalHeight ?? 0 }}>

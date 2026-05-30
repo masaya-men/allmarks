@@ -98,7 +98,9 @@ export function ShareMirror({
   const N = sharedCardCount
   const M = totalBoardCount
   const captionText = M > N ? `${N} OF ${M} CARDS · NEWEST FIRST` : `${N} CARDS`
-  const tagText = activeTagNames.map((s): string => s.toUpperCase()).join(' · ')
+  // タグ名は常に小文字 (= ユーザーが付けた中身)。 capture-mirror (= OG 画像) と揃えて
+  // JS 側で小文字化し、 .tagStrip の text-transform: lowercase が表示も担保する。
+  const tagText = activeTagNames.map((s): string => s.toLowerCase()).join(' · ')
 
   return (
     <div className={styles.frame} ref={setFrameRef} data-testid="mirror-frame">
