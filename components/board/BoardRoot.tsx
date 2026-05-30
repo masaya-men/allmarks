@@ -117,6 +117,9 @@ export function BoardRoot() {
   // Background typography (the big wordmark / filter title behind the cards)
   // master switch. Persisted in BoardConfig; the share image follows it too.
   const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
+  // Bumped on each USER toggle so the typography animates only then (not when
+  // a saved "off" hydrates from config on load).
+  const [bgTypoToggleNonce, setBgTypoToggleNonce] = useState<number>(0)
   const [viewport, setViewport] = useState({ x: 0, y: 0, w: 1200, h: 800 })
   // Mirror viewport in a ref so the edge auto-scroll rAF tick (which fires
   // outside React's render cycle) can read the latest scroll position
@@ -1304,6 +1307,7 @@ export function BoardRoot() {
   }, [])
 
   const handleToggleBgTypo = useCallback((): void => {
+    setBgTypoToggleNonce((n) => n + 1)
     setBgTypoEnabled((prev) => {
       const next = !prev
       void (async (): Promise<void> => {
@@ -1718,13 +1722,13 @@ export function BoardRoot() {
                 own stacking context via translate3d, and since the
                 typography host carries no explicit z-index, DOM order
                 alone keeps the cards above the typography. */}
-            {bgTypoEnabled && (
-              <BoardBackgroundTypography
-                activeFilter={activeFilter}
-                tags={tags}
-                variant={bgTypoVariant}
-              />
-            )}
+            <BoardBackgroundTypography
+              activeFilter={activeFilter}
+              tags={tags}
+              variant={bgTypoVariant}
+              enabled={bgTypoEnabled}
+              toggleNonce={bgTypoToggleNonce}
+            />
             {/* Cards — full-canvas-width with destefanis half-gap padding.
                 Vertical transform adds BOARD_TOP_PAD_PX so the first row gets
                 breathing room below the canvas top edge / toolbar pill. */}
