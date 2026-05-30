@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { IDBPDatabase } from 'idb'
 import type { TagRecord, TagInput } from './indexeddb'
 import { initDB } from './indexeddb'
-import { addTag, getAllTags, updateTag as updTag, deleteTagCascade as delTag } from './tags'
+import { addTag, getAllTags, updateTag as updTag, deleteTagCascade as delTag, reorderTags as reorderTagsDb } from './tags'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -15,6 +15,7 @@ export function useTags(): {
   create: (input: TagInput) => Promise<TagRecord>
   rename: (id: string, name: string) => Promise<void>
   remove: (id: string) => Promise<void>
+  reorder: (orderedIds: readonly string[]) => Promise<void>
   reload: () => Promise<void>
 } {
   const [tags, setTags] = useState<TagRecord[]>([])
@@ -66,5 +67,29 @@ export function useTags(): {
     setTags((prev) => prev.filter((m) => m.id !== id))
   }, [])
 
-  return { tags, loading, create, rename, remove, reload }
+  /** Persist a new complete tag order (each id gets its array index as
+   *  `order`). Updates local state optimistically so every tag surface
+   *  (filter dropdown, triage strip, background typography) reflects the
+   *  new order at once — order is a single shared field. */
+  const reorder = useCallback(async (orderedIds: readonly string[]): Promise<void> => {
+    const db = dbRef.current
+    if (!db) return
+    await reorderTagsDb(db, orderedIds)
+    setTags((prev) => {
+      const byId = new Map(prev.map((t) => [t.id, t]))
+      const next = orderedIds
+        .map((id, i) => {
+          const t = byId.get(id)
+          return t ? { ...t, order: i } : null
+        })
+        .filter((t): t is TagRecord => t !== null)
+      // Defensive: keep any tag missing from orderedIds (shouldn't happen)
+      // appended after, preserving their relative order.
+      const seen = new Set(orderedIds)
+      for (const t of prev) if (!seen.has(t.id)) next.push({ ...t, order: next.length })
+      return next
+    })
+  }, [])
+
+  return { tags, loading, create, rename, remove, reorder, reload }
 }

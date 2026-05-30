@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactElement, type PointerEvent as ReactPointerEvent } from 'react'
 import type { BoardFilter } from '@/lib/board/types'
 import {
   isTagsFilter,
@@ -10,6 +10,7 @@ import {
 } from '@/lib/board/board-filter-helpers'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
+import { computeReorder } from '@/lib/board/reorder'
 import styles from './FilterPill.module.css'
 
 type Props = {
@@ -32,6 +33,9 @@ type Props = {
   /** Id of the tag whose right-click menu is currently open, rendered
    *  with a red wash so the user sees which row is targeted. */
   readonly activeContextTagId?: string | null
+  /** Persist a new complete tag order (drag-to-reorder via the grip handle).
+   *  When omitted, the grip handles are not rendered. */
+  readonly onReorder?: (orderedIds: string[]) => void
 }
 
 /** Chrome label vocab — fixed English across all 15 languages
@@ -73,7 +77,7 @@ function countDigits(
 const LEAVE_GRACE_MS = 700
 
 export function FilterPill({
-  value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId,
+  value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId, onReorder,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   /* Sticky-open pin: a click on the pill latches the menu open so it stays
@@ -99,6 +103,16 @@ export function FilterPill({
     const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
     setTagScrollEdge(atTop ? 'top' : atBottom ? 'bottom' : 'middle')
   }, [])
+
+  /* Drag-to-reorder state for the tag rows (grip handle). `drag` is non-null
+     for the duration of a gesture: `offsetY` lifts the grabbed row with the
+     pointer; `gapIndex` is where the green insertion line sits [0..tags.length].
+     Other rows stay put — only a thin line shows the drop target — so the list
+     never churns mid-drag. */
+  const [drag, setDrag] = useState<{ id: string; offsetY: number; gapIndex: number } | null>(null)
+  const draggingRef = useRef(false)
+  const dragStartYRef = useRef(0)
+
   const effectiveLabel = labelFor(value, tags)
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
   const { display: displayLabel, triggerBurst } = useChromeScramble(effectiveLabel)
@@ -145,6 +159,62 @@ export function FilterPill({
       leaveTimerRef.current = null
     }, LEAVE_GRACE_MS)
   }, [clearLeaveTimer])
+
+  /* --- Tag drag-to-reorder (grip handle) ------------------------------------
+     Window pointer listeners (attached for the gesture's lifetime) drive the
+     drag, so moves keep firing even when the pointer leaves the row / menu, and
+     it works WITHOUT setPointerCapture — which Playwright and some touch paths
+     reject. The grabbed row lifts with the pointer; a green insertion line marks
+     the drop slot; on release computeReorder yields the new order. */
+  const dragRef = useRef(drag)
+  dragRef.current = drag
+
+  const gapIndexAt = useCallback((clientY: number): number => {
+    const container = tagScrollRef.current
+    if (!container) return tags.length
+    const rows = Array.from(container.querySelectorAll<HTMLElement>('[data-tag-id]'))
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i].getBoundingClientRect()
+      if (clientY < r.top + r.height / 2) return i
+    }
+    return rows.length
+  }, [tags.length])
+
+  const startTagDrag = useCallback((id: string, e: ReactPointerEvent<HTMLElement>): void => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    draggingRef.current = true
+    dragStartYRef.current = e.clientY
+    clearLeaveTimer()
+    setDrag({ id, offsetY: 0, gapIndex: tags.findIndex((t) => t.id === id) })
+  }, [clearLeaveTimer, tags])
+
+  const dragActive = drag !== null
+  useEffect(() => {
+    if (!dragActive) return
+    const onMove = (e: PointerEvent): void => {
+      setDrag((d) => (d ? { ...d, offsetY: e.clientY - dragStartYRef.current, gapIndex: gapIndexAt(e.clientY) } : d))
+    }
+    const onUp = (): void => {
+      const d = dragRef.current
+      draggingRef.current = false
+      setDrag(null)
+      if (d && onReorder) {
+        const ids = tags.map((t) => t.id)
+        const next = computeReorder(ids, d.id, d.gapIndex)
+        if (next.some((id, i) => id !== ids[i])) onReorder(next)
+      }
+      if (!stickyRef.current) scheduleClose()
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return (): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragActive])
 
   /* Outside-click hard-closes (mouse-leave timer is a soft path). Uses
      pointerdown so the menu doesn't briefly stay open while the user
@@ -225,7 +295,9 @@ export function FilterPill({
         setOpen(true)
       }}
       onMouseLeave={(): void => {
-        if (stickyRef.current) return
+        // Don't close while a drag is in flight — the pointer routinely leaves
+        // the menu bounds as the grabbed row is dragged past the edge.
+        if (draggingRef.current || stickyRef.current) return
         burstAll()
         scheduleClose()
       }}
@@ -294,10 +366,14 @@ export function FilterPill({
                 data-scroll-edge={tagScrollEdge}
                 onScroll={updateTagScroll}
               >
-                {tags.map((m) => {
+                {tags.map((m, index) => {
                   const active = tagsActiveSet.has(m.id)
                   const contextActive = activeContextTagId === m.id
                   const n = tagCounts?.[m.id] ?? 0
+                  const isDragging = drag?.id === m.id
+                  const dropBefore = drag != null && !isDragging && drag.gapIndex === index
+                  const dropAfter =
+                    drag != null && !isDragging && drag.gapIndex >= tags.length && index === tags.length - 1
                   const cls = [
                     styles.item,
                     styles.tagItem,
@@ -318,7 +394,21 @@ export function FilterPill({
                       }}
                       aria-pressed={active}
                       data-tag-id={m.id}
+                      data-dragging={isDragging ? 'true' : undefined}
+                      data-drop-before={dropBefore ? 'true' : undefined}
+                      data-drop-after={dropAfter ? 'true' : undefined}
+                      style={isDragging ? { transform: `translateY(${drag.offsetY}px)`, position: 'relative', zIndex: 3 } : undefined}
                     >
+                      {onReorder && (
+                        <span
+                          className={styles.grip}
+                          aria-hidden="true"
+                          onPointerDown={(e): void => startTagDrag(m.id, e)}
+                          onClick={(e): void => e.stopPropagation()}
+                        >
+                          ⠿
+                        </span>
+                      )}
                       <span className={styles.tagDot} data-active={active ? 'true' : 'false'} aria-hidden="true" />
                       <span className={styles.itemLabel}>{m.name}</span>
                       <span

@@ -94,7 +94,7 @@ export function BoardRoot() {
     reload,
     persistLinkStatus,
   } = useBoardData()
-  const { tags, reload: reloadTags, remove: removeTag, rename: renameTag } = useTags()
+  const { tags, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags } = useTags()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
@@ -1595,6 +1595,7 @@ export function BoardRoot() {
           tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
           onTagContextMenu={openTagContextMenu}
           activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? tagRenameTarget?.tagId ?? null}
+          onReorder={(orderedIds): void => { void reorderTags(orderedIds) }}
         />
       </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
