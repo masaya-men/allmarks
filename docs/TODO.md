@@ -28,7 +28,14 @@
 2. **③ 並び替えを直接ドラッグに** (掴み手 ⠿ 全廃): 行/チップを直接 press → 6px 動かしたらドラッグ、ちょん押しはクリック(絞り込み/arm)維持。端で自動スクロール(フィルター↕ / triage↔、スクロール補正で掴んだ要素がポインタに追従)。共通フック [lib/board/use-drag-reorder.ts] + 純粋ヒットテスト [lib/board/drag-reorder-geometry.ts]。**🐛 triage 右方向バグを systematic-debugging で根治**: gap 判定が掴んだ要素自身の(平行移動した)矩形を含んでいたため高index方向が no-op だった → 掴んだ要素を除外(memory `reference_drag_reorder_exclude_dragged_hittest`)。フィルター縦の下方向も同根バグだったので一緒に解消。
 3. **④ デフォルト名前順 + 昇順降順トグル + 手動モード**: 既定はアルファベット順(日本語あいうえお順、locale-aware)。新タグは自動で正しい位置。フィルターの TAGS ヘッダー横に「A→Z / Z→A」トグル(自動時は緑)。手で1回ドラッグすると手動モード(A↕Z)に切替・以後その順を保持・新タグ末尾。設定は独自キー `tag-order-mode` に永続化(BoardConfig と分離)。[lib/board/tag-order.ts] + [lib/storage/tag-order-mode.ts] + useTags 改修。
 
-**🔴 user 本番確認待ち** ([CURRENT_GOAL.md](./CURRENT_GOAL.md) に確認シート): 3 機能の体感 + 微調整余地(自動スクロール速度 / ドラッグ閾値 6px / トグル置き場所)。
+**追加 ship (= 同 session 後半、 本番反映済)**:
+
+4. **TITLE (背景タイポ) トグル**: TUNE 左隣に `●│TITLE` (LED)。板の大きな背景文字 (AllMarks / フィルター名) を表示/非表示、`BoardConfig.bgTypoEnabled` に永続化。新規 `ChromeLedToggle` (汎用 LED トグル)。
+5. **共有がタイポ追従**: 共有プレビュー (ShareMirror) + OG 画像 (capture-mirror) に背景タイポ描画 (元から欠けていた = §未対応バグ (b) 解消)。TITLE OFF なら共有にも出さない。
+6. **TITLE 出現エフェクト**: ON でカード出現と同じ CRT ブートアップ (`lib/animation/tag-entry`) を wordmark に。テーマ駆動。
+7. **🔴 安定化**: 「ON なのにタイトルが消える」不安定バグを根治。可視性をアニメ (`fill:forwards`+`onfinish`) に依存させていた競合が原因 → **可視性は `enabled` の純粋関数 (マウント=表示)**、出現は mount 1 回の飾り (`fill:'none'`) に作り直し。memory `feedback_visibility_never_from_animation`。OFF は確実性優先で即時非表示 (退場演出は次回 正式 enter/exit で任意)。
+
+**🔴 user 本番確認待ち** ([CURRENT_GOAL.md](./CURRENT_GOAL.md) に確認シート): ②③④ + TITLE トグル/エフェクトの体感 + 微調整余地(自動スクロール速度 / ドラッグ閾値 6px / トグル置き場所 / 出現エフェクトの強さ)。
 
 **プロセスメモ**: wrangler の git commit message 由来の reject 回避に `--commit-message` で ASCII 上書き。git commit -m のメッセージ本文にバッククォートを使うと bash がコマンド展開して 1 語落ちる(今回 `order` が消えた、無害)→ 以後使わない。
 
