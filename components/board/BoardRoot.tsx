@@ -67,6 +67,14 @@ import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import styles from './BoardRoot.module.css'
 
+// Horizontal room past the rightmost card so the user can scroll a little
+// further right. Vertical bottom room is computed per-render from the viewport
+// height (see contentBounds); the fraction below stops the last card around
+// screen-center instead of letting it scroll off the top. Tune up (0.7–0.85)
+// to allow scrolling until the last card is cut off near the top edge.
+const SCROLL_OVERFLOW_MARGIN_X = 600
+const BOTTOM_OVERSCROLL_FRACTION = 0.5
+
 export function BoardRoot() {
   const {
     items,
@@ -503,6 +511,18 @@ export function BoardRoot() {
     return ids
   }, [filteredItems, activeFilter])
 
+  // Lightbox left/right (chevron / wheel / meter) navigation scope. With a tag
+  // filter active the board keeps the non-matching cards MOUNTED (for the CRT
+  // shutdown animation) but hides them from the masonry, so `filteredItems`
+  // still contains them. The Lightbox must step through ONLY the cards the user
+  // actually sees — the matched set — otherwise nav walks into tagged-out cards
+  // that aren't on the board (the reported bug). No tag filter → identical to
+  // filteredItems.
+  const lightboxNavItems = useMemo(() => {
+    if (matchedBookmarkIds == null) return filteredItems
+    return filteredItems.filter((it) => matchedBookmarkIds.has(it.bookmarkId))
+  }, [filteredItems, matchedBookmarkIds])
+
   const themeMeta = getThemeMeta(DEFAULT_THEME_ID)
 
   // Cards span the full width of the inner dark canvas with a destefanis-
@@ -541,8 +561,9 @@ export function BoardRoot() {
   // BOARD_TOP_PAD_PX gives the board breathing room at the top so the first
   // row does not collide with the toolbar pill; added to the total so scroll
   // range still reaches cards after the shift in the cards wrapper transform.
-  // SCROLL_OVERFLOW_MARGIN adds room below the last card so a user can scroll
-  // further down.
+  // The bottom room is capped to a fraction of the visible board height (see
+  // module-level constants) so the deepest card stops around screen-center
+  // rather than scrolling off the top into empty background. (user request, s92)
   const contentBounds = useMemo(() => {
     let maxRight = 0
     let maxBottom = 0
@@ -554,15 +575,15 @@ export function BoardRoot() {
       if (right > maxRight) maxRight = right
       if (bottom > maxBottom) maxBottom = bottom
     }
-    const SCROLL_OVERFLOW_MARGIN = 600
+    const bottomOverscroll = Math.round(viewport.h * BOTTOM_OVERSCROLL_FRACTION)
     return {
-      width: Math.max(layout.totalWidth, maxRight + SCROLL_OVERFLOW_MARGIN),
+      width: Math.max(layout.totalWidth, maxRight + SCROLL_OVERFLOW_MARGIN_X),
       height: Math.max(
         layout.totalHeight + BOARD_TOP_PAD_PX,
-        maxBottom + BOARD_TOP_PAD_PX + SCROLL_OVERFLOW_MARGIN,
+        maxBottom + BOARD_TOP_PAD_PX + bottomOverscroll,
       ),
     }
-  }, [filteredItems, layout.positions, layout.totalWidth, layout.totalHeight])
+  }, [filteredItems, layout.positions, layout.totalWidth, layout.totalHeight, viewport.h])
 
   const handleScroll = useCallback(
     (dx: number, dy: number): void => {
@@ -999,34 +1020,34 @@ export function BoardRoot() {
     setLightboxOriginRect(null)
   }, [])
 
-  // Nav scope = filteredItems (what's currently visible on canvas).
-  // Items found only in `items` (e.g. archived, filtered-out) are not
-  // nav-reachable from the lightbox — that matches the user's mental
-  // model: "I'm browsing what I see".
+  // Nav scope = lightboxNavItems (what's currently visible on canvas, i.e.
+  // the matched set when a tag filter is active). Items not on the board
+  // (archived, filtered-out, tagged-out) are not nav-reachable from the
+  // lightbox — that matches the user's mental model: "I'm browsing what I see".
   const lightboxIndex = useMemo(
-    () => filteredItems.findIndex((it) => it.bookmarkId === lightboxItemId),
-    [filteredItems, lightboxItemId],
+    () => lightboxNavItems.findIndex((it) => it.bookmarkId === lightboxItemId),
+    [lightboxNavItems, lightboxItemId],
   )
-  const lightboxItem = lightboxIndex >= 0 ? filteredItems[lightboxIndex] : null
+  const lightboxItem = lightboxIndex >= 0 ? lightboxNavItems[lightboxIndex] : null
 
   const handleLightboxNav = useCallback((dir: -1 | 1): void => {
-    if (filteredItems.length === 0 || lightboxIndex < 0) return
-    const next = ((lightboxIndex + dir) % filteredItems.length + filteredItems.length) % filteredItems.length
-    const nextId = filteredItems[next]?.bookmarkId ?? null
+    if (lightboxNavItems.length === 0 || lightboxIndex < 0) return
+    const next = ((lightboxIndex + dir) % lightboxNavItems.length + lightboxNavItems.length) % lightboxNavItems.length
+    const nextId = lightboxNavItems[next]?.bookmarkId ?? null
     setLightboxItemId(nextId)
     if (nextId) revalidateOnNav(nextId)
     // Source id and origin rect are NOT touched here — close always
     // returns to the originally clicked card regardless of how many
     // chevron-navs the user performed in between (B-#11).
-  }, [filteredItems, lightboxIndex, revalidateOnNav])
+  }, [lightboxNavItems, lightboxIndex, revalidateOnNav])
 
   const handleLightboxJump = useCallback((index: number): void => {
-    if (index < 0 || index >= filteredItems.length) return
-    const nextId = filteredItems[index]?.bookmarkId ?? null
+    if (index < 0 || index >= lightboxNavItems.length) return
+    const nextId = lightboxNavItems[index]?.bookmarkId ?? null
     setLightboxItemId(nextId)
     if (nextId) revalidateOnIntent(nextId)
     // Source id / origin rect preserved — see handleLightboxNav (B-#11).
-  }, [filteredItems, revalidateOnIntent])
+  }, [lightboxNavItems, revalidateOnIntent])
 
   const handleDropOrder = useCallback(
     (orderedBookmarkIds: readonly string[]): void => {
@@ -1499,7 +1520,7 @@ export function BoardRoot() {
   const meterN2 = isLightboxMode ? lightboxIndex + 1 : visibleRange.end
   const meterScrollableHeight = Math.max(0, contentBounds.height - viewport.h)
   const meterSwellFraction = isLightboxMode
-    ? (filteredItems.length > 1 ? lightboxIndex / (filteredItems.length - 1) : 0)
+    ? (lightboxNavItems.length > 1 ? lightboxIndex / (lightboxNavItems.length - 1) : 0)
     : (meterScrollableHeight > 0 ? viewport.y / meterScrollableHeight : 0)
 
   // Parent-side scrub translator: ScrollMeter sends a 0..1 fraction at most
@@ -1507,14 +1528,14 @@ export function BoardRoot() {
   // in board mode, jump-to-card in lightbox mode).
   const handleMeterScrub = useCallback((fraction: number): void => {
     if (isLightboxMode) {
-      const lastIdx = Math.max(0, filteredItems.length - 1)
+      const lastIdx = Math.max(0, lightboxNavItems.length - 1)
       const idx = Math.max(0, Math.min(lastIdx, Math.round(fraction * lastIdx)))
       handleLightboxJump(idx)
     } else {
       const y = Math.max(0, fraction * meterScrollableHeight)
       handleScrollMeterJump(y)
     }
-  }, [isLightboxMode, filteredItems.length, handleLightboxJump, handleScrollMeterJump, meterScrollableHeight])
+  }, [isLightboxMode, lightboxNavItems.length, handleLightboxJump, handleScrollMeterJump, meterScrollableHeight])
 
   return (
     <div className={styles.outerFrame}>
@@ -1738,7 +1759,7 @@ export function BoardRoot() {
           onClose={handleLightboxClose}
           nav={lightboxItem ? {
             currentIndex: lightboxIndex,
-            total: filteredItems.length,
+            total: lightboxNavItems.length,
             onNav: handleLightboxNav,
             onJump: handleLightboxJump,
           } : undefined}

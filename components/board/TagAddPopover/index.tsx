@@ -19,11 +19,21 @@ export interface TagAddPopoverProps {
   suggestedEntries: readonly SuggestionEntry[]
   onAddExisting: (tagId: string) => void
   onAddNew: (name: string) => void
+  /** Request a close. The parent should start the exit animation (set
+   *  `closing`); the popover stays mounted until its exit transition ends,
+   *  then fires `onExited`. Esc / click-outside / add-new all route here. */
   onClose: () => void
+  /** When true, the popover plays its exit animation. Optional so existing
+   *  unit tests can mount the popover without driving the open/close
+   *  lifecycle. Defaults to false (= visible / playing the enter animation). */
+  closing?: boolean
+  /** Fired once the exit animation finishes so the parent can unmount. */
+  onExited?: () => void
 }
 
 export function TagAddPopover({
   allTags, currentTagIds, suggestedEntries, onAddExisting, onAddNew, onClose,
+  closing = false, onExited,
 }: TagAddPopoverProps): JSX.Element {
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -58,6 +68,24 @@ export function TagAddPopover({
     return () => document.removeEventListener('pointerdown', onPointerDownOutside)
   }, [onClose])
 
+  // Reduced-motion users get no exit animation, so onAnimationEnd never
+  // fires — unmount immediately when a close is requested.
+  useEffect(() => {
+    if (!closing) return
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduce) onExited?.()
+  }, [closing, onExited])
+
+  // The popover keyframes (enter on mount, exit while [data-closing]) fire
+  // animationend on the root. Only the EXIT end (closing === true) should
+  // unmount; the enter end runs with closing === false and is ignored.
+  function handleAnimationEnd(e: React.AnimationEvent<HTMLDivElement>): void {
+    if (e.target !== popoverRef.current) return
+    if (closing) onExited?.()
+  }
+
   function handleEnter(e: React.KeyboardEvent<HTMLInputElement>): void {
     if (e.key !== 'Enter') return
     const value = input.trim()
@@ -81,6 +109,11 @@ export function TagAddPopover({
         type="button"
         className={styles.chip}
         data-has={has ? 'true' : 'false'}
+        // Block focus-on-mouse-click so the chip doesn't keep a focus ring that
+        // would light up the moment a board keyboard shortcut flips the page
+        // into keyboard modality (same fix as the triage tag chips). Tab focus
+        // is untouched.
+        onMouseDown={(e): void => e.preventDefault()}
         onClick={() => onAddExisting(tag.id)}
       >
         {has ? '✓ ' : ''}{tag.name}
@@ -89,7 +122,13 @@ export function TagAddPopover({
   }
 
   return (
-    <div ref={popoverRef} className={styles.popover} role="dialog">
+    <div
+      ref={popoverRef}
+      className={styles.popover}
+      role="dialog"
+      data-closing={closing ? 'true' : undefined}
+      onAnimationEnd={handleAnimationEnd}
+    >
       {suggestedEntries.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>SUGGESTED</div>
@@ -105,6 +144,7 @@ export function TagAddPopover({
                   key={`new-${entry.name}`}
                   type="button"
                   className={styles.chipNew}
+                  onMouseDown={(e): void => e.preventDefault()}
                   onClick={() => onAddNew(entry.name)}
                 >
                   + {entry.name}

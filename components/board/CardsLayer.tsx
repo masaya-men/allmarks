@@ -48,6 +48,11 @@ import { pickCard } from './cards'
  *  this, so its knob + button stay comfortably operable on tiny cards. */
 const MIN_CONTROL_BAR_WIDTH_PX = PRESETS.find((p) => p.id === 'dense')?.w ?? 207.8
 
+/** Grace period after the cursor leaves the + TAG button / its popover before
+ *  the popover auto-closes. Matches the filter / TUNE drawer (LEAVE_GRACE_MS)
+ *  so all hover-dismiss chrome feels the same. */
+const POPOVER_LEAVE_GRACE_MS = 700
+
 /** Visibility-pool cap: high so the pool surfaces EVERY in-view video as a
  *  candidate. The rotating spotlight (below) is what actually bounds how many
  *  play at once. */
@@ -363,9 +368,52 @@ export function CardsLayer({
     })
   }, [entryAnimCycle])
   // Which card currently has its add-tag popover open. Null = none.
-  // Toggled by the + TAG corner button. Closed by Esc (handled inside
-  // TagAddPopover) or by clicking + TAG again on the same card.
+  // Toggled by the + TAG corner button. Closed by Esc / click-outside (both
+  // inside TagAddPopover), by clicking + TAG again, or by the cursor leaving
+  // the button + popover hover zone for POPOVER_LEAVE_GRACE_MS.
   const [popoverOpenFor, setPopoverOpenFor] = useState<string | null>(null)
+  // True while the open popover is playing its exit animation. The popover
+  // stays mounted (so the animation can run) until it reports onExited, which
+  // clears popoverOpenFor. Single flag is fine: only one popover is open.
+  const [popoverClosing, setPopoverClosing] = useState(false)
+  const popoverLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const clearPopoverTimer = useCallback((): void => {
+    if (popoverLeaveTimer.current) {
+      clearTimeout(popoverLeaveTimer.current)
+      popoverLeaveTimer.current = null
+    }
+  }, [])
+  // Cursor entered the button or popover — cancel any pending close and undo
+  // an in-flight exit so moving between the trigger and the popover (or back
+  // onto a closing popover) keeps it open.
+  const cancelPopoverClose = useCallback((): void => {
+    clearPopoverTimer()
+    setPopoverClosing((c) => (c ? false : c))
+  }, [clearPopoverTimer])
+  // Cursor left the hover zone — close after the grace period.
+  const schedulePopoverClose = useCallback((): void => {
+    clearPopoverTimer()
+    popoverLeaveTimer.current = setTimeout((): void => {
+      popoverLeaveTimer.current = null
+      setPopoverClosing(true)
+    }, POPOVER_LEAVE_GRACE_MS)
+  }, [clearPopoverTimer])
+  // Start the exit animation now (Esc / click-outside / + TAG re-click / add).
+  const beginPopoverClose = useCallback((): void => {
+    clearPopoverTimer()
+    setPopoverClosing(true)
+  }, [clearPopoverTimer])
+  // Exit animation finished — actually unmount.
+  const finishPopoverClose = useCallback((): void => {
+    setPopoverOpenFor(null)
+    setPopoverClosing(false)
+  }, [])
+  const openPopoverFor = useCallback((id: string): void => {
+    clearPopoverTimer()
+    setPopoverClosing(false)
+    setPopoverOpenFor(id)
+  }, [clearPopoverTimer])
+  useEffect(() => clearPopoverTimer, [clearPopoverTimer])
   // Per-render lookup so the per-card TagIndicatorStrip can resolve
   // bookmark.tags[] (ids) into the TagRecord shape it needs in O(1).
   const tagsById = useMemo<ReadonlyMap<string, TagRecord>>(
@@ -887,18 +935,21 @@ export function CardsLayer({
               width: `${p.w}px`,
               height: `${p.h}px`,
               pointerEvents: sourceCardId === it.bookmarkId || taggedOut ? 'none' : 'auto',
-              // Drag lifts highest (1000). The audio-active card (and thus its
-              // attached control bar) floats above sibling cards at 500 so the
-              // bar is never occluded by a later-painted neighbour. Idle cards
-              // stack by DOM order (undefined).
+              // Drag lifts highest (1000). A card with its add-tag popover open
+              // floats at 900 so the popover (which extends past the card box)
+              // is never occluded by a later-painted neighbour. The audio-active
+              // card (and thus its attached control bar) floats at 500. Idle
+              // cards stack by DOM order (undefined).
               zIndex:
                 dragState?.bookmarkId === it.bookmarkId
                   ? 1000
-                  : audioActiveId === it.bookmarkId || barMount?.id === it.bookmarkId
-                    ? 500
-                    : hoveredBookmarkId === it.bookmarkId
-                      ? 100
-                      : undefined,
+                  : popoverOpenFor === it.bookmarkId
+                    ? 900
+                    : audioActiveId === it.bookmarkId || barMount?.id === it.bookmarkId
+                      ? 500
+                      : hoveredBookmarkId === it.bookmarkId
+                        ? 100
+                        : undefined,
               opacity: newlyAddedIds.has(it.bookmarkId) ? 0 : 1,
               visibility: sourceCardId === it.bookmarkId ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
@@ -1103,9 +1154,12 @@ export function CardsLayer({
                   aria-label="Add tag"
                   onPointerDown={(e: PointerEvent<HTMLButtonElement>): void => e.stopPropagation()}
                   onMouseDown={(e): void => e.stopPropagation()}
+                  onMouseEnter={cancelPopoverClose}
+                  onMouseLeave={schedulePopoverClose}
                   onClick={(e): void => {
                     e.stopPropagation()
-                    setPopoverOpenFor((cur) => (cur === it.bookmarkId ? null : it.bookmarkId))
+                    if (popoverOpenFor === it.bookmarkId) beginPopoverClose()
+                    else openPopoverFor(it.bookmarkId)
                   }}
                   style={{
                     position: 'absolute',
@@ -1140,6 +1194,8 @@ export function CardsLayer({
                   <div
                     onPointerDown={(e: PointerEvent<HTMLDivElement>): void => e.stopPropagation()}
                     onMouseDown={(e): void => e.stopPropagation()}
+                    onMouseEnter={cancelPopoverClose}
+                    onMouseLeave={schedulePopoverClose}
                     style={{
                       position: 'absolute',
                       top: 36,
@@ -1151,12 +1207,14 @@ export function CardsLayer({
                       allTags={allTags}
                       currentTagIds={it.tags}
                       suggestedEntries={computeSuggestedEntries(it, allTags)}
+                      closing={popoverClosing}
+                      onExited={finishPopoverClose}
                       onAddExisting={(tagId): void => { void onTagToggle(it.bookmarkId, tagId) }}
                       onAddNew={(name): void => {
                         void onTagCreate(it.bookmarkId, name)
-                        setPopoverOpenFor(null)
+                        beginPopoverClose()
                       }}
-                      onClose={(): void => setPopoverOpenFor(null)}
+                      onClose={beginPopoverClose}
                     />
                   </div>
                 )}

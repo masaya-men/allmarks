@@ -2,6 +2,7 @@
 
 import { type ReactElement } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
+import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import styles from './AmbientBackdrop.module.css'
 
 export type SwipeDecision = 'yes' | 'no'
@@ -20,7 +21,12 @@ export function AmbientBackdrop({ item, exitDecision, role = 'current', enterDir
   role?: 'current' | 'incoming'
   enterDirection?: 'from-right' | 'from-left'
 }): ReactElement {
-  if (!item?.thumbnail) {
+  // Backdrop image = the card's thumbnail, or (for text-only cards) the same
+  // deterministic AI placeholder the card itself shows — so the ambient blur
+  // behind a text card matches its image instead of falling back to a flat
+  // panel. Null only when no placeholders are registered → flat fallback.
+  const bgUrl = item?.thumbnail || (item ? pickPlaceholderImage(item.url)?.url ?? null : null)
+  if (!bgUrl) {
     return <div className={styles.fallback} aria-hidden="true" />
   }
   const animClass = role === 'incoming'
@@ -31,7 +37,7 @@ export function AmbientBackdrop({ item, exitDecision, role = 'current', enterDir
   return (
     <div
       className={`${styles.layer} ${animClass}`.trim()}
-      style={{ backgroundImage: `url("${item.thumbnail.replace(/"/g, '%22')}")` }}
+      style={{ backgroundImage: `url("${bgUrl.replace(/"/g, '%22')}")` }}
       aria-hidden="true"
     />
   )

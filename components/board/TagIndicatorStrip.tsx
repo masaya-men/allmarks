@@ -105,7 +105,11 @@ export function TagIndicatorStrip({
             data-testid={`tag-pill-${tag.id}`}
             data-tag-id={tag.id}
             onPointerDown={stopDragSeed}
-            onMouseDown={(e): void => e.stopPropagation()}
+            // stopPropagation keeps the click off the card's reorder-drag seed;
+            // preventDefault blocks focus-on-mouse-click so the pill doesn't
+            // keep a focus ring that a later board keyboard shortcut would light
+            // up (same fix as the triage tag chips). Tab focus is untouched.
+            onMouseDown={(e): void => { e.stopPropagation(); e.preventDefault() }}
             onClick={(e): void => {
               e.stopPropagation()
               onTagClick(tag.id)

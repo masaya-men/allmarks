@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactElement } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
+import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import type { SwipeDecision } from './AmbientBackdrop'
 import styles from './TriageCard.module.css'
 
@@ -27,6 +28,12 @@ export function TriageCard({ item, exitDecision, role = 'current', enterDirectio
     : ''
 
   const hasThumb = Boolean(item.thumbnail)
+  // Text-only cards (no thumbnail) reuse the board's deterministic AI
+  // placeholder image (same URL-hash pick → same image as on the board /
+  // share mirror) instead of a flat black panel, so the manage screen matches
+  // the board. Null only if no placeholders are registered → black panel
+  // fallback below.
+  const placeholder = hasThumb ? null : pickPlaceholderImage(item.url)
   const cardStyle = { ['--item-aspect' as string]: String(item.aspectRatio || 1) } as CSSProperties
   return (
     <div className={`${styles.card} ${animClass}`.trim()} style={cardStyle} data-testid="triage-card">
@@ -34,6 +41,11 @@ export function TriageCard({ item, exitDecision, role = 'current', enterDirectio
         <div
           className={styles.media}
           style={{ backgroundImage: `url("${item.thumbnail!.replace(/"/g, '%22')}")` }}
+        />
+      ) : placeholder ? (
+        <div
+          className={styles.media}
+          style={{ backgroundImage: `url("${placeholder.url}")` }}
         />
       ) : (
         <div className={styles.hostnamePanel}>{host || 'link'}</div>

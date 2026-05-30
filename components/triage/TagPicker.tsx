@@ -54,17 +54,22 @@ export function useTagPickerKeys({
  *  sees which chip the menu is acting on. */
 export function TopTagStrip({
   tags, armedTagIds, suggestedTagIds, onToggle, onCreate, onChipContextMenu, activeContextTagId,
+  showAddButton = true,
 }: {
   tags: ReadonlyArray<TagRecord>
   armedTagIds: ReadonlySet<string>
   suggestedTagIds?: ReadonlySet<string>
   onToggle: (tagId: string) => void
-  onCreate: (name: string) => void
+  onCreate?: (name: string) => void
   onChipContextMenu?: (
     e: ReactMouseEvent<HTMLButtonElement>,
     tagId: string,
   ) => void
   activeContextTagId?: string | null
+  /** When false, the inline "+ TAG" creator is NOT rendered inside the strip.
+   *  TriagePage renders it pinned outside the scroll region so it's always
+   *  visible; the default keeps the standalone behaviour for any other use. */
+  showAddButton?: boolean
 }): ReactElement {
   return (
     <div className={styles.tagStrip} data-testid="top-tag-strip">
@@ -83,6 +88,14 @@ export function TopTagStrip({
             key={tag.id}
             type="button"
             className={cls}
+            // Don't let a mouse click leave the chip focused: the triage screen
+            // is keyboard-shortcut driven (1-9 arm, arrows/space act on window),
+            // so a lingering mouse-focus lights up the :focus-visible ring the
+            // moment the next keystroke flips the page into keyboard modality —
+            // a redundant "square frame" on top of the armed green-glow state.
+            // preventDefault here blocks focus-on-click only; Tab focus (and its
+            // ring, for real keyboard navigation) is untouched.
+            onMouseDown={(e): void => e.preventDefault()}
             onClick={(): void => onToggle(tag.id)}
             onContextMenu={(e): void => {
               if (!onChipContextMenu) return
@@ -99,7 +112,7 @@ export function TopTagStrip({
           </button>
         )
       })}
-      <NewMoodInput onCreate={onCreate} />
+      {showAddButton && onCreate && <NewMoodInput onCreate={onCreate} />}
     </div>
   )
 }

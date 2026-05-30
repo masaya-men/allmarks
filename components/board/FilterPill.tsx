@@ -231,6 +231,10 @@ export function FilterPill({
       <button
         type="button"
         className={styles.pill}
+        // Block focus-on-mouse-click so the pill's :focus-visible ring doesn't
+        // light up when a board keyboard shortcut later flips the page into
+        // keyboard modality. Tab focus (and its ring) is untouched.
+        onMouseDown={(e): void => e.preventDefault()}
         onClick={() => {
           clearLeaveTimer()
           stickyRef.current = !stickyRef.current
@@ -250,6 +254,11 @@ export function FilterPill({
         data-testid="filter-pill-menu"
         data-open={open ? 'true' : 'false'}
         aria-hidden={!open}
+        // One handler covers every row: prevent focus-on-mouse-click so a
+        // clicked row doesn't keep a ring that a board keyboard shortcut would
+        // light up. No inputs live in this menu, so blanket preventDefault is
+        // safe; Tab focus into the rows still works.
+        onMouseDown={(e): void => e.preventDefault()}
       >
         <div className={styles.menuInner}>
           {/* ALL — pinned at the top, the default "everything" view. */}

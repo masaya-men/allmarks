@@ -1,13 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useBoardData } from '@/lib/storage/use-board-data'
 import { useTags } from '@/lib/storage/use-tags'
 import { t } from '@/lib/i18n/t'
 import { TriageCard } from './TriageCard'
 import { TopTagStrip, useTagPickerKeys } from './TagPicker'
+import { NewMoodInput } from './NewMoodInput'
 import { AmbientBackdrop, type SwipeDecision } from './AmbientBackdrop'
+import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import { TagContextMenu } from './TagContextMenu'
 import { TagDeleteConfirmDialog } from './TagDeleteConfirmDialog'
 import styles from './TriagePage.module.css'
@@ -89,6 +91,87 @@ export function TriagePage(): ReactElement {
      */
   const incoming = (exitDecision && queue[index + 1]) ? queue[index + 1] : null
   const incomingDirection: 'from-right' | 'from-left' = exitDecision === 'yes' ? 'from-left' : 'from-right'
+
+  // Prefetch the resolved image (thumbnail, or the same placeholder the card /
+  // backdrop show for text-only cards) of the cards just ahead — and one
+  // behind for Z-undo — so they're already in the browser cache when they
+  // slide in. Without this the next card enters black and the image pops in a
+  // beat later, breaking the smooth left/right swipe feel. Each URL is fetched
+  // at most once per session (placeholders are only 4 URLs, so they warm
+  // immediately; thumbnails are the real win).
+  const prefetchedRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    for (const off of [1, 2, 3, 4, -1]) {
+      const it = queue[index + off]
+      if (!it) continue
+      const url = it.thumbnail || pickPlaceholderImage(it.url)?.url
+      if (!url || prefetchedRef.current.has(url)) continue
+      prefetchedRef.current.add(url)
+      const img = new Image()
+      img.decoding = 'async'
+      img.src = url
+    }
+  }, [index, queue])
+
+  // Tag strip overflow affordance. The strip is a single editorial row in a
+  // fixed ~52px band; with many tags it scrolls horizontally. Raw scrollbar is
+  // hidden (house rule), so a left/right fade mask signals "more tags ←/→" and
+  // the wheel handler below lets a normal mouse wheel page through them — so
+  // the row never looks cut off no matter how many tags exist.
+  const tagStripRef = useRef<HTMLDivElement>(null)
+  const [tagStripEdge, setTagStripEdge] = useState<'none' | 'start' | 'middle' | 'end'>('none')
+  const updateTagStripEdge = useCallback((): void => {
+    const el = tagStripRef.current
+    if (!el) { setTagStripEdge('none'); return }
+    const canScroll = el.scrollWidth > el.clientWidth + 1
+    if (!canScroll) { setTagStripEdge('none'); return }
+    const atStart = el.scrollLeft <= 1
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1
+    setTagStripEdge(atStart ? 'start' : atEnd ? 'end' : 'middle')
+  }, [])
+  useEffect(() => {
+    // Why this is more than a one-shot measure: on first mount (and right
+    // after tags load) the chip row hasn't been laid out yet, so scrollWidth
+    // still equals clientWidth and the strip wrongly reads as "fits, no fade".
+    // Two fixes together:
+    //   1. Re-measure on a few timers (rAF + 60ms + 200ms) so at least one
+    //      runs after fonts/layout settle and the overflow becomes real.
+    //   2. Observe the INNER tag row, not just the scroll viewport. The
+    //      viewport is flex:1 so its own box never changes when tags grow —
+    //      observing it alone never re-fires. The inner row's width tracks the
+    //      actual tag content, so adding/loading tags triggers a re-measure.
+    updateTagStripEdge()
+    const raf = requestAnimationFrame(updateTagStripEdge)
+    const t1 = setTimeout(updateTagStripEdge, 60)
+    const t2 = setTimeout(updateTagStripEdge, 200)
+    const el = tagStripRef.current
+    if (!el) {
+      return (): void => {
+        cancelAnimationFrame(raf)
+        clearTimeout(t1)
+        clearTimeout(t2)
+      }
+    }
+    const ro = new ResizeObserver(updateTagStripEdge)
+    ro.observe(el)
+    const inner = el.firstElementChild
+    if (inner) ro.observe(inner)
+    return (): void => {
+      cancelAnimationFrame(raf)
+      clearTimeout(t1)
+      clearTimeout(t2)
+      ro.disconnect()
+    }
+  }, [tags, updateTagStripEdge])
+  const handleTagStripWheel = useCallback((e: ReactWheelEvent<HTMLDivElement>): void => {
+    const el = tagStripRef.current
+    if (!el || el.scrollWidth <= el.clientWidth) return
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+    if (delta === 0) return
+    el.scrollLeft += delta
+    updateTagStripEdge()
+  }, [updateTagStripEdge])
 
   // Pre-arm the chip strip with the current card's existing tags whenever
   // the cursor moves into review mode (= 'all' or single 'tag:X'). The
@@ -418,14 +501,28 @@ export function TriagePage(): ReactElement {
       </h1>
       <span className={styles.outerProgress}>{progressText}</span>
       <div className={styles.outerTagStrip}>
-        <TopTagStrip
-          tags={tags}
-          armedTagIds={armedTagIds}
-          onToggle={toggleArmed}
-          onCreate={handleCreateTagAddArmed}
-          onChipContextMenu={openChipContextMenu}
-          activeContextTagId={contextMenu?.tagId ?? deleteConfirm?.tagId ?? null}
-        />
+        <div
+          ref={tagStripRef}
+          className={styles.tagScrollRegion}
+          data-scroll-edge={tagStripEdge}
+          onScroll={updateTagStripEdge}
+          onWheel={handleTagStripWheel}
+        >
+          <TopTagStrip
+            tags={tags}
+            armedTagIds={armedTagIds}
+            onToggle={toggleArmed}
+            onChipContextMenu={openChipContextMenu}
+            activeContextTagId={contextMenu?.tagId ?? deleteConfirm?.tagId ?? null}
+            showAddButton={false}
+          />
+        </div>
+        {/* + TAG pinned to the right edge, outside the scroll region, so it's
+            always visible and never caught by the fade no matter how many
+            tags exist. */}
+        <div className={styles.addTagPinned}>
+          <NewMoodInput onCreate={handleCreateTagAddArmed} />
+        </div>
       </div>
       <button type="button" className={styles.outerBackBtn} onClick={exit}>ESC</button>
 
@@ -474,6 +571,9 @@ export function TriagePage(): ReactElement {
         <button
           type="button"
           className={`${styles.swipeHint} ${styles.noHint}`}
+          // Block focus-on-click so the button doesn't keep the focus ring that
+          // would light up on the next keyboard shortcut (see TagPicker chip).
+          onMouseDown={(e): void => e.preventDefault()}
           onClick={handleNo}
           aria-label="No, skip this card"
           data-testid="triage-no-button"
@@ -484,6 +584,7 @@ export function TriagePage(): ReactElement {
         <button
           type="button"
           className={`${styles.swipeHint} ${styles.yesHint}`}
+          onMouseDown={(e): void => e.preventDefault()}
           onClick={handleYes}
           aria-label="Yes, apply armed tags"
           data-testid="triage-yes-button"

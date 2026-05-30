@@ -20,7 +20,25 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 91 — master push 同期 + ScrollMeter 下帯移設を試作→revert + 右端アイデア記録)
+### 直近の状態 (セッション 92 — board / triage の小改善を多数 ship)
+
+**ship 済 (= 本番反映済、 全て tsc 0 / 925 tests pass)**:
+
+1. **board スクロール下限を制限**: 最後のカードの下の余白を固定 600px → 「viewport 高さ × 0.5」 に。 一番下までスクロールしても最後のカードが画面中央で止まり、 背景だけの空白に入れない ([BoardRoot.tsx](../components/board/BoardRoot.tsx) `BOTTOM_OVERSCROLL_FRACTION`)。
+2. **カード +TAG ポップアップ改善**: マウス離脱で 0.7 秒 grace 後に閉じる + 開閉マイクロアニメ (top-left origin の scale+fade、 TUNE と同 easing) + ポップアップを持つカードを z-index 900 に上げ隣接カードに被らないように。
+3. **focus ring 四角枠の抑制**: triage のタグチップ + YES/NO + board のタグ chip/pill + FilterPill に `onMouseDown preventDefault`。 マウスクリックで focus が残らない (= 次のキー操作で :focus-visible 枠が出ない)、 Tab focus は維持。
+4. **Lightbox ナビがタグ絞り込みを尊重**: タグ filter 中、 左右/ホイール/メーター送りが「該当カードのみ」 を巡回 (旧 `filteredItems` 全件 → 新 `lightboxNavItems`)。 件数表示 N/M も該当数基準に。
+5. **triage テキストカードに placeholder 画像**: サムネ無しカードが黒背景 → board と同じ `pickPlaceholderImage` で 4 種画像表示 ([TriageCard.tsx](../components/triage/TriageCard.tsx))。
+6. **triage 背景 (AmbientBackdrop) も placeholder 画像**: テキストカードの背景ぼかしもカードと同じ画像で一致。
+7. **triage カード画像の先読み**: 次 4 枚 + 前 1 枚を `new Image()` でプリフェッチ、 スワイプ時の黒→パッ pop-in を解消。
+8. **triage タグ列 overflow 対応**: +TAG を右端固定 (スクロール外、 常に見える) + タグ列を狭めて中央ガラス幅 (左右 112px) に揃え + 強フェード (72px、 先がある側のみ) + ホイール横送り + **開いた瞬間からフェード表示** (内側行も ResizeObserver + rAF/60ms/200ms 多段測定で初回測定の取りこぼし解消、 Playwright 実機で edge='start' + mask 適用を確認)。
+9. **triage ヒント文を英語化**: `1-9 タグ ON/OFF · Z 取り消し` → `CLICK TO TOGGLE TAGS · Z TO UNDO` ([messages/ja.json](../messages/ja.json))。
+
+**未解決として TODO 追加**: 「スクロール中にカードの場所が入れ替わる問題」 (§未対応バグ、 真因未特定、 別 session)。
+
+**プロセス反省 (= 次 session で厳守)**: 途中、 ツール呼び出しの記法が壊れて編集が未適用なのに「ship した」 と誤報告 → user 指摘。 以後 **(a) 実機 (Playwright) で挙動を測ってから報告、 (b) ビルド成果物 + 本番チャンクに変更が入ったか確認してからデプロイ完了を宣言** する。 memory `feedback_verify_before_claiming` の再徹底。
+
+### 一つ前 (セッション 91 — master push 同期 + ScrollMeter 下帯移設を試作→revert + 右端アイデア記録)
 
 **確定 (= 本番反映済)**:
 - session 88-90 の 14 commits + 本 session の revert を **master push 済** (origin 同期完了)。
@@ -371,6 +389,7 @@
 
 - ~~**B-#23 Vimeo / SoundCloud Lightbox 再生未対応**~~ ✅ session 51 で完遂 (= 専用 Embed コンポーネント追加 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダーまで波及)
 - ~~**B-#22 長文 tweet Lightbox 末尾だけ表示 bug + 全文表示 enhancement**~~ ✅ session 52 で完遂 (= cleanTitle 過剰マッチ修正 + TextCard 透明グラス redesign + scroll + persistTitle backfill 開通 + font jump 解消、 9 file 変更 / 5 deploy / 19 unit test 追加)
+- **スクロール中にカードの場所が入れ替わる問題** (session 92 で再確認、 未解決) — 手動スクロール中に skyline masonry の bin-packing が再計算され、 カードの配置が動的に入れ替わって見えることがある。 viewport culling (画面内だけ render) と layout 再計算のタイミングが絡む疑い。 真因未特定、 別 session で着手
 - **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
 - **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)
 - **Task 12: 全件再 check 設定 UI** — viewport revalidation で日常運用は OK だが、 ユーザーが 「いま全件チェック」 を 1 クリックで kick できる設定パネル。 設定パネル自体が未実装なので別 spec 立ち上げ要
