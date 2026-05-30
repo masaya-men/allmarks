@@ -459,6 +459,38 @@
   font-size: 9px;
   letter-spacing: 0.14em;
 }
+.sectionHeaderRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Sort toggle — tiny editorial A→Z / Z→A switch sitting in the TAGS header.
+   Muted when in manual mode (invites "tap to sort"); brightens to the green
+   accent when an auto mode is active so the user sees the list is name-sorted.
+   Generous hit area despite the small glyph (house rule: 32px-ish targets). */
+.sortToggle {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  margin: -6px -4px;
+  padding: 6px 4px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.40);
+  cursor: pointer;
+  transition: color 120ms;
+}
+.sortToggle:hover { color: rgba(255, 255, 255, 0.85); }
+.sortToggle[data-mode='auto'] { color: rgba(40, 241, 0, 0.70); }
+.sortToggle[data-mode='auto']:hover { color: rgba(40, 241, 0, 0.95); }
+.sortToggle:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .item, .tagDot { transition: none; }

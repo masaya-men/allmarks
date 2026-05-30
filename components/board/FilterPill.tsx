@@ -11,6 +11,7 @@ import {
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import { useDragReorder } from '@/lib/board/use-drag-reorder'
+import type { TagOrderMode } from '@/lib/board/tag-order'
 import { InlineTagRenameInput } from './InlineTagRenameInput'
 import styles from './FilterPill.module.css'
 
@@ -44,6 +45,19 @@ type Props = {
   readonly onRenameSubmit?: (tagId: string, name: string) => void
   /** Abandon the inline rename (Esc / invalid blur). The parent just closes. */
   readonly onRenameCancel?: () => void
+  /** Current tag ordering mode (drives the A→Z / Z→A toggle label). */
+  readonly tagOrderMode?: TagOrderMode
+  /** Cycle the ordering mode (manual → A→Z → Z→A → A→Z …). When omitted, the
+   *  sort toggle is not rendered. */
+  readonly onCycleTagOrder?: () => void
+}
+
+/** Tiny editorial label for the sort toggle. manual prompts "sort"; an auto
+ *  mode shows the current direction. */
+function sortToggleLabel(mode: TagOrderMode | undefined): string {
+  if (mode === 'auto-asc') return 'A→Z'
+  if (mode === 'auto-desc') return 'Z→A'
+  return 'A↕Z'
 }
 
 /** Chrome label vocab — fixed English across all 15 languages
@@ -86,7 +100,7 @@ const LEAVE_GRACE_MS = 700
 
 export function FilterPill({
   value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId, onReorder,
-  editingTagId, onRenameSubmit, onRenameCancel,
+  editingTagId, onRenameSubmit, onRenameCancel, tagOrderMode, onCycleTagOrder,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   /* Sticky-open pin: a click on the pill latches the menu open so it stays
@@ -346,11 +360,28 @@ export function FilterPill({
             <>
               <div className={styles.sectionHeader}>
                 <span>TAGS</span>
-                {activeTagIds.length > 0 && (
-                  <span className={styles.sectionHeaderHint}>
-                    {activeTagIds.length} OF {tags.length} · OR
-                  </span>
-                )}
+                <span className={styles.sectionHeaderRight}>
+                  {activeTagIds.length > 0 && (
+                    <span className={styles.sectionHeaderHint}>
+                      {activeTagIds.length} OF {tags.length} · OR
+                    </span>
+                  )}
+                  {onCycleTagOrder && (
+                    <button
+                      type="button"
+                      className={styles.sortToggle}
+                      data-mode={tagOrderMode === 'manual' ? 'manual' : 'auto'}
+                      // Don't bubble to the menu's outside-click / row handlers;
+                      // just cycle the order and keep the dropdown open.
+                      onClick={(e): void => { e.stopPropagation(); onCycleTagOrder() }}
+                      title="Sort tags by name (A→Z / Z→A)"
+                      aria-label="Sort tags by name"
+                      data-testid="tag-sort-toggle"
+                    >
+                      {sortToggleLabel(tagOrderMode)}
+                    </button>
+                  )}
+                </span>
               </div>
               <div
                 ref={tagScrollRef}

@@ -21,6 +21,7 @@ import { createBackfillQueue } from '@/lib/board/backfill-queue'
 import { backfillTweetMeta } from '@/lib/board/tweet-backfill'
 import { fetchTikTokMeta } from '@/lib/embed/tiktok-meta'
 import { useTags } from '@/lib/storage/use-tags'
+import { nextTagOrderMode } from '@/lib/board/tag-order'
 import {
   BOARD_FILTER_ALL,
   boardFilterEquals,
@@ -93,7 +94,10 @@ export function BoardRoot() {
     reload,
     persistLinkStatus,
   } = useBoardData()
-  const { tags, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags } = useTags()
+  const {
+    tags, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
+    orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
+  } = useTags()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
@@ -1601,6 +1605,8 @@ export function BoardRoot() {
             setTagRenameTarget(null)
           }}
           onRenameCancel={(): void => setTagRenameTarget(null)}
+          tagOrderMode={tagOrderMode}
+          onCycleTagOrder={(): void => { void setTagOrderMode(nextTagOrderMode(tagOrderMode)) }}
         />
       </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
