@@ -6471,3 +6471,22 @@ user 発案「メーターを右端に出す」を [docs/private/IDEAS.md](priva
 - tsc 0 / vitest 925 pass / build 24 routes（B1 試作時）
 - commits: B1 移設 1 + revert 1 + doc。本番は **session 90 と同じ状態に復帰**（B1 は入っていない）。master push 済。
 - ドキュメント: TODO.md「現在の状態」更新、CURRENT_GOAL.md 上書き（session 92）、IDEAS.md §L 追加、memory 2 件更新。
+
+---
+
+## セッション 93 (2026-05-30) — タグ周り 4 機能を本番 ship + 次回 rework 方針確定
+
+ユーザーの「タグ名は小文字が良い」という質問から始まり、タグ周りを一気に整備。全て Playwright 実機検証 → コミット → 本番デプロイで区切りながら進行。
+
+**ship 済（本番 `booklage.pages.dev` 反映、tsc 0 / 942 tests pass）**:
+
+1. **タグ名 全小文字表示**: ユーザーが付けたタグ名だけ強制小文字、枠ラベル（ALL/TRASH/DEAD LINKS/セクション見出し/ボタン）は大文字維持。board 6 箇所（カードピル/triage チップ/フィルター行+折りたたみ/背景タイポ/+TAG ポップアップ）+ 共有 5 箇所。表示のみ（CSS text-transform、または該当枝だけ toLowerCase）で保存値は不変。背景タイポと折りたたみラベルはシステム名（AllMarks 等）と混在するので JS 側で「タグの枝だけ」小文字化。
+2. **共有のタグ小文字** + **🐛 共有がフィルター絞り込みを反映しないバグ修正**: 根本原因 = タグ絞り込み時 board は CRT シャットダウン演出のため非該当カードも mount し続ける設計で `filteredItems` が全件を返す（表示は `matchedBookmarkIds` オーバーレイで該当のみ再レイアウト）。共有の配線が `filteredItems`（全件）+ 全件 `layout` を見ていたため、絞り込んでも全カードを共有していた。共有を `lightboxNavItems`（該当のみ）に切替 + 該当カードを同パラメータで再計算した `shareLayout` を ShareMirror に渡す。ユーザーの「カードは上から詰まるので普通に見た目通りになるのでは」という指摘が正しく、特別なスクロール処理は不要だった。
+3. **タグ名リネーム**: 共通の右クリックメニュー（TagContextMenu）に「Rename」行を追加（`.row` を中立色に、Delete だけ `.rowDanger` 赤）。RenameTagDialog（editorial モーダル、現在名プリフィル、Enter 保存/Esc 取消、大小無視の重複ガード）。BoardRoot + TriagePage に配線、`useTags().rename` 使用。**→ session 94 でインライン編集に作り直す（ユーザー要望）**。
+4. **タグ並び替え**: `useTags().reorder` 新設 + 純関数 `computeReorder`（lib/board/reorder.ts、index 計算を単体テスト 9 件）。フィルターのドロップダウン（縦）+ triage（横）で掴み手（⠿）ドラッグ。**window pointer listener 方式**（setPointerCapture は Playwright/タッチで弾かれるため不使用）→ 本番でも実機検証でも確実に動く。持ち上げ + 緑の挿入ライン。**→ session 94 で掴み手廃止 + 直接ドラッグ + 自動スクロール + triage 右方向バグ修正に作り直す（ユーザー要望）**。
+
+**プロセス**: デプロイ中に Cloudflare の OAuth ログインが期限切れ（最初は「Max auth failures」一時ロック → 解除後「Invalid access token」）。`npx wrangler login`（ブラウザで Allow）で復旧して③④をデプロイ。デプロイ前の `whoami` 確認を習慣化。
+
+**ユーザーフィードバック（本番確認後）→ session 94 rework 確定**（詳細 CURRENT_GOAL.md）: ②インライン編集化 / ③掴み手廃止+直接ドラッグ+端で自動スクロール+triage 右方向バグ / ④デフォルト名前順（あいうえお含む）+追加時に自動で正しい位置+昇順降順ボタン+手動ドラッグ後は手動モード。
+
+**記録した別 backlog**: ページ名不一致（ボタン「MANAGE TAGS」↔ URL `/triage`）の整理タスク、共有ミラーの角丸・背景タイポ未再現、カードが左詰めされないことがある（TODO §未対応バグ）。

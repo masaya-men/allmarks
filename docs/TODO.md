@@ -20,7 +20,23 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 92 — board / triage の小改善を多数 ship)
+### 直近の状態 (セッション 93 — タグ周り 4 機能を本番 ship + 次回 rework 方針を確定)
+
+**ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 942 tests pass、 全て Playwright 実機検証済)**:
+
+1. **タグ名を全箇所で小文字表示**: ユーザーが付けたタグ名だけ強制小文字(枠ラベル ALL/TRASH/DEAD LINKS 等は大文字維持)。board 6 箇所 + 共有 5 箇所。表示のみ(CSS text-transform / 該当枝の toLowerCase)、保存値は不変。
+2. **共有まわり修正 2 件**: (a) 共有のタグ名も小文字、 (b) **🐛 共有がフィルター絞り込みを反映しないバグ修正** — タグ絞り込み時 board は演出のため全カードを保持(`filteredItems`=全件)+ 表示は `matchedBookmarkIds` で該当のみ再レイアウト、なのに共有が `filteredItems`(全件)を見ていた。共有を `lightboxNavItems`(該当のみ)+ 該当を再計算した `shareLayout` に切替 ([BoardRoot.tsx](../components/board/BoardRoot.tsx))。
+3. **タグ名リネーム**: 右クリックメニューに「Rename」追加 → [RenameTagDialog](../components/triage/RenameTagDialog.tsx)(モーダル)。重複ガード(大小無視)。**→ session 94 でインライン編集に作り直す予定**。
+4. **タグ並び替え**: フィルターのドロップダウン + triage で掴み手(⠿)ドラッグ。`computeReorder`([lib/board/reorder.ts](../lib/board/reorder.ts)) + `useTags().reorder` 新設。window pointer listener 方式(setPointerCapture 不使用)。**→ session 94 で掴み手廃止 + 直接ドラッグ + 自動スクロール + 右方向バグ修正に作り直す予定**。
+
+**🔴 user フィードバック (本番確認後) → session 94 で rework 確定** ([CURRENT_GOAL.md](./CURRENT_GOAL.md) に詳細):
+- ② リネーム = モーダル廃止 → **その場でインライン編集**
+- ③ 並び替え = 掴み手廃止 → **掴んで動かすだけ(threshold)** + **端で自動スクロール** + **triage 右方向バグ修正**
+- ④ **デフォルト名前順(あいうえお順含む)** + 追加時に自動で正しい位置 + **昇順/降順ボタン** + 手動ドラッグ後は手動モード
+
+**プロセスメモ**: デプロイ中に Cloudflare の OAuth ログインが期限切れ → `npx wrangler login`(ブラウザで Allow)で復旧。デプロイ前に `whoami` 確認。
+
+### 一つ前 (セッション 92 — board / triage の小改善を多数 ship)
 
 **ship 済 (= 本番反映済、 全て tsc 0 / 925 tests pass)**:
 
