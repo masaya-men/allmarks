@@ -117,9 +117,9 @@ export function BoardRoot() {
   // Background typography (the big wordmark / filter title behind the cards)
   // master switch. Persisted in BoardConfig; the share image follows it too.
   const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
-  // Bumped on each USER toggle so the typography animates only then (not when
-  // a saved "off" hydrates from config on load).
-  const [bgTypoToggleNonce, setBgTypoToggleNonce] = useState<number>(0)
+  // True once the user has toggled TITLE this session, so the boot-up effect
+  // plays on a user toggle but NOT on the initial page load / config hydration.
+  const [bgTypoUserToggled, setBgTypoUserToggled] = useState<boolean>(false)
   const [viewport, setViewport] = useState({ x: 0, y: 0, w: 1200, h: 800 })
   // Mirror viewport in a ref so the edge auto-scroll rAF tick (which fires
   // outside React's render cycle) can read the latest scroll position
@@ -1307,7 +1307,7 @@ export function BoardRoot() {
   }, [])
 
   const handleToggleBgTypo = useCallback((): void => {
-    setBgTypoToggleNonce((n) => n + 1)
+    setBgTypoUserToggled(true)
     setBgTypoEnabled((prev) => {
       const next = !prev
       void (async (): Promise<void> => {
@@ -1722,13 +1722,18 @@ export function BoardRoot() {
                 own stacking context via translate3d, and since the
                 typography host carries no explicit z-index, DOM order
                 alone keeps the cards above the typography. */}
-            <BoardBackgroundTypography
-              activeFilter={activeFilter}
-              tags={tags}
-              variant={bgTypoVariant}
-              enabled={bgTypoEnabled}
-              toggleNonce={bgTypoToggleNonce}
-            />
+            {/* Rendered ONLY when the title is on — being mounted == being
+                visible, period (the previous animation-driven visibility was
+                what made it flicker/vanish). playEntry plays the boot-up once
+                on a user toggle, never on initial load. */}
+            {bgTypoEnabled && (
+              <BoardBackgroundTypography
+                activeFilter={activeFilter}
+                tags={tags}
+                variant={bgTypoVariant}
+                playEntry={bgTypoUserToggled}
+              />
+            )}
             {/* Cards — full-canvas-width with destefanis half-gap padding.
                 Vertical transform adds BOARD_TOP_PAD_PX so the first row gets
                 breathing room below the canvas top edge / toolbar pill. */}
