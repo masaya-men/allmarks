@@ -8,6 +8,7 @@ describe('TagContextMenu', () => {
     y: 100,
     tagName: 'YouTube',
     bookmarkCount: 5,
+    onRename: vi.fn(),
     onDelete: vi.fn(),
     onClose: vi.fn(),
   }

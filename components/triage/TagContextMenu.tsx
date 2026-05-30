@@ -13,6 +13,8 @@ type Props = {
   /** Number of bookmarks this tag is currently attached to, shown as
    *  a quiet "N USES" tag below the name. */
   readonly bookmarkCount: number
+  /** Fired when the user picks RENAME. The parent opens the rename dialog. */
+  readonly onRename: () => void
   /** Fired when the user picks DELETE TAG. The parent opens the
    *  hold-to-confirm dialog. */
   readonly onDelete: () => void
@@ -29,7 +31,7 @@ const MENU_MARGIN = 8
  *  it never spills off-screen. Closes on Esc, outside click, or after
  *  activating the row. */
 export function TagContextMenu({
-  x, y, tagName, bookmarkCount, onDelete, onClose,
+  x, y, tagName, bookmarkCount, onRename, onDelete, onClose,
 }: Props): ReactElement {
   const panelRef = useRef<HTMLDivElement | null>(null)
   const [position, setPosition] = useState<{ left: number; top: number }>(() => ({
@@ -97,6 +99,16 @@ export function TagContextMenu({
       <button
         type="button"
         className={styles.row}
+        role="menuitem"
+        data-testid="tag-context-menu-rename"
+        onClick={(): void => { onRename(); onClose() }}
+      >
+        <span className={styles.rowIcon} aria-hidden="true">✎</span>
+        <span className={styles.rowLabel}>Rename</span>
+      </button>
+      <button
+        type="button"
+        className={`${styles.row} ${styles.rowDanger}`}
         role="menuitem"
         data-testid="tag-context-menu-delete"
         onClick={(): void => { onDelete(); onClose() }}

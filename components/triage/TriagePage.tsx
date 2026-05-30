@@ -12,6 +12,7 @@ import { AmbientBackdrop, type SwipeDecision } from './AmbientBackdrop'
 import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import { TagContextMenu } from './TagContextMenu'
 import { TagDeleteConfirmDialog } from './TagDeleteConfirmDialog'
+import { RenameTagDialog } from './RenameTagDialog'
 import styles from './TriagePage.module.css'
 
 type TriageMode = 'untagged' | 'all' | { tagId: string }
@@ -32,7 +33,7 @@ export function TriagePage(): ReactElement {
   const searchParams = useSearchParams()
   const mode = parseMode(searchParams.get('mode'))
   const { items, deletedItems, persistTags, reload: reloadBoardData, loading } = useBoardData()
-  const { tags, create, remove: removeTag } = useTags()
+  const { tags, create, remove: removeTag, rename: renameTag } = useTags()
 
   const untaggedItems = useMemo(() => items.filter((it) => !it.isDeleted && it.tags.length === 0), [items])
   const allItems = useMemo(() => items.filter((it) => !it.isDeleted), [items])
@@ -78,6 +79,8 @@ export function TriagePage(): ReactElement {
   /* Hold-to-delete confirm state for that menu's DELETE row. Null when
      the dialog is closed. */
   const [deleteConfirm, setDeleteConfirm] = useState<{ tagId: string } | null>(null)
+  /* Rename dialog state for that menu's RENAME row. Null when closed. */
+  const [renameTarget, setRenameTarget] = useState<{ tagId: string } | null>(null)
 
   const current = queue[index] ?? null
   const total = queue.length
@@ -609,6 +612,10 @@ export function TriagePage(): ReactElement {
             y={contextMenu.y}
             tagName={targetTag.name}
             bookmarkCount={tagBookmarkCount(targetTag.id)}
+            onRename={(): void => {
+              setRenameTarget({ tagId: targetTag.id })
+              setContextMenu(null)
+            }}
             onDelete={(): void => {
               setDeleteConfirm({ tagId: targetTag.id })
               setContextMenu(null)
@@ -631,6 +638,25 @@ export function TriagePage(): ReactElement {
             bookmarkCount={tagBookmarkCount(targetTag.id)}
             onConfirm={(): void => { void handleConfirmTagDelete(targetTag.id) }}
             onCancel={(): void => setDeleteConfirm(null)}
+          />
+        )
+      })()}
+
+      {/* Inline rename dialog for the targeted tag. Same editorial panel as
+          the delete dialog; case-insensitive duplicate guard against every
+          OTHER tag. */}
+      {renameTarget && (() => {
+        const targetTag = tags.find((tg) => tg.id === renameTarget.tagId)
+        if (!targetTag) return null
+        return (
+          <RenameTagDialog
+            currentName={targetTag.name}
+            existingNames={tags.filter((tg) => tg.id !== targetTag.id).map((tg) => tg.name)}
+            onSubmit={(name): void => {
+              void renameTag(targetTag.id, name)
+              setRenameTarget(null)
+            }}
+            onCancel={(): void => setRenameTarget(null)}
           />
         )
       })()}

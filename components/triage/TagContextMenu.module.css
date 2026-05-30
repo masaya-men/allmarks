@@ -55,10 +55,10 @@
   flex-shrink: 0;
 }
 
-/* Row — single-line action. The DELETE row is the only menuitem for
-   now; its color is the AllMarks warning red (= #FF3B30). On hover
-   the row gets a subtle red wash so it reads as "you are about to
-   trigger a destructive action". */
+/* Row — single-line action. Base row is neutral (RENAME etc.); the
+   destructive DELETE row layers `.rowDanger` on top for the AllMarks
+   warning red (= #FF3B30) + red hover wash so it reads as "you are about
+   to trigger a destructive action". */
 .row {
   display: flex;
   align-items: center;
@@ -71,28 +71,45 @@
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #FF3B30;
+  color: rgba(255, 255, 255, 0.90);
   cursor: pointer;
   text-align: left;
   transition: background-color 100ms, color 100ms;
 }
 .row:hover,
 .row:focus-visible {
-  background: rgba(255, 59, 48, 0.10);
-  color: #FF5A52;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
   outline: none;
 }
 .row:active {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* Destructive variant (DELETE). Placed after the base so its hover/active
+   overrides win at equal specificity. */
+.rowDanger {
+  color: #FF3B30;
+}
+.rowDanger:hover,
+.rowDanger:focus-visible {
+  background: rgba(255, 59, 48, 0.10);
+  color: #FF5A52;
+}
+.rowDanger:active {
   background: rgba(255, 59, 48, 0.18);
 }
 
 .rowIcon {
   font-size: 12px;
-  color: #FFB020; /* amber warning glyph */
+  color: rgba(255, 255, 255, 0.55);
   line-height: 1;
   width: 14px;
   display: inline-flex;
   justify-content: center;
+}
+.rowDanger .rowIcon {
+  color: #FFB020; /* amber warning glyph */
 }
 .rowLabel {
   flex: 1;

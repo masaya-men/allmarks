@@ -390,6 +390,8 @@
 - ~~**B-#23 Vimeo / SoundCloud Lightbox 再生未対応**~~ ✅ session 51 で完遂 (= 専用 Embed コンポーネント追加 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダーまで波及)
 - ~~**B-#22 長文 tweet Lightbox 末尾だけ表示 bug + 全文表示 enhancement**~~ ✅ session 52 で完遂 (= cleanTitle 過剰マッチ修正 + TextCard 透明グラス redesign + scroll + persistTitle backfill 開通 + font jump 解消、 9 file 変更 / 5 deploy / 19 unit test 追加)
 - **スクロール中にカードの場所が入れ替わる問題** (session 92 で再確認、 未解決) — 手動スクロール中に skyline masonry の bin-packing が再計算され、 カードの配置が動的に入れ替わって見えることがある。 viewport culling (画面内だけ render) と layout 再計算のタイミングが絡む疑い。 真因未特定、 別 session で着手
+- **カードが左端に詰まらず隙間ができることがある** (session 93 user スクショで報告) — 本来 skyline masonry は左から詰めるはずだが、 ある列が左に寄らず不自然な空きが出ることがある。 上記「スクロール中カード入れ替わり」 と同じ skyline 再計算/bin-packing 系の疑い (= 同根の可能性)。 再現条件・真因とも未特定、 別 session で腰を据えて調査
+- **共有ミラー (ShareMirror) の再現精度** (session 93 user 指摘) — 共有プレビューが board の見た目を完全再現できていない: (a) カードの**角丸が反映されていない**、 (b) **背景の大きいタグ文字 (BoardBackgroundTypography) がミラーに描かれていない**。 ミラーは軽量 DOM 複製 ([components/share/ShareMirror.tsx](../components/share/ShareMirror.tsx)) なので元から欠けていた要素。 OG 画像を焼く [lib/share/capture-mirror.ts](../lib/share/capture-mirror.ts) 側も角丸・背景文字を描いているか要確認 (= 両方揃えて初めて WYSIWYG)
 - **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
 - **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)
 - **Task 12: 全件再 check 設定 UI** — viewport revalidation で日常運用は OK だが、 ユーザーが 「いま全件チェック」 を 1 クリックで kick できる設定パネル。 設定パネル自体が未実装なので別 spec 立ち上げ要

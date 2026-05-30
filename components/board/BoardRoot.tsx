@@ -42,6 +42,7 @@ import { FilterPill } from './FilterPill'
 import { TrashConfirmDialog } from './TrashConfirmDialog'
 import { TagContextMenu } from '@/components/triage/TagContextMenu'
 import { TagDeleteConfirmDialog } from '@/components/triage/TagDeleteConfirmDialog'
+import { RenameTagDialog } from '@/components/triage/RenameTagDialog'
 import { useRouter } from 'next/navigation'
 import { TagButton } from './TagButton'
 import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/tags'
@@ -93,7 +94,7 @@ export function BoardRoot() {
     reload,
     persistLinkStatus,
   } = useBoardData()
-  const { tags, reload: reloadTags, remove: removeTag } = useTags()
+  const { tags, reload: reloadTags, remove: removeTag, rename: renameTag } = useTags()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
@@ -921,6 +922,8 @@ export function BoardRoot() {
      is identical across the app. */
   const [tagContextMenu, setTagContextMenu] = useState<{ tagId: string; x: number; y: number } | null>(null)
   const [tagDeleteConfirm, setTagDeleteConfirm] = useState<{ tagId: string } | null>(null)
+  // Rename dialog target for the context menu's RENAME row. Null = closed.
+  const [tagRenameTarget, setTagRenameTarget] = useState<{ tagId: string } | null>(null)
 
   const openTagContextMenu = useCallback((e: { clientX: number; clientY: number }, tagId: string): void => {
     setTagContextMenu({ tagId, x: e.clientX, y: e.clientY })
@@ -1591,7 +1594,7 @@ export function BoardRoot() {
           tagCounts={tagCounts}
           tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
           onTagContextMenu={openTagContextMenu}
-          activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
+          activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? tagRenameTarget?.tagId ?? null}
         />
       </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
@@ -1738,7 +1741,7 @@ export function BoardRoot() {
                   handleFilterChange(toggleTagInFilter(activeFilter, tagId))
                 }}
                 onTagContextMenu={openTagContextMenu}
-                activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
+                activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? tagRenameTarget?.tagId ?? null}
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
               />
@@ -1848,11 +1851,30 @@ export function BoardRoot() {
             y={tagContextMenu.y}
             tagName={targetTag.name}
             bookmarkCount={tagBookmarkCount(targetTag.id)}
+            onRename={(): void => {
+              setTagRenameTarget({ tagId: targetTag.id })
+              setTagContextMenu(null)
+            }}
             onDelete={(): void => {
               setTagDeleteConfirm({ tagId: targetTag.id })
               setTagContextMenu(null)
             }}
             onClose={(): void => setTagContextMenu(null)}
+          />
+        )
+      })()}
+      {tagRenameTarget && (() => {
+        const targetTag = tags.find((tg) => tg.id === tagRenameTarget.tagId)
+        if (!targetTag) return null
+        return (
+          <RenameTagDialog
+            currentName={targetTag.name}
+            existingNames={tags.filter((tg) => tg.id !== targetTag.id).map((tg) => tg.name)}
+            onSubmit={(name): void => {
+              void renameTag(targetTag.id, name)
+              setTagRenameTarget(null)
+            }}
+            onCancel={(): void => setTagRenameTarget(null)}
           />
         )
       })()}
