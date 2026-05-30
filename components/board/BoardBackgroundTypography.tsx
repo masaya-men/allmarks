@@ -122,7 +122,11 @@ export function BoardBackgroundTypography({
     const reduce =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    animRef.current?.cancel()
+    // Clear ALL animations on the span — including a finished power-down that is
+    // still holding its fill:forwards hidden state. Without this, that lingering
+    // hold reasserts itself the moment the entry (fill:none) releases, so the
+    // wordmark would flash on then vanish again.
+    el.getAnimations().forEach((a) => a.cancel())
     animRef.current = null
 
     if (enabled) {
