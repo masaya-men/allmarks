@@ -20,7 +20,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 93 — タグ周り 4 機能を本番 ship + 次回 rework 方針を確定)
+### 直近の状態 (セッション 94 — タグ周り作り直し 3 件を本番 ship)
+
+**ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 951 tests pass、 全て Playwright 実機検証済)**:
+
+1. **② リネームをその場インライン編集に** (モーダル `RenameTagDialog` 廃止): 右クリック「Rename」でタグ名がその場で入力欄になる。Enter 確定 / Esc 取消 / blur 確定、同名(大小無視)はアンバー下線で弾く。フィルターのドロップダウン行 + triage チップ両方。共通ロジック [lib/board/use-inline-tag-rename.ts] + [components/board/InlineTagRenameInput.tsx]。FilterPill は rename 対象が来たらドロップダウンを自動で開く（カードのタグpillから rename しても編集行に着地）。
+2. **③ 並び替えを直接ドラッグに** (掴み手 ⠿ 全廃): 行/チップを直接 press → 6px 動かしたらドラッグ、ちょん押しはクリック(絞り込み/arm)維持。端で自動スクロール(フィルター↕ / triage↔、スクロール補正で掴んだ要素がポインタに追従)。共通フック [lib/board/use-drag-reorder.ts] + 純粋ヒットテスト [lib/board/drag-reorder-geometry.ts]。**🐛 triage 右方向バグを systematic-debugging で根治**: gap 判定が掴んだ要素自身の(平行移動した)矩形を含んでいたため高index方向が no-op だった → 掴んだ要素を除外(memory `reference_drag_reorder_exclude_dragged_hittest`)。フィルター縦の下方向も同根バグだったので一緒に解消。
+3. **④ デフォルト名前順 + 昇順降順トグル + 手動モード**: 既定はアルファベット順(日本語あいうえお順、locale-aware)。新タグは自動で正しい位置。フィルターの TAGS ヘッダー横に「A→Z / Z→A」トグル(自動時は緑)。手で1回ドラッグすると手動モード(A↕Z)に切替・以後その順を保持・新タグ末尾。設定は独自キー `tag-order-mode` に永続化(BoardConfig と分離)。[lib/board/tag-order.ts] + [lib/storage/tag-order-mode.ts] + useTags 改修。
+
+**🔴 user 本番確認待ち** ([CURRENT_GOAL.md](./CURRENT_GOAL.md) に確認シート): 3 機能の体感 + 微調整余地(自動スクロール速度 / ドラッグ閾値 6px / トグル置き場所)。
+
+**プロセスメモ**: wrangler の git commit message 由来の reject 回避に `--commit-message` で ASCII 上書き。git commit -m のメッセージ本文にバッククォートを使うと bash がコマンド展開して 1 語落ちる(今回 `order` が消えた、無害)→ 以後使わない。
+
+### 一つ前 (セッション 93 — タグ周り 4 機能を本番 ship + 次回 rework 方針を確定)
 
 **ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 942 tests pass、 全て Playwright 実機検証済)**:
 
