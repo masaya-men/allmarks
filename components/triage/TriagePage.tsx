@@ -12,7 +12,6 @@ import { AmbientBackdrop, type SwipeDecision } from './AmbientBackdrop'
 import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import { TagContextMenu } from './TagContextMenu'
 import { TagDeleteConfirmDialog } from './TagDeleteConfirmDialog'
-import { RenameTagDialog } from './RenameTagDialog'
 import styles from './TriagePage.module.css'
 
 type TriageMode = 'untagged' | 'all' | { tagId: string }
@@ -476,7 +475,7 @@ export function TriagePage(): ReactElement {
        outside-click handler to close itself — the subsequent click on
        the bare margin must NOT also fire `exit()` and yank the user
        off the page. */
-    if (contextMenu || deleteConfirm) return
+    if (contextMenu || deleteConfirm || renameTarget) return
     if (e.target === e.currentTarget) exit()
   }
 
@@ -519,6 +518,12 @@ export function TriagePage(): ReactElement {
             activeContextTagId={contextMenu?.tagId ?? deleteConfirm?.tagId ?? null}
             showAddButton={false}
             onReorder={(orderedIds): void => { void reorderTag(orderedIds) }}
+            editingTagId={renameTarget?.tagId ?? null}
+            onRenameSubmit={(tagId, name): void => {
+              void renameTag(tagId, name)
+              setRenameTarget(null)
+            }}
+            onRenameCancel={(): void => setRenameTarget(null)}
           />
         </div>
         {/* + TAG pinned to the right edge, outside the scroll region, so it's
@@ -639,25 +644,6 @@ export function TriagePage(): ReactElement {
             bookmarkCount={tagBookmarkCount(targetTag.id)}
             onConfirm={(): void => { void handleConfirmTagDelete(targetTag.id) }}
             onCancel={(): void => setDeleteConfirm(null)}
-          />
-        )
-      })()}
-
-      {/* Inline rename dialog for the targeted tag. Same editorial panel as
-          the delete dialog; case-insensitive duplicate guard against every
-          OTHER tag. */}
-      {renameTarget && (() => {
-        const targetTag = tags.find((tg) => tg.id === renameTarget.tagId)
-        if (!targetTag) return null
-        return (
-          <RenameTagDialog
-            currentName={targetTag.name}
-            existingNames={tags.filter((tg) => tg.id !== targetTag.id).map((tg) => tg.name)}
-            onSubmit={(name): void => {
-              void renameTag(targetTag.id, name)
-              setRenameTarget(null)
-            }}
-            onCancel={(): void => setRenameTarget(null)}
           />
         )
       })()}

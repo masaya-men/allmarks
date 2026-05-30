@@ -42,7 +42,6 @@ import { FilterPill } from './FilterPill'
 import { TrashConfirmDialog } from './TrashConfirmDialog'
 import { TagContextMenu } from '@/components/triage/TagContextMenu'
 import { TagDeleteConfirmDialog } from '@/components/triage/TagDeleteConfirmDialog'
-import { RenameTagDialog } from '@/components/triage/RenameTagDialog'
 import { useRouter } from 'next/navigation'
 import { TagButton } from './TagButton'
 import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/tags'
@@ -1594,8 +1593,14 @@ export function BoardRoot() {
           tagCounts={tagCounts}
           tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
           onTagContextMenu={openTagContextMenu}
-          activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? tagRenameTarget?.tagId ?? null}
+          activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
           onReorder={(orderedIds): void => { void reorderTags(orderedIds) }}
+          editingTagId={tagRenameTarget?.tagId ?? null}
+          onRenameSubmit={(tagId, name): void => {
+            void renameTag(tagId, name)
+            setTagRenameTarget(null)
+          }}
+          onRenameCancel={(): void => setTagRenameTarget(null)}
         />
       </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
@@ -1742,7 +1747,7 @@ export function BoardRoot() {
                   handleFilterChange(toggleTagInFilter(activeFilter, tagId))
                 }}
                 onTagContextMenu={openTagContextMenu}
-                activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? tagRenameTarget?.tagId ?? null}
+                activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
               />
@@ -1861,21 +1866,6 @@ export function BoardRoot() {
               setTagContextMenu(null)
             }}
             onClose={(): void => setTagContextMenu(null)}
-          />
-        )
-      })()}
-      {tagRenameTarget && (() => {
-        const targetTag = tags.find((tg) => tg.id === tagRenameTarget.tagId)
-        if (!targetTag) return null
-        return (
-          <RenameTagDialog
-            currentName={targetTag.name}
-            existingNames={tags.filter((tg) => tg.id !== targetTag.id).map((tg) => tg.name)}
-            onSubmit={(name): void => {
-              void renameTag(targetTag.id, name)
-              setTagRenameTarget(null)
-            }}
-            onCancel={(): void => setTagRenameTarget(null)}
           />
         )
       })()}

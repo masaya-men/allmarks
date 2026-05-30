@@ -57,6 +57,34 @@
 .chipArmed .chipKey { color: #28F100; }
 .chipName { /* tag name */ }
 
+/* Inline rename field — replaces the chip name in place. Inherits the chip's
+   monospace + lowercase tonality so the chip just becomes editable. Sized to a
+   compact field that grows with the chip; green underline signals "editing",
+   amber when the typed value duplicates another tag (commit blocked). */
+.chipRenameInput {
+  width: 7ch;
+  min-width: 4ch;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(40, 241, 0, 0.6);
+  padding: 0 0 1px;
+  margin: 0;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: #fff;
+  caret-color: #28F100;
+  outline: none;
+}
+.chipRenameInput::selection {
+  background: rgba(40, 241, 0, 0.30);
+}
+.chipRenameInputDuplicate {
+  border-bottom-color: rgba(240, 170, 90, 0.85);
+  caret-color: rgba(240, 170, 90, 0.95);
+}
+
 /* Suggested (= HeuristicTagger flagged this tag as matching the current
    card). Only shown when NOT armed (the armed green takes priority).
    Subtle cool-white halo + brighter text so the user notices the

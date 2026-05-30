@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { computeReorder } from '@/lib/board/reorder'
+import { InlineTagRenameInput } from '@/components/board/InlineTagRenameInput'
 import { NewMoodInput } from './NewMoodInput'
 import styles from './TagPicker.module.css'
 
@@ -55,7 +56,7 @@ export function useTagPickerKeys({
  *  sees which chip the menu is acting on. */
 export function TopTagStrip({
   tags, armedTagIds, suggestedTagIds, onToggle, onCreate, onChipContextMenu, activeContextTagId,
-  showAddButton = true, onReorder,
+  showAddButton = true, onReorder, editingTagId, onRenameSubmit, onRenameCancel,
 }: {
   tags: ReadonlyArray<TagRecord>
   armedTagIds: ReadonlySet<string>
@@ -75,6 +76,13 @@ export function TopTagStrip({
    *  When omitted, the grip handles are not rendered. Same single `order`
    *  field as the filter dropdown, so reordering here reflects everywhere. */
   onReorder?: (orderedIds: string[]) => void
+  /** Id of the chip currently being renamed in place. The matching chip swaps
+   *  its name for a text input; null = no inline edit in progress. */
+  editingTagId?: string | null
+  /** Commit an inline rename (trimmed new name). */
+  onRenameSubmit?: (tagId: string, name: string) => void
+  /** Abandon the inline rename (Esc / invalid blur). */
+  onRenameCancel?: () => void
 }): ReactElement {
   /* Horizontal drag-to-reorder, mirroring the filter dropdown's grip handle
      but along the X axis. Window pointer listeners drive the gesture (no
@@ -134,6 +142,7 @@ export function TopTagStrip({
         const armed = armedTagIds.has(tag.id)
         const suggested = suggestedTagIds?.has(tag.id) ?? false
         const contextActive = activeContextTagId === tag.id
+        const isEditing = editingTagId === tag.id
         const isDragging = drag?.id === tag.id
         const dropBefore = drag != null && !isDragging && drag.gapIndex === i
         const dropAfter = drag != null && !isDragging && drag.gapIndex >= tags.length && i === tags.length - 1
@@ -160,7 +169,7 @@ export function TopTagStrip({
             // preventDefault here blocks focus-on-click only; Tab focus (and its
             // ring, for real keyboard navigation) is untouched.
             onMouseDown={(e): void => e.preventDefault()}
-            onClick={(): void => onToggle(tag.id)}
+            onClick={(): void => { if (!isEditing) onToggle(tag.id) }}
             onContextMenu={(e): void => {
               if (!onChipContextMenu) return
               e.preventDefault()
@@ -181,8 +190,22 @@ export function TopTagStrip({
               </span>
             )}
             {i < 9 && <span className={styles.chipKey}>{i + 1}</span>}
-            <span className={styles.chipName}>{tag.name}</span>
-            {suggested && !armed && <span className={styles.chipSparkle}>✦</span>}
+            {isEditing && onRenameSubmit && onRenameCancel ? (
+              <InlineTagRenameInput
+                className={styles.chipRenameInput}
+                duplicateClassName={styles.chipRenameInputDuplicate}
+                currentName={tag.name}
+                otherNames={tags.filter((t) => t.id !== tag.id).map((t) => t.name)}
+                onSubmit={(name): void => onRenameSubmit(tag.id, name)}
+                onCancel={onRenameCancel}
+                data-testid={`tag-chip-rename-input-${tag.id}`}
+              />
+            ) : (
+              <>
+                <span className={styles.chipName}>{tag.name}</span>
+                {suggested && !armed && <span className={styles.chipSparkle}>✦</span>}
+              </>
+            )}
           </button>
         )
       })}

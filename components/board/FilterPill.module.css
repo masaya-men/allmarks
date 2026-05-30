@@ -410,6 +410,35 @@
   box-shadow: 0 0 6px rgba(40, 241, 0, 0.55);
 }
 
+/* Inline rename field — replaces the tag label in place. Borrows the row's
+   monospace + lowercase tonality so the edit reads as the same row, just
+   editable. Thin green underline = "you're editing"; amber underline when the
+   typed value duplicates another tag (the commit is blocked until it's unique).
+   stretches to fill the row width where the label/count used to sit. */
+.renameInput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(40, 241, 0, 0.6);
+  padding: 0 0 1px;
+  margin: 0;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: lowercase;
+  color: #fff;
+  caret-color: #28F100;
+  outline: none;
+}
+.renameInput::selection {
+  background: rgba(40, 241, 0, 0.30);
+}
+.renameInputDuplicate {
+  border-bottom-color: rgba(240, 170, 90, 0.85);
+  caret-color: rgba(240, 170, 90, 0.95);
+}
+
 /* Right-click context menu target — red wash + red text. Stays on top
    of any active styling so the user sees which row the menu is acting
    on regardless of selection state. */

@@ -11,6 +11,7 @@ import {
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import { computeReorder } from '@/lib/board/reorder'
+import { InlineTagRenameInput } from './InlineTagRenameInput'
 import styles from './FilterPill.module.css'
 
 type Props = {
@@ -36,6 +37,13 @@ type Props = {
   /** Persist a new complete tag order (drag-to-reorder via the grip handle).
    *  When omitted, the grip handles are not rendered. */
   readonly onReorder?: (orderedIds: string[]) => void
+  /** Id of the tag currently being renamed in place. The matching row swaps
+   *  its label for a text input; null = no inline edit in progress. */
+  readonly editingTagId?: string | null
+  /** Commit an inline rename (trimmed new name). The parent persists + closes. */
+  readonly onRenameSubmit?: (tagId: string, name: string) => void
+  /** Abandon the inline rename (Esc / invalid blur). The parent just closes. */
+  readonly onRenameCancel?: () => void
 }
 
 /** Chrome label vocab — fixed English across all 15 languages
@@ -78,6 +86,7 @@ const LEAVE_GRACE_MS = 700
 
 export function FilterPill({
   value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId, onReorder,
+  editingTagId, onRenameSubmit, onRenameCancel,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   /* Sticky-open pin: a click on the pill latches the menu open so it stays
@@ -112,6 +121,13 @@ export function FilterPill({
   const [drag, setDrag] = useState<{ id: string; offsetY: number; gapIndex: number } | null>(null)
   const draggingRef = useRef(false)
   const dragStartYRef = useRef(0)
+
+  /* Inline-rename awareness for the auto-close guards. While a row is being
+     renamed in place, the dropdown must not auto-close on mouse-leave, Esc, or
+     outside-click — the input's own onBlur/Esc handle the commit/cancel. Mirror
+     the prop into a ref so the long-lived window listeners read the live value. */
+  const editingRef = useRef<string | null>(editingTagId ?? null)
+  editingRef.current = editingTagId ?? null
 
   const effectiveLabel = labelFor(value, tags)
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
@@ -242,8 +258,9 @@ export function FilterPill({
     if (!open) return
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
-        /* Don't fight the right-click menu / delete dialog for Esc —
-           they each handle their own close. */
+        /* Don't fight the right-click menu / delete dialog / inline rename
+           for Esc — they each handle their own close. */
+        if (editingRef.current) return
         if (document.querySelector('[data-testid="tag-context-menu"]')) return
         if (document.querySelector('[data-testid="tag-delete-confirm-dialog"]')) return
         stickyRef.current = false
@@ -257,6 +274,20 @@ export function FilterPill({
   useEffect(() => {
     return (): void => clearLeaveTimer()
   }, [clearLeaveTimer])
+
+  /* Inline rename can be triggered from anywhere (a dropdown row OR a card's
+     tag pill). Whenever a rename target appears, force the dropdown open and
+     pin it so the in-place input is visible and stays put while editing. When
+     the edit ends, release the pin so the normal mouse-leave close resumes. */
+  useEffect(() => {
+    if (editingTagId) {
+      clearLeaveTimer()
+      stickyRef.current = true
+      setOpen(true)
+    } else {
+      stickyRef.current = false
+    }
+  }, [editingTagId, clearLeaveTimer])
 
   /* Recompute the tag-list scroll affordance whenever the menu opens or
      the tag set changes. The menu is always mounted, so this just keys
@@ -296,8 +327,9 @@ export function FilterPill({
       }}
       onMouseLeave={(): void => {
         // Don't close while a drag is in flight — the pointer routinely leaves
-        // the menu bounds as the grabbed row is dragged past the edge.
-        if (draggingRef.current || stickyRef.current) return
+        // the menu bounds as the grabbed row is dragged past the edge. Also keep
+        // the menu open while a row is being renamed in place.
+        if (draggingRef.current || stickyRef.current || editingRef.current) return
         burstAll()
         scheduleClose()
       }}
@@ -370,6 +402,7 @@ export function FilterPill({
                   const active = tagsActiveSet.has(m.id)
                   const contextActive = activeContextTagId === m.id
                   const n = tagCounts?.[m.id] ?? 0
+                  const isEditing = editingTagId === m.id
                   const isDragging = drag?.id === m.id
                   const dropBefore = drag != null && !isDragging && drag.gapIndex === index
                   const dropAfter =
@@ -385,7 +418,7 @@ export function FilterPill({
                       key={m.id}
                       type="button"
                       className={cls}
-                      onClick={() => toggleTag(m.id)}
+                      onClick={() => { if (!isEditing) toggleTag(m.id) }}
                       onContextMenu={(e): void => {
                         if (!onTagContextMenu) return
                         e.preventDefault()
@@ -410,13 +443,27 @@ export function FilterPill({
                         </span>
                       )}
                       <span className={styles.tagDot} data-active={active ? 'true' : 'false'} aria-hidden="true" />
-                      <span className={styles.itemLabel}>{m.name}</span>
-                      <span
-                        className={styles.itemCount}
-                        data-empty={n === 0 ? 'true' : 'false'}
-                      >
-                        {String(n).padStart(3, '0')}
-                      </span>
+                      {isEditing && onRenameSubmit && onRenameCancel ? (
+                        <InlineTagRenameInput
+                          className={styles.renameInput}
+                          duplicateClassName={styles.renameInputDuplicate}
+                          currentName={m.name}
+                          otherNames={tags.filter((t) => t.id !== m.id).map((t) => t.name)}
+                          onSubmit={(name): void => onRenameSubmit(m.id, name)}
+                          onCancel={onRenameCancel}
+                          data-testid={`tag-rename-input-${m.id}`}
+                        />
+                      ) : (
+                        <>
+                          <span className={styles.itemLabel}>{m.name}</span>
+                          <span
+                            className={styles.itemCount}
+                            data-empty={n === 0 ? 'true' : 'false'}
+                          >
+                            {String(n).padStart(3, '0')}
+                          </span>
+                        </>
+                      )}
                     </button>
                   )
                 })}
