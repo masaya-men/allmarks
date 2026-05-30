@@ -134,6 +134,13 @@ export function FilterPill({
   const editingRef = useRef<string | null>(editingTagId ?? null)
   useEffect(() => { editingRef.current = editingTagId ?? null }, [editingTagId])
 
+  /* Same auto-close awareness for the right-click context menu / delete dialog
+     (both surface via activeContextTagId). They portal OUTSIDE the wrap, so
+     moving the cursor onto the menu fires the dropdown's mouse-leave — without
+     this guard the dropdown would auto-close behind the still-open menu. */
+  const contextOpenRef = useRef<boolean>(activeContextTagId != null)
+  useEffect(() => { contextOpenRef.current = activeContextTagId != null }, [activeContextTagId])
+
   const effectiveLabel = labelFor(value, tags)
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
   const { display: displayLabel, triggerBurst } = useChromeScramble(effectiveLabel)
@@ -303,8 +310,10 @@ export function FilterPill({
       onMouseLeave={(): void => {
         // Don't close while a drag is in flight — the pointer routinely leaves
         // the menu bounds as the grabbed row is dragged past the edge. Also keep
-        // the menu open while a row is being renamed in place.
-        if (dr.isDragging || stickyRef.current || editingRef.current) return
+        // the menu open while a row is being renamed in place, or while the
+        // right-click menu / delete dialog it spawned is open (the cursor moves
+        // onto that portaled menu, which counts as leaving this wrap).
+        if (dr.isDragging || stickyRef.current || editingRef.current || contextOpenRef.current) return
         burstAll()
         scheduleClose()
       }}
