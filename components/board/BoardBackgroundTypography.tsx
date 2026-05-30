@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactElement } from 'react'
 import type { BoardFilter } from '@/lib/board/types'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { getEntryAnimation } from '@/lib/animation/tag-entry'
+import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
 import styles from './BoardBackgroundTypography.module.css'
 
 /**
@@ -88,6 +89,12 @@ type Props = {
    *  there. Visibility itself is NOT driven by this — the parent mounts this
    *  component only when the title is on, so "rendered = visible" is absolute. */
   readonly playEntry?: boolean
+  /** When true, play the CRT shutdown — the exact same effect a card runs when
+   *  it drops out of a tag filter — once on the wordmark. The parent keeps this
+   *  component mounted for the shutdown's fixed duration, then unmounts it on a
+   *  timer; visibility is NEVER driven by the animation's finish event, so the
+   *  "on but vanished" race cannot return. */
+  readonly closing?: boolean
 }
 
 /**
@@ -103,6 +110,7 @@ export function BoardBackgroundTypography({
   tags,
   variant = 'static',
   playEntry = false,
+  closing = false,
 }: Props): ReactElement | null {
   const text = deriveBoardBgTypoText(activeFilter, tags)
   const textRef = useRef<HTMLSpanElement>(null)
@@ -112,6 +120,9 @@ export function BoardBackgroundTypography({
   // back to its plain CSS state when the animation ends — it cannot get stuck
   // hidden. eslint-disable: intentionally mount-only.
   useEffect(() => {
+    // Never play the entry while exiting (a fresh mount is always closing:false,
+    // so this only guards the rare re-toggle-during-close reuse of this node).
+    if (closing) return
     if (!playEntry) return
     const el = textRef.current
     if (!el) return
@@ -129,14 +140,26 @@ export function BoardBackgroundTypography({
 
   if (!text) return null
 
+  // While exiting, layer the card CRT-shutdown class onto the wordmark so it
+  // collapses to a line, flashes green, and pops out exactly like a card. The
+  // class brings its own scanline + flicker overlays via ::before/::after. The
+  // parent unmounts this node on a timer once the shutdown has run.
+  const shutdownClass = closing ? getShutdownAnimationClass('wave') : undefined
+
   return (
     <div
       className={styles.host}
       data-variant={variant}
       data-testid="board-bg-typography"
+      data-closing={closing ? 'true' : 'false'}
       aria-hidden="true"
     >
-      <span ref={textRef} className={styles.text}>{text}</span>
+      <span
+        ref={textRef}
+        className={shutdownClass ? `${styles.text} ${shutdownClass}` : styles.text}
+      >
+        {text}
+      </span>
     </div>
   )
 }

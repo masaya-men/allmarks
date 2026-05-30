@@ -78,6 +78,13 @@ import styles from './BoardRoot.module.css'
 const SCROLL_OVERFLOW_MARGIN_X = 600
 const BOTTOM_OVERSCROLL_FRACTION = 0.5
 
+/** How long the background-typography (TITLE) node lingers, mounted, after the
+ *  user turns it OFF so the CRT shutdown can play, before the parent unmounts
+ *  it. = the shutdown duration (--tag-shutdown-duration 0.55s) + a small buffer.
+ *  The unmount is driven by THIS timer, never by the animation's finish event,
+ *  so visibility stays a pure function of state (session 94 reliability rule). */
+const BG_TYPO_SHUTDOWN_MS = 620
+
 export function BoardRoot() {
   const {
     items,
@@ -120,6 +127,51 @@ export function BoardRoot() {
   // True once the user has toggled TITLE this session, so the boot-up effect
   // plays on a user toggle but NOT on the initial page load / config hydration.
   const [bgTypoUserToggled, setBgTypoUserToggled] = useState<boolean>(false)
+  // Render state for the TITLE wordmark, lagging behind `bgTypoEnabled` so the
+  // exit (CRT shutdown) can play before the node unmounts. This mirrors the
+  // proven control-bar pattern in CardsLayer (barMount): `bgTypoEnabled` is the
+  // source of truth, this is just "is the node on screen, and is it leaving".
+  //   null              → not rendered (TITLE off, at rest)
+  //   { closing:false } → rendered + visible (TITLE on)
+  //   { closing:true }  → rendered, playing the shutdown, will unmount on a timer
+  // Visibility is therefore a pure function of state (mounted == visible); the
+  // animation is decoration only. Init from the default-on state.
+  const [bgTypoMount, setBgTypoMount] = useState<{ closing: boolean } | null>(
+    () => (bgTypoEnabled ? { closing: false } : null),
+  )
+  const prevBgTypoEnabledRef = useRef<boolean>(bgTypoEnabled)
+  const bgTypoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    const prev = prevBgTypoEnabledRef.current
+    prevBgTypoEnabledRef.current = bgTypoEnabled
+    if (bgTypoEnabled) {
+      // Turning on (or re-showing mid-close): cancel any pending unmount and
+      // mount fresh so the boot-up entry plays.
+      if (bgTypoCloseTimerRef.current) {
+        clearTimeout(bgTypoCloseTimerRef.current)
+        bgTypoCloseTimerRef.current = null
+      }
+      setBgTypoMount({ closing: false })
+    } else if (prev && bgTypoUserToggled) {
+      // User just turned TITLE off → keep it mounted, play the card shutdown,
+      // then unmount on a fixed timer (NOT on the animation's finish event).
+      setBgTypoMount({ closing: true })
+      if (bgTypoCloseTimerRef.current) clearTimeout(bgTypoCloseTimerRef.current)
+      bgTypoCloseTimerRef.current = setTimeout(() => {
+        setBgTypoMount(null)
+        bgTypoCloseTimerRef.current = null
+      }, BG_TYPO_SHUTDOWN_MS)
+    } else {
+      // Hydrated to off, or already off → just hidden, no animation.
+      setBgTypoMount(null)
+    }
+  }, [bgTypoEnabled, bgTypoUserToggled])
+  useEffect(
+    () => (): void => {
+      if (bgTypoCloseTimerRef.current) clearTimeout(bgTypoCloseTimerRef.current)
+    },
+    [],
+  )
   const [viewport, setViewport] = useState({ x: 0, y: 0, w: 1200, h: 800 })
   // Mirror viewport in a ref so the edge auto-scroll rAF tick (which fires
   // outside React's render cycle) can read the latest scroll position
@@ -1722,16 +1774,19 @@ export function BoardRoot() {
                 own stacking context via translate3d, and since the
                 typography host carries no explicit z-index, DOM order
                 alone keeps the cards above the typography. */}
-            {/* Rendered ONLY when the title is on — being mounted == being
+            {/* Rendered while `bgTypoMount` is non-null — being mounted == being
                 visible, period (the previous animation-driven visibility was
-                what made it flicker/vanish). playEntry plays the boot-up once
-                on a user toggle, never on initial load. */}
-            {bgTypoEnabled && (
+                what made it flicker/vanish). On a user toggle ON it mounts fresh
+                and plays the boot-up; on a user toggle OFF it stays mounted with
+                closing=true to play the CRT shutdown, then the parent timer
+                unmounts it. Never animation-driven visibility. */}
+            {bgTypoMount && (
               <BoardBackgroundTypography
                 activeFilter={activeFilter}
                 tags={tags}
                 variant={bgTypoVariant}
-                playEntry={bgTypoUserToggled}
+                playEntry={bgTypoUserToggled && !bgTypoMount.closing}
+                closing={bgTypoMount.closing}
               />
             )}
             {/* Cards — full-canvas-width with destefanis half-gap padding.
