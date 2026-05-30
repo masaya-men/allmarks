@@ -33,7 +33,7 @@ export function TriagePage(): ReactElement {
   const searchParams = useSearchParams()
   const mode = parseMode(searchParams.get('mode'))
   const { items, deletedItems, persistTags, reload: reloadBoardData, loading } = useBoardData()
-  const { tags, create, remove: removeTag, rename: renameTag } = useTags()
+  const { tags, create, remove: removeTag, rename: renameTag, reorder: reorderTag } = useTags()
 
   const untaggedItems = useMemo(() => items.filter((it) => !it.isDeleted && it.tags.length === 0), [items])
   const allItems = useMemo(() => items.filter((it) => !it.isDeleted), [items])
@@ -518,6 +518,7 @@ export function TriagePage(): ReactElement {
             onChipContextMenu={openChipContextMenu}
             activeContextTagId={contextMenu?.tagId ?? deleteConfirm?.tagId ?? null}
             showAddButton={false}
+            onReorder={(orderedIds): void => { void reorderTag(orderedIds) }}
           />
         </div>
         {/* + TAG pinned to the right edge, outside the scroll region, so it's

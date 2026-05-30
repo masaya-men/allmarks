@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, type MouseEvent as ReactMouseEvent, type ReactElement } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react'
 import type { TagRecord } from '@/lib/storage/indexeddb'
+import { computeReorder } from '@/lib/board/reorder'
 import { NewMoodInput } from './NewMoodInput'
 import styles from './TagPicker.module.css'
 
@@ -54,7 +55,7 @@ export function useTagPickerKeys({
  *  sees which chip the menu is acting on. */
 export function TopTagStrip({
   tags, armedTagIds, suggestedTagIds, onToggle, onCreate, onChipContextMenu, activeContextTagId,
-  showAddButton = true,
+  showAddButton = true, onReorder,
 }: {
   tags: ReadonlyArray<TagRecord>
   armedTagIds: ReadonlySet<string>
@@ -70,13 +71,72 @@ export function TopTagStrip({
    *  TriagePage renders it pinned outside the scroll region so it's always
    *  visible; the default keeps the standalone behaviour for any other use. */
   showAddButton?: boolean
+  /** Persist a new complete tag order (drag-to-reorder via the chip grip).
+   *  When omitted, the grip handles are not rendered. Same single `order`
+   *  field as the filter dropdown, so reordering here reflects everywhere. */
+  onReorder?: (orderedIds: string[]) => void
 }): ReactElement {
+  /* Horizontal drag-to-reorder, mirroring the filter dropdown's grip handle
+     but along the X axis. Window pointer listeners drive the gesture (no
+     setPointerCapture) so it works in production and automated checks alike. */
+  const stripRef = useRef<HTMLDivElement | null>(null)
+  const [drag, setDrag] = useState<{ id: string; offsetX: number; gapIndex: number } | null>(null)
+  const dragStartXRef = useRef(0)
+  const dragRef = useRef(drag)
+  dragRef.current = drag
+
+  const gapIndexAt = useCallback((clientX: number): number => {
+    const container = stripRef.current
+    if (!container) return tags.length
+    const rows = Array.from(container.querySelectorAll<HTMLElement>('[data-tag-id]'))
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i].getBoundingClientRect()
+      if (clientX < r.left + r.width / 2) return i
+    }
+    return rows.length
+  }, [tags.length])
+
+  const startChipDrag = useCallback((id: string, e: ReactPointerEvent<HTMLElement>): void => {
+    if (e.button !== 0 || !onReorder) return
+    e.preventDefault()
+    e.stopPropagation()
+    dragStartXRef.current = e.clientX
+    setDrag({ id, offsetX: 0, gapIndex: tags.findIndex((t) => t.id === id) })
+  }, [onReorder, tags])
+
+  const dragActive = drag !== null
+  useEffect(() => {
+    if (!dragActive) return
+    const onMove = (e: PointerEvent): void => {
+      setDrag((d) => (d ? { ...d, offsetX: e.clientX - dragStartXRef.current, gapIndex: gapIndexAt(e.clientX) } : d))
+    }
+    const onUp = (): void => {
+      const d = dragRef.current
+      setDrag(null)
+      if (d && onReorder) {
+        const ids = tags.map((t) => t.id)
+        const next = computeReorder(ids, d.id, d.gapIndex)
+        if (next.some((id, i) => id !== ids[i])) onReorder(next)
+      }
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return (): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragActive])
+
   return (
-    <div className={styles.tagStrip} data-testid="top-tag-strip">
+    <div className={styles.tagStrip} data-testid="top-tag-strip" ref={stripRef}>
       {tags.map((tag, i) => {
         const armed = armedTagIds.has(tag.id)
         const suggested = suggestedTagIds?.has(tag.id) ?? false
         const contextActive = activeContextTagId === tag.id
+        const isDragging = drag?.id === tag.id
+        const dropBefore = drag != null && !isDragging && drag.gapIndex === i
+        const dropAfter = drag != null && !isDragging && drag.gapIndex >= tags.length && i === tags.length - 1
         const cls = [
           styles.chip,
           armed && styles.chipArmed,
@@ -88,6 +148,10 @@ export function TopTagStrip({
             key={tag.id}
             type="button"
             className={cls}
+            data-dragging={isDragging ? 'true' : undefined}
+            data-drop-before={dropBefore ? 'true' : undefined}
+            data-drop-after={dropAfter ? 'true' : undefined}
+            style={isDragging ? { transform: `translateX(${drag.offsetX}px)`, zIndex: 3 } : undefined}
             // Don't let a mouse click leave the chip focused: the triage screen
             // is keyboard-shortcut driven (1-9 arm, arrows/space act on window),
             // so a lingering mouse-focus lights up the :focus-visible ring the
@@ -106,6 +170,16 @@ export function TopTagStrip({
             data-tag-id={tag.id}
             aria-pressed={armed}
           >
+            {onReorder && (
+              <span
+                className={styles.chipGrip}
+                aria-hidden="true"
+                onPointerDown={(e): void => startChipDrag(tag.id, e)}
+                onClick={(e): void => e.stopPropagation()}
+              >
+                ⠿
+              </span>
+            )}
             {i < 9 && <span className={styles.chipKey}>{i + 1}</span>}
             <span className={styles.chipName}>{tag.name}</span>
             {suggested && !armed && <span className={styles.chipSparkle}>✦</span>}
