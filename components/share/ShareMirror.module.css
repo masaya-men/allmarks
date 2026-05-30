@@ -54,6 +54,32 @@
   text-overflow: ellipsis;
 }
 
+/* Background typography — the big wordmark / filter title behind the cards,
+   reproducing BoardBackgroundTypography inside the mirror canvas. Centred in
+   the canvas (fixed, like the board), cards (a later sibling) float on top.
+   font-size is set inline in board-pixel space so the outerBand scale shrinks
+   it in proportion with everything else. */
+.bgTypo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bgTypoText {
+  font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  line-height: 1.0;
+  letter-spacing: -0.035em;
+  text-align: center;
+  white-space: normal;
+  text-wrap: balance;
+  max-width: 95%;
+  color: rgba(255, 255, 255, 0.95);
+}
+
 .cardsLayer {
   position: absolute;
   top: 0;

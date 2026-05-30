@@ -33,6 +33,7 @@ import { loadBoardConfig, saveBoardConfig } from '@/lib/storage/board-config'
 import { ThemeLayer } from './ThemeLayer'
 import {
   BoardBackgroundTypography,
+  deriveBoardBgTypoText,
   isBoardBgTypoVariant,
   type BoardBgTypoVariant,
 } from './BoardBackgroundTypography'
@@ -47,6 +48,7 @@ import { useRouter } from 'next/navigation'
 import { TagButton } from './TagButton'
 import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/tags'
 import { MotionToggle } from './MotionToggle'
+import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
@@ -112,6 +114,9 @@ export function BoardRoot() {
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
   const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
+  // Background typography (the big wordmark / filter title behind the cards)
+  // master switch. Persisted in BoardConfig; the share image follows it too.
+  const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
   const [viewport, setViewport] = useState({ x: 0, y: 0, w: 1200, h: 800 })
   // Mirror viewport in a ref so the edge auto-scroll rAF tick (which fires
   // outside React's render cycle) can read the latest scroll position
@@ -456,6 +461,7 @@ export function BoardRoot() {
       if (cancelled) return
       setActiveFilter(cfg.activeFilter)
       setDisplayMode(cfg.displayMode)
+      setBgTypoEnabled(cfg.bgTypoEnabled)
       const prefersReduced =
         typeof window !== 'undefined' &&
         window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
@@ -1297,6 +1303,18 @@ export function BoardRoot() {
     })
   }, [])
 
+  const handleToggleBgTypo = useCallback((): void => {
+    setBgTypoEnabled((prev) => {
+      const next = !prev
+      void (async (): Promise<void> => {
+        const db = await initDB()
+        const cfg = await loadBoardConfig(db)
+        await saveBoardConfig(db, { ...cfg, bgTypoEnabled: next })
+      })()
+      return next
+    })
+  }, [])
+
   const handleOpenBookmarkletModal = useCallback((): void => {
     setBookmarkletModalOpen(true)
   }, [])
@@ -1618,6 +1636,14 @@ export function BoardRoot() {
           hidden={!!lightboxItemId}
           actions={
             <>
+              <ChromeLedToggle
+                label="TITLE"
+                on={bgTypoEnabled}
+                onToggle={handleToggleBgTypo}
+                wrapTestId="bgtypo-toggle-wrap"
+                ledTestId="bgtypo-led"
+                btnTestId="bgtypo-toggle"
+              />
               <TuneTrigger
                 widthPx={cardWidthPx}
                 gapPx={cardGapPx}
@@ -1692,11 +1718,13 @@ export function BoardRoot() {
                 own stacking context via translate3d, and since the
                 typography host carries no explicit z-index, DOM order
                 alone keeps the cards above the typography. */}
-            <BoardBackgroundTypography
-              activeFilter={activeFilter}
-              tags={tags}
-              variant={bgTypoVariant}
-            />
+            {bgTypoEnabled && (
+              <BoardBackgroundTypography
+                activeFilter={activeFilter}
+                tags={tags}
+                variant={bgTypoVariant}
+              />
+            )}
             {/* Cards — full-canvas-width with destefanis half-gap padding.
                 Vertical transform adds BOARD_TOP_PAD_PX so the first row gets
                 breathing room below the canvas top edge / toolbar pill. */}
@@ -1842,6 +1870,8 @@ export function BoardRoot() {
         }))}
         bgViewportWidth={effectiveLayoutWidth}
         bgCanvasWidth={viewport.w}
+        bgTypoEnabled={bgTypoEnabled}
+        bgTypoText={deriveBoardBgTypoText(activeFilter, tags)}
       />
       {trashConfirmOpen && (
         <TrashConfirmDialog

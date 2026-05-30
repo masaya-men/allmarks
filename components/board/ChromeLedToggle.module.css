@@ -1,0 +1,22 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Vertical hairline tying the LED to the label (audio-interface divider
+   vocabulary, matching the TUNE drawer + MOTION). Reads as "● │ LABEL". */
+.divider {
+  width: 1px;
+  height: 11px;
+  background: rgba(255, 255, 255, 0.28);
+  flex-shrink: 0;
+}
+
+/* ChromeButton carries a 12px left padding (shared hit-area recipe with
+   TUNE/POP OUT/SHARE). Pull the button left by that padding so the *text* sits
+   8px from the divider (matching the LED→divider gap), without shrinking the
+   clickable area. */
+.btn {
+  margin-left: -12px;
+}

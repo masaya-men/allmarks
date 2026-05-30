@@ -43,6 +43,10 @@ type Props = {
   readonly contentHeight: number
   /** Bg board's viewport height = canvas inner height. Used for canvas-replica height. */
   readonly viewportHeight: number
+  /** Background typography string (the big wordmark behind the cards). Empty
+   *  string (the default) hides it — the sender passes '' when the board's
+   *  TITLE toggle is off, so the share image follows the board. */
+  readonly bgTypoText?: string
   /** Forwarded ref to the frame DOM so capture-mirror.ts can read rects. Optional. */
   readonly frameRef?: RefObject<HTMLDivElement | null>
 }
@@ -58,6 +62,7 @@ export function ShareMirror({
   scrollY,
   contentHeight,
   viewportHeight,
+  bgTypoText = '',
   frameRef,
 }: Props): ReactElement {
   // The bg-replica reproduces bg's full screen chrome:
@@ -78,6 +83,11 @@ export function ShareMirror({
 
   const bgFullScreenWidth = bgCanvasWidth + 2 * CANVAS_MARGIN_PX
   const bgFullScreenHeight = viewportHeight + 2 * CANVAS_MARGIN_PX
+
+  // Reproduce BoardBackgroundTypography's clamp(96px, 14vw, 260px) in board
+  // pixel space (vw ≈ full screen width). The outerBand scale then shrinks it
+  // in proportion with the cards.
+  const bgTypoFontSize = Math.max(96, Math.min(0.14 * bgFullScreenWidth, 260))
 
   useEffect((): (() => void) => {
     const el = internalFrameRef.current
@@ -117,6 +127,13 @@ export function ShareMirror({
         }}
       >
         <div className={styles.canvasReplica}>
+          {/* Background typography behind the cards (a later sibling floats on
+              top). Empty bgTypoText (TITLE toggle off) renders nothing. */}
+          {bgTypoText ? (
+            <div className={styles.bgTypo} data-testid="mirror-bg-typo" aria-hidden="true">
+              <span className={styles.bgTypoText} style={{ fontSize: bgTypoFontSize }}>{bgTypoText}</span>
+            </div>
+          ) : null}
           <div
             className={styles.cardsLayer}
             data-testid="mirror-cards-layer"

@@ -38,6 +38,12 @@ type Props = {
   /** Bg board's canvas inner width = viewport.w. Used to compute mirror scale
    *  against bg's full screen width (= viewport.w + 2 * CANVAS_MARGIN_PX). */
   readonly bgCanvasWidth: number
+  /** Whether the board's background typography is on. The share preview + OG
+   *  image only draw the big wordmark when this is true (follows the board).
+   *  Defaults true. */
+  readonly bgTypoEnabled?: boolean
+  /** The background typography string (= deriveBoardBgTypoText). Empty hides it. */
+  readonly bgTypoText?: string
 }
 
 export function SenderShareModal({
@@ -54,6 +60,8 @@ export function SenderShareModal({
   positions,
   bgViewportWidth,
   bgCanvasWidth,
+  bgTypoEnabled = true,
+  bgTypoText = '',
 }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
@@ -102,6 +110,7 @@ export function SenderShareModal({
         sharedCardCount: share.cards.length,
         activeTagNames,
         totalBoardCount,
+        bgTypoText: bgTypoEnabled ? bgTypoText : '',
         width: 1200,
         height: 628,
         quality: 0.85,
@@ -121,7 +130,7 @@ export function SenderShareModal({
     } catch (e) {
       setState({ kind: 'error', message: e instanceof Error ? e.message : 'unknown error' })
     }
-  }, [getShareData, items, activeTagNames, totalBoardCount])
+  }, [getShareData, items, activeTagNames, totalBoardCount, bgTypoEnabled, bgTypoText])
 
   if (!open) return null
 
@@ -145,6 +154,7 @@ export function SenderShareModal({
             scrollY={scrollY}
             contentHeight={contentHeight}
             viewportHeight={viewportHeight}
+            bgTypoText={bgTypoEnabled ? bgTypoText : ''}
             frameRef={mirrorFrameRef}
           />
         </div>

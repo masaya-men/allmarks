@@ -24,6 +24,9 @@ export type MirrorCaptureInput = {
   readonly activeTagNames: ReadonlyArray<string>
   /** "N OF M CARDS" の M 側 (= ボード全体のカード数)。 */
   readonly totalBoardCount: number
+  /** 背景タイポ文字列 (= 大きな wordmark)。 空 / 未指定なら描かない (= board の
+   *  TITLE トグル off に追従)。 */
+  readonly bgTypoText?: string
   /** Output width in px (typical 1200). */
   readonly width: number
   /** Output height in px (typical 628 = 1.91:1)。 */
@@ -51,6 +54,9 @@ export async function captureMirrorToWebP(input: MirrorCaptureInput): Promise<st
     ctx.fillStyle = BG_COLOR
     ctx.fillRect(0, 0, input.width, input.height)
 
+    // 背景タイポ (= 大きな wordmark)。 カードより先に描いて下に敷く。
+    if (input.bgTypoText) drawBgTypo(ctx, input)
+
     // ミラー DOM から card 要素を取得 + 各カードを描画
     await drawCards(ctx, input)
 
@@ -64,6 +70,42 @@ export async function captureMirrorToWebP(input: MirrorCaptureInput): Promise<st
     if (typeof console !== 'undefined') console.warn('[share/capture-mirror] capture failed', e)
     return null
   }
+}
+
+/** 背景タイポを描画する。 プレビュー (ShareMirror) の span 矩形をそのまま読んで
+ *  canvas 座標に写すので、 OG 画像は preview と同じ位置・サイズになる (WYSIWYG)。
+ *  カードより先に呼ぶことで board と同じく「文字の上にカードが乗る」 重なりを再現。 */
+function drawBgTypo(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput): void {
+  const text = input.bgTypoText
+  if (!text) return
+  const frame = input.mirrorFrame
+  if (!frame) return
+  const frameRect = frame.getBoundingClientRect()
+  if (frameRect.width === 0 || frameRect.height === 0) return
+  const span = frame.querySelector<HTMLElement>('[data-testid="mirror-bg-typo"] span')
+  if (!span) return
+
+  const scaleX = input.width / frameRect.width
+  const scaleY = input.height / frameRect.height
+  const rect = span.getBoundingClientRect()
+  const cx = ((rect.left + rect.right) / 2 - frameRect.left) * scaleX
+  const cy = ((rect.top + rect.bottom) / 2 - frameRect.top) * scaleY
+
+  const cssFontPx = parseFloat(getComputedStyle(span).fontSize) || 0
+  let fontPx = Math.max(10, cssFontPx * scaleY)
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = `600 ${fontPx}px "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
+
+  // 横幅に収まるよう必要なら縮める (= board は wrap するが OG は 1 行で fit)。
+  const maxW = input.width * 0.92
+  while (fontPx > 12 && ctx.measureText(text).width > maxW) {
+    fontPx -= 2
+    ctx.font = `600 ${fontPx}px "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
+  }
+  ctx.fillText(text, cx, cy)
 }
 
 async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput): Promise<void> {

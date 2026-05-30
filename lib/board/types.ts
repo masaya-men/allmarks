@@ -101,6 +101,9 @@ export type BoardConfig = {
    *  autoplay muted + multi-image cards cycle. Default true (reduced-motion
    *  users default false, set at hydrate time in BoardRoot). */
   readonly motionEnabled: boolean
+  /** Background typography (the big wordmark / filter title behind the cards).
+   *  true = shown on the board AND reproduced in the share image. Default true. */
+  readonly bgTypoEnabled: boolean
 }
 
 export type SnapGuideLine =

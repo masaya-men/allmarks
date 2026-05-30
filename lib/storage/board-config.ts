@@ -13,6 +13,7 @@ export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   displayMode: 'visual',
   activeFilter: BOARD_FILTER_ALL,
   motionEnabled: true,
+  bgTypoEnabled: true,
 }
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
