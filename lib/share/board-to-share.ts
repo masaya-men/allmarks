@@ -7,6 +7,7 @@ import {
   type ShareDataV2,
   type TagDict,
 } from './types-v2'
+import type { ThemeId } from '@/lib/board/types'
 
 export type BoardItemForShare = {
   readonly bookmarkId: string
@@ -35,6 +36,7 @@ export type BuildShareArgs = {
   readonly tags: ReadonlyArray<TagForShare>
   readonly filter: FilterForShare | null
   readonly now: number
+  readonly themeId?: ThemeId
   readonly detectType?: (url: string) => ShareCardType
 }
 
@@ -86,7 +88,7 @@ export function buildShareDataFromBoard(args: BuildShareArgs): ShareDataV2 {
     cards,
     tags: tagDict,
     filter: args.filter ?? undefined,
-    theme: 'wave',
+    theme: args.themeId,
     createdAt: args.now,
   }
 }

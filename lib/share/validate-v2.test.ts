@@ -74,3 +74,15 @@ describe('sanitizeShareDataV2', () => {
     if (result.ok) expect(result.data.cards[0].t.length).toBe(500)
   })
 })
+
+describe('sanitizeShareDataV2 theme', () => {
+  const base = { v: SHARE_SCHEMA_VERSION_V2, cards: [{ u: 'https://example.com', t: 'Title', ty: 'website' as const, cw: 200, a: 1.5 }], createdAt: 1735000000000 }
+  it('keeps a valid ThemeId', () => {
+    const r = sanitizeShareDataV2({ ...base, theme: 'grid-paper' })
+    expect(r.ok && r.data.theme).toBe('grid-paper')
+  })
+  it('drops an unknown theme value (e.g. legacy "wave") to undefined', () => {
+    const r = sanitizeShareDataV2({ ...base, theme: 'wave' })
+    expect(r.ok && r.data.theme).toBeUndefined()
+  })
+})

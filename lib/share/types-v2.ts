@@ -1,4 +1,5 @@
 // lib/share/types-v2.ts
+import type { ThemeId } from '@/lib/board/types'
 
 /** Schema version. v1 (old fragment-based) is dropped — see migration in design doc §4. */
 export const SHARE_SCHEMA_VERSION_V2 = 2 as const
@@ -51,7 +52,7 @@ export type ShareDataV2 = {
     readonly mode: 'and' | 'or'
     readonly tagIds: ReadonlyArray<string>
   }
-  readonly theme?: 'wave'
+  readonly theme?: ThemeId
   readonly createdAt: number
 }
 

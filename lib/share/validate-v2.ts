@@ -1,6 +1,8 @@
 // lib/share/validate-v2.ts
 import { z } from 'zod'
 import { SHARE_LIMITS_V2, SHARE_SCHEMA_VERSION_V2, type ShareDataV2 } from './types-v2'
+import { listThemeIds } from '@/lib/board/theme-registry'
+import type { ThemeId } from '@/lib/board/types'
 
 const httpUrl = z.string().url().refine(
   (u) => u.startsWith('http://') || u.startsWith('https://'),
@@ -31,7 +33,7 @@ const shareDataSchema = z.object({
     mode: z.enum(['and', 'or']),
     tagIds: z.array(z.string().max(64)).max(50),
   }).optional(),
-  theme: z.literal('wave').optional(),
+  theme: z.enum(listThemeIds() as [ThemeId, ...ThemeId[]]).optional(),
   createdAt: z.number().int().positive(),
 })
 
@@ -67,5 +69,13 @@ export function sanitizeShareDataV2(input: unknown): ParseResult {
       return next
     })
   }
+  // Sanitize theme: drop unknown values (e.g. legacy 'wave') to undefined so
+  // Zod's optional field passes cleanly rather than rejecting the whole payload.
+  const validThemes = new Set<string>(listThemeIds())
+  const sanitizedTheme: ThemeId | undefined =
+    typeof obj.theme === 'string' && validThemes.has(obj.theme)
+      ? (obj.theme as ThemeId)
+      : undefined
+  obj.theme = sanitizedTheme
   return parseShareDataV2(obj)
 }
