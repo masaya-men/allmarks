@@ -1,5 +1,7 @@
 // functions/api/share/create.ts
-// POST /api/share/create — KV write + 6-char base62 ID 発行
+// POST /api/share/create — KV にデータ本体を、 R2 に OG 画像を書く。
+// session 96 で画像を KV → R2 へ分離: KV は share データのみ (軽量)、 画像 (thumb) は
+// R2 bucket SHARE_OG に key=id で put (= egress 無料 + ストレージ単価 1/33)。
 import { generateShareId } from '../../../lib/share/kv-id'
 import { parseShareDataV2 } from '../../../lib/share/validate-v2'
 import { encodeKVPayload } from '../../../lib/share/encode-v2'
@@ -10,8 +12,17 @@ interface KVNamespace {
   get(key: string, options?: { type?: 'text' | 'json' | 'arrayBuffer' }): Promise<string | null>
 }
 
+interface R2Bucket {
+  put(
+    key: string,
+    value: ArrayBuffer | Uint8Array,
+    options?: { httpMetadata?: { contentType?: string } },
+  ): Promise<unknown>
+}
+
 interface Env {
   SHARE_KV: KVNamespace
+  SHARE_OG: R2Bucket
 }
 
 interface PagesContext {
@@ -28,6 +39,14 @@ function errResponse(status: number, error: ShareErrorResponse['error'], message
     status,
     headers: { 'Content-Type': 'application/json' },
   })
+}
+
+/** base64 文字列を bytes に変換する (= R2 put 用)。 */
+function base64ToBytes(b64: string): Uint8Array {
+  const binary = atob(b64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
 }
 
 export async function onRequestPost(ctx: PagesContext): Promise<Response> {
@@ -51,12 +70,26 @@ export async function onRequestPost(ctx: PagesContext): Promise<Response> {
     return errResponse(413, 'invalid', 'thumbnail too large')
   }
 
+  // thumb は data:image/<jpeg|webp>;base64,... 形式。 bytes に分解して R2 へ。
+  const thumbMatch = bodyObj.thumb.match(/^data:image\/(jpeg|webp);base64,(.+)$/)
+  if (!thumbMatch || !thumbMatch[2]) {
+    return errResponse(400, 'invalid', 'thumb must be a jpeg/webp data URL')
+  }
+  const contentType = thumbMatch[1] === 'webp' ? 'image/webp' : 'image/jpeg'
+  let thumbBytes: Uint8Array
+  try {
+    thumbBytes = base64ToBytes(thumbMatch[2])
+  } catch {
+    return errResponse(400, 'invalid', 'thumb base64 decode failed')
+  }
+
   const parsed = parseShareDataV2(bodyObj.share)
   if (!parsed.ok) {
     return errResponse(400, 'invalid', parsed.error)
   }
 
-  const entry: KVShareEntry = { share: parsed.data, thumb: bodyObj.thumb }
+  // KV にはデータ本体のみ (= 軽量、 thumb は R2 へ分離)。
+  const entry: KVShareEntry = { share: parsed.data }
   const encoded = await encodeKVPayload(entry)
 
   if (encoded.length > SHARE_LIMITS_V2.MAX_KV_ENTRY_BYTES) {
@@ -71,6 +104,13 @@ export async function onRequestPost(ctx: PagesContext): Promise<Response> {
   }
   if (id === null) {
     return errResponse(500, 'server', 'ID allocation failed')
+  }
+
+  // 画像を先に R2 へ。 失敗したら KV を書かずに終わる (= og が画像欠けにならないように)。
+  try {
+    await ctx.env.SHARE_OG.put(id, thumbBytes, { httpMetadata: { contentType } })
+  } catch {
+    return errResponse(500, 'server', 'image upload failed')
   }
 
   await ctx.env.SHARE_KV.put(id, encoded, { expirationTtl: SHARE_LIMITS_V2.TTL_SECONDS })

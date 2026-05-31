@@ -55,12 +55,15 @@ export type ShareDataV2 = {
   readonly createdAt: number
 }
 
-/** KV entry structure (= what we write to Cloudflare KV). */
+/** KV entry structure (= what we write to Cloudflare KV).
+ *  session 96 の R2 移行後、 KV にはデータ本体 (share) のみを書き、 画像 (thumb) は
+ *  R2 bucket (SHARE_OG) に分離する (= KV を軽量化 + 画像は egress 無料の R2 で配信)。
+ *  移行前に作られた共有は KV に thumb を持つので、 後方互換で optional のまま残す
+ *  (og.ts が R2 → KV thumb の順でフォールバック、 30日 TTL で旧データは自然消滅)。 */
 export type KVShareEntry = {
   readonly share: ShareDataV2
-  /** Base64-encoded JPEG thumbnail (OGP 用、 目標 ~180KB)。 本変更前は WebP だった
-   *  ので、 受信側 (og.ts) は jpeg/webp 両対応。 */
-  readonly thumb: string
+  /** Base64-encoded JPEG/WebP thumbnail。 R2 移行後の新規共有では未設定 (= R2 に分離)。 */
+  readonly thumb?: string
 }
 
 /** API response shapes. */

@@ -14,3 +14,12 @@ pages_build_output_dir = "out"
 binding = "SHARE_KV"
 id = "9c53f92e6cbf493f83c0ae2392dff2de"
 preview_id = "ee3ba0063888495e906a17f42d5a0138"
+
+# OG 画像 (共有のSNSプレビュー用 JPEG) を置く R2 bucket。 KV には軽いデータ本体のみ、
+# 画像は R2 へ分離 (= egress 無料 + ストレージ単価 1/33、 100万ユーザー規模でもほぼ無料)。
+# bucket は `wrangler r2 bucket create allmarks-share-og(-preview)` 済 (session 96)。
+# 30日で自動削除する lifecycle rule (expire-30d) 設定済 = KV TTL 30日と寿命を揃える。
+[[r2_buckets]]
+binding = "SHARE_OG"
+bucket_name = "allmarks-share-og"
+preview_bucket_name = "allmarks-share-og-preview"
