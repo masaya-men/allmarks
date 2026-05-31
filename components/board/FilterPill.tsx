@@ -272,11 +272,37 @@ export function FilterPill({
   }, [editingTagId, clearLeaveTimer])
 
   /* Recompute the tag-list scroll affordance whenever the menu opens or
-     the tag set changes. The menu is always mounted, so this just keys
-     off `open`. */
+     the tag set changes. The menu is always mounted, so this keys off
+     `open`.
+
+     Why this is more than a one-shot measure: the dropdown opens via a
+     0.5s `grid-template-rows: 0fr → 1fr` transition (see .menu in the CSS),
+     so right when `open` flips true the .tagScroll element is still
+     collapsed — its clientHeight is ~0 while scrollHeight already reflects
+     the rows. A single measure then mis-reads "overflowing", sets
+     data-scroll-edge='top', and paints a fade mask that never clears (a
+     non-overflowing 1-tag list can't scroll, so onScroll never re-fires).
+     Fix mirrors the manage screen's tag strip (TriagePage): re-measure on
+     rAF + a few timers spanning the animation, and observe the scroll box
+     so each growth step during the transition re-measures. With no overflow
+     (reduced-motion skips the transition too) it settles on 'none'. */
   useEffect(() => {
     if (!open) return
     updateTagScroll()
+    const raf = requestAnimationFrame(updateTagScroll)
+    const t1 = setTimeout(updateTagScroll, 80)
+    const t2 = setTimeout(updateTagScroll, 280)
+    const t3 = setTimeout(updateTagScroll, 560)
+    const el = tagScrollRef.current
+    const ro = el ? new ResizeObserver(updateTagScroll) : null
+    if (el && ro) ro.observe(el)
+    return (): void => {
+      cancelAnimationFrame(raf)
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+      ro?.disconnect()
+    }
   }, [open, tags, updateTagScroll])
 
   /* Exclusive selection (ALL / TRASH / DEAD): always closes. */
