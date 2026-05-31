@@ -20,13 +20,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 96 — 共有の角丸 + OGP画像が出ない致命バグを修正、本番 ship)
+### 直近の状態 (セッション 96 — 共有の角丸 + OGP致命バグ + 画像413 + R2移行を本番 ship)
 
-**ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 967 tests pass)**:
+**ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 975 tests pass、 本番 e2e 実測 PASS)**:
 
 1. **共有カードの角丸を3面で統一**: プレビュー(ShareMirror) のカードが直書き 3px → outerBand 縮小でほぼ四角に見えていた。ボードと同じ `var(--card-radius)` (20px) に統一。OG画像 ([capture-mirror.ts](../lib/share/capture-mirror.ts)) も `fillRect` → 角丸クリップ (`roundRectPath`+`clip`) 描画にし、半径はカード幅比で算出 (縮小率非依存) してプレビューと一致。実機 Chromium ピクセル検証済。
-2. **🔴 OGP画像が出ない致命バグを修正**: 共有ページの og:image / twitter:image メタが `/api/share/<id>/og.webp` を指していたが、配信関数のルートは `/api/share/<id>/og` (.webp なし) で**どの関数にも当たらず Next の 404 HTML が返り、SNS クローラーが画像を取得できていなかった**。本番 curl で実測確定 → メタの参照先を実在する `/og` に修正。**本番で共有を実際に作り、og:image → 画像配信(200/image/webp/中身あり) まで一気通貫で実測 PASS**。テスト3箇所のアサーションも `/og` に追従。
-3. (繰越のまま) ページ名の不一致整理 (MANAGE TAGS ↔ /triage) / カード左詰めの隙間 (skyline 系)。
+2. **🔴 OGP画像が出ない致命バグ**: og:image メタが `/api/share/<id>/og.webp` を指すが配信関数ルートは `/og` (.webp なし) で**どの関数にも当たらず Next の 404 HTML が返り SNS クローラーが画像を取得できていなかった**。本番 curl で実測確定 → メタを実在する `/og` に修正。
+3. **🔴 31枚共有が 413 (thumbnail too large)**: 上限が極小 (50KB、 小アイコン想定の古い値) なのに実画像は写真密な1200x628。さらに WebP は Discord/Slack で OGP 非表示。→ **JPEG 化 + 目標180KB に品質自動調整** (`canvasToJpegUnderTarget`、 最低品質まで落として必ず成立)、上限を 300KB/600KB/800KB に緩和。実機 + 本番 e2e PASS。
+4. **🔴 OG画像を KV → R2 へ分離 (100万人規模コスト対策)**: KV は画像込みで保管がスケールし無料枠を超える恐れ (1M user で月¥1.5万、 ほぼ画像)。R2 は **egress 無料 + ストレージ単価 1/33** で画像側は実質無料 (1M user で月¥3-5k=リクエスト課金中心、 10万人まで完全無料)。user が Cloudflare ダッシュボードで **R2 有効化** (PayPal 紐付け済、 課金は無料枠超過分のみ)。bucket `allmarks-share-og(-preview)` 作成 + 30日 expire lifecycle 設定。create.ts は画像を R2.put・KV は share のみ、 og.ts は R2優先→旧共有は KV thumb フォールバック。**本番 e2e: KV軽量(thumb無)・R2からimage/jpeg配信・旧共有も後方互換配信、 全 PASS**。設計詳細 [docs/private/2026-05-31-share-image-r2-plan.md]。
+5. (繰越のまま) ページ名の不一致整理 (MANAGE TAGS ↔ /triage) / カード左詰めの隙間 (skyline 系)。
+
+**🔴 user 本番確認待ち**: 実データ (31枚タグ等) で共有が成功するか + SNS にリンク貼ってサムネ (JPEG) が出るか (新規共有で。 X は Card Validator でキャッシュ更新可)。
 
 ### 一つ前 (セッション 95 — TITLE退場演出 + マネージ操作改善 + YouTubeサムネ修正を本番 ship)
 
