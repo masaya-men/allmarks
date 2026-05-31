@@ -5,6 +5,7 @@
    iframe / no video) — the card stays cheap for back-to-back swipes. */
 
 .card {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,6 +68,12 @@
   background-size: cover;
   background-position: center;
   background-color: #0c0c10;
+  /* The image is the card's drag/tap handle: grab to carry it onto a tag,
+     tap (no move) to open the link. touch-action:none lets pointer drags
+     work without the browser hijacking them for scroll/zoom. */
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
 }
 
 /* Text-only card: no media, hostname panel takes its place. */
@@ -89,6 +96,56 @@
   text-align: center;
   word-break: break-word;
   border-radius: var(--lightbox-media-radius, var(--card-radius));
+  /* Same drag/tap handle role as .media for text-only cards. */
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+/* ===== Card-drag affordances (manage screen) ===== */
+/* While the user is carrying the card, lift it and switch to the grabbing
+   cursor. The live transform (follow the pointer + scale) is applied inline
+   from TriagePage; this class only adds the chrome that doesn't depend on
+   pointer position. */
+.dragging {
+  z-index: 5;
+  cursor: grabbing;
+}
+.dragging .media,
+.dragging .hostnamePanel {
+  cursor: grabbing;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+/* Floating "→ tag name" label centred on the card while a chip is targeted,
+   so it's unmistakable which tag the card is heading into. Centred (not pinned
+   to the top) so it stays visible even as the card lifts toward the strip. */
+.targetLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(40, 241, 0, 0.16);
+  border: 1px solid rgba(40, 241, 0, 0.85);
+  box-shadow: 0 0 18px rgba(40, 241, 0, 0.55), inset 0 0 12px rgba(40, 241, 0, 0.2);
+  color: #eaffea;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  /* Tag names are shown lowercase everywhere (= the user's content); match it. */
+  text-transform: lowercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.targetLabelArrow {
+  color: #28f100;
+  font-weight: 700;
 }
 
 /* ===== Text panel (right) — fixed 320, Lightbox typography ===== */
@@ -105,6 +162,11 @@
   max-height: 100%;
   overflow-y: auto;
   padding-right: 4px; /* leave room for scrollbar without text crowding */
+  /* The text panel is the one part of the card the user reads — keep it freely
+     selectable (and out of the card-drag gesture, which is wired to the media
+     side only) so hard-to-read copy can be highlighted. */
+  user-select: text;
+  cursor: auto;
 
   /* Hairline scrollbar, same as Lightbox. */
   scrollbar-width: thin;
@@ -123,22 +185,29 @@
   transition: background 0.18s ease;
 }
 
+/* Title / description sit on the dark canvas with the blurred ambient backdrop
+   bleeding behind them, which can wash the text out when the source image is
+   bright. Push the colours to near-white and add a tight drop + soft halo
+   shadow (same two-tier recipe the board cards use) so the copy stays crisp on
+   any backdrop. */
 .title {
   font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.35;
   margin: 0;
-  color: var(--text-primary, #f5f5f5);
+  color: #ffffff;
   font-family: var(--font-sans);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.55);
 }
 
 .description {
   font-size: 15px;
   line-height: 1.65;
-  color: var(--text-body, #cbcbcb);
+  color: rgba(255, 255, 255, 0.92);
   margin: 0;
   font-family: var(--font-sans);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.5);
 }
 
 .meta {
@@ -146,10 +215,11 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  color: var(--text-meta, #888);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 /* Narrow viewport: stack media on top, text below, like Lightbox. */

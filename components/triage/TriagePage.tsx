@@ -12,12 +12,30 @@ import { AmbientBackdrop, type SwipeDecision } from './AmbientBackdrop'
 import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import { TagContextMenu } from './TagContextMenu'
 import { TagDeleteConfirmDialog } from './TagDeleteConfirmDialog'
+import { classifyRelease, hitTestChip, type ChipRect } from '@/lib/triage/drag-gesture'
 import styles from './TriagePage.module.css'
 
 type TriageMode = 'untagged' | 'all' | { tagId: string }
 
 const SWIPE_ANIM_MS = 360
-const DRAG_THRESHOLD_PX = 60
+/** Card-drag gesture thresholds (manage screen). Below TAP = open the link;
+ *  a horizontal drag at/above SWIPE = yes/no; a release over a chip = tag it. */
+const TAP_THRESHOLD_PX = 6
+const SWIPE_THRESHOLD_PX = 60
+/** How much the card follows the pointer visually. Damped (< 1) so it lifts
+ *  and leans toward the drag but stays inside the glass rather than flying off
+ *  the top edge — the pointer (undamped) is what reaches the chip, and the
+ *  glowing chip + centred "→ tag" label show where it's headed. */
+const CARD_FOLLOW_DAMP = 0.42
+/** Toss-into-tag fly animation duration; the apply + advance fires after it. */
+const TOSS_MS = 300
+/** Snap-back-to-centre duration when a drag is released over nothing. */
+const RETURN_MS = 180
+/** Pixels each chip's hit rect is inflated so dropping onto the thin text
+ *  chips is forgiving (fills the inter-chip gaps + a generous vertical band). */
+const CHIP_HIT_PAD_X = 9
+const CHIP_HIT_PAD_TOP = 30
+const CHIP_HIT_PAD_BOTTOM = 16
 
 function parseMode(raw: string | null): TriageMode | null {
   if (!raw) return null
@@ -70,6 +88,28 @@ export function TriagePage(): ReactElement {
   const [lastAction, setLastAction] = useState<{ bookmarkId: string; prev: readonly string[] } | null>(null)
   const [exitDecision, setExitDecision] = useState<SwipeDecision | null>(null)
   const [armedTagIds, setArmedTagIds] = useState<ReadonlySet<string>>(() => new Set())
+
+  /* ── Card drag-to-tag gesture (manage screen) ──
+     The card's image is a drag/tap handle. dragView (= the live offset + the
+     chip under the pointer) drives the card's follow-transform + the strip's
+     drop-target highlight; it's render state. dragRef holds the press origin
+     (read by the window listeners without re-rendering). dragActive gates the
+     listener effect so it attaches once per drag, not once per move. */
+  const [dragView, setDragView] = useState<{ dx: number; dy: number; targetTagId: string | null } | null>(null)
+  const [dragActive, setDragActive] = useState(false)
+  const dragRef = useRef<{ pointerId: number; startX: number; startY: number } | null>(null)
+  const chipRectsRef = useRef<ChipRect[]>([])
+  const canvasCardHostRef = useRef<HTMLDivElement>(null)
+  /* True from the moment a drop-on-tag toss starts until the apply+advance
+     fires, so a second press can't double-fire during the fly animation. */
+  const tossingRef = useRef(false)
+  const tossTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /* A drag whose press and release land on different elements makes the
+     browser fire a click on their common ancestor (= the page root), which
+     would trip the click-bare-margin-to-close handler and navigate away
+     mid-gesture. Set on any moved release so handleRootClick swallows that
+     one synthetic click. */
+  const suppressNextRootClickRef = useRef(false)
 
   /* Right-click / Shift+Delete context menu state. `tagId` is the chip
      the menu acts on. `x`/`y` are viewport coordinates where the menu
@@ -396,20 +436,168 @@ export function TriagePage(): ReactElement {
     onUndo: lastAction ? handleUndo : null,
   })
 
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null)
-  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    dragStartRef.current = { x: e.clientX, y: e.clientY }
-  }
-  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    const start = dragStartRef.current
-    dragStartRef.current = null
-    if (!start) return
-    const dx = e.clientX - start.x
-    if (Math.abs(dx) < DRAG_THRESHOLD_PX) return
-    if (dx > 0) handleYes()
-    else handleNo()
-  }
-  const onPointerCancel = (): void => { dragStartRef.current = null }
+  /* Snapshot the current chip rects (inflated for forgiving drops) for
+     pointer hit-testing. Captured at press time; the strip doesn't move
+     during a drag. Viewport coords match pointer clientX/Y. */
+  const collectChipRects = useCallback((): ChipRect[] => {
+    const root = tagStripRef.current
+    if (!root) return []
+    const out: ChipRect[] = []
+    root.querySelectorAll<HTMLElement>('[data-tag-id]').forEach((el) => {
+      const id = el.getAttribute('data-tag-id')
+      if (!id) return
+      const r = el.getBoundingClientRect()
+      out.push({
+        tagId: id,
+        left: r.left - CHIP_HIT_PAD_X,
+        right: r.right + CHIP_HIT_PAD_X,
+        top: r.top - CHIP_HIT_PAD_TOP,
+        bottom: r.bottom + CHIP_HIT_PAD_BOTTOM,
+      })
+    })
+    return out
+  }, [])
+
+  /* Apply a single dropped tag (kept alongside the card's existing + any
+     armed tags so we never strip) and advance, mirroring handleYes. In
+     'untagged' mode applying any tag drops the card from the queue, so we
+     don't advance the index; otherwise we do. */
+  const applyDropTag = useCallback((tagId: string): void => {
+    if (!current) return
+    setLastAction({ bookmarkId: current.bookmarkId, prev: [...current.tags] })
+    const composed = Array.from(new Set<string>([...current.tags, ...armedTagIds, tagId]))
+    const bookmarkId = current.bookmarkId
+    void persistTags(bookmarkId, composed).finally((): void => {
+      if (mode !== 'untagged') setIndex((i) => i + 1)
+    })
+  }, [current, armedTagIds, persistTags, mode])
+
+  /* Decide what a pointer release means and act on it. */
+  const handleRelease = useCallback(
+    (dx: number, dy: number, targetTagId: string | null): void => {
+      const outcome = classifyRelease({
+        dx, dy, targetTagId,
+        tapThresholdPx: TAP_THRESHOLD_PX,
+        swipeThresholdPx: SWIPE_THRESHOLD_PX,
+      })
+      // Any moved release ends with a synthetic click on the root; swallow it.
+      if (outcome.kind !== 'open') suppressNextRootClickRef.current = true
+      const cardEl = canvasCardHostRef.current?.querySelector<HTMLElement>('[data-testid="triage-card"]')
+
+      // The card follows the pointer damped (see CARD_FOLLOW_DAMP), so its
+      // current visual offset is the damped delta — animations must start there.
+      const vx = dx * CARD_FOLLOW_DAMP
+      const vy = dy * CARD_FOLLOW_DAMP
+
+      if (outcome.kind === 'tag') {
+        // Fly the card from its dragged spot into the targeted chip, then
+        // apply + advance. WAAPI with explicit from/to so it animates cleanly
+        // even though React drops the inline transform on the same tick.
+        const from = `translate(${vx}px, ${vy}px) scale(1.04)`
+        let to = `translate(${vx}px, ${vy}px) scale(0.08)`
+        if (cardEl) {
+          const cr = cardEl.getBoundingClientRect()
+          const chip = chipRectsRef.current.find((c) => c.tagId === outcome.tagId)
+          if (chip) {
+            const tdx = (chip.left + chip.right) / 2 - (cr.left + cr.width / 2)
+            const tdy = (chip.top + chip.bottom) / 2 - (cr.top + cr.height / 2)
+            to = `translate(${vx + tdx}px, ${vy + tdy}px) scale(0.08)`
+          }
+        }
+        tossingRef.current = true
+        setDragView(null)
+        cardEl?.animate(
+          [{ transform: from, opacity: 1 }, { transform: to, opacity: 0 }],
+          { duration: TOSS_MS, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' },
+        )
+        if (tossTimerRef.current) clearTimeout(tossTimerRef.current)
+        const tagToApply = outcome.tagId
+        tossTimerRef.current = setTimeout((): void => {
+          tossingRef.current = false
+          tossTimerRef.current = null
+          applyDropTag(tagToApply)
+        }, TOSS_MS)
+        return
+      }
+
+      if (outcome.kind === 'open') {
+        setDragView(null)
+        if (current) window.open(current.url, '_blank', 'noopener,noreferrer')
+        return
+      }
+
+      if (outcome.kind === 'cancel') {
+        // Smooth snap back to centre.
+        const from = `translate(${vx}px, ${vy}px) scale(1.04)`
+        setDragView(null)
+        cardEl?.animate(
+          [{ transform: from }, { transform: 'translate(0px, 0px) scale(1)' }],
+          { duration: RETURN_MS, easing: 'ease-out', fill: 'none' },
+        )
+        return
+      }
+
+      // yes / no swipe — hand off to the existing slide + persist logic.
+      setDragView(null)
+      if (outcome.kind === 'yes') handleYes()
+      else handleNo()
+    },
+    [current, handleYes, handleNo, applyDropTag],
+  )
+  const handleReleaseRef = useRef(handleRelease)
+  handleReleaseRef.current = handleRelease
+
+  const onSurfacePointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLDivElement>): void => {
+      if (exitDecision || tossingRef.current) return
+      // Block native image-drag / text selection so the follow-drag is clean.
+      e.preventDefault()
+      chipRectsRef.current = collectChipRects()
+      dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY }
+      setDragView({ dx: 0, dy: 0, targetTagId: null })
+      setDragActive(true)
+    },
+    [exitDecision, collectChipRects],
+  )
+
+  // Attach window pointer listeners once per drag (gated on dragActive, NOT on
+  // the per-move dragView), so a 60fps move stream doesn't re-bind listeners.
+  useEffect(() => {
+    if (!dragActive) return
+    const onMove = (e: PointerEvent): void => {
+      const d = dragRef.current
+      if (!d || e.pointerId !== d.pointerId) return
+      const dx = e.clientX - d.startX
+      const dy = e.clientY - d.startY
+      const targetTagId = hitTestChip(e.clientX, e.clientY, chipRectsRef.current)
+      setDragView({ dx, dy, targetTagId })
+    }
+    const onUp = (e: PointerEvent): void => {
+      const d = dragRef.current
+      if (!d || e.pointerId !== d.pointerId) return
+      const dx = e.clientX - d.startX
+      const dy = e.clientY - d.startY
+      const targetTagId = hitTestChip(e.clientX, e.clientY, chipRectsRef.current)
+      dragRef.current = null
+      setDragActive(false)
+      handleReleaseRef.current(dx, dy, targetTagId)
+    }
+    const onCancel = (): void => {
+      dragRef.current = null
+      setDragActive(false)
+      setDragView(null)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onCancel)
+    return (): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onCancel)
+    }
+  }, [dragActive])
+
+  useEffect(() => (): void => { if (tossTimerRef.current) clearTimeout(tossTimerRef.current) }, [])
 
   if (loading) {
     return (
@@ -470,6 +658,14 @@ export function TriagePage(): ReactElement {
   // at their own elements so e.target !== currentTarget there; the heading
   // + progress are pointer-events:none so clicks fall through to root.
   const handleRootClick = (e: ReactMouseEvent<HTMLDivElement>): void => {
+    /* Swallow the synthetic click the browser fires on the root right after a
+       moved card drag (press + release on different elements) — without this
+       a drag-to-tag / swipe would also read as a "click the bare margin to
+       close" and navigate to /board mid-gesture. */
+    if (suppressNextRootClickRef.current) {
+      suppressNextRootClickRef.current = false
+      return
+    }
     /* While a chip context menu or the delete-confirm dialog is open,
        any background pointerdown is consumed by the menu/dialog's own
        outside-click handler to close itself — the subsequent click on
@@ -524,6 +720,8 @@ export function TriagePage(): ReactElement {
               setRenameTarget(null)
             }}
             onRenameCancel={(): void => setRenameTarget(null)}
+            cardDragActive={dragView != null}
+            dropTargetTagId={dragView?.targetTagId ?? null}
           />
         </div>
         {/* + TAG pinned to the right edge, outside the scroll region, so it's
@@ -555,15 +753,21 @@ export function TriagePage(): ReactElement {
         </defs>
       </svg>
 
-      {/* Central glass canvas — overflow:hidden clips the card as it slides off. */}
-      <div
-        className={styles.canvas}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
-      >
-        <div className={styles.canvasCardHost}>
-          <TriageCard key={current.bookmarkId} item={current} exitDecision={exitDecision} />
+      {/* Central glass canvas — overflow:hidden clips the card as it slides off.
+          Gestures live on the card's image surface (drag-to-tag / tap-to-open /
+          swipe), wired via onSurfacePointerDown below, so the text panel stays
+          freely selectable. */}
+      <div className={styles.canvas}>
+        <div className={styles.canvasCardHost} ref={canvasCardHostRef}>
+          <TriageCard
+            key={current.bookmarkId}
+            item={current}
+            exitDecision={exitDecision}
+            onSurfacePointerDown={onSurfacePointerDown}
+            liveTransform={dragView ? `translate(${dragView.dx * CARD_FOLLOW_DAMP}px, ${dragView.dy * CARD_FOLLOW_DAMP}px) scale(1.04)` : null}
+            isDragging={dragView != null}
+            targetTagName={dragView?.targetTagId ? tags.find((tg) => tg.id === dragView.targetTagId)?.name ?? null : null}
+          />
           {incoming && (
             <TriageCard
               key={`incoming-${incoming.bookmarkId}`}

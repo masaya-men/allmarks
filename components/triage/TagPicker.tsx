@@ -57,6 +57,7 @@ export function useTagPickerKeys({
 export function TopTagStrip({
   tags, armedTagIds, suggestedTagIds, onToggle, onCreate, onChipContextMenu, activeContextTagId,
   showAddButton = true, onReorder, editingTagId, onRenameSubmit, onRenameCancel,
+  cardDragActive = false, dropTargetTagId = null,
 }: {
   tags: ReadonlyArray<TagRecord>
   armedTagIds: ReadonlySet<string>
@@ -68,6 +69,11 @@ export function TopTagStrip({
     tagId: string,
   ) => void
   activeContextTagId?: string | null
+  /** True while a card is being carried over the strip (drag-to-tag). Dims the
+   *  chips so the targeted one stands out. */
+  cardDragActive?: boolean
+  /** Id of the chip the carried card is currently aimed at — blooms big+green. */
+  dropTargetTagId?: string | null
   /** When false, the inline "+ TAG" creator is NOT rendered inside the strip.
    *  TriagePage renders it pinned outside the scroll region so it's always
    *  visible; the default keeps the standalone behaviour for any other use. */
@@ -111,11 +117,15 @@ export function TopTagStrip({
         const isDragging = drag?.id === tag.id
         const dropBefore = drag != null && !isDragging && drag.gapIndex === i
         const dropAfter = drag != null && !isDragging && drag.gapIndex >= tags.length && i === tags.length - 1
+        const isDropTarget = cardDragActive && dropTargetTagId === tag.id
+        const isDragDimmed = cardDragActive && !isDropTarget
         const cls = [
           styles.chip,
           armed && styles.chipArmed,
           suggested && !armed && styles.chipSuggested,
           contextActive && styles.chipContextActive,
+          isDropTarget && styles.chipDropTarget,
+          isDragDimmed && styles.chipDragDimmed,
         ].filter(Boolean).join(' ')
         return (
           <button
