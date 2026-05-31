@@ -442,6 +442,11 @@
 
 完了済バグは TODO_COMPLETED.md に移動済。 ここはアクティブのみ。
 
+### 共有 (share) — 次セッション着手候補 (session 96 で user 要望)
+
+- **受け取り画面 (/s/<id>/triage) をマネージ画面と同じ UI に** (session 96 user 要望) — 現状 [ReceiverTriage.tsx](../components/share/ReceiverTriage.tsx)(239行) はマネージ [TriagePage.tsx](../components/triage/TriagePage.tsx)(857行)/[TriageCard.tsx](../components/triage/TriageCard.tsx) を**全く再利用していない別物**。user は「マネージと同じ UI で文言だけ共有用に変える」体験を希望。ただし目的が違う (マネージ=自分のブクマ整理 / 受け取り=他人のを取り込み + 送り主タグ提案 + 重複検出) ので「共通部品を共有 + 取り込み固有の振る舞いを差し込む」設計が要る。**brainstorming で方針合意してから実装** (大改修、勝手にやらない)。マネージ側には session 95 の「画像ドラッグでタグ付け + ガラス演出」もあり、受け取りにも欲しいか含め要相談。
+- **フィルターのタグ 1 つでもフェード(マスク)がかかり視認性が落ちる** (session 96 user 報告) — コード上はフェードは overflow 時のみ ([FilterPill.module.css:228](../components/board/FilterPill.module.css#L228) `data-scroll-edge !== 'none'` の時だけ mask、[FilterPill.tsx:120](../components/board/FilterPill.tsx#L120) `updateTagScroll` が `canScroll` 判定)。1 タグなら overflow しない→`none`→マスク無しが理屈なのに**実際はフェードが見える＝理屈と現実がズレ**。**実機(Playwright)で 1 タグ状態の dropdown を計測して真因特定してから直す** (憶測で触らない)。`.menu` 等別要素のフェード混入 or `data-scroll-edge` 初期値/measure タイミングの誤りを疑う。
+
 ### 表示・サムネ系
 
 - ~~**B-#23 Vimeo / SoundCloud Lightbox 再生未対応**~~ ✅ session 51 で完遂 (= 専用 Embed コンポーネント追加 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダーまで波及)
