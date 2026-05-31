@@ -1,0 +1,9 @@
+.receiverOverlay { position: absolute; inset: 0; z-index: 40; border-radius: var(--card-radius, 20px); opacity: 0; transition: opacity 140ms ease; pointer-events: none; }
+.receiverOverlay[data-visible='true'] { opacity: 1; pointer-events: auto; }
+.receiverOverlay[data-greyed='true'] { background: rgba(0, 0, 0, 0.55); }
+.includeToggle { position: absolute; top: 8px; left: 8px; font: 11px ui-monospace, monospace; letter-spacing: 0.1em; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.5); color: #fff; cursor: pointer; }
+.includeToggle[data-on='true'] { background: rgba(40, 241, 0, 0.18); border-color: #28F100; color: #d8ffcf; }
+.alreadyRibbon { position: absolute; top: 8px; left: 8px; font: 10px ui-monospace, monospace; letter-spacing: 0.12em; padding: 4px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.85); }
+.senderTagRow { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.senderTagChip { font: 10px ui-monospace, monospace; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.5); color: rgba(255, 255, 255, 0.85); cursor: pointer; }
+.senderTagChip[data-on='true'] { background: rgba(40, 241, 0, 0.18); border-color: #28F100; color: #d8ffcf; }

@@ -42,6 +42,7 @@ import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
 import { pickCard } from './cards'
+import styles from './CardsLayer.module.css'
 
 /** Minimum width for the playback control bar = the DENSE preset card width
  *  (207.80px). The bar tracks the active card's width but never shrinks below
@@ -296,6 +297,20 @@ type CardsLayerProps = {
    *  currently-matched cards once per filter change. 0 = initial mount
    *  (no animation). */
   readonly entryAnimCycle?: number
+  /** Receiver moodboard mode (shared-link recipient view). When set, the
+   *  board's edit affordances (resize handle, corner actions, drag-reorder,
+   *  per-card board tag UI) are suppressed and a per-card receiver overlay is
+   *  shown (save/skip toggle + sender-tag chips + grey-out + already-saved
+   *  ribbon). When undefined, CardsLayer behaves exactly as before. */
+  readonly receiverMode?: {
+    readonly includedUrls: ReadonlySet<string>
+    readonly alreadySavedUrls: ReadonlySet<string>
+    readonly senderTags: import('@/lib/share/types-v2').TagDict
+    readonly senderTagIdsByCard: ReadonlyMap<string, ReadonlyArray<string>>
+    readonly chosenTagsByCard: ReadonlyMap<string, ReadonlySet<string>>
+    readonly onToggleInclude: (cardUrl: string) => void
+    readonly onToggleSenderTag: (cardUrl: string, senderTagId: string) => void
+  }
 }
 
 export function CardsLayer({
@@ -336,6 +351,7 @@ export function CardsLayer({
   activeContextTagId,
   isScrolling = false,
   entryAnimCycle = 0,
+  receiverMode,
 }: CardsLayerProps): ReactNode {
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -873,6 +889,30 @@ export function CardsLayer({
   // without a dependency that causes extra FLIP runs.
   dragStateRef.current = dragState ? { bookmarkId: dragState.bookmarkId } : null
 
+  // Receiver-mode pointer handler. Cards in the shared-link recipient view
+  // must NOT reorder/drag, but click-to-open (Lightbox FLIP) must still work.
+  // So instead of the full reorder hook we bind a lightweight tap detector:
+  // on pointer-up within the same 5px / movement window the board uses, fire
+  // onClick(bookmarkId, originRect); a larger movement is simply ignored
+  // (= no drag, no reorder). Bound only when receiverMode is set.
+  const handleReceiverPointerDown = useCallback(
+    (e: PointerEvent<HTMLDivElement>, bookmarkId: string): void => {
+      if (e.button > 0) return
+      const el = e.currentTarget
+      const startX = e.clientX
+      const startY = e.clientY
+      const up = (ev: globalThis.PointerEvent): void => {
+        el.removeEventListener('pointerup', up)
+        el.removeEventListener('pointercancel', up)
+        const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+        if (dist < 5) onClick(bookmarkId, el.getBoundingClientRect())
+      }
+      el.addEventListener('pointerup', up)
+      el.addEventListener('pointercancel', up)
+    },
+    [onClick],
+  )
+
   // Esc during drag → restore dragged card to its pre-drag slot (FLIP handles it).
   useEffect(() => {
     if (!dragState) return
@@ -925,7 +965,11 @@ export function CardsLayer({
             }}
             data-bookmark-id={it.bookmarkId}
             data-link-status={it.linkStatus ?? undefined}
-            onPointerDown={(e: PointerEvent<HTMLDivElement>): void => handleReorderPointerDown(e, it.bookmarkId)}
+            onPointerDown={(e: PointerEvent<HTMLDivElement>): void =>
+              receiverMode
+                ? handleReceiverPointerDown(e, it.bookmarkId)
+                : handleReorderPointerDown(e, it.bookmarkId)
+            }
             onPointerEnter={(): void => onHoverChange(it.bookmarkId)}
             onPointerLeave={(): void => onHoverChange(null)}
             style={{
@@ -987,6 +1031,48 @@ export function CardsLayer({
                 )
               })()}
             </CardNode>
+            {receiverMode && (() => {
+              const url = it.url
+              const already = receiverMode.alreadySavedUrls.has(url)
+              const included = !already && receiverMode.includedUrls.has(url)
+              const greyed = already || !included
+              const hovered = hoveredBookmarkId === it.bookmarkId
+              const chosen = receiverMode.chosenTagsByCard.get(url) ?? new Set<string>()
+              const tagIds = receiverMode.senderTagIdsByCard.get(url) ?? []
+              return (
+                <div
+                  className={styles.receiverOverlay}
+                  data-visible={hovered || greyed ? 'true' : 'false'}
+                  data-greyed={greyed ? 'true' : 'false'}
+                  onPointerDown={(e): void => e.stopPropagation()}
+                >
+                  {already && <span className={styles.alreadyRibbon}>ALREADY SAVED</span>}
+                  {!already && (
+                    <button
+                      type="button"
+                      className={styles.includeToggle}
+                      data-on={included ? 'true' : 'false'}
+                      onClick={(e): void => { e.stopPropagation(); receiverMode.onToggleInclude(url) }}
+                    >{included ? 'SAVE' : 'SKIP'}</button>
+                  )}
+                  {!already && tagIds.length > 0 && (
+                    <div className={styles.senderTagRow}>
+                      {tagIds.map((tid) => {
+                        const tag = receiverMode.senderTags[tid]
+                        if (!tag) return null
+                        const on = chosen.has(tid)
+                        return (
+                          <button key={tid} type="button" className={styles.senderTagChip}
+                            data-on={on ? 'true' : 'false'}
+                            onClick={(e): void => { e.stopPropagation(); receiverMode.onToggleSenderTag(url, tid) }}
+                          >{tag.n.toLowerCase()}</button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
             {audioActiveId === it.bookmarkId && canPlayInline(it) && (
               // Tier 3 inline player overlay. stopPropagation on pointerdown
               // so interacting with the player (scrub, volume, fullscreen)
@@ -1110,26 +1196,30 @@ export function CardsLayer({
                 (see ResizeHandle.module.css cross-module rules). Without
                 this ordering, hovering × or ↺ silences the resize hint
                 arcs in the corners they cover. */}
-            <CardCornerActions
-              hovered={hoverActive}
-              hasCustomWidth={it.customCardWidth}
-              inTrash={inTrash}
-              onDelete={(): void => onDelete(it.bookmarkId)}
-              onResetSize={(): void => onCardResetSize(it.bookmarkId)}
-            />
-            <ResizeHandle
-              cardWidth={p.w}
-              cardHeight={p.h}
-              maxCardWidth={viewportWidth}
-              onResize={(nextW: number): void => onCardResize(it.bookmarkId, nextW)}
-              onResizeEnd={(finalW: number): void => onCardResizeEnd(it.bookmarkId, finalW)}
-            />
+            {!receiverMode && (
+              <>
+                <CardCornerActions
+                  hovered={hoverActive}
+                  hasCustomWidth={it.customCardWidth}
+                  inTrash={inTrash}
+                  onDelete={(): void => onDelete(it.bookmarkId)}
+                  onResetSize={(): void => onCardResetSize(it.bookmarkId)}
+                />
+                <ResizeHandle
+                  cardWidth={p.w}
+                  cardHeight={p.h}
+                  maxCardWidth={viewportWidth}
+                  onResize={(nextW: number): void => onCardResize(it.bookmarkId, nextW)}
+                  onResizeEnd={(finalW: number): void => onCardResizeEnd(it.bookmarkId, finalW)}
+                />
+              </>
+            )}
             {/* Per-card tag pills, bleeding off the card's top-left corner.
                 Renders only when the bookmark actually has tags AND the card
                 is hovered (= silent-board principle — meta UI stays invisible
                 at rest). Pills click → toggle in the board-wide tag filter,
                 same semantics as the chrome TagFilterBar chips. */}
-            {!taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
+            {!receiverMode && !taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
               <TagIndicatorStrip
                 tags={it.tags
                   .map((tid) => tagsById.get(tid))
@@ -1146,7 +1236,7 @@ export function CardsLayer({
                 open (so the trigger stays anchored under the user's eye
                 while they're choosing a tag). pointerdown swallow so a
                 click doesn't engage the card-reorder drag underneath. */}
-            {!taggedOut && allTags !== undefined && onTagToggle !== undefined && onTagCreate !== undefined && (
+            {!receiverMode && !taggedOut && allTags !== undefined && onTagToggle !== undefined && onTagCreate !== undefined && (
               <>
                 <button
                   type="button"
