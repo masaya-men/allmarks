@@ -88,7 +88,7 @@ export function buildShareDataFromBoard(args: BuildShareArgs): ShareDataV2 {
     cards,
     tags: tagDict,
     filter: args.filter ?? undefined,
-    theme: args.themeId,
+    ...(args.themeId ? { theme: args.themeId } : {}),
     createdAt: args.now,
   }
 }

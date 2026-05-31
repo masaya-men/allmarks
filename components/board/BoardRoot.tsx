@@ -1402,6 +1402,9 @@ export function BoardRoot() {
         ? { mode: activeFilter.mode, tagIds: activeFilter.tagIds }
         : null,
       now: Date.now(),
+      // Theme switching is not yet wired in the board UI; BoardRoot hardcodes
+      // DEFAULT_THEME_ID. Forward it so the receiver can restore the same theme.
+      themeId: DEFAULT_THEME_ID,
     })
   }, [lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx])
 

@@ -78,4 +78,16 @@ describe('buildShareDataFromBoard', () => {
     const data = buildShareDataFromBoard({ items: many, tags: [], filter: null, now: 1735000000000 })
     expect(data.cards.length).toBe(100)
   })
+
+  it('carries the provided themeId', () => {
+    const data = buildShareDataFromBoard({
+      items: [], tags: [], filter: null, now: 1, themeId: 'grid-paper',
+    })
+    expect(data.theme).toBe('grid-paper')
+  })
+
+  it('omits theme when no themeId provided', () => {
+    const data = buildShareDataFromBoard({ items: [], tags: [], filter: null, now: 1 })
+    expect(data.theme).toBeUndefined()
+  })
 })
