@@ -5,7 +5,7 @@ import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layo
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { CardPosition } from '@/lib/board/types'
 
-const CLICK_THRESHOLD_PX = 5
+export const CLICK_THRESHOLD_PX = 5
 const CLICK_MAX_MS = 200
 
 // Edge auto-scroll while dragging a card. When the pointer enters the top

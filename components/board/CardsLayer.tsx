@@ -40,9 +40,16 @@ import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
 import { useSpotlightRotation } from '@/lib/board/use-spotlight-rotation'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
-import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator } from './use-card-reorder-drag'
+import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX } from './use-card-reorder-drag'
 import { pickCard } from './cards'
 import styles from './CardsLayer.module.css'
+
+/** Max press-and-hold duration (ms) for a pointer gesture to still count as a
+ *  tap in receiver mode. Mirrors the value useCardReorderDrag uses internally
+ *  (CLICK_MAX_MS = 200 there — not exported, so replicated here). A slower
+ *  press-and-hold is NOT treated as a tap. Paired with CLICK_THRESHOLD_PX
+ *  (imported) for the 5px + 200ms tap window. */
+const CLICK_MAX_MS = 200
 
 /** Minimum width for the playback control bar = the DENSE preset card width
  *  (207.80px). The bar tracks the active card's width but never shrinks below
@@ -892,23 +899,43 @@ export function CardsLayer({
   // Receiver-mode pointer handler. Cards in the shared-link recipient view
   // must NOT reorder/drag, but click-to-open (Lightbox FLIP) must still work.
   // So instead of the full reorder hook we bind a lightweight tap detector:
-  // on pointer-up within the same 5px / movement window the board uses, fire
-  // onClick(bookmarkId, originRect); a larger movement is simply ignored
-  // (= no drag, no reorder). Bound only when receiverMode is set.
+  // a gesture counts as a tap (and fires onClick) only when it both moves
+  // less than CLICK_THRESHOLD_PX (5px) AND releases within CLICK_MAX_MS
+  // (200ms) of pressing — the same window useCardReorderDrag applies. A
+  // larger movement OR a slower press-and-hold is simply ignored (= no
+  // drag, no reorder, no open). Bound only when receiverMode is set.
+  //
+  // We setPointerCapture on pointerdown (mirroring the reorder hook) so an
+  // interrupted gesture — press, move off the card, release elsewhere —
+  // still routes pointerup/pointercancel to this element and tears the
+  // listeners down. Both terminal events run the same teardown so no
+  // dangling listener can leak. Timestamps use the PointerEvent's own
+  // e.timeStamp (Date.now() is forbidden in this codebase).
   const handleReceiverPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>, bookmarkId: string): void => {
       if (e.button > 0) return
       const el = e.currentTarget
+      const pointerId = e.pointerId
       const startX = e.clientX
       const startY = e.clientY
-      const up = (ev: globalThis.PointerEvent): void => {
-        el.removeEventListener('pointerup', up)
-        el.removeEventListener('pointercancel', up)
-        const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY)
-        if (dist < 5) onClick(bookmarkId, el.getBoundingClientRect())
+      const startTime = e.timeStamp
+      // Guard for environments (some test runners) without pointer capture.
+      el.setPointerCapture?.(pointerId)
+      const end = (ev: globalThis.PointerEvent): void => {
+        el.removeEventListener('pointerup', end)
+        el.removeEventListener('pointercancel', end)
+        if (el.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId)
+        // pointercancel must NOT open the lightbox — it only tears down. Only
+        // a genuine pointerup that satisfies the tap window fires onClick.
+        if (ev.type !== 'pointerup') return
+        const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+        const elapsed = ev.timeStamp - startTime
+        if (elapsed < CLICK_MAX_MS && distance < CLICK_THRESHOLD_PX) {
+          onClick(bookmarkId, el.getBoundingClientRect())
+        }
       }
-      el.addEventListener('pointerup', up)
-      el.addEventListener('pointercancel', up)
+      el.addEventListener('pointerup', end)
+      el.addEventListener('pointercancel', end)
     },
     [onClick],
   )
@@ -1044,7 +1071,6 @@ export function CardsLayer({
                   className={styles.receiverOverlay}
                   data-visible={hovered || greyed ? 'true' : 'false'}
                   data-greyed={greyed ? 'true' : 'false'}
-                  onPointerDown={(e): void => e.stopPropagation()}
                 >
                   {already && <span className={styles.alreadyRibbon}>ALREADY SAVED</span>}
                   {!already && (
@@ -1052,6 +1078,8 @@ export function CardsLayer({
                       type="button"
                       className={styles.includeToggle}
                       data-on={included ? 'true' : 'false'}
+                      aria-pressed={included}
+                      onPointerDown={(e): void => e.stopPropagation()}
                       onClick={(e): void => { e.stopPropagation(); receiverMode.onToggleInclude(url) }}
                     >{included ? 'SAVE' : 'SKIP'}</button>
                   )}
@@ -1064,6 +1092,8 @@ export function CardsLayer({
                         return (
                           <button key={tid} type="button" className={styles.senderTagChip}
                             data-on={on ? 'true' : 'false'}
+                            aria-pressed={on}
+                            onPointerDown={(e): void => e.stopPropagation()}
                             onClick={(e): void => { e.stopPropagation(); receiverMode.onToggleSenderTag(url, tid) }}
                           >{tag.n.toLowerCase()}</button>
                         )
