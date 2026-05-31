@@ -20,7 +20,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 94 — タグ周り作り直し 3 件を本番 ship)
+### 直近の状態 (セッション 95 — TITLE退場演出 + マネージ操作改善 + YouTubeサムネ修正を本番 ship)
+
+**ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 967 tests pass、 全て Playwright 実機検証済、 3件とも brainstorming で合意してから実装)**:
+
+1. **TITLE(背景タイポ) の OFF 退場演出** (`8cde48f`): OFF = カードがフィルターで消えるのと**完全同一の CRT shutdown**(`lib/animation/tag-shutdown`)、ON = 従来のブートアップ。可視性は状態の純粋関数のまま死守 (memory `feedback_visibility_never_from_animation`)、CardsLayer barMount と同じ遅延 unmount パターン (`bgTypoMount` が `bgTypoEnabled` に遅れて追従、OFF は closing=true で描画維持→固定タイマー620msで unmount、アニメ完了に依存しない)。連打は最後の状態に収束。
+2. **マネージ画面(/triage) 操作改善** (`b1afacb`): カードの**画像部分**でジェスチャ (本文テキストは選択可能のまま)。**ドラッグでタグ付け** (ガラス内で減衰追従 0.42、狙ったチップ緑発光+他減光、中央に「→タグ名」緑ピル、離すとそのタグへ吸い込み付与+次へ)、**タップで別タブ**、左右スワイプ YES/NO 維持。判定は純粋関数 [lib/triage/drag-gesture.ts](../lib/triage/drag-gesture.ts)(単体12件)。**文字くっきり** (タイトル純白/説明ほぼ白+黒影、本文 user-select:text)。ヒント `CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO`。🐛 移動 release の合成 click がルートの閉じるハンドラを誤発火→`suppressNextRootClickRef` で握り潰し解決。
+3. **YouTube サムネ修正** (`208e77d`): Lightbox・マネージが白い「YouTube」ロゴになる件を根本修正。[use-board-data.ts](../lib/storage/use-board-data.ts#L73) `deriveThumbnail` を、YouTube は保存 og:image より**動画IDの本物サムネ(hqdefault)を優先**に。読み込み時導出なので**既存ブクマもリロードで直る**。ボード(VideoThumbCard)は元から ID 方式で不変、スライドショーのコマ(hq1/hq2)は別物で不変。単体 +4。
+
+**🔴 user 本番確認待ち** ([CURRENT_GOAL.md](./CURRENT_GOAL.md)): ①TITLE 退場の体感・強さ / ②ドラッグ減衰量・吸い込み速度・タップ開き・文字可読 / ③Lightbox と Shorts でも本物サムネか。
+
+### 一つ前 (セッション 94 — タグ周り作り直し 3 件を本番 ship)
 
 **ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 951 tests pass、 全て Playwright 実機検証済)**:
 

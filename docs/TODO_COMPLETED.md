@@ -6490,3 +6490,44 @@ user 発案「メーターを右端に出す」を [docs/private/IDEAS.md](priva
 **ユーザーフィードバック（本番確認後）→ session 94 rework 確定**（詳細 CURRENT_GOAL.md）: ②インライン編集化 / ③掴み手廃止+直接ドラッグ+端で自動スクロール+triage 右方向バグ / ④デフォルト名前順（あいうえお含む）+追加時に自動で正しい位置+昇順降順ボタン+手動ドラッグ後は手動モード。
 
 **記録した別 backlog**: ページ名不一致（ボタン「MANAGE TAGS」↔ URL `/triage`）の整理タスク、共有ミラーの角丸・背景タイポ未再現、カードが左詰めされないことがある（TODO §未対応バグ）。
+
+---
+
+## セッション 95 (2026-05-31) — TITLE OFF退場演出 + マネージのドラッグでタグ付け/タップで開く/文字くっきり + YouTubeサムネ修正
+
+3件を本番 `booklage.pages.dev` 反映済（tsc 0 / 967 tests / すべて Playwright 実機検証済）。3件とも brainstorming で方針合意してから実装。
+
+### ① TITLE(背景タイポ) の ON/OFF 演出を仕上げ（commit 8cde48f）
+
+session 94 で「OFF=即時非表示（演出なし、未完成）」だった退場演出を、user 合意のうえ追加。**OFF＝カードがフィルターで消えるときと完全に同一の CRT shutdown**（`lib/animation/tag-shutdown` の `lbebber-green` 潰れ＋走査線＋チラつき）、ON＝従来のブートアップ。
+
+- **可視性ルールは死守**（memory `feedback_visibility_never_from_animation`）: 表示/非表示は状態の純粋関数のまま。CardsLayer の barMount と同じ「遅延 unmount」パターンを採用＝`bgTypoMount` state が `bgTypoEnabled` に遅れて追従し、OFF 時は closing=true で描画維持→**固定タイマー(620ms)で unmount**（アニメ完了イベントには依存しない）。連打は最後の状態に収束（ON=表示 / OFF=非表示）。
+- 変更: [BoardBackgroundTypography.tsx](../components/board/BoardBackgroundTypography.tsx)（`closing` prop で shutdown CSS を wordmark に適用）+ [BoardRoot.tsx](../components/board/BoardRoot.tsx)（遅延 unmount state machine、`BG_TYPO_SHUTDOWN_MS=620`）。
+- 実機検証: ON=WAAPI boot-up / OFF=lbebber-green+走査線+チラつき / タイマー後 unmount / 連打レース両方向が正しく収束。
+
+### ② マネージ画面(/triage) の操作改善（commit b1afacb）
+
+カードの**画像部分**をジェスチャ面に（**本文テキストは選択可能のまま**＝読みにくい時に選べる、user 要望）:
+
+- **ドラッグでタグ付け**: 画像をタグへ運ぶと、カードが**ガラス内で減衰追従して持ち上がり**（はみ出さない、follow factor 0.42）、狙ったタグチップが**緑に拡大発光**・他は減光、カード中央に**「→ タグ名」緑ピル**。離すとそのタグへ**吸い込まれて付与＋次へ**（untagged は queue 縮小、それ以外は index++）。判定は純粋関数 [lib/triage/drag-gesture.ts](../lib/triage/drag-gesture.ts)（classifyRelease / hitTestChip、単体テスト12件）。
+- **タップで別タブ**: 画像を動かさず離すと元URLを新規タブで開く。
+- **左右スワイプ** YES/NO は従来通り。
+- **文字くっきり**: タイトル純白、説明ほぼ白、全部に黒影（drop+halo）で明るい背景でも可読。本文は user-select:text。
+- **ヒント文**: `CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO`（SPACE 追記）。
+- **🐛 落とし穴**: 移動を伴う release は press/up が別要素なので**ルートに合成 click が飛び**、「余白クリックで閉じる」ハンドラが発火して /board へ遷移→toss タイマーが unmount で消えてタグが付かなかった。`suppressNextRootClickRef` で移動後の click 1回を握り潰して解決。
+- 実機検証: タップ=開く＋留まる / ドラッグ=タグ0→1付与＋留まる / スワイプ=送り＋留まる / ラベル＋減衰持ち上がり描画。
+
+### ③ YouTube サムネが Lightbox・マネージで「YouTubeロゴ」になる修正（commit 208e77d）
+
+ボードは [VideoThumbCard](../components/board/cards/VideoThumbCard.tsx) が動画IDから本物フレーム(i.ytimg)を組むので正しく出るが、Lightbox とマネージは `item.thumbnail`（=`deriveThumbnail` が返す保存 og:image）を使い、YouTube はこれが白い「YouTube」ロゴになっていることがあった。**根本修正は1か所**: [use-board-data.ts](../lib/storage/use-board-data.ts#L73) の `deriveThumbnail` を、YouTube URL なら保存 og:image より**動画IDの本物サムネ(hqdefault、必ず存在)を優先**するよう変更。読み込み時に毎回導出するので**既存ブクマもリロードで直る**（移行不要）。ボードは元から ID 方式で不変、スライドショーのコマ(hq1/hq2)は別物で不変。
+
+- user の鋭い確認: 「フレーム(コマ)とサムネは別では？」→ hqdefault/maxres=投稿者サムネ、1/2/3・hq1/hq2/hq3=タイムスタンプのコマ、と整理して合意。修正は**サムネのみ**使用。
+- 実機検証: YouTube ブクマにわざと偽ロゴを保存しても、マネージのカードは i.ytimg hqdefault を表示（偽ロゴ漏れ0）。`deriveThumbnail` 単体テスト +4。
+
+### user 本番確認待ち（次セッション冒頭）
+①TITLE 退場の体感・強さ / ②ドラッグ減衰量・吸い込み速度・タップ開き・文字可読 / ③Lightbox と Shorts でも本物サムネか。
+
+### 繰越（未着手）
+- 共有 OG 画像の角丸（ミラーは角丸あり、[capture-mirror.ts](../lib/share/capture-mirror.ts) の drawCards は fillRect で角丸無し）
+- ページ名の不一致整理（ボタン「MANAGE TAGS」↔ URL `/triage`、URL変更は共有リンク影響に注意）
+- カードが左詰めされないことがある（§未対応バグ、skyline 再計算系）
