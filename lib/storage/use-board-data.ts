@@ -70,10 +70,18 @@ export type BoardItem = {
 
 type DbLike = IDBPDatabase<unknown>
 
-function deriveThumbnail(b: BookmarkRecord): string | undefined {
-  if (b.thumbnail) return b.thumbnail
+export function deriveThumbnail(b: BookmarkRecord): string | undefined {
+  // YouTube: prefer the per-video CDN thumbnail (the uploader's chosen
+  // thumbnail; hqdefault always exists) OVER the captured og:image. The saved
+  // og:image is sometimes YouTube's generic white logo, which is what made the
+  // Lightbox / manage card show "YouTube" instead of the real thumbnail. The
+  // board already derives from the id (VideoThumbCard), so deriving here too
+  // brings every other surface (Lightbox, manage, share) in line with it.
+  // This is the thumbnail, NOT a video frame — the storyboard frames
+  // (hq1/hq2/...) used by the ambient slideshow are a separate concern.
   const youtubeId = extractYoutubeId(b.url)
   if (youtubeId) return `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`
+  if (b.thumbnail) return b.thumbnail
   return undefined
 }
 
