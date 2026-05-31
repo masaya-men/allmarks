@@ -132,23 +132,35 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     const item = input.items.find((it) => it.url === cardId)
     if (!item) continue
 
-    // カードの背景塗り (= 失敗時の fallback ベース、 cross-origin OK なら drawImage で上書き)
-    ctx.fillStyle = '#1a1a1c'
-    ctx.fillRect(cx, cy, cw, ch)
+    // カードの角丸 (= プレビュー .card の border-radius を OG スケールへ写す、 WYSIWYG)。
+    // getComputedStyle は transform 前の論理 px (= 20px) を返すので、 そのまま scaleX
+    // するとプレビューの縮小 (outerBand の scale) 分を取りこぼす。 カード幅に対する
+    // 比率に直してから OG 上のカード幅 (cw) に掛けることで、 縮小率に左右されず
+    // プレビューと同じ丸みになる。
+    const cssRadius = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0
+    const ownW = el.offsetWidth || 0
+    const radius = ownW > 0 ? (cssRadius / ownW) * cw : 0
 
-    // サムネ画像が取れれば drawImage
-    let hasImage = false
+    // サムネ画像を先に読み込む (= クリップ中に同期描画したいので await を前出し)
+    let img: HTMLImageElement | null = null
     if (item.thumbnailUrl) {
       try {
-        const img = await loadCrossOriginImage(item.thumbnailUrl)
-        if (img) {
-          ctx.drawImage(img, cx, cy, cw, ch)
-          hasImage = true
-        }
+        img = await loadCrossOriginImage(item.thumbnailUrl)
       } catch {
-        // 失敗時はベース塗りそのまま (= 上の灰色)
+        img = null
       }
     }
+    const hasImage = img !== null
+
+    // 角丸でクリップしてから背景塗り + サムネ描画 (= 角が四角く残らない)
+    ctx.save()
+    roundRectPath(ctx, cx, cy, cw, ch, radius)
+    ctx.clip()
+    // 背景塗り (= 失敗時の fallback ベース、 cross-origin OK なら drawImage で上書き)
+    ctx.fillStyle = '#1a1a1c'
+    ctx.fillRect(cx, cy, cw, ch)
+    if (img) ctx.drawImage(img, cx, cy, cw, ch)
+    ctx.restore()
 
     // タイトル text: サムネあり → 小さく下端に、 サムネなし → 大きくカード全体に
     ctx.fillStyle = TEXT_MAIN
@@ -261,6 +273,26 @@ function drawClippedText(
     clipped = clipped.slice(0, -1)
   }
   ctx.fillText(clipped + '…', x, y)
+}
+
+/** 角丸の矩形パスを現在の path に積む (= roundRect 非対応環境でも動くよう arcTo で構築)。
+ *  半径は幅 / 高さの半分でクランプして潰れを防ぐ。 */
+function roundRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+): void {
+  const radius = Math.max(0, Math.min(r, w / 2, h / 2))
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.arcTo(x + w, y, x + w, y + h, radius)
+  ctx.arcTo(x + w, y + h, x, y + h, radius)
+  ctx.arcTo(x, y + h, x, y, radius)
+  ctx.arcTo(x, y, x + w, y, radius)
+  ctx.closePath()
 }
 
 function loadCrossOriginImage(url: string): Promise<HTMLImageElement | null> {

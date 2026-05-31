@@ -90,7 +90,10 @@
 .card {
   position: absolute;
   background: #1a1a1c;
-  border-radius: 3px;
+  /* ボードのカードと同じ角丸 (= --card-radius, 現在 20px) を使う。 直書きの 3px
+     だと outerBand の縮小でほぼ 0 になり四角く見えた (session 96)。 var を使うので
+     ボード側の値が変わっても自動で追従する。 */
+  border-radius: var(--card-radius, 20px);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.04);
 }

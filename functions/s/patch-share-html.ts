@@ -29,7 +29,11 @@ export function patchShareHTML(template: string, vars: PatchShareHTMLVars): stri
   const { id, cardCount, baseUrl, page } = vars
   const pagePath = page === 'triage' ? `/s/${id}/triage` : `/s/${id}`
   const ogUrl = `${baseUrl}${pagePath}`
-  const ogImage = `${baseUrl}/api/share/${id}/og.webp`
+  // 配信関数は functions/api/share/[id]/og.ts = ルート /api/share/<id>/og。
+  // 以前は末尾に .webp を付けていたが、 そのパスにはどの関数も当たらず Next の 404
+  // HTML が返り、 SNS クローラーが OG 画像を取得できていなかった (session 96 本番実測で確定)。
+  // 関数側が Content-Type: image/webp を返すので拡張子は不要。
+  const ogImage = `${baseUrl}/api/share/${id}/og`
   const description = `A curated set of ${cardCount} bookmarks shared via AllMarks`
 
   let html = template

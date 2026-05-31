@@ -20,7 +20,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 95 — TITLE退場演出 + マネージ操作改善 + YouTubeサムネ修正を本番 ship)
+### 直近の状態 (セッション 96 — 共有の角丸 + OGP画像が出ない致命バグを修正、本番 ship)
+
+**ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 967 tests pass)**:
+
+1. **共有カードの角丸を3面で統一**: プレビュー(ShareMirror) のカードが直書き 3px → outerBand 縮小でほぼ四角に見えていた。ボードと同じ `var(--card-radius)` (20px) に統一。OG画像 ([capture-mirror.ts](../lib/share/capture-mirror.ts)) も `fillRect` → 角丸クリップ (`roundRectPath`+`clip`) 描画にし、半径はカード幅比で算出 (縮小率非依存) してプレビューと一致。実機 Chromium ピクセル検証済。
+2. **🔴 OGP画像が出ない致命バグを修正**: 共有ページの og:image / twitter:image メタが `/api/share/<id>/og.webp` を指していたが、配信関数のルートは `/api/share/<id>/og` (.webp なし) で**どの関数にも当たらず Next の 404 HTML が返り、SNS クローラーが画像を取得できていなかった**。本番 curl で実測確定 → メタの参照先を実在する `/og` に修正。**本番で共有を実際に作り、og:image → 画像配信(200/image/webp/中身あり) まで一気通貫で実測 PASS**。テスト3箇所のアサーションも `/og` に追従。
+3. (繰越のまま) ページ名の不一致整理 (MANAGE TAGS ↔ /triage) / カード左詰めの隙間 (skyline 系)。
+
+### 一つ前 (セッション 95 — TITLE退場演出 + マネージ操作改善 + YouTubeサムネ修正を本番 ship)
 
 **ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 967 tests pass、 全て Playwright 実機検証済、 3件とも brainstorming で合意してから実装)**:
 
@@ -436,7 +444,7 @@
 - ~~**B-#22 長文 tweet Lightbox 末尾だけ表示 bug + 全文表示 enhancement**~~ ✅ session 52 で完遂 (= cleanTitle 過剰マッチ修正 + TextCard 透明グラス redesign + scroll + persistTitle backfill 開通 + font jump 解消、 9 file 変更 / 5 deploy / 19 unit test 追加)
 - **スクロール中にカードの場所が入れ替わる問題** (session 92 で再確認、 未解決) — 手動スクロール中に skyline masonry の bin-packing が再計算され、 カードの配置が動的に入れ替わって見えることがある。 viewport culling (画面内だけ render) と layout 再計算のタイミングが絡む疑い。 真因未特定、 別 session で着手
 - **カードが左端に詰まらず隙間ができることがある** (session 93 user スクショで報告) — 本来 skyline masonry は左から詰めるはずだが、 ある列が左に寄らず不自然な空きが出ることがある。 上記「スクロール中カード入れ替わり」 と同じ skyline 再計算/bin-packing 系の疑い (= 同根の可能性)。 再現条件・真因とも未特定、 別 session で腰を据えて調査
-- **共有ミラー (ShareMirror) の再現精度** (session 93 user 指摘、 session 94 で (b) 修正済) — (a) カードの**角丸が反映されていない** ← 残: ミラー preview は `.card` border-radius 3px だが OG 画像 ([lib/share/capture-mirror.ts](../lib/share/capture-mirror.ts)) の drawCards は fillRect で角丸無し。 ~~(b) 背景の大きいタグ文字~~ ✅ **session 94 で修正済** — ShareMirror + capture-mirror に背景タイポ描画を追加 + TITLE トグルに追従 (OFF なら共有にも出さない)。 残るは (a) OG の角丸のみ。
+- ~~**共有ミラー (ShareMirror) の再現精度**~~ ✅ **session 96 で完了** — (a) カードの角丸: プレビュー `.card` を直書き 3px → ボードと同じ `var(--card-radius)` (20px) に統一 + OG 画像 ([capture-mirror.ts](../lib/share/capture-mirror.ts)) を角丸クリップ (`roundRectPath`+`clip`) 描画 + 半径をカード幅比で算出 (縮小率非依存) に修正。 実機 Chromium ピクセル検証済。 (b) 背景タグ文字は session 94 で対応済。
 - **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
 - **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)
 - **Task 12: 全件再 check 設定 UI** — viewport revalidation で日常運用は OK だが、 ユーザーが 「いま全件チェック」 を 1 クリックで kick できる設定パネル。 設定パネル自体が未実装なので別 spec 立ち上げ要

@@ -53,14 +53,14 @@ describe('patchShareHTML', () => {
     expect(out).toContain('content="https://booklage.pages.dev/s/k3p9xv/triage"')
   })
 
-  it('injects og:image pointing to /api/share/<id>/og.webp', () => {
+  it('injects og:image pointing to /api/share/<id>/og', () => {
     const out = patchShareHTML(sampleTemplate, baseVars)
-    expect(out).toContain('property="og:image" content="https://booklage.pages.dev/api/share/k3p9xv/og.webp"')
+    expect(out).toContain('property="og:image" content="https://booklage.pages.dev/api/share/k3p9xv/og"')
   })
 
   it('injects twitter:image so X cards show the per-id thumbnail', () => {
     const out = patchShareHTML(sampleTemplate, baseVars)
-    expect(out).toMatch(/<meta\s+name="twitter:image"\s+content="https:\/\/booklage\.pages\.dev\/api\/share\/k3p9xv\/og\.webp"/)
+    expect(out).toMatch(/<meta\s+name="twitter:image"\s+content="https:\/\/booklage\.pages\.dev\/api\/share\/k3p9xv\/og"/)
   })
 
   it('injects window.__SHARE_ID__ and window.__SHARE_CARD_COUNT__ early in <head>', () => {
@@ -90,7 +90,7 @@ describe('patchShareHTML', () => {
   it('supports an alternative base URL (= future allmarks.app swap)', () => {
     const out = patchShareHTML(sampleTemplate, { ...baseVars, baseUrl: 'https://allmarks.app' })
     expect(out).toContain('content="https://allmarks.app/s/k3p9xv"')
-    expect(out).toContain('content="https://allmarks.app/api/share/k3p9xv/og.webp"')
+    expect(out).toContain('content="https://allmarks.app/api/share/k3p9xv/og"')
   })
 
   it('handles cardCount=0 gracefully', () => {
