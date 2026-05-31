@@ -42,10 +42,21 @@
 - **描画の中核 [CardsLayer](../../../components/board/CardsLayer.tsx) は `items` を渡す prop 方式**。内部で IndexedDB を読んでいない。
   - 決定的証拠: [CardsLayer.tsx:261-264](../../../components/board/CardsLayer.tsx#L261-L264) のコメントに「**the share-view caller** がスクロール無しなら省略できるよう optional にしてある」=**もともと共有表示からの再利用を想定して prop 駆動に作られている**。
 - カードの種別振り分け [pickCard(item: BoardItem)](../../../components/board/cards/index.ts#L39)、[Lightbox](../../../components/board/Lightbox.tsx) も `item` prop 駆動 (Lightbox には [LightboxItem→BoardItem 詰め直しヘルパー](../../../components/board/Lightbox.tsx#L1816) が既にある)。
-- テーマ: 共有データ [ShareDataV2.theme](../../../lib/share/types-v2.ts#L54) フィールドは**既に存在** (今は `'wave'` の1値)。**スキーマ追加不要**。
 - 背景タイポ [BoardBackgroundTypography](../../../components/board/BoardBackgroundTypography.tsx) も props 駆動で、見出し文字を渡すだけ。
 
-→ 受け取り画面は「`ShareCardV2` を `BoardItem` 形に変換して、既存の CardsLayer + Lightbox に流す」だけ。今の [ReceiverLanding](../../../components/share/ReceiverLanding.tsx) が既に簡易カードで masonry を描いているので、それを**本物のカードに差し替え、選択用の見せ方を足す**作業。
+### 「生きている」挙動の在りか → CardsLayer 再利用が必須 (A案)
+
+[CardsLayer.tsx:1014-1065](../../../components/board/CardsLayer.tsx#L1014-L1065) で確認: ヒーロー1本の実再生 (`playing` 集合 + InlineMediaPlayer) と静止画スライドショー (`candidates` + CardSlideshow) は**カード部品ではなく CardsLayer がカードの上に重ねて駆動**している。カード部品 (pickCard → VideoThumbCard 等) は静止画だけ。
+→ 生きた挙動 (D4) を得るには **CardsLayer をそのまま使うしかない** (pickCard だけ流用する案だと Tier1/スライドショーが死ぬ)。
+→ 受け取り用オーバーレイ (取り込みトグル・送り主タグ chip・グレーアウト・リボン) は **CardsLayer に「受け取りモード」optional props を足し、per-card ラッパー内 (既存の再生オーバーレイ群と同じ場所) に重ねる**。編集系の affordance (リサイズ・×削除・並び替え・ボードのタグピル) は受け取りモードで無効化。CardsLayer は元々 share-view 再利用を想定して prop 駆動。
+
+### ⚠️ テーマの実態 (確認結果・brainstorming の前提を訂正)
+
+- 共有データ [ShareDataV2.theme](../../../lib/share/types-v2.ts#L54) は存在するが**値が `'wave'` のリテラルで、実際の [ThemeId](../../../lib/board/types.ts#L3) (`'dotted-notebook' | 'grid-paper'`) と一致していない**。送り主テーマを正しく運ぶには `theme` を `ThemeId` を運ぶ形に直す小変更が要る (= brainstorming で「スキーマ追加不要」と言ったのは不正確だった)。
+- さらに **ボードはテーマ切り替えを未実装** ([BoardRoot.tsx:591](../../../components/board/BoardRoot.tsx#L591) は `getThemeMeta(DEFAULT_THEME_ID)` でハードコード)。テーマは現状デフォルト1種のみ。
+- 結論: **D3「送り主テーマで表示」は今は見た目が変わらない (将来テーマが増えた時のための配管)**。themeId を共有に載せ、受け取り側はボードと同じやり方で適用するに留める (ボードが持たないテーマ適用機構は作らない = 過剰実装回避)。
+
+→ 受け取り画面は「`ShareCardV2` を `BoardItem` 形に変換して、CardsLayer (受け取りモード) + Lightbox に流す」作業。今の [ReceiverLanding](../../../components/share/ReceiverLanding.tsx) が既に簡易カードで masonry を描いているので、それを**本物のカード (CardsLayer) に差し替え、選択用の見せ方を足す**。
 
 ---
 
@@ -112,9 +123,10 @@
 
 ## 7. 共有を作る側 (送信側) で必要な小変更
 
-- 共有作成時 ([SenderShareModal](../../../components/share/SenderShareModal.tsx) → create API) に、**送り主の現在の `themeId` を `share.theme` に載せる**。
-  - 現状 `theme?: 'wave'` (1値) なので、今は実質常に `'wave'`。テーマが増えた時に自動で効く。
-  - 受け取り側は `share.theme` が未設定なら default テーマでフォールバック (後方互換: R2 移行前の旧共有も壊れない)。
+- 共有スキーマ [types-v2.ts](../../../lib/share/types-v2.ts#L54) の `theme?: 'wave'` を **`theme?: ThemeId`** に変更 (実際のテーマ値を運べるように)。[validate-v2](../../../lib/share/validate-v2.ts) の sanitize も `ThemeId` 集合で検証。
+- 共有作成 ([board-to-share.ts:89](../../../lib/share/board-to-share.ts#L89) の `theme: 'wave'` ハードコード) を、**送り主の `BoardConfig.themeId`** を載せる形に変更。
+- 受け取り側は `share.theme` が未設定 or 不正なら `DEFAULT_THEME_ID` でフォールバック (後方互換: R2 移行前の旧共有 + 旧 `'wave'` 値も壊れない)。
+- 適用はボードと同じ範囲に留める (ボードは現状ハードコード default なので、受け取り側も「themeId を保持しつつ、表示はボードの仕組みに従う」= 今は見た目差なし、将来テーマ実装で自動的に効く)。
 
 ---
 
