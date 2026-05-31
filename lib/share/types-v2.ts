@@ -58,7 +58,8 @@ export type ShareDataV2 = {
 /** KV entry structure (= what we write to Cloudflare KV). */
 export type KVShareEntry = {
   readonly share: ShareDataV2
-  /** Base64-encoded WebP thumbnail, ~5-15KB typical. */
+  /** Base64-encoded JPEG thumbnail (OGP 用、 目標 ~180KB)。 本変更前は WebP だった
+   *  ので、 受信側 (og.ts) は jpeg/webp 両対応。 */
   readonly thumb: string
 }
 
@@ -81,8 +82,8 @@ export const SHARE_LIMITS_V2 = {
   MAX_TITLE: 500,
   MAX_DESCRIPTION: 500,
   MAX_URL: 2048,
-  MAX_THUMB_BYTES: 50 * 1024,
-  MAX_KV_ENTRY_BYTES: 200 * 1024,
+  MAX_THUMB_BYTES: 300 * 1024,
+  MAX_KV_ENTRY_BYTES: 600 * 1024,
   TTL_DAYS: 30,
   TTL_SECONDS: 30 * 24 * 60 * 60,
 } as const

@@ -113,7 +113,11 @@ export function SenderShareModal({
         bgTypoText: bgTypoEnabled ? bgTypoText : '',
         width: 1200,
         height: 628,
-        quality: 0.85,
+        // OGP 推奨: 目標 ~180KB に収まるよう品質自動調整 (= SNS は縮小表示、 軽いほど
+        // クローラ取得成功率も上がる)。 写真が密でも min 品質まで落として必ず成立させる。
+        targetBytes: 180 * 1024,
+        startQuality: 0.82,
+        minQuality: 0.4,
       })
       if (!thumbDataUrl) {
         setState({ kind: 'error', message: 'capture failed' })

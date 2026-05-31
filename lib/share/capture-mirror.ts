@@ -31,8 +31,13 @@ export type MirrorCaptureInput = {
   readonly width: number
   /** Output height in px (typical 628 = 1.91:1)。 */
   readonly height: number
-  /** WebP quality 0.0-1.0。 */
-  readonly quality: number
+  /** 目標ファイルサイズ (bytes)。 この内に収まるよう JPEG 品質を自動調整する。
+   *  OGP 推奨は ~150KB / 上限 300KB (= SNS は縮小表示なので高画質不要)。 */
+  readonly targetBytes: number
+  /** 自動調整で許す最低品質 (0.0-1.0)。 これより下げてもサイズ超過なら、 最低品質で諦めて返す。 */
+  readonly minQuality: number
+  /** 自動調整の開始品質 (0.0-1.0)。 通常 0.82 程度。 */
+  readonly startQuality: number
 }
 
 const BG_COLOR = '#0a0a0c'
@@ -63,8 +68,15 @@ export async function captureMirrorToWebP(input: MirrorCaptureInput): Promise<st
     // ブランド帯
     drawBrandStrip(ctx, input)
 
-    // toBlob 経由で WebP base64 を返す
-    const dataUrl: string | null = await canvasToWebP(canvas, input.quality)
+    // JPEG で出力 (= 全 SNS で OGP プレビューが出る最大互換、 WebP は Discord/Slack 非対応)。
+    // 目標バイト数に収まるよう品質を段階的に落とす (= SNS は縮小表示なので高画質不要、
+    // 軽いほどクローラ取得成功率も上がる)。
+    const dataUrl: string | null = await canvasToJpegUnderTarget(
+      canvas,
+      input.targetBytes,
+      input.startQuality,
+      input.minQuality,
+    )
     return dataUrl
   } catch (e) {
     if (typeof console !== 'undefined') console.warn('[share/capture-mirror] capture failed', e)
@@ -306,7 +318,8 @@ function loadCrossOriginImage(url: string): Promise<HTMLImageElement | null> {
   })
 }
 
-function canvasToWebP(canvas: HTMLCanvasElement, quality: number): Promise<string | null> {
+/** canvas を指定品質で JPEG dataURL 化する (1 回)。 toBlob 非対応環境では null。 */
+function canvasToJpeg(canvas: HTMLCanvasElement, quality: number): Promise<string | null> {
   return new Promise((resolve): void => {
     if (typeof canvas.toBlob !== 'function') { resolve(null); return }
     canvas.toBlob(
@@ -317,9 +330,40 @@ function canvasToWebP(canvas: HTMLCanvasElement, quality: number): Promise<strin
         reader.onerror = (): void => resolve(null)
         reader.readAsDataURL(blob)
       },
-      'image/webp',
+      'image/jpeg',
       quality,
     )
   })
+}
+
+/** dataURL (base64) の実バイト数を概算する (= base64 長 × 3/4、 prefix 除外)。 */
+function dataUrlByteLength(dataUrl: string): number {
+  const comma = dataUrl.indexOf(',')
+  const b64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
+  // base64 4 文字 = 3 byte。 padding '=' は実バイトに含めない。
+  const padding = b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0
+  return Math.floor((b64.length * 3) / 4) - padding
+}
+
+/** 目標バイト数に収まる JPEG dataURL を返す。 startQuality から段階的に品質を
+ *  落とし、 収まった時点で返す。 minQuality まで下げても超過する場合は minQuality
+ *  の結果をそのまま返す (= 失敗させず、 多少大きくても共有を成立させる)。 */
+async function canvasToJpegUnderTarget(
+  canvas: HTMLCanvasElement,
+  targetBytes: number,
+  startQuality: number,
+  minQuality: number,
+): Promise<string | null> {
+  const STEP = 0.1
+  let quality = startQuality
+  let last: string | null = null
+  while (quality >= minQuality - 1e-9) {
+    const dataUrl = await canvasToJpeg(canvas, quality)
+    if (!dataUrl) return last // toBlob 非対応なら直前結果 (= 通常 null)
+    last = dataUrl
+    if (dataUrlByteLength(dataUrl) <= targetBytes) return dataUrl
+    quality -= STEP
+  }
+  return last // minQuality でも超過 → 最小品質版を返す
 }
 

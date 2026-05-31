@@ -19,7 +19,8 @@ interface PagesContext {
   env: Env
 }
 
-const MAX_BODY_BYTES = 250 * 1024
+// thumb は最大 300KB の JPEG → base64 で約 400KB + share データ。 余裕を見て 800KB。
+const MAX_BODY_BYTES = 800 * 1024
 const MAX_ID_RETRIES = 5
 
 function errResponse(status: number, error: ShareErrorResponse['error'], message: string): Response {

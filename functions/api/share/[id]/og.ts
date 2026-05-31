@@ -33,13 +33,16 @@ export async function onRequestGet(ctx: PagesContext): Promise<Response> {
     return new Response('error', { status: 500 })
   }
 
+  // thumb は data:image/<jpeg|webp>;base64,... 形式。 JPEG が現行 (= 全 SNS 互換)、
+  // webp は本変更前に作られた共有の後方互換 (30 日 TTL で自然消滅するまで対応)。
   const thumb = decoded.data.thumb
-  const match = thumb.match(/^data:image\/webp;base64,(.+)$/)
-  if (!match || !match[1]) {
+  const match = thumb.match(/^data:image\/(jpeg|webp);base64,(.+)$/)
+  if (!match || !match[2]) {
     return new Response('invalid thumb', { status: 500 })
   }
+  const contentType = match[1] === 'webp' ? 'image/webp' : 'image/jpeg'
 
-  const binary = atob(match[1])
+  const binary = atob(match[2])
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i)
@@ -48,7 +51,7 @@ export async function onRequestGet(ctx: PagesContext): Promise<Response> {
   return new Response(bytes, {
     status: 200,
     headers: {
-      'Content-Type': 'image/webp',
+      'Content-Type': contentType,
       'Cache-Control': 'public, max-age=3600, s-maxage=86400',
     },
   })

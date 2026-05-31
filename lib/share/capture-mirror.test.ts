@@ -10,7 +10,9 @@ const baseInput = {
   totalBoardCount: 0,
   width: 1200,
   height: 628,
-  quality: 0.85,
+  targetBytes: 180 * 1024,
+  startQuality: 0.82,
+  minQuality: 0.4,
 } as const
 
 describe('captureMirrorToWebP', () => {
