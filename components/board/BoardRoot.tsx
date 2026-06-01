@@ -1405,8 +1405,12 @@ export function BoardRoot() {
       // Theme switching is not yet wired in the board UI; BoardRoot hardcodes
       // DEFAULT_THEME_ID. Forward it so the receiver can restore the same theme.
       themeId: DEFAULT_THEME_ID,
+      // Global masonry gap the sender sees. Per-card widths ride on each
+      // card's `cw`; this is the only remaining global layout input the
+      // receiver needs to reproduce the same arrangement.
+      gap: cardGapPx,
     })
-  }, [lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx])
+  }, [lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx, cardGapPx])
 
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The

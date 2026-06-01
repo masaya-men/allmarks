@@ -18,6 +18,7 @@ import { findDuplicates, convertSenderTagsForReceiver, type ReceiverTagLite } fr
 import { initialIncludeSet, toggleInclude, toggleSenderTag } from '@/lib/share/receiver-selection'
 import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
+import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 import { detectUrlType } from '@/lib/utils/url'
 import { CardsLayer } from '@/components/board/CardsLayer'
@@ -32,10 +33,9 @@ import styles from './SharedBoard.module.css'
  *  from churning on every render. */
 const NOOP = (): void => {}
 
-/** Stable empty collections — passing fresh `new Set()` / `{}` inline would give
+/** Stable empty collection — passing a fresh `new Set()` inline would give
  *  CardsLayer a new reference each render and defeat its memoization. */
 const EMPTY_SET: ReadonlySet<string> = new Set()
-const EMPTY_OBJ: Readonly<Record<string, number>> = {}
 
 /** Receiver-mode default tag color when the sender supplied none. */
 const DEFAULT_TAG_COLOR = '#28F100'
@@ -48,11 +48,13 @@ const DEFAULT_TAG_COLOR = '#28F100'
  *  real DOM, independent of this culling math. */
 const UNCULLED_VIEWPORT_H = 1e7
 
-/** Per-card width + gap fed to CardsLayer in the receiver view. Kept as
- *  constants so the spacer-height estimate below uses the SAME layout inputs
- *  CardsLayer renders with (= the scroll range stays accurate). */
-const RECEIVER_CARD_WIDTH = 320
-const RECEIVER_GAP_PX = 16
+/** Fallback layout inputs for shares created before the sender packed its
+ *  own gap (and as the default-width baseline). These mirror the board's own
+ *  DEFAULT preset (BOARD_SLIDERS) so an old share still renders as a real
+ *  board layout rather than an arbitrary one. Per-card widths always come from
+ *  each card's `cw`; the gap comes from the share's `gap` when present. */
+const RECEIVER_DEFAULT_CARD_WIDTH = BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX
+const RECEIVER_FALLBACK_GAP_PX = BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
 
 type BoardState =
   | { readonly kind: 'loading' }
@@ -79,6 +81,10 @@ export function SharedBoard(): ReactElement {
   const [importResult, setImportResult] = useState<{ saved: number; skipped: number } | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [lightboxRect, setLightboxRect] = useState<DOMRect | null>(null)
+  // Bookmark id of the card the lightbox opened from — drives the SAME
+  // FLIP morph the board uses (CardsLayer hides this card while the cloned
+  // proxy morphs; Lightbox reads it to build the clone + close back to it).
+  const [lightboxSourceId, setLightboxSourceId] = useState<string | null>(null)
   // Scroll progress 0..1 for the ScrollMeter swell. 0 when not scrollable.
   const [swell, setSwell] = useState<number>(0)
 
@@ -163,6 +169,13 @@ export function SharedBoard(): ReactElement {
   const closeLightbox = useCallback((): void => {
     setLightboxIndex(null)
     setLightboxRect(null)
+    setLightboxSourceId(null)
+  }, [])
+  // Fired mid close-tween (when the morph clone lands back on the source
+  // card) so the hidden source card reappears one frame before unmount —
+  // mirrors BoardRoot.handleLightboxSourceShouldShow.
+  const showLightboxSource = useCallback((): void => {
+    setLightboxSourceId(null)
   }, [])
 
   const onCardClick = useCallback((bookmarkId: string, originRect: DOMRect): void => {
@@ -171,6 +184,7 @@ export function SharedBoard(): ReactElement {
     if (idx < 0) return
     setLightboxRect(originRect)
     setLightboxIndex(idx)
+    setLightboxSourceId(bookmarkId)
   }, [state])
 
   // ── derived board data ──
@@ -186,6 +200,24 @@ export function SharedBoard(): ReactElement {
     [state],
   )
 
+  // Reproduce the sender's arrangement: each card keeps the exact width
+  // (`cw`) the sender saw, keyed by bookmarkId (= the card URL). Feeding this
+  // as CardsLayer's customWidths makes the masonry size every card to the
+  // sender's value rather than a single uniform width.
+  const customWidths = useMemo<Record<string, number>>(
+    () =>
+      state.kind === 'ready'
+        ? Object.fromEntries(state.data.cards.map((c) => [c.u, c.cw]))
+        : {},
+    [state],
+  )
+  // Global masonry gap: the sender's value when present, else the board's
+  // DEFAULT-preset gap (old shares created before `gap` was carried).
+  const gapPx = useMemo<number>(
+    () => (state.kind === 'ready' ? state.data.gap ?? RECEIVER_FALLBACK_GAP_PX : RECEIVER_FALLBACK_GAP_PX),
+    [state],
+  )
+
   // CardsLayer's root is position:absolute (zero intrinsic height), so the
   // normal-scroll container needs an explicit spacer to become scrollable.
   // Replicate the SAME skyline layout CardsLayer renders (uniform 320px width,
@@ -195,17 +227,17 @@ export function SharedBoard(): ReactElement {
   const spacerHeight = useMemo<number>(() => {
     if (containerWidth <= 0 || items.length === 0) return 0
     const cards: SkylineCard[] = items.map((it) => {
-      const w = RECEIVER_CARD_WIDTH
+      const w = customWidths[it.bookmarkId] ?? RECEIVER_DEFAULT_CARD_WIDTH
       const h = it.aspectRatio > 0 ? w / it.aspectRatio : w
       return { id: it.bookmarkId, width: w, height: h }
     })
     const layout = computeSkylineLayout({
       cards,
       containerWidth,
-      gap: RECEIVER_GAP_PX,
+      gap: gapPx,
     })
     return layout.totalHeight
-  }, [items, containerWidth])
+  }, [items, containerWidth, customWidths, gapPx])
 
   // ── bulk import (SAVE N / M) ──
   const handleSave = useCallback(async (): Promise<void> => {
@@ -295,10 +327,17 @@ export function SharedBoard(): ReactElement {
 
   return (
     <div className={frame.outerFrame} data-theme={themeId}>
-      {/* Top-band chrome — SAVE control as plain monospace text (de-boxed),
-          matching the board's FilterPill chrome language. Green when there's a
-          selection, muted at zero. Not a button rectangle. */}
-      <div className={frame.frameTopChrome}>
+      {/* Inner dark canvas — reuses the board's rounded dark stage. */}
+      <div className={frame.canvas}>
+        {/* Background wordmark — big faint headline behind the cards, like the
+            board's BoardBackgroundTypography. */}
+        <div className={styles.bgTypo} aria-hidden>
+          SHARED WITH YOU
+        </div>
+
+        {/* SAVE control — plain monospace chrome text living INSIDE the dark
+            moodboard (top-left), not jammed into the outer frame band. Green
+            when there's a selection, muted at zero. Not a button rectangle. */}
         <button
           type="button"
           className={styles.saveChrome}
@@ -311,17 +350,8 @@ export function SharedBoard(): ReactElement {
         >
           {importing ? 'SAVING…' : `SAVE · ${includeCount} / ${total}`}
         </button>
-      </div>
 
-      {/* Inner dark canvas — reuses the board's rounded dark stage. */}
-      <div className={frame.canvas}>
-        {/* Background wordmark — big faint headline behind the cards, like the
-            board's BoardBackgroundTypography. */}
-        <div className={styles.bgTypo} aria-hidden>
-          SHARED WITH YOU
-        </div>
-
-        <div className={frame.canvasWrap}>
+        <div className={frame.canvasWrap} data-lightbox-clone-host>
           <div className={styles.scroller} ref={containerRef} onScroll={handleScroll}>
             {/* Flow spacer reserves the masonry's total height so the absolute
                 CardsLayer becomes scrollable (it has no intrinsic height). */}
@@ -330,7 +360,7 @@ export function SharedBoard(): ReactElement {
               items={items}
               viewport={{ x: 0, y: 0, w: containerWidth, h: UNCULLED_VIEWPORT_H }}
               viewportWidth={containerWidth}
-              cardGapPx={RECEIVER_GAP_PX}
+              cardGapPx={gapPx}
               hoveredBookmarkId={hovered}
               onHoverChange={setHovered}
               audioActiveId={null}
@@ -341,6 +371,7 @@ export function SharedBoard(): ReactElement {
               onAudioTogglePause={NOOP}
               spaceHeld={false}
               onClick={onCardClick}
+              sourceCardId={lightboxSourceId}
               onDrop={NOOP}
               onDelete={NOOP}
               onCardResize={NOOP}
@@ -348,8 +379,8 @@ export function SharedBoard(): ReactElement {
               onCardResetSize={NOOP}
               displayMode={'visual'}
               newlyAddedIds={EMPTY_SET}
-              defaultCardWidth={RECEIVER_CARD_WIDTH}
-              customWidths={EMPTY_OBJ}
+              defaultCardWidth={RECEIVER_DEFAULT_CARD_WIDTH}
+              customWidths={customWidths}
               motionEnabled={true}
               matchedBookmarkIds={null}
               receiverMode={{
@@ -377,7 +408,13 @@ export function SharedBoard(): ReactElement {
       </div>
 
       {lightboxItem && (
-        <Lightbox item={lightboxItem} originRect={lightboxRect} onClose={closeLightbox} />
+        <Lightbox
+          item={lightboxItem}
+          originRect={lightboxRect}
+          sourceCardId={lightboxSourceId}
+          onSourceShouldShow={showLightboxSource}
+          onClose={closeLightbox}
+        />
       )}
 
       {importResult && (

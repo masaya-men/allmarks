@@ -53,6 +53,11 @@ export type ShareDataV2 = {
     readonly tagIds: ReadonlyArray<string>
   }
   readonly theme?: ThemeId
+  /** Sender's global card gap in px (= the masonry spacing the sender saw).
+   *  Per-card widths live on each card's `cw`; this is the one remaining
+   *  global layout input. Optional for back-compat — shares created before
+   *  this field fall back to the board's default gap on the receiver. */
+  readonly gap?: number
   readonly createdAt: number
 }
 

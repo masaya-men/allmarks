@@ -13,16 +13,26 @@
    (.frameTopChrome). Plain monospace, matching FilterPill's chrome language
    (ui-monospace, 12px, letter-spacing 0.04em). Green #28F100 when there's a
    selection, muted when zero. No rectangle / border / background-box. */
+/* SAVE control — absolutely positioned INSIDE the dark moodboard canvas at
+   the top-left (canvas is position:relative). Sits above the cards (z 120,
+   matching the board's top chrome) and clear of the first card row (scroller
+   padding-top 84px), inset from the edge so it reads as part of the board
+   rather than pinned to the frame corner. */
 .saveChrome {
+  position: absolute;
+  top: 26px;
+  left: 28px;
+  z-index: 120;
   appearance: none;
   background: transparent;
   border: 0;
-  padding: 10px 12px;
+  padding: 2px 4px;
   cursor: pointer;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45);
@@ -56,7 +66,6 @@
   font-weight: 600;
   font-size: clamp(96px, 14vw, 260px);
   line-height: 1;
-  color: rgba(255, 255, 255, 0.04);
   letter-spacing: -0.035em;
   text-align: center;
   text-wrap: balance;
@@ -64,15 +73,22 @@
   margin: 0 auto;
   pointer-events: none;
   user-select: none;
+  color: rgba(255, 255, 255, 0.95);
 }
 
-/* Scrolling board area — fills the canvasWrap. No raw scrollbar (house rule). */
+/* Scrolling board area — fills the canvasWrap. No raw scrollbar (house rule).
+   Horizontal padding is 9px (= board's BOARD_INNER.SIDE_PADDING_PX) so the
+   masonry's usable width equals the board's effectiveLayoutWidth
+   (canvasWrap − 18). At 20px the receiver was 22px narrower than the board
+   and the DEFAULT preset — tuned to sit right at a column boundary — dropped
+   from 4 columns to 3. Matching the board's basis keeps the column count
+   identical. */
 .scroller {
   position: absolute;
   inset: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 84px 20px 120px;
+  padding: 84px 9px 120px;
   scrollbar-width: none;
 }
 

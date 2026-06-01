@@ -34,6 +34,7 @@ const shareDataSchema = z.object({
     tagIds: z.array(z.string().max(64)).max(50),
   }).optional(),
   theme: z.enum(listThemeIds() as [ThemeId, ...ThemeId[]]).optional(),
+  gap: z.number().min(0).max(300).optional(),
   createdAt: z.number().int().positive(),
 })
 
