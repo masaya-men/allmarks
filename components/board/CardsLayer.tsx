@@ -1072,17 +1072,8 @@ export function CardsLayer({
                   data-visible={hovered || greyed ? 'true' : 'false'}
                   data-greyed={greyed ? 'true' : 'false'}
                 >
-                  {already && <span className={styles.alreadyRibbon}>ALREADY SAVED</span>}
-                  {!already && (
-                    <button
-                      type="button"
-                      className={styles.includeToggle}
-                      data-on={included ? 'true' : 'false'}
-                      aria-pressed={included}
-                      onPointerDown={(e): void => e.stopPropagation()}
-                      onClick={(e): void => { e.stopPropagation(); receiverMode.onToggleInclude(url) }}
-                    >{included ? 'SAVE' : 'SKIP'}</button>
-                  )}
+                  {/* Sender tags — plain monospace text, top-left, matching
+                      TagIndicatorStrip. Opted-in → green glow. */}
                   {!already && tagIds.length > 0 && (
                     <div className={styles.senderTagRow}>
                       {tagIds.map((tid) => {
@@ -1090,7 +1081,10 @@ export function CardsLayer({
                         if (!tag) return null
                         const on = chosen.has(tid)
                         return (
-                          <button key={tid} type="button" className={styles.senderTagChip}
+                          <button
+                            key={tid}
+                            type="button"
+                            className={styles.senderTag}
                             data-on={on ? 'true' : 'false'}
                             aria-pressed={on}
                             onPointerDown={(e): void => e.stopPropagation()}
@@ -1098,6 +1092,26 @@ export function CardsLayer({
                           >{tag.n.toLowerCase()}</button>
                         )
                       })}
+                    </div>
+                  )}
+                  {/* Already-saved → muted "ALREADY SAVED" over the bottom fade,
+                      no toggle. */}
+                  {already && <div className={styles.alreadyLabel}>ALREADY SAVED</div>}
+                  {/* Bottom black-fade SAVE region. The fade IS the include
+                      toggle (stopPropagation on pointerdown AND click so it
+                      never opens the lightbox); the rest of the card above the
+                      fade still opens the lightbox. */}
+                  {!already && (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className={styles.saveFade}
+                      data-on={included ? 'true' : 'false'}
+                      aria-pressed={included}
+                      onPointerDown={(e: PointerEvent<HTMLDivElement>): void => e.stopPropagation()}
+                      onClick={(e): void => { e.stopPropagation(); receiverMode.onToggleInclude(url) }}
+                    >
+                      <span className={styles.saveLabel}>SAVE</span>
                     </div>
                   )}
                 </div>
