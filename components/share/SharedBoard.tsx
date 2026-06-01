@@ -12,7 +12,7 @@ import { fetchShare } from '@/lib/share/api-client'
 import { sanitizeShareDataV2 } from '@/lib/share/validate-v2'
 import { extractShareIdFromPathname } from '@/lib/share/extract-share-id'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
-import { initDB, addBookmarkBatch } from '@/lib/storage/indexeddb'
+import { initDB, addBookmarkBatch, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { orderForImport } from '@/lib/share/receiver-import-order'
 import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
@@ -248,17 +248,25 @@ export function SharedBoard(): ReactElement {
     setImportPhase('importing')
     try {
       const db = await initDB()
-      const inputs = orderForImport(visible).map((c) => ({
-        url: c.u,
-        title: c.t,
-        description: c.d ?? '',
-        thumbnail: c.th ?? '',
-        favicon: '',
-        siteName: '',
-        type: detectUrlType(c.u),
-        tags: [] as string[],
-      }))
-      await addBookmarkBatch(db, inputs)
+      // Dedupe against the receiver's existing (non-deleted) bookmarks so a
+      // re-import never silently duplicates URLs already on the board. Deleted
+      // URLs count as absent (policy: 削除済みは別扱い) so they can re-import.
+      const existing = await getAllBookmarks(db)
+      const existingUrls = new Set(existing.filter((b) => !b.isDeleted).map((b) => b.url))
+      const fresh = visible.filter((c) => !existingUrls.has(c.u))
+      if (fresh.length > 0) {
+        const inputs = orderForImport(fresh).map((c) => ({
+          url: c.u,
+          title: c.t,
+          description: c.d ?? '',
+          thumbnail: c.th ?? '',
+          favicon: '',
+          siteName: '',
+          type: detectUrlType(c.u),
+          tags: [] as string[],
+        }))
+        await addBookmarkBatch(db, inputs)
+      }
       setImportPhase('done')
     } catch {
       setImportPhase('idle')
