@@ -9,70 +9,67 @@
   overflow: hidden;
 }
 
-/* Top-left SAVE N / M — monospace, green accent when active. Fixed so it
-   stays reachable while the board scrolls. */
-.saveBtn {
-  position: fixed;
-  top: 18px;
-  left: 18px;
-  z-index: 50;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 12px 18px;
-  min-height: 44px;
-  border-radius: 4px;
+/* SAVE control — de-boxed chrome text living in the board's top band
+   (.frameTopChrome). Plain monospace, matching FilterPill's chrome language
+   (ui-monospace, 12px, letter-spacing 0.04em). Green #28F100 when there's a
+   selection, muted when zero. No rectangle / border / background-box. */
+.saveChrome {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 10px 12px;
   cursor: pointer;
-  background: #28F100;
-  border: 1px solid #28F100;
-  color: #000;
-  box-shadow: 0 0 0 1px rgba(40, 241, 0, 0.16), 0 8px 28px rgba(40, 241, 0, 0.22);
-  transition: background 100ms ease-out, box-shadow 140ms ease-out, opacity 120ms ease-out;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  transition: color 0.15s ease;
 }
 
-.saveBtn:hover:not(:disabled) {
-  background: rgba(40, 241, 0, 0.88);
-  box-shadow: 0 0 0 1px rgba(40, 241, 0, 0.3), 0 10px 34px rgba(40, 241, 0, 0.32);
+.saveChrome[data-active='true'] {
+  color: #28F100;
+  text-shadow: 0 0 8px rgba(40, 241, 0, 0.5), 0 0 18px rgba(40, 241, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
-.saveBtn:disabled {
+.saveChrome[data-active='true']:hover {
+  color: rgba(40, 241, 0, 0.82);
+}
+
+.saveChrome:disabled {
   cursor: default;
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.4);
-  box-shadow: none;
 }
 
-/* Faint background headline behind the cards. */
+/* Faint background headline behind the cards — absolutely positioned inside
+   the dark canvas, mirroring the board's BoardBackgroundTypography (centred,
+   near-invisible white, big fluid type). DOM order keeps the cards on top. */
 .bgTypo {
-  position: fixed;
+  position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Geist Mono', monospace;
-  font-weight: 800;
-  font-size: clamp(64px, 11vw, 200px);
-  line-height: 0.92;
-  color: rgba(255, 255, 255, 0.026);
-  letter-spacing: -0.03em;
+  font-family: var(--font-geist), 'Geist Mono', monospace;
+  font-weight: 600;
+  font-size: clamp(96px, 14vw, 260px);
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.04);
+  letter-spacing: -0.035em;
   text-align: center;
   text-wrap: balance;
   max-width: 95vw;
   margin: 0 auto;
   pointer-events: none;
   user-select: none;
-  z-index: 0;
 }
 
-/* Scrolling board area. No raw scrollbar (house rule). */
+/* Scrolling board area — fills the canvasWrap. No raw scrollbar (house rule). */
 .scroller {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-height: 100vh;
+  position: absolute;
+  inset: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 84px 20px 120px;

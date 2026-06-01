@@ -17,11 +17,14 @@ import { addTag, getAllTags } from '@/lib/storage/tags'
 import { findDuplicates, convertSenderTagsForReceiver, type ReceiverTagLite } from '@/lib/share/import'
 import { initialIncludeSet, toggleInclude, toggleSenderTag } from '@/lib/share/receiver-selection'
 import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
+import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 import { detectUrlType } from '@/lib/utils/url'
 import { CardsLayer } from '@/components/board/CardsLayer'
 import { Lightbox } from '@/components/board/Lightbox'
+import { ScrollMeter } from '@/components/board/ScrollMeter'
 import { BulkImportToast } from './BulkImportToast'
+import frame from '@/components/board/BoardRoot.module.css'
 import styles from './SharedBoard.module.css'
 
 /** Stable module-level no-op for every editing handler CardsLayer requires but
@@ -44,6 +47,12 @@ const DEFAULT_TAG_COLOR = '#28F100'
  *  autoplay stays correct because it is driven by IntersectionObserver on the
  *  real DOM, independent of this culling math. */
 const UNCULLED_VIEWPORT_H = 1e7
+
+/** Per-card width + gap fed to CardsLayer in the receiver view. Kept as
+ *  constants so the spacer-height estimate below uses the SAME layout inputs
+ *  CardsLayer renders with (= the scroll range stays accurate). */
+const RECEIVER_CARD_WIDTH = 320
+const RECEIVER_GAP_PX = 16
 
 type BoardState =
   | { readonly kind: 'loading' }
@@ -70,6 +79,8 @@ export function SharedBoard(): ReactElement {
   const [importResult, setImportResult] = useState<{ saved: number; skipped: number } | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [lightboxRect, setLightboxRect] = useState<DOMRect | null>(null)
+  // Scroll progress 0..1 for the ScrollMeter swell. 0 when not scrollable.
+  const [swell, setSwell] = useState<number>(0)
 
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -130,6 +141,24 @@ export function SharedBoard(): ReactElement {
     setChosenTags((m) => toggleSenderTag(m, url, tid))
   }, [])
 
+  // ── scroll meter wiring ──
+  // The receiver board is a normal vertical scroller (containerRef). Keep the
+  // meter's swell synced to scroll progress, and translate scrub fractions
+  // back into a scrollTop.
+  const handleScroll = useCallback((): void => {
+    const el = containerRef.current
+    if (!el) return
+    const range = el.scrollHeight - el.clientHeight
+    setSwell(range > 0 ? Math.max(0, Math.min(1, el.scrollTop / range)) : 0)
+  }, [])
+  const handleMeterScrub = useCallback((fraction: number): void => {
+    const el = containerRef.current
+    if (!el) return
+    const range = el.scrollHeight - el.clientHeight
+    if (range <= 0) return
+    el.scrollTop = Math.max(0, Math.min(1, fraction)) * range
+  }, [])
+
   // ── lightbox ──
   const closeLightbox = useCallback((): void => {
     setLightboxIndex(null)
@@ -156,6 +185,27 @@ export function SharedBoard(): ReactElement {
       ),
     [state],
   )
+
+  // CardsLayer's root is position:absolute (zero intrinsic height), so the
+  // normal-scroll container needs an explicit spacer to become scrollable.
+  // Replicate the SAME skyline layout CardsLayer renders (uniform 320px width,
+  // 16px gap) to get the content's total height. Text/tweet cards that report
+  // a taller intrinsic height inside CardsLayer are approximated here by their
+  // aspect-ratio box — close enough for a scroll range (spec: keep it simple).
+  const spacerHeight = useMemo<number>(() => {
+    if (containerWidth <= 0 || items.length === 0) return 0
+    const cards: SkylineCard[] = items.map((it) => {
+      const w = RECEIVER_CARD_WIDTH
+      const h = it.aspectRatio > 0 ? w / it.aspectRatio : w
+      return { id: it.bookmarkId, width: w, height: h }
+    })
+    const layout = computeSkylineLayout({
+      cards,
+      containerWidth,
+      gap: RECEIVER_GAP_PX,
+    })
+    return layout.totalHeight
+  }, [items, containerWidth])
 
   // ── bulk import (SAVE N / M) ──
   const handleSave = useCallback(async (): Promise<void> => {
@@ -244,59 +294,85 @@ export function SharedBoard(): ReactElement {
   const lightboxItem = lightboxIndex !== null ? (items[lightboxIndex] ?? null) : null
 
   return (
-    <div className={styles.shell} data-theme={themeId}>
-      <button
-        type="button"
-        className={styles.saveBtn}
-        disabled={importing || includeCount === 0}
-        onClick={(): void => {
-          void handleSave()
-        }}
-        data-testid="save-selected-btn"
-      >
-        {importing ? 'SAVING…' : `SAVE ${includeCount} / ${total}`}
-      </button>
-
-      <div className={styles.bgTypo} aria-hidden>
-        SHARED WITH YOU
+    <div className={frame.outerFrame} data-theme={themeId}>
+      {/* Top-band chrome — SAVE control as plain monospace text (de-boxed),
+          matching the board's FilterPill chrome language. Green when there's a
+          selection, muted at zero. Not a button rectangle. */}
+      <div className={frame.frameTopChrome}>
+        <button
+          type="button"
+          className={styles.saveChrome}
+          data-active={includeCount > 0 ? 'true' : 'false'}
+          disabled={importing || includeCount === 0}
+          onClick={(): void => {
+            void handleSave()
+          }}
+          data-testid="save-selected-btn"
+        >
+          {importing ? 'SAVING…' : `SAVE · ${includeCount} / ${total}`}
+        </button>
       </div>
 
-      <div className={styles.scroller} ref={containerRef}>
-        <CardsLayer
-          items={items}
-          viewport={{ x: 0, y: 0, w: containerWidth, h: UNCULLED_VIEWPORT_H }}
-          viewportWidth={containerWidth}
-          cardGapPx={16}
-          hoveredBookmarkId={hovered}
-          onHoverChange={setHovered}
-          audioActiveId={null}
-          onToggleAudio={NOOP}
-          audioVolume={1}
-          audioPaused={false}
-          onAudioVolumeChange={NOOP}
-          onAudioTogglePause={NOOP}
-          spaceHeld={false}
-          onClick={onCardClick}
-          onDrop={NOOP}
-          onDelete={NOOP}
-          onCardResize={NOOP}
-          onCardResizeEnd={NOOP}
-          onCardResetSize={NOOP}
-          displayMode={'visual'}
-          newlyAddedIds={EMPTY_SET}
-          defaultCardWidth={320}
-          customWidths={EMPTY_OBJ}
-          motionEnabled={true}
-          matchedBookmarkIds={null}
-          receiverMode={{
-            includedUrls: included,
-            alreadySavedUrls: dups,
-            senderTags: data.tags ?? {},
-            senderTagIdsByCard,
-            chosenTagsByCard: chosenTags,
-            onToggleInclude,
-            onToggleSenderTag,
-          }}
+      {/* Inner dark canvas — reuses the board's rounded dark stage. */}
+      <div className={frame.canvas}>
+        {/* Background wordmark — big faint headline behind the cards, like the
+            board's BoardBackgroundTypography. */}
+        <div className={styles.bgTypo} aria-hidden>
+          SHARED WITH YOU
+        </div>
+
+        <div className={frame.canvasWrap}>
+          <div className={styles.scroller} ref={containerRef} onScroll={handleScroll}>
+            {/* Flow spacer reserves the masonry's total height so the absolute
+                CardsLayer becomes scrollable (it has no intrinsic height). */}
+            <div aria-hidden style={{ height: `${spacerHeight}px` }} />
+            <CardsLayer
+              items={items}
+              viewport={{ x: 0, y: 0, w: containerWidth, h: UNCULLED_VIEWPORT_H }}
+              viewportWidth={containerWidth}
+              cardGapPx={RECEIVER_GAP_PX}
+              hoveredBookmarkId={hovered}
+              onHoverChange={setHovered}
+              audioActiveId={null}
+              onToggleAudio={NOOP}
+              audioVolume={1}
+              audioPaused={false}
+              onAudioVolumeChange={NOOP}
+              onAudioTogglePause={NOOP}
+              spaceHeld={false}
+              onClick={onCardClick}
+              onDrop={NOOP}
+              onDelete={NOOP}
+              onCardResize={NOOP}
+              onCardResizeEnd={NOOP}
+              onCardResetSize={NOOP}
+              displayMode={'visual'}
+              newlyAddedIds={EMPTY_SET}
+              defaultCardWidth={RECEIVER_CARD_WIDTH}
+              customWidths={EMPTY_OBJ}
+              motionEnabled={true}
+              matchedBookmarkIds={null}
+              receiverMode={{
+                includedUrls: included,
+                alreadySavedUrls: dups,
+                senderTags: data.tags ?? {},
+                senderTagIdsByCard,
+                chosenTagsByCard: chosenTags,
+                onToggleInclude,
+                onToggleSenderTag,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Sound-wave scroll meter, placed at the canvas bottom like the board. */}
+        <ScrollMeter
+          mode="board"
+          n1={1}
+          n2={total}
+          total={total}
+          swellFraction={swell}
+          onScrub={handleMeterScrub}
         />
       </div>
 
