@@ -1,0 +1,20 @@
+/* Struck-through, inert chrome. Children paint normally (identical look) but
+   take no input; a centered hairline draws the strike-through. */
+.wrap {
+  position: relative;
+  display: inline-flex;
+  opacity: 0.4;
+}
+.wrap > :not(.strike) {
+  pointer-events: none;
+}
+.strike {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: translateY(-0.5px);
+  pointer-events: none;
+}
