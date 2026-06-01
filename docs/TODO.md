@@ -20,7 +20,18 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 98 — 受け取り画面=ボード完全一致 / Plan 1 を本番 ship + master マージ)
+### 直近の状態 (セッション 99 — SHARE 再共有 / Plan 2 + 取り込み重複サマリーを本番 ship + master push)
+
+**ship 済 (本番 `booklage.pages.dev` 反映済・master push 済 / tsc 0・全 978 tests pass / 本番 playwright 実測 PASS)**:
+
+1. **Plan 2 = SHARE 再共有** ([SharedBoard.tsx](../components/share/SharedBoard.tsx)): 受け取り画面の SHARE を有効化。今見えてるカード (× で減らした後・TUNE 反映後) から本物の `SenderShareModal` を開いて新規共有を作る。共有データは `buildShareDataFromBoard` 流用 (上限/truncate/タグ辞書/型判定が一次共有と同じ)。ミラープレビューのジオメトリ (positions/scrollY/bgViewportWidth=containerWidth/bgCanvasWidth=+18/viewportHeight) は受け取りの skyline レイアウト (spacer と共用) + scrollTop + コンテナ実寸から供給。送り主タグは再共有データに残す (次の受け取り手にも読み取り専用ラベル=表現の一部)。本番ラウンドトリップ実測: 8枚→×で6枚→SHARE→ミラー6枚→SHARE NOW→新URLが6枚で開く、PASS。
+2. **取り込み重複サマリー (主流の「報告のみ」)** ([ImportProgressIndicator.tsx](../components/share/ImportProgressIndicator.tsx)): 取り込み完了の緑 ✓ の下に、重複があった時だけアンバー (`#FFB020`) で1行。一部重複=`N SAVED · M ALREADY SAVED`、全部重複=`ALL ALREADY SAVED`。**事前ダイアログ無し・どの URL かは出さない (一括は件数だけで十分、user 合意)・強制追加無し**。重複ありの時だけ done を 2s 保持 (読めるように)、重複ゼロは従来通りサッと遷移。削除済み URL は再取り込み可 (不変)。本番で両状態 実測 PASS。設計判断: 業界主流 (フォト系の「N件スキップ」報告) + AllMarks の優しい pill 言語 (エラー赤を使わない) に揃えた。
+3. **並び順の再確認**: 受け取り取り込み後の並び (送り主の最上段=受け取りの最上段) は **正しい**と再確認 (user の「古いものが上」は元 AllMarks タブのハードリロード漏れだった)。`orderForImport` の reverse + `addBookmarkBatch` の昇順 orderIndex + ボード DESC sort で論理整合。
+
+**🔴 user 視覚確認待ち**: 本番で SHARE 再共有の触り心地、取り込み重複サマリーの見た目/間 (一部重複・全部重複)。
+**次 (Plan 完了)**: 共有まわりは一段落。次は公開向けバックログ (下記) か共有の上澄み polish を user が選ぶ。
+
+### 一つ前 (セッション 98 — 受け取り画面=ボード完全一致 / Plan 1 を本番 ship + master マージ)
 
 **ship 済 (本番 `booklage.pages.dev` 反映済・master マージ済 / tsc 0・対象テスト緑 / 本番 playwright 実測 PASS)**:
 
