@@ -20,7 +20,22 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 96 — 共有の角丸 + OGP致命バグ + 画像413 + R2移行を本番 ship)
+### 直近の状態 (セッション 98 — 受け取り画面=ボード完全一致 / Plan 1 を本番 ship + master マージ)
+
+**ship 済 (本番 `booklage.pages.dev` 反映済・master マージ済 / tsc 0・対象テスト緑 / 本番 playwright 実測 PASS)**:
+
+受け取り画面 `/s/<id>`(`SharedBoard`) を本物のボード chrome に作り直した (設計 [docs/superpowers/specs/2026-06-01-receiver-board-parity-design.md]、計画 [docs/superpowers/plans/2026-06-01-receiver-board-parity.md]、サブエージェント駆動で実装+2段レビュー):
+1. **本物 chrome 流用**: TopHeader(TITLE/TUNE/MANAGE/POP OUT/SHARE) + 外側帯(MOTION/FILTER) を実部品で描画。TITLE/TUNE/MOTION 有効、FILTER/MANAGE/POP OUT/SHARE は取り消し線+無効 (`BlockedChrome`)。SHARE は計画2(再共有)まで仮ブロック。
+2. **IMPORT ボタン** (MOTION 左、`IMPORT N TO YOUR BOARD`、N=表示枚数)。**× 削除一本** (緑 SAVE 廃止)、送り主タグは**読み取り表示のみ**。
+3. **タグ非取り込み** (案A、調査 [docs/private/2026-06-01-tag-import-research.md])。**取り込み時に既存(非削除)URLと重複は弾く** (重複ポリシー準拠)。
+4. **並び順バグ修正**: `orderForImport` で逆順保存→送り主の順そのまま・束は最上段。
+5. **取り込み中インジケーター** (`ImportProgressIndicator`、テーマ駆動=既定音波→緑✓→ボード遷移、出現/最中/消滅アニメ)。
+6. 共有データに送り主の基準幅 `w` を追加 (gap は前回追加済)。受け取りが TUNE 完全再現。列数パリティ(9px)済。
+
+**🔴 user 視覚確認待ち**: 本番 `booklage.pages.dev/s/<新規共有>` で chrome の見た目一致・IMPORT のトンマナ・インジケーターのアニメ・×削除・送り主タグ表示・取り込み後の並びを目視。
+**次の計画 (Plan 2)**: SHARE 再共有 (`SenderShareModal` 流用で受け取り可視カードから新規共有を作る)。重複取り込みの「確認/強制追加」を出すかは要相談 (今は弾くのみ)。
+
+### 一つ前 (セッション 96 — 共有の角丸 + OGP致命バグ + 画像413 + R2移行を本番 ship)
 
 **ship 済 (= 本番 `booklage.pages.dev` 反映済、 tsc 0 / 975 tests pass、 本番 e2e 実測 PASS)**:
 

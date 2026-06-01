@@ -1,35 +1,29 @@
-# 次セッションのゴール (= セッション 98)
+# 次セッションのゴール (= セッション 99)
 
 ## 今のゴール (1 行)
 
-**①受け取り画面「SHARED WITH YOU」ムードボードは作業ブランチ `feat/receiver-moodboard` で本番反映済み。本物のボード枠+メーター+背景タイポを流用し、per-card は本物の言語(左上タグ文字/下部SAVEフェード)に作り直した。残りの見た目修正をいくつか潰してから master へ merge する。②フィルター fade は master に ship 済み。**
+**受け取り画面=ボード完全一致 (Plan 1) は本番 ship + master マージ済。次は ① user の本番視覚確認の反映 → ② Plan 2 (SHARE 再共有) の実装。**
 
 ## 開始時の動き
-1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む
-2. **user に「受け取り画面の残り修正リスト」を聞く**（下記 §残り修正は私の把握分。user が追加で挙げる前提）
-3. 直す → `rtk pnpm build` → `npx wrangler pages deploy out/ --project-name=booklage --branch=master --commit-dirty=true --commit-message="..."` → 新規共有を作って実機確認
-4. user OK で `feat/receiver-moodboard` を master に merge + ブランチ掃除
+1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態 (セッション 98)」を読む
+2. user に「受け取り画面の見た目/動き、気になる点ある?」を確認 (本番 `booklage.pages.dev/s/<新規共有>`)
+3. 視覚の手直しがあれば先に潰す → デプロイ
+4. その後 Plan 2 (SHARE 再共有) へ
 
-## 🔴 受け取り画面の残り修正 (= session 97 で user が「まだ必要」と明言、詳細は次回 user から)
+## Plan 1 で ship 済 (本番反映・master マージ済)
+受け取り `/s/<id>` を本物のボード chrome に再構築: 本物部品流用 (TITLE/TUNE/MOTION 有効・FILTER/MANAGE/POP OUT/SHARE 取り消し線ブロック) / `IMPORT N TO YOUR BOARD` ボタン / × 削除一本 (緑 SAVE 廃止) / 送り主タグ読み取り表示 / タグ非取り込み + 既存重複は弾く / 並び順逆順修正 / 取り込み中インジケーター (テーマ駆動・音波→緑✓→遷移)。共有データに `w` 追加。
+- 設計 [docs/superpowers/specs/2026-06-01-receiver-board-parity-design.md] / 計画 [docs/superpowers/plans/2026-06-01-receiver-board-parity.md]
 
-私が把握している候補（user の追加指示が本線）:
-- **per-card SAVE をもっと大きく/黒フェードを濃く**（「カード下部を全部覆う大きな黒フェード+大きな文字」の指示に対し、今は控えめかも）
-- **スクロールメーターの数字表示**が受け取り用に最適か（件数だけでよい等）。今 `n1=1 / n2=total / total` で `0001 — 0006 / …` 表示
-- **YouTube 等のその場再生**（Tier1）を受け取りでも出すか（今はボード挙動そのまま＝再生する）
-- **ALREADY SAVED**（既保存カードのグレー+表示）は実データ重複でまだ目視未確認
-- 未自動確認の対話: SKIP のグレー化+カウント減 / クリックで Lightbox / SAVE 取り込み→ボード遷移
+## Plan 2 (次の実装) = SHARE 再共有
+- 受け取り画面の SHARE を機能化: 今見えているカード (× で減らした後) から **新しい共有を作る**。
+- 本物の `SenderShareModal` + `buildShareDataFromBoard` + 共有作成 API を流用。ミラープレビューの props (MirrorItem/MirrorPosition/scroll/bgViewport 等) を受け取りの可視カードレイアウトから供給する配線が要。
+- 重複取り込みの UX: 今は「既存と重複する URL は弾く」のみ (silent skip)。確認ダイアログ/強制追加を出すかは Plan 2 着手時に user と相談。
 
-## テスト用の共有の作り方 (送信UI不要)
-新規共有を直接作れる（受け取り検証用）:
-`POST {本番}/api/share/create` body=`{share: ShareDataV2, thumb: "data:image/jpeg;base64,<valid>"}` → `{id}` → `/s/<id>` を開く。スクリプト雛形: `C:/Users/masay/AppData/Local/Temp/playwright-recv-shot.js`（picsum画像+youtube+タグ入りデモ6枚、スクショ2枚も出す）。
-
-## session 97 の成果
-- **①受け取りムードボード**（ブランチ `feat/receiver-moodboard`、本番反映・未merge）: 旧 ReceiverLanding/ReceiverTriage 廃止 → 本物 [CardsLayer](../components/board/CardsLayer.tsx) を「受け取りモード」で再利用。`ShareCardV2→BoardItem` 変換 / 取り込み選択の純ロジック / per-card オーバーレイ（左上タグ文字・下部SAVEフェード・選択で緑・ピル廃止）/ 本物のボード枠(outerFrame/canvas)+ScrollMeter+背景タイポ流用 / SAVE N/M は枠なし chrome 文字。subagent-driven + 2段レビュー。設計 [docs/superpowers/specs/2026-06-01-receiver-moodboard-design.md] / 計画 [docs/superpowers/plans/2026-06-01-receiver-moodboard.md]。
-- **②フィルター fade**（master ship 済): 0.5秒の開きアニメ途中の高さを overflow 誤判定→top マスク固着。アニメ後に測り直す(ResizeObserver+多段タイマー)を [FilterPill.tsx](../components/board/FilterPill.tsx#L274) に追加。
-- **誤診の訂正**: 「受け取りが空白」と判断して直した `scripts/generate-share-template.mjs`/`_template.generated.ts` は**配信に無関係な死にコード**だった（実配信は `_handler.ts` が `out/s.html` を OG メタだけ書き換えて返す）。死にコード削除済み。memory `reference_share_receiver_shell_generation` を事実に訂正。空白に見えたのは期限切れ共有の404ページ。
+## テスト用共有の作り方
+`POST {本番}/api/share/create` body=`{share: ShareDataV2(w/gap/cards...), thumb}` → `{id}` → `/s/<id>`。雛形 `C:/Users/masay/AppData/Local/Temp/playwright-recv-parity.js` (8枚デモ・列数/IMPORT文言/×削除をデータ確認)。
 
 ## 守ること
-- 実機(Playwright/本番)で測ってから「動いてる」と報告。視覚変更はデプロイ→スクショ確認。デプロイ前に `npx wrangler whoami`。
-- 発明しない: アプリに既にある表現(ボードのタグ表示・マネージの緑・FilterPill の chrome 文字)を踏襲。AI/SaaS っぽいピル・箱・グラデ禁止。
-- 横文字を日本語応答に混ぜない。AskUserQuestion ボックス禁止。可視性をアニメに依存させない。
-- git commit -m 本文にバッククォートを使わない。
+- **本番が既定**: ship したら淡々と本番デプロイ→本番で実測確認。デプロイ可否を毎回聞かない (memory `feedback_prod_is_default`)。特別な場合 (履歴書換/破壊的) のみ立ち止まる。
+- 実機(playwright/本番)で測ってから「動いてる」と報告。視覚変更はデプロイ→確認。デプロイ前 `npx wrangler whoami`。
+- 発明しない・本物のボード部品を流用。横文字を日本語応答に混ぜない。AskUserQuestion ボックス禁止。可視性をアニメに依存させない。
+- git commit -m 本文にバッククォートを使わない。push は user が求めた時のみ。
