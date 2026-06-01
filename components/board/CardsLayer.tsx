@@ -310,13 +310,14 @@ type CardsLayerProps = {
    *  shown (save/skip toggle + sender-tag chips + grey-out + already-saved
    *  ribbon). When undefined, CardsLayer behaves exactly as before. */
   readonly receiverMode?: {
-    readonly includedUrls: ReadonlySet<string>
-    readonly alreadySavedUrls: ReadonlySet<string>
-    readonly senderTags: import('@/lib/share/types-v2').TagDict
+    /** Cards removed from the working set (× pressed). */
+    readonly removedUrls: ReadonlySet<string>
+    /** Sender's tag dictionary (id → { n, c? }) for read-only display. */
+    readonly senderTags: Readonly<Record<string, { n: string; c?: string }>>
+    /** Sender tag ids per card url. */
     readonly senderTagIdsByCard: ReadonlyMap<string, ReadonlyArray<string>>
-    readonly chosenTagsByCard: ReadonlyMap<string, ReadonlySet<string>>
-    readonly onToggleInclude: (cardUrl: string) => void
-    readonly onToggleSenderTag: (cardUrl: string, senderTagId: string) => void
+    /** × handler: remove this card url from the working set. */
+    readonly onRemove: (url: string) => void
   }
 }
 
@@ -1059,64 +1060,28 @@ export function CardsLayer({
               })()}
             </CardNode>
             {receiverMode && (() => {
-              const url = it.url
-              const already = receiverMode.alreadySavedUrls.has(url)
-              const included = !already && receiverMode.includedUrls.has(url)
-              const greyed = already || !included
-              const hovered = hoveredBookmarkId === it.bookmarkId
-              const chosen = receiverMode.chosenTagsByCard.get(url) ?? new Set<string>()
-              const tagIds = receiverMode.senderTagIdsByCard.get(url) ?? []
+              const tagIds = receiverMode.senderTagIdsByCard.get(it.url) ?? []
+              if (tagIds.length === 0) return null
               return (
-                <div
-                  className={styles.receiverOverlay}
-                  data-visible={hovered || greyed ? 'true' : 'false'}
-                  data-greyed={greyed ? 'true' : 'false'}
-                >
-                  {/* Sender tags — plain monospace text, top-left, matching
-                      TagIndicatorStrip. Opted-in → green glow. */}
-                  {!already && tagIds.length > 0 && (
-                    <div className={styles.senderTagRow}>
-                      {tagIds.map((tid) => {
-                        const tag = receiverMode.senderTags[tid]
-                        if (!tag) return null
-                        const on = chosen.has(tid)
-                        return (
-                          <button
-                            key={tid}
-                            type="button"
-                            className={styles.senderTag}
-                            data-on={on ? 'true' : 'false'}
-                            aria-pressed={on}
-                            onPointerDown={(e): void => e.stopPropagation()}
-                            onClick={(e): void => { e.stopPropagation(); receiverMode.onToggleSenderTag(url, tid) }}
-                          >{tag.n.toLowerCase()}</button>
-                        )
-                      })}
-                    </div>
-                  )}
-                  {/* Already-saved → muted "ALREADY SAVED" over the bottom fade,
-                      no toggle. */}
-                  {already && <div className={styles.alreadyLabel}>ALREADY SAVED</div>}
-                  {/* Bottom black-fade SAVE region. The fade IS the include
-                      toggle (stopPropagation on pointerdown AND click so it
-                      never opens the lightbox); the rest of the card above the
-                      fade still opens the lightbox. */}
-                  {!already && (
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      className={styles.saveFade}
-                      data-on={included ? 'true' : 'false'}
-                      aria-pressed={included}
-                      onPointerDown={(e: PointerEvent<HTMLDivElement>): void => e.stopPropagation()}
-                      onClick={(e): void => { e.stopPropagation(); receiverMode.onToggleInclude(url) }}
-                    >
-                      <span className={styles.saveLabel}>SAVE</span>
-                    </div>
-                  )}
+                <div className={styles.receiverOverlay} data-visible={hoverActive ? 'true' : 'false'}>
+                  <div className={styles.senderTagRow}>
+                    {tagIds.map((tid) => {
+                      const tag = receiverMode.senderTags[tid]
+                      if (!tag) return null
+                      return <span key={tid} className={styles.senderTag}>{tag.n.toLowerCase()}</span>
+                    })}
+                  </div>
                 </div>
               )
             })()}
+            {receiverMode && (
+              <CardCornerActions
+                hovered={hoverActive}
+                hasCustomWidth={false}
+                onDelete={(): void => receiverMode.onRemove(it.url)}
+                onResetSize={(): void => {}}
+              />
+            )}
             {audioActiveId === it.bookmarkId && canPlayInline(it) && (
               // Tier 3 inline player overlay. stopPropagation on pointerdown
               // so interacting with the player (scrub, volume, fullscreen)

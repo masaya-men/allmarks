@@ -4,9 +4,9 @@
 
    The overlay container is ALWAYS pointer-events:none so it never intercepts
    the pointer over a hovered / greyed card — that would kill the card's
-   tap-to-open. Only the interactive children (.senderTag, .saveFade) opt back
-   into pointer-events:auto; the card's bare surface receives the pointer
-   through this transparent overlay. */
+   tap-to-open. The sender-tag row is read-only (pointer-events:none); the
+   card's bare surface receives the pointer through this transparent overlay,
+   and the × delete lives in CardCornerActions outside this overlay. */
 .receiverOverlay { position: absolute; inset: 0; z-index: 40; border-radius: var(--card-radius, 20px); opacity: 0; transition: opacity 140ms ease; pointer-events: none; overflow: hidden; }
 .receiverOverlay[data-visible='true'] { opacity: 1; }
 /* Greyed cards (excluded / already-saved) keep the dark wash always, even when
@@ -33,7 +33,7 @@
   z-index: 50;
 }
 .senderTag {
-  pointer-events: auto;
+  pointer-events: none;
   appearance: none;
   background: transparent;
   border: none;
@@ -45,103 +45,6 @@
   font-size: 10px;
   letter-spacing: 0.10em;
   text-transform: lowercase;
-  cursor: pointer;
   white-space: nowrap;
   line-height: 1.4;
-}
-/* Opted-in sender tag → green with a green glow (mirrors the red-context glow
-   in TagIndicatorStrip, but green #28F100). */
-.senderTag[data-on='true'] {
-  color: #28F100;
-  text-shadow: 0 0 8px rgba(40, 241, 0, 0.65), 0 0 18px rgba(40, 241, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.65);
-}
-
-/* Bottom SAVE fade — covers the lower ~42% of the card. The black band has a
-   DEFINED edge (holds near-solid to ~45%, then falls off fast) so the boundary
-   between the lightbox zone (card above) and the SAVE-toggle zone (this band)
-   reads clearly. The bottom is near-opaque so bright/portrait images never
-   bleed through the lowest edge. The fade IS the click target to toggle
-   include; the rest of the card opens the lightbox. No pill, no border. */
-.saveFade {
-  pointer-events: auto;
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 42%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 14px 12px;
-  cursor: pointer;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.96) 0%,
-    rgba(0, 0, 0, 0.9) 45%,
-    rgba(0, 0, 0, 0.45) 72%,
-    transparent 100%
-  );
-}
-/* Large SAVE text, bottom-centred. Monospace, bold-ish via wide tracking,
-   white + the shared 2-tier text-shadow family. Transitions drive the
-   hover/active micro-interaction below. */
-.saveLabel {
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: clamp(18px, 9%, 30px);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.94);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65), 0 0 4px rgba(0, 0, 0, 0.35);
-  line-height: 1;
-  transform-origin: bottom center;
-  transition: transform 160ms ease, letter-spacing 160ms ease, color 160ms ease, text-shadow 160ms ease;
-}
-/* Hover micro-interaction — reads as a button: grows, opens its tracking and
-   brightens. Active dips. */
-.saveFade:hover .saveLabel {
-  transform: scale(1.08);
-  letter-spacing: 0.26em;
-}
-.saveFade:not([data-on='true']):hover .saveLabel {
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 10px rgba(255, 255, 255, 0.25);
-}
-.saveFade:active .saveLabel {
-  transform: scale(0.97);
-}
-/* Included → green text with a subtle green glow. */
-.saveFade[data-on='true'] .saveLabel {
-  color: #28F100;
-  text-shadow: 0 0 8px rgba(40, 241, 0, 0.55), 0 0 18px rgba(40, 241, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.65);
-}
-.saveFade[data-on='true']:hover .saveLabel {
-  text-shadow: 0 0 12px rgba(40, 241, 0, 0.75), 0 0 24px rgba(40, 241, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.65);
-}
-
-/* Already-saved cards: same bottom position, muted text, NOT green, no toggle. */
-.alreadyLabel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 42%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 14px 12px;
-  pointer-events: none;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.96) 0%,
-    rgba(0, 0, 0, 0.9) 45%,
-    rgba(0, 0, 0, 0.45) 72%,
-    transparent 100%
-  );
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: clamp(13px, 6.5%, 20px);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65), 0 0 4px rgba(0, 0, 0, 0.35);
-  line-height: 1;
 }
