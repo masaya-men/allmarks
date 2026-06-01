@@ -1,18 +1,12 @@
-/* Receiver-mode per-card overlay. Matches the real board's visual language:
-   sender tags are plain monospace text top-left (mirroring TagIndicatorStrip),
-   and SAVE is large text over a black bottom-fade — no pills, no borders.
+/* Receiver-mode per-card overlay. Read-only sender tags (top-left, mirroring
+   TagIndicatorStrip) appear on hover; no SAVE fade, no pills, no borders.
+   The × delete lives in CardCornerActions outside this overlay.
 
    The overlay container is ALWAYS pointer-events:none so it never intercepts
-   the pointer over a hovered / greyed card — that would kill the card's
-   tap-to-open. The sender-tag row is read-only (pointer-events:none); the
-   card's bare surface receives the pointer through this transparent overlay,
-   and the × delete lives in CardCornerActions outside this overlay. */
+   the pointer — the card's bare surface receives the pointer through this
+   transparent overlay, and tap-to-open still works normally. */
 .receiverOverlay { position: absolute; inset: 0; z-index: 40; border-radius: var(--card-radius, 20px); opacity: 0; transition: opacity 140ms ease; pointer-events: none; overflow: hidden; }
 .receiverOverlay[data-visible='true'] { opacity: 1; }
-/* Greyed cards (excluded / already-saved) keep the dark wash always, even when
-   the rest of the overlay is faded out, so the user sees what is out at a
-   glance without hovering. */
-.receiverOverlay[data-greyed='true'] { background: rgba(0, 0, 0, 0.55); }
 
 /* Sender-tag labels — top-left, plain monospace text. EXACT mirror of
    TagIndicatorStrip's TEXT_STYLE (fontSize 10, letterSpacing 0.10em,

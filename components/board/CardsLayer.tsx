@@ -304,11 +304,10 @@ type CardsLayerProps = {
    *  currently-matched cards once per filter change. 0 = initial mount
    *  (no animation). */
   readonly entryAnimCycle?: number
-  /** Receiver moodboard mode (shared-link recipient view). When set, the
-   *  board's edit affordances (resize handle, corner actions, drag-reorder,
-   *  per-card board tag UI) are suppressed and a per-card receiver overlay is
-   *  shown (save/skip toggle + sender-tag chips + grey-out + already-saved
-   *  ribbon). When undefined, CardsLayer behaves exactly as before. */
+  /** Receiver (shared-view) mode. When set, the per-card editing chrome is
+   *  suppressed; instead each card shows read-only sender tags (top-left) and
+   *  a corner × that removes the card from the working set. No selection, no
+   *  tag toggles — import takes the whole visible set (tags not imported). */
   readonly receiverMode?: {
     /** Cards removed from the working set (× pressed). */
     readonly removedUrls: ReadonlySet<string>
