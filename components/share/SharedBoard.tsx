@@ -54,6 +54,12 @@ const UNCULLED_VIEWPORT_H = 1e7
 /** Fallback gap for shares created before the sender packed its own gap. */
 const RECEIVER_FALLBACK_GAP_PX = BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
 
+/** Minimum time the "importing" phase stays on screen so the working
+ *  animation always plays in full, even for a near-instant (few-card) write.
+ *  ~1.2s comfortably covers the backdrop/panel appear (~0.44s) plus a full
+ *  loop of the 0.9s sound-wave. */
+const MIN_IMPORTING_MS = 1200
+
 type BoardState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'ready'; readonly data: ShareDataV2 }
@@ -246,6 +252,7 @@ export function SharedBoard(): ReactElement {
     const visible = state.data.cards.filter((c) => !removedUrls.has(c.u))
     if (visible.length === 0) return
     setImportPhase('importing')
+    const startedAt = performance.now()
     try {
       const db = await initDB()
       // Dedupe against the receiver's existing (non-deleted) bookmarks so a
@@ -267,6 +274,13 @@ export function SharedBoard(): ReactElement {
         }))
         await addBookmarkBatch(db, inputs)
       }
+      // Hold the "importing" phase for a floor duration so the working
+      // animation always plays in full — even when the write is near-instant
+      // (a handful of cards). Without this the wave would flash by before the
+      // user registers it. The DB time already spent counts toward the floor.
+      const elapsed = performance.now() - startedAt
+      const remaining = MIN_IMPORTING_MS - elapsed
+      if (remaining > 0) await new Promise((r) => setTimeout(r, remaining))
       setImportPhase('done')
     } catch {
       setImportPhase('idle')
