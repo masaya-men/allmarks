@@ -15,8 +15,8 @@ import type { ShareDataV2 } from '@/lib/share/types-v2'
 import { initDB, addBookmarkBatch, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { orderForImport } from '@/lib/share/receiver-import-order'
 import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
-import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
-import { BOARD_SLIDERS } from '@/lib/board/constants'
+import { computeSkylineLayout, type SkylineCard, type SkylineResult } from '@/lib/board/skyline-layout'
+import { BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_INNER } from '@/lib/board/constants'
 import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 import type { PresetId } from '@/lib/board/tune-presets'
 import { PRESETS } from '@/lib/board/tune-presets'
@@ -31,6 +31,9 @@ import { ChromeButton } from '@/components/board/ChromeButton'
 import { TuneTrigger } from '@/components/board/TuneTrigger'
 import { BlockedChrome } from '@/components/board/BlockedChrome'
 import { ImportProgressIndicator } from './ImportProgressIndicator'
+import { SenderShareModal } from './SenderShareModal'
+import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
+import type { MirrorItem, MirrorPosition } from './ShareMirror'
 import frame from '@/components/board/BoardRoot.module.css'
 import styles from './SharedBoard.module.css'
 
@@ -81,9 +84,15 @@ export function SharedBoard(): ReactElement {
   const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
   const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
   const [importPhase, setImportPhase] = useState<'idle' | 'importing' | 'done'>('idle')
+  // SHARE re-share modal (Plan 2): re-share the currently-visible cards.
+  const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
 
   const [hovered, setHovered] = useState<string | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(1200)
+  // Scroller viewport height + live scrollTop — fed to the re-share mirror so
+  // it reproduces the same vertical slice the receiver currently sees.
+  const [containerHeight, setContainerHeight] = useState<number>(800)
+  const [scrollTop, setScrollTop] = useState<number>(0)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [lightboxRect, setLightboxRect] = useState<DOMRect | null>(null)
   // Bookmark id of the card the lightbox opened from — drives the SAME
@@ -143,8 +152,9 @@ export function SharedBoard(): ReactElement {
     const el = containerRef.current
     if (!el) return undefined
     const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width
-      if (w && w > 0) setContainerWidth(w)
+      const rect = entries[0]?.contentRect
+      if (rect && rect.width > 0) setContainerWidth(rect.width)
+      if (rect && rect.height > 0) setContainerHeight(rect.height)
     })
     ro.observe(el)
     return (): void => ro.disconnect()
@@ -159,6 +169,16 @@ export function SharedBoard(): ReactElement {
     if (!el) return
     const range = el.scrollHeight - el.clientHeight
     setSwell(range > 0 ? Math.max(0, Math.min(1, el.scrollTop / range)) : 0)
+    setScrollTop(el.scrollTop)
+  }, [])
+
+  // Forward the re-share modal's wheel to the receiver's own scroller so the
+  // background board pans in sync with the mirror (matches the sender flow).
+  // Setting scrollTop fires onScroll, which updates swell + scrollTop state.
+  const handleSharePanY = useCallback((deltaY: number): void => {
+    const el = containerRef.current
+    if (!el) return
+    el.scrollTop += deltaY
   }, [])
   const handleMeterScrub = useCallback((fraction: number): void => {
     const el = containerRef.current
@@ -231,20 +251,18 @@ export function SharedBoard(): ReactElement {
   // total height. Text/tweet cards that report a taller intrinsic height
   // inside CardsLayer are approximated here by their aspect-ratio box — close
   // enough for a scroll range (spec: keep it simple).
-  const spacerHeight = useMemo<number>(() => {
-    if (containerWidth <= 0 || items.length === 0) return 0
+  const skyline = useMemo<SkylineResult>(() => {
+    if (containerWidth <= 0 || items.length === 0) {
+      return { positions: {}, totalWidth: 0, totalHeight: 0 }
+    }
     const cards: SkylineCard[] = items.map((it) => {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       const h = it.aspectRatio > 0 ? w / it.aspectRatio : w
       return { id: it.bookmarkId, width: w, height: h }
     })
-    const layout = computeSkylineLayout({
-      cards,
-      containerWidth,
-      gap: gapPx,
-    })
-    return layout.totalHeight
+    return computeSkylineLayout({ cards, containerWidth, gap: gapPx })
   }, [items, containerWidth, customWidths, gapPx, cardWidthPx])
+  const spacerHeight = skyline.totalHeight
 
   // ── bulk import → board ──
   const handleSave = useCallback(async (): Promise<void> => {
@@ -294,6 +312,36 @@ export function SharedBoard(): ReactElement {
     return (): void => window.clearTimeout(t)
   }, [importPhase, router])
 
+  // ── re-share (Plan 2): build a fresh share payload from the cards the
+  // receiver currently sees (after × removals + TUNE width/gap). Reuses the
+  // real sender builder so capping / truncation / tag-dict rebuild / type
+  // detection all match a first-party share. Sender tags ride along as
+  // read-only labels for the next receiver (= the collection's expression). ──
+  const getShareData = useCallback((): ShareDataV2 => {
+    const cards = state.kind === 'ready'
+      ? state.data.cards.filter((c) => !removedUrls.has(c.u))
+      : []
+    const tagDict = state.kind === 'ready' ? (state.data.tags ?? {}) : {}
+    return buildShareDataFromBoard({
+      items: cards.map((c) => ({
+        bookmarkId: c.u,
+        url: c.u,
+        title: c.t,
+        description: c.d,
+        thumbnail: c.th,
+        aspectRatio: c.a,
+        tags: c.tg ?? [],
+        cardWidth: c.cw,
+      })),
+      tags: Object.entries(tagDict).map(([id, t]) => ({ id, name: t.n, color: t.c })),
+      filter: null,
+      now: Date.now(),
+      themeId: (state.kind === 'ready' ? state.data.theme : undefined) ?? DEFAULT_THEME_ID,
+      gap: gapPx,
+      defaultWidth: cardWidthPx,
+    })
+  }, [state, removedUrls, gapPx, cardWidthPx])
+
   if (state.kind === 'loading') {
     return (
       <div className={styles.shell}>
@@ -326,6 +374,17 @@ export function SharedBoard(): ReactElement {
   const themeId = data.theme ?? DEFAULT_THEME_ID
   const lightboxItem = lightboxIndex !== null ? (items[lightboxIndex] ?? null) : null
   const importing = importPhase !== 'idle'
+
+  // Re-share mirror props, supplied from the receiver's own visible layout.
+  const mirrorItems: MirrorItem[] = visibleCards.map((c) => ({
+    id: c.u,
+    url: c.u,
+    title: c.t,
+    thumbnailUrl: c.th ?? null,
+  }))
+  const mirrorPositions: MirrorPosition[] = Object.entries(skyline.positions).map(
+    ([id, p]): MirrorPosition => ({ id, x: p.x, y: p.y, w: p.w, h: p.h }),
+  )
 
   return (
     <div className={frame.outerFrame} data-theme={themeId}>
@@ -381,9 +440,12 @@ export function SharedBoard(): ReactElement {
               <BlockedChrome label="POP OUT">
                 <ChromeButton label="POP OUT" onClick={NOOP} />
               </BlockedChrome>
-              <BlockedChrome label="SHARE">
-                <ChromeButton label="SHARE" onClick={NOOP} />
-              </BlockedChrome>
+              <ChromeButton
+                label="SHARE"
+                onClick={(): void => setShareModalOpen(true)}
+                disabled={importing || visibleCards.length === 0}
+                data-testid="reshare-button"
+              />
             </span>
           }
         />
@@ -461,6 +523,26 @@ export function SharedBoard(): ReactElement {
           onClose={closeLightbox}
         />
       )}
+
+      {/* Re-share: build a new share from the cards still visible here. Reuses
+          the first-party sender modal + mirror preview + capture pipeline. */}
+      <SenderShareModal
+        open={shareModalOpen}
+        onClose={(): void => setShareModalOpen(false)}
+        getShareData={getShareData}
+        totalBoardCount={visibleCards.length}
+        scrollY={scrollTop}
+        contentHeight={spacerHeight + BOARD_TOP_PAD_PX}
+        viewportHeight={containerHeight}
+        activeTagNames={[]}
+        onPanY={handleSharePanY}
+        items={mirrorItems}
+        positions={mirrorPositions}
+        bgViewportWidth={containerWidth}
+        bgCanvasWidth={containerWidth + 2 * BOARD_INNER.SIDE_PADDING_PX}
+        bgTypoEnabled={bgTypoEnabled}
+        bgTypoText="SHARED WITH YOU"
+      />
     </div>
   )
 }
