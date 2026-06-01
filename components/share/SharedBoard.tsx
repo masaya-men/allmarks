@@ -12,19 +12,25 @@ import { fetchShare } from '@/lib/share/api-client'
 import { sanitizeShareDataV2 } from '@/lib/share/validate-v2'
 import { extractShareIdFromPathname } from '@/lib/share/extract-share-id'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
-import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
-import { addTag, getAllTags } from '@/lib/storage/tags'
-import { findDuplicates, convertSenderTagsForReceiver, type ReceiverTagLite } from '@/lib/share/import'
-import { initialIncludeSet, toggleInclude, toggleSenderTag } from '@/lib/share/receiver-selection'
+import { initDB, addBookmarkBatch } from '@/lib/storage/indexeddb'
+import { orderForImport } from '@/lib/share/receiver-import-order'
 import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
+import type { PresetId } from '@/lib/board/tune-presets'
+import { PRESETS } from '@/lib/board/tune-presets'
 import { detectUrlType } from '@/lib/utils/url'
 import { CardsLayer } from '@/components/board/CardsLayer'
 import { Lightbox } from '@/components/board/Lightbox'
 import { ScrollMeter } from '@/components/board/ScrollMeter'
-import { BulkImportToast } from './BulkImportToast'
+import { TopHeader } from '@/components/board/TopHeader'
+import { MotionToggle } from '@/components/board/MotionToggle'
+import { ChromeLedToggle } from '@/components/board/ChromeLedToggle'
+import { ChromeButton } from '@/components/board/ChromeButton'
+import { TuneTrigger } from '@/components/board/TuneTrigger'
+import { BlockedChrome } from '@/components/board/BlockedChrome'
+import { ImportProgressIndicator } from './ImportProgressIndicator'
 import frame from '@/components/board/BoardRoot.module.css'
 import styles from './SharedBoard.module.css'
 
@@ -37,9 +43,6 @@ const NOOP = (): void => {}
  *  CardsLayer a new reference each render and defeat its memoization. */
 const EMPTY_SET: ReadonlySet<string> = new Set()
 
-/** Receiver-mode default tag color when the sender supplied none. */
-const DEFAULT_TAG_COLOR = '#28F100'
-
 /** Huge viewport height so CardsLayer's culling window never drops a card.
  *  The receiver board is a normal scrolling container (capped at 100 cards),
  *  not a panning canvas, so feeding a near-infinite height keeps every card
@@ -48,12 +51,7 @@ const DEFAULT_TAG_COLOR = '#28F100'
  *  real DOM, independent of this culling math. */
 const UNCULLED_VIEWPORT_H = 1e7
 
-/** Fallback layout inputs for shares created before the sender packed its
- *  own gap (and as the default-width baseline). These mirror the board's own
- *  DEFAULT preset (BOARD_SLIDERS) so an old share still renders as a real
- *  board layout rather than an arbitrary one. Per-card widths always come from
- *  each card's `cw`; the gap comes from the share's `gap` when present. */
-const RECEIVER_DEFAULT_CARD_WIDTH = BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX
+/** Fallback gap for shares created before the sender packed its own gap. */
 const RECEIVER_FALLBACK_GAP_PX = BOARD_SLIDERS.CARD_GAP_DEFAULT_PX
 
 type BoardState =
@@ -70,15 +68,16 @@ export function SharedBoard(): ReactElement {
   const [state, setState] = useState<BoardState>({ kind: 'loading' })
   const [shareId, setShareId] = useState<string | null>(null)
 
-  // Selection state (only meaningful once state.kind === 'ready').
-  const [included, setIncluded] = useState<ReadonlySet<string>>(EMPTY_SET)
-  const [chosenTags, setChosenTags] = useState<ReadonlyMap<string, Set<string>>>(new Map())
-  const [dups, setDups] = useState<ReadonlySet<string>>(EMPTY_SET)
+  // Working-set + board-control state (only meaningful once state.kind === 'ready').
+  const [removedUrls, setRemovedUrls] = useState<ReadonlySet<string>>(EMPTY_SET)
+  const [cardWidthPx, setCardWidthPx] = useState<number>(BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX)
+  const [gapPx, setGapPx] = useState<number>(RECEIVER_FALLBACK_GAP_PX)
+  const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
+  const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
+  const [importPhase, setImportPhase] = useState<'idle' | 'importing' | 'done'>('idle')
 
   const [hovered, setHovered] = useState<string | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(1200)
-  const [importing, setImporting] = useState<boolean>(false)
-  const [importResult, setImportResult] = useState<{ saved: number; skipped: number } | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [lightboxRect, setLightboxRect] = useState<DOMRect | null>(null)
   // Bookmark id of the card the lightbox opened from — drives the SAME
@@ -90,6 +89,14 @@ export function SharedBoard(): ReactElement {
 
   const containerRef = useRef<HTMLDivElement>(null)
 
+  const onRemoveCard = useCallback((url: string): void => {
+    setRemovedUrls((s) => {
+      const n = new Set(s)
+      n.add(url)
+      return n
+    })
+  }, [])
+
   // ── boot: extract id ──
   useEffect((): void => {
     const extracted = extractShareIdFromPathname(window.location.pathname)
@@ -100,7 +107,7 @@ export function SharedBoard(): ReactElement {
     setShareId(extracted.id)
   }, [])
 
-  // ── boot: fetch + sanitize + duplicate scan ──
+  // ── boot: fetch + sanitize ──
   useEffect((): void => {
     if (!shareId) return
     void (async (): Promise<void> => {
@@ -116,12 +123,10 @@ export function SharedBoard(): ReactElement {
         return
       }
       const data = parsed.data
-      const db = await initDB()
-      const existing = await getAllBookmarks(db)
-      const existingUrls = new Set(existing.filter((b) => !b.isDeleted).map((b) => b.url))
-      const duplicates = findDuplicates(data.cards, existingUrls)
-      setDups(duplicates)
-      setIncluded(initialIncludeSet(data.cards.map((c) => c.u), duplicates))
+      // Seed the board controls from the sender's layout so TUNE behaves
+      // identically to what the sender saw (W/G), with back-compat fallbacks.
+      setCardWidthPx(data.w ?? BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX)
+      setGapPx(data.gap ?? RECEIVER_FALLBACK_GAP_PX)
       setState({ kind: 'ready', data })
     })()
   }, [shareId])
@@ -138,14 +143,6 @@ export function SharedBoard(): ReactElement {
     ro.observe(el)
     return (): void => ro.disconnect()
   }, [state.kind])
-
-  // ── selection toggles ──
-  const onToggleInclude = useCallback((url: string): void => {
-    setIncluded((s) => toggleInclude(s, url))
-  }, [])
-  const onToggleSenderTag = useCallback((url: string, tid: string): void => {
-    setChosenTags((m) => toggleSenderTag(m, url, tid))
-  }, [])
 
   // ── scroll meter wiring ──
   // The receiver board is a normal vertical scroller (containerRef). Keep the
@@ -178,26 +175,39 @@ export function SharedBoard(): ReactElement {
     setLightboxSourceId(null)
   }, [])
 
-  const onCardClick = useCallback((bookmarkId: string, originRect: DOMRect): void => {
-    if (state.kind !== 'ready') return
-    const idx = state.data.cards.findIndex((c) => c.u === bookmarkId)
-    if (idx < 0) return
-    setLightboxRect(originRect)
-    setLightboxIndex(idx)
-    setLightboxSourceId(bookmarkId)
-  }, [state])
+  // ── visible (working) cards = sender cards minus the ones × removed ──
+  const visibleCards = useMemo(
+    () => (state.kind === 'ready' ? state.data.cards.filter((c) => !removedUrls.has(c.u)) : []),
+    [state, removedUrls],
+  )
 
-  // ── derived board data ──
+  const onCardClick = useCallback(
+    (bookmarkId: string, originRect: DOMRect): void => {
+      const idx = visibleCards.findIndex((c) => c.u === bookmarkId)
+      if (idx < 0) return
+      setLightboxRect(originRect)
+      setLightboxIndex(idx)
+      setLightboxSourceId(bookmarkId)
+    },
+    [visibleCards],
+  )
+
+  // ── TUNE preset application (matches BoardRoot.onApplyPreset signature) ──
+  const onApplyPreset = useCallback((id: PresetId): void => {
+    const preset = PRESETS.find((p) => p.id === id)
+    if (!preset) return
+    setCardWidthPx(preset.w)
+    setGapPx(preset.g)
+  }, [])
+
+  // ── derived board data (re-based on visibleCards) ──
   const items = useMemo(
-    () => (state.kind === 'ready' ? state.data.cards.map((c, i) => shareCardToBoardItem(c, i)) : []),
-    [state],
+    () => visibleCards.map((c, i) => shareCardToBoardItem(c, i)),
+    [visibleCards],
   )
   const senderTagIdsByCard = useMemo(
-    () =>
-      new Map<string, ReadonlyArray<string>>(
-        state.kind === 'ready' ? state.data.cards.map((c) => [c.u, c.tg ?? []]) : [],
-      ),
-    [state],
+    () => new Map<string, ReadonlyArray<string>>(visibleCards.map((c) => [c.u, c.tg ?? []])),
+    [visibleCards],
   )
 
   // Reproduce the sender's arrangement: each card keeps the exact width
@@ -205,29 +215,20 @@ export function SharedBoard(): ReactElement {
   // as CardsLayer's customWidths makes the masonry size every card to the
   // sender's value rather than a single uniform width.
   const customWidths = useMemo<Record<string, number>>(
-    () =>
-      state.kind === 'ready'
-        ? Object.fromEntries(state.data.cards.map((c) => [c.u, c.cw]))
-        : {},
-    [state],
-  )
-  // Global masonry gap: the sender's value when present, else the board's
-  // DEFAULT-preset gap (old shares created before `gap` was carried).
-  const gapPx = useMemo<number>(
-    () => (state.kind === 'ready' ? state.data.gap ?? RECEIVER_FALLBACK_GAP_PX : RECEIVER_FALLBACK_GAP_PX),
-    [state],
+    () => Object.fromEntries(visibleCards.map((c) => [c.u, c.cw])),
+    [visibleCards],
   )
 
   // CardsLayer's root is position:absolute (zero intrinsic height), so the
   // normal-scroll container needs an explicit spacer to become scrollable.
-  // Replicate the SAME skyline layout CardsLayer renders (uniform 320px width,
-  // 16px gap) to get the content's total height. Text/tweet cards that report
-  // a taller intrinsic height inside CardsLayer are approximated here by their
-  // aspect-ratio box — close enough for a scroll range (spec: keep it simple).
+  // Replicate the SAME skyline layout CardsLayer renders to get the content's
+  // total height. Text/tweet cards that report a taller intrinsic height
+  // inside CardsLayer are approximated here by their aspect-ratio box — close
+  // enough for a scroll range (spec: keep it simple).
   const spacerHeight = useMemo<number>(() => {
     if (containerWidth <= 0 || items.length === 0) return 0
     const cards: SkylineCard[] = items.map((it) => {
-      const w = customWidths[it.bookmarkId] ?? RECEIVER_DEFAULT_CARD_WIDTH
+      const w = customWidths[it.bookmarkId] ?? cardWidthPx
       const h = it.aspectRatio > 0 ? w / it.aspectRatio : w
       return { id: it.bookmarkId, width: w, height: h }
     })
@@ -237,59 +238,39 @@ export function SharedBoard(): ReactElement {
       gap: gapPx,
     })
     return layout.totalHeight
-  }, [items, containerWidth, customWidths, gapPx])
+  }, [items, containerWidth, customWidths, gapPx, cardWidthPx])
 
-  // ── bulk import (SAVE N / M) ──
+  // ── bulk import → board ──
   const handleSave = useCallback(async (): Promise<void> => {
     if (state.kind !== 'ready') return
-    const data = state.data
-    setImporting(true)
+    const visible = state.data.cards.filter((c) => !removedUrls.has(c.u))
+    if (visible.length === 0) return
+    setImportPhase('importing')
     try {
       const db = await initDB()
-      // Running list of receiver tags so name-dedupe + `order` stay correct
-      // across cards (two cards sharing one new sender tag create it once).
-      const working: ReceiverTagLite[] = (await getAllTags(db)).map((t) => ({ id: t.id, name: t.name }))
-      const senderTags = data.tags ?? {}
-
-      let saved = 0
-      for (const c of data.cards) {
-        if (!included.has(c.u)) continue
-        const armed = [...(chosenTags.get(c.u) ?? [])]
-        const conv = convertSenderTagsForReceiver(armed, senderTags, working)
-
-        // sender tag id → resolved receiver tag id (existing or freshly created)
-        const created = new Map<string, string>()
-        for (const toCreate of conv.toCreate) {
-          const tag = await addTag(db, {
-            name: toCreate.name,
-            color: toCreate.color ?? DEFAULT_TAG_COLOR,
-            order: working.length,
-          })
-          created.set(toCreate.senderId, tag.id)
-          working.push({ id: tag.id, name: tag.name })
-        }
-
-        const finalTagIds = armed
-          .map((sid) => conv.existing.get(sid) ?? created.get(sid))
-          .filter((x): x is string => Boolean(x))
-
-        await addBookmark(db, {
-          url: c.u,
-          title: c.t,
-          description: c.d ?? '',
-          thumbnail: c.th ?? '',
-          favicon: '',
-          siteName: '',
-          type: detectUrlType(c.u),
-          tags: finalTagIds,
-        })
-        saved++
-      }
-      setImportResult({ saved, skipped: dups.size })
-    } finally {
-      setImporting(false)
+      const inputs = orderForImport(visible).map((c) => ({
+        url: c.u,
+        title: c.t,
+        description: c.d ?? '',
+        thumbnail: c.th ?? '',
+        favicon: '',
+        siteName: '',
+        type: detectUrlType(c.u),
+        tags: [] as string[],
+      }))
+      await addBookmarkBatch(db, inputs)
+      setImportPhase('done')
+    } catch {
+      setImportPhase('idle')
     }
-  }, [state, included, chosenTags, dups])
+  }, [state, removedUrls])
+
+  // After the done check shows briefly, navigate to the board.
+  useEffect((): (() => void) | undefined => {
+    if (importPhase !== 'done') return undefined
+    const t = window.setTimeout(() => router.push('/board'), 900)
+    return (): void => window.clearTimeout(t)
+  }, [importPhase, router])
 
   if (state.kind === 'loading') {
     return (
@@ -319,37 +300,79 @@ export function SharedBoard(): ReactElement {
   // ── ready ──
   const data = state.data
   // Theme is carried but not applied yet (no theme-application system on the
-  // board). Default styling only.
+  // board). Default styling only; the import indicator reads it.
   const themeId = data.theme ?? DEFAULT_THEME_ID
-  const includeCount = included.size
-  const total = data.cards.length
   const lightboxItem = lightboxIndex !== null ? (items[lightboxIndex] ?? null) : null
+  const importing = importPhase !== 'idle'
 
   return (
     <div className={frame.outerFrame} data-theme={themeId}>
-      {/* Inner dark canvas — reuses the board's rounded dark stage. */}
-      <div className={frame.canvas}>
-        {/* Background wordmark — big faint headline behind the cards, like the
-            board's BoardBackgroundTypography. */}
-        <div className={styles.bgTypo} aria-hidden>
-          SHARED WITH YOU
-        </div>
-
-        {/* SAVE control — plain monospace chrome text living INSIDE the dark
-            moodboard (top-left), not jammed into the outer frame band. Green
-            when there's a selection, muted at zero. Not a button rectangle. */}
-        <button
-          type="button"
-          className={styles.saveChrome}
-          data-active={includeCount > 0 ? 'true' : 'false'}
-          disabled={importing || includeCount === 0}
+      {/* Outer top band — the receiver's primary actions (IMPORT) plus the
+          reused MOTION switch and a blocked FILTER readout. Made inert while an
+          import is running. */}
+      <div
+        className={frame.frameTopChrome}
+        style={importing ? { pointerEvents: 'none' } : undefined}
+      >
+        <ChromeButton
+          label={`IMPORT ${visibleCards.length} TO YOUR BOARD`}
           onClick={(): void => {
             void handleSave()
           }}
-          data-testid="save-selected-btn"
-        >
-          {importing ? 'SAVING…' : `SAVE · ${includeCount} / ${total}`}
-        </button>
+          disabled={visibleCards.length === 0 || importPhase !== 'idle'}
+          data-testid="import-button"
+        />
+        <MotionToggle enabled={motionEnabled} onToggle={(): void => setMotionEnabled((v) => !v)} />
+        <BlockedChrome label="FILTER">
+          <ChromeButton label={`AllMarks · ${String(visibleCards.length).padStart(3, '0')}`} onClick={NOOP} />
+        </BlockedChrome>
+      </div>
+
+      {/* Inner dark canvas — reuses the board's rounded dark stage. */}
+      <div className={frame.canvas}>
+        <TopHeader
+          hidden={!!lightboxSourceId}
+          actions={
+            <span style={importing ? { pointerEvents: 'none' } : undefined}>
+              <ChromeLedToggle
+                label="TITLE"
+                on={bgTypoEnabled}
+                onToggle={(): void => setBgTypoEnabled((v) => !v)}
+                wrapTestId="bgtypo-toggle-wrap"
+                ledTestId="bgtypo-led"
+                btnTestId="bgtypo-toggle"
+              />
+              <TuneTrigger
+                widthPx={cardWidthPx}
+                gapPx={gapPx}
+                onChangeWidth={setCardWidthPx}
+                onChangeGap={setGapPx}
+                onReset={(): void => {
+                  setCardWidthPx(data.w ?? BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX)
+                  setGapPx(data.gap ?? RECEIVER_FALLBACK_GAP_PX)
+                }}
+                onApplyPreset={onApplyPreset}
+              />
+              <BlockedChrome label="MANAGE TAGS">
+                <ChromeButton label="MANAGE TAGS" onClick={NOOP} />
+              </BlockedChrome>
+              <BlockedChrome label="POP OUT">
+                <ChromeButton label="POP OUT" onClick={NOOP} />
+              </BlockedChrome>
+              <BlockedChrome label="SHARE">
+                <ChromeButton label="SHARE" onClick={NOOP} />
+              </BlockedChrome>
+            </span>
+          }
+        />
+
+        {/* Background wordmark — big faint headline behind the cards, like the
+            board's BoardBackgroundTypography. Gated by the TITLE switch. */}
+        {bgTypoEnabled && (
+          <div className={styles.bgTypo} aria-hidden>
+            SHARED WITH YOU
+          </div>
+        )}
 
         <div className={frame.canvasWrap} data-lightbox-clone-host>
           <div className={styles.scroller} ref={containerRef} onScroll={handleScroll}>
@@ -379,18 +402,15 @@ export function SharedBoard(): ReactElement {
               onCardResetSize={NOOP}
               displayMode={'visual'}
               newlyAddedIds={EMPTY_SET}
-              defaultCardWidth={RECEIVER_DEFAULT_CARD_WIDTH}
+              defaultCardWidth={cardWidthPx}
               customWidths={customWidths}
-              motionEnabled={true}
+              motionEnabled={motionEnabled}
               matchedBookmarkIds={null}
               receiverMode={{
-                includedUrls: included,
-                alreadySavedUrls: dups,
+                removedUrls,
                 senderTags: data.tags ?? {},
                 senderTagIdsByCard,
-                chosenTagsByCard: chosenTags,
-                onToggleInclude,
-                onToggleSenderTag,
+                onRemove: onRemoveCard,
               }}
             />
           </div>
@@ -400,11 +420,14 @@ export function SharedBoard(): ReactElement {
         <ScrollMeter
           mode="board"
           n1={1}
-          n2={total}
-          total={total}
+          n2={visibleCards.length}
+          total={visibleCards.length}
           swellFraction={swell}
           onScrub={handleMeterScrub}
         />
+
+        {/* Theme-driven import overlay (backdrop covers the canvas at z 300). */}
+        <ImportProgressIndicator phase={importPhase} themeId={themeId} />
       </div>
 
       {lightboxItem && (
@@ -414,17 +437,6 @@ export function SharedBoard(): ReactElement {
           sourceCardId={lightboxSourceId}
           onSourceShouldShow={showLightboxSource}
           onClose={closeLightbox}
-        />
-      )}
-
-      {importResult && (
-        <BulkImportToast
-          saved={importResult.saved}
-          skipped={importResult.skipped}
-          onDismiss={(): void => {
-            setImportResult(null)
-            router.push('/board')
-          }}
         />
       )}
     </div>
