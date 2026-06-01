@@ -86,6 +86,9 @@ export function SharedBoard(): ReactElement {
   const [importPhase, setImportPhase] = useState<'idle' | 'importing' | 'done'>('idle')
   // SHARE re-share modal (Plan 2): re-share the currently-visible cards.
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
+  // Import result counts for the done-phase summary (mainstream "report only"
+  // duplicate UX): how many were newly saved vs already on the user's board.
+  const [importCounts, setImportCounts] = useState<{ added: number; skipped: number } | null>(null)
 
   const [hovered, setHovered] = useState<string | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(1200)
@@ -279,6 +282,8 @@ export function SharedBoard(): ReactElement {
       const existing = await getAllBookmarks(db)
       const existingUrls = new Set(existing.filter((b) => !b.isDeleted).map((b) => b.url))
       const fresh = visible.filter((c) => !existingUrls.has(c.u))
+      // Report-only dup summary: surface added vs skipped in the done phase.
+      setImportCounts({ added: fresh.length, skipped: visible.length - fresh.length })
       if (fresh.length > 0) {
         const inputs = orderForImport(fresh).map((c) => ({
           url: c.u,
@@ -308,9 +313,11 @@ export function SharedBoard(): ReactElement {
   // After the done check shows briefly, navigate to the board.
   useEffect((): (() => void) | undefined => {
     if (importPhase !== 'done') return undefined
-    const t = window.setTimeout(() => router.push('/board'), 900)
+    // Hold the done state longer when there's a duplicate summary to read.
+    const holdMs = (importCounts?.skipped ?? 0) > 0 ? 2000 : 900
+    const t = window.setTimeout(() => router.push('/board'), holdMs)
     return (): void => window.clearTimeout(t)
-  }, [importPhase, router])
+  }, [importPhase, router, importCounts])
 
   // ── re-share (Plan 2): build a fresh share payload from the cards the
   // receiver currently sees (after × removals + TUNE width/gap). Reuses the
@@ -511,7 +518,7 @@ export function SharedBoard(): ReactElement {
         />
 
         {/* Theme-driven import overlay (backdrop covers the canvas at z 300). */}
-        <ImportProgressIndicator phase={importPhase} themeId={themeId} />
+        <ImportProgressIndicator phase={importPhase} themeId={themeId} counts={importCounts} />
       </div>
 
       {lightboxItem && (
