@@ -90,4 +90,12 @@ describe('buildShareDataFromBoard', () => {
     const data = buildShareDataFromBoard({ items: [], tags: [], filter: null, now: 1 })
     expect(data.theme).toBeUndefined()
   })
+
+  it('carries the sender default card width as w', () => {
+    const data = buildShareDataFromBoard({
+      items: [{ bookmarkId: 'b1', url: 'https://e.com', title: 't', aspectRatio: 1, tags: [], cardWidth: 300 }],
+      tags: [], filter: null, now: 1, gap: 40, defaultWidth: 267.84,
+    })
+    expect(data.w).toBe(267.84)
+  })
 })

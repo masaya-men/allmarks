@@ -39,6 +39,8 @@ export type BuildShareArgs = {
   readonly themeId?: ThemeId
   /** Sender's global card gap in px (= the masonry spacing they saw). */
   readonly gap?: number
+  /** Sender's default card width in px (= cardWidthPx). */
+  readonly defaultWidth?: number
   readonly detectType?: (url: string) => ShareCardType
 }
 
@@ -92,6 +94,7 @@ export function buildShareDataFromBoard(args: BuildShareArgs): ShareDataV2 {
     filter: args.filter ?? undefined,
     ...(args.themeId ? { theme: args.themeId } : {}),
     ...(typeof args.gap === 'number' ? { gap: args.gap } : {}),
+    ...(typeof args.defaultWidth === 'number' ? { w: args.defaultWidth } : {}),
     createdAt: args.now,
   }
 }

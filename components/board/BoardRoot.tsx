@@ -1409,6 +1409,8 @@ export function BoardRoot() {
       // card's `cw`; this is the only remaining global layout input the
       // receiver needs to reproduce the same arrangement.
       gap: cardGapPx,
+      // Sender's default card width so the receiver reconstructs board state.
+      defaultWidth: cardWidthPx,
     })
   }, [lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx, cardGapPx])
 

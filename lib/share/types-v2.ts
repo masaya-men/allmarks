@@ -58,6 +58,10 @@ export type ShareDataV2 = {
    *  global layout input. Optional for back-compat — shares created before
    *  this field fall back to the board's default gap on the receiver. */
   readonly gap?: number
+  /** Sender's default card width in px (= cardWidthPx). Lets the receiver
+   *  rebuild board state so TUNE behaves identically. Optional for
+   *  back-compat — old shares fall back to BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX. */
+  readonly w?: number
   readonly createdAt: number
 }
 
