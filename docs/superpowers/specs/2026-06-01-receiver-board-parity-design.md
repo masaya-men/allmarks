@@ -45,7 +45,8 @@
 - 各カードに **×**（ボードの `CardCornerActions` を受け取りモードでも描画）。押すと**画面上の除外セット**に入り、その場で消えてマソンリーが詰め直る。**IDB は触らない**（受け取りカードは画面上の配列のみ）。
 - 戻したい時は共有 URL を再読み込み（元データは不変）。
 - **緑の per-card SAVE フェード（saveFade/saveLabel）と per-card 送り主タグ選択 UI は削除**。
-- **送り主タグは取り込み時に全部自動で付与**（`convertSenderTagsForReceiver` を各カードの `c.tg` 全件に適用）。受け取り画面でのタグ取捨選択は廃止（ボードに無い機能だったため）。
+- **タグは取り込まない（決定: 案A、2026-06-01 調査ふまえ）**。IMPORT はブックマーク本体（url/title/description/thumbnail/type）のみを保存し、`tags: []`。`convertSenderTagsForReceiver` 等のタグ変換ロジックは取り込み経路から撤去。理由は `docs/private/2026-06-01-tag-import-research.md`（他人の集めた物を取り込む場面ではタグ非継承が主流／名前空間を汚さない／最もシンプル）。受け取り後はユーザーが自分の体系で `MANAGE TAGS` から付け直す。
+- **送り主タグの表示**: カード上に **読み取り専用ラベル**として表示は残す（ボードの TagIndicatorStrip と同じ見た目。送り主の整理＝表現の一部を見せるため）。トグル無し・フィルター連動無し・取り込み無しの純粋な情報表示。
 - IMPORT＝可視カード全取り込み、SHARE＝可視カードで再共有。除外は × 一本に統一。
 
 ### 6. 取り込み中インジケーター（出現・最中・消滅すべてアニメ）
@@ -87,7 +88,7 @@
 
 1. fetch → sanitize → `state.ready`。`cardWidthPx=w(or default)`, `cardGapPx=gap(or default)`, `customWidths` 構築。
 2. 表示: 可視カードを CardsLayer に流す。TUNE で width/gap 変更、× で removedUrls 追加。
-3. IMPORT: `importPhase=importing` → 暗転＋インジケーター → `data.cards` のうち可視分を**逆順**に addBookmark（タグ全付与）→ `done`（✓）→ 退場 → `/board` 遷移。
+3. IMPORT: `importPhase=importing` → 暗転＋インジケーター → `data.cards` のうち可視分を**逆順**に addBookmark（`tags: []`＝本体のみ）→ `done`（✓）→ 退場 → `/board` 遷移。
 4. SHARE: 可視カード→buildShareData→create API→`/s/<newId>`。
 
 ## テスト
