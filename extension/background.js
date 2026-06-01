@@ -81,4 +81,10 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     void mirrorRemoveUrl(normalizeUrl(msg.url), chrome.storage.local).catch(() => {})
     return
   }
+  // The AllMarks board (booklage tab) asks to open the extension's options
+  // page via the SETTINGS chrome entry. Forwarded here by the content script.
+  if (msg.type === 'booklage:open-options') {
+    void chrome.runtime.openOptionsPage()
+    return
+  }
 })

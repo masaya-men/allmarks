@@ -1,0 +1,155 @@
+'use client'
+
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react'
+import { EXTENSION_STORE_URL } from '@/lib/board/constants'
+import { ChromeButton } from './ChromeButton'
+import styles from './ExtensionEntry.module.css'
+
+/** Layout effect on the client, plain effect on the server (where layout
+ *  effects don't run and React warns). Lets us flip to the installed state
+ *  before first paint without a hydration mismatch. */
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
+
+/** Reads the marker the extension's content script writes onto <html>
+ *  (`data-booklage-extension="1"`). */
+function readMarker(): boolean {
+  return (
+    typeof document !== 'undefined' &&
+    document.documentElement.dataset.booklageExtension === '1'
+  )
+}
+
+/** True once the AllMarks extension is detected on the page. Starts from a
+ *  synchronous read (the content script usually sets the marker before React
+ *  mounts), then re-checks a few times + via a MutationObserver so an
+ *  installed user never sees the GET EXTENSION promo flash before it flips. */
+function useExtensionInstalled(): boolean {
+  // Start `false` so the first (hydration) render matches the server, which
+  // never sees the marker. The layout effect below flips it before paint.
+  const [installed, setInstalled] = useState<boolean>(false)
+  useIsoLayoutEffect(() => {
+    if (readMarker()) {
+      setInstalled(true)
+      return
+    }
+    const timers: number[] = []
+    let obs: MutationObserver | null = null
+    const check = (): void => {
+      if (!readMarker()) return
+      setInstalled(true)
+      timers.forEach((t) => clearTimeout(t))
+      obs?.disconnect()
+    }
+    ;[150, 500, 1200, 2500].forEach((ms) => timers.push(window.setTimeout(check, ms)))
+    obs = new MutationObserver(check)
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-booklage-extension'],
+    })
+    return (): void => {
+      timers.forEach((t) => clearTimeout(t))
+      obs?.disconnect()
+    }
+  }, [])
+  return installed
+}
+
+/**
+ * Header chrome entry, sits to the right of TUNE.
+ *
+ * - Extension installed → label `SETTINGS`; click asks the extension (via the
+ *   content-script bridge) to open its options page.
+ * - Extension absent → label `GET EXTENSION`; click opens a small promo
+ *   explaining the one-click save + an `ADD TO CHROME` link to the store.
+ *   While {@link EXTENSION_STORE_URL} is empty (pre-launch) the link degrades
+ *   to a quiet "coming soon" instead of a dead 404.
+ */
+export function ExtensionEntry(): ReactElement {
+  const installed = useExtensionInstalled()
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLSpanElement>(null)
+
+  const openSettings = useCallback((): void => {
+    // Mirrors the url-deleted bridge (use-board-data.ts): the content script
+    // listens on window 'message' for booklage.pages.dev and forwards to the
+    // background SW, which calls chrome.runtime.openOptionsPage().
+    window.postMessage({ type: 'allmarks:open-settings' }, '*')
+  }, [])
+
+  // Close the promo on outside-click / ESC. The board's interaction layer
+  // swallows pointer/mouse-down in the bubble phase (pan capture), so we
+  // listen in the CAPTURE phase to catch the press before it's stopped —
+  // otherwise clicking the canvas wouldn't dismiss the promo.
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: PointerEvent): void => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    window.addEventListener('keydown', onKey)
+    return (): void => {
+      document.removeEventListener('pointerdown', onDown, true)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  if (installed) {
+    return <ChromeButton label="SETTINGS" onClick={openSettings} data-testid="extension-settings" />
+  }
+
+  const hasStore = EXTENSION_STORE_URL.length > 0
+
+  return (
+    <span ref={wrapRef} className={styles.wrap}>
+      <ChromeButton
+        label="GET EXTENSION"
+        onClick={(): void => setOpen((v) => !v)}
+        aria-pressed={open}
+        data-testid="get-extension"
+      />
+      {open && (
+        <div className={styles.promo} role="dialog" aria-label="Get the AllMarks extension">
+          <button
+            type="button"
+            className={styles.close}
+            onClick={(): void => setOpen(false)}
+            aria-label="Close"
+            data-testid="get-extension-close"
+          >
+            ×
+          </button>
+          <div className={styles.title}>ALLMARKS EXTENSION</div>
+          <p className={styles.body}>
+            Save any page to AllMarks in one click — straight from X, YouTube, and anywhere
+            else. The floating mark and SNS auto-save come with it.
+          </p>
+          {hasStore ? (
+            <a
+              className={styles.cta}
+              href={EXTENSION_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(): void => setOpen(false)}
+            >
+              ADD TO CHROME
+            </a>
+          ) : (
+            <span className={styles.soon} aria-disabled="true">
+              COMING SOON
+            </span>
+          )}
+        </div>
+      )}
+    </span>
+  )
+}

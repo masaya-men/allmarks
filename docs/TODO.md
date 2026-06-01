@@ -20,7 +20,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 99 — SHARE 再共有 / Plan 2 + 取り込み重複サマリーを本番 ship + master push)
+### 直近の状態 (セッション 100 — 拡張機能の設定画面リデザイン + ボードからの設定入口を本番 ship)
+
+**ship 済 (本番 `booklage.pages.dev` 反映済 / tsc 0 / 全 978 tests pass / 全状態 Playwright 実機検証)**:
+
+1. **拡張機能の設定画面 (options) を参考画像どおりに全面リデザイン** ([extension/options.html](../extension/options.html) / [options.css](../extension/options.css) / [options.js](../extension/options.js)): 左サイドバー (ワードマーク・ナビ・MOTION・SIGNAL オシロスコープ・VER/BUILD) + 上部 EQ バー + 「ALLMARKS SETTINGS」+ 縦フェーダー付き 4 カード + ワイヤーフレーム地球儀 + フッター。**フォントは AllMarks と同じ Geist/Geist Mono を [extension/fonts/](../extension/fonts/) に同梱** (Google Fonts の latin 可変フォント、計 31KB)。配色は既存トークン (share オレンジ `#ff8a3d` / A ロゴ緑 `#28f100`)。「AllMarks · 372」は `savedUrlsMirror` の実保存数、VER/BUILD は manifest 実値。設定の挙動は全保持 (idle opacity のみ select→スライダー化、保存値 0–1 互換)。manifest `0.1.16→0.1.17`。
+2. **ボードの TUNE 右隣に拡張設定の入口を追加** (新規 [ExtensionEntry.tsx](../components/board/ExtensionEntry.tsx) + `.module.css`、[BoardRoot.tsx](../components/board/BoardRoot.tsx) で配置): 拡張検知 (`data-booklage-extension`) で出し分け。**導入済み → `SETTINGS`** (クリックで postMessage → content.js → background が `chrome.runtime.openOptionsPage()`)。**未導入 → `GET EXTENSION`** (宣伝ポップオーバー + `ADD TO CHROME`)。ストア URL は [constants.ts](../lib/board/constants.ts) の `EXTENSION_STORE_URL` (空)、**空の間は `COMING SOON` で死んだリンクを出さない** → 公開日に1行埋めれば全員に自動点灯。閉じる手段3つ (× / ESC / 外側クリック=capture pointerdown でボードの操作レイヤーより先に判定)。
+3. これで公開向け残タスクの **「拡張機能 設定画面 整備」は完了**。「Chrome Web Store 公開準備」も入口・宣伝・同梱フォントが揃い前進 (公開は引き続きドメイン取得待ち)。
+
+**設計上の確定 (memory 化済)**: ボード上の「外側クリックで閉じる」は capture フェーズ pointerdown 必須 (InteractionLayer が bubble で mousedown を握り潰す)。拡張に AllMarks フォントを使うには woff2 同梱 (next/font なので repo に実体無し)。
+
+**🔴 user 確認手順**: あなたは拡張 sideload 済なので本番ボードでは `SETTINGS` が出る。クリックで設定が開く配線は `content.js`/`background.js` 更新が要るので、`chrome://extensions` で拡張を「更新」してからボードをハードリロード。宣伝側を見たい時は拡張を一時オフに。
+
+### 一つ前 (セッション 99 — SHARE 再共有 / Plan 2 + 取り込み重複サマリーを本番 ship + master push)
 
 **ship 済 (本番 `booklage.pages.dev` 反映済・master push 済 / tsc 0・全 978 tests pass / 本番 playwright 実測 PASS)**:
 

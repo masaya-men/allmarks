@@ -50,6 +50,7 @@ import { addTag, addTagToBookmark, removeTagFromBookmark } from '@/lib/storage/t
 import { MotionToggle } from './MotionToggle'
 import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
+import { ExtensionEntry } from './ExtensionEntry'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
@@ -1717,6 +1718,7 @@ export function BoardRoot() {
                 onReset={handleResetWidthGap}
                 onApplyPreset={onApplyPreset}
               />
+              <ExtensionEntry />
               <TagButton
                 onClick={(): void => {
                   // Session 81: entry picker removed. TriagePage now auto-

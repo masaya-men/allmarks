@@ -24,6 +24,13 @@ export const BOARD_INNER = {
  *  applied in BoardRoot's cards wrapper transform. */
 export const BOARD_TOP_PAD_PX = 80
 
+/** Chrome Web Store listing URL for the AllMarks browser extension. Empty
+ *  until the extension is published (gated behind the domain move / store
+ *  review). While empty, the board's GET EXTENSION entry shows a quiet
+ *  "coming soon" affordance instead of a dead link — fill this in on launch
+ *  day and the public install promo lights up automatically. */
+export const EXTENSION_STORE_URL = ''
+
 /** Outer frame padding around the inner dark canvas (= --canvas-margin in
  *  globals.css). Kept here as a runtime constant so non-CSS consumers (e.g.
  *  ShareMirror, which reproduces the bg structure at scale) can apply it

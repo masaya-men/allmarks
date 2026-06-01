@@ -231,13 +231,26 @@ if (location.hostname === 'booklage.pages.dev') {
   window.addEventListener('message', (event) => {
     if (event.source !== window) return
     const msg = event.data
-    if (!msg || msg.type !== 'allmarks:url-deleted') return
-    if (typeof msg.url !== 'string' || !msg.url) return
-    if (!isExtensionAlive()) return
-    try {
-      chrome.runtime.sendMessage({ type: 'booklage:url-deleted', url: msg.url }).catch(() => {})
-    } catch (_) {
-      // Context invalidated; drop silently.
+    if (!msg) return
+    if (msg.type === 'allmarks:url-deleted') {
+      if (typeof msg.url !== 'string' || !msg.url) return
+      if (!isExtensionAlive()) return
+      try {
+        chrome.runtime.sendMessage({ type: 'booklage:url-deleted', url: msg.url }).catch(() => {})
+      } catch (_) {
+        // Context invalidated; drop silently.
+      }
+      return
+    }
+    // SETTINGS chrome entry on the board → open the extension options page.
+    if (msg.type === 'allmarks:open-settings') {
+      if (!isExtensionAlive()) return
+      try {
+        chrome.runtime.sendMessage({ type: 'booklage:open-options' }).catch(() => {})
+      } catch (_) {
+        // Context invalidated; drop silently.
+      }
+      return
     }
   })
 }
