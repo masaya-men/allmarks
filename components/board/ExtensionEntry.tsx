@@ -71,7 +71,15 @@ function useExtensionInstalled(): boolean {
  *   While {@link EXTENSION_STORE_URL} is empty (pre-launch) the link degrades
  *   to a quiet "coming soon" instead of a dead 404.
  */
-export function ExtensionEntry(): ReactElement {
+export interface ExtensionEntryProps {
+  readonly quickTagEnabled: boolean
+  readonly onQuickTagToggle: (next: boolean) => void
+}
+
+export function ExtensionEntry({
+  quickTagEnabled,
+  onQuickTagToggle,
+}: ExtensionEntryProps): ReactElement {
   const installed = useExtensionInstalled()
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLSpanElement>(null)
@@ -104,7 +112,42 @@ export function ExtensionEntry(): ReactElement {
   }, [open])
 
   if (installed) {
-    return <ChromeButton label="SETTINGS" onClick={openSettings} data-testid="extension-settings" />
+    return (
+      <span ref={wrapRef} className={styles.wrap}>
+        <ChromeButton
+          label="SETTINGS"
+          onClick={(): void => setOpen((v) => !v)}
+          aria-pressed={open}
+          data-testid="extension-settings"
+        />
+        {open && (
+          <div className={styles.panel} role="dialog" aria-label="AllMarks settings">
+            <div className={styles.title}>SETTINGS</div>
+            <label className={styles.toggleRow}>
+              <span className={styles.toggleLabel}>QUICK-TAG ON SAVE</span>
+              <input
+                type="checkbox"
+                className={styles.toggle}
+                checked={quickTagEnabled}
+                onChange={(e): void => onQuickTagToggle(e.target.checked)}
+                data-testid="quick-tag-toggle"
+              />
+            </label>
+            <button
+              type="button"
+              className={styles.panelCta}
+              onClick={(): void => {
+                openSettings()
+                setOpen(false)
+              }}
+              data-testid="open-extension-settings"
+            >
+              OPEN EXTENSION SETTINGS
+            </button>
+          </div>
+        )}
+      </span>
+    )
   }
 
   const hasStore = EXTENSION_STORE_URL.length > 0
