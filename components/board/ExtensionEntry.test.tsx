@@ -6,10 +6,11 @@ beforeEach(() => {
   document.documentElement.dataset.booklageExtension = '1'
 })
 
-describe('ExtensionEntry settings panel', () => {
-  it('opens the panel and reflects the toggle state', () => {
+describe('ExtensionEntry settings drawer', () => {
+  it('opens the drawer on hover and reflects the toggle state', () => {
     render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={() => {}} />)
-    fireEvent.click(screen.getByTestId('extension-settings'))
+    // TUNE-style hover open: the drawer expands when the wrapper is entered.
+    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
     const toggle = screen.getByTestId('quick-tag-toggle') as HTMLInputElement
     expect(toggle.checked).toBe(true)
   })
@@ -17,7 +18,7 @@ describe('ExtensionEntry settings panel', () => {
   it('calls onQuickTagToggle when toggled', () => {
     const onToggle = vi.fn()
     render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} />)
-    fireEvent.click(screen.getByTestId('extension-settings'))
+    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
     fireEvent.click(screen.getByTestId('quick-tag-toggle'))
     expect(onToggle).toHaveBeenCalledWith(false)
   })

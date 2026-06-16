@@ -96,22 +96,38 @@
   cursor: default;
 }
 
-/* SETTINGS panel for the installed state. Same dark glass + promo-in entrance
-   as .promo, a touch narrower since it's a short settings list. */
-.panel {
+/* SETTINGS drawer for the installed state. Identical mechanics to TUNE's
+   drawer (TuneTrigger.module.css): always mounted, max-height accordion
+   expand on hover, same easing + dark glass. Vertical list, so column
+   layout + an explicit width (TUNE's content sizes its row drawer; ours
+   needs a fixed width). */
+.drawer {
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%;
   right: 0;
-  z-index: 60;
   width: 240px;
-  padding: 14px 16px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  background: rgba(10, 10, 12, 0.96);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-  animation: promo-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  background: rgba(10, 10, 10, 0.92);
+  border: 0;
+  border-radius: 8px;
+  padding: 0 24px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+  user-select: none;
+}
+.drawer[data-open='true'] {
+  max-height: 320px;
+  padding: 22px 24px 24px;
+  pointer-events: auto;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
 .toggleRow {
@@ -173,8 +189,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .promo,
-  .panel {
+  .promo {
     animation: none;
+  }
+  .drawer {
+    transition: none;
   }
 }

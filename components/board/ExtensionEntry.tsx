@@ -76,13 +76,22 @@ export interface ExtensionEntryProps {
   readonly onQuickTagToggle: (next: boolean) => void
 }
 
+/** Hover-open leave grace, copied from TuneTrigger so the SETTINGS drawer
+ *  forgives a brief pointer slip between the trigger and the drawer. */
+const LEAVE_GRACE_MS = 700
+
 export function ExtensionEntry({
   quickTagEnabled,
   onQuickTagToggle,
 }: ExtensionEntryProps): ReactElement {
   const installed = useExtensionInstalled()
+  // `open`/`setOpen` + the outside-click effect drive the NOT-installed
+  // GET EXTENSION promo (click to toggle). The installed SETTINGS drawer is
+  // hover-driven via `expanded` (TUNE mechanics) and never touches `open`.
   const [open, setOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const wrapRef = useRef<HTMLSpanElement>(null)
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const openSettings = useCallback((): void => {
     // Mirrors the url-deleted bridge (use-board-data.ts): the content script
@@ -91,10 +100,35 @@ export function ExtensionEntry({
     window.postMessage({ type: 'allmarks:open-settings' }, '*')
   }, [])
 
+  // TUNE-style hover open/close with a 700ms leave grace (no click-pin).
+  const handleMouseEnter = useCallback((): void => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+    setExpanded(true)
+  }, [])
+
+  const handleMouseLeave = useCallback((): void => {
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    leaveTimerRef.current = setTimeout(() => {
+      setExpanded(false)
+      leaveTimerRef.current = null
+    }, LEAVE_GRACE_MS)
+  }, [])
+
+  useEffect(() => {
+    return (): void => {
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    }
+  }, [])
+
   // Close the promo on outside-click / ESC. The board's interaction layer
   // swallows pointer/mouse-down in the bubble phase (pan capture), so we
   // listen in the CAPTURE phase to catch the press before it's stopped —
-  // otherwise clicking the canvas wouldn't dismiss the promo.
+  // otherwise clicking the canvas wouldn't dismiss the promo. Only the
+  // NOT-installed branch sets `open`, so this early-returns for the
+  // installed (hover) branch.
   useEffect(() => {
     if (!open) return
     const onDown = (e: PointerEvent): void => {
@@ -113,39 +147,48 @@ export function ExtensionEntry({
 
   if (installed) {
     return (
-      <span ref={wrapRef} className={styles.wrap}>
+      <span
+        ref={wrapRef}
+        className={styles.wrap}
+        data-testid="extension-settings-wrap"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <ChromeButton
           label="SETTINGS"
-          onClick={(): void => setOpen((v) => !v)}
-          aria-pressed={open}
+          onClick={(): void => {}}
+          aria-pressed={expanded}
           data-testid="extension-settings"
         />
-        {open && (
-          <div className={styles.panel} role="dialog" aria-label="AllMarks settings">
-            <div className={styles.title}>SETTINGS</div>
-            <label className={styles.toggleRow}>
-              <span className={styles.toggleLabel}>QUICK-TAG ON SAVE</span>
-              <input
-                type="checkbox"
-                className={styles.toggle}
-                checked={quickTagEnabled}
-                onChange={(e): void => onQuickTagToggle(e.target.checked)}
-                data-testid="quick-tag-toggle"
-              />
-            </label>
-            <button
-              type="button"
-              className={styles.panelCta}
-              onClick={(): void => {
-                openSettings()
-                setOpen(false)
-              }}
-              data-testid="open-extension-settings"
-            >
-              OPEN EXTENSION SETTINGS
-            </button>
-          </div>
-        )}
+        <div
+          className={styles.drawer}
+          role="dialog"
+          aria-label="AllMarks settings"
+          data-open={expanded ? 'true' : 'false'}
+          aria-hidden={!expanded}
+        >
+          <div className={styles.title}>SETTINGS</div>
+          <label className={styles.toggleRow}>
+            <span className={styles.toggleLabel}>QUICK-TAG ON SAVE</span>
+            <input
+              type="checkbox"
+              className={styles.toggle}
+              checked={quickTagEnabled}
+              onChange={(e): void => onQuickTagToggle(e.target.checked)}
+              data-testid="quick-tag-toggle"
+            />
+          </label>
+          <button
+            type="button"
+            className={styles.panelCta}
+            onClick={(): void => {
+              openSettings()
+            }}
+            data-testid="open-extension-settings"
+          >
+            OPEN EXTENSION SETTINGS
+          </button>
+        </div>
       </span>
     )
   }
