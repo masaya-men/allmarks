@@ -168,6 +168,22 @@ export function SaveIframeClient(): ReactElement {
         ev.source?.postMessage(msg, { targetOrigin: ev.origin })
       }
 
+      // Resolve PiP presence freshly for this save. The passively-maintained
+      // pipActiveRef is only correct if this (offscreen) iframe was alive to
+      // hear the pip-open broadcast. The offscreen doc is created on demand
+      // per save, so a doc spun up AFTER PiP opened would have missed the
+      // broadcast and report a false negative — which would let the extension
+      // show its host-page strip on top of the PiP (the collision we fixed).
+      // Actively query once (same lazy path the probe uses) when we've never
+      // observed a presence message; open/close broadcasts keep the ref fresh
+      // thereafter.
+      let pipActiveNow = pipActiveRef.current
+      if (!seenPresenceRef.current) {
+        pipActiveNow = await queryPipPresence(80)
+        pipActiveRef.current = pipActiveNow
+        seenPresenceRef.current = true
+      }
+
       try {
         const db = await initDB()
         if (payload.skipIfDuplicate) {
@@ -184,7 +200,7 @@ export function SaveIframeClient(): ReactElement {
               bookmarkId: existing.id,
               skipped: true,
               ...savePayload,
-              pipActive: pipActiveRef.current,
+              pipActive: pipActiveNow,
             })
             return
           }
@@ -207,7 +223,7 @@ export function SaveIframeClient(): ReactElement {
           ok: true,
           bookmarkId: bm.id,
           ...savePayload,
-          pipActive: pipActiveRef.current,
+          pipActive: pipActiveNow,
         })
 
         // Phase A: fire-and-forget syndication fetch for X tweets so the
