@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useState,
   type CSSProperties,
   type ReactElement,
@@ -48,6 +49,12 @@ export function PipCard({
   const [imgErrored, setImgErrored] = useState(false)
   const [detectedAspect, setDetectedAspect] = useState<number | undefined>()
   const [tagOpen, setTagOpen] = useState(false)
+
+  // Collapse the strip back to the "+" when this card stops being the active
+  // one, so returning to it later starts closed (no surprise re-open).
+  useEffect(() => {
+    if (!isActive) setTagOpen(false)
+  }, [isActive])
 
   const canTag =
     isActive === true &&

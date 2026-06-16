@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, type ReactElement } from 'react'
+import { useEffect, useRef, useState, useCallback, type ReactElement } from 'react'
 import { initDB, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
@@ -27,6 +27,10 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   // while the companion was visible (a "look how many you grabbed today"
   // feel). Closing the PiP loses this buffer; reopening starts fresh.
   const [cards, setCards] = useState<PipStackCard[]>([])
+  // Keep a ref in sync so handleAddTag can read current cards without adding
+  // `cards` to its useCallback deps (which would recreate it every render).
+  const cardsRef = useRef(cards)
+  useEffect(() => { cardsRef.current = cards }, [cards])
 
   useEffect(() => {
     const unsub = subscribeBookmarkSaved(async ({ bookmarkId }) => {
@@ -85,6 +89,11 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   }, [onCardClick])
 
   const handleAddTag = useCallback(async (bookmarkId: string, tagId: string) => {
+    // Skip entirely if the tag is already applied — avoids a redundant IDB
+    // write and a spurious bookmark-updated broadcast (which would make an
+    // open board reload for nothing).
+    const already = (cardsRef.current.find((c) => c.id === bookmarkId)?.currentTagIds ?? []).includes(tagId)
+    if (already) return
     const db = await initDB()
     await addTagToBookmark(db, bookmarkId, tagId)
     setCards((prev) =>

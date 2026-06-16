@@ -136,4 +136,45 @@ describe('PipCompanion', () => {
     })
   })
 
+  it('re-tapping an already-applied chip is a no-op: addTagToBookmark + postBookmarkUpdated called exactly once', async () => {
+    render(<PipCompanion onClose={() => {}} />)
+    expect(savedHandler).toBeTruthy()
+    // Save one bookmark so the card + "+" affordance appear.
+    await act(async () => {
+      await savedHandler?.({ bookmarkId: 'b1' })
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('pip-card-b1')).toBeTruthy()
+    })
+
+    // Open the strip.
+    const addBtn = await screen.findByLabelText('Add tag')
+    await act(async () => {
+      fireEvent.click(addBtn)
+    })
+
+    // First tap — applies the tag. The chip text may change to "✓ design".
+    const chipFirst = await screen.findByText(/design/)
+    await act(async () => {
+      fireEvent.click(chipFirst)
+    })
+    await waitFor(() => {
+      expect(addTagToBookmark).toHaveBeenCalledTimes(1)
+      expect(postBookmarkUpdated).toHaveBeenCalledTimes(1)
+    })
+
+    // Second tap on the same chip — should be a no-op.
+    // Re-query because the text may have changed to "✓ design".
+    const chipSecond = screen.getByText(/design/)
+    await act(async () => {
+      fireEvent.click(chipSecond)
+    })
+
+    // Give any async work a chance to settle, then assert counts are unchanged.
+    await waitFor(() => {
+      expect(addTagToBookmark).toHaveBeenCalledTimes(1)
+      expect(postBookmarkUpdated).toHaveBeenCalledTimes(1)
+    })
+  })
+
 })
