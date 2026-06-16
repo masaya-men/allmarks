@@ -1,0 +1,78 @@
+.strip {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-dark, #0a0a0a) 82%, transparent);
+  border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.08));
+  backdrop-filter: blur(var(--glass-blur, 8px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 8px));
+  max-width: 100%;
+  font-family: var(--font-sans, sans-serif);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: var(--text-primary, #e8e8e8);
+  font-size: 11px;
+  font-family: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+  line-height: 1.4;
+}
+
+.chip:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.chip[data-has='true'] {
+  color: #28f100;
+  border-color: color-mix(in srgb, #28f100 60%, transparent);
+}
+
+.chip[data-has='true']:hover {
+  border-color: #28f100;
+}
+
+/* Collapse: hide chips marked data-overflow when not expanded.
+   Explicit attribute avoids any :nth-of-type footguns; .more button is unaffected. */
+.strip[data-expanded='false'] .chip[data-overflow='true'] {
+  display: none;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+  line-height: 1.4;
+}
+
+.more:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.7);
+}

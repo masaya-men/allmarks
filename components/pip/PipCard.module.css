@@ -70,3 +70,25 @@
     radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04) 0%, transparent 60%),
     #0c0c12;
 }
+
+.tagAffordance {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  z-index: 2;
+  max-width: calc(100% - 12px);
+}
+
+.addTagButton {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  font: 600 16px/1 var(--font-sans, system-ui, sans-serif);
+  color: var(--text-primary, #f2f2f2);
+  background: color-mix(in srgb, var(--bg-dark, #0a0a0a) 70%, transparent);
+  border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.2));
+  backdrop-filter: blur(var(--glass-blur, 8px));
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}

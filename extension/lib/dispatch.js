@@ -1,5 +1,6 @@
 import { addUrl as mirrorAddUrl } from './saved-urls-mirror.js'
 import { normalizeUrl } from './normalize-url.js'
+import { shouldSendQuickTag } from './quick-tag-gate.js'
 
 const OFFSCREEN_PATH = 'offscreen.html'
 
@@ -136,8 +137,9 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
   }
   // Quick-tag strip is always rendered by floating-button.js (anchored to the
   // button, or its default slot when the button is off), regardless of which
-  // confirmation surface showed. Send the tag payload on every successful save.
-  if (finalState === 'saved' || finalState === 'duplicate') {
+  // confirmation surface showed. Show it only when the feature is ON and no
+  // PiP window is open (PiP handles tagging on its own card — see phase 2).
+  if ((finalState === 'saved' || finalState === 'duplicate') && shouldSendQuickTag(result)) {
     chrome.tabs.sendMessage(tabId, {
       type: 'booklage:quick-tag',
       bookmarkId: result.bookmarkId,

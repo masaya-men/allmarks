@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { initDB, addBookmark, persistMediaSlots, getAllBookmarks } from '@/lib/storage/indexeddb'
 import type { BookmarkRecord } from '@/lib/storage/indexeddb'
 import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
+import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
@@ -44,12 +45,22 @@ function readThemeTokens(): StripThemeTokens {
 async function buildSavePayload(
   db: SaveDb,
   bookmark: BookmarkRecord,
-): Promise<{ tags: ReturnType<typeof orderTagsForSave>; currentTagIds: string[]; themeTokens: StripThemeTokens }> {
-  const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+): Promise<{
+  tags: ReturnType<typeof orderTagsForSave>
+  currentTagIds: string[]
+  themeTokens: StripThemeTokens
+  quickTagEnabled: boolean
+}> {
+  const [corpus, allTags, quickTagEnabled] = await Promise.all([
+    getAllBookmarks(db),
+    getAllTags(db),
+    loadQuickTagEnabled(db),
+  ])
   return {
     tags: orderTagsForSave(bookmark, corpus, allTags),
     currentTagIds: bookmark.tags,
     themeTokens: readThemeTokens(),
+    quickTagEnabled,
   }
 }
 
@@ -173,6 +184,7 @@ export function SaveIframeClient(): ReactElement {
               bookmarkId: existing.id,
               skipped: true,
               ...savePayload,
+              pipActive: pipActiveRef.current,
             })
             return
           }
@@ -189,7 +201,14 @@ export function SaveIframeClient(): ReactElement {
         })
         postBookmarkSaved({ bookmarkId: bm.id })
         const savePayload = await buildSavePayload(db, bm)
-        reply({ type: 'booklage:save:result', nonce: payload.nonce, ok: true, bookmarkId: bm.id, ...savePayload })
+        reply({
+          type: 'booklage:save:result',
+          nonce: payload.nonce,
+          ok: true,
+          bookmarkId: bm.id,
+          ...savePayload,
+          pipActive: pipActiveRef.current,
+        })
 
         // Phase A: fire-and-forget syndication fetch for X tweets so the
         // newly saved bookmark already has mediaSlots[] populated before

@@ -11,6 +11,7 @@ import {
 } from 'react'
 import { PipCard } from './PipCard'
 import { LightboxNavMeter } from '@/components/board/LightboxNavMeter'
+import type { QuickTag } from '@/lib/tagger/order-tags-for-save'
 import styles from './PipStack.module.css'
 
 export interface PipStackCard {
@@ -20,6 +21,10 @@ export interface PipStackCard {
   readonly favicon: string
   /** Width / height ratio of the card. Defaults to 1 (square) when omitted. */
   readonly aspectRatio?: number
+  /** Existing tags relevant-first (orderTagsForSave). */
+  readonly tags?: readonly QuickTag[]
+  /** Tag ids already on this bookmark. */
+  readonly currentTagIds?: readonly string[]
 }
 
 export interface PipStackProps {
@@ -28,9 +33,13 @@ export interface PipStackProps {
   /** Inline style applied to the .stage root. Used by the /pip-tune playground
    *  to override CSS custom properties live; production PiP omits it. */
   readonly stageStyle?: CSSProperties
+  /** Whole-feature toggle — threaded to the active card's + affordance. */
+  readonly tagEnabled?: boolean
+  /** Attach an existing tag to a bookmark (active card only). */
+  readonly onAddTag?: (bookmarkId: string, tagId: string) => void
 }
 
-export function PipStack({ cards, onCardClick, stageStyle }: PipStackProps): ReactElement {
+export function PipStack({ cards, onCardClick, stageStyle, tagEnabled, onAddTag }: PipStackProps): ReactElement {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [activeIdx, setActiveIdx] = useState<number>(0)
 
@@ -289,7 +298,12 @@ export function PipStack({ cards, onCardClick, stageStyle }: PipStackProps): Rea
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSlotClick(idx, card.id)() }}
           >
-            <PipCard {...card} />
+            <PipCard
+              {...card}
+              isActive={idx === activeIdx}
+              tagEnabled={tagEnabled}
+              onAddTag={onAddTag ? (tagId) => onAddTag(card.id, tagId) : undefined}
+            />
           </div>
         ))}
       </div>

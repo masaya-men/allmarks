@@ -30,6 +30,7 @@ import {
 } from '@/lib/board/board-filter-helpers'
 import { initDB } from '@/lib/storage/indexeddb'
 import { loadBoardConfig, saveBoardConfig } from '@/lib/storage/board-config'
+import { loadQuickTagEnabled, saveQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { ThemeLayer } from './ThemeLayer'
 import {
   BoardBackgroundTypography,
@@ -541,6 +542,31 @@ export function BoardRoot() {
     update()
     window.addEventListener('resize', update)
     return (): void => window.removeEventListener('resize', update)
+  }, [])
+
+  // Source-of-truth for the whole quick-tag-on-save feature. Loaded from app
+  // IndexedDB (default ON); the SETTINGS panel toggles it and PiP reads it.
+  const [quickTagEnabled, setQuickTagEnabled] = useState(true)
+  useEffect(() => {
+    let alive = true
+    void (async (): Promise<void> => {
+      const db = await initDB()
+      const v = await loadQuickTagEnabled(db)
+      if (alive) setQuickTagEnabled(v)
+    })()
+    return (): void => { alive = false }
+  }, [])
+  const handleQuickTagToggle = useCallback(async (next: boolean): Promise<void> => {
+    setQuickTagEnabled(next) // optimistic — the toggle reflects immediately
+    try {
+      const db = await initDB()
+      await saveQuickTagEnabled(db, next)
+    } catch (err) {
+      // An IDB write effectively never fails, so we keep the optimistic value
+      // rather than rolling back (a flicker would be more confusing). Log so a
+      // genuine failure leaves a trail for debugging.
+      console.error('[AllMarks] failed to persist quick-tag setting', err)
+    }
   }, [])
 
   const filteredItems = useMemo(() => {
@@ -1727,7 +1753,10 @@ export function BoardRoot() {
                 onReset={handleResetWidthGap}
                 onApplyPreset={onApplyPreset}
               />
-              <ExtensionEntry />
+              <ExtensionEntry
+                quickTagEnabled={quickTagEnabled}
+                onQuickTagToggle={handleQuickTagToggle}
+              />
               <TagButton
                 onClick={(): void => {
                   // Session 81: entry picker removed. TriagePage now auto-
@@ -2005,6 +2034,7 @@ export function BoardRoot() {
         <PipCompanion
           onClose={() => pip.close()}
           onCardClick={handleCardClickFromPip}
+          quickTagEnabled={quickTagEnabled}
         />
       </PipPortal>
       <UndoToast input={toast} />

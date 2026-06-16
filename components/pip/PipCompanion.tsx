@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback, type ReactElement } from 'react'
-import { initDB } from '@/lib/storage/indexeddb'
-import { subscribeBookmarkSaved, subscribeBookmarkDeleted } from '@/lib/board/channel'
+import { useEffect, useRef, useState, useCallback, type ReactElement } from 'react'
+import { initDB, getAllBookmarks } from '@/lib/storage/indexeddb'
+import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
+import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
+import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkUpdated } from '@/lib/board/channel'
 import { broadcastPipOpen, broadcastPipClosed, subscribePipPresence } from '@/lib/board/pip-presence'
 import { resolveThumbnail } from '@/lib/pip/resolve-thumbnail'
 import { PipEmptyState } from './PipEmptyState'
@@ -15,14 +17,20 @@ export interface PipCompanionProps {
    *  no longer render an in-page close button. */
   readonly onClose?: () => void
   readonly onCardClick?: (cardId: string) => void
+  /** Whole-feature ON/OFF (lifted from BoardRoot). Default ON. */
+  readonly quickTagEnabled?: boolean
 }
 
-export function PipCompanion({ onCardClick }: PipCompanionProps): ReactElement {
+export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps): ReactElement {
   // Per-session card buffer — starts empty every time PiP opens. Cards
   // accumulate without a cap so the user sees every bookmark they saved
   // while the companion was visible (a "look how many you grabbed today"
   // feel). Closing the PiP loses this buffer; reopening starts fresh.
   const [cards, setCards] = useState<PipStackCard[]>([])
+  // Keep a ref in sync so handleAddTag can read current cards without adding
+  // `cards` to its useCallback deps (which would recreate it every render).
+  const cardsRef = useRef(cards)
+  useEffect(() => { cardsRef.current = cards }, [cards])
 
   useEffect(() => {
     const unsub = subscribeBookmarkSaved(async ({ bookmarkId }) => {
@@ -33,11 +41,14 @@ export function PipCompanion({ onCardClick }: PipCompanionProps): ReactElement {
       // IDB (real og:image for Apple/news, X default or empty for tweets).
       // Then upgrade asynchronously via the resolver — the syndication /
       // oEmbed / CDN derive that the board does for non-OG sources.
+      const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
       const initial: PipStackCard = {
         id: bm.id,
         title: bm.title,
         thumbnail: bm.thumbnail ?? '',
         favicon: bm.favicon ?? '',
+        tags: orderTagsForSave(bm, corpus, allTags),
+        currentTagIds: [...bm.tags],
       }
       // Append chronologically: 1, 2, 3, … each new bookmark lands on the
       // right end of the carousel and the auto-scroll inside PipStack
@@ -77,12 +88,35 @@ export function PipCompanion({ onCardClick }: PipCompanionProps): ReactElement {
     if (onCardClick) onCardClick(cardId)
   }, [onCardClick])
 
+  const handleAddTag = useCallback(async (bookmarkId: string, tagId: string) => {
+    // Skip entirely if the tag is already applied — avoids a redundant IDB
+    // write and a spurious bookmark-updated broadcast (which would make an
+    // open board reload for nothing).
+    const already = (cardsRef.current.find((c) => c.id === bookmarkId)?.currentTagIds ?? []).includes(tagId)
+    if (already) return
+    const db = await initDB()
+    await addTagToBookmark(db, bookmarkId, tagId)
+    setCards((prev) =>
+      prev.map((c) =>
+        c.id === bookmarkId && !(c.currentTagIds ?? []).includes(tagId)
+          ? { ...c, currentTagIds: [...(c.currentTagIds ?? []), tagId] }
+          : c,
+      ),
+    )
+    postBookmarkUpdated({ bookmarkId })
+  }, [])
+
   return (
     <div className={styles.host}>
       {cards.length === 0 ? (
         <PipEmptyState />
       ) : (
-        <PipStack cards={cards} onCardClick={handleCardClick} />
+        <PipStack
+          cards={cards}
+          onCardClick={handleCardClick}
+          tagEnabled={quickTagEnabled !== false}
+          onAddTag={handleAddTag}
+        />
       )}
     </div>
   )
