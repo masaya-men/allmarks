@@ -48,15 +48,31 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   const [tagMenuFor, setTagMenuFor] = useState<string | null>(null)
   const [tagMenuClosing, setTagMenuClosing] = useState(false)
 
+  // Hover leave-grace for the tag panel — matches the board / TUNE drawer
+  // (700ms). Leaving the panel schedules a close; re-entering cancels it.
+  const tagLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const clearTagLeave = useCallback(() => {
+    if (tagLeaveTimer.current) { clearTimeout(tagLeaveTimer.current); tagLeaveTimer.current = null }
+  }, [])
   const handleOpenTags = useCallback((bookmarkId: string) => {
+    clearTagLeave()
     setTagMenuClosing(false)
     setTagMenuFor(bookmarkId)
-  }, [])
-  const beginCloseTagMenu = useCallback(() => setTagMenuClosing(true), [])
+  }, [clearTagLeave])
+  const beginCloseTagMenu = useCallback(() => { clearTagLeave(); setTagMenuClosing(true) }, [clearTagLeave])
   const finishCloseTagMenu = useCallback(() => {
     setTagMenuFor(null)
     setTagMenuClosing(false)
   }, [])
+  const scheduleCloseTagMenu = useCallback(() => {
+    clearTagLeave()
+    tagLeaveTimer.current = setTimeout(() => { tagLeaveTimer.current = null; setTagMenuClosing(true) }, 700)
+  }, [clearTagLeave])
+  const cancelCloseTagMenu = useCallback(() => {
+    clearTagLeave()
+    setTagMenuClosing((c) => (c ? false : c))
+  }, [clearTagLeave])
+  useEffect(() => clearTagLeave, [clearTagLeave])
 
   useEffect(() => {
     void (async () => {
@@ -202,6 +218,8 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
             className={styles.tagPanel}
             data-testid="pip-tag-overlay"
             onPointerDown={(e) => e.stopPropagation()}
+            onMouseEnter={cancelCloseTagMenu}
+            onMouseLeave={scheduleCloseTagMenu}
           >
             <TagAddPopover
               compact

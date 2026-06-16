@@ -35,12 +35,15 @@
  * the left and behind. */
 .tagPanel {
   position: absolute;
-  top: 8px;
+  /* ~2/3 of the window wide, ~3/4 tall, anchored to the right edge and
+     vertically centred — leaves the card visible to the left and above/below. */
+  top: 50%;
   right: 8px;
-  bottom: 8px;
-  width: 56%;
-  min-width: 168px;
-  max-width: 240px;
+  transform: translateY(-50%);
+  width: 66%;
+  min-width: 160px;
+  max-width: 260px;
+  height: 75%;
   z-index: 100;
   display: flex;
 }

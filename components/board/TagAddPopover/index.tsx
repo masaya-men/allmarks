@@ -45,7 +45,11 @@ export function TagAddPopover({
   const popoverRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    inputRef.current?.focus()
+    // preventScroll: focusing the new-tag input must NOT scroll a scrollable
+    // ancestor to reveal it. In the PiP compact panel the input sits at the
+    // bottom of an internally-scrolling list, so a plain focus() would open
+    // the menu scrolled to the bottom; preventScroll keeps it at the top.
+    inputRef.current?.focus({ preventScroll: true })
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') onClose()
     }
