@@ -6653,3 +6653,10 @@ PiP を開いた状態で保存すると、第1段のフローティングボタ
 
 user 実機: PiP の「+ TAG」を押すとタグが全然見えない。原因は `.host`(overflow:hidden)→`.stage`(hidden)→`.scroller`(overflow-y:hidden)の三重切り抜きの中(カード内)に TagAddPopover を置いていたこと。
 **修正**: メニューをカードから出し、**PipCompanion の `.host` 直下に PipStack の兄弟としてオーバーレイ**(`.tagOverlay` position:absolute inset:0 z-index:100、暗い背景、背景クリックで閉じる)。状態を PipCompanion に持ち上げ(`tagMenuFor`/`tagMenuClosing`)、PipCard は「+ TAG」ボタンだけに縮小(`onOpenTags` を上へ通知)。Document PiP では Esc/外側クリックの document リスナーが効かないので、**背景クリック(target===currentTarget)を主 dismiss**に。tsc 0 / vitest 1002 pass / `allmarks.app` 反映。
+
+### セッション 104 PiP タグUI 最終形 — 右側サブパネル化 + 衝突バグ修正
+
+- **②衝突の実害バグ修正**: 保存応答の `pipActive` が `pipActiveRef`(broadcast 受信頼み)で、PiP 開後に生成された offscreen は合図を取り逃し `false`→拡張が帯を出していた。保存ハンドラで `queryPipPresence(80)` を能動実行して PiP 在席を都度解決(probe と同じ lazy 経路)。拡張 manifest を 0.1.20 に bump(ユーザーがリロードして反映する必要があるため目印)。
+- **①「外/横に出す」は不可能と判明・説明済**: Pop Out は独立 OS ウィンドウで、Web は自ウィンドウ外(デスクトップ/隣)に描画できない。横出し・画面端検知も「描く面が無い」ので不可。→ ウィンドウ内に収める方針で合意。
+- **PiP タグメニュー最終形**: 全画面オーバーレイ(カードを覆う)を廃し、**右側の狭いサブパネル**(`.tagPanel` 右固定 width:56%/max240/min168、上下 inset で固定高)+**透明クリック受け**(`.tagCatcher`、カードは見えたまま・パネル外クリックで閉じる)。`TagAddPopover` に **`compact` モード**追加(width:100%・min-width 解除・`max-height:100%`+`overflow-y:auto` で内部スクロール・chipRow を1列に)。ボードは compact off で従来の wrap 維持。カードは常時可視、メニューだけが内部スクロール。
+- tsc 0 / vitest 1002 pass / allmarks.app 反映。
