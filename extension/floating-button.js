@@ -327,6 +327,7 @@
 
   function unmount() {
     if (!container) return
+    removeTagStrip()
     container.remove()
     container = null
   }
@@ -335,6 +336,7 @@
   function onFullscreenChange() {
     if (!container) return
     const isFullscreen = !!document.fullscreenElement
+    if (isFullscreen) removeTagStrip()
     container.style.display = isFullscreen ? 'none' : ''
   }
 
