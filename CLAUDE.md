@@ -95,21 +95,21 @@
 ### デプロイ手順（固定）
 
 ```bash
-# worktree 内で実行
 rtk pnpm build
-npx wrangler pages deploy out/ --project-name=booklage --branch=master --commit-dirty=true
+npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true
 ```
 
-- **`--branch=master` は必須**。これがないと現在の git ブランチ名で preview deploy になってしまい、`booklage.pages.dev` に反映されない（ユーザーが確認に使う URL はここ固定）。ユーザーの IndexedDB ブクマは URL 単位で保存されるため、別 URL に deploy されると確認 URL でブクマが空に見える致命的 UX 破綻になる
-- `pnpm build` は `output: 'export'` 設定で `out/` に static file 生成
+- **2026-06-16 リブランド移行で本番 URL は `allmarks.app` に切替**（旧 `booklage.pages.dev` は 301 リダイレクトの別プロジェクト）。Pages プロジェクトも `allmarks` に変更（`wrangler.toml` の既定 name も `allmarks`）。`DB_NAME='booklage-db'` 等の不可視な内部符号は引き続き維持
+- **`--branch=master` は必須**。これがないと現在の git ブランチ名で preview deploy になってしまい本番 `allmarks.app` に反映されない。ユーザーの IndexedDB ブクマは URL(origin) 単位で保存されるため、別 URL に deploy されると確認 URL でブクマが空に見える致命的 UX 破綻になる
+- `pnpm build` は `output: 'export'` 設定で `out/` に static file 生成（本番 URL は `.env.production` の `NEXT_PUBLIC_APP_URL=https://allmarks.app` 由来）
 - `--commit-dirty=true` は「現在の作業ツリーに未 commit 変更があっても deploy してよい」フラグ（直前の commit とビルド内容が一致する前提で使う）
-- **本番 URL**: `https://booklage.pages.dev` ← **ユーザーが確認に使うのは常にここ**。ハードリロードで最新版が見える
-- deploy 完了時、ユーザーに「`booklage.pages.dev` をハードリロードしてください」と案内する（ブランチ固有の preview URL `xxxxx.booklage.pages.dev` は案内しない — ブクマが空で混乱の元）
+- **本番 URL**: `https://allmarks.app` ← **ユーザーが確認に使うのは常にここ**。ハードリロードで最新版が見える
+- deploy 完了時、ユーザーに「`allmarks.app` をハードリロードしてください」と案内する（ブランチ固有の preview URL `xxxxx.allmarks.pages.dev` は案内しない — ブクマが空で混乱の元）
 
 ### 守ること
 
 - デプロイ前に tsc + vitest が通っていること（壊れたものを本番に上げない）
-- master ブランチじゃなくても OK（Cloudflare Pages は direct upload 時は branch 情報を問わない、URL も `booklage.pages.dev` 固定）
+- master ブランチじゃなくても OK（Cloudflare Pages は direct upload 時は branch 情報を問わない、URL も `allmarks.app` 固定）
 - デプロイしたら引き継ぎメッセージに「本番反映済」の旨を添える
 
 ---
