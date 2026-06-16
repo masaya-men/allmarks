@@ -19,6 +19,10 @@ export interface PipTagStripProps {
  * tests can find all tag names regardless of expanded state.
  * The `▾` expand button toggles a data-expanded attribute on the root which
  * CSS uses to hide/show overflow chips.
+ *
+ * Collapse-back is intentionally omitted for v1: the strip is opened via the
+ * card "+" button and dismissed by closing the PiP / the card, so an in-strip
+ * collapse-back would add complexity with no clear user need (YAGNI).
  */
 export function PipTagStrip({ tags, currentTagIds, onAdd }: PipTagStripProps): JSX.Element | null {
   const [expanded, setExpanded] = useState(false)
@@ -33,18 +37,19 @@ export function PipTagStrip({ tags, currentTagIds, onAdd }: PipTagStripProps): J
       data-expanded={expanded ? 'true' : 'false'}
     >
       <div className={styles.row}>
-        {tags.map((tag) => {
-          const has = currentTagIds.includes(tag.id)
+        {tags.map((t, i) => {
+          const has = currentTagIds.includes(t.id)
           return (
             <button
-              key={tag.id}
+              key={t.id}
               type="button"
               className={styles.chip}
               data-has={has ? 'true' : 'false'}
+              data-overflow={i >= 2 ? 'true' : undefined}
               onMouseDown={(e): void => e.preventDefault()}
-              onClick={() => onAdd(tag.id)}
+              onClick={() => onAdd(t.id)}
             >
-              {has ? '✓ ' : ''}{tag.name}
+              {has ? '✓ ' : ''}{t.name}
             </button>
           )
         })}
@@ -54,7 +59,7 @@ export function PipTagStrip({ tags, currentTagIds, onAdd }: PipTagStripProps): J
             className={styles.more}
             onMouseDown={(e): void => e.preventDefault()}
             onClick={() => setExpanded(true)}
-            aria-label="Show more tags"
+            aria-label="Show all tags"
           >
             ▾
           </button>

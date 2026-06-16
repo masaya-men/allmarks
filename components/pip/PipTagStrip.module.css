@@ -49,9 +49,9 @@
   border-color: #28f100;
 }
 
-/* Collapse: hide chips beyond the first 2 when not expanded.
-   `.more` uses a different class so nth-of-type on `.chip` does not affect it. */
-.strip[data-expanded='false'] .chip:nth-of-type(n+3) {
+/* Collapse: hide chips marked data-overflow when not expanded.
+   Explicit attribute avoids any :nth-of-type footguns; .more button is unaffected. */
+.strip[data-expanded='false'] .chip[data-overflow='true'] {
   display: none;
 }
 

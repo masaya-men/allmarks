@@ -34,4 +34,9 @@ describe('PipTagStrip', () => {
     const { container } = render(<PipTagStrip tags={[]} currentTagIds={[]} onAdd={() => {}} />)
     expect(container.firstChild).toBeNull()
   })
+
+  it('renders the expand button when there are more than 2 tags', () => {
+    render(<PipTagStrip tags={TAGS} currentTagIds={[]} onAdd={() => {}} />)
+    expect(screen.getByLabelText('Show all tags')).toBeTruthy()
+  })
 })
