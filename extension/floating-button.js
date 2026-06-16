@@ -16,7 +16,7 @@
 
 ;(function () {
   // === Early exits ===
-  if (location.hostname === 'booklage.pages.dev') return
+  if (location.hostname === 'allmarks.app' || location.hostname === 'booklage.pages.dev') return
   if (window.__allmarksFloatingButtonInjected) return
   window.__allmarksFloatingButtonInjected = true
 

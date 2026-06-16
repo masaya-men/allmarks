@@ -4,6 +4,13 @@ export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'AllMarks'
 /** Application URL — sourced from env or fallback */
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
+/** Canonical production site URL. When APP_URL is a localhost dev value, falls
+ *  back to the production domain so static metadata (sitemap, robots, OG
+ *  metadataBase) never bakes a localhost URL into a production build. */
+export const SITE_URL = APP_URL.startsWith('http://localhost')
+  ? 'https://allmarks.app'
+  : APP_URL
+
 /** Predefined folder accent colors */
 export const FOLDER_COLORS = [
   '#ff6b6b', '#ff922b', '#ffd43b', '#51cf66', '#20c997',

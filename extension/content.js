@@ -227,7 +227,7 @@ window.addEventListener('message', (event) => {
 // forward them to the background SW so it can drop the URL from the
 // saved-urls mirror (= keeps the floating button's "already saved" state
 // in sync with what's actually in the user's AllMarks).
-if (location.hostname === 'booklage.pages.dev') {
+if (location.hostname === 'allmarks.app' || location.hostname === 'booklage.pages.dev') {
   window.addEventListener('message', (event) => {
     if (event.source !== window) return
     const msg = event.data

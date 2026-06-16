@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Outfit, Caveat, Geist, Geist_Mono } from 'next/font/google'
-import { APP_NAME, APP_URL } from '@/lib/constants'
+import { APP_NAME, SITE_URL } from '@/lib/constants'
 import './globals.css'
 
 const inter = Inter({
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   description:
     'Turn your bookmarks into beautiful visual collages. Save any URL, arrange freely, share as images.',
-  metadataBase: new URL(APP_URL),
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     title: `${APP_NAME} — Bookmark × Collage`,
     description: 'Turn your bookmarks into beautiful visual collages.',

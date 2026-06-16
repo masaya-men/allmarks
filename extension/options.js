@@ -189,7 +189,7 @@ $('floatingButtonAddDomain').addEventListener('keydown', (e) => {
 // ── Open AllMarks board (about link) ──
 $('openBoard').addEventListener('click', (e) => {
   e.preventDefault()
-  chrome.tabs.create({ url: 'https://booklage.pages.dev/board' })
+  chrome.tabs.create({ url: 'https://allmarks.app/board' })
 })
 
 // ── Version / build from the real manifest ──

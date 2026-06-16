@@ -1,11 +1,7 @@
 import type { MetadataRoute } from 'next'
-import { APP_URL } from '@/lib/constants'
+import { SITE_URL as PRODUCTION_URL } from '@/lib/constants'
 
 export const dynamic = 'force-static'
-
-const PRODUCTION_URL = APP_URL.startsWith('http://localhost')
-  ? 'https://booklage.pages.dev'
-  : APP_URL
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()

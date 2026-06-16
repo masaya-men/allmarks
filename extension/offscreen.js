@@ -1,7 +1,11 @@
 import { createOffscreenRouter } from './lib/offscreen-router.js'
 
 const iframe = document.getElementById('save')
-const BOOKLAGE_ORIGIN = 'https://booklage.pages.dev'
+// Canonical save destination origin. Must match the iframe src in offscreen.html
+// (the bridge writes into this origin's IndexedDB). Post-rebrand this is
+// allmarks.app; the `booklage:*` message types below stay as a stable internal
+// protocol contract with the web app's /save-iframe page (do not rename).
+const BOOKLAGE_ORIGIN = 'https://allmarks.app'
 const router = createOffscreenRouter()
 
 window.addEventListener('message', (ev) => {

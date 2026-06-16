@@ -18,7 +18,7 @@ export default function ExtensionPrivacyPage(): React.ReactElement {
         When you click the extension&apos;s icon, press <code>Ctrl+Shift+B</code>, or use the right-click
         &quot;Save to AllMarks&quot; menu, the extension reads the URL, page title, OGP description,
         OGP image URL, site name, and favicon URL of the active tab (or the link you right-clicked)
-        and writes them as a bookmark to your browser&apos;s IndexedDB inside the booklage.pages.dev origin.
+        and writes them as a bookmark to your browser&apos;s IndexedDB inside the allmarks.app origin.
       </p>
 
       <h2>What we do NOT collect</h2>
@@ -33,7 +33,7 @@ export default function ExtensionPrivacyPage(): React.ReactElement {
       <ul>
         <li>
           All saved bookmarks live only in your browser&apos;s IndexedDB under the origin
-          {' '}<code>https://booklage.pages.dev</code>.
+          {' '}<code>https://allmarks.app</code>.
         </li>
         <li>
           Extension settings (auto-open PiP, cursor pill position) are saved via{' '}
@@ -49,9 +49,9 @@ export default function ExtensionPrivacyPage(): React.ReactElement {
       <h2>Data exposed to other origins</h2>
       <p>
         The extension creates a hidden iframe pointing at{' '}
-        <code>https://booklage.pages.dev/save-iframe?ext=1</code> to bridge from the
-        extension&apos;s origin into the booklage.pages.dev origin. This is necessary so the
-        bookmark can be written to the same IndexedDB that the booklage.pages.dev web app reads.
+        <code>https://allmarks.app/save-iframe?ext=1</code> to bridge from the
+        extension&apos;s origin into the allmarks.app origin. This is necessary so the
+        bookmark can be written to the same IndexedDB that the allmarks.app web app reads.
         No information is sent to any other domain.
       </p>
 
@@ -78,7 +78,7 @@ export default function ExtensionPrivacyPage(): React.ReactElement {
           </tr>
           <tr>
             <td><code>offscreen</code></td>
-            <td>Create the offscreen document that hosts the booklage.pages.dev iframe bridge.</td>
+            <td>Create the offscreen document that hosts the allmarks.app iframe bridge.</td>
           </tr>
           <tr>
             <td><code>storage</code></td>
@@ -89,8 +89,8 @@ export default function ExtensionPrivacyPage(): React.ReactElement {
             <td>Show a system notification fallback when the in-page cursor pill cannot be drawn (e.g. on chrome:// pages).</td>
           </tr>
           <tr>
-            <td><code>host_permissions: https://booklage.pages.dev/*</code></td>
-            <td>Allow the offscreen bridge to load the booklage save endpoint.</td>
+            <td><code>host_permissions: https://allmarks.app/*</code></td>
+            <td>Allow the offscreen bridge to load the AllMarks save endpoint.</td>
           </tr>
         </tbody>
       </table>

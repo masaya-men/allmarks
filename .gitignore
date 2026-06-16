@@ -46,6 +46,9 @@ next-env.d.ts
 # Secrets
 .env*
 .dev.vars
+# Tracked: production NEXT_PUBLIC_* values are public (baked into the client
+# bundle). Negation must follow the last .env* rule to win.
+!.env.production
 
 # Superpowers brainstorm sessions
 .superpowers/
