@@ -21,7 +21,23 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 103 — 保存直後タグ付け 第1段(拡張ホスト頁) 完成 + 公開前片付け)
+### 直近の状態 (セッション 104 — 保存直後タグ付け 第2段(PiP) + ON/OFF トグル 完成)
+
+**完了 (= 全て検証済: tsc 0 / 1006 tests pass / build OK / 本番 allmarks.app に反映)**:
+
+1. **🔴 新機能: 保存直後タグ付け 第2段(Pop Out / PiP)** — brainstorming→spec→plan→サブエージェント駆動(各2段レビュー+通し最終レビュー)で実装:
+   - **PiP のアクティブカードに「＋」**→押すと既存タグ帯(`PipTagStrip`、関連順=`orderTagsForSave` を流用、既存タグのみ・新規作成なし)。チップタップで `addTagToBookmark`→`postBookmarkUpdated` で開いてるボードへ即反映。カードが非アクティブになると帯は閉じる。
+   - 帯は新規部品 `components/pip/PipTagStrip.tsx`(TUNE風アコーディオン、全チップ常時マウント+`data-overflow` でCSS折りたたみ)。PipCompanion がカード生成時に tags/currentTagIds を読み、`handleAddTag` 提供(既適用タグの再タップは IDB書込+通知をスキップ)。
+2. **🔴 衝突解消**: PiP を開いている時は拡張のホスト頁タグ帯を**出さない**。`/save-iframe` が保存応答に `quickTagEnabled`(設定値)+ `pipActive`(既存 pip-presence で把握)を相乗り → 拡張 `extension/lib/quick-tag-gate.js` の `shouldSendQuickTag` がゲート。緑フラッシュの保存合図は残る。
+3. **🔴 ON/OFF トグル(機能全体)**: 真実の値は本体 IDB `settings` の `quick-tag-on-save`(既定 ON、`lib/storage/quick-tag-setting.ts`)。PiP は直接読む、拡張は保存応答経由。**SETTINGS 入口を本体内パネル化**(`ExtensionEntry.tsx`、既存 `.promo` のダークグラス+`promo-in` を流用): トグル「QUICK-TAG ON SAVE」+「OPEN EXTENSION SETTINGS」ボタン。BoardRoot が state を持ち ExtensionEntry と PiP 両方へ供給。
+4. 設計 `docs/superpowers/specs/2026-06-16-quick-tag-on-save-phase2-pip-design.md` / 計画 `docs/superpowers/plans/2026-06-16-quick-tag-on-save-phase2-pip.md`。
+5. **実機で目視調整が残る項目**(本番 allmarks.app で詰める): PiP「＋」の位置・帯の寸法、SETTINGS パネルのイージング(現状は隣の `.promo`=右上AllMarks と同じ `0.22,1,0.36,1`、TUNE の `0.16,1,0.3,1` とは僅差)、拡張設定が本番で開くかの切り分け(localhost では橋渡し無効)。
+
+**🔴 次セッションの候補**: 第3段(ブックマークレット・URL貼り付けに同じ帯)/ 公開準備(言語切替・onboarding・LP・拡張ストア素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+### 過去の状態 (セッション 103 — 保存直後タグ付け 第1段(拡張ホスト頁) 完成 + 公開前片付け)
 
 **完了 (= 全て検証済: tsc 0 / 988 tests pass / build OK / 本番 allmarks.app + 拡張に反映)**:
 
