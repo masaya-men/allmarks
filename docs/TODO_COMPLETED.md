@@ -6648,3 +6648,8 @@ PiP を開いた状態で保存すると、第1段のフローティングボタ
 - **Document PiP 窓内では、コンポーネント内の `document.addEventListener` はメイン窓の document に付く**(JS はメイン窓で実行、DOM だけ portal で PiP 窓に出る)。TagAddPopover の Esc/外側クリックは PiP 窓内のクリックを拾えない → ホバー離脱猶予を主たる dismiss にする。
 - **PiP のカードはカルーセルのスロット onClick でナビゲートする**ので、カード上の操作ボタンは必ず `stopPropagation`(ボードの +TAG と同じ作法)。
 - 「再発明より既存部品の再利用」: 自作するとトンマナ・挙動がズレる。既存の `TagAddPopover` をそのまま出す方が user の期待(=ムードボードと同じ)に一致した。
+
+### セッション 104 さらに後半 — PiP タグメニューを切り抜きから救出
+
+user 実機: PiP の「+ TAG」を押すとタグが全然見えない。原因は `.host`(overflow:hidden)→`.stage`(hidden)→`.scroller`(overflow-y:hidden)の三重切り抜きの中(カード内)に TagAddPopover を置いていたこと。
+**修正**: メニューをカードから出し、**PipCompanion の `.host` 直下に PipStack の兄弟としてオーバーレイ**(`.tagOverlay` position:absolute inset:0 z-index:100、暗い背景、背景クリックで閉じる)。状態を PipCompanion に持ち上げ(`tagMenuFor`/`tagMenuClosing`)、PipCard は「+ TAG」ボタンだけに縮小(`onOpenTags` を上へ通知)。Document PiP では Esc/外側クリックの document リスナーが効かないので、**背景クリック(target===currentTarget)を主 dismiss**に。tsc 0 / vitest 1002 pass / `allmarks.app` 反映。
