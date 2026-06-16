@@ -29,11 +29,16 @@ export interface TagAddPopoverProps {
   closing?: boolean
   /** Fired once the exit animation finishes so the parent can unmount. */
   onExited?: () => void
+  /** Compact mode for tight surfaces (= the PiP window). Fills the parent's
+   *  width (drops the 220px min-width), stacks chips in a single column, and
+   *  scrolls internally instead of growing. The board leaves this off and
+   *  keeps the default wrap layout. */
+  compact?: boolean
 }
 
 export function TagAddPopover({
   allTags, currentTagIds, suggestedEntries, onAddExisting, onAddNew, onClose,
-  closing = false, onExited,
+  closing = false, onExited, compact = false,
 }: TagAddPopoverProps): JSX.Element {
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -127,6 +132,7 @@ export function TagAddPopover({
       className={styles.popover}
       role="dialog"
       data-closing={closing ? 'true' : undefined}
+      data-compact={compact ? 'true' : undefined}
       onAnimationEnd={handleAnimationEnd}
     >
       {suggestedEntries.length > 0 && (

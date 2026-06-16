@@ -186,13 +186,25 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
         />
       )}
       {tagMenuFor && menuCard && (
-        <div
-          className={styles.tagOverlay}
-          data-testid="pip-tag-overlay"
-          onPointerDown={(e) => { if (e.target === e.currentTarget) beginCloseTagMenu() }}
-        >
-          <div className={styles.tagOverlayInner} onPointerDown={(e) => e.stopPropagation()}>
+        <>
+          {/* Transparent full-window catcher: keeps the card VISIBLE behind it
+              (no dimming) while still letting a click anywhere off the panel
+              dismiss the menu — the PiP window can't use TagAddPopover's
+              document-level outside-click, so this is the dismiss surface. */}
+          <div
+            className={styles.tagCatcher}
+            data-testid="pip-tag-catcher"
+            onPointerDown={beginCloseTagMenu}
+          />
+          {/* The menu occupies only a side sub-region so the card stays in
+              view; the menu scrolls internally (compact = single column). */}
+          <div
+            className={styles.tagPanel}
+            data-testid="pip-tag-overlay"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             <TagAddPopover
+              compact
               allTags={allTags}
               currentTagIds={menuCard.currentTagIds ?? []}
               suggestedEntries={menuCard.suggestedEntries ?? []}
@@ -203,7 +215,7 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
               onClose={beginCloseTagMenu}
             />
           </div>
-        </div>
+        </>
       )}
     </div>
   )
