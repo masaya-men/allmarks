@@ -8,22 +8,32 @@
 
 ---
 
-## ドメイン allmarks.app (= ✅ 2026-06-16 取得完了)
+## ドメイン allmarks.app (= ✅ 2026-06-16 取得 + リブランド移行 完了)
 
-**session 101 (2026-06-16): `allmarks.app` 取得完了。** Cloudflare Registrar $14.20/年、支払いは PayPal (LoPo に届いた支援金から、引き落とし確認済)。session 91 のカード拒否を PayPal 経路で回避。**これで一般公開・拡張ストア公開の最後の関門クリア。**
+**session 102 (2026-06-16): リブランド移行 完了。本番 = `https://allmarks.app`。** 新 `allmarks` Pages プロジェクト + カスタムドメイン Active(SSL有効)。旧 `booklage.pages.dev` は `/* → allmarks.app/:splat 301` 転送シェル(古い共有リンクも生存)。KV/R2 は wrangler.toml の同 ID 引き継ぎ。user 本人の 545件(タグ22)は EXPORT/IMPORT で移行済。拡張も allmarks.app 保存先(v0.1.18)で実機確認済。GitHub repo は `masaya-men/allmarks` に rename。
 
-**次 = リブランド移行 (詳細 `docs/private/2026-05-11-allmarks-branding-spec.md` §5、 大きい多段タスクなので元気な session で spec 読んでから着手)**:
-- Cloudflare Pages に allmarks.app 接続 (新 project か 既存 booklage に custom domain かは spec 確認)
-- 旧 booklage.pages.dev の扱い (301 redirect 等)
-- GitHub repo rename、Chrome 拡張の host 判定 (`booklage.pages.dev`) 更新 + 再パッケージ + `EXTENSION_STORE_URL` 投入
-- **落とし穴**: IndexedDB は origin 単位。**user 自身の既存ブクマ (旧 origin、約372件) は allmarks.app に自動移行しない** → BackupButton で 1 回だけ手動 export/import。公開ユーザーは最初から allmarks.app なので影響なし。
-- **意図的に維持リスト** (`DB_NAME='booklage-db'` 等、§リブランド進行 参照) は移行でも壊さない。
+- **deploy は `--project-name=allmarks --branch=master`**(CLAUDE.md 更新済)。本番 URL は `.env.production`(tracked)の `NEXT_PUBLIC_APP_URL=https://allmarks.app` 由来 → `SITE_URL`(lib/constants.ts)経由で sitemap/robots/OG に反映
+- **永久に維持**(変えるとデータ/互換破壊): `DB_NAME='booklage-db'`、bookmarklet 内部 ID、拡張の `booklage:*` メッセージ型、CSS クラス名等の不可視符号
+- **公開前の残り片付け**: 暫定 EXPORT/IMPORT ボタン撤去(BoardRoot の TEMPORARY 箇所)、未使用 `chrome-extension/` 削除、`EXTENSION_STORE_URL` 投入(ストア公開時)
+- 詳細プラン: `docs/superpowers/plans/2026-06-16-allmarks-rebrand-migration.md`
 
 ---
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 101 — i18n の mood→tag 掃除 + 15 言語を ja.json と同構造に翻訳)
+### 直近の状態 (セッション 102 — allmarks.app へのリブランド移行 完了)
+
+**完了 (= 全て検証済: tsc 0 / vitest 978 / build OK / 本番 allmarks.app 実測 + 301 実測)**:
+
+1. **コード手当て**: `.env.production`(tracked、allmarks.app + AllMarks)新設 + 古い `.env.local`(localhost/Booklage 上書き)撤去 → dev は constants の fallback。`lib/constants.ts` に `SITE_URL` 追加し sitemap/robots/layout metadataBase を一本化(localhost OG バグも解消)。拡張(content/floating-button/offscreen/options/manifest v0.1.18)を allmarks.app 保存先 + allmarks.app|booklage.pages.dev 両ホスト判定に。privacy ページ説明文。`booklage:*` メッセージ型は内部契約として維持。
+2. **インフラ**: 新 `allmarks` Pages プロジェクト作成+デプロイ、`allmarks.app` カスタムドメイン Active(SSL)。KV `SHARE_KV`/R2 `SHARE_OG` は wrangler.toml の同 ID で新 project に引き継ぎ(`/s`・`/api/share/*/og` の graceful 404 で実測確認、共有データ・古い共有リンク生存)。旧 `booklage` プロジェクトは `/*  https://allmarks.app/:splat  301` の転送シェルに置換(本番 301 実測)。wrangler.toml の name も allmarks に。
+3. **データ移行**: user が booklage.pages.dev で EXPORT(暫定再表示した BackupButton)→ ファイル解析で 545件(アクティブ514+ゴミ箱31)・タグ22・参照整合 dangling 0 を検証 → allmarks.app で IMPORT 復元確認。拡張リロード後の実機保存(ツイート)も allmarks.app で確認済。
+4. **片付け**: GitHub repo rename(booklage→allmarks、local remote 更新)、package.json name、CLAUDE.md デプロイ手順を allmarks.app/`--project-name=allmarks` に。master push 済。記憶(project_allmarks 等)も更新。
+5. **暫定残置**: EXPORT/IMPORT ボタンは再取り込みの保険として BoardRoot に残置(TEMPORARY コメント付き、公開前に撤去)。
+
+**🔴 次セッションの候補**: 公開前の最終片付け(暫定ボタン撤去・未使用 chrome-extension/ 削除)/ i18n 言語切替の配線(要 brainstorming)/ onboarding / LP 整備 / 拡張ストア公開素材。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+### 一つ前 (セッション 101 — i18n の mood→tag 掃除 + 15 言語を ja.json と同構造に翻訳)
 
 **完了 (= 全て検証済: tsc 0 / 全 978 tests pass / build 成功。本番未デプロイ = 画面に出ない変更なので任意)**:
 
