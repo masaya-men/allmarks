@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback, type ReactElement } from 'react'
-import { initDB, getAllBookmarks } from '@/lib/storage/indexeddb'
-import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
+import { initDB, getAllBookmarks, type TagRecord } from '@/lib/storage/indexeddb'
+import { getAllTags, addTagToBookmark, addTag } from '@/lib/storage/tags'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkUpdated } from '@/lib/board/channel'
 import { broadcastPipOpen, broadcastPipClosed, subscribePipPresence } from '@/lib/board/pip-presence'
@@ -27,10 +27,24 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   // while the companion was visible (a "look how many you grabbed today"
   // feel). Closing the PiP loses this buffer; reopening starts fresh.
   const [cards, setCards] = useState<PipStackCard[]>([])
-  // Keep a ref in sync so handleAddTag can read current cards without adding
-  // `cards` to its useCallback deps (which would recreate it every render).
+  // Keep a ref in sync so handleAddExisting can read current cards without
+  // adding `cards` to its useCallback deps (which would recreate it every render).
   const cardsRef = useRef(cards)
   useEffect(() => { cardsRef.current = cards }, [cards])
+
+  // Full tag master — feeds the popover's ALL TAGS section and the case-
+  // insensitive dedupe in handleAddNew. Loaded on mount and refreshed whenever
+  // a bookmark is saved (a fresh save may have introduced new tags elsewhere).
+  const [allTags, setAllTags] = useState<TagRecord[]>([])
+  const allTagsRef = useRef(allTags)
+  useEffect(() => { allTagsRef.current = allTags }, [allTags])
+
+  useEffect(() => {
+    void (async () => {
+      const db = await initDB()
+      setAllTags(await getAllTags(db))
+    })()
+  }, [])
 
   useEffect(() => {
     const unsub = subscribeBookmarkSaved(async ({ bookmarkId }) => {
@@ -41,14 +55,21 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
       // IDB (real og:image for Apple/news, X default or empty for tweets).
       // Then upgrade asynchronously via the resolver — the syndication /
       // oEmbed / CDN derive that the board does for non-OG sources.
-      const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+      const [corpus, freshTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+      // Refresh the picker's tag master — a save elsewhere may have created tags.
+      setAllTags(freshTags)
+      const ordered = orderTagsForSave(bm, corpus, freshTags)
       const initial: PipStackCard = {
         id: bm.id,
         title: bm.title,
         thumbnail: bm.thumbnail ?? '',
         favicon: bm.favicon ?? '',
-        tags: orderTagsForSave(bm, corpus, allTags),
         currentTagIds: [...bm.tags],
+        // Relevant-first existing tags, capped at the industry-standard 5 —
+        // the popover renders these as its SUGGESTED row.
+        suggestedEntries: ordered
+          .slice(0, 5)
+          .map((t) => ({ kind: 'existing' as const, tagId: t.id })),
       }
       // Append chronologically: 1, 2, 3, … each new bookmark lands on the
       // right end of the carousel and the auto-scroll inside PipStack
@@ -88,7 +109,7 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
     if (onCardClick) onCardClick(cardId)
   }, [onCardClick])
 
-  const handleAddTag = useCallback(async (bookmarkId: string, tagId: string) => {
+  const handleAddExisting = useCallback(async (bookmarkId: string, tagId: string) => {
     // Skip entirely if the tag is already applied — avoids a redundant IDB
     // write and a spurious bookmark-updated broadcast (which would make an
     // open board reload for nothing).
@@ -106,6 +127,28 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
     postBookmarkUpdated({ bookmarkId })
   }, [])
 
+  // Create-or-reuse a tag by name, then attach it. Mirrors the board's
+  // create logic: trim, case-insensitive dedupe against the tag master
+  // (reuse if found), else mint a new tag with the AllMarks green.
+  const handleAddNew = useCallback(async (bookmarkId: string, name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const db = await initDB()
+    const existing = allTagsRef.current.find((t) => t.name.toLowerCase() === trimmed.toLowerCase())
+    const target = existing ?? (await addTag(db, { name: trimmed, color: '#28F100', order: allTagsRef.current.length }))
+    await addTagToBookmark(db, bookmarkId, target.id)
+    const fresh = await getAllTags(db)
+    setAllTags(fresh)
+    setCards((prev) =>
+      prev.map((c) =>
+        c.id === bookmarkId && !(c.currentTagIds ?? []).includes(target.id)
+          ? { ...c, currentTagIds: [...(c.currentTagIds ?? []), target.id] }
+          : c,
+      ),
+    )
+    postBookmarkUpdated({ bookmarkId })
+  }, [])
+
   return (
     <div className={styles.host}>
       {cards.length === 0 ? (
@@ -115,7 +158,9 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
           cards={cards}
           onCardClick={handleCardClick}
           tagEnabled={quickTagEnabled !== false}
-          onAddTag={handleAddTag}
+          allTags={allTags}
+          onAddExisting={handleAddExisting}
+          onAddNew={handleAddNew}
         />
       )}
     </div>

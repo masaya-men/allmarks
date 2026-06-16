@@ -11,7 +11,8 @@ import {
 } from 'react'
 import { PipCard } from './PipCard'
 import { LightboxNavMeter } from '@/components/board/LightboxNavMeter'
-import type { QuickTag } from '@/lib/tagger/order-tags-for-save'
+import type { SuggestionEntry } from '@/components/board/TagAddPopover'
+import type { TagRecord } from '@/lib/storage/indexeddb'
 import styles from './PipStack.module.css'
 
 export interface PipStackCard {
@@ -21,10 +22,10 @@ export interface PipStackCard {
   readonly favicon: string
   /** Width / height ratio of the card. Defaults to 1 (square) when omitted. */
   readonly aspectRatio?: number
-  /** Existing tags relevant-first (orderTagsForSave). */
-  readonly tags?: readonly QuickTag[]
   /** Tag ids already on this bookmark. */
   readonly currentTagIds?: readonly string[]
+  /** Pre-ranked SUGGESTED entries (relevant-first existing tags). */
+  readonly suggestedEntries?: readonly SuggestionEntry[]
 }
 
 export interface PipStackProps {
@@ -33,13 +34,25 @@ export interface PipStackProps {
   /** Inline style applied to the .stage root. Used by the /pip-tune playground
    *  to override CSS custom properties live; production PiP omits it. */
   readonly stageStyle?: CSSProperties
-  /** Whole-feature toggle — threaded to the active card's + affordance. */
+  /** Whole-feature toggle — threaded to the active card's + TAG affordance. */
   readonly tagEnabled?: boolean
+  /** Full tag master (for the popover's ALL TAGS section). */
+  readonly allTags?: readonly TagRecord[]
   /** Attach an existing tag to a bookmark (active card only). */
-  readonly onAddTag?: (bookmarkId: string, tagId: string) => void
+  readonly onAddExisting?: (bookmarkId: string, tagId: string) => void
+  /** Create (or reuse) a tag by name and attach it (active card only). */
+  readonly onAddNew?: (bookmarkId: string, name: string) => void
 }
 
-export function PipStack({ cards, onCardClick, stageStyle, tagEnabled, onAddTag }: PipStackProps): ReactElement {
+export function PipStack({
+  cards,
+  onCardClick,
+  stageStyle,
+  tagEnabled,
+  allTags,
+  onAddExisting,
+  onAddNew,
+}: PipStackProps): ReactElement {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [activeIdx, setActiveIdx] = useState<number>(0)
 
@@ -302,7 +315,9 @@ export function PipStack({ cards, onCardClick, stageStyle, tagEnabled, onAddTag 
               {...card}
               isActive={idx === activeIdx}
               tagEnabled={tagEnabled}
-              onAddTag={onAddTag ? (tagId) => onAddTag(card.id, tagId) : undefined}
+              allTags={allTags}
+              onAddExisting={onAddExisting ? (tagId) => onAddExisting(card.id, tagId) : undefined}
+              onAddNew={onAddNew ? (name) => onAddNew(card.id, name) : undefined}
             />
           </div>
         ))}

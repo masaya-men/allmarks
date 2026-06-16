@@ -1554,13 +1554,16 @@ export function BoardRoot() {
   }, [reload])
 
   // BroadcastChannel: reload (no entrance highlight) when an existing bookmark
-  // changes — e.g., a tag added from the extension's quick-tag strip.
+  // changes — e.g., a tag added from the extension's quick-tag strip or the
+  // PiP companion. Also reload the tag master so a tag *created* in PiP shows
+  // up in the board's tag list immediately.
   useEffect(() => {
     const unsub = subscribeBookmarkUpdated(() => {
       void reload()
+      void reloadTags()
     })
     return (): void => unsub()
-  }, [reload])
+  }, [reload, reloadTags])
 
   // Viewport-driven revalidation: when a card enters the viewport, check
   // whether its link is still alive if it hasn't been checked recently
