@@ -21,11 +21,23 @@ function tagstripShouldShow(state, tags) {
 
 let tagStripEl = null
 let tagStripHideTimer = null
+let tagStripLeaveTimer = null
 const TAGSTRIP_HIDE_MS = 4200
+const TAGSTRIP_LEAVE_GRACE_MS = 700
+const TAGSTRIP_HIDE_AFTER_LEAVE_MS = 1200
 
-function removeTagStrip() {
+function removeTagStrip(animate) {
   if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
-  if (tagStripEl) { tagStripEl.remove(); tagStripEl = null }
+  if (tagStripLeaveTimer) { clearTimeout(tagStripLeaveTimer); tagStripLeaveTimer = null }
+  const el = tagStripEl
+  if (!el) return
+  tagStripEl = null
+  if (animate) {
+    el.classList.add('is-closing')
+    setTimeout(() => el.remove(), 170)
+  } else {
+    el.remove()
+  }
 }
 
 function sendAddTag(bookmarkId, tagId) {
@@ -55,12 +67,15 @@ function makeChip(bookmarkId, tag, alreadyOn) {
   if (alreadyOn) chip.dataset.on = 'true'
   chip.addEventListener('click', (e) => {
     e.preventDefault(); e.stopPropagation()
-    if (chip.dataset.on === 'true') return // already applied — no-op (no un-tag in phase 1)
-    chip.dataset.on = 'true' // optimistic ✓
+    if (chip.dataset.on === 'true') return
+    chip.dataset.on = 'true' // optimistic ✓ (rendered via CSS ::before)
     sendAddTag(bookmarkId, tag.id)
-    // keep the strip open a little longer after an interaction
-    if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
-    tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_HIDE_MS)
+    // Re-arm auto-dismiss only when the drawer is closed; when open (hovered)
+    // the mouseleave handler owns dismissal.
+    if (!tagStripEl || tagStripEl.dataset.open !== 'true') {
+      if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
+      tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
+    }
   })
   return chip
 }
@@ -70,23 +85,39 @@ function makeChip(bookmarkId, tag, alreadyOn) {
 function showTagStrip(bookmarkId, tags, currentTagIds, themeTokens) {
   removeTagStrip()
   const current = new Set(Array.isArray(currentTagIds) ? currentTagIds : [])
-  const { visible, overflow } = tagstripSplit(tags, STRIP_MAX_CHIPS)
+  const { visible, overflow } = tagstripSplit(tags, 2) // collapsed preview = top 2 tags
   const el = document.createElement('div')
   el.className = 'allmarks-tagstrip'
   applyStripTheme(el, themeTokens)
-  for (const t of visible) el.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+  const rowEl = document.createElement('div')
+  rowEl.className = 'allmarks-tagstrip__row'
+  for (const t of visible) rowEl.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+  el.appendChild(rowEl)
   if (overflow.length > 0) {
-    const all = document.createElement('button')
-    all.type = 'button'
-    all.className = 'allmarks-tagstrip__chip'
-    all.dataset.role = 'all'
-    all.textContent = 'ALL'
-    all.addEventListener('click', (e) => {
-      e.preventDefault(); e.stopPropagation()
-      all.remove()
-      for (const t of overflow) el.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+    const hint = document.createElement('span')
+    hint.className = 'allmarks-tagstrip__hint'
+    hint.textContent = '▾'
+    rowEl.appendChild(hint)
+    const drawer = document.createElement('div')
+    drawer.className = 'allmarks-tagstrip__drawer'
+    for (const t of overflow) drawer.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+    el.appendChild(drawer)
+    // TUNE-style hover open/close: hover opens the accordion; leaving closes it
+    // after a grace, then the whole strip auto-dismisses.
+    el.addEventListener('mouseenter', () => {
+      if (tagStripLeaveTimer) { clearTimeout(tagStripLeaveTimer); tagStripLeaveTimer = null }
+      if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
+      el.dataset.open = 'true'
     })
-    el.appendChild(all)
+    el.addEventListener('mouseleave', () => {
+      if (tagStripLeaveTimer) clearTimeout(tagStripLeaveTimer)
+      tagStripLeaveTimer = setTimeout(() => {
+        tagStripLeaveTimer = null
+        el.dataset.open = 'false'
+        if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
+        tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_AFTER_LEAVE_MS)
+      }, TAGSTRIP_LEAVE_GRACE_MS)
+    })
   }
   document.documentElement.appendChild(el)
   tagStripEl = el
@@ -96,7 +127,7 @@ function showTagStrip(bookmarkId, tags, currentTagIds, themeTokens) {
   el.style.left = Math.max(8, Math.min(window.innerWidth - el.offsetWidth - 8, r.left)) + 'px'
   el.style.top = Math.min(window.innerHeight - el.offsetHeight - 8, r.bottom + 6) + 'px'
   requestAnimationFrame(() => el.classList.add('is-visible'))
-  tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_HIDE_MS)
+  tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
 }
 
 const MIN_SAVING_MS = 500
