@@ -353,6 +353,7 @@
   let tagStripEl = null
   let tagStripHideTimer = null
   const TAGSTRIP_HIDE_MS = 4200
+  const TAGSTRIP_EXPANDED_HIDE_MS = 2600
   function removeTagStrip() {
     if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
     if (tagStripEl) { tagStripEl.remove(); tagStripEl = null }
@@ -412,8 +413,17 @@
         close.type = 'button'; close.className = 'allmarks-tagstrip__close'; close.textContent = '✕'
         close.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); removeTagStrip() })
         el.appendChild(close)
-        // An expanded panel stays open until closed — kill the auto-dismiss.
+        // Expanded: stay open while hovered; auto-close shortly after the
+        // pointer leaves (✕ also closes). The pointer is over the panel now
+        // (just clicked MORE), so the timer only starts once the user leaves.
         if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
+        el.addEventListener('mouseenter', () => {
+          if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
+        })
+        el.addEventListener('mouseleave', () => {
+          if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
+          tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_EXPANDED_HIDE_MS)
+        })
       })
       el.appendChild(more)
     }
