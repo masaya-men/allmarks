@@ -24,9 +24,17 @@ let tagStripHideTimer = null
 const TAGSTRIP_HIDE_MS = 4200
 const TAGSTRIP_EXPANDED_HIDE_MS = 2600
 
-function removeTagStrip() {
+function removeTagStrip(animate) {
   if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
-  if (tagStripEl) { tagStripEl.remove(); tagStripEl = null }
+  const el = tagStripEl
+  if (!el) return
+  tagStripEl = null
+  if (animate) {
+    el.classList.add('is-closing')
+    setTimeout(() => el.remove(), 170)
+  } else {
+    el.remove()
+  }
 }
 
 function sendAddTag(bookmarkId, tagId) {
@@ -63,7 +71,7 @@ function makeChip(bookmarkId, tag, alreadyOn) {
     // open until the user closes it via ✕.
     if (!tagStripEl || tagStripEl.dataset.expanded !== 'true') {
       if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
-      tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_HIDE_MS)
+      tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
     }
   })
   return chip
@@ -74,7 +82,7 @@ function makeChip(bookmarkId, tag, alreadyOn) {
 function showTagStrip(bookmarkId, tags, currentTagIds, themeTokens) {
   removeTagStrip()
   const current = new Set(Array.isArray(currentTagIds) ? currentTagIds : [])
-  const { visible, overflow } = tagstripSplit(tags, STRIP_MAX_CHIPS)
+  const { visible, overflow } = tagstripSplit(tags, 2) // collapsed preview = top 2 tags
   const el = document.createElement('div')
   el.className = 'allmarks-tagstrip'
   applyStripTheme(el, themeTokens)
@@ -97,7 +105,7 @@ function showTagStrip(bookmarkId, tags, currentTagIds, themeTokens) {
       close.type = 'button'
       close.className = 'allmarks-tagstrip__close'
       close.textContent = '✕'
-      close.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); removeTagStrip() })
+      close.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); removeTagStrip(true) })
       el.appendChild(close)
       // Expanded: stay open while hovered; auto-close shortly after the
       // pointer leaves (✕ also closes). The pointer is over the panel now
@@ -108,7 +116,7 @@ function showTagStrip(bookmarkId, tags, currentTagIds, themeTokens) {
       })
       el.addEventListener('mouseleave', () => {
         if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
-        tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_EXPANDED_HIDE_MS)
+        tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_EXPANDED_HIDE_MS)
       })
     })
     el.appendChild(more)
@@ -121,7 +129,7 @@ function showTagStrip(bookmarkId, tags, currentTagIds, themeTokens) {
   el.style.left = Math.max(8, Math.min(window.innerWidth - el.offsetWidth - 8, r.left)) + 'px'
   el.style.top = Math.min(window.innerHeight - el.offsetHeight - 8, r.bottom + 6) + 'px'
   requestAnimationFrame(() => el.classList.add('is-visible'))
-  tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_HIDE_MS)
+  tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
 }
 
 const MIN_SAVING_MS = 500
