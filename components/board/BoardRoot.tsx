@@ -51,12 +51,6 @@ import { MotionToggle } from './MotionToggle'
 import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ExtensionEntry } from './ExtensionEntry'
-// TEMPORARY (2026-06-16 allmarks.app rebrand migration): EXPORT/IMPORT chrome
-// buttons were removed in session 77; re-surfaced here ONLY so the developer
-// can move their own IndexedDB (origin-bound) from booklage.pages.dev to
-// allmarks.app via one export/import. REMOVE before public launch — a proper
-// cross-device data-portability feature is tracked in docs/private/IDEAS.md.
-import { BackupButton } from './BackupButton'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
@@ -1725,8 +1719,6 @@ export function BoardRoot() {
                 onApplyPreset={onApplyPreset}
               />
               <ExtensionEntry />
-              {/* TEMPORARY — remove before public launch (see import note). */}
-              <BackupButton />
               <TagButton
                 onClick={(): void => {
                   // Session 81: entry picker removed. TriagePage now auto-
