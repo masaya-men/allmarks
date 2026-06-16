@@ -186,6 +186,13 @@
   flex-direction: row;
   align-items: stretch;
   gap: 0;
+  /* Hardware control surface, not document text: default (arrow) cursor and
+     no selection across the whole drawer. Interactive children (preset cells,
+     faders, reset) keep their own pointer/grab cursors via more specific
+     rules; this only suppresses the I-beam on the plain labels (preset names,
+     W/G, legend, ALLMARKS · MK-1). cursor + user-select both inherit. */
+  cursor: default;
+  user-select: none;
 }
 
 /* Thin engraved divider between the preset column and the fader group.
