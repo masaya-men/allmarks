@@ -7,6 +7,8 @@ import {
   type ReactElement,
   type SyntheticEvent,
 } from 'react'
+import { PipTagStrip } from './PipTagStrip'
+import type { QuickTag } from '@/lib/tagger/order-tags-for-save'
 import styles from './PipCard.module.css'
 
 export interface PipCardProps {
@@ -19,11 +21,39 @@ export interface PipCardProps {
    *  When aspect < 1 (vertical reel), the inner thumbnail expands taller
    *  than the carousel frame so verticals read as actually vertical. */
   readonly aspectRatio?: number
+  /** True for the centred/active carousel card — only it shows the + affordance. */
+  readonly isActive?: boolean
+  /** Whole-feature toggle. When false, no + button is rendered. */
+  readonly tagEnabled?: boolean
+  /** Existing tags relevant-first (orderTagsForSave). */
+  readonly tags?: readonly QuickTag[]
+  /** Tag ids already on this bookmark. */
+  readonly currentTagIds?: readonly string[]
+  /** Attach an existing tag to this bookmark. */
+  readonly onAddTag?: (tagId: string) => void
 }
 
-export function PipCard({ id, thumbnail, favicon, title, aspectRatio }: PipCardProps): ReactElement {
+export function PipCard({
+  id,
+  thumbnail,
+  favicon,
+  title,
+  aspectRatio,
+  isActive,
+  tagEnabled,
+  tags,
+  currentTagIds,
+  onAddTag,
+}: PipCardProps): ReactElement {
   const [imgErrored, setImgErrored] = useState(false)
   const [detectedAspect, setDetectedAspect] = useState<number | undefined>()
+  const [tagOpen, setTagOpen] = useState(false)
+
+  const canTag =
+    isActive === true &&
+    tagEnabled !== false &&
+    onAddTag !== undefined &&
+    (tags?.length ?? 0) > 0
 
   const handleLoad = useCallback((e: SyntheticEvent<HTMLImageElement>): void => {
     if (aspectRatio !== undefined) return
@@ -77,6 +107,27 @@ export function PipCard({ id, thumbnail, favicon, title, aspectRatio }: PipCardP
           <div className={styles.genericPlaceholder} data-role="generic-placeholder" aria-hidden="true" />
         )}
       </div>
+      {canTag && (
+        <div className={styles.tagAffordance}>
+          {!tagOpen ? (
+            <button
+              type="button"
+              className={styles.addTagButton}
+              aria-label="Add tag"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setTagOpen(true)}
+            >
+              +
+            </button>
+          ) : (
+            <PipTagStrip
+              tags={tags ?? []}
+              currentTagIds={currentTagIds ?? []}
+              onAdd={(tagId) => onAddTag?.(tagId)}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }

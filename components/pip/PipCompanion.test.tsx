@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import { PipCompanion } from './PipCompanion'
 import { broadcastPipOpen, broadcastPipClosed } from '@/lib/board/pip-presence'
+import { addTagToBookmark } from '@/lib/storage/tags'
+import { postBookmarkUpdated } from '@/lib/board/channel'
 
 let savedHandler: ((msg: { bookmarkId: string }) => void) | null = null
 let deletedHandler: ((msg: { bookmarkId: string }) => void) | null = null
@@ -9,9 +11,25 @@ let deletedHandler: ((msg: { bookmarkId: string }) => void) | null = null
 vi.mock('@/lib/storage/indexeddb', () => ({
   initDB: vi.fn().mockResolvedValue({
     get: vi.fn().mockImplementation((_store: string, id: string) =>
-      Promise.resolve({ id, title: `Title ${id}`, thumbnail: '', favicon: '', url: '' }),
+      Promise.resolve({ id, title: `Title ${id}`, thumbnail: '', favicon: '', url: '', tags: [] }),
     ),
   }),
+  getAllBookmarks: vi.fn(async () => []),
+}))
+
+vi.mock('@/lib/storage/tags', () => ({
+  getAllTags: vi.fn(async () => [
+    { id: 't1', name: 'design', color: '#fff' },
+    { id: 't2', name: 'video', color: '#fff' },
+  ]),
+  addTagToBookmark: vi.fn(async () => {}),
+}))
+
+vi.mock('@/lib/tagger/order-tags-for-save', () => ({
+  orderTagsForSave: vi.fn(() => [
+    { id: 't1', name: 'design', color: '#fff' },
+    { id: 't2', name: 'video', color: '#fff' },
+  ]),
 }))
 
 vi.mock('@/lib/board/channel', () => ({
@@ -23,6 +41,7 @@ vi.mock('@/lib/board/channel', () => ({
     deletedHandler = handler
     return () => { deletedHandler = null }
   }),
+  postBookmarkUpdated: vi.fn(),
 }))
 
 vi.mock('@/lib/board/pip-presence', () => ({
@@ -86,6 +105,34 @@ describe('PipCompanion', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('pip-card-b1')).toBeNull()
       expect(screen.getByTestId('pip-card-b2')).toBeTruthy()
+    })
+  })
+
+  it('tags the active card in place: addTagToBookmark + postBookmarkUpdated fire with the right id', async () => {
+    render(<PipCompanion onClose={() => {}} />)
+    expect(savedHandler).toBeTruthy()
+    // Save one bookmark — it becomes the active (centred) card so the
+    // "+" affordance renders on it.
+    await act(async () => {
+      await savedHandler?.({ bookmarkId: 'b1' })
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('pip-card-b1')).toBeTruthy()
+    })
+
+    // Open the strip via the "+" button, then tap a chip.
+    const addBtn = await screen.findByLabelText('Add tag')
+    await act(async () => {
+      fireEvent.click(addBtn)
+    })
+    const chip = await screen.findByText('design')
+    await act(async () => {
+      fireEvent.click(chip)
+    })
+
+    await waitFor(() => {
+      expect(addTagToBookmark).toHaveBeenCalledWith(expect.anything(), 'b1', 't1')
+      expect(postBookmarkUpdated).toHaveBeenCalledWith({ bookmarkId: 'b1' })
     })
   })
 
