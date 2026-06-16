@@ -13,3 +13,28 @@
   color: rgba(255, 255, 255, 0.94);
 }
 
+/* Tag menu overlay — a sibling of the carousel, so it sits ABOVE the
+ * nested overflow:hidden boxes (.host / .stage / .scroller) that would
+ * otherwise clip a popover rendered inside a card. Covers the whole PiP
+ * window; the dimmed backdrop is the dismiss target (TagAddPopover's own
+ * Escape / outside-pointerdown listeners attach to the MAIN window's
+ * document and never fire for clicks inside this PiP window). */
+.tagOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  overflow: auto;
+}
+
+.tagOverlayInner {
+  /* Let the reused TagAddPopover size itself; cap to the PiP window and
+   * scroll if the tag list is long. The popover overlays the carousel. */
+  max-width: 100%;
+  max-height: 100%;
+}
+

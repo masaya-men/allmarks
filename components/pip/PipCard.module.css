@@ -71,8 +71,10 @@
     #0c0c12;
 }
 
-/* Positioned container — anchors the + TAG button (and its popover) to the
- * card's top-left, matching the board card's "+ TAG" affordance placement. */
+/* Positioned container — anchors the + TAG button to the card's top-left,
+ * matching the board card's "+ TAG" affordance placement. The tag menu it
+ * opens is rendered as a PiP-window-level overlay in PipCompanion (the
+ * carousel's nested overflow:hidden would clip a popover anchored here). */
 .tagAffordance {
   position: absolute;
   top: 8px;
@@ -94,12 +96,4 @@
   letter-spacing: 0.10em;
   text-transform: uppercase;
   cursor: pointer;
-}
-
-/* Popover drops just under the + TAG button. */
-.tagPopover {
-  position: absolute;
-  top: 28px;
-  left: 0;
-  z-index: 70;
 }

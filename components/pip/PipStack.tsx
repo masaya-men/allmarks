@@ -12,7 +12,6 @@ import {
 import { PipCard } from './PipCard'
 import { LightboxNavMeter } from '@/components/board/LightboxNavMeter'
 import type { SuggestionEntry } from '@/components/board/TagAddPopover'
-import type { TagRecord } from '@/lib/storage/indexeddb'
 import styles from './PipStack.module.css'
 
 export interface PipStackCard {
@@ -36,12 +35,10 @@ export interface PipStackProps {
   readonly stageStyle?: CSSProperties
   /** Whole-feature toggle — threaded to the active card's + TAG affordance. */
   readonly tagEnabled?: boolean
-  /** Full tag master (for the popover's ALL TAGS section). */
-  readonly allTags?: readonly TagRecord[]
-  /** Attach an existing tag to a bookmark (active card only). */
-  readonly onAddExisting?: (bookmarkId: string, tagId: string) => void
-  /** Create (or reuse) a tag by name and attach it (active card only). */
-  readonly onAddNew?: (bookmarkId: string, name: string) => void
+  /** Ask the PiP window to open the tag menu for a bookmark (active card only).
+   *  The menu is rendered at the PipCompanion window level so it isn't clipped
+   *  by the carousel's overflow; PipStack only relays the open request. */
+  readonly onOpenTags?: (bookmarkId: string) => void
 }
 
 export function PipStack({
@@ -49,9 +46,7 @@ export function PipStack({
   onCardClick,
   stageStyle,
   tagEnabled,
-  allTags,
-  onAddExisting,
-  onAddNew,
+  onOpenTags,
 }: PipStackProps): ReactElement {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [activeIdx, setActiveIdx] = useState<number>(0)
@@ -315,9 +310,7 @@ export function PipStack({
               {...card}
               isActive={idx === activeIdx}
               tagEnabled={tagEnabled}
-              allTags={allTags}
-              onAddExisting={onAddExisting ? (tagId) => onAddExisting(card.id, tagId) : undefined}
-              onAddNew={onAddNew ? (name) => onAddNew(card.id, name) : undefined}
+              onOpenTags={onOpenTags ? () => onOpenTags(card.id) : undefined}
             />
           </div>
         ))}

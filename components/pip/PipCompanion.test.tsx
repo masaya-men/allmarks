@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent, within } from '@testing-library/react'
 import { PipCompanion } from './PipCompanion'
 import { broadcastPipOpen, broadcastPipClosed } from '@/lib/board/pip-presence'
 import { addTagToBookmark, addTag } from '@/lib/storage/tags'
@@ -140,13 +140,16 @@ describe('PipCompanion', () => {
       expect(screen.getByTestId('pip-card-b1')).toBeTruthy()
     })
 
-    // Open the reused board TagAddPopover via the "+ TAG" button, then tap a
-    // tag chip ("design" → tag id t1).
+    // Click the card's "+ TAG" button → PipCompanion opens the tag menu as a
+    // window-level overlay (lifted out of the clipped carousel). The reused
+    // board TagAddPopover renders inside that overlay; tap a tag chip
+    // ("design" → tag id t1).
     const addBtn = await screen.findByTestId('pip-add-tag-button')
     await act(async () => {
       fireEvent.click(addBtn)
     })
-    const chip = await screen.findByText('design')
+    const overlay = await screen.findByTestId('pip-tag-overlay')
+    const chip = await within(overlay).findByText('design')
     await act(async () => {
       fireEvent.click(chip)
     })
@@ -168,14 +171,15 @@ describe('PipCompanion', () => {
       expect(screen.getByTestId('pip-card-b1')).toBeTruthy()
     })
 
-    // Open the popover.
+    // Open the tag menu overlay.
     const addBtn = await screen.findByTestId('pip-add-tag-button')
     await act(async () => {
       fireEvent.click(addBtn)
     })
+    const overlay = await screen.findByTestId('pip-tag-overlay')
 
     // First tap — applies the tag. The chip text may change to "✓ design".
-    const chipFirst = await screen.findByText(/design/)
+    const chipFirst = await within(overlay).findByText(/design/)
     await act(async () => {
       fireEvent.click(chipFirst)
     })
@@ -186,7 +190,7 @@ describe('PipCompanion', () => {
 
     // Second tap on the same chip — should be a no-op.
     // Re-query because the text may have changed to "✓ design".
-    const chipSecond = screen.getByText(/design/)
+    const chipSecond = within(overlay).getByText(/design/)
     await act(async () => {
       fireEvent.click(chipSecond)
     })
@@ -208,12 +212,13 @@ describe('PipCompanion', () => {
       expect(screen.getByTestId('pip-card-b1')).toBeTruthy()
     })
 
-    // Open the popover, type a brand-new tag name, press Enter.
+    // Open the tag menu overlay, type a brand-new tag name, press Enter.
     const addBtn = await screen.findByTestId('pip-add-tag-button')
     await act(async () => {
       fireEvent.click(addBtn)
     })
-    const input = await screen.findByPlaceholderText('new tag…')
+    const overlay = await screen.findByTestId('pip-tag-overlay')
+    const input = await within(overlay).findByPlaceholderText('new tag…')
     await act(async () => {
       fireEvent.change(input, { target: { value: 'fresh' } })
       fireEvent.keyDown(input, { key: 'Enter' })

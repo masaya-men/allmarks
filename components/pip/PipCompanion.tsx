@@ -7,6 +7,7 @@ import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkUpdated } from '@/lib/board/channel'
 import { broadcastPipOpen, broadcastPipClosed, subscribePipPresence } from '@/lib/board/pip-presence'
 import { resolveThumbnail } from '@/lib/pip/resolve-thumbnail'
+import { TagAddPopover } from '@/components/board/TagAddPopover'
 import { PipEmptyState } from './PipEmptyState'
 import { PipStack, type PipStackCard } from './PipStack'
 import styles from './PipCompanion.module.css'
@@ -38,6 +39,24 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   const [allTags, setAllTags] = useState<TagRecord[]>([])
   const allTagsRef = useRef(allTags)
   useEffect(() => { allTagsRef.current = allTags }, [allTags])
+
+  // Tag menu is rendered as a PiP-window-level overlay (a sibling of the
+  // carousel inside .host), NOT inside PipCard — the carousel's nested
+  // overflow:hidden (.host / .stage / .scroller) clips anything a card tries
+  // to pop out. `tagMenuFor` holds the bookmark id whose menu is open;
+  // `tagMenuClosing` drives TagAddPopover's exit animation before unmount.
+  const [tagMenuFor, setTagMenuFor] = useState<string | null>(null)
+  const [tagMenuClosing, setTagMenuClosing] = useState(false)
+
+  const handleOpenTags = useCallback((bookmarkId: string) => {
+    setTagMenuClosing(false)
+    setTagMenuFor(bookmarkId)
+  }, [])
+  const beginCloseTagMenu = useCallback(() => setTagMenuClosing(true), [])
+  const finishCloseTagMenu = useCallback(() => {
+    setTagMenuFor(null)
+    setTagMenuClosing(false)
+  }, [])
 
   useEffect(() => {
     void (async () => {
@@ -91,6 +110,9 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   useEffect(() => {
     const unsub = subscribeBookmarkDeleted(({ bookmarkId }) => {
       setCards((prev) => prev.filter((c) => c.id !== bookmarkId))
+      // If the deleted card's tag menu is open, close it — otherwise the
+      // overlay would dangle pointing at a card that no longer exists.
+      setTagMenuFor((cur) => (cur === bookmarkId ? null : cur))
     })
     return unsub
   }, [])
@@ -149,6 +171,8 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
     postBookmarkUpdated({ bookmarkId })
   }, [])
 
+  const menuCard = tagMenuFor !== null ? cards.find((c) => c.id === tagMenuFor) : undefined
+
   return (
     <div className={styles.host}>
       {cards.length === 0 ? (
@@ -158,10 +182,28 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
           cards={cards}
           onCardClick={handleCardClick}
           tagEnabled={quickTagEnabled !== false}
-          allTags={allTags}
-          onAddExisting={handleAddExisting}
-          onAddNew={handleAddNew}
+          onOpenTags={handleOpenTags}
         />
+      )}
+      {tagMenuFor && menuCard && (
+        <div
+          className={styles.tagOverlay}
+          data-testid="pip-tag-overlay"
+          onPointerDown={(e) => { if (e.target === e.currentTarget) beginCloseTagMenu() }}
+        >
+          <div className={styles.tagOverlayInner} onPointerDown={(e) => e.stopPropagation()}>
+            <TagAddPopover
+              allTags={allTags}
+              currentTagIds={menuCard.currentTagIds ?? []}
+              suggestedEntries={menuCard.suggestedEntries ?? []}
+              closing={tagMenuClosing}
+              onExited={finishCloseTagMenu}
+              onAddExisting={(tagId) => { void handleAddExisting(tagMenuFor, tagId) }}
+              onAddNew={(name) => { void handleAddNew(tagMenuFor, name); beginCloseTagMenu() }}
+              onClose={beginCloseTagMenu}
+            />
+          </div>
+        </div>
       )}
     </div>
   )
