@@ -128,10 +128,38 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
     try { await mirrorAddUrl(normalizeUrl(ogp.url), chrome.storage.local) } catch (_) {}
   }
 
+  const tagExtras =
+    finalState === 'saved' || finalState === 'duplicate'
+      ? {
+          bookmarkId: result.bookmarkId,
+          tags: Array.isArray(result.tags) ? result.tags : [],
+          currentTagIds: Array.isArray(result.currentTagIds) ? result.currentTagIds : [],
+          themeTokens: result.themeTokens || null,
+        }
+      : {}
   if (!isFloatingButton) {
-    chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: finalState }).catch(() => {})
+    chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: finalState, ...tagExtras }).catch(() => {})
   }
   if (isFloatingButton) {
-    chrome.tabs.sendMessage(tabId, { type: 'booklage:floating-button-state', state: finalState }).catch(() => {})
+    chrome.tabs.sendMessage(tabId, { type: 'booklage:floating-button-state', state: finalState, ...tagExtras }).catch(() => {})
   }
+}
+
+// Add-tag round-trip for the quick-tag strip. Same offscreen bridge as save:
+// post a booklage:add-tag envelope, let the /save-iframe page call
+// addTagToBookmark, resolve on booklage:add-tag:result. Fire-and-forget from
+// the UI's perspective (the strip shows ✓ optimistically); we still await the
+// result here to drive the one-shot offscreen self-heal on timeout.
+export async function dispatchAddTag({ bookmarkId, tagId }) {
+  await ensureOffscreen()
+  const nonce = makeNonce('t')
+  const envelope = { type: 'booklage:add-tag', payload: { bookmarkId, tagId, nonce } }
+  let result = await postToOffscreen(envelope, nonce)
+  if (!result?.ok && result?.error === 'timeout') {
+    try { await chrome.offscreen.closeDocument() } catch (_) { /* no doc */ }
+    await ensureOffscreen()
+    const retryNonce = makeNonce('t-retry')
+    result = await postToOffscreen({ ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }, retryNonce)
+  }
+  return result
 }

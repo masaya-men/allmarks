@@ -8,6 +8,97 @@ function pillStateView(state) {
   return null
 }
 
+// === Quick-tag strip (inlined; source of truth: extension/lib/tag-strip-model.js) ===
+const STRIP_MAX_CHIPS = 5
+function tagstripSplit(tags, max) {
+  const list = Array.isArray(tags) ? tags : []
+  return { visible: list.slice(0, max || STRIP_MAX_CHIPS), overflow: list.slice(max || STRIP_MAX_CHIPS) }
+}
+function tagstripShouldShow(state, tags) {
+  if (state !== 'saved' && state !== 'duplicate') return false
+  return Array.isArray(tags) && tags.length > 0
+}
+
+let tagStripEl = null
+let tagStripHideTimer = null
+const TAGSTRIP_HIDE_MS = 4200
+
+function removeTagStrip() {
+  if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
+  if (tagStripEl) { tagStripEl.remove(); tagStripEl = null }
+}
+
+function sendAddTag(bookmarkId, tagId) {
+  if (!isExtensionAlive()) return
+  try {
+    chrome.runtime.sendMessage({ type: 'booklage:add-tag-request', bookmarkId, tagId }).catch(() => {})
+  } catch (_) { /* context invalidated */ }
+}
+
+// Push the active theme's tokens onto the strip's CSS vars so its tone matches
+// the app's current theme (and follows future theme switches).
+function applyStripTheme(el, t) {
+  if (!t) return
+  const set = (k, v) => { if (v) el.style.setProperty(k, v) }
+  set('--am-strip-bg', t.bg)
+  set('--am-strip-fg', t.fg)
+  set('--am-strip-border', t.border)
+  set('--am-strip-accent', t.accent)
+  set('--am-strip-blur', t.blur)
+}
+
+function makeChip(bookmarkId, tag, alreadyOn) {
+  const chip = document.createElement('button')
+  chip.type = 'button'
+  chip.className = 'allmarks-tagstrip__chip'
+  chip.textContent = tag.name
+  if (alreadyOn) chip.dataset.on = 'true'
+  chip.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation()
+    if (chip.dataset.on === 'true') return // already applied — no-op (no un-tag in phase 1)
+    chip.dataset.on = 'true' // optimistic ✓
+    sendAddTag(bookmarkId, tag.id)
+    // keep the strip open a little longer after an interaction
+    if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
+    tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_HIDE_MS)
+  })
+  return chip
+}
+
+// Render the strip next to the cursor pill. The pill sits near the cursor
+// (top-left of pointer); place the strip just below it.
+function showTagStrip(bookmarkId, tags, currentTagIds, themeTokens) {
+  removeTagStrip()
+  const current = new Set(Array.isArray(currentTagIds) ? currentTagIds : [])
+  const { visible, overflow } = tagstripSplit(tags, STRIP_MAX_CHIPS)
+  const el = document.createElement('div')
+  el.className = 'allmarks-tagstrip'
+  applyStripTheme(el, themeTokens)
+  for (const t of visible) el.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+  if (overflow.length > 0) {
+    const all = document.createElement('button')
+    all.type = 'button'
+    all.className = 'allmarks-tagstrip__chip'
+    all.dataset.role = 'all'
+    all.textContent = 'ALL'
+    all.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation()
+      all.remove()
+      for (const t of overflow) el.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+    })
+    el.appendChild(all)
+  }
+  document.documentElement.appendChild(el)
+  tagStripEl = el
+  // Position: under the pill (pill positions itself via positionPill()).
+  const p = ensurePill()
+  const r = p.getBoundingClientRect()
+  el.style.left = Math.max(8, Math.min(window.innerWidth - el.offsetWidth - 8, r.left)) + 'px'
+  el.style.top = Math.min(window.innerHeight - el.offsetHeight - 8, r.bottom + 6) + 'px'
+  requestAnimationFrame(() => el.classList.add('is-visible'))
+  tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_HIDE_MS)
+}
+
 const MIN_SAVING_MS = 500
 
 // Extension reloads invalidate this script's chrome.* handle; touching
@@ -171,6 +262,12 @@ function setState(state) {
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type !== 'booklage:cursor-pill') return
   setState(msg.state)
+  if (tagstripShouldShow(msg.state, msg.tags)) {
+    // Defer so the pill has positioned itself first.
+    setTimeout(() => showTagStrip(msg.bookmarkId, msg.tags, msg.currentTagIds, msg.themeTokens), 80)
+  } else if (msg.state === 'error') {
+    removeTagStrip()
+  }
 })
 
 // === Bookmarklet hand-off + immediate pill trigger ===

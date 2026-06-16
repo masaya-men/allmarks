@@ -3,15 +3,55 @@
 import { useEffect, useRef, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { initDB, addBookmark, persistMediaSlots, getAllBookmarks } from '@/lib/storage/indexeddb'
+import type { BookmarkRecord } from '@/lib/storage/indexeddb'
+import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
+import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
 import { postBookmarkSaved } from '@/lib/board/channel'
 import {
   parseSaveMessage,
   parseProbeMessage,
+  parseAddTagMessage,
   type SaveMessageResult,
+  type StripThemeTokens,
 } from '@/lib/utils/save-message'
 import { subscribePipPresence, queryPipPresence } from '@/lib/board/pip-presence'
+
+type SaveDb = Awaited<ReturnType<typeof initDB>>
+
+/**
+ * Read the active theme's resolved tokens straight off the document. Because we
+ * read *computed* values (not a hardcoded palette), the strip auto-follows
+ * whatever theme is active — today the dark default, later any switched theme.
+ * The applied-✓ accent stays AllMarks green (semantic pill-language constant).
+ */
+function readThemeTokens(): StripThemeTokens {
+  const cs = getComputedStyle(document.documentElement)
+  const v = (name: string, fallback: string): string => {
+    const got = cs.getPropertyValue(name).trim()
+    return got || fallback
+  }
+  return {
+    bg: v('--bg-dark', '#0a0a0a'),
+    fg: v('--text-primary', '#f2f2f2'),
+    border: v('--color-card-border', 'rgba(255,255,255,0.12)'),
+    accent: '#28f100',
+    blur: v('--glass-blur', '8px'),
+  }
+}
+
+async function buildSavePayload(
+  db: SaveDb,
+  bookmark: BookmarkRecord,
+): Promise<{ tags: ReturnType<typeof orderTagsForSave>; currentTagIds: string[]; themeTokens: StripThemeTokens }> {
+  const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+  return {
+    tags: orderTagsForSave(bookmark, corpus, allTags),
+    currentTagIds: bookmark.tags,
+    themeTokens: readThemeTokens(),
+  }
+}
 
 const ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
   /^chrome-extension:\/\//,
@@ -84,6 +124,25 @@ export function SaveIframeClient(): ReactElement {
         return
       }
 
+      const addTagParsed = parseAddTagMessage(ev.data)
+      if (addTagParsed.ok) {
+        const { bookmarkId, tagId, nonce } = addTagParsed.value.payload
+        try {
+          const db = await initDB()
+          await addTagToBookmark(db, bookmarkId, tagId)
+          ev.source?.postMessage(
+            { type: 'booklage:add-tag:result', nonce, ok: true },
+            { targetOrigin: ev.origin },
+          )
+        } catch (err) {
+          ev.source?.postMessage(
+            { type: 'booklage:add-tag:result', nonce, ok: false, error: err instanceof Error ? err.message : String(err) },
+            { targetOrigin: ev.origin },
+          )
+        }
+        return
+      }
+
       const parsed = parseSaveMessage(ev.data)
       if (!parsed.ok) return
       const { payload } = parsed.value
@@ -103,12 +162,14 @@ export function SaveIframeClient(): ReactElement {
           // 削除した tweet をもう一度いいねしたら再保存されるべき。
           const existing = all.find((b) => b.url === payload.url && !b.isDeleted)
           if (existing) {
+            const savePayload = await buildSavePayload(db, existing)
             reply({
               type: 'booklage:save:result',
               nonce: payload.nonce,
               ok: true,
               bookmarkId: existing.id,
               skipped: true,
+              ...savePayload,
             })
             return
           }
@@ -124,7 +185,8 @@ export function SaveIframeClient(): ReactElement {
           tags: [],
         })
         postBookmarkSaved({ bookmarkId: bm.id })
-        reply({ type: 'booklage:save:result', nonce: payload.nonce, ok: true, bookmarkId: bm.id })
+        const savePayload = await buildSavePayload(db, bm)
+        reply({ type: 'booklage:save:result', nonce: payload.nonce, ok: true, bookmarkId: bm.id, ...savePayload })
 
         // Phase A: fire-and-forget syndication fetch for X tweets so the
         // newly saved bookmark already has mediaSlots[] populated before

@@ -1,4 +1,4 @@
-import { dispatchSave } from './lib/dispatch.js'
+import { dispatchSave, dispatchAddTag } from './lib/dispatch.js'
 import { isAutoSaveEnabled } from './lib/auto-save-config.js'
 import { removeUrl as mirrorRemoveUrl } from './lib/saved-urls-mirror.js'
 import { normalizeUrl } from './lib/normalize-url.js'
@@ -72,6 +72,13 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     const tabId = sender.tab?.id
     if (!tabId) return
     void safeDispatch({ trigger: 'floating-button', tabId }, tabId)
+    return
+  }
+  if (msg.type === 'booklage:add-tag-request') {
+    if (typeof msg.bookmarkId !== 'string' || typeof msg.tagId !== 'string') return
+    void dispatchAddTag({ bookmarkId: msg.bookmarkId, tagId: msg.tagId }).catch((e) => {
+      console.warn('[booklage] add-tag failed:', e)
+    })
     return
   }
   if (msg.type === 'booklage:url-deleted') {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { QuickTag } from '@/lib/tagger/order-tags-for-save'
 
 const SaveMessagePayload = z.object({
   url: z.string().min(1),
@@ -33,8 +34,29 @@ export function parseSaveMessage(input: unknown): ParseResult<SaveMessageInput> 
   }
 }
 
+/** Resolved theme tokens for the host-page strip (ready-to-use CSS values). */
+export interface StripThemeTokens {
+  bg: string
+  fg: string
+  border: string
+  accent: string
+  blur: string
+}
+
 export type SaveMessageResult =
-  | { type: 'booklage:save:result'; nonce: string; ok: true; bookmarkId: string; skipped?: true }
+  | {
+      type: 'booklage:save:result'
+      nonce: string
+      ok: true
+      bookmarkId: string
+      skipped?: true
+      /** Existing tags, relevant-first, for the quick-tag strip. */
+      tags?: QuickTag[]
+      /** Tag ids already on this bookmark (marked ✓ in the strip). */
+      currentTagIds?: string[]
+      /** Active theme's resolved tokens; strip auto-follows theme changes. */
+      themeTokens?: StripThemeTokens
+    }
   | { type: 'booklage:save:result'; nonce: string; ok: false; error: string }
 
 const ProbeMessage = z.object({
@@ -65,3 +87,25 @@ export function parseProbeResult(input: unknown): ParseResult<ProbeResult> {
     error: r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
   }
 }
+
+const AddTagMessage = z.object({
+  type: z.literal('booklage:add-tag'),
+  payload: z.object({
+    bookmarkId: z.string().min(1),
+    tagId: z.string().min(1),
+    nonce: z.string().min(1),
+  }),
+})
+export type AddTagMessageInput = z.infer<typeof AddTagMessage>
+export function parseAddTagMessage(input: unknown): ParseResult<AddTagMessageInput> {
+  const r = AddTagMessage.safeParse(input)
+  if (r.success) return { ok: true, value: r.data }
+  return {
+    ok: false,
+    error: r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+  }
+}
+
+export type AddTagResult =
+  | { type: 'booklage:add-tag:result'; nonce: string; ok: true }
+  | { type: 'booklage:add-tag:result'; nonce: string; ok: false; error: string }
