@@ -557,9 +557,16 @@ export function BoardRoot() {
     return (): void => { alive = false }
   }, [])
   const handleQuickTagToggle = useCallback(async (next: boolean): Promise<void> => {
-    setQuickTagEnabled(next) // optimistic
-    const db = await initDB()
-    await saveQuickTagEnabled(db, next)
+    setQuickTagEnabled(next) // optimistic — the toggle reflects immediately
+    try {
+      const db = await initDB()
+      await saveQuickTagEnabled(db, next)
+    } catch (err) {
+      // An IDB write effectively never fails, so we keep the optimistic value
+      // rather than rolling back (a flicker would be more confusing). Log so a
+      // genuine failure leaves a trail for debugging.
+      console.error('[AllMarks] failed to persist quick-tag setting', err)
+    }
   }, [])
 
   const filteredItems = useMemo(() => {
