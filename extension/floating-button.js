@@ -399,9 +399,29 @@
     })
     return chip
   }
+  // The strip anchors to the floating button's box if it's mounted, otherwise
+  // to the button's default slot derived from settings (so users who turned the
+  // button off still get the strip at the expected edge position).
+  function getStripAnchor() {
+    const side = settings.floatingButtonSnapSide === 'left' ? 'left' : 'right'
+    if (container) {
+      const r = container.getBoundingClientRect()
+      return { top: r.top, height: r.height, left: r.left, right: r.right, side }
+    }
+    const SIZE = 40
+    const ratio = Math.max(0.05, Math.min(0.95, Number(settings.floatingButtonTopRatio) || 0.5))
+    const cy = ratio * window.innerHeight
+    return {
+      top: cy - SIZE / 2,
+      height: SIZE,
+      left: side === 'left' ? 0 : window.innerWidth - SIZE,
+      right: side === 'left' ? SIZE : window.innerWidth,
+      side,
+    }
+  }
+
   function showTagStripForButton(bookmarkId, tags, currentTagIds, themeTokens) {
     removeTagStrip()
-    if (!container) return
     const current = new Set(Array.isArray(currentTagIds) ? currentTagIds : [])
     const { visible, overflow } = tagstripSplit(tags, 2) // collapsed preview = top 2 tags
     const el = document.createElement('div')
@@ -439,13 +459,11 @@
     }
     document.documentElement.appendChild(el)
     tagStripEl = el
-    // Anchor to the button, expand inward from its snapped edge.
-    const r = container.getBoundingClientRect()
-    const side = settings.floatingButtonSnapSide === 'left' ? 'left' : 'right'
-    const top = Math.max(8, Math.min(window.innerHeight - el.offsetHeight - 8, r.top + r.height / 2 - el.offsetHeight / 2))
+    const a = getStripAnchor()
+    const top = Math.max(8, Math.min(window.innerHeight - el.offsetHeight - 8, a.top + a.height / 2 - el.offsetHeight / 2))
     el.style.top = top + 'px'
-    if (side === 'right') el.style.right = (window.innerWidth - r.left + 6) + 'px'
-    else el.style.left = (r.right + 6) + 'px'
+    if (a.side === 'right') el.style.right = (window.innerWidth - a.left + 6) + 'px'
+    else el.style.left = (a.right + 6) + 'px'
     requestAnimationFrame(() => el.classList.add('is-visible'))
     tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
   }
@@ -454,14 +472,17 @@
   if (isExtensionAlive()) {
     chrome.runtime.onMessage.addListener((msg) => {
       if (!msg || msg.type !== 'booklage:floating-button-state') return
-      if (msg.state === 'saved' || msg.state === 'duplicate') {
-        dispatch({ type: 'save-success' })
-        if (tagstripShouldShow(msg.state, msg.tags)) {
-          setTimeout(() => showTagStripForButton(msg.bookmarkId, msg.tags, msg.currentTagIds, msg.themeTokens), 80)
-        }
-      } else if (msg.state === 'error') {
-        dispatch({ type: 'save-error' })
-        removeTagStrip()
+      if (msg.state === 'saved' || msg.state === 'duplicate') dispatch({ type: 'save-success' })
+      else if (msg.state === 'error') { dispatch({ type: 'save-error' }); removeTagStrip() }
+    })
+  }
+
+  if (isExtensionAlive()) {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (!msg || msg.type !== 'booklage:quick-tag') return
+      if (Array.isArray(msg.tags) && msg.tags.length > 0) {
+        // Defer a tick so layout/settings are settled before anchoring.
+        setTimeout(() => showTagStripForButton(msg.bookmarkId, msg.tags, msg.currentTagIds, msg.themeTokens), 80)
       }
     })
   }
