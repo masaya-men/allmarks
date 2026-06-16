@@ -376,10 +376,14 @@
     chip.addEventListener('click', (e) => {
       e.preventDefault(); e.stopPropagation()
       if (chip.dataset.on === 'true') return
-      chip.dataset.on = 'true'
+      chip.dataset.on = 'true' // optimistic ✓ (rendered via CSS ::before)
       sendAddTag(bookmarkId, tag.id)
-      if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
-      tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_HIDE_MS)
+      // Re-arm the auto-dismiss only while collapsed; an expanded panel stays
+      // open until the user closes it via ✕.
+      if (!tagStripEl || tagStripEl.dataset.expanded !== 'true') {
+        if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
+        tagStripHideTimer = setTimeout(removeTagStrip, TAGSTRIP_HIDE_MS)
+      }
     })
     return chip
   }
@@ -391,15 +395,27 @@
     const el = document.createElement('div')
     el.className = 'allmarks-tagstrip'
     applyStripTheme(el, themeTokens)
-    for (const t of visible) el.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+    // One non-wrapping row of curated chips; overflow folds behind MORE ▾.
+    const rowEl = document.createElement('div')
+    rowEl.className = 'allmarks-tagstrip__row'
+    for (const t of visible) rowEl.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+    el.appendChild(rowEl)
     if (overflow.length > 0) {
-      const all = document.createElement('button')
-      all.type = 'button'; all.className = 'allmarks-tagstrip__chip'; all.dataset.role = 'all'; all.textContent = 'ALL'
-      all.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation(); all.remove()
-        for (const t of overflow) el.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+      const more = document.createElement('button')
+      more.type = 'button'; more.className = 'allmarks-tagstrip__more'; more.textContent = 'MORE ▾'
+      more.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation()
+        el.dataset.expanded = 'true'
+        for (const t of overflow) rowEl.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+        more.remove()
+        const close = document.createElement('button')
+        close.type = 'button'; close.className = 'allmarks-tagstrip__close'; close.textContent = '✕'
+        close.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); removeTagStrip() })
+        el.appendChild(close)
+        // An expanded panel stays open until closed — kill the auto-dismiss.
+        if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
       })
-      el.appendChild(all)
+      el.appendChild(more)
     }
     document.documentElement.appendChild(el)
     tagStripEl = el

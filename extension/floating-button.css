@@ -173,63 +173,100 @@
   }
 }
 
-/* === Quick-tag strip (Phase 1) — theme-driven via --am-strip-* vars === */
+/* === Quick-tag strip — matches the board +TAG popover (theme-driven) === */
 .allmarks-tagstrip {
-  /* Defaults = AllMarks dark theme; overridden per-save from theme tokens. */
-  --am-strip-bg: #0a0a0a;
-  --am-strip-fg: #f2f2f2;
-  --am-strip-border: rgba(255, 255, 255, 0.12);
+  --am-strip-bg: #141414;
+  --am-strip-fg: #ffffff;
+  --am-strip-border: rgba(255, 255, 255, 0.10);
   --am-strip-accent: #28f100;
-  --am-strip-blur: 8px;
+  --am-strip-blur: 12px;
 
   position: fixed;
-  z-index: 2147483646; /* just under the pill/button */
+  z-index: 2147483646;
+  box-sizing: border-box;
+  min-width: 224px;
+  max-width: min(78vw, 360px);
+  padding: 8px;
   display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: min(72vw, 520px);
-  padding: 6px 8px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--am-strip-border) 100%, transparent);
-  background: color-mix(in srgb, var(--am-strip-bg) 92%, transparent);
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--am-strip-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--am-strip-bg) 95%, transparent);
   backdrop-filter: blur(var(--am-strip-blur));
   -webkit-backdrop-filter: blur(var(--am-strip-blur));
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
-  color: var(--am-strip-fg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: var(--am-strip-fg);
+  transform-origin: top center;
   opacity: 0;
-  transform: translateY(2px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
-  pointer-events: auto;
-  overflow-x: auto;
+  transform: scale(0.96) translateY(-4px);
+  transition: opacity 170ms cubic-bezier(0.16,1,0.3,1), transform 170ms cubic-bezier(0.16,1,0.3,1);
+}
+.allmarks-tagstrip.is-visible { opacity: 1; transform: scale(1) translateY(0); }
+.allmarks-tagstrip[data-expanded="true"] { padding-top: 24px; }
+
+.allmarks-tagstrip__row {
+  display: flex;
+  gap: 4px 2px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.allmarks-tagstrip[data-expanded="true"] .allmarks-tagstrip__row {
+  flex-wrap: wrap;
+  overflow-y: auto;
+  max-height: 50vh;
   scrollbar-width: none;
 }
-.allmarks-tagstrip::-webkit-scrollbar { display: none; }
-.allmarks-tagstrip.is-visible { opacity: 1; transform: translateY(0); }
+.allmarks-tagstrip__row::-webkit-scrollbar { display: none; }
+
 .allmarks-tagstrip__chip {
+  appearance: none;
   flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  min-height: 28px;
-  border-radius: 7px;
-  border: 1px solid color-mix(in srgb, var(--am-strip-border) 130%, transparent);
-  background: color-mix(in srgb, var(--am-strip-fg) 6%, transparent);
-  color: color-mix(in srgb, var(--am-strip-fg) 82%, transparent);
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--am-strip-fg) 85%, transparent);
+  padding: 4px 8px;
+  font: inherit;
   font-size: 11px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: lowercase;
   white-space: nowrap;
   cursor: pointer;
-  user-select: none;
+  transition: color 120ms;
 }
-.allmarks-tagstrip__chip[data-on="true"] {
-  border-color: var(--am-strip-accent);
-  color: var(--am-strip-accent);
-  background: color-mix(in srgb, var(--am-strip-accent) 12%, transparent);
-}
-.allmarks-tagstrip__chip[data-role="all"] {
+.allmarks-tagstrip__chip:hover { color: var(--am-strip-fg); }
+.allmarks-tagstrip__chip[data-on="true"] { color: var(--am-strip-accent); }
+.allmarks-tagstrip__chip[data-on="true"]::before { content: "\2713\00a0"; }
+
+.allmarks-tagstrip__more {
+  appearance: none;
+  align-self: center;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--am-strip-fg) 50%, transparent);
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--am-strip-fg) 60%, transparent);
+  cursor: pointer;
+  transition: color 120ms;
 }
+.allmarks-tagstrip__more:hover { color: color-mix(in srgb, var(--am-strip-fg) 85%, transparent); }
+
+.allmarks-tagstrip__close {
+  appearance: none;
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--am-strip-fg) 50%, transparent);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+.allmarks-tagstrip__close:hover { color: var(--am-strip-fg); }
