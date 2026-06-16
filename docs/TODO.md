@@ -21,7 +21,26 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 102 — allmarks.app へのリブランド移行 完了)
+### 直近の状態 (セッション 103 — 保存直後タグ付け 第1段(拡張ホスト頁) 完成 + 公開前片付け)
+
+**完了 (= 全て検証済: tsc 0 / 988 tests pass / build OK / 本番 allmarks.app + 拡張に反映)**:
+
+1. **公開前の片付け**: 暫定 EXPORT/IMPORT ボタン撤去(BoardRoot の TEMPORARY 箇所、BackupButton.tsx 自体は温存)、未使用 `chrome-extension/`(古い v1.0.0 試作)削除。
+2. **ブラッシュアップ**: TUNE ドロワー(`.drawer`)全体に `cursor: default` + `user-select: none` で文字カーソル(I-beam)抑制(プリセット名/W·G/凡例/フッター。操作系は指カーソル維持)。本番実測済。
+3. **🔴 新機能: 保存直後タグ付け 第1段(拡張ホスト頁)** — brainstorming→spec→plan→サブエージェント駆動(各2段レビュー)で実装後、user と実機で UX 反復:
+   - 保存応答(`/save-iframe`)に「全タグ(関連順=`scoreSimilarBookmarks`)+現在タグ+現テーマの解決済み色トークン」を相乗り、`booklage:add-tag` 受け口追加。拡張は `booklage:add-tag-request`→background→offscreen→`addTagToBookmark` の往復。
+   - トンマナは本家「+TAGポップアップ」(枠なし等幅チップ・緑✓・小ぶり)。テーマ追従(`--am-strip-*` を `getComputedStyle` で読んで相乗り)。
+   - **TUNE風ホバーアコーディオン**: 上2タグ+`▾`→ホバーで残りを2列(`max-height` アコーディオン、TUNE と同 easing)、離れて猶予後に閉じ自動消滅。クリックピン/✕/MORE は廃止。出入りはテーマのアニメ。
+   - **タグ帯は常にフローティングボタンの位置**(OFF時はデフォルト右端中央=settings由来)。カーソルピルは保存の合図のみ。帯コードは floating-button.js に一本化(content.js/.css から撤去)。
+   - **🐛 修正**: add-tag は IDB に保存済(本番 playwright 実測で確認)だが開いてるボードが再読込せず未反映に見えた → 専用合図 `bookmark-updated`(再読込のみ、新着ハイライト/PiP追加の副作用なし)を新設し `/save-iframe`→ボードで即反映。
+4. **付随**: ボードの TUNE ボタンのクリックピン留め撤去(ホバー一本化、ESC/外側クリックの固定解除も削除、テスト更新)。
+5. 設計 `docs/superpowers/specs/2026-06-16-quick-tag-on-save-design.md` / 計画 `docs/superpowers/plans/2026-06-16-quick-tag-on-save-phase1.md`。
+
+**🔴 次セッションの候補**: 第2段(Pop Out/PiP に同じその場タグ付け)/ 第3段(ブックマークレット・URL貼り付け)/ 公開準備(言語切替・onboarding・LP・拡張ストア素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+**プロセスメモ**: 拡張 content scripts(content.js/floating-button.js)は vitest/tsc の対象外。`node --check` で必ず構文確認する(本 session でサブエージェントが `//`→`\` typo を出し両方素通りした)。
+
+### 一つ前 (セッション 102 — allmarks.app へのリブランド移行 完了)
 
 **完了 (= 全て検証済: tsc 0 / vitest 978 / build OK / 本番 allmarks.app 実測 + 301 実測)**:
 
