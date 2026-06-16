@@ -184,8 +184,8 @@
   position: fixed;
   z-index: 2147483646;
   box-sizing: border-box;
-  min-width: 224px;
-  max-width: min(78vw, 360px);
+  min-width: 188px;
+  max-width: 224px;
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -213,10 +213,15 @@
   overflow: hidden;
 }
 .allmarks-tagstrip[data-expanded="true"] .allmarks-tagstrip__row {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 4px;
   overflow-y: auto;
-  max-height: 50vh;
+  max-height: 240px;
   scrollbar-width: none;
+}
+.allmarks-tagstrip[data-expanded="true"] .allmarks-tagstrip__chip {
+  justify-self: start;
 }
 .allmarks-tagstrip__row::-webkit-scrollbar { display: none; }
 
