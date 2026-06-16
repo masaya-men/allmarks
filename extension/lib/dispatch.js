@@ -128,11 +128,20 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
     try { await mirrorAddUrl(normalizeUrl(ogp.url), chrome.storage.local) } catch (_) {}
   }
 
+  const tagExtras =
+    finalState === 'saved' || finalState === 'duplicate'
+      ? {
+          bookmarkId: result.bookmarkId,
+          tags: Array.isArray(result.tags) ? result.tags : [],
+          currentTagIds: Array.isArray(result.currentTagIds) ? result.currentTagIds : [],
+          themeTokens: result.themeTokens || null,
+        }
+      : {}
   if (!isFloatingButton) {
-    chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: finalState }).catch(() => {})
+    chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: finalState, ...tagExtras }).catch(() => {})
   }
   if (isFloatingButton) {
-    chrome.tabs.sendMessage(tabId, { type: 'booklage:floating-button-state', state: finalState }).catch(() => {})
+    chrome.tabs.sendMessage(tabId, { type: 'booklage:floating-button-state', state: finalState, ...tagExtras }).catch(() => {})
   }
 }
 
