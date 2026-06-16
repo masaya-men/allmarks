@@ -124,6 +124,25 @@ export function SaveIframeClient(): ReactElement {
         return
       }
 
+      const addTagParsed = parseAddTagMessage(ev.data)
+      if (addTagParsed.ok) {
+        const { bookmarkId, tagId, nonce } = addTagParsed.value.payload
+        try {
+          const db = await initDB()
+          await addTagToBookmark(db, bookmarkId, tagId)
+          ev.source?.postMessage(
+            { type: 'booklage:add-tag:result', nonce, ok: true },
+            { targetOrigin: ev.origin },
+          )
+        } catch (err) {
+          ev.source?.postMessage(
+            { type: 'booklage:add-tag:result', nonce, ok: false, error: err instanceof Error ? err.message : String(err) },
+            { targetOrigin: ev.origin },
+          )
+        }
+        return
+      }
+
       const parsed = parseSaveMessage(ev.data)
       if (!parsed.ok) return
       const { payload } = parsed.value
