@@ -12,7 +12,11 @@ window.addEventListener('message', (ev) => {
   if (ev.origin !== BOOKLAGE_ORIGIN) return
   const data = ev.data
   if (!data || typeof data !== 'object') return
-  if (data.type === 'booklage:save:result' || data.type === 'booklage:probe:result') {
+  if (
+    data.type === 'booklage:save:result' ||
+    data.type === 'booklage:probe:result' ||
+    data.type === 'booklage:add-tag:result'
+  ) {
     router.resolve(data.nonce, data)
   }
 })
