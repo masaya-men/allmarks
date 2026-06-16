@@ -8,7 +8,7 @@ import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
-import { postBookmarkSaved } from '@/lib/board/channel'
+import { postBookmarkSaved, postBookmarkUpdated } from '@/lib/board/channel'
 import {
   parseSaveMessage,
   parseProbeMessage,
@@ -130,6 +130,9 @@ export function SaveIframeClient(): ReactElement {
         try {
           const db = await initDB()
           await addTagToBookmark(db, bookmarkId, tagId)
+          // Tell any open board to re-read so the new tag shows immediately
+          // (add-tag is a mutation of an existing bookmark, not a new save).
+          postBookmarkUpdated({ bookmarkId })
           ev.source?.postMessage(
             { type: 'booklage:add-tag:result', nonce, ok: true },
             { targetOrigin: ev.origin },

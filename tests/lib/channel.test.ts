@@ -5,6 +5,8 @@ import { describe, it, expect, vi } from 'vitest'
 import {
   postBookmarkSaved,
   subscribeBookmarkSaved,
+  postBookmarkUpdated,
+  subscribeBookmarkUpdated,
   postBookmarkDeleted,
   subscribeBookmarkDeleted,
 } from '@/lib/board/channel'
@@ -35,6 +37,24 @@ describe('BroadcastChannel helper', () => {
     postBookmarkDeleted({ bookmarkId: 'b3' })
     await new Promise((r) => setTimeout(r, 0))
     expect(handler).toHaveBeenCalledWith({ bookmarkId: 'b3' })
+    unsub()
+  })
+
+  it('subscriber receives postBookmarkUpdated event', async () => {
+    const handler = vi.fn()
+    const unsub = subscribeBookmarkUpdated(handler)
+    postBookmarkUpdated({ bookmarkId: 'b5' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(handler).toHaveBeenCalledWith({ bookmarkId: 'b5' })
+    unsub()
+  })
+
+  it('updated subscriber ignores save events (different message type)', async () => {
+    const updatedHandler = vi.fn()
+    const unsub = subscribeBookmarkUpdated(updatedHandler)
+    postBookmarkSaved({ bookmarkId: 'b6' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(updatedHandler).not.toHaveBeenCalled()
     unsub()
   })
 
