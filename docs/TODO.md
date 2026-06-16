@@ -31,7 +31,12 @@
 2. **🔴 衝突解消**: PiP を開いている時は拡張のホスト頁タグ帯を**出さない**。`/save-iframe` が保存応答に `quickTagEnabled`(設定値)+ `pipActive`(既存 pip-presence で把握)を相乗り → 拡張 `extension/lib/quick-tag-gate.js` の `shouldSendQuickTag` がゲート。緑フラッシュの保存合図は残る。
 3. **🔴 ON/OFF トグル(機能全体)**: 真実の値は本体 IDB `settings` の `quick-tag-on-save`(既定 ON、`lib/storage/quick-tag-setting.ts`)。PiP は直接読む、拡張は保存応答経由。**SETTINGS 入口を本体内パネル化**(`ExtensionEntry.tsx`、既存 `.promo` のダークグラス+`promo-in` を流用): トグル「QUICK-TAG ON SAVE」+「OPEN EXTENSION SETTINGS」ボタン。BoardRoot が state を持ち ExtensionEntry と PiP 両方へ供給。
 4. 設計 `docs/superpowers/specs/2026-06-16-quick-tag-on-save-phase2-pip-design.md` / 計画 `docs/superpowers/plans/2026-06-16-quick-tag-on-save-phase2-pip.md`。
-5. **実機で目視調整が残る項目**(本番 allmarks.app で詰める): PiP「＋」の位置・帯の寸法、SETTINGS パネルのイージング(現状は隣の `.promo`=右上AllMarks と同じ `0.22,1,0.36,1`、TUNE の `0.16,1,0.3,1` とは僅差)、拡張設定が本番で開くかの切り分け(localhost では橋渡し無効)。
+5. **🔧 同セッション後半のリワーク(user 実機フィードバック反映)**:
+   - **SETTINGS を TUNE と完全同一の開き方に**: `.promo` ポップ(クリック開閉)→ **TUNE の `.drawer` 方式**(ホバー開閉・`max-height` アコーディオン・`cubic-bezier(0.16,1,0.3,1)`・700ms 離脱猶予・`rgba(10,10,10,0.92)`+blur(8px))。
+   - **PiP のタグUIを再発明から再利用へ**: 自作 `PipTagStrip` を**廃止(削除)**し、ボードの **`TagAddPopover`(ムードボードのタグメニュー)をそのまま再利用**(新規タグ作成欄も含む)。「＋」は丸ボタン→**ボードと同じ「+ TAG」テキストボタン**(カード左上)。
+   - **🐛 ジャンプ修正**: PiP の「+ TAG」が `stopPropagation` していなかったため、クリックがカルーセルのスロットに伝わりボードへジャンプしていた → ボード同様 pointerdown/mousedown/click で `stopPropagation`。
+   - **付随**: ボードの `bookmark-updated` ハンドラに `reloadTags()` を追加(PiP で作った新規タグが board のタグ一覧へ即反映)。
+   - **残りの目視調整**: PiP の「+ TAG」位置・TagAddPopover の出る位置/サイズ感、拡張設定が本番で開くかの確認(localhost では橋渡し無効)。
 
 **🔴 次セッションの候補**: 第3段(ブックマークレット・URL貼り付けに同じ帯)/ 公開準備(言語切替・onboarding・LP・拡張ストア素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 

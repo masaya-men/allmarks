@@ -6625,3 +6625,26 @@ PiP を開いた状態で保存すると、第1段のフローティングボタ
 - サブエージェント駆動: 軽微/逐語タスク(1〜4)は controller が差分自読みでスペック確認、新規UI・統合(5〜7)はスペック+品質の2段サブエージェントレビュー、最後に opus で通し最終レビュー、という濃淡配分が効率的だった。
 
 **実機で残る目視調整**: PiP「＋」位置・帯寸法、パネルのイージング(`0.22,1,0.36,1` vs TUNE `0.16,1,0.3,1` の僅差)。次セッション冒頭で本番確認。
+
+### セッション 104 後半 — user 実機フィードバックでリワーク
+
+本番で触った user から 3 点の指摘 → 修正。
+1. **SETTINGS の開き方が TUNE と違う → 完全同一に**: `.promo` ポップ(クリック開閉、140ms translateY+scale)を廃し、TUNE の `.drawer` 方式に置換(ホバー開閉・`max-height` 0→320 アコーディオン・`cubic-bezier(0.16,1,0.3,1)` 0.5s+padding 0.4s・700ms 離脱猶予・`rgba(10,10,10,0.92)`+blur(8px))。GET EXTENSION(未導入)ブランチの `.promo` はそのまま。
+2. **PiP の「＋」がムードボードと違う + 丸が中央ずれ**: 丸ボタンを廃し、ボードカードと同じ「+ TAG」テキストボタン(左上 top:8/left:8、等幅小文字)に。
+3. **再発明するな + ＋でボードにジャンプする**: 自作 `PipTagStrip` を削除し、ボードの `TagAddPopover`(ムードボードのタグメニュー、新規作成欄含む)を PiP でそのまま再利用。ジャンプの原因は「+ TAG」が `stopPropagation` していなかったため(クリックがカルーセルスロットの onClick に伝播)→ pointerdown/mousedown/click で停止。
+
+**実装(opus サブエージェント2本 + 通しレビュー1本)**: 
+- `ExtensionEntry.tsx/.module.css`: installed ブランチをホバー駆動 `expanded` + `.drawer`(TUNE レシピ複製)に。`aria-expanded` は ChromeButton 非対応のため `aria-pressed` 維持。
+- `PipCard.tsx/.module.css`: 「+ TAG」+ `TagAddPopover`、700ms ホバー離脱で閉じる(`tagOpen`/`tagClosing` + `closing`/`onExited`)、非アクティブ化でリセット。
+- `PipStack.tsx`: `allTags`/`onAddExisting`/`onAddNew` を active card へ中継、`PipStackCard` は `suggestedEntries`(relevant-first slice5)を持つ。
+- `PipCompanion.tsx`: `allTags` state(mount+保存時+作成後に refresh、`allTagsRef`)、`handleAddExisting`(既適用 no-op)、`handleAddNew`(trim+大小無視 dedupe→`addTag('#28F100')`→attach→refresh→local→`postBookmarkUpdated`)。
+- `BoardRoot.tsx`: `bookmark-updated` ハンドラに `reloadTags()` 追加(PiP 作成タグが board タグ一覧へ即反映)。
+- `PipTagStrip.{tsx,module.css,test.tsx}` 削除。
+
+**検証**: tsc 0 / vitest **1002 pass**(PipTagStrip の 5 テスト削除で 1006→1002)/ 通しレビュー READY / `allmarks.app` デプロイ済。
+
+### 学び
+- **TUNE の開閉は `max-height` アコーディオン(ホバー駆動・700ms 猶予)**。ポップアニメ(`.promo`)とは別系統。chrome 系の「開く」を揃えるなら `.drawer` レシピを複製する。
+- **Document PiP 窓内では、コンポーネント内の `document.addEventListener` はメイン窓の document に付く**(JS はメイン窓で実行、DOM だけ portal で PiP 窓に出る)。TagAddPopover の Esc/外側クリックは PiP 窓内のクリックを拾えない → ホバー離脱猶予を主たる dismiss にする。
+- **PiP のカードはカルーセルのスロット onClick でナビゲートする**ので、カード上の操作ボタンは必ず `stopPropagation`(ボードの +TAG と同じ作法)。
+- 「再発明より既存部品の再利用」: 自作するとトンマナ・挙動がズレる。既存の `TagAddPopover` をそのまま出す方が user の期待(=ムードボードと同じ)に一致した。
