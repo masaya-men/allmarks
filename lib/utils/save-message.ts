@@ -56,6 +56,13 @@ export type SaveMessageResult =
       currentTagIds?: string[]
       /** Active theme's resolved tokens; strip auto-follows theme changes. */
       themeTokens?: StripThemeTokens
+      /** Whole-feature ON/OFF (read from app IDB). false = extension shows no
+       *  strip (plain save confirmation only). Absent = treat as ON. */
+      quickTagEnabled?: boolean
+      /** True when a PiP companion window is open at save time. The extension
+       *  suppresses its host-page strip when true (PiP handles tagging on the
+       *  card instead) — avoids the two surfaces colliding. */
+      pipActive?: boolean
     }
   | { type: 'booklage:save:result'; nonce: string; ok: false; error: string }
 
