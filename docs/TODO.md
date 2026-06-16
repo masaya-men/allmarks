@@ -8,19 +8,32 @@
 
 ---
 
-## ドメイン allmarks.app (= 棚上げ中、 催促しない)
+## ドメイン allmarks.app (= ✅ 2026-06-16 取得完了)
 
-**session 91 (2026-05-29): user が購入直前まで進んだが カード拒否で取得できず。 生活が落ち着くまで取得は棚上げ (急がない) で合意済。**
+**session 101 (2026-06-16): `allmarks.app` 取得完了。** Cloudflare Registrar $14.20/年、支払いは PayPal (LoPo に届いた支援金から、引き落とし確認済)。session 91 のカード拒否を PayPal 経路で回避。**これで一般公開・拡張ストア公開の最後の関門クリア。**
 
-- **毎セッション催促しない**。 user から「取れた」 と報告が来たら下記に進む。
-- 取得方法 (再掲): `https://dash.cloudflare.com/` → Domain Registration → allmarks.app → 約 $14.20 (¥2,200) /年
-- 取得済になったら: リブランド実装 (詳細 `docs/private/2026-05-11-allmarks-branding-spec.md`)。 一般公開・拡張ストア公開もこのタイミング以降 (= 上「現在の状態」 の origin 移行の理由参照)。
+**次 = リブランド移行 (詳細 `docs/private/2026-05-11-allmarks-branding-spec.md` §5、 大きい多段タスクなので元気な session で spec 読んでから着手)**:
+- Cloudflare Pages に allmarks.app 接続 (新 project か 既存 booklage に custom domain かは spec 確認)
+- 旧 booklage.pages.dev の扱い (301 redirect 等)
+- GitHub repo rename、Chrome 拡張の host 判定 (`booklage.pages.dev`) 更新 + 再パッケージ + `EXTENSION_STORE_URL` 投入
+- **落とし穴**: IndexedDB は origin 単位。**user 自身の既存ブクマ (旧 origin、約372件) は allmarks.app に自動移行しない** → BackupButton で 1 回だけ手動 export/import。公開ユーザーは最初から allmarks.app なので影響なし。
+- **意図的に維持リスト** (`DB_NAME='booklage-db'` 等、§リブランド進行 参照) は移行でも壊さない。
 
 ---
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 100 — 拡張機能の設定画面リデザイン + ボードからの設定入口を本番 ship)
+### 直近の状態 (セッション 101 — i18n の mood→tag 掃除 + 15 言語を ja.json と同構造に翻訳)
+
+**完了 (= 全て検証済: tsc 0 / 全 978 tests pass / build 成功。本番未デプロイ = 画面に出ない変更なので任意)**:
+
+1. **Phase D5 + mood→tag コード掃除**: `NewMoodInput` → `NewTagInput` (ファイル + 識別子、[NewTagInput.tsx](../components/triage/NewTagInput.tsx))。ja.json の最後の mood キー (`moodsHeader`/`newMood`/`moodNamePlaceholder`) を `tagsHeader`/`newTag`/`tagNamePlaceholder` に統一 + 参照追従 ([Sidebar.tsx](../components/board/Sidebar.tsx) の t() キー + `.moodDot`→`.tagDot` / `.newMoodBtn`→`.newTagBtn` CSS)。**DB ストア名 `moods` 等の内部符号・マイグレーション・「ムードボード」視覚語は意図的に不変** (触ると既存データ破壊)。
+2. **TODO 前提の誤りを訂正**: 「他14言語の `newMood` を rename」という TODO の前提は**成り立っていなかった**。実際は他14言語ファイルは**タグ機能以前の古い版**で、mood キーが無く、sidebar/triage/bookmarklet セクションごと欠落・古い「folder」語が残存していた。
+3. **15 言語を ja.json と同構造に整備**: [en.json](../messages/en.json) を基準テンプレートとして ja と同構造 (96 leaf キー) に再作 → 残り13言語 (ar/de/es/fr/it/ko/nl/pt/ru/th/tr/vi/zh) を並列サブエージェントで翻訳。固定英語語彙 (TUNE/TAGS/LIBRARY/Inbox/Archive/Visual 等)・プレースホルダ `{current}/{total}`・絵文字・キーコンボ・`#AllMarks` は全言語で verbatim 保持。`triage.skip/undo/hint` は ja に合わせ英語固定 (一部 agent がローカライズした分を強制英語に統一)。構造・固定値とも機械チェック通過。
+
+**🔴 ただし今は誰の画面にも出ない**: [t.ts](../lib/i18n/t.ts) が `ja.json` 固定 import のまま。外国語を実際に出すには **locale 配線が必要** (= §公開向け残タスク release blocker #4 に新規追加)。これは `output: 'export'` の制約で設計判断が要るので別タスク (brainstorming してから)。
+
+### 一つ前 (セッション 100 — 拡張機能の設定画面リデザイン + ボードからの設定入口を本番 ship)
 
 **ship 済 (本番 `booklage.pages.dev` 反映済 / tsc 0 / 全 978 tests pass / 全状態 Playwright 実機検証)**:
 
@@ -431,13 +444,13 @@
 ### 公開向け残タスク (= session 83 以降の優先度順、 session 82 で整理)
 
 **release blocker (= 公開前 必須)**:
-1. **🔴 ドメイン取得確認** (= allmarks.app、 2026-05-28 朝以降)
-2. **Phase D4 他 14 言語 mood → tag rename** (= 公開時に各国語ユーザー必須)
-3. **Phase D5 NewMoodInput → NewTagInput 内部 rename**
-4. **onboarding チュートリアル** (= 初回ユーザー向け、 user 自身が複数回言及)
-5. **拡張機能 Chrome Web Store 公開準備** (= manifest 整備、 audit、 アイコン整備、 説明文)
-6. **拡張機能 設定画面 整備** (= マネージ完了後の「ダサい完了画面」 を「ボードに戻る」 自動化に置換、 components/triage/TriagePage.tsx:334)
-7. **LP 整備** (= 現 LP に share / multi-playback / 拡張機能 言及無、 update 要)
+1. ~~**ドメイン取得**~~ ✅ **2026-06-16 取得完了** (allmarks.app、 §ドメイン 参照) → 次はリブランド移行
+2. ~~**Phase D4 mood → tag rename**~~ ✅ **session 101 完了** (下記 §i18n 参照)
+3. ~~**Phase D5 NewMoodInput → NewTagInput 内部 rename**~~ ✅ **session 101 完了**
+4. **🔴 i18n 言語切替の配線 (= 新ブロッカー、 session 101 で判明)** — 翻訳 15 言語は揃ったが [lib/i18n/t.ts](../lib/i18n/t.ts) が **ja.json 固定 import** のままなので外国語は誰の画面にも出ない。実際に locale 別で出す仕組みが要る。`output: 'export'` の制約 (静的 HTML は 1 言語で prerender → client 切替は flash/hydration mismatch、 marketing LP は SEO 影響) があるので **設計判断が要る = brainstorming してから着手**。方式候補: (a) per-locale 静的ルート (proper だが大) / (b) client-side runtime 切替 (board 中心なら可、 LP は要検討) / (c) アプリ内 言語ピッカー手動選択。**着手前に t() の利用箇所 (server/client・marketing/app) を洗う**
+5. **onboarding チュートリアル** (= 初回ユーザー向け、 user 自身が複数回言及)
+6. **拡張機能 Chrome Web Store 公開準備** (= manifest 整備、 audit、 アイコン整備、 説明文)
+7. **LP 整備** (= 現 LP に share / 拡張機能 言及無、 update 要。 multi-playback は未実装なので謳わない)
 
 **公開後でも OK (= 上澄み polish)**:
 7. convex bezel 数値調整 (= session 82 試作 OK 後の微調整余地)

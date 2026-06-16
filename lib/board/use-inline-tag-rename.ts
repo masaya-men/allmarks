@@ -54,7 +54,7 @@ export function useInlineTagRename({
   const doneRef = useRef(false)
 
   // Focus + select on mount. rAF lets React commit the <input> first, matching
-  // NewMoodInput's pattern so focus doesn't race the layout.
+  // NewTagInput's pattern so focus doesn't race the layout.
   const focus = useCallback((el: HTMLInputElement | null): void => {
     if (!el) return
     requestAnimationFrame(() => { el.focus(); el.select() })

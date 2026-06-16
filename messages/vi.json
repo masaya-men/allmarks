@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "Dấu trang × Cắt dán"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
     "urlPlaceholder": "Dán URL...",
     "save": "Lưu",
-    "exportImage": "Lưu dưới dạng ảnh",
-    "shareX": "Chia sẻ trên X",
     "randomPick": "Chọn ngẫu nhiên",
-    "bgTheme": "Chủ đề nền",
     "newFolder": "+ Thư mục mới",
     "folderNamePlaceholder": "Tên thư mục...",
-    "emptyState": "Dán URL để thêm dấu trang đầu tiên của bạn",
+    "emptyState": "Dán một URL để thêm dấu trang đầu tiên",
     "theme": {
-      "dottedNotebook": "Sổ Tay Chấm Bi",
-      "gridPaper": "Giấy Kẻ Ô"
+      "dottedNotebook": "Giấy chấm bi",
+      "gridPaper": "Giấy ô vuông"
+    },
+    "filter": {
+      "label": "Tất cả",
+      "all": "Tất cả",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Hiển thị",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Tìm kiếm...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "Tất cả",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ Thẻ mới",
+      "triageCta": "Bắt đầu sắp xếp",
+      "collapseAria": "Thu gọn",
+      "expandAria": "Mở rộng",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Bookmarklet",
+      "bookmarkletHint": "Lưu từ mọi trang web chỉ với một cú nhấp"
+    },
+    "empty": {
+      "title": "Bắt đầu lưu dấu trang",
+      "description": "AllMarks dùng một bookmarklet để lưu mọi trang web chỉ với một cú nhấp",
+      "installButton": "📌 Cài đặt AllMarks",
+      "alreadyInstalled": "Đã cài rồi? Nhấp 📌 trên một trang khác"
+    },
+    "bookmarkletModal": {
+      "title": "Cài đặt bookmarklet",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Kéo nút này lên thanh dấu trang của trình duyệt",
+      "barHint": "Nếu không thấy thanh dấu trang:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "Cách sử dụng",
+      "usageStep1": "1. Mở trang web bạn muốn lưu",
+      "usageStep2": "2. Nhấp 📌 trên thanh dấu trang",
+      "usageStep3": "3. Chọn thư mục → lưu",
+      "closeLabel": "Đóng"
+    },
+    "tweet": {
+      "deleted": "Bài đăng này đã bị xóa hoặc ở chế độ riêng tư",
+      "loading": "Đang tải..."
+    },
+    "video": {
+      "play": "Phát",
+      "thumbnailAlt": "Ảnh thu nhỏ video"
+    },
+    "lightbox": {
+      "close": "Đóng",
+      "openSource": "Mở trang gốc"
     },
     "slider": {
-      "tooltipClick": "Nhấn để nhảy",
-      "tooltipShift": "Shift để nhanh"
+      "tooltipClick": "Nhấp để nhảy đến",
+      "tooltipShift": "Giữ Shift để nhanh hơn"
     },
     "chrome": {
       "tune": "TUNE",
@@ -29,37 +85,56 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "Đặt lại giá trị mặc định"
+      "reset_tooltip": "Đặt lại về mặc định"
     }
   },
   "share": {
-    "defaultText": "Tôi đã tạo một bức cắt dán từ dấu trang và nó tuyệt vời ✨ #AllMarks"
+    "defaultText": "Vừa làm một bộ sưu tập dấu trang và kết quả tuyệt vời luôn ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Đang lưu…",
+      "saved": "Đã lưu vào Inbox",
+      "error": "Lưu thất bại"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "Không có dấu trang nào để sắp xếp",
+    "empty_cta": "Quay lại bảng",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ Thẻ mới",
+    "tagNamePlaceholder": "Tên thẻ",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Đã sắp xếp xong",
+    "done_back": "Quay lại bảng"
   },
   "undo": {
-    "reorder": "Hoàn tác sắp xếp",
-    "delete": "Hoàn tác xóa",
-    "resize": "Hoàn tác đổi cỡ",
-    "add": "Hoàn tác thêm",
-    "cardWidth": "Hoàn tác cỡ",
-    "cardGap": "Hoàn tác khoảng cách",
-    "tunePreset": "Hoàn tác cài đặt sẵn"
+    "reorder": "Đã hoàn tác sắp xếp lại",
+    "delete": "Đã hoàn tác xóa",
+    "resize": "Đã hoàn tác đổi kích thước",
+    "add": "Đã hoàn tác thêm",
+    "cardWidth": "Đã hoàn tác chỉnh cỡ",
+    "cardGap": "Đã hoàn tác chỉnh khoảng cách",
+    "tunePreset": "Đã hoàn tác cài đặt sẵn"
   },
   "redo": {
-    "reorder": "Làm lại sắp xếp",
-    "delete": "Làm lại xóa",
-    "resize": "Làm lại đổi cỡ",
-    "add": "Làm lại thêm",
-    "cardWidth": "Làm lại cỡ",
-    "cardGap": "Làm lại khoảng cách",
-    "tunePreset": "Làm lại cài đặt sẵn"
+    "reorder": "Đã làm lại sắp xếp lại",
+    "delete": "Đã làm lại xóa",
+    "resize": "Đã làm lại đổi kích thước",
+    "add": "Đã làm lại thêm",
+    "cardWidth": "Đã làm lại chỉnh cỡ",
+    "cardGap": "Đã làm lại chỉnh khoảng cách",
+    "tunePreset": "Đã làm lại cài đặt sẵn"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "Xóa tất cả bộ lọc",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "Mở quản lý thẻ"
   }
 }

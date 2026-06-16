@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "Yer İmleri × Kolaj"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
     "urlPlaceholder": "URL yapıştır...",
     "save": "Kaydet",
-    "exportImage": "Görüntü olarak kaydet",
-    "shareX": "X'te paylaş",
-    "randomPick": "Rastgele seç",
-    "bgTheme": "Arka plan teması",
-    "newFolder": "+ Yeni klasör",
+    "randomPick": "Rastgele Seç",
+    "newFolder": "+ Yeni Klasör",
     "folderNamePlaceholder": "Klasör adı...",
-    "emptyState": "İlk yer iminizi eklemek için bir URL yapıştırın",
+    "emptyState": "İlk yer imini eklemek için bir URL yapıştır",
     "theme": {
       "dottedNotebook": "Noktalı Defter",
       "gridPaper": "Kareli Kağıt"
     },
+    "filter": {
+      "label": "Tümü",
+      "all": "Tümü",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Görünüm",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Ara...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "Tümü",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ Yeni Etiket",
+      "triageCta": "Düzenlemeye başla",
+      "collapseAria": "Daralt",
+      "expandAria": "Genişlet",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Yer imi düğmesi",
+      "bookmarkletHint": "Tek tıkla her siteden kaydet"
+    },
+    "empty": {
+      "title": "Yer imi eklemeye başla",
+      "description": "AllMarks, her siteyi tek tıkla kaydeden bir yer imi düğmesi kullanır",
+      "installButton": "📌 AllMarks'ı yükle",
+      "alreadyInstalled": "Zaten yüklü mü? Başka bir sitede 📌 simgesine tıkla"
+    },
+    "bookmarkletModal": {
+      "title": "Yer imi düğmesini yükle",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Bunu tarayıcının yer imi çubuğuna sürükle",
+      "barHint": "Yer imi çubuğunu göremiyorsan:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "Nasıl kullanılır",
+      "usageStep1": "1. Kaydetmek istediğin bir siteyi aç",
+      "usageStep2": "2. Yer imi çubuğundaki 📌 simgesine tıkla",
+      "usageStep3": "3. Bir klasör seç → kaydet",
+      "closeLabel": "Kapat"
+    },
+    "tweet": {
+      "deleted": "Bu gönderi silindi ya da gizli",
+      "loading": "Yükleniyor..."
+    },
+    "video": {
+      "play": "Oynat",
+      "thumbnailAlt": "Video küçük resmi"
+    },
+    "lightbox": {
+      "close": "Kapat",
+      "openSource": "Orijinal sayfayı aç"
+    },
     "slider": {
-      "tooltipClick": "Tıkla, atla",
-      "tooltipShift": "Shift, hızlı"
+      "tooltipClick": "Atlamak için tıkla",
+      "tooltipShift": "Hızlı için Shift"
     },
     "chrome": {
       "tune": "TUNE",
@@ -29,11 +85,30 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "Varsayılana sıfırla"
+      "reset_tooltip": "Varsayılanlara sıfırla"
     }
   },
   "share": {
-    "defaultText": "Yer imleriyle bir kolaj yaptım ve harika oldu ✨ #AllMarks"
+    "defaultText": "Bir yer imi kolajı yaptım ve harika oldu ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Kaydediliyor…",
+      "saved": "Inbox'a kaydedildi",
+      "error": "Kaydedilemedi"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "Düzenlenecek yer imi yok",
+    "empty_cta": "Panoya dön",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ Yeni Etiket",
+    "tagNamePlaceholder": "Etiket adı",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Düzenleme tamamlandı",
+    "done_back": "Panoya dön"
   },
   "undo": {
     "reorder": "Sıralama geri alındı",
@@ -41,25 +116,25 @@
     "resize": "Boyutlandırma geri alındı",
     "add": "Ekleme geri alındı",
     "cardWidth": "Boyut geri alındı",
-    "cardGap": "Boşluk geri alındı",
-    "tunePreset": "Ön ayar geri alındı"
+    "cardGap": "Aralık geri alındı",
+    "tunePreset": "Hazır ayar geri alındı"
   },
   "redo": {
-    "reorder": "Sıralama yinelendi",
-    "delete": "Silme yinelendi",
-    "resize": "Boyutlandırma yinelendi",
-    "add": "Ekleme yinelendi",
-    "cardWidth": "Boyut yinelendi",
-    "cardGap": "Boşluk yinelendi",
-    "tunePreset": "Ön ayar yinelendi"
+    "reorder": "Sıralama yeniden yapıldı",
+    "delete": "Silme yeniden yapıldı",
+    "resize": "Boyutlandırma yeniden yapıldı",
+    "add": "Ekleme yeniden yapıldı",
+    "cardWidth": "Boyut yeniden yapıldı",
+    "cardGap": "Aralık yeniden yapıldı",
+    "tunePreset": "Hazır ayar yeniden yapıldı"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "Tüm filtreleri temizle",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "Etiket yönetimini aç"
   }
 }

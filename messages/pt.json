@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "Favoritos × Colagem"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
-    "urlPlaceholder": "Colar URL...",
+    "urlPlaceholder": "Cole a URL...",
     "save": "Salvar",
-    "exportImage": "Salvar como imagem",
-    "shareX": "Compartilhar no X",
     "randomPick": "Escolha aleatória",
-    "bgTheme": "Tema de fundo",
     "newFolder": "+ Nova pasta",
     "folderNamePlaceholder": "Nome da pasta...",
     "emptyState": "Cole uma URL para adicionar seu primeiro favorito",
     "theme": {
-      "dottedNotebook": "Caderno Pontilhado",
-      "gridPaper": "Papel Quadriculado"
+      "dottedNotebook": "Caderno pontilhado",
+      "gridPaper": "Papel quadriculado"
+    },
+    "filter": {
+      "label": "Todos",
+      "all": "Todos",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Exibição",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Buscar...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "Todos",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ Nova tag",
+      "triageCta": "Começar a organizar",
+      "collapseAria": "Recolher",
+      "expandAria": "Expandir",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Bookmarklet",
+      "bookmarkletHint": "Salve de qualquer site com um clique"
+    },
+    "empty": {
+      "title": "Comece a salvar favoritos",
+      "description": "O AllMarks usa um bookmarklet que salva qualquer site com um clique",
+      "installButton": "📌 Instalar o AllMarks",
+      "alreadyInstalled": "Já instalou? Clique em 📌 em outro site"
+    },
+    "bookmarkletModal": {
+      "title": "Instalar o bookmarklet",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Arraste isto para a barra de favoritos do navegador",
+      "barHint": "Se você não vê a barra de favoritos:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "Como usar",
+      "usageStep1": "1. Abra um site que você quer salvar",
+      "usageStep2": "2. Clique em 📌 na barra de favoritos",
+      "usageStep3": "3. Escolha uma pasta → salvar",
+      "closeLabel": "Fechar"
+    },
+    "tweet": {
+      "deleted": "Esta publicação foi excluída ou é privada",
+      "loading": "Carregando..."
+    },
+    "video": {
+      "play": "Reproduzir",
+      "thumbnailAlt": "Miniatura do vídeo"
+    },
+    "lightbox": {
+      "close": "Fechar",
+      "openSource": "Abrir página original"
     },
     "slider": {
       "tooltipClick": "Clique para pular",
-      "tooltipShift": "Shift para rápido"
+      "tooltipShift": "Shift para acelerar"
     },
     "chrome": {
       "tune": "TUNE",
@@ -29,11 +85,30 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "Redefinir valores"
+      "reset_tooltip": "Restaurar padrões"
     }
   },
   "share": {
     "defaultText": "Fiz uma colagem de favoritos e ficou incrível ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Salvando…",
+      "saved": "Salvo na Inbox",
+      "error": "Falha ao salvar"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "Nenhum favorito para organizar",
+    "empty_cta": "Voltar ao quadro",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ Nova tag",
+    "tagNamePlaceholder": "Nome da tag",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Organização concluída",
+    "done_back": "Voltar ao quadro"
   },
   "undo": {
     "reorder": "Reordenação desfeita",
@@ -41,7 +116,7 @@
     "resize": "Redimensionamento desfeito",
     "add": "Adição desfeita",
     "cardWidth": "Tamanho desfeito",
-    "cardGap": "Espaço desfeito",
+    "cardGap": "Espaçamento desfeito",
     "tunePreset": "Predefinição desfeita"
   },
   "redo": {
@@ -50,16 +125,16 @@
     "resize": "Redimensionamento refeito",
     "add": "Adição refeita",
     "cardWidth": "Tamanho refeito",
-    "cardGap": "Espaço refeito",
+    "cardGap": "Espaçamento refeito",
     "tunePreset": "Predefinição refeita"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "Limpar todos os filtros",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "Abrir gerenciamento de tags"
   }
 }

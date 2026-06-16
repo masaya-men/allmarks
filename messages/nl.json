@@ -1,21 +1,77 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "Bladwijzers × Collage"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
-    "urlPlaceholder": "URL plakken...",
+    "urlPlaceholder": "Plak een URL...",
     "save": "Opslaan",
-    "exportImage": "Opslaan als afbeelding",
-    "shareX": "Delen op X",
     "randomPick": "Willekeurige keuze",
-    "bgTheme": "Achtergrondthema",
     "newFolder": "+ Nieuwe map",
     "folderNamePlaceholder": "Mapnaam...",
     "emptyState": "Plak een URL om je eerste bladwijzer toe te voegen",
     "theme": {
       "dottedNotebook": "Stippennotitieboek",
       "gridPaper": "Ruitjespapier"
+    },
+    "filter": {
+      "label": "Alles",
+      "all": "Alles",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Weergave",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Zoeken...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "Alles",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ Nieuwe tag",
+      "triageCta": "Begin met sorteren",
+      "collapseAria": "Inklappen",
+      "expandAria": "Uitklappen",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Bookmarklet",
+      "bookmarkletHint": "Bewaar elke site met één klik"
+    },
+    "empty": {
+      "title": "Begin met bewaren",
+      "description": "AllMarks gebruikt een bookmarklet die elke site met één klik bewaart",
+      "installButton": "📌 AllMarks installeren",
+      "alreadyInstalled": "Al geïnstalleerd? Klik op 📌 op een andere site"
+    },
+    "bookmarkletModal": {
+      "title": "De bookmarklet installeren",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Sleep dit naar de bladwijzerbalk van je browser",
+      "barHint": "Zie je de bladwijzerbalk niet:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "Zo gebruik je het",
+      "usageStep1": "1. Open een site die je wilt bewaren",
+      "usageStep2": "2. Klik op 📌 in de bladwijzerbalk",
+      "usageStep3": "3. Kies een map → opslaan",
+      "closeLabel": "Sluiten"
+    },
+    "tweet": {
+      "deleted": "Dit bericht is verwijderd of is privé",
+      "loading": "Laden..."
+    },
+    "video": {
+      "play": "Afspelen",
+      "thumbnailAlt": "Videominiatuur"
+    },
+    "lightbox": {
+      "close": "Sluiten",
+      "openSource": "Originele pagina openen"
     },
     "slider": {
       "tooltipClick": "Klik om te springen",
@@ -33,7 +89,26 @@
     }
   },
   "share": {
-    "defaultText": "Ik heb een bladwijzercollage gemaakt en het is geweldig ✨ #AllMarks"
+    "defaultText": "Ik heb een bladwijzercollage gemaakt en het is prachtig geworden ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Opslaan…",
+      "saved": "Bewaard in Inbox",
+      "error": "Opslaan mislukt"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "Geen bladwijzers om te sorteren",
+    "empty_cta": "Terug naar board",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ Nieuwe tag",
+    "tagNamePlaceholder": "Tagnaam",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Sorteren voltooid",
+    "done_back": "Terug naar board"
   },
   "undo": {
     "reorder": "Sortering ongedaan gemaakt",
@@ -56,10 +131,10 @@
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "Alle filters wissen",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "Tagbeheer openen"
   }
 }

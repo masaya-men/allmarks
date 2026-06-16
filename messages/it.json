@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "Segnalibri × Collage"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
     "urlPlaceholder": "Incolla URL...",
     "save": "Salva",
-    "exportImage": "Salva come immagine",
-    "shareX": "Condividi su X",
     "randomPick": "Scelta casuale",
-    "bgTheme": "Tema di sfondo",
     "newFolder": "+ Nuova cartella",
     "folderNamePlaceholder": "Nome cartella...",
     "emptyState": "Incolla un URL per aggiungere il tuo primo segnalibro",
     "theme": {
-      "dottedNotebook": "Quaderno Puntinato",
-      "gridPaper": "Carta Quadrettata"
+      "dottedNotebook": "Quaderno a puntini",
+      "gridPaper": "Carta a quadretti"
+    },
+    "filter": {
+      "label": "Tutti",
+      "all": "Tutti",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Visualizzazione",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Cerca...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "Tutti",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ Nuovo tag",
+      "triageCta": "Inizia a ordinare",
+      "collapseAria": "Comprimi",
+      "expandAria": "Espandi",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Bookmarklet",
+      "bookmarkletHint": "Salva da qualsiasi sito con un clic"
+    },
+    "empty": {
+      "title": "Inizia a salvare segnalibri",
+      "description": "AllMarks usa un bookmarklet che salva qualsiasi sito con un clic",
+      "installButton": "📌 Installa AllMarks",
+      "alreadyInstalled": "Già installato? Clicca 📌 su un altro sito"
+    },
+    "bookmarkletModal": {
+      "title": "Installa il bookmarklet",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Trascinalo nella barra dei segnalibri del browser",
+      "barHint": "Se non vedi la barra dei segnalibri:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "Come usarlo",
+      "usageStep1": "1. Apri un sito che vuoi salvare",
+      "usageStep2": "2. Clicca 📌 nella barra dei segnalibri",
+      "usageStep3": "3. Scegli una cartella → salva",
+      "closeLabel": "Chiudi"
+    },
+    "tweet": {
+      "deleted": "Questo post è stato eliminato o è privato",
+      "loading": "Caricamento..."
+    },
+    "video": {
+      "play": "Riproduci",
+      "thumbnailAlt": "Anteprima del video"
+    },
+    "lightbox": {
+      "close": "Chiudi",
+      "openSource": "Apri pagina originale"
     },
     "slider": {
-      "tooltipClick": "Clic per saltare",
-      "tooltipShift": "Shift per veloce"
+      "tooltipClick": "Clicca per saltare",
+      "tooltipShift": "Shift per andare veloce"
     },
     "chrome": {
       "tune": "TUNE",
@@ -29,11 +85,30 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "Ripristina valori"
+      "reset_tooltip": "Ripristina i valori predefiniti"
     }
   },
   "share": {
-    "defaultText": "Ho creato un collage di segnalibri ed è fantastico ✨ #AllMarks"
+    "defaultText": "Ho creato un collage di segnalibri ed è venuto benissimo ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Salvataggio…",
+      "saved": "Salvato nell'Inbox",
+      "error": "Salvataggio non riuscito"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "Nessun segnalibro da ordinare",
+    "empty_cta": "Torna alla board",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ Nuovo tag",
+    "tagNamePlaceholder": "Nome del tag",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Ordinamento completato",
+    "done_back": "Torna alla board"
   },
   "undo": {
     "reorder": "Riordino annullato",
@@ -41,7 +116,7 @@
     "resize": "Ridimensionamento annullato",
     "add": "Aggiunta annullata",
     "cardWidth": "Dimensione annullata",
-    "cardGap": "Spazio annullato",
+    "cardGap": "Spaziatura annullata",
     "tunePreset": "Preset annullato"
   },
   "redo": {
@@ -50,16 +125,16 @@
     "resize": "Ridimensionamento ripristinato",
     "add": "Aggiunta ripristinata",
     "cardWidth": "Dimensione ripristinata",
-    "cardGap": "Spazio ripristinato",
+    "cardGap": "Spaziatura ripristinata",
     "tunePreset": "Preset ripristinato"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "Cancella tutti i filtri",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "Apri la gestione dei tag"
   }
 }

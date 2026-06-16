@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "บุ๊กมาร์ก × คอลลาจ"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
     "urlPlaceholder": "วาง URL...",
     "save": "บันทึก",
-    "exportImage": "บันทึกเป็นรูปภาพ",
-    "shareX": "แชร์บน X",
-    "randomPick": "สุ่มเลือก",
-    "bgTheme": "ธีมพื้นหลัง",
+    "randomPick": "สุ่มหยิบ",
     "newFolder": "+ โฟลเดอร์ใหม่",
     "folderNamePlaceholder": "ชื่อโฟลเดอร์...",
     "emptyState": "วาง URL เพื่อเพิ่มบุ๊กมาร์กแรกของคุณ",
     "theme": {
-      "dottedNotebook": "สมุดจุดประ",
-      "gridPaper": "กระดาษกราฟ"
+      "dottedNotebook": "สมุดจุดไข่ปลา",
+      "gridPaper": "กระดาษตาราง"
+    },
+    "filter": {
+      "label": "ทั้งหมด",
+      "all": "ทั้งหมด",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "การแสดงผล",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "ค้นหา...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "ทั้งหมด",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ แท็กใหม่",
+      "triageCta": "เริ่มจัดเรียง",
+      "collapseAria": "ย่อ",
+      "expandAria": "ขยาย",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Bookmarklet",
+      "bookmarkletHint": "บันทึกจากเว็บไซต์ใดก็ได้ในคลิกเดียว"
+    },
+    "empty": {
+      "title": "เริ่มบันทึกบุ๊กมาร์ก",
+      "description": "AllMarks ใช้บุ๊กมาร์กเล็ตที่บันทึกเว็บไซต์ใดก็ได้ในคลิกเดียว",
+      "installButton": "📌 ติดตั้ง AllMarks",
+      "alreadyInstalled": "ติดตั้งแล้วใช่ไหม? คลิก 📌 บนเว็บไซต์อื่น"
+    },
+    "bookmarkletModal": {
+      "title": "ติดตั้งบุ๊กมาร์กเล็ต",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ ลากปุ่มนี้ไปยังแถบบุ๊กมาร์กของเบราว์เซอร์",
+      "barHint": "ถ้ามองไม่เห็นแถบบุ๊กมาร์ก:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "วิธีใช้งาน",
+      "usageStep1": "1. เปิดเว็บไซต์ที่ต้องการบันทึก",
+      "usageStep2": "2. คลิก 📌 ในแถบบุ๊กมาร์ก",
+      "usageStep3": "3. เลือกโฟลเดอร์ → บันทึก",
+      "closeLabel": "ปิด"
+    },
+    "tweet": {
+      "deleted": "โพสต์นี้ถูกลบหรือเป็นแบบส่วนตัว",
+      "loading": "กำลังโหลด..."
+    },
+    "video": {
+      "play": "เล่น",
+      "thumbnailAlt": "ภาพตัวอย่างวิดีโอ"
+    },
+    "lightbox": {
+      "close": "ปิด",
+      "openSource": "เปิดหน้าต้นฉบับ"
     },
     "slider": {
-      "tooltipClick": "คลิกเพื่อกระโดด",
-      "tooltipShift": "Shift เพื่อเร็ว"
+      "tooltipClick": "คลิกเพื่อกระโดดไป",
+      "tooltipShift": "กด Shift เพื่อเลื่อนเร็ว"
     },
     "chrome": {
       "tune": "TUNE",
@@ -33,33 +89,52 @@
     }
   },
   "share": {
-    "defaultText": "ทำคอลลาจจากบุ๊กมาร์กแล้วสวยมาก ✨ #AllMarks"
+    "defaultText": "ลองทำคอลลาจบุ๊กมาร์กดู ออกมาสวยมาก ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "กำลังบันทึก…",
+      "saved": "บันทึกไปยัง Inbox แล้ว",
+      "error": "บันทึกไม่สำเร็จ"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "ไม่มีบุ๊กมาร์กให้จัดเรียง",
+    "empty_cta": "กลับไปที่บอร์ด",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ แท็กใหม่",
+    "tagNamePlaceholder": "ชื่อแท็ก",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "จัดเรียงเสร็จแล้ว",
+    "done_back": "กลับไปที่บอร์ด"
   },
   "undo": {
-    "reorder": "ยกเลิกการจัดเรียง",
-    "delete": "ยกเลิกการลบ",
-    "resize": "ยกเลิกการเปลี่ยนขนาด",
-    "add": "ยกเลิกการเพิ่ม",
-    "cardWidth": "ยกเลิกขนาด",
-    "cardGap": "ยกเลิกระยะห่าง",
-    "tunePreset": "ยกเลิกพรีเซ็ต"
+    "reorder": "เลิกทำการจัดเรียงแล้ว",
+    "delete": "เลิกทำการลบแล้ว",
+    "resize": "เลิกทำการปรับขนาดแล้ว",
+    "add": "เลิกทำการเพิ่มแล้ว",
+    "cardWidth": "เลิกทำขนาดแล้ว",
+    "cardGap": "เลิกทำระยะห่างแล้ว",
+    "tunePreset": "เลิกทำพรีเซ็ตแล้ว"
   },
   "redo": {
-    "reorder": "ทำซ้ำการจัดเรียง",
-    "delete": "ทำซ้ำการลบ",
-    "resize": "ทำซ้ำการเปลี่ยนขนาด",
-    "add": "ทำซ้ำการเพิ่ม",
-    "cardWidth": "ทำซ้ำขนาด",
-    "cardGap": "ทำซ้ำระยะห่าง",
-    "tunePreset": "ทำซ้ำพรีเซ็ต"
+    "reorder": "ทำซ้ำการจัดเรียงแล้ว",
+    "delete": "ทำซ้ำการลบแล้ว",
+    "resize": "ทำซ้ำการปรับขนาดแล้ว",
+    "add": "ทำซ้ำการเพิ่มแล้ว",
+    "cardWidth": "ทำซ้ำขนาดแล้ว",
+    "cardGap": "ทำซ้ำระยะห่างแล้ว",
+    "tunePreset": "ทำซ้ำพรีเซ็ตแล้ว"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "ล้างตัวกรองทั้งหมด",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "เปิดการจัดการแท็ก"
   }
 }

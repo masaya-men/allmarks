@@ -4,7 +4,7 @@ import { useEffect, useRef, type MouseEvent as ReactMouseEvent, type ReactElemen
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useDragReorder } from '@/lib/board/use-drag-reorder'
 import { InlineTagRenameInput } from '@/components/board/InlineTagRenameInput'
-import { NewMoodInput } from './NewMoodInput'
+import { NewTagInput } from './NewTagInput'
 import styles from './TagPicker.module.css'
 
 /** Keyboard handler hook for 1-9 armed-tag toggle, Space → No, Z → undo.
@@ -38,7 +38,7 @@ export function useTagPickerKeys({
 
 /** Top tag strip: all tags as chips, click to toggle "armed" state.
  *  Armed tags get applied together when the user does a Yes swipe.
- *  Plus a NewMoodInput for inline tag creation.
+ *  Plus a NewTagInput for inline tag creation.
  *
  *  suggestedTagIds (optional): tags the HeuristicTagger flagged as
  *  matching the current card (= hashtag / domain / keyword). Rendered
@@ -178,7 +178,7 @@ export function TopTagStrip({
           </button>
         )
       })}
-      {showAddButton && onCreate && <NewMoodInput onCreate={onCreate} />}
+      {showAddButton && onCreate && <NewTagInput onCreate={onCreate} />}
     </div>
   )
 }

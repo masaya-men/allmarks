@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "Закладки × Коллаж"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
-    "urlPlaceholder": "Вставить URL...",
+    "urlPlaceholder": "Вставьте ссылку...",
     "save": "Сохранить",
-    "exportImage": "Сохранить как изображение",
-    "shareX": "Поделиться в X",
     "randomPick": "Случайный выбор",
-    "bgTheme": "Тема фона",
     "newFolder": "+ Новая папка",
-    "folderNamePlaceholder": "Имя папки...",
-    "emptyState": "Вставьте URL, чтобы добавить первую закладку",
+    "folderNamePlaceholder": "Название папки...",
+    "emptyState": "Вставьте ссылку, чтобы добавить первую закладку",
     "theme": {
-      "dottedNotebook": "Точечная Тетрадь",
-      "gridPaper": "Миллиметровая Бумага"
+      "dottedNotebook": "Точечный блокнот",
+      "gridPaper": "Бумага в клетку"
+    },
+    "filter": {
+      "label": "Все",
+      "all": "Все",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Вид",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Поиск...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "Все",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ Новый тег",
+      "triageCta": "Начать сортировку",
+      "collapseAria": "Свернуть",
+      "expandAria": "Развернуть",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Букмарклет",
+      "bookmarkletHint": "Сохраняйте с любого сайта в один клик"
+    },
+    "empty": {
+      "title": "Начните собирать закладки",
+      "description": "AllMarks использует букмарклет, который сохраняет любой сайт в один клик",
+      "installButton": "📌 Установить AllMarks",
+      "alreadyInstalled": "Уже установлен? Нажмите 📌 на другом сайте"
+    },
+    "bookmarkletModal": {
+      "title": "Установите букмарклет",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Перетащите это на панель закладок браузера",
+      "barHint": "Если панель закладок не видна:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "Как пользоваться",
+      "usageStep1": "1. Откройте сайт, который хотите сохранить",
+      "usageStep2": "2. Нажмите 📌 на панели закладок",
+      "usageStep3": "3. Выберите папку → сохранить",
+      "closeLabel": "Закрыть"
+    },
+    "tweet": {
+      "deleted": "Эта запись удалена или закрыта",
+      "loading": "Загрузка..."
+    },
+    "video": {
+      "play": "Смотреть",
+      "thumbnailAlt": "Превью видео"
+    },
+    "lightbox": {
+      "close": "Закрыть",
+      "openSource": "Открыть оригинальную страницу"
     },
     "slider": {
-      "tooltipClick": "Клик — прыжок",
-      "tooltipShift": "Shift — быстро"
+      "tooltipClick": "Нажмите, чтобы перейти",
+      "tooltipShift": "Shift — для ускорения"
     },
     "chrome": {
       "tune": "TUNE",
@@ -29,37 +85,56 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "Сбросить к значениям по умолчанию"
+      "reset_tooltip": "Сбросить к настройкам по умолчанию"
     }
   },
   "share": {
-    "defaultText": "Сделал коллаж из закладок — получилось потрясающе ✨ #AllMarks"
+    "defaultText": "Сделал(а) коллаж из закладок, и получилось потрясающе ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Сохранение…",
+      "saved": "Сохранено в Inbox",
+      "error": "Не удалось сохранить"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "Нет закладок для сортировки",
+    "empty_cta": "Назад к доске",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ Новый тег",
+    "tagNamePlaceholder": "Название тега",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Сортировка завершена",
+    "done_back": "Назад к доске"
   },
   "undo": {
-    "reorder": "Перестановка отменена",
+    "reorder": "Порядок отменён",
     "delete": "Удаление отменено",
     "resize": "Изменение размера отменено",
     "add": "Добавление отменено",
     "cardWidth": "Размер отменён",
-    "cardGap": "Промежуток отменён",
+    "cardGap": "Отступ отменён",
     "tunePreset": "Пресет отменён"
   },
   "redo": {
-    "reorder": "Перестановка повторена",
-    "delete": "Удаление повторено",
-    "resize": "Изменение размера повторено",
-    "add": "Добавление повторено",
-    "cardWidth": "Размер повторён",
-    "cardGap": "Промежуток повторён",
-    "tunePreset": "Пресет повторён"
+    "reorder": "Порядок возвращён",
+    "delete": "Удаление возвращено",
+    "resize": "Изменение размера возвращено",
+    "add": "Добавление возвращено",
+    "cardWidth": "Размер возвращён",
+    "cardGap": "Отступ возвращён",
+    "tunePreset": "Пресет возвращён"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "Сбросить все фильтры",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "Открыть управление тегами"
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactElement } from 'react'
-import styles from './NewMoodInput.module.css'
+import styles from './NewTagInput.module.css'
 
 type Props = {
   readonly onCreate: (name: string) => void
@@ -11,7 +11,7 @@ type Props = {
  *  click. Label matches the board CardsLayer + TAG affordance so users
  *  see one vocabulary across the app. Esc cancels, Enter commits, blur
  *  also commits when the field has a value. */
-export function NewMoodInput({ onCreate }: Props): ReactElement {
+export function NewTagInput({ onCreate }: Props): ReactElement {
   const [expanded, setExpanded] = useState(false)
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement | null>(null)

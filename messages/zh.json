@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "书签 × 拼贴"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
-    "urlPlaceholder": "粘贴网址...",
+    "urlPlaceholder": "粘贴网址……",
     "save": "保存",
-    "exportImage": "保存为图片",
-    "shareX": "分享到 X",
-    "randomPick": "随机抽取",
-    "bgTheme": "背景主题",
+    "randomPick": "随机挑选",
     "newFolder": "+ 新建文件夹",
-    "folderNamePlaceholder": "文件夹名称...",
-    "emptyState": "粘贴网址来添加你的第一个书签",
+    "folderNamePlaceholder": "文件夹名称……",
+    "emptyState": "粘贴网址，添加你的第一个书签",
     "theme": {
-      "dottedNotebook": "点线笔记本",
+      "dottedNotebook": "圆点笔记本",
       "gridPaper": "方格纸"
+    },
+    "filter": {
+      "label": "全部",
+      "all": "全部",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "显示",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "搜索……",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "全部",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ 新建标签",
+      "triageCta": "开始整理",
+      "collapseAria": "收起",
+      "expandAria": "展开",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "书签小工具",
+      "bookmarkletHint": "在任意网站一键保存"
+    },
+    "empty": {
+      "title": "开始收藏书签",
+      "description": "AllMarks 通过书签小工具，在任意网站一键保存",
+      "installButton": "📌 安装 AllMarks",
+      "alreadyInstalled": "已经安装了？在其他网站点击 📌 试试"
+    },
+    "bookmarkletModal": {
+      "title": "安装书签小工具",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ 把它拖到浏览器的书签栏",
+      "barHint": "如果看不到书签栏：",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "使用方法",
+      "usageStep1": "1. 打开想要保存的网站",
+      "usageStep2": "2. 点击书签栏中的 📌",
+      "usageStep3": "3. 选择文件夹 → 保存",
+      "closeLabel": "关闭"
+    },
+    "tweet": {
+      "deleted": "该帖子已删除或为私密内容",
+      "loading": "加载中……"
+    },
+    "video": {
+      "play": "播放",
+      "thumbnailAlt": "视频缩略图"
+    },
+    "lightbox": {
+      "close": "关闭",
+      "openSource": "打开原始页面"
     },
     "slider": {
       "tooltipClick": "点击跳转",
-      "tooltipShift": "Shift 快速"
+      "tooltipShift": "按住 Shift 加速"
     },
     "chrome": {
       "tune": "TUNE",
@@ -29,37 +85,56 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "重置为默认值"
+      "reset_tooltip": "恢复默认值"
     }
   },
   "share": {
-    "defaultText": "用书签做了一个拼贴画，太棒了 ✨ #AllMarks"
+    "defaultText": "做了一个书签拼贴，效果超惊艳 ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "保存中……",
+      "saved": "已保存到 Inbox",
+      "error": "保存失败"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "没有可整理的书签",
+    "empty_cta": "返回看板",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ 新建标签",
+    "tagNamePlaceholder": "标签名称",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "整理完成",
+    "done_back": "返回看板"
   },
   "undo": {
-    "reorder": "已撤销排序",
+    "reorder": "已撤销重新排序",
     "delete": "已撤销删除",
-    "resize": "已撤销大小调整",
+    "resize": "已撤销调整大小",
     "add": "已撤销添加",
-    "cardWidth": "已撤销大小",
-    "cardGap": "已撤销间距",
+    "cardWidth": "已撤销尺寸调整",
+    "cardGap": "已撤销间距调整",
     "tunePreset": "已撤销预设"
   },
   "redo": {
-    "reorder": "已重做排序",
+    "reorder": "已重做重新排序",
     "delete": "已重做删除",
-    "resize": "已重做大小调整",
+    "resize": "已重做调整大小",
     "add": "已重做添加",
-    "cardWidth": "已重做大小",
-    "cardGap": "已重做间距",
+    "cardWidth": "已重做尺寸调整",
+    "cardGap": "已重做间距调整",
     "tunePreset": "已重做预设"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "清除所有筛选",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "打开标签管理"
   }
 }

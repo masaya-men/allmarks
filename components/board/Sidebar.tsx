@@ -84,7 +84,7 @@ export function Sidebar({
 
           <BookmarkletInstall onClick={onOpenBookmarkletModal ?? (() => {})} />
 
-          <div className={styles.sectionHeader}>{t('board.sidebar.moodsHeader')}</div>
+          <div className={styles.sectionHeader}>{t('board.sidebar.tagsHeader')}</div>
           {tags.map((m) => {
             const f: BoardFilter = { kind: 'tags', tagIds: [m.id], mode: 'and' }
             const active = isActiveTag(m.id)
@@ -92,14 +92,14 @@ export function Sidebar({
               <button key={m.id} type="button"
                 className={`${styles.navItem} ${active ? styles.active : ''}`.trim()}
                 onClick={() => onFilterChange(f)}>
-                <span className={styles.moodDot} style={{ background: m.color }} />
+                <span className={styles.tagDot} style={{ background: m.color }} />
                 <span className={styles.navLabel}>{m.name}</span>
                 <span className={styles.navCount}>{tagCounts[m.id] ?? 0}</span>
               </button>
             )
           })}
-          <button type="button" className={styles.newMoodBtn} onClick={onCreateTag}>
-            {t('board.sidebar.newMood')}
+          <button type="button" className={styles.newTagBtn} onClick={onCreateTag}>
+            {t('board.sidebar.newTag')}
           </button>
 
           <div className={styles.spacer} />

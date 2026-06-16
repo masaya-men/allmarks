@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "إشارات مرجعية × كولاج"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
-    "urlPlaceholder": "...الصق الرابط",
+    "urlPlaceholder": "الصق الرابط...",
     "save": "حفظ",
-    "exportImage": "حفظ كصورة",
-    "shareX": "مشاركة على X",
     "randomPick": "اختيار عشوائي",
-    "bgTheme": "سمة الخلفية",
     "newFolder": "+ مجلد جديد",
-    "folderNamePlaceholder": "...اسم المجلد",
+    "folderNamePlaceholder": "اسم المجلد...",
     "emptyState": "الصق رابطًا لإضافة أول إشارة مرجعية",
     "theme": {
-      "dottedNotebook": "دفتر منقط",
+      "dottedNotebook": "دفتر منقّط",
       "gridPaper": "ورق مربعات"
     },
+    "filter": {
+      "label": "الكل",
+      "all": "الكل",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "العرض",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "بحث...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "الكل",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ وسم جديد",
+      "triageCta": "ابدأ الترتيب",
+      "collapseAria": "طيّ",
+      "expandAria": "توسيع",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "أداة الحفظ",
+      "bookmarkletHint": "احفظ من أي موقع بنقرة واحدة"
+    },
+    "empty": {
+      "title": "ابدأ بحفظ الإشارات",
+      "description": "يستخدم AllMarks أداة حفظ تخزّن أي موقع بنقرة واحدة",
+      "installButton": "📌 تثبيت AllMarks",
+      "alreadyInstalled": "ثبّتَها من قبل؟ انقر 📌 في موقع آخر"
+    },
+    "bookmarkletModal": {
+      "title": "تثبيت أداة الحفظ",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ اسحب هذا إلى شريط الإشارات في متصفحك",
+      "barHint": "إذا لم تجد شريط الإشارات:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "طريقة الاستخدام",
+      "usageStep1": "١. افتح الموقع الذي تريد حفظه",
+      "usageStep2": "٢. انقر 📌 في شريط الإشارات",
+      "usageStep3": "٣. اختر مجلدًا ← احفظ",
+      "closeLabel": "إغلاق"
+    },
+    "tweet": {
+      "deleted": "تم حذف هذا المنشور أو أنه خاص",
+      "loading": "جارٍ التحميل..."
+    },
+    "video": {
+      "play": "تشغيل",
+      "thumbnailAlt": "صورة مصغّرة للفيديو"
+    },
+    "lightbox": {
+      "close": "إغلاق",
+      "openSource": "فتح الصفحة الأصلية"
+    },
     "slider": {
-      "tooltipClick": "انقر للقفز",
-      "tooltipShift": "Shift للسرعة"
+      "tooltipClick": "انقر للانتقال",
+      "tooltipShift": "اضغط Shift للتسريع"
     },
     "chrome": {
       "tune": "TUNE",
@@ -29,11 +85,30 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "إعادة تعيين القيم"
+      "reset_tooltip": "إعادة التعيين إلى الإعدادات الافتراضية"
     }
   },
   "share": {
-    "defaultText": "صنعت كولاج من الإشارات المرجعية وكان رائعًا ✨ #AllMarks"
+    "defaultText": "صنعتُ كولاجًا من إشاراتي المرجعية وجاء رائعًا ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "جارٍ الحفظ…",
+      "saved": "تم الحفظ في Inbox",
+      "error": "فشل الحفظ"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "لا توجد إشارات للترتيب",
+    "empty_cta": "العودة إلى اللوحة",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ وسم جديد",
+    "tagNamePlaceholder": "اسم الوسم",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "اكتمل الترتيب",
+    "done_back": "العودة إلى اللوحة"
   },
   "undo": {
     "reorder": "تم التراجع عن إعادة الترتيب",
@@ -41,25 +116,25 @@
     "resize": "تم التراجع عن تغيير الحجم",
     "add": "تم التراجع عن الإضافة",
     "cardWidth": "تم التراجع عن الحجم",
-    "cardGap": "تم التراجع عن المسافة",
+    "cardGap": "تم التراجع عن التباعد",
     "tunePreset": "تم التراجع عن الإعداد المسبق"
   },
   "redo": {
-    "reorder": "تم إعادة الترتيب",
-    "delete": "تم إعادة الحذف",
-    "resize": "تم إعادة تغيير الحجم",
-    "add": "تم إعادة الإضافة",
-    "cardWidth": "تم إعادة الحجم",
-    "cardGap": "تم إعادة المسافة",
-    "tunePreset": "تم إعادة الإعداد المسبق"
+    "reorder": "تمت إعادة الترتيب",
+    "delete": "تمت إعادة الحذف",
+    "resize": "تمت إعادة تغيير الحجم",
+    "add": "تمت إعادة الإضافة",
+    "cardWidth": "تمت إعادة الحجم",
+    "cardGap": "تمت إعادة التباعد",
+    "tunePreset": "تمت إعادة الإعداد المسبق"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "مسح كل عوامل التصفية",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "فتح إدارة الوسوم"
   }
 }

@@ -1,24 +1,80 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "북마크 × 콜라주"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
     "urlPlaceholder": "URL 붙여넣기...",
     "save": "저장",
-    "exportImage": "이미지로 저장",
-    "shareX": "X에 공유",
-    "randomPick": "랜덤 뽑기",
-    "bgTheme": "배경 테마",
+    "randomPick": "랜덤 추천",
     "newFolder": "+ 새 폴더",
     "folderNamePlaceholder": "폴더 이름...",
-    "emptyState": "URL을 붙여넣어 첫 번째 북마크를 추가하세요",
+    "emptyState": "URL을 붙여넣어 첫 북마크를 추가하세요",
     "theme": {
-      "dottedNotebook": "점선 노트",
-      "gridPaper": "모눈종이"
+      "dottedNotebook": "도트 노트",
+      "gridPaper": "모눈 종이"
+    },
+    "filter": {
+      "label": "전체",
+      "all": "전체",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "표시",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "검색...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "전체",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ 새 태그",
+      "triageCta": "정리 시작",
+      "collapseAria": "접기",
+      "expandAria": "펼치기",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "북마클릿",
+      "bookmarkletHint": "어떤 사이트든 한 번에 저장"
+    },
+    "empty": {
+      "title": "북마크 시작하기",
+      "description": "AllMarks는 어떤 사이트든 한 번에 저장하는 북마클릿을 사용합니다",
+      "installButton": "📌 AllMarks 설치",
+      "alreadyInstalled": "이미 설치하셨나요? 다른 사이트에서 📌를 클릭하세요"
+    },
+    "bookmarkletModal": {
+      "title": "북마클릿 설치",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ 이것을 브라우저 북마크 바로 드래그하세요",
+      "barHint": "북마크 바가 보이지 않을 때:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "사용 방법",
+      "usageStep1": "1. 저장할 사이트를 엽니다",
+      "usageStep2": "2. 북마크 바에서 📌를 클릭합니다",
+      "usageStep3": "3. 폴더 선택 → 저장",
+      "closeLabel": "닫기"
+    },
+    "tweet": {
+      "deleted": "삭제되었거나 비공개인 게시물입니다",
+      "loading": "불러오는 중..."
+    },
+    "video": {
+      "play": "재생",
+      "thumbnailAlt": "동영상 썸네일"
+    },
+    "lightbox": {
+      "close": "닫기",
+      "openSource": "원본 페이지 열기"
     },
     "slider": {
-      "tooltipClick": "클릭으로 점프",
+      "tooltipClick": "클릭해서 이동",
       "tooltipShift": "Shift로 빠르게"
     },
     "chrome": {
@@ -29,20 +85,39 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "기본값으로 재설정"
+      "reset_tooltip": "기본값으로 초기화"
     }
   },
   "share": {
-    "defaultText": "북마크로 콜라주를 만들었는데 최고예요 ✨ #AllMarks"
+    "defaultText": "북마크 콜라주를 만들었더니 너무 멋지게 나왔어요 ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "저장 중…",
+      "saved": "Inbox에 저장됨",
+      "error": "저장에 실패했습니다"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "정리할 북마크가 없습니다",
+    "empty_cta": "보드로 돌아가기",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ 새 태그",
+    "tagNamePlaceholder": "태그 이름",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "정리 완료",
+    "done_back": "보드로 돌아가기"
   },
   "undo": {
-    "reorder": "정렬 취소됨",
-    "delete": "삭제 취소됨",
-    "resize": "크기 변경 취소됨",
-    "add": "추가 취소됨",
-    "cardWidth": "크기 취소됨",
-    "cardGap": "간격 취소됨",
-    "tunePreset": "프리셋 취소됨"
+    "reorder": "정렬 되돌림",
+    "delete": "삭제 되돌림",
+    "resize": "크기 변경 되돌림",
+    "add": "추가 되돌림",
+    "cardWidth": "크기 되돌림",
+    "cardGap": "간격 되돌림",
+    "tunePreset": "프리셋 되돌림"
   },
   "redo": {
     "reorder": "정렬 다시 실행",
@@ -56,10 +131,10 @@
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "모든 필터 지우기",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "태그 관리 열기"
   }
 }

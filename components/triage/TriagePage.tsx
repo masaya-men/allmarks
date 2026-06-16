@@ -7,7 +7,7 @@ import { useTags } from '@/lib/storage/use-tags'
 import { t } from '@/lib/i18n/t'
 import { TriageCard } from './TriageCard'
 import { TopTagStrip, useTagPickerKeys } from './TagPicker'
-import { NewMoodInput } from './NewMoodInput'
+import { NewTagInput } from './NewTagInput'
 import { AmbientBackdrop, type SwipeDecision } from './AmbientBackdrop'
 import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import { TagContextMenu } from './TagContextMenu'
@@ -728,7 +728,7 @@ export function TriagePage(): ReactElement {
             always visible and never caught by the fade no matter how many
             tags exist. */}
         <div className={styles.addTagPinned}>
-          <NewMoodInput onCreate={handleCreateTagAddArmed} />
+          <NewTagInput onCreate={handleCreateTagAddArmed} />
         </div>
       </div>
       <button type="button" className={styles.outerBackBtn} onClick={exit}>ESC</button>

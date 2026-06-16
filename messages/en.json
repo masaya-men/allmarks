@@ -6,16 +6,72 @@
   "board": {
     "urlPlaceholder": "Paste URL...",
     "save": "Save",
-    "exportImage": "Save as Image",
-    "shareX": "Share on X",
     "randomPick": "Random Pick",
-    "bgTheme": "Background Theme",
     "newFolder": "+ New Folder",
     "folderNamePlaceholder": "Folder name...",
     "emptyState": "Paste a URL to add your first bookmark",
     "theme": {
       "dottedNotebook": "Dotted Notebook",
       "gridPaper": "Grid Paper"
+    },
+    "filter": {
+      "label": "All",
+      "all": "All",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Display",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Search...",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "All",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ New Tag",
+      "triageCta": "Start sorting",
+      "collapseAria": "Collapse",
+      "expandAria": "Expand",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Bookmarklet",
+      "bookmarkletHint": "Save from any site in one click"
+    },
+    "empty": {
+      "title": "Start bookmarking",
+      "description": "AllMarks uses a bookmarklet that saves any site in one click",
+      "installButton": "📌 Install AllMarks",
+      "alreadyInstalled": "Already installed? Click 📌 on another site"
+    },
+    "bookmarkletModal": {
+      "title": "Install the bookmarklet",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Drag this to your browser's bookmarks bar",
+      "barHint": "If you can't see the bookmarks bar:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "How to use it",
+      "usageStep1": "1. Open a site you want to save",
+      "usageStep2": "2. Click 📌 in the bookmarks bar",
+      "usageStep3": "3. Pick a folder → save",
+      "closeLabel": "Close"
+    },
+    "tweet": {
+      "deleted": "This post was deleted or is private",
+      "loading": "Loading..."
+    },
+    "video": {
+      "play": "Play",
+      "thumbnailAlt": "Video thumbnail"
+    },
+    "lightbox": {
+      "close": "Close",
+      "openSource": "Open original page"
     },
     "slider": {
       "tooltipClick": "Click to jump",
@@ -33,7 +89,26 @@
     }
   },
   "share": {
-    "defaultText": "Made a bookmark collage and it's amazing ✨ #AllMarks"
+    "defaultText": "Made a bookmark collage and it turned out amazing ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Saving…",
+      "saved": "Saved to Inbox",
+      "error": "Failed to save"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "No bookmarks to sort",
+    "empty_cta": "Back to board",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ New Tag",
+    "tagNamePlaceholder": "Tag name",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Sorting complete",
+    "done_back": "Back to board"
   },
   "undo": {
     "reorder": "Reorder undone",

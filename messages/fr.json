@@ -1,25 +1,81 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "Signets × Collage"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
-    "urlPlaceholder": "Coller l'URL...",
+    "urlPlaceholder": "Collez une URL…",
     "save": "Enregistrer",
-    "exportImage": "Enregistrer en image",
-    "shareX": "Partager sur X",
-    "randomPick": "Tirage aléatoire",
-    "bgTheme": "Thème de fond",
+    "randomPick": "Au hasard",
     "newFolder": "+ Nouveau dossier",
-    "folderNamePlaceholder": "Nom du dossier...",
-    "emptyState": "Collez une URL pour ajouter votre premier signet",
+    "folderNamePlaceholder": "Nom du dossier…",
+    "emptyState": "Collez une URL pour ajouter votre premier favori",
     "theme": {
-      "dottedNotebook": "Carnet Pointillé",
-      "gridPaper": "Papier Quadrillé"
+      "dottedNotebook": "Carnet pointillé",
+      "gridPaper": "Papier quadrillé"
+    },
+    "filter": {
+      "label": "Tous",
+      "all": "Tous",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Affichage",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Rechercher…",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "Tous",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ Nouveau tag",
+      "triageCta": "Commencer le tri",
+      "collapseAria": "Réduire",
+      "expandAria": "Développer",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Bookmarklet",
+      "bookmarkletHint": "Enregistrez n'importe quel site en un clic"
+    },
+    "empty": {
+      "title": "Commencez à enregistrer",
+      "description": "AllMarks utilise un bookmarklet qui enregistre n'importe quel site en un clic",
+      "installButton": "📌 Installer AllMarks",
+      "alreadyInstalled": "Déjà installé ? Cliquez sur 📌 sur un autre site"
+    },
+    "bookmarkletModal": {
+      "title": "Installer le bookmarklet",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Glissez ceci dans la barre de favoris de votre navigateur",
+      "barHint": "Si la barre de favoris n'apparaît pas :",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "Comment l'utiliser",
+      "usageStep1": "1. Ouvrez un site à enregistrer",
+      "usageStep2": "2. Cliquez sur 📌 dans la barre de favoris",
+      "usageStep3": "3. Choisissez un dossier → enregistrez",
+      "closeLabel": "Fermer"
+    },
+    "tweet": {
+      "deleted": "Ce post a été supprimé ou est privé",
+      "loading": "Chargement…"
+    },
+    "video": {
+      "play": "Lire",
+      "thumbnailAlt": "Miniature de la vidéo"
+    },
+    "lightbox": {
+      "close": "Fermer",
+      "openSource": "Ouvrir la page d'origine"
     },
     "slider": {
-      "tooltipClick": "Clic pour sauter",
-      "tooltipShift": "Shift pour rapide"
+      "tooltipClick": "Cliquez pour aller à",
+      "tooltipShift": "Shift pour accélérer"
     },
     "chrome": {
       "tune": "TUNE",
@@ -29,11 +85,30 @@
     "tune": {
       "width": "W",
       "gap": "G",
-      "reset_tooltip": "Réinitialiser"
+      "reset_tooltip": "Réinitialiser les valeurs par défaut"
     }
   },
   "share": {
-    "defaultText": "J'ai fait un collage de signets et c'est magnifique ✨ #AllMarks"
+    "defaultText": "J'ai créé un collage de favoris et le rendu est superbe ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Enregistrement…",
+      "saved": "Enregistré dans Inbox",
+      "error": "Échec de l'enregistrement"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "Aucun favori à trier",
+    "empty_cta": "Retour au board",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ Nouveau tag",
+    "tagNamePlaceholder": "Nom du tag",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Tri terminé",
+    "done_back": "Retour au board"
   },
   "undo": {
     "reorder": "Réorganisation annulée",
@@ -41,7 +116,7 @@
     "resize": "Redimensionnement annulé",
     "add": "Ajout annulé",
     "cardWidth": "Taille annulée",
-    "cardGap": "Écart annulé",
+    "cardGap": "Espacement annulé",
     "tunePreset": "Préréglage annulé"
   },
   "redo": {
@@ -50,16 +125,16 @@
     "resize": "Redimensionnement rétabli",
     "add": "Ajout rétabli",
     "cardWidth": "Taille rétablie",
-    "cardGap": "Écart rétabli",
+    "cardGap": "Espacement rétabli",
     "tunePreset": "Préréglage rétabli"
   },
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "Effacer tous les filtres",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "Ouvrir la gestion des tags"
   }
 }

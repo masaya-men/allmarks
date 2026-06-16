@@ -1,24 +1,80 @@
 {
   "app": {
     "name": "AllMarks",
-    "tagline": "Lesezeichen × Collage"
+    "tagline": "Bookmark × Collage"
   },
   "board": {
-    "urlPlaceholder": "URL einfügen...",
+    "urlPlaceholder": "URL einfügen …",
     "save": "Speichern",
-    "exportImage": "Als Bild speichern",
-    "shareX": "Auf X teilen",
-    "randomPick": "Zufällige Auswahl",
-    "bgTheme": "Hintergrundthema",
+    "randomPick": "Zufallsauswahl",
     "newFolder": "+ Neuer Ordner",
-    "folderNamePlaceholder": "Ordnername...",
-    "emptyState": "Füge eine URL ein, um dein erstes Lesezeichen hinzuzufügen",
+    "folderNamePlaceholder": "Ordnername …",
+    "emptyState": "Füge eine URL ein, um dein erstes Bookmark anzulegen",
     "theme": {
-      "dottedNotebook": "Punktiertes Notizbuch",
-      "gridPaper": "Rasterpapier"
+      "dottedNotebook": "Punktraster",
+      "gridPaper": "Karopapier"
+    },
+    "filter": {
+      "label": "Alle",
+      "all": "Alle",
+      "inbox": "Inbox",
+      "archive": "Archive"
+    },
+    "display": {
+      "label": "Ansicht",
+      "visual": "Visual",
+      "editorial": "Editorial",
+      "native": "Native"
+    },
+    "sidebar": {
+      "searchPlaceholder": "Suchen …",
+      "searchHint": "⌘K",
+      "libraryHeader": "LIBRARY",
+      "all": "Alle",
+      "inbox": "Inbox",
+      "archive": "Archive",
+      "tagsHeader": "TAGS",
+      "newTag": "+ Neuer Tag",
+      "triageCta": "Sortieren starten",
+      "collapseAria": "Einklappen",
+      "expandAria": "Ausklappen",
+      "signature": "BOARD · 2026",
+      "bookmarklet": "Bookmarklet",
+      "bookmarkletHint": "Mit einem Klick von jeder Seite speichern"
+    },
+    "empty": {
+      "title": "Leg mit dem Bookmarken los",
+      "description": "AllMarks nutzt ein Bookmarklet, das jede Seite mit einem Klick speichert",
+      "installButton": "📌 AllMarks installieren",
+      "alreadyInstalled": "Schon installiert? Klick auf einer anderen Seite auf 📌"
+    },
+    "bookmarkletModal": {
+      "title": "Bookmarklet installieren",
+      "linkLabel": "📌 AllMarks",
+      "dragInstruction": "↑ Zieh dies in die Lesezeichenleiste deines Browsers",
+      "barHint": "Falls du die Lesezeichenleiste nicht siehst:",
+      "barShortcutWindows": "Windows: Ctrl + Shift + B",
+      "barShortcutMac": "Mac: ⌘ + Shift + B",
+      "usageTitle": "So funktioniert's",
+      "usageStep1": "1. Öffne eine Seite, die du speichern möchtest",
+      "usageStep2": "2. Klick in der Lesezeichenleiste auf 📌",
+      "usageStep3": "3. Ordner wählen → speichern",
+      "closeLabel": "Schließen"
+    },
+    "tweet": {
+      "deleted": "Dieser Beitrag wurde gelöscht oder ist privat",
+      "loading": "Wird geladen …"
+    },
+    "video": {
+      "play": "Abspielen",
+      "thumbnailAlt": "Video-Vorschaubild"
+    },
+    "lightbox": {
+      "close": "Schließen",
+      "openSource": "Originalseite öffnen"
     },
     "slider": {
-      "tooltipClick": "Klick zum Springen",
+      "tooltipClick": "Klicken zum Springen",
       "tooltipShift": "Shift für schnell"
     },
     "chrome": {
@@ -33,7 +89,26 @@
     }
   },
   "share": {
-    "defaultText": "Habe eine Lesezeichen-Collage erstellt und sie ist großartig ✨ #AllMarks"
+    "defaultText": "Hab eine Bookmark-Collage gemacht und sie ist richtig schön geworden ✨ #AllMarks"
+  },
+  "bookmarklet": {
+    "toast": {
+      "saving": "Wird gespeichert …",
+      "saved": "In der Inbox gespeichert",
+      "error": "Speichern fehlgeschlagen"
+    }
+  },
+  "triage": {
+    "progress": "{current} / {total}",
+    "empty": "Keine Bookmarks zum Sortieren",
+    "empty_cta": "Zurück zum Board",
+    "hint": "CLICK TO TOGGLE TAGS · SPACE TO SKIP · Z TO UNDO",
+    "newTag": "+ Neuer Tag",
+    "tagNamePlaceholder": "Tag-Name",
+    "skip": "Skip",
+    "undo": "Undo",
+    "done_title": "Sortieren abgeschlossen",
+    "done_back": "Zurück zum Board"
   },
   "undo": {
     "reorder": "Sortierung rückgängig gemacht",
@@ -56,10 +131,10 @@
   "tag": {
     "addLabel": "+ TAG",
     "newPlaceholder": "new tag…",
-    "filterClearAria": "Clear all filters",
+    "filterClearAria": "Alle Filter zurücksetzen",
     "modeAnd": "AND",
     "modeOr": "OR",
     "buttonLabel": "TAG",
-    "buttonAria": "Open tag management"
+    "buttonAria": "Tag-Verwaltung öffnen"
   }
 }
