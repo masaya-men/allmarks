@@ -55,11 +55,20 @@
 
 ### 部品の分け方（単位と責務）
 
-1. **タグ帯（共通部品・素のJS）** — `extension/` 配下に新規。チップ表示・`ALL`展開・タップ処理だけを担う。`extension/` の既存の素JS（フローティングボタン／カーソルピルと同じ流儀）で実装。ボタンにもカーソルピルにも同じ部品をぶら下げる。
-   - 入力：`{ bookmarkId, tags: [{id, name, color, suggested}], anchor(出す場所/向き) }`
+1. **タグ帯（共通部品・素のJS）** — `extension/` 配下に新規。チップ表示・`ALL`展開・タップ処理だけを担う。`extension/` の既存の素JS（フローティングボタン／カーソルピルと同じ流儀）で実装。ボタンにもカーソルピルにも同じ部品をぶら下げる。見た目は `--am-strip-*` CSS変数駆動（既定値内蔵）。
+   - 入力：`{ bookmarkId, tags: [{id, name, color}], currentTagIds, themeTokens, anchor(出す場所/向き) }`
    - 出力（コールバック）：`onAddTag(bookmarkId, tagId)` / `onDismiss()`
-2. **保存応答の拡張（offscreen / save 経路側）** — `bookmarkId` に加え「全タグ ＋ おすすめ順」を返す。`addTag` 要求を受けて本体に `addTagToBookmark` を書く。
+2. **保存応答の拡張（offscreen / save 経路側）** — `bookmarkId` に加え「全タグ ＋ おすすめ順」＋「現在テーマの色トークン」を返す。`addTag` 要求を受けて本体に `addTagToBookmark` を書く。
 3. **アンカー供給（ボタン側／ピル側）** — それぞれ「帯を出す座標と展開方向（端なら内側へ）」だけを共通部品に渡す。
+
+### トンマナ＝テーマ追従（user 要望、2026-06-16 追加）
+帯の見た目はAllMarksの現テーマに合わせ、将来のテーマ切替に自動追従させる。ただし帯はホスト頁（例：X）上の拡張DOMで、アプリ本体のCSS変数を直接読めない。
+
+- **方式**：`/save-iframe`（アプリ本体オリジン）で `getComputedStyle(document.documentElement)` から**解決済みの色値**（背景 `--bg-dark` / 前景 `--text-primary` / 枠 `--color-card-border` / ぼかし `--glass-blur` ＋ ✓緑は意味的定数 `#28F100`）を読み、保存応答にタグと一緒に相乗りさせて返す（[app/globals.css](../../../app/globals.css) `:root`）。
+- **帯側**：CSSは `--am-strip-*` 変数駆動（既定値＝ダーク）。受け取ったトークンを帯要素の inline style で上書き。`color-mix` で半透明化（Chrome ≥124、manifest `minimum_chrome_version`）。
+- **なぜ追従するか**：「どのテーマか」を判定せず**実際に解決された値**を読むので、色テーマ切替が将来実装された時に読み出す値が変わるだけで帯も自動で変わる。
+- **現状**：色テーマ切替UIは未配線（[app/layout.tsx](../../../app/layout.tsx) で `data-theme="dark"` 固定）＝今はダーク既定が流れる。切替実装時は `/save-iframe` がアクティブテーマを適用してから読む小フォロー 1 つで完成。
+- 注：[lib/board/board-config.ts](../../../lib/board/board-config.ts) の `BoardConfig.themeId`（dotted/grid）はスクロール方向・レイアウト用で**色とは別軸**。色は globals.css の CSS変数。
 
 ### 既存資産の流用
 - storage：`addBookmark`（[lib/storage/indexeddb.ts](../../../lib/storage/indexeddb.ts) L826）はタグ受け入れ済 / `addTagToBookmark`・`getAllTags`（[lib/storage/tags.ts](../../../lib/storage/tags.ts)）をそのまま使用。

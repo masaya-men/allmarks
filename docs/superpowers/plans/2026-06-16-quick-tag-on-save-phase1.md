@@ -4,7 +4,9 @@
 
 **Goal:** After an extension save, show a small tag-chip strip on whichever confirmation surface is visible (floating button or cursor pill); tapping a chip tags the just-saved bookmark, with an `ALL` expansion to the full tag list. No on-the-spot new-tag creation.
 
-**Architecture:** "Save-first" — the save runs unchanged (Inbox, `tags:[]`). The save response, computed in the `/save-iframe` page (allmarks.app origin), now also carries the user's existing tags ordered most-relevant-first plus the bookmark's current tag ids. That payload rides back through the existing offscreen router → `dispatch.js` → the tab message that drives the confirmation surface. The strip is rendered (inlined) in `content.js` (cursor pill) and `floating-button.js` (button). A chip tap sends an `add-tag-request` to the background, which round-trips through the same offscreen `/save-iframe` bridge to call `addTagToBookmark`. The UI shows ✓ optimistically.
+**Architecture:** "Save-first" — the save runs unchanged (Inbox, `tags:[]`). The save response, computed in the `/save-iframe` page (allmarks.app origin), now also carries: the user's existing tags ordered most-relevant-first, the bookmark's current tag ids, and **the active theme's resolved color tokens** (read live via `getComputedStyle` so the strip's tone follows whatever theme is active — no theme-id branching). That payload rides back through the existing offscreen router → `dispatch.js` → the tab message that drives the confirmation surface. The strip is rendered (inlined) in `content.js` (cursor pill) and `floating-button.js` (button), styled entirely from `--am-strip-*` CSS variables (defaults baked in CSS, overridden per-save from the theme tokens). A chip tap sends an `add-tag-request` to the background, which round-trips through the same offscreen `/save-iframe` bridge to call `addTagToBookmark`. The UI shows ✓ optimistically.
+
+**Theme requirement (user):** the strip must match AllMarks' current tone and be theme-switch-ready. Color theme switching is not yet wired in the app (`data-theme="dark"` is hardcoded), so today the tokens resolve to the dark default — but because we read resolved CSS values in `/save-iframe` and the strip is driven by CSS variables, the strip will auto-follow when theme switching lands (a future one-liner makes `/save-iframe` apply the active `BoardConfig` theme before reading). The applied-✓ color stays AllMarks green `#28f100` (semantic constant in the pill language), exposed as a variable so a future theme could override it.
 
 **Tech Stack:** Vanilla JS MV3 extension (no ES imports in content scripts — inline + a source-of-truth lib module kept in sync, mirroring `pill-state-machine.js`), Next.js `/save-iframe` React client, IndexedDB via `idb`, Zod for message schemas, Vitest + jsdom for unit tests.
 
@@ -201,6 +203,15 @@ import type { QuickTag } from '@/lib/tagger/order-tags-for-save'
 Replace the `SaveMessageResult` type (currently lines ~36-38) with:
 
 ```ts
+/** Resolved theme tokens for the host-page strip (ready-to-use CSS values). */
+export interface StripThemeTokens {
+  bg: string
+  fg: string
+  border: string
+  accent: string
+  blur: string
+}
+
 export type SaveMessageResult =
   | {
       type: 'booklage:save:result'
@@ -212,6 +223,8 @@ export type SaveMessageResult =
       tags?: QuickTag[]
       /** Tag ids already on this bookmark (marked ✓ in the strip). */
       currentTagIds?: string[]
+      /** Active theme's resolved tokens; strip auto-follows theme changes. */
+      themeTokens?: StripThemeTokens
     }
   | { type: 'booklage:save:result'; nonce: string; ok: false; error: string }
 ```
@@ -273,22 +286,47 @@ import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 
 - [ ] **Step 2: Add a helper inside the component (above the `handler` definition, inside the effect or as a module function)**
 
-Add this module-level function near the top of the file (after imports, before the component):
+Add this module-level code near the top of the file (after imports, before the component). It builds the tags **and** reads the active theme's resolved CSS tokens so the host-page strip matches the current theme and follows future theme switches:
 
 ```ts
 import type { BookmarkRecord } from '@/lib/storage/indexeddb'
-import type { IDBPDatabase } from 'idb'
+import type { StripThemeTokens } from '@/lib/utils/save-message'
 
-async function buildTagPayload(
-  db: IDBPDatabase<unknown>,
+type SaveDb = Awaited<ReturnType<typeof initDB>>
+
+/**
+ * Read the active theme's resolved tokens straight off the document. Because we
+ * read *computed* values (not a hardcoded palette), the strip auto-follows
+ * whatever theme is active — today the dark default, later any switched theme.
+ * The applied-✓ accent stays AllMarks green (semantic pill-language constant).
+ */
+function readThemeTokens(): StripThemeTokens {
+  const cs = getComputedStyle(document.documentElement)
+  const v = (name: string, fallback: string): string => {
+    const got = cs.getPropertyValue(name).trim()
+    return got || fallback
+  }
+  return {
+    bg: v('--bg-dark', '#0a0a0a'),
+    fg: v('--text-primary', '#f2f2f2'),
+    border: v('--color-card-border', 'rgba(255,255,255,0.12)'),
+    accent: '#28f100',
+    blur: v('--glass-blur', '8px'),
+  }
+}
+
+async function buildSavePayload(
+  db: SaveDb,
   bookmark: BookmarkRecord,
-): Promise<{ tags: ReturnType<typeof orderTagsForSave>; currentTagIds: string[] }> {
-  const [corpus, allTags] = await Promise.all([getAllBookmarks(db as never), getAllTags(db as never)])
-  return { tags: orderTagsForSave(bookmark, corpus, allTags), currentTagIds: bookmark.tags }
+): Promise<{ tags: ReturnType<typeof orderTagsForSave>; currentTagIds: string[]; themeTokens: StripThemeTokens }> {
+  const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+  return {
+    tags: orderTagsForSave(bookmark, corpus, allTags),
+    currentTagIds: bookmark.tags,
+    themeTokens: readThemeTokens(),
+  }
 }
 ```
-
-> Note: the existing file already types `db` via `initDB()`'s return. Match the existing local `db` type rather than `IDBPDatabase<unknown>` if tsc complains — use `Awaited<ReturnType<typeof initDB>>` for the param type.
 
 - [ ] **Step 3: Include the payload in the duplicate reply**
 
@@ -296,14 +334,14 @@ Replace the duplicate-branch reply (currently lines ~106-113):
 
 ```ts
           if (existing) {
-            const tagPayload = await buildTagPayload(db, existing)
+            const savePayload = await buildSavePayload(db, existing)
             reply({
               type: 'booklage:save:result',
               nonce: payload.nonce,
               ok: true,
               bookmarkId: existing.id,
               skipped: true,
-              ...tagPayload,
+              ...savePayload,
             })
             return
           }
@@ -315,8 +353,8 @@ Replace the fresh reply (currently line ~127):
 
 ```ts
         postBookmarkSaved({ bookmarkId: bm.id })
-        const tagPayload = await buildTagPayload(db, bm)
-        reply({ type: 'booklage:save:result', nonce: payload.nonce, ok: true, bookmarkId: bm.id, ...tagPayload })
+        const savePayload = await buildSavePayload(db, bm)
+        reply({ type: 'booklage:save:result', nonce: payload.nonce, ok: true, bookmarkId: bm.id, ...savePayload })
 ```
 
 - [ ] **Step 5: Verify types + build**
@@ -467,6 +505,7 @@ Replace the final state messages (lines ~131-136) with:
           bookmarkId: result.bookmarkId,
           tags: Array.isArray(result.tags) ? result.tags : [],
           currentTagIds: Array.isArray(result.currentTagIds) ? result.currentTagIds : [],
+          themeTokens: result.themeTokens || null,
         }
       : {}
   if (!isFloatingButton) {
@@ -614,11 +653,18 @@ git commit -m "feat(extension): pure tag-strip model (splitChips, shouldShowStri
 
 - [ ] **Step 1: Append a shared-look strip style to BOTH css files**
 
-Add this block to each file (identical; both inject into the page). Black panel, mono, AllMarks green accent — matches the cursor pill / chrome buttons. Values are first-cut for live tuning.
+Add this block to each file (identical; both inject into the page). The look is driven entirely by `--am-strip-*` CSS variables with the AllMarks dark-theme defaults baked in; the content script overrides them per-save from the theme tokens, so the strip matches the active theme and follows future switches. `color-mix` is used for translucency (Chrome ≥124 per manifest `minimum_chrome_version`). Geometry/sizing values are first-cut for live tuning; the colors come from the theme.
 
 ```css
-/* === Quick-tag strip (Phase 1) — first-cut visuals, tuned live === */
+/* === Quick-tag strip (Phase 1) — theme-driven via --am-strip-* vars === */
 .allmarks-tagstrip {
+  /* Defaults = AllMarks dark theme; overridden per-save from theme tokens. */
+  --am-strip-bg: #0a0a0a;
+  --am-strip-fg: #f2f2f2;
+  --am-strip-border: rgba(255, 255, 255, 0.12);
+  --am-strip-accent: #28f100;
+  --am-strip-blur: 8px;
+
   position: fixed;
   z-index: 2147483646; /* just under the pill/button */
   display: flex;
@@ -626,11 +672,13 @@ Add this block to each file (identical; both inject into the page). Black panel,
   gap: 6px;
   max-width: min(72vw, 520px);
   padding: 6px 8px;
-  border-radius: 10px;
-  background: rgba(10, 10, 10, 0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--am-strip-border) 100%, transparent);
+  background: color-mix(in srgb, var(--am-strip-bg) 92%, transparent);
+  backdrop-filter: blur(var(--am-strip-blur));
+  -webkit-backdrop-filter: blur(var(--am-strip-blur));
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  color: var(--am-strip-fg);
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   opacity: 0;
   transform: translateY(2px);
@@ -649,9 +697,9 @@ Add this block to each file (identical; both inject into the page). Black panel,
   padding: 5px 10px;
   min-height: 28px;
   border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid color-mix(in srgb, var(--am-strip-border) 130%, transparent);
+  background: color-mix(in srgb, var(--am-strip-fg) 6%, transparent);
+  color: color-mix(in srgb, var(--am-strip-fg) 82%, transparent);
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: lowercase;
@@ -660,13 +708,13 @@ Add this block to each file (identical; both inject into the page). Black panel,
   user-select: none;
 }
 .allmarks-tagstrip__chip[data-on="true"] {
-  border-color: #28f100;
-  color: #28f100;
-  background: rgba(40, 241, 0, 0.1);
+  border-color: var(--am-strip-accent);
+  color: var(--am-strip-accent);
+  background: color-mix(in srgb, var(--am-strip-accent) 12%, transparent);
 }
 .allmarks-tagstrip__chip[data-role="all"] {
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--am-strip-fg) 60%, transparent);
 }
 ```
 
@@ -714,6 +762,18 @@ function sendAddTag(bookmarkId, tagId) {
   } catch (_) { /* context invalidated */ }
 }
 
+// Push the active theme's tokens onto the strip's CSS vars so its tone matches
+// the app's current theme (and follows future theme switches).
+function applyStripTheme(el, t) {
+  if (!t) return
+  const set = (k, v) => { if (v) el.style.setProperty(k, v) }
+  set('--am-strip-bg', t.bg)
+  set('--am-strip-fg', t.fg)
+  set('--am-strip-border', t.border)
+  set('--am-strip-accent', t.accent)
+  set('--am-strip-blur', t.blur)
+}
+
 function makeChip(bookmarkId, tag, alreadyOn) {
   const chip = document.createElement('button')
   chip.type = 'button'
@@ -734,12 +794,13 @@ function makeChip(bookmarkId, tag, alreadyOn) {
 
 // Render the strip next to the cursor pill. The pill sits near the cursor
 // (top-left of pointer); place the strip just below it.
-function showTagStrip(bookmarkId, tags, currentTagIds) {
+function showTagStrip(bookmarkId, tags, currentTagIds, themeTokens) {
   removeTagStrip()
   const current = new Set(Array.isArray(currentTagIds) ? currentTagIds : [])
   const { visible, overflow } = tagstripSplit(tags, STRIP_MAX_CHIPS)
   const el = document.createElement('div')
   el.className = 'allmarks-tagstrip'
+  applyStripTheme(el, themeTokens)
   for (const t of visible) el.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
   if (overflow.length > 0) {
     const all = document.createElement('button')
@@ -776,7 +837,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   setState(msg.state)
   if (tagstripShouldShow(msg.state, msg.tags)) {
     // Defer so the pill has positioned itself first.
-    setTimeout(() => showTagStrip(msg.bookmarkId, msg.tags, msg.currentTagIds), 80)
+    setTimeout(() => showTagStrip(msg.bookmarkId, msg.tags, msg.currentTagIds, msg.themeTokens), 80)
   } else if (msg.state === 'error') {
     removeTagStrip()
   }
@@ -825,6 +886,12 @@ Inside the floating-button IIFE (e.g., just before `// === Background messages =
     if (!isExtensionAlive()) return
     try { chrome.runtime.sendMessage({ type: 'booklage:add-tag-request', bookmarkId, tagId }).catch(() => {}) } catch (_) {}
   }
+  function applyStripTheme(el, t) {
+    if (!t) return
+    const set = (k, v) => { if (v) el.style.setProperty(k, v) }
+    set('--am-strip-bg', t.bg); set('--am-strip-fg', t.fg); set('--am-strip-border', t.border)
+    set('--am-strip-accent', t.accent); set('--am-strip-blur', t.blur)
+  }
   function makeChip(bookmarkId, tag, alreadyOn) {
     const chip = document.createElement('button')
     chip.type = 'button'
@@ -841,13 +908,14 @@ Inside the floating-button IIFE (e.g., just before `// === Background messages =
     })
     return chip
   }
-  function showTagStripForButton(bookmarkId, tags, currentTagIds) {
+  function showTagStripForButton(bookmarkId, tags, currentTagIds, themeTokens) {
     removeTagStrip()
     if (!container) return
     const current = new Set(Array.isArray(currentTagIds) ? currentTagIds : [])
     const { visible, overflow } = tagstripSplit(tags, STRIP_MAX_CHIPS)
     const el = document.createElement('div')
     el.className = 'allmarks-tagstrip'
+    applyStripTheme(el, themeTokens)
     for (const t of visible) el.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
     if (overflow.length > 0) {
       const all = document.createElement('button')
@@ -883,7 +951,7 @@ Replace the background-message listener (currently lines ~342-351):
       if (msg.state === 'saved' || msg.state === 'duplicate') {
         dispatch({ type: 'save-success' })
         if (tagstripShouldShow(msg.state, msg.tags)) {
-          setTimeout(() => showTagStripForButton(msg.bookmarkId, msg.tags, msg.currentTagIds), 80)
+          setTimeout(() => showTagStripForButton(msg.bookmarkId, msg.tags, msg.currentTagIds, msg.themeTokens), 80)
         }
       } else if (msg.state === 'error') {
         dispatch({ type: 'save-error' })
@@ -962,7 +1030,7 @@ Then verify on production with the reloaded extension (the offscreen iframe load
 
 ## Self-Review Notes
 
-- **Spec coverage:** save-first model (B2/D3/D4), confirmation-surface attachment for button + cursor pill (D3/D4 — covers floating-button-OFF users via the cursor pill), curated chips + ALL expansion (D1/D3/D4), ride-along tag data approach A (B1/B2/C3), no new-tag creation (chips only add existing; no input field), duplicate shows ✓ (B2 `currentTagIds` + D3/D4 `data-on`). PiP (#3) and bookmarklet/paste (#4/#5) are explicitly out (phases 2-3).
+- **Spec coverage:** save-first model (B2/D3/D4), confirmation-surface attachment for button + cursor pill (D3/D4 — covers floating-button-OFF users via the cursor pill), curated chips + ALL expansion (D1/D3/D4), ride-along tag data approach A (B1/B2/C3), no new-tag creation (chips only add existing; no input field), duplicate shows ✓ (B2 `currentTagIds` + D3/D4 `data-on`), **theme-matched + theme-switch-ready strip** (B1 `StripThemeTokens` → B2 `readThemeTokens` via `getComputedStyle` → C3 forward → D2 `--am-strip-*` vars → D3/D4 `applyStripTheme`). PiP (#3) and bookmarklet/paste (#4/#5) are explicitly out (phases 2-3).
 - **Type consistency:** `QuickTag {id,name,color}` defined in A1, imported by B1, produced in B2, consumed inline in D3/D4 via `tag.id`/`tag.name`. Message types: `booklage:add-tag` (B1 schema) ↔ envelope in C2 ↔ handler in B3 ↔ result resolved in C1. `booklage:add-tag-request` (content → background) in D3/D4 ↔ C4.
 - **Known non-TDD:** D3/D4 are DOM content-script code (no jsdom unit test); covered by manual verify. The pure decision logic they depend on is unit-tested in D1.
 - **Out of scope (note for follow-up):** richer relevance via the full `HeuristicTagger` (A1 uses `scoreSimilarBookmarks`, which is sufficient and already tested); un-tagging from the strip; new-tag creation on the spot.
