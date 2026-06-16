@@ -187,7 +187,7 @@ describe('TuneTrigger — drawer with FaderColumns', () => {
   })
 })
 
-describe('TuneTrigger — reset and sticky', () => {
+describe('TuneTrigger — reset', () => {
   it('clicking the ↺ cell calls onReset', async () => {
     const onReset = vi.fn()
     const { getByTestId, container } = render(
@@ -211,7 +211,7 @@ describe('TuneTrigger — reset and sticky', () => {
     expect(onReset).toHaveBeenCalledOnce()
   })
 
-  it('clicking the TUNE button toggles sticky open (mouseleave does not close)', async () => {
+  it('clicking the TUNE button does not pin it open (mouseleave still closes)', async () => {
     const { getByTestId } = render(
       <TuneTrigger
         widthPx={267.84}
@@ -228,30 +228,9 @@ describe('TuneTrigger — reset and sticky', () => {
     fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
     fireEvent.click(btn)
-    // Sticky now ON — leave should NOT close
+    // No click-to-pin — leaving still closes after the grace + close animation.
     fireEvent.mouseLeave(wrap)
-    await new Promise<void>((resolve) => setTimeout(resolve, 700))
-    expect(btn.getAttribute('aria-expanded')).toBe('true')
-  })
-
-  it('ESC closes a sticky-open readout', async () => {
-    const { getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
-    const btn = getByTestId('tune-trigger')
-    const wrap = getByTestId('tune-wrap')
-    fireEvent.mouseEnter(wrap)
-    await new Promise<void>((resolve) => setTimeout(resolve, 500))
-    fireEvent.click(btn)
-    fireEvent.keyDown(window, { key: 'Escape' })
-    await new Promise<void>((resolve) => setTimeout(resolve, 700))
+    await new Promise<void>((resolve) => setTimeout(resolve, 1500))
     expect(btn.getAttribute('aria-expanded')).toBe('false')
     expect(btn.textContent).toBe('TUNE')
   })

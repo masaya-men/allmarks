@@ -146,7 +146,6 @@ export function TuneTrigger({
   const phaseStartRef = useRef<number>(0)
   const rafIdRef = useRef<number | null>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const stickyOpenRef = useRef(false)
   const [expanded, setExpanded] = useState(false)
 
   // Refs kept in sync with props each render (PrecisionSlider pattern).
@@ -362,7 +361,6 @@ export function TuneTrigger({
   }, [startOpen])
 
   const handleMouseLeave = useCallback((): void => {
-    if (stickyOpenRef.current) return
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
     leaveTimerRef.current = setTimeout(() => {
       startClose()
@@ -370,45 +368,16 @@ export function TuneTrigger({
     }, LEAVE_GRACE_MS)
   }, [startClose])
 
+  // Click only handles the reset cell (↺). The drawer is hover-controlled;
+  // there is no click-to-pin (removed at user request — hover open/close only).
   const handleClick = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
     const target = e.target as HTMLElement
-    const kind = target.dataset.cellKind
-    if (kind === 'reset') {
+    if (target.dataset.cellKind === 'reset') {
       e.preventDefault()
       e.stopPropagation()
       onReset()
-      return
     }
-    stickyOpenRef.current = !stickyOpenRef.current
-    if (!stickyOpenRef.current) startClose()
-  }, [onReset, startClose])
-
-  // ESC closes sticky-open readout.
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && stickyOpenRef.current) {
-        stickyOpenRef.current = false
-        startClose()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return (): void => window.removeEventListener('keydown', onKeyDown)
-  }, [startClose])
-
-  // Outside-click closes sticky-open readout. Checks wrap (= button + drawer)
-  // so a click inside the drawer (fader, LED legend) doesn't get treated as
-  // an outside-click and force a close.
-  useEffect(() => {
-    const onDocClick = (e: globalThis.MouseEvent): void => {
-      if (!stickyOpenRef.current) return
-      if (!wrapRef.current?.contains(e.target as Node)) {
-        stickyOpenRef.current = false
-        startClose()
-      }
-    }
-    document.addEventListener('mousedown', onDocClick)
-    return (): void => document.removeEventListener('mousedown', onDocClick)
-  }, [startClose])
+  }, [onReset])
 
   // While the readout is rendered, value changes from drag (= FaderColumn
   // in the drawer) must reflow the readout text immediately. We re-render
