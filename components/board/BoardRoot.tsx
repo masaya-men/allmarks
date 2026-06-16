@@ -14,7 +14,7 @@ import { applyFilter } from '@/lib/board/filter'
 import { useBoardData } from '@/lib/storage/use-board-data'
 import { RevalidationQueue, defaultFetcher, shouldRevalidate } from '@/lib/board/revalidate'
 import { createCompositeFetcher } from '@/lib/board/tweet-liveness'
-import { subscribeBookmarkSaved } from '@/lib/board/channel'
+import { subscribeBookmarkSaved, subscribeBookmarkUpdated } from '@/lib/board/channel'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
 import { createBackfillQueue } from '@/lib/board/backfill-queue'
@@ -1525,6 +1525,15 @@ export function BoardRoot() {
       unsub()
       for (const t of timers) clearTimeout(t)
     }
+  }, [reload])
+
+  // BroadcastChannel: reload (no entrance highlight) when an existing bookmark
+  // changes — e.g., a tag added from the extension's quick-tag strip.
+  useEffect(() => {
+    const unsub = subscribeBookmarkUpdated(() => {
+      void reload()
+    })
+    return (): void => unsub()
   }, [reload])
 
   // Viewport-driven revalidation: when a card enters the viewport, check

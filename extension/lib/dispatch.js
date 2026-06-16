@@ -128,20 +128,23 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
     try { await mirrorAddUrl(normalizeUrl(ogp.url), chrome.storage.local) } catch (_) {}
   }
 
-  const tagExtras =
-    finalState === 'saved' || finalState === 'duplicate'
-      ? {
-          bookmarkId: result.bookmarkId,
-          tags: Array.isArray(result.tags) ? result.tags : [],
-          currentTagIds: Array.isArray(result.currentTagIds) ? result.currentTagIds : [],
-          themeTokens: result.themeTokens || null,
-        }
-      : {}
   if (!isFloatingButton) {
-    chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: finalState, ...tagExtras }).catch(() => {})
+    chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: finalState }).catch(() => {})
   }
   if (isFloatingButton) {
-    chrome.tabs.sendMessage(tabId, { type: 'booklage:floating-button-state', state: finalState, ...tagExtras }).catch(() => {})
+    chrome.tabs.sendMessage(tabId, { type: 'booklage:floating-button-state', state: finalState }).catch(() => {})
+  }
+  // Quick-tag strip is always rendered by floating-button.js (anchored to the
+  // button, or its default slot when the button is off), regardless of which
+  // confirmation surface showed. Send the tag payload on every successful save.
+  if (finalState === 'saved' || finalState === 'duplicate') {
+    chrome.tabs.sendMessage(tabId, {
+      type: 'booklage:quick-tag',
+      bookmarkId: result.bookmarkId,
+      tags: Array.isArray(result.tags) ? result.tags : [],
+      currentTagIds: Array.isArray(result.currentTagIds) ? result.currentTagIds : [],
+      themeTokens: result.themeTokens || null,
+    }).catch(() => {})
   }
 }
 
