@@ -44,13 +44,10 @@ export function extractOgpFromDocument(doc: Document): OgpData {
  *     slide-in) provides feedback. This is the preferred UX.
  *
  * (B) Extension not present (fallback for visitors without the extension):
- *     1) Open <APP>/save?... popup at bottom-right (Chrome may override
- *        position/size; the popup fast-closes within ~80ms via /save's logic).
- *     2) Inject a Shadow-DOM-isolated toast into the user's current page DOM:
- *        "AllMarks に保存中…" → "AllMarks に保存しました ✓" → fade out (~2.2s).
- *        Shadow DOM (closed) keeps host-page CSS from bleeding in. The toast
- *        is the primary visible feedback, so the popup can flash and close
- *        almost imperceptibly.
+ *     Open <APP>/save?... popup at the final window size (300×380).
+ *     The popup is the primary feedback surface — it shows the Saved
+ *     confirmation itself and stays open until the user dismisses it.
+ *     No host-page toast is injected.
  *
  * Why a popup is still needed in path B: Chrome's storage partitioning
  * (Chrome 115+) isolates AllMarks-origin iframes embedded in 3rd-party
@@ -69,7 +66,7 @@ export function extractOgpFromDocument(doc: Document): OgpData {
  *
  * Keep this in sync with extractOgpFromDocument.
  */
-const BOOKMARKLET_SOURCE = `(function(){var d=document,l=location,m=function(s){var e=d.querySelector(s);return e?e.getAttribute('content')||'':'';},k=function(s){var e=d.querySelector(s);return e?e.getAttribute('href')||'':'';},r=function(h,b){if(!h)return'';if(/^https?:\\/\\//i.test(h))return h;if(h.indexOf('//')===0)return'https:'+h;try{return new URL(h,b).href}catch(e){return''}},u=l.href,t=m('meta[property="og:title"]')||d.title||u,i=r(m('meta[property="og:image"]')||m('meta[name="twitter:image"]')||'',u),ds=(m('meta[property="og:description"]')||m('meta[name="description"]')||'').slice(0,200),sn=m('meta[property="og:site_name"]')||l.hostname,f=r(k('link[rel="icon"]')||k('link[rel="shortcut icon"]')||'/favicon.ico',u);if(d.documentElement&&d.documentElement.dataset&&d.documentElement.dataset.booklageExtension==='1'){var nc='b'+Date.now()+Math.random().toString(36).slice(2,7);window.postMessage({type:'booklage:save-via-extension',ogp:{url:u,title:t,image:i,description:ds,siteName:sn,favicon:f},nonce:nc},'*');return}var p=new URLSearchParams({url:u,title:t,image:i,desc:ds,site:sn,favicon:f}),W=200,H=160;window.open('__APP_URL__/save?'+p.toString(),'booklage-save','width='+W+',height='+H+',left='+Math.max(0,screen.availWidth-W-20)+',top='+Math.max(0,screen.availHeight-H-20)+',toolbar=0,menubar=0,location=0,status=0,resizable=0,scrollbars=0');var h=d.createElement('div');h.style.cssText='all:initial;position:fixed;top:16px;right:16px;z-index:2147483647';d.body.appendChild(h);var sh=h.attachShadow?h.attachShadow({mode:'closed'}):h,P=d.createElement('div');P.style.cssText='padding:10px 16px;border-radius:20px;background:rgba(18,18,22,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 24px rgba(0,0,0,.32);font:500 13px system-ui,sans-serif;color:rgba(255,255,255,.94);opacity:0;transition:opacity .2s';P.textContent='AllMarks に保存中…';sh.appendChild(P);setTimeout(function(){P.style.opacity='1'},20);setTimeout(function(){P.textContent='AllMarks に保存しました ✓'},500);setTimeout(function(){P.style.opacity='0'},2200);setTimeout(function(){try{d.body.removeChild(h)}catch(e){}},2500)})();`
+const BOOKMARKLET_SOURCE = `(function(){var d=document,l=location,m=function(s){var e=d.querySelector(s);return e?e.getAttribute('content')||'':'';},k=function(s){var e=d.querySelector(s);return e?e.getAttribute('href')||'':'';},r=function(h,b){if(!h)return'';if(/^https?:\\/\\//i.test(h))return h;if(h.indexOf('//')===0)return'https:'+h;try{return new URL(h,b).href}catch(e){return''}},u=l.href,t=m('meta[property="og:title"]')||d.title||u,i=r(m('meta[property="og:image"]')||m('meta[name="twitter:image"]')||'',u),ds=(m('meta[property="og:description"]')||m('meta[name="description"]')||'').slice(0,200),sn=m('meta[property="og:site_name"]')||l.hostname,f=r(k('link[rel="icon"]')||k('link[rel="shortcut icon"]')||'/favicon.ico',u);if(d.documentElement&&d.documentElement.dataset&&d.documentElement.dataset.booklageExtension==='1'){var nc='b'+Date.now()+Math.random().toString(36).slice(2,7);window.postMessage({type:'booklage:save-via-extension',ogp:{url:u,title:t,image:i,description:ds,siteName:sn,favicon:f},nonce:nc},'*');return}var p=new URLSearchParams({url:u,title:t,image:i,desc:ds,site:sn,favicon:f});window.open('__APP_URL__/save?'+p.toString(),'booklage-save','width=300,height=380,left='+Math.max(0,screen.availWidth-300-20)+',top='+Math.max(0,screen.availHeight-380-20)+',toolbar=0,menubar=0,location=0,status=0,resizable=0,scrollbars=0')})();`
 
 /**
  * Generate the `javascript:` URI for the AllMarks bookmarklet.
