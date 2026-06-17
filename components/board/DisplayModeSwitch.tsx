@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import type { DisplayMode } from '@/lib/board/types'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './DisplayModeSwitch.module.css'
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
 }
 
 export function DisplayModeSwitch({ value, onChange }: Props): ReactElement {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactEl
 import { pickRandomChar } from '@/lib/board/scramble'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { PRESETS, findActivePreset } from '@/lib/board/tune-presets'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import { FaderColumn } from './FaderColumn'
 import { TunePresetColumn } from './TunePresetColumn'
 import styles from './TuneTrigger.module.css'
@@ -138,6 +138,7 @@ export function TuneTrigger({
   onApplyPreset,
   label,
 }: Props): ReactElement {
+  const { t } = useI18n()
   const visibleLabel = label ?? t('board.chrome.tune')
   const btnRef = useRef<HTMLButtonElement>(null)
   const wrapRef = useRef<HTMLSpanElement>(null)

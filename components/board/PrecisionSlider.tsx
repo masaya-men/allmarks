@@ -8,7 +8,7 @@ import {
   type PointerEvent,
   type ReactElement,
 } from 'react'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './PrecisionSlider.module.css'
 
 /** マウス N px で min→max を移動する基準値。 大きいほど slider が「遅く動く」
@@ -98,6 +98,7 @@ export function PrecisionSlider({
   testId,
   ariaLabel,
 }: Props): ReactElement {
+  const { t } = useI18n()
   const trackRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)

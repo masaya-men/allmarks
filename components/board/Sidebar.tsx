@@ -3,7 +3,7 @@
 import type { ReactElement } from 'react'
 import { LiquidGlass } from './LiquidGlass'
 import { BookmarkletInstall } from '@/components/bookmarklet/BookmarkletInstall'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { BoardFilter } from '@/lib/board/types'
 import {
   BOARD_FILTER_ALL, BOARD_FILTER_INBOX, BOARD_FILTER_ARCHIVE,
@@ -29,6 +29,7 @@ export function Sidebar({
   collapsed, onToggle, counts, activeFilter, onFilterChange,
   tags, tagCounts, onCreateTag, onOpenBookmarkletModal, onTriageStart,
 }: Props): ReactElement {
+  const { t } = useI18n()
   const isActiveTag = (id: string): boolean =>
     isTagsFilter(activeFilter) && activeFilter.tagIds.length === 1 && activeFilter.tagIds[0] === id
 

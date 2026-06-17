@@ -5,7 +5,7 @@ import { gsap } from 'gsap'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { TweetMeta, MediaSlot } from '@/lib/embed/types'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import { normalizeItem, type LightboxItem } from '@/lib/share/lightbox-item'
 import type { ShareCard } from '@/lib/share/types'
 import { PlaceholderCard, pickCard } from './cards'
@@ -401,6 +401,7 @@ type Props = {
 }
 
 export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShouldShow, nav, persistMediaSlots }: Props): ReactElement | null {
+  const { t } = useI18n()
   const backdropRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
@@ -1452,6 +1453,7 @@ function DefaultText({
    *  large TextCard on the media side (text-only card, session 31). */
   readonly hideTitle?: boolean
 }): ReactElement {
+  const { t } = useI18n()
   const isInstagram = detectUrlType(item.url) === 'instagram'
 
   if (isInstagram) {
@@ -1704,6 +1706,7 @@ function TweetText({
    *  text inside the left-side large TextCard (session 32 Fix 2). */
   readonly hideBody?: boolean
 }): ReactNode {
+  const { t } = useI18n()
   const authorName = meta?.authorName ?? ''
   const authorHandle = meta?.authorHandle ?? ''
   const text = meta?.text ?? item.title

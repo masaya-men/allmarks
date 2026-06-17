@@ -58,7 +58,7 @@ import { BoardChrome } from './BoardChrome'
 import { UndoToast, type UndoToastInput } from './UndoToast'
 import { type UndoEntry, MAX_UNDO_STACK, pushBounded } from '@/lib/board/undo-stack'
 import { PRESETS, type PresetId } from '@/lib/board/tune-presets'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
 import { BookmarkletPill } from '@/components/bookmarklet/BookmarkletPill'
 import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
@@ -88,6 +88,7 @@ const BOTTOM_OVERSCROLL_FRACTION = 0.5
 const BG_TYPO_SHUTDOWN_MS = 620
 
 export function BoardRoot() {
+  const { t } = useI18n()
   const {
     items,
     deletedItems,
