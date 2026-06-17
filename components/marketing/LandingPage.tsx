@@ -4,7 +4,9 @@ import { useSmoothScroll } from '@/lib/scroll/use-smooth-scroll'
 import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
 import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
+import { Hero } from './sections/Hero'
 import { HeroSection } from './sections/HeroSection'
+import './landing-tokens.css'
 import { SaveDemoSection } from './sections/SaveDemoSection'
 import { CollageDemoSection } from './sections/CollageDemoSection'
 import { StyleSwitchSection } from './sections/StyleSwitchSection'
@@ -22,9 +24,10 @@ export function LandingPage(): React.ReactElement {
   useScrollTrigger()
 
   return (
-    <div className={styles.wrapper}>
+    <div className={`${styles.wrapper} lpRoot`}>
       <SiteHeader />
       <div className={styles.content}>
+        <Hero />
         <HeroSection />
         <SaveDemoSection />
         <CollageDemoSection />

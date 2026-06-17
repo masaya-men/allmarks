@@ -1,0 +1,279 @@
+/* Hero.module.css — signature landing hero. Editorial, white ground, depth. */
+
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  /* hairline editorial baseline at the very top */
+  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
+}
+
+/* Centered measure that holds all three depth layers. */
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: var(--lp-maxw);
+  margin: 0 auto;
+  padding: 96px 40px 40px;
+  box-sizing: border-box;
+}
+
+/* ── Layer 1 (back): oversized faint serif keyword, drifts on scroll ── */
+.bgWord {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(180px, 34vw, 520px);
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--lp-ink) 6%, transparent);
+  user-select: none;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* ── Layer 2 (mid): floating collage cards that occlude the big word ── */
+.cardsLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.card {
+  position: absolute;
+  margin: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--lp-bg);
+  transform: rotate(var(--rot));
+  /* layered editorial shadow — soft + a crisp contact edge */
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 6%, transparent),
+    0 18px 40px -18px color-mix(in srgb, var(--lp-ink) 32%, transparent),
+    0 4px 10px -6px color-mix(in srgb, var(--lp-ink) 18%, transparent);
+  animation: heroFloat 9s ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+
+.cardImg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@keyframes heroFloat {
+  0%,
+  100% {
+    transform: rotate(var(--rot)) translateY(0);
+  }
+  50% {
+    transform: rotate(var(--rot)) translateY(-12px);
+  }
+}
+
+/* ── Layer 3 (front): content column ── */
+.content {
+  position: relative;
+  z-index: 5;
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 28px;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(44px, 7.2vw, 104px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+  opacity: 0;
+}
+
+.description {
+  max-width: 540px;
+  margin: 30px auto 0;
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 1.62;
+  letter-spacing: -0.005em;
+  color: var(--lp-ink-soft);
+  text-wrap: pretty;
+  opacity: 0;
+}
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 40px;
+  opacity: 0;
+}
+
+.ctaPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 54px;
+  padding: 0 28px;
+  border-radius: 999px;
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s ease;
+}
+
+.ctaPrimary:hover {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--lp-ink) 88%, var(--lp-accent));
+}
+
+.ctaArrow {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ctaPrimary:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+.ctaGhost {
+  display: inline-flex;
+  align-items: center;
+  height: 54px;
+  padding: 0 22px;
+  border: 0;
+  background: transparent;
+  color: var(--lp-ink);
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  /* underline that draws in on hover */
+  background-image: linear-gradient(var(--lp-ink), var(--lp-ink));
+  background-repeat: no-repeat;
+  background-position: 22px 36px;
+  background-size: 0% 1px;
+  transition: background-size 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ctaGhost:hover {
+  background-size: calc(100% - 44px) 1px;
+}
+
+/* ── Scroll hint ── */
+.scrollHint {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.scrollLine {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--lp-ink) 45%, transparent)
+  );
+  animation: scrollPulse 2.4s ease-in-out infinite;
+  transform-origin: top;
+}
+
+.scrollWord {
+  font-family: var(--lp-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+}
+
+@keyframes scrollPulse {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* ── Responsive: shrink the foreground cards on narrower viewports ── */
+@media (max-width: 900px) {
+  .stage {
+    padding: 80px 24px 32px;
+  }
+  .card {
+    width: 130px !important;
+  }
+  .bgWord {
+    font-size: clamp(120px, 40vw, 280px);
+  }
+}
+
+/* ── Reduced motion: kill drift + float, keep everything visible ── */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .scrollLine {
+    animation: none;
+  }
+  .label,
+  .headline,
+  .description,
+  .ctaRow {
+    opacity: 1;
+  }
+}
