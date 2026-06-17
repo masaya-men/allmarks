@@ -2,34 +2,33 @@
 
 ## 今のゴール (1 行)
 
-**🎉 session 105: 拡張なしブックマークレットの保存窓を再設計・本番反映済。`/save` 窓を**最初から最終サイズ(300×380)で開き**(リサイズなし=チラつきの根本排除)、**Saving → Saved / Already saved / Failed** を意図して見せ、**quick-tag ON かつ PiP未表示なら Saved の下に任意タグ付け**(既存+新規)。元ページ右上トーストは廃止。サブエージェント駆動(各タスク2段レビュー + 通し最終レビュー opus、tsc 0 / vitest 1019 / build OK)。次は user 実機確認(下記)→ OK なら公開準備へ。**
+**🎉 session 105 完了・本番反映・user 確認済: 拡張なしブックマークレットの保存窓を再設計(意図した Saved 確認 + 任意タグ付け)。窓は **PiP と同じ 256×256 正方形**(`PIP_OUTER` に統一)、上に Saved・下にスクロールするタグ。拡張なしでも **SETTINGS の QUICK-TAG トグルが触れる**(常時表示化)。チラつき問題は「窓を最初から固定サイズで開く」で根絶。次は**公開準備**(言語切替・onboarding・LP・拡張ストア素材)。**
 
 ## 開始時の動き
 1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態 (セッション 105)」を読む
 2. **本番は `allmarks.app`**(deploy は `--project-name=allmarks --branch=master`)
-3. user に「保存窓の実機確認どうだった?」を確認 → OK なら公開準備へ
+3. user に「公開準備、どこから着手する?」を確認
 
-## 🔴 user の実機確認(本番 allmarks.app + 拡張オフ + 自前ブックマークレット)
-**重要: ブックマークレットの中身を変えた(窓サイズ + トースト廃止)ので、必ず配布元からブックマークレットを「取り直し」してから確認すること。** 拡張は一時オフに。
-1. 保存 → 窓が**最初から最終サイズ(300×380)で一発で出る**(小→大の変身・チラつきが無いか = 今回の肝)。
-2. 新規保存 → Saving → **Saved ✓**(英語ラベル、1文字ずつ出る)。同じURL再保存 → **Already saved**(⚠アンバー)。失敗 → **Failed**。
-3. quick-tag **ON + PiP なし** → Saved の下にタグ(既存+新規作成)。タップでボード即反映。
-4. quick-tag **OFF / PiP 開** → Saved/Already saved だけで自動クローズ(~1.8s)。
-5. ライフサイクル: 無操作5sで閉じる / マウス乗せる・入力で止まる / 離れたら閉じる(入力中は閉じない)/ ✕。
-6. 元ページ右上の四角いトーストが**もう出ない**こと。
-7. **拡張あり経路・カーソルピルが不変**(回帰なし)。
-8. 目視微調整候補(気になれば次セッションで): 窓サイズ・位置・✕配置・Saved の世界観の作り込み。
+## session 105 で確定したこと(user 確認済)
+- **保存窓 = 256×256**(本物 Pop Out / `lib/board/pip-window.ts` の `PIP_OUTER=256` と統一)。ブックマークレットは `width=256,height=256` で開く。
+- **拡張なしでも QUICK-TAG ON/OFF できる**: [ExtensionEntry.tsx](../components/board/ExtensionEntry.tsx) を拡張の有無に関わらず SETTINGS 常時表示に。拡張なしは GET EXTENSION 案内をドロワー下段に畳み込み。設定は本体 IDB に永続化、`/save` 窓が読む。
+- **保存窓の中身**: Saving→Saved/Already saved/Failed(英語ラベル)+ ON かつ PiP無なら下にスクロールするタグ。OFF/PiP中は Saved だけ自動クローズ。
+- **「右上ピル」事件**: 原因は古いブックマークレットの残骸(取り直しで解消、コードは正常)。教訓 = ブックマークレットを変えたら必ず取り直し([[project_bookmarklet_persistence]])。
 
-## 次の候補(保存窓の確認が済んだら)
-- **公開準備**: i18n 言語切替の配線(要 brainstorming)/ onboarding / LP 整備 / 拡張ストア公開素材。
+## 次の候補(公開準備)
+- **i18n 言語切替の配線**(要 brainstorming。`t.ts` が `ja.json` 固定 import、`output: 'export'` 制約で設計判断が要る)
+- **onboarding**(初回案内)
+- **LP 整備**([[project_lp_redesign_vision]])
+- **拡張ストア公開素材**(スクショ・説明文・`EXTENSION_STORE_URL` 投入)
 
-## 設計・計画
+## 設計・計画(参照)
 - 設計 `docs/superpowers/specs/2026-06-17-bookmarklet-save-window-redesign-design.md`
 - 計画 `docs/superpowers/plans/2026-06-17-bookmarklet-save-window-redesign.md`
-- (没)カーソルピル案・第3段は撤去/不採用。経緯は [[project_bookmarklet_popup_flash_deadend]]・IDEAS.md。
+- (没)カーソルピル案・第3段(小→大変身版)は不採用/撤去。経緯は [[project_bookmarklet_popup_flash_deadend]]・IDEAS.md。
 
 ## 守ること
 - **本番は allmarks.app**。deploy 前 `npx wrangler whoami`、tsc + vitest 通してから。実機/本番で測ってから「動いてる」と報告
 - 発明しない・本物の部品を流用。横文字を日本語応答に混ぜない。AskUserQuestion ボックス禁止。デザイン変更は提案→承認→実装
 - `DB_NAME='booklage-db'`・`booklage:*`・窓名 `booklage-save` 等の不可視符号は**永久に維持**
 - i18n: 新 key は 15 言語全部に同期
+- **ブックマークレットの中身を変えたら、user に「取り直し」を必ず案内**(installed 分は自動更新されない)

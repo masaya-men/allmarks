@@ -32,9 +32,13 @@
 3. **任意タグ付け**: **quick-tag ON かつ PiP 未表示**のときだけ Saved の下に [TagAddPopover](../components/board/TagAddPopover/index.tsx)(compact、既存+新規作成)。純粋関数 [planSaveWindow](../lib/bookmarklet/save-window-plan.ts) が「タグ出すか / 自動クローズ時間」を決定。付与は共有ヘルパー [quick-tag-apply.ts](../lib/tagger/quick-tag-apply.ts)(第3段で作り撤去→復元)。ライフサイクル: 無操作5s自動 / pointerEnter・keydownでengage / leave 600msクローズ(入力中=value非空は閉じない) / ✕。タグ無し(OFF/PiP/失敗)は自動クローズ(~1.8s/~2.4s)。
 4. **拡張ユーザー無関係**: ブックマークレットは拡張検知で即 return(`/save`もトーストも開かない)。カーソルピル(`extension/`)不変。
 5. 設計 `docs/superpowers/specs/2026-06-17-bookmarklet-save-window-redesign-design.md` / 計画 `...plans/2026-06-17-bookmarklet-save-window-redesign.md`。
-6. **未着手の磨き(非ブロッキング)**: 窓サイズ/位置/✕配置/Saved の世界観作り込みは実機を見て次セッションで微調整可。
+6. **同 session 後半の追い込み(user 実機FB → 全て対応・確認済)**:
+   - **🐛「右上にカーソルピルの名残」報告 → 原因 = 古いブックマークレットの残骸**(撤去前の host-page トースト `top:16px;right:16px;border-radius:20px`)。コードは正常、**取り直しで解消**(systematic-debugging で証拠特定)。教訓: ブックマークレットを変えたら必ず取り直し案内。
+   - **🔴 抜け修正: 拡張オフだと QUICK-TAG トグルに触れなかった** → [ExtensionEntry.tsx](../components/board/ExtensionEntry.tsx) を拡張の有無に関わらず **SETTINGS 常時表示**に。トグルは誰でも ON/OFF 可。拡張なしは GET EXTENSION 案内をドロワー下段に畳み込み。
+   - **窓サイズ: 300×380(縦長)→ 320×320 → 最終 256×256**(本物 Pop Out `PIP_OUTER` と統一)。タグ窓は「上にコンパクト Saved・下にスクロールするタグ」に再構成(`.center` 絶対配置の重なりも解消)。
+   - 全て tsc 0 / vitest 1020 / build OK / 本番反映 / user 確認済。
 
-**🔴 次セッション**: user 実機確認(**ブックマークレット取り直し必須** + 拡張オフ)→ OK なら公開準備(言語切替・onboarding・LP・拡張ストア素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+**🔴 次セッション**: 公開準備(i18n 言語切替の配線・onboarding・LP 整備・拡張ストア素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 **没/撤去(履歴)**: カーソルピル案(拡張なしでも出す)は不採用 — 窓がどうせ出るなら窓で Saved を見せる方が筋が良い、で決着。第3段(小→大変身版)の spec/plan は参照のみ残置。
 
