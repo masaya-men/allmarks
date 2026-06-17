@@ -26,7 +26,6 @@
   background: transparent;
   border-bottom: 1px solid transparent;
   /* backdrop-filter is inert until the translucent background kicks in */
-  -webkit-backdrop-filter: blur(0px);
   backdrop-filter: blur(0px);
 
   /* Smooth transition when scrolled class is toggled */
@@ -41,7 +40,6 @@
   /* Off-white translucent — echoes --lp-bg (#faf9f6) at 88% opacity */
   background: color-mix(in srgb, #faf9f6 88%, transparent);
   border-bottom-color: color-mix(in srgb, #14130f 8%, transparent);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
   backdrop-filter: blur(12px) saturate(160%);
 }
 

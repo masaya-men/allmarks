@@ -15,13 +15,16 @@
 .cta {
   position: relative;
   width: 100%;
-  /* 140vh gives the scroll-scrub transition ample room on typical viewports */
-  min-height: 140vh;
+  /* 105vh: enough for the scrub to complete as the section enters the viewport,
+     but leaves only a modest black settle (~0.15–0.20vh) before the footer.
+     The transition completes well before the content reaches centre, so the
+     footer follows promptly with no large empty black void. */
+  min-height: 105vh;
   display: flex;
   align-items: center;
   justify-content: center;
   /* The section bottom is solid black — seamless into the (black) app footer */
-  padding-bottom: 160px;
+  padding-bottom: 80px;
   box-sizing: border-box;
   /* Off-white from --lp-bg shows through until the overlay covers it */
   background: var(--lp-bg);
@@ -137,8 +140,8 @@
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   .cta {
-    min-height: 120vh;
-    padding-bottom: 120px;
+    min-height: 100vh;
+    padding-bottom: 80px;
   }
 
   .stage {
@@ -158,8 +161,8 @@
 
 @media (max-width: 480px) {
   .cta {
-    min-height: 100vh;
-    padding-bottom: 96px;
+    min-height: 96vh;
+    padding-bottom: 64px;
   }
 
   .rule {

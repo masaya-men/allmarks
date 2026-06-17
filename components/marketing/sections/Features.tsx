@@ -283,8 +283,9 @@ function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement 
  * fabricated source domains/favicons appear anywhere — source variety is shown
  * through card shape/type (e.g. a play-triangle = video) and through the copy.
  *
- * The 03 LIVE GRID visual is a static poster placeholder marked with
- * `data-livegrid-slot` so Task 8 can swap in real autoplaying video.
+ * The 03 LIVE GRID visual renders real autoplaying NASA public-domain video
+ * loops via the `LiveGrid` component — in-view-only (IntersectionObserver)
+ * with poster fallbacks under prefers-reduced-motion.
  */
 export function Features(): React.ReactElement {
   const { t } = useI18n()

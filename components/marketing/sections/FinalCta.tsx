@@ -69,7 +69,6 @@ export function FinalCta(): React.ReactElement {
         trigger: section,
         start: 'top bottom',   // overlay starts fading in as section enters viewport
         end: 'center center',  // fully black once centre of section hits centre of viewport
-        scrub: 0.8,
         onUpdate: (self) => {
           gsap.set(overlay, { opacity: self.progress })
         },
