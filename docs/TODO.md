@@ -21,18 +21,22 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 105 — 保存直後タグ付け 第3段(拡張なしブックマークレット)実装→撤去)
+### 直近の状態 (セッション 105 — 拡張なしブックマークレット保存窓を再設計 + 任意タグ付け 完成)
 
-**結論: 第3段は実装・本番確認したが user 判断で撤去。`/save` は元の「保存して即閉じる」に復帰(本番反映済)。第1段・第2段は無傷。**
+**完了 (= 全て検証済: tsc 0 / vitest 1019 pass / build OK / 本番 allmarks.app 反映。brainstorming→spec→plan→サブエージェント駆動(各タスク2段レビュー + 通し最終レビュー opus))**:
 
-1. **実装した内容(撤去済)**: 拡張なしのブックマークレット保存で `/save` ポップアップ窓を PiP 風タグUI(既存タグ + 新規作成、カード/メーターなし)に変身させ、その場でタグ付け→ボード即反映する機能。トグル ON かつ PiP 未表示のときだけ表示、ライフサイクル(無操作クローズ/engage/leave/✕)つき。spec/plan/サブエージェント駆動で完成、tsc 0 / vitest 1018 / build OK まで通した。
-2. **撤去理由**: 本番実機で `resizeTo` は効いた・挙動もOKだったが、**全ケースで「窓が中身付きでチラッと出る」のが体験を損なう**。「決定するまで暗い無地」polish を入れても、**窓が一瞬現れること自体はゼロにできない**(拡張なしの保存は AllMarks の窓を一度開く必要がある=ブラウザのストレージ分離仕様)。user「チラつき0じゃないならない方がいい」→ 撤去。
-3. **撤去内容**: `components/bookmarklet/SaveToast.{tsx,module.css}` を pre-第3段に復帰、`lib/tagger/quick-tag-apply.{ts,test.ts}` と `components/bookmarklet/SaveToast.test.tsx` を削除。検証済(tsc 0 / vitest 997 / build OK / 本番反映)。
-4. **教訓**: 拡張なし経路に「窓を見せて操作させる」UXは OS窓フラッシュが不可避で筋が悪い。タグ付けは拡張(第1段)/PiP(第2段)で完結させる方向が正しい。
-5. **残骸(履歴として保持)**: 設計 `docs/superpowers/specs/2026-06-17-quick-tag-on-save-phase3-bookmarklet-design.md` / 計画 `...plans/2026-06-17-quick-tag-on-save-phase3-bookmarklet.md`(実装は撤去済、参照のみ)。
-6. **別タスク(保留・IDEAS.md)**: 「拡張なしでもカーソルピルを出す」= 見た目だけ元ページに描く案なので窓フラッシュ問題と無関係。本命は本物ピル(extension CSS)を透明 iframe で重ねカーソル追従させる案(B)。
+**経緯**: 本 session 前半で「保存直後タグ付け 第3段」を実装したが、`/save` 窓が小→大に変身してチラつくため user 判断で**一度撤去**。その後 user の発案で方針転換 — 「窓はどうせ必ず出る(拡張なしの保存に必須)。隠さず**堂々と Saved を見せる窓**にし、ついでに任意タグ付けもできれば良い」。チラつきの根本原因は「窓のサイズ変身」だったので、**最初から最終サイズで開けば消える**。これで作り直した。
 
-**🔴 次セッションの候補**: 公開準備(i18n 言語切替の配線・onboarding・LP 整備・拡張ストア公開素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+1. **🔴 保存窓の再設計** ([SaveToast.tsx](../components/bookmarklet/SaveToast.tsx)): 拡張なしのブックマークレット保存で、`/save` 窓を 80ms 即閉じから「意図して数秒見せる確認窓」に。**Saving → Saved / Already saved(重複)/ Failed**(英語ラベル=カーソルピルと一致、1文字ずつ出る演出)。重複は同URL+`!isDeleted`照合(二重追加しない)。
+2. **チラつき根絶**: ブックマークレット([lib/utils/bookmarklet.ts](../lib/utils/bookmarklet.ts))が窓を**最初から最終サイズ 300×380 で開く**(`window.resizeTo` 不使用=サイズ変身なし)。元ページ右上の Shadow DOM トーストは**廃止**(窓自体が合図)。
+3. **任意タグ付け**: **quick-tag ON かつ PiP 未表示**のときだけ Saved の下に [TagAddPopover](../components/board/TagAddPopover/index.tsx)(compact、既存+新規作成)。純粋関数 [planSaveWindow](../lib/bookmarklet/save-window-plan.ts) が「タグ出すか / 自動クローズ時間」を決定。付与は共有ヘルパー [quick-tag-apply.ts](../lib/tagger/quick-tag-apply.ts)(第3段で作り撤去→復元)。ライフサイクル: 無操作5s自動 / pointerEnter・keydownでengage / leave 600msクローズ(入力中=value非空は閉じない) / ✕。タグ無し(OFF/PiP/失敗)は自動クローズ(~1.8s/~2.4s)。
+4. **拡張ユーザー無関係**: ブックマークレットは拡張検知で即 return(`/save`もトーストも開かない)。カーソルピル(`extension/`)不変。
+5. 設計 `docs/superpowers/specs/2026-06-17-bookmarklet-save-window-redesign-design.md` / 計画 `...plans/2026-06-17-bookmarklet-save-window-redesign.md`。
+6. **未着手の磨き(非ブロッキング)**: 窓サイズ/位置/✕配置/Saved の世界観作り込みは実機を見て次セッションで微調整可。
+
+**🔴 次セッション**: user 実機確認(**ブックマークレット取り直し必須** + 拡張オフ)→ OK なら公開準備(言語切替・onboarding・LP・拡張ストア素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+**没/撤去(履歴)**: カーソルピル案(拡張なしでも出す)は不採用 — 窓がどうせ出るなら窓で Saved を見せる方が筋が良い、で決着。第3段(小→大変身版)の spec/plan は参照のみ残置。
 
 ---
 
