@@ -147,8 +147,8 @@ export function SaveToast(): ReactElement {
               currentTagIds: [...bm.tags],
               suggestedEntries: ordered.slice(0, 5).map((t) => ({ kind: 'existing' as const, tagId: t.id })),
             })
-            setState('tags')
             try { window.resizeTo(TAG_WIN_W, TAG_WIN_H) } catch { /* popup may refuse */ }
+            setState('tags')
             return
           }
         }
@@ -225,45 +225,27 @@ export function SaveToast(): ReactElement {
     )
   }
 
-  const labelText =
-    state === 'error' ? t('bookmarklet.toast.error') :
-    state === 'saved' || state === 'recede' ? t('bookmarklet.toast.saved') :
-    t('bookmarklet.toast.saving')
-
-  const labelClass =
-    state === 'saved' || state === 'recede' ? `${styles.label} ${styles.saved}` :
-    state === 'error' ? `${styles.label} ${styles.error}` :
-    styles.label
-
-  const showImage = (state === 'saved' || state === 'recede') && image !== ''
+  // During the decision phase (saving/saved/recede), show a blank placeholder.
+  // Visible save feedback is already provided by the Shadow-DOM toast that the
+  // bookmarklet IIFE injects into the host page — the popup window is just an
+  // IDB-write bridge and must not flash distracting content before closing or
+  // transforming into the tag window.
+  if (state === 'saving' || state === 'saved' || state === 'recede') {
+    return (
+      <div
+        className={styles.blank}
+        data-state={state}
+        data-testid="save-toast"
+        aria-hidden="true"
+      />
+    )
+  }
 
   return (
     <div className={styles.stage} data-state={state} data-testid="save-toast">
-      {showImage && (
-        <img
-          className={styles.bgThumb}
-          src={image}
-          alt=""
-          aria-hidden="true"
-          data-role="bg-thumb"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-        />
-      )}
       <div className={styles.glow} />
       <div className={styles.center}>
         <div className={styles.indicator}>
-          {state === 'saving' && <div className={styles.ring} data-role="ring" />}
-          {(state === 'saved' || state === 'recede') && (
-            <svg
-              className={styles.checkmark}
-              viewBox="0 0 24 24"
-              role="img"
-              aria-label={t('bookmarklet.toast.saved')}
-              data-role="checkmark"
-            >
-              <path d="M5 12 L10 17 L19 7" />
-            </svg>
-          )}
           {state === 'error' && (
             <div
               className={styles.errorMark}
@@ -274,8 +256,8 @@ export function SaveToast(): ReactElement {
           )}
         </div>
         <div className={styles.brand}>AllMarks</div>
-        <div className={labelClass} aria-live="polite">
-          <StaggeredLabel text={labelText} />
+        <div className={`${styles.label} ${styles.error}`} aria-live="polite">
+          <StaggeredLabel text={t('bookmarklet.toast.error')} />
         </div>
       </div>
     </div>

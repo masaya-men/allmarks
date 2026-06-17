@@ -61,7 +61,11 @@ describe('SaveToast', () => {
     expect(joined).toBe('ブックマークレットから開いてください')
   })
 
-  it('renders saving state with ring indicator initially', () => {
+  it('renders a blank placeholder (no ring, no brand) during the saving state', () => {
+    // Behavior change: during the decision phase the popup shows a blank
+    // placeholder — no distracting ring/brand/label. The host-page
+    // Shadow-DOM toast injected by the bookmarklet IIFE owns the visible
+    // save feedback.
     mockParams = new URLSearchParams({
       url: 'https://example.com',
       title: 'Example',
@@ -69,7 +73,10 @@ describe('SaveToast', () => {
     render(<SaveToast />)
     const stage = screen.getByTestId('save-toast')
     expect(stage.getAttribute('data-state')).toBe('saving')
-    expect(stage.querySelector('[data-role="ring"]')).toBeTruthy()
+    // Ring must NOT appear (blank placeholder, no animation)
+    expect(stage.querySelector('[data-role="ring"]')).toBeNull()
+    // Brand text must NOT appear
+    expect(stage.textContent).not.toContain('AllMarks')
   })
 
   it('fast-closes after IDB write completes (popup is just an IDB-write bridge)', async () => {
@@ -192,7 +199,7 @@ describe('SaveToast quick-tag branching', () => {
 })
 
 import { addTagToBookmark } from '@/lib/storage/tags'
-import { addBookmark } from '@/lib/storage/indexeddb'
+import { addBookmark, initDB } from '@/lib/storage/indexeddb'
 import { postBookmarkUpdated } from '@/lib/board/channel'
 
 describe('SaveToast lifecycle (Task 4)', () => {
@@ -276,6 +283,50 @@ describe('SaveToast lifecycle (Task 4)', () => {
     fireEvent.pointerLeave(win)
     await act(async () => { await vi.advanceTimersByTimeAsync(700) })
     expect(window.close).not.toHaveBeenCalled()
+  })
+})
+
+describe('SaveToast blank during decision phase', () => {
+  // During state === 'saving' (the decision phase), the popup must show NO
+  // distracting content — no ring animation, no brand text, no "保存中…" label.
+  // Visible feedback lives in the host-page Shadow-DOM toast injected by the
+  // bookmarklet IIFE. The popup is just an IDB-write bridge.
+  beforeEach(() => {
+    vi.clearAllMocks()
+    Object.defineProperty(window, 'resizeTo', { value: vi.fn(), writable: true, configurable: true })
+    Object.defineProperty(window, 'close', { value: vi.fn(), configurable: true, writable: true })
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: false, media: q, onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    }))
+    // Pause async save so we can inspect the initial rendering
+    vi.mocked(initDB).mockReturnValue(new Promise(() => { /* never resolves */ }))
+    mockParams = new URLSearchParams({ url: 'https://example.com', title: 'Example' })
+  })
+
+  afterEach(() => {
+    // Restore initDB to its default resolved mock so later describe blocks are unaffected
+    vi.mocked(initDB).mockResolvedValue({} as Awaited<ReturnType<typeof initDB>>)
+  })
+
+  it('does NOT render ring, brand, or saving label during the decision phase', () => {
+    render(<SaveToast />)
+    const stage = screen.getByTestId('save-toast')
+    // Ring must be absent
+    expect(stage.querySelector('[data-role="ring"]')).toBeNull()
+    // Brand "AllMarks" text must be absent
+    expect(stage.textContent).not.toContain('AllMarks')
+    // "保存中…" label must be absent
+    expect(stage.textContent).not.toContain('保存中')
+  })
+
+  it('still shows data-testid="save-toast" placeholder during decision phase', () => {
+    render(<SaveToast />)
+    expect(screen.getByTestId('save-toast')).toBeTruthy()
+    // No error mark and no tag window either
+    expect(screen.queryByTestId('save-tag-window')).toBeNull()
+    expect(screen.queryByRole('img', { name: /エラー/ })).toBeNull()
   })
 })
 

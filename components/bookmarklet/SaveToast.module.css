@@ -182,6 +182,15 @@
   .stage[data-state="recede"] { transition: opacity 80ms linear, transform 0s; }
 }
 
+/* Blank placeholder shown during the decision phase (saving/saved/recede).
+ * No animation, no text, no ring — just a background that blends with the
+ * popup window so the brief flash before close/tag-window is invisible. */
+.blank {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-dark, #0a0a0a);
+}
+
 /* Tag-mode stage — fills the popup window with dark world styling. */
 .tagStage {
   position: fixed;
