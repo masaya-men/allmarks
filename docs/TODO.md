@@ -21,7 +21,23 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 105 — 拡張なしブックマークレット保存窓を再設計 + 任意タグ付け 完成)
+### 直近の状態 (セッション 106 — i18n 言語切替の層①(アプリ本体ランタイム切替) 配線 完成)
+
+**完了 (= 全て検証済: tsc 0 / vitest 1037 pass / build 22 routes / 本番 allmarks.app 反映・user 確認済。brainstorming→spec→plan→サブエージェント駆動(各タスク2段レビュー + 通し最終レビュー opus = READY TO MERGE))**:
+
+1. **🔴 言語切替の「層①(アプリ本体)」を配線**: 翻訳ファイルは 15 言語揃っていたが `t.ts` が `ja.json` 固定 import で日本語しか出なかった。これを **React Context 方式**に作り直し。新規 `lib/i18n/I18nProvider.tsx`(`I18nProvider`+`useI18n()` フック、英語ベイク既定、**プロバイダ外でも throw せず英語フォールバック**、`loadMessages` で選択言語のみ動的 import=コード分割)、`lib/i18n/locale-store.ts`(localStorage キー `allmarks-locale`、解決順=**保存値→ブラウザ言語→英語**)、`lib/i18n/translate.ts`(純粋関数に切り出し)。`(app)` layout に Provider 設置。
+2. **既存 10 コンポーネントを hook に移行 + 旧 `t.ts` 削除**(BoardRoot/TuneTrigger/Sidebar/Lightbox(内部に DefaultText/TweetText も)/DisplayModeSwitch/PrecisionSlider/TriagePage/BookmarkletInstall(Modal)/EmptyStateWelcome)。既定言語を ja→en にしたことで日本語 assert の3テストが落ちたので、`renderWithLocale(ui,'ja',ja)` で包んで温存(意図=日本語UIが出ることの確認を維持)。
+3. **言語切替UI** `components/board/LanguageSwitcher.tsx`(ボード右下 `position:fixed`、`BOARD_Z_INDEX.LANGUAGE_SWITCHER=140`): 畳=`🌐 JA`、開=15 言語を **各言語自身の名前**(`LANGUAGE_ENDONYMS`=日本語/English/中文/한국어/Español…)で列挙、選ぶと即切替。外側クリックは capture-phase pointerdown。
+4. **重要な認識(user 確認済)**: アプリ chrome は**意図的に英語固定**(TITLE/TUNE/SETTINGS 等)なので、言語切替しても画面の見た目変化は小さい(これは仕様、バグではない)。言語で変わるのは少数の文章のみ(ライトボックス「元ページを開く↔Open original page」で user 実機確認済 / TUNE スライダー tooltip / サイドバー All↔すべて 等 / 空状態 / ブックマークレット modal / triage 一部)。**多言語の本丸 = LP(層②)** で、これは設計図のみ確定・未実装(下記)。
+5. **層②(LP 言語別 URL)は設計図として確定・本セッションでは未実装**: 素URL=英語 + `/ja` `/zh`… + hreflang + 言語別sitemap、`app/[locale]/` を `generateStaticParams` で全言語 prerender。**LP は丸ごと洗練デザインに作り直す予定なので、古い日本語ベタ書き LP を今 translate するのは捨て仕事**と判断 → LP 作り直し時にこの設計図に乗せる。
+6. **未処理 Minor(全て最終レビューで非ブロッキング判定、次に LanguageSwitcher を触るとき回収)**: 言語リストの生スクロールバー → fade化、`<li>`→`role=option`、`aria-hidden="true"`、`setLocale` の rapid-switch 最新優先ガード(任意)。
+7. 設計 `docs/superpowers/specs/2026-06-17-i18n-locale-architecture-design.md` / 計画 `docs/superpowers/plans/2026-06-17-i18n-locale-wiring.md`。
+
+**🔴 次セッション**: LP 作り直し(層②もそこに乗せる)/ 言語切替UIの見た目調整 / onboarding / 拡張ストア素材。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+### 一つ前 (セッション 105 — 拡張なしブックマークレット保存窓を再設計 + 任意タグ付け 完成)
 
 **完了 (= 全て検証済: tsc 0 / vitest 1019 pass / build OK / 本番 allmarks.app 反映。brainstorming→spec→plan→サブエージェント駆動(各タスク2段レビュー + 通し最終レビュー opus))**:
 
