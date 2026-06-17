@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import type { SupportedLocale } from '@/lib/i18n/config'
+import { LanguageMenu } from './LanguageMenu'
 import styles from './SiteHeader.module.css'
 
 /**
@@ -29,8 +30,6 @@ const NAV_ITEMS = [
 ] as const
 
 export function SiteHeader({ locale }: { locale: SupportedLocale }): React.ReactElement {
-  // locale will be wired to LanguageMenu in Task 7
-  void locale
   const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -71,6 +70,7 @@ export function SiteHeader({ locale }: { locale: SupportedLocale }): React.React
           Open Board
           <span className={styles.openArrow} aria-hidden="true">↗</span>
         </Link>
+        <LanguageMenu current={locale} />
       </nav>
     </header>
   )
