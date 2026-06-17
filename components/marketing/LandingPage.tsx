@@ -8,6 +8,7 @@ import { Hero } from './sections/Hero'
 import { Problem } from './sections/Problem'
 import { Features } from './sections/Features'
 import { ShareIt } from './sections/ShareIt'
+import { FinalCta } from './sections/FinalCta'
 import { HeroSection } from './sections/HeroSection'
 import './landing-tokens.css'
 import { SaveDemoSection } from './sections/SaveDemoSection'
@@ -34,6 +35,7 @@ export function LandingPage(): React.ReactElement {
         <Problem />
         <Features />
         <ShareIt />
+        <FinalCta />
         <HeroSection />
         <SaveDemoSection />
         <CollageDemoSection />
