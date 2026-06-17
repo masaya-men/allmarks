@@ -136,5 +136,38 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Etiket yönetimini aç"
+  },
+  "landing": {
+    "hero": {
+      "label": "Görsel Yer İmi Yöneticisi",
+      "headline": "Bağlantıları görsel bir panoya dönüştürün.",
+      "description": "Videoları, sosyal paylaşımları, makaleleri ve görselleri tek tıkla kaydedin, ardından özgürce düzenleyin. Sıradan bir metin listesini tek bakışta kavrayabileceğiniz bir ilham panosuna çevirin. Kayıt yok, tamamen ücretsiz.",
+      "ctaPrimary": "Panoyu aç",
+      "ctaGhost": "Nasıl çalıştığını gör",
+      "scrollHint": "kaydır"
+    },
+    "problem": {
+      "headline": "Biriktiriyorsunuz ama bir daha bakmıyorsunuz.",
+      "body": "Sıkıcı bir mavi bağlantı sütunu. Sadece kaydırarak geçtiğiniz zaman tünelleri. Kaydettiğiniz şeylerin bir metin duvarına gömülmesine izin vermeyin."
+    },
+    "features": {
+      "capture": { "title": "Her yerden, tek tıkla.", "body": "X paylaşımları, YouTube videoları, makaleler, mağazalar, görseller — uzantı, yer imi aracı veya yapıştırılan URL ile doğrudan panonuza gönderin." },
+      "layout": { "title": "Özgürce düzenleyin.", "body": "Boyutu ve konumu tam istediğiniz gibi ayarlamak için sürükleyip bırakın." },
+      "live": { "title": "Birden fazla videoyu aynı anda oynatın.", "body": "Panodaki videolar birlikte hareket eder — durağan görsel listesi değil, gerçekten canlı bir pano." },
+      "organize": { "title": "Etiketle sırala. Temayla yenile.", "body": "Etikete göre filtreleyin ve temalarla tüm görünümü değiştirin. Daha fazla tema geliyor." },
+      "privacy": { "title": "Hesap yok. Tamamen yerel.", "body": "Her şey yalnızca tarayıcınızda saklanır. Hiçbir şey sunucuya gönderilmez. Gizliliğiniz size ait kalır." }
+    },
+    "share": {
+      "headline": "Tek bir pano olarak paylaşın.",
+      "body": "Tamamlanan panoyu görsel olarak dışa aktarın veya bir bağlantı paylaşın — tam düzeniniz tam olarak oluşturduğunuz şekilde ulaşır."
+    },
+    "cta": {
+      "headline": "Pano oluşturmaya başlayın.",
+      "button": "Hemen başla — kayıt yok"
+    },
+    "footer": {
+      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
+      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+    }
   }
 }

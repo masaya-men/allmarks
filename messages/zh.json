@@ -136,5 +136,38 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "打开标签管理"
+  },
+  "landing": {
+    "hero": {
+      "label": "可视化书签管理",
+      "headline": "把链接变成可视化画板。",
+      "description": "一键保存视频、社交帖子、文章和图片，再自由排列。把单调的文字列表变成一眼就能领会的灵感画板。无需注册，完全免费。",
+      "ctaPrimary": "打开画板",
+      "ctaGhost": "了解工作方式",
+      "scrollHint": "向下滚动"
+    },
+    "problem": {
+      "headline": "你不断堆积，却再也不看。",
+      "body": "一列单调的蓝色链接。只是划过的时间线。别让你保存的东西淹没在文字之中。"
+    },
+    "features": {
+      "capture": { "title": "随时随地，一键保存。", "body": "X 上的帖子、YouTube 视频、文章、店铺、图片——通过扩展、书签小工具或粘贴网址，直接发送到你的画板。" },
+      "layout": { "title": "自由排列。", "body": "拖放即可随心设定大小和位置。" },
+      "live": { "title": "同时播放多个视频。", "body": "画板上的视频一起动起来——不是一堆静止图，而是真正活起来的画板。" },
+      "organize": { "title": "用标签整理，用主题换装。", "body": "按标签筛选，用主题切换整体外观。更多主题即将推出。" },
+      "privacy": { "title": "无需账户，完全本地。", "body": "一切只保存在你的浏览器中，绝不发送到服务器。你的隐私始终属于你。" }
+    },
+    "share": {
+      "headline": "作为一整块画板分享。",
+      "body": "把完成的画板导出为图片，或分享链接——你的排版会原样呈现。"
+    },
+    "cta": {
+      "headline": "开始打造你的画板。",
+      "button": "立即开始——无需注册"
+    },
+    "footer": {
+      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
+      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+    }
   }
 }

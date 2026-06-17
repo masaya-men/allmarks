@@ -136,5 +136,43 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Tag-Verwaltung öffnen"
+  },
+  "landing": {
+    "hero": {
+      "label": "Visueller Lesezeichen-Manager",
+      "headline": "Links in ein visuelles Board verwandeln.",
+      "description": "Videos, Social-Posts, Artikel und Bilder per Klick speichern, frei anordnen. Verwandle eine dröge Linkliste in ein Inspirations-Board, das du auf einen Blick erfasst. Kein Account nötig, komplett kostenlos.",
+      "ctaPrimary": "Board öffnen",
+      "ctaGhost": "So funktioniert es",
+      "scrollHint": "scrollen"
+    },
+    "problem": {
+      "headline": "Du sammelst alles – und schaust nie wieder rein.",
+      "body": "Eine fade Spalte blauer Links. Timelines, die du nur durchscrollst. Lass nicht zu, dass das Gespeicherte in einem Textberg verschwindet."
+    },
+    "features": {
+      "capture": { "title": "Ein Klick, von überall.", "body": "Posts auf X, YouTube-Videos, Artikel, Shops, Bilder – direkt aufs Board senden, per Erweiterung, Bookmarklet oder eingefügter URL." },
+      "layout": { "title": "Frei anordnen.", "body": "Per Drag & Drop Größe und Position genau so setzen, wie es dir gefällt." },
+      "live": { "title": "Mehrere Videos gleichzeitig abspielen.", "body": "Videos auf deinem Board laufen zusammen – keine Liste statischer Vorschaubilder, sondern ein Board, das wirklich lebt." },
+      "organize": { "title": "Taggen zum Sortieren. Themes zum Umgestalten.", "body": "Nach Tags filtern und das gesamte Aussehen mit Themes wechseln. Mehr Themes sind in Arbeit." },
+      "privacy": { "title": "Kein Account. Vollständig lokal.", "body": "Alles wird nur in deinem Browser gespeichert. Nichts wird an einen Server übermittelt. Deine Privatsphäre bleibt deine." }
+    },
+    "share": {
+      "headline": "Als ganzes Board teilen.",
+      "body": "Fertige Boards als Bild exportieren oder einen Link teilen – dein exaktes Layout kommt genauso an, wie du es erstellt hast."
+    },
+    "cta": {
+      "headline": "Fang an, dein Board zu bauen.",
+      "button": "Jetzt starten – ohne Anmeldung"
+    },
+    "footer": {
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
+    }
   }
 }

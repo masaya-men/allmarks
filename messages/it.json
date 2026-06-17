@@ -136,5 +136,38 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Apri la gestione dei tag"
+  },
+  "landing": {
+    "hero": {
+      "label": "Gestore visivo di segnalibri",
+      "headline": "Trasforma i link in una bacheca visiva.",
+      "description": "Salva video, post social, articoli e immagini con un clic, poi disponili liberamente. Trasforma una noiosa lista di testo in una bacheca d'ispirazione che capisci a colpo d'occhio. Nessuna registrazione, completamente gratuito.",
+      "ctaPrimary": "Apri la bacheca",
+      "ctaGhost": "Scopri come funziona",
+      "scrollHint": "scorri"
+    },
+    "problem": {
+      "headline": "Li accumuli e non li guardi mai più.",
+      "body": "Una colonna piatta di link blu. Timeline che scorri senza fermarti. Non lasciare che ciò che salvi venga sepolto in un muro di testo."
+    },
+    "features": {
+      "capture": { "title": "Un clic, da qualsiasi posto.", "body": "Post su X, video YouTube, articoli, negozi, immagini — inviali direttamente alla tua bacheca tramite l'estensione, il bookmarklet o incollando l'URL." },
+      "layout": { "title": "Disponi liberamente.", "body": "Trascina e rilascia per impostare dimensione e posizione esattamente come vuoi." },
+      "live": { "title": "Riproduci più video contemporaneamente.", "body": "I video sulla tua bacheca si muovono insieme — non è una lista di immagini statiche, ma una bacheca davvero viva." },
+      "organize": { "title": "Tag per ordinare. Temi per rinnovare.", "body": "Filtra per tag e cambia l'aspetto complessivo con i temi. Altri temi sono in arrivo." },
+      "privacy": { "title": "Nessun account. Completamente locale.", "body": "Tutto viene salvato solo nel tuo browser. Nulla viene inviato a un server. La tua privacy rimane tua." }
+    },
+    "share": {
+      "headline": "Condividila come un'unica bacheca.",
+      "body": "Esporta la bacheca finita come immagine o condividi un link — il tuo layout esatto arriva esattamente come l'hai creato."
+    },
+    "cta": {
+      "headline": "Inizia a costruire la tua bacheca.",
+      "button": "Inizia ora — senza registrazione"
+    },
+    "footer": {
+      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
+      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+    }
   }
 }

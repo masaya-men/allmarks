@@ -181,8 +181,8 @@
       "button": "今すぐ始める（登録不要）"
     },
     "footer": {
-      "features": "機能", "guide": "使い方", "faq": "FAQ", "about": "About",
-      "privacy": "プライバシー", "terms": "規約", "contact": "お問い合わせ"
+      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
+      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
   }
 }

@@ -136,5 +136,43 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Abrir gestión de etiquetas"
+  },
+  "landing": {
+    "hero": {
+      "label": "Gestor visual de marcadores",
+      "headline": "Convierte tus enlaces en un tablero visual.",
+      "description": "Guarda vídeos, publicaciones, artículos e imágenes con un clic y ordénalos libremente. Transforma una aburrida lista de texto en un tablero de inspiración que entiendes de un vistazo. Sin registro, totalmente gratis.",
+      "ctaPrimary": "Abrir el tablero",
+      "ctaGhost": "Ver cómo funciona",
+      "scrollHint": "desplazar"
+    },
+    "problem": {
+      "headline": "Los acumulas y nunca vuelves a verlos.",
+      "body": "Una columna sosa de enlaces azules. Timelines que solo deslizas. No dejes que lo que guardas quede enterrado en un muro de texto."
+    },
+    "features": {
+      "capture": { "title": "Un clic, desde cualquier lugar.", "body": "Publicaciones en X, vídeos de YouTube, artículos, tiendas, imágenes — envíalos directamente a tu tablero con la extensión, el marcador o pegando la URL." },
+      "layout": { "title": "Ordénalos libremente.", "body": "Arrastra y suelta para ajustar tamaño y posición exactamente como quieras." },
+      "live": { "title": "Reproduce varios vídeos a la vez.", "body": "Los vídeos de tu tablero se mueven juntos — no es una lista de imágenes estáticas, es un tablero que de verdad vive." },
+      "organize": { "title": "Etiqueta para ordenar. Temas para rediseñar.", "body": "Filtra por etiqueta y cambia todo el aspecto con temas. Hay más temas en camino." },
+      "privacy": { "title": "Sin cuenta. Completamente local.", "body": "Todo se guarda solo dentro de tu navegador. Nada se envía a ningún servidor. Tu privacidad es tuya." }
+    },
+    "share": {
+      "headline": "Compártelo como un tablero completo.",
+      "body": "Exporta tu tablero terminado como imagen o comparte un enlace — tu disposición exacta llega tal como la creaste."
+    },
+    "cta": {
+      "headline": "Empieza a construir tu tablero.",
+      "button": "Comenzar ahora — sin registro"
+    },
+    "footer": {
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
+    }
   }
 }

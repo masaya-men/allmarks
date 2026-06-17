@@ -136,5 +136,38 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Tagbeheer openen"
+  },
+  "landing": {
+    "hero": {
+      "label": "Visuele bladwijzermanager",
+      "headline": "Zet links om in een visueel bord.",
+      "description": "Sla video's, sociale berichten, artikelen en afbeeldingen op met één klik en rangschik ze daarna vrij. Verander een saaie tekstlijst in een inspiratiebord dat je in één oogopslag begrijpt. Geen aanmelding nodig, volledig gratis.",
+      "ctaPrimary": "Open het bord",
+      "ctaGhost": "Bekijk hoe het werkt",
+      "scrollHint": "scrollen"
+    },
+    "problem": {
+      "headline": "Je stapelt ze op en kijkt er nooit meer naar.",
+      "body": "Een saaie kolom blauwe links. Tijdlijnen die je alleen maar doorscrollt. Laat je opgeslagen content niet begraven worden in een muur van tekst."
+    },
+    "features": {
+      "capture": { "title": "Eén klik, van overal.", "body": "Posts op X, YouTube-video's, artikelen, winkels, afbeeldingen — stuur ze rechtstreeks naar je bord via de extensie, de bladwijzer of een geplakte URL." },
+      "layout": { "title": "Vrij rangschikken.", "body": "Slepen en neerzetten om formaat en positie precies naar wens in te stellen." },
+      "live": { "title": "Meerdere video's tegelijk afspelen.", "body": "Video's op je bord bewegen samen — geen lijst met stilstaande beelden, maar een bord dat echt leeft." },
+      "organize": { "title": "Tags om te sorteren. Thema's om van look te wisselen.", "body": "Filteren op tag en de hele look wisselen met thema's. Er zijn meer thema's onderweg." },
+      "privacy": { "title": "Geen account. Volledig lokaal.", "body": "Alles wordt alleen in je browser opgeslagen. Er wordt niets naar een server gestuurd. Jouw privacy blijft van jou." }
+    },
+    "share": {
+      "headline": "Deel het als één bord.",
+      "body": "Exporteer je afgeronde bord als afbeelding of deel een link — jouw exacte indeling arriveert precies zoals je het gemaakt hebt."
+    },
+    "cta": {
+      "headline": "Begin met het bouwen van je bord.",
+      "button": "Nu beginnen — geen aanmelding"
+    },
+    "footer": {
+      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
+      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+    }
   }
 }

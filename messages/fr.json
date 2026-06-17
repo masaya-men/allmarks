@@ -136,5 +136,43 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Ouvrir la gestion des tags"
+  },
+  "landing": {
+    "hero": {
+      "label": "Gestionnaire visuel de favoris",
+      "headline": "Transformez vos liens en tableau visuel.",
+      "description": "Enregistrez vidéos, publications, articles et images en un clic, puis arrangez-les librement. Transformez une liste de liens ennuyeuse en un tableau d'inspiration que vous saisissez d'un coup d'œil. Sans inscription, entièrement gratuit.",
+      "ctaPrimary": "Ouvrir le tableau",
+      "ctaGhost": "Voir comment ça marche",
+      "scrollHint": "défiler"
+    },
+    "problem": {
+      "headline": "Vous les accumulez sans jamais y revenir.",
+      "body": "Une colonne morne de liens bleus. Des timelines que vous faites défiler sans vous arrêter. Ne laissez pas vos sauvegardes s'engloutir dans un mur de texte."
+    },
+    "features": {
+      "capture": { "title": "Un clic, depuis n'importe où.", "body": "Posts sur X, vidéos YouTube, articles, boutiques, images — envoyez-les directement sur votre tableau via l'extension, le bookmarklet ou en collant l'URL." },
+      "layout": { "title": "Arrangez librement.", "body": "Glissez-déposez pour définir taille et position exactement comme vous le souhaitez." },
+      "live": { "title": "Lisez plusieurs vidéos en même temps.", "body": "Les vidéos de votre tableau jouent ensemble — pas une liste d'images figées, mais un tableau vraiment vivant." },
+      "organize": { "title": "Tags pour trier. Thèmes pour changer de look.", "body": "Filtrez par tag et changez l'apparence entière avec les thèmes. D'autres thèmes arrivent bientôt." },
+      "privacy": { "title": "Sans compte. Entièrement local.", "body": "Tout est enregistré uniquement dans votre navigateur. Rien n'est envoyé à un serveur. Votre vie privée reste la vôtre." }
+    },
+    "share": {
+      "headline": "Partagez-le comme un tableau complet.",
+      "body": "Exportez votre tableau terminé en image ou partagez un lien — votre mise en page exacte arrive telle que vous l'avez créée."
+    },
+    "cta": {
+      "headline": "Commencez à construire votre tableau.",
+      "button": "Démarrer maintenant — sans inscription"
+    },
+    "footer": {
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
+    }
   }
 }

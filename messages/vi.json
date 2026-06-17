@@ -136,5 +136,38 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Mở quản lý thẻ"
+  },
+  "landing": {
+    "hero": {
+      "label": "Trình quản lý dấu trang trực quan",
+      "headline": "Biến liên kết thành bảng hình ảnh.",
+      "description": "Lưu video, bài đăng mạng xã hội, bài viết và hình ảnh chỉ bằng một cú nhấp, rồi sắp xếp tự do. Biến danh sách văn bản nhàm chán thành bảng cảm hứng hiểu ngay từ cái nhìn đầu tiên. Không cần đăng ký, hoàn toàn miễn phí.",
+      "ctaPrimary": "Mở bảng",
+      "ctaGhost": "Xem cách hoạt động",
+      "scrollHint": "cuộn xuống"
+    },
+    "problem": {
+      "headline": "Bạn cứ tích góp mà chẳng bao giờ xem lại.",
+      "body": "Một cột liên kết màu xanh tẻ nhạt. Dòng thời gian chỉ để vuốt qua. Đừng để thứ bạn lưu bị chôn vùi trong một bức tường chữ."
+    },
+    "features": {
+      "capture": { "title": "Một cú nhấp, từ bất kỳ đâu.", "body": "Bài đăng trên X, video YouTube, bài viết, cửa hàng, hình ảnh — gửi thẳng vào bảng qua tiện ích mở rộng, bookmarklet hoặc dán URL." },
+      "layout": { "title": "Sắp xếp tự do.", "body": "Kéo và thả để đặt kích thước và vị trí chính xác theo ý bạn." },
+      "live": { "title": "Phát nhiều video cùng lúc.", "body": "Các video trên bảng chạy cùng nhau — không phải danh sách ảnh tĩnh, mà là bảng thực sự sống động." },
+      "organize": { "title": "Gắn thẻ để phân loại. Chủ đề để thay đổi giao diện.", "body": "Lọc theo thẻ và đổi giao diện tổng thể bằng chủ đề. Thêm nhiều chủ đề đang được phát triển." },
+      "privacy": { "title": "Không cần tài khoản. Hoàn toàn cục bộ.", "body": "Mọi thứ chỉ được lưu trong trình duyệt của bạn. Không có gì được gửi lên máy chủ. Quyền riêng tư của bạn là của bạn." }
+    },
+    "share": {
+      "headline": "Chia sẻ như một bảng hoàn chỉnh.",
+      "body": "Xuất bảng hoàn chỉnh dưới dạng hình ảnh hoặc chia sẻ liên kết — bố cục chính xác của bạn được gửi đến đúng như bạn đã tạo."
+    },
+    "cta": {
+      "headline": "Bắt đầu xây dựng bảng của bạn.",
+      "button": "Bắt đầu ngay — không cần đăng ký"
+    },
+    "footer": {
+      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
+      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+    }
   }
 }

@@ -136,5 +136,38 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Abrir gerenciamento de tags"
+  },
+  "landing": {
+    "hero": {
+      "label": "Gerenciador visual de favoritos",
+      "headline": "Transforme links em um quadro visual.",
+      "description": "Salve vídeos, publicações, artigos e imagens com um clique e organize-os livremente. Transforme uma lista de texto monótona em um quadro de inspiração que você entende de relance. Sem cadastro, completamente gratuito.",
+      "ctaPrimary": "Abrir o quadro",
+      "ctaGhost": "Ver como funciona",
+      "scrollHint": "rolar"
+    },
+    "problem": {
+      "headline": "Você acumula e nunca mais olha.",
+      "body": "Uma coluna sem graça de links azuis. Timelines que você apenas passa rolando. Não deixe o que você salvou ficar soterrado em um muro de texto."
+    },
+    "features": {
+      "capture": { "title": "Um clique, de qualquer lugar.", "body": "Posts no X, vídeos do YouTube, artigos, lojas, imagens — envie direto para o seu quadro pela extensão, bookmarklet ou colando a URL." },
+      "layout": { "title": "Organize livremente.", "body": "Arraste e solte para definir tamanho e posição exatamente como você quer." },
+      "live": { "title": "Reproduza vários vídeos ao mesmo tempo.", "body": "Os vídeos do seu quadro se movem juntos — não é uma lista de imagens estáticas, mas um quadro que realmente vive." },
+      "organize": { "title": "Tags para organizar. Temas para renovar.", "body": "Filtre por tag e mude a aparência completa com temas. Mais temas estão a caminho." },
+      "privacy": { "title": "Sem conta. Totalmente local.", "body": "Tudo é salvo apenas no seu navegador. Nada é enviado a um servidor. Sua privacidade permanece sua." }
+    },
+    "share": {
+      "headline": "Compartilhe como um quadro completo.",
+      "body": "Exporte o quadro finalizado como imagem ou compartilhe um link — o seu layout exato chega exatamente como você criou."
+    },
+    "cta": {
+      "headline": "Comece a montar o seu quadro.",
+      "button": "Começar agora — sem cadastro"
+    },
+    "footer": {
+      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
+      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+    }
   }
 }
