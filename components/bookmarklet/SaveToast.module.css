@@ -181,39 +181,3 @@
   .stage,
   .stage[data-state="recede"] { transition: opacity 80ms linear, transform 0s; }
 }
-
-/* Blank placeholder shown during the decision phase (saving/saved/recede).
- * No animation, no text, no ring — just a background that blends with the
- * popup window so the brief flash before close/tag-window is invisible. */
-.blank {
-  position: fixed;
-  inset: 0;
-  background: var(--bg-dark, #0a0a0a);
-}
-
-/* Tag-mode stage — fills the popup window with dark world styling. */
-.tagStage {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  background: var(--bg-dark, #0a0a0a);
-  color: var(--text-primary, #f2f2f2);
-  overflow: hidden;
-  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
-}
-
-.tagClose {
-  align-self: flex-end;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--color-card-border, rgba(255, 255, 255, 0.12));
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  color: inherit;
-  cursor: pointer;
-  font-size: 13px;
-  line-height: 1;
-  flex-shrink: 0;
-}
