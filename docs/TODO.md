@@ -21,20 +21,18 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 105 — 保存直後タグ付け 第3段(拡張なしブックマークレット)完成)
+### 直近の状態 (セッション 105 — 保存直後タグ付け 第3段(拡張なしブックマークレット)実装→撤去)
 
-**完了 (= 全て検証済: tsc 0 / vitest 1018 pass / build OK / 本番 allmarks.app に反映。brainstorming→spec→plan→サブエージェント駆動(各タスク2段レビュー + 通し最終レビュー opus))**:
+**結論: 第3段は実装・本番確認したが user 判断で撤去。`/save` は元の「保存して即閉じる」に復帰(本番反映済)。第1段・第2段は無傷。**
 
-1. **🔴 新機能: 保存直後タグ付け 第3段(拡張なしブックマークレット)** — 拡張を入れていない人がブックマークレットで保存したとき、`/save` ポップアップ窓([SaveToast.tsx](../components/bookmarklet/SaveToast.tsx))が「一瞬で閉じる」だけだったのを、**トグル ON かつ 本物の PiP 未表示**のとき **PiP 風のタグUIに変身**するようにした(カード・メーターなし、タグだけがずらっと並ぶ + 新規作成欄)。
-   - **分岐**: 保存後に `loadQuickTagEnabled` → `queryPipPresence` → `shouldShowQuickTagWindow(enabled, pipActive)`。OFF / PiP 開 → 今まで通り 80ms で fast-close。ON + PiP なし → 窓を残しタグUI(`window.resizeTo(280,360)`、try/catch)。
-   - **タグUI**: 既存の board/PiP のタグメニュー [TagAddPopover](../components/board/TagAddPopover/index.tsx) を `compact` で流用。付与は新規共有ヘルパー [lib/tagger/quick-tag-apply.ts](../lib/tagger/quick-tag-apply.ts)(`shouldShowQuickTagWindow` / `applyExistingQuickTag` / `applyNewQuickTag` = find-or-create #28F100 + `postBookmarkUpdated`)。`/save` 窓は AllMarks origin なので IDB を直接書け、開いてるボードへ即反映。既適用タグの再タップは write/broadcast をスキップ(PiP と同じ)。
-   - **ライフサイクル**: 5s 無操作で自動クローズ / `pointerEnter` **または keydown(入力開始)**で engage しタイマー解除(プログラム的 mount-focus では engage しない)/ engage 後 `pointerLeave` で 600ms 後にクローズ、ただし**新規タグ入力欄に未確定の文字がある間は閉じない**(value 基準ガード。focus 基準だとチップが入力欄フォーカスを保持し続けるので不可)/ ✕ で即クローズ。
-   - **触らない**: カーソルピル(拡張専用)・元ページ Shadow DOM トースト・`lib/utils/bookmarklet.ts`・PipCompanion は不変。
-2. 設計 `docs/superpowers/specs/2026-06-17-quick-tag-on-save-phase3-bookmarklet-design.md` / 計画 `docs/superpowers/plans/2026-06-17-quick-tag-on-save-phase3-bookmarklet.md`。
-3. **フォローアップ(非急、IDEAS.md 記録)**: (a) PiP の付与ロジックを共有ヘルパーに寄せて二重管理解消(今は温存)。(b) 「拡張なしでもカーソルピルを出す」別タスク(透明 iframe で本物ピル流用案)。
-4. **条件付き未実施**: `window.resizeTo` が本番で効かなければ Task 6(ブックマークレット `resizable=1` 化)。user 実機確認で判定。
+1. **実装した内容(撤去済)**: 拡張なしのブックマークレット保存で `/save` ポップアップ窓を PiP 風タグUI(既存タグ + 新規作成、カード/メーターなし)に変身させ、その場でタグ付け→ボード即反映する機能。トグル ON かつ PiP 未表示のときだけ表示、ライフサイクル(無操作クローズ/engage/leave/✕)つき。spec/plan/サブエージェント駆動で完成、tsc 0 / vitest 1018 / build OK まで通した。
+2. **撤去理由**: 本番実機で `resizeTo` は効いた・挙動もOKだったが、**全ケースで「窓が中身付きでチラッと出る」のが体験を損なう**。「決定するまで暗い無地」polish を入れても、**窓が一瞬現れること自体はゼロにできない**(拡張なしの保存は AllMarks の窓を一度開く必要がある=ブラウザのストレージ分離仕様)。user「チラつき0じゃないならない方がいい」→ 撤去。
+3. **撤去内容**: `components/bookmarklet/SaveToast.{tsx,module.css}` を pre-第3段に復帰、`lib/tagger/quick-tag-apply.{ts,test.ts}` と `components/bookmarklet/SaveToast.test.tsx` を削除。検証済(tsc 0 / vitest 997 / build OK / 本番反映)。
+4. **教訓**: 拡張なし経路に「窓を見せて操作させる」UXは OS窓フラッシュが不可避で筋が悪い。タグ付けは拡張(第1段)/PiP(第2段)で完結させる方向が正しい。
+5. **残骸(履歴として保持)**: 設計 `docs/superpowers/specs/2026-06-17-quick-tag-on-save-phase3-bookmarklet-design.md` / 計画 `...plans/2026-06-17-quick-tag-on-save-phase3-bookmarklet.md`(実装は撤去済、参照のみ)。
+6. **別タスク(保留・IDEAS.md)**: 「拡張なしでもカーソルピルを出す」= 見た目だけ元ページに描く案なので窓フラッシュ問題と無関係。本命は本物ピル(extension CSS)を透明 iframe で重ねカーソル追従させる案(B)。
 
-**🔴 次セッションの候補**: 第3段の user 実機確認 → OK なら 公開準備(言語切替・onboarding・LP・拡張ストア素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+**🔴 次セッションの候補**: 公開準備(i18n 言語切替の配線・onboarding・LP 整備・拡張ストア公開素材)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 
