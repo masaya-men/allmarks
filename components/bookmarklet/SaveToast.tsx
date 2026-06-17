@@ -33,6 +33,8 @@ const ERROR_CLOSE_MS = 2600
 const FAST_CLOSE_MS = 80
 const TAG_WIN_W = 280
 const TAG_WIN_H = 360
+const UNTOUCHED_CLOSE_MS = 5000
+const LEAVE_GRACE_MS = 600
 
 function StaggeredLabel({ text }: { text: string }): ReactElement {
   const chars = useMemo(() => Array.from(text), [text])
@@ -61,6 +63,33 @@ export function SaveToast(): ReactElement {
   const savedRef = useRef(false)
 
   const closeWindow = useRef(() => { try { window.close() } catch { /* blocked */ } }).current
+
+  const untouchedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const engagedRef = useRef(false)
+
+  useEffect(() => {
+    if (state !== 'tags') return
+    untouchedTimerRef.current = setTimeout(() => {
+      if (!engagedRef.current) closeWindow()
+    }, UNTOUCHED_CLOSE_MS)
+    return () => {
+      if (untouchedTimerRef.current) clearTimeout(untouchedTimerRef.current)
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    }
+  }, [state, closeWindow])
+
+  function engage(): void {
+    engagedRef.current = true
+    if (untouchedTimerRef.current) { clearTimeout(untouchedTimerRef.current); untouchedTimerRef.current = null }
+    if (leaveTimerRef.current) { clearTimeout(leaveTimerRef.current); leaveTimerRef.current = null }
+  }
+
+  function handleLeave(): void {
+    if (!engagedRef.current) return
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    leaveTimerRef.current = setTimeout(closeWindow, LEAVE_GRACE_MS)
+  }
 
   async function handleAddExisting(tagId: string): Promise<void> {
     if (!tagData) return
@@ -165,7 +194,13 @@ export function SaveToast(): ReactElement {
   // Tag mode — render the compact tag menu in the /save popup window.
   if (state === 'tags' && tagData) {
     return (
-      <div className={styles.tagStage} data-state="tags" data-testid="save-tag-window">
+      <div
+        className={styles.tagStage}
+        data-state="tags"
+        data-testid="save-tag-window"
+        onPointerEnter={engage}
+        onPointerLeave={handleLeave}
+      >
         <button
           type="button"
           className={styles.tagClose}

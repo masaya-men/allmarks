@@ -194,6 +194,62 @@ describe('SaveToast quick-tag branching', () => {
 import { addTagToBookmark } from '@/lib/storage/tags'
 import { addBookmark } from '@/lib/storage/indexeddb'
 
+describe('SaveToast lifecycle (Task 4)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(addBookmark).mockResolvedValue({ id: 'b1', tags: [] } as unknown as Awaited<ReturnType<typeof addBookmark>>)
+    Object.defineProperty(window, 'resizeTo', { value: vi.fn(), writable: true, configurable: true })
+    vi.stubGlobal('close', vi.fn())
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: false, media: q, onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    }))
+    mockParams = new URLSearchParams({ url: 'https://x.com/a/status/1', title: 'Hello' })
+    ;(loadQuickTagEnabled as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(true)
+    ;(queryPipPresence as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(false)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('auto-closes after the untouched timeout when never engaged', async () => {
+    vi.useFakeTimers()
+    render(<SaveToast />)
+    // flush the async save+branch (resolves all mocked promises)
+    await act(async () => { await vi.runAllTimersAsync() })
+    // flush pending React effects (the lifecycle useEffect sets up the 5s timer here)
+    await act(async () => {})
+    expect(window.close).not.toHaveBeenCalled()
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
+    expect(window.close).toHaveBeenCalled()
+  })
+
+  it('cancels the untouched timer once the window is engaged', async () => {
+    vi.useFakeTimers()
+    render(<SaveToast />)
+    await act(async () => { await vi.runAllTimersAsync() })
+    await act(async () => {})
+    const win = screen.getByTestId('save-tag-window')
+    fireEvent.pointerEnter(win)
+    await act(async () => { await vi.advanceTimersByTimeAsync(6000) })
+    expect(window.close).not.toHaveBeenCalled()
+  })
+
+  it('closes shortly after the pointer leaves once engaged', async () => {
+    vi.useFakeTimers()
+    render(<SaveToast />)
+    await act(async () => { await vi.runAllTimersAsync() })
+    await act(async () => {})
+    const win = screen.getByTestId('save-tag-window')
+    fireEvent.pointerEnter(win)
+    fireEvent.pointerLeave(win)
+    await act(async () => { await vi.advanceTimersByTimeAsync(700) })
+    expect(window.close).toHaveBeenCalled()
+  })
+})
+
 describe('SaveToast tag-mode UI (Task 3)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
