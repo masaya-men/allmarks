@@ -19,48 +19,41 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Placement spec for one floating foreground collage card.
- * Coordinates are percentages of the stage; the card partially occludes the
- * oversized background serif keyword to create real layered depth.
+ * One tile in the bold artwork grid. Tiles are AXIS-ALIGNED (never rotated) and
+ * flow inside a CSS columns masonry — orderly, grid-like, echoing the product's
+ * clean board layout. No scatter, no tilt: that is an AllMarks rule.
  */
-type CardSlot = {
-  /** Index into DEMO_COLLAGE for the artwork shown in this card. */
+type GridTile = {
+  /** Index into DEMO_COLLAGE for the artwork shown in this tile. */
   readonly asset: number
-  /** Horizontal position (CSS left, % of stage). */
-  readonly left: string
-  /** Vertical position (CSS top, % of stage). */
-  readonly top: string
-  /** Rendered card width in px (height derives from the asset aspect ratio). */
-  readonly width: number
-  /** Static rotation in degrees for the editorial "pinned" feel. */
-  readonly rot: number
-  /** Float keyframe delay in seconds (de-syncs the drift). */
+  /** Float keyframe delay in seconds (de-syncs the gentle vertical drift). */
   readonly delay: number
-  /** Stacking order — higher sits above the big type and other cards. */
-  readonly z: number
 }
 
 /**
- * Curated 6-card arrangement. Hand-picked assets + positions so the cards
- * frame the headline column and clip the background word at its edges.
+ * Curated 8-artwork masonry. Hand-picked assets mixing landscape, portrait and
+ * tall formats so the column flow stays visually balanced. The grid is the bold
+ * hero now — large, confident, image-first — partially occluding the big word.
  */
-const CARD_SLOTS: readonly CardSlot[] = [
-  { asset: 0, left: '4%', top: '14%', width: 244, rot: -4, delay: 0, z: 3 }, // Hokusai wave (landscape)
-  { asset: 3, left: '70%', top: '6%', width: 176, rot: 3.5, delay: 1.1, z: 4 }, // Van Gogh self-portrait (portrait)
-  { asset: 8, left: '80%', top: '52%', width: 230, rot: -3, delay: 0.6, z: 3 }, // Moulin Rouge
-  { asset: 6, left: '10%', top: '58%', width: 168, rot: 4.5, delay: 1.7, z: 4 }, // Renoir sisters (portrait)
-  { asset: 5, left: '60%', top: '70%', width: 210, rot: -2, delay: 2.2, z: 2 }, // Monet stacks (wide)
-  { asset: 12, left: '30%', top: '2%', width: 96, rot: 5, delay: 1.4, z: 2 }, // Tiffany lilies (tall thin)
+const GRID_TILES: readonly GridTile[] = [
+  { asset: 3, delay: 0 }, // Van Gogh self-portrait (portrait)
+  { asset: 0, delay: 0.5 }, // Hokusai wave (landscape)
+  { asset: 8, delay: 1.1 }, // Moulin Rouge
+  { asset: 6, delay: 0.3 }, // Renoir sisters (portrait)
+  { asset: 5, delay: 1.4 }, // Monet stacks (wide)
+  { asset: 14, delay: 0.8 }, // Cézanne apples
+  { asset: 12, delay: 1.7 }, // Tiffany lilies (tall thin)
+  { asset: 9, delay: 0.6 }, // Caillebotte Paris street
 ] as const
 
 /**
  * Hero — signature landing section.
  *
- * Establishes the LP's visual language (serif display scale, generous white
- * space, restrained motion). The depth effect is the soul: an oversized faint
- * serif keyword ("collage") drifts on scroll one layer back, while six floating
- * collage cards sit in front and partially occlude it, producing genuine
- * parallax depth on a white ground.
+ * Image-first and grid-based: a bold masonry of large, perfectly upright
+ * artworks dominates the composition (echoing the product's clean board), while
+ * an oversized faint serif keyword ("collage") drifts one layer back on scroll
+ * and is partially occluded by the grid — real layered depth on a white ground.
+ * The headline column keeps generous breathing room so it stays fully legible.
  */
 export function Hero(): React.ReactElement {
   const { t } = useI18n()
@@ -91,66 +84,67 @@ export function Hero(): React.ReactElement {
           </div>
         </div>
 
-        {/* Foreground layer — floating collage cards that occlude the big word. */}
-        <div className={styles.cardsLayer} aria-hidden="true">
-          {CARD_SLOTS.map((slot, i) => {
-            const art = DEMO_COLLAGE[slot.asset]
-            const height = Math.round((slot.width * art.h) / art.w)
-            return (
-              <figure
-                key={i}
-                className={styles.card}
-                style={
-                  {
-                    left: slot.left,
-                    top: slot.top,
-                    width: `${slot.width}px`,
-                    zIndex: slot.z,
-                    '--rot': `${slot.rot}deg`,
-                    '--float-delay': `${slot.delay}s`,
-                  } as React.CSSProperties
-                }
+        <div className={styles.split}>
+          {/* Content column — kicker, headline, description, CTAs. */}
+          <div className={styles.content}>
+            <p className={styles.label} data-reveal>
+              <span className={styles.dot} aria-hidden="true" />
+              {t('landing.hero.label')}
+            </p>
+
+            <h1 className={styles.headline} data-reveal>
+              {t('landing.hero.headline')}
+            </h1>
+
+            <p className={styles.description} data-reveal>
+              {t('landing.hero.description')}
+            </p>
+
+            <div className={styles.ctaRow} data-reveal>
+              <Link href="/board" className={styles.ctaPrimary}>
+                {t('landing.hero.ctaPrimary')}
+                <span className={styles.ctaArrow} aria-hidden="true">
+                  →
+                </span>
+              </Link>
+              <button
+                type="button"
+                className={styles.ctaGhost}
+                onClick={handleSeeHow}
               >
-                <img
-                  src={`/${art.src}`}
-                  alt=""
-                  width={slot.width}
-                  height={height}
-                  className={styles.cardImg}
-                  loading={i < 2 ? 'eager' : 'lazy'}
-                  decoding="async"
-                  draggable={false}
-                />
-              </figure>
-            )
-          })}
-        </div>
+                {t('landing.hero.ctaGhost')}
+              </button>
+            </div>
+          </div>
 
-        {/* Content layer — kicker, headline, description, CTAs. */}
-        <div className={styles.content}>
-          <p className={styles.label} data-reveal>
-            <span className={styles.dot} aria-hidden="true" />
-            {t('landing.hero.label')}
-          </p>
-
-          <h1 className={styles.headline} data-reveal>
-            {t('landing.hero.headline')}
-          </h1>
-
-          <p className={styles.description} data-reveal>
-            {t('landing.hero.description')}
-          </p>
-
-          <div className={styles.ctaRow} data-reveal>
-            <Link href="/board" className={styles.ctaPrimary}>
-              {t('landing.hero.ctaPrimary')}
-              <span className={styles.ctaArrow} aria-hidden="true">
-                →
-              </span>
-            </Link>
-            <button type="button" className={styles.ctaGhost} onClick={handleSeeHow}>
-              {t('landing.hero.ctaGhost')}
-            </button>
+          {/* Bold grid layer — large, upright artworks in a clean masonry that
+              partially occludes the big background word. No rotation, no tilt. */}
+          <div className={styles.grid} aria-hidden="true" data-reveal>
+            {GRID_TILES.map((tile, i) => {
+              const art = DEMO_COLLAGE[tile.asset]
+              return (
+                <figure
+                  key={i}
+                  className={styles.tile}
+                  style={
+                    {
+                      '--float-delay': `${tile.delay}s`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <img
+                    src={`/${art.src}`}
+                    alt=""
+                    width={art.w}
+                    height={art.h}
+                    className={styles.tileImg}
+                    loading={i < 3 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    draggable={false}
+                  />
+                </figure>
+              )
+            })}
           </div>
         </div>
       </div>
