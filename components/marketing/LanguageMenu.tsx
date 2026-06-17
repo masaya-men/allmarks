@@ -43,20 +43,22 @@ export function LanguageMenu({ current }: { current: SupportedLocale }): React.R
         type="button"
         data-testid="lang-menu-toggle"
         className={styles.toggle}
-        aria-haspopup="listbox"
+        aria-haspopup="true"
         aria-expanded={open}
+        aria-label="Language"
         onClick={() => setOpen((v) => !v)}
       >
         <span aria-hidden="true">🌐</span> {current.toUpperCase()}
       </button>
       {open && (
-        <ul className={styles.list} role="listbox" aria-label="Language">
+        <ul className={styles.list}>
           {SUPPORTED_LOCALES.map((locale) => (
-            <li key={locale} role="option" aria-selected={locale === current}>
+            <li key={locale}>
               <button
                 type="button"
                 className={styles.item}
                 data-current={locale === current}
+                aria-current={locale === current ? true : undefined}
                 onClick={() => choose(locale)}
               >
                 {LANGUAGE_ENDONYMS[locale]}

@@ -8,6 +8,11 @@
   --lp-maxw: 1489px;
   background: var(--lp-bg);
   color: var(--lp-ink);
+  /* ── Z-index scale ── */
+  /* SiteHeader sits at z-index: 100 (literal in SiteHeader.module.css).
+     The language menu dropdown must float above the header chrome. */
+  --lp-z-language-menu: 110;
+
   /* Declare the LP an explicit LIGHT surface so browsers (Chrome Auto Dark
      Mode for web contents, dark-mode extensions) do NOT force-darken this
      intentionally-white page. The app itself is dark; the LP is its own
