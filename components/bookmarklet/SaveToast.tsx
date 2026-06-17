@@ -95,8 +95,9 @@ export function SaveToast(): ReactElement {
 
   async function handleAddExisting(tagId: string): Promise<void> {
     if (!tagData) return
+    if (tagData.currentTagIds.includes(tagId)) return  // already applied — no redundant write/broadcast (matches PipCompanion)
     await applyExistingQuickTag(await initDB(), tagData.bookmarkId, tagId)
-    setTagData((d) => d ? { ...d, currentTagIds: d.currentTagIds.includes(tagId) ? d.currentTagIds : [...d.currentTagIds, tagId] } : d)
+    setTagData((d) => d ? { ...d, currentTagIds: [...d.currentTagIds, tagId] } : d)
   }
 
   async function handleAddNew(name: string): Promise<void> {

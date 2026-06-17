@@ -193,6 +193,7 @@ describe('SaveToast quick-tag branching', () => {
 
 import { addTagToBookmark } from '@/lib/storage/tags'
 import { addBookmark } from '@/lib/storage/indexeddb'
+import { postBookmarkUpdated } from '@/lib/board/channel'
 
 describe('SaveToast lifecycle (Task 4)', () => {
   beforeEach(() => {
@@ -309,5 +310,23 @@ describe('SaveToast tag-mode UI (Task 3)', () => {
     const btn = await screen.findByTestId('save-tag-close')
     fireEvent.click(btn)
     expect(window.close).toHaveBeenCalled()
+  })
+
+  it('re-clicking an already-applied chip does NOT write or broadcast again', async () => {
+    vi.useRealTimers()
+    render(<SaveToast />)
+    const win = await screen.findByTestId('save-tag-window')
+    const chip = await within(win).findByText('design')
+    // First click — genuine apply
+    fireEvent.click(chip)
+    await waitFor(() => expect(addTagToBookmark).toHaveBeenCalledTimes(1))
+    // Clear mocks so we can detect any spurious second call
+    vi.clearAllMocks()
+    // Second click — tag is now in currentTagIds; should be a no-op
+    fireEvent.click(chip)
+    // Give any async paths a moment to settle
+    await act(async () => {})
+    expect(addTagToBookmark).not.toHaveBeenCalled()
+    expect(postBookmarkUpdated).not.toHaveBeenCalled()
   })
 })

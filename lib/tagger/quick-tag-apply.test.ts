@@ -55,5 +55,6 @@ describe('applyNewQuickTag', () => {
     expect(tag).toBeNull()
     expect(addTag).not.toHaveBeenCalled()
     expect(addTagToBookmark).not.toHaveBeenCalled()
+    expect(postBookmarkUpdated).not.toHaveBeenCalled()
   })
 })
