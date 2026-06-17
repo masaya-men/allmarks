@@ -263,41 +263,63 @@ rtk git commit -m "i18n(lp): landing namespace copy (en baseline + ja) + parity 
 - Create: `public/marketing/collage/*.webp`, `lib/marketing/demo-collage.ts`, `lib/marketing/demo-collage.test.ts`, `docs/marketing-asset-licenses.md`
 
 **Interfaces:**
-- Produces: `DEMO_COLLAGE: readonly DemoAsset[]` where `DemoAsset = { src: string; w: number; h: number; kind: 'art' | 'photo'; credit: string; license: 'CC0' }`.
+- Produces:
+  - `DEMO_COLLAGE: readonly DemoAsset[]` where `DemoAsset = { src: string; w: number; h: number; kind: 'art' | 'photo'; credit: string; license: 'CC0' }`.
+  - `DEMO_VIDEOS: readonly DemoVideo[]` where `DemoVideo = { src: string; poster: string; w: number; h: number; credit: string; license: 'CC0' | 'royalty-free' }` (`src` = optimized mp4 under `marketing/collage/`, `poster` = WebP first frame).
+  - `DEMO_YOUTUBE: readonly DemoYouTube[]` where `DemoYouTube = { videoId: string; title: string; vertical: boolean; channel: string; rights: 'public-domain' | 'official-brand' }` — real, rights-clean YouTube IDs (e.g. NASA = public domain) embedded via the product's own `YouTubeEmbed`. No file download.
 
 - [ ] **Step 1: Source 12–16 CC0 images.** Download stylish, varied-color/varied-style images strictly from CC0 sources:
   - Public-domain art: Metropolitan Museum Open Access (`metmuseum.github.io` / `collectionapi.metmuseum.org`, `isPublicDomain: true`), Art Institute of Chicago API (`api.artic.edu`, `is_public_domain: true`), Rijksmuseum.
   - CC0 photos: Unsplash / Pexels.
   Pick only aesthetically strong images; aim for a mix of painterly, photographic, textural, and bold-color frames.
-- [ ] **Step 2: Optimize to WebP** (max edge ~1000px, quality ~80) and place in `public/marketing/collage/` with descriptive names (e.g. `art-met-portrait-01.webp`). Keep total under ~600KB.
-- [ ] **Step 3: Record provenance.** `docs/marketing-asset-licenses.md` — one row per file: filename, source URL, title/author, license (CC0/Public Domain).
-- [ ] **Step 4: Write the manifest + its test.** `lib/marketing/demo-collage.ts` exports `DEMO_COLLAGE` with real dimensions. `lib/marketing/demo-collage.test.ts`:
+- [ ] **Step 2: Source 3–5 royalty-free looping video clips.** From Pexels Videos / Coverr / Mixkit (all free for commercial use, no attribution required). Choose **stylish, aesthetic, abstract-or-atmospheric** clips (e.g. ink-in-water, neon light, slow fabric, liquid, particles) — moving content that looks beautiful muted and looping. Each ≤10s.
+- [ ] **Step 2b: Pick 2–3 rights-clean real YouTube IDs.** Choose from **public-domain / official institutional channels** only — e.g. NASA (footage is public domain), a museum/library official channel. Verify each video plays in an embed (not embed-disabled) and is genuinely rights-clean. These convey "real content from real sites" honestly without implying a private creator's endorsement. Record the channel + rights basis.
+- [ ] **Step 3: Optimize all assets.** Images → WebP (max edge ~1000px, quality ~80) in `public/marketing/collage/`. Videos → H.264 mp4 (max 720p, low bitrate, no audio track) + a WebP poster of the first frame, also in `public/marketing/collage/`. Descriptive names (`art-met-portrait-01.webp`, `vid-ink-bloom-01.mp4` / `vid-ink-bloom-01.webp`). Keep total images < ~600KB; each video < ~1.2MB.
+- [ ] **Step 4: Record provenance.** `docs/marketing-asset-licenses.md` — one row per file (image AND video): filename, source URL, title/author, license (CC0 / Public Domain / royalty-free).
+- [ ] **Step 5: Write the manifest + its test.** `lib/marketing/demo-collage.ts` exports `DEMO_COLLAGE`, `DEMO_VIDEOS`, and `DEMO_YOUTUBE` with real values. `lib/marketing/demo-collage.test.ts`:
 ```ts
 import { describe, it, expect } from 'vitest'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { DEMO_COLLAGE } from './demo-collage'
+import { DEMO_COLLAGE, DEMO_VIDEOS, DEMO_YOUTUBE } from './demo-collage'
+
+const pub = (rel: string): string => join(process.cwd(), 'public', rel)
 
 describe('demo collage manifest', () => {
-  it('has at least 12 assets, all CC0', () => {
+  it('has at least 12 image assets, all CC0', () => {
     expect(DEMO_COLLAGE.length).toBeGreaterThanOrEqual(12)
     expect(DEMO_COLLAGE.every((a) => a.license === 'CC0')).toBe(true)
   })
-  it('every asset file exists with a positive aspect ratio', () => {
+  it('every image file exists with a positive aspect ratio', () => {
     for (const a of DEMO_COLLAGE) {
-      expect(existsSync(join(process.cwd(), 'public', a.src))).toBe(true)
+      expect(existsSync(pub(a.src))).toBe(true)
       expect(a.w / a.h).toBeGreaterThan(0)
+    }
+  })
+  it('has at least 3 looping videos, each with an existing file + poster', () => {
+    expect(DEMO_VIDEOS.length).toBeGreaterThanOrEqual(3)
+    for (const v of DEMO_VIDEOS) {
+      expect(existsSync(pub(v.src))).toBe(true)
+      expect(existsSync(pub(v.poster))).toBe(true)
+      expect(v.w / v.h).toBeGreaterThan(0)
+    }
+  })
+  it('has at least 2 rights-clean real YouTube ids', () => {
+    expect(DEMO_YOUTUBE.length).toBeGreaterThanOrEqual(2)
+    for (const y of DEMO_YOUTUBE) {
+      expect(y.videoId).toMatch(/^[\w-]{11}$/)
+      expect(['public-domain', 'official-brand']).toContain(y.rights)
     }
   })
 })
 ```
-- [ ] **Step 5: Run the test.**
+- [ ] **Step 6: Run the test.**
 Run: `pnpm vitest run lib/marketing/demo-collage.test.ts`
 Expected: PASS.
-- [ ] **Step 6: Commit.**
+- [ ] **Step 7: Commit.**
 ```bash
 rtk git add public/marketing/collage lib/marketing/demo-collage.ts lib/marketing/demo-collage.test.ts docs/marketing-asset-licenses.md
-rtk git commit -m "feat(lp): curated CC0 demo collage assets + manifest"
+rtk git commit -m "feat(lp): curated CC0 demo images + royalty-free looping videos + manifest"
 ```
 
 ---
@@ -433,13 +455,18 @@ return (
 - Quiet editorial statement. Large serif `headline`, soft-ink `body`. Generous whitespace, minimal elements. One subtle accent mark (`--lp-accent`) allowed.
 
 ### Task 7: Save-anywhere section (`SaveAnywhere.tsx`)
-- `headline` + `body`. Show variety of sources as distinct card shapes (tweet/video/article/image silhouettes) using `DEMO_COLLAGE` + simple labeled chips. No real third-party logos that aren't license-safe; use generic glyphs/text.
+- `headline` + `body`. Show variety of sources as distinct card shapes (tweet/video/article/image) using `DEMO_COLLAGE` + **one real YouTube card** from `DEMO_YOUTUBE` rendered as a static thumbnail (use `getYoutubeThumb` / a poster `<img>`, NOT an autoplaying iframe here — this section is about "it all comes in", not playback). Simple labeled chips. No license-unsafe third-party logos; use generic glyphs/text for the others.
 
 ### Task 8: Arrange section (`Arrange.tsx`)
-- The "real product board" moment. Reuse the real board card look (mirror the board card styling) populated **only** with `DEMO_COLLAGE` content — a multi-color, multi-style masonry. `headline` + `body`. This is the completed-collage hero of the page.
+- The "real product board" moment. Reuse the real board card look (mirror the board card styling) populated with `DEMO_COLLAGE` content **plus one real YouTube card** (thumbnail with a small play affordance, matching `VideoThumbCard` styling) — a multi-color, multi-style masonry that hints the board holds real video too. `headline` + `body`. This is the completed-collage hero of the page.
 
-### Task 9: Alive section (`Alive.tsx`) — multi-playback showcase
-- The wow moment; transitional darker tint (not full black). `headline` + `body`. Show multiple media frames appearing to play at once. Prefer a lightweight representation (looping muted poster crossfades / CSS) over many real `<video>` elements to protect perf; if real video is used, cap at 2 muted, lazy, `playsinline`. Document the choice in the section file header comment.
+### Task 9: Alive section (`Alive.tsx`) — multi-playback showcase (REAL motion)
+- The wow moment; transitional darker tint (not full black). `headline` + `body`. **Actually plays multiple things at once** — this is the hybrid the user approved:
+  - **Main wall = 3–4 royalty-free loop `<video>`** from `DEMO_VIDEOS`: `muted loop playsInline preload="none"`, `poster` set, autoplay **only while in viewport** (IntersectionObserver: `play()` on enter, `pause()` on leave) to protect perf and battery.
+  - **Plus one real YouTube** from `DEMO_YOUTUBE` rendered via the product's own `YouTubeEmbed` with `autoStart muted` (so it autoplays muted, **loops**, and hides player chrome via `controls=0&modestbranding=1` — the component already does this in its `muted` branch). Pass `onUnplayable` to fall back to the poster if the embed is restricted. This proves real video plays on the board, using the actual product component.
+  - Cap concurrently-playing media at ~4. **Reduced motion (`prefers-reduced-motion: reduce`): show posters only**, no autoplay (`<video>` without autoplay; do not mount the YouTube iframe — render its poster instead).
+  - Document the approach in the section file header comment.
+- **Interfaces consumed:** `YouTubeEmbed` from `@/components/board/embeds/YouTubeEmbed` — props `{ videoId, title, vertical, thumbnail, aspectRatio, autoStart, muted, onUnplayable }` (see component). `getYoutubeThumb` from `@/lib/embed/youtube-thumb` for posters.
 
 ### Task 10: Customize section (`Customize.tsx`)
 - `headline` + `body`. Visualize theme switching (swatches), size tuning, tags/filter. Copy already signals "more themes on the way" — keep visuals theme-agnostic (do not brand around the sound-wave default).
