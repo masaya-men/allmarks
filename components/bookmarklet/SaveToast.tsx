@@ -2,13 +2,27 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { initDB, addBookmark } from '@/lib/storage/indexeddb'
+import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
+import { getAllTags } from '@/lib/storage/tags'
 import { detectUrlType } from '@/lib/utils/url'
 import { postBookmarkSaved } from '@/lib/board/channel'
+import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
+import { queryPipPresence } from '@/lib/board/pip-presence'
+import { shouldShowQuickTagWindow } from '@/lib/tagger/quick-tag-apply'
+import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { t } from '@/lib/i18n/t'
+import type { TagRecord } from '@/lib/storage/indexeddb'
+import type { SuggestionEntry } from '@/components/board/TagAddPopover'
 import styles from './SaveToast.module.css'
 
-type State = 'saving' | 'saved' | 'recede' | 'error'
+type State = 'saving' | 'saved' | 'recede' | 'error' | 'tags'
+
+interface TagData {
+  bookmarkId: string
+  allTags: TagRecord[]
+  currentTagIds: string[]
+  suggestedEntries: SuggestionEntry[]
+}
 
 const ERROR_CLOSE_MS = 2600
 // Bookmarklet popup is purely a bridge to write IDB in the {booklage,
@@ -16,6 +30,8 @@ const ERROR_CLOSE_MS = 2600
 // the bookmarklet IIFE injects. So we close the popup as fast as Chrome
 // will allow after the IDB write completes.
 const FAST_CLOSE_MS = 80
+const TAG_WIN_W = 280
+const TAG_WIN_H = 360
 
 function StaggeredLabel({ text }: { text: string }): ReactElement {
   const chars = useMemo(() => Array.from(text), [text])
@@ -23,7 +39,7 @@ function StaggeredLabel({ text }: { text: string }): ReactElement {
     <>
       {chars.map((ch, i) => (
         <span key={`${i}-${ch}`} style={{ animationDelay: `${i * 40}ms` }}>
-          {ch === ' ' ? ' ' : ch}
+          {ch === ' ' ? ' ' : ch}
         </span>
       ))}
     </>
@@ -40,6 +56,7 @@ export function SaveToast(): ReactElement {
   const favicon = params.get('favicon') ?? ''
 
   const [state, setState] = useState<State>('saving')
+  const [tagData, setTagData] = useState<TagData | null>(null)
   const savedRef = useRef(false)
 
   useEffect(() => {
@@ -62,14 +79,35 @@ export function SaveToast(): ReactElement {
         })
         postBookmarkSaved({ bookmarkId: bm.id })
 
-        // Always fast-close. The bookmarklet IIFE injects a Shadow-DOM
-        // toast into the user's host page (saving → saved → fade out)
-        // that owns the visible feedback now. The popup is just a
-        // bridge to write IDB in the {booklage, booklage} partition,
-        // so it has no UI responsibility — keep it on screen as briefly
-        // as Chrome will allow. Same closing path whether PiP is open
-        // or not; PiP slide-in animation provides additional feedback
-        // when present, parent toast covers the no-PiP case.
+        // Branch: show quick-tag window when feature is ON and no PiP is open.
+        // Otherwise fast-close as before (PiP already provides the tag surface,
+        // or the feature is disabled).
+        const enabled = await loadQuickTagEnabled(db)
+        if (enabled) {
+          const pipActive = await queryPipPresence(80)
+          if (shouldShowQuickTagWindow(enabled, pipActive)) {
+            const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+            const ordered = orderTagsForSave(bm, corpus, allTags)
+            setTagData({
+              bookmarkId: bm.id,
+              allTags,
+              currentTagIds: [...bm.tags],
+              suggestedEntries: ordered.slice(0, 5).map((t) => ({ kind: 'existing' as const, tagId: t.id })),
+            })
+            setState('tags')
+            try { window.resizeTo(TAG_WIN_W, TAG_WIN_H) } catch { /* popup may refuse */ }
+            return
+          }
+        }
+
+        // Default: fast-close (feature OFF, or PiP open) — unchanged behavior.
+        // The bookmarklet IIFE injects a Shadow-DOM toast into the user's host
+        // page (saving → saved → fade out) that owns the visible feedback now.
+        // The popup is just a bridge to write IDB in the partition, so it has
+        // no UI responsibility — keep it on screen as briefly as Chrome will
+        // allow. Same closing path whether PiP is open or not; PiP slide-in
+        // animation provides additional feedback when present, parent toast
+        // covers the no-PiP case.
         timers.push(setTimeout(() => {
           try { window.close() } catch { /* browser blocked */ }
         }, FAST_CLOSE_MS))
@@ -99,6 +137,15 @@ export function SaveToast(): ReactElement {
             <StaggeredLabel text="ブックマークレットから開いてください" />
           </div>
         </div>
+      </div>
+    )
+  }
+
+  // Tag mode — UI wired in Task 3.
+  if (state === 'tags' && tagData) {
+    return (
+      <div className={styles.stage} data-state="tags" data-testid="save-tag-window">
+        {/* TagAddPopover wired in Task 3 */}
       </div>
     )
   }

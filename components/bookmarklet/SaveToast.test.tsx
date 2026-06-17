@@ -9,17 +9,38 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/storage/indexeddb', () => ({
   initDB: vi.fn().mockResolvedValue({}),
-  addBookmark: vi.fn().mockResolvedValue({ id: 'bm-test-1' }),
+  addBookmark: vi.fn().mockResolvedValue({ id: 'bm-test-1', tags: [] }),
+  getAllBookmarks: vi.fn(async () => []),
+}))
+
+vi.mock('@/lib/storage/tags', () => ({
+  getAllTags: vi.fn(async () => [{ id: 't1', name: 'design', color: '#fff', order: 0 }]),
+  addTagToBookmark: vi.fn(async () => {}),
+  addTag: vi.fn(async () => ({ id: 't2', name: 'new', color: '#28F100', order: 1 })),
+}))
+
+vi.mock('@/lib/tagger/order-tags-for-save', () => ({
+  orderTagsForSave: vi.fn(() => [{ id: 't1', name: 'design', color: '#fff' }]),
 }))
 
 vi.mock('@/lib/board/channel', () => ({
   postBookmarkSaved: vi.fn(),
+  postBookmarkUpdated: vi.fn(),
+}))
+
+vi.mock('@/lib/storage/quick-tag-setting', () => ({
+  loadQuickTagEnabled: vi.fn(async () => true),
 }))
 
 let mockPipActive = false
 vi.mock('@/lib/board/pip-presence', () => ({
   queryPipPresence: vi.fn(() => Promise.resolve(mockPipActive)),
 }))
+
+vi.mock('@/lib/utils/url', () => ({ detectUrlType: () => 'tweet' }))
+
+import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
+import { queryPipPresence } from '@/lib/board/pip-presence'
 
 describe('SaveToast', () => {
   beforeEach(() => {
@@ -55,6 +76,8 @@ describe('SaveToast', () => {
       url: 'https://example.com',
       title: 'Example',
     })
+    // feature OFF so fast-close path is taken
+    ;(loadQuickTagEnabled as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(false)
     const closeMock = vi.fn()
     Object.defineProperty(window, 'close', { value: closeMock, configurable: true, writable: true })
 
@@ -118,5 +141,50 @@ describe('SaveToast', () => {
 
     // State should still be 'saving' when close fired (toast animation skipped).
     expect(screen.getByTestId('save-toast').getAttribute('data-state')).toBe('saving')
+  })
+})
+
+describe('SaveToast quick-tag branching', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    vi.stubGlobal('close', vi.fn())
+    vi.stubGlobal('resizeTo', vi.fn())
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: false, media: q, onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    }))
+    mockParams = new URLSearchParams({ url: 'https://x.com/a/status/1', title: 'Hello' })
+    ;(loadQuickTagEnabled as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(true)
+    ;(queryPipPresence as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(false)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows the tag window when enabled and no PiP', async () => {
+    render(<SaveToast />)
+    await waitFor(() => expect(screen.getByTestId('save-tag-window')).toBeTruthy())
+    expect(window.close).not.toHaveBeenCalled()
+  })
+
+  it('fast-closes when feature is OFF', async () => {
+    ;(loadQuickTagEnabled as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(false)
+    render(<SaveToast />)
+    await waitFor(() => expect(loadQuickTagEnabled).toHaveBeenCalled())
+    await vi.advanceTimersByTimeAsync(120)
+    expect(window.close).toHaveBeenCalled()
+    expect(screen.queryByTestId('save-tag-window')).toBeNull()
+  })
+
+  it('fast-closes when a PiP is open', async () => {
+    ;(queryPipPresence as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(true)
+    render(<SaveToast />)
+    await waitFor(() => expect(queryPipPresence).toHaveBeenCalled())
+    await vi.advanceTimersByTimeAsync(120)
+    expect(window.close).toHaveBeenCalled()
+    expect(screen.queryByTestId('save-tag-window')).toBeNull()
   })
 })
