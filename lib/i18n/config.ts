@@ -22,7 +22,7 @@ export function detectLocale(): SupportedLocale {
   return 'en'
 }
 
-type Messages = Record<string, Record<string, string>>
+export type Messages = { [k: string]: string | Messages }
 
 const messageCache = new Map<string, Messages>()
 
