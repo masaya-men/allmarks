@@ -1,7 +1,7 @@
-/* Hero.module.css — signature landing hero, v3.
+/* Hero.module.css — signature landing hero, v4.
    PRODUCT-FORWARD: the hero visual is a large, clean AllMarks BOARD mock — a
-   masonry of upright SAVED CARDS (artwork + favicon-dot + source label) that
-   reads as the product, not a gallery. Editorial white ground, generous space.
+   masonry of clean image cards (artwork only, no labels) matching the real
+   board's ImageCard convention. Editorial white ground, generous space.
    ZERO rotation anywhere (AllMarks is a clean grid, never tilted). Reflows to a
    single-column stack on narrow viewports — must never look broken. */
 
@@ -192,8 +192,9 @@
   will-change: transform;
 }
 
-/* One saved card — artwork thumbnail + meta footer. Echoes the board's ~20px
-   card radius. Upright, axis-aligned: never rotated (hard AllMarks rule). */
+/* One saved card — artwork thumbnail only, matching the real board's ImageCard.
+   Echoes the board's ~20px card radius. No labels, no favicon dots.
+   Upright, axis-aligned: never rotated (hard AllMarks rule). */
 .card {
   margin: 0 0 18px;
   border-radius: 18px;
@@ -230,38 +231,6 @@
   display: block;
   width: 100%;
   height: auto;
-}
-
-/* Footer strip — favicon-dot + muted source label = "this is a saved link". */
-.meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 14px 12px;
-}
-
-.favicon {
-  flex: 0 0 auto;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--lp-ink) 28%, transparent);
-}
-
-/* Accent favicon hints a "live"/featured saved item with the brand green. */
-.faviconAccent {
-  background: var(--lp-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lp-accent) 18%, transparent);
-}
-
-.source {
-  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
-  font-size: 12px;
-  letter-spacing: -0.01em;
-  color: var(--lp-ink-soft);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ── Scroll hint ── */

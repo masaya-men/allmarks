@@ -19,34 +19,30 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * One saved card on the hero board-mock. The artwork is the card thumbnail; the
- * `source` label + favicon-dot reframe it as a SAVED BOOKMARK (not a painting in
- * a gallery), so the hero reads unmistakably as the AllMarks product board.
+ * One saved image card on the hero board-mock. The artwork is the card
+ * thumbnail — clean, label-free, exactly matching the real board's ImageCard
+ * which renders only the image with no domain/host strip.
  * Cards are AXIS-ALIGNED — never rotated. That is a hard AllMarks rule.
  */
 type BoardCard = {
   /** Index into DEMO_COLLAGE for the thumbnail shown on this card. */
   readonly asset: number
-  /** Muted source/domain hint that frames the tile as a saved link. */
-  readonly source: string
-  /** Accent dot on a card hints "live"/featured; mostly neutral favicon-dots. */
-  readonly accent?: boolean
 }
 
 /**
  * Curated saved-cards for the board-mock. Hand-picked assets mixing landscape,
- * portrait and tall formats so the masonry columns stay balanced, each paired
- * with a plausible source so the block reads as "your saved links → this board".
+ * portrait and tall formats so the masonry columns stay balanced.
+ * Matches the real board's ImageCard convention: clean image, no labels.
  */
 const BOARD_CARDS: readonly BoardCard[] = [
-  { asset: 0, source: 'youtube.com', accent: true }, // Hokusai wave (landscape)
-  { asset: 3, source: 'x.com' }, // Van Gogh self-portrait (portrait)
-  { asset: 8, source: 'pinterest.com' }, // Moulin Rouge
-  { asset: 5, source: 'vimeo.com' }, // Monet stacks (wide)
-  { asset: 6, source: 'instagram.com' }, // Renoir sisters (portrait)
-  { asset: 14, source: 'are.na' }, // Cézanne apples
-  { asset: 9, source: 'tiktok.com' }, // Caillebotte Paris street
-  { asset: 12, source: 'behance.net' }, // Tiffany lilies (tall thin)
+  { asset: 0 }, // Hokusai wave (landscape)
+  { asset: 3 }, // Van Gogh self-portrait (portrait)
+  { asset: 8 }, // Moulin Rouge
+  { asset: 5 }, // Monet stacks (wide)
+  { asset: 6 }, // Renoir sisters (portrait)
+  { asset: 14 }, // Cézanne apples
+  { asset: 9 }, // Caillebotte Paris street
+  { asset: 12 }, // Tiffany lilies (tall thin)
 ] as const
 
 /**
@@ -114,15 +110,15 @@ export function Hero(): React.ReactElement {
             </div>
           </div>
 
-          {/* Product-forward visual: a large, clean AllMarks BOARD mock. The
-              artworks are framed as SAVED CARDS (favicon-dot + source label) so
-              it reads as the product, not a gallery. No rotation, no tilt. */}
+          {/* Product-forward visual: a large, clean AllMarks BOARD mock.
+              Clean image cards — no source labels, no favicon dots — matching
+              the real board's ImageCard convention. No rotation, no tilt. */}
           <div className={styles.boardWrap} data-reveal>
             <div ref={boardRef} className={styles.board} aria-hidden="true">
               {BOARD_CARDS.map((card, i) => {
                 const art = DEMO_COLLAGE[card.asset]
                 return (
-                  <figure key={i} className={styles.card}>
+                  <div key={i} className={styles.card}>
                     <div className={styles.thumb}>
                       <img
                         src={`/${art.src}`}
@@ -135,17 +131,7 @@ export function Hero(): React.ReactElement {
                         draggable={false}
                       />
                     </div>
-                    <figcaption className={styles.meta}>
-                      <span
-                        className={
-                          card.accent
-                            ? `${styles.favicon} ${styles.faviconAccent}`
-                            : styles.favicon
-                        }
-                      />
-                      <span className={styles.source}>{card.source}</span>
-                    </figcaption>
-                  </figure>
+                  </div>
                 )
               })}
             </div>
