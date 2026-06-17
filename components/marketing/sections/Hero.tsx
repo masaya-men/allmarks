@@ -49,8 +49,8 @@ const BOARD_CARDS: readonly BoardCard[] = [
  * Hero — signature landing section.
  *
  * Product-forward: the hero visual is a large, clean AllMarks BOARD mock — a
- * masonry of upright cards (artwork thumbnail + favicon-dot + source label) on
- * an off-white ground, echoing the real board's ~20px card radius. It reads as
+ * masonry of upright cards showing clean artwork thumbnails only (no labels,
+ * no favicon dots), matching the real board's ImageCard convention. It reads as
  * "your saved links become this visual board", letting the PRODUCT do the
  * talking. The headline column keeps generous whitespace so it stays legible,
  * and the whole composition reflows to a clean single-column stack on narrow
@@ -117,6 +117,7 @@ export function Hero(): React.ReactElement {
             <div ref={boardRef} className={styles.board} aria-hidden="true">
               {BOARD_CARDS.map((card, i) => {
                 const art = DEMO_COLLAGE[card.asset]
+                if (!art) return null
                 return (
                   <div key={i} className={styles.card}>
                     <div className={styles.thumb}>

@@ -305,9 +305,6 @@
     max-width: 760px;
     margin: 0 auto;
   }
-  .board {
-    columns: 3;
-  }
 }
 
 @media (max-width: 720px) {
