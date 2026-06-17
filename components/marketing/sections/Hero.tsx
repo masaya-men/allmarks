@@ -81,9 +81,14 @@ export function Hero(): React.ReactElement {
   return (
     <section ref={sectionRef} id="hero" className={styles.hero}>
       <div className={styles.stage}>
-        {/* Background layer — oversized faint serif keyword, drifts on scroll. */}
-        <div ref={bgWordRef} className={styles.bgWord} aria-hidden="true">
-          collage
+        {/* Background layer — oversized faint serif keyword, drifts on scroll.
+            Shell handles absolute centering; inner bgWord is the parallax target.
+            GSAP writes `y` on bgWordRef (the inner element) only, so the shell's
+            translate(-50%,-50%) centering is never clobbered. */}
+        <div className={styles.bgWordShell} aria-hidden="true">
+          <div ref={bgWordRef} className={styles.bgWord}>
+            collage
+          </div>
         </div>
 
         {/* Foreground layer — floating collage cards that occlude the big word. */}

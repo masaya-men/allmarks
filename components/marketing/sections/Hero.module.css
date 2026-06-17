@@ -24,12 +24,20 @@
 }
 
 /* ── Layer 1 (back): oversized faint serif keyword, drifts on scroll ── */
-.bgWord {
+
+/* Shell: handles absolute centering only. Never receives a GSAP transform. */
+.bgWordShell {
   position: absolute;
   left: 50%;
   top: 46%;
   transform: translate(-50%, -50%);
   z-index: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Inner word: parallax target. GSAP writes `y` here; no CSS transform of its own. */
+.bgWord {
   font-family: var(--lp-serif);
   font-weight: 300;
   font-style: italic;
@@ -38,8 +46,6 @@
   letter-spacing: -0.04em;
   white-space: nowrap;
   color: color-mix(in srgb, var(--lp-ink) 6%, transparent);
-  user-select: none;
-  pointer-events: none;
   will-change: transform;
 }
 
