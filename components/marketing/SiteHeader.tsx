@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
+import type { SupportedLocale } from '@/lib/i18n/config'
 import styles from './SiteHeader.module.css'
 
 /**
@@ -27,7 +28,9 @@ const NAV_ITEMS = [
   { href: '/contact',  label: 'Contact'  },
 ] as const
 
-export function SiteHeader(): React.ReactElement {
+export function SiteHeader({ locale }: { locale: SupportedLocale }): React.ReactElement {
+  // locale will be wired to LanguageMenu in Task 7
+  void locale
   const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {

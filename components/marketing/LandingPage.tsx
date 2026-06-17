@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import type { SupportedLocale } from '@/lib/i18n/config'
 import { useSmoothScroll } from '@/lib/scroll/use-smooth-scroll'
 import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
 import { SiteHeader } from './SiteHeader'
@@ -30,31 +31,27 @@ import styles from './LandingPage.module.css'
  *   ─── black continues seamlessly ──────────────────────────────────
  *   SiteFooter  — dark editorial footer (#0a0a0a)
  */
-export function LandingPage(): React.ReactElement {
+export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): React.ReactElement {
   useSmoothScroll()
   useScrollTrigger()
 
-  // The marketing LP is an intentionally LIGHT world, but the app's root
-  // <html> defaults to data-theme="dark" (the board is dark). Without an
-  // explicit light declaration, browser auto-dark-mode (Chrome's "Auto Dark
-  // Mode for Web Contents" flag, or dark-mode extensions) force-darkens this
-  // white page. Mark the document as light while the LP is mounted; restore
-  // dark on unmount so navigating into the (dark) board is unaffected. The
-  // old marketing ThemeToggle used to do this implicitly; it was removed in
-  // the redesign, so the LP now owns the declaration. (color-scheme: light
-  // on .lpRoot in landing-tokens.css reinforces this for auto-dark.)
+  // LP は意図的に LIGHT。app 既定 <html data-theme="dark"> + ブラウザ自動ダーク対策。
+  // 併せて各言語ページの <html lang> を locale に合わせる(root layout は en 固定のため)。
   useEffect(() => {
     const html = document.documentElement
-    const prev = html.getAttribute('data-theme')
+    const prevTheme = html.getAttribute('data-theme')
+    const prevLang = html.getAttribute('lang')
     html.setAttribute('data-theme', 'light')
+    html.setAttribute('lang', locale)
     return () => {
-      html.setAttribute('data-theme', prev ?? 'dark')
+      html.setAttribute('data-theme', prevTheme ?? 'dark')
+      html.setAttribute('lang', prevLang ?? 'en')
     }
-  }, [])
+  }, [locale])
 
   return (
     <div className={`${styles.wrapper} lpRoot`}>
-      <SiteHeader />
+      <SiteHeader locale={locale} />
       <div className={styles.content}>
         <Hero />
         <Problem />
