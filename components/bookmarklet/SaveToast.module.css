@@ -149,8 +149,22 @@
   color: rgba(255, 255, 255, 0.96);
 }
 
+.label.duplicate {
+  color: #ffb020;
+}
+
 .label.error {
   color: #ff8a8a;
+}
+
+.warn {
+  stroke: #ffb020;
+  fill: none;
+}
+
+.warn circle {
+  fill: #ffb020;
+  stroke: none;
 }
 
 .label > span {

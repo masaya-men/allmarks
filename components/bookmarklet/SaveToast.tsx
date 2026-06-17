@@ -2,20 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { initDB, addBookmark } from '@/lib/storage/indexeddb'
+import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { postBookmarkSaved } from '@/lib/board/channel'
-import { t } from '@/lib/i18n/t'
+import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
+import { queryPipPresence } from '@/lib/board/pip-presence'
+import { planSaveWindow, type SaveOutcome } from '@/lib/bookmarklet/save-window-plan'
 import styles from './SaveToast.module.css'
 
-type State = 'saving' | 'saved' | 'recede' | 'error'
+type State = 'saving' | SaveOutcome // 'saving' | 'saved' | 'duplicate' | 'error'
 
-const ERROR_CLOSE_MS = 2600
-// Bookmarklet popup is purely a bridge to write IDB in the {booklage,
-// booklage} partition; visible feedback lives in the host-page toast that
-// the bookmarklet IIFE injects. So we close the popup as fast as Chrome
-// will allow after the IDB write completes.
-const FAST_CLOSE_MS = 80
+const MIN_SAVING_MS = 400
+const LABELS: Record<State, string> = {
+  saving: 'Saving', saved: 'Saved', duplicate: 'Already saved', error: 'Failed',
+}
 
 function StaggeredLabel({ text }: { text: string }): ReactElement {
   const chars = useMemo(() => Array.from(text), [text])
@@ -30,6 +30,10 @@ function StaggeredLabel({ text }: { text: string }): ReactElement {
   )
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export function SaveToast(): ReactElement {
   const params = useSearchParams()
   const url = params.get('url') ?? ''
@@ -40,60 +44,58 @@ export function SaveToast(): ReactElement {
   const favicon = params.get('favicon') ?? ''
 
   const [state, setState] = useState<State>('saving')
-  const savedRef = useRef(false)
+  const startedRef = useRef(false)
+  const closeWindow = useRef(() => { try { window.close() } catch { /* blocked */ } }).current
 
   useEffect(() => {
-    if (!url || savedRef.current) return
-    savedRef.current = true
+    if (!url || startedRef.current) return
+    startedRef.current = true
     const timers: ReturnType<typeof setTimeout>[] = []
 
     ;(async (): Promise<void> => {
       try {
         const db = await initDB()
-        const bm = await addBookmark(db, {
-          url,
-          title,
-          description: desc,
-          thumbnail: image,
-          favicon,
-          siteName: site,
-          type: detectUrlType(url),
-          tags: [],
-        })
-        postBookmarkSaved({ bookmarkId: bm.id })
+        // Min-saving floor runs concurrently so 'Saving' is always perceived.
+        const work = (async (): Promise<{ outcome: SaveOutcome }> => {
+          const all = await getAllBookmarks(db)
+          const existing = all.find((b) => b.url === url && !b.isDeleted)
+          if (existing) return { outcome: 'duplicate' }
+          const bm = await addBookmark(db, {
+            url, title, description: desc, thumbnail: image, favicon,
+            siteName: site, type: detectUrlType(url), tags: [],
+          })
+          postBookmarkSaved({ bookmarkId: bm.id })
+          return { outcome: 'saved' }
+        })()
+        const [{ outcome }] = await Promise.all([work, delay(MIN_SAVING_MS)])
 
-        // Always fast-close. The bookmarklet IIFE injects a Shadow-DOM
-        // toast into the user's host page (saving → saved → fade out)
-        // that owns the visible feedback now. The popup is just a
-        // bridge to write IDB in the {booklage, booklage} partition,
-        // so it has no UI responsibility — keep it on screen as briefly
-        // as Chrome will allow. Same closing path whether PiP is open
-        // or not; PiP slide-in animation provides additional feedback
-        // when present, parent toast covers the no-PiP case.
-        timers.push(setTimeout(() => {
-          try { window.close() } catch { /* browser blocked */ }
-        }, FAST_CLOSE_MS))
+        const [enabled, pipActive] = await Promise.all([
+          loadQuickTagEnabled(db),
+          queryPipPresence(80),
+        ])
+        const plan = planSaveWindow(outcome, enabled, pipActive)
+        setState(outcome)
+        // Tag rendering + lifecycle land in the next task; for now, when the
+        // plan says no tags, auto-close. (plan.showTags is always false until
+        // the tag path is wired.)
+        if (plan.autoCloseMs !== null) {
+          timers.push(setTimeout(closeWindow, plan.autoCloseMs))
+        }
       } catch {
-        // Hard error path — keep the original error toast so the user
-        // sees the failure even if their host page's toast was ephemeral.
         setState('error')
-        timers.push(setTimeout(() => {
-          try { window.close() } catch { /* ignore */ }
-        }, ERROR_CLOSE_MS))
+        timers.push(setTimeout(closeWindow, 2400))
       }
     })()
 
     return () => { for (const tm of timers) clearTimeout(tm) }
-  }, [url, title, desc, image, site, favicon])
+  }, [url, title, desc, image, site, favicon, closeWindow])
 
   if (!url) {
     return (
       <div className={styles.stage} data-state="saving" data-testid="save-toast">
         <div className={styles.glow} />
         <div className={styles.center}>
-          <div className={styles.indicator}>
-            <div className={styles.ring} data-role="ring" />
-          </div>
+          <div className={styles.indicator}><div className={styles.ring} data-role="ring" /></div>
           <div className={styles.brand}>AllMarks</div>
           <div className={styles.label} aria-live="polite">
             <StaggeredLabel text="ブックマークレットから開いてください" />
@@ -103,58 +105,34 @@ export function SaveToast(): ReactElement {
     )
   }
 
-  const labelText =
-    state === 'error' ? t('bookmarklet.toast.error') :
-    state === 'saved' || state === 'recede' ? t('bookmarklet.toast.saved') :
-    t('bookmarklet.toast.saving')
-
   const labelClass =
-    state === 'saved' || state === 'recede' ? `${styles.label} ${styles.saved}` :
+    state === 'saved' ? `${styles.label} ${styles.saved}` :
+    state === 'duplicate' ? `${styles.label} ${styles.duplicate}` :
     state === 'error' ? `${styles.label} ${styles.error}` :
     styles.label
 
-  const showImage = (state === 'saved' || state === 'recede') && image !== ''
-
   return (
     <div className={styles.stage} data-state={state} data-testid="save-toast">
-      {showImage && (
-        <img
-          className={styles.bgThumb}
-          src={image}
-          alt=""
-          aria-hidden="true"
-          data-role="bg-thumb"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-        />
-      )}
       <div className={styles.glow} />
       <div className={styles.center}>
         <div className={styles.indicator}>
           {state === 'saving' && <div className={styles.ring} data-role="ring" />}
-          {(state === 'saved' || state === 'recede') && (
-            <svg
-              className={styles.checkmark}
-              viewBox="0 0 24 24"
-              role="img"
-              aria-label={t('bookmarklet.toast.saved')}
-              data-role="checkmark"
-            >
+          {state === 'saved' && (
+            <svg className={styles.checkmark} viewBox="0 0 24 24" role="img" aria-label="Saved" data-role="checkmark">
               <path d="M5 12 L10 17 L19 7" />
             </svg>
           )}
+          {state === 'duplicate' && (
+            <svg className={`${styles.checkmark} ${styles.warn}`} viewBox="0 0 24 24" role="img" aria-label="Already saved" data-role="warn">
+              <path d="M12 3 L22 20 L2 20 Z" /><path d="M12 9 L12 14" /><circle cx="12" cy="17.2" r="1.3" />
+            </svg>
+          )}
           {state === 'error' && (
-            <div
-              className={styles.errorMark}
-              role="img"
-              aria-label={t('bookmarklet.toast.error')}
-              data-role="error-mark"
-            >!</div>
+            <div className={styles.errorMark} role="img" aria-label="Failed" data-role="error-mark">!</div>
           )}
         </div>
         <div className={styles.brand}>AllMarks</div>
-        <div className={labelClass} aria-live="polite">
-          <StaggeredLabel text={labelText} />
-        </div>
+        <div className={labelClass} aria-live="polite">{LABELS[state]}</div>
       </div>
     </div>
   )
