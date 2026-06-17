@@ -125,19 +125,17 @@ describe('generateBookmarkletUri', () => {
     expect(uri).toMatch(/\(function\(\)\{[\s\S]*\}\)\(\);?$/)
   })
 
-  it('uses 200x160 popup dims (small mini-popup; Chrome may inflate but we ask small)', () => {
+  it('uses 300x380 popup dims (final save confirmation window)', () => {
     const uri = generateBookmarkletUri('https://booklage.pages.dev')
-    expect(uri).toContain('width=')
-    expect(uri).toContain('W=200')
-    expect(uri).toContain('H=160')
+    expect(uri).toContain('width=300,height=380')
   })
 
   it('positions popup at bottom-right (PiP default location, popup tucks behind PiP)', () => {
     const uri = generateBookmarkletUri('https://booklage.pages.dev')
-    // Right edge: availWidth - W - 20 inset
-    expect(uri).toContain('screen.availWidth-W-20')
-    // Bottom: availHeight - H - 20 inset
-    expect(uri).toContain('screen.availHeight-H-20')
+    // Right edge: availWidth - 300 - 20 inset
+    expect(uri).toContain('screen.availWidth-300-20')
+    // Bottom: availHeight - 380 - 20 inset
+    expect(uri).toContain('screen.availHeight-380-20')
     // Old center-bottom math must be gone
     expect(uri).not.toContain('(screen.availWidth-W)/2')
   })
@@ -184,5 +182,22 @@ describe('generateBookmarkletUri', () => {
     expect(popupIdx).toBeGreaterThan(handoffIdx)
     const between = uri.slice(handoffIdx, popupIdx)
     expect(between).toContain('return')
+  })
+})
+
+describe('bookmarklet source (save-window redesign)', () => {
+  const uri = generateBookmarkletUri('https://allmarks.app')
+  it('opens the /save popup at the final window size', () => {
+    expect(uri).toContain('width=300,height=380')
+  })
+  it('no longer injects a host-page shadow-DOM toast', () => {
+    expect(uri).not.toContain('attachShadow')
+    expect(uri).not.toContain('に保存中') // legacy 'に保存中'
+  })
+  it('still hands off to the extension when present', () => {
+    expect(uri).toContain('booklage:save-via-extension')
+  })
+  it('still opens the booklage-save window', () => {
+    expect(uri).toContain("'booklage-save'")
   })
 })

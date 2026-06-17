@@ -1,8 +1,7 @@
 /* Bookmarklet save popup — full-canvas stage that fills the 320×320 window.
  * Stages (driven by [data-state]):
  *   saving  → ring + brand + "保存中…"
- *   saved   → optional bg image + checkmark draw + brand + "Inbox に保存しました"
- *   recede  → fade-out + scale-down (final 250ms before window.close)
+ *   saved   → optional bg image + checkmark draw + brand + "Saved"
  *   error   → error mark + brand + error label
  */
 
@@ -18,11 +17,6 @@
   opacity: 1;
 }
 
-.stage[data-state="recede"] {
-  opacity: 0;
-  transform: scale(0.96);
-}
-
 .bgThumb {
   position: absolute;
   inset: 0;
@@ -35,8 +29,7 @@
   will-change: opacity;
 }
 
-.stage[data-state="saved"] .bgThumb,
-.stage[data-state="recede"] .bgThumb {
+.stage[data-state="saved"] .bgThumb {
   animation: bgFadeIn 250ms ease-out forwards;
 }
 
@@ -149,8 +142,22 @@
   color: rgba(255, 255, 255, 0.96);
 }
 
+.label.duplicate {
+  color: #ffb020;
+}
+
 .label.error {
   color: #ff8a8a;
+}
+
+.warn {
+  stroke: #ffb020;
+  fill: none;
+}
+
+.warn circle {
+  fill: #ffb020;
+  stroke: none;
 }
 
 .label > span {
@@ -163,7 +170,7 @@
 
 .stage[data-state="saving"] .label > span,
 .stage[data-state="saved"] .label > span,
-.stage[data-state="recede"] .label > span,
+.stage[data-state="duplicate"] .label > span,
 .stage[data-state="error"] .label > span {
   animation: letterIn 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -178,6 +185,14 @@
   .brand,
   .label > span,
   .bgThumb { animation: none; opacity: 1; transform: none; }
-  .stage,
-  .stage[data-state="recede"] { transition: opacity 80ms linear, transform 0s; }
+  .stage { transition: opacity 80ms linear, transform 0s; }
+}
+
+.tagStage { display: flex; flex-direction: column; padding: 12px; overflow: hidden; }
+
+.tagClose {
+  position: absolute; top: 8px; right: 8px; width: 28px; height: 28px;
+  border: 1px solid var(--color-card-border, rgba(255,255,255,0.12)); border-radius: 8px;
+  background: rgba(255,255,255,0.04); color: inherit; cursor: pointer; font-size: 13px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
 }
