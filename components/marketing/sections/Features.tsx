@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { useReveal } from '@/lib/scroll/use-reveal'
 import { DEMO_COLLAGE, DEMO_VIDEOS } from '@/lib/marketing/demo-collage'
@@ -88,6 +88,85 @@ const PRIVACY_ROWS: readonly string[] = [
 ] as const
 
 /**
+ * 03 LIVE GRID — the AllMarks differentiator: multiple real videos playing at
+ * once. Three NASA public-domain clips in a 2+1 grid layout; all autoplay
+ * only while in the viewport (IntersectionObserver) and respect reduced-motion.
+ *
+ * Grid: large aurora (top-left, 2×1 cell wide) + earth + nebula stacked in the
+ * right column. Covers the cells with object-fit:cover so the low-res 320px
+ * clips look clean and never letterboxed.
+ */
+function LiveGrid(): React.ReactElement {
+  const slotRef = useRef<HTMLDivElement>(null)
+  // Stable refs to the three video elements — avoids stale closure issues
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([null, null, null])
+
+  useEffect(() => {
+    const slot = slotRef.current
+    if (!slot) return
+
+    // Reduced-motion: check once. If user prefers-reduced-motion, never autoplay.
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (reducedMotion) return
+
+    const videos = videoRefs.current.filter((v): v is HTMLVideoElement => v !== null)
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            for (const v of videos) {
+              // play() returns a Promise; ignore the rejection if interrupted
+              v.play().catch(() => {})
+            }
+          } else {
+            for (const v of videos) {
+              v.pause()
+            }
+          }
+        }
+      },
+      { threshold: 0.25 },
+    )
+
+    observer.observe(slot)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div
+      ref={slotRef}
+      className={styles.liveGrid}
+      data-livegrid-slot
+      aria-hidden="true"
+    >
+      {DEMO_VIDEOS.map((vid, i) => (
+        <figure
+          key={vid.src}
+          className={`${styles.liveCell} ${styles[`liveCell${i}`]}`}
+        >
+          <video
+            ref={(el) => {
+              videoRefs.current[i] = el
+            }}
+            src={`/${vid.src}`}
+            poster={`/${vid.poster}`}
+            muted
+            loop
+            playsInline
+            preload="none"
+            className={styles.liveCellVideo}
+          />
+        </figure>
+      ))}
+    </div>
+  )
+}
+
+/**
  * Renders the supporting visual for a given beat. All cards are clean image
  * thumbnails (no labels, no fabricated domains) and strictly axis-aligned.
  */
@@ -150,32 +229,7 @@ function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement 
   }
 
   if (visual === 'live') {
-    // POSTER PLACEHOLDER. A later task (Task 8) swaps this static poster for
-    // real autoplaying video — keyed off the data-livegrid-slot marker below.
-    const vid = DEMO_VIDEOS[0]
-    return (
-      <div className={styles.liveSlot} data-livegrid-slot>
-        {vid ? (
-          <figure className={styles.card}>
-            <img
-              src={`/${vid.poster}`}
-              alt=""
-              width={vid.w}
-              height={vid.h}
-              className={styles.cardImg}
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-            />
-            <span className={styles.playBadge} aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22">
-                <path d="M8 5v14l11-7z" fill="currentColor" />
-              </svg>
-            </span>
-          </figure>
-        ) : null}
-      </div>
-    )
+    return <LiveGrid />
   }
 
   if (visual === 'organize') {
