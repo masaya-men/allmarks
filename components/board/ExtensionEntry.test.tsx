@@ -22,4 +22,19 @@ describe('ExtensionEntry settings drawer', () => {
     fireEvent.click(screen.getByTestId('quick-tag-toggle'))
     expect(onToggle).toHaveBeenCalledWith(false)
   })
+
+  it('exposes SETTINGS + the quick-tag toggle even when the extension is absent', () => {
+    // Bookmarklet-only users must still be able to turn quick-tag on/off,
+    // because the /save window reads the same setting.
+    delete document.documentElement.dataset.booklageExtension
+    const onToggle = vi.fn()
+    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} />)
+    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    expect(screen.getByTestId('extension-settings')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('quick-tag-toggle'))
+    expect(onToggle).toHaveBeenCalledWith(false)
+    // The drawer folds the GET EXTENSION promo in (no OPEN EXTENSION SETTINGS).
+    expect(screen.getByTestId('get-extension-block')).toBeTruthy()
+    expect(screen.queryByTestId('open-extension-settings')).toBeNull()
+  })
 })

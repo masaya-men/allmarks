@@ -125,17 +125,17 @@ describe('generateBookmarkletUri', () => {
     expect(uri).toMatch(/\(function\(\)\{[\s\S]*\}\)\(\);?$/)
   })
 
-  it('uses 300x380 popup dims (final save confirmation window)', () => {
+  it('uses 320x320 square popup dims (save confirmation + scrollable tags)', () => {
     const uri = generateBookmarkletUri('https://booklage.pages.dev')
-    expect(uri).toContain('width=300,height=380')
+    expect(uri).toContain('width=320,height=320')
   })
 
   it('positions popup at bottom-right (PiP default location, popup tucks behind PiP)', () => {
     const uri = generateBookmarkletUri('https://booklage.pages.dev')
-    // Right edge: availWidth - 300 - 20 inset
-    expect(uri).toContain('screen.availWidth-300-20')
-    // Bottom: availHeight - 380 - 20 inset
-    expect(uri).toContain('screen.availHeight-380-20')
+    // Right edge: availWidth - 320 - 20 inset
+    expect(uri).toContain('screen.availWidth-320-20')
+    // Bottom: availHeight - 320 - 20 inset
+    expect(uri).toContain('screen.availHeight-320-20')
     // Old center-bottom math must be gone
     expect(uri).not.toContain('(screen.availWidth-W)/2')
   })
@@ -187,8 +187,8 @@ describe('generateBookmarkletUri', () => {
 
 describe('bookmarklet source (save-window redesign)', () => {
   const uri = generateBookmarkletUri('https://allmarks.app')
-  it('opens the /save popup at the final window size', () => {
-    expect(uri).toContain('width=300,height=380')
+  it('opens the /save popup at the square window size', () => {
+    expect(uri).toContain('width=320,height=320')
   })
   it('no longer injects a host-page shadow-DOM toast', () => {
     expect(uri).not.toContain('attachShadow')

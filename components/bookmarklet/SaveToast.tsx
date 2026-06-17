@@ -213,8 +213,8 @@ export function SaveToast(): ReactElement {
         >
           ✕
         </button>
-        <div className={styles.center}>
-          <div className={styles.indicator}>
+        <div className={styles.tagHeader}>
+          <div className={`${styles.indicator} ${styles.indicatorSmall}`}>
             {state === 'saving' && <div className={styles.ring} data-role="ring" />}
             {state === 'saved' && (
               <svg className={styles.checkmark} viewBox="0 0 24 24" role="img" aria-label="Saved" data-role="checkmark">
@@ -230,20 +230,24 @@ export function SaveToast(): ReactElement {
               <div className={styles.errorMark} role="img" aria-label="Failed" data-role="error-mark">!</div>
             )}
           </div>
-          <div className={styles.brand}>AllMarks</div>
-          <div className={labelClass} aria-label={LABELS[state]} aria-live="polite" data-testid="status-label">
-            <StaggeredLabel text={LABELS[state]} />
+          <div className={styles.tagHeaderText}>
+            <span className={styles.brandInline}>AllMarks</span>
+            <span className={`${labelClass} ${styles.labelInline}`} aria-label={LABELS[state]} aria-live="polite" data-testid="status-label">
+              <StaggeredLabel text={LABELS[state]} />
+            </span>
           </div>
         </div>
-        <TagAddPopover
-          compact
-          allTags={tagData.allTags}
-          currentTagIds={tagData.currentTagIds}
-          suggestedEntries={tagData.suggestedEntries}
-          onAddExisting={(id) => { void handleAddExisting(id) }}
-          onAddNew={(name) => { void handleAddNew(name) }}
-          onClose={() => { /* lifecycle owns dismissal */ }}
-        />
+        <div className={styles.tagScroll}>
+          <TagAddPopover
+            compact
+            allTags={tagData.allTags}
+            currentTagIds={tagData.currentTagIds}
+            suggestedEntries={tagData.suggestedEntries}
+            onAddExisting={(id) => { void handleAddExisting(id) }}
+            onAddNew={(name) => { void handleAddNew(name) }}
+            onClose={() => { /* lifecycle owns dismissal */ }}
+          />
+        </div>
       </div>
     )
   }

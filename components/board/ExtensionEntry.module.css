@@ -196,3 +196,16 @@
     transition: none;
   }
 }
+
+/* Not-installed: GET EXTENSION promo folded into the SETTINGS drawer, under
+ * the QUICK-TAG toggle, separated by a hairline. The body keeps its existing
+ * style; trim its bottom margin since the CTA follows directly. */
+.promoInline {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.promoInline .body {
+  margin: 0 0 12px;
+}
