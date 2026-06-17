@@ -178,6 +178,7 @@
 .stage[data-state="saving"] .label > span,
 .stage[data-state="saved"] .label > span,
 .stage[data-state="recede"] .label > span,
+.stage[data-state="duplicate"] .label > span,
 .stage[data-state="error"] .label > span {
   animation: letterIn 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

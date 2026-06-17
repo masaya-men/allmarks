@@ -132,7 +132,9 @@ export function SaveToast(): ReactElement {
           )}
         </div>
         <div className={styles.brand}>AllMarks</div>
-        <div className={labelClass} aria-live="polite">{LABELS[state]}</div>
+        <div className={labelClass} aria-label={LABELS[state]} aria-live="polite" data-testid="status-label">
+          <StaggeredLabel text={LABELS[state]} />
+        </div>
       </div>
     </div>
   )

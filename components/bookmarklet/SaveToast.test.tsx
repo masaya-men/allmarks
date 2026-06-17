@@ -34,7 +34,7 @@ describe('SaveToast deliberate confirmation', () => {
     render(<SaveToast />)
     await flush(500) // min-saving + async work
     expect(screen.getByTestId('save-toast').getAttribute('data-state')).toBe('saved')
-    expect(screen.getByText('Saved')).toBeTruthy()
+    expect(screen.getByTestId('status-label').getAttribute('aria-label')).toBe('Saved')
     expect(window.close).not.toHaveBeenCalled()
     await flush(1900)
     expect(window.close).toHaveBeenCalled()
@@ -45,7 +45,7 @@ describe('SaveToast deliberate confirmation', () => {
     render(<SaveToast />)
     await flush(500)
     expect(screen.getByTestId('save-toast').getAttribute('data-state')).toBe('duplicate')
-    expect(screen.getByText('Already saved')).toBeTruthy()
+    expect(screen.getByTestId('status-label').getAttribute('aria-label')).toBe('Already saved')
     expect(addBookmark).not.toHaveBeenCalled()
   })
 
@@ -54,7 +54,7 @@ describe('SaveToast deliberate confirmation', () => {
     render(<SaveToast />)
     await flush(500)
     expect(screen.getByTestId('save-toast').getAttribute('data-state')).toBe('error')
-    expect(screen.getByText('Failed')).toBeTruthy()
+    expect(screen.getByTestId('status-label').getAttribute('aria-label')).toBe('Failed')
     await flush(2500)
     expect(window.close).toHaveBeenCalled()
   })
