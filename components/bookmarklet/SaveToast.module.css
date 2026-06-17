@@ -1,4 +1,5 @@
-/* Bookmarklet save popup — full-canvas stage that fills the 320×320 window.
+/* Bookmarklet save popup — full-canvas stage that fills the 256×256 window
+ * (matches the real Pop Out / PIP_OUTER).
  * Stages (driven by [data-state]):
  *   saving  → ring + brand + "保存中…"
  *   saved   → optional bg image + checkmark draw + brand + "Saved"
@@ -189,7 +190,7 @@
 }
 
 /* Tag window: compact confirmation header on top, scrollable tag UI below.
- * The square 320×320 window stays fixed; the tag list scrolls internally. */
+ * The square 256×256 window stays fixed; the tag list scrolls internally. */
 .tagStage { display: flex; flex-direction: column; padding: 12px; gap: 10px; overflow: hidden; }
 
 .tagHeader {
