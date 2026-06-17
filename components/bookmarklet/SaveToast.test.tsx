@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import { SaveToast } from './SaveToast'
 
 let mockParams = new URLSearchParams()
@@ -46,6 +46,7 @@ describe('SaveToast', () => {
   beforeEach(() => {
     mockParams = new URLSearchParams()
     mockPipActive = false
+    Object.defineProperty(window, 'resizeTo', { value: vi.fn(), writable: true, configurable: true })
   })
 
   afterEach(() => {
@@ -149,7 +150,7 @@ describe('SaveToast quick-tag branching', () => {
     vi.clearAllMocks()
     vi.useFakeTimers()
     vi.stubGlobal('close', vi.fn())
-    vi.stubGlobal('resizeTo', vi.fn())
+    Object.defineProperty(window, 'resizeTo', { value: vi.fn(), writable: true, configurable: true })
     vi.stubGlobal('matchMedia', (q: string) => ({
       matches: false, media: q, onchange: null,
       addEventListener: vi.fn(), removeEventListener: vi.fn(),
@@ -166,15 +167,16 @@ describe('SaveToast quick-tag branching', () => {
 
   it('shows the tag window when enabled and no PiP', async () => {
     render(<SaveToast />)
-    await waitFor(() => expect(screen.getByTestId('save-tag-window')).toBeTruthy())
+    await act(async () => { await vi.runAllTimersAsync() })
+    expect(screen.getByTestId('save-tag-window')).toBeTruthy()
     expect(window.close).not.toHaveBeenCalled()
   })
 
   it('fast-closes when feature is OFF', async () => {
     ;(loadQuickTagEnabled as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(false)
     render(<SaveToast />)
-    await waitFor(() => expect(loadQuickTagEnabled).toHaveBeenCalled())
-    await vi.advanceTimersByTimeAsync(120)
+    await act(async () => { await vi.runAllTimersAsync() })
+    await act(async () => { await vi.advanceTimersByTimeAsync(120) })
     expect(window.close).toHaveBeenCalled()
     expect(screen.queryByTestId('save-tag-window')).toBeNull()
   })
@@ -182,8 +184,8 @@ describe('SaveToast quick-tag branching', () => {
   it('fast-closes when a PiP is open', async () => {
     ;(queryPipPresence as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(true)
     render(<SaveToast />)
-    await waitFor(() => expect(queryPipPresence).toHaveBeenCalled())
-    await vi.advanceTimersByTimeAsync(120)
+    await act(async () => { await vi.runAllTimersAsync() })
+    await act(async () => { await vi.advanceTimersByTimeAsync(120) })
     expect(window.close).toHaveBeenCalled()
     expect(screen.queryByTestId('save-tag-window')).toBeNull()
   })
