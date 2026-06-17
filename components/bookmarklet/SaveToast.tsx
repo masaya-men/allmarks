@@ -3,18 +3,32 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
+import type { BookmarkRecord, TagRecord } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { postBookmarkSaved } from '@/lib/board/channel'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { queryPipPresence } from '@/lib/board/pip-presence'
 import { planSaveWindow, type SaveOutcome } from '@/lib/bookmarklet/save-window-plan'
+import { getAllTags } from '@/lib/storage/tags'
+import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
+import { applyExistingQuickTag, applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
+import { TagAddPopover, type SuggestionEntry } from '@/components/board/TagAddPopover'
 import styles from './SaveToast.module.css'
 
 type State = 'saving' | SaveOutcome // 'saving' | 'saved' | 'duplicate' | 'error'
 
 const MIN_SAVING_MS = 400
+const UNTOUCHED_CLOSE_MS = 5000
+const LEAVE_GRACE_MS = 600
 const LABELS: Record<State, string> = {
   saving: 'Saving', saved: 'Saved', duplicate: 'Already saved', error: 'Failed',
+}
+
+interface TagData {
+  bookmarkId: string
+  allTags: TagRecord[]
+  currentTagIds: string[]
+  suggestedEntries: SuggestionEntry[]
 }
 
 function StaggeredLabel({ text }: { text: string }): ReactElement {
@@ -23,7 +37,7 @@ function StaggeredLabel({ text }: { text: string }): ReactElement {
     <>
       {chars.map((ch, i) => (
         <span key={`${i}-${ch}`} style={{ animationDelay: `${i * 40}ms` }}>
-          {ch === ' ' ? ' ' : ch}
+          {ch === ' ' ? ' ' : ch}
         </span>
       ))}
     </>
@@ -44,8 +58,15 @@ export function SaveToast(): ReactElement {
   const favicon = params.get('favicon') ?? ''
 
   const [state, setState] = useState<State>('saving')
+  const [tagData, setTagData] = useState<TagData | null>(null)
   const startedRef = useRef(false)
+  // Cache the db instance so tag handlers can use it without re-awaiting initDB each time.
+  const dbRef = useRef<Awaited<ReturnType<typeof initDB>> | null>(null)
   const closeWindow = useRef(() => { try { window.close() } catch { /* blocked */ } }).current
+
+  const untouchedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const engagedRef = useRef(false)
 
   useEffect(() => {
     if (!url || startedRef.current) return
@@ -55,29 +76,40 @@ export function SaveToast(): ReactElement {
     ;(async (): Promise<void> => {
       try {
         const db = await initDB()
-        // Min-saving floor runs concurrently so 'Saving' is always perceived.
-        const work = (async (): Promise<{ outcome: SaveOutcome }> => {
+        dbRef.current = db
+        // work now returns { outcome, bm } — the full BookmarkRecord so
+        // orderTagsForSave gets the real object without casting.
+        const work = (async (): Promise<{ outcome: SaveOutcome; bm: BookmarkRecord }> => {
           const all = await getAllBookmarks(db)
           const existing = all.find((b) => b.url === url && !b.isDeleted)
-          if (existing) return { outcome: 'duplicate' }
-          const bm = await addBookmark(db, {
+          if (existing) return { outcome: 'duplicate', bm: existing as BookmarkRecord }
+          const created = await addBookmark(db, {
             url, title, description: desc, thumbnail: image, favicon,
             siteName: site, type: detectUrlType(url), tags: [],
           })
-          postBookmarkSaved({ bookmarkId: bm.id })
-          return { outcome: 'saved' }
+          postBookmarkSaved({ bookmarkId: created.id })
+          return { outcome: 'saved', bm: created }
         })()
-        const [{ outcome }] = await Promise.all([work, delay(MIN_SAVING_MS)])
+        const [{ outcome, bm }] = await Promise.all([work, delay(MIN_SAVING_MS)])
 
         const [enabled, pipActive] = await Promise.all([
           loadQuickTagEnabled(db),
           queryPipPresence(80),
         ])
         const plan = planSaveWindow(outcome, enabled, pipActive)
+
+        if (plan.showTags) {
+          const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+          const ordered = orderTagsForSave(bm, corpus, allTags)
+          setTagData({
+            bookmarkId: bm.id,
+            allTags,
+            currentTagIds: [...bm.tags],
+            suggestedEntries: ordered.slice(0, 5).map((tg) => ({ kind: 'existing' as const, tagId: tg.id })),
+          })
+        }
+
         setState(outcome)
-        // Tag rendering + lifecycle land in the next task; for now, when the
-        // plan says no tags, auto-close. (plan.showTags is always false until
-        // the tag path is wired.)
         if (plan.autoCloseMs !== null) {
           timers.push(setTimeout(closeWindow, plan.autoCloseMs))
         }
@@ -89,6 +121,57 @@ export function SaveToast(): ReactElement {
 
     return () => { for (const tm of timers) clearTimeout(tm) }
   }, [url, title, desc, image, site, favicon, closeWindow])
+
+  // Lifecycle effect: when tag UI is shown, start the untouched auto-close
+  // timer and listen for keydown to engage. Only active while tagData is set.
+  useEffect(() => {
+    if (!tagData) return
+    untouchedTimerRef.current = setTimeout(() => {
+      if (!engagedRef.current) closeWindow()
+    }, UNTOUCHED_CLOSE_MS)
+    function onKeyDown(): void { engage() }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      if (untouchedTimerRef.current) clearTimeout(untouchedTimerRef.current)
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagData, closeWindow])
+
+  function engage(): void {
+    engagedRef.current = true
+    if (untouchedTimerRef.current) { clearTimeout(untouchedTimerRef.current); untouchedTimerRef.current = null }
+    if (leaveTimerRef.current) { clearTimeout(leaveTimerRef.current); leaveTimerRef.current = null }
+  }
+
+  function handleLeave(e: React.PointerEvent<HTMLDivElement>): void {
+    if (!engagedRef.current) return
+    const input = e.currentTarget.querySelector('input')
+    if (input && input.value.trim() !== '') return // mid-compose: keep open
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    leaveTimerRef.current = setTimeout(closeWindow, LEAVE_GRACE_MS)
+  }
+
+  async function handleAddExisting(tagId: string): Promise<void> {
+    if (!tagData) return
+    if (tagData.currentTagIds.includes(tagId)) return
+    const db = dbRef.current ?? (await initDB())
+    await applyExistingQuickTag(db, tagData.bookmarkId, tagId)
+    setTagData((d) => d ? { ...d, currentTagIds: [...d.currentTagIds, tagId] } : d)
+  }
+
+  async function handleAddNew(name: string): Promise<void> {
+    if (!tagData) return
+    const db = dbRef.current ?? (await initDB())
+    const tag = await applyNewQuickTag(db, tagData.bookmarkId, name, tagData.allTags)
+    if (!tag) return
+    const fresh = await getAllTags(db)
+    setTagData((d) => d ? {
+      ...d, allTags: fresh,
+      currentTagIds: d.currentTagIds.includes(tag.id) ? d.currentTagIds : [...d.currentTagIds, tag.id],
+    } : d)
+  }
 
   if (!url) {
     return (
@@ -110,6 +193,60 @@ export function SaveToast(): ReactElement {
     state === 'duplicate' ? `${styles.label} ${styles.duplicate}` :
     state === 'error' ? `${styles.label} ${styles.error}` :
     styles.label
+
+  // Tag-window render: confirmation block + tag UI + ✕ close
+  if (tagData) {
+    return (
+      <div
+        className={`${styles.stage} ${styles.tagStage}`}
+        data-state={state}
+        data-testid="save-tag-window"
+        onPointerEnter={engage}
+        onPointerLeave={handleLeave}
+      >
+        <button
+          type="button"
+          className={styles.tagClose}
+          data-testid="save-tag-close"
+          aria-label="close"
+          onClick={closeWindow}
+        >
+          ✕
+        </button>
+        <div className={styles.center}>
+          <div className={styles.indicator}>
+            {state === 'saving' && <div className={styles.ring} data-role="ring" />}
+            {state === 'saved' && (
+              <svg className={styles.checkmark} viewBox="0 0 24 24" role="img" aria-label="Saved" data-role="checkmark">
+                <path d="M5 12 L10 17 L19 7" />
+              </svg>
+            )}
+            {state === 'duplicate' && (
+              <svg className={`${styles.checkmark} ${styles.warn}`} viewBox="0 0 24 24" role="img" aria-label="Already saved" data-role="warn">
+                <path d="M12 3 L22 20 L2 20 Z" /><path d="M12 9 L12 14" /><circle cx="12" cy="17.2" r="1.3" />
+              </svg>
+            )}
+            {state === 'error' && (
+              <div className={styles.errorMark} role="img" aria-label="Failed" data-role="error-mark">!</div>
+            )}
+          </div>
+          <div className={styles.brand}>AllMarks</div>
+          <div className={labelClass} aria-label={LABELS[state]} aria-live="polite" data-testid="status-label">
+            <StaggeredLabel text={LABELS[state]} />
+          </div>
+        </div>
+        <TagAddPopover
+          compact
+          allTags={tagData.allTags}
+          currentTagIds={tagData.currentTagIds}
+          suggestedEntries={tagData.suggestedEntries}
+          onAddExisting={(id) => { void handleAddExisting(id) }}
+          onAddNew={(name) => { void handleAddNew(name) }}
+          onClose={() => { /* lifecycle owns dismissal */ }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className={styles.stage} data-state={state} data-testid="save-toast">

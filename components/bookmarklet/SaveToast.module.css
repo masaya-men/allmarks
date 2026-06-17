@@ -196,3 +196,11 @@
   .stage,
   .stage[data-state="recede"] { transition: opacity 80ms linear, transform 0s; }
 }
+
+.tagStage { display: flex; flex-direction: column; padding: 12px; overflow: hidden; }
+
+.tagClose {
+  position: absolute; top: 8px; right: 8px; width: 28px; height: 28px;
+  border: 1px solid var(--color-card-border, rgba(255,255,255,0.12)); border-radius: 8px;
+  background: rgba(255,255,255,0.04); color: inherit; cursor: pointer; font-size: 13px; line-height: 1;
+}
