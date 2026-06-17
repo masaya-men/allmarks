@@ -5,6 +5,7 @@ import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
 import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
 import { Hero } from './sections/Hero'
+import { Problem } from './sections/Problem'
 import { HeroSection } from './sections/HeroSection'
 import './landing-tokens.css'
 import { SaveDemoSection } from './sections/SaveDemoSection'
@@ -28,6 +29,7 @@ export function LandingPage(): React.ReactElement {
       <SiteHeader />
       <div className={styles.content}>
         <Hero />
+        <Problem />
         <HeroSection />
         <SaveDemoSection />
         <CollageDemoSection />
