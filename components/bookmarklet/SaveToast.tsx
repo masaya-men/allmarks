@@ -8,11 +8,12 @@ import { detectUrlType } from '@/lib/utils/url'
 import { postBookmarkSaved } from '@/lib/board/channel'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { queryPipPresence } from '@/lib/board/pip-presence'
-import { shouldShowQuickTagWindow } from '@/lib/tagger/quick-tag-apply'
+import { shouldShowQuickTagWindow, applyExistingQuickTag, applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { t } from '@/lib/i18n/t'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import type { SuggestionEntry } from '@/components/board/TagAddPopover'
+import { TagAddPopover } from '@/components/board/TagAddPopover'
 import styles from './SaveToast.module.css'
 
 type State = 'saving' | 'saved' | 'recede' | 'error' | 'tags'
@@ -58,6 +59,26 @@ export function SaveToast(): ReactElement {
   const [state, setState] = useState<State>('saving')
   const [tagData, setTagData] = useState<TagData | null>(null)
   const savedRef = useRef(false)
+
+  const closeWindow = useRef(() => { try { window.close() } catch { /* blocked */ } }).current
+
+  async function handleAddExisting(tagId: string): Promise<void> {
+    if (!tagData) return
+    await applyExistingQuickTag(await initDB(), tagData.bookmarkId, tagId)
+    setTagData((d) => d ? { ...d, currentTagIds: d.currentTagIds.includes(tagId) ? d.currentTagIds : [...d.currentTagIds, tagId] } : d)
+  }
+
+  async function handleAddNew(name: string): Promise<void> {
+    if (!tagData) return
+    const db = await initDB()
+    const tag = await applyNewQuickTag(db, tagData.bookmarkId, name, tagData.allTags)
+    if (!tag) return
+    const fresh = await getAllTags(db)
+    setTagData((d) => d ? {
+      ...d, allTags: fresh,
+      currentTagIds: d.currentTagIds.includes(tag.id) ? d.currentTagIds : [...d.currentTagIds, tag.id],
+    } : d)
+  }
 
   useEffect(() => {
     if (!url || savedRef.current) return
@@ -141,11 +162,26 @@ export function SaveToast(): ReactElement {
     )
   }
 
-  // Tag mode — UI wired in Task 3.
+  // Tag mode — render the compact tag menu in the /save popup window.
   if (state === 'tags' && tagData) {
     return (
-      <div className={styles.stage} data-state="tags" data-testid="save-tag-window">
-        {/* TagAddPopover wired in Task 3 */}
+      <div className={styles.tagStage} data-state="tags" data-testid="save-tag-window">
+        <button
+          type="button"
+          className={styles.tagClose}
+          data-testid="save-tag-close"
+          aria-label="close"
+          onClick={closeWindow}
+        >✕</button>
+        <TagAddPopover
+          compact
+          allTags={tagData.allTags}
+          currentTagIds={tagData.currentTagIds}
+          suggestedEntries={tagData.suggestedEntries}
+          onAddExisting={(tagId) => { void handleAddExisting(tagId) }}
+          onAddNew={(name) => { void handleAddNew(name) }}
+          onClose={() => { /* lifecycle owns dismissal; popover Esc is a no-op here */ }}
+        />
       </div>
     )
   }

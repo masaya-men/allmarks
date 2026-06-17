@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor, act, within, fireEvent } from '@testing-library/react'
 import { SaveToast } from './SaveToast'
 
 let mockParams = new URLSearchParams()
@@ -188,5 +188,42 @@ describe('SaveToast quick-tag branching', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(120) })
     expect(window.close).toHaveBeenCalled()
     expect(screen.queryByTestId('save-tag-window')).toBeNull()
+  })
+})
+
+import { addTagToBookmark } from '@/lib/storage/tags'
+import { addBookmark } from '@/lib/storage/indexeddb'
+
+describe('SaveToast tag-mode UI (Task 3)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(addBookmark).mockResolvedValue({ id: 'b1', tags: [] } as unknown as Awaited<ReturnType<typeof addBookmark>>)
+    Object.defineProperty(window, 'resizeTo', { value: vi.fn(), writable: true, configurable: true })
+    Object.defineProperty(window, 'close', { value: vi.fn(), configurable: true, writable: true })
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: false, media: q, onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    }))
+    mockParams = new URLSearchParams({ url: 'https://x.com/a/status/1', title: 'Hello' })
+    ;(loadQuickTagEnabled as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(true)
+    ;(queryPipPresence as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(false)
+  })
+
+  it('applies an existing tag chip and broadcasts update', async () => {
+    vi.useRealTimers()
+    render(<SaveToast />)
+    const win = await screen.findByTestId('save-tag-window')
+    const chip = await within(win).findByText('design')
+    fireEvent.click(chip)
+    await waitFor(() => expect(addTagToBookmark).toHaveBeenCalledWith(expect.anything(), 'b1', 't1'))
+  })
+
+  it('closes the window when the close button is pressed', async () => {
+    vi.useRealTimers()
+    render(<SaveToast />)
+    const btn = await screen.findByTestId('save-tag-close')
+    fireEvent.click(btn)
+    expect(window.close).toHaveBeenCalled()
   })
 })
