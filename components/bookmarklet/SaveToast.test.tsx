@@ -103,6 +103,15 @@ describe('SaveToast tag path (enabled + no PiP)', () => {
     expect(addTagToBookmark).toHaveBeenCalledWith(expect.anything(), 'b1', 't1')
   })
 
+  it('untouched 5s DOES auto-close when no interaction', async () => {
+    vi.useFakeTimers()
+    render(<SaveToast />)
+    await act(async () => { await vi.advanceTimersByTimeAsync(500) })
+    // No pointerEnter, no keydown — just wait past the 5000ms threshold
+    await act(async () => { await vi.advanceTimersByTimeAsync(5100) })
+    expect(window.close).toHaveBeenCalled()
+  })
+
   it('untouched 5s auto-closes; pointerEnter cancels', async () => {
     vi.useFakeTimers()
     render(<SaveToast />)

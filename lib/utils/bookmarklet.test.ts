@@ -193,7 +193,6 @@ describe('bookmarklet source (save-window redesign)', () => {
   it('no longer injects a host-page shadow-DOM toast', () => {
     expect(uri).not.toContain('attachShadow')
     expect(uri).not.toContain('に保存中') // legacy 'に保存中'
-    expect(uri).not.toContain('に保存中')
   })
   it('still hands off to the extension when present', () => {
     expect(uri).toContain('booklage:save-via-extension')

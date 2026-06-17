@@ -8,7 +8,7 @@ import { detectUrlType } from '@/lib/utils/url'
 import { postBookmarkSaved } from '@/lib/board/channel'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { queryPipPresence } from '@/lib/board/pip-presence'
-import { planSaveWindow, type SaveOutcome } from '@/lib/bookmarklet/save-window-plan'
+import { planSaveWindow, type SaveOutcome, ERROR_AUTOCLOSE_MS } from '@/lib/bookmarklet/save-window-plan'
 import { getAllTags } from '@/lib/storage/tags'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { applyExistingQuickTag, applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
@@ -115,7 +115,7 @@ export function SaveToast(): ReactElement {
         }
       } catch {
         setState('error')
-        timers.push(setTimeout(closeWindow, 2400))
+        timers.push(setTimeout(closeWindow, ERROR_AUTOCLOSE_MS))
       }
     })()
 
