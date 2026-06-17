@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactElement } from 'react'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './BookmarkletInstall.module.css'
 
 type Props = {
@@ -9,6 +9,7 @@ type Props = {
 }
 
 export function BookmarkletInstall({ onClick }: Props): ReactElement {
+  const { t } = useI18n()
   return (
     <button type="button" className={styles.row} onClick={onClick}>
       <span className={styles.icon}>📌</span>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as R
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useBoardData } from '@/lib/storage/use-board-data'
 import { useTags } from '@/lib/storage/use-tags'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import { TriageCard } from './TriageCard'
 import { TopTagStrip, useTagPickerKeys } from './TagPicker'
 import { NewTagInput } from './NewTagInput'
@@ -46,6 +46,7 @@ function parseMode(raw: string | null): TriageMode | null {
 }
 
 export function TriagePage(): ReactElement {
+  const { t } = useI18n()
   const router = useRouter()
   const searchParams = useSearchParams()
   const mode = parseMode(searchParams.get('mode'))

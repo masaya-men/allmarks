@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import type { ReactElement } from 'react'
 import { generateBookmarkletUri } from '@/lib/utils/bookmarklet'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './BookmarkletInstallModal.module.css'
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
 }
 
 export function BookmarkletInstallModal({ isOpen, onClose, appUrl }: Props): ReactElement | null {
+  const { t } = useI18n()
   const closeBtnRef = useRef<HTMLButtonElement>(null)
   const linkRef = useRef<HTMLAnchorElement>(null)
 

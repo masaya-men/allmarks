@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactElement } from 'react'
-import { t } from '@/lib/i18n/t'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './EmptyStateWelcome.module.css'
 
 type Props = {
@@ -9,6 +9,7 @@ type Props = {
 }
 
 export function EmptyStateWelcome({ onOpenModal }: Props): ReactElement {
+  const { t } = useI18n()
   return (
     <div className={styles.wrap} data-testid="empty-state-welcome">
       <div className={styles.icon}>📌</div>
