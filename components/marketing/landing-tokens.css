@@ -8,4 +8,10 @@
   --lp-maxw: 1489px;
   background: var(--lp-bg);
   color: var(--lp-ink);
+  /* Declare the LP an explicit LIGHT surface so browsers (Chrome Auto Dark
+     Mode for web contents, dark-mode extensions) do NOT force-darken this
+     intentionally-white page. The app itself is dark; the LP is its own
+     light world. Paired with data-theme="light" set on <html> while the LP
+     is mounted (see LandingPage.tsx). */
+  color-scheme: light;
 }
