@@ -85,8 +85,10 @@ export function SaveToast(): ReactElement {
     if (leaveTimerRef.current) { clearTimeout(leaveTimerRef.current); leaveTimerRef.current = null }
   }
 
-  function handleLeave(): void {
+  function handleLeave(e: React.PointerEvent<HTMLDivElement>): void {
     if (!engagedRef.current) return
+    const input = e.currentTarget.querySelector('input')
+    if (input && input.value.trim() !== '') return
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
     leaveTimerRef.current = setTimeout(closeWindow, LEAVE_GRACE_MS)
   }
@@ -199,6 +201,7 @@ export function SaveToast(): ReactElement {
         data-state="tags"
         data-testid="save-tag-window"
         onPointerEnter={engage}
+        onKeyDownCapture={engage}
         onPointerLeave={handleLeave}
       >
         <button

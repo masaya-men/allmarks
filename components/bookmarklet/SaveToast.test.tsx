@@ -149,7 +149,7 @@ describe('SaveToast quick-tag branching', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
-    vi.stubGlobal('close', vi.fn())
+    Object.defineProperty(window, 'close', { value: vi.fn(), writable: true, configurable: true })
     Object.defineProperty(window, 'resizeTo', { value: vi.fn(), writable: true, configurable: true })
     vi.stubGlobal('matchMedia', (q: string) => ({
       matches: false, media: q, onchange: null,
@@ -199,7 +199,7 @@ describe('SaveToast lifecycle (Task 4)', () => {
     vi.clearAllMocks()
     vi.mocked(addBookmark).mockResolvedValue({ id: 'b1', tags: [] } as unknown as Awaited<ReturnType<typeof addBookmark>>)
     Object.defineProperty(window, 'resizeTo', { value: vi.fn(), writable: true, configurable: true })
-    vi.stubGlobal('close', vi.fn())
+    Object.defineProperty(window, 'close', { value: vi.fn(), writable: true, configurable: true })
     vi.stubGlobal('matchMedia', (q: string) => ({
       matches: false, media: q, onchange: null,
       addEventListener: vi.fn(), removeEventListener: vi.fn(),
@@ -226,7 +226,7 @@ describe('SaveToast lifecycle (Task 4)', () => {
     expect(window.close).toHaveBeenCalled()
   })
 
-  it('cancels the untouched timer once the window is engaged', async () => {
+  it('cancels the untouched timer once the window is engaged via pointer', async () => {
     vi.useFakeTimers()
     render(<SaveToast />)
     await act(async () => { await vi.runAllTimersAsync() })
@@ -237,16 +237,44 @@ describe('SaveToast lifecycle (Task 4)', () => {
     expect(window.close).not.toHaveBeenCalled()
   })
 
-  it('closes shortly after the pointer leaves once engaged', async () => {
+  it('typing cancels the untouched close timer', async () => {
     vi.useFakeTimers()
     render(<SaveToast />)
     await act(async () => { await vi.runAllTimersAsync() })
     await act(async () => {})
     const win = screen.getByTestId('save-tag-window')
+    fireEvent.keyDown(win, { key: 'a' })
+    await act(async () => { await vi.advanceTimersByTimeAsync(6000) })
+    expect(window.close).not.toHaveBeenCalled()
+  })
+
+  it('closes shortly after the pointer leaves once engaged (empty input)', async () => {
+    vi.useFakeTimers()
+    render(<SaveToast />)
+    await act(async () => { await vi.runAllTimersAsync() })
+    await act(async () => {})
+    const win = screen.getByTestId('save-tag-window')
+    // ensure input is empty
+    const input = win.querySelector('input')
+    if (input) fireEvent.change(input, { target: { value: '' } })
     fireEvent.pointerEnter(win)
     fireEvent.pointerLeave(win)
     await act(async () => { await vi.advanceTimersByTimeAsync(700) })
     expect(window.close).toHaveBeenCalled()
+  })
+
+  it('leave with non-empty new-tag input does NOT close (mid-compose guard)', async () => {
+    vi.useFakeTimers()
+    render(<SaveToast />)
+    await act(async () => { await vi.runAllTimersAsync() })
+    await act(async () => {})
+    const win = screen.getByTestId('save-tag-window')
+    const input = win.querySelector('input')
+    if (input) fireEvent.change(input, { target: { value: 'abc' } })
+    fireEvent.pointerEnter(win)
+    fireEvent.pointerLeave(win)
+    await act(async () => { await vi.advanceTimersByTimeAsync(700) })
+    expect(window.close).not.toHaveBeenCalled()
   })
 })
 
