@@ -19,51 +19,58 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * One tile in the bold artwork grid. Tiles are AXIS-ALIGNED (never rotated) and
- * flow inside a CSS columns masonry — orderly, grid-like, echoing the product's
- * clean board layout. No scatter, no tilt: that is an AllMarks rule.
+ * One saved card on the hero board-mock. The artwork is the card thumbnail; the
+ * `source` label + favicon-dot reframe it as a SAVED BOOKMARK (not a painting in
+ * a gallery), so the hero reads unmistakably as the AllMarks product board.
+ * Cards are AXIS-ALIGNED — never rotated. That is a hard AllMarks rule.
  */
-type GridTile = {
-  /** Index into DEMO_COLLAGE for the artwork shown in this tile. */
+type BoardCard = {
+  /** Index into DEMO_COLLAGE for the thumbnail shown on this card. */
   readonly asset: number
-  /** Float keyframe delay in seconds (de-syncs the gentle vertical drift). */
-  readonly delay: number
+  /** Muted source/domain hint that frames the tile as a saved link. */
+  readonly source: string
+  /** Accent dot on a card hints "live"/featured; mostly neutral favicon-dots. */
+  readonly accent?: boolean
 }
 
 /**
- * Curated 8-artwork masonry. Hand-picked assets mixing landscape, portrait and
- * tall formats so the column flow stays visually balanced. The grid is the bold
- * hero now — large, confident, image-first — partially occluding the big word.
+ * Curated saved-cards for the board-mock. Hand-picked assets mixing landscape,
+ * portrait and tall formats so the masonry columns stay balanced, each paired
+ * with a plausible source so the block reads as "your saved links → this board".
  */
-const GRID_TILES: readonly GridTile[] = [
-  { asset: 3, delay: 0 }, // Van Gogh self-portrait (portrait)
-  { asset: 0, delay: 0.5 }, // Hokusai wave (landscape)
-  { asset: 8, delay: 1.1 }, // Moulin Rouge
-  { asset: 6, delay: 0.3 }, // Renoir sisters (portrait)
-  { asset: 5, delay: 1.4 }, // Monet stacks (wide)
-  { asset: 14, delay: 0.8 }, // Cézanne apples
-  { asset: 12, delay: 1.7 }, // Tiffany lilies (tall thin)
-  { asset: 9, delay: 0.6 }, // Caillebotte Paris street
+const BOARD_CARDS: readonly BoardCard[] = [
+  { asset: 0, source: 'youtube.com', accent: true }, // Hokusai wave (landscape)
+  { asset: 3, source: 'x.com' }, // Van Gogh self-portrait (portrait)
+  { asset: 8, source: 'pinterest.com' }, // Moulin Rouge
+  { asset: 5, source: 'vimeo.com' }, // Monet stacks (wide)
+  { asset: 6, source: 'instagram.com' }, // Renoir sisters (portrait)
+  { asset: 14, source: 'are.na' }, // Cézanne apples
+  { asset: 9, source: 'tiktok.com' }, // Caillebotte Paris street
+  { asset: 12, source: 'behance.net' }, // Tiffany lilies (tall thin)
 ] as const
 
 /**
  * Hero — signature landing section.
  *
- * Image-first and grid-based: a bold masonry of large, perfectly upright
- * artworks dominates the composition (echoing the product's clean board), while
- * an oversized faint serif keyword ("collage") drifts one layer back on scroll
- * and is partially occluded by the grid — real layered depth on a white ground.
- * The headline column keeps generous breathing room so it stays fully legible.
+ * Product-forward: the hero visual is a large, clean AllMarks BOARD mock — a
+ * masonry of upright cards (artwork thumbnail + favicon-dot + source label) on
+ * an off-white ground, echoing the real board's ~20px card radius. It reads as
+ * "your saved links become this visual board", letting the PRODUCT do the
+ * talking. The headline column keeps generous whitespace so it stays legible,
+ * and the whole composition reflows to a clean single-column stack on narrow
+ * viewports. NO rotation anywhere — AllMarks is grid-based.
  */
 export function Hero(): React.ReactElement {
   const { t } = useI18n()
   const sectionRef = useRef<HTMLElement>(null)
-  const bgWordRef = useRef<HTMLDivElement>(null)
+  const boardRef = useRef<HTMLDivElement>(null)
 
   // The scroll hooks declare a non-null RefObject<HTMLElement>; the refs are
   // genuinely non-null once mounted and the hooks null-check `.current` inside.
-  useParallaxLayer(bgWordRef as RefObject<HTMLElement>, 120)
-  useReveal(sectionRef as RefObject<HTMLElement>, { y: 32, stagger: 0.1 })
+  // Gentle drift on the board block is depth, secondary to clarity, and is
+  // disabled under prefers-reduced-motion by the hook's matchMedia.
+  useParallaxLayer(boardRef as RefObject<HTMLElement>, 56)
+  useReveal(sectionRef as RefObject<HTMLElement>, { y: 28, stagger: 0.09 })
 
   const handleSeeHow = (): void => {
     const target =
@@ -74,16 +81,6 @@ export function Hero(): React.ReactElement {
   return (
     <section ref={sectionRef} id="hero" className={styles.hero}>
       <div className={styles.stage}>
-        {/* Background layer — oversized faint serif keyword, drifts on scroll.
-            Shell handles absolute centering; inner bgWord is the parallax target.
-            GSAP writes `y` on bgWordRef (the inner element) only, so the shell's
-            translate(-50%,-50%) centering is never clobbered. */}
-        <div className={styles.bgWordShell} aria-hidden="true">
-          <div ref={bgWordRef} className={styles.bgWord}>
-            collage
-          </div>
-        </div>
-
         <div className={styles.split}>
           {/* Content column — kicker, headline, description, CTAs. */}
           <div className={styles.content}>
@@ -117,34 +114,41 @@ export function Hero(): React.ReactElement {
             </div>
           </div>
 
-          {/* Bold grid layer — large, upright artworks in a clean masonry that
-              partially occludes the big background word. No rotation, no tilt. */}
-          <div className={styles.grid} aria-hidden="true" data-reveal>
-            {GRID_TILES.map((tile, i) => {
-              const art = DEMO_COLLAGE[tile.asset]
-              return (
-                <figure
-                  key={i}
-                  className={styles.tile}
-                  style={
-                    {
-                      '--float-delay': `${tile.delay}s`,
-                    } as React.CSSProperties
-                  }
-                >
-                  <img
-                    src={`/${art.src}`}
-                    alt=""
-                    width={art.w}
-                    height={art.h}
-                    className={styles.tileImg}
-                    loading={i < 3 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    draggable={false}
-                  />
-                </figure>
-              )
-            })}
+          {/* Product-forward visual: a large, clean AllMarks BOARD mock. The
+              artworks are framed as SAVED CARDS (favicon-dot + source label) so
+              it reads as the product, not a gallery. No rotation, no tilt. */}
+          <div className={styles.boardWrap} data-reveal>
+            <div ref={boardRef} className={styles.board} aria-hidden="true">
+              {BOARD_CARDS.map((card, i) => {
+                const art = DEMO_COLLAGE[card.asset]
+                return (
+                  <figure key={i} className={styles.card}>
+                    <div className={styles.thumb}>
+                      <img
+                        src={`/${art.src}`}
+                        alt=""
+                        width={art.w}
+                        height={art.h}
+                        className={styles.thumbImg}
+                        loading={i < 4 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        draggable={false}
+                      />
+                    </div>
+                    <figcaption className={styles.meta}>
+                      <span
+                        className={
+                          card.accent
+                            ? `${styles.favicon} ${styles.faviconAccent}`
+                            : styles.favicon
+                        }
+                      />
+                      <span className={styles.source}>{card.source}</span>
+                    </figcaption>
+                  </figure>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>

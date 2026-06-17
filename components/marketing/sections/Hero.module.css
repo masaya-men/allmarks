@@ -1,71 +1,62 @@
-/* Hero.module.css — signature landing hero. Editorial, white ground, depth.
-   v2: image-first + GRID-BASED. Bold masonry of large, perfectly upright
-   artworks (NO rotation anywhere — AllMarks is a clean grid, never tilted). */
+/* Hero.module.css — signature landing hero, v3.
+   PRODUCT-FORWARD: the hero visual is a large, clean AllMarks BOARD mock — a
+   masonry of upright SAVED CARDS (artwork + favicon-dot + source label) that
+   reads as the product, not a gallery. Editorial white ground, generous space.
+   ZERO rotation anywhere (AllMarks is a clean grid, never tilted). Reflows to a
+   single-column stack on narrow viewports — must never look broken. */
 
 .hero {
   position: relative;
   width: 100%;
-  min-height: 100vh;
-  min-height: 100svh;
+  /* Tall enough to feel like a hero, but capped so the short 679px-tall dev
+     viewport never clips the board. Content drives height; this is a floor. */
+  min-height: 640px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* Top-align the composition: on short viewports (the dev's 679px-tall screen)
+     vertical-centering pushed the headline/CTA below the fold. Anchoring to the
+     top keeps the headline + CTA visible; the board fills downward. */
+  justify-content: flex-start;
   overflow: hidden;
   /* hairline editorial baseline at the very top */
   border-top: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
 }
 
-/* Centered measure that holds the depth layers. */
+/* Centered measure that holds the composition. */
 .stage {
   position: relative;
   width: 100%;
   max-width: var(--lp-maxw);
   margin: 0 auto;
-  padding: 104px 40px 48px;
+  padding: 96px 40px 72px;
   box-sizing: border-box;
 }
 
-/* ── Layer 1 (back): oversized faint serif keyword, drifts on scroll ── */
-
-/* Shell: handles absolute centering only. Never receives a GSAP transform. */
-.bgWordShell {
-  position: absolute;
-  left: 50%;
-  top: 48%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-  user-select: none;
-  pointer-events: none;
-}
-
-/* Inner word: parallax target. GSAP writes `y` here; no CSS transform of its own. */
-.bgWord {
-  font-family: var(--lp-serif);
-  font-weight: 300;
-  font-style: italic;
-  font-size: clamp(180px, 34vw, 520px);
-  line-height: 0.8;
-  letter-spacing: -0.04em;
-  white-space: nowrap;
-  color: color-mix(in srgb, var(--lp-ink) 6%, transparent);
-  will-change: transform;
-}
-
-/* ── Editorial split: content column + bold image grid ── */
+/* ── Editorial split: content column + product board-mock ──
+   Flex with wrap is intrinsically robust: when the two columns no longer fit
+   they stack cleanly instead of overlapping or half-collapsing. */
 .split {
   position: relative;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-  align-items: center;
-  gap: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  /* Top-align so the headline sits near the top of the board, not floated to
+     the board's vertical mid-point — keeps headline + CTA above the fold on the
+     short dev viewport. A small content offset optically aligns it to row 1. */
+  align-items: flex-start;
+  gap: 56px clamp(40px, 5vw, 72px);
 }
 
 /* ── Content column ── */
 .content {
   position: relative;
-  z-index: 5;
+  z-index: 2;
+  /* grow/shrink around a comfortable measure; min-width:0 lets it shrink
+     without forcing horizontal overflow at narrow widths */
+  flex: 1 1 380px;
+  min-width: 0;
   max-width: 540px;
+  /* optical nudge so the text block aligns with the first card row */
+  padding-top: 14px;
 }
 
 .label {
@@ -73,10 +64,11 @@
   align-items: center;
   gap: 9px;
   margin: 0 0 26px;
-  font-family: var(--lp-sans);
-  font-size: 13px;
+  /* mono kicker — distinct from the sans body, hints "spec/label" */
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--lp-ink-soft);
   /* revealed by useReveal */
@@ -95,8 +87,8 @@
   margin: 0;
   font-family: var(--lp-serif);
   font-weight: 300;
-  font-size: clamp(44px, 6vw, 96px);
-  line-height: 0.98;
+  font-size: clamp(40px, 5.4vw, 88px);
+  line-height: 0.99;
   letter-spacing: -0.03em;
   color: var(--lp-ink);
   text-wrap: balance;
@@ -105,10 +97,10 @@
 
 .description {
   max-width: 460px;
-  margin: 28px 0 0;
+  margin: 26px 0 0;
   font-family: var(--lp-sans);
   font-size: 18px;
-  line-height: 1.62;
+  line-height: 1.6;
   letter-spacing: -0.005em;
   color: var(--lp-ink-soft);
   text-wrap: pretty;
@@ -120,7 +112,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  margin-top: 38px;
+  margin-top: 36px;
   opacity: 0;
 }
 
@@ -181,62 +173,104 @@
   background-size: calc(100% - 44px) 1px;
 }
 
-/* ── Bold image grid: clean masonry, large + UPRIGHT (never tilted) ──
-   CSS columns gives aligned columns with natural-aspect tiles — orderly,
-   grid-like, echoing the product board. Images are the dominant hero. */
-.grid {
-  position: relative;
-  z-index: 4;
+/* ── Product board-mock ──
+   The wrap grows to take the remaining width; the inner .board receives the
+   gentle parallax drift (GSAP writes `y` here) so the wrap stays put. */
+.boardWrap {
+  flex: 1 1 460px;
+  min-width: 0;
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+/* CSS columns masonry: aligned columns, natural-aspect cards, break-inside
+   avoid keeps a card whole. Intrinsically robust — it simply reflows, it can't
+   produce broken half-cells. Echoes the real product board. */
+.board {
   columns: 3;
   column-gap: 18px;
+  will-change: transform;
 }
 
-.tile {
+/* One saved card — artwork thumbnail + meta footer. Echoes the board's ~20px
+   card radius. Upright, axis-aligned: never rotated (hard AllMarks rule). */
+.card {
   margin: 0 0 18px;
-  border-radius: 4px;
+  border-radius: 18px;
   overflow: hidden;
   background: var(--lp-bg);
-  /* keep the column from splitting a single artwork across columns */
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
   break-inside: avoid;
-  /* layered editorial shadow — soft + a crisp contact edge */
+  /* layered editorial shadow — soft drop + a crisp contact edge */
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 5%, transparent),
+    0 18px 42px -22px color-mix(in srgb, var(--lp-ink) 30%, transparent),
+    0 5px 12px -8px color-mix(in srgb, var(--lp-ink) 14%, transparent);
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover {
+  transform: translateY(-5px);
   box-shadow:
     0 1px 0 0 color-mix(in srgb, var(--lp-ink) 6%, transparent),
-    0 22px 50px -22px color-mix(in srgb, var(--lp-ink) 34%, transparent),
-    0 6px 14px -8px color-mix(in srgb, var(--lp-ink) 18%, transparent);
-  /* gentle vertical drift — NO rotation (axis-aligned, AllMarks rule) */
-  animation: heroFloat 9s ease-in-out infinite;
-  animation-delay: var(--float-delay, 0s);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    0 26px 56px -22px color-mix(in srgb, var(--lp-ink) 36%, transparent),
+    0 8px 16px -8px color-mix(in srgb, var(--lp-ink) 18%, transparent);
 }
 
-.tile:hover {
-  transform: translateY(-6px) scale(1.012);
+.thumb {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--lp-ink) 4%, transparent);
 }
 
-.tileImg {
+.thumbImg {
   display: block;
   width: 100%;
   height: auto;
 }
 
-/* Pure vertical float — explicitly upright, no rotate() at any keyframe. */
-@keyframes heroFloat {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+/* Footer strip — favicon-dot + muted source label = "this is a saved link". */
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px 12px;
+}
+
+.favicon {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--lp-ink) 28%, transparent);
+}
+
+/* Accent favicon hints a "live"/featured saved item with the brand green. */
+.faviconAccent {
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lp-accent) 18%, transparent);
+}
+
+.source {
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+  color: var(--lp-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Scroll hint ── */
 .scrollHint {
   position: absolute;
   left: 50%;
-  bottom: 28px;
+  bottom: 24px;
   transform: translateX(-50%);
-  z-index: 6;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -245,7 +279,7 @@
 
 .scrollLine {
   width: 1px;
-  height: 40px;
+  height: 38px;
   background: linear-gradient(
     to bottom,
     transparent,
@@ -256,7 +290,7 @@
 }
 
 .scrollWord {
-  font-family: var(--lp-sans);
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.22em;
@@ -276,16 +310,18 @@
   }
 }
 
-/* ── Responsive: stack the grid below the content on narrower viewports ── */
+/* ── Responsive ───────────────────────────────────────────────────────────
+   At ≤1080px the flex columns stack (content → CTA → board below). The board
+   keeps a comfortable column count and centers so it never looks broken. */
 @media (max-width: 1080px) {
-  .split {
-    grid-template-columns: 1fr;
-    gap: 44px;
+  .stage {
+    padding: 84px 36px 64px;
   }
   .content {
-    max-width: 640px;
-    text-align: center;
+    flex-basis: 100%;
+    max-width: 660px;
     margin: 0 auto;
+    text-align: center;
   }
   .description {
     margin-left: auto;
@@ -294,30 +330,39 @@
   .ctaRow {
     justify-content: center;
   }
-  .grid {
+  .boardWrap {
+    flex-basis: 100%;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .board {
     columns: 3;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .stage {
-    padding: 88px 24px 40px;
+    padding: 76px 22px 56px;
   }
-  .grid {
+  .board {
     columns: 2;
     column-gap: 14px;
   }
-  .tile {
+  .card {
     margin-bottom: 14px;
-  }
-  .bgWord {
-    font-size: clamp(120px, 40vw, 280px);
+    border-radius: 16px;
   }
 }
 
-/* ── Reduced motion: kill drift + float, keep everything visible ── */
+@media (max-width: 420px) {
+  .board {
+    columns: 1;
+  }
+}
+
+/* ── Reduced motion: kill drift + pulse, keep everything visible ── */
 @media (prefers-reduced-motion: reduce) {
-  .tile,
   .scrollLine {
     animation: none;
   }
@@ -325,7 +370,7 @@
   .headline,
   .description,
   .ctaRow,
-  .grid {
+  .boardWrap {
     opacity: 1;
   }
 }
