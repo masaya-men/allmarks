@@ -1,86 +1,166 @@
+/* SiteHeader.module.css — LP editorial header.
+   Transparent at page top; gains a translucent off-white bar + hairline + blur
+   on scroll via the [data-scrolled="true"] attribute set by JS.
+   Uses --lp-* tokens from landing-tokens.css (via the lpRoot wrapper).
+   NO Tailwind, NO rem, NO tilt, NO Framer Motion. px/clamp + CSS transitions. */
+
 .header {
-  position: absolute;
+  /* Sticky so it doesn't vanish as the user scrolls — but the content below
+     must NOT be offset: the header floats over the Hero's white ground. */
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 50;
+  z-index: 100;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 28px;
-  pointer-events: none;
+
+  /* Comfortable vertical rhythm; horizontal padding mirrors the stage gutter */
+  padding: 0 36px;
+  height: 64px;
+  box-sizing: border-box;
+
+  /* ── At-rest: fully transparent ── */
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  /* backdrop-filter is inert until the translucent background kicks in */
+  backdrop-filter: blur(0px);
+
+  /* Smooth transition when scrolled class is toggled */
+  transition:
+    background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color     0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    backdrop-filter  0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.header > * {
-  pointer-events: auto;
+/* ── Scrolled state: translucent bar with hairline ── */
+.header[data-scrolled='true'] {
+  /* Off-white translucent — echoes --lp-bg (#faf9f6) at 88% opacity */
+  background: color-mix(in srgb, #faf9f6 88%, transparent);
+  border-bottom-color: color-mix(in srgb, #14130f 8%, transparent);
+  backdrop-filter: blur(12px) saturate(160%);
 }
 
+/* ── Wordmark / logo ── */
 .logo {
-  font-family: var(--font-geist), var(--font-sans, system-ui), sans-serif;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--color-text-primary, #fff);
+  font-family: var(--lp-serif, Georgia, serif);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink, #14130f);
   text-decoration: none;
-  transition: opacity var(--duration-fast, 0.15s) ease;
+  /* Subtle italic for editorial flair */
+  font-style: italic;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
 }
 
 .logo:hover {
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
+/* ── Navigation row ── */
 .nav {
   display: flex;
   align-items: center;
-  gap: 24px;
-  font-family: var(--font-geist), var(--font-sans, system-ui), sans-serif;
-  font-size: 13px;
-  letter-spacing: 0.005em;
+  gap: 4px;
 }
 
+/* Regular nav links */
 .navLink {
-  color: var(--color-text-secondary, rgba(255, 255, 255, 0.65));
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-family: var(--lp-sans, system-ui, sans-serif);
+  font-size: 14px;
+  font-weight: 450;
+  letter-spacing: -0.005em;
+  color: var(--lp-ink-soft, #57544c);
   text-decoration: none;
-  transition: color var(--duration-fast, 0.15s) ease;
+  transition:
+    color       0.2s ease,
+    background  0.2s ease;
 }
 
 .navLink:hover {
-  color: var(--color-text-primary, #fff);
+  color: var(--lp-ink, #14130f);
+  background: color-mix(in srgb, var(--lp-ink, #14130f) 5%, transparent);
 }
 
+/* ── "Open Board" action pill ── */
 .openApp {
   display: inline-flex;
   align-items: center;
-  padding: 7px 14px;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  margin-left: 8px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: var(--color-text-primary, #fff);
-  text-decoration: none;
+  border: 1.5px solid color-mix(in srgb, var(--lp-ink, #14130f) 22%, transparent);
+  background: transparent;
+  color: var(--lp-ink, #14130f);
+  font-family: var(--lp-sans, system-ui, sans-serif);
+  font-size: 14px;
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.04);
-  transition: background var(--duration-fast, 0.15s) ease, border-color var(--duration-fast, 0.15s) ease;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition:
+    background      0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color    0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    color           0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    transform       0.3s  cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
 }
 
 .openApp:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--lp-ink, #14130f);
+  border-color: var(--lp-ink, #14130f);
+  color: var(--lp-bg, #faf9f6);
+  transform: translateY(-1px);
 }
 
-.themeToggleSlot {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 4px;
+.openArrow {
+  font-size: 13px;
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (max-width: 720px) {
+.openApp:hover .openArrow {
+  transform: translate(2px, -2px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
   .header {
-    padding: 14px 16px;
+    padding: 0 24px;
   }
-  .nav {
-    gap: 14px;
-    font-size: 12px;
-  }
+  /* Hide middle nav items at medium widths, keep the pill */
   .navLink:nth-child(n+4) {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 0 16px;
+    height: 56px;
+  }
+  /* Show only the pill action on mobile */
+  .navLink {
+    display: none;
+  }
+  .logo {
+    font-size: 18px;
+  }
+}
+
+/* ── Reduced motion: skip the backdrop transition ── */
+@media (prefers-reduced-motion: reduce) {
+  .header {
+    transition: none;
   }
 }

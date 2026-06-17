@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Outfit, Caveat, Geist, Geist_Mono } from 'next/font/google'
+import { Inter, Outfit, Caveat, Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { APP_NAME, SITE_URL } from '@/lib/constants'
 import './globals.css'
 
@@ -30,6 +30,14 @@ const geist = Geist({
 const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-geist-mono',
+  display: 'swap',
+})
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-serif-display',
   display: 'swap',
 })
 
@@ -77,7 +85,7 @@ export default function RootLayout({ children }: RootLayoutProps): React.ReactEl
         `}} />
       </head>
       <body
-        className={`${inter.variable} ${outfit.variable} ${caveat.variable} ${geist.variable} ${geistMono.variable}`}
+        className={`${inter.variable} ${outfit.variable} ${caveat.variable} ${geist.variable} ${geistMono.variable} ${fraunces.variable}`}
       >
         {children}
       </body>

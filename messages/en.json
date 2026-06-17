@@ -136,5 +136,53 @@
     "modeOr": "OR",
     "buttonLabel": "TAG",
     "buttonAria": "Open tag management"
+  },
+  "landing": {
+    "hero": {
+      "label": "Visual Bookmark Manager",
+      "headline": "Turn links into a visual board.",
+      "description": "Save videos, social posts, articles, and images in one click, then arrange them freely. Turn a plain list of text into an inspiration board you grasp at a glance. No sign-up, completely free.",
+      "ctaPrimary": "Open the board",
+      "ctaGhost": "See how it works",
+      "scrollHint": "scroll"
+    },
+    "problem": {
+      "headline": "You pile them up and never look again.",
+      "body": "A bland column of blue links. Timelines you only scroll past. Don't let what you save get buried in a wall of text."
+    },
+    "features": {
+      "capture": {
+        "title": "One click, from anywhere.",
+        "body": "Posts on X, YouTube videos, articles, shops, images — send them straight to your board via the extension, the bookmarklet, or a pasted URL."
+      },
+      "layout": {
+        "title": "Arrange it freely.",
+        "body": "Drag and drop to set size and position exactly how you like."
+      },
+      "live": {
+        "title": "Play several videos at once.",
+        "body": "Videos across your board move together — not a list of stills, but a board that's actually alive."
+      },
+      "organize": {
+        "title": "Tag to sort. Theme to restyle.",
+        "body": "Filter by tag, and switch the whole look with themes. More themes are on the way."
+      },
+      "privacy": {
+        "title": "No account. Fully local.",
+        "body": "Everything is saved only inside your browser. Nothing is sent to a server. Your privacy stays yours."
+      }
+    },
+    "share": {
+      "headline": "Share it as one board.",
+      "body": "Export your finished board as an image, or share a link — your exact layout arrives just as you made it."
+    },
+    "cta": {
+      "headline": "Start building your board.",
+      "button": "Start now — no sign-up"
+    },
+    "footer": {
+      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
+      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+    }
   }
 }

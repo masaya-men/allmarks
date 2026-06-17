@@ -1,0 +1,101 @@
+/* Problem.module.css
+   Quiet editorial "pause" section: white off-white ground, large Fraunces serif
+   headline, soft Geist body. One green accent rule (the only colour). Generous
+   whitespace. Grid-aligned — NO tilt, NO rotation anywhere. */
+
+.problem {
+  width: 100%;
+  /* Generous padding makes this feel like a breath, not a banner */
+  padding: 140px 40px 148px;
+  box-sizing: border-box;
+  /* Hairline divider from Hero */
+  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
+}
+
+/* Centred editorial column — deliberately narrow so the large serif
+   headline has maximum optical weight and reads at once. */
+.stage {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* ── Accent rule — a short green dash above the headline ── */
+.rule {
+  display: block;
+  width: 36px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+  margin-bottom: 40px;
+  /* starts invisible; useReveal fades it in first (lowest stagger index) */
+  opacity: 0;
+}
+
+/* ── Headline ─────────────────────────────────────────────────────────────
+   Large, weight-300 Fraunces — same voice as the Hero h1 but deliberately
+   smaller so it reads as a "section title", not a competing hero moment.
+   text-wrap:balance keeps the two-clause line from splitting awkwardly. */
+.headline {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  /* 56px at 800px, scales down on narrow; cap at 72px on wide */
+  font-size: clamp(40px, 5.6vw, 72px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+  /* starts invisible; useReveal animates this in */
+  opacity: 0;
+}
+
+/* ── Body copy ────────────────────────────────────────────────────────────
+   Geist, soft ink — same voice as Hero .description but set slightly larger
+   to fill the narrower column width comfortably. */
+.body {
+  margin: 30px 0 0;
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+  color: var(--lp-ink-soft);
+  max-width: 560px;
+  text-wrap: pretty;
+  /* starts invisible; useReveal fades last */
+  opacity: 0;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .problem {
+    padding: 104px 24px 112px;
+  }
+  .headline {
+    font-size: clamp(32px, 6.5vw, 56px);
+  }
+  .body {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 420px) {
+  .problem {
+    padding: 80px 20px 88px;
+  }
+  .rule {
+    margin-bottom: 32px;
+  }
+}
+
+/* ── Reduced motion: keep everything visible, skip animation ── */
+@media (prefers-reduced-motion: reduce) {
+  .rule,
+  .headline,
+  .body {
+    opacity: 1;
+  }
+}

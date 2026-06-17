@@ -1,28 +1,64 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ThemeToggle } from './ThemeToggle'
 import styles from './SiteHeader.module.css'
+
+/**
+ * SiteHeader — LP editorial header.
+ *
+ * At rest (top of page): fully transparent, text in --lp-ink, floats over
+ * the Hero's white ground without visual weight.
+ * On scroll: a subtle translucent off-white bar with a hairline border and
+ * light backdrop blur slides in — the header "arrives" as the user descends.
+ *
+ * Transitions use CSS alone (class toggle via JS scroll listener), no GSAP,
+ * keeping this purely declarative and static-export safe.
+ *
+ * No ThemeToggle on the LP — the LP is a fixed editorial context (white →
+ * black) and a theme toggle would fight the intentional flow.
+ */
 
 const NAV_ITEMS = [
   { href: '/features', label: 'Features' },
-  { href: '/guide', label: 'Guide' },
-  { href: '/about', label: 'About' },
-  { href: '/faq', label: 'FAQ' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/guide',    label: 'Guide'    },
+  { href: '/about',    label: 'About'    },
+  { href: '/faq',      label: 'FAQ'      },
+  { href: '/contact',  label: 'Contact'  },
 ] as const
 
-type SiteHeaderProps = {
-  showThemeToggle?: boolean
-}
+export function SiteHeader(): React.ReactElement {
+  const headerRef = useRef<HTMLElement>(null)
 
-export function SiteHeader({ showThemeToggle = true }: SiteHeaderProps = {}): React.ReactElement {
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+
+    let ticking = false
+    const onScroll = (): void => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        ticking = false
+        if (!el) return
+        const scrolled = window.scrollY > 32
+        el.setAttribute('data-scrolled', scrolled ? 'true' : 'false')
+      })
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    // Set initial state
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
-    <header className={styles.header}>
+    <header ref={headerRef} className={styles.header} data-scrolled="false">
       <Link href="/" className={styles.logo} aria-label="AllMarks home">
         AllMarks
       </Link>
-      <nav className={styles.nav} aria-label="Primary">
+
+      <nav className={styles.nav} aria-label="Primary navigation">
         {NAV_ITEMS.map((item) => (
           <Link key={item.href} href={item.href} className={styles.navLink}>
             {item.label}
@@ -30,12 +66,8 @@ export function SiteHeader({ showThemeToggle = true }: SiteHeaderProps = {}): Re
         ))}
         <Link href="/board" className={styles.openApp}>
           Open Board
+          <span className={styles.openArrow} aria-hidden="true">↗</span>
         </Link>
-        {showThemeToggle && (
-          <span className={styles.themeToggleSlot}>
-            <ThemeToggle />
-          </span>
-        )}
       </nav>
     </header>
   )

@@ -1,0 +1,342 @@
+/* Hero.module.css — signature landing hero, v4.
+   PRODUCT-FORWARD: the hero visual is a large, clean AllMarks BOARD mock — a
+   masonry of clean image cards (artwork only, no labels) matching the real
+   board's ImageCard convention. Editorial white ground, generous space.
+   ZERO rotation anywhere (AllMarks is a clean grid, never tilted). Reflows to a
+   single-column stack on narrow viewports — must never look broken. */
+
+.hero {
+  position: relative;
+  width: 100%;
+  /* Tall enough to feel like a hero, but capped so the short 679px-tall dev
+     viewport never clips the board. Content drives height; this is a floor. */
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+  /* Top-align the composition: on short viewports (the dev's 679px-tall screen)
+     vertical-centering pushed the headline/CTA below the fold. Anchoring to the
+     top keeps the headline + CTA visible; the board fills downward. */
+  justify-content: flex-start;
+  overflow: hidden;
+  /* hairline editorial baseline at the very top */
+  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
+}
+
+/* Centered measure that holds the composition. */
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: var(--lp-maxw);
+  margin: 0 auto;
+  padding: 96px 40px 72px;
+  box-sizing: border-box;
+}
+
+/* ── Editorial split: content column + product board-mock ──
+   Flex with wrap is intrinsically robust: when the two columns no longer fit
+   they stack cleanly instead of overlapping or half-collapsing. */
+.split {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  /* Top-align so the headline sits near the top of the board, not floated to
+     the board's vertical mid-point — keeps headline + CTA above the fold on the
+     short dev viewport. A small content offset optically aligns it to row 1. */
+  align-items: flex-start;
+  gap: 56px clamp(40px, 5vw, 72px);
+}
+
+/* ── Content column ── */
+.content {
+  position: relative;
+  z-index: 2;
+  /* grow/shrink around a comfortable measure; min-width:0 lets it shrink
+     without forcing horizontal overflow at narrow widths */
+  flex: 1 1 380px;
+  min-width: 0;
+  max-width: 540px;
+  /* optical nudge so the text block aligns with the first card row */
+  padding-top: 14px;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 26px;
+  /* mono kicker — distinct from the sans body, hints "spec/label" */
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(40px, 5.4vw, 88px);
+  line-height: 0.99;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+  opacity: 0;
+}
+
+.description {
+  max-width: 460px;
+  margin: 26px 0 0;
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+  color: var(--lp-ink-soft);
+  text-wrap: pretty;
+  opacity: 0;
+}
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 36px;
+  opacity: 0;
+}
+
+.ctaPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 54px;
+  padding: 0 28px;
+  border-radius: 999px;
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s ease;
+}
+
+.ctaPrimary:hover {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--lp-ink) 88%, var(--lp-accent));
+}
+
+.ctaArrow {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ctaPrimary:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+.ctaGhost {
+  display: inline-flex;
+  align-items: center;
+  height: 54px;
+  padding: 0 22px;
+  border: 0;
+  background: transparent;
+  color: var(--lp-ink);
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  /* underline that draws in on hover */
+  background-image: linear-gradient(var(--lp-ink), var(--lp-ink));
+  background-repeat: no-repeat;
+  background-position: 22px 36px;
+  background-size: 0% 1px;
+  transition: background-size 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ctaGhost:hover {
+  background-size: calc(100% - 44px) 1px;
+}
+
+/* ── Product board-mock ──
+   The wrap grows to take the remaining width; the inner .board receives the
+   gentle parallax drift (GSAP writes `y` here) so the wrap stays put. */
+.boardWrap {
+  flex: 1 1 460px;
+  min-width: 0;
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+/* CSS columns masonry: aligned columns, natural-aspect cards, break-inside
+   avoid keeps a card whole. Intrinsically robust — it simply reflows, it can't
+   produce broken half-cells. Echoes the real product board. */
+.board {
+  columns: 3;
+  column-gap: 18px;
+  will-change: transform;
+}
+
+/* One saved card — artwork thumbnail only, matching the real board's ImageCard.
+   Echoes the board's ~20px card radius. No labels, no favicon dots.
+   Upright, axis-aligned: never rotated (hard AllMarks rule). */
+.card {
+  margin: 0 0 18px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--lp-bg);
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
+  break-inside: avoid;
+  /* layered editorial shadow — soft drop + a crisp contact edge */
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 5%, transparent),
+    0 18px 42px -22px color-mix(in srgb, var(--lp-ink) 30%, transparent),
+    0 5px 12px -8px color-mix(in srgb, var(--lp-ink) 14%, transparent);
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 6%, transparent),
+    0 26px 56px -22px color-mix(in srgb, var(--lp-ink) 36%, transparent),
+    0 8px 16px -8px color-mix(in srgb, var(--lp-ink) 18%, transparent);
+}
+
+.thumb {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--lp-ink) 4%, transparent);
+}
+
+.thumbImg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── Scroll hint ── */
+.scrollHint {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.scrollLine {
+  width: 1px;
+  height: 38px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--lp-ink) 45%, transparent)
+  );
+  animation: scrollPulse 2.4s ease-in-out infinite;
+  transform-origin: top;
+}
+
+.scrollWord {
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+}
+
+@keyframes scrollPulse {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────
+   At ≤1080px the flex columns stack (content → CTA → board below). The board
+   keeps a comfortable column count and centers so it never looks broken. */
+@media (max-width: 1080px) {
+  .stage {
+    padding: 84px 36px 64px;
+  }
+  .content {
+    flex-basis: 100%;
+    max-width: 660px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ctaRow {
+    justify-content: center;
+  }
+  .boardWrap {
+    flex-basis: 100%;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .stage {
+    padding: 76px 22px 56px;
+  }
+  .board {
+    columns: 2;
+    column-gap: 14px;
+  }
+  .card {
+    margin-bottom: 14px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .board {
+    columns: 1;
+  }
+}
+
+/* ── Reduced motion: kill drift + pulse, keep everything visible ── */
+@media (prefers-reduced-motion: reduce) {
+  .scrollLine {
+    animation: none;
+  }
+  .label,
+  .headline,
+  .description,
+  .ctaRow,
+  .boardWrap {
+    opacity: 1;
+  }
+}

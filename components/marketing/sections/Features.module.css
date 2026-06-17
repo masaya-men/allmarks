@@ -1,0 +1,460 @@
+/* Features.module.css — the FEATURES section as a numbered editorial sequence
+   (01–05), NOT a boxed SaaS grid. White off-white ground, Fraunces serif titles,
+   Geist body, soft ink, green accent used sparingly. Five full-width beats stack
+   vertically; each is a two-column moment that alternates text-left/visual-right.
+   Every card/image is AXIS-ALIGNED — NO tilt, NO rotation (hard AllMarks rule).
+   No fabricated source labels anywhere. Reflows to a clean single column at
+   narrow widths; must never look broken. */
+
+.features {
+  width: 100%;
+  padding: 128px 40px 140px;
+  box-sizing: border-box;
+  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
+}
+
+.stage {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ── Section kicker — mono "FEATURES" with a short green dash ── */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 84px;
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+  opacity: 0; /* revealed by useReveal */
+}
+
+.kickerDash {
+  width: 32px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+}
+
+/* ── The vertical sequence of beats ── */
+.sequence {
+  display: flex;
+  flex-direction: column;
+}
+
+/* One beat — a two-column editorial row. Text + visual. Hairline rule between
+   beats ties the sequence; generous vertical padding gives each beat air. */
+.beat {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: center;
+  gap: clamp(40px, 6vw, 96px);
+  padding: 72px 0;
+  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 9%, transparent);
+  opacity: 0; /* revealed by useReveal */
+}
+
+.beat:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.beat:last-child {
+  padding-bottom: 0;
+}
+
+/* Alternate the rhythm: even beats put the visual on the LEFT. Achieved by
+   swapping the grid column order — content stays in DOM order for a11y. */
+.beat:nth-child(even) .beatText {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.beat:nth-child(even) .beatVisual {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+/* ── Text column ── */
+.beatText {
+  min-width: 0;
+}
+
+/* number + label kicker — the spine of the sequence */
+.beatNum {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0 0 22px;
+}
+
+.num {
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--lp-ink);
+}
+
+.numLabel {
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lp-accent);
+  /* keep on the number's baseline-ish line; nudge optically */
+  transform: translateY(-2px);
+}
+
+.beatTitle {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(28px, 3.6vw, 46px);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+.beatBody {
+  margin: 20px 0 0;
+  font-family: var(--lp-sans);
+  font-size: 17px;
+  line-height: 1.65;
+  letter-spacing: -0.005em;
+  color: var(--lp-ink-soft);
+  max-width: 460px;
+  text-wrap: pretty;
+}
+
+/* ── Visual column ── */
+.beatVisual {
+  min-width: 0;
+}
+
+/* Shared card chrome — clean image thumbnail, soft editorial shadow, ~18px
+   radius echoing the real board. Axis-aligned, never rotated. */
+.card {
+  position: relative;
+  margin: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--lp-bg);
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 5%, transparent),
+    0 18px 42px -22px color-mix(in srgb, var(--lp-ink) 30%, transparent),
+    0 5px 12px -8px color-mix(in srgb, var(--lp-ink) 14%, transparent);
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 6%, transparent),
+    0 26px 56px -22px color-mix(in srgb, var(--lp-ink) 36%, transparent),
+    0 8px 16px -8px color-mix(in srgb, var(--lp-ink) 18%, transparent);
+}
+
+.cardImg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Play-triangle overlay — reads as "video" via SHAPE, not via any fake domain
+   text. A frosted disc with a centered triangle. */
+.playBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: var(--lp-bg);
+  background: color-mix(in srgb, var(--lp-ink) 64%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  /* nudge the triangle to look optically centered */
+}
+
+.playBadge svg {
+  transform: translateX(1px);
+}
+
+/* ── 01 CAPTURE visual — three cards of DIFFERENT shapes side by side.
+   align-items:center lets the differing aspect ratios read as "variety". ── */
+.captureRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+
+/* ── 02 LAYOUT visual — a clean masonry, like the real AllMarks board. ── */
+.masonry {
+  columns: 3;
+  column-gap: 16px;
+}
+
+.masonry .card {
+  margin: 0 0 16px;
+  break-inside: avoid;
+}
+
+/* ── 03 LIVE GRID visual — real autoplaying video grid (3 NASA clips).
+   2-column asymmetric grid: aurora spans the full left half (large),
+   earth-from-space + nebula stack in the right column (small pair).
+   object-fit:cover ensures the low-res 320px clips are always cropped
+   clean — never letterboxed, never stretched. ── */
+
+.liveGrid {
+  display: grid;
+  /* left column = large aurora card, right column = two small stacked cards */
+  grid-template-columns: 1.28fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 14px;
+  /* fixed height so both columns align; cards fill their cells */
+  height: 340px;
+  max-width: 560px;
+}
+
+/* Shared figure chrome — match the editorial .card style */
+.liveCell {
+  position: relative;
+  margin: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--lp-ink) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 9%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 5%, transparent),
+    0 18px 42px -22px color-mix(in srgb, var(--lp-ink) 30%, transparent),
+    0 5px 12px -8px color-mix(in srgb, var(--lp-ink) 14%, transparent);
+}
+
+/* Cell 0 (aurora): span both rows in the left column — the hero tile */
+.liveCell0 {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+
+/* Cell 1 (earth-from-space): top of right column */
+.liveCell1 {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* Cell 2 (nebula): bottom of right column */
+.liveCell2 {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* Video element fills the cell; object-fit:cover crops low-res clips cleanly */
+.liveCellVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Responsive: on narrow screens collapse to a single large + two side-by-side */
+@media (max-width: 560px) {
+  .liveGrid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 200px 140px;
+    height: auto;
+    max-width: 100%;
+  }
+  .liveCell0 {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+  .liveCell1 {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .liveCell2 {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+/* ── Reduced motion: videos stay as posters (no autoplay enforced via JS too) ── */
+@media (prefers-reduced-motion: reduce) {
+  .liveCellVideo {
+    /* pointer-events and visibility stay normal; the JS never calls .play() */
+  }
+}
+
+/* ── 04 ORGANIZE visual — tag pills + theme swatches, theme-agnostic. ── */
+.organize {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 8px 0;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 16%, transparent);
+  background: color-mix(in srgb, var(--lp-ink) 3%, transparent);
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--lp-ink);
+}
+
+.pillHash {
+  color: var(--lp-accent);
+  font-weight: 600;
+}
+
+.swatchRow {
+  display: flex;
+  gap: 14px;
+}
+
+.swatch {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
+  box-shadow: 0 6px 16px -10px color-mix(in srgb, var(--lp-ink) 30%, transparent);
+}
+
+/* ── 05 PRIVACY visual — quiet typographic rows, minimal. ── */
+.privacyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.privacyRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--lp-ink) 9%, transparent);
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(22px, 2.6vw, 30px);
+  letter-spacing: -0.02em;
+  color: var(--lp-ink);
+}
+
+.privacyRow:first-child {
+  padding-top: 0;
+}
+
+.privacyRow:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.privacyDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────
+   At ≤920px each beat stacks to a single column: text first, visual below,
+   always. Reset the even-row swap so order stays text → visual. ── */
+@media (max-width: 920px) {
+  .features {
+    padding: 104px 32px 112px;
+  }
+  .kicker {
+    margin-bottom: 60px;
+  }
+  .beat {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 60px 0;
+  }
+  .beat:nth-child(even) .beatText,
+  .beat:nth-child(even) .beatVisual {
+    grid-column: 1;
+  }
+  .beat:nth-child(even) .beatText {
+    grid-row: 1;
+  }
+  .beat:nth-child(even) .beatVisual {
+    grid-row: 2;
+  }
+  .beatBody {
+    max-width: 560px;
+  }
+  .liveGrid {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .features {
+    padding: 80px 22px 88px;
+  }
+  .beat {
+    padding: 48px 0;
+  }
+  .captureRow {
+    gap: 12px;
+  }
+  .masonry {
+    columns: 2;
+    column-gap: 12px;
+  }
+  .masonry .card {
+    margin-bottom: 12px;
+  }
+  .swatch {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ── Reduced motion: keep everything visible, skip card hover lift ── */
+@media (prefers-reduced-motion: reduce) {
+  .kicker,
+  .beat {
+    opacity: 1;
+  }
+  .card,
+  .card:hover {
+    transition: none;
+    transform: none;
+  }
+}

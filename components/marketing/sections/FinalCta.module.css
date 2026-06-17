@@ -1,0 +1,192 @@
+/* FinalCta.module.css — AllMarks LP final CTA section.
+   The climax: white LP ground fades to near-black (#0a0a0a) via a GSAP
+   ScrollTrigger scrub on the .overlay layer. Content (headline + button)
+   renders in light ink on the black ground.
+
+   On reduced-motion the overlay is immediately opacity:1 — pure black from
+   the first paint. No half-states, no broken transitions.
+
+   Follows the LP grammar: --lp-serif Fraunces headline, --lp-sans Geist
+   button, --lp-accent green sparingly. NO Tailwind, NO rem, NO tilt. */
+
+/* ── Section root ──────────────────────────────────────────────────────────
+   Tall enough to give the scrub room to complete before the content reaches
+   centre. position:relative is the stacking context for the overlay.       */
+.cta {
+  position: relative;
+  width: 100%;
+  /* 105vh: enough for the scrub to complete as the section enters the viewport,
+     but leaves only a modest black settle (~0.15–0.20vh) before the footer.
+     The transition completes well before the content reaches centre, so the
+     footer follows promptly with no large empty black void. */
+  min-height: 105vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The section bottom is solid black — seamless into the (black) app footer */
+  padding-bottom: 80px;
+  box-sizing: border-box;
+  /* Off-white from --lp-bg shows through until the overlay covers it */
+  background: var(--lp-bg);
+}
+
+/* ── Black overlay — the transition layer ──────────────────────────────────
+   Absolute, full-bleed, below the content (z-index 0 vs content z-index 1).
+   GSAP scrubs this from opacity:0 → 1 as the user scrolls.
+   On reduced-motion it starts at opacity:1 (see useEffect).
+   pointer-events:none so it never blocks any interaction.                   */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: #0a0a0a;
+  opacity: 0;
+  pointer-events: none;
+  /* z-index below .stage */
+  z-index: 0;
+}
+
+/* ── Stage — the centred measure column ────────────────────────────────── */
+.stage {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 40px;
+  box-sizing: border-box;
+  /* Sticky centre: keep inner content pinned to viewport centre during scrub */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Inner content block — centred column ──────────────────────────────── */
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+}
+
+/* ── Accent rule — a short green dash above the headline ──────────────── */
+.rule {
+  display: block;
+  width: 40px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+  margin-bottom: 40px;
+  /* Not a data-reveal target; the rule fades in with the overlay's darkness */
+  transition: opacity 0.6s ease;
+}
+
+/* ── Headline — Fraunces serif, light on the black ground ──────────────── */
+.headline {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(40px, 6vw, 96px);
+  line-height: 1.0;
+  letter-spacing: -0.035em;
+  /* Near-white — legible on the near-black overlay */
+  color: #f0efe9;
+  text-wrap: balance;
+  /* revealed by useReveal; starts opacity:0 */
+  opacity: 0;
+  margin-bottom: 52px;
+}
+
+/* ── CTA button — pill link → /board ───────────────────────────────────── */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  height: 62px;
+  padding: 0 36px;
+  border-radius: 999px;
+  /* White button on black — maximum contrast, no colour gimmicks */
+  background: #f0efe9;
+  color: #14130f;
+  font-family: var(--lp-sans);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  /* revealed by useReveal; starts opacity:0 */
+  opacity: 0;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Hover: green tint background — --lp-accent accent applied tastefully */
+.button:hover {
+  transform: translateY(-2px);
+  background: var(--lp-accent);
+  color: #0a0a0a;
+}
+
+.arrow {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.button:hover .arrow {
+  transform: translateX(5px);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .cta {
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  .stage {
+    padding: 0 24px;
+  }
+
+  .headline {
+    margin-bottom: 40px;
+  }
+
+  .button {
+    height: 56px;
+    padding: 0 28px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cta {
+    min-height: 96vh;
+    padding-bottom: 64px;
+  }
+
+  .rule {
+    margin-bottom: 28px;
+  }
+
+  .headline {
+    margin-bottom: 32px;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+   Skip all GSAP scrub/reveal animation. Show the section as already-black
+   with fully legible text. The overlay starts opacity:1 via useEffect's
+   matchMedia branch; here we also force data-reveal items to opacity:1
+   so the text is never hidden if JS runs slowly or matchMedia fires after
+   first paint. */
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    opacity: 1;
+  }
+
+  .headline,
+  .button {
+    opacity: 1;
+  }
+}

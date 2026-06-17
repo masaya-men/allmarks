@@ -1,70 +1,109 @@
+'use client'
+
 import Link from 'next/link'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './SiteFooter.module.css'
 
-type FooterColumn = {
-  heading: string
-  links: ReadonlyArray<{ href: string; label: string }>
-}
-
-const COLUMNS: ReadonlyArray<FooterColumn> = [
-  {
-    heading: 'Product',
-    links: [
-      { href: '/features', label: 'Features' },
-      { href: '/guide', label: 'Guide' },
-      { href: '/board', label: 'Open Board' },
-    ],
-  },
-  {
-    heading: 'Company',
-    links: [
-      { href: '/about', label: 'About' },
-      { href: '/faq', label: 'FAQ' },
-      { href: '/contact', label: 'Contact' },
-    ],
-  },
-  {
-    heading: 'Legal',
-    links: [
-      { href: '/privacy', label: 'Privacy' },
-      { href: '/terms', label: 'Terms' },
-    ],
-  },
-]
-
+/**
+ * SiteFooter — dark footer that continues the FinalCta's near-black ground.
+ *
+ * Background: #0a0a0a (same as the FinalCta overlay end-state).
+ * Text: off-white #f0efe9 / muted rgba variant.
+ * Nav labels sourced from useI18n() landing.footer.* keys — correctly shows
+ * English when the LP runs without an I18nProvider (FALLBACK is English).
+ * NO tilt. Minimal, refined editorial tone.
+ */
 export function SiteFooter(): React.ReactElement {
+  const { t } = useI18n()
+
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
+
+        {/* Brand column */}
         <div className={styles.brandColumn}>
           <Link href="/" className={styles.brand} aria-label="AllMarks home">
             AllMarks
           </Link>
           <p className={styles.tagline}>
-            ブックマークを、ビジュアルコラージュに。
+            Save anything. See everything.
+          </p>
+          <p className={styles.privacy}>
+            Data lives in your browser.
+            <br />
+            No accounts. No tracking.
           </p>
         </div>
+
+        {/* Nav columns */}
         <div className={styles.columns}>
-          {COLUMNS.map((col) => (
-            <div key={col.heading} className={styles.column}>
-              <h3 className={styles.heading}>{col.heading}</h3>
-              <ul className={styles.list}>
-                {col.links.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className={styles.link}>
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+
+          <div className={styles.column}>
+            <h3 className={styles.colHeading}>Product</h3>
+            <ul className={styles.list}>
+              <li>
+                <Link href="/features" className={styles.link}>
+                  {t('landing.footer.features')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/guide" className={styles.link}>
+                  {t('landing.footer.guide')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/board" className={styles.link}>
+                  Open Board
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className={styles.column}>
+            <h3 className={styles.colHeading}>Company</h3>
+            <ul className={styles.list}>
+              <li>
+                <Link href="/about" className={styles.link}>
+                  {t('landing.footer.about')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className={styles.link}>
+                  {t('landing.footer.faq')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className={styles.link}>
+                  {t('landing.footer.contact')}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className={styles.column}>
+            <h3 className={styles.colHeading}>Legal</h3>
+            <ul className={styles.list}>
+              <li>
+                <Link href="/privacy" className={styles.link}>
+                  {t('landing.footer.privacy')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className={styles.link}>
+                  {t('landing.footer.terms')}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
         </div>
       </div>
+
+      {/* Bottom strip */}
       <div className={styles.bottom}>
-        <p>&copy; 2026 AllMarks</p>
-        <p className={styles.bottomMeta}>
-          Data lives in your browser. No accounts, no tracking.
+        <p className={styles.copy}>&copy; 2026 AllMarks</p>
+        <p className={styles.bottomRight}>
+          Made with care. Designed for everyone.
         </p>
       </div>
     </footer>
