@@ -21,7 +21,24 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 106 — i18n 言語切替の層①(アプリ本体ランタイム切替) 配線 完成)
+### 直近の状態 (セッション 107 — LP 全面作り直し フェーズ1 本番 ship + master マージ)
+
+**完了 (= 全て検証済: tsc 0 / vitest 1043 pass(1 fail は LP無関係の既存 flaky BroadcastChannel タイミングテスト・単体は通る)/ build 24 routes / 本番 `allmarks.app` 反映・user 確認済。brainstorming→spec→plan→サブエージェント駆動(各タスク2段レビュー + 通し最終レビュー opus=READY TO MERGE))**:
+
+1. **🔴 LP を白基調・編集的・スクロール演出で全面作り直し**(旧「平凡」LP は削除)。route `/`(`components/marketing/LandingPage.tsx`)。構成6ブロック: **HERO**(製品ボード風のクリーンな画像カード + 大セリフ見出し + 奥行きパララックス)/ **PROBLEM** / **FEATURES 01–05**(CAPTURE/LAYOUT/**LIVE GRID=本物のNASA動画3本を画面内で同時再生**/ORGANIZE/PRIVACY、番号付き編集的シーケンス・箱グリッドにしない)/ **SHARE** / **FINAL CTA**(白→黒に暗転)+ 黒フッター。
+2. **user 採用コピー(ミニマル文体)** を `landing.*` に英語(既定)+日本語で実装。LP は当面**英語固定**(`app/page.tsx` は `I18nProvider` 外 → `useI18n()` が英語フォールバック)。**多言語化=層②は次回**(日本語コピーは ja.json に作成済)。
+3. **デモ素材**: CC0 名画16点(Art Institute of Chicago Open Access)+ NASA パブリックドメイン動画3本。`lib/marketing/demo-collage.ts` + `public/marketing/collage/`。LIVE GRID は IntersectionObserver で画面内のみ再生・reduced-motion はポスター。
+4. **新フォント** Fraunces(見出しセリフ)を `next/font/google` 追加。LP トークン `components/marketing/landing-tokens.css` の `.lpRoot`。スクロール基盤(Lenis + ScrollTrigger)+ `lib/scroll/`(parallax-math/use-parallax-layer/use-reveal、reduced-motion 対応)。
+5. **AllMarks 視覚原則を確立**(記憶 [[feedback_allmarks_grid_no_tilt]]): グリッド整列・**傾けない**・画像は大胆に・**偽メタデータ禁止**(本物のボードは画像カードにドメインラベルを出さない=ImageCard を確認の上)。Hero は user FB で v1→v4 反復(散らし浮遊→大胆グリッド→製品ボード化→偽ラベル除去)。
+6. **🔴 ダーク強制バグ**(記憶 [[reference_lp_light_color_scheme]]): user 画面で白LPが黒く見えた。原因=clean browser では白(実測 #faf9f6)だが、`<html data-theme="dark">`既定 + ブラウザ自動ダーク(Chrome Auto Dark / Dark Reader)が白ページを暗転。対処= `.lpRoot { color-scheme: light }` + LandingPage マウント中 `<html data-theme="light">`(離脱で dark 復帰)。
+7. **`ThemeToggle.tsx` は残す**(LP からは外したが `app/(marketing)/layout.tsx` の静的ページが使用中=最終レビューで誤削除を回避)。
+8. 設計 `docs/superpowers/specs/2026-06-17-lp-redesign-design.md` / 計画 `docs/superpowers/plans/2026-06-17-lp-redesign.md`。
+
+**🔴 次セッション**: i18n 層②(LP 言語別URL/15言語)/ onboarding / 拡張ストア素材 / LP残債(非ブロッキング)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+### 一つ前 (セッション 106 — i18n 言語切替の層①(アプリ本体ランタイム切替) 配線 完成)
 
 **完了 (= 全て検証済: tsc 0 / vitest 1037 pass / build 22 routes / 本番 allmarks.app 反映・user 確認済。brainstorming→spec→plan→サブエージェント駆動(各タスク2段レビュー + 通し最終レビュー opus = READY TO MERGE))**:
 
