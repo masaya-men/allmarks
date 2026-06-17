@@ -272,8 +272,8 @@ rtk git commit -m "i18n(lp): landing namespace copy (en baseline + ja) + parity 
   - Public-domain art: Metropolitan Museum Open Access (`metmuseum.github.io` / `collectionapi.metmuseum.org`, `isPublicDomain: true`), Art Institute of Chicago API (`api.artic.edu`, `is_public_domain: true`), Rijksmuseum.
   - CC0 photos: Unsplash / Pexels.
   Pick only aesthetically strong images; aim for a mix of painterly, photographic, textural, and bold-color frames.
-- [ ] **Step 2: Source 3–5 royalty-free looping video clips.** From Pexels Videos / Coverr / Mixkit (all free for commercial use, no attribution required). Choose **stylish, aesthetic, abstract-or-atmospheric** clips (e.g. ink-in-water, neon light, slow fabric, liquid, particles) — moving content that looks beautiful muted and looping. Each ≤10s.
-- [ ] **Step 2b: Pick 2–3 rights-clean real YouTube IDs.** Choose from **public-domain / official institutional channels** only — e.g. NASA (footage is public domain), a museum/library official channel. Verify each video plays in an embed (not embed-disabled) and is genuinely rights-clean. These convey "real content from real sites" honestly without implying a private creator's endorsement. Record the channel + rights basis.
+- [ ] **Step 2: Source 3 public-domain looping video clips from NASA Image and Video Library** (`images-api.nasa.gov` — all NASA media is public domain, direct-download, no key, no attribution required). Choose **visually striking, atmospheric** clips (e.g. aurora, Earth from orbit, nebula timelapse, fluid/plasma) that look beautiful muted and looping. Download the mp4 asset, transcode with **ffmpeg** to ≤720p / low bitrate / no audio, trim to ≤10s, and extract a WebP poster of a representative frame (ffmpeg → png → sharp → webp).
+- [ ] **Step 2b: (optional this task) rights-clean real YouTube IDs.** `DEMO_YOUTUBE` may stay EMPTY in this task — the real-motion requirement is already met by the NASA video files above. If a rights-clean public-domain YouTube ID (e.g. NASA channel) can be **validated via the oEmbed endpoint** (`https://www.youtube.com/oembed?url=https://youtu.be/<id>&format=json` returns 200 + title), include it; otherwise leave `DEMO_YOUTUBE = []` and it will be sourced/validated in Task 8. Do NOT invent IDs — only include IDs confirmed via oEmbed.
 - [ ] **Step 3: Optimize all assets.** Images → WebP (max edge ~1000px, quality ~80) in `public/marketing/collage/`. Videos → H.264 mp4 (max 720p, low bitrate, no audio track) + a WebP poster of the first frame, also in `public/marketing/collage/`. Descriptive names (`art-met-portrait-01.webp`, `vid-ink-bloom-01.mp4` / `vid-ink-bloom-01.webp`). Keep total images < ~600KB; each video < ~1.2MB.
 - [ ] **Step 4: Record provenance.** `docs/marketing-asset-licenses.md` — one row per file (image AND video): filename, source URL, title/author, license (CC0 / Public Domain / royalty-free).
 - [ ] **Step 5: Write the manifest + its test.** `lib/marketing/demo-collage.ts` exports `DEMO_COLLAGE`, `DEMO_VIDEOS`, and `DEMO_YOUTUBE` with real values. `lib/marketing/demo-collage.test.ts`:
@@ -304,8 +304,7 @@ describe('demo collage manifest', () => {
       expect(v.w / v.h).toBeGreaterThan(0)
     }
   })
-  it('has at least 2 rights-clean real YouTube ids', () => {
-    expect(DEMO_YOUTUBE.length).toBeGreaterThanOrEqual(2)
+  it('any YouTube entries are well-formed + rights-clean (may be empty this task)', () => {
     for (const y of DEMO_YOUTUBE) {
       expect(y.videoId).toMatch(/^[\w-]{11}$/)
       expect(['public-domain', 'official-brand']).toContain(y.rights)
