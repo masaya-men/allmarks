@@ -1,0 +1,11 @@
+.lpRoot {
+  --lp-bg: #faf9f6;
+  --lp-ink: #14130f;
+  --lp-ink-soft: #57544c;
+  --lp-accent: #28f100;
+  --lp-serif: var(--font-serif-display), Georgia, 'Times New Roman', serif;
+  --lp-sans: var(--font-geist), system-ui, sans-serif;
+  --lp-maxw: 1489px;
+  background: var(--lp-bg);
+  color: var(--lp-ink);
+}
