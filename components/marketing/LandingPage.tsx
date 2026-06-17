@@ -9,19 +9,25 @@ import { Problem } from './sections/Problem'
 import { Features } from './sections/Features'
 import { ShareIt } from './sections/ShareIt'
 import { FinalCta } from './sections/FinalCta'
-import { HeroSection } from './sections/HeroSection'
 import './landing-tokens.css'
-import { SaveDemoSection } from './sections/SaveDemoSection'
-import { CollageDemoSection } from './sections/CollageDemoSection'
-import { StyleSwitchSection } from './sections/StyleSwitchSection'
-import { ShareDemoSection } from './sections/ShareDemoSection'
-import { CtaSection } from './sections/CtaSection'
 import styles from './LandingPage.module.css'
 
 /**
- * Landing page root client component.
- * Initializes Lenis smooth scrolling and GSAP ScrollTrigger.
- * Renders 6 marketing sections.
+ * LandingPage — root client component for the AllMarks marketing LP.
+ *
+ * Initialises Lenis smooth scrolling and GSAP ScrollTrigger, then renders
+ * the full editorial flow:
+ *
+ *   SiteHeader (fixed, transparent → scrolled)
+ *   ─── white editorial ground (#faf9f6) ──────────────────────────────
+ *   Hero        — product board-mock visual + headline + CTAs
+ *   Problem     — the problem we solve
+ *   Features    — 01-05 feature cards with live video grid
+ *   ShareIt     — share / export story
+ *   ─── white fades to black (FinalCta GSAP scrub) ──────────────────
+ *   FinalCta    — climax CTA on near-black ground
+ *   ─── black continues seamlessly ──────────────────────────────────
+ *   SiteFooter  — dark editorial footer (#0a0a0a)
  */
 export function LandingPage(): React.ReactElement {
   useSmoothScroll()
@@ -36,12 +42,6 @@ export function LandingPage(): React.ReactElement {
         <Features />
         <ShareIt />
         <FinalCta />
-        <HeroSection />
-        <SaveDemoSection />
-        <CollageDemoSection />
-        <StyleSwitchSection />
-        <ShareDemoSection />
-        <CtaSection />
         <SiteFooter />
       </div>
     </div>

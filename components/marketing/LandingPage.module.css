@@ -5,8 +5,9 @@
   width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  /* Background and color are owned by the lpRoot class in landing-tokens.css.
+     Do NOT set background/color here — that would override the LP off-white token
+     with the dark board theme's --color-bg-primary. */
 }
 
 /* Subtle noise texture overlay */
