@@ -139,44 +139,46 @@
   },
   "landing": {
     "hero": {
-      "label": "A visual home for your bookmarks",
-      "headline": "Bookmarks worth looking at.",
-      "subtitle": "Save anything from anywhere, then arrange it into a living visual board that's entirely yours.",
-      "ctaPrimary": "Start your board",
+      "label": "Visual Bookmark Manager",
+      "headline": "Turn links into a visual board.",
+      "description": "Save videos, social posts, articles, and images in one click, then arrange them freely. Turn a plain list of text into an inspiration board you grasp at a glance. No sign-up, completely free.",
+      "ctaPrimary": "Open the board",
       "ctaGhost": "See how it works",
       "scrollHint": "scroll"
     },
     "problem": {
-      "headline": "A list is where bookmarks go to be forgotten.",
-      "body": "Rows of blue links — no color, no life, nothing you actually want to revisit. Your taste deserves better than a list."
+      "headline": "You pile them up and never look again.",
+      "body": "A bland column of blue links. Timelines you only scroll past. Don't let what you save get buried in a wall of text."
     },
-    "save": {
-      "headline": "Save from anywhere.",
-      "body": "Tweets, videos, articles, shops, images — one click from your browser, the bookmarklet, or a pasted link. It all lands on your board."
-    },
-    "arrange": {
-      "headline": "Then make it a collage.",
-      "body": "Colors and styles from all over the web, side by side. Drag, resize, and let it become a board you're proud to open."
-    },
-    "alive": {
-      "headline": "And then it comes alive.",
-      "body": "Play several videos at once, right on the board. Not a static grid — a living wall of everything you love."
-    },
-    "customize": {
-      "headline": "Make it unmistakably yours.",
-      "body": "Switch themes, tune the sizes, tag and filter. More themes are on the way."
+    "features": {
+      "capture": {
+        "title": "One click, from anywhere.",
+        "body": "Posts on X, YouTube videos, articles, shops, images — send them straight to your board via the extension, the bookmarklet, or a pasted URL."
+      },
+      "layout": {
+        "title": "Arrange it freely.",
+        "body": "Drag and drop to set size and position exactly how you like."
+      },
+      "live": {
+        "title": "Play several videos at once.",
+        "body": "Videos across your board move together — not a list of stills, but a board that's actually alive."
+      },
+      "organize": {
+        "title": "Tag to sort. Theme to restyle.",
+        "body": "Filter by tag, and switch the whole look with themes. More themes are on the way."
+      },
+      "privacy": {
+        "title": "No account. Fully local.",
+        "body": "Everything is saved only inside your browser. Nothing is sent to a server. Your privacy stays yours."
+      }
     },
     "share": {
-      "headline": "Share it as a picture.",
-      "body": "Export your board as an image, or send a link. Your collage travels — links and all."
-    },
-    "trust": {
-      "headline": "No account. No catch.",
-      "body": "Everything stays in your browser. No sign-up, no servers holding your data, free to use."
+      "headline": "Share it as one board.",
+      "body": "Export your finished board as an image, or share a link — your exact layout arrives just as you made it."
     },
     "cta": {
-      "headline": "Your board is waiting.",
-      "button": "Open the board"
+      "headline": "Start building your board.",
+      "button": "Start now — no sign-up"
     },
     "footer": {
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
