@@ -62,6 +62,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
 import { BookmarkletPill } from '@/components/bookmarklet/BookmarkletPill'
 import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
+import { LanguageSwitcher } from './LanguageSwitcher'
 import { Lightbox } from './Lightbox'
 import { PipPortal } from '@/components/pip/PipPortal'
 import { PipCompanion } from '@/components/pip/PipCompanion'
@@ -2042,6 +2043,8 @@ export function BoardRoot() {
         />
       </PipPortal>
       <UndoToast input={toast} />
+      {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}
+      <LanguageSwitcher />
     </div>
   )
 }
