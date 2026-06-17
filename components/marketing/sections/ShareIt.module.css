@@ -1,0 +1,324 @@
+/* ShareIt.module.css — the SHARE section of the AllMarks LP.
+   Matches the established LP grammar: white off-white --lp-bg ground,
+   Fraunces serif headline (--lp-serif), Geist body (--lp-sans), soft ink
+   (--lp-ink-soft), --lp-accent used sparingly (accent rule), generous
+   whitespace, editorial confidence.
+
+   Visual: a framed mini-board that reads as a finished exported image.
+   The mini grid is STRICTLY AXIS-ALIGNED — zero tilt, zero rotation
+   (hard AllMarks rule). No fabricated metadata anywhere.
+
+   Reflows cleanly to a single column at narrow widths. */
+
+/* ── Section root ── */
+.share {
+  width: 100%;
+  padding: 128px 40px 140px;
+  box-sizing: border-box;
+  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
+}
+
+/* ── Centred measure stage ── */
+.stage {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ── Section kicker — mono "SHARE" with a short green dash ── */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 72px;
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+.kickerDash {
+  width: 32px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+}
+
+/* ── Two-column editorial split ──
+   Text on the left, framed visual on the right.
+   Wraps to a single column at ≤960px. */
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 64px clamp(48px, 7vw, 96px);
+}
+
+/* ── Text column ── */
+.text {
+  flex: 1 1 360px;
+  min-width: 0;
+  max-width: 500px;
+}
+
+/* Accent rule — a short green dash above the headline, matching Problem.tsx */
+.rule {
+  display: block;
+  width: 36px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+  margin-bottom: 36px;
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+/* ── Headline — Fraunces serif, weight 300, editorial ── */
+.headline {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(34px, 4.2vw, 58px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+/* ── Body copy — Geist, soft ink ── */
+.body {
+  margin: 24px 0 0;
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 1.65;
+  letter-spacing: -0.005em;
+  color: var(--lp-ink-soft);
+  max-width: 440px;
+  text-wrap: pretty;
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+/* ── Quiet pill hints — suggestive affordances below the body copy ── */
+.hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 32px;
+  /* revealed by useReveal */
+  opacity: 0;
+}
+
+.hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 14%, transparent);
+  background: color-mix(in srgb, var(--lp-ink) 3%, transparent);
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--lp-ink-soft);
+  /* non-interactive: pointer-events off, cursor default */
+  pointer-events: none;
+  user-select: none;
+}
+
+.hintIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lp-ink-soft);
+  flex-shrink: 0;
+}
+
+/* ── Visual column ── */
+.visual {
+  flex: 1 1 400px;
+  min-width: 0;
+  /* revealed by useReveal */
+  opacity: 0;
+  /* centre the frame in this column */
+  display: flex;
+  justify-content: center;
+}
+
+/* ── The framed mini-board ──
+   Reads as a finished board captured as an exported image / printed photo.
+   The outer frame carries the editorial shadow; the inner mat provides the
+   cream-white surround (photo-print feel); the mini board grid sits within.
+   No rotation anywhere. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  /* constrain the frame's total width */
+  width: 100%;
+  max-width: 520px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--lp-bg);
+  /* layered editorial shadow — soft depth + a crisp contact base */
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 9%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 5%, transparent),
+    0 32px 80px -32px color-mix(in srgb, var(--lp-ink) 28%, transparent),
+    0 8px 24px -12px color-mix(in srgb, var(--lp-ink) 14%, transparent);
+}
+
+/* Photo-print mat — the cream surround that makes the grid read as a picture */
+.mat {
+  padding: 20px 20px 0;
+  background: var(--lp-bg);
+}
+
+/* ── Mini board grid: strict 2×2, axis-aligned, no tilt ── */
+.miniBoard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  /* matching the board's corner radius at this smaller scale */
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* One mini card — clean image thumbnail, no labels, axis-aligned */
+.miniCard {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--lp-ink) 4%, transparent);
+  /* No rotation — ever. Hard AllMarks rule. */
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.miniCardImg {
+  display: block;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ── Frame bottom strip ── "AllMarks · your board" meta strip
+   Suggests a photo credit line / export watermark. Purely decorative. */
+.frameStrip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--lp-bg);
+}
+
+.frameWordmark {
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lp-ink);
+}
+
+.frameDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--lp-ink-soft);
+  opacity: 0.4;
+}
+
+.frameHint {
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--lp-ink-soft);
+  opacity: 0.55;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────
+   At ≤960px the two columns stack: text first, visual below. */
+@media (max-width: 960px) {
+  .share {
+    padding: 104px 32px 112px;
+  }
+  .kicker {
+    margin-bottom: 52px;
+  }
+  .split {
+    flex-direction: column;
+    gap: 48px;
+  }
+  .text {
+    flex-basis: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .rule {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hints {
+    justify-content: center;
+  }
+  .body {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .visual {
+    flex-basis: 100%;
+    width: 100%;
+  }
+  .frame {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .share {
+    padding: 80px 22px 88px;
+  }
+  .miniCardImg {
+    height: 120px;
+  }
+  .mat {
+    padding: 14px 14px 0;
+  }
+  .miniBoard {
+    gap: 8px;
+  }
+  .frame {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+}
+
+/* ── Reduced motion: keep everything visible, skip animation ── */
+@media (prefers-reduced-motion: reduce) {
+  .kicker,
+  .rule,
+  .headline,
+  .body,
+  .hints,
+  .visual {
+    opacity: 1;
+  }
+  .miniCard,
+  .miniCard:hover {
+    transition: none;
+    transform: none;
+  }
+}

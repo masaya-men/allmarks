@@ -7,6 +7,7 @@ import { SiteFooter } from './SiteFooter'
 import { Hero } from './sections/Hero'
 import { Problem } from './sections/Problem'
 import { Features } from './sections/Features'
+import { ShareIt } from './sections/ShareIt'
 import { HeroSection } from './sections/HeroSection'
 import './landing-tokens.css'
 import { SaveDemoSection } from './sections/SaveDemoSection'
@@ -32,6 +33,7 @@ export function LandingPage(): React.ReactElement {
         <Hero />
         <Problem />
         <Features />
+        <ShareIt />
         <HeroSection />
         <SaveDemoSection />
         <CollageDemoSection />
