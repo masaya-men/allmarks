@@ -21,15 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 108 — LP 多言語化(層②)第1段を実装中・Task 1〜7 完了・本番未反映)
+### 直近の状態 (セッション 109 — LP 多言語化(層②)第1段 Task 1〜10 完了・本番反映済・master マージ待ち)
 
-**進行中 (ブランチ `feat/lp-i18n-layer2-phase1`、master 未マージ・本番未反映)。サブエージェント駆動で Task 1〜7 完了(各タスク2段レビュー緑)。残り Task 8〜10。**
+**ブランチ `feat/lp-i18n-layer2-phase1` で Task 1〜10 全完了。サブエージェント駆動(各タスク2段レビュー緑 + 通し最終レビュー opus=READY TO MERGE)。本番 `allmarks.app` 反映済。残り = ユーザーのブラウザ実機確認 + master マージ + F-1 タイトル多言語化の小フォロー。**
 
 - **目的**: トップLP を15言語の言語別URL(`/`=英語 + `/ja` `/zh`…14言語)で静的に作り置きし、検索集客(hreflang/canonical/言語別sitemap)+ ヘッダー言語切替 + 母国語案内バーを実装。紹介ページ群は**第2段**に分離(中身が古く新デザイン未適用のため)。
-- **完了 Task 1〜7**: ①13言語へ `landing.*` 翻訳+パリティテスト ②`locale-urls` 純粋関数 ③`STATIC_MESSAGES`(server専用) ④`LandingPage` に locale prop + `<html lang>` ⑤英語トップ `/` を provider 化 + `lp-metadata`(hreflang等)+ root layout lang ja→en ⑥`app/[locale]/page.tsx` で14言語 prerender ⑦ヘッダー `LanguageMenu`(endonym・URL移動)。検証: tsc 0 / vitest 1103 pass / build で `/ja` `/zh` 等生成・既存ルート健在・各言語焼き込み確認。
-- **学び**: **Next.js 16.2.3 は dynamic route の `params` が Promise** → `app/[locale]` は async+await 必須(同期だと全 locale 404)。`tsc <file>` 直叩きは stray `.js` を吐くので `rtk tsc`(noEmit)を使う。
-- **残り(次セッション)**: Task 8 母国語案内バー → Task 9 言語別sitemap → Task 10 通し検証+本番デプロイ+実機確認 → 最終コードレビュー → master マージ。
-- 設計 `docs/superpowers/specs/2026-06-18-lp-i18n-layer2-design.md` / 計画 `docs/superpowers/plans/2026-06-18-lp-i18n-layer2-phase1.md`。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+- **完了 Task 1〜10**: ①13言語へ `landing.*` 翻訳+パリティテスト ②`locale-urls` 純粋関数 ③`STATIC_MESSAGES`(server専用) ④`LandingPage` に locale prop + `<html lang>` ⑤英語トップ `/` を provider 化 + `lp-metadata`(hreflang等)+ root layout lang ja→en ⑥`app/[locale]/page.tsx` で14言語 prerender ⑦ヘッダー `LanguageMenu`(endonym・URL移動)⑧母国語案内バー `LocaleSuggestBanner`(z-token 105 でヘッダー上)⑨言語別 sitemap(15言語)⑩通し検証+本番デプロイ。検証: tsc 0 / vitest 1110 pass / build 38ルート / 本番で `/` `/ja` `/zh` `/board`=200・`/ja` に hreflang16+canonical=/ja+日本語焼き込み確認。
+- **学び**: **Next.js は dynamic route の `params` が Promise** → `app/[locale]` は async+await 必須。`tsc <file>` 直叩きは stray `.js` を吐くので `rtk tsc`(noEmit)。静的出力は flat file(`out/ja.html`)・Next は属性を `hrefLang`(キャメル)で出力(grep は大小区別注意)。
+- **残り**: ①ユーザーがブラウザで言語メニュー切替・案内バー表示を実機確認 ②master マージ ③**F-1 フォロー**: 言語別LPの `<title>`/`og:title` が現状英語固定(description のみローカライズ)→ `landing.hero.headline` 流用で多言語化したい(英語トップのタイトル文言含めユーザー承認待ち)。
+- 設計 `docs/superpowers/specs/2026-06-18-lp-i18n-layer2-design.md` / 計画 `docs/superpowers/plans/2026-06-18-lp-i18n-layer2-phase1.md`。
 
 ---
 
