@@ -31,7 +31,6 @@
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--lp-ink-soft);
-  opacity: 0; /* revealed by useReveal */
 }
 
 .kickerDash {
@@ -57,7 +56,6 @@
   gap: clamp(40px, 6vw, 96px);
   padding: 72px 0;
   border-top: 1px solid color-mix(in srgb, var(--lp-ink) 9%, transparent);
-  opacity: 0; /* revealed by useReveal */
 }
 
 .beat:first-child {
