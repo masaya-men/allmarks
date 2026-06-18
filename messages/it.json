@@ -151,11 +151,26 @@
       "body": "Solo righe di link di testo. Feed che scorrono via. Non lasciare che ciò che salvi venga sepolto nel testo."
     },
     "features": {
-      "capture": { "title": "Sulla tua bacheca, da ovunque.", "body": "Basta incollare un URL — X, YouTube, articoli, negozi, immagini, qualsiasi cosa sul web. Vuoi salvare con un clic? L'estensione del browser e il bookmarklet ci pensano loro." },
-      "layout": { "title": "Disponi liberamente.", "body": "Trascina e rilascia per impostare dimensione e posizione esattamente come vuoi." },
-      "live": { "title": "Riproduci più video contemporaneamente.", "body": "I video sulla tua bacheca si muovono insieme — non è una lista di immagini statiche, ma una bacheca davvero viva." },
-      "organize": { "title": "Tag per ordinare. Temi per rinnovare.", "body": "Filtra per tag e cambia l'aspetto complessivo con i temi. Altri temi sono in arrivo." },
-      "privacy": { "title": "Nessun account. Completamente locale.", "body": "Tutto viene salvato solo nel tuo browser. Nulla viene inviato a un server. La tua privacy rimane tua." }
+      "capture": {
+        "title": "Sulla tua bacheca, da ovunque.",
+        "body": "Basta incollare un URL — X, YouTube, articoli, negozi, immagini, qualsiasi cosa sul web. Vuoi salvare con un clic? L'estensione del browser e il bookmarklet ci pensano loro."
+      },
+      "layout": {
+        "title": "Disponi liberamente.",
+        "body": "Trascina e rilascia per impostare dimensione e posizione esattamente come vuoi."
+      },
+      "live": {
+        "title": "Riproduci più video contemporaneamente.",
+        "body": "I video sulla tua bacheca si muovono insieme — non è una lista di immagini statiche, ma una bacheca davvero viva."
+      },
+      "organize": {
+        "title": "Tag per ordinare. Temi per rinnovare.",
+        "body": "Filtra per tag e cambia l'aspetto complessivo con i temi. Altri temi sono in arrivo."
+      },
+      "privacy": {
+        "title": "Nessun account. Completamente locale.",
+        "body": "Tutto risiede nel tuo browser. Nessun account, nessuna registrazione — la tua privacy rimane tua."
+      }
     },
     "share": {
       "headline": "Condividila come un'unica bacheca.",
@@ -166,8 +181,13 @@
       "button": "Inizia ora — senza registrazione"
     },
     "footer": {
-      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
-      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
     }
   },
   "pages": {
@@ -204,7 +224,7 @@
       "privacy": {
         "num": "05",
         "heading": "Privata per impostazione predefinita",
-        "body": "I tuoi segnalibri vivono nel tuo browser, mai sui nostri server. Nessun account, nessuna registrazione, nessun cookie di tracciamento. È gratuito, e resta tuo."
+        "body": "I tuoi segnalibri vivono nel tuo browser. Nessun account, nessuna registrazione, nessun cookie di tracciamento. È gratuito, e resta tuo."
       },
       "sites": {
         "heading": "Dove funziona",
@@ -232,7 +252,7 @@
       },
       "privacy": {
         "heading": "Privacy by design",
-        "body": "I tuoi segnalibri vivono nel tuo browser, non sui nostri server. Nessun account, nessun tracciamento, nessuna registrazione. È gratuito, e resta tuo."
+        "body": "I tuoi segnalibri vivono nel tuo browser. Nessun account, nessun tracciamento, nessuna registrazione. È gratuito, e resta tuo."
       },
       "openSource": {
         "heading": "Open source",
@@ -410,7 +430,7 @@
       },
       "sharing": {
         "heading": "Quando condividi una bacheca",
-        "body": "La condivisione è l'unico caso in cui i dati lasciano il tuo dispositivo — e solo perché lo richiedi tu. Quando crei un link di condivisione, i dati della bacheca vengono caricati sul nostro hosting (Cloudflare KV) e un'immagine di anteprima su Cloudflare R2, raggiungibili solo attraverso il link segreto di condivisione, e automaticamente eliminati dopo circa 30 giorni. Nulla viene caricato a meno che tu non crei esplicitamente un link di condivisione, e le tue bacheche private non vengono mai caricate. Puoi anche esportare una bacheca come PNG, generato interamente nel tuo browser."
+        "body": "La condivisione è l'unico caso in cui i dati lasciano il tuo dispositivo — e solo perché lo richiedi tu. Quando crei un link di condivisione, i dati della bacheca (solo le schede che hai scelto di condividere, senza informazioni personali, poiché non esistono account) vengono caricati sul nostro hosting (Cloudflare KV) e un'immagine di anteprima su Cloudflare R2, in modo che chi riceve il link possa aprire la bacheca. È raggiungibile solo attraverso il link segreto e viene automaticamente eliminato dopo circa 30 giorni, quindi non rimane nulla. Nulla viene caricato a meno che tu non crei un link di condivisione, e le tue bacheche private non vengono mai caricate. Puoi anche esportare una bacheca come PNG, generato interamente nel tuo browser."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",

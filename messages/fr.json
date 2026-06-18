@@ -169,7 +169,7 @@
       },
       "privacy": {
         "title": "Sans compte. Entièrement local.",
-        "body": "Tout est enregistré uniquement dans votre navigateur. Rien n'est envoyé à un serveur. Votre vie privée reste la vôtre."
+        "body": "Tout vit dans votre navigateur. Pas de compte, rien à créer — votre vie privée reste la vôtre."
       }
     },
     "share": {
@@ -207,7 +207,7 @@
       },
       "privacy": {
         "heading": "Confidentialité by design",
-        "body": "Vos favoris vivent dans votre navigateur, pas sur nos serveurs. Pas de compte, pas de suivi, pas d'inscription. C'est gratuit, et ça reste à vous."
+        "body": "Vos favoris vivent dans votre navigateur. Pas de compte, pas de suivi, pas d'inscription. C'est gratuit, et ça reste à vous."
       },
       "openSource": {
         "heading": "Open source",
@@ -251,7 +251,7 @@
       "privacy": {
         "num": "05",
         "heading": "Privé par défaut",
-        "body": "Vos favoris vivent dans votre navigateur, jamais sur nos serveurs. Pas de compte, pas d'inscription, pas de cookies de suivi. C'est gratuit, et ça reste à vous."
+        "body": "Vos favoris vivent dans votre navigateur. Pas de compte, pas d'inscription, pas de cookies de suivi. C'est gratuit, et ça reste à vous."
       },
       "sites": {
         "heading": "Où ça fonctionne",
@@ -430,7 +430,7 @@
       },
       "sharing": {
         "heading": "Lorsque vous partagez un tableau",
-        "body": "Le partage est le seul cas où des données quittent votre appareil — et uniquement parce que vous le demandez. Lorsque vous créez un lien de partage, les données du tableau sont téléversées sur notre hébergement (Cloudflare KV) et une image d'aperçu sur notre stockage (Cloudflare R2), accessibles uniquement via le lien de partage secret, et supprimées automatiquement après environ 30 jours. Rien n'est téléversé sauf si vous créez explicitement un lien de partage, et vos tableaux privés ne sont jamais téléversés. Vous pouvez également exporter un tableau en PNG, qui est généré entièrement dans votre navigateur."
+        "body": "Le partage est le seul cas où des données quittent votre appareil — et uniquement parce que vous le demandez. Lorsque vous créez un lien de partage, les données du tableau (uniquement les cartes que vous avez choisies de partager, sans information personnelle puisqu'il n'y a pas de compte) sont téléversées sur Cloudflare KV, et l'image d'aperçu sur Cloudflare R2, pour que les personnes à qui vous envoyez le lien puissent ouvrir le tableau. Le lien n'est accessible que via l'adresse secrète et est supprimé automatiquement après environ 30 jours — rien ne persiste. Rien n'est téléversé tant que vous ne créez pas de lien de partage, et vos tableaux privés ne sont jamais téléversés. Vous pouvez également exporter un tableau en PNG, généré entièrement dans votre navigateur."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",

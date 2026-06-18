@@ -155,7 +155,7 @@
       "layout": { "title": "Vrij rangschikken.", "body": "Slepen en neerzetten om formaat en positie precies naar wens in te stellen." },
       "live": { "title": "Meerdere video's tegelijk afspelen.", "body": "Video's op je bord bewegen samen — geen lijst met stilstaande beelden, maar een bord dat echt leeft." },
       "organize": { "title": "Tags om te sorteren. Thema's om van look te wisselen.", "body": "Filteren op tag en de hele look wisselen met thema's. Er zijn meer thema's onderweg." },
-      "privacy": { "title": "Geen account. Volledig lokaal.", "body": "Alles wordt alleen in je browser opgeslagen. Er wordt niets naar een server gestuurd. Jouw privacy blijft van jou." }
+      "privacy": { "title": "Geen account. Volledig lokaal.", "body": "Alles leeft in je browser. Geen account, niets om je voor aan te melden — jouw privacy blijft van jou." }
     },
     "share": {
       "headline": "Deel het als één bord.",
@@ -187,7 +187,7 @@
       },
       "privacy": {
         "heading": "Privacy by design",
-        "body": "Je bladwijzers leven in je browser, niet op onze servers. Geen account, geen tracking, geen aanmelding. Het is gratis en blijft van jou."
+        "body": "Je bladwijzers leven in je browser. Geen account, geen tracking, geen aanmelding. Het is gratis en blijft van jou."
       },
       "openSource": {
         "heading": "Open source",
@@ -231,7 +231,7 @@
       "privacy": {
         "num": "05",
         "heading": "Standaard privé",
-        "body": "Je bladwijzers leven in je browser, nooit op onze servers. Geen account, geen aanmelding, geen trackers. Het is gratis en blijft van jou."
+        "body": "Je bladwijzers leven in je browser. Geen account, geen aanmelding, geen trackers. Het is gratis en blijft van jou."
       },
       "sites": {
         "heading": "Waar het werkt",
@@ -410,7 +410,7 @@
       },
       "sharing": {
         "heading": "Wanneer je een bord deelt",
-        "body": "Delen is het enige geval waarbij gegevens je apparaat verlaten — en alleen omdat jij daarom vraagt. Wanneer je een deellink aanmaakt, worden de bordgegevens geüpload naar onze hosting (Cloudflare KV) en een voorbeeldafbeelding naar opslag (Cloudflare R2), alleen bereikbaar via de geheime deellink, en na ongeveer 30 dagen automatisch verwijderd. Er wordt niets geüpload tenzij je uitdrukkelijk een deellink aanmaakt, en je privéborden worden nooit geüpload. Je kunt een bord ook exporteren als PNG, wat volledig in je browser wordt gegenereerd."
+        "body": "Delen is het geval waarbij gegevens je apparaat verlaten — en alleen omdat jij dat kiest. Wanneer je een deellink aanmaakt, worden de bordgegevens (alleen de kaarten die je kiest te delen, zonder persoonsgegevens want er zijn geen accounts) geüpload naar onze hosting (Cloudflare KV), samen met een voorbeeldafbeelding (Cloudflare R2), zodat degene aan wie je de link stuurt het bord kan openen. Het is alleen bereikbaar via de geheime deellink en wordt na ongeveer 30 dagen automatisch verwijderd, zodat er niets achterblijft. Er wordt niets geüpload tenzij je een deellink aanmaakt, en je privéborden worden nooit geüpload. Je kunt een bord ook exporteren als PNG, volledig gegenereerd in je browser."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",
