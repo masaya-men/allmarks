@@ -60,6 +60,12 @@ export function SiteFooter(): React.ReactElement {
             <br />
             No accounts. No tracking.
           </p>
+          {/* Persistent board CTA for the final scrolled state (after the
+              sticky finale curtain has scrolled away). */}
+          <Link href="/board" className={styles.footerCta}>
+            Open Board
+            <span className={styles.footerCtaArrow} aria-hidden="true">→</span>
+          </Link>
         </div>
 
         {/* Nav columns */}

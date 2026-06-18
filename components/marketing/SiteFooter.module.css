@@ -160,6 +160,46 @@
   color: rgba(240, 239, 233, 0.35);
 }
 
+/* Persistent "Open Board" CTA in the footer's final state — a compact white
+   pill, smaller than the finale curtain button, anchored in the brand column
+   so a board entry is always present once the curtain has scrolled away. */
+.footerCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  align-self: flex-start;
+  margin-top: 8px;
+  height: 48px;
+  padding: 0 26px;
+  border-radius: 999px;
+  background: #f0efe9;
+  color: #14130f;
+  font-family: var(--lp-sans, system-ui, sans-serif);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.footerCta:hover {
+  transform: translateY(-2px);
+  background: var(--lp-accent, #28f100);
+  color: #0a0a0a;
+}
+
+.footerCtaArrow {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.footerCta:hover .footerCtaArrow {
+  transform: translateX(5px);
+}
+
 /* ── Three-column nav grid ── */
 .columns {
   display: grid;
