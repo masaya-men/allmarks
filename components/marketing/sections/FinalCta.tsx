@@ -51,29 +51,53 @@ export function FinalCta(): React.ReactElement {
     const overlay = overlayRef.current
     if (!section || !overlay) return
 
+    // Collect [data-cta-rise] elements within this section.
+    const ctaRiseEls = section.querySelectorAll<HTMLElement>('[data-cta-rise]')
+
     const mm = gsap.matchMedia()
 
-    // Reduced-motion: lock the overlay at full opacity (black) immediately.
-    // Combined with useReveal's reduced-motion branch (opacity:1 on data-reveal),
-    // the section renders as a solid black panel with legible light text.
+    // Reduced-motion: lock the overlay at full opacity (black) immediately
+    // and make CTA elements fully visible — no animation, no hidden state.
     mm.add('(prefers-reduced-motion: reduce)', () => {
       gsap.set(overlay, { opacity: 1 })
+      if (ctaRiseEls.length > 0) {
+        gsap.set(ctaRiseEls, { y: 0, opacity: 1 })
+      }
     })
 
-    // Normal motion: scrub the overlay opacity from 0 to 1 as the user
-    // scrolls from the TOP of the section to the centre of the viewport.
-    // The background-color tween is on a separate non-layout layer (opacity
-    // only) so no layout is triggered.
+    // Normal motion (PC + reduced-motion: no-preference handled by matchMedia
+    // caller; this branch fires for any no-preference environment including
+    // mobile — the mobile CTA is still functional, just animated).
+    // Scrub phase 1 (0→50%): overlay opacity 0 → 1 (white → black transition).
+    // Scrub phase 2 (50→100%): CTA elements rise y:40→0, opacity:0→1.
+    // Both driven by a single scrubbed GSAP timeline so they share one
+    // ScrollTrigger instance.
     mm.add('(prefers-reduced-motion: no-preference)', () => {
+      const tl = gsap.timeline()
+
+      // Phase 1: black overlay fades in (full timeline duration)
+      tl.fromTo(overlay, { opacity: 0 }, { opacity: 1, ease: 'none' })
+
+      // Phase 2: CTA rises during the second half of the scrub (offset 0.5 on
+      // the timeline = 50% scrub progress). If there are no [data-cta-rise]
+      // elements this tween is a harmless no-op.
+      if (ctaRiseEls.length > 0) {
+        tl.fromTo(
+          ctaRiseEls,
+          { y: 40, opacity: 0 },
+          { y: 0, opacity: 1, ease: 'power2.out', stagger: 0.1 },
+          0.5, // start this tween at 50% into the timeline
+        )
+      }
+
       const st = ScrollTrigger.create({
         trigger: section,
         start: 'top bottom',   // overlay starts fading in as section enters viewport
-        end: 'center center',  // fully black once centre of section hits centre of viewport
-        onUpdate: (self) => {
-          gsap.set(overlay, { opacity: self.progress })
-        },
+        end: 'center center',  // fully settled once centre of section hits viewport centre
+        scrub: true,
+        animation: tl,
       })
-      return () => st.kill()
+      return () => { st.kill(); tl.kill() }
     })
 
     return () => mm.revert()
@@ -95,11 +119,11 @@ export function FinalCta(): React.ReactElement {
           {/* Small accent line above the headline — green --lp-accent rule */}
           <span className={styles.rule} aria-hidden="true" />
 
-          <h2 className={styles.headline} data-reveal>
+          <h2 className={styles.headline} data-cta-rise>
             {t('landing.cta.headline')}
           </h2>
 
-          <Link href="/board" className={styles.button} data-reveal>
+          <Link href="/board" className={styles.button} data-cta-rise>
             {t('landing.cta.button')}
             <span className={styles.arrow} aria-hidden="true">→</span>
           </Link>

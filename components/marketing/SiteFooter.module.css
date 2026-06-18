@@ -8,14 +8,102 @@
   background: #0a0a0a;
   color: #f0efe9;
   font-family: var(--lp-sans, system-ui, sans-serif);
-  padding: 80px 40px 48px;
+  /* No top padding — the finale curtain provides the visual buffer */
+  padding: 0 40px 48px;
   box-sizing: border-box;
+}
+
+/* ── Footer Finale Curtain ───────────────────────────────────────────────────
+   Full-screen #0a0a0a panel shown BEFORE the nav. On PC + no-preference motion
+   GSAP pins this for one viewport-height of scroll then fades it to opacity:0.
+   On reduced-motion or non-PC it renders statically as a compact CTA block.
+
+   Visibility MUST NOT depend on animation — opacity:1 by default so the
+   Open Board button is always accessible before JS runs or if GSAP fails.    */
+.finale {
+  width: 100%;
+  /* Full viewport height on PC; auto (content-height) on small screens */
+  min-height: 100vh;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* z-index token — below SiteHeader(100) so header stays on top during pin */
+  z-index: var(--lp-z-footer-finale, 50);
+  /* Ensure the curtain is a stacking context for the z-index to take effect */
+  position: relative;
+}
+
+.finaleInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+/* Large Open Board button — the climax CTA */
+.finaleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  /* Tall, generous pill — prominent hero CTA */
+  height: clamp(64px, 7vw, 96px);
+  padding: 0 clamp(40px, 5vw, 72px);
+  border-radius: 999px;
+  /* White button on black — maximum contrast */
+  background: #f0efe9;
+  color: #14130f;
+  font-family: var(--lp-sans, system-ui, sans-serif);
+  font-size: clamp(20px, 2.5vw, 32px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s ease,
+    color 0.3s ease;
+  /* Minimum 32×32 click target (always satisfied by the height above) */
+  min-width: 200px;
+  justify-content: center;
+}
+
+.finaleButton:hover {
+  transform: translateY(-3px);
+  background: var(--lp-accent, #28f100);
+  color: #0a0a0a;
+}
+
+.finaleArrow {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.finaleButton:hover .finaleArrow {
+  transform: translateX(6px);
+}
+
+/* Reduced-motion: show curtain as compact static block, not full-screen */
+@media (prefers-reduced-motion: reduce) {
+  .finale {
+    min-height: auto;
+    padding: 60px 40px;
+  }
+}
+
+/* Non-PC (below 1024px): static compact block regardless of motion */
+@media (max-width: 1023px) {
+  .finale {
+    min-height: auto;
+    padding: 60px 24px;
+  }
 }
 
 /* ── Main row: brand + 3 nav columns ── */
 .inner {
   max-width: var(--lp-maxw, 1489px);
   margin: 0 auto;
+  /* Restore the original top spacing that .footer padding used to provide */
+  padding-top: 80px;
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 80px;

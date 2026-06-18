@@ -175,9 +175,9 @@
 }
 
 /* ── Reduced motion ─────────────────────────────────────────────────────────
-   Skip all GSAP scrub/reveal animation. Show the section as already-black
+   Skip all GSAP scrub/rise animation. Show the section as already-black
    with fully legible text. The overlay starts opacity:1 via useEffect's
-   matchMedia branch; here we also force data-reveal items to opacity:1
+   matchMedia branch; here we also force [data-cta-rise] items to opacity:1
    so the text is never hidden if JS runs slowly or matchMedia fires after
    first paint. */
 @media (prefers-reduced-motion: reduce) {
