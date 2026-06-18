@@ -186,6 +186,51 @@
     }
   },
   "pages": {
+    "features": {
+      "meta": {
+        "title": "Features",
+        "description": "Save anything from the web and lay it out as a visual board. Inline playback, tags, instant sharing — all private, all in your browser."
+      },
+      "hero": {
+        "kicker": "Features",
+        "title": "Everything you save, made to look at.",
+        "lead": "AllMarks keeps the things you love from across the web on one living, visual board — not a list you never open again."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Save three ways",
+        "body": "Paste a URL straight onto your board — that's the main way. Prefer one click? Use the bookmarklet that works in any browser, or the Chrome extension for one-tap saving from any page."
+      },
+      "board": {
+        "num": "02",
+        "heading": "A board you arrange",
+        "body": "Cards sit on a clean grid — never tilted. Resize any card freely, or pick a density preset from DENSE to AMBIENT. Switch each card between visual, editorial, and native looks. Tag freely; tags sort alphabetically, or drag them into your own order."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "A board that comes alive",
+        "body": "As you browse, the video in focus plays for real while the others shimmer through still frames — so the board feels alive without ever turning into chaos. One switch, MOTION, calms it all to stillness whenever you want."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Share in a link",
+        "body": "Turn any board into a short link with a ready-made preview image for social. Or export it as a PNG and post it to X. Shared boards live on a link, not in an account."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Private by default",
+        "body": "Your bookmarks live in your browser, never on our servers. No account, no sign-up, no tracking cookies. It's free, and it stays yours."
+      },
+      "sites": {
+        "heading": "Where it works",
+        "body": "Posts from X, YouTube (including Shorts), TikTok, Vimeo, and SoundCloud play right on your board. Anything else is saved with a clean thumbnail.",
+        "note": "Instagram can't be embedded by anyone outside Instagram, so those saves open the original page instead — we'd rather be honest than fake it."
+      },
+      "cta": {
+        "heading": "Start your board.",
+        "button": "Open Board"
+      }
+    },
     "about": {
       "meta": {
         "title": "About",
