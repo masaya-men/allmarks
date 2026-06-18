@@ -184,5 +184,34 @@
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
       "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "About",
+        "description": "AllMarks turns your bookmarks into a visual collage. Private by design — your data stays in your browser. Free, no account."
+      },
+      "hero": {
+        "kicker": "About",
+        "title": "Bookmarks, made to be seen.",
+        "lead": "AllMarks is a place to keep the things you love from across the web — and actually enjoy looking at them."
+      },
+      "philosophy": {
+        "heading": "Express, don't file",
+        "body": "Most bookmarks vanish into a list you never open again. AllMarks treats them as something to arrange, revisit, and share — a visual board, not a folder."
+      },
+      "privacy": {
+        "heading": "Private by design",
+        "body": "Your bookmarks live in your browser, not on our servers. No account, no tracking, no sign-up. It's free, and it stays yours."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "AllMarks is open source. Anyone can read the code and confirm that nothing is sent anywhere it shouldn't be."
+      },
+      "cta": {
+        "heading": "Start your board.",
+        "button": "Open Board"
+      }
+    }
   }
 }
