@@ -10,15 +10,14 @@ import styles from './SiteFooter.module.css'
  * Background: #0a0a0a (same as the FinalCta overlay end-state).
  * Text: off-white #f0efe9 / muted rgba variant.
  *
- * Footer Finale curtain:
- * A full-viewport #0a0a0a panel with a large "Open Board →" button. On PC it is
- * `position: sticky; top: 0` with a z-index above the fixed header, so as the
- * user scrolls into the footer the curtain sticks to the viewport — the whole
- * screen goes black with the CTA — and then scrolls away to reveal the nav as
- * you keep going. Pure CSS sticky (no GSAP pin) keeps this robust. On non-PC /
- * reduced-motion it renders as a compact static CTA block (no full-screen
- * takeover). The Open Board button is always visible and clickable — visibility
- * never depends on animation.
+ * Footer Finale — the closing CTA:
+ * A full-viewport #0a0a0a panel with a large "Open Board →" button, placed AFTER
+ * the nav as the very last thing on the page. On PC it is `position: relative`
+ * with a z-index above the fixed header, so once you reach the bottom the whole
+ * screen — header included — is black and the page closes on the CTA. Pure CSS
+ * (no GSAP) keeps it robust. On non-PC / reduced-motion it renders as a compact
+ * static CTA block (no full-screen takeover). The Open Board button is always
+ * visible and clickable — visibility never depends on animation.
  *
  * Nav labels sourced from useI18n() landing.footer.* keys — correctly shows
  * English when the LP runs without an I18nProvider (FALLBACK is English).
