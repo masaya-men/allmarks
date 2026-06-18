@@ -146,8 +146,11 @@
 .visual {
   flex: 1 1 400px;
   min-width: 0;
-  /* revealed by useReveal */
-  opacity: 0;
+  /* NOTE: opacity is 1 by default — data-reveal was removed from this element.
+     The board-assembly animation (GSAP, PC + no-preference only) sets opacity/
+     transform initial values via gsap.set() inside the matchMedia block.
+     SSR, mobile, and reduced-motion always see the frame fully visible. */
+  opacity: 1;
   /* centre the frame in this column */
   display: flex;
   justify-content: center;
