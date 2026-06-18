@@ -27,3 +27,18 @@ describe('sitemap', () => {
     expect(aboutUrls).toHaveLength(15)
   })
 })
+
+describe('sitemap 集客4ページ', () => {
+  const urls = sitemap().map((e) => e.url)
+  for (const page of ['features', 'guide', 'faq', 'extension'] as const) {
+    it(`${page} は英語フラットを含む`, () => {
+      expect(urls).toContain(`${SITE_URL}/${page}`)
+    })
+    it(`${page} は日本語版を含む`, () => {
+      expect(urls).toContain(`${SITE_URL}/ja/${page}`)
+    })
+    it(`${page} は15言語ぶん存在する`, () => {
+      expect(urls.filter((u) => u.endsWith(`/${page}`))).toHaveLength(15)
+    })
+  }
+})

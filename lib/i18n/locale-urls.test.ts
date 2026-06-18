@@ -51,8 +51,8 @@ describe('navHref', () => {
   it('ja + about → /ja/about', () => {
     expect(navHref('ja', 'about')).toBe('/ja/about')
   })
-  it('ja + features → /features (flat, not localized yet)', () => {
-    expect(navHref('ja', 'features')).toBe('/features')
+  it('ja + features → /ja/features (localized in Phase B)', () => {
+    expect(navHref('ja', 'features')).toBe('/ja/features')
   })
   it('en + about → /about (flat for en)', () => {
     expect(navHref('en', 'about')).toBe('/about')
