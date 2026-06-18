@@ -15,4 +15,15 @@ describe('lpMetadata', () => {
     expect(m.description).not.toBe(lpMetadata('en').description)
     expect(typeof m.description).toBe('string')
   })
+  it('英語タイトルは AllMarks — Bookmark × Collage を維持', () => {
+    const m = lpMetadata('en')
+    expect(m.title).toEqual({ absolute: 'AllMarks — Bookmark × Collage' })
+  })
+  it('日本語タイトルは AllMarks — {日本語見出し}(英語と異なる・og と一致)', () => {
+    const m = lpMetadata('ja')
+    const t = m.title as { absolute: string }
+    expect(t.absolute.startsWith('AllMarks — ')).toBe(true)
+    expect(t.absolute).not.toBe('AllMarks — Bookmark × Collage')
+    expect((m.openGraph as { title?: string }).title).toBe(t.absolute)
+  })
 })
