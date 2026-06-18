@@ -544,7 +544,7 @@
       },
       "storage": {
         "heading": "Onde os dados são armazenados",
-        "body": "Os favoritos salvos ficam apenas no banco de dados local do seu navegador na origem allmarks.app. As configurações da extensão (como as opções do botão flutuante e da pílula de cursor) são salvas com chrome.storage.sync; se a sincronização do Chrome estiver ativada, elas poderão sincronizar entre seus navegadores Chrome pela infraestrutura do Google — nós nunca as vemos. Uma lista local das URLs que você já salvou é mantida com chrome.storage.local para que o botão de salvar possa exibir o estado \"já salvo\" (savedUrlsMirror); ela permanece no seu dispositivo. Não há conta, servidor nem banco de dados do nosso lado que armazene seus favoritos."
+        "body": "Os favoritos salvos ficam apenas no banco de dados local do seu navegador na origem allmarks.app. As configurações da extensão (como as opções do botão flutuante e da pílula de cursor) são salvas com chrome.storage.sync; se a sincronização do Chrome estiver ativada, elas poderão sincronizar entre seus navegadores Chrome pela infraestrutura do Google — nós nunca as vemos. Uma lista local das URLs que você já salvou é mantida com chrome.storage.local para que o botão de salvar possa exibir o estado \"já salvo\"; ela permanece no seu dispositivo. Não há conta, servidor nem banco de dados do nosso lado que armazene seus favoritos."
       },
       "bridge": {
         "heading": "Como o salvamento chega ao aplicativo",
