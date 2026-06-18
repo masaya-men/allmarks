@@ -21,15 +21,16 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 109 — LP 多言語化(層②)第1段 Task 1〜10 完了・本番反映済・master マージ待ち)
+### 直近の状態 (セッション 109 — LP 多言語化(層②)第1段 + LP スクロール演出 + F-1 + コピー調整、全完了・本番反映済・master マージ済)
 
-**ブランチ `feat/lp-i18n-layer2-phase1` で Task 1〜10 全完了。サブエージェント駆動(各タスク2段レビュー緑 + 通し最終レビュー opus=READY TO MERGE)。本番 `allmarks.app` 反映済。残り = ユーザーのブラウザ実機確認 + master マージ + F-1 タイトル多言語化の小フォロー。**
+**ブランチ `feat/lp-i18n-layer2-phase1` で 3 本立てを完走し master へマージ。すべて本番 `allmarks.app` 反映済・ユーザー実機承認済。**
 
-- **目的**: トップLP を15言語の言語別URL(`/`=英語 + `/ja` `/zh`…14言語)で静的に作り置きし、検索集客(hreflang/canonical/言語別sitemap)+ ヘッダー言語切替 + 母国語案内バーを実装。紹介ページ群は**第2段**に分離(中身が古く新デザイン未適用のため)。
-- **完了 Task 1〜10**: ①13言語へ `landing.*` 翻訳+パリティテスト ②`locale-urls` 純粋関数 ③`STATIC_MESSAGES`(server専用) ④`LandingPage` に locale prop + `<html lang>` ⑤英語トップ `/` を provider 化 + `lp-metadata`(hreflang等)+ root layout lang ja→en ⑥`app/[locale]/page.tsx` で14言語 prerender ⑦ヘッダー `LanguageMenu`(endonym・URL移動)⑧母国語案内バー `LocaleSuggestBanner`(z-token 105 でヘッダー上)⑨言語別 sitemap(15言語)⑩通し検証+本番デプロイ。検証: tsc 0 / vitest 1110 pass / build 38ルート / 本番で `/` `/ja` `/zh` `/board`=200・`/ja` に hreflang16+canonical=/ja+日本語焼き込み確認。
-- **学び**: **Next.js は dynamic route の `params` が Promise** → `app/[locale]` は async+await 必須。`tsc <file>` 直叩きは stray `.js` を吐くので `rtk tsc`(noEmit)。静的出力は flat file(`out/ja.html`)・Next は属性を `hrefLang`(キャメル)で出力(grep は大小区別注意)。
-- **残り**: ①ユーザーがブラウザで言語メニュー切替・案内バー表示を実機確認 ②master マージ ③**F-1 フォロー**: 言語別LPの `<title>`/`og:title` が現状英語固定(description のみローカライズ)→ `landing.hero.headline` 流用で多言語化したい(英語トップのタイトル文言含めユーザー承認待ち)。
-- 設計 `docs/superpowers/specs/2026-06-18-lp-i18n-layer2-design.md` / 計画 `docs/superpowers/plans/2026-06-18-lp-i18n-layer2-phase1.md`。
+- **(A) LP 多言語化(層②)第1段 Task 1〜10**: 15言語の言語別URL(`/`=英語+`/ja`…14言語)を静的prerender、hreflang/canonical/言語別sitemap、ヘッダー言語切替 `LanguageMenu`、母国語案内バー `LocaleSuggestBanner`。opus 最終レビュー=READY。
+- **(B) LP スクロール演出 Task 1〜9**(PC幅1024px+ no-preference のみ、reduced-motion/非PC は静的): Lenis↔ScrollTrigger 配線、**Features 横スクロールジャック**(pin+scrub・5パネル別小アニメ・音波プログレスバー)、Hero 入場、Problem 横ワイプ、ShareIt 組み上がり、FinalCta 白→黒+CTA浮上、**フッター全黒フィナーレ**(締めの大 Open Board・nav→©→黒画面の順、CSS relative+z120 でヘッダーも覆う)。設計 `specs/2026-06-18-lp-scroll-choreography-design.md` / 計画 `plans/2026-06-18-lp-scroll-choreography.md`。opus 最終レビュー=READY。
+- **(C) F-1 + コピー**: 言語別LPタイトルを `AllMarks — {その言語の見出し}`(英語は `AllMarks — Bookmark × Collage` 維持)。problem.body / capture.title / capture.body を全15言語で「URL貼り付けが主役・拡張機能は補助」の新メッセージに更新。
+- **検証**: tsc 0 / vitest 1117 pass / build 38ルート。
+- **学び**: Next の dynamic route `params` は Promise(async+await 必須)。`tsc <file>` 直叩き禁止→`rtk tsc`。静的出力は flat file(`out/ja.html`)・属性は `hrefLang`(キャメル)。**可視性をアニメに依存させない**(CSS既定=可視、非表示初期値は matchMedia 内 gsap.set + clearProps のみ)を全セクションで徹底。**GSAP pin は absolute 要素に使うと壊れる**→ フッターは CSS `position` で実装。
+- **次の小フォロー(非ブロッキング)**: LP の z-index トークン統一(`Features.module.css` の literal `z-index:1/2`、`SiteHeader.module.css` の `z-index:100`)、Hero の `useReveal`+入場timeline 二重作用の掃除(`data-entrance-done` 死にコメント)、GSAP import の静的/動的混在統一。見た目調整セッションでまとめて回収。
 
 ---
 
