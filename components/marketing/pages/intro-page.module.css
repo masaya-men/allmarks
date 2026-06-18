@@ -1,0 +1,276 @@
+/* intro-page.module.css
+   集客紹介ページ(features/guide/faq/extension)共有の編集グラマー。
+   About の AllMarks LP グラマーを一般化: 白 off-white 地、ink 文字、Fraunces 見出し
+   (weight 300, tight tracking)、Geist body、緑アクセント(--lp-accent)1点。
+   グリッド整列・傾け/回転なし。px ベース clamp() で dev desktop サイズに上限。
+
+   可視性はアニメ非依存: 全要素 opacity:1 が既定。.root [data-reveal] のみ
+   matchMedia(no-preference + 1024px)内で opacity:0 にし useReveal が fade。
+   reduced-motion / narrow / SSR では opacity:1 を強制(useReveal Task 1 と対称)。 */
+
+.root {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(72px, 12vw, 132px) 40px clamp(40px, 8vw, 96px);
+  box-sizing: border-box;
+}
+
+/* Hero */
+.hero { margin-bottom: clamp(56px, 10vw, 116px); }
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 28px;
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+}
+
+.kickerDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(38px, 6.6vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+.lead {
+  max-width: 34ch;
+  margin: clamp(24px, 3.6vw, 38px) 0 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(20px, 2.6vw, 28px);
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  color: var(--lp-ink-soft);
+  text-wrap: pretty;
+}
+
+/* Numbered editorial sections */
+.sections { border-top: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent); }
+
+.section {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: clamp(20px, 4vw, 56px);
+  padding: clamp(36px, 6vw, 64px) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
+}
+
+.sectionIndex {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 4px;
+}
+
+.sectionNum {
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(26px, 3.4vw, 38px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.sectionTick {
+  display: block;
+  width: 28px;
+  height: 3px;
+  margin-top: 16px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+}
+
+.sectionBody { min-width: 0; }
+
+.heading {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(24px, 3.2vw, 34px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+.body {
+  max-width: 62ch;
+  margin: clamp(14px, 1.6vw, 20px) 0 0;
+  font-family: var(--lp-sans);
+  font-size: clamp(16px, 1.4vw, 18px);
+  line-height: 1.72;
+  letter-spacing: -0.005em;
+  color: var(--lp-ink-soft);
+  text-wrap: pretty;
+}
+
+/* 誠実な制約開示など、本文に添える控えめな注記 */
+.note {
+  max-width: 62ch;
+  margin: clamp(12px, 1.4vw, 16px) 0 0;
+  font-family: var(--lp-sans);
+  font-size: clamp(14px, 1.2vw, 15px);
+  line-height: 1.66;
+  color: color-mix(in srgb, var(--lp-ink-soft) 78%, transparent);
+}
+
+.link {
+  color: var(--lp-ink);
+  text-decoration: none;
+  background-image: linear-gradient(var(--lp-ink), var(--lp-ink));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 1px;
+  padding-bottom: 1px;
+  transition: background-size 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.link:hover { background-image: linear-gradient(var(--lp-accent), var(--lp-accent)); }
+
+/* Q&A (FAQ) */
+.qaList { border-top: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent); }
+
+.qa {
+  padding: clamp(28px, 4.4vw, 44px) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
+}
+
+.qaQ {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(20px, 2.6vw, 27px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+.qaA {
+  max-width: 64ch;
+  margin: clamp(12px, 1.4vw, 16px) 0 0;
+  font-family: var(--lp-sans);
+  font-size: clamp(16px, 1.4vw, 18px);
+  line-height: 1.72;
+  color: var(--lp-ink-soft);
+  text-wrap: pretty;
+}
+
+/* 状態バナー(Extension ストア準備中) */
+.banner {
+  margin: 0 0 clamp(40px, 7vw, 72px);
+  padding: clamp(22px, 3vw, 30px) clamp(24px, 3.2vw, 34px);
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 14%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--lp-accent) 7%, transparent);
+}
+
+.bannerHeading {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 10px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-ink);
+}
+
+.bannerBody {
+  margin: 0;
+  max-width: 60ch;
+  font-family: var(--lp-sans);
+  font-size: clamp(15px, 1.3vw, 17px);
+  line-height: 1.66;
+  color: var(--lp-ink-soft);
+}
+
+/* Closing CTA(About と同じ静かな ghost link) */
+.cta { margin-top: clamp(72px, 12vw, 132px); text-align: center; }
+
+.ctaRule {
+  display: inline-block;
+  width: 40px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+  margin-bottom: clamp(28px, 4vw, 40px);
+}
+
+.ctaHeading {
+  margin: 0 0 clamp(22px, 3vw, 32px);
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(28px, 4.4vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+.ctaLink {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--lp-sans);
+  font-size: clamp(16px, 1.6vw, 18px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  color: var(--lp-ink);
+  background-image: linear-gradient(var(--lp-ink), var(--lp-ink));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 1px;
+  padding-bottom: 2px;
+  transition: background-size 0.45s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+}
+.ctaLink:hover {
+  color: color-mix(in srgb, var(--lp-ink) 86%, var(--lp-accent));
+  background-image: linear-gradient(var(--lp-accent), var(--lp-accent));
+}
+
+.ctaArrow { display: inline-block; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.ctaLink:hover .ctaArrow { transform: translate(3px, -3px); }
+
+/* Reveal 初期状態(scoped、PC のみ。useReveal Task 1 と対称) */
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+  .root [data-reveal] { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .root [data-reveal] { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .root { padding: clamp(56px, 16vw, 96px) 24px 56px; }
+  .hero { margin-bottom: clamp(44px, 13vw, 88px); }
+  .section { grid-template-columns: 1fr; gap: 18px; }
+  .sectionIndex { flex-direction: row; align-items: center; gap: 14px; padding-top: 0; }
+  .sectionTick { margin-top: 0; }
+}
+@media (max-width: 420px) {
+  .root { padding: 64px 20px 48px; }
+}
