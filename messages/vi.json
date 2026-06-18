@@ -169,5 +169,34 @@
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
       "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "Giới thiệu",
+        "description": "AllMarks biến dấu trang của bạn thành một bộ sưu tập hình ảnh. Được thiết kế riêng tư — dữ liệu lưu trong trình duyệt. Miễn phí, không cần tài khoản."
+      },
+      "hero": {
+        "kicker": "Giới thiệu",
+        "title": "Dấu trang, để được nhìn ngắm.",
+        "lead": "AllMarks là nơi lưu giữ những điều bạn yêu thích từ khắp nơi trên web — và thực sự thích thú khi nhìn lại chúng."
+      },
+      "philosophy": {
+        "heading": "Thể hiện, không chỉ lưu trữ",
+        "body": "Hầu hết dấu trang biến mất vào một danh sách chẳng ai mở lại. AllMarks coi chúng như thứ để sắp xếp, khám phá lại và chia sẻ — một bảng hình ảnh, không phải thư mục."
+      },
+      "privacy": {
+        "heading": "Riêng tư theo thiết kế",
+        "body": "Dấu trang của bạn sống trong trình duyệt, không phải trên máy chủ của chúng tôi. Không tài khoản, không theo dõi, không đăng ký. Miễn phí, và mãi là của bạn."
+      },
+      "openSource": {
+        "heading": "Mã nguồn mở",
+        "body": "AllMarks là mã nguồn mở. Bất kỳ ai cũng có thể đọc code và xác nhận rằng không có gì bị gửi đến nơi không nên."
+      },
+      "cta": {
+        "heading": "Bắt đầu bảng của bạn.",
+        "button": "Open Board"
+      }
+    }
   }
 }

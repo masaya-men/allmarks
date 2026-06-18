@@ -174,5 +174,34 @@
       "terms": "Terms",
       "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "Acerca de",
+        "description": "AllMarks convierte tus marcadores en un collage visual. Privacidad por diseño — tus datos se quedan en tu navegador. Gratis, sin cuenta."
+      },
+      "hero": {
+        "kicker": "Acerca de",
+        "title": "Marcadores hechos para verse.",
+        "lead": "AllMarks es un lugar para guardar lo que amas de la web — y disfrutar de verdad al verlo."
+      },
+      "philosophy": {
+        "heading": "Expresa, no archives",
+        "body": "La mayoría de los marcadores desaparecen en una lista que nunca vuelves a abrir. AllMarks los trata como algo para organizar, revisitar y compartir — un tablero visual, no una carpeta."
+      },
+      "privacy": {
+        "heading": "Privacidad por diseño",
+        "body": "Tus marcadores viven en tu navegador, no en nuestros servidores. Sin cuenta, sin rastreo, sin registro. Es gratis, y sigue siendo tuyo."
+      },
+      "openSource": {
+        "heading": "Código abierto",
+        "body": "AllMarks es de código abierto. Cualquiera puede leer el código y confirmar que nada se envía a donde no debe."
+      },
+      "cta": {
+        "heading": "Empieza tu tablero.",
+        "button": "Open Board"
+      }
+    }
   }
 }

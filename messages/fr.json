@@ -174,5 +174,34 @@
       "terms": "Terms",
       "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "À propos",
+        "description": "AllMarks transforme vos favoris en collage visuel. Confidentialité by design — vos données restent dans votre navigateur. Gratuit, sans compte."
+      },
+      "hero": {
+        "kicker": "À propos",
+        "title": "Des favoris faits pour être vus.",
+        "lead": "AllMarks est un endroit pour garder ce que vous aimez sur le web — et prendre vraiment plaisir à le regarder."
+      },
+      "philosophy": {
+        "heading": "Exprimez, ne classez pas",
+        "body": "La plupart des favoris disparaissent dans une liste que vous ne rouvrez jamais. AllMarks les traite comme quelque chose à arranger, revisiter et partager — un tableau visuel, pas un dossier."
+      },
+      "privacy": {
+        "heading": "Confidentialité by design",
+        "body": "Vos favoris vivent dans votre navigateur, pas sur nos serveurs. Pas de compte, pas de suivi, pas d'inscription. C'est gratuit, et ça reste à vous."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "AllMarks est open source. N'importe qui peut lire le code et confirmer que rien n'est envoyé là où ça ne devrait pas l'être."
+      },
+      "cta": {
+        "heading": "Démarrez votre tableau.",
+        "button": "Open Board"
+      }
+    }
   }
 }

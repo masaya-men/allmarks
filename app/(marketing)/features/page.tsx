@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { LegacyMarketingChrome } from '@/components/marketing/LegacyMarketingChrome'
 
 export const metadata: Metadata = {
   title: 'Features',
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function FeaturesPage(): React.ReactElement {
   return (
-    <>
+    <LegacyMarketingChrome>
       <h1>Features</h1>
       <p className="updated">AllMarks でできること</p>
 
@@ -123,6 +124,6 @@ export default function FeaturesPage(): React.ReactElement {
         登録不要で無料です。<Link href="/board">Board を開く</Link> から始められます。
         使い方は <Link href="/guide">Guide</Link> を参照してください。
       </p>
-    </>
+    </LegacyMarketingChrome>
   )
 }

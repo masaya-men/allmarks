@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { LegacyMarketingChrome } from '@/components/marketing/LegacyMarketingChrome'
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage(): React.ReactElement {
   return (
-    <>
+    <LegacyMarketingChrome>
       <h1>Terms of Service</h1>
       <p className="updated">Last updated: April 14, 2026</p>
 
@@ -85,6 +86,6 @@ export default function TermsPage(): React.ReactElement {
         If you have questions about these terms, please visit
         our <a href="/contact">Contact page</a>.
       </p>
-    </>
+    </LegacyMarketingChrome>
   )
 }

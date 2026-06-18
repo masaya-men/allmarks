@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { LegacyMarketingChrome } from '@/components/marketing/LegacyMarketingChrome'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage(): React.ReactElement {
   return (
-    <>
+    <LegacyMarketingChrome>
       <h1>Privacy Policy</h1>
       <p className="updated">Last updated: April 14, 2026</p>
 
@@ -97,6 +98,6 @@ export default function PrivacyPage(): React.ReactElement {
         If you have questions about this privacy policy, please visit
         our <a href="/contact">Contact page</a>.
       </p>
-    </>
+    </LegacyMarketingChrome>
   )
 }

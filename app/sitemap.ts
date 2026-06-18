@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { SITE_URL as PRODUCTION_URL } from '@/lib/constants'
 import { PREFIXED_LOCALES, localePath } from '@/lib/i18n/locale-urls'
+import { SUPPORTED_LOCALES } from '@/lib/i18n/config'
 
 export const dynamic = 'force-static'
 
@@ -17,7 +18,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/board', priority: 0.9, changeFrequency: 'weekly' },
     { path: '/features', priority: 0.8, changeFrequency: 'monthly' },
     { path: '/guide', priority: 0.8, changeFrequency: 'monthly' },
-    { path: '/about', priority: 0.7, changeFrequency: 'monthly' },
+    // About(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'about'),
+      priority: 0.7,
+      changeFrequency: 'monthly' as const,
+    })),
     { path: '/faq', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/contact', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/privacy', priority: 0.5, changeFrequency: 'monthly' },

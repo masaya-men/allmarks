@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { LegacyMarketingChrome } from '@/components/marketing/LegacyMarketingChrome'
 
 export const metadata: Metadata = {
   title: 'FAQ',
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function FaqPage(): React.ReactElement {
   return (
-    <>
+    <LegacyMarketingChrome>
       <h1>FAQ</h1>
       <p className="updated">よくある質問</p>
 
@@ -91,6 +92,6 @@ export default function FaqPage(): React.ReactElement {
       <p>
         <a href="/contact">お問い合わせページ</a>からご連絡ください。
       </p>
-    </>
+    </LegacyMarketingChrome>
   )
 }

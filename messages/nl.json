@@ -169,5 +169,34 @@
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
       "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "Over ons",
+        "description": "AllMarks maakt van je bladwijzers een visuele collage. Privacy by design — je gegevens blijven in je browser. Gratis, geen account."
+      },
+      "hero": {
+        "kicker": "Over ons",
+        "title": "Bladwijzers, gemaakt om te zien.",
+        "lead": "AllMarks is een plek om de dingen te bewaren die je mooi vindt van het hele web — en er ook echt van te genieten."
+      },
+      "philosophy": {
+        "heading": "Uitdrukken, niet archiveren",
+        "body": "De meeste bladwijzers verdwijnen in een lijst die je nooit meer opent. AllMarks behandelt ze als iets om te rangschikken, opnieuw te bekijken en te delen — een visueel bord, geen map."
+      },
+      "privacy": {
+        "heading": "Privacy by design",
+        "body": "Je bladwijzers leven in je browser, niet op onze servers. Geen account, geen tracking, geen aanmelding. Het is gratis en blijft van jou."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "AllMarks is open source. Iedereen kan de code lezen en bevestigen dat er niets naartoe wordt gestuurd waar het niet hoort."
+      },
+      "cta": {
+        "heading": "Begin je bord.",
+        "button": "Open Board"
+      }
+    }
   }
 }

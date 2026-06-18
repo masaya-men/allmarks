@@ -60,7 +60,7 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
         <Features />
         <ShareIt />
         <FinalCta />
-        <SiteFooter />
+        <SiteFooter locale={locale} />
       </div>
     </div>
   )

@@ -184,5 +184,34 @@
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
       "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "About",
+        "description": "AllMarks はブックマークをビジュアルなコラージュにします。データはあなたのブラウザの中だけ。アカウント不要・無料。"
+      },
+      "hero": {
+        "kicker": "About",
+        "title": "ブックマークを、眺めて楽しいものに。",
+        "lead": "Web で見つけたお気に入りを集めて、ただのリストではなく「見て楽しい場所」にする — それが AllMarks です。"
+      },
+      "philosophy": {
+        "heading": "整理ではなく、表現",
+        "body": "ブックマークは二度と開かないリストに埋もれがち。AllMarks はそれを並べて・見返して・共有するもの = フォルダではなくビジュアルボードとして扱います。"
+      },
+      "privacy": {
+        "heading": "最初からプライベート",
+        "body": "ブックマークはサーバーではなくあなたのブラウザの中に保存されます。アカウントも追跡も登録も不要。無料で、ずっとあなたのものです。"
+      },
+      "openSource": {
+        "heading": "オープンソース",
+        "body": "AllMarks はオープンソースです。誰でもコードを読んで、データが余計な場所に送られていないことを確認できます。"
+      },
+      "cta": {
+        "heading": "あなたのボードを始めよう。",
+        "button": "Open Board"
+      }
+    }
   }
 }

@@ -169,5 +169,34 @@
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
       "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "关于",
+        "description": "AllMarks 将你的书签变成一幅视觉拼贴。隐私优先设计——数据留在你的浏览器中。免费，无需注册。"
+      },
+      "hero": {
+        "kicker": "关于",
+        "title": "书签，值得被看见。",
+        "lead": "AllMarks 是一个收藏你喜爱的网络内容的地方——并且真正享受欣赏它们的过程。"
+      },
+      "philosophy": {
+        "heading": "表达，而不是归档",
+        "body": "大多数书签消失在再也不打开的列表里。AllMarks 把它们当作可以排列、重访和分享的东西——是视觉画板，不是文件夹。"
+      },
+      "privacy": {
+        "heading": "隐私优先设计",
+        "body": "你的书签存在浏览器里，不在我们的服务器上。无需账户，没有追踪，无需注册。免费，永远属于你。"
+      },
+      "openSource": {
+        "heading": "开放源代码",
+        "body": "AllMarks 是开源项目。任何人都可以阅读代码，确认没有任何数据被发送到不该去的地方。"
+      },
+      "cta": {
+        "heading": "开始打造你的画板。",
+        "button": "Open Board"
+      }
+    }
   }
 }
