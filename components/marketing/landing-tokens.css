@@ -11,6 +11,7 @@
   /* ── Z-index scale ── */
   /* SiteHeader sits at z-index: 100 (literal in SiteHeader.module.css).
      The language menu dropdown must float above the header chrome. */
+  --lp-z-locale-banner: 105;   /* above header(100), below language menu(110) */
   --lp-z-language-menu: 110;
 
   /* Declare the LP an explicit LIGHT surface so browsers (Chrome Auto Dark

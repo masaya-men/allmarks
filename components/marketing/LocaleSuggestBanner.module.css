@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 60;                 /* ヘッダーより上 */
+  z-index: var(--lp-z-locale-banner); /* above header(100), below language menu(110) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,6 +26,7 @@
   background: transparent; border: none; color: #faf9f6;
   font-size: 18px; line-height: 1; cursor: pointer;
   min-width: 32px; min-height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 @media (prefers-reduced-motion: reduce) {
   .bar { animation: none; }

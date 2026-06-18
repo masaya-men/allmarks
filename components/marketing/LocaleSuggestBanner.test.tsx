@@ -32,4 +32,10 @@ describe('LocaleSuggestBanner', () => {
     expect(screen.queryByTestId('locale-suggest')).toBeNull()
     expect(window.localStorage.getItem('allmarks-locale')).toBe('ja')
   })
+  it('リンク(母国語で見る)をクリックすると localStorage に suggested locale が記録される', () => {
+    vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['ja-JP'])
+    render(<LocaleSuggestBanner current="en" />)
+    fireEvent.click(screen.getByRole('link'))
+    expect(window.localStorage.getItem('allmarks-locale')).toBe('ja')
+  })
 })
