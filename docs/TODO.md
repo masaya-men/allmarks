@@ -21,7 +21,23 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 110 — 紹介ページ群 全面作り直し+15言語化 フェーズA(土台 + About 縦切り) 完了・本番反映済・master マージ済)
+### 直近の状態 (セッション 111 — 紹介ページ群 フェーズB(集客: features/guide/faq/新設extension紹介) 完了・本番反映済・master マージ済)
+
+**ゴール「集客4ページを ①内容書き直し(現行プロダクト事実) ②編集デザイン統一 ③15言語化 ④nav言語化」を土台(フェーズA)に乗せて完走。** writing-plans→サブエージェント駆動(各タスク2段レビュー + 最終ブランチレビュー opus = READY TO MERGE)。
+
+- **コピーをコード事実に書き直し**(ユーザー承認): 再生=フォーカスで1本が実再生+他は静止画でゆらめく(`HERO_CAP=1`、「複数同時再生」は書かない)/サイズ=密度プリセット DENSE〜AMBIENT + 自由リサイズ(「1–5/S/M/L」廃止)/テーマ2種(「リキッドグラス」削除)/保存=URL貼付主役+ブックマークレット+拡張/共有=`/s/`+PNG+X/Instagram は埋め込み不可で正直にリンクアウト/ローカル完結。
+- **reveal 小残債回収**: `useReveal` の幅ゲートを `min-width:1024px` に揃え CSS と対称化(narrow PC のチラつき解消、LP/About にも好影響)。
+- **共有 CSS** `intro-page.module.css`(About の LP グラマーを一般化・DRY、可視性アニメ非依存の `[data-reveal]` ゲート同梱)。
+- **4ページ稼働**: `/features` `/guide` `/faq` `/extension`(新設)+ 各14言語 `/<locale>/...` が専用URLで稼働(hreflang16+自己canonical)。Extension は `EXTENSION_STORE_URL` 空の間「準備中・今はブックマークレットで」バナー、`/extension/privacy`(法務Legacy)と2階層共存。
+- **15言語化**: `pages.{features,guide,faq,extension}.*` を15言語キー完全一致(en/ja 人手 + 13言語並列サブエージェント + パリティ120テスト)。`cta.button`='Open Board' verbatim。
+- **nav 言語化**: `LOCALIZED_INTRO_SUBPATHS={about,features,guide,faq,extension}` に拡張 → ヘッダー/フッター nav が当該言語接頭辞付きに自動化(navHref)。sitemap も4ページ×15言語に拡張。Contact 等は Phase C まで意図的フラット。
+- **検証**: tsc 0 / vitest 1297 pass / build(各言語 HTML 焼き込み)/ 旧語(リキッドグラス/booklage/S/M/L/simultaneous)grep ゼロ。
+- **設計/計画**: `specs/2026-06-18-intro-pages-redesign-i18n-design.md`(全体9ページ) / `plans/2026-06-18-intro-pages-phaseB-acquisition.md`(フェーズB)。
+- **次**: フェーズC = 法務(privacy/terms/contact/extension-privacy)の作り直し+15言語化 + 残り nav 言語化。これが揃えば拡張ストア審査の紹介・プライバシー導線が完成。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+### 一つ前 (セッション 110 — 紹介ページ群 全面作り直し+15言語化 フェーズA(土台 + About 縦切り) 完了・本番反映済・master マージ済)
 
 **ゴール「全紹介ページ(9枚)を ①言語別URL ②内容書き直し ③編集デザイン ④15言語化」の土台 + About を端から端まで実証。** brainstorming→spec→plan→サブエージェント駆動(各タスク2段レビュー + 最終ブランチレビュー opus = READY TO MERGE)。
 
