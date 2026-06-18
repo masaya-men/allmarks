@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type RefObject } from 'react'
+import { useRef, useEffect, type RefObject } from 'react'
 import Link from 'next/link'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -68,6 +68,85 @@ export function Hero(): React.ReactElement {
   useParallaxLayer(boardRef as RefObject<HTMLElement>, 56)
   useReveal(sectionRef as RefObject<HTMLElement>, { y: 28, stagger: 0.09 })
 
+  // ── Entrance timeline (mount-once, PC + no-preference only) ──
+  // CSS defaults are always "visible" (opacity:1, no transform). The gsap.set()
+  // initial state (opacity:0, yPercent:110, scale:0.96) is applied ONLY inside
+  // the matchMedia branch, so SSR/reduced-motion/narrow viewports never hide
+  // the headline or cards.
+  //
+  // Conflict avoidance with useReveal:
+  //   useReveal animates [data-reveal] on scroll (opacity 0→1 + y).
+  //   The headline carries data-reveal so useReveal would also animate it.
+  //   On PC+no-preference the entrance timeline owns the headline's opacity and
+  //   yPercent; to avoid the double-animation we mark the headline rows with
+  //   data-entrance-done after the timeline completes — useReveal's ScrollTrigger
+  //   will still "fire" but the element is already fully visible (opacity:1, y:0)
+  //   so the second animation is a no-op visually.
+  //
+  // Parallax safety:
+  //   useParallaxLayer writes `y` on boardRef (the inner .board div).
+  //   Entrance timeline animates `scale` + `opacity` on [data-hero-card] children
+  //   inside that div — different elements, different properties — no conflict.
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+
+    const mm = gsap.matchMedia()
+
+    mm.add(
+      '(min-width: 1024px) and (prefers-reduced-motion: no-preference)',
+      () => {
+        const lines = section.querySelectorAll<HTMLElement>('[data-hero-line]')
+        const cards = section.querySelectorAll<HTMLElement>('[data-hero-card]')
+
+        if (lines.length === 0 && cards.length === 0) return
+
+        // Apply initial hidden state only in this branch.
+        if (lines.length > 0) gsap.set(lines, { yPercent: 110 })
+        if (cards.length > 0) gsap.set(cards, { scale: 0.96, opacity: 0 })
+
+        const tl = gsap.timeline({ defaults: { ease: 'power4.out' } })
+
+        if (lines.length > 0) {
+          tl.to(lines, {
+            yPercent: 0,
+            duration: 0.9,
+            stagger: 0.12,
+            ease: 'power4.out',
+            onComplete: () => {
+              gsap.set(lines, { clearProps: 'yPercent' })
+            },
+          })
+        }
+
+        if (cards.length > 0) {
+          tl.to(
+            cards,
+            {
+              scale: 1,
+              opacity: 1,
+              duration: 0.8,
+              stagger: 0.07,
+              ease: 'power3.out',
+              onComplete: () => {
+                gsap.set(cards, { clearProps: 'scale,opacity' })
+              },
+            },
+            lines.length > 0 ? '-=0.55' : 0,
+          )
+        }
+
+        return () => {
+          tl.kill()
+          if (lines.length > 0) gsap.set(lines, { clearProps: 'all' })
+          if (cards.length > 0) gsap.set(cards, { clearProps: 'all' })
+        }
+      },
+    )
+
+    return () => mm.revert()
+  }, [])
+
   const handleSeeHow = (): void => {
     const target =
       document.getElementById('features') ?? document.getElementById('save-demo')
@@ -86,7 +165,13 @@ export function Hero(): React.ReactElement {
             </p>
 
             <h1 className={styles.headline} data-reveal>
-              {t('landing.hero.headline')}
+              {/* Visual line wrappers for the entrance mask-up animation.
+                  Each span[data-hero-line] slides up from yPercent:110 inside
+                  an overflow:hidden parent (.headlineLine). The text content and
+                  i18n key are unchanged — only a visual wrapping span is added. */}
+              <span className={styles.headlineLine}>
+                <span data-hero-line>{t('landing.hero.headline')}</span>
+              </span>
             </h1>
 
             <p className={styles.description} data-reveal>
@@ -119,7 +204,7 @@ export function Hero(): React.ReactElement {
                 const art = DEMO_COLLAGE[card.asset]
                 if (!art) return null
                 return (
-                  <div key={i} className={styles.card}>
+                  <div key={i} className={styles.card} data-hero-card>
                     <div className={styles.thumb}>
                       <img
                         src={`/${art.src}`}

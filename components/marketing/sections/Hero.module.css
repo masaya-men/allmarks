@@ -95,6 +95,18 @@
   opacity: 0;
 }
 
+/* Mask container for the entrance line-reveal animation.
+   overflow:hidden clips the inner [data-hero-line] span when it starts at
+   yPercent:110 (below the visible area). display:block keeps the natural
+   headline layout unchanged — one line wrapper, full width. */
+.headlineLine {
+  display: block;
+  overflow: hidden;
+  /* Slight extra room so descenders aren't clipped during the slide. */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
 .description {
   max-width: 460px;
   margin: 26px 0 0;
