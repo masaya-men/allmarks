@@ -51,7 +51,10 @@ export function LanguageMenu({ current }: { current: SupportedLocale }): React.R
         <span aria-hidden="true">🌐</span> {current.toUpperCase()}
       </button>
       {open && (
-        <ul className={styles.list}>
+        // data-lenis-prevent: let this scrollable list use native wheel scroll
+        // instead of the page-wide Lenis smooth scroll (which otherwise swallows
+        // the wheel and the dropdown won't scroll). 14+ langs overflow max-height.
+        <ul className={styles.list} data-lenis-prevent>
           {SUPPORTED_LOCALES.map((locale) => (
             <li key={locale}>
               <button
