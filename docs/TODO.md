@@ -21,7 +21,21 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 111 — 紹介ページ群 フェーズB(集客: features/guide/faq/新設extension紹介) 完了・本番反映済・master マージ済)
+### 直近の状態 (セッション 112 — 紹介ページ群 フェーズC(法務: privacy/terms/contact/extension-privacy) 完了・本番反映済・master マージ済 → 紹介9ページ全完成)
+
+**ゴール「法務4ページを ①内容を現行事実に正確化 ②落ち着いた読み物デザイン ③15言語化 ④nav全言語化」を完走。これで紹介9ページ全部が英語+14言語で稼働。** writing-plans→サブエージェント駆動(各タスク2段レビュー)。
+
+- **法務の事実を正確化(審査直結)**: 拡張プライバシーの権限表を manifest 実体に一致(`activeTab/contextMenus/scripting/offscreen/storage` + host `<all_urls>`、**実在しない `notifications` 行を撤去**、`host_permissions` の `allmarks.app/*` 誤記を訂正)、設定=`chrome.storage.sync`・保存控え=`chrome.storage.local`(savedUrlsMirror)、GitHub=allmarks。
+- **共有の事実を訂正**: privacy/terms の「共有はサーバーに送らない」旧誤りを一掃 → 「共有時に Cloudflare KV/R2 へ約30日アップロード+自動削除、共有を作らない限り何も出ない」。準拠法=日本/東京は維持。
+- **Contact 刷新**: GitHub(allmarks)中心・**X 欄撤去**・個人メアド非掲載・セキュリティは GitHub 非公開報告。
+- **読み物デザイン**: 新 `legal-page.module.css`(1カラム・目次アンカー・最終更新日・スクロール演出なし・常に可視)。Contact は中央寄せ。
+- **15言語化 + nav全言語化**: `pages.{privacy,terms,contact,extensionPrivacy}.*` を15言語キー一致(パリティ60)、`LOCALIZED_INTRO_SUBPATHS` 全9 subpath 完成 → nav 全言語接頭辞付き。sitemap も法務4ページ×15言語。
+- **検証**: tsc 0 / vitest 1361 pass / build 165ルート / 本番8URL(en+ja×4)200 / extension紹介と extension/privacy 共存。
+- **次**: 拡張の Chrome ウェブストア審査提出準備 / オンボーディング。小残債=法務本文の補助リンク href のフラット残り。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+### 一つ前 (セッション 111 — 紹介ページ群 フェーズB(集客: features/guide/faq/新設extension紹介) 完了・本番反映済・master マージ済)
 
 **ゴール「集客4ページを ①内容書き直し(現行プロダクト事実) ②編集デザイン統一 ③15言語化 ④nav言語化」を土台(フェーズA)に乗せて完走。** writing-plans→サブエージェント駆動(各タスク2段レビュー + 最終ブランチレビュー opus = READY TO MERGE)。
 
