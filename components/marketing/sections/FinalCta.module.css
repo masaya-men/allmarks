@@ -32,14 +32,16 @@
 
 /* ── Black overlay — the transition layer ──────────────────────────────────
    Absolute, full-bleed, below the content (z-index 0 vs content z-index 1).
-   GSAP scrubs this from opacity:0 → 1 as the user scrolls.
-   On reduced-motion it starts at opacity:1 (see useEffect).
+   GSAP scrubs this from opacity:0 → 1 as the user scrolls (the fromTo forces
+   the 0 start on PC, so a visible:1 default is safe). Default opacity:1 means
+   non-PC / reduced-motion / JS-off all show the black end-state — otherwise the
+   near-white headline would sit on the white .cta ground and vanish.
    pointer-events:none so it never blocks any interaction.                   */
 .overlay {
   position: absolute;
   inset: 0;
   background: #0a0a0a;
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
   /* z-index below .stage */
   z-index: 0;
