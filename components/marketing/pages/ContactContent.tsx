@@ -7,7 +7,7 @@ const GITHUB_ISSUES_URL = 'https://github.com/masaya-men/allmarks/issues'
 
 /**
  * Contact 本文(短い中央寄せ)。GitHub Issues 中心・X 欄なし・個人メアド非掲載
- * (確定方針: 個人 FF14 垢はサイト非掲載・拡散専用)。スクロール演出なし。
+ * (確定方針)。スクロール演出なし。
  */
 export function ContactContent(): React.ReactElement {
   const { t } = useI18n()
