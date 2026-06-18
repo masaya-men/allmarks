@@ -466,6 +466,11 @@
   .features {
     overflow: hidden; /* clip panels that are off to the right */
     position: relative; /* anchor the floating kicker overlay */
+    /* Zero the section's vertical padding while pinned: the 128/140px top/bottom
+       padding would push the 100vh panels down, putting content below the fold's
+       center. With 0 here, each panel == the viewport exactly and centers true. */
+    padding-top: 0;
+    padding-bottom: 0;
   }
   .stage {
     max-width: 100%; /* track must be full-viewport-width, not 1180px-capped */
