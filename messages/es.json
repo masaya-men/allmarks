@@ -151,11 +151,26 @@
       "body": "Solo filas de enlaces de texto. Feeds que pasas de largo. No dejes que lo que guardas quede enterrado entre texto plano."
     },
     "features": {
-      "capture": { "title": "A tu tablero, desde donde sea.", "body": "Solo pega una URL — X, YouTube, artículos, tiendas, imágenes, lo que sea de la web. ¿Quieres guardar con un clic? La extensión del navegador y el marcador rápido lo hacen por ti." },
-      "layout": { "title": "Ordénalos libremente.", "body": "Arrastra y suelta para ajustar tamaño y posición exactamente como quieras." },
-      "live": { "title": "Reproduce varios vídeos a la vez.", "body": "Los vídeos de tu tablero se mueven juntos — no es una lista de imágenes estáticas, es un tablero que de verdad vive." },
-      "organize": { "title": "Etiqueta para ordenar. Temas para rediseñar.", "body": "Filtra por etiqueta y cambia todo el aspecto con temas. Hay más temas en camino." },
-      "privacy": { "title": "Sin cuenta. Completamente local.", "body": "Todo se guarda solo dentro de tu navegador. Nada se envía a ningún servidor. Tu privacidad es tuya." }
+      "capture": {
+        "title": "A tu tablero, desde donde sea.",
+        "body": "Solo pega una URL — X, YouTube, artículos, tiendas, imágenes, lo que sea de la web. ¿Quieres guardar con un clic? La extensión del navegador y el marcador rápido lo hacen por ti."
+      },
+      "layout": {
+        "title": "Ordénalos libremente.",
+        "body": "Arrastra y suelta para ajustar tamaño y posición exactamente como quieras."
+      },
+      "live": {
+        "title": "Reproduce varios vídeos a la vez.",
+        "body": "Los vídeos de tu tablero se mueven juntos — no es una lista de imágenes estáticas, es un tablero que de verdad vive."
+      },
+      "organize": {
+        "title": "Etiqueta para ordenar. Temas para rediseñar.",
+        "body": "Filtra por etiqueta y cambia todo el aspecto con temas. Hay más temas en camino."
+      },
+      "privacy": {
+        "title": "Sin cuenta. Completamente local.",
+        "body": "Todo vive dentro de tu navegador. Sin cuenta, sin registro — tu privacidad es tuya."
+      }
     },
     "share": {
       "headline": "Compártelo como un tablero completo.",
@@ -192,7 +207,7 @@
       },
       "privacy": {
         "heading": "Privacidad por diseño",
-        "body": "Tus marcadores viven en tu navegador, no en nuestros servidores. Sin cuenta, sin rastreo, sin registro. Es gratis, y sigue siendo tuyo."
+        "body": "Tus marcadores viven en tu navegador. Sin cuenta, sin rastreo, sin registro. Es gratis, y sigue siendo tuyo."
       },
       "openSource": {
         "heading": "Código abierto",
@@ -236,7 +251,7 @@
       "privacy": {
         "num": "05",
         "heading": "Privado por defecto",
-        "body": "Tus marcadores viven en tu navegador, nunca en nuestros servidores. Sin cuenta, sin registro, sin cookies de rastreo. Es gratis y sigue siendo tuyo."
+        "body": "Tus marcadores viven en tu navegador. Sin cuenta, sin registro, sin cookies de rastreo. Es gratis y sigue siendo tuyo."
       },
       "sites": {
         "heading": "Dónde funciona",
@@ -415,7 +430,7 @@
       },
       "sharing": {
         "heading": "Cuando compartes un tablero",
-        "body": "Compartir es el único caso en que los datos salen de tu dispositivo — y solo porque tú lo solicitas. Cuando creas un enlace para compartir, los datos del tablero se suben a nuestro servicio de alojamiento (Cloudflare KV) y la imagen de vista previa al almacenamiento (Cloudflare R2), accesibles únicamente mediante el enlace secreto, y se eliminan automáticamente después de unos 30 días. No se sube nada a menos que crees explícitamente un enlace para compartir, y tus tableros privados nunca se suben. También puedes exportar un tablero como PNG, que se genera completamente en tu navegador."
+        "body": "Compartir es el único caso en que los datos salen de tu dispositivo — y solo porque tú lo solicitas. Cuando creas un enlace para compartir, los datos del tablero (únicamente las tarjetas que elegiste compartir, sin información personal, ya que no hay cuentas) se suben a nuestro servicio de alojamiento (Cloudflare KV) junto con una imagen de vista previa (Cloudflare R2), para que quienes reciban el enlace puedan abrir el tablero. Solo es accesible mediante el enlace secreto y se elimina automáticamente después de unos 30 días, sin dejar rastro. No se sube nada a menos que crees un enlace para compartir, y tus tableros privados nunca se suben. También puedes exportar un tablero como PNG, que se genera completamente en tu navegador."
       },
       "bookmarklet": {
         "heading": "Marcador rápido",

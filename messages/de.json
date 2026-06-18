@@ -155,7 +155,7 @@
       "layout": { "title": "Frei anordnen.", "body": "Per Drag & Drop Größe und Position genau so setzen, wie es dir gefällt." },
       "live": { "title": "Mehrere Videos gleichzeitig abspielen.", "body": "Videos auf deinem Board laufen zusammen – keine Liste statischer Vorschaubilder, sondern ein Board, das wirklich lebt." },
       "organize": { "title": "Taggen zum Sortieren. Themes zum Umgestalten.", "body": "Nach Tags filtern und das gesamte Aussehen mit Themes wechseln. Mehr Themes sind in Arbeit." },
-      "privacy": { "title": "Kein Account. Vollständig lokal.", "body": "Alles wird nur in deinem Browser gespeichert. Nichts wird an einen Server übermittelt. Deine Privatsphäre bleibt deine." }
+      "privacy": { "title": "Kein Account. Vollständig lokal.", "body": "Alles lebt in deinem Browser. Kein Account, keine Anmeldung — deine Privatsphäre bleibt deine." }
     },
     "share": {
       "headline": "Als ganzes Board teilen.",
@@ -209,7 +209,7 @@
       "privacy": {
         "num": "05",
         "heading": "Standardmäßig privat",
-        "body": "Deine Lesezeichen leben in deinem Browser, nie auf unseren Servern. Kein Account, keine Anmeldung, keine Tracking-Cookies. Kostenlos, und es bleibt deins."
+        "body": "Deine Lesezeichen leben in deinem Browser. Kein Account, keine Anmeldung, keine Tracking-Cookies. Kostenlos, und es bleibt deins."
       },
       "sites": {
         "heading": "Wo es funktioniert",
@@ -237,7 +237,7 @@
       },
       "privacy": {
         "heading": "Datenschutz by Design",
-        "body": "Deine Lesezeichen leben in deinem Browser, nicht auf unseren Servern. Kein Account, kein Tracking, keine Anmeldung. Kostenlos, und es bleibt deins."
+        "body": "Deine Lesezeichen leben in deinem Browser. Kein Account, kein Tracking, keine Anmeldung. Kostenlos, und es bleibt deins."
       },
       "openSource": {
         "heading": "Open Source",
@@ -415,7 +415,7 @@
       },
       "sharing": {
         "heading": "Wenn du ein Board teilst",
-        "body": "Das Teilen ist der einzige Fall, in dem Daten dein Gerät verlassen — und nur, weil du es selbst veranlasst. Wenn du einen Teilungslink erstellst, werden die Board-Daten in unser Hosting (Cloudflare KV) und ein Vorschaubild in den Speicher (Cloudflare R2) hochgeladen, nur über den geheimen Teilungslink erreichbar, und nach etwa 30 Tagen automatisch gelöscht. Es wird nichts hochgeladen, außer du erstellst ausdrücklich einen Teilungslink; deine privaten Boards werden niemals hochgeladen. Du kannst ein Board auch als PNG exportieren, das vollständig in deinem Browser erzeugt wird."
+        "body": "Das Teilen ist der einzige Fall, in dem Daten dein Gerät verlassen — und nur, weil du es selbst veranlasst. Wenn du einen Teilungslink erstellst, werden die Board-Daten (nur die Karten, die du zu teilen gewählt hast; da es keine Konten gibt, sind keine personenbezogenen Daten enthalten) in unser Hosting (Cloudflare KV) hochgeladen, das Vorschaubild in den Bildspeicher (Cloudflare R2), damit die Empfänger des Links das Board öffnen können. Der Link ist ausschließlich über die geheime URL erreichbar und wird nach etwa 30 Tagen automatisch gelöscht — nichts bleibt dauerhaft bestehen. Es wird nichts hochgeladen, außer du erstellst ausdrücklich einen Teilungslink; deine privaten Boards werden niemals hochgeladen. Du kannst ein Board auch als PNG exportieren — dieses wird vollständig in deinem Browser erzeugt."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",

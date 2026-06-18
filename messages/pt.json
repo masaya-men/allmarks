@@ -155,7 +155,7 @@
       "layout": { "title": "Organize livremente.", "body": "Arraste e solte para definir tamanho e posição exatamente como você quer." },
       "live": { "title": "Reproduza vários vídeos ao mesmo tempo.", "body": "Os vídeos do seu quadro se movem juntos — não é uma lista de imagens estáticas, mas um quadro que realmente vive." },
       "organize": { "title": "Tags para organizar. Temas para renovar.", "body": "Filtre por tag e mude a aparência completa com temas. Mais temas estão a caminho." },
-      "privacy": { "title": "Sem conta. Totalmente local.", "body": "Tudo é salvo apenas no seu navegador. Nada é enviado a um servidor. Sua privacidade permanece sua." }
+      "privacy": { "title": "Sem conta. Totalmente local.", "body": "Tudo fica dentro do seu navegador. Sem conta, sem cadastro — sua privacidade é sua." }
     },
     "share": {
       "headline": "Compartilhe como um quadro completo.",
@@ -204,7 +204,7 @@
       "privacy": {
         "num": "05",
         "heading": "Privado por padrão",
-        "body": "Seus favoritos vivem no seu navegador, nunca nos nossos servidores. Sem conta, sem cadastro, sem cookies de rastreamento. É gratuito e continua sendo seu."
+        "body": "Seus favoritos vivem no seu navegador. Sem conta, sem cadastro, sem cookies de rastreamento. É gratuito e continua sendo seu."
       },
       "sites": {
         "heading": "Onde funciona",
@@ -232,7 +232,7 @@
       },
       "privacy": {
         "heading": "Privacidade por design",
-        "body": "Seus favoritos vivem no seu navegador, não nos nossos servidores. Sem conta, sem rastreamento, sem cadastro. É gratuito e continua sendo seu."
+        "body": "Seus favoritos vivem no seu navegador. Sem conta, sem rastreamento, sem cadastro. É gratuito e continua sendo seu."
       },
       "openSource": {
         "heading": "Código aberto",
@@ -410,7 +410,7 @@
       },
       "sharing": {
         "heading": "Quando você compartilha um quadro",
-        "body": "O compartilhamento é o único caso em que os dados saem do seu dispositivo — e apenas porque você solicitou. Quando você cria um link de compartilhamento, os dados do quadro são enviados para nossa hospedagem (Cloudflare KV) e uma imagem de prévia para o armazenamento (Cloudflare R2), acessíveis apenas pelo link secreto de compartilhamento e excluídos automaticamente após cerca de 30 dias. Nada é enviado a menos que você crie explicitamente um link de compartilhamento, e seus quadros privados nunca são enviados. Você também pode exportar um quadro como PNG, que é gerado inteiramente no seu navegador."
+        "body": "O compartilhamento é o único caso em que os dados saem do seu dispositivo — e apenas porque você solicitou. Quando você cria um link de compartilhamento, os dados do quadro (somente os cartões que você escolheu compartilhar; sem informações pessoais, já que não há contas) são enviados para a nossa hospedagem (Cloudflare KV), e uma imagem de prévia para o armazenamento (Cloudflare R2), para que as pessoas que receberem o link possam abrir o quadro. Ele fica acessível apenas pelo link secreto e é excluído automaticamente após cerca de 30 dias — nada permanece. Nada é enviado a menos que você crie um link de compartilhamento, e seus quadros privados nunca são enviados. Você também pode exportar um quadro como PNG, gerado inteiramente no seu navegador."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",

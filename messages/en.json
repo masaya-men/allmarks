@@ -169,7 +169,7 @@
       },
       "privacy": {
         "title": "No account. Fully local.",
-        "body": "Everything is saved only inside your browser. Nothing is sent to a server. Your privacy stays yours."
+        "body": "Everything lives inside your browser. No account, nothing to sign up for — your privacy stays yours."
       }
     },
     "share": {
@@ -219,7 +219,7 @@
       "privacy": {
         "num": "05",
         "heading": "Private by default",
-        "body": "Your bookmarks live in your browser, never on our servers. No account, no sign-up, no tracking cookies. It's free, and it stays yours."
+        "body": "Your bookmarks live in your browser. No account, no sign-up, no tracking cookies. It's free, and it stays yours."
       },
       "sites": {
         "heading": "Where it works",
@@ -247,7 +247,7 @@
       },
       "privacy": {
         "heading": "Private by design",
-        "body": "Your bookmarks live in your browser, not on our servers. No account, no tracking, no sign-up. It's free, and it stays yours."
+        "body": "Your bookmarks live in your browser. No account, no tracking, no sign-up. It's free, and it stays yours."
       },
       "openSource": {
         "heading": "Open source",
@@ -423,7 +423,7 @@
       },
       "sharing": {
         "heading": "When you share a board",
-        "body": "Sharing is the one case where data leaves your device — and only because you ask it to. When you create a share link, the board's data is uploaded to our hosting (Cloudflare KV) and a preview image to storage (Cloudflare R2), reachable only through the secret share link, and automatically deleted after about 30 days. Nothing is uploaded unless you explicitly create a share link, and your private boards are never uploaded. You can also export a board as a PNG, which is generated entirely in your browser."
+        "body": "Sharing is the one case where data leaves your device — and only because you ask it to. When you create a share link, the board's data (just the cards you chose to share, with no personal information, since there are no accounts) is uploaded to our hosting (Cloudflare KV) along with a preview image (Cloudflare R2), so the people you send the link to can open the board. It is reachable only through the secret link and is automatically deleted after about 30 days, so nothing lingers. Nothing is uploaded unless you create a share link, and your private boards are never uploaded. You can also export a board as a PNG, generated entirely in your browser."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",

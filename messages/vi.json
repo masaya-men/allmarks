@@ -155,7 +155,7 @@
       "layout": { "title": "Sắp xếp tự do.", "body": "Kéo và thả để đặt kích thước và vị trí chính xác theo ý bạn." },
       "live": { "title": "Phát nhiều video cùng lúc.", "body": "Các video trên bảng chạy cùng nhau — không phải danh sách ảnh tĩnh, mà là bảng thực sự sống động." },
       "organize": { "title": "Gắn thẻ để phân loại. Chủ đề để thay đổi giao diện.", "body": "Lọc theo thẻ và đổi giao diện tổng thể bằng chủ đề. Thêm nhiều chủ đề đang được phát triển." },
-      "privacy": { "title": "Không cần tài khoản. Hoàn toàn cục bộ.", "body": "Mọi thứ chỉ được lưu trong trình duyệt của bạn. Không có gì được gửi lên máy chủ. Quyền riêng tư của bạn là của bạn." }
+      "privacy": { "title": "Không cần tài khoản. Hoàn toàn cục bộ.", "body": "Mọi thứ đều ở trong trình duyệt của bạn. Không cần tài khoản, không cần đăng ký — quyền riêng tư là của bạn." }
     },
     "share": {
       "headline": "Chia sẻ như một bảng hoàn chỉnh.",
@@ -204,7 +204,7 @@
       "privacy": {
         "num": "05",
         "heading": "Riêng tư mặc định",
-        "body": "Dấu trang của bạn sống trong trình duyệt, không bao giờ trên máy chủ của chúng tôi. Không tài khoản, không đăng ký, không cookie theo dõi. Miễn phí, và mãi là của bạn."
+        "body": "Dấu trang của bạn sống trong trình duyệt. Không tài khoản, không đăng ký, không cookie theo dõi. Miễn phí, và mãi là của bạn."
       },
       "sites": {
         "heading": "Hoạt động ở đâu",
@@ -232,7 +232,7 @@
       },
       "privacy": {
         "heading": "Riêng tư theo thiết kế",
-        "body": "Dấu trang của bạn sống trong trình duyệt, không phải trên máy chủ của chúng tôi. Không tài khoản, không theo dõi, không đăng ký. Miễn phí, và mãi là của bạn."
+        "body": "Dấu trang của bạn sống trong trình duyệt. Không tài khoản, không theo dõi, không đăng ký. Miễn phí, và mãi là của bạn."
       },
       "openSource": {
         "heading": "Mã nguồn mở",
@@ -410,7 +410,7 @@
       },
       "sharing": {
         "heading": "Khi bạn chia sẻ bảng",
-        "body": "Chia sẻ là trường hợp duy nhất dữ liệu rời khỏi thiết bị của bạn — và chỉ vì bạn yêu cầu. Khi bạn tạo liên kết chia sẻ, dữ liệu bảng được tải lên dịch vụ lưu trữ của chúng tôi (Cloudflare KV) và ảnh xem trước lên kho lưu trữ (Cloudflare R2), chỉ truy cập được qua liên kết chia sẻ bí mật, và tự động xóa sau khoảng 30 ngày. Không có gì được tải lên trừ khi bạn chủ động tạo liên kết chia sẻ, và các bảng riêng tư của bạn không bao giờ được tải lên. Bạn cũng có thể xuất bảng dưới dạng PNG, được tạo hoàn toàn trong trình duyệt."
+        "body": "Chia sẻ là trường hợp duy nhất dữ liệu rời khỏi thiết bị của bạn — và chỉ khi bạn muốn. Khi bạn tạo liên kết chia sẻ, dữ liệu bảng (chỉ những thẻ bạn chọn chia sẻ; không có thông tin cá nhân vì không có tài khoản) được tải lên Cloudflare KV để người nhận liên kết có thể mở, còn ảnh xem trước được tải lên Cloudflare R2. Liên kết chỉ truy cập được qua đường dẫn bí mật và tự động xóa sau khoảng 30 ngày, không có gì lưu lại. Không có gì được tải lên trừ khi bạn tạo liên kết chia sẻ, và các bảng riêng tư của bạn sẽ không bao giờ được tải lên. Bạn cũng có thể xuất bảng dưới dạng PNG, được tạo hoàn toàn trong trình duyệt."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",

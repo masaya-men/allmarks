@@ -155,7 +155,7 @@
       "layout": { "title": "Özgürce düzenleyin.", "body": "Boyutu ve konumu tam istediğiniz gibi ayarlamak için sürükleyip bırakın." },
       "live": { "title": "Birden fazla videoyu aynı anda oynatın.", "body": "Panodaki videolar birlikte hareket eder — durağan görsel listesi değil, gerçekten canlı bir pano." },
       "organize": { "title": "Etiketle sırala. Temayla yenile.", "body": "Etikete göre filtreleyin ve temalarla tüm görünümü değiştirin. Daha fazla tema geliyor." },
-      "privacy": { "title": "Hesap yok. Tamamen yerel.", "body": "Her şey yalnızca tarayıcınızda saklanır. Hiçbir şey sunucuya gönderilmez. Gizliliğiniz size ait kalır." }
+      "privacy": { "title": "Hesap yok. Tamamen yerel.", "body": "Her şey yalnızca tarayıcınızda saklanır. Hesap yok, kayıt yok — gizliliğiniz size ait kalır." }
     },
     "share": {
       "headline": "Tek bir pano olarak paylaşın.",
@@ -204,7 +204,7 @@
       "privacy": {
         "num": "05",
         "heading": "Varsayılan olarak gizli",
-        "body": "Yer imleriniz tarayıcınızda yaşar, sunucularımızda asla değil. Hesap yok, kayıt yok, izleme çerezi yok. Ücretsiz ve hep sizin."
+        "body": "Yer imleriniz tarayıcınızda yaşar. Hesap yok, kayıt yok, izleme çerezi yok. Ücretsiz ve hep sizin."
       },
       "sites": {
         "heading": "Nereden çalışır",
@@ -232,7 +232,7 @@
       },
       "privacy": {
         "heading": "Tasarım gereği gizlilik",
-        "body": "Yer imleriniz sunucularımızda değil, tarayıcınızda yaşar. Hesap yok, takip yok, kayıt yok. Ücretsiz ve hep sizin."
+        "body": "Yer imleriniz tarayıcınızda yaşar. Hesap yok, takip yok, kayıt yok. Ücretsiz ve hep sizin."
       },
       "openSource": {
         "heading": "Açık kaynak",
@@ -410,7 +410,7 @@
       },
       "sharing": {
         "heading": "Bir pano paylaştığınızda",
-        "body": "Paylaşım, verilerin cihazınızdan ayrıldığı tek durumadur — ve yalnızca siz istediğiniz için. Bir paylaşım bağlantısı oluşturduğunuzda, pano verileri barındırma platformumuza (Cloudflare KV), önizleme görseli ise depolama alanına (Cloudflare R2) yüklenir; bunlara yalnızca gizli paylaşım bağlantısıyla erişilebilir ve yaklaşık 30 gün sonra otomatik olarak silinir. Açıkça bir paylaşım bağlantısı oluşturmadığınız sürece hiçbir şey yüklenmez; özel panolarınız hiçbir zaman yüklenmez. Ayrıca panoyu tamamen tarayıcınızda oluşturulan bir PNG olarak dışa aktarabilirsiniz."
+        "body": "Paylaşım, verilerin cihazınızdan ayrıldığı tek durumadur — ve yalnızca siz istediğiniz için. Bir paylaşım bağlantısı oluşturduğunuzda, pano verileri (yalnızca paylaşmayı seçtiğiniz kartlar; hesap olmadığından kişisel bilgi içermez) bağlantıyı gönderdiğiniz kişilerin panoyu açabilmesi için Cloudflare KV'ye, önizleme görseli ise Cloudflare R2'ye yüklenir. Bunlara yalnızca gizli bağlantıyla erişilebilir ve yaklaşık 30 gün sonra otomatik olarak silinir; hiçbir şey kalıcı olarak saklanmaz. Açıkça bir paylaşım bağlantısı oluşturmadığınız sürece hiçbir şey yüklenmez; özel panolarınız hiçbir zaman yüklenmez. Ayrıca panoyu, tamamen tarayıcınızda oluşturulan bir PNG olarak dışa aktarabilirsiniz."
       },
       "bookmarklet": {
         "heading": "Yer imi düğmesi",
