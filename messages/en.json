@@ -306,6 +306,57 @@
         "heading": "Open your first board.",
         "button": "Open Board"
       }
+    },
+    "faq": {
+      "meta": {
+        "title": "FAQ",
+        "description": "Common questions about AllMarks: is it free, where your data lives, how saving and sharing work, and which browsers are supported."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Questions, answered.",
+        "lead": "The short version: it's free, private, and lives in your browser. Here are the details."
+      },
+      "q1": {
+        "q": "Is it free?",
+        "a": "Yes — AllMarks is free, with no account and no sign-up."
+      },
+      "q2": {
+        "q": "Where is my data stored?",
+        "a": "In your browser, on your device. Nothing is kept on our servers, so your boards never leave your machine unless you choose to share one."
+      },
+      "q3": {
+        "q": "How do I save things?",
+        "a": "Three ways: paste a URL straight onto the board (the main way), use the bookmarklet in any browser, or save in one tap with the Chrome extension."
+      },
+      "q4": {
+        "q": "Which browsers work?",
+        "a": "Any modern browser works for the board and the bookmarklet. The one-tap extension is Chrome-based for now."
+      },
+      "q5": {
+        "q": "Can I use it on my phone?",
+        "a": "Yes. Pasting a URL onto the board works on mobile, and the bookmarklet works in mobile browsers too."
+      },
+      "q6": {
+        "q": "How does sharing work?",
+        "a": "You can turn a board into a short link with a preview image for social, or export it as a PNG to post on X. A shared link carries the board itself — there's no account on either side."
+      },
+      "q7": {
+        "q": "What happens if I clear my browser data?",
+        "a": "Because everything lives in your browser, clearing its data also clears your boards. Export a backup first if you want to keep them, and import it later to restore."
+      },
+      "q8": {
+        "q": "Is it open source?",
+        "a": "Yes. The code is open, so anyone can confirm that nothing is sent anywhere it shouldn't be."
+      },
+      "q9": {
+        "q": "Do I need an account?",
+        "a": "No. There's no login, ever — that's the point. You stay anonymous and your data stays with you."
+      },
+      "cta": {
+        "heading": "See it for yourself.",
+        "button": "Open Board"
+      }
     }
   }
 }
