@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import type { SupportedLocale } from '@/lib/i18n/config'
 import { useSmoothScroll } from '@/lib/scroll/use-smooth-scroll'
 import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
+import { LocaleSuggestBanner } from './LocaleSuggestBanner'
 import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
 import { Hero } from './sections/Hero'
@@ -51,6 +52,7 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
 
   return (
     <div className={`${styles.wrapper} lpRoot`}>
+      <LocaleSuggestBanner current={locale} />
       <SiteHeader locale={locale} />
       <div className={styles.content}>
         <Hero />

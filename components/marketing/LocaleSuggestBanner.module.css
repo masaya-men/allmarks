@@ -1,0 +1,32 @@
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;                 /* ヘッダーより上 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(20, 19, 15, 0.92);
+  color: #faf9f6;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  animation: slideDown 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.link { color: #faf9f6; text-decoration: none; display: inline-flex; gap: 6px; align-items: center; }
+.link:hover { text-decoration: underline; }
+.close {
+  background: transparent; border: none; color: #faf9f6;
+  font-size: 18px; line-height: 1; cursor: pointer;
+  min-width: 32px; min-height: 32px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar { animation: none; }
+}
