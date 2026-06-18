@@ -510,6 +510,29 @@
         "heading": "10. Questions",
         "body": "If you have questions about these terms, please reach us through the contact page."
       }
+    },
+    "contact": {
+      "meta": {
+        "title": "Contact",
+        "description": "Get in touch about AllMarks — questions, feedback, bug reports, and security, through GitHub."
+      },
+      "hero": {
+        "kicker": "Contact",
+        "title": "Get in touch.",
+        "lead": "Questions, ideas, and bug reports are all welcome. GitHub is the most reliable way to reach us."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "For bug reports and feature requests, open an issue on GitHub — it's the surest way to be heard."
+      },
+      "feedback": {
+        "label": "Feedback",
+        "body": "Ideas for making AllMarks better are always welcome — \"I wish it could do this\" or \"this part is awkward,\" however small."
+      },
+      "security": {
+        "label": "Security",
+        "body": "Found a security issue? Please report it privately through GitHub rather than a public issue. Responsible disclosure is much appreciated."
+      }
     }
   }
 }
