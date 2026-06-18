@@ -41,8 +41,9 @@
   background: var(--lp-accent);
 }
 
-/* ── The vertical sequence of beats ── */
-.sequence {
+/* ── The vertical sequence of beats (default / fallback layout) ── */
+.sequence,
+.track {
   display: flex;
   flex-direction: column;
 }
@@ -456,5 +457,56 @@
   .card:hover {
     transition: none;
     transform: none;
+  }
+}
+
+/* ── Horizontal scroll-jack: PC width (≥1024px) + no reduced-motion only ──
+   The section is pinned by GSAP useHorizontalPin while the .track slides left.
+   Each .beat occupies exactly one full viewport width as a panel. The section
+   needs overflow:hidden to clip the offscreen panels during the pin. ── */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .features {
+    overflow: hidden; /* clip panels that are off to the right */
+  }
+  .stage {
+    max-width: 100%; /* track must be full-viewport-width, not 1180px-capped */
+    overflow: visible;
+  }
+  .track {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0;
+  }
+  .beat {
+    flex: 0 0 100vw; /* one panel = full viewport width */
+    box-sizing: border-box;
+    min-height: 100vh;
+    padding: 0 clamp(48px, 8vw, 160px);
+    margin: 0;
+  }
+  /* In horizontal mode beats no longer alternate columns, so reset the swap.
+     The grid columns still give text/visual side-by-side within each panel. */
+  .beat:nth-child(even) .beatText {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .beat:nth-child(even) .beatVisual {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  /* The kicker stays visible above the track; keep it revealed */
+  .kicker {
+    opacity: 1;
+  }
+}
+
+/* ── Non-PC fallback: keep classic vertical stack ──
+   .track behaves exactly like the former .sequence — no flex-row override. ── */
+@media (max-width: 1023px), (prefers-reduced-motion: reduce) {
+  .track {
+    display: flex;
+    flex-direction: column;
   }
 }

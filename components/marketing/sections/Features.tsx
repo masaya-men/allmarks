@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { useReveal } from '@/lib/scroll/use-reveal'
+import { useHorizontalPin } from '@/lib/scroll/use-horizontal-pin'
 import { DEMO_COLLAGE, DEMO_VIDEOS } from '@/lib/marketing/demo-collage'
 import styles from './Features.module.css'
 
@@ -273,11 +273,11 @@ function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement 
  * Features — the FEATURES section of the LP, as a numbered editorial sequence
  * (01–05), NOT a boxed SaaS grid.
  *
- * Five full-width "beats" stack vertically, each a two-column editorial moment:
- * a mono number + English label kicker (the sequence spine), a Fraunces serif
- * title and Geist body (from i18n), paired with a bold, grid-aligned supporting
- * visual built from real CC0 demo assets. Beats alternate text-left / visual-
- * right for rhythm and stack cleanly to a single column at narrow widths.
+ * On PC widths (≥1024px) with no reduced-motion preference the five beats are
+ * laid out horizontally and the section is pinned while the track scrolls
+ * laterally (scroll-jack via useHorizontalPin). On narrow widths and under
+ * prefers-reduced-motion the beats stack vertically in the classic alternating
+ * text-left / visual-right two-column layout (CSS fallback).
  *
  * Hard rules honored: every card/image is AXIS-ALIGNED (never tilted), and NO
  * fabricated source domains/favicons appear anywhere — source variety is shown
@@ -290,20 +290,24 @@ function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement 
 export function Features(): React.ReactElement {
   const { t } = useI18n()
   const sectionRef = useRef<HTMLElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
 
-  useReveal(sectionRef as React.RefObject<HTMLElement>, { y: 26, stagger: 0.08 })
+  useHorizontalPin({
+    sectionRef: sectionRef as React.RefObject<HTMLElement>,
+    trackRef: trackRef as React.RefObject<HTMLElement>,
+  })
 
   return (
     <section ref={sectionRef} id="features" className={styles.features}>
       <div className={styles.stage}>
-        <p className={styles.kicker} data-reveal>
+        <p className={styles.kicker}>
           <span className={styles.kickerDash} aria-hidden="true" />
           FEATURES
         </p>
 
-        <div className={styles.sequence}>
+        <div ref={trackRef} className={styles.track}>
           {BEATS.map((beat) => (
-            <article key={beat.num} className={styles.beat} data-reveal>
+            <article key={beat.num} className={styles.beat} data-panel>
               <div className={styles.beatText}>
                 <p className={styles.beatNum}>
                   <span className={styles.num}>{beat.num}</span>
