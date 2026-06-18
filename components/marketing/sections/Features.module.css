@@ -465,6 +465,7 @@
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
   .features {
     overflow: hidden; /* clip panels that are off to the right */
+    position: relative; /* anchor the floating kicker overlay */
   }
   .stage {
     max-width: 100%; /* track must be full-viewport-width, not 1180px-capped */
@@ -474,13 +475,14 @@
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    align-items: center;
+    align-items: stretch; /* each panel fills the pinned viewport height */
     gap: 0;
   }
   .beat {
     flex: 0 0 100vw; /* one panel = full viewport width */
     box-sizing: border-box;
-    min-height: 100vh;
+    height: 100vh; /* EXACTLY one viewport — no overflow past the fold */
+    align-content: center; /* center the text/visual row vertically */
     padding: 0 clamp(48px, 8vw, 160px);
     margin: 0;
   }
@@ -494,8 +496,21 @@
     grid-column: 2;
     grid-row: 1;
   }
-  /* The kicker stays visible above the track; keep it revealed */
+  /* Visuals must not exceed the panel height on short viewports (the dev's
+     own CSS viewport is ~679px tall). Cap them so the bottom never clips. */
+  .beatVisual {
+    max-height: 78vh;
+    overflow: hidden;
+  }
+  /* The kicker floats in the top-left corner OVER the track instead of sitting
+     above it (which stole vertical space and pushed panels below the fold).
+     It stays put while the track slides — a persistent FEATURES label. */
   .kicker {
+    position: absolute;
+    top: clamp(20px, 4.5vh, 44px);
+    left: clamp(48px, 8vw, 160px);
+    z-index: 1;
+    margin: 0;
     opacity: 1;
   }
 }
