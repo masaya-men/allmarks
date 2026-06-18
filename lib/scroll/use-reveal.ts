@@ -11,8 +11,11 @@ export function useReveal(ref: RefObject<HTMLElement>, opts: { y?: number; stagg
     const targets = el.querySelectorAll('[data-reveal]')
     if (targets.length === 0) return
     const mm = gsap.matchMedia()
-    mm.add('(prefers-reduced-motion: reduce)', () => { gsap.set(targets, { opacity: 1, y: 0 }) })
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
+    // reduced-motion または narrow(<1024px)は静的に可視(演出は PC のみ)。
+    mm.add('(prefers-reduced-motion: reduce), (max-width: 1023px)', () => {
+      gsap.set(targets, { opacity: 1, y: 0 })
+    })
+    mm.add('(prefers-reduced-motion: no-preference) and (min-width: 1024px)', () => {
       const tween = gsap.fromTo(targets, { opacity: 0, y },
         { opacity: 1, y: 0, duration: 0.8, stagger, ease: 'power2.out',
           scrollTrigger: { trigger: el, start: 'top 75%' } })
