@@ -169,5 +169,34 @@
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
       "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "Sobre",
+        "description": "O AllMarks transforma seus favoritos em uma colagem visual. Privacidade por design — seus dados ficam no seu navegador. Gratuito, sem conta."
+      },
+      "hero": {
+        "kicker": "Sobre",
+        "title": "Favoritos feitos para serem vistos.",
+        "lead": "AllMarks é um lugar para guardar as coisas que você ama de toda a web — e realmente curtir olhar para elas."
+      },
+      "philosophy": {
+        "heading": "Expresse, não arquive",
+        "body": "A maioria dos favoritos some numa lista que você nunca abre de novo. O AllMarks os trata como algo para organizar, revisitar e compartilhar — um quadro visual, não uma pasta."
+      },
+      "privacy": {
+        "heading": "Privacidade por design",
+        "body": "Seus favoritos vivem no seu navegador, não nos nossos servidores. Sem conta, sem rastreamento, sem cadastro. É gratuito e continua sendo seu."
+      },
+      "openSource": {
+        "heading": "Código aberto",
+        "body": "O AllMarks é código aberto. Qualquer pessoa pode ler o código e confirmar que nada é enviado para onde não deveria."
+      },
+      "cta": {
+        "heading": "Comece seu quadro.",
+        "button": "Open Board"
+      }
+    }
   }
 }

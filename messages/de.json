@@ -174,5 +174,34 @@
       "terms": "Terms",
       "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "Über uns",
+        "description": "AllMarks verwandelt deine Lesezeichen in eine visuelle Collage. Datenschutz by Design — deine Daten bleiben in deinem Browser. Kostenlos, kein Account."
+      },
+      "hero": {
+        "kicker": "Über uns",
+        "title": "Lesezeichen, die gesehen werden wollen.",
+        "lead": "AllMarks ist ein Ort für alles, was du im Web liebst — und du schaust wirklich gern drauf."
+      },
+      "philosophy": {
+        "heading": "Ausdrücken, nicht ablegen",
+        "body": "Die meisten Lesezeichen verschwinden in einer Liste, die du nie wieder öffnest. AllMarks behandelt sie als etwas, das du arrangierst, wiederentdeckst und teilst — ein visuelles Board, kein Ordner."
+      },
+      "privacy": {
+        "heading": "Datenschutz by Design",
+        "body": "Deine Lesezeichen leben in deinem Browser, nicht auf unseren Servern. Kein Account, kein Tracking, keine Anmeldung. Kostenlos, und es bleibt deins."
+      },
+      "openSource": {
+        "heading": "Open Source",
+        "body": "AllMarks ist Open Source. Jeder kann den Code lesen und bestätigen, dass nichts dorthin gesendet wird, wo es nicht hingehört."
+      },
+      "cta": {
+        "heading": "Starte dein Board.",
+        "button": "Open Board"
+      }
+    }
   }
 }

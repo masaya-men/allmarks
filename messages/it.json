@@ -169,5 +169,34 @@
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
       "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "Informazioni",
+        "description": "AllMarks trasforma i tuoi segnalibri in un collage visivo. Progettato per la privacy — i tuoi dati restano nel browser. Gratuito, senza account."
+      },
+      "hero": {
+        "kicker": "Informazioni",
+        "title": "Segnalibri, fatti per essere visti.",
+        "lead": "AllMarks è un posto dove tenere le cose che ami da tutto il web — e godersi davvero il guardarle."
+      },
+      "philosophy": {
+        "heading": "Esprimi, non archiviare",
+        "body": "La maggior parte dei segnalibri sparisce in una lista che non apri mai più. AllMarks li tratta come qualcosa da disporre, rivisitare e condividere — una bacheca visiva, non una cartella."
+      },
+      "privacy": {
+        "heading": "Privacy by design",
+        "body": "I tuoi segnalibri vivono nel tuo browser, non sui nostri server. Nessun account, nessun tracciamento, nessuna registrazione. È gratuito, e resta tuo."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "AllMarks è open source. Chiunque può leggere il codice e verificare che nulla venga inviato dove non dovrebbe."
+      },
+      "cta": {
+        "heading": "Inizia la tua bacheca.",
+        "button": "Open Board"
+      }
+    }
   }
 }

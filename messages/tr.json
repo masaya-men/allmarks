@@ -169,5 +169,34 @@
       "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
       "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
     }
+  },
+  "pages": {
+    "about": {
+      "meta": {
+        "title": "Hakkında",
+        "description": "AllMarks, yer imlerinizi görsel bir kolaja dönüştürür. Tasarım gereği gizli — verileriniz tarayıcınızda kalır. Ücretsiz, hesap gerekmez."
+      },
+      "hero": {
+        "kicker": "Hakkında",
+        "title": "Yer imleri, bakılmak için var.",
+        "lead": "AllMarks, web'in dört bir yanından sevdiklerinizi bir arada tutabileceğiniz ve gerçekten zevkle bakabileceğiniz bir yerdir."
+      },
+      "philosophy": {
+        "heading": "Dosyalama değil, ifade",
+        "body": "Çoğu yer imi, bir daha açılmayan bir listede kaybolur. AllMarks onları düzenlenecek, tekrar ziyaret edilecek ve paylaşılacak bir şey olarak görür — klasör değil, görsel pano."
+      },
+      "privacy": {
+        "heading": "Tasarım gereği gizlilik",
+        "body": "Yer imleriniz sunucularımızda değil, tarayıcınızda yaşar. Hesap yok, takip yok, kayıt yok. Ücretsiz ve hep sizin."
+      },
+      "openSource": {
+        "heading": "Açık kaynak",
+        "body": "AllMarks açık kaynaktır. Herkes kodu okuyabilir ve hiçbir şeyin olmaması gereken yere gönderilmediğini doğrulayabilir."
+      },
+      "cta": {
+        "heading": "Panonuzu oluşturmaya başlayın.",
+        "button": "Open Board"
+      }
+    }
   }
 }
