@@ -151,11 +151,26 @@
       "body": "De simples rangées de liens texte. Des fils d'actualité que vous faites défiler sans jamais vous arrêter. Ne laissez pas ce que vous avez sauvegardé se perdre dans un mur de texte."
     },
     "features": {
-      "capture": { "title": "Sur votre tableau, depuis n'importe où.", "body": "Collez simplement une URL — X, YouTube, articles, boutiques, images, tout ce qui est sur le web. Vous voulez sauvegarder en un clic ? L'extension navigateur et le bookmarklet sont là pour ça." },
-      "layout": { "title": "Arrangez librement.", "body": "Glissez-déposez pour définir taille et position exactement comme vous le souhaitez." },
-      "live": { "title": "Lisez plusieurs vidéos en même temps.", "body": "Les vidéos de votre tableau jouent ensemble — pas une liste d'images figées, mais un tableau vraiment vivant." },
-      "organize": { "title": "Tags pour trier. Thèmes pour changer de look.", "body": "Filtrez par tag et changez l'apparence entière avec les thèmes. D'autres thèmes arrivent bientôt." },
-      "privacy": { "title": "Sans compte. Entièrement local.", "body": "Tout est enregistré uniquement dans votre navigateur. Rien n'est envoyé à un serveur. Votre vie privée reste la vôtre." }
+      "capture": {
+        "title": "Sur votre tableau, depuis n'importe où.",
+        "body": "Collez simplement une URL — X, YouTube, articles, boutiques, images, tout ce qui est sur le web. Vous voulez sauvegarder en un clic ? L'extension navigateur et le bookmarklet sont là pour ça."
+      },
+      "layout": {
+        "title": "Arrangez librement.",
+        "body": "Glissez-déposez pour définir taille et position exactement comme vous le souhaitez."
+      },
+      "live": {
+        "title": "Lisez plusieurs vidéos en même temps.",
+        "body": "Les vidéos de votre tableau jouent ensemble — pas une liste d'images figées, mais un tableau vraiment vivant."
+      },
+      "organize": {
+        "title": "Tags pour trier. Thèmes pour changer de look.",
+        "body": "Filtrez par tag et changez l'apparence entière avec les thèmes. D'autres thèmes arrivent bientôt."
+      },
+      "privacy": {
+        "title": "Sans compte. Entièrement local.",
+        "body": "Tout est enregistré uniquement dans votre navigateur. Rien n'est envoyé à un serveur. Votre vie privée reste la vôtre."
+      }
     },
     "share": {
       "headline": "Partagez-le comme un tableau complet.",
@@ -385,6 +400,198 @@
       "cta": {
         "heading": "Commencez à enregistrer.",
         "button": "Open Board"
+      }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Politique de confidentialité",
+        "description": "AllMarks ne collecte aucune donnée personnelle. Vos favoris restent dans votre navigateur ; rien n'est téléversé sauf si vous choisissez de partager un tableau."
+      },
+      "hero": {
+        "kicker": "Confidentialité",
+        "title": "Politique de confidentialité",
+        "lead": "AllMarks repose sur un seul principe : vos données vous appartiennent. Nous ne collectons aucune donnée personnelle, et il n'y a pas de compte.",
+        "updated": "Dernière mise à jour : 18 juin 2026"
+      },
+      "toc": {
+        "title": "Sommaire"
+      },
+      "philosophy": {
+        "heading": "Zéro collecte de données",
+        "body": "Vos favoris, vos tags et la disposition de vos tableaux sont stockés uniquement dans la base de données locale de votre navigateur (IndexedDB). Nous ne collectons, ne stockons ni ne transmettons vos données personnelles à nos serveurs, et il n'y a aucun compte auquel se connecter."
+      },
+      "collect": {
+        "heading": "Ce que nous ne collectons pas",
+        "body": "Nous ne collectons pas votre nom, votre adresse e-mail ni votre adresse postale ; il n'y a pas de compte ni d'identifiants de connexion ; nous ne conservons aucune copie de votre historique de navigation ni de vos favoris sur nos serveurs ; nous n'utilisons aucun cookie de suivi ou publicitaire ; et nous ne recueillons aucune empreinte basée sur l'IP ni aucune analyse liée à vous en tant qu'individu."
+      },
+      "local": {
+        "heading": "Stockage local uniquement",
+        "body": "Tout réside dans votre navigateur sur votre appareil. Cela signifie que nous ne pouvons pas accéder à vos données, les consulter ni les récupérer, qu'il n'existe aucune sauvegarde côté serveur de vos tableaux, et que vider les données de votre navigateur supprime définitivement votre contenu AllMarks. Vous pouvez exporter votre propre sauvegarde à tout moment."
+      },
+      "sharing": {
+        "heading": "Lorsque vous partagez un tableau",
+        "body": "Le partage est le seul cas où des données quittent votre appareil — et uniquement parce que vous le demandez. Lorsque vous créez un lien de partage, les données du tableau sont téléversées sur notre hébergement (Cloudflare KV) et une image d'aperçu sur notre stockage (Cloudflare R2), accessibles uniquement via le lien de partage secret, et supprimées automatiquement après environ 30 jours. Rien n'est téléversé sauf si vous créez explicitement un lien de partage, et vos tableaux privés ne sont jamais téléversés. Vous pouvez également exporter un tableau en PNG, qui est généré entièrement dans votre navigateur."
+      },
+      "bookmarklet": {
+        "heading": "Bookmarklet",
+        "body": "Le bookmarklet AllMarks lit les balises méta Open Graph (titre, description, image, nom du site) de la page sur laquelle vous vous trouvez, entièrement dans votre navigateur, et les transmet à votre fenêtre d'enregistrement AllMarks locale. Aucune donnée ne transite par nos serveurs."
+      },
+      "extension": {
+        "heading": "Extension de navigateur",
+        "body": "L'extension AllMarks lit uniquement la page que vous choisissez d'enregistrer, et n'envoie rien à aucun serveur — vos enregistrements vont directement dans la base de données locale de votre navigateur. Sa propre politique de confidentialité explique précisément ce qu'elle lit et les autorisations qu'elle utilise."
+      },
+      "hosting": {
+        "heading": "Hébergement et analyses",
+        "body": "AllMarks est hébergé sur Cloudflare Pages. Cloudflare peut enregistrer des métriques serveur minimales et anonymisées (comme le nombre total de pages vues) dans le cadre d'un hébergement standard ; celles-ci ne contiennent aucune information permettant d'identifier personnellement un utilisateur. Nous n'utilisons pas Google Analytics, pas de Facebook Pixel, et aucun script de suivi tiers."
+      },
+      "thirdParty": {
+        "heading": "Contenu tiers",
+        "body": "AllMarks peut afficher du contenu provenant d'autres sites — par exemple des tweets via react-tweet, ou des vidéos via oEmbed. Ces intégrations peuvent être soumises aux politiques de confidentialité de leurs propres services, que nous vous recommandons de consulter pour tout contenu apparaissant dans vos tableaux."
+      },
+      "advertising": {
+        "heading": "Publicité",
+        "body": "AllMarks est gratuit et n'affiche aucune publicité aujourd'hui. Si nous introduisons un jour de la publicité pour soutenir le service gratuit, nous mettrons à jour cette politique, l'indiquerons clairement, et continuerons à ne collecter aucune donnée personnelle de notre côté."
+      },
+      "children": {
+        "heading": "Confidentialité des enfants",
+        "body": "AllMarks ne collecte sciemment aucune information auprès des enfants de moins de 13 ans. Comme nous ne collectons aucune donnée personnelle de qui que ce soit, cela est inhérent au fonctionnement de l'application."
+      },
+      "changes": {
+        "heading": "Modifications de cette politique",
+        "body": "Nous pouvons mettre à jour cette politique de temps à autre. Les modifications sont publiées sur cette page avec une nouvelle date de « dernière mise à jour ». Comme nous ne collectons aucune donnée personnelle, nous ne pouvons pas vous notifier des modifications directement."
+      },
+      "contact": {
+        "heading": "Questions",
+        "body": "Si vous avez des questions sur cette politique, veuillez nous contacter via la page de contact."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Conditions d'utilisation",
+        "description": "Conditions d'utilisation d'AllMarks — gratuit, sans compte, vos données restent dans votre navigateur."
+      },
+      "hero": {
+        "kicker": "Conditions",
+        "title": "Conditions d'utilisation",
+        "lead": "AllMarks est une application gratuite sans compte. Ces conditions expliquent les règles de base de son utilisation.",
+        "updated": "Dernière mise à jour : 18 juin 2026"
+      },
+      "toc": {
+        "title": "Sommaire"
+      },
+      "acceptance": {
+        "heading": "1. Acceptation des conditions",
+        "body": "En utilisant AllMarks (« le Service »), vous acceptez ces Conditions d'utilisation. Si vous n'acceptez pas, veuillez ne pas utiliser le Service."
+      },
+      "service": {
+        "heading": "2. Le service",
+        "body": "AllMarks est une application web gratuite pour enregistrer des favoris et les organiser en tableaux visuels. Toutes les données sont stockées localement dans votre navigateur, et aucun compte ni inscription n'est requis."
+      },
+      "responsibilities": {
+        "heading": "3. Vos responsabilités",
+        "body": "Vous êtes responsable du contenu que vous enregistrez et partagez, vous vous engagez à ne pas utiliser le Service à des fins illégales ni à le perturber, et vous comprenez que vos données sont stockées localement — vider les données de votre navigateur supprime définitivement votre contenu AllMarks."
+      },
+      "ip": {
+        "heading": "4. Propriété intellectuelle",
+        "body": "Les favoris que vous enregistrez font référence à du contenu appartenant à des tiers ; AllMarks ne revendique aucune propriété sur le contenu mis en favori. L'application AllMarks, son code, son design et son identité visuelle appartiennent à AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Partage de contenu",
+        "body": "Lorsque vous créez un lien de partage, les données du tableau sont téléversées sur notre hébergement pour que le lien puisse les afficher, et sont supprimées automatiquement après environ 30 jours. En partageant, vous déclarez avoir le droit de partager le contenu de cette manière."
+      },
+      "warranty": {
+        "heading": "6. Absence de garantie",
+        "body": "Le Service est fourni « tel quel » et « selon disponibilité » sans aucune garantie. Nous ne garantissons pas qu'il sera ininterrompu, sécurisé ou exempt d'erreurs, et nous ne sommes pas responsables des pertes de données résultant de la suppression des données du navigateur, d'une défaillance de l'appareil ou de toute autre cause."
+      },
+      "liability": {
+        "heading": "7. Limitation de responsabilité",
+        "body": "Dans la mesure maximale permise par la loi, AllMarks ne saurait être tenu responsable de dommages indirects, accessoires, spéciaux, consécutifs ou punitifs résultant de votre utilisation du Service."
+      },
+      "modifications": {
+        "heading": "8. Modifications du service et des conditions",
+        "body": "Nous pouvons modifier ou interrompre le Service à tout moment sans préavis, et pouvons mettre à jour ces conditions de temps à autre. La poursuite de l'utilisation après des modifications signifie que vous acceptez les conditions révisées."
+      },
+      "law": {
+        "heading": "9. Droit applicable",
+        "body": "Ces conditions sont régies par le droit japonais, et tout litige relève de la compétence exclusive des tribunaux de Tokyo, au Japon."
+      },
+      "contact": {
+        "heading": "10. Questions",
+        "body": "Si vous avez des questions sur ces conditions, veuillez nous contacter via la page de contact."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "Contact",
+        "description": "Contactez-nous au sujet d'AllMarks — questions, retours, signalements de bugs et sécurité, via GitHub."
+      },
+      "hero": {
+        "kicker": "Contact",
+        "title": "Prenez contact.",
+        "lead": "Questions, idées et signalements de bugs sont les bienvenus. GitHub est le moyen le plus fiable de nous joindre."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "Pour les rapports de bugs et les demandes de fonctionnalités, ouvrez une issue sur GitHub — c'est le moyen le plus sûr d'être entendu."
+      },
+      "feedback": {
+        "label": "Retours",
+        "body": "Les idées pour améliorer AllMarks sont toujours les bienvenues — « j'aimerais que ça puisse faire ça » ou « cette partie est maladroite », aussi petites soient-elles."
+      },
+      "security": {
+        "label": "Sécurité",
+        "body": "Vous avez découvert un problème de sécurité ? Veuillez le signaler en privé via GitHub plutôt qu'en issue publique. La divulgation responsable est vivement appréciée."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Politique de confidentialité de l'extension",
+        "description": "Politique de confidentialité de l'extension Chrome AllMarks — elle lit uniquement la page que vous enregistrez et n'envoie rien à aucun serveur."
+      },
+      "hero": {
+        "kicker": "Confidentialité de l'extension",
+        "title": "Extension AllMarks — Politique de confidentialité",
+        "lead": "L'extension lit uniquement la page que vous choisissez d'enregistrer, et n'envoie rien à aucun serveur.",
+        "updated": "Dernière mise à jour : 18 juin 2026"
+      },
+      "does": {
+        "heading": "Ce que fait l'extension",
+        "body": "Lorsque vous cliquez sur l'icône de l'extension, appuyez sur le raccourci clavier ou utilisez le menu contextuel « Enregistrer dans AllMarks », l'extension lit l'URL, le titre de la page, la description, l'image d'aperçu, le nom du site et le favicon de l'onglet actif (ou du lien sur lequel vous avez effectué un clic droit) et les enregistre comme favori dans la base de données locale de votre navigateur sur l'origine allmarks.app."
+      },
+      "notCollect": {
+        "heading": "Ce qu'elle ne fait pas",
+        "body": "Elle ne collecte, ne journalise ni ne transmet votre historique de navigation. Elle n'envoie aucune donnée à nos serveurs ni à aucun tiers. Elle ne comporte aucune analyse, aucun suivi, aucune publicité ni aucune télémétrie. Elle ne lit pas le contenu des pages au-delà des balises méta Open Graph mentionnées ci-dessus, et uniquement lorsque vous déclenchez un enregistrement."
+      },
+      "storage": {
+        "heading": "Où les données sont stockées",
+        "body": "Les favoris enregistrés résident uniquement dans la base de données locale de votre navigateur sur l'origine allmarks.app. Vos paramètres d'extension (comme les options du bouton flottant et du curseur) sont sauvegardés avec chrome.storage.sync ; si la synchronisation Chrome est activée, ils peuvent se synchroniser sur vos navigateurs Chrome via l'infrastructure de Google — nous ne les voyons jamais. Une liste locale des URL déjà enregistrées est conservée avec chrome.storage.local pour que le bouton d'enregistrement puisse afficher un état « déjà enregistré » ; elle reste sur votre appareil. Il n'y a aucun compte, serveur ni base de données de notre côté qui stocke vos favoris."
+      },
+      "bridge": {
+        "heading": "Comment l'enregistrement atteint l'application",
+        "body": "Pour écrire un favori dans la même base de données locale qu'utilise l'application web AllMarks, l'extension ouvre une page cachée sur allmarks.app/save-iframe. Cela crée un pont entre l'extension et l'origine allmarks.app ; aucune information n'est envoyée à un autre domaine."
+      },
+      "perms": {
+        "heading": "Autorisations et raisons",
+        "colName": "Autorisation",
+        "colPurpose": "Raison",
+        "activeTab": "Lire l'URL et les méta Open Graph de l'onglet que vous enregistrez activement.",
+        "contextMenus": "Ajouter les entrées « Enregistrer dans AllMarks » dans le menu contextuel.",
+        "scripting": "Injecter le petit extracteur qui lit les balises méta de la page lorsque vous enregistrez.",
+        "offscreen": "Créer la page hors-écran qui héberge le pont d'enregistrement allmarks.app.",
+        "storage": "Sauvegarder vos paramètres d'extension et la liste locale « déjà enregistré ».",
+        "hostAll": "Afficher le bouton d'enregistrement flottant sur les pages que vous visitez et permettre au pont d'enregistrement d'atteindre allmarks.app. L'extension ne lit les méta d'une page que lorsque vous choisissez de l'enregistrer."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "Le code source est public sur GitHub (l'extension se trouve dans le dossier extension), afin que chacun puisse vérifier exactement ce qu'elle fait."
+      },
+      "contact": {
+        "heading": "Contact",
+        "body": "Pour toute question relative à la confidentialité, veuillez utiliser la page de contact."
+      },
+      "changes": {
+        "heading": "Modifications",
+        "body": "Nous mettons à jour cette page chaque fois que les autorisations ou les flux de données changent. La date de « dernière mise à jour » ci-dessus reflète la modification la plus récente."
       }
     }
   }

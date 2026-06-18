@@ -381,6 +381,198 @@
         "heading": "Kaydetmeye başlayın.",
         "button": "Open Board"
       }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Gizlilik Politikası",
+        "description": "AllMarks hiçbir kişisel veri toplamaz. Yer imleriniz tarayıcınızda kalır; bir panoyu paylaşmayı seçmediğiniz sürece hiçbir şey yüklenmez."
+      },
+      "hero": {
+        "kicker": "Gizlilik",
+        "title": "Gizlilik Politikası",
+        "lead": "AllMarks tek bir ilke üzerine inşa edilmiştir: verileriniz size aittir. Kişisel veri toplamıyoruz ve hesap sistemi bulunmuyor.",
+        "updated": "Son güncelleme: 18 Haziran 2026"
+      },
+      "toc": {
+        "title": "İçindekiler"
+      },
+      "philosophy": {
+        "heading": "Sıfır veri toplama",
+        "body": "Yer imleriniz, etiketleriniz ve pano düzenlemeleriniz yalnızca tarayıcınızın yerel veritabanında (IndexedDB) saklanır. Kişisel verilerinizi sunucularımıza toplamıyor, depolamıyor veya iletmiyoruz; ayrıca giriş yapabileceğiniz bir hesap sistemi bulunmuyor."
+      },
+      "collect": {
+        "heading": "Toplamadıklarımız",
+        "body": "Adınızı, e-posta adresinizi veya fiziksel adresinizi toplamıyoruz; hesap ya da oturum açma bilgileriniz yok; tarama geçmişinizin veya yer imlerinizin kopyasını sunucularımızda tutmuyoruz; izleme ya da reklam çerezi kullanmıyoruz; sizi bireysel olarak tanımlayan IP tabanlı parmak izi veya analitik verisi toplamıyoruz."
+      },
+      "local": {
+        "heading": "Yalnızca yerel depolama",
+        "body": "Her şey cihazınızdaki tarayıcıda yaşar. Bu, verilerinize erişemeyeceğimiz, göremeyeceğimiz veya kurtaramayacağımız anlamına gelir; panolarınızın sunucu tarafında yedeklenmesi söz konusu değildir; tarayıcı verilerinizi temizlemek AllMarks içeriğinizi kalıcı olarak siler. Kendi yedeğinizi istediğiniz zaman dışa aktarabilirsiniz."
+      },
+      "sharing": {
+        "heading": "Bir pano paylaştığınızda",
+        "body": "Paylaşım, verilerin cihazınızdan ayrıldığı tek durumadur — ve yalnızca siz istediğiniz için. Bir paylaşım bağlantısı oluşturduğunuzda, pano verileri barındırma platformumuza (Cloudflare KV), önizleme görseli ise depolama alanına (Cloudflare R2) yüklenir; bunlara yalnızca gizli paylaşım bağlantısıyla erişilebilir ve yaklaşık 30 gün sonra otomatik olarak silinir. Açıkça bir paylaşım bağlantısı oluşturmadığınız sürece hiçbir şey yüklenmez; özel panolarınız hiçbir zaman yüklenmez. Ayrıca panoyu tamamen tarayıcınızda oluşturulan bir PNG olarak dışa aktarabilirsiniz."
+      },
+      "bookmarklet": {
+        "heading": "Yer imi düğmesi",
+        "body": "AllMarks yer imi düğmesi, bulunduğunuz sayfanın Open Graph meta etiketlerini (başlık, açıklama, görsel, site adı) tamamen tarayıcınız içinde okur ve bunları yerel AllMarks kayıt pencerenize iletir. Sunucularımız üzerinden hiçbir veri geçmez."
+      },
+      "extension": {
+        "heading": "Tarayıcı uzantısı",
+        "body": "AllMarks uzantısı yalnızca kaydetmeyi seçtiğiniz sayfayı okur ve hiçbir sunucuya veri göndermez; kayıtlarınız doğrudan tarayıcınızın yerel veritabanına gider. Uzantının kendi gizlilik politikası, okuduklarını ve kullandığı izinleri tam olarak açıklar."
+      },
+      "hosting": {
+        "heading": "Barındırma ve analitik",
+        "body": "AllMarks, Cloudflare Pages üzerinde barındırılmaktadır. Cloudflare, standart barındırma kapsamında asgari düzeyde anonimleştirilmiş sunucu metrikleri (örneğin toplam sayfa görüntüleme sayısı) kaydedebilir; bunlar kişisel tanımlayıcı bilgi içermez. Google Analytics, Facebook Pixel veya herhangi bir üçüncü taraf izleme betiği kullanmıyoruz."
+      },
+      "thirdParty": {
+        "heading": "Üçüncü taraf içerikler",
+        "body": "AllMarks, diğer sitelerden içerik gösterebilir; örneğin react-tweet aracılığıyla tweetler veya oEmbed aracılığıyla videolar. Bu yerleştirmeler kendi hizmetlerinin gizlilik politikalarına tabi olabilir; panolarınızda görünen her içerik için ilgili politikaların incelenmesini öneririz."
+      },
+      "advertising": {
+        "heading": "Reklamlar",
+        "body": "AllMarks bugün ücretsizdir ve reklam göstermez. Ücretsiz hizmeti desteklemek amacıyla ileride reklam sunmayı düşünürsek bu politikayı güncelleyecek, bunu açıkça belirteceğiz ve tarafımızda kişisel veri toplamaya devam etmeyeceğiz."
+      },
+      "children": {
+        "heading": "Çocukların gizliliği",
+        "body": "AllMarks, 13 yaşın altındaki çocuklardan bilerek herhangi bir bilgi toplamaz. Zaten hiç kimseden kişisel veri toplamadığımız için bu durum uygulamanın çalışma biçimine içkin olarak gerçekleşir."
+      },
+      "changes": {
+        "heading": "Bu politikadaki değişiklikler",
+        "body": "Bu politikayı zaman zaman güncelleyebiliriz. Değişiklikler yeni bir \"son güncelleme\" tarihiyle bu sayfada yayımlanır. Kişisel veri toplamadığımız için değişiklikleri doğrudan size bildiremeyiz."
+      },
+      "contact": {
+        "heading": "Sorularınız",
+        "body": "Bu politikaya ilişkin sorularınız için iletişim sayfamızdan bize ulaşabilirsiniz."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Hizmet Şartları",
+        "description": "AllMarks hizmet şartları — ücretsiz kullanım, hesap gerekmez, verileriniz tarayıcınızda kalır."
+      },
+      "hero": {
+        "kicker": "Şartlar",
+        "title": "Hizmet Şartları",
+        "lead": "AllMarks, hesap gerektirmeyen ücretsiz bir uygulamadır. Bu şartlar, kullanımın temel kurallarını açıklar.",
+        "updated": "Son güncelleme: 18 Haziran 2026"
+      },
+      "toc": {
+        "title": "İçindekiler"
+      },
+      "acceptance": {
+        "heading": "1. Şartların kabulü",
+        "body": "AllMarks'ı (\"Hizmet\") kullanarak bu Hizmet Şartlarını kabul etmiş olursunuz. Kabul etmiyorsanız lütfen Hizmeti kullanmayınız."
+      },
+      "service": {
+        "heading": "2. Hizmet",
+        "body": "AllMarks, yer imlerini kaydetmenize ve görsel panolar olarak düzenlemenize olanak tanıyan ücretsiz bir web uygulamasıdır. Tüm veriler tarayıcınızda yerel olarak saklanır; hesap veya kayıt gerekmez."
+      },
+      "responsibilities": {
+        "heading": "3. Sorumluluklarınız",
+        "body": "Kaydettiğiniz ve paylaştığınız içerikten siz sorumlusunuz; Hizmeti herhangi bir yasadışı amaç için veya Hizmeti kesintiye uğratmak amacıyla kullanmamayı kabul ediyorsunuz; verilerinizin yerel olarak saklandığını ve tarayıcı verilerinizi temizlemenin AllMarks içeriğinizi kalıcı olarak sileceğini anlıyorsunuz."
+      },
+      "ip": {
+        "heading": "4. Fikri mülkiyet",
+        "body": "Kaydettiğiniz yer imleri üçüncü taraflara ait içeriklere başvurur; AllMarks, yer imi eklenen içerikler üzerinde herhangi bir mülkiyet iddiasında bulunmaz. AllMarks uygulaması, kodu, tasarımı ve markası AllMarks'a aittir."
+      },
+      "sharing": {
+        "heading": "5. İçerik paylaşımı",
+        "body": "Bir paylaşım bağlantısı oluşturduğunuzda, bağlantının içeriği görüntüleyebilmesi için pano verileri barındırma platformumuza yüklenir ve yaklaşık 30 gün sonra otomatik olarak silinir. Paylaşım yaparak, içeriği bu şekilde paylaşma hakkına sahip olduğunuzu beyan etmiş olursunuz."
+      },
+      "warranty": {
+        "heading": "6. Garanti yoktur",
+        "body": "Hizmet, herhangi bir garanti olmaksızın \"olduğu gibi\" ve \"mevcut haliyle\" sunulmaktadır. Hizmetin kesintisiz, güvenli veya hatasız olacağını garanti etmiyoruz; tarayıcı verisi temizleme, cihaz arızası veya herhangi başka bir nedenden kaynaklanan veri kaybından sorumlu değiliz."
+      },
+      "liability": {
+        "heading": "7. Sorumluluğun sınırlandırılması",
+        "body": "Yasaların izin verdiği azami ölçüde, AllMarks; Hizmetin kullanımından kaynaklanan dolaylı, arızi, özel, sonuçsal veya cezai zararlardan sorumlu tutulamaz."
+      },
+      "modifications": {
+        "heading": "8. Hizmet ve şartlardaki değişiklikler",
+        "body": "Hizmeti önceden bildirimde bulunmaksızın istediğimiz zaman değiştirebilir veya sonlandırabiliriz; bu şartları da zaman zaman güncelleyebiliriz. Değişikliklerin ardından Hizmeti kullanmaya devam etmeniz, revize edilmiş şartları kabul ettiğiniz anlamına gelir."
+      },
+      "law": {
+        "heading": "9. Geçerli hukuk",
+        "body": "Bu şartlar Japonya hukukuna tabidir; tüm anlaşmazlıklar Japonya'nın Tokyo mahkemelerinin münhasır yargı yetkisine tabidir."
+      },
+      "contact": {
+        "heading": "10. Sorularınız",
+        "body": "Bu şartlara ilişkin sorularınız için iletişim sayfamızdan bize ulaşabilirsiniz."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "İletişim",
+        "description": "AllMarks hakkında bizimle iletişime geçin — sorular, geri bildirimler, hata raporları ve güvenlik konuları GitHub üzerinden iletilebilir."
+      },
+      "hero": {
+        "kicker": "İletişim",
+        "title": "Bizimle iletişime geçin.",
+        "lead": "Sorular, fikirler ve hata raporları her zaman hoş karşılanır. Bize ulaşmanın en güvenilir yolu GitHub'dır."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "Hata raporları ve özellik istekleri için GitHub'da bir konu açın — sesinizin duyulacağından emin olmanın en kesin yolu budur."
+      },
+      "feedback": {
+        "label": "Geri Bildirim",
+        "body": "AllMarks'ı daha iyi hale getirmeye yönelik fikirler her zaman hoş karşılanır — ne kadar küçük olursa olsun \"keşke şunu yapabilseydi\" veya \"bu kısım rahatsız edici\" türünden her görüş değerlidir."
+      },
+      "security": {
+        "label": "Güvenlik",
+        "body": "Bir güvenlik açığı mı buldunuz? Lütfen kamuya açık bir konu yerine GitHub üzerinden özel olarak bildirin. Sorumlu ifşaat anlayışına büyük değer veriyoruz."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Uzantı Gizlilik Politikası",
+        "description": "AllMarks Chrome uzantısı için gizlilik politikası — yalnızca kaydettiğiniz sayfayı okur ve hiçbir sunucuya veri göndermez."
+      },
+      "hero": {
+        "kicker": "Uzantı Gizliliği",
+        "title": "AllMarks Uzantısı — Gizlilik Politikası",
+        "lead": "Uzantı, kaydetmeyi seçtiğiniz sayfayı okur ve hiçbir sunucuya veri göndermez.",
+        "updated": "Son güncelleme: 18 Haziran 2026"
+      },
+      "does": {
+        "heading": "Uzantının işlevi",
+        "body": "Uzantı simgesine tıkladığınızda, klavye kısayolunu kullandığınızda veya sağ tık menüsünden \"Save to AllMarks\" seçeneğine bastığınızda, uzantı aktif sekmenin (ya da sağ tıkladığınız bağlantının) URL'sini, sayfa başlığını, açıklamasını, önizleme görselini, site adını ve favicon'ını okur; bunları allmarks.app kaynağında tarayıcınızın yerel veritabanına yer imi olarak yazar."
+      },
+      "notCollect": {
+        "heading": "Yapmadıkları",
+        "body": "Tarama geçmişinizi toplamaz, kaydetmez veya iletmez. Sunucularımıza ya da herhangi bir üçüncü tarafa veri göndermez. Analitik, izleme, reklam veya telemetri içermez. Kaydetmeyi tetiklediğinizde yalnızca yukarıda belirtilen Open Graph meta etiketlerinin ötesinde sayfa içeriğini okumaz."
+      },
+      "storage": {
+        "heading": "Verilerin saklandığı yer",
+        "body": "Kaydedilen yer imleri yalnızca allmarks.app kaynağında tarayıcınızın yerel veritabanında yaşar. Uzantı ayarlarınız (kayan düğme ve imleç hapı seçenekleri gibi) chrome.storage.sync ile kaydedilir; Chrome senkronizasyonu etkinse bunlar Google'ın altyapısı aracılığıyla Chrome tarayıcılarınız arasında eşitlenebilir — biz bunları hiçbir zaman görmeyiz. Hangi URL'leri zaten kaydettiğinize dair yerel bir liste, kaydet düğmesinin \"zaten kaydedildi\" durumunu gösterebilmesi için chrome.storage.local ile tutulur; bu liste cihazınızda kalır. Yer imlerinizi depolayan tarafımıza ait bir hesap, sunucu veya veritabanı bulunmamaktadır."
+      },
+      "bridge": {
+        "heading": "Kayıtların uygulamaya ulaşması",
+        "body": "Bir yer imini AllMarks web uygulamasının kullandığı yerel veritabanına yazabilmek için uzantı, allmarks.app/save-iframe adresinde gizli bir sayfa açar. Bu, uzantıdan allmarks.app kaynağına köprü kurar; başka herhangi bir etki alanına bilgi gönderilmez."
+      },
+      "perms": {
+        "heading": "İzinler ve gerekçeleri",
+        "colName": "İzin",
+        "colPurpose": "Amaç",
+        "activeTab": "Aktif olarak kaydettiğiniz sekmenin URL'sini ve Open Graph meta verilerini okumak için.",
+        "contextMenus": "Sağ tık \"Save to AllMarks\" menü girişlerini eklemek için.",
+        "scripting": "Kaydettiğinizde sayfanın meta etiketlerini okuyan küçük bir çıkarıcı enjekte etmek için.",
+        "offscreen": "allmarks.app kayıt köprüsünü barındıran arka plan dışı sayfayı oluşturmak için.",
+        "storage": "Uzantı ayarlarınızı ve yerel \"zaten kaydedildi\" listesini saklamak için.",
+        "hostAll": "Ziyaret ettiğiniz sayfalarda kayan kaydet düğmesini göstermek ve kayıt köprüsünün allmarks.app'e erişmesini sağlamak için. Uzantı, bir sayfanın meta verilerini yalnızca kaydetmeyi seçtiğinizde okur."
+      },
+      "openSource": {
+        "heading": "Açık kaynak",
+        "body": "Kaynak kodu GitHub'da herkese açıktır (uzantı, extension klasörü altında yer alır); böylece herkes tam olarak ne yaptığını doğrulayabilir."
+      },
+      "contact": {
+        "heading": "İletişim",
+        "body": "Gizlilikle ilgili sorularınız için lütfen iletişim sayfamızı kullanın."
+      },
+      "changes": {
+        "heading": "Değişiklikler",
+        "body": "İzinler veya veri akışları değiştiğinde bu sayfayı güncelleriz. Yukarıdaki \"son güncelleme\" tarihi en son değişikliği yansıtır."
+      }
     }
   }
 }

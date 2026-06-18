@@ -386,6 +386,198 @@
         "heading": "Empieza a guardar.",
         "button": "Open Board"
       }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Política de privacidad",
+        "description": "AllMarks no recopila ningún dato personal. Tus marcadores permanecen en tu navegador; no se sube nada a menos que elijas compartir un tablero."
+      },
+      "hero": {
+        "kicker": "Privacidad",
+        "title": "Política de privacidad",
+        "lead": "AllMarks se basa en un principio: tus datos son tuyos. No recopilamos ningún dato personal y no existen cuentas.",
+        "updated": "Última actualización: 18 de junio de 2026"
+      },
+      "toc": {
+        "title": "Contenido"
+      },
+      "philosophy": {
+        "heading": "Cero recopilación de datos",
+        "body": "Tus marcadores, etiquetas y diseños de tablero se almacenan únicamente en la base de datos local de tu navegador (IndexedDB). No recopilamos, almacenamos ni transmitimos tus datos personales a nuestros servidores, y no existen cuentas con las que iniciar sesión."
+      },
+      "collect": {
+        "heading": "Lo que no recopilamos",
+        "body": "No recopilamos tu nombre, correo electrónico ni dirección; no tenemos cuentas ni credenciales de acceso; no guardamos ninguna copia de tu historial de navegación ni de tus marcadores en nuestros servidores; no usamos cookies de seguimiento ni publicidad; y no recogemos huellas basadas en IP ni análisis vinculados a ti como individuo."
+      },
+      "local": {
+        "heading": "Solo almacenamiento local",
+        "body": "Todo reside en tu navegador, en tu dispositivo. Esto significa que no podemos acceder, ver ni recuperar tus datos, no existe ninguna copia de seguridad de tus tableros en el servidor, y borrar los datos del navegador elimina permanentemente tu contenido de AllMarks. Puedes exportar tu propia copia de seguridad en cualquier momento."
+      },
+      "sharing": {
+        "heading": "Cuando compartes un tablero",
+        "body": "Compartir es el único caso en que los datos salen de tu dispositivo — y solo porque tú lo solicitas. Cuando creas un enlace para compartir, los datos del tablero se suben a nuestro servicio de alojamiento (Cloudflare KV) y la imagen de vista previa al almacenamiento (Cloudflare R2), accesibles únicamente mediante el enlace secreto, y se eliminan automáticamente después de unos 30 días. No se sube nada a menos que crees explícitamente un enlace para compartir, y tus tableros privados nunca se suben. También puedes exportar un tablero como PNG, que se genera completamente en tu navegador."
+      },
+      "bookmarklet": {
+        "heading": "Marcador rápido",
+        "body": "El marcador rápido de AllMarks lee las etiquetas meta de Open Graph (título, descripción, imagen, nombre del sitio) de la página en la que estás, íntegramente dentro de tu navegador, y las envía a tu ventana local de guardado de AllMarks. Ningún dato pasa por nuestros servidores."
+      },
+      "extension": {
+        "heading": "Extensión del navegador",
+        "body": "La extensión de AllMarks lee únicamente la página que eliges guardar, y no envía nada a ningún servidor: tus guardados van directamente a la base de datos local de tu navegador. Su propia política de privacidad explica exactamente qué lee y los permisos que utiliza."
+      },
+      "hosting": {
+        "heading": "Alojamiento y analíticas",
+        "body": "AllMarks está alojado en Cloudflare Pages. Cloudflare puede registrar métricas mínimas y anonimizadas del servidor (como el total de visitas a la página) como parte del alojamiento estándar; estas no contienen información de identificación personal. No usamos Google Analytics, ni Facebook Pixel, ni scripts de seguimiento de terceros."
+      },
+      "thirdParty": {
+        "heading": "Contenido de terceros",
+        "body": "AllMarks puede mostrar contenido de otros sitios — por ejemplo, tuits mediante react-tweet, o vídeos mediante oEmbed. Esos contenidos incrustados pueden estar sujetos a las políticas de privacidad de sus propios servicios, que recomendamos revisar para cualquier contenido que aparezca en tus tableros."
+      },
+      "advertising": {
+        "heading": "Publicidad",
+        "body": "AllMarks es gratuito y hoy no muestra anuncios. Si alguna vez introducimos publicidad para sostener el servicio gratuito, actualizaremos esta política, lo indicaremos claramente y continuaremos sin recopilar ningún dato personal por nuestra parte."
+      },
+      "children": {
+        "heading": "Privacidad de los menores",
+        "body": "AllMarks no recopila conscientemente ninguna información de menores de 13 años. Dado que no recopilamos datos personales de nadie, esto es inherente al funcionamiento de la aplicación."
+      },
+      "changes": {
+        "heading": "Cambios en esta política",
+        "body": "Podemos actualizar esta política ocasionalmente. Los cambios se publican en esta página con una nueva fecha de «última actualización». Como no recopilamos datos personales, no podemos notificarte los cambios directamente."
+      },
+      "contact": {
+        "heading": "Preguntas",
+        "body": "Si tienes preguntas sobre esta política, contáctanos a través de la página de contacto."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Términos de servicio",
+        "description": "Términos de servicio de AllMarks — gratuito, sin cuenta, tus datos permanecen en tu navegador."
+      },
+      "hero": {
+        "kicker": "Términos",
+        "title": "Términos de servicio",
+        "lead": "AllMarks es una aplicación gratuita sin cuenta. Estos términos explican los aspectos básicos de su uso.",
+        "updated": "Última actualización: 18 de junio de 2026"
+      },
+      "toc": {
+        "title": "Contenido"
+      },
+      "acceptance": {
+        "heading": "1. Aceptación de los términos",
+        "body": "Al usar AllMarks («el Servicio»), aceptas estos Términos de servicio. Si no estás de acuerdo, por favor no uses el Servicio."
+      },
+      "service": {
+        "heading": "2. El servicio",
+        "body": "AllMarks es una aplicación web gratuita para guardar marcadores y organizarlos como tableros visuales. Todos los datos se almacenan localmente en tu navegador y no se requiere cuenta ni registro."
+      },
+      "responsibilities": {
+        "heading": "3. Tus responsabilidades",
+        "body": "Eres responsable del contenido que guardas y compartes, aceptas no usar el Servicio para ningún fin ilícito ni para perturbarlo, y entiendes que tus datos se almacenan localmente — borrar los datos del navegador elimina permanentemente tu contenido de AllMarks."
+      },
+      "ip": {
+        "heading": "4. Propiedad intelectual",
+        "body": "Los marcadores que guardas hacen referencia a contenido propiedad de terceros; AllMarks no reclama ningún derecho sobre el contenido guardado como marcador. La aplicación AllMarks, su código, diseño y marca pertenecen a AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Compartir contenido",
+        "body": "Cuando creas un enlace para compartir, los datos del tablero se suben a nuestro servicio de alojamiento para que el enlace pueda renderizarlo, y se eliminan automáticamente después de unos 30 días. Al compartir, declaras que tienes derecho a compartir el contenido de esta manera."
+      },
+      "warranty": {
+        "heading": "6. Sin garantía",
+        "body": "El Servicio se proporciona «tal cual» y «según disponibilidad» sin garantías de ningún tipo. No garantizamos que sea ininterrumpido, seguro o libre de errores, y no somos responsables de la pérdida de datos por borrado de datos del navegador, fallo del dispositivo ni cualquier otra causa."
+      },
+      "liability": {
+        "heading": "7. Limitación de responsabilidad",
+        "body": "En la máxima medida permitida por la ley, AllMarks no será responsable de ningún daño indirecto, incidental, especial, consecuente o punitivo derivado del uso del Servicio."
+      },
+      "modifications": {
+        "heading": "8. Cambios en el servicio y en los términos",
+        "body": "Podemos modificar o interrumpir el Servicio en cualquier momento sin previo aviso, y podemos actualizar estos términos ocasionalmente. El uso continuado tras los cambios implica la aceptación de los términos revisados."
+      },
+      "law": {
+        "heading": "9. Legislación aplicable",
+        "body": "Estos términos se rigen por las leyes de Japón, y cualquier disputa estará sujeta a la jurisdicción exclusiva de los tribunales de Tokio, Japón."
+      },
+      "contact": {
+        "heading": "10. Preguntas",
+        "body": "Si tienes preguntas sobre estos términos, contáctanos a través de la página de contacto."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "Contacto",
+        "description": "Contáctanos sobre AllMarks — preguntas, comentarios, informes de errores y seguridad, a través de GitHub."
+      },
+      "hero": {
+        "kicker": "Contacto",
+        "title": "Ponte en contacto.",
+        "lead": "Preguntas, ideas e informes de errores son bienvenidos. GitHub es la forma más fiable de llegar hasta nosotros."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "Para informes de errores y solicitudes de funciones, abre una incidencia en GitHub — es la forma más segura de ser escuchado."
+      },
+      "feedback": {
+        "label": "Comentarios",
+        "body": "Las ideas para mejorar AllMarks son siempre bienvenidas — «ojalá pudiera hacer esto» o «esta parte es incómoda», por pequeño que sea."
+      },
+      "security": {
+        "label": "Seguridad",
+        "body": "¿Has encontrado un problema de seguridad? Comunícalo de forma privada a través de GitHub en lugar de como una incidencia pública. La divulgación responsable es muy apreciada."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Política de privacidad de la extensión",
+        "description": "Política de privacidad de la extensión de Chrome de AllMarks — solo lee la página que guardas y no envía nada a ningún servidor."
+      },
+      "hero": {
+        "kicker": "Privacidad de la extensión",
+        "title": "Extensión AllMarks — Política de privacidad",
+        "lead": "La extensión lee únicamente la página que eliges guardar, y no envía nada a ningún servidor.",
+        "updated": "Última actualización: 18 de junio de 2026"
+      },
+      "does": {
+        "heading": "Qué hace la extensión",
+        "body": "Cuando haces clic en el icono de la extensión, pulsas el atajo de teclado o usas el menú contextual «Guardar en AllMarks», la extensión lee la URL, el título de la página, la descripción, la imagen de vista previa, el nombre del sitio y el favicon de la pestaña activa (o del enlace en el que hiciste clic con el botón derecho) y los escribe como marcador en la base de datos local de tu navegador en el origen allmarks.app."
+      },
+      "notCollect": {
+        "heading": "Lo que no hace",
+        "body": "No recopila, registra ni transmite tu historial de navegación. No envía datos a nuestros servidores ni a ningún tercero. No tiene analíticas, seguimiento, publicidad ni telemetría de ningún tipo. No lee el contenido de las páginas más allá de las etiquetas meta de Open Graph indicadas, y solo cuando tú activas un guardado."
+      },
+      "storage": {
+        "heading": "Dónde se almacenan los datos",
+        "body": "Los marcadores guardados residen únicamente en la base de datos local de tu navegador en el origen allmarks.app. Los ajustes de la extensión (como las opciones del botón flotante y la pastilla de cursor) se guardan con chrome.storage.sync, de modo que si Chrome Sync está activado, pueden sincronizarse entre tus navegadores Chrome a través de la infraestructura de Google — nosotros nunca los vemos. Una lista local de las URL que ya has guardado se mantiene con chrome.storage.local para que el botón de guardado pueda mostrar un estado «ya guardado»; permanece en tu dispositivo. No hay cuenta, servidor ni base de datos de nuestra parte que almacene tus marcadores."
+      },
+      "bridge": {
+        "heading": "Cómo llega el guardado a la aplicación",
+        "body": "Para escribir un marcador en la misma base de datos local que usa la aplicación web AllMarks, la extensión abre una página oculta en allmarks.app/save-iframe. Esto sirve de puente entre la extensión y el origen allmarks.app; no se envía información a ningún otro dominio."
+      },
+      "perms": {
+        "heading": "Permisos y su razón de ser",
+        "colName": "Permiso",
+        "colPurpose": "Finalidad",
+        "activeTab": "Leer la URL y las meta de Open Graph de la pestaña que guardas activamente.",
+        "contextMenus": "Añadir las entradas «Guardar en AllMarks» del menú contextual.",
+        "scripting": "Inyectar el pequeño extractor que lee las etiquetas meta de la página cuando guardas.",
+        "offscreen": "Crear la página fuera de pantalla que aloja el puente de guardado de allmarks.app.",
+        "storage": "Guardar los ajustes de la extensión y la lista local de «ya guardado».",
+        "hostAll": "Mostrar el botón flotante de guardado en las páginas que visitas y permitir que el puente de guardado alcance allmarks.app. La extensión lee las meta de una página solo cuando tú decides guardarla."
+      },
+      "openSource": {
+        "heading": "Código abierto",
+        "body": "El código fuente es público en GitHub (la extensión se encuentra en la carpeta extension), por lo que cualquiera puede verificar exactamente qué hace."
+      },
+      "contact": {
+        "heading": "Contacto",
+        "body": "Para preguntas sobre privacidad, usa la página de contacto."
+      },
+      "changes": {
+        "heading": "Cambios",
+        "body": "Actualizamos esta página siempre que cambien los permisos o los flujos de datos. La fecha de «última actualización» que aparece arriba refleja el cambio más reciente."
+      }
     }
   }
 }

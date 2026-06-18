@@ -386,6 +386,198 @@
         "heading": "Fang an zu speichern.",
         "button": "Open Board"
       }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Datenschutzrichtlinie",
+        "description": "AllMarks erfasst keinerlei personenbezogene Daten. Deine Lesezeichen bleiben in deinem Browser; es wird nichts hochgeladen, außer du entscheidest dich, ein Board zu teilen."
+      },
+      "hero": {
+        "kicker": "Datenschutz",
+        "title": "Datenschutzrichtlinie",
+        "lead": "AllMarks basiert auf einem einzigen Grundsatz: Deine Daten gehören dir. Wir erfassen keine personenbezogenen Daten, und es gibt keine Konten.",
+        "updated": "Zuletzt aktualisiert: 18. Juni 2026"
+      },
+      "toc": {
+        "title": "Inhalt"
+      },
+      "philosophy": {
+        "heading": "Keine Datenerfassung",
+        "body": "Deine Lesezeichen, Tags und Board-Layouts werden ausschließlich in der lokalen Datenbank deines Browsers (IndexedDB) gespeichert. Wir erfassen, speichern oder übertragen keine personenbezogenen Daten an unsere Server, und es gibt keine Konten, bei denen du dich anmelden müsstest."
+      },
+      "collect": {
+        "heading": "Was wir nicht erfassen",
+        "body": "Wir erfassen weder deinen Namen, deine E-Mail noch deine Adresse; wir haben keine Konten oder Anmeldedaten; wir bewahren keine Kopie deines Browserverlaufs oder deiner Lesezeichen auf unseren Servern auf; wir verwenden keine Tracking- oder Werbe-Cookies; und wir erheben keine IP-basierten Fingerabdrücke oder auf dich als Person bezogene Analysen."
+      },
+      "local": {
+        "heading": "Nur lokale Speicherung",
+        "body": "Alles verbleibt in deinem Browser auf deinem Gerät. Das bedeutet: Wir können nicht auf deine Daten zugreifen, sie einsehen oder wiederherstellen; es gibt kein serverseitiges Backup deiner Boards; und das Löschen der Browserdaten entfernt deine AllMarks-Inhalte dauerhaft. Du kannst jederzeit ein eigenes Backup exportieren."
+      },
+      "sharing": {
+        "heading": "Wenn du ein Board teilst",
+        "body": "Das Teilen ist der einzige Fall, in dem Daten dein Gerät verlassen — und nur, weil du es selbst veranlasst. Wenn du einen Teilungslink erstellst, werden die Board-Daten in unser Hosting (Cloudflare KV) und ein Vorschaubild in den Speicher (Cloudflare R2) hochgeladen, nur über den geheimen Teilungslink erreichbar, und nach etwa 30 Tagen automatisch gelöscht. Es wird nichts hochgeladen, außer du erstellst ausdrücklich einen Teilungslink; deine privaten Boards werden niemals hochgeladen. Du kannst ein Board auch als PNG exportieren, das vollständig in deinem Browser erzeugt wird."
+      },
+      "bookmarklet": {
+        "heading": "Bookmarklet",
+        "body": "Das AllMarks-Bookmarklet liest die Open Graph-Meta-Tags (Titel, Beschreibung, Bild, Seitenname) der Seite, auf der du dich befindest, vollständig in deinem Browser, und übergibt sie an dein lokales AllMarks-Speicherfenster. Es werden keine Daten über unsere Server übertragen."
+      },
+      "extension": {
+        "heading": "Browser-Erweiterung",
+        "body": "Die AllMarks-Erweiterung liest nur die Seite, die du zu speichern auswählst, und sendet nichts an irgendeinen Server — deine Speicherungen gehen direkt in die lokale Datenbank deines Browsers. Die eigene Datenschutzrichtlinie der Erweiterung erläutert genau, was sie liest und welche Berechtigungen sie verwendet."
+      },
+      "hosting": {
+        "heading": "Hosting und Analysen",
+        "body": "AllMarks wird auf Cloudflare Pages gehostet. Cloudflare kann im Rahmen des Standard-Hostings minimale, anonymisierte Servermetriken (etwa Gesamtseitenaufrufe) erfassen; diese enthalten keine personenbezogenen Informationen. Wir verwenden weder Google Analytics noch den Facebook Pixel noch sonstige Drittanbieter-Tracking-Skripte."
+      },
+      "thirdParty": {
+        "heading": "Drittanbieter-Inhalte",
+        "body": "AllMarks kann Inhalte von anderen Seiten anzeigen — zum Beispiel Tweets über react-tweet oder Videos über oEmbed. Diese Einbettungen können den Datenschutzrichtlinien der jeweiligen Dienste unterliegen, die wir für alle Inhalte, die in deinen Boards erscheinen, zur Lektüre empfehlen."
+      },
+      "advertising": {
+        "heading": "Werbung",
+        "body": "AllMarks ist kostenlos und zeigt heute keine Werbung. Sollten wir jemals Werbung zur Finanzierung des kostenlosen Dienstes einführen, werden wir diese Richtlinie aktualisieren, sie klar kennzeichnen und weiterhin keinerlei personenbezogene Daten auf unserer Seite erfassen."
+      },
+      "children": {
+        "heading": "Datenschutz für Kinder",
+        "body": "AllMarks erfasst wissentlich keine Informationen von Kindern unter 13 Jahren. Da wir von niemandem personenbezogene Daten erfassen, ist dies der Funktionsweise der App inhärent."
+      },
+      "changes": {
+        "heading": "Änderungen dieser Richtlinie",
+        "body": "Wir können diese Richtlinie von Zeit zu Zeit aktualisieren. Änderungen werden auf dieser Seite mit einem neuen Datum unter „Zuletzt aktualisiert“ veröffentlicht. Da wir keine personenbezogenen Daten erfassen, können wir dich nicht direkt über Änderungen informieren."
+      },
+      "contact": {
+        "heading": "Fragen",
+        "body": "Bei Fragen zu dieser Richtlinie erreichst du uns über die Kontaktseite."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Nutzungsbedingungen",
+        "description": "Nutzungsbedingungen von AllMarks — kostenlos nutzbar, kein Konto, deine Daten bleiben in deinem Browser."
+      },
+      "hero": {
+        "kicker": "Nutzungsbedingungen",
+        "title": "Nutzungsbedingungen",
+        "lead": "AllMarks ist eine kostenlose App ohne Konto. Diese Bedingungen erläutern die Grundlagen der Nutzung.",
+        "updated": "Zuletzt aktualisiert: 18. Juni 2026"
+      },
+      "toc": {
+        "title": "Inhalt"
+      },
+      "acceptance": {
+        "heading": "1. Zustimmung zu den Bedingungen",
+        "body": "Durch die Nutzung von AllMarks („der Dienst\") stimmst du diesen Nutzungsbedingungen zu. Wenn du nicht zustimmst, nutze den Dienst bitte nicht."
+      },
+      "service": {
+        "heading": "2. Der Dienst",
+        "body": "AllMarks ist eine kostenlose Web-App zum Speichern von Lesezeichen und Anordnen als visuelle Boards. Alle Daten werden lokal in deinem Browser gespeichert, und es ist kein Konto oder keine Registrierung erforderlich."
+      },
+      "responsibilities": {
+        "heading": "3. Deine Pflichten",
+        "body": "Du bist für die Inhalte verantwortlich, die du speicherst und teilst; du stimmst zu, den Dienst nicht für rechtswidrige Zwecke oder zur Störung desselben zu nutzen; und du verstehst, dass deine Daten lokal gespeichert werden — das Löschen der Browserdaten löscht deine AllMarks-Inhalte dauerhaft."
+      },
+      "ip": {
+        "heading": "4. Geistiges Eigentum",
+        "body": "Von dir gespeicherte Lesezeichen verweisen auf Inhalte, die Dritten gehören; AllMarks erhebt keinen Anspruch auf gespeicherte Inhalte. Die AllMarks-App, ihr Code, ihr Design und ihre Marke gehören AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Inhalte teilen",
+        "body": "Wenn du einen Teilungslink erstellst, werden die Board-Daten in unser Hosting hochgeladen, damit der Link sie darstellen kann, und nach etwa 30 Tagen automatisch gelöscht. Durch das Teilen erklärst du, dass du berechtigt bist, die Inhalte auf diese Weise zu teilen."
+      },
+      "warranty": {
+        "heading": "6. Keine Gewährleistung",
+        "body": "Der Dienst wird „wie besehen\" und „wie verfügbar\" ohne jegliche Gewährleistung bereitgestellt. Wir garantieren nicht, dass er ununterbrochen, sicher oder fehlerfrei ist, und wir haften nicht für Datenverlust durch Löschung von Browserdaten, Geräteausfall oder sonstige Ursachen."
+      },
+      "liability": {
+        "heading": "7. Haftungsbeschränkung",
+        "body": "Im gesetzlich maximal zulässigen Umfang haftet AllMarks nicht für mittelbare, zufällige, besondere, Folge- oder Strafschäden, die aus deiner Nutzung des Dienstes entstehen."
+      },
+      "modifications": {
+        "heading": "8. Änderungen des Dienstes und der Bedingungen",
+        "body": "Wir können den Dienst jederzeit ohne Vorankündigung ändern oder einstellen und diese Bedingungen von Zeit zu Zeit aktualisieren. Die weitere Nutzung nach Änderungen gilt als Zustimmung zu den überarbeiteten Bedingungen."
+      },
+      "law": {
+        "heading": "9. Anwendbares Recht",
+        "body": "Diese Bedingungen unterliegen dem Recht Japans; für Streitigkeiten sind ausschließlich die Gerichte in Tokio, Japan zuständig."
+      },
+      "contact": {
+        "heading": "10. Fragen",
+        "body": "Bei Fragen zu diesen Bedingungen erreichst du uns über die Kontaktseite."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "Kontakt",
+        "description": "AllMarks kontaktieren — Fragen, Feedback, Fehlermeldungen und Sicherheitshinweise über GitHub."
+      },
+      "hero": {
+        "kicker": "Kontakt",
+        "title": "Schreib uns.",
+        "lead": "Fragen, Ideen und Fehlermeldungen sind herzlich willkommen. GitHub ist der zuverlässigste Weg, uns zu erreichen."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "Für Fehlermeldungen und Feature-Anfragen öffne ein Issue auf GitHub — das ist der sicherste Weg, gehört zu werden."
+      },
+      "feedback": {
+        "label": "Feedback",
+        "body": "Ideen, wie AllMarks besser werden könnte, sind immer willkommen — „Ich wünschte, es könnte das\" oder „Dieser Teil ist umständlich\", egal wie klein."
+      },
+      "security": {
+        "label": "Sicherheit",
+        "body": "Sicherheitsproblem entdeckt? Bitte melde es privat über GitHub statt als öffentliches Issue. Verantwortungsvolle Offenlegung wird sehr geschätzt."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Datenschutzrichtlinie der Erweiterung",
+        "description": "Datenschutzrichtlinie für die AllMarks Chrome-Erweiterung — sie liest nur die Seite, die du speicherst, und sendet nichts an irgendeinen Server."
+      },
+      "hero": {
+        "kicker": "Datenschutz der Erweiterung",
+        "title": "AllMarks-Erweiterung — Datenschutzrichtlinie",
+        "lead": "Die Erweiterung liest nur die Seite, die du zu speichern auswählst, und sendet nichts an irgendeinen Server.",
+        "updated": "Zuletzt aktualisiert: 18. Juni 2026"
+      },
+      "does": {
+        "heading": "Was die Erweiterung tut",
+        "body": "Wenn du auf das Erweiterungssymbol klickst, das Tastenkürzel drückst oder das Rechtsklick-Menü „In AllMarks speichern\" verwendest, liest die Erweiterung die URL, den Seitentitel, die Beschreibung, das Vorschaubild, den Seitenname und das Favicon des aktiven Tabs (oder des Links, auf den du geklickt hast) und schreibt sie als Lesezeichen in die lokale Datenbank deines Browsers auf dem allmarks.app-Ursprung."
+      },
+      "notCollect": {
+        "heading": "Was sie nicht tut",
+        "body": "Sie erfasst, protokolliert oder überträgt deinen Browserverlauf nicht. Sie sendet keine Daten an unsere Server oder Dritte. Sie verfügt über keinerlei Analysen, Tracking, Werbung oder Telemetrie. Sie liest keine Seiteninhalte über die oben genannten Open Graph-Meta-Tags hinaus, und nur wenn du einen Speichervorgang auslöst."
+      },
+      "storage": {
+        "heading": "Wo Daten gespeichert werden",
+        "body": "Gespeicherte Lesezeichen verbleiben ausschließlich in der lokalen Datenbank deines Browsers auf dem allmarks.app-Ursprung. Deine Erweiterungseinstellungen (etwa Optionen für den Schwebeschaltfläche und die Cursor-Pille) werden mit chrome.storage.sync gespeichert; ist Chrome-Sync aktiviert, können sie über Googles Infrastruktur auf deine Chrome-Browser synchronisiert werden — wir sehen sie nie. Eine lokale Liste bereits gespeicherter URLs wird mit chrome.storage.local vorgehalten, damit die Schaltfläche einen „Bereits gespeichert\"-Status anzeigen kann; sie verbleibt auf deinem Gerät. Es gibt kein Konto, keinen Server und keine Datenbank auf unserer Seite, der deine Lesezeichen speichert."
+      },
+      "bridge": {
+        "heading": "Wie das Speichern die App erreicht",
+        "body": "Um ein Lesezeichen in dieselbe lokale Datenbank zu schreiben, die die AllMarks-Web-App verwendet, öffnet die Erweiterung eine versteckte Seite unter allmarks.app/save-iframe. Dies überbrückt die Erweiterung mit dem allmarks.app-Ursprung; es werden keine Informationen an eine andere Domain gesendet."
+      },
+      "perms": {
+        "heading": "Berechtigungen und Zwecke",
+        "colName": "Berechtigung",
+        "colPurpose": "Zweck",
+        "activeTab": "URL und Open Graph-Meta des Tabs lesen, den du aktiv speicherst.",
+        "contextMenus": "Den Rechtsklick-Eintrag „In AllMarks speichern\" hinzufügen.",
+        "scripting": "Den kleinen Extraktor einschleusen, der die Meta-Tags der Seite beim Speichern liest.",
+        "offscreen": "Die Offscreen-Seite erstellen, die die allmarks.app-Speicher-Bridge beherbergt.",
+        "storage": "Deine Erweiterungseinstellungen und die lokale „Bereits gespeichert\"-Liste speichern.",
+        "hostAll": "Den schwebenden Speicher-Button auf den von dir besuchten Seiten anzeigen und der Speicher-Bridge den Zugriff auf allmarks.app ermöglichen. Die Erweiterung liest die Meta einer Seite nur, wenn du sie zu speichern auswählst."
+      },
+      "openSource": {
+        "heading": "Open Source",
+        "body": "Der Quellcode ist öffentlich auf GitHub zugänglich (die Erweiterung befindet sich im Extension-Ordner), sodass jeder genau nachvollziehen kann, was sie tut."
+      },
+      "contact": {
+        "heading": "Kontakt",
+        "body": "Bei Datenschutzfragen nutze bitte die Kontaktseite."
+      },
+      "changes": {
+        "heading": "Änderungen",
+        "body": "Wir aktualisieren diese Seite, wenn sich Berechtigungen oder Datenflüsse ändern. Das oben angegebene Datum unter „Zuletzt aktualisiert\" gibt die jüngste Änderung wieder."
+      }
     }
   }
 }

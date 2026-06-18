@@ -381,6 +381,198 @@
         "heading": "Begin met opslaan.",
         "button": "Open Board"
       }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Privacybeleid",
+        "description": "AllMarks verzamelt geen persoonsgegevens. Je bladwijzers blijven in je browser; er wordt niets geüpload tenzij je zelf kiest een bord te delen."
+      },
+      "hero": {
+        "kicker": "Privacy",
+        "title": "Privacybeleid",
+        "lead": "AllMarks is gebouwd op één beginsel: jouw gegevens zijn van jou. We verzamelen geen persoonsgegevens en er zijn geen accounts.",
+        "updated": "Laatst bijgewerkt: 18 juni 2026"
+      },
+      "toc": {
+        "title": "Inhoud"
+      },
+      "philosophy": {
+        "heading": "Nul gegevensverzameling",
+        "body": "Je bladwijzers, tags en bordinrichtingen worden alleen opgeslagen in de lokale database van je browser (IndexedDB). We verzamelen, bewaren en verzenden je persoonsgegevens niet naar onze servers, en er zijn geen accounts om bij in te loggen."
+      },
+      "collect": {
+        "heading": "Wat we niet verzamelen",
+        "body": "We verzamelen je naam, e-mailadres of adres niet; we hebben geen accounts of inloggegevens; we bewaren geen kopie van je browsergeschiedenis of je bladwijzers op onze servers; we gebruiken geen tracking- of advertentiecookies; en we verzamelen geen op IP gebaseerde vingerafdrukken of analyses die aan jou als individu zijn gekoppeld."
+      },
+      "local": {
+        "heading": "Alleen lokale opslag",
+        "body": "Alles leeft in je browser op je apparaat. Dat betekent dat we je gegevens niet kunnen inzien, bekijken of herstellen, dat er geen serverback-up van je borden bestaat, en dat het wissen van je browsergegevens je AllMarks-inhoud permanent verwijdert. Je kunt altijd zelf een back-up exporteren."
+      },
+      "sharing": {
+        "heading": "Wanneer je een bord deelt",
+        "body": "Delen is het enige geval waarbij gegevens je apparaat verlaten — en alleen omdat jij daarom vraagt. Wanneer je een deellink aanmaakt, worden de bordgegevens geüpload naar onze hosting (Cloudflare KV) en een voorbeeldafbeelding naar opslag (Cloudflare R2), alleen bereikbaar via de geheime deellink, en na ongeveer 30 dagen automatisch verwijderd. Er wordt niets geüpload tenzij je uitdrukkelijk een deellink aanmaakt, en je privéborden worden nooit geüpload. Je kunt een bord ook exporteren als PNG, wat volledig in je browser wordt gegenereerd."
+      },
+      "bookmarklet": {
+        "heading": "Bookmarklet",
+        "body": "De AllMarks-bookmarklet leest de Open Graph-metatags (titel, beschrijving, afbeelding, sitenaam) van de pagina waarop je je bevindt, volledig binnen je browser, en geeft ze door aan je lokale AllMarks-opslaanvenster. Er worden geen gegevens via onze servers doorgegeven."
+      },
+      "extension": {
+        "heading": "Browserextensie",
+        "body": "De AllMarks-extensie leest alleen de pagina die je kiest op te slaan en stuurt niets naar een server — je opgeslagen items gaan direct naar de lokale database van je browser. Het eigen privacybeleid van de extensie legt precies uit wat het leest en welke machtigingen het gebruikt."
+      },
+      "hosting": {
+        "heading": "Hosting en analyses",
+        "body": "AllMarks wordt gehost op Cloudflare Pages. Cloudflare kan als onderdeel van standaardhostingactiviteiten minimale, geanonimiseerde serverstatistieken bijhouden (zoals het totale aantal paginaweergaven); deze bevatten geen persoonsidentificeerbare informatie. We gebruiken geen Google Analytics, geen Facebook Pixel en geen externe trackingscripts."
+      },
+      "thirdParty": {
+        "heading": "Inhoud van derden",
+        "body": "AllMarks kan inhoud van andere sites weergeven — bijvoorbeeld tweets via react-tweet of video's via oEmbed. Die insluitingen kunnen onderworpen zijn aan de privacybeleidsregels van hun eigen diensten, die we aanbevelen te raadplegen voor alle inhoud die in je borden verschijnt."
+      },
+      "advertising": {
+        "heading": "Reclame",
+        "body": "AllMarks is gratis en vertoont momenteel geen advertenties. Als we ooit reclame zouden introduceren om de gratis dienst te ondersteunen, zullen we dit beleid bijwerken, het duidelijk aangeven en aan onze kant nog steeds geen persoonsgegevens verzamelen."
+      },
+      "children": {
+        "heading": "Privacy van kinderen",
+        "body": "AllMarks verzamelt bewust geen informatie van kinderen onder de 13 jaar. Omdat we van niemand persoonsgegevens verzamelen, is dit inherent aan de werking van de app."
+      },
+      "changes": {
+        "heading": "Wijzigingen in dit beleid",
+        "body": "We kunnen dit beleid van tijd tot tijd bijwerken. Wijzigingen worden op deze pagina gepubliceerd met een nieuwe datum \"laatst bijgewerkt\". Omdat we geen persoonsgegevens verzamelen, kunnen we je niet rechtstreeks op de hoogte stellen van wijzigingen."
+      },
+      "contact": {
+        "heading": "Vragen",
+        "body": "Als je vragen hebt over dit beleid, kun je ons bereiken via de contactpagina."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Servicevoorwaarden",
+        "description": "Servicevoorwaarden van AllMarks — gratis te gebruiken, geen account, je gegevens blijven in je browser."
+      },
+      "hero": {
+        "kicker": "Voorwaarden",
+        "title": "Servicevoorwaarden",
+        "lead": "AllMarks is een gratis app zonder account. Deze voorwaarden leggen de basis van het gebruik uit.",
+        "updated": "Laatst bijgewerkt: 18 juni 2026"
+      },
+      "toc": {
+        "title": "Inhoud"
+      },
+      "acceptance": {
+        "heading": "1. Aanvaarding van voorwaarden",
+        "body": "Door AllMarks (\"de Dienst\") te gebruiken, ga je akkoord met deze Servicevoorwaarden. Als je niet akkoord gaat, gebruik de Dienst dan niet."
+      },
+      "service": {
+        "heading": "2. De dienst",
+        "body": "AllMarks is een gratis webapplicatie voor het opslaan van bladwijzers en het rangschikken ervan als visuele borden. Alle gegevens worden lokaal in je browser opgeslagen en er is geen account of registratie vereist."
+      },
+      "responsibilities": {
+        "heading": "3. Jouw verantwoordelijkheden",
+        "body": "Je bent verantwoordelijk voor de inhoud die je opslaat en deelt, je gaat ermee akkoord de Dienst niet te gebruiken voor onrechtmatige doeleinden of de Dienst te verstoren, en je begrijpt dat je gegevens lokaal worden opgeslagen — het wissen van je browsergegevens verwijdert je AllMarks-inhoud permanent."
+      },
+      "ip": {
+        "heading": "4. Intellectueel eigendom",
+        "body": "Bladwijzers die je opslaat verwijzen naar inhoud die eigendom is van derden; AllMarks claimt geen eigendom van opgeslagen inhoud. De AllMarks-app, de code, het ontwerp en de huisstijl zijn eigendom van AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Inhoud delen",
+        "body": "Wanneer je een deellink aanmaakt, worden de bordgegevens geüpload naar onze hosting zodat de link ze kan weergeven, en worden ze na ongeveer 30 dagen automatisch verwijderd. Door te delen verklaar je dat je het recht hebt de inhoud op deze manier te delen."
+      },
+      "warranty": {
+        "heading": "6. Geen garantie",
+        "body": "De Dienst wordt geleverd \"as is\" en \"as available\" zonder garanties van welke aard dan ook. We garanderen niet dat de Dienst ononderbroken, veilig of foutloos zal zijn, en we zijn niet verantwoordelijk voor gegevensverlies als gevolg van het wissen van browsergegevens, apparaatstoringen of enige andere oorzaak."
+      },
+      "liability": {
+        "heading": "7. Beperking van aansprakelijkheid",
+        "body": "Voor zover wettelijk toegestaan is AllMarks niet aansprakelijk voor indirecte, incidentele, bijzondere, gevolgschade of punitieve schade die voortvloeit uit jouw gebruik van de Dienst."
+      },
+      "modifications": {
+        "heading": "8. Wijzigingen in de dienst en voorwaarden",
+        "body": "We kunnen de Dienst te allen tijde zonder kennisgeving wijzigen of beëindigen, en we kunnen deze voorwaarden van tijd tot tijd bijwerken. Voortgezet gebruik na wijzigingen betekent dat je de herziene voorwaarden aanvaardt."
+      },
+      "law": {
+        "heading": "9. Toepasselijk recht",
+        "body": "Deze voorwaarden worden beheerst door het recht van Japan, en eventuele geschillen zijn onderworpen aan de exclusieve bevoegdheid van de rechtbanken van Tokio, Japan."
+      },
+      "contact": {
+        "heading": "10. Vragen",
+        "body": "Als je vragen hebt over deze voorwaarden, kun je ons bereiken via de contactpagina."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "Contact",
+        "description": "Neem contact op over AllMarks — vragen, feedback, bugrapporten en beveiliging, via GitHub."
+      },
+      "hero": {
+        "kicker": "Contact",
+        "title": "Neem contact op.",
+        "lead": "Vragen, ideeën en bugrapporten zijn altijd welkom. GitHub is de meest betrouwbare manier om ons te bereiken."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "Voor bugrapporten en functieverzoeken kun je een issue openen op GitHub — dat is de zekerste manier om gehoord te worden."
+      },
+      "feedback": {
+        "label": "Feedback",
+        "body": "Ideeën om AllMarks beter te maken zijn altijd welkom — \"ik wou dat het dit kon\" of \"dit onderdeel is onhandig,\" hoe klein ook."
+      },
+      "security": {
+        "label": "Beveiliging",
+        "body": "Een beveiligingsprobleem gevonden? Meld het privé via GitHub in plaats van als openbaar issue. Responsible disclosure wordt zeer gewaardeerd."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Privacybeleid van de extensie",
+        "description": "Privacybeleid voor de AllMarks Chrome-extensie — leest alleen de pagina die je opslaat en stuurt niets naar een server."
+      },
+      "hero": {
+        "kicker": "Privacy van de extensie",
+        "title": "AllMarks-extensie — Privacybeleid",
+        "lead": "De extensie leest alleen de pagina die je kiest op te slaan en stuurt niets naar een server.",
+        "updated": "Laatst bijgewerkt: 18 juni 2026"
+      },
+      "does": {
+        "heading": "Wat de extensie doet",
+        "body": "Wanneer je op het extensiepictogram klikt, de sneltoets gebruikt of het rechtsklikmenu \"Opslaan in AllMarks\" gebruikt, leest de extensie de URL, paginatitel, beschrijving, voorbeeldafbeelding, sitenaam en favicon van het actieve tabblad (of de link waarop je hebt geklikt) en schrijft ze als bladwijzer naar de lokale database van je browser op de allmarks.app-oorsprong."
+      },
+      "notCollect": {
+        "heading": "Wat het niet doet",
+        "body": "Het verzamelt, registreert of verzendt je browsergeschiedenis niet. Het stuurt geen gegevens naar onze servers of een derde partij. Het heeft geen analyses, tracking, reclame of telemetrie van welke aard dan ook. Het leest geen pagina-inhoud voorbij de bovenstaande Open Graph-metatags, en alleen wanneer jij een opslaan activeert."
+      },
+      "storage": {
+        "heading": "Waar gegevens worden opgeslagen",
+        "body": "Opgeslagen bladwijzers leven alleen in de lokale database van je browser op de allmarks.app-oorsprong. Je extensie-instellingen (zoals de zwevende knop en cursorpil-opties) worden opgeslagen met chrome.storage.sync, zodat als Chrome-synchronisatie aan staat ze mogelijk via de infrastructuur van Google worden gesynchroniseerd tussen je Chrome-browsers — wij zien ze nooit. Een lokale lijst van welke URL's je al hebt opgeslagen wordt bijgehouden met chrome.storage.local zodat de opslaanknop de status \"al opgeslagen\" kan weergeven; die blijft op je apparaat. Er is geen account, server of database aan onze kant die je bladwijzers opslaat."
+      },
+      "bridge": {
+        "heading": "Hoe opslaan de app bereikt",
+        "body": "Om een bladwijzer te schrijven naar dezelfde lokale database die de AllMarks-webapplicatie gebruikt, opent de extensie een verborgen pagina op allmarks.app/save-iframe. Dit vormt de brug van de extensie naar de allmarks.app-oorsprong; er wordt geen informatie naar een ander domein gestuurd."
+      },
+      "perms": {
+        "heading": "Machtigingen en het waarom",
+        "colName": "Machtiging",
+        "colPurpose": "Doel",
+        "activeTab": "De URL en Open Graph-meta van het tabblad dat je actief opslaat lezen.",
+        "contextMenus": "De rechtsklikmenu-items \"Opslaan in AllMarks\" toevoegen.",
+        "scripting": "De kleine extractor injecteren die de metatags van de pagina leest wanneer je opslaat.",
+        "offscreen": "De offscreen-pagina aanmaken die de allmarks.app-opslaanbrug host.",
+        "storage": "Je extensie-instellingen en de lokale lijst \"al opgeslagen\" opslaan.",
+        "hostAll": "De zwevende opslaanknop weergeven op de pagina's die je bezoekt en de opslaanbrug allmarks.app laten bereiken. De extensie leest de meta van een pagina alleen wanneer je kiest deze op te slaan."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "De broncode is openbaar op GitHub (de extensie staat in de extensiemap), zodat iedereen precies kan verifiëren wat het doet."
+      },
+      "contact": {
+        "heading": "Contact",
+        "body": "Voor privacyvragen kunt u de contactpagina gebruiken."
+      },
+      "changes": {
+        "heading": "Wijzigingen",
+        "body": "We werken deze pagina bij wanneer machtigingen of gegevensstromen veranderen. De datum \"Laatst bijgewerkt\" hierboven geeft de meest recente wijziging aan."
+      }
     }
   }
 }
