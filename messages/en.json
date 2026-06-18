@@ -533,6 +533,57 @@
         "label": "Security",
         "body": "Found a security issue? Please report it privately through GitHub rather than a public issue. Responsible disclosure is much appreciated."
       }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Extension Privacy Policy",
+        "description": "Privacy policy for the AllMarks Chrome extension — it reads only the page you save and sends nothing to any server."
+      },
+      "hero": {
+        "kicker": "Extension Privacy",
+        "title": "AllMarks Extension — Privacy Policy",
+        "lead": "The extension reads only the page you choose to save, and sends nothing to any server.",
+        "updated": "Last updated: June 18, 2026"
+      },
+      "does": {
+        "heading": "What the extension does",
+        "body": "When you click the extension icon, press the keyboard shortcut, or use the right-click \"Save to AllMarks\" menu, the extension reads the URL, page title, description, preview image, site name, and favicon of the active tab (or the link you right-clicked) and writes them as a bookmark into your browser's local database on the allmarks.app origin."
+      },
+      "notCollect": {
+        "heading": "What it does not do",
+        "body": "It does not collect, log, or transmit your browsing history. It sends no data to our servers or any third party. It has no analytics, tracking, advertising, or telemetry of any kind. It does not read page contents beyond the Open Graph meta tags above, and only when you trigger a save."
+      },
+      "storage": {
+        "heading": "Where data is stored",
+        "body": "Saved bookmarks live only in your browser's local database on the allmarks.app origin. Your extension settings (such as the floating button and cursor pill options) are saved with chrome.storage.sync, so if Chrome sync is on they may sync across your Chrome browsers through Google's infrastructure — we never see them. A local list of which URLs you've already saved is kept with chrome.storage.local so the save button can show an \"already saved\" state; it stays on your device. There is no account, server, or database on our side that stores your bookmarks."
+      },
+      "bridge": {
+        "heading": "How saving reaches the app",
+        "body": "To write a bookmark into the same local database the AllMarks web app uses, the extension opens a hidden page at allmarks.app/save-iframe. This bridges from the extension into the allmarks.app origin; no information is sent to any other domain."
+      },
+      "perms": {
+        "heading": "Permissions and why",
+        "colName": "Permission",
+        "colPurpose": "Purpose",
+        "activeTab": "Read the URL and Open Graph meta of the tab you actively save.",
+        "contextMenus": "Add the right-click \"Save to AllMarks\" entries.",
+        "scripting": "Inject the small extractor that reads the page's meta tags when you save.",
+        "offscreen": "Create the offscreen page that hosts the allmarks.app save bridge.",
+        "storage": "Save your extension settings and the local \"already saved\" list.",
+        "hostAll": "Show the floating save button on the pages you visit and let the save bridge reach allmarks.app. The extension reads a page's meta only when you choose to save it."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "The source code is public on GitHub (the extension lives under the extension folder), so anyone can verify exactly what it does."
+      },
+      "contact": {
+        "heading": "Contact",
+        "body": "For privacy questions, please use the contact page."
+      },
+      "changes": {
+        "heading": "Changes",
+        "body": "We update this page whenever permissions or data flows change. The \"last updated\" date above reflects the most recent change."
+      }
     }
   }
 }
