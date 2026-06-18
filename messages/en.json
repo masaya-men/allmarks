@@ -396,6 +396,194 @@
         "heading": "Start saving.",
         "button": "Open Board"
       }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Privacy Policy",
+        "description": "AllMarks collects zero personal data. Your bookmarks stay in your browser; nothing is uploaded unless you choose to share a board."
+      },
+      "hero": {
+        "kicker": "Privacy",
+        "title": "Privacy Policy",
+        "lead": "AllMarks is built on one principle: your data belongs to you. We collect no personal data, and there are no accounts.",
+        "updated": "Last updated: June 18, 2026"
+      },
+      "toc": { "title": "Contents" },
+      "philosophy": {
+        "heading": "Zero data collection",
+        "body": "Your bookmarks, tags, and board layouts are stored only in your browser's local database (IndexedDB). We do not collect, store, or transmit your personal data to our servers, and there are no accounts to sign in to."
+      },
+      "collect": {
+        "heading": "What we don't collect",
+        "body": "We do not collect your name, email, or address; we have no accounts or login credentials; we keep no copy of your browsing history or your bookmarks on our servers; we use no tracking or advertising cookies; and we gather no IP-based fingerprints or analytics tied to you as an individual."
+      },
+      "local": {
+        "heading": "Local storage only",
+        "body": "Everything lives in your browser on your device. That means we cannot access, view, or recover your data, no server-side backup of your boards exists, and clearing your browser data permanently removes your AllMarks content. You can export your own backup at any time."
+      },
+      "sharing": {
+        "heading": "When you share a board",
+        "body": "Sharing is the one case where data leaves your device — and only because you ask it to. When you create a share link, the board's data is uploaded to our hosting (Cloudflare KV) and a preview image to storage (Cloudflare R2), reachable only through the secret share link, and automatically deleted after about 30 days. Nothing is uploaded unless you explicitly create a share link, and your private boards are never uploaded. You can also export a board as a PNG, which is generated entirely in your browser."
+      },
+      "bookmarklet": {
+        "heading": "Bookmarklet",
+        "body": "The AllMarks bookmarklet reads the Open Graph meta tags (title, description, image, site name) of the page you're on, entirely within your browser, and passes them to your local AllMarks save window. No data passes through our servers."
+      },
+      "extension": {
+        "heading": "Browser extension",
+        "body": "The AllMarks extension reads only the page you choose to save, and sends nothing to any server — your saves go straight into your browser's local database. Its own privacy policy explains exactly what it reads and the permissions it uses."
+      },
+      "hosting": {
+        "heading": "Hosting and analytics",
+        "body": "AllMarks is hosted on Cloudflare Pages. Cloudflare may record minimal, anonymized server metrics (such as total page views) as part of standard hosting; these contain no personally identifiable information. We use no Google Analytics, no Facebook Pixel, and no third-party tracking scripts."
+      },
+      "thirdParty": {
+        "heading": "Third-party content",
+        "body": "AllMarks can display content from other sites — for example tweets via react-tweet, or videos via oEmbed. Those embeds may be subject to the privacy policies of their own services, which we recommend reviewing for any content that appears in your boards."
+      },
+      "advertising": {
+        "heading": "Advertising",
+        "body": "AllMarks is free and shows no ads today. If we ever introduce advertising to support the free service, we will update this policy, clearly label it, and continue to collect zero personal data on our end."
+      },
+      "children": {
+        "heading": "Children's privacy",
+        "body": "AllMarks does not knowingly collect any information from children under 13. Because we collect no personal data from anyone, this is inherent to how the app works."
+      },
+      "changes": {
+        "heading": "Changes to this policy",
+        "body": "We may update this policy from time to time. Changes are posted on this page with a new \"last updated\" date. Because we collect no personal data, we cannot notify you of changes directly."
+      },
+      "contact": {
+        "heading": "Questions",
+        "body": "If you have questions about this policy, please reach us through the contact page."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Terms of Service",
+        "description": "AllMarks terms of service — free to use, no account, your data stays in your browser."
+      },
+      "hero": {
+        "kicker": "Terms",
+        "title": "Terms of Service",
+        "lead": "AllMarks is a free app with no account. These terms explain the basics of using it.",
+        "updated": "Last updated: June 18, 2026"
+      },
+      "toc": { "title": "Contents" },
+      "acceptance": {
+        "heading": "1. Acceptance of terms",
+        "body": "By using AllMarks (\"the Service\"), you agree to these Terms of Service. If you do not agree, please do not use the Service."
+      },
+      "service": {
+        "heading": "2. The service",
+        "body": "AllMarks is a free web app for saving bookmarks and arranging them as visual boards. All data is stored locally in your browser, and no account or registration is required."
+      },
+      "responsibilities": {
+        "heading": "3. Your responsibilities",
+        "body": "You are responsible for the content you save and share, you agree not to use the Service for any unlawful purpose or to disrupt it, and you understand that your data is stored locally — clearing your browser data permanently deletes your AllMarks content."
+      },
+      "ip": {
+        "heading": "4. Intellectual property",
+        "body": "Bookmarks you save reference content owned by third parties; AllMarks claims no ownership of bookmarked content. The AllMarks app, its code, design, and branding belong to AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Sharing content",
+        "body": "When you create a share link, the board data is uploaded to our hosting so the link can render it, and is deleted automatically after about 30 days. By sharing, you represent that you have the right to share the content in this way."
+      },
+      "warranty": {
+        "heading": "6. No warranty",
+        "body": "The Service is provided \"as is\" and \"as available\" without warranties of any kind. We do not guarantee it will be uninterrupted, secure, or error-free, and we are not responsible for data loss from browser data clearing, device failure, or any other cause."
+      },
+      "liability": {
+        "heading": "7. Limitation of liability",
+        "body": "To the maximum extent permitted by law, AllMarks shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service."
+      },
+      "modifications": {
+        "heading": "8. Changes to the service and terms",
+        "body": "We may modify or discontinue the Service at any time without notice, and may update these terms from time to time. Continued use after changes means you accept the revised terms."
+      },
+      "law": {
+        "heading": "9. Governing law",
+        "body": "These terms are governed by the laws of Japan, and any disputes are subject to the exclusive jurisdiction of the courts of Tokyo, Japan."
+      },
+      "contact": {
+        "heading": "10. Questions",
+        "body": "If you have questions about these terms, please reach us through the contact page."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "Contact",
+        "description": "Get in touch about AllMarks — questions, feedback, bug reports, and security, through GitHub."
+      },
+      "hero": {
+        "kicker": "Contact",
+        "title": "Get in touch.",
+        "lead": "Questions, ideas, and bug reports are all welcome. GitHub is the most reliable way to reach us."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "For bug reports and feature requests, open an issue on GitHub — it's the surest way to be heard."
+      },
+      "feedback": {
+        "label": "Feedback",
+        "body": "Ideas for making AllMarks better are always welcome — \"I wish it could do this\" or \"this part is awkward,\" however small."
+      },
+      "security": {
+        "label": "Security",
+        "body": "Found a security issue? Please report it privately through GitHub rather than a public issue. Responsible disclosure is much appreciated."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Extension Privacy Policy",
+        "description": "Privacy policy for the AllMarks Chrome extension — it reads only the page you save and sends nothing to any server."
+      },
+      "hero": {
+        "kicker": "Extension Privacy",
+        "title": "AllMarks Extension — Privacy Policy",
+        "lead": "The extension reads only the page you choose to save, and sends nothing to any server.",
+        "updated": "Last updated: June 18, 2026"
+      },
+      "does": {
+        "heading": "What the extension does",
+        "body": "When you click the extension icon, press the keyboard shortcut, or use the right-click \"Save to AllMarks\" menu, the extension reads the URL, page title, description, preview image, site name, and favicon of the active tab (or the link you right-clicked) and writes them as a bookmark into your browser's local database on the allmarks.app origin."
+      },
+      "notCollect": {
+        "heading": "What it does not do",
+        "body": "It does not collect, log, or transmit your browsing history. It sends no data to our servers or any third party. It has no analytics, tracking, advertising, or telemetry of any kind. It does not read page contents beyond the Open Graph meta tags above, and only when you trigger a save."
+      },
+      "storage": {
+        "heading": "Where data is stored",
+        "body": "Saved bookmarks live only in your browser's local database on the allmarks.app origin. Your extension settings (such as the floating button and cursor pill options) are saved with chrome.storage.sync, so if Chrome sync is on they may sync across your Chrome browsers through Google's infrastructure — we never see them. A local list of which URLs you've already saved is kept with chrome.storage.local so the save button can show an \"already saved\" state; it stays on your device. There is no account, server, or database on our side that stores your bookmarks."
+      },
+      "bridge": {
+        "heading": "How saving reaches the app",
+        "body": "To write a bookmark into the same local database the AllMarks web app uses, the extension opens a hidden page at allmarks.app/save-iframe. This bridges from the extension into the allmarks.app origin; no information is sent to any other domain."
+      },
+      "perms": {
+        "heading": "Permissions and why",
+        "colName": "Permission",
+        "colPurpose": "Purpose",
+        "activeTab": "Read the URL and Open Graph meta of the tab you actively save.",
+        "contextMenus": "Add the right-click \"Save to AllMarks\" entries.",
+        "scripting": "Inject the small extractor that reads the page's meta tags when you save.",
+        "offscreen": "Create the offscreen page that hosts the allmarks.app save bridge.",
+        "storage": "Save your extension settings and the local \"already saved\" list.",
+        "hostAll": "Show the floating save button on the pages you visit and let the save bridge reach allmarks.app. The extension reads a page's meta only when you choose to save it."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "The source code is public on GitHub (the extension lives under the extension folder), so anyone can verify exactly what it does."
+      },
+      "contact": {
+        "heading": "Contact",
+        "body": "For privacy questions, please use the contact page."
+      },
+      "changes": {
+        "heading": "Changes",
+        "body": "We update this page whenever permissions or data flows change. The \"last updated\" date above reflects the most recent change."
+      }
     }
   }
 }

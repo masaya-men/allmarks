@@ -46,9 +46,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
       changeFrequency: 'monthly' as const,
     })),
-    { path: '/contact', priority: 0.6, changeFrequency: 'monthly' },
-    { path: '/privacy', priority: 0.5, changeFrequency: 'monthly' },
-    { path: '/terms', priority: 0.5, changeFrequency: 'monthly' },
+    // Contact(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'contact'),
+      priority: 0.6,
+      changeFrequency: 'monthly' as const,
+    })),
+    // Privacy(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'privacy'),
+      priority: 0.5,
+      changeFrequency: 'monthly' as const,
+    })),
+    // Terms(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'terms'),
+      priority: 0.5,
+      changeFrequency: 'monthly' as const,
+    })),
+    // Extension Privacy(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'extension/privacy'),
+      priority: 0.5,
+      changeFrequency: 'monthly' as const,
+    })),
   ]
 
   return routes.map(({ path, priority, changeFrequency }) => ({

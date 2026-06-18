@@ -14,7 +14,7 @@ export default function ExtensionPage(): React.ReactElement {
   return (
     <I18nProvider initialLocale="en" initialMessages={en as Messages}>
       <MarketingShell locale="en" subpath="extension">
-        <ExtensionContent />
+        <ExtensionContent locale="en" />
       </MarketingShell>
     </I18nProvider>
   )

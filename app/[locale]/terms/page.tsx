@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { I18nProvider } from '@/lib/i18n/I18nProvider'
 import { MarketingShell } from '@/components/marketing/MarketingShell'
-import { ExtensionContent } from '@/components/marketing/pages/ExtensionContent'
+import { TermsContent } from '@/components/marketing/pages/TermsContent'
 import { STATIC_MESSAGES } from '@/lib/i18n/static-messages'
 import { PREFIXED_LOCALES } from '@/lib/i18n/locale-urls'
 import { pageMetadata } from '@/lib/i18n/page-metadata'
@@ -25,10 +25,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params
   if (!isPrefixedLocale(locale)) return {}
-  return pageMetadata(locale, 'extension', 'extension')
+  return pageMetadata(locale, 'terms', 'terms')
 }
 
-export default async function LocaleExtension({
+export default async function LocaleTerms({
   params,
 }: {
   params: Promise<{ locale: string }>
@@ -37,8 +37,8 @@ export default async function LocaleExtension({
   if (!isPrefixedLocale(locale)) notFound()
   return (
     <I18nProvider initialLocale={locale} initialMessages={STATIC_MESSAGES[locale]}>
-      <MarketingShell locale={locale} subpath="extension">
-        <ExtensionContent locale={locale} />
+      <MarketingShell locale={locale} subpath="terms">
+        <TermsContent />
       </MarketingShell>
     </I18nProvider>
   )

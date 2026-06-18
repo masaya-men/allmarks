@@ -381,6 +381,198 @@
         "heading": "Comece a salvar.",
         "button": "Open Board"
       }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Política de Privacidade",
+        "description": "O AllMarks não coleta nenhum dado pessoal. Seus favoritos ficam no seu navegador; nada é enviado a menos que você escolha compartilhar um quadro."
+      },
+      "hero": {
+        "kicker": "Privacidade",
+        "title": "Política de Privacidade",
+        "lead": "O AllMarks é construído sobre um princípio: seus dados pertencem a você. Não coletamos dados pessoais e não há contas.",
+        "updated": "Última atualização: 18 de junho de 2026"
+      },
+      "toc": {
+        "title": "Conteúdo"
+      },
+      "philosophy": {
+        "heading": "Coleta de dados zero",
+        "body": "Seus favoritos, tags e layouts de quadro são armazenados apenas no banco de dados local do seu navegador (IndexedDB). Não coletamos, armazenamos nem transmitimos seus dados pessoais para nossos servidores, e não há contas para fazer login."
+      },
+      "collect": {
+        "heading": "O que não coletamos",
+        "body": "Não coletamos seu nome, e-mail ou endereço; não temos contas ou credenciais de login; não mantemos cópias do seu histórico de navegação ou dos seus favoritos em nossos servidores; não usamos cookies de rastreamento ou publicidade; e não coletamos impressões digitais baseadas em IP nem análises vinculadas a você como indivíduo."
+      },
+      "local": {
+        "heading": "Armazenamento apenas local",
+        "body": "Tudo fica no seu navegador, no seu dispositivo. Isso significa que não podemos acessar, visualizar ou recuperar seus dados, não existe backup no servidor para seus quadros e limpar os dados do navegador remove permanentemente o conteúdo do AllMarks. Você pode exportar seu próprio backup a qualquer momento."
+      },
+      "sharing": {
+        "heading": "Quando você compartilha um quadro",
+        "body": "O compartilhamento é o único caso em que os dados saem do seu dispositivo — e apenas porque você solicitou. Quando você cria um link de compartilhamento, os dados do quadro são enviados para nossa hospedagem (Cloudflare KV) e uma imagem de prévia para o armazenamento (Cloudflare R2), acessíveis apenas pelo link secreto de compartilhamento e excluídos automaticamente após cerca de 30 dias. Nada é enviado a menos que você crie explicitamente um link de compartilhamento, e seus quadros privados nunca são enviados. Você também pode exportar um quadro como PNG, que é gerado inteiramente no seu navegador."
+      },
+      "bookmarklet": {
+        "heading": "Bookmarklet",
+        "body": "O bookmarklet do AllMarks lê as metatags Open Graph (título, descrição, imagem, nome do site) da página em que você está, inteiramente no seu navegador, e as passa para a janela de salvamento local do AllMarks. Nenhum dado passa pelos nossos servidores."
+      },
+      "extension": {
+        "heading": "Extensão do navegador",
+        "body": "A extensão do AllMarks lê apenas a página que você escolhe salvar e não envia nada a nenhum servidor — seus salvamentos vão direto para o banco de dados local do seu navegador. A própria política de privacidade da extensão explica exatamente o que ela lê e as permissões que usa."
+      },
+      "hosting": {
+        "heading": "Hospedagem e análises",
+        "body": "O AllMarks é hospedado no Cloudflare Pages. O Cloudflare pode registrar métricas mínimas e anonimizadas do servidor (como o total de visualizações de página) como parte da hospedagem padrão; essas não contêm informações de identificação pessoal. Não usamos Google Analytics, Facebook Pixel nem scripts de rastreamento de terceiros."
+      },
+      "thirdParty": {
+        "heading": "Conteúdo de terceiros",
+        "body": "O AllMarks pode exibir conteúdo de outros sites — por exemplo, publicações via react-tweet ou vídeos via oEmbed. Esses incorporações podem estar sujeitas às políticas de privacidade de seus próprios serviços, que recomendamos revisar para qualquer conteúdo que apareça nos seus quadros."
+      },
+      "advertising": {
+        "heading": "Publicidade",
+        "body": "O AllMarks é gratuito e não exibe anúncios hoje. Se algum dia introduzirmos publicidade para manter o serviço gratuito, atualizaremos esta política, a sinalizaremos claramente e continuaremos a não coletar dados pessoais da nossa parte."
+      },
+      "children": {
+        "heading": "Privacidade de crianças",
+        "body": "O AllMarks não coleta conscientemente nenhuma informação de crianças menores de 13 anos. Como não coletamos dados pessoais de ninguém, isso é inerente ao funcionamento do aplicativo."
+      },
+      "changes": {
+        "heading": "Alterações nesta política",
+        "body": "Podemos atualizar esta política de tempos em tempos. As alterações são publicadas nesta página com uma nova data de \"última atualização\". Como não coletamos dados pessoais, não podemos notificá-lo das alterações diretamente."
+      },
+      "contact": {
+        "heading": "Dúvidas",
+        "body": "Se você tiver dúvidas sobre esta política, entre em contato conosco pela página de contato."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Termos de Serviço",
+        "description": "Termos de serviço do AllMarks — uso gratuito, sem conta, seus dados ficam no seu navegador."
+      },
+      "hero": {
+        "kicker": "Termos",
+        "title": "Termos de Serviço",
+        "lead": "O AllMarks é um aplicativo gratuito sem conta. Estes termos explicam os fundamentos do seu uso.",
+        "updated": "Última atualização: 18 de junho de 2026"
+      },
+      "toc": {
+        "title": "Conteúdo"
+      },
+      "acceptance": {
+        "heading": "1. Aceitação dos termos",
+        "body": "Ao usar o AllMarks (\"o Serviço\"), você concorda com estes Termos de Serviço. Se não concordar, por favor não use o Serviço."
+      },
+      "service": {
+        "heading": "2. O serviço",
+        "body": "O AllMarks é um aplicativo web gratuito para salvar favoritos e organizá-los como quadros visuais. Todos os dados são armazenados localmente no seu navegador e não é necessário criar conta nem se registrar."
+      },
+      "responsibilities": {
+        "heading": "3. Suas responsabilidades",
+        "body": "Você é responsável pelo conteúdo que salva e compartilha, concorda em não usar o Serviço para qualquer finalidade ilícita nem para perturbá-lo, e entende que seus dados são armazenados localmente — limpar os dados do navegador exclui permanentemente seu conteúdo do AllMarks."
+      },
+      "ip": {
+        "heading": "4. Propriedade intelectual",
+        "body": "Os favoritos que você salva fazem referência a conteúdos pertencentes a terceiros; o AllMarks não reivindica propriedade sobre o conteúdo salvo. O aplicativo AllMarks, seu código, design e identidade visual pertencem ao AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Compartilhamento de conteúdo",
+        "body": "Quando você cria um link de compartilhamento, os dados do quadro são enviados para nossa hospedagem para que o link possa renderizá-los, sendo excluídos automaticamente após cerca de 30 dias. Ao compartilhar, você declara ter o direito de compartilhar o conteúdo dessa forma."
+      },
+      "warranty": {
+        "heading": "6. Ausência de garantias",
+        "body": "O Serviço é fornecido \"como está\" e \"conforme disponível\" sem garantias de qualquer tipo. Não garantimos que será ininterrupto, seguro ou livre de erros, e não nos responsabilizamos por perda de dados decorrente de limpeza de dados do navegador, falha de dispositivo ou qualquer outra causa."
+      },
+      "liability": {
+        "heading": "7. Limitação de responsabilidade",
+        "body": "Na máxima extensão permitida por lei, o AllMarks não será responsável por quaisquer danos indiretos, incidentais, especiais, consequenciais ou punitivos decorrentes do seu uso do Serviço."
+      },
+      "modifications": {
+        "heading": "8. Alterações no serviço e nos termos",
+        "body": "Podemos modificar ou descontinuar o Serviço a qualquer momento sem aviso, e podemos atualizar estes termos periodicamente. O uso continuado após as alterações implica aceitação dos termos revisados."
+      },
+      "law": {
+        "heading": "9. Lei aplicável",
+        "body": "Estes termos são regidos pelas leis do Japão, e quaisquer disputas estão sujeitas à jurisdição exclusiva dos tribunais de Tóquio, Japão."
+      },
+      "contact": {
+        "heading": "10. Dúvidas",
+        "body": "Se você tiver dúvidas sobre estes termos, entre em contato conosco pela página de contato."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "Contato",
+        "description": "Entre em contato sobre o AllMarks — dúvidas, feedback, relatórios de bugs e segurança, via GitHub."
+      },
+      "hero": {
+        "kicker": "Contato",
+        "title": "Entre em contato.",
+        "lead": "Dúvidas, ideias e relatórios de bugs são sempre bem-vindos. O GitHub é a forma mais confiável de nos contatar."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "Para relatórios de bugs e solicitações de funcionalidades, abra uma issue no GitHub — é a forma mais garantida de ser ouvido."
+      },
+      "feedback": {
+        "label": "Feedback",
+        "body": "Ideias para melhorar o AllMarks são sempre bem-vindas — \"eu queria que fizesse isso\" ou \"essa parte é estranha\", por menor que seja."
+      },
+      "security": {
+        "label": "Segurança",
+        "body": "Encontrou um problema de segurança? Por favor, relate-o de forma privada via GitHub em vez de uma issue pública. A divulgação responsável é muito apreciada."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Política de Privacidade da Extensão",
+        "description": "Política de privacidade da extensão Chrome do AllMarks — ela lê apenas a página que você salva e não envia nada a nenhum servidor."
+      },
+      "hero": {
+        "kicker": "Privacidade da Extensão",
+        "title": "Extensão AllMarks — Política de Privacidade",
+        "lead": "A extensão lê apenas a página que você escolhe salvar e não envia nada a nenhum servidor.",
+        "updated": "Última atualização: 18 de junho de 2026"
+      },
+      "does": {
+        "heading": "O que a extensão faz",
+        "body": "Quando você clica no ícone da extensão, pressiona o atalho de teclado ou usa o menu de botão direito \"Salvar no AllMarks\", a extensão lê a URL, o título da página, a descrição, a imagem de prévia, o nome do site e o favicon da aba ativa (ou do link em que você clicou com o botão direito) e os grava como favorito no banco de dados local do seu navegador na origem allmarks.app."
+      },
+      "notCollect": {
+        "heading": "O que ela não faz",
+        "body": "Ela não coleta, registra nem transmite seu histórico de navegação. Não envia dados para nossos servidores nem para terceiros. Não possui análises, rastreamento, publicidade nem telemetria de qualquer tipo. Não lê o conteúdo da página além das metatags Open Graph acima, e apenas quando você aciona um salvamento."
+      },
+      "storage": {
+        "heading": "Onde os dados são armazenados",
+        "body": "Os favoritos salvos ficam apenas no banco de dados local do seu navegador na origem allmarks.app. As configurações da extensão (como as opções do botão flutuante e da pílula de cursor) são salvas com chrome.storage.sync; se a sincronização do Chrome estiver ativada, elas poderão sincronizar entre seus navegadores Chrome pela infraestrutura do Google — nós nunca as vemos. Uma lista local das URLs que você já salvou é mantida com chrome.storage.local para que o botão de salvar possa exibir o estado \"já salvo\"; ela permanece no seu dispositivo. Não há conta, servidor nem banco de dados do nosso lado que armazene seus favoritos."
+      },
+      "bridge": {
+        "heading": "Como o salvamento chega ao aplicativo",
+        "body": "Para gravar um favorito no mesmo banco de dados local que o aplicativo web AllMarks usa, a extensão abre uma página oculta em allmarks.app/save-iframe. Isso faz a ponte da extensão para a origem allmarks.app; nenhuma informação é enviada a nenhum outro domínio."
+      },
+      "perms": {
+        "heading": "Permissões e por quê",
+        "colName": "Permissão",
+        "colPurpose": "Finalidade",
+        "activeTab": "Ler a URL e as metatags Open Graph da aba que você salva ativamente.",
+        "contextMenus": "Adicionar as entradas \"Salvar no AllMarks\" no menu de botão direito.",
+        "scripting": "Injetar o pequeno extrator que lê as metatags da página quando você salva.",
+        "offscreen": "Criar a página em segundo plano que hospeda a ponte de salvamento do allmarks.app.",
+        "storage": "Salvar suas configurações da extensão e a lista local de \"já salvo\".",
+        "hostAll": "Exibir o botão de salvar flutuante nas páginas que você visita e permitir que a ponte de salvamento alcance allmarks.app. A extensão lê as metatags de uma página apenas quando você escolhe salvá-la."
+      },
+      "openSource": {
+        "heading": "Código aberto",
+        "body": "O código-fonte é público no GitHub (a extensão fica na pasta extension), para que qualquer pessoa possa verificar exatamente o que ela faz."
+      },
+      "contact": {
+        "heading": "Contato",
+        "body": "Para dúvidas sobre privacidade, use a página de contato."
+      },
+      "changes": {
+        "heading": "Alterações",
+        "body": "Atualizamos esta página sempre que as permissões ou os fluxos de dados mudam. A data de \"última atualização\" acima reflete a alteração mais recente."
+      }
     }
   }
 }

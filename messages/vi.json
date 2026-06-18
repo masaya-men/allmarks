@@ -381,6 +381,198 @@
         "heading": "Bắt đầu lưu.",
         "button": "Open Board"
       }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Chính sách quyền riêng tư",
+        "description": "AllMarks không thu thập dữ liệu cá nhân. Dấu trang của bạn ở lại trong trình duyệt; không có gì được tải lên trừ khi bạn chọn chia sẻ bảng."
+      },
+      "hero": {
+        "kicker": "Quyền riêng tư",
+        "title": "Chính sách quyền riêng tư",
+        "lead": "AllMarks được xây dựng trên một nguyên tắc: dữ liệu của bạn thuộc về bạn. Chúng tôi không thu thập dữ liệu cá nhân, và không có tài khoản nào.",
+        "updated": "Cập nhật lần cuối: ngày 18 tháng 6 năm 2026"
+      },
+      "toc": {
+        "title": "Mục lục"
+      },
+      "philosophy": {
+        "heading": "Không thu thập dữ liệu",
+        "body": "Dấu trang, thẻ và bố cục bảng của bạn chỉ được lưu trong cơ sở dữ liệu cục bộ trên trình duyệt (IndexedDB). Chúng tôi không thu thập, lưu trữ hay truyền dữ liệu cá nhân của bạn lên máy chủ, và không có tài khoản nào để đăng nhập."
+      },
+      "collect": {
+        "heading": "Những gì chúng tôi không thu thập",
+        "body": "Chúng tôi không thu thập tên, email hay địa chỉ của bạn; không có tài khoản hay thông tin đăng nhập; không lưu bản sao lịch sử duyệt web hay dấu trang trên máy chủ; không sử dụng cookie theo dõi hay quảng cáo; và không thu thập dấu vân tay IP hay phân tích liên kết đến cá nhân bạn."
+      },
+      "local": {
+        "heading": "Chỉ lưu trữ cục bộ",
+        "body": "Mọi thứ tồn tại trong trình duyệt trên thiết bị của bạn. Điều đó có nghĩa chúng tôi không thể truy cập, xem hay khôi phục dữ liệu của bạn, không có bản sao lưu phía máy chủ cho các bảng của bạn, và xóa dữ liệu trình duyệt sẽ xóa vĩnh viễn nội dung AllMarks. Bạn có thể tự xuất bản sao lưu bất cứ lúc nào."
+      },
+      "sharing": {
+        "heading": "Khi bạn chia sẻ bảng",
+        "body": "Chia sẻ là trường hợp duy nhất dữ liệu rời khỏi thiết bị của bạn — và chỉ vì bạn yêu cầu. Khi bạn tạo liên kết chia sẻ, dữ liệu bảng được tải lên dịch vụ lưu trữ của chúng tôi (Cloudflare KV) và ảnh xem trước lên kho lưu trữ (Cloudflare R2), chỉ truy cập được qua liên kết chia sẻ bí mật, và tự động xóa sau khoảng 30 ngày. Không có gì được tải lên trừ khi bạn chủ động tạo liên kết chia sẻ, và các bảng riêng tư của bạn không bao giờ được tải lên. Bạn cũng có thể xuất bảng dưới dạng PNG, được tạo hoàn toàn trong trình duyệt."
+      },
+      "bookmarklet": {
+        "heading": "Bookmarklet",
+        "body": "Bookmarklet AllMarks đọc các thẻ meta Open Graph (tiêu đề, mô tả, hình ảnh, tên trang web) của trang bạn đang xem, hoàn toàn trong trình duyệt, và chuyển chúng đến cửa sổ lưu AllMarks cục bộ. Không có dữ liệu nào đi qua máy chủ của chúng tôi."
+      },
+      "extension": {
+        "heading": "Tiện ích mở rộng trình duyệt",
+        "body": "Tiện ích mở rộng AllMarks chỉ đọc trang bạn chọn lưu, và không gửi gì đến bất kỳ máy chủ nào — những gì bạn lưu đi thẳng vào cơ sở dữ liệu cục bộ trong trình duyệt. Chính sách quyền riêng tư riêng của nó giải thích chính xác nội dung nó đọc và các quyền nó sử dụng."
+      },
+      "hosting": {
+        "heading": "Lưu trữ và phân tích",
+        "body": "AllMarks được lưu trữ trên Cloudflare Pages. Cloudflare có thể ghi lại các số liệu máy chủ tối thiểu, ẩn danh (như tổng số lượt xem trang) như một phần của dịch vụ lưu trữ thông thường; những dữ liệu này không chứa thông tin nhận dạng cá nhân. Chúng tôi không sử dụng Google Analytics, Facebook Pixel hay bất kỳ tập lệnh theo dõi của bên thứ ba nào."
+      },
+      "thirdParty": {
+        "heading": "Nội dung từ bên thứ ba",
+        "body": "AllMarks có thể hiển thị nội dung từ các trang khác — ví dụ tweet qua react-tweet, hoặc video qua oEmbed. Những nội dung nhúng đó có thể chịu sự điều chỉnh bởi chính sách quyền riêng tư của dịch vụ riêng của chúng, mà chúng tôi khuyến nghị bạn xem xét đối với bất kỳ nội dung nào xuất hiện trong bảng."
+      },
+      "advertising": {
+        "heading": "Quảng cáo",
+        "body": "AllMarks miễn phí và hiện không hiển thị quảng cáo. Nếu chúng tôi có giới thiệu quảng cáo để duy trì dịch vụ miễn phí, chúng tôi sẽ cập nhật chính sách này, ghi nhãn rõ ràng, và tiếp tục không thu thập dữ liệu cá nhân từ phía chúng tôi."
+      },
+      "children": {
+        "heading": "Quyền riêng tư của trẻ em",
+        "body": "AllMarks không cố ý thu thập bất kỳ thông tin nào từ trẻ em dưới 13 tuổi. Vì chúng tôi không thu thập dữ liệu cá nhân của bất kỳ ai, điều này là cố hữu trong cách thức hoạt động của ứng dụng."
+      },
+      "changes": {
+        "heading": "Thay đổi chính sách này",
+        "body": "Chúng tôi có thể cập nhật chính sách này theo thời gian. Các thay đổi được đăng trên trang này với ngày \"cập nhật lần cuối\" mới. Vì chúng tôi không thu thập dữ liệu cá nhân, chúng tôi không thể thông báo trực tiếp cho bạn về các thay đổi."
+      },
+      "contact": {
+        "heading": "Câu hỏi",
+        "body": "Nếu bạn có câu hỏi về chính sách này, vui lòng liên hệ qua trang liên hệ."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Điều khoản dịch vụ",
+        "description": "Điều khoản dịch vụ AllMarks — miễn phí sử dụng, không cần tài khoản, dữ liệu ở lại trong trình duyệt."
+      },
+      "hero": {
+        "kicker": "Điều khoản",
+        "title": "Điều khoản dịch vụ",
+        "lead": "AllMarks là ứng dụng miễn phí không cần tài khoản. Các điều khoản này giải thích những điều cơ bản khi sử dụng.",
+        "updated": "Cập nhật lần cuối: ngày 18 tháng 6 năm 2026"
+      },
+      "toc": {
+        "title": "Mục lục"
+      },
+      "acceptance": {
+        "heading": "1. Chấp nhận điều khoản",
+        "body": "Bằng cách sử dụng AllMarks (\"Dịch vụ\"), bạn đồng ý với các Điều khoản dịch vụ này. Nếu bạn không đồng ý, vui lòng không sử dụng Dịch vụ."
+      },
+      "service": {
+        "heading": "2. Dịch vụ",
+        "body": "AllMarks là ứng dụng web miễn phí để lưu dấu trang và sắp xếp chúng thành các bảng hình ảnh. Toàn bộ dữ liệu được lưu cục bộ trong trình duyệt, không cần tài khoản hay đăng ký."
+      },
+      "responsibilities": {
+        "heading": "3. Trách nhiệm của bạn",
+        "body": "Bạn chịu trách nhiệm về nội dung bạn lưu và chia sẻ, bạn đồng ý không sử dụng Dịch vụ cho bất kỳ mục đích bất hợp pháp hay làm gián đoạn nó, và bạn hiểu rằng dữ liệu được lưu cục bộ — xóa dữ liệu trình duyệt sẽ xóa vĩnh viễn nội dung AllMarks."
+      },
+      "ip": {
+        "heading": "4. Sở hữu trí tuệ",
+        "body": "Các dấu trang bạn lưu tham chiếu đến nội dung thuộc sở hữu của bên thứ ba; AllMarks không yêu cầu quyền sở hữu đối với nội dung được đánh dấu. Ứng dụng AllMarks, mã nguồn, thiết kế và thương hiệu thuộc về AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Chia sẻ nội dung",
+        "body": "Khi bạn tạo liên kết chia sẻ, dữ liệu bảng được tải lên dịch vụ lưu trữ để liên kết có thể hiển thị, và tự động xóa sau khoảng 30 ngày. Bằng cách chia sẻ, bạn xác nhận rằng bạn có quyền chia sẻ nội dung theo cách này."
+      },
+      "warranty": {
+        "heading": "6. Không có bảo đảm",
+        "body": "Dịch vụ được cung cấp \"nguyên trạng\" và \"theo hiện trạng\" mà không có bảo đảm dưới bất kỳ hình thức nào. Chúng tôi không đảm bảo nó sẽ không bị gián đoạn, an toàn hay không có lỗi, và chúng tôi không chịu trách nhiệm về mất mát dữ liệu do xóa dữ liệu trình duyệt, lỗi thiết bị hay bất kỳ nguyên nhân nào khác."
+      },
+      "liability": {
+        "heading": "7. Giới hạn trách nhiệm",
+        "body": "Trong phạm vi tối đa được pháp luật cho phép, AllMarks sẽ không chịu trách nhiệm về bất kỳ thiệt hại gián tiếp, ngẫu nhiên, đặc biệt, hậu quả hay trừng phạt nào phát sinh từ việc bạn sử dụng Dịch vụ."
+      },
+      "modifications": {
+        "heading": "8. Thay đổi dịch vụ và điều khoản",
+        "body": "Chúng tôi có thể sửa đổi hoặc ngừng Dịch vụ bất kỳ lúc nào mà không cần thông báo, và có thể cập nhật các điều khoản này theo thời gian. Việc tiếp tục sử dụng sau khi có thay đổi có nghĩa là bạn chấp nhận các điều khoản đã sửa đổi."
+      },
+      "law": {
+        "heading": "9. Luật điều chỉnh",
+        "body": "Các điều khoản này được điều chỉnh bởi pháp luật Nhật Bản, và mọi tranh chấp thuộc thẩm quyền xét xử độc quyền của tòa án Tokyo, Nhật Bản."
+      },
+      "contact": {
+        "heading": "10. Câu hỏi",
+        "body": "Nếu bạn có câu hỏi về các điều khoản này, vui lòng liên hệ qua trang liên hệ."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "Liên hệ",
+        "description": "Liên hệ về AllMarks — câu hỏi, phản hồi, báo cáo lỗi và bảo mật, qua GitHub."
+      },
+      "hero": {
+        "kicker": "Liên hệ",
+        "title": "Hãy liên hệ.",
+        "lead": "Câu hỏi, ý tưởng và báo cáo lỗi đều được chào đón. GitHub là cách đáng tin cậy nhất để liên hệ với chúng tôi."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "Để báo cáo lỗi và yêu cầu tính năng, hãy mở một issue trên GitHub — đó là cách chắc chắn nhất để được lắng nghe."
+      },
+      "feedback": {
+        "label": "Phản hồi",
+        "body": "Ý tưởng để cải thiện AllMarks luôn được chào đón — \"Tôi ước nó có thể làm điều này\" hay \"phần này hơi khó dùng,\" dù nhỏ đến đâu."
+      },
+      "security": {
+        "label": "Bảo mật",
+        "body": "Tìm thấy vấn đề bảo mật? Vui lòng báo cáo riêng qua GitHub thay vì issue công khai. Chúng tôi rất trân trọng việc công bố có trách nhiệm."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Chính sách quyền riêng tư của tiện ích",
+        "description": "Chính sách quyền riêng tư của tiện ích mở rộng AllMarks Chrome — chỉ đọc trang bạn lưu và không gửi gì đến bất kỳ máy chủ nào."
+      },
+      "hero": {
+        "kicker": "Quyền riêng tư tiện ích",
+        "title": "Tiện ích AllMarks — Chính sách quyền riêng tư",
+        "lead": "Tiện ích mở rộng chỉ đọc trang bạn chọn lưu, và không gửi gì đến bất kỳ máy chủ nào.",
+        "updated": "Cập nhật lần cuối: ngày 18 tháng 6 năm 2026"
+      },
+      "does": {
+        "heading": "Tiện ích mở rộng làm gì",
+        "body": "Khi bạn nhấp biểu tượng tiện ích, nhấn phím tắt, hoặc dùng menu chuột phải \"Save to AllMarks\", tiện ích đọc URL, tiêu đề trang, mô tả, ảnh xem trước, tên trang web và favicon của tab đang hoạt động (hoặc liên kết bạn nhấp chuột phải) và ghi chúng như một dấu trang vào cơ sở dữ liệu cục bộ trên trình duyệt ở origin allmarks.app."
+      },
+      "notCollect": {
+        "heading": "Những gì nó không làm",
+        "body": "Nó không thu thập, ghi lại hay truyền lịch sử duyệt web. Nó không gửi dữ liệu đến máy chủ hay bên thứ ba. Nó không có phân tích, theo dõi, quảng cáo hay đo lường dưới bất kỳ hình thức nào. Nó không đọc nội dung trang ngoài các thẻ meta Open Graph ở trên, và chỉ khi bạn kích hoạt lưu."
+      },
+      "storage": {
+        "heading": "Dữ liệu được lưu ở đâu",
+        "body": "Dấu trang đã lưu chỉ tồn tại trong cơ sở dữ liệu cục bộ trên trình duyệt ở origin allmarks.app. Cài đặt tiện ích mở rộng (như tùy chọn nút nổi và con trỏ) được lưu bằng chrome.storage.sync, vì vậy nếu Chrome sync được bật chúng có thể đồng bộ trên các trình duyệt Chrome thông qua cơ sở hạ tầng của Google — chúng tôi không bao giờ thấy chúng. Danh sách cục bộ các URL bạn đã lưu được giữ bằng chrome.storage.local để nút lưu có thể hiển thị trạng thái \"đã lưu rồi\"; nó ở lại trên thiết bị của bạn. Không có tài khoản, máy chủ hay cơ sở dữ liệu nào ở phía chúng tôi lưu dấu trang của bạn."
+      },
+      "bridge": {
+        "heading": "Cách lưu đến ứng dụng",
+        "body": "Để ghi dấu trang vào cùng cơ sở dữ liệu cục bộ mà ứng dụng web AllMarks sử dụng, tiện ích mở một trang ẩn tại allmarks.app/save-iframe. Điều này kết nối từ tiện ích vào origin allmarks.app; không có thông tin nào được gửi đến domain nào khác."
+      },
+      "perms": {
+        "heading": "Quyền và lý do",
+        "colName": "Quyền",
+        "colPurpose": "Mục đích",
+        "activeTab": "Đọc URL và meta Open Graph của tab bạn đang chủ động lưu.",
+        "contextMenus": "Thêm mục \"Save to AllMarks\" vào menu chuột phải.",
+        "scripting": "Chèn trình trích xuất nhỏ đọc các thẻ meta trang khi bạn lưu.",
+        "offscreen": "Tạo trang offscreen lưu trữ cầu nối lưu allmarks.app.",
+        "storage": "Lưu cài đặt tiện ích và danh sách \"đã lưu rồi\" cục bộ.",
+        "hostAll": "Hiển thị nút lưu nổi trên các trang bạn truy cập và cho phép cầu nối lưu tiếp cận allmarks.app. Tiện ích chỉ đọc meta trang khi bạn chọn lưu nó."
+      },
+      "openSource": {
+        "heading": "Mã nguồn mở",
+        "body": "Mã nguồn công khai trên GitHub (tiện ích mở rộng nằm trong thư mục extension), vì vậy bất kỳ ai cũng có thể xác minh chính xác nó làm gì."
+      },
+      "contact": {
+        "heading": "Liên hệ",
+        "body": "Đối với câu hỏi về quyền riêng tư, vui lòng sử dụng trang liên hệ."
+      },
+      "changes": {
+        "heading": "Thay đổi",
+        "body": "Chúng tôi cập nhật trang này bất cứ khi nào quyền hoặc luồng dữ liệu thay đổi. Ngày \"cập nhật lần cuối\" ở trên phản ánh thay đổi gần nhất."
+      }
     }
   }
 }

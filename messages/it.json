@@ -381,6 +381,198 @@
         "heading": "Inizia a salvare.",
         "button": "Open Board"
       }
+    },
+    "privacy": {
+      "meta": {
+        "title": "Informativa sulla privacy",
+        "description": "AllMarks non raccoglie alcun dato personale. I tuoi segnalibri restano nel tuo browser; nulla viene caricato a meno che tu non scelga di condividere una bacheca."
+      },
+      "hero": {
+        "kicker": "Privacy",
+        "title": "Informativa sulla privacy",
+        "lead": "AllMarks è costruito su un principio: i tuoi dati appartengono a te. Non raccogliamo dati personali e non esistono account.",
+        "updated": "Ultimo aggiornamento: 18 giugno 2026"
+      },
+      "toc": {
+        "title": "Indice"
+      },
+      "philosophy": {
+        "heading": "Raccolta dati zero",
+        "body": "I tuoi segnalibri, tag e layout delle bacheche sono archiviati esclusivamente nel database locale del tuo browser (IndexedDB). Non raccogliamo, conserviamo né trasmettiamo i tuoi dati personali ai nostri server, e non esistono account a cui accedere."
+      },
+      "collect": {
+        "heading": "Cosa non raccogliamo",
+        "body": "Non raccogliamo il tuo nome, indirizzo email o residenza; non esistono account né credenziali di accesso; non conserviamo alcuna copia della tua cronologia di navigazione o dei tuoi segnalibri sui nostri server; non utilizziamo cookie di tracciamento o pubblicitari; e non raccogliamo impronte digitali basate sull'IP né analisi riconducibili a te come individuo."
+      },
+      "local": {
+        "heading": "Solo archiviazione locale",
+        "body": "Tutto risiede nel tuo browser, sul tuo dispositivo. Ciò significa che non possiamo accedere, visualizzare o recuperare i tuoi dati, non esiste alcun backup server delle tue bacheche, e la cancellazione dei dati del browser rimuove definitivamente i tuoi contenuti su AllMarks. Puoi esportare il tuo backup in qualsiasi momento."
+      },
+      "sharing": {
+        "heading": "Quando condividi una bacheca",
+        "body": "La condivisione è l'unico caso in cui i dati lasciano il tuo dispositivo — e solo perché lo richiedi tu. Quando crei un link di condivisione, i dati della bacheca vengono caricati sul nostro hosting (Cloudflare KV) e un'immagine di anteprima su Cloudflare R2, raggiungibili solo attraverso il link segreto di condivisione, e automaticamente eliminati dopo circa 30 giorni. Nulla viene caricato a meno che tu non crei esplicitamente un link di condivisione, e le tue bacheche private non vengono mai caricate. Puoi anche esportare una bacheca come PNG, generato interamente nel tuo browser."
+      },
+      "bookmarklet": {
+        "heading": "Bookmarklet",
+        "body": "Il bookmarklet di AllMarks legge i meta tag Open Graph (titolo, descrizione, immagine, nome del sito) della pagina in cui ti trovi, interamente all'interno del tuo browser, e li trasmette alla tua finestra di salvataggio AllMarks locale. Nessun dato transita attraverso i nostri server."
+      },
+      "extension": {
+        "heading": "Estensione del browser",
+        "body": "L'estensione AllMarks legge solo la pagina che scegli di salvare, e non invia nulla ad alcun server — i tuoi salvataggi vanno direttamente nel database locale del tuo browser. La sua informativa sulla privacy spiega esattamente cosa legge e le autorizzazioni che utilizza."
+      },
+      "hosting": {
+        "heading": "Hosting e analisi",
+        "body": "AllMarks è ospitato su Cloudflare Pages. Cloudflare può registrare metriche server minime e anonimizzate (come il totale delle visualizzazioni di pagina) come parte dell'hosting standard; queste non contengono informazioni di identificazione personale. Non utilizziamo Google Analytics, Facebook Pixel né script di tracciamento di terze parti."
+      },
+      "thirdParty": {
+        "heading": "Contenuti di terze parti",
+        "body": "AllMarks può visualizzare contenuti da altri siti — ad esempio tweet tramite react-tweet, o video tramite oEmbed. Tali incorporamenti possono essere soggetti alle informative sulla privacy dei rispettivi servizi, che ti consigliamo di consultare per i contenuti che appaiono nelle tue bacheche."
+      },
+      "advertising": {
+        "heading": "Pubblicità",
+        "body": "AllMarks è gratuito e attualmente non mostra annunci. Se dovessimo mai introdurre la pubblicità a sostegno del servizio gratuito, aggiorneremo questa informativa, la segnaleremo chiaramente, e continueremo a non raccogliere alcun dato personale da parte nostra."
+      },
+      "children": {
+        "heading": "Privacy dei minori",
+        "body": "AllMarks non raccoglie consapevolmente informazioni da minori di 13 anni. Poiché non raccogliamo dati personali da nessuno, ciò è intrinseco al funzionamento dell'app."
+      },
+      "changes": {
+        "heading": "Modifiche alla presente informativa",
+        "body": "Potremmo aggiornare questa informativa di tanto in tanto. Le modifiche vengono pubblicate su questa pagina con una nuova data di «ultimo aggiornamento». Poiché non raccogliamo dati personali, non possiamo notificarti direttamente le modifiche."
+      },
+      "contact": {
+        "heading": "Domande",
+        "body": "Per domande relative a questa informativa, contattaci tramite la pagina contatti."
+      }
+    },
+    "terms": {
+      "meta": {
+        "title": "Termini di servizio",
+        "description": "Termini di servizio di AllMarks — utilizzo gratuito, senza account, i tuoi dati restano nel tuo browser."
+      },
+      "hero": {
+        "kicker": "Termini",
+        "title": "Termini di servizio",
+        "lead": "AllMarks è un'app gratuita senza account. Questi termini illustrano le basi dell'utilizzo.",
+        "updated": "Ultimo aggiornamento: 18 giugno 2026"
+      },
+      "toc": {
+        "title": "Indice"
+      },
+      "acceptance": {
+        "heading": "1. Accettazione dei termini",
+        "body": "Utilizzando AllMarks («il Servizio»), accetti i presenti Termini di servizio. Se non li accetti, ti preghiamo di non utilizzare il Servizio."
+      },
+      "service": {
+        "heading": "2. Il Servizio",
+        "body": "AllMarks è un'app web gratuita per salvare segnalibri e disporli come bacheche visive. Tutti i dati vengono archiviati localmente nel tuo browser e non è richiesta alcuna registrazione o account."
+      },
+      "responsibilities": {
+        "heading": "3. Le tue responsabilità",
+        "body": "Sei responsabile dei contenuti che salvi e condividi, accetti di non utilizzare il Servizio per scopi illeciti né di perturbarne il funzionamento, e sei consapevole che i tuoi dati sono archiviati localmente — la cancellazione dei dati del browser elimina definitivamente i tuoi contenuti su AllMarks."
+      },
+      "ip": {
+        "heading": "4. Proprietà intellettuale",
+        "body": "I segnalibri che salvi fanno riferimento a contenuti di proprietà di terze parti; AllMarks non rivendica alcuna proprietà sui contenuti salvati. L'app AllMarks, il suo codice, il design e il brand appartengono ad AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Condivisione dei contenuti",
+        "body": "Quando crei un link di condivisione, i dati della bacheca vengono caricati sul nostro hosting affinché il link possa renderizzarli, e vengono eliminati automaticamente dopo circa 30 giorni. Condividendo, dichiari di avere il diritto di condividere i contenuti in questo modo."
+      },
+      "warranty": {
+        "heading": "6. Assenza di garanzie",
+        "body": "Il Servizio è fornito «così com'è» e «come disponibile», senza garanzie di alcun tipo. Non garantiamo che sia ininterrotto, sicuro o privo di errori, e non siamo responsabili per la perdita di dati derivante dalla cancellazione dei dati del browser, guasto del dispositivo o qualsiasi altra causa."
+      },
+      "liability": {
+        "heading": "7. Limitazione di responsabilità",
+        "body": "Nella misura massima consentita dalla legge, AllMarks non sarà responsabile per eventuali danni indiretti, incidentali, speciali, consequenziali o punitivi derivanti dall'utilizzo del Servizio."
+      },
+      "modifications": {
+        "heading": "8. Modifiche al Servizio e ai termini",
+        "body": "Possiamo modificare o interrompere il Servizio in qualsiasi momento senza preavviso, e possiamo aggiornare i presenti termini di tanto in tanto. Il proseguimento dell'utilizzo dopo le modifiche implica l'accettazione dei termini aggiornati."
+      },
+      "law": {
+        "heading": "9. Legge applicabile",
+        "body": "I presenti termini sono disciplinati dalla legge giapponese, e qualsiasi controversia è soggetta alla giurisdizione esclusiva dei tribunali di Tokyo, Giappone."
+      },
+      "contact": {
+        "heading": "10. Domande",
+        "body": "Per domande relative ai presenti termini, contattaci tramite la pagina contatti."
+      }
+    },
+    "contact": {
+      "meta": {
+        "title": "Contatti",
+        "description": "Contatta AllMarks — domande, feedback, segnalazioni di bug e sicurezza, tramite GitHub."
+      },
+      "hero": {
+        "kicker": "Contatti",
+        "title": "Scrivici.",
+        "lead": "Domande, idee e segnalazioni di bug sono sempre benvenute. GitHub è il modo più affidabile per contattarci."
+      },
+      "github": {
+        "label": "GitHub Issues",
+        "body": "Per segnalazioni di bug e richieste di funzionalità, apri una issue su GitHub — è il modo più sicuro per essere ascoltato."
+      },
+      "feedback": {
+        "label": "Feedback",
+        "body": "I suggerimenti per migliorare AllMarks sono sempre graditi — «vorrei che potesse fare questo» o «questa parte è scomoda», per quanto piccoli."
+      },
+      "security": {
+        "label": "Sicurezza",
+        "body": "Hai trovato un problema di sicurezza? Segnalalo in modo riservato tramite GitHub anziché aprire una issue pubblica. La divulgazione responsabile è molto apprezzata."
+      }
+    },
+    "extensionPrivacy": {
+      "meta": {
+        "title": "Informativa sulla privacy dell'estensione",
+        "description": "Informativa sulla privacy per l'estensione Chrome di AllMarks — legge solo la pagina che salvi e non invia nulla ad alcun server."
+      },
+      "hero": {
+        "kicker": "Privacy estensione",
+        "title": "AllMarks Estensione — Informativa sulla privacy",
+        "lead": "L'estensione legge solo la pagina che scegli di salvare, e non invia nulla ad alcun server.",
+        "updated": "Ultimo aggiornamento: 18 giugno 2026"
+      },
+      "does": {
+        "heading": "Cosa fa l'estensione",
+        "body": "Quando clicchi sull'icona dell'estensione, premi la scorciatoia da tastiera, o utilizzi il menu contestuale «Salva su AllMarks», l'estensione legge l'URL, il titolo della pagina, la descrizione, l'immagine di anteprima, il nome del sito e il favicon della scheda attiva (o del link su cui hai fatto clic con il tasto destro) e li salva come segnalibro nel database locale del tuo browser sull'origine allmarks.app."
+      },
+      "notCollect": {
+        "heading": "Cosa non fa",
+        "body": "Non raccoglie, registra né trasmette la tua cronologia di navigazione. Non invia dati ai nostri server né a terze parti. Non contiene analisi, tracciamento, pubblicità né telemetria di alcun tipo. Non legge i contenuti della pagina al di là dei meta tag Open Graph sopra indicati, e solo quando attivi un salvataggio."
+      },
+      "storage": {
+        "heading": "Dove vengono archiviati i dati",
+        "body": "I segnalibri salvati risiedono esclusivamente nel database locale del tuo browser sull'origine allmarks.app. Le impostazioni dell'estensione (come le opzioni del pulsante flottante e della pillola cursore) vengono salvate con chrome.storage.sync, quindi se la sincronizzazione di Chrome è attiva potrebbero sincronizzarsi tra i tuoi browser Chrome tramite l'infrastruttura di Google — noi non li vediamo mai. Un elenco locale degli URL già salvati viene mantenuto con chrome.storage.local affinché il pulsante di salvataggio possa mostrare uno stato «già salvato»; rimane sul tuo dispositivo. Non esiste alcun account, server o database dalla nostra parte che conservi i tuoi segnalibri."
+      },
+      "bridge": {
+        "heading": "Come il salvataggio raggiunge l'app",
+        "body": "Per scrivere un segnalibro nello stesso database locale utilizzato dall'app web AllMarks, l'estensione apre una pagina nascosta su allmarks.app/save-iframe. Questo crea un ponte dall'estensione all'origine allmarks.app; nessuna informazione viene inviata ad altri domini."
+      },
+      "perms": {
+        "heading": "Autorizzazioni e motivazioni",
+        "colName": "Autorizzazione",
+        "colPurpose": "Scopo",
+        "activeTab": "Legge l'URL e i meta Open Graph della scheda che salvi attivamente.",
+        "contextMenus": "Aggiunge le voci «Salva su AllMarks» nel menu contestuale del tasto destro.",
+        "scripting": "Inietta il piccolo estrattore che legge i meta tag della pagina quando salvi.",
+        "offscreen": "Crea la pagina fuori schermo che ospita il bridge di salvataggio di allmarks.app.",
+        "storage": "Salva le impostazioni dell'estensione e l'elenco locale «già salvato».",
+        "hostAll": "Mostra il pulsante di salvataggio flottante sulle pagine che visiti e consente al bridge di salvataggio di raggiungere allmarks.app. L'estensione legge i meta di una pagina solo quando scegli di salvarla."
+      },
+      "openSource": {
+        "heading": "Open source",
+        "body": "Il codice sorgente è pubblico su GitHub (l'estensione si trova nella cartella extension), così chiunque può verificare esattamente cosa fa."
+      },
+      "contact": {
+        "heading": "Contatti",
+        "body": "Per domande sulla privacy, utilizza la pagina contatti."
+      },
+      "changes": {
+        "heading": "Modifiche",
+        "body": "Aggiorniamo questa pagina ogni volta che le autorizzazioni o i flussi di dati cambiano. La data di «ultimo aggiornamento» sopra indica la modifica più recente."
+      }
     }
   }
 }
