@@ -89,7 +89,7 @@ export function ExtensionPrivacyContent(): React.ReactElement {
         <h2 className={styles.heading}>{t('pages.extensionPrivacy.contact.heading')}</h2>
         <p className={styles.body}>
           {t('pages.extensionPrivacy.contact.body')}{' '}
-          <Link href="/contact" className={styles.link}>/contact</Link>
+          <Link href="/contact" className={styles.link}>{t('pages.contact.hero.kicker')}</Link>
         </p>
       </section>
 

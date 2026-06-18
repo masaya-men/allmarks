@@ -50,14 +50,14 @@ export function PrivacyContent(): React.ReactElement {
           {id === 'extension' && (
             <p className={styles.body}>
               <Link href="/extension/privacy" className={styles.link}>
-                {t('pages.privacy.extension.heading')}
+                {t('pages.extensionPrivacy.hero.kicker')}
               </Link>
             </p>
           )}
           {id === 'contact' && (
             <p className={styles.body}>
               <Link href="/contact" className={styles.link}>
-                {t('pages.privacy.contact.heading')}
+                {t('pages.contact.hero.kicker')}
               </Link>
             </p>
           )}

@@ -42,3 +42,20 @@ describe('sitemap 集客4ページ', () => {
     })
   }
 })
+
+describe('sitemap 法務4ページ', () => {
+  const urls = sitemap().map((e) => e.url)
+  for (const page of ['terms', 'contact'] as const) {
+    it(`${page} は15言語ぶん存在する`, () => {
+      expect(urls.filter((u) => u.endsWith(`/${page}`))).toHaveLength(15)
+    })
+  }
+  it('privacy は15言語ぶん存在する(/extension/privacy は除く)', () => {
+    expect(
+      urls.filter((u) => u.endsWith('/privacy') && !u.endsWith('/extension/privacy')),
+    ).toHaveLength(15)
+  })
+  it('extension/privacy は15言語ぶん存在する', () => {
+    expect(urls.filter((u) => u.endsWith('/extension/privacy'))).toHaveLength(15)
+  })
+})

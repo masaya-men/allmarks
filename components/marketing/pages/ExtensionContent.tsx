@@ -5,15 +5,17 @@ import { useRef } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { useReveal } from '@/lib/scroll/use-reveal'
 import { EXTENSION_STORE_URL } from '@/lib/board/constants'
+import { navHref } from '@/lib/i18n/locale-urls'
+import type { SupportedLocale } from '@/lib/i18n/config'
 import styles from './intro-page.module.css'
 
 /**
  * Extension 紹介本文。EXTENSION_STORE_URL が空の間は「ストア準備中・今は
  * ブックマークレットで」バナーを出し、死んだストアリンクを出さない(値が入れば
- * 自動でストアボタン点灯)。プライバシーリンクはフラット /extension/privacy
- * (Phase C で言語化)。事実は §確定済みプロダクト事実に準拠。可視性はアニメ非依存。
+ * 自動でストアボタン点灯)。プライバシーリンクは locale に応じた言語別 URL。
+ * 事実は §確定済みプロダクト事実に準拠。可視性はアニメ非依存。
  */
-export function ExtensionContent(): React.ReactElement {
+export function ExtensionContent({ locale }: { locale: SupportedLocale }): React.ReactElement {
   const { t } = useI18n()
   const rootRef = useRef<HTMLElement>(null)
   useReveal(rootRef as React.RefObject<HTMLElement>, { y: 24, stagger: 0.1 })
@@ -65,8 +67,8 @@ export function ExtensionContent(): React.ReactElement {
             <h2 className={styles.heading}>{t('pages.extension.privacy.heading')}</h2>
             <p className={styles.body}>
               {t('pages.extension.privacy.body')}{' '}
-              <Link href="/extension/privacy" className={styles.link}>
-                Extension privacy
+              <Link href={navHref(locale, 'extension/privacy')} className={styles.link}>
+                {t('pages.extensionPrivacy.hero.kicker')}
               </Link>
             </p>
           </div>

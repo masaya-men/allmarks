@@ -38,7 +38,7 @@ export default async function LocaleExtension({
   return (
     <I18nProvider initialLocale={locale} initialMessages={STATIC_MESSAGES[locale]}>
       <MarketingShell locale={locale} subpath="extension">
-        <ExtensionContent />
+        <ExtensionContent locale={locale} />
       </MarketingShell>
     </I18nProvider>
   )

@@ -47,7 +47,7 @@ export function TermsContent(): React.ReactElement {
           {id === 'contact' && (
             <p className={styles.body}>
               <Link href="/contact" className={styles.link}>
-                {t('pages.terms.contact.heading')}
+                {t('pages.contact.hero.kicker')}
               </Link>
             </p>
           )}
