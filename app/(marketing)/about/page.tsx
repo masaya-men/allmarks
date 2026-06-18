@@ -1,66 +1,21 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import en from '@/messages/en.json'
+import type { Messages } from '@/lib/i18n/config'
+import { I18nProvider } from '@/lib/i18n/I18nProvider'
+import { MarketingShell } from '@/components/marketing/MarketingShell'
+import { AboutContent } from '@/components/marketing/pages/AboutContent'
+import { pageMetadata } from '@/lib/i18n/page-metadata'
 
-export const metadata: Metadata = {
-  title: 'About',
-  description: 'About AllMarks — a bookmark collage app that puts privacy first.',
+export function generateMetadata(): Metadata {
+  return pageMetadata('en', 'about', 'about')
 }
 
 export default function AboutPage(): React.ReactElement {
   return (
-    <>
-      <h1>About AllMarks</h1>
-
-      <h2>ブックマークを、もっと楽しく。</h2>
-      <p>
-        AllMarks は「ブックマーク × コラージュ」をテーマにした Web アプリです。
-        あらゆる Web サイトのブックマークを、自由に並べて、自分だけの
-        ビジュアルコラージュとして楽しむことができます。
-      </p>
-
-      <h2>Why AllMarks?</h2>
-      <p>
-        ブックマークは「あとで読む」リストに埋もれがちです。
-        AllMarks は、ブックマークを「整理」するのではなく「表現」するツールとして
-        デザインしました。服飾学生のムードボードのように、
-        お気に入りのコンテンツを自由に並べて、眺めて、シェアする体験を提供します。
-      </p>
-
-      <h2>Privacy First</h2>
-      <p>
-        AllMarks は一切のユーザーデータをサーバーに保存しません。
-        すべてのデータはあなたのブラウザ内（IndexedDB）に保存されます。
-        アカウント登録も不要。完全に無料。これが私たちの哲学です。
-      </p>
-      <p>
-        詳しくは <Link href="/privacy">プライバシーポリシー</Link> をご覧ください。
-      </p>
-
-      <h2>Open Source</h2>
-      <p>
-        AllMarks はオープンソースプロジェクトです。
-        ソースコードは{' '}
-        <a href="https://github.com/masaya-men/booklage" target="_blank" rel="noopener noreferrer">
-          GitHub
-        </a>
-        {' '}で公開しています。
-        プライバシーを重視する方は、実際にコードを確認して
-        データが外部に送信されていないことを検証できます。
-      </p>
-
-      <h2>Tech Stack</h2>
-      <ul>
-        <li><strong>Next.js</strong> — React フレームワーク</li>
-        <li><strong>IndexedDB</strong> — ブラウザ内データベース</li>
-        <li><strong>GSAP</strong> — アニメーション</li>
-        <li><strong>Cloudflare Pages</strong> — ホスティング</li>
-        <li><strong>TypeScript</strong> — 型安全な開発</li>
-      </ul>
-
-      <h2>Contact</h2>
-      <p>
-        ご質問やフィードバックは <Link href="/contact">お問い合わせページ</Link> からどうぞ。
-      </p>
-    </>
+    <I18nProvider initialLocale="en" initialMessages={en as Messages}>
+      <MarketingShell locale="en" subpath="about">
+        <AboutContent />
+      </MarketingShell>
+    </I18nProvider>
   )
 }
