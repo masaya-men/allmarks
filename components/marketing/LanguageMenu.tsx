@@ -14,7 +14,13 @@ import styles from './LanguageMenu.module.css'
  * page, so we navigate rather than runtime-swap. The choice is persisted so the
  * locale-suggest banner won't nag afterward.
  */
-export function LanguageMenu({ current }: { current: SupportedLocale }): React.ReactElement {
+export function LanguageMenu({
+  current,
+  subpath,
+}: {
+  current: SupportedLocale
+  subpath?: string
+}): React.ReactElement {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -33,7 +39,7 @@ export function LanguageMenu({ current }: { current: SupportedLocale }): React.R
     setOpen(false)
     if (locale !== current) {
       persistLocale(locale)
-      router.push(localePath(locale))
+      router.push(localePath(locale, subpath))
     }
   }
 
