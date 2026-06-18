@@ -148,10 +148,10 @@
     },
     "problem": {
       "headline": "Du sammelst alles – und schaust nie wieder rein.",
-      "body": "Eine fade Spalte blauer Links. Timelines, die du nur durchscrollst. Lass nicht zu, dass das Gespeicherte in einem Textberg verschwindet."
+      "body": "Nur Zeilen mit Textlinks. Feeds, die du einfach durchscrollst. Lass nicht zu, dass das, was du gespeichert hast, im Textchaos versinkt."
     },
     "features": {
-      "capture": { "title": "Ein Klick, von überall.", "body": "Posts auf X, YouTube-Videos, Artikel, Shops, Bilder – direkt aufs Board senden, per Erweiterung, Bookmarklet oder eingefügter URL." },
+      "capture": { "title": "Auf dein Board, von überall.", "body": "Einfach eine URL einfügen – X, YouTube, Artikel, Shops, Bilder, alles im Web. Du möchtest mit einem Klick speichern? Die Browser-Erweiterung und das Bookmarklet machen es möglich." },
       "layout": { "title": "Frei anordnen.", "body": "Per Drag & Drop Größe und Position genau so setzen, wie es dir gefällt." },
       "live": { "title": "Mehrere Videos gleichzeitig abspielen.", "body": "Videos auf deinem Board laufen zusammen – keine Liste statischer Vorschaubilder, sondern ein Board, das wirklich lebt." },
       "organize": { "title": "Taggen zum Sortieren. Themes zum Umgestalten.", "body": "Nach Tags filtern und das gesamte Aussehen mit Themes wechseln. Mehr Themes sind in Arbeit." },

@@ -148,10 +148,10 @@
     },
     "problem": {
       "headline": "Vous les accumulez sans jamais y revenir.",
-      "body": "Une colonne morne de liens bleus. Des timelines que vous faites défiler sans vous arrêter. Ne laissez pas vos sauvegardes s'engloutir dans un mur de texte."
+      "body": "De simples rangées de liens texte. Des fils d'actualité que vous faites défiler sans jamais vous arrêter. Ne laissez pas ce que vous avez sauvegardé se perdre dans un mur de texte."
     },
     "features": {
-      "capture": { "title": "Un clic, depuis n'importe où.", "body": "Posts sur X, vidéos YouTube, articles, boutiques, images — envoyez-les directement sur votre tableau via l'extension, le bookmarklet ou en collant l'URL." },
+      "capture": { "title": "Sur votre tableau, depuis n'importe où.", "body": "Collez simplement une URL — X, YouTube, articles, boutiques, images, tout ce qui est sur le web. Vous voulez sauvegarder en un clic ? L'extension navigateur et le bookmarklet sont là pour ça." },
       "layout": { "title": "Arrangez librement.", "body": "Glissez-déposez pour définir taille et position exactement comme vous le souhaitez." },
       "live": { "title": "Lisez plusieurs vidéos en même temps.", "body": "Les vidéos de votre tableau jouent ensemble — pas une liste d'images figées, mais un tableau vraiment vivant." },
       "organize": { "title": "Tags pour trier. Thèmes pour changer de look.", "body": "Filtrez par tag et changez l'apparence entière avec les thèmes. D'autres thèmes arrivent bientôt." },

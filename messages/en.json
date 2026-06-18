@@ -148,12 +148,12 @@
     },
     "problem": {
       "headline": "You pile them up and never look again.",
-      "body": "A bland column of blue links. Timelines you only scroll past. Don't let what you save get buried in a wall of text."
+      "body": "Just rows of text links. Feeds you scroll right past. Don't let what you save get buried in plain text."
     },
     "features": {
       "capture": {
-        "title": "One click, from anywhere.",
-        "body": "Posts on X, YouTube videos, articles, shops, images — send them straight to your board via the extension, the bookmarklet, or a pasted URL."
+        "title": "To your board, from anywhere.",
+        "body": "Just paste a URL — X, YouTube, articles, shops, images, anything on the web. Want one-click saving? The browser extension and bookmarklet have you covered."
       },
       "layout": {
         "title": "Arrange it freely.",

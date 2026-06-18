@@ -148,10 +148,10 @@
     },
     "problem": {
       "headline": "Je stapelt ze op en kijkt er nooit meer naar.",
-      "body": "Een saaie kolom blauwe links. Tijdlijnen die je alleen maar doorscrollt. Laat je opgeslagen content niet begraven worden in een muur van tekst."
+      "body": "Alleen rijen met tekstlinks. Feeds die je zo doorscrollt. Laat niet toe dat wat je opslaat verdwijnt in een zee van tekst."
     },
     "features": {
-      "capture": { "title": "Eén klik, van overal.", "body": "Posts op X, YouTube-video's, artikelen, winkels, afbeeldingen — stuur ze rechtstreeks naar je bord via de extensie, de bladwijzer of een geplakte URL." },
+      "capture": { "title": "Naar je bord, van overal.", "body": "Plak gewoon een URL — X, YouTube, artikelen, winkels, afbeeldingen, alles op het web. Wil je met één klik opslaan? De browserextensie en de bookmarklet zorgen daarvoor." },
       "layout": { "title": "Vrij rangschikken.", "body": "Slepen en neerzetten om formaat en positie precies naar wens in te stellen." },
       "live": { "title": "Meerdere video's tegelijk afspelen.", "body": "Video's op je bord bewegen samen — geen lijst met stilstaande beelden, maar een bord dat echt leeft." },
       "organize": { "title": "Tags om te sorteren. Thema's om van look te wisselen.", "body": "Filteren op tag en de hele look wisselen met thema's. Er zijn meer thema's onderweg." },

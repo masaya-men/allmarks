@@ -148,10 +148,10 @@
     },
     "problem": {
       "headline": "Você acumula e nunca mais olha.",
-      "body": "Uma coluna sem graça de links azuis. Timelines que você apenas passa rolando. Não deixe o que você salvou ficar soterrado em um muro de texto."
+      "body": "Só filas de links de texto. Feeds que você rola sem parar. Não deixe o que você salvou ficar soterrado em texto puro."
     },
     "features": {
-      "capture": { "title": "Um clique, de qualquer lugar.", "body": "Posts no X, vídeos do YouTube, artigos, lojas, imagens — envie direto para o seu quadro pela extensão, bookmarklet ou colando a URL." },
+      "capture": { "title": "Para o seu quadro, de qualquer lugar.", "body": "Basta colar uma URL — X, YouTube, artigos, lojas, imagens, qualquer coisa da web. Quer salvar com um clique? A extensão do navegador e o bookmarklet resolvem." },
       "layout": { "title": "Organize livremente.", "body": "Arraste e solte para definir tamanho e posição exatamente como você quer." },
       "live": { "title": "Reproduza vários vídeos ao mesmo tempo.", "body": "Os vídeos do seu quadro se movem juntos — não é uma lista de imagens estáticas, mas um quadro que realmente vive." },
       "organize": { "title": "Tags para organizar. Temas para renovar.", "body": "Filtre por tag e mude a aparência completa com temas. Mais temas estão a caminho." },

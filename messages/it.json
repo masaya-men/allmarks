@@ -148,10 +148,10 @@
     },
     "problem": {
       "headline": "Li accumuli e non li guardi mai più.",
-      "body": "Una colonna piatta di link blu. Timeline che scorri senza fermarti. Non lasciare che ciò che salvi venga sepolto in un muro di testo."
+      "body": "Solo righe di link di testo. Feed che scorrono via. Non lasciare che ciò che salvi venga sepolto nel testo."
     },
     "features": {
-      "capture": { "title": "Un clic, da qualsiasi posto.", "body": "Post su X, video YouTube, articoli, negozi, immagini — inviali direttamente alla tua bacheca tramite l'estensione, il bookmarklet o incollando l'URL." },
+      "capture": { "title": "Sulla tua bacheca, da ovunque.", "body": "Basta incollare un URL — X, YouTube, articoli, negozi, immagini, qualsiasi cosa sul web. Vuoi salvare con un clic? L'estensione del browser e il bookmarklet ci pensano loro." },
       "layout": { "title": "Disponi liberamente.", "body": "Trascina e rilascia per impostare dimensione e posizione esattamente come vuoi." },
       "live": { "title": "Riproduci più video contemporaneamente.", "body": "I video sulla tua bacheca si muovono insieme — non è una lista di immagini statiche, ma una bacheca davvero viva." },
       "organize": { "title": "Tag per ordinare. Temi per rinnovare.", "body": "Filtra per tag e cambia l'aspetto complessivo con i temi. Altri temi sono in arrivo." },

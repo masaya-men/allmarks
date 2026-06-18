@@ -148,10 +148,10 @@
     },
     "problem": {
       "headline": "Bạn cứ tích góp mà chẳng bao giờ xem lại.",
-      "body": "Một cột liên kết màu xanh tẻ nhạt. Dòng thời gian chỉ để vuốt qua. Đừng để thứ bạn lưu bị chôn vùi trong một bức tường chữ."
+      "body": "Chỉ là những dòng liên kết văn bản xếp hàng. Dòng feed chỉ để cuộn qua. Đừng để những gì bạn lưu bị chôn vùi trong chữ."
     },
     "features": {
-      "capture": { "title": "Một cú nhấp, từ bất kỳ đâu.", "body": "Bài đăng trên X, video YouTube, bài viết, cửa hàng, hình ảnh — gửi thẳng vào bảng qua tiện ích mở rộng, bookmarklet hoặc dán URL." },
+      "capture": { "title": "Từ bất kỳ đâu, thẳng vào bảng.", "body": "Chỉ cần dán URL là xong — X, YouTube, bài viết kỹ thuật, cửa hàng, hình ảnh, bất cứ thứ gì trên web. Muốn lưu một chạm? Tiện ích mở rộng và bookmarklet luôn sẵn sàng." },
       "layout": { "title": "Sắp xếp tự do.", "body": "Kéo và thả để đặt kích thước và vị trí chính xác theo ý bạn." },
       "live": { "title": "Phát nhiều video cùng lúc.", "body": "Các video trên bảng chạy cùng nhau — không phải danh sách ảnh tĩnh, mà là bảng thực sự sống động." },
       "organize": { "title": "Gắn thẻ để phân loại. Chủ đề để thay đổi giao diện.", "body": "Lọc theo thẻ và đổi giao diện tổng thể bằng chủ đề. Thêm nhiều chủ đề đang được phát triển." },

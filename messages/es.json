@@ -148,10 +148,10 @@
     },
     "problem": {
       "headline": "Los acumulas y nunca vuelves a verlos.",
-      "body": "Una columna sosa de enlaces azules. Timelines que solo deslizas. No dejes que lo que guardas quede enterrado en un muro de texto."
+      "body": "Solo filas de enlaces de texto. Feeds que pasas de largo. No dejes que lo que guardas quede enterrado entre texto plano."
     },
     "features": {
-      "capture": { "title": "Un clic, desde cualquier lugar.", "body": "Publicaciones en X, vídeos de YouTube, artículos, tiendas, imágenes — envíalos directamente a tu tablero con la extensión, el marcador o pegando la URL." },
+      "capture": { "title": "A tu tablero, desde donde sea.", "body": "Solo pega una URL — X, YouTube, artículos, tiendas, imágenes, lo que sea de la web. ¿Quieres guardar con un clic? La extensión del navegador y el marcador rápido lo hacen por ti." },
       "layout": { "title": "Ordénalos libremente.", "body": "Arrastra y suelta para ajustar tamaño y posición exactamente como quieras." },
       "live": { "title": "Reproduce varios vídeos a la vez.", "body": "Los vídeos de tu tablero se mueven juntos — no es una lista de imágenes estáticas, es un tablero que de verdad vive." },
       "organize": { "title": "Etiqueta para ordenar. Temas para rediseñar.", "body": "Filtra por etiqueta y cambia todo el aspecto con temas. Hay más temas en camino." },

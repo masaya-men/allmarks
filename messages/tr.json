@@ -148,10 +148,10 @@
     },
     "problem": {
       "headline": "Biriktiriyorsunuz ama bir daha bakmıyorsunuz.",
-      "body": "Sıkıcı bir mavi bağlantı sütunu. Sadece kaydırarak geçtiğiniz zaman tünelleri. Kaydettiğiniz şeylerin bir metin duvarına gömülmesine izin vermeyin."
+      "body": "Sadece sıralanan metin bağlantıları. Sürekli kaydırdığınız beslemeler. Kaydettiğiniz şeylerin düz metin içinde kaybolmasına izin vermeyin."
     },
     "features": {
-      "capture": { "title": "Her yerden, tek tıkla.", "body": "X paylaşımları, YouTube videoları, makaleler, mağazalar, görseller — uzantı, yer imi aracı veya yapıştırılan URL ile doğrudan panonuza gönderin." },
+      "capture": { "title": "Her yerden, panonuza.", "body": "Bir URL yapıştırmanız yeterli — X, YouTube, makaleler, mağazalar, görseller, web'deki her şey. Tek tıkla kaydetmek ister misiniz? Tarayıcı uzantısı ve yer imi aracı tam bunun için var." },
       "layout": { "title": "Özgürce düzenleyin.", "body": "Boyutu ve konumu tam istediğiniz gibi ayarlamak için sürükleyip bırakın." },
       "live": { "title": "Birden fazla videoyu aynı anda oynatın.", "body": "Panodaki videolar birlikte hareket eder — durağan görsel listesi değil, gerçekten canlı bir pano." },
       "organize": { "title": "Etiketle sırala. Temayla yenile.", "body": "Etikete göre filtreleyin ve temalarla tüm görünümü değiştirin. Daha fazla tema geliyor." },
