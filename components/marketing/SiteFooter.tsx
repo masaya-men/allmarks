@@ -1,16 +1,8 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './SiteFooter.module.css'
-
-// Register ScrollTrigger at import time — idempotent, safe to call multiple times.
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 /**
  * SiteFooter — dark footer that continues the FinalCta's near-black ground.
@@ -18,13 +10,15 @@ if (typeof window !== 'undefined') {
  * Background: #0a0a0a (same as the FinalCta overlay end-state).
  * Text: off-white #f0efe9 / muted rgba variant.
  *
- * Footer Finale curtain (PC + prefers-reduced-motion: no-preference only):
- * A full-screen #0a0a0a panel with a large "Open Board →" button is pinned
- * at the top of the viewport as the user scrolls into the footer. After one
- * viewport-height of scroll the curtain fades to opacity:0, revealing the
- * standard nav below. On reduced-motion or non-PC the curtain is rendered
- * statically (no pin) and the Open Board button is immediately visible and
- * clickable.
+ * Footer Finale curtain:
+ * A full-viewport #0a0a0a panel with a large "Open Board →" button. On PC it is
+ * `position: sticky; top: 0` with a z-index above the fixed header, so as the
+ * user scrolls into the footer the curtain sticks to the viewport — the whole
+ * screen goes black with the CTA — and then scrolls away to reveal the nav as
+ * you keep going. Pure CSS sticky (no GSAP pin) keeps this robust. On non-PC /
+ * reduced-motion it renders as a compact static CTA block (no full-screen
+ * takeover). The Open Board button is always visible and clickable — visibility
+ * never depends on animation.
  *
  * Nav labels sourced from useI18n() landing.footer.* keys — correctly shows
  * English when the LP runs without an I18nProvider (FALLBACK is English).
@@ -33,57 +27,16 @@ if (typeof window !== 'undefined') {
 export function SiteFooter(): React.ReactElement {
   const { t } = useI18n()
 
-  /** Ref to the finale curtain element */
-  const finaleRef = useRef<HTMLDivElement>(null)
-  /** Ref to the footer root (ScrollTrigger trigger) */
-  const footerRef = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const footer = footerRef.current
-    const finale = finaleRef.current
-    if (!footer || !finale) return
-
-    const mm = gsap.matchMedia()
-
-    // PC (≥1024px) + normal motion: pin the curtain for one viewport-height
-    // of scroll, then fade it out to reveal the nav below.
-    mm.add(
-      '(min-width: 1024px) and (prefers-reduced-motion: no-preference)',
-      () => {
-        // The curtain starts at opacity:1 (CSS default). After pin completes
-        // we tween opacity to 0 so the nav below becomes visible.
-        // scrub:true ties the fade to scroll position.
-        const tl = gsap.timeline()
-        tl.to(finale, { opacity: 0, ease: 'none' })
-
-        const st = ScrollTrigger.create({
-          trigger: footer,
-          start: 'top top',
-          end: '+=100vh',
-          scrub: true,
-          pin: finale,
-          pinSpacing: false,
-          animation: tl,
-        })
-
-        return () => { st.kill(); tl.kill() }
-      },
-    )
-
-    return () => mm.revert()
-  }, [])
-
   return (
-    <footer ref={footerRef} className={styles.footer}>
+    <footer className={styles.footer}>
 
       {/*
-        Footer Finale curtain — full-screen #0a0a0a panel with large CTA.
-        - PC + no-preference: pinned for 1 viewport-height then fades away.
-        - Reduced-motion / non-PC: rendered statically; no pin, no animation.
-          The Open Board button is always visible and clickable.
-        aria-hidden is NOT set — the button must be accessible at all times.
+        Footer Finale curtain — full-viewport #0a0a0a panel with large CTA.
+        position: sticky (CSS) makes it hold the screen black on PC, then scroll
+        away to the nav. Static compact block on non-PC / reduced-motion.
+        The Open Board button is always visible and clickable.
       */}
-      <div ref={finaleRef} className={styles.finale} data-footer-finale>
+      <div className={styles.finale} data-footer-finale>
         <div className={styles.finaleInner}>
           <Link href="/board" className={styles.finaleButton}>
             Open Board
