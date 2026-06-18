@@ -30,21 +30,6 @@ export function SiteFooter(): React.ReactElement {
   return (
     <footer className={styles.footer}>
 
-      {/*
-        Footer Finale curtain — full-viewport #0a0a0a panel with large CTA.
-        position: sticky (CSS) makes it hold the screen black on PC, then scroll
-        away to the nav. Static compact block on non-PC / reduced-motion.
-        The Open Board button is always visible and clickable.
-      */}
-      <div className={styles.finale} data-footer-finale>
-        <div className={styles.finaleInner}>
-          <Link href="/board" className={styles.finaleButton}>
-            Open Board
-            <span className={styles.finaleArrow} aria-hidden="true">→</span>
-          </Link>
-        </div>
-      </div>
-
       <div className={styles.inner}>
 
         {/* Brand column */}
@@ -60,12 +45,6 @@ export function SiteFooter(): React.ReactElement {
             <br />
             No accounts. No tracking.
           </p>
-          {/* Persistent board CTA for the final scrolled state (after the
-              sticky finale curtain has scrolled away). */}
-          <Link href="/board" className={styles.footerCta}>
-            Open Board
-            <span className={styles.footerCtaArrow} aria-hidden="true">→</span>
-          </Link>
         </div>
 
         {/* Nav columns */}
@@ -138,6 +117,21 @@ export function SiteFooter(): React.ReactElement {
         <p className={styles.bottomRight}>
           Made with care. Designed for everyone.
         </p>
+      </div>
+
+      {/*
+        Footer Finale — the closing CTA. A full-viewport #0a0a0a screen with the
+        large "Open Board →" button as the very last thing on the page (after the
+        nav). z-index above the fixed header so the closing screen is fully black.
+        Plain link — always visible and clickable, no animation dependency.
+      */}
+      <div className={styles.finale} data-footer-finale>
+        <div className={styles.finaleInner}>
+          <Link href="/board" className={styles.finaleButton}>
+            Open Board
+            <span className={styles.finaleArrow} aria-hidden="true">→</span>
+          </Link>
+        </div>
       </div>
     </footer>
   )

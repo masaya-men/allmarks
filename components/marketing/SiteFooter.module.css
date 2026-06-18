@@ -15,30 +15,24 @@
   box-sizing: border-box;
 }
 
-/* ── Footer Finale Curtain ───────────────────────────────────────────────────
-   Full-viewport #0a0a0a panel shown BEFORE the nav. On PC it is sticky at the
-   top of the viewport with a z-index above the fixed header, so scrolling into
-   the footer turns the WHOLE screen black with the CTA, then it scrolls away to
-   reveal the nav. Pure CSS `position: sticky` — no GSAP pin — so it can't break.
-
-   It occupies one viewport of flow height (min-height:100vh); the nav below it
-   provides the scroll distance over which the sticky curtain holds then releases
-   (no leftover void — the curtain IS in flow and simply scrolls past).
+/* ── Footer Finale — the closing CTA screen ──────────────────────────────────
+   A full-viewport #0a0a0a panel placed AFTER the nav as the very last thing on
+   the page. The large "Open Board →" button is the LP's closing call to action.
+   z-index sits above the fixed header so that when you reach the bottom the
+   whole screen — header included — is black. Plain CSS, no GSAP: it can't break.
 
    Visibility never depends on animation — the Open Board button is a plain link,
-   visible and clickable at all times, before JS runs or if GSAP fails.
+   visible and clickable at all times.
 
-   z-index: var(--lp-z-footer-finale) = 120 > header(100) > language-menu(110)
-   so while stuck the full-black curtain covers every fixed element.            */
+   z-index: var(--lp-z-footer-finale) = 120 > header(100) > language-menu(110).  */
 .finale {
-  position: sticky;
-  top: 0;
+  position: relative;
   min-height: 100vh;
   background: #0a0a0a;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* z-index token — ABOVE SiteHeader(100) so the stuck curtain goes full-black */
+  /* z-index token — ABOVE SiteHeader(100) so the closing screen is fully black */
   z-index: var(--lp-z-footer-finale, 120);
 }
 
@@ -158,46 +152,6 @@
   font-size: 13px;
   line-height: 1.7;
   color: rgba(240, 239, 233, 0.35);
-}
-
-/* Persistent "Open Board" CTA in the footer's final state — a compact white
-   pill, smaller than the finale curtain button, anchored in the brand column
-   so a board entry is always present once the curtain has scrolled away. */
-.footerCta {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  align-self: flex-start;
-  margin-top: 8px;
-  height: 48px;
-  padding: 0 26px;
-  border-radius: 999px;
-  background: #f0efe9;
-  color: #14130f;
-  font-family: var(--lp-sans, system-ui, sans-serif);
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  text-decoration: none;
-  transition:
-    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.3s ease,
-    color 0.3s ease;
-}
-
-.footerCta:hover {
-  transform: translateY(-2px);
-  background: var(--lp-accent, #28f100);
-  color: #0a0a0a;
-}
-
-.footerCtaArrow {
-  display: inline-block;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.footerCta:hover .footerCtaArrow {
-  transform: translateX(5px);
 }
 
 /* ── Three-column nav grid ── */
