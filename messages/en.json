@@ -257,6 +257,55 @@
         "heading": "Start your board.",
         "button": "Open Board"
       }
+    },
+    "guide": {
+      "meta": {
+        "title": "Guide",
+        "description": "How to use AllMarks: save in three ways, arrange your board, play media, and share — start in about 30 seconds."
+      },
+      "hero": {
+        "kicker": "Guide",
+        "title": "Up and running in 30 seconds.",
+        "lead": "No account, no setup. Open the board, save your first link, and start arranging."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Open the board",
+        "body": "Head to the board and you're in — nothing to sign up for. Copy a link from anywhere on the web and paste it straight onto the board to save your first card."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Three ways to save",
+        "body": "Pasting a URL is the main way. For one-click saving, drag the bookmarklet to your bookmarks bar — it works in every browser, including on your phone. On Chrome, the extension saves from any page in a tap."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Make it yours",
+        "body": "Click a card to open it full-size. Resize cards or pick a density preset, switch the visual / editorial / native look, and add tags. Drag cards and tags into the order you like — everything stays on a tidy grid."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Watch it come alive",
+        "body": "Videos from X, YouTube, TikTok, Vimeo, and SoundCloud play right on the board — the one in focus plays for real while the rest shimmer as stills. Toggle MOTION off any time for total quiet."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Share your board",
+        "body": "Make a short link with a preview image for social, or export the board as a PNG to post on X. Anyone with the link sees your board — no account needed on their end either."
+      },
+      "data": {
+        "num": "06",
+        "heading": "About your data",
+        "body": "Everything is stored in this browser only. That means it won't follow you to another device or a private window, and clearing your browser data clears your boards. You can export a backup any time."
+      },
+      "trouble": {
+        "heading": "If something looks off",
+        "body": "A card stuck on a plain thumbnail usually just needs the page reloaded so it can fetch a fresh preview. If a bookmarklet save does nothing, re-add the bookmarklet — older copies can go stale after an update."
+      },
+      "cta": {
+        "heading": "Open your first board.",
+        "button": "Open Board"
+      }
     }
   }
 }
