@@ -1,8 +1,10 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
+import { gsap } from 'gsap'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { useHorizontalPin } from '@/lib/scroll/use-horizontal-pin'
+import { panelProgress } from '@/lib/scroll/horizontal-pin-math'
 import { DEMO_COLLAGE, DEMO_VIDEOS } from '@/lib/marketing/demo-collage'
 import styles from './Features.module.css'
 
@@ -162,6 +164,15 @@ function LiveGrid(): React.ReactElement {
           />
         </figure>
       ))}
+      {/* Sound-wave pulse bars for the LIVE panel micro-anim.
+          Three vertical bars that pulse via scaleY driven by onProgress. */}
+      <div className={styles.livePulse} aria-hidden="true">
+        <span className={styles.liveBar} data-live-bar="0" />
+        <span className={styles.liveBar} data-live-bar="1" />
+        <span className={styles.liveBar} data-live-bar="2" />
+        <span className={styles.liveBar} data-live-bar="3" />
+        <span className={styles.liveBar} data-live-bar="4" />
+      </div>
     </div>
   )
 }
@@ -173,12 +184,12 @@ function LiveGrid(): React.ReactElement {
 function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement {
   if (visual === 'capture') {
     return (
-      <div className={styles.captureRow}>
+      <div className={styles.captureRow} data-panel-visual="capture">
         {CAPTURE_CARDS.map((card, i) => {
           const art = DEMO_COLLAGE[card.asset]
           if (!art) return null
           return (
-            <figure key={i} className={styles.card}>
+            <figure key={i} className={styles.card} data-capture-card={i}>
               <img
                 src={`/${art.src}`}
                 alt=""
@@ -205,12 +216,12 @@ function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement 
 
   if (visual === 'layout') {
     return (
-      <div className={styles.masonry}>
+      <div className={styles.masonry} data-panel-visual="layout">
         {LAYOUT_CARDS.map((card, i) => {
           const art = DEMO_COLLAGE[card.asset]
           if (!art) return null
           return (
-            <figure key={i} className={styles.card}>
+            <figure key={i} className={styles.card} data-layout-card={i}>
               <img
                 src={`/${art.src}`}
                 alt=""
@@ -234,10 +245,10 @@ function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement 
 
   if (visual === 'organize') {
     return (
-      <div className={styles.organize}>
+      <div className={styles.organize} data-panel-visual="organize">
         <div className={styles.pillRow} aria-hidden="true">
-          {TAG_PILLS.map((tag) => (
-            <span key={tag} className={styles.pill}>
+          {TAG_PILLS.map((tag, i) => (
+            <span key={tag} className={styles.pill} data-organize-pill={i}>
               <span className={styles.pillHash}>#</span>
               {tag}
             </span>
@@ -249,6 +260,7 @@ function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement 
               key={i}
               className={styles.swatch}
               style={{ background: c }}
+              data-organize-swatch={i}
             />
           ))}
         </div>
@@ -258,9 +270,9 @@ function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement 
 
   // privacy — quiet typographic rows, minimal visual
   return (
-    <ul className={styles.privacyList} aria-hidden="true">
-      {PRIVACY_ROWS.map((row) => (
-        <li key={row} className={styles.privacyRow}>
+    <ul className={styles.privacyList} aria-hidden="true" data-panel-visual="privacy">
+      {PRIVACY_ROWS.map((row, i) => (
+        <li key={row} className={styles.privacyRow} data-privacy-row={i}>
           <span className={styles.privacyDot} />
           {row}
         </li>
@@ -291,10 +303,129 @@ export function Features(): React.ReactElement {
   const { t } = useI18n()
   const sectionRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const progressFillRef = useRef<HTMLSpanElement>(null)
+
+  /**
+   * Drive all per-panel micro-animations from the single 0..1 global progress.
+   * Only called in the PC + no-preference branch (matchMedia inside the hook).
+   * Uses gsap.set / quickSetter for zero-overhead per-frame updates.
+   * Default visual state is always "visible" — animations only add polish.
+   */
+  const handleProgress = useCallback((p: number): void => {
+    const section = sectionRef.current
+    if (!section) return
+
+    // ── Sound-wave progress bar ──────────────────────────────────────────────
+    const fill = progressFillRef.current
+    if (fill) {
+      gsap.set(fill, { scaleX: p })
+    }
+
+    // Helper: ease a 0..1 value through expo-out-ish curve
+    const easeOut = (v: number): number => 1 - Math.pow(1 - v, 3)
+
+    // ── Panel 0 (CAPTURE): 3 cards scale+opacity + slight x convergence ──────
+    const lp0 = panelProgress(p, 5, 0)
+    const e0 = easeOut(Math.min(1, lp0 / 0.55))
+    const captureCards = section.querySelectorAll<HTMLElement>('[data-capture-card]')
+    captureCards.forEach((el, i) => {
+      // Center card (i=1) converges from right; outer cards from their sides
+      const xFrom = i === 0 ? -14 : i === 2 ? 14 : 0
+      gsap.set(el, {
+        scale: 0.8 + 0.2 * e0,
+        opacity: e0,
+        x: xFrom * (1 - e0),
+      })
+    })
+
+    // ── Panel 1 (LAYOUT): masonry cards stagger in from y:24 ─────────────────
+    const lp1 = panelProgress(p, 5, 1)
+    const layoutCards = section.querySelectorAll<HTMLElement>('[data-layout-card]')
+    layoutCards.forEach((el, i) => {
+      // Each card gets its own offset so they feel like a stagger
+      const staggerOffset = i * 0.12
+      const raw = Math.max(0, Math.min(1, (lp1 - staggerOffset) / (0.55 - staggerOffset * 0.5)))
+      const e1 = easeOut(raw)
+      gsap.set(el, {
+        y: 24 * (1 - e1),
+        opacity: e1,
+      })
+    })
+
+    // ── Panel 2 (LIVE): pulse bars scaleY driven by progress ─────────────────
+    const lp2 = panelProgress(p, 5, 2)
+    const liveBars = section.querySelectorAll<HTMLElement>('[data-live-bar]')
+    liveBars.forEach((el, i) => {
+      // Each bar oscillates at a different phase / amplitude
+      const phase = i * 0.18
+      const wave = 0.35 + 0.65 * Math.abs(Math.sin((lp2 * 2.4 + phase) * Math.PI))
+      const e2 = easeOut(Math.min(1, lp2 / 0.4))
+      gsap.set(el, { scaleY: wave * e2 })
+    })
+
+    // ── Panel 3 (ORGANIZE): pills x+opacity, then swatches ───────────────────
+    const lp3 = panelProgress(p, 5, 3)
+    const pills = section.querySelectorAll<HTMLElement>('[data-organize-pill]')
+    pills.forEach((el, i) => {
+      const offset = i * 0.09
+      const raw = Math.max(0, Math.min(1, (lp3 - offset) / (0.45 - offset * 0.3)))
+      const e3p = easeOut(raw)
+      gsap.set(el, { x: -16 * (1 - e3p), opacity: e3p })
+    })
+    const swatches = section.querySelectorAll<HTMLElement>('[data-organize-swatch]')
+    swatches.forEach((el, i) => {
+      // Swatches lag behind pills
+      const offset = 0.22 + i * 0.06
+      const raw = Math.max(0, Math.min(1, (lp3 - offset) / 0.35))
+      const e3s = easeOut(raw)
+      gsap.set(el, { x: -16 * (1 - e3s), opacity: e3s })
+    })
+
+    // ── Panel 4 (PRIVACY): rows fade in + slight x slide ─────────────────────
+    const lp4 = panelProgress(p, 5, 4)
+    const rows = section.querySelectorAll<HTMLElement>('[data-privacy-row]')
+    rows.forEach((el, i) => {
+      const offset = i * 0.13
+      const raw = Math.max(0, Math.min(1, (lp4 - offset) / (0.5 - offset * 0.2)))
+      const e4 = easeOut(raw)
+      gsap.set(el, { x: -12 * (1 - e4), opacity: e4 })
+    })
+  }, [])
+
+  /**
+   * In the PC + no-preference branch, set the "before animation" initial state
+   * for all animated elements so they start invisible (opacity:0 etc.) and
+   * onProgress builds them in. In the static fallback (reduced-motion / non-PC)
+   * this block never runs and all elements stay fully visible (their CSS default).
+   */
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+    const mm = gsap.matchMedia()
+    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+      gsap.set(section.querySelectorAll('[data-capture-card]'), { opacity: 0, scale: 0.8 })
+      gsap.set(section.querySelectorAll('[data-layout-card]'), { opacity: 0, y: 24 })
+      gsap.set(section.querySelectorAll('[data-organize-pill]'), { opacity: 0, x: -16 })
+      gsap.set(section.querySelectorAll('[data-organize-swatch]'), { opacity: 0, x: -16 })
+      gsap.set(section.querySelectorAll('[data-privacy-row]'), { opacity: 0, x: -12 })
+      gsap.set(section.querySelectorAll('[data-live-bar]'), { scaleY: 0 })
+      return () => {
+        // Restore visible state on unmount / breakpoint revert
+        gsap.set(section.querySelectorAll('[data-capture-card]'), { clearProps: 'opacity,scale,x' })
+        gsap.set(section.querySelectorAll('[data-layout-card]'), { clearProps: 'opacity,y' })
+        gsap.set(section.querySelectorAll('[data-organize-pill]'), { clearProps: 'opacity,x' })
+        gsap.set(section.querySelectorAll('[data-organize-swatch]'), { clearProps: 'opacity,x' })
+        gsap.set(section.querySelectorAll('[data-privacy-row]'), { clearProps: 'opacity,x' })
+        gsap.set(section.querySelectorAll('[data-live-bar]'), { clearProps: 'scaleY' })
+      }
+    })
+    return () => mm.revert()
+  }, [])
 
   useHorizontalPin({
     sectionRef: sectionRef as React.RefObject<HTMLElement>,
     trackRef: trackRef as React.RefObject<HTMLElement>,
+    onProgress: handleProgress,
   })
 
   return (
@@ -304,6 +435,11 @@ export function Features(): React.ReactElement {
           <span className={styles.kickerDash} aria-hidden="true" />
           FEATURES
         </p>
+
+        {/* Sound-wave progress bar — PC + no-preference only (CSS hides on mobile/reduced) */}
+        <div className={styles.progress} aria-hidden="true">
+          <span ref={progressFillRef} className={styles.progressFill} />
+        </div>
 
         <div ref={trackRef} className={styles.track}>
           {BEATS.map((beat) => (

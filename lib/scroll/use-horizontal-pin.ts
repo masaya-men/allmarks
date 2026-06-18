@@ -9,12 +9,18 @@ import { horizontalScrollDistance } from './horizontal-pin-math'
  * (scroll-jack). PC width only (min-width:1024px) AND only when the user has no
  * reduced-motion preference; otherwise no pin is created and the track stays in
  * its static (CSS) layout. Reverts fully on unmount / breakpoint change.
+ *
+ * @param opts.onProgress - Optional callback invoked with the overall pin
+ *   progress (0..1) on every scrub update. Only called in the PC + no-preference
+ *   branch where the pin is active; never called in the static fallback.
  */
 export function useHorizontalPin(opts: {
   sectionRef: RefObject<HTMLElement>
   trackRef: RefObject<HTMLElement>
+  /** Called with overall pin progress 0..1 on every scrub update (PC + no-preference only). */
+  onProgress?: (p: number) => void
 }): void {
-  const { sectionRef, trackRef } = opts
+  const { sectionRef, trackRef, onProgress } = opts
   useEffect(() => {
     const section = sectionRef.current
     const track = trackRef.current
@@ -35,6 +41,9 @@ export function useHorizontalPin(opts: {
           scrub: true,
           invalidateOnRefresh: true,
           anticipatePin: 1,
+          onUpdate: (self) => {
+            onProgress?.(self.progress)
+          },
         },
       })
       return () => {
@@ -44,5 +53,5 @@ export function useHorizontalPin(opts: {
       }
     })
     return () => mm.revert()
-  }, [sectionRef, trackRef])
+  }, [sectionRef, trackRef, onProgress])
 }

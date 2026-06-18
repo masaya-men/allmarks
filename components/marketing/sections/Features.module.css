@@ -445,6 +445,56 @@
   }
 }
 
+/* ── Sound-wave progress bar (PC + no-preference only; hidden elsewhere) ──
+   A thin horizontal line at the bottom of the features section that grows
+   from left to right as the user scrolls through the panels. Green accent
+   (--lp-accent) gives it the "sound wave" identity. transform-origin:left
+   lets gsap.set(fill, {scaleX: p}) drive the width smoothly. */
+.progress {
+  display: none; /* hidden by default; shown only in the PC+no-preference media query below */
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  background: var(--lp-accent);
+  transform-origin: left center;
+  transform: scaleX(0);
+  border-radius: 999px;
+}
+
+/* ── 03 LIVE pulse bars — animated in handleProgress, always mounted ──
+   Five thin vertical bars overlaid on the liveGrid corner. Default scaleY=0
+   in JS-driven mode (PC+no-pref), but CSS gives them a base height so they're
+   visible statically in the reduced-motion / non-PC fallback. */
+.livePulse {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+  pointer-events: none;
+}
+
+.liveBar {
+  display: block;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+  /* Static fallback height (reduced-motion / non-PC): bars are visible at 40–100% */
+  height: 40%;
+  transform-origin: bottom center;
+}
+
+/* Stagger the static heights so the bar group looks like a mini equalizer */
+.liveBar:nth-child(1) { height: 55%; }
+.liveBar:nth-child(2) { height: 80%; }
+.liveBar:nth-child(3) { height: 100%; }
+.liveBar:nth-child(4) { height: 70%; }
+.liveBar:nth-child(5) { height: 45%; }
+
 /* ── Reduced motion: keep everything visible, skip card hover lift ── */
 @media (prefers-reduced-motion: reduce) {
   .kicker,
@@ -517,6 +567,33 @@
     z-index: 1;
     margin: 0;
     opacity: 1;
+  }
+
+  /* ── Sound-wave progress bar (PC + no-preference only) ── */
+  .progress {
+    display: block;
+    position: absolute;
+    bottom: clamp(14px, 3vh, 28px);
+    left: clamp(48px, 8vw, 160px);
+    right: clamp(48px, 8vw, 160px);
+    height: 2px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--lp-accent) 18%, transparent);
+    z-index: 2; /* above track panels, below nothing critical */
+    overflow: hidden;
+  }
+
+  /* Per-panel initial states are set via JavaScript (gsap.set) when the
+     PC+no-preference branch initialises. CSS Modules does not allow bare
+     [data-*] attribute selectors (not pure). JS handles opacity:0 / scale
+     setup inside useEffect so reduced-motion / non-PC users always see the
+     default visible state below. */
+
+  /* Live bars: in PC+no-pref mode, GSAP drives scaleY from 0 on first update.
+     Start them collapsed so the first progress callback builds them up. */
+  .liveBar {
+    height: 100%; /* full height, scaleY=0 via JS at first paint */
+    transform: scaleY(0);
   }
 }
 
