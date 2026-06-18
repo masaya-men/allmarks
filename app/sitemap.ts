@@ -16,15 +16,36 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly' as const,
     })),
     { path: '/board', priority: 0.9, changeFrequency: 'weekly' },
-    { path: '/features', priority: 0.8, changeFrequency: 'monthly' },
-    { path: '/guide', priority: 0.8, changeFrequency: 'monthly' },
+    // Features(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'features'),
+      priority: 0.8,
+      changeFrequency: 'monthly' as const,
+    })),
+    // Guide(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'guide'),
+      priority: 0.8,
+      changeFrequency: 'monthly' as const,
+    })),
     // About(15言語)
     ...SUPPORTED_LOCALES.map((locale) => ({
       path: localePath(locale, 'about'),
       priority: 0.7,
       changeFrequency: 'monthly' as const,
     })),
-    { path: '/faq', priority: 0.7, changeFrequency: 'monthly' },
+    // FAQ(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'faq'),
+      priority: 0.7,
+      changeFrequency: 'monthly' as const,
+    })),
+    // Extension 紹介(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'extension'),
+      priority: 0.6,
+      changeFrequency: 'monthly' as const,
+    })),
     { path: '/contact', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/privacy', priority: 0.5, changeFrequency: 'monthly' },
     { path: '/terms', priority: 0.5, changeFrequency: 'monthly' },

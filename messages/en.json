@@ -186,6 +186,51 @@
     }
   },
   "pages": {
+    "features": {
+      "meta": {
+        "title": "Features",
+        "description": "Save anything from the web and lay it out as a visual board. Inline playback, tags, instant sharing — all private, all in your browser."
+      },
+      "hero": {
+        "kicker": "Features",
+        "title": "Everything you save, made to look at.",
+        "lead": "AllMarks keeps the things you love from across the web on one living, visual board — not a list you never open again."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Save three ways",
+        "body": "Paste a URL straight onto your board — that's the main way. Prefer one click? Use the bookmarklet that works in any browser, or the Chrome extension for one-tap saving from any page."
+      },
+      "board": {
+        "num": "02",
+        "heading": "A board you arrange",
+        "body": "Cards sit on a clean grid — never tilted. Resize any card freely, or pick a density preset from DENSE to AMBIENT. Switch each card between visual, editorial, and native looks. Tag freely; tags sort alphabetically, or drag them into your own order."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "A board that comes alive",
+        "body": "As you browse, the video in focus plays for real while the others shimmer through still frames — so the board feels alive without ever turning into chaos. One switch, MOTION, calms it all to stillness whenever you want."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Share in a link",
+        "body": "Turn any board into a short link with a ready-made preview image for social. Or export it as a PNG and post it to X. Shared boards live on a link, not in an account."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Private by default",
+        "body": "Your bookmarks live in your browser, never on our servers. No account, no sign-up, no tracking cookies. It's free, and it stays yours."
+      },
+      "sites": {
+        "heading": "Where it works",
+        "body": "Posts from X, YouTube (including Shorts), TikTok, Vimeo, and SoundCloud play right on your board. Anything else is saved with a clean thumbnail.",
+        "note": "Instagram can't be embedded by anyone outside Instagram, so those saves open the original page instead — we'd rather be honest than fake it."
+      },
+      "cta": {
+        "heading": "Start your board.",
+        "button": "Open Board"
+      }
+    },
     "about": {
       "meta": {
         "title": "About",
@@ -210,6 +255,145 @@
       },
       "cta": {
         "heading": "Start your board.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Guide",
+        "description": "How to use AllMarks: save in three ways, arrange your board, play media, and share — start in about 30 seconds."
+      },
+      "hero": {
+        "kicker": "Guide",
+        "title": "Up and running in 30 seconds.",
+        "lead": "No account, no setup. Open the board, save your first link, and start arranging."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Open the board",
+        "body": "Head to the board and you're in — nothing to sign up for. Copy a link from anywhere on the web and paste it straight onto the board to save your first card."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Three ways to save",
+        "body": "Pasting a URL is the main way. For one-click saving, drag the bookmarklet to your bookmarks bar — it works in every browser, including on your phone. On Chrome, the extension saves from any page in a tap."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Make it yours",
+        "body": "Click a card to open it full-size. Resize cards or pick a density preset, switch the visual / editorial / native look, and add tags. Drag cards and tags into the order you like — everything stays on a tidy grid."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Watch it come alive",
+        "body": "Videos from X, YouTube, TikTok, Vimeo, and SoundCloud play right on the board — the one in focus plays for real while the rest shimmer as stills. Toggle MOTION off any time for total quiet."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Share your board",
+        "body": "Make a short link with a preview image for social, or export the board as a PNG to post on X. Anyone with the link sees your board — no account needed on their end either."
+      },
+      "data": {
+        "num": "06",
+        "heading": "About your data",
+        "body": "Everything is stored in this browser only. That means it won't follow you to another device or a private window, and clearing your browser data clears your boards. You can export a backup any time."
+      },
+      "trouble": {
+        "heading": "If something looks off",
+        "body": "A card stuck on a plain thumbnail usually just needs the page reloaded so it can fetch a fresh preview. If a bookmarklet save does nothing, re-add the bookmarklet — older copies can go stale after an update."
+      },
+      "cta": {
+        "heading": "Open your first board.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "FAQ",
+        "description": "Common questions about AllMarks: is it free, where your data lives, how saving and sharing work, and which browsers are supported."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Questions, answered.",
+        "lead": "The short version: it's free, private, and lives in your browser. Here are the details."
+      },
+      "q1": {
+        "q": "Is it free?",
+        "a": "Yes — AllMarks is free, with no account and no sign-up."
+      },
+      "q2": {
+        "q": "Where is my data stored?",
+        "a": "In your browser, on your device. Nothing is kept on our servers, so your boards never leave your machine unless you choose to share one."
+      },
+      "q3": {
+        "q": "How do I save things?",
+        "a": "Three ways: paste a URL straight onto the board (the main way), use the bookmarklet in any browser, or save in one tap with the Chrome extension."
+      },
+      "q4": {
+        "q": "Which browsers work?",
+        "a": "Any modern browser works for the board and the bookmarklet. The one-tap extension is Chrome-based for now."
+      },
+      "q5": {
+        "q": "Can I use it on my phone?",
+        "a": "Yes. Pasting a URL onto the board works on mobile, and the bookmarklet works in mobile browsers too."
+      },
+      "q6": {
+        "q": "How does sharing work?",
+        "a": "You can turn a board into a short link with a preview image for social, or export it as a PNG to post on X. A shared link carries the board itself — there's no account on either side."
+      },
+      "q7": {
+        "q": "What happens if I clear my browser data?",
+        "a": "Because everything lives in your browser, clearing its data also clears your boards. Export a backup first if you want to keep them, and import it later to restore."
+      },
+      "q8": {
+        "q": "Is it open source?",
+        "a": "Yes. The code is open, so anyone can confirm that nothing is sent anywhere it shouldn't be."
+      },
+      "q9": {
+        "q": "Do I need an account?",
+        "a": "No. There's no login, ever — that's the point. You stay anonymous and your data stays with you."
+      },
+      "cta": {
+        "heading": "See it for yourself.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Chrome Extension",
+        "description": "Save any page to AllMarks in one tap with the Chrome extension. Reads only the page you save, sends nothing to a server."
+      },
+      "hero": {
+        "kicker": "Extension",
+        "title": "Save anything, in one tap.",
+        "lead": "The AllMarks extension puts a save button on every page, so the things you find go straight to your board."
+      },
+      "status": {
+        "label": "Coming soon to the Chrome Web Store",
+        "body": "The extension is on its way to the store. In the meantime you can already save from any browser with the bookmarklet — no waiting."
+      },
+      "what": {
+        "num": "01",
+        "heading": "One-tap saving",
+        "body": "Save the page you're on with a click, a right-click menu, or a keyboard shortcut. It drops straight onto your board, and you can add a tag right as you save."
+      },
+      "how": {
+        "num": "02",
+        "heading": "How to get it",
+        "body": "Once it's on the Chrome Web Store, it's a one-click install. Right now, grab the bookmarklet from the guide and you'll have the same one-tap saving in any browser today."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Works across the web",
+        "body": "Save from anywhere. Posts from X, YouTube, Vimeo, SoundCloud, and more come in ready to play on your board; everything else saves with a clean preview."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Reads only what you save",
+        "body": "The extension reads the page you choose to save and nothing else. There's no server in the middle — your saves go straight into your browser."
+      },
+      "cta": {
+        "heading": "Start saving.",
         "button": "Open Board"
       }
     }

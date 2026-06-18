@@ -202,6 +202,190 @@
         "heading": "Empieza tu tablero.",
         "button": "Open Board"
       }
+    },
+    "features": {
+      "meta": {
+        "title": "Funciones",
+        "description": "Guarda cualquier cosa de la web y preséntala como un tablero visual. Reproducción integrada, etiquetas, compartir al instante — todo privado, todo en tu navegador."
+      },
+      "hero": {
+        "kicker": "Funciones",
+        "title": "Todo lo que guardas, hecho para mirarse.",
+        "lead": "AllMarks mantiene lo que amas de la web en un tablero visual y vivo — no en una lista que nunca vuelves a abrir."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Tres formas de guardar",
+        "body": "Pega una URL directamente en tu tablero — esa es la forma principal. ¿Prefieres un solo clic? Usa el marcador rápido que funciona en cualquier navegador, o la extensión de Chrome para guardar desde cualquier página con un toque."
+      },
+      "board": {
+        "num": "02",
+        "heading": "Un tablero que tú ordenas",
+        "body": "Las tarjetas se colocan en una cuadrícula limpia — sin inclinaciones. Redimensiona cualquier tarjeta libremente, o elige un ajuste de densidad desde DENSE hasta AMBIENT. Cambia cada tarjeta entre las vistas visual, editorial y native. Etiqueta sin límites; las etiquetas se ordenan alfabéticamente o puedes arrastrarlas a tu propio orden."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "Un tablero que cobra vida",
+        "body": "Mientras navegas, el vídeo en foco se reproduce de verdad mientras los demás destellan entre fotogramas fijos — el tablero se siente vivo sin convertirse en caos. Un solo interruptor, MOTION, lo calma todo a la quietud cuando quieras."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Comparte con un enlace",
+        "body": "Convierte cualquier tablero en un enlace corto con una imagen de vista previa lista para redes sociales. O expórtalo como PNG y publícalo en X. Los tableros compartidos viven en un enlace, no en una cuenta."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Privado por defecto",
+        "body": "Tus marcadores viven en tu navegador, nunca en nuestros servidores. Sin cuenta, sin registro, sin cookies de rastreo. Es gratis y sigue siendo tuyo."
+      },
+      "sites": {
+        "heading": "Dónde funciona",
+        "body": "Las publicaciones de X, YouTube (incluidos Shorts), TikTok, Vimeo y SoundCloud se reproducen directamente en tu tablero. Todo lo demás se guarda con una miniatura limpia.",
+        "note": "Instagram no puede ser integrado por nadie fuera de Instagram, así que esos marcadores abren la página original en su lugar — preferimos ser honestos antes que fingirlo."
+      },
+      "cta": {
+        "heading": "Empieza tu tablero.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Guía",
+        "description": "Cómo usar AllMarks: guarda de tres formas, organiza tu tablero, reproduce contenido y comparte — empieza en unos 30 segundos."
+      },
+      "hero": {
+        "kicker": "Guía",
+        "title": "Listo en 30 segundos.",
+        "lead": "Sin cuenta, sin configuración. Abre el tablero, guarda tu primer enlace y empieza a organizar."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Abre el tablero",
+        "body": "Ve al tablero y ya estás dentro — nada que registrar. Copia un enlace de cualquier lugar de la web y pégalo directamente en el tablero para guardar tu primera tarjeta."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Tres formas de guardar",
+        "body": "Pegar una URL es la forma principal. Para guardar con un clic, arrastra el marcador rápido a tu barra de marcadores — funciona en todos los navegadores, incluso en el móvil. En Chrome, la extensión guarda desde cualquier página con un toque."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Hazlo tuyo",
+        "body": "Haz clic en una tarjeta para abrirla a tamaño completo. Redimensiona tarjetas o elige un ajuste de densidad, cambia entre las vistas visual / editorial / native, y añade etiquetas. Arrastra tarjetas y etiquetas al orden que prefieras — todo se mantiene en una cuadrícula ordenada."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Mira cómo cobra vida",
+        "body": "Los vídeos de X, YouTube, TikTok, Vimeo y SoundCloud se reproducen directamente en el tablero — el que está en foco se reproduce de verdad mientras el resto destella como imágenes fijas. Desactiva MOTION en cualquier momento para un silencio total."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Comparte tu tablero",
+        "body": "Crea un enlace corto con una imagen de vista previa para redes sociales, o exporta el tablero como PNG para publicarlo en X. Cualquiera con el enlace ve tu tablero — sin necesidad de cuenta de su lado tampoco."
+      },
+      "data": {
+        "num": "06",
+        "heading": "Sobre tus datos",
+        "body": "Todo se almacena solo en este navegador. Eso significa que no seguirá a otro dispositivo ni a una ventana privada, y borrar los datos del navegador borrará tus tableros. Puedes exportar una copia de seguridad en cualquier momento."
+      },
+      "trouble": {
+        "heading": "Si algo no se ve bien",
+        "body": "Una tarjeta atascada en una miniatura plana generalmente solo necesita que recargues la página para que pueda obtener una vista previa nueva. Si guardar con el marcador rápido no hace nada, vuelve a añadirlo — las copias antiguas pueden quedar desactualizadas tras una actualización."
+      },
+      "cta": {
+        "heading": "Abre tu primer tablero.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "Preguntas frecuentes",
+        "description": "Preguntas comunes sobre AllMarks: si es gratis, dónde se guardan tus datos, cómo funcionan el guardado y el compartir, y qué navegadores son compatibles."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Preguntas, respondidas.",
+        "lead": "La versión corta: es gratis, privado y vive en tu navegador. Aquí están los detalles."
+      },
+      "q1": {
+        "q": "¿Es gratis?",
+        "a": "Sí — AllMarks es gratis, sin cuenta y sin registro."
+      },
+      "q2": {
+        "q": "¿Dónde se guardan mis datos?",
+        "a": "En tu navegador, en tu dispositivo. Nada se guarda en nuestros servidores, así que tus tableros nunca salen de tu equipo a menos que elijas compartir uno."
+      },
+      "q3": {
+        "q": "¿Cómo guardo cosas?",
+        "a": "De tres formas: pega una URL directamente en el tablero (la forma principal), usa el marcador rápido en cualquier navegador, o guarda con un toque con la extensión de Chrome."
+      },
+      "q4": {
+        "q": "¿Qué navegadores son compatibles?",
+        "a": "Cualquier navegador moderno funciona con el tablero y el marcador rápido. La extensión de un toque es para Chrome por ahora."
+      },
+      "q5": {
+        "q": "¿Puedo usarlo en el móvil?",
+        "a": "Sí. Pegar una URL en el tablero funciona en móvil, y el marcador rápido también funciona en los navegadores móviles."
+      },
+      "q6": {
+        "q": "¿Cómo funciona el compartir?",
+        "a": "Puedes convertir un tablero en un enlace corto con una imagen de vista previa para redes sociales, o exportarlo como PNG para publicarlo en X. Un enlace compartido lleva el tablero en sí mismo — sin cuenta en ninguno de los lados."
+      },
+      "q7": {
+        "q": "¿Qué pasa si borro los datos del navegador?",
+        "a": "Dado que todo vive en tu navegador, borrar sus datos también borra tus tableros. Exporta una copia de seguridad primero si quieres conservarlos, e impórtala después para restaurarlos."
+      },
+      "q8": {
+        "q": "¿Es de código abierto?",
+        "a": "Sí. El código es abierto, así que cualquiera puede confirmar que nada se envía a donde no debe."
+      },
+      "q9": {
+        "q": "¿Necesito una cuenta?",
+        "a": "No. No hay inicio de sesión, nunca — ese es el punto. Te mantienes anónimo y tus datos se quedan contigo."
+      },
+      "cta": {
+        "heading": "Compruébalo tú mismo.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Extensión de Chrome",
+        "description": "Guarda cualquier página en AllMarks con un toque gracias a la extensión de Chrome. Solo lee la página que guardas, no envía nada a ningún servidor."
+      },
+      "hero": {
+        "kicker": "Extensión",
+        "title": "Guarda cualquier cosa, con un toque.",
+        "lead": "La extensión de AllMarks pone un botón de guardado en cada página, para que lo que encuentras vaya directo a tu tablero."
+      },
+      "status": {
+        "label": "Próximamente en Chrome Web Store",
+        "body": "La extensión está de camino a la tienda. Mientras tanto, ya puedes guardar desde cualquier navegador con el marcador rápido — sin esperas."
+      },
+      "what": {
+        "num": "01",
+        "heading": "Guardado con un toque",
+        "body": "Guarda la página en la que estás con un clic, un menú contextual o un atajo de teclado. Cae directamente en tu tablero, y puedes añadir una etiqueta justo al guardar."
+      },
+      "how": {
+        "num": "02",
+        "heading": "Cómo conseguirla",
+        "body": "Una vez que esté en Chrome Web Store, la instalación es de un solo clic. Por ahora, consigue el marcador rápido desde la guía y tendrás el mismo guardado de un toque en cualquier navegador hoy mismo."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Funciona en toda la web",
+        "body": "Guarda desde cualquier lugar. Las publicaciones de X, YouTube, Vimeo, SoundCloud y más llegan listas para reproducirse en tu tablero; todo lo demás se guarda con una vista previa limpia."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Solo lee lo que tú guardas",
+        "body": "La extensión lee la página que eliges guardar y nada más. No hay ningún servidor en el medio — tus guardados van directo a tu navegador."
+      },
+      "cta": {
+        "heading": "Empieza a guardar.",
+        "button": "Open Board"
+      }
     }
   }
 }

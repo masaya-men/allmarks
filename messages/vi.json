@@ -171,6 +171,51 @@
     }
   },
   "pages": {
+    "features": {
+      "meta": {
+        "title": "Tính năng",
+        "description": "Lưu bất cứ thứ gì từ web và trình bày dưới dạng bảng hình ảnh. Phát nội dung trực tiếp, gắn thẻ, chia sẻ tức thì — hoàn toàn riêng tư, ngay trong trình duyệt."
+      },
+      "hero": {
+        "kicker": "Tính năng",
+        "title": "Mọi thứ bạn lưu, được tạo ra để nhìn ngắm.",
+        "lead": "AllMarks giữ những điều bạn yêu thích từ khắp nơi trên web trên một bảng hình ảnh sống động — không phải danh sách bạn chẳng bao giờ mở lại."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Ba cách lưu",
+        "body": "Dán URL thẳng lên bảng — đó là cách chính. Thích một chạm hơn? Dùng bookmarklet hoạt động trên mọi trình duyệt, hoặc tiện ích mở rộng Chrome để lưu ngay từ bất kỳ trang nào."
+      },
+      "board": {
+        "num": "02",
+        "heading": "Một bảng do bạn sắp xếp",
+        "body": "Thẻ hiển thị trên lưới gọn gàng — không bao giờ nghiêng. Tự do thay đổi kích thước từng thẻ, hoặc chọn cài đặt mật độ từ DENSE đến AMBIENT. Chuyển đổi mỗi thẻ giữa giao diện visual, editorial và native. Gắn thẻ thoải mái; thẻ sắp xếp theo bảng chữ cái, hoặc kéo thủ công theo thứ tự bạn thích."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "Một bảng sống động",
+        "body": "Khi bạn lướt, video đang được xem sẽ phát thật sự trong khi các video khác lướt qua từng khung hình tĩnh — bảng cảm giác sống động mà không hỗn loạn. Một công tắc duy nhất, MOTION, đưa tất cả về tĩnh lặng bất cứ lúc nào bạn muốn."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Chia sẻ qua liên kết",
+        "body": "Biến bất kỳ bảng nào thành liên kết ngắn kèm ảnh xem trước sẵn sàng đăng mạng xã hội. Hoặc xuất dưới dạng PNG và đăng lên X. Bảng chia sẻ tồn tại qua liên kết, không cần tài khoản."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Riêng tư mặc định",
+        "body": "Dấu trang của bạn sống trong trình duyệt, không bao giờ trên máy chủ của chúng tôi. Không tài khoản, không đăng ký, không cookie theo dõi. Miễn phí, và mãi là của bạn."
+      },
+      "sites": {
+        "heading": "Hoạt động ở đâu",
+        "body": "Bài đăng từ X, YouTube (bao gồm Shorts), TikTok, Vimeo và SoundCloud phát ngay trên bảng của bạn. Mọi thứ khác được lưu với ảnh thu nhỏ gọn gàng.",
+        "note": "Instagram không cho phép nhúng bởi bất kỳ ai ngoài Instagram, vì vậy những lưu đó sẽ mở trang gốc thay thế — chúng tôi thà trung thực còn hơn giả tạo."
+      },
+      "cta": {
+        "heading": "Bắt đầu bảng của bạn.",
+        "button": "Open Board"
+      }
+    },
     "about": {
       "meta": {
         "title": "Giới thiệu",
@@ -195,6 +240,145 @@
       },
       "cta": {
         "heading": "Bắt đầu bảng của bạn.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Hướng dẫn",
+        "description": "Cách dùng AllMarks: lưu theo ba cách, sắp xếp bảng, phát nội dung và chia sẻ — bắt đầu trong khoảng 30 giây."
+      },
+      "hero": {
+        "kicker": "Hướng dẫn",
+        "title": "Sẵn sàng trong 30 giây.",
+        "lead": "Không cần tài khoản, không cần cài đặt. Mở bảng, lưu liên kết đầu tiên và bắt đầu sắp xếp."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Mở bảng",
+        "body": "Vào bảng là bạn đã vào ngay — không cần đăng ký gì cả. Sao chép một liên kết từ bất kỳ đâu trên web và dán thẳng lên bảng để lưu thẻ đầu tiên."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Ba cách lưu",
+        "body": "Dán URL là cách chính. Để lưu một chạm, kéo bookmarklet lên thanh dấu trang — hoạt động trên mọi trình duyệt, kể cả điện thoại. Trên Chrome, tiện ích mở rộng lưu từ bất kỳ trang nào chỉ bằng một nhấn."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Làm theo cách của bạn",
+        "body": "Nhấp thẻ để mở toàn màn hình. Thay đổi kích thước thẻ hoặc chọn cài đặt mật độ, chuyển đổi giao diện visual / editorial / native và thêm thẻ. Kéo thẻ và nhãn vào thứ tự bạn thích — mọi thứ vẫn giữ trên lưới gọn gàng."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Xem bảng sống động",
+        "body": "Video từ X, YouTube, TikTok, Vimeo và SoundCloud phát ngay trên bảng — video đang được xem phát thật trong khi phần còn lại lướt qua như ảnh tĩnh. Tắt MOTION bất cứ lúc nào để lấy lại sự yên tĩnh hoàn toàn."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Chia sẻ bảng của bạn",
+        "body": "Tạo liên kết ngắn kèm ảnh xem trước để đăng mạng xã hội, hoặc xuất bảng dưới dạng PNG để đăng lên X. Bất kỳ ai có liên kết đều xem được bảng của bạn — họ cũng không cần tài khoản."
+      },
+      "data": {
+        "num": "06",
+        "heading": "Về dữ liệu của bạn",
+        "body": "Mọi thứ chỉ được lưu trong trình duyệt này. Nghĩa là sẽ không theo bạn sang thiết bị khác hay cửa sổ ẩn danh, và xóa dữ liệu trình duyệt sẽ xóa bảng của bạn. Bạn có thể xuất bản sao lưu bất cứ lúc nào."
+      },
+      "trouble": {
+        "heading": "Nếu có gì đó trông lạ",
+        "body": "Thẻ bị kẹt ở ảnh thu nhỏ thường chỉ cần tải lại trang để lấy ảnh xem trước mới. Nếu lưu bằng bookmarklet không có phản hồi, hãy cài lại bookmarklet — các bản cũ có thể lỗi thời sau khi cập nhật."
+      },
+      "cta": {
+        "heading": "Mở bảng đầu tiên của bạn.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "FAQ",
+        "description": "Câu hỏi thường gặp về AllMarks: có miễn phí không, dữ liệu lưu ở đâu, lưu và chia sẻ hoạt động như thế nào, và trình duyệt nào được hỗ trợ."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Câu hỏi, đã có câu trả lời.",
+        "lead": "Tóm tắt ngắn: miễn phí, riêng tư, và tồn tại trong trình duyệt của bạn. Đây là chi tiết."
+      },
+      "q1": {
+        "q": "Có miễn phí không?",
+        "a": "Có — AllMarks hoàn toàn miễn phí, không cần tài khoản và không cần đăng ký."
+      },
+      "q2": {
+        "q": "Dữ liệu của tôi được lưu ở đâu?",
+        "a": "Trong trình duyệt của bạn, trên thiết bị của bạn. Không có gì được lưu trên máy chủ của chúng tôi, vì vậy bảng của bạn không rời khỏi máy trừ khi bạn chủ động chia sẻ."
+      },
+      "q3": {
+        "q": "Làm thế nào để lưu thứ gì đó?",
+        "a": "Ba cách: dán URL thẳng lên bảng (cách chính), dùng bookmarklet trên bất kỳ trình duyệt nào, hoặc lưu một chạm bằng tiện ích mở rộng Chrome."
+      },
+      "q4": {
+        "q": "Những trình duyệt nào hoạt động?",
+        "a": "Mọi trình duyệt hiện đại đều dùng được bảng và bookmarklet. Tiện ích mở rộng một chạm hiện chỉ dành cho Chrome."
+      },
+      "q5": {
+        "q": "Tôi có dùng được trên điện thoại không?",
+        "a": "Có. Dán URL lên bảng hoạt động trên điện thoại, và bookmarklet cũng hoạt động trên trình duyệt di động."
+      },
+      "q6": {
+        "q": "Chia sẻ hoạt động như thế nào?",
+        "a": "Bạn có thể biến bảng thành liên kết ngắn kèm ảnh xem trước để đăng mạng xã hội, hoặc xuất dưới dạng PNG để đăng lên X. Liên kết chia sẻ mang theo chính bảng đó — không cần tài khoản ở cả hai phía."
+      },
+      "q7": {
+        "q": "Điều gì xảy ra nếu tôi xóa dữ liệu trình duyệt?",
+        "a": "Vì mọi thứ sống trong trình duyệt, xóa dữ liệu cũng xóa bảng của bạn. Hãy xuất bản sao lưu trước nếu muốn giữ lại, và nhập lại sau để khôi phục."
+      },
+      "q8": {
+        "q": "Có phải mã nguồn mở không?",
+        "a": "Có. Code công khai để bất kỳ ai cũng có thể xác nhận rằng không có gì bị gửi đến nơi không nên."
+      },
+      "q9": {
+        "q": "Tôi có cần tài khoản không?",
+        "a": "Không. Không bao giờ có đăng nhập — đó chính là điểm mấu chốt. Bạn ở ẩn danh và dữ liệu ở với bạn."
+      },
+      "cta": {
+        "heading": "Tự mình trải nghiệm.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Tiện ích Chrome",
+        "description": "Lưu bất kỳ trang nào vào AllMarks chỉ bằng một chạm với tiện ích Chrome. Chỉ đọc trang bạn lưu, không gửi gì lên máy chủ."
+      },
+      "hero": {
+        "kicker": "Extension",
+        "title": "Lưu bất cứ thứ gì, chỉ bằng một chạm.",
+        "lead": "Tiện ích mở rộng AllMarks đặt nút lưu trên mọi trang, để những gì bạn tìm thấy đi thẳng vào bảng."
+      },
+      "status": {
+        "label": "Sắp có trên Chrome Web Store",
+        "body": "Tiện ích mở rộng đang trên đường đến cửa hàng. Trong thời gian chờ, bạn đã có thể lưu từ bất kỳ trình duyệt nào bằng bookmarklet — không cần đợi."
+      },
+      "what": {
+        "num": "01",
+        "heading": "Lưu một chạm",
+        "body": "Lưu trang đang xem bằng một nhấp chuột, menu chuột phải, hoặc phím tắt. Nó đi thẳng vào bảng của bạn, và bạn có thể thêm thẻ ngay khi lưu."
+      },
+      "how": {
+        "num": "02",
+        "heading": "Cách cài đặt",
+        "body": "Khi đã có trên Chrome Web Store, chỉ cần một cú nhấp để cài. Hiện tại, hãy lấy bookmarklet từ hướng dẫn và bạn đã có tính năng lưu một chạm trên bất kỳ trình duyệt nào ngay hôm nay."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Hoạt động trên toàn web",
+        "body": "Lưu từ bất kỳ đâu. Bài đăng từ X, YouTube, Vimeo, SoundCloud và nhiều nơi khác vào sẵn sàng phát trên bảng; mọi thứ khác được lưu với ảnh xem trước gọn gàng."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Chỉ đọc những gì bạn lưu",
+        "body": "Tiện ích mở rộng chỉ đọc trang bạn chọn lưu và không có gì khác. Không có máy chủ trung gian — những gì bạn lưu đi thẳng vào trình duyệt của bạn."
+      },
+      "cta": {
+        "heading": "Bắt đầu lưu.",
         "button": "Open Board"
       }
     }

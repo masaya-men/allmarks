@@ -19,7 +19,15 @@ export const PREFIXED_LOCALES: readonly SupportedLocale[] = SUPPORTED_LOCALES.fi
 /** Intro subpaths that have localized (/<locale>/<sub>) versions generated.
  *  Phase B/C extends this as more pages ship. Anything NOT here links flat
  *  (English) to avoid 404s on not-yet-localized pages. */
-export const LOCALIZED_INTRO_SUBPATHS: ReadonlySet<string> = new Set(['about'])
+// 多言語化済みページのみ。404 回避のため、[locale] 経路が全14言語生成済みの
+// subpath だけを登録する(navHref が未登録 subpath はフラットに落とす)。
+export const LOCALIZED_INTRO_SUBPATHS: ReadonlySet<string> = new Set([
+  'about',
+  'features',
+  'guide',
+  'faq',
+  'extension',
+])
 
 /** Header/footer nav href for a subpath: localized when that page exists in
  *  all locales, else flat English. `board` (app route) is never localized. */

@@ -202,6 +202,190 @@
         "heading": "Démarrez votre tableau.",
         "button": "Open Board"
       }
+    },
+    "features": {
+      "meta": {
+        "title": "Fonctionnalités",
+        "description": "Enregistrez tout ce que vous trouvez sur le web et disposez-le en tableau visuel. Lecture intégrée, tags, partage instantané — tout en privé, tout dans votre navigateur."
+      },
+      "hero": {
+        "kicker": "Fonctionnalités",
+        "title": "Tout ce que vous sauvegardez, fait pour être regardé.",
+        "lead": "AllMarks rassemble ce que vous aimez sur le web en un tableau vivant et visuel — pas une liste que vous ne rouvrez jamais."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Trois façons d'enregistrer",
+        "body": "Collez une URL directement sur votre tableau — c'est la méthode principale. Préférez un seul clic ? Utilisez le bookmarklet qui fonctionne dans tous les navigateurs, ou l'extension Chrome pour enregistrer n'importe quelle page en un clic."
+      },
+      "board": {
+        "num": "02",
+        "heading": "Un tableau que vous arrangez",
+        "body": "Les cartes s'organisent sur une grille nette — jamais inclinées. Redimensionnez chaque carte librement, ou choisissez un préréglage de densité, de DENSE à AMBIENT. Basculez chaque carte entre les affichages visual, editorial et native. Ajoutez des tags librement ; ils se trient par ordre alphabétique ou glissez-les dans l'ordre de votre choix."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "Un tableau qui prend vie",
+        "body": "Pendant votre navigation, la vidéo au premier plan joue vraiment tandis que les autres scintillent en images fixes — le tableau semble vivant sans jamais virer au chaos. Un seul interrupteur, MOTION, ramène tout au calme quand vous le souhaitez."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Partagez en un lien",
+        "body": "Transformez n'importe quel tableau en lien court avec une image d'aperçu prête pour les réseaux. Ou exportez-le en PNG pour le publier sur X. Les tableaux partagés vivent dans un lien, pas dans un compte."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Privé par défaut",
+        "body": "Vos favoris vivent dans votre navigateur, jamais sur nos serveurs. Pas de compte, pas d'inscription, pas de cookies de suivi. C'est gratuit, et ça reste à vous."
+      },
+      "sites": {
+        "heading": "Où ça fonctionne",
+        "body": "Les publications de X, YouTube (dont Shorts), TikTok, Vimeo et SoundCloud se lisent directement sur votre tableau. Tout le reste est enregistré avec une miniature soignée.",
+        "note": "Instagram ne peut pas être intégré par qui que ce soit en dehors d'Instagram, donc ces sauvegardes ouvrent la page d'origine — nous préférons être honnêtes plutôt que de simuler."
+      },
+      "cta": {
+        "heading": "Démarrez votre tableau.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Guide",
+        "description": "Comment utiliser AllMarks : enregistrez de trois façons, arrangez votre tableau, lisez vos médias et partagez — prêt en 30 secondes environ."
+      },
+      "hero": {
+        "kicker": "Guide",
+        "title": "Opérationnel en 30 secondes.",
+        "lead": "Pas de compte, pas de configuration. Ouvrez le tableau, enregistrez votre premier lien et commencez à arranger."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Ouvrez le tableau",
+        "body": "Rendez-vous sur le tableau et vous êtes prêt — rien à créer. Copiez un lien depuis n'importe où sur le web et collez-le directement sur le tableau pour enregistrer votre première carte."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Trois façons d'enregistrer",
+        "body": "Coller une URL est la méthode principale. Pour enregistrer en un clic, glissez le bookmarklet dans votre barre de favoris — il fonctionne dans tous les navigateurs, y compris sur mobile. Sur Chrome, l'extension enregistre depuis n'importe quelle page en un clic."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Faites-en votre espace",
+        "body": "Cliquez sur une carte pour l'ouvrir en grand. Redimensionnez les cartes ou choisissez un préréglage de densité, basculez entre les affichages visual / editorial / native, et ajoutez des tags. Glissez les cartes et les tags dans l'ordre que vous aimez — tout reste sur une grille ordonnée."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Regardez-le prendre vie",
+        "body": "Les vidéos de X, YouTube, TikTok, Vimeo et SoundCloud se lisent directement sur le tableau — celle au premier plan joue vraiment tandis que les autres scintillent en images fixes. Désactivez MOTION à tout moment pour un silence total."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Partagez votre tableau",
+        "body": "Créez un lien court avec une image d'aperçu pour les réseaux, ou exportez le tableau en PNG pour le publier sur X. N'importe qui avec le lien voit votre tableau — sans compte de leur côté non plus."
+      },
+      "data": {
+        "num": "06",
+        "heading": "Vos données",
+        "body": "Tout est stocké dans ce navigateur uniquement. Elles ne vous suivront pas sur un autre appareil ni en navigation privée, et effacer vos données de navigation efface aussi vos tableaux. Exportez une sauvegarde à tout moment."
+      },
+      "trouble": {
+        "heading": "Si quelque chose ne semble pas juste",
+        "body": "Une carte bloquée sur une miniature vierge a généralement juste besoin d'un rechargement de page pour récupérer un nouvel aperçu. Si un enregistrement via bookmarklet ne fonctionne pas, réinstallez-le — les anciennes copies peuvent devenir obsolètes après une mise à jour."
+      },
+      "cta": {
+        "heading": "Ouvrez votre premier tableau.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "FAQ",
+        "description": "Questions fréquentes sur AllMarks : est-ce gratuit, où sont stockées vos données, comment fonctionne l'enregistrement et le partage, et quels navigateurs sont pris en charge."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Les questions, répondues.",
+        "lead": "En résumé : c'est gratuit, privé, et ça vit dans votre navigateur. Voici les détails."
+      },
+      "q1": {
+        "q": "Est-ce gratuit ?",
+        "a": "Oui — AllMarks est gratuit, sans compte et sans inscription."
+      },
+      "q2": {
+        "q": "Où sont stockées mes données ?",
+        "a": "Dans votre navigateur, sur votre appareil. Rien n'est conservé sur nos serveurs, donc vos tableaux ne quittent jamais votre machine, sauf si vous choisissez d'en partager un."
+      },
+      "q3": {
+        "q": "Comment enregistrer des choses ?",
+        "a": "De trois façons : collez une URL directement sur le tableau (la méthode principale), utilisez le bookmarklet dans n'importe quel navigateur, ou enregistrez en un clic avec l'extension Chrome."
+      },
+      "q4": {
+        "q": "Quels navigateurs fonctionnent ?",
+        "a": "N'importe quel navigateur moderne fonctionne pour le tableau et le bookmarklet. L'extension en un clic est basée sur Chrome pour l'instant."
+      },
+      "q5": {
+        "q": "Puis-je l'utiliser sur mon téléphone ?",
+        "a": "Oui. Coller une URL sur le tableau fonctionne sur mobile, et le bookmarklet fonctionne aussi dans les navigateurs mobiles."
+      },
+      "q6": {
+        "q": "Comment fonctionne le partage ?",
+        "a": "Vous pouvez transformer un tableau en lien court avec une image d'aperçu pour les réseaux, ou l'exporter en PNG pour le publier sur X. Un lien partagé porte le tableau lui-même — pas de compte des deux côtés."
+      },
+      "q7": {
+        "q": "Que se passe-t-il si j'efface mes données de navigation ?",
+        "a": "Comme tout vit dans votre navigateur, effacer ses données efface aussi vos tableaux. Exportez d'abord une sauvegarde si vous souhaitez les conserver, puis importez-la pour les restaurer."
+      },
+      "q8": {
+        "q": "Est-ce open source ?",
+        "a": "Oui. Le code est ouvert, donc n'importe qui peut confirmer que rien n'est envoyé là où ça ne devrait pas l'être."
+      },
+      "q9": {
+        "q": "Ai-je besoin d'un compte ?",
+        "a": "Non. Il n'y a jamais de connexion — c'est tout le principe. Vous restez anonyme et vos données restent avec vous."
+      },
+      "cta": {
+        "heading": "Voyez par vous-même.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Extension Chrome",
+        "description": "Enregistrez n'importe quelle page sur AllMarks en un clic avec l'extension Chrome. Ne lit que la page que vous enregistrez, n'envoie rien à un serveur."
+      },
+      "hero": {
+        "kicker": "Extension",
+        "title": "Enregistrez tout, en un clic.",
+        "lead": "L'extension AllMarks place un bouton d'enregistrement sur chaque page, pour que ce que vous trouvez aille directement sur votre tableau."
+      },
+      "status": {
+        "label": "Bientôt disponible sur le Chrome Web Store",
+        "body": "L'extension arrive bientôt sur le store. En attendant, vous pouvez déjà enregistrer depuis n'importe quel navigateur avec le bookmarklet — sans attente."
+      },
+      "what": {
+        "num": "01",
+        "heading": "Enregistrement en un clic",
+        "body": "Enregistrez la page sur laquelle vous vous trouvez d'un clic, via le menu contextuel ou un raccourci clavier. Elle arrive directement sur votre tableau, et vous pouvez ajouter un tag au moment de l'enregistrement."
+      },
+      "how": {
+        "num": "02",
+        "heading": "Comment l'obtenir",
+        "body": "Une fois disponible sur le Chrome Web Store, l'installation se fait en un clic. Pour l'instant, installez le bookmarklet depuis le guide et vous aurez le même enregistrement en un clic dans n'importe quel navigateur dès aujourd'hui."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Fonctionne partout sur le web",
+        "body": "Enregistrez depuis n'importe où. Les publications de X, YouTube, Vimeo, SoundCloud et d'autres arrivent prêtes à être lues sur votre tableau ; tout le reste est enregistré avec un aperçu soigné."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Ne lit que ce que vous enregistrez",
+        "body": "L'extension lit la page que vous choisissez d'enregistrer, et rien d'autre. Pas de serveur intermédiaire — vos sauvegardes vont directement dans votre navigateur."
+      },
+      "cta": {
+        "heading": "Commencez à enregistrer.",
+        "button": "Open Board"
+      }
     }
   }
 }
