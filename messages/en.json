@@ -457,6 +457,59 @@
         "heading": "Questions",
         "body": "If you have questions about this policy, please reach us through the contact page."
       }
+    },
+    "terms": {
+      "meta": {
+        "title": "Terms of Service",
+        "description": "AllMarks terms of service — free to use, no account, your data stays in your browser."
+      },
+      "hero": {
+        "kicker": "Terms",
+        "title": "Terms of Service",
+        "lead": "AllMarks is a free app with no account. These terms explain the basics of using it.",
+        "updated": "Last updated: June 18, 2026"
+      },
+      "toc": { "title": "Contents" },
+      "acceptance": {
+        "heading": "1. Acceptance of terms",
+        "body": "By using AllMarks (\"the Service\"), you agree to these Terms of Service. If you do not agree, please do not use the Service."
+      },
+      "service": {
+        "heading": "2. The service",
+        "body": "AllMarks is a free web app for saving bookmarks and arranging them as visual boards. All data is stored locally in your browser, and no account or registration is required."
+      },
+      "responsibilities": {
+        "heading": "3. Your responsibilities",
+        "body": "You are responsible for the content you save and share, you agree not to use the Service for any unlawful purpose or to disrupt it, and you understand that your data is stored locally — clearing your browser data permanently deletes your AllMarks content."
+      },
+      "ip": {
+        "heading": "4. Intellectual property",
+        "body": "Bookmarks you save reference content owned by third parties; AllMarks claims no ownership of bookmarked content. The AllMarks app, its code, design, and branding belong to AllMarks."
+      },
+      "sharing": {
+        "heading": "5. Sharing content",
+        "body": "When you create a share link, the board data is uploaded to our hosting so the link can render it, and is deleted automatically after about 30 days. By sharing, you represent that you have the right to share the content in this way."
+      },
+      "warranty": {
+        "heading": "6. No warranty",
+        "body": "The Service is provided \"as is\" and \"as available\" without warranties of any kind. We do not guarantee it will be uninterrupted, secure, or error-free, and we are not responsible for data loss from browser data clearing, device failure, or any other cause."
+      },
+      "liability": {
+        "heading": "7. Limitation of liability",
+        "body": "To the maximum extent permitted by law, AllMarks shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service."
+      },
+      "modifications": {
+        "heading": "8. Changes to the service and terms",
+        "body": "We may modify or discontinue the Service at any time without notice, and may update these terms from time to time. Continued use after changes means you accept the revised terms."
+      },
+      "law": {
+        "heading": "9. Governing law",
+        "body": "These terms are governed by the laws of Japan, and any disputes are subject to the exclusive jurisdiction of the courts of Tokyo, Japan."
+      },
+      "contact": {
+        "heading": "10. Questions",
+        "body": "If you have questions about these terms, please reach us through the contact page."
+      }
     }
   }
 }
