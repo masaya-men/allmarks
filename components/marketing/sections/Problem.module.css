@@ -38,7 +38,11 @@
 /* ── Headline ─────────────────────────────────────────────────────────────
    Large, weight-300 Fraunces — same voice as the Hero h1 but deliberately
    smaller so it reads as a "section title", not a competing hero moment.
-   text-wrap:balance keeps the two-clause line from splitting awkwardly. */
+   text-wrap:balance keeps the two-clause line from splitting awkwardly.
+   Default: fully visible (opacity:1, clip-path:none).
+   The clip-wipe initial state (inset 0 100% 0 0) is applied only by GSAP
+   inside matchMedia(PC + no-preference) so SSR / reduced-motion / mobile
+   never shows a clipped or hidden headline. */
 .headline {
   margin: 0;
   font-family: var(--lp-serif);
@@ -49,8 +53,10 @@
   letter-spacing: -0.03em;
   color: var(--lp-ink);
   text-wrap: balance;
-  /* starts invisible; useReveal animates this in */
-  opacity: 0;
+  /* Visible by default — animation layer (GSAP matchMedia) overrides only
+     on PC with no-preference. DO NOT set opacity:0 here. */
+  opacity: 1;
+  clip-path: none;
 }
 
 /* ── Body copy ────────────────────────────────────────────────────────────
@@ -93,9 +99,15 @@
 
 /* ── Reduced motion: keep everything visible, skip animation ── */
 @media (prefers-reduced-motion: reduce) {
+  /* rule + body start at opacity:0 (owned by useReveal); force visible */
   .rule,
-  .headline,
   .body {
     opacity: 1;
+  }
+  /* headline is already opacity:1 by default; clip-path:none ensures no
+     residual GSAP inline style hides it even if matchMedia fires late */
+  .headline {
+    opacity: 1;
+    clip-path: none !important;
   }
 }
