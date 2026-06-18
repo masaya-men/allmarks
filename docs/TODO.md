@@ -21,7 +21,20 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 109 — LP 多言語化(層②)第1段 + LP スクロール演出 + F-1 + コピー調整、全完了・本番反映済・master マージ済)
+### 直近の状態 (セッション 110 — 紹介ページ群 全面作り直し+15言語化 フェーズA(土台 + About 縦切り) 完了・本番反映済・master マージ済)
+
+**ゴール「全紹介ページ(9枚)を ①言語別URL ②内容書き直し ③編集デザイン ④15言語化」の土台 + About を端から端まで実証。** brainstorming→spec→plan→サブエージェント駆動(各タスク2段レビュー + 最終ブランチレビュー opus = READY TO MERGE)。
+
+- **土台(A)**: `localePath(locale, subpath?)` / `hreflangAlternates(subpath?)` を後方互換で一般化、汎用 `pageMetadata`、共有編集シェル `MarketingShell`(html lang+light、SiteHeader/SiteFooter)、旧 static チャ―ムを `LegacyMarketingChrome` に退避(features/guide/faq/privacy/terms/contact/extension-privacy を見た目ゼロ変化で温存)、`(marketing)/layout.tsx` を pass-through 化、`navHref`+`LOCALIZED_INTRO_SUBPATHS`(言語化対象 subpath レジストリ=現在 `{about}`)、sitemap を About 15言語に拡張。
+- **About 縦切り**: `pages.about.*` 名前空間を15言語で新設(en/ja 人手 + 13言語翻訳 + キーパリティテスト)、`AboutContent`(編集トーン・番号付きセクション・Fraunchesセリフ・静かなCTA)、英語 `/about` + `app/[locale]/about`(14言語)生成。
+- **本番稼働**: `/about` `/ja/about` … 15言語が専用URLで稼働(hreflang16+自己canonical)。ヘッダー/フッターのロゴ=現在言語LP、About リンク=言語別(他nav はフラット維持=404回避)。
+- **検証**: tsc 0 / vitest 1165 pass / build(about HTML 15枚)。
+- **設計/計画**: `specs/2026-06-18-intro-pages-redesign-i18n-design.md`(全体9ページ) / `plans/2026-06-18-intro-pages-phaseA-foundation.md`(フェーズA)。
+- **次**: フェーズB = 集客ページ(features/guide/faq/extension紹介)を土台に乗せる。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。小残債(useReveal/CSS ゲート非対称・OG_LOCALE重複・About polish)はフェーズB集客標準化で回収。
+
+---
+
+### 一つ前 (セッション 109 — LP 多言語化(層②)第1段 + LP スクロール演出 + F-1 + コピー調整、全完了・本番反映済・master マージ済)
 
 **ブランチ `feat/lp-i18n-layer2-phase1` で 3 本立てを完走し master へマージ。すべて本番 `allmarks.app` 反映済・ユーザー実機承認済。**
 
