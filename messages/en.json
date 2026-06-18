@@ -357,6 +357,45 @@
         "heading": "See it for yourself.",
         "button": "Open Board"
       }
+    },
+    "extension": {
+      "meta": {
+        "title": "Chrome Extension",
+        "description": "Save any page to AllMarks in one tap with the Chrome extension. Reads only the page you save, sends nothing to a server."
+      },
+      "hero": {
+        "kicker": "Extension",
+        "title": "Save anything, in one tap.",
+        "lead": "The AllMarks extension puts a save button on every page, so the things you find go straight to your board."
+      },
+      "status": {
+        "label": "Coming soon to the Chrome Web Store",
+        "body": "The extension is on its way to the store. In the meantime you can already save from any browser with the bookmarklet — no waiting."
+      },
+      "what": {
+        "num": "01",
+        "heading": "One-tap saving",
+        "body": "Save the page you're on with a click, a right-click menu, or a keyboard shortcut. It drops straight onto your board, and you can add a tag right as you save."
+      },
+      "how": {
+        "num": "02",
+        "heading": "How to get it",
+        "body": "Once it's on the Chrome Web Store, it's a one-click install. Right now, grab the bookmarklet from the guide and you'll have the same one-tap saving in any browser today."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Works across the web",
+        "body": "Save from anywhere. Posts from X, YouTube, Vimeo, SoundCloud, and more come in ready to play on your board; everything else saves with a clean preview."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Reads only what you save",
+        "body": "The extension reads the page you choose to save and nothing else. There's no server in the middle — your saves go straight into your browser."
+      },
+      "cta": {
+        "heading": "Start saving.",
+        "button": "Open Board"
+      }
     }
   }
 }
