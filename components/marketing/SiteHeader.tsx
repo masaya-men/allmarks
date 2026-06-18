@@ -29,7 +29,13 @@ const NAV_ITEMS = [
   { href: '/contact',  label: 'Contact'  },
 ] as const
 
-export function SiteHeader({ locale }: { locale: SupportedLocale }): React.ReactElement {
+export function SiteHeader({
+  locale,
+  subpath,
+}: {
+  locale: SupportedLocale
+  subpath?: string
+}): React.ReactElement {
   const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -70,7 +76,7 @@ export function SiteHeader({ locale }: { locale: SupportedLocale }): React.React
           Open Board
           <span className={styles.openArrow} aria-hidden="true">↗</span>
         </Link>
-        <LanguageMenu current={locale} />
+        <LanguageMenu current={locale} subpath={subpath} />
       </nav>
     </header>
   )

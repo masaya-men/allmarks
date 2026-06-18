@@ -1,0 +1,9 @@
+.wrapper {
+  min-height: 100vh;
+  background: var(--lp-paper, #faf9f6);
+  color: var(--lp-ink, #1a1a1a);
+}
+/* SiteHeader は fixed。本文がヘッダー下に潜らないよう余白。実値は実機調整。 */
+.main {
+  padding-top: clamp(72px, 8vw, 96px);
+}
