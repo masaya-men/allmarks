@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import type { SupportedLocale } from '@/lib/i18n/config'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { localePath, navHref } from '@/lib/i18n/locale-urls'
 import styles from './SiteFooter.module.css'
 
 /**
@@ -23,7 +25,7 @@ import styles from './SiteFooter.module.css'
  * English when the LP runs without an I18nProvider (FALLBACK is English).
  * NO tilt. Minimal, refined editorial tone.
  */
-export function SiteFooter(): React.ReactElement {
+export function SiteFooter({ locale = 'en' }: { locale?: SupportedLocale }): React.ReactElement {
   const { t } = useI18n()
 
   return (
@@ -33,7 +35,7 @@ export function SiteFooter(): React.ReactElement {
 
         {/* Brand column */}
         <div className={styles.brandColumn}>
-          <Link href="/" className={styles.brand} aria-label="AllMarks home">
+          <Link href={localePath(locale)} className={styles.brand} aria-label="AllMarks home">
             AllMarks
           </Link>
           <p className={styles.tagline}>
@@ -53,12 +55,12 @@ export function SiteFooter(): React.ReactElement {
             <h3 className={styles.colHeading}>Product</h3>
             <ul className={styles.list}>
               <li>
-                <Link href="/features" className={styles.link}>
+                <Link href={navHref(locale, 'features')} className={styles.link}>
                   {t('landing.footer.features')}
                 </Link>
               </li>
               <li>
-                <Link href="/guide" className={styles.link}>
+                <Link href={navHref(locale, 'guide')} className={styles.link}>
                   {t('landing.footer.guide')}
                 </Link>
               </li>
@@ -74,17 +76,17 @@ export function SiteFooter(): React.ReactElement {
             <h3 className={styles.colHeading}>Company</h3>
             <ul className={styles.list}>
               <li>
-                <Link href="/about" className={styles.link}>
+                <Link href={navHref(locale, 'about')} className={styles.link}>
                   {t('landing.footer.about')}
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className={styles.link}>
+                <Link href={navHref(locale, 'faq')} className={styles.link}>
                   {t('landing.footer.faq')}
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className={styles.link}>
+                <Link href={navHref(locale, 'contact')} className={styles.link}>
                   {t('landing.footer.contact')}
                 </Link>
               </li>
@@ -95,12 +97,12 @@ export function SiteFooter(): React.ReactElement {
             <h3 className={styles.colHeading}>Legal</h3>
             <ul className={styles.list}>
               <li>
-                <Link href="/privacy" className={styles.link}>
+                <Link href={navHref(locale, 'privacy')} className={styles.link}>
                   {t('landing.footer.privacy')}
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className={styles.link}>
+                <Link href={navHref(locale, 'terms')} className={styles.link}>
                   {t('landing.footer.terms')}
                 </Link>
               </li>

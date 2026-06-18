@@ -38,7 +38,7 @@ export function MarketingShell({
     <div className={`${styles.wrapper} lpRoot`}>
       <SiteHeader locale={locale} subpath={subpath} />
       <main className={styles.main}>{children}</main>
-      <SiteFooter />
+      <SiteFooter locale={locale} />
     </div>
   )
 }

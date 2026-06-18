@@ -16,6 +16,17 @@ export const PREFIXED_LOCALES: readonly SupportedLocale[] = SUPPORTED_LOCALES.fi
   (l) => l !== 'en',
 )
 
+/** Intro subpaths that have localized (/<locale>/<sub>) versions generated.
+ *  Phase B/C extends this as more pages ship. Anything NOT here links flat
+ *  (English) to avoid 404s on not-yet-localized pages. */
+export const LOCALIZED_INTRO_SUBPATHS: ReadonlySet<string> = new Set(['about'])
+
+/** Header/footer nav href for a subpath: localized when that page exists in
+ *  all locales, else flat English. `board` (app route) is never localized. */
+export function navHref(locale: SupportedLocale, subpath: string): string {
+  return LOCALIZED_INTRO_SUBPATHS.has(subpath) ? localePath(locale, subpath) : `/${subpath}`
+}
+
 /**
  * Next Metadata `alternates.languages` 用 hreflang マップ。
  * 15言語(hreflang コード)+ 'x-default' → 英語版。相対パス(metadataBase で解決)。

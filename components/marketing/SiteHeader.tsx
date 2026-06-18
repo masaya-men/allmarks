@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import type { SupportedLocale } from '@/lib/i18n/config'
+import { localePath, navHref } from '@/lib/i18n/locale-urls'
 import { LanguageMenu } from './LanguageMenu'
 import styles from './SiteHeader.module.css'
 
@@ -22,11 +23,11 @@ import styles from './SiteHeader.module.css'
  */
 
 const NAV_ITEMS = [
-  { href: '/features', label: 'Features' },
-  { href: '/guide',    label: 'Guide'    },
-  { href: '/about',    label: 'About'    },
-  { href: '/faq',      label: 'FAQ'      },
-  { href: '/contact',  label: 'Contact'  },
+  { subpath: 'features', label: 'Features' },
+  { subpath: 'guide',    label: 'Guide'    },
+  { subpath: 'about',    label: 'About'    },
+  { subpath: 'faq',      label: 'FAQ'      },
+  { subpath: 'contact',  label: 'Contact'  },
 ] as const
 
 export function SiteHeader({
@@ -62,13 +63,13 @@ export function SiteHeader({
 
   return (
     <header ref={headerRef} className={styles.header} data-scrolled="false">
-      <Link href="/" className={styles.logo} aria-label="AllMarks home">
+      <Link href={localePath(locale)} className={styles.logo} aria-label="AllMarks home">
         AllMarks
       </Link>
 
       <nav className={styles.nav} aria-label="Primary navigation">
         {NAV_ITEMS.map((item) => (
-          <Link key={item.href} href={item.href} className={styles.navLink}>
+          <Link key={item.subpath} href={navHref(locale, item.subpath)} className={styles.navLink}>
             {item.label}
           </Link>
         ))}

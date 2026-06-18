@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { localePath, hreflangAlternates, PREFIXED_LOCALES } from './locale-urls'
+import { localePath, hreflangAlternates, PREFIXED_LOCALES, navHref } from './locale-urls'
 
 describe('localePath', () => {
   it('英語は subpath 無しで /', () => {
@@ -44,5 +44,23 @@ describe('PREFIXED_LOCALES', () => {
   it('en を含まない14言語', () => {
     expect(PREFIXED_LOCALES).toHaveLength(14)
     expect(PREFIXED_LOCALES).not.toContain('en')
+  })
+})
+
+describe('navHref', () => {
+  it('ja + about → /ja/about', () => {
+    expect(navHref('ja', 'about')).toBe('/ja/about')
+  })
+  it('ja + features → /features (flat, not localized yet)', () => {
+    expect(navHref('ja', 'features')).toBe('/features')
+  })
+  it('en + about → /about (flat for en)', () => {
+    expect(navHref('en', 'about')).toBe('/about')
+  })
+  it('en + features → /features', () => {
+    expect(navHref('en', 'features')).toBe('/features')
+  })
+  it('ja + board → /board (app route, never localized)', () => {
+    expect(navHref('ja', 'board')).toBe('/board')
   })
 })
