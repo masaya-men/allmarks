@@ -197,6 +197,190 @@
         "heading": "Begin je bord.",
         "button": "Open Board"
       }
+    },
+    "features": {
+      "meta": {
+        "title": "Functies",
+        "description": "Sla alles van het web op en presenteer het als een visueel bord. Inline afspelen, tags, direct delen — volledig privé, volledig in je browser."
+      },
+      "hero": {
+        "kicker": "Functies",
+        "title": "Alles wat je bewaart, gemaakt om naar te kijken.",
+        "lead": "AllMarks brengt de dingen die je mooi vindt van het hele web samen op één levend, visueel bord — geen lijst die je nooit meer opent."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Opslaan op drie manieren",
+        "body": "Plak een URL direct op je bord — dat is de hoofdweg. Liever met één klik? Gebruik de bookmarklet die in elke browser werkt, of de Chrome-extensie voor opslaan met één tik vanuit elke pagina."
+      },
+      "board": {
+        "num": "02",
+        "heading": "Een bord dat jij rangschikt",
+        "body": "Kaarten staan op een overzichtelijk raster — nooit gekanteld. Vergroot of verklein elke kaart vrij, of kies een dichtheidsinstelling van DENSE tot AMBIENT. Schakel elke kaart tussen visual, editorial en native weergave. Tag vrij; tags worden alfabetisch gesorteerd, of sleep ze in je eigen volgorde."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "Een bord dat tot leven komt",
+        "body": "Terwijl je bladert, speelt de video in focus echt af terwijl de andere door stilstaande beelden heen flikkeren — zodat het bord levendigt aanvoelt zonder ooit chaotisch te worden. Met één schakelaar, MOTION, breng je alles tot rust wanneer je wilt."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Delen via een link",
+        "body": "Verander elk bord in een korte link met een kant-en-klaar voorbeeldafbeelding voor sociale media. Of exporteer het als PNG en post het op X. Gedeelde borden leven op een link, niet in een account."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Standaard privé",
+        "body": "Je bladwijzers leven in je browser, nooit op onze servers. Geen account, geen aanmelding, geen trackers. Het is gratis en blijft van jou."
+      },
+      "sites": {
+        "heading": "Waar het werkt",
+        "body": "Berichten van X, YouTube (inclusief Shorts), TikTok, Vimeo en SoundCloud spelen direct op je bord af. Al het andere wordt opgeslagen met een overzichtelijke miniatuur.",
+        "note": "Instagram kan door niemand buiten Instagram worden ingesloten, dus die opgeslagen items openen de originele pagina — we zijn liever eerlijk dan dat we iets veinzen."
+      },
+      "cta": {
+        "heading": "Begin je bord.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Handleiding",
+        "description": "Hoe je AllMarks gebruikt: opslaan op drie manieren, je bord rangschikken, media afspelen en delen — klaar in ongeveer 30 seconden."
+      },
+      "hero": {
+        "kicker": "Handleiding",
+        "title": "In 30 seconden aan de slag.",
+        "lead": "Geen account, geen installatie. Open het bord, sla je eerste link op en begin met rangschikken."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Open het bord",
+        "body": "Ga naar het bord en je bent er — niets om je voor aan te melden. Kopieer een link van ergens op het web en plak hem direct op het bord om je eerste kaart op te slaan."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Drie manieren om op te slaan",
+        "body": "Een URL plakken is de hoofdweg. Voor opslaan met één klik sleep je de bookmarklet naar je bladwijzerbalk — die werkt in elke browser, ook op je telefoon. Op Chrome sla je met de extensie vanuit elke pagina op met één tik."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Maak het van jou",
+        "body": "Klik op een kaart om hem op volledig formaat te openen. Verander de kaartgrootte of kies een dichtheidsinstelling, schakel tussen visual / editorial / native weergave en voeg tags toe. Sleep kaarten en tags in de volgorde die je wilt — alles blijft netjes op een raster."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Bekijk het tot leven komen",
+        "body": "Video's van X, YouTube, TikTok, Vimeo en SoundCloud spelen direct op het bord af — de video in focus speelt echt af terwijl de rest als stilstaande beelden flikkert. Zet MOTION op elk moment uit voor volledige rust."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Deel je bord",
+        "body": "Maak een korte link met een voorbeeldafbeelding voor sociale media, of exporteer het bord als PNG om op X te plaatsen. Iedereen met de link ziet jouw bord — ook aan hun kant is geen account nodig."
+      },
+      "data": {
+        "num": "06",
+        "heading": "Over je gegevens",
+        "body": "Alles wordt alleen in deze browser opgeslagen. Dat betekent dat het je niet volgt naar een ander apparaat of een privévenster, en dat het wissen van je browsergegevens ook je borden wist. Je kunt altijd een reservekopie exporteren."
+      },
+      "trouble": {
+        "heading": "Als er iets niet klopt",
+        "body": "Een kaart die vastloopt op een gewone miniatuur heeft doorgaans alleen een paginaverversing nodig zodat er een nieuwe voorvertoning kan worden opgehaald. Als een bladwijzer-opslag niets doet, voeg de bookmarklet opnieuw toe — oudere exemplaren kunnen na een update verouderd raken."
+      },
+      "cta": {
+        "heading": "Open je eerste bord.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "Veelgestelde vragen",
+        "description": "Veelgestelde vragen over AllMarks: is het gratis, waar je gegevens staan, hoe opslaan en delen werken en welke browsers worden ondersteund."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Vragen, beantwoord.",
+        "lead": "De korte versie: het is gratis, privé en leeft in je browser. Hier zijn de details."
+      },
+      "q1": {
+        "q": "Is het gratis?",
+        "a": "Ja — AllMarks is gratis, zonder account en zonder aanmelding."
+      },
+      "q2": {
+        "q": "Waar worden mijn gegevens opgeslagen?",
+        "a": "In je browser, op je apparaat. Er wordt niets op onze servers bewaard, zodat je borden je apparaat nooit verlaten tenzij je er zelf voor kiest er een te delen."
+      },
+      "q3": {
+        "q": "Hoe sla ik dingen op?",
+        "a": "Op drie manieren: plak een URL direct op het bord (de hoofdweg), gebruik de bookmarklet in elke browser, of sla op met één tik via de Chrome-extensie."
+      },
+      "q4": {
+        "q": "Welke browsers werken?",
+        "a": "Elke moderne browser werkt voor het bord en de bookmarklet. De extensie met één tik is voorlopig alleen voor Chrome."
+      },
+      "q5": {
+        "q": "Kan ik het op mijn telefoon gebruiken?",
+        "a": "Ja. Een URL op het bord plakken werkt op mobiel, en de bookmarklet werkt ook in mobiele browsers."
+      },
+      "q6": {
+        "q": "Hoe werkt delen?",
+        "a": "Je kunt een bord omzetten in een korte link met een voorbeeldafbeelding voor sociale media, of het exporteren als PNG om op X te plaatsen. Een gedeelde link bevat het bord zelf — aan geen van beide kanten is een account nodig."
+      },
+      "q7": {
+        "q": "Wat gebeurt er als ik mijn browsergegevens wis?",
+        "a": "Omdat alles in je browser leeft, worden bij het wissen van die gegevens ook je borden gewist. Exporteer eerst een reservekopie als je ze wilt bewaren, en importeer die later om ze te herstellen."
+      },
+      "q8": {
+        "q": "Is het open source?",
+        "a": "Ja. De code is openbaar, zodat iedereen kan bevestigen dat er niets naartoe wordt gestuurd waar het niet hoort."
+      },
+      "q9": {
+        "q": "Heb ik een account nodig?",
+        "a": "Nee. Er is nooit een aanmelding — dat is het punt. Je blijft anoniem en je gegevens blijven bij jou."
+      },
+      "cta": {
+        "heading": "Zie het zelf.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Chrome-extensie",
+        "description": "Sla elke pagina op in AllMarks met één tik via de Chrome-extensie. Leest alleen de pagina die je opslaat, stuurt niets naar een server."
+      },
+      "hero": {
+        "kicker": "Extension",
+        "title": "Sla alles op, met één tik.",
+        "lead": "De AllMarks-extensie plaatst een opslaanknop op elke pagina, zodat wat je vindt direct naar je bord gaat."
+      },
+      "status": {
+        "label": "Binnenkort in de Chrome Web Store",
+        "body": "De extensie is onderweg naar de store. Inmiddels kun je al vanuit elke browser opslaan met de bookmarklet — geen wachten nodig."
+      },
+      "what": {
+        "num": "01",
+        "heading": "Opslaan met één tik",
+        "body": "Sla de pagina waarop je je bevindt op met een klik, een rechtskliksmenu of een sneltoets. Het verschijnt direct op je bord, en je kunt meteen een tag toevoegen terwijl je opslaat."
+      },
+      "how": {
+        "num": "02",
+        "heading": "Hoe je het krijgt",
+        "body": "Zodra het in de Chrome Web Store staat, is het met één klik te installeren. Pak nu de bookmarklet via de handleiding en je hebt vandaag nog het zelfde opslaan met één tik in elke browser."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Werkt overal op het web",
+        "body": "Sla op van overal. Berichten van X, YouTube, Vimeo, SoundCloud en meer komen klaar voor afspelen op je bord binnen; al het andere wordt opgeslagen met een overzichtelijke voorvertoning."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Leest alleen wat je opslaat",
+        "body": "De extensie leest de pagina die je kiest op te slaan en niets anders. Er is geen server tussenin — je opgeslagen items gaan direct naar je browser."
+      },
+      "cta": {
+        "heading": "Begin met opslaan.",
+        "button": "Open Board"
+      }
     }
   }
 }

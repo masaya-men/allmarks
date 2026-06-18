@@ -171,6 +171,51 @@
     }
   },
   "pages": {
+    "features": {
+      "meta": {
+        "title": "Özellikler",
+        "description": "Web'den her şeyi kaydedin ve görsel bir pano olarak düzenleyin. Satır içi oynatma, etiketler, anında paylaşım — tamamen gizli, tamamen tarayıcınızda."
+      },
+      "hero": {
+        "kicker": "Özellikler",
+        "title": "Kaydettiğiniz her şey, görülmek için.",
+        "lead": "AllMarks, web'in dört bir yanından sevdiklerinizi tek bir canlı, görsel panoda bir araya getirir — bir daha açmadığınız bir liste değil."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Üç yolla kaydedin",
+        "body": "Bir URL'yi doğrudan panonuza yapıştırın — bu ana yoldur. Tek tıkı mı tercih edersiniz? Her tarayıcıda çalışan yer imi düğmesini ya da herhangi bir sayfadan tek dokunuşla kaydetmek için Chrome uzantısını kullanın."
+      },
+      "board": {
+        "num": "02",
+        "heading": "Düzenleyeceğiniz bir pano",
+        "body": "Kartlar temiz bir ızgarada durur — hiçbir zaman eğik değil. Herhangi bir kartı özgürce yeniden boyutlandırın ya da DENSE'den AMBIENT'e kadar yoğunluk hazır ayarı seçin. Her kartı visual, editorial ve native görünümler arasında değiştirin. İstediğiniz gibi etiket ekleyin; etiketler alfabetik sıralanır ya da kendi sıranıza göre sürükleyerek dizebilirsiniz."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "Hayat bulan bir pano",
+        "body": "Panoda gezinirken odaktaki video gerçekten oynarken diğerleri durağan kareler arasında geçiş yapar — böylece pano kaosa dönmeden canlı hissettirirken MOTION tek bir geçişle her şeyi sessizliğe taşır."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Bağlantıyla paylaşın",
+        "body": "Herhangi bir panoyu sosyal medya için hazır önizleme görseliyle kısa bir bağlantıya çevirin ya da PNG olarak dışa aktarıp X'te paylaşın. Paylaşılan panolar bir bağlantıda yaşar, hesapta değil."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Varsayılan olarak gizli",
+        "body": "Yer imleriniz tarayıcınızda yaşar, sunucularımızda asla değil. Hesap yok, kayıt yok, izleme çerezi yok. Ücretsiz ve hep sizin."
+      },
+      "sites": {
+        "heading": "Nereden çalışır",
+        "body": "X, YouTube (Shorts dahil), TikTok, Vimeo ve SoundCloud gönderileri doğrudan panonuzda oynar. Diğer her şey temiz bir küçük resimle kaydedilir.",
+        "note": "Instagram, Instagram dışındaki hiç kimse tarafından yerleştirilemez; bu nedenle bu kayıtlar orijinal sayfayı açar — sahte yapmak yerine dürüst olmayı tercih ederiz."
+      },
+      "cta": {
+        "heading": "Panonuzu oluşturun.",
+        "button": "Open Board"
+      }
+    },
     "about": {
       "meta": {
         "title": "Hakkında",
@@ -195,6 +240,145 @@
       },
       "cta": {
         "heading": "Panonuzu oluşturmaya başlayın.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Kılavuz",
+        "description": "AllMarks nasıl kullanılır: üç yolla kaydedin, panonuzu düzenleyin, medyayı oynatın ve paylaşın — yaklaşık 30 saniyede başlayın."
+      },
+      "hero": {
+        "kicker": "Kılavuz",
+        "title": "30 saniyede hazır.",
+        "lead": "Hesap yok, kurulum yok. Panoyu açın, ilk bağlantınızı kaydedin ve düzenlemeye başlayın."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Panoyu açın",
+        "body": "Panoya gidin ve hemen başlayın — kayıt gerektirmez. Web'in herhangi bir yerinden bir bağlantı kopyalayın ve ilk kartınızı kaydetmek için doğrudan panoya yapıştırın."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Kaydetmenin üç yolu",
+        "body": "URL yapıştırmak ana yoldur. Tek tıkla kaydetmek için yer imi düğmesini yer imleri çubuğunuza sürükleyin — telefonunuz dahil her tarayıcıda çalışır. Chrome'da uzantı, herhangi bir sayfadan tek dokunuşla kaydeder."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Kendinize göre yapın",
+        "body": "Kartı tam boyutlu açmak için tıklayın. Kartları yeniden boyutlandırın ya da yoğunluk hazır ayarı seçin, visual / editorial / native görünümü değiştirin ve etiket ekleyin. Kartları ve etiketleri istediğiniz sıraya sürükleyin — her şey düzenli bir ızgarada kalır."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Canlandığını izleyin",
+        "body": "X, YouTube, TikTok, Vimeo ve SoundCloud videoları doğrudan panoda oynar — odaktaki gerçekten oynarken diğerleri durağan kareler olarak geçiş yapar. Tam sessizlik için istediğiniz zaman MOTION'ı kapatın."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Panonuzu paylaşın",
+        "body": "Sosyal medya için önizleme görselli kısa bir bağlantı oluşturun ya da panoyu X'te paylaşmak için PNG olarak dışa aktarın. Bağlantıya sahip olan herkes panonuzu görür — karşı tarafta da hesap gerekmez."
+      },
+      "data": {
+        "num": "06",
+        "heading": "Verileriniz hakkında",
+        "body": "Her şey yalnızca bu tarayıcıda saklanır. Bu, verilerinizin başka bir cihaza ya da gizli pencereye taşınmayacağı ve tarayıcı verilerini temizlediğinizde panolarınızın da silineceği anlamına gelir. İstediğiniz zaman yedek dışa aktarabilirsiniz."
+      },
+      "trouble": {
+        "heading": "Bir şey yanlış görünüyorsa",
+        "body": "Düz bir küçük resimde takılı kalan bir kart genellikle yalnızca sayfanın yeniden yüklenmesine ihtiyaç duyar; böylece taze bir önizleme alınabilir. Yer imi düğmesiyle kayıt hiçbir şey yapmıyorsa düğmeyi yeniden ekleyin — eski kopyalar güncellemeden sonra işlevsiz kalabilir."
+      },
+      "cta": {
+        "heading": "İlk panonuzu açın.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "SSS",
+        "description": "AllMarks hakkında sık sorulan sorular: ücretsiz mi, verileriniz nerede, kaydetme ve paylaşma nasıl çalışır, hangi tarayıcılar desteklenir."
+      },
+      "hero": {
+        "kicker": "SSS",
+        "title": "Sorular, yanıtlandı.",
+        "lead": "Kısa yanıt: ücretsiz, gizli ve tarayıcınızda yaşar. İşte ayrıntılar."
+      },
+      "q1": {
+        "q": "Ücretsiz mi?",
+        "a": "Evet — AllMarks ücretsizdir; hesap ve kayıt gerekmez."
+      },
+      "q2": {
+        "q": "Verilerim nerede saklanır?",
+        "a": "Cihazınızdaki tarayıcınızda. Sunucularımızda hiçbir şey tutulmaz; dolayısıyla birini paylaşmayı seçmediğiniz sürece panolarınız makinenizden çıkmaz."
+      },
+      "q3": {
+        "q": "Bir şeyleri nasıl kaydederim?",
+        "a": "Üç yol var: URL'yi doğrudan panoya yapıştırın (ana yol), herhangi bir tarayıcıda yer imi düğmesini kullanın ya da Chrome uzantısıyla tek dokunuşta kaydedin."
+      },
+      "q4": {
+        "q": "Hangi tarayıcılar çalışır?",
+        "a": "Pano ve yer imi düğmesi için her modern tarayıcı çalışır. Tek dokunuşluk uzantı şimdilik yalnızca Chrome tabanlıdır."
+      },
+      "q5": {
+        "q": "Telefonda kullanabilir miyim?",
+        "a": "Evet. Panoya URL yapıştırmak mobilde çalışır; yer imi düğmesi de mobil tarayıcılarda kullanılabilir."
+      },
+      "q6": {
+        "q": "Paylaşma nasıl çalışır?",
+        "a": "Bir panoyu sosyal medya için önizleme görselli kısa bir bağlantıya dönüştürebilir ya da X'te paylaşmak için PNG olarak dışa aktarabilirsiniz. Paylaşılan bağlantı panonun kendisini taşır — iki tarafta da hesap gerekmez."
+      },
+      "q7": {
+        "q": "Tarayıcı verilerimi temizlersem ne olur?",
+        "a": "Her şey tarayıcınızda yaşadığından, verileri temizlemek panolarınızı da siler. Korumak istiyorsanız önce bir yedek dışa aktarın; daha sonra içe aktararak geri yükleyebilirsiniz."
+      },
+      "q8": {
+        "q": "Açık kaynak mu?",
+        "a": "Evet. Kod açıktır; herkes hiçbir şeyin olmaması gereken yere gönderilmediğini doğrulayabilir."
+      },
+      "q9": {
+        "q": "Hesap gerekiyor mu?",
+        "a": "Hayır. Hiçbir zaman giriş yapmanız gerekmez — bu zaten tasarımın özü. Anonim kalırsınız ve verileriniz sizde kalır."
+      },
+      "cta": {
+        "heading": "Kendiniz görün.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Chrome Uzantısı",
+        "description": "Chrome uzantısıyla AllMarks'a herhangi bir sayfayı tek dokunuşla kaydedin. Yalnızca kaydettiğiniz sayfayı okur, hiçbir şeyi sunucuya göndermez."
+      },
+      "hero": {
+        "kicker": "Extension",
+        "title": "Her şeyi tek dokunuşla kaydedin.",
+        "lead": "AllMarks uzantısı her sayfaya bir kaydet düğmesi ekler; böylece keşfettikleriniz doğrudan panonuza gider."
+      },
+      "status": {
+        "label": "Chrome Web Store'a yakında geliyor",
+        "body": "Uzantı mağazaya geliyor. Bu sürede yer imi düğmesiyle her tarayıcıdan kayıt yapabilirsiniz — beklemenize gerek yok."
+      },
+      "what": {
+        "num": "01",
+        "heading": "Tek dokunuşla kaydet",
+        "body": "Bulunduğunuz sayfayı bir tıkla, sağ tıklama menüsüyle ya da klavye kısayoluyla kaydedin. Doğrudan panonuza düşer; kaydederken hemen etiket de ekleyebilirsiniz."
+      },
+      "how": {
+        "num": "02",
+        "heading": "Nasıl edinilir",
+        "body": "Chrome Web Store'a geldiğinde tek tıkla kurulur. Şimdilik kılavuzdan yer imi düğmesini alın; bugün her tarayıcıda aynı tek dokunuşlu kayıt deneyimine kavuşursunuz."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Web genelinde çalışır",
+        "body": "Her yerden kaydedin. X, YouTube, Vimeo, SoundCloud ve daha fazlasından gönderiler panonuzda oynatmaya hazır gelir; diğer her şey temiz bir önizlemeyle kaydedilir."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Yalnızca kaydettiğinizi okur",
+        "body": "Uzantı, kaydetmeyi seçtiğiniz sayfayı okur ve başka hiçbir şeyi değil. Arada sunucu yoktur — kayıtlarınız doğrudan tarayıcınıza gider."
+      },
+      "cta": {
+        "heading": "Kaydetmeye başlayın.",
         "button": "Open Board"
       }
     }

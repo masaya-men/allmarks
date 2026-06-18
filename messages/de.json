@@ -176,6 +176,51 @@
     }
   },
   "pages": {
+    "features": {
+      "meta": {
+        "title": "Funktionen",
+        "description": "Alles aus dem Web speichern und als visuelles Board anordnen. Inline-Wiedergabe, Tags, sofortiges Teilen — vollständig privat, direkt in deinem Browser."
+      },
+      "hero": {
+        "kicker": "Features",
+        "title": "Alles, was du sammelst — gemacht, um es anzusehen.",
+        "lead": "AllMarks bewahrt die Dinge, die du im Web liebst, auf einem lebendigen, visuellen Board — keine Liste, die du nie wieder öffnest."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Drei Wege zum Speichern",
+        "body": "Füge eine URL direkt auf dein Board ein — das ist der Hauptweg. Lieber mit einem Klick? Nutze das Bookmarklet in jedem Browser oder die Chrome-Erweiterung für das Speichern jeder Seite per Tipp."
+      },
+      "board": {
+        "num": "02",
+        "heading": "Ein Board, das du arrangierst",
+        "body": "Karten liegen auf einem sauberen Raster — niemals geneigt. Ändere die Größe jeder Karte frei oder wähle ein Dichte-Preset von DENSE bis AMBIENT. Schalte jede Karte zwischen visual, editorial und native um. Tagge frei; Tags sortieren sich alphabetisch oder du ziehst sie in deine eigene Reihenfolge."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "Ein Board, das lebendig wird",
+        "body": "Beim Durchstöbern spielt das fokussierte Video wirklich ab, während die anderen als Standbilder schimmern — das Board fühlt sich lebendig an, ohne je ins Chaos zu kippen. Ein Schalter, MOTION, bringt alles zur Ruhe, wann immer du es möchtest."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Per Link teilen",
+        "body": "Wandle jedes Board in einen Kurzlink mit fertigem Vorschaubild für soziale Medien um. Oder exportiere es als PNG und poste es auf X. Geteilte Boards leben auf einem Link, nicht in einem Account."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Standardmäßig privat",
+        "body": "Deine Lesezeichen leben in deinem Browser, nie auf unseren Servern. Kein Account, keine Anmeldung, keine Tracking-Cookies. Kostenlos, und es bleibt deins."
+      },
+      "sites": {
+        "heading": "Wo es funktioniert",
+        "body": "Beiträge von X, YouTube (einschließlich Shorts), TikTok, Vimeo und SoundCloud spielen direkt auf deinem Board ab. Alles andere wird mit einem sauberen Vorschaubild gespeichert.",
+        "note": "Instagram kann von niemandem außerhalb von Instagram eingebettet werden — solche Speicherungen öffnen daher die Originalseite. Lieber ehrlich als Schein."
+      },
+      "cta": {
+        "heading": "Starte dein Board.",
+        "button": "Open Board"
+      }
+    },
     "about": {
       "meta": {
         "title": "Über uns",
@@ -200,6 +245,145 @@
       },
       "cta": {
         "heading": "Starte dein Board.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Anleitung",
+        "description": "So nutzt du AllMarks: auf drei Wegen speichern, dein Board arrangieren, Medien abspielen und teilen — startklar in etwa 30 Sekunden."
+      },
+      "hero": {
+        "kicker": "Guide",
+        "title": "In 30 Sekunden startklar.",
+        "lead": "Kein Account, kein Setup. Öffne das Board, speichere deinen ersten Link und fang an zu arrangieren."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Board öffnen",
+        "body": "Gehe zum Board und leg direkt los — nichts anzumelden. Kopiere einen Link von irgendwo im Web und füge ihn direkt auf das Board ein, um deine erste Karte zu speichern."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Drei Wege zum Speichern",
+        "body": "Eine URL einzufügen ist der Hauptweg. Für das Speichern per Klick ziehe das Bookmarklet in deine Lesezeichenleiste — es funktioniert in jedem Browser, auch auf dem Handy. Auf Chrome speichert die Erweiterung jede Seite per Tipp."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Mach es zu deinem",
+        "body": "Klicke auf eine Karte, um sie in voller Größe zu öffnen. Ändere die Kartengröße oder wähle ein Dichte-Preset, schalte zwischen visual / editorial / native um und füge Tags hinzu. Ziehe Karten und Tags in die gewünschte Reihenfolge — alles bleibt auf einem aufgeräumten Raster."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Erlebe es lebendig",
+        "body": "Videos von X, YouTube, TikTok, Vimeo und SoundCloud spielen direkt auf dem Board ab — das fokussierte spielt wirklich, die anderen schimmern als Standbilder. Schalte MOTION jederzeit aus für vollständige Stille."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Board teilen",
+        "body": "Erstelle einen Kurzlink mit Vorschaubild für soziale Medien oder exportiere das Board als PNG für X. Wer den Link hat, sieht dein Board — auch ohne Account."
+      },
+      "data": {
+        "num": "06",
+        "heading": "Über deine Daten",
+        "body": "Alles wird nur in diesem Browser gespeichert. Das bedeutet, es folgt dir nicht auf ein anderes Gerät oder ein privates Fenster, und das Löschen der Browserdaten löscht auch deine Boards. Du kannst jederzeit ein Backup exportieren."
+      },
+      "trouble": {
+        "heading": "Wenn etwas nicht stimmt",
+        "body": "Eine Karte, die nur ein einfaches Vorschaubild zeigt, braucht meistens nur ein Neuladen der Seite, damit sie eine frische Vorschau laden kann. Falls ein Bookmarklet-Speichern nichts tut, füge das Bookmarklet erneut hinzu — ältere Kopien können nach einem Update veraltet sein."
+      },
+      "cta": {
+        "heading": "Öffne dein erstes Board.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "FAQ",
+        "description": "Häufige Fragen zu AllMarks: ob es kostenlos ist, wo deine Daten liegen, wie Speichern und Teilen funktionieren und welche Browser unterstützt werden."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Fragen, beantwortet.",
+        "lead": "Die Kurzversion: kostenlos, privat und in deinem Browser. Hier die Details."
+      },
+      "q1": {
+        "q": "Ist es kostenlos?",
+        "a": "Ja — AllMarks ist kostenlos, ohne Account und ohne Anmeldung."
+      },
+      "q2": {
+        "q": "Wo werden meine Daten gespeichert?",
+        "a": "In deinem Browser, auf deinem Gerät. Nichts wird auf unseren Servern gespeichert, sodass deine Boards deinen Computer nie verlassen, es sei denn, du entscheidest dich, eines zu teilen."
+      },
+      "q3": {
+        "q": "Wie speichere ich Dinge?",
+        "a": "Auf drei Wegen: eine URL direkt auf das Board einfügen (der Hauptweg), das Bookmarklet in jedem Browser nutzen oder mit einem Tipp per Chrome-Erweiterung speichern."
+      },
+      "q4": {
+        "q": "Welche Browser funktionieren?",
+        "a": "Jeder moderne Browser funktioniert für das Board und das Bookmarklet. Die Ein-Tipp-Erweiterung ist derzeit Chrome-basiert."
+      },
+      "q5": {
+        "q": "Kann ich es auf meinem Handy nutzen?",
+        "a": "Ja. Eine URL auf das Board einzufügen funktioniert auf Mobilgeräten, und das Bookmarklet funktioniert auch in mobilen Browsern."
+      },
+      "q6": {
+        "q": "Wie funktioniert das Teilen?",
+        "a": "Du kannst ein Board in einen Kurzlink mit Vorschaubild für soziale Medien umwandeln oder es als PNG exportieren und auf X posten. Ein geteilter Link trägt das Board selbst — auf keiner Seite ist ein Account nötig."
+      },
+      "q7": {
+        "q": "Was passiert, wenn ich meine Browserdaten lösche?",
+        "a": "Da alles in deinem Browser liegt, löscht das Löschen der Browserdaten auch deine Boards. Exportiere vorher ein Backup, wenn du sie behalten möchtest, und importiere es später, um sie wiederherzustellen."
+      },
+      "q8": {
+        "q": "Ist es Open Source?",
+        "a": "Ja. Der Code ist offen, sodass jeder bestätigen kann, dass nichts dorthin gesendet wird, wo es nicht hingehört."
+      },
+      "q9": {
+        "q": "Brauche ich einen Account?",
+        "a": "Nein. Es gibt nie ein Login — das ist der Punkt. Du bleibst anonym und deine Daten bleiben bei dir."
+      },
+      "cta": {
+        "heading": "Überzeug dich selbst.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Chrome-Erweiterung",
+        "description": "Speichere jede Seite mit einem Tipp in AllMarks. Liest nur die Seite, die du speicherst — nichts wird an einen Server gesendet."
+      },
+      "hero": {
+        "kicker": "Extension",
+        "title": "Alles speichern, mit einem Tipp.",
+        "lead": "Die AllMarks-Erweiterung bringt einen Speichern-Button auf jede Seite, damit das, was du findest, direkt auf dein Board wandert."
+      },
+      "status": {
+        "label": "Demnächst im Chrome Web Store",
+        "body": "Die Erweiterung ist auf dem Weg in den Store. In der Zwischenzeit kannst du bereits mit dem Bookmarklet aus jedem Browser speichern — ohne Warten."
+      },
+      "what": {
+        "num": "01",
+        "heading": "Speichern per Tipp",
+        "body": "Speichere die aktuelle Seite per Klick, Rechtsklick-Menü oder Tastenkürzel. Sie landet direkt auf deinem Board, und du kannst gleich beim Speichern einen Tag hinzufügen."
+      },
+      "how": {
+        "num": "02",
+        "heading": "So bekommst du sie",
+        "body": "Sobald sie im Chrome Web Store verfügbar ist, ist es eine Ein-Klick-Installation. Hol dir jetzt das Bookmarklet aus der Anleitung und du hast noch heute das gleiche Ein-Tipp-Speichern in jedem Browser."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Funktioniert im ganzen Web",
+        "body": "Speichere von überall. Beiträge von X, YouTube, Vimeo, SoundCloud und mehr kommen bereit zum Abspielen auf deinem Board an; alles andere speichert sich mit einer sauberen Vorschau."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Liest nur, was du speicherst",
+        "body": "Die Erweiterung liest die Seite, die du zum Speichern auswählst — und nichts weiter. Es gibt keinen Server dazwischen — deine Speicherungen gehen direkt in deinen Browser."
+      },
+      "cta": {
+        "heading": "Fang an zu speichern.",
         "button": "Open Board"
       }
     }

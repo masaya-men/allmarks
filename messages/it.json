@@ -171,6 +171,51 @@
     }
   },
   "pages": {
+    "features": {
+      "meta": {
+        "title": "Funzionalità",
+        "description": "Salva qualsiasi cosa dal web e disponila come una bacheca visiva. Riproduzione inline, tag, condivisione istantanea — tutto privato, tutto nel tuo browser."
+      },
+      "hero": {
+        "kicker": "Funzionalità",
+        "title": "Tutto ciò che salvi, fatto per essere guardato.",
+        "lead": "AllMarks raccoglie le cose che ami da tutto il web su un'unica bacheca visiva e viva — non una lista che non apri mai più."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Salva in tre modi",
+        "body": "Incolla un URL direttamente sulla bacheca — è il modo principale. Preferisci un clic? Usa il bookmarklet che funziona in qualsiasi browser, oppure l'estensione Chrome per salvare da qualsiasi pagina con un tocco."
+      },
+      "board": {
+        "num": "02",
+        "heading": "Una bacheca che organizzi tu",
+        "body": "Le card si dispongono su una griglia ordinata — mai inclinate. Ridimensiona ogni card liberamente, oppure scegli un preset di densità da DENSE a AMBIENT. Passa ogni card tra le visualizzazioni visual, editorial e native. Aggiungi tag liberamente; i tag si ordinano alfabeticamente, oppure trascinali nell'ordine che preferisci."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "Una bacheca che prende vita",
+        "body": "Mentre navighi, il video in primo piano riproduce davvero mentre gli altri scorrono come fotogrammi fermi — così la bacheca sembra viva senza mai diventare caotica. Un solo interruttore, MOTION, riporta tutto alla quiete quando vuoi."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Condividi con un link",
+        "body": "Trasforma qualsiasi bacheca in un link breve con un'immagine di anteprima pronta per i social. Oppure esportala come PNG e pubblicala su X. Le bacheche condivise vivono su un link, non in un account."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Privata per impostazione predefinita",
+        "body": "I tuoi segnalibri vivono nel tuo browser, mai sui nostri server. Nessun account, nessuna registrazione, nessun cookie di tracciamento. È gratuito, e resta tuo."
+      },
+      "sites": {
+        "heading": "Dove funziona",
+        "body": "I post da X, YouTube (inclusi gli Shorts), TikTok, Vimeo e SoundCloud si riproducono direttamente sulla bacheca. Tutto il resto viene salvato con una miniatura pulita.",
+        "note": "Instagram non può essere incorporato da nessuno al di fuori di Instagram, quindi quei salvataggi aprono la pagina originale — preferiamo essere onesti piuttosto che fingere."
+      },
+      "cta": {
+        "heading": "Inizia la tua bacheca.",
+        "button": "Open Board"
+      }
+    },
     "about": {
       "meta": {
         "title": "Informazioni",
@@ -195,6 +240,145 @@
       },
       "cta": {
         "heading": "Inizia la tua bacheca.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Guida",
+        "description": "Come usare AllMarks: salva in tre modi, organizza la bacheca, riproduci i media e condividi — inizia in circa 30 secondi."
+      },
+      "hero": {
+        "kicker": "Guida",
+        "title": "Operativo in 30 secondi.",
+        "lead": "Nessun account, nessuna configurazione. Apri la bacheca, salva il primo link e inizia a disporre."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Apri la bacheca",
+        "body": "Vai alla bacheca ed è subito tutto pronto — nessuna registrazione richiesta. Copia un link da qualsiasi parte del web e incollalo direttamente sulla bacheca per salvare la tua prima card."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Tre modi per salvare",
+        "body": "Incollare un URL è il modo principale. Per salvare con un clic, trascina il bookmarklet nella barra dei segnalibri — funziona in ogni browser, anche sul telefono. Su Chrome, l'estensione salva da qualsiasi pagina con un tocco."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Personalizzala",
+        "body": "Clicca su una card per aprirla a schermo intero. Ridimensiona le card o scegli un preset di densità, passa tra le visualizzazioni visual / editorial / native e aggiungi tag. Trascina card e tag nell'ordine che preferisci — tutto rimane su una griglia ordinata."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Guardala prendere vita",
+        "body": "I video da X, YouTube, TikTok, Vimeo e SoundCloud si riproducono direttamente sulla bacheca — quello in primo piano riproduce davvero mentre gli altri scorrono come fotogrammi. Disattiva MOTION in qualsiasi momento per il silenzio totale."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Condividi la tua bacheca",
+        "body": "Crea un link breve con un'immagine di anteprima per i social, oppure esporta la bacheca come PNG da pubblicare su X. Chiunque abbia il link vede la tua bacheca — senza account anche da parte loro."
+      },
+      "data": {
+        "num": "06",
+        "heading": "I tuoi dati",
+        "body": "Tutto è archiviato solo in questo browser. Ciò significa che non ti seguirà su un altro dispositivo o in una finestra privata, e cancellare i dati del browser cancellerà anche le tue bacheche. Puoi esportare un backup in qualsiasi momento."
+      },
+      "trouble": {
+        "heading": "Se qualcosa non va",
+        "body": "Una card bloccata su una miniatura semplice di solito ha solo bisogno di ricaricare la pagina per recuperare un'anteprima aggiornata. Se un salvataggio con il bookmarklet non fa nulla, ri-aggiungi il bookmarklet — le copie vecchie possono diventare obsolete dopo un aggiornamento."
+      },
+      "cta": {
+        "heading": "Apri la tua prima bacheca.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "FAQ",
+        "description": "Domande frequenti su AllMarks: è gratuito, dove sono archiviati i dati, come funzionano il salvataggio e la condivisione e quali browser sono supportati."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Domande, risposte.",
+        "lead": "La versione breve: è gratuito, privato e vive nel tuo browser. Ecco i dettagli."
+      },
+      "q1": {
+        "q": "È gratuito?",
+        "a": "Sì — AllMarks è gratuito, senza account e senza registrazione."
+      },
+      "q2": {
+        "q": "Dove vengono archiviati i miei dati?",
+        "a": "Nel tuo browser, sul tuo dispositivo. Nulla viene conservato sui nostri server, quindi le tue bacheche non lasciano mai il tuo computer a meno che tu non scelga di condividerne una."
+      },
+      "q3": {
+        "q": "Come faccio a salvare le cose?",
+        "a": "In tre modi: incolla un URL direttamente sulla bacheca (il modo principale), usa il bookmarklet in qualsiasi browser, oppure salva con un tocco tramite l'estensione Chrome."
+      },
+      "q4": {
+        "q": "Quali browser funzionano?",
+        "a": "Qualsiasi browser moderno funziona per la bacheca e il bookmarklet. L'estensione con un tocco è al momento basata su Chrome."
+      },
+      "q5": {
+        "q": "Posso usarlo sul telefono?",
+        "a": "Sì. Incollare un URL sulla bacheca funziona su mobile, e il bookmarklet funziona anche nei browser mobile."
+      },
+      "q6": {
+        "q": "Come funziona la condivisione?",
+        "a": "Puoi trasformare una bacheca in un link breve con un'immagine di anteprima per i social, oppure esportarla come PNG da pubblicare su X. Un link condiviso porta con sé la bacheca stessa — senza account da nessuna delle due parti."
+      },
+      "q7": {
+        "q": "Cosa succede se cancello i dati del browser?",
+        "a": "Poiché tutto vive nel tuo browser, cancellandone i dati si cancellano anche le tue bacheche. Esporta prima un backup se vuoi conservarle, e importalo in seguito per ripristinarle."
+      },
+      "q8": {
+        "q": "È open source?",
+        "a": "Sì. Il codice è aperto, così chiunque può verificare che nulla venga inviato dove non dovrebbe."
+      },
+      "q9": {
+        "q": "Ho bisogno di un account?",
+        "a": "No. Non c'è mai un accesso — è proprio questo il punto. Resti anonimo e i tuoi dati rimangono con te."
+      },
+      "cta": {
+        "heading": "Scoprilo di persona.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Estensione Chrome",
+        "description": "Salva qualsiasi pagina su AllMarks con un tocco usando l'estensione Chrome. Legge solo la pagina che salvi, non invia nulla a un server."
+      },
+      "hero": {
+        "kicker": "Extension",
+        "title": "Salva qualsiasi cosa, con un tocco.",
+        "lead": "L'estensione AllMarks aggiunge un pulsante di salvataggio su ogni pagina, così ciò che trovi va direttamente sulla tua bacheca."
+      },
+      "status": {
+        "label": "Presto disponibile sul Chrome Web Store",
+        "body": "L'estensione è in arrivo sullo store. Nel frattempo puoi già salvare da qualsiasi browser con il bookmarklet — senza attese."
+      },
+      "what": {
+        "num": "01",
+        "heading": "Salvataggio con un tocco",
+        "body": "Salva la pagina su cui ti trovi con un clic, il menu del tasto destro o una scorciatoia da tastiera. Va direttamente sulla tua bacheca e puoi aggiungere un tag mentre salvi."
+      },
+      "how": {
+        "num": "02",
+        "heading": "Come ottenerla",
+        "body": "Una volta disponibile sul Chrome Web Store, l'installazione è con un clic. Per ora, installa il bookmarklet dalla guida e avrai lo stesso salvataggio con un tocco in qualsiasi browser già oggi."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Funziona su tutto il web",
+        "body": "Salva da ovunque. I post da X, YouTube, Vimeo, SoundCloud e altri arrivano pronti per la riproduzione sulla bacheca; tutto il resto viene salvato con un'anteprima pulita."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Legge solo ciò che salvi",
+        "body": "L'estensione legge la pagina che scegli di salvare e nient'altro. Non c'è nessun server nel mezzo — i tuoi salvataggi vanno direttamente nel tuo browser."
+      },
+      "cta": {
+        "heading": "Inizia a salvare.",
         "button": "Open Board"
       }
     }

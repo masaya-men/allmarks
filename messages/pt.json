@@ -171,6 +171,51 @@
     }
   },
   "pages": {
+    "features": {
+      "meta": {
+        "title": "Funcionalidades",
+        "description": "Salve qualquer coisa da web e organize em um quadro visual. Reprodução inline, tags, compartilhamento instantâneo — tudo privado, tudo no seu navegador."
+      },
+      "hero": {
+        "kicker": "Funcionalidades",
+        "title": "Tudo que você salva, feito para ser visto.",
+        "lead": "O AllMarks mantém as coisas que você ama de toda a web em um único quadro visual e vivo — não uma lista que você nunca abre de novo."
+      },
+      "save": {
+        "num": "01",
+        "heading": "Salve de três formas",
+        "body": "Cole uma URL direto no quadro — esse é o jeito principal. Prefere um clique? Use o bookmarklet que funciona em qualquer navegador, ou a extensão do Chrome para salvar com um toque em qualquer página."
+      },
+      "board": {
+        "num": "02",
+        "heading": "Um quadro que você organiza",
+        "body": "Os cartões ficam em uma grade limpa — sem inclinação. Redimensione qualquer cartão livremente, ou escolha uma predefinição de densidade de DENSE a AMBIENT. Alterne cada cartão entre os modos visual, editorial e native. Adicione tags à vontade; elas se ordenam alfabeticamente, ou você as arrasta para sua própria ordem."
+      },
+      "motion": {
+        "num": "03",
+        "heading": "Um quadro que ganha vida",
+        "body": "Enquanto você navega, o vídeo em foco toca de verdade enquanto os outros piscam em quadros estáticos — fazendo o quadro parecer vivo sem virar caos. Um único botão, MOTION, traz a calma total quando você quiser."
+      },
+      "share": {
+        "num": "04",
+        "heading": "Compartilhe em um link",
+        "body": "Transforme qualquer quadro em um link curto com uma imagem de prévia pronta para o social. Ou exporte como PNG e poste no X. Os quadros compartilhados vivem em um link, não em uma conta."
+      },
+      "privacy": {
+        "num": "05",
+        "heading": "Privado por padrão",
+        "body": "Seus favoritos vivem no seu navegador, nunca nos nossos servidores. Sem conta, sem cadastro, sem cookies de rastreamento. É gratuito e continua sendo seu."
+      },
+      "sites": {
+        "heading": "Onde funciona",
+        "body": "Publicações do X, YouTube (incluindo Shorts), TikTok, Vimeo e SoundCloud tocam direto no seu quadro. Todo o resto é salvo com uma miniatura limpa.",
+        "note": "O Instagram não pode ser incorporado por ninguém de fora do Instagram, então esses favoritos abrem a página original — preferimos ser honestos a fingir."
+      },
+      "cta": {
+        "heading": "Comece seu quadro.",
+        "button": "Open Board"
+      }
+    },
     "about": {
       "meta": {
         "title": "Sobre",
@@ -195,6 +240,145 @@
       },
       "cta": {
         "heading": "Comece seu quadro.",
+        "button": "Open Board"
+      }
+    },
+    "guide": {
+      "meta": {
+        "title": "Guia",
+        "description": "Como usar o AllMarks: salve de três formas, organize seu quadro, reproduza mídia e compartilhe — comece em cerca de 30 segundos."
+      },
+      "hero": {
+        "kicker": "Guia",
+        "title": "Pronto para usar em 30 segundos.",
+        "lead": "Sem conta, sem configuração. Abra o quadro, salve seu primeiro link e comece a organizar."
+      },
+      "start": {
+        "num": "01",
+        "heading": "Abra o quadro",
+        "body": "Acesse o quadro e pronto — sem cadastro. Copie um link de qualquer lugar da web e cole direto no quadro para salvar seu primeiro cartão."
+      },
+      "save": {
+        "num": "02",
+        "heading": "Três formas de salvar",
+        "body": "Colar uma URL é o jeito principal. Para salvar com um clique, arraste o bookmarklet para a sua barra de favoritos — funciona em todos os navegadores, inclusive no celular. No Chrome, a extensão salva de qualquer página com um toque."
+      },
+      "arrange": {
+        "num": "03",
+        "heading": "Faça do seu jeito",
+        "body": "Clique em um cartão para abri-lo em tamanho completo. Redimensione cartões ou escolha uma predefinição de densidade, alterne entre os modos visual / editorial / native e adicione tags. Arraste cartões e tags para a ordem que preferir — tudo fica em uma grade organizada."
+      },
+      "play": {
+        "num": "04",
+        "heading": "Veja ganhar vida",
+        "body": "Vídeos do X, YouTube, TikTok, Vimeo e SoundCloud tocam direto no quadro — o que está em foco toca de verdade enquanto os outros piscam como estáticas. Desligue MOTION a qualquer momento para silêncio total."
+      },
+      "share": {
+        "num": "05",
+        "heading": "Compartilhe seu quadro",
+        "body": "Crie um link curto com imagem de prévia para o social, ou exporte o quadro como PNG para postar no X. Quem tiver o link vê seu quadro — sem precisar de conta no lado deles também."
+      },
+      "data": {
+        "num": "06",
+        "heading": "Sobre seus dados",
+        "body": "Tudo é armazenado apenas neste navegador. Isso significa que não vai para outro dispositivo ou janela privativa, e limpar os dados do navegador apaga seus quadros. Você pode exportar um backup a qualquer hora."
+      },
+      "trouble": {
+        "heading": "Se algo parecer errado",
+        "body": "Um cartão preso em uma miniatura simples geralmente só precisa recarregar a página para buscar uma prévia atualizada. Se um salvamento pelo bookmarklet não fizer nada, adicione o bookmarklet novamente — cópias antigas podem ficar desatualizadas após uma atualização."
+      },
+      "cta": {
+        "heading": "Abra seu primeiro quadro.",
+        "button": "Open Board"
+      }
+    },
+    "faq": {
+      "meta": {
+        "title": "FAQ",
+        "description": "Perguntas frequentes sobre o AllMarks: é gratuito, onde ficam seus dados, como funcionam o salvamento e o compartilhamento, e quais navegadores são suportados."
+      },
+      "hero": {
+        "kicker": "FAQ",
+        "title": "Perguntas, respondidas.",
+        "lead": "A versão curta: é gratuito, privado e fica no seu navegador. Veja os detalhes."
+      },
+      "q1": {
+        "q": "É gratuito?",
+        "a": "Sim — o AllMarks é gratuito, sem conta e sem cadastro."
+      },
+      "q2": {
+        "q": "Onde meus dados ficam armazenados?",
+        "a": "No seu navegador, no seu dispositivo. Nada é mantido nos nossos servidores, então seus quadros nunca saem da sua máquina a não ser que você escolha compartilhar um."
+      },
+      "q3": {
+        "q": "Como salvo coisas?",
+        "a": "De três formas: cole uma URL direto no quadro (o jeito principal), use o bookmarklet em qualquer navegador, ou salve com um toque com a extensão do Chrome."
+      },
+      "q4": {
+        "q": "Quais navegadores funcionam?",
+        "a": "Qualquer navegador moderno funciona para o quadro e o bookmarklet. A extensão de um toque é para Chrome por enquanto."
+      },
+      "q5": {
+        "q": "Posso usar no celular?",
+        "a": "Sim. Colar uma URL no quadro funciona no celular, e o bookmarklet também funciona em navegadores móveis."
+      },
+      "q6": {
+        "q": "Como funciona o compartilhamento?",
+        "a": "Você pode transformar um quadro em um link curto com imagem de prévia para o social, ou exportá-lo como PNG para postar no X. Um link compartilhado carrega o próprio quadro — sem conta dos dois lados."
+      },
+      "q7": {
+        "q": "O que acontece se eu limpar os dados do navegador?",
+        "a": "Como tudo fica no seu navegador, limpar os dados também apaga seus quadros. Exporte um backup antes se quiser manter, e importe depois para restaurar."
+      },
+      "q8": {
+        "q": "É código aberto?",
+        "a": "Sim. O código é aberto, então qualquer pessoa pode confirmar que nada é enviado para onde não deveria."
+      },
+      "q9": {
+        "q": "Preciso de uma conta?",
+        "a": "Não. Não há login, nunca — esse é o ponto. Você fica anônimo e seus dados ficam com você."
+      },
+      "cta": {
+        "heading": "Veja por si mesmo.",
+        "button": "Open Board"
+      }
+    },
+    "extension": {
+      "meta": {
+        "title": "Extensão Chrome",
+        "description": "Salve qualquer página no AllMarks com um toque usando a extensão do Chrome. Lê apenas a página que você salva, não envia nada para um servidor."
+      },
+      "hero": {
+        "kicker": "Extensão",
+        "title": "Salve qualquer coisa, com um toque.",
+        "lead": "A extensão AllMarks coloca um botão de salvar em cada página, para que o que você encontrar vá direto para o seu quadro."
+      },
+      "status": {
+        "label": "Em breve na Chrome Web Store",
+        "body": "A extensão está a caminho da loja. Enquanto isso, você já pode salvar de qualquer navegador com o bookmarklet — sem esperar."
+      },
+      "what": {
+        "num": "01",
+        "heading": "Salvar com um toque",
+        "body": "Salve a página em que você está com um clique, um menu de botão direito ou um atalho de teclado. Cai direto no seu quadro, e você pode adicionar uma tag bem na hora de salvar."
+      },
+      "how": {
+        "num": "02",
+        "heading": "Como obter",
+        "body": "Quando estiver na Chrome Web Store, é uma instalação com um clique. Por enquanto, pegue o bookmarklet pelo guia e você já terá o mesmo salvamento com um clique em qualquer navegador hoje."
+      },
+      "sites": {
+        "num": "03",
+        "heading": "Funciona em toda a web",
+        "body": "Salve de qualquer lugar. Publicações do X, YouTube, Vimeo, SoundCloud e mais chegam prontas para tocar no seu quadro; todo o resto salva com uma prévia limpa."
+      },
+      "privacy": {
+        "num": "04",
+        "heading": "Lê apenas o que você salva",
+        "body": "A extensão lê a página que você escolhe salvar e nada mais. Não há servidor no meio — seus salvamentos vão direto para o seu navegador."
+      },
+      "cta": {
+        "heading": "Comece a salvar.",
         "button": "Open Board"
       }
     }
