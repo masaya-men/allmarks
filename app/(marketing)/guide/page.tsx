@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { GuideCalloutDragLink } from '@/components/bookmarklet/GuideCalloutDragLink'
+import { LegacyMarketingChrome } from '@/components/marketing/LegacyMarketingChrome'
 
 export const metadata: Metadata = {
   title: 'Guide',
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function GuidePage(): React.ReactElement {
   return (
-    <>
+    <LegacyMarketingChrome>
       <aside className="guide-callout" role="note" aria-label="bookmarklet update notice">
         <h2>ブックマークレットを更新しました (2026-05-09)</h2>
         <p>
@@ -153,6 +154,6 @@ export default function GuidePage(): React.ReactElement {
       <p>
         準備ができたら、<Link href="/board">Board を開く</Link> から始めましょう。
       </p>
-    </>
+    </LegacyMarketingChrome>
   )
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { LegacyMarketingChrome } from '@/components/marketing/LegacyMarketingChrome'
 
 export const metadata: Metadata = {
   title: 'Extension Privacy Policy — AllMarks',
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ExtensionPrivacyPage(): React.ReactElement {
   return (
-    <>
+    <LegacyMarketingChrome>
       <h1>AllMarks Chrome Extension — Privacy Policy</h1>
       <p className="updated">Last updated: 2026-05-09</p>
 
@@ -114,6 +115,6 @@ export default function ExtensionPrivacyPage(): React.ReactElement {
         We will update this page when permissions or data flows change. The &quot;Last updated&quot;
         stamp at the top reflects the most recent change.
       </p>
-    </>
+    </LegacyMarketingChrome>
   )
 }
