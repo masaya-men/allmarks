@@ -8,7 +8,9 @@
   background: #0a0a0a;
   color: #f0efe9;
   font-family: var(--lp-sans, system-ui, sans-serif);
-  /* No top padding — the finale curtain provides the visual buffer */
+  /* No top padding — the finale curtain provides the visual buffer.
+     position:relative creates the stacking context for the absolute finale. */
+  position: relative;
   padding: 0 40px 48px;
   box-sizing: border-box;
 }
@@ -19,19 +21,30 @@
    On reduced-motion or non-PC it renders statically as a compact CTA block.
 
    Visibility MUST NOT depend on animation — opacity:1 by default so the
-   Open Board button is always accessible before JS runs or if GSAP fails.    */
+   Open Board button is always accessible before JS runs or if GSAP fails.
+
+   LAYOUT NOTE:
+   The curtain is position:absolute; inset:0 so it overlays the footer without
+   contributing to DOM flow height. This prevents a 100vh black void from
+   remaining after the pin completes and the curtain fades out.
+   GSAP's pin:finale + pinSpacing:false keeps the curtain stuck to the viewport
+   top for exactly one viewport-height of scroll distance (supplied by the
+   footer's own min-height: 100vh on PC), then the scrub fades it to opacity:0.
+
+   z-index: var(--lp-z-footer-finale) = 120 > header(100) > language-menu(110)
+   so the full-black curtain truly covers every fixed element.                 */
 .finale {
-  width: 100%;
-  /* Full viewport height on PC; auto (content-height) on small screens */
+  /* Overlay the footer in-flow without taking layout height */
+  position: absolute;
+  inset: 0;
+  /* Stretch to fill the viewport vertically when pinned */
   min-height: 100vh;
   background: #0a0a0a;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* z-index token — below SiteHeader(100) so header stays on top during pin */
-  z-index: var(--lp-z-footer-finale, 50);
-  /* Ensure the curtain is a stacking context for the z-index to take effect */
-  position: relative;
+  /* z-index token — ABOVE SiteHeader(100) so entire screen goes black */
+  z-index: var(--lp-z-footer-finale, 120);
 }
 
 .finaleInner {
@@ -82,19 +95,39 @@
   transform: translateX(6px);
 }
 
-/* Reduced-motion: show curtain as compact static block, not full-screen */
+/* Reduced-motion: show curtain as a compact static block, not full-screen.
+   position:relative re-enters normal flow so it contributes height to the
+   footer layout (no pin runs, so there's no void risk on this path). */
 @media (prefers-reduced-motion: reduce) {
   .finale {
+    position: relative;
     min-height: auto;
     padding: 60px 40px;
   }
 }
 
-/* Non-PC (below 1024px): static compact block regardless of motion */
+/* Non-PC (below 1024px): static compact block regardless of motion.
+   Same reasoning as reduced-motion — no pin, so position:relative is correct. */
 @media (max-width: 1023px) {
   .finale {
+    position: relative;
     min-height: auto;
     padding: 60px 24px;
+  }
+}
+
+/* ── Footer scroll-distance spacer (PC + no-preference only) ──
+   The finale curtain is position:absolute and contributes no layout height.
+   We need the footer to be tall enough to provide one viewport-height of scroll
+   for the pin to consume. On PC the footer padding-top on .inner (80px) + nav
+   content height is not enough on short viewports, so we give the footer itself
+   a min-height equal to 100vh + the nav height (~400px as a safe buffer).
+   On mobile/tablet the .finale is position:relative again (media query above)
+   so the footer height is purely content-driven — no override needed.         */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .footer {
+    /* 100vh for pin scrub + ~450px for visible nav below the finale */
+    min-height: calc(100vh + 450px);
   }
 }
 

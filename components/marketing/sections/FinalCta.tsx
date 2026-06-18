@@ -65,14 +65,23 @@ export function FinalCta(): React.ReactElement {
       }
     })
 
-    // Normal motion (PC + reduced-motion: no-preference handled by matchMedia
-    // caller; this branch fires for any no-preference environment including
-    // mobile — the mobile CTA is still functional, just animated).
+    // Normal motion — PC (≥1024px) + reduced-motion: no-preference only.
+    // On mobile the CSS default opacity:1 keeps CTA visible; no animation runs.
+    //
     // Scrub phase 1 (0→50%): overlay opacity 0 → 1 (white → black transition).
     // Scrub phase 2 (50→100%): CTA elements rise y:40→0, opacity:0→1.
     // Both driven by a single scrubbed GSAP timeline so they share one
     // ScrollTrigger instance.
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
+    //
+    // gsap.set() initialises the CTA elements to opacity:0 / y:40 INSIDE this
+    // matchMedia guard — so mobile and reduced-motion users never see opacity:0.
+    // clearProps on cleanup restores CSS-default opacity:1.
+    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+      // Set initial hidden state for CTA elements (CSS default is opacity:1)
+      if (ctaRiseEls.length > 0) {
+        gsap.set(ctaRiseEls, { y: 40, opacity: 0 })
+      }
+
       const tl = gsap.timeline()
 
       // Phase 1: black overlay fades in (full timeline duration)
@@ -82,9 +91,8 @@ export function FinalCta(): React.ReactElement {
       // the timeline = 50% scrub progress). If there are no [data-cta-rise]
       // elements this tween is a harmless no-op.
       if (ctaRiseEls.length > 0) {
-        tl.fromTo(
+        tl.to(
           ctaRiseEls,
-          { y: 40, opacity: 0 },
           { y: 0, opacity: 1, ease: 'power2.out', stagger: 0.1 },
           0.5, // start this tween at 50% into the timeline
         )
@@ -97,7 +105,15 @@ export function FinalCta(): React.ReactElement {
         scrub: true,
         animation: tl,
       })
-      return () => { st.kill(); tl.kill() }
+
+      return () => {
+        st.kill()
+        tl.kill()
+        // Restore CSS-default visibility so no element stays hidden after cleanup
+        if (ctaRiseEls.length > 0) {
+          gsap.set(ctaRiseEls, { clearProps: 'opacity,y,transform' })
+        }
+      }
     })
 
     return () => mm.revert()

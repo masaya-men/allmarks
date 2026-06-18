@@ -92,8 +92,10 @@
   /* Near-white — legible on the near-black overlay */
   color: #f0efe9;
   text-wrap: balance;
-  /* revealed by useReveal; starts opacity:0 */
-  opacity: 0;
+  /* Default: visible — GSAP sets opacity:0 only within the matchMedia guard
+     (PC ≥1024px + prefers-reduced-motion:no-preference). This ensures the CTA
+     is always accessible on mobile or if GSAP fails to run. */
+  opacity: 1;
   margin-bottom: 52px;
 }
 
@@ -113,8 +115,10 @@
   font-weight: 500;
   letter-spacing: -0.01em;
   text-decoration: none;
-  /* revealed by useReveal; starts opacity:0 */
-  opacity: 0;
+  /* Default: visible — GSAP sets opacity:0 only within the matchMedia guard
+     (PC ≥1024px + prefers-reduced-motion:no-preference). This ensures the CTA
+     is always accessible on mobile or if GSAP fails to run. */
+  opacity: 1;
   transition:
     transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
     background-color 0.3s ease,

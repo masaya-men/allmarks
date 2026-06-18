@@ -10,8 +10,10 @@
   color: var(--lp-ink);
   /* ── Z-index scale ── */
   /* SiteHeader sits at z-index: 100 (literal in SiteHeader.module.css).
-     The language menu dropdown must float above the header chrome. */
-  --lp-z-footer-finale: 50;    /* full-screen finale curtain — below header(100) */
+     The language menu dropdown must float above the header chrome.
+     The footer finale curtain must cover the header so the full-black effect
+     is truly full-screen — it sits above header(100) and language-menu(110). */
+  --lp-z-footer-finale: 120;   /* full-screen finale curtain — ABOVE header(100) and language-menu(110) */
   --lp-z-locale-banner: 105;   /* above header(100), below language menu(110) */
   --lp-z-language-menu: 110;
 
