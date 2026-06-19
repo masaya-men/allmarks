@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "Installer le bookmarklet",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ Glissez ceci dans la barre de favoris de votre navigateur",
       "barHint": "Si la barre de favoris n'apparaît pas :",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "Comment l'utiliser",
       "usageStep1": "1. Ouvrez un site à enregistrer",
-      "usageStep2": "2. Cliquez sur 📌 dans la barre de favoris",
-      "usageStep3": "3. Choisissez un dossier → enregistrez",
+      "usageStep2": "2. Cliquez sur AllMarks dans la barre de favoris",
+      "usageStep3": "3. Une petite fenêtre confirme l'enregistrement — ajoutez un tag si vous voulez",
       "closeLabel": "Fermer"
     },
     "tweet": {

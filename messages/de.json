@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "Bookmarklet installieren",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ Zieh dies in die Lesezeichenleiste deines Browsers",
       "barHint": "Falls du die Lesezeichenleiste nicht siehst:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "So funktioniert's",
       "usageStep1": "1. Öffne eine Seite, die du speichern möchtest",
-      "usageStep2": "2. Klick in der Lesezeichenleiste auf 📌",
-      "usageStep3": "3. Ordner wählen → speichern",
+      "usageStep2": "2. Klick in der Lesezeichenleiste auf AllMarks",
+      "usageStep3": "3. Ein kleines Fenster bestätigt das Speichern — füge bei Bedarf ein Tag hinzu",
       "closeLabel": "Schließen"
     },
     "tweet": {

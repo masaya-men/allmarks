@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "De bookmarklet installeren",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ Sleep dit naar de bladwijzerbalk van je browser",
       "barHint": "Zie je de bladwijzerbalk niet:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "Zo gebruik je het",
       "usageStep1": "1. Open een site die je wilt bewaren",
-      "usageStep2": "2. Klik op 📌 in de bladwijzerbalk",
-      "usageStep3": "3. Kies een map → opslaan",
+      "usageStep2": "2. Klik op AllMarks in de bladwijzerbalk",
+      "usageStep3": "3. Een klein venster bevestigt het opslaan — voeg desgewenst een tag toe",
       "closeLabel": "Sluiten"
     },
     "tweet": {

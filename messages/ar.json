@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "تثبيت أداة الحفظ",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ اسحب هذا إلى شريط الإشارات في متصفحك",
       "barHint": "إذا لم تجد شريط الإشارات:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "طريقة الاستخدام",
       "usageStep1": "١. افتح الموقع الذي تريد حفظه",
-      "usageStep2": "٢. انقر 📌 في شريط الإشارات",
-      "usageStep3": "٣. اختر مجلدًا ← احفظ",
+      "usageStep2": "٢. انقر AllMarks في شريط الإشارات",
+      "usageStep3": "٣. تظهر نافذة صغيرة تؤكد الحفظ — أضف وسمًا إن أردت",
       "closeLabel": "إغلاق"
     },
     "tweet": {

@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9,124 +9,234 @@
   animation: fadeIn 160ms ease-out;
 }
 
+/* Dark glass surface — same language as the TUNE drawer and the language
+   list (rgba(10,10,10,~0.92) + blur + thin white hairline). White-over-board
+   text like the board chrome, not the generic theme card tokens. */
 .modal {
-  background: var(--color-bg-elevated);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-  padding: 24px 28px;
-  width: 480px;
+  background: rgba(12, 12, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  padding: 22px 26px 26px;
+  width: 440px;
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 32px);
   overflow-y: auto;
   position: relative;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .title {
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
   margin: 0;
-  color: var(--color-text-primary);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.titleIcon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
 }
 
 .closeBtn {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 18px;
+  line-height: 1;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 4px;
-  color: var(--color-text-secondary);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.15s, background 0.15s;
 }
 
 .closeBtn:hover {
-  background: var(--color-glass-bg-hover);
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.closeBtn:focus-visible {
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
 }
 
 .dragLinkWrap {
   display: flex;
   justify-content: center;
-  margin: 20px 0 12px;
+  margin: 18px 0 12px;
 }
 
+/* The chip the user drags to the bookmarks bar. The bookmark NAME is the
+   link's text content (the <svg> carries no text), so it lands cleanly as
+   "AllMarks" — no emoji baked into the name. */
 .dragLink {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-card-border);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 10px;
-  padding: 12px 20px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--color-text-primary);
+  padding: 11px 18px;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
   cursor: grab;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   user-select: none;
-  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s;
 }
 
 .dragLink:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.28);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .dragLink:active {
   cursor: grabbing;
 }
 
+.chipIcon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: #28f100; /* A-logo green check motif */
+}
+
+/* RGB glitch ghosts on the text only (icon stays put) — same recipe as
+   ChromeButton / LanguageSwitcher. */
+.chipText {
+  position: relative;
+  display: inline-block;
+  font-weight: 600;
+}
+
+.chipText::before,
+.chipText::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+.dragLink:hover .chipText::before {
+  color: #ff9d3f;
+  animation: bm-glitch-a 700ms steps(7, end);
+}
+
+.dragLink:hover .chipText::after {
+  color: #50c8ff;
+  animation: bm-glitch-b 700ms steps(7, end);
+}
+
 .dragInstruction {
   text-align: center;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  margin: 0 0 20px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 18px;
 }
 
 .divider {
   height: 1px;
-  background: var(--color-card-border);
-  margin: 20px 0;
+  background: rgba(255, 255, 255, 0.10);
+  margin: 18px 0;
   border: none;
 }
 
 .barHint {
-  font-size: 13px;
-  color: var(--color-text-secondary);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0 0 6px;
 }
 
 .shortcuts {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.42);
   margin: 0;
-  font-family: var(--font-mono);
-  line-height: 1.6;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
 }
 
 .usageTitle {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
-  margin: 0 0 8px;
-  color: var(--color-text-primary);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .usageList {
-  font-size: 13px;
-  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.72);
   margin: 0;
   padding: 0;
   list-style: none;
-  line-height: 1.8;
+  line-height: 1.9;
+  letter-spacing: 0.01em;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay { animation: none; }
+  .dragLink:hover .chipText::before,
+  .dragLink:hover .chipText::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Module-scoped glitch keyframes (CSS Modules scopes animation-name, so they
+   must live in this file — same shapes as ChromeButton's glitch). */
+@keyframes bm-glitch-a {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(3px, -1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(-5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(-3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+@keyframes bm-glitch-b {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(-3px, 1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
 }

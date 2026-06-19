@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "ติดตั้งบุ๊กมาร์กเล็ต",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ ลากปุ่มนี้ไปยังแถบบุ๊กมาร์กของเบราว์เซอร์",
       "barHint": "ถ้ามองไม่เห็นแถบบุ๊กมาร์ก:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "วิธีใช้งาน",
       "usageStep1": "1. เปิดเว็บไซต์ที่ต้องการบันทึก",
-      "usageStep2": "2. คลิก 📌 ในแถบบุ๊กมาร์ก",
-      "usageStep3": "3. เลือกโฟลเดอร์ → บันทึก",
+      "usageStep2": "2. คลิก AllMarks ในแถบบุ๊กมาร์ก",
+      "usageStep3": "3. หน้าต่างเล็ก ๆ จะยืนยันว่าบันทึกแล้ว — เพิ่มแท็กได้ถ้าต้องการ",
       "closeLabel": "ปิด"
     },
     "tweet": {

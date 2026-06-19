@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "ブックマークレットを設置する",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ これをブラウザのブックマークバーにドラッグしてください",
       "barHint": "ブックマークバーが見えない場合:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "設置後の使い方",
       "usageStep1": "1. 保存したいサイトを開く",
-      "usageStep2": "2. ブックマークバーの 📌 をクリック",
-      "usageStep3": "3. フォルダ選択 → 保存",
+      "usageStep2": "2. ブックマークバーの AllMarks をクリック",
+      "usageStep3": "3. 小さな確認ウィンドウが「保存しました」と表示 — そのままタグも付けられます",
       "closeLabel": "閉じる"
     },
     "tweet": {

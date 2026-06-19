@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "북마클릿 설치",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ 이것을 브라우저 북마크 바로 드래그하세요",
       "barHint": "북마크 바가 보이지 않을 때:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "사용 방법",
       "usageStep1": "1. 저장할 사이트를 엽니다",
-      "usageStep2": "2. 북마크 바에서 📌를 클릭합니다",
-      "usageStep3": "3. 폴더 선택 → 저장",
+      "usageStep2": "2. 북마크 바에서 AllMarks를 클릭합니다",
+      "usageStep3": "3. 작은 창이 저장을 확인합니다 — 원하면 태그를 추가하세요",
       "closeLabel": "닫기"
     },
     "tweet": {

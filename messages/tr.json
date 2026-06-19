@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "Yer imi düğmesini yükle",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ Bunu tarayıcının yer imi çubuğuna sürükle",
       "barHint": "Yer imi çubuğunu göremiyorsan:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "Nasıl kullanılır",
       "usageStep1": "1. Kaydetmek istediğin bir siteyi aç",
-      "usageStep2": "2. Yer imi çubuğundaki 📌 simgesine tıkla",
-      "usageStep3": "3. Bir klasör seç → kaydet",
+      "usageStep2": "2. Yer imi çubuğundaki AllMarks'a tıkla",
+      "usageStep3": "3. Küçük bir pencere kaydedildiğini onaylar — istersen bir etiket ekle",
       "closeLabel": "Kapat"
     },
     "tweet": {

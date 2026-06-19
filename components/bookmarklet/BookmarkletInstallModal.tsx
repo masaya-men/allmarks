@@ -12,8 +12,27 @@ type Props = {
   readonly appUrl: string
 }
 
+/** Thin-line bookmark glyph — matches the board chrome's stroke vocabulary
+ *  (no emoji). Rides on currentColor so it brightens with the text. */
+function BookmarkIcon({ className }: { readonly className?: string }): ReactElement {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 3.5 h12 a1 1 0 0 1 1 1 v16.2 a0.6 0.6 0 0 1 -0.93 0.5 L12 17.6 l-6.07 3.6 A0.6 0.6 0 0 1 5 20.7 V4.5 a1 1 0 0 1 1 -1 z" />
+    </svg>
+  )
+}
+
 export function BookmarkletInstallModal({ isOpen, onClose, appUrl }: Props): ReactElement | null {
   const { t } = useI18n()
+  const linkLabel = t('board.bookmarkletModal.linkLabel')
   const closeBtnRef = useRef<HTMLButtonElement>(null)
   const linkRef = useRef<HTMLAnchorElement>(null)
 
@@ -58,7 +77,8 @@ export function BookmarkletInstallModal({ isOpen, onClose, appUrl }: Props): Rea
       >
         <div className={styles.header}>
           <h2 id="bookmarklet-modal-title" className={styles.title}>
-            📌 {t('board.bookmarkletModal.title')}
+            <BookmarkIcon className={styles.titleIcon} />
+            {t('board.bookmarkletModal.title')}
           </h2>
           <button
             ref={closeBtnRef}
@@ -79,7 +99,13 @@ export function BookmarkletInstallModal({ isOpen, onClose, appUrl }: Props): Rea
             draggable="true"
             onClick={(e) => e.preventDefault()}
           >
-            {t('board.bookmarkletModal.linkLabel')}
+            <BookmarkIcon className={styles.chipIcon} />
+            <span
+              className={styles.chipText}
+              data-glitch-text={linkLabel}
+            >
+              {linkLabel}
+            </span>
           </a>
         </div>
 

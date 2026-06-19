@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "Установите букмарклет",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ Перетащите это на панель закладок браузера",
       "barHint": "Если панель закладок не видна:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "Как пользоваться",
       "usageStep1": "1. Откройте сайт, который хотите сохранить",
-      "usageStep2": "2. Нажмите 📌 на панели закладок",
-      "usageStep3": "3. Выберите папку → сохранить",
+      "usageStep2": "2. Нажмите AllMarks на панели закладок",
+      "usageStep3": "3. Небольшое окно подтвердит сохранение — добавьте тег, если хотите",
       "closeLabel": "Закрыть"
     },
     "tweet": {

@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "Instala el marcador rápido",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ Arrastra esto a la barra de marcadores de tu navegador",
       "barHint": "Si no ves la barra de marcadores:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "Cómo usarlo",
       "usageStep1": "1. Abre un sitio que quieras guardar",
-      "usageStep2": "2. Haz clic en 📌 en la barra de marcadores",
-      "usageStep3": "3. Elige una carpeta → guarda",
+      "usageStep2": "2. Haz clic en AllMarks en la barra de marcadores",
+      "usageStep3": "3. Una pequeña ventana confirma que se guardó — añade una etiqueta si quieres",
       "closeLabel": "Cerrar"
     },
     "tweet": {

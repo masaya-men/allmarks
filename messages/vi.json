@@ -50,15 +50,15 @@
     },
     "bookmarkletModal": {
       "title": "Cài đặt bookmarklet",
-      "linkLabel": "📌 AllMarks",
+      "linkLabel": "AllMarks",
       "dragInstruction": "↑ Kéo nút này lên thanh dấu trang của trình duyệt",
       "barHint": "Nếu không thấy thanh dấu trang:",
       "barShortcutWindows": "Windows: Ctrl + Shift + B",
       "barShortcutMac": "Mac: ⌘ + Shift + B",
       "usageTitle": "Cách sử dụng",
       "usageStep1": "1. Mở trang web bạn muốn lưu",
-      "usageStep2": "2. Nhấp 📌 trên thanh dấu trang",
-      "usageStep3": "3. Chọn thư mục → lưu",
+      "usageStep2": "2. Nhấp AllMarks trên thanh dấu trang",
+      "usageStep3": "3. Một cửa sổ nhỏ xác nhận đã lưu — thêm thẻ nếu bạn muốn",
       "closeLabel": "Đóng"
     },
     "tweet": {
