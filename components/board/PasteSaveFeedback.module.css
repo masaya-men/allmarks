@@ -30,7 +30,7 @@
 }
 
 .label {
-  font: 600 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font: 600 11px/1 var(--font-sans);
   letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.60);
 }
@@ -46,7 +46,7 @@
   box-shadow:
     0 0 16px rgba(255, 176, 32, 0.20),
     0 4px 16px rgba(0, 0, 0, 0.28);
-  font: 500 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font: 500 13px/1 var(--font-sans);
   letter-spacing: 0.01em;
   color: #FFB020;
   white-space: nowrap;

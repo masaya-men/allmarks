@@ -25,6 +25,11 @@ export type IngestResult = {
 
 const EMBEDDABLE = new Set(['tweet', 'youtube', 'tiktok', 'instagram', 'vimeo', 'soundcloud'])
 
+/** Returns true for URL types that are rich embeds and don't need an OGP fetch. */
+export function isEmbeddableType(type: import('@/lib/utils/url').UrlType): boolean {
+  return EMBEDDABLE.has(type)
+}
+
 /** Server-side OGP fetch for a plain URL. Returns null on any failure so the
  *  caller falls back gracefully. */
 export async function fetchOgpMeta(url: string): Promise<OgpMeta | null> {
