@@ -141,20 +141,20 @@
     "hero": {
       "label": "Visuele bladwijzermanager",
       "headline": "Zet links om in een visueel bord.",
-      "description": "Sla video's, sociale berichten, artikelen en afbeeldingen op met één klik en rangschik ze daarna vrij. Verander een saaie tekstlijst in een inspiratiebord dat je in één oogopslag begrijpt. Geen aanmelding nodig, volledig gratis.",
+      "description": "Sla video's, sociale berichten, artikelen en afbeeldingen op met één klik en rangschik ze daarna vrij. Verander een saaie lijst in een inspiratiebord dat je in één oogopslag begrijpt. Gratis, geen aanmelding.",
       "ctaPrimary": "Open het bord",
       "ctaGhost": "Bekijk hoe het werkt",
       "scrollHint": "scrollen"
     },
     "problem": {
       "headline": "Je stapelt ze op en kijkt er nooit meer naar.",
-      "body": "Alleen rijen met tekstlinks. Feeds die je zo doorscrollt. Laat niet toe dat wat je opslaat verdwijnt in een zee van tekst."
+      "body": "Alleen links. Feeds die je zo doorscrollt. Laat niet toe dat wat je opslaat begraven raakt."
     },
     "features": {
       "capture": { "title": "Naar je bord, van overal.", "body": "Plak gewoon een URL — X, YouTube, artikelen, winkels, afbeeldingen, alles op het web. Wil je met één klik opslaan? De browserextensie en de bookmarklet zorgen daarvoor." },
       "layout": { "title": "Vrij rangschikken.", "body": "Slepen en neerzetten om formaat en positie precies naar wens in te stellen." },
-      "live": { "title": "Meerdere video's tegelijk afspelen.", "body": "Video's op je bord bewegen samen — geen lijst met stilstaande beelden, maar een bord dat echt leeft." },
-      "organize": { "title": "Tags om te sorteren. Thema's om van look te wisselen.", "body": "Filteren op tag en de hele look wisselen met thema's. Er zijn meer thema's onderweg." },
+      "live": { "title": "Een bord dat tot leven komt.", "body": "De video in focus speelt echt af terwijl de andere als stilstaande beelden flikkeren — geen lijst met stilstaande beelden, maar een levend visueel bord. Met één schakelaar, MOTION, breng je alles terug naar een rustig moodboard." },
+      "organize": { "title": "Tag om te sorteren.", "body": "Filter op tag om precies te zien wat je zoekt. Er zijn meer looks en thema's onderweg." },
       "privacy": { "title": "Geen account. Volledig lokaal.", "body": "Alles leeft in je browser. Geen account, niets om je voor aan te melden — jouw privacy blijft van jou." }
     },
     "share": {
@@ -187,7 +187,7 @@
       },
       "privacy": {
         "heading": "Privacy by design",
-        "body": "Je bladwijzers leven in je browser. Geen account, geen tracking, geen aanmelding. Het is gratis en blijft van jou."
+        "body": "Je bladwijzers leven in je browser. Geen account, geen aanmelding. Het is gratis en je gegevens blijven bij jou."
       },
       "openSource": {
         "heading": "Open source",
@@ -211,12 +211,12 @@
       "save": {
         "num": "01",
         "heading": "Opslaan op drie manieren",
-        "body": "Plak een URL direct op je bord — dat is de hoofdweg. Liever met één klik? Gebruik de bookmarklet die in elke browser werkt, of de Chrome-extensie voor opslaan met één tik vanuit elke pagina."
+        "body": "Drie manieren om op te slaan: plak een URL op je bord, gebruik de bookmarklet, of gebruik de Chrome-extensie. Met de bookmarklet of de extensie sla je met één klik de pagina op en kun je hem meteen taggen."
       },
       "board": {
         "num": "02",
         "heading": "Een bord dat jij rangschikt",
-        "body": "Kaarten staan op een overzichtelijk raster — nooit gekanteld. Vergroot of verklein elke kaart vrij, of kies een dichtheidsinstelling van DENSE tot AMBIENT. Schakel elke kaart tussen visual, editorial en native weergave. Tag vrij; tags worden alfabetisch gesorteerd, of sleep ze in je eigen volgorde."
+        "body": "Verander het formaat van elke kaart vrij, of kies uit een reeks layoutinstellingen. Tag vrij; tags worden alfabetisch gesorteerd, of sleep ze in je eigen volgorde."
       },
       "motion": {
         "num": "03",
@@ -231,12 +231,12 @@
       "privacy": {
         "num": "05",
         "heading": "Standaard privé",
-        "body": "Je bladwijzers leven in je browser. Geen account, geen aanmelding, geen trackers. Het is gratis en blijft van jou."
+        "body": "Je bladwijzers leven in je browser. Geen account, geen aanmelding, geen trackingcookies. Het is gratis en je gegevens blijven bij jou."
       },
       "sites": {
         "heading": "Waar het werkt",
         "body": "Berichten van X, YouTube (inclusief Shorts), TikTok, Vimeo en SoundCloud spelen direct op je bord af. Al het andere wordt opgeslagen met een overzichtelijke miniatuur.",
-        "note": "Instagram kan door niemand buiten Instagram worden ingesloten, dus die opgeslagen items openen de originele pagina — we zijn liever eerlijk dan dat we iets veinzen."
+        "note": "Instagram kan door niemand buiten Instagram worden ingesloten, dus opgeslagen Instagram-items openen de originele pagina."
       },
       "cta": {
         "heading": "Begin je bord.",
@@ -261,22 +261,22 @@
       "save": {
         "num": "02",
         "heading": "Drie manieren om op te slaan",
-        "body": "Een URL plakken is de hoofdweg. Voor opslaan met één klik sleep je de bookmarklet naar je bladwijzerbalk — die werkt in elke browser, ook op je telefoon. Op Chrome sla je met de extensie vanuit elke pagina op met één tik."
+        "body": "Er zijn drie manieren om op te slaan: plak een URL op je bord, voeg de bookmarklet toe aan je bladwijzerbalk, of gebruik de Chrome-extensie. Met de bookmarklet of de extensie sla je met één klik de pagina op en kun je hem meteen taggen."
       },
       "arrange": {
         "num": "03",
         "heading": "Maak het van jou",
-        "body": "Klik op een kaart om hem op volledig formaat te openen. Verander de kaartgrootte of kies een dichtheidsinstelling, schakel tussen visual / editorial / native weergave en voeg tags toe. Sleep kaarten en tags in de volgorde die je wilt — alles blijft netjes op een raster."
+        "body": "Klik op een kaart om hem op volledig formaat te openen. Verander het kaartformaat of kies een layoutinstelling, en voeg tags toe. Sleep kaarten en tags in de volgorde die je wilt — alles blijft netjes op een raster."
       },
       "play": {
         "num": "04",
         "heading": "Bekijk het tot leven komen",
-        "body": "Video's van X, YouTube, TikTok, Vimeo en SoundCloud spelen direct op het bord af — de video in focus speelt echt af terwijl de rest als stilstaande beelden flikkert. Zet MOTION op elk moment uit voor volledige rust."
+        "body": "Video's van X, YouTube, TikTok, Vimeo en SoundCloud spelen direct op het bord af — de video in focus speelt echt af terwijl de rest als stilstaande beelden flikkert. Zet MOTION op elk moment uit voor een rustig moodboard."
       },
       "share": {
         "num": "05",
         "heading": "Deel je bord",
-        "body": "Maak een korte link met een voorbeeldafbeelding voor sociale media, of exporteer het bord als PNG om op X te plaatsen. Iedereen met de link ziet jouw bord — ook aan hun kant is geen account nodig."
+        "body": "Maak een korte link met een voorbeeldafbeelding voor sociale media, of exporteer het bord als PNG om op X te plaatsen. Geef de link door en de ander ziet een kopie van de inhoud — ze kunnen niet bij je apparaat. Aan hun kant is ook geen account nodig."
       },
       "data": {
         "num": "06",
@@ -308,23 +308,23 @@
       },
       "q2": {
         "q": "Waar worden mijn gegevens opgeslagen?",
-        "a": "In je browser, op je apparaat. Er wordt niets op onze servers bewaard, zodat je borden je apparaat nooit verlaten tenzij je er zelf voor kiest er een te delen."
+        "a": "Je bord wordt alleen in je browser opgeslagen, op je apparaat — niet op een server. De enige uitzondering is wanneer je deelt: een kopie van de URL-info van de gekozen kaarten (titel, voorbeeldafbeelding en dergelijke) wordt ongeveer 30 dagen bewaard en daarna automatisch verwijderd. Omdat er geen account is, wordt er nooit persoonlijke informatie opgenomen. Als je niet deelt, verlaat er niets je apparaat."
       },
       "q3": {
         "q": "Hoe sla ik dingen op?",
-        "a": "Op drie manieren: plak een URL direct op het bord (de hoofdweg), gebruik de bookmarklet in elke browser, of sla op met één tik via de Chrome-extensie."
+        "a": "Op drie manieren: plak een URL op het bord, gebruik de bookmarklet in elke browser, of gebruik de Chrome-extensie. De bookmarklet en de extensie slaan op met één klik."
       },
       "q4": {
         "q": "Welke browsers werken?",
-        "a": "Elke moderne browser werkt voor het bord en de bookmarklet. De extensie met één tik is voorlopig alleen voor Chrome."
+        "a": "Elke moderne browser werkt voor het bord en de bookmarklet. De extensie met één klik is voorlopig alleen voor Chrome."
       },
       "q5": {
         "q": "Kan ik het op mijn telefoon gebruiken?",
-        "a": "Ja. Een URL op het bord plakken werkt op mobiel, en de bookmarklet werkt ook in mobiele browsers."
+        "a": "We optimaliseren de mobiele weergave nog. Opslaan zelf — een URL op het bord plakken of de bookmarklet gebruiken — werkt wel, maar de weergave wordt later nog verder verfijnd."
       },
       "q6": {
         "q": "Hoe werkt delen?",
-        "a": "Je kunt een bord omzetten in een korte link met een voorbeeldafbeelding voor sociale media, of het exporteren als PNG om op X te plaatsen. Een gedeelde link bevat het bord zelf — aan geen van beide kanten is een account nodig."
+        "a": "Als je deelt, kun je een kopie van de gekozen kaarten omzetten in een korte link met een voorbeeldafbeelding voor sociale media — of een PNG exporteren om op X te plaatsen. Wie de link opent, ziet alleen die kopie; die kan niet bij je apparaat of je bord. Aan geen van beide kanten is een account nodig."
       },
       "q7": {
         "q": "Wat gebeurt er als ik mijn browsergegevens wis?",
@@ -336,7 +336,7 @@
       },
       "q9": {
         "q": "Heb ik een account nodig?",
-        "a": "Nee. Er is nooit een aanmelding — dat is het punt. Je blijft anoniem en je gegevens blijven bij jou."
+        "a": "Nee. Er is helemaal geen account aanmaken of inloggen."
       },
       "cta": {
         "heading": "Zie het zelf.",

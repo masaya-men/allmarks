@@ -141,14 +141,14 @@
     "hero": {
       "label": "Gestionnaire visuel de favoris",
       "headline": "Transformez vos liens en tableau visuel.",
-      "description": "Enregistrez vidéos, publications, articles et images en un clic, puis arrangez-les librement. Transformez une liste de liens ennuyeuse en un tableau d'inspiration que vous saisissez d'un coup d'œil. Sans inscription, entièrement gratuit.",
+      "description": "Enregistrez vidéos, publications, articles et images en un clic, puis arrangez-les librement. Transformez une simple liste en un tableau d'inspiration que vous saisissez d'un coup d'œil. Gratuit, sans inscription.",
       "ctaPrimary": "Ouvrir le tableau",
       "ctaGhost": "Voir comment ça marche",
       "scrollHint": "défiler"
     },
     "problem": {
       "headline": "Vous les accumulez sans jamais y revenir.",
-      "body": "De simples rangées de liens texte. Des fils d'actualité que vous faites défiler sans jamais vous arrêter. Ne laissez pas ce que vous avez sauvegardé se perdre dans un mur de texte."
+      "body": "Rien que des liens. Des fils que vous faites défiler sans vous arrêter. Ne laissez pas ce que vous avez sauvegardé se noyer dans l'oubli."
     },
     "features": {
       "capture": {
@@ -160,12 +160,12 @@
         "body": "Glissez-déposez pour définir taille et position exactement comme vous le souhaitez."
       },
       "live": {
-        "title": "Lisez plusieurs vidéos en même temps.",
-        "body": "Les vidéos de votre tableau jouent ensemble — pas une liste d'images figées, mais un tableau vraiment vivant."
+        "title": "Un tableau qui prend vie.",
+        "body": "La vidéo au premier plan joue vraiment tandis que les autres scintillent en images fixes — pas une liste d'images figées, mais un tableau vivant. Un seul interrupteur, MOTION, le ramène au calme d'un moodboard."
       },
       "organize": {
-        "title": "Tags pour trier. Thèmes pour changer de look.",
-        "body": "Filtrez par tag et changez l'apparence entière avec les thèmes. D'autres thèmes arrivent bientôt."
+        "title": "Un tag pour trier.",
+        "body": "Filtrez par tag pour ne voir que ce que vous cherchez. D'autres styles et thèmes arrivent bientôt."
       },
       "privacy": {
         "title": "Sans compte. Entièrement local.",
@@ -207,7 +207,7 @@
       },
       "privacy": {
         "heading": "Confidentialité by design",
-        "body": "Vos favoris vivent dans votre navigateur. Pas de compte, pas de suivi, pas d'inscription. C'est gratuit, et ça reste à vous."
+        "body": "Vos favoris vivent dans votre navigateur. Pas de compte, pas d'inscription. Gratuit, et vos données restent à vous."
       },
       "openSource": {
         "heading": "Open source",
@@ -231,12 +231,12 @@
       "save": {
         "num": "01",
         "heading": "Trois façons d'enregistrer",
-        "body": "Collez une URL directement sur votre tableau — c'est la méthode principale. Préférez un seul clic ? Utilisez le bookmarklet qui fonctionne dans tous les navigateurs, ou l'extension Chrome pour enregistrer n'importe quelle page en un clic."
+        "body": "Trois façons d'enregistrer : collez une URL sur votre tableau, utilisez le bookmarklet, ou l'extension Chrome. Avec le bookmarklet ou l'extension, un clic suffit pour enregistrer la page et lui ajouter un tag sur le moment."
       },
       "board": {
         "num": "02",
         "heading": "Un tableau que vous arrangez",
-        "body": "Les cartes s'organisent sur une grille nette — jamais inclinées. Redimensionnez chaque carte librement, ou choisissez un préréglage de densité, de DENSE à AMBIENT. Basculez chaque carte entre les affichages visual, editorial et native. Ajoutez des tags librement ; ils se trient par ordre alphabétique ou glissez-les dans l'ordre de votre choix."
+        "body": "Redimensionnez chaque carte librement, ou choisissez parmi une gamme de préréglages de mise en page. Ajoutez des tags librement ; ils se trient par ordre alphabétique, ou faites-les glisser dans l'ordre de votre choix."
       },
       "motion": {
         "num": "03",
@@ -251,12 +251,12 @@
       "privacy": {
         "num": "05",
         "heading": "Privé par défaut",
-        "body": "Vos favoris vivent dans votre navigateur. Pas de compte, pas d'inscription, pas de cookies de suivi. C'est gratuit, et ça reste à vous."
+        "body": "Vos favoris vivent dans votre navigateur. Pas de compte, pas d'inscription, pas de cookies de suivi. Gratuit, et vos données restent à vous."
       },
       "sites": {
         "heading": "Où ça fonctionne",
         "body": "Les publications de X, YouTube (dont Shorts), TikTok, Vimeo et SoundCloud se lisent directement sur votre tableau. Tout le reste est enregistré avec une miniature soignée.",
-        "note": "Instagram ne peut pas être intégré par qui que ce soit en dehors d'Instagram, donc ces sauvegardes ouvrent la page d'origine — nous préférons être honnêtes plutôt que de simuler."
+        "note": "Instagram ne peut pas être intégré depuis l'extérieur par qui que ce soit, donc les sauvegardes Instagram ouvrent la page d'origine."
       },
       "cta": {
         "heading": "Démarrez votre tableau.",
@@ -281,22 +281,22 @@
       "save": {
         "num": "02",
         "heading": "Trois façons d'enregistrer",
-        "body": "Coller une URL est la méthode principale. Pour enregistrer en un clic, glissez le bookmarklet dans votre barre de favoris — il fonctionne dans tous les navigateurs, y compris sur mobile. Sur Chrome, l'extension enregistre depuis n'importe quelle page en un clic."
+        "body": "Il y a trois façons d'enregistrer : coller une URL sur votre tableau, ajouter le bookmarklet à votre barre de favoris, ou utiliser l'extension Chrome. Avec le bookmarklet ou l'extension, un clic suffit pour enregistrer la page et lui ajouter un tag sur le moment."
       },
       "arrange": {
         "num": "03",
         "heading": "Faites-en votre espace",
-        "body": "Cliquez sur une carte pour l'ouvrir en grand. Redimensionnez les cartes ou choisissez un préréglage de densité, basculez entre les affichages visual / editorial / native, et ajoutez des tags. Glissez les cartes et les tags dans l'ordre que vous aimez — tout reste sur une grille ordonnée."
+        "body": "Cliquez sur une carte pour l'ouvrir en grand. Redimensionnez les cartes ou choisissez un préréglage de mise en page, et ajoutez des tags. Glissez les cartes et les tags dans l'ordre que vous aimez — tout reste sur une grille ordonnée."
       },
       "play": {
         "num": "04",
         "heading": "Regardez-le prendre vie",
-        "body": "Les vidéos de X, YouTube, TikTok, Vimeo et SoundCloud se lisent directement sur le tableau — celle au premier plan joue vraiment tandis que les autres scintillent en images fixes. Désactivez MOTION à tout moment pour un silence total."
+        "body": "Les vidéos de X, YouTube, TikTok, Vimeo et SoundCloud se lisent directement sur le tableau — celle au premier plan joue vraiment tandis que les autres scintillent en images fixes. Désactivez MOTION à tout moment pour retrouver un moodboard calme."
       },
       "share": {
         "num": "05",
         "heading": "Partagez votre tableau",
-        "body": "Créez un lien court avec une image d'aperçu pour les réseaux, ou exportez le tableau en PNG pour le publier sur X. N'importe qui avec le lien voit votre tableau — sans compte de leur côté non plus."
+        "body": "Créez un lien court avec une image d'aperçu pour les réseaux, ou exportez le tableau en PNG pour le publier sur X. Transmettez le lien et l'autre personne voit une copie du contenu — elle n'a pas accès à votre appareil. Pas de compte nécessaire de son côté non plus."
       },
       "data": {
         "num": "06",
@@ -328,11 +328,11 @@
       },
       "q2": {
         "q": "Où sont stockées mes données ?",
-        "a": "Dans votre navigateur, sur votre appareil. Rien n'est conservé sur nos serveurs, donc vos tableaux ne quittent jamais votre machine, sauf si vous choisissez d'en partager un."
+        "a": "Votre tableau est stocké uniquement dans votre navigateur, sur votre appareil — pas sur un serveur. La seule exception, c'est le partage : une copie des informations d'URL des cartes choisies (titre, image d'aperçu, etc.) est conservée environ 30 jours, puis supprimée automatiquement. Comme il n'y a pas de compte, aucune information personnelle n'est jamais incluse. Si vous ne partagez pas, rien ne quitte votre appareil."
       },
       "q3": {
         "q": "Comment enregistrer des choses ?",
-        "a": "De trois façons : collez une URL directement sur le tableau (la méthode principale), utilisez le bookmarklet dans n'importe quel navigateur, ou enregistrez en un clic avec l'extension Chrome."
+        "a": "De trois façons : collez une URL sur le tableau, utilisez le bookmarklet dans n'importe quel navigateur, ou utilisez l'extension Chrome. Le bookmarklet et l'extension enregistrent en un clic."
       },
       "q4": {
         "q": "Quels navigateurs fonctionnent ?",
@@ -340,11 +340,11 @@
       },
       "q5": {
         "q": "Puis-je l'utiliser sur mon téléphone ?",
-        "a": "Oui. Coller une URL sur le tableau fonctionne sur mobile, et le bookmarklet fonctionne aussi dans les navigateurs mobiles."
+        "a": "Nous optimisons encore la mise en page mobile. L'enregistrement lui-même — coller une URL sur le tableau ou utiliser le bookmarklet — fonctionne, mais l'affichage sera peaufiné un peu plus tard."
       },
       "q6": {
         "q": "Comment fonctionne le partage ?",
-        "a": "Vous pouvez transformer un tableau en lien court avec une image d'aperçu pour les réseaux, ou l'exporter en PNG pour le publier sur X. Un lien partagé porte le tableau lui-même — pas de compte des deux côtés."
+        "a": "Lorsque vous partagez, vous pouvez transformer une copie des cartes choisies en lien court avec une image d'aperçu pour les réseaux — ou exporter un PNG à publier sur X. Celui qui ouvre le lien voit seulement cette copie ; il n'a pas accès à votre appareil ni à votre tableau. Pas de compte des deux côtés."
       },
       "q7": {
         "q": "Que se passe-t-il si j'efface mes données de navigation ?",
@@ -356,7 +356,7 @@
       },
       "q9": {
         "q": "Ai-je besoin d'un compte ?",
-        "a": "Non. Il n'y a jamais de connexion — c'est tout le principe. Vous restez anonyme et vos données restent avec vous."
+        "a": "Non. Il n'y a aucune création de compte ni connexion, tout simplement."
       },
       "cta": {
         "heading": "Voyez par vous-même.",

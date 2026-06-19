@@ -141,20 +141,20 @@
     "hero": {
       "label": "Gerenciador visual de favoritos",
       "headline": "Transforme links em um quadro visual.",
-      "description": "Salve vídeos, publicações, artigos e imagens com um clique e organize-os livremente. Transforme uma lista de texto monótona em um quadro de inspiração que você entende de relance. Sem cadastro, completamente gratuito.",
+      "description": "Salve vídeos, publicações, artigos e imagens com um clique e organize-os livremente. Transforme uma lista simples em um quadro de inspiração que você entende de relance. Gratuito, sem cadastro.",
       "ctaPrimary": "Abrir o quadro",
       "ctaGhost": "Ver como funciona",
       "scrollHint": "rolar"
     },
     "problem": {
       "headline": "Você acumula e nunca mais olha.",
-      "body": "Só filas de links de texto. Feeds que você rola sem parar. Não deixe o que você salvou ficar soterrado em texto puro."
+      "body": "Só links. Feeds que você rola sem parar. Não deixe o que você salvou ficar soterrado."
     },
     "features": {
       "capture": { "title": "Para o seu quadro, de qualquer lugar.", "body": "Basta colar uma URL — X, YouTube, artigos, lojas, imagens, qualquer coisa da web. Quer salvar com um clique? A extensão do navegador e o bookmarklet resolvem." },
       "layout": { "title": "Organize livremente.", "body": "Arraste e solte para definir tamanho e posição exatamente como você quer." },
-      "live": { "title": "Reproduza vários vídeos ao mesmo tempo.", "body": "Os vídeos do seu quadro se movem juntos — não é uma lista de imagens estáticas, mas um quadro que realmente vive." },
-      "organize": { "title": "Tags para organizar. Temas para renovar.", "body": "Filtre por tag e mude a aparência completa com temas. Mais temas estão a caminho." },
+      "live": { "title": "Um quadro que ganha vida.", "body": "O vídeo em foco toca de verdade enquanto os outros pulsam como imagens estáticas — não uma lista de estáticas, mas um quadro visual vivo. Um botão, MOTION, acalma tudo e vira um moodboard tranquilo." },
+      "organize": { "title": "Tags para organizar.", "body": "Filtre por tag para encontrar exatamente o que você quer. Mais visuais e temas estão a caminho." },
       "privacy": { "title": "Sem conta. Totalmente local.", "body": "Tudo fica dentro do seu navegador. Sem conta, sem cadastro — sua privacidade é sua." }
     },
     "share": {
@@ -184,12 +184,12 @@
       "save": {
         "num": "01",
         "heading": "Salve de três formas",
-        "body": "Cole uma URL direto no quadro — esse é o jeito principal. Prefere um clique? Use o bookmarklet que funciona em qualquer navegador, ou a extensão do Chrome para salvar com um toque em qualquer página."
+        "body": "Três formas de salvar: cole uma URL no quadro, use o bookmarklet, ou use a extensão do Chrome. Com o bookmarklet ou a extensão, um clique salva a página e deixa você adicionar uma tag na hora."
       },
       "board": {
         "num": "02",
         "heading": "Um quadro que você organiza",
-        "body": "Os cartões ficam em uma grade limpa — sem inclinação. Redimensione qualquer cartão livremente, ou escolha uma predefinição de densidade de DENSE a AMBIENT. Alterne cada cartão entre os modos visual, editorial e native. Adicione tags à vontade; elas se ordenam alfabeticamente, ou você as arrasta para sua própria ordem."
+        "body": "Redimensione qualquer cartão livremente, ou escolha entre uma variedade de predefinições de layout. Adicione tags à vontade; elas se ordenam alfabeticamente, ou você as arrasta para a sua própria ordem."
       },
       "motion": {
         "num": "03",
@@ -204,12 +204,12 @@
       "privacy": {
         "num": "05",
         "heading": "Privado por padrão",
-        "body": "Seus favoritos vivem no seu navegador. Sem conta, sem cadastro, sem cookies de rastreamento. É gratuito e continua sendo seu."
+        "body": "Seus favoritos ficam no seu navegador. Sem conta, sem cadastro, sem cookies de rastreamento. Gratuito, e seus dados ficam com você."
       },
       "sites": {
         "heading": "Onde funciona",
         "body": "Publicações do X, YouTube (incluindo Shorts), TikTok, Vimeo e SoundCloud tocam direto no seu quadro. Todo o resto é salvo com uma miniatura limpa.",
-        "note": "O Instagram não pode ser incorporado por ninguém de fora do Instagram, então esses favoritos abrem a página original — preferimos ser honestos a fingir."
+        "note": "O Instagram não pode ser incorporado por ninguém de fora do Instagram, então os favoritos do Instagram abrem a página original."
       },
       "cta": {
         "heading": "Comece seu quadro.",
@@ -232,7 +232,7 @@
       },
       "privacy": {
         "heading": "Privacidade por design",
-        "body": "Seus favoritos vivem no seu navegador. Sem conta, sem rastreamento, sem cadastro. É gratuito e continua sendo seu."
+        "body": "Seus favoritos ficam no seu navegador. Sem conta, sem cadastro. Gratuito, e seus dados ficam com você."
       },
       "openSource": {
         "heading": "Código aberto",
@@ -261,22 +261,22 @@
       "save": {
         "num": "02",
         "heading": "Três formas de salvar",
-        "body": "Colar uma URL é o jeito principal. Para salvar com um clique, arraste o bookmarklet para a sua barra de favoritos — funciona em todos os navegadores, inclusive no celular. No Chrome, a extensão salva de qualquer página com um toque."
+        "body": "São três formas de salvar: cole uma URL no quadro, adicione o bookmarklet à barra de favoritos, ou use a extensão do Chrome. Com o bookmarklet ou a extensão, um clique salva a página e deixa você adicionar uma tag na hora."
       },
       "arrange": {
         "num": "03",
         "heading": "Faça do seu jeito",
-        "body": "Clique em um cartão para abri-lo em tamanho completo. Redimensione cartões ou escolha uma predefinição de densidade, alterne entre os modos visual / editorial / native e adicione tags. Arraste cartões e tags para a ordem que preferir — tudo fica em uma grade organizada."
+        "body": "Clique em um cartão para abri-lo em tamanho completo. Redimensione cartões ou escolha uma predefinição de layout, e adicione tags. Arraste cartões e tags para a ordem que preferir — tudo fica em uma grade organizada."
       },
       "play": {
         "num": "04",
         "heading": "Veja ganhar vida",
-        "body": "Vídeos do X, YouTube, TikTok, Vimeo e SoundCloud tocam direto no quadro — o que está em foco toca de verdade enquanto os outros piscam como estáticas. Desligue MOTION a qualquer momento para silêncio total."
+        "body": "Vídeos do X, YouTube, TikTok, Vimeo e SoundCloud tocam direto no quadro — o que está em foco toca de verdade enquanto os outros pulsam como imagens estáticas. Desative MOTION a qualquer momento para um moodboard tranquilo."
       },
       "share": {
         "num": "05",
         "heading": "Compartilhe seu quadro",
-        "body": "Crie um link curto com imagem de prévia para o social, ou exporte o quadro como PNG para postar no X. Quem tiver o link vê seu quadro — sem precisar de conta no lado deles também."
+        "body": "Crie um link curto com imagem de prévia para o social, ou exporte o quadro como PNG para postar no X. Quem abrir o link vê uma cópia do conteúdo — não tem acesso ao seu dispositivo. Sem conta de nenhum dos lados."
       },
       "data": {
         "num": "06",
@@ -308,23 +308,23 @@
       },
       "q2": {
         "q": "Onde meus dados ficam armazenados?",
-        "a": "No seu navegador, no seu dispositivo. Nada é mantido nos nossos servidores, então seus quadros nunca saem da sua máquina a não ser que você escolha compartilhar um."
+        "a": "Seu quadro fica armazenado apenas no seu navegador, no seu dispositivo — não em um servidor. A única exceção é quando você compartilha: uma cópia das informações de URL dos cartões escolhidos (título, imagem de prévia e similares) fica guardada por cerca de 30 dias e depois é apagada automaticamente. Como não há conta, nenhuma informação pessoal é incluída. Se você não compartilhar, nada sai do seu dispositivo."
       },
       "q3": {
         "q": "Como salvo coisas?",
-        "a": "De três formas: cole uma URL direto no quadro (o jeito principal), use o bookmarklet em qualquer navegador, ou salve com um toque com a extensão do Chrome."
+        "a": "De três formas: cole uma URL no quadro, use o bookmarklet em qualquer navegador, ou use a extensão do Chrome. O bookmarklet e a extensão salvam com um clique."
       },
       "q4": {
         "q": "Quais navegadores funcionam?",
-        "a": "Qualquer navegador moderno funciona para o quadro e o bookmarklet. A extensão de um toque é para Chrome por enquanto."
+        "a": "Qualquer navegador moderno funciona para o quadro e o bookmarklet. A extensão de um clique é para Chrome por enquanto."
       },
       "q5": {
         "q": "Posso usar no celular?",
-        "a": "Sim. Colar uma URL no quadro funciona no celular, e o bookmarklet também funciona em navegadores móveis."
+        "a": "Ainda estamos ajustando o layout para mobile. O salvamento em si — colar uma URL no quadro ou usar o bookmarklet — funciona, mas a aparência será aperfeiçoada em breve."
       },
       "q6": {
         "q": "Como funciona o compartilhamento?",
-        "a": "Você pode transformar um quadro em um link curto com imagem de prévia para o social, ou exportá-lo como PNG para postar no X. Um link compartilhado carrega o próprio quadro — sem conta dos dois lados."
+        "a": "Ao compartilhar, você pode transformar uma cópia dos cartões escolhidos em um link curto com imagem de prévia para o social — ou exportar um PNG para postar no X. Quem abrir o link vê apenas essa cópia; não tem acesso ao seu dispositivo nem ao seu quadro. Sem conta de nenhum dos lados."
       },
       "q7": {
         "q": "O que acontece se eu limpar os dados do navegador?",
@@ -336,7 +336,7 @@
       },
       "q9": {
         "q": "Preciso de uma conta?",
-        "a": "Não. Não há login, nunca — esse é o ponto. Você fica anônimo e seus dados ficam com você."
+        "a": "Não. Não há criação de conta nem login de forma alguma."
       },
       "cta": {
         "heading": "Veja por si mesmo.",

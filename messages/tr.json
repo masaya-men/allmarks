@@ -141,20 +141,20 @@
     "hero": {
       "label": "Görsel Yer İmi Yöneticisi",
       "headline": "Bağlantıları görsel bir panoya dönüştürün.",
-      "description": "Videoları, sosyal paylaşımları, makaleleri ve görselleri tek tıkla kaydedin, ardından özgürce düzenleyin. Sıradan bir metin listesini tek bakışta kavrayabileceğiniz bir ilham panosuna çevirin. Kayıt yok, tamamen ücretsiz.",
+      "description": "Videoları, sosyal paylaşımları, makaleleri ve görselleri tek tıkla kaydedin, ardından özgürce düzenleyin. Sıradan bir listeyi tek bakışta kavrayabileceğiniz bir ilham panosuna çevirin. Ücretsiz, kayıt gerekmez.",
       "ctaPrimary": "Panoyu aç",
       "ctaGhost": "Nasıl çalıştığını gör",
       "scrollHint": "kaydır"
     },
     "problem": {
       "headline": "Biriktiriyorsunuz ama bir daha bakmıyorsunuz.",
-      "body": "Sadece sıralanan metin bağlantıları. Sürekli kaydırdığınız beslemeler. Kaydettiğiniz şeylerin düz metin içinde kaybolmasına izin vermeyin."
+      "body": "Sadece bağlantılar. Hızla geçip geçtiğiniz akışlar. Kaydettiğiniz şeylerin gömülü kalmasına izin vermeyin."
     },
     "features": {
       "capture": { "title": "Her yerden, panonuza.", "body": "Bir URL yapıştırmanız yeterli — X, YouTube, makaleler, mağazalar, görseller, web'deki her şey. Tek tıkla kaydetmek ister misiniz? Tarayıcı uzantısı ve yer imi aracı tam bunun için var." },
       "layout": { "title": "Özgürce düzenleyin.", "body": "Boyutu ve konumu tam istediğiniz gibi ayarlamak için sürükleyip bırakın." },
-      "live": { "title": "Birden fazla videoyu aynı anda oynatın.", "body": "Panodaki videolar birlikte hareket eder — durağan görsel listesi değil, gerçekten canlı bir pano." },
-      "organize": { "title": "Etiketle sırala. Temayla yenile.", "body": "Etikete göre filtreleyin ve temalarla tüm görünümü değiştirin. Daha fazla tema geliyor." },
+      "live": { "title": "Hayat bulan bir pano.", "body": "Odaktaki video gerçekten oynarken diğerleri durağan kareler olarak parldar — durağan görseller listesi değil, canlı bir görsel pano. Bir geçişle, MOTION, her şeyi sessiz bir moodboard'a taşır." },
+      "organize": { "title": "Etiketle sırala.", "body": "İstediğinizi bulmak için etikete göre filtreleyin. Daha fazla görünüm ve tema geliyor." },
       "privacy": { "title": "Hesap yok. Tamamen yerel.", "body": "Her şey yalnızca tarayıcınızda saklanır. Hesap yok, kayıt yok — gizliliğiniz size ait kalır." }
     },
     "share": {
@@ -184,12 +184,12 @@
       "save": {
         "num": "01",
         "heading": "Üç yolla kaydedin",
-        "body": "Bir URL'yi doğrudan panonuza yapıştırın — bu ana yoldur. Tek tıkı mı tercih edersiniz? Her tarayıcıda çalışan yer imi düğmesini ya da herhangi bir sayfadan tek dokunuşla kaydetmek için Chrome uzantısını kullanın."
+        "body": "Kaydetmenin üç yolu: panonuza URL yapıştırın, yer imi düğmesini kullanın ya da Chrome uzantısını kullanın. Yer imi düğmesi veya uzantıyla tek tıkla sayfayı kaydedip hemen etiket ekleyebilirsiniz."
       },
       "board": {
         "num": "02",
         "heading": "Düzenleyeceğiniz bir pano",
-        "body": "Kartlar temiz bir ızgarada durur — hiçbir zaman eğik değil. Herhangi bir kartı özgürce yeniden boyutlandırın ya da DENSE'den AMBIENT'e kadar yoğunluk hazır ayarı seçin. Her kartı visual, editorial ve native görünümler arasında değiştirin. İstediğiniz gibi etiket ekleyin; etiketler alfabetik sıralanır ya da kendi sıranıza göre sürükleyerek dizebilirsiniz."
+        "body": "Herhangi bir kartı özgürce yeniden boyutlandırın ya da çeşitli düzen hazır ayarlarından birini seçin. İstediğiniz gibi etiket ekleyin; etiketler alfabetik sıralanır ya da kendi sıranıza göre sürükleyerek dizebilirsiniz."
       },
       "motion": {
         "num": "03",
@@ -204,12 +204,12 @@
       "privacy": {
         "num": "05",
         "heading": "Varsayılan olarak gizli",
-        "body": "Yer imleriniz tarayıcınızda yaşar. Hesap yok, kayıt yok, izleme çerezi yok. Ücretsiz ve hep sizin."
+        "body": "Yer imleriniz tarayıcınızda yaşar. Hesap yok, kayıt yok, izleme çerezi yok. Ücretsiz olarak kullanın ve verileriniz sizde kalır."
       },
       "sites": {
         "heading": "Nereden çalışır",
         "body": "X, YouTube (Shorts dahil), TikTok, Vimeo ve SoundCloud gönderileri doğrudan panonuzda oynar. Diğer her şey temiz bir küçük resimle kaydedilir.",
-        "note": "Instagram, Instagram dışındaki hiç kimse tarafından yerleştirilemez; bu nedenle bu kayıtlar orijinal sayfayı açar — sahte yapmak yerine dürüst olmayı tercih ederiz."
+        "note": "Instagram, Instagram dışında hiç kimse tarafından yerleştirilemez; bu nedenle Instagram kayıtları orijinal sayfayı açar."
       },
       "cta": {
         "heading": "Panonuzu oluşturun.",
@@ -232,7 +232,7 @@
       },
       "privacy": {
         "heading": "Tasarım gereği gizlilik",
-        "body": "Yer imleriniz tarayıcınızda yaşar. Hesap yok, takip yok, kayıt yok. Ücretsiz ve hep sizin."
+        "body": "Yer imleriniz tarayıcınızda yaşar. Hesap yok, kayıt yok. Ücretsiz olarak kullanın ve verileriniz sizde kalır."
       },
       "openSource": {
         "heading": "Açık kaynak",
@@ -261,22 +261,22 @@
       "save": {
         "num": "02",
         "heading": "Kaydetmenin üç yolu",
-        "body": "URL yapıştırmak ana yoldur. Tek tıkla kaydetmek için yer imi düğmesini yer imleri çubuğunuza sürükleyin — telefonunuz dahil her tarayıcıda çalışır. Chrome'da uzantı, herhangi bir sayfadan tek dokunuşla kaydeder."
+        "body": "Kaydetmenin üç yolu var: panonuza URL yapıştırın, yer imi çubuğunuza yer imi düğmesini ekleyin ya da Chrome uzantısını kullanın. Yer imi düğmesi veya uzantıyla tek tıkla sayfayı kaydedip hemen etiket ekleyebilirsiniz."
       },
       "arrange": {
         "num": "03",
         "heading": "Kendinize göre yapın",
-        "body": "Kartı tam boyutlu açmak için tıklayın. Kartları yeniden boyutlandırın ya da yoğunluk hazır ayarı seçin, visual / editorial / native görünümü değiştirin ve etiket ekleyin. Kartları ve etiketleri istediğiniz sıraya sürükleyin — her şey düzenli bir ızgarada kalır."
+        "body": "Kartı tam boyutlu açmak için tıklayın. Kartları yeniden boyutlandırın ya da düzen hazır ayarı seçin ve etiket ekleyin. Kartları ve etiketleri istediğiniz sıraya sürükleyin — her şey düzenli bir ızgarada kalır."
       },
       "play": {
         "num": "04",
         "heading": "Canlandığını izleyin",
-        "body": "X, YouTube, TikTok, Vimeo ve SoundCloud videoları doğrudan panoda oynar — odaktaki gerçekten oynarken diğerleri durağan kareler olarak geçiş yapar. Tam sessizlik için istediğiniz zaman MOTION'ı kapatın."
+        "body": "X, YouTube, TikTok, Vimeo ve SoundCloud videoları doğrudan panoda oynar — odaktaki gerçekten oynarken diğerleri durağan kareler olarak parldar. İstediğiniz zaman MOTION'ı kapatarak sessiz bir moodboard'a geçin."
       },
       "share": {
         "num": "05",
         "heading": "Panonuzu paylaşın",
-        "body": "Sosyal medya için önizleme görselli kısa bir bağlantı oluşturun ya da panoyu X'te paylaşmak için PNG olarak dışa aktarın. Bağlantıya sahip olan herkes panonuzu görür — karşı tarafta da hesap gerekmez."
+        "body": "Sosyal medya için önizleme görselli kısa bir bağlantı oluşturun ya da panoyu X'te paylaşmak için PNG olarak dışa aktarın. Bağlantıyı verin; karşı taraf içeriğin bir kopyasını görür — cihazınıza erişemez. Karşı tarafta da hesap gerekmez."
       },
       "data": {
         "num": "06",
@@ -308,23 +308,23 @@
       },
       "q2": {
         "q": "Verilerim nerede saklanır?",
-        "a": "Cihazınızdaki tarayıcınızda. Sunucularımızda hiçbir şey tutulmaz; dolayısıyla birini paylaşmayı seçmediğiniz sürece panolarınız makinenizden çıkmaz."
+        "a": "Panonuz yalnızca tarayıcınızda, cihazınızda saklanır — sunucuda değil. Tek istisna paylaşımdır: seçilen kartların URL bilgilerinin (başlık, önizleme görseli vb.) bir kopyası yaklaşık 30 gün boyunca tutulur, ardından otomatik olarak silinir. Hesap olmadığından kişisel bilgi hiçbir zaman eklenmez. Paylaşım yapmazsanız cihazınızdan hiçbir şey çıkmaz."
       },
       "q3": {
         "q": "Bir şeyleri nasıl kaydederim?",
-        "a": "Üç yol var: URL'yi doğrudan panoya yapıştırın (ana yol), herhangi bir tarayıcıda yer imi düğmesini kullanın ya da Chrome uzantısıyla tek dokunuşta kaydedin."
+        "a": "Üç yol var: URL'yi panoya yapıştırın, herhangi bir tarayıcıda yer imi düğmesini kullanın ya da Chrome uzantısını kullanın. Yer imi düğmesi ve uzantı tek tıkla kaydeder."
       },
       "q4": {
         "q": "Hangi tarayıcılar çalışır?",
-        "a": "Pano ve yer imi düğmesi için her modern tarayıcı çalışır. Tek dokunuşluk uzantı şimdilik yalnızca Chrome tabanlıdır."
+        "a": "Pano ve yer imi düğmesi için her modern tarayıcı çalışır. Tek tıklamalı uzantı şimdilik yalnızca Chrome tabanlıdır."
       },
       "q5": {
         "q": "Telefonda kullanabilir miyim?",
-        "a": "Evet. Panoya URL yapıştırmak mobilde çalışır; yer imi düğmesi de mobil tarayıcılarda kullanılabilir."
+        "a": "Mobil düzeni hâlâ optimize ediyoruz. Kaydetmek — panoya URL yapıştırmak veya yer imi düğmesini kullanmak — çalışır, ancak görünüm biraz daha sonra polish edilecek."
       },
       "q6": {
         "q": "Paylaşma nasıl çalışır?",
-        "a": "Bir panoyu sosyal medya için önizleme görselli kısa bir bağlantıya dönüştürebilir ya da X'te paylaşmak için PNG olarak dışa aktarabilirsiniz. Paylaşılan bağlantı panonun kendisini taşır — iki tarafta da hesap gerekmez."
+        "a": "Paylaşım yaptığınızda, seçilen kartları sosyal medya için önizleme görselli kısa bir bağlantıya dönüştürebilir ya da X'te paylaşmak için PNG olarak dışa aktarabilirsiniz. Bağlantıyı açan kişi yalnızca o kopyayı görür; cihazınıza veya panonuza erişemez. İki tarafta da hesap gerekmez."
       },
       "q7": {
         "q": "Tarayıcı verilerimi temizlersem ne olur?",
@@ -336,7 +336,7 @@
       },
       "q9": {
         "q": "Hesap gerekiyor mu?",
-        "a": "Hayır. Hiçbir zaman giriş yapmanız gerekmez — bu zaten tasarımın özü. Anonim kalırsınız ve verileriniz sizde kalır."
+        "a": "Hayır. Hesap oluşturma veya giriş yapma diye bir şey yok."
       },
       "cta": {
         "heading": "Kendiniz görün.",

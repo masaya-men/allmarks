@@ -141,20 +141,20 @@
     "hero": {
       "label": "Visueller Lesezeichen-Manager",
       "headline": "Links in ein visuelles Board verwandeln.",
-      "description": "Videos, Social-Posts, Artikel und Bilder per Klick speichern, frei anordnen. Verwandle eine dröge Linkliste in ein Inspirations-Board, das du auf einen Blick erfasst. Kein Account nötig, komplett kostenlos.",
+      "description": "Videos, Social-Posts, Artikel und Bilder mit einem Klick speichern, dann frei anordnen. Verwandle eine dröge Linkliste in ein Inspirations-Board, das du auf einen Blick erfasst. Kostenlos, keine Anmeldung.",
       "ctaPrimary": "Board öffnen",
       "ctaGhost": "So funktioniert es",
       "scrollHint": "scrollen"
     },
     "problem": {
       "headline": "Du sammelst alles – und schaust nie wieder rein.",
-      "body": "Nur Zeilen mit Textlinks. Feeds, die du einfach durchscrollst. Lass nicht zu, dass das, was du gespeichert hast, im Textchaos versinkt."
+      "body": "Nur Links. Feeds, die du einfach durchscrollst. Lass nicht zu, dass das, was du gespeichert hast, im Chaos versinkt."
     },
     "features": {
       "capture": { "title": "Auf dein Board, von überall.", "body": "Einfach eine URL einfügen – X, YouTube, Artikel, Shops, Bilder, alles im Web. Du möchtest mit einem Klick speichern? Die Browser-Erweiterung und das Bookmarklet machen es möglich." },
       "layout": { "title": "Frei anordnen.", "body": "Per Drag & Drop Größe und Position genau so setzen, wie es dir gefällt." },
-      "live": { "title": "Mehrere Videos gleichzeitig abspielen.", "body": "Videos auf deinem Board laufen zusammen – keine Liste statischer Vorschaubilder, sondern ein Board, das wirklich lebt." },
-      "organize": { "title": "Taggen zum Sortieren. Themes zum Umgestalten.", "body": "Nach Tags filtern und das gesamte Aussehen mit Themes wechseln. Mehr Themes sind in Arbeit." },
+      "live": { "title": "Ein Board, das lebendig wird.", "body": "Das fokussierte Video spielt wirklich ab, während die anderen als Standbilder schimmern — keine Liste statischer Vorschaubilder, sondern ein lebendiges Board. Ein Schalter, MOTION, bringt es zur Ruhe, wann immer du ein ruhiges Moodboard möchtest." },
+      "organize": { "title": "Taggen zum Sortieren.", "body": "Nach Tags filtern, um genau das zu finden, was du brauchst. Weitere Looks und Themes sind in Arbeit." },
       "privacy": { "title": "Kein Account. Vollständig lokal.", "body": "Alles lebt in deinem Browser. Kein Account, keine Anmeldung — deine Privatsphäre bleibt deine." }
     },
     "share": {
@@ -189,12 +189,12 @@
       "save": {
         "num": "01",
         "heading": "Drei Wege zum Speichern",
-        "body": "Füge eine URL direkt auf dein Board ein — das ist der Hauptweg. Lieber mit einem Klick? Nutze das Bookmarklet in jedem Browser oder die Chrome-Erweiterung für das Speichern jeder Seite per Tipp."
+        "body": "Drei Wege zum Speichern: eine URL auf das Board einfügen, das Bookmarklet nutzen oder die Chrome-Erweiterung verwenden. Mit dem Bookmarklet oder der Erweiterung speichert ein Klick die Seite und du kannst gleich einen Tag vergeben."
       },
       "board": {
         "num": "02",
         "heading": "Ein Board, das du arrangierst",
-        "body": "Karten liegen auf einem sauberen Raster — niemals geneigt. Ändere die Größe jeder Karte frei oder wähle ein Dichte-Preset von DENSE bis AMBIENT. Schalte jede Karte zwischen visual, editorial und native um. Tagge frei; Tags sortieren sich alphabetisch oder du ziehst sie in deine eigene Reihenfolge."
+        "body": "Ändere die Größe jeder Karte frei oder wähle aus einer Auswahl an Layout-Presets. Tagge frei; Tags sortieren sich alphabetisch oder du ziehst sie in deine eigene Reihenfolge."
       },
       "motion": {
         "num": "03",
@@ -209,12 +209,12 @@
       "privacy": {
         "num": "05",
         "heading": "Standardmäßig privat",
-        "body": "Deine Lesezeichen leben in deinem Browser. Kein Account, keine Anmeldung, keine Tracking-Cookies. Kostenlos, und es bleibt deins."
+        "body": "Deine Lesezeichen leben in deinem Browser. Kein Account, keine Anmeldung, keine Tracking-Cookies. Kostenlos nutzbar, und deine Daten bleiben bei dir."
       },
       "sites": {
         "heading": "Wo es funktioniert",
         "body": "Beiträge von X, YouTube (einschließlich Shorts), TikTok, Vimeo und SoundCloud spielen direkt auf deinem Board ab. Alles andere wird mit einem sauberen Vorschaubild gespeichert.",
-        "note": "Instagram kann von niemandem außerhalb von Instagram eingebettet werden — solche Speicherungen öffnen daher die Originalseite. Lieber ehrlich als Schein."
+        "note": "Instagram kann von niemandem außerhalb von Instagram eingebettet werden — Instagram-Speicherungen öffnen daher die Originalseite."
       },
       "cta": {
         "heading": "Starte dein Board.",
@@ -237,7 +237,7 @@
       },
       "privacy": {
         "heading": "Datenschutz by Design",
-        "body": "Deine Lesezeichen leben in deinem Browser. Kein Account, kein Tracking, keine Anmeldung. Kostenlos, und es bleibt deins."
+        "body": "Deine Lesezeichen leben in deinem Browser. Kein Account, keine Anmeldung. Kostenlos nutzbar, und deine Daten bleiben bei dir."
       },
       "openSource": {
         "heading": "Open Source",
@@ -266,22 +266,22 @@
       "save": {
         "num": "02",
         "heading": "Drei Wege zum Speichern",
-        "body": "Eine URL einzufügen ist der Hauptweg. Für das Speichern per Klick ziehe das Bookmarklet in deine Lesezeichenleiste — es funktioniert in jedem Browser, auch auf dem Handy. Auf Chrome speichert die Erweiterung jede Seite per Tipp."
+        "body": "Es gibt drei Möglichkeiten zum Speichern: eine URL auf das Board einfügen, das Bookmarklet zur Lesezeichenleiste hinzufügen oder die Chrome-Erweiterung nutzen. Mit dem Bookmarklet oder der Erweiterung speichert ein Klick die Seite und du kannst gleich einen Tag vergeben."
       },
       "arrange": {
         "num": "03",
         "heading": "Mach es zu deinem",
-        "body": "Klicke auf eine Karte, um sie in voller Größe zu öffnen. Ändere die Kartengröße oder wähle ein Dichte-Preset, schalte zwischen visual / editorial / native um und füge Tags hinzu. Ziehe Karten und Tags in die gewünschte Reihenfolge — alles bleibt auf einem aufgeräumten Raster."
+        "body": "Klicke auf eine Karte, um sie in voller Größe zu öffnen. Ändere die Kartengröße oder wähle ein Layout-Preset und füge Tags hinzu. Ziehe Karten und Tags in die gewünschte Reihenfolge — alles bleibt auf einem aufgeräumten Raster."
       },
       "play": {
         "num": "04",
         "heading": "Erlebe es lebendig",
-        "body": "Videos von X, YouTube, TikTok, Vimeo und SoundCloud spielen direkt auf dem Board ab — das fokussierte spielt wirklich, die anderen schimmern als Standbilder. Schalte MOTION jederzeit aus für vollständige Stille."
+        "body": "Videos von X, YouTube, TikTok, Vimeo und SoundCloud spielen direkt auf dem Board ab — das fokussierte spielt wirklich, während die anderen als Standbilder schimmern. Schalte MOTION jederzeit aus, um ein ruhiges Moodboard zu erhalten."
       },
       "share": {
         "num": "05",
         "heading": "Board teilen",
-        "body": "Erstelle einen Kurzlink mit Vorschaubild für soziale Medien oder exportiere das Board als PNG für X. Wer den Link hat, sieht dein Board — auch ohne Account."
+        "body": "Erstelle einen Kurzlink mit Vorschaubild für soziale Medien oder exportiere das Board als PNG und poste es auf X. Wer den Link öffnet, sieht eine Kopie des Inhalts — er kann nicht auf dein Gerät zugreifen. Auch auf der anderen Seite ist kein Account nötig."
       },
       "data": {
         "num": "06",
@@ -313,23 +313,23 @@
       },
       "q2": {
         "q": "Wo werden meine Daten gespeichert?",
-        "a": "In deinem Browser, auf deinem Gerät. Nichts wird auf unseren Servern gespeichert, sodass deine Boards deinen Computer nie verlassen, es sei denn, du entscheidest dich, eines zu teilen."
+        "a": "Dein Board wird nur in deinem Browser, auf deinem Gerät gespeichert — nicht auf einem Server. Die einzige Ausnahme ist das Teilen: Eine Kopie der URL-Informationen der gewählten Karten (Titel, Vorschaubild und dergleichen) wird für etwa 30 Tage gespeichert und dann automatisch gelöscht. Da es kein Konto gibt, sind nie persönliche Daten enthalten. Wenn du nicht teilst, verlässt nichts dein Gerät."
       },
       "q3": {
         "q": "Wie speichere ich Dinge?",
-        "a": "Auf drei Wegen: eine URL direkt auf das Board einfügen (der Hauptweg), das Bookmarklet in jedem Browser nutzen oder mit einem Tipp per Chrome-Erweiterung speichern."
+        "a": "Auf drei Wegen: eine URL auf das Board einfügen, das Bookmarklet in jedem Browser nutzen oder die Chrome-Erweiterung verwenden. Das Bookmarklet und die Erweiterung speichern mit einem Klick."
       },
       "q4": {
         "q": "Welche Browser funktionieren?",
-        "a": "Jeder moderne Browser funktioniert für das Board und das Bookmarklet. Die Ein-Tipp-Erweiterung ist derzeit Chrome-basiert."
+        "a": "Jeder moderne Browser funktioniert für das Board und das Bookmarklet. Die Ein-Klick-Erweiterung ist derzeit Chrome-basiert."
       },
       "q5": {
         "q": "Kann ich es auf meinem Handy nutzen?",
-        "a": "Ja. Eine URL auf das Board einzufügen funktioniert auf Mobilgeräten, und das Bookmarklet funktioniert auch in mobilen Browsern."
+        "a": "Wir optimieren das mobile Layout noch. Das Speichern selbst — eine URL auf das Board einfügen oder das Bookmarklet nutzen — funktioniert, aber die Darstellung wird noch etwas später verfeinert."
       },
       "q6": {
         "q": "Wie funktioniert das Teilen?",
-        "a": "Du kannst ein Board in einen Kurzlink mit Vorschaubild für soziale Medien umwandeln oder es als PNG exportieren und auf X posten. Ein geteilter Link trägt das Board selbst — auf keiner Seite ist ein Account nötig."
+        "a": "Beim Teilen kannst du eine Kopie der gewählten Karten in einen Kurzlink mit Vorschaubild für soziale Medien umwandeln — oder ein PNG exportieren und auf X posten. Wer den Link öffnet, sieht nur diese Kopie; er kann nicht auf dein Gerät oder dein Board zugreifen. Auf keiner Seite ist ein Account nötig."
       },
       "q7": {
         "q": "Was passiert, wenn ich meine Browserdaten lösche?",
@@ -341,7 +341,7 @@
       },
       "q9": {
         "q": "Brauche ich einen Account?",
-        "a": "Nein. Es gibt nie ein Login — das ist der Punkt. Du bleibst anonym und deine Daten bleiben bei dir."
+        "a": "Nein. Es gibt keinerlei Kontoerstellung oder Login."
       },
       "cta": {
         "heading": "Überzeug dich selbst.",

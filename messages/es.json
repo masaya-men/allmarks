@@ -141,14 +141,14 @@
     "hero": {
       "label": "Gestor visual de marcadores",
       "headline": "Convierte tus enlaces en un tablero visual.",
-      "description": "Guarda vídeos, publicaciones, artículos e imágenes con un clic y ordénalos libremente. Transforma una aburrida lista de texto en un tablero de inspiración que entiendes de un vistazo. Sin registro, totalmente gratis.",
+      "description": "Guarda vídeos, publicaciones, artículos e imágenes con un clic y ordénalos libremente. Transforma una lista simple en un tablero de inspiración que entiendes de un vistazo. Gratis, sin registro.",
       "ctaPrimary": "Abrir el tablero",
       "ctaGhost": "Ver cómo funciona",
       "scrollHint": "desplazar"
     },
     "problem": {
       "headline": "Los acumulas y nunca vuelves a verlos.",
-      "body": "Solo filas de enlaces de texto. Feeds que pasas de largo. No dejes que lo que guardas quede enterrado entre texto plano."
+      "body": "Solo enlaces. Feeds que pasas de largo. No dejes que lo que guardas quede enterrado."
     },
     "features": {
       "capture": {
@@ -160,12 +160,12 @@
         "body": "Arrastra y suelta para ajustar tamaño y posición exactamente como quieras."
       },
       "live": {
-        "title": "Reproduce varios vídeos a la vez.",
-        "body": "Los vídeos de tu tablero se mueven juntos — no es una lista de imágenes estáticas, es un tablero que de verdad vive."
+        "title": "Un tablero que cobra vida.",
+        "body": "El vídeo en foco se reproduce de verdad mientras los demás brillan como imágenes fijas — no es una lista estática, es un tablero visual que vive. Un solo interruptor, MOTION, lo devuelve a la calma de un moodboard."
       },
       "organize": {
-        "title": "Etiqueta para ordenar. Temas para rediseñar.",
-        "body": "Filtra por etiqueta y cambia todo el aspecto con temas. Hay más temas en camino."
+        "title": "Etiqueta para ordenar.",
+        "body": "Filtra por etiqueta para ver solo lo que quieres. Hay más estilos y temas en camino."
       },
       "privacy": {
         "title": "Sin cuenta. Completamente local.",
@@ -207,7 +207,7 @@
       },
       "privacy": {
         "heading": "Privacidad por diseño",
-        "body": "Tus marcadores viven en tu navegador. Sin cuenta, sin rastreo, sin registro. Es gratis, y sigue siendo tuyo."
+        "body": "Tus marcadores viven en tu navegador. Sin cuenta, sin registro. Gratis y tus datos se quedan contigo."
       },
       "openSource": {
         "heading": "Código abierto",
@@ -231,12 +231,12 @@
       "save": {
         "num": "01",
         "heading": "Tres formas de guardar",
-        "body": "Pega una URL directamente en tu tablero — esa es la forma principal. ¿Prefieres un solo clic? Usa el marcador rápido que funciona en cualquier navegador, o la extensión de Chrome para guardar desde cualquier página con un toque."
+        "body": "Tres formas de guardar: pega una URL en tu tablero, usa el marcador rápido, o usa la extensión de Chrome. Con el marcador rápido o la extensión, un clic guarda la página y te permite etiquetarla al momento."
       },
       "board": {
         "num": "02",
         "heading": "Un tablero que tú ordenas",
-        "body": "Las tarjetas se colocan en una cuadrícula limpia — sin inclinaciones. Redimensiona cualquier tarjeta libremente, o elige un ajuste de densidad desde DENSE hasta AMBIENT. Cambia cada tarjeta entre las vistas visual, editorial y native. Etiqueta sin límites; las etiquetas se ordenan alfabéticamente o puedes arrastrarlas a tu propio orden."
+        "body": "Redimensiona cualquier tarjeta libremente, o elige entre distintos ajustes de diseño. Etiqueta sin límites; las etiquetas se ordenan alfabéticamente o puedes arrastrarlas a tu propio orden."
       },
       "motion": {
         "num": "03",
@@ -251,12 +251,12 @@
       "privacy": {
         "num": "05",
         "heading": "Privado por defecto",
-        "body": "Tus marcadores viven en tu navegador. Sin cuenta, sin registro, sin cookies de rastreo. Es gratis y sigue siendo tuyo."
+        "body": "Tus marcadores viven en tu navegador. Sin cuenta, sin registro, sin cookies de rastreo. Gratis y tus datos se quedan contigo."
       },
       "sites": {
         "heading": "Dónde funciona",
         "body": "Las publicaciones de X, YouTube (incluidos Shorts), TikTok, Vimeo y SoundCloud se reproducen directamente en tu tablero. Todo lo demás se guarda con una miniatura limpia.",
-        "note": "Instagram no puede ser integrado por nadie fuera de Instagram, así que esos marcadores abren la página original en su lugar — preferimos ser honestos antes que fingirlo."
+        "note": "Instagram no puede ser integrado desde fuera de Instagram por nadie, así que los marcadores de Instagram abren la página original."
       },
       "cta": {
         "heading": "Empieza tu tablero.",
@@ -281,22 +281,22 @@
       "save": {
         "num": "02",
         "heading": "Tres formas de guardar",
-        "body": "Pegar una URL es la forma principal. Para guardar con un clic, arrastra el marcador rápido a tu barra de marcadores — funciona en todos los navegadores, incluso en el móvil. En Chrome, la extensión guarda desde cualquier página con un toque."
+        "body": "Hay tres formas de guardar: pega una URL en tu tablero, añade el marcador rápido a tu barra de marcadores, o usa la extensión de Chrome. Con el marcador rápido o la extensión, un clic guarda la página y te permite etiquetarla al momento."
       },
       "arrange": {
         "num": "03",
         "heading": "Hazlo tuyo",
-        "body": "Haz clic en una tarjeta para abrirla a tamaño completo. Redimensiona tarjetas o elige un ajuste de densidad, cambia entre las vistas visual / editorial / native, y añade etiquetas. Arrastra tarjetas y etiquetas al orden que prefieras — todo se mantiene en una cuadrícula ordenada."
+        "body": "Haz clic en una tarjeta para abrirla a tamaño completo. Redimensiona tarjetas o elige un ajuste de diseño, y añade etiquetas. Arrastra tarjetas y etiquetas al orden que prefieras — todo se mantiene en una cuadrícula ordenada."
       },
       "play": {
         "num": "04",
         "heading": "Mira cómo cobra vida",
-        "body": "Los vídeos de X, YouTube, TikTok, Vimeo y SoundCloud se reproducen directamente en el tablero — el que está en foco se reproduce de verdad mientras el resto destella como imágenes fijas. Desactiva MOTION en cualquier momento para un silencio total."
+        "body": "Los vídeos de X, YouTube, TikTok, Vimeo y SoundCloud se reproducen directamente en el tablero — el que está en foco se reproduce de verdad mientras el resto brilla como imágenes fijas. Desactiva MOTION en cualquier momento para volver a un moodboard tranquilo."
       },
       "share": {
         "num": "05",
         "heading": "Comparte tu tablero",
-        "body": "Crea un enlace corto con una imagen de vista previa para redes sociales, o exporta el tablero como PNG para publicarlo en X. Cualquiera con el enlace ve tu tablero — sin necesidad de cuenta de su lado tampoco."
+        "body": "Crea un enlace corto con una imagen de vista previa para redes sociales, o exporta el tablero como PNG para publicarlo en X. Comparte el enlace y la otra persona ve una copia del contenido — no puede acceder a tu dispositivo. Tampoco necesita cuenta."
       },
       "data": {
         "num": "06",
@@ -328,23 +328,23 @@
       },
       "q2": {
         "q": "¿Dónde se guardan mis datos?",
-        "a": "En tu navegador, en tu dispositivo. Nada se guarda en nuestros servidores, así que tus tableros nunca salen de tu equipo a menos que elijas compartir uno."
+        "a": "Tu tablero se guarda solo en tu navegador, en tu dispositivo — no en un servidor. La única excepción es cuando compartes: una copia de la información de URL de las tarjetas elegidas (título, imagen de vista previa y similares) se conserva durante unos 30 días y luego se elimina automáticamente. Como no hay cuenta, nunca se incluye información personal. Si no compartes, nada sale de tu dispositivo."
       },
       "q3": {
         "q": "¿Cómo guardo cosas?",
-        "a": "De tres formas: pega una URL directamente en el tablero (la forma principal), usa el marcador rápido en cualquier navegador, o guarda con un toque con la extensión de Chrome."
+        "a": "De tres formas: pega una URL en el tablero, usa el marcador rápido en cualquier navegador, o usa la extensión de Chrome. El marcador rápido y la extensión guardan con un clic."
       },
       "q4": {
         "q": "¿Qué navegadores son compatibles?",
-        "a": "Cualquier navegador moderno funciona con el tablero y el marcador rápido. La extensión de un toque es para Chrome por ahora."
+        "a": "Cualquier navegador moderno funciona con el tablero y el marcador rápido. La extensión de un clic es para Chrome por ahora."
       },
       "q5": {
         "q": "¿Puedo usarlo en el móvil?",
-        "a": "Sí. Pegar una URL en el tablero funciona en móvil, y el marcador rápido también funciona en los navegadores móviles."
+        "a": "Estamos mejorando el diseño para móvil. Guardar en sí — pegar una URL en el tablero o usar el marcador rápido — funciona, pero el aspecto se pulirá un poco más adelante."
       },
       "q6": {
         "q": "¿Cómo funciona el compartir?",
-        "a": "Puedes convertir un tablero en un enlace corto con una imagen de vista previa para redes sociales, o exportarlo como PNG para publicarlo en X. Un enlace compartido lleva el tablero en sí mismo — sin cuenta en ninguno de los lados."
+        "a": "Al compartir, puedes convertir una copia de las tarjetas elegidas en un enlace corto con una imagen de vista previa para redes sociales — o exportar un PNG para publicarlo en X. Quien abra el enlace solo ve esa copia; no puede acceder a tu dispositivo ni a tu tablero. Sin cuenta en ninguno de los lados."
       },
       "q7": {
         "q": "¿Qué pasa si borro los datos del navegador?",
@@ -356,7 +356,7 @@
       },
       "q9": {
         "q": "¿Necesito una cuenta?",
-        "a": "No. No hay inicio de sesión, nunca — ese es el punto. Te mantienes anónimo y tus datos se quedan contigo."
+        "a": "No. No hay creación de cuenta ni inicio de sesión en absoluto."
       },
       "cta": {
         "heading": "Compruébalo tú mismo.",

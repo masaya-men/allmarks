@@ -141,20 +141,20 @@
     "hero": {
       "label": "Trình quản lý dấu trang trực quan",
       "headline": "Biến liên kết thành bảng hình ảnh.",
-      "description": "Lưu video, bài đăng mạng xã hội, bài viết và hình ảnh chỉ bằng một cú nhấp, rồi sắp xếp tự do. Biến danh sách văn bản nhàm chán thành bảng cảm hứng hiểu ngay từ cái nhìn đầu tiên. Không cần đăng ký, hoàn toàn miễn phí.",
+      "description": "Lưu video, bài đăng mạng xã hội, bài viết và hình ảnh chỉ bằng một cú nhấp, rồi sắp xếp tự do. Biến danh sách thông thường thành bảng cảm hứng nắm bắt ngay từ cái nhìn đầu tiên. Miễn phí, không cần đăng ký.",
       "ctaPrimary": "Mở bảng",
       "ctaGhost": "Xem cách hoạt động",
       "scrollHint": "cuộn xuống"
     },
     "problem": {
       "headline": "Bạn cứ tích góp mà chẳng bao giờ xem lại.",
-      "body": "Chỉ là những dòng liên kết văn bản xếp hàng. Dòng feed chỉ để cuộn qua. Đừng để những gì bạn lưu bị chôn vùi trong chữ."
+      "body": "Chỉ là những liên kết. Feed thì cứ cuộn qua. Đừng để những gì bạn lưu bị chôn vùi."
     },
     "features": {
       "capture": { "title": "Từ bất kỳ đâu, thẳng vào bảng.", "body": "Chỉ cần dán URL là xong — X, YouTube, bài viết kỹ thuật, cửa hàng, hình ảnh, bất cứ thứ gì trên web. Muốn lưu một chạm? Tiện ích mở rộng và bookmarklet luôn sẵn sàng." },
       "layout": { "title": "Sắp xếp tự do.", "body": "Kéo và thả để đặt kích thước và vị trí chính xác theo ý bạn." },
-      "live": { "title": "Phát nhiều video cùng lúc.", "body": "Các video trên bảng chạy cùng nhau — không phải danh sách ảnh tĩnh, mà là bảng thực sự sống động." },
-      "organize": { "title": "Gắn thẻ để phân loại. Chủ đề để thay đổi giao diện.", "body": "Lọc theo thẻ và đổi giao diện tổng thể bằng chủ đề. Thêm nhiều chủ đề đang được phát triển." },
+      "live": { "title": "Bảng sống động.", "body": "Video đang được chọn phát thật sự trong khi những video khác lấp lánh như ảnh tĩnh — không phải danh sách ảnh đứng yên, mà là bảng hình ảnh thực sự sống. Một công tắc duy nhất, MOTION, đưa tất cả về yên tĩnh." },
+      "organize": { "title": "Gắn thẻ để phân loại.", "body": "Lọc theo thẻ để tìm đúng thứ bạn cần. Thêm nhiều giao diện và chủ đề đang được phát triển." },
       "privacy": { "title": "Không cần tài khoản. Hoàn toàn cục bộ.", "body": "Mọi thứ đều ở trong trình duyệt của bạn. Không cần tài khoản, không cần đăng ký — quyền riêng tư là của bạn." }
     },
     "share": {
@@ -184,12 +184,12 @@
       "save": {
         "num": "01",
         "heading": "Ba cách lưu",
-        "body": "Dán URL thẳng lên bảng — đó là cách chính. Thích một chạm hơn? Dùng bookmarklet hoạt động trên mọi trình duyệt, hoặc tiện ích mở rộng Chrome để lưu ngay từ bất kỳ trang nào."
+        "body": "Ba cách lưu: dán URL lên bảng, dùng bookmarklet, hoặc dùng tiện ích mở rộng Chrome. Với bookmarklet hoặc tiện ích, một cú nhấp lưu trang và cho phép gắn thẻ ngay tại chỗ."
       },
       "board": {
         "num": "02",
         "heading": "Một bảng do bạn sắp xếp",
-        "body": "Thẻ hiển thị trên lưới gọn gàng — không bao giờ nghiêng. Tự do thay đổi kích thước từng thẻ, hoặc chọn cài đặt mật độ từ DENSE đến AMBIENT. Chuyển đổi mỗi thẻ giữa giao diện visual, editorial và native. Gắn thẻ thoải mái; thẻ sắp xếp theo bảng chữ cái, hoặc kéo thủ công theo thứ tự bạn thích."
+        "body": "Tự do thay đổi kích thước từng thẻ, hoặc chọn từ nhiều cài đặt bố cục có sẵn. Gắn thẻ thoải mái; thẻ sắp xếp theo bảng chữ cái, hoặc kéo thủ công theo thứ tự bạn thích."
       },
       "motion": {
         "num": "03",
@@ -204,12 +204,12 @@
       "privacy": {
         "num": "05",
         "heading": "Riêng tư mặc định",
-        "body": "Dấu trang của bạn sống trong trình duyệt. Không tài khoản, không đăng ký, không cookie theo dõi. Miễn phí, và mãi là của bạn."
+        "body": "Dấu trang của bạn sống trong trình duyệt. Không tài khoản, không đăng ký, không cookie theo dõi. Miễn phí, và dữ liệu vẫn ở với bạn."
       },
       "sites": {
         "heading": "Hoạt động ở đâu",
         "body": "Bài đăng từ X, YouTube (bao gồm Shorts), TikTok, Vimeo và SoundCloud phát ngay trên bảng của bạn. Mọi thứ khác được lưu với ảnh thu nhỏ gọn gàng.",
-        "note": "Instagram không cho phép nhúng bởi bất kỳ ai ngoài Instagram, vì vậy những lưu đó sẽ mở trang gốc thay thế — chúng tôi thà trung thực còn hơn giả tạo."
+        "note": "Instagram không cho phép ai bên ngoài nhúng nội dung, vì vậy những lưu từ Instagram sẽ mở trang gốc."
       },
       "cta": {
         "heading": "Bắt đầu bảng của bạn.",
@@ -232,7 +232,7 @@
       },
       "privacy": {
         "heading": "Riêng tư theo thiết kế",
-        "body": "Dấu trang của bạn sống trong trình duyệt. Không tài khoản, không theo dõi, không đăng ký. Miễn phí, và mãi là của bạn."
+        "body": "Dấu trang của bạn sống trong trình duyệt. Không tài khoản, không đăng ký. Miễn phí, và dữ liệu vẫn ở với bạn."
       },
       "openSource": {
         "heading": "Mã nguồn mở",
@@ -261,22 +261,22 @@
       "save": {
         "num": "02",
         "heading": "Ba cách lưu",
-        "body": "Dán URL là cách chính. Để lưu một chạm, kéo bookmarklet lên thanh dấu trang — hoạt động trên mọi trình duyệt, kể cả điện thoại. Trên Chrome, tiện ích mở rộng lưu từ bất kỳ trang nào chỉ bằng một nhấn."
+        "body": "Có ba cách lưu: dán URL lên bảng, thêm bookmarklet vào thanh dấu trang, hoặc dùng tiện ích mở rộng Chrome. Với bookmarklet hoặc tiện ích, một cú nhấp lưu trang và cho phép gắn thẻ ngay tại chỗ."
       },
       "arrange": {
         "num": "03",
         "heading": "Làm theo cách của bạn",
-        "body": "Nhấp thẻ để mở toàn màn hình. Thay đổi kích thước thẻ hoặc chọn cài đặt mật độ, chuyển đổi giao diện visual / editorial / native và thêm thẻ. Kéo thẻ và nhãn vào thứ tự bạn thích — mọi thứ vẫn giữ trên lưới gọn gàng."
+        "body": "Nhấp thẻ để mở toàn màn hình. Thay đổi kích thước thẻ hoặc chọn cài đặt bố cục có sẵn, và thêm thẻ. Kéo thẻ và nhãn vào thứ tự bạn thích — mọi thứ vẫn giữ trên lưới gọn gàng."
       },
       "play": {
         "num": "04",
         "heading": "Xem bảng sống động",
-        "body": "Video từ X, YouTube, TikTok, Vimeo và SoundCloud phát ngay trên bảng — video đang được xem phát thật trong khi phần còn lại lướt qua như ảnh tĩnh. Tắt MOTION bất cứ lúc nào để lấy lại sự yên tĩnh hoàn toàn."
+        "body": "Video từ X, YouTube, TikTok, Vimeo và SoundCloud phát ngay trên bảng — video đang được chọn phát thật trong khi phần còn lại lấp lánh như ảnh tĩnh. Bật/tắt MOTION bất cứ lúc nào để về lại moodboard yên tĩnh."
       },
       "share": {
         "num": "05",
         "heading": "Chia sẻ bảng của bạn",
-        "body": "Tạo liên kết ngắn kèm ảnh xem trước để đăng mạng xã hội, hoặc xuất bảng dưới dạng PNG để đăng lên X. Bất kỳ ai có liên kết đều xem được bảng của bạn — họ cũng không cần tài khoản."
+        "body": "Tạo liên kết ngắn kèm ảnh xem trước để đăng mạng xã hội, hoặc xuất bảng dưới dạng PNG để đăng lên X. Gửi liên kết đó cho ai là họ thấy bản sao nội dung — họ không thể truy cập vào thiết bị của bạn. Cũng không cần tài khoản từ phía họ."
       },
       "data": {
         "num": "06",
@@ -308,23 +308,23 @@
       },
       "q2": {
         "q": "Dữ liệu của tôi được lưu ở đâu?",
-        "a": "Trong trình duyệt của bạn, trên thiết bị của bạn. Không có gì được lưu trên máy chủ của chúng tôi, vì vậy bảng của bạn không rời khỏi máy trừ khi bạn chủ động chia sẻ."
+        "a": "Bảng của bạn chỉ được lưu trong trình duyệt, trên thiết bị của bạn — không phải trên máy chủ. Ngoại lệ duy nhất là khi bạn chia sẻ: thông tin URL của những thẻ bạn chọn chia sẻ (tiêu đề, ảnh xem trước, v.v.) được giữ trong khoảng 30 ngày rồi tự động xóa. Vì không có tài khoản, không có thông tin cá nhân nào được đưa vào. Nếu bạn không chia sẻ, không có gì rời khỏi thiết bị của bạn."
       },
       "q3": {
         "q": "Làm thế nào để lưu thứ gì đó?",
-        "a": "Ba cách: dán URL thẳng lên bảng (cách chính), dùng bookmarklet trên bất kỳ trình duyệt nào, hoặc lưu một chạm bằng tiện ích mở rộng Chrome."
+        "a": "Ba cách: dán URL lên bảng, dùng bookmarklet trên bất kỳ trình duyệt nào, hoặc dùng tiện ích mở rộng Chrome. Bookmarklet và tiện ích lưu chỉ bằng một cú nhấp."
       },
       "q4": {
         "q": "Những trình duyệt nào hoạt động?",
-        "a": "Mọi trình duyệt hiện đại đều dùng được bảng và bookmarklet. Tiện ích mở rộng một chạm hiện chỉ dành cho Chrome."
+        "a": "Mọi trình duyệt hiện đại đều dùng được bảng và bookmarklet. Tiện ích mở rộng một cú nhấp hiện chỉ dành cho Chrome."
       },
       "q5": {
         "q": "Tôi có dùng được trên điện thoại không?",
-        "a": "Có. Dán URL lên bảng hoạt động trên điện thoại, và bookmarklet cũng hoạt động trên trình duyệt di động."
+        "a": "Chúng tôi vẫn đang tối ưu giao diện di động. Việc lưu — dán URL lên bảng hoặc dùng bookmarklet — hoạt động được, nhưng giao diện sẽ được hoàn thiện thêm sau."
       },
       "q6": {
         "q": "Chia sẻ hoạt động như thế nào?",
-        "a": "Bạn có thể biến bảng thành liên kết ngắn kèm ảnh xem trước để đăng mạng xã hội, hoặc xuất dưới dạng PNG để đăng lên X. Liên kết chia sẻ mang theo chính bảng đó — không cần tài khoản ở cả hai phía."
+        "a": "Khi chia sẻ, bạn có thể biến bản sao của những thẻ đã chọn thành liên kết ngắn kèm ảnh xem trước để đăng mạng xã hội — hoặc xuất dưới dạng PNG để đăng lên X. Ai mở liên kết đó chỉ thấy bản sao đó; họ không thể truy cập thiết bị hay bảng của bạn. Không cần tài khoản từ cả hai phía."
       },
       "q7": {
         "q": "Điều gì xảy ra nếu tôi xóa dữ liệu trình duyệt?",
@@ -336,7 +336,7 @@
       },
       "q9": {
         "q": "Tôi có cần tài khoản không?",
-        "a": "Không. Không bao giờ có đăng nhập — đó chính là điểm mấu chốt. Bạn ở ẩn danh và dữ liệu ở với bạn."
+        "a": "Không. Hoàn toàn không có tạo tài khoản hay đăng nhập gì cả."
       },
       "cta": {
         "heading": "Tự mình trải nghiệm.",

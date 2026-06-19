@@ -141,14 +141,14 @@
     "hero": {
       "label": "Gestore visivo di segnalibri",
       "headline": "Trasforma i link in una bacheca visiva.",
-      "description": "Salva video, post social, articoli e immagini con un clic, poi disponili liberamente. Trasforma una noiosa lista di testo in una bacheca d'ispirazione che capisci a colpo d'occhio. Nessuna registrazione, completamente gratuito.",
+      "description": "Salva video, post social, articoli e immagini con un clic, poi disponili liberamente. Trasforma una semplice lista in una bacheca d'ispirazione che capisci a colpo d'occhio. Gratuito, senza registrazione.",
       "ctaPrimary": "Apri la bacheca",
       "ctaGhost": "Scopri come funziona",
       "scrollHint": "scorri"
     },
     "problem": {
       "headline": "Li accumuli e non li guardi mai più.",
-      "body": "Solo righe di link di testo. Feed che scorrono via. Non lasciare che ciò che salvi venga sepolto nel testo."
+      "body": "Solo link. Feed che scorrono via. Non lasciare che ciò che salvi venga sepolto."
     },
     "features": {
       "capture": {
@@ -160,12 +160,12 @@
         "body": "Trascina e rilascia per impostare dimensione e posizione esattamente come vuoi."
       },
       "live": {
-        "title": "Riproduci più video contemporaneamente.",
-        "body": "I video sulla tua bacheca si muovono insieme — non è una lista di immagini statiche, ma una bacheca davvero viva."
+        "title": "Una bacheca che prende vita.",
+        "body": "Il video in primo piano si riproduce davvero mentre gli altri brillano come fotogrammi fermi — non una lista di immagini statiche, ma una bacheca viva. Un solo interruttore, MOTION, la riporta alla quiete di un moodboard."
       },
       "organize": {
-        "title": "Tag per ordinare. Temi per rinnovare.",
-        "body": "Filtra per tag e cambia l'aspetto complessivo con i temi. Altri temi sono in arrivo."
+        "title": "Tag per ordinare.",
+        "body": "Filtra per tag per trovare esattamente quello che cerchi. Altre visualizzazioni e temi sono in arrivo."
       },
       "privacy": {
         "title": "Nessun account. Completamente locale.",
@@ -204,12 +204,12 @@
       "save": {
         "num": "01",
         "heading": "Salva in tre modi",
-        "body": "Incolla un URL direttamente sulla bacheca — è il modo principale. Preferisci un clic? Usa il bookmarklet che funziona in qualsiasi browser, oppure l'estensione Chrome per salvare da qualsiasi pagina con un tocco."
+        "body": "Tre modi per salvare: incolla un URL sulla bacheca, usa il bookmarklet, oppure usa l'estensione Chrome. Con il bookmarklet o l'estensione, un clic salva la pagina e ti permette di aggiungerle un tag subito."
       },
       "board": {
         "num": "02",
         "heading": "Una bacheca che organizzi tu",
-        "body": "Le card si dispongono su una griglia ordinata — mai inclinate. Ridimensiona ogni card liberamente, oppure scegli un preset di densità da DENSE a AMBIENT. Passa ogni card tra le visualizzazioni visual, editorial e native. Aggiungi tag liberamente; i tag si ordinano alfabeticamente, oppure trascinali nell'ordine che preferisci."
+        "body": "Ridimensiona ogni card liberamente, oppure scegli tra una serie di preset di layout. Aggiungi tag liberamente; i tag si ordinano alfabeticamente, oppure trascinali nell'ordine che preferisci."
       },
       "motion": {
         "num": "03",
@@ -224,12 +224,12 @@
       "privacy": {
         "num": "05",
         "heading": "Privata per impostazione predefinita",
-        "body": "I tuoi segnalibri vivono nel tuo browser. Nessun account, nessuna registrazione, nessun cookie di tracciamento. È gratuito, e resta tuo."
+        "body": "I tuoi segnalibri vivono nel tuo browser. Nessun account, nessuna registrazione, nessun cookie di tracciamento. Gratuito, e i tuoi dati rimangono con te."
       },
       "sites": {
         "heading": "Dove funziona",
         "body": "I post da X, YouTube (inclusi gli Shorts), TikTok, Vimeo e SoundCloud si riproducono direttamente sulla bacheca. Tutto il resto viene salvato con una miniatura pulita.",
-        "note": "Instagram non può essere incorporato da nessuno al di fuori di Instagram, quindi quei salvataggi aprono la pagina originale — preferiamo essere onesti piuttosto che fingere."
+        "note": "Instagram non può essere incorporato da nessuno al di fuori di Instagram, quindi i salvataggi Instagram aprono la pagina originale."
       },
       "cta": {
         "heading": "Inizia la tua bacheca.",
@@ -252,7 +252,7 @@
       },
       "privacy": {
         "heading": "Privacy by design",
-        "body": "I tuoi segnalibri vivono nel tuo browser. Nessun account, nessun tracciamento, nessuna registrazione. È gratuito, e resta tuo."
+        "body": "I tuoi segnalibri vivono nel tuo browser. Nessun account, nessuna registrazione. Gratuito, e i tuoi dati rimangono con te."
       },
       "openSource": {
         "heading": "Open source",
@@ -281,22 +281,22 @@
       "save": {
         "num": "02",
         "heading": "Tre modi per salvare",
-        "body": "Incollare un URL è il modo principale. Per salvare con un clic, trascina il bookmarklet nella barra dei segnalibri — funziona in ogni browser, anche sul telefono. Su Chrome, l'estensione salva da qualsiasi pagina con un tocco."
+        "body": "Ci sono tre modi per salvare: incolla un URL sulla bacheca, aggiungi il bookmarklet alla barra dei segnalibri, oppure usa l'estensione Chrome. Con il bookmarklet o l'estensione, un clic salva la pagina e ti permette di aggiungerle un tag subito."
       },
       "arrange": {
         "num": "03",
         "heading": "Personalizzala",
-        "body": "Clicca su una card per aprirla a schermo intero. Ridimensiona le card o scegli un preset di densità, passa tra le visualizzazioni visual / editorial / native e aggiungi tag. Trascina card e tag nell'ordine che preferisci — tutto rimane su una griglia ordinata."
+        "body": "Clicca su una card per aprirla a schermo intero. Ridimensiona le card o scegli un preset di layout, e aggiungi tag. Trascina card e tag nell'ordine che preferisci — tutto rimane su una griglia ordinata."
       },
       "play": {
         "num": "04",
         "heading": "Guardala prendere vita",
-        "body": "I video da X, YouTube, TikTok, Vimeo e SoundCloud si riproducono direttamente sulla bacheca — quello in primo piano riproduce davvero mentre gli altri scorrono come fotogrammi. Disattiva MOTION in qualsiasi momento per il silenzio totale."
+        "body": "I video da X, YouTube, TikTok, Vimeo e SoundCloud si riproducono direttamente sulla bacheca — il video in primo piano si riproduce davvero mentre gli altri brillano come fotogrammi fermi. Disattiva MOTION in qualsiasi momento per ritrovare la quiete di un moodboard."
       },
       "share": {
         "num": "05",
         "heading": "Condividi la tua bacheca",
-        "body": "Crea un link breve con un'immagine di anteprima per i social, oppure esporta la bacheca come PNG da pubblicare su X. Chiunque abbia il link vede la tua bacheca — senza account anche da parte loro."
+        "body": "Crea un link breve con un'immagine di anteprima per i social, oppure esporta la bacheca come PNG da pubblicare su X. Consegna il link e l'altra persona vedrà una copia del contenuto — non potrà accedere al tuo dispositivo. Nessun account neanche da parte loro."
       },
       "data": {
         "num": "06",
@@ -328,23 +328,23 @@
       },
       "q2": {
         "q": "Dove vengono archiviati i miei dati?",
-        "a": "Nel tuo browser, sul tuo dispositivo. Nulla viene conservato sui nostri server, quindi le tue bacheche non lasciano mai il tuo computer a meno che tu non scelga di condividerne una."
+        "a": "La tua bacheca è archiviata solo nel tuo browser, sul tuo dispositivo — non su un server. L'unica eccezione è quando condividi: una copia delle informazioni URL delle schede scelte (titolo, immagine di anteprima e simili) viene conservata per circa 30 giorni, poi eliminata automaticamente. Poiché non esiste un account, non vengono mai incluse informazioni personali. Se non condividi, nulla lascia il tuo dispositivo."
       },
       "q3": {
         "q": "Come faccio a salvare le cose?",
-        "a": "In tre modi: incolla un URL direttamente sulla bacheca (il modo principale), usa il bookmarklet in qualsiasi browser, oppure salva con un tocco tramite l'estensione Chrome."
+        "a": "In tre modi: incolla un URL sulla bacheca, usa il bookmarklet in qualsiasi browser, oppure usa l'estensione Chrome. Il bookmarklet e l'estensione salvano con un clic."
       },
       "q4": {
         "q": "Quali browser funzionano?",
-        "a": "Qualsiasi browser moderno funziona per la bacheca e il bookmarklet. L'estensione con un tocco è al momento basata su Chrome."
+        "a": "Qualsiasi browser moderno funziona per la bacheca e il bookmarklet. L'estensione con un clic è al momento basata su Chrome."
       },
       "q5": {
         "q": "Posso usarlo sul telefono?",
-        "a": "Sì. Incollare un URL sulla bacheca funziona su mobile, e il bookmarklet funziona anche nei browser mobile."
+        "a": "Stiamo ancora ottimizzando il layout mobile. Salvare in sé — incollare un URL sulla bacheca o usare il bookmarklet — funziona, ma l'aspetto verrà rifinito un po' più avanti."
       },
       "q6": {
         "q": "Come funziona la condivisione?",
-        "a": "Puoi trasformare una bacheca in un link breve con un'immagine di anteprima per i social, oppure esportarla come PNG da pubblicare su X. Un link condiviso porta con sé la bacheca stessa — senza account da nessuna delle due parti."
+        "a": "Quando condividi, puoi trasformare una copia delle schede scelte in un link breve con un'immagine di anteprima per i social, oppure esportare un PNG da pubblicare su X. Chi apre il link vede solo quella copia; non può accedere al tuo dispositivo né alla tua bacheca. Nessun account da nessuna delle due parti."
       },
       "q7": {
         "q": "Cosa succede se cancello i dati del browser?",
@@ -356,7 +356,7 @@
       },
       "q9": {
         "q": "Ho bisogno di un account?",
-        "a": "No. Non c'è mai un accesso — è proprio questo il punto. Resti anonimo e i tuoi dati rimangono con te."
+        "a": "No. Non è prevista alcuna creazione di account né accesso."
       },
       "cta": {
         "heading": "Scoprilo di persona.",
