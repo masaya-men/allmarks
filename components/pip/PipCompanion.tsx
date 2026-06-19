@@ -4,10 +4,13 @@ import { useEffect, useRef, useState, useCallback, type ReactElement } from 'rea
 import { initDB, getAllBookmarks, type TagRecord } from '@/lib/storage/indexeddb'
 import { getAllTags, addTagToBookmark, addTag } from '@/lib/storage/tags'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
-import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkUpdated } from '@/lib/board/channel'
+import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
 import { broadcastPipOpen, broadcastPipClosed, subscribePipPresence } from '@/lib/board/pip-presence'
 import { resolveThumbnail } from '@/lib/pip/resolve-thumbnail'
+import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
+import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 import { TagAddPopover } from '@/components/board/TagAddPopover'
+import { PasteSaveFeedback } from '@/components/board/PasteSaveFeedback'
 import { PipEmptyState } from './PipEmptyState'
 import { PipStack, type PipStackCard } from './PipStack'
 import styles from './PipCompanion.module.css'
@@ -32,6 +35,20 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   // adding `cards` to its useCallback deps (which would recreate it every render).
   const cardsRef = useRef(cards)
   useEffect(() => { cardsRef.current = cards }, [cards])
+
+  // Paste-to-save inside the PiP window. Listen on the PiP window's OWN
+  // document (the host node's ownerDocument, resolved after mount) and reuse
+  // the board's ingest. A saved paste broadcasts bookmark-saved, which the
+  // subscribeBookmarkSaved effect below appends + auto-scrolls to — so the
+  // pasted card lands at the front, ready for +TAG. No direct buffer insert
+  // here (that would double the card with the broadcast append).
+  const hostRef = useRef<HTMLDivElement | null>(null)
+  const [pipDoc, setPipDoc] = useState<Document | null>(null)
+  useEffect(() => { setPipDoc(hostRef.current?.ownerDocument ?? null) }, [])
+  const { feedback: pasteFeedback } = useUrlPasteSave({
+    onSaved: (bookmarkId) => postBookmarkSaved({ bookmarkId }),
+    targetDocument: pipDoc,
+  })
 
   // Full tag master — feeds the popover's ALL TAGS section and the case-
   // insensitive dedupe in handleAddNew. Loaded on mount and refreshed whenever
@@ -190,7 +207,8 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   const menuCard = tagMenuFor !== null ? cards.find((c) => c.id === tagMenuFor) : undefined
 
   return (
-    <div className={styles.host}>
+    <div className={styles.host} ref={hostRef}>
+      <PasteSaveFeedback feedback={pasteFeedback} themeId={DEFAULT_THEME_ID} />
       {cards.length === 0 ? (
         <PipEmptyState />
       ) : (

@@ -10,14 +10,21 @@ const DUPLICATE_MS = 1600
 
 export function useUrlPasteSave(opts: {
   onSaved: (bookmarkId: string) => void | Promise<void>
+  /** Document to listen on. Omit for the main board document; pass the PiP
+   *  window's document (e.g. `hostRef.current?.ownerDocument`) to ingest
+   *  pastes made while the Pop Out window is focused. */
+  targetDocument?: Document | null
 }): { feedback: PasteFeedback } {
   const [feedback, setFeedback] = useState<PasteFeedback>({ kind: null })
   const onSavedRef = useRef(opts.onSaved)
   onSavedRef.current = opts.onSaved
   const busyRef = useRef(false)
   const dupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const targetDocument = opts.targetDocument
 
   useEffect(() => {
+    const doc = targetDocument ?? (typeof document !== 'undefined' ? document : null)
+    if (!doc) return
     const handler = async (e: ClipboardEvent): Promise<void> => {
       if (busyRef.current) return
       if (isEditableTarget(e.target)) return
@@ -48,15 +55,15 @@ export function useUrlPasteSave(opts: {
       }
     }
     const listener = (e: Event): void => { void handler(e as ClipboardEvent) }
-    document.addEventListener('paste', listener)
+    doc.addEventListener('paste', listener)
     return (): void => {
-      document.removeEventListener('paste', listener)
+      doc.removeEventListener('paste', listener)
       if (dupTimerRef.current !== null) {
         clearTimeout(dupTimerRef.current)
         dupTimerRef.current = null
       }
     }
-  }, [])
+  }, [targetDocument])
 
   return { feedback }
 }

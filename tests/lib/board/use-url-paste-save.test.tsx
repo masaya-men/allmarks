@@ -14,11 +14,15 @@ vi.mock('@/lib/board/paste-ingest', async (orig) => {
 import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
 import * as indexeddb from '@/lib/storage/indexeddb'
 
-function paste(text: string, target: EventTarget = document.body): void {
+function pasteOn(doc: Document, text: string, target: EventTarget): void {
   const e = new Event('paste', { bubbles: true }) as Event & { clipboardData: unknown }
   ;(e as { clipboardData: unknown }).clipboardData = { getData: () => text }
   Object.defineProperty(e, 'target', { value: target })
-  document.dispatchEvent(e)
+  doc.dispatchEvent(e)
+}
+
+function paste(text: string, target: EventTarget = document.body): void {
+  pasteOn(document, text, target)
 }
 
 describe('useUrlPasteSave', () => {
@@ -72,6 +76,19 @@ describe('useUrlPasteSave', () => {
     act(() => paste('https://example.com/existing'))
     await waitFor(() => expect(result.current.feedback.kind).toBe('duplicate'))
     expect(onSaved).not.toHaveBeenCalled()
+  })
+
+  it('listens on the provided targetDocument (PiP), not the main document', async () => {
+    const otherDoc = document.implementation.createHTMLDocument('pip')
+    const onSaved = vi.fn()
+    renderHook(() => useUrlPasteSave({ onSaved, targetDocument: otherDoc }))
+    // A paste on the MAIN document must be ignored — the listener is on otherDoc.
+    act(() => paste('https://example.com'))
+    await new Promise((r) => setTimeout(r, 30))
+    expect(onSaved).not.toHaveBeenCalled()
+    // A paste on the provided document ingests and calls onSaved.
+    act(() => pasteOn(otherDoc, 'https://example.com', otherDoc.body))
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith('b1'))
   })
 
   it('never sets feedback.kind to loading for embeddable URLs (YouTube)', async () => {
