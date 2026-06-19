@@ -36,14 +36,18 @@ export function LanguageSwitcher(): React.ReactElement {
       {open && (
         <ul className={styles.list} role="listbox" aria-label="Language">
           {SUPPORTED_LOCALES.map((loc) => (
-            <li key={loc}>
+            <li key={loc} role="presentation">
               <button
                 type="button"
+                role="option"
                 className={styles.option}
                 aria-selected={loc === locale}
                 onClick={() => pick(loc)}
               >
-                {LANGUAGE_ENDONYMS[loc]}
+                {loc === locale && <span aria-hidden className={styles.check}>✓</span>}
+                <span className={styles.label} data-glitch-text={LANGUAGE_ENDONYMS[loc]}>
+                  {LANGUAGE_ENDONYMS[loc]}
+                </span>
               </button>
             </li>
           ))}
@@ -57,8 +61,24 @@ export function LanguageSwitcher(): React.ReactElement {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span aria-hidden className={styles.globe}>🌐</span>
-        <span className={styles.code}>{locale.toUpperCase()}</span>
+        <svg
+          aria-hidden
+          className={styles.globe}
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18" />
+          <path d="M12 3c3.2 3 3.2 15 0 18M12 3c-3.2 3-3.2 15 0 18" />
+        </svg>
+        <span className={styles.code} data-glitch-text={locale.toUpperCase()}>
+          {locale.toUpperCase()}
+        </span>
       </button>
     </div>
   )

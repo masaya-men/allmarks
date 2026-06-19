@@ -6,48 +6,162 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  font-family: var(--font-geist-mono, monospace);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
 }
+
+/* Toggle — no pill. Matches the top chrome buttons exactly: bare monospace
+   text, uppercase, letter-spaced, black text-stroke for legibility over the
+   board, and the RGB glitch hover. The globe rides on currentColor so it
+   brightens with the text. */
 .toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: 32px;
-  padding: 6px 10px;
-  background: rgba(10, 10, 10, 0.72);
-  color: #e8e8e8;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  padding: 8px 4px;
+  background: none;
+  border: none;
   cursor: pointer;
-  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.85);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
+  paint-order: stroke fill;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  transition: color 0.15s;
 }
-.globe { font-size: 14px; line-height: 1; }
-.code { font-weight: 600; }
+.toggle:hover { color: rgba(255, 255, 255, 1); }
+.toggle:focus-visible {
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.globe {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+.code {
+  position: relative;
+  display: inline-block;
+  font-weight: 600;
+}
+
+/* RGB ghost copies for the glitch hover — same recipe as ChromeButton, on the
+   text spans (.code on the toggle, .label on each option). */
+.code::before, .code::after,
+.label::before, .label::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  -webkit-text-stroke: 0;
+  paint-order: fill;
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+}
+.toggle:hover .code::before,
+.option:hover .label::before {
+  color: #ff9d3f;
+  animation: lang-glitch-a 700ms steps(7, end);
+}
+.toggle:hover .code::after,
+.option:hover .label::after {
+  color: #50c8ff;
+  animation: lang-glitch-b 700ms steps(7, end);
+}
+
+/* Dropdown list — dark glass menu (same surface language as the TUNE drawer),
+   fade-masked scroll (no raw scrollbar), slides up on open. */
 .list {
   list-style: none;
   margin: 0;
   padding: 6px;
-  max-height: 320px;
+  width: 150px;
+  max-height: 300px;
   overflow-y: auto;
   background: rgba(10, 10, 10, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  transform-origin: bottom right;
+  animation: lang-list-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+.list::-webkit-scrollbar { display: none; }
+
 .option {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
   width: 100%;
-  text-align: right;
-  padding: 7px 12px;
+  padding: 7px 10px;
   min-height: 32px;
   background: transparent;
-  color: #cfcfcf;
   border: 0;
-  border-radius: 8px;
-  font-size: 13px;
   cursor: pointer;
+  color: rgba(255, 255, 255, 0.82);
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  transition: color 0.15s;
 }
-.option:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.option:hover { color: #fff; }
 .option[aria-selected='true'] { color: #fff; }
+.label {
+  position: relative;
+  display: inline-block;
+}
+.check {
+  color: #28f100;
+  font-size: 12px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list { animation: none; }
+  .toggle:hover .code::before, .toggle:hover .code::after,
+  .option:hover .label::before, .option:hover .label::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Module-scoped keyframes (CSS Modules scopes animation-name, so they must
+   live here — same shapes as ChromeButton's glitch). */
+@keyframes lang-list-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes lang-glitch-a {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(3px, -1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(-5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(-3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+@keyframes lang-glitch-b {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(-3px, 1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
