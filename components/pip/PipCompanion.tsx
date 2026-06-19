@@ -7,6 +7,7 @@ import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
 import { broadcastPipOpen, broadcastPipClosed, subscribePipPresence } from '@/lib/board/pip-presence'
 import { resolveThumbnail } from '@/lib/pip/resolve-thumbnail'
+import { pipDisplayThumbnail } from '@/lib/pip/pip-thumbnail'
 import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
 import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 import { TagAddPopover } from '@/components/board/TagAddPopover'
@@ -114,7 +115,9 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
       const initial: PipStackCard = {
         id: bm.id,
         title: bm.title,
-        thumbnail: bm.thumbnail ?? '',
+        // No-image sites fall back to the same placeholder artwork the board
+        // uses (pickPlaceholderImage), so the PiP card matches the board.
+        thumbnail: pipDisplayThumbnail(bm.thumbnail ?? '', bm.url),
         favicon: bm.favicon ?? '',
         currentTagIds: [...bm.tags],
         // Relevant-first existing tags, capped at the industry-standard 5 —
@@ -129,8 +132,8 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
       // the right end (we filter the prior copy out first).
       setCards((prev) => [...prev.filter((c) => c.id !== initial.id), initial])
 
-      const resolved = await resolveThumbnail(bm)
-      if (resolved && resolved !== initial.thumbnail) {
+      const resolved = pipDisplayThumbnail(await resolveThumbnail(bm), bm.url)
+      if (resolved !== initial.thumbnail) {
         setCards((prev) => prev.map((c) => (c.id === bm.id ? { ...c, thumbnail: resolved } : c)))
       }
     })
