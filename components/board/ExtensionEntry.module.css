@@ -124,7 +124,7 @@
   user-select: none;
 }
 .drawer[data-open='true'] {
-  max-height: 320px;
+  max-height: 380px;
   padding: 22px 24px 24px;
   pointer-events: auto;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
@@ -175,6 +175,10 @@
   background: rgba(255, 255, 255, 0.09);
   border-color: rgba(255, 255, 255, 0.28);
   color: #fff;
+}
+/* Stacked actions (SAVE WITHOUT EXTENSION + OPEN EXTENSION SETTINGS) breathe. */
+.panelCta + .panelCta {
+  margin-top: 8px;
 }
 
 @keyframes promo-in {

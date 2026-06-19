@@ -8,7 +8,7 @@ beforeEach(() => {
 
 describe('ExtensionEntry settings drawer', () => {
   it('opens the drawer on hover and reflects the toggle state', () => {
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={() => {}} />)
+    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={() => {}} onOpenBookmarkletModal={() => {}} />)
     // TUNE-style hover open: the drawer expands when the wrapper is entered.
     fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
     const toggle = screen.getByTestId('quick-tag-toggle') as HTMLInputElement
@@ -17,7 +17,7 @@ describe('ExtensionEntry settings drawer', () => {
 
   it('calls onQuickTagToggle when toggled', () => {
     const onToggle = vi.fn()
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} />)
+    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} onOpenBookmarkletModal={() => {}} />)
     fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
     fireEvent.click(screen.getByTestId('quick-tag-toggle'))
     expect(onToggle).toHaveBeenCalledWith(false)
@@ -28,7 +28,7 @@ describe('ExtensionEntry settings drawer', () => {
     // because the /save window reads the same setting.
     delete document.documentElement.dataset.booklageExtension
     const onToggle = vi.fn()
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} />)
+    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} onOpenBookmarkletModal={() => {}} />)
     fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
     expect(screen.getByTestId('extension-settings')).toBeTruthy()
     fireEvent.click(screen.getByTestId('quick-tag-toggle'))
@@ -36,5 +36,19 @@ describe('ExtensionEntry settings drawer', () => {
     // The drawer folds the GET EXTENSION promo in (no OPEN EXTENSION SETTINGS).
     expect(screen.getByTestId('get-extension-block')).toBeTruthy()
     expect(screen.queryByTestId('open-extension-settings')).toBeNull()
+  })
+
+  it('opens the bookmarklet install modal from SAVE WITHOUT EXTENSION', () => {
+    const onOpen = vi.fn()
+    render(
+      <ExtensionEntry
+        quickTagEnabled={true}
+        onQuickTagToggle={() => {}}
+        onOpenBookmarkletModal={onOpen}
+      />,
+    )
+    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    fireEvent.click(screen.getByTestId('open-bookmarklet-install'))
+    expect(onOpen).toHaveBeenCalledTimes(1)
   })
 })

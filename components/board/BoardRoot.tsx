@@ -62,7 +62,6 @@ import { type UndoEntry, MAX_UNDO_STACK, pushBounded } from '@/lib/board/undo-st
 import { PRESETS, type PresetId } from '@/lib/board/tune-presets'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
-import { BookmarkletPill } from '@/components/bookmarklet/BookmarkletPill'
 import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Lightbox } from './Lightbox'
@@ -1726,10 +1725,10 @@ export function BoardRoot() {
           ため、 footer 全体デザイン (= 広告含む) を別 sprint で再設計してから
           差し戻す。 復活させるには下行のコメントアウトを外す。 */}
       {/* <BoardChrome /> */}
-      {/* Provisional onboarding affordance for early testers — drag the
-          pill into the browser bookmark bar to install AllMarks. Revisit
-          once the marketing site handles install on its own. */}
-      <BookmarkletPill />
+      {/* The always-on bottom-left bookmarklet pill was removed (session 114).
+          The no-extension install path now lives in SETTINGS ("SAVE WITHOUT
+          EXTENSION" → BookmarkletInstallModal) and the empty-state welcome,
+          and will become the onboarding flow's primary step. */}
       {/* MOTION switch + active-filter readout live in the outer frame's TOP
           BAND (the empty margin above the canvas), right edge aligned to the
           canvas action row's SHARE button. Placing them here — OUTSIDE the
@@ -1789,6 +1788,7 @@ export function BoardRoot() {
               <ExtensionEntry
                 quickTagEnabled={quickTagEnabled}
                 onQuickTagToggle={handleQuickTagToggle}
+                onOpenBookmarkletModal={handleOpenBookmarkletModal}
               />
               <TagButton
                 onClick={(): void => {

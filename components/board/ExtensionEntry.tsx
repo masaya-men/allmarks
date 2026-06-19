@@ -74,6 +74,11 @@ function useExtensionInstalled(): boolean {
 export interface ExtensionEntryProps {
   readonly quickTagEnabled: boolean
   readonly onQuickTagToggle: (next: boolean) => void
+  /** Opens the bookmarklet install modal (drag-to-bookmark-bar). The permanent
+   *  home for the no-extension save path now that the always-on board pill is
+   *  gone — reachable here regardless of extension status (Firefox / Safari /
+   *  mobile users still need it). */
+  readonly onOpenBookmarkletModal: () => void
 }
 
 /** Hover-open leave grace, copied from TuneTrigger so the SETTINGS drawer
@@ -83,6 +88,7 @@ const LEAVE_GRACE_MS = 700
 export function ExtensionEntry({
   quickTagEnabled,
   onQuickTagToggle,
+  onOpenBookmarkletModal,
 }: ExtensionEntryProps): ReactElement {
   const installed = useExtensionInstalled()
   // SETTINGS is always shown (extension or not) so the QUICK-TAG ON SAVE
@@ -157,6 +163,14 @@ export function ExtensionEntry({
             data-testid="quick-tag-toggle"
           />
         </label>
+        <button
+          type="button"
+          className={styles.panelCta}
+          onClick={onOpenBookmarkletModal}
+          data-testid="open-bookmarklet-install"
+        >
+          SAVE WITHOUT EXTENSION
+        </button>
         {installed ? (
           <button
             type="button"
