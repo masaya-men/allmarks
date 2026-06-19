@@ -1,0 +1,53 @@
+/* PasteSaveFeedback — centered fixed overlay for paste-to-save feedback.
+ * loading = themed SoundWaveWorking + SAVING label in a glass panel.
+ * duplicate = amber pill matching the existing AllMarks pill vocabulary. */
+
+.root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  /* z-index applied inline from BOARD_Z_INDEX.PASTE_FEEDBACK */
+}
+
+/* Loading panel: glass card with sound-wave motif + SAVING label */
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 28px;
+  border-radius: 16px;
+  background: rgba(18, 18, 22, 0.88);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.40),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+.label {
+  font: 600 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.60);
+}
+
+/* Duplicate pill: amber — matches AllMarks ⚠ amber vocabulary */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 20px;
+  border-radius: 999px;
+  background: rgba(255, 176, 32, 0.15);
+  border: 1px solid rgba(255, 176, 32, 0.35);
+  box-shadow:
+    0 0 16px rgba(255, 176, 32, 0.20),
+    0 4px 16px rgba(0, 0, 0, 0.28);
+  font: 500 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  color: #FFB020;
+  white-space: nowrap;
+}
