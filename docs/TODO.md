@@ -21,7 +21,18 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 114 — 拡張ストア提出準備 完了 + タグメニュー2種 改修)
+### 直近の状態 (セッション 115 — ブックマークレット設置モーダルの改良 完了・本番反映済)
+
+**ゴール(A)「設置モーダルを chrome 語彙に寄せる + 古いコピー修正」を完走。本番 `allmarks.app` 反映済(`163232d8`)、tsc0/vitest1390/build OK/隔離レンダで glass+glitch+コピー目視済。**
+
+1. **見た目**: `BookmarkletInstallModal` を汎用ダークカード → **ダークガラス**(`rgba(12,12,12,.94)`+blur+細白枠、TUNEドロワー/言語リストと同表面)。タイトル&ドラッグチップを**等幅・大文字**化、`📌`撤去 → **細線の緑しおりSVG**(A緑 `#28f100`)。チップ文字は `data-glitch-text` で**RGBグリッチホバー**(ChromeButtonと同 recipe)。チップのブックマーク名は textContent = 綺麗に「AllMarks」だけ(絵文字が名前に焼かれない)。
+2. **コピー(15言語同期)**: `usageStep3`「フォルダ選択→保存」(フォルダ廃止済) → 「小さな確認ウィンドウが保存を表示 — そのままタグも付けられます」。`usageStep2` の `📌`→AllMarks、`linkLabel` 「📌 AllMarks」→「AllMarks」。新キー追加なしで全15言語の値だけ更新(パリティ不変)。`BookmarkletInstallModal.{tsx,module.css}` + `messages/*.json`。
+3. **🚩未処理の関連箇所**: サイドバーLIBRARYにも `BookmarkletInstall` 行が生きており([Sidebar.tsx:86](../components/board/Sidebar.tsx#L86) → [BookmarkletInstall.tsx:15](../components/bookmarklet/BookmarkletInstall.tsx#L15))**まだ `📌` を使っている**。同じモーダルを開く第2の入口。ユーザー判断待ち(直すなら細線しおりSVG化 or 行自体の要否確認)。
+4. **次**: (B)ユーザーがストア提出 / (C)オンボーディング本体 / (D)残り公開前TODO。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+### 一つ前 (セッション 114 — 拡張ストア提出準備 完了 + タグメニュー2種 改修)
 
 **ゴール「拡張ストア素材の2判断 → 提出準備」を完走。途中、保存UXの中核のタグメニュー2種をユーザー要望で再デザイン。全コミット+push 済(git=本番一致)。**
 
