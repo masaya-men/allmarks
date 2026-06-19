@@ -28,7 +28,9 @@
 1. **拡張ストア提出準備 完了**: 掲載言語=**英+日**確定([docs/extension-store-submission.md](./extension-store-submission.md) §1J に日本語掲載文)。スクショ②+プロモタイル+アイコンを生成 → `dist/store-assets/`(本番ボードに CC0/PD画像40点を Playwright で IDB 直接注入→撮影→sharp で 1280×800/440×280)。`options.html` の no-server 文を拡張限定に正直化。`pnpm package:extension` で zip 再生成(`dist/booklage-extension-0.1.20.zip`、修正反映を unzip 検証)。**提出はユーザー作業**(デベロッパー登録 約¥800・一度きり)。
 2. **floating-button タグメニュー(拡張)= 端ドック+TUNE風スライド**(実機OK): ボタン内側 → 画面端密着、端から滑り出すドロワー、ボタンは gutter 内の取っ手。`extension/floating-button.{css,js}`。
 3. **PiP タグメニュー(本体)= 中央ドロップダウン**(本番反映済 `d8957ac5`): 右端ストリップ → 中央上部から降りて中央に収まる。`PipCompanion.{module.css,tsx}`。tsc0/vitest1389/PiPテスト15。
-4. **次**: ①ユーザーがストア提出 → 公開後 `EXTENSION_STORE_URL` 投入+再デプロイ。②右下・言語切替の磨き込み(別タスク・約束済)。③残り公開前TODO。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+4. **右下・言語切替リデザイン**(本番反映済 `25d595e4`): 上部 chrome(`ChromeButton`)と完全一致=ピル撤去・素テキスト・等幅・大文字・**ホバー RGB グリッチ**。`🌐`→細線地球 SVG、開リストはガラス+上下フェード(生スクロールバー廃止)+スライドアップ+選択中緑✓。`LanguageSwitcher.{tsx,module.css}`。
+5. **ブックマークレット設置を SETTINGS 常設化 + 左下ピル撤去**(本番反映済 `9ea070ff`): 常時「Drag me」ピル撤去+コンポ削除。SETTINGS ドロワーに `SAVE WITHOUT EXTENSION` → 既存 `BookmarkletInstallModal` を開く。`ExtensionEntry`/`BoardRoot`。vitest1390。
+6. **次**: ①**ブックマークレット設置モーダルの改良**(`📌`絵文字ダサい→chrome/glitch化・**「フォルダ選択」コピーが古い**=タグに直す・15言語)。②ユーザーがストア提出 → 公開後 `EXTENSION_STORE_URL` 投入+再デプロイ。③オンボーディング本体。④残り公開前TODO。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 
