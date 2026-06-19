@@ -25,7 +25,10 @@
 
 1. **ライセンス AGPL-3.0 + 商標方針**: `LICENSE`(GNU AGPL-3.0 全文)追加、`package.json` `license: "AGPL-3.0-only"`(`private:true` 維持)、`README` 刷新+ライセンス/商標節。コードは AGPL(=「読んで安全確認できる」を保てる+商用クローン禁止)、「AllMarks」の名前と A ロゴは別途商標(出願は事業判断・方針メモのみ IDEAS.md)。サイトの「open source」文言はそのまま正しい。
 2. **拡張ストア提出ドキュメント**: [docs/extension-store-submission.md](./extension-store-submission.md) に掲載文・単一目的・権限6行の正当化(公開プライバシーページと一致)・データ開示の推奨回答・手順を完成。zip `dist/booklage-extension-0.1.20.zip` 生成済。manifest v0.1.20 最終チェック OK。**保留=掲載言語(英のみ or 英+日)/ スクショ・プロモタイルの用意方法**。
-3. **🔴 貼り付け保存(Ctrl+V)実装・本番反映**: ボードにフォーカスがある状態(入力欄でない)で単一URLを Ctrl+V/右クリック貼り付け → 取り込み。埋め込み系(ツイート/YouTube等)は即・生きたカード、一般サイトは `/api/ogp`(既存 Cloudflare Function)でサムネ取得。テーマ駆動の読み込み中表示+新着ハイライト、重複は `Already saved`、失敗はフォールバック保存。**3経路目の保存方法がこれで実在**(従来はブックマークレット+拡張のみ、貼り付けは未実装だった=コピーが存在しない機能を宣伝していた)。brainstorming→spec→plan→サブエージェント駆動6タスク(各2段レビュー+最終 opus レビュー)。spec `specs/2026-06-19-paste-to-save-design.md` / plan `plans/2026-06-19-paste-to-save.md`。検証: tsc0 / vitest 1382 / build OK / 本番反映済(**ユーザー実機確認待ち**)。
+3. **🔴 貼り付け保存(Ctrl+V)実装・本番反映**: ボードにフォーカスがある状態(入力欄でない)で単一URLを Ctrl+V/右クリック貼り付け → 取り込み。埋め込み系(ツイート/YouTube等)は即・生きたカード、一般サイトは `/api/ogp`(既存 Cloudflare Function)でサムネ取得。テーマ駆動の読み込み中表示+新着ハイライト、重複は `Already saved`、失敗はフォールバック保存。**3経路目の保存方法がこれで実在**(従来はブックマークレット+拡張のみ、貼り付けは未実装だった=コピーが存在しない機能を宣伝していた)。brainstorming→spec→plan→サブエージェント駆動6タスク(各2段レビュー+最終 opus レビュー)。spec `specs/2026-06-19-paste-to-save-design.md` / plan `plans/2026-06-19-paste-to-save.md`。検証: tsc0 / vitest 1389 / build OK / 本番反映済・**ユーザー実機「完璧」確認済**。
+4. **🔴 PiP(Pop Out)貼り付け保存**: `useUrlPasteSave` を `targetDocument` 対応に一般化、PiP ウィンドウの document に paste リスナ。保存→既存の「バッファ追加→自動先頭スクロール」で貼り付けカードが先頭アクティブ化→既存「+TAG」でタグ付け。spec `2026-06-19-pip-paste-save-design.md`。実機確認済。
+5. **🔴 YouTube ライブURL修正**: `extractYoutubeId` が `youtube.com/live/<id>` 未対応でサムネ無し&再生不可だった実バグ修正(全経路に効く・保存済みもリロードで復活)。
+6. **🔴 PiP プレースホルダー画像をボードと一致**: 画像なしサイトの PiP カードが無地だったのを、ボードと同じ4種(`pickPlaceholderImage`)に。新ヘルパー `lib/pip/pip-thumbnail.ts`。
 
 #### ✅ コピー修正(セッション113で確定 → 全15言語で本番反映済)
 en/ja を確定し13言語へ並列翻訳展開、本番反映済(15言語 JSON valid・パリティ47 pass・build OK・push 済)。保存セクションは3経路を正直に記載(貼り付けCtrl+V / ブックマークレット / 拡張。ブックマークレット・拡張は「ワンクリックでタグ付けながら保存」を前へ。「URL貼り付けが主役」は全廃)。**ユーザーの実機目視はこれから**。反映した主な修正:
