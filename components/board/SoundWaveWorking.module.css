@@ -1,0 +1,16 @@
+/* Sound-wave working visual: bars pulse height in a staggered loop. */
+.wave { width: 96px; height: 36px; }
+.wave rect {
+  fill: #28F100;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sound-wave 900ms ease-in-out infinite;
+}
+@keyframes sound-wave {
+  0%, 100% { transform: scaleY(0.35) }
+  50% { transform: scaleY(1) }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave rect { animation: none; }
+}

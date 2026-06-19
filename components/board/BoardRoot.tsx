@@ -14,7 +14,7 @@ import { applyFilter } from '@/lib/board/filter'
 import { useBoardData } from '@/lib/storage/use-board-data'
 import { RevalidationQueue, defaultFetcher, shouldRevalidate } from '@/lib/board/revalidate'
 import { createCompositeFetcher } from '@/lib/board/tweet-liveness'
-import { subscribeBookmarkSaved, subscribeBookmarkUpdated } from '@/lib/board/channel'
+import { subscribeBookmarkSaved, subscribeBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
 import { createBackfillQueue } from '@/lib/board/backfill-queue'
@@ -56,6 +56,8 @@ import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
 import { UndoToast, type UndoToastInput } from './UndoToast'
+import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
+import { PasteSaveFeedback } from './PasteSaveFeedback'
 import { type UndoEntry, MAX_UNDO_STACK, pushBounded } from '@/lib/board/undo-stack'
 import { PRESETS, type PresetId } from '@/lib/board/tune-presets'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -1555,6 +1557,32 @@ export function BoardRoot() {
     }
   }, [reload])
 
+  // Paste-to-save: listen for clipboard paste events on the board canvas and
+  // save valid URLs directly to IDB. Mirrors the same reload + entrance
+  // highlight path used by the bookmarklet BroadcastChannel above.
+  const { feedback: pasteFeedback } = useUrlPasteSave({
+    onSaved: async (bookmarkId: string): Promise<void> => {
+      await reload()
+      setNewlyAddedIds((prev) => {
+        const next = new Set(prev)
+        next.add(bookmarkId)
+        return next
+      })
+      setTimeout(() => {
+        setNewlyAddedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(bookmarkId)
+          return next
+        })
+      }, 800)
+      // Broadcast to other surfaces (PiP companion, second board tab) so they
+      // reload and show the new card. The local `subscribeBookmarkSaved` listener
+      // above will also fire from this broadcast — a benign second reload that is
+      // acceptable (no entrance highlight on other tabs is intentional).
+      postBookmarkSaved({ bookmarkId })
+    },
+  })
+
   // BroadcastChannel: reload (no entrance highlight) when an existing bookmark
   // changes — e.g., a tag added from the extension's quick-tag strip or the
   // PiP companion. Also reload the tag master so a tag *created* in PiP shows
@@ -2043,6 +2071,7 @@ export function BoardRoot() {
         />
       </PipPortal>
       <UndoToast input={toast} />
+      <PasteSaveFeedback feedback={pasteFeedback} themeId={DEFAULT_THEME_ID} />
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}
       <LanguageSwitcher />
     </div>
