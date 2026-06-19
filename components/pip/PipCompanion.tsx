@@ -238,6 +238,7 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
           <div
             className={styles.tagPanel}
             data-testid="pip-tag-overlay"
+            data-closing={tagMenuClosing ? 'true' : undefined}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseEnter={cancelCloseTagMenu}
             onMouseLeave={scheduleCloseTagMenu}

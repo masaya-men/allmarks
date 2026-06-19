@@ -1,33 +1,27 @@
-# 次セッションのゴール (= セッション 114)
+# 次セッションのゴール (= セッション 115)
 
 ## 今のゴール (1 行)
 
-**✅ セッション 113 で ①AGPL-3.0 ライセンス ②拡張ストア提出ドキュメント ③貼り付け保存(Ctrl+V、ボード+PiP)④コピー15言語正直化 ⑤YouTubeライブURL修正 ⑥PiPプレースホルダー一致 まで実装・本番反映・ユーザー実機「完璧」確認済。次は 公開前の残TODO + 拡張ストア素材。**
+**✅ セッション 114 で 拡張ストア提出準備を完了(英+日掲載文・スクショ②/プロモタイル `dist/store-assets/`・options.html 正直化・zip 再生成)+ タグメニュー2種を改修(floating=端ドック実機OK / PiP=中央ドロップダウン本番反映)。次は ①ユーザーがストア提出 ②右下・言語切替の磨き込み ③残り公開前TODO。**
 
 ## 開始時の動き
-1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態 (セッション 113)」を読む
-2. `git branch --show-current` で master 確認
+1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む
+2. `git status` がクリーン・`git log` が最新であることを確認(セッション114末で全コミット+push 済のはず)
 3. ユーザーに方向確認 → 下記から着手
 
-## 次の候補(公開前の残TODO・セッション113で確定・未着手)
-- **初回ボードのチュートリアル(オンボーディング)** — 貼り付け保存(Ctrl+V)を初回案内に組み込める
-- **ガイド等への操作動画**(ユーザー「絶対つける」)
-- **リリース前にテーマを1つ作る**(ユーザーがイメージ画像所持。コピーは「テーマ順次追加」で控えめ化済み)
-- **スマホ最適化**(コピーは「近日対応」に弱め済み)
-- **バックアップを表に出す**(EXPORT/IMPORT セットで。IDEAS.md「ちゃんとしたデータ持ち運び」と統合)
-- **公式X開設** → Contact に導線(ハンドル決定後)+ Contact のアイデア募集文を「不具合報告歓迎」に
-
-## 次: 拡張ストア素材の判断2点(セッション113で保留)
-1. 掲載言語: 英語のみ or 英語+日本語
-2. スクショ/プロモタイル: Claude が Playwright でボード撮影+タイル生成 or ユーザー用意
-提出原稿一式は [docs/extension-store-submission.md](./extension-store-submission.md) に完成済み。zip は `dist/booklage-extension-0.1.20.zip`。提出後 `EXTENSION_STORE_URL`(`lib/board/constants.ts`)に URL を入れると board の「GET EXTENSION」と紹介ページが自動点灯。
+## 次の最優先候補
+- **(A) 拡張ストア提出**(ユーザー作業 / 私は代行不可): デベロッパー登録(約¥800・一度きり)→ `dist/booklage-extension-0.1.20.zip` をアップロード → 掲載文は [docs/extension-store-submission.md](./extension-store-submission.md)(§1英 / §1J日 / §2-4 / §5素材は `dist/store-assets/`)→ 審査送信。公開後 `lib/board/constants.ts` の `EXTENSION_STORE_URL` に URL 投入 → 再デプロイで board「GET EXTENSION」点灯。
+- **(B) 右下・言語切替の見た目磨き込み**(私の作業・別タスク・session 114 で約束): `components/board/LanguageSwitcher.tsx` + `.module.css`。`🌐` 絵文字 → オンブランドの印 / 開いたリストをガラス+フェード(生スクロールバー禁止 [[feedback_no_plain_scrollbars]])/ a11y(role=option 等)。現状→案→承認→実装のフロー。
+- **(C) 残り公開前TODO**: 初回オンボーディング(貼り付け保存を案内に組める)/ ガイド操作動画/ テーマ1つ作る/ モバイル最適化/ バックアップ(EXPORT/IMPORT)表出し/ 公式X開設→Contact 導線。
 
 ## 小残・気づいたら直す
-- LP の LIVE GRID デモ(動画3本の見せ方)とコピー「フォーカス1本+他静止画」の整合を一度確認(デモが過剰なら寄せる)。
-- `/api/ogp` の favicon 抽出は一部サイトで取れない(貼り付け時)。no-image はプレースホルダーで揃うので影響軽微・据え置き可。
+- floating-button タグメニュー(端ドック)・PiP タグメニュー(中央ドロップダウン)は実機/本番確認済。微調整希望が出たら CSS だけで対応可。
+- ストア動画カードの見せ方は v0.1.21(公開後の掲載編集)で追加検討。
 - 法務ページ本文の補助リンク href のローカライズ(`/ja/privacy` の「お問い合わせ」が英語 `/contact` 着地)。
 
 ## 守ること
 - 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII)必須。`tsc <file>` 直叩き禁止 → `rtk tsc`。
-- アプリ本体(`/board` `/s/*` `/save`)に言語接頭辞を付けない。`DB_NAME` 等の内部符号は不変。
+- アプリ本体(`/board` `/s/*` `/save`)に言語接頭辞を付けない。`DB_NAME='booklage-db'` 等の内部符号は不変。
+- 拡張(`extension/`)は tsc/vitest 対象外 → `node --check` 必須。実機/PiP 挙動は自動検証できないのでユーザー実機テストとセット。
 - 個人情報(本名/個人メアド/個人 X 垢)を tracked ファイルに書かない。デザイン変更は提案→承認。応答は日本語。
+- **常にクリーンなセーブを維持**(ユーザー要望): 完了した区切りで commit+push、本番=git を一致させる。

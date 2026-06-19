@@ -21,7 +21,18 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 113 — ①AGPL-3.0 ライセンス整備 ②拡張ストア提出ドキュメント ③貼り付け保存(Ctrl+V)を設計→実装→本番反映)
+### 直近の状態 (セッション 114 — 拡張ストア提出準備 完了 + タグメニュー2種 改修)
+
+**ゴール「拡張ストア素材の2判断 → 提出準備」を完走。途中、保存UXの中核のタグメニュー2種をユーザー要望で再デザイン。全コミット+push 済(git=本番一致)。**
+
+1. **拡張ストア提出準備 完了**: 掲載言語=**英+日**確定([docs/extension-store-submission.md](./extension-store-submission.md) §1J に日本語掲載文)。スクショ②+プロモタイル+アイコンを生成 → `dist/store-assets/`(本番ボードに CC0/PD画像40点を Playwright で IDB 直接注入→撮影→sharp で 1280×800/440×280)。`options.html` の no-server 文を拡張限定に正直化。`pnpm package:extension` で zip 再生成(`dist/booklage-extension-0.1.20.zip`、修正反映を unzip 検証)。**提出はユーザー作業**(デベロッパー登録 約¥800・一度きり)。
+2. **floating-button タグメニュー(拡張)= 端ドック+TUNE風スライド**(実機OK): ボタン内側 → 画面端密着、端から滑り出すドロワー、ボタンは gutter 内の取っ手。`extension/floating-button.{css,js}`。
+3. **PiP タグメニュー(本体)= 中央ドロップダウン**(本番反映済 `d8957ac5`): 右端ストリップ → 中央上部から降りて中央に収まる。`PipCompanion.{module.css,tsx}`。tsc0/vitest1389/PiPテスト15。
+4. **次**: ①ユーザーがストア提出 → 公開後 `EXTENSION_STORE_URL` 投入+再デプロイ。②右下・言語切替の磨き込み(別タスク・約束済)。③残り公開前TODO。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+### 一つ前 (セッション 113 — ①AGPL-3.0 ライセンス整備 ②拡張ストア提出ドキュメント ③貼り付け保存(Ctrl+V)を設計→実装→本番反映)
 
 1. **ライセンス AGPL-3.0 + 商標方針**: `LICENSE`(GNU AGPL-3.0 全文)追加、`package.json` `license: "AGPL-3.0-only"`(`private:true` 維持)、`README` 刷新+ライセンス/商標節。コードは AGPL(=「読んで安全確認できる」を保てる+商用クローン禁止)、「AllMarks」の名前と A ロゴは別途商標(出願は事業判断・方針メモのみ IDEAS.md)。サイトの「open source」文言はそのまま正しい。
 2. **拡張ストア提出ドキュメント**: [docs/extension-store-submission.md](./extension-store-submission.md) に掲載文・単一目的・権限6行の正当化(公開プライバシーページと一致)・データ開示の推奨回答・手順を完成。zip `dist/booklage-extension-0.1.20.zip` 生成済。manifest v0.1.20 最終チェック OK。**保留=掲載言語(英のみ or 英+日)/ スクショ・プロモタイルの用意方法**。

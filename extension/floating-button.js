@@ -364,7 +364,7 @@
     tagStripEl = null
     if (animate) {
       el.classList.add('is-closing')
-      setTimeout(() => el.remove(), 170)
+      setTimeout(() => el.remove(), 280)
     } else {
       el.remove()
     }
@@ -426,6 +426,8 @@
     const { visible, overflow } = tagstripSplit(tags, 2) // collapsed preview = top 2 tags
     const el = document.createElement('div')
     el.className = 'allmarks-tagstrip'
+    // Slide direction + button-handle gutter follow the button's snap side.
+    el.dataset.side = settings.floatingButtonSnapSide === 'left' ? 'left' : 'right'
     applyStripTheme(el, themeTokens)
     const rowEl = document.createElement('div')
     rowEl.className = 'allmarks-tagstrip__row'
@@ -462,8 +464,10 @@
     const a = getStripAnchor()
     const top = Math.max(8, Math.min(window.innerHeight - el.offsetHeight - 8, a.top + a.height / 2 - el.offsetHeight / 2))
     el.style.top = top + 'px'
-    if (a.side === 'right') el.style.right = (window.innerWidth - a.left + 6) + 'px'
-    else el.style.left = (a.right + 6) + 'px'
+    // Pin flush to the screen edge (drawer slides out from the edge). The
+    // button sits on top as a handle inside the reserved gutter.
+    if (a.side === 'right') el.style.right = '0px'
+    else el.style.left = '0px'
     requestAnimationFrame(() => el.classList.add('is-visible'))
     tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
   }

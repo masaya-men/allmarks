@@ -29,22 +29,40 @@
   background: transparent;
 }
 
-/* The menu panel: a tall, narrow strip on the right of the PiP window. Fixed
- * height (top/bottom inset) so the reused TagAddPopover (compact) scrolls
- * inside it rather than growing past the window. The card remains visible to
- * the left and behind. */
+/* The menu panel: a centred panel that DESCENDS FROM THE TOP-CENTRE of the PiP
+ * window and settles in the middle (fits the small square window better than a
+ * side strip). Definite height (so the reused TagAddPopover compact =
+ * height:100% can scroll inside it rather than growing past the window); the
+ * card peeks around the edges and shows through the transparent catcher behind.
+ * Drops in on open, retracts up on close — same easing language as the board
+ * chrome / floating button. The centring translate(-50%) is folded into the
+ * keyframes so the drop reads as a single top-centre motion. */
 .tagPanel {
   position: absolute;
-  /* ~2/3 of the window wide, ~3/4 tall, anchored to the right edge and
-     vertically centred — leaves the card visible to the left and above/below. */
   top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  width: 66%;
-  min-width: 160px;
-  max-width: 260px;
-  height: 75%;
+  left: 50%;
+  width: 74%;
+  min-width: 168px;
+  max-width: 220px;
+  height: 74%;
+  transform: translate(-50%, -50%);
   z-index: 100;
   display: flex;
+  animation: pipMenuDrop 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tagPanel[data-closing='true'] {
+  animation: pipMenuRetract 160ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+@keyframes pipMenuDrop {
+  from { opacity: 0; transform: translate(-50%, -160%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+@keyframes pipMenuRetract {
+  from { opacity: 1; transform: translate(-50%, -50%); }
+  to   { opacity: 0; transform: translate(-50%, -160%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tagPanel,
+  .tagPanel[data-closing='true'] { animation: none; }
 }
 

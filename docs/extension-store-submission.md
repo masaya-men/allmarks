@@ -2,7 +2,7 @@
 
 > 提出フォームにコピペするための原稿一式。掲載文・権限の正当化・データ開示の回答・手順。
 > 英語コピーは公開中の `allmarks.app/extension/privacy` と矛盾しないこと（審査で最重要）。
-> 最終更新: 2026-06-19（session 113）
+> 最終更新: 2026-06-19（session 114 — 掲載言語=英+日 確定、日本語コピー §1J 追加、スクショ／プロモタイル作成済 `dist/store-assets/`、`options.html` の no-server 文を正直化、floating-button タグメニューを端ドック化、zip 再生成済）
 
 ---
 
@@ -21,7 +21,7 @@
 | Item name | `AllMarks` |
 | Summary（短い説明・132字以内） | `Save any page as a visual card and build a collage you can browse and share. Bookmarks stay in your browser — no account.` |
 | Category | `Productivity`（候補2: Tools） |
-| Language（既定の掲載言語） | `English`（→ §6 で日本語を足すか相談） |
+| Language（掲載言語） | `English` + `日本語`（2言語掲載。日本語コピーは §1J） |
 
 ### Detailed description（詳細説明・コピペ用）
 
@@ -44,6 +44,42 @@ code is public on GitHub so anyone can verify exactly what it does.
 
 Learn more: https://allmarks.app/extension
 Privacy policy: https://allmarks.app/extension/privacy
+```
+
+---
+
+## 1J. 日本語の掲載文（Store listing の「日本語」ロケールに貼る）
+
+> Chrome ウェブストアは Store listing タブで言語ごとのローカライズ掲載文を追加できる。
+> 単一目的・権限正当化・データ開示（Privacy practices タブ）は英語のまま1言語でよい。
+
+| 項目 | 値 |
+|---|---|
+| Item name | `AllMarks`（共通） |
+| Summary（短い説明・132字以内） | `どんなページもビジュアルカードとして保存し、眺めて共有できるコラージュに。ブックマークはブラウザ内に保存・アカウント不要。` |
+| Category | `Productivity` |
+
+### Detailed description（日本語・コピペ用）
+
+```
+AllMarks は、ブックマークを眺めて・並べて・共有できるビジュアルコラージュに変えます。
+
+どんなページ（記事・動画・投稿）も、ワンクリック・右クリックメニュー・キーボード
+ショートカット（Ctrl+Shift+B）で保存。ボードにビジュアルカードとして並び、保存しながら
+その場でタグも付けられます。
+
+• どのサイトからもワンクリックで保存
+• X・YouTube・Vimeo・SoundCloud などの投稿はボード上でそのまま再生でき、
+  それ以外もきれいなプレビューで保存
+• 保存したものをコラージュに並べ、画像やリンクとして共有
+• ブックマークはあなた自身のブラウザ内に保存 — アカウント不要・ログイン不要
+
+プライバシー優先：拡張機能が読み取るのは、あなたが保存を選んだページだけで、開発者の
+サーバーには何も送りません。アナリティクス・トラッキング・広告・テレメトリは一切なし。
+ソースコードは GitHub で公開しており、誰でも動作を確認できます。
+
+詳しく: https://allmarks.app/extension
+プライバシーポリシー: https://allmarks.app/extension/privacy
 ```
 
 ---
@@ -112,19 +148,22 @@ Chrome ウェブストアの必須/推奨サイズ:
 
 | 素材 | サイズ | 必須? | 現状 |
 |---|---|---|---|
-| Store icon | 128×128 PNG | 必須 | `extension/icons/icon-128.png` あり（流用可） |
-| Screenshot | 1280×800 または 640×400 PNG/JPEG（最低1枚・最大5枚） | 必須 | **未作成** |
-| Small promo tile | 440×280 PNG/JPEG | 強く推奨（掲載見栄え） | **未作成** |
-| Marquee promo | 1440×560 | 任意（フィーチャー候補用） | 未作成 |
+| Store icon | 128×128 PNG | 必須 | ✅ `dist/store-assets/icon-128.png`（`extension/icons/` から流用） |
+| Screenshot ① | 1280×800 PNG | 必須 | ✅ `dist/store-assets/store-1-hero.png`（密なコラージュ） |
+| Screenshot ② | 1280×800 PNG | 任意（推奨） | ✅ `dist/store-assets/store-2-editorial.png`（編集版） |
+| Small promo tile | 440×280 PNG | 強く推奨（掲載見栄え） | ✅ `dist/store-assets/store-promo-440x280.png` |
+| Marquee promo | 1440×560 | 任意（フィーチャー候補用） | 未作成（任意・後日でよい） |
 
-→ スクリーンショットとプロモタイルの作り方は §6 でユーザーと決める。
+- すべて本番ボードに CC0／パブリックドメイン画像（シカゴ美術館 Open Access + NASA）を流し込んで撮影。第三者の権利物は含まない。
+- 撮影時は左下のブックマークレット pill と右下の言語切替を非表示にしてある（広告画像として隅を整理）。
+- 動画カード（画面内再生）の見せ方は今回見送り。掲載は随時編集できるので後日 v0.1.21 で追加可。
 
 ---
 
-## 6. 残りの判断事項（ユーザーと相談）
+## 6. 判断事項（✅ セッション114で確定）
 
-1. **掲載言語**: まず英語のみで提出（最速）か、英語＋日本語の2言語掲載にするか。
-2. **スクリーンショット/プロモタイル**: 誰がどう用意するか（ボード画面の自動撮影＋簡易プロモタイル生成を Claude がやるか、ユーザーが用意するか）。
+1. **掲載言語** → ✅ **英語＋日本語の2言語掲載**（日本語コピー = §1J）。
+2. **スクリーンショット/プロモタイル** → ✅ **Claude が Playwright で本番ボードを撮影＋プロモタイル生成**。成果物は `dist/store-assets/`（§5）。
 
 ---
 
