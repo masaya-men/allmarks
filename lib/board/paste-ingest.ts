@@ -1,6 +1,7 @@
 import type { IDBPDatabase } from 'idb'
 import { detectUrlType } from '@/lib/utils/url'
 import type { addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
+import type { AllMarksDB } from '@/lib/storage/indexeddb'
 
 export type OgpMeta = {
   readonly title: string
@@ -11,7 +12,7 @@ export type OgpMeta = {
 }
 
 export type IngestDeps = {
-  readonly db: IDBPDatabase
+  readonly db: IDBPDatabase<AllMarksDB>
   readonly getAll: typeof getAllBookmarks
   readonly add: typeof addBookmark
   readonly fetchOgp: (url: string) => Promise<OgpMeta | null>
@@ -53,21 +54,20 @@ function domainOf(url: string): string {
 }
 
 export async function ingestPastedUrl(url: string, deps: IngestDeps): Promise<IngestResult> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const all = await deps.getAll(deps.db as any)
+  const all = await deps.getAll(deps.db)
   const existing = all.find((b) => b.url === url && !b.isDeleted)
   if (existing) return { outcome: 'duplicate', bookmarkId: null }
 
   const type = detectUrlType(url)
+  const isEmbeddable = EMBEDDABLE.has(type)
   let meta: OgpMeta | null = null
-  if (!EMBEDDABLE.has(type)) {
+  if (!isEmbeddable) {
     meta = await deps.fetchOgp(url)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const created = await deps.add(deps.db as any, {
+  const created = await deps.add(deps.db, {
     url,
-    title: meta?.title || (EMBEDDABLE.has(type) ? '' : domainOf(url)),
+    title: meta?.title || (isEmbeddable ? '' : domainOf(url)),
     description: meta?.description ?? '',
     thumbnail: meta?.image ?? '',
     favicon: meta?.favicon ?? '',

@@ -211,7 +211,7 @@ export type BookmarkInput = Omit<
 // Database schema
 // ---------------------------------------------------------------------------
 
-interface AllMarksDB {
+export interface AllMarksDB {
   bookmarks: BookmarkRecord
   /** Legacy store name (pre-v15). Physically still present until the
    *  v14→v15 migration (Task 5) renames it to `tags`. Records have the

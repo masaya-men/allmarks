@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
-import { ingestPastedUrl } from '@/lib/board/paste-ingest'
+import { ingestPastedUrl, type IngestDeps } from '@/lib/board/paste-ingest'
 
-function deps(over = {}) {
+function deps(over: Partial<IngestDeps> = {}): IngestDeps {
   return {
     db: {} as never,
     getAll: vi.fn(async () => [] as never[]),
