@@ -1,21 +1,9 @@
 'use client'
-import { type ReactElement, type ReactNode } from 'react'
+import { type ReactElement } from 'react'
 import styles from './ImportProgressIndicator.module.css'
+import { SoundWaveWorking } from '@/components/board/SoundWaveWorking'
 
 export type ImportPhase = 'idle' | 'importing' | 'done'
-
-/** Theme-driven "working" visual. Add a theme id → element here to make the
- *  indicator change with future themes. Default = sound-wave motif. */
-function resolveWorkingVisual(themeId: string): ReactNode {
-  void themeId // only the default exists today; switch on themeId when themes grow
-  return (
-    <svg data-testid="import-working-visual" className={styles.wave} viewBox="0 0 64 24" aria-hidden="true">
-      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-        <rect key={i} x={4 + i * 8} y="2" width="4" height="20" rx="2" style={{ animationDelay: `${i * 90}ms` }} />
-      ))}
-    </svg>
-  )
-}
 
 /** Report-only duplicate summary shown under the done check. Returns null when
  *  nothing was skipped (snappy ✓ → board, unchanged). Count of which specific
@@ -47,7 +35,7 @@ export function ImportProgressIndicator({
       <div className={styles.panel}>
         {phase === 'importing' ? (
           <>
-            {resolveWorkingVisual(themeId)}
+            <SoundWaveWorking themeId={themeId} />
             <span className={styles.label}>IMPORTING</span>
           </>
         ) : (

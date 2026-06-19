@@ -10,7 +10,7 @@ describe('ImportProgressIndicator', () => {
   it('shows IMPORTING while importing', () => {
     const { getByText, getByTestId } = render(<ImportProgressIndicator phase="importing" themeId="default" />)
     expect(getByText('IMPORTING')).toBeTruthy()
-    expect(getByTestId('import-working-visual')).toBeTruthy()
+    expect(getByTestId('sound-wave-working')).toBeTruthy()
   })
   it('shows the done check on done', () => {
     const { getByTestId } = render(<ImportProgressIndicator phase="done" themeId="default" />)
