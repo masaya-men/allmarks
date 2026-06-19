@@ -43,7 +43,8 @@ export function extractTweetId(url: string): string | null {
 
 /**
  * Extracts the YouTube video ID from a URL.
- * Supports youtube.com/watch?v=, youtu.be/, and youtube.com/embed/ formats.
+ * Supports youtube.com/watch?v=, youtu.be/, youtube.com/embed/,
+ * youtube.com/shorts/, and youtube.com/live/ (live-stream) formats.
  * @param url - The YouTube URL
  * @returns The 11-character video ID, or null if not found
  */
@@ -56,6 +57,9 @@ export function extractYoutubeId(url: string): string | null {
   if (embedMatch) return embedMatch[1]
   const shortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/)
   if (shortsMatch) return shortsMatch[1]
+  // Live streams (and their archived VODs) are shared as youtube.com/live/<id>.
+  const liveMatch = url.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/)
+  if (liveMatch) return liveMatch[1]
   return null
 }
 

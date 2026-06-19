@@ -6,6 +6,7 @@ import {
   extractTweetId,
   extractUrlFromText,
   extractVimeoId,
+  extractYoutubeId,
   isValidUrl,
 } from '@/lib/utils/url'
 
@@ -134,5 +135,21 @@ describe('extractUrlFromText', () => {
     expect(extractUrlFromText('Visit http://legacy-site.com/path')).toBe(
       'http://legacy-site.com/path',
     )
+  })
+})
+
+describe('extractYoutubeId', () => {
+  it('extracts ID from watch, youtu.be, embed, and shorts URLs', () => {
+    expect(extractYoutubeId('https://www.youtube.com/watch?v=il7OpdBqLWE')).toBe('il7OpdBqLWE')
+    expect(extractYoutubeId('https://youtu.be/il7OpdBqLWE')).toBe('il7OpdBqLWE')
+    expect(extractYoutubeId('https://www.youtube.com/embed/il7OpdBqLWE')).toBe('il7OpdBqLWE')
+    expect(extractYoutubeId('https://www.youtube.com/shorts/il7OpdBqLWE')).toBe('il7OpdBqLWE')
+  })
+  it('extracts ID from a live-stream URL (youtube.com/live/<id>)', () => {
+    expect(extractYoutubeId('https://www.youtube.com/live/il7OpdBqLWE')).toBe('il7OpdBqLWE')
+  })
+  it('returns null for non-YouTube URLs', () => {
+    expect(extractYoutubeId('https://example.com/live/il7OpdBqLWE')).toBeNull()
+    expect(extractYoutubeId('https://www.youtube.com/@channel')).toBeNull()
   })
 })
