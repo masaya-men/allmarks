@@ -360,23 +360,20 @@ export function OnboardingController({
   // Beat 1 (demo): a faithful re-enactment of saving with the bookmarklet — the
   // cursor clicks the AllMarks bookmarklet in a browser frame's bookmark bar and
   // the REAL save window pops (Saving → Saved → suggested tags). It shows the
-  // VALUE before asking for the action. Beat 2 (install): the real draggable
-  // chip so the user drops the bookmarklet onto their own (real) bookmark bar —
-  // the chip MUST target the user's actual browser chrome, so it can't live in
-  // the demo's fake bar. If the extension is already present, skip the pitch.
-  if (installDetected) {
-    return wrap(
-      <OnboardingSpotlight targetSelector={null} caption={body}>
-        <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
-      </OnboardingSpotlight>,
-    )
-  }
+  // VALUE before asking for the action. This beat plays for EVERYONE, including
+  // people who already have the extension: the bookmarklet is a cross-browser
+  // save path worth teaching (it works where the extension can't — Firefox /
+  // Safari / mobile). Beat 2 (install): the real draggable chip so the user
+  // drops the bookmarklet onto their own (real) bookmark bar — the chip MUST
+  // target the user's actual browser chrome, so it can't live in the demo's fake
+  // bar. Extension users don't need the drag, so they advance straight from the
+  // demo; everyone else gets the drag beat.
   if (installBeat === 'demo') {
     return wrap(
       <BookmarkletSaveReenactment
         caption={t('board.onboarding.install.demoCaption')}
         buttonLabel="NEXT"
-        onAdvance={() => setInstallBeat('install')}
+        onAdvance={() => { if (installDetected) { advance() } else { setInstallBeat('install') } }}
       />,
     )
   }
