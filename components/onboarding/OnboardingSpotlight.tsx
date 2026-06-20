@@ -125,24 +125,28 @@ export function OnboardingSpotlight({
               {cardAnchoredSlot}
             </div>
           )}
-          {captionAtBottom ? (
-            <div className={styles.bubbleBottom}>
-              {caption}
-              {children}
-            </div>
-          ) : placement === 'center' ? (
-            <div className={styles.bubbleCenterFixed}>
-              {caption}
-              {children}
-            </div>
-          ) : (
-            <div
-              className={styles.bubble}
-              style={{ top: placement.top, left: placement.left }}
-            >
-              {caption}
-              {children}
-            </div>
+          {/* No bubble when there's nothing to show (e.g. the tag demo runs with
+              an empty caption — the action lives in the anchored slot instead). */}
+          {(caption || children) && (
+            captionAtBottom ? (
+              <div className={styles.bubbleBottom}>
+                {caption}
+                {children}
+              </div>
+            ) : placement === 'center' ? (
+              <div className={styles.bubbleCenterFixed}>
+                {caption}
+                {children}
+              </div>
+            ) : (
+              <div
+                className={styles.bubble}
+                style={{ top: placement.top, left: placement.left }}
+              >
+                {caption}
+                {children}
+              </div>
+            )
           )}
         </>
       ) : (

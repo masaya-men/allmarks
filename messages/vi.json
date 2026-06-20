@@ -96,8 +96,8 @@
         "copied": "Đã sao chép. Bây giờ dán vào bảng (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Thẻ giúp bảng của bạn gọn gàng. Xem một thẻ được thêm vào thẻ này — bạn có thể tự thêm thẻ bất cứ lúc nào.",
-        "done": "Đã gắn thẻ 'sample' ✓  Nhấn NEXT để tiếp tục."
+        "body": "Hãy thêm một thẻ vào thẻ này.",
+        "done": "Thẻ giúp bảng của bạn gọn gàng — bạn có thể tự thêm bất cứ lúc nào. Nhấn NEXT để tiếp tục."
       },
       "motion": {
         "body": "Nhấn MOTION để làm các thẻ trên bảng chuyển động. Hãy thử.",

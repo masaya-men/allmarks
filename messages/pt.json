@@ -96,8 +96,8 @@
         "copied": "Copiado. Agora cole no board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "As tags mantêm seu quadro organizado. Veja uma tag ser adicionada a este cartão — você pode adicionar as suas quando quiser.",
-        "done": "Marcada com 'sample' ✓  Toque em NEXT para continuar."
+        "body": "Vamos adicionar uma tag a este cartão.",
+        "done": "As tags mantêm seu quadro organizado — adicione as suas quando quiser. Toque em NEXT para continuar."
       },
       "motion": {
         "body": "Toque em MOTION para dar vida aos cards do board. Experimente.",

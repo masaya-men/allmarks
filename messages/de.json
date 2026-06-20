@@ -96,8 +96,8 @@
         "copied": "Kopiert. Füge ihn jetzt auf dem Board ein (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Tags halten dein Board geordnet. Sieh zu, wie diese Karte ein Tag bekommt – eigene kannst du jederzeit hinzufügen.",
-        "done": "Mit 'sample' getaggt ✓  NEXT zum Fortfahren."
+        "body": "Fügen wir dieser Karte ein Tag hinzu.",
+        "done": "Tags halten dein Board geordnet – eigene kannst du jederzeit hinzufügen. NEXT zum Fortfahren."
       },
       "motion": {
         "body": "Drücke MOTION, um die Karten des Boards zum Leben zu erwecken. Probier es aus.",

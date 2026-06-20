@@ -96,8 +96,8 @@
         "copied": "Kopyalandı. Şimdi panoya yapıştır (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Etiketler panonu düzenli tutar. Bu karta bir etiketin eklenişini izle — kendi etiketlerini istediğin zaman ekleyebilirsin.",
-        "done": "'sample' etiketi eklendi ✓  Devam etmek için NEXT'e bas."
+        "body": "Bu karta bir etiket ekleyelim.",
+        "done": "Etiketler panonu düzenli tutar — kendi etiketlerini istediğin zaman ekleyebilirsin. Devam etmek için NEXT'e bas."
       },
       "motion": {
         "body": "Panodaki kartları canlandırmak için MOTION'a bas. Dene.",

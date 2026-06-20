@@ -96,8 +96,8 @@
         "copied": "Gekopieerd. Plak het nu op het board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Tags houden je bord overzichtelijk. Kijk hoe deze kaart een tag krijgt — je kunt er altijd zelf toevoegen.",
-        "done": "Getagd met 'sample' ✓  Druk op NEXT om door te gaan."
+        "body": "Laten we deze kaart een tag geven.",
+        "done": "Tags houden je bord overzichtelijk — voeg er altijd zelf toe. Druk op NEXT om door te gaan."
       },
       "motion": {
         "body": "Druk op MOTION om de kaarten van je board tot leven te brengen. Probeer het.",

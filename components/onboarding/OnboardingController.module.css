@@ -137,6 +137,10 @@
    scene's camera pushes in (the board stays visible, just untouchable). */
 .fullBlocker { position: fixed; inset: 0; background: transparent; pointer-events: auto; }
 
+/* Opaque dark veil for the tag scene's closing beat — darkens the whole board
+   (including the card) behind the "tags organize" message. */
+.fullDim { position: fixed; inset: 0; background: rgba(6, 6, 6, 0.94); pointer-events: auto; }
+
 /* Standalone caption pinned at the bottom-center (used during the tag scene's
    read/zoom phases, before the spotlight takes over). Matches the spotlight's
    bottom bubble and clears the ScrollMeter waveform. */

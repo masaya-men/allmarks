@@ -96,8 +96,8 @@
         "copied": "Copiato. Ora incollalo sulla board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "I tag tengono in ordine la tua board. Guarda come viene aggiunto un tag a questa scheda: puoi aggiungere i tuoi quando vuoi.",
-        "done": "Taggata con 'sample' ✓  Premi NEXT per continuare."
+        "body": "Aggiungiamo un tag a questa scheda.",
+        "done": "I tag tengono in ordine la tua board: aggiungi i tuoi quando vuoi. Premi NEXT per continuare."
       },
       "motion": {
         "body": "Premi MOTION per dare vita alle card della board. Provalo.",

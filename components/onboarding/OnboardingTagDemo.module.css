@@ -1,0 +1,100 @@
+/* components/onboarding/OnboardingTagDemo.module.css
+   Guided tag-add demo. Mirrors the real board tag menu (TagAddPopover): glass,
+   blur, monospace, green chips — plus a teardrop demo cursor + a "+ TAG" button
+   that is emphasized then "clicked" before the menu opens. */
+.wrap {
+  position: relative;
+  width: 240px;
+  min-height: 116px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  /* A guided demo — never interactive (the controller blocks the board). */
+  pointer-events: none;
+}
+/* the small "+ TAG" button, emphasized first, then pressed by the cursor */
+.tagBtn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #28f100;
+  background: rgba(40, 241, 0, 0.16);
+  border: 1px solid rgba(40, 241, 0, 0.5);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: default;
+}
+/* the popover that opens after the click */
+.menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 240px;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.header {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 0 4px;
+}
+.chipRow { display: flex; min-height: 20px; align-items: center; }
+.chip {
+  color: #28f100;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  padding: 4px 8px;
+}
+.input {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(40, 241, 0, 0.6); /* the real input's green focus border */
+  border-radius: 2px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #fff;
+}
+.typed { white-space: pre; }
+.placeholder { color: rgba(255, 255, 255, 0.3); }
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  margin-left: 1px;
+  background: #28f100;
+  animation: caretBlink 0.53s step-end infinite;
+}
+.caret[data-typing="true"] { animation: none; }
+/* same teardrop pointer as the other demos */
+.cursor {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 50% 2px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
+  transform: rotate(-12deg);
+  z-index: 2;
+}
+@keyframes caretBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .caret { animation: none; }
+}

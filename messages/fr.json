@@ -96,8 +96,8 @@
         "copied": "Copié. Collez-le maintenant sur le tableau (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Les tags gardent ton tableau organisé. Regarde une étiquette s'ajouter à cette carte — tu peux ajouter les tiennes à tout moment.",
-        "done": "Taguée avec « sample » ✓  Appuyez sur NEXT pour continuer."
+        "body": "Ajoutons une étiquette à cette carte.",
+        "done": "Les tags gardent ton tableau organisé — ajoute les tiens à tout moment. Appuyez sur NEXT pour continuer."
       },
       "motion": {
         "body": "Appuyez sur MOTION pour donner vie aux cartes du tableau. Essayez.",

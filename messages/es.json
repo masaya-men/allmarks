@@ -96,8 +96,8 @@
         "copied": "Copiado. Ahora pégalo en el tablero (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Las etiquetas mantienen tu tablero ordenado. Mira cómo se añade una a esta tarjeta; puedes añadir las tuyas cuando quieras.",
-        "done": "Etiquetada con 'sample' ✓  Pulsa NEXT para continuar."
+        "body": "Vamos a añadir una etiqueta a esta tarjeta.",
+        "done": "Las etiquetas mantienen tu tablero ordenado: añade las tuyas cuando quieras. Pulsa NEXT para continuar."
       },
       "motion": {
         "body": "Pulsa MOTION para dar vida a las tarjetas del tablero. Pruébalo.",

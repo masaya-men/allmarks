@@ -14,7 +14,7 @@ import { OnboardingStage } from './OnboardingStage'
 import { ExtensionSaveReenactment } from './ExtensionSaveReenactment'
 import { ShareReenactment } from './ShareReenactment'
 import { OnboardingSpotlight } from './OnboardingSpotlight'
-import { OnboardingTagTyper } from './OnboardingTagTyper'
+import { OnboardingTagDemo } from './OnboardingTagDemo'
 import { OnboardingPasteCursor } from './OnboardingPasteCursor'
 import { BookmarkletInstallChip } from './BookmarkletInstallChip'
 import styles from './OnboardingController.module.css'
@@ -59,10 +59,11 @@ const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   share: '[data-onboarding-target="share"]',
 }
 
-// Tag scene cinematic timing: read the caption, then push the camera in toward
-// the just-added card, then type the tag on the now-centered card.
-const TAG_READ_BEAT_MS = 1500 // read the caption before the camera moves
-const TAG_ZOOM_MS = 1200       // camera push-in (matches BoardRoot's 1.1s + buffer)
+// Tag scene beats: the camera pushes in to the just-added card FIRST, then a
+// caption rises and holds for reading, then the guided tag-add demo plays.
+const TAG_ZOOM_MS = 1300        // camera push-in (BoardRoot's 1.1s + settle buffer)
+const TAG_INTRO_READ_MS = 2600  // hold the explanation long enough to read
+const TAG_TYPE_CHAR_MS = 140    // ~2.5x the old 55ms — deliberate, readable typing
 
 function extensionDetected(): boolean {
   if (typeof document === 'undefined') return false
@@ -80,8 +81,11 @@ export function OnboardingController({
   // NEXT button, so the user sees what happened and proceeds at their own pace
   // (rather than the scene rushing past the moment they act).
   const [tagApplied, setTagApplied] = useState(false)
-  // Tag scene plays as: read (caption) -> zoom (camera push-in) -> type (demo).
-  const [tagPhase, setTagPhase] = useState<'read' | 'zoom' | 'type'>('read')
+  // Tag scene plays as: zoom (camera push-in) -> intro (read the caption) ->
+  // demo (guided tag-add) -> done (closing message + NEXT).
+  const [tagPhase, setTagPhase] = useState<'zoom' | 'intro' | 'demo' | 'done'>('zoom')
+  const tagPhaseRef = useRef(tagPhase)
+  tagPhaseRef.current = tagPhase
   const [motionOn, setMotionOn] = useState(false)
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
@@ -138,7 +142,7 @@ export function OnboardingController({
   // Reset the per-scene confirmation flags whenever the scene changes.
   useEffect(() => {
     setTagApplied(false)
-    setTagPhase('read')
+    setTagPhase('zoom')
     setMotionOn(false)
     setCopied(false)
   }, [sceneId])
@@ -184,21 +188,24 @@ export function OnboardingController({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
-  // Tag scene cinematic: read the caption -> push the camera in toward the
-  // just-added card -> mount the typed-tag demo on the now-centered card.
+  // Tag scene cinematic: push the camera in to the just-added card FIRST, then
+  // raise the explanation, then play the guided demo. Guarded setters so an
+  // early tag-add (→ 'done') isn't reverted by a late timer.
   useEffect(() => {
     if (sceneId !== 'tag') return
-    const t1 = setTimeout(() => { setTagPhase('zoom'); onZoomToCard?.() }, TAG_READ_BEAT_MS)
-    const t2 = setTimeout(() => setTagPhase('type'), TAG_READ_BEAT_MS + TAG_ZOOM_MS)
+    setTagPhase('zoom')
+    onZoomToCard?.()
+    const t1 = setTimeout(() => setTagPhase((p) => (p === 'zoom' ? 'intro' : p)), TAG_ZOOM_MS)
+    const t2 = setTimeout(() => setTagPhase((p) => (p === 'intro' ? 'demo' : p)), TAG_ZOOM_MS + TAG_INTRO_READ_MS)
     return () => { clearTimeout(t1); clearTimeout(t2) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
-  // If a tag lands before the cinematic reaches the type phase (a real tag-add
-  // via the channel, or a fast unit test), jump straight to the result so the
-  // confirmation + NEXT are shown rather than swallowed by the read/zoom phase.
+  // If a tag lands via the cross-context channel (PiP/extension) or a fast unit
+  // test before the demo plays, jump straight to the closing 'done' state. Never
+  // interrupt the demo itself — it ends by setting 'done' on its own.
   useEffect(() => {
-    if (sceneId === 'tag' && tagApplied) setTagPhase('type')
+    if (sceneId === 'tag' && tagApplied && tagPhaseRef.current !== 'demo') setTagPhase('done')
   }, [tagApplied, sceneId])
 
   const installDetected = sceneId === 'install' && extensionDetected()
@@ -241,36 +248,48 @@ export function OnboardingController({
   // spotlight rings it and the typed-tag demo plays on it.
   if (sceneId === 'tag') {
     const advanceFromTag = (): void => { onZoomReset?.(); advance() }
-    if (tagPhase !== 'type') {
+
+    // zoom: the camera pushes in; board stays visible but untouchable.
+    if (tagPhase === 'zoom') {
+      return wrap(<div className={styles.fullBlocker} />)
+    }
+    // intro: raise the explanation from the bottom and hold it to be read.
+    if (tagPhase === 'intro') {
       return wrap(
         <>
-          {/* transparent blocker so the board can't be touched while it zooms */}
           <div className={styles.fullBlocker} />
           <div className={styles.bottomCaption}>{body}</div>
         </>,
       )
     }
+    // demo: only the card is lit (spotlight dims the rest) while the guided
+    // tag-add plays on it (emphasize +TAG → cursor click → slow type → chip).
+    if (tagPhase === 'demo') {
+      return wrap(
+        <OnboardingSpotlight
+          targetSelector={TARGET_SELECTOR.card}
+          caption=""
+          blockHole
+          cardAnchoredSlot={
+            <OnboardingTagDemo
+              text="sample"
+              charMs={TAG_TYPE_CHAR_MS}
+              onApply={() => onApplySampleTag?.()}
+              onFinished={() => { setTagApplied(true); setTagPhase('done') }}
+            />
+          }
+        />,
+      )
+    }
+    // done: darken everything, raise the closing "tags organize" message + NEXT.
     return wrap(
-      <OnboardingSpotlight
-        targetSelector={TARGET_SELECTOR.card}
-        caption={body}
-        captionAtBottom
-        blockHole
-        cardAnchoredSlot={
-          <OnboardingTagTyper
-            text="sample"
-            onApply={() => onApplySampleTag?.()}
-            onFinished={() => setTagApplied(true)}
-          />
-        }
-      >
-        {tagApplied && (
-          <>
-            <p className={styles.copiedHint}>{t('board.onboarding.tag.done')}</p>
-            <button type="button" className={styles.advanceBtn} onClick={advanceFromTag}>NEXT</button>
-          </>
-        )}
-      </OnboardingSpotlight>,
+      <>
+        <div className={styles.fullDim} />
+        <div className={styles.bottomCaption}>
+          <div>{t('board.onboarding.tag.done')}</div>
+          <button type="button" className={styles.advanceBtn} onClick={advanceFromTag}>NEXT</button>
+        </div>
+      </>,
     )
   }
 
