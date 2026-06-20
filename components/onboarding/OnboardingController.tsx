@@ -325,25 +325,40 @@ export function OnboardingController({
     )
   }
 
-  // ---- Other hands-on scenes (motion / install) ----------------------------
-  // The motion scene shows the RESULT of the action and only then reveals NEXT.
+  // ---- MOTION scene — two beats --------------------------------------------
+  // Beat 1: spotlight the MOTION toggle (board dimmed) so the user finds + flips
+  // it. Beat 2: once MOTION is on, lift the dim so the now-live board — videos
+  // playing, multi-image galleries cycling — is the showcase, then NEXT.
+  if (sceneId === 'motion') {
+    if (!motionOn) {
+      return wrap(
+        <OnboardingSpotlight
+          targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
+          caption={body}
+          captionAtBottom
+        />,
+      )
+    }
+    return wrap(
+      <>
+        {/* board fully visible + alive; blocked from interaction (transparent) */}
+        <div className={styles.fullBlocker} />
+        <div className={styles.bottomCaption}>
+          <div>{t('board.onboarding.motion.done')}</div>
+          <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
+        </div>
+      </>,
+    )
+  }
+
+  // ---- Install scene -------------------------------------------------------
   // The spotlight hole passes clicks through so the user can operate the real
-  // control (MOTION toggle).
-  const isMotion = sceneId === 'motion'
+  // control (bookmarklet drag / the page).
   return wrap(
     <OnboardingSpotlight
       targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
       caption={body}
-      captionAtBottom={isMotion}
     >
-      {/* Motion: NEXT appears only after the user turns MOTION on, so they
-          actually see the cards come alive first. */}
-      {isMotion && motionOn && (
-        <>
-          <p className={styles.copiedHint}>{t('board.onboarding.motion.done')}</p>
-          <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
-        </>
-      )}
       {sceneId === 'install' && !installDetected && (
         <BookmarkletInstallChip appUrl={appUrl} />
       )}
