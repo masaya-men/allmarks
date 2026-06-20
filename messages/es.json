@@ -95,13 +95,13 @@
         "body": "Pega un enlace con Cmd/Ctrl+V o usa TRY THIS.", "copied": "Copiado. Ahora pégalo en el tablero (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Añade una etiqueta a la tarjeta que acabas de guardar."
+        "body": "Las etiquetas mantienen tu tablero organizado. Añadiremos una etiqueta de ejemplo a esta tarjeta."
       },
       "motion": {
         "body": "Activa MOTION para dar vida al tablero."
       },
       "extDemo": {
-        "body": "Con la extensión, un clic guarda la página abierta y la etiqueta."
+        "body": "Con la extensión AllMarks, un clic en cualquier página la guarda — y la etiqueta automáticamente."
       },
       "install": {
         "body": "Arrastra el chip de AllMarks a la barra de marcadores para guardar desde cualquier lugar."
@@ -110,7 +110,7 @@
         "body": "La extensión ya está instalada. También puedes guardar pegando un enlace o usando el bookmarklet."
       },
       "share": {
-        "body": "Abre SHARE para publicar tu tablero como imagen o enlace."
+        "body": "Abre SHARE para publicar tu tablero como imagen o enlace; luego ciérralo o pulsa NEXT."
       },
       "finale": {
         "body": "Todo listo. Repite este tutorial desde SETTINGS en cualquier momento."

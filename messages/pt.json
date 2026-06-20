@@ -95,13 +95,13 @@
         "body": "Colar um link com Cmd/Ctrl+V ou usar TRY THIS.", "copied": "Copiado. Agora cole no board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Adicionar uma etiqueta ao cartão que acabou de guardar."
+        "body": "As tags mantêm seu board organizado. Vamos adicionar uma tag de exemplo a este card."
       },
       "motion": {
         "body": "Ativar MOTION para animar o quadro."
       },
       "extDemo": {
-        "body": "Com a extensão, um clique guarda a página aberta e adiciona uma etiqueta."
+        "body": "Com a extensão AllMarks, um clique em qualquer página a salva — e adiciona tags automaticamente."
       },
       "install": {
         "body": "Arrastar o chip AllMarks para a barra de favoritos para guardar a partir de qualquer lugar."
@@ -110,7 +110,7 @@
         "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
       },
       "share": {
-        "body": "Abrir SHARE para publicar o quadro como imagem ou link."
+        "body": "Abra SHARE para publicar seu board como imagem ou link — depois feche, ou toque em NEXT."
       },
       "finale": {
         "body": "Tudo pronto. Este tutorial pode ser repetido em SETTINGS a qualquer momento."

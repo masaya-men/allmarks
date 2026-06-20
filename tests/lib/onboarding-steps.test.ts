@@ -21,7 +21,7 @@ describe('onboarding steps', () => {
   })
   it('hands-on scenes carry a spotlight target', () => {
     expect(sceneById('paste').target).toBe('paste-zone')
-    expect(sceneById('tag').target).toBe('card-tag')
+    expect(sceneById('tag').target).toBe('card')
     expect(sceneById('enter').target).toBeUndefined()
   })
   it('mobile sequence is enter->paste->finale', () => {

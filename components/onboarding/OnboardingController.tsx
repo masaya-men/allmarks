@@ -37,6 +37,10 @@ type Props = {
    *  does NOT post to the bookmark-updated channel, so this in-process signal
    *  is how the controller learns a tag was applied. */
   readonly tagAddedSignal?: number
+  /** Apply a sample tag to the newest card on the user's behalf. The tag scene
+   *  calls this automatically (tagging by hand through the popover is fiddly),
+   *  then advances when tagAddedSignal bumps. */
+  readonly onApplySampleTag?: () => void
 }
 
 const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' // public, long-lived
@@ -44,9 +48,14 @@ const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' // public, long
 const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   'paste-zone': '[data-onboarding-target="paste-zone"]',
   'card-tag': '[data-onboarding-target="card-tag"]',
+  card: '[data-onboarding-target="card"]',
   motion: '[data-onboarding-target="motion"]',
   share: '[data-onboarding-target="share"]',
 }
+
+// How long the tag scene shows the card before auto-applying the sample tag,
+// so the user reads the caption and sees the tag land rather than a flash.
+const TAG_AUTO_DELAY_MS = 1600
 
 function extensionDetected(): boolean {
   if (typeof document === 'undefined') return false
@@ -55,7 +64,7 @@ function extensionDetected(): boolean {
 
 export function OnboardingController({
   db, motionEnabled, sharePanelOpen, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
-  tagAddedSignal = 0,
+  tagAddedSignal = 0, onApplySampleTag,
 }: Props): ReactElement {
   const { t } = useI18n()
   const [sceneId, setSceneId] = useState<SceneId>('enter')
@@ -156,9 +165,20 @@ export function OnboardingController({
   }, [sceneId])
 
   // Tell the board to force the hover-gated +TAG button visible during the
-  // tag scene (the user can't hover precisely through the spotlight hole).
+  // tag scene (so it's visible inside the cut-out).
   useEffect(() => {
     onTagSceneActive?.(sceneId === 'tag')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sceneId])
+
+  // Tag scene: auto-apply a sample tag to the newest card after a beat (tagging
+  // by hand through the popover is fiddly), then the tagAddedSignal bump
+  // advances the scene. Guard against firing twice.
+  useEffect(() => {
+    if (sceneId !== 'tag') return
+    let fired = false
+    const id = setTimeout(() => { fired = true; onApplySampleTag?.() }, TAG_AUTO_DELAY_MS)
+    return () => { if (!fired) clearTimeout(id) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
@@ -208,15 +228,15 @@ export function OnboardingController({
   }
 
   // ---- Hands-on scenes -----------------------------------------------------
-  // The tag scene opens the board's +TAG popover, which extends well beyond the
-  // spotlight hole — so it must NOT block outside clicks (the popover has to be
-  // usable) and its caption sits at the bottom so it doesn't cover the popover.
+  // The tag scene cuts out the whole newest card and auto-applies a sample tag,
+  // so its caption sits at the bottom (off the card). Other scenes anchor the
+  // caption to their target. The spotlight hole passes clicks through, so the
+  // user can still operate the real control (MOTION toggle, SHARE button).
   const isTag = sceneId === 'tag'
   return wrap(
     <OnboardingSpotlight
       targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
       caption={body}
-      blockOutside={!isTag}
       captionAtBottom={isTag}
     >
       {sceneId === 'paste' && (
@@ -233,6 +253,13 @@ export function OnboardingController({
         <BookmarkletInstallChip appUrl={appUrl} />
       )}
       {sceneId === 'install' && (
+        <button type="button" className={styles.advanceBtn} onClick={advance}>
+          NEXT
+        </button>
+      )}
+      {/* SHARE advances when the panel is opened then closed, but give a plain
+          NEXT too so the user is never unsure how to proceed. */}
+      {sceneId === 'share' && (
         <button type="button" className={styles.advanceBtn} onClick={advance}>
           NEXT
         </button>

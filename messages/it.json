@@ -95,13 +95,13 @@
         "body": "Incollare un link con Cmd/Ctrl+V o usare TRY THIS.", "copied": "Copiato. Ora incollalo sulla board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Aggiungere un tag alla scheda appena salvata."
+        "body": "I tag mantengono la board ordinata. Aggiungiamo un tag di esempio a questa card."
       },
       "motion": {
         "body": "Attivare MOTION per animare la bacheca."
       },
       "extDemo": {
-        "body": "Con l'estensione, un clic salva la pagina aperta e le aggiunge un tag."
+        "body": "Con l'estensione AllMarks, un clic su qualsiasi pagina la salva — e la tagga automaticamente."
       },
       "install": {
         "body": "Trascinare il chip AllMarks nella barra dei segnalibri per salvare da qualsiasi luogo."
@@ -110,7 +110,7 @@
         "body": "L'estensione è già installata. È possibile salvare anche incollando un link o usando il bookmarklet."
       },
       "share": {
-        "body": "Aprire SHARE per pubblicare la bacheca come immagine o link."
+        "body": "Apri SHARE per pubblicare la board come immagine o link — poi chiudi, o premi NEXT."
       },
       "finale": {
         "body": "Tutto pronto. Il tutorial può essere ripetuto da SETTINGS in qualsiasi momento."

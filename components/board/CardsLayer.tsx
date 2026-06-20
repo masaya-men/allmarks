@@ -975,7 +975,7 @@ export function CardsLayer({
         pointerEvents: 'none',
       }}
     >
-      {visibleItems.map((it) => {
+      {visibleItems.map((it, cardIdx) => {
         const p = displayedPositions[it.bookmarkId]
         if (!p) return null
         const taggedOut = matchedBookmarkIds != null && !matchedBookmarkIds.has(it.bookmarkId)
@@ -995,6 +995,7 @@ export function CardsLayer({
               if (canViewportAutoplay(it)) observeViz(it.bookmarkId)(el)
             }}
             data-bookmark-id={it.bookmarkId}
+            data-onboarding-target={cardIdx === 0 ? 'card' : undefined}
             data-link-status={it.linkStatus ?? undefined}
             onPointerDown={(e: PointerEvent<HTMLDivElement>): void =>
               receiverMode

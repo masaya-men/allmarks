@@ -1,25 +1,158 @@
 /* components/onboarding/ExtensionSaveReenactment.module.css */
 .stage {
-  position: fixed; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 18px;
-  background: rgba(6,6,6,0.96); color: rgba(255,255,255,0.9);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: rgba(6, 6, 6, 0.97);
+  color: rgba(255, 255, 255, 0.9);
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  /* Cinema scene must block all board interaction (parent .root is none). */
-  pointer-events: auto;
+  pointer-events: auto; /* cinema scene blocks the board */
 }
+
+/* fake browser window */
 .browser {
-  position: relative; width: min(560px, 86vw); aspect-ratio: 16/10;
-  background: rgba(18,18,18,0.96); border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px; overflow: hidden;
+  position: relative;
+  width: min(640px, 90vw);
+  aspect-ratio: 16 / 10;
+  background: rgba(20, 20, 22, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
-.toolbar { position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.18); }
-.url { flex: 1; font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; }
-.extIcon { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: rgba(40,241,0,0.15); color: #28f100; font-weight: 700; }
-.flash { position: absolute; right: 10px; top: 8px; width: 26px; height: 26px; border-radius: 8px; background: #28f100; opacity: 0; }
-.page { height: 60%; background: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 12px, transparent 12px 24px); }
-.strip { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); display: flex; gap: 8px; }
-.chip { padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #28f100; font-size: 11px; }
-.cursor { position: absolute; left: 30%; top: 70%; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.4); }
-.caption { max-width: 440px; text-align: center; font-size: 13px; line-height: 1.8; }
-.cta { font: inherit; font-size: 12px; letter-spacing: 0.10em; text-transform: uppercase; color: rgba(255,255,255,0.95); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.22); border-radius: 8px; padding: 10px 22px; cursor: pointer; }
+
+.chrome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); }
+.urlbar {
+  flex: 1;
+  height: 26px;
+  margin: 0 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+/* the AllMarks extension button in the toolbar */
+.extBtn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(40, 241, 0, 0.16);
+  border: 1px solid rgba(40, 241, 0, 0.5);
+  flex: none;
+}
+.extA { color: #28f100; font-weight: 800; font-size: 16px; line-height: 1; }
+
+.viewport {
+  position: relative;
+  height: 100%;
+  padding: 18px;
+}
+.hero {
+  height: 46%;
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.02)),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 14px, transparent 14px 28px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.lines { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.line { height: 9px; border-radius: 5px; background: rgba(255, 255, 255, 0.10); }
+
+/* big, readable save confirmation */
+.savedBadge {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: rgba(8, 22, 6, 0.92);
+  border: 1px solid rgba(40, 241, 0, 0.6);
+  box-shadow: 0 0 30px rgba(40, 241, 0, 0.3);
+  color: #d7ffd0;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.savedCheck {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #28f100;
+  color: #0a0a0a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* tag chips that drop in under the badge */
+.strip {
+  position: absolute;
+  top: 58%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+.chip {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(40, 241, 0, 0.4);
+  color: #28f100;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.cursor {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 50% 2px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  transform: rotate(-12deg);
+}
+
+.caption {
+  max-width: 460px;
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.92);
+}
+.cta {
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+.cta:hover { background: rgba(255, 255, 255, 0.1); }

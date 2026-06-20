@@ -95,13 +95,13 @@
         "body": "Dán liên kết bằng Cmd/Ctrl+V hoặc dùng TRY THIS.", "copied": "Đã sao chép. Bây giờ dán vào bảng (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Thêm thẻ vào thẻ bạn vừa lưu."
+        "body": "Thẻ giúp bảng của bạn gọn gàng. Chúng tôi sẽ thêm một thẻ mẫu vào thẻ này cho bạn."
       },
       "motion": {
         "body": "Bật MOTION để làm bảng trở nên sống động."
       },
       "extDemo": {
-        "body": "Với tiện ích mở rộng, một cú nhấp chuột lưu trang đang mở và gắn thẻ cho nó."
+        "body": "Với tiện ích AllMarks, một cú nhấp trên bất kỳ trang nào sẽ lưu nó — và tự động gắn thẻ."
       },
       "install": {
         "body": "Kéo chip AllMarks vào thanh dấu trang để lưu từ bất kỳ đâu."
@@ -110,7 +110,7 @@
         "body": "Tiện ích mở rộng đã được cài đặt. Bạn cũng có thể lưu bằng cách dán liên kết hoặc dùng bookmarklet."
       },
       "share": {
-        "body": "Mở SHARE để xuất bảng dưới dạng hình ảnh hoặc liên kết."
+        "body": "Mở SHARE để chia sẻ bảng dưới dạng ảnh hoặc liên kết — rồi đóng lại, hoặc nhấn NEXT."
       },
       "finale": {
         "body": "Xong rồi. Có thể xem lại hướng dẫn này bất cứ lúc nào từ SETTINGS."

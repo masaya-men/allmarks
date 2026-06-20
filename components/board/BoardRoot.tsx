@@ -1160,6 +1160,16 @@ export function BoardRoot() {
     [tags, reload, reloadTags],
   )
 
+  // Onboarding tag scene: tag the newest card (highest orderIndex = the card the
+  // user just saved) with a sample tag, so the tutorial demonstrates tagging
+  // without the user fiddling with the popover. handleTagCreate bumps
+  // tagAddedTick, which advances the scene.
+  const applySampleTag = useCallback(async (): Promise<void> => {
+    if (items.length === 0) return
+    const newest = items.reduce((a, b) => ((b.orderIndex ?? 0) > (a.orderIndex ?? 0) ? b : a))
+    await handleTagCreate(newest.bookmarkId, 'sample')
+  }, [items, handleTagCreate])
+
   // Card width and gap are board-wide preferences, not per-card data.
   // localStorage is sufficient (recovers on next visit, cross-device sync
   // not in scope). On mount we hydrate from saved values once.
@@ -2009,6 +2019,7 @@ export function BoardRoot() {
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
               tagAddedSignal={tagAddedTick}
+              onApplySampleTag={() => { void applySampleTag() }}
             />
           )}
           {!loading && !showOnboarding && items.length === 0 && (

@@ -95,13 +95,13 @@
         "body": "使用 Cmd/Ctrl+V 粘贴链接，或使用 TRY THIS。", "copied": "已复制。现在粘贴到板上 (Cmd/Ctrl+V)。"
       },
       "tag": {
-        "body": "为刚刚保存的卡片添加标签。"
+        "body": "标签让你的板保持整洁。我们会为这张卡片添加一个示例标签。"
       },
       "motion": {
         "body": "开启 MOTION，让版面动起来。"
       },
       "extDemo": {
-        "body": "安装扩展后，单击即可保存当前页面并添加标签。"
+        "body": "使用 AllMarks 扩展，在任意页面上一键即可保存 — 并自动加标签。"
       },
       "install": {
         "body": "将 AllMarks 芯片拖到书签栏，即可从任何页面保存。"
@@ -110,7 +110,7 @@
         "body": "扩展已安装。也可通过粘贴链接或使用 bookmarklet 进行保存。"
       },
       "share": {
-        "body": "打开 SHARE，将版面发布为图片或链接。"
+        "body": "打开 SHARE 即可把你的板作为图片或链接分享 — 然后关闭，或按 NEXT。"
       },
       "finale": {
         "body": "已准备就绪。随时可在 SETTINGS 中重播本教程。"

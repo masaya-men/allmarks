@@ -3,7 +3,7 @@ export type SceneKind = 'cinema' | 'handsOn'
 export type AdvanceTrigger = 'button' | 'saved' | 'tagged' | 'motion' | 'sharePanel'
 export type SceneId =
   | 'enter' | 'paste' | 'tag' | 'motion' | 'extDemo' | 'install' | 'share' | 'finale'
-export type OnboardingTarget = 'paste-zone' | 'card-tag' | 'motion' | 'share'
+export type OnboardingTarget = 'paste-zone' | 'card-tag' | 'card' | 'motion' | 'share'
 
 export type OnboardingScene = {
   readonly id: SceneId
@@ -15,7 +15,7 @@ export type OnboardingScene = {
 export const ONBOARDING_SCENES: readonly OnboardingScene[] = [
   { id: 'enter',   kind: 'cinema',  advance: 'button' },
   { id: 'paste',   kind: 'handsOn', advance: 'saved',      target: 'paste-zone' },
-  { id: 'tag',     kind: 'handsOn', advance: 'tagged',     target: 'card-tag' },
+  { id: 'tag',     kind: 'handsOn', advance: 'tagged',     target: 'card' },
   { id: 'motion',  kind: 'handsOn', advance: 'motion',     target: 'motion' },
   { id: 'extDemo', kind: 'cinema',  advance: 'button' },
   { id: 'install', kind: 'handsOn', advance: 'button' },

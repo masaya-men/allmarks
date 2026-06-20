@@ -95,13 +95,13 @@
         "body": "Link mit Cmd/Ctrl+V einfügen oder TRY THIS verwenden.", "copied": "Kopiert. Füge ihn jetzt auf dem Board ein (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Füge dem gerade gespeicherten Karten ein Tag hinzu."
+        "body": "Tags halten dein Board geordnet. Wir fügen dieser Karte ein Beispiel-Tag hinzu."
       },
       "motion": {
         "body": "MOTION einschalten, um das Board zum Leben zu erwecken."
       },
       "extDemo": {
-        "body": "Mit der Erweiterung speichert ein Klick die geöffnete Seite und taggt sie."
+        "body": "Mit der AllMarks-Erweiterung speichert ein Klick jede Seite — und vergibt automatisch Tags."
       },
       "install": {
         "body": "AllMarks-Chip in die Lesezeichenleiste ziehen, um von überall zu speichern."
@@ -110,7 +110,7 @@
         "body": "Die Erweiterung ist bereits installiert. Du kannst auch per Link-Einfügen oder Bookmarklet speichern."
       },
       "share": {
-        "body": "SHARE öffnen, um das Board als Bild oder Link zu veröffentlichen."
+        "body": "Öffne SHARE, um dein Board als Bild oder Link zu veröffentlichen — dann schließen oder NEXT drücken."
       },
       "finale": {
         "body": "Alles bereit. Tutorial jederzeit über SETTINGS wiederholen."
