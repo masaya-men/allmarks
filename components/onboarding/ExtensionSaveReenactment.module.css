@@ -1,7 +1,7 @@
 /* components/onboarding/ExtensionSaveReenactment.module.css
-   Promo-quality re-enactment of the AllMarks extension saving + tagging a page.
-   Tied to the world: dark glass, sound-wave hero, a single minimal close glyph,
-   and the real (borderless, monospace, green) tag-chip vocabulary. */
+   The demo CHROME only — the browser frame + cursor + caption + CTA. The actual
+   extension UI (cursor pill, floating button, quick-tag strip) is the real
+   thing, ported verbatim in ./extension-ui.css. */
 .stage {
   position: fixed;
   inset: 0;
@@ -16,7 +16,7 @@
   pointer-events: auto; /* cinema scene blocks the board */
 }
 
-/* fake browser window */
+/* fake browser window holding the real page screenshot */
 .browser {
   position: relative;
   display: flex;
@@ -58,131 +58,25 @@
   color: rgba(255, 255, 255, 0.5);
   font-size: 12px;
 }
-/* the AllMarks extension button in the toolbar — the focal accent */
-.extBtn {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: rgba(40, 241, 0, 0.16);
-  border: 1px solid rgba(40, 241, 0, 0.5);
-  flex: none;
-}
-.extA { color: #28f100; font-weight: 800; font-size: 16px; line-height: 1; }
 
+/* the page area — holds the LP screenshot full-bleed + the extension overlays */
 .viewport {
   position: relative;
   flex: 1;
-  padding: 18px;
-}
-/* hero carries the sound-wave motif so the frame belongs to the AllMarks world */
-.hero {
-  height: 46%;
-  display: grid;
-  place-items: center;
   overflow: hidden;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
 }
-.heroWave { display: flex; align-items: center; gap: 5px; height: 52%; }
-.heroBar {
-  width: 3px;
-  height: 100%;
-  border-radius: 2px;
-  background: rgba(40, 241, 0, 0.5);
-  transform-origin: center;
-  transform: scaleY(0.5);
-  animation: heroOsc 1.4s ease-in-out infinite;
-  animation-delay: calc(var(--i) * 0.09s);
-}
-@keyframes heroOsc { 0%, 100% { transform: scaleY(0.45); } 50% { transform: scaleY(1.4); } }
-.lines { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-.title { height: 12px; width: 52%; border-radius: 5px; background: rgba(255, 255, 255, 0.16); }
-.line { height: 9px; border-radius: 5px; background: rgba(255, 255, 255, 0.09); }
-
-/* green save-flash that sweeps the page on save */
-.flash {
+.page {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 30%,
-    rgba(40, 241, 0, 0.35) 50%,
-    transparent 70%
-  );
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-/* "Saved" confirmation pill near the extension button */
-.savePill {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: rgba(8, 18, 6, 0.94);
-  border: 1px solid rgba(40, 241, 0, 0.55);
-  box-shadow: 0 0 24px rgba(40, 241, 0, 0.28);
-  color: #d7ffd0;
-  font-size: 12.5px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.savedCheck {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #28f100;
-  color: #0a0a0a;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-/* the real AllMarks tag menu (matches TagAddPopover: glass, borderless chips) */
-.tagMenu {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  min-width: 62%;
-  padding: 10px;
-  background: rgba(20, 20, 20, 0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-}
-.tagHeader {
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  padding: 0 4px 6px;
-}
-.tagChips { display: flex; gap: 6px; flex-wrap: wrap; }
-.tagChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 5px 9px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: lowercase;
-  color: rgba(255, 255, 255, 0.82);
-  white-space: nowrap;
-}
-.chipCheck { display: inline-block; overflow: hidden; white-space: nowrap; color: #28f100; font-size: 11px; }
-.chipName { color: inherit; }
-
+/* demo cursor (above the pill/strip/button so the pointer always reads on top) */
 .cursor {
   position: absolute;
   width: 18px;
@@ -192,7 +86,7 @@
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   transform: rotate(-12deg);
-  z-index: 2;
+  z-index: 6;
 }
 
 .caption {
@@ -225,6 +119,5 @@
   50% { box-shadow: 0 0 0 5px rgba(40, 241, 0, 0.18); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .heroBar { animation: none; transform: scaleY(1); }
   .cta[data-cue="true"] { animation: none; }
 }

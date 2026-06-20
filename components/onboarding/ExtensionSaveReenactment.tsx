@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { gsap } from 'gsap'
 import styles from './ExtensionSaveReenactment.module.css'
+import './extension-ui.css'
 
 type Props = {
   readonly caption: string
@@ -11,138 +12,232 @@ type Props = {
   readonly onAdvance: () => void
 }
 
-const DEMO_TAGS = ['design', 'video', 'inspo'] as const
+// Two chips in the visible row + a few in the drawer (the ▾ hint shows there's
+// more), mirroring the real strip's overflow layout.
+const ROW_TAGS = ['design', 'video'] as const
+const DRAWER_TAGS = ['inspo', 'mood', 'read later', 'work'] as const
+
+// The REAL floating-button SVG (verbatim from extension/floating-button.js
+// SVG_STRING) — black A mark + white outline + the green check group.
+const FB_SVG = `
+<svg viewBox="0 0 112 111" fill="none" xmlns="http://www.w3.org/2000/svg" class="allmarks-fb-svg" aria-hidden="true">
+  <mask id="onb-fb-mask-inside" fill="white">
+    <path d="M52.6441 9.31894C67.4082 36.0874 86.0574 60.9154 103.159 86.5162C104.401 88.3758 105.635 90.2402 106.859 92.109C107.931 93.7454 109.002 95.3818 110.074 97.0183C113.558 102.339 109.741 109.401 103.381 109.401H59.7004C56.2986 109.401 53.2666 107.251 52.1635 104.033C44.5649 81.8666 37.6138 59.3761 28.9285 37.7528C27.7417 34.7981 24.8839 32.8661 21.6999 32.8382C17.7002 32.803 13.7004 32.7899 9.70074 32.7613C6.00914 32.7349 3.04449 29.728 3.04449 26.0363V7.34958C3.04449 3.65788 6.00914 0.651022 9.70074 0.6246C19.0949 0.557363 28.4892 0.575688 37.8834 0.19296L42.4549 0.00666439C45.4836 -0.116759 48.3219 1.48218 49.7858 4.13646L52.6441 9.31894Z"/>
+  </mask>
+  <path class="allmarks-fb-mark-fill" d="M52.6441 9.31894C67.4082 36.0874 86.0574 60.9154 103.159 86.5162C104.401 88.3758 105.635 90.2402 106.859 92.109C107.931 93.7454 109.002 95.3818 110.074 97.0183C113.558 102.339 109.741 109.401 103.381 109.401H59.7004C56.2986 109.401 53.2666 107.251 52.1635 104.033C44.5649 81.8666 37.6138 59.3761 28.9285 37.7528C27.7417 34.7981 24.8839 32.8661 21.6999 32.8382C17.7002 32.803 13.7004 32.7899 9.70074 32.7613C6.00914 32.7349 3.04449 29.728 3.04449 26.0363V7.34958C3.04449 3.65788 6.00914 0.651022 9.70074 0.6246C19.0949 0.557363 28.4892 0.575688 37.8834 0.19296L42.4549 0.00666439C45.4836 -0.116759 48.3219 1.48218 49.7858 4.13646L52.6441 9.31894Z"/>
+  <path class="allmarks-fb-mark-highlight" d="M52.6441 9.31894L51.7685 9.80188L51.7685 9.8019L52.6441 9.31894ZM103.159 86.5162L103.99 85.9607L103.99 85.9607L103.159 86.5162ZM106.859 92.109L107.696 91.5611V91.5611L106.859 92.109ZM9.70074 32.7613L9.7079 31.7613V31.7613L9.70074 32.7613ZM9.70074 0.6246L9.7079 1.62457V1.62457L9.70074 0.6246ZM37.8834 0.19296L37.9241 1.19213L37.9241 1.19213L37.8834 0.19296ZM52.6441 9.31894L51.7685 9.8019C66.5595 36.6193 85.2678 61.5337 102.327 87.0717L103.159 86.5162L103.99 85.9607C86.847 60.2971 68.2568 35.5555 53.5197 8.83598L52.6441 9.31894ZM103.159 86.5162L102.327 87.0717C103.568 88.929 104.8 90.7908 106.022 92.6568L106.859 92.109L107.696 91.5611C106.47 89.6896 105.234 87.8226 103.99 85.9607L103.159 86.5162ZM106.859 92.109L106.022 92.6568C107.094 94.2933 108.166 95.9297 109.237 97.5662L110.074 97.0183L110.91 96.4704C109.839 94.834 108.767 93.1976 107.696 91.5611L106.859 92.109ZM103.381 109.401V108.401H59.7004V109.401V110.401H103.381V109.401ZM52.1635 104.033L53.1095 103.708C45.5242 81.5813 38.5546 59.0352 29.8565 37.3801L28.9285 37.7528L28.0006 38.1255C36.6731 59.7169 43.6056 82.1519 51.2175 104.357L52.1635 104.033ZM21.6999 32.8382L21.7087 31.8382C17.7098 31.8031 13.7004 31.7899 9.7079 31.7613L9.70074 32.7613L9.69359 33.7613C13.7004 33.79 17.6906 33.803 21.6911 33.8381L21.6999 32.8382ZM3.04449 26.0363H4.04449V7.34958H3.04449H2.04449V26.0363H3.04449ZM9.70074 0.6246L9.7079 1.62457C19.0893 1.55743 28.5082 1.57575 37.9241 1.19213L37.8834 0.19296L37.8427 -0.806211C28.4703 -0.42437 19.1004 -0.442702 9.69359 -0.375374L9.70074 0.6246ZM37.8834 0.19296L37.9241 1.19213L42.4956 1.00584L42.4549 0.00666439L42.4142 -0.992506L37.8426 -0.806211L37.8834 0.19296ZM49.7858 4.13646L48.9102 4.6194L51.7685 9.80188L52.6441 9.31894L53.5198 8.83599L50.6615 3.65351L49.7858 4.13646ZM42.4549 0.00666439L42.4956 1.00584C45.1457 0.897839 47.6292 2.29691 48.9102 4.6194L49.7858 4.13646L50.6615 3.65351C49.0146 0.667443 45.8214 -1.13136 42.4142 -0.992506L42.4549 0.00666439ZM9.70074 32.7613L9.7079 31.7613C6.56982 31.7389 4.04449 29.1826 4.04449 26.0363H3.04449H2.04449C2.04449 30.2735 5.44846 33.7309 9.69359 33.7613L9.70074 32.7613ZM28.9285 37.7528L29.8565 37.3801C28.5172 34.0458 25.2939 31.8697 21.7087 31.8382L21.6999 32.8382L21.6911 33.8381C24.4739 33.8626 26.9663 35.5505 28.0006 38.1255L28.9285 37.7528ZM59.7004 109.401V108.401C56.7227 108.401 54.073 106.519 53.1095 103.708L52.1635 104.033L51.2175 104.357C52.4602 107.982 55.8745 110.401 59.7004 110.401V109.401ZM3.04449 7.34958H4.04449C4.04449 4.20332 6.56982 1.64704 9.7079 1.62457L9.70074 0.6246L9.69359 -0.375374C5.44846 -0.34499 2.04449 3.11244 2.04449 7.34958H3.04449ZM110.074 97.0183L109.237 97.5662C112.286 102.222 108.946 108.401 103.381 108.401V109.401V110.401C110.536 110.401 114.83 102.456 110.91 96.4704L110.074 97.0183Z" fill="white" mask="url(#onb-fb-mask-inside)"/>
+  <g class="allmarks-fb-group-check">
+    <path class="allmarks-fb-check-fill" d="M14.4803 72.5461C13.2604 70.808 11.415 69.6569 9.31096 69.376C7.20916 69.0933 5.02096 69.7038 3.26682 71.0433C1.51269 72.3828 0.347562 74.333 0.0668612 76.4351C-0.21611 78.5389 0.40843 80.6223 1.76399 82.2567C1.76399 82.2567 1.76399 82.2567 1.76399 82.2567C3.10464 83.875 4.4453 85.4934 5.78595 87.1117C11.1511 93.588 16.5162 100.064 21.8814 106.541C25.0609 110.797 31.7446 111.469 35.6577 108.042C56.5326 89.6602 77.4075 71.2782 98.2824 52.8962C99.8596 51.5074 101.437 50.1186 103.014 48.7298C103.588 48.2237 103.941 47.495 104.006 46.7178C104.071 45.9397 103.842 45.1769 103.36 44.5832C102.878 43.9896 102.178 43.6099 101.403 43.5138C100.629 43.4185 99.8432 43.6148 99.2304 44.0731C99.2304 44.0731 99.2304 44.0731 99.2304 44.0731C97.5481 45.3326 95.8658 46.592 94.1836 47.8515C71.9176 64.5214 49.6517 81.1913 27.3857 97.8613C28.8201 96.5554 31.3437 96.7337 32.61 98.3478C27.7749 91.4667 22.9399 84.5856 18.1049 77.7045C16.8967 75.985 15.6885 74.2656 14.4803 72.5461Z"/>
+  </g>
+</svg>`.trim()
+
+// Ported (chrome-free) from extension/content.js — the pill's icon + label.
+const ICONS: Record<string, string> = {
+  ring: '<span class="ring"></span>',
+  check: '<svg viewBox="0 0 24 24" class="check"><path d="M5 12 L10 17 L19 7"/></svg>',
+}
+const STATE_LABEL: Record<string, string> = { saving: 'Saving', saved: 'Saved' }
+const STATE_ICON: Record<string, string> = { saving: 'ring', saved: 'check' }
+
+/** Per-char rise → morph to a single text node → 700ms RGB glitch
+ *  (extension/content.js:81-111). Returns timer ids so the loop can clear them. */
+function setLabelAnimated(stateEl: HTMLElement, finalText: string): number[] {
+  const timers: number[] = []
+  stateEl.classList.remove('is-glitching')
+  stateEl.setAttribute('data-glitch-text', finalText)
+  stateEl.innerHTML = ''
+  for (let i = 0; i < finalText.length; i++) {
+    const span = document.createElement('span')
+    span.className = 'booklage-pill__char'
+    span.textContent = finalText[i] === ' ' ? ' ' : finalText[i]
+    span.style.animationDelay = `${i * 22}ms`
+    stateEl.appendChild(span)
+  }
+  const slideEnd = (finalText.length - 1) * 22 + 320
+  timers.push(window.setTimeout(() => {
+    stateEl.textContent = finalText
+    stateEl.classList.add('is-glitching')
+    timers.push(window.setTimeout(() => stateEl.classList.remove('is-glitching'), 700))
+  }, slideEnd + 40))
+  return timers
+}
+
+/** Re-fire the per-state CSS animation (extension/content.js:113-132): clear
+ *  data-state, force a reflow, re-set it, swap the icon, re-animate the label. */
+function applyState(pill: HTMLElement, iconEl: HTMLElement, stateEl: HTMLElement, state: string): number[] {
+  pill.setAttribute('data-state', '')
+  void pill.offsetWidth
+  pill.setAttribute('data-state', state)
+  iconEl.innerHTML = ICONS[STATE_ICON[state]] ?? ''
+  return setLabelAnimated(stateEl, STATE_LABEL[state] ?? '')
+}
 
 /**
- * A promo-quality re-enactment of the AllMarks browser extension saving the open
- * page in one click and tagging it. Built entirely with GSAP so it's crisp at any
- * DPR and on-theme. The beats read like a product PV: (1) the cursor clicks the
- * AllMarks button → (2) a green save-flash sweeps the page → (3) a "Saved" pill
- * pops → (4) the real tag menu slides up and the cursor SELECTS tags one by one,
- * each lighting up green. Loops; after the first pass it pulses NEXT so the user
- * knows they can move on (the loop is a showcase, not a wait).
+ * A promo re-enactment of the AllMarks extension saving + tagging the page —
+ * built from the REAL extension UI. On a screenshot of the AllMarks LP (a real
+ * page being browsed), the cursor presses the genuine floating save button, the
+ * genuine cursor pill runs Saving → Saved (per-char rise, RGB glitch, green
+ * check with 3-layer glow), the genuine quick-tag strip slides in, and chips
+ * light green as they're selected. Pure GSAP drives the timing; the look is the
+ * extension's own CSS (extension-ui.css). Loops; pulses NEXT after the first pass.
  */
 export function ExtensionSaveReenactment({ caption, buttonLabel, onAdvance }: Props): ReactElement {
-  const ref = useRef<HTMLDivElement>(null)
+  const vpRef = useRef<HTMLDivElement>(null)
   const ctaRef = useRef<HTMLButtonElement>(null)
   const [cuePulse, setCuePulse] = useState(false)
 
   useEffect(() => {
-    const root = ref.current
-    if (!root) return
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const q = (sel: string): Element | null => root.querySelector(sel)
-    const qa = (sel: string): Element[] => Array.from(root.querySelectorAll(sel))
-
-    const cursor = q('[data-anim="cursor"]')
+    const vp = vpRef.current
+    if (!vp) return
+    const q = <T extends HTMLElement>(sel: string): T | null => vp.querySelector<T>(sel)
     const btn = q('[data-anim="btn"]')
-    const flash = q('[data-anim="flash"]')
     const pill = q('[data-anim="pill"]')
-    const menu = q('[data-anim="menu"]')
-    const chips = qa('[data-anim="chip"]')
-    const checks = chips.map((c) => c.querySelector('[data-anim="check"]'))
+    const pillIcon = q<HTMLElement>('[data-anim="pill"] [data-role="icon"]')
+    const pillState = q<HTMLElement>('[data-anim="pill"] [data-role="state"]')
+    const strip = q('[data-anim="menu"]')
+    const chips = Array.from(vp.querySelectorAll<HTMLElement>('.allmarks-tagstrip__row [data-anim="chip"]'))
+    const cursor = q('[data-anim="cursor"]')
+    if (!btn || !pill || !pillIcon || !pillState || !strip || !cursor || chips.length < 2) return
 
-    const showEnd = (): void => {
-      gsap.set(flash, { opacity: 0 })
-      gsap.set(pill, { opacity: 1, scale: 1, y: 0 })
-      gsap.set(menu, { opacity: 1, y: 0 })
-      gsap.set(chips, { color: '#28f100' })
-      gsap.set(checks, { opacity: 1, width: 'auto' })
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let labelTimers: number[] = []
+    const clearLabels = (): void => { labelTimers.forEach(clearTimeout); labelTimers = [] }
+    const push = (t: number[]): void => { labelTimers.push(...t) }
+
+    // center of an element relative to the viewport box (for cursor targeting)
+    const rel = (el: HTMLElement): { x: number; y: number } => {
+      const r = el.getBoundingClientRect()
+      const v = vp.getBoundingClientRect()
+      return { x: r.left - v.left + r.width / 2, y: r.top - v.top + r.height / 2 }
+    }
+    const vw = (): number => vp.getBoundingClientRect().width
+    const vh = (): number => vp.getBoundingClientRect().height
+
+    const reset = (): void => {
+      clearLabels()
+      pill.classList.remove('is-visible')
+      pill.setAttribute('data-state', '')
+      pillIcon.innerHTML = ''
+      pillState.textContent = ''
+      strip.classList.remove('is-visible')
+      strip.setAttribute('data-open', 'false')
+      chips.forEach((c) => c.setAttribute('data-on', 'false'))
+      btn.setAttribute('data-state', 'idle')
+      gsap.set(cursor, { left: vw() * 0.18, top: vh() * 0.86, scale: 1, opacity: 0 })
     }
 
     if (reduce) {
-      showEnd()
+      // Static end state — no animation.
+      btn.setAttribute('data-state', 'saved-idle')
+      const b = rel(btn)
+      gsap.set(pill, { left: Math.max(8, b.x - 168), top: Math.max(8, b.y - 66) })
+      pill.classList.add('is-visible')
+      pill.setAttribute('data-state', 'saved')
+      pillIcon.innerHTML = ICONS.check
+      pillState.textContent = 'Saved'
+      strip.classList.add('is-visible')
+      chips[0].setAttribute('data-on', 'true')
+      chips[1].setAttribute('data-on', 'true')
+      gsap.set(cursor, { opacity: 0 })
       setCuePulse(true)
       return
     }
 
-    const hideAll = (): void => {
-      gsap.set(flash, { opacity: 0 })
-      gsap.set(pill, { opacity: 0, scale: 0.7, y: 6 })
-      gsap.set(menu, { opacity: 0, y: 14 })
-      gsap.set(chips, { color: 'rgba(255,255,255,0.82)' })
-      gsap.set(checks, { opacity: 0, width: 0 })
-      gsap.set(cursor, { left: '12%', top: '86%', scale: 1 })
-      gsap.set(btn, { boxShadow: '0 0 0 0 rgba(40,241,0,0)' })
-    }
-    hideAll()
-
-    const tl = gsap.timeline({
-      repeat: -1,
-      repeatDelay: 0.9,
-      onRepeat: () => setCuePulse(true), // first loop done → tell the user NEXT is live
-    })
+    const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.9, onRepeat: () => setCuePulse(true) })
     tl
-      .add(hideAll)
-      // 1) the extension button draws the eye
-      .to(btn, { boxShadow: '0 0 0 7px rgba(40,241,0,0.22)', duration: 0.5, yoyo: true, repeat: 1, ease: 'sine.inOut' })
-      // 2) cursor glides up to the button and presses it
-      .to(cursor, { left: '90%', top: '11%', duration: 1.0, ease: 'power2.inOut' }, '-=0.45')
+      .call(reset)
+      .to(cursor, { opacity: 1, duration: 0.3, ease: 'power2.out' })
+      // the floating button draws the eye (its real hover state = opaque + scale)
+      .call(() => btn.setAttribute('data-state', 'idle-hover'))
+      // cursor glides to the real button and presses it
+      .to(cursor, { left: () => rel(btn).x - 4, top: () => rel(btn).y - 2, duration: 1.0, ease: 'power2.inOut' }, '+=0.1')
       .to(cursor, { scale: 0.78, duration: 0.13, yoyo: true, repeat: 1, ease: 'power1.inOut' })
-      .to(btn, { backgroundColor: 'rgba(40,241,0,0.95)', color: '#0a0a0a', duration: 0.14, yoyo: true, repeat: 1 }, '<')
-      // 3) a green save-flash sweeps the page
-      .fromTo(flash, { opacity: 0, x: '-30%' }, { opacity: 0.55, x: '0%', duration: 0.22, ease: 'power2.out' }, '<')
-      .to(flash, { opacity: 0, x: '30%', duration: 0.45, ease: 'power2.in' })
-      // 4) the "Saved" pill pops
-      .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.8)' }, '-=0.2')
-      // 5) the real tag menu slides up
-      .to(menu, { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }, '+=0.15')
-      // 6) cursor moves to each chip and selects it (chip lights up green + ✓)
-      .to(cursor, { left: '34%', top: '74%', duration: 0.6, ease: 'power2.inOut' }, '+=0.1')
+      // button → saving (its real spinner), the cursor pill appears + runs "Saving"
+      .call(() => {
+        btn.setAttribute('data-state', 'saving')
+        const b = rel(btn)
+        gsap.set(pill, { left: Math.max(8, b.x - 168), top: Math.max(8, b.y - 66) })
+        pill.classList.add('is-visible')
+        push(applyState(pill, pillIcon, pillState, 'saving'))
+      })
+      .to({}, { duration: 0.95 }) // hold "Saving" (real min is 500ms)
+      // save lands: button flashes its real check, pill morphs to "Saved"
+      .call(() => {
+        btn.setAttribute('data-state', 'flash')
+        push(applyState(pill, pillIcon, pillState, 'saved'))
+      })
+      .to({}, { duration: 0.7 })
+      // the real quick-tag strip slides in
+      .call(() => strip.classList.add('is-visible'))
+      .to({}, { duration: 0.45 }) // let the native 240/360ms slide play
+      // cursor selects the first chip (lights green + ✓)
+      .to(cursor, { left: () => rel(chips[0]).x, top: () => rel(chips[0]).y, duration: 0.6, ease: 'power2.inOut' })
       .to(cursor, { scale: 0.8, duration: 0.11, yoyo: true, repeat: 1 })
-      .to(chips[0] ?? {}, { color: '#28f100', duration: 0.2 }, '<')
-      .to(checks[0] ?? {}, { opacity: 1, width: 'auto', duration: 0.22, ease: 'back.out(2)' }, '<')
-      .to(cursor, { left: '56%', top: '74%', duration: 0.5, ease: 'power2.inOut' }, '+=0.15')
+      .call(() => chips[0].setAttribute('data-on', 'true'))
+      // …and the second chip
+      .to(cursor, { left: () => rel(chips[1]).x, top: () => rel(chips[1]).y, duration: 0.5, ease: 'power2.inOut' }, '+=0.1')
       .to(cursor, { scale: 0.8, duration: 0.11, yoyo: true, repeat: 1 })
-      .to(chips[1] ?? {}, { color: '#28f100', duration: 0.2 }, '<')
-      .to(checks[1] ?? {}, { opacity: 1, width: 'auto', duration: 0.22, ease: 'back.out(2)' }, '<')
-      // 7) hold so the viewer reads the finished, tagged state
+      .call(() => chips[1].setAttribute('data-on', 'true'))
+      // pill auto-hides (real saved autoHide ~1700ms), then hold the tagged state
+      .to({}, { duration: 0.5 })
+      .call(() => pill.classList.remove('is-visible'))
       .to({}, { duration: 1.5 })
 
-    return () => { tl.kill() }
+    return () => { tl.kill(); clearLabels() }
   }, [])
 
   return (
     <div className={styles.stage} data-testid="stage-extDemo">
-      <div ref={ref} className={styles.browser}>
+      <div className={styles.browser}>
         <div className={styles.chrome}>
           <span className={styles.close} aria-hidden="true" />
-          <span className={styles.urlbar}>cool-article.example</span>
-          <span data-anim="btn" className={styles.extBtn} aria-hidden="true">
-            <span className={styles.extA}>A</span>
-          </span>
+          <span className={styles.urlbar}>allmarks.app</span>
         </div>
-        <div className={styles.viewport}>
-          <div className={styles.hero}>
-            <div className={styles.heroWave} aria-hidden="true">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <span key={i} className={styles.heroBar} style={{ ['--i' as string]: i }} />
+        <div ref={vpRef} className={styles.viewport}>
+          {/* the "real screen" — a screenshot of the AllMarks LP being browsed */}
+          <img className={styles.page} src="/onboarding/lp-hero-shot.webp" alt="" draggable={false} />
+
+          {/* REAL floating save button (extension UI) */}
+          <div
+            data-anim="btn"
+            className="allmarks-floating-btn"
+            data-state="idle"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: FB_SVG }}
+          />
+
+          {/* REAL cursor pill (extension UI) */}
+          <div data-anim="pill" className="booklage-pill" data-state="" aria-hidden="true">
+            <span className="booklage-pill__icon" data-role="icon" />
+            <span className="booklage-pill__brand">AllMarks</span>
+            <span className="booklage-pill__sep">·</span>
+            <span className="booklage-pill__state" data-role="state">Saving</span>
+          </div>
+
+          {/* REAL quick-tag strip (extension UI) */}
+          <div
+            data-anim="menu"
+            className="allmarks-tagstrip"
+            data-side="right"
+            data-open="false"
+            aria-hidden="true"
+            style={{ right: 0, top: '50%', marginTop: '-30px' }}
+          >
+            <div className="allmarks-tagstrip__row">
+              {ROW_TAGS.map((t) => (
+                <button key={t} type="button" data-anim="chip" className="allmarks-tagstrip__chip" data-on="false">{t}</button>
+              ))}
+              <span className="allmarks-tagstrip__hint">▾</span>
+            </div>
+            <div className="allmarks-tagstrip__drawer">
+              {DRAWER_TAGS.map((t) => (
+                <button key={t} type="button" className="allmarks-tagstrip__chip" data-on="false">{t}</button>
               ))}
             </div>
           </div>
-          <div className={styles.lines}>
-            <span className={styles.title} />
-            <span className={styles.line} style={{ width: '90%' }} />
-            <span className={styles.line} style={{ width: '64%' }} />
-          </div>
-          <div data-anim="flash" className={styles.flash} aria-hidden="true" />
-          <div data-anim="pill" className={styles.savePill}>
-            <span className={styles.savedCheck} aria-hidden="true">✓</span>
-            <span>Saved to AllMarks</span>
-          </div>
-          <div data-anim="menu" className={styles.tagMenu}>
-            <div className={styles.tagHeader}>+ TAG</div>
-            <div className={styles.tagChips}>
-              {DEMO_TAGS.map((name) => (
-                <span key={name} data-anim="chip" className={styles.tagChip}>
-                  <span data-anim="check" className={styles.chipCheck} aria-hidden="true">✓</span>
-                  <span className={styles.chipName}>{name}</span>
-                </span>
-              ))}
-            </div>
-          </div>
+
+          <span data-anim="cursor" className={styles.cursor} aria-hidden="true" />
         </div>
-        <span data-anim="cursor" className={styles.cursor} aria-hidden="true" />
       </div>
       <p className={styles.caption}>{caption}</p>
       <button

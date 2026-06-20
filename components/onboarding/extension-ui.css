@@ -1,0 +1,301 @@
+/* components/onboarding/extension-ui.css
+ *
+ * The REAL extension UI, ported verbatim for the onboarding extension demo so it
+ * re-enacts exactly what the AllMarks extension produces on a page — the cursor
+ * pill (extension/content.css), the floating save button + check, and the
+ * quick-tag strip (extension/floating-button.css).
+ *
+ * Plain GLOBAL css on purpose (NOT a CSS module): the demo's small JS helper
+ * injects the same hardcoded class names the extension uses (.ring/.check/
+ * .booklage-pill__char etc.), so the selectors must stay un-hashed. BEM names
+ * (booklage-pill__*, allmarks-*) keep it from colliding inside onboarding.
+ *
+ * Only deviation from the extension source: position fixed -> absolute (these
+ * live inside the demo's browser frame, not the OS viewport) and contained
+ * z-index values. Colors / radii / glow / glitch / fonts / keyframes / timings
+ * are 1:1 with the real extension.
+ */
+
+/* ===== Cursor pill (extension/content.css L1-236) ========================= */
+.booklage-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 12px;
+  height: 40px;
+  width: max-content;
+  border-radius: 20px;
+  background: rgba(18, 18, 22, 0.92);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  font: 500 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.94);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.booklage-pill.is-visible { opacity: 1; }
+.booklage-pill__brand { font-weight: 600; letter-spacing: 0.01em; }
+.booklage-pill__sep { opacity: 0.45; }
+.booklage-pill__state {
+  font-weight: 400;
+  opacity: 0.85;
+  transition: opacity 0.18s ease, color 0.24s ease;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  overflow-clip-margin: 10px;
+  white-space: pre;
+  line-height: 1.15;
+  vertical-align: middle;
+}
+.booklage-pill__char {
+  display: inline-block;
+  transform: translateY(110%);
+  opacity: 0;
+  animation: booklage-pill-char-rise 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes booklage-pill-char-rise { to { transform: translateY(0); opacity: 1; } }
+.booklage-pill[data-state="saved"] .booklage-pill__state { color: rgba(134, 239, 172, 0.96); }
+.booklage-pill[data-state="duplicate"] .booklage-pill__state { color: rgba(252, 211, 77, 0.96); }
+.booklage-pill[data-state="error"] .booklage-pill__state { color: rgba(255, 130, 130, 0.96); }
+.booklage-pill__state::before,
+.booklage-pill__state::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+}
+.booklage-pill__state.is-glitching::before { color: #ff9d3f; animation: booklage-pill-glitch-a 700ms steps(7, end); }
+.booklage-pill__state.is-glitching::after { color: #50c8ff; animation: booklage-pill-glitch-b 700ms steps(7, end); }
+@keyframes booklage-pill-glitch-a {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(3px, -1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(-5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(-3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+@keyframes booklage-pill-glitch-b {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(-3px, 1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+.booklage-pill__icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; transform-origin: center; }
+.booklage-pill .ring {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-top-color: rgba(255, 255, 255, 0.96);
+  border-radius: 50%;
+  animation: booklage-pill-spin 0.85s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+}
+@keyframes booklage-pill-spin { to { transform: rotate(360deg); } }
+.booklage-pill[data-state="saved"] .booklage-pill__icon { animation: booklage-pill-pop 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.booklage-pill[data-state="duplicate"] .booklage-pill__icon { animation: booklage-pill-pop-gentle 0.36s cubic-bezier(0.4, 0, 0.2, 1) both; }
+@keyframes booklage-pill-pop { 0% { transform: scale(0.4); } 55% { transform: scale(1.2); } 78% { transform: scale(0.94); } 100% { transform: scale(1); } }
+@keyframes booklage-pill-pop-gentle { 0% { transform: scale(0.85); } 100% { transform: scale(1); } }
+.booklage-pill .check {
+  width: 14px;
+  height: 14px;
+  stroke: rgba(74, 222, 128, 0.98);
+  stroke-width: 2.6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px rgba(134, 239, 172, 0.95)) drop-shadow(0 0 8px rgba(74, 222, 128, 0.75)) drop-shadow(0 0 16px rgba(34, 197, 94, 0.55));
+}
+.booklage-pill .check:not(.check-warn) { stroke-dasharray: 24; stroke-dashoffset: 24; animation: booklage-pill-check-stroke 0.48s cubic-bezier(0.65, 0, 0.35, 1) 0.06s forwards; }
+.booklage-pill .check-warn .warn-tri { stroke-dasharray: 60; stroke-dashoffset: 60; animation: booklage-pill-check-stroke 0.44s cubic-bezier(0.65, 0, 0.35, 1) 0.04s forwards; }
+.booklage-pill .check-warn .warn-bang { stroke-dasharray: 5; stroke-dashoffset: 5; animation: booklage-pill-check-stroke 0.18s cubic-bezier(0.65, 0, 0.35, 1) 0.36s forwards; }
+.booklage-pill .check-warn .warn-dot { fill: currentColor; stroke: none; opacity: 0; animation: booklage-pill-warn-dot 0.14s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards; }
+@keyframes booklage-pill-check-stroke { to { stroke-dashoffset: 0; } }
+@keyframes booklage-pill-warn-dot { to { opacity: 1; } }
+.booklage-pill[data-state="duplicate"] .check {
+  stroke: rgba(252, 211, 77, 0.98);
+  color: rgba(252, 211, 77, 0.98);
+  filter: drop-shadow(0 0 3px rgba(254, 240, 138, 0.95)) drop-shadow(0 0 8px rgba(250, 204, 21, 0.78)) drop-shadow(0 0 16px rgba(234, 179, 8, 0.55));
+}
+.booklage-pill[data-state="error"] .booklage-pill__icon { animation: booklage-pill-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes booklage-pill-shake { 0% { transform: translateX(0); } 18% { transform: translateX(-3px); } 36% { transform: translateX(3px); } 54% { transform: translateX(-2px); } 72% { transform: translateX(2px); } 100% { transform: translateX(0); } }
+.booklage-pill .bang { width: 14px; height: 14px; border-radius: 50%; background: rgba(255, 90, 90, 0.96); color: #1a0808; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+
+/* ===== Floating save button (extension/floating-button.css L1-142) ======== */
+.allmarks-floating-btn {
+  --floating-btn-idle-opacity: 0.3;
+  --floating-btn-mark-color: #000;
+  --floating-btn-check-color: #28f100;
+  --floating-btn-glow-inner: rgba(134, 239, 172, 0.95);
+  --floating-btn-glow-mid: rgba(74, 222, 128, 0.75);
+  --floating-btn-glow-outer: rgba(34, 197, 94, 0.55);
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4; /* above the strip (z3) so the button shows in the strip's gutter */
+  opacity: var(--floating-btn-idle-opacity, 0.3);
+  transition: opacity 220ms cubic-bezier(0.4, 0, 0.2, 1), transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none; /* demo: the cursor presses it on rails, not really clickable */
+}
+.allmarks-floating-btn .allmarks-fb-svg { width: 32px; height: 32px; overflow: visible; pointer-events: none; }
+.allmarks-floating-btn .allmarks-fb-mark-fill { fill: var(--floating-btn-mark-color); }
+.allmarks-floating-btn .allmarks-fb-check-fill { fill: var(--floating-btn-check-color); }
+.allmarks-floating-btn[data-state="idle"],
+.allmarks-floating-btn[data-state="saved-idle"] { opacity: var(--floating-btn-idle-opacity, 0.3); transform: translateY(-50%) scale(1); }
+.allmarks-floating-btn[data-state="idle-hover"],
+.allmarks-floating-btn[data-state="saving"],
+.allmarks-floating-btn[data-state="flash"],
+.allmarks-floating-btn[data-state="error"],
+.allmarks-floating-btn[data-state="saved-hover"] { opacity: 1; transform: translateY(-50%) scale(1.08); }
+.allmarks-floating-btn .allmarks-fb-group-check { opacity: 0; }
+.allmarks-floating-btn[data-state="flash"] .allmarks-fb-group-check,
+.allmarks-floating-btn[data-state="saved-idle"] .allmarks-fb-group-check,
+.allmarks-floating-btn[data-state="saved-hover"] .allmarks-fb-group-check { opacity: 1; }
+.allmarks-floating-btn[data-state="flash"] .allmarks-fb-check-fill {
+  clip-path: inset(0 100% 0 0);
+  animation: allmarks-fb-check-reveal 480ms cubic-bezier(0.65, 0, 0.35, 1) 60ms forwards;
+}
+@keyframes allmarks-fb-check-reveal { to { clip-path: inset(0 0 0 0); } }
+.allmarks-floating-btn[data-state="flash"] .allmarks-fb-check-fill,
+.allmarks-floating-btn[data-state="saved-idle"] .allmarks-fb-check-fill,
+.allmarks-floating-btn[data-state="saved-hover"] .allmarks-fb-check-fill {
+  filter: drop-shadow(0 0 3px var(--floating-btn-glow-inner)) drop-shadow(0 0 8px var(--floating-btn-glow-mid)) drop-shadow(0 0 16px var(--floating-btn-glow-outer));
+}
+.allmarks-floating-btn[data-state="saving"]::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  animation: allmarks-fb-spin 0.85s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 12px rgba(0, 0, 0, 0.35));
+  pointer-events: none;
+}
+@keyframes allmarks-fb-spin { to { transform: rotate(360deg); } }
+
+/* ===== Quick-tag strip (extension/floating-button.css L183-281) =========== */
+.allmarks-tagstrip {
+  --am-strip-bg: #141414;
+  --am-strip-fg: #ffffff;
+  --am-strip-border: rgba(255, 255, 255, 0.10);
+  --am-strip-accent: #28f100;
+  --am-strip-blur: 12px;
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  min-width: 188px;
+  max-width: 224px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--am-strip-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--am-strip-bg) 95%, transparent);
+  backdrop-filter: blur(var(--am-strip-blur));
+  -webkit-backdrop-filter: blur(var(--am-strip-blur));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: var(--am-strip-fg);
+  transform-origin: center right;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 240ms cubic-bezier(0.16, 1, 0.3, 1), transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.allmarks-tagstrip.is-visible { opacity: 1; transform: translateX(0); }
+.allmarks-tagstrip.is-closing {
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 200ms cubic-bezier(0.4, 0, 1, 1), transform 260ms cubic-bezier(0.4, 0, 1, 1);
+  pointer-events: none;
+}
+.allmarks-tagstrip[data-side="right"] { padding-right: 46px; transform-origin: center right; transform: translateX(100%); }
+.allmarks-tagstrip[data-side="right"].is-visible { transform: translateX(0); }
+.allmarks-tagstrip__row { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; overflow: hidden; }
+.allmarks-tagstrip__hint {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--am-strip-fg) 45%, transparent);
+  font-size: 10px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.allmarks-tagstrip[data-open="true"] .allmarks-tagstrip__hint { transform: rotate(180deg); }
+.allmarks-tagstrip__drawer {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 4px;
+  padding-top: 6px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.allmarks-tagstrip[data-open="true"] .allmarks-tagstrip__drawer { max-height: 264px; overflow-y: auto; scrollbar-width: none; }
+.allmarks-tagstrip__drawer::-webkit-scrollbar { display: none; }
+.allmarks-tagstrip__chip {
+  appearance: none;
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--am-strip-fg) 85%, transparent);
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 120ms;
+}
+.allmarks-tagstrip__chip:hover { color: var(--am-strip-fg); }
+.allmarks-tagstrip__chip[data-on="true"] { color: var(--am-strip-accent); }
+.allmarks-tagstrip__chip[data-on="true"]::before { content: "\2713\00a0"; }
+
+/* ===== Reduced motion ===================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .booklage-pill,
+  .booklage-pill *,
+  .booklage-pill__state::before,
+  .booklage-pill__state::after,
+  .allmarks-floating-btn,
+  .allmarks-floating-btn::after,
+  .allmarks-floating-btn .allmarks-fb-check-fill {
+    transition: none !important;
+    animation: none !important;
+  }
+  .allmarks-tagstrip,
+  .allmarks-tagstrip[data-side="right"] {
+    transition: none !important;
+    transform: none !important;
+  }
+}
