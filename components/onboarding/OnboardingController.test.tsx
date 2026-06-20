@@ -133,6 +133,33 @@ describe('OnboardingController', () => {
     expect(screen.getByTestId('scene-extDemo')).not.toBeNull()
   })
 
+  it('tag scene advances when tagAddedSignal increments (board tag-add path)', async () => {
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {
+      const [tick, setTick] = useState(0)
+      return (
+        <>
+          <button type="button" onClick={() => setTick((v) => v + 1)}>ADD_TAG</button>
+          <OnboardingController
+            db={db} motionEnabled={false} sharePanelOpen={false}
+            appUrl="https://allmarks.app" tagAddedSignal={tick}
+            onComplete={onComplete}
+          />
+        </>
+      )
+    }
+    const db = await initDB()
+    const onComplete = vi.fn()
+    renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
+
+    fireEvent.click(screen.getByRole('button', { name: 'START' }))
+    await act(async () => { postBookmarkSaved({ bookmarkId: 'a' }) })
+    expect(screen.getByTestId('scene-tag')).not.toBeNull()
+    // Simulate the board adding a tag (which bumps the signal, not the channel)
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'ADD_TAG' })) })
+    expect(screen.getByTestId('scene-motion')).not.toBeNull()
+  })
+
   it('share scene steps aside while panel open and advances on close', async () => {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {

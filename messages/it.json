@@ -92,7 +92,7 @@
         "body": "AllMarks trasforma i link in una bacheca visiva."
       },
       "paste": {
-        "body": "Incollare un link con Cmd/Ctrl+V o usare TRY THIS."
+        "body": "Incollare un link con Cmd/Ctrl+V o usare TRY THIS.", "copied": "Copiato. Ora incollalo sulla board (Cmd/Ctrl+V)."
       },
       "tag": {
         "body": "Aggiungere un tag alla scheda appena salvata."

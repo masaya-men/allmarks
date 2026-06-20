@@ -92,7 +92,7 @@
         "body": "AllMarks verwandelt Links in ein visuelles Board."
       },
       "paste": {
-        "body": "Link mit Cmd/Ctrl+V einfügen oder TRY THIS verwenden."
+        "body": "Link mit Cmd/Ctrl+V einfügen oder TRY THIS verwenden.", "copied": "Kopiert. Füge ihn jetzt auf dem Board ein (Cmd/Ctrl+V)."
       },
       "tag": {
         "body": "Füge dem gerade gespeicherten Karten ein Tag hinzu."

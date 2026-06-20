@@ -89,7 +89,7 @@
     },
     "onboarding": {
       "enter": { "body": "AllMarks はリンクをビジュアルボードに変えます。" },
-      "paste": { "body": "Cmd/Ctrl+V でリンクをペーストするか、TRY THIS を使ってください。" },
+      "paste": { "body": "Cmd/Ctrl+V でリンクをペーストするか、TRY THIS を使ってください。", "copied": "コピーしました。ボードのどこかに貼り付けてください（Cmd/Ctrl+V）。" },
       "tag": { "body": "保存したカードにタグを追加してください。" },
       "motion": { "body": "MOTION をオンにしてボードに動きを加えてください。" },
       "extDemo": { "body": "拡張機能を使うと、1クリックで開いているページを保存してタグ付けできます。" },

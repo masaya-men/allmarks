@@ -32,6 +32,11 @@ type Props = {
   /** True while the tag scene is active so the board can force the hover-gated
    *  +TAG button visible (the user can't hover through the spotlight). */
   readonly onTagSceneActive?: (active: boolean) => void
+  /** Bumped by the board each time a tag is added to a card. The tag scene
+   *  advances on a change here — the board's own tag-add reloads locally and
+   *  does NOT post to the bookmark-updated channel, so this in-process signal
+   *  is how the controller learns a tag was applied. */
+  readonly tagAddedSignal?: number
 }
 
 const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' // public, long-lived
@@ -50,13 +55,16 @@ function extensionDetected(): boolean {
 
 export function OnboardingController({
   db, motionEnabled, sharePanelOpen, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
+  tagAddedSignal = 0,
 }: Props): ReactElement {
   const { t } = useI18n()
   const [sceneId, setSceneId] = useState<SceneId>('enter')
+  const [copied, setCopied] = useState(false)
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
   const shareOpenedRef = useRef(false)
+  const prevTagSignalRef = useRef(tagAddedSignal)
   const isMobileRef = useRef(typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches)
 
   const advance = (): void => {
@@ -74,19 +82,23 @@ export function OnboardingController({
     onComplete()
   }
 
-  // TRY THIS — create a REAL (non-demo) bookmark that persists as the user's
-  // first card. The bookmark-saved event advances the paste scene; the user
-  // pasting their own URL also fires it, so both paths work.
-  const saveSample = async (): Promise<void> => {
+  // TRY THIS — copy a sample link to the clipboard and prompt the user to
+  // paste it onto the board themselves, so they learn the real paste gesture
+  // (the point of this scene). Their paste (or their own link) fires
+  // bookmark-saved, which advances the scene. If the clipboard API is blocked,
+  // fall back to saving the sample directly so the user is never stuck.
+  const tryThis = async (): Promise<void> => {
     try {
-      const created = await addBookmark(db, {
-        url: SAMPLE_URL, title: '', description: '', thumbnail: '', favicon: '',
-        siteName: '', type: detectUrlType(SAMPLE_URL),
-      })
-      postBookmarkSaved({ bookmarkId: created.id })
+      await navigator.clipboard.writeText(SAMPLE_URL)
+      setCopied(true)
     } catch {
-      // If the sample save fails (rare IDB error), the user can still paste
-      // their own link to advance — don't crash with an unhandled rejection.
+      try {
+        const created = await addBookmark(db, {
+          url: SAMPLE_URL, title: '', description: '', thumbnail: '', favicon: '',
+          siteName: '', type: detectUrlType(SAMPLE_URL),
+        })
+        postBookmarkSaved({ bookmarkId: created.id })
+      } catch { /* user can still paste their own link to advance */ }
     }
   }
 
@@ -97,11 +109,21 @@ export function OnboardingController({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
+  // Tag scene advances on either the cross-context bookmark-updated channel
+  // (PiP / extension) or the in-process tagAddedSignal (the board's own
+  // tag-add, which doesn't post to the channel).
   useEffect(() => {
     if (scene.advance !== 'tagged') return
     return subscribeBookmarkUpdated(() => advance())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
+
+  useEffect(() => {
+    const was = prevTagSignalRef.current
+    prevTagSignalRef.current = tagAddedSignal
+    if (scene.advance === 'tagged' && tagAddedSignal !== was) advance()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagAddedSignal, sceneId])
 
   useEffect(() => {
     const was = prevMotionRef.current
@@ -186,15 +208,26 @@ export function OnboardingController({
   }
 
   // ---- Hands-on scenes -----------------------------------------------------
+  // The tag scene opens the board's +TAG popover, which extends well beyond the
+  // spotlight hole — so it must NOT block outside clicks (the popover has to be
+  // usable) and its caption sits at the bottom so it doesn't cover the popover.
+  const isTag = sceneId === 'tag'
   return wrap(
     <OnboardingSpotlight
       targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
       caption={body}
+      blockOutside={!isTag}
+      captionAtBottom={isTag}
     >
       {sceneId === 'paste' && (
-        <button type="button" className={styles.tryThis} onClick={() => void saveSample()}>
-          TRY THIS
-        </button>
+        <>
+          <button type="button" className={styles.tryThis} onClick={() => void tryThis()}>
+            TRY THIS
+          </button>
+          {copied && (
+            <p className={styles.copiedHint}>{t('board.onboarding.paste.copied')}</p>
+          )}
+        </>
       )}
       {sceneId === 'install' && !installDetected && (
         <BookmarkletInstallChip appUrl={appUrl} />

@@ -92,7 +92,7 @@
         "body": "AllMarks transforme les liens en un tableau visuel."
       },
       "paste": {
-        "body": "Coller un lien avec Cmd/Ctrl+V ou utiliser TRY THIS."
+        "body": "Coller un lien avec Cmd/Ctrl+V ou utiliser TRY THIS.", "copied": "Copié. Collez-le maintenant sur le tableau (Cmd/Ctrl+V)."
       },
       "tag": {
         "body": "Ajouter un tag à la carte que vous venez de sauvegarder."

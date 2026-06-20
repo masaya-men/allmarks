@@ -92,7 +92,7 @@
         "body": "AllMarks bağlantıları görsel bir panoya dönüştürür."
       },
       "paste": {
-        "body": "Cmd/Ctrl+V ile bir bağlantı yapıştırın veya TRY THIS kullanın."
+        "body": "Cmd/Ctrl+V ile bir bağlantı yapıştırın veya TRY THIS kullanın.", "copied": "Kopyalandı. Şimdi panoya yapıştır (Cmd/Ctrl+V)."
       },
       "tag": {
         "body": "Az önce kaydettiğiniz karta bir etiket ekleyin."

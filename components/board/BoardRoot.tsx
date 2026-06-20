@@ -64,7 +64,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
 import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
 import { OnboardingController } from '@/components/onboarding/OnboardingController'
-import { shouldAutoStartOnboarding, isOnboardingComplete } from '@/lib/onboarding/onboarding-state'
+import { shouldAutoStartOnboarding } from '@/lib/onboarding/onboarding-state'
 import { seedOnboardingDemo, clearOnboardingDemo } from '@/lib/onboarding/onboarding-demo'
 import type { IDBPDatabase } from 'idb'
 import { LanguageSwitcher } from './LanguageSwitcher'
@@ -135,6 +135,11 @@ export function BoardRoot() {
   // While the onboarding tag scene is active, force the hover-gated card +TAG
   // button visible (the user can't hover precisely through the spotlight hole).
   const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
+  // Bumped each time a tag is ADDED to a card from the board UI. The onboarding
+  // tag scene watches this to advance — the board's own tag-add doesn't post to
+  // the bookmark-updated channel (it reloads locally), so the scene needs a
+  // direct in-process signal.
+  const [tagAddedTick, setTagAddedTick] = useState<number>(0)
   // Background typography (the big wordmark / filter title behind the cards)
   // master switch. Persisted in BoardConfig; the share image follows it too.
   const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
@@ -566,8 +571,15 @@ export function BoardRoot() {
         await reload()
         if (cancelled) return
         setShowOnboarding(true)
-      } else if (await isOnboardingComplete(db)) {
-        await clearOnboardingDemo(db) // sweep stale demo from an abandoned run
+      } else {
+        // Not auto-starting → any onboardingDemo cards present are leftovers
+        // from an abandoned run (the user reloaded mid-tutorial). Demo cards
+        // only ever exist while onboarding is showing, so sweep them now so
+        // they never pollute the real board. Reload only if something was
+        // actually removed, to avoid a needless board re-render on every load.
+        const removed = await clearOnboardingDemo(db)
+        if (cancelled) return
+        if (removed > 0) await reload()
       }
     })()
     return (): void => { cancelled = true }
@@ -1123,6 +1135,7 @@ export function BoardRoot() {
         await removeTagFromBookmark(db, bookmarkId, tagId)
       } else {
         await addTagToBookmark(db, bookmarkId, tagId)
+        setTagAddedTick((t) => t + 1)
       }
       await reload()
     },
@@ -1140,6 +1153,7 @@ export function BoardRoot() {
       const existing = tags.find((t) => t.name.toLowerCase() === trimmed.toLowerCase())
       const target = existing ?? (await addTag(db, { name: trimmed, color: '#28F100', order: tags.length }))
       await addTagToBookmark(db, bookmarkId, target.id)
+      setTagAddedTick((t) => t + 1)
       await reloadTags()
       await reload()
     },
@@ -1994,6 +2008,7 @@ export function BoardRoot() {
               onComplete={() => setShowOnboarding(false)}
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
+              tagAddedSignal={tagAddedTick}
             />
           )}
           {!loading && !showOnboarding && items.length === 0 && (

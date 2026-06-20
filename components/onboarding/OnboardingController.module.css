@@ -66,6 +66,14 @@
 }
 .tryThis:hover { background: rgba(255, 255, 255, 0.12); }
 
+/* "Copied — now paste it" hint shown after TRY THIS copies the sample link. */
+.copiedHint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #28f100; /* A-logo green — confirms the copy succeeded */
+}
+
 /* Draggable bookmarklet chip inside the install spotlight bubble. */
 .installChip {
   display: inline-flex;

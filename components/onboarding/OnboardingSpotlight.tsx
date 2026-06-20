@@ -10,6 +10,13 @@ type Props = {
   readonly targetSelector: string | null
   readonly caption: string
   readonly children?: ReactNode
+  /** When false, the dim panels don't capture pointer events — the whole board
+   *  stays interactive (needed for the tag scene, whose +TAG popover extends
+   *  beyond the hole). Default true (dim blocks clicks outside the hole). */
+  readonly blockOutside?: boolean
+  /** When true, the caption sits fixed at the bottom-center instead of anchored
+   *  to the hole (so it never covers a popover opening at the target). */
+  readonly captionAtBottom?: boolean
 }
 
 const BUBBLE_W = 320
@@ -39,7 +46,9 @@ function computePlacement(hole: Rect, viewportW: number, viewportH: number): Pla
   return { top, left: clampedLeft }
 }
 
-export function OnboardingSpotlight({ targetSelector, caption, children }: Props): ReactElement {
+export function OnboardingSpotlight({
+  targetSelector, caption, children, blockOutside = true, captionAtBottom = false,
+}: Props): ReactElement {
   const [rect, setRect] = useState<Rect | null>(() => null)
 
   useEffect(() => {
@@ -76,13 +85,26 @@ export function OnboardingSpotlight({ targetSelector, caption, children }: Props
     <div className={styles.layer} data-testid="onboarding-spotlight">
       {hole && placement ? (
         <>
-          {/* four dim panels around the hole */}
-          <div className={styles.dim} style={{ top: 0, left: 0, right: 0, height: hole.top }} />
-          <div className={styles.dim} style={{ top: hole.top, left: 0, width: hole.left, height: hole.height }} />
-          <div className={styles.dim} style={{ top: hole.top, left: hole.left + hole.width, right: 0, height: hole.height }} />
-          <div className={styles.dim} style={{ top: hole.top + hole.height, left: 0, right: 0, bottom: 0 }} />
+          {/* four dim panels around the hole; pointer-events off when the scene
+              needs the whole board interactive (blockOutside=false) */}
+          {(() => {
+            const pe = blockOutside ? undefined : ('none' as const)
+            return (
+              <>
+                <div className={styles.dim} style={{ top: 0, left: 0, right: 0, height: hole.top, pointerEvents: pe }} />
+                <div className={styles.dim} style={{ top: hole.top, left: 0, width: hole.left, height: hole.height, pointerEvents: pe }} />
+                <div className={styles.dim} style={{ top: hole.top, left: hole.left + hole.width, right: 0, height: hole.height, pointerEvents: pe }} />
+                <div className={styles.dim} style={{ top: hole.top + hole.height, left: 0, right: 0, bottom: 0, pointerEvents: pe }} />
+              </>
+            )
+          })()}
           <div className={styles.ring} style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }} />
-          {placement === 'center' ? (
+          {captionAtBottom ? (
+            <div className={styles.bubbleBottom}>
+              {caption}
+              {children}
+            </div>
+          ) : placement === 'center' ? (
             <div className={styles.bubbleCenterFixed}>
               {caption}
               {children}

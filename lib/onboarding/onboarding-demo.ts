@@ -8,12 +8,15 @@ type DbLike = IDBPDatabase<any>
 
 const DEFAULT_DEMO_COUNT = 12
 
-/** Hard-delete every bookmark flagged onboardingDemo. */
-export async function clearOnboardingDemo(db: DbLike): Promise<void> {
+/** Hard-delete every bookmark flagged onboardingDemo. Returns how many were
+ *  removed (so callers can skip a board reload when nothing changed). */
+export async function clearOnboardingDemo(db: DbLike): Promise<number> {
   const all = await getAllBookmarks(db)
+  let removed = 0
   for (const b of all) {
-    if (b.onboardingDemo === true) await deleteBookmark(db, b.id)
+    if (b.onboardingDemo === true) { await deleteBookmark(db, b.id); removed++ }
   }
+  return removed
 }
 
 export async function countOnboardingDemo(db: DbLike): Promise<number> {
