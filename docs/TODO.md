@@ -21,7 +21,23 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 115 — ブックマークレット設置モーダルの改良 完了・本番反映済)
+### 直近の状態 (セッション 115 — 初回オンボーディング（対話型チュートリアル）完成・本番反映済 + ブックマークレット設置モーダルの改良)
+
+**(C) オンボーディング本体を brainstorming→spec→plan→サブエージェント駆動15タスク（各2段レビュー＋最終 opus 全体レビュー=READY TO MERGE）で完走。master マージ＋本番反映済（tsc0 / vitest1411 / build OK / 通しPlaywright実機検証）。**
+
+- **形式**: ハイブリッド（見せる=全画面シネマ / やらせる=本物ボード上のスポットライト誘導）。音波・A形ロゴ・緑チェック・グリッチ・ダークガラスの世界観で統一。GSAP。
+- **8シーン（全部 本物のイベントで前進）**: 入場(START) → 貼る(Ctrl+V or **TRY THIS** サンプル) → タグ → MOTION（入場時に強制OFF→ユーザーがON→`false→true`で前進）→ 拡張デモ(GSAP再現) → 設置(ブックマークレットチップ/拡張検出で出し分け) → 共有(SHARE パネルを開いて見せ、閉じたら前進・サーバーに共有は作らない) → フィナーレ。
+- **デモカード**: 開始時に CC0名画12枚を仮置き(`onboardingDemo`フラグ) → MOTIONで魅せる → 完了/スキップ/次回起動で**フラグ付きのみ掃除**、ユーザーの実カードは無傷。`BookmarkRecord.onboardingDemo?`（IDBスキーマbumpなし）。
+- **状態**: IDB `settings` の `onboarding-completed`。初回=空ボード&未完了で自動開始。**REPLAY INTRO** を SETTINGS ドロワー＋空状態に常設。
+- **重要な実装の肝（次に触るとき必読）**: ①オーバーレイ root は `pointer-events:none`、対話要素のみ `auto`＝スポットライトの穴から本物ボードへクリックが通る（シネマ stage は `auto` で遮断）。②MOTION は first-run 既定ON→motionシーン入場で強制OFF。③+TAG はホバー依存なのでタグシーン中 `forceTagButtonVisible` で強制表示。④共有は「開いて見せる」=閉じた瞬間に前進（z-210オーバーレイがz-200モーダルを隠さないよう、パネル開いてる間はオーバーレイが退く）。
+- **i18n**: `board.onboarding.*` ＋現行化した `board.empty.*` を15言語同期（淡々・説明調、MOTION/SHARE/SETTINGS/TRY THIS等は英語固定）。
+- **縮退**: `prefers-reduced-motion`＝即最終状態、モバイル＝enter→paste→finale の3シーン。
+- **動作確認の入口**: ユーザーは既存545件があり自動開始しない → **SETTINGS の REPLAY INTRO** で確認（or シークレットウィンドウ=空IDBで真の初回体験）。
+- spec `specs/2026-06-20-onboarding-design.md` / plan `plans/2026-06-20-onboarding.md`。
+
+---
+
+#### （同セッション前半）ブックマークレット設置モーダルの改良 完了・本番反映済
 
 **ゴール(A)「設置モーダルを chrome 語彙に寄せる + 古いコピー修正」を完走。本番 `allmarks.app` 反映済(`163232d8`)、tsc0/vitest1390/build OK/隔離レンダで glass+glitch+コピー目視済。**
 
