@@ -12,7 +12,9 @@ describe('onboarding steps', () => {
     expect(sceneById('paste').advance).toBe('saved')
     expect(sceneById('tag').advance).toBe('button')
     expect(sceneById('motion').advance).toBe('button')
-    expect(sceneById('share').advance).toBe('sharePanel')
+    // share is now an auto-playing showcase (cinema), advanced by NEXT/auto.
+    expect(sceneById('share').advance).toBe('button')
+    expect(sceneById('share').kind).toBe('cinema')
   })
   it('nextSceneId walks the chain then ends', () => {
     expect(nextSceneId('enter')).toBe('paste')

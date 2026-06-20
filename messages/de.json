@@ -92,25 +92,28 @@
         "body": "AllMarks verwandelt Links in ein visuelles Board."
       },
       "paste": {
-        "body": "Link mit Cmd/Ctrl+V einfügen oder TRY THIS verwenden.", "copied": "Kopiert. Füge ihn jetzt auf dem Board ein (Cmd/Ctrl+V)."
+        "body": "Link mit Cmd/Ctrl+V einfügen oder TRY THIS verwenden.",
+        "copied": "Kopiert. Füge ihn jetzt auf dem Board ein (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Tags halten dein Board geordnet. Wir fügen dieser Karte ein Beispiel-Tag hinzu.", "done": "Mit 'sample' getaggt ✓  NEXT zum Fortfahren."
+        "body": "Tags halten dein Board geordnet. Sieh zu, wie diese Karte ein Tag bekommt – eigene kannst du jederzeit hinzufügen.",
+        "done": "Mit 'sample' getaggt ✓  NEXT zum Fortfahren."
       },
       "motion": {
-        "body": "Drücke MOTION, um die Karten des Boards zum Leben zu erwecken. Probier es aus.", "done": "Die Karten bewegen sich jetzt ✓  NEXT zum Fortfahren."
+        "body": "Drücke MOTION, um die Karten des Boards zum Leben zu erwecken. Probier es aus.",
+        "done": "Die Karten bewegen sich jetzt ✓  NEXT zum Fortfahren."
       },
       "extDemo": {
         "body": "Mit der AllMarks-Erweiterung speichert ein Klick jede Seite — und vergibt automatisch Tags."
       },
       "install": {
-        "body": "AllMarks-Chip in die Lesezeichenleiste ziehen, um von überall zu speichern."
+        "body": "Zieh diesen AllMarks-Button in deine Lesezeichenleiste, um von überall zu speichern. Keine Leiste zu sehen? Drücke Ctrl/⌘+Shift+B."
       },
       "installDetected": {
         "body": "Die Erweiterung ist bereits installiert. Du kannst auch per Link-Einfügen oder Bookmarklet speichern."
       },
       "share": {
-        "body": "Öffne SHARE, um dein Board als Bild oder Link zu veröffentlichen — dann schließen oder NEXT drücken."
+        "body": "So funktioniert das Teilen. Erstelle ein Board, das du liebst, und teile es mit allen."
       },
       "finale": {
         "body": "Alles bereit. Tutorial jederzeit über SETTINGS wiederholen."

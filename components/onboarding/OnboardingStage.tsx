@@ -35,6 +35,17 @@ export function OnboardingStage({ variant, caption, buttonLabel, onAdvance }: Pr
     if (logo) tl.from(logo, { opacity: 0, scale: 0.8, duration: 0.5, ease: 'back.out(1.6)' }, '-=0.2')
     if (check) tl.from(check, { opacity: 0, scale: 0.4, duration: 0.35, ease: 'back.out(2)' }, '-=0.1')
     tl.from(copy, { opacity: 0, y: 12, duration: 0.4, stagger: 0.08 }, '-=0.1')
+    // Keep the sound-wave motif alive after the intro settles — a gentle infinite
+    // oscillation so the brand's signature waveform isn't frozen at the two
+    // highest-stakes moments (first impression + finale).
+    tl.to(wave, {
+      scaleY: 1.5,
+      duration: 1.1,
+      ease: 'sine.inOut',
+      stagger: { each: 0.09, from: 'center' },
+      repeat: -1,
+      yoyo: true,
+    }, '+=0.05')
     return () => { tl.kill() }
   }, [variant])
 

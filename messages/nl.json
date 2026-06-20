@@ -92,25 +92,28 @@
         "body": "AllMarks zet links om in een visueel bord."
       },
       "paste": {
-        "body": "Plak een link met Cmd/Ctrl+V of gebruik TRY THIS.", "copied": "Gekopieerd. Plak het nu op het board (Cmd/Ctrl+V)."
+        "body": "Plak een link met Cmd/Ctrl+V of gebruik TRY THIS.",
+        "copied": "Gekopieerd. Plak het nu op het board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Tags houden je board georganiseerd. We voegen een voorbeeld-tag toe aan deze kaart.", "done": "Getagd met 'sample' ✓  Druk op NEXT om door te gaan."
+        "body": "Tags houden je bord overzichtelijk. Kijk hoe deze kaart een tag krijgt — je kunt er altijd zelf toevoegen.",
+        "done": "Getagd met 'sample' ✓  Druk op NEXT om door te gaan."
       },
       "motion": {
-        "body": "Druk op MOTION om de kaarten van je board tot leven te brengen. Probeer het.", "done": "De kaarten bewegen nu ✓  Druk op NEXT om door te gaan."
+        "body": "Druk op MOTION om de kaarten van je board tot leven te brengen. Probeer het.",
+        "done": "De kaarten bewegen nu ✓  Druk op NEXT om door te gaan."
       },
       "extDemo": {
         "body": "Met de AllMarks-extensie slaat één klik elke pagina op — en voegt automatisch tags toe."
       },
       "install": {
-        "body": "Sleep de AllMarks-chip naar de bladwijzerbalk om overal op te slaan."
+        "body": "Sleep deze AllMarks-knop naar je bladwijzerbalk om overal op te slaan. Zie je de balk niet? Druk op Ctrl/⌘+Shift+B."
       },
       "installDetected": {
         "body": "De extensie is al geïnstalleerd. Je kunt ook opslaan door een link te plakken of de bookmarklet te gebruiken."
       },
       "share": {
-        "body": "Open SHARE om je board als afbeelding of link te delen — sluit het daarna of druk op NEXT."
+        "body": "Zo werkt delen. Maak een bord waar je van houdt en deel het met iedereen."
       },
       "finale": {
         "body": "Klaar. Bekijk deze tutorial opnieuw via SETTINGS."

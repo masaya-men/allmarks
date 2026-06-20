@@ -92,25 +92,28 @@
         "body": "AllMarks convierte enlaces en un tablero visual."
       },
       "paste": {
-        "body": "Pega un enlace con Cmd/Ctrl+V o usa TRY THIS.", "copied": "Copiado. Ahora pégalo en el tablero (Cmd/Ctrl+V)."
+        "body": "Pega un enlace con Cmd/Ctrl+V o usa TRY THIS.",
+        "copied": "Copiado. Ahora pégalo en el tablero (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Las etiquetas mantienen tu tablero organizado. Añadiremos una etiqueta de ejemplo a esta tarjeta.", "done": "Etiquetada con 'sample' ✓  Pulsa NEXT para continuar."
+        "body": "Las etiquetas mantienen tu tablero ordenado. Mira cómo se añade una a esta tarjeta; puedes añadir las tuyas cuando quieras.",
+        "done": "Etiquetada con 'sample' ✓  Pulsa NEXT para continuar."
       },
       "motion": {
-        "body": "Pulsa MOTION para dar vida a las tarjetas del tablero. Pruébalo.", "done": "Las tarjetas ya se mueven ✓  Pulsa NEXT para continuar."
+        "body": "Pulsa MOTION para dar vida a las tarjetas del tablero. Pruébalo.",
+        "done": "Las tarjetas ya se mueven ✓  Pulsa NEXT para continuar."
       },
       "extDemo": {
         "body": "Con la extensión AllMarks, un clic en cualquier página la guarda — y la etiqueta automáticamente."
       },
       "install": {
-        "body": "Arrastra el chip de AllMarks a la barra de marcadores para guardar desde cualquier lugar."
+        "body": "Arrastra este botón de AllMarks a tu barra de marcadores para guardar desde cualquier lugar. ¿No ves la barra? Pulsa Ctrl/⌘+Shift+B."
       },
       "installDetected": {
         "body": "La extensión ya está instalada. También puedes guardar pegando un enlace o usando el bookmarklet."
       },
       "share": {
-        "body": "Abre SHARE para publicar tu tablero como imagen o enlace; luego ciérralo o pulsa NEXT."
+        "body": "Así funciona compartir. Crea un tablero que te encante y compártelo con todos."
       },
       "finale": {
         "body": "Todo listo. Repite este tutorial desde SETTINGS en cualquier momento."

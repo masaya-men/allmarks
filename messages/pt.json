@@ -92,25 +92,28 @@
         "body": "AllMarks transforma links num quadro visual."
       },
       "paste": {
-        "body": "Colar um link com Cmd/Ctrl+V ou usar TRY THIS.", "copied": "Copiado. Agora cole no board (Cmd/Ctrl+V)."
+        "body": "Colar um link com Cmd/Ctrl+V ou usar TRY THIS.",
+        "copied": "Copiado. Agora cole no board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "As tags mantêm seu board organizado. Vamos adicionar uma tag de exemplo a este card.", "done": "Marcada com 'sample' ✓  Toque em NEXT para continuar."
+        "body": "As tags mantêm seu quadro organizado. Veja uma tag ser adicionada a este cartão — você pode adicionar as suas quando quiser.",
+        "done": "Marcada com 'sample' ✓  Toque em NEXT para continuar."
       },
       "motion": {
-        "body": "Toque em MOTION para dar vida aos cards do board. Experimente.", "done": "Os cards estão se movendo ✓  Toque em NEXT para continuar."
+        "body": "Toque em MOTION para dar vida aos cards do board. Experimente.",
+        "done": "Os cards estão se movendo ✓  Toque em NEXT para continuar."
       },
       "extDemo": {
         "body": "Com a extensão AllMarks, um clique em qualquer página a salva — e adiciona tags automaticamente."
       },
       "install": {
-        "body": "Arrastar o chip AllMarks para a barra de favoritos para guardar a partir de qualquer lugar."
+        "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B."
       },
       "installDetected": {
         "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
       },
       "share": {
-        "body": "Abra SHARE para publicar seu board como imagem ou link — depois feche, ou toque em NEXT."
+        "body": "É assim que o compartilhamento funciona. Crie um quadro que você ama e compartilhe com todos."
       },
       "finale": {
         "body": "Tudo pronto. Este tutorial pode ser repetido em SETTINGS a qualquer momento."

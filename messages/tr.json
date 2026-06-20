@@ -92,25 +92,28 @@
         "body": "AllMarks bağlantıları görsel bir panoya dönüştürür."
       },
       "paste": {
-        "body": "Cmd/Ctrl+V ile bir bağlantı yapıştırın veya TRY THIS kullanın.", "copied": "Kopyalandı. Şimdi panoya yapıştır (Cmd/Ctrl+V)."
+        "body": "Cmd/Ctrl+V ile bir bağlantı yapıştırın veya TRY THIS kullanın.",
+        "copied": "Kopyalandı. Şimdi panoya yapıştır (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Etiketler panonu düzenli tutar. Bu karta senin için örnek bir etiket ekleyeceğiz.", "done": "'sample' etiketi eklendi ✓  Devam etmek için NEXT'e bas."
+        "body": "Etiketler panonu düzenli tutar. Bu karta bir etiketin eklenişini izle — kendi etiketlerini istediğin zaman ekleyebilirsin.",
+        "done": "'sample' etiketi eklendi ✓  Devam etmek için NEXT'e bas."
       },
       "motion": {
-        "body": "Panodaki kartları canlandırmak için MOTION'a bas. Dene.", "done": "Kartlar şimdi hareket ediyor ✓  Devam etmek için NEXT'e bas."
+        "body": "Panodaki kartları canlandırmak için MOTION'a bas. Dene.",
+        "done": "Kartlar şimdi hareket ediyor ✓  Devam etmek için NEXT'e bas."
       },
       "extDemo": {
         "body": "AllMarks uzantısıyla herhangi bir sayfada tek tık onu kaydeder — ve otomatik etiketler."
       },
       "install": {
-        "body": "Her yerden kaydetmek için AllMarks çipini yer imleri çubuğuna sürükleyin."
+        "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas."
       },
       "installDetected": {
         "body": "Uzantı zaten yüklü. Bağlantı yapıştırarak veya bookmarklet kullanarak da kaydedebilirsiniz."
       },
       "share": {
-        "body": "Panonu görsel veya bağlantı olarak paylaşmak için SHARE'i aç — sonra kapat ya da NEXT'e bas."
+        "body": "Paylaşım böyle çalışır. Sevdiğin bir pano oluştur ve herkesle paylaş."
       },
       "finale": {
         "body": "Hazırsınız. Bu öğreticiyi SETTINGS üzerinden istediğiniz zaman tekrar izleyebilirsiniz."

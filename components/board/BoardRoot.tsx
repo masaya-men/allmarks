@@ -566,7 +566,12 @@ export function BoardRoot() {
       if (cancelled) return
       onboardingDbRef.current = db
       if (await shouldAutoStartOnboarding(db, items.length)) {
-        await seedOnboardingDemo(db)
+        // Mobile runs only enter->paste->finale (no tag/motion scenes), so the
+        // demo cards have no scene to justify them — skip seeding so a mobile
+        // first-timer pastes onto a board reflecting only their own action
+        // (rather than a board full of art they didn't add that then vanishes).
+        const onMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+        await seedOnboardingDemo(db, onMobile ? 0 : undefined)
         if (cancelled) return
         await reload()
         if (cancelled) return
@@ -592,7 +597,8 @@ export function BoardRoot() {
   const startOnboardingReplay = async (): Promise<void> => {
     const db = onboardingDbRef.current ?? ((await initDB()) as unknown as DbLike)
     onboardingDbRef.current = db
-    await seedOnboardingDemo(db)
+    const onMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+    await seedOnboardingDemo(db, onMobile ? 0 : undefined)
     await reload()
     setShowOnboarding(true)
   }

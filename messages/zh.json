@@ -92,25 +92,28 @@
         "body": "AllMarks 将链接转化为视觉版面。"
       },
       "paste": {
-        "body": "使用 Cmd/Ctrl+V 粘贴链接，或使用 TRY THIS。", "copied": "已复制。现在粘贴到板上 (Cmd/Ctrl+V)。"
+        "body": "使用 Cmd/Ctrl+V 粘贴链接，或使用 TRY THIS。",
+        "copied": "已复制。现在粘贴到板上 (Cmd/Ctrl+V)。"
       },
       "tag": {
-        "body": "标签让你的板保持整洁。我们会为这张卡片添加一个示例标签。", "done": "已添加 'sample' 标签 ✓  按 NEXT 继续。"
+        "body": "标签让你的看板井井有条。看一个标签被添加到这张卡片上——你随时可以添加自己的标签。",
+        "done": "已添加 'sample' 标签 ✓  按 NEXT 继续。"
       },
       "motion": {
-        "body": "点击 MOTION 让板上的卡片动起来。试试看。", "done": "卡片现在动起来了 ✓  按 NEXT 继续。"
+        "body": "点击 MOTION 让板上的卡片动起来。试试看。",
+        "done": "卡片现在动起来了 ✓  按 NEXT 继续。"
       },
       "extDemo": {
         "body": "使用 AllMarks 扩展，在任意页面上一键即可保存 — 并自动加标签。"
       },
       "install": {
-        "body": "将 AllMarks 芯片拖到书签栏，即可从任何页面保存。"
+        "body": "把这个 AllMarks 按钮拖到书签栏，就能在任何网页一键保存。看不到书签栏？按 Ctrl/⌘+Shift+B。"
       },
       "installDetected": {
         "body": "扩展已安装。也可通过粘贴链接或使用 bookmarklet 进行保存。"
       },
       "share": {
-        "body": "打开 SHARE 即可把你的板作为图片或链接分享 — 然后关闭，或按 NEXT。"
+        "body": "分享就是这样进行的。打造一个你喜欢的看板，分享给所有人。"
       },
       "finale": {
         "body": "已准备就绪。随时可在 SETTINGS 中重播本教程。"
