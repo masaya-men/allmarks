@@ -272,6 +272,9 @@ type CardsLayerProps = {
   readonly onPanY?: (requestedDy: number) => number
   /** Tier 1 master switch — when false, no viewport autoplay. */
   readonly motionEnabled: boolean
+  /** Onboarding tag scene: force the hover-gated +TAG button visible &
+   *  clickable (the user can't hover through the spotlight hole). */
+  readonly forceTagButtonVisible?: boolean
   /** Tag-filter match set. null = no tag filter active (every card matches).
    *  When set, cards whose id is NOT in the set are "tagged out": they play
    *  the CRT shutdown animation and drop out of the masonry input so the
@@ -359,6 +362,7 @@ export function CardsLayer({
   isScrolling = false,
   entryAnimCycle = 0,
   receiverMode,
+  forceTagButtonVisible = false,
 }: CardsLayerProps): ReactNode {
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -1281,9 +1285,9 @@ export function CardsLayer({
                     letterSpacing: '0.10em',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
-                    opacity: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId) ? 1 : 0,
+                    opacity: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId || forceTagButtonVisible) ? 1 : 0,
                     transition: 'opacity 120ms',
-                    pointerEvents: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId) ? 'auto' : 'none',
+                    pointerEvents: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId || forceTagButtonVisible) ? 'auto' : 'none',
                     zIndex: 40,
                   }}
                 >

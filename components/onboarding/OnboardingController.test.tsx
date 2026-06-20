@@ -24,6 +24,7 @@ async function setup(props: Partial<React.ComponentProps<typeof OnboardingContro
   const ui = (
     <OnboardingController
       db={db} motionEnabled={false} sharePanelOpen={false}
+      appUrl="https://allmarks.app"
       onComplete={onComplete} {...props}
     />
   )
@@ -66,6 +67,7 @@ describe('OnboardingController', () => {
           <button type="button" onClick={() => setMotion((v) => !v)}>TOGGLE_MOTION</button>
           <OnboardingController
             db={db} motionEnabled={motion} sharePanelOpen={false}
+            appUrl="https://allmarks.app"
             onComplete={onComplete}
           />
         </>
@@ -105,6 +107,7 @@ describe('OnboardingController', () => {
           <button type="button" onClick={() => setMotion((v) => !v)}>TOGGLE_MOTION</button>
           <OnboardingController
             db={db} motionEnabled={motion} sharePanelOpen={false}
+            appUrl="https://allmarks.app"
             onComplete={onComplete}
           />
         </>

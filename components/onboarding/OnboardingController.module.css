@@ -35,3 +35,50 @@
   cursor: pointer;
 }
 .placeholderCopy { text-align: center; max-width: 420px; }
+
+/* Per-scene wrapper carries the scene-<id> testid; scenes manage their own
+   layout, so this is a transparent passthrough that fills the root. */
+.sceneWrap {
+  display: contents;
+}
+
+/* TRY THIS — sample-save button inside the paste spotlight bubble. Built on
+   the .advanceBtn chrome look (monospace, white-on-dark). */
+.tryThis {
+  display: inline-block;
+  margin-top: 12px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+.tryThis:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* Draggable bookmarklet chip inside the install spotlight bubble. */
+.installChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: grab;
+  user-select: none;
+  text-decoration: none;
+}
+.installChip:active { cursor: grabbing; }
+.installChipIcon { width: 16px; height: 16px; flex: none; }
+.installChipText { white-space: nowrap; }

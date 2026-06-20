@@ -132,6 +132,9 @@ export function BoardRoot() {
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
   const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
+  // While the onboarding tag scene is active, force the hover-gated card +TAG
+  // button visible (the user can't hover precisely through the spotlight hole).
+  const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
   // Background typography (the big wordmark / filter title behind the cards)
   // master switch. Persisted in BoardConfig; the share image follows it too.
   const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
@@ -1978,6 +1981,7 @@ export function BoardRoot() {
                 activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
+                forceTagButtonVisible={forceCardTagVisible}
               />
             </div>
           </InteractionLayer>
@@ -1986,7 +1990,10 @@ export function BoardRoot() {
               db={onboardingDbRef.current}
               motionEnabled={motionEnabled}
               sharePanelOpen={shareModalOpen}
+              appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://booklage.pages.dev')}
               onComplete={() => setShowOnboarding(false)}
+              onRequestMotionOff={() => setMotionEnabled(false)}
+              onTagSceneActive={setForceCardTagVisible}
             />
           )}
           {!loading && !showOnboarding && items.length === 0 && (
