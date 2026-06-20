@@ -1,4 +1,7 @@
-/* components/onboarding/ExtensionSaveReenactment.module.css */
+/* components/onboarding/ExtensionSaveReenactment.module.css
+   Promo-quality re-enactment of the AllMarks extension saving + tagging a page.
+   Tied to the world: dark glass, sound-wave hero, a single minimal close glyph,
+   and the real (borderless, monospace, green) tag-chip vocabulary. */
 .stage {
   position: fixed;
   inset: 0;
@@ -16,10 +19,12 @@
 /* fake browser window */
 .browser {
   position: relative;
-  width: min(640px, 90vw);
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 92vw);
   aspect-ratio: 16 / 10;
-  background: rgba(20, 20, 22, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(14, 14, 16, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
@@ -28,12 +33,19 @@
 .chrome {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
 }
-.dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); }
+/* minimal close glyph (replaces the colored traffic-light cliché) */
+.close { position: relative; width: 12px; height: 12px; flex: none; opacity: 0.5; }
+.close::before, .close::after {
+  content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1.5px;
+  background: rgba(255, 255, 255, 0.7);
+}
+.close::before { transform: rotate(45deg); }
+.close::after { transform: rotate(-45deg); }
 .urlbar {
   flex: 1;
   height: 26px;
@@ -46,7 +58,7 @@
   color: rgba(255, 255, 255, 0.5);
   font-size: 12px;
 }
-/* the AllMarks extension button in the toolbar */
+/* the AllMarks extension button in the toolbar — the focal accent */
 .extBtn {
   display: grid;
   place-items: center;
@@ -61,69 +73,115 @@
 
 .viewport {
   position: relative;
-  height: 100%;
+  flex: 1;
   padding: 18px;
 }
+/* hero carries the sound-wave motif so the frame belongs to the AllMarks world */
 .hero {
   height: 46%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
   border-radius: 10px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.02)),
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 14px, transparent 14px 28px);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
 }
+.heroWave { display: flex; align-items: center; gap: 5px; height: 52%; }
+.heroBar {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: rgba(40, 241, 0, 0.5);
+  transform-origin: center;
+  transform: scaleY(0.5);
+  animation: heroOsc 1.4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.09s);
+}
+@keyframes heroOsc { 0%, 100% { transform: scaleY(0.45); } 50% { transform: scaleY(1.4); } }
 .lines { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-.line { height: 9px; border-radius: 5px; background: rgba(255, 255, 255, 0.10); }
+.title { height: 12px; width: 52%; border-radius: 5px; background: rgba(255, 255, 255, 0.16); }
+.line { height: 9px; border-radius: 5px; background: rgba(255, 255, 255, 0.09); }
 
-/* big, readable save confirmation */
-.savedBadge {
+/* green save-flash that sweeps the page on save */
+.flash {
   position: absolute;
-  top: 38%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(40, 241, 0, 0.35) 50%,
+    transparent 70%
+  );
+}
+
+/* "Saved" confirmation pill near the extension button */
+.savePill {
+  position: absolute;
+  top: 14px;
+  right: 16px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  background: rgba(8, 22, 6, 0.92);
-  border: 1px solid rgba(40, 241, 0, 0.6);
-  box-shadow: 0 0 30px rgba(40, 241, 0, 0.3);
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(8, 18, 6, 0.94);
+  border: 1px solid rgba(40, 241, 0, 0.55);
+  box-shadow: 0 0 24px rgba(40, 241, 0, 0.28);
   color: #d7ffd0;
-  font-size: 15px;
+  font-size: 12.5px;
   font-weight: 600;
   white-space: nowrap;
 }
 .savedCheck {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #28f100;
   color: #0a0a0a;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 800;
 }
 
-/* tag chips that drop in under the badge */
-.strip {
+/* the real AllMarks tag menu (matches TagAddPopover: glass, borderless chips) */
+.tagMenu {
   position: absolute;
-  top: 58%;
   left: 50%;
+  bottom: 16px;
   transform: translateX(-50%);
-  display: flex;
-  gap: 10px;
+  min-width: 62%;
+  padding: 10px;
+  background: rgba(20, 20, 20, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
-.chip {
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(40, 241, 0, 0.4);
-  color: #28f100;
-  font-size: 12.5px;
+.tagHeader {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 0 4px 6px;
+}
+.tagChips { display: flex; gap: 6px; flex-wrap: wrap; }
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 9px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.82);
   white-space: nowrap;
 }
+.chipCheck { display: inline-block; overflow: hidden; white-space: nowrap; color: #28f100; font-size: 11px; }
+.chipName { color: inherit; }
 
 .cursor {
   position: absolute;
@@ -134,6 +192,7 @@
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   transform: rotate(-12deg);
+  z-index: 2;
 }
 
 .caption {
@@ -156,3 +215,16 @@
   cursor: pointer;
 }
 .cta:hover { background: rgba(255, 255, 255, 0.1); }
+/* After the first loop the demo pulses NEXT so the user knows they can proceed. */
+.cta[data-cue="true"] {
+  border-color: rgba(40, 241, 0, 0.5);
+  animation: ctaPulse 1.5s ease-in-out infinite;
+}
+@keyframes ctaPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(40, 241, 0, 0); }
+  50% { box-shadow: 0 0 0 5px rgba(40, 241, 0, 0.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .heroBar { animation: none; transform: scaleY(1); }
+  .cta[data-cue="true"] { animation: none; }
+}
