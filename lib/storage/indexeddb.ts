@@ -114,10 +114,13 @@ export interface TagRecord {
   theme?: string | null
   /** v15+: rename / 編集トラッキング用 (Unix epoch ms) */
   updatedAt?: number
+  /** Created by the first-run onboarding tag demo — swept on completion/next
+   *  load alongside the demo cards. Absent on every real user tag. */
+  onboardingDemo?: boolean
 }
 
 /** Input for creating a new tag (id and createdAt are auto-generated) */
-export type TagInput = Pick<TagRecord, 'name' | 'color' | 'order'>
+export type TagInput = Pick<TagRecord, 'name' | 'color' | 'order' | 'onboardingDemo'>
 
 /** Card record — visual position of a bookmark on the canvas */
 export interface CardRecord {

@@ -118,6 +118,8 @@ export function OnboardingController({
         const created = await addBookmark(db, {
           url: SAMPLE_URL, title: '', description: '', thumbnail: '', favicon: '',
           siteName: '', type: detectUrlType(SAMPLE_URL),
+          // Tutorial content — swept when onboarding ends, never left on the board.
+          onboardingDemo: true,
         })
         postBookmarkSaved({ bookmarkId: created.id })
       } catch { /* user can still paste their own link to advance */ }

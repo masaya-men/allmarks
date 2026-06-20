@@ -281,6 +281,11 @@ export function BoardRoot() {
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
   // Onboarding: true while the first-run tutorial overlay is active.
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false)
+  // Read at save time by the paste handler + tag-create so anything saved/created
+  // DURING the tutorial is flagged onboardingDemo and swept on completion. Kept
+  // current via assignment below (refs don't need an effect for read-at-event).
+  const onboardingActiveRef = useRef(false)
+  onboardingActiveRef.current = showOnboarding
   // DB ref shared across onboarding helpers (populated on first initDB() call).
   const onboardingDbRef = useRef<DbLike | null>(null)
   // When focusCard is called for a bookmark not in the current filtered view
@@ -1158,7 +1163,12 @@ export function BoardRoot() {
       // case-insensitive — so the new-input pathway doesn't silently create
       // duplicates of "YouTube" / "youtube" etc.
       const existing = tags.find((t) => t.name.toLowerCase() === trimmed.toLowerCase())
-      const target = existing ?? (await addTag(db, { name: trimmed, color: '#28F100', order: tags.length }))
+      const target = existing ?? (await addTag(db, {
+        name: trimmed, color: '#28F100', order: tags.length,
+        // Flag tags born during the tutorial (e.g. the demo "sample") so they're
+        // swept with the demo cards. Reused existing tags are never flagged.
+        ...(onboardingActiveRef.current ? { onboardingDemo: true } : {}),
+      }))
       await addTagToBookmark(db, bookmarkId, target.id)
       setTagAddedTick((t) => t + 1)
       await reloadTags()
@@ -1692,6 +1702,7 @@ export function BoardRoot() {
       // acceptable (no entrance highlight on other tabs is intentional).
       postBookmarkSaved({ bookmarkId })
     },
+    flagOnboardingRef: onboardingActiveRef,
   })
 
   // BroadcastChannel: reload (no entrance highlight) when an existing bookmark
@@ -2055,7 +2066,7 @@ export function BoardRoot() {
               db={onboardingDbRef.current}
               motionEnabled={motionEnabled}
               appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
-              onComplete={() => { setShowOnboarding(false); resetOnboardingCamera(); void reload() }}
+              onComplete={() => { setShowOnboarding(false); resetOnboardingCamera(); void reload(); void reloadTags() }}
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
               tagAddedSignal={tagAddedTick}

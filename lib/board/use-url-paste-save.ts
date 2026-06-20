@@ -14,6 +14,10 @@ export function useUrlPasteSave(opts: {
    *  window's document (e.g. `hostRef.current?.ownerDocument`) to ingest
    *  pastes made while the Pop Out window is focused. */
   targetDocument?: Document | null
+  /** When this ref reads true at save time, the saved bookmark is flagged
+   *  onboardingDemo so it's swept when the tutorial ends (a paste made while the
+   *  first-run onboarding is showing is tutorial content, not a real bookmark). */
+  flagOnboardingRef?: { readonly current: boolean }
 }): { feedback: PasteFeedback } {
   const [feedback, setFeedback] = useState<PasteFeedback>({ kind: null })
   const onSavedRef = useRef(opts.onSaved)
@@ -36,7 +40,12 @@ export function useUrlPasteSave(opts: {
       if (!isEmbeddableType(detectUrlType(url))) setFeedback({ kind: 'loading' })
       try {
         const db = await initDB()
-        const result = await ingestPastedUrl(url, { db, getAll: getAllBookmarks, add: addBookmark, fetchOgp: fetchOgpMeta })
+        // Flag onboarding-time pastes so the tutorial sweep removes them and the
+        // user's real board is never affected.
+        const add: typeof addBookmark = opts.flagOnboardingRef?.current
+          ? (database, input) => addBookmark(database, { ...input, onboardingDemo: true })
+          : addBookmark
+        const result = await ingestPastedUrl(url, { db, getAll: getAllBookmarks, add, fetchOgp: fetchOgpMeta })
         if (result.outcome === 'saved' && result.bookmarkId) {
           setFeedback({ kind: null })
           await onSavedRef.current(result.bookmarkId)

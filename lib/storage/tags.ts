@@ -29,6 +29,8 @@ export async function addTag(db: DbLike, input: TagInput): Promise<TagRecord> {
     createdAt: now,
     updatedAt: now,
     theme: null,
+    // Only present when the onboarding demo created it; absent on real tags.
+    ...(input.onboardingDemo ? { onboardingDemo: true } : {}),
   }
   await db.put('tags', tag)
   return tag
