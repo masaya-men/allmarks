@@ -1,39 +1,34 @@
-# 次セッションのゴール (= セッション 117)
+# 次セッションのゴール (= セッション 118)
 
 ## 今のゴール (1 行)
 
-**🎬 オンボーディングを「1シーンずつ磨く」フェーズ。セッション116で 大刷新＋タグ画面のカメラズーム演出＋終了時クリーンアップ まで完了・本番反映済。次は ①入場 から順に、各シーンの速度・文言・見た目・配置を1つずつ詰める（ユーザーと相談しながら）。**
+**🎬 オンボーディングのシーン単位の磨きを継続。次は ⑥設置(ブックマークレット) を ⑤拡張デモと同じ「本物UIの忠実再現」にする。**
 
 ## 開始時の動き
 1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む
-2. `git status` クリーン確認（116末で全コミット+push+本番反映済）
-3. ユーザーに「①入場シーンから磨きますか？」と確認 → REPLAY INTRO の実機所感を聞く
+2. `git status` クリーン確認（117末で全コミット+push+本番反映済）
+3. 確認は **SETTINGS → REPLAY INTRO**（or シークレットウィンドウ）
 
-## 進め方（ユーザー指定）
-- **1シーンずつ**。セッションを重くしないため、数シーンごとに区切る。
-- 各シーンで (A)ユーザーが REPLAY INTRO を見て気になる所を言う / (B)Claude が改善案を1つずつ出す、のどちらでも。
-- デザイン変更は提案→承認。応答は日本語。確認は **SETTINGS → REPLAY INTRO**（or シークレットウィンドウ）。
+## 次にやる本命: ⑥設置 = ブックマークレットの忠実デモ（ユーザー希望）
+- ⑤拡張デモと同じ方針で「**本物の画面（LPスクショ流用可）＋本物の保存UI**」にする。
+- **本物の保存窓 = [SaveToast.tsx](../components/bookmarklet/SaveToast.tsx)**（拡張なしのブックマークレット保存窓。`Saving → Saved / Already saved / Failed`＋ring/brand/glow、256×256、任意でコンパクトTagAddPopover）。これを忠実再現に流用。
+- 流れ案: ブラウザ枠＋**ブックマークバーに「AllMarks」ブックマークレット**（バーは模型／ツールバー拡張アイコン同様、ブラウザchromeは描画不可なのでバーは作り物）→ カーソルがブックマークレットをクリック → **本物の /save 窓がポップ（Saving→Saved）** → 任意でタグ。
+- 現状の ⑥ は `BookmarkletInstallChip`（ドラッグして設置）＝「設置の説明」。**使い方デモ（保存の様子）を見せる**形に格上げするか、設置＋デモの2ビートにするか要判断。
+- 移植元参考: [extension-ui.css](../components/onboarding/extension-ui.css) と [ExtensionSaveReenactment.tsx](../components/onboarding/ExtensionSaveReenactment.tsx)（⑤の作り）。SaveToast の見た目は `SaveToast.module.css` から移植 or `:global` 注意（⑤と同じくグローバルCSSで回避済の手法が使える）。
 
-## シーン別・磨き候補（Claude の seed。順に潰す）
-1. **入場(START＋言語)**: 言語切替の発見性（地球儀＋言語名だけ→「LANGUAGE」等の手がかり or もう少し目立たせる）。背景の0.96幕越しにデモカードが薄く見える（奥行きとして残すか不透明化するか）。SKIP が小さい(29×17)。
-2. **貼る**: TRY THIS が「コピー→自分で貼る」の2段で間接的（サンプルを直接出す案も）。貼ったカードの着地をもっと見せる。
-3. **タグ(ズーム＋タイピング)**: ズームの倍率(1.7)/緩急、読ませ→寄り→打鍵の各間（`TAG_READ_BEAT_MS`/`TAG_ZOOM_MS`）、大きいカード上での打鍵欄の位置・サイズ、done表示の保持時間。
-4. **MOTION**: スポットライト位置、「動き出す」体験の見せ方。
-5. **拡張デモ(PV)**: ループの間/repeatDelay、タグ選択ビートの速度、初回後の NEXT 緑pulse の分かりやすさ。タグチップは本物語彙に統一済。
-6. **設置**: target無しで全面ダーク（cinema的）になる。ブックマークレットチップのドラッグ訴求、「chip」語彙は撤去済＋Ctrl/⌘+Shift+B案内追加済。
-7. **共有(ショーケース)**: プレビュータイルの不揃い、自動前進 `AUTO_ADVANCE_MS=5200`（速い/遅い）、アスピレーショナル文言。
-8. **フィナーレ**: 緑ディスクチェック統一（tag/motionのdoneは素の✓のまま=低優先の残）、空ボードへの着地。
-- **横断**: doneの✓を緑ディスクチェックに統一（低優先）。SKIPのクリック領域拡大。
+## その後の残り（シーン磨き）
+- **⑦共有(ショーケース)**: プレビュータイルの不揃い・自動前進速度・文言。
+- **⑧フィナーレ**: 緑ディスクチェック統一・空ボードへの着地。
+- **①入場(START＋言語)**: まだ未着手の seed が残る — 言語切替の発見性（🌐＋言語名だけ→「LANGUAGE」手がかり）、背景0.96幕越しのデモカード透け、SKIP の当たり判定(約29×17)拡大。
 
-## 実装の要点（次に触るとき必読）
-- 部品: `components/onboarding/{OnboardingController, OnboardingStage, OnboardingSpotlight, OnboardingTagTyper, OnboardingLanguagePicker, ExtensionSaveReenactment, ShareReenactment, BookmarkletInstallChip}`。
-- **タグ画面の流れ**: `tagPhase: 'read'→'zoom'→'type'`。read(`TAG_READ_BEAT_MS=1500`)で文言→zoom(`onZoomToCard`→BoardRootの`zoomCameraToOnboardingCard`がカメラ層をGSAP変形、`TAG_ZOOM_MS=1200`)→type(`OnboardingSpotlight`がセンタリングされたカードをリング＋`OnboardingTagTyper`が`sample`打鍵→chip popで`onApplySampleTag`本物タグ→`tagApplied`でdone+NEXT)。NEXT/skipで`onZoomReset`。
-- **カメラ層**: BoardRootで`InteractionLayer`だけを`cameraRef`(`.cameraWrap`)で包む。オンボーディングは兄弟なので`position:fixed`は無事、`canvasWrap`の`overflow:hidden`でズームが盤面内に収まる。
-- **終了時クリーンアップ**: オンボ中の保存/タグ生成は全て`onboardingDemo`フラグ付き（demo seed / TRY THIS fallback / `useUrlPasteSave`の`flagOnboardingRef`経由の貼り付け / `handleTagCreate`の新規タグ）。`clearOnboardingDemo`がフラグ付きカード＋タグ(deleteTagCascade)を掃除。`onComplete`で`reload()`+`reloadTags()`＝ページ再読込なしで空状態に。**本物のブクマ/タグは無印=不可侵**（test: `tests/lib/onboarding-demo.test.ts`）。
-- **共有**: `ShareReenactment`が自動再生→`AUTO_ADVANCE_MS`で自動前進、NEXTで早送り。本物パネルは開かない。
+## このセッション(117)でやったこと（全て本番反映済・ユーザー承認済）
+- **②貼る**: 全面スポットライト廃止→中央カード＋暗幕、URL欄＋COPYボタン(input禁止でCtrl+V保証)、一行コピー15言語、ふわっと入場、**COPY後に盤面を明るく＋下部プロンプト＋デモカーソルが空き地をカチッ**、ScrollMeterをチュートリアル中非表示。
+- **③タグ**: 4ビート化(zoom→intro→demo→done)。**本物の+TAGを実測して光らせ・カーソルでクリック**、メニューは本物位置に出現、入力はカーソルが脇へどいて2.5倍ゆっくり、完了で全体暗転＋下部メッセージ。
+- **④MOTION**: デモseedを動くカードで刷新(複数画像3＋**本物YouTube4本(Blender作品, oEmbed検証済)**＋静止)、**MOTION ONで盤面を明るく見せる**2ビート、done文言15言語。
+- **⑤拡張デモ**: **本物の拡張UIを忠実再現**(cursor pill / floating button / tag strip を `extension/` から1:1移植、新規 extension-ui.css)＋**AllMarks LPスクショ**(`public/onboarding/lp-hero-shot.webp`, `scripts/capture-lp-shot.mjs`)上で実演。
 
 ## 守ること
 - 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII)必須。`tsc <file>` 直叩き禁止 → `rtk tsc`。
-- アプリ本体に言語接頭辞を付けない。`DB_NAME='booklage-db'` 等の内部符号は不変。
-- 視覚は隔離レンダ(Playwright `serve out -l 4321`)＋ユーザー実機の二段。デザイン変更は提案→承認。応答は日本語。
-- **常にクリーンなセーブ**: 完了の区切りで commit+push、git=本番一致。
+- 視覚は隔離レンダ＋ユーザー実機の二段。デザイン変更は提案→承認。応答は日本語。
+- 大きめ改修(新component/100行+)は事前に方針確認。**常にクリーンなセーブ**(区切りで commit+push、git=本番一致)。
+- LPスクショは LP の見た目が大きく変わったら `node scripts/capture-lp-shot.mjs`(serve out/ 後)で撮り直す。
