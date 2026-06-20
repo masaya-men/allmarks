@@ -86,6 +86,16 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Reset to defaults"
+    },
+    "onboarding": {
+      "enter": { "body": "AllMarks turns links into a visual board." },
+      "paste": { "body": "Paste a link with Cmd/Ctrl+V, or use TRY THIS." },
+      "tag": { "body": "Add a tag to the card you just saved." },
+      "motion": { "body": "Turn on MOTION to bring the board to life." },
+      "extDemo": { "body": "With the extension, one click saves the open page and tags it." },
+      "install": { "body": "Drag the AllMarks chip to your bookmarks bar to save from anywhere." },
+      "share": { "body": "Open SHARE to publish your board as an image or a link." },
+      "finale": { "body": "You're set. Replay this anytime from SETTINGS." }
     }
   },
   "share": {
