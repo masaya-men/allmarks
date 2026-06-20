@@ -26,6 +26,9 @@ export function ExtensionSaveReenactment({ caption, buttonLabel, onAdvance }: Pr
       gsap.set(strip, { y: 0, opacity: 1 }); gsap.set(chips, { opacity: 1 })
       return
     }
+    // Minor 2 fix: synchronously pre-hide before timeline builds to avoid 1-frame flash
+    gsap.set(strip, { y: -12, opacity: 0 })
+    gsap.set(chips, { opacity: 0 })
     const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.1 })
     tl.set(strip, { y: -12, opacity: 0 })
       .set(chips, { opacity: 0 })
