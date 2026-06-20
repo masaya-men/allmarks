@@ -1990,7 +1990,7 @@ export function BoardRoot() {
               db={onboardingDbRef.current}
               motionEnabled={motionEnabled}
               sharePanelOpen={shareModalOpen}
-              appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://booklage.pages.dev')}
+              appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
               onComplete={() => setShowOnboarding(false)}
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
@@ -2048,7 +2048,7 @@ export function BoardRoot() {
       <BookmarkletInstallModal
         isOpen={bookmarkletModalOpen}
         onClose={handleCloseBookmarkletModal}
-        appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://booklage.pages.dev')}
+        appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
       />
       <SenderShareModal
         open={shareModalOpen}

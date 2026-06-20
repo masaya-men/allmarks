@@ -78,11 +78,16 @@ export function OnboardingController({
   // first card. The bookmark-saved event advances the paste scene; the user
   // pasting their own URL also fires it, so both paths work.
   const saveSample = async (): Promise<void> => {
-    const created = await addBookmark(db, {
-      url: SAMPLE_URL, title: '', description: '', thumbnail: '', favicon: '',
-      siteName: '', type: detectUrlType(SAMPLE_URL),
-    })
-    postBookmarkSaved({ bookmarkId: created.id })
+    try {
+      const created = await addBookmark(db, {
+        url: SAMPLE_URL, title: '', description: '', thumbnail: '', favicon: '',
+        siteName: '', type: detectUrlType(SAMPLE_URL),
+      })
+      postBookmarkSaved({ bookmarkId: created.id })
+    } catch {
+      // If the sample save fails (rare IDB error), the user can still paste
+      // their own link to advance — don't crash with an unhandled rejection.
+    }
   }
 
   // Event-driven advances. Each effect is scoped to the scene that needs it.

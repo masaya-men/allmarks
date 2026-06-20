@@ -52,12 +52,6 @@
   transform: translateY(0);
 }
 
-.hint {
-  margin: 20px 0 0;
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-}
-
 .replay {
   margin-top: 14px;
   background: none;

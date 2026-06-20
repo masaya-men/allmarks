@@ -24,14 +24,16 @@ export function OnboardingStage({ variant, caption, buttonLabel, onAdvance }: Pr
     const check = root.querySelector('[data-anim="check"]')
     const copy = root.querySelectorAll('[data-anim="copy"]')
     if (reduce) {
-      gsap.set([logo, check, ...copy], { opacity: 1, scale: 1, y: 0 })
+      // finale has no logo/check nodes — filter nulls so gsap doesn't warn.
+      gsap.set([logo, check, ...copy].filter(Boolean), { opacity: 1, scale: 1, y: 0 })
       return
     }
     const tl = gsap.timeline()
     tl.from(wave, { scaleX: 0, opacity: 0, duration: 0.6, stagger: 0.06, ease: 'power2.out' })
-      .from(logo, { opacity: 0, scale: 0.8, duration: 0.5, ease: 'back.out(1.6)' }, '-=0.2')
-      .from(check, { opacity: 0, scale: 0.4, duration: 0.35, ease: 'back.out(2)' }, '-=0.1')
-      .from(copy, { opacity: 0, y: 12, duration: 0.4, stagger: 0.08 }, '-=0.1')
+    // logo/check only exist on the enter variant; skip cleanly for finale.
+    if (logo) tl.from(logo, { opacity: 0, scale: 0.8, duration: 0.5, ease: 'back.out(1.6)' }, '-=0.2')
+    if (check) tl.from(check, { opacity: 0, scale: 0.4, duration: 0.35, ease: 'back.out(2)' }, '-=0.1')
+    tl.from(copy, { opacity: 0, y: 12, duration: 0.4, stagger: 0.08 }, '-=0.1')
     return () => { tl.kill() }
   }, [variant])
 
