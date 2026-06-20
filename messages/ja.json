@@ -43,10 +43,10 @@
       "bookmarkletHint": "サイトから 1 クリックで保存"
     },
     "empty": {
-      "title": "ブックマークをはじめよう",
-      "description": "AllMarks は、どのサイトからでも 1 クリックで保存できるブックマークレットを使います",
-      "installButton": "📌 AllMarks を設置",
-      "alreadyInstalled": "既に設置済？ 別サイトで 📌 をクリック"
+      "title": "ボードが空です",
+      "description": "リンクを貼り付け (Ctrl/Cmd+V) して最初のブックマークを保存しよう。",
+      "installButton": "拡張機能なしで保存",
+      "alreadyInstalled": "リンクをボードに貼り付けて保存"
     },
     "bookmarkletModal": {
       "title": "ブックマークレットを設置する",

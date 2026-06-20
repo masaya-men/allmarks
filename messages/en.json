@@ -43,10 +43,10 @@
       "bookmarkletHint": "Save from any site in one click"
     },
     "empty": {
-      "title": "Start bookmarking",
-      "description": "AllMarks uses a bookmarklet that saves any site in one click",
-      "installButton": "📌 Install AllMarks",
-      "alreadyInstalled": "Already installed? Click 📌 on another site"
+      "title": "Your board is empty",
+      "description": "Paste a link (Cmd/Ctrl+V) to save your first bookmark.",
+      "installButton": "Save without the extension",
+      "alreadyInstalled": "Paste a link on the board to save it"
     },
     "bookmarkletModal": {
       "title": "Install the bookmarklet",
