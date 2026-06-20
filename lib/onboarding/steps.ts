@@ -19,7 +19,7 @@ export const ONBOARDING_SCENES: readonly OnboardingScene[] = [
   { id: 'motion',  kind: 'handsOn', advance: 'button',     target: 'motion' },
   { id: 'extDemo', kind: 'cinema',  advance: 'button' },
   { id: 'install', kind: 'handsOn', advance: 'button' },
-  { id: 'share',   kind: 'handsOn', advance: 'sharePanel', target: 'share' },
+  { id: 'share',   kind: 'cinema',  advance: 'button' },
   { id: 'finale',  kind: 'cinema',  advance: 'button' },
 ] as const
 

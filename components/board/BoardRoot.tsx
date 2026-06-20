@@ -2013,7 +2013,6 @@ export function BoardRoot() {
             <OnboardingController
               db={onboardingDbRef.current}
               motionEnabled={motionEnabled}
-              sharePanelOpen={shareModalOpen}
               appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
               onComplete={() => setShowOnboarding(false)}
               onRequestMotionOff={() => setMotionEnabled(false)}

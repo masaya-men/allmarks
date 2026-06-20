@@ -23,7 +23,7 @@ async function setup(props: Partial<React.ComponentProps<typeof OnboardingContro
   const onComplete = vi.fn()
   const ui = (
     <OnboardingController
-      db={db} motionEnabled={false} sharePanelOpen={false}
+      db={db} motionEnabled={false}
       appUrl="https://allmarks.app"
       onComplete={onComplete} {...props}
     />
@@ -65,7 +65,7 @@ describe('OnboardingController', () => {
         <>
           <button type="button" onClick={() => setMotion((v) => !v)}>TOGGLE_MOTION</button>
           <OnboardingController
-            db={db} motionEnabled={motion} sharePanelOpen={false}
+            db={db} motionEnabled={motion}
             appUrl="https://allmarks.app"
             onComplete={onComplete}
           />
@@ -98,7 +98,7 @@ describe('OnboardingController', () => {
     const onRequestMotionOff = vi.fn()
     renderWithLocale(
       <OnboardingController
-        db={db} motionEnabled={true} sharePanelOpen={false}
+        db={db} motionEnabled={true}
         appUrl="https://allmarks.app" onComplete={() => {}}
         onRequestMotionOff={onRequestMotionOff}
       />, 'en', en as Messages,
@@ -119,7 +119,7 @@ describe('OnboardingController', () => {
         <>
           <button type="button" onClick={() => setTick((v) => v + 1)}>ADD_TAG</button>
           <OnboardingController
-            db={db} motionEnabled={false} sharePanelOpen={false}
+            db={db} motionEnabled={false}
             appUrl="https://allmarks.app" tagAddedSignal={tick}
             onComplete={onComplete}
           />
@@ -141,17 +141,15 @@ describe('OnboardingController', () => {
     expect(screen.getByTestId('scene-motion')).not.toBeNull()
   })
 
-  it('share scene steps aside while panel open and advances on close', async () => {
+  it('share scene shows the share showcase and advances on NEXT', async () => {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {
       const [motion, setMotion] = useState(false)
-      const [share, setShare] = useState(false)
       return (
         <>
           <button type="button" onClick={() => setMotion((v) => !v)}>TOGGLE_MOTION</button>
-          <button type="button" onClick={() => setShare((v) => !v)}>TOGGLE_SHARE</button>
           <OnboardingController
-            db={db} motionEnabled={motion} sharePanelOpen={share}
+            db={db} motionEnabled={motion}
             appUrl="https://allmarks.app"
             onComplete={onComplete}
           />
@@ -173,15 +171,9 @@ describe('OnboardingController', () => {
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo -> install
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install -> share
     expect(screen.getByTestId('scene-share')).not.toBeNull()
-    expect(screen.queryByTestId('onboarding-spotlight')).not.toBeNull() // spotlight shown while closed
 
-    // Open the share panel -> still on share, but spotlight steps aside
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_SHARE' })) })
-    expect(screen.getByTestId('scene-share')).not.toBeNull()
-    expect(screen.queryByTestId('onboarding-spotlight')).toBeNull()
-
-    // Close the share panel -> advances to finale (panel already gone)
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_SHARE' })) })
+    // The share showcase plays as a cinema beat; a NEXT escape advances to finale.
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // share -> finale
     expect(screen.getByTestId('scene-finale')).not.toBeNull()
   })
 })

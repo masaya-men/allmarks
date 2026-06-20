@@ -12,6 +12,7 @@ import { addBookmark } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { OnboardingStage } from './OnboardingStage'
 import { ExtensionSaveReenactment } from './ExtensionSaveReenactment'
+import { ShareReenactment } from './ShareReenactment'
 import { OnboardingSpotlight } from './OnboardingSpotlight'
 import { OnboardingTagTyper } from './OnboardingTagTyper'
 import { BookmarkletInstallChip } from './BookmarkletInstallChip'
@@ -23,7 +24,6 @@ type DbLike = IDBPDatabase<any>
 type Props = {
   readonly db: DbLike
   readonly motionEnabled: boolean
-  readonly sharePanelOpen: boolean
   readonly appUrl: string
   readonly onComplete: () => void
   /** Force MOTION off when entering the motion scene so the user has a real
@@ -65,7 +65,7 @@ function extensionDetected(): boolean {
 }
 
 export function OnboardingController({
-  db, motionEnabled, sharePanelOpen, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
+  db, motionEnabled, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
   tagAddedSignal = 0, onApplySampleTag,
 }: Props): ReactElement {
   const { t } = useI18n()
@@ -80,7 +80,6 @@ export function OnboardingController({
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
-  const shareOpenedRef = useRef(false)
   const prevTagSignalRef = useRef(tagAddedSignal)
   const isMobileRef = useRef(typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches)
 
@@ -160,21 +159,6 @@ export function OnboardingController({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [motionEnabled, sceneId])
 
-  // Share scene advances when the panel is CLOSED AFTER having been OPENED
-  // (matches the spec: "open SHARE to see how publishing works, then close").
-  // Advancing on close guarantees the panel is gone before the finale renders
-  // (no lingering modal intercepting the finale's NEXT).
-  useEffect(() => {
-    if (scene.advance !== 'sharePanel') { shareOpenedRef.current = false; return }
-    if (sharePanelOpen) {
-      shareOpenedRef.current = true
-    } else if (shareOpenedRef.current) {
-      shareOpenedRef.current = false
-      advance()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sharePanelOpen, sceneId])
-
   // Force MOTION off exactly once when transitioning into the motion scene,
   // otherwise the false->true edge advance has nothing to fire on (MOTION
   // defaults to ON for first-run) and the scene stalls.
@@ -222,6 +206,9 @@ export function OnboardingController({
     if (sceneId === 'extDemo') {
       return wrap(<ExtensionSaveReenactment caption={body} buttonLabel="NEXT" onAdvance={advance} />)
     }
+    if (sceneId === 'share') {
+      return wrap(<ShareReenactment caption={body} onAdvance={advance} />)
+    }
     return wrap(
       <OnboardingStage
         variant={sceneId === 'finale' ? 'finale' : 'enter'}
@@ -229,20 +216,6 @@ export function OnboardingController({
         buttonLabel={sceneId === 'enter' ? 'START' : 'NEXT'}
         onAdvance={advance}
       />,
-    )
-  }
-
-  // Share scene with the panel open: step aside (skip-only, no dim/spotlight)
-  // so the z-200 share modal is fully visible above the (z-210, but now
-  // pointer-transparent) onboarding root. Advance happens when it closes.
-  if (sceneId === 'share' && sharePanelOpen) {
-    return (
-      <div className={styles.root} data-testid="onboarding-root">
-        <button type="button" className={styles.skip} onClick={() => void finish()}>
-          SKIP
-        </button>
-        <div data-testid="scene-share" className={styles.sceneWrap} />
-      </div>
     )
   }
 
@@ -300,13 +273,6 @@ export function OnboardingController({
         <BookmarkletInstallChip appUrl={appUrl} />
       )}
       {sceneId === 'install' && (
-        <button type="button" className={styles.advanceBtn} onClick={advance}>
-          NEXT
-        </button>
-      )}
-      {/* SHARE advances when the panel is opened then closed, but give a plain
-          NEXT too so the user is never unsure how to proceed. */}
-      {sceneId === 'share' && (
         <button type="button" className={styles.advanceBtn} onClick={advance}>
           NEXT
         </button>
