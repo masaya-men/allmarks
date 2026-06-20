@@ -27,6 +27,8 @@ export function OnboardingController({
   const [sceneId, setSceneId] = useState<SceneId>('enter')
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
+  const prevMotionRef = useRef(motionEnabled)
+  const prevShareRef = useRef(sharePanelOpen)
 
   const advance = (): void => {
     const next = nextSceneId(sceneId)
@@ -56,12 +58,16 @@ export function OnboardingController({
   }, [sceneId])
 
   useEffect(() => {
-    if (scene.advance === 'motion' && motionEnabled) advance()
+    const was = prevMotionRef.current
+    prevMotionRef.current = motionEnabled
+    if (scene.advance === 'motion' && !was && motionEnabled) advance()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [motionEnabled, sceneId])
 
   useEffect(() => {
-    if (scene.advance === 'sharePanel' && sharePanelOpen) advance()
+    const was = prevShareRef.current
+    prevShareRef.current = sharePanelOpen
+    if (scene.advance === 'sharePanel' && !was && sharePanelOpen) advance()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharePanelOpen, sceneId])
 
