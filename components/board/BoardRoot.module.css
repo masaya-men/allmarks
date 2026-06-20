@@ -94,6 +94,14 @@
   overflow: hidden;
 }
 
+/* Transformable "camera" layer wrapping the board content (InteractionLayer).
+   Identity by default (no containing-block side effects); the onboarding tag
+   scene GSAP-transforms this to push the view in toward the just-saved card. */
+.cameraWrap {
+  position: absolute;
+  inset: 0;
+}
+
 /* Session 39 phase 6 (B-#20 refactor): the LightboxMeterSlot wrapper +
  * crossfade machinery was removed when ScrollMeter became the single
  * unified meter for both board and lightbox states. The meter now lives

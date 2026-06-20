@@ -81,6 +81,32 @@
   color: #28f100; /* A-logo green — confirms the copy succeeded */
 }
 
+/* Transparent full-screen blocker — stops board interaction while the tag
+   scene's camera pushes in (the board stays visible, just untouchable). */
+.fullBlocker { position: fixed; inset: 0; background: transparent; pointer-events: auto; }
+
+/* Standalone caption pinned at the bottom-center (used during the tag scene's
+   read/zoom phases, before the spotlight takes over). Matches the spotlight's
+   bottom bubble and clears the ScrollMeter waveform. */
+.bottomCaption {
+  position: fixed;
+  bottom: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 420px;
+  padding: 12px 16px;
+  text-align: center;
+  background: rgba(12, 12, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12.5px;
+  line-height: 1.7;
+  pointer-events: auto;
+}
+
 /* Draggable bookmarklet chip inside the install spotlight bubble. */
 /* Same chrome-button family as the others — just draggable (grab cursor + glyph),
    not a brighter/rounder outlier. */

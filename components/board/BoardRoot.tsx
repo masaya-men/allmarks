@@ -38,6 +38,7 @@ import {
   isBoardBgTypoVariant,
   type BoardBgTypoVariant,
 } from './BoardBackgroundTypography'
+import { gsap } from 'gsap'
 import { CardsLayer } from './CardsLayer'
 import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
@@ -1176,6 +1177,38 @@ export function BoardRoot() {
     await handleTagCreate(newest.bookmarkId, 'sample')
   }, [items, handleTagCreate])
 
+  // Onboarding tag scene "camera": pushes the whole board view in toward the
+  // just-added card so it lands centered + enlarged, then the typed-tag demo
+  // plays on it. Transforms a wrapper around InteractionLayer only (the
+  // onboarding overlay is a sibling, so its fixed positioning is unaffected;
+  // canvasWrap's overflow:hidden clips the zoom to the board area).
+  const cameraRef = useRef<HTMLDivElement>(null)
+  const zoomCameraToOnboardingCard = useCallback((): void => {
+    const cam = cameraRef.current
+    const card = document.querySelector('[data-onboarding-target="card"]')
+    if (!cam || !card) return
+    const cr = card.getBoundingClientRect()
+    const mr = cam.getBoundingClientRect()
+    const cx = cr.left + cr.width / 2
+    const cy = cr.top + cr.height / 2
+    gsap.to(cam, {
+      transformOrigin: `${cx - mr.left}px ${cy - mr.top}px`,
+      scale: 1.7,
+      x: window.innerWidth / 2 - cx,
+      y: window.innerHeight / 2 - cy,
+      duration: 1.1,
+      ease: 'power3.inOut',
+    })
+  }, [])
+  const resetOnboardingCamera = useCallback((): void => {
+    const cam = cameraRef.current
+    if (!cam) return
+    gsap.to(cam, {
+      scale: 1, x: 0, y: 0, duration: 0.7, ease: 'power3.inOut',
+      onComplete: () => { gsap.set(cam, { clearProps: 'all' }) },
+    })
+  }, [])
+
   // Card width and gap are board-wide preferences, not per-card data.
   // localStorage is sufficient (recovers on next visit, cross-device sync
   // not in scope). On mount we hydrate from saved values once.
@@ -1908,6 +1941,7 @@ export function BoardRoot() {
           }
         />
         <div ref={canvasRef} className={styles.canvasWrap} data-lightbox-clone-host data-onboarding-target="paste-zone">
+          <div ref={cameraRef} className={styles.cameraWrap}>
           <InteractionLayer
             direction={themeMeta.direction}
             onScroll={handleScroll}
@@ -2015,16 +2049,19 @@ export function BoardRoot() {
               />
             </div>
           </InteractionLayer>
+          </div>
           {!loading && showOnboarding && onboardingDbRef.current && (
             <OnboardingController
               db={onboardingDbRef.current}
               motionEnabled={motionEnabled}
               appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
-              onComplete={() => setShowOnboarding(false)}
+              onComplete={() => { setShowOnboarding(false); resetOnboardingCamera(); void reload() }}
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
               tagAddedSignal={tagAddedTick}
               onApplySampleTag={() => { void applySampleTag() }}
+              onZoomToCard={zoomCameraToOnboardingCard}
+              onZoomReset={resetOnboardingCamera}
             />
           )}
           {!loading && !showOnboarding && items.length === 0 && (

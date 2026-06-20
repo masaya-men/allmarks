@@ -42,6 +42,10 @@ type Props = {
    *  calls this automatically (tagging by hand through the popover is fiddly),
    *  then advances when tagAddedSignal bumps. */
   readonly onApplySampleTag?: () => void
+  /** Tag scene camera: push the board view in toward the just-added card (so it
+   *  lands centered + enlarged) and reset it afterward. */
+  readonly onZoomToCard?: () => void
+  readonly onZoomReset?: () => void
 }
 
 const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' // public, long-lived
@@ -54,10 +58,10 @@ const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   share: '[data-onboarding-target="share"]',
 }
 
-// How long the tag scene shows the card + caption before the typed-tag demo
-// starts, so the user reads "tags keep your board organized" first, then watches
-// the tag get typed in (rather than a tag appearing out of nowhere).
-const TAG_READ_BEAT_MS = 1500
+// Tag scene cinematic timing: read the caption, then push the camera in toward
+// the just-added card, then type the tag on the now-centered card.
+const TAG_READ_BEAT_MS = 1500 // read the caption before the camera moves
+const TAG_ZOOM_MS = 1200       // camera push-in (matches BoardRoot's 1.1s + buffer)
 
 function extensionDetected(): boolean {
   if (typeof document === 'undefined') return false
@@ -66,7 +70,7 @@ function extensionDetected(): boolean {
 
 export function OnboardingController({
   db, motionEnabled, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
-  tagAddedSignal = 0, onApplySampleTag,
+  tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset,
 }: Props): ReactElement {
   const { t } = useI18n()
   const [sceneId, setSceneId] = useState<SceneId>('enter')
@@ -75,7 +79,8 @@ export function OnboardingController({
   // NEXT button, so the user sees what happened and proceeds at their own pace
   // (rather than the scene rushing past the moment they act).
   const [tagApplied, setTagApplied] = useState(false)
-  const [tagTyperMounted, setTagTyperMounted] = useState(false)
+  // Tag scene plays as: read (caption) -> zoom (camera push-in) -> type (demo).
+  const [tagPhase, setTagPhase] = useState<'read' | 'zoom' | 'type'>('read')
   const [motionOn, setMotionOn] = useState(false)
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
@@ -93,6 +98,7 @@ export function OnboardingController({
   const finish = async (): Promise<void> => {
     if (finishingRef.current) return
     finishingRef.current = true
+    onZoomReset?.() // undo any tag-scene camera zoom before tearing down
     await clearOnboardingDemo(db)
     await markOnboardingComplete(db)
     onComplete()
@@ -128,7 +134,7 @@ export function OnboardingController({
   // Reset the per-scene confirmation flags whenever the scene changes.
   useEffect(() => {
     setTagApplied(false)
-    setTagTyperMounted(false)
+    setTagPhase('read')
     setMotionOn(false)
     setCopied(false)
   }, [sceneId])
@@ -174,16 +180,22 @@ export function OnboardingController({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
-  // Tag scene: after a read beat, mount the typed-tag demo. The demo types
-  // "sample" into a faithful copy of the real tag menu, then pops the chip —
-  // at which point it applies the REAL tag (onApplySampleTag) so the genuine
-  // green pill lands on the genuine card — and finally reveals the confirmation.
+  // Tag scene cinematic: read the caption -> push the camera in toward the
+  // just-added card -> mount the typed-tag demo on the now-centered card.
   useEffect(() => {
     if (sceneId !== 'tag') return
-    const id = setTimeout(() => setTagTyperMounted(true), TAG_READ_BEAT_MS)
-    return () => clearTimeout(id)
+    const t1 = setTimeout(() => { setTagPhase('zoom'); onZoomToCard?.() }, TAG_READ_BEAT_MS)
+    const t2 = setTimeout(() => setTagPhase('type'), TAG_READ_BEAT_MS + TAG_ZOOM_MS)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
+
+  // If a tag lands before the cinematic reaches the type phase (a real tag-add
+  // via the channel, or a fast unit test), jump straight to the result so the
+  // confirmation + NEXT are shown rather than swallowed by the read/zoom phase.
+  useEffect(() => {
+    if (sceneId === 'tag' && tagApplied) setTagPhase('type')
+  }, [tagApplied, sceneId])
 
   const installDetected = sceneId === 'install' && extensionDetected()
   const body = installDetected
@@ -219,29 +231,55 @@ export function OnboardingController({
     )
   }
 
-  // ---- Hands-on scenes -----------------------------------------------------
-  // The tag and motion scenes show the RESULT of the action (a tag landing /
-  // the cards moving) and only then reveal NEXT, so the user sees what happened
-  // and proceeds at their own pace. Their captions sit at the bottom (off the
-  // cut-out / off the moving cards). The spotlight hole passes clicks through,
-  // so the user can still operate the real control (MOTION toggle, SHARE).
-  const isTag = sceneId === 'tag'
-  const isMotion = sceneId === 'motion'
-  return wrap(
-    <OnboardingSpotlight
-      targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
-      caption={body}
-      captionAtBottom={isTag || isMotion}
-      blockHole={isTag}
-      cardAnchoredSlot={
-        isTag && tagTyperMounted ? (
+  // ---- Tag scene (its own cinematic) ---------------------------------------
+  // read/zoom: caption only, the board stays visible while the camera pushes in
+  // toward the just-added card. type: the card is centered + enlarged, the
+  // spotlight rings it and the typed-tag demo plays on it.
+  if (sceneId === 'tag') {
+    const advanceFromTag = (): void => { onZoomReset?.(); advance() }
+    if (tagPhase !== 'type') {
+      return wrap(
+        <>
+          {/* transparent blocker so the board can't be touched while it zooms */}
+          <div className={styles.fullBlocker} />
+          <div className={styles.bottomCaption}>{body}</div>
+        </>,
+      )
+    }
+    return wrap(
+      <OnboardingSpotlight
+        targetSelector={TARGET_SELECTOR.card}
+        caption={body}
+        captionAtBottom
+        blockHole
+        cardAnchoredSlot={
           <OnboardingTagTyper
             text="sample"
             onApply={() => onApplySampleTag?.()}
             onFinished={() => setTagApplied(true)}
           />
-        ) : null
-      }
+        }
+      >
+        {tagApplied && (
+          <>
+            <p className={styles.copiedHint}>{t('board.onboarding.tag.done')}</p>
+            <button type="button" className={styles.advanceBtn} onClick={advanceFromTag}>NEXT</button>
+          </>
+        )}
+      </OnboardingSpotlight>,
+    )
+  }
+
+  // ---- Other hands-on scenes (paste / motion / install) --------------------
+  // The motion scene shows the RESULT of the action and only then reveals NEXT.
+  // The spotlight hole passes clicks through so the user can operate the real
+  // control (paste zone, MOTION toggle).
+  const isMotion = sceneId === 'motion'
+  return wrap(
+    <OnboardingSpotlight
+      targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
+      caption={body}
+      captionAtBottom={isMotion}
     >
       {sceneId === 'paste' && (
         <>
@@ -251,14 +289,6 @@ export function OnboardingController({
           {copied && (
             <p className={styles.copiedHint}>{t('board.onboarding.paste.copied')}</p>
           )}
-        </>
-      )}
-      {/* Tag: auto-applies a sample tag after a beat; once it lands, confirm it
-          and reveal NEXT (user-paced, not a flash). */}
-      {isTag && tagApplied && (
-        <>
-          <p className={styles.copiedHint}>{t('board.onboarding.tag.done')}</p>
-          <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
         </>
       )}
       {/* Motion: NEXT appears only after the user turns MOTION on, so they
