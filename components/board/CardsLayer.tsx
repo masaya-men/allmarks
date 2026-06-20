@@ -1249,6 +1249,7 @@ export function CardsLayer({
                 <button
                   type="button"
                   data-testid="card-add-tag-button"
+                  data-onboarding-target="card-tag"
                   aria-label="Add tag"
                   onPointerDown={(e: PointerEvent<HTMLButtonElement>): void => e.stopPropagation()}
                   onMouseDown={(e): void => e.stopPropagation()}

@@ -1862,6 +1862,7 @@ export function BoardRoot() {
                 label={t('board.chrome.share')}
                 onClick={(): void => setShareModalOpen(true)}
                 data-testid="share-pill"
+                data-onboarding-target="share"
               />
               {activeFilter.kind === 'archive' && deletedItems.length > 0 && (
                 <ChromeButton
@@ -1873,7 +1874,7 @@ export function BoardRoot() {
             </>
           }
         />
-        <div ref={canvasRef} className={styles.canvasWrap} data-lightbox-clone-host>
+        <div ref={canvasRef} className={styles.canvasWrap} data-lightbox-clone-host data-onboarding-target="paste-zone">
           <InteractionLayer
             direction={themeMeta.direction}
             onScroll={handleScroll}
