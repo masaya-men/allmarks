@@ -7,7 +7,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { subscribeBookmarkSaved, subscribeBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
 import { markOnboardingComplete } from '@/lib/onboarding/onboarding-state'
 import { clearOnboardingDemo } from '@/lib/onboarding/onboarding-demo'
-import { nextSceneId, sceneById, type SceneId, type OnboardingTarget } from '@/lib/onboarding/steps'
+import { MOBILE_SCENE_IDS, nextSceneIdIn, ONBOARDING_SCENES, sceneById, type SceneId, type OnboardingTarget } from '@/lib/onboarding/steps'
 import { addBookmark } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { OnboardingStage } from './OnboardingStage'
@@ -57,9 +57,11 @@ export function OnboardingController({
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
   const shareOpenedRef = useRef(false)
+  const isMobileRef = useRef(typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches)
 
   const advance = (): void => {
-    const next = nextSceneId(sceneId)
+    const seq = isMobileRef.current ? MOBILE_SCENE_IDS : ONBOARDING_SCENES.map((s) => s.id)
+    const next = nextSceneIdIn(seq, sceneId)
     if (next === null) { void finish(); return }
     setSceneId(next)
   }

@@ -1,6 +1,6 @@
 // tests/lib/onboarding-steps.test.ts
 import { describe, it, expect } from 'vitest'
-import { ONBOARDING_SCENES, nextSceneId, sceneById } from '@/lib/onboarding/steps'
+import { ONBOARDING_SCENES, nextSceneId, sceneById, MOBILE_SCENE_IDS, nextSceneIdIn } from '@/lib/onboarding/steps'
 
 describe('onboarding steps', () => {
   it('has 8 scenes in the spec order', () => {
@@ -23,5 +23,10 @@ describe('onboarding steps', () => {
     expect(sceneById('paste').target).toBe('paste-zone')
     expect(sceneById('tag').target).toBe('card-tag')
     expect(sceneById('enter').target).toBeUndefined()
+  })
+  it('mobile sequence is enter->paste->finale', () => {
+    expect([...MOBILE_SCENE_IDS]).toEqual(['enter', 'paste', 'finale'])
+    expect(nextSceneIdIn(MOBILE_SCENE_IDS, 'paste')).toBe('finale')
+    expect(nextSceneIdIn(MOBILE_SCENE_IDS, 'finale')).toBeNull()
   })
 })

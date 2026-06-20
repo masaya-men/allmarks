@@ -34,3 +34,11 @@ export function nextSceneId(current: SceneId): SceneId | null {
   const next = ONBOARDING_SCENES[i + 1]
   return next ? next.id : null
 }
+
+export const MOBILE_SCENE_IDS: readonly SceneId[] = ['enter', 'paste', 'finale'] as const
+
+export function nextSceneIdIn(seq: readonly SceneId[], current: SceneId): SceneId | null {
+  const i = seq.indexOf(current)
+  const n = seq[i + 1]
+  return n ?? null
+}
