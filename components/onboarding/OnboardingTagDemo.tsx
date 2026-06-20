@@ -92,9 +92,13 @@ export function OnboardingTagDemo({ text, charMs, onApply, onFinished }: Props):
         // 3) the tag menu opens where the real popover would; cursor drops to the input
         .to(glow, { opacity: 0, duration: 0.3 })
         .to(menu, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.4)' }, '-=0.1')
+        // cursor drops into the input and "focuses" it (the field lights up)
         .to(cursor, { left: menuLeft + 42, top: menuTop + 46, duration: 0.5, ease: 'power2.inOut' }, '<')
         .to(input, { boxShadow: '0 0 0 3px rgba(40,241,0,0.3)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
-        // 4) type the tag in slowly
+        .to(cursor, { scale: 0.78, duration: 0.12, yoyo: true, repeat: 1, ease: 'power1.inOut' })
+        // then move the cursor clear of the field so the typing stays visible
+        .to(cursor, { left: menuLeft + 30, top: menuTop + 100, duration: 0.45, ease: 'power2.inOut' })
+        // 4) type the tag in slowly (now unobstructed)
         .to(counter, {
           v: text.length,
           duration: (text.length * charMs) / 1000,
