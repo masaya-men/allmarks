@@ -43,10 +43,10 @@
       "bookmarkletHint": "在任意网站一键保存"
     },
     "empty": {
-      "title": "开始收藏书签",
-      "description": "AllMarks 通过书签小工具，在任意网站一键保存",
-      "installButton": "📌 安装 AllMarks",
-      "alreadyInstalled": "已经安装了？在其他网站点击 📌 试试"
+      "title": "版面为空",
+      "description": "粘贴链接（Cmd/Ctrl+V）以保存第一个书签。",
+      "installButton": "不使用扩展保存",
+      "alreadyInstalled": "在版面上粘贴链接以保存"
     },
     "bookmarkletModal": {
       "title": "安装书签小工具",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "恢复默认值"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks 将链接转化为视觉版面。"
+      },
+      "paste": {
+        "body": "使用 Cmd/Ctrl+V 粘贴链接，或使用 TRY THIS。"
+      },
+      "tag": {
+        "body": "为刚刚保存的卡片添加标签。"
+      },
+      "motion": {
+        "body": "开启 MOTION，让版面动起来。"
+      },
+      "extDemo": {
+        "body": "安装扩展后，单击即可保存当前页面并添加标签。"
+      },
+      "install": {
+        "body": "将 AllMarks 芯片拖到书签栏，即可从任何页面保存。"
+      },
+      "installDetected": {
+        "body": "扩展已安装。也可通过粘贴链接或使用 bookmarklet 进行保存。"
+      },
+      "share": {
+        "body": "打开 SHARE，将版面发布为图片或链接。"
+      },
+      "finale": {
+        "body": "已准备就绪。随时可在 SETTINGS 中重播本教程。"
+      }
     }
   },
   "share": {

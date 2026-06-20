@@ -43,10 +43,10 @@
       "bookmarkletHint": "Mit einem Klick von jeder Seite speichern"
     },
     "empty": {
-      "title": "Leg mit dem Bookmarken los",
-      "description": "AllMarks nutzt ein Bookmarklet, das jede Seite mit einem Klick speichert",
-      "installButton": "📌 AllMarks installieren",
-      "alreadyInstalled": "Schon installiert? Klick auf einer anderen Seite auf 📌"
+      "title": "Das Board ist leer",
+      "description": "Einen Link einfügen (Cmd/Ctrl+V), um das erste Lesezeichen zu speichern.",
+      "installButton": "Ohne Erweiterung speichern",
+      "alreadyInstalled": "Link auf dem Board einfügen, um ihn zu speichern"
     },
     "bookmarkletModal": {
       "title": "Bookmarklet installieren",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Auf Standard zurücksetzen"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks verwandelt Links in ein visuelles Board."
+      },
+      "paste": {
+        "body": "Link mit Cmd/Ctrl+V einfügen oder TRY THIS verwenden."
+      },
+      "tag": {
+        "body": "Füge dem gerade gespeicherten Karten ein Tag hinzu."
+      },
+      "motion": {
+        "body": "MOTION einschalten, um das Board zum Leben zu erwecken."
+      },
+      "extDemo": {
+        "body": "Mit der Erweiterung speichert ein Klick die geöffnete Seite und taggt sie."
+      },
+      "install": {
+        "body": "AllMarks-Chip in die Lesezeichenleiste ziehen, um von überall zu speichern."
+      },
+      "installDetected": {
+        "body": "Die Erweiterung ist bereits installiert. Du kannst auch per Link-Einfügen oder Bookmarklet speichern."
+      },
+      "share": {
+        "body": "SHARE öffnen, um das Board als Bild oder Link zu veröffentlichen."
+      },
+      "finale": {
+        "body": "Alles bereit. Tutorial jederzeit über SETTINGS wiederholen."
+      }
     }
   },
   "share": {
@@ -151,11 +180,26 @@
       "body": "Nur Links. Feeds, die du einfach durchscrollst. Lass nicht zu, dass das, was du gespeichert hast, im Chaos versinkt."
     },
     "features": {
-      "capture": { "title": "Auf dein Board, von überall.", "body": "Einfach eine URL einfügen – X, YouTube, Artikel, Shops, Bilder, alles im Web. Du möchtest mit einem Klick speichern? Die Browser-Erweiterung und das Bookmarklet machen es möglich." },
-      "layout": { "title": "Frei anordnen.", "body": "Per Drag & Drop Größe und Position genau so setzen, wie es dir gefällt." },
-      "live": { "title": "Ein Board, das lebendig wird.", "body": "Das fokussierte Video spielt wirklich ab, während die anderen als Standbilder schimmern — keine Liste statischer Vorschaubilder, sondern ein lebendiges Board. Ein Schalter, MOTION, bringt es zur Ruhe, wann immer du ein ruhiges Moodboard möchtest." },
-      "organize": { "title": "Taggen zum Sortieren.", "body": "Nach Tags filtern, um genau das zu finden, was du brauchst. Weitere Looks und Themes sind in Arbeit." },
-      "privacy": { "title": "Kein Account. Vollständig lokal.", "body": "Alles lebt in deinem Browser. Kein Account, keine Anmeldung — deine Privatsphäre bleibt deine." }
+      "capture": {
+        "title": "Auf dein Board, von überall.",
+        "body": "Einfach eine URL einfügen – X, YouTube, Artikel, Shops, Bilder, alles im Web. Du möchtest mit einem Klick speichern? Die Browser-Erweiterung und das Bookmarklet machen es möglich."
+      },
+      "layout": {
+        "title": "Frei anordnen.",
+        "body": "Per Drag & Drop Größe und Position genau so setzen, wie es dir gefällt."
+      },
+      "live": {
+        "title": "Ein Board, das lebendig wird.",
+        "body": "Das fokussierte Video spielt wirklich ab, während die anderen als Standbilder schimmern — keine Liste statischer Vorschaubilder, sondern ein lebendiges Board. Ein Schalter, MOTION, bringt es zur Ruhe, wann immer du ein ruhiges Moodboard möchtest."
+      },
+      "organize": {
+        "title": "Taggen zum Sortieren.",
+        "body": "Nach Tags filtern, um genau das zu finden, was du brauchst. Weitere Looks und Themes sind in Arbeit."
+      },
+      "privacy": {
+        "title": "Kein Account. Vollständig lokal.",
+        "body": "Alles lebt in deinem Browser. Kein Account, keine Anmeldung — deine Privatsphäre bleibt deine."
+      }
     },
     "share": {
       "headline": "Als ganzes Board teilen.",

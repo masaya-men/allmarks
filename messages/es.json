@@ -43,10 +43,10 @@
       "bookmarkletHint": "Guarda desde cualquier sitio con un clic"
     },
     "empty": {
-      "title": "Empieza a guardar marcadores",
-      "description": "AllMarks usa un marcador rápido que guarda cualquier sitio con un clic",
-      "installButton": "📌 Instalar AllMarks",
-      "alreadyInstalled": "¿Ya lo instalaste? Haz clic en 📌 en otro sitio"
+      "title": "Tu tablero está vacío",
+      "description": "Pega un enlace (Cmd/Ctrl+V) para guardar tu primer marcador.",
+      "installButton": "Guardar sin la extensión",
+      "alreadyInstalled": "Pega un enlace en el tablero para guardarlo"
     },
     "bookmarkletModal": {
       "title": "Instala el marcador rápido",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Restablecer valores predeterminados"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks convierte enlaces en un tablero visual."
+      },
+      "paste": {
+        "body": "Pega un enlace con Cmd/Ctrl+V o usa TRY THIS."
+      },
+      "tag": {
+        "body": "Añade una etiqueta a la tarjeta que acabas de guardar."
+      },
+      "motion": {
+        "body": "Activa MOTION para dar vida al tablero."
+      },
+      "extDemo": {
+        "body": "Con la extensión, un clic guarda la página abierta y la etiqueta."
+      },
+      "install": {
+        "body": "Arrastra el chip de AllMarks a la barra de marcadores para guardar desde cualquier lugar."
+      },
+      "installDetected": {
+        "body": "La extensión ya está instalada. También puedes guardar pegando un enlace o usando el bookmarklet."
+      },
+      "share": {
+        "body": "Abre SHARE para publicar tu tablero como imagen o enlace."
+      },
+      "finale": {
+        "body": "Todo listo. Repite este tutorial desde SETTINGS en cualquier momento."
+      }
     }
   },
   "share": {

@@ -43,10 +43,10 @@
       "bookmarkletHint": "Salve de qualquer site com um clique"
     },
     "empty": {
-      "title": "Comece a salvar favoritos",
-      "description": "O AllMarks usa um bookmarklet que salva qualquer site com um clique",
-      "installButton": "📌 Instalar o AllMarks",
-      "alreadyInstalled": "Já instalou? Clique em 📌 em outro site"
+      "title": "O seu quadro está vazio",
+      "description": "Colar um link (Cmd/Ctrl+V) para guardar o primeiro marcador.",
+      "installButton": "Guardar sem a extensão",
+      "alreadyInstalled": "Colar um link no quadro para o guardar"
     },
     "bookmarkletModal": {
       "title": "Instalar o bookmarklet",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Restaurar padrões"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks transforma links num quadro visual."
+      },
+      "paste": {
+        "body": "Colar um link com Cmd/Ctrl+V ou usar TRY THIS."
+      },
+      "tag": {
+        "body": "Adicionar uma etiqueta ao cartão que acabou de guardar."
+      },
+      "motion": {
+        "body": "Ativar MOTION para animar o quadro."
+      },
+      "extDemo": {
+        "body": "Com a extensão, um clique guarda a página aberta e adiciona uma etiqueta."
+      },
+      "install": {
+        "body": "Arrastar o chip AllMarks para a barra de favoritos para guardar a partir de qualquer lugar."
+      },
+      "installDetected": {
+        "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
+      },
+      "share": {
+        "body": "Abrir SHARE para publicar o quadro como imagem ou link."
+      },
+      "finale": {
+        "body": "Tudo pronto. Este tutorial pode ser repetido em SETTINGS a qualquer momento."
+      }
     }
   },
   "share": {
@@ -151,11 +180,26 @@
       "body": "Só links. Feeds que você rola sem parar. Não deixe o que você salvou ficar soterrado."
     },
     "features": {
-      "capture": { "title": "Para o seu quadro, de qualquer lugar.", "body": "Basta colar uma URL — X, YouTube, artigos, lojas, imagens, qualquer coisa da web. Quer salvar com um clique? A extensão do navegador e o bookmarklet resolvem." },
-      "layout": { "title": "Organize livremente.", "body": "Arraste e solte para definir tamanho e posição exatamente como você quer." },
-      "live": { "title": "Um quadro que ganha vida.", "body": "O vídeo em foco toca de verdade enquanto os outros pulsam como imagens estáticas — não uma lista de estáticas, mas um quadro visual vivo. Um botão, MOTION, acalma tudo e vira um moodboard tranquilo." },
-      "organize": { "title": "Tags para organizar.", "body": "Filtre por tag para encontrar exatamente o que você quer. Mais visuais e temas estão a caminho." },
-      "privacy": { "title": "Sem conta. Totalmente local.", "body": "Tudo fica dentro do seu navegador. Sem conta, sem cadastro — sua privacidade é sua." }
+      "capture": {
+        "title": "Para o seu quadro, de qualquer lugar.",
+        "body": "Basta colar uma URL — X, YouTube, artigos, lojas, imagens, qualquer coisa da web. Quer salvar com um clique? A extensão do navegador e o bookmarklet resolvem."
+      },
+      "layout": {
+        "title": "Organize livremente.",
+        "body": "Arraste e solte para definir tamanho e posição exatamente como você quer."
+      },
+      "live": {
+        "title": "Um quadro que ganha vida.",
+        "body": "O vídeo em foco toca de verdade enquanto os outros pulsam como imagens estáticas — não uma lista de estáticas, mas um quadro visual vivo. Um botão, MOTION, acalma tudo e vira um moodboard tranquilo."
+      },
+      "organize": {
+        "title": "Tags para organizar.",
+        "body": "Filtre por tag para encontrar exatamente o que você quer. Mais visuais e temas estão a caminho."
+      },
+      "privacy": {
+        "title": "Sem conta. Totalmente local.",
+        "body": "Tudo fica dentro do seu navegador. Sem conta, sem cadastro — sua privacidade é sua."
+      }
     },
     "share": {
       "headline": "Compartilhe como um quadro completo.",
@@ -166,8 +210,13 @@
       "button": "Começar agora — sem cadastro"
     },
     "footer": {
-      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
-      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
     }
   },
   "pages": {

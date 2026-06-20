@@ -43,10 +43,10 @@
       "bookmarkletHint": "Salva da qualsiasi sito con un clic"
     },
     "empty": {
-      "title": "Inizia a salvare segnalibri",
-      "description": "AllMarks usa un bookmarklet che salva qualsiasi sito con un clic",
-      "installButton": "📌 Installa AllMarks",
-      "alreadyInstalled": "Già installato? Clicca 📌 su un altro sito"
+      "title": "La bacheca è vuota",
+      "description": "Incollare un link (Cmd/Ctrl+V) per salvare il primo segnalibro.",
+      "installButton": "Salva senza l'estensione",
+      "alreadyInstalled": "Incollare un link nella bacheca per salvarlo"
     },
     "bookmarkletModal": {
       "title": "Installa il bookmarklet",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Ripristina i valori predefiniti"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks trasforma i link in una bacheca visiva."
+      },
+      "paste": {
+        "body": "Incollare un link con Cmd/Ctrl+V o usare TRY THIS."
+      },
+      "tag": {
+        "body": "Aggiungere un tag alla scheda appena salvata."
+      },
+      "motion": {
+        "body": "Attivare MOTION per animare la bacheca."
+      },
+      "extDemo": {
+        "body": "Con l'estensione, un clic salva la pagina aperta e le aggiunge un tag."
+      },
+      "install": {
+        "body": "Trascinare il chip AllMarks nella barra dei segnalibri per salvare da qualsiasi luogo."
+      },
+      "installDetected": {
+        "body": "L'estensione è già installata. È possibile salvare anche incollando un link o usando il bookmarklet."
+      },
+      "share": {
+        "body": "Aprire SHARE per pubblicare la bacheca come immagine o link."
+      },
+      "finale": {
+        "body": "Tutto pronto. Il tutorial può essere ripetuto da SETTINGS in qualsiasi momento."
+      }
     }
   },
   "share": {
