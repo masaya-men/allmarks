@@ -1,0 +1,28 @@
+/* components/onboarding/OnboardingPasteCursor.module.css
+   Demo cursor + drop-ring for the paste scene's "paste around here" cue. */
+.layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+/* Same teardrop pointer as the extension re-enactment, so the demo-cursor
+   vocabulary reads the same across the tutorial. left/top set by GSAP. */
+.cursor {
+  position: fixed;
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 50% 2px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
+  transform: rotate(-12deg);
+}
+/* Green press ring that pulses out where the cursor lands. */
+.ring {
+  position: fixed;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(40, 241, 0, 0.85);
+  box-shadow: 0 0 18px rgba(40, 241, 0, 0.35);
+}

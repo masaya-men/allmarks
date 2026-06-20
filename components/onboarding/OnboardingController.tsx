@@ -15,6 +15,7 @@ import { ExtensionSaveReenactment } from './ExtensionSaveReenactment'
 import { ShareReenactment } from './ShareReenactment'
 import { OnboardingSpotlight } from './OnboardingSpotlight'
 import { OnboardingTagTyper } from './OnboardingTagTyper'
+import { OnboardingPasteCursor } from './OnboardingPasteCursor'
 import { BookmarkletInstallChip } from './BookmarkletInstallChip'
 import styles from './OnboardingController.module.css'
 
@@ -273,27 +274,37 @@ export function OnboardingController({
     )
   }
 
-  // ---- Paste scene — centered card on a dark backdrop ----------------------
+  // ---- Paste scene — two beats --------------------------------------------
   // No whole-board spotlight (that ringed the entire viewport green and left the
-  // board undimmed). A copyable sample URL + COPY button teaches the gesture;
-  // the user pastes it onto the board with Cmd/Ctrl+V (a document-level paste
-  // that still fires under the dim, because the URL box is NOT an input).
+  // board undimmed). Beat A: a dark veil + centered card with a copyable sample
+  // URL + COPY button (the URL box is NOT an input on purpose, so the user's
+  // Cmd/Ctrl+V still fires the board paste-save). Beat B (after COPY): the veil
+  // lifts so the real board brightens, the prompt drops to the bottom, and a
+  // demo cursor presses an empty board spot to show where the card will land.
   if (sceneId === 'paste') {
-    return wrap(
-      <div className={styles.pasteScene}>
-        <div className={styles.pasteCard}>
-          <p className={styles.pasteCaption}>{body}</p>
-          <div className={styles.pasteFieldRow}>
-            <span className={styles.pasteUrl} title={SAMPLE_URL}>{SAMPLE_URL}</span>
-            <button type="button" className={styles.pasteCopyBtn} onClick={() => void copySampleLink()}>
-              COPY
-            </button>
+    if (!copied) {
+      return wrap(
+        <div className={styles.pasteScene}>
+          <div className={styles.pasteCard}>
+            <p className={styles.pasteCaption}>{body}</p>
+            <div className={styles.pasteFieldRow}>
+              <span className={styles.pasteUrl} title={SAMPLE_URL}>{SAMPLE_URL}</span>
+              <button type="button" className={styles.pasteCopyBtn} onClick={() => void copySampleLink()}>
+                COPY
+              </button>
+            </div>
           </div>
-          {copied && (
-            <p className={styles.copiedHint}>{t('board.onboarding.paste.copied')}</p>
-          )}
-        </div>
-      </div>,
+        </div>,
+      )
+    }
+    return wrap(
+      <>
+        {/* transparent blocker: board is bright + visible but not clickable
+            (paste is keyboard, so this never blocks the gesture) */}
+        <div className={styles.fullBlocker} />
+        <OnboardingPasteCursor />
+        <div className={styles.bottomCaption}>{t('board.onboarding.paste.copied')}</div>
+      </>,
     )
   }
 

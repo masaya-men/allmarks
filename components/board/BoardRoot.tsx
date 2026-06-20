@@ -2090,14 +2090,18 @@ export function BoardRoot() {
             on mode change AND on lightbox-mode card swaps. No slot
             wrapper, no freeze refs, no glide-arm React state — all the
             transition logic lives inside ScrollMeter itself. */}
-        <ScrollMeter
-          mode={meterMode}
-          n1={meterN1}
-          n2={meterN2}
-          total={filteredItems.length}
-          swellFraction={meterSwellFraction}
-          onScrub={handleMeterScrub}
-        />
+        {/* Hidden during onboarding — the tutorial owns the bottom of the screen
+            (its bottom captions + paste cue would otherwise fight the meter). */}
+        {!showOnboarding && (
+          <ScrollMeter
+            mode={meterMode}
+            n1={meterN1}
+            n2={meterN2}
+            total={filteredItems.length}
+            swellFraction={meterSwellFraction}
+            onScrub={handleMeterScrub}
+          />
+        )}
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
             canvasWrap. This way its backdrop (position: absolute; inset: 0)
             fills the FULL canvas — including the TopHeader band — so the
