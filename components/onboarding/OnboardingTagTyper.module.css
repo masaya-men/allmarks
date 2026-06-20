@@ -1,0 +1,76 @@
+/* components/onboarding/OnboardingTagTyper.module.css
+   Mirrors the real board tag menu (TagAddPopover.module.css) so the demo teaches
+   the genuine UI: rgba(20,20,20,.95) glass, blur(12px), monospace, green chips. */
+.menu {
+  position: relative;
+  min-width: 220px;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  /* A guided demo — never interactive (the controller blocks the board under it). */
+  pointer-events: none;
+  animation: typerIn 170ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.header {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 0 4px;
+}
+.chipRow {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+}
+.chip {
+  color: #28f100; /* AllMarks success-green — matches the real applied chip */
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  padding: 4px 8px;
+}
+.input {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(40, 241, 0, 0.6); /* the real input's green focus border */
+  border-radius: 2px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #fff;
+}
+.typed { white-space: pre; }
+.placeholder { color: rgba(255, 255, 255, 0.3); }
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  margin-left: 1px;
+  background: #28f100;
+  animation: caretBlink 0.53s step-end infinite;
+}
+/* Solid (no blink) while characters are actively being appended. */
+.caret[data-typing="true"] { animation: none; }
+
+@keyframes caretBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes typerIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu { animation: none; }
+  .caret { animation: none; }
+}

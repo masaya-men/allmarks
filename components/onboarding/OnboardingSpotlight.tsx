@@ -17,6 +17,14 @@ type Props = {
   /** When true, the caption sits fixed at the bottom-center instead of anchored
    *  to the hole (so it never covers a popover opening at the target). */
   readonly captionAtBottom?: boolean
+  /** When true, a transparent panel covers the cut-out hole too, so even the
+   *  spotlighted element can't be clicked. Used while an automated demo plays
+   *  over the target (the tag-typer) and the user must not interfere. */
+  readonly blockHole?: boolean
+  /** Rendered at the spotlighted element's top-left, where its real popover
+   *  would open (used by the tag scene to float the typed-tag demo on the card,
+   *  above the dim panels). Only shown when a target rect is measured. */
+  readonly cardAnchoredSlot?: ReactNode
 }
 
 const BUBBLE_W = 320
@@ -48,6 +56,7 @@ function computePlacement(hole: Rect, viewportW: number, viewportH: number): Pla
 
 export function OnboardingSpotlight({
   targetSelector, caption, children, blockOutside = true, captionAtBottom = false,
+  blockHole = false, cardAnchoredSlot,
 }: Props): ReactElement {
   const [rect, setRect] = useState<Rect | null>(() => null)
 
@@ -98,7 +107,24 @@ export function OnboardingSpotlight({
               </>
             )
           })()}
+          {blockHole && (
+            <div
+              className={styles.holeBlock}
+              style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }}
+            />
+          )}
           <div className={styles.ring} style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }} />
+          {cardAnchoredSlot && rect && (
+            <div
+              className={styles.anchoredSlot}
+              style={{
+                top: Math.max(MARGIN, Math.min(rect.top + 36, window.innerHeight - 140)),
+                left: Math.max(MARGIN, Math.min(rect.left + 8, window.innerWidth - 240)),
+              }}
+            >
+              {cardAnchoredSlot}
+            </div>
+          )}
           {captionAtBottom ? (
             <div className={styles.bubbleBottom}>
               {caption}

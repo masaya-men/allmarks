@@ -6,6 +6,12 @@
   pointer-events: auto; /* block clicks outside the hole */
 }
 .dimFull { inset: 0; display: flex; align-items: center; justify-content: center; }
+/* Transparent click-blocker over the cut-out hole — stops the user touching the
+   spotlighted element while an automated demo plays on it (tag-typer). */
+.holeBlock { position: fixed; background: transparent; pointer-events: auto; }
+/* Floats a demo (the tag-typer) at the spotlighted element's top-left, above
+   the dim panels. Non-interactive wrapper; the slot content sets its own look. */
+.anchoredSlot { position: fixed; pointer-events: none; z-index: 1; }
 .ring {
   position: fixed;
   border: 1px solid rgba(40, 241, 0, 0.8); /* A-logo green */

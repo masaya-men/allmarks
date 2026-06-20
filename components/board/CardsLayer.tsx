@@ -1237,7 +1237,11 @@ export function CardsLayer({
                 tags={it.tags
                   .map((tid) => tagsById.get(tid))
                   .filter((t): t is TagRecord => t !== undefined)}
-                isHovered={hoverActive}
+                // Force-visible during the onboarding tag scene so the freshly
+                // typed 'sample' pill is actually seen landing on the card
+                // (otherwise the hover-gated strip stays at opacity 0 because the
+                // user is behind the spotlight, not hovering the card).
+                isHovered={hoverActive || forceTagButtonVisible}
                 onTagClick={(tagId): void => onTagFilterToggle?.(tagId, it.bookmarkId)}
                 onTagContextMenu={onTagContextMenu}
                 activeContextTagId={activeContextTagId}

@@ -13,6 +13,7 @@ import { detectUrlType } from '@/lib/utils/url'
 import { OnboardingStage } from './OnboardingStage'
 import { ExtensionSaveReenactment } from './ExtensionSaveReenactment'
 import { OnboardingSpotlight } from './OnboardingSpotlight'
+import { OnboardingTagTyper } from './OnboardingTagTyper'
 import { BookmarkletInstallChip } from './BookmarkletInstallChip'
 import styles from './OnboardingController.module.css'
 
@@ -53,9 +54,10 @@ const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   share: '[data-onboarding-target="share"]',
 }
 
-// How long the tag scene shows the card before auto-applying the sample tag,
-// so the user reads the caption and watches the tag land rather than a flash.
-const TAG_AUTO_DELAY_MS = 2200
+// How long the tag scene shows the card + caption before the typed-tag demo
+// starts, so the user reads "tags keep your board organized" first, then watches
+// the tag get typed in (rather than a tag appearing out of nowhere).
+const TAG_READ_BEAT_MS = 1500
 
 function extensionDetected(): boolean {
   if (typeof document === 'undefined') return false
@@ -73,6 +75,7 @@ export function OnboardingController({
   // NEXT button, so the user sees what happened and proceeds at their own pace
   // (rather than the scene rushing past the moment they act).
   const [tagApplied, setTagApplied] = useState(false)
+  const [tagTyperMounted, setTagTyperMounted] = useState(false)
   const [motionOn, setMotionOn] = useState(false)
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
@@ -126,6 +129,7 @@ export function OnboardingController({
   // Reset the per-scene confirmation flags whenever the scene changes.
   useEffect(() => {
     setTagApplied(false)
+    setTagTyperMounted(false)
     setMotionOn(false)
     setCopied(false)
   }, [sceneId])
@@ -186,14 +190,14 @@ export function OnboardingController({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
-  // Tag scene: auto-apply a sample tag to the newest card after a beat (tagging
-  // by hand through the popover is fiddly), then the tagAddedSignal bump
-  // advances the scene. Guard against firing twice.
+  // Tag scene: after a read beat, mount the typed-tag demo. The demo types
+  // "sample" into a faithful copy of the real tag menu, then pops the chip —
+  // at which point it applies the REAL tag (onApplySampleTag) so the genuine
+  // green pill lands on the genuine card — and finally reveals the confirmation.
   useEffect(() => {
     if (sceneId !== 'tag') return
-    let fired = false
-    const id = setTimeout(() => { fired = true; onApplySampleTag?.() }, TAG_AUTO_DELAY_MS)
-    return () => { if (!fired) clearTimeout(id) }
+    const id = setTimeout(() => setTagTyperMounted(true), TAG_READ_BEAT_MS)
+    return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
@@ -255,6 +259,16 @@ export function OnboardingController({
       targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
       caption={body}
       captionAtBottom={isTag || isMotion}
+      blockHole={isTag}
+      cardAnchoredSlot={
+        isTag && tagTyperMounted ? (
+          <OnboardingTagTyper
+            text="sample"
+            onApply={() => onApplySampleTag?.()}
+            onFinished={() => setTagApplied(true)}
+          />
+        ) : null
+      }
     >
       {sceneId === 'paste' && (
         <>
