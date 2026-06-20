@@ -32,7 +32,9 @@
 5. **モバイルseed停止**（タグ/MOTION非実行なのにデモ12枚が出て消える謎を解消）/ **音波バーを常時ゆらす**（最初と最後の固定を解消）/ **ボタン4種を統一** / **SKIPを最前面化**（cinema/dimに埋もれていた）。
 6. **15言語コピー更新**（tag再構成 / share=アスピレーショナル / install=「chip/チップ」撤去＋`Ctrl/⌘+Shift+B`案内 / motion(en)具体化 / paste(ja)=「貼り付け」）。
 7. **掃除**: 過去エージェントの迷子worktree2つ削除（セキュリティ警告は公開用 `NEXT_PUBLIC_*` の誤検知）。
-8. **次**: ユーザー実機FB（SETTINGS→REPLAY INTRO）→ 残り公開前TODO → 拡張ストア提出。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+8. **🔴 タグ画面のカメラズーム演出**（ユーザー希望）: 文言を読ませる→**画面全体が追加したカードに寄っていき中央に拡大**→そのカード上でタイピング。BoardRootで`InteractionLayer`だけを`cameraRef`で包みGSAP変形（オーバーレイは兄弟＝`position:fixed`無事、`canvasWrap`の`overflow:hidden`で収まる）。`tagPhase: read→zoom→type`。NEXT/skipでカメラ復帰。隔離レンダで通し確認済。
+9. **🔴 終了時クリーンアップ**（ユーザー希望「TRY THIS含めチュートリアル分は消す」）: オンボ中の保存/タグ生成を全て`onboardingDemo`フラグ化（demo / TRY THIS / 貼り付け / `sample`タグ）→ `clearOnboardingDemo`がカード＋タグ(cascade)を掃除、`onComplete`で`reload`+`reloadTags`＝**ページ再読込なしで空状態へ**。**本物のブクマ/タグは無印＝不可侵**（専用test＋e2e検証: デモ12+TRY THIS+sampleタグ→完了後0）。
+10. **次**: **オンボーディングを1シーンずつ磨く**（①入場から順、ユーザーと相談）。その後 残り公開前TODO → 拡張ストア提出。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 
