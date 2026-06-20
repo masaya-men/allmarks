@@ -1,0 +1,19 @@
+/* components/onboarding/OnboardingStage.module.css */
+.stage {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; background: rgba(6, 6, 6, 0.96);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace; color: rgba(255,255,255,0.9);
+}
+.waves { display: flex; gap: 6px; align-items: center; height: 40px; }
+.wave { width: 3px; height: 24px; background: rgba(40,241,0,0.7); border-radius: 2px; transform-origin: center; }
+.mark { position: relative; display: inline-flex; }
+.logo { width: 64px; height: 64px; }
+.check { position: absolute; right: -10px; bottom: -6px; color: #28f100; font-size: 22px; }
+.caption { max-width: 420px; text-align: center; font-size: 13px; line-height: 1.8; }
+.cta {
+  font: inherit; font-size: 12px; letter-spacing: 0.10em; text-transform: uppercase;
+  color: rgba(255,255,255,0.95); background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.22); border-radius: 8px; padding: 10px 22px; cursor: pointer;
+}
+.cta:hover { background: rgba(255,255,255,0.1); }
