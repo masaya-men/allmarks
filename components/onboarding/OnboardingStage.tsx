@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, type ReactElement } from 'react'
 import { gsap } from 'gsap'
+import { OnboardingLanguagePicker } from './OnboardingLanguagePicker'
 import styles from './OnboardingStage.module.css'
 
 type Props = {
@@ -39,6 +40,12 @@ export function OnboardingStage({ variant, caption, buttonLabel, onAdvance }: Pr
 
   return (
     <div ref={rootRef} className={styles.stage} data-testid={`stage-${variant}`}>
+      {/* Let first-timers set the tutorial's language before they begin. */}
+      {variant === 'enter' && (
+        <div className={styles.langPicker}>
+          <OnboardingLanguagePicker />
+        </div>
+      )}
       <div className={styles.waves}>
         {Array.from({ length: 7 }).map((_, i) => (
           <span key={i} data-anim="wave" className={styles.wave} />

@@ -1,0 +1,71 @@
+/* components/onboarding/OnboardingLanguagePicker.module.css */
+.root {
+  position: relative;
+  display: inline-flex;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 120ms, background 120ms;
+}
+.toggle:hover { color: #fff; background: rgba(255, 255, 255, 0.09); }
+.globe { flex: none; opacity: 0.85; }
+.current { white-space: nowrap; }
+.caret { font-size: 9px; opacity: 0.6; }
+.list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  width: max-content;
+  min-width: 170px;
+  max-height: 264px;
+  overflow-y: auto;
+  background: rgba(12, 12, 12, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  /* Fade the top/bottom edges instead of showing a raw scrollbar. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+  scrollbar-width: none;
+}
+.list::-webkit-scrollbar { display: none; }
+.option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 34px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.8);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+.option:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.option[aria-selected="true"] { color: #28f100; }
+.check { flex: none; width: 12px; color: #28f100; font-size: 11px; }
+.optionLabel { white-space: nowrap; }

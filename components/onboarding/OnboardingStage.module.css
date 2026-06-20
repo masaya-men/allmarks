@@ -8,6 +8,9 @@
      (parent .root is pointer-events:none, so child must opt back in). */
   pointer-events: auto;
 }
+/* Language chooser pinned to the top-center of the START scene (clear of the
+   top-right SKIP), so the tutorial can be set to the user's language up front. */
+.langPicker { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); }
 .waves { display: flex; gap: 6px; align-items: center; height: 40px; }
 .wave { width: 3px; height: 24px; background: rgba(40,241,0,0.7); border-radius: 2px; transform-origin: center; }
 .mark { position: relative; display: inline-flex; }
