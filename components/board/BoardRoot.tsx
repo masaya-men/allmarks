@@ -63,6 +63,10 @@ import { PRESETS, type PresetId } from '@/lib/board/tune-presets'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
 import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
+import { OnboardingController } from '@/components/onboarding/OnboardingController'
+import { shouldAutoStartOnboarding, isOnboardingComplete } from '@/lib/onboarding/onboarding-state'
+import { seedOnboardingDemo, clearOnboardingDemo } from '@/lib/onboarding/onboarding-demo'
+import type { IDBPDatabase } from 'idb'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Lightbox } from './Lightbox'
 import { PipPortal } from '@/components/pip/PipPortal'
@@ -81,6 +85,8 @@ import styles from './BoardRoot.module.css'
 // to allow scrolling until the last card is cut off near the top edge.
 const SCROLL_OVERFLOW_MARGIN_X = 600
 const BOTTOM_OVERSCROLL_FRACTION = 0.5
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+type DbLike = IDBPDatabase<any>
 
 /** How long the background-typography (TITLE) node lingers, mounted, after the
  *  user turns it OFF so the CRT shutdown can play, before the parent unmounts
@@ -126,6 +132,9 @@ export function BoardRoot() {
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
   const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
+  // While the onboarding tag scene is active, force the hover-gated card +TAG
+  // button visible (the user can't hover precisely through the spotlight hole).
+  const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
   // Background typography (the big wordmark / filter title behind the cards)
   // master switch. Persisted in BoardConfig; the share image follows it too.
   const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
@@ -264,6 +273,10 @@ export function BoardRoot() {
   const [lightboxOriginRect, setLightboxOriginRect] = useState<DOMRect | null>(null)
   const [newlyAddedIds, setNewlyAddedIds] = useState<ReadonlySet<string>>(new Set())
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
+  // Onboarding: true while the first-run tutorial overlay is active.
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false)
+  // DB ref shared across onboarding helpers (populated on first initDB() call).
+  const onboardingDbRef = useRef<DbLike | null>(null)
   // When focusCard is called for a bookmark not in the current filtered view
   // (e.g. user is on a tags filter but the PiP-clicked card has different
   // tags), we clear the filter to BOARD_FILTER_ALL and stash the cardId here.
@@ -535,6 +548,42 @@ export function BoardRoot() {
     })()
     return (): void => { cancelled = true }
   }, [])
+
+  // First-run onboarding gate: runs once when loading flips false and db is ready.
+  // If the user has no bookmarks and hasn't completed onboarding, seeds demo cards
+  // and launches the controller. If they've already completed, sweeps any leftover
+  // demo cards from an abandoned run.
+  useEffect(() => {
+    if (loading) return
+    let cancelled = false
+    void (async (): Promise<void> => {
+      const db = (await initDB()) as unknown as DbLike
+      if (cancelled) return
+      onboardingDbRef.current = db
+      if (await shouldAutoStartOnboarding(db, items.length)) {
+        await seedOnboardingDemo(db)
+        if (cancelled) return
+        await reload()
+        if (cancelled) return
+        setShowOnboarding(true)
+      } else if (await isOnboardingComplete(db)) {
+        await clearOnboardingDemo(db) // sweep stale demo from an abandoned run
+      }
+    })()
+    return (): void => { cancelled = true }
+    // Once-only: runs when loading flips false for the first time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading])
+
+  // Seed demo cards, reload the board, and open the onboarding controller.
+  // Used by EmptyStateWelcome's REPLAY INTRO and (Task 7) SETTINGS entry.
+  const startOnboardingReplay = async (): Promise<void> => {
+    const db = onboardingDbRef.current ?? ((await initDB()) as unknown as DbLike)
+    onboardingDbRef.current = db
+    await seedOnboardingDemo(db)
+    await reload()
+    setShowOnboarding(true)
+  }
 
   useEffect(() => {
     const update = (): void => {
@@ -1789,6 +1838,7 @@ export function BoardRoot() {
                 quickTagEnabled={quickTagEnabled}
                 onQuickTagToggle={handleQuickTagToggle}
                 onOpenBookmarkletModal={handleOpenBookmarkletModal}
+                onReplayIntro={() => { void startOnboardingReplay() }}
               />
               <TagButton
                 onClick={(): void => {
@@ -1815,6 +1865,7 @@ export function BoardRoot() {
                 label={t('board.chrome.share')}
                 onClick={(): void => setShareModalOpen(true)}
                 data-testid="share-pill"
+                data-onboarding-target="share"
               />
               {activeFilter.kind === 'archive' && deletedItems.length > 0 && (
                 <ChromeButton
@@ -1826,7 +1877,7 @@ export function BoardRoot() {
             </>
           }
         />
-        <div ref={canvasRef} className={styles.canvasWrap} data-lightbox-clone-host>
+        <div ref={canvasRef} className={styles.canvasWrap} data-lightbox-clone-host data-onboarding-target="paste-zone">
           <InteractionLayer
             direction={themeMeta.direction}
             onScroll={handleScroll}
@@ -1930,11 +1981,26 @@ export function BoardRoot() {
                 activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
+                forceTagButtonVisible={forceCardTagVisible}
               />
             </div>
           </InteractionLayer>
-          {!loading && items.length === 0 && (
-            <EmptyStateWelcome onOpenModal={handleOpenBookmarkletModal} />
+          {!loading && showOnboarding && onboardingDbRef.current && (
+            <OnboardingController
+              db={onboardingDbRef.current}
+              motionEnabled={motionEnabled}
+              sharePanelOpen={shareModalOpen}
+              appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
+              onComplete={() => setShowOnboarding(false)}
+              onRequestMotionOff={() => setMotionEnabled(false)}
+              onTagSceneActive={setForceCardTagVisible}
+            />
+          )}
+          {!loading && !showOnboarding && items.length === 0 && (
+            <EmptyStateWelcome
+              onOpenModal={handleOpenBookmarkletModal}
+              onReplayIntro={() => { void startOnboardingReplay() }}
+            />
           )}
         </div>
         {/* Session 39 phase 6 (B-#20 refactor): single unified meter for
@@ -1982,7 +2048,7 @@ export function BoardRoot() {
       <BookmarkletInstallModal
         isOpen={bookmarkletModalOpen}
         onClose={handleCloseBookmarkletModal}
-        appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://booklage.pages.dev')}
+        appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
       />
       <SenderShareModal
         open={shareModalOpen}

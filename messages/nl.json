@@ -43,10 +43,10 @@
       "bookmarkletHint": "Bewaar elke site met één klik"
     },
     "empty": {
-      "title": "Begin met bewaren",
-      "description": "AllMarks gebruikt een bookmarklet die elke site met één klik bewaart",
-      "installButton": "📌 AllMarks installeren",
-      "alreadyInstalled": "Al geïnstalleerd? Klik op 📌 op een andere site"
+      "title": "Je bord is leeg",
+      "description": "Plak een link (Cmd/Ctrl+V) om je eerste bladwijzer op te slaan.",
+      "installButton": "Opslaan zonder extensie",
+      "alreadyInstalled": "Plak een link op het bord om het op te slaan"
     },
     "bookmarkletModal": {
       "title": "De bookmarklet installeren",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Standaardwaarden herstellen"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks zet links om in een visueel bord."
+      },
+      "paste": {
+        "body": "Plak een link met Cmd/Ctrl+V of gebruik TRY THIS."
+      },
+      "tag": {
+        "body": "Voeg een tag toe aan de kaart die je zojuist hebt opgeslagen."
+      },
+      "motion": {
+        "body": "Zet MOTION aan om het bord tot leven te brengen."
+      },
+      "extDemo": {
+        "body": "Met de extensie slaat één klik de geopende pagina op en tagt deze."
+      },
+      "install": {
+        "body": "Sleep de AllMarks-chip naar de bladwijzerbalk om overal op te slaan."
+      },
+      "installDetected": {
+        "body": "De extensie is al geïnstalleerd. Je kunt ook opslaan door een link te plakken of de bookmarklet te gebruiken."
+      },
+      "share": {
+        "body": "Open SHARE om je bord als afbeelding of link te publiceren."
+      },
+      "finale": {
+        "body": "Klaar. Bekijk deze tutorial opnieuw via SETTINGS."
+      }
     }
   },
   "share": {
@@ -151,11 +180,26 @@
       "body": "Alleen links. Feeds die je zo doorscrollt. Laat niet toe dat wat je opslaat begraven raakt."
     },
     "features": {
-      "capture": { "title": "Naar je bord, van overal.", "body": "Plak gewoon een URL — X, YouTube, artikelen, winkels, afbeeldingen, alles op het web. Wil je met één klik opslaan? De browserextensie en de bookmarklet zorgen daarvoor." },
-      "layout": { "title": "Vrij rangschikken.", "body": "Slepen en neerzetten om formaat en positie precies naar wens in te stellen." },
-      "live": { "title": "Een bord dat tot leven komt.", "body": "De video in focus speelt echt af terwijl de andere als stilstaande beelden flikkeren — geen lijst met stilstaande beelden, maar een levend visueel bord. Met één schakelaar, MOTION, breng je alles terug naar een rustig moodboard." },
-      "organize": { "title": "Tag om te sorteren.", "body": "Filter op tag om precies te zien wat je zoekt. Er zijn meer looks en thema's onderweg." },
-      "privacy": { "title": "Geen account. Volledig lokaal.", "body": "Alles leeft in je browser. Geen account, niets om je voor aan te melden — jouw privacy blijft van jou." }
+      "capture": {
+        "title": "Naar je bord, van overal.",
+        "body": "Plak gewoon een URL — X, YouTube, artikelen, winkels, afbeeldingen, alles op het web. Wil je met één klik opslaan? De browserextensie en de bookmarklet zorgen daarvoor."
+      },
+      "layout": {
+        "title": "Vrij rangschikken.",
+        "body": "Slepen en neerzetten om formaat en positie precies naar wens in te stellen."
+      },
+      "live": {
+        "title": "Een bord dat tot leven komt.",
+        "body": "De video in focus speelt echt af terwijl de andere als stilstaande beelden flikkeren — geen lijst met stilstaande beelden, maar een levend visueel bord. Met één schakelaar, MOTION, breng je alles terug naar een rustig moodboard."
+      },
+      "organize": {
+        "title": "Tag om te sorteren.",
+        "body": "Filter op tag om precies te zien wat je zoekt. Er zijn meer looks en thema's onderweg."
+      },
+      "privacy": {
+        "title": "Geen account. Volledig lokaal.",
+        "body": "Alles leeft in je browser. Geen account, niets om je voor aan te melden — jouw privacy blijft van jou."
+      }
     },
     "share": {
       "headline": "Deel het als één bord.",
@@ -166,8 +210,13 @@
       "button": "Nu beginnen — geen aanmelding"
     },
     "footer": {
-      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
-      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
     }
   },
   "pages": {

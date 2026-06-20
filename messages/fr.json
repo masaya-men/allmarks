@@ -43,10 +43,10 @@
       "bookmarkletHint": "Enregistrez n'importe quel site en un clic"
     },
     "empty": {
-      "title": "Commencez à enregistrer",
-      "description": "AllMarks utilise un bookmarklet qui enregistre n'importe quel site en un clic",
-      "installButton": "📌 Installer AllMarks",
-      "alreadyInstalled": "Déjà installé ? Cliquez sur 📌 sur un autre site"
+      "title": "Le tableau est vide",
+      "description": "Coller un lien (Cmd/Ctrl+V) pour enregistrer le premier favori.",
+      "installButton": "Enregistrer sans l'extension",
+      "alreadyInstalled": "Coller un lien sur le tableau pour le sauvegarder"
     },
     "bookmarkletModal": {
       "title": "Installer le bookmarklet",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Réinitialiser les valeurs par défaut"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks transforme les liens en un tableau visuel."
+      },
+      "paste": {
+        "body": "Coller un lien avec Cmd/Ctrl+V ou utiliser TRY THIS."
+      },
+      "tag": {
+        "body": "Ajouter un tag à la carte que vous venez de sauvegarder."
+      },
+      "motion": {
+        "body": "Activer MOTION pour animer le tableau."
+      },
+      "extDemo": {
+        "body": "Avec l'extension, un clic enregistre la page ouverte et lui attribue un tag."
+      },
+      "install": {
+        "body": "Faire glisser la puce AllMarks vers la barre de favoris pour enregistrer depuis n'importe où."
+      },
+      "installDetected": {
+        "body": "L'extension est déjà installée. Il est aussi possible d'enregistrer en collant un lien ou en utilisant le bookmarklet."
+      },
+      "share": {
+        "body": "Ouvrir SHARE pour publier le tableau en tant qu'image ou lien."
+      },
+      "finale": {
+        "body": "Tout est prêt. Ce tutoriel peut être relu depuis SETTINGS à tout moment."
+      }
     }
   },
   "share": {

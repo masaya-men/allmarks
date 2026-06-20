@@ -43,10 +43,10 @@
       "bookmarkletHint": "サイトから 1 クリックで保存"
     },
     "empty": {
-      "title": "ブックマークをはじめよう",
-      "description": "AllMarks は、どのサイトからでも 1 クリックで保存できるブックマークレットを使います",
-      "installButton": "📌 AllMarks を設置",
-      "alreadyInstalled": "既に設置済？ 別サイトで 📌 をクリック"
+      "title": "ボードが空です",
+      "description": "リンクを貼り付け (Ctrl/Cmd+V) して最初のブックマークを保存しよう。",
+      "installButton": "拡張機能なしで保存",
+      "alreadyInstalled": "リンクをボードに貼り付けて保存"
     },
     "bookmarkletModal": {
       "title": "ブックマークレットを設置する",
@@ -86,6 +86,17 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "初期値に戻す"
+    },
+    "onboarding": {
+      "enter": { "body": "AllMarks はリンクをビジュアルボードに変えます。" },
+      "paste": { "body": "Cmd/Ctrl+V でリンクをペーストするか、TRY THIS を使ってください。" },
+      "tag": { "body": "保存したカードにタグを追加してください。" },
+      "motion": { "body": "MOTION をオンにしてボードに動きを加えてください。" },
+      "extDemo": { "body": "拡張機能を使うと、1クリックで開いているページを保存してタグ付けできます。" },
+      "install": { "body": "AllMarks チップをブックマークバーにドラッグすると、どこからでも保存できます。" },
+      "installDetected": { "body": "拡張機能は導入済みです。リンクの貼り付けやブックマークレットでも保存できます。" },
+      "share": { "body": "SHARE を開いてボードを画像またはリンクとして公開してください。" },
+      "finale": { "body": "準備完了です。SETTINGS からいつでもこのチュートリアルを再生できます。" }
     }
   },
   "share": {

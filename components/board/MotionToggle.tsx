@@ -18,7 +18,7 @@ export function MotionToggle({
     <span className={styles.wrap} data-testid="motion-toggle-wrap">
       <StatusLed on={enabled} data-testid="motion-led" />
       <span className={styles.divider} aria-hidden="true" />
-      <ChromeButton label="MOTION" onClick={onToggle} className={styles.motionBtn} data-testid="motion-toggle" aria-pressed={enabled} />
+      <ChromeButton label="MOTION" onClick={onToggle} className={styles.motionBtn} data-testid="motion-toggle" aria-pressed={enabled} data-onboarding-target="motion" />
     </span>
   )
 }

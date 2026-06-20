@@ -68,6 +68,7 @@ export const BOARD_Z_INDEX = {
   PASTE_FEEDBACK: 135,
   LANGUAGE_SWITCHER: 140,
   MODAL_OVERLAY: 200,  // App-level modal overlay (Bookmarklet install, etc.)
+  ONBOARDING: 210,     // First-run tutorial overlay (above MODAL_OVERLAY)
 } as const
 
 export const INTERACTION = {

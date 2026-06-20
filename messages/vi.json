@@ -43,10 +43,10 @@
       "bookmarkletHint": "Lưu từ mọi trang web chỉ với một cú nhấp"
     },
     "empty": {
-      "title": "Bắt đầu lưu dấu trang",
-      "description": "AllMarks dùng một bookmarklet để lưu mọi trang web chỉ với một cú nhấp",
-      "installButton": "📌 Cài đặt AllMarks",
-      "alreadyInstalled": "Đã cài rồi? Nhấp 📌 trên một trang khác"
+      "title": "Bảng của bạn trống",
+      "description": "Dán liên kết (Cmd/Ctrl+V) để lưu dấu trang đầu tiên.",
+      "installButton": "Lưu không cần tiện ích mở rộng",
+      "alreadyInstalled": "Dán liên kết lên bảng để lưu"
     },
     "bookmarkletModal": {
       "title": "Cài đặt bookmarklet",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Đặt lại về mặc định"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks chuyển đổi liên kết thành bảng trực quan."
+      },
+      "paste": {
+        "body": "Dán liên kết bằng Cmd/Ctrl+V hoặc dùng TRY THIS."
+      },
+      "tag": {
+        "body": "Thêm thẻ vào thẻ bạn vừa lưu."
+      },
+      "motion": {
+        "body": "Bật MOTION để làm bảng trở nên sống động."
+      },
+      "extDemo": {
+        "body": "Với tiện ích mở rộng, một cú nhấp chuột lưu trang đang mở và gắn thẻ cho nó."
+      },
+      "install": {
+        "body": "Kéo chip AllMarks vào thanh dấu trang để lưu từ bất kỳ đâu."
+      },
+      "installDetected": {
+        "body": "Tiện ích mở rộng đã được cài đặt. Bạn cũng có thể lưu bằng cách dán liên kết hoặc dùng bookmarklet."
+      },
+      "share": {
+        "body": "Mở SHARE để xuất bảng dưới dạng hình ảnh hoặc liên kết."
+      },
+      "finale": {
+        "body": "Xong rồi. Có thể xem lại hướng dẫn này bất cứ lúc nào từ SETTINGS."
+      }
     }
   },
   "share": {
@@ -151,11 +180,26 @@
       "body": "Chỉ là những liên kết. Feed thì cứ cuộn qua. Đừng để những gì bạn lưu bị chôn vùi."
     },
     "features": {
-      "capture": { "title": "Từ bất kỳ đâu, thẳng vào bảng.", "body": "Chỉ cần dán URL là xong — X, YouTube, bài viết kỹ thuật, cửa hàng, hình ảnh, bất cứ thứ gì trên web. Muốn lưu một chạm? Tiện ích mở rộng và bookmarklet luôn sẵn sàng." },
-      "layout": { "title": "Sắp xếp tự do.", "body": "Kéo và thả để đặt kích thước và vị trí chính xác theo ý bạn." },
-      "live": { "title": "Bảng sống động.", "body": "Video đang được chọn phát thật sự trong khi những video khác lấp lánh như ảnh tĩnh — không phải danh sách ảnh đứng yên, mà là bảng hình ảnh thực sự sống. Một công tắc duy nhất, MOTION, đưa tất cả về yên tĩnh." },
-      "organize": { "title": "Gắn thẻ để phân loại.", "body": "Lọc theo thẻ để tìm đúng thứ bạn cần. Thêm nhiều giao diện và chủ đề đang được phát triển." },
-      "privacy": { "title": "Không cần tài khoản. Hoàn toàn cục bộ.", "body": "Mọi thứ đều ở trong trình duyệt của bạn. Không cần tài khoản, không cần đăng ký — quyền riêng tư là của bạn." }
+      "capture": {
+        "title": "Từ bất kỳ đâu, thẳng vào bảng.",
+        "body": "Chỉ cần dán URL là xong — X, YouTube, bài viết kỹ thuật, cửa hàng, hình ảnh, bất cứ thứ gì trên web. Muốn lưu một chạm? Tiện ích mở rộng và bookmarklet luôn sẵn sàng."
+      },
+      "layout": {
+        "title": "Sắp xếp tự do.",
+        "body": "Kéo và thả để đặt kích thước và vị trí chính xác theo ý bạn."
+      },
+      "live": {
+        "title": "Bảng sống động.",
+        "body": "Video đang được chọn phát thật sự trong khi những video khác lấp lánh như ảnh tĩnh — không phải danh sách ảnh đứng yên, mà là bảng hình ảnh thực sự sống. Một công tắc duy nhất, MOTION, đưa tất cả về yên tĩnh."
+      },
+      "organize": {
+        "title": "Gắn thẻ để phân loại.",
+        "body": "Lọc theo thẻ để tìm đúng thứ bạn cần. Thêm nhiều giao diện và chủ đề đang được phát triển."
+      },
+      "privacy": {
+        "title": "Không cần tài khoản. Hoàn toàn cục bộ.",
+        "body": "Mọi thứ đều ở trong trình duyệt của bạn. Không cần tài khoản, không cần đăng ký — quyền riêng tư là của bạn."
+      }
     },
     "share": {
       "headline": "Chia sẻ như một bảng hoàn chỉnh.",
@@ -166,8 +210,13 @@
       "button": "Bắt đầu ngay — không cần đăng ký"
     },
     "footer": {
-      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
-      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
     }
   },
   "pages": {

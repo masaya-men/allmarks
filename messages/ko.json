@@ -43,10 +43,10 @@
       "bookmarkletHint": "어떤 사이트든 한 번에 저장"
     },
     "empty": {
-      "title": "북마크 시작하기",
-      "description": "AllMarks는 어떤 사이트든 한 번에 저장하는 북마클릿을 사용합니다",
-      "installButton": "📌 AllMarks 설치",
-      "alreadyInstalled": "이미 설치하셨나요? 다른 사이트에서 📌를 클릭하세요"
+      "title": "보드가 비어 있습니다",
+      "description": "링크를 붙여넣어 (Cmd/Ctrl+V) 첫 번째 북마크를 저장하세요.",
+      "installButton": "확장 프로그램 없이 저장",
+      "alreadyInstalled": "보드에 링크를 붙여넣어 저장하세요"
     },
     "bookmarkletModal": {
       "title": "북마클릿 설치",
@@ -86,6 +86,35 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "기본값으로 초기화"
+    },
+    "onboarding": {
+      "enter": {
+        "body": "AllMarks는 링크를 비주얼 보드로 변환합니다."
+      },
+      "paste": {
+        "body": "Cmd/Ctrl+V로 링크를 붙여넣거나 TRY THIS를 사용하세요."
+      },
+      "tag": {
+        "body": "방금 저장한 카드에 태그를 추가하세요."
+      },
+      "motion": {
+        "body": "MOTION을 켜서 보드에 생동감을 더하세요."
+      },
+      "extDemo": {
+        "body": "확장 프로그램을 사용하면 클릭 한 번으로 열린 페이지를 저장하고 태그를 붙일 수 있습니다."
+      },
+      "install": {
+        "body": "AllMarks 칩을 북마크 바에 드래그하면 어디서든 저장할 수 있습니다."
+      },
+      "installDetected": {
+        "body": "확장 프로그램이 이미 설치되어 있습니다. 링크를 붙여넣거나 북마크릿으로도 저장할 수 있습니다."
+      },
+      "share": {
+        "body": "SHARE를 열어 보드를 이미지 또는 링크로 게시하세요."
+      },
+      "finale": {
+        "body": "준비 완료. SETTINGS에서 언제든지 이 튜토리얼을 다시 볼 수 있습니다."
+      }
     }
   },
   "share": {
@@ -151,11 +180,26 @@
       "body": "그저 링크만 남습니다. 그냥 스크롤하고 지나치는 피드. 애써 저장한 것들을 묻히게 두지 마세요."
     },
     "features": {
-      "capture": { "title": "어디서든, 보드로 바로.", "body": "URL만 붙여넣으면 끝 — X, YouTube, 기술 아티클, 쇼핑몰, 이미지 등 웹의 모든 것을 지원합니다. 원클릭 저장이 필요하다면 브라우저 확장 프로그램이나 북마클릿도 있어요." },
-      "layout": { "title": "자유롭게 배치하세요.", "body": "드래그 앤 드롭으로 크기와 위치를 원하는 대로 설정하세요." },
-      "live": { "title": "살아 움직이는 보드.", "body": "포커스된 동영상은 실제로 재생되고, 나머지는 정지 화면으로 넘어갑니다 — 정지 화면 목록이 아니라, 살아있는 비주얼 보드입니다. 스위치 하나, MOTION으로 언제든지 고요한 무드보드로 가라앉힐 수 있습니다." },
-      "organize": { "title": "태그로 정렬하세요.", "body": "태그로 필터링해 원하는 것만 꺼내보세요. 더 많은 디자인과 테마가 추가될 예정입니다." },
-      "privacy": { "title": "계정 없이. 완전 로컬.", "body": "모든 것은 브라우저 안에 있습니다. 계정도 없고, 가입할 것도 없습니다 — 프라이버시는 온전히 당신 것입니다." }
+      "capture": {
+        "title": "어디서든, 보드로 바로.",
+        "body": "URL만 붙여넣으면 끝 — X, YouTube, 기술 아티클, 쇼핑몰, 이미지 등 웹의 모든 것을 지원합니다. 원클릭 저장이 필요하다면 브라우저 확장 프로그램이나 북마클릿도 있어요."
+      },
+      "layout": {
+        "title": "자유롭게 배치하세요.",
+        "body": "드래그 앤 드롭으로 크기와 위치를 원하는 대로 설정하세요."
+      },
+      "live": {
+        "title": "살아 움직이는 보드.",
+        "body": "포커스된 동영상은 실제로 재생되고, 나머지는 정지 화면으로 넘어갑니다 — 정지 화면 목록이 아니라, 살아있는 비주얼 보드입니다. 스위치 하나, MOTION으로 언제든지 고요한 무드보드로 가라앉힐 수 있습니다."
+      },
+      "organize": {
+        "title": "태그로 정렬하세요.",
+        "body": "태그로 필터링해 원하는 것만 꺼내보세요. 더 많은 디자인과 테마가 추가될 예정입니다."
+      },
+      "privacy": {
+        "title": "계정 없이. 완전 로컬.",
+        "body": "모든 것은 브라우저 안에 있습니다. 계정도 없고, 가입할 것도 없습니다 — 프라이버시는 온전히 당신 것입니다."
+      }
     },
     "share": {
       "headline": "하나의 보드로 공유하세요.",
@@ -166,8 +210,13 @@
       "button": "지금 시작 — 가입 불필요"
     },
     "footer": {
-      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
-      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
     }
   },
   "pages": {

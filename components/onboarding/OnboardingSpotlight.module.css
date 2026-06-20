@@ -1,0 +1,56 @@
+/* components/onboarding/OnboardingSpotlight.module.css */
+.layer { position: fixed; inset: 0; pointer-events: none; }
+.dim, .dimFull {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.72);
+  pointer-events: auto; /* block clicks outside the hole */
+}
+.dimFull { inset: 0; display: flex; align-items: center; justify-content: center; }
+.ring {
+  position: fixed;
+  border: 1px solid rgba(40, 241, 0, 0.8); /* A-logo green */
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 0 24px rgba(40,241,0,0.25);
+  pointer-events: none;
+  animation: spot-pulse 1.6s ease-in-out infinite;
+}
+.bubble, .bubbleCenter {
+  position: fixed;
+  max-width: 320px;
+  padding: 12px 16px;
+  background: rgba(12, 12, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  pointer-events: auto;
+}
+.bubbleCenter { position: static; max-width: 420px; text-align: center; }
+.bubbleCenterFixed {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 420px;
+  text-align: center;
+  padding: 12px 16px;
+  background: rgba(12, 12, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  pointer-events: auto;
+}
+@keyframes spot-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 0 18px rgba(40,241,0,0.2); }
+  50%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.25), 0 0 30px rgba(40,241,0,0.4); }
+}
+@media (prefers-reduced-motion: reduce) { .ring { animation: none; } }

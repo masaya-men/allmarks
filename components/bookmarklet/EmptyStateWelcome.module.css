@@ -13,11 +13,6 @@
   pointer-events: auto;
 }
 
-.icon {
-  font-size: 36px;
-  margin-bottom: 16px;
-}
-
 .title {
   font-size: 20px;
   font-weight: 600;
@@ -57,8 +52,14 @@
   transform: translateY(0);
 }
 
-.hint {
-  margin: 20px 0 0;
-  font-size: 12px;
+.replay {
+  margin-top: 14px;
+  background: none;
+  border: none;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.10em;
   color: var(--color-text-tertiary);
+  cursor: pointer;
 }
+.replay:hover { color: var(--color-text-primary); }

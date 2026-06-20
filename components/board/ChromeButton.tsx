@@ -11,6 +11,7 @@ type Props = {
   readonly className?: string
   readonly 'data-testid'?: string
   readonly 'aria-pressed'?: boolean
+  readonly 'data-onboarding-target'?: string
 }
 
 export function ChromeButton({
@@ -20,6 +21,7 @@ export function ChromeButton({
   className,
   'data-testid': dataTestId,
   'aria-pressed': ariaPressed,
+  'data-onboarding-target': dataOnboardingTarget,
 }: Props): ReactElement {
   const { display, triggerBurst } = useChromeScramble(label)
   const cls = className ? `${styles.btn} ${className}` : styles.btn
@@ -34,6 +36,7 @@ export function ChromeButton({
       data-testid={dataTestId}
       data-glitch-text={label}
       aria-pressed={ariaPressed}
+      data-onboarding-target={dataOnboardingTarget}
     >
       {display}
     </button>

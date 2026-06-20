@@ -43,10 +43,10 @@
       "bookmarkletHint": "Save from any site in one click"
     },
     "empty": {
-      "title": "Start bookmarking",
-      "description": "AllMarks uses a bookmarklet that saves any site in one click",
-      "installButton": "📌 Install AllMarks",
-      "alreadyInstalled": "Already installed? Click 📌 on another site"
+      "title": "Your board is empty",
+      "description": "Paste a link (Cmd/Ctrl+V) to save your first bookmark.",
+      "installButton": "Save without the extension",
+      "alreadyInstalled": "Paste a link on the board to save it"
     },
     "bookmarkletModal": {
       "title": "Install the bookmarklet",
@@ -86,6 +86,17 @@
       "width": "W",
       "gap": "G",
       "reset_tooltip": "Reset to defaults"
+    },
+    "onboarding": {
+      "enter": { "body": "AllMarks turns links into a visual board." },
+      "paste": { "body": "Paste a link with Cmd/Ctrl+V, or use TRY THIS." },
+      "tag": { "body": "Add a tag to the card you just saved." },
+      "motion": { "body": "Turn on MOTION to bring the board to life." },
+      "extDemo": { "body": "With the extension, one click saves the open page and tags it." },
+      "install": { "body": "Drag the AllMarks chip to your bookmarks bar to save from anywhere." },
+      "installDetected": { "body": "The extension is already installed. You can also save by pasting a link or using the bookmarklet." },
+      "share": { "body": "Open SHARE to publish your board as an image or a link." },
+      "finale": { "body": "You're set. Replay this anytime from SETTINGS." }
     }
   },
   "share": {
