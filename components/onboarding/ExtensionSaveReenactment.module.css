@@ -4,6 +4,8 @@
   align-items: center; justify-content: center; gap: 18px;
   background: rgba(6,6,6,0.96); color: rgba(255,255,255,0.9);
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  /* Cinema scene must block all board interaction (parent .root is none). */
+  pointer-events: auto;
 }
 .browser {
   position: relative; width: min(560px, 86vw); aspect-ratio: 16/10;
