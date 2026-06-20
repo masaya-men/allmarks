@@ -95,10 +95,10 @@
         "body": "Incollare un link con Cmd/Ctrl+V o usare TRY THIS.", "copied": "Copiato. Ora incollalo sulla board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "I tag mantengono la board ordinata. Aggiungiamo un tag di esempio a questa card."
+        "body": "I tag mantengono la board ordinata. Aggiungiamo un tag di esempio a questa card.", "done": "Taggata con 'sample' ✓  Premi NEXT per continuare."
       },
       "motion": {
-        "body": "Attivare MOTION per animare la bacheca."
+        "body": "Premi MOTION per dare vita alle card della board. Provalo.", "done": "Ora le card si muovono ✓  Premi NEXT per continuare."
       },
       "extDemo": {
         "body": "Con l'estensione AllMarks, un clic su qualsiasi pagina la salva — e la tagga automaticamente."

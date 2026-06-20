@@ -57,8 +57,7 @@ describe('OnboardingController', () => {
     await vi.waitFor(() => expect(onComplete).toHaveBeenCalledOnce())
   })
 
-  it('motion scene advances only on a false->true toggle', async () => {
-    // Wrapper component holds motionEnabled in state so we can flip it
+  it('motion scene reveals NEXT only after MOTION is turned on, then advances on NEXT', async () => {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {
       const [motion, setMotion] = useState(false)
@@ -78,62 +77,41 @@ describe('OnboardingController', () => {
     const onComplete = vi.fn()
     renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
 
-    // Advance enter -> paste
     fireEvent.click(screen.getByRole('button', { name: 'START' }))
-    expect(screen.getByTestId('scene-paste')).not.toBeNull()
-
-    // Advance paste -> tag via saved event
-    await act(async () => { postBookmarkSaved({ bookmarkId: 'a' }) })
-    expect(screen.getByTestId('scene-tag')).not.toBeNull()
-
-    // Advance tag -> motion via updated event
-    await act(async () => { postBookmarkUpdated({ bookmarkId: 'a' }) })
+    await act(async () => { postBookmarkSaved({ bookmarkId: 'a' }) }) // -> tag
+    await act(async () => { postBookmarkUpdated({ bookmarkId: 'a' }) }) // tag applied -> NEXT in tag
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // tag -> motion
     expect(screen.getByTestId('scene-motion')).not.toBeNull()
 
-    // motion is already false, re-clicking TOGGLE to set true->false then back does nothing yet
-    // First: verify that motion=true from the start (already true on entry) does NOT auto-advance.
-    // We're currently on scene-motion with motion=false. Flip to true -> should advance.
+    // Motion isn't on yet → no NEXT (the user must turn it on first)
+    expect(screen.queryByRole('button', { name: 'NEXT' })).toBeNull()
+
+    // Turn MOTION on → confirmation + NEXT appear, but it does NOT auto-advance
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) })
-    expect(screen.getByTestId('scene-extDemo')).not.toBeNull()
-  })
-
-  it('motion already-true on entry does NOT auto-advance', async () => {
-    // Wrapper starts with motionEnabled=true; should stay on motion scene without a toggle
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {
-      const [motion, setMotion] = useState(true)
-      return (
-        <>
-          <button type="button" onClick={() => setMotion((v) => !v)}>TOGGLE_MOTION</button>
-          <OnboardingController
-            db={db} motionEnabled={motion} sharePanelOpen={false}
-            appUrl="https://allmarks.app"
-            onComplete={onComplete}
-          />
-        </>
-      )
-    }
-
-    const db = await initDB()
-    const onComplete = vi.fn()
-    renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
-
-    // Walk to motion scene
-    fireEvent.click(screen.getByRole('button', { name: 'START' }))
-    await act(async () => { postBookmarkSaved({ bookmarkId: 'b' }) })
-    await act(async () => { postBookmarkUpdated({ bookmarkId: 'b' }) })
-
-    // On entry to motion scene, motionEnabled is already true — must NOT auto-advance
     expect(screen.getByTestId('scene-motion')).not.toBeNull()
-
-    // Now flip false then back to true — the false->true edge should advance
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // true->false
-    expect(screen.getByTestId('scene-motion')).not.toBeNull() // still on motion
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // false->true
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // motion -> extDemo
     expect(screen.getByTestId('scene-extDemo')).not.toBeNull()
   })
 
-  it('tag scene advances when tagAddedSignal increments (board tag-add path)', async () => {
+  it('motion scene asks the board to force MOTION off on entry', async () => {
+    const db = await initDB()
+    const onRequestMotionOff = vi.fn()
+    renderWithLocale(
+      <OnboardingController
+        db={db} motionEnabled={true} sharePanelOpen={false}
+        appUrl="https://allmarks.app" onComplete={() => {}}
+        onRequestMotionOff={onRequestMotionOff}
+      />, 'en', en as Messages,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'START' }))
+    await act(async () => { postBookmarkSaved({ bookmarkId: 'b' }) }) // -> tag
+    await act(async () => { postBookmarkUpdated({ bookmarkId: 'b' }) }) // tag applied -> NEXT
+    expect(onRequestMotionOff).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // tag -> motion
+    expect(onRequestMotionOff).toHaveBeenCalledOnce()
+  })
+
+  it('tag scene reveals NEXT after a tag is applied (board tag-add path)', async () => {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {
       const [tick, setTick] = useState(0)
@@ -155,8 +133,11 @@ describe('OnboardingController', () => {
     fireEvent.click(screen.getByRole('button', { name: 'START' }))
     await act(async () => { postBookmarkSaved({ bookmarkId: 'a' }) })
     expect(screen.getByTestId('scene-tag')).not.toBeNull()
-    // Simulate the board adding a tag (which bumps the signal, not the channel)
+    // No NEXT until a tag is applied
+    expect(screen.queryByRole('button', { name: 'NEXT' })).toBeNull()
+    // The board adds a tag (bumps the signal) → confirmation + NEXT appear
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'ADD_TAG' })) })
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // tag -> motion
     expect(screen.getByTestId('scene-motion')).not.toBeNull()
   })
 
@@ -184,9 +165,11 @@ describe('OnboardingController', () => {
 
     // Walk to the share scene: paste -> tag -> motion -> extDemo -> install -> share
     fireEvent.click(screen.getByRole('button', { name: 'START' }))
-    await act(async () => { postBookmarkSaved({ bookmarkId: 'c' }) })
-    await act(async () => { postBookmarkUpdated({ bookmarkId: 'c' }) })
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // -> extDemo
+    await act(async () => { postBookmarkSaved({ bookmarkId: 'c' }) }) // -> tag
+    await act(async () => { postBookmarkUpdated({ bookmarkId: 'c' }) }) // tag applied -> NEXT
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // tag -> motion
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // motion on -> NEXT
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // motion -> extDemo
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo -> install
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install -> share
     expect(screen.getByTestId('scene-share')).not.toBeNull()

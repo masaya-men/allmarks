@@ -95,10 +95,10 @@
         "body": "Dán liên kết bằng Cmd/Ctrl+V hoặc dùng TRY THIS.", "copied": "Đã sao chép. Bây giờ dán vào bảng (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Thẻ giúp bảng của bạn gọn gàng. Chúng tôi sẽ thêm một thẻ mẫu vào thẻ này cho bạn."
+        "body": "Thẻ giúp bảng của bạn gọn gàng. Chúng tôi sẽ thêm một thẻ mẫu vào thẻ này cho bạn.", "done": "Đã gắn thẻ 'sample' ✓  Nhấn NEXT để tiếp tục."
       },
       "motion": {
-        "body": "Bật MOTION để làm bảng trở nên sống động."
+        "body": "Nhấn MOTION để làm các thẻ trên bảng chuyển động. Hãy thử.", "done": "Các thẻ đang chuyển động ✓  Nhấn NEXT để tiếp tục."
       },
       "extDemo": {
         "body": "Với tiện ích AllMarks, một cú nhấp trên bất kỳ trang nào sẽ lưu nó — và tự động gắn thẻ."

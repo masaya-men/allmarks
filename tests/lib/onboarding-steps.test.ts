@@ -10,8 +10,8 @@ describe('onboarding steps', () => {
   })
   it('paste advances on a real save event', () => {
     expect(sceneById('paste').advance).toBe('saved')
-    expect(sceneById('tag').advance).toBe('tagged')
-    expect(sceneById('motion').advance).toBe('motion')
+    expect(sceneById('tag').advance).toBe('button')
+    expect(sceneById('motion').advance).toBe('button')
     expect(sceneById('share').advance).toBe('sharePanel')
   })
   it('nextSceneId walks the chain then ends', () => {

@@ -54,8 +54,8 @@ const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
 }
 
 // How long the tag scene shows the card before auto-applying the sample tag,
-// so the user reads the caption and sees the tag land rather than a flash.
-const TAG_AUTO_DELAY_MS = 1600
+// so the user reads the caption and watches the tag land rather than a flash.
+const TAG_AUTO_DELAY_MS = 2200
 
 function extensionDetected(): boolean {
   if (typeof document === 'undefined') return false
@@ -69,6 +69,11 @@ export function OnboardingController({
   const { t } = useI18n()
   const [sceneId, setSceneId] = useState<SceneId>('enter')
   const [copied, setCopied] = useState(false)
+  // Confirmations: the tag/motion scenes show the RESULT of the action and a
+  // NEXT button, so the user sees what happened and proceeds at their own pace
+  // (rather than the scene rushing past the moment they act).
+  const [tagApplied, setTagApplied] = useState(false)
+  const [motionOn, setMotionOn] = useState(false)
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
@@ -118,26 +123,36 @@ export function OnboardingController({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
-  // Tag scene advances on either the cross-context bookmark-updated channel
-  // (PiP / extension) or the in-process tagAddedSignal (the board's own
-  // tag-add, which doesn't post to the channel).
+  // Reset the per-scene confirmation flags whenever the scene changes.
   useEffect(() => {
-    if (scene.advance !== 'tagged') return
-    return subscribeBookmarkUpdated(() => advance())
+    setTagApplied(false)
+    setMotionOn(false)
+    setCopied(false)
+  }, [sceneId])
+
+  // Tag scene: mark "applied" (→ show the result + NEXT) when a tag lands on the
+  // card, via the cross-context channel (PiP/extension) or the in-process
+  // tagAddedSignal (the board's own tag-add). Does NOT advance — the user does.
+  useEffect(() => {
+    if (sceneId !== 'tag') return
+    return subscribeBookmarkUpdated(() => setTagApplied(true))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
   useEffect(() => {
     const was = prevTagSignalRef.current
     prevTagSignalRef.current = tagAddedSignal
-    if (scene.advance === 'tagged' && tagAddedSignal !== was) advance()
+    if (sceneId === 'tag' && tagAddedSignal !== was) setTagApplied(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tagAddedSignal, sceneId])
 
+  // Motion scene: mark "on" (→ show confirmation + NEXT) when the user turns
+  // MOTION on (false→true). Does NOT advance — the user watches the cards move,
+  // then presses NEXT.
   useEffect(() => {
     const was = prevMotionRef.current
     prevMotionRef.current = motionEnabled
-    if (scene.advance === 'motion' && !was && motionEnabled) advance()
+    if (sceneId === 'motion' && !was && motionEnabled) setMotionOn(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [motionEnabled, sceneId])
 
@@ -228,16 +243,18 @@ export function OnboardingController({
   }
 
   // ---- Hands-on scenes -----------------------------------------------------
-  // The tag scene cuts out the whole newest card and auto-applies a sample tag,
-  // so its caption sits at the bottom (off the card). Other scenes anchor the
-  // caption to their target. The spotlight hole passes clicks through, so the
-  // user can still operate the real control (MOTION toggle, SHARE button).
+  // The tag and motion scenes show the RESULT of the action (a tag landing /
+  // the cards moving) and only then reveal NEXT, so the user sees what happened
+  // and proceeds at their own pace. Their captions sit at the bottom (off the
+  // cut-out / off the moving cards). The spotlight hole passes clicks through,
+  // so the user can still operate the real control (MOTION toggle, SHARE).
   const isTag = sceneId === 'tag'
+  const isMotion = sceneId === 'motion'
   return wrap(
     <OnboardingSpotlight
       targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
       caption={body}
-      captionAtBottom={isTag}
+      captionAtBottom={isTag || isMotion}
     >
       {sceneId === 'paste' && (
         <>
@@ -247,6 +264,22 @@ export function OnboardingController({
           {copied && (
             <p className={styles.copiedHint}>{t('board.onboarding.paste.copied')}</p>
           )}
+        </>
+      )}
+      {/* Tag: auto-applies a sample tag after a beat; once it lands, confirm it
+          and reveal NEXT (user-paced, not a flash). */}
+      {isTag && tagApplied && (
+        <>
+          <p className={styles.copiedHint}>{t('board.onboarding.tag.done')}</p>
+          <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
+        </>
+      )}
+      {/* Motion: NEXT appears only after the user turns MOTION on, so they
+          actually see the cards come alive first. */}
+      {isMotion && motionOn && (
+        <>
+          <p className={styles.copiedHint}>{t('board.onboarding.motion.done')}</p>
+          <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
         </>
       )}
       {sceneId === 'install' && !installDetected && (

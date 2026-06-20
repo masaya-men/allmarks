@@ -15,8 +15,8 @@ export type OnboardingScene = {
 export const ONBOARDING_SCENES: readonly OnboardingScene[] = [
   { id: 'enter',   kind: 'cinema',  advance: 'button' },
   { id: 'paste',   kind: 'handsOn', advance: 'saved',      target: 'paste-zone' },
-  { id: 'tag',     kind: 'handsOn', advance: 'tagged',     target: 'card' },
-  { id: 'motion',  kind: 'handsOn', advance: 'motion',     target: 'motion' },
+  { id: 'tag',     kind: 'handsOn', advance: 'button',     target: 'card' },
+  { id: 'motion',  kind: 'handsOn', advance: 'button',     target: 'motion' },
   { id: 'extDemo', kind: 'cinema',  advance: 'button' },
   { id: 'install', kind: 'handsOn', advance: 'button' },
   { id: 'share',   kind: 'handsOn', advance: 'sharePanel', target: 'share' },

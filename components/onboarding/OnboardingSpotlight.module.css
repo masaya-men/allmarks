@@ -42,10 +42,11 @@
   max-width: 420px;
   text-align: center;
 }
-/* fixed at the bottom-center (tag scene — keeps the caption off the popover) */
+/* fixed at the bottom-center (tag/motion scenes). Sits high enough to clear
+   the board's ScrollMeter waveform at the very bottom. */
 .bubbleBottom {
   position: fixed;
-  bottom: 32px;
+  bottom: 92px;
   left: 50%;
   transform: translateX(-50%);
   max-width: 420px;

@@ -95,10 +95,10 @@
         "body": "使用 Cmd/Ctrl+V 粘贴链接，或使用 TRY THIS。", "copied": "已复制。现在粘贴到板上 (Cmd/Ctrl+V)。"
       },
       "tag": {
-        "body": "标签让你的板保持整洁。我们会为这张卡片添加一个示例标签。"
+        "body": "标签让你的板保持整洁。我们会为这张卡片添加一个示例标签。", "done": "已添加 'sample' 标签 ✓  按 NEXT 继续。"
       },
       "motion": {
-        "body": "开启 MOTION，让版面动起来。"
+        "body": "点击 MOTION 让板上的卡片动起来。试试看。", "done": "卡片现在动起来了 ✓  按 NEXT 继续。"
       },
       "extDemo": {
         "body": "使用 AllMarks 扩展，在任意页面上一键即可保存 — 并自动加标签。"

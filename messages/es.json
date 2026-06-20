@@ -95,10 +95,10 @@
         "body": "Pega un enlace con Cmd/Ctrl+V o usa TRY THIS.", "copied": "Copiado. Ahora pégalo en el tablero (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Las etiquetas mantienen tu tablero organizado. Añadiremos una etiqueta de ejemplo a esta tarjeta."
+        "body": "Las etiquetas mantienen tu tablero organizado. Añadiremos una etiqueta de ejemplo a esta tarjeta.", "done": "Etiquetada con 'sample' ✓  Pulsa NEXT para continuar."
       },
       "motion": {
-        "body": "Activa MOTION para dar vida al tablero."
+        "body": "Pulsa MOTION para dar vida a las tarjetas del tablero. Pruébalo.", "done": "Las tarjetas ya se mueven ✓  Pulsa NEXT para continuar."
       },
       "extDemo": {
         "body": "Con la extensión AllMarks, un clic en cualquier página la guarda — y la etiqueta automáticamente."

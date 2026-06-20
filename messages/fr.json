@@ -95,10 +95,10 @@
         "body": "Coller un lien avec Cmd/Ctrl+V ou utiliser TRY THIS.", "copied": "Copié. Collez-le maintenant sur le tableau (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Les tags gardent votre tableau organisé. Nous ajoutons un tag d'exemple à cette carte."
+        "body": "Les tags gardent votre tableau organisé. Nous ajoutons un tag d'exemple à cette carte.", "done": "Taguée avec « sample » ✓  Appuyez sur NEXT pour continuer."
       },
       "motion": {
-        "body": "Activer MOTION pour animer le tableau."
+        "body": "Appuyez sur MOTION pour donner vie aux cartes du tableau. Essayez.", "done": "Les cartes bougent maintenant ✓  Appuyez sur NEXT pour continuer."
       },
       "extDemo": {
         "body": "Avec l'extension AllMarks, un clic sur n'importe quelle page l'enregistre — et la tague automatiquement."

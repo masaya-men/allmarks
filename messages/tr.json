@@ -95,10 +95,10 @@
         "body": "Cmd/Ctrl+V ile bir bağlantı yapıştırın veya TRY THIS kullanın.", "copied": "Kopyalandı. Şimdi panoya yapıştır (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Etiketler panonu düzenli tutar. Bu karta senin için örnek bir etiket ekleyeceğiz."
+        "body": "Etiketler panonu düzenli tutar. Bu karta senin için örnek bir etiket ekleyeceğiz.", "done": "'sample' etiketi eklendi ✓  Devam etmek için NEXT'e bas."
       },
       "motion": {
-        "body": "Panoya hayat vermek için MOTION açın."
+        "body": "Panodaki kartları canlandırmak için MOTION'a bas. Dene.", "done": "Kartlar şimdi hareket ediyor ✓  Devam etmek için NEXT'e bas."
       },
       "extDemo": {
         "body": "AllMarks uzantısıyla herhangi bir sayfada tek tık onu kaydeder — ve otomatik etiketler."

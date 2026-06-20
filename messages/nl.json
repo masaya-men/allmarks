@@ -95,10 +95,10 @@
         "body": "Plak een link met Cmd/Ctrl+V of gebruik TRY THIS.", "copied": "Gekopieerd. Plak het nu op het board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Tags houden je board georganiseerd. We voegen een voorbeeld-tag toe aan deze kaart."
+        "body": "Tags houden je board georganiseerd. We voegen een voorbeeld-tag toe aan deze kaart.", "done": "Getagd met 'sample' ✓  Druk op NEXT om door te gaan."
       },
       "motion": {
-        "body": "Zet MOTION aan om het bord tot leven te brengen."
+        "body": "Druk op MOTION om de kaarten van je board tot leven te brengen. Probeer het.", "done": "De kaarten bewegen nu ✓  Druk op NEXT om door te gaan."
       },
       "extDemo": {
         "body": "Met de AllMarks-extensie slaat één klik elke pagina op — en voegt automatisch tags toe."
