@@ -90,6 +90,9 @@ export interface BookmarkRecord {
   /** v15+: Phase 3 カラーハント (タグ別テーマ) 用のドミナントカラー hex。
    *  Phase 1 では常に null/undefined。 backfill が走るまで未設定。 */
   dominantColor?: string | null
+  /** Onboarding demo card — seeded during the first-run tutorial and swept
+   *  on completion/next load. Absent on all real user bookmarks. */
+  onboardingDemo?: boolean
 }
 
 /** Tag record (v15、 旧 MoodRecord をリネーム) — destefanis pivot の
@@ -850,6 +853,7 @@ export async function addBookmark(
     cardWidth: DEFAULT_CARD_WIDTH,
     tags: input.tags ?? [],
     displayMode: input.displayMode ?? null,
+    onboardingDemo: input.onboardingDemo,
   }
 
   // Use a transaction to atomically create both bookmark and card
