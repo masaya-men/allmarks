@@ -92,7 +92,7 @@
         "body": "AllMarks는 링크를 비주얼 보드로 변환합니다."
       },
       "paste": {
-        "body": "Cmd/Ctrl+V로 링크를 붙여넣거나 TRY THIS를 사용하세요.",
+        "body": "이 링크를 복사한 다음 보드에 붙여넣으세요 (Cmd/Ctrl+V).",
         "copied": "복사했습니다. 이제 보드에 붙여넣으세요 (Cmd/Ctrl+V)."
       },
       "tag": {

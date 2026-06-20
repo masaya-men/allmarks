@@ -92,7 +92,7 @@
         "body": "AllMarks 将链接转化为视觉版面。"
       },
       "paste": {
-        "body": "使用 Cmd/Ctrl+V 粘贴链接，或使用 TRY THIS。",
+        "body": "复制此链接，然后粘贴到板上（Cmd/Ctrl+V）。",
         "copied": "已复制。现在粘贴到板上 (Cmd/Ctrl+V)。"
       },
       "tag": {

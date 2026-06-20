@@ -104,12 +104,13 @@ export function OnboardingController({
     onComplete()
   }
 
-  // TRY THIS — copy a sample link to the clipboard and prompt the user to
-  // paste it onto the board themselves, so they learn the real paste gesture
-  // (the point of this scene). Their paste (or their own link) fires
-  // bookmark-saved, which advances the scene. If the clipboard API is blocked,
-  // fall back to saving the sample directly so the user is never stuck.
-  const tryThis = async (): Promise<void> => {
+  // COPY — copy the sample link to the clipboard so the user can paste it onto
+  // the board themselves (Cmd/Ctrl+V), learning the real paste gesture (the
+  // point of this scene). Their paste (or their own link) fires bookmark-saved,
+  // which advances the scene. If the clipboard API is blocked, fall back to
+  // saving the sample directly so the user is never stuck (the visible URL field
+  // is also manually selectable as a fallback).
+  const copySampleLink = async (): Promise<void> => {
     try {
       await navigator.clipboard.writeText(SAMPLE_URL)
       setCopied(true)
@@ -272,10 +273,34 @@ export function OnboardingController({
     )
   }
 
-  // ---- Other hands-on scenes (paste / motion / install) --------------------
+  // ---- Paste scene — centered card on a dark backdrop ----------------------
+  // No whole-board spotlight (that ringed the entire viewport green and left the
+  // board undimmed). A copyable sample URL + COPY button teaches the gesture;
+  // the user pastes it onto the board with Cmd/Ctrl+V (a document-level paste
+  // that still fires under the dim, because the URL box is NOT an input).
+  if (sceneId === 'paste') {
+    return wrap(
+      <div className={styles.pasteScene}>
+        <div className={styles.pasteCard}>
+          <p className={styles.pasteCaption}>{body}</p>
+          <div className={styles.pasteFieldRow}>
+            <span className={styles.pasteUrl} title={SAMPLE_URL}>{SAMPLE_URL}</span>
+            <button type="button" className={styles.pasteCopyBtn} onClick={() => void copySampleLink()}>
+              COPY
+            </button>
+          </div>
+          {copied && (
+            <p className={styles.copiedHint}>{t('board.onboarding.paste.copied')}</p>
+          )}
+        </div>
+      </div>,
+    )
+  }
+
+  // ---- Other hands-on scenes (motion / install) ----------------------------
   // The motion scene shows the RESULT of the action and only then reveals NEXT.
   // The spotlight hole passes clicks through so the user can operate the real
-  // control (paste zone, MOTION toggle).
+  // control (MOTION toggle).
   const isMotion = sceneId === 'motion'
   return wrap(
     <OnboardingSpotlight
@@ -283,16 +308,6 @@ export function OnboardingController({
       caption={body}
       captionAtBottom={isMotion}
     >
-      {sceneId === 'paste' && (
-        <>
-          <button type="button" className={styles.tryThis} onClick={() => void tryThis()}>
-            TRY THIS
-          </button>
-          {copied && (
-            <p className={styles.copiedHint}>{t('board.onboarding.paste.copied')}</p>
-          )}
-        </>
-      )}
       {/* Motion: NEXT appears only after the user turns MOTION on, so they
           actually see the cards come alive first. */}
       {isMotion && motionOn && (

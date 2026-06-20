@@ -92,7 +92,7 @@
         "body": "AllMarks chuyển đổi liên kết thành bảng trực quan."
       },
       "paste": {
-        "body": "Dán liên kết bằng Cmd/Ctrl+V hoặc dùng TRY THIS.",
+        "body": "Sao chép liên kết này rồi dán vào bảng (Cmd/Ctrl+V).",
         "copied": "Đã sao chép. Bây giờ dán vào bảng (Cmd/Ctrl+V)."
       },
       "tag": {

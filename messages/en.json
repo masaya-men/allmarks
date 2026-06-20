@@ -89,7 +89,7 @@
     },
     "onboarding": {
       "enter": { "body": "AllMarks turns links into a visual board." },
-      "paste": { "body": "Paste a link with Cmd/Ctrl+V, or use TRY THIS.", "copied": "Copied. Now paste it onto the board (Cmd/Ctrl+V)." },
+      "paste": { "body": "Copy this link, then paste it onto the board (Cmd/Ctrl+V).", "copied": "Copied. Now paste it onto the board (Cmd/Ctrl+V)." },
       "tag": { "body": "Tags keep your board organized. Watch a tag get added to this card — you can add your own anytime.", "done": "Tagged with 'sample' ✓  Press NEXT to continue." },
       "motion": { "body": "Press MOTION to make the cards gently move. Try it.", "done": "The cards are moving now ✓  Press NEXT to continue." },
       "extDemo": { "body": "With the AllMarks extension, one click on any page saves it — and tags it automatically." },

@@ -92,7 +92,7 @@
         "body": "AllMarks convierte enlaces en un tablero visual."
       },
       "paste": {
-        "body": "Pega un enlace con Cmd/Ctrl+V o usa TRY THIS.",
+        "body": "Copia este enlace y pégalo en el tablero (Cmd/Ctrl+V).",
         "copied": "Copiado. Ahora pégalo en el tablero (Cmd/Ctrl+V)."
       },
       "tag": {

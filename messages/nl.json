@@ -92,7 +92,7 @@
         "body": "AllMarks zet links om in een visueel bord."
       },
       "paste": {
-        "body": "Plak een link met Cmd/Ctrl+V of gebruik TRY THIS.",
+        "body": "Kopieer deze link en plak hem op het board (Cmd/Ctrl+V).",
         "copied": "Gekopieerd. Plak het nu op het board (Cmd/Ctrl+V)."
       },
       "tag": {

@@ -92,7 +92,7 @@
         "body": "AllMarks transforma links num quadro visual."
       },
       "paste": {
-        "body": "Colar um link com Cmd/Ctrl+V ou usar TRY THIS.",
+        "body": "Copie este link e cole-o no board (Cmd/Ctrl+V).",
         "copied": "Copiado. Agora cole no board (Cmd/Ctrl+V)."
       },
       "tag": {
