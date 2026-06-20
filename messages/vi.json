@@ -107,8 +107,7 @@
         "body": "Với tiện ích AllMarks, một cú nhấp trên bất kỳ trang nào sẽ lưu nó — và tự động gắn thẻ."
       },
       "install": {
-        "body": "Kéo nút AllMarks này vào thanh dấu trang để lưu từ bất cứ đâu. Không thấy thanh? Nhấn Ctrl/⌘+Shift+B."
-      },
+        "body": "Kéo nút AllMarks này vào thanh dấu trang để lưu từ bất cứ đâu. Không thấy thanh? Nhấn Ctrl/⌘+Shift+B.", "demoCaption": "Nhấp dấu trang AllMarks trên bất kỳ trang nào — một cửa sổ nhỏ hiện ra và lưu lại." },
       "installDetected": {
         "body": "Tiện ích mở rộng đã được cài đặt. Bạn cũng có thể lưu bằng cách dán liên kết hoặc dùng bookmarklet."
       },

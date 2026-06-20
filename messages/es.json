@@ -107,8 +107,7 @@
         "body": "Con la extensión AllMarks, un clic en cualquier página la guarda — y la etiqueta automáticamente."
       },
       "install": {
-        "body": "Arrastra este botón de AllMarks a tu barra de marcadores para guardar desde cualquier lugar. ¿No ves la barra? Pulsa Ctrl/⌘+Shift+B."
-      },
+        "body": "Arrastra este botón de AllMarks a tu barra de marcadores para guardar desde cualquier lugar. ¿No ves la barra? Pulsa Ctrl/⌘+Shift+B.", "demoCaption": "Pulsa el marcador de AllMarks en cualquier página — se abre una pequeña ventana y la guarda." },
       "installDetected": {
         "body": "La extensión ya está instalada. También puedes guardar pegando un enlace o usando el bookmarklet."
       },

@@ -168,8 +168,9 @@ describe('OnboardingController', () => {
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // tag -> motion
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // motion on -> NEXT
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // motion -> extDemo
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo -> install
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install -> share
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo -> install (beat: demo)
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: demo -> drag
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: drag -> share
     expect(screen.getByTestId('scene-share')).not.toBeNull()
 
     // The share showcase plays as a cinema beat; a NEXT escape advances to finale.

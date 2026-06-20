@@ -107,8 +107,7 @@
         "body": "Com a extensão AllMarks, um clique em qualquer página a salva — e adiciona tags automaticamente."
       },
       "install": {
-        "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B."
-      },
+        "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B.", "demoCaption": "Clique no favorito do AllMarks em qualquer página — uma pequena janela aparece e o salva." },
       "installDetected": {
         "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
       },

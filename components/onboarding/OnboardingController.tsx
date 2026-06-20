@@ -17,6 +17,7 @@ import { OnboardingSpotlight } from './OnboardingSpotlight'
 import { OnboardingTagDemo } from './OnboardingTagDemo'
 import { OnboardingPasteCursor } from './OnboardingPasteCursor'
 import { BookmarkletInstallChip } from './BookmarkletInstallChip'
+import { BookmarkletSaveReenactment } from './BookmarkletSaveReenactment'
 import styles from './OnboardingController.module.css'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -87,6 +88,9 @@ export function OnboardingController({
   const tagPhaseRef = useRef(tagPhase)
   tagPhaseRef.current = tagPhase
   const [motionOn, setMotionOn] = useState(false)
+  // Install scene plays as two beats: 'demo' (a faithful save re-enactment) →
+  // 'install' (the real draggable bookmarklet chip).
+  const [installBeat, setInstallBeat] = useState<'demo' | 'install'>('demo')
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
@@ -145,6 +149,7 @@ export function OnboardingController({
     setTagPhase('zoom')
     setMotionOn(false)
     setCopied(false)
+    setInstallBeat('demo')
   }, [sceneId])
 
   // Tag scene: mark "applied" (→ show the result + NEXT) when a tag lands on the
@@ -351,22 +356,35 @@ export function OnboardingController({
     )
   }
 
-  // ---- Install scene -------------------------------------------------------
-  // The spotlight hole passes clicks through so the user can operate the real
-  // control (bookmarklet drag / the page).
+  // ---- Install scene — two beats ------------------------------------------
+  // Beat 1 (demo): a faithful re-enactment of saving with the bookmarklet — the
+  // cursor clicks the AllMarks bookmarklet in a browser frame's bookmark bar and
+  // the REAL save window pops (Saving → Saved → suggested tags). It shows the
+  // VALUE before asking for the action. Beat 2 (install): the real draggable
+  // chip so the user drops the bookmarklet onto their own (real) bookmark bar —
+  // the chip MUST target the user's actual browser chrome, so it can't live in
+  // the demo's fake bar. If the extension is already present, skip the pitch.
+  if (installDetected) {
+    return wrap(
+      <OnboardingSpotlight targetSelector={null} caption={body}>
+        <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
+      </OnboardingSpotlight>,
+    )
+  }
+  if (installBeat === 'demo') {
+    return wrap(
+      <BookmarkletSaveReenactment
+        caption={t('board.onboarding.install.demoCaption')}
+        buttonLabel="NEXT"
+        onAdvance={() => setInstallBeat('install')}
+      />,
+    )
+  }
+  // The spotlight hole passes clicks through so the user can drag the real chip.
   return wrap(
-    <OnboardingSpotlight
-      targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
-      caption={body}
-    >
-      {sceneId === 'install' && !installDetected && (
-        <BookmarkletInstallChip appUrl={appUrl} />
-      )}
-      {sceneId === 'install' && (
-        <button type="button" className={styles.advanceBtn} onClick={advance}>
-          NEXT
-        </button>
-      )}
+    <OnboardingSpotlight targetSelector={null} caption={body}>
+      <BookmarkletInstallChip appUrl={appUrl} />
+      <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
     </OnboardingSpotlight>,
   )
 }

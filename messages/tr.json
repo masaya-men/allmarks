@@ -107,8 +107,7 @@
         "body": "AllMarks uzantısıyla herhangi bir sayfada tek tık onu kaydeder — ve otomatik etiketler."
       },
       "install": {
-        "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas."
-      },
+        "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas.", "demoCaption": "Herhangi bir sayfada yer imleri çubuğundaki AllMarks'a tıkla — küçük bir pencere açılıp onu kaydeder." },
       "installDetected": {
         "body": "Uzantı zaten yüklü. Bağlantı yapıştırarak veya bookmarklet kullanarak da kaydedebilirsiniz."
       },

@@ -107,8 +107,7 @@
         "body": "Met de AllMarks-extensie slaat één klik elke pagina op — en voegt automatisch tags toe."
       },
       "install": {
-        "body": "Sleep deze AllMarks-knop naar je bladwijzerbalk om overal op te slaan. Zie je de balk niet? Druk op Ctrl/⌘+Shift+B."
-      },
+        "body": "Sleep deze AllMarks-knop naar je bladwijzerbalk om overal op te slaan. Zie je de balk niet? Druk op Ctrl/⌘+Shift+B.", "demoCaption": "Klik op elke pagina op de AllMarks-bladwijzer in je bladwijzerbalk — er verschijnt een klein venster dat hem opslaat." },
       "installDetected": {
         "body": "De extensie is al geïnstalleerd. Je kunt ook opslaan door een link te plakken of de bookmarklet te gebruiken."
       },

@@ -93,7 +93,7 @@
       "tag": { "body": "Let's add a tag to this card.", "done": "Tags keep your board organized — add your own anytime. Press NEXT to continue." },
       "motion": { "body": "Press MOTION to make the cards gently move. Try it.", "done": "Your board is alive — videos play and image galleries cycle. Press NEXT to continue." },
       "extDemo": { "body": "With the AllMarks extension, one click on any page saves it — and tags it automatically." },
-      "install": { "body": "Drag this AllMarks button to your bookmarks bar to save from anywhere. Don't see the bar? Press Ctrl/⌘+Shift+B." },
+      "install": { "body": "Drag this AllMarks button to your bookmarks bar to save from anywhere. Don't see the bar? Press Ctrl/⌘+Shift+B.", "demoCaption": "Click the AllMarks bookmark on any page — a little window pops up and saves it." },
       "installDetected": { "body": "The extension is already installed. You can also save by pasting a link or using the bookmarklet." },
       "share": { "body": "This is how sharing works. Build a board you love and share it with everyone." },
       "finale": { "body": "You're set. Replay this anytime from SETTINGS." }

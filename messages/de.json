@@ -107,8 +107,7 @@
         "body": "Mit der AllMarks-Erweiterung speichert ein Klick jede Seite — und vergibt automatisch Tags."
       },
       "install": {
-        "body": "Zieh diesen AllMarks-Button in deine Lesezeichenleiste, um von überall zu speichern. Keine Leiste zu sehen? Drücke Ctrl/⌘+Shift+B."
-      },
+        "body": "Zieh diesen AllMarks-Button in deine Lesezeichenleiste, um von überall zu speichern. Keine Leiste zu sehen? Drücke Ctrl/⌘+Shift+B.", "demoCaption": "Klick auf jeder Seite auf das AllMarks-Lesezeichen – ein kleines Fenster öffnet sich und speichert sie." },
       "installDetected": {
         "body": "Die Erweiterung ist bereits installiert. Du kannst auch per Link-Einfügen oder Bookmarklet speichern."
       },
