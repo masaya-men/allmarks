@@ -1,0 +1,23 @@
+/* components/onboarding/ExtensionSaveReenactment.module.css */
+.stage {
+  position: fixed; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+  background: rgba(6,6,6,0.96); color: rgba(255,255,255,0.9);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+.browser {
+  position: relative; width: min(560px, 86vw); aspect-ratio: 16/10;
+  background: rgba(18,18,18,0.96); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px; overflow: hidden;
+}
+.toolbar { position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.18); }
+.url { flex: 1; font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; }
+.extIcon { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: rgba(40,241,0,0.15); color: #28f100; font-weight: 700; }
+.flash { position: absolute; right: 10px; top: 8px; width: 26px; height: 26px; border-radius: 8px; background: #28f100; opacity: 0; }
+.page { height: 60%; background: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 12px, transparent 12px 24px); }
+.strip { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); display: flex; gap: 8px; }
+.chip { padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #28f100; font-size: 11px; }
+.cursor { position: absolute; left: 30%; top: 70%; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.4); }
+.caption { max-width: 440px; text-align: center; font-size: 13px; line-height: 1.8; }
+.cta { font: inherit; font-size: 12px; letter-spacing: 0.10em; text-transform: uppercase; color: rgba(255,255,255,0.95); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.22); border-radius: 8px; padding: 10px 22px; cursor: pointer; }
