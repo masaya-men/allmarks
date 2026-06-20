@@ -263,22 +263,20 @@ export function OnboardingController({
       )
     }
     // demo: only the card is lit (spotlight dims the rest) while the guided
-    // tag-add plays on it (emphasize +TAG → cursor click → slow type → chip).
+    // tag-add plays on the REAL +TAG button (highlight it → cursor click → menu
+    // opens where the real popover would → slow type → chip). OnboardingTagDemo
+    // measures the real +TAG itself, so it renders as a sibling overlay.
     if (tagPhase === 'demo') {
       return wrap(
-        <OnboardingSpotlight
-          targetSelector={TARGET_SELECTOR.card}
-          caption=""
-          blockHole
-          cardAnchoredSlot={
-            <OnboardingTagDemo
-              text="sample"
-              charMs={TAG_TYPE_CHAR_MS}
-              onApply={() => onApplySampleTag?.()}
-              onFinished={() => { setTagApplied(true); setTagPhase('done') }}
-            />
-          }
-        />,
+        <>
+          <OnboardingSpotlight targetSelector={TARGET_SELECTOR.card} caption="" blockHole />
+          <OnboardingTagDemo
+            text="sample"
+            charMs={TAG_TYPE_CHAR_MS}
+            onApply={() => onApplySampleTag?.()}
+            onFinished={() => { setTagApplied(true); setTagPhase('done') }}
+          />
+        </>,
       )
     }
     // done: darken everything, raise the closing "tags organize" message + NEXT.

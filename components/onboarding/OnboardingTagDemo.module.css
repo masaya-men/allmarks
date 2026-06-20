@@ -1,36 +1,25 @@
 /* components/onboarding/OnboardingTagDemo.module.css
-   Guided tag-add demo. Mirrors the real board tag menu (TagAddPopover): glass,
-   blur, monospace, green chips — plus a teardrop demo cursor + a "+ TAG" button
-   that is emphasized then "clicked" before the menu opens. */
-.wrap {
-  position: relative;
-  width: 240px;
-  min-height: 116px;
+   Guided tag-add demo anchored to the REAL card's +TAG button. Mirrors the real
+   board tag menu (TagAddPopover): glass, blur, monospace, green chips — plus a
+   green highlight over the real +TAG and a teardrop demo cursor. All children
+   are positioned in screen space (fixed) from the measured button rect. */
+.layer {
+  position: fixed;
+  inset: 0;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  /* A guided demo — never interactive (the controller blocks the board). */
-  pointer-events: none;
+  pointer-events: none; /* guided demo — the controller blocks the board */
 }
-/* the small "+ TAG" button, emphasized first, then pressed by the cursor */
-.tagBtn {
-  position: absolute;
-  top: 0;
-  left: 0;
-  font: inherit;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #28f100;
-  background: rgba(40, 241, 0, 0.16);
-  border: 1px solid rgba(40, 241, 0, 0.5);
+/* green highlight placed exactly over the real "+ TAG" button (rect from JS) */
+.glow {
+  position: fixed;
   border-radius: 6px;
-  padding: 6px 10px;
-  cursor: default;
+  border: 1px solid rgba(40, 241, 0, 0.7);
+  box-shadow: 0 0 0 3px rgba(40, 241, 0, 0.25), 0 0 16px rgba(40, 241, 0, 0.4);
+  background: rgba(40, 241, 0, 0.1);
 }
-/* the popover that opens after the click */
+/* the popover that opens after the click (matches TagAddPopover) */
 .menu {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: fixed;
   width: 240px;
   background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(12px);
@@ -42,13 +31,6 @@
   flex-direction: column;
   gap: 8px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-}
-.header {
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  padding: 0 4px;
 }
 .chipRow { display: flex; min-height: 20px; align-items: center; }
 .chip {
@@ -82,7 +64,7 @@
 .caret[data-typing="true"] { animation: none; }
 /* same teardrop pointer as the other demos */
 .cursor {
-  position: absolute;
+  position: fixed;
   width: 18px;
   height: 18px;
   border-radius: 50% 50% 50% 2px;

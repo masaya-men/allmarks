@@ -18,13 +18,17 @@ type Props = {
   readonly onFinished: () => void
 }
 
+type Box = { left: number; top: number; width: number; height: number; bottom: number }
+
+const MENU_W = 240
+
 /**
- * A guided, on-rails re-enactment of tagging a card: it first highlights the
- * "+ TAG" button (green glow + scale), a demo cursor glides over and presses it
- * (button reacts), the real tag menu opens, the input lights up, and the tag is
- * typed in slowly so the gesture is unmistakable. Mirrors the board's real
- * TagAddPopover look (rgba(20,20,20,.95) glass, monospace, green chips). Pure
- * GSAP, non-interactive (the controller blocks the board underneath).
+ * A guided, on-rails re-enactment of tagging a card, anchored to the REAL card.
+ * It measures the card's real "+ TAG" button, highlights THAT button (green
+ * glow), glides a demo cursor over and presses it, then opens the tag menu right
+ * where the real popover would, lights the input and types the tag in slowly so
+ * "click here → this happens" is unmistakable. Mirrors the real TagAddPopover
+ * look. Pure GSAP; non-interactive (the controller blocks the board underneath).
  */
 export function OnboardingTagDemo({ text, charMs, onApply, onFinished }: Props): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -39,7 +43,7 @@ export function OnboardingTagDemo({ text, charMs, onApply, onFinished }: Props):
     const root = rootRef.current
     if (!root) return
     const q = (sel: string): Element | null => root.querySelector(sel)
-    const tagBtn = q('[data-anim="tagbtn"]')
+    const glow = q('[data-anim="glow"]')
     const menu = q('[data-anim="menu"]')
     const input = q('[data-anim="input"]')
     const chip = q('[data-anim="chip"]')
@@ -48,56 +52,81 @@ export function OnboardingTagDemo({ text, charMs, onApply, onFinished }: Props):
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    if (reduce) {
-      gsap.set(menu, { opacity: 1, scale: 1, y: 0 })
-      gsap.set(tagBtn, { opacity: 0 })
-      gsap.set(chip, { opacity: 1, scale: 1 })
-      gsap.set(cursor, { opacity: 0 })
-      setTyped(text.length)
-      setCommitted(true)
-      onApplyRef.current()
-      const t = setTimeout(() => onFinishedRef.current(), 500)
-      return () => clearTimeout(t)
+    let tl: gsap.core.Timeline | null = null
+    let raf = 0
+
+    const run = (b: Box): void => {
+      const menuLeft = Math.max(12, Math.min(b.left, window.innerWidth - MENU_W - 12))
+      const menuTop = b.bottom + 8
+      const cx = b.left + b.width / 2
+      const cy = b.top + b.height / 2
+
+      // place the glow exactly over the real +TAG button
+      gsap.set(glow, { left: b.left - 8, top: b.top - 6, width: b.width + 16, height: b.height + 12, opacity: 0 })
+      gsap.set(menu, { left: menuLeft, top: menuTop, opacity: 0, scale: 0.92, y: -4, transformOrigin: 'top left' })
+      gsap.set(chip, { opacity: 0, scale: 0.7 })
+      gsap.set(cursor, { left: cx + 70, top: cy + 64, opacity: 0, scale: 1 })
+
+      if (reduce) {
+        gsap.set(menu, { opacity: 1, scale: 1, y: 0 })
+        gsap.set(chip, { opacity: 1, scale: 1 })
+        gsap.set([glow, cursor], { opacity: 0 })
+        setTyped(text.length)
+        setCommitted(true)
+        onApplyRef.current()
+        raf = window.setTimeout(() => onFinishedRef.current(), 500) as unknown as number
+        return
+      }
+
+      const counter = { v: 0 }
+      tl = gsap.timeline()
+      tl
+        // 1) highlight the REAL +TAG button
+        .to(glow, { opacity: 1, duration: 0.35, ease: 'power2.out' })
+        .to(glow, { boxShadow: '0 0 0 4px rgba(40,241,0,0.4), 0 0 22px rgba(40,241,0,0.5)', scale: 1.08, duration: 0.55, yoyo: true, repeat: 1, ease: 'sine.inOut', transformOrigin: 'center' }, '<')
+        .to(cursor, { opacity: 1, duration: 0.3, ease: 'power2.out' }, '<')
+        // 2) cursor glides to the real +TAG and presses it (glow reacts)
+        .to(cursor, { left: cx - 4, top: cy - 2, duration: 0.85, ease: 'power2.inOut' })
+        .to(cursor, { scale: 0.74, duration: 0.13, yoyo: true, repeat: 1, ease: 'power1.inOut' })
+        .to(glow, { scale: 0.9, duration: 0.13, yoyo: true, repeat: 1, transformOrigin: 'center' }, '<')
+        // 3) the tag menu opens where the real popover would; cursor drops to the input
+        .to(glow, { opacity: 0, duration: 0.3 })
+        .to(menu, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.4)' }, '-=0.1')
+        .to(cursor, { left: menuLeft + 42, top: menuTop + 46, duration: 0.5, ease: 'power2.inOut' }, '<')
+        .to(input, { boxShadow: '0 0 0 3px rgba(40,241,0,0.3)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
+        // 4) type the tag in slowly
+        .to(counter, {
+          v: text.length,
+          duration: (text.length * charMs) / 1000,
+          ease: 'none',
+          onUpdate: () => setTyped(Math.min(text.length, Math.floor(counter.v))),
+        }, '+=0.15')
+        .add(() => setTyped(text.length))
+        // 5) commit the chip + apply the REAL tag to the REAL card
+        .to({}, { duration: 0.22 })
+        .add(() => { setCommitted(true); onApplyRef.current() })
+        .to(chip, { opacity: 1, scale: 1, duration: 0.38, ease: 'back.out(1.7)' })
+        // 6) hold so the chip + the real pill register, then hand off
+        .to({}, { duration: 0.9 })
+        .add(() => onFinishedRef.current())
     }
 
-    const counter = { v: 0 }
-    gsap.set(menu, { opacity: 0, scale: 0.96, y: -6 })
-    gsap.set(chip, { opacity: 0, scale: 0.7 })
-    gsap.set(tagBtn, { opacity: 1, scale: 1, backgroundColor: 'rgba(40,241,0,0.16)', color: '#28f100' })
-    gsap.set(cursor, { left: 150, top: 116, opacity: 0, scale: 1 })
+    // Measure the real +TAG one frame in (after the zoom has settled). Fall back
+    // to a centered box if it can't be found, so the demo never gets stuck.
+    raf = requestAnimationFrame(() => {
+      const el = document.querySelector('[data-onboarding-target="card-tag"]')
+      const r = el?.getBoundingClientRect()
+      const box: Box = r && r.width > 0
+        ? { left: r.left, top: r.top, width: r.width, height: r.height, bottom: r.bottom }
+        : { left: window.innerWidth / 2 - 30, top: window.innerHeight / 2 - 12, width: 60, height: 24, bottom: window.innerHeight / 2 + 12 }
+      run(box)
+    })
 
-    const tl = gsap.timeline()
-    tl
-      // 1) draw the eye to "+ TAG"
-      .to(cursor, { opacity: 1, duration: 0.3, ease: 'power2.out' })
-      .to(tagBtn, { boxShadow: '0 0 0 6px rgba(40,241,0,0.22)', scale: 1.12, duration: 0.5, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
-      // 2) cursor glides over and presses (the button reacts so the click reads)
-      .to(cursor, { left: 30, top: 14, duration: 0.85, ease: 'power2.inOut' })
-      .to(cursor, { scale: 0.76, duration: 0.13, yoyo: true, repeat: 1, ease: 'power1.inOut' })
-      .to(tagBtn, { scale: 0.88, duration: 0.13, yoyo: true, repeat: 1 }, '<')
-      .to(tagBtn, { backgroundColor: 'rgba(40,241,0,0.95)', color: '#0a0a0a', duration: 0.13, yoyo: true, repeat: 1 }, '<')
-      // 3) the menu opens; cursor drops to the input, which lights up
-      .to(tagBtn, { opacity: 0, duration: 0.2 })
-      .to(menu, { opacity: 1, scale: 1, y: 0, duration: 0.38, ease: 'back.out(1.4)' }, '-=0.08')
-      .to(cursor, { left: 46, top: 80, duration: 0.45, ease: 'power2.inOut' }, '<')
-      .to(input, { boxShadow: '0 0 0 3px rgba(40,241,0,0.28)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
-      // 4) type the tag in slowly
-      .to(counter, {
-        v: text.length,
-        duration: (text.length * charMs) / 1000,
-        ease: 'none',
-        onUpdate: () => setTyped(Math.min(text.length, Math.floor(counter.v))),
-      }, '+=0.15')
-      .add(() => setTyped(text.length))
-      // 5) commit the chip + apply the REAL tag to the REAL card
-      .to({}, { duration: 0.22 })
-      .add(() => { setCommitted(true); onApplyRef.current() })
-      .to(chip, { opacity: 1, scale: 1, duration: 0.38, ease: 'back.out(1.7)' })
-      // 6) hold so the chip + the real pill both register, then hand off
-      .to({}, { duration: 0.9 })
-      .add(() => onFinishedRef.current())
-
-    return () => { tl.kill() }
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(raf)
+      if (tl) tl.kill()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -105,10 +134,12 @@ export function OnboardingTagDemo({ text, charMs, onApply, onFinished }: Props):
   const stillTyping = typed < text.length
 
   return (
-    <div ref={rootRef} className={styles.wrap} data-testid="onboarding-tag-demo" aria-hidden="true">
-      <button type="button" tabIndex={-1} data-anim="tagbtn" className={styles.tagBtn}>+ TAG</button>
+    <div ref={rootRef} className={styles.layer} data-testid="onboarding-tag-demo" aria-hidden="true">
+      {/* green highlight that sits exactly over the REAL +TAG button */}
+      <span data-anim="glow" className={styles.glow} />
+      {/* the tag menu that opens where the real popover would (matches the real
+          TagAddPopover: no "+ TAG" header — that lives on the card button). */}
       <div data-anim="menu" className={styles.menu}>
-        <div className={styles.header}>+ TAG</div>
         <div className={styles.chipRow}>
           <span data-anim="chip" className={styles.chip}>✓ {text}</span>
         </div>
