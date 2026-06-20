@@ -51,4 +51,19 @@ describe('ExtensionEntry settings drawer', () => {
     fireEvent.click(screen.getByTestId('open-bookmarklet-install'))
     expect(onOpen).toHaveBeenCalledTimes(1)
   })
+
+  it('REPLAY INTRO calls onReplayIntro', () => {
+    const onReplay = vi.fn()
+    render(
+      <ExtensionEntry
+        quickTagEnabled={true}
+        onQuickTagToggle={() => {}}
+        onOpenBookmarkletModal={() => {}}
+        onReplayIntro={onReplay}
+      />,
+    )
+    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    fireEvent.click(screen.getByTestId('replay-intro'))
+    expect(onReplay).toHaveBeenCalledOnce()
+  })
 })

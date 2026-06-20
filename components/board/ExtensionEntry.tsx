@@ -79,6 +79,9 @@ export interface ExtensionEntryProps {
    *  gone — reachable here regardless of extension status (Firefox / Safari /
    *  mobile users still need it). */
   readonly onOpenBookmarkletModal: () => void
+  /** When provided, shows a REPLAY INTRO button in the drawer that restarts
+   *  the onboarding animation sequence. */
+  readonly onReplayIntro?: () => void
 }
 
 /** Hover-open leave grace, copied from TuneTrigger so the SETTINGS drawer
@@ -89,6 +92,7 @@ export function ExtensionEntry({
   quickTagEnabled,
   onQuickTagToggle,
   onOpenBookmarkletModal,
+  onReplayIntro,
 }: ExtensionEntryProps): ReactElement {
   const installed = useExtensionInstalled()
   // SETTINGS is always shown (extension or not) so the QUICK-TAG ON SAVE
@@ -171,6 +175,16 @@ export function ExtensionEntry({
         >
           SAVE WITHOUT EXTENSION
         </button>
+        {onReplayIntro && (
+          <button
+            type="button"
+            className={styles.panelCta}
+            data-testid="replay-intro"
+            onClick={onReplayIntro}
+          >
+            REPLAY INTRO
+          </button>
+        )}
         {installed ? (
           <button
             type="button"

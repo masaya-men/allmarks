@@ -1835,6 +1835,7 @@ export function BoardRoot() {
                 quickTagEnabled={quickTagEnabled}
                 onQuickTagToggle={handleQuickTagToggle}
                 onOpenBookmarkletModal={handleOpenBookmarkletModal}
+                onReplayIntro={() => { void startOnboardingReplay() }}
               />
               <TagButton
                 onClick={(): void => {
