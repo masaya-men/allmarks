@@ -132,4 +132,46 @@ describe('OnboardingController', () => {
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // false->true
     expect(screen.getByTestId('scene-extDemo')).not.toBeNull()
   })
+
+  it('share scene steps aside while panel open and advances on close', async () => {
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {
+      const [motion, setMotion] = useState(false)
+      const [share, setShare] = useState(false)
+      return (
+        <>
+          <button type="button" onClick={() => setMotion((v) => !v)}>TOGGLE_MOTION</button>
+          <button type="button" onClick={() => setShare((v) => !v)}>TOGGLE_SHARE</button>
+          <OnboardingController
+            db={db} motionEnabled={motion} sharePanelOpen={share}
+            appUrl="https://allmarks.app"
+            onComplete={onComplete}
+          />
+        </>
+      )
+    }
+
+    const db = await initDB()
+    const onComplete = vi.fn()
+    renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
+
+    // Walk to the share scene: paste -> tag -> motion -> extDemo -> install -> share
+    fireEvent.click(screen.getByRole('button', { name: 'START' }))
+    await act(async () => { postBookmarkSaved({ bookmarkId: 'c' }) })
+    await act(async () => { postBookmarkUpdated({ bookmarkId: 'c' }) })
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // -> extDemo
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo -> install
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install -> share
+    expect(screen.getByTestId('scene-share')).not.toBeNull()
+    expect(screen.queryByTestId('onboarding-spotlight')).not.toBeNull() // spotlight shown while closed
+
+    // Open the share panel -> still on share, but spotlight steps aside
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_SHARE' })) })
+    expect(screen.getByTestId('scene-share')).not.toBeNull()
+    expect(screen.queryByTestId('onboarding-spotlight')).toBeNull()
+
+    // Close the share panel -> advances to finale (panel already gone)
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_SHARE' })) })
+    expect(screen.getByTestId('scene-finale')).not.toBeNull()
+  })
 })

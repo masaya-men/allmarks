@@ -56,7 +56,7 @@ export function OnboardingController({
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
-  const prevShareRef = useRef(sharePanelOpen)
+  const shareOpenedRef = useRef(false)
 
   const advance = (): void => {
     const next = nextSceneId(sceneId)
@@ -103,10 +103,18 @@ export function OnboardingController({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [motionEnabled, sceneId])
 
+  // Share scene advances when the panel is CLOSED AFTER having been OPENED
+  // (matches the spec: "open SHARE to see how publishing works, then close").
+  // Advancing on close guarantees the panel is gone before the finale renders
+  // (no lingering modal intercepting the finale's NEXT).
   useEffect(() => {
-    const was = prevShareRef.current
-    prevShareRef.current = sharePanelOpen
-    if (scene.advance === 'sharePanel' && !was && sharePanelOpen) advance()
+    if (scene.advance !== 'sharePanel') { shareOpenedRef.current = false; return }
+    if (sharePanelOpen) {
+      shareOpenedRef.current = true
+    } else if (shareOpenedRef.current) {
+      shareOpenedRef.current = false
+      advance()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharePanelOpen, sceneId])
 
@@ -153,6 +161,20 @@ export function OnboardingController({
         buttonLabel={sceneId === 'enter' ? 'START' : 'NEXT'}
         onAdvance={advance}
       />,
+    )
+  }
+
+  // Share scene with the panel open: step aside (skip-only, no dim/spotlight)
+  // so the z-200 share modal is fully visible above the (z-210, but now
+  // pointer-transparent) onboarding root. Advance happens when it closes.
+  if (sceneId === 'share' && sharePanelOpen) {
+    return (
+      <div className={styles.root} data-testid="onboarding-root">
+        <button type="button" className={styles.skip} onClick={() => void finish()}>
+          SKIP
+        </button>
+        <div data-testid="scene-share" className={styles.sceneWrap} />
+      </div>
     )
   }
 
