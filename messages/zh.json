@@ -106,8 +106,8 @@
       },
       "extDemo": { "body": "装上 AllMarks 扩展后，在任意页面点一下即可保存，还能同时打标签。", "hideNote": "觉得悬浮按钮碍事？随时可以在扩展的设置里把它隐藏。", "bodyX": "在 X、YouTube 等知名网站，只要点一下书签或喜欢，AllMarks 扩展也会自动把它保存到你的看板。" },
       "install": {
-        "body": "把这个 AllMarks 按钮拖到书签栏，就能在任何网页一键保存。看不到书签栏？按 Ctrl/⌘+Shift+B。", "demoCaption": "在任何网页点击书签栏里的 AllMarks 书签——会弹出一个小窗口，帮你保存。" },
-      "manage": { "settingsBody": "不需要保存时弹出的小窗？随时可以在 SETTINGS 里关掉。", "body": "想一次给多张卡片打标签，就打开 MANAGE TAGS。", "triageBody": "MANAGE TAGS — 一次一张卡片地加标签，滑动就能飞快整理。" },
+        "body": "把这个 AllMarks 按钮拖到书签栏，就能在任何网页一键保存。看不到书签栏？按 Ctrl/⌘+Shift+B。", "demoCaption": "在任何网页，只要点击书签栏里的 AllMarks——就会弹出一个窗口，帮你保存。", "dragged": "安装好了！现在来看看实际怎么用吧。" },
+      "manage": { "settingsBody": "不想要保存时弹出的窗口？把这个“QUICK-TAG ON SAVE”关掉就好——随时都能再打开。", "body": "想一次给多张卡片打标签，就打开 MANAGE TAGS。", "triageBody": "MANAGE TAGS — 一次一张卡片地加标签，滑动就能飞快整理。" },
       "installDetected": {
         "body": "扩展已安装。也可通过粘贴链接或使用 bookmarklet 进行保存。"
       },

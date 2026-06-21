@@ -106,8 +106,8 @@
       },
       "extDemo": { "body": "Com a extensão do AllMarks, basta um clique em qualquer página para salvar. E você pode adicionar tags ao mesmo tempo.", "hideNote": "O botão flutuante atrapalha? Você pode escondê-lo quando quiser nas configurações da extensão.", "bodyX": "No X, no YouTube e em outros sites, é só tocar em Salvar ou Curtir. A extensão do AllMarks também guarda no seu quadro." },
       "install": {
-        "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B.", "demoCaption": "Clique no favorito do AllMarks em qualquer página — uma pequena janela aparece e o salva." },
-      "manage": { "settingsBody": "Não precisa da janelinha que aparece ao salvar? Você pode desativá-la quando quiser em SETTINGS.", "body": "Para adicionar tags a vários cards de uma vez, abra MANAGE TAGS.", "triageBody": "MANAGE TAGS — marque seu quadro carta a carta. Deslize para avançar rápido." },
+        "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B.", "demoCaption": "Em qualquer página, basta clicar no AllMarks na sua barra de favoritos — uma janela abre e o salva.", "dragged": "Instalado! Agora vamos ver como você vai usá-lo." },
+      "manage": { "settingsBody": "Não quer a janela que aparece ao salvar? Desative este “QUICK-TAG ON SAVE” — você pode reativá-lo quando quiser.", "body": "Para adicionar tags a vários cards de uma vez, abra MANAGE TAGS.", "triageBody": "MANAGE TAGS — marque seu quadro carta a carta. Deslize para avançar rápido." },
       "installDetected": {
         "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
       },

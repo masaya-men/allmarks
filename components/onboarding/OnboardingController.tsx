@@ -37,6 +37,9 @@ type Props = {
   /** True while the tag scene is active so the board can force the hover-gated
    *  +TAG button visible (the user can't hover through the spotlight). */
   readonly onTagSceneActive?: (active: boolean) => void
+  /** True only during the manage scene's SETTINGS beat, so the board can force
+   *  the hover-only SETTINGS drawer open (to spotlight the toggle inside it). */
+  readonly onSettingsBeatActive?: (active: boolean) => void
   /** Bumped by the board each time a tag is added to a card. The tag scene
    *  advances on a change here — the board's own tag-add reloads locally and
    *  does NOT post to the bookmark-updated channel, so this in-process signal
@@ -73,6 +76,7 @@ const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   share: '[data-onboarding-target="share"]',
   manage: '[data-onboarding-target="manage"]',
   settings: '[data-onboarding-target="settings"]',
+  'quick-tag-toggle': '[data-onboarding-target="quick-tag-toggle"]',
 }
 
 // Tag scene beats: the camera pushes in to the just-added card FIRST, then a
@@ -81,15 +85,10 @@ const TAG_ZOOM_MS = 1300        // camera push-in (BoardRoot's 1.1s + settle buf
 const TAG_INTRO_READ_MS = 2600  // hold the explanation long enough to read
 const TAG_TYPE_CHAR_MS = 140    // ~2.5x the old 55ms — deliberate, readable typing
 
-function extensionDetected(): boolean {
-  if (typeof document === 'undefined') return false
-  return Boolean(document.documentElement.getAttribute('data-booklage-extension'))
-}
-
 export function OnboardingController({
   db, motionEnabled, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
-  tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset, onShareSceneActive,
-  shareModalOpen = false, initialScene,
+  onSettingsBeatActive, tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset,
+  onShareSceneActive, shareModalOpen = false, initialScene,
 }: Props): ReactElement {
   const { t } = useI18n()
   const [sceneId, setSceneId] = useState<SceneId>(initialScene ?? 'enter')
@@ -108,6 +107,10 @@ export function OnboardingController({
   // real bookmarklet chip onto the bookmark bar) → 'demo' (a faithful save
   // re-enactment showing how it's then used). Extension users skip the drag.
   const [installBeat, setInstallBeat] = useState<'demo' | 'install'>('install')
+  // Set once the user drags the bookmarklet chip (gesture detected; the actual
+  // drop onto the browser's bookmark bar is invisible to the page) → brief
+  // "installed!" confirmation, then auto-advance to the save re-enactment.
+  const [installDragged, setInstallDragged] = useState(false)
   // Extension demo plays as two beats: 'page' (floating-button save on a normal
   // page) → 'x' (the X bookmark → AllMarks auto-save = famous-site integration).
   const [extBeat, setExtBeat] = useState<'page' | 'x'>('page')
@@ -173,9 +176,26 @@ export function OnboardingController({
     setMotionOn(false)
     setCopied(false)
     setInstallBeat('install') // setup (drag) is taught first, then the save demo
+    setInstallDragged(false)
     setExtBeat('page')
     setManageBeat('settings')
   }, [sceneId])
+
+  // Force the hover-only SETTINGS drawer open while (and only while) the manage
+  // scene's SETTINGS beat is on, so the spotlight can land on the toggle inside.
+  useEffect(() => {
+    onSettingsBeatActive?.(sceneId === 'manage' && manageBeat === 'settings')
+    return () => onSettingsBeatActive?.(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sceneId, manageBeat])
+
+  // Bookmarklet chip dragged → hold a brief "installed!" beat, then move on to the
+  // save re-enactment on its own (no NEXT needed once they've done the gesture).
+  useEffect(() => {
+    if (!installDragged) return
+    const t = setTimeout(() => setInstallBeat('demo'), 1600)
+    return () => clearTimeout(t)
+  }, [installDragged])
 
   // Tag scene: mark "applied" (→ show the result + NEXT) when a tag lands on the
   // card, via the cross-context channel (PiP/extension) or the in-process
@@ -238,10 +258,7 @@ export function OnboardingController({
     if (sceneId === 'tag' && tagApplied && tagPhaseRef.current !== 'demo') setTagPhase('done')
   }, [tagApplied, sceneId])
 
-  const installDetected = sceneId === 'install' && extensionDetected()
-  const body = installDetected
-    ? t('board.onboarding.installDetected.body')
-    : t(`board.onboarding.${sceneId}.body`)
+  const body = t(`board.onboarding.${sceneId}.body`)
 
   const wrap = (inner: ReactElement): ReactElement => (
     <div className={styles.root} data-testid="onboarding-root">
@@ -437,13 +454,16 @@ export function OnboardingController({
     if (manageBeat === 'settings') {
       return wrap(
         <>
+          {/* Point at the QUICK-TAG ON SAVE toggle INSIDE the drawer (the board
+              forces the hover-only drawer open via onSettingsBeatActive), so the
+              user sees exactly which control turns the save window off. */}
           <OnboardingSpotlight
-            targetSelector={TARGET_SELECTOR.settings}
+            targetSelector={TARGET_SELECTOR['quick-tag-toggle']}
             caption={t('board.onboarding.manage.settingsBody')}
           >
             <button type="button" className={styles.advanceBtn} onClick={() => setManageBeat('manage')}>NEXT</button>
           </OnboardingSpotlight>
-          <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.settings} />
+          <OnboardingCursorGuide targetSelector={TARGET_SELECTOR['quick-tag-toggle']} />
         </>,
       )
     }
@@ -469,11 +489,21 @@ export function OnboardingController({
   // frame's bookmark bar and the REAL save window pops (Saving → Saved →
   // suggested tags). The bookmarklet is a cross-browser save path worth showing
   // EVERYONE (it works where the extension can't — Firefox / Safari / mobile).
-  if (installBeat === 'install' && !installDetected) {
-    // The spotlight hole passes clicks through so the user can drag the real chip.
+  if (installBeat === 'install') {
+    // Taught to EVERYONE (no extension branch): the bookmarklet works where the
+    // extension can't — Firefox / Safari / mobile. The spotlight hole passes
+    // clicks through so the user can drag the real chip onto their bookmark bar.
+    // Dragging it (gesture detected via the chip's onDragEnd; the actual drop on
+    // the browser chrome is invisible to the page) shows a brief "installed!"
+    // and auto-advances to the save re-enactment. NEXT stays as a manual path.
     return wrap(
-      <OnboardingSpotlight targetSelector={null} caption={body}>
-        <BookmarkletInstallChip appUrl={appUrl} />
+      <OnboardingSpotlight
+        targetSelector={null}
+        caption={installDragged ? t('board.onboarding.install.dragged') : body}
+      >
+        {!installDragged && (
+          <BookmarkletInstallChip appUrl={appUrl} onDragComplete={() => setInstallDragged(true)} />
+        )}
         <button type="button" className={styles.advanceBtn} onClick={() => setInstallBeat('demo')}>NEXT</button>
       </OnboardingSpotlight>,
     )

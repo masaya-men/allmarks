@@ -8,6 +8,10 @@ import styles from './OnboardingController.module.css'
 
 type Props = {
   readonly appUrl: string
+  /** Fired when the user finishes dragging the chip (onDragEnd). The page can't
+   *  see whether the drop actually landed on the browser's bookmark bar, so this
+   *  is a GESTURE signal — the controller uses it to confirm + auto-advance. */
+  readonly onDragComplete?: () => void
 }
 
 /** Thin-line bookmark glyph — mirrors the board chrome's stroke vocabulary. */
@@ -33,7 +37,7 @@ function BookmarkIcon({ className }: { readonly className?: string }): ReactElem
  * (setAttribute) to bypass React 19's javascript: URL security block —
  * setting it in JSX silently strips the value.
  */
-export function BookmarkletInstallChip({ appUrl }: Props): ReactElement {
+export function BookmarkletInstallChip({ appUrl, onDragComplete }: Props): ReactElement {
   const { t } = useI18n()
   const linkLabel = t('board.bookmarkletModal.linkLabel')
   const linkRef = useRef<HTMLAnchorElement>(null)
@@ -51,6 +55,7 @@ export function BookmarkletInstallChip({ appUrl }: Props): ReactElement {
       className={styles.installChip}
       draggable="true"
       onClick={(e) => e.preventDefault()}
+      onDragEnd={() => onDragComplete?.()}
     >
       <BookmarkIcon className={styles.installChipIcon} />
       <span className={styles.installChipText}>{linkLabel}</span>

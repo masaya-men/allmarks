@@ -106,8 +106,8 @@
       },
       "extDemo": { "body": "AllMarks eklentisiyle herhangi bir sayfayı tek tıkla kaydedersin; aynı anda etiketleyebilirsin de.", "hideNote": "Kayan düğmeyi istemiyor musun? Eklentinin ayarlarından istediğin zaman gizleyebilirsin.", "bodyX": "X, YouTube ve daha fazlasında sadece Yer İşareti'ne veya Beğen'e dokun; AllMarks eklentisi onu panona da kaydeder." },
       "install": {
-        "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas.", "demoCaption": "Herhangi bir sayfada yer imleri çubuğundaki AllMarks'a tıkla — küçük bir pencere açılıp onu kaydeder." },
-      "manage": { "settingsBody": "Kayıt penceresine ihtiyacın yok mu? SETTINGS'ten istediğin zaman kapatabilirsin.", "body": "Birçok kartı tek seferde etiketlemek için MANAGE TAGS'i aç.", "triageBody": "MANAGE TAGS — panonu tek tek kartlarla etiketle. Kaydırarak hızlıca ilerle." },
+        "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas.", "demoCaption": "Herhangi bir sayfada, sadece yer imleri çubuğundaki AllMarks'a tıkla — bir pencere açılıp onu kaydeder.", "dragged": "Harika — yüklendi! Şimdi onu nasıl kullanacağına bir bakalım." },
+      "manage": { "settingsBody": "Kaydederken açılan pencereyi istemiyor musun? Bu “QUICK-TAG ON SAVE” seçeneğini kapat — istediğin zaman geri açabilirsin.", "body": "Birçok kartı tek seferde etiketlemek için MANAGE TAGS'i aç.", "triageBody": "MANAGE TAGS — panonu tek tek kartlarla etiketle. Kaydırarak hızlıca ilerle." },
       "installDetected": {
         "body": "Uzantı zaten yüklü. Bağlantı yapıştırarak veya bookmarklet kullanarak da kaydedebilirsiniz."
       },

@@ -82,6 +82,10 @@ export interface ExtensionEntryProps {
   /** When provided, shows a REPLAY INTRO button in the drawer that restarts
    *  the onboarding animation sequence. */
   readonly onReplayIntro?: () => void
+  /** When true (the onboarding SETTINGS beat), force the drawer open regardless
+   *  of hover so the tutorial can spotlight the QUICK-TAG ON SAVE toggle inside
+   *  (the drawer is hover-only; a guided demo can't hold a hover). */
+  readonly forceOpen?: boolean
 }
 
 /** Hover-open leave grace, copied from TuneTrigger so the SETTINGS drawer
@@ -93,6 +97,7 @@ export function ExtensionEntry({
   onQuickTagToggle,
   onOpenBookmarkletModal,
   onReplayIntro,
+  forceOpen = false,
 }: ExtensionEntryProps): ReactElement {
   const installed = useExtensionInstalled()
   // SETTINGS is always shown (extension or not) so the QUICK-TAG ON SAVE
@@ -134,6 +139,8 @@ export function ExtensionEntry({
   }, [])
 
   const hasStore = EXTENSION_STORE_URL.length > 0
+  // Onboarding's SETTINGS beat forces the drawer open; otherwise it's hover-driven.
+  const isOpen = forceOpen || expanded
 
   return (
     <span
@@ -146,7 +153,7 @@ export function ExtensionEntry({
       <ChromeButton
         label="SETTINGS"
         onClick={(): void => {}}
-        aria-pressed={expanded}
+        aria-pressed={isOpen}
         data-testid="extension-settings"
         data-onboarding-target="settings"
       />
@@ -154,11 +161,11 @@ export function ExtensionEntry({
         className={styles.drawer}
         role="dialog"
         aria-label="AllMarks settings"
-        data-open={expanded ? 'true' : 'false'}
-        aria-hidden={!expanded}
+        data-open={isOpen ? 'true' : 'false'}
+        aria-hidden={!isOpen}
       >
         <div className={styles.title}>SETTINGS</div>
-        <label className={styles.toggleRow}>
+        <label className={styles.toggleRow} data-onboarding-target="quick-tag-toggle">
           <span className={styles.toggleLabel}>QUICK-TAG ON SAVE</span>
           <input
             type="checkbox"
