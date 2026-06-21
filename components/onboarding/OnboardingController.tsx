@@ -12,7 +12,7 @@ import { addBookmark } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { OnboardingStage } from './OnboardingStage'
 import { ExtensionSaveReenactment } from './ExtensionSaveReenactment'
-import { ShareReenactment } from './ShareReenactment'
+import { OnboardingShareReveal } from './OnboardingShareReveal'
 import { OnboardingSpotlight } from './OnboardingSpotlight'
 import { OnboardingTagDemo } from './OnboardingTagDemo'
 import { OnboardingPasteCursor } from './OnboardingPasteCursor'
@@ -48,6 +48,10 @@ type Props = {
    *  lands centered + enlarged) and reset it afterward. */
   readonly onZoomToCard?: () => void
   readonly onZoomReset?: () => void
+  /** Share scene: open/close the REAL share panel (BoardRoot's SenderShareModal)
+   *  so the tutorial shows the genuine share screen (non-interactive) rather
+   *  than a re-enactment. Never confirms the share, so no server share is made. */
+  readonly onShareSceneActive?: (active: boolean) => void
 }
 
 const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' // public, long-lived
@@ -73,7 +77,7 @@ function extensionDetected(): boolean {
 
 export function OnboardingController({
   db, motionEnabled, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
-  tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset,
+  tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset, onShareSceneActive,
 }: Props): ReactElement {
   const { t } = useI18n()
   const [sceneId, setSceneId] = useState<SceneId>('enter')
@@ -235,7 +239,14 @@ export function OnboardingController({
       return wrap(<ExtensionSaveReenactment caption={body} buttonLabel="NEXT" onAdvance={advance} />)
     }
     if (sceneId === 'share') {
-      return wrap(<ShareReenactment caption={body} onAdvance={advance} />)
+      return wrap(
+        <OnboardingShareReveal
+          caption={body}
+          onOpenModal={() => onShareSceneActive?.(true)}
+          onCloseModal={() => onShareSceneActive?.(false)}
+          onAdvance={advance}
+        />,
+      )
     }
     return wrap(
       <OnboardingStage

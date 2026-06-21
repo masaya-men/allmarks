@@ -1,0 +1,85 @@
+/* components/onboarding/OnboardingShareReveal.module.css
+   ⑦ share — opens the REAL share panel (SenderShareModal) and shows it
+   non-interactive. This layer is portaled to <body> so it sits ABOVE the
+   modal (z 1000); it carries the demo cursor that presses the real SHARE
+   button, the transparent blocker that makes the open modal untouchable, the
+   caption and NEXT. */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1100; /* above SenderShareModal's backdrop (z 1000) */
+  pointer-events: none;
+}
+
+/* transparent blocker — makes the open modal non-interactive (shown beat only) */
+.blocker {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+/* demo arrow cursor (tip at top-left = click hotspot), matches the other demos */
+.cursor {
+  position: fixed;
+  width: 17px;
+  height: 23px;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2014%2019'%3E%3Cpath%20d='M0,0L0,16.6L4.6,12.6L7.1,18.6L9.9,17.4L7.4,11.6L13.4,11.6Z'%20fill='white'%20stroke='black'%20stroke-width='1'%20stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat top left / contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* caption + NEXT, pinned bottom-center above the modal */
+.footer {
+  position: absolute;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 460px;
+  width: calc(100vw - 48px);
+  pointer-events: none;
+}
+.caption {
+  margin: 0;
+  padding: 12px 16px;
+  text-align: center;
+  background: rgba(12, 12, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.next {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(20, 20, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  padding: 10px 22px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.next:hover { background: rgba(40, 40, 40, 0.95); }
+.next[data-cue="true"] {
+  border-color: rgba(40, 241, 0, 0.5);
+  animation: shareCtaPulse 1.5s ease-in-out infinite;
+}
+@keyframes shareCtaPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(40, 241, 0, 0); }
+  50% { box-shadow: 0 0 0 5px rgba(40, 241, 0, 0.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .next[data-cue="true"] { animation: none; }
+}

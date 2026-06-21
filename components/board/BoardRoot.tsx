@@ -2073,6 +2073,7 @@ export function BoardRoot() {
               onApplySampleTag={() => { void applySampleTag() }}
               onZoomToCard={zoomCameraToOnboardingCard}
               onZoomReset={resetOnboardingCamera}
+              onShareSceneActive={(active): void => setShareModalOpen(active)}
             />
           )}
           {!loading && !showOnboarding && items.length === 0 && (
