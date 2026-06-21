@@ -21,7 +21,22 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 118 — ⑥設置=ブックマークレットを「本物の保存窓」忠実デモに格上げ → 本番反映済)
+### 直近の状態 (セッション 119 — オンボーディング ブラッシュアップ（実機FB A〜F）→ 本番反映済)
+
+**実機FBの6点バッチ（A〜F）を完走。全て `allmarks.app` 反映済（tsc0 / vitest1445 / build OK / 隔離レンダで5シーン目視 + 多視点の敵対的レビューで確定バグ0）。**
+
+1. **A デモカーソルを緑縁取りに**: 全5デモ（貼る/タグ/拡張/設置/共有）のカーソルを「白塗り＋黒フチ」→「白塗り＋緑フチ（`#28f100`）＋緑グロー」に。矢印の形は不変＝ユーザーの実カーソルと混同しない。
+2. **B 視線誘導を統一**: 新 `OnboardingCursorGuide`（緑カーソルがターゲットへ滑って押すループ）を MOTION / SETTINGS / MANAGE のスポットライト各シーンに追加（既存の緑パルスリング＋カーソル誘導の二段）。⑦共有は本物SHAREボタンに緑パルスリングを足してから押す。
+3. **C カメラズーム一般化＝見送り（調査結論・ユーザー承認）**: `zoomCameraToOnboardingCard` はボード内カード専用（`cameraWrap` 内）。ヘッダーのボタン（MOTION/SETTINGS/MANAGE/SHARE）は枠の外で物理的にズーム不可。代わりにB（スポットライト＋緑カーソル）で「寄ってから押す」を統一。
+4. **D manageを2ビート化**: ①SETTINGS強調＋「保存時の小窓はSETTINGSでオフにできる」→NEXT、②MANAGE説明＋緑カーソル誘導→本物triage（既存フロー）。`manage.settingsBody` 新設、`manage.body` をMANAGE専用に分割。SETTINGSボタンに `data-onboarding-target="settings"` 付与。
+5. **E ⑤拡張デモ文言修正**: ja「同時にタグも自動で付きます」→「同時にタグ付けできます」/ en "tags it automatically"→"you can tag it at the same time"。
+6. **F ⑤拡張デモを2画面化**: 画面1=従来のページ保存（＋「保存ボタンは拡張の設定で隠せる」注記 `extDemo.hideNote`）、画面2=新 `ExtensionXSaveReenactment`（`x.com` 偽枠＋X風ツイート＋緑カーソルがブックマークを押す→本物の AllMarks ピル Saving→Saved＝有名サイト連動 (I-05) の実演、`extDemo.bodyX`）。Xロゴは商標回避で自作の線アイコン。本物ピルCSS流用、ピルのアニメ補助は新 `extension-pill.ts` に抽出（⑤と共有）。
+7. **i18n**: 新3キー（`extDemo.hideNote`/`extDemo.bodyX`/`manage.settingsBody`）＋変更2キーを15言語同期（13言語は並列翻訳ワークフロー、`SETTINGS`/`MANAGE TAGS`/`AllMarks`/`X`/`YouTube` は verbatim）。`board.onboarding` 15言語パリティテスト緑。
+8. **次**: **⑧フィナーレ**（緑ディスク統一・空ボード着地）/ **①入場の残りseed**（言語切替の発見性・幕越し透け・SKIP当たり判定）。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+---
+
+### 一つ前 (セッション 118 — ⑥設置=ブックマークレットを「本物の保存窓」忠実デモに格上げ → 本番反映済)
 
 **⑥設置シーンを ⑤拡張デモと対になる2ビートに作り直し。全て `allmarks.app` 反映済（tsc0 / vitest1445 / build OK / 隔離レンダで Saving→Saved→タグ点灯を実機目視）。多視点の敵対的レビュー（4視点→各指摘をコードで裏取り、high0）で確定指摘を全て解消。**
 

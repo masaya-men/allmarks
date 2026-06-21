@@ -3,11 +3,15 @@
 
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { gsap } from 'gsap'
+import { PILL_ICONS, applyPillState } from './extension-pill'
 import styles from './ExtensionSaveReenactment.module.css'
 import './extension-ui.css'
 
 type Props = {
   readonly caption: string
+  /** Optional dimmer secondary line under the caption (e.g. "you can hide the
+   *  floating button in the extension's settings"). */
+  readonly note?: string
   readonly buttonLabel: string
   readonly onAdvance: () => void
 }
@@ -31,46 +35,8 @@ const FB_SVG = `
   </g>
 </svg>`.trim()
 
-// Ported (chrome-free) from extension/content.js — the pill's icon + label.
-const ICONS: Record<string, string> = {
-  ring: '<span class="ring"></span>',
-  check: '<svg viewBox="0 0 24 24" class="check"><path d="M5 12 L10 17 L19 7"/></svg>',
-}
-const STATE_LABEL: Record<string, string> = { saving: 'Saving', saved: 'Saved' }
-const STATE_ICON: Record<string, string> = { saving: 'ring', saved: 'check' }
-
-/** Per-char rise → morph to a single text node → 700ms RGB glitch
- *  (extension/content.js:81-111). Returns timer ids so the loop can clear them. */
-function setLabelAnimated(stateEl: HTMLElement, finalText: string): number[] {
-  const timers: number[] = []
-  stateEl.classList.remove('is-glitching')
-  stateEl.setAttribute('data-glitch-text', finalText)
-  stateEl.innerHTML = ''
-  for (let i = 0; i < finalText.length; i++) {
-    const span = document.createElement('span')
-    span.className = 'booklage-pill__char'
-    span.textContent = finalText[i] === ' ' ? ' ' : finalText[i]
-    span.style.animationDelay = `${i * 22}ms`
-    stateEl.appendChild(span)
-  }
-  const slideEnd = (finalText.length - 1) * 22 + 320
-  timers.push(window.setTimeout(() => {
-    stateEl.textContent = finalText
-    stateEl.classList.add('is-glitching')
-    timers.push(window.setTimeout(() => stateEl.classList.remove('is-glitching'), 700))
-  }, slideEnd + 40))
-  return timers
-}
-
-/** Re-fire the per-state CSS animation (extension/content.js:113-132): clear
- *  data-state, force a reflow, re-set it, swap the icon, re-animate the label. */
-function applyState(pill: HTMLElement, iconEl: HTMLElement, stateEl: HTMLElement, state: string): number[] {
-  pill.setAttribute('data-state', '')
-  void pill.offsetWidth
-  pill.setAttribute('data-state', state)
-  iconEl.innerHTML = ICONS[STATE_ICON[state]] ?? ''
-  return setLabelAnimated(stateEl, STATE_LABEL[state] ?? '')
-}
+/* Pill helpers (icons, per-char label rise + RGB glitch, applyPillState) live
+ * in ./extension-pill — shared with ExtensionXSaveReenactment. */
 
 /**
  * A promo re-enactment of the AllMarks extension saving + tagging the page —
@@ -81,7 +47,7 @@ function applyState(pill: HTMLElement, iconEl: HTMLElement, stateEl: HTMLElement
  * light green as they're selected. Pure GSAP drives the timing; the look is the
  * extension's own CSS (extension-ui.css). Loops; pulses NEXT after the first pass.
  */
-export function ExtensionSaveReenactment({ caption, buttonLabel, onAdvance }: Props): ReactElement {
+export function ExtensionSaveReenactment({ caption, note, buttonLabel, onAdvance }: Props): ReactElement {
   const vpRef = useRef<HTMLDivElement>(null)
   const ctaRef = useRef<HTMLButtonElement>(null)
   const [cuePulse, setCuePulse] = useState(false)
@@ -133,7 +99,7 @@ export function ExtensionSaveReenactment({ caption, buttonLabel, onAdvance }: Pr
       gsap.set(pill, { left: Math.max(8, b.x - 168), top: Math.max(8, b.y - 66) })
       pill.classList.add('is-visible')
       pill.setAttribute('data-state', 'saved')
-      pillIcon.innerHTML = ICONS.check
+      pillIcon.innerHTML = PILL_ICONS.check
       pillState.textContent = 'Saved'
       strip.classList.add('is-visible')
       chips[0].setAttribute('data-on', 'true')
@@ -158,13 +124,13 @@ export function ExtensionSaveReenactment({ caption, buttonLabel, onAdvance }: Pr
         const b = rel(btn)
         gsap.set(pill, { left: Math.max(8, b.x - 168), top: Math.max(8, b.y - 66) })
         pill.classList.add('is-visible')
-        push(applyState(pill, pillIcon, pillState, 'saving'))
+        push(applyPillState(pill, pillIcon, pillState, 'saving'))
       })
       .to({}, { duration: 0.95 }) // hold "Saving" (real min is 500ms)
       // save lands: button flashes its real check, pill morphs to "Saved"
       .call(() => {
         btn.setAttribute('data-state', 'flash')
-        push(applyState(pill, pillIcon, pillState, 'saved'))
+        push(applyPillState(pill, pillIcon, pillState, 'saved'))
       })
       .to({}, { duration: 0.7 })
       // the real quick-tag strip slides in
@@ -240,6 +206,7 @@ export function ExtensionSaveReenactment({ caption, buttonLabel, onAdvance }: Pr
         </div>
       </div>
       <p className={styles.caption}>{caption}</p>
+      {note && <p className={styles.note}>{note}</p>}
       <button
         ref={ctaRef}
         type="button"

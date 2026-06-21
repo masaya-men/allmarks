@@ -3,7 +3,7 @@ export type SceneKind = 'cinema' | 'handsOn'
 export type AdvanceTrigger = 'button' | 'saved' | 'tagged' | 'motion' | 'sharePanel'
 export type SceneId =
   | 'enter' | 'paste' | 'tag' | 'motion' | 'extDemo' | 'install' | 'manage' | 'share' | 'finale'
-export type OnboardingTarget = 'paste-zone' | 'card-tag' | 'card' | 'motion' | 'share' | 'manage'
+export type OnboardingTarget = 'paste-zone' | 'card-tag' | 'card' | 'motion' | 'share' | 'manage' | 'settings'
 
 export type OnboardingScene = {
   readonly id: SceneId

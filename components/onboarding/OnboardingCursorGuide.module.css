@@ -1,0 +1,16 @@
+/* components/onboarding/OnboardingCursorGuide.module.css
+   Green demo cursor for the spotlight scenes' "press here" guidance. Same green
+   arrow as the other re-enactments (tip at top-left = click hotspot); position
+   driven by GSAP. Fixed + above the spotlight dim so it reads while it glides. */
+.cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 17px;
+  height: 23px;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2014%2019'%3E%3Cpath%20d='M0,0L0,16.6L4.6,12.6L7.1,18.6L9.9,17.4L7.4,11.6L13.4,11.6Z'%20fill='white'%20stroke='%2328f100'%20stroke-width='1.5'%20stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat top left / contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 5px rgba(40, 241, 0, 0.9));
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+}

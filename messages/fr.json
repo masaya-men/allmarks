@@ -103,12 +103,10 @@
         "body": "Appuyez sur MOTION pour donner vie aux cartes du tableau. Essayez.",
         "done": "Ton tableau s’anime — les vidéos jouent et les galeries d’images défilent. Appuyez sur NEXT pour continuer."
       },
-      "extDemo": {
-        "body": "Avec l'extension AllMarks, un clic sur n'importe quelle page l'enregistre — et la tague automatiquement."
-      },
+      "extDemo": { "body": "Avec l'extension AllMarks, un clic sur n'importe quelle page suffit pour l'enregistrer, et vous pouvez l'étiqueter en même temps.", "hideNote": "Le bouton flottant vous gêne ? Vous pouvez le masquer à tout moment dans les paramètres de l'extension.", "bodyX": "Sur X, YouTube et d'autres sites, il suffit d'appuyer sur Signets ou J'aime : l'extension AllMarks l'enregistre aussi sur votre tableau." },
       "install": {
         "body": "Fais glisser ce bouton AllMarks dans ta barre de favoris pour enregistrer depuis n'importe où. Tu ne vois pas la barre ? Appuie sur Ctrl/⌘+Shift+B.", "demoCaption": "Clique sur le favori AllMarks depuis n'importe quelle page — une petite fenêtre s'ouvre et l'enregistre." },
-      "manage": { "body": "La fenêtre d'enregistrement peut être désactivée dans SETTINGS. Pour étiqueter en masse, ouvre MANAGE TAGS.", "triageBody": "MANAGE TAGS — étiquette ton tableau carte par carte. Glisse pour avancer vite." },
+      "manage": { "settingsBody": "La petite fenêtre d'enregistrement ne vous sert pas ? Vous pouvez la désactiver à tout moment dans SETTINGS.", "body": "Pour étiqueter plusieurs cartes d'un coup, ouvrez MANAGE TAGS.", "triageBody": "MANAGE TAGS — étiquette ton tableau carte par carte. Glisse pour avancer vite." },
       "installDetected": {
         "body": "L'extension est déjà installée. Il est aussi possible d'enregistrer en collant un lien ou en utilisant le bookmarklet."
       },

@@ -148,6 +148,7 @@ export function ExtensionEntry({
         onClick={(): void => {}}
         aria-pressed={expanded}
         data-testid="extension-settings"
+        data-onboarding-target="settings"
       />
       <div
         className={styles.drawer}

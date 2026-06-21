@@ -50,6 +50,7 @@ export function OnboardingShareReveal({ caption, onOpenModal, onCloseModal, onAd
     }
     const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const cursor = layerRef.current?.querySelector<HTMLElement>('[data-anim="cursor"]') ?? null
+    const ring = layerRef.current?.querySelector<HTMLElement>('[data-anim="share-ring"]') ?? null
     const btn = typeof document !== 'undefined' ? document.querySelector<HTMLElement>(SHARE_SELECTOR) : null
 
     let tl: gsap.core.Timeline | null = null
@@ -60,6 +61,8 @@ export function OnboardingShareReveal({ caption, onOpenModal, onCloseModal, onAd
       timer = setTimeout(open, reduce ? 0 : 300)
     } else {
       const r = btn.getBoundingClientRect()
+      // Ring the SHARE button so the eye lands there before the cursor presses.
+      if (ring) gsap.set(ring, { left: r.left - 7, top: r.top - 7, width: r.width + 14, height: r.height + 14, opacity: 1 })
       gsap.set(cursor, { left: r.left + r.width / 2 - 60, top: r.top + r.height / 2 + 48, opacity: 0, scale: 1 })
       tl = gsap.timeline()
       tl.to(cursor, { opacity: 1, duration: 0.3, ease: 'power2.out' })
@@ -83,6 +86,7 @@ export function OnboardingShareReveal({ caption, onOpenModal, onCloseModal, onAd
   return createPortal(
     <div ref={layerRef} className={styles.layer} data-testid="onboarding-share-reveal">
       {phase === 'shown' && <div className={styles.blocker} />}
+      {phase === 'press' && <span data-anim="share-ring" className={styles.pulseRing} aria-hidden="true" />}
       <span data-anim="cursor" className={styles.cursor} aria-hidden="true" />
       <div className={styles.footer}>
         {phase === 'shown' && <p className={styles.caption}>{caption}</p>}

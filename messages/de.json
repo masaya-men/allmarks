@@ -103,12 +103,10 @@
         "body": "Drücke MOTION, um die Karten des Boards zum Leben zu erwecken. Probier es aus.",
         "done": "Dein Board lebt — Videos spielen und Bildergalerien wechseln. NEXT zum Fortfahren."
       },
-      "extDemo": {
-        "body": "Mit der AllMarks-Erweiterung speichert ein Klick jede Seite — und vergibt automatisch Tags."
-      },
+      "extDemo": { "body": "Mit der AllMarks-Erweiterung speicherst du jede Seite mit einem Klick und kannst sie gleich verschlagworten.", "hideNote": "Stört dich der Speicher-Button? Du kannst ihn jederzeit in den Einstellungen der Erweiterung ausblenden.", "bodyX": "Auf X, YouTube und anderen Seiten tippst du einfach auf Lesezeichen oder Gefällt mir, und die AllMarks-Erweiterung speichert es auch auf deinem Board." },
       "install": {
         "body": "Zieh diesen AllMarks-Button in deine Lesezeichenleiste, um von überall zu speichern. Keine Leiste zu sehen? Drücke Ctrl/⌘+Shift+B.", "demoCaption": "Klick auf jeder Seite auf das AllMarks-Lesezeichen – ein kleines Fenster öffnet sich und speichert sie." },
-      "manage": { "body": "Das Speicherfenster lässt sich in SETTINGS abschalten. Zum Taggen vieler Einträge auf einmal öffne MANAGE TAGS.", "triageBody": "MANAGE TAGS — tagge dein Board Karte für Karte. Wische, um schnell durchzukommen." },
+      "manage": { "settingsBody": "Brauchst du das Speicher-Fenster nicht? Du kannst es jederzeit in SETTINGS abschalten.", "body": "Um viele Karten auf einmal zu verschlagworten, öffne MANAGE TAGS.", "triageBody": "MANAGE TAGS — tagge dein Board Karte für Karte. Wische, um schnell durchzukommen." },
       "installDetected": {
         "body": "Die Erweiterung ist bereits installiert. Du kannst auch per Link-Einfügen oder Bookmarklet speichern."
       },

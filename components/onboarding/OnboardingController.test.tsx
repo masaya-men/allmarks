@@ -161,16 +161,19 @@ describe('OnboardingController', () => {
     const onComplete = vi.fn()
     renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
 
-    // Walk to the share scene: paste -> tag -> motion -> extDemo -> install -> share
+    // Walk to the share scene: paste -> tag -> motion -> extDemo(page,X) ->
+    // install(demo,drag) -> manage(settings,manage) -> share
     fireEvent.click(screen.getByRole('button', { name: 'START' }))
     await act(async () => { postBookmarkSaved({ bookmarkId: 'c' }) }) // -> tag
     await act(async () => { postBookmarkUpdated({ bookmarkId: 'c' }) }) // tag applied -> NEXT
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // tag -> motion
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // motion on -> NEXT
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // motion -> extDemo
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo -> install (beat: demo)
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // motion -> extDemo (page)
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo: page -> X
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo: X -> install (demo)
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: demo -> drag
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: drag -> manage
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: drag -> manage (settings)
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // manage: settings -> manage
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // manage -> share
     expect(screen.getByTestId('scene-share')).not.toBeNull()
 

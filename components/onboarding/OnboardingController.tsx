@@ -12,8 +12,10 @@ import { addBookmark } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { OnboardingStage } from './OnboardingStage'
 import { ExtensionSaveReenactment } from './ExtensionSaveReenactment'
+import { ExtensionXSaveReenactment } from './ExtensionXSaveReenactment'
 import { OnboardingShareReveal } from './OnboardingShareReveal'
 import { OnboardingSpotlight } from './OnboardingSpotlight'
+import { OnboardingCursorGuide } from './OnboardingCursorGuide'
 import { OnboardingTagDemo } from './OnboardingTagDemo'
 import { OnboardingPasteCursor } from './OnboardingPasteCursor'
 import { BookmarkletInstallChip } from './BookmarkletInstallChip'
@@ -66,6 +68,7 @@ const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   motion: '[data-onboarding-target="motion"]',
   share: '[data-onboarding-target="share"]',
   manage: '[data-onboarding-target="manage"]',
+  settings: '[data-onboarding-target="settings"]',
 }
 
 // Tag scene beats: the camera pushes in to the just-added card FIRST, then a
@@ -100,6 +103,12 @@ export function OnboardingController({
   // Install scene plays as two beats: 'demo' (a faithful save re-enactment) →
   // 'install' (the real draggable bookmarklet chip).
   const [installBeat, setInstallBeat] = useState<'demo' | 'install'>('demo')
+  // Extension demo plays as two beats: 'page' (floating-button save on a normal
+  // page) → 'x' (the X bookmark → AllMarks auto-save = famous-site integration).
+  const [extBeat, setExtBeat] = useState<'page' | 'x'>('page')
+  // Manage scene plays as two beats: 'settings' (point at SETTINGS — the save
+  // window can be turned off there) → 'manage' (point at MANAGE TAGS → triage).
+  const [manageBeat, setManageBeat] = useState<'settings' | 'manage'>('settings')
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
@@ -159,6 +168,8 @@ export function OnboardingController({
     setMotionOn(false)
     setCopied(false)
     setInstallBeat('demo')
+    setExtBeat('page')
+    setManageBeat('settings')
   }, [sceneId])
 
   // Tag scene: mark "applied" (→ show the result + NEXT) when a tag lands on the
@@ -240,8 +251,27 @@ export function OnboardingController({
 
   // ---- Cinema scenes -------------------------------------------------------
   if (scene.kind === 'cinema') {
+    // ⑤ extension demo — two beats. Beat 'page': the floating save button on a
+    // normal page (+ a note that it can be hidden). Beat 'x': the famous-site
+    // integration — bookmarking on X auto-saves to AllMarks.
     if (sceneId === 'extDemo') {
-      return wrap(<ExtensionSaveReenactment caption={body} buttonLabel="NEXT" onAdvance={advance} />)
+      if (extBeat === 'page') {
+        return wrap(
+          <ExtensionSaveReenactment
+            caption={t('board.onboarding.extDemo.body')}
+            note={t('board.onboarding.extDemo.hideNote')}
+            buttonLabel="NEXT"
+            onAdvance={() => setExtBeat('x')}
+          />,
+        )
+      }
+      return wrap(
+        <ExtensionXSaveReenactment
+          caption={t('board.onboarding.extDemo.bodyX')}
+          buttonLabel="NEXT"
+          onAdvance={advance}
+        />,
+      )
     }
     if (sceneId === 'share') {
       return wrap(
@@ -353,11 +383,14 @@ export function OnboardingController({
   if (sceneId === 'motion') {
     if (!motionOn) {
       return wrap(
-        <OnboardingSpotlight
-          targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
-          caption={body}
-          captionAtBottom
-        />,
+        <>
+          <OnboardingSpotlight
+            targetSelector={scene.target ? TARGET_SELECTOR[scene.target] : null}
+            caption={body}
+            captionAtBottom
+          />
+          {scene.target && <OnboardingCursorGuide targetSelector={TARGET_SELECTOR[scene.target]} />}
+        </>,
       )
     }
     return wrap(
@@ -380,10 +413,30 @@ export function OnboardingController({
   // the resume flag); the tutorial resumes at the share scene on return. NEXT
   // skips straight ahead for anyone who doesn't want the detour.
   if (sceneId === 'manage') {
+    // Beat 'settings': point at SETTINGS — the save window can be turned off
+    // there (explanation only; advance with NEXT). Beat 'manage': point at
+    // MANAGE TAGS — clicking the real button (through the spotlight hole) opens
+    // the genuine /triage; NEXT skips the detour.
+    if (manageBeat === 'settings') {
+      return wrap(
+        <>
+          <OnboardingSpotlight
+            targetSelector={TARGET_SELECTOR.settings}
+            caption={t('board.onboarding.manage.settingsBody')}
+          >
+            <button type="button" className={styles.advanceBtn} onClick={() => setManageBeat('manage')}>NEXT</button>
+          </OnboardingSpotlight>
+          <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.settings} />
+        </>,
+      )
+    }
     return wrap(
-      <OnboardingSpotlight targetSelector={TARGET_SELECTOR.manage} caption={body}>
-        <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
-      </OnboardingSpotlight>,
+      <>
+        <OnboardingSpotlight targetSelector={TARGET_SELECTOR.manage} caption={t('board.onboarding.manage.body')}>
+          <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
+        </OnboardingSpotlight>
+        <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.manage} />
+      </>,
     )
   }
 

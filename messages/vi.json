@@ -103,12 +103,10 @@
         "body": "Nhấn MOTION để làm các thẻ trên bảng chuyển động. Hãy thử.",
         "done": "Bảng của bạn trở nên sống động — video phát và các thư viện ảnh chuyển đổi. Nhấn NEXT để tiếp tục."
       },
-      "extDemo": {
-        "body": "Với tiện ích AllMarks, một cú nhấp trên bất kỳ trang nào sẽ lưu nó — và tự động gắn thẻ."
-      },
+      "extDemo": { "body": "Với tiện ích AllMarks, chỉ cần một cú nhấp trên bất kỳ trang nào là lưu được, và bạn có thể gắn thẻ ngay lúc đó.", "hideNote": "Không thích nút nổi? Bạn có thể ẩn nó bất cứ lúc nào trong phần cài đặt của tiện ích.", "bodyX": "Trên X, YouTube và nhiều trang khác, chỉ cần nhấn Dấu trang hoặc Thích, tiện ích AllMarks cũng sẽ lưu vào bảng của bạn." },
       "install": {
         "body": "Kéo nút AllMarks này vào thanh dấu trang để lưu từ bất cứ đâu. Không thấy thanh? Nhấn Ctrl/⌘+Shift+B.", "demoCaption": "Nhấp dấu trang AllMarks trên bất kỳ trang nào — một cửa sổ nhỏ hiện ra và lưu lại." },
-      "manage": { "body": "Cửa sổ khi lưu có thể tắt trong SETTINGS. Để gắn thẻ hàng loạt, hãy mở MANAGE TAGS.", "triageBody": "MANAGE TAGS — gắn thẻ bảng của bạn từng thẻ một. Vuốt để lướt nhanh." },
+      "manage": { "settingsBody": "Không cần cửa sổ lưu hiện ra? Bạn có thể tắt nó bất cứ lúc nào trong SETTINGS.", "body": "Để gắn thẻ nhiều thẻ cùng lúc, hãy mở MANAGE TAGS.", "triageBody": "MANAGE TAGS — gắn thẻ bảng của bạn từng thẻ một. Vuốt để lướt nhanh." },
       "installDetected": {
         "body": "Tiện ích mở rộng đã được cài đặt. Bạn cũng có thể lưu bằng cách dán liên kết hoặc dùng bookmarklet."
       },

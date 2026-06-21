@@ -103,12 +103,10 @@
         "body": "Panodaki kartları canlandırmak için MOTION'a bas. Dene.",
         "done": "Panon canlanıyor — videolar oynuyor ve görsel galerileri değişiyor. Devam etmek için NEXT'e bas."
       },
-      "extDemo": {
-        "body": "AllMarks uzantısıyla herhangi bir sayfada tek tık onu kaydeder — ve otomatik etiketler."
-      },
+      "extDemo": { "body": "AllMarks eklentisiyle herhangi bir sayfayı tek tıkla kaydedersin; aynı anda etiketleyebilirsin de.", "hideNote": "Kayan düğmeyi istemiyor musun? Eklentinin ayarlarından istediğin zaman gizleyebilirsin.", "bodyX": "X, YouTube ve daha fazlasında sadece Yer İşareti'ne veya Beğen'e dokun; AllMarks eklentisi onu panona da kaydeder." },
       "install": {
         "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas.", "demoCaption": "Herhangi bir sayfada yer imleri çubuğundaki AllMarks'a tıkla — küçük bir pencere açılıp onu kaydeder." },
-      "manage": { "body": "Kaydetme penceresini SETTINGS'ten kapatabilirsin. Toplu etiketlemek için MANAGE TAGS'i aç.", "triageBody": "MANAGE TAGS — panonu tek tek kartlarla etiketle. Kaydırarak hızlıca ilerle." },
+      "manage": { "settingsBody": "Kayıt penceresine ihtiyacın yok mu? SETTINGS'ten istediğin zaman kapatabilirsin.", "body": "Birçok kartı tek seferde etiketlemek için MANAGE TAGS'i aç.", "triageBody": "MANAGE TAGS — panonu tek tek kartlarla etiketle. Kaydırarak hızlıca ilerle." },
       "installDetected": {
         "body": "Uzantı zaten yüklü. Bağlantı yapıştırarak veya bookmarklet kullanarak da kaydedebilirsiniz."
       },
