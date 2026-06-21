@@ -2,7 +2,12 @@
 .stage {
   position: fixed; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; background: rgba(6, 6, 6, 0.96);
+  gap: 18px;
+  /* A "thin curtain", not a blackout: opaque enough at the centre to keep the
+     mark + copy legible, but thinning toward the edges so the board world
+     faintly shows through (the scene lives inside the product, not over it). */
+  background: radial-gradient(ellipse 72% 64% at 50% 50%,
+    rgba(6, 6, 6, 0.95) 0%, rgba(6, 6, 6, 0.88) 52%, rgba(6, 6, 6, 0.78) 100%);
   font-family: ui-monospace, "SF Mono", Consolas, monospace; color: rgba(255,255,255,0.9);
   /* Cinema scene must block all board interaction; re-enable explicitly
      (parent .root is pointer-events:none, so child must opt back in). */
@@ -16,6 +21,16 @@
 .mark { position: relative; display: inline-flex; }
 .logo { width: 64px; height: 64px; }
 .check { position: absolute; right: -10px; bottom: -6px; color: #28f100; font-size: 22px; }
+/* finale completion stamp — A-logo + check seated inside a glowing green disk.
+   markInner is the positioned box the check anchors to (mirrors .mark). */
+.disk {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 124px; height: 124px; border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(40,241,0,0.26), rgba(40,241,0,0.06) 62%, transparent 74%);
+  border: 1.5px solid rgba(40,241,0,0.5);
+  box-shadow: 0 0 44px rgba(40,241,0,0.30), inset 0 0 26px rgba(40,241,0,0.16);
+}
+.markInner { position: relative; display: inline-flex; }
 .caption { max-width: 420px; text-align: center; font-size: 13px; line-height: 1.8; }
 .cta {
   font: inherit; font-size: 12px; letter-spacing: 0.10em; text-transform: uppercase;

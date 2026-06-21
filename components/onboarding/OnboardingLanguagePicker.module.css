@@ -8,20 +8,31 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 34px;
-  padding: 8px 12px;
+  min-height: 36px;
+  padding: 9px 14px;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.78);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 8px;
   cursor: pointer;
-  transition: color 120ms, background 120ms;
+  transition: color 120ms, background 120ms, box-shadow 120ms;
 }
-.toggle:hover { color: #fff; background: rgba(255, 255, 255, 0.09); }
-.globe { flex: none; opacity: 0.85; }
+.toggle:hover { color: #fff; background: rgba(255, 255, 255, 0.11); }
+.globe { flex: none; opacity: 1; }
+
+/* First-timers must notice they can read the tutorial in their language. A few
+   gentle green breaths draw the eye on START, then it settles (no permanent
+   glow — that would compete with the brand mark). Pauses for reduced-motion. */
+@keyframes lang-attn {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(40, 241, 0, 0); border-color: rgba(255, 255, 255, 0.22); }
+  50% { box-shadow: 0 0 0 3px rgba(40, 241, 0, 0.16), 0 0 16px rgba(40, 241, 0, 0.28); border-color: rgba(40, 241, 0, 0.55); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toggle { animation: lang-attn 1.5s ease-in-out 0.7s 3; }
+}
 .current { white-space: nowrap; }
 .caret { font-size: 9px; opacity: 0.6; }
 .list {
