@@ -88,7 +88,7 @@
       "reset_tooltip": "Auf Standard zurücksetzen"
     },
     "onboarding": {
-      "triage": {"intro":"Das ist MANAGE. Versieh deine gespeicherten Karten nacheinander mit Tags, um schnell Ordnung zu schaffen.","pickTag":"Wähle zuerst einen Tag aus – klicke ihn an oder drücke eine Zahlentaste (1–9).","apply":"Drücke → (oder D, oder wische nach rechts), um den Tag zu vergeben und zur nächsten Karte zu wechseln.","skip":"Bei einer Karte, der du den Tag nicht geben willst, wechselst du mit ← (der A-Taste / wische nach links) zur nächsten.","done":"Das ist schon der ganze Ablauf – einfach wiederholen. Drücke CONTINUE, um fortzufahren."},
+      "triage": {"intro":"Das ist MANAGE. Versieh deine gespeicherten Karten nacheinander mit Tags, um schnell Ordnung zu schaffen.","pickTag":"Wähle zuerst einen Tag aus – klicke ihn an oder drücke eine Zahlentaste (1–9).","apply":"Drücke → (oder D, oder wische nach rechts), um den Tag zu vergeben und zur nächsten Karte zu wechseln.","skip":"Bei einer Karte, der du den Tag nicht geben willst, wechselst du mit ← (der A-Taste / wische nach links) zur nächsten.","done":"Das ist schon der ganze Ablauf – einfach wiederholen. Drücke NEXT, um fortzufahren."},
       "enter": {
         "body": "AllMarks verwandelt Links in ein visuelles Board."
       },
@@ -97,7 +97,7 @@
         "copied": "Kopiert. Füge ihn jetzt auf dem Board ein (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Fügen wir dieser Karte ein Tag hinzu.",
+        "body": "Fügen wir dieser Karte ein Tag hinzu. Diesmal mache ich es für dich – schau einfach zu.",
         "done": "Tags halten dein Board geordnet – eigene kannst du jederzeit hinzufügen. NEXT zum Fortfahren."
       },
       "motion": {

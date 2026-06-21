@@ -88,10 +88,10 @@
       "reset_tooltip": "Reset to defaults"
     },
     "onboarding": {
-      "triage": {"intro":"This is MANAGE. Tag your saved cards one at a time to tidy them up fast.","pickTag":"First, pick a tag to apply — click it, or press a number key (1–9).","apply":"Press → (or D, or swipe right) to apply the tag and move to the next card.","skip":"For a card you're not giving this tag, move to the next one with ← (the A key, or swipe left).","done":"That's the whole routine — just repeat. Press CONTINUE to carry on."},
+      "triage": {"intro":"This is MANAGE. Tag your saved cards one at a time to tidy them up fast.","pickTag":"First, pick a tag to apply — click it, or press a number key (1–9).","apply":"Press → (or D, or swipe right) to apply the tag and move to the next card.","skip":"For a card you're not giving this tag, move to the next one with ← (the A key, or swipe left).","done":"That's the whole routine — just repeat. Press NEXT to continue."},
       "enter": { "body": "AllMarks turns links into a visual board." },
       "paste": { "body": "Copy this link, then paste it onto the board (Cmd/Ctrl+V).", "copied": "Copied. Now paste it onto the board (Cmd/Ctrl+V)." },
-      "tag": { "body": "Let's add a tag to this card.", "done": "Tags keep your board organized — add your own anytime. Press NEXT to continue." },
+      "tag": { "body": "Let's tag this card. I'll do it for you this time — just watch.", "done": "Tags keep your board organized — add your own anytime. Press NEXT to continue." },
       "motion": { "body": "Press MOTION to make the cards gently move. Try it.", "done": "Your board is alive — videos play and image galleries cycle. Press NEXT to continue." },
       "extDemo": { "body": "With the AllMarks extension, one click on any page saves it — and you can tag it at the same time.", "hideNote": "Don't want the floating button? You can hide it anytime in the extension's settings.", "bodyX": "On X, YouTube, and more, just tap Bookmark or Like — the AllMarks extension saves it to your board too." },
       "install": { "body": "Drag this AllMarks button to your bookmarks bar to save from anywhere. Don't see the bar? Press Ctrl/⌘+Shift+B.", "demoCaption": "Click the AllMarks bookmark on any page — a little window pops up and saves it." },

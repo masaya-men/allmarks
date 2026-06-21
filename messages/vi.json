@@ -88,7 +88,7 @@
       "reset_tooltip": "Đặt lại về mặc định"
     },
     "onboarding": {
-      "triage": {"intro":"Đây là MANAGE. Gắn thẻ cho từng tấm thẻ đã lưu để dọn dẹp thật nhanh.","pickTag":"Trước tiên, hãy chọn một thẻ để gắn — bấm vào thẻ, hoặc nhấn phím số (1–9).","apply":"Nhấn → (hoặc D, hoặc vuốt sang phải) để gắn thẻ và chuyển sang tấm tiếp theo.","skip":"Với tấm thẻ bạn không gắn thẻ đã chọn, hãy chuyển sang tấm tiếp theo bằng ← (phím A, hoặc vuốt sang trái).","done":"Vậy thôi — cứ lặp lại như thế. Nhấn CONTINUE để tiếp tục."},
+      "triage": {"intro":"Đây là MANAGE. Gắn thẻ cho từng tấm thẻ đã lưu để dọn dẹp thật nhanh.","pickTag":"Trước tiên, hãy chọn một thẻ để gắn — bấm vào thẻ, hoặc nhấn phím số (1–9).","apply":"Nhấn → (hoặc D, hoặc vuốt sang phải) để gắn thẻ và chuyển sang tấm tiếp theo.","skip":"Với tấm thẻ bạn không gắn thẻ đã chọn, hãy chuyển sang tấm tiếp theo bằng ← (phím A, hoặc vuốt sang trái).","done":"Vậy thôi — cứ lặp lại như thế. Nhấn NEXT để tiếp tục."},
       "enter": {
         "body": "AllMarks chuyển đổi liên kết thành bảng trực quan."
       },
@@ -97,7 +97,7 @@
         "copied": "Đã sao chép. Bây giờ dán vào bảng (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Hãy thêm một thẻ vào thẻ này.",
+        "body": "Hãy gắn thẻ cho tấm thẻ này. Lần này tôi sẽ làm thay bạn — bạn chỉ cần xem nhé.",
         "done": "Thẻ giúp bảng của bạn gọn gàng — bạn có thể tự thêm bất cứ lúc nào. Nhấn NEXT để tiếp tục."
       },
       "motion": {

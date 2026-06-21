@@ -88,7 +88,7 @@
       "reset_tooltip": "Restaurar padrões"
     },
     "onboarding": {
-      "triage": {"intro":"Esta é a tela MANAGE. Marque seus cards salvos um por um para organizá-los rapidamente.","pickTag":"Primeiro, escolha uma tag para aplicar — clique nela ou pressione uma tecla numérica (1–9).","apply":"Pressione → (ou D, ou deslize para a direita) para aplicar a tag e ir para o próximo card.","skip":"Para um card que você não vai marcar com essa tag, vá para o próximo com ← (a tecla A / deslize para a esquerda).","done":"É isso — basta repetir. Pressione CONTINUE para continuar."},
+      "triage": {"intro":"Esta é a tela MANAGE. Marque seus cards salvos um por um para organizá-los rapidamente.","pickTag":"Primeiro, escolha uma tag para aplicar — clique nela ou pressione uma tecla numérica (1–9).","apply":"Pressione → (ou D, ou deslize para a direita) para aplicar a tag e ir para o próximo card.","skip":"Para um card que você não vai marcar com essa tag, vá para o próximo com ← (a tecla A / deslize para a esquerda).","done":"É isso — basta repetir. Pressione NEXT para continuar."},
       "enter": {
         "body": "AllMarks transforma links num quadro visual."
       },
@@ -97,7 +97,7 @@
         "copied": "Copiado. Agora cole no board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Vamos adicionar uma tag a este cartão.",
+        "body": "Vamos adicionar uma tag a este cartão. Desta vez eu faço por você — é só observar.",
         "done": "As tags mantêm seu quadro organizado — adicione as suas quando quiser. Toque em NEXT para continuar."
       },
       "motion": {

@@ -88,7 +88,7 @@
       "reset_tooltip": "Ripristina i valori predefiniti"
     },
     "onboarding": {
-      "triage": {"intro":"Questa è la schermata MANAGE. Aggiungi un tag alle carte salvate, una alla volta, per metterle in ordine in un attimo.","pickTag":"Per prima cosa, scegli il tag da applicare: cliccalo oppure premi un tasto numerico (1–9).","apply":"Premi → (oppure D, o scorri verso destra) per applicare il tag e passare alla carta successiva.","skip":"Per una carta a cui non vuoi applicare questo tag, passa alla successiva con ← (il tasto A, o scorri verso sinistra).","done":"Tutto qui: basta ripetere. Premi CONTINUE per proseguire."},
+      "triage": {"intro":"Questa è la schermata MANAGE. Aggiungi un tag alle carte salvate, una alla volta, per metterle in ordine in un attimo.","pickTag":"Per prima cosa, scegli il tag da applicare: cliccalo oppure premi un tasto numerico (1–9).","apply":"Premi → (oppure D, o scorri verso destra) per applicare il tag e passare alla carta successiva.","skip":"Per una carta a cui non vuoi applicare questo tag, passa alla successiva con ← (il tasto A, o scorri verso sinistra).","done":"Tutto qui: basta ripetere. Premi NEXT per proseguire."},
       "enter": {
         "body": "AllMarks trasforma i link in una bacheca visiva."
       },
@@ -97,7 +97,7 @@
         "copied": "Copiato. Ora incollalo sulla board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Aggiungiamo un tag a questa scheda.",
+        "body": "Aggiungiamo un tag a questa scheda. Questa volta lo faccio io — tu guarda e basta.",
         "done": "I tag tengono in ordine la tua board: aggiungi i tuoi quando vuoi. Premi NEXT per continuare."
       },
       "motion": {

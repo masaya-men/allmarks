@@ -975,7 +975,7 @@ export function TriagePage(): ReactElement {
                 bottom fresh (the demo auto-plays; this caption IS the narration). */}
             <p key={onbPhase} className={styles.onbCaption}>{t(`board.onboarding.triage.${onbPhase}`)}</p>
             {onbPhase === 'done' && (
-              <button type="button" className={styles.onbContinue} onClick={exit}>CONTINUE</button>
+              <button type="button" className={styles.onbContinue} onClick={exit}>NEXT</button>
             )}
           </div>
         </div>

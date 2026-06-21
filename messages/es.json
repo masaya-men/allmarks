@@ -88,7 +88,7 @@
       "reset_tooltip": "Restablecer valores predeterminados"
     },
     "onboarding": {
-      "triage": {"intro":"Esto es MANAGE. Etiqueta tus tarjetas guardadas una por una para ordenarlas rápido.","pickTag":"Primero, elige una etiqueta para aplicar: haz clic en ella o pulsa una tecla numérica (1–9).","apply":"Pulsa → (o D, o desliza a la derecha) para aplicar la etiqueta y pasar a la siguiente tarjeta.","skip":"Si no vas a poner esta etiqueta a una tarjeta, pasa a la siguiente con ← (la tecla A o desliza a la izquierda).","done":"Eso es toda la rutina: solo repite. Pulsa CONTINUE para seguir."},
+      "triage": {"intro":"Esto es MANAGE. Etiqueta tus tarjetas guardadas una por una para ordenarlas rápido.","pickTag":"Primero, elige una etiqueta para aplicar: haz clic en ella o pulsa una tecla numérica (1–9).","apply":"Pulsa → (o D, o desliza a la derecha) para aplicar la etiqueta y pasar a la siguiente tarjeta.","skip":"Si no vas a poner esta etiqueta a una tarjeta, pasa a la siguiente con ← (la tecla A o desliza a la izquierda).","done":"Eso es toda la rutina: solo repite. Pulsa NEXT para continuar."},
       "enter": {
         "body": "AllMarks convierte enlaces en un tablero visual."
       },
@@ -97,7 +97,7 @@
         "copied": "Copiado. Ahora pégalo en el tablero (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Vamos a añadir una etiqueta a esta tarjeta.",
+        "body": "Vamos a añadir una etiqueta a esta tarjeta. Esta vez lo hago yo por ti: solo mira.",
         "done": "Las etiquetas mantienen tu tablero ordenado: añade las tuyas cuando quieras. Pulsa NEXT para continuar."
       },
       "motion": {

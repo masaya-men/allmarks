@@ -88,7 +88,7 @@
       "reset_tooltip": "Standaardwaarden herstellen"
     },
     "onboarding": {
-      "triage": {"intro":"Dit is MANAGE. Tag je opgeslagen kaarten één voor één om ze snel op te ruimen.","pickTag":"Kies eerst een tag om toe te passen — klik erop, of druk op een cijfertoets (1–9).","apply":"Druk op → (of D, of veeg naar rechts) om de tag toe te passen en naar de volgende kaart te gaan.","skip":"Geef je deze kaart de gekozen tag niet? Ga met ← (de A-toets / veeg naar links) naar de volgende.","done":"Dat is de hele routine — gewoon herhalen. Druk op CONTINUE om door te gaan."},
+      "triage": {"intro":"Dit is MANAGE. Tag je opgeslagen kaarten één voor één om ze snel op te ruimen.","pickTag":"Kies eerst een tag om toe te passen — klik erop, of druk op een cijfertoets (1–9).","apply":"Druk op → (of D, of veeg naar rechts) om de tag toe te passen en naar de volgende kaart te gaan.","skip":"Geef je deze kaart de gekozen tag niet? Ga met ← (de A-toets / veeg naar links) naar de volgende.","done":"Dat is de hele routine — gewoon herhalen. Druk op NEXT om door te gaan."},
       "enter": {
         "body": "AllMarks zet links om in een visueel bord."
       },
@@ -97,7 +97,7 @@
         "copied": "Gekopieerd. Plak het nu op het board (Cmd/Ctrl+V)."
       },
       "tag": {
-        "body": "Laten we deze kaart een tag geven.",
+        "body": "Laten we deze kaart een tag geven. Deze keer doe ik het voor je — kijk maar mee.",
         "done": "Tags houden je bord overzichtelijk — voeg er altijd zelf toe. Druk op NEXT om door te gaan."
       },
       "motion": {
