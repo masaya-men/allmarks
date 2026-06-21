@@ -208,16 +208,15 @@
 .chipCheck svg { width: 11px; height: 11px; display: block; }
 .chipCheck path { fill: none; stroke: #28f100; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 
-/* demo cursor — above the popup so the pointer always reads on top */
+/* demo cursor — a classic arrow pointer (tip at top-left = the click hotspot),
+   above the popup so it always reads on top */
 .cursor {
   position: absolute;
-  width: 18px;
-  height: 18px;
-  border-radius: 50% 50% 50% 2px;
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
+  width: 17px;
+  height: 23px;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2014%2019'%3E%3Cpath%20d='M0,0L0,16.6L4.6,12.6L7.1,18.6L9.9,17.4L7.4,11.6L13.4,11.6Z'%20fill='white'%20stroke='black'%20stroke-width='1'%20stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat top left / contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
   pointer-events: none;
-  transform: rotate(-12deg);
   opacity: 0;
   z-index: 6;
 }
