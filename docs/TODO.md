@@ -21,33 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 119 — オンボーディング ブラッシュアップ（実機FB A〜F）→ 本番反映済)
+### 直近の状態 (セッション 120 — TODO整頓 + オンボーディング実機FB 6点 → 本番反映済)
 
-**実機FBの6点バッチ（A〜F）を完走。全て `allmarks.app` 反映済（tsc0 / vitest1445 / build OK / 隔離レンダで5シーン目視 + 多視点の敵対的レビューで確定バグ0）。**
+**TODO.md を 911→207 行に整頓。ユーザー実機FB 6点を1つずつ実装→本番反映（tsc0 / vitest1447 / 隔離レンダ目視 + ④⑥は多視点の敵対的レビュー）。** 詳細 narrative は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション120。
 
-1. **A デモカーソルを緑縁取りに**: 全5デモ（貼る/タグ/拡張/設置/共有）のカーソルを「白塗り＋黒フチ」→「白塗り＋緑フチ（`#28f100`）＋緑グロー」に。矢印の形は不変＝ユーザーの実カーソルと混同しない。
-2. **B 視線誘導を統一**: 新 `OnboardingCursorGuide`（緑カーソルがターゲットへ滑って押すループ）を MOTION / SETTINGS / MANAGE のスポットライト各シーンに追加（既存の緑パルスリング＋カーソル誘導の二段）。⑦共有は本物SHAREボタンに緑パルスリングを足してから押す。
-3. **C カメラズーム一般化＝見送り（調査結論・ユーザー承認）**: `zoomCameraToOnboardingCard` はボード内カード専用（`cameraWrap` 内）。ヘッダーのボタン（MOTION/SETTINGS/MANAGE/SHARE）は枠の外で物理的にズーム不可。代わりにB（スポットライト＋緑カーソル）で「寄ってから押す」を統一。
-4. **D manageを2ビート化**: ①SETTINGS強調＋「保存時の小窓はSETTINGSでオフにできる」→NEXT、②MANAGE説明＋緑カーソル誘導→本物triage（既存フロー）。`manage.settingsBody` 新設、`manage.body` をMANAGE専用に分割。SETTINGSボタンに `data-onboarding-target="settings"` 付与。
-5. **E ⑤拡張デモ文言修正**: ja「同時にタグも自動で付きます」→「同時にタグ付けできます」/ en "tags it automatically"→"you can tag it at the same time"。
-6. **F ⑤拡張デモを2画面化**: 画面1=従来のページ保存（＋「保存ボタンは拡張の設定で隠せる」注記 `extDemo.hideNote`）、画面2=新 `ExtensionXSaveReenactment`（`x.com` 偽枠＋X風ツイート＋緑カーソルがブックマークを押す→本物の AllMarks ピル Saving→Saved＝有名サイト連動 (I-05) の実演、`extDemo.bodyX`）。Xロゴは商標回避で自作の線アイコン。本物ピルCSS流用、ピルのアニメ補助は新 `extension-pill.ts` に抽出（⑤と共有）。
-7. **i18n**: 新3キー（`extDemo.hideNote`/`extDemo.bodyX`/`manage.settingsBody`）＋変更2キーを15言語同期（13言語は並列翻訳ワークフロー、`SETTINGS`/`MANAGE TAGS`/`AllMarks`/`X`/`YouTube` は verbatim）。`board.onboarding` 15言語パリティテスト緑。
-8. **次**: **⑧フィナーレ**（緑ディスク統一・空ボード着地）/ **①入場の残りseed**（言語切替の発見性・幕越し透け・SKIP当たり判定）。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
-
----
-
-### 一つ前 (セッション 118 — ⑥設置=ブックマークレットを「本物の保存窓」忠実デモに格上げ → 本番反映済)
-
-**⑥設置シーンを ⑤拡張デモと対になる2ビートに作り直し。全て `allmarks.app` 反映済（tsc0 / vitest1445 / build OK / 隔離レンダで Saving→Saved→タグ点灯を実機目視）。多視点の敵対的レビュー（4視点→各指摘をコードで裏取り、high0）で確定指摘を全て解消。**
-
-1. **🔴 ⑥設置 = 2ビート（魅せる→設置）**:
-   - **ビート1（デモ）**: 新 `BookmarkletSaveReenactment`。偽ブラウザ枠＋**ブックマークバーに「AllMarks」しおり**（Docs/Mail/News のダミー併記）→ カーソルがしおりをクリック → **本物そっくりの保存窓ポップ**（新 `SaveToastFace` が `SaveToast.module.css` を共有＝顔は完全ドリフト不可、ring→チェック描画→`AllMarks`→1字ずつ Saving/Saved→glow）→ タグモードでチップ緑点灯。暗幕でページが沈む。GSAPはタイミングのみ駆動、`.browser` 全体を座標系にしてカーソルがバー↔ページを横断。
-   - **ビート2（設置）**: 既存の本物ドラッグチップ `BookmarkletInstallChip`（実ブラウザのバーへドロップ＝偽バーには置けない本物操作）。
-   - **ビート1（デモ）は拡張の有無に関わらず全員に表示**（ブックマークレットは他ブラウザ Firefox/Safari/モバイルでも使える保存手段なので拡張ユーザーにも見せる価値あり）。ビート2（ドラッグ設置）のみ拡張なしの人に出す＝拡張ユーザーはデモ→そのまま次へ。※当初は拡張検出でデモごと省く実装→**拡張ユーザー（=開発者本人）にデモが出ない**問題が判明し修正。
-2. **本物の保存窓 `SaveToast.tsx` は無改変**（ユーザー依存の重要部品）。CSS（`SaveToast.module.css`）流用のみ＝顔の見た目は本物と一致。タグモードは意図的な様式化（本物のタグUI=対話的 `TagAddPopover` は再現対象外）＝JSDoc/CSSコメントに明記。
-3. **i18n**: `board.onboarding.install.demoCaption` を15言語追加（13言語は並列翻訳ワークフロー、`AllMarks` verbatim）。`board.onboarding` の15言語パリティテストを新設（将来の文言追加も自動保護＝missing時に生キー表示する事故を防ぐ）。
-4. **後半（実機FB 4点・全て本番反映）**: **① ③タグ done 文言(ja)修正** / **③ デモのマウスポインターを矢印ポインタに全デモ統一** / **🔴④ ⑦共有=本物の `SenderShareModal` を非対話で出す**（矢印が本物SHAREを押す→本物モーダル→portal z1100の透明ブロッカーで操作不能＋NEXT、SHARE NOW押さず=サーバー共有なし、`ShareReenactment`削除）/ **🔴② 新 manage シーン=MANAGE→本物 `/triage` 実演**（install後に9シーン目。実クリックで本物triageへ遷移→オンボモード=デモカード絞り/実入力ブロック/本物ハンドラ自動駆動でタグ適用＋連続パン演出/CONTINUE→sessionStorage+`initialScene`で共有シーンへ再開）。詳細は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション118後半。
-5. **次**: **⑧フィナーレ**（緑ディスク統一・空ボード着地）/ **①入場の残りseed**（言語切替の発見性・幕越し透け・SKIP当たり判定）。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+1. **① マーク=正規ロゴSVG**: finale/enter の手描き簡易A→ファビコン(`app/icon.svg`)/フローティングボタンと同一の正規 AllMarks SVG。共有 `components/onboarding/AllMarksMark.tsx`。
+2. **② 吹き出し統一**: `OnboardingSpotlight` 全 variant を縦並び中央寄せ（caption 段落化→中央下部ボタン、文字のボタン回り込み解消）。
+3. **③ NEXT撤去**: manage(MANAGE TAGS)ビートは実クリックで進む（覚えさせたい動作は NEXT を出さない、SKIP は残置）。
+4. **④ SHARE実クリック化**: 実SHAREをスポット+緑カーソルで誘導→押す→本物 `SenderShareModal`→保持+NEXT（`shareModalOpen` を BoardRoot から受領、`share.pressBody` 15言語、`OnboardingShareReveal` を shown 専用に簡素化）。
+5. **⑤ 設置を先に**: install reset を `installBeat='install'` に＝設置(チップをブクマバーへドラッグ)ビート→保存デモの順。
+6. **🔴⑥ トリアージ実演をフェーズ制に**(最重要): 旧6.9s早回し→`OnbPhase`(intro/pickTag/apply/skip/done)で1手ずつ・スポット/ズーム・緑カーソル・本物アニメ・解説。NEXTで進む/CONTINUEで共有へ。`board.onboarding.triage.*`5キー15言語。敵対的レビュー2件修正＝オンボ中のキーボード封鎖(`useTagPickerKeys` disabled + window keydown は Esc 以外封鎖)＋apply の空タグ防止(冪等 arm)。
+7. **次**: **⑥(トリアージ・チュートリアル)のユーザー実機確認 + 追加FB** / その後 公開前片付け。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 

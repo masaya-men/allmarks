@@ -1,30 +1,30 @@
-# 次セッションのゴール (= セッション 120)
+# 次セッションのゴール (= セッション 121)
 
 ## 今のゴール (1 行)
 
-**🎬 オンボーディング仕上げ — ⑧フィナーレ（緑ディスク統一・空ボード着地）と ①入場の残りseed（言語切替の発見性・幕越し透け・SKIP当たり判定）。**
+**🎬 オンボーディング ⑥トリアージ・チュートリアルの実機確認 + 追加FB対応 → 落ち着いたら公開前の片付けへ。**
 
 ## 開始時の動き
-1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む
-2. `git status` クリーン確認（119末で全コミット+push+本番反映済）
-3. 確認は **SETTINGS → REPLAY INTRO**（or シークレットウィンドウ=空IDBで真の初回体験）
+1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む（セッション120で実機FB 6点を本番反映済）
+2. `git status` クリーン確認（120末で全コミット+push+本番反映済）
+3. 確認は **`allmarks.app` ハードリロード → SETTINGS → REPLAY INTRO**（or シークレットウィンドウ=空IDBで真の初回体験）
 
 ## このセッションの候補（ユーザーと相談して着手）
 
-### ⑧ フィナーレ（finale シーン）
-- 現状は `OnboardingStage variant="finale"` ＋ `finale.body`「準備完了です。SETTINGS からいつでも再生できます。」だけ。**緑ディスク（Aロゴ／音波モチーフ）の演出統一**と**空ボードへの気持ちいい着地**を作り込む。
-- 着地後はオンボのデモカードが掃除され（`clearOnboardingDemo`）、ユーザーの実ボードに戻る。フィナーレ→空状態（`EmptyStateWelcome`）の繋ぎを滑らかに。
+### 🔴 まず: ⑥トリアージ・チュートリアルの実機確認
+- セッション120で「1手ずつ・スポット/ズーム・緑カーソル・本物アニメ・解説」のフェーズ制（intro→pickTag→apply→skip→done）に作り替えた。**ユーザーが MANAGE TAGS まで通しで触って、各手の分かりやすさ・速度・ズームの寄り具合・キーボード封鎖を確認**。気になる所は数値/コピー/フェーズ追加で詰める。
+- 必要なら他シーン（①〜⑤）の追加FBも同様に1つずつ。
 
-### ① 入場まわりの残りseed（実機FBで継続）
-- **言語切替の発見性**: START画面の `OnboardingLanguagePicker` がもっと気づかれるように。
-- **幕越し透け**: 入場シネマの黒幕越しに次が薄く透ける演出（記憶 [[feedback_animation_world_consistency]]＝幕は「薄いカーテン」）。
-- **SKIP当たり判定**: SKIPが押しやすいか（最前面化済だが当たり判定/視認性の微調整）。
+### 公開前の片付け（オンボが固まったら）
+- 暫定 EXPORT/IMPORT ボタン撤去（BoardRoot の TEMPORARY 箇所）
+- 未使用 `chrome-extension/` 削除
+- 拡張機能 Chrome Web Store 提出（素材・zip は準備済、提出は user 作業）→ 公開後 `EXTENSION_STORE_URL` 投入 + 再デプロイ
 
-## 119 で到達済（本番反映・実機FB A〜F 完了）
-**A** 緑カーソル（5デモ全部、形不変＋緑フチ＋グロー）/ **B** 視線誘導統一（新 `OnboardingCursorGuide`＝緑カーソルが MOTION/SETTINGS/MANAGE を押しに行く＋⑦共有SHAREに緑パルスリング）/ **C** カメラズーム一般化は見送り（ヘッダーは枠外で不可、B で代替・承認済）/ **D** manage 2ビート化（SETTINGS説明→MANAGE操作、`manage.settingsBody` 新設）/ **E** ⑤文言「自動で付く→タグ付けできる」修正 / **F** ⑤拡張デモ2画面化（画面2＝新 `ExtensionXSaveReenactment`＝X風ツイートのブックマーク→本物ピル保存＝I-05実演、`extDemo.bodyX`／「保存ボタンは設定で隠せる」`extDemo.hideNote`）。i18n 15言語同期＋パリティ緑。
+## 120 で到達済（本番反映・実機FB 6点 完了）
+**①** マーク=正規ロゴSVG（共有 `AllMarksMark.tsx`）/ **②** 吹き出し体裁統一（説明文→中央下部ボタン）/ **③** manage は実クリック誘導（NEXT撤去）/ **④** SHARE 実クリック化（本物パネル、`shareModalOpen` 連携）/ **⑤** ブックマークレット設置を先に教える / **🔴⑥** トリアージ実演をフェーズ制（1手ずつズーム/解説）に作り替え＋敵対的レビュー2件修正（キーボード封鎖・空タグ防止）。i18n 新キー(`share.pressBody`/`triage.*`)15言語。前半で TODO.md を 911→207 行に整頓。
 
 ## 守ること
 - 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII)必須。`tsc <file>` 直叩き禁止 → `rtk tsc`。
-- 視覚は隔離レンダ（`sessionStorage['allmarks-onboarding-resume']='<scene>'` で各シーンへジャンプ → Playwright スクショ）＋ユーザー実機の二段。デザイン変更は提案→承認。応答は日本語。
+- 視覚は隔離レンダ（`sessionStorage['allmarks-onboarding-resume']='<scene>'` で各シーンへジャンプ、トリアージは `/triage?onboarding=1`＝要デモseed → Playwright スクショ）＋ユーザー実機の二段。デザイン変更は提案→（隔離レンダ目視で）承認。応答は日本語。
 - 大きめ改修(新component/100行+)は事前に方針確認。**常にクリーンなセーブ**(区切りで commit+push、git=本番一致)。
 - 新オンボーディングseedは onboardingDemo フラグ管理（完了時に掃除、本物ブクマ不可侵）。新i18nキーは15言語同期＋パリティテスト。

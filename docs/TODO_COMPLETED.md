@@ -7619,3 +7619,20 @@ en/ja を確定し13言語へ並列翻訳展開、本番反映済(15言語 JSON 
 - **convex bezel 数値調整** / **ハロ 0.5x 絞り** / **TrashConfirmDialog 2 秒 feel** / **TAG THIS. サイズ** — 全部「一旦 OK」 で棚上げ、 気が向いたら brushup
 
 詳細 narrative: [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション 82 セクション
+
+## セッション 120 (2026-06-21) — TODO 整頓 + オンボーディング実機FB 6点を実装・本番反映
+
+**前半: TODO.md を 911→207 行に整頓**（過去セッション物語を TODO_COMPLETED へ退避＝唯一コピーだった 117/116/115/107/105/103/102/101/99/96/94/92 を保全、完了済 release blocker(ドメイン/i18n配線/LP)一掃、陳腐化した「リブランド進行」節削除）。
+
+**後半: ユーザー実機FB 6点を1つずつ実装→検証→本番反映**（全て tsc0 / vitest1447 / 隔離レンダ目視 + ④⑥は多視点の敵対的レビュー）:
+
+1. **① finale/enter のマークを正規ロゴSVGに**: 手描き簡易Aパス＋別✓グリフ → ファビコン(`app/icon.svg`)/フローティングボタンと同一の正規 AllMarks SVG(黒A+白ハイライト+緑チェック内蔵)。共有コンポーネント `components/onboarding/AllMarksMark.tsx` 化(icon.svg から生成、id衝突回避)。`OnboardingStage` の enter/finale 両方で使用。
+2. **② スポットライト吹き出しの体裁統一**: caption(生テキスト)とボタンが兄弟並び→文字がボタンを回り込む崩れ。`OnboardingSpotlight` を全 variant 縦並び中央寄せ(caption を `<p class=bubbleText>` で段落化→中央下部にボタン)に。
+3. **③ 覚えさせたい動作のシーンは NEXT を出さない**: manage(MANAGE TAGS)ビートの NEXT 撤去 — 実ボタンを押させる(コピーが既に「MANAGE TAGS を開きましょう」と促す、SKIP は残置)。通しテストを実態追従。
+4. **④ SHARE も実クリック化**: scripted 自動オープン廃止 → 実 SHARE ボタンをスポットライト+緑カーソルで誘導→ユーザーが実クリック→本物 `SenderShareModal` が開く(`shareModalOpen` を BoardRoot から受領)。press beat は NEXT 無し、開いたら保持+NEXT(SHARE NOW 押さず=サーバー共有なし)。`OnboardingShareReveal` を shown 専用に簡素化。`share.pressBody` 15言語追加。
+5. **⑤ ブックマークレットは設置を先に教える**: install シーンの reset で `installBeat='install'` → 設置(チップをブクマバーへドラッグ)を先頭ビート→その後 save デモ(拡張ユーザーはドラッグ省略)。コピー順(install.body→demoCaption)が自然な「設置→使い方」に。
+6. **🔴⑥ トリアージ実演を 1手ずつズーム/解説のフェーズ制に**(最重要・最大): 旧 6.9s 自動早回し(解説/ズーム無し)を撤去 → `OnbPhase`(intro/pickTag/apply/skip/done)。各手で本物アニメを見せ・スポットライトで寄り・緑カーソルで押す場所を示し・下部 caption で解説、NEXT で進む/CONTINUE で共有へ復帰。intro=カードに緑リング+ズーム、pickTag=タグ列スポット+チップarm、apply=全面+YESカーソル+本物スワイプで適用&次へ、skip=全面+NOカーソル+本物スキップ、done=全暗転+まとめ。`board.onboarding.triage.{intro,pickTag,apply,skip,done}` 15言語追加。**敵対的レビュー指摘2件修正**: (1)オンボ中もキーボード(Space/数字/Z)が window に漏れ index/arm を黙って変える→`useTagPickerKeys` に `disabled`、window keydown は Esc 以外封鎖(実測でSpaceがNo-op化を確認) (2)pickTag の arm 前に NEXT すると apply が空タグで空振り→apply 開始時に冪等 arm を保証。
+
+**i18n**: 新キー(`share.pressBody` / `triage.*`5)を15言語へ。en/ja 手動 + 13言語並列翻訳ワークフロー、`board.onboarding` パリティ緑。
+
+**次**: ⑥(トリアージ・チュートリアル)のユーザー実機確認 + 追加FB / その後 公開前片付け(暫定EXPORT/IMPORTボタン撤去・未使用 chrome-extension/ 削除・拡張ストア提出→`EXTENSION_STORE_URL` 投入)。
