@@ -309,42 +309,58 @@ export function TriagePage(): ReactElement {
   const tagsRef = useRef(tags)
   tagsRef.current = tags
   const [onbPhase, setOnbPhase] = useState<OnbPhase>('intro')
+  // Each beat plays in two steps so the eye can keep up:
+  //   'read' — the caption rises + the target zooms / is spotlit (the eye is led to
+  //            WHERE it happens and to the words) and HOLDS, with no cursor yet.
+  //   'act'  — only now the green cursor glides in and presses; the REAL action
+  //            fires in sync with that press, then the result holds to be absorbed.
+  const [onbStep, setOnbStep] = useState<'read' | 'act'>('read')
   const firstDemoTagId = tags[0]?.id ?? null
-  // Auto-play the whole workflow: each phase zooms into its spot, the green cursor
-  // glides there and "presses" (mid-beat), the REAL action plays, then the beat
-  // auto-advances to the next phase. The user watches the routine demonstrated
-  // end-to-end — no NEXT to push. 'done' is terminal: it waits for the user's
+  // Auto-play the whole workflow end-to-end (no NEXT). Deliberately slow + led:
+  // read → act → hold, then advance. 'done' is terminal: it waits for the user's
   // CONTINUE so they leave at their own pace (never a dead-end). onbFiredRef keeps
   // the card-advancing actions to exactly once (StrictMode-safe).
   const onbFiredRef = useRef<Set<OnbPhase>>(new Set())
   useEffect(() => {
     if (!onboarding || loading || onbPhase === 'done') return
+    setOnbStep('read')
     const timers: ReturnType<typeof setTimeout>[] = []
-    const fireOnce = (key: OnbPhase, fn: () => void, at: number): void => {
+    const advance = (): void =>
+      setOnbPhase((p) => ONB_SEQUENCE[Math.min(ONB_SEQUENCE.indexOf(p) + 1, ONB_SEQUENCE.length - 1)])
+    // Pacing (ms). Tunable — kept generous so the demo is easy to follow.
+    const READ_MS = 2400  // hold the caption + the zoom/spotlight long enough to read
+    const PRESS_MS = 1600  // after that, the cursor glides in and visually "presses"
+    const HOLD_MS = 1700  // then the result is held so it can be absorbed
+    const hasAction = onbPhase === 'pickTag' || onbPhase === 'apply' || onbPhase === 'skip'
+
+    if (!hasAction) {
+      // intro: read-only — see the card + read what this screen is, then move on.
+      timers.push(setTimeout(advance, READ_MS + 1500))
+      return () => timers.forEach((tm) => clearTimeout(tm))
+    }
+
+    // Lead the eye first (read), THEN bring the cursor in to act.
+    timers.push(setTimeout(() => setOnbStep('act'), READ_MS))
+    const fireAt = READ_MS + PRESS_MS // the action fires in sync with the cursor press
+    const fireOnce = (key: OnbPhase, fn: () => void): void => {
       timers.push(setTimeout(() => {
         if (onbFiredRef.current.has(key)) return
         onbFiredRef.current.add(key)
         fn()
-      }, at))
+      }, fireAt))
     }
-    const PRESS_AT = 1500 // the green cursor reaches its target and presses here
     if (onbPhase === 'pickTag') {
-      fireOnce('pickTag', () => { const id = tagsRef.current[0]?.id; if (id) setArmedTagIds(new Set([id])) }, PRESS_AT)
+      fireOnce('pickTag', () => { const id = tagsRef.current[0]?.id; if (id) setArmedTagIds(new Set([id])) })
     } else if (onbPhase === 'apply') {
       // Guarantee a tag is armed even if pickTag's arm was missed — otherwise the
       // apply swipe would tag nothing (a hollow demo). Idempotent.
       const id = tagsRef.current[0]?.id
       if (id) setArmedTagIds((prev) => (prev.size > 0 ? prev : new Set([id])))
-      fireOnce('apply', () => handleYesRef.current(), PRESS_AT)
+      fireOnce('apply', () => handleYesRef.current())
     } else if (onbPhase === 'skip') {
-      fireOnce('skip', () => handleNoRef.current(), PRESS_AT)
+      fireOnce('skip', () => handleNoRef.current())
     }
-    // Hold the beat long enough to read the message + see the result, then advance.
-    // intro has no press, so it can run a touch shorter.
-    const beatMs = onbPhase === 'intro' ? 2900 : 3100
-    timers.push(setTimeout(() => {
-      setOnbPhase((p) => ONB_SEQUENCE[Math.min(ONB_SEQUENCE.indexOf(p) + 1, ONB_SEQUENCE.length - 1)])
-    }, beatMs))
+    timers.push(setTimeout(advance, fireAt + HOLD_MS))
     return () => timers.forEach((tm) => clearTimeout(tm))
   }, [onbPhase, onboarding, loading])
 
@@ -947,11 +963,13 @@ export function TriagePage(): ReactElement {
               blockOutside={false}
             />
           )}
-          {onbPhase === 'pickTag' && firstDemoTagId && (
+          {/* Cursor only in the 'act' step — it appears AFTER the read window so it
+              never competes with the caption for the eye, then glides in to press. */}
+          {onbStep === 'act' && onbPhase === 'pickTag' && firstDemoTagId && (
             <OnboardingCursorGuide targetSelector={`[data-tag-id="${firstDemoTagId}"]`} />
           )}
-          {onbPhase === 'apply' && <OnboardingCursorGuide targetSelector='[data-testid="triage-yes-button"]' />}
-          {onbPhase === 'skip' && <OnboardingCursorGuide targetSelector='[data-testid="triage-no-button"]' />}
+          {onbStep === 'act' && onbPhase === 'apply' && <OnboardingCursorGuide targetSelector='[data-testid="triage-yes-button"]' />}
+          {onbStep === 'act' && onbPhase === 'skip' && <OnboardingCursorGuide targetSelector='[data-testid="triage-no-button"]' />}
           <div className={styles.onbFooter}>
             {/* key={onbPhase}: each beat's lecture remounts so it rises in from the
                 bottom fresh (the demo auto-plays; this caption IS the narration). */}
