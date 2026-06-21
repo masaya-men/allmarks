@@ -111,7 +111,7 @@
         "body": "L'extension est déjà installée. Il est aussi possible d'enregistrer en collant un lien ou en utilisant le bookmarklet."
       },
       "share": {
-        "body": "Voilà comment fonctionne le partage. Crée un tableau que tu adores et partage-le avec tout le monde."
+        "body": "Voilà comment fonctionne le partage. Crée un tableau que tu adores et partage-le avec tout le monde.", "pressBody": "Appuyez sur SHARE dans l'en-tête pour ouvrir le panneau de partage."
       },
       "finale": {
         "body": "Tout est prêt. Ce tutoriel peut être relu depuis SETTINGS à tout moment."

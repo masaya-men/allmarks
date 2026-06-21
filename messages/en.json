@@ -96,7 +96,7 @@
       "install": { "body": "Drag this AllMarks button to your bookmarks bar to save from anywhere. Don't see the bar? Press Ctrl/⌘+Shift+B.", "demoCaption": "Click the AllMarks bookmark on any page — a little window pops up and saves it." },
       "manage": { "settingsBody": "Don't need the save window? You can turn it off anytime in SETTINGS.", "body": "To tag many cards at once, open MANAGE TAGS.", "triageBody": "MANAGE TAGS — tag your board one card at a time. Swipe to fly through it." },
       "installDetected": { "body": "The extension is already installed. You can also save by pasting a link or using the bookmarklet." },
-      "share": { "body": "This is how sharing works. Build a board you love and share it with everyone." },
+      "share": { "body": "This is how sharing works. Build a board you love and share it with everyone.", "pressBody": "Press SHARE in the header to open the share panel." },
       "finale": { "body": "You're set. Replay this anytime from SETTINGS." }
     }
   },

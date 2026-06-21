@@ -162,7 +162,7 @@ describe('OnboardingController', () => {
     renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
 
     // Walk to the manage scene: paste -> tag -> motion -> extDemo(page,X) ->
-    // install(demo,drag) -> manage(settings -> manage)
+    // install(install/drag -> demo) -> manage(settings -> manage)
     fireEvent.click(screen.getByRole('button', { name: 'START' }))
     await act(async () => { postBookmarkSaved({ bookmarkId: 'c' }) }) // -> tag
     await act(async () => { postBookmarkUpdated({ bookmarkId: 'c' }) }) // tag applied -> NEXT
@@ -170,9 +170,9 @@ describe('OnboardingController', () => {
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'TOGGLE_MOTION' })) }) // motion on -> NEXT
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // motion -> extDemo (page)
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo: page -> X
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo: X -> install (demo)
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: demo -> drag
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: drag -> manage (settings)
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo: X -> install (drag/install beat)
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: install (drag) -> demo
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: demo -> manage (settings)
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // manage: settings -> manage
 
     // The manage beat teaches the real gesture (open MANAGE TAGS); it deliberately
@@ -183,21 +183,34 @@ describe('OnboardingController', () => {
     expect(screen.queryByRole('button', { name: 'NEXT' })).toBeNull()
   })
 
-  it('share scene shows the share showcase and advances on NEXT', async () => {
-    // The share scene is reached via resume (initialScene) after the /triage
-    // detour from the manage beat, so render the controller directly there.
+  it('share press beat guides the real SHARE click with no NEXT escape', async () => {
+    // Reached via resume (initialScene) after the /triage detour. With the panel
+    // not yet open, the press beat spotlights the real SHARE button — no NEXT
+    // (the user must actually click SHARE, like the manage beat).
     const db = await initDB()
-    const onComplete = vi.fn()
     renderWithLocale(
       <OnboardingController
         db={db} motionEnabled={false} appUrl="https://allmarks.app"
-        onComplete={onComplete} initialScene="share"
+        onComplete={vi.fn()} initialScene="share"
       />,
       'en', en as Messages,
     )
     expect(screen.getByTestId('scene-share')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'NEXT' })).toBeNull()
+  })
 
-    // The share showcase plays as a cinema beat; a NEXT escape advances to finale.
+  it('share shown beat (panel open) holds the panel and advances on NEXT', async () => {
+    // Once the user's real SHARE click opens BoardRoot's panel (shareModalOpen),
+    // the shown beat appears with a NEXT that advances to finale.
+    const db = await initDB()
+    renderWithLocale(
+      <OnboardingController
+        db={db} motionEnabled={false} appUrl="https://allmarks.app"
+        onComplete={vi.fn()} initialScene="share" shareModalOpen
+      />,
+      'en', en as Messages,
+    )
+    expect(screen.getByTestId('onboarding-share-reveal')).not.toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // share -> finale
     expect(screen.getByTestId('scene-finale')).not.toBeNull()
   })

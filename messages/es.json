@@ -111,7 +111,7 @@
         "body": "La extensión ya está instalada. También puedes guardar pegando un enlace o usando el bookmarklet."
       },
       "share": {
-        "body": "Así funciona compartir. Crea un tablero que te encante y compártelo con todos."
+        "body": "Así funciona compartir. Crea un tablero que te encante y compártelo con todos.", "pressBody": "Pulsa SHARE en el encabezado para abrir el panel de compartir."
       },
       "finale": {
         "body": "Todo listo. Repite este tutorial desde SETTINGS en cualquier momento."

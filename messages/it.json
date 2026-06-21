@@ -111,7 +111,7 @@
         "body": "L'estensione è già installata. È possibile salvare anche incollando un link o usando il bookmarklet."
       },
       "share": {
-        "body": "Ecco come funziona la condivisione. Crea una board che ami e condividila con tutti."
+        "body": "Ecco come funziona la condivisione. Crea una board che ami e condividila con tutti.", "pressBody": "Premi SHARE nell'intestazione per aprire il pannello di condivisione."
       },
       "finale": {
         "body": "Tutto pronto. Il tutorial può essere ripetuto da SETTINGS in qualsiasi momento."

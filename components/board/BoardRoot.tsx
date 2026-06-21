@@ -2104,6 +2104,7 @@ export function BoardRoot() {
               onZoomToCard={zoomCameraToOnboardingCard}
               onZoomReset={resetOnboardingCamera}
               onShareSceneActive={(active): void => setShareModalOpen(active)}
+              shareModalOpen={shareModalOpen}
             />
           )}
           {!loading && !showOnboarding && items.length === 0 && (

@@ -111,7 +111,7 @@
         "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
       },
       "share": {
-        "body": "É assim que o compartilhamento funciona. Crie um quadro que você ama e compartilhe com todos."
+        "body": "É assim que o compartilhamento funciona. Crie um quadro que você ama e compartilhe com todos.", "pressBody": "Toque em SHARE no cabeçalho para abrir o painel de compartilhamento."
       },
       "finale": {
         "body": "Tudo pronto. Este tutorial pode ser repetido em SETTINGS a qualquer momento."

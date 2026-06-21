@@ -54,6 +54,10 @@ type Props = {
    *  so the tutorial shows the genuine share screen (non-interactive) rather
    *  than a re-enactment. Never confirms the share, so no server share is made. */
   readonly onShareSceneActive?: (active: boolean) => void
+  /** Whether BoardRoot's real share panel is currently open. The share scene
+   *  uses this to detect the user's REAL click on the SHARE button (press beat →
+   *  shown beat) instead of scripting the open itself. */
+  readonly shareModalOpen?: boolean
   /** Start at a specific scene instead of 'enter'. Used to RESUME the tutorial
    *  after the manage scene navigates out to the real /triage screen and back. */
   readonly initialScene?: SceneId
@@ -85,7 +89,7 @@ function extensionDetected(): boolean {
 export function OnboardingController({
   db, motionEnabled, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
   tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset, onShareSceneActive,
-  initialScene,
+  shareModalOpen = false, initialScene,
 }: Props): ReactElement {
   const { t } = useI18n()
   const [sceneId, setSceneId] = useState<SceneId>(initialScene ?? 'enter')
@@ -100,9 +104,10 @@ export function OnboardingController({
   const tagPhaseRef = useRef(tagPhase)
   tagPhaseRef.current = tagPhase
   const [motionOn, setMotionOn] = useState(false)
-  // Install scene plays as two beats: 'demo' (a faithful save re-enactment) →
-  // 'install' (the real draggable bookmarklet chip).
-  const [installBeat, setInstallBeat] = useState<'demo' | 'install'>('demo')
+  // Install scene plays as two beats. Setup is taught FIRST: 'install' (drag the
+  // real bookmarklet chip onto the bookmark bar) → 'demo' (a faithful save
+  // re-enactment showing how it's then used). Extension users skip the drag.
+  const [installBeat, setInstallBeat] = useState<'demo' | 'install'>('install')
   // Extension demo plays as two beats: 'page' (floating-button save on a normal
   // page) → 'x' (the X bookmark → AllMarks auto-save = famous-site integration).
   const [extBeat, setExtBeat] = useState<'page' | 'x'>('page')
@@ -167,7 +172,7 @@ export function OnboardingController({
     setTagPhase('zoom')
     setMotionOn(false)
     setCopied(false)
-    setInstallBeat('demo')
+    setInstallBeat('install') // setup (drag) is taught first, then the save demo
     setExtBeat('page')
     setManageBeat('settings')
   }, [sceneId])
@@ -274,10 +279,22 @@ export function OnboardingController({
       )
     }
     if (sceneId === 'share') {
+      // Press beat: the user clicks the REAL SHARE button (spotlight + green
+      // cursor guide, no NEXT — it's a gesture to learn). Clicking it opens
+      // BoardRoot's real share panel, which flips shareModalOpen.
+      if (!shareModalOpen) {
+        return wrap(
+          <>
+            <OnboardingSpotlight targetSelector={TARGET_SELECTOR.share} caption={t('board.onboarding.share.pressBody')} />
+            <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.share} />
+          </>,
+        )
+      }
+      // Shown beat: the real panel is open — hold it look-don't-touch + caption +
+      // NEXT (advancing closes the panel; SHARE NOW is never pressed → no server share).
       return wrap(
         <OnboardingShareReveal
           caption={body}
-          onOpenModal={() => onShareSceneActive?.(true)}
           onCloseModal={() => onShareSceneActive?.(false)}
           onAdvance={advance}
         />,
@@ -442,32 +459,30 @@ export function OnboardingController({
     )
   }
 
-  // ---- Install scene — two beats ------------------------------------------
-  // Beat 1 (demo): a faithful re-enactment of saving with the bookmarklet — the
-  // cursor clicks the AllMarks bookmarklet in a browser frame's bookmark bar and
-  // the REAL save window pops (Saving → Saved → suggested tags). It shows the
-  // VALUE before asking for the action. This beat plays for EVERYONE, including
-  // people who already have the extension: the bookmarklet is a cross-browser
-  // save path worth teaching (it works where the extension can't — Firefox /
-  // Safari / mobile). Beat 2 (install): the real draggable chip so the user
-  // drops the bookmarklet onto their own (real) bookmark bar — the chip MUST
-  // target the user's actual browser chrome, so it can't live in the demo's fake
-  // bar. Extension users don't need the drag, so they advance straight from the
-  // demo; everyone else gets the drag beat.
-  if (installBeat === 'demo') {
+  // ---- Install scene — two beats (setup taught FIRST) ----------------------
+  // Beat 1 (install): the real draggable chip — the user drops the bookmarklet
+  // onto their own (real) bookmark bar. The chip MUST target the user's actual
+  // browser chrome, so it can't live in a fake bar; a drop there can't be
+  // detected, so NEXT advances. Extension users don't need to install the
+  // bookmarklet, so they skip this beat. Beat 2 (demo): a faithful re-enactment
+  // of saving WITH it — the cursor clicks the AllMarks bookmarklet in a browser
+  // frame's bookmark bar and the REAL save window pops (Saving → Saved →
+  // suggested tags). The bookmarklet is a cross-browser save path worth showing
+  // EVERYONE (it works where the extension can't — Firefox / Safari / mobile).
+  if (installBeat === 'install' && !installDetected) {
+    // The spotlight hole passes clicks through so the user can drag the real chip.
     return wrap(
-      <BookmarkletSaveReenactment
-        caption={t('board.onboarding.install.demoCaption')}
-        buttonLabel="NEXT"
-        onAdvance={() => { if (installDetected) { advance() } else { setInstallBeat('install') } }}
-      />,
+      <OnboardingSpotlight targetSelector={null} caption={body}>
+        <BookmarkletInstallChip appUrl={appUrl} />
+        <button type="button" className={styles.advanceBtn} onClick={() => setInstallBeat('demo')}>NEXT</button>
+      </OnboardingSpotlight>,
     )
   }
-  // The spotlight hole passes clicks through so the user can drag the real chip.
   return wrap(
-    <OnboardingSpotlight targetSelector={null} caption={body}>
-      <BookmarkletInstallChip appUrl={appUrl} />
-      <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
-    </OnboardingSpotlight>,
+    <BookmarkletSaveReenactment
+      caption={t('board.onboarding.install.demoCaption')}
+      buttonLabel="NEXT"
+      onAdvance={advance}
+    />,
   )
 }

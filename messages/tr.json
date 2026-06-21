@@ -111,7 +111,7 @@
         "body": "Uzantı zaten yüklü. Bağlantı yapıştırarak veya bookmarklet kullanarak da kaydedebilirsiniz."
       },
       "share": {
-        "body": "Paylaşım böyle çalışır. Sevdiğin bir pano oluştur ve herkesle paylaş."
+        "body": "Paylaşım böyle çalışır. Sevdiğin bir pano oluştur ve herkesle paylaş.", "pressBody": "Paylaşım panelini açmak için başlıktaki SHARE düğmesine basın."
       },
       "finale": {
         "body": "Hazırsınız. Bu öğreticiyi SETTINGS üzerinden istediğiniz zaman tekrar izleyebilirsiniz."
