@@ -3,9 +3,9 @@ import { describe, it, expect } from 'vitest'
 import { ONBOARDING_SCENES, nextSceneId, sceneById, MOBILE_SCENE_IDS, nextSceneIdIn } from '@/lib/onboarding/steps'
 
 describe('onboarding steps', () => {
-  it('has 8 scenes in the spec order', () => {
+  it('has 9 scenes in the spec order', () => {
     expect(ONBOARDING_SCENES.map((s) => s.id)).toEqual([
-      'enter', 'paste', 'tag', 'motion', 'extDemo', 'install', 'share', 'finale',
+      'enter', 'paste', 'tag', 'motion', 'extDemo', 'install', 'manage', 'share', 'finale',
     ])
   })
   it('paste advances on a real save event', () => {
@@ -18,6 +18,8 @@ describe('onboarding steps', () => {
   })
   it('nextSceneId walks the chain then ends', () => {
     expect(nextSceneId('enter')).toBe('paste')
+    expect(nextSceneId('install')).toBe('manage')
+    expect(nextSceneId('manage')).toBe('share')
     expect(nextSceneId('share')).toBe('finale')
     expect(nextSceneId('finale')).toBeNull()
   })

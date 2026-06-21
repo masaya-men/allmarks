@@ -17,6 +17,7 @@ export function TagButton({ onClick, active }: TagButtonProps): ReactElement {
       className={active ? styles.active : undefined}
       data-testid="tag-button"
       aria-pressed={active}
+      data-onboarding-target="manage"
     />
   )
 }

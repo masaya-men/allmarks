@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "Zieh diesen AllMarks-Button in deine Lesezeichenleiste, um von überall zu speichern. Keine Leiste zu sehen? Drücke Ctrl/⌘+Shift+B.", "demoCaption": "Klick auf jeder Seite auf das AllMarks-Lesezeichen – ein kleines Fenster öffnet sich und speichert sie." },
+      "manage": { "body": "Das Speicherfenster lässt sich in SETTINGS abschalten. Zum Taggen vieler Einträge auf einmal öffne MANAGE TAGS.", "triageBody": "MANAGE TAGS — tagge dein Board Karte für Karte. Wische, um schnell durchzukommen." },
       "installDetected": {
         "body": "Die Erweiterung ist bereits installiert. Du kannst auch per Link-Einfügen oder Bookmarklet speichern."
       },

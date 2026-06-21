@@ -66,6 +66,7 @@ import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletIns
 import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
 import { OnboardingController } from '@/components/onboarding/OnboardingController'
 import { shouldAutoStartOnboarding } from '@/lib/onboarding/onboarding-state'
+import type { SceneId } from '@/lib/onboarding/steps'
 import { seedOnboardingDemo, clearOnboardingDemo } from '@/lib/onboarding/onboarding-demo'
 import type { IDBPDatabase } from 'idb'
 import { LanguageSwitcher } from './LanguageSwitcher'
@@ -281,6 +282,9 @@ export function BoardRoot() {
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
   // Onboarding: true while the first-run tutorial overlay is active.
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false)
+  // Resume target after the manage scene's /triage detour (undefined = start at
+  // 'enter' for a normal first run / replay).
+  const [onboardingInitialScene, setOnboardingInitialScene] = useState<SceneId | undefined>(undefined)
   // Read at save time by the paste handler + tag-create so anything saved/created
   // DURING the tutorial is flagged onboardingDemo and swept on completion. Kept
   // current via assignment below (refs don't need an effect for read-at-event).
@@ -571,6 +575,20 @@ export function BoardRoot() {
       const db = (await initDB()) as unknown as DbLike
       if (cancelled) return
       onboardingDbRef.current = db
+      // RESUME after the manage scene navigated out to /triage and back. The
+      // demo cards are still seeded from the original run, so DON'T sweep them
+      // (items.length > 0 would otherwise make shouldAutoStartOnboarding false
+      // and trigger the sweep) — re-open the tutorial at the saved scene.
+      let resumeScene: string | null = null
+      try { resumeScene = sessionStorage.getItem('allmarks-onboarding-resume') } catch { /* private mode */ }
+      if (resumeScene) {
+        try { sessionStorage.removeItem('allmarks-onboarding-resume') } catch { /* ignore */ }
+        await reload()
+        if (cancelled) return
+        setOnboardingInitialScene(resumeScene as SceneId)
+        setShowOnboarding(true)
+        return
+      }
       if (await shouldAutoStartOnboarding(db, items.length)) {
         // Mobile runs only enter->paste->finale (no tag/motion scenes), so the
         // demo cards have no scene to justify them — skip seeding so a mobile
@@ -606,6 +624,7 @@ export function BoardRoot() {
     const onMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
     await seedOnboardingDemo(db, onMobile ? 0 : undefined)
     await reload()
+    setOnboardingInitialScene(undefined) // replay always starts from 'enter'
     setShowOnboarding(true)
   }
 
@@ -1916,6 +1935,16 @@ export function BoardRoot() {
               />
               <TagButton
                 onClick={(): void => {
+                  // Onboarding 'manage' scene → show the REAL /triage in
+                  // onboarding mode (demo-card auto-demo + the swipe pan), then
+                  // resume the tutorial at the next scene on return. MANAGE is
+                  // only clickable during that scene (the overlay blocks it
+                  // otherwise), so gating on showOnboarding is enough.
+                  if (onboardingActiveRef.current) {
+                    try { sessionStorage.setItem('allmarks-onboarding-resume', 'share') } catch { /* private mode */ }
+                    router.push('/triage?onboarding=1')
+                    return
+                  }
                   // Session 81: entry picker removed. TriagePage now auto-
                   // selects mode based on the untagged backlog (= empty
                   // backlog → 'all' so the user can review existing tags,
@@ -2066,7 +2095,8 @@ export function BoardRoot() {
               db={onboardingDbRef.current}
               motionEnabled={motionEnabled}
               appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
-              onComplete={() => { setShowOnboarding(false); resetOnboardingCamera(); void reload(); void reloadTags() }}
+              onComplete={() => { setShowOnboarding(false); setOnboardingInitialScene(undefined); resetOnboardingCamera(); void reload(); void reloadTags() }}
+              initialScene={onboardingInitialScene}
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
               tagAddedSignal={tagAddedTick}

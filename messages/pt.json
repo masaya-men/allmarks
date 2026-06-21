@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B.", "demoCaption": "Clique no favorito do AllMarks em qualquer página — uma pequena janela aparece e o salva." },
+      "manage": { "body": "A janela de salvamento pode ser desativada em SETTINGS. Para marcar várias de uma vez, abra MANAGE TAGS.", "triageBody": "MANAGE TAGS — marque seu quadro carta a carta. Deslize para avançar rápido." },
       "installDetected": {
         "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
       },

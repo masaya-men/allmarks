@@ -66,6 +66,9 @@ export type BoardItem = {
   readonly linkStatus?: 'alive' | 'gone' | 'unknown'
   /** v14: 最後に link 健全性を再 scrape した Unix ms。 undefined = 未チェック。 */
   readonly lastCheckedAt?: number
+  /** True for tutorial demo cards (swept when onboarding ends). Lets the
+   *  onboarding /triage screen scope its queue to just the demo cards. */
+  readonly onboardingDemo?: boolean
 }
 
 type DbLike = IDBPDatabase<unknown>
@@ -144,6 +147,7 @@ function toItem(b: BookmarkRecord, c: CardRecord | undefined): BoardItem {
     mediaSlots: b.mediaSlots,
     linkStatus: b.linkStatus,
     lastCheckedAt: b.lastCheckedAt,
+    onboardingDemo: b.onboardingDemo,
   }
 }
 

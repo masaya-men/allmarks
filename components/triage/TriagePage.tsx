@@ -50,6 +50,10 @@ export function TriagePage(): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
   const mode = parseMode(searchParams.get('mode'))
+  // Onboarding mode: reached from the tutorial's manage scene. Scopes the queue
+  // to the demo cards and auto-plays the tag + swipe-pan so the user sees the
+  // real MANAGE TAGS screen in action, then CONTINUE resumes the tutorial.
+  const onboarding = searchParams.get('onboarding') === '1'
   const { items, deletedItems, persistTags, reload: reloadBoardData, loading } = useBoardData()
   const { tags, create, remove: removeTag, rename: renameTag, reorder: reorderTag } = useTags()
 
@@ -61,20 +65,22 @@ export function TriagePage(): ReactElement {
   // fall through to "all" so the user can revisit existing tags on every
   // card. The replace (not push) keeps the back button sensible.
   useEffect(() => {
+    if (onboarding) return // onboarding keeps mode=null + ?onboarding=1; don't redirect it away
     if (mode !== null) return
     if (loading) return
     const target = untaggedItems.length === 0 ? 'all' : 'untagged'
     router.replace(`/triage?mode=${target}`)
-  }, [mode, loading, untaggedItems.length, router])
+  }, [onboarding, mode, loading, untaggedItems.length, router])
 
   const queue = useMemo(() => {
+    if (onboarding) return allItems.filter((it) => it.onboardingDemo === true)
     if (mode === 'untagged') return untaggedItems
     if (mode === 'all') return allItems
     if (mode && typeof mode === 'object') {
       return items.filter((it) => !it.isDeleted && it.tags.includes(mode.tagId))
     }
     return []
-  }, [mode, untaggedItems, allItems, items])
+  }, [onboarding, mode, untaggedItems, allItems, items])
 
   // Review mode = the user is editing existing tag assignments (= 'all'
   // or a single 'tag:X' filter), so pre-arm the chips with the current
@@ -283,6 +289,34 @@ export function TriagePage(): ReactElement {
       setIndex((i) => i + 1)
     }, SWIPE_ANIM_MS)
   }, [current, exitDecision])
+
+  // ── Onboarding auto-demo ──
+  // Drives the REAL handlers on a timer so the tutorial shows MANAGE TAGS doing
+  // its thing: arm a tag → Yes (apply + the continuous swipe-pan) → repeat, then
+  // a plain No pan, then reveal CONTINUE. Reuses the genuine animation; the
+  // overlay below blocks real input so the user just watches. Refs keep the
+  // latest closures so the armed tag is read after the setState re-render.
+  const handleYesRef = useRef(handleYes)
+  handleYesRef.current = handleYes
+  const handleNoRef = useRef(handleNo)
+  handleNoRef.current = handleNo
+  const [onbDone, setOnbDone] = useState(false)
+  const onbStartedRef = useRef(false)
+  useEffect(() => {
+    if (!onboarding || loading || onbStartedRef.current) return
+    if (queue.length < 2) return
+    onbStartedRef.current = true
+    const firstTag = tags[0]?.id
+    const secondTag = tags[1]?.id ?? tags[0]?.id
+    const timers: ReturnType<typeof setTimeout>[] = []
+    timers.push(setTimeout(() => { if (firstTag) setArmedTagIds(new Set([firstTag])) }, 1500))
+    timers.push(setTimeout(() => { handleYesRef.current() }, 2200))
+    timers.push(setTimeout(() => { if (secondTag) setArmedTagIds(new Set([secondTag])) }, 3900))
+    timers.push(setTimeout(() => { handleYesRef.current() }, 4600))
+    timers.push(setTimeout(() => { handleNoRef.current() }, 6000))
+    timers.push(setTimeout(() => setOnbDone(true), 6900))
+    return () => { for (const t of timers) clearTimeout(t) }
+  }, [onboarding, loading, queue.length, tags])
 
   /** Bookmark we want to jump back to after the queue re-derives from
    *  the updated items list. Consumed in the useEffect below. */
@@ -610,8 +644,9 @@ export function TriagePage(): ReactElement {
 
   // mode === null is a transient state — the useEffect above will replace
   // the URL on the next tick. Render a loading placeholder so we don't
-  // flash blank canvas during the redirect.
-  if (!mode) {
+  // flash blank canvas during the redirect. (Onboarding keeps mode=null on
+  // purpose, so skip this and render the real screen.)
+  if (!mode && !onboarding) {
     return (
       <div className={styles.simpleRoot}>
         <div className={styles.main}><div>Loading…</div></div>
@@ -852,6 +887,20 @@ export function TriagePage(): ReactElement {
           />
         )
       })()}
+
+      {/* Onboarding overlay — transparent blocker (the auto-demo drives the
+          real handlers underneath; real input is blocked so the user just
+          watches) + a caption and the CONTINUE button that resumes the tutorial. */}
+      {onboarding && (
+        <div className={styles.onbOverlay} data-testid="triage-onboarding">
+          <div className={styles.onbFooter}>
+            <p className={styles.onbCaption}>{t('board.onboarding.manage.triageBody')}</p>
+            {onbDone && (
+              <button type="button" className={styles.onbContinue} onClick={exit}>CONTINUE</button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

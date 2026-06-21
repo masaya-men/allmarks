@@ -52,6 +52,9 @@ type Props = {
    *  so the tutorial shows the genuine share screen (non-interactive) rather
    *  than a re-enactment. Never confirms the share, so no server share is made. */
   readonly onShareSceneActive?: (active: boolean) => void
+  /** Start at a specific scene instead of 'enter'. Used to RESUME the tutorial
+   *  after the manage scene navigates out to the real /triage screen and back. */
+  readonly initialScene?: SceneId
 }
 
 const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' // public, long-lived
@@ -62,6 +65,7 @@ const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   card: '[data-onboarding-target="card"]',
   motion: '[data-onboarding-target="motion"]',
   share: '[data-onboarding-target="share"]',
+  manage: '[data-onboarding-target="manage"]',
 }
 
 // Tag scene beats: the camera pushes in to the just-added card FIRST, then a
@@ -78,9 +82,10 @@ function extensionDetected(): boolean {
 export function OnboardingController({
   db, motionEnabled, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
   tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset, onShareSceneActive,
+  initialScene,
 }: Props): ReactElement {
   const { t } = useI18n()
-  const [sceneId, setSceneId] = useState<SceneId>('enter')
+  const [sceneId, setSceneId] = useState<SceneId>(initialScene ?? 'enter')
   const [copied, setCopied] = useState(false)
   // Confirmations: the tag/motion scenes show the RESULT of the action and a
   // NEXT button, so the user sees what happened and proceeds at their own pace
@@ -364,6 +369,21 @@ export function OnboardingController({
           <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
         </div>
       </>,
+    )
+  }
+
+  // ---- Manage scene -------------------------------------------------------
+  // Spotlight the real MANAGE TAGS button. The caption notes the save window
+  // can be turned off in SETTINGS and that bulk tagging lives behind MANAGE
+  // TAGS. Clicking the real button (through the spotlight hole) navigates to the
+  // genuine /triage screen in onboarding mode (BoardRoot routes it there + sets
+  // the resume flag); the tutorial resumes at the share scene on return. NEXT
+  // skips straight ahead for anyone who doesn't want the detour.
+  if (sceneId === 'manage') {
+    return wrap(
+      <OnboardingSpotlight targetSelector={TARGET_SELECTOR.manage} caption={body}>
+        <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
+      </OnboardingSpotlight>,
     )
   }
 

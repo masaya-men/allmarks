@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "Fais glisser ce bouton AllMarks dans ta barre de favoris pour enregistrer depuis n'importe où. Tu ne vois pas la barre ? Appuie sur Ctrl/⌘+Shift+B.", "demoCaption": "Clique sur le favori AllMarks depuis n'importe quelle page — une petite fenêtre s'ouvre et l'enregistre." },
+      "manage": { "body": "La fenêtre d'enregistrement peut être désactivée dans SETTINGS. Pour étiqueter en masse, ouvre MANAGE TAGS.", "triageBody": "MANAGE TAGS — étiquette ton tableau carte par carte. Glisse pour avancer vite." },
       "installDetected": {
         "body": "L'extension est déjà installée. Il est aussi possible d'enregistrer en collant un lien ou en utilisant le bookmarklet."
       },

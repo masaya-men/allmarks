@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas.", "demoCaption": "Herhangi bir sayfada yer imleri çubuğundaki AllMarks'a tıkla — küçük bir pencere açılıp onu kaydeder." },
+      "manage": { "body": "Kaydetme penceresini SETTINGS'ten kapatabilirsin. Toplu etiketlemek için MANAGE TAGS'i aç.", "triageBody": "MANAGE TAGS — panonu tek tek kartlarla etiketle. Kaydırarak hızlıca ilerle." },
       "installDetected": {
         "body": "Uzantı zaten yüklü. Bağlantı yapıştırarak veya bookmarklet kullanarak da kaydedebilirsiniz."
       },

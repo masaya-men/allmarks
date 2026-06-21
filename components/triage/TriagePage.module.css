@@ -542,3 +542,62 @@
   transition: color 120ms;
 }
 .tagManagementRemove:hover { color: rgba(220, 80, 80, 0.95); }
+
+/* Onboarding auto-demo overlay — transparent input blocker (the tutorial drives
+   the real swipe/tag handlers programmatically underneath) + a bottom caption
+   and the CONTINUE button that resumes the tutorial back on the board. */
+.onbOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10; /* above the triage chrome (max z-index 5) so input is sealed */
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+.onbFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 40px;
+  max-width: 480px;
+  width: calc(100vw - 48px);
+  text-align: center;
+}
+.onbCaption {
+  margin: 0;
+  padding: 12px 16px;
+  background: rgba(12, 12, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.onbContinue {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(20, 20, 20, 0.92);
+  border: 1px solid rgba(40, 241, 0, 0.5);
+  border-radius: 8px;
+  padding: 10px 22px;
+  cursor: pointer;
+  pointer-events: auto;
+  animation: onbContinuePulse 1.5s ease-in-out infinite;
+}
+.onbContinue:hover { background: rgba(40, 40, 40, 0.95); }
+@keyframes onbContinuePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(40, 241, 0, 0); }
+  50% { box-shadow: 0 0 0 5px rgba(40, 241, 0, 0.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onbContinue { animation: none; }
+}

@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "Sleep deze AllMarks-knop naar je bladwijzerbalk om overal op te slaan. Zie je de balk niet? Druk op Ctrl/⌘+Shift+B.", "demoCaption": "Klik op elke pagina op de AllMarks-bladwijzer in je bladwijzerbalk — er verschijnt een klein venster dat hem opslaat." },
+      "manage": { "body": "Het opslagvenster kun je uitzetten in SETTINGS. Wil je er veel tegelijk taggen, open dan MANAGE TAGS.", "triageBody": "MANAGE TAGS — tag je bord kaart voor kaart. Veeg om er snel doorheen te gaan." },
       "installDetected": {
         "body": "De extensie is al geïnstalleerd. Je kunt ook opslaan door een link te plakken of de bookmarklet te gebruiken."
       },

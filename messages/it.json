@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "Trascina questo pulsante AllMarks nella barra dei preferiti per salvare da ovunque. Non vedi la barra? Premi Ctrl/⌘+Shift+B.", "demoCaption": "Clicca il segnalibro AllMarks su qualsiasi pagina — si apre una piccola finestra che la salva." },
+      "manage": { "body": "La finestra di salvataggio si può disattivare in SETTINGS. Per assegnare tag in blocco, apri MANAGE TAGS.", "triageBody": "MANAGE TAGS — assegna tag al tuo board una carta alla volta. Scorri per andare veloce." },
       "installDetected": {
         "body": "L'estensione è già installata. È possibile salvare anche incollando un link o usando il bookmarklet."
       },

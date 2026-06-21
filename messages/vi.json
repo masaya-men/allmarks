@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "Kéo nút AllMarks này vào thanh dấu trang để lưu từ bất cứ đâu. Không thấy thanh? Nhấn Ctrl/⌘+Shift+B.", "demoCaption": "Nhấp dấu trang AllMarks trên bất kỳ trang nào — một cửa sổ nhỏ hiện ra và lưu lại." },
+      "manage": { "body": "Cửa sổ khi lưu có thể tắt trong SETTINGS. Để gắn thẻ hàng loạt, hãy mở MANAGE TAGS.", "triageBody": "MANAGE TAGS — gắn thẻ bảng của bạn từng thẻ một. Vuốt để lướt nhanh." },
       "installDetected": {
         "body": "Tiện ích mở rộng đã được cài đặt. Bạn cũng có thể lưu bằng cách dán liên kết hoặc dùng bookmarklet."
       },

@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "把这个 AllMarks 按钮拖到书签栏，就能在任何网页一键保存。看不到书签栏？按 Ctrl/⌘+Shift+B。", "demoCaption": "在任何网页点击书签栏里的 AllMarks 书签——会弹出一个小窗口，帮你保存。" },
+      "manage": { "body": "保存时的小窗口可以在 SETTINGS 中关闭。想一次性批量加标签，就打开 MANAGE TAGS。", "triageBody": "MANAGE TAGS — 一次一张卡片地加标签，滑动就能飞快整理。" },
       "installDetected": {
         "body": "扩展已安装。也可通过粘贴链接或使用 bookmarklet 进行保存。"
       },

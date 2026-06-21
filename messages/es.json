@@ -108,6 +108,7 @@
       },
       "install": {
         "body": "Arrastra este botón de AllMarks a tu barra de marcadores para guardar desde cualquier lugar. ¿No ves la barra? Pulsa Ctrl/⌘+Shift+B.", "demoCaption": "Pulsa el marcador de AllMarks en cualquier página — se abre una pequeña ventana y la guarda." },
+      "manage": { "body": "La ventana de guardado puede desactivarse en SETTINGS. Para etiquetar muchas a la vez, abre MANAGE TAGS.", "triageBody": "MANAGE TAGS — etiqueta tu tablero tarjeta a tarjeta. Desliza para avanzar rápido." },
       "installDetected": {
         "body": "La extensión ya está instalada. También puedes guardar pegando un enlace o usando el bookmarklet."
       },
