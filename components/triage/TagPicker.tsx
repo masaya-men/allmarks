@@ -9,16 +9,21 @@ import styles from './TagPicker.module.css'
 
 /** Keyboard handler hook for 1-9 armed-tag toggle, Space → No, Z → undo.
  *  Direction keys (Arrow / WASD) are handled in TriagePage itself
- *  alongside Esc. Skips input/textarea targets. */
+ *  alongside Esc. Skips input/textarea targets. `disabled` seals these keys
+ *  during the onboarding demo (the transparent overlay only blocks pointer
+ *  input — keyboard reaches window listeners, which would silently advance the
+ *  index / arm a tag out from under the guided steps). */
 export function useTagPickerKeys({
-  tags, onToggleArmed, onNo, onUndo,
+  tags, onToggleArmed, onNo, onUndo, disabled = false,
 }: {
   tags: ReadonlyArray<TagRecord>
   onToggleArmed: (tagId: string) => void
   onNo: () => void
   onUndo: (() => void) | null
+  disabled?: boolean
 }): void {
   useEffect(() => {
+    if (disabled) return
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
@@ -33,7 +38,7 @@ export function useTagPickerKeys({
     }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
-  }, [tags, onToggleArmed, onNo, onUndo])
+  }, [tags, onToggleArmed, onNo, onUndo, disabled])
 }
 
 /** Top tag strip: all tags as chips, click to toggle "armed" state.

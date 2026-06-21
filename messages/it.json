@@ -88,6 +88,7 @@
       "reset_tooltip": "Ripristina i valori predefiniti"
     },
     "onboarding": {
+      "triage": {"intro":"Questa è la schermata MANAGE. Aggiungi un tag alle carte salvate, una alla volta, per metterle in ordine in un attimo.","pickTag":"Per prima cosa, scegli il tag da applicare: cliccalo oppure premi un tasto numerico (1–9).","apply":"Premi → (oppure D, o scorri verso destra) per applicare il tag e passare alla carta successiva.","skip":"Salta una carta con ← (oppure A, o scorri verso sinistra). Hai sbagliato? Con Z torni indietro di uno.","done":"Tutto qui: basta ripetere. Il tuo arretrato sparisce in fretta."},
       "enter": {
         "body": "AllMarks trasforma i link in una bacheca visiva."
       },

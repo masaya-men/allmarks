@@ -88,6 +88,7 @@
       "reset_tooltip": "Varsayılanlara sıfırla"
     },
     "onboarding": {
+      "triage": {"intro":"Burası MANAGE. Kaydettiğin kartları teker teker etiketleyerek hızlıca düzene sok.","pickTag":"Önce uygulamak istediğin bir etiket seç — üstüne tıkla ya da bir rakam tuşuna bas (1–9).","apply":"Etiketi uygulayıp sonraki karta geçmek için → bas (ya da D, ya da sağa kaydır).","skip":"Bir kartı atlamak için ← bas (ya da A, ya da sola kaydır). Hata mı yaptın? Z ile bir adım geri al.","done":"Hepsi bu — sadece tekrarla. Biriken kartların hızla erir."},
       "enter": {
         "body": "AllMarks bağlantıları görsel bir panoya dönüştürür."
       },

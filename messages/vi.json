@@ -88,6 +88,7 @@
       "reset_tooltip": "Đặt lại về mặc định"
     },
     "onboarding": {
+      "triage": {"intro":"Đây là MANAGE. Gắn thẻ cho từng tấm thẻ đã lưu để dọn dẹp thật nhanh.","pickTag":"Trước tiên, hãy chọn một thẻ để gắn — bấm vào thẻ, hoặc nhấn phím số (1–9).","apply":"Nhấn → (hoặc D, hoặc vuốt sang phải) để gắn thẻ và chuyển sang tấm tiếp theo.","skip":"Bỏ qua một tấm bằng ← (hoặc A, hoặc vuốt sang trái). Lỡ tay? Nhấn Z để lùi lại một bước.","done":"Vậy thôi — cứ lặp lại như thế. Đống thẻ tồn đọng sẽ vơi đi nhanh chóng."},
       "enter": {
         "body": "AllMarks chuyển đổi liên kết thành bảng trực quan."
       },

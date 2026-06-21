@@ -88,6 +88,7 @@
       "reset_tooltip": "Restablecer valores predeterminados"
     },
     "onboarding": {
+      "triage": {"intro":"Esto es MANAGE. Etiqueta tus tarjetas guardadas una por una para ordenarlas rápido.","pickTag":"Primero, elige una etiqueta para aplicar: haz clic en ella o pulsa una tecla numérica (1–9).","apply":"Pulsa → (o D, o desliza a la derecha) para aplicar la etiqueta y pasar a la siguiente tarjeta.","skip":"Omite una tarjeta con ← (o A, o desliza a la izquierda). ¿Te equivocaste? Z retrocede uno.","done":"Eso es todo: solo repite. Tu pila pendiente se desvanece."},
       "enter": {
         "body": "AllMarks convierte enlaces en un tablero visual."
       },

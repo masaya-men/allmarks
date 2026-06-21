@@ -13,9 +13,16 @@ import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import { TagContextMenu } from './TagContextMenu'
 import { TagDeleteConfirmDialog } from './TagDeleteConfirmDialog'
 import { classifyRelease, hitTestChip, type ChipRect } from '@/lib/triage/drag-gesture'
+import { OnboardingSpotlight } from '@/components/onboarding/OnboardingSpotlight'
+import { OnboardingCursorGuide } from '@/components/onboarding/OnboardingCursorGuide'
 import styles from './TriagePage.module.css'
 
 type TriageMode = 'untagged' | 'all' | { tagId: string }
+
+/** ⑥ Onboarding guided demo phases — one gesture explained per step, advancing
+ *  on NEXT (the old version auto-ran all of it in ~7s with no explanation). */
+type OnbPhase = 'intro' | 'pickTag' | 'apply' | 'skip' | 'done'
+const ONB_SEQUENCE: readonly OnbPhase[] = ['intro', 'pickTag', 'apply', 'skip', 'done'] as const
 
 const SWIPE_ANIM_MS = 360
 /** Card-drag gesture thresholds (manage screen). Below TAP = open the link;
@@ -290,33 +297,47 @@ export function TriagePage(): ReactElement {
     }, SWIPE_ANIM_MS)
   }, [current, exitDecision])
 
-  // ── Onboarding auto-demo ──
-  // Drives the REAL handlers on a timer so the tutorial shows MANAGE TAGS doing
-  // its thing: arm a tag → Yes (apply + the continuous swipe-pan) → repeat, then
-  // a plain No pan, then reveal CONTINUE. Reuses the genuine animation; the
-  // overlay below blocks real input so the user just watches. Refs keep the
-  // latest closures so the armed tag is read after the setState re-render.
+  // ── Onboarding step-by-step guided demo (⑥) ──
+  // One gesture per phase: intro (what this screen is) → pickTag (a green cursor
+  // arms a tag) → apply (→ applies it + the real swipe-pan plays) → skip (← pan,
+  // no apply) → done (CONTINUE). NEXT advances; the overlay blocks real input so
+  // each step is explained and SHOWN, not auto-rushed. Refs keep latest closures.
   const handleYesRef = useRef(handleYes)
   handleYesRef.current = handleYes
   const handleNoRef = useRef(handleNo)
   handleNoRef.current = handleNo
-  const [onbDone, setOnbDone] = useState(false)
-  const onbStartedRef = useRef(false)
+  const tagsRef = useRef(tags)
+  tagsRef.current = tags
+  const [onbPhase, setOnbPhase] = useState<OnbPhase>('intro')
+  const firstDemoTagId = tags[0]?.id ?? null
+  const onbNext = useCallback((): void => {
+    setOnbPhase((p) => ONB_SEQUENCE[Math.min(ONB_SEQUENCE.indexOf(p) + 1, ONB_SEQUENCE.length - 1)])
+  }, [])
+  // Fire each phase's demo action exactly once (StrictMode-safe: the guard is set
+  // inside the timeout, so a dev double-invoke that clears the first timer still
+  // lets the second fire). pickTag arms a tag; apply/skip drive the real handlers.
+  const onbFiredRef = useRef<Set<OnbPhase>>(new Set())
   useEffect(() => {
-    if (!onboarding || loading || onbStartedRef.current) return
-    if (queue.length < 2) return
-    onbStartedRef.current = true
-    const firstTag = tags[0]?.id
-    const secondTag = tags[1]?.id ?? tags[0]?.id
-    const timers: ReturnType<typeof setTimeout>[] = []
-    timers.push(setTimeout(() => { if (firstTag) setArmedTagIds(new Set([firstTag])) }, 1500))
-    timers.push(setTimeout(() => { handleYesRef.current() }, 2200))
-    timers.push(setTimeout(() => { if (secondTag) setArmedTagIds(new Set([secondTag])) }, 3900))
-    timers.push(setTimeout(() => { handleYesRef.current() }, 4600))
-    timers.push(setTimeout(() => { handleNoRef.current() }, 6000))
-    timers.push(setTimeout(() => setOnbDone(true), 6900))
-    return () => { for (const t of timers) clearTimeout(t) }
-  }, [onboarding, loading, queue.length, tags])
+    if (!onboarding || loading) return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const fireOnce = (key: OnbPhase, fn: () => void, delay: number): void => {
+      timer = setTimeout(() => {
+        if (onbFiredRef.current.has(key)) return
+        onbFiredRef.current.add(key)
+        fn()
+      }, delay)
+    }
+    if (onbPhase === 'pickTag') fireOnce('pickTag', () => { const id = tagsRef.current[0]?.id; if (id) setArmedTagIds(new Set([id])) }, 950)
+    else if (onbPhase === 'apply') {
+      // Guarantee a tag is armed even if the user clicked NEXT before pickTag's
+      // arm timer fired — otherwise apply would swipe with nothing applied (a
+      // hollow "nothing got tagged" demo). Idempotent: keeps an existing armed set.
+      const id = tagsRef.current[0]?.id
+      if (id) setArmedTagIds((prev) => (prev.size > 0 ? prev : new Set([id])))
+      fireOnce('apply', () => handleYesRef.current(), 1200)
+    } else if (onbPhase === 'skip') fireOnce('skip', () => handleNoRef.current(), 1200)
+    return () => { if (timer) clearTimeout(timer) }
+  }, [onbPhase, onboarding, loading])
 
   /** Bookmark we want to jump back to after the queue re-derives from
    *  the updated items list. Consumed in the useEffect below. */
@@ -431,6 +452,12 @@ export function TriagePage(): ReactElement {
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+      /* During the onboarding demo the overlay seals POINTER input, but keyboard
+         events still reach this window listener — so block every shortcut here
+         too. Esc stays as a deliberate escape (→ /board, which resumes the
+         tutorial at the share scene). Space/Shift+Delete/etc. are silenced so
+         they can't desync the guided phases. */
+      if (onboarding && e.key !== 'Escape') return
 
       /* Shift+Delete on a focused tag chip opens the context menu near
          the chip's right edge. Mirrors the right-click flow so users
@@ -462,13 +489,14 @@ export function TriagePage(): ReactElement {
     }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
-  }, [exit, handleYes, handleNo, mode, contextMenu, deleteConfirm])
+  }, [exit, handleYes, handleNo, mode, contextMenu, deleteConfirm, onboarding])
 
   useTagPickerKeys({
     tags,
     onToggleArmed: toggleArmed,
     onNo: handleNo,
     onUndo: lastAction ? handleUndo : null,
+    disabled: onboarding, // the guided demo drives everything; seal real keys
   })
 
   /* Snapshot the current chip rects (inflated for forgiving drops) for
@@ -794,7 +822,10 @@ export function TriagePage(): ReactElement {
           swipe), wired via onSurfacePointerDown below, so the text panel stays
           freely selectable. */}
       <div className={styles.canvas}>
-        <div className={styles.canvasCardHost} ref={canvasCardHostRef}>
+        <div
+          className={`${styles.canvasCardHost} ${onboarding && onbPhase === 'intro' ? styles.onbZoom : ''}`}
+          ref={canvasCardHostRef}
+        >
           <TriageCard
             key={current.bookmarkId}
             item={current}
@@ -888,15 +919,36 @@ export function TriagePage(): ReactElement {
         )
       })()}
 
-      {/* Onboarding overlay — transparent blocker (the auto-demo drives the
-          real handlers underneath; real input is blocked so the user just
-          watches) + a caption and the CONTINUE button that resumes the tutorial. */}
+      {/* Onboarding guided demo overlay (⑥) — transparent blocker (real input is
+          sealed; the demo drives the real handlers) + per-phase focus: a dim +
+          ring spotlights the relevant element (intro=card, pickTag=tag strip,
+          done=full), a green cursor shows WHERE to act, and the bottom caption
+          explains THIS step. apply/skip keep the canvas fully lit so the real
+          swipe-pan reads. NEXT advances; CONTINUE resumes the tutorial. */}
       {onboarding && (
         <div className={styles.onbOverlay} data-testid="triage-onboarding">
+          {(onbPhase === 'intro' || onbPhase === 'pickTag' || onbPhase === 'done') && (
+            <OnboardingSpotlight
+              targetSelector={
+                onbPhase === 'pickTag' ? '[data-testid="top-tag-strip"]'
+                  : onbPhase === 'intro' ? '[data-testid="triage-card"]'
+                    : null
+              }
+              caption=""
+              blockOutside={false}
+            />
+          )}
+          {onbPhase === 'pickTag' && firstDemoTagId && (
+            <OnboardingCursorGuide targetSelector={`[data-tag-id="${firstDemoTagId}"]`} />
+          )}
+          {onbPhase === 'apply' && <OnboardingCursorGuide targetSelector='[data-testid="triage-yes-button"]' />}
+          {onbPhase === 'skip' && <OnboardingCursorGuide targetSelector='[data-testid="triage-no-button"]' />}
           <div className={styles.onbFooter}>
-            <p className={styles.onbCaption}>{t('board.onboarding.manage.triageBody')}</p>
-            {onbDone && (
+            <p className={styles.onbCaption}>{t(`board.onboarding.triage.${onbPhase}`)}</p>
+            {onbPhase === 'done' ? (
               <button type="button" className={styles.onbContinue} onClick={exit}>CONTINUE</button>
+            ) : (
+              <button type="button" className={styles.onbContinue} onClick={onbNext}>NEXT</button>
             )}
           </div>
         </div>

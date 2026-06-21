@@ -88,6 +88,7 @@
       "reset_tooltip": "Restaurar padrões"
     },
     "onboarding": {
+      "triage": {"intro":"Esta é a tela MANAGE. Marque seus cards salvos um por um para organizá-los rapidamente.","pickTag":"Primeiro, escolha uma tag para aplicar — clique nela ou pressione uma tecla numérica (1–9).","apply":"Pressione → (ou D, ou deslize para a direita) para aplicar a tag e ir para o próximo card.","skip":"Pule um card com ← (ou A, ou deslize para a esquerda). Errou? Z volta um card.","done":"É isso — basta repetir. Seus cards acumulados somem num instante."},
       "enter": {
         "body": "AllMarks transforma links num quadro visual."
       },
