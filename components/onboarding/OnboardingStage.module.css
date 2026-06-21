@@ -18,11 +18,9 @@
 .langPicker { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); }
 .waves { display: flex; gap: 6px; align-items: center; height: 40px; }
 .wave { width: 3px; height: 24px; background: rgba(40,241,0,0.7); border-radius: 2px; transform-origin: center; }
-.mark { position: relative; display: inline-flex; }
-.logo { width: 64px; height: 64px; }
-.check { position: absolute; right: -10px; bottom: -6px; color: #28f100; font-size: 22px; }
-/* finale completion stamp — A-logo + check seated inside a glowing green disk.
-   markInner is the positioned box the check anchors to (mirrors .mark). */
+/* Brand A-mark (favicon / floating-button SVG). Square viewBox → height auto. */
+.logo { width: 68px; height: auto; }
+/* finale completion stamp — the brand mark seated inside a glowing green disk. */
 .disk {
   display: inline-flex; align-items: center; justify-content: center;
   width: 124px; height: 124px; border-radius: 50%;
@@ -30,7 +28,6 @@
   border: 1.5px solid rgba(40,241,0,0.5);
   box-shadow: 0 0 44px rgba(40,241,0,0.30), inset 0 0 26px rgba(40,241,0,0.16);
 }
-.markInner { position: relative; display: inline-flex; }
 .caption { max-width: 420px; text-align: center; font-size: 13px; line-height: 1.8; }
 .cta {
   font: inherit; font-size: 12px; letter-spacing: 0.10em; text-transform: uppercase;

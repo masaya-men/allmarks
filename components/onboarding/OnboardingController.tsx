@@ -430,11 +430,13 @@ export function OnboardingController({
         </>,
       )
     }
+    // No NEXT here: the goal is to LEARN the gesture (open MANAGE TAGS). Offering
+    // NEXT let users skip past it without doing it. The caption + spotlight +
+    // green cursor all point at the real button; clicking it advances. SKIP
+    // (top-right) remains the escape hatch for anyone who wants out entirely.
     return wrap(
       <>
-        <OnboardingSpotlight targetSelector={TARGET_SELECTOR.manage} caption={t('board.onboarding.manage.body')}>
-          <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
-        </OnboardingSpotlight>
+        <OnboardingSpotlight targetSelector={TARGET_SELECTOR.manage} caption={t('board.onboarding.manage.body')} />
         <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.manage} />
       </>,
     )

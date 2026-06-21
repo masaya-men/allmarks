@@ -141,7 +141,7 @@ describe('OnboardingController', () => {
     expect(screen.getByTestId('scene-motion')).not.toBeNull()
   })
 
-  it('share scene shows the share showcase and advances on NEXT', async () => {
+  it('manage scene teaches the real MANAGE TAGS gesture with no NEXT escape', async () => {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {
       const [motion, setMotion] = useState(false)
@@ -161,8 +161,8 @@ describe('OnboardingController', () => {
     const onComplete = vi.fn()
     renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
 
-    // Walk to the share scene: paste -> tag -> motion -> extDemo(page,X) ->
-    // install(demo,drag) -> manage(settings,manage) -> share
+    // Walk to the manage scene: paste -> tag -> motion -> extDemo(page,X) ->
+    // install(demo,drag) -> manage(settings -> manage)
     fireEvent.click(screen.getByRole('button', { name: 'START' }))
     await act(async () => { postBookmarkSaved({ bookmarkId: 'c' }) }) // -> tag
     await act(async () => { postBookmarkUpdated({ bookmarkId: 'c' }) }) // tag applied -> NEXT
@@ -174,7 +174,27 @@ describe('OnboardingController', () => {
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: demo -> drag
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: drag -> manage (settings)
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // manage: settings -> manage
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // manage -> share
+
+    // The manage beat teaches the real gesture (open MANAGE TAGS); it deliberately
+    // has NO NEXT — it advances only when the user clicks the real button
+    // (BoardRoot routes to /triage, then resumes at the share scene). SKIP remains
+    // the escape hatch.
+    expect(screen.getByTestId('scene-manage')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'NEXT' })).toBeNull()
+  })
+
+  it('share scene shows the share showcase and advances on NEXT', async () => {
+    // The share scene is reached via resume (initialScene) after the /triage
+    // detour from the manage beat, so render the controller directly there.
+    const db = await initDB()
+    const onComplete = vi.fn()
+    renderWithLocale(
+      <OnboardingController
+        db={db} motionEnabled={false} appUrl="https://allmarks.app"
+        onComplete={onComplete} initialScene="share"
+      />,
+      'en', en as Messages,
+    )
     expect(screen.getByTestId('scene-share')).not.toBeNull()
 
     // The share showcase plays as a cinema beat; a NEXT escape advances to finale.

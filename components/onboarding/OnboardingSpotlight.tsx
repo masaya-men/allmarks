@@ -90,6 +90,16 @@ export function OnboardingSpotlight({
     ? computePlacement(hole, window.innerWidth, window.innerHeight)
     : null
 
+  // Every caption bubble lays out the same way: the explanation as a block
+  // paragraph, then the action button centered on its own line below (never
+  // inline, which let the text wrap around the button).
+  const bubbleInner = (
+    <>
+      {caption && <p className={styles.bubbleText}>{caption}</p>}
+      {children}
+    </>
+  )
+
   return (
     <div className={styles.layer} data-testid="onboarding-spotlight">
       {hole && placement ? (
@@ -129,29 +139,22 @@ export function OnboardingSpotlight({
               an empty caption — the action lives in the anchored slot instead). */}
           {(caption || children) && (
             captionAtBottom ? (
-              <div className={styles.bubbleBottom}>
-                {caption}
-                {children}
-              </div>
+              <div className={styles.bubbleBottom}>{bubbleInner}</div>
             ) : placement === 'center' ? (
-              <div className={styles.bubbleCenterFixed}>
-                {caption}
-                {children}
-              </div>
+              <div className={styles.bubbleCenterFixed}>{bubbleInner}</div>
             ) : (
               <div
                 className={styles.bubble}
                 style={{ top: placement.top, left: placement.left }}
               >
-                {caption}
-                {children}
+                {bubbleInner}
               </div>
             )
           )}
         </>
       ) : (
         <div className={styles.dimFull}>
-          <div className={styles.bubbleCenter}>{caption}{children}</div>
+          <div className={styles.bubbleCenter}>{bubbleInner}</div>
         </div>
       )}
     </div>

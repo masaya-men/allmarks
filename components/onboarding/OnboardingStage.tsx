@@ -4,6 +4,7 @@
 import { useEffect, useRef, type ReactElement } from 'react'
 import { gsap } from 'gsap'
 import { OnboardingLanguagePicker } from './OnboardingLanguagePicker'
+import { AllMarksMark } from './AllMarksMark'
 import styles from './OnboardingStage.module.css'
 
 type Props = {
@@ -21,23 +22,21 @@ export function OnboardingStage({ variant, caption, buttonLabel, onAdvance }: Pr
     if (!root) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const wave = root.querySelectorAll('[data-anim="wave"]')
-    // The green completion disk is finale-only; the A-logo + check appear on
-    // both scenes (enter = the mark arrives, finale = it lands inside the disk).
+    // The green completion disk is finale-only; the brand A-mark (A + integrated
+    // green check) appears on both (enter = it arrives, finale = it lands in the disk).
     const disk = root.querySelector('[data-anim="disk"]')
     const logo = root.querySelector('[data-anim="logo"]')
-    const check = root.querySelector('[data-anim="check"]')
     const copy = root.querySelectorAll('[data-anim="copy"]')
     if (reduce) {
       // finale adds a disk node; filter nulls so gsap doesn't warn per-variant.
-      gsap.set([disk, logo, check, ...copy].filter(Boolean), { opacity: 1, scale: 1, y: 0 })
+      gsap.set([disk, logo, ...copy].filter(Boolean), { opacity: 1, scale: 1, y: 0 })
       return
     }
     const tl = gsap.timeline()
     tl.from(wave, { scaleX: 0, opacity: 0, duration: 0.6, stagger: 0.06, ease: 'power2.out' })
-    // finale: the green disk blooms in first, the logo + check then land in it.
+    // finale: the green disk blooms in first, the brand mark then lands inside it.
     if (disk) tl.from(disk, { opacity: 0, scale: 0.55, duration: 0.5, ease: 'back.out(1.7)' }, '-=0.2')
     if (logo) tl.from(logo, { opacity: 0, scale: 0.8, duration: 0.5, ease: 'back.out(1.6)' }, '-=0.2')
-    if (check) tl.from(check, { opacity: 0, scale: 0.4, duration: 0.35, ease: 'back.out(2)' }, '-=0.1')
     tl.from(copy, { opacity: 0, y: 12, duration: 0.4, stagger: 0.08 }, '-=0.1')
     // One-shot "stamp" bloom on the finale disk — a gentle pulse that reads as
     // "done", then settles (the waves keep the motif alive afterward).
@@ -83,24 +82,12 @@ export function OnboardingStage({ variant, caption, buttonLabel, onAdvance }: Pr
           <span key={i} data-anim="wave" className={styles.wave} />
         ))}
       </div>
-      {variant === 'enter' && (
-        <div className={styles.mark}>
-          <svg data-anim="logo" className={styles.logo} viewBox="0 0 48 48" aria-hidden="true">
-            <path d="M24 6 L40 42 L31 42 L24 24 L17 42 L8 42 Z" fill="#0a0a0a" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" />
-          </svg>
-          <span data-anim="check" className={styles.check}>✓</span>
-        </div>
-      )}
+      {variant === 'enter' && <AllMarksMark className={styles.logo} />}
       {variant === 'finale' && (
-        // Completion stamp: the A-logo + check land inside a glowing green disk —
-        // the bookend to the START scene's bare mark ("you finished").
+        // Completion stamp: the real brand A-mark lands inside a glowing green
+        // disk — the bookend to the START scene's bare mark ("you finished").
         <div data-anim="disk" className={styles.disk}>
-          <span className={styles.markInner}>
-            <svg data-anim="logo" className={styles.logo} viewBox="0 0 48 48" aria-hidden="true">
-              <path d="M24 6 L40 42 L31 42 L24 24 L17 42 L8 42 Z" fill="#0a0a0a" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" />
-            </svg>
-            <span data-anim="check" className={styles.check}>✓</span>
-          </span>
+          <AllMarksMark className={styles.logo} />
         </div>
       )}
       <p data-anim="copy" className={styles.caption}>{caption}</p>
