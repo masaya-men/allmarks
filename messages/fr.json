@@ -88,7 +88,7 @@
       "reset_tooltip": "Réinitialiser les valeurs par défaut"
     },
     "onboarding": {
-      "triage": {"intro":"Voici MANAGE. Taguez vos cartes enregistrées une par une pour les ranger en un clin d'œil.","pickTag":"D'abord, choisissez un tag à appliquer — cliquez dessus, ou appuyez sur une touche numérique (1–9).","apply":"Appuyez sur → (ou D, ou balayez vers la droite) pour appliquer le tag et passer à la carte suivante.","skip":"Passez une carte avec ← (ou A, ou balayez vers la gauche). Une erreur ? Z revient en arrière d'un cran.","done":"C'est tout — il suffit de répéter. Votre pile fond à vue d'œil."},
+      "triage": {"intro":"Voici MANAGE. Taguez vos cartes enregistrées une par une pour les ranger en un clin d'œil.","pickTag":"D'abord, choisissez un tag à appliquer — cliquez dessus, ou appuyez sur une touche numérique (1–9).","apply":"Appuyez sur → (ou D, ou balayez vers la droite) pour appliquer le tag et passer à la carte suivante.","skip":"Pour une carte à laquelle vous n'appliquez pas ce tag, passez à la suivante avec ← (la touche A / balayez vers la gauche).","done":"C'est toute la routine — il suffit de répéter. Appuyez sur CONTINUE pour continuer."},
       "enter": {
         "body": "AllMarks transforme les liens en un tableau visuel."
       },

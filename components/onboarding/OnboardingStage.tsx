@@ -37,7 +37,7 @@ export function OnboardingStage({ variant, caption, buttonLabel, onAdvance }: Pr
     // finale: the green disk blooms in first, the brand mark then lands inside it.
     if (disk) tl.from(disk, { opacity: 0, scale: 0.55, duration: 0.5, ease: 'back.out(1.7)' }, '-=0.2')
     if (logo) tl.from(logo, { opacity: 0, scale: 0.8, duration: 0.5, ease: 'back.out(1.6)' }, '-=0.2')
-    tl.from(copy, { opacity: 0, y: 12, duration: 0.4, stagger: 0.08 }, '-=0.1')
+    tl.from(copy, { opacity: 0, y: 24, duration: 0.5, stagger: 0.08 }, '-=0.1')
     // One-shot "stamp" bloom on the finale disk — a gentle pulse that reads as
     // "done", then settles (the waves keep the motif alive afterward).
     if (disk) tl.to(disk, { scale: 1.05, duration: 0.24, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '-=0.05')

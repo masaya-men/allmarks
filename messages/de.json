@@ -88,7 +88,7 @@
       "reset_tooltip": "Auf Standard zurücksetzen"
     },
     "onboarding": {
-      "triage": {"intro":"Das ist MANAGE. Versieh deine gespeicherten Karten nacheinander mit Tags, um schnell Ordnung zu schaffen.","pickTag":"Wähle zuerst einen Tag aus – klicke ihn an oder drücke eine Zahlentaste (1–9).","apply":"Drücke → (oder D, oder wische nach rechts), um den Tag zu vergeben und zur nächsten Karte zu wechseln.","skip":"Überspringe eine Karte mit ← (oder A, oder wische nach links). Vertippt? Mit Z geht's einen Schritt zurück.","done":"Das war's – einfach wiederholen. Dein Rückstau löst sich von selbst auf."},
+      "triage": {"intro":"Das ist MANAGE. Versieh deine gespeicherten Karten nacheinander mit Tags, um schnell Ordnung zu schaffen.","pickTag":"Wähle zuerst einen Tag aus – klicke ihn an oder drücke eine Zahlentaste (1–9).","apply":"Drücke → (oder D, oder wische nach rechts), um den Tag zu vergeben und zur nächsten Karte zu wechseln.","skip":"Bei einer Karte, der du den Tag nicht geben willst, wechselst du mit ← (der A-Taste / wische nach links) zur nächsten.","done":"Das ist schon der ganze Ablauf – einfach wiederholen. Drücke CONTINUE, um fortzufahren."},
       "enter": {
         "body": "AllMarks verwandelt Links in ein visuelles Board."
       },

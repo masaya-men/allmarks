@@ -137,13 +137,18 @@ export function OnboardingSpotlight({
           )}
           {/* No bubble when there's nothing to show (e.g. the tag demo runs with
               an empty caption — the action lives in the anchored slot instead). */}
+          {/* key={caption}: when the message text changes while the same spotlight
+              stays mounted (e.g. the manage scene's settings→manage beat reuses
+              this component at the same tree position), the bubble remounts so the
+              rise-from-bottom entrance re-fires for the new message. */}
           {(caption || children) && (
             captionAtBottom ? (
-              <div className={styles.bubbleBottom}>{bubbleInner}</div>
+              <div key={caption} className={styles.bubbleBottom}>{bubbleInner}</div>
             ) : placement === 'center' ? (
-              <div className={styles.bubbleCenterFixed}>{bubbleInner}</div>
+              <div key={caption} className={styles.bubbleCenterFixed}>{bubbleInner}</div>
             ) : (
               <div
+                key={caption}
                 className={styles.bubble}
                 style={{ top: placement.top, left: placement.left }}
               >
@@ -154,7 +159,11 @@ export function OnboardingSpotlight({
         </>
       ) : (
         <div className={styles.dimFull}>
-          <div className={styles.bubbleCenter}>{bubbleInner}</div>
+          {/* No empty glass box when there's nothing to say (e.g. the triage demo's
+              'done' beat uses this only for the full dim; its message lives elsewhere). */}
+          {(caption || children) && (
+            <div key={caption} className={styles.bubbleCenter}>{bubbleInner}</div>
+          )}
         </div>
       )}
     </div>

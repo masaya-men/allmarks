@@ -557,6 +557,14 @@
   align-items: center;
 }
 .onbFooter {
+  /* Lift the message + CONTINUE ABOVE the spotlight's dim panels. Those panels
+     are position:fixed (= painted above a non-positioned flex child) with
+     pointer-events:auto on the 'done' full-dim — without this the dim sat ON TOP
+     of CONTINUE, swallowing the click (the "stuck at the end" dead-end) AND
+     darkening the caption in intro/pickTag/done. position+z-index puts the footer
+     in front of every dim so it's bright and the button is clickable. */
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -566,37 +574,56 @@
   width: calc(100vw - 48px);
   text-align: center;
 }
+/* The lecture caption — large + high-contrast so it reads at a glance over the
+   dimmed board (the old small dark pill got lost in the dark space). A faint
+   green hairline + glow ties it to the brand without shouting. */
 .onbCaption {
   margin: 0;
-  padding: 12px 16px;
-  background: rgba(12, 12, 12, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: rgba(255, 255, 255, 0.92);
+  padding: 14px 20px;
+  background: rgba(8, 10, 9, 0.96);
+  border: 1px solid rgba(40, 241, 0, 0.40);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(40, 241, 0, 0.12);
+  color: #ffffff;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 12.5px;
+  font-size: 15px;
   line-height: 1.7;
+  letter-spacing: 0.01em;
 }
+/* Each beat's caption rises in from below. Keyed on the phase in TriagePage, so a
+   new message always remounts → this entrance re-fires (it's the demo's narration). */
+@keyframes onbCaptionRise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .onbCaption { animation: onbCaptionRise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+/* Bright, unmistakable "way forward" at the end of the auto-demo — the user got
+   stuck before because the only control was a dim outline they didn't read as a
+   button. Filled brand green with dark text + a pulsing ring: clearly "press to go". */
 .onbContinue {
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 12px;
-  letter-spacing: 0.10em;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.95);
-  background: rgba(20, 20, 20, 0.92);
-  border: 1px solid rgba(40, 241, 0, 0.5);
-  border-radius: 8px;
-  padding: 10px 22px;
+  color: #07140a;
+  background: rgba(40, 241, 0, 0.92);
+  border: 1px solid rgba(40, 241, 0, 0.95);
+  border-radius: 10px;
+  padding: 12px 30px;
   cursor: pointer;
   pointer-events: auto;
+  box-shadow: 0 6px 22px rgba(40, 241, 0, 0.32);
   animation: onbContinuePulse 1.5s ease-in-out infinite;
 }
-.onbContinue:hover { background: rgba(40, 40, 40, 0.95); }
+.onbContinue:hover { background: rgba(70, 255, 40, 1); box-shadow: 0 6px 26px rgba(40, 241, 0, 0.5); }
 @keyframes onbContinuePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(40, 241, 0, 0); }
-  50% { box-shadow: 0 0 0 5px rgba(40, 241, 0, 0.18); }
+  0%, 100% { box-shadow: 0 6px 22px rgba(40, 241, 0, 0.32); }
+  50% { box-shadow: 0 6px 22px rgba(40, 241, 0, 0.32), 0 0 0 6px rgba(40, 241, 0, 0.18); }
 }
 @media (prefers-reduced-motion: reduce) {
   .onbContinue { animation: none; }
@@ -606,3 +633,21 @@
    swipe-pan transform reads true. */
 .onbZoom { transform: scale(1.1); transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 @media (prefers-reduced-motion: reduce) { .onbZoom { transform: none; } }
+/* ⑥ auto-demo "zoom into the spot being pressed". pickTag: the tag list pushes in
+   (origin left, so the first chip — where the cursor presses — stays anchored).
+   apply/skip: the YES/NO hint the cursor presses scales up + glows green. Both ride
+   on top of the real swipe so the action still reads true. */
+.onbStripZoom {
+  transform: scale(1.1);
+  transform-origin: left center;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.onbBtnZoom {
+  transform: translateY(-50%) scale(1.55);
+  filter: brightness(1.35) drop-shadow(0 0 12px rgba(40, 241, 0, 0.55));
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), filter 0.45s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .onbStripZoom { transition: none; }
+  .onbBtnZoom { transform: translateY(-50%) scale(1.3); transition: none; }
+}

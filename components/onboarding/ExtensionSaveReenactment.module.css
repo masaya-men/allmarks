@@ -128,3 +128,13 @@
 @media (prefers-reduced-motion: reduce) {
   .cta[data-cue="true"] { animation: none; }
 }
+/* Caption rises up from below as the scene appears (shared onboarding entrance).
+   Used by BOTH the page-save and the X-save (beat 2) re-enactments — the latter
+   imports this module as `frame` and renders frame.caption. */
+@keyframes onb-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .caption { animation: onb-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}

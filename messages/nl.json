@@ -88,7 +88,7 @@
       "reset_tooltip": "Standaardwaarden herstellen"
     },
     "onboarding": {
-      "triage": {"intro":"Dit is MANAGE. Tag je opgeslagen kaarten één voor één om ze snel op te ruimen.","pickTag":"Kies eerst een tag om toe te passen — klik erop, of druk op een cijfertoets (1–9).","apply":"Druk op → (of D, of veeg naar rechts) om de tag toe te passen en naar de volgende kaart te gaan.","skip":"Sla een kaart over met ← (of A, of veeg naar links). Een foutje gemaakt? Met Z ga je één stap terug.","done":"Dat is alles — gewoon herhalen. Je achterstand smelt vanzelf weg."},
+      "triage": {"intro":"Dit is MANAGE. Tag je opgeslagen kaarten één voor één om ze snel op te ruimen.","pickTag":"Kies eerst een tag om toe te passen — klik erop, of druk op een cijfertoets (1–9).","apply":"Druk op → (of D, of veeg naar rechts) om de tag toe te passen en naar de volgende kaart te gaan.","skip":"Geef je deze kaart de gekozen tag niet? Ga met ← (de A-toets / veeg naar links) naar de volgende.","done":"Dat is de hele routine — gewoon herhalen. Druk op CONTINUE om door te gaan."},
       "enter": {
         "body": "AllMarks zet links om in een visueel bord."
       },

@@ -202,14 +202,14 @@
    message containers that otherwise popped in instantly. -cx keeps the
    horizontal centering transform while it rises. */
 @keyframes onb-rise {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes onb-rise-cx {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  from { opacity: 0; transform: translateX(-50%) translateY(24px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .pasteCard { animation: onb-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .bottomCaption { animation: onb-rise-cx 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .pasteCard { animation: onb-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .bottomCaption { animation: onb-rise-cx 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
 }

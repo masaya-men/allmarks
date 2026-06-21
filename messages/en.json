@@ -88,7 +88,7 @@
       "reset_tooltip": "Reset to defaults"
     },
     "onboarding": {
-      "triage": {"intro":"This is MANAGE. Tag your saved cards one at a time to tidy them up fast.","pickTag":"First, pick a tag to apply — click it, or press a number key (1–9).","apply":"Press → (or D, or swipe right) to apply the tag and move to the next card.","skip":"Skip a card with ← (or A, or swipe left). Made a mistake? Z steps back one.","done":"That's it — just repeat. Your backlog melts away."},
+      "triage": {"intro":"This is MANAGE. Tag your saved cards one at a time to tidy them up fast.","pickTag":"First, pick a tag to apply — click it, or press a number key (1–9).","apply":"Press → (or D, or swipe right) to apply the tag and move to the next card.","skip":"For a card you're not giving this tag, move to the next one with ← (the A key, or swipe left).","done":"That's the whole routine — just repeat. Press CONTINUE to carry on."},
       "enter": { "body": "AllMarks turns links into a visual board." },
       "paste": { "body": "Copy this link, then paste it onto the board (Cmd/Ctrl+V).", "copied": "Copied. Now paste it onto the board (Cmd/Ctrl+V)." },
       "tag": { "body": "Let's add a tag to this card.", "done": "Tags keep your board organized — add your own anytime. Press NEXT to continue." },

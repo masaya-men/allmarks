@@ -310,33 +310,42 @@ export function TriagePage(): ReactElement {
   tagsRef.current = tags
   const [onbPhase, setOnbPhase] = useState<OnbPhase>('intro')
   const firstDemoTagId = tags[0]?.id ?? null
-  const onbNext = useCallback((): void => {
-    setOnbPhase((p) => ONB_SEQUENCE[Math.min(ONB_SEQUENCE.indexOf(p) + 1, ONB_SEQUENCE.length - 1)])
-  }, [])
-  // Fire each phase's demo action exactly once (StrictMode-safe: the guard is set
-  // inside the timeout, so a dev double-invoke that clears the first timer still
-  // lets the second fire). pickTag arms a tag; apply/skip drive the real handlers.
+  // Auto-play the whole workflow: each phase zooms into its spot, the green cursor
+  // glides there and "presses" (mid-beat), the REAL action plays, then the beat
+  // auto-advances to the next phase. The user watches the routine demonstrated
+  // end-to-end — no NEXT to push. 'done' is terminal: it waits for the user's
+  // CONTINUE so they leave at their own pace (never a dead-end). onbFiredRef keeps
+  // the card-advancing actions to exactly once (StrictMode-safe).
   const onbFiredRef = useRef<Set<OnbPhase>>(new Set())
   useEffect(() => {
-    if (!onboarding || loading) return
-    let timer: ReturnType<typeof setTimeout> | null = null
-    const fireOnce = (key: OnbPhase, fn: () => void, delay: number): void => {
-      timer = setTimeout(() => {
+    if (!onboarding || loading || onbPhase === 'done') return
+    const timers: ReturnType<typeof setTimeout>[] = []
+    const fireOnce = (key: OnbPhase, fn: () => void, at: number): void => {
+      timers.push(setTimeout(() => {
         if (onbFiredRef.current.has(key)) return
         onbFiredRef.current.add(key)
         fn()
-      }, delay)
+      }, at))
     }
-    if (onbPhase === 'pickTag') fireOnce('pickTag', () => { const id = tagsRef.current[0]?.id; if (id) setArmedTagIds(new Set([id])) }, 950)
-    else if (onbPhase === 'apply') {
-      // Guarantee a tag is armed even if the user clicked NEXT before pickTag's
-      // arm timer fired — otherwise apply would swipe with nothing applied (a
-      // hollow "nothing got tagged" demo). Idempotent: keeps an existing armed set.
+    const PRESS_AT = 1500 // the green cursor reaches its target and presses here
+    if (onbPhase === 'pickTag') {
+      fireOnce('pickTag', () => { const id = tagsRef.current[0]?.id; if (id) setArmedTagIds(new Set([id])) }, PRESS_AT)
+    } else if (onbPhase === 'apply') {
+      // Guarantee a tag is armed even if pickTag's arm was missed — otherwise the
+      // apply swipe would tag nothing (a hollow demo). Idempotent.
       const id = tagsRef.current[0]?.id
       if (id) setArmedTagIds((prev) => (prev.size > 0 ? prev : new Set([id])))
-      fireOnce('apply', () => handleYesRef.current(), 1200)
-    } else if (onbPhase === 'skip') fireOnce('skip', () => handleNoRef.current(), 1200)
-    return () => { if (timer) clearTimeout(timer) }
+      fireOnce('apply', () => handleYesRef.current(), PRESS_AT)
+    } else if (onbPhase === 'skip') {
+      fireOnce('skip', () => handleNoRef.current(), PRESS_AT)
+    }
+    // Hold the beat long enough to read the message + see the result, then advance.
+    // intro has no press, so it can run a touch shorter.
+    const beatMs = onbPhase === 'intro' ? 2900 : 3100
+    timers.push(setTimeout(() => {
+      setOnbPhase((p) => ONB_SEQUENCE[Math.min(ONB_SEQUENCE.indexOf(p) + 1, ONB_SEQUENCE.length - 1)])
+    }, beatMs))
+    return () => timers.forEach((tm) => clearTimeout(tm))
   }, [onbPhase, onboarding, loading])
 
   /** Bookmark we want to jump back to after the queue re-derives from
@@ -765,7 +774,7 @@ export function TriagePage(): ReactElement {
       <div className={styles.outerTagStrip}>
         <div
           ref={tagStripRef}
-          className={styles.tagScrollRegion}
+          className={`${styles.tagScrollRegion} ${onboarding && onbPhase === 'pickTag' ? styles.onbStripZoom : ''}`}
           data-scroll-edge={tagStripEdge}
           onScroll={updateTagStripEdge}
           onWheel={handleTagStripWheel}
@@ -850,7 +859,7 @@ export function TriagePage(): ReactElement {
             just swipe / keyboard). */}
         <button
           type="button"
-          className={`${styles.swipeHint} ${styles.noHint}`}
+          className={`${styles.swipeHint} ${styles.noHint} ${onboarding && onbPhase === 'skip' ? styles.onbBtnZoom : ''}`}
           // Block focus-on-click so the button doesn't keep the focus ring that
           // would light up on the next keyboard shortcut (see TagPicker chip).
           onMouseDown={(e): void => e.preventDefault()}
@@ -863,7 +872,7 @@ export function TriagePage(): ReactElement {
         </button>
         <button
           type="button"
-          className={`${styles.swipeHint} ${styles.yesHint}`}
+          className={`${styles.swipeHint} ${styles.yesHint} ${onboarding && onbPhase === 'apply' ? styles.onbBtnZoom : ''}`}
           onMouseDown={(e): void => e.preventDefault()}
           onClick={handleYes}
           aria-label="Yes, apply armed tags"
@@ -944,11 +953,11 @@ export function TriagePage(): ReactElement {
           {onbPhase === 'apply' && <OnboardingCursorGuide targetSelector='[data-testid="triage-yes-button"]' />}
           {onbPhase === 'skip' && <OnboardingCursorGuide targetSelector='[data-testid="triage-no-button"]' />}
           <div className={styles.onbFooter}>
-            <p className={styles.onbCaption}>{t(`board.onboarding.triage.${onbPhase}`)}</p>
-            {onbPhase === 'done' ? (
+            {/* key={onbPhase}: each beat's lecture remounts so it rises in from the
+                bottom fresh (the demo auto-plays; this caption IS the narration). */}
+            <p key={onbPhase} className={styles.onbCaption}>{t(`board.onboarding.triage.${onbPhase}`)}</p>
+            {onbPhase === 'done' && (
               <button type="button" className={styles.onbContinue} onClick={exit}>CONTINUE</button>
-            ) : (
-              <button type="button" className={styles.onbContinue} onClick={onbNext}>NEXT</button>
             )}
           </div>
         </div>
