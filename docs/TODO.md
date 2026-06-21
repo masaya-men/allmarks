@@ -31,7 +31,8 @@
    - **ビート1（デモ）は拡張の有無に関わらず全員に表示**（ブックマークレットは他ブラウザ Firefox/Safari/モバイルでも使える保存手段なので拡張ユーザーにも見せる価値あり）。ビート2（ドラッグ設置）のみ拡張なしの人に出す＝拡張ユーザーはデモ→そのまま次へ。※当初は拡張検出でデモごと省く実装→**拡張ユーザー（=開発者本人）にデモが出ない**問題が判明し修正。
 2. **本物の保存窓 `SaveToast.tsx` は無改変**（ユーザー依存の重要部品）。CSS（`SaveToast.module.css`）流用のみ＝顔の見た目は本物と一致。タグモードは意図的な様式化（本物のタグUI=対話的 `TagAddPopover` は再現対象外）＝JSDoc/CSSコメントに明記。
 3. **i18n**: `board.onboarding.install.demoCaption` を15言語追加（13言語は並列翻訳ワークフロー、`AllMarks` verbatim）。`board.onboarding` の15言語パリティテストを新設（将来の文言追加も自動保護＝missing時に生キー表示する事故を防ぐ）。
-4. **次**: ⑦共有（ショーケース） / ⑧フィナーレ（緑ディスク統一・空ボード着地） / ①入場の残りseed（言語切替の発見性・幕越し透け・SKIP当たり判定）。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+4. **後半（実機FB 4点・全て本番反映）**: **① ③タグ done 文言(ja)修正** / **③ デモのマウスポインターを矢印ポインタに全デモ統一** / **🔴④ ⑦共有=本物の `SenderShareModal` を非対話で出す**（矢印が本物SHAREを押す→本物モーダル→portal z1100の透明ブロッカーで操作不能＋NEXT、SHARE NOW押さず=サーバー共有なし、`ShareReenactment`削除）/ **🔴② 新 manage シーン=MANAGE→本物 `/triage` 実演**（install後に9シーン目。実クリックで本物triageへ遷移→オンボモード=デモカード絞り/実入力ブロック/本物ハンドラ自動駆動でタグ適用＋連続パン演出/CONTINUE→sessionStorage+`initialScene`で共有シーンへ再開）。詳細は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション118後半。
+5. **次**: **⑧フィナーレ**（緑ディスク統一・空ボード着地）/ **①入場の残りseed**（言語切替の発見性・幕越し透け・SKIP当たり判定）。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 
