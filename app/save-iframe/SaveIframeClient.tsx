@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { initDB, addBookmark, persistMediaSlots, getAllBookmarks } from '@/lib/storage/indexeddb'
+import { initDB, persistMediaSlots, getAllBookmarks, saveBookmarkDeduped } from '@/lib/storage/indexeddb'
 import type { BookmarkRecord } from '@/lib/storage/indexeddb'
 import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
@@ -186,26 +186,12 @@ export function SaveIframeClient(): ReactElement {
 
       try {
         const db = await initDB()
-        if (payload.skipIfDuplicate) {
-          const all = await getAllBookmarks(db)
-          // soft-deleted bookmarks (= ユーザーがゴミ箱送り済み) は重複扱いしない:
-          // 削除した tweet をもう一度いいねしたら再保存されるべき。
-          const existing = all.find((b) => b.url === payload.url && !b.isDeleted)
-          if (existing) {
-            const savePayload = await buildSavePayload(db, existing)
-            reply({
-              type: 'booklage:save:result',
-              nonce: payload.nonce,
-              ok: true,
-              bookmarkId: existing.id,
-              skipped: true,
-              ...savePayload,
-              pipActive: pipActiveNow,
-            })
-            return
-          }
-        }
-        const bm = await addBookmark(db, {
+        // One atomic, scheme-validated, dedup-aware insert shared by every save
+        // path. `dedupe` mirrors the prior gate: extension auto-save sends
+        // skipIfDuplicate=true (→ gentle "Already saved" instead of a 2nd copy);
+        // a manual save leaves it unset (→ always insert). The dup scan + insert
+        // run in ONE transaction so two concurrent saves can't both insert.
+        const result = await saveBookmarkDeduped(db, {
           url: payload.url,
           title: payload.title || payload.url,
           description: payload.description,
@@ -214,7 +200,38 @@ export function SaveIframeClient(): ReactElement {
           siteName: payload.siteName,
           type: detectUrlType(payload.url),
           tags: [],
-        })
+        }, { dedupe: payload.skipIfDuplicate === true })
+
+        if (result.outcome === 'invalid-url') {
+          // A non-http/https URL (e.g. a malicious site posting javascript:…)
+          // is rejected before it can reach IDB. Reply with a clean error so
+          // the extension shows "Failed" instead of waiting out the 8s timeout.
+          reply({
+            type: 'booklage:save:result',
+            nonce: payload.nonce,
+            ok: false,
+            error: 'Unsupported URL scheme (http/https only)',
+          })
+          return
+        }
+
+        if (result.outcome === 'duplicate') {
+          // soft-deleted bookmarks (= ユーザーがゴミ箱送り済み) は findActiveDuplicate
+          // が除外するので、削除した tweet をもう一度いいねすれば再保存される。
+          const savePayload = await buildSavePayload(db, result.bookmark)
+          reply({
+            type: 'booklage:save:result',
+            nonce: payload.nonce,
+            ok: true,
+            bookmarkId: result.bookmark.id,
+            skipped: true,
+            ...savePayload,
+            pipActive: pipActiveNow,
+          })
+          return
+        }
+
+        const bm = result.bookmark
         postBookmarkSaved({ bookmarkId: bm.id })
         const savePayload = await buildSavePayload(db, bm)
         reply({

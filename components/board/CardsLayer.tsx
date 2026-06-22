@@ -19,7 +19,7 @@ import {
 } from '@/lib/board/constants'
 import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
-import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
+import { detectUrlType, isInstagramReel, safeExternalUrl } from '@/lib/utils/url'
 import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
 import { getEntryAnimation } from '@/lib/animation/tag-entry'
 import { extractTypedCandidatesFromBookmark } from '@/lib/board/tag-candidates'
@@ -766,8 +766,10 @@ export function CardsLayer({
     onModifierClick: useCallback(
       (id: string): void => {
         // Ctrl/⌘ + click → open the bookmark's original URL in a new tab.
+        // Guard the scheme so a stored javascript:/data: URL can't execute.
         const it = items.find((b) => b.bookmarkId === id)
-        if (it?.url) window.open(it.url, '_blank', 'noopener,noreferrer')
+        const safe = safeExternalUrl(it?.url)
+        if (safe) window.open(safe, '_blank', 'noopener,noreferrer')
       },
       [items],
     ),

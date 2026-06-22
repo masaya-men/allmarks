@@ -8,6 +8,7 @@ import {
   extractVimeoId,
   extractYoutubeId,
   isValidUrl,
+  safeExternalUrl,
 } from '@/lib/utils/url'
 
 describe('isValidUrl', () => {
@@ -19,6 +20,25 @@ describe('isValidUrl', () => {
     expect(isValidUrl('')).toBe(false)
     expect(isValidUrl('not a url')).toBe(false)
     expect(isValidUrl('ftp://file.txt')).toBe(false)
+  })
+})
+
+describe('safeExternalUrl', () => {
+  it('returns http/https URLs unchanged', () => {
+    expect(safeExternalUrl('https://example.com')).toBe('https://example.com')
+    expect(safeExternalUrl('http://example.com/a?b=1')).toBe('http://example.com/a?b=1')
+  })
+  it('returns undefined for dangerous or non-http schemes', () => {
+    // eslint-disable-next-line no-script-url
+    expect(safeExternalUrl('javascript:alert(1)')).toBeUndefined()
+    expect(safeExternalUrl('data:text/html,<script>alert(1)</script>')).toBeUndefined()
+    expect(safeExternalUrl('file:///etc/passwd')).toBeUndefined()
+    expect(safeExternalUrl('ftp://host/file')).toBeUndefined()
+  })
+  it('returns undefined for empty / nullish input', () => {
+    expect(safeExternalUrl('')).toBeUndefined()
+    expect(safeExternalUrl(undefined)).toBeUndefined()
+    expect(safeExternalUrl(null)).toBeUndefined()
   })
 })
 

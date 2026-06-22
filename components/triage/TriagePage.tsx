@@ -13,6 +13,7 @@ import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import { TagContextMenu } from './TagContextMenu'
 import { TagDeleteConfirmDialog } from './TagDeleteConfirmDialog'
 import { classifyRelease, hitTestChip, type ChipRect } from '@/lib/triage/drag-gesture'
+import { safeExternalUrl } from '@/lib/utils/url'
 import { OnboardingSpotlight } from '@/components/onboarding/OnboardingSpotlight'
 import { OnboardingCursorGuide } from '@/components/onboarding/OnboardingCursorGuide'
 import styles from './TriagePage.module.css'
@@ -610,7 +611,9 @@ export function TriagePage(): ReactElement {
 
       if (outcome.kind === 'open') {
         setDragView(null)
-        if (current) window.open(current.url, '_blank', 'noopener,noreferrer')
+        // Guard the scheme so a stored javascript:/data: URL can't execute.
+        const safe = safeExternalUrl(current?.url)
+        if (safe) window.open(safe, '_blank', 'noopener,noreferrer')
         return
       }
 

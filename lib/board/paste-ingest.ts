@@ -1,6 +1,7 @@
 import type { IDBPDatabase } from 'idb'
 import { detectUrlType } from '@/lib/utils/url'
-import type { addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
+import { findActiveDuplicate } from '@/lib/storage/indexeddb'
+import type { saveBookmarkDeduped, getAllBookmarks } from '@/lib/storage/indexeddb'
 import type { AllMarksDB } from '@/lib/storage/indexeddb'
 
 export type OgpMeta = {
@@ -14,7 +15,7 @@ export type OgpMeta = {
 export type IngestDeps = {
   readonly db: IDBPDatabase<AllMarksDB>
   readonly getAll: typeof getAllBookmarks
-  readonly add: typeof addBookmark
+  readonly save: typeof saveBookmarkDeduped
   readonly fetchOgp: (url: string) => Promise<OgpMeta | null>
 }
 
@@ -59,9 +60,10 @@ function domainOf(url: string): string {
 }
 
 export async function ingestPastedUrl(url: string, deps: IngestDeps): Promise<IngestResult> {
+  // Cheap pre-check to skip a wasted OGP fetch on an obvious duplicate. The
+  // authoritative, atomic dedup happens inside deps.save below (one tx).
   const all = await deps.getAll(deps.db)
-  const existing = all.find((b) => b.url === url && !b.isDeleted)
-  if (existing) return { outcome: 'duplicate', bookmarkId: null }
+  if (findActiveDuplicate(all, url)) return { outcome: 'duplicate', bookmarkId: null }
 
   const type = detectUrlType(url)
   const isEmbeddable = EMBEDDABLE.has(type)
@@ -70,7 +72,7 @@ export async function ingestPastedUrl(url: string, deps: IngestDeps): Promise<In
     meta = await deps.fetchOgp(url)
   }
 
-  const created = await deps.add(deps.db, {
+  const result = await deps.save(deps.db, {
     url,
     title: meta?.title || (isEmbeddable ? '' : domainOf(url)),
     description: meta?.description ?? '',
@@ -79,6 +81,11 @@ export async function ingestPastedUrl(url: string, deps: IngestDeps): Promise<In
     siteName: meta?.siteName ?? '',
     type,
     tags: [],
-  })
-  return { outcome: 'saved', bookmarkId: created.id }
+  }, { dedupe: true })
+  // invalid-url is unreachable here (extractSinglePastedUrl already enforced
+  // http/https), and a race could still surface 'duplicate' — both map to the
+  // gentle "already saved" feedback, so anything other than a fresh save is a
+  // no-op insert.
+  if (result.outcome !== 'saved') return { outcome: 'duplicate', bookmarkId: null }
+  return { outcome: 'saved', bookmarkId: result.bookmark.id }
 }

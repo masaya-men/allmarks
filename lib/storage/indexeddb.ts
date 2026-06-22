@@ -1,6 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import { DB_NAME, DB_VERSION, FLOAT_ROTATION_RANGE } from '@/lib/constants'
 import type { UrlType } from '@/lib/utils/url'
+import { isValidUrl } from '@/lib/utils/url'
 import { generateCardDimensions } from '@/lib/canvas/card-sizing'
 import { MIN_CARD_WIDTH, presetToCardWidth, DEFAULT_CARD_WIDTH } from '@/lib/board/size-migration'
 import type { MediaSlot } from '@/lib/embed/types'
@@ -824,6 +825,82 @@ export async function repairOrderIndexIfNeeded(
 }
 
 /**
+ * Build the BookmarkRecord + its companion CardRecord for a fresh save.
+ *
+ * Pure construction (no IDB writes) so both `addBookmark` and the atomic
+ * `saveBookmarkDeduped` share one source of truth for a new card's shape —
+ * the three save paths used to duplicate this inline and drifted (audit
+ * rank14). The caller supplies the already-computed `orderIndex` and
+ * `gridIndex` so this stays side-effect-free apart from uuid/random/Date.
+ */
+function buildBookmarkAndCard(
+  input: BookmarkInput,
+  orderIndex: number,
+  gridIndex: number,
+): { bookmark: BookmarkRecord; card: CardRecord } {
+  const bookmark: BookmarkRecord = {
+    id: uuid(),
+    url: input.url,
+    title: input.title,
+    description: input.description,
+    thumbnail: input.thumbnail,
+    favicon: input.favicon,
+    siteName: input.siteName,
+    type: input.type,
+    savedAt: new Date().toISOString(),
+    ogpStatus: input.ogpStatus ?? 'fetched',
+    orderIndex,
+    sizePreset: 'S',
+    cardWidth: DEFAULT_CARD_WIDTH,
+    tags: input.tags ?? [],
+    displayMode: input.displayMode ?? null,
+    onboardingDemo: input.onboardingDemo,
+  }
+  const pos = randomPosition()
+  const dimensions = generateCardDimensions('random', 'random')
+  const card: CardRecord = {
+    id: uuid(),
+    bookmarkId: bookmark.id,
+    // Legacy column kept for v8 schema compatibility; retired in a later task.
+    folderId: '',
+    x: pos.x,
+    y: pos.y,
+    rotation: randomRotation(),
+    scale: 1,
+    zIndex: 1,
+    gridIndex,
+    isManuallyPlaced: false,
+    width: dimensions.width,
+    height: dimensions.height,
+  }
+  return { bookmark, card }
+}
+
+/**
+ * The active (non-deleted) bookmark with the exact same URL, or null.
+ *
+ * Soft-deleted bookmarks are intentionally NOT matched: a URL the user sent to
+ * trash can be re-saved (= delete a tweet, then like it again). Pure function
+ * over an already-fetched snapshot so it can run INSIDE an open transaction
+ * (keeping the duplicate scan + insert atomic) and be unit-tested directly.
+ *
+ * @param all - snapshot of all bookmark records (e.g. from getAll)
+ * @param url - the exact URL to look for
+ */
+export function findActiveDuplicate(
+  all: readonly BookmarkRecord[],
+  url: string,
+): BookmarkRecord | null {
+  return all.find((b) => b.url === url && !b.isDeleted) ?? null
+}
+
+/** Result of {@link saveBookmarkDeduped}. */
+export type DedupedSaveResult =
+  | { outcome: 'invalid-url'; bookmark: null }
+  | { outcome: 'duplicate'; bookmark: BookmarkRecord }
+  | { outcome: 'saved'; bookmark: BookmarkRecord }
+
+/**
  * Add a new bookmark and automatically create an associated card.
  * @param db - The database instance
  * @param input - Bookmark data
@@ -840,52 +917,73 @@ export async function addBookmark(
   // the source of the "new bookmark scattered in the middle" bug).
   const nextOrder = await nextOrderIndex(db)
 
-  const bookmark: BookmarkRecord = {
-    id: uuid(),
-    url: input.url,
-    title: input.title,
-    description: input.description,
-    thumbnail: input.thumbnail,
-    favicon: input.favicon,
-    siteName: input.siteName,
-    type: input.type,
-    savedAt: new Date().toISOString(),
-    ogpStatus: input.ogpStatus ?? 'fetched',
-    orderIndex: nextOrder,
-    sizePreset: 'S',
-    cardWidth: DEFAULT_CARD_WIDTH,
-    tags: input.tags ?? [],
-    displayMode: input.displayMode ?? null,
-    onboardingDemo: input.onboardingDemo,
-  }
-
-  // Use a transaction to atomically create both bookmark and card
+  // Use a transaction to atomically create both bookmark and card.
   const tx = db.transaction(['bookmarks', 'cards'], 'readwrite')
-  await tx.objectStore('bookmarks').put(bookmark)
-
   const existingCards = await tx.objectStore('cards').count()
-
-  const pos = randomPosition()
-  const dimensions = generateCardDimensions('random', 'random')
-  const card: CardRecord = {
-    id: uuid(),
-    bookmarkId: bookmark.id,
-    // Legacy column kept for v8 schema compatibility; retired in a later task.
-    folderId: '',
-    x: pos.x,
-    y: pos.y,
-    rotation: randomRotation(),
-    scale: 1,
-    zIndex: 1,
-    gridIndex: existingCards,
-    isManuallyPlaced: false,
-    width: dimensions.width,
-    height: dimensions.height,
-  }
+  const { bookmark, card } = buildBookmarkAndCard(input, nextOrder, existingCards)
+  await tx.objectStore('bookmarks').put(bookmark)
   await tx.objectStore('cards').put(card)
   await tx.done
 
   return bookmark
+}
+
+/**
+ * Scheme-validated, duplicate-aware, ATOMIC bookmark insert. The single entry
+ * point the three save paths (bookmarklet window, extension save-iframe,
+ * clipboard paste) now share — replacing the copy-pasted
+ * "getAllBookmarks → find active dup → addBookmark" blocks that had drifted
+ * (audit rank14) and folding in two security/data fixes:
+ *
+ *   - rank2: a `javascript:` / `data:` / `file:` URL is rejected up front
+ *     (`outcome: 'invalid-url'`) so it can never reach IndexedDB and later
+ *     execute when opened.
+ *   - rank30: the duplicate scan AND the insert run in ONE readwrite
+ *     transaction. Two concurrent saves of the same URL can no longer both
+ *     pass a stale "not a duplicate" check and insert two rows — the second
+ *     transaction sees the first's write (IDB serialises overlapping scopes).
+ *
+ * @param opts.dedupe - when true, an existing active duplicate short-circuits
+ *   with `{outcome:'duplicate'}` and nothing is inserted. When false, always
+ *   insert (the "save anyway" path: a manual save that intentionally allows a
+ *   second copy — preserves the prior `skipIfDuplicate === false` behaviour).
+ */
+export async function saveBookmarkDeduped(
+  db: IDBPDatabase<AllMarksDB>,
+  input: BookmarkInput,
+  opts: { dedupe: boolean },
+): Promise<DedupedSaveResult> {
+  if (!isValidUrl(input.url)) return { outcome: 'invalid-url', bookmark: null }
+
+  const tx = db.transaction(['bookmarks', 'cards'], 'readwrite')
+  const bookmarks = tx.objectStore('bookmarks')
+  // One snapshot drives BOTH the duplicate scan and the orderIndex high-water
+  // mark; reading inside the tx is what makes check-and-insert atomic. No
+  // `await` on a non-IDB promise may sit between here and `tx.done` or the
+  // transaction would auto-commit early.
+  const all = await bookmarks.getAll()
+
+  if (opts.dedupe) {
+    const existing = findActiveDuplicate(all, input.url)
+    if (existing) {
+      await tx.done
+      return { outcome: 'duplicate', bookmark: existing }
+    }
+  }
+
+  let max = -1
+  for (const b of all) {
+    const o = b.orderIndex ?? -1
+    if (o > max) max = o
+  }
+  const nextOrder = all.length === 0 ? 0 : max + 1
+  const existingCards = await tx.objectStore('cards').count()
+  const { bookmark, card } = buildBookmarkAndCard(input, nextOrder, existingCards)
+  await bookmarks.put(bookmark)
+  await tx.objectStore('cards').put(card)
+  await tx.done
+
+  return { outcome: 'saved', bookmark }
 }
 
 /**

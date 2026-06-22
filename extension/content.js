@@ -18,6 +18,21 @@ function isExtensionAlive() {
   try { return !!(chrome && chrome.runtime && chrome.runtime.id) } catch (_) { return false }
 }
 
+// Reject non-http(s) URLs before forwarding a save. The bookmarklet + site
+// scripts only ever send the http/https page the user is actually on, so this
+// drops only hostile injections — e.g. a malicious page posting a forged
+// `booklage:save-via-extension` with a `javascript:` / `data:` URL — closing
+// the "any site can make the extension save a dangerous URL" hole (audit rank12).
+function isHttpUrl(u) {
+  if (typeof u !== 'string') return false
+  try {
+    const proto = new URL(u).protocol
+    return proto === 'http:' || proto === 'https:'
+  } catch (_) {
+    return false
+  }
+}
+
 // Marker for the bookmarklet IIFE: when present, the bookmarklet skips its
 // popup/toast path and routes through the extension instead (silent save).
 if (document.documentElement) {
@@ -201,6 +216,9 @@ window.addEventListener('message', (event) => {
     return
   }
   if (msg.type !== 'booklage:save-via-extension') return
+  // Scheme gate (audit rank12): drop forged / dangerous-scheme saves before
+  // they ever reach the background service worker.
+  if (!isHttpUrl(msg.ogp && msg.ogp.url)) return
   const nonce = typeof msg.nonce === 'string' ? msg.nonce : null
   if (nonce) {
     const now = Date.now()

@@ -16,6 +16,22 @@ export function isValidUrl(input: string): boolean {
 }
 
 /**
+ * Returns the URL only when it is a safe http/https link, otherwise undefined.
+ *
+ * Use on the DISPLAY side (href / window.open) for any user-saved URL so a
+ * stored `javascript:` / `data:` / `file:` URL cannot execute when the user
+ * clicks "open source" or Ctrl+clicks a card. This is the defensive backstop
+ * for bookmarks that predate the save-time scheme validation (= a dangerous
+ * URL already sitting in the user's IndexedDB just becomes non-clickable).
+ *
+ * @param input - The stored URL (may be undefined/empty)
+ * @returns the URL if http/https, else undefined
+ */
+export function safeExternalUrl(input: string | undefined | null): string | undefined {
+  return input && isValidUrl(input) ? input : undefined
+}
+
+/**
  * Detects the type of a URL based on its hostname.
  * @param url - The URL string to classify
  * @returns The detected UrlType

@@ -26,6 +26,7 @@ import {
   detectUrlType,
   extractInstagramShortcode,
   extractTweetId,
+  safeExternalUrl,
 } from '@/lib/utils/url'
 import styles from './Lightbox.module.css'
 
@@ -1467,7 +1468,7 @@ function DefaultText({
         <div className={styles.metaCtaGroup}>
           {meta && <div className={styles.meta}><span>{meta}</span></div>}
           <a
-            href={item.url}
+            href={safeExternalUrl(item.url)}
             target="_blank"
             rel="noopener noreferrer"
             className={styles.sourceLink}
@@ -1487,7 +1488,7 @@ function DefaultText({
       <div className={styles.metaCtaGroup}>
         <div className={styles.meta}>{host && <span>{host}</span>}</div>
         <a
-          href={item.url}
+          href={safeExternalUrl(item.url)}
           target="_blank"
           rel="noopener noreferrer"
           className={styles.sourceLink}
@@ -1730,7 +1731,7 @@ function TweetText({
       {!hideBody && <p className={styles.tweetBody}>{text}</p>}
       <div className={styles.metaCtaGroup}>
         <a
-          href={item.url}
+          href={safeExternalUrl(item.url)}
           target="_blank"
           rel="noopener noreferrer"
           className={styles.sourceLink}

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
+import { initDB, getAllBookmarks, saveBookmarkDeduped } from '@/lib/storage/indexeddb'
 import { extractSinglePastedUrl, isEditableTarget } from '@/lib/board/paste-url'
 import { ingestPastedUrl, fetchOgpMeta, isEmbeddableType } from '@/lib/board/paste-ingest'
 import { detectUrlType } from '@/lib/utils/url'
@@ -42,10 +42,10 @@ export function useUrlPasteSave(opts: {
         const db = await initDB()
         // Flag onboarding-time pastes so the tutorial sweep removes them and the
         // user's real board is never affected.
-        const add: typeof addBookmark = opts.flagOnboardingRef?.current
-          ? (database, input) => addBookmark(database, { ...input, onboardingDemo: true })
-          : addBookmark
-        const result = await ingestPastedUrl(url, { db, getAll: getAllBookmarks, add, fetchOgp: fetchOgpMeta })
+        const save: typeof saveBookmarkDeduped = opts.flagOnboardingRef?.current
+          ? (database, input, o) => saveBookmarkDeduped(database, { ...input, onboardingDemo: true }, o)
+          : saveBookmarkDeduped
+        const result = await ingestPastedUrl(url, { db, getAll: getAllBookmarks, save, fetchOgp: fetchOgpMeta })
         if (result.outcome === 'saved' && result.bookmarkId) {
           setFeedback({ kind: null })
           await onSavedRef.current(result.bookmarkId)

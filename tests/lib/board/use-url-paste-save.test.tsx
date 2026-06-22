@@ -3,8 +3,11 @@ import { renderHook, act, waitFor } from '@testing-library/react'
 
 vi.mock('@/lib/storage/indexeddb', () => ({
   initDB: vi.fn(async () => ({})),
-  addBookmark: vi.fn(async () => ({ id: 'b1', tags: [] })),
+  saveBookmarkDeduped: vi.fn(async () => ({ outcome: 'saved', bookmark: { id: 'b1', tags: [] } })),
   getAllBookmarks: vi.fn(async () => []),
+  // Pure helper (mirrors the real implementation) so the duplicate pre-check works.
+  findActiveDuplicate: (all: Array<{ url: string; isDeleted?: boolean }>, url: string) =>
+    all.find((b) => b.url === url && !b.isDeleted) ?? null,
 }))
 vi.mock('@/lib/board/paste-ingest', async (orig) => {
   const real = await orig<typeof import('@/lib/board/paste-ingest')>()

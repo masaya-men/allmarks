@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { initDB, addBookmark, getAllBookmarks } from '@/lib/storage/indexeddb'
+import { initDB, getAllBookmarks, saveBookmarkDeduped } from '@/lib/storage/indexeddb'
 import type { BookmarkRecord, TagRecord } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { postBookmarkSaved } from '@/lib/board/channel'
@@ -80,15 +80,16 @@ export function SaveToast(): ReactElement {
         // work now returns { outcome, bm } — the full BookmarkRecord so
         // orderTagsForSave gets the real object without casting.
         const work = (async (): Promise<{ outcome: SaveOutcome; bm: BookmarkRecord }> => {
-          const all = await getAllBookmarks(db)
-          const existing = all.find((b) => b.url === url && !b.isDeleted)
-          if (existing) return { outcome: 'duplicate', bm: existing as BookmarkRecord }
-          const created = await addBookmark(db, {
+          const result = await saveBookmarkDeduped(db, {
             url, title, description: desc, thumbnail: image, favicon,
             siteName: site, type: detectUrlType(url), tags: [],
-          })
-          postBookmarkSaved({ bookmarkId: created.id })
-          return { outcome: 'saved', bm: created }
+          }, { dedupe: true })
+          // The bookmarklet only ever saves the page the user is actually on
+          // (always http/https), so invalid-url is a guard, not a real path —
+          // surface it as the error state rather than a fake success.
+          if (result.outcome === 'invalid-url') throw new Error('Unsupported URL scheme')
+          if (result.outcome === 'saved') postBookmarkSaved({ bookmarkId: result.bookmark.id })
+          return { outcome: result.outcome, bm: result.bookmark }
         })()
         const [{ outcome, bm }] = await Promise.all([work, delay(MIN_SAVING_MS)])
 

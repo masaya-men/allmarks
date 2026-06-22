@@ -8,11 +8,11 @@ import { addTagToBookmark } from '@/lib/storage/tags'
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams({ url: 'https://x.com/a/status/1', title: 'Hi' }),
 }))
-const addBookmark = vi.fn(async () => ({ id: 'b1', tags: [] }))
+const saveBookmarkDeduped = vi.fn(async (): Promise<unknown> => ({ outcome: 'saved', bookmark: { id: 'b1', tags: [] } }))
 const getAllBookmarks = vi.fn(async () => [] as Array<{ id: string; url: string; isDeleted?: boolean; tags: string[] }>)
 vi.mock('@/lib/storage/indexeddb', () => ({
   initDB: vi.fn(async () => ({})),
-  addBookmark: (...a: unknown[]) => (addBookmark as (...args: unknown[]) => unknown)(...a),
+  saveBookmarkDeduped: (...a: unknown[]) => (saveBookmarkDeduped as (...args: unknown[]) => unknown)(...a),
   getAllBookmarks: (...a: unknown[]) => (getAllBookmarks as (...args: unknown[]) => unknown)(...a),
 }))
 vi.mock('@/lib/storage/quick-tag-setting', () => ({ loadQuickTagEnabled: vi.fn(async () => false) }))
@@ -38,7 +38,7 @@ describe('SaveToast deliberate confirmation', () => {
     vi.useFakeTimers()
     Object.defineProperty(window, 'close', { value: vi.fn(), writable: true, configurable: true })
     getAllBookmarks.mockResolvedValue([])
-    addBookmark.mockResolvedValue({ id: 'b1', tags: [] })
+    saveBookmarkDeduped.mockResolvedValue({ outcome: 'saved', bookmark: { id: 'b1', tags: [] } })
   })
 
   it('new save → shows Saved then auto-closes (no tags when feature off)', async () => {
@@ -51,17 +51,16 @@ describe('SaveToast deliberate confirmation', () => {
     expect(window.close).toHaveBeenCalled()
   })
 
-  it('duplicate (same non-deleted url) → Already saved, no second addBookmark', async () => {
-    getAllBookmarks.mockResolvedValue([{ id: 'old', url: 'https://x.com/a/status/1', isDeleted: false, tags: [] }])
+  it('duplicate (same non-deleted url) → Already saved', async () => {
+    saveBookmarkDeduped.mockResolvedValue({ outcome: 'duplicate', bookmark: { id: 'old', url: 'https://x.com/a/status/1', tags: [] } })
     render(<SaveToast />)
     await flush(500)
     expect(screen.getByTestId('save-toast').getAttribute('data-state')).toBe('duplicate')
     expect(screen.getByTestId('status-label').getAttribute('aria-label')).toBe('Already saved')
-    expect(addBookmark).not.toHaveBeenCalled()
   })
 
   it('save failure → Failed then auto-closes', async () => {
-    addBookmark.mockRejectedValue(new Error('boom'))
+    saveBookmarkDeduped.mockRejectedValue(new Error('boom'))
     render(<SaveToast />)
     await flush(500)
     expect(screen.getByTestId('save-toast').getAttribute('data-state')).toBe('error')
@@ -82,7 +81,7 @@ describe('SaveToast tag path (enabled + no PiP)', () => {
     }))
     ;(loadQuickTagEnabled as unknown as { mockResolvedValue: (v: boolean) => void }).mockResolvedValue(true)
     getAllBookmarks.mockResolvedValue([])
-    addBookmark.mockResolvedValue({ id: 'b1', tags: [] })
+    saveBookmarkDeduped.mockResolvedValue({ outcome: 'saved', bookmark: { id: 'b1', tags: [] } })
   })
 
   it('renders the tag menu and does not auto-close', async () => {
