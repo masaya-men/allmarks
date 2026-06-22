@@ -99,8 +99,9 @@ describe('BackupButton', () => {
       }))
 
       await waitFor(() => expect(alertSpy).toHaveBeenCalled())
+      // No I18nProvider here → useI18n falls back to baked English messages.
       const lastMsg = String(alertSpy.mock.calls[alertSpy.mock.calls.length - 1][0])
-      expect(lastMsg).toContain('タグ')
+      expect(lastMsg).toContain('kept')
     })
   })
 })

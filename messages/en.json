@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "Save your data to a file, or restore it.",
+      "confirmRestore": "This replaces your current data with the contents of this backup. Continue?\n\n(saved: {date} · version: {version})",
+      "restoreDone": "Restore complete — {count} bookmarks.",
+      "restoreKeptSome": "Some items weren't in this backup, so your current data for them was kept.",
+      "reloading": "Reloading the page…",
+      "exportFailed": "Couldn't export the backup. Please try again.",
+      "fileUnreadable": "Couldn't read the file (it may be corrupted).",
+      "formatUnrecognized": "This file isn't a recognized AllMarks backup. Please choose a file you exported from AllMarks.",
+      "noBookmarks": "This backup has no bookmarks. Please check the file.",
+      "versionTooNew": "This backup was made with a newer version of AllMarks. Please update the app first, then restore.",
+      "corruptRows": "Part of this backup is damaged, so the restore was cancelled. Your current data is unchanged.",
+      "restoreFailed": "Restore failed. Please check the file and try again."
+    },
     "urlPlaceholder": "Paste URL...",
     "save": "Save",
     "randomPick": "Random Pick",

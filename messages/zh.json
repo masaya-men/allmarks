@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "将设备中的数据保存到文件，或从文件恢复。",
+      "confirmRestore": "这将用此备份的内容替换你当前的数据。是否继续？\n\n（保存时间：{date} · version：{version}）",
+      "restoreDone": "恢复完成 — 共 {count} 个书签。",
+      "restoreKeptSome": "部分项目不在此备份中，因此保留了你当前的相应数据。",
+      "reloading": "正在重新加载页面…",
+      "exportFailed": "无法导出备份。请重试。",
+      "fileUnreadable": "无法读取该文件（可能已损坏）。",
+      "formatUnrecognized": "无法将此文件识别为 AllMarks 备份。请选择你从 AllMarks 导出的文件。",
+      "noBookmarks": "此备份中没有书签。请检查该文件。",
+      "versionTooNew": "此备份是用更新版本的 AllMarks 创建的。请先将应用更新到最新版本，然后再恢复。",
+      "corruptRows": "此备份的部分内容已损坏，因此已取消恢复。你当前的数据未做任何更改。",
+      "restoreFailed": "恢复失败。请检查文件后重试。"
+    },
     "urlPlaceholder": "粘贴网址……",
     "save": "保存",
     "randomPick": "随机挑选",

@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "Sichere deine Daten in einer Datei oder stelle sie wieder her.",
+      "confirmRestore": "Dadurch werden deine aktuellen Daten durch den Inhalt dieser Sicherung ersetzt. Fortfahren?\n\n(gespeichert: {date} · version: {version})",
+      "restoreDone": "Wiederherstellung abgeschlossen – {count} Lesezeichen.",
+      "restoreKeptSome": "Einige Elemente waren in dieser Sicherung nicht enthalten, daher wurden deine aktuellen Daten dafür beibehalten.",
+      "reloading": "Die Seite wird neu geladen …",
+      "exportFailed": "Die Sicherung konnte nicht exportiert werden. Bitte versuche es erneut.",
+      "fileUnreadable": "Die Datei konnte nicht gelesen werden (sie ist möglicherweise beschädigt).",
+      "formatUnrecognized": "Diese Datei wird nicht als AllMarks-Sicherung erkannt. Bitte wähle eine Datei, die du aus AllMarks exportiert hast.",
+      "noBookmarks": "Diese Sicherung enthält keine Lesezeichen. Bitte überprüfe die Datei.",
+      "versionTooNew": "Diese Sicherung wurde mit einer neueren Version von AllMarks erstellt. Bitte aktualisiere zuerst die App und stelle sie dann wieder her.",
+      "corruptRows": "Ein Teil dieser Sicherung ist beschädigt, daher wurde die Wiederherstellung abgebrochen. Deine aktuellen Daten bleiben unverändert.",
+      "restoreFailed": "Die Wiederherstellung ist fehlgeschlagen. Bitte überprüfe die Datei und versuche es erneut."
+    },
     "urlPlaceholder": "URL einfügen …",
     "save": "Speichern",
     "randomPick": "Zufallsauswahl",

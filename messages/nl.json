@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "Bewaar je gegevens in een bestand, of zet ze terug.",
+      "confirmRestore": "Hiermee vervang je je huidige gegevens door de inhoud van deze back-up. Doorgaan?\n\n(opgeslagen: {date} · version: {version})",
+      "restoreDone": "Terugzetten voltooid — {count} bladwijzers.",
+      "restoreKeptSome": "Sommige items zaten niet in deze back-up, dus je huidige gegevens daarvoor zijn behouden.",
+      "reloading": "De pagina wordt opnieuw geladen…",
+      "exportFailed": "De back-up kon niet worden geëxporteerd. Probeer het opnieuw.",
+      "fileUnreadable": "Het bestand kon niet worden gelezen (het is mogelijk beschadigd).",
+      "formatUnrecognized": "Dit bestand is geen herkenbare AllMarks-back-up. Kies een bestand dat je vanuit AllMarks hebt geëxporteerd.",
+      "noBookmarks": "Deze back-up bevat geen bladwijzers. Controleer het bestand.",
+      "versionTooNew": "Deze back-up is gemaakt met een nieuwere versie van AllMarks. Werk eerst de app bij en zet daarna terug.",
+      "corruptRows": "Een deel van deze back-up is beschadigd, daarom is het terugzetten geannuleerd. Je huidige gegevens zijn ongewijzigd.",
+      "restoreFailed": "Terugzetten mislukt. Controleer het bestand en probeer het opnieuw."
+    },
     "urlPlaceholder": "Plak een URL...",
     "save": "Opslaan",
     "randomPick": "Willekeurige keuze",

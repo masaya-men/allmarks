@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "Verilerini bir dosyaya kaydet veya geri yükle.",
+      "confirmRestore": "Bu işlem, mevcut verilerini bu yedeğin içeriğiyle değiştirir. Devam edilsin mi?\n\n(kaydedildiği tarih: {date} · version: {version})",
+      "restoreDone": "Geri yükleme tamamlandı — {count} yer imi.",
+      "restoreKeptSome": "Bazı öğeler bu yedekte yer almıyordu; bu nedenle onlara ait mevcut verilerin korundu.",
+      "reloading": "Sayfa yeniden yükleniyor…",
+      "exportFailed": "Yedek dışa aktarılamadı. Lütfen tekrar deneyin.",
+      "fileUnreadable": "Dosya okunamadı (bozulmuş olabilir).",
+      "formatUnrecognized": "Bu dosya, tanınan bir AllMarks yedeği değil. Lütfen AllMarks'tan dışa aktardığın bir dosya seç.",
+      "noBookmarks": "Bu yedekte hiç yer imi yok. Lütfen dosyayı kontrol et.",
+      "versionTooNew": "Bu yedek, AllMarks'ın daha yeni bir sürümüyle oluşturulmuş. Lütfen önce uygulamayı güncelle, ardından geri yükle.",
+      "corruptRows": "Bu yedeğin bir kısmı hasarlı olduğu için geri yükleme iptal edildi. Mevcut verilerin değişmedi.",
+      "restoreFailed": "Geri yükleme başarısız oldu. Lütfen dosyayı kontrol edip tekrar deneyin."
+    },
     "urlPlaceholder": "URL yapıştır...",
     "save": "Kaydet",
     "randomPick": "Rastgele Seç",

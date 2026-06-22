@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "Lưu dữ liệu của bạn vào một tệp, hoặc khôi phục lại.",
+      "confirmRestore": "Thao tác này sẽ thay thế dữ liệu hiện tại của bạn bằng nội dung của bản sao lưu này. Tiếp tục?\n\n(đã lưu: {date} · version: {version})",
+      "restoreDone": "Khôi phục hoàn tất — {count} dấu trang.",
+      "restoreKeptSome": "Một số mục không có trong bản sao lưu này, nên dữ liệu hiện tại của bạn cho những mục đó đã được giữ lại.",
+      "reloading": "Đang tải lại trang…",
+      "exportFailed": "Không thể xuất bản sao lưu. Vui lòng thử lại.",
+      "fileUnreadable": "Không thể đọc tệp (tệp có thể đã bị hỏng).",
+      "formatUnrecognized": "Tệp này không phải là bản sao lưu AllMarks hợp lệ. Vui lòng chọn một tệp mà bạn đã xuất từ AllMarks.",
+      "noBookmarks": "Bản sao lưu này không có dấu trang nào. Vui lòng kiểm tra lại tệp.",
+      "versionTooNew": "Bản sao lưu này được tạo bằng một phiên bản AllMarks mới hơn. Vui lòng cập nhật ứng dụng trước, rồi mới khôi phục.",
+      "corruptRows": "Một phần của bản sao lưu này bị hỏng, nên việc khôi phục đã bị hủy. Dữ liệu hiện tại của bạn không thay đổi.",
+      "restoreFailed": "Khôi phục thất bại. Vui lòng kiểm tra lại tệp và thử lại."
+    },
     "urlPlaceholder": "Dán URL...",
     "save": "Lưu",
     "randomPick": "Chọn ngẫu nhiên",

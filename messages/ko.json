@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "기기 내 데이터를 파일로 저장하거나 복원합니다.",
+      "confirmRestore": "현재 데이터를 이 백업의 내용으로 덮어씁니다. 계속하시겠습니까?\n\n(저장 일시: {date} · version: {version})",
+      "restoreDone": "복원이 완료되었습니다 — 북마크 {count}개.",
+      "restoreKeptSome": "일부 항목은 이 백업에 포함되어 있지 않아, 해당 항목의 현재 데이터를 그대로 유지했습니다.",
+      "reloading": "페이지를 다시 불러오는 중…",
+      "exportFailed": "백업을 내보내지 못했습니다. 다시 시도해 주세요.",
+      "fileUnreadable": "파일을 읽을 수 없습니다(손상되었을 수 있습니다).",
+      "formatUnrecognized": "이 파일은 AllMarks 백업으로 인식되지 않습니다. AllMarks에서 내보낸 파일을 선택해 주세요.",
+      "noBookmarks": "이 백업에는 북마크가 들어 있지 않습니다. 파일을 확인해 주세요.",
+      "versionTooNew": "이 백업은 더 새로운 버전의 AllMarks에서 만들어졌습니다. 먼저 앱을 최신 버전으로 업데이트한 후 복원해 주세요.",
+      "corruptRows": "이 백업의 일부가 손상되어 복원을 취소했습니다. 현재 데이터는 변경되지 않았습니다.",
+      "restoreFailed": "복원에 실패했습니다. 파일을 확인한 후 다시 시도해 주세요."
+    },
     "urlPlaceholder": "URL 붙여넣기...",
     "save": "저장",
     "randomPick": "랜덤 추천",

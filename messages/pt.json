@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "Salve seus dados em um arquivo ou restaure-os.",
+      "confirmRestore": "Isto substitui seus dados atuais pelo conteúdo deste backup. Deseja continuar?\n\n(salvo em: {date} · version: {version})",
+      "restoreDone": "Restauração concluída — {count} favoritos.",
+      "restoreKeptSome": "Alguns itens não estavam neste backup, então os seus dados atuais referentes a eles foram mantidos.",
+      "reloading": "Recarregando a página…",
+      "exportFailed": "Não foi possível exportar o backup. Tente novamente.",
+      "fileUnreadable": "Não foi possível ler o arquivo (ele pode estar corrompido).",
+      "formatUnrecognized": "Este arquivo não é reconhecido como um backup do AllMarks. Escolha um arquivo que você exportou do AllMarks.",
+      "noBookmarks": "Este backup não contém favoritos. Verifique o arquivo.",
+      "versionTooNew": "Este backup foi criado com uma versão mais recente do AllMarks. Atualize o aplicativo primeiro e depois faça a restauração.",
+      "corruptRows": "Parte deste backup está danificada, então a restauração foi cancelada. Seus dados atuais permanecem inalterados.",
+      "restoreFailed": "A restauração falhou. Verifique o arquivo e tente novamente."
+    },
     "urlPlaceholder": "Cole a URL...",
     "save": "Salvar",
     "randomPick": "Escolha aleatória",

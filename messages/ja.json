@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "端末内のデータをファイルに保存／復元します。",
+      "confirmRestore": "今のデータを、このバックアップの内容で置き換えます。続けますか?\n\n(書き出し日時: {date} ・ version: {version})",
+      "restoreDone": "復元が完了しました（ブックマーク {count} 件）。",
+      "restoreKeptSome": "一部の項目はこのバックアップに含まれていなかったため、今のデータをそのまま残しました。",
+      "reloading": "ページを再読み込みします…",
+      "exportFailed": "バックアップの書き出しに失敗しました。もう一度お試しください。",
+      "fileUnreadable": "ファイルを読み取れませんでした（壊れている可能性があります）。",
+      "formatUnrecognized": "このファイルは AllMarks のバックアップとして認識できません。AllMarks で書き出したファイルを選んでください。",
+      "noBookmarks": "このバックアップにはブックマークが入っていません。ファイルをご確認ください。",
+      "versionTooNew": "このバックアップは新しいバージョンの AllMarks で作られています。先にアプリを最新にしてから復元してください。",
+      "corruptRows": "このバックアップは一部が壊れているため、復元を中止しました。現在のデータは変更していません。",
+      "restoreFailed": "バックアップの復元に失敗しました。ファイルをご確認のうえ、もう一度お試しください。"
+    },
     "urlPlaceholder": "URLをペースト...",
     "save": "保存",
     "randomPick": "ランダムピック",

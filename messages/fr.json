@@ -4,6 +4,20 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "backup": {
+      "caption": "Enregistrez vos données dans un fichier, ou restaurez-les.",
+      "confirmRestore": "Cette opération remplace vos données actuelles par le contenu de cette sauvegarde. Continuer ?\n\n(enregistrée le : {date} · version : {version})",
+      "restoreDone": "Restauration terminée — {count} favoris.",
+      "restoreKeptSome": "Certains éléments ne figuraient pas dans cette sauvegarde ; vos données actuelles les concernant ont donc été conservées.",
+      "reloading": "Rechargement de la page…",
+      "exportFailed": "Impossible d'exporter la sauvegarde. Veuillez réessayer.",
+      "fileUnreadable": "Impossible de lire le fichier (il est peut-être endommagé).",
+      "formatUnrecognized": "Ce fichier n'est pas une sauvegarde AllMarks reconnue. Veuillez choisir un fichier que vous avez exporté depuis AllMarks.",
+      "noBookmarks": "Cette sauvegarde ne contient aucun favori. Veuillez vérifier le fichier.",
+      "versionTooNew": "Cette sauvegarde a été créée avec une version plus récente d'AllMarks. Veuillez d'abord mettre à jour l'application, puis effectuer la restauration.",
+      "corruptRows": "Une partie de cette sauvegarde est endommagée ; la restauration a donc été annulée. Vos données actuelles n'ont pas été modifiées.",
+      "restoreFailed": "Échec de la restauration. Veuillez vérifier le fichier et réessayer."
+    },
     "urlPlaceholder": "Collez une URL…",
     "save": "Enregistrer",
     "randomPick": "Au hasard",

@@ -9,7 +9,9 @@ import {
   type ReactElement,
 } from 'react'
 import { EXTENSION_STORE_URL } from '@/lib/board/constants'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ChromeButton } from './ChromeButton'
+import { BackupButton } from './BackupButton'
 import styles from './ExtensionEntry.module.css'
 
 /** Layout effect on the client, plain effect on the server (where layout
@@ -99,6 +101,7 @@ export function ExtensionEntry({
   onReplayIntro,
   forceOpen = false,
 }: ExtensionEntryProps): ReactElement {
+  const { t } = useI18n()
   const installed = useExtensionInstalled()
   // SETTINGS is always shown (extension or not) so the QUICK-TAG ON SAVE
   // toggle is reachable by bookmarklet-only users too. The drawer is
@@ -175,6 +178,13 @@ export function ExtensionEntry({
             data-testid="quick-tag-toggle"
           />
         </label>
+        <div className={styles.backupSection} data-testid="backup-section">
+          <div className={styles.backupLabel}>BACKUP</div>
+          <p className={styles.backupCaption}>{t('board.backup.caption')}</p>
+          <div className={styles.backupRow}>
+            <BackupButton buttonClassName={styles.backupBtn} />
+          </div>
+        </div>
         <button
           type="button"
           className={styles.panelCta}
