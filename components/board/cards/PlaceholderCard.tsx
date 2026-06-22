@@ -7,6 +7,7 @@ import { hostnameFromUrl } from '@/lib/embed/favicon'
 import { pickTitleTypography } from '@/lib/embed/title-typography'
 import { cleanTitle } from '@/lib/embed/clean-title'
 import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
+import { PLACEHOLDER_ASPECT } from './placeholder-aspect'
 import styles from './PlaceholderCard.module.css'
 
 type Props = {
@@ -51,9 +52,10 @@ export function PlaceholderCard({
   const placeholder = useMemo(() => pickPlaceholderImage(item.url), [item.url])
 
   // Report intrinsic height so layout doesn't reflow with text overflow.
-  // Aspect is fixed at 1.25 (= same as old TextCard's TEXT_CARD_ASPECT) so
-  // a 280px wide card resolves to 224px tall — matches user's recent sizing.
-  const PLACEHOLDER_ASPECT = 1.25
+  // Aspect is fixed (PLACEHOLDER_ASPECT, shared with the layout-height helper)
+  // so a 280px wide card resolves to 224px tall — matches user's recent sizing.
+  // The board layout now computes this height eagerly (itemSkylineHeight), so
+  // this report only refines the ImageCard error-fallback case.
   const lastReportedKeyRef = useRef<string>('')
   useEffect((): void => {
     if (!persistMeasuredAspect && !reportIntrinsicHeight) return

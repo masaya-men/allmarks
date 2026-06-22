@@ -41,7 +41,7 @@ import { useSpotlightRotation } from '@/lib/board/use-spotlight-rotation'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX } from './use-card-reorder-drag'
-import { pickCard } from './cards'
+import { pickCard, itemSkylineHeight } from './cards'
 import styles from './CardsLayer.module.css'
 
 /** Max press-and-hold duration (ms) for a pointer gesture to still count as a
@@ -565,14 +565,15 @@ export function CardsLayer({
   // or `width / aspectRatio` for image/video cards.
   const buildSkylineCard = useCallback(
     (it: BoardItem): SkylineCard => {
-      const intrinsic = intrinsicHeights[it.bookmarkId]
       const w = resolveCardWidth(it.bookmarkId)
-      const h =
-        intrinsic && intrinsic > 0
-          ? intrinsic
-          : it.aspectRatio > 0
-            ? w / it.aspectRatio
-            : w
+      // Prefer a card's reported intrinsic height when present (covers the
+      // ImageCard→PlaceholderCard error fallback, where a thumbnail card flips
+      // to a placeholder at runtime). Otherwise use the deterministic height —
+      // crucially this is w/PLACEHOLDER_ASPECT for placeholder cards, so the
+      // masonry no longer waits for each card to mount and report (which made
+      // cards below it reshuffle while scrolling). See itemSkylineHeight.
+      const intrinsic = intrinsicHeights[it.bookmarkId]
+      const h = intrinsic && intrinsic > 0 ? intrinsic : itemSkylineHeight(it, w)
       return { id: it.bookmarkId, width: w, height: h }
     },
     [resolveCardWidth, intrinsicHeights],

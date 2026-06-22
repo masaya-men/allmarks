@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
+import { itemSkylineHeight } from './cards'
 import { computeFocusScrollY } from '@/lib/board/scroll-to-card'
 import {
   DEFAULT_THEME_ID,
@@ -727,8 +728,10 @@ export function BoardRoot() {
     () =>
       filteredItems.map((it) => {
         const w = customWidths[it.bookmarkId] ?? cardWidthPx
-        const h = it.aspectRatio > 0 ? w / it.aspectRatio : w
-        return { id: it.bookmarkId, width: w, height: h }
+        // Same deterministic height the render layer (CardsLayer) uses, so the
+        // scroll-range / contentBounds never diverge from the actual cards for
+        // thumbnail-less placeholder cards.
+        return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
       }),
     [filteredItems, cardWidthPx, customWidths],
   )
@@ -787,8 +790,7 @@ export function BoardRoot() {
     if (matchedBookmarkIds == null) return layout
     const cards: SkylineCard[] = lightboxNavItems.map((it) => {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
-      const h = it.aspectRatio > 0 ? w / it.aspectRatio : w
-      return { id: it.bookmarkId, width: w, height: h }
+      return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
     return computeSkylineLayout({ cards, containerWidth: effectiveLayoutWidth, gap: cardGapPx })
   }, [matchedBookmarkIds, layout, lightboxNavItems, customWidths, cardWidthPx, effectiveLayoutWidth, cardGapPx])
