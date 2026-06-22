@@ -5,8 +5,9 @@
   },
   "board": {
     "settings": {
-      "saveWithoutExtension": "SALVAR SEM A EXTENSÃO",
-      "replayIntro": "REVER INTRODUÇÃO",
+      "quickTagOnSave": "Marcar ao salvar",
+      "saveWithoutExtension": "SALVAR COM BOOKMARKLET",
+      "replayIntro": "VER O TUTORIAL DE NOVO",
       "openExtensionSettings": "ABRIR CONFIGURAÇÕES DA EXTENSÃO",
       "getExtensionBody": "Salve qualquer página no AllMarks com um clique — direto do X, do YouTube e de qualquer outro lugar. A marca flutuante e o salvamento automático de SNS já vêm junto.",
       "addToChrome": "USAR NO CHROME",
@@ -129,7 +130,7 @@
       "extDemo": { "body": "Com a extensão do AllMarks, basta um clique em qualquer página para salvar. E você pode adicionar tags ao mesmo tempo.", "hideNote": "O botão flutuante atrapalha? Você pode escondê-lo quando quiser nas configurações da extensão.", "bodyX": "No X, no YouTube e em outros sites, é só tocar em Salvar ou Curtir. A extensão do AllMarks também guarda no seu quadro." },
       "install": {
         "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B.", "demoCaption": "Em qualquer página, basta clicar no AllMarks na sua barra de favoritos — uma janela abre e o salva.", "dragged": "Instalado! Agora vamos ver como você vai usá-lo." },
-      "manage": { "settingsBody": "Não quer a janela que aparece ao salvar? Desative este “QUICK-TAG ON SAVE” — você pode reativá-lo quando quiser.", "body": "Para adicionar tags a vários cards de uma vez, abra MANAGE TAGS.", "triageBody": "MANAGE TAGS — marque seu quadro carta a carta. Deslize para avançar rápido." },
+      "manage": { "settingsBody": "Não quer a janela que aparece ao salvar? Desative este “Marcar ao salvar” — você pode reativá-lo quando quiser.", "body": "Para adicionar tags a vários cards de uma vez, abra MANAGE TAGS.", "triageBody": "MANAGE TAGS — marque seu quadro carta a carta. Deslize para avançar rápido." },
       "installDetected": {
         "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
       },

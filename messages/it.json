@@ -5,8 +5,9 @@
   },
   "board": {
     "settings": {
-      "saveWithoutExtension": "SALVA SENZA ESTENSIONE",
-      "replayIntro": "RIVEDI L'INTRO",
+      "quickTagOnSave": "Tagga al salvataggio",
+      "saveWithoutExtension": "SALVA CON BOOKMARKLET",
+      "replayIntro": "RIVEDI IL TUTORIAL",
       "openExtensionSettings": "APRI IMPOSTAZIONI ESTENSIONE",
       "getExtensionBody": "Salva qualsiasi pagina su AllMarks con un clic, direttamente da X, YouTube e ovunque tu sia. Il segno fluttuante e il salvataggio automatico sui SNS sono inclusi.",
       "addToChrome": "AGGIUNGI A CHROME",
@@ -129,7 +130,7 @@
       "extDemo": { "body": "Con l'estensione AllMarks, basta un clic su qualsiasi pagina per salvarla, e puoi aggiungere un tag allo stesso tempo.", "hideNote": "Il pulsante fluttuante ti dà fastidio? Puoi nasconderlo quando vuoi nelle impostazioni dell'estensione.", "bodyX": "Su X, YouTube e altri siti famosi, basta toccare Aggiungi ai segnalibri o Mi piace: l'estensione AllMarks lo salva anche sulla tua bacheca." },
       "install": {
         "body": "Trascina questo pulsante AllMarks nella barra dei preferiti per salvare da ovunque. Non vedi la barra? Premi Ctrl/⌘+Shift+B.", "demoCaption": "Su qualsiasi pagina, basta cliccare AllMarks nella barra dei preferiti: si apre una finestra che la salva.", "dragged": "Perfetto, è installato! Ora vediamo come usarlo." },
-      "manage": { "settingsBody": "Non vuoi la finestra che appare quando salvi? Disattiva questo «QUICK-TAG ON SAVE» — puoi riattivarlo quando vuoi.", "body": "Per aggiungere tag a tante schede in una volta, apri MANAGE TAGS.", "triageBody": "MANAGE TAGS — assegna tag al tuo board una carta alla volta. Scorri per andare veloce." },
+      "manage": { "settingsBody": "Non vuoi la finestra che appare quando salvi? Disattiva questo «Tagga al salvataggio» — puoi riattivarlo quando vuoi.", "body": "Per aggiungere tag a tante schede in una volta, apri MANAGE TAGS.", "triageBody": "MANAGE TAGS — assegna tag al tuo board una carta alla volta. Scorri per andare veloce." },
       "installDetected": {
         "body": "L'estensione è già installata. È possibile salvare anche incollando un link o usando il bookmarklet."
       },

@@ -169,7 +169,7 @@ export function ExtensionEntry({
       >
         <div className={styles.title}>SETTINGS</div>
         <label className={styles.toggleRow} data-onboarding-target="quick-tag-toggle">
-          <span className={styles.toggleLabel}>QUICK-TAG ON SAVE</span>
+          <span className={styles.toggleLabel}>{t('board.settings.quickTagOnSave')}</span>
           <input
             type="checkbox"
             className={styles.toggle}

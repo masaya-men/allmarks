@@ -5,8 +5,9 @@
   },
   "board": {
     "settings": {
-      "saveWithoutExtension": "LƯU KHÔNG CẦN TIỆN ÍCH",
-      "replayIntro": "XEM LẠI GIỚI THIỆU",
+      "quickTagOnSave": "Gắn thẻ nhanh khi lưu",
+      "saveWithoutExtension": "LƯU BẰNG BOOKMARKLET",
+      "replayIntro": "XEM LẠI HƯỚNG DẪN",
       "openExtensionSettings": "MỞ CÀI ĐẶT TIỆN ÍCH",
       "getExtensionBody": "Lưu bất kỳ trang nào vào AllMarks chỉ với một cú nhấp — ngay từ X, YouTube và mọi nơi khác. Nút đánh dấu nổi và tính năng tự động lưu SNS đều đi kèm.",
       "addToChrome": "THÊM VÀO CHROME",
@@ -129,7 +130,7 @@
       "extDemo": { "body": "Với tiện ích AllMarks, chỉ cần một cú nhấp trên bất kỳ trang nào là lưu được, và bạn có thể gắn thẻ ngay lúc đó.", "hideNote": "Không thích nút nổi? Bạn có thể ẩn nó bất cứ lúc nào trong phần cài đặt của tiện ích.", "bodyX": "Trên X, YouTube và nhiều trang khác, chỉ cần nhấn Dấu trang hoặc Thích, tiện ích AllMarks cũng sẽ lưu vào bảng của bạn." },
       "install": {
         "body": "Kéo nút AllMarks này vào thanh dấu trang để lưu từ bất cứ đâu. Không thấy thanh? Nhấn Ctrl/⌘+Shift+B.", "demoCaption": "Trên bất kỳ trang nào, chỉ cần nhấp AllMarks trên thanh dấu trang — một cửa sổ mở ra và lưu lại.", "dragged": "Tuyệt — đã cài xong! Giờ hãy xem bạn sẽ dùng nó như thế nào." },
-      "manage": { "settingsBody": "Không thích cửa sổ hiện ra khi bạn lưu? Hãy tắt “QUICK-TAG ON SAVE” này đi — bạn có thể bật lại bất cứ lúc nào.", "body": "Để gắn thẻ nhiều thẻ cùng lúc, hãy mở MANAGE TAGS.", "triageBody": "MANAGE TAGS — gắn thẻ bảng của bạn từng thẻ một. Vuốt để lướt nhanh." },
+      "manage": { "settingsBody": "Không thích cửa sổ hiện ra khi bạn lưu? Hãy tắt “Gắn thẻ nhanh khi lưu” này đi — bạn có thể bật lại bất cứ lúc nào.", "body": "Để gắn thẻ nhiều thẻ cùng lúc, hãy mở MANAGE TAGS.", "triageBody": "MANAGE TAGS — gắn thẻ bảng của bạn từng thẻ một. Vuốt để lướt nhanh." },
       "installDetected": {
         "body": "Tiện ích mở rộng đã được cài đặt. Bạn cũng có thể lưu bằng cách dán liên kết hoặc dùng bookmarklet."
       },

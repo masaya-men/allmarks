@@ -5,8 +5,9 @@
   },
   "board": {
     "settings": {
-      "saveWithoutExtension": "SAVE WITHOUT EXTENSION",
-      "replayIntro": "REPLAY INTRO",
+      "quickTagOnSave": "QUICK-TAG ON SAVE",
+      "saveWithoutExtension": "SAVE VIA BOOKMARKLET",
+      "replayIntro": "REPLAY TUTORIAL",
       "openExtensionSettings": "OPEN EXTENSION SETTINGS",
       "getExtensionBody": "Save any page to AllMarks in one click — straight from X, YouTube, and anywhere else. The floating mark and SNS auto-save come with it.",
       "addToChrome": "ADD TO CHROME",

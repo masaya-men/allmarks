@@ -5,8 +5,9 @@
   },
   "board": {
     "settings": {
-      "saveWithoutExtension": "GUARDAR SIN EXTENSIÓN",
-      "replayIntro": "VER LA INTRODUCCIÓN DE NUEVO",
+      "quickTagOnSave": "Etiquetar al guardar",
+      "saveWithoutExtension": "GUARDAR CON BOOKMARKLET",
+      "replayIntro": "VER EL TUTORIAL DE NUEVO",
       "openExtensionSettings": "ABRIR AJUSTES DE LA EXTENSIÓN",
       "getExtensionBody": "Guarda cualquier página en AllMarks con un solo clic, directamente desde X, YouTube y cualquier otro sitio. La marca flotante y el guardado automático en SNS vienen incluidos.",
       "addToChrome": "AÑADIR A CHROME",
@@ -129,7 +130,7 @@
       "extDemo": { "body": "Con la extensión de AllMarks, un clic en cualquier página la guarda, y puedes etiquetarla al mismo tiempo.", "hideNote": "¿No quieres el botón flotante? Puedes ocultarlo cuando quieras en los ajustes de la extensión.", "bodyX": "En X, YouTube y más, solo toca Guardar o Me gusta: la extensión de AllMarks también lo guarda en tu tablero." },
       "install": {
         "body": "Arrastra este botón de AllMarks a tu barra de marcadores para guardar desde cualquier lugar. ¿No ves la barra? Pulsa Ctrl/⌘+Shift+B.", "demoCaption": "En cualquier página, solo pulsa AllMarks en tu barra de marcadores — se abre una ventana y la guarda.", "dragged": "¡Listo, ya está instalado! Ahora veamos cómo lo vas a usar." },
-      "manage": { "settingsBody": "¿No quieres la ventana que aparece al guardar? Desactiva este “QUICK-TAG ON SAVE” — puedes volver a activarlo cuando quieras.", "body": "Para etiquetar muchas tarjetas a la vez, abre MANAGE TAGS.", "triageBody": "MANAGE TAGS — etiqueta tu tablero tarjeta a tarjeta. Desliza para avanzar rápido." },
+      "manage": { "settingsBody": "¿No quieres la ventana que aparece al guardar? Desactiva este “Etiquetar al guardar” — puedes volver a activarlo cuando quieras.", "body": "Para etiquetar muchas tarjetas a la vez, abre MANAGE TAGS.", "triageBody": "MANAGE TAGS — etiqueta tu tablero tarjeta a tarjeta. Desliza para avanzar rápido." },
       "installDetected": {
         "body": "La extensión ya está instalada. También puedes guardar pegando un enlace o usando el bookmarklet."
       },

@@ -5,8 +5,9 @@
   },
   "board": {
     "settings": {
-      "saveWithoutExtension": "OPSLAAN ZONDER EXTENSIE",
-      "replayIntro": "INTRO OPNIEUW BEKIJKEN",
+      "quickTagOnSave": "Direct taggen bij opslaan",
+      "saveWithoutExtension": "OPSLAAN VIA BOOKMARKLET",
+      "replayIntro": "TUTORIAL OPNIEUW BEKIJKEN",
       "openExtensionSettings": "EXTENSIE-INSTELLINGEN OPENEN",
       "getExtensionBody": "Sla elke pagina met één klik op in AllMarks — rechtstreeks vanuit X, YouTube en overal elders. De zwevende mark en automatisch opslaan van SNS horen erbij.",
       "addToChrome": "TOEVOEGEN AAN Chrome",
@@ -129,7 +130,7 @@
       "extDemo": { "body": "Met de AllMarks-extensie sla je elke pagina op met één klik. Tegelijk kun je er een tag aan geven.", "hideNote": "Vind je de zwevende knop in de weg? Je kunt hem altijd verbergen in de instellingen van de extensie.", "bodyX": "Op X, YouTube en andere bekende sites druk je gewoon op Bladwijzer of Vind ik leuk. De AllMarks-extensie zet het ook op je bord." },
       "install": {
         "body": "Sleep deze AllMarks-knop naar je bladwijzerbalk om overal op te slaan. Zie je de balk niet? Druk op Ctrl/⌘+Shift+B.", "demoCaption": "Klik op elke pagina gewoon op AllMarks in je bladwijzerbalk — er opent een venster dat hem opslaat.", "dragged": "Mooi — hij is geïnstalleerd! Laten we nu kijken hoe je hem gaat gebruiken." },
-      "manage": { "settingsBody": "Heb je het venster dat verschijnt bij het opslaan niet nodig? Schakel deze “QUICK-TAG ON SAVE” uit — je kunt het altijd weer aanzetten.", "body": "Wil je veel kaarten in één keer taggen? Open dan MANAGE TAGS.", "triageBody": "MANAGE TAGS — tag je bord kaart voor kaart. Veeg om er snel doorheen te gaan." },
+      "manage": { "settingsBody": "Heb je het venster dat verschijnt bij het opslaan niet nodig? Schakel deze “Direct taggen bij opslaan” uit — je kunt het altijd weer aanzetten.", "body": "Wil je veel kaarten in één keer taggen? Open dan MANAGE TAGS.", "triageBody": "MANAGE TAGS — tag je bord kaart voor kaart. Veeg om er snel doorheen te gaan." },
       "installDetected": {
         "body": "De extensie is al geïnstalleerd. Je kunt ook opslaan door een link te plakken of de bookmarklet te gebruiken."
       },
