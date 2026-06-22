@@ -21,9 +21,11 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 121 — オンボFB詰め + 拡張アイコン B→A 修正 + ストア提出)
+### 直近の状態 (セッション 122 — 敵対的・徹底監査 + 上位修正4件)
 
-**オンボーディング実機FBを反映→ユーザー「一旦OK」、そのまま公開へ。拡張アイコンの旧Booklage「B」を公開直前に発見→AllMarks「A」へ修正。拡張を Chromeウェブストアに提出。** (tsc0 / vitest1447 / Playwright)。詳細 narrative は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション121。
+**全体を敵対的に徹底監査（12領域→各指摘を2懐疑役で反証→確定44件）。上位を修正・本番反映: ①フィルタのタグ一覧フェードが開く瞬間に短いリストを隠す不具合 ②スクロールでカードが並び替わる不具合(rank1, 高さ計算を決定論化) ③プライバシー掃除(実メアド/実名/競合・収益を docs/private へ退避) ④旧ブランド紫アクセント→ブランド緑#28F100 統一。** 残り40件は作業キュー化（[docs/private/2026-06-22-audit-fix-progress.md](./private/2026-06-22-audit-fix-progress.md)）、次は B4(保存セキュリティ)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。(tsc0 / vitest1473)。
+
+↓ 以下はセッション121のメモ（archive）:
 
 1. **トリアージ実演を全自動シネマ→read→act 2段ペース化**: NEXT撤去で自動進行、read(キャプション＋対象ズーム/スポットで視線誘導・カーソル無し)→act(緑カーソルが押す＋本物スワイプ)→hold。約14s→約22sに減速。最後の手詰まり真因＝`dimFull` が CONTINUE のクリックを奪う z-index罠を `onbFooter` の z-index で解消。
 2. **全オンボメッセージを「下から24px上昇」で統一**(Spotlight/Reenactment/ShareReveal/bottomCaption/Stage)、manage 使い回しは `key={caption}` で再発火。
@@ -79,14 +81,14 @@
 ### 共有 (share) — 次セッション着手候補 (session 96 で user 要望)
 
 - **受け取り画面 (/s/<id>/triage) をマネージ画面と同じ UI に** (session 96 user 要望) — 現状 [ReceiverTriage.tsx](../components/share/ReceiverTriage.tsx)(239行) はマネージ [TriagePage.tsx](../components/triage/TriagePage.tsx)(857行)/[TriageCard.tsx](../components/triage/TriageCard.tsx) を**全く再利用していない別物**。user は「マネージと同じ UI で文言だけ共有用に変える」体験を希望。ただし目的が違う (マネージ=自分のブクマ整理 / 受け取り=他人のを取り込み + 送り主タグ提案 + 重複検出) ので「共通部品を共有 + 取り込み固有の振る舞いを差し込む」設計が要る。**brainstorming で方針合意してから実装** (大改修、勝手にやらない)。マネージ側には session 95 の「画像ドラッグでタグ付け + ガラス演出」もあり、受け取りにも欲しいか含め要相談。
-- **フィルターのタグ 1 つでもフェード(マスク)がかかり視認性が落ちる** (session 96 user 報告) — コード上はフェードは overflow 時のみ ([FilterPill.module.css:228](../components/board/FilterPill.module.css#L228) `data-scroll-edge !== 'none'` の時だけ mask、[FilterPill.tsx:120](../components/board/FilterPill.tsx#L120) `updateTagScroll` が `canScroll` 判定)。1 タグなら overflow しない→`none`→マスク無しが理屈なのに**実際はフェードが見える＝理屈と現実がズレ**。**実機(Playwright)で 1 タグ状態の dropdown を計測して真因特定してから直す** (憶測で触らない)。`.menu` 等別要素のフェード混入 or `data-scroll-edge` 初期値/measure タイミングの誤りを疑う。
+- ~~**フィルターのタグ 1 つでもフェードがかかり視認性が落ちる**~~ ✅ **session 122 完了** — 真因は静止時でなく「開くアニメ中に clientHeight が過小なまま→overflow 誤判定→フェードが一瞬タグを隠す」。判定を max-height 基準の安定値に変更（純関数 [computeTagScrollEdge](../lib/board/tag-scroll-edge.ts) に切出し+単体テスト15件）。実機計測で前後検証済。
 
 ### 表示・サムネ系
 
 - ~~**B-#23 Vimeo / SoundCloud Lightbox 再生未対応**~~ ✅ session 51 で完遂 (= 専用 Embed コンポーネント追加 + 全 embed 共通 50% 音量デフォルト + SoundCloud カスタムスライダーまで波及)
 - ~~**B-#22 長文 tweet Lightbox 末尾だけ表示 bug + 全文表示 enhancement**~~ ✅ session 52 で完遂 (= cleanTitle 過剰マッチ修正 + TextCard 透明グラス redesign + scroll + persistTitle backfill 開通 + font jump 解消、 9 file 変更 / 5 deploy / 19 unit test 追加)
-- **スクロール中にカードの場所が入れ替わる問題** (session 92 で再確認、 未解決) — 手動スクロール中に skyline masonry の bin-packing が再計算され、 カードの配置が動的に入れ替わって見えることがある。 viewport culling (画面内だけ render) と layout 再計算のタイミングが絡む疑い。 真因未特定、 別 session で着手
-- **カードが左端に詰まらず隙間ができることがある** (session 93 user スクショで報告) — 本来 skyline masonry は左から詰めるはずだが、 ある列が左に寄らず不自然な空きが出ることがある。 上記「スクロール中カード入れ替わり」 と同じ skyline 再計算/bin-packing 系の疑い (= 同根の可能性)。 再現条件・真因とも未特定、 別 session で腰を据えて調査
+- ~~**スクロール中にカードの場所が入れ替わる問題**~~ ✅ **session 122 完了 (rank1)** — 真因: サムネ無しカードの高さを「画面表示の瞬間に初測(w/1.25)」する作りで、表示前(推定aspect)→表示後で高さが変わり下のカードが全部ずれていた。高さ計算を決定論の共通純関数 [itemSkylineHeight](../components/board/cards/index.ts) に一本化（CardsLayer描画 / BoardRootスクロール範囲 / 共有プレビューの3箇所）。マウント順非依存に。実機で再現(12枚Δ804px)→決定論を単体テストで証明。**ユーザー実機での最終確認待ち**。
+- **カードが左端に詰まらず隙間ができることがある** (session 93 報告) — 上記 reshuffle 修正で多くは解消の見込みだが、**残因として F5 = skyline-layout が segment の左端しか試さず右の窪みに詰めない**点が残る（監査 board-layout finder 指摘）。reshuffle のユーザー実機確認で「左すき間まだ出る」なら skyline に右端候補/backfill を追加。別途・低優先。
 - ~~**共有ミラー (ShareMirror) の再現精度**~~ ✅ **session 96 で完了** — (a) カードの角丸: プレビュー `.card` を直書き 3px → ボードと同じ `var(--card-radius)` (20px) に統一 + OG 画像 ([capture-mirror.ts](../lib/share/capture-mirror.ts)) を角丸クリップ (`roundRectPath`+`clip`) 描画 + 半径をカード幅比で算出 (縮小率非依存) に修正。 実機 Chromium ピクセル検証済。 (b) 背景タグ文字は session 94 で対応済。
 - **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
 - **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)

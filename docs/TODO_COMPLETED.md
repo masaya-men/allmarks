@@ -7648,3 +7648,21 @@ en/ja を確定し13言語へ並列翻訳展開、本番反映済(15言語 JSON 
 
 ### 公開前片付けの実態(TODO記載が古かった)
 - 「EXPORT/IMPORT撤去」=既に完了(`BackupButton.tsx`/`backup.ts` は未描画の孤立 dead code)。「chrome-extension/削除」=そのフォルダ不在(本物は `extension/`=提出対象)。残る公開作業は承認後の `EXTENSION_STORE_URL` 投入のみ。
+
+---
+
+## セッション 122 (2026-06-22) — 敵対的・徹底監査 + 上位修正4件
+
+ユーザー要望「全部を敵対的に徹底的に監査して、全部直して（安全に確実に・文脈を失わず）」。
+
+**監査**: 12領域（ボード配置/保存IDB/共有/拡張/オンボ/プライバシー・セキュリティ/React/i18n/パフォ/ビルド/コード品質/堅牢性）を専任エージェントが実コード監査→各指摘を2懐疑役で反証→統合。総指摘57件、**確定44件/要確認10件/反証却下3件**。詳細レポートと作業キューは docs/private/（gitignored）。
+
+**修正・本番反映（4 commit）**:
+1. **フィルタのタグ一覧フェード** — 開くアニメ中に clientHeight が過小なまま overflow と誤判定し、短いリストのタグを一瞬フェードで隠していた。判定を max-height 基準の安定値に変更。純関数 `lib/board/tag-scroll-edge.ts`(computeTagScrollEdge) に切出し+単体テスト15件。実機 Playwright で前後計測。
+2. **rank1 スクロールでカードが並び替わる** — サムネ無しカード(PlaceholderCard)の高さを「画面表示の瞬間に初測(w/1.25)」する作りで、表示前(推定aspect≠1.25)→表示後で高さが変わり、下のカードがスクロール中に全部ずれていた。高さ計算を決定論の共通純関数 `components/board/cards/index.ts`(itemSkylineHeight) に一本化（CardsLayer描画/BoardRootスクロール範囲/共有プレビューの3箇所が同じ計算を使う＝マウント順非依存＝reshuffle構造的に消失。scroll範囲ズレF2も解消）。`cards/placeholder-aspect.ts`(共有定数)新設。実機で再現(12枚/最大Δ804px)→決定論を単体テストで証明。GSAP tween で瞬間値が交絡するため最終確認はユーザー実機に委ねる。F5(skyline左端のみ詰める)は残課題。
+3. **B2 プライバシー掃除** — 実メアド(.husky/pre-commit直書き)を gitignored .husky/.leak-patterns へ / 実名 Masaya→masaya-men / 競合名・収益記述を docs/private へ退避し公開側中立化 / robots.ts に内部ルート追加 / sw.js CACHE_VERSION更新。pre-comm パターン強化は正規用途の誤検知で見送り。
+4. **テーマ色** — 実機FBで「空状態のボタン等が紫でテーマに合わない」。旧Booklage紫 --color-accent-primary(#7c5cfc)→ブランド緑 #28F100 に統一（CTAボタン/静的リンク/フォーカス枠/PWA色）。
+
+**掃除**: 監査エージェントが tests/lib/ に残した IDB調査スクラッチ12本（未追跡・tsc破壊）を削除。
+
+**残**: B4(保存セキュリティ)〜B11 の40件。詳細は docs/CURRENT_GOAL.md と docs/private/2026-06-22-audit-fix-progress.md。tsc0 / vitest1473。
