@@ -1,7 +1,7 @@
 # Board: Content-Sized Masonry + Drag-to-Reorder — Design Spec
 
 - **Status**: Draft, awaiting user review
-- **Author**: Masaya + Claude (brainstorming session 2026-04-20, 続編)
+- **Author**: masaya-men + Claude (brainstorming session 2026-04-20, 続編)
 - **Supersedes (partial)**: `2026-04-20-b1-dashboard-redesign-design.md` — §2.1（常時自由配置）/ §2.6（整列アクション）/ §5.1（Task 16 free-drag, Task 17 Rotation, Task 18 Resize を主役とする方針）を本 spec で差し替える
 - **Preserves**: Sidebar（§2.3）/ Share Modal（§2.5）/ 視覚言語（§3）/ Theme system は変更なし
 - **Defers**: Free 配置 / 回転 / 連続リサイズ / 装飾 → すべて Share Modal（Plan B）内に移設

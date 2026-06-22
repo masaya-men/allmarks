@@ -67,3 +67,6 @@ next-env.d.ts
 # Private sensitive content (business/personal) — README only tracked
 docs/private/*
 !docs/private/README.md
+
+# Real leak-scan patterns (e.g. owner's email) — kept out of the tracked hook
+.husky/.leak-patterns

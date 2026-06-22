@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/save', '/triage', '/seed-demos', '/glass-lab'],
+        disallow: ['/save', '/save-iframe', '/triage', '/seed-demos', '/glass-lab', '/pip-tune', '/typo-glitch-lab'],
       },
     ],
     sitemap: `${PRODUCTION_URL}/sitemap.xml`,

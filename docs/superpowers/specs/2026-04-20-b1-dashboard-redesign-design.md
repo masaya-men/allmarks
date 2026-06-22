@@ -1,7 +1,7 @@
 # B1 Dashboard Redesign — Design Spec
 
 - **Status**: Draft, awaiting user review
-- **Author**: Masaya + Claude (brainstorming session 2026-04-20)
+- **Author**: masaya-men + Claude (brainstorming session 2026-04-20)
 - **Supersedes**: Task 19 Toolbar + Task 20 FramePresetPopover (will be reworked)
 - **Preserves**: Task 14 (morph), Task 15 (CardNode 2-div), Task 16 (free-drag), Task 17 (RotationHandle), Task 18 (ResizeHandle 8 handles)
 
@@ -306,4 +306,4 @@ IDEAS.md §kube.io に記載の recipe を採用:
 
 ## 変更履歴
 
-- 2026-04-20 初稿 (Masaya + Claude brainstorming session)
+- 2026-04-20 初稿 (masaya-men + Claude brainstorming session)

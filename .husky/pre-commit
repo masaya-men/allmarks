@@ -41,7 +41,12 @@ echo "✅ gitleaks: シークレット無し"
 # gitleaks が検知しない個人情報・戦略キーワードをブロック
 # ============================================================
 
-EMAIL_PATTERN='masaya\.maeno0106@gmail\.com'
+# Real email pattern is kept in a gitignored file so it isn't committed in
+# plaintext. Absent on a fresh clone → email nudge is skipped (gitleaks still
+# guards real secrets); the owner's local checkout has the file.
+# shellcheck disable=SC1091
+[ -f .husky/.leak-patterns ] && . .husky/.leak-patterns
+EMAIL_PATTERN="${EMAIL_PATTERN:-__no_email_pattern_configured__}"
 STRATEGY_PATTERN='収益化計画|価格戦略|monetization plan|launch strategy'
 
 LEAKED_FILES=$(git diff --cached --name-only --diff-filter=ACM | while IFS= read -r f; do
