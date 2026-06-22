@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AllMarks",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "description": "Save any URL to AllMarks as a beautiful visual collage card.",
   "minimum_chrome_version": "124",
   "icons": {
