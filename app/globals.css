@@ -148,8 +148,11 @@ ol {
   --color-text-inverse: #0a0a0f;
 
   /* ── Accent Colors ── */
-  --color-accent-primary: #7c5cfc;
-  --color-accent-primary-hover: #9178ff;
+  /* AllMarks brand green (= the logo checkmark / active-state green). Replaced
+     the old Booklage purple #7c5cfc so every accent (CTA buttons, static-page
+     links, focus rings) matches the black+white+green theme. */
+  --color-accent-primary: #28F100;
+  --color-accent-primary-hover: #5cff3d;
   --color-accent-secondary: #20c997;
   --color-accent-warning: #ffd43b;
   --color-accent-danger: #ff6b6b;
@@ -397,8 +400,10 @@ ol {
   --color-text-tertiary: #9090a8;
   --color-text-inverse: #f0f0f5;
 
-  --color-accent-primary: #6b46f5;
-  --color-accent-primary-hover: #7c5cfc;
+  /* Light-theme accent: a deeper green that stays readable on white pages
+     (privacy / terms / guide), matching the brand green family. */
+  --color-accent-primary: #1a9e00;
+  --color-accent-primary-hover: #28F100;
 
   --color-glass-bg: rgba(255, 255, 255, 0.05);
   --color-glass-border: rgba(0, 0, 0, 0.08);
