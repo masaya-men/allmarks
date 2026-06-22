@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import 'fake-indexeddb/auto'
 import type { IDBPDatabase } from 'idb'
 import { initDB } from '@/lib/storage/indexeddb'
-import { exportAllStores, importAllStores } from '@/lib/storage/backup'
+import { DB_VERSION } from '@/lib/constants'
+import {
+  exportAllStores,
+  importAllStores,
+  BackupImportError,
+} from '@/lib/storage/backup'
 
 let db: IDBPDatabase<unknown> | null = null
 
@@ -83,5 +88,119 @@ describe('backup', () => {
     // Only bm-a should remain (= import is a full replace, not merge).
     const after = await d.getAll('bookmarks')
     expect(after.map((b) => (b as { id: string }).id)).toEqual(['bm-a'])
+  })
+
+  // ── rank3: restore must never destroy data with a partial/foreign file ──
+
+  const aBookmark = (id: string): Record<string, unknown> => ({
+    id, url: `https://${id}.com`, title: id, description: '',
+    thumbnail: '', favicon: '', siteName: id, type: 'website',
+    savedAt: '2026-05-25T00:00:00Z', ogpStatus: 'fetched', tags: [],
+  })
+
+  it('rejects a backup whose version is newer than the running app (forward-incompat)', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await d.put('bookmarks', aBookmark('bm-keep'))
+
+    const dump = { ...(await exportAllStores(d)), version: DB_VERSION + 1, bookmarks: [aBookmark('bm-new')] }
+
+    await expect(importAllStores(d, dump)).rejects.toBeInstanceOf(BackupImportError)
+    // Existing data untouched — the reject happens before any clear().
+    const after = await d.getAll('bookmarks')
+    expect(after.map((b) => (b as { id: string }).id)).toEqual(['bm-keep'])
+  })
+
+  it('refuses a backup that has zero bookmarks, leaving the current DB intact', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await d.put('bookmarks', aBookmark('bm-keep'))
+
+    const dump = { ...(await exportAllStores(d)), bookmarks: [] as Record<string, unknown>[] }
+
+    await expect(importAllStores(d, dump)).rejects.toBeInstanceOf(BackupImportError)
+    const after = await d.getAll('bookmarks')
+    expect(after.map((b) => (b as { id: string }).id)).toEqual(['bm-keep'])
+  })
+
+  it('does NOT clear a store the dump leaves empty (= partial file cannot wipe placement)', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await d.put('bookmarks', aBookmark('bm-old'))
+    await d.put('tags', { id: 'tag-keep', name: 'Keep', color: '#28F100', order: 0, createdAt: 0 })
+
+    // A valid backup of new bookmarks, but with tags omitted (empty array).
+    const dump = { ...(await exportAllStores(d)), bookmarks: [aBookmark('bm-new')], tags: [] as Record<string, unknown>[] }
+
+    await importAllStores(d, dump)
+
+    // bookmarks fully replaced...
+    const bms = await d.getAll('bookmarks')
+    expect(bms.map((b) => (b as { id: string }).id)).toEqual(['bm-new'])
+    // ...but the existing tag survives (empty store in dump = leave untouched).
+    const tags = await d.getAll('tags')
+    expect(tags.map((t) => (t as { id: string }).id)).toEqual(['tag-keep'])
+  })
+
+  it('reports imported counts and lists skipped stores that retained existing data', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', { id: 'tag-keep', name: 'Keep', color: '#28F100', order: 0, createdAt: 0 })
+    const dump = { ...(await exportAllStores(d)), bookmarks: [aBookmark('bm-1'), aBookmark('bm-2')], tags: [] as Record<string, unknown>[] }
+
+    const result = await importAllStores(d, dump)
+
+    expect(result.imported.bookmarks).toBe(2)
+    // tags was empty in the dump but the DB still holds tag-keep → surfaced.
+    expect(result.skipped).toContain('tags')
+  })
+
+  it('does NOT list a skipped store that was already empty (nothing stale to report)', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    // Fresh DB: no tags/cards/etc. Dump replaces bookmarks only.
+    const dump = { ...(await exportAllStores(d)), bookmarks: [aBookmark('bm-1')], tags: [] as Record<string, unknown>[] }
+
+    const result = await importAllStores(d, dump)
+
+    expect(result.skipped).toEqual([])
+  })
+
+  it('a runtime put failure in a later store rolls back ALL stores (cross-store atomic)', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await d.put('bookmarks', aBookmark('bm-keep'))
+
+    // bookmarks rows are fine; a tag row carries its key (passes up-front
+    // validation) but holds a non-cloneable value, so put() throws at runtime
+    // AFTER bookmarks would have been cleared. A single cross-store transaction
+    // must roll bookmarks back too, leaving bm-keep intact (not bm-new).
+    const dump = {
+      ...(await exportAllStores(d)),
+      bookmarks: [aBookmark('bm-new')],
+      tags: [{ id: 'tag-bad', boom: () => 1 } as unknown as Record<string, unknown>],
+    }
+
+    await expect(importAllStores(d, dump)).rejects.toBeTruthy()
+    const after = await d.getAll('bookmarks')
+    expect(after.map((b) => (b as { id: string }).id)).toEqual(['bm-keep'])
+  })
+
+  it('a malformed row in a store does not leave that store half-wiped (atomic per store)', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await d.put('bookmarks', aBookmark('bm-keep'))
+
+    // First bookmark is valid, second is missing the keyPath ('id') => put rejects
+    // mid-loop. The store's clear()+put() share one transaction, so the failure
+    // must roll the clear() back: bm-keep survives rather than being lost.
+    const dump = {
+      ...(await exportAllStores(d)),
+      bookmarks: [aBookmark('bm-new'), { url: 'https://no-id.com' } as Record<string, unknown>],
+    }
+
+    await expect(importAllStores(d, dump)).rejects.toBeTruthy()
+    const after = await d.getAll('bookmarks')
+    expect(after.map((b) => (b as { id: string }).id)).toEqual(['bm-keep'])
   })
 })
