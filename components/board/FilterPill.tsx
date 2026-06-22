@@ -11,6 +11,7 @@ import {
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import { useDragReorder } from '@/lib/board/use-drag-reorder'
+import { computeTagScrollEdge } from '@/lib/board/tag-scroll-edge'
 import type { TagOrderMode } from '@/lib/board/tag-order'
 import { InlineTagRenameInput } from './InlineTagRenameInput'
 import styles from './FilterPill.module.css'
@@ -120,11 +121,15 @@ export function FilterPill({
   const updateTagScroll = useCallback((): void => {
     const el = tagScrollRef.current
     if (!el) { setTagScrollEdge('none'); return }
-    const canScroll = el.scrollHeight > el.clientHeight + 1
-    if (!canScroll) { setTagScrollEdge('none'); return }
-    const atTop = el.scrollTop <= 1
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
-    setTagScrollEdge(atTop ? 'top' : atBottom ? 'bottom' : 'middle')
+    /* Overflow is decided against the scroller's max-height (a constant CSS
+       cap), not its live clientHeight — see computeTagScrollEdge for why this
+       matters during the dropdown's open animation. */
+    setTagScrollEdge(computeTagScrollEdge({
+      scrollHeight: el.scrollHeight,
+      scrollTop: el.scrollTop,
+      clientHeight: el.clientHeight,
+      maxHeight: parseFloat(getComputedStyle(el).maxHeight),
+    }))
   }, [])
 
   /* Inline-rename awareness for the auto-close guards. While a row is being
@@ -271,36 +276,26 @@ export function FilterPill({
     }
   }, [editingTagId, clearLeaveTimer])
 
-  /* Recompute the tag-list scroll affordance whenever the menu opens or
-     the tag set changes. The menu is always mounted, so this keys off
-     `open`.
+  /* Recompute the tag-list scroll affordance whenever the menu opens or the
+     tag set changes. The menu is always mounted, so this keys off `open`.
 
-     Why this is more than a one-shot measure: the dropdown opens via a
-     0.5s `grid-template-rows: 0fr → 1fr` transition (see .menu in the CSS),
-     so right when `open` flips true the .tagScroll element is still
-     collapsed — its clientHeight is ~0 while scrollHeight already reflects
-     the rows. A single measure then mis-reads "overflowing", sets
-     data-scroll-edge='top', and paints a fade mask that never clears (a
-     non-overflowing 1-tag list can't scroll, so onScroll never re-fires).
-     Fix mirrors the manage screen's tag strip (TriagePage): re-measure on
-     rAF + a few timers spanning the animation, and observe the scroll box
-     so each growth step during the transition re-measures. With no overflow
-     (reduced-motion skips the transition too) it settles on 'none'. */
+     The overflow decision in updateTagScroll compares scrollHeight against the
+     scroller's fixed max-height (not the live clientHeight), so it reads the
+     correct state on the very first measure even though the dropdown is still
+     mid-open (grid 0fr→1fr) — this is what stops a short list's tag rows from
+     flashing behind a fade mask during the ~300ms open. The ResizeObserver is
+     a light safety net: if the content height changes after open (a late
+     web-font reflow, or the `tags` prop changing) it re-measures so the fade
+     tracks the real overflow state. */
   useEffect(() => {
     if (!open) return
     updateTagScroll()
     const raf = requestAnimationFrame(updateTagScroll)
-    const t1 = setTimeout(updateTagScroll, 80)
-    const t2 = setTimeout(updateTagScroll, 280)
-    const t3 = setTimeout(updateTagScroll, 560)
     const el = tagScrollRef.current
     const ro = el ? new ResizeObserver(updateTagScroll) : null
     if (el && ro) ro.observe(el)
     return (): void => {
       cancelAnimationFrame(raf)
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
       ro?.disconnect()
     }
   }, [open, tags, updateTagScroll])
