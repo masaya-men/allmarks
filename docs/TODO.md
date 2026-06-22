@@ -21,9 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 122 — 敵対的・徹底監査 + 上位修正4件)
+### 直近の状態 (セッション 123 — B4 保存経路セキュリティ＋重複統合 完了・本番反映済)
 
-**全体を敵対的に徹底監査（12領域→各指摘を2懐疑役で反証→確定44件）。上位を修正・本番反映: ①フィルタのタグ一覧フェードが開く瞬間に短いリストを隠す不具合 ②スクロールでカードが並び替わる不具合(rank1, 高さ計算を決定論化) ③プライバシー掃除(実メアド/実名/競合・収益を docs/private へ退避) ④旧ブランド紫アクセント→ブランド緑#28F100 統一。** 残り40件は作業キュー化（[docs/private/2026-06-22-audit-fix-progress.md](./private/2026-06-22-audit-fix-progress.md)）、次は B4(保存セキュリティ)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。(tsc0 / vitest1473)。
+**B4 完了**: 3保存経路（ブックマークレット小窓/拡張/ペースト）の「重複チェック＋保存」を共通 `saveBookmarkDeduped` に統合し、4安全策を集約 — rank2(危険スキーム遮断 http/https限定＋表示側 `safeExternalUrl` ガード) / rank12(拡張 content.js スキーム検証) / rank14(重複判定DRY化) / rank30(重複チェック+挿入を1トランザクション=同時保存2枚防止)。**DBバージョンは据え置き**（後戻り不可な移行を回避、tx内一括スキャンで原子性確保）。tsc0 / vitest1487 / build green、本番反映済。**次は B5(バックアップ安全化＋配線)**。
+
+**重要方針（session123 user合意）**: DBバージョン上げが必要になったら、その前に**バックアップをユーザーが使える状態**にする。B5 がその前提作業（バックアップ安全化＋画面配線）。詳細は progress.md B5 / [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+
+↓ 以下はセッション122のメモ（archive）:
+**全体を敵対的に徹底監査（12領域→各指摘を2懐疑役で反証→確定44件）。上位を修正・本番反映: ①フィルタのタグ一覧フェード不具合 ②スクロールでカードが並び替わる不具合(rank1) ③プライバシー掃除 ④旧ブランド紫→緑#28F100 統一。** 残りは作業キュー（[progress.md](./private/2026-06-22-audit-fix-progress.md)）。
 
 ↓ 以下はセッション121のメモ（archive）:
 
@@ -41,7 +46,8 @@
 **release blocker (= 公開前 必須・残り)**:
 1. **onboarding チュートリアル** — ✅ session 121 でユーザー「一旦OK」。追加ブラッシュアップは公開後でも可(ユーザーと一緒に随時)。
 2. **拡張機能 Chrome Web Store 提出** — ✅ **session 121 で提出済(審査結果待ち)**。掲載文(英＋日併記)・素材(`dist/store-assets/`)・zip(`dist/booklage-extension-0.1.21.zip`, v0.1.21 Aアイコン)。**承認されたら `EXTENSION_STORE_URL` 投入 + 再デプロイ**(これが唯一の残作業、[docs/extension-store-submission.md](./extension-store-submission.md) §7)。却下/修正依頼ならメール文面→該当箇所修正→再提出。
-3. **公開前の残り片付け** — ✅ **実態調査で完了/不要と判明(TODO記載が古かった)**: EXPORT/IMPORT ボタンは既にUIから撤去済(`BackupButton.tsx`/`backup.ts` は未描画の孤立 dead code、掃除 or バックアップ機能として復活は後日相談)、`chrome-extension/` は不在(本物は `extension/`＝提出対象)。残るは上記2の `EXTENSION_STORE_URL` 投入のみ。
+3. **公開前の残り片付け** — ✅ **実態調査で完了/不要と判明(TODO記載が古かった)**: `chrome-extension/` は不在(本物は `extension/`＝提出対象)。残るは上記2の `EXTENSION_STORE_URL` 投入のみ。
+   - **BackupButton.tsx/backup.ts は未描画の孤立コード** → **B5(rank15)で「ユーザー向けバックアップ機能」として復活配線する方針に確定(session123)**。これは将来の DBバージョン上げ前に「ユーザーが自分でバックアップを取れる」安全網を用意する目的(=version bump の前提)。置き場所は SETTINGS ドロワー内が候補(要 user 確認)。
 
 > ✅ 完了済 (詳細は TODO_COMPLETED.md): ドメイン取得 (session 102) / mood→tag rename (session 101) / **i18n 言語切替の配線**(層① runtime=session 106・層② LP言語別URL=session 109、 [lib/i18n/config.ts](../lib/i18n/config.ts) が locale 別動的 import) / **LP 全面作り直し + 紹介9ページ15言語化** (session 107〜112)。
 

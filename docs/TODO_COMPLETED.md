@@ -7666,3 +7666,21 @@ en/ja を確定し13言語へ並列翻訳展開、本番反映済(15言語 JSON 
 **掃除**: 監査エージェントが tests/lib/ に残した IDB調査スクラッチ12本（未追跡・tsc破壊）を削除。
 
 **残**: B4(保存セキュリティ)〜B11 の40件。詳細は docs/CURRENT_GOAL.md と docs/private/2026-06-22-audit-fix-progress.md。tsc0 / vitest1473。
+
+---
+
+## セッション 123 (2026-06-22) — B4 保存経路セキュリティ＋重複統合（rank2/12/14/30）
+
+監査フィックスの続き。3つの保存経路（ブックマークレット小窓 `SaveToast.tsx` / 拡張の隠しフレーム `SaveIframeClient.tsx` / クリップボードペースト `paste-ingest.ts`）に**コピペで散らばっていた「重複チェック＋保存」を共通関数に統合**し、そこに4つの安全策を集約。
+
+**実装**:
+- **rank14（DRY化）**: `lib/storage/indexeddb.ts` に `findActiveDuplicate(all, url)`（純関数、isDeleted除外）+ `saveBookmarkDeduped(db, input, {dedupe})` + `buildBookmarkAndCard()`（ブクマ+カード生成を `addBookmark` と共有）を新設。3経路が委譲。`addBookmark` は既存呼び出し向けに挙動不変。
+- **rank2（危険スキーム）**: `saveBookmarkDeduped` 冒頭で `isValidUrl`(http/https) 検証→`invalid-url` で IDB に入れない。SaveIframe は ok:false 即返信（8sタイムアウト回避）。**表示側ガード** `lib/utils/url.ts` に `safeExternalUrl()` 新設→Lightbox の `<a href>`×3 / CardsLayer Ctrl+クリック / TriagePage 開く に適用（既に保存済みの危険ブクマも開けなくする防御）。
+- **rank12（拡張）**: `extension/content.js` の `booklage:save-via-extension` 転送前に `isHttpUrl(msg.ogp.url)` で弾く（悪意サイトの偽URL注入を遮断）。`node --check` で構文確認（content.js は tsc/vitest 対象外）。送信元origin固定は canonical/別ドメインog:url を壊すリスクで見送り（実害=javascript:実行はスキーム検証で封鎖済）。
+- **rank30（同時保存）**: 重複スキャン＋orderIndex算出＋挿入を**1トランザクション**に（同一スナップショット使用）。IDBの重なるトランザクション直列化を利用し、同時保存で同URL2枚を構造的に防止。
+
+**設計判断（重要・user合意）**: by-urlインデックス追加（=DBバージョン上げ=後戻り不可な移行）は**せず**、tx内一括スキャンで原子性を確保＝スキーマ変更ゼロ・移行リスクゼロ。**将来DBバージョン上げが必要になる時は、先に B5 でバックアップをユーザー可用にしてから行う**方針を確定（version bump の安全網）。
+
+**テスト**: `tests/lib/storage/save-bookmark-deduped.test.ts` 新規（scheme検証/重複ポリシー/ソフト削除再保存/**同時保存2本→1本のatomic実証**）。`tests/lib/url.test.ts`(safeExternalUrl) + paste-ingest/SaveToast/use-url-paste-save のモックを `addBookmark`→`saveBookmarkDeduped` に更新。tsc0 / **vitest1487** / build green。commit `fix(save)` + デプロイ済（allmarks.app）。
+
+**残**: B5(バックアップ安全化＋配線)〜B11。実機まとめ確認は監査スプリント完了時に1度。
