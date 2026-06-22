@@ -157,6 +157,10 @@
   let errorTimer = null
   let dragLongPressTimer = null
   let dragging = false
+  // True only for the synthetic click that fires right after a long-press drag
+  // ends (pointerup clears `dragging` before the click arrives), so we can
+  // swallow that one click instead of saving the page by accident (rank5).
+  let justDragged = false
   let dragStartY = 0
   let dragOriginTopRatio = 0.5
 
@@ -228,6 +232,7 @@
   // === Drag (long-press → reposition → snap) ===
   function onPointerDown(e) {
     if (e.button !== 0) return
+    justDragged = false
     dragLongPressTimer = setTimeout(() => {
       dragging = true
       dragStartY = e.clientY
@@ -247,6 +252,7 @@
     clearTimeout(dragLongPressTimer)
     if (!dragging) return
     dragging = false
+    justDragged = true
     container.classList.remove('is-dragging')
     // Snap horizontally based on cursor's X.
     const newSide = e.clientX < window.innerWidth / 2 ? 'left' : 'right'
@@ -284,8 +290,15 @@
   }
 
   function onClick(e) {
-    // Don't fire save if a long-press drag just ended.
-    if (dragging) return
+    // Swallow the synthetic click that fires right after a long-press drag:
+    // pointerup clears `dragging` before this click arrives, so without the
+    // `justDragged` latch every reposition would trigger an accidental save (rank5).
+    if (dragging || justDragged) {
+      justDragged = false
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
     e.preventDefault()
     e.stopPropagation()
     if (state.pillState === 'saving' || state.pillState === 'flash') return
