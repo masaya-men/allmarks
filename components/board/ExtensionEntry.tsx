@@ -178,20 +178,13 @@ export function ExtensionEntry({
             data-testid="quick-tag-toggle"
           />
         </label>
-        <div className={styles.backupSection} data-testid="backup-section">
-          <div className={styles.backupLabel}>BACKUP</div>
-          <p className={styles.backupCaption}>{t('board.backup.caption')}</p>
-          <div className={styles.backupRow}>
-            <BackupButton buttonClassName={styles.backupBtn} />
-          </div>
-        </div>
         <button
           type="button"
           className={styles.panelCta}
           onClick={onOpenBookmarkletModal}
           data-testid="open-bookmarklet-install"
         >
-          SAVE WITHOUT EXTENSION
+          {t('board.settings.saveWithoutExtension')}
         </button>
         {onReplayIntro && (
           <button
@@ -200,7 +193,7 @@ export function ExtensionEntry({
             data-testid="replay-intro"
             onClick={onReplayIntro}
           >
-            REPLAY INTRO
+            {t('board.settings.replayIntro')}
           </button>
         )}
         {installed ? (
@@ -212,14 +205,11 @@ export function ExtensionEntry({
             }}
             data-testid="open-extension-settings"
           >
-            OPEN EXTENSION SETTINGS
+            {t('board.settings.openExtensionSettings')}
           </button>
         ) : (
           <div className={styles.promoInline} data-testid="get-extension-block">
-            <p className={styles.body}>
-              Save any page to AllMarks in one click — straight from X, YouTube, and anywhere
-              else. The floating mark and SNS auto-save come with it.
-            </p>
+            <p className={styles.body}>{t('board.settings.getExtensionBody')}</p>
             {hasStore ? (
               <a
                 className={styles.cta}
@@ -228,15 +218,24 @@ export function ExtensionEntry({
                 rel="noopener noreferrer"
                 data-testid="get-extension"
               >
-                ADD TO CHROME
+                {t('board.settings.addToChrome')}
               </a>
             ) : (
               <span className={styles.soon} aria-disabled="true" data-testid="get-extension">
-                COMING SOON
+                {t('board.settings.comingSoon')}
               </span>
             )}
           </div>
         )}
+        {/* BACKUP sits at the very bottom, hairline-separated: a heavier,
+            occasional data operation kept away from the everyday toggles. */}
+        <div className={styles.backupSection} data-testid="backup-section">
+          <div className={styles.backupLabel}>BACKUP</div>
+          <p className={styles.backupCaption}>{t('board.backup.caption')}</p>
+          <div className={styles.backupRow}>
+            <BackupButton buttonClassName={styles.backupBtn} />
+          </div>
+        </div>
       </div>
     </span>
   )

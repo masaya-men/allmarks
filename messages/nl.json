@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "OPSLAAN ZONDER EXTENSIE",
+      "replayIntro": "INTRO OPNIEUW BEKIJKEN",
+      "openExtensionSettings": "EXTENSIE-INSTELLINGEN OPENEN",
+      "getExtensionBody": "Sla elke pagina met één klik op in AllMarks — rechtstreeks vanuit X, YouTube en overal elders. De zwevende mark en automatisch opslaan van SNS horen erbij.",
+      "addToChrome": "TOEVOEGEN AAN Chrome",
+      "comingSoon": "BINNENKORT BESCHIKBAAR"
+    },
     "backup": {
       "caption": "Bewaar je gegevens in een bestand, of zet ze terug.",
       "confirmRestore": "Hiermee vervang je je huidige gegevens door de inhoud van deze back-up. Doorgaan?\n\n(opgeslagen: {date} · version: {version})",

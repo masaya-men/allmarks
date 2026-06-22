@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "ENREGISTRER SANS L'EXTENSION",
+      "replayIntro": "REVOIR L'INTRO",
+      "openExtensionSettings": "OUVRIR LES PARAMÈTRES DE L'EXTENSION",
+      "getExtensionBody": "Enregistrez n'importe quelle page dans AllMarks en un clic — directement depuis X, YouTube et partout ailleurs. La marque flottante et la sauvegarde automatique des SNS sont incluses.",
+      "addToChrome": "AJOUTER À CHROME",
+      "comingSoon": "BIENTÔT DISPONIBLE"
+    },
     "backup": {
       "caption": "Enregistrez vos données dans un fichier, ou restaurez-les.",
       "confirmRestore": "Cette opération remplace vos données actuelles par le contenu de cette sauvegarde. Continuer ?\n\n(enregistrée le : {date} · version : {version})",

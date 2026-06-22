@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "拡張機能なしで保存",
+      "replayIntro": "イントロをもう一度見る",
+      "openExtensionSettings": "拡張機能の設定を開く",
+      "getExtensionBody": "どのページでもワンクリックで AllMarks に保存 — X や YouTube などからも。フローティングのマークと SNS 自動保存も付いてきます。",
+      "addToChrome": "Chrome に追加",
+      "comingSoon": "近日公開"
+    },
     "backup": {
       "caption": "端末内のデータをファイルに保存／復元します。",
       "confirmRestore": "今のデータを、このバックアップの内容で置き換えます。続けますか?\n\n(書き出し日時: {date} ・ version: {version})",

@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "EKLENTİSİZ KAYDET",
+      "replayIntro": "TANITIMI TEKRAR İZLE",
+      "openExtensionSettings": "EKLENTİ AYARLARINI AÇ",
+      "getExtensionBody": "Herhangi bir sayfayı tek tıkla AllMarks'a kaydet — X, YouTube ve diğer her yerden. Yüzen işaret ve SNS otomatik kaydı da onunla birlikte gelir.",
+      "addToChrome": "CHROME'A EKLE",
+      "comingSoon": "YAKINDA"
+    },
     "backup": {
       "caption": "Verilerini bir dosyaya kaydet veya geri yükle.",
       "confirmRestore": "Bu işlem, mevcut verilerini bu yedeğin içeriğiyle değiştirir. Devam edilsin mi?\n\n(kaydedildiği tarih: {date} · version: {version})",

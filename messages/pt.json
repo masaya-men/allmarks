@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "SALVAR SEM A EXTENSÃO",
+      "replayIntro": "REVER INTRODUÇÃO",
+      "openExtensionSettings": "ABRIR CONFIGURAÇÕES DA EXTENSÃO",
+      "getExtensionBody": "Salve qualquer página no AllMarks com um clique — direto do X, do YouTube e de qualquer outro lugar. A marca flutuante e o salvamento automático de SNS já vêm junto.",
+      "addToChrome": "USAR NO CHROME",
+      "comingSoon": "EM BREVE"
+    },
     "backup": {
       "caption": "Salve seus dados em um arquivo ou restaure-os.",
       "confirmRestore": "Isto substitui seus dados atuais pelo conteúdo deste backup. Deseja continuar?\n\n(salvo em: {date} · version: {version})",

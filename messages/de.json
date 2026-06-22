@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "OHNE ERWEITERUNG SPEICHERN",
+      "replayIntro": "INTRO ERNEUT ANSEHEN",
+      "openExtensionSettings": "ERWEITERUNGSEINSTELLUNGEN ÖFFNEN",
+      "getExtensionBody": "Jede Seite mit einem Klick in AllMarks speichern – direkt von X, YouTube und überall sonst. Die schwebende Markierung und das automatische SNS-Speichern sind inklusive.",
+      "addToChrome": "ZU CHROME HINZUFÜGEN",
+      "comingSoon": "DEMNÄCHST VERFÜGBAR"
+    },
     "backup": {
       "caption": "Sichere deine Daten in einer Datei oder stelle sie wieder her.",
       "confirmRestore": "Dadurch werden deine aktuellen Daten durch den Inhalt dieser Sicherung ersetzt. Fortfahren?\n\n(gespeichert: {date} · version: {version})",

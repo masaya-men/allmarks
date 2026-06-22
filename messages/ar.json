@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "الحفظ بدون الإضافة",
+      "replayIntro": "إعادة عرض المقدمة",
+      "openExtensionSettings": "فتح إعدادات الإضافة",
+      "getExtensionBody": "احفظ أي صفحة في AllMarks بنقرة واحدة — مباشرةً من X وYouTube وأي مكان آخر. وتأتي معها العلامة العائمة والحفظ التلقائي من SNS.",
+      "addToChrome": "إضافة إلى Chrome",
+      "comingSoon": "قريبًا"
+    },
     "backup": {
       "caption": "احفظ بياناتك في ملف، أو استعدها.",
       "confirmRestore": "سيؤدي هذا إلى استبدال بياناتك الحالية بمحتويات هذه النسخة الاحتياطية. هل تريد المتابعة؟\n\n(تاريخ الحفظ: {date} · version: {version})",

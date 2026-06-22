@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "บันทึกโดยไม่ใช้ส่วนขยาย",
+      "replayIntro": "ดูอินโทรอีกครั้ง",
+      "openExtensionSettings": "เปิดการตั้งค่าส่วนขยาย",
+      "getExtensionBody": "บันทึกหน้าเว็บใดก็ได้ลง AllMarks ด้วยคลิกเดียว — ตรงจาก X, YouTube และที่อื่น ๆ พร้อมมาร์กแบบลอยและการบันทึก SNS อัตโนมัติ",
+      "addToChrome": "เพิ่มลงใน Chrome",
+      "comingSoon": "เร็ว ๆ นี้"
+    },
     "backup": {
       "caption": "บันทึกข้อมูลของคุณเป็นไฟล์ หรือกู้คืนข้อมูล",
       "confirmRestore": "การดำเนินการนี้จะแทนที่ข้อมูลปัจจุบันของคุณด้วยเนื้อหาในไฟล์สำรองนี้ ต้องการดำเนินการต่อหรือไม่?\n\n(บันทึกเมื่อ: {date} · version: {version})",

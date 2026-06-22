@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "LƯU KHÔNG CẦN TIỆN ÍCH",
+      "replayIntro": "XEM LẠI GIỚI THIỆU",
+      "openExtensionSettings": "MỞ CÀI ĐẶT TIỆN ÍCH",
+      "getExtensionBody": "Lưu bất kỳ trang nào vào AllMarks chỉ với một cú nhấp — ngay từ X, YouTube và mọi nơi khác. Nút đánh dấu nổi và tính năng tự động lưu SNS đều đi kèm.",
+      "addToChrome": "THÊM VÀO CHROME",
+      "comingSoon": "SẮP RA MẮT"
+    },
     "backup": {
       "caption": "Lưu dữ liệu của bạn vào một tệp, hoặc khôi phục lại.",
       "confirmRestore": "Thao tác này sẽ thay thế dữ liệu hiện tại của bạn bằng nội dung của bản sao lưu này. Tiếp tục?\n\n(đã lưu: {date} · version: {version})",

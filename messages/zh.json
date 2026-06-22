@@ -4,6 +4,14 @@
     "tagline": "Bookmark × Collage"
   },
   "board": {
+    "settings": {
+      "saveWithoutExtension": "不使用扩展程序保存",
+      "replayIntro": "重看引导动画",
+      "openExtensionSettings": "打开扩展程序设置",
+      "getExtensionBody": "一键将任意网页保存到 AllMarks——无论是 X、YouTube 还是其他任何网站。悬浮标记和 SNS 自动保存也一并附带。",
+      "addToChrome": "添加到 Chrome",
+      "comingSoon": "即将推出"
+    },
     "backup": {
       "caption": "将设备中的数据保存到文件，或从文件恢复。",
       "confirmRestore": "这将用此备份的内容替换你当前的数据。是否继续？\n\n（保存时间：{date} · version：{version}）",
