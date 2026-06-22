@@ -7636,3 +7636,26 @@ en/ja を確定し13言語へ並列翻訳展開、本番反映済(15言語 JSON 
 **i18n**: 新キー(`share.pressBody` / `triage.*`5)を15言語へ。en/ja 手動 + 13言語並列翻訳ワークフロー、`board.onboarding` パリティ緑。
 
 **次**: ⑥(トリアージ・チュートリアル)のユーザー実機確認 + 追加FB / その後 公開前片付け(暫定EXPORT/IMPORTボタン撤去・未使用 chrome-extension/ 削除・拡張ストア提出→`EXTENSION_STORE_URL` 投入)。
+
+---
+
+## セッション 121 (2026-06-22) — オンボFB詰め + 拡張アイコン B→A + Chromeウェブストア提出
+
+### オンボーディング実機FB → ユーザー「一旦OK」で公開へ
+- トリアージ実演を全自動シネマ化 → さらに **read→act の2段ペース**に(視線誘導＋減速、約14s→22s)。read=キャプション＋対象ズーム/スポットで「読む・見る」へ誘導しカーソル無し、act=緑カーソルが滑り込んで実押下＋本物スワイプ＋余韻。
+- **最後の手詰まりの真因を Playwright で特定**: `OnboardingSpotlight` の `dimFull`(position:fixed=配置済み, pointer-events:auto)が非配置 flex 子の `onbFooter` の上に描画され、CONTINUE のクリックを奪い＋メッセージを暗幕で沈めていた。`.onbFooter { position:relative; z-index:2 }` で前面化して解消(intro/pickTag の暗さも同時に解消)。
+- 全オンボメッセージを「下から24px上昇」で統一(Spotlight bubbleCenter/CenterFixed・各Reenactment・ShareReveal・bottomCaption/pasteCard・Stage)。manage settings→manage の使い回しは `key={caption}` で再発火。
+- 実機FB ①〜④＋②③: ①tag.body に「今回は私がやってみせる」追加 / ②install=拡張分岐撤去(全員に設置提示)＋チップ `onDragEnd` でジェスチャ検知→「設置できましたね！」→1.6sで保存デモへ自動 / ③manage settings=ホバー開の SETTINGS ドロワーをオンボ中だけ `forceOpen`(BoardRoot `forceSettingsOpen`←`onSettingsBeatActive`)で強制オープン＋スポット/緑カーソルを `QUICK-TAG ON SAVE` トグル(`data-onboarding-target`)直指し＋「小窓/小さな窓→ウィンドウ」 / ④トリアージ done を CONTINUE→NEXT 統一＋見た目控えめ化。i18n は 15言語 並列ワークフローで同期(parity緑)。
+- 検証: tsc0 / vitest1447 / Playwright(トリアージ13 + 設定/設置7。resume機構 `allmarks-onboarding-resume` で manage/install へジャンプ＋タグ seed)。
+
+### 拡張アイコン 旧Booklage「B」→ AllMarks「A」(公開直前に発見)
+- ストアのショップアイコンで「Bモチーフ」とユーザーが気付く。`extension/icons/icon-{16,32,48,128}.png` がリブランド取り残しで旧B(黒角丸+白B)のまま=ツールバー/ストアで露出。
+- 正本Aマーク(`app/icon.svg`=favicon と byte一致、黒A+白アウトライン+緑#28f100チェック)から Playwright で全サイズ再生成(design A=黒角丸+白A+緑チェック、ユーザー選択)。`dist/store-assets/icon-128.png` も同A。v0.1.20→0.1.21、再パッケージ `dist/booklage-extension-0.1.21.zip`。
+- サイト側(public/icon-192/512.png, app/icon.svg)は元からAで問題なし。`booklage:*` メッセージ型/CSSクラスは互換のため不変。
+
+### Chromeウェブストア提出(ユーザー操作、私が各欄文言提供)
+- `docs/extension-store-submission.md` の原稿で全欄記入。カテゴリ=ツール(仕事効率化)、掲載文 英語＋日本語併記(言語追加不可のため同一説明欄に併記)、スクショ=localized+全言語向けに同一2枚、データ収集=9種別 全オフ(Chrome定義「端末外送信」に非該当)、3誓約チェック、権限正当化6件、プライバシーURL=allmarks.app/extension/privacy。
+- ホスト権限 `<all_urls>` の警告=全ページ保存ボタンに正当に必要(activeTab だけにするとフローティングボタン不成立)。審査が丁寧になる(=公開が遅れ得る)が正直＆OSSで通る見込み。**審査結果待ち**。
+
+### 公開前片付けの実態(TODO記載が古かった)
+- 「EXPORT/IMPORT撤去」=既に完了(`BackupButton.tsx`/`backup.ts` は未描画の孤立 dead code)。「chrome-extension/削除」=そのフォルダ不在(本物は `extension/`=提出対象)。残る公開作業は承認後の `EXTENSION_STORE_URL` 投入のみ。

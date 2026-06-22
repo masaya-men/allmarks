@@ -21,26 +21,25 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 120 — TODO整頓 + オンボーディング実機FB 6点 → 本番反映済)
+### 直近の状態 (セッション 121 — オンボFB詰め + 拡張アイコン B→A 修正 + ストア提出)
 
-**TODO.md を 911→207 行に整頓。ユーザー実機FB 6点を1つずつ実装→本番反映（tsc0 / vitest1447 / 隔離レンダ目視 + ④⑥は多視点の敵対的レビュー）。** 詳細 narrative は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション120。
+**オンボーディング実機FBを反映→ユーザー「一旦OK」、そのまま公開へ。拡張アイコンの旧Booklage「B」を公開直前に発見→AllMarks「A」へ修正。拡張を Chromeウェブストアに提出。** (tsc0 / vitest1447 / Playwright)。詳細 narrative は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション121。
 
-1. **① マーク=正規ロゴSVG**: finale/enter の手描き簡易A→ファビコン(`app/icon.svg`)/フローティングボタンと同一の正規 AllMarks SVG。共有 `components/onboarding/AllMarksMark.tsx`。
-2. **② 吹き出し統一**: `OnboardingSpotlight` 全 variant を縦並び中央寄せ（caption 段落化→中央下部ボタン、文字のボタン回り込み解消）。
-3. **③ NEXT撤去**: manage(MANAGE TAGS)ビートは実クリックで進む（覚えさせたい動作は NEXT を出さない、SKIP は残置）。
-4. **④ SHARE実クリック化**: 実SHAREをスポット+緑カーソルで誘導→押す→本物 `SenderShareModal`→保持+NEXT（`shareModalOpen` を BoardRoot から受領、`share.pressBody` 15言語、`OnboardingShareReveal` を shown 専用に簡素化）。
-5. **⑤ 設置を先に**: install reset を `installBeat='install'` に＝設置(チップをブクマバーへドラッグ)ビート→保存デモの順。
-6. **🔴⑥ トリアージ実演をフェーズ制に**(最重要): 旧6.9s早回し→`OnbPhase`(intro/pickTag/apply/skip/done)で1手ずつ・スポット/ズーム・緑カーソル・本物アニメ・解説。NEXTで進む/CONTINUEで共有へ。`board.onboarding.triage.*`5キー15言語。敵対的レビュー2件修正＝オンボ中のキーボード封鎖(`useTagPickerKeys` disabled + window keydown は Esc 以外封鎖)＋apply の空タグ防止(冪等 arm)。
-7. **次**: **⑥(トリアージ・チュートリアル)のユーザー実機確認 + 追加FB** / その後 公開前片付け。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+1. **トリアージ実演を全自動シネマ→read→act 2段ペース化**: NEXT撤去で自動進行、read(キャプション＋対象ズーム/スポットで視線誘導・カーソル無し)→act(緑カーソルが押す＋本物スワイプ)→hold。約14s→約22sに減速。最後の手詰まり真因＝`dimFull` が CONTINUE のクリックを奪う z-index罠を `onbFooter` の z-index で解消。
+2. **全オンボメッセージを「下から24px上昇」で統一**(Spotlight/Reenactment/ShareReveal/bottomCaption/Stage)、manage 使い回しは `key={caption}` で再発火。
+3. **実機FB ①〜④＋②③**: ①タグ実演に「私がやってみせる」明示 / ②ブックマークレット=拡張分岐撤去＋`onDragEnd`検知で✓→保存デモへ自動 / ③SETTINGS=オンボ中だけドロワー強制オープン(`forceOpen`/`onSettingsBeatActive`)＋`QUICK-TAG ON SAVE`トグル直指し＋「小窓→ウィンドウ」 / ④トリアージ done を CONTINUE→NEXT 統一。15言語同期。
+4. **拡張アイコン B→A**: `extension/icons/icon-{16,32,48,128}.png` が旧Bのまま→正本Aマークから全サイズ再生成(黒角丸+白A+緑#28f100) + v0.1.20→0.1.21 + 再パッケージ。サイト側(favicon/PWA)は元からAで問題なし。
+5. **拡張を Chromeウェブストアに提出**(ユーザー操作・私が各欄文言提供)。データ収集=全オフ(Chrome定義で非収集)、3誓約チェック、英語掲載＋日本語併記。ホスト権限 `<all_urls>` は審査が丁寧になる(=公開が遅れ得る)が正当(=全ページ保存ボタンに必要)＆OSSで通る見込み。
+6. **次**: **拡張審査結果待ち→承認で `EXTENSION_STORE_URL` 投入＋デプロイ** / オンボの追加ブラッシュアップ(ユーザーと一緒に)。詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
 
 ---
 
 ### 公開向け残タスク (= session 83 以降の優先度順、 session 82 で整理)
 
 **release blocker (= 公開前 必須・残り)**:
-1. **onboarding チュートリアル** — 🔧 進行中 (session 115〜 で実装。 現在 ⑧フィナーレ + ①入場 seed を仕上げ中、 詳細は [CURRENT_GOAL.md](./CURRENT_GOAL.md))
-2. **拡張機能 Chrome Web Store 提出** — 提出素材・zip は session 114 で準備完了。 **提出自体は user 作業** (デベロッパー登録 約¥800・一度きり)。 公開後 `EXTENSION_STORE_URL` 投入 + 再デプロイ
-3. **公開前の残り片付け** (§ドメイン allmarks.app 参照): 暫定 EXPORT/IMPORT ボタン撤去 (BoardRoot の TEMPORARY 箇所)、 未使用 `chrome-extension/` 削除、 `EXTENSION_STORE_URL` 投入
+1. **onboarding チュートリアル** — ✅ session 121 でユーザー「一旦OK」。追加ブラッシュアップは公開後でも可(ユーザーと一緒に随時)。
+2. **拡張機能 Chrome Web Store 提出** — ✅ **session 121 で提出済(審査結果待ち)**。掲載文(英＋日併記)・素材(`dist/store-assets/`)・zip(`dist/booklage-extension-0.1.21.zip`, v0.1.21 Aアイコン)。**承認されたら `EXTENSION_STORE_URL` 投入 + 再デプロイ**(これが唯一の残作業、[docs/extension-store-submission.md](./extension-store-submission.md) §7)。却下/修正依頼ならメール文面→該当箇所修正→再提出。
+3. **公開前の残り片付け** — ✅ **実態調査で完了/不要と判明(TODO記載が古かった)**: EXPORT/IMPORT ボタンは既にUIから撤去済(`BackupButton.tsx`/`backup.ts` は未描画の孤立 dead code、掃除 or バックアップ機能として復活は後日相談)、`chrome-extension/` は不在(本物は `extension/`＝提出対象)。残るは上記2の `EXTENSION_STORE_URL` 投入のみ。
 
 > ✅ 完了済 (詳細は TODO_COMPLETED.md): ドメイン取得 (session 102) / mood→tag rename (session 101) / **i18n 言語切替の配線**(層① runtime=session 106・層② LP言語別URL=session 109、 [lib/i18n/config.ts](../lib/i18n/config.ts) が locale 別動的 import) / **LP 全面作り直し + 紹介9ページ15言語化** (session 107〜112)。
 

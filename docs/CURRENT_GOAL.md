@@ -1,30 +1,32 @@
-# 次セッションのゴール (= セッション 121)
+# 次セッションのゴール (= セッション 122)
 
 ## 今のゴール (1 行)
 
-**🎬 オンボーディング ⑥トリアージ・チュートリアルの実機確認 + 追加FB対応 → 落ち着いたら公開前の片付けへ。**
+**🚀 拡張機能 Chrome ウェブストア審査の結果待ち → 承認されたら `EXTENSION_STORE_URL` 投入＋再デプロイ。並行してオンボーディングの追加ブラッシュアップ（ユーザーと一緒に）。**
 
 ## 開始時の動き
-1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む（セッション120で実機FB 6点を本番反映済）
-2. `git status` クリーン確認（120末で全コミット+push+本番反映済）
-3. 確認は **`allmarks.app` ハードリロード → SETTINGS → REPLAY INTRO**（or シークレットウィンドウ=空IDBで真の初回体験）
+1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む
+2. **ユーザーに「拡張の審査結果メールは届きましたか？」を確認**
 
-## このセッションの候補（ユーザーと相談して着手）
+## このセッションの候補
 
-### 🔴 まず: ⑥トリアージ・チュートリアルの実機確認
-- セッション120で「1手ずつ・スポット/ズーム・緑カーソル・本物アニメ・解説」のフェーズ制（intro→pickTag→apply→skip→done）に作り替えた。**ユーザーが MANAGE TAGS まで通しで触って、各手の分かりやすさ・速度・ズームの寄り具合・キーボード封鎖を確認**。気になる所は数値/コピー/フェーズ追加で詰める。
-- 必要なら他シーン（①〜⑤）の追加FBも同様に1つずつ。
+### 🔴 拡張ストア審査の後処理（メール待ち）
+- **承認されたら**: ユーザーがストア公開URL(`chrome.google.com/webstore/detail/...`)を貼る → `lib/board/constants.ts` の `EXTENSION_STORE_URL = ''` にそのURLを投入 → `pnpm build` → デプロイ。これで board「GET EXTENSION」/ 紹介ページ`/extension`「ADD TO CHROME」が点灯・「COMING SOON」が消える。提出手順全体は [docs/extension-store-submission.md](./extension-store-submission.md) §7
+- **修正依頼/却下が来たら**: メール文面をユーザーから受領 → 該当箇所（多くは権限正当化の文言）を直して再提出。素材は `dist/store-assets/` + zip `dist/booklage-extension-0.1.21.zip`、原稿は submission.md に全部ある
 
-### 公開前の片付け（オンボが固まったら）
-- 暫定 EXPORT/IMPORT ボタン撤去（BoardRoot の TEMPORARY 箇所）
-- 未使用 `chrome-extension/` 削除
-- 拡張機能 Chrome Web Store 提出（素材・zip は準備済、提出は user 作業）→ 公開後 `EXTENSION_STORE_URL` 投入 + 再デプロイ
+### 🎨 オンボーディングの追加ブラッシュアップ（ユーザーと一緒に）
+- セッション 121 で①〜④＋②③を反映しユーザーは「一旦OK」。**さらに磨きたい意向あり**。実機を一緒に見ながら、気になる所を1つずつ詰める（速度・寄り・文言・演出）。
 
-## 120 で到達済（本番反映・実機FB 6点 完了）
-**①** マーク=正規ロゴSVG（共有 `AllMarksMark.tsx`）/ **②** 吹き出し体裁統一（説明文→中央下部ボタン）/ **③** manage は実クリック誘導（NEXT撤去）/ **④** SHARE 実クリック化（本物パネル、`shareModalOpen` 連携）/ **⑤** ブックマークレット設置を先に教える / **🔴⑥** トリアージ実演をフェーズ制（1手ずつズーム/解説）に作り替え＋敵対的レビュー2件修正（キーボード封鎖・空タグ防止）。i18n 新キー(`share.pressBody`/`triage.*`)15言語。前半で TODO.md を 911→207 行に整頓。
+### その他 公開前の最終確認（任意）
+- 公開前片付けの「EXPORT/IMPORT撤去」「chrome-extension/削除」は**既に完了/不在**だった(TODO記載が古かった)。孤立 dead code（`BackupButton.tsx`/`backup.ts` 未描画）は掃除 or バックアップ機能として復活、どちらか後日相談（公開ブロッカーではない）。
+
+## 121 で到達済（本番反映済）
+- **オンボFB ①** タグ実演に「今回は私がやってみせる」明示 / **②** ブックマークレット: 拡張分岐撤去＋ドラッグ検知(`onDragEnd`)で✓→自動で保存デモへ / **③** SETTINGS演出: ホバー開のドロワーをオンボ中だけ強制オープン(`forceOpen`/`onSettingsBeatActive`)＋中の `QUICK-TAG ON SAVE` トグルをスポット＋「小窓→ウィンドウ」 / **④** トリアージ done を CONTINUE→NEXT に統一＋見た目控えめ化。15言語同期。
+- 前半: トリアージ実演を **read→act の2段ペース**（視線誘導＋減速 約22s）+ 全オンボメッセージを「下から24px上昇」統一 + トリアージ自動シネマ化 + 最後の手詰まり(dimFullがCONTINUEのクリックを奪う z-index罠)解消。
+- **拡張アイコンを旧Booklage「B」→ AllMarks「A」マーク**(黒角丸+白A+緑#28f100)に全サイズ再生成 + v0.1.20→0.1.21 + 再パッケージ。サイト側(favicon/PWA)は元からAで問題なし。
+- **拡張を Chromeウェブストアに提出**（英語掲載＋日本語併記、データ収集は全オフ＝Chrome定義で非収集、3誓約チェック、ホスト権限は審査が丁寧になるが正直＆OSSで通る見込み）。
 
 ## 守ること
-- 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII)必須。`tsc <file>` 直叩き禁止 → `rtk tsc`。
-- 視覚は隔離レンダ（`sessionStorage['allmarks-onboarding-resume']='<scene>'` で各シーンへジャンプ、トリアージは `/triage?onboarding=1`＝要デモseed → Playwright スクショ）＋ユーザー実機の二段。デザイン変更は提案→（隔離レンダ目視で）承認。応答は日本語。
-- 大きめ改修(新component/100行+)は事前に方針確認。**常にクリーンなセーブ**(区切りで commit+push、git=本番一致)。
-- 新オンボーディングseedは onboardingDemo フラグ管理（完了時に掃除、本物ブクマ不可侵）。新i18nキーは15言語同期＋パリティテスト。
+- 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII)必須。応答は日本語。
+- 大きめ改修(新component/100行+)は事前に方針確認。常にクリーンなセーブ(区切りで commit+push)。新i18nキーは15言語同期＋パリティテスト。
+- 拡張の `extension/icons/` は A マーク。`booklage:*` メッセージ型/CSSクラスは互換のため不変(DO-NOT-TOUCH)。
