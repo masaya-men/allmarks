@@ -4,6 +4,11 @@ import { shouldSendQuickTag } from './quick-tag-gate.js'
 
 const OFFSCREEN_PATH = 'offscreen.html'
 
+// In-flight count of offscreen round-trips (saves + add-tags). The offscreen
+// document is a single shared context; a timeout's self-heal must not close it
+// out from under a concurrent op, so we only tear it down when alone (rank13).
+let offscreenInFlight = 0
+
 async function ensureOffscreen() {
   const existing = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] })
   if (existing.length > 0) return
@@ -12,6 +17,17 @@ async function ensureOffscreen() {
     reasons: ['IFRAME_SCRIPTING'],
     justification: 'Bridge to booklage origin for IDB write',
   })
+}
+
+async function recreateOffscreenIfAlone() {
+  // Only tear down the shared offscreen when this op is the sole one in flight.
+  // Closing it while a concurrent save/add-tag is mid-round-trip would resolve
+  // the other's sendMessage callback with `undefined`, surfacing a false error
+  // pill (and losing the visible result of a real write) — rank13.
+  if (offscreenInFlight <= 1) {
+    try { await chrome.offscreen.closeDocument() } catch (_) { /* no doc to close */ }
+  }
+  await ensureOffscreen()
 }
 
 function makeNonce(prefix) {
@@ -92,24 +108,28 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
     chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: 'saving' }).catch(() => {})
   }
 
-  let result = await postToOffscreen(envelope, nonce)
-  console.debug('[allmarks] save iframe result:', { trigger, result })
+  offscreenInFlight++
+  let result
+  try {
+    result = await postToOffscreen(envelope, nonce)
 
-  // Self-heal: a timeout almost always means the offscreen iframe is in a
-  // stuck state (= stale load after deploy, lost message listener, paused
-  // service worker that woke up mid-flight, etc). Close the stale offscreen,
-  // recreate it, and retry once with a fresh nonce. The user sees no error
-  // if the retry succeeds. Only if the retry also times out do we surface
-  // the red pill. The cost is up to ~8s extra latency on the rare stuck
-  // case; everyday saves are untouched.
-  if (!result?.ok && result?.error === 'timeout') {
-    console.debug('[allmarks] timeout; recreating offscreen and retrying once')
-    try { await chrome.offscreen.closeDocument() } catch (_) { /* no doc to close */ }
-    await ensureOffscreen()
-    const retryNonce = makeNonce('e-retry')
-    const retryEnvelope = { ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }
-    result = await postToOffscreen(retryEnvelope, retryNonce)
-    console.debug('[allmarks] save iframe retry result:', { trigger, result })
+    // Self-heal: a timeout almost always means the offscreen iframe is in a
+    // stuck state (= stale load after deploy, lost message listener, paused
+    // service worker that woke up mid-flight, etc). Recreate it and retry once
+    // with a fresh nonce. The user sees no error if the retry succeeds; only
+    // if the retry also times out do we surface the red pill. We tear the
+    // shared offscreen down ONLY when no other save/add-tag is in flight
+    // (recreateOffscreenIfAlone) — closing it under a concurrent op would flip
+    // that op to a false error pill (rank13). Cost: up to ~8s extra latency on
+    // the rare stuck single-save case; everyday saves are untouched.
+    if (!result?.ok && result?.error === 'timeout') {
+      await recreateOffscreenIfAlone()
+      const retryNonce = makeNonce('e-retry')
+      const retryEnvelope = { ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }
+      result = await postToOffscreen(retryEnvelope, retryNonce)
+    }
+  } finally {
+    offscreenInFlight--
   }
 
   let finalState
@@ -159,12 +179,16 @@ export async function dispatchAddTag({ bookmarkId, tagId }) {
   await ensureOffscreen()
   const nonce = makeNonce('t')
   const envelope = { type: 'booklage:add-tag', payload: { bookmarkId, tagId, nonce } }
-  let result = await postToOffscreen(envelope, nonce)
-  if (!result?.ok && result?.error === 'timeout') {
-    try { await chrome.offscreen.closeDocument() } catch (_) { /* no doc */ }
-    await ensureOffscreen()
-    const retryNonce = makeNonce('t-retry')
-    result = await postToOffscreen({ ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }, retryNonce)
+  offscreenInFlight++
+  try {
+    let result = await postToOffscreen(envelope, nonce)
+    if (!result?.ok && result?.error === 'timeout') {
+      await recreateOffscreenIfAlone()
+      const retryNonce = makeNonce('t-retry')
+      result = await postToOffscreen({ ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }, retryNonce)
+    }
+    return result
+  } finally {
+    offscreenInFlight--
   }
-  return result
 }
