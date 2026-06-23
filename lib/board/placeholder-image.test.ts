@@ -54,10 +54,10 @@ describe('placeholderArtFrames', () => {
     ),
   )
 
-  it('returns 3 distinct frames from the known art set by default', () => {
+  it('cycles through ALL the generated styles by default, each distinct', () => {
     const frames = placeholderArtFrames('https://example.com/article')
-    expect(frames).toHaveLength(3)
-    expect(new Set(frames).size).toBe(3) // distinct
+    expect(frames).toHaveLength(placeholderCount()) // all 6 styles
+    expect(new Set(frames).size).toBe(frames.length) // distinct
     for (const f of frames) expect(knownSet.has(f)).toBe(true)
   })
 

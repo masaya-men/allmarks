@@ -84,8 +84,8 @@ describe('PlaceholderCard generated-art cycling', () => {
     const { container } = render(
       <PlaceholderCard item={makeItem('https://a.test/x')} ambientOn />,
     )
-    // All frames stacked; frame[0] is the one shown first (= matches static).
-    expect(bgLayers(container)).toHaveLength(3)
+    // All 6 generated styles stacked; frame[0] is the one shown first (= static).
+    expect(bgLayers(container)).toHaveLength(6)
     expect(bgLayers(container)[0]!.style.opacity).toBe('1')
 
     // Fire the cycle timer → the visible frame advances off frame[0].

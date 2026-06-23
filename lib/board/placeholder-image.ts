@@ -38,8 +38,9 @@ const PLACEHOLDERS: ReadonlyArray<PlaceholderImage> = ART_STYLES.map((style) => 
   aspect: 1.25,
 }))
 
-/** 1 カードが巡回する既定枚数 (= 複数画像ツイート式の「数枚」)。 */
-const FRAME_COUNT = 3
+/** 1 カードが巡回する既定枚数。 user 方針: 作った 6 スタイルを全部使って巡回する
+ *  (= カードごとに別順で全 6 枚を周回。 frame[0] は pickPlaceholderImage と一致)。 */
+const FRAME_COUNT = ART_STYLES.length
 
 /** 文字列を 32bit 整数にハッシュ (= djb2)。 暗号用途じゃなくて単に「同じ URL は
  *  同じ slot に落ちる」 ためなので速度重視。 */
