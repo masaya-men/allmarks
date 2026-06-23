@@ -21,6 +21,20 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 128 — テキストカード placeholder 刷新 **完了**・全バッチ本番反映済)
+
+thumbnail 無しテキストカードの背景を、旧 AI webp 4枚 → ブランド準拠のコード生成 SVG アート 6スタイル(音波バー/オーロラ/波形ライン/グレイン+波/波紋/ドット・黒+控えめ緑)に刷新。最優先要件「既存の見え方・挙動にゼロ影響」を満たして完了。
+
+- **B1**: `scripts/generate-placeholder-art.mjs` が 6 SVG を `public/placeholders/art/default/` に出力、`pickPlaceholderImage` を差し替え → board/triage/PiP/共有プレビューが一斉刷新。横長5:4(=PLACEHOLDER_ASPECT でクロップなし)・ベクター(Lightbox拡大くっきり)・ファイルURL(data URI の符号化/taint の罠なし)。
+- **B2**: PlaceholderCard が `placeholderArtFrames`(全6スタイルを決定論順で巡回・frame[0]=静止/他consumerと一致)を N層クロスフェード(800ms)。`ambientOn` prop(= CardsLayer の motion on && !lightbox && !scroll && !reduce-motion)+ カード自前 IntersectionObserver(画面内) でゲート。Lightbox scaler / ImageCard fallback は ambientOn 未渡し → 静止 frame[0]。
+- **B2.5**: Lightbox 背景(=停止中の盤面)に `backdrop-filter: blur(16px)`(`--lightbox-backdrop-blur`)を再有効化。固定半径+透明度のみアニメ(GSAP)で「ぼかし作り直し」を回避、フェード 0.42→0.24s。user 実機(DPR2.58)で滑らか確認(2026-05-14 に jank で外した手法を「停止盤面+半径固定」で復活)。
+- **B3 + 見切れ修正**: 共有OG(capture-mirror)がテキストカードに生成SVG + board同等 scrim を描画(自己完結SVG=canvas taint なし・Playwrightで実証)。さらに **OGのカードを内側盤面 `.canvasReplica` でクリップ**して preview=OG=board の見切れを一致(従来は外側 frame まで塗り下端が1行多く写っていた)。user 目視で完璧確認。
+- **B4**: 旧webp4枚 + `public/mockups/` + `scripts/og-placeholder-mockups.mjs` 削除。
+
+各バッチ tsc0 / vitest 1652 / build green / 本番 `allmarks.app` 反映済。テーマ対応は palette 引数で将来差し込む構造のみ用意(現状デフォルト palette のみ・themeId 配線は別タスク)。
+
+**session 128 で出た別件(未着手・IDEAS.md 記録済)**: ①ツイートの自動翻訳をカード/ボードに持ち込めるか(原文しか取れない可能性大→自前翻訳要・端末内 Translator API が候補) ②テキストカードのタイトルが board=中央寄せ/サンセリフ に対し OG=左上/等幅 の差(WYSIWYG 詰めるなら別途)。
+
 ### 直近の状態 (セッション 127 — 監査フィックス **全44件 処理完了**・全バッチ本番反映済)
 
 **監査フィックスの作業キューは [progress.md](./private/2026-06-22-audit-fix-progress.md) が真実の場所（gitignored）。全件決着済み。**

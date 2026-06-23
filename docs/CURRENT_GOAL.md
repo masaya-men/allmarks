@@ -1,36 +1,19 @@
-# 次セッションのゴール (= セッション 128)
+# 次セッションのゴール (= セッション 129)
 
-## 今のゴール (1 行)
+## 前セッション(128)の成果 — テキストカード placeholder 刷新 **完了・本番反映済み**
+旧 AI webp 4枚 → ブランド準拠のコード生成 SVG アート 6スタイル(黒+控えめ緑・音波モチーフ)に刷新。
+- B1 生成SVG差し替え / B2 巡回スライドショー(画面内+MOTION時のみ・Lightbox停止) / B2.5 Lightbox背景フロストガラス(16px) / B3 共有OG WYSIWYG + 見切れ修正 / B4 旧アセット削除。
+- 全て tsc0 / vitest 1652 / build green / `allmarks.app` 反映済・user 目視承認済。
+- 詳細は [docs/TODO.md](./TODO.md) 「現在の状態(セッション128)」。
 
-**テキストカード placeholder の刷新（生成アート＋スライドショー＋テーマ対応）を、既存の見え方にゼロ影響で実装する。**
-
-## 開始時の動き
-1. このファイル + [docs/private/IDEAS.md](./private/IDEAS.md) 末尾「テキストカード placeholder 刷新」セクションを読む（=完全な調査結果・計画・制約・チェックリスト）
-2. user に「session 128 開始」+ 下の確認1つを出して着手
-
-## 最初に user に確認すること（1つだけ）
-- **音波バー(style1)を残す/外す**（賑やかなので緑絞り運用 or 除外）／**巡回は「同系統の微変化」か「別スタイル混在」か**
-- モック再掲: https://allmarks.app/mockups/styles.png ・ https://allmarks.app/mockups/on-board.png
-
-## 実装の要点（詳細は IDEAS.md）
-- swap point は1関数 `lib/board/placeholder-image.ts pickPlaceholderImage` → 生成SVG data URI に。5消費者が一度に刷新。旧webp4枚削除可
-- 新規 `lib/board/placeholder-art.ts`（軽量SVG・seed=URLハッシュ・**スケール非依存設計**）
-- 「動く」= 既存 `use-slideshow-cycle.ts` 流用（div レイヤー crossfade）。`ambientOn` で自動停止
-- **★ライトボックス制約（最重要）**: Lightbox は同じ PlaceholderCard を全画面拡大（LargePlaceholderCardScaler）。生成構図は全スケール対応必須＋巡回がライトボックスで動かないようスコープ管理
-- 共有OG(capture-mirror)も同生成で WYSIWYG
-- テーマ対応は palette 引数で将来差し込み（今は既定ブランド）
-
-## ゼロ影響チェックリスト（厳守・IDEAS.md に詳細）
-layout/スクリム/タイトル不変 / ライトボックス全スケール検証(Playwright) / アニメ停止条件 / プレビュー=OG=ボード一致 / 545枚軽量 / tsc・vitest・build・敵対検証・本番スモーク
-
-## クリーンアップ（実装完了後）
-- `public/mockups/`（本番に一時設置・未commit）と `scripts/og-placeholder-mockups.mjs`（未commit）を削除
-
-## 監査フィックス（前回完了・参考）
-- 確定44件 = 42 fix + 2 据え置き(rank31/rank43)。session127 で B8/B10/B11/B3 + 後続バグ修正（共有OG二重/CJKはみ出し/プレビュー≠実画像/legalリンク英語）すべて本番反映済。詳細 [docs/private/2026-06-22-audit-fix-progress.md](./private/2026-06-22-audit-fix-progress.md)
-- B3 既定OGP画像(public/og.png)も user 承認待ち（暫定）
+## 次セッションで user に確認する(どれをやるか)
+前セッションで出た follow-up。user が優先を選ぶ:
+1. **ツイートの自動翻訳の取り込み調査**（IDEAS.md §session128 (B)）— まず AllMarks の tweet テキスト取り込み経路を実コードで裏取り(原文しか取れないか)→ 端末内 Translator API の実現性調査。実装は別。
+2. **共有OG のタイトル WYSIWYG 詰め**（IDEAS.md §session128, TODO.md 末尾）— board=中央寄せ/サンセリフ に対し OG=左上/等幅。capture-mirror のタイトル描画を中央寄せ+フォント統一。
+3. **公開前の片付け**（TODO.md 上部）— 暫定 EXPORT/IMPORT 撤去判断、未使用 `chrome-extension/` 削除、`EXTENSION_STORE_URL` 投入(ストア公開時)。
+4. B3 既定 OGP 画像(public/og.png)の承認/差し替え(session127 からの持ち越し)。
 
 ## 守ること
 - 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII) 必須。応答は日本語。UI 変更は事前一言。
 - **既知フレーキー**: `tests/lib/channel.test.ts` が full run でたまに落ちる→再実行 green。
-- サブエージェントのモデルは作業の重さで使い分け。検証は省かない。
+- 生成アートの調整は `scripts/generate-placeholder-art.mjs`(greenIntensity / 各スタイル) を編集 → 再実行 → 6 SVG 再生成 → 差し替え。
