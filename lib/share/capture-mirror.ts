@@ -174,7 +174,12 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     if (img) ctx.drawImage(img, cx, cy, cw, ch)
     ctx.restore()
 
-    // タイトル text: サムネあり → 小さく下端に、 サムネなし → 大きくカード全体に
+    // タイトル text: サムネあり → 小さく下端に、 サムネなし → 大きくカード全体に。
+    // カード矩形でクリップしてから描く (= 折返しが不完全でも文字がカード外へ
+    // はみ出さない安全網。 CJK のはみ出しバグ対策)。
+    ctx.save()
+    roundRectPath(ctx, cx, cy, cw, ch, radius)
+    ctx.clip()
     ctx.fillStyle = TEXT_MAIN
     ctx.textBaseline = 'top'
     ctx.textAlign = 'left'
@@ -191,6 +196,7 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
       const maxLines = Math.floor((ch - 16) / lineHeight)
       drawWrappedText(ctx, item.title, cx + 8, cy + 8, cw - 16, lineHeight, Math.max(1, maxLines))
     }
+    ctx.restore()
   }
 }
 
@@ -237,6 +243,62 @@ function drawBrandStrip(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput
   ctx.fill()
 }
 
+/**
+ * Wrap `text` into at most `maxLines` lines that each fit `maxWidth`, using the
+ * supplied `measure` (= ctx.measureText width). Breaks at spaces when possible
+ * (Latin) and mid-string otherwise — crucial for CJK (Japanese/Chinese tweet
+ * bodies have NO spaces, so the old whitespace-only split produced one giant
+ * line that overflowed the card). The last line is ellipsized when text is cut.
+ * Exported for unit testing (the canvas isn't available under jsdom).
+ */
+export function wrapTextToLines(
+  measure: (s: string) => number,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+): string[] {
+  if (maxLines < 1 || maxWidth <= 0) return []
+  const chars = Array.from(text.replace(/\s+/g, ' ').trim())
+  const lines: string[] = []
+  let line = ''
+  let i = 0
+  while (i < chars.length && lines.length < maxLines) {
+    const ch = chars[i]
+    const candidate = line + ch
+    if (measure(candidate) <= maxWidth) {
+      line = candidate
+      i++
+      continue
+    }
+    if (line.length === 0) {
+      // A single character is wider than maxWidth — force it on its own line.
+      lines.push(ch)
+      i++
+      continue
+    }
+    const sp = line.lastIndexOf(' ')
+    if (sp > 0) {
+      lines.push(line.slice(0, sp))
+      line = line.slice(sp + 1) // carry the remainder; re-process ch (no i++)
+    } else {
+      lines.push(line)
+      line = '' // char-break; re-process ch (no i++)
+    }
+  }
+  if (line.length > 0 && lines.length < maxLines) {
+    lines.push(line)
+    line = ''
+  }
+  // Truncated if any text is left unrendered → ellipsize the last line.
+  const truncated = line.length > 0 || i < chars.length
+  if (truncated && lines.length > 0) {
+    let last = lines[lines.length - 1]
+    while (last.length > 0 && measure(last + '…') > maxWidth) last = last.slice(0, -1)
+    lines[lines.length - 1] = last + '…'
+  }
+  return lines
+}
+
 function drawWrappedText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -246,25 +308,11 @@ function drawWrappedText(
   lineHeight: number,
   maxLines: number,
 ): void {
-  const words = text.split(/\s+/)
-  let line = ''
+  const lines = wrapTextToLines((s) => ctx.measureText(s).width, text, maxWidth, maxLines)
   let currentY = y
-  let lineCount = 0
-
-  for (let i = 0; i < words.length; i++) {
-    const testLine = line === '' ? words[i] : `${line} ${words[i]}`
-    if (ctx.measureText(testLine).width > maxWidth && line !== '') {
-      ctx.fillText(line, x, currentY)
-      lineCount++
-      if (lineCount >= maxLines) return
-      line = words[i] ?? ''
-      currentY += lineHeight
-    } else {
-      line = testLine
-    }
-  }
-  if (line !== '' && lineCount < maxLines) {
+  for (const line of lines) {
     ctx.fillText(line, x, currentY)
+    currentY += lineHeight
   }
 }
 
