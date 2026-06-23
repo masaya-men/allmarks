@@ -103,8 +103,14 @@ function drawBgTypo(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput): v
   const cx = ((rect.left + rect.right) / 2 - frameRect.left) * scaleX
   const cy = ((rect.top + rect.bottom) / 2 - frameRect.top) * scaleY
 
-  const cssFontPx = parseFloat(getComputedStyle(span).fontSize) || 0
-  let fontPx = Math.max(10, cssFontPx * scaleY)
+  // Size from the span's PAINTED height (getBoundingClientRect already includes
+  // the .outerBand transform: scale), mapped into OG space. Using
+  // getComputedStyle().fontSize here was the bug: it returns the PRE-transform
+  // px (e.g. 260), ignoring the outerBand down-scale, so the wordmark rendered
+  // ~2× larger than the preview — the "preview ≠ share height" the user saw.
+  // line-height is 1.0, so the single-line box height ≈ the rendered font size;
+  // the maxW shrink below keeps multi-line/long text within frame.
+  let fontPx = Math.max(10, rect.height * scaleY)
 
   ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
   ctx.textAlign = 'center'
