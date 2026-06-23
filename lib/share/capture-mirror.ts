@@ -137,6 +137,27 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
   const scaleX = input.width / frameRect.width
   const scaleY = input.height / frameRect.height
 
+  // Clip every card to the VISIBLE inner board area (= ShareMirror の
+  // .canvasReplica, overflow:hidden)。 これが無いと、 プレビューが盤面の下端で
+  // 隠している行のカードが、 frame の下の余白ゾーンにまで描かれて「OG だけ下に
+  // 1 行多く写る」 ズレになる (= preview/board は canvasReplica で切るのに、 capture
+  // は frame まで塗っていた)。 canvasReplica の矩形でクリップして preview と一致させる。
+  const replicaRect = frame
+    .querySelector<HTMLElement>('[data-testid="mirror-canvas-replica"]')
+    ?.getBoundingClientRect()
+  const hasReplicaClip = !!replicaRect && replicaRect.width > 0 && replicaRect.height > 0
+  if (hasReplicaClip && replicaRect) {
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(
+      (replicaRect.left - frameRect.left) * scaleX,
+      (replicaRect.top - frameRect.top) * scaleY,
+      replicaRect.width * scaleX,
+      replicaRect.height * scaleY,
+    )
+    ctx.clip()
+  }
+
   const cardEls = Array.from(frame.querySelectorAll<HTMLElement>('[data-mirror-card-id]'))
   for (const el of cardEls) {
     const rect = el.getBoundingClientRect()
@@ -234,6 +255,8 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     }
     ctx.restore()
   }
+
+  if (hasReplicaClip) ctx.restore()
 }
 
 function drawBrandStrip(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput): void {

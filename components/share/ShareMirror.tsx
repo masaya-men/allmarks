@@ -126,7 +126,7 @@ export function ShareMirror({
           height: bgFullScreenHeight,
         }}
       >
-        <div className={styles.canvasReplica}>
+        <div className={styles.canvasReplica} data-testid="mirror-canvas-replica">
           {/* Background typography behind the cards (a later sibling floats on
               top). Empty bgTypoText (TITLE toggle off) renders nothing. */}
           {bgTypoText ? (
