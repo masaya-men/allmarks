@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { navHref } from '@/lib/i18n/locale-urls'
 import styles from './legal-page.module.css'
 
 /** privacy/terms 共通: セクション定義(anchor id = key)。 */
@@ -17,7 +18,7 @@ const SECTIONS = [
  * スクロール演出なし(全要素可視)。
  */
 export function PrivacyContent(): React.ReactElement {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   return (
     <article className={styles.root}>
       <header className={styles.hero}>
@@ -49,14 +50,14 @@ export function PrivacyContent(): React.ReactElement {
           <p className={styles.body}>{t(`pages.privacy.${id}.body`)}</p>
           {id === 'extension' && (
             <p className={styles.body}>
-              <Link href="/extension/privacy" className={styles.link}>
+              <Link href={navHref(locale, 'extension/privacy')} className={styles.link}>
                 {t('pages.extensionPrivacy.hero.kicker')}
               </Link>
             </p>
           )}
           {id === 'contact' && (
             <p className={styles.body}>
-              <Link href="/contact" className={styles.link}>
+              <Link href={navHref(locale, 'contact')} className={styles.link}>
                 {t('pages.contact.hero.kicker')}
               </Link>
             </p>

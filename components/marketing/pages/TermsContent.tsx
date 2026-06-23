@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { navHref } from '@/lib/i18n/locale-urls'
 import styles from './legal-page.module.css'
 
 const SECTIONS = [
@@ -14,7 +15,7 @@ const SECTIONS = [
  * 共有=KV に一時アップロード+30日削除の事実を反映。スクロール演出なし。
  */
 export function TermsContent(): React.ReactElement {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   return (
     <article className={styles.root}>
       <header className={styles.hero}>
@@ -46,7 +47,7 @@ export function TermsContent(): React.ReactElement {
           <p className={styles.body}>{t(`pages.terms.${id}.body`)}</p>
           {id === 'contact' && (
             <p className={styles.body}>
-              <Link href="/contact" className={styles.link}>
+              <Link href={navHref(locale, 'contact')} className={styles.link}>
                 {t('pages.contact.hero.kicker')}
               </Link>
             </p>

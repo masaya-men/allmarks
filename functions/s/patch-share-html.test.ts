@@ -11,7 +11,14 @@ const sampleTemplate = `<!DOCTYPE html><html lang="ja"><head>` +
   `<meta property="og:title" content="Booklage — Bookmark × Collage"/>` +
   `<meta property="og:description" content="Turn your bookmarks into beautiful visual collages."/>` +
   `<meta property="og:type" content="website"/>` +
+  // The root layout bakes a default social card into out/s.html — the template
+  // MUST carry og:image* + twitter:image so this test mirrors production.
+  `<meta property="og:image" content="https://allmarks.app/og.png"/>` +
+  `<meta property="og:image:width" content="1200"/>` +
+  `<meta property="og:image:height" content="630"/>` +
+  `<meta property="og:image:alt" content="AllMarks"/>` +
   `<meta name="twitter:card" content="summary_large_image"/>` +
+  `<meta name="twitter:image" content="https://allmarks.app/og.png"/>` +
   `<link rel="icon" href="/favicon.ico"/>` +
   `<script src="/_next/static/chunks/abc.js" async=""></script>` +
   `</head><body class="x"><div id="__next"></div>` +
@@ -56,6 +63,17 @@ describe('patchShareHTML', () => {
   it('injects og:image pointing to /api/share/<id>/og', () => {
     const out = patchShareHTML(sampleTemplate, baseVars)
     expect(out).toContain('property="og:image" content="https://booklage.pages.dev/api/share/k3p9xv/og"')
+  })
+
+  it('emits exactly ONE og:image and drops the template default /og.png (B3 regression guard)', () => {
+    const out = patchShareHTML(sampleTemplate, baseVars)
+    const ogImages = out.match(/<meta\s+property="og:image"\s+content="[^"]*"/g) ?? []
+    expect(ogImages).toHaveLength(1)
+    expect(out).not.toContain('content="https://allmarks.app/og.png"')
+    // twitter:image too — only the per-share one survives.
+    const twImages = out.match(/<meta\s+name="twitter:image"\s+content="[^"]*"/g) ?? []
+    expect(twImages).toHaveLength(1)
+    expect(twImages[0]).toContain('/api/share/k3p9xv/og')
   })
 
   it('injects twitter:image so X cards show the per-id thumbnail', () => {

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { navHref } from '@/lib/i18n/locale-urls'
 import styles from './legal-page.module.css'
 
 const GITHUB_URL = 'https://github.com/masaya-men/allmarks'
@@ -22,7 +23,7 @@ const PERMS = [
  * GitHub=allmarks。スクロール演出なし。
  */
 export function ExtensionPrivacyContent(): React.ReactElement {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   return (
     <article className={styles.root}>
       <header className={styles.hero}>
@@ -89,7 +90,7 @@ export function ExtensionPrivacyContent(): React.ReactElement {
         <h2 className={styles.heading}>{t('pages.extensionPrivacy.contact.heading')}</h2>
         <p className={styles.body}>
           {t('pages.extensionPrivacy.contact.body')}{' '}
-          <Link href="/contact" className={styles.link}>{t('pages.contact.hero.kicker')}</Link>
+          <Link href={navHref(locale, 'contact')} className={styles.link}>{t('pages.contact.hero.kicker')}</Link>
         </p>
       </section>
 

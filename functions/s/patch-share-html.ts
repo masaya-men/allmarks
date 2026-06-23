@@ -56,6 +56,14 @@ export function patchShareHTML(template: string, vars: PatchShareHTMLVars): stri
     `<meta property="og:description" content="${description}"/>`,
   )
 
+  // Strip any og:image* / twitter:image the exported template already carries.
+  // The root layout's default social card (/og.png) is baked into out/s.html,
+  // so without removing it first the per-share image injected below becomes a
+  // SECOND og:image and crawlers render BOTH — the default card splits the
+  // board collage in the preview (B3 regression, session 127).
+  html = html.replace(/<meta\s+property="og:image(?::[a-z]+)?"\s+content="[^"]*"\s*\/?>/g, '')
+  html = html.replace(/<meta\s+name="twitter:image"\s+content="[^"]*"\s*\/?>/g, '')
+
   const injectAfterOgType = [
     `<meta property="og:url" content="${ogUrl}"/>`,
     `<meta property="og:image" content="${ogImage}"/>`,
