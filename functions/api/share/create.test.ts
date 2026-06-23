@@ -84,4 +84,54 @@ describe('POST /api/share/create (R2 migration)', () => {
     expect(res.status).toBe(500)
     expect(kvStore.size).toBe(0)
   })
+
+  // rank9: the size cap must be enforced on the ACTUAL bytes read, not the
+  // Content-Length header (which a client can omit). A streamed body has no
+  // Content-Length, so the old header-only check let it slip through.
+  it('rejects an oversized body that has NO Content-Length header (rank9 DoS)', async () => {
+    const MAX = 800 * 1024
+    const oversized = 'a'.repeat(MAX + 4096)
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(oversized))
+        controller.close()
+      },
+    })
+    const env = {
+      SHARE_KV: { get: vi.fn(), put: vi.fn() },
+      SHARE_OG: { put: vi.fn() },
+    }
+    const ctx = {
+      request: new Request('https://test.local/api/share/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, // deliberately no content-length
+        body: stream,
+        duplex: 'half',
+      } as RequestInit & { duplex: 'half' }),
+      env,
+    }
+    const res = await onRequestPost(ctx as never)
+    expect(res.status).toBe(413)
+    // Nothing should have been written when the body is rejected.
+    expect(env.SHARE_KV.put).not.toHaveBeenCalled()
+    expect(env.SHARE_OG.put).not.toHaveBeenCalled()
+  })
+
+  it('rejects via the Content-Length fast-path when the header is oversized', async () => {
+    const env = {
+      SHARE_KV: { get: vi.fn(), put: vi.fn() },
+      SHARE_OG: { put: vi.fn() },
+    }
+    const ctx = {
+      request: new Request('https://test.local/api/share/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'content-length': String(900 * 1024) },
+        body: JSON.stringify({ share: validShare, thumb: jpegThumb }),
+      }),
+      env,
+    }
+    const res = await onRequestPost(ctx as never)
+    expect(res.status).toBe(413)
+    expect(env.SHARE_OG.put).not.toHaveBeenCalled()
+  })
 })

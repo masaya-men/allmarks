@@ -24,6 +24,12 @@ const TITLE = 'Shared collection on AllMarks'
  * 4. <head> 直後に window.__SHARE_ID__ / __SHARE_CARD_COUNT__ を注入 (= bundle 前に必ず実行されるよう先頭に)
  *
  * Next.js bundle <script> や RSC streaming <script> には**触らない**ことが重要。
+ *
+ * ⚠ このコードは Next の export 出力 (out/s.html) の形に依存する。 og:title /
+ * og:description / og:type / <title> / <head> の形が変わると下記の replace が
+ * **無言で no-op** になり OG メタが欠ける。 ビルド時に scripts/assert-share-template.mjs
+ * が out/s.html にこれらのアンカーが在るか検査して壊れたら build を落とす (rank20)。
+ * 下の regex を変えたら同スクリプトの REQUIRED_ANCHORS も合わせて更新する。
  */
 export function patchShareHTML(template: string, vars: PatchShareHTMLVars): string {
   const { id, cardCount, baseUrl, page } = vars

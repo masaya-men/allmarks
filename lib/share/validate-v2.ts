@@ -53,31 +53,38 @@ export function parseShareDataV2(input: unknown): ParseResult {
 }
 
 /** Lenient parse — coerces / trims overlong values. Used on receiver side
- *  where the sender's payload may have been tampered with in transit. */
+ *  where the sender's payload may have been tampered with in transit.
+ *
+ *  Pure: never mutates `input`. We build a shallow copy of the share object
+ *  (and of any card we trim) so the caller's object is left untouched —
+ *  reassigning `obj.cards`/`obj.theme` in place would silently corrupt a value
+ *  the caller might still read elsewhere. */
 export function sanitizeShareDataV2(input: unknown): ParseResult {
   if (typeof input !== 'object' || input === null) {
     return { ok: false, error: 'not an object' }
   }
   const obj = input as Record<string, unknown>
-  if (Array.isArray(obj.cards)) {
-    obj.cards = (obj.cards as Array<Record<string, unknown>>).map((card) => {
-      const next: Record<string, unknown> = { ...card }
-      if (typeof next.t === 'string' && next.t.length > SHARE_LIMITS_V2.MAX_TITLE) {
-        next.t = next.t.slice(0, SHARE_LIMITS_V2.MAX_TITLE)
+  const next: Record<string, unknown> = { ...obj }
+
+  if (Array.isArray(next.cards)) {
+    next.cards = (next.cards as Array<Record<string, unknown>>).map((card) => {
+      const copy: Record<string, unknown> = { ...card }
+      if (typeof copy.t === 'string' && copy.t.length > SHARE_LIMITS_V2.MAX_TITLE) {
+        copy.t = copy.t.slice(0, SHARE_LIMITS_V2.MAX_TITLE)
       }
-      if (typeof next.d === 'string' && next.d.length > SHARE_LIMITS_V2.MAX_DESCRIPTION) {
-        next.d = next.d.slice(0, SHARE_LIMITS_V2.MAX_DESCRIPTION)
+      if (typeof copy.d === 'string' && copy.d.length > SHARE_LIMITS_V2.MAX_DESCRIPTION) {
+        copy.d = copy.d.slice(0, SHARE_LIMITS_V2.MAX_DESCRIPTION)
       }
-      return next
+      return copy
     })
   }
   // Sanitize theme: drop unknown values (e.g. legacy 'wave') to undefined so
   // Zod's optional field passes cleanly rather than rejecting the whole payload.
   const validThemes = new Set<string>(listThemeIds())
   const sanitizedTheme: ThemeId | undefined =
-    typeof obj.theme === 'string' && validThemes.has(obj.theme)
-      ? (obj.theme as ThemeId)
+    typeof next.theme === 'string' && validThemes.has(next.theme)
+      ? (next.theme as ThemeId)
       : undefined
-  obj.theme = sanitizedTheme
-  return parseShareDataV2(obj)
+  next.theme = sanitizedTheme
+  return parseShareDataV2(next)
 }

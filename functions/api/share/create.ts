@@ -49,15 +49,60 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes
 }
 
+/**
+ * Reads the request body as text but enforces a hard ceiling on the *actual*
+ * bytes read, returning null when the body exceeds `maxBytes`.
+ *
+ * The Content-Length check in onRequestPost is only a cheap early-out — a client
+ * can omit or understate that header, so it must never be the real limit. This
+ * reader copies into a single pre-sized maxBytes buffer and rejects *before*
+ * copying any chunk that would cross the ceiling, so retained memory stays
+ * within maxBytes (plus the one transient chunk the runtime hands us), then
+ * cancels the rest of the stream — closing the size-cap bypass (rank9, DoS).
+ * A missing body stream fails closed (returns '' → JSON.parse → 400) rather
+ * than doing an unbounded text() read. Mirrors readCappedText in
+ * functions/api/ogp.ts (which truncates; here we reject instead).
+ */
+async function readBodyCapped(request: Request, maxBytes: number): Promise<string | null> {
+  const reader = request.body?.getReader()
+  // No readable-stream binding — fail closed. In workerd a POST with a body
+  // always exposes request.body; treat its absence as an empty body so the
+  // caller's JSON.parse('') yields a clean 400 (never an unbounded read).
+  if (!reader) return ''
+  const buf = new Uint8Array(maxBytes)
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (value && value.byteLength > 0) {
+      if (total + value.byteLength > maxBytes) {
+        await reader.cancel()
+        return null
+      }
+      buf.set(value, total)
+      total += value.byteLength
+    }
+  }
+  return new TextDecoder().decode(buf.subarray(0, total))
+}
+
 export async function onRequestPost(ctx: PagesContext): Promise<Response> {
-  const contentLength = parseInt(ctx.request.headers.get('content-length') ?? '0', 10)
-  if (contentLength > MAX_BODY_BYTES) {
-    return errResponse(413, 'invalid', `body too large (${contentLength} > ${MAX_BODY_BYTES})`)
+  // Fast path: reject an obviously-oversized upload before reading any body.
+  const declaredLength = parseInt(ctx.request.headers.get('content-length') ?? '0', 10)
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+    return errResponse(413, 'invalid', `body too large (${declaredLength} > ${MAX_BODY_BYTES})`)
+  }
+
+  // Real enforcement: cap the actual bytes read so a missing / understated
+  // Content-Length cannot slip a huge body past the fast path (rank9, DoS).
+  const raw = await readBodyCapped(ctx.request, MAX_BODY_BYTES)
+  if (raw === null) {
+    return errResponse(413, 'invalid', `body too large (> ${MAX_BODY_BYTES})`)
   }
 
   let body: unknown
   try {
-    body = await ctx.request.json()
+    body = JSON.parse(raw)
   } catch {
     return errResponse(400, 'invalid', 'malformed JSON body')
   }

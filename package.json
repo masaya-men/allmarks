@@ -5,16 +5,17 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/assert-share-template.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "preview": "next build && wrangler pages dev out",
+    "preview": "pnpm build && wrangler pages dev out",
     "prepare": "husky",
     "icons:extension": "node scripts/generate-extension-icons.mjs",
-    "package:extension": "node scripts/package-extension.mjs"
+    "package:extension": "node scripts/package-extension.mjs",
+    "check:r2-lifecycle": "wrangler r2 bucket lifecycle list allmarks-share-og && wrangler r2 bucket lifecycle list allmarks-share-og-preview"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.1",

@@ -73,6 +73,26 @@ describe('sanitizeShareDataV2', () => {
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.data.cards[0].t.length).toBe(500)
   })
+
+  it('does not mutate the caller\'s input object (pure)', () => {
+    const overlongTitle = 'x'.repeat(600)
+    const card = { u: 'https://a.com', t: overlongTitle, ty: 'website' as const, cw: 200, a: 1 }
+    const input = { ...validShare, cards: [card], theme: 'wave' }
+    const before = JSON.parse(JSON.stringify(input))
+
+    const result = sanitizeShareDataV2(input)
+    expect(result.ok).toBe(true)
+    // Sanitized output is trimmed / theme-dropped …
+    if (result.ok) {
+      expect(result.data.cards[0].t.length).toBe(500)
+      expect(result.data.theme).toBeUndefined()
+    }
+    // … but the original input is byte-for-byte unchanged.
+    expect(input).toEqual(before)
+    expect(input.cards[0].t.length).toBe(600)
+    expect(input.cards[0]).toBe(card) // same card reference, untouched
+    expect((input as Record<string, unknown>).theme).toBe('wave')
+  })
 })
 
 describe('sanitizeShareDataV2 theme', () => {
