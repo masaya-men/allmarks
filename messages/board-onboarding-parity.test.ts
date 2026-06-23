@@ -37,10 +37,12 @@ function onboardingOf(file: unknown): Record<string, unknown> {
   return (board?.onboarding as Record<string, unknown>) ?? {}
 }
 
-// translate() returns the RAW KEY STRING on a miss (no English fallback), and
-// the onboarding t() call sites have no `?? fallback`. A locale missing an
-// onboarding key would therefore render the literal key path on screen. This
-// guard catches that the same way landing-parity guards the landing block.
+// translate() now falls back to English on a miss (rank16), so a missing
+// onboarding key renders the English string rather than the literal key path —
+// but English text in a non-English locale is still a defect. This structural
+// guard keeps every locale complete so the fallback never has to fire, the same
+// way landing-parity guards the landing block. (all-keys-parity.test.ts covers
+// the whole tree; this stays as the focused onboarding guard.)
 describe('board.onboarding translation parity', () => {
   const enKeys = leafKeys(onboardingOf(en))
 

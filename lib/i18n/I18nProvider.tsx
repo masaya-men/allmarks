@@ -56,7 +56,9 @@ export function I18nProvider({
   }, [])
 
   const value = useMemo<I18nValue>(
-    () => ({ locale, t: (key: string) => translate(messages, key), setLocale }),
+    // English (bakedMessages) is the fallback so a missing key in the active
+    // locale renders the English string, never the raw dot-key (rank16).
+    () => ({ locale, t: (key: string) => translate(messages, key, bakedMessages), setLocale }),
     [locale, messages, setLocale],
   )
 
