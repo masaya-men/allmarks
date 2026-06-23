@@ -232,8 +232,6 @@ export interface AllMarksDB {
   preferences: UserPreferencesRecord
 }
 
-type AllMarksIDB = IDBPDatabase<AllMarksDB>
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -739,15 +737,17 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
  * Cost: O(N) since IDB has no native "max indexed value" query and
  * orderIndex is not separately indexed today. ~1ms for N=1000.
  */
-export async function nextOrderIndex(db: IDBPDatabase<AllMarksDB>): Promise<number> {
-  const all = await db.getAll('bookmarks')
-  if (all.length === 0) return 0
+export function nextOrderIndexFrom(all: readonly BookmarkRecord[]): number {
   let max = -1
   for (const b of all) {
     const o = b.orderIndex ?? -1
     if (o > max) max = o
   }
-  return max + 1
+  return max + 1 // empty → -1 + 1 = 0
+}
+
+export async function nextOrderIndex(db: IDBPDatabase<AllMarksDB>): Promise<number> {
+  return nextOrderIndexFrom(await db.getAll('bookmarks'))
 }
 
 /**
@@ -773,7 +773,17 @@ export async function nextOrderIndex(db: IDBPDatabase<AllMarksDB>): Promise<numb
 export async function repairOrderIndexIfNeeded(
   db: IDBPDatabase<AllMarksDB>,
 ): Promise<{ ran: boolean; updated: number }> {
-  const existingMigration = await db.get('settings', 'migration').catch(() => undefined)
+  // Read the guard flag. CRITICAL: a read FAILURE must not be treated as
+  // "not yet migrated" — re-running this migration re-sorts by savedAt and
+  // CLOBBERS the user's manual drag-to-reorder (audit rank22/rank41). So fail
+  // safe: if we cannot read the flag, skip the run this launch (retried next
+  // time). A first-ever install reads `undefined` (no throw) and still runs.
+  let existingMigration: SettingsRecord | undefined
+  try {
+    existingMigration = await db.get('settings', 'migration')
+  } catch {
+    return { ran: false, updated: 0 }
+  }
   if (existingMigration?.migrationFlags?.orderIndexRepairV2) {
     return { ran: false, updated: 0 }
   }
@@ -910,18 +920,21 @@ export async function addBookmark(
   db: IDBPDatabase<AllMarksDB>,
   input: BookmarkInput,
 ): Promise<BookmarkRecord> {
-  // Newest gets the highest orderIndex. Board sort is DESC by orderIndex so
-  // this card appears at the top. Using `max + 1` rather than `count`
-  // prevents collisions after EMPTY TRASH physically removes records (= the
-  // count drops below max, and `count` would re-issue an in-use orderIndex —
-  // the source of the "new bookmark scattered in the middle" bug).
-  const nextOrder = await nextOrderIndex(db)
-
   // Use a transaction to atomically create both bookmark and card.
   const tx = db.transaction(['bookmarks', 'cards'], 'readwrite')
+  const bookmarks = tx.objectStore('bookmarks')
+  // Compute the next orderIndex from a snapshot read INSIDE this transaction so
+  // the high-water-mark read and the insert are atomic. Reading it in a separate
+  // call beforehand (the old `await nextOrderIndex(db)`) let two concurrent
+  // adds see the same max and write a DUPLICATE orderIndex (audit rank22) —
+  // the same invariant saveBookmarkDeduped already protects. Newest gets the
+  // highest orderIndex; the board sorts DESC so this card lands at the top.
+  // `max + 1` (not `count`) stays collision-safe after EMPTY TRASH physically
+  // removes records (count drops below max; count would re-issue a live index).
+  const nextOrder = nextOrderIndexFrom(await bookmarks.getAll())
   const existingCards = await tx.objectStore('cards').count()
   const { bookmark, card } = buildBookmarkAndCard(input, nextOrder, existingCards)
-  await tx.objectStore('bookmarks').put(bookmark)
+  await bookmarks.put(bookmark)
   await tx.objectStore('cards').put(card)
   await tx.done
 
@@ -971,12 +984,7 @@ export async function saveBookmarkDeduped(
     }
   }
 
-  let max = -1
-  for (const b of all) {
-    const o = b.orderIndex ?? -1
-    if (o > max) max = o
-  }
-  const nextOrder = all.length === 0 ? 0 : max + 1
+  const nextOrder = nextOrderIndexFrom(all)
   const existingCards = await tx.objectStore('cards').count()
   const { bookmark, card } = buildBookmarkAndCard(input, nextOrder, existingCards)
   await bookmarks.put(bookmark)

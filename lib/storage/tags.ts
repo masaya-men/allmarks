@@ -1,8 +1,9 @@
 import type { IDBPDatabase } from 'idb'
-import type { TagRecord, TagInput, BookmarkRecord } from './indexeddb'
+import type { TagRecord, TagInput, BookmarkRecord, AllMarksDB } from './indexeddb'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type DbLike = IDBPDatabase<any>
+/** The typed handle the tag helpers operate on. Was `IDBPDatabase<any>` (audit
+ *  rank32); now the real schema so store/key access is type-checked. */
+type DbLike = IDBPDatabase<AllMarksDB>
 
 /** Generate a UUID v4 */
 function uuid(): string {
