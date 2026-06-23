@@ -7721,3 +7721,39 @@ en/ja を確定し13言語へ並列翻訳展開、本番反映済(15言語 JSON 
 tsc0 / vitest1593 / build green。commit×2 + デプロイ。OnboardingController はコンポーネントテスト harness 無し＝rank39 は tsc+目視検証（実機任意）。
 
 **残**: B8(共有)/ B10(パフォ)/ B11(i18n)/ B3(LP用OGP画像=要画像相談)。詳細 progress.md + CURRENT_GOAL.md。
+
+---
+
+## セッション 127 (2026-06-23) — 監査フィックス 残り全バッチ完了（B8/B10/B11/B3）・全44件 処理済
+
+セッション122から続く「敵対的徹底監査 確定44件」の残りを推奨順に全消化し、各バッチを実装→敵対的検証ワークフロー→tsc/vitest/lint/build→commit+push+本番デプロイ→本番スモークの順で本番反映した。**これで監査は全44件「処理」完了（42 fix + 2 据え置き(理由付き)、偽陽性も全件決着）。**
+
+### B8 共有堅牢性（rank9/19/20/25/45）— commit d26f65b
+- **rank9 DoS**: `functions/api/share/create.ts` が本文サイズを Content-Length ヘッダ頼みで判定（欠落=0扱いで素通り→`request.json()` 無制限読み）だったのを、新設 `readBodyCapped()`（単一事前確保バッファ・超過チャンクをコピー前に拒否・本文ストリーム不在は fail-closed で `''`）で**実バイト数強制**に。敵対検証(opus×2)の指摘で no-reader 無制限読み・peak ~2x を ogp.ts と真に同等な実装へ v2 化。
+- **rank19 R2掃除**: `expire-30d`（30日自動削除）を本番・preview 両 bucket で **enabled 実測確認**し、埋もれた wrangler.toml コメントを runbook `docs/ops/r2-share-og-lifecycle.md` に昇格＋`pnpm check:r2-lifecycle`(両bucket)。Pages に cron handler 不可＋lifecycle ルール自体が自動削除＝cron 不要決着。
+- **rank20 OGP差込アサート**: 共有受信は Next 出力 `out/s.html` を借りて OG メタを regex 注入するため出力形変化で無言破壊（過去 .webp 被弾）。`scripts/assert-share-template.mjs` が5アンカーを検査し欠けたら build を落とす。`build` に配線（preview も `pnpm build` 経由に）。
+- **rank25 404統一**: `[id].ts` のデコード失敗が 500、HTMLハンドラは 404＝画面で食い違い。**全失敗分岐（不正ID/欠落/デコード失敗）を 404 not_found に統一**（敵対検証で不正IDも 404 に）。
+- **rank45 sanitize純粋化**: `sanitizeShareDataV2` の引数破壊を純関数化（敵対検証=solid）。
+- 本番スモーク: 不正ID/欠落→404、過大本文→413、壊れJSON→400 を実測。
+
+### B10 パフォ/React（rank24/26/29/40/44）— commit 2776be2
+- **rank29 リサイズ間引き**: 毎 pointermove のフル masonry 再計算を **rAF合流 + 8px movement gate** に（end/reset/unmount で cancel）。敵対検証(opus)で races=solid・perf=weak（gate 無しでは巨大ボードで毎フレーム全 layout）指摘→8px gate 追加採用。最終幅は handleCardResizeEnd が正確に確定。
+- **rank24 PiP rAF**: scrollToIdx スライド rAF をアンマウント cancel（wheel 側は元から cleanup 済み）。
+- **rank26 既読反映**: persistReadFlag を items + deletedItems に楽観反映（敵対検証で deletedItems 追加）。
+- **rank40 タグ候補**: 開ポップオーバーの候補を useMemo 化（hover/scroll で再計算しない・敵対検証=solid 等価）。
+- **rank44 ScrollTrigger**: 登録専用フックの全消し cleanup を撤去（各セクション自前 revert 実証）＋Problem/ShareIt を cancel 対応（import 中アンマウントの孤児 trigger 封鎖）。
+- 本番スモーク: LP+board が runtime エラー無く描画（Playwright）。
+- 既知の体感: user が「リサイズで少しかくつく」報告＝gate 刻み or 深い最適化を session128 で判断。
+
+### B11 i18n（rank16/11/47）— commit d820888
+- **rank16**: `translate` を `lookup()` 分離＋英語フォールバック（欠損で生キーを出さず英語表示）、I18nProvider が en を fallback に配線。全15言語キー照合テスト1本 `messages/all-keys-parity.test.ts`（各378キー一致を実測・section別パリティの未カバー解消）。敵対検証=solid。
+- **rank11**: dead code `lib/share/x-intent.ts`（ハードコード日本語・呼び出し元ゼロ、実ボタンは inline）削除。敵対検証=solid。
+- **rank47**: ko の6 hero kicker（features/guide/privacy/terms/contact/extensionPrivacy）が英語のまま（多数派はローカライズ）を韓国語化。敵対検証(韓国語ネイティブ観点)の3指摘で再修正＝privacy が H1 重複「개인정보 처리방침」→「개인정보 보호」、features の不要な「주요」除去→「기능」、extensionPrivacy の接尾辞補完→「확장 프로그램 개인정보 보호」。
+
+### B3 公開用OGP画像（rank4）— commit 15ed6c7
+- allmarks.app を SNS に貼ると画像なしだった。`public/og.png`（1200×630・黒地+canonical A マークを白+緑チェック+ワードマーク+「Turn your bookmarks into a visual collage」+音波モチーフ+allmarks.app）を `scripts/generate-og-image.mjs`(sharp・再生成可) で生成。
+- Next の openGraph 非 deep-merge に対応し root layout + lp-metadata(LP) + page-metadata(紹介ページ) の3箇所に images 配線＝全公開ページに og:image が乗ることをビルド HTML + 本番 curl で実測。og.png は本番 HTTP 200/image/png。
+- **既定画像のデザインは Claude 暫定版＝user 承認待ち**（session128 で実物確認・差し替え）。
+
+### 総括
+監査の作業キュー `docs/private/2026-06-22-audit-fix-progress.md`（gitignored）が全件 ✅/⏸ で決着。本番 allmarks.app に B8〜B3 反映済。残る user アクションは B3 画像承認 と rank29 体感調整の判断のみ。

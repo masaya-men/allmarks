@@ -21,20 +21,23 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 126 — 監査フィックス rank6 + B7 + B9 完了・本番反映済 / 約25/44=57%)
+### 直近の状態 (セッション 127 — 監査フィックス **全44件 処理完了**・全バッチ本番反映済)
 
-**監査フィックスの作業キューは [progress.md](./private/2026-06-22-audit-fix-progress.md) が真実の場所（gitignored）。**
+**監査フィックスの作業キューは [progress.md](./private/2026-06-22-audit-fix-progress.md) が真実の場所（gitignored）。全件決着済み。**
 
-**session 126 で本番反映した3つ**:
-- **rank6 SSRF（取りこぼし）**: `/api/ogp`（本番 Pages Function・誰でも到達）が任意URLを fetch＝踏み台。スキーム限定+内部/プライベート/メタデータIP排除+**自前 IPv4 数値正規化**(coerceIpv4)+応答サイズ上限+リダイレクト着地先再検証で封鎖。**敵対検証3ラウンド(opus)+本番curl実測**で内部エンコード全て400・公開200を確認。**workerd の URL パーサ罠を発見**（本番は整数/16進IPv4を非正規化・IPv6ブラケットを切断＝Node/ローカルと違う）→ memory [[reference_workerd_url_parser_quirks]]
-- **B7 ストレージ堅牢性**: rank22a(addBookmark の orderIndex を insert tx 内計算=同時保存の並び順重複防止)/ rank22b・41(移行ガード読取失敗を未移行に倒さず fail-safe=手動並べ替えの破壊防止)/ rank32(tags.ts `any`→`AllMarksDB`)/ rank38(v14→v16 通し移行テスト新規)。rank31(by-tag index)は据え置き。敵対検証(sonnet)
-- **B9 オンボーディング**: rank7(チュートリアル中に貼った**自分の本物リンクが終了時に黙って消える**実害バグ→`SAMPLE_URL` 一致時のみデモ印)/ rank23(manage の嘘コメント修正)/ rank39(MANAGE TAGS が欠落した時だけ NEXT フォールバック＝teach-by-doing 維持)。rank48 偽陽性・rank43 据え置き
+**session 127 で実装+敵対検証+本番反映した4バッチ**:
+- **B8 共有堅牢性** (commit d26f65b): rank9(共有作成の本文サイズを実バイト数で強制＝Content-Length 欠落バイパス封鎖・DoS)/ rank19(R2 expire-30d を両 bucket 実測確認＋runbook 化 docs/ops/r2-share-og-lifecycle.md＋`pnpm check:r2-lifecycle`、cron 不要決着)/ rank20(共有OGP差込のアンカーをビルド時アサート scripts/assert-share-template.mjs＝Next出力形変化で無言破壊を防止)/ rank25(壊れ共有を全失敗分岐で404統一＝画面の食い違い解消)/ rank45(受信側 sanitize を純関数化)
+- **B10 パフォ/React** (commit 2776be2): rank29(リサイズを rAF合流+8pxゲート＝大画面の毎フレーム全再計算を抑制)/ rank24(PiP スライド rAF をアンマウント cancel)/ rank26(persistReadFlag を items+deletedItems に反映)/ rank40(タグ候補を useMemo＝hover/scroll で再計算しない)/ rank44(use-scroll-trigger の全消し撤去＋Problem/ShareIt を cancel 対応)
+- **B11 i18n** (commit d820888): rank16(translate を英語フォールバック化＝欠損で生キーを出さない＋全15言語キー照合テスト1本)/ rank11(dead code x-intent 削除)/ rank47(ko の6 kicker を韓国語化・ネイティブ観点で再修正)
+- **B3 公開用OGP画像** (commit 15ed6c7): public/og.png(1200×630・黒地+白A緑チェック+音波)+ root/lp/page メタ全配線。**※既定画像のデザインは Claude 暫定版＝user 承認待ち**（差し替え=scripts/generate-og-image.mjs 編集 or public/og.png 置換）
 
-tsc0 / vitest1593 / build green。全て本番 allmarks.app 反映済。**次は残りバッチ B8(共有)/ B10(パフォ)/ B11(i18n)/ B3(LP用OGP画像=要画像相談)**。詳細は CURRENT_GOAL.md。
+各バッチ tsc0 / vitest(B11 後 1637) / build green / 敵対検証ワークフロー(各3〜6エージェント)で指摘反映 / 本番 allmarks.app 反映・スモーク済。
 
-**据え置き確定（理由付き）**: rank31(by-tag index＝getAll で十分速い)/ rank43(複数タブ初回オンボ＝デモカードのみ影響・実データ無傷)。
+**据え置き確定（理由付き・将来再検討）**: rank31(by-tag index＝getAll で十分速い)/ rank43(複数タブ初回オンボ＝デモカードのみ影響・実データ無傷)。
 
-**follow-up（別タスク・未着手）**: 拡張の設定画面(options)は英語のみ＝多言語化は別バッチ / TrashConfirmDialog 等の他 chrome 文章の多言語化も独立バッチ（B11 と一緒が効率的）。
+**残る user アクション**: (1) B3 既定 OGP 画像の承認/差し替え。(2) rank29 リサイズの「少しかくつく」体感＝gate 刻み調整 or 深いレイアウト最適化を別タスク化するか判断。
+
+**follow-up（別タスク・未着手）**: 拡張の設定画面(options)は英語のみ＝多言語化は別バッチ / TrashConfirmDialog 等の他 chrome 文章の多言語化も独立バッチ / 公開前の片付け(暫定 EXPORT/IMPORT は B5 で正規化済＝撤去不要、未使用 chrome-extension/ 削除、EXTENSION_STORE_URL 投入)。
 
 ↓ 以下はセッション122のメモ（archive）:
 **全体を敵対的に徹底監査（12領域→各指摘を2懐疑役で反証→確定44件）。上位を修正・本番反映: ①フィルタのタグ一覧フェード不具合 ②スクロールでカードが並び替わる不具合(rank1) ③プライバシー掃除 ④旧ブランド紫→緑#28F100 統一。** 残りは作業キュー（[progress.md](./private/2026-06-22-audit-fix-progress.md)）。

@@ -1,34 +1,28 @@
-# 次セッションのゴール (= セッション 127)
+# 次セッションのゴール (= セッション 128)
 
 ## 今のゴール (1 行)
 
-**監査フィックスの残りバッチを推奨順で進める（次候補 = B8 共有堅牢性 か B10 パフォ）。安全に確実に・バッチごと commit+deploy。**
+**監査フィックスは全44件 処理完了・本番反映済。次は (1) B3 既定 OGP 画像の最終承認/差し替え、(2) 公開前の残り片付け or 次の機能、を user と決めて進める。**
 
 ## 開始時の動き
 1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む
-2. **[docs/private/2026-06-22-audit-fix-progress.md](./private/2026-06-22-audit-fix-progress.md) を読む** ← 監査フィックスの作業キュー（真実の場所・約25/44 完了）
-3. ユーザーに「session 127 開始」+ 続行確認を出す
+2. 監査の詳細が要れば [docs/private/2026-06-22-audit-fix-progress.md](./private/2026-06-22-audit-fix-progress.md)（全件決着済み・真実の場所）
+3. user に「session 128 開始」+ 下記の残りアクションを 1 行で提示して続行確認
 
-## 残りの監査バッチ（推奨順）
-- **B8 共有 堅牢性**（rank9 本文バイト上限 / rank19 R2ライフサイクル明文化+掃除Cron / rank20 OGP差込ビルド時アサート / rank25 [id].ts 404統一 / rank45 sanitize純粋化）← コードのみ・次候補
-- **B10 パフォ/React**（rank29 リサイズ間引き / rank24 PiP rAF cancel / rank26 persistReadFlag 画面更新 / rank40 タグ候補 useMemo / rank44 use-scroll-trigger 全消し撤去）← コードのみ
-- **B11 i18n**（rank16 全キー照合テスト+translate英語フォールバック / rank11 x-intent本文配線 or 削除 / rank47 ko kicker）← 15言語同期注意
-- **B3 公開用 OGP 画像**（rank4 = 🔴高優先だが**画像アセットの相談が必要**: LP を SNS に貼った時のプレビュー画像 1200×630 をどうするか。既存の共有OG生成を流用する/ブランド静的画像を作る等を user と決めてから）
+## 残りの user アクション（監査の積み残しはこれだけ）
+- **B3 OGP 画像の承認**: `public/og.png`（黒地+白A緑チェック+ワードマーク+タグライン+音波+allmarks.app）は Claude 暫定版。OK なら確定、変えたいなら方針（タグライン/レイアウト/実カードのコラージュ風/ブランド色）を聞いて `scripts/generate-og-image.mjs` を編集→再生成。**X等で `allmarks.app` を貼って実際のカード見た目を確認推奨**（キャッシュは debugger で更新）
+- **rank29 リサイズの体感かくつき**: user が「少し感じる」と報告。選択肢＝(a) 8px gate の刻みを小さく/無しに(滑らかさ↑・負荷↑) (b) computeSkylineLayout 自体の最適化を別タスク化(根本) (c) 現状維持。どれにするか相談
 
-## 据え置き確定（理由付き・再検討は将来）
-- **rank31** by-tag インデックス利用（getAll+filter が十分速く単純・正確、複雑化の割に IndexedDB 単一ユーザーで実利益薄。将来数万件で再検討）
-- **rank43** 複数タブ初回オンボ競合（rare・デモカードのみ・実データ無傷。マルチタブ協調は過剰）
+## 監査の最終結果（session 122〜127）
+- **確定44件 = 42 fix + 2 据え置き(理由付き)**。偽陽性も全件決着。
+- session127 で B8(共有堅牢性)/B10(パフォ・React)/B11(i18n)/B3(OGP画像) を実装+敵対検証+本番反映。
+- 据え置き: rank31(by-tag index 不要)・rank43(複数タブ初回オンボ＝デモのみ)。
 
-## session 126 でやったこと（3つ本番反映済）
-- **rank6 SSRF**: `/api/ogp` の踏み台化を封鎖（スキーム限定+内部IP排除+自前IPv4正規化+サイズ上限+リダイレクト再検証）。敵対検証3ラウンド+本番実測。**workerd の URL パーサ罠を発見**（整数/16進IPv4 非正規化・IPv6 ブラケット切断）→ [[reference_workerd_url_parser_quirks]] に記録
-- **B7 ストレージ堅牢性**: rank22a(addBookmark の orderIndex を tx 内計算=同時保存重複防止)/ rank22b・41(移行ガード読取失敗のフェイルセーフ+書き戻し)/ rank32(tags.ts any→AllMarksDB)/ rank38(v14→v16 移行テスト)。rank31 据え置き
-- **B9 オンボーディング**: rank7(チュートリアル中の自分リンク消失バグ=SAMPLE_URL一致時のみデモ印)/ rank23(manage の嘘コメント修正)/ rank39(MANAGE TAGS 欠落時のみ NEXT フォールバック=teach-by-doing 維持)。rank48 偽陽性・rank43 据え置き
+## 公開前の片付け候補（監査外・将来）
+- 未使用 `chrome-extension/` 削除 / `EXTENSION_STORE_URL` 投入(ストア公開時) / 拡張 options 画面の多言語化 / ボード内 chrome 文章(TrashConfirm 等)の多言語化
 
 ## 守ること
-- 本番 = `allmarks.app`。deploy前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII)必須。応答は日本語。
-- **拡張(extension/)の修正は Pages 非対象＝commit のみ**（本番デプロイ不要）。lib/・components/・functions/ は app バンドル＝デプロイ対象。
-- バッチごとに commit+push+deploy。UI変更は事前一言（ui-design.md）。新 i18n キーは15言語同期。
-- progress.md を都度更新。docs/private は gitignored。
-- **方針: 監査は全44件「処理」する（user 確定）**＝直す/偽陽性/据え置き(理由付き) のいずれかに必ず決着させる。コスト最適化＝サブエージェントのモデルを作業の重さで使い分け（機械的=haiku/sonnet、調査=sonnet、難所+敵対的検証=opus）。検証は省かない。
+- 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII) 必須。応答は日本語。
+- UI 変更は事前一言（ui-design.md）。新 i18n キーは15言語同期（`messages/all-keys-parity.test.ts` が照合）。
 - **既知フレーキー**: `tests/lib/channel.test.ts`（BroadcastChannel タイミング）が full run でたまに落ちる→再実行で green。無関係。
-- **OnboardingController はコンポーネントテスト harness 無し**。rank39 フォールバックは tsc+目視検証のみ＝実機オンボ確認は任意。
+- サブエージェントのモデルは作業の重さで使い分け（機械的=haiku/sonnet、調査=sonnet、難所+敵対検証=opus）。検証は省かない。
