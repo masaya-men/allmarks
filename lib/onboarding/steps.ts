@@ -1,4 +1,11 @@
 // lib/onboarding/steps.ts
+
+/** The URL the tutorial copies to the clipboard for the hands-on "paste" beat.
+ *  Shared so the paste handler can recognise the scripted sample paste and flag
+ *  ONLY that one as a demo card — a real link the user pastes during onboarding
+ *  must never be swept (audit rank7). Public, long-lived clip. */
+export const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+
 export type SceneKind = 'cinema' | 'handsOn'
 export type AdvanceTrigger = 'button' | 'saved' | 'tagged' | 'motion' | 'sharePanel'
 export type SceneId =

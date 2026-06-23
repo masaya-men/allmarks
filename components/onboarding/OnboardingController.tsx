@@ -7,7 +7,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { subscribeBookmarkSaved, subscribeBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
 import { markOnboardingComplete } from '@/lib/onboarding/onboarding-state'
 import { clearOnboardingDemo } from '@/lib/onboarding/onboarding-demo'
-import { MOBILE_SCENE_IDS, nextSceneIdIn, ONBOARDING_SCENES, sceneById, type SceneId, type OnboardingTarget } from '@/lib/onboarding/steps'
+import { MOBILE_SCENE_IDS, nextSceneIdIn, ONBOARDING_SCENES, sceneById, SAMPLE_URL, type SceneId, type OnboardingTarget } from '@/lib/onboarding/steps'
 import { addBookmark } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { OnboardingStage } from './OnboardingStage'
@@ -65,8 +65,6 @@ type Props = {
    *  after the manage scene navigates out to the real /triage screen and back. */
   readonly initialScene?: SceneId
 }
-
-const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' // public, long-lived
 
 const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   'paste-zone': '[data-onboarding-target="paste-zone"]',

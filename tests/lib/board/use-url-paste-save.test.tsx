@@ -16,6 +16,7 @@ vi.mock('@/lib/board/paste-ingest', async (orig) => {
 
 import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
 import * as indexeddb from '@/lib/storage/indexeddb'
+import { SAMPLE_URL } from '@/lib/onboarding/steps'
 
 function pasteOn(doc: Document, text: string, target: EventTarget): void {
   const e = new Event('paste', { bubbles: true }) as Event & { clipboardData: unknown }
@@ -92,6 +93,33 @@ describe('useUrlPasteSave', () => {
     // A paste on the provided document ingests and calls onSaved.
     act(() => pasteOn(otherDoc, 'https://example.com', otherDoc.body))
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith('b1'))
+  })
+
+  it('flags ONLY the scripted SAMPLE_URL paste as onboardingDemo during onboarding (rank7)', async () => {
+    const onSaved = vi.fn()
+    renderHook(() => useUrlPasteSave({ onSaved, flagOnboardingRef: { current: true } }))
+    act(() => paste(SAMPLE_URL))
+    await waitFor(() => expect(onSaved).toHaveBeenCalled())
+    const call = vi.mocked(indexeddb.saveBookmarkDeduped).mock.calls.at(-1)
+    expect(call?.[1]).toMatchObject({ onboardingDemo: true })
+  })
+
+  it('does NOT flag a REAL link pasted during onboarding, so it survives the sweep (rank7)', async () => {
+    const onSaved = vi.fn()
+    renderHook(() => useUrlPasteSave({ onSaved, flagOnboardingRef: { current: true } }))
+    act(() => paste('https://my-real-blog.example.com/post'))
+    await waitFor(() => expect(onSaved).toHaveBeenCalled())
+    const call = vi.mocked(indexeddb.saveBookmarkDeduped).mock.calls.at(-1)
+    expect((call?.[1] as { onboardingDemo?: boolean })?.onboardingDemo).toBeUndefined()
+  })
+
+  it('does not flag the sample paste when onboarding is inactive', async () => {
+    const onSaved = vi.fn()
+    renderHook(() => useUrlPasteSave({ onSaved }))
+    act(() => paste(SAMPLE_URL))
+    await waitFor(() => expect(onSaved).toHaveBeenCalled())
+    const call = vi.mocked(indexeddb.saveBookmarkDeduped).mock.calls.at(-1)
+    expect((call?.[1] as { onboardingDemo?: boolean })?.onboardingDemo).toBeUndefined()
   })
 
   it('never sets feedback.kind to loading for embeddable URLs (YouTube)', async () => {

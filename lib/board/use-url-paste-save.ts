@@ -4,6 +4,7 @@ import { initDB, getAllBookmarks, saveBookmarkDeduped } from '@/lib/storage/inde
 import { extractSinglePastedUrl, isEditableTarget } from '@/lib/board/paste-url'
 import { ingestPastedUrl, fetchOgpMeta, isEmbeddableType } from '@/lib/board/paste-ingest'
 import { detectUrlType } from '@/lib/utils/url'
+import { SAMPLE_URL } from '@/lib/onboarding/steps'
 
 export type PasteFeedback = { readonly kind: 'loading' | 'duplicate' | null }
 const DUPLICATE_MS = 1600
@@ -14,14 +15,22 @@ export function useUrlPasteSave(opts: {
    *  window's document (e.g. `hostRef.current?.ownerDocument`) to ingest
    *  pastes made while the Pop Out window is focused. */
   targetDocument?: Document | null
-  /** When this ref reads true at save time, the saved bookmark is flagged
-   *  onboardingDemo so it's swept when the tutorial ends (a paste made while the
-   *  first-run onboarding is showing is tutorial content, not a real bookmark). */
+  /** When this ref reads true at save time AND the pasted URL is the tutorial's
+   *  scripted SAMPLE_URL, the saved bookmark is flagged onboardingDemo so it's
+   *  swept when the tutorial ends. A *real* link the user pastes during
+   *  onboarding (any URL ≠ SAMPLE_URL) is NEVER flagged, so it survives the
+   *  sweep (audit rank7 — previously every onboarding-time paste was flagged and
+   *  silently deleted). */
   flagOnboardingRef?: { readonly current: boolean }
 }): { feedback: PasteFeedback } {
   const [feedback, setFeedback] = useState<PasteFeedback>({ kind: null })
   const onSavedRef = useRef(opts.onSaved)
   onSavedRef.current = opts.onSaved
+  // Mirror so the paste handler reads the latest onboarding flag without making
+  // `opts.flagOnboardingRef` an effect dependency (the effect re-subscribes only
+  // on targetDocument). `.current?.current` = the mirrored ref's live boolean.
+  const flagOnboardingRef = useRef(opts.flagOnboardingRef)
+  flagOnboardingRef.current = opts.flagOnboardingRef
   const busyRef = useRef(false)
   const dupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const targetDocument = opts.targetDocument
@@ -40,9 +49,12 @@ export function useUrlPasteSave(opts: {
       if (!isEmbeddableType(detectUrlType(url))) setFeedback({ kind: 'loading' })
       try {
         const db = await initDB()
-        // Flag onboarding-time pastes so the tutorial sweep removes them and the
-        // user's real board is never affected.
-        const save: typeof saveBookmarkDeduped = opts.flagOnboardingRef?.current
+        // Flag ONLY the tutorial's scripted sample paste as a demo card, so the
+        // end-of-tutorial sweep removes it. A real link the user pastes while
+        // onboarding is showing (url ≠ SAMPLE_URL) stays a real bookmark and is
+        // never swept (audit rank7).
+        const isDemoPaste = !!flagOnboardingRef.current?.current && url === SAMPLE_URL
+        const save: typeof saveBookmarkDeduped = isDemoPaste
           ? (database, input, o) => saveBookmarkDeduped(database, { ...input, onboardingDemo: true }, o)
           : saveBookmarkDeduped
         const result = await ingestPastedUrl(url, { db, getAll: getAllBookmarks, save, fetchOgp: fetchOgpMeta })
