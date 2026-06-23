@@ -55,7 +55,10 @@ const OPEN_DIST_BONUS_MAX = 0.2 // …capped at this many extra seconds
 const OPEN_EASE = 'power3.out'
 const OPEN_TEXT_FADE_DUR = 0.28
 const OPEN_TEXT_FADE_DELAY_RATIO = 0.55 // text reveal starts at 55% of frame morph
-const OPEN_BACKDROP_FADE_DUR = 0.42
+// session128: was 0.42; user found the frosted backdrop too slow to fade in.
+// Snappier also shortens the window where the blur composites at intermediate
+// opacity (= less chance to notice the faint occasional stutter at DPR 2.58).
+const OPEN_BACKDROP_FADE_DUR = 0.24
 const OPEN_FALLBACK_DUR = 0.42
 
 // Close — single diagonal tween from natural rect → source card's rect.
@@ -80,7 +83,7 @@ const CLOSE_RADIUS_EASE = 'power2.out'
 const CLOSE_REVEAL_LEAD = 0.10  // reveal source card this many seconds BEFORE landing (safety margin)
 const CLOSE_FADE_DUR = 0.10     // .media opacity fade at the very end, paired with reveal lead
 const CLOSE_TEXT_FADE_DUR = 0.14
-const CLOSE_BACKDROP_FADE_DUR = 0.42
+const CLOSE_BACKDROP_FADE_DUR = 0.24 // session128: was 0.42 — snappier blur fade-out
 const CLOSE_BACKDROP_DELAY = 0.15
 const CLOSE_FALLBACK_DUR = 0.3
 
