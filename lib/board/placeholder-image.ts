@@ -38,6 +38,9 @@ const PLACEHOLDERS: ReadonlyArray<PlaceholderImage> = ART_STYLES.map((style) => 
   aspect: 1.25,
 }))
 
+/** 1 カードが巡回する既定枚数 (= 複数画像ツイート式の「数枚」)。 */
+const FRAME_COUNT = 3
+
 /** 文字列を 32bit 整数にハッシュ (= djb2)。 暗号用途じゃなくて単に「同じ URL は
  *  同じ slot に落ちる」 ためなので速度重視。 */
 function hashString(s: string): number {
@@ -49,11 +52,55 @@ function hashString(s: string): number {
 }
 
 /** URL から決定論的に 1 枚の placeholder を返す。 placeholder が 1 枚も
- *  登録されてない時は null (= 呼び出し側が text-only fallback に戻れる)。 */
+ *  登録されてない時は null (= 呼び出し側が text-only fallback に戻れる)。
+ *  これは巡回 (placeholderArtFrames) の frame[0] と常に一致する = 静止時や
+ *  巡回しない consumer (triage / PiP / 共有) と board の resting frame が揃う。 */
 export function pickPlaceholderImage(url: string): PlaceholderImage | null {
   if (PLACEHOLDERS.length === 0) return null
   const idx = hashString(url) % PLACEHOLDERS.length
   return PLACEHOLDERS[idx] ?? null
+}
+
+/** 1 カードが「複数画像ツイート式」に巡回する数枚を URL から決定論的に返す。
+ *
+ *  - frame[0] === pickPlaceholderImage(url).url (= 静止時の絵と一致)
+ *  - 残りは別スタイルから重複なく選ぶ (暗い統一トーンなので混在しても浮かない)
+ *  - 決定論的 (同 URL → 同じ並び)。巡回は board の画面内 + MOTION 時のみ動かす
+ *    (PlaceholderCard 側でゲート)。frameCount < 2 なら静止。 */
+export function placeholderArtFrames(
+  url: string,
+  count: number = FRAME_COUNT,
+): readonly string[] {
+  const n = PLACEHOLDERS.length
+  if (n === 0) return []
+  const h = hashString(url)
+  const base = h % n
+
+  // 全 index を seed 付き Fisher–Yates で並べ替え、 base を先頭へ固定する。
+  const order: number[] = []
+  for (let i = 0; i < n; i++) order.push(i)
+  let s = h | 0
+  for (let i = n - 1; i > 0; i--) {
+    s = (Math.imul(s, 1103515245) + 12345) | 0
+    const j = Math.abs(s) % (i + 1)
+    const a = order[i] as number
+    const b = order[j] as number
+    order[i] = b
+    order[j] = a
+  }
+
+  const wanted = Math.min(Math.max(1, count), n)
+  const frames: string[] = []
+  const pushUrl = (idx: number): void => {
+    const ph = PLACEHOLDERS[idx]
+    if (ph) frames.push(ph.url)
+  }
+  pushUrl(base)
+  for (const idx of order) {
+    if (frames.length >= wanted) break
+    if (idx !== base) pushUrl(idx)
+  }
+  return frames
 }
 
 /** Test 用 / debug 用: 現在登録されてる枚数。 */

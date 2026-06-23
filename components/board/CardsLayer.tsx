@@ -1081,6 +1081,7 @@ export function CardsLayer({
                     cardHeight={p.h}
                     displayMode={it.displayMode ?? displayMode}
                     autoCycle={motionEnabled}
+                    ambientOn={ambientOn}
                   />
                 )
               })()}

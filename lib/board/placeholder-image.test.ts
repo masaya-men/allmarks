@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickPlaceholderImage, placeholderCount } from './placeholder-image'
+import { pickPlaceholderImage, placeholderArtFrames, placeholderCount } from './placeholder-image'
 
 describe('pickPlaceholderImage', () => {
   it('returns a {url, aspect} object when placeholders are registered', () => {
@@ -44,5 +44,37 @@ describe('pickPlaceholderImage', () => {
     const urls = Array.from({ length: 12 }, (_, i) => `https://x.com/foo/status/${i}`)
     const slots = new Set(urls.map((u) => pickPlaceholderImage(u)?.url))
     expect(slots.size).toBeGreaterThan(1)
+  })
+})
+
+describe('placeholderArtFrames', () => {
+  const knownSet = new Set(
+    ['waveform', 'aurora', 'oscillo', 'grain', 'ripple', 'dots'].map(
+      (s) => `/placeholders/art/default/${s}.svg`,
+    ),
+  )
+
+  it('returns 3 distinct frames from the known art set by default', () => {
+    const frames = placeholderArtFrames('https://example.com/article')
+    expect(frames).toHaveLength(3)
+    expect(new Set(frames).size).toBe(3) // distinct
+    for (const f of frames) expect(knownSet.has(f)).toBe(true)
+  })
+
+  it('frame[0] always equals pickPlaceholderImage (resting frame = static / other consumers)', () => {
+    for (let i = 0; i < 40; i++) {
+      const url = `https://site${i}.test/p/${i}`
+      expect(placeholderArtFrames(url)[0]).toBe(pickPlaceholderImage(url)?.url)
+    }
+  })
+
+  it('is deterministic (same URL → same ordered frames)', () => {
+    const url = 'https://x.com/foo/status/777'
+    expect(placeholderArtFrames(url)).toEqual(placeholderArtFrames(url))
+  })
+
+  it('respects the count argument and never exceeds the registered set', () => {
+    expect(placeholderArtFrames('https://a.test', 1)).toHaveLength(1)
+    expect(placeholderArtFrames('https://a.test', 99)).toHaveLength(placeholderCount())
   })
 })

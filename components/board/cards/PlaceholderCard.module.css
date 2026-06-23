@@ -17,15 +17,20 @@
   color: rgba(255, 255, 255, 0.92);
 }
 
-/* AI placeholder image layer. URL ハッシュで決定論的に 4 枚から 1 枚を選ぶ
-   (= pickPlaceholderImage)。 cover で card に fit、 中央 anchor。 */
-.bg {
+/* 生成アート背景レイヤー。 placeholderArtFrames が返す数枚を絶対配置で重ね、
+   active 1 枚を opacity:1、 他を opacity:0 にして 800ms クロスフェード (= 複数
+   画像ツイート式の巡回)。 巡回しないときは frame[0] 1 枚だけ opacity:1 = 静止。
+   cover で card に fit、 中央 anchor。 crossfade は CardSlideshow (動画カード) と
+   同じ 800ms ease-in-out で世界観を揃える。 */
+.bgLayer {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 800ms ease-in-out;
 }
 
 /* Scrim — 画像 bg の上に薄い暗幕。 白系画像 (= light / jewel) でも白タイトル

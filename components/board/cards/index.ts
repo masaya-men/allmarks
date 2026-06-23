@@ -20,6 +20,11 @@ export type CardComponentProps = {
   readonly displayMode: DisplayMode
   /** Tier 1: advance through mediaSlots on an interval (hard cut). Only consumed by ImageCard. */
   readonly autoCycle?: boolean
+  /** Board ambient gate (motion on, not in lightbox, not scrolling, reduce-motion
+   *  off). Only consumed by PlaceholderCard: it crossfades its generated SVG art
+   *  through several frames ONLY when this is true AND the card is on-screen. The
+   *  Lightbox scaler / ImageCard fallback never pass it → those stay static. */
+  readonly ambientOn?: boolean
 }
 
 export type CardComponent = ComponentType<CardComponentProps>

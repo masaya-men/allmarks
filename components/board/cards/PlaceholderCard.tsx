@@ -6,7 +6,8 @@ import type { DisplayMode } from '@/lib/board/types'
 import { hostnameFromUrl } from '@/lib/embed/favicon'
 import { pickTitleTypography } from '@/lib/embed/title-typography'
 import { cleanTitle } from '@/lib/embed/clean-title'
-import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
+import { placeholderArtFrames } from '@/lib/board/placeholder-image'
+import { useSlideshowCycle } from '@/lib/board/use-slideshow-cycle'
 import { PLACEHOLDER_ASPECT } from './placeholder-aspect'
 import styles from './PlaceholderCard.module.css'
 
@@ -20,6 +21,11 @@ type Props = {
   /** Lightbox の LargeTextCardScaler 等、 拡大表示で hostname strip を抑制する用途。
    *  board の通常描画では付けない。 既存 TextCard の `omitMeta` と同じ意味論。 */
   readonly omitMeta?: boolean
+  /** Board ambient gate (= CardsLayer の `ambientOn`: motion on / not in lightbox
+   *  / not scrolling / reduce-motion off)。 true かつ「画面内」のときだけ、 生成
+   *  アートを複数フレーム巡回 (= 複数画像ツイート式) する。 Lightbox / ImageCard
+   *  fallback は渡さない → 常に frame[0] 静止 (= B1 と同一の見た目)。 */
+  readonly ambientOn?: boolean
 }
 
 const ASPECT_EPSILON = 0.005
@@ -43,13 +49,48 @@ export function PlaceholderCard({
   persistMeasuredAspect,
   reportIntrinsicHeight,
   omitMeta = false,
+  ambientOn = false,
 }: Props): ReactNode {
   const hostname = hostnameFromUrl(item.url)
   const rawTitle = item.title || hostname || item.url
   const title = cleanTitle(rawTitle, item.url)
   const typography = pickTitleTypography({ title, cardWidth, cardHeight })
 
-  const placeholder = useMemo(() => pickPlaceholderImage(item.url), [item.url])
+  // 生成アートの巡回 (= 複数画像ツイート式)。frames[0] は pickPlaceholderImage と一致
+  // するので、 巡回しないとき (= ambientOn false / 画面外 / 単一フレーム) は B1 の
+  // 静止表示と寸分同じ見た目になる。
+  const rootRef = useRef<HTMLDivElement>(null)
+  const frames = useMemo(() => placeholderArtFrames(item.url), [item.url])
+
+  // 画面内かどうかは自前の IntersectionObserver で検知する。 observer は
+  // ambientOn (= board で motion on) のときだけ生成し、 motion off / Lightbox /
+  // triage / PiP では一切作らない (= 大量カードでも observer を増やさない)。
+  const [inView, setInView] = useState<boolean>(false)
+  useEffect((): (() => void) | void => {
+    if (!ambientOn) {
+      setInView(false)
+      return
+    }
+    const el = rootRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      (entries): void => setInView(entries.some((e) => e.isIntersecting)),
+      { threshold: 0.15 },
+    )
+    io.observe(el)
+    return (): void => io.disconnect()
+  }, [ambientOn])
+
+  // frameCount < 2 を渡すと hook は常に 0 (静止・timer 無し)。 巡回条件を満たす
+  // ときだけ frames.length を渡して循環させる = MOTIONオフ/スクロール/省モーション/
+  // Lightbox/画面外 で自動停止 (ambientOn と inView に集約済み)。
+  const cycleEnabled = ambientOn && inView && frames.length >= 2
+  const activeFrame = useSlideshowCycle(cycleEnabled ? frames.length : 1)
+
+  // motion off 等で巡回しないときは frame[0] 1 枚だけ描く (= DOM を太らせない)。
+  // motion on のときは全フレームを stack して inView の切り替えで巡回開始しても
+  // re-mount しない (= ちらつき無し)。
+  const layerUrls = ambientOn ? frames : frames.slice(0, 1)
 
   // Report intrinsic height so layout doesn't reflow with text overflow.
   // Aspect is fixed (PLACEHOLDER_ASPECT, shared with the layout-height helper)
@@ -113,13 +154,16 @@ export function PlaceholderCard({
     lineHeight: `${typography.lineHeight}px`,
   }
 
-  const bgStyle: CSSProperties | undefined = placeholder
-    ? { backgroundImage: `url(${placeholder.url})` }
-    : undefined
-
   return (
-    <div className={styles.placeholderCard}>
-      <div className={styles.bg} style={bgStyle} aria-hidden="true" />
+    <div className={styles.placeholderCard} ref={rootRef}>
+      {layerUrls.map((url, i) => (
+        <div
+          key={i}
+          className={styles.bgLayer}
+          style={{ backgroundImage: `url(${url})`, opacity: i === activeFrame ? 1 : 0 }}
+          aria-hidden="true"
+        />
+      ))}
       <div className={styles.scrim} aria-hidden="true" />
 
       {!omitMeta && hostname && (
