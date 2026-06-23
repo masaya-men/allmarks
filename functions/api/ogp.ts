@@ -19,9 +19,10 @@ const MAX_HTML_BYTES = 1_000_000
  *
  * Cloudflare's edge fetch generally cannot route to private IPs from production
  * anyway, but we block at the hostname layer too as defense-in-depth and to
- * stay consistent with the proxy endpoints. The WHATWG URL parser normalizes
- * IPv4 literals (decimal/octal/hex forms all collapse to dotted-decimal in
- * `.hostname`), so those bypass encodings are already handled before we see it.
+ * stay consistent with the proxy endpoints. IPv4 alternative encodings
+ * (integer / hex / octal) are normalized by us in coerceIpv4 rather than
+ * trusted from `.hostname`, because the production workerd build leaves e.g.
+ * `2130706433` and `0xa9fea9fe` un-normalized (verified against allmarks.app).
  */
 /** True if a dotted-decimal IPv4 (as 4 octets) is in a private / loopback /
  *  link-local / metadata / CGNAT / multicast / reserved range. */
@@ -39,6 +40,53 @@ function isBlockedIpv4(o: readonly number[]): boolean {
   if (a === 100 && b >= 64 && b <= 127) return true // 100.64.0.0/10 CGNAT
   if (a >= 224) return true // 224.0.0.0/4 multicast + 240.0.0.0/4 reserved
   return false
+}
+
+/** Parse one IPv4 part as decimal / hex (0x…) / octal (0…), per the WHATWG IPv4
+ *  parser. Returns the integer value, or null if the part isn't numeric. */
+function parseIpv4Part(part: string): number | null {
+  if (part === '0' || part === '0x' || part === '0X') return 0
+  if (/^0x[0-9a-f]+$/i.test(part)) return parseInt(part.slice(2), 16)
+  if (/^0[0-7]+$/.test(part)) return parseInt(part, 8)
+  if (/^[1-9][0-9]*$/.test(part)) return parseInt(part, 10)
+  return null
+}
+
+/** Sentinel: a host that is clearly an IPv4 literal (all numeric labels) but
+ *  out of range / wrong shape. Returned so the caller blocks it. */
+const MALFORMED_IPV4: readonly number[] = [256, 0, 0, 0]
+
+/**
+ * Coerce a host into IPv4 octets if it is an IPv4 address in *any* encoding
+ * (single decimal/hex/octal integer, or dotted parts each decimal/hex/octal).
+ *
+ * We do this ourselves rather than trusting `new URL().hostname`: the
+ * production workerd build does NOT normalize `http://2130706433/` or
+ * `http://0xa9fea9fe/` to dotted-decimal (verified against allmarks.app), so
+ * relying on the parser would let these encodings bypass the SSRF guard.
+ *
+ * Returns 4 octets, MALFORMED_IPV4 (= block) for an all-numeric-but-invalid
+ * host, or null when the host is a normal domain name (not IPv4-shaped).
+ */
+function coerceIpv4(host: string): readonly number[] | null {
+  const parts = host.split('.')
+  // An empty label (`127..0.0.1`, leftover from a trailing dot) is never a valid
+  // domain; treat it as a malformed IPv4 so it can't slip through as "a domain".
+  if (parts.some((p) => p === '')) return MALFORMED_IPV4
+  const parsed = parts.map(parseIpv4Part)
+  if (parsed.some((n) => n === null)) return null // a non-numeric label → domain
+  if (parts.length > 4) return MALFORMED_IPV4
+  const nums = parsed as number[]
+  for (let i = 0; i < nums.length - 1; i++) {
+    if (nums[i] > 255) return MALFORMED_IPV4 // non-final part must fit a byte
+  }
+  const last = nums[nums.length - 1]
+  if (last >= 256 ** (5 - nums.length)) return MALFORMED_IPV4 // final part too big
+  let ip = last
+  for (let i = 0; i < nums.length - 1; i++) {
+    ip += nums[i] * 256 ** (3 - i)
+  }
+  return [(ip >>> 24) & 255, (ip >>> 16) & 255, (ip >>> 8) & 255, ip & 255]
 }
 
 /** Expand an IPv6 literal (no brackets, lowercased) into 8 numeric hextets, or
@@ -89,7 +137,7 @@ export function isBlockedHost(hostname: string): boolean {
     .toLowerCase()
     .replace(/^\[/, '') // strip IPv6 brackets: `[::1]` → `::1`
     .replace(/\]$/, '')
-    .replace(/\.$/, '') // strip a single root-anchored trailing dot (`localhost.`)
+    .replace(/\.+$/, '') // strip root-anchored trailing dots (`localhost.`, `127.0.0.1..`)
 
   if (host === '') return true
 
@@ -130,12 +178,11 @@ export function isBlockedHost(hostname: string): boolean {
     return g[0] < 0x2000 || g[0] > 0x3fff
   }
 
-  // IPv4 literal. WHATWG URL normalizes decimal/octal/hex forms to dotted
-  // decimal in `.hostname`, so we only need to parse the dotted form here.
-  const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
-  if (m) {
-    return isBlockedIpv4([Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4])])
-  }
+  // IPv4 literal in any encoding (dotted decimal, or integer / hex / octal
+  // forms). Parsed by us, not relied on from `.hostname`, because production
+  // workerd doesn't normalize the integer/hex forms (see coerceIpv4).
+  const v4 = coerceIpv4(host)
+  if (v4) return isBlockedIpv4(v4)
 
   return false
 }

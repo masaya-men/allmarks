@@ -58,6 +58,22 @@ describe('isBlockedHost', () => {
     '224.0.0.1', // multicast
     '255.255.255.255',
     '256.1.2.3', // malformed octet
+    // IPv4 alternative encodings — prod workerd leaves these un-normalized, so
+    // isBlockedHost must coerce them itself (see coerceIpv4).
+    '2130706433', // decimal 127.0.0.1
+    '0x7f000001', // hex 127.0.0.1
+    '017700000001', // octal 127.0.0.1
+    '127.1', // short-form 127.0.0.1
+    '0177.0.0.1', // octal-octet 127.0.0.1
+    '0xa9fea9fe', // hex 169.254.169.254 (metadata!)
+    '0', // 0.0.0.0
+    '3232235521', // decimal 192.168.0.1
+    '167772161', // decimal 10.0.0.1
+    '1.2.3.4.5', // 5 numeric labels → malformed
+    '0xa9fea9fe..', // double-trailing-dot bypass of hex metadata (R3-HIGH)
+    '2130706433..', // double-trailing-dot bypass of decimal loopback
+    '127.0.0.1..', // double-trailing-dot dotted loopback
+    '127..0.0.1', // empty middle label in a numeric host → malformed
     'localhost.', // trailing-dot FQDN (C1)
     'foo.internal.', // trailing-dot internal TLD (C1)
     'localhost.localdomain', // loopback alias (L1)
@@ -90,9 +106,11 @@ describe('isBlockedHost', () => {
     'sub.example.com',
     'github.com',
     'localhost.example.com', // not the localhost host itself
+    'example.com..', // double-trailing-dot on a real domain stays allowed
     '8.8.8.8',
     '1.1.1.1',
     '11.0.0.1',
+    '134744072', // decimal 8.8.8.8 (public) — coerced but not internal
     '172.15.0.1', // just below private block
     '172.32.0.1', // just above private block
     '192.167.0.1',
@@ -131,10 +149,11 @@ describe('onRequest /api/ogp SSRF + size guards', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('rejects a decimal-encoded loopback IP (URL-normalized) without fetching', async () => {
+  it('rejects a decimal-encoded loopback IP without fetching', async () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
-    // 2130706433 === 127.0.0.1
+    // 2130706433 === 127.0.0.1 (coerced by isBlockedHost regardless of whether
+    // the runtime's URL parser normalized it).
     const res = await onRequest(makeCtx('http://2130706433/') as never)
     expect(res.status).toBe(400)
     expect(fetchSpy).not.toHaveBeenCalled()
