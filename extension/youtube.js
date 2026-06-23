@@ -322,65 +322,7 @@ document.addEventListener('click', (event) => {
   captureVideoFromTile(event.target)
 
   const kind = getButtonKind(event.target)
-  if (!kind) {
-    // Diagnostic — clicks inside YouTube popups/menus that we failed to
-    // detect, where the surrounding text looks like Watch Later. Captures
-    // the DOM so we can spot novel layouts and update the selector.
-    // (Session 59 round-3: specific videos misdetected even after the
-    // session 58 selector expansion.)
-    try {
-      const inMenu = event.target && event.target.closest
-        ? event.target.closest('ytd-menu-popup-renderer, ytd-popup-container, yt-list-view-model, ytd-popup-container-renderer, tp-yt-paper-dialog')
-        : null
-      if (inMenu) {
-        const wrap = event.target.closest(
-          '[role="menuitem"], [role="option"], button, ' +
-          'yt-list-item-view-model, ytd-menu-service-item-renderer, ' +
-          'ytd-playlist-add-to-option-renderer, tp-yt-paper-checkbox'
-        ) || event.target
-        const wrapText = ((wrap.innerText || wrap.textContent || '') + '').trim().slice(0, 160)
-        const wrapLabel = wrap.getAttribute ? (wrap.getAttribute('aria-label') || '') : ''
-        const hay = (wrapText + ' ' + wrapLabel).toLowerCase()
-        const suspect = (
-          /watch\s*later/.test(hay) ||
-          /後で見る/.test(wrapText + wrapLabel) ||
-          /나중에\s*보|나중에\s*볼/.test(hay) ||
-          /稍后观看|稍後觀看/.test(wrapText + wrapLabel) ||
-          /ver\s*más\s*tarde|ver\s*mas\s*tarde/.test(hay) ||
-          /regarder\s*plus\s*tard/.test(hay) ||
-          /später/.test(hay) ||
-          /assistir\s*mais\s*tarde/.test(hay) ||
-          /guarda(re)?\s*più\s*tardi/.test(hay)
-        )
-        if (suspect) {
-          const insideLikeBVM = !!(wrap.closest && wrap.closest('like-button-view-model'))
-          const p1 = wrap.parentElement
-          const p2 = p1 ? p1.parentElement : null
-          const p3 = p2 ? p2.parentElement : null
-          const tagOf = (el) => {
-            if (!el) return null
-            const tag = el.tagName ? el.tagName.toLowerCase() : ''
-            const cls = (el.className && el.className.toString && el.className.toString()) || ''
-            return cls ? tag + '.' + cls.slice(0, 60) : tag
-          }
-          console.log('[AllMarks] YouTube Watch Later click NOT detected — please share this log', {
-            url: location.href,
-            wrapTag: wrap.tagName,
-            wrapText,
-            wrapLabel,
-            wrapRole: wrap.getAttribute ? wrap.getAttribute('role') : null,
-            wrapAriaChecked: wrap.getAttribute ? wrap.getAttribute('aria-checked') : null,
-            wrapAriaPressed: wrap.getAttribute ? wrap.getAttribute('aria-pressed') : null,
-            wrapClass: (wrap.className && wrap.className.toString && wrap.className.toString().slice(0, 200)) || null,
-            insideLikeButtonViewModel: insideLikeBVM,
-            parentChain: [tagOf(p1), tagOf(p2), tagOf(p3)],
-          })
-          console.log('[AllMarks] DOM outerHTML:', (wrap.outerHTML || '').slice(0, 1200))
-        }
-      }
-    } catch (_) {}
-    return
-  }
+  if (!kind) return
   const source = kind === 'like' ? 'yt-like' : 'yt-watch-later'
   // Bail out before pill / DOM walks if the user toggled this source OFF.
   if (!isSourceEnabled(source)) return
@@ -414,21 +356,6 @@ document.addEventListener('click', (event) => {
   //       the text-stem OFF guard in getButtonKind,
   //   (b) deliberate re-clicks on already-saved videos.
   if (isUrlAlreadySaved(url)) {
-    try {
-      const btn = event.target && event.target.closest
-        ? event.target.closest('button, yt-list-item-view-model, [class*="ytListItemViewModel"], [role="option"]')
-        : null
-      console.log('[AllMarks] YouTube auto-save suppressed — URL already in mirror', {
-        url,
-        kind,
-        btnText: btn ? (btn.innerText || '').trim().slice(0, 80) : null,
-        btnAriaLabel: btn ? btn.getAttribute('aria-label') : null,
-        btnAriaChecked: btn ? btn.getAttribute('aria-checked') : null,
-        btnAriaPressed: btn ? btn.getAttribute('aria-pressed') : null,
-        btnRole: btn ? btn.getAttribute('role') : null,
-        btnClass: btn ? (btn.className && btn.className.toString && btn.className.toString().slice(0, 120)) : null,
-      })
-    } catch (_) {}
     try { window.postMessage({ source: 'booklage-extension', type: 'pill-duplicate' }, '*') } catch (_) {}
     return
   }
@@ -438,9 +365,6 @@ document.addEventListener('click', (event) => {
   if (recentlySent.has(dedupeKey)) return
   recentlySent.set(dedupeKey, now)
   if (!isExtensionAlive()) return
-  try {
-    console.log('[AllMarks] YouTube auto-save fired', { kind, source, url })
-  } catch (_) {}
   // Fire the pill immediately via same-window postMessage so content.js
   // can show "Saving" within ~10ms instead of waiting for the background
   // round-trip (~100-300ms). content.js falls back to a stuck-saving

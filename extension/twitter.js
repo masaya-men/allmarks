@@ -155,9 +155,6 @@ document.addEventListener('click', (event) => {
   if (!url) return
   // Mirror defense — see youtube.js for rationale.
   if (isUrlAlreadySaved(url)) {
-    try {
-      console.log('[AllMarks] X auto-save suppressed — URL already in mirror', { url, kind })
-    } catch (_) {}
     try { window.postMessage({ source: 'booklage-extension', type: 'pill-duplicate' }, '*') } catch (_) {}
     return
   }
