@@ -38,6 +38,17 @@ export function pageMetadata(
       title: titleText,
       description,
       locale: OG_LOCALE[locale] ?? 'en_US',
+      // A page-level openGraph replaces the root layout's (no deep-merge), so
+      // re-declare the social card here too — otherwise every intro page would
+      // share with no preview image (rank4).
+      images: [
+        {
+          url: '/og.png',
+          width: 1200,
+          height: 630,
+          alt: `${APP_NAME} — turn your bookmarks into a visual collage`,
+        },
+      ],
     },
   }
 }

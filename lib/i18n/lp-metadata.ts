@@ -34,6 +34,17 @@ export function lpMetadata(locale: SupportedLocale): Metadata {
       title,
       description,
       locale: OG_LOCALE[locale] ?? 'en_US',
+      // Re-declare the social card here: a page-level openGraph replaces the root
+      // layout's openGraph (Next doesn't deep-merge it), so without this the LP —
+      // the most-shared URL — would lose its preview image (rank4).
+      images: [
+        {
+          url: '/og.png',
+          width: 1200,
+          height: 630,
+          alt: `${APP_NAME} — turn your bookmarks into a visual collage`,
+        },
+      ],
     },
   }
 }
