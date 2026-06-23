@@ -7,6 +7,8 @@
 // jsdom 環境では canvas API が未対応のため、 null を返して safely fail する。
 // 実環境 (= ブラウザ) の動作は playwright で検証 (= Task 7)。
 
+import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
+
 export type MirrorCaptureItem = {
   readonly url: string
   readonly title: string
@@ -170,6 +172,22 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     }
     const hasImage = img !== null
 
+    // サムネが無い / 失敗したカードは、 board と同じ生成アート背景を描く (WYSIWYG)。
+    // frame[0] (= pickPlaceholderImage) を使うので board の resting frame・triage・
+    // PiP と一致。 生成 SVG は自己完結 (外部 font / foreignObject なし) なので canvas
+    // を taint せず、 後段の toBlob が SecurityError にならない。
+    let artImg: HTMLImageElement | null = null
+    if (!hasImage) {
+      const artUrl = pickPlaceholderImage(item.url)?.url ?? null
+      if (artUrl) {
+        try {
+          artImg = await loadCrossOriginImage(artUrl)
+        } catch {
+          artImg = null
+        }
+      }
+    }
+
     // 角丸でクリップしてから背景塗り + サムネ描画 (= 角が四角く残らない)
     ctx.save()
     roundRectPath(ctx, cx, cy, cw, ch, radius)
@@ -177,7 +195,19 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     // 背景塗り (= 失敗時の fallback ベース、 cross-origin OK なら drawImage で上書き)
     ctx.fillStyle = '#1a1a1c'
     ctx.fillRect(cx, cy, cw, ch)
-    if (img) ctx.drawImage(img, cx, cy, cw, ch)
+    if (img) {
+      ctx.drawImage(img, cx, cy, cw, ch)
+    } else if (artImg) {
+      ctx.drawImage(artImg, cx, cy, cw, ch)
+      // board の PlaceholderCard と同じ scrim (0.22 / 0.48 / 0.22 の縦グラデ) を重ねて、
+      // どのスタイルでも白タイトルが読めるよう可読性を board と揃える。
+      const scrim = ctx.createLinearGradient(cx, cy, cx, cy + ch)
+      scrim.addColorStop(0, 'rgba(0, 0, 0, 0.22)')
+      scrim.addColorStop(0.5, 'rgba(0, 0, 0, 0.48)')
+      scrim.addColorStop(1, 'rgba(0, 0, 0, 0.22)')
+      ctx.fillStyle = scrim
+      ctx.fillRect(cx, cy, cw, ch)
+    }
     ctx.restore()
 
     // タイトル text: サムネあり → 小さく下端に、 サムネなし → 大きくカード全体に。
