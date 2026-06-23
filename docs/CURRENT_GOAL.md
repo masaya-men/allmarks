@@ -1,19 +1,22 @@
-# 次セッションのゴール (= セッション 129)
+# 次セッションのゴール (= セッション 130)
 
-## 前セッション(128)の成果 — テキストカード placeholder 刷新 **完了・本番反映済み**
-旧 AI webp 4枚 → ブランド準拠のコード生成 SVG アート 6スタイル(黒+控えめ緑・音波モチーフ)に刷新。
-- B1 生成SVG差し替え / B2 巡回スライドショー(画面内+MOTION時のみ・Lightbox停止) / B2.5 Lightbox背景フロストガラス(16px) / B3 共有OG WYSIWYG + 見切れ修正 / B4 旧アセット削除。
-- 全て tsc0 / vitest 1652 / build green / `allmarks.app` 反映済・user 目視承認済。
-- 詳細は [docs/TODO.md](./TODO.md) 「現在の状態(セッション128)」。
+## 最優先: ① ツイート翻訳機能の設計を固めて実装に入る
+session129 で brainstorming の「対象範囲 = ツイート本文のみ」まで合意済。続きから:
+1. **アプローチを2〜3案提示して合意** — 翻訳トリガーUI(ボタンの場所・見た目)/ 原文↔訳の切替方式 / 初回モデルDL中の見せ方 / 非対応ブラウザの扱い。
+2. **設計提示→承認→設計書を `docs/superpowers/specs/2026-06-2x-tweet-translate-design.md` に保存+commit→自己レビュー→user レビュー**。
+3. **writing-plans で実装計画→実装(TDD)**。
 
-## 次セッションで user に確認する(どれをやるか)
-前セッションで出た follow-up。user が優先を選ぶ:
-1. **ツイートの自動翻訳の取り込み調査**（IDEAS.md §session128 (B)）— まず AllMarks の tweet テキスト取り込み経路を実コードで裏取り(原文しか取れないか)→ 端末内 Translator API の実現性調査。実装は別。
-2. **共有OG のタイトル WYSIWYG 詰め**（IDEAS.md §session128, TODO.md 末尾）— board=中央寄せ/サンセリフ に対し OG=左上/等幅。capture-mirror のタイトル描画を中央寄せ+フォント統一。
-3. **公開前の片付け**（TODO.md 上部）— 暫定 EXPORT/IMPORT 撤去判断、未使用 `chrome-extension/` 削除、`EXTENSION_STORE_URL` 投入(ストア公開時)。
-4. B3 既定 OGP 画像(public/og.png)の承認/差し替え(session127 からの持ち越し)。
+### 確定済みの事実・骨子(再調査不要)
+- 取り込みは **原文のみ**。`fetchTweetMeta` → `/api/tweet-meta` プロキシ → `cdn.syndication.twimg.com/tweet-result`、本文 `text = full_text ?? text`([tweet-meta.ts:142](../lib/embed/tweet-meta.ts#L142))。URL の `&lang=en` は表示ヒントで翻訳ではない。**自前翻訳が必須**。
+- 端末内 **Chrome Translator API**(安定版 Chrome 144〜・Win/Mac/Linux/ChromeOS・**モバイル/Firefox/Safari 不可**)。サーバー/キー不要・¥0・データ非送信。`Translator.availability()` + LanguageDetector(原文言語判定)。
+- 表示は Lightbox の `TweetText`(右カラム、`tweetMeta.text` = 原文を描画)。トグルはこの周辺に置く。
+- 骨子: Lightbox トグル / 押した時だけ都度翻訳 / 原文↔訳ワンタップ / 訳文は保存しない / 非対応はボタン非表示 / 翻訳先 = アプリの現在表示言語(15言語設定)。
+
+## 次点・宿題
+- **② の目視確認**: 本物のボード共有を1回して、テキストカードのタイトルが共有OG画像で **中央寄せ + Geist** になってるか確認(コードは本番反映済)。ズレてたら capture-mirror の画像なし分岐を微調整。
+- ④ 既定OGP画像はミニマル版(波形メーター削除・ロゴ+説明文のみ)で本番反映済(user 承認済)。`allmarks.app` 文字を戻したくなったら `scripts/generate-og-image.mjs` に1行で復活可。
 
 ## 守ること
 - 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII) 必須。応答は日本語。UI 変更は事前一言。
-- **既知フレーキー**: `tests/lib/channel.test.ts` が full run でたまに落ちる→再実行 green。
-- 生成アートの調整は `scripts/generate-placeholder-art.mjs`(greenIntensity / 各スタイル) を編集 → 再実行 → 6 SVG 再生成 → 差し替え。
+- **既知フレーキー**: `tests/lib/channel.test.ts` が full run でたまに落ちる→再実行 green(session129 は1652全 pass だった)。
+- 翻訳は新機能なので **brainstorming→spec→plan の順を守る**(コードを書く前に user 合意)。

@@ -14,12 +14,19 @@
 
 - **deploy は `--project-name=allmarks --branch=master`**(CLAUDE.md 更新済)。本番 URL は `.env.production`(tracked)の `NEXT_PUBLIC_APP_URL=https://allmarks.app` 由来 → `SITE_URL`(lib/constants.ts)経由で sitemap/robots/OG に反映
 - **永久に維持**(変えるとデータ/互換破壊): `DB_NAME='booklage-db'`、bookmarklet 内部 ID、拡張の `booklage:*` メッセージ型、CSS クラス名等の不可視符号
-- **公開前の残り片付け**: 暫定 EXPORT/IMPORT ボタン撤去(BoardRoot の TEMPORARY 箇所)、未使用 `chrome-extension/` 削除、`EXTENSION_STORE_URL` 投入(ストア公開時)
+- **公開前の残り片付け = 実質ゼロ(session129 で実態確認)**: 暫定 EXPORT/IMPORT 撤去は**不要**(B5/session124 で設定の正式バックアップ機能として配線済＝撤去は機能破壊)、`chrome-extension/` は**不在**(本物は `extension/`)、残るは `EXTENSION_STORE_URL` 投入のみ＝Chrome審査通過後に1行(外部待ち)
 - 詳細プラン: `docs/superpowers/plans/2026-06-16-allmarks-rebrand-migration.md`
 
 ---
 
 ## 現在の状態 (次セッションはここから読む)
+
+### 直近の状態 (セッション 129 — ②共有OGタイトル一致 + ④既定OGP画像ミニマル化 + ①翻訳調査)
+
+- **② 共有OGタイトルを board と一致(WYSIWYG)・本番反映済**: サムネ無しテキストカードのタイトルを共有OG画像でも **中央寄せ + Geist(サンセリフ)** に([capture-mirror.ts](../lib/share/capture-mirror.ts) の画像なし分岐)。旧=左上+等幅でズレていた。tsc0/vitest1652/build green。**canvas の見た目はテスト範囲外＝本物の共有で目視確認が次セッションの宿題**。
+- **④ 既定OGP画像 public/og.png をミニマル化・user 承認済・本番反映済**: 波形メーター + allmarks.app 文字を削除し、ロゴ+ワードマーク+説明文を縦中央に(`scripts/generate-og-image.mjs` 編集→再生成)。= session127 からの B3 既定画像承認タスク完了。
+- **③ 公開前の片付け = 手を動かす対象ゼロと確認**: `chrome-extension/` 不在 / EXPORT/IMPORT は正式機能で撤去不要 / `EXTENSION_STORE_URL` は審査待ち(上の「片付け」行を中立化済)。
+- **① ツイート翻訳 = 調査完了 + 対象範囲合意(ツイートのみ)**: 取り込みは**原文のみ**と実コードで確定([tweet-meta.ts:142](../lib/embed/tweet-meta.ts#L142))→自前翻訳が必要。端末内 Chrome Translator API(安定版・デスクトップ・¥0・非送信)が候補。骨子=Lightbox トグル/都度翻訳/原文切替/非対応はボタン非表示/翻訳先=アプリ言語。**次セッション=アプローチ→設計→spec→plan→実装**(詳細 CURRENT_GOAL)。
 
 ### 直近の状態 (セッション 128 — テキストカード placeholder 刷新 **完了**・全バッチ本番反映済)
 

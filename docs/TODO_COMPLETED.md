@@ -7788,3 +7788,30 @@ tsc0 / vitest1593 / build green。commit×2 + デプロイ。OnboardingControlle
 
 ### 総括
 監査の作業キュー `docs/private/2026-06-22-audit-fix-progress.md`（gitignored）が全件 ✅/⏸ で決着。本番 allmarks.app に B8〜B3 反映済。残る user アクションは B3 画像承認 と rank29 体感調整の判断のみ。
+
+---
+
+## セッション 129 (2026-06-24) — 共有OGタイトルWYSIWYG(②) + 既定OGP画像ミニマル化(④・承認済) + ツイート翻訳の取り込み調査(①)
+
+候補4件のうち user が ①④ を実施・③確認・②小修正 を選択。
+
+### ② 共有OGタイトルを board と一致(WYSIWYG)
+サムネ無しテキストカードのタイトルが、board=中央寄せ+サンセリフ(Geist) なのに 共有OG画像(capture-mirror) では 左上+等幅(Geist Mono) でズレていた。`lib/share/capture-mirror.ts` の画像なし分岐を **中央寄せ + Geist(サンセリフ)** に変更(`textAlign='center'`・起点 `cx+cw/2`・font を `"Geist", -apple-system,…sans-serif` に・天地 padding を ch比 8%)。画像ありの小キャプションは従来どおり左寄せ Geist Mono のまま。tsc0 / 共有vitest80 + 全vitest1652 green。**canvas のピクセル見た目はテスト範囲外＝本物の共有で目視確認は次セッション宿題。**
+
+### ④ 既定OGP画像(public/og.png)をミニマル化(user 承認済)
+session127 の暫定版(波形メーター + allmarks.app footer 付き)を、user 希望で **ロゴ+ワードマーク+説明文だけ** に。`scripts/generate-og-image.mjs` から音波バー生成ブロックと allmarks.app テキストを削除、ロゴ/ワードマーク/説明文を縦中央へ再配置(markY=140 / wordmark y=420 / tagline y=484)→再生成→user 目視で承認。ドメイン文字は X 等が自動表示するため省略可と判断(戻すのは容易)。= session127 からの B3 既定画像承認タスク完了。
+
+### ③ 公開前の片付け = 手を動かす対象ゼロと確認
+- `chrome-extension/` フォルダは**不在**(Glob ヒット0、本物は `extension/`)＝削除対象なし。
+- 「暫定 EXPORT/IMPORT 撤去」は**誤り**＝B5(session124)で設定の正式バックアップ機能として配線済([ExtensionEntry.tsx:236](../components/board/ExtensionEntry.tsx#L236))＝撤去は機能破壊。
+- `EXTENSION_STORE_URL`([constants.ts:32](../lib/board/constants.ts#L32))は空のまま＝Chrome審査通過後に1行入れるだけ(外部待ち)。
+- → CURRENT_GOAL/TODO の「片付け」文言が古かったので中立化(撤去不要を明記)。
+
+### ① ツイート翻訳機能 = 取り込み経路調査 + 設計の対象範囲合意
+- **裏取り**: 取り込みは `fetchTweetMeta`([tweet-meta.ts:17](../lib/embed/tweet-meta.ts#L17)) → `/api/tweet-meta` プロキシ([functions/api/tweet-meta.ts:56](../functions/api/tweet-meta.ts#L56)) → `cdn.syndication.twimg.com/tweet-result`。本文は `text = full_text ?? text`([tweet-meta.ts:142](../lib/embed/tweet-meta.ts#L142)) = **常に原文のみ**。URL の `&lang=en` は表示言語ヒントで翻訳指定ではない。**= 翻訳は自前で行うしかない**。
+- **実現性**: Chrome 組み込み Translator API は現在 Chrome 安定版(144〜)で**端末内翻訳が正式提供**(Win/Mac/Linux/ChromeOS デスクトップ・モバイル不可・Firefox/Safari不可)。サーバー不要・APIキー不要・¥0・データ非送信＝AllMarks の設計に合致。`Translator.availability()` + LanguageDetector(原文言語判定)。
+- **合意した設計の骨子**: Lightbox 内に翻訳トグル / 押した時だけその場翻訳 / 原文↔訳をワンタップ切替 / 訳文は保存せず都度生成(プライバシー+容量) / 非対応ブラウザはボタン非表示 / 翻訳先=アプリの現在表示言語(15言語設定)を提案。
+- **対象範囲 = ツイート本文だけ(user 確定)**。他カードのタイトル翻訳は将来拡張(作りは広げやすい形に)。
+- brainstorming は対象範囲確定まで。次セッション=アプローチ提示→設計提示→spec(`docs/superpowers/specs`)→plan→実装。
+
+tsc0 / vitest1652 / build green。② と ④ を本番反映。設計仕様書は次セッションで作成。

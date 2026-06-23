@@ -239,19 +239,25 @@ async function drawCards(ctx: CanvasRenderingContext2D, input: MirrorCaptureInpu
     ctx.clip()
     ctx.fillStyle = TEXT_MAIN
     ctx.textBaseline = 'top'
-    ctx.textAlign = 'left'
     if (hasImage) {
-      // 画像あり: 小さいタイトルを下端に
+      // 画像あり: 小さいタイトルを下端に (= board ImageCard と同じ左寄せ・等幅キャプション)
+      ctx.textAlign = 'left'
       const titleSize = Math.max(9, Math.round(ch * 0.09))
       ctx.font = `500 ${titleSize}px "Geist Mono", ui-monospace, monospace`
       drawClippedText(ctx, item.title, cx + 6, cy + ch - titleSize - 6, cw - 12)
     } else {
-      // 画像なし: 大きいタイトルをカード全体に
+      // 画像なし: board の PlaceholderCard と同じ「中央寄せ + サンセリフ(Geist)」で
+      // カード全体に大きく描く。 board 側 (.titleInner) は text-align:center +
+      // font-family:var(--font-sans)(= Geist)。 OG も同じにして「共有プレビュー =
+      // 盤面」 の WYSIWYG を保つ (= 旧: 左上・等幅 "Geist Mono" でズレていた)。
+      // 上端から流す点も board (titleScroll の上端 start) に合わせる。
+      ctx.textAlign = 'center'
       const titleSize = Math.max(10, Math.round(ch * 0.12))
-      ctx.font = `500 ${titleSize}px "Geist Mono", ui-monospace, monospace`
+      ctx.font = `500 ${titleSize}px "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
       const lineHeight = titleSize * 1.3
-      const maxLines = Math.floor((ch - 16) / lineHeight)
-      drawWrappedText(ctx, item.title, cx + 8, cy + 8, cw - 16, lineHeight, Math.max(1, maxLines))
+      const topPad = Math.max(8, Math.round(ch * 0.08))
+      const maxLines = Math.floor((ch - topPad * 2) / lineHeight)
+      drawWrappedText(ctx, item.title, cx + cw / 2, cy + topPad, cw - 16, lineHeight, Math.max(1, maxLines))
     }
     ctx.restore()
   }
