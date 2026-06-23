@@ -7684,3 +7684,40 @@ en/ja を確定し13言語へ並列翻訳展開、本番反映済(15言語 JSON 
 **テスト**: `tests/lib/storage/save-bookmark-deduped.test.ts` 新規（scheme検証/重複ポリシー/ソフト削除再保存/**同時保存2本→1本のatomic実証**）。`tests/lib/url.test.ts`(safeExternalUrl) + paste-ingest/SaveToast/use-url-paste-save のモックを `addBookmark`→`saveBookmarkDeduped` に更新。tsc0 / **vitest1487** / build green。commit `fix(save)` + デプロイ済（allmarks.app）。
 
 **残**: B5(バックアップ安全化＋配線)〜B11。実機まとめ確認は監査スプリント完了時に1度。
+
+---
+
+## セッション 126 (2026-06-23) — 監査フィックス rank6(SSRF) + B7(ストレージ) + B9(オンボ) 完了・本番反映
+
+監査フィックスを推奨順で3バッチ。約17/44 → 約25/44(57%)。コスト最適化＝サブエージェントのモデルを作業の重さで使い分け（調査/敵対検証=sonnet〜opus）、検証は省かず。
+
+### rank6 — `/api/ogp` の SSRF 踏み台化を封鎖（取りこぼし・本番Pages Function）
+
+**問題**: `allmarks.app/api/ogp?url=<任意>` が任意URLを fetch＝攻撃者が私たちのサーバー経由で内部ネット/クラウドメタデータ(169.254.169.254)を覗ける。動画系プロキシは対策済みなのにここだけ取り残し・どのバッチにも未所属だった。汎用fetcher（任意公開サイトを取りに行く）なので許可リスト不可→blocklist方式。
+
+**実装** ([functions/api/ogp.ts](functions/api/ogp.ts) + 新規 `functions/api/ogp.test.ts` 78件): (1)http/https以外のスキーム拒否 (2)`isBlockedHost` で localhost/内部TLD/IPv4全エンコード(10進/16進/8進/短縮)/IPv6(数値展開して global unicast 2000::/3 以外 default-deny、mapped/6to4/NAT64/compat unwrap)/末尾ドット(複数)を排除 (3)`readCappedText` で応答1MB上限(DoS) (4)リダイレクト着地先(res.url)再検証・取得不能は fail-closed。
+
+**workerd の罠を実測で発見（重要・memory化）**: 本番に一時診断エンドポイントを deploy して `new URL(x).hostname` の実値を取得→**本番 workerd は整数/16進IPv4を正規化しない**(`2130706433`→そのまま)・**IPv6ブラケットを最初の`:`で切る**(`[fe80::1]`→`[fe80`)。Node/ローカル最新 workerd は両方正規化するので**ローカルテストだけでは検出不能**だった。帰結＝`coerceIpv4` で自前に IPv4 を 32bit 正規化してから判定（パーサ非依存）。診断は確認後削除+クリーン再デプロイ(404確認)。→ memory `reference_workerd_url_parser_quirks`。
+
+**敵対検証3ラウンド(opus)**: R1=末尾ドット/IPv6非mapped/サイズ上限チャンク積み/リダイレクトfail-open 検出→修正。R2=全CLOSED確認+残LOW2件修正。R3=`coerceIpv4` 算術集中→二重末尾ドット `0xa9fea9fe..` バイパス(HIGH)発見→末尾ドット全除去+空ラベル malformed 化で封鎖。**本番curl実測で内部エンコード全て400・公開200を確認**。commit×3 + デプロイ。
+
+### B7 — ストレージ堅牢性（rank22a/22b/41/32/38、rank31 据え置き）
+
+- **rank22a**: `addBookmark` が orderIndex の max を insert tx の**外**で読んでいた→同時保存で並び順番号が重複し得た。純関数 `nextOrderIndexFrom(all)` を新設し insert tx 内の `getAll` から計算（`saveBookmarkDeduped` が既に持つ不変条件を addBookmark にも）。3者で共有しDRY化。
+- **rank22b/41**: `repairOrderIndexIfNeeded` のガード flag 読取が `.catch(()=>undefined)`＝読取失敗で「未移行」に倒れ、破壊的な savedAt 再ソートが再実行→**ユーザーの手動ドラッグ並べ替えを上書き**。try/catch で読取 throw 時は `{ran:false}` で即 bail（初回は undefined 返りで従来通り実行）。flag 書き戻しは単一tx内で原子的を確認＋直接テスト追加。
+- **rank32**: `tags.ts` の `IDBPDatabase<any>`→`IDBPDatabase<AllMarksDB>`。死蔵型 `AllMarksIDB` も除去。
+- **rank38**: v14→v16 通し移行テスト新規（`tests/lib/idb-v14-to-v16-migration.test.ts` 4件＝moods→tags / by-tag index / activeFilter string→object / bookmark保全）。
+- **rank31 据え置き**: `filterBookmarks` の getAll+filter は O(N)~1ms・単純で正確。by-tag(multiEntry) index 利用は集合演算+重複除去+isDeleted後段フィルタで複雑化の割に IndexedDB単一ユーザーで実利益薄。監査も「低・要確認」。将来数万件で再検討。
+- **敵対検証(sonnet)**: H-1(cards.count auto-commit)＝既存パターン同型で非問題と却下。M-2(書き戻し直接テスト欠如)＝採用しテスト追加。tsc0/vitest1590/build green。
+
+### B9 — オンボーディング（rank7/23/39 修正、rank48 偽陽性、rank43 据え置き）
+
+- **rank7（実害バグ・最優先）**: チュートリアル中は `flagOnboardingRef.current` なら**貼られたURLが何であれ** `onboardingDemo:true`→終了時 sweep で**ユーザーの本物リンクも黙って削除**。`SAMPLE_URL` を `lib/onboarding/steps.ts` に共有定数化し、`use-url-paste-save` で **`flagOnboardingRef && url===SAMPLE_URL` の時のみ**デモ印。実リンク(≠SAMPLE_URL)は sweep を生き残る。新規3テスト。
+- **rank23（嘘コメント・user質問で再発見）**: manage シーンのコメント「NEXT skips the detour」が実コードと矛盾（gesture beat は teach-by-doing で NEXT 撤去済み）。実態に修正。`advance` フィールドは `==='saved'` 判定のみ＝機能的に無害。
+- **rank39（ジェスチャ詰みリスク・user 承認の(b)防御策）**: manage gesture beat は意図的に NEXT 無しだが、MANAGE TAGS ボタンが万一表示されないと SKIP しか出口が無い。`manageTargetMissing` state+検出effect(2.5s grace で `querySelector` 無ければ true)を追加し、欠落時のみフォールバック NEXT(`advance`で share へ)を描画。**通常フローは NEXT 出ず teach-by-doing 完全維持**。
+- **rank48 偽陽性**: settings キー5種・sessionStorage キー・onboardingDemo フラグ全て分離済み・実衝突なし（調査確認）。
+- **rank43 据え置き**: 2タブ同時初回起動でデモカード二重 seed の可能性だが、影響はデモカードのみ＝実データ無傷・終了時 sweep・窓も極狭。マルチタブ協調は過剰。
+
+tsc0 / vitest1593 / build green。commit×2 + デプロイ。OnboardingController はコンポーネントテスト harness 無し＝rank39 は tsc+目視検証（実機任意）。
+
+**残**: B8(共有)/ B10(パフォ)/ B11(i18n)/ B3(LP用OGP画像=要画像相談)。詳細 progress.md + CURRENT_GOAL.md。

@@ -21,18 +21,20 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 124 — B5 バックアップ安全化＋配線＋多言語化 完了・本番反映済)
+### 直近の状態 (セッション 126 — 監査フィックス rank6 + B7 + B9 完了・本番反映済 / 約25/44=57%)
 
-**B5 完了（本番 allmarks.app 反映済）**: バックアップ機能を「安全＋ユーザー可用」にした。
-- **rank3 安全復元**: `importAllStores` を原子的復元に作り直し（version>DB拒否 / ブックマーク0件拒否 / 全行の主キーを clear 前に検証 / 空・欠落倉庫は触らない / **全倉庫を単一tx＋失敗時 tx.abort() で全ロールバック**）。敵対的レビューで実データ消失バグ2件（壊れ行での部分消失・ストア間非原子）を検出→根絶
-- **rank8 無言失敗解消**: catch 全経路＋Zod 検証＋復元前 confirm＋全失敗で日本語/多言語アラート
-- **rank15 配線**: 孤立していた BackupButton を **SETTINGS ドロワー内「BACKUP」区画**に配線（EXPORT/IMPORT を枠付きボタンでドロワー様式統一）
-- **多言語化（user 方針）**: 前面の英語ラベル(EXPORT/IMPORT/BACKUP)は残し、説明・確認・結果・エラー文を `board.backup.*` で**全15言語化**（翻訳→検証ワークフロー）
-- tsc0 / vitest1499 / build green。実機(1489×679)＋本番スモーク確認済。**次は B6(拡張の堅牢化)**。
+**監査フィックスの作業キューは [progress.md](./private/2026-06-22-audit-fix-progress.md) が真実の場所（gitignored）。**
 
-**バックアップ方針の達成（session123 user合意の前提作業）**: これで「将来 DBバージョン上げが必要になったら、その前にユーザーが自分で EXPORT→移行→失敗時 IMPORT で戻せる」安全網が**本番で使える状態**になった。[project_backup_before_idb_migration] 参照。
+**session 126 で本番反映した3つ**:
+- **rank6 SSRF（取りこぼし）**: `/api/ogp`（本番 Pages Function・誰でも到達）が任意URLを fetch＝踏み台。スキーム限定+内部/プライベート/メタデータIP排除+**自前 IPv4 数値正規化**(coerceIpv4)+応答サイズ上限+リダイレクト着地先再検証で封鎖。**敵対検証3ラウンド(opus)+本番curl実測**で内部エンコード全て400・公開200を確認。**workerd の URL パーサ罠を発見**（本番は整数/16進IPv4を非正規化・IPv6ブラケットを切断＝Node/ローカルと違う）→ memory [[reference_workerd_url_parser_quirks]]
+- **B7 ストレージ堅牢性**: rank22a(addBookmark の orderIndex を insert tx 内計算=同時保存の並び順重複防止)/ rank22b・41(移行ガード読取失敗を未移行に倒さず fail-safe=手動並べ替えの破壊防止)/ rank32(tags.ts `any`→`AllMarksDB`)/ rank38(v14→v16 通し移行テスト新規)。rank31(by-tag index)は据え置き。敵対検証(sonnet)
+- **B9 オンボーディング**: rank7(チュートリアル中に貼った**自分の本物リンクが終了時に黙って消える**実害バグ→`SAMPLE_URL` 一致時のみデモ印)/ rank23(manage の嘘コメント修正)/ rank39(MANAGE TAGS が欠落した時だけ NEXT フォールバック＝teach-by-doing 維持)。rank48 偽陽性・rank43 据え置き
 
-**follow-up（別タスク・未着手）**: 拡張の設定画面(options)は英語のみ＝多言語化は別バッチ / TrashConfirmDialog 等の他 chrome 文章の多言語化も独立バッチ。
+tsc0 / vitest1593 / build green。全て本番 allmarks.app 反映済。**次は残りバッチ B8(共有)/ B10(パフォ)/ B11(i18n)/ B3(LP用OGP画像=要画像相談)**。詳細は CURRENT_GOAL.md。
+
+**据え置き確定（理由付き）**: rank31(by-tag index＝getAll で十分速い)/ rank43(複数タブ初回オンボ＝デモカードのみ影響・実データ無傷)。
+
+**follow-up（別タスク・未着手）**: 拡張の設定画面(options)は英語のみ＝多言語化は別バッチ / TrashConfirmDialog 等の他 chrome 文章の多言語化も独立バッチ（B11 と一緒が効率的）。
 
 ↓ 以下はセッション122のメモ（archive）:
 **全体を敵対的に徹底監査（12領域→各指摘を2懐疑役で反証→確定44件）。上位を修正・本番反映: ①フィルタのタグ一覧フェード不具合 ②スクロールでカードが並び替わる不具合(rank1) ③プライバシー掃除 ④旧ブランド紫→緑#28F100 統一。** 残りは作業キュー（[progress.md](./private/2026-06-22-audit-fix-progress.md)）。
