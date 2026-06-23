@@ -66,12 +66,16 @@ export function ShareIt(): React.ReactElement {
     if (!section || !frame) return (): void => undefined
 
     let ctx: gsap.MatchMedia | undefined
+    let cancelled = false
 
     const loadGsap = async (): Promise<void> => {
       const [{ gsap }, { ScrollTrigger }] = await Promise.all([
         import('gsap'),
         import('gsap/ScrollTrigger'),
       ])
+      // Unmounted during the dynamic import — don't create a matchMedia the
+      // cleanup (which already ran) can't revert, or it leaks (rank44).
+      if (cancelled) return
       gsap.registerPlugin(ScrollTrigger)
 
       const tiles = Array.from(frame.querySelectorAll<HTMLElement>('[data-share-tile]'))
@@ -140,6 +144,7 @@ export function ShareIt(): React.ReactElement {
     void loadGsap()
 
     return (): void => {
+      cancelled = true
       ctx?.revert()
     }
   }, [])

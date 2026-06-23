@@ -182,6 +182,20 @@ export function PipStack({
     return (): void => window.removeEventListener('resize', onResize)
   }, [recomputeActive])
 
+  // Cancel any in-flight slide animation on unmount. The wheel effect already
+  // cleans up its own drain-queue rAF, but scrollToIdx's animation rAF
+  // (animRafRef) outlives it — without this, a component torn down mid-slide
+  // leaves a dangling requestAnimationFrame whose step() fires into the
+  // unmounted component (rank24).
+  useEffect(() => {
+    return (): void => {
+      if (animRafRef.current !== 0) {
+        cancelAnimationFrame(animRafRef.current)
+        animRafRef.current = 0
+      }
+    }
+  }, [])
+
   // Mouse-wheel = one notch advances exactly one card with a Lightbox-
   // style smooth slide. We never let scroll halt mid-card: a wheel event
   // crosses an accumulator threshold, picks a direction, and animates

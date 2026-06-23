@@ -88,6 +88,10 @@ import styles from './BoardRoot.module.css'
 // to allow scrolling until the last card is cut off near the top edge.
 const SCROLL_OVERFLOW_MARGIN_X = 600
 const BOTTOM_OVERSCROLL_FRACTION = 0.5
+/** Min width change (px) before a live resize re-runs the full masonry layout.
+ *  Gates out micro-jitter frames during a drag; the exact final width is still
+ *  committed on pointerup (rank29). */
+const RESIZE_GATE_PX = 8
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
 
@@ -422,6 +426,18 @@ export function BoardRoot() {
   // persistentCustomWidths in the same React batch.
   const [liveResize, setLiveResize] = useState<{ id: string; width: number } | null>(null)
 
+  // rAF coalescing + movement gate for live resize. ResizeHandle fires onResize
+  // on every pointermove and each setLiveResize drives a full masonry re-layout
+  // (skylineCards → computeSkylineLayout → contentBounds), which is O(n) in card
+  // count — costly on large boards (rank29). Two-part throttle: (1) coalesce to
+  // at most one flush per frame, (2) skip the flush unless the width moved
+  // ≥ RESIZE_GATE_PX since the last applied value, so micro-jitter / very slow
+  // drag frames don't re-run the layout at all. The exact final width is still
+  // committed on pointerup via handleCardResizeEnd.
+  const resizeRafRef = useRef<number>(0)
+  const pendingResizeRef = useRef<{ id: string; width: number } | null>(null)
+  const lastFlushedResizeRef = useRef<{ id: string; width: number } | null>(null)
+
   // What the layout actually reads — persisted overrides, with the
   // live in-flight width layered on top for the dragging card.
   const customWidths = useMemo<Readonly<Record<string, number>>>(() => {
@@ -430,9 +446,27 @@ export function BoardRoot() {
   }, [persistentCustomWidths, liveResize])
 
   const handleCardResize = useCallback((bookmarkId: string, nextWidth: number): void => {
-    setLiveResize((prev) => {
-      if (prev?.id === bookmarkId && prev.width === nextWidth) return prev
-      return { id: bookmarkId, width: nextWidth }
+    pendingResizeRef.current = { id: bookmarkId, width: nextWidth }
+    if (resizeRafRef.current !== 0) return
+    resizeRafRef.current = requestAnimationFrame(() => {
+      resizeRafRef.current = 0
+      const pending = pendingResizeRef.current
+      if (!pending) return
+      // Movement gate: a different card always flushes; otherwise only when the
+      // width changed enough to matter. Skips the full relayout on jitter frames
+      // (ResizeHandle's 2× sensitivity makes a 1px wiggle a 2px delta).
+      const last = lastFlushedResizeRef.current
+      if (
+        last &&
+        last.id === pending.id &&
+        Math.abs(last.width - pending.width) < RESIZE_GATE_PX
+      ) {
+        return
+      }
+      lastFlushedResizeRef.current = pending
+      setLiveResize((prev) =>
+        prev?.id === pending.id && prev.width === pending.width ? prev : pending,
+      )
     })
   }, [])
 
@@ -450,6 +484,14 @@ export function BoardRoot() {
           prevCustom: cur.customCardWidth,
         })
       }
+      // Drop any coalesced resize still queued for this frame so it can't fire
+      // after end and clobber the null/final state (rank29).
+      if (resizeRafRef.current !== 0) {
+        cancelAnimationFrame(resizeRafRef.current)
+        resizeRafRef.current = 0
+      }
+      pendingResizeRef.current = null
+      lastFlushedResizeRef.current = null
       // Clearing liveResize and queueing the optimistic items update
       // in the same task lets React batch them — no flicker between
       // the live drag and the persisted state taking over.
@@ -459,8 +501,23 @@ export function BoardRoot() {
     [persistCustomWidth, items, pushUndo],
   )
 
+  // Cancel a dangling coalesced-resize rAF on unmount (rank29).
+  useEffect(() => {
+    return (): void => {
+      if (resizeRafRef.current !== 0) cancelAnimationFrame(resizeRafRef.current)
+    }
+  }, [])
+
   const handleCardResetSize = useCallback(
     (bookmarkId: string): void => {
+      // Mirror handleCardResizeEnd's rAF teardown so a queued live-resize flush
+      // can't fire after a reset and reapply a stale width (rank29 symmetry).
+      if (resizeRafRef.current !== 0) {
+        cancelAnimationFrame(resizeRafRef.current)
+        resizeRafRef.current = 0
+      }
+      pendingResizeRef.current = null
+      lastFlushedResizeRef.current = null
       setLiveResize((prev) => (prev?.id === bookmarkId ? null : prev))
       void resetCustomWidth(bookmarkId)
     },

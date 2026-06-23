@@ -147,6 +147,10 @@ const NEW_CANDIDATE_CONFIDENCE: Record<'siteName' | 'hashtag', number> = {
 
 const SUGGESTED_MAX = 5
 
+/** Stable empty result so the suggestions memo returns the same reference when
+ *  no popover is open (avoids handing TagAddPopover a fresh [] each render). */
+const EMPTY_SUGGESTIONS: readonly SuggestionEntry[] = []
+
 /** Merge HeuristicTagger existing-tag suggestions with raw new-name
  *  candidates, drop duplicates (case-insensitive name match against the
  *  tag master), sort by confidence, and cap. Called only when the popover
@@ -403,6 +407,21 @@ export function CardsLayer({
   // stays mounted (so the animation can run) until it reports onExited, which
   // clears popoverOpenFor. Single flag is fine: only one popover is open.
   const [popoverClosing, setPopoverClosing] = useState(false)
+
+  // Tag suggestions for the open popover only. computeSuggestedEntries builds a
+  // HeuristicTagger + extracts typed candidates, so calling it inline in render
+  // recomputed it on every unrelated re-render (hover, scroll, audio) while a
+  // popover was open. Memoize so it recomputes only when the open card, the
+  // board items, or the tag master actually change (rank40). Uses the full
+  // `items` prop (not the scroll-dependent visible set) so scrolling doesn't
+  // invalidate it.
+  const openPopoverSuggestions = useMemo<readonly SuggestionEntry[]>(() => {
+    // allTags === undefined ⇒ the whole tag affordance is gated off in render
+    // (same guard as the popover block), so suggestions are never shown.
+    if (!popoverOpenFor || allTags === undefined) return EMPTY_SUGGESTIONS
+    const openItem = items.find((it) => it.bookmarkId === popoverOpenFor)
+    return openItem ? computeSuggestedEntries(openItem, allTags) : EMPTY_SUGGESTIONS
+  }, [popoverOpenFor, items, allTags])
   const popoverLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const clearPopoverTimer = useCallback((): void => {
     if (popoverLeaveTimer.current) {
@@ -1317,7 +1336,7 @@ export function CardsLayer({
                     <TagAddPopover
                       allTags={allTags}
                       currentTagIds={it.tags}
-                      suggestedEntries={computeSuggestedEntries(it, allTags)}
+                      suggestedEntries={openPopoverSuggestions}
                       closing={popoverClosing}
                       onExited={finishPopoverClose}
                       onAddExisting={(tagId): void => { void onTagToggle(it.bookmarkId, tagId) }}

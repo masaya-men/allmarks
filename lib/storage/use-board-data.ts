@@ -377,6 +377,21 @@ export function useBoardData(): {
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
       await db.put('bookmarks', { ...existing, isRead })
+      // Mirror the write into in-memory state so the board reflects the new read
+      // state without a reload — matches persistThumbnail / persistSoftDelete
+      // (rank26). A soft-deleted bookmark lives in deletedItems (not items), so
+      // update whichever list holds it; the some()-guard skips the churn when
+      // nothing changed (e.g. re-flagging an already-read item).
+      setItems((prev) =>
+        prev.some((it) => it.bookmarkId === bookmarkId && it.isRead !== isRead)
+          ? prev.map((it) => (it.bookmarkId === bookmarkId ? { ...it, isRead } : it))
+          : prev,
+      )
+      setDeletedItems((prev) =>
+        prev.some((it) => it.bookmarkId === bookmarkId && it.isRead !== isRead)
+          ? prev.map((it) => (it.bookmarkId === bookmarkId ? { ...it, isRead } : it))
+          : prev,
+      )
     },
     [],
   )
