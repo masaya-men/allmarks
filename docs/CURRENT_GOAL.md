@@ -1,50 +1,31 @@
-# 次セッションのゴール (= セッション 125)
+# 次セッションのゴール (= セッション 126)
 
 ## 今のゴール (1 行)
 
-**まず SETTINGS ドロワーの文言3点を直す（user FB・下記 A/B/C、多言語15言語）→ 終わったら B6(拡張の堅牢化) に進む。安全に確実に・バッチごと commit+deploy。**
+**B6（拡張の堅牢化）完了。次は監査フィックスの残りバッチ（次候補=B7 ストレージ堅牢性）を進める。安全に確実に・バッチごと commit+deploy。**
 
 ## 開始時の動き
 1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む
 2. **[docs/private/2026-06-22-audit-fix-progress.md](./private/2026-06-22-audit-fix-progress.md) を読む** ← 監査フィックスの作業キュー（真実の場所）
-3. ユーザーに「session 125 開始」+ 続行確認を出し、下記 A→B→C を進める
+3. ユーザーに「session 126 開始」+ 続行確認を出す
 
-## ★最優先: SETTINGS ドロワー文言の修正（session124 末 user FB・未着手）
+## ⚠️ 拡張の実機まとめ確認が未消化（最初に案内）
+session125 で B6 拡張修正を ship 済だが、**拡張は Cloudflare Pages に乗らない**（Chrome に unpacked で読み込む別物）。動作確認はユーザーが拡張を再読込して手で試す形。session125 末に「実機確認シート」を提示済み。まだ試していなければ最初に促す：
+- rank5: フローティングボタンを**ドラッグ移動**→保存されない／**普通に1クリック**→保存される／**動かさず長め（0.5秒）に押して離す**→保存される（v2 で直した回帰ポイント）
+- rank13: 重いページ（YouTube 等）で自動保存と手動保存を重ねて発火→両方正しく結果が出る（片方が赤い失敗にならない）。稀なので単独保存・タグ付けが普段通りでも OK
+- 回帰スモーク: ペースト/ブックマークレット/拡張ワンクリック保存、重複「保存済み」表示、保存後クイックタグ付け が普段通り。DevTools に [AllMarks] デバッグログが出ない
 
-session124 で BACKUP を最下部移動＋ドロワー操作文を15言語化済（commit `feat(settings)`、本番反映済）。その後 user から追加 FB：
+## 残りの監査バッチ（progress.md が詳細・真実）
+- **B7 ストレージ堅牢性**（rank22 orderIndex 同時保存重複→1tx / rank31 by-tag index / rank32 storage層 any / rank38 v14→v16移行テスト / rank41 移行ガード書き戻し）← 次候補
+- B8 共有堅牢性（rank9,19,20,25,45）/ B9 オンボーディング（rank7,23,39,43,48）/ B10 パフォ・React（rank24,26,29,40,44）/ B11 i18n（rank11,16,47）/ B3 公開用 OGP 画像（rank4）
+- follow-up（低）: 拡張 options 画面(英語のみ)多言語化 / TrashConfirmDialog 等ボード内ダイアログ多言語化（B11 と一緒が効率的）
 
-- **A. QUICK-TAG ON SAVE も多言語化する**
-  - 現状: [ExtensionEntry.tsx:172](../components/board/ExtensionEntry.tsx#L172) で `<span className={styles.toggleLabel}>QUICK-TAG ON SAVE</span>` と**英語ベタ書き**
-  - やること: 新キー `board.settings.quickTagOnSave` を15言語追加し `{t('board.settings.quickTagOnSave')}` に置換
-  - **連動修正(重要)**: `board.onboarding.manage.settingsBody`（15言語、各 messages/*.json）が本文で「QUICK-TAG ON SAVE」を引用している（en例: `Turn this “QUICK-TAG ON SAVE” off`）。トグル名を多言語化したら、この引用も各言語のトグル名に合わせて更新（または「この保存時タグ付けのトグル」等に一般化）。**settingsBody は ja.json 等で1行インライン化されたオブジェクト内**なので、値文字列だけを狙って Edit（JSON 全体 re-stringify はインライン展開で巨大 diff になる。要注意）
-  - 推奨 en/ja: en `"QUICK-TAG ON SAVE"`（en は原文のまま）/ ja `"保存時にすぐタグ付け"`
-
-- **B. 「拡張機能なしで保存」が意味不明 → ブックマークレット方向の良い文言に**
-  - 対象キー: 既存 `board.settings.saveWithoutExtension`（15言語、値を**更新**）。ボタンはブックマークレット設置モーダルを開く（[ExtensionEntry.tsx](../components/board/ExtensionEntry.tsx) `onOpenBookmarkletModal`）
-  - user 指示: 「ブックマークレットを使う。とかそういう方向で良い感じの」
-  - 推奨 en/ja（要 user 確認）: en `"SAVE VIA BOOKMARKLET"` / ja `"ブックマークレットで保存"`
-
-- **C. 「イントロをもう一度見る」→ チュートリアル方向に**
-  - 対象キー: 既存 `board.settings.replayIntro`（15言語、値を**更新**）。ボタンは初回オンボーディングを再生（`onReplayIntro`）
-  - user 指示: 「イントロは好きだが、ちゃんとチュートリアルをみる。とかにしましょう」
-  - 推奨 en/ja（要 user 確認）: en `"REPLAY TUTORIAL"` / ja `"チュートリアルをもう一度見る"`
-
-### 進め方メモ（効率化）
-- A の新キーは「翻訳→検証ワークフロー（13言語）＋ en/ja は自分で確定」→ message へ挿入。B/C は**既存キーの値更新**なので、ワークフローで新文言を13言語訳→各 messages/*.json で当該キーの値を Edit 置換（saveWithoutExtension/replayIntro は各自1行なので置換しやすい）
-- 15言語: ja, en, zh, ko, es, fr, de, pt, it, nl, tr, ru, ar, th, vi（[lib/i18n/config.ts](../lib/i18n/config.ts)）。ブランド名 AllMarks/X/YouTube/Chrome/SNS は不訳
-- 検証: tsc / vitest / build → 実機(1489×679)で ja ドロワー描画確認 → 本番デプロイ。ExtensionEntry.test は testid 参照なので文言変更で壊れない
-- 切り分け方針の根拠: [[feedback_ui_vocabulary]]（記号ラベルは英語/意味文は多言語）
-
-## 残りの作業キュー（A/B/C 後。詳細は progress.md）
-- **B6 拡張**（rank5 フローティングボタン移動で勝手保存 / rank13 同時保存タイムアウト巻き添え / rank27,28,42,46）
-- B7 ストレージ堅牢性 / B8 共有堅牢性 / B9 オンボーディング / B10 パフォ・React / B11 i18n(rank16翻訳もれ検知) / B3 OGP画像
-- follow-up（低優先）: 拡張 options 画面(英語のみ)の多言語化 / TrashConfirmDialog 等ボード内ダイアログの多言語化（B11 と一緒が効率的）
-
-## 状況サマリ（session124 でやったこと）
-- **B5 完了・本番反映済**: バックアップを「安全＋ユーザー可用」に（rank3 原子的復元/rank8 無言失敗解消/rank15 SETTINGSドロワー配線/全15言語化）。敵対的レビューで実データ消失バグ2件検出→根絶。**user が実機で EXPORT 成功（version16・全データ確認）**
-- **追加**: BACKUP を仕切り線付きで最下部へ移動＋ドロワー操作文を15言語化（A/B/C はその後の追加 FB）
+## session125 でやったこと（要約）
+- **A/B/C SETTINGS ドロワー文言の多言語化（15言語）完了・本番 allmarks.app 反映＆確認済**: A=トグル名を新キー `board.settings.quickTagOnSave`（ja「保存時にすぐタグ付け」）＋連動オンボ文、B=`saveWithoutExtension`→ブックマークレット方向、C=`replayIntro`→チュートリアル方向。tsc/vitest1505/build green、実機(1489×679) ja 描画クリップ無し確認。
+- **B6 拡張の堅牢化 完了**: rank5（ドラッグ後の勝手保存→justDragged を movement-gate 化）/ rank13（同時保存の巻き添え失敗→offscreen 参照カウント化、増分を冲頭へ、undefined 復旧）/ rank42（残存 console.log 全除去）/ rank28（normalizeUrl 不変条件ガードテスト）。rank27・rank46 は**偽陽性**と確定。**敵対的検証2ラウンドで両修正の隠れ不具合（静止長押し回帰・OGP 窓レース）を発見→v2 で修正→再確認**。全 commit+push 済。
 
 ## 守ること
 - 本番 = `allmarks.app`。deploy前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII)必須。応答は日本語。
-- バッチごとに commit+push。UI変更は事前一言。新i18nキーは15言語同期。
+- **拡張(extension/)の修正は Pages 非対象＝commit のみ**（本番デプロイ不要）。動作確認は拡張再読込＋手動。
+- バッチごとに commit+push。UI変更は事前一言。新 i18n キーは15言語同期。
 - progress.md を都度更新（文脈の永続化）。docs/private は gitignored。
