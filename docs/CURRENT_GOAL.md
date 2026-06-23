@@ -2,27 +2,35 @@
 
 ## 今のゴール (1 行)
 
-**監査フィックスは全44件 処理完了・本番反映済。次は (1) B3 既定 OGP 画像の最終承認/差し替え、(2) 公開前の残り片付け or 次の機能、を user と決めて進める。**
+**テキストカード placeholder の刷新（生成アート＋スライドショー＋テーマ対応）を、既存の見え方にゼロ影響で実装する。**
 
 ## 開始時の動き
-1. このファイル + [docs/TODO.md](./TODO.md)「現在の状態」を読む
-2. 監査の詳細が要れば [docs/private/2026-06-22-audit-fix-progress.md](./private/2026-06-22-audit-fix-progress.md)（全件決着済み・真実の場所）
-3. user に「session 128 開始」+ 下記の残りアクションを 1 行で提示して続行確認
+1. このファイル + [docs/private/IDEAS.md](./private/IDEAS.md) 末尾「テキストカード placeholder 刷新」セクションを読む（=完全な調査結果・計画・制約・チェックリスト）
+2. user に「session 128 開始」+ 下の確認1つを出して着手
 
-## 残りの user アクション（監査の積み残しはこれだけ）
-- **B3 OGP 画像の承認**: `public/og.png`（黒地+白A緑チェック+ワードマーク+タグライン+音波+allmarks.app）は Claude 暫定版。OK なら確定、変えたいなら方針（タグライン/レイアウト/実カードのコラージュ風/ブランド色）を聞いて `scripts/generate-og-image.mjs` を編集→再生成。**X等で `allmarks.app` を貼って実際のカード見た目を確認推奨**（キャッシュは debugger で更新）
-- **rank29 リサイズの体感かくつき**: user が「少し感じる」と報告。選択肢＝(a) 8px gate の刻みを小さく/無しに(滑らかさ↑・負荷↑) (b) computeSkylineLayout 自体の最適化を別タスク化(根本) (c) 現状維持。どれにするか相談
+## 最初に user に確認すること（1つだけ）
+- **音波バー(style1)を残す/外す**（賑やかなので緑絞り運用 or 除外）／**巡回は「同系統の微変化」か「別スタイル混在」か**
+- モック再掲: https://allmarks.app/mockups/styles.png ・ https://allmarks.app/mockups/on-board.png
 
-## 監査の最終結果（session 122〜127）
-- **確定44件 = 42 fix + 2 据え置き(理由付き)**。偽陽性も全件決着。
-- session127 で B8(共有堅牢性)/B10(パフォ・React)/B11(i18n)/B3(OGP画像) を実装+敵対検証+本番反映。
-- 据え置き: rank31(by-tag index 不要)・rank43(複数タブ初回オンボ＝デモのみ)。
+## 実装の要点（詳細は IDEAS.md）
+- swap point は1関数 `lib/board/placeholder-image.ts pickPlaceholderImage` → 生成SVG data URI に。5消費者が一度に刷新。旧webp4枚削除可
+- 新規 `lib/board/placeholder-art.ts`（軽量SVG・seed=URLハッシュ・**スケール非依存設計**）
+- 「動く」= 既存 `use-slideshow-cycle.ts` 流用（div レイヤー crossfade）。`ambientOn` で自動停止
+- **★ライトボックス制約（最重要）**: Lightbox は同じ PlaceholderCard を全画面拡大（LargePlaceholderCardScaler）。生成構図は全スケール対応必須＋巡回がライトボックスで動かないようスコープ管理
+- 共有OG(capture-mirror)も同生成で WYSIWYG
+- テーマ対応は palette 引数で将来差し込み（今は既定ブランド）
 
-## 公開前の片付け候補（監査外・将来）
-- 未使用 `chrome-extension/` 削除 / `EXTENSION_STORE_URL` 投入(ストア公開時) / 拡張 options 画面の多言語化 / ボード内 chrome 文章(TrashConfirm 等)の多言語化
+## ゼロ影響チェックリスト（厳守・IDEAS.md に詳細）
+layout/スクリム/タイトル不変 / ライトボックス全スケール検証(Playwright) / アニメ停止条件 / プレビュー=OG=ボード一致 / 545枚軽量 / tsc・vitest・build・敵対検証・本番スモーク
+
+## クリーンアップ（実装完了後）
+- `public/mockups/`（本番に一時設置・未commit）と `scripts/og-placeholder-mockups.mjs`（未commit）を削除
+
+## 監査フィックス（前回完了・参考）
+- 確定44件 = 42 fix + 2 据え置き(rank31/rank43)。session127 で B8/B10/B11/B3 + 後続バグ修正（共有OG二重/CJKはみ出し/プレビュー≠実画像/legalリンク英語）すべて本番反映済。詳細 [docs/private/2026-06-22-audit-fix-progress.md](./private/2026-06-22-audit-fix-progress.md)
+- B3 既定OGP画像(public/og.png)も user 承認待ち（暫定）
 
 ## 守ること
-- 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII) 必須。応答は日本語。
-- UI 変更は事前一言（ui-design.md）。新 i18n キーは15言語同期（`messages/all-keys-parity.test.ts` が照合）。
-- **既知フレーキー**: `tests/lib/channel.test.ts`（BroadcastChannel タイミング）が full run でたまに落ちる→再実行で green。無関係。
-- サブエージェントのモデルは作業の重さで使い分け（機械的=haiku/sonnet、調査=sonnet、難所+敵対検証=opus）。検証は省かない。
+- 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII) 必須。応答は日本語。UI 変更は事前一言。
+- **既知フレーキー**: `tests/lib/channel.test.ts` が full run でたまに落ちる→再実行 green。
+- サブエージェントのモデルは作業の重さで使い分け。検証は省かない。
