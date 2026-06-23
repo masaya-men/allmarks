@@ -115,6 +115,10 @@ export function OnboardingController({
   // Manage scene plays as two beats: 'settings' (point at SETTINGS — the save
   // window can be turned off there) → 'manage' (point at MANAGE TAGS → triage).
   const [manageBeat, setManageBeat] = useState<'settings' | 'manage'>('settings')
+  // rank39 fallback: true when the manage beat's real MANAGE TAGS button can't
+  // be found after a grace period, so we can offer a NEXT instead of trapping
+  // the user (whose only exit would otherwise be SKIP).
+  const [manageTargetMissing, setManageTargetMissing] = useState(false)
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
@@ -194,6 +198,19 @@ export function OnboardingController({
     const t = setTimeout(() => setInstallBeat('demo'), 1600)
     return () => clearTimeout(t)
   }, [installDragged])
+
+  // rank39: the manage gesture beat has no NEXT (teach-by-doing). If the real
+  // MANAGE TAGS button never appears (a broken/edge state), the user would be
+  // stuck with only SKIP. Grace-check the target; if it's still absent after a
+  // beat, reveal a fallback NEXT. Normal runs (button present) never see it.
+  useEffect(() => {
+    setManageTargetMissing(false)
+    if (sceneId !== 'manage' || manageBeat !== 'manage') return
+    const t = setTimeout(() => {
+      if (!document.querySelector(TARGET_SELECTOR.manage)) setManageTargetMissing(true)
+    }, 2500)
+    return () => clearTimeout(t)
+  }, [sceneId, manageBeat])
 
   // Tag scene: mark "applied" (→ show the result + NEXT) when a tag lands on the
   // card, via the cross-context channel (PiP/extension) or the in-process
@@ -442,13 +459,15 @@ export function OnboardingController({
   // can be turned off in SETTINGS and that bulk tagging lives behind MANAGE
   // TAGS. Clicking the real button (through the spotlight hole) navigates to the
   // genuine /triage screen in onboarding mode (BoardRoot routes it there + sets
-  // the resume flag); the tutorial resumes at the share scene on return. NEXT
-  // skips straight ahead for anyone who doesn't want the detour.
+  // the resume flag); the tutorial resumes at the share scene on return. The
+  // 'manage' beat has NO NEXT on purpose (teach-by-doing) — SKIP is the manual
+  // exit, plus a fallback NEXT that appears only if the button can't be found.
   if (sceneId === 'manage') {
     // Beat 'settings': point at SETTINGS — the save window can be turned off
     // there (explanation only; advance with NEXT). Beat 'manage': point at
     // MANAGE TAGS — clicking the real button (through the spotlight hole) opens
-    // the genuine /triage; NEXT skips the detour.
+    // the genuine /triage. No NEXT here (the gesture is the lesson); a fallback
+    // NEXT surfaces only when the target button is missing (rank39).
     if (manageBeat === 'settings') {
       return wrap(
         <>
@@ -469,9 +488,15 @@ export function OnboardingController({
     // NEXT let users skip past it without doing it. The caption + spotlight +
     // green cursor all point at the real button; clicking it advances. SKIP
     // (top-right) remains the escape hatch for anyone who wants out entirely.
+    // EXCEPTION (rank39): if the real button can't be found after a grace
+    // period, surface a fallback NEXT so a broken state can't trap the user.
     return wrap(
       <>
-        <OnboardingSpotlight targetSelector={TARGET_SELECTOR.manage} caption={t('board.onboarding.manage.body')} />
+        <OnboardingSpotlight targetSelector={TARGET_SELECTOR.manage} caption={t('board.onboarding.manage.body')}>
+          {manageTargetMissing && (
+            <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
+          )}
+        </OnboardingSpotlight>
         <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.manage} />
       </>,
     )
