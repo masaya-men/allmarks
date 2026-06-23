@@ -12,11 +12,17 @@ let offscreenInFlight = 0
 async function ensureOffscreen() {
   const existing = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] })
   if (existing.length > 0) return
-  await chrome.offscreen.createDocument({
-    url: OFFSCREEN_PATH,
-    reasons: ['IFRAME_SCRIPTING'],
-    justification: 'Bridge to booklage origin for IDB write',
-  })
+  try {
+    await chrome.offscreen.createDocument({
+      url: OFFSCREEN_PATH,
+      reasons: ['IFRAME_SCRIPTING'],
+      justification: 'Bridge to booklage origin for IDB write',
+    })
+  } catch (_) {
+    // A concurrent ensureOffscreen may have created the document between our
+    // getContexts() check and here — "only a single offscreen document may be
+    // created" is benign in that case (the doc we wanted now exists).
+  }
 }
 
 async function recreateOffscreenIfAlone() {
@@ -83,46 +89,46 @@ async function postToOffscreen(envelope, nonce) {
 }
 
 export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet }) {
-  await ensureOffscreen()
-  const ogp = await extractOgpFromTab(tabId, linkUrl, ogpFromBookmarklet)
-  const nonce = makeNonce('e')
-  // Every trigger uses skipIfDuplicate now — duplicates aren't an error,
-  // they're a recognised "already saved" outcome surfaced gently to the user.
-  // The offscreen iframe replies with { ok: true, skipped: true } when the URL
-  // exists; we translate that into a `duplicate` pill state below.
-  const envelope = {
-    type: 'booklage:save',
-    payload: { ...ogp, nonce, skipIfDuplicate: true },
-  }
-  // Cursor pill on the source tab. The pill always fires for every trigger
-  // except floating-button — that button has its own visual state machine
-  // (green check + glow) and a parallel cursor pill would be dual feedback.
-  // We previously also suppressed the pill when PiP was open (= PiP slide-
-  // in shows the save), but site .js (twitter / youtube / note / vimeo /
-  // soundcloud) fires its own immediate `pill-saving` postMessage before
-  // the background round-trip starts — it doesn't know about PiP state.
-  // So when PiP was open + auto-save fired, the saving pill would spin
-  // forever (no final state arrived). Pill always-on resolves that.
   const isFloatingButton = trigger === 'floating-button'
-  if (!isFloatingButton) {
-    chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: 'saving' }).catch(() => {})
-  }
-
+  // Count this op as in-flight for its ENTIRE offscreen lifetime — from before
+  // ensureOffscreen()/OGP extraction through the round-trip — so a concurrent
+  // op's timeout self-heal (recreateOffscreenIfAlone) can never tear the shared
+  // offscreen down while we are mid-save (rank13). The increment MUST precede
+  // the long OGP-extraction await; a save parked there would otherwise be
+  // uncounted, get closed out from under it, and post into a dead context.
   offscreenInFlight++
+  let ogp
   let result
   try {
+    await ensureOffscreen()
+    ogp = await extractOgpFromTab(tabId, linkUrl, ogpFromBookmarklet)
+    const nonce = makeNonce('e')
+    // Every trigger uses skipIfDuplicate now — duplicates aren't an error,
+    // they're a recognised "already saved" outcome surfaced gently to the user.
+    // The offscreen iframe replies with { ok: true, skipped: true } when the URL
+    // exists; we translate that into a `duplicate` pill state below.
+    const envelope = {
+      type: 'booklage:save',
+      payload: { ...ogp, nonce, skipIfDuplicate: true },
+    }
+    // Cursor pill on the source tab. The pill always fires for every trigger
+    // except floating-button — that button has its own visual state machine
+    // (green check + glow) and a parallel cursor pill would be dual feedback.
+    // (PiP-open used to suppress it, but site .js fires its own pill-saving
+    // before the round-trip, so always-on avoids a forever-spinning pill.)
+    if (!isFloatingButton) {
+      chrome.tabs.sendMessage(tabId, { type: 'booklage:cursor-pill', state: 'saving' }).catch(() => {})
+    }
+
     result = await postToOffscreen(envelope, nonce)
 
-    // Self-heal: a timeout almost always means the offscreen iframe is in a
-    // stuck state (= stale load after deploy, lost message listener, paused
-    // service worker that woke up mid-flight, etc). Recreate it and retry once
-    // with a fresh nonce. The user sees no error if the retry succeeds; only
-    // if the retry also times out do we surface the red pill. We tear the
-    // shared offscreen down ONLY when no other save/add-tag is in flight
-    // (recreateOffscreenIfAlone) — closing it under a concurrent op would flip
-    // that op to a false error pill (rank13). Cost: up to ~8s extra latency on
-    // the rare stuck single-save case; everyday saves are untouched.
-    if (!result?.ok && result?.error === 'timeout') {
+    // Self-heal: a timeout (or an `undefined` reply = the offscreen was torn
+    // down out from under us) means the shared iframe is unusable. Recreate it
+    // and retry once with a fresh nonce; the user sees no error if the retry
+    // succeeds. We tear the shared offscreen down ONLY when no other save/add-tag
+    // is in flight (recreateOffscreenIfAlone) — closing it under a concurrent op
+    // would flip that op to a false error pill (rank13).
+    if (!result?.ok && (result?.error === 'timeout' || result == null)) {
       await recreateOffscreenIfAlone()
       const retryNonce = makeNonce('e-retry')
       const retryEnvelope = { ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }
@@ -176,13 +182,16 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
 // the UI's perspective (the strip shows ✓ optimistically); we still await the
 // result here to drive the one-shot offscreen self-heal on timeout.
 export async function dispatchAddTag({ bookmarkId, tagId }) {
-  await ensureOffscreen()
-  const nonce = makeNonce('t')
-  const envelope = { type: 'booklage:add-tag', payload: { bookmarkId, tagId, nonce } }
+  // Increment before ensureOffscreen (same in-flight discipline as dispatchSave)
+  // so a concurrent op's self-heal can't tear the shared offscreen down while
+  // this add-tag is mid-round-trip (rank13).
   offscreenInFlight++
   try {
+    await ensureOffscreen()
+    const nonce = makeNonce('t')
+    const envelope = { type: 'booklage:add-tag', payload: { bookmarkId, tagId, nonce } }
     let result = await postToOffscreen(envelope, nonce)
-    if (!result?.ok && result?.error === 'timeout') {
+    if (!result?.ok && (result?.error === 'timeout' || result == null)) {
       await recreateOffscreenIfAlone()
       const retryNonce = makeNonce('t-retry')
       result = await postToOffscreen({ ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }, retryNonce)

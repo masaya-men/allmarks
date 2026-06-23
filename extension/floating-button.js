@@ -163,6 +163,12 @@
   let justDragged = false
   let dragStartY = 0
   let dragOriginTopRatio = 0.5
+  // Snap side captured at drag-start, so onPointerUp can tell a real reposition
+  // from a stationary long-press (which must still save) when setting justDragged.
+  let dragOriginSide = 'right'
+  // Set true as soon as a drag moves past the 6px threshold, so even a drag that
+  // wanders and returns near its start still suppresses the trailing save click.
+  let dragMoved = false
 
   // === SVG markup (= mirrors extension/icons/floating-button-mark.svg) ===
   // Session 82: filters removed. The innerShadow filter regions
@@ -231,18 +237,21 @@
 
   // === Drag (long-press → reposition → snap) ===
   function onPointerDown(e) {
-    if (e.button !== 0) return
     justDragged = false
+    if (e.button !== 0) return
     dragLongPressTimer = setTimeout(() => {
       dragging = true
+      dragMoved = false
       dragStartY = e.clientY
       dragOriginTopRatio = settings.floatingButtonTopRatio
+      dragOriginSide = settings.floatingButtonSnapSide === 'left' ? 'left' : 'right'
       container.classList.add('is-dragging')
     }, 300)
   }
   function onPointerMove(e) {
     if (!dragging) return
     const dy = e.clientY - dragStartY
+    if (Math.abs(dy) > 6) dragMoved = true
     const vh = window.innerHeight
     const newRatio = Math.max(0.05, Math.min(0.95, dragOriginTopRatio + dy / vh))
     settings.floatingButtonTopRatio = newRatio
@@ -252,10 +261,15 @@
     clearTimeout(dragLongPressTimer)
     if (!dragging) return
     dragging = false
-    justDragged = true
     container.classList.remove('is-dragging')
     // Snap horizontally based on cursor's X.
     const newSide = e.clientX < window.innerWidth / 2 ? 'left' : 'right'
+    // Only swallow the trailing click when the button ACTUALLY moved — a
+    // stationary long-press that merely crossed the 300ms threshold (hesitation
+    // or a laggy tab) must still save (rank5 follow-up: never eat a real save).
+    // dragMoved covers any vertical drag (even one that returns near start);
+    // the side check covers a horizontal drag that flipped the snap side.
+    justDragged = dragMoved || newSide !== dragOriginSide
     settings.floatingButtonSnapSide = newSide
     applyPosition()
     // Snap pulse feedback.
