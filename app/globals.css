@@ -374,7 +374,9 @@ ol {
      board stays a quiet backdrop without becoming the focus. Tune both
      vars freely; they're independent. */
   --lightbox-backdrop: rgba(0, 0, 0, 0.5);
-  --lightbox-backdrop-blur: 8px;
+  /* session128: user wants a clearly frosted backdrop. Bumped 8px → 16px.
+     Higher = stronger blur but more GPU cost (watch for stutter at DPR 2.58). */
+  --lightbox-backdrop-blur: 16px;
 
   /* === Outer-frame design (v17 → session 30 全画面化) ===
      セッション 30 で 額縁付き destefanis homage から 全画面 (= 「自分の世界」)

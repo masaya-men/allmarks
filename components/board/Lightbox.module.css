@@ -20,13 +20,17 @@
   inset: 0;
   z-index: 100;
   background: var(--lightbox-backdrop);
-  /* backdrop-filter intentionally removed 2026-05-14: viewport-sized blur
-     filter on a fading-in element with moving clone behind it produced
-     visible "shake / low FPS" feeling during open animation, especially
-     at high DPR (user environment: 4K + 200% × 130% = DPR 2.58). The
-     dark semi-transparent background alone gives the depth-separation
-     we want — same as destefanis reference. To bring blur back as a
-     theme option, set --lightbox-backdrop-blur and re-enable here. */
+  /* Frosted-glass backdrop (re-enabled session 128). 2026-05-14 had removed it
+     because animating the blur on a fading element with a MOVING clone behind it
+     re-computed the blur every frame → "shake / low FPS" at the user's DPR 2.58.
+     This time it works as the smooth pattern recommends: a CONSTANT blur radius
+     (never tweened — only .open's opacity is animated by GSAP) over a board that
+     is FROZEN while the lightbox is open (ambient slideshow + hero playback both
+     pause on sourceCardId). So the compositor fades a static blurred layer in,
+     rather than recomputing a moving blur. Strength is tunable via
+     --lightbox-backdrop-blur; if the user's GPU still stutters, fall back to a
+     filter:blur snapped on the frozen board, or a downscaled-blur layer. */
+  backdrop-filter: blur(var(--lightbox-backdrop-blur));
   opacity: 0;
   pointer-events: none;
 }
