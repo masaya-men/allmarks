@@ -35,7 +35,8 @@
     "emptyState": "Cole uma URL para adicionar seu primeiro favorito",
     "theme": {
       "dottedNotebook": "Caderno pontilhado",
-      "gridPaper": "Papel quadriculado"
+      "gridPaper": "Papel quadriculado",
+      "paperAtelier": "Ateliê de Papel"
     },
     "filter": {
       "label": "Todos",

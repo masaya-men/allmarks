@@ -35,7 +35,8 @@
     "emptyState": "粘贴网址，添加你的第一个书签",
     "theme": {
       "dottedNotebook": "圆点笔记本",
-      "gridPaper": "方格纸"
+      "gridPaper": "方格纸",
+      "paperAtelier": "Paper Atelier"
     },
     "filter": {
       "label": "全部",

@@ -35,7 +35,8 @@
     "emptyState": "İlk yer imini eklemek için bir URL yapıştır",
     "theme": {
       "dottedNotebook": "Noktalı Defter",
-      "gridPaper": "Kareli Kağıt"
+      "gridPaper": "Kareli Kağıt",
+      "paperAtelier": "Paper Atelier"
     },
     "filter": {
       "label": "Tümü",

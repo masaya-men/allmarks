@@ -35,7 +35,8 @@
     "emptyState": "URL을 붙여넣어 첫 북마크를 추가하세요",
     "theme": {
       "dottedNotebook": "도트 노트",
-      "gridPaper": "모눈 종이"
+      "gridPaper": "모눈 종이",
+      "paperAtelier": "페이퍼 아틀리에"
     },
     "filter": {
       "label": "전체",

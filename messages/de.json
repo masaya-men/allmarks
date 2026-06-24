@@ -35,7 +35,8 @@
     "emptyState": "Füge eine URL ein, um dein erstes Bookmark anzulegen",
     "theme": {
       "dottedNotebook": "Punktraster",
-      "gridPaper": "Karopapier"
+      "gridPaper": "Karopapier",
+      "paperAtelier": "Papier-Atelier"
     },
     "filter": {
       "label": "Alle",
