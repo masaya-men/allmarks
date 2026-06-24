@@ -462,6 +462,11 @@ html[data-theme-id="paper-atelier"] {
   --accent-primary: #2f4a37;
   --accent-gold: #b9924a;            /* GOLD PEEL (used by paper decorations in Plan 2) */
 
+  /* scroll meter (paper "ruler" variant — RulerTrack) */
+  --meter-ruler-marker: #b9924a;            /* GOLD PEEL brass marker */
+  --meter-ruler-numeral: #2b2722;           /* CHARCOAL ruler numerals + major ticks */
+  --meter-ruler-rule: rgba(43, 39, 34, 0.45); /* faint ink rule + minor ticks */
+
   /* fibre texture tile — generated once by scripts/generate-paper-texture.mjs,
      consumed by .paperAtelier via var(); paper-only so the default theme is
      byte-identical (.paperAtelier reads var(--paper-fiber-url, none)). */

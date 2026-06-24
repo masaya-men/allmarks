@@ -2242,6 +2242,7 @@ export function BoardRoot() {
             total={filteredItems.length}
             swellFraction={meterSwellFraction}
             onScrub={handleMeterScrub}
+            variant={themeMeta.scrollMeterVariant}
           />
         )}
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of

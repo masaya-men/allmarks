@@ -17,7 +17,7 @@ import { orderForImport } from '@/lib/share/receiver-import-order'
 import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
 import { computeSkylineLayout, type SkylineCard, type SkylineResult } from '@/lib/board/skyline-layout'
 import { BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_INNER } from '@/lib/board/constants'
-import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
+import { DEFAULT_THEME_ID, getThemeMeta } from '@/lib/board/theme-registry'
 import type { PresetId } from '@/lib/board/tune-presets'
 import { PRESETS } from '@/lib/board/tune-presets'
 import { detectUrlType } from '@/lib/utils/url'
@@ -515,6 +515,7 @@ export function SharedBoard(): ReactElement {
           total={visibleCards.length}
           swellFraction={swell}
           onScrub={handleMeterScrub}
+          variant={getThemeMeta(themeId).scrollMeterVariant}
         />
 
         {/* Theme-driven import overlay (backdrop covers the canvas at z 300). */}
