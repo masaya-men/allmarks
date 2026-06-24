@@ -138,11 +138,14 @@
 
 ### 3.5 ベタ書き値のトークン化（デフォルト見た目は不変）
 
-各々、**現在の値を default トークン値にする**ので既定テーマの見た目は変わらない。テーマはこのトークンを上書きするだけ:
-- メーター波形バー: `--meter-bar-color` / `--meter-swell-color` / `--meter-bar-glow`（[ScrollMeter.tsx](../../../components/board/ScrollMeter.tsx) のインライン style 経由で WaveformTrack へ）。
-- 方眼線色: `--theme-grid-line-color`（[themes.module.css](../../../components/board/themes.module.css) `.gridPaper`）。
-- カードタイトル帯: `--card-title-bg` / `--card-title-fg`（[ImageCard.module.css](../../../components/board/cards/ImageCard.module.css) の白ベタ `rgba(255,255,255,0.95)` を置換）。
-- Instagram 覆い: `--card-instagram-tint`（同上のラジアルグラデの黒ベタ）。
+**実コード確認の結果（2026-06-24 修正）**: カード表面は既にトークン駆動（[ImageCard.module.css:9](../../../components/board/cards/ImageCard.module.css#L9) `background: var(--card-dark-alt)`、`border-radius: var(--card-radius)`）。テキスト/アクセント/背景も既存トークン。**＝ paper は既存トークンを上書きするだけで核の見た目が出る。大規模なトークン化工事は不要**（旧 spec の「カードタイトル帯の白ベタ」は誤り＝実際は [ImageCard.module.css:98](../../../components/board/cards/ImageCard.module.css#L98) の複数画像ドットのアクティブ色）。
+
+真にベタ書きで「将来テーマが触れたい」のは以下のみ。**各々 default 値＝現状値にするので既定テーマは不変**。Plan の段階で対応:
+- **メーター波形バー色**（[ScrollMeter.tsx](../../../components/board/ScrollMeter.tsx) React 内ベタ書き）→ `--meter-*` トークン化は **Plan 2（定規メーター変種）と同時**。
+- **Instagram 覆いの黒ベタ**（[ImageCard.module.css:59-64](../../../components/board/cards/ImageCard.module.css#L59) ラジアルグラデ）→ `--card-instagram-tint`。軽微・**Plan 2**。
+- **方眼線色**（[themes.module.css:8-9](../../../components/board/themes.module.css#L8) `rgba(255,255,255,0.18)`）→ `--theme-grid-line-color`。grid-paper 専用・テーマ化対象外（後回しで可）。
+
+→ **Plan 1（土台＋paper核）ではトークン化工事ゼロ**。paper は `html[data-theme-id="paper-atelier"]` ブロックで既存トークン（`--bg-dark` / `--card-dark-alt` / `--text-*` / `--color-accent-primary` / `--chrome-text-color` / `--card-radius` / `--font-heading` 等）を上書き＋背景クラスを足すだけ。
 
 ---
 
