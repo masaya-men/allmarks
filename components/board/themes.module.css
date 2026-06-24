@@ -10,3 +10,12 @@
   background-size: 40px 40px;
   background-position: 0 0;
 }
+
+.paperAtelier {
+  background-color: var(--bg-dark);
+  /* Plan 1: CSS-only parchment grain + soft vignette (no external asset yet;
+     the real fiber texture asset lands in Plan 2 calibration). */
+  background-image:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 253, 246, 0.45), transparent 60%),
+    radial-gradient(140% 120% at 50% 100%, rgba(43, 39, 34, 0.06), transparent 55%);
+}

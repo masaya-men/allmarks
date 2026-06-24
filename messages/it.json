@@ -35,7 +35,8 @@
     "emptyState": "Incolla un URL per aggiungere il tuo primo segnalibro",
     "theme": {
       "dottedNotebook": "Quaderno a puntini",
-      "gridPaper": "Carta a quadretti"
+      "gridPaper": "Carta a quadretti",
+      "paperAtelier": "Atelier di Carta"
     },
     "filter": {
       "label": "Tutti",

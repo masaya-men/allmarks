@@ -35,7 +35,8 @@
     "emptyState": "Dán một URL để thêm dấu trang đầu tiên",
     "theme": {
       "dottedNotebook": "Giấy chấm bi",
-      "gridPaper": "Giấy ô vuông"
+      "gridPaper": "Giấy ô vuông",
+      "paperAtelier": "Paper Atelier"
     },
     "filter": {
       "label": "Tất cả",

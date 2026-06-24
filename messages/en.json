@@ -35,7 +35,8 @@
     "emptyState": "Paste a URL to add your first bookmark",
     "theme": {
       "dottedNotebook": "Dotted Notebook",
-      "gridPaper": "Grid Paper"
+      "gridPaper": "Grid Paper",
+      "paperAtelier": "Paper Atelier"
     },
     "filter": {
       "label": "All",

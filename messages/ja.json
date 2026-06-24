@@ -35,7 +35,8 @@
     "emptyState": "URLをペーストしてブックマークを追加しましょう",
     "theme": {
       "dottedNotebook": "点線ノート",
-      "gridPaper": "方眼紙"
+      "gridPaper": "方眼紙",
+      "paperAtelier": "ペーパーアトリエ"
     },
     "filter": {
       "label": "すべて",

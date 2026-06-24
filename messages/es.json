@@ -35,7 +35,8 @@
     "emptyState": "Pega una URL para añadir tu primer marcador",
     "theme": {
       "dottedNotebook": "Cuaderno punteado",
-      "gridPaper": "Papel cuadriculado"
+      "gridPaper": "Papel cuadriculado",
+      "paperAtelier": "Taller de Papel"
     },
     "filter": {
       "label": "Todos",

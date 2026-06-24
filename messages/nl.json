@@ -35,7 +35,8 @@
     "emptyState": "Plak een URL om je eerste bladwijzer toe te voegen",
     "theme": {
       "dottedNotebook": "Stippennotitieboek",
-      "gridPaper": "Ruitjespapier"
+      "gridPaper": "Ruitjespapier",
+      "paperAtelier": "Papieratelier"
     },
     "filter": {
       "label": "Alles",

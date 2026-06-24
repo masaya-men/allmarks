@@ -35,7 +35,8 @@
     "emptyState": "วาง URL เพื่อเพิ่มบุ๊กมาร์กแรกของคุณ",
     "theme": {
       "dottedNotebook": "สมุดจุดไข่ปลา",
-      "gridPaper": "กระดาษตาราง"
+      "gridPaper": "กระดาษตาราง",
+      "paperAtelier": "Paper Atelier"
     },
     "filter": {
       "label": "ทั้งหมด",

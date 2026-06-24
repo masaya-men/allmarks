@@ -12,6 +12,8 @@ import { EXTENSION_STORE_URL } from '@/lib/board/constants'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ChromeButton } from './ChromeButton'
 import { BackupButton } from './BackupButton'
+import { ThemePicker } from './ThemePicker'
+import type { ThemeId } from '@/lib/board/types'
 import styles from './ExtensionEntry.module.css'
 
 /** Layout effect on the client, plain effect on the server (where layout
@@ -88,6 +90,9 @@ export interface ExtensionEntryProps {
    *  of hover so the tutorial can spotlight the QUICK-TAG ON SAVE toggle inside
    *  (the drawer is hover-only; a guided demo can't hold a hover). */
   readonly forceOpen?: boolean
+  /** Active board theme + change handler for the THEMES section. */
+  readonly themeId: ThemeId
+  readonly onThemeChange: (id: ThemeId) => void
 }
 
 /** Hover-open leave grace, copied from TuneTrigger so the SETTINGS drawer
@@ -100,6 +105,8 @@ export function ExtensionEntry({
   onOpenBookmarkletModal,
   onReplayIntro,
   forceOpen = false,
+  themeId,
+  onThemeChange,
 }: ExtensionEntryProps): ReactElement {
   const { t } = useI18n()
   const installed = useExtensionInstalled()
@@ -178,6 +185,7 @@ export function ExtensionEntry({
             data-testid="quick-tag-toggle"
           />
         </label>
+        <ThemePicker themeId={themeId} onThemeChange={onThemeChange} />
         <button
           type="button"
           className={styles.panelCta}

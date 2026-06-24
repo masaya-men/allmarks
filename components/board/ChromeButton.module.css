@@ -4,8 +4,8 @@
   line-height: 1;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
+  color: var(--chrome-btn-color, rgba(255, 255, 255, 0.85));
+  -webkit-text-stroke: var(--chrome-btn-stroke-width, 0.5px) var(--chrome-btn-stroke-color, rgba(0, 0, 0, 0.45));
   paint-order: stroke fill;
   padding: 8px 12px;
   background: none;
@@ -38,7 +38,7 @@
 }
 
 .btn:hover {
-  color: rgba(255, 255, 255, 1);
+  color: var(--chrome-btn-color-hover, rgba(255, 255, 255, 1));
 }
 
 .btn:hover::before {

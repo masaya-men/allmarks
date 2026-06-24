@@ -8,6 +8,9 @@ import {
   DEFAULT_THEME_ID,
   getThemeMeta,
 } from '@/lib/board/theme-registry'
+import { resolveThemeId } from '@/lib/board/theme-resolve'
+import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
+import type { ThemeId } from '@/lib/board/types'
 import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
@@ -139,6 +142,18 @@ export function BoardRoot() {
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
   const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
+  // Seeded from the localStorage theme cache (mirrored in the effect below) so
+  // the first client paint matches the pre-paint inline script in (app)/layout —
+  // no flash of the default theme for users who saved a non-default one. IDB
+  // (loadBoardConfig) is the source of truth and reconciles this right after.
+  const [themeId, setThemeId] = useState<ThemeId>(() => {
+    if (typeof window === 'undefined') return DEFAULT_THEME_ID
+    try {
+      return resolveThemeId(window.localStorage.getItem('allmarks-theme-id') ?? undefined, EMPTY_LICENSES)
+    } catch {
+      return DEFAULT_THEME_ID
+    }
+  })
   // While the onboarding tag scene is active, force the hover-gated card +TAG
   // button visible (the user can't hover precisely through the spotlight hole).
   const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
@@ -611,6 +626,7 @@ export function BoardRoot() {
       setActiveFilter(cfg.activeFilter)
       setDisplayMode(cfg.displayMode)
       setBgTypoEnabled(cfg.bgTypoEnabled)
+      setThemeId(resolveThemeId(cfg.themeId, EMPTY_LICENSES))
       const prefersReduced =
         typeof window !== 'undefined' &&
         window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
@@ -624,6 +640,25 @@ export function BoardRoot() {
     })()
     return (): void => { cancelled = true }
   }, [])
+
+  // Reflect the active theme onto <html> so the [data-theme-id] cascade reaches
+  // portalled UI (Lightbox / popovers) too. Cleared on unmount so leaving the
+  // board (e.g. back to the LP) doesn't leave a stale attribute behind.
+  useEffect(() => {
+    const el = document.documentElement
+    el.setAttribute('data-theme-id', themeId)
+    // Mirror to a localStorage cache (NOT the source of truth — that's the IDB
+    // BoardConfig) so the pre-paint inline script in (app)/layout can apply the
+    // attribute before first paint and avoid a theme flash on reload.
+    try {
+      window.localStorage.setItem('allmarks-theme-id', themeId)
+    } catch {
+      // private mode / storage disabled — the IDB path still themes correctly.
+    }
+    return (): void => {
+      el.removeAttribute('data-theme-id')
+    }
+  }, [themeId])
 
   // First-run onboarding gate: runs once when loading flips false and db is ready.
   // If the user has no bookmarks and hasn't completed onboarding, seeds demo cards
@@ -771,7 +806,7 @@ export function BoardRoot() {
     return filteredItems.filter((it) => matchedBookmarkIds.has(it.bookmarkId))
   }, [filteredItems, matchedBookmarkIds])
 
-  const themeMeta = getThemeMeta(DEFAULT_THEME_ID)
+  const themeMeta = getThemeMeta(themeId)
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
@@ -1579,6 +1614,15 @@ export function BoardRoot() {
     })()
   }, [])
 
+  const handleThemeChange = useCallback((next: ThemeId): void => {
+    setThemeId(next)
+    void (async (): Promise<void> => {
+      const db = await initDB()
+      const cfg = await loadBoardConfig(db)
+      await saveBoardConfig(db, { ...cfg, themeId: next })
+    })()
+  }, [])
+
   const handleToggleMotion = useCallback((): void => {
     setMotionEnabled((prev) => {
       const next = !prev
@@ -1635,8 +1679,9 @@ export function BoardRoot() {
         ? { mode: activeFilter.mode, tagIds: activeFilter.tagIds }
         : null,
       now: Date.now(),
-      // Theme switching is not yet wired in the board UI; BoardRoot hardcodes
-      // DEFAULT_THEME_ID. Forward it so the receiver can restore the same theme.
+      // Share theming is Plan 3 — until then a shared board renders the default
+      // theme. Forward DEFAULT_THEME_ID as a deliberate placeholder; the live
+      // themeId state is intentionally NOT used here yet.
       themeId: DEFAULT_THEME_ID,
       // Global masonry gap the sender sees. Per-card widths ride on each
       // card's `cw`; this is the only remaining global layout input the
@@ -1994,6 +2039,8 @@ export function BoardRoot() {
                 onOpenBookmarkletModal={handleOpenBookmarkletModal}
                 onReplayIntro={() => { void startOnboardingReplay() }}
                 forceOpen={forceSettingsOpen}
+                themeId={themeId}
+                onThemeChange={handleThemeChange}
               />
               <TagButton
                 onClick={(): void => {
@@ -2061,7 +2108,7 @@ export function BoardRoot() {
               }}
             >
               <ThemeLayer
-                themeId={DEFAULT_THEME_ID}
+                themeId={themeId}
                 totalWidth={contentWidth}
                 totalHeight={contentHeight}
               />
@@ -2315,7 +2362,7 @@ export function BoardRoot() {
         />
       </PipPortal>
       <UndoToast input={toast} />
-      <PasteSaveFeedback feedback={pasteFeedback} themeId={DEFAULT_THEME_ID} />
+      <PasteSaveFeedback feedback={pasteFeedback} themeId={themeId} />
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}
       <LanguageSwitcher />
     </div>

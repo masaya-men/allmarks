@@ -1,6 +1,6 @@
 export type ScrollDirection = 'vertical' | 'horizontal' | '2d' | 'sphere'
 
-export type ThemeId = 'dotted-notebook' | 'grid-paper'
+export type ThemeId = 'dotted-notebook' | 'grid-paper' | 'paper-atelier'
 
 export type CardPosition = {
   readonly x: number
@@ -55,6 +55,10 @@ export type ThemeMeta = {
   readonly direction: ScrollDirection
   readonly backgroundClassName: string
   readonly labelKey: string
+  /** Base color scheme — drives color-scheme + which token block applies. */
+  readonly colorScheme: 'light' | 'dark'
+  /** Entitlement tier. 'free' = always available; 'paid' = needs a license. */
+  readonly tier: 'free' | 'paid'
   readonly layoutParams?: ThemeLayoutParams
 }
 

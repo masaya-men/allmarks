@@ -8,7 +8,7 @@ beforeEach(() => {
 
 describe('ExtensionEntry settings drawer', () => {
   it('opens the drawer on hover and reflects the toggle state', () => {
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={() => {}} onOpenBookmarkletModal={() => {}} />)
+    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={() => {}} onOpenBookmarkletModal={() => {}} themeId="dotted-notebook" onThemeChange={() => {}} />)
     // TUNE-style hover open: the drawer expands when the wrapper is entered.
     fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
     const toggle = screen.getByTestId('quick-tag-toggle') as HTMLInputElement
@@ -17,7 +17,7 @@ describe('ExtensionEntry settings drawer', () => {
 
   it('calls onQuickTagToggle when toggled', () => {
     const onToggle = vi.fn()
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} onOpenBookmarkletModal={() => {}} />)
+    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} onOpenBookmarkletModal={() => {}} themeId="dotted-notebook" onThemeChange={() => {}} />)
     fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
     fireEvent.click(screen.getByTestId('quick-tag-toggle'))
     expect(onToggle).toHaveBeenCalledWith(false)
@@ -28,7 +28,7 @@ describe('ExtensionEntry settings drawer', () => {
     // because the /save window reads the same setting.
     delete document.documentElement.dataset.booklageExtension
     const onToggle = vi.fn()
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} onOpenBookmarkletModal={() => {}} />)
+    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} onOpenBookmarkletModal={() => {}} themeId="dotted-notebook" onThemeChange={() => {}} />)
     fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
     expect(screen.getByTestId('extension-settings')).toBeTruthy()
     fireEvent.click(screen.getByTestId('quick-tag-toggle'))
@@ -45,6 +45,8 @@ describe('ExtensionEntry settings drawer', () => {
         quickTagEnabled={true}
         onQuickTagToggle={() => {}}
         onOpenBookmarkletModal={onOpen}
+        themeId="dotted-notebook"
+        onThemeChange={() => {}}
       />,
     )
     fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
@@ -60,6 +62,8 @@ describe('ExtensionEntry settings drawer', () => {
         onQuickTagToggle={() => {}}
         onOpenBookmarkletModal={() => {}}
         onReplayIntro={onReplay}
+        themeId="dotted-notebook"
+        onThemeChange={() => {}}
       />,
     )
     fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))

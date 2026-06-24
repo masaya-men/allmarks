@@ -35,7 +35,8 @@
     "emptyState": "الصق رابطًا لإضافة أول إشارة مرجعية",
     "theme": {
       "dottedNotebook": "دفتر منقّط",
-      "gridPaper": "ورق مربعات"
+      "gridPaper": "ورق مربعات",
+      "paperAtelier": "ورشة الورق"
     },
     "filter": {
       "label": "الكل",

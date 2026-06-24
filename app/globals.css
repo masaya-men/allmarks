@@ -427,6 +427,72 @@ ol {
   --shadow-collage-card: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* ── paper-atelier theme ─────────────────────────────────────
+   Self-contained token override for the editorial-paper theme. Set on <html>
+   via data-theme-id at runtime (BoardRoot). Initial values — calibrate to
+   docs/private/theme-mockups/03-paper-atelier__*.png with the calibration grid. */
+html[data-theme-id="paper-atelier"] {
+  color-scheme: light;
+
+  /* board canvas + card surface (destefanis token family — board consumes these) */
+  --bg-dark: #efe6d2;            /* PARCHMENT */
+  --bg-outer: #e9dfc8;
+  --card-dark-alt: #f7f1e3;      /* IVORY card surface */
+  --card-white: #fffdf6;
+  --card-border-dark: rgba(43, 39, 34, 0.14);
+  --card-radius: 3px;            /* paper-print corner */
+
+  /* text (destefanis family) */
+  --text-primary: #2b2722;       /* CHARCOAL ink */
+  --text-body: #4a443b;
+  --text-meta: #8a8275;
+  --text-muted: #9c9485;         /* WARM GRAY */
+  --text-signature: #b4ab98;
+
+  /* color family (some chrome/components consume these) */
+  --color-bg-primary: #efe6d2;
+  --color-bg-elevated: #f7f1e3;
+  --color-text-primary: #2b2722;
+  --color-text-secondary: #6a6356;
+  --color-text-tertiary: #8a8275;
+
+  /* accents */
+  --color-accent-primary: #2f4a37;   /* FOREST */
+  --color-accent-primary-hover: #3c5e46;
+  --accent-primary: #2f4a37;
+  --accent-gold: #b9924a;            /* GOLD PEEL (used by paper decorations in Plan 2) */
+
+  /* floating chrome text (ScrollMeter counter / buttons) — ink on paper */
+  --chrome-text-color: rgba(43, 39, 34, 0.92);
+  --chrome-text-color-hover: rgba(43, 39, 34, 1);
+  --chrome-text-stroke-color: rgba(255, 253, 246, 0.55);
+  --chrome-text-stroke-color-hover: rgba(255, 253, 246, 0.7);
+  --chrome-text-shadow: 0 1px 2px rgba(43, 39, 34, 0.18);
+
+  /* big background wordmark — ink + serif on paper (BoardBackgroundTypography
+     reads these via var-with-fallback, so the default theme is unchanged) */
+  --bg-typo-font: var(--font-serif-display);
+  --bg-typo-color: rgba(43, 39, 34, 0.9);
+
+  /* header chrome buttons (TITLE/TUNE/SETTINGS…) — dark, no stroke on paper */
+  --chrome-btn-color: rgba(43, 39, 34, 0.9);
+  --chrome-btn-color-hover: rgba(43, 39, 34, 1);
+  --chrome-btn-stroke-width: 0px;
+  --chrome-btn-stroke-color: transparent;
+
+  /* serif headings + body (Fraunces, already loaded as --font-serif-display).
+     --font-sans is overridden too so portalled UI (Lightbox / PiP / popovers)
+     and any component that reads var(--font-sans) directly renders serif on the
+     paper world; --font-mono is left untouched so technical labels stay mono. */
+  --font-heading: var(--font-serif-display), Georgia, 'Times New Roman', serif;
+  --font-body: var(--font-serif-display), Georgia, serif;
+  --font-sans: var(--font-serif-display), Georgia, 'Times New Roman', serif;
+
+  /* soft warm paper shadows */
+  --shadow-grid-card: 0 2px 8px rgba(43, 39, 34, 0.12);
+  --shadow-collage-card: 0 10px 28px rgba(43, 39, 34, 0.16);
+}
+
 /* ── Reduced Motion ────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

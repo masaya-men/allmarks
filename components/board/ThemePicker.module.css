@@ -1,0 +1,17 @@
+.section { display: flex; flex-direction: column; gap: 6px; }
+.heading { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--text-meta); }
+.grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch {
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  width: 84px; padding: 6px; border-radius: 8px; cursor: pointer;
+  background: var(--color-glass-bg); border: 1px solid var(--color-glass-border);
+  color: var(--text-body); transition: border-color 140ms ease, background 140ms ease;
+}
+.swatch[aria-pressed='true'] { border-color: var(--color-accent-primary); }
+.swatch:disabled { opacity: 0.55; cursor: default; }
+.preview { height: 38px; border-radius: 4px; }
+.preview[data-theme-id='dotted-notebook'] { background: #0a0a0a; }
+.preview[data-theme-id='grid-paper'] { background: #0e0e11; }
+.preview[data-theme-id='paper-atelier'] { background: #efe6d2; }
+.name { font-family: var(--font-heading); font-size: 12px; }
+.badge { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--text-meta); }
