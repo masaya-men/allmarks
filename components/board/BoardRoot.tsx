@@ -60,6 +60,8 @@ import { ExtensionEntry } from './ExtensionEntry'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
+import { PaperFramePlate } from './chrome/PaperFramePlate'
+import { PaperWaxSeal } from './chrome/PaperWaxSeal'
 import { UndoToast, type UndoToastInput } from './UndoToast'
 import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
 import { PasteSaveFeedback } from './PasteSaveFeedback'
@@ -82,6 +84,7 @@ import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
+import { usePaperParallax } from './use-paper-parallax'
 import styles from './BoardRoot.module.css'
 
 // Horizontal room past the rightmost card so the user can scroll a little
@@ -807,6 +810,7 @@ export function BoardRoot() {
   }, [filteredItems, matchedBookmarkIds])
 
   const themeMeta = getThemeMeta(themeId)
+  const paperParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y })
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
@@ -1973,6 +1977,16 @@ export function BoardRoot() {
           link strip waits for a footer redesign). Fades with the chrome while
           the Lightbox is open, mirroring frameTopChrome. */}
       <BoardChrome hidden={!!lightboxItemId} />
+      {/* Paper-atelier decorative chrome (Plan 2 §4.7) — MK-1 plate (bottom-left)
+          + wax "A" seal & decorative "+" stamp (bottom-right). pointer-events:none
+          siblings of BoardChrome, gated on the theme opting into decorations, and
+          faded with the chrome while the Lightbox is open (mirrors BoardChrome). */}
+      {themeMeta.decorations === true && (
+        <>
+          <PaperFramePlate hidden={!!lightboxItemId} />
+          <PaperWaxSeal hidden={!!lightboxItemId} />
+        </>
+      )}
       {/* The always-on bottom-left bookmarklet pill was removed (session 114).
           The no-extension install path now lives in SETTINGS ("SAVE WITHOUT
           EXTENSION" → BookmarkletInstallModal) and the empty-state welcome,
@@ -2096,13 +2110,16 @@ export function BoardRoot() {
             onScroll={handleScroll}
             spaceHeld={spaceHeld}
           >
-            {/* Background — full canvas coverage, follows scroll. */}
+            {/* Background — full canvas coverage, follows scroll. Paper-atelier
+                lags the vertical pan by paperParallaxY (0.85x) for a gentle
+                depth read; every other theme keeps the exact 1:1 pan
+                (paperParallaxY is 0 unless paper + motion + not reduced). */}
             <div
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                transform: `translate3d(${-viewport.x}px, ${-viewport.y}px, 0)`,
+                transform: `translate3d(${-viewport.x}px, ${-viewport.y + paperParallaxY}px, 0)`,
                 willChange: 'transform',
                 pointerEvents: 'none',
               }}
@@ -2128,6 +2145,7 @@ export function BoardRoot() {
                 unmounts it. Never animation-driven visibility. */}
             {bgTypoMount && (
               <BoardBackgroundTypography
+                themeId={themeId}
                 activeFilter={activeFilter}
                 tags={tags}
                 variant={bgTypoVariant}
@@ -2149,6 +2167,7 @@ export function BoardRoot() {
               }}
             >
               <CardsLayer
+                themeId={themeId}
                 items={filteredItems}
                 viewport={viewport}
                 viewportWidth={effectiveLayoutWidth}
@@ -2242,6 +2261,7 @@ export function BoardRoot() {
             total={filteredItems.length}
             swellFraction={meterSwellFraction}
             onScrub={handleMeterScrub}
+            variant={themeMeta.scrollMeterVariant}
           />
         )}
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
@@ -2259,6 +2279,7 @@ export function BoardRoot() {
           sourceCardId={lightboxSourceItemId}
           onSourceShouldShow={handleLightboxSourceShouldShow}
           onClose={handleLightboxClose}
+          themeId={themeId}
           nav={lightboxItem ? {
             currentIndex: lightboxIndex,
             total: lightboxNavItems.length,

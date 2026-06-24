@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "圆点笔记本",
       "gridPaper": "方格纸",
-      "paperAtelier": "Paper Atelier"
+      "paperAtelier": "Paper Atelier",
+      "pickerGroupLabel": "选择一个画板主题。",
+      "unlockLater": "稍后即可解锁，敬请期待。"
     },
     "filter": {
       "label": "全部",

@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "Quaderno a puntini",
       "gridPaper": "Carta a quadretti",
-      "paperAtelier": "Atelier di Carta"
+      "paperAtelier": "Atelier di Carta",
+      "pickerGroupLabel": "Scegli un tema per la bacheca.",
+      "unlockLater": "Si sblocca più avanti. Resta sintonizzato."
     },
     "filter": {
       "label": "Tutti",

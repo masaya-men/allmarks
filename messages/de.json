@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "Punktraster",
       "gridPaper": "Karopapier",
-      "paperAtelier": "Papier-Atelier"
+      "paperAtelier": "Papier-Atelier",
+      "pickerGroupLabel": "Wähle ein Board-Thema.",
+      "unlockLater": "Bald freigeschaltet. Bleib dran."
     },
     "filter": {
       "label": "Alle",

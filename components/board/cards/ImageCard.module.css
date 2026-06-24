@@ -31,6 +31,16 @@
   opacity: 1;
 }
 
+/* Paper soft-shuffle: slow, gentle opacity crossfade between photo layers
+   (the default theme keeps the fast --card-hover-swap-duration token). The
+   paper token falls back to a calm 900ms when undefined so non-paper builds
+   are unaffected. */
+.thumbSoft {
+  transition:
+    opacity var(--paper-shuffle-fade-duration, 900ms) ease-in-out,
+    filter var(--card-hover-swap-duration) var(--card-hover-swap-easing);
+}
+
 /* destefanis-style affordance: hover gently brightens the active layer.
  * Excluded for Instagram Reel cards because their .thumbInstagramReel
  * baseline filter (brightness 0.86) and our lift would compose into a

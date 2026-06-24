@@ -25,6 +25,12 @@ export type CardComponentProps = {
    *  through several frames ONLY when this is true AND the card is on-screen. The
    *  Lightbox scaler / ImageCard fallback never pass it → those stay static. */
   readonly ambientOn?: boolean
+  /** Interval per image in ms (default 2200). Only consumed by ImageCard. */
+  readonly cycleMs?: number
+  /** When true, multi-image swap cross-fades (paper soft-shuffle) instead of
+   *  a hard src cut. Only consumed by ImageCard. Default false keeps existing
+   *  hard-cut behavior. */
+  readonly softShuffle?: boolean
 }
 
 export type CardComponent = ComponentType<CardComponentProps>

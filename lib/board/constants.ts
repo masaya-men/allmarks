@@ -54,8 +54,10 @@ export const BOARD_Z_INDEX = {
   THEME_BG: 0,
   FRAME_MASK: 5,
   CARDS: 10,
+  CARD_DECORATION: 11,  // paper-atelier per-card overlay (pointer-events:none, above thumbnail, below interactive chrome)
   EMPTY_STATE: 12,
   FRAME_BORDER: 15,
+  PAPER_CHROME: 16,  // Paper-atelier decorative frame plate + wax seal (pointer-events:none, below TOOLBAR:110)
   INTERACTION_OVERLAY: 20,
   SNAP_GUIDES: 25,
   RESIZE_HANDLE: 30,

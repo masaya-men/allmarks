@@ -1,0 +1,61 @@
+/* "ALLMARKS MK-1 / ARCHIVE" engraved plate — bottom-left board margin.
+ * Paper-atelier chrome only (mounted gated by BoardRoot). pointer-events:none,
+ * static, sits at BOARD_Z_INDEX.PAPER_CHROME (16) — above the frame border,
+ * far below the toolbar (110). Engraved look = IVORY face + CHARCOAL edge +
+ * GOLD PEEL hairline rule, mono spec text. */
+.plate {
+  position: absolute;
+  left: calc(var(--canvas-margin, 48px) + 12px);
+  bottom: calc(var(--canvas-margin, 48px) * 0.32);
+  z-index: var(--z-paper-chrome, 16); /* = BOARD_Z_INDEX.PAPER_CHROME */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 11px;
+  pointer-events: none;
+  user-select: none;
+  background: var(--plate-bg, #f7f1e3);
+  border: 1px solid var(--plate-edge, rgba(43, 39, 34, 0.22));
+  border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 253, 246, 0.6),
+    inset 0 -1px 0 rgba(43, 39, 34, 0.12),
+    0 1px 3px rgba(43, 39, 34, 0.14);
+  transition: opacity 0.25s ease;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+.title {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--plate-text, rgba(43, 39, 34, 0.82));
+  white-space: nowrap;
+}
+
+.rule {
+  width: 1px;
+  align-self: stretch;
+  margin: 1px 0;
+  background: var(--plate-rule, #b9924a);
+  opacity: 0.7;
+}
+
+.sub {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--plate-text, rgba(43, 39, 34, 0.82));
+  opacity: 0.78;
+}
+
+@media (max-width: 720px) {
+  .plate {
+    left: var(--canvas-margin, 48px);
+  }
+}

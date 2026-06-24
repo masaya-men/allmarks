@@ -1,0 +1,58 @@
+/* Wax "A" seal + decorative "+" stamp — bottom-right board margin.
+ * Paper-atelier chrome only. pointer-events:none, static, z-index =
+ * BOARD_Z_INDEX.PAPER_CHROME (16). The "+" is decorative (no handler). */
+.wrap {
+  position: absolute;
+  right: calc(var(--canvas-margin, 48px) + 12px);
+  bottom: calc(var(--canvas-margin, 48px) * 0.22);
+  z-index: var(--z-paper-chrome, 16); /* = BOARD_Z_INDEX.PAPER_CHROME */
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.25s ease;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+/* decorative GOLD PEEL "+" stamp — slightly rotated, hand-pressed feel */
+.stamp {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--stamp-ink, #b9924a);
+  transform: rotate(-8deg);
+  opacity: 0.85;
+  text-shadow: 0 1px 1px rgba(43, 39, 34, 0.18);
+}
+
+.seal {
+  display: block;
+  filter: none; /* board is fill-rate bound — NO drop-shadow filter */
+  transform: rotate(6deg);
+}
+
+/* FOREST wax body with a soft debossed look (inner highlight via the rim) */
+.wax {
+  fill: var(--wax-fill, #2f4a37);
+}
+
+/* debossed rim — a darker stroke just inside the edge so the wax reads pressed */
+.waxRim {
+  fill: none;
+  stroke: var(--wax-rim, rgba(43, 39, 34, 0.35));
+  stroke-width: 2.5;
+}
+
+/* IVORY pressed monogram "A" — the AllMarks A-motif */
+.monogram {
+  font-family: var(--font-serif-display, Georgia, serif);
+  font-size: 34px;
+  font-weight: 700;
+  fill: var(--wax-letter, rgba(255, 253, 246, 0.92));
+  letter-spacing: 0;
+}

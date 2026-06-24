@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "สมุดจุดไข่ปลา",
       "gridPaper": "กระดาษตาราง",
-      "paperAtelier": "Paper Atelier"
+      "paperAtelier": "Paper Atelier",
+      "pickerGroupLabel": "เลือกธีมของบอร์ด",
+      "unlockLater": "จะปลดล็อกในภายหลัง โปรดติดตาม"
     },
     "filter": {
       "label": "ทั้งหมด",

@@ -12,7 +12,7 @@ import {
 } from 'react'
 import { gsap } from 'gsap'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
-import type { CardPosition, DisplayMode } from '@/lib/board/types'
+import type { CardPosition, DisplayMode, ThemeId } from '@/lib/board/types'
 import {
   BOARD_Z_INDEX,
   CULLING,
@@ -20,6 +20,8 @@ import {
 import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel, safeExternalUrl } from '@/lib/utils/url'
+import { getThemeMeta } from '@/lib/board/theme-registry'
+import { PaperCardDecorations } from '@/components/board/decorations/PaperCardDecorations'
 import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
 import { getEntryAnimation } from '@/lib/animation/tag-entry'
 import { extractTypedCandidatesFromBookmark } from '@/lib/board/tag-candidates'
@@ -42,6 +44,7 @@ import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX } from './use-card-reorder-drag'
 import { pickCard, itemSkylineHeight } from './cards'
+import { selectPaperSoftShuffle } from '@/lib/board/paper-soft-shuffle'
 import styles from './CardsLayer.module.css'
 
 /** Max press-and-hold duration (ms) for a pointer gesture to still count as a
@@ -325,6 +328,9 @@ type CardsLayerProps = {
     /** × handler: remove this card url from the working set. */
     readonly onRemove: (url: string) => void
   }
+  /** Active board theme id. Drives per-card decorations (meta.decorations)
+   *  and, from Task 5, the entry/shutdown motion keys. */
+  readonly themeId: ThemeId
 }
 
 export function CardsLayer({
@@ -367,8 +373,10 @@ export function CardsLayer({
   entryAnimCycle = 0,
   receiverMode,
   forceTagButtonVisible = false,
+  themeId,
 }: CardsLayerProps): ReactNode {
   const rootRef = useRef<HTMLDivElement>(null)
+  const meta = getThemeMeta(themeId)
 
   // Filter 変化 → 復活してくる (= matched) カードに WAVE テーマの fade-up
   // entry アニメを stagger 付きで適用。 inner wrapper (= shutdown が走る
@@ -378,7 +386,7 @@ export function CardsLayer({
     if (entryAnimCycle === 0) return
     const root = rootRef.current
     if (!root) return
-    const entryAnim = getEntryAnimation('wave')
+    const entryAnim = getEntryAnimation(meta.motion.entry)
     if (!entryAnim) return
     const prefersReducedMotion = typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -719,6 +727,10 @@ export function CardsLayer({
   // が paint を集中させて jank。 isScrolling は markScrollActive で 200ms
   // idle 後 false に戻るので、 scroll 終了から 200ms で ambient 自然復帰。
   const ambientOn = motionEnabled && !sourceCardId && !reduceMotion && !isScrolling
+  // Paper soft-shuffle vs default hard-cut. meta.decorations === true marks the
+  // paper-atelier theme (only theme with decorations); ambientOn already folds
+  // motionEnabled + !reduceMotion + !isScrolling + !sourceCardId.
+  const softShuffleSel = selectPaperSoftShuffle({ softShuffle: meta.decorations === true, ambientOn })
   const rotateMs = Math.max(MIN_ROTATE_MS, HERO_PER_CARD_MS)
   const spotlightCap = ambientOn ? HERO_CAP : 0
   const playing = useSpotlightRotation(candidates, spotlightCap, rotateMs)
@@ -1001,7 +1013,7 @@ export function CardsLayer({
         const p = displayedPositions[it.bookmarkId]
         if (!p) return null
         const taggedOut = matchedBookmarkIds != null && !matchedBookmarkIds.has(it.bookmarkId)
-        const shutdownClass = taggedOut ? getShutdownAnimationClass('wave') : undefined
+        const shutdownClass = taggedOut ? getShutdownAnimationClass(meta.motion.shutdown) : undefined
         // When this card is the lightbox FLIP source, suppress all
         // hover-revealed meta affordances (+TAG, tag pills, ×, ↺) so the
         // morph clone captures the bare thumbnail. Without this they
@@ -1051,7 +1063,7 @@ export function CardsLayer({
               opacity: newlyAddedIds.has(it.bookmarkId) ? 0 : 1,
               visibility: sourceCardId === it.bookmarkId ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
-              ['--card-radius' as string]: '20px',
+              ['--card-radius' as string]: meta.colorScheme === 'light' ? '3px' : '20px',
             }}
           >
             {/* Tag-shutdown wrapper. The outer div above carries the GSAP
@@ -1082,10 +1094,15 @@ export function CardsLayer({
                     displayMode={it.displayMode ?? displayMode}
                     autoCycle={motionEnabled}
                     ambientOn={ambientOn}
+                    softShuffle={softShuffleSel.crossfade}
+                    cycleMs={softShuffleSel.cadenceMs}
                   />
                 )
               })()}
             </CardNode>
+            {meta.decorations === true && (
+              <PaperCardDecorations cardId={it.bookmarkId} />
+            )}
             {receiverMode && (() => {
               const tagIds = receiverMode.senderTagIdsByCard.get(it.url) ?? []
               if (tagIds.length === 0) return null

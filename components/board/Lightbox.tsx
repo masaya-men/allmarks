@@ -22,6 +22,8 @@ import {
 import { LightboxNavChevron } from './LightboxNavChevron'
 import { useSmoothWheelScroll } from '@/lib/scroll/use-smooth-wheel-scroll'
 import { useTweetTranslation, type TweetTranslationView } from '@/lib/board/use-tweet-translation'
+import { getThemeMeta } from '@/lib/board/theme-registry'
+import type { ThemeId } from '@/lib/board/types'
 import type { LightboxFlipSceneProps } from './LightboxFlipScene'
 import {
   detectUrlType,
@@ -403,9 +405,13 @@ type Props = {
    *  next time the user is on the board. Pass through from
    *  useBoardData().persistMediaSlots. Fire-and-forget. */
   readonly persistMediaSlots?: (bookmarkId: string, mediaSlots: readonly MediaSlot[]) => Promise<void>
+  /** Active board theme. Drives the body-text translate transition flavor
+   *  (paper-atelier → ink-underline; default themes → glitch-crt) via
+   *  getThemeMeta(themeId).motion.text. */
+  readonly themeId: ThemeId
 }
 
-export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShouldShow, nav, persistMediaSlots }: Props): ReactElement | null {
+export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShouldShow, nav, persistMediaSlots, themeId }: Props): ReactElement | null {
   const { t } = useI18n()
   const backdropRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
@@ -1348,6 +1354,7 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
               slots={tweetSlots}
               slotIdx={tweetSlotIdx}
               onJump={setTweetSlotIdx}
+              themeId={themeId}
             />
           )
           : (
@@ -1789,6 +1796,7 @@ function TweetColumns({
   slots,
   slotIdx,
   onJump,
+  themeId,
 }: {
   readonly mediaRef: React.Ref<HTMLDivElement>
   readonly textRef: React.Ref<HTMLDivElement>
@@ -1797,6 +1805,8 @@ function TweetColumns({
   readonly slots: readonly MediaSlot[]
   readonly slotIdx: number
   readonly onJump: (idx: number) => void
+  /** Active board theme — selects the body-text translate transition. */
+  readonly themeId: ThemeId
 }): ReactNode {
   const textOnly = isTweetTextOnly(meta, slots)
   const hideBody = shouldHideTweetBody(meta, slots)
@@ -1806,7 +1816,7 @@ function TweetColumns({
   const originalText = textOnly
     ? (view.title || meta?.text || cleanTweetTitle(view.title ?? ''))
     : (meta?.text ?? view.title)
-  const tr = useTweetTranslation({ originalText })
+  const tr = useTweetTranslation({ originalText, themeId: getThemeMeta(themeId).motion.text })
   return (
     <>
       <div

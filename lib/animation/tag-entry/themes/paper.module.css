@@ -1,0 +1,32 @@
+/* PAPER-ATELIER テーマ用 carded entry effect (= 絞り込み解除 / filter 切替時に
+   復活してくるカードのためのアニメ)。 紙の世界観: ピン留めした写真が
+   そっと差し込まれるような穏やかな drift。 WAVE の CRT bootup とは別言語で、
+   緑 flash / glitch / 強い scale を一切持たない。 触る数値は :root の CSS
+   変数経由のみ。 実発火は WAAPI 経由 (= CardsLayer の useEffect)、 この file は
+   CSS 変数を export するためだけに存在する (= wave と同じ pattern)。 */
+
+/* 時間系の値 (duration / stagger) は単位を付けない (= 数値リテラル)。
+   理由: Chrome は custom property の `Nms` を `(N/1000)s` に正規化するため、
+   getComputedStyle 経由で parseFloat すると 800ms → 0.8 になる (= 1000 倍
+   小さい値を WAAPI に渡してしまう) 罠 (session 74) の回避。 単位なしの数値で
+   書けば parseFloat が期待通り N を返す。 コメントに単位を明記して読者を助ける。 */
+:root {
+  /* board は合成 (fill-rate) 律速なので amplitude は極小に保つ:
+     - duration 520ms: wave 380ms より遅い (= 紙は「ふわり」 と静かに置かれる)
+     - ease-out: 入ってくる要素の標準 (Material decelerate)
+     - drift 6px / blur 無し / scale 無し (= 合成負荷を上げない) */
+  --paper-drift-duration: 520; /* ms */
+  --paper-drift-easing: cubic-bezier(0.16, 1, 0.3, 1); /* gentle ease-out */
+  --paper-drift-offset-y: 6; /* px、 下から差し込まれる量 (極小) */
+  --paper-drift-tilt: 0.6; /* deg、 紙が落ち着くときの微傾き */
+  --paper-drift-stagger-step: 22; /* ms、 wave より遅め (= 静かに 1 枚ずつ) */
+  --paper-drift-stagger-cap: 420; /* ms */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --paper-drift-duration: 200;
+    --paper-drift-offset-y: 0;
+    --paper-drift-tilt: 0;
+  }
+}

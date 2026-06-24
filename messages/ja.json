@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "点線ノート",
       "gridPaper": "方眼紙",
-      "paperAtelier": "ペーパーアトリエ"
+      "paperAtelier": "ペーパーアトリエ",
+      "pickerGroupLabel": "ボードのテーマを選びます。",
+      "unlockLater": "あとで使えるようになります。お楽しみに。"
     },
     "filter": {
       "label": "すべて",

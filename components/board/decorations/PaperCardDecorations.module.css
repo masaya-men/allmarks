@@ -1,0 +1,101 @@
+/* Per-card paper decoration overlay. Fills the CardsLayer wrapper (NOT the
+   clipped ImageCard), so overhanging tape / pins are visible. Strictly
+   decorative: never receives pointer events, never changes layout.
+   Z-index: BOARD_Z_INDEX.CARD_DECORATION = 11 (above thumbnail, below
+   interactive chrome: resize z30, media z50). */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* source-of-truth constant: BOARD_Z_INDEX.CARD_DECORATION = 11 (lib/board/constants.ts);
+     token --deco-z is defined in html[data-theme-id="paper-atelier"] block of globals.css */
+  z-index: var(--deco-z, 11);
+  /* tape/pins overhang the card box by design; do not clip */
+  overflow: visible;
+}
+
+.overlay * {
+  pointer-events: none;
+}
+
+/* --- Photo-album corners (match the rendered card radius) --- */
+.photoCorner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 0 solid var(--deco-photo-corner, rgba(43, 39, 34, 0.55));
+}
+.photoCornerTl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: var(--card-radius, 3px); }
+.photoCornerTr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: var(--card-radius, 3px); }
+.photoCornerBl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: var(--card-radius, 3px); }
+.photoCornerBr { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: var(--card-radius, 3px); }
+
+/* --- Washi tape --- */
+.washi {
+  position: absolute;
+  width: 76px;
+  height: 22px;
+  border-radius: 1px;
+  opacity: 0.92;
+  /* hand-torn jagged ends */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 4px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 4px), transparent 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.washiTintA { background: var(--deco-washi-a, rgba(201, 178, 122, 0.42)); }
+.washiTintB { background: var(--deco-washi-b, rgba(143, 168, 142, 0.38)); }
+.washiTintC { background: var(--deco-washi-c, rgba(196, 160, 150, 0.40)); }
+.washiTop { top: -11px; }
+.washiBottom { bottom: -11px; }
+.washiLeft { left: -27px; transform-origin: center; }
+.washiRight { right: -27px; transform-origin: center; }
+
+/* --- Push-pin --- */
+.pin {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff80, transparent 55%), var(--deco-pin, #2f4a37);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* --- Bulldog clip --- */
+.clip {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 26px;
+  height: 12px;
+  margin-left: -13px;
+  border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(180deg, #9a948a, var(--deco-clip, #6f6a60));
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.22);
+}
+
+/* --- Rubber stamp --- */
+.stamp {
+  position: absolute;
+  padding: 3px 6px;
+  font-family: var(--font-mono, 'Geist Mono', monospace);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: var(--deco-stamp-ink, rgba(140, 60, 48, 0.62));
+  border: 1.5px solid var(--deco-stamp-ink, rgba(140, 60, 48, 0.62));
+  border-radius: 2px;
+  /* faded ink */
+  opacity: 0.85;
+}
+.stampTl { top: 6px; left: 6px; }
+.stampTr { top: 6px; right: 6px; }
+.stampBl { bottom: 6px; left: 6px; }
+.stampBr { bottom: 6px; right: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* decorations are static — nothing to disable, listed for invariant parity */
+  .overlay { }
+}

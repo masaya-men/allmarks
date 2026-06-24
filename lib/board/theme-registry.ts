@@ -8,6 +8,8 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     labelKey: 'board.theme.dottedNotebook',
     colorScheme: 'dark',
     tier: 'free',
+    scrollMeterVariant: 'waveform',
+    motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' },
   },
   'grid-paper': {
     id: 'grid-paper',
@@ -16,6 +18,8 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     labelKey: 'board.theme.gridPaper',
     colorScheme: 'dark',
     tier: 'free',
+    scrollMeterVariant: 'waveform',
+    motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' },
   },
   'paper-atelier': {
     id: 'paper-atelier',
@@ -24,6 +28,9 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     labelKey: 'board.theme.paperAtelier',
     colorScheme: 'light',
     tier: 'free',
+    scrollMeterVariant: 'ruler',
+    motion: { entry: 'paper-drift', text: 'ink-underline', shutdown: 'paper-fade' },
+    decorations: true,
   },
 }
 

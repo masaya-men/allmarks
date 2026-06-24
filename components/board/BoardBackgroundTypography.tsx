@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, type ReactElement } from 'react'
-import type { BoardFilter } from '@/lib/board/types'
+import type { BoardFilter, ThemeId } from '@/lib/board/types'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { getEntryAnimation } from '@/lib/animation/tag-entry'
 import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
+import { getThemeMeta } from '@/lib/board/theme-registry'
 import styles from './BoardBackgroundTypography.module.css'
 
 /**
@@ -95,6 +96,11 @@ type Props = {
    *  timer; visibility is NEVER driven by the animation's finish event, so the
    *  "on but vanished" race cannot return. */
   readonly closing?: boolean
+  /** The active board theme id. Selects which entry/shutdown motion the wordmark
+   *  plays — the wordmark mirrors the card CRT/paper effects so the whole board
+   *  speaks one motion language. paper-atelier → paper-drift / paper-fade;
+   *  default themes → wave. */
+  readonly themeId: ThemeId
 }
 
 /**
@@ -111,6 +117,7 @@ export function BoardBackgroundTypography({
   variant = 'static',
   playEntry = false,
   closing = false,
+  themeId,
 }: Props): ReactElement | null {
   const text = deriveBoardBgTypoText(activeFilter, tags)
   const textRef = useRef<HTMLSpanElement>(null)
@@ -133,7 +140,7 @@ export function BoardBackgroundTypography({
       el.animate([{ opacity: '0' }, { opacity: '1' }], { duration: 180, easing: 'ease-out', fill: 'none' })
       return
     }
-    const a = getEntryAnimation('wave')
+    const a = getEntryAnimation(getThemeMeta(themeId).motion.entry)
     if (a) el.animate(a.keyframes, { ...a.options, fill: 'none' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -144,7 +151,7 @@ export function BoardBackgroundTypography({
   // collapses to a line, flashes green, and pops out exactly like a card. The
   // class brings its own scanline + flicker overlays via ::before/::after. The
   // parent unmounts this node on a timer once the shutdown has run.
-  const shutdownClass = closing ? getShutdownAnimationClass('wave') : undefined
+  const shutdownClass = closing ? getShutdownAnimationClass(getThemeMeta(themeId).motion.shutdown) : undefined
 
   return (
     <div
@@ -157,6 +164,7 @@ export function BoardBackgroundTypography({
       <span
         ref={textRef}
         className={shutdownClass ? `${styles.text} ${shutdownClass}` : styles.text}
+        data-wordmark-text={text}
       >
         {text}
       </span>

@@ -1,6 +1,7 @@
 import waveStyles from './themes/wave.module.css'
+import paperStyles from './themes/paper.module.css'
 
-export type SupportedTheme = 'wave'
+export type SupportedTheme = 'wave' | 'paper-fade'
 
 /**
  * テーマ key を渡すと、 そのテーマの shutdown CSS class 名を返す。
@@ -13,6 +14,8 @@ export function getShutdownAnimationClass(theme: string): string | undefined {
   switch (theme) {
     case 'wave':
       return waveStyles.shutdown
+    case 'paper-fade':
+      return paperStyles.fade
     default:
       return undefined
   }

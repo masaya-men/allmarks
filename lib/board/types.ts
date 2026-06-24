@@ -59,6 +59,31 @@ export type ThemeMeta = {
   readonly colorScheme: 'light' | 'dark'
   /** Entitlement tier. 'free' = always available; 'paid' = needs a license. */
   readonly tier: 'free' | 'paid'
+  /**
+   * ScrollMeter rendering style. 'waveform' = the default sound-wave bars;
+   * 'ruler' = the paper-atelier brass ruler track. Read by ScrollMeter's
+   * `variant` prop (default 'waveform') so omitting it is impossible (required).
+   */
+  readonly scrollMeterVariant: 'waveform' | 'ruler'
+  /**
+   * Per-theme animation keys (NOT ThemeIds — a decoupled namespace:
+   * 'wave' | 'paper-drift' | 'paper-fade' | 'ink-underline' | 'glitch-crt').
+   * Consumers resolve via getEntryAnimation/getShutdownAnimationClass/getTextTransition.
+   * @property entry    card + background-typography enter animation key
+   * @property text     Lightbox tweet-translation text-transition key
+   * @property shutdown card + background-typography MOTION-off exit key
+   */
+  readonly motion: {
+    readonly entry: string
+    readonly text: string
+    readonly shutdown: string
+  }
+  /**
+   * When true, mount the pointer-events:none paper card-decoration overlay
+   * (washi tape / pins / photo corners). Only paper-atelier sets it. Optional:
+   * absence === no decorations.
+   */
+  readonly decorations?: boolean
   readonly layoutParams?: ThemeLayoutParams
 }
 

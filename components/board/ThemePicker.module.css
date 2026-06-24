@@ -15,3 +15,16 @@
 .preview[data-theme-id='paper-atelier'] { background: #efe6d2; }
 .name { font-family: var(--font-heading); font-size: 12px; }
 .badge { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--text-meta); }
+.lockedPill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  text-align: center;
+  padding: 3px 6px;
+  border-radius: 999px;
+  /* AMBER, kind — never red/error. Soft fill + warm border. */
+  color: var(--accent-gold, #b9924a);
+  background: color-mix(in srgb, var(--accent-gold, #b9924a) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-gold, #b9924a) 38%, transparent);
+}

@@ -1,4 +1,5 @@
 import { createGlitchCrtTransition } from './themes/glitch-crt'
+import { createInkUnderlineTransition } from './themes/ink-underline'
 
 /**
  * 1 つの「本文テキスト遷移」テーマの記述子。
@@ -44,6 +45,8 @@ export type TextTransition = {
  */
 export function getTextTransition(theme: string): TextTransition {
   switch (theme) {
+    case 'ink-underline':
+      return createInkUnderlineTransition()
     case 'glitch-crt':
     case 'default':
     default:

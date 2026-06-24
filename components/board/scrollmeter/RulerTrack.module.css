@@ -1,0 +1,87 @@
+/* Paper "ruler / tape-measure" meter track. Static — only the brass marker
+   is repositioned each frame by the parent rAF (via the forwarded markerRef).
+   Lives only on the paper-atelier theme (rendered when variant === 'ruler').
+   Every element is pointer-events:none; the parent .track keeps the real
+   scrub hit-area. Colors come from the paper-block --meter-ruler-* tokens
+   defined in globals.css; a neutral fallback keeps it visible off-theme. */
+
+.rail {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The horizontal rule the ruler ticks hang from (top edge of the tape). */
+.rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  height: 1px;
+  background: var(--meter-ruler-rule, rgba(43, 39, 34, 0.45));
+  pointer-events: none;
+}
+
+/* Minor tick (every 2 units): short vertical line rising from the rule. */
+.minorTick {
+  position: absolute;
+  bottom: 5px;
+  width: 1px;
+  height: 4px;
+  background: var(--meter-ruler-rule, rgba(43, 39, 34, 0.45));
+  transform: translateX(-0.5px);
+  pointer-events: none;
+}
+
+/* Wrapper for each major-tick group (numeral + tick line). Explicit
+   pointer-events:none so the hit-area guarantee holds even if .rail
+   CSS doesn't cascade (e.g. in jsdom or a future refactor). Must stay
+   non-positioned: its children (.numeral/.majorTick) are absolute with
+   left:X% and must resolve against .rail (full track width), NOT this
+   wrapper — making it position:absolute collapses them to left:0. */
+.majorGroup {
+  pointer-events: none;
+}
+
+/* Major tick (every 10 units): taller, full-ink. */
+.majorTick {
+  position: absolute;
+  bottom: 5px;
+  width: 1px;
+  height: 9px;
+  background: var(--meter-ruler-numeral, #2b2722);
+  transform: translateX(-0.5px);
+  pointer-events: none;
+}
+
+/* Numeral above each major tick — Geist Mono, charcoal ink. */
+.numeral {
+  position: absolute;
+  bottom: 15px;
+  transform: translateX(-50%);
+  font-family: var(--font-mono, ui-monospace, Menlo, Consolas, monospace);
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: var(--meter-ruler-numeral, #2b2722);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Brass position marker: a downward-pointing triangle riding the rule.
+   The parent rAF sets `left: <pct>%` each frame from centerTickIdx. */
+.marker {
+  position: absolute;
+  bottom: 2px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--meter-ruler-marker, #b9924a);
+  transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgba(43, 39, 34, 0.25));
+  will-change: left;
+}

@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "Dotted Notebook",
       "gridPaper": "Grid Paper",
-      "paperAtelier": "Paper Atelier"
+      "paperAtelier": "Paper Atelier",
+      "pickerGroupLabel": "Choose a board theme.",
+      "unlockLater": "Unlocks later — stay tuned."
     },
     "filter": {
       "label": "All",

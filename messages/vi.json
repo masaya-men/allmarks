@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "Giấy chấm bi",
       "gridPaper": "Giấy ô vuông",
-      "paperAtelier": "Paper Atelier"
+      "paperAtelier": "Paper Atelier",
+      "pickerGroupLabel": "Chọn một chủ đề bảng.",
+      "unlockLater": "Sẽ mở khóa sau. Hãy chờ nhé."
     },
     "filter": {
       "label": "Tất cả",

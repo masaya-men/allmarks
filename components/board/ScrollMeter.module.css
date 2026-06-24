@@ -38,7 +38,7 @@
    em dash, and slash dim to 0.42 so the digits read as the foreground.
    tabular-nums + monospace prevent reflow during scramble. */
 .meterCounter {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace);
   font-size: 11px;
   letter-spacing: 0.10em;
   color: var(--chrome-text-color);
@@ -75,7 +75,7 @@
 }
 
 .meterDim {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--meter-dim-color, rgba(255, 255, 255, 0.6));
 }
 
 /* Session 43: glitch on counter hover — unified with chrome buttons
@@ -175,6 +175,13 @@
   cursor: grabbing;
 }
 
+/* Ruler variant needs vertical room for the numerals above the rule; the
+   waveform keeps its 18px box untouched (numerals would otherwise be clipped
+   or push the waveform ticks off-center). */
+.track[data-meter-variant='ruler'] {
+  height: 28px;
+}
+
 /* Faint horizontal baseline that the waveform straddles. Identical to
    `.meterTrackLine` in Lightbox.module.css. */
 .baseline {
@@ -183,7 +190,7 @@
   right: 0;
   top: 50%;
   height: 1px;
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--meter-baseline-color, rgba(255, 255, 255, 0.18));
   transform: translateY(-0.5px);
   pointer-events: none;
 }
@@ -195,7 +202,7 @@
   top: 50%;
   width: 1px;
   height: 6px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--meter-tick-color, rgba(255, 255, 255, 0.55));
   transform: translate(-50%, -50%);
   transform-origin: center;
   pointer-events: none;
@@ -208,8 +215,8 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgba(255, 255, 255, 0.5);
-  box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+  background: var(--meter-hover-line-color, rgba(255, 255, 255, 0.5));
+  box-shadow: 0 0 4px var(--meter-hover-line-shadow, rgba(255, 255, 255, 0.3));
   pointer-events: none;
   transform: translateX(-0.5px);
   animation: hoverPulse 900ms ease-in-out infinite alternate;

@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "دفتر منقّط",
       "gridPaper": "ورق مربعات",
-      "paperAtelier": "ورشة الورق"
+      "paperAtelier": "ورشة الورق",
+      "pickerGroupLabel": "اختر سمة للوحة.",
+      "unlockLater": "سيتم فتحها لاحقًا. ترقّبوا."
     },
     "filter": {
       "label": "الكل",

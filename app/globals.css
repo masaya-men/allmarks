@@ -462,6 +462,22 @@ html[data-theme-id="paper-atelier"] {
   --accent-primary: #2f4a37;
   --accent-gold: #b9924a;            /* GOLD PEEL (used by paper decorations in Plan 2) */
 
+  /* scroll meter (paper "ruler" variant — RulerTrack) */
+  --meter-ruler-marker: #b9924a;            /* GOLD PEEL brass marker */
+  --meter-ruler-numeral: #2b2722;           /* CHARCOAL ruler numerals + major ticks */
+  --meter-ruler-rule: rgba(43, 39, 34, 0.45); /* faint ink rule + minor ticks */
+
+  /* fibre texture tile — generated once by scripts/generate-paper-texture.mjs,
+     consumed by .paperAtelier via var(); paper-only so the default theme is
+     byte-identical (.paperAtelier reads var(--paper-fiber-url, none)). */
+  --paper-fiber-url: url("/themes/paper-atelier/fiber.svg");
+
+  /* soft photo shuffle — slow crossfade cadence for paper image cards.
+     thumbSoft uses var(--paper-shuffle-fade-duration, 900ms) so non-paper
+     builds are unaffected (900ms fallback is unused — non-paper cards never
+     get .thumbSoft applied). */
+  --paper-shuffle-fade-duration: 900ms;
+
   /* floating chrome text (ScrollMeter counter / buttons) — ink on paper */
   --chrome-text-color: rgba(43, 39, 34, 0.92);
   --chrome-text-color-hover: rgba(43, 39, 34, 1);
@@ -473,6 +489,28 @@ html[data-theme-id="paper-atelier"] {
      reads these via var-with-fallback, so the default theme is unchanged) */
   --bg-typo-font: var(--font-serif-display);
   --bg-typo-color: rgba(43, 39, 34, 0.9);
+
+  /* big background wordmark — STATIC letterpress/kasure treatment (Plan 2 §4.7).
+     Paper-only: consumed in BoardBackgroundTypography.module.css via the scoped
+     :global selector, so the DEFAULT (dotted/grid) wordmark stays flat ink.
+     --wordmark-grain-url reuses Task 2's generated paper-fiber tile so the ink
+     looks pressed into the same fibre as the canvas. UNITLESS time values are
+     irrelevant here (no animation) but opacities/spreads stay literal. */
+  --wordmark-ink-color: rgba(43, 39, 34, 0.92);     /* CHARCOAL ink, slightly deeper than flat */
+  --wordmark-grain-url: var(--paper-fiber-url);      /* reuse Task 2 fibre tile */
+  --wordmark-grain-opacity: 0.16;                    /* kasure dropout strength */
+  --wordmark-emboss-light: rgba(255, 253, 246, 0.45); /* IVORY top highlight (letterpress lift) */
+  --wordmark-emboss-shadow: rgba(43, 39, 34, 0.30);   /* CHARCOAL bottom debossed edge */
+
+  /* paper chrome — MK-1 plate + wax "A" seal + decorative "+" stamp (Plan 2 §4.7) */
+  --plate-bg: var(--card-dark-alt);          /* IVORY plate face */
+  --plate-edge: rgba(43, 39, 34, 0.22);      /* CHARCOAL engraved edge */
+  --plate-text: rgba(43, 39, 34, 0.82);      /* CHARCOAL engraved label */
+  --plate-rule: var(--accent-gold);          /* GOLD PEEL hairline divider */
+  --wax-fill: var(--color-accent-primary);   /* FOREST wax body */
+  --wax-rim: rgba(43, 39, 34, 0.35);         /* debossed wax rim */
+  --wax-letter: rgba(255, 253, 246, 0.92);   /* IVORY pressed "A" */
+  --stamp-ink: var(--accent-gold);           /* GOLD PEEL decorative "+" */
 
   /* header chrome buttons (TITLE/TUNE/SETTINGS…) — dark, no stroke on paper */
   --chrome-btn-color: rgba(43, 39, 34, 0.9);
@@ -491,6 +529,24 @@ html[data-theme-id="paper-atelier"] {
   /* soft warm paper shadows */
   --shadow-grid-card: 0 2px 8px rgba(43, 39, 34, 0.12);
   --shadow-collage-card: 0 10px 28px rgba(43, 39, 34, 0.16);
+
+  /* --- PAPER DECORATIONS (per-card overlay, pointer-events:none) --- */
+  /* z-index token: source of truth is BOARD_Z_INDEX.CARD_DECORATION = 11 in lib/board/constants.ts */
+  --deco-z: 11;
+  /* z-index token: source of truth is BOARD_Z_INDEX.PAPER_CHROME = 16 in lib/board/constants.ts */
+  --z-paper-chrome: 16;
+  --deco-washi-a: rgba(201, 178, 122, 0.42);   /* PALE STRAW translucent tape */
+  --deco-washi-b: rgba(143, 168, 142, 0.38);   /* SAGE translucent tape */
+  --deco-washi-c: rgba(196, 160, 150, 0.40);   /* DUSTY ROSE translucent tape */
+  --deco-pin: var(--color-accent-primary);     /* FOREST push-pin head */
+  --deco-clip: #6f6a60;                         /* WARM GRAY bulldog clip */
+  --deco-stamp-ink: rgba(140, 60, 48, 0.62);   /* OXIDE RED rubber-stamp ink */
+  --deco-photo-corner: rgba(43, 39, 34, 0.55); /* CHARCOAL album corner */
+
+  /* lightbox scrim — PALE PARCHMENT behind enlarged media (NOT the dark default).
+     Portals inherit because data-theme-id lives on <html>, so the body-level
+     lightbox portal still resolves this var. */
+  --lightbox-backdrop: rgba(43, 39, 34, 0.34);   /* CHARCOAL ink @ low alpha over PARCHMENT */
 }
 
 /* ── Reduced Motion ────────────────────────────────────────── */
