@@ -6,12 +6,24 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     direction: 'vertical',
     backgroundClassName: 'dottedNotebook',
     labelKey: 'board.theme.dottedNotebook',
+    colorScheme: 'dark',
+    tier: 'free',
   },
   'grid-paper': {
     id: 'grid-paper',
     direction: 'vertical',
     backgroundClassName: 'gridPaper',
     labelKey: 'board.theme.gridPaper',
+    colorScheme: 'dark',
+    tier: 'free',
+  },
+  'paper-atelier': {
+    id: 'paper-atelier',
+    direction: 'vertical',
+    backgroundClassName: 'paperAtelier',
+    labelKey: 'board.theme.paperAtelier',
+    colorScheme: 'light',
+    tier: 'free',
   },
 }
 
