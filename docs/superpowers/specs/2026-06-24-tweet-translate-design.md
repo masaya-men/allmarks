@@ -167,3 +167,22 @@ any ──失敗──▶ error（後述）
 - 訳文は IndexedDB / item に保存されない。
 - 切替アニメはテーマ key で差し替え可能な構造（`getTextTransition(theme)`）で、デフォルト=scramble+glitch。
 - tsc 0 / vitest green / build green。
+
+---
+
+## 改訂 (2026-06-24 session 130 実機FB後)
+
+実装→実機検証で **2 点の設計誤り/要望** が判明し修正・本番反映済み。
+
+### 誤りの訂正: テキスト専用ツイートでボタンが出ない
+- **当初 §4 / §7 の判断「`hideBody` ではボタンを出さない」は誤り**。テキスト専用ツイート(画像/動画なし)は本文が **左の大カード**(`LargePlaceholderCardScaler`)に描画され右カラムは本文非表示(`shouldHideTweetBody`)。当初実装はボタンを `!hideBody && showButton` でゲートしたため、**最も翻訳したいテキスト専用ツイートでボタンが永遠に出なかった**(根本原因は判定ロジックでなくボタンの表示場所)。
+- **修正**: フックを左右カラムの親 `TweetColumns` に持ち上げ、本文が出ている場所を差し替える。テキスト専用 → 左カード(`translatedText`/`bodyRef`/`bodyClassName` を `TweetMedia`→`LargePlaceholderCardScaler` の `outerRef`/`outerClassName` へ)。メディア+本文 → 右段落。ボタンは `showButton` のみでゲート。idle 時 `displayText === canonical card text` を保つので FLIP open の font jump は不変。
+
+### 切替アニメの刷新 (全文スクランブル → glitch-CRT)
+当初の「全文スクランブル+グリッチ」は **うるさすぎ** とFB。要素ベースの新エンジンに刷新:
+- **翻訳中(loading)** = 間欠グリッチ「じじっ…じじっ…」(CSS `glitch-crt.module.css` の `.loading`、chromatic-aberration パルス・長い静止+短バースト)。
+- **原文退場(exit)** = CRT shutdown「ぶつん」= `getShutdownAnimationClass('wave')`(= ムードボードのタイトルが消えるのと同じ)。
+- **訳登場(entry)** = boot-up = `getEntryAnimation('wave')`(= タイトル登場と同じ) **＋ 全文の約10%だけ軽くスクランブル**。
+- `TextTransition` を要素ベース記述子に変更: `loadingClass` / `exitClass` / `exitMs` / `playEntry({el,finalText,setText,reducedMotion})`。phase(`idle/loading/exiting`)は React state で className 駆動、boot-up だけ WAAPI を imperative に流す(className と非競合)。`useTweetTranslation` は phase 機械 + `bodyRef` + `bodyClassName` を返す。
+- 数値チューニング点: `glitch-crt.module.css` の `--tweet-glitch-pulse-period`(1.8s)/`--tweet-glitch-offset`(2px)、`glitch-crt.ts` の `EXIT_MS`(550)/`ENTRY_MS`(520)/`SCRAMBLE_FRACTION`(0.1)。
+- user 実機FB: 「いいかんじ」で承認。
