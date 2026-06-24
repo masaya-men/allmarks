@@ -530,6 +530,7 @@ export function SharedBoard(): ReactElement {
           sourceCardId={lightboxSourceId}
           onSourceShouldShow={showLightboxSource}
           onClose={closeLightbox}
+          themeId={themeId}
         />
       )}
 

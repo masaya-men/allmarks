@@ -2262,6 +2262,7 @@ export function BoardRoot() {
           sourceCardId={lightboxSourceItemId}
           onSourceShouldShow={handleLightboxSourceShouldShow}
           onClose={handleLightboxClose}
+          themeId={themeId}
           nav={lightboxItem ? {
             currentIndex: lightboxIndex,
             total: lightboxNavItems.length,
