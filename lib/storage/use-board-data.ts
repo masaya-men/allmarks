@@ -24,6 +24,7 @@ import {
 import type { MediaSlot } from '@/lib/embed/types'
 import { presetToCardWidth } from '@/lib/board/size-migration'
 import { postBookmarkDeleted } from '@/lib/board/channel'
+import { requestPersistentStorage } from './persist'
 
 export type BoardItem = {
   readonly bookmarkId: string
@@ -228,6 +229,10 @@ export function useBoardData(): {
       const db = (await initDB()) as unknown as DbLike
       if (cancelled) return
       dbRef.current = db
+      // Ask the browser to make IndexedDB persistent (exempt from eviction
+      // under storage pressure). Best-effort + fire-and-forget: a denied
+      // request just falls back to best-effort storage + the EXPORT backup.
+      void requestPersistentStorage()
       // One-shot cleanup: heal legacy relative thumbnails to absolute.
       // Idempotent and cheap when nothing needs fixing.
       try {
