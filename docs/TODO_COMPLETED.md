@@ -7876,3 +7876,23 @@ ChatGPT 製モック5テーマ（docs/private/theme-mockups/）から、user 選
 **検証**: tsc0 / vitest 1704 pass / e2e board-theme 3/3 / pnpm build OK / 本番スモーク（allmarks.app/board に前置スクリプト有・LP は0＝汚染なし）。default(黒+音波)は byte-identical を実機スクショで確認。
 
 **残（Plan 2/3、別セッション）**: paper の作り込み（装飾マステ/ピン・定規メーター・署名アニメ4種・紙テクスチャ素材・MK-1/蝋封、spec§4.4-4.7）／共有のテーマ化（A 盤面・B OGサムネ、spec§6）／#1 white-sector・#5 celestial-atlas を同型量産。最終レビュー Minor（Lightbox 暗スクリムの paper 淡色化・picker a11y・§3.4 ロック pill 文言）は Plan 2 で拾う。
+
+---
+
+## セッション 132 (2026-06-24) — テーマシステム Plan 2（paper-atelier 完全再現）本番反映
+
+Plan 1 の「核の見た目」を「完璧なフル再現」へ。**spec §4.3-4.7 を正本**に、現状コード(Plan 1 後)を8面の調査ワークフローで実測 → 共有契約を固定して8タスクを並行起草(plan: `docs/superpowers/plans/2026-06-24-theme-system-paper-atelier-plan2.md`) → サブエージェント駆動で実装。各タスク= 実装(TDD)→ task レビュー(spec+品質)→ Important/Critical を fix サブエージェント→ 再レビュー、の二段ゲート。最後に opus 全ブランチレビュー= **Ready to merge: yes**。フィーチャーブランチ `theme-paper-atelier-plan2`(30コミット) → master merge `79f0206` → push → 本番デプロイ。
+
+**8タスク**:
+1. **ThemeMeta 契約拡張**: `scrollMeterVariant`/`motion{entry,text,shutdown}`/`decorations?` 追加、3テーマ充填(Record 型で tsc 強制)、契約テスト拡張、手書き fixture 3ファイル修正。
+2. **紙背景**: `scripts/generate-paper-texture.mjs`(決定論・純関数 buildPaperFiberSvg・node:fs のみ)→ committed `public/themes/paper-atelier/fiber.svg`。`.paperAtelier` に繊維タイル＋シミ＋**真のインセット・ヴィネット**(常時 canvas/GPU フィルタ無し)。
+3. **定規スクロールメーター**: `RulerTrack`(目盛り＋Geist-Mono数字＋真鍮マーカー)を variant で出し分け。メーター色を `--meter-*` トークン化(default=現状値の var fallback)。両呼び出し口(BoardRoot/SharedBoard)配線。**controller が実レイアウト回帰(.majorGroup を absolute 化で major tick が left:0 に潰れる)を捕捉・修正**(2レビュアー見落とし)。
+4. **カード装飾**: `components/board/decorations/`(純 `getCardDecorations` 決定論 FNV-1a+mulberry32 + `PaperCardDecorations` 上書きレイヤー)。CardsLayer の shutdown ラッパに pointer-events:none で mount、`meta.decorations===true` ゲート。`.media`=外側ラッパ rect なので FLIP/ドラッグ/リサイズ非干渉。`--card-radius` インライン上書きを colorScheme 判定で 3px/20px 整合。`--deco-z` トークン。
+5. **署名アニメ#1**: `paper-drift`(entry, WAAPI fill:none・緑flash無し)＋`paper-fade`(shutdown)を登録、CSS-var 時間値は単位なし。**両 consumer の `'wave'` ハードコードを `meta.motion.*` に置換**(キー名前空間は ThemeId と別＝配線が肝)。
+6. **署名アニメ#2**: `ink-underline` テキスト遷移(Lightbox 翻訳トグル、paper-fade/paper-drift 再利用)＋themeId を Lightbox→TweetColumns→useTweetTranslation へ配線 / soft photo shuffle(paper だけ穏やかクロスフェード＋遅いカデンス、default はハード切替を byte-identical 維持) / 背景パララックス 0.85x(既存 bg-wrapper transform に折込・三重ゲート)。
+7. **chrome §4.7**: 活版/かすれワードマーク(paper-scoped 静的 mask、BoardChrome 不変)、`PaperFramePlate`(MK-1/ARCHIVE)＋`PaperWaxSeal`(蝋封「A」＋**装飾「+」=非機能 span**)。outerFrame に pointer-events:none で mount、decorations ゲート、Lightbox でフェード。`--z-paper-chrome` トークン。
+8. **据え置きMinor＋e2e**: Lightbox 淡色スクリム(paper 用に `--lightbox-backdrop` トークン化＋上書き、default byte-identical)/picker `role="group"`＋aria-label(i18n)/優しいアンバーのロック pill(i18n、15言語ネイティブ翻訳)/e2e テーマ切替を hover-drawer 対応で un-skip＋paper(html属性/定規/装飾)アサート拡張。
+
+**検証**: tsc0 / **vitest 1768 pass** / build OK。default(黒+音波)は opus 最終レビューで **byte-identical を直接検証**(paper トークンは全て paper ブロック限定＋var fallback、波形メータートークンは literal に解決、本番パスに `'wave'` 残存なし、buildShareData は DEFAULT 維持=Plan 3)。Critical/Important ゼロ。
+
+**フォローアップ(非ブロッキング、CURRENT_GOAL/TODO 記載)**: (a) **e2e シード版数ズレ=既存債務**(seed が IDB を v9 で開く→app DB_VERSION=16 で VersionError→board-b0 全テスト実行不可、Plan 2 起因でない、テーマ切替テストは構造正しく un-skip 済) (b) `useTweetTranslation` 引数名 `themeId` は実 motion キーを受ける→リネーム (c) perf watch: `filter:blur(1.5px)` / `will-change:left`(4K)。**user 宿題= allmarks.app で paper を実機確認＋校正フィードバック**(色/grain/装飾/メーター/活版は全部トークンで寄せられる)。
