@@ -44,6 +44,7 @@ import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX } from './use-card-reorder-drag'
 import { pickCard, itemSkylineHeight } from './cards'
+import { selectPaperSoftShuffle } from '@/lib/board/paper-soft-shuffle'
 import styles from './CardsLayer.module.css'
 
 /** Max press-and-hold duration (ms) for a pointer gesture to still count as a
@@ -726,6 +727,10 @@ export function CardsLayer({
   // が paint を集中させて jank。 isScrolling は markScrollActive で 200ms
   // idle 後 false に戻るので、 scroll 終了から 200ms で ambient 自然復帰。
   const ambientOn = motionEnabled && !sourceCardId && !reduceMotion && !isScrolling
+  // Paper soft-shuffle vs default hard-cut. meta.decorations === true marks the
+  // paper-atelier theme (only theme with decorations); ambientOn already folds
+  // motionEnabled + !reduceMotion + !isScrolling + !sourceCardId.
+  const softShuffleSel = selectPaperSoftShuffle({ softShuffle: meta.decorations === true, ambientOn })
   const rotateMs = Math.max(MIN_ROTATE_MS, HERO_PER_CARD_MS)
   const spotlightCap = ambientOn ? HERO_CAP : 0
   const playing = useSpotlightRotation(candidates, spotlightCap, rotateMs)
@@ -1089,6 +1094,8 @@ export function CardsLayer({
                     displayMode={it.displayMode ?? displayMode}
                     autoCycle={motionEnabled}
                     ambientOn={ambientOn}
+                    softShuffle={softShuffleSel.crossfade}
+                    cycleMs={softShuffleSel.cadenceMs}
                   />
                 )
               })()}

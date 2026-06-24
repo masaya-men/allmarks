@@ -22,11 +22,14 @@ type Props = {
   readonly autoCycle?: boolean
   /** Interval per image in ms (default 2200). */
   readonly cycleMs?: number
+  /** When true, multi-image swap cross-fades (paper soft-shuffle) instead of
+   *  a hard src cut. Default false keeps the existing hard-cut behavior. */
+  readonly softShuffle?: boolean
 }
 
 const ASPECT_EPSILON = 0.005
 
-export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200 }: Props): ReactNode {
+export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200, softShuffle = false }: Props): ReactNode {
   const imgRef = useRef<HTMLImageElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -66,10 +69,11 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
 
   useEffect(() => {
     if (!autoCycle || !hasMultiple) return
-    // Per-card random interval band so cards never tick in lockstep — without
-    // this every multi-photo tweet on screen advances together every cycleMs.
-    const minMs = cycleMs * 0.6
-    const maxMs = cycleMs * 1.8
+    // Per-card random interval band so cards never tick in lockstep. Paper
+    // (softShuffle) uses a tighter band around the calm cadence so the slow
+    // rhythm reads as deliberate, not occasionally-snappy.
+    const minMs = softShuffle ? cycleMs * 0.85 : cycleMs * 0.6
+    const maxMs = softShuffle ? cycleMs * 1.25 : cycleMs * 1.8
     let timer: number
     const step = (): number => minMs + Math.random() * (maxMs - minMs)
     const tick = (): void => {
@@ -79,7 +83,7 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
     // Initial offset spread across the full cycle so cards desync immediately.
     timer = window.setTimeout(tick, Math.random() * maxMs)
     return (): void => window.clearTimeout(timer)
-  }, [autoCycle, hasMultiple, slots.length, cycleMs])
+  }, [autoCycle, hasMultiple, slots.length, cycleMs, softShuffle])
 
   // Reset to the lead image when autoCycle turns off so the card is never
   // left stranded mid-sequence.
@@ -135,6 +139,9 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
   const thumbClass = isReel
     ? `${styles.thumb} ${styles.thumbInstagramReel}`
     : styles.thumb
+  const softThumbClass = softShuffle
+    ? `${thumbClass} ${styles.thumbSoft}`
+    : thumbClass
 
   return (
     <div
@@ -156,7 +163,7 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
           <img
             key={slot.url}
             ref={i === 0 ? imgRef : undefined}
-            className={thumbClass}
+            className={softThumbClass}
             src={slot.url}
             alt={item.title}
             draggable={false}

@@ -472,6 +472,12 @@ html[data-theme-id="paper-atelier"] {
      byte-identical (.paperAtelier reads var(--paper-fiber-url, none)). */
   --paper-fiber-url: url("/themes/paper-atelier/fiber.svg");
 
+  /* soft photo shuffle — slow crossfade cadence for paper image cards.
+     thumbSoft uses var(--paper-shuffle-fade-duration, 900ms) so non-paper
+     builds are unaffected (900ms fallback is unused — non-paper cards never
+     get .thumbSoft applied). */
+  --paper-shuffle-fade-duration: 900ms;
+
   /* floating chrome text (ScrollMeter counter / buttons) — ink on paper */
   --chrome-text-color: rgba(43, 39, 34, 0.92);
   --chrome-text-color-hover: rgba(43, 39, 34, 1);
