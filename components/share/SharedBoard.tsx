@@ -495,6 +495,7 @@ export function SharedBoard(): ReactElement {
               newlyAddedIds={EMPTY_SET}
               defaultCardWidth={cardWidthPx}
               customWidths={customWidths}
+              themeId={themeId}
               motionEnabled={motionEnabled}
               matchedBookmarkIds={null}
               receiverMode={{

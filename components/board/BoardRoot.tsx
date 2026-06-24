@@ -2149,6 +2149,7 @@ export function BoardRoot() {
               }}
             >
               <CardsLayer
+                themeId={themeId}
                 items={filteredItems}
                 viewport={viewport}
                 viewportWidth={effectiveLayoutWidth}

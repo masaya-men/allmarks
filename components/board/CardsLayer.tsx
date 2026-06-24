@@ -12,7 +12,7 @@ import {
 } from 'react'
 import { gsap } from 'gsap'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
-import type { CardPosition, DisplayMode } from '@/lib/board/types'
+import type { CardPosition, DisplayMode, ThemeId } from '@/lib/board/types'
 import {
   BOARD_Z_INDEX,
   CULLING,
@@ -20,6 +20,8 @@ import {
 import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel, safeExternalUrl } from '@/lib/utils/url'
+import { getThemeMeta } from '@/lib/board/theme-registry'
+import { PaperCardDecorations } from '@/components/board/decorations/PaperCardDecorations'
 import { getShutdownAnimationClass } from '@/lib/animation/tag-shutdown'
 import { getEntryAnimation } from '@/lib/animation/tag-entry'
 import { extractTypedCandidatesFromBookmark } from '@/lib/board/tag-candidates'
@@ -325,6 +327,9 @@ type CardsLayerProps = {
     /** × handler: remove this card url from the working set. */
     readonly onRemove: (url: string) => void
   }
+  /** Active board theme id. Drives per-card decorations (meta.decorations)
+   *  and, from Task 5, the entry/shutdown motion keys. */
+  readonly themeId: ThemeId
 }
 
 export function CardsLayer({
@@ -367,8 +372,10 @@ export function CardsLayer({
   entryAnimCycle = 0,
   receiverMode,
   forceTagButtonVisible = false,
+  themeId,
 }: CardsLayerProps): ReactNode {
   const rootRef = useRef<HTMLDivElement>(null)
+  const meta = getThemeMeta(themeId)
 
   // Filter 変化 → 復活してくる (= matched) カードに WAVE テーマの fade-up
   // entry アニメを stagger 付きで適用。 inner wrapper (= shutdown が走る
@@ -1051,7 +1058,7 @@ export function CardsLayer({
               opacity: newlyAddedIds.has(it.bookmarkId) ? 0 : 1,
               visibility: sourceCardId === it.bookmarkId ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
-              ['--card-radius' as string]: '20px',
+              ['--card-radius' as string]: meta.colorScheme === 'light' ? '3px' : '20px',
             }}
           >
             {/* Tag-shutdown wrapper. The outer div above carries the GSAP
@@ -1086,6 +1093,9 @@ export function CardsLayer({
                 )
               })()}
             </CardNode>
+            {meta.decorations === true && (
+              <PaperCardDecorations cardId={it.bookmarkId} />
+            )}
             {receiverMode && (() => {
               const tagIds = receiverMode.senderTagIdsByCard.get(it.url) ?? []
               if (tagIds.length === 0) return null
