@@ -83,8 +83,15 @@ type RootLayoutProps = {
 
 export default function RootLayout({ children }: RootLayoutProps): React.ReactElement {
   return (
-    <html lang="en" data-theme="dark" data-card-style="glass" data-ui-theme="auto">
+    <html lang="en" translate="no" className="notranslate" data-theme="dark" data-card-style="glass" data-ui-theme="auto">
       <head>
+        {/* Suppress Chrome's "translate this page?" offer. The app has its own
+            15-language i18n (and on-device tweet translation), and Chrome
+            translating the React DOM both annoys the user (the bar appears every
+            load) and breaks React reconciliation by mutating text nodes. The
+            in-app tweet translate feature is unaffected (it calls the Translator
+            API directly, not Chrome's page UI). */}
+        <meta name="google" content="notranslate" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <script dangerouslySetInnerHTML={{ __html: `

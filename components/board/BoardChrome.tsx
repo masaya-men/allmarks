@@ -1,13 +1,18 @@
 'use client'
 
-import Link from 'next/link'
+import { ChromeButton } from './ChromeButton'
 import styles from './BoardChrome.module.css'
 
 /**
  * Outer-frame chrome for /board: the AllMarks wordmark in the top-left margin,
  * linking back to the marketing home (= a way out of the board to the LP).
- * Plain text-only — no glass, no shadow — lets the canvas remain the focal point.
- * Fades out with the rest of the chrome while the Lightbox is open.
+ *
+ * Rendered as a {@link ChromeButton} link variant so it is visually and
+ * behaviourally identical to the header menu (TUNE / SHARE …): same monospace
+ * font, idle micro-scramble, hover scramble burst + RGB glitch. Sharing the
+ * component means a future chrome theme swaps the wordmark and the header menu
+ * together. This module only positions it in the dark top margin + fades it
+ * with the rest of the chrome while the Lightbox is open.
  *
  * The bottom marketing link strip (Guide/About/Privacy/Terms) was dropped when
  * the board went edge-to-edge (no bottom margin to host it); it returns in a
@@ -15,12 +20,8 @@ import styles from './BoardChrome.module.css'
  */
 export function BoardChrome({ hidden = false }: { readonly hidden?: boolean }): React.ReactElement {
   return (
-    <Link
-      href="/"
-      className={hidden ? `${styles.brand} ${styles.brandHidden}` : styles.brand}
-      aria-label="AllMarks home"
-    >
-      AllMarks
-    </Link>
+    <div className={hidden ? `${styles.brandSlot} ${styles.brandHidden}` : styles.brandSlot}>
+      <ChromeButton href="/" label="AllMarks" aria-label="AllMarks home" />
+    </div>
   )
 }

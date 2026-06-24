@@ -1,26 +1,16 @@
-/* AllMarks wordmark in the dark top margin (--bg-outer #0a0a0a), mirroring the
-   frameTopChrome (MOTION / filter) on the right. Light text on the dark frame.
-   Links to the marketing home — the user's way out of the board to the LP. */
-.brand {
+/* Positioning slot for the AllMarks wordmark (a ChromeButton link variant) in
+   the dark top margin (--bg-outer #0a0a0a), mirroring frameTopChrome on the
+   right. The wordmark's font / color / scramble / glitch all come from
+   ChromeButton — this slot only places and fades it. */
+.brandSlot {
   position: absolute;
   top: 0;
-  left: calc(var(--canvas-margin, 48px) + 24px);
+  left: calc(var(--canvas-margin, 48px) + 12px);
   height: var(--canvas-margin, 48px);
   display: flex;
   align-items: center;
-  font-family: var(--font-geist), var(--font-sans, system-ui), sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: rgba(255, 255, 255, 0.5);
-  text-decoration: none;
-  white-space: nowrap;
   z-index: 120;
-  transition: color 0.15s ease, opacity 0.25s ease;
-}
-
-.brand:hover {
-  color: rgba(255, 255, 255, 0.92);
+  transition: opacity 0.25s ease;
 }
 
 .brandHidden {
@@ -29,8 +19,7 @@
 }
 
 @media (max-width: 720px) {
-  .brand {
-    left: calc(var(--canvas-margin, 48px) + 12px);
-    font-size: 12px;
+  .brandSlot {
+    left: var(--canvas-margin, 48px);
   }
 }
