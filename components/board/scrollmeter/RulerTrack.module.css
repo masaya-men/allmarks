@@ -35,9 +35,11 @@
 
 /* Wrapper for each major-tick group (numeral + tick line). Explicit
    pointer-events:none so the hit-area guarantee holds even if .rail
-   CSS doesn't cascade (e.g. in jsdom or a future refactor). */
+   CSS doesn't cascade (e.g. in jsdom or a future refactor). Must stay
+   non-positioned: its children (.numeral/.majorTick) are absolute with
+   left:X% and must resolve against .rail (full track width), NOT this
+   wrapper — making it position:absolute collapses them to left:0. */
 .majorGroup {
-  position: absolute;
   pointer-events: none;
 }
 
