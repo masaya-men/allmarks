@@ -501,6 +501,15 @@ html[data-theme-id="paper-atelier"] {
   /* soft warm paper shadows */
   --shadow-grid-card: 0 2px 8px rgba(43, 39, 34, 0.12);
   --shadow-collage-card: 0 10px 28px rgba(43, 39, 34, 0.16);
+
+  /* --- PAPER DECORATIONS (per-card overlay, pointer-events:none) --- */
+  --deco-washi-a: rgba(201, 178, 122, 0.42);   /* PALE STRAW translucent tape */
+  --deco-washi-b: rgba(143, 168, 142, 0.38);   /* SAGE translucent tape */
+  --deco-washi-c: rgba(196, 160, 150, 0.40);   /* DUSTY ROSE translucent tape */
+  --deco-pin: var(--color-accent-primary);     /* FOREST push-pin head */
+  --deco-clip: #6f6a60;                         /* WARM GRAY bulldog clip */
+  --deco-stamp-ink: rgba(140, 60, 48, 0.62);   /* OXIDE RED rubber-stamp ink */
+  --deco-photo-corner: rgba(43, 39, 34, 0.55); /* CHARCOAL album corner */
 }
 
 /* ── Reduced Motion ────────────────────────────────────────── */
