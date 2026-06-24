@@ -46,6 +46,15 @@ export function I18nProvider({
     }
   }, [initialLocale])
 
+  // 実行時の表示言語を <html lang> に反映する。これが無いと静的シェルの
+  // lang="en" のままになり、日本語表示なのに Chrome が「このページを翻訳しますか?」
+  // を毎回出してしまう (locale と lang の不一致)。locale が確定/変化するたび同期。
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale
+    }
+  }, [locale])
+
   const setLocale = useCallback((next: SupportedLocale): void => {
     if (!(SUPPORTED_LOCALES as readonly string[]).includes(next)) return
     persistLocale(next)

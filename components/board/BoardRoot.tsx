@@ -1922,13 +1922,12 @@ export function BoardRoot() {
 
   return (
     <div className={styles.outerFrame}>
-      {/* Outer-frame chrome — wordmark (top-left) + link strip (bottom).
-          Sits in the white margin around the dark canvas, gives users a way
-          back to the marketing site without intruding on the board.
-          Session 30: 全画面化 sprint で一時非表示。 余白がなくなり居場所を失った
-          ため、 footer 全体デザイン (= 広告含む) を別 sprint で再設計してから
-          差し戻す。 復活させるには下行のコメントアウトを外す。 */}
-      {/* <BoardChrome /> */}
+      {/* Outer-frame chrome — AllMarks wordmark (top-left dark margin) linking
+          to the marketing home, so users have a way back to the LP from the
+          board. Session 130: restored as wordmark-only (the bottom marketing
+          link strip waits for a footer redesign). Fades with the chrome while
+          the Lightbox is open, mirroring frameTopChrome. */}
+      <BoardChrome hidden={!!lightboxItemId} />
       {/* The always-on bottom-left bookmarklet pill was removed (session 114).
           The no-extension install path now lives in SETTINGS ("SAVE WITHOUT
           EXTENSION" → BookmarkletInstallModal) and the empty-state welcome,
