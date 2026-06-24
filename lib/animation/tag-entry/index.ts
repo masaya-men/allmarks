@@ -4,7 +4,7 @@ import './themes/wave.module.css'
 // PAPER-ATELIER テーマの CSS variables を side-effect で :root に注入する。
 import './themes/paper.module.css'
 
-export type SupportedTheme = 'wave'
+export type SupportedTheme = 'wave' | 'paper-drift'
 
 interface EntryAnimation {
   readonly keyframes: Keyframe[]

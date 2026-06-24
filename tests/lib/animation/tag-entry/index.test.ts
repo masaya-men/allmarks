@@ -20,6 +20,11 @@ describe('getEntryAnimation', () => {
     const serialized = JSON.stringify(a?.keyframes)
     expect(serialized).not.toContain('#28F100')
     expect(serialized.toLowerCase()).not.toContain('5aefff') // glitch cyan
+    // stagger は数値であること (JSDOM で :root CSS var 未適用なら NaN になる回帰を捕捉)
+    expect(typeof a?.staggerStepMs).toBe('number')
+    expect(Number.isNaN(a?.staggerStepMs)).toBe(false)
+    expect(typeof a?.staggerCapMs).toBe('number')
+    expect(Number.isNaN(a?.staggerCapMs)).toBe(false)
   })
 
   it('未対応テーマ key では undefined フォールバック (= フォールバック契約維持)', () => {
