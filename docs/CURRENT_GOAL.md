@@ -8,8 +8,12 @@
 - spec: [docs/superpowers/specs/2026-06-24-theme-system-paper-atelier-design.md](specs/.. ) ／ plan1: [docs/superpowers/plans/2026-06-24-theme-system-foundation-paper-atelier.md](plans/..)。
 - ⏳ **user 宿題**: `allmarks.app` をハードリロード → SETTINGS → THEMES → Paper Atelier に切替えて**実機で見た目を確認＋校正フィードバック**（色味/セリフの重さ等は校正で寄せられる）。
 
+## user 判断（2026-06-24 セッション131末）
+- **paper は公開のまま隠さない**（宣伝前・流入少なので、公開しつつ Plan 2 で仕上げる方針）。
+- **Plan 2 の到達目標 = 「本当に完璧に忠実に再現」**（user 強調）。モックを実測し、校正グリッドで徹底的に寄せ、各段でスクショを出して承認をもらいながら進める。妥協で核止まりにしない。
+
 ## 次にやる（優先順）
-1. **Plan 2 = paper-atelier の作り込み（フル再現）** — まだ核の見た目だけ。残り: カード装飾（マステ/画びょう/クリップ/スタンプ）・**定規/巻尺スクロールメーター**・署名アニメ4種（pinned-card drift / paper parallax / ink underline / soft photo shuffle）・紙テクスチャ素材・MK-1プレート/蝋封シール。**spec §4.4-4.7 が設計の正本**。`writing-plans` で Plan 2 を起こしてから実装。
+1. **Plan 2 = paper-atelier の作り込み（完璧なフル再現）** — まだ核の見た目だけ。残り: カード装飾（マステ/画びょう/クリップ/スタンプ）・**定規/巻尺スクロールメーター**・署名アニメ4種（pinned-card drift / paper parallax / ink underline / soft photo shuffle）・紙テクスチャ素材・MK-1プレート/蝋封シール。**spec §4.4-4.7 が設計の正本＋モック画像 `docs/private/theme-mockups/03-paper-atelier__{board,settings,scrollmeter}.png` を実装前に必ず見る**。`writing-plans` で Plan 2 を起こしてから実装。
    - Plan 2 で拾う細かな指摘（最終レビュー Minor）: Lightbox の暗スクリムを paper 用に淡色化 / picker の a11y(role=group) / §3.4 ロック pill の優しい文言（有料テーマ実装時）。
 2. **Plan 3 = 共有のテーマ化** — (A) 共有盤面に実 themeId を載せる（送信は今 DEFAULT 固定＝[BoardRoot.tsx](../components/board/BoardRoot.tsx) 共有ペイロード）＋ SharedBoard を `data-theme-id` に統一。(B) OG サムネ canvas（[capture-mirror.ts](../lib/share/capture-mirror.ts)）をテーマ対応（初版=署名再現→実共有で再判断）。**spec §6 が正本**。`writing-plans` で Plan 3。
 3. **テーマ #1 white-sector → #5 celestial-atlas** を同じ器で量産（spec の「7部品契約」を埋めるだけ）。
