@@ -9,8 +9,13 @@
 
 ## 次にやる（user 指示「全部やる・順番は任せる」）優先順私案
 1. **テーマシステム + ChatGPT製テーマ画像の再現**（最優先・大物・有料テーマ/Proの土台）
-   - **user が `docs/private/theme-mockups/` に画像を置く or チャットに貼る → それを見てコードで再現**（背景/カード/演出/配色を1枚ずつ詰める）
-   - エンタイトルメント受け口込みで設計（ノーアカウント・ライセンスキー解錠案＝IDEAS.md N-06）。無料テーマで世界観を見せる導線を先に。
+   - **画像は保管済み**: `docs/private/theme-mockups/` に `0N-<theme>__{settings,board,scrollmeter}.png`（5テーマ×3ビュー=15枚）。**実装前に必ず該当画像を見る**。
+   - **5テーマ**: 01 white-sector(白ミリタリーHUD・ライトモード) / 02 code-rain(黒地に緑・canvasの降るコード) / 03 paper-atelier(編集紙・セリフ・マステ/ピン・クリーム+金) / 04 liquid-chrome(Y2Kガラス・クローム・最難関GPU重) / 05 celestial-atlas(宇宙・星座・濃紺+金)。
+   - **各テーマ = 背景レイヤー/カード表面/スクロールメーター/設定画面/配色/フォント/モーション まで作り込まれた完全な世界観**。1テーマ=大型実装。default(黒白+音波)は残し、これらは切替で選べる追加テーマ。
+   - **進め方=縦切り**: まず1テーマを端から端まで完成させ「テーマ切替の土台」を確立→同型で量産。**最初の1テーマは user が選ぶ**（Claude推奨=paper-atelier が事故少+差別化強。次点 code-rain。liquid-chrome は土台確立後）。
+   - **土台**: `data-theme` で CSS変数一式差替え + テーマ別背景/カード/メーター/設定 + 既存アニメ登録機構(getEntryAnimation/getTextTransition の wave/glitch-crt)にテーマ別ストラテジ追加 + テーマ切替UI + 有料テーマのライセンスキー解錠受け口(N-06)。
+   - **手順**: brainstorm→spec(docs/superpowers/specs)→plan→実装（翻訳機能と同じ流れ）。エンタイトルメント受け口込みで設計。無料テーマで世界観を見せる導線を先に。
+   - ⏳ **user 待ち**: 「最初の1テーマ」の選択。
 2. **(N-04) ツイート本文取れないバグ**（軽い・先に潰してもよい）: repro `https://x.com/fta7/status/2059754329058488795`。`/api/tweet-meta`→syndication payload 実取得で `text/full_text` 空 or note/article 別フィールドか確認 → `parseTweetData`(lib/embed/tweet-meta.ts:137) 補強。
 3. **(N-02) Lightbox 自動再生プレイリスト** / **(N-01) カラーハント**（触って楽しい系）
 4. **(N-05) LPナビ演出**（選んだ語がヘッダーに緑玉で「しゅん」格納・GSAP ScrollTrigger） / PiP等のオンボ高品質化
