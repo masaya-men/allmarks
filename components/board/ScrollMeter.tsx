@@ -10,6 +10,7 @@ import {
   type ReactElement,
 } from 'react'
 import styles from './ScrollMeter.module.css'
+import { RulerTrack } from './scrollmeter/RulerTrack'
 
 /** Number of tick marks rendered on the ruler. Decoupled from any external
  *  count — the meter is a pure visual waveform, with current scroll OR
@@ -111,6 +112,11 @@ type Props = {
    *  rAF-throttled (= max once per frame), so the parent can call expensive
    *  state setters without per-pointer-event flooding. */
   readonly onScrub: (fraction: number) => void
+  /** Which meter face to render. 'waveform' = the default sound-wave ticks
+   *  (dotted-notebook / grid-paper). 'ruler' = the paper-atelier tape-measure
+   *  (RulerTrack). The 0..1 swellFraction-in / onScrub-out contract and the
+   *  counter readout are identical across both faces. */
+  readonly variant?: 'waveform' | 'ruler'
 }
 
 function pad4(n: number): string {
@@ -149,6 +155,7 @@ export function ScrollMeter({
   total,
   swellFraction,
   onScrub,
+  variant = 'waveform',
 }: Props): ReactElement {
   const trackRef = useRef<HTMLDivElement>(null)
   const tickRefs = useRef<HTMLDivElement[]>([])
@@ -165,6 +172,15 @@ export function ScrollMeter({
   useEffect(() => { modeRef.current = mode }, [mode])
   useEffect(() => { swellFractionRef.current = swellFraction }, [swellFraction])
   useEffect(() => { onScrubRef.current = onScrub }, [onScrub])
+
+  // Mirror variant into a ref so the single []-deps rAF loop can branch on
+  // it each frame without restarting. Same idiom as modeRef/swellFractionRef.
+  const variantRef = useRef<'waveform' | 'ruler'>(variant)
+  useEffect(() => { variantRef.current = variant }, [variant])
+
+  // Brass marker for the ruler variant — positioned by the rAF loop via
+  // left %, mirroring how the waveform's swell rides centerTickIdx.
+  const rulerMarkerRef = useRef<HTMLDivElement>(null)
 
   // ---- Swell state ----
   // `displayedTickIdxRef` is what the rAF actually paints each frame. It's
@@ -396,29 +412,40 @@ export function ScrollMeter({
       )
       const swellSigma = TICK_COUNT / 32
       const swellGain = 3.4
-      for (let i = 0; i < TICK_COUNT; i++) {
-        const el = tickRefs.current[i]
-        if (!el) continue
+      const isRuler = variantRef.current === 'ruler'
+      if (!isRuler) {
+        for (let i = 0; i < TICK_COUNT; i++) {
+          const el = tickRefs.current[i]
+          if (!el) continue
 
-        const w1 = Math.sin(t * 0.6 + i * 0.08) * 0.45
-        const w2 = Math.sin(t * 1.7 + i * 0.31) * 0.30
-        const w3 = Math.sin(t * 4.2 + i * 0.93) * 0.15
-        const norm = (w1 + w2 + w3 + 0.9) / 1.8 // → 0..1-ish
-        const baseH = 2 + norm * 8
+          const w1 = Math.sin(t * 0.6 + i * 0.08) * 0.45
+          const w2 = Math.sin(t * 1.7 + i * 0.31) * 0.30
+          const w3 = Math.sin(t * 4.2 + i * 0.93) * 0.15
+          const norm = (w1 + w2 + w3 + 0.9) / 1.8 // → 0..1-ish
+          const baseH = 2 + norm * 8
 
-        const dist = i - centerTickIdx
-        const swell = 1
-          + swellGain * Math.exp(-(dist * dist) / (2 * swellSigma * swellSigma))
+          const dist = i - centerTickIdx
+          const swell = 1
+            + swellGain * Math.exp(-(dist * dist) / (2 * swellSigma * swellSigma))
 
-        let h = baseH * swell
-        if (isInteracting) {
-          if (Math.random() < 0.10) {
-            h = 1
-          } else {
-            h = h * (0.40 + Math.random() * 1.25)
+          let h = baseH * swell
+          if (isInteracting) {
+            if (Math.random() < 0.10) {
+              h = 1
+            } else {
+              h = h * (0.40 + Math.random() * 1.25)
+            }
           }
+          el.style.height = `${Math.max(1, h).toFixed(1)}px`
         }
-        el.style.height = `${Math.max(1, h).toFixed(1)}px`
+      } else {
+        // Ruler: no per-tick height writes; just slide the brass marker to the
+        // centerTickIdx position (same 0..1 mapping, expressed as left %).
+        const marker = rulerMarkerRef.current
+        if (marker) {
+          const pct = (centerTickIdx / (TICK_COUNT - 1)) * 100
+          marker.style.left = `${Math.max(0, Math.min(100, pct)).toFixed(2)}%`
+        }
       }
 
       // ---- Periodic full-scramble trigger (session 29 user feedback) ----
@@ -590,19 +617,26 @@ export function ScrollMeter({
           aria-valuenow={swellPct}
           data-testid="scroll-meter"
           data-mode={mode}
+          data-meter-variant={variant}
           data-dragging={isDragging || undefined}
         >
-          <div className={styles.baseline} aria-hidden="true" />
-          {ticks.map((i) => (
-            <div
-              key={i}
-              ref={(el): void => { if (el) tickRefs.current[i] = el }}
-              className={styles.tick}
-              style={{ left: `${(i / (TICK_COUNT - 1)) * 100}%` }}
-            />
-          ))}
-          {hoverPct !== null && !isDragging && (
-            <div className={styles.hoverLine} aria-hidden="true" style={{ left: `${hoverPct}%` }} />
+          {variant === 'ruler' ? (
+            <RulerTrack markerRef={rulerMarkerRef} />
+          ) : (
+            <>
+              <div className={styles.baseline} aria-hidden="true" />
+              {ticks.map((i) => (
+                <div
+                  key={i}
+                  ref={(el): void => { if (el) tickRefs.current[i] = el }}
+                  className={styles.tick}
+                  style={{ left: `${(i / (TICK_COUNT - 1)) * 100}%` }}
+                />
+              ))}
+              {hoverPct !== null && !isDragging && (
+                <div className={styles.hoverLine} aria-hidden="true" style={{ left: `${hoverPct}%` }} />
+              )}
+            </>
           )}
         </div>
       </div>
