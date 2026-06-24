@@ -462,6 +462,11 @@ html[data-theme-id="paper-atelier"] {
   --accent-primary: #2f4a37;
   --accent-gold: #b9924a;            /* GOLD PEEL (used by paper decorations in Plan 2) */
 
+  /* fibre texture tile — generated once by scripts/generate-paper-texture.mjs,
+     consumed by .paperAtelier via var(); paper-only so the default theme is
+     byte-identical (.paperAtelier reads var(--paper-fiber-url, none)). */
+  --paper-fiber-url: url("/themes/paper-atelier/fiber.svg");
+
   /* floating chrome text (ScrollMeter counter / buttons) — ink on paper */
   --chrome-text-color: rgba(43, 39, 34, 0.92);
   --chrome-text-color-hover: rgba(43, 39, 34, 1);

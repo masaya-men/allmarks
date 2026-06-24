@@ -12,10 +12,32 @@
 }
 
 .paperAtelier {
-  background-color: var(--bg-dark);
-  /* Plan 1: CSS-only parchment grain + soft vignette (no external asset yet;
-     the real fiber texture asset lands in Plan 2 calibration). */
+  background-color: var(--bg-dark); /* PARCHMENT base */
+  /* Plan 2: parchment = colour washes (highlight + stains) + an inset edge
+     vignette ON TOP OF a repeating fibre tile. All static — ZERO per-frame
+     paint, NO canvas / GPU / backdrop-filter (board is fill-rate bound at 4K). */
   background-image:
+    /* top ivory highlight (kept from Plan 1) */
     radial-gradient(120% 90% at 50% 0%, rgba(255, 253, 246, 0.45), transparent 60%),
-    radial-gradient(140% 120% at 50% 100%, rgba(43, 39, 34, 0.06), transparent 55%);
+    /* faint bottom wash (kept from Plan 1) */
+    radial-gradient(140% 120% at 50% 100%, rgba(43, 39, 34, 0.06), transparent 55%),
+    /* large off-center coffee-ish stains — low alpha, irregular placement */
+    radial-gradient(38% 30% at 22% 34%, rgba(140, 110, 64, 0.05), transparent 70%),
+    radial-gradient(46% 40% at 78% 68%, rgba(110, 92, 60, 0.045), transparent 72%),
+    radial-gradient(30% 26% at 60% 14%, rgba(120, 96, 56, 0.035), transparent 70%),
+    /* true inset edge vignette — darkens only the rim, transparent center */
+    radial-gradient(ellipse at center, transparent 55%, rgba(43, 39, 34, 0.10) 100%),
+    /* fibre tile (under everything) — default theme has no --paper-fiber-url → none */
+    var(--paper-fiber-url, none);
+  /* gradients cover the full canvas so their repeat mode is visually immaterial;
+     the fibre tile needs repeat — single-value applies to all layers. */
+  background-repeat: repeat;
+  background-size:
+    auto,
+    auto,
+    auto,
+    auto,
+    auto,
+    auto,
+    160px 160px;
 }
