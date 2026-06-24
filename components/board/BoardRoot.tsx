@@ -82,6 +82,7 @@ import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
+import { usePaperParallax } from './use-paper-parallax'
 import styles from './BoardRoot.module.css'
 
 // Horizontal room past the rightmost card so the user can scroll a little
@@ -807,6 +808,7 @@ export function BoardRoot() {
   }, [filteredItems, matchedBookmarkIds])
 
   const themeMeta = getThemeMeta(themeId)
+  const paperParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y })
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
@@ -2096,13 +2098,16 @@ export function BoardRoot() {
             onScroll={handleScroll}
             spaceHeld={spaceHeld}
           >
-            {/* Background — full canvas coverage, follows scroll. */}
+            {/* Background — full canvas coverage, follows scroll. Paper-atelier
+                lags the vertical pan by paperParallaxY (0.85x) for a gentle
+                depth read; every other theme keeps the exact 1:1 pan
+                (paperParallaxY is 0 unless paper + motion + not reduced). */}
             <div
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                transform: `translate3d(${-viewport.x}px, ${-viewport.y}px, 0)`,
+                transform: `translate3d(${-viewport.x}px, ${-viewport.y + paperParallaxY}px, 0)`,
                 willChange: 'transform',
                 pointerEvents: 'none',
               }}
