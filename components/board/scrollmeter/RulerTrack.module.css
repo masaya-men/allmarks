@@ -33,6 +33,14 @@
   pointer-events: none;
 }
 
+/* Wrapper for each major-tick group (numeral + tick line). Explicit
+   pointer-events:none so the hit-area guarantee holds even if .rail
+   CSS doesn't cascade (e.g. in jsdom or a future refactor). */
+.majorGroup {
+  position: absolute;
+  pointer-events: none;
+}
+
 /* Major tick (every 10 units): taller, full-ink. */
 .majorTick {
   position: absolute;

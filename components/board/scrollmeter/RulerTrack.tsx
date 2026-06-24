@@ -43,7 +43,7 @@ export function RulerTrack({ markerRef }: Props): ReactElement {
       {ticks.map(({ unit, isMajor }) => {
         const leftPct = (unit / RULER_UNITS) * 100
         return isMajor ? (
-          <div key={unit}>
+          <div key={unit} className={styles.majorGroup}>
             <span
               className={styles.numeral}
               data-testid="ruler-numeral"

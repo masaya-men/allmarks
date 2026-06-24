@@ -141,7 +141,15 @@ describe('ScrollMeter variant prop', () => {
     expect(queryAllByTestId('ruler-numeral').length).toBeGreaterThan(0)
   })
 
-  it('keeps the onScrub 0..1 pointer-down contract in ruler variant', () => {
+  it('captures scrub state on pointer-down in ruler variant (onScrub fires in rAF, not synchronously)', () => {
+    // onScrub is rAF-throttled inside the component: pointerDown stores the
+    // fraction in a ref and the rAF loop fires onScrub at most once per frame.
+    // jsdom does not run requestAnimationFrame, so onScrub will NOT be called
+    // synchronously here — this is by design, not a bug. The synchronous
+    // contract we CAN assert is:
+    //   1. data-dragging flips to "true" (= scrub has started, the fraction IS
+    //      stored in the ref ready for the next rAF frame).
+    // End-to-end rAF firing is covered by Playwright browser tests.
     const onScrub = vi.fn()
     const { getByTestId } = render(
       <ScrollMeter
@@ -154,7 +162,12 @@ describe('ScrollMeter variant prop', () => {
       x: 0, y: 0, width: 200, height: 28, top: 0, right: 200, bottom: 28, left: 0, toJSON: () => ({}),
     } as DOMRect)
     fireEvent.pointerDown(track, { clientX: 100, pointerId: 1 })
+    // Synchronous layer: dragging state must be set (fraction stored in ref).
     expect(track.getAttribute('data-dragging')).toBe('true')
+    // onScrub is NOT called synchronously (rAF-throttled); confirm this honestly
+    // rather than asserting a value that would only pass if the component broke
+    // its own throttle invariant.
+    expect(onScrub).not.toHaveBeenCalled()
   })
 })
 
