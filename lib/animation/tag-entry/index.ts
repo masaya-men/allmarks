@@ -1,6 +1,8 @@
 // WAVE テーマの CSS variables を side-effect で :root に注入するため、
 // theme module を 1 つ import する (= shutdown と同じ pattern)。
 import './themes/wave.module.css'
+// PAPER-ATELIER テーマの CSS variables を side-effect で :root に注入する。
+import './themes/paper.module.css'
 
 export type SupportedTheme = 'wave'
 
@@ -107,6 +109,43 @@ export function getEntryAnimation(theme: string): EntryAnimation | undefined {
             filter: 'brightness(1)',
             background: 'transparent',
             boxShadow: 'none',
+          },
+        ],
+        options: { duration, easing, fill: 'none' },
+        staggerStepMs,
+        staggerCapMs,
+      }
+    }
+    case 'paper-drift': {
+      // PAPER-ATELIER entry: ピン留め写真が下からそっと差し込まれる穏やかな
+      // drift。 wave のような緑 flash / CRT glitch / 強 scale は一切使わない
+      // (= 紙の世界観 + board が合成律速なので amplitude を極小に保つ)。
+      // 数値は paper.module.css の :root から読む (= wave と同じ思想)。
+      const duration = readCssVar('--paper-drift-duration', 520)
+      const easing = readCssVarRaw('--paper-drift-easing', 'cubic-bezier(0.16, 1, 0.3, 1)')
+      const offsetY = readCssVar('--paper-drift-offset-y', 6)
+      const tilt = readCssVar('--paper-drift-tilt', 0.6)
+      const staggerStepMs = readCssVar('--paper-drift-stagger-step', 22)
+      const staggerCapMs = readCssVar('--paper-drift-stagger-cap', 420)
+      // 0   : 少し下 + 微傾き + 透明 (まだ「置かれていない」 紙)
+      // 0.6 : ほぼ定位置、 不透明に近づく (= 紙が机に触れる)
+      // 1.0 : 通常表示 (= 全部 reset、 fill:none で最終状態を保持しない)
+      return {
+        keyframes: [
+          {
+            offset: 0,
+            transform: `translateY(${offsetY}px) rotate(${tilt}deg)`,
+            opacity: '0',
+          },
+          {
+            offset: 0.6,
+            transform: `translateY(${offsetY * 0.18}px) rotate(${tilt * 0.3}deg)`,
+            opacity: '0.92',
+          },
+          {
+            offset: 1,
+            transform: 'translateY(0) rotate(0deg)',
+            opacity: '1',
           },
         ],
         options: { duration, easing, fill: 'none' },

@@ -1,0 +1,49 @@
+/* PAPER-ATELIER テーマ用 shutdown effect (= 絞り込みから外れたカードが
+   消えるときのアニメ)。 紙の世界観: インクが滲んで紙が裏返り、 そっと
+   フェードする。 wave のような緑 flash / CRT scanline / glitch は一切無し。
+   触る数値は :root の CSS 変数経由のみ。 */
+
+:root {
+  --paper-fade-duration: 0.46s;
+  --paper-fade-easing: cubic-bezier(0.4, 0, 0.6, 1);
+  --paper-fade-lift-y: -4px; /* わずかに浮いてから消える */
+  --paper-fade-tilt: -1.2deg; /* 紙がめくれる微傾き */
+  --paper-fade-blur: 1.5px; /* インクが滲む程度の微 blur (極小、 合成負荷配慮) */
+}
+
+/* 適用対象: [data-tagged-out="true"] のカードのみ。
+   通常状態 / 該当カード / ボード背景には一切影響させない。 */
+.fade {
+  animation: paper-dissolve var(--paper-fade-duration) var(--paper-fade-easing) forwards;
+  transform-origin: 50% 40%;
+  position: relative;
+}
+
+@keyframes paper-dissolve {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    filter: blur(0);
+    opacity: 1;
+  }
+  45% {
+    transform: translateY(var(--paper-fade-lift-y)) rotate(calc(var(--paper-fade-tilt) * 0.4));
+    filter: blur(calc(var(--paper-fade-blur) * 0.4));
+    opacity: 0.78;
+  }
+  100% {
+    transform: translateY(calc(var(--paper-fade-lift-y) * 2)) rotate(var(--paper-fade-tilt)) scale(0.985);
+    filter: blur(var(--paper-fade-blur));
+    opacity: 0;
+  }
+}
+
+/* prefers-reduced-motion: 視覚過敏 user 配慮、 単純フェードに置換 (blur/tilt 除去) */
+@media (prefers-reduced-motion: reduce) {
+  .fade {
+    animation: paper-fade-simple var(--paper-fade-duration) ease-out forwards;
+  }
+  @keyframes paper-fade-simple {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(0); }
+  }
+}
