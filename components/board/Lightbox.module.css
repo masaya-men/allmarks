@@ -790,11 +790,6 @@
   font-family: var(--font-sans);
 }
 
-/* chromatic-aberration glitch (= AllMarks 確定言語) for the body swap moment. */
-.tweetBodyGlitch {
-  text-shadow: 2px 0 0 #ff3a5a, -2px 0 0 #5aefff;
-}
-
 /* Plain text-only close button. Intentionally NO glass surface, NO
    background, NO border — the bare ✕ is the most refined treatment for
    this corner element (user-confirmed 2026-05-04). Subtle hover dims the

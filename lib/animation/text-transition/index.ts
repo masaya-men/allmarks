@@ -1,36 +1,52 @@
-import { createScrambleTransition } from './themes/scramble'
+import { createGlitchCrtTransition } from './themes/glitch-crt'
 
-export type TextTransitionHandle = {
-  /** 訳文(or 原文)が確定したら呼ぶ。スクランブルがその文字列に着地する。 */
-  settle: (finalText: string) => void
-  /** 進行中の遷移を中断 (Lightbox を閉じた / カード切替時)。 */
-  cancel: () => void
-}
-
-export type TextTransitionRunArgs = {
-  /** 切替前のテキスト (原文 or 直前の訳文)。 */
-  fromText: string
-  /** 切替後のテキスト。null = まだ未確定 (DL/翻訳中) → スクランブルをループ。 */
-  toText: string | null
-  /** tick ごとに「いま表示すべき文字列」を渡す。 */
-  onFrame: (text: string) => void
-  /** 切替の山場で chromatic-aberration glitch を on/off する。 */
-  onGlitch?: (active: boolean) => void
-  reducedMotion: boolean
+/**
+ * 1 つの「本文テキスト遷移」テーマの記述子。
+ *
+ * 遷移は要素ベース: controller (= useTweetTranslation) が phase を進め、
+ *  - loading 中: 本文要素に loadingClass を付ける (= 間欠グリッチ「じじっ」)
+ *  - exit: exitClass を付けて exitMs 待つ (= CRT shutdown「ぶつん」)
+ *  - text 差し替え後: playEntry() で boot-up を流し、entryMs の間に
+ *    scrambleFraction 割の文字を軽くスクランブルして settle
+ *
+ * テーマ切替は getTextTransition(theme) の case 追加だけ (= tag-entry /
+ * tag-shutdown と同じ思想)。CSS クラスは declarative に React が付け外し、
+ * boot-up だけ playEntry() で imperative に流す (WAAPI は className と競合しない)。
+ */
+export type PlayEntryArgs = {
+  /** 差し替え後の本文要素 (null なら WAAPI は流さず text だけ確定)。 */
+  readonly el: HTMLElement | null
+  /** 着地させる最終テキスト (訳文 or 原文)。 */
+  readonly finalText: string
+  /** 表示テキストを更新する (React setState)。 */
+  readonly setText: (text: string) => void
+  readonly reducedMotion: boolean
 }
 
 export type TextTransition = {
-  run: (args: TextTransitionRunArgs) => TextTransitionHandle
+  /** translating 中に本文要素へ付ける CSS class (間欠グリッチ)。null = 無し。 */
+  readonly loadingClass: string | null
+  /** 原文退場 (CRT shutdown) で本文要素へ付ける CSS class。null = 無し。 */
+  readonly exitClass: string | null
+  /** exit アニメの長さ (ms)。controller はこの後にテキストを差し替えて playEntry を呼ぶ。 */
+  readonly exitMs: number
+  /**
+   * 差し替え後の要素に boot-up を流し、entry 窓の間に一部の文字を軽くスクランブル
+   * してから finalText に着地させる。reduced-motion / el=null は即 setText(final)。
+   * 返り値は cancel (= Lightbox を閉じた等で進行中の entry を止める)。
+   */
+  playEntry(args: PlayEntryArgs): () => void
 }
 
-/** テーマ key → テキスト遷移ストラテジ。未対応 theme は default(scramble+glitch)。
- *  将来テーマは case 追加 (例: wave = CSS crossfade ストラテジ)。
- *  getEntryAnimation (lib/animation/tag-entry) と同じ思想。 */
+/**
+ * テーマ key → テキスト遷移記述子。未対応テーマは default (glitch-crt)。
+ * 将来テーマは case 追加 (例: wave = CSS crossfade)。
+ */
 export function getTextTransition(theme: string): TextTransition {
   switch (theme) {
-    case 'scramble':
+    case 'glitch-crt':
     case 'default':
     default:
-      return createScrambleTransition()
+      return createGlitchCrtTransition()
   }
 }

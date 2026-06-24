@@ -1,0 +1,37 @@
+/* Default tweet-translate transition theme = glitch-crt.
+ *
+ * Reuses AllMarks の確定アニメ言語:
+ *  - loading indicator = 間欠的な chromatic-aberration「じじっ」パルス
+ *    (= ChromeButton hover glitch と同じ RGB ずれ感。連続せず、長い静止 +
+ *     短いバーストで「じじっ……じじっ…」のリズム)
+ *  - exit / entry は JS 側で tag-shutdown (.shutdown) と tag-entry を流用する
+ *    ので、ここには loading パルスだけ置く。
+ *
+ * 数値を触るのは :root の CSS 変数経由のみ。 */
+
+:root {
+  --tweet-glitch-pulse-period: 1.8s;
+  --tweet-glitch-offset: 2px;
+}
+
+.loading {
+  animation: tweetGlitchPulse var(--tweet-glitch-pulse-period) steps(1, end) infinite;
+  will-change: text-shadow, transform;
+}
+
+/* 大半は静止、 短い 2 連バーストだけ「じじっ」。 周期の前半に 1 回、
+   後半に 1 回置いて「じじっ……じじっ…」の不規則っぽいリズムを作る。 */
+@keyframes tweetGlitchPulse {
+  0%, 100%   { text-shadow: none; transform: translate(0, 0); }
+  3%   { text-shadow: var(--tweet-glitch-offset) 0 0 #ff3a5a, calc(-1 * var(--tweet-glitch-offset)) 0 0 #5aefff; transform: translate(-1px, 0); }
+  5%   { text-shadow: calc(-1 * var(--tweet-glitch-offset)) 0 0 #ff3a5a, var(--tweet-glitch-offset) 0 0 #5aefff; transform: translate(1px, 0); }
+  7%   { text-shadow: none; transform: translate(0, 0); }
+  42%  { text-shadow: none; transform: translate(0, 0); }
+  45%  { text-shadow: var(--tweet-glitch-offset) 0 0 #ff3a5a, calc(-1 * var(--tweet-glitch-offset)) 0 0 #5aefff; transform: translate(1px, 0); }
+  47%  { text-shadow: calc(-1 * var(--tweet-glitch-offset)) 0 0 #ff3a5a, var(--tweet-glitch-offset) 0 0 #5aefff; transform: translate(-1px, 0); }
+  49%  { text-shadow: none; transform: translate(0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading { animation: none; }
+}
