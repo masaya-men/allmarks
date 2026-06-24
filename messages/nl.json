@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "Sluiten",
-      "openSource": "Originele pagina openen"
+      "openSource": "Originele pagina openen",
+      "translate": "Vertalen",
+      "showOriginal": "Origineel tonen",
+      "translationFailed": "Vertaling niet beschikbaar"
     },
     "slider": {
       "tooltipClick": "Klik om te springen",

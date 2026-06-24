@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "Kapat",
-      "openSource": "Orijinal sayfayı aç"
+      "openSource": "Orijinal sayfayı aç",
+      "translate": "Çevir",
+      "showOriginal": "Orijinali göster",
+      "translationFailed": "Çeviri kullanılamıyor"
     },
     "slider": {
       "tooltipClick": "Atlamak için tıkla",

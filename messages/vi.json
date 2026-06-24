@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "Đóng",
-      "openSource": "Mở trang gốc"
+      "openSource": "Mở trang gốc",
+      "translate": "Dịch",
+      "showOriginal": "Xem bản gốc",
+      "translationFailed": "Không thể dịch"
     },
     "slider": {
       "tooltipClick": "Nhấp để nhảy đến",

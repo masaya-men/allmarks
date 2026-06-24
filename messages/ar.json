@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "إغلاق",
-      "openSource": "فتح الصفحة الأصلية"
+      "openSource": "فتح الصفحة الأصلية",
+      "translate": "ترجمة",
+      "showOriginal": "عرض النص الأصلي",
+      "translationFailed": "الترجمة غير متاحة"
     },
     "slider": {
       "tooltipClick": "انقر للانتقال",

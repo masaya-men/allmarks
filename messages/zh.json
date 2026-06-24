@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "关闭",
-      "openSource": "打开原始页面"
+      "openSource": "打开原始页面",
+      "translate": "翻译",
+      "showOriginal": "显示原文",
+      "translationFailed": "无法翻译"
     },
     "slider": {
       "tooltipClick": "点击跳转",

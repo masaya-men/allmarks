@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "Fechar",
-      "openSource": "Abrir página original"
+      "openSource": "Abrir página original",
+      "translate": "Traduzir",
+      "showOriginal": "Ver original",
+      "translationFailed": "Tradução indisponível"
     },
     "slider": {
       "tooltipClick": "Clique para pular",

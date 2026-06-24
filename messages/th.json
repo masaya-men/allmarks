@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "ปิด",
-      "openSource": "เปิดหน้าต้นฉบับ"
+      "openSource": "เปิดหน้าต้นฉบับ",
+      "translate": "แปล",
+      "showOriginal": "ดูต้นฉบับ",
+      "translationFailed": "ไม่สามารถแปลได้"
     },
     "slider": {
       "tooltipClick": "คลิกเพื่อกระโดดไป",
