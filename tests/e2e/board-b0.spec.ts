@@ -135,10 +135,27 @@ test.describe('B0 board skeleton', () => {
     expect(after?.y ?? 0).toBeLessThan(before?.y ?? 0)
   })
 
-  // TODO Task 7/9: restore once [data-theme-button] attribute is wired up on Sidebar theme buttons
-  test.skip('theme switch toggles background', async ({ page }) => {
+  test('theme switch toggles background, ruler meter and decorations', async ({ page }) => {
+    // The THEMES picker lives inside the hover-open SETTINGS drawer; reveal it first.
+    const drawer = page.locator('[data-testid="extension-settings-wrap"]')
+    await drawer.hover()
+    await expect(page.locator('[data-testid="extension-settings"]')).toBeVisible()
+
+    // 1) switch to grid-paper → <html data-theme-id="grid-paper">
     await page.locator('[data-theme-button="grid-paper"]').click()
-    await expect(page.locator('[data-theme-id="grid-paper"]').first()).toBeVisible()
+    await expect(page.locator('html[data-theme-id="grid-paper"]')).toHaveCount(1)
+
+    // 2) switch to paper-atelier (re-reveal the drawer in case hover dropped)
+    await drawer.hover()
+    await expect(page.locator('[data-testid="extension-settings"]')).toBeVisible()
+    await page.locator('[data-theme-button="paper-atelier"]').click()
+    await expect(page.locator('html[data-theme-id="paper-atelier"]')).toHaveCount(1)
+
+    // paper-atelier uses the RULER scroll meter (Task 2 sets data-meter-variant on .track)
+    await expect(page.locator('[data-meter-variant="ruler"]')).toHaveCount(1)
+
+    // paper-atelier mounts pointer-events:none card decorations (Task 3/4)
+    await expect(page.locator('[data-testid="paper-card-decorations"]').first()).toBeAttached()
   })
 
   // Task 12 DONE — drag-to-reorder changes order (orderIndex), not XY position.
