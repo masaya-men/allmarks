@@ -19,14 +19,12 @@ describe('PaperCardDecorations', () => {
   })
 
   it('renders decoration nodes consistent with the model', () => {
-    // 'has-stamp' picked so the set is non-empty in practice; the overlay
-    // should mount at least one decoration descendant for a typical id.
+    // 'bookmark-rich-42' is proven to produce 1 washi strip (derived via node run 2026-06-24).
+    // The overlay must mount at least one [data-deco] node for this id.
     const { container } = render(<PaperCardDecorations cardId="bookmark-rich-42" />)
     const overlay = container.firstElementChild as HTMLElement
-    expect(overlay.querySelectorAll('[data-deco]').length).toBeGreaterThanOrEqual(0)
-    // every decoration node is marked decorative
-    overlay.querySelectorAll('[data-deco]').forEach((n) => {
-      expect(n.getAttribute('aria-hidden')).not.toBe('false')
-    })
+    expect(overlay.querySelectorAll('[data-deco]').length).toBeGreaterThanOrEqual(1)
+    // the overlay root itself is aria-hidden="true" (purely decorative)
+    expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull()
   })
 })

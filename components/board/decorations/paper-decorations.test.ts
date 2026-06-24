@@ -10,6 +10,31 @@ describe('getCardDecorations', () => {
     expect(a).not.toBe(b)
   })
 
+  it('PRNG regression guard — concrete output is pinned to today\'s mulberry32+FNV-1a impl', () => {
+    // Values derived by running the algorithm in Node (node --input-type=module) on 2026-06-24.
+    // If the PRNG, hash function, or generation logic changes, these assertions WILL fail —
+    // that is the intent. Update only after a deliberate visual-regression review.
+    expect(getCardDecorations('bookmark-abc')).toEqual({
+      photoCorners: ['tl', 'br'],
+      washi: [
+        { tint: 'b', edge: 'bottom', angleDeg: 5.6, offsetPct: 69.4 },
+        { tint: 'b', edge: 'right', angleDeg: 0.6, offsetPct: 22.3 },
+      ],
+      pin: true,
+      clip: false,
+      stamp: { label: 'RATED', corner: 'br', angleDeg: -16.7 },
+    })
+    expect(getCardDecorations('card-xyz-7')).toEqual({
+      photoCorners: ['tr'],
+      washi: [
+        { tint: 'a', edge: 'bottom', angleDeg: 5, offsetPct: 15.1 },
+      ],
+      pin: false,
+      clip: false,
+      stamp: null,
+    })
+  })
+
   it('generally differs across ids', () => {
     const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
     const serialized = ids.map((id) => JSON.stringify(getCardDecorations(id)))

@@ -7,7 +7,9 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 11;
+  /* source-of-truth constant: BOARD_Z_INDEX.CARD_DECORATION = 11 (lib/board/constants.ts);
+     token --deco-z is defined in html[data-theme-id="paper-atelier"] block of globals.css */
+  z-index: var(--deco-z, 11);
   /* tape/pins overhang the card box by design; do not clip */
   overflow: visible;
 }
