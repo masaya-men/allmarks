@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 131 — テーマシステム Plan 1 = 土台 ＋ paper-atelier 核の見た目 本番反映)
+
+- **テーマシステムの土台 ＋ paper-atelier(核)を `allmarks.app` にデプロイ済み**。SETTINGS の「THEMES」欄で Paper Atelier を選ぶと盤面が生成り紙＋墨セリフ「AllMarks」＋読みやすい濃色ヘッダーへ一斉切替（保存・reload維持・ロードフラッシュなし）。**default(黒+音波)は完全無傷**。
+- 進め方: brainstorm→spec→plan→サブエージェント駆動実装(ワークフロー＋敵対検証 WF1/WF2)→全ブランチ opus レビュー→Important2件修正(FOUC/portalセリフ)→再レビューREADY→master マージ→push→デプロイ→本番スモーク。tsc0/vitest1704/e2e3/3/build OK。
+- 設計の正本: [spec](superpowers/specs/2026-06-24-theme-system-paper-atelier-design.md) / [plan1](superpowers/plans/2026-06-24-theme-system-foundation-paper-atelier.md)。
+- **残り(次セッション)**: **Plan 2**=paper の作り込み(装飾マステ/ピン・定規メーター・署名アニメ4種・紙テクスチャ、spec§4.4-4.7) / **Plan 3**=共有のテーマ化(A盤面+B OGサムネ、spec§6) / その後 #1 white-sector→#5 celestial-atlas を同型量産。詳細は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **user 宿題**: allmarks.app で Paper Atelier に切替えて実機の見た目確認＋校正フィードバック。
+
 ### 直近の状態 (セッション 130 — 拡張ストアURL点灯 + ツイート翻訳機能 実装完了)
 
 - **拡張機能 審査通過 → `EXTENSION_STORE_URL` 投入・本番反映済**: AllMarks拡張 v0.1.21 一般公開。[constants.ts:32](../lib/board/constants.ts#L32) に実URL投入(`: string` 型明示でTS2367回避)。ボード `GET EXTENSION` + 紹介ページ `/extension` が「ADD TO CHROME」自動点灯。**= 公開前 release blocker 完全解消**。ユーザーはストア版インストール済(開発版無効化)。

@@ -1,29 +1,26 @@
-# 次セッションのゴール (= セッション 131)
+# 次セッションのゴール (= セッション 132)
 
-## このセッション(130)で完了したこと
-- 拡張ストアURL点灯（公開ブロッカー解消）
-- ツイート翻訳機能 実装→実機修正（テキスト専用対応 + glitch-CRTアニメ刷新）→ user承認
-- Chrome翻訳プロンプト抑止（`<html translate="no">` + notranslate）
-- ボード左上に「AllMarks」→LP 戻り導線（ChromeButton統一・ヘッダーと同じグリッチ）
-- **ローカル保存の安全性**: 起動時 `navigator.storage.persist()` 要求（退避防止）+ `getStorageStatus()` 用意
+## このセッション(131)で完了したこと — テーマシステム Plan 1 本番反映
+- **テーマシステムの土台 ＋ paper-atelier の「核の見た目」を実装し `allmarks.app` にデプロイ済み**。
+- ブレスト→spec→plan→サブエージェント駆動実装（ワークフロー＋敵対的検証）→全ブランチ opus レビュー→修正→マージ→デプロイ→本番確認、まで完走。
+- **見え方**: SETTINGS ドロワーの「THEMES」欄で **Paper Atelier** を選ぶと、盤面が生成り紙＋墨の Fraunces セリフ「AllMarks」＋読みやすい濃色ヘッダーに一斉切替。選択は保存され reload 後も維持（ロード時フラッシュなし）。**default(黒+音波)は完全に無傷**。
+- 検証: tsc0 / vitest1704 / e2e3/3 / build OK / 本番スモーク（board に前置スクリプト有・LP汚染なし）。
+- spec: [docs/superpowers/specs/2026-06-24-theme-system-paper-atelier-design.md](specs/.. ) ／ plan1: [docs/superpowers/plans/2026-06-24-theme-system-foundation-paper-atelier.md](plans/..)。
+- ⏳ **user 宿題**: `allmarks.app` をハードリロード → SETTINGS → THEMES → Paper Atelier に切替えて**実機で見た目を確認＋校正フィードバック**（色味/セリフの重さ等は校正で寄せられる）。
 
-## 次にやる（user 指示「全部やる・順番は任せる」）優先順私案
-1. **テーマシステム + ChatGPT製テーマ画像の再現**（最優先・大物・有料テーマ/Proの土台）
-   - **画像は保管済み**: `docs/private/theme-mockups/` に `0N-<theme>__{settings,board,scrollmeter}.png`（5テーマ×3ビュー=15枚）。**実装前に必ず該当画像を見る**。
-   - **5テーマ**: 01 white-sector(白ミリタリーHUD・ライトモード) / 02 code-rain(黒地に緑・canvasの降るコード) / 03 paper-atelier(編集紙・セリフ・マステ/ピン・クリーム+金) / 04 liquid-chrome(Y2Kガラス・クローム・最難関GPU重) / 05 celestial-atlas(宇宙・星座・濃紺+金)。
-   - **各テーマ = 背景レイヤー/カード表面/スクロールメーター/設定画面/配色/フォント/モーション まで作り込まれた完全な世界観**。1テーマ=大型実装。default(黒白+音波)は残し、これらは切替で選べる追加テーマ。
-   - **進め方=縦切り**: まず1テーマを端から端まで完成させ「テーマ切替の土台」を確立→同型で量産。**最初の1テーマは user が選ぶ**（Claude推奨=paper-atelier が事故少+差別化強。次点 code-rain。liquid-chrome は土台確立後）。
-   - **土台**: `data-theme` で CSS変数一式差替え + テーマ別背景/カード/メーター/設定 + 既存アニメ登録機構(getEntryAnimation/getTextTransition の wave/glitch-crt)にテーマ別ストラテジ追加 + テーマ切替UI + 有料テーマのライセンスキー解錠受け口(N-06)。
-   - **手順**: brainstorm→spec(docs/superpowers/specs)→plan→実装（翻訳機能と同じ流れ）。エンタイトルメント受け口込みで設計。無料テーマで世界観を見せる導線を先に。
-   - ⏳ **user 待ち**: 「最初の1テーマ」の選択。
-2. **(N-04) ツイート本文取れないバグ**（軽い・先に潰してもよい）: repro `https://x.com/fta7/status/2059754329058488795`。`/api/tweet-meta`→syndication payload 実取得で `text/full_text` 空 or note/article 別フィールドか確認 → `parseTweetData`(lib/embed/tweet-meta.ts:137) 補強。
-3. **(N-02) Lightbox 自動再生プレイリスト** / **(N-01) カラーハント**（触って楽しい系）
-4. **(N-05) LPナビ演出**（選んだ語がヘッダーに緑玉で「しゅん」格納・GSAP ScrollTrigger） / PiP等のオンボ高品質化
-5. **保存安全性の続き**: 使用量表示(SETTINGS, getStorageStatus既存) + 起動時データ消失検知→「最後のバックアップから復元?」
+## 次にやる（優先順）
+1. **Plan 2 = paper-atelier の作り込み（フル再現）** — まだ核の見た目だけ。残り: カード装飾（マステ/画びょう/クリップ/スタンプ）・**定規/巻尺スクロールメーター**・署名アニメ4種（pinned-card drift / paper parallax / ink underline / soft photo shuffle）・紙テクスチャ素材・MK-1プレート/蝋封シール。**spec §4.4-4.7 が設計の正本**。`writing-plans` で Plan 2 を起こしてから実装。
+   - Plan 2 で拾う細かな指摘（最終レビュー Minor）: Lightbox の暗スクリムを paper 用に淡色化 / picker の a11y(role=group) / §3.4 ロック pill の優しい文言（有料テーマ実装時）。
+2. **Plan 3 = 共有のテーマ化** — (A) 共有盤面に実 themeId を載せる（送信は今 DEFAULT 固定＝[BoardRoot.tsx](../components/board/BoardRoot.tsx) 共有ペイロード）＋ SharedBoard を `data-theme-id` に統一。(B) OG サムネ canvas（[capture-mirror.ts](../lib/share/capture-mirror.ts)）をテーマ対応（初版=署名再現→実共有で再判断）。**spec §6 が正本**。`writing-plans` で Plan 3。
+3. **テーマ #1 white-sector → #5 celestial-atlas** を同じ器で量産（spec の「7部品契約」を埋めるだけ）。
+4. 軽い既存バグ: **(N-04) 一部ツイート本文取れない**（repro `https://x.com/fta7/status/2059754329058488795`、[tweet-meta.ts:137](../lib/embed/tweet-meta.ts#L137)）。
 
-## 収益化メモ（再確認済み・IDEAS.md §収益化）
-投げ銭+アフィリエイト(初日) → AdSenseはサイトページのみ(boardは世界観死守) → Pro¥500/月(限定テーマ等) → Curated Ad Card(Phase2+, 厳選ブランド直契約)。テーマは「Pro限定テーマ」「単体有料テーマ」両方の受け皿。
+## 土台の要点（次回の実装者＝私へのメモ）
+- 各テーマ = `html[data-theme-id="<id>"]` の CSS ブロックで自己完結（配色/`color-scheme`/書体トークン上書き）。**default 不変は `var(--token, 現状値)` フォールバックで担保**。
+- **next/font 変数は `<html>` にも乗せてある**（[app/layout.tsx](../app/layout.tsx)）。html-level の paper ブロックが `var(--font-serif-display)` を解決するため必須。
+- ロード時フラッシュ対策: themeId を localStorage(`allmarks-theme-id`) にミラー＋ `(app)/layout` のペイント前インラインスクリプトで先付け（**LP には付けない**＝(app) 限定）。真実の場所は IDB(BoardConfig)。
+- 解錠は受け口だけ（`isThemeUnlocked`/`EMPTY_LICENSES`）。paper=無料。
 
 ## 守ること
 - 本番 = `allmarks.app`。deploy 前 `npx wrangler whoami`、`rtk tsc && rtk vitest run && rtk pnpm build`。`--branch=master --commit-message`(ASCII) 必須。応答は日本語。UI変更は事前一言。
-- **既知フレーキー**: `tests/lib/channel.test.ts` が full run でたまに落ちる→再実行 green。
+- **既知フレーキー**: `tests/lib/channel.test.ts`（full run でたまに落ちる→再実行 green）。

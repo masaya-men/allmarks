@@ -7858,3 +7858,21 @@ tsc0 / vitest1681 / build green。master マージ(1b09933)・本番反映済。
 各 tsc0 / vitest(最終1688) / build green / `allmarks.app` 反映済。
 
 **session 130 末の user 棚卸し結果 + 新アイデア(N-01カラーハント/N-02 Lightbox自動再生/N-03保存安全性/N-04ツイート本文バグ/N-05 LPナビ演出/N-06有料テーマ) + 収益化再確認 → docs/private/IDEAS.md に集約。次セッションの主役 = テーマシステム + ChatGPT製テーマ画像の再現（画像は docs/private/theme-mockups/ 待ち）。**
+
+---
+
+## セッション 131 (2026-06-24) — テーマシステム Plan 1（土台 ＋ paper-atelier 核の見た目）本番反映
+
+ChatGPT 製モック5テーマ（docs/private/theme-mockups/）から、user 選択順 3→1→5 のうち **paper-atelier** を1本目に、「テーマ切替の土台」を端から端まで確立。brainstorm→spec→plan→サブエージェント駆動実装→敵対的検証→マージ→デプロイまで完走。
+
+**設計（spec / plan1）**: `docs/superpowers/specs/2026-06-24-theme-system-paper-atelier-design.md`、`docs/superpowers/plans/2026-06-24-theme-system-foundation-paper-atelier.md`。各テーマ＝`html[data-theme-id="<id>"]` の CSS ブロックで自己完結（配色/`color-scheme`/書体を上書き）。default 不変は `var(--token, 現状値)` フォールバックで担保。解錠は受け口だけ（`isThemeUnlocked`/`EMPTY_LICENSES`、paper=無料）。適用＝ボード本体＋（将来）共有。LP/紹介ページは対象外。
+
+**実装（フィーチャーブランチ theme-system-paper-atelier → master マージ）**:
+- WF1: 型/レジストリ拡張(ThemeMeta に tier/colorScheme + paper-atelier 登録) / 解錠スタブ / resolveThemeId フォールバック（TDD 3コミット・敵対レビュー APPROVED）。
+- WF2: paper トークンブロック + `.paperAtelier` 背景 / BoardRoot の themeId 配線(state/load/`<html>`属性/3箇所のハードコード置換/picker へ props) / SETTINGS ドロワー内「THEMES」picker / 15言語ラベル。レビュー Important（licenses prop 化・ロック経路テスト・resolver 有料分岐テスト・共有コメント修正）を controller が修正。
+- Task 7: e2e（切替/永続/回帰、オンボスキップ helper）+ 視覚校正。校正で判明し修正: ワードマーク/ヘッダーがトークン非追従(白直書き)→ `var(--token, fallback)` 化で default 不変のまま paper=墨セリフ＋読みやすいヘッダー。**next/font 変数を `<html>` にも付与**（html-level の paper ブロックが `var(--font-serif-display)` を解決するため）。
+- 全ブランチ opus レビュー → Important 2件: **(1) ロード時フラッシュ**（非default テーマ保存ユーザー）→ localStorage(`allmarks-theme-id`) ミラー＋ `(app)/layout` ペイント前インラインスクリプト（LP非汚染＝(app)限定）＋ state を localStorage シード。**(2) Lightbox 等が paper でセリフにならない**（`--font-sans` 未上書き）→ paper に `--font-sans` セリフ上書き（`--font-mono` は据え置き）。→ 再レビュー READY_TO_MERGE: yes。
+
+**検証**: tsc0 / vitest 1704 pass / e2e board-theme 3/3 / pnpm build OK / 本番スモーク（allmarks.app/board に前置スクリプト有・LP は0＝汚染なし）。default(黒+音波)は byte-identical を実機スクショで確認。
+
+**残（Plan 2/3、別セッション）**: paper の作り込み（装飾マステ/ピン・定規メーター・署名アニメ4種・紙テクスチャ素材・MK-1/蝋封、spec§4.4-4.7）／共有のテーマ化（A 盤面・B OGサムネ、spec§6）／#1 white-sector・#5 celestial-atlas を同型量産。最終レビュー Minor（Lightbox 暗スクリムの paper 淡色化・picker a11y・§3.4 ロック pill 文言）は Plan 2 で拾う。
