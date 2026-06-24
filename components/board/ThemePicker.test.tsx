@@ -13,9 +13,9 @@ vi.mock('@/lib/i18n/I18nProvider', () => ({
 // test the component's logic in isolation against controlled data.
 vi.mock('@/lib/board/theme-registry', () => {
   const REG = {
-    'free-a': { id: 'free-a', direction: 'vertical', backgroundClassName: 'a', labelKey: 'board.theme.freeA', colorScheme: 'dark', tier: 'free' },
-    'free-b': { id: 'free-b', direction: 'vertical', backgroundClassName: 'b', labelKey: 'board.theme.freeB', colorScheme: 'dark', tier: 'free' },
-    'paid-x': { id: 'paid-x', direction: 'vertical', backgroundClassName: 'x', labelKey: 'board.theme.paidX', colorScheme: 'light', tier: 'paid' },
+    'free-a': { id: 'free-a', direction: 'vertical', backgroundClassName: 'a', labelKey: 'board.theme.freeA', colorScheme: 'dark', tier: 'free', scrollMeterVariant: 'waveform', motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' } },
+    'free-b': { id: 'free-b', direction: 'vertical', backgroundClassName: 'b', labelKey: 'board.theme.freeB', colorScheme: 'dark', tier: 'free', scrollMeterVariant: 'waveform', motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' } },
+    'paid-x': { id: 'paid-x', direction: 'vertical', backgroundClassName: 'x', labelKey: 'board.theme.paidX', colorScheme: 'light', tier: 'paid', scrollMeterVariant: 'waveform', motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' } },
   }
   return {
     THEME_REGISTRY: REG,
