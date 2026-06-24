@@ -8,6 +8,9 @@ import {
   DEFAULT_THEME_ID,
   getThemeMeta,
 } from '@/lib/board/theme-registry'
+import { resolveThemeId } from '@/lib/board/theme-resolve'
+import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
+import type { ThemeId } from '@/lib/board/types'
 import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
@@ -139,6 +142,7 @@ export function BoardRoot() {
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
   const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
+  const [themeId, setThemeId] = useState<ThemeId>(DEFAULT_THEME_ID)
   // While the onboarding tag scene is active, force the hover-gated card +TAG
   // button visible (the user can't hover precisely through the spotlight hole).
   const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
@@ -611,6 +615,7 @@ export function BoardRoot() {
       setActiveFilter(cfg.activeFilter)
       setDisplayMode(cfg.displayMode)
       setBgTypoEnabled(cfg.bgTypoEnabled)
+      setThemeId(resolveThemeId(cfg.themeId, EMPTY_LICENSES))
       const prefersReduced =
         typeof window !== 'undefined' &&
         window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
@@ -624,6 +629,17 @@ export function BoardRoot() {
     })()
     return (): void => { cancelled = true }
   }, [])
+
+  // Reflect the active theme onto <html> so the [data-theme-id] cascade reaches
+  // portalled UI (Lightbox / popovers) too. Cleared on unmount so leaving the
+  // board (e.g. back to the LP) doesn't leave a stale attribute behind.
+  useEffect(() => {
+    const el = document.documentElement
+    el.setAttribute('data-theme-id', themeId)
+    return (): void => {
+      el.removeAttribute('data-theme-id')
+    }
+  }, [themeId])
 
   // First-run onboarding gate: runs once when loading flips false and db is ready.
   // If the user has no bookmarks and hasn't completed onboarding, seeds demo cards
@@ -771,7 +787,7 @@ export function BoardRoot() {
     return filteredItems.filter((it) => matchedBookmarkIds.has(it.bookmarkId))
   }, [filteredItems, matchedBookmarkIds])
 
-  const themeMeta = getThemeMeta(DEFAULT_THEME_ID)
+  const themeMeta = getThemeMeta(themeId)
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
@@ -1579,6 +1595,15 @@ export function BoardRoot() {
     })()
   }, [])
 
+  const handleThemeChange = useCallback((next: ThemeId): void => {
+    setThemeId(next)
+    void (async (): Promise<void> => {
+      const db = await initDB()
+      const cfg = await loadBoardConfig(db)
+      await saveBoardConfig(db, { ...cfg, themeId: next })
+    })()
+  }, [])
+
   const handleToggleMotion = useCallback((): void => {
     setMotionEnabled((prev) => {
       const next = !prev
@@ -1994,6 +2019,8 @@ export function BoardRoot() {
                 onOpenBookmarkletModal={handleOpenBookmarkletModal}
                 onReplayIntro={() => { void startOnboardingReplay() }}
                 forceOpen={forceSettingsOpen}
+                themeId={themeId}
+                onThemeChange={handleThemeChange}
               />
               <TagButton
                 onClick={(): void => {
@@ -2061,7 +2088,7 @@ export function BoardRoot() {
               }}
             >
               <ThemeLayer
-                themeId={DEFAULT_THEME_ID}
+                themeId={themeId}
                 totalWidth={contentWidth}
                 totalHeight={contentHeight}
               />
@@ -2315,7 +2342,7 @@ export function BoardRoot() {
         />
       </PipPortal>
       <UndoToast input={toast} />
-      <PasteSaveFeedback feedback={pasteFeedback} themeId={DEFAULT_THEME_ID} />
+      <PasteSaveFeedback feedback={pasteFeedback} themeId={themeId} />
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}
       <LanguageSwitcher />
     </div>
