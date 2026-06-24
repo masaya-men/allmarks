@@ -385,7 +385,7 @@ export function CardsLayer({
     if (entryAnimCycle === 0) return
     const root = rootRef.current
     if (!root) return
-    const entryAnim = getEntryAnimation('wave')
+    const entryAnim = getEntryAnimation(meta.motion.entry)
     if (!entryAnim) return
     const prefersReducedMotion = typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -1008,7 +1008,7 @@ export function CardsLayer({
         const p = displayedPositions[it.bookmarkId]
         if (!p) return null
         const taggedOut = matchedBookmarkIds != null && !matchedBookmarkIds.has(it.bookmarkId)
-        const shutdownClass = taggedOut ? getShutdownAnimationClass('wave') : undefined
+        const shutdownClass = taggedOut ? getShutdownAnimationClass(meta.motion.shutdown) : undefined
         // When this card is the lightbox FLIP source, suppress all
         // hover-revealed meta affordances (+TAG, tag pills, ×, ↺) so the
         // morph clone captures the bare thumbnail. Without this they

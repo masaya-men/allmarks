@@ -74,7 +74,7 @@ describe('isBoardBgTypoVariant', () => {
 describe('BoardBackgroundTypography — static wordmark', () => {
   it('renders a single text span when text is non-empty', () => {
     const { container } = render(
-      <BoardBackgroundTypography activeFilter={BOARD_FILTER_ALL} tags={[]} />,
+      <BoardBackgroundTypography activeFilter={BOARD_FILTER_ALL} tags={[]} themeId="dotted-notebook" />,
     )
     const host = container.querySelector('[data-testid="board-bg-typography"]')
     expect(host).not.toBeNull()
@@ -85,7 +85,7 @@ describe('BoardBackgroundTypography — static wordmark', () => {
 
   it('does NOT render anything when text resolves to empty', () => {
     const { container } = render(
-      <BoardBackgroundTypography activeFilter={makeTagsFilter(['nonexistent'], 'and')} tags={[]} />,
+      <BoardBackgroundTypography activeFilter={makeTagsFilter(['nonexistent'], 'and')} tags={[]} themeId="dotted-notebook" />,
     )
     expect(container.querySelector('[data-testid="board-bg-typography"]')).toBeNull()
   })

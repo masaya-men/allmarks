@@ -2128,6 +2128,7 @@ export function BoardRoot() {
                 unmounts it. Never animation-driven visibility. */}
             {bgTypoMount && (
               <BoardBackgroundTypography
+                themeId={themeId}
                 activeFilter={activeFilter}
                 tags={tags}
                 variant={bgTypoVariant}
