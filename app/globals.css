@@ -469,6 +469,17 @@ html[data-theme-id="paper-atelier"] {
   --chrome-text-stroke-color-hover: rgba(255, 253, 246, 0.7);
   --chrome-text-shadow: 0 1px 2px rgba(43, 39, 34, 0.18);
 
+  /* big background wordmark — ink + serif on paper (BoardBackgroundTypography
+     reads these via var-with-fallback, so the default theme is unchanged) */
+  --bg-typo-font: var(--font-serif-display);
+  --bg-typo-color: rgba(43, 39, 34, 0.9);
+
+  /* header chrome buttons (TITLE/TUNE/SETTINGS…) — dark, no stroke on paper */
+  --chrome-btn-color: rgba(43, 39, 34, 0.9);
+  --chrome-btn-color-hover: rgba(43, 39, 34, 1);
+  --chrome-btn-stroke-width: 0px;
+  --chrome-btn-stroke-color: transparent;
+
   /* serif headings (Fraunces, already loaded as --font-serif-display) */
   --font-heading: var(--font-serif-display), Georgia, 'Times New Roman', serif;
   --font-body: var(--font-serif-display), Georgia, serif;

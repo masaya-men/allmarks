@@ -83,7 +83,14 @@ type RootLayoutProps = {
 
 export default function RootLayout({ children }: RootLayoutProps): React.ReactElement {
   return (
-    <html lang="en" translate="no" className="notranslate" data-theme="dark" data-card-style="glass" data-ui-theme="auto">
+    <html
+      lang="en"
+      translate="no"
+      className={`notranslate ${inter.variable} ${outfit.variable} ${caveat.variable} ${geist.variable} ${geistMono.variable} ${fraunces.variable}`}
+      data-theme="dark"
+      data-card-style="glass"
+      data-ui-theme="auto"
+    >
       <head>
         {/* Suppress Chrome's "translate this page?" offer. The app has its own
             15-language i18n (and on-device tweet translation), and Chrome

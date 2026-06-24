@@ -22,7 +22,7 @@
 }
 
 .text {
-  font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--bg-typo-font, var(--font-geist)), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 600;
   /* Session 82: floor raised to 96px. The fluid mid-term (~14vw) stays
      near the old 17vw mid-range; the cap holds at 260px. Once the type
@@ -39,7 +39,7 @@
   text-wrap: balance;
   max-width: 95vw;
   user-select: none;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--bg-typo-color, rgba(255, 255, 255, 0.95));
 }
 
 /* ─── Variants ────────────────────────────────────────────────────────────
