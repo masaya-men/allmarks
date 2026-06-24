@@ -28,7 +28,7 @@ export function PaperCardDecorations({
   const set = getCardDecorations(cardId)
 
   return (
-    <div className={styles.overlay} aria-hidden="true">
+    <div className={styles.overlay} aria-hidden="true" data-testid="paper-card-decorations">
       {set.photoCorners.map((c) => (
         <span key={`pc-${c}`} data-deco="photo-corner" className={cornerClass(c)} />
       ))}

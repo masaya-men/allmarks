@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "Noktalı Defter",
       "gridPaper": "Kareli Kağıt",
-      "paperAtelier": "Paper Atelier"
+      "paperAtelier": "Paper Atelier",
+      "pickerGroupLabel": "Bir pano teması seçin.",
+      "unlockLater": "Yakında açılacak. Takipte kalın."
     },
     "filter": {
       "label": "Tümü",

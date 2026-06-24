@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "Точечный блокнот",
       "gridPaper": "Бумага в клетку",
-      "paperAtelier": "Бумажная мастерская"
+      "paperAtelier": "Бумажная мастерская",
+      "pickerGroupLabel": "Выберите тему доски.",
+      "unlockLater": "Откроется позже. Следите за обновлениями."
     },
     "filter": {
       "label": "Все",

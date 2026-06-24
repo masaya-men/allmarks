@@ -542,6 +542,11 @@ html[data-theme-id="paper-atelier"] {
   --deco-clip: #6f6a60;                         /* WARM GRAY bulldog clip */
   --deco-stamp-ink: rgba(140, 60, 48, 0.62);   /* OXIDE RED rubber-stamp ink */
   --deco-photo-corner: rgba(43, 39, 34, 0.55); /* CHARCOAL album corner */
+
+  /* lightbox scrim — PALE PARCHMENT behind enlarged media (NOT the dark default).
+     Portals inherit because data-theme-id lives on <html>, so the body-level
+     lightbox portal still resolves this var. */
+  --lightbox-backdrop: rgba(43, 39, 34, 0.34);   /* CHARCOAL ink @ low alpha over PARCHMENT */
 }
 
 /* ── Reduced Motion ────────────────────────────────────────── */

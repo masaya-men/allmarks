@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "Stippennotitieboek",
       "gridPaper": "Ruitjespapier",
-      "paperAtelier": "Papieratelier"
+      "paperAtelier": "Papieratelier",
+      "pickerGroupLabel": "Kies een bordthema.",
+      "unlockLater": "Binnenkort beschikbaar. Houd het in de gaten."
     },
     "filter": {
       "label": "Alles",

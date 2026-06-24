@@ -23,7 +23,7 @@ export function ThemePicker({ themeId, onThemeChange, licenses = EMPTY_LICENSES 
   return (
     <div className={styles.section} data-testid="theme-picker">
       <div className={styles.heading}>THEMES</div>
-      <div className={styles.grid}>
+      <div className={styles.grid} role="group" aria-label={t('board.theme.pickerGroupLabel')}>
         {listThemeIds().map((id) => {
           const meta = getThemeMeta(id)
           const unlocked = isThemeUnlocked(meta, licenses)
@@ -44,7 +44,13 @@ export function ThemePicker({ themeId, onThemeChange, licenses = EMPTY_LICENSES 
             >
               <span className={styles.preview} data-theme-id={id} aria-hidden="true" />
               <span className={styles.name}>{t(meta.labelKey)}</span>
-              <span className={styles.badge}>{unlocked ? 'FREE' : 'LOCKED'}</span>
+              {unlocked ? (
+                <span className={styles.badge}>FREE</span>
+              ) : (
+                <span className={styles.lockedPill} data-locked-pill aria-hidden="false">
+                  {t('board.theme.unlockLater')}
+                </span>
+              )}
             </button>
           )
         })}

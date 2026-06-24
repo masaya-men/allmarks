@@ -36,7 +36,9 @@
     "theme": {
       "dottedNotebook": "Carnet pointillé",
       "gridPaper": "Papier quadrillé",
-      "paperAtelier": "Atelier Papier"
+      "paperAtelier": "Atelier Papier",
+      "pickerGroupLabel": "Choisissez un thème de tableau.",
+      "unlockLater": "Bientôt disponible. Restez à l'écoute."
     },
     "filter": {
       "label": "Tous",
