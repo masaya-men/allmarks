@@ -38,6 +38,12 @@ test('paper-atelier tokens apply when data-theme-id is set', async ({ page }) =>
   expect(cardBg).toBe('#f7f1e3')
   const scheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
   expect(scheme).toContain('light')
+  // serif override must also reach var(--font-sans) so portalled UI (Lightbox)
+  // and direct --font-sans consumers render serif on paper (not Geist sans).
+  const fontSans = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--font-sans'),
+  )
+  expect(fontSans).toContain('Georgia')
 })
 
 test('switching to paper-atelier themes the board and persists', async ({ page }) => {
@@ -61,6 +67,10 @@ test('switching to paper-atelier themes the board and persists', async ({ page }
     getComputedStyle(document.documentElement).getPropertyValue('--card-dark-alt').trim().toLowerCase(),
   )
   expect(cardBg).toBe('#f7f1e3')
+
+  // the theme is mirrored to localStorage so the pre-paint script avoids a flash
+  const cached = await page.evaluate(() => localStorage.getItem('allmarks-theme-id'))
+  expect(cached).toBe('paper-atelier')
 
   // settings screenshot (drawer open, now in paper theme)
   await page.screenshot({ path: `${SHOT_DIR}/paper-settings.png`, fullPage: false })

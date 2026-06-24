@@ -142,7 +142,18 @@ export function BoardRoot() {
   }, [])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('visual')
   const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
-  const [themeId, setThemeId] = useState<ThemeId>(DEFAULT_THEME_ID)
+  // Seeded from the localStorage theme cache (mirrored in the effect below) so
+  // the first client paint matches the pre-paint inline script in (app)/layout —
+  // no flash of the default theme for users who saved a non-default one. IDB
+  // (loadBoardConfig) is the source of truth and reconciles this right after.
+  const [themeId, setThemeId] = useState<ThemeId>(() => {
+    if (typeof window === 'undefined') return DEFAULT_THEME_ID
+    try {
+      return resolveThemeId(window.localStorage.getItem('allmarks-theme-id') ?? undefined, EMPTY_LICENSES)
+    } catch {
+      return DEFAULT_THEME_ID
+    }
+  })
   // While the onboarding tag scene is active, force the hover-gated card +TAG
   // button visible (the user can't hover precisely through the spotlight hole).
   const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
@@ -636,6 +647,14 @@ export function BoardRoot() {
   useEffect(() => {
     const el = document.documentElement
     el.setAttribute('data-theme-id', themeId)
+    // Mirror to a localStorage cache (NOT the source of truth — that's the IDB
+    // BoardConfig) so the pre-paint inline script in (app)/layout can apply the
+    // attribute before first paint and avoid a theme flash on reload.
+    try {
+      window.localStorage.setItem('allmarks-theme-id', themeId)
+    } catch {
+      // private mode / storage disabled — the IDB path still themes correctly.
+    }
     return (): void => {
       el.removeAttribute('data-theme-id')
     }

@@ -480,9 +480,13 @@ html[data-theme-id="paper-atelier"] {
   --chrome-btn-stroke-width: 0px;
   --chrome-btn-stroke-color: transparent;
 
-  /* serif headings (Fraunces, already loaded as --font-serif-display) */
+  /* serif headings + body (Fraunces, already loaded as --font-serif-display).
+     --font-sans is overridden too so portalled UI (Lightbox / PiP / popovers)
+     and any component that reads var(--font-sans) directly renders serif on the
+     paper world; --font-mono is left untouched so technical labels stay mono. */
   --font-heading: var(--font-serif-display), Georgia, 'Times New Roman', serif;
   --font-body: var(--font-serif-display), Georgia, serif;
+  --font-sans: var(--font-serif-display), Georgia, 'Times New Roman', serif;
 
   /* soft warm paper shadows */
   --shadow-grid-card: 0 2px 8px rgba(43, 39, 34, 0.12);
