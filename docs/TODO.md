@@ -21,6 +21,12 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 130 — 拡張ストアURL点灯 + ツイート翻訳機能 実装完了)
+
+- **拡張機能 審査通過 → `EXTENSION_STORE_URL` 投入・本番反映済**: AllMarks拡張 v0.1.21 一般公開。[constants.ts:32](../lib/board/constants.ts#L32) に実URL投入(`: string` 型明示でTS2367回避)。ボード `GET EXTENSION` + 紹介ページ `/extension` が「ADD TO CHROME」自動点灯。**= 公開前 release blocker 完全解消**。ユーザーはストア版インストール済(開発版無効化)。
+- **ツイート翻訳機能 = 設計→計画→TDD実装→マージ→本番反映 完了**: 外国語ツイート本文を Lightbox 内で端末内 Translator API により原文↔訳ワンタップ切替。切替アニメはテーマ差替え可能(デフォルト=scramble+glitch)。6タスクをサブエージェント駆動で実装、最終opus全ブランチレビュー READY TO MERGE、master マージ(c71c280)・デプロイ済。tsc0/vitest1675/build green。**対応=デスクトップChrome安定版のみ**。**次セッション宿題=ユーザー実機目視確認**(外国語ツイートで Translate→scramble+glitch→Show original、同言語で非表示)。詳細 [CURRENT_GOAL.md](./CURRENT_GOAL.md)。
+- **② 共有OGタイトル一致(session129)の目視確認は未消化のまま持ち越し**(下記)。
+
 ### 直近の状態 (セッション 129 — ②共有OGタイトル一致 + ④既定OGP画像ミニマル化 + ①翻訳調査)
 
 - **② 共有OGタイトルを board と一致(WYSIWYG)・本番反映済**: サムネ無しテキストカードのタイトルを共有OG画像でも **中央寄せ + Geist(サンセリフ)** に([capture-mirror.ts](../lib/share/capture-mirror.ts) の画像なし分岐)。旧=左上+等幅でズレていた。tsc0/vitest1652/build green。**canvas の見た目はテスト範囲外＝本物の共有で目視確認が次セッションの宿題**。

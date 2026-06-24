@@ -7815,3 +7815,27 @@ session127 の暫定版(波形メーター + allmarks.app footer 付き)を、us
 - brainstorming は対象範囲確定まで。次セッション=アプローチ提示→設計提示→spec(`docs/superpowers/specs`)→plan→実装。
 
 tsc0 / vitest1652 / build green。② と ④ を本番反映。設計仕様書は次セッションで作成。
+
+---
+
+## セッション 130 (2026-06-24) — 拡張ストアURL点灯(公開ブロッカー解消) + ツイート翻訳機能 実装完了
+
+### 拡張機能 Chrome ウェブストア審査通過 → `EXTENSION_STORE_URL` 投入・本番反映
+AllMarks 拡張(v0.1.21, アイテムID `gefnpfbjnlbhgomlfcfalnbdlenpmpcg`)が審査通過・一般公開。[lib/board/constants.ts:32](../lib/board/constants.ts#L32) の `EXTENSION_STORE_URL` を空→実URL(`https://chromewebstore.google.com/detail/allmarks/gefnpfbjnlbhgomlfcfalnbdlenpmpcg`)に1行投入。定数を `: string` 型明示でリテラル固定を解除(消費側 `!== ''` 比較の TS2367 回避)。ボード `GET EXTENSION`([ExtensionEntry.tsx](../components/board/ExtensionEntry.tsx))と紹介ページ `/extension`([ExtensionContent.tsx](../components/marketing/pages/ExtensionContent.tsx))が「準備中」→「ADD TO CHROME」自動点灯。**= 公開前 release blocker(拡張提出)を完全解消**。tsc0/vitest1652/build green、本番反映済(JSチャンクにURL焼込み確認)。ユーザーはストア版を実機インストール済(開発版は無効化)。
+
+### ツイート翻訳機能 — brainstorm→spec→plan→TDD実装(サブエージェント駆動)で完遂
+外国語ツイート本文を Lightbox 内で端末内 Chrome Translator API により原文↔訳ワンタップ切替。切替アニメはテーマ差し替え可能(デフォルト=既存スクランブル+確定言語グリッチ流用)。
+
+- **設計**: [docs/superpowers/specs/2026-06-24-tweet-translate-design.md](./superpowers/specs/2026-06-24-tweet-translate-design.md)。案A(その場差替え)採用、ユーザー要望でテーマ差替え式に。
+- **計画**: [docs/superpowers/plans/2026-06-24-tweet-translate.md](./superpowers/plans/2026-06-24-tweet-translate.md) 6タスクTDD。
+- **実装(全6タスク・各実装+レビューのサブエージェント駆動・最終opus全ブランチレビューREADY TO MERGE)**:
+  - i18n 3キー×15言語([tests/i18n/translate-keys.test.ts](../tests/i18n/translate-keys.test.ts))
+  - [lib/translate/locale-map.ts](../lib/translate/locale-map.ts) アプリlocale→BCP47(zh→zh-Hans)
+  - [lib/translate/translator-api.ts](../lib/translate/translator-api.ts) Translator/LanguageDetector薄ラッパ(特徴検出/検出/availability/DL進捗monitor/翻訳)
+  - [lib/animation/text-transition/](../lib/animation/text-transition/) `getTextTransition(theme)` レジストリ(既存 getEntryAnimation 思想) + scramble+glitch デフォルト。`toText=null`でDL中スクランブルループ=ローダー兼用、reduce-motionで即着地。
+  - [lib/board/use-tweet-translation.ts](../lib/board/use-tweet-translation.ts) 状態機械フック。mount時プローブで非対応/同言語/検出不可/unavailableはボタン非表示。訳はメモリキャッシュのみ(IDB/item非保存)、再翻訳しない。
+  - [Lightbox.tsx](../components/board/Lightbox.tsx) TweetText 配線 + CSS(`.translateToggle`/`.translateFailed`/`.tweetBodyGlitch`)。
+- master へ no-ff マージ(c71c280)・push・本番デプロイ済。tsc0/vitest1675/build green。
+- **対応 = デスクトップ Chrome 安定版のみ**(モバイル/Firefox/Safari は端末内APIなし=ボタン非表示)。
+- **未実施 = ユーザー実機目視確認**(外国語ツイートで Translate→scramble+glitch切替→Show original、同言語で非表示)。
+- 据え置きフォローアップ(IDEAS.md 記録): hideBody時もプローブが走る無駄 / toggle初回翻訳のunmountガード。テーマsystem実装時に text-transition に wave 等の別ストラテジ差込可能。
