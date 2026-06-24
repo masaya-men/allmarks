@@ -490,6 +490,28 @@ html[data-theme-id="paper-atelier"] {
   --bg-typo-font: var(--font-serif-display);
   --bg-typo-color: rgba(43, 39, 34, 0.9);
 
+  /* big background wordmark — STATIC letterpress/kasure treatment (Plan 2 §4.7).
+     Paper-only: consumed in BoardBackgroundTypography.module.css via the scoped
+     :global selector, so the DEFAULT (dotted/grid) wordmark stays flat ink.
+     --wordmark-grain-url reuses Task 2's generated paper-fiber tile so the ink
+     looks pressed into the same fibre as the canvas. UNITLESS time values are
+     irrelevant here (no animation) but opacities/spreads stay literal. */
+  --wordmark-ink-color: rgba(43, 39, 34, 0.92);     /* CHARCOAL ink, slightly deeper than flat */
+  --wordmark-grain-url: var(--paper-fiber-url);      /* reuse Task 2 fibre tile */
+  --wordmark-grain-opacity: 0.16;                    /* kasure dropout strength */
+  --wordmark-emboss-light: rgba(255, 253, 246, 0.45); /* IVORY top highlight (letterpress lift) */
+  --wordmark-emboss-shadow: rgba(43, 39, 34, 0.30);   /* CHARCOAL bottom debossed edge */
+
+  /* paper chrome — MK-1 plate + wax "A" seal + decorative "+" stamp (Plan 2 §4.7) */
+  --plate-bg: var(--card-dark-alt);          /* IVORY plate face */
+  --plate-edge: rgba(43, 39, 34, 0.22);      /* CHARCOAL engraved edge */
+  --plate-text: rgba(43, 39, 34, 0.82);      /* CHARCOAL engraved label */
+  --plate-rule: var(--accent-gold);          /* GOLD PEEL hairline divider */
+  --wax-fill: var(--color-accent-primary);   /* FOREST wax body */
+  --wax-rim: rgba(43, 39, 34, 0.35);         /* debossed wax rim */
+  --wax-letter: rgba(255, 253, 246, 0.92);   /* IVORY pressed "A" */
+  --stamp-ink: var(--accent-gold);           /* GOLD PEEL decorative "+" */
+
   /* header chrome buttons (TITLE/TUNE/SETTINGS…) — dark, no stroke on paper */
   --chrome-btn-color: rgba(43, 39, 34, 0.9);
   --chrome-btn-color-hover: rgba(43, 39, 34, 1);

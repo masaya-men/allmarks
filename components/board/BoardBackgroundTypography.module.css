@@ -51,6 +51,63 @@
   /* no-op — matches the shared declaration above */
 }
 
+/* ─── Paper-atelier letterpress (Plan 2 §4.7) ──────────────────────────────
+ * Paper-ONLY, STATIC, reduced-motion-safe (no animation), no positive z-index.
+ * The :global() reach is required: data-theme-id lives on <html>, outside this
+ * module's local scope. The DEFAULT (dotted/grid) wordmark never matches this
+ * selector, so it stays the flat Plan-1 ink — byte-identical.
+ *
+ * Treatment = (1) a debossed letterpress emboss via dual text-shadow (a light
+ * top-lift + a dark bottom edge), plus (2) a kasure/ink-dropout: the generated
+ * paper-fibre tile is masked over the glyphs so the ink reads as pressed into
+ * fibre with micro-gaps, like a worn print block. No filter/backdrop-filter
+ * (board is fill-rate bound at 4K) — mask-image on a text-clipped pseudo only. */
+:global(html[data-theme-id='paper-atelier']) .text {
+  color: var(--wordmark-ink-color, rgba(43, 39, 34, 0.92));
+  /* letterpress emboss: top IVORY lift + bottom CHARCOAL debossed edge */
+  text-shadow:
+    0 1px 0 var(--wordmark-emboss-light, rgba(255, 253, 246, 0.45)),
+    0 -1px 0 var(--wordmark-emboss-shadow, rgba(43, 39, 34, 0.30));
+  position: relative;
+}
+
+/* Kasure ink-dropout: clip the fibre tile to the glyph shapes and overlay it
+ * at low opacity so ink shows micro-gaps. ::after inherits the parent's text
+ * geometry via position:absolute inset:0 + the SAME font properties, then
+ * paints the tile only where the text is (background-clip:text). aria-hidden
+ * is irrelevant (pseudo). pointer-events stay off (host is pointer-events:none).
+ * If background-clip:text is unsupported the ::after simply paints nothing
+ * visible (transparent fill) — the emboss text-shadow above is the floor. */
+:global(html[data-theme-id='paper-atelier']) .text::after {
+  content: attr(data-wordmark-text);
+  position: absolute;
+  inset: 0;
+  /* match the glyph layout exactly so the clip aligns 1:1 */
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  white-space: inherit;
+  text-wrap: inherit;
+  max-width: inherit;
+  pointer-events: none;
+  /* paint the fibre tile, clip to the text, lift to a low kasure opacity */
+  background-image: var(--wordmark-grain-url, none);
+  background-size: 220px 220px;
+  background-repeat: repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  opacity: var(--wordmark-grain-opacity, 0.16);
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No animation exists here, but declare the no-op block so the static-only
+     intent is explicit and a future motion variant can't silently leak in. */
+  :global(html[data-theme-id='paper-atelier']) .text { /* static — unchanged */ }
+}
+
 /* Reserved selector slots for future variants. Empty for now.
 .host[data-variant='dvd-bounce'] .text { ... }
 .host[data-variant='glitch'] .text { ... }

@@ -164,6 +164,7 @@ export function BoardBackgroundTypography({
       <span
         ref={textRef}
         className={shutdownClass ? `${styles.text} ${shutdownClass}` : styles.text}
+        data-wordmark-text={text}
       >
         {text}
       </span>
