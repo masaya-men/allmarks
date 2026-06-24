@@ -1,7 +1,7 @@
 # テーマシステム土台 ＋ paper-atelier（第1テーマ）設計書
 
 - **日付**: 2026-06-24（セッション 131）
-- **状態**: ✅ ブレインストーミング承認済み（①器 / ②paper-atelier / ③UI・解錠・データ・テスト の3チャンク全承認）→ 実装計画(plan)待ち
+- **状態**: ✅ ブレインストーミング承認済み（①器 / ②paper-atelier / ③UI・解錠・データ・テスト 全承認）＋ 共有テーマ化をスコープ追加（user 指摘 2026-06-24）→ 実装計画(plan)待ち
 - **関連**: `docs/CURRENT_GOAL.md`、`docs/private/theme-mockups/`（モック15枚）、`docs/private/IDEAS.md`（N-06 有料テーマ）
 - **進め方**: brainstorm（本書）→ writing-plans → 実装
 
@@ -14,8 +14,9 @@
 - 既存の `themeId`（IndexedDB 保存）/ `THEME_REGISTRY` / `ThemeLayer` を拡張する自然な延長で作る。新規の重い仕組みは作らない。
 - 各テーマは `data-theme-id="<id>"` の CSS ブロックで **自己完結**（自分の配色・`color-scheme`・書体を全部宣言）。LP の `data-theme=light`（過去の遺物・別属性）には依存しない。
 - **デフォルト（dotted-notebook = 黒 + 音波）は無傷**。新テーマは追加で選べるだけ。
+- **共有にもテーマが乗る**（= バイラルの核）。共有盤面(A)は低コストで同梱、SNSサムネ画像(B)は専用ステップ。詳細 §6。
 - 有料解錠は **受け口（判定窓口）だけ** 配線。鍵入力・検証の本体は後の回（N-06）。
-- 適用範囲 = **アプリ本体（ボード）のみ**。LP・紹介ページ群は従来の編集デザインを維持（対象外）。
+- 適用範囲 = **アプリ本体（ボード）＋共有（盤面/サムネ）**。LP・紹介ページ群は従来の編集デザインを維持（対象外）。
 - ロードマップ順: **paper-atelier(3) → white-sector(1) → celestial-atlas(5)**、code-rain(2)・liquid-chrome(4) は後。器は最初からこの5枚を量産できる汎用の器として設計する。
 
 ---
@@ -27,7 +28,8 @@
 2. **第1テーマ**: paper-atelier をモック完全再現（最終形）で実装。
 3. **選択UI**: SETTINGS ドロワー内の「THEMES」欄で切替（プレビュー付き・即適用・無料/🔒バッジ）。
 4. **解錠受け口**: `tier` と `isThemeUnlocked()` の窓口（スタブ）を配線。
-5. **デフォルト無傷**: 既存の黒+音波テーマは見た目・挙動とも一切変えない。
+5. **共有のテーマ化**: 共有盤面(A)＋OGサムネ(B)にテーマを乗せる（バイラル動線）。
+6. **デフォルト無傷**: 既存の黒+音波テーマは見た目・挙動とも一切変えない。
 
 ### スコープ（slice 1 で作るもの）
 - `ThemeMeta`（テーマ1個の定義型）を「7部品の契約」へ拡張。
@@ -35,13 +37,15 @@
 - `themeId` を BoardConfig → BoardRoot state → ルート属性 → `ThemeLayer` へ配線（現状ハードコード `DEFAULT_THEME_ID` を置換）。
 - paper-atelier の CSS トークン一式・紙背景・カード紙化・装飾（マステ/ピン/クリップ/フォトコーナー/スタンプ）・定規メーター変種・署名アニメ。
 - ベタ書き値のトークン化（メーター波形色・方眼線色・カードタイトル帯・Instagram覆い）。
+- **共有(A)**: 送信ペイロードに実 themeId を載せ、共有盤面に器と同じテーマCSSを適用（既存配線の延長＝低コスト）。
+- **共有(B)**: OGサムネ canvas（capture-mirror）をテーマ対応化。初版は「署名再現」（§6.2）。
 - 単体テスト＋視覚検証。
 
 ### 非ゴール（今回やらない・後の回）
 - 有料テーマの **鍵入力・検証の本体**（受け口の形だけ作る）。
 - **テーマ #1/#5/#2/#4 の実装**（器は対応するが中身は別セッション）。
 - **紹介ページ群（features/guide/faq 等）へのテーマ適用**。
-- **共有ビュー / 共有OG画像のテーマ化**（[SharedBoard.tsx](../../../components/share/SharedBoard.tsx) / capture-mirror 系）= follow-up。
+- **OGサムネの“全部入り”忠実再現**（紙テクスチャ・複数装飾を canvas で再現）= 初版「署名再現」を **実際の共有で見てから判断**（§6.2）。
 - 専用「テーマギャラリー画面」（テーマ5枚揃った後に格上げ）。
 - IndexedDB の **バージョン上げは不要**（後述）。
 
@@ -63,9 +67,11 @@
 | 設定UI | [ExtensionEntry.tsx](../../../components/board/ExtensionEntry.tsx)（SETTINGS hover ドロワー）/ [TuneTrigger.tsx](../../../components/board/TuneTrigger.tsx)（TUNE） | ✅ THEMES 欄の置き場所＝SETTINGS ドロワー |
 | 配線の手本 | `motionEnabled`: state→load→handler→save→UI→描画の一式 | ✅ themeId はこれを完全に踏襲 |
 | 属性切替の実証 | [LandingPage.tsx:45-48](../../../components/marketing/LandingPage.tsx#L45) が mount 時に `data-theme` を setAttribute し離脱で復元 | ✅ ランタイム属性切替の「技」はこれを流用 |
+| 共有のテーマ | [types-v2.ts:55](../../../lib/share/types-v2.ts#L55) `theme?: ThemeId` 既存。送信は [BoardRoot.tsx:1640](../../../components/board/BoardRoot.tsx#L1640) で `DEFAULT_THEME_ID` 固定、受信は [SharedBoard.tsx:381](../../../components/share/SharedBoard.tsx#L381) で適用 | ✅ 配線済。**送信値を実 themeId に繋ぐだけ**（§6.1） |
+| OGサムネ | [capture-mirror.ts](../../../lib/share/capture-mirror.ts) 手書き canvas、色/書体ベタ書き | ❌ テーマ非対応（§6.2 で対応） |
 | i18n | 15言語 + 整合テスト（`messages/*.json` + parity test） | ✅ 新ラベルキーは15言語へ追加 |
 
-**ギャップ（今回埋める）**: ①themeId が描画に未接続（[BoardRoot.tsx](../../../components/board/BoardRoot.tsx) が `DEFAULT_THEME_ID` をハードコードで `ThemeLayer` に渡す）/ ②選択UIなし / ③解錠なし / ④ベタ書き値4箇所 / ⑤`ThemeMeta` が薄い。
+**ギャップ（今回埋める）**: ①themeId が描画に未接続（[BoardRoot.tsx](../../../components/board/BoardRoot.tsx) が `DEFAULT_THEME_ID` をハードコードで `ThemeLayer` に渡す）/ ②選択UIなし / ③解錠なし / ④ベタ書き値4箇所 / ⑤`ThemeMeta` が薄い / ⑥共有送信が DEFAULT 固定・OGサムネがテーマ非対応。
 
 ---
 
@@ -76,6 +82,7 @@
 - **各テーマ = 自己完結した `[data-theme-id="<id>"]` CSS ブロック**。自分の `color-scheme` と CSS 変数（配色・書体・影・カード・メーター等）を全部宣言する。デフォルト = `:root`（暗）そのまま、override ブロック無し（= 恒等）。
 - **属性の付与先 = `document.documentElement`（`<html>`）**。理由: Lightbox / ポップオーバー等 **portal で `<body>` 直下に出る要素にもカスケードを効かせる**ため。`<html>` に付ければ portal 要素（body の子孫）にも届く。
 - **LP との非干渉**: LP が触るのは `data-theme`（light/dark）。ボードが使うのは **別属性 `data-theme-id`**。衝突しない。ボードは mount 時に `data-theme-id` をセットし、ボード離脱時に除去/復元（LandingPage と同じ作法）。
+- **共有盤面との統一**: 共有盤面は現状ルートに `data-theme={themeId}` を付与（[SharedBoard.tsx:397](../../../components/share/SharedBoard.tsx#L397)）。器に合わせ **`data-theme-id` に統一**（同じテーマCSSが共有でも効く）。
 - **specificity**: テーマ override は `:root` の後段に置き、必要なら `html[data-theme-id="paper-atelier"]`（specificity 0,1,1）で `:root`(0,1,0) と `[data-theme="dark"]` を確実に上書き。既存 `[data-theme="light"]` が `:root` を上書きしているのと同じ原理。
 - **背景描画**: `ThemeLayer` は従来どおりボード内の背景を描く（自 div の `data-theme-id` ＋背景クラス）。token カスケード（`<html>`）と背景描画（ThemeLayer）は同じ `themeId` state を読む二系統。役割が違うので併存させる。
 
@@ -117,7 +124,7 @@
 3. mount 時 `loadBoardConfig` で読み込み → state へ（`motionEnabled` と同じ useEffect）。
 4. `handleThemeChange(id)` → setState ＋ `saveBoardConfig(db, { ...cfg, themeId: id })`。
 5. `themeId` state を **副作用で `<html>` の `data-theme-id` に反映**（mount/change で set、ボード離脱で除去）。
-6. `<ThemeLayer themeId={themeId} .../>` に渡す（**現状の `DEFAULT_THEME_ID` ハードコードを置換**）。
+6. `<ThemeLayer themeId={themeId} .../>` に渡す（**現状の `DEFAULT_THEME_ID` ハードコードを置換**）。送信ペイロードの themeId も実 state を使う（§6.1）。
 7. **フォールバック**: 読み込んだ `themeId` が registry に無い / 有料未解錠 → `DEFAULT_THEME_ID` に落とす（壊れない）。
 8. **IndexedDB バージョン上げ不要**: `themeId` は既存の保存項目。union に値を増やすだけ＝後方互換。既存保存値（dotted-notebook/grid-paper）も有効なまま。`loadBoardConfig` は default とマージするので未知値もフォールバックで安全。
 
@@ -212,7 +219,9 @@
 6. 定規メーター変種。
 7. 署名アニメ4種。
 8. 選択UI（THEMES 欄）＋解錠受け口。
-9. 全体 校正グリッドで mock に寄せる。
+9. **(A) 共有盤面にテーマ**（送信 themeId 接続＋属性統一＋確認。§6.1 ＝低コスト）。
+10. **(B) OGサムネのテーマ化**（署名再現。§6.2）→ 実際に共有して再判断。
+11. 全体 校正グリッドで mock に寄せる。
 
 ---
 
@@ -221,26 +230,49 @@
 - **置き場所**: SETTINGS ドロワー（[ExtensionEntry.tsx](../../../components/board/ExtensionEntry.tsx)）内に「**THEMES**」セクション新設（QUICK-TAG トグルと既存項目の並び）。
 - **見た目**: テーマを**ミニプレビュー付きの札**で横並び（default / paper-atelier）。各札 = 小サムネ＋テーマ名（i18n）＋ 無料/🔒 バッジ。クリックで即適用（保存＋属性更新＋即反映）。
 - **e2e 用**: 各札に `data-theme-button="<id>"` を付与（既存 e2e の TODO だった属性を復活）。
-- **将来**: テーマが5枚揃ったら **専用ギャラリー画面** に格上げ（"売り場" として魅せる）= 後の回。slice 1 はドロワー内方式（YAGNI）。
+- **将来**: テーマが5枚揃ったら **専用ギャラリー画面** に格上げ（魅せる専用画面）= 後の回。slice 1 はドロワー内方式（YAGNI）。
 
 ---
 
-## 6. エラー処理 / エッジケース / パフォーマンス
+## 6. 共有のテーマ化（バイラル動線の核）
 
-- **未知/削除/未解錠の themeId** → `DEFAULT_THEME_ID` フォールバック（§3.3-7）。
+ミッション「コラージュを画像で SNS シェアしてバイラル」の心臓。共有にテーマが乗らないと「え？こんなテーマあるんだ」の発見が起きず、テーマの意味（魅せる→発見→拡散→解錠）が切れる。よって **スコープ内**。2層に分けて段階実装。
+
+### 6.1 (A) インタラクティブな共有盤面（/s/<id>）— 低コスト・slice 同梱
+- 共有データに `theme` は既に存在（[types-v2.ts:55](../../../lib/share/types-v2.ts#L55)）、エンコード（[board-to-share.ts:95](../../../lib/share/board-to-share.ts#L95)）・デコード・適用（[SharedBoard.tsx:381](../../../components/share/SharedBoard.tsx#L381), [:397](../../../components/share/SharedBoard.tsx#L397)）まで配線済み。共有盤面は本物のカード/メーター/ヘッダー部品と CSS を再利用。
+- 現状は送信時 `DEFAULT_THEME_ID` 固定（[BoardRoot.tsx:1640](../../../components/board/BoardRoot.tsx#L1640)「未配線」）。**themeId を配線（§3.3）すれば自動で本物のテーマが共有に乗る。**
+- やること: ①送信ペイロードに実 themeId を載せる（§3.3 の state をそのまま使う）。②共有盤面のルート属性を器と統一（`data-theme-id`）。③テーマ CSS が共有ルートにも適用されることを実機確認。
+- 未知 themeId → default フォールバック（既存挙動）。
+
+### 6.2 (B) OGサムネ画像（SNSフィードの最前線）— 専用ステップ・段階判断
+- OG画像は手書き canvas 描画（[capture-mirror.ts](../../../lib/share/capture-mirror.ts)）。色（`#0a0a0c` 等）・書体（Geist）が **全部ベタ書き** でテーマ非対応。生成は共有作成時にクライアントで実行（[SenderShareModal.tsx](../../../components/share/SenderShareModal.tsx) が capture を起動、1200×628）。
+- やること: capture-mirror に `themeId` を渡し、テーマ別の色・書体マップで描く。
+- **初版の作り込み度＝「署名再現」**（user 判断 2026-06-24）: 生成り地＋セリフ見出し＋象牙カード＋マステ1枚で「paper だ」と即伝わる絵。**実際の共有サムネを見てから「もっと作り込む/十分」を再判断**（紙テクスチャ・複数装飾の忠実再現は逓減効果なので初版では入れない）。
+- **3つの落とし穴（必ずケア）**:
+  1. **フォント**: canvas は読込済みフォントしか使えない。Fraunces が ready になってから描画（FontFace 確認）。
+  2. **明暗反転**: 現状「黒地＋白文字＋暗スクリム」。paper は生成り地 → 文字=墨・スクリム=明 に **テーマ別** で持つ。小サムネでの可読性を実測。
+  3. **寸法固定**: 1200×628 維持（OG メタの width/height と一致必須）。
+
+---
+
+## 7. エラー処理 / エッジケース / パフォーマンス
+
+- **未知/削除/未解錠の themeId** → `DEFAULT_THEME_ID` フォールバック（§3.3-7）。共有受信側も同様（既存挙動）。
 - **reduced-motion** → テーマアニメは既存ゲートで停止。
 - **portal 要素**（Lightbox/PiP/ポップオーバー）→ `<html>` 属性なのでカスケード到達。要視覚確認。
-- **共有/エクスポート**（[SharedBoard.tsx:397](../../../components/share/SharedBoard.tsx#L397) は `data-theme={themeId}` を outer frame に付与、OG は capture-mirror）→ **テーマ化は follow-up**（slice 1 はボードのライブ表示が対象。共有はデフォルト見た目のままでも破綻しない）。
+- **共有**: (A) 盤面・(B) OGサムネともテーマ対応（§6）。古い共有（theme 無し）→ default で破綻なし。
 - **パフォーマンス**: paper は静的テクスチャ＋静的装飾、常時 canvas/GPU フィルタ無し → 盤面は合成律速（fill-rate 律速）だが paper はそこに負荷を足さないので安全。装飾は `pointer-events:none` で hit-test 負荷も無し。
 
 ---
 
-## 7. テスト ＆ 検証
+## 8. テスト ＆ 検証
 
 ### 単体（vitest）
 - **契約整合**: 全テーマが `ThemeMeta` 7部品（colorScheme/backgroundClassName/scrollMeterVariant/motion/tier/labelKey/id）を漏れなく持つ。
 - **解錠**: `isThemeUnlocked` — free→true / paid(未解錠)→false。
 - **保存往復**: `saveBoardConfig`→`loadBoardConfig` で themeId 保持。
+- **共有往復**: themeId が共有ペイロードに乗り、decode/sanitize で復元（ShareDataV2 round-trip）。
+- **OG色/書体マップ**: themeId → テーマ別の color/font が選ばれる（純関数）。
 - **フォールバック**: 未知 themeId → default。
 - **i18n parity**: 新ラベルキー（`board.theme.paperAtelier`）が15言語に存在（既存 parity テストに乗る）。
 - **決定論装飾**: 同 card.id → 同じ装飾割り当て（純関数）。
@@ -249,6 +281,7 @@
 - paper 適用時に `getComputedStyle` で **実際に紙色・セリフ・color-scheme が効く**ことを実測（code が通る≠効いている）。
 - ボード/設定/メーターを paper テーマでスクショ → **校正グリッド**で mock に寄せる。
 - portal（Lightbox）にもテーマが届くことを確認。
+- 共有: paper の盤面を共有 →(A) 共有盤面が paper で出る／(B) OGサムネが生成り地＋墨文字＋セリフで出る・可読性OK を実物で確認。
 - 既知フレーキー: `tests/lib/channel.test.ts`（full run でたまに落ちる→再実行 green）。
 
 ### デプロイ前ゲート（CLAUDE.md）
@@ -256,7 +289,7 @@
 
 ---
 
-## 8. 変更/新規ファイル 地図（plan 用の目安）
+## 9. 変更/新規ファイル 地図（plan 用の目安）
 
 **型/レジストリ**
 - `lib/board/types.ts` — `ThemeId` に `'paper-atelier'`、`ThemeMeta` に新フィールド。
@@ -264,7 +297,7 @@
 - `lib/board/theme-entitlement.ts`（新規） — `tier` 型・`isThemeUnlocked`・ライセンス読み出しスタブ。
 
 **配線**
-- `components/board/BoardRoot.tsx` — themeId state / load / handler / `<html>` 属性副作用 / `ThemeLayer` へ渡す（DEFAULT_THEME_ID 置換）。
+- `components/board/BoardRoot.tsx` — themeId state / load / handler / `<html>` 属性副作用 / `ThemeLayer` へ渡す（DEFAULT_THEME_ID 置換）/ 送信ペイロードに実 themeId。
 - `components/board/ThemeLayer.tsx` — 既存維持（必要なら variant 受け）。
 
 **CSS/トークン**
@@ -278,6 +311,11 @@
 - `components/board/ThemePicker.tsx`（新規） — SETTINGS 内 THEMES 欄。
 - `lib/animation/*/themes/paper-*.{ts,module.css}`（新規） — paper の entry/text/shutdown 戦略。
 
+**共有**
+- `components/share/SharedBoard.tsx` — ルート属性を `data-theme-id` に統一（(A)）。
+- `lib/share/capture-mirror.ts` — `themeId` 受領＋テーマ別 色/書体マップ（(B)）。
+- `components/share/SenderShareModal.tsx` — `themeId` を capture へ伝播（(B)）。
+
 **アセット/生成**
 - `scripts/generate-paper-texture.mjs`（新規・任意） — 紙テクスチャ生成 → `public/themes/paper-atelier/`。
 
@@ -285,11 +323,12 @@
 - `messages/*.json`（15言語） — `board.theme.paperAtelier` ほかラベル。
 
 **テスト**
-- `lib/board/theme-registry.test.ts` / `theme-entitlement.test.ts` / 装飾決定論 / 既存 e2e の `[data-theme-button]` 復活。
+- `lib/board/theme-registry.test.ts` / `theme-entitlement.test.ts` / 装飾決定論 / 共有 themeId round-trip / OG色書体マップ / 既存 e2e の `[data-theme-button]` 復活。
 
 ---
 
-## 9. 未解決の論点
+## 10. 未解決の論点 / follow-up
 
-- なし（slice 1 の範囲は確定）。色 hex・寸法は「初期値→実装中に校正グリッドで確定」というプロセスで解決する（spec 上の placeholder ではなく確定手順）。
-- follow-up（別タスク化）: 共有/OG のテーマ化、紹介ページのテーマ化、テーマギャラリー画面、有料解錠の本体（N-06）。
+- slice 1 の範囲は確定。色 hex・寸法は「初期値→実装中に校正グリッドで確定」というプロセスで解決。
+- **OGサムネの作り込み度**: 初版「署名再現」を **実際の共有で見てから**、忠実度を上げるか判断（user 合意 2026-06-24）。
+- follow-up（別タスク化）: 紹介ページのテーマ化、テーマギャラリー画面、有料解錠の本体（N-06）、テーマ #1/#5/#2/#4 の実装。
