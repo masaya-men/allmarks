@@ -60,6 +60,8 @@ import { ExtensionEntry } from './ExtensionEntry'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
+import { PaperFramePlate } from './chrome/PaperFramePlate'
+import { PaperWaxSeal } from './chrome/PaperWaxSeal'
 import { UndoToast, type UndoToastInput } from './UndoToast'
 import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
 import { PasteSaveFeedback } from './PasteSaveFeedback'
@@ -1975,6 +1977,16 @@ export function BoardRoot() {
           link strip waits for a footer redesign). Fades with the chrome while
           the Lightbox is open, mirroring frameTopChrome. */}
       <BoardChrome hidden={!!lightboxItemId} />
+      {/* Paper-atelier decorative chrome (Plan 2 §4.7) — MK-1 plate (bottom-left)
+          + wax "A" seal & decorative "+" stamp (bottom-right). pointer-events:none
+          siblings of BoardChrome, gated on the theme opting into decorations, and
+          faded with the chrome while the Lightbox is open (mirrors BoardChrome). */}
+      {themeMeta.decorations === true && (
+        <>
+          <PaperFramePlate hidden={!!lightboxItemId} />
+          <PaperWaxSeal hidden={!!lightboxItemId} />
+        </>
+      )}
       {/* The always-on bottom-left bookmarklet pill was removed (session 114).
           The no-extension install path now lives in SETTINGS ("SAVE WITHOUT
           EXTENSION" → BookmarkletInstallModal) and the empty-state welcome,
