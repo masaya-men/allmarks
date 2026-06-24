@@ -1,0 +1,50 @@
+/* PAPER-ATELIER tweet-translate transition = ink-underline.
+ *
+ * Reuses AllMarks の paper motion 言語:
+ *  - loading indicator = 本文の下に「インクが引かれていく」 underline draw
+ *    (= scaleX 0→1 を左から、 ペン先が走るような ease-out。 glitch の
+ *     「じじっ」 と違い、 静かで紙的)
+ *  - exit / entry は JS 側で tag-shutdown('paper-fade') / tag-entry('paper-drift')
+ *    を流用するので、 ここには loading の下線だけ置く。
+ *
+ * 数値を触るのは :root の CSS 変数経由のみ。 */
+
+:root {
+  --tweet-ink-underline-color: var(--color-accent-primary, #2f4a37); /* FOREST */
+  --tweet-ink-underline-thickness: 2px;
+  --tweet-ink-underline-period: 1.6s;
+}
+
+.loading {
+  position: relative;
+}
+
+/* The draw lives on a pseudo so it never affects the body's box geometry
+   (= no reflow, FLIP-safe). Repeats while loading: draw in, hold, fade out. */
+.loading::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.12em;
+  height: var(--tweet-ink-underline-thickness);
+  background: var(--tweet-ink-underline-color);
+  transform-origin: left center;
+  transform: scaleX(0);
+  opacity: 0;
+  pointer-events: none;
+  animation: tweetInkUnderlineDraw var(--tweet-ink-underline-period) ease-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes tweetInkUnderlineDraw {
+  0%   { transform: scaleX(0);   opacity: 0; }
+  12%  { transform: scaleX(0);   opacity: 1; }
+  62%  { transform: scaleX(1);   opacity: 1; }
+  86%  { transform: scaleX(1);   opacity: 0.85; }
+  100% { transform: scaleX(1);   opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading::after { animation: none; opacity: 0; }
+}
