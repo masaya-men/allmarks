@@ -5,7 +5,7 @@
   position: absolute;
   right: calc(var(--canvas-margin, 48px) + 12px);
   bottom: calc(var(--canvas-margin, 48px) * 0.22);
-  z-index: 16; /* = BOARD_Z_INDEX.PAPER_CHROME */
+  z-index: var(--z-paper-chrome, 16); /* = BOARD_Z_INDEX.PAPER_CHROME */
   display: inline-flex;
   align-items: center;
   gap: 14px;

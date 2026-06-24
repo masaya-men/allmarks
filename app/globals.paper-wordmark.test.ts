@@ -6,9 +6,19 @@ const css = readFileSync(resolve(__dirname, 'globals.css'), 'utf8')
 const paperBlock = (() => {
   const start = css.indexOf('html[data-theme-id="paper-atelier"]')
   const open = css.indexOf('{', start)
-  // naive brace match is enough — the block has no nested braces in this file
-  const close = css.indexOf('}', open)
-  return css.slice(open, close)
+  // Depth-counting matcher: walk forward tracking open/close brace nesting so
+  // nested {} (media queries, sub-rules, future additions) are handled correctly.
+  let depth = 0
+  let i = open
+  while (i < css.length) {
+    if (css[i] === '{') depth++
+    else if (css[i] === '}') {
+      depth--
+      if (depth === 0) break
+    }
+    i++
+  }
+  return css.slice(open, i) // slice up to (not including) the closing '}'
 })()
 
 describe('paper-atelier letterpress wordmark tokens', () => {

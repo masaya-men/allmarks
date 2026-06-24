@@ -533,6 +533,8 @@ html[data-theme-id="paper-atelier"] {
   /* --- PAPER DECORATIONS (per-card overlay, pointer-events:none) --- */
   /* z-index token: source of truth is BOARD_Z_INDEX.CARD_DECORATION = 11 in lib/board/constants.ts */
   --deco-z: 11;
+  /* z-index token: source of truth is BOARD_Z_INDEX.PAPER_CHROME = 16 in lib/board/constants.ts */
+  --z-paper-chrome: 16;
   --deco-washi-a: rgba(201, 178, 122, 0.42);   /* PALE STRAW translucent tape */
   --deco-washi-b: rgba(143, 168, 142, 0.38);   /* SAGE translucent tape */
   --deco-washi-c: rgba(196, 160, 150, 0.40);   /* DUSTY ROSE translucent tape */

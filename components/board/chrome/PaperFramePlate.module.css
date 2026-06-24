@@ -7,7 +7,7 @@
   position: absolute;
   left: calc(var(--canvas-margin, 48px) + 12px);
   bottom: calc(var(--canvas-margin, 48px) * 0.32);
-  z-index: 16; /* = BOARD_Z_INDEX.PAPER_CHROME */
+  z-index: var(--z-paper-chrome, 16); /* = BOARD_Z_INDEX.PAPER_CHROME */
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -34,6 +34,7 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   color: var(--plate-text, rgba(43, 39, 34, 0.82));
+  white-space: nowrap;
 }
 
 .rule {
