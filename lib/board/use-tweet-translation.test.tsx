@@ -7,12 +7,15 @@ vi.mock('@/lib/translate/translator-api', () => ({
   getTranslatorAvailability: vi.fn(async () => 'available'),
   translateText: vi.fn(async (a: { text: string }) => `EN(${a.text})`),
 }))
-// テキスト遷移は決定論化: toText を即 onFrame、settle も即 onFrame。
+// 遷移を決定論化: exit は短い setTimeout、playEntry は finalText を即 setText。
 vi.mock('@/lib/animation/text-transition', () => ({
   getTextTransition: () => ({
-    run: (args: { toText: string | null; onFrame: (t: string) => void }) => {
-      if (args.toText !== null) args.onFrame(args.toText)
-      return { settle: (f: string) => args.onFrame(f), cancel: () => {} }
+    loadingClass: 'loading-cls',
+    exitClass: 'exit-cls',
+    exitMs: 5,
+    playEntry: ({ finalText, setText }: { finalText: string; setText: (t: string) => void }) => {
+      setText(finalText)
+      return () => {}
     },
   }),
 }))
@@ -50,14 +53,17 @@ describe('useTweetTranslation', () => {
     expect(result.current.showButton).toBe(false)
   })
 
-  it('toggle translates, then toggles back to original without re-translating', async () => {
+  it('toggle translates, swaps, then toggles back to original without re-translating', async () => {
     const { result } = renderHook(() => useTweetTranslation({ originalText: 'Hola' }))
     await waitFor(() => expect(result.current.showButton).toBe(true))
+
     await act(async () => { result.current.toggle() })
     await waitFor(() => expect(result.current.displayText).toBe('EN(Hola)'))
     expect(api.translateText).toHaveBeenCalledTimes(1)
+
     await act(async () => { result.current.toggle() }) // back to original
     await waitFor(() => expect(result.current.displayText).toBe('Hola'))
+
     await act(async () => { result.current.toggle() }) // forward again (cached)
     await waitFor(() => expect(result.current.displayText).toBe('EN(Hola)'))
     expect(api.translateText).toHaveBeenCalledTimes(1) // not re-translated
@@ -70,5 +76,12 @@ describe('useTweetTranslation', () => {
     await act(async () => { result.current.toggle() })
     await waitFor(() => expect(result.current.failed).toBe(true))
     expect(result.current.displayText).toBe('Hola')
+  })
+
+  it('exposes a bodyRef and a phase-derived bodyClassName', async () => {
+    const { result } = renderHook(() => useTweetTranslation({ originalText: 'Hola' }))
+    await waitFor(() => expect(result.current.showButton).toBe(true))
+    expect(result.current.bodyRef).toBeDefined()
+    expect(typeof result.current.bodyClassName).toBe('string')
   })
 })

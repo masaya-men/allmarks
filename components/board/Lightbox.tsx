@@ -21,7 +21,7 @@ import {
 } from './embeds'
 import { LightboxNavChevron } from './LightboxNavChevron'
 import { useSmoothWheelScroll } from '@/lib/scroll/use-smooth-wheel-scroll'
-import { useTweetTranslation } from '@/lib/board/use-tweet-translation'
+import { useTweetTranslation, type TweetTranslationView } from '@/lib/board/use-tweet-translation'
 import type { LightboxFlipSceneProps } from './LightboxFlipScene'
 import {
   detectUrlType,
@@ -1334,55 +1334,39 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
         >
           <span className={styles.closeIcon} aria-hidden="true">✕</span>
         </button>
-        <div
-          ref={mediaRef}
-          className={styles.media}
-          /* Session 33: 媒体 (動画 / 画像 / iframe) の click は .frame の
-             close 発火を吸収する。 動画 controls / image zoom 等は内部要素が
-             個別に hit を取るので機能維持。 */
-          onClick={(e): void => e.stopPropagation()}
-        >
-          {/* key={view.url}: remount the whole left-media subtree per card so a
-              reused <video>/<iframe> can't keep showing the previous card's
-              frame on left/right nav (the text panel updated fine, the media
-              didn't — session 63 stale-media bug). */}
-          {tweetId
-            ? <TweetMedia
-                key={view.url}
-                item={view}
-                meta={tweetMeta}
-                slots={tweetSlots}
-                slotIdx={tweetSlotIdx}
-              />
-            : <LightboxMedia key={view.url} item={view} />}
-          {/* I-07-#4 follow-up: multi-image dots live INSIDE .media as
-              an absolutely-positioned child, centered horizontally on
-              the media column (= the image itself), placed in the
-              chrome-clearance zone just below the media envelope.
-              `.media` keeps overflow:visible so the dots aren't clipped
-              by it — descendant img/iframe/video each carry their own
-              border-radius so removing .media's overflow clip is
-              visually identical (per the .media comment block). */}
-          {tweetId && tweetSlots.length > 1 && (
-            <LightboxImageDots
+        {/* Tweets render both columns through TweetColumns so the translate
+            hook is shared between the left card (text-only body) and the right
+            panel (toggle + media-tweet body) — session 130. Non-tweets keep the
+            plain two-column structure. */}
+        {tweetId
+          ? (
+            <TweetColumns
+              mediaRef={mediaRef}
+              textRef={textRef}
+              view={view}
+              meta={tweetMeta}
               slots={tweetSlots}
-              currentIdx={tweetSlotIdx}
+              slotIdx={tweetSlotIdx}
               onJump={setTweetSlotIdx}
             />
+          )
+          : (
+            <>
+              <div
+                ref={mediaRef}
+                className={styles.media}
+                /* Session 33: 媒体 click は .frame の close 発火を吸収。 */
+                onClick={(e): void => e.stopPropagation()}
+              >
+                <LightboxMedia key={view.url} item={view} />
+              </div>
+              {/* data-card-scroll: window wheel handler bails over this panel so
+                  the wheel scrolls the text natively (session 56). */}
+              <div ref={textRef} className={styles.text} data-card-scroll="true">
+                <DefaultText item={view} host={host} />
+              </div>
+            </>
           )}
-        </div>
-        {/* data-card-scroll: the window wheel handler bails over this panel, so
-            the wheel scrolls the text natively and never flips to the prev/next
-            card — including when you wheel past the scroll edge (session 56). */}
-        <div ref={textRef} className={styles.text} data-card-scroll="true">
-          {tweetId
-            ? <TweetText
-                item={view}
-                meta={tweetMeta}
-                hideBody={shouldHideTweetBody(tweetMeta, tweetSlots)}
-              />
-            : <DefaultText item={view} host={host} />}
-        </div>
       </div>
     </div>
     </>
@@ -1525,11 +1509,22 @@ function TweetMedia({
   meta,
   slots,
   slotIdx,
+  translatedText,
+  bodyRef,
+  bodyClassName,
 }: {
   readonly item: LightboxItem
   readonly meta: TweetMeta | null
   readonly slots: readonly MediaSlot[]
   readonly slotIdx: number
+  /** For text-only tweets: the current (possibly translated) body text to show
+   *  in the left card. Idle value === the canonical card text, so the FLIP open
+   *  morph is unaffected (session 130). */
+  readonly translatedText?: string
+  /** For text-only tweets: ref + class for the swap (CRT shutdown / boot-up)
+   *  animation, applied to the card's outer box. */
+  readonly bodyRef?: React.RefObject<HTMLElement | null>
+  readonly bodyClassName?: string
 }): ReactNode {
   // Slot-driven path (v13): a non-empty slots array fully determines media.
   if (slots.length > 0) {
@@ -1567,7 +1562,9 @@ function TweetMedia({
     // for some reason, fall back to meta.text or the cleaned title path
     // for legacy data. Full-text legibility is delivered via the tweet
     // backfill (= updates item.title with meta.text after fetch).
-    const text = item.title || meta?.text || cleanTweetTitle(item.title ?? '')
+    // translatedText (= tr.displayText) は idle 時にこの canonical 値と一致するので
+    // 通常表示・FLIP morph は不変。翻訳トグル時だけ訳文に差し替わる (session 130)。
+    const text = translatedText ?? (item.title || meta?.text || cleanTweetTitle(item.title ?? ''))
     const aspect = item.aspectRatio ?? PLACEHOLDER_ASPECT
     const fakeBoardItem: BoardItem = {
       bookmarkId: item.bookmarkId ?? item.url,
@@ -1590,7 +1587,14 @@ function TweetMedia({
     // 非ツイートのテキストカードと同じ LargePlaceholderCardScaler 経路。 board の
     // PlaceholderCard と media が同じ component (= PlaceholderCard + omitMeta=true)
     // になるので、 open swap の瞬間に font / hostname jump が原理的に消える。
-    return <LargePlaceholderCardScaler fakeItem={fakeBoardItem} aspect={aspect} />
+    return (
+      <LargePlaceholderCardScaler
+        fakeItem={fakeBoardItem}
+        aspect={aspect}
+        outerRef={bodyRef}
+        outerClassName={bodyClassName}
+      />
+    )
   }
 
   // Legacy fallbacks — slots が空 + hasPhoto/hasVideo は true のケース。
@@ -1704,19 +1708,21 @@ function TweetText({
   item,
   meta,
   hideBody = false,
+  tr,
 }: {
   readonly item: LightboxItem
   readonly meta: TweetMeta | null
   /** Suppress the tweet body paragraph when text-only tweets render their
-   *  text inside the left-side large TextCard (session 32 Fix 2). */
+   *  text inside the left-side large TextCard (session 32 Fix 2). The translate
+   *  toggle still shows — for text-only tweets the body (and its swap animation)
+   *  lives in the left card, driven by the same `tr` hook (session 130 fix). */
   readonly hideBody?: boolean
+  /** Translation state, owned by the parent so both columns share one hook. */
+  readonly tr: TweetTranslationView
 }): ReactNode {
   const { t } = useI18n()
   const authorName = meta?.authorName ?? ''
   const authorHandle = meta?.authorHandle ?? ''
-  const originalText = meta?.text ?? item.title
-  const tr = useTweetTranslation({ originalText })
-  const bodyText = hideBody ? '' : tr.displayText
   return (
     <>
       {(authorName || authorHandle || meta?.authorAvatar) && (
@@ -1735,12 +1741,15 @@ function TweetText({
         </div>
       )}
       {!hideBody && (
-        <p className={`${styles.tweetBody}${tr.glitch ? ` ${styles.tweetBodyGlitch}` : ''}`}>
-          {bodyText}
+        <p
+          ref={tr.bodyRef as React.RefObject<HTMLParagraphElement>}
+          className={tr.bodyClassName ? `${styles.tweetBody} ${tr.bodyClassName}` : styles.tweetBody}
+        >
+          {tr.displayText}
         </p>
       )}
       <div className={styles.metaCtaGroup}>
-        {!hideBody && tr.showButton && (
+        {tr.showButton && (
           <button
             type="button"
             className={styles.translateToggle}
@@ -1762,6 +1771,68 @@ function TweetText({
         >
           {t('board.lightbox.openSource')} →
         </a>
+      </div>
+    </>
+  )
+}
+
+/** Renders BOTH lightbox columns for a tweet so the translate hook is shared:
+ *  the toggle lives in the right panel, while the body it swaps is in the left
+ *  card (text-only tweets) or the right paragraph (media tweets). Session 130:
+ *  fixes "text-only tweets never showed the Translate button" by lifting the
+ *  hook above both columns. */
+function TweetColumns({
+  mediaRef,
+  textRef,
+  view,
+  meta,
+  slots,
+  slotIdx,
+  onJump,
+}: {
+  readonly mediaRef: React.Ref<HTMLDivElement>
+  readonly textRef: React.Ref<HTMLDivElement>
+  readonly view: LightboxItem
+  readonly meta: TweetMeta | null
+  readonly slots: readonly MediaSlot[]
+  readonly slotIdx: number
+  readonly onJump: (idx: number) => void
+}): ReactNode {
+  const textOnly = isTweetTextOnly(meta, slots)
+  const hideBody = shouldHideTweetBody(meta, slots)
+  // Canonical body text — the same source the card normally shows, so the idle
+  // value === the card text and the FLIP open morph is unaffected. For text-only
+  // tweets the left card is title-first (board-equivalence); else meta.text-first.
+  const originalText = textOnly
+    ? (view.title || meta?.text || cleanTweetTitle(view.title ?? ''))
+    : (meta?.text ?? view.title)
+  const tr = useTweetTranslation({ originalText })
+  return (
+    <>
+      <div
+        ref={mediaRef}
+        className={styles.media}
+        /* Session 33: 媒体 click は .frame の close 発火を吸収。 */
+        onClick={(e): void => e.stopPropagation()}
+      >
+        {/* key={view.url}: remount the left-media subtree per card (session 63). */}
+        <TweetMedia
+          key={view.url}
+          item={view}
+          meta={meta}
+          slots={slots}
+          slotIdx={slotIdx}
+          translatedText={textOnly ? tr.displayText : undefined}
+          bodyRef={textOnly ? tr.bodyRef : undefined}
+          bodyClassName={textOnly ? tr.bodyClassName : undefined}
+        />
+        {slots.length > 1 && (
+          <LightboxImageDots slots={slots} currentIdx={slotIdx} onJump={onJump} />
+        )}
+      </div>
+      {/* data-card-scroll: window wheel handler bails over this panel (session 56). */}
+      <div ref={textRef} className={styles.text} data-card-scroll="true">
+        <TweetText item={view} meta={meta} hideBody={hideBody} tr={tr} />
       </div>
     </>
   )
@@ -1967,12 +2038,24 @@ function LargeBoardCardClone({
 function LargePlaceholderCardScaler({
   fakeItem,
   aspect,
+  outerRef,
+  outerClassName,
 }: {
   readonly fakeItem: BoardItem
   readonly aspect: number
+  /** Optional external ref to the outer box (= translate swap animation target). */
+  readonly outerRef?: React.RefObject<HTMLElement | null>
+  /** Optional extra class on the outer box (= CRT shutdown during a swap). */
+  readonly outerClassName?: string
 }): ReactElement {
   const boxRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
+  // Merge the internal boxRef (ResizeObserver) with the optional external ref so
+  // the translate swap animation can target the same element.
+  const setBox = useCallback((el: HTMLDivElement | null): void => {
+    boxRef.current = el
+    if (outerRef) outerRef.current = el
+  }, [outerRef])
   const boardW = useMemo<number>(() => {
     if (typeof document === 'undefined') return fakeItem.cardWidth
     const source = document.querySelector<HTMLElement>(`[data-bookmark-id="${fakeItem.bookmarkId}"]`)
@@ -2002,8 +2085,8 @@ function LargePlaceholderCardScaler({
 
   return (
     <div
-      ref={boxRef}
-      className={styles.imageBox}
+      ref={setBox}
+      className={outerClassName ? `${styles.imageBox} ${outerClassName}` : styles.imageBox}
       style={{ ['--item-aspect' as string]: aspect } as React.CSSProperties}
     >
       <div
