@@ -23,7 +23,9 @@ function prefersReducedMotion(): boolean {
 
 /** 視差の translateY 補正 (px)。0 = 視差なし。 */
 export function usePaperParallax({ themeId, motionEnabled, viewportY }: PaperParallaxInput): number {
-  const [reduced, setReduced] = useState(false)
+  // 初期値も同期で正しく解決 (reduced-motion 環境でのマウント時 1 回の余分な
+  // 再レンダリングを回避; SSR では prefersReducedMotion() が false を返す)。
+  const [reduced, setReduced] = useState(prefersReducedMotion)
   // matchMedia を JS で監視 (CSS @media と二重に gate する layer のうちの JS 側)。
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return

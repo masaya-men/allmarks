@@ -18,5 +18,6 @@ describe('selectPaperSoftShuffle', () => {
   it('ambient off (motion disabled / reduced / scrolling) → no crossfade even on paper', () => {
     const r = selectPaperSoftShuffle({ softShuffle: true, ambientOn: false })
     expect(r.crossfade).toBe(false)
+    expect(r.cadenceMs).toBe(DEFAULT_SHUFFLE_CADENCE_MS) // falls back to the default cadence too
   })
 })
