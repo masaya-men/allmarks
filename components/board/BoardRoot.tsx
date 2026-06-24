@@ -1660,8 +1660,9 @@ export function BoardRoot() {
         ? { mode: activeFilter.mode, tagIds: activeFilter.tagIds }
         : null,
       now: Date.now(),
-      // Theme switching is not yet wired in the board UI; BoardRoot hardcodes
-      // DEFAULT_THEME_ID. Forward it so the receiver can restore the same theme.
+      // Share theming is Plan 3 — until then a shared board renders the default
+      // theme. Forward DEFAULT_THEME_ID as a deliberate placeholder; the live
+      // themeId state is intentionally NOT used here yet.
       themeId: DEFAULT_THEME_ID,
       // Global masonry gap the sender sees. Per-card widths ride on each
       // card's `cw`; this is the only remaining global layout input the

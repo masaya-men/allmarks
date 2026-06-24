@@ -10,12 +10,15 @@ import styles from './ThemePicker.module.css'
 export interface ThemePickerProps {
   readonly themeId: ThemeId
   readonly onThemeChange: (id: ThemeId) => void
+  /** License set for paid themes. Defaults to the (currently empty) stub so
+   *  callers need not pass it until real licenses exist; injectable for tests. */
+  readonly licenses?: ReadonlySet<ThemeId>
 }
 
 /** THEMES section inside the SETTINGS drawer. One button per registered theme;
  *  free themes apply on click, paid+locked themes show a lock and (for now)
  *  do nothing destructive — the real unlock flow is a later session. */
-export function ThemePicker({ themeId, onThemeChange }: ThemePickerProps): ReactElement {
+export function ThemePicker({ themeId, onThemeChange, licenses = EMPTY_LICENSES }: ThemePickerProps): ReactElement {
   const { t } = useI18n()
   return (
     <div className={styles.section} data-testid="theme-picker">
@@ -23,7 +26,7 @@ export function ThemePicker({ themeId, onThemeChange }: ThemePickerProps): React
       <div className={styles.grid}>
         {listThemeIds().map((id) => {
           const meta = getThemeMeta(id)
-          const unlocked = isThemeUnlocked(meta, EMPTY_LICENSES)
+          const unlocked = isThemeUnlocked(meta, licenses)
           const active = id === themeId
           return (
             <button
