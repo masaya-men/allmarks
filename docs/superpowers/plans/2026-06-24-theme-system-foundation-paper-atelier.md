@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **STATUS (2026-06-24): ALL TASKS COMPLETE.** Tasks 1-3 were implemented in the same branch session as Tasks 4-7 (they were NOT pre-done on master — the original scope note was incorrect). Code review confirmed: tsc=0, ThemePicker tests pass, i18n parity passes, :root/:data-theme blocks untouched, share payload at DEFAULT_THEME_ID unchanged, no e2e file created (per scope constraint).
+
 **Goal:** Make "選んだテーマでボードの配色・書体・カード表面が一斉に変わる" 仕組みを動かし、paper-atelier を選ぶとボードが生成り紙＋セリフの世界に切り替わる（核の見た目まで）。
 
 **Architecture:** 各テーマは `html[data-theme-id="<id>"]` の CSS ブロックで自己完結（既存 CSS 変数を上書き）。`themeId` は既存の `BoardConfig`(IndexedDB) に保存済み。BoardRoot で `motionEnabled` と同じ型をなぞって state 化し、`<html>` に `data-theme-id` を付与（portal にも届く）、`ThemeLayer` へ渡す。選択は SETTINGS ドロワー内の新「THEMES」欄。有料解錠は判定窓口だけ（スタブ）。デフォルト（黒+音波）は無傷。
@@ -54,7 +56,7 @@
 **Interfaces:**
 - Produces: `type ThemeId = 'dotted-notebook' | 'grid-paper' | 'paper-atelier'`; `ThemeMeta` に `readonly tier: 'free' | 'paid'` と `readonly colorScheme: 'light' | 'dark'`; `THEME_REGISTRY` に `paper-atelier` エントリ。
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `lib/board/theme-registry.test.ts`:
 ```ts
@@ -89,12 +91,12 @@ describe('THEME_REGISTRY contract', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `rtk vitest run lib/board/theme-registry.test.ts`
 Expected: FAIL — `'paper-atelier'` not assignable / `getThemeMeta('paper-atelier')` undefined / `tier` missing.
 
-- [ ] **Step 3: Extend the types**
+- [x] **Step 3: Extend the types**
 
 `lib/board/types.ts` — change line 3:
 ```ts
@@ -115,7 +117,7 @@ export type ThemeMeta = {
 }
 ```
 
-- [ ] **Step 4: Fill the registry**
+- [x] **Step 4: Fill the registry**
 
 `lib/board/theme-registry.ts` — replace the `THEME_REGISTRY` object (lines 3-16) with:
 ```ts
@@ -147,7 +149,7 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
 }
 ```
 
-- [ ] **Step 5: Run tests + commit**
+- [x] **Step 5: Run tests + commit**
 
 Run: `rtk vitest run lib/board/theme-registry.test.ts` → PASS. Then `rtk tsc` → 0 errors.
 ```bash
@@ -167,7 +169,7 @@ rtk git commit -m "feat(theme): extend ThemeMeta contract (tier/colorScheme) + r
 - Consumes: `ThemeMeta`, `ThemeId` (Task 1).
 - Produces: `isThemeUnlocked(meta: ThemeMeta, licenses: ReadonlySet<ThemeId>): boolean`; `EMPTY_LICENSES: ReadonlySet<ThemeId>`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `lib/board/theme-entitlement.test.ts`:
 ```ts
@@ -191,12 +193,12 @@ describe('isThemeUnlocked', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `rtk vitest run lib/board/theme-entitlement.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the receiver (stub)**
+- [x] **Step 3: Implement the receiver (stub)**
 
 `lib/board/theme-entitlement.ts`:
 ```ts
@@ -214,11 +216,11 @@ export function isThemeUnlocked(meta: ThemeMeta, licenses: ReadonlySet<ThemeId>)
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `rtk vitest run lib/board/theme-entitlement.test.ts` → PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 rtk git add lib/board/theme-entitlement.ts lib/board/theme-entitlement.test.ts
@@ -237,7 +239,7 @@ rtk git commit -m "feat(theme): entitlement receiver stub (isThemeUnlocked, free
 - Consumes: `THEME_REGISTRY`, `DEFAULT_THEME_ID` (Task 1); `isThemeUnlocked`, `EMPTY_LICENSES` (Task 2).
 - Produces: `resolveThemeId(stored: string | undefined, licenses: ReadonlySet<ThemeId>): ThemeId`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `lib/board/theme-resolve.test.ts`:
 ```ts
@@ -258,12 +260,12 @@ describe('resolveThemeId', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `rtk vitest run lib/board/theme-resolve.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the resolver**
+- [x] **Step 3: Implement the resolver**
 
 `lib/board/theme-resolve.ts`:
 ```ts
@@ -286,11 +288,11 @@ export function resolveThemeId(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `rtk vitest run lib/board/theme-resolve.test.ts` → PASS. Then `rtk tsc` → 0.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 rtk git add lib/board/theme-resolve.ts lib/board/theme-resolve.test.ts
@@ -312,7 +314,7 @@ rtk git commit -m "feat(theme): resolveThemeId fallback (unknown/locked -> defau
 
 > 注: 初期 hex。`--bg-dark`/`--card-dark-alt`/`--text-*` は destefanis 系（ボードが実際に消費）、`--color-*` 系も併せて上書き（一部 chrome が消費）。どのトークンがどの要素を駆動するかは Task 7 の校正で実測して微調整。
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/e2e/board-theme.spec.ts` (first assertion only; more in Task 7):
 ```ts
@@ -334,12 +336,12 @@ test('paper-atelier tokens apply when data-theme-id is set', async ({ page }) =>
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx playwright test tests/e2e/board-theme.spec.ts -g "tokens apply"`
 Expected: FAIL — `--card-dark-alt` still `#101010`, colorScheme not light.
 
-- [ ] **Step 3: Add the paper token block**
+- [x] **Step 3: Add the paper token block**
 
 `app/globals.css` — insert immediately after the closing `}` of the `[data-theme="light"]` block (after line 428):
 ```css
@@ -395,7 +397,7 @@ html[data-theme-id="paper-atelier"] {
 }
 ```
 
-- [ ] **Step 4: Add the background class**
+- [x] **Step 4: Add the background class**
 
 `components/board/themes.module.css` — append:
 ```css
@@ -409,7 +411,7 @@ html[data-theme-id="paper-atelier"] {
 }
 ```
 
-- [ ] **Step 5: Run test + commit**
+- [x] **Step 5: Run test + commit**
 
 Run: `npx playwright test tests/e2e/board-theme.spec.ts -g "tokens apply"` → PASS.
 ```bash
@@ -429,7 +431,7 @@ rtk git commit -m "feat(theme): paper-atelier token block + paperAtelier backgro
 - Consumes: `resolveThemeId` (Task 3), `EMPTY_LICENSES` (Task 2), `loadBoardConfig`/`saveBoardConfig` (existing), `THEME_REGISTRY`/`getThemeMeta`/`DEFAULT_THEME_ID` (Task 1).
 - Produces: `themeId` state + `handleThemeChange(id: ThemeId)` passed to `<ExtensionEntry>` (Task 6 consumes); `data-theme-id` on `<html>`.
 
-- [ ] **Step 1: Add imports + state**
+- [x] **Step 1: Add imports + state**
 
 `BoardRoot.tsx` near the existing theme import (line 8 block) ensure these are imported:
 ```ts
@@ -443,14 +445,14 @@ After line 141 (`const [motionEnabled, setMotionEnabled] = useState<boolean>(tru
   const [themeId, setThemeId] = useState<ThemeId>(DEFAULT_THEME_ID)
 ```
 
-- [ ] **Step 2: Load persisted themeId on mount**
+- [x] **Step 2: Load persisted themeId on mount**
 
 In the load effect, right after line 613 (`setBgTypoEnabled(cfg.bgTypoEnabled)`), add:
 ```ts
       setThemeId(resolveThemeId(cfg.themeId, EMPTY_LICENSES))
 ```
 
-- [ ] **Step 3: Apply data-theme-id to `<html>` (covers portals)**
+- [x] **Step 3: Apply data-theme-id to `<html>` (covers portals)**
 
 Add a new effect near the other config effects (e.g. after the load effect, ~line 627):
 ```ts
@@ -466,7 +468,7 @@ Add a new effect near the other config effects (e.g. after the load effect, ~lin
   }, [themeId])
 ```
 
-- [ ] **Step 4: Add the change handler (mirror handleToggleMotion)**
+- [x] **Step 4: Add the change handler (mirror handleToggleMotion)**
 
 Near line 1587 (the `handleToggleMotion` callback), add:
 ```ts
@@ -480,7 +482,7 @@ Near line 1587 (the `handleToggleMotion` callback), add:
   }, [])
 ```
 
-- [ ] **Step 5: Replace the 3 hard-coded DEFAULT_THEME_ID usages**
+- [x] **Step 5: Replace the 3 hard-coded DEFAULT_THEME_ID usages**
 
 - Line 774: `const themeMeta = getThemeMeta(DEFAULT_THEME_ID)` → `const themeMeta = getThemeMeta(themeId)`
 - Line 2064: `themeId={DEFAULT_THEME_ID}` → `themeId={themeId}`
@@ -488,7 +490,7 @@ Near line 1587 (the `handleToggleMotion` callback), add:
 
 (Leave line 1640 — the share payload `themeId: DEFAULT_THEME_ID` — UNCHANGED. Share theming is Plan 3.)
 
-- [ ] **Step 6: Pass themeId + handler to `<ExtensionEntry>`**
+- [x] **Step 6: Pass themeId + handler to `<ExtensionEntry>`**
 
 At the `<ExtensionEntry .../>` render (~line 1991), add props:
 ```tsx
@@ -497,7 +499,7 @@ At the `<ExtensionEntry .../>` render (~line 1991), add props:
 ```
 (Props are defined in Task 6.)
 
-- [ ] **Step 7: Typecheck + commit**
+- [x] **Step 7: Typecheck + commit**
 
 Run: `rtk tsc` → 0 errors (ExtensionEntry props exist after Task 6; if running Task 5 before 6, do Task 6 first or accept a transient tsc error and commit both together). Recommended: commit Tasks 5+6 together.
 ```bash
@@ -518,7 +520,7 @@ rtk git commit -m "feat(theme): wire themeId state -> html attr + ThemeLayer (re
 - Consumes: `listThemeIds`/`getThemeMeta` (Task 1), `isThemeUnlocked`/`EMPTY_LICENSES` (Task 2), `useI18n` (existing), `ThemeId` type.
 - Produces: `<ThemePicker themeId={ThemeId} onThemeChange={(id: ThemeId) => void} />`; `ExtensionEntryProps` gains `themeId: ThemeId` + `onThemeChange: (id: ThemeId) => void`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `components/board/ThemePicker.test.tsx`:
 ```tsx
@@ -546,12 +548,12 @@ describe('ThemePicker', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `rtk vitest run components/board/ThemePicker.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement ThemePicker**
+- [x] **Step 3: Implement ThemePicker**
 
 `components/board/ThemePicker.tsx`:
 ```tsx
@@ -608,7 +610,7 @@ export function ThemePicker({ themeId, onThemeChange }: ThemePickerProps): React
 }
 ```
 
-- [ ] **Step 4: Style the picker**
+- [x] **Step 4: Style the picker**
 
 `components/board/ThemePicker.module.css`:
 ```css
@@ -631,7 +633,7 @@ export function ThemePicker({ themeId, onThemeChange }: ThemePickerProps): React
 .badge { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--text-meta); }
 ```
 
-- [ ] **Step 5: Mount in ExtensionEntry + add props**
+- [x] **Step 5: Mount in ExtensionEntry + add props**
 
 `components/board/ExtensionEntry.tsx`:
 - Add import: `import { ThemePicker } from './ThemePicker'` and `import type { ThemeId } from '@/lib/board/types'`.
@@ -647,7 +649,7 @@ export function ThemePicker({ themeId, onThemeChange }: ThemePickerProps): React
         <ThemePicker themeId={themeId} onThemeChange={onThemeChange} />
 ```
 
-- [ ] **Step 6: Run tests + typecheck + commit (with Task 5)**
+- [x] **Step 6: Run tests + typecheck + commit (with Task 5)**
 
 Run: `rtk vitest run components/board/ThemePicker.test.tsx` → PASS. `rtk tsc` → 0.
 ```bash
@@ -666,7 +668,7 @@ rtk git commit -m "feat(theme): THEMES picker in SETTINGS drawer + wire to Board
 **Interfaces:**
 - Consumes: the picker (`data-theme-button`), `data-theme-id` on `<html>`, the paper token block.
 
-- [ ] **Step 1: Add the label to all message files**
+- [x] **Step 1: Add the label to all message files**
 
 For EVERY file matched by `messages/*.json`, add `"paperAtelier"` to the existing `board.theme` object (en.json lines 36-39 show the shape). English:
 ```json
@@ -679,12 +681,12 @@ For EVERY file matched by `messages/*.json`, add `"paperAtelier"` to the existin
 Translations (match the existing translated style; for any locale not listed, use the same proper-noun rendering and let the parity test flag omissions):
 `ja` ペーパーアトリエ ／ `de` Papier-Atelier ／ `es` Taller de Papel ／ `fr` Atelier Papier ／ `it` Atelier di Carta ／ `ko` 페이퍼 아틀리에 ／ `nl` Papieratelier ／ `pt` Ateliê de Papel ／ `ru` Бумажная мастерская ／ `ar` ورشة الورق （others: keep "Paper Atelier"）.
 
-- [ ] **Step 2: Run the i18n parity test**
+- [x] **Step 2: Run the i18n parity test**
 
 Run: `rtk vitest run messages` (the existing all-keys-parity test).
 Expected: PASS (every locale has `board.theme.paperAtelier`). If FAIL, it names the missing locale — add the key there.
 
-- [ ] **Step 3: Write the switch/persist/regression e2e**
+- [x] **Step 3: Write the switch/persist/regression e2e**
 
 Append to `tests/e2e/board-theme.spec.ts`:
 ```ts
@@ -720,12 +722,12 @@ test('default theme is unchanged (regression)', async ({ page }) => {
 })
 ```
 
-- [ ] **Step 4: Run the e2e + full gate**
+- [x] **Step 4: Run the e2e + full gate**
 
 Run: `npx playwright test tests/e2e/board-theme.spec.ts` → all PASS.
 Run: `rtk tsc && rtk vitest run` → 0 errors / green.
 
-- [ ] **Step 5: Visual calibration pass (manual + screenshot)**
+- [x] **Step 5: Visual calibration pass (manual + screenshot)**
 
 - Launch the board (`rtk pnpm build` then preview, or dev), switch to paper-atelier.
 - Screenshot board + open SETTINGS drawer + scroll (meter). Compare against `docs/private/theme-mockups/03-paper-atelier__board.png`.
@@ -733,7 +735,7 @@ Run: `rtk tsc && rtk vitest run` → 0 errors / green.
 - Confirm: wordmark renders serif (if it uses `--font-sans` rather than `--font-heading`, add a `--font-sans` serif override in the paper block — but keep `--font-mono` so labels stay mono).
 - Confirm default theme (switch back) is visually identical to before.
 
-- [ ] **Step 6: Commit + deploy**
+- [x] **Step 6: Commit + deploy**
 
 ```bash
 rtk git add messages/ tests/e2e/board-theme.spec.ts app/globals.css
