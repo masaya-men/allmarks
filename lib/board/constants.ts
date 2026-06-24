@@ -28,8 +28,10 @@ export const BOARD_TOP_PAD_PX = 80
  *  until the extension is published (gated behind the domain move / store
  *  review). While empty, the board's GET EXTENSION entry shows a quiet
  *  "coming soon" affordance instead of a dead link — fill this in on launch
- *  day and the public install promo lights up automatically. */
-export const EXTENSION_STORE_URL = ''
+ *  day and the public install promo lights up automatically. Typed as
+ *  `string` (not a literal) so toggling the value never makes the empty-check
+ *  comparisons in consumers a TS2367 "always true/false" error. */
+export const EXTENSION_STORE_URL: string = 'https://chromewebstore.google.com/detail/allmarks/gefnpfbjnlbhgomlfcfalnbdlenpmpcg'
 
 /** Outer frame padding around the inner dark canvas (= --canvas-margin in
  *  globals.css). Kept here as a runtime constant so non-CSS consumers (e.g.
