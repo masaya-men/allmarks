@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "닫기",
-      "openSource": "원본 페이지 열기"
+      "openSource": "원본 페이지 열기",
+      "translate": "번역",
+      "showOriginal": "원문 보기",
+      "translationFailed": "번역할 수 없습니다"
     },
     "slider": {
       "tooltipClick": "클릭해서 이동",

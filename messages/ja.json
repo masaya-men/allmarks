@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "閉じる",
-      "openSource": "元ページを開く"
+      "openSource": "元ページを開く",
+      "translate": "翻訳",
+      "showOriginal": "原文を表示",
+      "translationFailed": "翻訳できません"
     },
     "slider": {
       "tooltipClick": "クリックでジャンプ",

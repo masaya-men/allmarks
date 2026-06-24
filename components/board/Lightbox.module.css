@@ -770,6 +770,31 @@
 }
 .sourceLink:hover { color: var(--text-primary); }
 
+/* Tweet translate toggle — bare text affordance, matches .sourceLink weight. */
+.translateToggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-body);
+  text-decoration: underline;
+  font-size: 13px;
+  font-family: var(--font-sans);
+}
+.translateToggle:hover { color: var(--text-primary); }
+
+.translateFailed {
+  color: var(--text-meta);
+  font-size: 12px;
+  font-family: var(--font-sans);
+}
+
+/* chromatic-aberration glitch (= AllMarks 確定言語) for the body swap moment. */
+.tweetBodyGlitch {
+  text-shadow: 2px 0 0 #ff3a5a, -2px 0 0 #5aefff;
+}
+
 /* Plain text-only close button. Intentionally NO glass surface, NO
    background, NO border — the bare ✕ is the most refined treatment for
    this corner element (user-confirmed 2026-05-04). Subtle hover dims the

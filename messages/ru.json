@@ -94,7 +94,10 @@
     },
     "lightbox": {
       "close": "Закрыть",
-      "openSource": "Открыть оригинальную страницу"
+      "openSource": "Открыть оригинальную страницу",
+      "translate": "Перевести",
+      "showOriginal": "Показать оригинал",
+      "translationFailed": "Перевод недоступен"
     },
     "slider": {
       "tooltipClick": "Нажмите, чтобы перейти",
