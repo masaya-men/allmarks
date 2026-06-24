@@ -21,6 +21,7 @@ import {
 } from './embeds'
 import { LightboxNavChevron } from './LightboxNavChevron'
 import { useSmoothWheelScroll } from '@/lib/scroll/use-smooth-wheel-scroll'
+import { useTweetTranslation } from '@/lib/board/use-tweet-translation'
 import type { LightboxFlipSceneProps } from './LightboxFlipScene'
 import {
   detectUrlType,
@@ -1713,7 +1714,9 @@ function TweetText({
   const { t } = useI18n()
   const authorName = meta?.authorName ?? ''
   const authorHandle = meta?.authorHandle ?? ''
-  const text = meta?.text ?? item.title
+  const originalText = meta?.text ?? item.title
+  const tr = useTweetTranslation({ originalText })
+  const bodyText = hideBody ? '' : tr.displayText
   return (
     <>
       {(authorName || authorHandle || meta?.authorAvatar) && (
@@ -1731,8 +1734,25 @@ function TweetText({
           </div>
         </div>
       )}
-      {!hideBody && <p className={styles.tweetBody}>{text}</p>}
+      {!hideBody && (
+        <p className={`${styles.tweetBody}${tr.glitch ? ` ${styles.tweetBodyGlitch}` : ''}`}>
+          {bodyText}
+        </p>
+      )}
       <div className={styles.metaCtaGroup}>
+        {!hideBody && tr.showButton && (
+          <button
+            type="button"
+            className={styles.translateToggle}
+            onClick={(e): void => { e.stopPropagation(); tr.toggle() }}
+            aria-pressed={tr.buttonLabel === t('board.lightbox.showOriginal')}
+          >
+            {tr.buttonLabel}
+          </button>
+        )}
+        {tr.failed && (
+          <span className={styles.translateFailed}>{t('board.lightbox.translationFailed')}</span>
+        )}
         <a
           href={safeExternalUrl(item.url)}
           target="_blank"
