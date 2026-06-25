@@ -812,8 +812,9 @@ export function BoardRoot() {
 
   const themeMeta = getThemeMeta(themeId)
   const paperParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y })
-  // Middle scatter layer pans slower than cards (0.7x) for a 3-plane depth read.
-  const decorParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: 0.7 })
+  // Middle scatter layer pans at HALF the card speed (0.5x) for a strong,
+  // clearly-felt depth read — slower than cards, faster than the bg stains (0.4x).
+  const decorParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: 0.5 })
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
@@ -2114,8 +2115,8 @@ export function BoardRoot() {
             spaceHeld={spaceHeld}
           >
             {/* Background — full canvas coverage, follows scroll. Paper-atelier
-                lags the vertical pan by paperParallaxY (0.85x) for a gentle
-                depth read; every other theme keeps the exact 1:1 pan
+                lags the vertical pan by paperParallaxY (0.4x) for a depth
+                read; every other theme keeps the exact 1:1 pan
                 (paperParallaxY is 0 unless paper + motion + not reduced). */}
             <div
               style={{

@@ -22,16 +22,63 @@ export type BoardDecorItem = {
   readonly opacity: number
 }
 
-/** Scatter pool — rings read as stains; flourishes as faint ink lines; a rare
- *  wax seal as a small accent. */
-const DECOR_POOL: readonly PaperAssetId[] = [
-  'decor-ring-1', 'decor-ring-2', 'decor-ring-coffee',
-  'decor-flourish-1', 'decor-flourish-2', 'decor-flourish-3',
-  'wax-seal-red',
+/** Scatter categories. Each item rolls a category first (weighted), then an id
+ *  + size/opacity range for that category, so stains stay large and faint while
+ *  accents stay small and a touch crisper — a believable atelier wash rather
+ *  than a uniform field. Ids are all PLACED assets (paper-assets manifest). */
+type DecorCategory = {
+  readonly ids: readonly PaperAssetId[]
+  /** relative draw weight */
+  readonly weight: number
+  /** [min, max] rendered width px */
+  readonly width: readonly [number, number]
+  /** [min, max] opacity */
+  readonly opacity: readonly [number, number]
+  /** max absolute rotation (deg) */
+  readonly rotate: number
+}
+
+const DECOR_CATEGORIES: readonly DecorCategory[] = [
+  // coffee/ink rings → read as stains. Most common, large, faint.
+  { ids: ['decor-ring-1', 'decor-ring-2', 'decor-ring-coffee'], weight: 5, width: [120, 280], opacity: [0.26, 0.5], rotate: 40 },
+  // flourishes → faint ink lines drifting across the sheet.
+  { ids: ['decor-flourish-1', 'decor-flourish-2', 'decor-flourish-3'], weight: 3, width: [140, 320], opacity: [0.2, 0.4], rotate: 28 },
+  // small accents — wax seals + faded archive/word + icon stamps. Rare, smaller,
+  // slightly crisper so they punctuate the wash without crowding it.
+  {
+    ids: [
+      'wax-seal-red', 'wax-seal-a',
+      'stamp-archive', 'stamp-confidential', 'stamp-received', 'stamp-approved',
+      'icon-star', 'icon-eye', 'icon-flag', 'icon-bookmark', 'icon-heart',
+    ],
+    weight: 2, width: [64, 130], opacity: [0.3, 0.5], rotate: 44,
+  },
 ]
 
-/** ~one scattered item per this many px of content height. */
-const ROW_SPACING_PX = 540
+const TOTAL_WEIGHT = DECOR_CATEGORIES.reduce((s, c) => s + c.weight, 0)
+
+/** Vertical band size; each band scatters ITEMS_PER_BAND items across the full
+ *  width, so the effective density is ~one item per (ROW_SPACING_PX / avg
+ *  items) px — several × the previous one-per-540px field. */
+const ROW_SPACING_PX = 230
+const ITEMS_PER_BAND_MIN = 2
+const ITEMS_PER_BAND_MAX = 3
+/** Safety cap so very tall boards can't spawn an unbounded scatter (4K
+ *  fill-rate watch — these are static imgs but more = more composited tiles). */
+const MAX_ITEMS = 90
+
+function rangeAt(rng: () => number, [min, max]: readonly [number, number]): number {
+  return min + rng() * (max - min)
+}
+
+function pickCategory(rng: () => number): DecorCategory {
+  let r = rng() * TOTAL_WEIGHT
+  for (const c of DECOR_CATEGORIES) {
+    r -= c.weight
+    if (r <= 0) return c
+  }
+  return DECOR_CATEGORIES[0] as DecorCategory
+}
 
 function mulberry32(seed: number): () => number {
   let s = seed
@@ -59,22 +106,26 @@ function hashStringToSeed(input: string): number {
  */
 export function getBoardDecor(contentHeight: number): BoardDecorItem[] {
   if (!Number.isFinite(contentHeight) || contentHeight <= 0) return []
-  const rng = mulberry32(hashStringToSeed('allmarks-board-decor-v1'))
-  const rows = Math.max(0, Math.floor(contentHeight / ROW_SPACING_PX))
+  const rng = mulberry32(hashStringToSeed('allmarks-board-decor-v2'))
+  const rows = Math.max(1, Math.floor(contentHeight / ROW_SPACING_PX))
   const items: BoardDecorItem[] = []
-  for (let i = 0; i < rows; i++) {
-    const id = DECOR_POOL[Math.floor(rng() * DECOR_POOL.length)] as PaperAssetId
-    // jittered vertical band so items don't sit on an even grid
-    const band = (i + rng()) / Math.max(1, rows)
-    const isFlourish = id.startsWith('decor-flourish')
-    items.push({
-      id,
-      xPct: Math.round((6 + rng() * 88) * 10) / 10,
-      yPx: Math.floor(band * contentHeight),
-      widthPx: isFlourish ? Math.round(140 + rng() * 160) : Math.round(90 + rng() * 110),
-      rotateDeg: Math.round((rng() - 0.5) * 30 * 10) / 10,
-      opacity: Math.round((0.45 + rng() * 0.35) * 100) / 100,
-    })
+  for (let i = 0; i < rows && items.length < MAX_ITEMS; i++) {
+    const perBand =
+      ITEMS_PER_BAND_MIN + Math.floor(rng() * (ITEMS_PER_BAND_MAX - ITEMS_PER_BAND_MIN + 1))
+    for (let j = 0; j < perBand && items.length < MAX_ITEMS; j++) {
+      const cat = pickCategory(rng)
+      const id = cat.ids[Math.floor(rng() * cat.ids.length)] as PaperAssetId
+      // jittered vertical position within this band so items never sit on a grid
+      const band = (i + rng()) / rows
+      items.push({
+        id,
+        xPct: Math.round((4 + rng() * 92) * 10) / 10,
+        yPx: Math.floor(band * contentHeight),
+        widthPx: Math.round(rangeAt(rng, cat.width)),
+        rotateDeg: Math.round((rng() - 0.5) * 2 * cat.rotate * 10) / 10,
+        opacity: Math.round(rangeAt(rng, cat.opacity) * 100) / 100,
+      })
+    }
   }
   return items
 }

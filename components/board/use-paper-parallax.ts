@@ -2,10 +2,12 @@
 import { useEffect, useState } from 'react'
 import type { ThemeId } from '@/lib/board/types'
 
-/** paper bg を content より 0.85x で動かす (= 0.15x ぶん遅れる) ための
- *  translateY 補正量を返す。 paper-atelier 以外 / motion off / reduced-motion
- *  では 0 (= 視差なし、 従来どおり bg は content と 1:1)。 */
-export const PAPER_PARALLAX_FACTOR = 0.85
+/** paper bg を content より 0.4x で動かす (= cards の 40% 速度で進む = 強い視差)
+ *  ための translateY 補正量を返す。 paper-atelier 以外 / motion off /
+ *  reduced-motion では 0 (= 視差なし、 従来どおり bg は content と 1:1)。
+ *  奥行き順: 固定羊皮紙 0x → bg かすれ染み 0.4x → 中間散乱層 0.5x → カード 1x
+ *  (奥ほど遅い = 正しい前後関係)。 */
+export const PAPER_PARALLAX_FACTOR = 0.4
 
 export type PaperParallaxInput = {
   readonly themeId: ThemeId
