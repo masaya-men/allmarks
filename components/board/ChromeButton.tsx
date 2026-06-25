@@ -38,11 +38,17 @@ export function ChromeButton({
 
   // SSR-safe paper theme detection: read the DOM only after mount so the
   // initial server render and first client paint are identical (hydration-safe).
+  // A MutationObserver keeps the flag in sync when the user switches themes at
+  // runtime (BoardRoot updates data-theme-id without a page reload).
   const [paper, setPaper] = useState(false)
   useEffect(() => {
-    setPaper(
-      document.documentElement.getAttribute('data-theme-id') === 'paper-atelier',
-    )
+    const el = document.documentElement
+    const read = (): void =>
+      setPaper(el.getAttribute('data-theme-id') === 'paper-atelier')
+    read()
+    const obs = new MutationObserver(read)
+    obs.observe(el, { attributes: true, attributeFilter: ['data-theme-id'] })
+    return () => obs.disconnect()
   }, [])
 
   // On paper: render the static label (calm serif), skip the scramble burst.
