@@ -7896,3 +7896,35 @@ Plan 1 の「核の見た目」を「完璧なフル再現」へ。**spec §4.3-
 **検証**: tsc0 / **vitest 1768 pass** / build OK。default(黒+音波)は opus 最終レビューで **byte-identical を直接検証**(paper トークンは全て paper ブロック限定＋var fallback、波形メータートークンは literal に解決、本番パスに `'wave'` 残存なし、buildShareData は DEFAULT 維持=Plan 3)。Critical/Important ゼロ。
 
 **フォローアップ(非ブロッキング、CURRENT_GOAL/TODO 記載)**: (a) **e2e シード版数ズレ=既存債務**(seed が IDB を v9 で開く→app DB_VERSION=16 で VersionError→board-b0 全テスト実行不可、Plan 2 起因でない、テーマ切替テストは構造正しく un-skip 済) (b) `useTweetTranslation` 引数名 `themeId` は実 motion キーを受ける→リネーム (c) perf watch: `filter:blur(1.5px)` / `will-change:left`(4K)。**user 宿題= allmarks.app で paper を実機確認＋校正フィードバック**(色/grain/装飾/メーター/活版は全部トークンで寄せられる)。
+
+
+---
+
+## セッション 133 (2026-06-25) — paper-atelier フル再現「素材駆動」= 本物の紙PNGに置換
+
+Plan 2(CSS擬似のスキン)では user 評価「モックと同じ質感じゃない」だったため、各面を **本物の紙テクスチャ PNG 素材** に置換するフル再現を実装。GPT 生成の透明PNG(自動スライサで切り出し)を `public/themes/paper-atelier/` に配置し、TS マニフェストで「どの素材が配置済みか」を一元管理 → 未配置の面は Plan 2 の CSS見た目に **graceful degrade** する設計。
+
+### 進め方
+brainstorm 承認済 design → `writing-plans` で 8タスクの impl plan → **サブエージェント駆動**(実装 haiku/sonnet・タスクごと二段レビュー sonnet・fix)→ opus 全ブランチレビュー **Ready to merge**(0 Critical/0 Important、6不変条件検証)→ master merge `d25db58` → 本番デプロイ。
+
+### タスク
+- **T1**: 素材マニフェスト `lib/board/paper-assets.ts`(`PaperAssetId`/`hasPaperAsset`/`paperAssetUrl`/`pickPaperAsset`)+ 28 PNG を `public/themes/paper-atelier/` に配置。
+- **T2**: 背景に `--asset-parchment-bg` トークン(paper スコープ限定)+ `.paperAtelier` が `var(--asset-parchment-bg, var(--paper-fiber-url, none))`。parchment 未配置→fiber.svg 継続。
+- **T3**: 装飾(washi×5/pin 金緑/clip/photo-corner×4/stamp 空枠+文字は上載せ)を実 PNG に。`CardDecorationSet` 拡張(`assetSeed`/`pin: {variant}|null`)、決定論維持(regression は `toEqual` で assetSeed 含め全 pin)。
+- **T4**(最大の山): ImageCard に paper 分岐 — 象牙紙台紙(`card-mat-1..3` 決定論)+ 写真インセット(マウント風 inner shadow)+ セリフ署名(`item.title`、clamp)。outer box(FLIP origin)不変・default full-bleed 不変。
+- **T5**: 定規メーター = 紙帯(目盛り焼き込み、トラック固定360pxなので歪まない)+ ピンク紙片サム。位置ロジック不変、rAF は style.left のみ書込。CSS フォールバック(目盛り)を vi.mock でテスト。
+- **T6**: chrome ボタン paper = Fraunces セリフ + RGBグリッチ/scramble 廃止 → 穏やかなインクフェード。**MutationObserver で data-theme-id をライブ追従**(ランタイムテーマ切替でも JS ゲートが追従)。SSR-safe。
+- **T7**: ワードマーク `--asset-letterpress-grain` トークン(未配置→fiber)+ MK-1 プレート/蝋封を実 PNG に(テキスト/+ スタンプ/SVG フォールバック/lightbox フェード維持)。
+- **T8**: 検証 tsc0 / vitest 1786 / build OK / default-invariance grep。
+
+### レビューで捕まえた重要バグ(controller-direct fix `8299ebe`)
+保留素材トークンが `: none`(=有効値)だと `var(--asset-X, fallback)` が `none` に解決し、繊維タイル/かすれが **消える回帰**になる。`: initial`(guaranteed-invalid)に修正して var() フォールバックを正しく発火。Task2/Task7 両方に適用、buggy `none` を pin していたテストも修正。
+
+### 未配置素材(graceful degrade で無くても破綻なし)
+`parchment-bg`(背景羊皮紙タイル)・`letterpress-ink-grain`(ワードマークかすれ)= 次セッションで生成して配置。スタンプは空枠 PNG なので文字はコードで上載せ(多言語安全)。
+
+### 正本
+[impl plan](superpowers/plans/2026-06-25-paper-atelier-full-fidelity-impl.md) / [design](superpowers/specs/2026-06-25-paper-atelier-full-fidelity-design.md)。
+
+### 次
+user 実機校正(素材バリエーション選択 + 寸法トークン微調整)→ 残り2素材生成 → メーター状態差の磨き → Plan 3(共有テーマ化)。

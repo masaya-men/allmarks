@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 133 — paper-atelier フル再現「素材駆動」= 本物の紙PNGに置換 本番反映)
+
+- **paper-atelier の各面を「CSS擬似」→「本物の紙PNG素材」に置換、`allmarks.app` にデプロイ済み**。8タスク(素材マニフェスト+PNG配置/背景羊皮紙トークン/装飾実PNG=テープ・ピン・クリップ・写真コーナー・スタンプ/カード=象牙紙台紙+写真インセット+セリフ署名/定規メーター=紙帯+紙片サム/chrome=セリフ+インク演出 グリッチ廃止/ワードマーク活版+MK-1+蝋封PNG/検証)をサブエージェント駆動(各タスク二段レビュー+fix)→ opus 全ブランチレビュー **Ready to merge**(0 Critical/0 Important、6不変条件検証)→ master merge `d25db58` → 本番デプロイ。
+- 検証 **tsc0 / vitest 1786 / build OK**。**default(黒+音波)は byte-identical**(全 paper トークン/URL は paper ブロック限定 or コードで paper ゲート)。**素材未配置の面は Plan 2 の CSS見た目に graceful degrade**(マニフェスト bool / CSS は `initial` で var フォールバック)。
+- 重要な落とし穴と修正: 保留素材トークンは **`none` でなく `initial`**(=`none` は有効値なので var() がフォールバックせず繊維/かすれが消える回帰になる)。
+- **未配置素材(無くても壊れない)**: `parchment-bg`(背景羊皮紙タイル、未スライス→当面 fiber.svg)/ `letterpress-ink-grain`(ワードマークかすれ、未生成→当面 fiber)。配置時はマニフェストを `true` / CSS トークンを `url(...)` に変えるだけ。
+- 正本: [impl plan](superpowers/plans/2026-06-25-paper-atelier-full-fidelity-impl.md) / [design](superpowers/specs/2026-06-25-paper-atelier-full-fidelity-design.md)。詳細 narrative は TODO_COMPLETED.md。
+- **user 宿題(最優先)**: allmarks.app ハードリロード→Paper Atelier で実機確認。**素材バリエーション選択(定規帯 v1/v2・サム v1/v2・蝋封 赤/濃色・台紙の色味・foxing 重ねの要否)と寸法校正(定規トラック高、台紙余白、署名サイズ)をフィードバック**。残り2素材(parchment 背景タイル・letterpress かすれ)を生成して渡す。
+
 ### 直近の状態 (セッション 132 — テーマシステム Plan 2 = paper-atelier 完全再現 本番反映)
 
 - **paper-atelier を「核」→「完璧なフル再現」へ。`allmarks.app` にデプロイ済み**。8タスク(契約拡張/紙繊維背景/定規メーター/カード装飾/署名アニメ4種/活版+MK-1+蝋封 chrome/据え置きMinor+e2e)をサブエージェント駆動(各タスク二段レビュー+fix)→ opus 全ブランチレビュー **Ready to merge** → master merge `79f0206` → 本番デプロイ。
