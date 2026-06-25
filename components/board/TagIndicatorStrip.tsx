@@ -116,17 +116,24 @@ export function TagIndicatorStrip({
       data-testid="tag-indicator-strip"
       style={{
         position: 'absolute',
-        // Paper: nudge inward + down so the washi tapes clear the TL photo-corner
-        // and don't clip above the card; default keeps the bleed-overhang pills.
-        top: isPaper ? 4 : BLEED_TOP_PX,
+        // Paper: drop the washi-tape column DOWN below the "+ TAG" button
+        // (CardsLayer: top:8 left:8, ~20px tall → bottom ~28) and nudge inward,
+        // so the first tape no longer sits over +TAG. Default keeps the
+        // bleed-overhang pills hugging the very top edge (their thin top:-8 row
+        // already clears +TAG by sitting ABOVE it — paper's tall column did not).
+        top: isPaper ? 32 : BLEED_TOP_PX,
         left: isPaper ? 12 : BLEED_LEFT_PX,
         display: 'flex',
         flexDirection: isPaper ? 'column' : 'row',
         alignItems: 'flex-start',
         gap: isPaper ? 6 : 12,
-        // Paper: sit ABOVE the card's photo-corner / decoration overlay so the
-        // labelled tape stays readable (a tape applied over the corner).
-        zIndex: isPaper ? 90 : STRIP_Z_INDEX,
+        // Paper: sit just ABOVE the decoration overlay (--deco-z = 11) so the
+        // labelled tape stays readable, but BELOW the interactive card chrome
+        // (+TAG z40, TagAddPopover z70) so a tape can never steal their clicks
+        // where it overlaps. (z90 sat above EVERYTHING — that was the
+        // +TAG-unclickable bug; dropping the column down alone would just move
+        // the theft onto the popover, so the low z is what actually fixes it.)
+        zIndex: isPaper ? 15 : STRIP_Z_INDEX,
         opacity: isHovered ? 1 : 0,
         pointerEvents: isHovered ? 'auto' : 'none',
         transition: 'opacity 120ms ease-out',
