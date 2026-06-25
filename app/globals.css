@@ -472,6 +472,14 @@ html[data-theme-id="paper-atelier"] {
      byte-identical (.paperAtelier reads var(--paper-fiber-url, none)). */
   --paper-fiber-url: url("/themes/paper-atelier/fiber.svg");
 
+  /* Real parchment tile (Task 2). Defined here = paper-only; default theme
+     never sees it. Until parchment-bg.png is placed + flipped in
+     lib/board/paper-assets.ts, leave this as `none` so the fiber.svg fallback
+     below stays the live look (graceful degrade). When the PNG lands, set:
+       --asset-parchment-bg: url("/themes/paper-atelier/parchment-bg.png");
+     and choose a background-size that tiles seamlessly at 100%. */
+  --asset-parchment-bg: none;
+
   /* soft photo shuffle — slow crossfade cadence for paper image cards.
      thumbSoft uses var(--paper-shuffle-fade-duration, 900ms) so non-paper
      builds are unaffected (900ms fallback is unused — non-paper cards never

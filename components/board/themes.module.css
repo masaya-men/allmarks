@@ -27,8 +27,8 @@
     radial-gradient(30% 26% at 60% 14%, rgba(120, 96, 56, 0.035), transparent 70%),
     /* true inset edge vignette — darkens only the rim, transparent center */
     radial-gradient(ellipse at center, transparent 55%, rgba(43, 39, 34, 0.10) 100%),
-    /* fibre tile (under everything) — default theme has no --paper-fiber-url → none */
-    var(--paper-fiber-url, none);
+    /* parchment PNG when placed; otherwise the generated fibre tile (Task 2) */
+    var(--asset-parchment-bg, var(--paper-fiber-url, none));
   /* gradients cover the full canvas so their repeat mode is visually immaterial;
      the fibre tile needs repeat — single-value applies to all layers. */
   background-repeat: repeat;
