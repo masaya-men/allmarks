@@ -5,6 +5,7 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import type { MediaSlot } from '@/lib/embed/types'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
+import { paperAssetUrl, pickPaperAsset } from '@/lib/board/paper-assets'
 import { PlaceholderCard } from './PlaceholderCard'
 import styles from './ImageCard.module.css'
 
@@ -25,11 +26,29 @@ type Props = {
   /** When true, multi-image swap cross-fades (paper soft-shuffle) instead of
    *  a hard src cut. Default false keeps the existing hard-cut behavior. */
   readonly softShuffle?: boolean
+  /** When true, renders the paper-atelier card face (mat backing + mounted
+   *  photo inset + serif caption). Default false = full-bleed thumbnail,
+   *  unchanged from the default theme. */
+  readonly paper?: boolean
+}
+
+/**
+ * FNV-1a 32-bit string hash → stable 0..1 fraction for deterministic asset
+ * picking. Inlined here because paper-decorations.ts's hashStringToSeed is
+ * not exported (and adding an export there for one consumer would be noisy).
+ */
+function seedFractionFromId(id: string): number {
+  let h = 0x811c9dc5
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return (h >>> 0) / 0x100000000
 }
 
 const ASPECT_EPSILON = 0.005
 
-export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200, softShuffle = false }: Props): ReactNode {
+export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200, softShuffle = false, paper = false }: Props): ReactNode {
   const imgRef = useRef<HTMLImageElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -143,13 +162,10 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
     ? `${thumbClass} ${styles.thumbSoft}`
     : thumbClass
 
-  return (
-    <div
-      ref={cardRef}
-      className={styles.imageCard}
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-    >
+  // Shared image/slots/placeholder/dots/tint tree — used by both the default
+  // full-bleed branch and the paper mat branch. No behavior change vs. before.
+  const renderThumbContent = (): ReactNode => (
+    <>
       {hasError ? (
         <PlaceholderCard
           item={item}
@@ -202,6 +218,46 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
           ))}
         </div>
       )}
+    </>
+  )
+
+  // Paper-atelier card face: deterministic mat backing, mounted-print photo
+  // inset, serif ink caption. Only rendered when paper===true.
+  if (paper) {
+    const matId = pickPaperAsset(
+      seedFractionFromId(item.bookmarkId),
+      ['card-mat-1', 'card-mat-2', 'card-mat-3'],
+    )
+    const matUrl = matId ? paperAssetUrl(matId) : null
+    return (
+      <div
+        ref={cardRef}
+        className={styles.imageCard}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
+      >
+        <div
+          className={styles.paperCard}
+          data-paper-mat="true"
+          style={matUrl ? { backgroundImage: `url("${matUrl}")` } : undefined}
+        >
+          <div className={styles.paperPhoto}>
+            {renderThumbContent()}
+          </div>
+          {item.title && <div className={styles.paperCaption}>{item.title}</div>}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={cardRef}
+      className={styles.imageCard}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
+      {renderThumbContent()}
     </div>
   )
 }

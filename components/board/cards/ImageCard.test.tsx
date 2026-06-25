@@ -15,6 +15,36 @@ const item = {
   ],
 } as unknown as Parameters<typeof ImageCard>[0]['item']
 
+function makeItem(overrides: { title?: string; thumbnail?: string; bookmarkId?: string } = {}): Parameters<typeof ImageCard>[0]['item'] {
+  return {
+    cardId: overrides.bookmarkId ?? 'test-card',
+    bookmarkId: overrides.bookmarkId ?? 'test-bookmark',
+    url: 'https://example.com',
+    title: overrides.title ?? 't',
+    aspectRatio: 1,
+    thumbnail: overrides.thumbnail,
+    mediaSlots: undefined,
+  } as unknown as Parameters<typeof ImageCard>[0]['item']
+}
+
+describe('ImageCard paper mode', () => {
+  it('paper mode wraps the thumbnail in a mat and prints a serif caption', () => {
+    const paperItem = makeItem({ title: 'Interior Study', thumbnail: 'https://x/t.jpg' })
+    const { container, getByText } = render(<ImageCard item={paperItem} paper cardWidth={240} cardHeight={300} displayMode="visual" />)
+    // mat backing present
+    expect(container.querySelector('[data-paper-mat]')).not.toBeNull()
+    // caption shows the bookmark title
+    expect(getByText('Interior Study')).toBeTruthy()
+  })
+
+  it('default (non-paper) mode renders the full-bleed thumbnail with no mat/caption', () => {
+    const defaultItem = makeItem({ title: 'X', thumbnail: 'https://x/t.jpg' })
+    const { container, queryByText } = render(<ImageCard item={defaultItem} cardWidth={240} cardHeight={300} displayMode="visual" />)
+    expect(container.querySelector('[data-paper-mat]')).toBeNull()
+    expect(queryByText('X')).toBeNull()
+  })
+})
+
 describe('ImageCard auto-cycle', () => {
   beforeEach(() => {
     vi.useFakeTimers()
