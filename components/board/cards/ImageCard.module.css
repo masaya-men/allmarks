@@ -145,8 +145,11 @@
   background-size: cover;
   background-position: center;
   border-radius: var(--card-radius, 3px);
-  /* warm-gray hairline + soft paper shadow are on the outer wrapper already;
-     keep the mat flush. */
+  /* warm-gray hairline = the physical edge of the parchment sheet. The card's
+     lift/drop shadow lives on .cardNode (CardNode.module.css, paper-scoped);
+     this border just defines the paper's rim. box-sizing:border-box (global)
+     keeps the 1px out of the layout box. */
+  border: 1px solid var(--card-border-dark, rgba(43, 39, 34, 0.14));
   overflow: hidden;
   padding: 6%;            /* the mat margin around the print */
   gap: 5%;

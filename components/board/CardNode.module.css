@@ -50,6 +50,21 @@
   transform-origin: center center;
 }
 
+/* Paper-atelier: each card is a physical parchment sheet RESTING ON the board.
+   A strong layered drop shadow (tight contact + lift + soft ambient) makes it
+   float clearly off the desk. Paper-scoped only — the default (black) theme is
+   byte-identical. Applied to .cardNode (the outer box, which is NOT
+   overflow:hidden) so the shadow isn't clipped; .inner has overflow:hidden and
+   carries the selection glow, so there's no conflict. box-shadow + radius do
+   not change layout geometry (FLIP origin unaffected). */
+:global(html[data-theme-id='paper-atelier']) .cardNode {
+  border-radius: var(--card-radius, 3px);
+  box-shadow:
+    0 2px 3px rgba(43, 39, 34, 0.16),
+    0 10px 20px rgba(43, 39, 34, 0.22),
+    0 26px 46px rgba(43, 39, 34, 0.18);
+}
+
 .selected {
   outline: 2px solid var(--color-accent-primary);
   outline-offset: 2px;
