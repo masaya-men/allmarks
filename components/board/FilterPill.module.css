@@ -497,3 +497,17 @@
 }
 
 .wrap { position: relative; }
+
+/* Paper-atelier: serif ink label, no RGB glitch. The pill color already uses
+   the themed --chrome-text-* tokens (charcoal on paper); only the mono font
+   and the glitch ghosts need overriding so the tag title reads as printed type. */
+:global(html[data-theme-id='paper-atelier']) .label,
+:global(html[data-theme-id='paper-atelier']) .count {
+  font-family: var(--font-serif-display, Georgia, 'Times New Roman', serif);
+}
+:global(html[data-theme-id='paper-atelier']) .label::before,
+:global(html[data-theme-id='paper-atelier']) .label::after,
+:global(html[data-theme-id='paper-atelier']) .count::before,
+:global(html[data-theme-id='paper-atelier']) .count::after {
+  content: none; /* remove the RGB glitch ghosts on paper */
+}

@@ -101,6 +101,18 @@ export default function RootLayout({ children }: RootLayoutProps): React.ReactEl
         <meta name="google" content="notranslate" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        {/* Yomogi — a hand-written brush font covering Japanese + Latin, used
+            ONLY for the paper-atelier card caption (a hand-labelled archival
+            print). Loaded via Google Fonts so its per-glyph unicode-range
+            subsetting fetches just the characters actually shown (Japanese web
+            fonts are huge; this avoids self-hosting the whole CJK set).
+            display=swap so it never blocks paint. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap"
+          rel="stylesheet"
+        />
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')

@@ -139,8 +139,6 @@
 .paperCard {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
   background-color: var(--card-dark-alt, #f7f1e3); /* fallback ivory if mat png absent */
   background-size: cover;
   background-position: center;
@@ -151,24 +149,33 @@
      keeps the 1px out of the layout box. */
   border: 1px solid var(--card-border-dark, rgba(43, 39, 34, 0.14));
   overflow: hidden;
-  padding: 6%;            /* the mat margin around the print */
-  gap: 5%;
 }
+/* The mounted-print window. Absolutely positioned at --paper-frame-inset so it
+   matches the live playback overlays exactly (CardsLayer insets them by the
+   same token) — a playing video then sits in this same window, framed by the
+   parchment, never covering the rim or caption. */
 .paperPhoto {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
+  position: absolute;
+  inset: var(--paper-frame-inset, 6% 6% 22% 6%);
   overflow: hidden;
+  border-radius: 1px;
   /* mounted-print look: faint inner shadow so the photo sits IN the mat */
   box-shadow: inset 0 0 0 1px rgba(43, 39, 34, 0.10), 0 1px 2px rgba(43, 39, 34, 0.14);
 }
 .paperPhoto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* caption sits in the reserved bottom band, hand-written on the parchment */
 .paperCaption {
-  flex: 0 0 auto;
-  font-family: var(--font-serif-display, Georgia, serif);
-  font-size: clamp(10px, 1.1vw, 14px);
-  line-height: 1.2;
-  color: var(--text-primary, #2b2722);
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  bottom: 6%;
+  /* hand-written archival label: Yomogi (JP + Latin brush) → Caveat (Latin)
+     → cursive. Smaller than the print, like a pencilled caption. */
+  font-family: 'Yomogi', var(--font-handwriting, 'Caveat'), cursive;
+  font-size: clamp(8px, 0.85vw, 11px);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--text-body, #4a443b);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;

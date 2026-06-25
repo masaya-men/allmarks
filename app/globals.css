@@ -483,6 +483,15 @@ html[data-theme-id="paper-atelier"] {
      and choose a background-size that tiles seamlessly at 100%. */
   --asset-parchment-bg: initial;
 
+  /* The parchment "photo window" inset (top right bottom left). The card mat
+     frames a window here; the static photo (.paperPhoto) AND the live playback
+     overlays (CardsLayer Tier-1/Tier-3/slideshow) both inset by THIS exact
+     value, so a playing video sits INSIDE the parchment frame (border + caption
+     stay visible) instead of covering the whole card. Bottom is larger to
+     reserve the caption band. Default theme: token undefined → overlays fall
+     back to inset:0 (unchanged). */
+  --paper-frame-inset: 6% 6% 22% 6%;
+
   /* soft photo shuffle — slow crossfade cadence for paper image cards.
      thumbSoft uses var(--paper-shuffle-fade-duration, 900ms) so non-paper
      builds are unaffected (900ms fallback is unused — non-paper cards never

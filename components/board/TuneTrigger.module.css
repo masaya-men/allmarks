@@ -312,3 +312,18 @@
   white-space: nowrap;
 }
 
+
+/* Paper-atelier: serif ink TUNE label, no RGB glitch. .trigger hard-codes white
+   for the dark board, so on paper switch to charcoal ink + drop the white stroke. */
+:global(html[data-theme-id='paper-atelier']) .trigger {
+  font-family: var(--font-serif-display, Georgia, 'Times New Roman', serif);
+  color: var(--chrome-text-color, rgba(43, 39, 34, 0.92));
+  -webkit-text-stroke: 0;
+}
+:global(html[data-theme-id='paper-atelier']) .trigger:hover {
+  color: var(--chrome-text-color-hover, rgba(43, 39, 34, 1));
+}
+:global(html[data-theme-id='paper-atelier']) .trigger::before,
+:global(html[data-theme-id='paper-atelier']) .trigger::after {
+  content: none; /* remove the RGB glitch ghosts on paper */
+}

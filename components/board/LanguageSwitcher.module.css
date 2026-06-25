@@ -165,3 +165,23 @@
   80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
   100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
 }
+
+/* Paper-atelier: serif ink language toggle, no RGB glitch. .toggle hard-codes
+   white for the dark board, so on paper use charcoal ink + drop the white stroke. */
+:global(html[data-theme-id='paper-atelier']) .toggle,
+:global(html[data-theme-id='paper-atelier']) .option {
+  font-family: var(--font-serif-display, Georgia, 'Times New Roman', serif);
+}
+:global(html[data-theme-id='paper-atelier']) .toggle {
+  color: var(--chrome-text-color, rgba(43, 39, 34, 0.92));
+  -webkit-text-stroke: 0;
+}
+:global(html[data-theme-id='paper-atelier']) .toggle:hover {
+  color: var(--chrome-text-color-hover, rgba(43, 39, 34, 1));
+}
+:global(html[data-theme-id='paper-atelier']) .code::before,
+:global(html[data-theme-id='paper-atelier']) .code::after,
+:global(html[data-theme-id='paper-atelier']) .label::before,
+:global(html[data-theme-id='paper-atelier']) .label::after {
+  content: none; /* remove the RGB glitch ghosts on paper */
+}

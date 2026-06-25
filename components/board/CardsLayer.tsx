@@ -1136,7 +1136,11 @@ export function CardsLayer({
                 onPointerDown={(e: PointerEvent<HTMLDivElement>): void => e.stopPropagation()}
                 style={{
                   position: 'absolute',
-                  inset: 0,
+                  // Paper theme: inset to the parchment photo window so the
+                  // player sits framed inside the mat (border + caption stay
+                  // visible). Default theme: token undefined → 0 (full-bleed,
+                  // unchanged).
+                  inset: 'var(--paper-frame-inset, 0)',
                   // Above the card visual, below the resize handle (z 30),
                   // media indicator (z 50) and corner actions so those stay
                   // operable while the player is mounted.
@@ -1161,7 +1165,7 @@ export function CardsLayer({
                 data-viewport-playback
                 style={{
                   position: 'absolute',
-                  inset: 0,
+                  inset: 'var(--paper-frame-inset, 0)',
                   zIndex: 10,
                   overflow: 'hidden',
                   borderRadius: 'var(--card-radius, 20px)',
@@ -1189,7 +1193,7 @@ export function CardsLayer({
                 data-card-slideshow
                 style={{
                   position: 'absolute',
-                  inset: 0,
+                  inset: 'var(--paper-frame-inset, 0)',
                   zIndex: 9,
                   overflow: 'hidden',
                   borderRadius: 'var(--card-radius, 20px)',
