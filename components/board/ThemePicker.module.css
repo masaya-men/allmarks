@@ -28,3 +28,25 @@
   background: color-mix(in srgb, var(--accent-gold, #b9924a) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-gold, #b9924a) 38%, transparent);
 }
+
+/* ── paper-atelier theme overrides ─────────────────────────────────────────
+   The THEMES sub-section (.section) sits inside the SETTINGS drawer which is
+   already given the parchment surface by ExtensionEntry.module.css. These
+   rules tune only the text/swatch colours within that parchment context.
+   Layout / sizing / font-family untouched.                                   */
+
+:global(html[data-theme-id='paper-atelier']) .heading {
+  color: var(--text-meta);
+}
+
+:global(html[data-theme-id='paper-atelier']) .sectionHeader {
+  color: var(--text-meta);
+}
+
+:global(html[data-theme-id='paper-atelier']) .name {
+  color: var(--text-body);
+}
+
+:global(html[data-theme-id='paper-atelier']) .swatch[aria-pressed='true'] .name {
+  color: var(--text-primary);
+}

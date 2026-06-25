@@ -185,3 +185,25 @@
 :global(html[data-theme-id='paper-atelier']) .label::after {
   content: none; /* remove the RGB glitch ghosts on paper */
 }
+
+/* Paper-atelier: dropdown list → aged-paper note (not dark glass). */
+:global(html[data-theme-id='paper-atelier']) .list {
+  background-color: var(--paper-panel-surface);
+  background-image: var(--paper-panel-texture);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--paper-panel-border);
+  box-shadow: var(--paper-panel-shadow);
+  backdrop-filter: none;
+}
+:global(html[data-theme-id='paper-atelier']) .option {
+  color: var(--text-body);
+}
+:global(html[data-theme-id='paper-atelier']) .option:hover {
+  background: var(--paper-panel-btn-bg);
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .option[aria-selected='true'] {
+  background: var(--paper-panel-btn-bg-hover);
+  color: var(--text-primary);
+}

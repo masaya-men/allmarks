@@ -189,6 +189,43 @@
   .stage { transition: opacity 80ms linear, transform 0s; }
 }
 
+/* ── paper-atelier: the save popup follows the board theme — a parchment stage
+   with ink marks instead of the black stage + white glyphs (the layout's
+   pre-paint script propagates data-theme-id from localStorage). Functional
+   error red / duplicate amber stay. Default theme is byte-identical. ─────── */
+:global(html[data-theme-id='paper-atelier']) .stage {
+  background-color: var(--bg-dark, #efe6d2);
+  background-image: var(--asset-parchment-bg);
+  background-size: cover;
+  background-position: center;
+  color: var(--text-primary, #2b2722);
+}
+:global(html[data-theme-id='paper-atelier']) .glow {
+  /* a white bloom is invisible on parchment — faint warm vignette instead */
+  background: radial-gradient(circle at 50% 50%, rgba(43, 39, 34, 0.05) 0%, transparent 60%);
+}
+:global(html[data-theme-id='paper-atelier']) .ring {
+  border-color: rgba(43, 39, 34, 0.18);
+  border-top-color: var(--text-primary, #2b2722);
+}
+:global(html[data-theme-id='paper-atelier']) .checkmark path {
+  stroke: var(--text-primary, #2b2722);
+}
+:global(html[data-theme-id='paper-atelier']) .brand,
+:global(html[data-theme-id='paper-atelier']) .brandInline {
+  color: var(--text-primary, #2b2722);
+}
+:global(html[data-theme-id='paper-atelier']) .label {
+  color: var(--text-body, #4a443b);
+}
+:global(html[data-theme-id='paper-atelier']) .label.saved {
+  color: var(--text-primary, #2b2722);
+}
+:global(html[data-theme-id='paper-atelier']) .tagClose {
+  border-color: var(--paper-panel-border, rgba(43, 39, 34, 0.30));
+  background: var(--paper-panel-btn-bg, rgba(43, 39, 34, 0.05));
+}
+
 /* Tag window: compact confirmation header on top, scrollable tag UI below.
  * The square 256×256 window stays fixed; the tag list scrolls internally. */
 .tagStage { display: flex; flex-direction: column; padding: 12px; gap: 10px; overflow: hidden; }

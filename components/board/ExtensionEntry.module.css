@@ -269,3 +269,88 @@
 .promoInline .body {
   margin: 0 0 12px;
 }
+
+/* ── paper-atelier theme overrides ─────────────────────────────────────────
+   Render SETTINGS drawer + GET-EXTENSION promo as an aged-paper note instead
+   of default dark glass. All rules scoped to the theme; default bytes untouched.
+   Layout / sizing / font-family / animation are never touched here.           */
+
+:global(html[data-theme-id='paper-atelier']) .drawer,
+:global(html[data-theme-id='paper-atelier']) .promo {
+  background-color: var(--paper-panel-surface);
+  background-image: var(--paper-panel-texture);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--paper-panel-border);
+  box-shadow: var(--paper-panel-shadow);
+  backdrop-filter: none;
+  color: var(--text-primary);
+}
+
+:global(html[data-theme-id='paper-atelier']) .drawer[data-open='true'] {
+  box-shadow: var(--paper-panel-shadow);
+}
+
+:global(html[data-theme-id='paper-atelier']) .title {
+  color: var(--text-primary);
+}
+
+:global(html[data-theme-id='paper-atelier']) .body {
+  color: var(--text-body);
+}
+
+:global(html[data-theme-id='paper-atelier']) .soon {
+  color: var(--text-meta);
+  border-color: var(--paper-panel-border);
+  background: var(--paper-panel-btn-bg);
+}
+
+:global(html[data-theme-id='paper-atelier']) .close {
+  color: var(--text-meta);
+}
+:global(html[data-theme-id='paper-atelier']) .close:hover {
+  color: var(--text-primary);
+  background: var(--paper-panel-btn-bg-hover);
+}
+
+:global(html[data-theme-id='paper-atelier']) .toggleLabel {
+  color: var(--text-primary);
+}
+
+:global(html[data-theme-id='paper-atelier']) .panelCta {
+  background: var(--paper-panel-btn-bg);
+  border-color: var(--paper-panel-border);
+  color: var(--text-body);
+}
+:global(html[data-theme-id='paper-atelier']) .panelCta:hover {
+  background: var(--paper-panel-btn-bg-hover);
+  border-color: var(--paper-panel-border);
+  color: var(--text-primary);
+}
+
+:global(html[data-theme-id='paper-atelier']) .backupSection {
+  border-top-color: var(--paper-panel-hairline);
+}
+
+:global(html[data-theme-id='paper-atelier']) .backupLabel {
+  color: var(--text-primary);
+}
+
+:global(html[data-theme-id='paper-atelier']) .backupCaption {
+  color: var(--text-body);
+}
+
+:global(html[data-theme-id='paper-atelier']) .backupBtn {
+  background: var(--paper-panel-btn-bg);
+  border-color: var(--paper-panel-border);
+  color: var(--text-body);
+}
+:global(html[data-theme-id='paper-atelier']) .backupBtn:hover {
+  background: var(--paper-panel-btn-bg-hover);
+  border-color: var(--paper-panel-border);
+  color: var(--text-primary);
+}
+
+:global(html[data-theme-id='paper-atelier']) .promoInline {
+  border-top-color: var(--paper-panel-hairline);
+}

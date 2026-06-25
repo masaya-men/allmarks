@@ -327,3 +327,70 @@
 :global(html[data-theme-id='paper-atelier']) .trigger::after {
   content: none; /* remove the RGB glitch ghosts on paper */
 }
+
+/* ── Paper-atelier: TUNE drawer panel ──────────────────────────────────────
+   Converts the dark-glass drawer into an aged-parchment note.
+   Only color / background / border / box-shadow / backdrop-filter touched.
+   Layout, sizing, font-family, animation, transition are untouched.       */
+
+/* Panel container — opaque warm cream + subtle grain, no blur */
+:global(html[data-theme-id='paper-atelier']) .drawer {
+  background-color: var(--paper-panel-surface);
+  background-image: var(--paper-panel-texture);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--paper-panel-border);
+  box-shadow: var(--paper-panel-shadow);
+  backdrop-filter: none;
+  color: var(--text-primary);
+}
+
+/* Re-state the open-state box-shadow so it uses the paper token */
+:global(html[data-theme-id='paper-atelier']) .drawer[data-open='true'] {
+  box-shadow: var(--paper-panel-shadow);
+}
+
+/* Engraved divider between preset column and fader area — replace dark neon
+   gradient with a charcoal hairline that fades at both ends */
+:global(html[data-theme-id='paper-atelier']) .drawerDivider {
+  background: linear-gradient(180deg,
+    rgba(43, 39, 34, 0) 0%,
+    var(--paper-panel-hairline) 10%,
+    var(--paper-panel-hairline) 90%,
+    rgba(43, 39, 34, 0) 100%);
+  box-shadow: none;
+}
+
+/* Numeric values (W / G readout in the trigger) — body ink, not orange */
+:global(html[data-theme-id='paper-atelier']) .cell.num {
+  color: var(--text-body);
+}
+
+/* Dim separators ("·") */
+:global(html[data-theme-id='paper-atelier']) .cell.dim {
+  color: var(--text-meta);
+}
+
+/* "DEFAULT" reset label — strong ink when active, muted when idle */
+:global(html[data-theme-id='paper-atelier']) .cell.reset {
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .cell.reset:hover {
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .cell.reset.resetIdle {
+  color: var(--text-meta);
+}
+:global(html[data-theme-id='paper-atelier']) .cell.reset.resetIdle:hover {
+  color: var(--text-body);
+}
+
+/* Ops legend separator — hairline ink rule instead of white dashed */
+:global(html[data-theme-id='paper-atelier']) .opsLegend {
+  border-top-color: var(--paper-panel-hairline);
+}
+
+/* Ops legend text rows — muted ink */
+:global(html[data-theme-id='paper-atelier']) .opsText {
+  color: var(--text-meta);
+}

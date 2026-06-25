@@ -514,6 +514,20 @@ html[data-theme-id="paper-atelier"] {
   --chrome-text-stroke-color-hover: rgba(255, 253, 246, 0.7);
   --chrome-text-shadow: 0 1px 2px rgba(43, 39, 34, 0.18);
 
+  /* session 135 — floating chrome PANELS (TUNE drawer / SETTINGS drawer /
+     language list / tag-add popover) read as an aged-paper note pinned to the
+     board, instead of the default dark glass. Each panel's .module.css applies
+     these under `html[data-theme-id='paper-atelier']` only — default untouched.
+     parchment-bg-plain is a clean cream sheet (no coffee rings); at cover on a
+     small panel it shows the calm centre, so panel text stays legible. */
+  --paper-panel-surface: #f1e7cf;                                    /* warm aged cream */
+  --paper-panel-texture: url("/themes/paper-atelier/parchment-bg-plain.png");
+  --paper-panel-border: rgba(43, 39, 34, 0.30);                      /* charcoal hairline */
+  --paper-panel-hairline: rgba(43, 39, 34, 0.16);                    /* inner dividers */
+  --paper-panel-shadow: 0 12px 30px rgba(43, 39, 34, 0.28);          /* warm lift */
+  --paper-panel-btn-bg: rgba(43, 39, 34, 0.05);                      /* quiet button face */
+  --paper-panel-btn-bg-hover: rgba(43, 39, 34, 0.10);
+
   /* big background wordmark — ink + serif on paper (BoardBackgroundTypography
      reads these via var-with-fallback, so the default theme is unchanged) */
   --bg-typo-font: var(--font-serif-display);
