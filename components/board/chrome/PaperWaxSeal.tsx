@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactElement } from 'react'
+import { paperAssetUrl } from '@/lib/board/paper-assets'
 import styles from './PaperWaxSeal.module.css'
 
 /**
@@ -20,11 +21,18 @@ import styles from './PaperWaxSeal.module.css'
  *
  * Mounted by BoardRoot ONLY when themeId === 'paper-atelier'. Fades with the
  * chrome while the Lightbox is open via the `hidden` prop (mirrors BoardChrome).
+ *
+ * Asset backing (Task 7): when wax-seal-a.png is placed, the SVG seal is
+ * replaced with a <span data-paper-seal> using the PNG as backgroundImage.
+ * The rotated "+" stamp glyph is kept as-is. When the asset is absent → existing
+ * inline SVG seal renders unchanged.
  */
 export function PaperWaxSeal({ hidden }: {
   /** Mirror of BoardChrome's hidden prop — true while the Lightbox is open. */
   readonly hidden: boolean
 }): ReactElement {
+  const assetUrl = paperAssetUrl('wax-seal-a')
+
   return (
     <div
       className={hidden ? `${styles.wrap} ${styles.hidden}` : styles.wrap}
@@ -34,28 +42,36 @@ export function PaperWaxSeal({ hidden }: {
     >
       {/* decorative "+" stamp — NOT a button, NOT a save action */}
       <span className={styles.stamp} data-testid="paper-wax-stamp">+</span>
-      {/* wax "A" seal */}
-      <svg
-        className={styles.seal}
-        viewBox="0 0 64 64"
-        width="64"
-        height="64"
-        role="presentation"
-        focusable="false"
-      >
-        {/* irregular wax blob — a circle with subtle drips, FOREST fill */}
-        <circle cx="32" cy="32" r="27" className={styles.wax} />
-        <circle cx="32" cy="32" r="27" className={styles.waxRim} />
-        {/* pressed monogram "A" — IVORY, debossed look via the rim stroke */}
-        <text
-          x="32"
-          y="42"
-          textAnchor="middle"
-          className={styles.monogram}
+      {/* wax "A" seal: PNG when placed, inline SVG when absent */}
+      {assetUrl !== null ? (
+        <span
+          data-paper-seal
+          className={styles.sealImg}
+          style={{ backgroundImage: `url("${assetUrl}")` }}
+        />
+      ) : (
+        <svg
+          className={styles.seal}
+          viewBox="0 0 64 64"
+          width="64"
+          height="64"
+          role="presentation"
+          focusable="false"
         >
-          A
-        </text>
-      </svg>
+          {/* irregular wax blob — a circle with subtle drips, FOREST fill */}
+          <circle cx="32" cy="32" r="27" className={styles.wax} />
+          <circle cx="32" cy="32" r="27" className={styles.waxRim} />
+          {/* pressed monogram "A" — IVORY, debossed look via the rim stroke */}
+          <text
+            x="32"
+            y="42"
+            textAnchor="middle"
+            className={styles.monogram}
+          >
+            A
+          </text>
+        </svg>
+      )}
     </div>
   )
 }

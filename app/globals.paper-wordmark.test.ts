@@ -29,7 +29,8 @@ describe('paper-atelier letterpress wordmark tokens', () => {
     expect(paperBlock).toContain('--wordmark-emboss-light:')
     expect(paperBlock).toContain('--wordmark-emboss-shadow:')
   })
-  it('reuses Task 2 paper-fiber tile (no separate download)', () => {
-    expect(paperBlock).toContain('--wordmark-grain-url: var(--paper-fiber-url)')
+  it('grain token falls back to Task 2 paper-fiber tile (no separate download)', () => {
+    expect(paperBlock).toContain('--asset-letterpress-grain: none')
+    expect(paperBlock).toContain('--wordmark-grain-url: var(--asset-letterpress-grain, var(--paper-fiber-url))')
   })
 })

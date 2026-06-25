@@ -8,6 +8,13 @@ describe('PaperFramePlate', () => {
     expect(screen.getByTestId('paper-frame-plate')).toBeTruthy()
   })
 
+  it('applies the mk1-plate PNG as background when placed and keeps the text', () => {
+    const { container, getByText } = render(<PaperFramePlate hidden={false} />)
+    const plate = container.querySelector('[data-paper-plate]') as HTMLElement
+    expect(plate.style.backgroundImage).toContain('/themes/paper-atelier/mk1-plate')
+    expect(getByText('ALLMARKS MK-1')).toBeTruthy()  // text still typeset on top
+  })
+
   it('shows the engraved MK-1 / ARCHIVE technical labels', () => {
     render(<PaperFramePlate hidden={false} />)
     const plate = screen.getByTestId('paper-frame-plate')
