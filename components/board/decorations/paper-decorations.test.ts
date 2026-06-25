@@ -15,21 +15,22 @@ describe('getCardDecorations', () => {
     // pin changed from boolean to { variant:'gold'|'green' } | null).
     // Adding assetSeed: rng() at end of washi[0] advances PRNG state so washi[1]'s
     // angleDeg/offsetPct differ from the pre-Task-3 values — this is expected and intentional.
-    // Generated via inline Node script 2026-06-25 after implementing the extension.
-    expect(getCardDecorations('bookmark-abc')).toMatchObject({
+    // Derived via vitest run 2026-06-25 after implementing the extension.
+    // Using toEqual + full field pinning to catch PRNG shifts in any field (incl assetSeed).
+    expect(getCardDecorations('bookmark-abc')).toEqual({
       photoCorners: ['tl', 'br'],
       washi: [
-        { tint: 'b', edge: 'bottom', angleDeg: 5.6, offsetPct: 69.4 },
-        { tint: 'b', edge: 'right', angleDeg: -8.4, offsetPct: 18.9 },
+        { tint: 'b', edge: 'bottom', angleDeg: 5.6, offsetPct: 69.4, assetSeed: 0.4857295488473028 },
+        { tint: 'b', edge: 'right', angleDeg: -8.4, offsetPct: 18.9, assetSeed: 0.12128980527631938 },
       ],
       pin: null,
       clip: false,
       stamp: null,
     })
-    expect(getCardDecorations('card-xyz-7')).toMatchObject({
+    expect(getCardDecorations('card-xyz-7')).toEqual({
       photoCorners: ['tr'],
       washi: [
-        { tint: 'a', edge: 'bottom', angleDeg: 5, offsetPct: 15.1 },
+        { tint: 'a', edge: 'bottom', angleDeg: 5, offsetPct: 15.1, assetSeed: 0.5053368334192783 },
       ],
       pin: null,
       clip: false,
