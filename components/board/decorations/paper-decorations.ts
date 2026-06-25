@@ -24,12 +24,16 @@ export type WashiPiece = {
   readonly angleDeg: number
   /** Position along the edge, 0..100 (% of that edge's free span). */
   readonly offsetPct: number
+  /** Stable 0..1 fraction used by the component to pick a washi-tape PNG variant. */
+  readonly assetSeed: number
 }
 
 export type DecoStamp = {
   readonly label: StampLabel
   readonly corner: DecoCorner
   readonly angleDeg: number
+  /** Stable 0..1 fraction used by the component to pick a stamp-frame PNG variant. */
+  readonly assetSeed: number
 }
 
 export type CardDecorationSet = {
@@ -37,8 +41,8 @@ export type CardDecorationSet = {
   readonly photoCorners: ReadonlyArray<DecoCorner>
   /** 0..2 washi-tape strips. */
   readonly washi: ReadonlyArray<WashiPiece>
-  /** Top-edge push-pin (mutually exclusive with `clip`). */
-  readonly pin: boolean
+  /** Top-edge push-pin (mutually exclusive with `clip`). null = no pin. */
+  readonly pin: { readonly variant: 'gold' | 'green' } | null
   /** Top-edge bulldog clip (mutually exclusive with `pin`). */
   readonly clip: boolean
   /** Optional archival rubber stamp, or null. */
@@ -128,13 +132,18 @@ export function getCardDecorations(cardId: string): CardDecorationSet {
       edge,
       angleDeg: floatRange(rng, -14, 14),
       offsetPct: floatRange(rng, 8, 80),
+      assetSeed: rng(), // appended last — does not shift prior rng() call positions
     })
   }
 
   // --- Fastener: pin XOR clip, biased toward "nothing" so it stays calm. ---
   const fastenerRoll = rng()
-  const pin = fastenerRoll < 0.18
-  const clip = !pin && fastenerRoll < 0.3
+  const pinPresent = fastenerRoll < 0.18
+  // variant rng() consumed after the presence check (appended at end of pin logic)
+  const pin: { readonly variant: 'gold' | 'green' } | null = pinPresent
+    ? { variant: rng() < 0.5 ? 'gold' : 'green' }
+    : null
+  const clip = !pinPresent && fastenerRoll < 0.3
 
   // --- Stamp: rare archival rubber stamp in a corner. ---
   let stamp: DecoStamp | null = null
@@ -143,6 +152,7 @@ export function getCardDecorations(cardId: string): CardDecorationSet {
       label: pick(rng, STAMP_LABELS),
       corner: pick(rng, ALL_CORNERS),
       angleDeg: floatRange(rng, -18, 18),
+      assetSeed: rng(), // appended last — does not shift prior rng() call positions
     }
   }
 
