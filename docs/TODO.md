@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 134 — paper-atelier ブラッシュアップ継続 / 6本 本番反映)
+
+- **5本の並列調査(Workflow)で事実を固めてから実装**。本番 `allmarks.app` 反映済・全 commit/push 済。tsc0 vitest1790 build OK、default byte-identical。
+- shipped: ①**角の真因修正**(`.canvas::before/::after`暗い影帯が角丸クリップを破る→紙で display:none、ブラウザ実測検証) ②**インク染み=本物素材**(マスターシートから切り出し ink-splat-1/2/3、自作生成は廃止) ③**染め小型化(width30-76)+ループ配置**(board-decor が1500pxタイル繰返し、下まで途切れない) ④**カードのワードスタンプ削除**(タグ誤認解消) ⑤**タグ=マステに手書き文字**(TagIndicatorStrip, useIsPaperTheme) ⑥**メディア contain+台紙が見える**(.paperPhoto, --paper-window-bg)。
+- **user 確認: 染み・パララックス・washiタグ OK**。
+- **次の最優先=バグ**: washiタグのマステが「+ TAG」ボタンに被って操作不能(TagIndicatorStrip paper container top:4 left:12 z90 が +TAG top:8 left:8 z40 を覆う)。次に D=カード台紙バリエーション追加 / F=パネル背景の羊皮紙化(TUNE/SETTINGS/言語/タグ追加+保存ページ、もれなくテーマ追従)。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- パララックス確定値: bg 0.15x / 散布 0.30x（`use-paper-parallax.ts` / `BoardRoot.tsx DECOR_PARALLAX_FACTOR`）。素材源は memory `reference_paper_asset_sources`。
+
 ### 直近の状態 (セッション 133 続き — paper-atelier 対話ブラッシュアップ 7 本 本番反映)
 
 - フル再現 shipped 後、user フィードバックで **ブラッシュアップ7本**（立体感/額縁内再生+chrome paper化+手書きキャプション/写真コーナー+メーター+スクランブル停止/装飾26点豪華化/本物羊皮紙背景/市松修正+紙の上に紙/3層パララックス）を実装・本番反映。tsc0 vitest1790 build OK、default byte-identical。
