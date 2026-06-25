@@ -13,6 +13,9 @@ export const PAPER_ASSET_BASE = '/themes/paper-atelier'
 export type PaperAssetId =
   | 'parchment-bg'
   | 'card-mat-1' | 'card-mat-2' | 'card-mat-3' | 'card-mat-aged'
+  // session 135 — ruled / graph paper mats (cut from master sheet section 2,
+  // upscaled). Solid repeating textures that survive background-size:cover.
+  | 'card-mat-lined' | 'card-mat-grid'
   | 'washi-tape-1' | 'washi-tape-2' | 'washi-tape-3' | 'washi-tape-4' | 'washi-tape-5'
   | 'push-pin-gold' | 'push-pin-green' | 'paper-clip'
   | 'photo-corner-1' | 'photo-corner-2' | 'photo-corner-3' | 'photo-corner-4'
@@ -44,6 +47,7 @@ export const PAPER_ASSETS: Readonly<Record<PaperAssetId, boolean>> = {
   'decor-flourish-1': true, 'decor-flourish-2': true, 'decor-flourish-3': true,
   'ink-splat-1': true, 'ink-splat-2': true, 'ink-splat-3': true,
   'card-mat-1': true, 'card-mat-2': true, 'card-mat-3': true, 'card-mat-aged': true,
+  'card-mat-lined': true, 'card-mat-grid': true,
   'washi-tape-1': true, 'washi-tape-2': true, 'washi-tape-3': true,
   'washi-tape-4': true, 'washi-tape-5': true,
   'push-pin-gold': true, 'push-pin-green': true, 'paper-clip': true,
