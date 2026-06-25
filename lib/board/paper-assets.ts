@@ -29,12 +29,17 @@ export type PaperAssetId =
   | 'icon-search' | 'icon-bookmark' | 'icon-camera' | 'icon-envelope' | 'icon-eye' | 'icon-flag'
   | 'wax-seal-gold-a' | 'wax-seal-red'
   | 'parchment-bg-plain' | 'parchment-bg-frame' | 'parchment-outer'
+  // middle parallax scatter layer (stains / flourishes)
+  | 'decor-ring-1' | 'decor-ring-2' | 'decor-ring-coffee'
+  | 'decor-flourish-1' | 'decor-flourish-2' | 'decor-flourish-3'
 
 /** `true` = the PNG is committed and usable. `false` = not placed yet; the
  *  consuming face must degrade to its CSS/SVG fallback. */
 export const PAPER_ASSETS: Readonly<Record<PaperAssetId, boolean>> = {
   'parchment-bg': true, // real aged-parchment backdrop (sheet 13_27, with coffee rings/specks)
   'parchment-bg-plain': true, 'parchment-bg-frame': true, 'parchment-outer': true,
+  'decor-ring-1': true, 'decor-ring-2': true, 'decor-ring-coffee': true,
+  'decor-flourish-1': true, 'decor-flourish-2': true, 'decor-flourish-3': true,
   'card-mat-1': true, 'card-mat-2': true, 'card-mat-3': true, 'card-mat-aged': true,
   'washi-tape-1': true, 'washi-tape-2': true, 'washi-tape-3': true,
   'washi-tape-4': true, 'washi-tape-5': true,

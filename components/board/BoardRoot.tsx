@@ -85,6 +85,7 @@ import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { usePaperParallax } from './use-paper-parallax'
+import { BoardDecorLayer } from './BoardDecorLayer'
 import styles from './BoardRoot.module.css'
 
 // Horizontal room past the rightmost card so the user can scroll a little
@@ -811,6 +812,8 @@ export function BoardRoot() {
 
   const themeMeta = getThemeMeta(themeId)
   const paperParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y })
+  // Middle scatter layer pans slower than cards (0.7x) for a 3-plane depth read.
+  const decorParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: 0.7 })
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
@@ -2130,6 +2133,26 @@ export function BoardRoot() {
                 totalHeight={contentHeight}
               />
             </div>
+            {/* Paper-atelier MIDDLE parallax layer: faint stains/flourishes
+                scattered across the content, panned at 0.7x (vs cards 1x and the
+                fixed 0x backdrop) for a real depth read. Behind the wordmark and
+                cards (DOM order). Paper-only; decorParallaxY is 0 off-paper. */}
+            {themeId === 'paper-atelier' && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: contentWidth,
+                  height: contentHeight,
+                  transform: `translate3d(${-viewport.x}px, ${-viewport.y + decorParallaxY}px, 0)`,
+                  willChange: 'transform',
+                  pointerEvents: 'none',
+                }}
+              >
+                <BoardDecorLayer contentHeight={contentHeight} />
+              </div>
+            )}
             {/* Hero background typography — viewport-bound (does NOT live
                 inside the pan-transform wrappers above), so the headline
                 stays centred on screen while cards travel over it. The

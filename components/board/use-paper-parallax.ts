@@ -6,13 +6,15 @@ import type { ThemeId } from '@/lib/board/types'
  *  translateY 補正量を返す。 paper-atelier 以外 / motion off / reduced-motion
  *  では 0 (= 視差なし、 従来どおり bg は content と 1:1)。 */
 export const PAPER_PARALLAX_FACTOR = 0.85
-const LAG = 1 - PAPER_PARALLAX_FACTOR // 0.15
 
 export type PaperParallaxInput = {
   readonly themeId: ThemeId
   readonly motionEnabled: boolean
   /** BoardRoot の viewport.y (= 縦スクロール量 px)。 */
   readonly viewportY: number
+  /** その層が content に対して動く倍率 (1 = 1:1、 0.85 = 15% 遅れ、 0.7 = 30%
+   *  遅れ)。背景=0.85、 中間装飾層=0.7 のように層ごとに変えて奥行きを出す。 */
+  readonly factor?: number
 }
 
 function prefersReducedMotion(): boolean {
@@ -22,7 +24,7 @@ function prefersReducedMotion(): boolean {
 }
 
 /** 視差の translateY 補正 (px)。0 = 視差なし。 */
-export function usePaperParallax({ themeId, motionEnabled, viewportY }: PaperParallaxInput): number {
+export function usePaperParallax({ themeId, motionEnabled, viewportY, factor = PAPER_PARALLAX_FACTOR }: PaperParallaxInput): number {
   // 初期値も同期で正しく解決 (reduced-motion 環境でのマウント時 1 回の余分な
   // 再レンダリングを回避; SSR では prefersReducedMotion() が false を返す)。
   const [reduced, setReduced] = useState(prefersReducedMotion)
@@ -38,5 +40,5 @@ export function usePaperParallax({ themeId, motionEnabled, viewportY }: PaperPar
 
   const gatedOff = themeId !== 'paper-atelier' || !motionEnabled || reduced || prefersReducedMotion()
   if (gatedOff) return 0
-  return viewportY * LAG
+  return viewportY * (1 - factor)
 }
