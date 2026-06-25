@@ -7928,3 +7928,27 @@ brainstorm 承認済 design → `writing-plans` で 8タスクの impl plan → 
 
 ### 次
 user 実機校正(素材バリエーション選択 + 寸法トークン微調整)→ 残り2素材生成 → メーター状態差の磨き → Plan 3(共有テーマ化)。
+
+
+---
+
+## セッション 133 続き (2026-06-25) — paper-atelier 対話ブラッシュアップ 7 本（本番反映）
+
+フル再現の本番反映後、user のスクショ＋フィードバックで 7 本のブラッシュアップを直接 master 実装・各回デプロイ。各回 tsc0 / vitest 全通過 / build OK / default byte-identical。
+
+1. **カードの立体感**: 外箱 `.cardNode` に層状ドロップシャドウ（接地+浮き+柔らかい影、paper限定）＋ `.paperCard` に warm-gray ヘアライン縁。机から浮いた羊皮紙に。
+2. **額縁内再生 + chrome3点 paper化 + 手書きキャプション**: 再生オーバーレイ（Tier1/3/slideshow）を `--paper-frame-inset`(6% 6% 22% 6%) で羊皮紙の写真窓に inset → 止めても額縁＋キャプションが残る。FilterPill/TuneTrigger/LanguageSwitcher に paper CSS（セリフ+グリッチ除去+墨インク）。キャプションを Yomogi(手書き・日英)＋小サイズに。
+3. **写真コーナー向き修正 + メーターはみ出し + スクランブル停止**: 写真コーナーは1枚(左上)をCSS回転(0/90/180/270)で各隅へ。メーターハンドルを `.markerTrack`(左右9pxインセット)で帯内に収める。共通フック `useIsPaperTheme`(MutationObserver) で FilterPill/TUNE の常時文字スクランブルを paper で停止（ChromeButton も統一）。
+4. **装飾を豪華に（シート9/10から26点）**: 本物の文字スタンプ7(ARCHIVE/CONFIDENTIAL/TOP SECRET/RECEIVED/CLASSIFIED/APPROVED)で空枠+タイプセットを置換、アイコンスタンプ12(新カテゴリ)、蝋封アクセント(新カテゴリ)、washi+4(計9)、ボード隅を金A封蝋に。`CardDecorationSet` に iconStamp/wax 追加（regression 再導出）。
+5. **本物の羊皮紙背景**: GPT生成の不透明パーチメント画像を固定 backdrop に。
+6. **市松バグ修正 + 紙の上に紙**: 画像(4)に薄い市松が焼き込まれていた→クリーン版に交換。`.canvas` を角丸+ドロップシャドウの羊皮紙パネル、`.outerFrame` を別の羊皮紙にして「紙の上に紙」。`--canvas-radius` paper=14px。
+7. **3層パララックス**: 下=固定羊皮紙(0x) / 中=`BoardDecorLayer`(汚れ・金罫・蝋封を `board-decor.ts` 決定論散布、0.7xスクロール) / 上=カード(1x)。`use-paper-parallax` に factor 引数追加。paper限定・reduced-motion/MOTIONゲート。
+
+### 素材方式の学び
+- GPT/Photoroom 出力は**偽透明（焼き込み市松）**や**薄い市松**が混入しうる → sharp で alpha 実測＋目視で必ず確認。
+- 保留素材トークンは `none`(有効値)でなく **`initial`**(guaranteed-invalid) にしないと var() フォールバックが効かず素材が消える。
+- 単一スクリーン背景画像は縦長スクロール盤面に tile できない → 固定 backdrop（cards が上をスクロール=最大視差）が解。
+- 配置済み未使用: `ruler-meter-strip-3`(番号ルーラー)、`parchment-bg-plain`/`-frame`、ラベル付きクリップ等（次セッションで活用）。
+
+### 残（次セッション）
+パララックス調整 / ライトボックス羊皮紙化(必ず) / メーター刷新 / 装飾追加 / 外側面の本素材化。詳細 CURRENT_GOAL.md。

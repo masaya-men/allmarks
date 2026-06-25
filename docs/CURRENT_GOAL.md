@@ -1,23 +1,37 @@
 # 次セッションのゴール (= セッション 134)
 
 ## 今の状態（セッション133で完了）
-paper-atelier を **「CSS擬似」→「本物の紙PNG素材」** に置換するフル再現を実装し、`allmarks.app` に本番反映済み。8タスクをサブエージェント駆動（各タスク二段レビュー＋fix）→ opus 全ブランチレビュー Ready to merge（0 Critical/0 Important）→ master `d25db58` → デプロイ。tsc0 / vitest 1786 / build OK。default(黒+音波)は byte-identical。素材未配置の面は CSS見た目に graceful degrade。
+paper-atelier をサブエージェント駆動で本番反映（8タスク）→ その後 **対話ブラッシュアップ7本**を直接 master で実装・各回デプロイ。本番 `allmarks.app`、全 commit/push 済み。tsc0 / vitest 1790 / build OK。default(黒+音波)は byte-identical 維持。
 
-## user 宿題（最優先・実機校正）
-allmarks.app をハードリロード → SETTINGS → THEMES → Paper Atelier で実機確認し、フィードバック：
-1. **素材バリエーション選択**: 定規帯 v1/v2・サム v1/v2・蝋封（赤封蝋 vs 濃色）・カード台紙の色味・foxing 重ねの要否。
-2. **寸法校正**: 定規トラック高(今 34px)・カード台紙の余白(今 padding 6%)・セリフ署名サイズ・背景ヴィネット強度。
-→ 全部トークン/マニフェスト差し替えで寄せられる（今は初期値）。
+ブラッシュアップ済み（session133）:
+1. カードの立体感（層状ドロップシャドウ＋羊皮紙の縁）
+2. 額縁内再生（再生オーバーレイを `--paper-frame-inset` で羊皮紙の写真窓に収める）＋ chrome3点(FilterPill/TUNE/言語)を paper化 ＋ キャプション手書き(Yomogi)
+3. 写真コーナーの向き（1枚をCSS回転）＋ メーターハンドルを帯内に収める ＋ FilterPill/TUNE の常時スクランブル停止（共通フック `useIsPaperTheme`）
+4. 装飾を豪華に（本物の文字スタンプ7・アイコンスタンプ12・蝋封・washi+4・金A封蝋）= シート9/10から26点
+5. 本物の羊皮紙背景（固定backdrop）
+6. 市松バグ修正（クリーン羊皮紙へ）＋ 紙の上に紙（角丸パネル＋外側面）
+7. **3層パララックス完成**: 下=固定羊皮紙(0x) / 中=汚れ・金罫・蝋封を散らし0.7xでスクロール(`BoardDecorLayer`/`lib/board/board-decor.ts`) / 上=カード1x
 
-## 次にやる
-1. **残り2素材を生成して配置**: `parchment-bg`(背景の継ぎ目なし羊皮紙タイル／不透明OK、`Downloads/素材/` 由来 or 再生成) と `letterpress-ink-grain`(ワードマークのかすれ＝黒地に白インク、継ぎ目なし)。配置=`public/themes/paper-atelier/<id>.png` に置き、`lib/board/paper-assets.ts` を `true`(または CSS トークンを `url(...)`)に。
-2. **user 校正フィードバックを反映**(バリエーション/寸法トークン微調整 → 再デプロイ反復)。
-3. **メーター状態差の磨き**(spec§3.3 04: hover でタブ浮き影／ドラッグ中インク濃度up／慣性減速／エンドストップ) ＝ 段階追加。
-4. その後 **Plan 3＝共有のテーマ化**(SharedBoard が `data-theme-id` 未適用＝paper トークンが /s/ で cascade しない、spec§6) → #1 white-sector・#5 celestial-atlas 量産(素材は先取り生成済)。
+## 次にやる（user 要望キュー）
+1. **パララックスのブラッシュアップ**（density/大きさ/透明度/速度の調整、インク染み等の素材追加、配置の前後関係）← user 次の主目的
+2. **ライトボックスの羊皮紙化**（user「必ず」。FLIPモーフが絡む単独タスク。Lightbox.tsxはmediaのみFLIP拡大＋clone host z300 → 羊皮紙台紙を拡大ビューにも描く）
+3. **メーター刷新**（高品質ルーラー `ruler-meter-strip-3` 配置済・未使用 ／ 走らせるサムを紙タブ/クリップに）
+4. **装飾追加**（ラベル付きクリップ NOTE/IDEA・紙タブ・バナー等。シート在庫あり）
+5. **外側の面**を本素材に（今はクリーン羊皮紙の仮置き）／ 背景variant選択（parchment-bg / -plain / -frame）
 
 ## 守ること
-- 本番 `allmarks.app`。default(黒+音波) は **byte-identical** 維持。**自由リサイズは壊さない**。装飾/署名は pointer-events:none・極端サイズでクランプ。常時 canvas/GPU/backdrop-filter 禁止。
-- 保留素材トークンは **`none` でなく `initial`**(var フォールバックの罠)。
-- deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`、`--branch=master --commit-message`(ASCII)。応答は日本語。
-- 視覚は user が直接確認(スクショ撮影に手を割かない)[[feedback_user_self_verifies_visuals]]。
-- フォローアップ(TODO): e2e シード v9→16、useTweetTranslation 引数リネーム、4K perf watch。既知フレーキー channel.test。
+- 本番 `allmarks.app`。default(黒+音波)は **byte-identical** 維持。自由リサイズ壊さない。装飾/署名は pointer-events:none・極端サイズでクランプ。
+- **保留素材トークンは `none` でなく `initial`**（var フォールバックの罠）。素材未配置の面は CSS/旧表現に graceful degrade。
+- 偽透明（焼き込み市松）に注意：sharp で alpha 実測＋目視。画像は不透明/透明を必ず確認。
+- deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`、`--branch=master --commit-message`(ASCII)。応答は日本語。視覚は user 直接確認。
+- **4K perf watch（最重要・新規）**: パララックス層＋カード装飾PNG多数＋scatter img で fill-rate 負荷増。常時 canvas/GPU/backdrop-filter 禁止は維持。重さを感じたら scatter 数/装飾率を下げる。
+- 既存フォローアップ: e2e シード v9→16、useTweetTranslation 引数リネーム。既知フレーキー channel.test。
+
+## 主要ファイル（paper 関連）
+- 素材マニフェスト: `lib/board/paper-assets.ts`（true/false で配置管理、`pickPaperAsset`）
+- 背景/パネル: `app/globals.css`(paper block) / `components/board/themes.module.css`(.paperAtelier) / `BoardRoot.module.css`(.canvas/.outerFrame paper) / `components/board/themes.module.css`
+- 中間層: `lib/board/board-decor.ts` + `components/board/BoardDecorLayer.tsx` + `use-paper-parallax.ts`(factor) + BoardRoot 配線
+- カード: `cards/ImageCard.tsx`(.paperCard/Photo/Caption) / `decorations/paper-decorations.ts` + `PaperCardDecorations.tsx`
+- メーター: `scrollmeter/RulerTrack.tsx`
+- chrome: `ChromeButton`/`FilterPill`/`TuneTrigger`/`LanguageSwitcher`(.module.css paper rules) + `chrome/PaperWaxSeal`/`PaperFramePlate`
+- 配置済み未使用素材: `ruler-meter-strip-3`(番号ルーラー)、`parchment-bg-plain`/`-frame`、deckle-edge-mat 等
