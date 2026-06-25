@@ -88,13 +88,18 @@ export function RulerTrack({ markerRef }: Props): ReactElement {
           })}
         </>
       )}
-      <div
-        ref={markerRef}
-        className={styles.marker}
-        data-testid="ruler-marker"
-        data-asset={thumbUrl ? 'true' : undefined}
-        style={markerStyle}
-      />
+      {/* Marker travels inside a track inset by half the thumb width, so the
+          handle never overhangs the strip ends (left:0% = flush left edge,
+          left:100% = flush right edge). */}
+      <div className={styles.markerTrack} aria-hidden="true">
+        <div
+          ref={markerRef}
+          className={styles.marker}
+          data-testid="ruler-marker"
+          data-asset={thumbUrl ? 'true' : undefined}
+          style={markerStyle}
+        />
+      </div>
     </div>
   )
 }

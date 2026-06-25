@@ -10,6 +10,7 @@ import {
 } from '@/lib/board/board-filter-helpers'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
+import { useIsPaperTheme } from '@/lib/board/use-is-paper-theme'
 import { useDragReorder } from '@/lib/board/use-drag-reorder'
 import { computeTagScrollEdge } from '@/lib/board/tag-scroll-edge'
 import type { TagOrderMode } from '@/lib/board/tag-order'
@@ -150,6 +151,10 @@ export function FilterPill({
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
   const { display: displayLabel, triggerBurst } = useChromeScramble(effectiveLabel)
   const { display: displayCount, triggerBurst: triggerCountBurst } = useChromeScramble(effectiveCount)
+  // On paper: show the plain label/count (calm serif, no character scramble).
+  const paper = useIsPaperTheme()
+  const shownLabel = paper ? effectiveLabel : displayLabel
+  const shownCount = paper ? effectiveCount : displayCount
 
   /* Fire the label + count scramble together. Used on hover ENTER and LEAVE
      so the chrome glitches in and out — matching the TUNE drawer, which
@@ -355,9 +360,9 @@ export function FilterPill({
         aria-expanded={open}
         data-testid="filter-pill"
       >
-        <span className={styles.label} data-glitch-text={effectiveLabel}>{displayLabel}</span>
+        <span className={styles.label} data-glitch-text={effectiveLabel}>{shownLabel}</span>
         <span className={styles.separator}>·</span>
-        <span className={styles.count} data-glitch-text={effectiveCount}>{displayCount}</span>
+        <span className={styles.count} data-glitch-text={effectiveCount}>{shownCount}</span>
       </button>
       <div
         className={styles.menu}

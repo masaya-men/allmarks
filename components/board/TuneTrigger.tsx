@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react'
 import { pickRandomChar } from '@/lib/board/scramble'
+import { useIsPaperTheme } from '@/lib/board/use-is-paper-theme'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { PRESETS, findActivePreset } from '@/lib/board/tune-presets'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -148,6 +149,8 @@ export function TuneTrigger({
   const rafIdRef = useRef<number | null>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [expanded, setExpanded] = useState(false)
+  // On paper: calm serif TUNE — suspend the idle character scramble entirely.
+  const paper = useIsPaperTheme()
 
   // Refs kept in sync with props each render (PrecisionSlider pattern).
   // Used by both drag math and the HTML emitters so an in-flight rAF chain
@@ -290,6 +293,8 @@ export function TuneTrigger({
   // prefers-reduced-motion.
   useEffect(() => {
     if (expanded) return
+    // Paper theme: no scramble — restore the plain label and bail.
+    if (paper) { writeIdleTune(); return }
     const mql = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
       ? window.matchMedia('(prefers-reduced-motion: reduce)')
       : null
@@ -351,7 +356,7 @@ export function TuneTrigger({
       if (timer) clearTimeout(timer)
       if (rafId !== null) cancelAnimationFrame(rafId)
     }
-  }, [expanded, visibleLabel])
+  }, [expanded, visibleLabel, paper, writeIdleTune])
 
   const handleMouseEnter = useCallback((): void => {
     if (leaveTimerRef.current) {

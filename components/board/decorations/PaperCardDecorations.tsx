@@ -31,16 +31,19 @@ export function PaperCardDecorations({
   return (
     <div className={styles.overlay} aria-hidden="true" data-testid="paper-card-decorations">
       {set.photoCorners.map((c) => {
-        const idx = ({ tl: 1, tr: 2, br: 3, bl: 4 } as const)[c]
-        const assetId: PaperAssetId = `photo-corner-${idx}`
-        const url = paperAssetUrl(assetId)
+        // Use ONE corner asset (photo-corner-1 = top-left pocket) and rotate it
+        // to each corner. This guarantees the pocket always points the right way
+        // — the 4 source PNGs aren't reliably ordered tl/tr/br/bl, so mapping by
+        // index produced mis-oriented corners.
+        const url = paperAssetUrl('photo-corner-1')
+        const rot = ({ tl: 0, tr: 90, br: 180, bl: 270 } as const)[c]
         return (
           <span
             key={`pc-${c}`}
             data-deco="photo-corner"
             data-asset={url ? 'true' : undefined}
             className={cornerClass(c)}
-            style={{ backgroundImage: bg(url) }}
+            style={{ backgroundImage: bg(url), transform: url ? `rotate(${rot}deg)` : undefined }}
           />
         )
       })}

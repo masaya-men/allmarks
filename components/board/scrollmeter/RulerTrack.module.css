@@ -88,6 +88,19 @@
   will-change: left;
 }
 
+/* Marker travel lane: inset left/right by ~half the paper-scrap thumb width so
+   the handle stays flush inside the strip at the scroll extremes instead of
+   overhanging the torn ends. The marker's left:0..100% (set by the rAF) is
+   relative to THIS lane, not the full rail. */
+.markerTrack {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 9px;
+  right: 9px;
+  pointer-events: none;
+}
+
 /* ── Paper-atelier PNG overrides ─────────────────────────────────────── */
 
 /* Strip PNG replaces the CSS rule/ticks/numerals as the track background.
