@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { type ReactElement } from 'react'
+import { type ReactElement, useState, useEffect } from 'react'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import styles from './ChromeButton.module.css'
 
@@ -36,18 +36,32 @@ export function ChromeButton({
   const { display, triggerBurst } = useChromeScramble(label)
   const cls = className ? `${styles.btn} ${className}` : styles.btn
 
+  // SSR-safe paper theme detection: read the DOM only after mount so the
+  // initial server render and first client paint are identical (hydration-safe).
+  const [paper, setPaper] = useState(false)
+  useEffect(() => {
+    setPaper(
+      document.documentElement.getAttribute('data-theme-id') === 'paper-atelier',
+    )
+  }, [])
+
+  // On paper: render the static label (calm serif), skip the scramble burst.
+  // On default: byte-identical to original behaviour.
+  const content = paper ? label : display
+  const onHover = paper ? undefined : triggerBurst
+
   if (href) {
     return (
       <Link
         href={href}
         className={cls}
-        onMouseEnter={triggerBurst}
+        onMouseEnter={onHover}
         data-testid={dataTestId}
         data-glitch-text={label}
         aria-label={ariaLabel}
         data-onboarding-target={dataOnboardingTarget}
       >
-        {display}
+        {content}
       </Link>
     )
   }
@@ -57,7 +71,7 @@ export function ChromeButton({
       type="button"
       className={cls}
       onClick={onClick}
-      onMouseEnter={triggerBurst}
+      onMouseEnter={onHover}
       disabled={disabled}
       data-testid={dataTestId}
       data-glitch-text={label}
@@ -65,7 +79,7 @@ export function ChromeButton({
       aria-label={ariaLabel}
       data-onboarding-target={dataOnboardingTarget}
     >
-      {display}
+      {content}
     </button>
   )
 }
