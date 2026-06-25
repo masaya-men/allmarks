@@ -137,8 +137,17 @@ describe('ScrollMeter variant prop', () => {
       (el) => (el as HTMLElement).style.left,
     )
     expect(waveformTicks).not.toHaveLength(150)
-    // ruler still surfaces numerals
-    expect(queryAllByTestId('ruler-numeral').length).toBeGreaterThan(0)
+    // When the ruler-meter-strip PNG asset is placed, baked-in ticks replace
+    // CSS numerals — so numeral count depends on asset presence.
+    // The data-asset attribute on the rail confirms which path was taken.
+    const rulerRail = getByTestId('ruler-track')
+    if (rulerRail.getAttribute('data-asset') === 'true') {
+      // PNG strip present: CSS numerals suppressed (baked into the PNG)
+      expect(queryAllByTestId('ruler-numeral').length).toBe(0)
+    } else {
+      // PNG not placed: CSS numerals should be present
+      expect(queryAllByTestId('ruler-numeral').length).toBeGreaterThan(0)
+    }
   })
 
   it('captures scrub state on pointer-down in ruler variant (onScrub fires in rAF, not synchronously)', () => {
@@ -168,6 +177,19 @@ describe('ScrollMeter variant prop', () => {
     // rather than asserting a value that would only pass if the component broke
     // its own throttle invariant.
     expect(onScrub).not.toHaveBeenCalled()
+  })
+})
+
+describe('ScrollMeter ruler track — paper strip + thumb assets', () => {
+  it('ruler track uses the paper strip + thumb assets when placed', () => {
+    const { getByTestId } = render(
+      <ScrollMeter mode="board" n1={1} n2={1} total={1} swellFraction={0} onScrub={() => {}} variant="ruler" />,
+    )
+    const rail = getByTestId('ruler-track')
+    // strip background applied somewhere on the rail
+    expect(rail.getAttribute('data-asset')).toBe('true')
+    const marker = getByTestId('ruler-marker')
+    expect((marker.style.backgroundImage || '')).toContain('/themes/paper-atelier/ruler-meter-thumb')
   })
 })
 

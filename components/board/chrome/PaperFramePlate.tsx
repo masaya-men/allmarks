@@ -1,6 +1,7 @@
 'use client'
 
-import type { ReactElement } from 'react'
+import type { CSSProperties, ReactElement } from 'react'
+import { paperAssetUrl } from '@/lib/board/paper-assets'
 import styles from './PaperFramePlate.module.css'
 
 /**
@@ -19,17 +20,30 @@ import styles from './PaperFramePlate.module.css'
  * (L48-50) is an UNRELATED TUNE column maker label with its own getByText test.
  * This component is identified ONLY by data-testid="paper-frame-plate" to avoid
  * a text collision.
+ *
+ * Asset backing (Task 7): when mk1-plate.png is placed, the wrapper receives
+ * `data-paper-plate` + a backgroundImage style; the CSS modifier drops the
+ * baked-in background/border/box-shadow (the PNG bakes those) and sets
+ * background-size:100% 100%. Text spans stay rendered on top (PNG is text-free).
+ * When the asset is absent → current CSS plate renders unchanged.
  */
 export function PaperFramePlate({ hidden }: {
   /** Mirror of BoardChrome's hidden prop — true while the Lightbox is open, so
    *  the plate fades out with the rest of the chrome. */
   readonly hidden: boolean
 }): ReactElement {
+  const assetUrl = paperAssetUrl('mk1-plate')
+  const plateStyle: CSSProperties | undefined = assetUrl !== null
+    ? { backgroundImage: `url("${assetUrl}")` }
+    : undefined
+
   return (
     <div
       className={hidden ? `${styles.plate} ${styles.hidden}` : styles.plate}
       data-testid="paper-frame-plate"
       data-hidden={hidden ? 'true' : 'false'}
+      data-paper-plate={assetUrl !== null ? 'true' : undefined}
+      style={plateStyle}
       aria-hidden="true"
     >
       <span className={styles.title}>ALLMARKS MK-1</span>

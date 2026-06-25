@@ -5,6 +5,7 @@ import {
   type WashiPiece,
   type WashiEdge,
 } from './paper-decorations'
+import { paperAssetUrl, pickPaperAsset, type PaperAssetId } from '@/lib/board/paper-assets'
 import styles from './PaperCardDecorations.module.css'
 
 /**
@@ -29,33 +30,81 @@ export function PaperCardDecorations({
 
   return (
     <div className={styles.overlay} aria-hidden="true" data-testid="paper-card-decorations">
-      {set.photoCorners.map((c) => (
-        <span key={`pc-${c}`} data-deco="photo-corner" className={cornerClass(c)} />
-      ))}
+      {set.photoCorners.map((c) => {
+        const idx = ({ tl: 1, tr: 2, br: 3, bl: 4 } as const)[c]
+        const assetId: PaperAssetId = `photo-corner-${idx}`
+        const url = paperAssetUrl(assetId)
+        return (
+          <span
+            key={`pc-${c}`}
+            data-deco="photo-corner"
+            data-asset={url ? 'true' : undefined}
+            className={cornerClass(c)}
+            style={{ backgroundImage: bg(url) }}
+          />
+        )
+      })}
 
-      {set.washi.map((w, i) => (
-        <span
-          key={`washi-${i}`}
-          data-deco="washi"
-          className={washiClass(w)}
-          style={washiStyle(w)}
-        />
-      ))}
+      {set.washi.map((w, i) => {
+        const id = pickPaperAsset(w.assetSeed, [
+          'washi-tape-1', 'washi-tape-2', 'washi-tape-3', 'washi-tape-4', 'washi-tape-5',
+        ])
+        return (
+          <span
+            key={`washi-${i}`}
+            data-deco="washi"
+            data-asset={id ? 'true' : undefined}
+            className={washiClass(w)}
+            style={{ ...washiStyle(w), backgroundImage: bg(id ? paperAssetUrl(id) : null) }}
+          />
+        )
+      })}
 
-      {set.pin && <span data-deco="pin" className={styles.pin} />}
-      {set.clip && <span data-deco="clip" className={styles.clip} />}
+      {set.pin && (() => {
+        const pinId: PaperAssetId = set.pin.variant === 'gold' ? 'push-pin-gold' : 'push-pin-green'
+        const hasAsset = Boolean(paperAssetUrl(pinId))
+        return (
+          <span
+            data-deco="pin"
+            data-asset={hasAsset ? 'true' : undefined}
+            className={styles.pin}
+            style={{ backgroundImage: bg(paperAssetUrl(pinId)) }}
+          />
+        )
+      })()}
 
-      {set.stamp && (
-        <span
-          data-deco="stamp"
-          className={`${styles.stamp} ${stampCornerClass(set.stamp.corner)}`}
-          style={{ transform: `rotate(${set.stamp.angleDeg}deg)` }}
-        >
-          {set.stamp.label}
-        </span>
-      )}
+      {set.clip && (() => {
+        const hasAsset = Boolean(paperAssetUrl('paper-clip'))
+        return (
+          <span
+            data-deco="clip"
+            data-asset={hasAsset ? 'true' : undefined}
+            className={styles.clip}
+            style={{ backgroundImage: bg(paperAssetUrl('paper-clip')) }}
+          />
+        )
+      })()}
+
+      {set.stamp && (() => {
+        const id = pickPaperAsset(set.stamp!.assetSeed, ['stamp-circular', 'stamp-rect', 'stamp-oval'])
+        return (
+          <span
+            data-deco="stamp"
+            data-asset={id ? 'true' : undefined}
+            className={`${styles.stamp} ${stampCornerClass(set.stamp!.corner)}`}
+            style={{ transform: `rotate(${set.stamp!.angleDeg}deg)`, backgroundImage: bg(id ? paperAssetUrl(id) : null) }}
+          >
+            {set.stamp!.label}
+          </span>
+        )
+      })()}
     </div>
   )
+}
+
+/** Convert a URL string (or null) to a CSS background-image value. */
+function bg(url: string | null): string | undefined {
+  return url ? `url("${url}")` : undefined
 }
 
 function cornerClass(c: DecoCorner): string {

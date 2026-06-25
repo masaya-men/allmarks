@@ -71,7 +71,9 @@
 }
 
 /* Brass position marker: a downward-pointing triangle riding the rule.
-   The parent rAF sets `left: <pct>%` each frame from centerTickIdx. */
+   The parent rAF sets `left: <pct>%` each frame from centerTickIdx.
+   This is the CSS fallback; when data-asset='true' the triangle borders
+   are replaced by the paper-scrap thumb PNG (see below). */
 .marker {
   position: absolute;
   bottom: 2px;
@@ -84,4 +86,32 @@
   pointer-events: none;
   filter: drop-shadow(0 1px 1px rgba(43, 39, 34, 0.25));
   will-change: left;
+}
+
+/* ── Paper-atelier PNG overrides ─────────────────────────────────────── */
+
+/* Strip PNG replaces the CSS rule/ticks/numerals as the track background.
+   The track is a fixed 360px wide so the baked ticks won't stretch-distort. */
+.rail[data-asset='true'] {
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Paper-scrap thumb PNG replaces the CSS triangle.
+   The parent rAF still sets style.left each frame (only 'left', so the
+   backgroundImage style prop set by React persists across frames). */
+.marker[data-asset='true'] {
+  width: 18px;
+  height: 22px;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  background-color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 1px 1px rgba(43, 39, 34, 0.22));
+  bottom: 2px;
 }

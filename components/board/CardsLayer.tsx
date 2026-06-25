@@ -1096,6 +1096,7 @@ export function CardsLayer({
                     ambientOn={ambientOn}
                     softShuffle={softShuffleSel.crossfade}
                     cycleMs={softShuffleSel.cadenceMs}
+                    paper={meta.decorations === true}
                   />
                 )
               })()}

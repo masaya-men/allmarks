@@ -179,7 +179,7 @@
    waveform keeps its 18px box untouched (numerals would otherwise be clipped
    or push the waveform ticks off-center). */
 .track[data-meter-variant='ruler'] {
-  height: 28px;
+  height: 34px;
 }
 
 /* Faint horizontal baseline that the waveform straddles. Identical to

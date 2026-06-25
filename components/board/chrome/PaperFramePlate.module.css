@@ -28,6 +28,18 @@
   opacity: 0;
 }
 
+/* When the mk1-plate PNG is placed, back the wrapper with it.
+ * The PNG bakes the background colour, border, and shadow — drop them here so
+ * there is no double-render; text spans stay on top (the PNG is text-free). */
+.plate[data-paper-plate] {
+  background: none;
+  border: none;
+  box-shadow: none;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 .title {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;

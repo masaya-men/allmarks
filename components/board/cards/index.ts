@@ -31,6 +31,9 @@ export type CardComponentProps = {
    *  a hard src cut. Only consumed by ImageCard. Default false keeps existing
    *  hard-cut behavior. */
   readonly softShuffle?: boolean
+  /** When true, renders the paper-atelier card face (mat backing + mounted
+   *  photo inset + serif caption). Only consumed by ImageCard. Default false. */
+  readonly paper?: boolean
 }
 
 export type CardComponent = ComponentType<CardComponentProps>

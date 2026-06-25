@@ -36,6 +36,18 @@
   transform: rotate(6deg);
 }
 
+/* PNG-backed seal span — used when wax-seal-a.png is placed (Task 7).
+ * Preserves pointer-events:none (inherited from .wrap) and dimensions to
+ * match the inline SVG's 64×64 footprint. */
+.sealImg {
+  display: block;
+  width: 64px;
+  height: 64px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 /* FOREST wax body with a soft debossed look (inner highlight via the rim) */
 .wax {
   fill: var(--wax-fill, #2f4a37);

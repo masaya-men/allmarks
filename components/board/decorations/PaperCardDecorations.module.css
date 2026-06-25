@@ -95,6 +95,50 @@
 .stampBl { bottom: 6px; left: 6px; }
 .stampBr { bottom: 6px; right: 6px; }
 
+/* --- PNG asset overrides (data-asset='true') ---
+   When a real PNG is available the inline backgroundImage supplies the art.
+   These rules remove the CSS-baked paint so the PNG shows cleanly.
+   The base class rules remain as graceful CSS fallback when data-asset is absent. */
+
+.washi[data-asset='true'] {
+  /* PNG bakes in the tape colour and torn-end appearance */
+  background-color: transparent;
+  -webkit-mask-image: none;
+  mask-image: none;
+  box-shadow: none; /* contact shadow baked into PNG */
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.pin[data-asset='true'],
+.clip[data-asset='true'] {
+  /* override radial / linear gradient; inline backgroundImage wins */
+  background: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  box-shadow: none;
+}
+
+.photoCorner[data-asset='true'] {
+  /* PNG bakes in the corner shape; remove the border-only CSS art */
+  border: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.stamp[data-asset='true'] {
+  /* PNG frame replaces the border; keep text legible over it */
+  border: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* decorations are static — nothing to disable, listed for invariant parity */
   .overlay { }

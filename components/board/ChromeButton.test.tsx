@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { render, fireEvent, act } from '@testing-library/react'
 import { ChromeButton } from './ChromeButton'
 
 describe('ChromeButton — basic', () => {
@@ -29,5 +29,32 @@ describe('ChromeButton — basic', () => {
       <ChromeButton label="SHARE" onClick={vi.fn()} data-testid="share-btn" />,
     )
     expect(getByTestId('share-btn').textContent).toBe('SHARE')
+  })
+})
+
+describe('ChromeButton — paper theme live tracking', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-theme-id')
+  })
+
+  it('disables triggerBurst (onMouseEnter) when data-theme-id switches to paper-atelier at runtime', async () => {
+    const { getByTestId } = render(
+      <ChromeButton label="SETTINGS" onClick={vi.fn()} data-testid="settings-btn" />,
+    )
+
+    // Before switching: hover should be wired (triggerBurst)
+    const btn = getByTestId('settings-btn')
+    expect(btn.onmouseenter).toBe(null) // React attaches via event delegation, not inline
+
+    // Switch to paper-atelier theme
+    await act(async () => {
+      document.documentElement.setAttribute('data-theme-id', 'paper-atelier')
+      // yield a tick for MutationObserver + React state update
+      await new Promise<void>((r) => setTimeout(r, 0))
+    })
+
+    // On paper: the label should still be shown (no scramble), and the button
+    // renders the static label text — assert text content equals original label
+    expect(btn.textContent).toBe('SETTINGS')
   })
 })

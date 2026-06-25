@@ -8,9 +8,22 @@ describe('PaperWaxSeal', () => {
     expect(screen.getByTestId('paper-wax-seal')).toBeTruthy()
   })
 
-  it('presses an "A" letter into the wax (the AllMarks monogram)', () => {
-    render(<PaperWaxSeal hidden={false} />)
-    expect(screen.getByTestId('paper-wax-seal').textContent).toContain('A')
+  it('renders the wax-seal PNG when placed (img/background), falls back to SVG otherwise', () => {
+    const { container } = render(<PaperWaxSeal hidden={false} />)
+    const sealImg = container.querySelector('[data-paper-seal]') as HTMLElement
+    expect(sealImg.style.backgroundImage).toContain('/themes/paper-atelier/wax-seal-a')
+  })
+
+  it('contains the AllMarks monogram — "A" in SVG or PNG seal covers it', () => {
+    const { container } = render(<PaperWaxSeal hidden={false} />)
+    const seal = screen.getByTestId('paper-wax-seal')
+    // When PNG asset is placed (wax-seal-a.png), the SVG is swapped out for a
+    // <span data-paper-seal> and the "A" text lives inside the PNG image, not the
+    // DOM. When fallback SVG is active, the text node "A" is present.
+    // This test checks the presence of either form.
+    const hasSvgMonogram = seal.querySelector('svg text') !== null
+    const hasPngSeal = container.querySelector('[data-paper-seal]') !== null
+    expect(hasSvgMonogram || hasPngSeal).toBe(true)
   })
 
   it('renders the decorative "+" stamp', () => {

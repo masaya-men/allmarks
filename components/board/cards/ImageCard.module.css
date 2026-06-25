@@ -132,3 +132,42 @@
   background: rgba(255, 255, 255, 0.95);
   transform: scale(1.2);
 }
+
+/* Paper-atelier card face: ivory mat, inset mounted photo, serif caption.
+   Only rendered when ImageCard receives paper. Lives entirely inside the
+   card box — the outer FLIP wrapper is untouched. */
+.paperCard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-dark-alt, #f7f1e3); /* fallback ivory if mat png absent */
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--card-radius, 3px);
+  /* warm-gray hairline + soft paper shadow are on the outer wrapper already;
+     keep the mat flush. */
+  overflow: hidden;
+  padding: 6%;            /* the mat margin around the print */
+  gap: 5%;
+}
+.paperPhoto {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  /* mounted-print look: faint inner shadow so the photo sits IN the mat */
+  box-shadow: inset 0 0 0 1px rgba(43, 39, 34, 0.10), 0 1px 2px rgba(43, 39, 34, 0.14);
+}
+.paperPhoto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.paperCaption {
+  flex: 0 0 auto;
+  font-family: var(--font-serif-display, Georgia, serif);
+  font-size: clamp(10px, 1.1vw, 14px);
+  line-height: 1.2;
+  color: var(--text-primary, #2b2722);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
