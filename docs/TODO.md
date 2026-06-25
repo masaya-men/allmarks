@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 135 — paper-atelier ブラッシュアップ: バグ1＋台紙2＋パネル羊皮紙化5面 本番反映)
+
+- 3タスクを優先順どおり実装・全て `allmarks.app` 反映済。**tsc0 / vitest1790 / build OK、default(黒+音波) byte-identical**（全変更 paper-scoped、各 CSS は numstat deleted=0 の純追記で実証）。
+- ①**washi×+TAG バグ修正**: paper の TagIndicatorStrip を z90→15（装飾z11 の上・全chrome の下）＋top:4→32。+TAG クリック奪取を解消、popover(z70)衝突も同時防止。Playwright で +TAG が elementFromPoint で取れることを実測。
+- ②**カード台紙 +2**: マスター節2 から CCL 自動検出 → `card-mat-lined`(罫線) / `card-mat-grid`(方眼) を切り出し+upscale、プール追加。**`.paperCard` は cover なので枠付き/クリップボードは別扱い必要**（cover で枠が切れる）→ user 相談事項（下記）。
+- ③**パネル羊皮紙化（もれなくテーマ追従）**: 共有トークン `--paper-panel-*` を globals に追加 → TUNE/SETTINGS/言語/タグ追加pop の各 .module.css に paper-scoped で羊皮紙背景＋墨文字（機能アクセント温存）。**別ルート /save** は pre-paint テーマスクリプト注入＋SaveToast 羊皮紙化（テーマ伝播を新設）。4パネル+/save を Playwright 実測（bg=rgb(241,231,207)+墨）＋視覚確認。
+- **user 宿題（最優先）**: allmarks.app ハードリロード→Paper Atelier 実機目視（+TAG押下/新台紙の見え/各羊皮紙パネルの色味・可読性）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **user 判断待ち（②の残り）**: 枠付きカード/クリップボード台紙と、user が今日生成した 16:08 古紙フレームセット(1) の使い道 = (a)専用「枠付きカード」モード(`background-size:100% 100%`/枠PNGオーバーレイ) か (b)パネル枠装飾 か。16:08 バッチは5テーマ分のフレーム素材（将来テーマ準備）。
+
 ### 直近の状態 (セッション 134 — paper-atelier ブラッシュアップ継続 / 6本 本番反映)
 
 - **5本の並列調査(Workflow)で事実を固めてから実装**。本番 `allmarks.app` 反映済・全 commit/push 済。tsc0 vitest1790 build OK、default byte-identical。

@@ -1,52 +1,43 @@
-# 次セッションのゴール (= セッション 135)
+# 次セッションのゴール (= セッション 136)
 
-## 今の状態（セッション134で完了・全て本番 `allmarks.app` 反映済み / commit+push 済み）
+## 今の状態（セッション135で完了・全て本番 `allmarks.app` 反映済み / commit+push 済み）
 
-paper-atelier の対話ブラッシュアップを継続。**5本の並列調査で事実を固めてから**実装した。tsc0 / vitest 1790 / build OK。default(黒+音波)は paper-scoped で byte-identical 維持。
+paper-atelier ブラッシュアップ継続。3タスク実装・本番反映。tsc0 / vitest1790 / build OK。default(黒+音波)は byte-identical（全変更 paper-scoped、各 CSS は numstat deleted=0 の純追記で実証）。
 
-セッション134で shipped:
-1. **角の不具合の真因特定＋修正**: y=0でだけ角が四角くなるのは `.canvas::before/::after`（暗い影帯, position:absolute z80）が角丸パネルの上辺のクリップを破る Chromium バグ。**紙テーマで影帯を `display:none`**（`BoardRoot.module.css` 末尾、paper-scoped）。ブラウザで「四角→丸」実測検証済み。（`.canvas`に`will-change`は全画面Lightboxを壊すので不採用。）
-2. **インク染み＝ユーザーの本物素材に差し替え**: 自作生成は廃止。マスターシート `12_29_56-Photoroom.png` 4節から切り出し → `ink-splat-1/2/3.png`。
-3. **染みを小さく（width 30-76, 旧180-380）＋ループ配置**: `board-decor.ts` が固定1500pxタイルを繰り返す（交互にx反転+回転）→ 下までスクロールしても途切れない（旧 MAX_ITEMS で下が空になっていた）。
-4. **カードの英語ワードスタンプ削除**: `paper-decorations.ts` の `stamp` を常時null（rng列は温存）。散布層の accents からもワードスタンプ除外（タグ誤認解消）。
-5. **タグ＝マステに手書き文字**（`TagIndicatorStrip.tsx`, `useIsPaperTheme`で紙のみ）: washi-tape PNG上にYomogi/Caveatでタグ名、id由来で安定変種+傾き。
-6. **メディアを切らない（contain）＋台紙が見える**（前々回）: `.paperPhoto img` cover→contain、窓背景 `--paper-window-bg`、台紙プールに card-mat-aged 追加。
-
-パララックス・染みの大きさ・washiタグは **user OK**。
+セッション135 で shipped:
+1. **washi×+TAG バグ修正**: paper の `TagIndicatorStrip` を z90→15（装飾z11 の上・全chrome の下）＋top:4→32。+TAG クリック奪取を解消、popover(z70)衝突も同時防止。Playwright 実測済。
+2. **カード台紙 +2**: マスター節2 から CCL 自動検出 → `card-mat-lined`(罫線)/`card-mat-grid`(方眼) を切り出し+upscale、`ImageCard.tsx:227` プールに追加。
+3. **パネル羊皮紙化（もれなくテーマ追従）**: globals に共有トークン `--paper-panel-*` 追加 → TUNE/SETTINGS/言語/タグ追加pop の各 .module.css に paper-scoped で羊皮紙背景＋墨文字（機能アクセント温存）。**別ルート /save** に pre-paint テーマスクリプト注入＋SaveToast 羊皮紙化。4パネル+/save を Playwright 実測（bg=rgb(241,231,207)+墨）。
 
 ## 次にやる（優先順）
 
-### 1. 【最優先・バグ】washiタグのマステが「+ TAG」ボタンに被って操作不能
-- **真因（特定済み）**: 紙テーマの `TagIndicatorStrip`（`components/board/TagIndicatorStrip.tsx`、コンテナ `top:4 left:12`、column、`zIndex:90`、ホバー時 `pointerEvents:auto`）が、`+ TAG` ボタン（`components/board/CardsLayer.tsx:1317-1341`、`top:8 left:8 zIndex:40`、ホバーで出る）の真上に重なり、テープがクリックを奪う。
-- **直し方の案**: 紙テーマだけ washi strip を +TAG ボタンの**下に逃がす**（例: コンテナ `top` を ~30px に）／または +TAG を別位置に。+TAG が必ずクリックできること＋ washiタグも読めることの両立を実機で確認。
-- 触るファイル: `TagIndicatorStrip.tsx`（コンテナ style の paper分岐）。必要なら `CardsLayer.tsx` の +TAG 位置も。
+### 1. 【最優先】user の実機目視フィードバックを反映
+- allmarks.app ハードリロード → Paper Atelier で: ①washiタグ下の **+TAG が押せるか** ②**罫線/方眼の新台紙**の見え（cover+大写真なので余白＋caption帯に控えめ。物足りなければ inset を緩める/台紙をもっと見せる検討）③**TUNE/SETTINGS/言語/タグ追加pop/保存窓** の羊皮紙パネルの色味・可読性（`--paper-panel-surface #f1e7cf` 等トークンで一括調整可）。
+- 出た指摘を 1 つずつ反映（feedback_one_thing_at_a_time）。
 
-### 2. 【D】カード台紙のバリエーションを増やす（user「囲った全部使う」）
-- 現状の台紙プール: `components/board/cards/ImageCard.tsx:227-231` の `['card-mat-1','card-mat-2','card-mat-3','card-mat-aged']`（`pickPaperAsset`で id 安定選択）。
-- やること: 枠付き/罫線/方眼/クリップボード/ノート等を切り出して追加。**素材は低解像度（元シート ~1122px）なので sharp で切り出し+upscale**。`lib/board/paper-assets.ts` に id 登録（type union + PAPER_ASSETS true）、PNG を `public/themes/paper-atelier/` に。
-- **注意**: 枠の装飾／罫線が写真窓（`--paper-frame-inset: 6% 6% 22% 6%`）と干渉しないか **1種ずつ実機確認**。`deckle-edge-mat` は横長の破れ紙なので `background-size:cover` で縦カードに使うと端が切れる→専用 contain 扱いが要る（汎用プールに入れない）。
-- 素材の在り処と切り出しレシピは memory `reference_paper_asset_sources` 参照（マスター = `C:/Users/masay/Downloads/ChatGPT Image 2026年6月25日 12_29_56-Photoroom.png`、節2=CARD&PANEL）。
+### 2. 【②の残り】枠付きカード/クリップボード台紙 + 16:08 フレームセットの使い道を決める
+- **背景**: `.paperCard` は `background-size: cover`。カードのアスペクトは写真ごとに変わるので、**強い矩形フレーム素材は cover で切れて壊れる**（deckle-edge と同じ罠）。だから session135 では cover で生きる無地系(罫線/方眼)のみ追加した。
+- user が今日(6/25)生成した **16:08 の古紙フレームセット(1)**（`ChatGPT Image 2026年6月25日 16_08_56 (1).png`、高解像度・専用・3枠）の使い道を user と決める:
+  - (a) 専用「**枠付きカード**」モード = picked mat が枠系のとき `data-paper-mat-frame` を立て CSS で `background-size: 100% 100%`（単純な矩形枠なら歪み許容）か、枠PNGを写真の上に重ねるオーバーレイ層
+  - (b) パネル枠の装飾（今のパネルは無地羊皮紙。枠を足すか）
+- master 節2 の framed/clipboard/folder piece も同様（要 contain or overlay）。
+- **16:08 バッチは5テーマ分のフレーム**（(1)古紙=paper / (2)SF白メカ / (3)暗緑端末 / (4)celestial紺金 / (5)リキッドグラス）＝**将来テーマの素材準備**。paper 以外は今は対象外。
 
-### 3. 【F】パネル背景の羊皮紙化（user「もれなくテーマ追従」承認済み）
-- 対象パネル（紙テーマのとき背景を羊皮紙＋インク文字に）:
-  - 板内: **TUNE**（`TuneTrigger.module.css` + `TunePresetColumn.module.css`）／**SETTINGS ドロワー**（場所未特定、要調査）／**言語切替**（`LanguageSwitcher.module.css`）／**タグ追加ポップ**（`components/board/TagAddPopover/`）
-  - 別ページ: **保存窓 `app/save/`**（拡張/ブックマークレットの保存タグ窓）← **別ルートなのでテーマ伝達の仕組みから**。`(app)/layout` の pre-paint インラインスクリプト（localStorage `allmarks-theme-id` → `<html data-theme-id>`）を参考に、`app/save` でも同様に data-theme-id を立てる。
-- session133 は文字をインク化しただけ（`TuneTrigger`/`LanguageSwitcher` に一部 paper rule あり）。今回は **パネルの背景そのもの**を羊皮紙に。各 `.module.css` に `:global(html[data-theme-id='paper-atelier'])` スコープで背景画像（`--asset-parchment-*` か card-mat 系）＋インク文字。各パネルを実機で1つずつ確認。
+### 3. その後（paper が固まったら）
+- Plan 3 = **共有のテーマ化**（spec §6、A盤面+B OGサムネを paper でも）／ #1 white-sector・#5 celestial-atlas を同型量産（16:08 (4) celestial フレーム素材あり）。
 
 ## 守ること（毎回）
-- default(黒+音波)は **byte-identical**。全 paper 変更は paper-scoped（`:global(html[data-theme-id='paper-atelier'])` か `useIsPaperTheme` か paper-only 描画分岐）。
+- default(黒+音波)は **byte-identical**。全 paper 変更は paper-scoped（`:global(html[data-theme-id='paper-atelier'])` か `useIsPaperTheme` か paper-only 分岐）。各 CSS は**末尾に純追記**（numstat deleted=0 を保つ）。
 - deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy は `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true --commit-message="ASCII"`。応答は日本語。視覚は user 直接確認。
 - **4K perf watch**: 散布層＋装飾PNG＋scatter で fill-rate 負荷。重ければ密度/サイズ下げる。
 - 既知フレーキー: `tests/lib/channel.test.ts`（単独では緑）。
 
-## 主要ファイル（paper 関連 / 今回の追加）
-- パララックス: `lib/board/board-decor.ts`（タイル+カテゴリ）/ `BoardDecorLayer.tsx`（`scatterHeight`）/ `use-paper-parallax.ts`（bg 0.15）/ `BoardRoot.tsx`（`DECOR_PARALLAX_FACTOR=0.30`、scatterHeight算出 ~L2163、layers ~L2120/2150/2188）
-- 角修正: `BoardRoot.module.css`（`.canvas::before/::after` を paper で display:none）
-- カード: `cards/ImageCard.tsx`（台紙プール）/ `cards/ImageCard.module.css`（.paperPhoto contain + 窓背景）/ `decorations/paper-decorations.ts`（stamp無効化）/ `decorations/PaperCardDecorations.tsx`
-- タグ: `components/board/TagIndicatorStrip.tsx`（paper=washi+手書き、`useIsPaperTheme`）
-- 素材: `lib/board/paper-assets.ts`（マニフェスト）/ `public/themes/paper-atelier/*.png`
-- chrome: `TuneTrigger`/`TunePresetColumn`/`LanguageSwitcher`/`TagAddPopover` の .module.css、`app/save/`
-- トークン: `app/globals.css` paper ブロック（`--paper-window-bg`, `--paper-frame-inset`, `--asset-parchment-bg/-outer`, `--canvas-radius:14px`）
+## 主要ファイル（今回の追加/変更）
+- バグ: `components/board/TagIndicatorStrip.tsx`（paper 分岐 z15/top32）
+- 台紙: `lib/board/paper-assets.ts`（`card-mat-lined`/`card-mat-grid` 登録）/ `components/board/cards/ImageCard.tsx:227`（プール）/ `public/themes/paper-atelier/card-mat-{lined,grid}.png`
+- パネル: `app/globals.css`（`--paper-panel-*` トークン、chrome-text 群の直後）/ `TuneTrigger.module.css` / `TunePresetColumn.module.css` / `ExtensionEntry.module.css` / `ThemePicker.module.css` / `LanguageSwitcher.module.css` / `TagAddPopover/TagAddPopover.module.css`
+- 保存窓: `app/save/layout.tsx`（pre-paint テーマスクリプト＋テーマ連動bg）/ `components/bookmarklet/SaveToast.module.css`（paper stage）
+- 素材源: `C:/Users/masay/Downloads/ChatGPT Image 2026年6月25日 12_29_56-Photoroom.png`（マスター, 透明背景, 1122×1402, 節2=CARD&PANEL）/ 16:08 フレームセット5枚（将来テーマ）。memory `reference_paper_asset_sources` も参照。
 
 ## 実機検証レシピ（playwright）
-dev: `pnpm dev`（:3000）。viewport `1489×679` dpr2。`/board` を開き 2.5s 待ち → IDB seed（store `settings` に `{key:'board-config',config:{themeId:'paper-atelier',displayMode:'visual',activeFilter:{kind:'all'},motionEnabled:true,bgTypoEnabled:true,frameRatio:{kind:'preset',presetId:'free'}}}` ＋ `bookmarks` に thumbnail付きダミー、タグ確認は `tags` store にレコード＋bookmark.tags）→ reload 4s。スクリプトは**プロジェクト直下に書いて** `node ./_x.mjs`（playwright解決のため）→ 実行後削除。DB名 `booklage-db`。
+dev: `pnpm dev`（:3000）。viewport `1489×679` dpr2。`/board` を 2.5s 待ち → IDB seed（store `settings` に `{key:'board-config',config:{themeId:'paper-atelier',displayMode:'visual',activeFilter:{kind:'all'},motionEnabled:true,bgTypoEnabled:true,frameRatio:{kind:'preset',presetId:'free'}}}` ＋ localStorage `allmarks-theme-id='paper-atelier'` ＋ `bookmarks` に thumbnail付きダミー）→ reload 4s。DB名 `booklage-db`。パネルは testid: `tune-trigger`/`tune-drawer`、`extension-settings`/`[aria-label="AllMarks settings"]`、`language-switcher-toggle`、card hover→`card-add-tag-button`。スクリプトは**プロジェクト直下**に書いて `node ./_x.mjs` → 実行後削除。台紙の特定 mat 強制は id を FNV-1a でブルートフォース（プール6種 index4=lined/5=grid）。
