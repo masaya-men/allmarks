@@ -31,7 +31,9 @@ export function PaperWaxSeal({ hidden }: {
   /** Mirror of BoardChrome's hidden prop — true while the Lightbox is open. */
   readonly hidden: boolean
 }): ReactElement {
-  const assetUrl = paperAssetUrl('wax-seal-a')
+  // Prefer the gold "A" wax medallion (sheet 9); fall back to the original
+  // dark seal, then to the inline SVG when no PNG is placed.
+  const assetUrl = paperAssetUrl('wax-seal-gold-a') ?? paperAssetUrl('wax-seal-a')
 
   return (
     <div

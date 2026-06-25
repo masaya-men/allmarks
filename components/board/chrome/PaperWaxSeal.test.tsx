@@ -11,7 +11,8 @@ describe('PaperWaxSeal', () => {
   it('renders the wax-seal PNG when placed (img/background), falls back to SVG otherwise', () => {
     const { container } = render(<PaperWaxSeal hidden={false} />)
     const sealImg = container.querySelector('[data-paper-seal]') as HTMLElement
-    expect(sealImg.style.backgroundImage).toContain('/themes/paper-atelier/wax-seal-a')
+    // Prefers the gold "A" medallion; both candidate ids share the wax-seal stem.
+    expect(sealImg.style.backgroundImage).toContain('/themes/paper-atelier/wax-seal')
   })
 
   it('contains the AllMarks monogram — "A" in SVG or PNG seal covers it', () => {

@@ -18,9 +18,16 @@ export type PaperAssetId =
   | 'photo-corner-1' | 'photo-corner-2' | 'photo-corner-3' | 'photo-corner-4'
   | 'stamp-circular' | 'stamp-rect' | 'stamp-oval'
   | 'wax-seal-a' | 'mk1-plate'
-  | 'ruler-meter-strip' | 'ruler-meter-strip-2'
+  | 'ruler-meter-strip' | 'ruler-meter-strip-2' | 'ruler-meter-strip-3'
   | 'ruler-meter-thumb' | 'ruler-meter-thumb-2'
   | 'deckle-edge-mat' | 'paper-foxing-overlay'
+  // session 133 brushup 4 — richer parts (sheets 9/10)
+  | 'washi-tape-6' | 'washi-tape-7' | 'washi-tape-8' | 'washi-tape-9'
+  | 'stamp-archive' | 'stamp-confidential' | 'stamp-top-secret'
+  | 'stamp-received' | 'stamp-classified' | 'stamp-confidential-red' | 'stamp-approved'
+  | 'icon-star' | 'icon-heart' | 'icon-check' | 'icon-x' | 'icon-excl' | 'icon-question'
+  | 'icon-search' | 'icon-bookmark' | 'icon-camera' | 'icon-envelope' | 'icon-eye' | 'icon-flag'
+  | 'wax-seal-gold-a' | 'wax-seal-red'
 
 /** `true` = the PNG is committed and usable. `false` = not placed yet; the
  *  consuming face must degrade to its CSS/SVG fallback. */
@@ -33,9 +40,15 @@ export const PAPER_ASSETS: Readonly<Record<PaperAssetId, boolean>> = {
   'photo-corner-1': true, 'photo-corner-2': true, 'photo-corner-3': true, 'photo-corner-4': true,
   'stamp-circular': true, 'stamp-rect': true, 'stamp-oval': true,
   'wax-seal-a': true, 'mk1-plate': true,
-  'ruler-meter-strip': true, 'ruler-meter-strip-2': true,
+  'ruler-meter-strip': true, 'ruler-meter-strip-2': true, 'ruler-meter-strip-3': true,
   'ruler-meter-thumb': true, 'ruler-meter-thumb-2': true,
   'deckle-edge-mat': true, 'paper-foxing-overlay': true,
+  'washi-tape-6': true, 'washi-tape-7': true, 'washi-tape-8': true, 'washi-tape-9': true,
+  'stamp-archive': true, 'stamp-confidential': true, 'stamp-top-secret': true,
+  'stamp-received': true, 'stamp-classified': true, 'stamp-confidential-red': true, 'stamp-approved': true,
+  'icon-star': true, 'icon-heart': true, 'icon-check': true, 'icon-x': true, 'icon-excl': true, 'icon-question': true,
+  'icon-search': true, 'icon-bookmark': true, 'icon-camera': true, 'icon-envelope': true, 'icon-eye': true, 'icon-flag': true,
+  'wax-seal-gold-a': true, 'wax-seal-red': true,
 }
 
 export function hasPaperAsset(id: PaperAssetId): boolean {

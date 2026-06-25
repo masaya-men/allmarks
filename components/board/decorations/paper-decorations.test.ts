@@ -11,12 +11,11 @@ describe('getCardDecorations', () => {
   })
 
   it('PRNG regression guard — concrete output is pinned to today\'s mulberry32+FNV-1a impl', () => {
-    // Values updated 2026-06-25 for Task 3 shape extension (assetSeed fields added per-piece,
-    // pin changed from boolean to { variant:'gold'|'green' } | null).
-    // Adding assetSeed: rng() at end of washi[0] advances PRNG state so washi[1]'s
-    // angleDeg/offsetPct differ from the pre-Task-3 values — this is expected and intentional.
-    // Derived via vitest run 2026-06-25 after implementing the extension.
-    // Using toEqual + full field pinning to catch PRNG shifts in any field (incl assetSeed).
+    // Values re-derived 2026-06-25 (brushup 4): stamp lost its `label` (word now
+    // baked into the PNG) and new iconStamp/wax categories were appended, so the
+    // PRNG stream past the stamp roll shifted. washi/pin/clip/photoCorners are
+    // unchanged (they precede the stamp). Derived via a throwaway vitest run.
+    // Using toEqual + full field pinning to catch PRNG shifts in any field.
     expect(getCardDecorations('bookmark-abc')).toEqual({
       photoCorners: ['tl', 'br'],
       washi: [
@@ -26,6 +25,8 @@ describe('getCardDecorations', () => {
       pin: null,
       clip: false,
       stamp: null,
+      iconStamp: { corner: 'tl', angleDeg: 2.9, assetSeed: 0.8656163848936558 },
+      wax: null,
     })
     expect(getCardDecorations('card-xyz-7')).toEqual({
       photoCorners: ['tr'],
@@ -35,6 +36,8 @@ describe('getCardDecorations', () => {
       pin: null,
       clip: false,
       stamp: null,
+      iconStamp: null,
+      wax: null,
     })
   })
 
@@ -75,15 +78,28 @@ describe('getCardDecorations', () => {
       if (d.pin !== null) {
         expect(['gold', 'green']).toContain(d.pin.variant)
       }
-      // stamp: null or a known variant + corner + bounded angle + assetSeed
+      // stamp: null or a corner + bounded angle + assetSeed (word baked into PNG)
       if (d.stamp) {
-        expect(['ARCHIVE', 'REAL', 'RATED']).toContain(d.stamp.label)
         expect(['tl', 'tr', 'bl', 'br']).toContain(d.stamp.corner)
         expect(d.stamp.angleDeg).toBeGreaterThanOrEqual(-18)
         expect(d.stamp.angleDeg).toBeLessThanOrEqual(18)
         expect(typeof d.stamp.assetSeed).toBe('number')
         expect(d.stamp.assetSeed).toBeGreaterThanOrEqual(0)
         expect(d.stamp.assetSeed).toBeLessThan(1)
+      }
+      // icon stamp: null or a corner + bounded angle + assetSeed
+      if (d.iconStamp) {
+        expect(['tl', 'tr', 'bl', 'br']).toContain(d.iconStamp.corner)
+        expect(d.iconStamp.angleDeg).toBeGreaterThanOrEqual(-12)
+        expect(d.iconStamp.angleDeg).toBeLessThanOrEqual(12)
+        expect(d.iconStamp.assetSeed).toBeGreaterThanOrEqual(0)
+        expect(d.iconStamp.assetSeed).toBeLessThan(1)
+      }
+      // wax: null or a corner + assetSeed
+      if (d.wax) {
+        expect(['tl', 'tr', 'bl', 'br']).toContain(d.wax.corner)
+        expect(d.wax.assetSeed).toBeGreaterThanOrEqual(0)
+        expect(d.wax.assetSeed).toBeLessThan(1)
       }
     }
   })

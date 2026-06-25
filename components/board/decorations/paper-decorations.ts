@@ -13,7 +13,6 @@
 export type DecoCorner = 'tl' | 'tr' | 'bl' | 'br'
 export type WashiTint = 'a' | 'b' | 'c'
 export type WashiEdge = 'top' | 'right' | 'bottom' | 'left'
-export type StampLabel = 'ARCHIVE' | 'REAL' | 'RATED'
 
 export type WashiPiece = {
   /** Which --deco-washi-{a|b|c} tint token to paint with. */
@@ -29,10 +28,25 @@ export type WashiPiece = {
 }
 
 export type DecoStamp = {
-  readonly label: StampLabel
   readonly corner: DecoCorner
   readonly angleDeg: number
-  /** Stable 0..1 fraction used by the component to pick a stamp-frame PNG variant. */
+  /** Stable 0..1 fraction used by the component to pick a word-stamp PNG
+   *  (ARCHIVE / CONFIDENTIAL / TOP SECRET / RECEIVED / CLASSIFIED / APPROVED). */
+  readonly assetSeed: number
+}
+
+/** A small archival icon stamp (star / heart / check / camera / …). */
+export type DecoIcon = {
+  readonly corner: DecoCorner
+  readonly angleDeg: number
+  /** Stable 0..1 fraction used by the component to pick an icon-stamp PNG. */
+  readonly assetSeed: number
+}
+
+/** A pressed wax-seal accent. */
+export type DecoWax = {
+  readonly corner: DecoCorner
+  /** Stable 0..1 fraction used by the component to pick a wax-seal PNG. */
   readonly assetSeed: number
 }
 
@@ -45,8 +59,12 @@ export type CardDecorationSet = {
   readonly pin: { readonly variant: 'gold' | 'green' } | null
   /** Top-edge bulldog clip (mutually exclusive with `pin`). */
   readonly clip: boolean
-  /** Optional archival rubber stamp, or null. */
+  /** Optional archival word stamp, or null. */
   readonly stamp: DecoStamp | null
+  /** Optional small icon stamp, or null. */
+  readonly iconStamp: DecoIcon | null
+  /** Optional pressed wax-seal accent, or null. */
+  readonly wax: DecoWax | null
 }
 
 /** mulberry32 — same variant as the approved mockup generator. */
@@ -74,7 +92,6 @@ function hashStringToSeed(input: string): number {
 const ALL_CORNERS: ReadonlyArray<DecoCorner> = ['tl', 'tr', 'bl', 'br']
 const TINTS: ReadonlyArray<WashiTint> = ['a', 'b', 'c']
 const EDGES: ReadonlyArray<WashiEdge> = ['top', 'right', 'bottom', 'left']
-const STAMP_LABELS: ReadonlyArray<StampLabel> = ['ARCHIVE', 'REAL', 'RATED']
 
 /** Pick one element of `arr` using rng in [0,1). */
 function pick<T>(rng: () => number, arr: ReadonlyArray<T>): T {
@@ -145,16 +162,34 @@ export function getCardDecorations(cardId: string): CardDecorationSet {
     : null
   const clip = !pinPresent && fastenerRoll < 0.3
 
-  // --- Stamp: rare archival rubber stamp in a corner. ---
+  // --- Stamp: archival word stamp in a corner (ARCHIVE / CONFIDENTIAL / …). ---
   let stamp: DecoStamp | null = null
-  if (rng() < 0.28) {
+  if (rng() < 0.3) {
     stamp = {
-      label: pick(rng, STAMP_LABELS),
       corner: pick(rng, ALL_CORNERS),
       angleDeg: floatRange(rng, -18, 18),
-      assetSeed: rng(), // appended last — does not shift prior rng() call positions
+      assetSeed: rng(),
     }
   }
 
-  return { photoCorners, washi, pin, clip, stamp }
+  // --- Icon stamp: small archival icon (star / heart / camera / …). ---
+  let iconStamp: DecoIcon | null = null
+  if (rng() < 0.22) {
+    iconStamp = {
+      corner: pick(rng, ALL_CORNERS),
+      angleDeg: floatRange(rng, -12, 12),
+      assetSeed: rng(),
+    }
+  }
+
+  // --- Wax seal: rare pressed-wax accent. ---
+  let wax: DecoWax | null = null
+  if (rng() < 0.14) {
+    wax = {
+      corner: pick(rng, ALL_CORNERS),
+      assetSeed: rng(),
+    }
+  }
+
+  return { photoCorners, washi, pin, clip, stamp, iconStamp, wax }
 }

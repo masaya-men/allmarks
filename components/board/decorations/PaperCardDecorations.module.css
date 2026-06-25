@@ -129,14 +129,36 @@
 }
 
 .stamp[data-asset='true'] {
-  /* PNG frame replaces the border; keep text legible over it */
+  /* The word is baked into the PNG (no text child) — give the span an explicit
+     box (~4:1, matching the word-stamp art) so the background can render. */
   border: none;
+  padding: 0;
+  width: 84px;
+  height: 22px;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+/* --- Icon stamp (small archival icon: star / heart / camera / …) --- */
+.iconStamp {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.9;
+}
+
+/* --- Wax-seal accent (pressed wax) --- */
+.waxDeco {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -51,6 +51,7 @@ export function PaperCardDecorations({
       {set.washi.map((w, i) => {
         const id = pickPaperAsset(w.assetSeed, [
           'washi-tape-1', 'washi-tape-2', 'washi-tape-3', 'washi-tape-4', 'washi-tape-5',
+          'washi-tape-6', 'washi-tape-7', 'washi-tape-8', 'washi-tape-9',
         ])
         return (
           <span
@@ -89,21 +90,57 @@ export function PaperCardDecorations({
       })()}
 
       {set.stamp && (() => {
-        const id = pickPaperAsset(set.stamp!.assetSeed, ['stamp-circular', 'stamp-rect', 'stamp-oval'])
+        const s = set.stamp
+        const id = pickPaperAsset(s.assetSeed, STAMP_IDS)
         return (
           <span
             data-deco="stamp"
             data-asset={id ? 'true' : undefined}
-            className={`${styles.stamp} ${stampCornerClass(set.stamp!.corner)}`}
-            style={{ transform: `rotate(${set.stamp!.angleDeg}deg)`, backgroundImage: bg(id ? paperAssetUrl(id) : null) }}
-          >
-            {set.stamp!.label}
-          </span>
+            className={`${styles.stamp} ${stampCornerClass(s.corner)}`}
+            style={{ transform: `rotate(${s.angleDeg}deg)`, backgroundImage: bg(id ? paperAssetUrl(id) : null) }}
+          />
+        )
+      })()}
+
+      {set.iconStamp && (() => {
+        const ic = set.iconStamp
+        const id = pickPaperAsset(ic.assetSeed, ICON_IDS)
+        return (
+          <span
+            data-deco="icon"
+            data-asset={id ? 'true' : undefined}
+            className={`${styles.iconStamp} ${stampCornerClass(ic.corner)}`}
+            style={{ transform: `rotate(${ic.angleDeg}deg)`, backgroundImage: bg(id ? paperAssetUrl(id) : null) }}
+          />
+        )
+      })()}
+
+      {set.wax && (() => {
+        const id = pickPaperAsset(set.wax.assetSeed, ['wax-seal-red'])
+        return (
+          <span
+            data-deco="wax"
+            data-asset={id ? 'true' : undefined}
+            className={`${styles.waxDeco} ${stampCornerClass(set.wax.corner)}`}
+            style={{ backgroundImage: bg(id ? paperAssetUrl(id) : null) }}
+          />
         )
       })()}
     </div>
   )
 }
+
+/** Word-stamp PNG pool (the word is baked into the art). */
+const STAMP_IDS: readonly PaperAssetId[] = [
+  'stamp-archive', 'stamp-confidential', 'stamp-top-secret',
+  'stamp-received', 'stamp-classified', 'stamp-confidential-red', 'stamp-approved',
+]
+
+/** Icon-stamp PNG pool. */
+const ICON_IDS: readonly PaperAssetId[] = [
+  'icon-star', 'icon-heart', 'icon-check', 'icon-x', 'icon-excl', 'icon-question',
+  'icon-search', 'icon-bookmark', 'icon-camera', 'icon-envelope', 'icon-eye', 'icon-flag',
+]
 
 /** Convert a URL string (or null) to a CSS background-image value. */
 function bg(url: string | null): string | undefined {
