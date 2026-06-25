@@ -94,6 +94,21 @@
   overflow: hidden;
 }
 
+/* paper-atelier: the top/bottom edge scrims (.canvas::before / ::after) are a
+   positioned z-index:80 descendant sitting ON the top edge of a rounded (14px)
+   overflow:hidden .canvas. In Chromium that defeats the TOP corner's clip of
+   .canvas's OWN background at scroll y=0 → square top corners, but ONLY at y=0
+   (any scroll repaints the cards and the compositor re-applies the corner clip).
+   Disabling the scrims on paper restores the rounded top corners (empirically
+   verified at y=0 + scrolled). They're also wrong on cream parchment — a DARK
+   gradient over paper — and paper chrome text gets its legibility from ink-on-
+   cream + light text-stroke/shadow (globals.css). Paper-only: every other theme
+   keeps both scrims byte-identical. */
+:global(html[data-theme-id='paper-atelier']) .canvas::before,
+:global(html[data-theme-id='paper-atelier']) .canvas::after {
+  display: none;
+}
+
 /* Paper-atelier "paper on paper": the board .canvas is a rounded parchment
    PANEL lifted off an outer parchment surface (.outerFrame). The panel image is
    FIXED/cover (the camera scrolls inside it) so cards travel OVER a still

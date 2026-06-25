@@ -14,12 +14,14 @@ import { paperAssetUrl } from '@/lib/board/paper-assets'
  * per-frame paint); the only motion is the parent wrapper's scroll transform.
  */
 export function BoardDecorLayer({
-  contentHeight,
+  scatterHeight,
 }: {
-  /** Total scrollable content height (px) — drives how many items scatter. */
-  readonly contentHeight: number
+  /** The vertical band (px) the slow-panned layer ever exposes through scroll —
+   *  items scatter across THIS (not the full content height) so on-screen
+   *  density stays uniform and no items are wasted below the visible band. */
+  readonly scatterHeight: number
 }): ReactElement {
-  const items = useMemo(() => getBoardDecor(contentHeight), [contentHeight])
+  const items = useMemo(() => getBoardDecor(scatterHeight), [scatterHeight])
 
   return (
     <div

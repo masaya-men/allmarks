@@ -18,9 +18,9 @@ describe('usePaperParallax', () => {
   it('enabled only for paper-atelier: returns a fractional offset of viewportY', () => {
     const { result } = renderHook(() =>
       usePaperParallax({ themeId: 'paper-atelier', motionEnabled: true, viewportY: 1000 }))
-    // 0.4x content pan → bg lags by 60% of scroll (positive lag offset).
+    // 0.15x content pan → bg lags by 85% of scroll (positive lag offset).
     expect(result.current).toBeGreaterThan(0)
-    expect(result.current).toBeCloseTo(1000 * 0.6, 5)
+    expect(result.current).toBeCloseTo(1000 * 0.85, 5)
   })
 
   it('disabled for non-paper themes → 0 (no parallax)', () => {

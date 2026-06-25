@@ -39,10 +39,14 @@ type DecorCategory = {
 }
 
 const DECOR_CATEGORIES: readonly DecorCategory[] = [
-  // coffee/ink rings → read as stains. Most common, large, faint.
-  { ids: ['decor-ring-1', 'decor-ring-2', 'decor-ring-coffee'], weight: 5, width: [120, 280], opacity: [0.26, 0.5], rotate: 40 },
+  // DARK aged-ink splat stains — the visible, parallax-CARRYING marks. Highest
+  // weight + bold size/opacity: a layer you can't see can't show motion, so
+  // these dominate the wash so the slow pan is actually felt over the cards.
+  { ids: ['ink-splat-1', 'ink-splat-2', 'ink-splat-3'], weight: 7, width: [180, 380], opacity: [0.5, 0.78], rotate: 50 },
+  // gold coffee/ink rings → secondary faint stains.
+  { ids: ['decor-ring-1', 'decor-ring-2', 'decor-ring-coffee'], weight: 3, width: [120, 270], opacity: [0.4, 0.62], rotate: 40 },
   // flourishes → faint ink lines drifting across the sheet.
-  { ids: ['decor-flourish-1', 'decor-flourish-2', 'decor-flourish-3'], weight: 3, width: [140, 320], opacity: [0.2, 0.4], rotate: 28 },
+  { ids: ['decor-flourish-1', 'decor-flourish-2', 'decor-flourish-3'], weight: 2, width: [150, 320], opacity: [0.35, 0.55], rotate: 28 },
   // small accents — wax seals + faded archive/word + icon stamps. Rare, smaller,
   // slightly crisper so they punctuate the wash without crowding it.
   {
@@ -51,7 +55,7 @@ const DECOR_CATEGORIES: readonly DecorCategory[] = [
       'stamp-archive', 'stamp-confidential', 'stamp-received', 'stamp-approved',
       'icon-star', 'icon-eye', 'icon-flag', 'icon-bookmark', 'icon-heart',
     ],
-    weight: 2, width: [64, 130], opacity: [0.3, 0.5], rotate: 44,
+    weight: 2, width: [64, 130], opacity: [0.45, 0.65], rotate: 44,
   },
 ]
 
@@ -60,9 +64,9 @@ const TOTAL_WEIGHT = DECOR_CATEGORIES.reduce((s, c) => s + c.weight, 0)
 /** Vertical band size; each band scatters ITEMS_PER_BAND items across the full
  *  width, so the effective density is ~one item per (ROW_SPACING_PX / avg
  *  items) px — several × the previous one-per-540px field. */
-const ROW_SPACING_PX = 230
+const ROW_SPACING_PX = 190
 const ITEMS_PER_BAND_MIN = 2
-const ITEMS_PER_BAND_MAX = 3
+const ITEMS_PER_BAND_MAX = 4
 /** Safety cap so very tall boards can't spawn an unbounded scatter (4K
  *  fill-rate watch — these are static imgs but more = more composited tiles). */
 const MAX_ITEMS = 90
@@ -101,13 +105,14 @@ function hashStringToSeed(input: string): number {
 }
 
 /**
- * Deterministic scatter for a board of the given content height. More items for
- * taller boards; stable for a given height (same seed string).
+ * Deterministic scatter across `scatterHeight` px (the vertical band the slow
+ * parallax pan actually exposes — see BoardRoot DECOR_PARALLAX_FACTOR). More
+ * items for a taller band; stable for a given height (same seed string).
  */
-export function getBoardDecor(contentHeight: number): BoardDecorItem[] {
-  if (!Number.isFinite(contentHeight) || contentHeight <= 0) return []
-  const rng = mulberry32(hashStringToSeed('allmarks-board-decor-v2'))
-  const rows = Math.max(1, Math.floor(contentHeight / ROW_SPACING_PX))
+export function getBoardDecor(scatterHeight: number): BoardDecorItem[] {
+  if (!Number.isFinite(scatterHeight) || scatterHeight <= 0) return []
+  const rng = mulberry32(hashStringToSeed('allmarks-board-decor-v3'))
+  const rows = Math.max(1, Math.floor(scatterHeight / ROW_SPACING_PX))
   const items: BoardDecorItem[] = []
   for (let i = 0; i < rows && items.length < MAX_ITEMS; i++) {
     const perBand =
@@ -120,7 +125,7 @@ export function getBoardDecor(contentHeight: number): BoardDecorItem[] {
       items.push({
         id,
         xPct: Math.round((4 + rng() * 92) * 10) / 10,
-        yPx: Math.floor(band * contentHeight),
+        yPx: Math.floor(band * scatterHeight),
         widthPx: Math.round(rangeAt(rng, cat.width)),
         rotateDeg: Math.round((rng() - 0.5) * 2 * cat.rotate * 10) / 10,
         opacity: Math.round(rangeAt(rng, cat.opacity) * 100) / 100,

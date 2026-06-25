@@ -226,7 +226,7 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
   if (paper) {
     const matId = pickPaperAsset(
       seedFractionFromId(item.bookmarkId),
-      ['card-mat-1', 'card-mat-2', 'card-mat-3'],
+      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged'],
     )
     const matUrl = matId ? paperAssetUrl(matId) : null
     return (

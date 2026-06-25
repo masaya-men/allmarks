@@ -494,6 +494,13 @@ html[data-theme-id="paper-atelier"] {
      back to inset:0 (unchanged). */
   --paper-frame-inset: 6% 6% 22% 6%;
 
+  /* The photo "window" surface = warm photo-paper white the media is mounted ON.
+     With object-fit:contain (media never cropped, may shrink), the letterbox
+     bands inside the window read as this paper tone — a print mounted on the
+     kraft mat — instead of a void. Slightly lighter than the mat so the window
+     reads as a distinct sheet. Paper-only; default theme never sees it. */
+  --paper-window-bg: #f4eedd;
+
   /* soft photo shuffle — slow crossfade cadence for paper image cards.
      thumbSoft uses var(--paper-shuffle-fade-duration, 900ms) so non-paper
      builds are unaffected (900ms fallback is unused — non-paper cards never

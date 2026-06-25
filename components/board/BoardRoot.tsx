@@ -88,6 +88,14 @@ import { usePaperParallax } from './use-paper-parallax'
 import { BoardDecorLayer } from './BoardDecorLayer'
 import styles from './BoardRoot.module.css'
 
+/** Paper middle-scatter layer pan speed, as a fraction of the card scroll. 0.30
+ *  = the scatter travels at 30% of card speed (lags by 70% of scroll) = strong
+ *  parallax. Also drives the scatter DISTRIBUTION band: because the layer moves
+ *  this slowly, only content-y up to `viewportH + 0.30·(contentH − viewportH)`
+ *  ever crosses the viewport, so we scatter items across exactly that band (not
+ *  the full content height) for uniform on-screen density with no wasted items. */
+const DECOR_PARALLAX_FACTOR = 0.30
+
 // Horizontal room past the rightmost card so the user can scroll a little
 // further right. Vertical bottom room is computed per-render from the viewport
 // height (see contentBounds); the fraction below stops the last card around
@@ -812,9 +820,10 @@ export function BoardRoot() {
 
   const themeMeta = getThemeMeta(themeId)
   const paperParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y })
-  // Middle scatter layer pans at HALF the card speed (0.5x) for a strong,
-  // clearly-felt depth read — slower than cards, faster than the bg stains (0.4x).
-  const decorParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: 0.5 })
+  // Middle scatter layer pans at 0.30x the card speed (lags by 70% of scroll)
+  // for a strong, clearly-felt depth read — much slower than cards, a touch
+  // faster than the near-static bg stains (0.15x). See DECOR_PARALLAX_FACTOR.
+  const decorParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: DECOR_PARALLAX_FACTOR })
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
@@ -2135,9 +2144,11 @@ export function BoardRoot() {
               />
             </div>
             {/* Paper-atelier MIDDLE parallax layer: faint stains/flourishes
-                scattered across the content, panned at 0.7x (vs cards 1x and the
-                fixed 0x backdrop) for a real depth read. Behind the wordmark and
-                cards (DOM order). Paper-only; decorParallaxY is 0 off-paper. */}
+                scattered across the content, panned at 0.30x (vs cards 1x and
+                the fixed 0x backdrop) for a strong depth read. Behind the
+                wordmark and cards (DOM order). Paper-only; decorParallaxY is 0
+                off-paper. Items scatter across only the band the slow pan ever
+                exposes (decorScatterHeight) for uniform on-screen density. */}
             {themeId === 'paper-atelier' && (
               <div
                 style={{
@@ -2151,7 +2162,7 @@ export function BoardRoot() {
                   pointerEvents: 'none',
                 }}
               >
-                <BoardDecorLayer contentHeight={contentHeight} />
+                <BoardDecorLayer scatterHeight={viewport.h + DECOR_PARALLAX_FACTOR * Math.max(0, contentHeight - viewport.h)} />
               </div>
             )}
             {/* Hero background typography — viewport-bound (does NOT live

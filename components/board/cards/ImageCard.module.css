@@ -159,10 +159,17 @@
   inset: var(--paper-frame-inset, 6% 6% 22% 6%);
   overflow: hidden;
   border-radius: 1px;
+  /* photo-paper window surface: with object-fit:contain the media may shrink and
+     leave bands — they read as this warm paper tone (a print mounted on the mat),
+     never a void. */
+  background: var(--paper-window-bg, #f4eedd);
   /* mounted-print look: faint inner shadow so the photo sits IN the mat */
   box-shadow: inset 0 0 0 1px rgba(43, 39, 34, 0.10), 0 1px 2px rgba(43, 39, 34, 0.14);
 }
-.paperPhoto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* contain (NOT cover): the saved media must never be cropped — it may shrink to
+   fit fully inside the window so nothing is cut off (the Lightbox keeps media on
+   the paper, where a clipped video would break the illusion). */
+.paperPhoto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 /* caption sits in the reserved bottom band, hand-written on the parchment */
 .paperCaption {
   position: absolute;
