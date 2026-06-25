@@ -39,23 +39,22 @@ type DecorCategory = {
 }
 
 const DECOR_CATEGORIES: readonly DecorCategory[] = [
-  // DARK aged-ink splat stains — the visible, parallax-CARRYING marks. Highest
-  // weight + bold size/opacity: a layer you can't see can't show motion, so
-  // these dominate the wash so the slow pan is actually felt over the cards.
-  { ids: ['ink-splat-1', 'ink-splat-2', 'ink-splat-3'], weight: 7, width: [180, 380], opacity: [0.5, 0.78], rotate: 50 },
-  // gold coffee/ink rings → secondary faint stains.
-  { ids: ['decor-ring-1', 'decor-ring-2', 'decor-ring-coffee'], weight: 3, width: [120, 270], opacity: [0.4, 0.62], rotate: 40 },
-  // flourishes → faint ink lines drifting across the sheet.
-  { ids: ['decor-flourish-1', 'decor-flourish-2', 'decor-flourish-3'], weight: 2, width: [150, 320], opacity: [0.35, 0.55], rotate: 28 },
-  // small accents — wax seals + faded archive/word + icon stamps. Rare, smaller,
-  // slightly crisper so they punctuate the wash without crowding it.
+  // DARK aged-ink splat stains — the parallax-CARRYING marks. SMALL: scattered
+  // ink specks, not big blobs (user: the stains were too big, shrink to ~1/8).
+  // Kept the dominant category + decent opacity so the slow pan is still felt.
+  { ids: ['ink-splat-1', 'ink-splat-2', 'ink-splat-3'], weight: 7, width: [30, 76], opacity: [0.5, 0.74], rotate: 60 },
+  // gold coffee/ink rings → small secondary stains.
+  { ids: ['decor-ring-1', 'decor-ring-2', 'decor-ring-coffee'], weight: 3, width: [56, 130], opacity: [0.4, 0.6], rotate: 40 },
+  // flourishes → faint short ink lines drifting across the sheet.
+  { ids: ['decor-flourish-1', 'decor-flourish-2', 'decor-flourish-3'], weight: 2, width: [80, 180], opacity: [0.32, 0.5], rotate: 28 },
+  // small accents — wax seals + icon stamps. NO word/text stamps (ARCHIVE etc.):
+  // on a card they get mistaken for tags, and even loose they read as labels.
   {
     ids: [
       'wax-seal-red', 'wax-seal-a',
-      'stamp-archive', 'stamp-confidential', 'stamp-received', 'stamp-approved',
       'icon-star', 'icon-eye', 'icon-flag', 'icon-bookmark', 'icon-heart',
     ],
-    weight: 2, width: [64, 130], opacity: [0.45, 0.65], rotate: 44,
+    weight: 2, width: [40, 86], opacity: [0.4, 0.6], rotate: 44,
   },
 ]
 
@@ -63,13 +62,18 @@ const TOTAL_WEIGHT = DECOR_CATEGORIES.reduce((s, c) => s + c.weight, 0)
 
 /** Vertical band size; each band scatters ITEMS_PER_BAND items across the full
  *  width, so the effective density is ~one item per (ROW_SPACING_PX / avg
- *  items) px — several × the previous one-per-540px field. */
+ *  items) px. */
 const ROW_SPACING_PX = 190
 const ITEMS_PER_BAND_MIN = 2
 const ITEMS_PER_BAND_MAX = 4
+/** One self-contained scatter TILE is generated for this height, then repeated
+ *  (LOOPED) down the whole band so the scatter NEVER runs out partway — items
+ *  used to stop once MAX_ITEMS was hit, leaving the lower board bare. Alternate
+ *  tiles are x-mirrored + rotation-shifted to mask the repeat. */
+const TILE_HEIGHT_PX = 1500
 /** Safety cap so very tall boards can't spawn an unbounded scatter (4K
- *  fill-rate watch — these are static imgs but more = more composited tiles). */
-const MAX_ITEMS = 90
+ *  fill-rate watch — items are small now, but more = more composited tiles). */
+const MAX_ITEMS = 220
 
 function rangeAt(rng: () => number, [min, max]: readonly [number, number]): number {
   return min + rng() * (max - min)
@@ -104,31 +108,55 @@ function hashStringToSeed(input: string): number {
   return h >>> 0
 }
 
-/**
- * Deterministic scatter across `scatterHeight` px (the vertical band the slow
- * parallax pan actually exposes — see BoardRoot DECOR_PARALLAX_FACTOR). More
- * items for a taller band; stable for a given height (same seed string).
- */
-export function getBoardDecor(scatterHeight: number): BoardDecorItem[] {
-  if (!Number.isFinite(scatterHeight) || scatterHeight <= 0) return []
-  const rng = mulberry32(hashStringToSeed('allmarks-board-decor-v3'))
-  const rows = Math.max(1, Math.floor(scatterHeight / ROW_SPACING_PX))
-  const items: BoardDecorItem[] = []
-  for (let i = 0; i < rows && items.length < MAX_ITEMS; i++) {
+/** Build ONE deterministic scatter tile (items with yPx in [0, TILE_HEIGHT_PX)). */
+function buildTile(rng: () => number): BoardDecorItem[] {
+  const tile: BoardDecorItem[] = []
+  const rows = Math.max(1, Math.floor(TILE_HEIGHT_PX / ROW_SPACING_PX))
+  for (let i = 0; i < rows; i++) {
     const perBand =
       ITEMS_PER_BAND_MIN + Math.floor(rng() * (ITEMS_PER_BAND_MAX - ITEMS_PER_BAND_MIN + 1))
-    for (let j = 0; j < perBand && items.length < MAX_ITEMS; j++) {
+    for (let j = 0; j < perBand; j++) {
       const cat = pickCategory(rng)
       const id = cat.ids[Math.floor(rng() * cat.ids.length)] as PaperAssetId
-      // jittered vertical position within this band so items never sit on a grid
-      const band = (i + rng()) / rows
-      items.push({
+      const band = (i + rng()) / rows // jittered so items never sit on a grid
+      tile.push({
         id,
         xPct: Math.round((4 + rng() * 92) * 10) / 10,
-        yPx: Math.floor(band * scatterHeight),
+        yPx: Math.floor(band * TILE_HEIGHT_PX),
         widthPx: Math.round(rangeAt(rng, cat.width)),
         rotateDeg: Math.round((rng() - 0.5) * 2 * cat.rotate * 10) / 10,
         opacity: Math.round(rangeAt(rng, cat.opacity) * 100) / 100,
+      })
+    }
+  }
+  return tile
+}
+
+/**
+ * Deterministic scatter across `scatterHeight` px (the vertical band the slow
+ * parallax pan actually exposes — see BoardRoot DECOR_PARALLAX_FACTOR). A single
+ * TILE pattern is repeated down the band so the scatter is uniform and NEVER
+ * runs out partway (alternate tiles are x-mirrored + rotation-shifted to mask
+ * the repeat). Stable for a given height (same seed string).
+ */
+export function getBoardDecor(scatterHeight: number): BoardDecorItem[] {
+  if (!Number.isFinite(scatterHeight) || scatterHeight <= 0) return []
+  const rng = mulberry32(hashStringToSeed('allmarks-board-decor-v4'))
+  const tile = buildTile(rng)
+  const items: BoardDecorItem[] = []
+  const tiles = Math.max(1, Math.ceil(scatterHeight / TILE_HEIGHT_PX))
+  for (let t = 0; t < tiles && items.length < MAX_ITEMS; t++) {
+    const mirror = t % 2 === 1
+    const rotShift = mirror ? 17 : -11
+    for (const base of tile) {
+      if (items.length >= MAX_ITEMS) break
+      const yPx = base.yPx + t * TILE_HEIGHT_PX
+      if (yPx > scatterHeight) continue
+      items.push({
+        ...base,
+        yPx,
+        xPct: mirror ? Math.round((100 - base.xPct) * 10) / 10 : base.xPct,
+        rotateDeg: Math.round((base.rotateDeg + rotShift) * 10) / 10,
       })
     }
   }

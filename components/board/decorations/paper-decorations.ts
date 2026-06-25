@@ -162,14 +162,15 @@ export function getCardDecorations(cardId: string): CardDecorationSet {
     : null
   const clip = !pinPresent && fastenerRoll < 0.3
 
-  // --- Stamp: archival word stamp in a corner (ARCHIVE / CONFIDENTIAL / …). ---
-  let stamp: DecoStamp | null = null
+  // --- Word stamps REMOVED (user): archival WORD stamps (ARCHIVE / CONFIDENTIAL
+  //     / TOP SECRET / …) read as a TAG when stuck on a card, so cards never show
+  //     them. The same rng() rolls are still consumed so the icon/wax decorations
+  //     below keep their current values (no reshuffle). ---
+  const stamp: DecoStamp | null = null
   if (rng() < 0.3) {
-    stamp = {
-      corner: pick(rng, ALL_CORNERS),
-      angleDeg: floatRange(rng, -18, 18),
-      assetSeed: rng(),
-    }
+    rng() // (was: corner pick)
+    rng() // (was: angleDeg)
+    rng() // (was: assetSeed)
   }
 
   // --- Icon stamp: small archival icon (star / heart / camera / …). ---
