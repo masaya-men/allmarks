@@ -28,13 +28,13 @@ export type PaperAssetId =
   | 'icon-star' | 'icon-heart' | 'icon-check' | 'icon-x' | 'icon-excl' | 'icon-question'
   | 'icon-search' | 'icon-bookmark' | 'icon-camera' | 'icon-envelope' | 'icon-eye' | 'icon-flag'
   | 'wax-seal-gold-a' | 'wax-seal-red'
-  | 'parchment-bg-plain' | 'parchment-bg-frame'
+  | 'parchment-bg-plain' | 'parchment-bg-frame' | 'parchment-outer'
 
 /** `true` = the PNG is committed and usable. `false` = not placed yet; the
  *  consuming face must degrade to its CSS/SVG fallback. */
 export const PAPER_ASSETS: Readonly<Record<PaperAssetId, boolean>> = {
   'parchment-bg': true, // real aged-parchment backdrop (sheet 13_27, with coffee rings/specks)
-  'parchment-bg-plain': true, 'parchment-bg-frame': true,
+  'parchment-bg-plain': true, 'parchment-bg-frame': true, 'parchment-outer': true,
   'card-mat-1': true, 'card-mat-2': true, 'card-mat-3': true, 'card-mat-aged': true,
   'washi-tape-1': true, 'washi-tape-2': true, 'washi-tape-3': true,
   'washi-tape-4': true, 'washi-tape-5': true,

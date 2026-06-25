@@ -94,15 +94,30 @@
   overflow: hidden;
 }
 
-/* Paper-atelier: a FIXED, cover-sized real-parchment backdrop on the viewport
-   frame. Because .canvasWrap is the still frame (the camera scrolls INSIDE it),
-   this image never scrolls — the cards travel over it for a strong depth read,
-   and the parchment's baked coffee-rings/specks sit in the background. The cream
-   base-color is the graceful fallback if the image is ever missing. Paper-only;
-   default themes never define --asset-parchment-bg, so this is a no-op there. */
-:global(html[data-theme-id='paper-atelier']) .canvasWrap {
+/* Paper-atelier "paper on paper": the board .canvas is a rounded parchment
+   PANEL lifted off an outer parchment surface (.outerFrame). The panel image is
+   FIXED/cover (the camera scrolls inside it) so cards travel OVER a still
+   parchment = strong depth. .canvas already has overflow:hidden + the
+   --canvas-radius (set to a paper value in globals), so the rounded corners clip
+   the cards too — no more sharp-cornered board. Cream base = graceful fallback.
+   Paper-only; default themes never define --asset-parchment-bg → no-op there. */
+:global(html[data-theme-id='paper-atelier']) .canvas {
   background-color: var(--bg-dark, #efe6d2);
   background-image: var(--asset-parchment-bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* lift the paper panel off the outer parchment surface */
+  box-shadow:
+    0 2px 6px rgba(43, 39, 34, 0.16),
+    0 14px 36px rgba(43, 39, 34, 0.20);
+}
+
+/* Outer surface = a second, larger parchment so the panel reads as paper resting
+   ON paper. */
+:global(html[data-theme-id='paper-atelier']) .outerFrame {
+  background-color: var(--bg-outer, #e9dfc8);
+  background-image: var(--asset-parchment-outer, none);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

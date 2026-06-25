@@ -478,6 +478,12 @@ html[data-theme-id="paper-atelier"] {
      parallax = strong depth), and the baked coffee-rings/specks read as
      background objects. Paper-only; default theme never sees it. */
   --asset-parchment-bg: url("/themes/paper-atelier/parchment-bg.png");
+  /* outer surface parchment (a second sheet under the board panel → paper on
+     paper). Applied to .outerFrame cover. */
+  --asset-parchment-outer: url("/themes/paper-atelier/parchment-outer.png");
+  /* round the board panel into a paper sheet (default theme = 0px sharp). The
+     panel's overflow:hidden clips the cards to these rounded corners too. */
+  --canvas-radius: 14px;
 
   /* The parchment "photo window" inset (top right bottom left). The card mat
      frames a window here; the static photo (.paperPhoto) AND the live playback

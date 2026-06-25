@@ -17,13 +17,14 @@ describe('paper background asset wiring', () => {
     expect(beforePaper).not.toContain('--asset-parchment-bg')
   })
 
-  it('the real parchment is a FIXED cover backdrop on .canvasWrap (paper-scoped)', () => {
-    // session 133: the parchment image is a still viewport backdrop (cards scroll
-    // over it for depth), not a tiled content layer. Wired paper-scoped with a
-    // var fallback so default themes are a no-op.
+  it('paper-on-paper: parchment panel on .canvas (rounded+lifted) over .outerFrame parchment', () => {
+    // session 133: the board .canvas is a rounded parchment PANEL (cover, fixed)
+    // lifted off an outer parchment surface (.outerFrame). Both paper-scoped with
+    // var fallbacks so default themes are a no-op.
     const block = boardRoot.slice(boardRoot.indexOf("data-theme-id='paper-atelier'"))
-    expect(block).toContain('.canvasWrap')
+    expect(block).toContain('.canvas')
     expect(block).toMatch(/background-image:\s*var\(--asset-parchment-bg, none\)/)
-    expect(block).toContain('background-size: cover')
+    expect(block).toMatch(/background-image:\s*var\(--asset-parchment-outer, none\)/)
+    expect(block).toContain('box-shadow')
   })
 })
