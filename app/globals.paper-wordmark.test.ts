@@ -30,7 +30,12 @@ describe('paper-atelier letterpress wordmark tokens', () => {
     expect(paperBlock).toContain('--wordmark-emboss-shadow:')
   })
   it('grain token falls back to Task 2 paper-fiber tile (no separate download)', () => {
-    expect(paperBlock).toContain('--asset-letterpress-grain: none')
+    // MUST be `initial` (guaranteed-invalid), NOT `none`: with `none` the
+    // var(--asset-letterpress-grain, var(--paper-fiber-url)) consumer would
+    // resolve to `none` (a valid value) and the kasure grain would vanish.
+    // `initial` triggers the var() fallback to the fiber tile.
+    expect(paperBlock).toContain('--asset-letterpress-grain: initial')
+    expect(paperBlock).not.toContain('--asset-letterpress-grain: none')
     expect(paperBlock).toContain('--wordmark-grain-url: var(--asset-letterpress-grain, var(--paper-fiber-url))')
   })
 })

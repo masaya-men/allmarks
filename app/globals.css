@@ -474,11 +474,14 @@ html[data-theme-id="paper-atelier"] {
 
   /* Real parchment tile (Task 2). Defined here = paper-only; default theme
      never sees it. Until parchment-bg.png is placed + flipped in
-     lib/board/paper-assets.ts, leave this as `none` so the fiber.svg fallback
-     below stays the live look (graceful degrade). When the PNG lands, set:
+     lib/board/paper-assets.ts, this is `initial` (= guaranteed-invalid) so the
+     `var(--asset-parchment-bg, var(--paper-fiber-url, none))` consumer FALLS
+     BACK to the fiber.svg tile. NOTE: do NOT use `none` here — `none` is a
+     valid value, so var() would resolve to `none` and the fiber tile would
+     vanish (a paper-visual regression). When the PNG lands, set:
        --asset-parchment-bg: url("/themes/paper-atelier/parchment-bg.png");
      and choose a background-size that tiles seamlessly at 100%. */
-  --asset-parchment-bg: none;
+  --asset-parchment-bg: initial;
 
   /* soft photo shuffle — slow crossfade cadence for paper image cards.
      thumbSoft uses var(--paper-shuffle-fade-duration, 900ms) so non-paper
@@ -506,9 +509,13 @@ html[data-theme-id="paper-atelier"] {
      irrelevant here (no animation) but opacities/spreads stay literal. */
   --wordmark-ink-color: rgba(43, 39, 34, 0.92);     /* CHARCOAL ink, slightly deeper than flat */
   /* letterpress broken-ink grain for the wordmark. Real asset pending
-     (letterpress-ink-grain.png not generated yet); fall back to the fibre
-     tile so the wordmark keeps its current kasure look. */
-  --asset-letterpress-grain: none;
+     (letterpress-ink-grain.png not generated yet). `initial` (= guaranteed-
+     invalid) makes the `var(--asset-letterpress-grain, var(--paper-fiber-url))`
+     consumer FALL BACK to the fibre tile so the wordmark keeps its current
+     kasure look. Do NOT use `none` — `none` is valid and would kill the grain
+     (var() would resolve to `none`, not the fallback). Set to url(...) when the
+     real grain PNG lands. */
+  --asset-letterpress-grain: initial;
   --wordmark-grain-url: var(--asset-letterpress-grain, var(--paper-fiber-url)); /* reuse Task 2 fibre tile when asset absent */
   --wordmark-grain-opacity: 0.16;                    /* kasure dropout strength */
   --wordmark-emboss-light: rgba(255, 253, 246, 0.45); /* IVORY top highlight (letterpress lift) */
