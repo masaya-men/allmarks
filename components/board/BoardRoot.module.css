@@ -94,6 +94,20 @@
   overflow: hidden;
 }
 
+/* Paper-atelier: a FIXED, cover-sized real-parchment backdrop on the viewport
+   frame. Because .canvasWrap is the still frame (the camera scrolls INSIDE it),
+   this image never scrolls — the cards travel over it for a strong depth read,
+   and the parchment's baked coffee-rings/specks sit in the background. The cream
+   base-color is the graceful fallback if the image is ever missing. Paper-only;
+   default themes never define --asset-parchment-bg, so this is a no-op there. */
+:global(html[data-theme-id='paper-atelier']) .canvasWrap {
+  background-color: var(--bg-dark, #efe6d2);
+  background-image: var(--asset-parchment-bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* Transformable "camera" layer wrapping the board content (InteractionLayer).
    Identity by default (no containing-block side effects); the onboarding tag
    scene GSAP-transforms this to push the view in toward the just-saved card. */

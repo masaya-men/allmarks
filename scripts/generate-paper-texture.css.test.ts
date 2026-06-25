@@ -16,16 +16,18 @@ describe('paper-atelier background wiring', () => {
     expect(occurrences.length).toBe(1)
   })
 
-  it('.paperAtelier consumes the fiber url via var() so the DEFAULT theme stays unaffected', () => {
+  it('.paperAtelier is transparent — the real parchment backdrop lives on .canvasWrap (session 133)', () => {
+    // The aged-parchment image moved to a FIXED cover backdrop on .canvasWrap
+    // (BoardRoot.module.css); this content-sized layer is now transparent so it
+    // does not cover that backdrop. .paperAtelier is paper-only, so the DEFAULT
+    // theme is unaffected either way.
     const rule = themes.match(/\.paperAtelier\s*\{[\s\S]*?\n\}/)
     expect(rule, '.paperAtelier rule must exist').toBeTruthy()
-    expect(rule![0]).toContain('var(--paper-fiber-url')
-    expect(rule![0]).toContain('background-repeat: repeat')
+    expect(rule![0]).toContain('background-color: transparent')
   })
 
-  it('.paperAtelier adds an inset edge vignette (charcoal at the rim only)', () => {
+  it('.paperAtelier keeps faint scrolling stain washes drifting over the fixed parchment', () => {
     const rule = themes.match(/\.paperAtelier\s*\{[\s\S]*?\n\}/)!
-    expect(rule[0]).toContain('rgba(43, 39, 34, 0.10)')
-    expect(rule[0]).toMatch(/radial-gradient\(\s*ellipse/)
+    expect(rule[0]).toMatch(/radial-gradient/)
   })
 })

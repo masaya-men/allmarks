@@ -472,16 +472,12 @@ html[data-theme-id="paper-atelier"] {
      byte-identical (.paperAtelier reads var(--paper-fiber-url, none)). */
   --paper-fiber-url: url("/themes/paper-atelier/fiber.svg");
 
-  /* Real parchment tile (Task 2). Defined here = paper-only; default theme
-     never sees it. Until parchment-bg.png is placed + flipped in
-     lib/board/paper-assets.ts, this is `initial` (= guaranteed-invalid) so the
-     `var(--asset-parchment-bg, var(--paper-fiber-url, none))` consumer FALLS
-     BACK to the fiber.svg tile. NOTE: do NOT use `none` here — `none` is a
-     valid value, so var() would resolve to `none` and the fiber tile would
-     vanish (a paper-visual regression). When the PNG lands, set:
-       --asset-parchment-bg: url("/themes/paper-atelier/parchment-bg.png");
-     and choose a background-size that tiles seamlessly at 100%. */
-  --asset-parchment-bg: initial;
+  /* Real aged-parchment backdrop (session 133). Applied as a FIXED, cover-sized
+     background on .canvasWrap (the viewport frame) — NOT tiled on the scrolling
+     content — so the cards scroll OVER a still parchment (max-difference
+     parallax = strong depth), and the baked coffee-rings/specks read as
+     background objects. Paper-only; default theme never sees it. */
+  --asset-parchment-bg: url("/themes/paper-atelier/parchment-bg.png");
 
   /* The parchment "photo window" inset (top right bottom left). The card mat
      frames a window here; the static photo (.paperPhoto) AND the live playback

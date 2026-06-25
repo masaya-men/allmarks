@@ -12,32 +12,19 @@
 }
 
 .paperAtelier {
-  background-color: var(--bg-dark); /* PARCHMENT base */
-  /* Plan 2: parchment = colour washes (highlight + stains) + an inset edge
-     vignette ON TOP OF a repeating fibre tile. All static — ZERO per-frame
-     paint, NO canvas / GPU / backdrop-filter (board is fill-rate bound at 4K). */
+  /* Session 133: the real aged-parchment image is now a FIXED, cover-sized
+     backdrop on .canvasWrap (the viewport frame) — see BoardRoot.module.css —
+     so the cards scroll OVER a still parchment (strong depth). This
+     content-sized layer therefore stays transparent and just carries a faint
+     scrolling vignette/stain wash that drifts over the fixed parchment for an
+     extra parallax plane. A cream base-color is the graceful fallback if the
+     backdrop image is ever missing. All static — NO canvas/GPU/backdrop-filter
+     (board is fill-rate bound at 4K). */
+  background-color: transparent;
   background-image:
-    /* top ivory highlight (kept from Plan 1) */
-    radial-gradient(120% 90% at 50% 0%, rgba(255, 253, 246, 0.45), transparent 60%),
-    /* faint bottom wash (kept from Plan 1) */
-    radial-gradient(140% 120% at 50% 100%, rgba(43, 39, 34, 0.06), transparent 55%),
-    /* large off-center coffee-ish stains — low alpha, irregular placement */
+    /* faint scrolling stains — low alpha, drift over the fixed parchment */
     radial-gradient(38% 30% at 22% 34%, rgba(140, 110, 64, 0.05), transparent 70%),
     radial-gradient(46% 40% at 78% 68%, rgba(110, 92, 60, 0.045), transparent 72%),
-    radial-gradient(30% 26% at 60% 14%, rgba(120, 96, 56, 0.035), transparent 70%),
-    /* true inset edge vignette — darkens only the rim, transparent center */
-    radial-gradient(ellipse at center, transparent 55%, rgba(43, 39, 34, 0.10) 100%),
-    /* parchment PNG when placed; otherwise the generated fibre tile (Task 2) */
-    var(--asset-parchment-bg, var(--paper-fiber-url, none));
-  /* gradients cover the full canvas so their repeat mode is visually immaterial;
-     the fibre tile needs repeat — single-value applies to all layers. */
-  background-repeat: repeat;
-  background-size:
-    auto,
-    auto,
-    auto,
-    auto,
-    auto,
-    auto,
-    160px 160px;
+    radial-gradient(30% 26% at 60% 14%, rgba(120, 96, 56, 0.035), transparent 70%);
+  background-repeat: no-repeat;
 }

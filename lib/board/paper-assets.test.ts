@@ -13,9 +13,14 @@ describe('paper-assets manifest', () => {
     expect(paperAssetUrl('card-mat-1')).toBe(`${PAPER_ASSET_BASE}/card-mat-1.png`)
   })
 
-  it('returns null url for an un-placed asset (parchment-bg pending)', () => {
-    expect(hasPaperAsset('parchment-bg')).toBe(false)
-    expect(paperAssetUrl('parchment-bg')).toBeNull()
+  it('every manifest entry that is true resolves to a /<id>.png URL', () => {
+    for (const [id, placed] of Object.entries(PAPER_ASSETS)) {
+      if (placed) {
+        expect(paperAssetUrl(id as keyof typeof PAPER_ASSETS)).toBe(`${PAPER_ASSET_BASE}/${id}.png`)
+      } else {
+        expect(paperAssetUrl(id as keyof typeof PAPER_ASSETS)).toBeNull()
+      }
+    }
   })
 
   it('pickPaperAsset is deterministic for a given fraction and skips un-placed ids', () => {
@@ -26,8 +31,7 @@ describe('paper-assets manifest', () => {
     expect(ids).toContain(a)
   })
 
-  it('pickPaperAsset returns null when no candidate is placed', () => {
-    // parchment-bg is the only un-placed id; a list of only it must yield null
-    expect(pickPaperAsset(0.5, ['parchment-bg'])).toBeNull()
+  it('pickPaperAsset returns null when there are no candidates', () => {
+    expect(pickPaperAsset(0.5, [])).toBeNull()
   })
 })
