@@ -2,6 +2,7 @@
 
 import { useMemo, type ReactElement, type RefObject } from 'react'
 import styles from './RulerTrack.module.css'
+import { paperAssetUrl } from '@/lib/board/paper-assets'
 
 /** Number of ruler units shown across the full track width (0..100, a
  *  percentage scale — the meter is a fraction-of-content readout, not a
@@ -24,8 +25,16 @@ type Props = {
  * decorative — every child is pointer-events:none so the parent `.track`
  * keeps the real scrub hit-area. The only animated element is the marker,
  * positioned by the parent rAF via `markerRef`.
+ *
+ * When the paper-atelier PNG assets are placed (ruler-meter-strip,
+ * ruler-meter-thumb), the CSS ticks/rule/numerals are hidden and the baked
+ * PNG strip is used as the track background. The marker shifts to the
+ * paper-scrap thumb PNG. Falls back to the CSS ruler when assets are absent.
  */
 export function RulerTrack({ markerRef }: Props): ReactElement {
+  const stripUrl = paperAssetUrl('ruler-meter-strip')
+  const thumbUrl = paperAssetUrl('ruler-meter-thumb')
+
   // Precompute tick positions once. Major when divisible by MAJOR_STEP,
   // otherwise minor when divisible by MINOR_STEP.
   const ticks = useMemo(
@@ -37,35 +46,54 @@ export function RulerTrack({ markerRef }: Props): ReactElement {
     [],
   )
 
+  const railStyle = stripUrl
+    ? { backgroundImage: `url("${stripUrl}")` }
+    : undefined
+
+  const markerStyle: React.CSSProperties = thumbUrl
+    ? { left: '0%', pointerEvents: 'none' as const, backgroundImage: `url("${thumbUrl}")` }
+    : { left: '0%', pointerEvents: 'none' as const }
+
   return (
-    <div className={styles.rail} data-testid="ruler-track" aria-hidden="true">
-      <div className={styles.rule} />
-      {ticks.map(({ unit, isMajor }) => {
-        const leftPct = (unit / RULER_UNITS) * 100
-        return isMajor ? (
-          <div key={unit} className={styles.majorGroup}>
-            <span
-              className={styles.numeral}
-              data-testid="ruler-numeral"
-              style={{ left: `${leftPct}%` }}
-            >
-              {unit}
-            </span>
-            <div className={styles.majorTick} style={{ left: `${leftPct}%` }} />
-          </div>
-        ) : (
-          <div
-            key={unit}
-            className={styles.minorTick}
-            style={{ left: `${leftPct}%` }}
-          />
-        )
-      })}
+    <div
+      className={styles.rail}
+      data-testid="ruler-track"
+      aria-hidden="true"
+      data-asset={stripUrl ? 'true' : undefined}
+      style={railStyle}
+    >
+      {!stripUrl && (
+        <>
+          <div className={styles.rule} />
+          {ticks.map(({ unit, isMajor }) => {
+            const leftPct = (unit / RULER_UNITS) * 100
+            return isMajor ? (
+              <div key={unit} className={styles.majorGroup}>
+                <span
+                  className={styles.numeral}
+                  data-testid="ruler-numeral"
+                  style={{ left: `${leftPct}%` }}
+                >
+                  {unit}
+                </span>
+                <div className={styles.majorTick} style={{ left: `${leftPct}%` }} />
+              </div>
+            ) : (
+              <div
+                key={unit}
+                className={styles.minorTick}
+                style={{ left: `${leftPct}%` }}
+              />
+            )
+          })}
+        </>
+      )}
       <div
         ref={markerRef}
         className={styles.marker}
         data-testid="ruler-marker"
-        style={{ left: '0%', pointerEvents: 'none' }}
+        data-asset={thumbUrl ? 'true' : undefined}
+        style={markerStyle}
       />
     </div>
   )
