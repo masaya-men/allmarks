@@ -827,19 +827,20 @@ export function BoardRoot() {
   }, [filteredItems, matchedBookmarkIds])
 
   const themeMeta = getThemeMeta(themeId)
-  const paperParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y })
+  // Parallax depth is independent of the MOTION toggle. MOTION only stops card
+  // autoplay / slideshow; parallax is "how the depth reads", not a motion effect,
+  // so it stays on regardless (the hook only drops to 0 for non-parallax themes
+  // or OS prefers-reduced-motion).
+  const paperParallaxY = usePaperParallax({ themeId, viewportY: viewport.y })
   // Middle scatter layer pans at 0.30x the card speed (lags by 70% of scroll)
   // for a strong, clearly-felt depth read — much slower than cards, a touch
   // faster than the near-static bg stains (0.15x). See DECOR_PARALLAX_FACTOR.
-  const decorParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: DECOR_PARALLAX_FACTOR })
+  const decorParallaxY = usePaperParallax({ themeId, viewportY: viewport.y, factor: DECOR_PARALLAX_FACTOR })
   // grid-paper: the grid lives on a viewport-anchored layer (see render below),
-  // so it drifts via background-position-y instead of a translated layer. The
-  // grid parallax is part of the theme's depth, NOT a "motion effect" — it's a
-  // gentle, non-distracting backdrop drift — so it stays ON regardless of the
-  // MOTION toggle (hardcode motionEnabled: true). OS prefers-reduced-motion is
-  // still honoured inside the hook. Returns viewport.y * (1 − factor) = the
-  // grid's drift, matching the paper backdrop's 0.15× speed.
-  const gridBgPanY = usePaperParallax({ themeId, motionEnabled: true, viewportY: viewport.y, factor: GRID_BG_PARALLAX_FACTOR })
+  // so it drifts via background-position-y instead of a translated layer.
+  // Returns viewport.y * (1 − factor) = the grid's drift, matching the paper
+  // backdrop's 0.15× speed.
+  const gridBgPanY = usePaperParallax({ themeId, viewportY: viewport.y, factor: GRID_BG_PARALLAX_FACTOR })
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).

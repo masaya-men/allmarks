@@ -17,7 +17,7 @@ describe('usePaperParallax', () => {
 
   it('enabled for paper-atelier: returns a fractional offset of viewportY', () => {
     const { result } = renderHook(() =>
-      usePaperParallax({ themeId: 'paper-atelier', motionEnabled: true, viewportY: 1000 }))
+      usePaperParallax({ themeId: 'paper-atelier', viewportY: 1000 }))
     // 0.15x content pan → bg lags by 85% of scroll (positive lag offset).
     expect(result.current).toBeGreaterThan(0)
     expect(result.current).toBeCloseTo(1000 * 0.85, 5)
@@ -25,26 +25,29 @@ describe('usePaperParallax', () => {
 
   it('enabled for grid-paper too: the grid drifts behind the cards', () => {
     const { result } = renderHook(() =>
-      usePaperParallax({ themeId: 'grid-paper', motionEnabled: true, viewportY: 1000 }))
+      usePaperParallax({ themeId: 'grid-paper', viewportY: 1000 }))
+    expect(result.current).toBeCloseTo(1000 * 0.85, 5)
+  })
+
+  it('independent of the MOTION toggle (parallax is depth, not a motion effect)', () => {
+    // The hook no longer takes motionEnabled — parallax stays on regardless of
+    // the MOTION (card autoplay/slideshow) toggle. This test documents that the
+    // only gate left is theme + reduced-motion.
+    const { result } = renderHook(() =>
+      usePaperParallax({ themeId: 'paper-atelier', viewportY: 1000 }))
     expect(result.current).toBeCloseTo(1000 * 0.85, 5)
   })
 
   it('disabled for the plain default theme (dotted-notebook) → 0 (no parallax)', () => {
     const { result } = renderHook(() =>
-      usePaperParallax({ themeId: 'dotted-notebook', motionEnabled: true, viewportY: 1000 }))
-    expect(result.current).toBe(0)
-  })
-
-  it('disabled when motionEnabled=false → 0', () => {
-    const { result } = renderHook(() =>
-      usePaperParallax({ themeId: 'paper-atelier', motionEnabled: false, viewportY: 1000 }))
+      usePaperParallax({ themeId: 'dotted-notebook', viewportY: 1000 }))
     expect(result.current).toBe(0)
   })
 
   it('disabled under prefers-reduced-motion → 0', () => {
     mockReducedMotion(true)
     const { result } = renderHook(() =>
-      usePaperParallax({ themeId: 'paper-atelier', motionEnabled: true, viewportY: 1000 }))
+      usePaperParallax({ themeId: 'paper-atelier', viewportY: 1000 }))
     expect(result.current).toBe(0)
   })
 })
