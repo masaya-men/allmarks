@@ -105,7 +105,7 @@
   position: absolute;
   top: 100%;
   right: 0;
-  width: 240px;
+  width: 320px;
   background: rgba(10, 10, 10, 0.92);
   border: 0;
   border-radius: 8px;
@@ -124,10 +124,72 @@
   user-select: none;
 }
 .drawer[data-open='true'] {
-  max-height: 520px;
+  /* Tall enough for the tallest state (not-installed: the GET EXTENSION promo
+     adds ~575px of content). Capped to the viewport so a very short window
+     scrolls internally instead of running off-screen. */
+  max-height: min(600px, calc(100dvh - 80px));
   padding: 22px 24px 24px;
   pointer-events: auto;
+  overflow-y: auto;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Labelled group block. The title sits above each cluster; groups after the
+   first are hairline-separated so SAVING / THEME / HOW TO USE / EXTENSION read
+   as distinct settings areas instead of one long stack. */
+.group {
+  display: flex;
+  flex-direction: column;
+}
+.group + .group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.groupLabel {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  margin-bottom: 10px;
+}
+
+/* THEME group: a single button that opens the dedicated theme screen. Shows
+   the current selection on a second line so the drawer still reads the active
+   world at a glance. */
+.themePickBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.themePickBtn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.themePickLabel {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+}
+.themePickBtn:hover .themePickLabel {
+  color: #fff;
+}
+.themeCurrent {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .toggleRow {
@@ -135,7 +197,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 6px 0 12px;
+  padding: 2px 0 0;
   cursor: pointer;
 }
 .toggleLabel {
@@ -181,22 +243,11 @@
   margin-top: 8px;
 }
 
-/* BACKUP subsection — export/restore the in-browser data. Hairline-separated
-   from the QUICK-TAG toggle above, same monospace vocabulary as the rest of
-   the drawer. The EXPORT/IMPORT labels stay English (brand chrome); only the
-   caption is localized. */
+/* BACKUP — export/restore the in-browser data, inside the SAVING group below
+   the QUICK-TAG toggle. The EXPORT/IMPORT labels stay English (brand chrome);
+   only the caption is localized. */
 .backupSection {
   margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 4px;
-}
-.backupLabel {
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.82);
 }
 .backupCaption {
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
@@ -204,7 +255,7 @@
   line-height: 1.5;
   letter-spacing: 0.01em;
   color: rgba(255, 255, 255, 0.5);
-  margin: 6px 0 10px;
+  margin: 0 0 10px;
 }
 .backupRow {
   display: flex;
@@ -257,13 +308,10 @@
   }
 }
 
-/* Not-installed: GET EXTENSION promo folded into the SETTINGS drawer, under
- * the QUICK-TAG toggle, separated by a hairline. The body keeps its existing
- * style; trim its bottom margin since the CTA follows directly. */
+/* Not-installed: GET EXTENSION promo lives inside the EXTENSION group (its
+ * group label + hairline already separate it), so no own top border here. */
 .promoInline {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 0;
 }
 
 .promoInline .body {
@@ -317,6 +365,32 @@
   color: var(--text-primary);
 }
 
+:global(html[data-theme-id='paper-atelier']) .group + .group {
+  border-top-color: var(--paper-panel-hairline);
+}
+
+:global(html[data-theme-id='paper-atelier']) .groupLabel {
+  color: var(--text-meta);
+}
+
+:global(html[data-theme-id='paper-atelier']) .themePickBtn {
+  background: var(--paper-panel-btn-bg);
+  border-color: var(--paper-panel-border);
+}
+:global(html[data-theme-id='paper-atelier']) .themePickBtn:hover {
+  background: var(--paper-panel-btn-bg-hover);
+  border-color: var(--paper-panel-border);
+}
+:global(html[data-theme-id='paper-atelier']) .themePickLabel {
+  color: var(--text-body);
+}
+:global(html[data-theme-id='paper-atelier']) .themePickBtn:hover .themePickLabel {
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .themeCurrent {
+  color: var(--text-meta);
+}
+
 :global(html[data-theme-id='paper-atelier']) .panelCta {
   background: var(--paper-panel-btn-bg);
   border-color: var(--paper-panel-border);
@@ -325,14 +399,6 @@
 :global(html[data-theme-id='paper-atelier']) .panelCta:hover {
   background: var(--paper-panel-btn-bg-hover);
   border-color: var(--paper-panel-border);
-  color: var(--text-primary);
-}
-
-:global(html[data-theme-id='paper-atelier']) .backupSection {
-  border-top-color: var(--paper-panel-hairline);
-}
-
-:global(html[data-theme-id='paper-atelier']) .backupLabel {
   color: var(--text-primary);
 }
 

@@ -11,7 +11,8 @@
       "openExtensionSettings": "APRI IMPOSTAZIONI ESTENSIONE",
       "getExtensionBody": "Salva qualsiasi pagina su AllMarks con un clic, direttamente da X, YouTube e ovunque tu sia. Il segno fluttuante e il salvataggio automatico sui SNS sono inclusi.",
       "addToChrome": "AGGIUNGI A CHROME",
-      "comingSoon": "DISPONIBILE A BREVE"
+      "comingSoon": "DISPONIBILE A BREVE",
+      "chooseTheme": "Scegli un tema"
     },
     "backup": {
       "caption": "Salva i tuoi dati in un file o ripristinali.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Scegli un tema per la bacheca.",
-      "unlockLater": "Si sblocca più avanti. Resta sintonizzato."
+      "unlockLater": "Si sblocca più avanti. Resta sintonizzato.",
+      "modalTitle": "Scegli un tema",
+      "modalSubtitle": "Scegli il mondo in cui vive la tua bacheca.",
+      "modalCloseLabel": "Chiudi"
     },
     "filter": {
       "label": "Tutti",
@@ -117,7 +121,13 @@
       "reset_tooltip": "Ripristina i valori predefiniti"
     },
     "onboarding": {
-      "triage": {"intro":"Questa è la schermata MANAGE. Aggiungi un tag alle carte salvate, una alla volta, per metterle in ordine in un attimo.","pickTag":"Per prima cosa, scegli il tag da applicare: cliccalo oppure premi un tasto numerico (1–9).","apply":"Premi → (oppure D, o scorri verso destra) per applicare il tag e passare alla carta successiva.","skip":"Per una carta a cui non vuoi applicare questo tag, passa alla successiva con ← (il tasto A, o scorri verso sinistra).","done":"Tutto qui: basta ripetere. Premi NEXT per proseguire."},
+      "triage": {
+        "intro": "Questa è la schermata MANAGE. Aggiungi un tag alle carte salvate, una alla volta, per metterle in ordine in un attimo.",
+        "pickTag": "Per prima cosa, scegli il tag da applicare: cliccalo oppure premi un tasto numerico (1–9).",
+        "apply": "Premi → (oppure D, o scorri verso destra) per applicare il tag e passare alla carta successiva.",
+        "skip": "Per una carta a cui non vuoi applicare questo tag, passa alla successiva con ← (il tasto A, o scorri verso sinistra).",
+        "done": "Tutto qui: basta ripetere. Premi NEXT per proseguire."
+      },
       "enter": {
         "body": "AllMarks trasforma i link in una bacheca visiva."
       },
@@ -133,15 +143,27 @@
         "body": "Premi MOTION per dare vita alle card della board. Provalo.",
         "done": "La tua board è viva — i video partono e le gallerie di immagini scorrono. Premi NEXT per continuare."
       },
-      "extDemo": { "body": "Con l'estensione AllMarks, basta un clic su qualsiasi pagina per salvarla, e puoi aggiungere un tag allo stesso tempo.", "hideNote": "Il pulsante fluttuante ti dà fastidio? Puoi nasconderlo quando vuoi nelle impostazioni dell'estensione.", "bodyX": "Su X, YouTube e altri siti famosi, basta toccare Aggiungi ai segnalibri o Mi piace: l'estensione AllMarks lo salva anche sulla tua bacheca." },
+      "extDemo": {
+        "body": "Con l'estensione AllMarks, basta un clic su qualsiasi pagina per salvarla, e puoi aggiungere un tag allo stesso tempo.",
+        "hideNote": "Il pulsante fluttuante ti dà fastidio? Puoi nasconderlo quando vuoi nelle impostazioni dell'estensione.",
+        "bodyX": "Su X, YouTube e altri siti famosi, basta toccare Aggiungi ai segnalibri o Mi piace: l'estensione AllMarks lo salva anche sulla tua bacheca."
+      },
       "install": {
-        "body": "Trascina questo pulsante AllMarks nella barra dei preferiti per salvare da ovunque. Non vedi la barra? Premi Ctrl/⌘+Shift+B.", "demoCaption": "Su qualsiasi pagina, basta cliccare AllMarks nella barra dei preferiti: si apre una finestra che la salva.", "dragged": "Perfetto, è installato! Ora vediamo come usarlo." },
-      "manage": { "settingsBody": "Non vuoi la finestra che appare quando salvi? Disattiva questo «Tagga al salvataggio» — puoi riattivarlo quando vuoi.", "body": "Per aggiungere tag a tante schede in una volta, apri MANAGE TAGS.", "triageBody": "MANAGE TAGS — assegna tag al tuo board una carta alla volta. Scorri per andare veloce." },
+        "body": "Trascina questo pulsante AllMarks nella barra dei preferiti per salvare da ovunque. Non vedi la barra? Premi Ctrl/⌘+Shift+B.",
+        "demoCaption": "Su qualsiasi pagina, basta cliccare AllMarks nella barra dei preferiti: si apre una finestra che la salva.",
+        "dragged": "Perfetto, è installato! Ora vediamo come usarlo."
+      },
+      "manage": {
+        "settingsBody": "Non vuoi la finestra che appare quando salvi? Disattiva questo «Tagga al salvataggio» — puoi riattivarlo quando vuoi.",
+        "body": "Per aggiungere tag a tante schede in una volta, apri MANAGE TAGS.",
+        "triageBody": "MANAGE TAGS — assegna tag al tuo board una carta alla volta. Scorri per andare veloce."
+      },
       "installDetected": {
         "body": "L'estensione è già installata. È possibile salvare anche incollando un link o usando il bookmarklet."
       },
       "share": {
-        "body": "Ecco come funziona la condivisione. Crea una board che ami e condividila con tutti.", "pressBody": "Premi SHARE nell'intestazione per aprire il pannello di condivisione."
+        "body": "Ecco come funziona la condivisione. Crea una board che ami e condividila con tutti.",
+        "pressBody": "Premi SHARE nell'intestazione per aprire il pannello di condivisione."
       },
       "finale": {
         "body": "Tutto pronto. Il tutorial può essere ripetuto da SETTINGS in qualsiasi momento."

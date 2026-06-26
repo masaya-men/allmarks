@@ -58,6 +58,7 @@ import { MotionToggle } from './MotionToggle'
 import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ExtensionEntry } from './ExtensionEntry'
+import { ThemeModal } from './ThemeModal'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
 import { BoardChrome } from './BoardChrome'
@@ -271,6 +272,7 @@ export function BoardRoot() {
   // InteractionLayer where pan engagement lives.
   const [spaceHeld, setSpaceHeld] = useState<boolean>(false)
   const [bookmarkletModalOpen, setBookmarkletModalOpen] = useState<boolean>(false)
+  const [themeModalOpen, setThemeModalOpen] = useState<boolean>(false)
   const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null)
   // True during an active scroll session (any source: wheel, drag, meter jump).
   // Goes false 200ms after the last scroll delta. Consumers (CardSlideshow's
@@ -2084,7 +2086,7 @@ export function BoardRoot() {
                 onReplayIntro={() => { void startOnboardingReplay() }}
                 forceOpen={forceSettingsOpen}
                 themeId={themeId}
-                onThemeChange={handleThemeChange}
+                onOpenThemeModal={() => setThemeModalOpen(true)}
               />
               <TagButton
                 onClick={(): void => {
@@ -2365,6 +2367,12 @@ export function BoardRoot() {
         isOpen={bookmarkletModalOpen}
         onClose={handleCloseBookmarkletModal}
         appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
+      />
+      <ThemeModal
+        isOpen={themeModalOpen}
+        onClose={(): void => setThemeModalOpen(false)}
+        themeId={themeId}
+        onThemeChange={handleThemeChange}
       />
       <SenderShareModal
         open={shareModalOpen}

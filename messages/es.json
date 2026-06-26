@@ -11,7 +11,8 @@
       "openExtensionSettings": "ABRIR AJUSTES DE LA EXTENSIÓN",
       "getExtensionBody": "Guarda cualquier página en AllMarks con un solo clic, directamente desde X, YouTube y cualquier otro sitio. La marca flotante y el guardado automático en SNS vienen incluidos.",
       "addToChrome": "AÑADIR A CHROME",
-      "comingSoon": "PRÓXIMAMENTE"
+      "comingSoon": "PRÓXIMAMENTE",
+      "chooseTheme": "Elegir tema"
     },
     "backup": {
       "caption": "Guarda tus datos en un archivo o restáuralos.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Elige un tema de tablero.",
-      "unlockLater": "Se desbloqueará más adelante. No te lo pierdas."
+      "unlockLater": "Se desbloqueará más adelante. No te lo pierdas.",
+      "modalTitle": "Elegir tema",
+      "modalSubtitle": "Elige el mundo donde vive tu tablero.",
+      "modalCloseLabel": "Cerrar"
     },
     "filter": {
       "label": "Todos",
@@ -117,7 +121,13 @@
       "reset_tooltip": "Restablecer valores predeterminados"
     },
     "onboarding": {
-      "triage": {"intro":"Esto es MANAGE. Etiqueta tus tarjetas guardadas una por una para ordenarlas rápido.","pickTag":"Primero, elige una etiqueta para aplicar: haz clic en ella o pulsa una tecla numérica (1–9).","apply":"Pulsa → (o D, o desliza a la derecha) para aplicar la etiqueta y pasar a la siguiente tarjeta.","skip":"Si no vas a poner esta etiqueta a una tarjeta, pasa a la siguiente con ← (la tecla A o desliza a la izquierda).","done":"Eso es toda la rutina: solo repite. Pulsa NEXT para continuar."},
+      "triage": {
+        "intro": "Esto es MANAGE. Etiqueta tus tarjetas guardadas una por una para ordenarlas rápido.",
+        "pickTag": "Primero, elige una etiqueta para aplicar: haz clic en ella o pulsa una tecla numérica (1–9).",
+        "apply": "Pulsa → (o D, o desliza a la derecha) para aplicar la etiqueta y pasar a la siguiente tarjeta.",
+        "skip": "Si no vas a poner esta etiqueta a una tarjeta, pasa a la siguiente con ← (la tecla A o desliza a la izquierda).",
+        "done": "Eso es toda la rutina: solo repite. Pulsa NEXT para continuar."
+      },
       "enter": {
         "body": "AllMarks convierte enlaces en un tablero visual."
       },
@@ -133,15 +143,27 @@
         "body": "Pulsa MOTION para dar vida a las tarjetas del tablero. Pruébalo.",
         "done": "Tu tablero cobra vida — los vídeos se reproducen y las galerías de imágenes cambian. Pulsa NEXT para continuar."
       },
-      "extDemo": { "body": "Con la extensión de AllMarks, un clic en cualquier página la guarda, y puedes etiquetarla al mismo tiempo.", "hideNote": "¿No quieres el botón flotante? Puedes ocultarlo cuando quieras en los ajustes de la extensión.", "bodyX": "En X, YouTube y más, solo toca Guardar o Me gusta: la extensión de AllMarks también lo guarda en tu tablero." },
+      "extDemo": {
+        "body": "Con la extensión de AllMarks, un clic en cualquier página la guarda, y puedes etiquetarla al mismo tiempo.",
+        "hideNote": "¿No quieres el botón flotante? Puedes ocultarlo cuando quieras en los ajustes de la extensión.",
+        "bodyX": "En X, YouTube y más, solo toca Guardar o Me gusta: la extensión de AllMarks también lo guarda en tu tablero."
+      },
       "install": {
-        "body": "Arrastra este botón de AllMarks a tu barra de marcadores para guardar desde cualquier lugar. ¿No ves la barra? Pulsa Ctrl/⌘+Shift+B.", "demoCaption": "En cualquier página, solo pulsa AllMarks en tu barra de marcadores — se abre una ventana y la guarda.", "dragged": "¡Listo, ya está instalado! Ahora veamos cómo lo vas a usar." },
-      "manage": { "settingsBody": "¿No quieres la ventana que aparece al guardar? Desactiva este “Etiquetar al guardar” — puedes volver a activarlo cuando quieras.", "body": "Para etiquetar muchas tarjetas a la vez, abre MANAGE TAGS.", "triageBody": "MANAGE TAGS — etiqueta tu tablero tarjeta a tarjeta. Desliza para avanzar rápido." },
+        "body": "Arrastra este botón de AllMarks a tu barra de marcadores para guardar desde cualquier lugar. ¿No ves la barra? Pulsa Ctrl/⌘+Shift+B.",
+        "demoCaption": "En cualquier página, solo pulsa AllMarks en tu barra de marcadores — se abre una ventana y la guarda.",
+        "dragged": "¡Listo, ya está instalado! Ahora veamos cómo lo vas a usar."
+      },
+      "manage": {
+        "settingsBody": "¿No quieres la ventana que aparece al guardar? Desactiva este “Etiquetar al guardar” — puedes volver a activarlo cuando quieras.",
+        "body": "Para etiquetar muchas tarjetas a la vez, abre MANAGE TAGS.",
+        "triageBody": "MANAGE TAGS — etiqueta tu tablero tarjeta a tarjeta. Desliza para avanzar rápido."
+      },
       "installDetected": {
         "body": "La extensión ya está instalada. También puedes guardar pegando un enlace o usando el bookmarklet."
       },
       "share": {
-        "body": "Así funciona compartir. Crea un tablero que te encante y compártelo con todos.", "pressBody": "Pulsa SHARE en el encabezado para abrir el panel de compartir."
+        "body": "Así funciona compartir. Crea un tablero que te encante y compártelo con todos.",
+        "pressBody": "Pulsa SHARE en el encabezado para abrir el panel de compartir."
       },
       "finale": {
         "body": "Todo listo. Repite este tutorial desde SETTINGS en cualquier momento."

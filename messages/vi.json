@@ -11,7 +11,8 @@
       "openExtensionSettings": "MỞ CÀI ĐẶT TIỆN ÍCH",
       "getExtensionBody": "Lưu bất kỳ trang nào vào AllMarks chỉ với một cú nhấp — ngay từ X, YouTube và mọi nơi khác. Nút đánh dấu nổi và tính năng tự động lưu SNS đều đi kèm.",
       "addToChrome": "THÊM VÀO CHROME",
-      "comingSoon": "SẮP RA MẮT"
+      "comingSoon": "SẮP RA MẮT",
+      "chooseTheme": "Chọn giao diện"
     },
     "backup": {
       "caption": "Lưu dữ liệu của bạn vào một tệp, hoặc khôi phục lại.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Chọn một chủ đề bảng.",
-      "unlockLater": "Sẽ mở khóa sau. Hãy chờ nhé."
+      "unlockLater": "Sẽ mở khóa sau. Hãy chờ nhé.",
+      "modalTitle": "Chọn giao diện",
+      "modalSubtitle": "Chọn thế giới cho bảng của bạn.",
+      "modalCloseLabel": "Đóng"
     },
     "filter": {
       "label": "Tất cả",
@@ -117,7 +121,13 @@
       "reset_tooltip": "Đặt lại về mặc định"
     },
     "onboarding": {
-      "triage": {"intro":"Đây là MANAGE. Gắn thẻ cho từng tấm thẻ đã lưu để dọn dẹp thật nhanh.","pickTag":"Trước tiên, hãy chọn một thẻ để gắn — bấm vào thẻ, hoặc nhấn phím số (1–9).","apply":"Nhấn → (hoặc D, hoặc vuốt sang phải) để gắn thẻ và chuyển sang tấm tiếp theo.","skip":"Với tấm thẻ bạn không gắn thẻ đã chọn, hãy chuyển sang tấm tiếp theo bằng ← (phím A, hoặc vuốt sang trái).","done":"Vậy thôi — cứ lặp lại như thế. Nhấn NEXT để tiếp tục."},
+      "triage": {
+        "intro": "Đây là MANAGE. Gắn thẻ cho từng tấm thẻ đã lưu để dọn dẹp thật nhanh.",
+        "pickTag": "Trước tiên, hãy chọn một thẻ để gắn — bấm vào thẻ, hoặc nhấn phím số (1–9).",
+        "apply": "Nhấn → (hoặc D, hoặc vuốt sang phải) để gắn thẻ và chuyển sang tấm tiếp theo.",
+        "skip": "Với tấm thẻ bạn không gắn thẻ đã chọn, hãy chuyển sang tấm tiếp theo bằng ← (phím A, hoặc vuốt sang trái).",
+        "done": "Vậy thôi — cứ lặp lại như thế. Nhấn NEXT để tiếp tục."
+      },
       "enter": {
         "body": "AllMarks chuyển đổi liên kết thành bảng trực quan."
       },
@@ -133,15 +143,27 @@
         "body": "Nhấn MOTION để làm các thẻ trên bảng chuyển động. Hãy thử.",
         "done": "Bảng của bạn trở nên sống động — video phát và các thư viện ảnh chuyển đổi. Nhấn NEXT để tiếp tục."
       },
-      "extDemo": { "body": "Với tiện ích AllMarks, chỉ cần một cú nhấp trên bất kỳ trang nào là lưu được, và bạn có thể gắn thẻ ngay lúc đó.", "hideNote": "Không thích nút nổi? Bạn có thể ẩn nó bất cứ lúc nào trong phần cài đặt của tiện ích.", "bodyX": "Trên X, YouTube và nhiều trang khác, chỉ cần nhấn Dấu trang hoặc Thích, tiện ích AllMarks cũng sẽ lưu vào bảng của bạn." },
+      "extDemo": {
+        "body": "Với tiện ích AllMarks, chỉ cần một cú nhấp trên bất kỳ trang nào là lưu được, và bạn có thể gắn thẻ ngay lúc đó.",
+        "hideNote": "Không thích nút nổi? Bạn có thể ẩn nó bất cứ lúc nào trong phần cài đặt của tiện ích.",
+        "bodyX": "Trên X, YouTube và nhiều trang khác, chỉ cần nhấn Dấu trang hoặc Thích, tiện ích AllMarks cũng sẽ lưu vào bảng của bạn."
+      },
       "install": {
-        "body": "Kéo nút AllMarks này vào thanh dấu trang để lưu từ bất cứ đâu. Không thấy thanh? Nhấn Ctrl/⌘+Shift+B.", "demoCaption": "Trên bất kỳ trang nào, chỉ cần nhấp AllMarks trên thanh dấu trang — một cửa sổ mở ra và lưu lại.", "dragged": "Tuyệt — đã cài xong! Giờ hãy xem bạn sẽ dùng nó như thế nào." },
-      "manage": { "settingsBody": "Không thích cửa sổ hiện ra khi bạn lưu? Hãy tắt “Gắn thẻ nhanh khi lưu” này đi — bạn có thể bật lại bất cứ lúc nào.", "body": "Để gắn thẻ nhiều thẻ cùng lúc, hãy mở MANAGE TAGS.", "triageBody": "MANAGE TAGS — gắn thẻ bảng của bạn từng thẻ một. Vuốt để lướt nhanh." },
+        "body": "Kéo nút AllMarks này vào thanh dấu trang để lưu từ bất cứ đâu. Không thấy thanh? Nhấn Ctrl/⌘+Shift+B.",
+        "demoCaption": "Trên bất kỳ trang nào, chỉ cần nhấp AllMarks trên thanh dấu trang — một cửa sổ mở ra và lưu lại.",
+        "dragged": "Tuyệt — đã cài xong! Giờ hãy xem bạn sẽ dùng nó như thế nào."
+      },
+      "manage": {
+        "settingsBody": "Không thích cửa sổ hiện ra khi bạn lưu? Hãy tắt “Gắn thẻ nhanh khi lưu” này đi — bạn có thể bật lại bất cứ lúc nào.",
+        "body": "Để gắn thẻ nhiều thẻ cùng lúc, hãy mở MANAGE TAGS.",
+        "triageBody": "MANAGE TAGS — gắn thẻ bảng của bạn từng thẻ một. Vuốt để lướt nhanh."
+      },
       "installDetected": {
         "body": "Tiện ích mở rộng đã được cài đặt. Bạn cũng có thể lưu bằng cách dán liên kết hoặc dùng bookmarklet."
       },
       "share": {
-        "body": "Chia sẻ hoạt động như thế này. Hãy tạo một bảng bạn yêu thích và chia sẻ với mọi người.", "pressBody": "Nhấn SHARE trên thanh tiêu đề để mở bảng chia sẻ nhé."
+        "body": "Chia sẻ hoạt động như thế này. Hãy tạo một bảng bạn yêu thích và chia sẻ với mọi người.",
+        "pressBody": "Nhấn SHARE trên thanh tiêu đề để mở bảng chia sẻ nhé."
       },
       "finale": {
         "body": "Xong rồi. Có thể xem lại hướng dẫn này bất cứ lúc nào từ SETTINGS."

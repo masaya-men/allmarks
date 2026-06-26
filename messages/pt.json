@@ -11,7 +11,8 @@
       "openExtensionSettings": "ABRIR CONFIGURAÇÕES DA EXTENSÃO",
       "getExtensionBody": "Salve qualquer página no AllMarks com um clique — direto do X, do YouTube e de qualquer outro lugar. A marca flutuante e o salvamento automático de SNS já vêm junto.",
       "addToChrome": "USAR NO CHROME",
-      "comingSoon": "EM BREVE"
+      "comingSoon": "EM BREVE",
+      "chooseTheme": "Escolher tema"
     },
     "backup": {
       "caption": "Salve seus dados em um arquivo ou restaure-os.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Escolha um tema de quadro.",
-      "unlockLater": "Disponível em breve. Fique de olho."
+      "unlockLater": "Disponível em breve. Fique de olho.",
+      "modalTitle": "Escolher tema",
+      "modalSubtitle": "Escolha o mundo onde seu quadro vive.",
+      "modalCloseLabel": "Fechar"
     },
     "filter": {
       "label": "Todos",
@@ -117,7 +121,13 @@
       "reset_tooltip": "Restaurar padrões"
     },
     "onboarding": {
-      "triage": {"intro":"Esta é a tela MANAGE. Marque seus cards salvos um por um para organizá-los rapidamente.","pickTag":"Primeiro, escolha uma tag para aplicar — clique nela ou pressione uma tecla numérica (1–9).","apply":"Pressione → (ou D, ou deslize para a direita) para aplicar a tag e ir para o próximo card.","skip":"Para um card que você não vai marcar com essa tag, vá para o próximo com ← (a tecla A / deslize para a esquerda).","done":"É isso — basta repetir. Pressione NEXT para continuar."},
+      "triage": {
+        "intro": "Esta é a tela MANAGE. Marque seus cards salvos um por um para organizá-los rapidamente.",
+        "pickTag": "Primeiro, escolha uma tag para aplicar — clique nela ou pressione uma tecla numérica (1–9).",
+        "apply": "Pressione → (ou D, ou deslize para a direita) para aplicar a tag e ir para o próximo card.",
+        "skip": "Para um card que você não vai marcar com essa tag, vá para o próximo com ← (a tecla A / deslize para a esquerda).",
+        "done": "É isso — basta repetir. Pressione NEXT para continuar."
+      },
       "enter": {
         "body": "AllMarks transforma links num quadro visual."
       },
@@ -133,15 +143,27 @@
         "body": "Toque em MOTION para dar vida aos cards do board. Experimente.",
         "done": "Seu quadro ganha vida — os vídeos tocam e as galerias de imagens alternam. Toque em NEXT para continuar."
       },
-      "extDemo": { "body": "Com a extensão do AllMarks, basta um clique em qualquer página para salvar. E você pode adicionar tags ao mesmo tempo.", "hideNote": "O botão flutuante atrapalha? Você pode escondê-lo quando quiser nas configurações da extensão.", "bodyX": "No X, no YouTube e em outros sites, é só tocar em Salvar ou Curtir. A extensão do AllMarks também guarda no seu quadro." },
+      "extDemo": {
+        "body": "Com a extensão do AllMarks, basta um clique em qualquer página para salvar. E você pode adicionar tags ao mesmo tempo.",
+        "hideNote": "O botão flutuante atrapalha? Você pode escondê-lo quando quiser nas configurações da extensão.",
+        "bodyX": "No X, no YouTube e em outros sites, é só tocar em Salvar ou Curtir. A extensão do AllMarks também guarda no seu quadro."
+      },
       "install": {
-        "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B.", "demoCaption": "Em qualquer página, basta clicar no AllMarks na sua barra de favoritos — uma janela abre e o salva.", "dragged": "Instalado! Agora vamos ver como você vai usá-lo." },
-      "manage": { "settingsBody": "Não quer a janela que aparece ao salvar? Desative este “Marcar ao salvar” — você pode reativá-lo quando quiser.", "body": "Para adicionar tags a vários cards de uma vez, abra MANAGE TAGS.", "triageBody": "MANAGE TAGS — marque seu quadro carta a carta. Deslize para avançar rápido." },
+        "body": "Arraste este botão do AllMarks para a barra de favoritos para salvar de qualquer lugar. Não vê a barra? Pressione Ctrl/⌘+Shift+B.",
+        "demoCaption": "Em qualquer página, basta clicar no AllMarks na sua barra de favoritos — uma janela abre e o salva.",
+        "dragged": "Instalado! Agora vamos ver como você vai usá-lo."
+      },
+      "manage": {
+        "settingsBody": "Não quer a janela que aparece ao salvar? Desative este “Marcar ao salvar” — você pode reativá-lo quando quiser.",
+        "body": "Para adicionar tags a vários cards de uma vez, abra MANAGE TAGS.",
+        "triageBody": "MANAGE TAGS — marque seu quadro carta a carta. Deslize para avançar rápido."
+      },
       "installDetected": {
         "body": "A extensão já está instalada. Também é possível guardar colando um link ou usando o bookmarklet."
       },
       "share": {
-        "body": "É assim que o compartilhamento funciona. Crie um quadro que você ama e compartilhe com todos.", "pressBody": "Toque em SHARE no cabeçalho para abrir o painel de compartilhamento."
+        "body": "É assim que o compartilhamento funciona. Crie um quadro que você ama e compartilhe com todos.",
+        "pressBody": "Toque em SHARE no cabeçalho para abrir o painel de compartilhamento."
       },
       "finale": {
         "body": "Tudo pronto. Este tutorial pode ser repetido em SETTINGS a qualquer momento."

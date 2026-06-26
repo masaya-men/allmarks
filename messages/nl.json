@@ -11,7 +11,8 @@
       "openExtensionSettings": "EXTENSIE-INSTELLINGEN OPENEN",
       "getExtensionBody": "Sla elke pagina met één klik op in AllMarks — rechtstreeks vanuit X, YouTube en overal elders. De zwevende mark en automatisch opslaan van SNS horen erbij.",
       "addToChrome": "TOEVOEGEN AAN Chrome",
-      "comingSoon": "BINNENKORT BESCHIKBAAR"
+      "comingSoon": "BINNENKORT BESCHIKBAAR",
+      "chooseTheme": "Kies een thema"
     },
     "backup": {
       "caption": "Bewaar je gegevens in een bestand, of zet ze terug.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Kies een bordthema.",
-      "unlockLater": "Binnenkort beschikbaar. Houd het in de gaten."
+      "unlockLater": "Binnenkort beschikbaar. Houd het in de gaten.",
+      "modalTitle": "Kies een thema",
+      "modalSubtitle": "Kies de wereld waarin je bord leeft.",
+      "modalCloseLabel": "Sluiten"
     },
     "filter": {
       "label": "Alles",
@@ -117,7 +121,13 @@
       "reset_tooltip": "Standaardwaarden herstellen"
     },
     "onboarding": {
-      "triage": {"intro":"Dit is MANAGE. Tag je opgeslagen kaarten één voor één om ze snel op te ruimen.","pickTag":"Kies eerst een tag om toe te passen — klik erop, of druk op een cijfertoets (1–9).","apply":"Druk op → (of D, of veeg naar rechts) om de tag toe te passen en naar de volgende kaart te gaan.","skip":"Geef je deze kaart de gekozen tag niet? Ga met ← (de A-toets / veeg naar links) naar de volgende.","done":"Dat is de hele routine — gewoon herhalen. Druk op NEXT om door te gaan."},
+      "triage": {
+        "intro": "Dit is MANAGE. Tag je opgeslagen kaarten één voor één om ze snel op te ruimen.",
+        "pickTag": "Kies eerst een tag om toe te passen — klik erop, of druk op een cijfertoets (1–9).",
+        "apply": "Druk op → (of D, of veeg naar rechts) om de tag toe te passen en naar de volgende kaart te gaan.",
+        "skip": "Geef je deze kaart de gekozen tag niet? Ga met ← (de A-toets / veeg naar links) naar de volgende.",
+        "done": "Dat is de hele routine — gewoon herhalen. Druk op NEXT om door te gaan."
+      },
       "enter": {
         "body": "AllMarks zet links om in een visueel bord."
       },
@@ -133,15 +143,27 @@
         "body": "Druk op MOTION om de kaarten van je board tot leven te brengen. Probeer het.",
         "done": "Je bord komt tot leven — video’s spelen en afbeeldingsgalerijen wisselen. Druk op NEXT om door te gaan."
       },
-      "extDemo": { "body": "Met de AllMarks-extensie sla je elke pagina op met één klik. Tegelijk kun je er een tag aan geven.", "hideNote": "Vind je de zwevende knop in de weg? Je kunt hem altijd verbergen in de instellingen van de extensie.", "bodyX": "Op X, YouTube en andere bekende sites druk je gewoon op Bladwijzer of Vind ik leuk. De AllMarks-extensie zet het ook op je bord." },
+      "extDemo": {
+        "body": "Met de AllMarks-extensie sla je elke pagina op met één klik. Tegelijk kun je er een tag aan geven.",
+        "hideNote": "Vind je de zwevende knop in de weg? Je kunt hem altijd verbergen in de instellingen van de extensie.",
+        "bodyX": "Op X, YouTube en andere bekende sites druk je gewoon op Bladwijzer of Vind ik leuk. De AllMarks-extensie zet het ook op je bord."
+      },
       "install": {
-        "body": "Sleep deze AllMarks-knop naar je bladwijzerbalk om overal op te slaan. Zie je de balk niet? Druk op Ctrl/⌘+Shift+B.", "demoCaption": "Klik op elke pagina gewoon op AllMarks in je bladwijzerbalk — er opent een venster dat hem opslaat.", "dragged": "Mooi — hij is geïnstalleerd! Laten we nu kijken hoe je hem gaat gebruiken." },
-      "manage": { "settingsBody": "Heb je het venster dat verschijnt bij het opslaan niet nodig? Schakel deze “Direct taggen bij opslaan” uit — je kunt het altijd weer aanzetten.", "body": "Wil je veel kaarten in één keer taggen? Open dan MANAGE TAGS.", "triageBody": "MANAGE TAGS — tag je bord kaart voor kaart. Veeg om er snel doorheen te gaan." },
+        "body": "Sleep deze AllMarks-knop naar je bladwijzerbalk om overal op te slaan. Zie je de balk niet? Druk op Ctrl/⌘+Shift+B.",
+        "demoCaption": "Klik op elke pagina gewoon op AllMarks in je bladwijzerbalk — er opent een venster dat hem opslaat.",
+        "dragged": "Mooi — hij is geïnstalleerd! Laten we nu kijken hoe je hem gaat gebruiken."
+      },
+      "manage": {
+        "settingsBody": "Heb je het venster dat verschijnt bij het opslaan niet nodig? Schakel deze “Direct taggen bij opslaan” uit — je kunt het altijd weer aanzetten.",
+        "body": "Wil je veel kaarten in één keer taggen? Open dan MANAGE TAGS.",
+        "triageBody": "MANAGE TAGS — tag je bord kaart voor kaart. Veeg om er snel doorheen te gaan."
+      },
       "installDetected": {
         "body": "De extensie is al geïnstalleerd. Je kunt ook opslaan door een link te plakken of de bookmarklet te gebruiken."
       },
       "share": {
-        "body": "Zo werkt delen. Maak een bord waar je van houdt en deel het met iedereen.", "pressBody": "Druk op SHARE in de header om het deelpaneel te openen."
+        "body": "Zo werkt delen. Maak een bord waar je van houdt en deel het met iedereen.",
+        "pressBody": "Druk op SHARE in de header om het deelpaneel te openen."
       },
       "finale": {
         "body": "Klaar. Bekijk deze tutorial opnieuw via SETTINGS."

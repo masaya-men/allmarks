@@ -13,16 +13,29 @@ export interface ThemePickerProps {
   /** License set for paid themes. Defaults to the (currently empty) stub so
    *  callers need not pass it until real licenses exist; injectable for tests. */
   readonly licenses?: ReadonlySet<ThemeId>
+  /** 'inline' = compact swatches (legacy drawer use); 'modal' = larger swatches
+   *  for the dedicated theme screen. Defaults to 'inline'. */
+  readonly variant?: 'inline' | 'modal'
+  /** Show the internal "THEMES" heading. False when a host (the modal) already
+   *  provides its own title. Defaults to true. */
+  readonly showHeading?: boolean
 }
 
-/** THEMES section inside the SETTINGS drawer. One button per registered theme;
- *  free themes apply on click, paid+locked themes show a lock and (for now)
- *  do nothing destructive — the real unlock flow is a later session. */
-export function ThemePicker({ themeId, onThemeChange, licenses = EMPTY_LICENSES }: ThemePickerProps): ReactElement {
+/** Swatch grid of every registered theme. Free themes apply on click,
+ *  paid+locked themes show a gentle lock and do nothing destructive — the real
+ *  unlock flow is a later session. Used inside the dedicated theme modal
+ *  (variant='modal'); the legacy inline drawer use kept the compact default. */
+export function ThemePicker({
+  themeId,
+  onThemeChange,
+  licenses = EMPTY_LICENSES,
+  variant = 'inline',
+  showHeading = true,
+}: ThemePickerProps): ReactElement {
   const { t } = useI18n()
   return (
-    <div className={styles.section} data-testid="theme-picker">
-      <div className={styles.heading}>THEMES</div>
+    <div className={styles.section} data-variant={variant} data-testid="theme-picker">
+      {showHeading && <div className={styles.heading}>THEMES</div>}
       <div className={styles.grid} role="group" aria-label={t('board.theme.pickerGroupLabel')}>
         {listThemeIds().map((id) => {
           const meta = getThemeMeta(id)

@@ -12,7 +12,7 @@ import { EXTENSION_STORE_URL } from '@/lib/board/constants'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ChromeButton } from './ChromeButton'
 import { BackupButton } from './BackupButton'
-import { ThemePicker } from './ThemePicker'
+import { getThemeMeta } from '@/lib/board/theme-registry'
 import type { ThemeId } from '@/lib/board/types'
 import styles from './ExtensionEntry.module.css'
 
@@ -90,9 +90,12 @@ export interface ExtensionEntryProps {
    *  of hover so the tutorial can spotlight the QUICK-TAG ON SAVE toggle inside
    *  (the drawer is hover-only; a guided demo can't hold a hover). */
   readonly forceOpen?: boolean
-  /** Active board theme + change handler for the THEMES section. */
+  /** Active board theme — shown as the current selection under the THEME group's
+   *  "CHOOSE A THEME" button. */
   readonly themeId: ThemeId
-  readonly onThemeChange: (id: ThemeId) => void
+  /** Opens the dedicated theme screen (rendered at the board root so it escapes
+   *  this drawer's `overflow: hidden`). */
+  readonly onOpenThemeModal: () => void
 }
 
 /** Hover-open leave grace, copied from TuneTrigger so the SETTINGS drawer
@@ -106,10 +109,11 @@ export function ExtensionEntry({
   onReplayIntro,
   forceOpen = false,
   themeId,
-  onThemeChange,
+  onOpenThemeModal,
 }: ExtensionEntryProps): ReactElement {
   const { t } = useI18n()
   const installed = useExtensionInstalled()
+  const currentThemeName = t(getThemeMeta(themeId).labelKey)
   // SETTINGS is always shown (extension or not) so the QUICK-TAG ON SAVE
   // toggle is reachable by bookmarklet-only users too. The drawer is
   // hover-driven via `expanded` (TUNE mechanics). The not-installed state
@@ -175,75 +179,106 @@ export function ExtensionEntry({
         aria-hidden={!isOpen}
       >
         <div className={styles.title}>SETTINGS</div>
-        <label className={styles.toggleRow} data-onboarding-target="quick-tag-toggle">
-          <span className={styles.toggleLabel}>{t('board.settings.quickTagOnSave')}</span>
-          <input
-            type="checkbox"
-            className={styles.toggle}
-            checked={quickTagEnabled}
-            onChange={(e): void => onQuickTagToggle(e.target.checked)}
-            data-testid="quick-tag-toggle"
-          />
-        </label>
-        <ThemePicker themeId={themeId} onThemeChange={onThemeChange} />
-        <button
-          type="button"
-          className={styles.panelCta}
-          onClick={onOpenBookmarkletModal}
-          data-testid="open-bookmarklet-install"
-        >
-          {t('board.settings.saveWithoutExtension')}
-        </button>
-        {onReplayIntro && (
+
+        {/* ── SAVING ───────────────────────────────────────────────────────
+            Everyday data settings: quick-tag-on-save + the file backup. */}
+        <section className={styles.group}>
+          <div className={styles.groupLabel}>SAVING</div>
+          <label className={styles.toggleRow} data-onboarding-target="quick-tag-toggle">
+            <span className={styles.toggleLabel}>{t('board.settings.quickTagOnSave')}</span>
+            <input
+              type="checkbox"
+              className={styles.toggle}
+              checked={quickTagEnabled}
+              onChange={(e): void => onQuickTagToggle(e.target.checked)}
+              data-testid="quick-tag-toggle"
+            />
+          </label>
+          <div className={styles.backupSection} data-testid="backup-section">
+            <p className={styles.backupCaption}>{t('board.backup.caption')}</p>
+            <div className={styles.backupRow}>
+              <BackupButton buttonClassName={styles.backupBtn} />
+            </div>
+          </div>
+        </section>
+
+        {/* ── THEME ────────────────────────────────────────────────────────
+            One button → the dedicated theme screen (gallery + later preview +
+            customization). Keeping the heavy swatch grid out of this drawer is
+            what brings its height back under the max-height cap. */}
+        <section className={styles.group}>
+          <div className={styles.groupLabel}>THEME</div>
+          <button
+            type="button"
+            className={styles.themePickBtn}
+            onClick={onOpenThemeModal}
+            data-testid="open-theme-modal"
+          >
+            <span className={styles.themePickLabel}>{t('board.settings.chooseTheme')}</span>
+            <span className={styles.themeCurrent}>{currentThemeName}</span>
+          </button>
+        </section>
+
+        {/* ── HOW TO USE ───────────────────────────────────────────────────
+            Bookmarklet save (cross-browser) + replay the onboarding tour. */}
+        <section className={styles.group}>
+          <div className={styles.groupLabel}>HOW TO USE</div>
           <button
             type="button"
             className={styles.panelCta}
-            data-testid="replay-intro"
-            onClick={onReplayIntro}
+            onClick={onOpenBookmarkletModal}
+            data-testid="open-bookmarklet-install"
           >
-            {t('board.settings.replayIntro')}
+            {t('board.settings.saveWithoutExtension')}
           </button>
-        )}
-        {installed ? (
-          <button
-            type="button"
-            className={styles.panelCta}
-            onClick={(): void => {
-              openSettings()
-            }}
-            data-testid="open-extension-settings"
-          >
-            {t('board.settings.openExtensionSettings')}
-          </button>
-        ) : (
-          <div className={styles.promoInline} data-testid="get-extension-block">
-            <p className={styles.body}>{t('board.settings.getExtensionBody')}</p>
-            {hasStore ? (
-              <a
-                className={styles.cta}
-                href={EXTENSION_STORE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-testid="get-extension"
-              >
-                {t('board.settings.addToChrome')}
-              </a>
-            ) : (
-              <span className={styles.soon} aria-disabled="true" data-testid="get-extension">
-                {t('board.settings.comingSoon')}
-              </span>
-            )}
-          </div>
-        )}
-        {/* BACKUP sits at the very bottom, hairline-separated: a heavier,
-            occasional data operation kept away from the everyday toggles. */}
-        <div className={styles.backupSection} data-testid="backup-section">
-          <div className={styles.backupLabel}>BACKUP</div>
-          <p className={styles.backupCaption}>{t('board.backup.caption')}</p>
-          <div className={styles.backupRow}>
-            <BackupButton buttonClassName={styles.backupBtn} />
-          </div>
-        </div>
+          {onReplayIntro && (
+            <button
+              type="button"
+              className={styles.panelCta}
+              data-testid="replay-intro"
+              onClick={onReplayIntro}
+            >
+              {t('board.settings.replayIntro')}
+            </button>
+          )}
+        </section>
+
+        {/* ── EXTENSION ────────────────────────────────────────────────────
+            Installed → open the options page. Absent → the GET EXTENSION promo. */}
+        <section className={styles.group}>
+          <div className={styles.groupLabel}>EXTENSION</div>
+          {installed ? (
+            <button
+              type="button"
+              className={styles.panelCta}
+              onClick={(): void => {
+                openSettings()
+              }}
+              data-testid="open-extension-settings"
+            >
+              {t('board.settings.openExtensionSettings')}
+            </button>
+          ) : (
+            <div className={styles.promoInline} data-testid="get-extension-block">
+              <p className={styles.body}>{t('board.settings.getExtensionBody')}</p>
+              {hasStore ? (
+                <a
+                  className={styles.cta}
+                  href={EXTENSION_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="get-extension"
+                >
+                  {t('board.settings.addToChrome')}
+                </a>
+              ) : (
+                <span className={styles.soon} aria-disabled="true" data-testid="get-extension">
+                  {t('board.settings.comingSoon')}
+                </span>
+              )}
+            </div>
+          )}
+        </section>
       </div>
     </span>
   )

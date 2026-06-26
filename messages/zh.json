@@ -11,7 +11,8 @@
       "openExtensionSettings": "打开扩展程序设置",
       "getExtensionBody": "一键将任意网页保存到 AllMarks——无论是 X、YouTube 还是其他任何网站。悬浮标记和 SNS 自动保存也一并附带。",
       "addToChrome": "添加到 Chrome",
-      "comingSoon": "即将推出"
+      "comingSoon": "即将推出",
+      "chooseTheme": "选择主题"
     },
     "backup": {
       "caption": "将设备中的数据保存到文件，或从文件恢复。",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "选择一个画板主题。",
-      "unlockLater": "稍后即可解锁，敬请期待。"
+      "unlockLater": "稍后即可解锁，敬请期待。",
+      "modalTitle": "选择主题",
+      "modalSubtitle": "选择你的画板所处的世界。",
+      "modalCloseLabel": "关闭"
     },
     "filter": {
       "label": "全部",
@@ -117,7 +121,13 @@
       "reset_tooltip": "恢复默认值"
     },
     "onboarding": {
-      "triage": {"intro":"这里是 MANAGE 界面。把攒下的卡片一张张快速打上标签，轻松整理。","pickTag":"先选一个要用的标签——点击它，或按数字键（1–9）。","apply":"按 →（或 D、向右滑动），就能贴上所选标签并切换到下一张卡片。","skip":"不想给这张卡片贴所选标签的话，就按 ←（A 键 / 向左滑动）切换到下一张。","done":"接下来就这样重复。按 NEXT 继续。"},
+      "triage": {
+        "intro": "这里是 MANAGE 界面。把攒下的卡片一张张快速打上标签，轻松整理。",
+        "pickTag": "先选一个要用的标签——点击它，或按数字键（1–9）。",
+        "apply": "按 →（或 D、向右滑动），就能贴上所选标签并切换到下一张卡片。",
+        "skip": "不想给这张卡片贴所选标签的话，就按 ←（A 键 / 向左滑动）切换到下一张。",
+        "done": "接下来就这样重复。按 NEXT 继续。"
+      },
       "enter": {
         "body": "AllMarks 将链接转化为视觉版面。"
       },
@@ -133,15 +143,27 @@
         "body": "点击 MOTION 让板上的卡片动起来。试试看。",
         "done": "你的看板活起来了——视频开始播放，多图卡片轮播切换。按 NEXT 继续。"
       },
-      "extDemo": { "body": "装上 AllMarks 扩展后，在任意页面点一下即可保存，还能同时打标签。", "hideNote": "觉得悬浮按钮碍事？随时可以在扩展的设置里把它隐藏。", "bodyX": "在 X、YouTube 等知名网站，只要点一下书签或喜欢，AllMarks 扩展也会自动把它保存到你的看板。" },
+      "extDemo": {
+        "body": "装上 AllMarks 扩展后，在任意页面点一下即可保存，还能同时打标签。",
+        "hideNote": "觉得悬浮按钮碍事？随时可以在扩展的设置里把它隐藏。",
+        "bodyX": "在 X、YouTube 等知名网站，只要点一下书签或喜欢，AllMarks 扩展也会自动把它保存到你的看板。"
+      },
       "install": {
-        "body": "把这个 AllMarks 按钮拖到书签栏，就能在任何网页一键保存。看不到书签栏？按 Ctrl/⌘+Shift+B。", "demoCaption": "在任何网页，只要点击书签栏里的 AllMarks——就会弹出一个窗口，帮你保存。", "dragged": "安装好了！现在来看看实际怎么用吧。" },
-      "manage": { "settingsBody": "不想要保存时弹出的窗口？把这个“保存时即时打标签”关掉就好——随时都能再打开。", "body": "想一次给多张卡片打标签，就打开 MANAGE TAGS。", "triageBody": "MANAGE TAGS — 一次一张卡片地加标签，滑动就能飞快整理。" },
+        "body": "把这个 AllMarks 按钮拖到书签栏，就能在任何网页一键保存。看不到书签栏？按 Ctrl/⌘+Shift+B。",
+        "demoCaption": "在任何网页，只要点击书签栏里的 AllMarks——就会弹出一个窗口，帮你保存。",
+        "dragged": "安装好了！现在来看看实际怎么用吧。"
+      },
+      "manage": {
+        "settingsBody": "不想要保存时弹出的窗口？把这个“保存时即时打标签”关掉就好——随时都能再打开。",
+        "body": "想一次给多张卡片打标签，就打开 MANAGE TAGS。",
+        "triageBody": "MANAGE TAGS — 一次一张卡片地加标签，滑动就能飞快整理。"
+      },
       "installDetected": {
         "body": "扩展已安装。也可通过粘贴链接或使用 bookmarklet 进行保存。"
       },
       "share": {
-        "body": "分享就是这样进行的。打造一个你喜欢的看板，分享给所有人。", "pressBody": "点击顶部的 SHARE，打开分享面板吧。"
+        "body": "分享就是这样进行的。打造一个你喜欢的看板，分享给所有人。",
+        "pressBody": "点击顶部的 SHARE，打开分享面板吧。"
       },
       "finale": {
         "body": "已准备就绪。随时可在 SETTINGS 中重播本教程。"

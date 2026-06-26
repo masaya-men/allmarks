@@ -11,7 +11,8 @@
       "openExtensionSettings": "OUVRIR LES PARAMÈTRES DE L'EXTENSION",
       "getExtensionBody": "Enregistrez n'importe quelle page dans AllMarks en un clic — directement depuis X, YouTube et partout ailleurs. La marque flottante et la sauvegarde automatique des SNS sont incluses.",
       "addToChrome": "AJOUTER À CHROME",
-      "comingSoon": "BIENTÔT DISPONIBLE"
+      "comingSoon": "BIENTÔT DISPONIBLE",
+      "chooseTheme": "Choisir un thème"
     },
     "backup": {
       "caption": "Enregistrez vos données dans un fichier, ou restaurez-les.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Choisissez un thème de tableau.",
-      "unlockLater": "Bientôt disponible. Restez à l'écoute."
+      "unlockLater": "Bientôt disponible. Restez à l'écoute.",
+      "modalTitle": "Choisir un thème",
+      "modalSubtitle": "Choisissez le monde où vit votre tableau.",
+      "modalCloseLabel": "Fermer"
     },
     "filter": {
       "label": "Tous",
@@ -117,7 +121,13 @@
       "reset_tooltip": "Réinitialiser les valeurs par défaut"
     },
     "onboarding": {
-      "triage": {"intro":"Voici MANAGE. Taguez vos cartes enregistrées une par une pour les ranger en un clin d'œil.","pickTag":"D'abord, choisissez un tag à appliquer — cliquez dessus, ou appuyez sur une touche numérique (1–9).","apply":"Appuyez sur → (ou D, ou balayez vers la droite) pour appliquer le tag et passer à la carte suivante.","skip":"Pour une carte à laquelle vous n'appliquez pas ce tag, passez à la suivante avec ← (la touche A / balayez vers la gauche).","done":"C'est toute la routine — il suffit de répéter. Appuyez sur NEXT pour continuer."},
+      "triage": {
+        "intro": "Voici MANAGE. Taguez vos cartes enregistrées une par une pour les ranger en un clin d'œil.",
+        "pickTag": "D'abord, choisissez un tag à appliquer — cliquez dessus, ou appuyez sur une touche numérique (1–9).",
+        "apply": "Appuyez sur → (ou D, ou balayez vers la droite) pour appliquer le tag et passer à la carte suivante.",
+        "skip": "Pour une carte à laquelle vous n'appliquez pas ce tag, passez à la suivante avec ← (la touche A / balayez vers la gauche).",
+        "done": "C'est toute la routine — il suffit de répéter. Appuyez sur NEXT pour continuer."
+      },
       "enter": {
         "body": "AllMarks transforme les liens en un tableau visuel."
       },
@@ -133,15 +143,27 @@
         "body": "Appuyez sur MOTION pour donner vie aux cartes du tableau. Essayez.",
         "done": "Ton tableau s’anime — les vidéos jouent et les galeries d’images défilent. Appuyez sur NEXT pour continuer."
       },
-      "extDemo": { "body": "Avec l'extension AllMarks, un clic sur n'importe quelle page suffit pour l'enregistrer, et vous pouvez l'étiqueter en même temps.", "hideNote": "Le bouton flottant vous gêne ? Vous pouvez le masquer à tout moment dans les paramètres de l'extension.", "bodyX": "Sur X, YouTube et d'autres sites, il suffit d'appuyer sur Signets ou J'aime : l'extension AllMarks l'enregistre aussi sur votre tableau." },
+      "extDemo": {
+        "body": "Avec l'extension AllMarks, un clic sur n'importe quelle page suffit pour l'enregistrer, et vous pouvez l'étiqueter en même temps.",
+        "hideNote": "Le bouton flottant vous gêne ? Vous pouvez le masquer à tout moment dans les paramètres de l'extension.",
+        "bodyX": "Sur X, YouTube et d'autres sites, il suffit d'appuyer sur Signets ou J'aime : l'extension AllMarks l'enregistre aussi sur votre tableau."
+      },
       "install": {
-        "body": "Fais glisser ce bouton AllMarks dans ta barre de favoris pour enregistrer depuis n'importe où. Tu ne vois pas la barre ? Appuie sur Ctrl/⌘+Shift+B.", "demoCaption": "Sur n'importe quelle page, clique simplement sur AllMarks dans ta barre de favoris — une fenêtre s'ouvre et l'enregistre.", "dragged": "Parfait — c'est installé ! Voyons maintenant comment tu vas l'utiliser." },
-      "manage": { "settingsBody": "Vous ne voulez pas la fenêtre qui apparaît à l'enregistrement ? Désactivez cet « Étiqueter à l'enregistrement » — vous pouvez le réactiver à tout moment.", "body": "Pour étiqueter plusieurs cartes d'un coup, ouvrez MANAGE TAGS.", "triageBody": "MANAGE TAGS — étiquette ton tableau carte par carte. Glisse pour avancer vite." },
+        "body": "Fais glisser ce bouton AllMarks dans ta barre de favoris pour enregistrer depuis n'importe où. Tu ne vois pas la barre ? Appuie sur Ctrl/⌘+Shift+B.",
+        "demoCaption": "Sur n'importe quelle page, clique simplement sur AllMarks dans ta barre de favoris — une fenêtre s'ouvre et l'enregistre.",
+        "dragged": "Parfait — c'est installé ! Voyons maintenant comment tu vas l'utiliser."
+      },
+      "manage": {
+        "settingsBody": "Vous ne voulez pas la fenêtre qui apparaît à l'enregistrement ? Désactivez cet « Étiqueter à l'enregistrement » — vous pouvez le réactiver à tout moment.",
+        "body": "Pour étiqueter plusieurs cartes d'un coup, ouvrez MANAGE TAGS.",
+        "triageBody": "MANAGE TAGS — étiquette ton tableau carte par carte. Glisse pour avancer vite."
+      },
       "installDetected": {
         "body": "L'extension est déjà installée. Il est aussi possible d'enregistrer en collant un lien ou en utilisant le bookmarklet."
       },
       "share": {
-        "body": "Voilà comment fonctionne le partage. Crée un tableau que tu adores et partage-le avec tout le monde.", "pressBody": "Appuyez sur SHARE dans l'en-tête pour ouvrir le panneau de partage."
+        "body": "Voilà comment fonctionne le partage. Crée un tableau que tu adores et partage-le avec tout le monde.",
+        "pressBody": "Appuyez sur SHARE dans l'en-tête pour ouvrir le panneau de partage."
       },
       "finale": {
         "body": "Tout est prêt. Ce tutoriel peut être relu depuis SETTINGS à tout moment."

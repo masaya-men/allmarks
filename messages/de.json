@@ -11,7 +11,8 @@
       "openExtensionSettings": "ERWEITERUNGSEINSTELLUNGEN ÖFFNEN",
       "getExtensionBody": "Jede Seite mit einem Klick in AllMarks speichern – direkt von X, YouTube und überall sonst. Die schwebende Markierung und das automatische SNS-Speichern sind inklusive.",
       "addToChrome": "ZU CHROME HINZUFÜGEN",
-      "comingSoon": "DEMNÄCHST VERFÜGBAR"
+      "comingSoon": "DEMNÄCHST VERFÜGBAR",
+      "chooseTheme": "Thema wählen"
     },
     "backup": {
       "caption": "Sichere deine Daten in einer Datei oder stelle sie wieder her.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Wähle ein Board-Thema.",
-      "unlockLater": "Bald freigeschaltet. Bleib dran."
+      "unlockLater": "Bald freigeschaltet. Bleib dran.",
+      "modalTitle": "Thema wählen",
+      "modalSubtitle": "Wähle die Welt, in der dein Board lebt.",
+      "modalCloseLabel": "Schließen"
     },
     "filter": {
       "label": "Alle",
@@ -117,7 +121,13 @@
       "reset_tooltip": "Auf Standard zurücksetzen"
     },
     "onboarding": {
-      "triage": {"intro":"Das ist MANAGE. Versieh deine gespeicherten Karten nacheinander mit Tags, um schnell Ordnung zu schaffen.","pickTag":"Wähle zuerst einen Tag aus – klicke ihn an oder drücke eine Zahlentaste (1–9).","apply":"Drücke → (oder D, oder wische nach rechts), um den Tag zu vergeben und zur nächsten Karte zu wechseln.","skip":"Bei einer Karte, der du den Tag nicht geben willst, wechselst du mit ← (der A-Taste / wische nach links) zur nächsten.","done":"Das ist schon der ganze Ablauf – einfach wiederholen. Drücke NEXT, um fortzufahren."},
+      "triage": {
+        "intro": "Das ist MANAGE. Versieh deine gespeicherten Karten nacheinander mit Tags, um schnell Ordnung zu schaffen.",
+        "pickTag": "Wähle zuerst einen Tag aus – klicke ihn an oder drücke eine Zahlentaste (1–9).",
+        "apply": "Drücke → (oder D, oder wische nach rechts), um den Tag zu vergeben und zur nächsten Karte zu wechseln.",
+        "skip": "Bei einer Karte, der du den Tag nicht geben willst, wechselst du mit ← (der A-Taste / wische nach links) zur nächsten.",
+        "done": "Das ist schon der ganze Ablauf – einfach wiederholen. Drücke NEXT, um fortzufahren."
+      },
       "enter": {
         "body": "AllMarks verwandelt Links in ein visuelles Board."
       },
@@ -133,15 +143,27 @@
         "body": "Drücke MOTION, um die Karten des Boards zum Leben zu erwecken. Probier es aus.",
         "done": "Dein Board lebt — Videos spielen und Bildergalerien wechseln. NEXT zum Fortfahren."
       },
-      "extDemo": { "body": "Mit der AllMarks-Erweiterung speicherst du jede Seite mit einem Klick und kannst sie gleich verschlagworten.", "hideNote": "Stört dich der Speicher-Button? Du kannst ihn jederzeit in den Einstellungen der Erweiterung ausblenden.", "bodyX": "Auf X, YouTube und anderen Seiten tippst du einfach auf Lesezeichen oder Gefällt mir, und die AllMarks-Erweiterung speichert es auch auf deinem Board." },
+      "extDemo": {
+        "body": "Mit der AllMarks-Erweiterung speicherst du jede Seite mit einem Klick und kannst sie gleich verschlagworten.",
+        "hideNote": "Stört dich der Speicher-Button? Du kannst ihn jederzeit in den Einstellungen der Erweiterung ausblenden.",
+        "bodyX": "Auf X, YouTube und anderen Seiten tippst du einfach auf Lesezeichen oder Gefällt mir, und die AllMarks-Erweiterung speichert es auch auf deinem Board."
+      },
       "install": {
-        "body": "Zieh diesen AllMarks-Button in deine Lesezeichenleiste, um von überall zu speichern. Keine Leiste zu sehen? Drücke Ctrl/⌘+Shift+B.", "demoCaption": "Klick auf jeder Seite einfach auf AllMarks in deiner Lesezeichenleiste – ein Fenster öffnet sich und speichert sie.", "dragged": "Geschafft – das Bookmarklet ist installiert! Sehen wir uns jetzt an, wie du es nutzt." },
-      "manage": { "settingsBody": "Brauchst du das Fenster nicht, das beim Speichern aufpoppt? Schalte dieses „Beim Speichern direkt taggen“ aus – du kannst es jederzeit wieder einschalten.", "body": "Um viele Karten auf einmal zu verschlagworten, öffne MANAGE TAGS.", "triageBody": "MANAGE TAGS — tagge dein Board Karte für Karte. Wische, um schnell durchzukommen." },
+        "body": "Zieh diesen AllMarks-Button in deine Lesezeichenleiste, um von überall zu speichern. Keine Leiste zu sehen? Drücke Ctrl/⌘+Shift+B.",
+        "demoCaption": "Klick auf jeder Seite einfach auf AllMarks in deiner Lesezeichenleiste – ein Fenster öffnet sich und speichert sie.",
+        "dragged": "Geschafft – das Bookmarklet ist installiert! Sehen wir uns jetzt an, wie du es nutzt."
+      },
+      "manage": {
+        "settingsBody": "Brauchst du das Fenster nicht, das beim Speichern aufpoppt? Schalte dieses „Beim Speichern direkt taggen“ aus – du kannst es jederzeit wieder einschalten.",
+        "body": "Um viele Karten auf einmal zu verschlagworten, öffne MANAGE TAGS.",
+        "triageBody": "MANAGE TAGS — tagge dein Board Karte für Karte. Wische, um schnell durchzukommen."
+      },
       "installDetected": {
         "body": "Die Erweiterung ist bereits installiert. Du kannst auch per Link-Einfügen oder Bookmarklet speichern."
       },
       "share": {
-        "body": "So funktioniert das Teilen. Erstelle ein Board, das du liebst, und teile es mit allen.", "pressBody": "Tippe in der Kopfzeile auf SHARE, um das Teilen-Panel zu öffnen."
+        "body": "So funktioniert das Teilen. Erstelle ein Board, das du liebst, und teile es mit allen.",
+        "pressBody": "Tippe in der Kopfzeile auf SHARE, um das Teilen-Panel zu öffnen."
       },
       "finale": {
         "body": "Alles bereit. Tutorial jederzeit über SETTINGS wiederholen."

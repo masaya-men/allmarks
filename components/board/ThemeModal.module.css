@@ -1,0 +1,130 @@
+/* Dedicated theme screen. Same dark-glass vocabulary as the bookmarklet modal
+   (rgba(12,12,12,.94) + blur + hairline). The backdrop is deliberately lighter
+   than a normal modal so the real board stays faintly visible around the
+   centred panel — a theme change reads immediately behind the dim. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200; /* mirrors BOARD_Z_INDEX.MODAL_OVERLAY */
+  animation: fadeIn 160ms ease-out;
+}
+
+.modal {
+  background: rgba(12, 12, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  padding: 24px 28px 28px;
+  width: 620px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  position: relative;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  animation: panelIn 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.titleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.subtitle {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+.closeBtn {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 9px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.15s, background 0.15s;
+}
+.closeBtn:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.06);
+}
+.closeBtn:focus-visible {
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay { animation: none; }
+  .modal { animation: none; }
+}
+
+/* ── paper-atelier theme overrides ─────────────────────────────────────────
+   Render the theme screen as an aged-paper note instead of dark glass. Scoped
+   to the theme; default bytes untouched. Layout / sizing / font never touched. */
+:global(html[data-theme-id='paper-atelier']) .modal {
+  background-color: var(--paper-panel-surface);
+  background-image: var(--paper-panel-texture);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--paper-panel-border);
+  box-shadow: var(--paper-panel-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .title {
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .subtitle {
+  color: var(--text-body);
+}
+:global(html[data-theme-id='paper-atelier']) .closeBtn {
+  color: var(--text-meta);
+}
+:global(html[data-theme-id='paper-atelier']) .closeBtn:hover {
+  color: var(--text-primary);
+  background: var(--paper-panel-btn-bg-hover);
+}

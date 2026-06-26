@@ -11,7 +11,8 @@
       "openExtensionSettings": "OPEN EXTENSION SETTINGS",
       "getExtensionBody": "Save any page to AllMarks in one click — straight from X, YouTube, and anywhere else. The floating mark and SNS auto-save come with it.",
       "addToChrome": "ADD TO CHROME",
-      "comingSoon": "COMING SOON"
+      "comingSoon": "COMING SOON",
+      "chooseTheme": "CHOOSE A THEME"
     },
     "backup": {
       "caption": "Save your data to a file, or restore it.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Choose a board theme.",
-      "unlockLater": "Unlocks later — stay tuned."
+      "unlockLater": "Unlocks later — stay tuned.",
+      "modalTitle": "CHOOSE A THEME",
+      "modalSubtitle": "Pick the world your board lives in.",
+      "modalCloseLabel": "Close"
     },
     "filter": {
       "label": "All",
@@ -117,17 +121,53 @@
       "reset_tooltip": "Reset to defaults"
     },
     "onboarding": {
-      "triage": {"intro":"This is MANAGE. Tag your saved cards one at a time to tidy them up fast.","pickTag":"First, pick a tag to apply — click it, or press a number key (1–9).","apply":"Press → (or D, or swipe right) to apply the tag and move to the next card.","skip":"For a card you're not giving this tag, move to the next one with ← (the A key, or swipe left).","done":"That's the whole routine — just repeat. Press NEXT to continue."},
-      "enter": { "body": "AllMarks turns links into a visual board." },
-      "paste": { "body": "Copy this link, then paste it onto the board (Cmd/Ctrl+V).", "copied": "Copied. Now paste it onto the board (Cmd/Ctrl+V)." },
-      "tag": { "body": "Let's tag this card. I'll do it for you this time — just watch.", "done": "Tags keep your board organized — add your own anytime. Press NEXT to continue." },
-      "motion": { "body": "Press MOTION to make the cards gently move. Try it.", "done": "Your board is alive — videos play and image galleries cycle. Press NEXT to continue." },
-      "extDemo": { "body": "With the AllMarks extension, one click on any page saves it — and you can tag it at the same time.", "hideNote": "Don't want the floating button? You can hide it anytime in the extension's settings.", "bodyX": "On X, YouTube, and more, just tap Bookmark or Like — the AllMarks extension saves it to your board too." },
-      "install": { "body": "Drag this AllMarks button to your bookmarks bar to save from anywhere. Don't see the bar? Press Ctrl/⌘+Shift+B.", "demoCaption": "On any page, just click AllMarks in your bookmark bar — a window opens and saves it.", "dragged": "Nice — it's installed! Now let's see how you'll use it." },
-      "manage": { "settingsBody": "Don't want the window that pops up when you save? Turn this “QUICK-TAG ON SAVE” off — you can switch it back anytime.", "body": "To tag many cards at once, open MANAGE TAGS.", "triageBody": "MANAGE TAGS — tag your board one card at a time. Swipe to fly through it." },
-      "installDetected": { "body": "The extension is already installed. You can also save by pasting a link or using the bookmarklet." },
-      "share": { "body": "This is how sharing works. Build a board you love and share it with everyone.", "pressBody": "Press SHARE in the header to open the share panel." },
-      "finale": { "body": "You're set. Replay this anytime from SETTINGS." }
+      "triage": {
+        "intro": "This is MANAGE. Tag your saved cards one at a time to tidy them up fast.",
+        "pickTag": "First, pick a tag to apply — click it, or press a number key (1–9).",
+        "apply": "Press → (or D, or swipe right) to apply the tag and move to the next card.",
+        "skip": "For a card you're not giving this tag, move to the next one with ← (the A key, or swipe left).",
+        "done": "That's the whole routine — just repeat. Press NEXT to continue."
+      },
+      "enter": {
+        "body": "AllMarks turns links into a visual board."
+      },
+      "paste": {
+        "body": "Copy this link, then paste it onto the board (Cmd/Ctrl+V).",
+        "copied": "Copied. Now paste it onto the board (Cmd/Ctrl+V)."
+      },
+      "tag": {
+        "body": "Let's tag this card. I'll do it for you this time — just watch.",
+        "done": "Tags keep your board organized — add your own anytime. Press NEXT to continue."
+      },
+      "motion": {
+        "body": "Press MOTION to make the cards gently move. Try it.",
+        "done": "Your board is alive — videos play and image galleries cycle. Press NEXT to continue."
+      },
+      "extDemo": {
+        "body": "With the AllMarks extension, one click on any page saves it — and you can tag it at the same time.",
+        "hideNote": "Don't want the floating button? You can hide it anytime in the extension's settings.",
+        "bodyX": "On X, YouTube, and more, just tap Bookmark or Like — the AllMarks extension saves it to your board too."
+      },
+      "install": {
+        "body": "Drag this AllMarks button to your bookmarks bar to save from anywhere. Don't see the bar? Press Ctrl/⌘+Shift+B.",
+        "demoCaption": "On any page, just click AllMarks in your bookmark bar — a window opens and saves it.",
+        "dragged": "Nice — it's installed! Now let's see how you'll use it."
+      },
+      "manage": {
+        "settingsBody": "Don't want the window that pops up when you save? Turn this “QUICK-TAG ON SAVE” off — you can switch it back anytime.",
+        "body": "To tag many cards at once, open MANAGE TAGS.",
+        "triageBody": "MANAGE TAGS — tag your board one card at a time. Swipe to fly through it."
+      },
+      "installDetected": {
+        "body": "The extension is already installed. You can also save by pasting a link or using the bookmarklet."
+      },
+      "share": {
+        "body": "This is how sharing works. Build a board you love and share it with everyone.",
+        "pressBody": "Press SHARE in the header to open the share panel."
+      },
+      "finale": {
+        "body": "You're set. Replay this anytime from SETTINGS."
+      }
     }
   },
   "share": {
@@ -223,8 +263,13 @@
       "button": "Start now — no sign-up"
     },
     "footer": {
-      "features": "Features", "guide": "Guide", "faq": "FAQ", "about": "About",
-      "privacy": "Privacy", "terms": "Terms", "contact": "Contact"
+      "features": "Features",
+      "guide": "Guide",
+      "faq": "FAQ",
+      "about": "About",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
     }
   },
   "pages": {
@@ -450,7 +495,9 @@
         "lead": "AllMarks is built on one principle: your data belongs to you. We collect no personal data, and there are no accounts.",
         "updated": "Last updated: June 18, 2026"
       },
-      "toc": { "title": "Contents" },
+      "toc": {
+        "title": "Contents"
+      },
       "philosophy": {
         "heading": "Zero data collection",
         "body": "Your bookmarks, tags, and board layouts are stored only in your browser's local database (IndexedDB). We do not collect, store, or transmit your personal data to our servers, and there are no accounts to sign in to."
@@ -511,7 +558,9 @@
         "lead": "AllMarks is a free app with no account. These terms explain the basics of using it.",
         "updated": "Last updated: June 18, 2026"
       },
-      "toc": { "title": "Contents" },
+      "toc": {
+        "title": "Contents"
+      },
       "acceptance": {
         "heading": "1. Acceptance of terms",
         "body": "By using AllMarks (\"the Service\"), you agree to these Terms of Service. If you do not agree, please do not use the Service."

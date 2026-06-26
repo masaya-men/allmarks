@@ -11,7 +11,8 @@
       "openExtensionSettings": "EKLENTİ AYARLARINI AÇ",
       "getExtensionBody": "Herhangi bir sayfayı tek tıkla AllMarks'a kaydet — X, YouTube ve diğer her yerden. Yüzen işaret ve SNS otomatik kaydı da onunla birlikte gelir.",
       "addToChrome": "CHROME'A EKLE",
-      "comingSoon": "YAKINDA"
+      "comingSoon": "YAKINDA",
+      "chooseTheme": "Tema seç"
     },
     "backup": {
       "caption": "Verilerini bir dosyaya kaydet veya geri yükle.",
@@ -38,7 +39,10 @@
       "gridPaper": "Grid",
       "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Bir pano teması seçin.",
-      "unlockLater": "Yakında açılacak. Takipte kalın."
+      "unlockLater": "Yakında açılacak. Takipte kalın.",
+      "modalTitle": "Tema seç",
+      "modalSubtitle": "Panonuzun yaşadığı dünyayı seçin.",
+      "modalCloseLabel": "Kapat"
     },
     "filter": {
       "label": "Tümü",
@@ -117,7 +121,13 @@
       "reset_tooltip": "Varsayılanlara sıfırla"
     },
     "onboarding": {
-      "triage": {"intro":"Burası MANAGE. Kaydettiğin kartları teker teker etiketleyerek hızlıca düzene sok.","pickTag":"Önce uygulamak istediğin bir etiket seç — üstüne tıkla ya da bir rakam tuşuna bas (1–9).","apply":"Etiketi uygulayıp sonraki karta geçmek için → bas (ya da D, ya da sağa kaydır).","skip":"Bu etiketi vermeyeceğin bir kart için ← bas (A tuşu ya da sola kaydır) ve sonrakine geç.","done":"Bütün akış bu kadar — sadece tekrarla. Devam etmek için NEXT'e bas."},
+      "triage": {
+        "intro": "Burası MANAGE. Kaydettiğin kartları teker teker etiketleyerek hızlıca düzene sok.",
+        "pickTag": "Önce uygulamak istediğin bir etiket seç — üstüne tıkla ya da bir rakam tuşuna bas (1–9).",
+        "apply": "Etiketi uygulayıp sonraki karta geçmek için → bas (ya da D, ya da sağa kaydır).",
+        "skip": "Bu etiketi vermeyeceğin bir kart için ← bas (A tuşu ya da sola kaydır) ve sonrakine geç.",
+        "done": "Bütün akış bu kadar — sadece tekrarla. Devam etmek için NEXT'e bas."
+      },
       "enter": {
         "body": "AllMarks bağlantıları görsel bir panoya dönüştürür."
       },
@@ -133,15 +143,27 @@
         "body": "Panodaki kartları canlandırmak için MOTION'a bas. Dene.",
         "done": "Panon canlanıyor — videolar oynuyor ve görsel galerileri değişiyor. Devam etmek için NEXT'e bas."
       },
-      "extDemo": { "body": "AllMarks eklentisiyle herhangi bir sayfayı tek tıkla kaydedersin; aynı anda etiketleyebilirsin de.", "hideNote": "Kayan düğmeyi istemiyor musun? Eklentinin ayarlarından istediğin zaman gizleyebilirsin.", "bodyX": "X, YouTube ve daha fazlasında sadece Yer İşareti'ne veya Beğen'e dokun; AllMarks eklentisi onu panona da kaydeder." },
+      "extDemo": {
+        "body": "AllMarks eklentisiyle herhangi bir sayfayı tek tıkla kaydedersin; aynı anda etiketleyebilirsin de.",
+        "hideNote": "Kayan düğmeyi istemiyor musun? Eklentinin ayarlarından istediğin zaman gizleyebilirsin.",
+        "bodyX": "X, YouTube ve daha fazlasında sadece Yer İşareti'ne veya Beğen'e dokun; AllMarks eklentisi onu panona da kaydeder."
+      },
       "install": {
-        "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas.", "demoCaption": "Herhangi bir sayfada, sadece yer imleri çubuğundaki AllMarks'a tıkla — bir pencere açılıp onu kaydeder.", "dragged": "Harika — yüklendi! Şimdi onu nasıl kullanacağına bir bakalım." },
-      "manage": { "settingsBody": "Kaydederken açılan pencereyi istemiyor musun? Bu “Kaydederken hemen etiketle” seçeneğini kapat — istediğin zaman geri açabilirsin.", "body": "Birçok kartı tek seferde etiketlemek için MANAGE TAGS'i aç.", "triageBody": "MANAGE TAGS — panonu tek tek kartlarla etiketle. Kaydırarak hızlıca ilerle." },
+        "body": "Her yerden kaydetmek için bu AllMarks düğmesini yer imleri çubuğuna sürükle. Çubuğu görmüyor musun? Ctrl/⌘+Shift+B'ye bas.",
+        "demoCaption": "Herhangi bir sayfada, sadece yer imleri çubuğundaki AllMarks'a tıkla — bir pencere açılıp onu kaydeder.",
+        "dragged": "Harika — yüklendi! Şimdi onu nasıl kullanacağına bir bakalım."
+      },
+      "manage": {
+        "settingsBody": "Kaydederken açılan pencereyi istemiyor musun? Bu “Kaydederken hemen etiketle” seçeneğini kapat — istediğin zaman geri açabilirsin.",
+        "body": "Birçok kartı tek seferde etiketlemek için MANAGE TAGS'i aç.",
+        "triageBody": "MANAGE TAGS — panonu tek tek kartlarla etiketle. Kaydırarak hızlıca ilerle."
+      },
       "installDetected": {
         "body": "Uzantı zaten yüklü. Bağlantı yapıştırarak veya bookmarklet kullanarak da kaydedebilirsiniz."
       },
       "share": {
-        "body": "Paylaşım böyle çalışır. Sevdiğin bir pano oluştur ve herkesle paylaş.", "pressBody": "Paylaşım panelini açmak için başlıktaki SHARE düğmesine basın."
+        "body": "Paylaşım böyle çalışır. Sevdiğin bir pano oluştur ve herkesle paylaş.",
+        "pressBody": "Paylaşım panelini açmak için başlıktaki SHARE düğmesine basın."
       },
       "finale": {
         "body": "Hazırsınız. Bu öğreticiyi SETTINGS üzerinden istediğiniz zaman tekrar izleyebilirsiniz."

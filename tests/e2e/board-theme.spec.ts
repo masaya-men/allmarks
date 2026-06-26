@@ -55,6 +55,9 @@ test('switching to paper-atelier themes the board and persists', async ({ page }
   await settings.scrollIntoViewIfNeeded()
   await settings.hover()
   await settings.dispatchEvent('mouseover')
+  // THEME group → open the dedicated theme screen, which hosts the picker.
+  await page.getByTestId('open-theme-modal').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.getByTestId('open-theme-modal').click({ timeout: 8_000 })
   await page.getByTestId('theme-picker').waitFor({ state: 'visible', timeout: 10_000 })
 
   // pick the paper theme
@@ -72,12 +75,12 @@ test('switching to paper-atelier themes the board and persists', async ({ page }
   const cached = await page.evaluate(() => localStorage.getItem('allmarks-theme-id'))
   expect(cached).toBe('paper-atelier')
 
-  // settings screenshot (drawer open, now in paper theme)
+  // theme-screen screenshot (modal open, now in paper theme)
   await page.screenshot({ path: `${SHOT_DIR}/paper-settings.png`, fullPage: false })
 
-  // close the drawer (move away + leave grace) then screenshot the board itself
-  await page.mouse.move(640, 720)
-  await page.waitForTimeout(900)
+  // close the theme screen (Esc) then screenshot the board itself
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(400)
   await page.screenshot({ path: `${SHOT_DIR}/paper-board.png`, fullPage: false })
 
   // persists across reload

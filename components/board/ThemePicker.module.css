@@ -15,6 +15,20 @@
 .preview[data-theme-id='paper-atelier'] { background: #efe6d2; }
 .name { font-family: var(--font-heading); font-size: 12px; }
 .badge { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--text-meta); }
+
+/* ── modal variant ─────────────────────────────────────────────────────────
+   Larger swatches for the dedicated theme screen. The grid breathes (wider
+   gap), each swatch shows a taller preview so the world reads at a glance. */
+.section[data-variant='modal'] .grid { gap: 14px; }
+.section[data-variant='modal'] .swatch {
+  width: 168px;
+  padding: 12px;
+  gap: 8px;
+  border-radius: 12px;
+}
+.section[data-variant='modal'] .preview { height: 104px; border-radius: 7px; }
+.section[data-variant='modal'] .name { font-size: 15px; }
+.section[data-variant='modal'] .badge { font-size: 10px; }
 .lockedPill {
   font-family: var(--font-mono);
   font-size: 9px;
