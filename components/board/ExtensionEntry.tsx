@@ -8,6 +8,7 @@ import {
   useState,
   type ReactElement,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { EXTENSION_STORE_URL } from '@/lib/board/constants'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ChromeButton } from './ChromeButton'
@@ -125,6 +126,12 @@ export function ExtensionEntry({
   // True when the drawer is taller than the viewport allows AND there's more
   // content below the fold — drives the bottom fade hint (no raw scrollbar).
   const [moreBelow, setMoreBelow] = useState(false)
+  // The drawer is portalled to <body> so it escapes the TopHeader's z-index:110
+  // stacking context — otherwise the canvas ScrollMeter (z 400) paints over its
+  // bottom. `pos` anchors the fixed drawer under the SETTINGS button.
+  const [mounted, setMounted] = useState(false)
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
+  useEffect(() => setMounted(true), [])
 
   const openSettings = useCallback((): void => {
     // Mirrors the url-deleted bridge (use-board-data.ts): the content script
@@ -150,6 +157,37 @@ export function ExtensionEntry({
     }, LEAVE_GRACE_MS)
   }, [])
 
+  // Close immediately (no leave grace) — used when an action opens a modal so
+  // the modal isn't briefly occluded by the higher-z portalled drawer.
+  const closeNow = useCallback((): void => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+    setExpanded(false)
+  }, [])
+
+  // Anchor the portalled (fixed) drawer under the SETTINGS button. The header
+  // doesn't move with board scroll, so measuring on open + resize is enough;
+  // the capture-phase scroll listener covers any incidental layout shift.
+  const measure = useCallback((): void => {
+    const el = wrapRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    setPos({ top: Math.round(r.bottom), right: Math.round(window.innerWidth - r.right) })
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!mounted) return
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return (): void => {
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [mounted, measure])
+
   useEffect(() => {
     return (): void => {
       if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
@@ -174,6 +212,7 @@ export function ExtensionEntry({
       setMoreBelow(false)
       return
     }
+    measure() // refresh anchor when the drawer opens
     // Measure after the max-height open transition settles (clientHeight grows
     // during it), and once more on the next frame for the fits-immediately case.
     const raf = requestAnimationFrame(recomputeFade)
@@ -184,7 +223,7 @@ export function ExtensionEntry({
       clearTimeout(timer)
       window.removeEventListener('resize', recomputeFade)
     }
-  }, [isOpen, installed, recomputeFade])
+  }, [isOpen, installed, recomputeFade, measure])
 
   return (
     <span
@@ -201,14 +240,18 @@ export function ExtensionEntry({
         data-testid="extension-settings"
         data-onboarding-target="settings"
       />
+      {mounted && createPortal(
       <div
         ref={drawerRef}
         className={styles.drawer}
+        style={pos ? { position: 'fixed', top: pos.top, right: pos.right } : undefined}
         role="dialog"
         aria-label="AllMarks settings"
         data-open={isOpen ? 'true' : 'false'}
         aria-hidden={!isOpen}
         onScroll={recomputeFade}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <div className={styles.title}>SETTINGS</div>
 
@@ -243,7 +286,7 @@ export function ExtensionEntry({
           <button
             type="button"
             className={styles.themePickBtn}
-            onClick={onOpenThemeModal}
+            onClick={(): void => { closeNow(); onOpenThemeModal() }}
             data-testid="open-theme-modal"
           >
             <span className={styles.themePickLabel}>{t('board.settings.chooseTheme')}</span>
@@ -258,7 +301,7 @@ export function ExtensionEntry({
           <button
             type="button"
             className={styles.panelCta}
-            onClick={onOpenBookmarkletModal}
+            onClick={(): void => { closeNow(); onOpenBookmarkletModal() }}
             data-testid="open-bookmarklet-install"
           >
             {t('board.settings.saveWithoutExtension')}
@@ -318,7 +361,9 @@ export function ExtensionEntry({
           data-visible={moreBelow ? 'true' : 'false'}
           aria-hidden="true"
         />
-      </div>
+      </div>,
+      document.body,
+      )}
     </span>
   )
 }

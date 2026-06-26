@@ -116,7 +116,10 @@
               padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  z-index: 50;
+  /* Portalled to <body>: must sit above the canvas ScrollMeter (z 400). The
+     ThemeModal / bookmarklet modal (z 200) are opened only after this drawer
+     closes itself (closeNow), so there's no modal-behind-drawer conflict. */
+  z-index: 401;
   pointer-events: none;
   display: flex;
   flex-direction: column;
