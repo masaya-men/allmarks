@@ -7,7 +7,7 @@ Paper/テーマ系のユーザー実機フィードバックを多数反映。ts
 セッション136 で shipped（4デプロイ）:
 1. **テーマ追従漏れクラスタ**: ①FilterPill ドロップダウン（黒箱→羊皮紙紙片＋墨、フォントも serif 化＝周囲と所帯統一）／②拡張のフローティングタグ strip（save-iframe が **third-party 埋め込みで localStorage 分離**のため暗かった → **IDB board-config からテーマを読む**よう修正、memory `reference_save_iframe_storage_partition`）／③PiP本体＋PiP内タグ窓（data-theme-id を PiP doc にスタンプ＋PiP CSS 4枚 paper override、user確認OK）。
 2. **テーマ名英語統一（全15言語）**: Sound Wave(既定・旧Dotted Notebook)／Grid／Paper Atelier。既定は選択肢に **DEFAULT バッジ**。
-3. **Grid テーマ刷新**: グリッドを**ビューポート固定層**に移設（旧: contentWidth=1963 の panned 層で center が盤面1393とズレ→左右非対称だった）。今は canvas 中央＝対称（端で左右16.5px）＋ **bg-position-y で 0.5x パララックス**（motion/reduced gating）。memory `reference_theme_bg_viewport_vs_content`。
+3. **Grid テーマ刷新**: グリッドを**ビューポート固定層**に移設（旧: contentWidth=1963 の panned 層で center が盤面1393とズレ→左右非対称だった）。今は canvas 中央＝対称（端で左右16.5px）＋ **bg-position-y で 0.15x パララックス**（= paper 背景と同強度 `1−PAPER_PARALLAX_FACTOR`、**MOTION トグル無視で常時ON**・OS reduced-motion のみ尊重）。memory `reference_theme_bg_viewport_vs_content`。
 
 ## 次にやる（user と合意済みの順番: ④ → ⑤）
 
