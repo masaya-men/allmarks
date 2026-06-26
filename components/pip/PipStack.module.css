@@ -84,3 +84,12 @@
   .slot { transition: none; }
   .scroller { scroll-behavior: auto; }
 }
+
+/* ── paper-atelier: parchment stage instead of the black letterbox (the cards
+   sit on a warm sheet, matching the board). Default theme byte-identical. ─── */
+:global(html[data-theme-id='paper-atelier']) .stage {
+  background-color: var(--bg-dark, #efe6d2);
+  background-image: var(--asset-parchment-bg);
+  background-size: cover;
+  background-position: center;
+}

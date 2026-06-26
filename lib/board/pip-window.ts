@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 
 export interface PipWindowApi {
   readonly window: Window | null
@@ -133,12 +134,29 @@ export function usePipWindow(): PipWindowApi {
       )
     }
 
+    // Mirror the board's active theme onto the PiP document. We copy every
+    // theme-scoped stylesheet above, but those `html[data-theme-id='…']` rules
+    // stay inert unless the attribute is present on the PiP <html>. The opener's
+    // <html> carries the chosen theme (the board keeps it in sync), so read it
+    // straight off and stamp it onto the PiP document — now the copied paper
+    // rules (cards, tag popover, empty state) actually apply.
+    const activeTheme = document.documentElement.getAttribute('data-theme-id')
+    if (activeTheme) win.document.documentElement.setAttribute('data-theme-id', activeTheme)
+
     // Fill whatever inner area Chrome ends up giving us (after resizeTo, the
     // inner is roughly PIP_OUTER × (PIP_OUTER - title_bar_height) — slightly
-    // landscape). Companion content centers via grid, with a black letterbox
-    // for any residual aspect mismatch when the user resizes mid-session.
-    win.document.documentElement.style.cssText = 'margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden;'
-    win.document.body.style.cssText = 'margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden;display:grid;place-items:center;'
+    // landscape). Companion content centers via grid, with a letterbox for any
+    // residual aspect mismatch when the user resizes mid-session. The default
+    // theme keeps the pure-black stage; any non-default theme uses its own
+    // canvas colour so the PiP doesn't read as a black hole on a light board
+    // (e.g. parchment cream on paper-atelier).
+    let stageBg = '#000'
+    if (activeTheme && activeTheme !== DEFAULT_THEME_ID) {
+      const themedBg = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim()
+      if (themedBg) stageBg = themedBg
+    }
+    win.document.documentElement.style.cssText = `margin:0;padding:0;background:${stageBg};width:100%;height:100%;overflow:hidden;`
+    win.document.body.style.cssText = `margin:0;padding:0;background:${stageBg};width:100%;height:100%;overflow:hidden;display:grid;place-items:center;`
     // Chrome's Document PiP intentionally always shows the origin in the
     // title bar (anti-spoofing), so document.title doesn't actually surface.
     // Setting it anyway in case Chrome relaxes this in future versions.

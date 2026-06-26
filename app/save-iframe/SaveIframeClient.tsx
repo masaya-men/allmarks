@@ -33,10 +33,14 @@ function readThemeTokens(): StripThemeTokens {
     const got = cs.getPropertyValue(name).trim()
     return got || fallback
   }
+  // On themes that define panel tokens (paper-atelier), prefer them so the
+  // floating strip reads as the same parchment note as the in-app popovers.
+  // The default theme leaves --paper-panel-* undefined → these resolve empty
+  // and fall back to the dark canvas tokens, so the default strip is unchanged.
   return {
-    bg: v('--bg-dark', '#0a0a0a'),
+    bg: v('--paper-panel-surface', '') || v('--bg-dark', '#0a0a0a'),
     fg: v('--text-primary', '#f2f2f2'),
-    border: v('--color-card-border', 'rgba(255,255,255,0.12)'),
+    border: v('--paper-panel-border', '') || v('--color-card-border', 'rgba(255,255,255,0.12)'),
     accent: '#28f100',
     blur: v('--glass-blur', '8px'),
   }

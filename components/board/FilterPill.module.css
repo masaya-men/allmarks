@@ -511,3 +511,85 @@
 :global(html[data-theme-id='paper-atelier']) .count::after {
   content: none; /* remove the RGB glitch ghosts on paper */
 }
+
+/* ── Paper-atelier session 136: harmonise the pill with its chrome siblings +
+   re-skin the dropdown ───────────────────────────────────────────────────────
+   The pill family is already Fraunces (above), but it still carried the dark-
+   theme 0.75px ivory text-stroke (globals never reset --chrome-text-stroke-width
+   for paper) plus a heavier 12px/500 scale, so it read as an embossed, bolder
+   glyph next to the flat-ink 11px/400 TUNE / SETTINGS buttons. Drop the stroke
+   and match the editorial scale; the AllMarks brand stays mixed-case (tag names
+   stay lowercase, INBOX/TRASH uppercase) because case is content-driven. */
+:global(html[data-theme-id='paper-atelier']) .pill {
+  -webkit-text-stroke-width: 0;
+}
+:global(html[data-theme-id='paper-atelier']) .label {
+  font-size: 11px;
+  font-weight: 400;
+}
+:global(html[data-theme-id='paper-atelier']) .separator {
+  color: var(--text-meta);
+}
+
+/* Dropdown panel — opaque cream sheet + paper grain, no dark glass / blur.
+   Mirrors TagAddPopover's paper tokens so every list popover reads the same. */
+:global(html[data-theme-id='paper-atelier']) .menu {
+  background-color: var(--paper-panel-surface);
+  background-image: var(--paper-panel-texture);
+  background-size: cover;
+  background-position: center;
+  border-color: var(--paper-panel-border);
+  color: var(--text-body);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+:global(html[data-theme-id='paper-atelier']) .menu[data-open='true'] {
+  box-shadow: var(--paper-panel-shadow);
+}
+
+/* Rows — ink text, warm hover wash (green active accent kept). */
+:global(html[data-theme-id='paper-atelier']) .item {
+  color: var(--text-body);
+}
+:global(html[data-theme-id='paper-atelier']) .item:hover,
+:global(html[data-theme-id='paper-atelier']) .item:focus-visible {
+  background: var(--paper-panel-btn-bg-hover);
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .item:active {
+  background: var(--paper-panel-btn-bg-hover);
+}
+:global(html[data-theme-id='paper-atelier']) .itemCount {
+  color: var(--text-meta);
+}
+:global(html[data-theme-id='paper-atelier']) .item.active {
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .item.active .itemCount {
+  color: var(--text-body);
+}
+
+/* Dividers / section header — charcoal hairlines + muted ink. */
+:global(html[data-theme-id='paper-atelier']) .bottomGroup {
+  border-top-color: var(--paper-panel-hairline);
+}
+:global(html[data-theme-id='paper-atelier']) .sectionHeader {
+  color: var(--text-meta);
+  border-top-color: var(--paper-panel-hairline);
+}
+:global(html[data-theme-id='paper-atelier']) .sortToggle {
+  color: var(--text-meta);
+}
+:global(html[data-theme-id='paper-atelier']) .sortToggle:hover {
+  color: var(--text-body);
+}
+
+/* Hollow tag dot — charcoal outline so the inactive ring reads on cream. */
+:global(html[data-theme-id='paper-atelier']) .tagDot {
+  border-color: var(--paper-panel-border);
+}
+
+/* Inline rename field — ink text on cream (green underline accent kept). */
+:global(html[data-theme-id='paper-atelier']) .renameInput {
+  color: var(--text-primary);
+}

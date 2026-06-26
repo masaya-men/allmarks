@@ -66,3 +66,16 @@
   .tagPanel[data-closing='true'] { animation: none; }
 }
 
+/* ── paper-atelier: the PiP companion follows the board theme. pip-window.ts
+   stamps data-theme-id onto the PiP <html>, so these scoped rules apply inside
+   the picture-in-picture document. The black stage becomes parchment + ink so
+   the companion reads as a small paper note, not a dark hole on a light board.
+   Default theme is byte-identical (no rule below touches it). ─────────────── */
+:global(html[data-theme-id='paper-atelier']) .host {
+  background-color: var(--bg-dark, #efe6d2);
+  background-image: var(--asset-parchment-bg);
+  background-size: cover;
+  background-position: center;
+  color: var(--text-primary, #2b2722);
+}
+

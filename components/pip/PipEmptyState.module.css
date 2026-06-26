@@ -24,3 +24,16 @@
 @media (prefers-reduced-motion: reduce) {
   .wordmark { animation: none; opacity: 1; transform: none; }
 }
+
+/* ── paper-atelier: parchment empty stage + ink wordmark + serif (instead of
+   the black stage + white Geist mark). Default theme byte-identical. ──────── */
+:global(html[data-theme-id='paper-atelier']) .empty {
+  background-color: var(--bg-dark, #efe6d2);
+  background-image: var(--asset-parchment-bg);
+  background-size: cover;
+  background-position: center;
+}
+:global(html[data-theme-id='paper-atelier']) .wordmark {
+  font-family: var(--font-serif-display, Georgia, 'Times New Roman', serif);
+  color: var(--text-primary, #2b2722);
+}

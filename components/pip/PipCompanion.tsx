@@ -46,6 +46,10 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   const hostRef = useRef<HTMLDivElement | null>(null)
   const [pipDoc, setPipDoc] = useState<Document | null>(null)
   useEffect(() => { setPipDoc(hostRef.current?.ownerDocument ?? null) }, [])
+  // The PiP document carries the board's active theme (stamped by pip-window.ts),
+  // so read it off there rather than hardcoding the default — keeps the paste
+  // feedback in step with the rest of the themed PiP chrome.
+  const pipThemeId = pipDoc?.documentElement.getAttribute('data-theme-id') ?? DEFAULT_THEME_ID
   const { feedback: pasteFeedback } = useUrlPasteSave({
     onSaved: (bookmarkId) => postBookmarkSaved({ bookmarkId }),
     targetDocument: pipDoc,
@@ -211,7 +215,7 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
 
   return (
     <div className={styles.host} ref={hostRef}>
-      <PasteSaveFeedback feedback={pasteFeedback} themeId={DEFAULT_THEME_ID} />
+      <PasteSaveFeedback feedback={pasteFeedback} themeId={pipThemeId} />
       {cards.length === 0 ? (
         <PipEmptyState />
       ) : (
