@@ -34,9 +34,9 @@
     "folderNamePlaceholder": "フォルダ名...",
     "emptyState": "URLをペーストしてブックマークを追加しましょう",
     "theme": {
-      "dottedNotebook": "点線ノート",
-      "gridPaper": "方眼紙",
-      "paperAtelier": "ペーパーアトリエ",
+      "dottedNotebook": "Sound Wave",
+      "gridPaper": "Grid",
+      "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "ボードのテーマを選びます。",
       "unlockLater": "あとで使えるようになります。お楽しみに。"
     },

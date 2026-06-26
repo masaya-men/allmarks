@@ -20,13 +20,18 @@ export type PaperParallaxInput = {
   readonly factor?: number
 }
 
+/** 背景レイヤーを視差で動かすテーマ。 paper-atelier = 奥の羊皮紙バックドロップ。
+ *  grid-paper = グリッドがカードの背後でゆっくり流れる (= キャンバスに張り付かない、
+ *  奥行きが出る)。 dotted-notebook (既定) は無地なので視差対象外 = 従来どおり 1:1。 */
+const BG_PARALLAX_THEMES: ReadonlySet<ThemeId> = new Set<ThemeId>(['paper-atelier', 'grid-paper'])
+
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined'
     && typeof window.matchMedia === 'function'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-/** 視差の translateY 補正 (px)。0 = 視差なし。 */
+/** 視差の translateY 補正 (px)。0 = 視差なし。 paper-atelier と grid-paper で有効。 */
 export function usePaperParallax({ themeId, motionEnabled, viewportY, factor = PAPER_PARALLAX_FACTOR }: PaperParallaxInput): number {
   // 初期値も同期で正しく解決 (reduced-motion 環境でのマウント時 1 回の余分な
   // 再レンダリングを回避; SSR では prefersReducedMotion() が false を返す)。
@@ -41,7 +46,7 @@ export function usePaperParallax({ themeId, motionEnabled, viewportY, factor = P
     return (): void => mq.removeEventListener('change', onChange)
   }, [])
 
-  const gatedOff = themeId !== 'paper-atelier' || !motionEnabled || reduced || prefersReducedMotion()
+  const gatedOff = !BG_PARALLAX_THEMES.has(themeId) || !motionEnabled || reduced || prefersReducedMotion()
   if (gatedOff) return 0
   return viewportY * (1 - factor)
 }

@@ -15,7 +15,7 @@ describe('usePaperParallax', () => {
   beforeEach(() => mockReducedMotion(false))
   afterEach(() => vi.unstubAllGlobals())
 
-  it('enabled only for paper-atelier: returns a fractional offset of viewportY', () => {
+  it('enabled for paper-atelier: returns a fractional offset of viewportY', () => {
     const { result } = renderHook(() =>
       usePaperParallax({ themeId: 'paper-atelier', motionEnabled: true, viewportY: 1000 }))
     // 0.15x content pan → bg lags by 85% of scroll (positive lag offset).
@@ -23,7 +23,13 @@ describe('usePaperParallax', () => {
     expect(result.current).toBeCloseTo(1000 * 0.85, 5)
   })
 
-  it('disabled for non-paper themes → 0 (no parallax)', () => {
+  it('enabled for grid-paper too: the grid drifts behind the cards', () => {
+    const { result } = renderHook(() =>
+      usePaperParallax({ themeId: 'grid-paper', motionEnabled: true, viewportY: 1000 }))
+    expect(result.current).toBeCloseTo(1000 * 0.85, 5)
+  })
+
+  it('disabled for the plain default theme (dotted-notebook) → 0 (no parallax)', () => {
     const { result } = renderHook(() =>
       usePaperParallax({ themeId: 'dotted-notebook', motionEnabled: true, viewportY: 1000 }))
     expect(result.current).toBe(0)

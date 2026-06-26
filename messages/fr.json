@@ -34,9 +34,9 @@
     "folderNamePlaceholder": "Nom du dossier…",
     "emptyState": "Collez une URL pour ajouter votre premier favori",
     "theme": {
-      "dottedNotebook": "Carnet pointillé",
-      "gridPaper": "Papier quadrillé",
-      "paperAtelier": "Atelier Papier",
+      "dottedNotebook": "Sound Wave",
+      "gridPaper": "Grid",
+      "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Choisissez un thème de tableau.",
       "unlockLater": "Bientôt disponible. Restez à l'écoute."
     },

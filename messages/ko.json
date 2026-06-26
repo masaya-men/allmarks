@@ -34,9 +34,9 @@
     "folderNamePlaceholder": "폴더 이름...",
     "emptyState": "URL을 붙여넣어 첫 북마크를 추가하세요",
     "theme": {
-      "dottedNotebook": "도트 노트",
-      "gridPaper": "모눈 종이",
-      "paperAtelier": "페이퍼 아틀리에",
+      "dottedNotebook": "Sound Wave",
+      "gridPaper": "Grid",
+      "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "보드 테마를 선택하세요.",
       "unlockLater": "곧 사용할 수 있어요. 기대해 주세요."
     },

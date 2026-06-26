@@ -8,7 +8,12 @@
     linear-gradient(to right, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
   background-size: 40px 40px;
-  background-position: 0 0;
+  /* Center the tile so the left/right edges cut symmetrically, instead of
+     always starting a full cell at x=0 (which left a ragged right edge). The
+     grid layer itself parallaxes vertically — BoardRoot translates this layer
+     at 0.15x via usePaperParallax for grid-paper — so the grid drifts behind
+     the cards rather than sitting glued to the canvas. */
+  background-position: center top;
 }
 
 .paperAtelier {

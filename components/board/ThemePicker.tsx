@@ -2,7 +2,7 @@
 
 import type { ReactElement } from 'react'
 import type { ThemeId } from '@/lib/board/types'
-import { listThemeIds, getThemeMeta } from '@/lib/board/theme-registry'
+import { listThemeIds, getThemeMeta, DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 import { isThemeUnlocked, EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './ThemePicker.module.css'
@@ -45,7 +45,7 @@ export function ThemePicker({ themeId, onThemeChange, licenses = EMPTY_LICENSES 
               <span className={styles.preview} data-theme-id={id} aria-hidden="true" />
               <span className={styles.name}>{t(meta.labelKey)}</span>
               {unlocked ? (
-                <span className={styles.badge}>FREE</span>
+                <span className={styles.badge}>{id === DEFAULT_THEME_ID ? 'DEFAULT' : 'FREE'}</span>
               ) : (
                 <span className={styles.lockedPill} data-locked-pill aria-hidden="false">
                   {t('board.theme.unlockLater')}

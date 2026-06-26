@@ -34,9 +34,9 @@
     "folderNamePlaceholder": "Название папки...",
     "emptyState": "Вставьте ссылку, чтобы добавить первую закладку",
     "theme": {
-      "dottedNotebook": "Точечный блокнот",
-      "gridPaper": "Бумага в клетку",
-      "paperAtelier": "Бумажная мастерская",
+      "dottedNotebook": "Sound Wave",
+      "gridPaper": "Grid",
+      "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Выберите тему доски.",
       "unlockLater": "Откроется позже. Следите за обновлениями."
     },

@@ -34,9 +34,9 @@
     "folderNamePlaceholder": "Nome cartella...",
     "emptyState": "Incolla un URL per aggiungere il tuo primo segnalibro",
     "theme": {
-      "dottedNotebook": "Quaderno a puntini",
-      "gridPaper": "Carta a quadretti",
-      "paperAtelier": "Atelier di Carta",
+      "dottedNotebook": "Sound Wave",
+      "gridPaper": "Grid",
+      "paperAtelier": "Paper Atelier",
       "pickerGroupLabel": "Scegli un tema per la bacheca.",
       "unlockLater": "Si sblocca più avanti. Resta sintonizzato."
     },
