@@ -122,16 +122,41 @@
   flex-direction: column;
   cursor: default;
   user-select: none;
+  /* Raw scrollbar hidden — scrollability is communicated by the bottom fade
+     (.scrollFade), matching the app's no-plain-scrollbars rule. */
+  scrollbar-width: none;
+}
+.drawer::-webkit-scrollbar {
+  display: none;
 }
 .drawer[data-open='true'] {
-  /* Tall enough for the tallest state (not-installed: the GET EXTENSION promo
-     adds ~575px of content). Capped to the viewport so a very short window
-     scrolls internally instead of running off-screen. */
-  max-height: min(600px, calc(100dvh - 80px));
+  /* Capped to the viewport (minus the drawer's top offset + a bottom margin)
+     so the tall not-installed state (GET EXTENSION promo, ~575px) never runs
+     off-screen — it scrolls internally instead, hinted by the bottom fade. */
+  max-height: min(600px, calc(100dvh - 140px));
   padding: 22px 24px 24px;
   pointer-events: auto;
   overflow-y: auto;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Bottom scroll fade — pinned to the drawer's visible bottom edge (absolute in
+   the positioned, scrolling drawer → doesn't move with content). Fades content
+   into the drawer surface so there's a clear "more below" cue. */
+.scrollFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 54px;
+  pointer-events: none;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0) 0%, rgba(10, 10, 10, 0.92) 88%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.scrollFade[data-visible='true'] {
+  opacity: 1;
 }
 
 /* Labelled group block. The title sits above each cluster; groups after the
@@ -371,6 +396,10 @@
 
 :global(html[data-theme-id='paper-atelier']) .groupLabel {
   color: var(--text-meta);
+}
+
+:global(html[data-theme-id='paper-atelier']) .scrollFade {
+  background: linear-gradient(to bottom, transparent 0%, var(--paper-panel-surface) 88%);
 }
 
 :global(html[data-theme-id='paper-atelier']) .themePickBtn {

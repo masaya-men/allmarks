@@ -120,7 +120,11 @@ export function ExtensionEntry({
   // folds the GET EXTENSION promo into the same drawer.
   const [expanded, setExpanded] = useState(false)
   const wrapRef = useRef<HTMLSpanElement>(null)
+  const drawerRef = useRef<HTMLDivElement>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // True when the drawer is taller than the viewport allows AND there's more
+  // content below the fold — drives the bottom fade hint (no raw scrollbar).
+  const [moreBelow, setMoreBelow] = useState(false)
 
   const openSettings = useCallback((): void => {
     // Mirrors the url-deleted bridge (use-board-data.ts): the content script
@@ -156,6 +160,32 @@ export function ExtensionEntry({
   // Onboarding's SETTINGS beat forces the drawer open; otherwise it's hover-driven.
   const isOpen = forceOpen || expanded
 
+  // Show the bottom fade only while there's more content below the fold. The
+  // drawer caps its height to the viewport (see CSS), so a tall state (e.g. the
+  // GET EXTENSION promo on a short window) scrolls; the fade hints at it.
+  const recomputeFade = useCallback((): void => {
+    const el = drawerRef.current
+    if (!el) return
+    setMoreBelow(el.scrollHeight - el.scrollTop - el.clientHeight > 4)
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setMoreBelow(false)
+      return
+    }
+    // Measure after the max-height open transition settles (clientHeight grows
+    // during it), and once more on the next frame for the fits-immediately case.
+    const raf = requestAnimationFrame(recomputeFade)
+    const timer = window.setTimeout(recomputeFade, 560)
+    window.addEventListener('resize', recomputeFade)
+    return (): void => {
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+      window.removeEventListener('resize', recomputeFade)
+    }
+  }, [isOpen, installed, recomputeFade])
+
   return (
     <span
       ref={wrapRef}
@@ -172,11 +202,13 @@ export function ExtensionEntry({
         data-onboarding-target="settings"
       />
       <div
+        ref={drawerRef}
         className={styles.drawer}
         role="dialog"
         aria-label="AllMarks settings"
         data-open={isOpen ? 'true' : 'false'}
         aria-hidden={!isOpen}
+        onScroll={recomputeFade}
       >
         <div className={styles.title}>SETTINGS</div>
 
@@ -279,6 +311,13 @@ export function ExtensionEntry({
             </div>
           )}
         </section>
+        {/* Bottom fade — hints at scrollable content below on short viewports
+            (no raw scrollbar). Pinned to the drawer's visible bottom edge. */}
+        <div
+          className={styles.scrollFade}
+          data-visible={moreBelow ? 'true' : 'false'}
+          aria-hidden="true"
+        />
       </div>
     </span>
   )
