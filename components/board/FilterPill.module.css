@@ -542,6 +542,15 @@
   color: var(--text-body);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  /* Serif on paper so the dropdown reads as printed type, like the pill above
+     and the rest of the paper chrome — the mono kept it visibly "different
+     household" from everything else on the parchment world. */
+  font-family: var(--font-serif-display, Georgia, 'Times New Roman', serif);
+}
+/* These two re-declare mono explicitly, so override them to serif too. */
+:global(html[data-theme-id='paper-atelier']) .sectionHeader,
+:global(html[data-theme-id='paper-atelier']) .sortToggle {
+  font-family: var(--font-serif-display, Georgia, 'Times New Roman', serif);
 }
 :global(html[data-theme-id='paper-atelier']) .menu[data-open='true'] {
   box-shadow: var(--paper-panel-shadow);

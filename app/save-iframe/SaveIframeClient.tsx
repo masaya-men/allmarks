@@ -6,6 +6,7 @@ import { initDB, persistMediaSlots, getAllBookmarks, saveBookmarkDeduped } from 
 import type { BookmarkRecord } from '@/lib/storage/indexeddb'
 import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
+import { loadBoardConfig } from '@/lib/storage/board-config'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
@@ -55,11 +56,21 @@ async function buildSavePayload(
   themeTokens: StripThemeTokens
   quickTagEnabled: boolean
 }> {
-  const [corpus, allTags, quickTagEnabled] = await Promise.all([
+  const [corpus, allTags, quickTagEnabled, boardConfig] = await Promise.all([
     getAllBookmarks(db),
     getAllTags(db),
     loadQuickTagEnabled(db),
+    loadBoardConfig(db),
   ])
+  // Apply the board's theme to THIS document before reading the strip tokens.
+  // The layout's pre-paint script reads localStorage, but this iframe is
+  // embedded in a third-party host page (e.g. twitter.com), so Chrome's storage
+  // partitioning hides the board's first-party localStorage from it — the theme
+  // hint arrives empty there. IndexedDB is the source of truth and is the SAME
+  // store we just read the user's tags from, so it's the reliable signal here.
+  if (typeof document !== 'undefined' && boardConfig.themeId) {
+    document.documentElement.setAttribute('data-theme-id', boardConfig.themeId)
+  }
   return {
     tags: orderTagsForSave(bookmark, corpus, allTags),
     currentTagIds: bookmark.tags,
