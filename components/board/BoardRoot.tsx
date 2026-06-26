@@ -11,7 +11,7 @@ import {
 import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId } from '@/lib/board/types'
-import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX } from '@/lib/board/constants'
+import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
@@ -36,6 +36,7 @@ import { initDB } from '@/lib/storage/indexeddb'
 import { loadBoardConfig, saveBoardConfig } from '@/lib/storage/board-config'
 import { loadQuickTagEnabled, saveQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { ThemeLayer } from './ThemeLayer'
+import themeStyles from './themes.module.css'
 import {
   BoardBackgroundTypography,
   deriveBoardBgTypoText,
@@ -95,6 +96,13 @@ import styles from './BoardRoot.module.css'
  *  ever crosses the viewport, so we scatter items across exactly that band (not
  *  the full content height) for uniform on-screen density with no wasted items. */
 const DECOR_PARALLAX_FACTOR = 0.30
+
+/** grid-paper background drift. usePaperParallax returns viewportY * (1 − factor),
+ *  so 0.5 → the grid moves at 0.5× the card scroll (half speed = clear parallax,
+ *  still clearly a backdrop). Applied as background-position-y on the viewport-
+ *  anchored grid layer (NOT a translate — the layer is screen-fixed so it stays
+ *  centred + symmetric). */
+const GRID_BG_PARALLAX_FACTOR = 0.5
 
 // Horizontal room past the rightmost card so the user can scroll a little
 // further right. Vertical bottom room is computed per-render from the viewport
@@ -824,6 +832,13 @@ export function BoardRoot() {
   // for a strong, clearly-felt depth read — much slower than cards, a touch
   // faster than the near-static bg stains (0.15x). See DECOR_PARALLAX_FACTOR.
   const decorParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: DECOR_PARALLAX_FACTOR })
+  // grid-paper: the grid lives on a viewport-anchored layer (see render below),
+  // so it drifts via background-position-y instead of a translated layer. Reuse
+  // usePaperParallax (gated on theme/motion/reduced-motion) with factor 0.5 so
+  // the returned value = viewport.y * 0.5 = the grid's drift (half the card
+  // speed → clear parallax, still reads as "behind"). 0 when gated off → the
+  // grid sits centred + static.
+  const gridBgPanY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: GRID_BG_PARALLAX_FACTOR })
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
@@ -2123,6 +2138,24 @@ export function BoardRoot() {
             onScroll={handleScroll}
             spaceHeld={spaceHeld}
           >
+            {/* grid-paper: VIEWPORT-anchored grid (screen-fixed, NOT in a pan
+                wrapper) so the pattern always centres on the viewport — the
+                left/right edges cut symmetrically regardless of content width.
+                It parallaxes vertically via background-position-y (= the grid's
+                drift) so it floats behind the cards instead of sitting glued. */}
+            {themeId === 'grid-paper' && (
+              <div
+                aria-hidden="true"
+                className={themeStyles.gridLines}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: BOARD_Z_INDEX.THEME_BG,
+                  pointerEvents: 'none',
+                  backgroundPosition: `center ${-gridBgPanY}px`,
+                }}
+              />
+            )}
             {/* Background — full canvas coverage, follows scroll. Paper-atelier
                 lags the vertical pan by paperParallaxY (0.4x) for a depth
                 read; every other theme keeps the exact 1:1 pan
