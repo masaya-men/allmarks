@@ -85,7 +85,7 @@ import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
-import { usePaperParallax } from './use-paper-parallax'
+import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { BoardDecorLayer } from './BoardDecorLayer'
 import styles from './BoardRoot.module.css'
 
@@ -98,11 +98,11 @@ import styles from './BoardRoot.module.css'
 const DECOR_PARALLAX_FACTOR = 0.30
 
 /** grid-paper background drift. usePaperParallax returns viewportY * (1 − factor),
- *  so 0.5 → the grid moves at 0.5× the card scroll (half speed = clear parallax,
- *  still clearly a backdrop). Applied as background-position-y on the viewport-
- *  anchored grid layer (NOT a translate — the layer is screen-fixed so it stays
- *  centred + symmetric). */
-const GRID_BG_PARALLAX_FACTOR = 0.5
+ *  so `1 − PAPER_PARALLAX_FACTOR` makes the grid move at exactly the same speed
+ *  as the paper-atelier backdrop (0.15× the card scroll = a slow, deep drift).
+ *  Applied as background-position-y on the viewport-anchored grid layer (NOT a
+ *  translate — the layer is screen-fixed so it stays centred + symmetric). */
+const GRID_BG_PARALLAX_FACTOR = 1 - PAPER_PARALLAX_FACTOR
 
 // Horizontal room past the rightmost card so the user can scroll a little
 // further right. Vertical bottom room is computed per-render from the viewport
@@ -833,12 +833,13 @@ export function BoardRoot() {
   // faster than the near-static bg stains (0.15x). See DECOR_PARALLAX_FACTOR.
   const decorParallaxY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: DECOR_PARALLAX_FACTOR })
   // grid-paper: the grid lives on a viewport-anchored layer (see render below),
-  // so it drifts via background-position-y instead of a translated layer. Reuse
-  // usePaperParallax (gated on theme/motion/reduced-motion) with factor 0.5 so
-  // the returned value = viewport.y * 0.5 = the grid's drift (half the card
-  // speed → clear parallax, still reads as "behind"). 0 when gated off → the
-  // grid sits centred + static.
-  const gridBgPanY = usePaperParallax({ themeId, motionEnabled, viewportY: viewport.y, factor: GRID_BG_PARALLAX_FACTOR })
+  // so it drifts via background-position-y instead of a translated layer. The
+  // grid parallax is part of the theme's depth, NOT a "motion effect" — it's a
+  // gentle, non-distracting backdrop drift — so it stays ON regardless of the
+  // MOTION toggle (hardcode motionEnabled: true). OS prefers-reduced-motion is
+  // still honoured inside the hook. Returns viewport.y * (1 − factor) = the
+  // grid's drift, matching the paper backdrop's 0.15× speed.
+  const gridBgPanY = usePaperParallax({ themeId, motionEnabled: true, viewportY: viewport.y, factor: GRID_BG_PARALLAX_FACTOR })
 
   // Cards span the full width of the inner dark canvas with a destefanis-
   // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
