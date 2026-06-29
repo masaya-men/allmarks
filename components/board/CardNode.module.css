@@ -65,6 +65,23 @@
     0 26px 46px rgba(43, 39, 34, 0.18);
 }
 
+/* Torn-paper text cards (PlaceholderCard's paper face) fill only an irregular
+   torn silhouette, not the full card box. A RECTANGULAR box-shadow therefore
+   betrays the invisible card rectangle — on the dark Lightbox backdrop the
+   brown shadow even reads LIGHTER than the surround, looking like a translucent
+   square board behind the sheet (user report s140). Drop the rectangular
+   box-shadow for these cards and cast a `drop-shadow` filter instead, which
+   follows the rendered alpha (the torn paper outline) so the float shadow hugs
+   the sheet. .cardNode is NOT overflow:hidden, so the filter shadow isn't
+   clipped; image/mat cards keep the rectangular box-shadow (their mat IS
+   rectangular, so it's correct there). */
+:global(html[data-theme-id='paper-atelier']) .cardNode:has([data-paper-note='true']) {
+  box-shadow: none;
+  filter:
+    drop-shadow(0 2px 3px rgba(43, 39, 34, 0.18))
+    drop-shadow(0 12px 22px rgba(43, 39, 34, 0.22));
+}
+
 .selected {
   outline: 2px solid var(--color-accent-primary);
   outline-offset: 2px;
