@@ -25,6 +25,15 @@ const tagDictSchema = z.record(
   z.object({ n: z.string().min(1).max(64), c: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional() }),
 )
 
+const customSchema = z.object({
+  edgeColor: z.string().max(64),
+  boardColor: z.string().max(64),
+  patternColor: z.string().max(64),
+  patternType: z.enum(['none', 'grid', 'diagonal', 'dots', 'crosshatch']),
+  patternSize: z.number().min(8).max(200),
+  titleColor: z.string().max(64),
+})
+
 const shareDataSchema = z.object({
   v: z.literal(SHARE_SCHEMA_VERSION_V2),
   cards: z.array(shareCardSchema).min(1).max(SHARE_LIMITS_V2.MAX_CARDS),
@@ -34,6 +43,7 @@ const shareDataSchema = z.object({
     tagIds: z.array(z.string().max(64)).max(50),
   }).optional(),
   theme: z.enum(listThemeIds() as [ThemeId, ...ThemeId[]]).optional(),
+  custom: customSchema.optional(),
   gap: z.number().min(0).max(300).optional(),
   w: z.number().positive().max(2000).optional(),
   createdAt: z.number().int().positive(),
@@ -86,5 +96,10 @@ export function sanitizeShareDataV2(input: unknown): ParseResult {
       ? (next.theme as ThemeId)
       : undefined
   next.theme = sanitizedTheme
+  // Drop a malformed custom rather than failing the payload (theme still applies
+  // its defaults). A well-formed custom passes through to the strict parse.
+  if (next.custom !== undefined && !customSchema.safeParse(next.custom).success) {
+    next.custom = undefined
+  }
   return parseShareDataV2(next)
 }

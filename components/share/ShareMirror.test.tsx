@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, screen } from '@testing-library/react'
 import { ShareMirror, type MirrorItem, type MirrorPosition } from './ShareMirror'
+import type { ShareCustomization } from '@/lib/share/types-v2'
 
 function makeItems(n: number): MirrorItem[] {
   return Array.from({ length: n }, (_, i) => ({
@@ -21,6 +22,21 @@ function makePositions(n: number): MirrorPosition[] {
   }))
 }
 
+const gridCustom: ShareCustomization = {
+  edgeColor: '#0a0a0a',
+  boardColor: '#0e0e11',
+  patternColor: 'rgba(255,255,255,0.18)',
+  patternType: 'grid',
+  patternSize: 40,
+  titleColor: 'rgba(255,255,255,0.95)',
+}
+
+/** Props shared by all legacy tests — default (dark) theme. */
+const baseThemeProps = {
+  themeId: 'dotted-notebook' as const,
+  custom: null as ShareCustomization | null,
+}
+
 describe('ShareMirror', () => {
   it('renders one [data-mirror-card-id] element per item', () => {
     const { container } = render(
@@ -35,6 +51,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
+        {...baseThemeProps}
       />,
     )
     const cards = container.querySelectorAll('[data-mirror-card-id]')
@@ -54,6 +71,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
+        {...baseThemeProps}
       />,
     )
     expect(container.querySelectorAll('iframe').length).toBe(0)
@@ -74,6 +92,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
+        {...baseThemeProps}
       />,
     )
     expect(getByText(/3 CARDS/)).toBeTruthy()
@@ -92,6 +111,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
+        {...baseThemeProps}
       />,
     )
     expect(getByText(/3 OF 10 CARDS · NEWEST FIRST/)).toBeTruthy()
@@ -110,6 +130,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
+        {...baseThemeProps}
       />,
     )
     // タグ名は常に小文字で表示する (= 'Music'/'Design' を渡しても 'music · design')。
@@ -129,6 +150,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
+        {...baseThemeProps}
       />,
     )
     expect(queryByTestId('mirror-tag-strip')).toBeNull()
@@ -152,6 +174,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={500}
         viewportHeight={400}
+        {...baseThemeProps}
       />,
     )
     // Pre-error: img path is taken
@@ -195,6 +218,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={4000}
         viewportHeight={800}
+        {...baseThemeProps}
       />,
     )
     const cardsLayer1 = container.querySelector('[data-testid="mirror-cards-layer"]') as HTMLElement | null
@@ -212,10 +236,50 @@ describe('ShareMirror', () => {
         scrollY={500}
         contentHeight={4000}
         viewportHeight={800}
+        {...baseThemeProps}
       />,
     )
     const cardsLayer2 = container.querySelector('[data-testid="mirror-cards-layer"]') as HTMLElement | null
     const t2 = cardsLayer2?.style.transform ?? ''
     expect(t1).not.toBe(t2)
+  })
+
+  it('paints the board colour + pattern for a pattern theme', () => {
+    render(<ShareMirror
+      items={makeItems(2)}
+      positions={makePositions(2)}
+      bgViewportWidth={1200}
+      bgCanvasWidth={1218}
+      activeTagNames={[]}
+      totalBoardCount={2}
+      sharedCardCount={2}
+      scrollY={0}
+      contentHeight={1000}
+      viewportHeight={800}
+      themeId="grid-paper"
+      custom={gridCustom}
+    />)
+    const rep = screen.getByTestId('mirror-canvas-replica') as HTMLElement
+    expect(rep.style.backgroundColor).not.toBe('')
+    expect(rep.style.backgroundImage).toContain('svg')
+  })
+
+  it('paints parchment for the paper theme', () => {
+    render(<ShareMirror
+      items={makeItems(2)}
+      positions={makePositions(2)}
+      bgViewportWidth={1200}
+      bgCanvasWidth={1218}
+      activeTagNames={[]}
+      totalBoardCount={2}
+      sharedCardCount={2}
+      scrollY={0}
+      contentHeight={1000}
+      viewportHeight={800}
+      themeId="paper-atelier"
+      custom={null}
+    />)
+    const rep = screen.getByTestId('mirror-canvas-replica') as HTMLElement
+    expect(rep.style.backgroundImage).toContain('parchment-bg.png')
   })
 })

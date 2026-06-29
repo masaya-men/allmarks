@@ -1,8 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type MutableRefObject, type ReactElement, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactElement, type RefObject } from 'react'
 import { BOARD_INNER, BOARD_TOP_PAD_PX, CANVAS_MARGIN_PX } from '@/lib/board/constants'
 import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
+import type { ThemeId } from '@/lib/board/types'
+import { patternSvgDataUri } from '@/lib/board/theme-customization'
+import type { ShareCustomization } from '@/lib/share/types-v2'
 import styles from './ShareMirror.module.css'
 
 export type MirrorItem = {
@@ -49,6 +52,10 @@ type Props = {
   readonly bgTypoText?: string
   /** Forwarded ref to the frame DOM so capture-mirror.ts can read rects. Optional. */
   readonly frameRef?: RefObject<HTMLDivElement | null>
+  /** Active theme id — drives the replica's surfaces. */
+  readonly themeId: ThemeId
+  /** Resolved customization for pattern themes; null for fixed 'work' themes. */
+  readonly custom: ShareCustomization | null
 }
 
 export function ShareMirror({
@@ -64,6 +71,8 @@ export function ShareMirror({
   viewportHeight,
   bgTypoText = '',
   frameRef,
+  themeId,
+  custom,
 }: Props): ReactElement {
   // The bg-replica reproduces bg's full screen chrome:
   //   outerFrame (48px padding) → canvas (viewport.w × viewport.h) →
@@ -112,6 +121,21 @@ export function ShareMirror({
   // JS 側で小文字化し、 .tagStrip の text-transform: lowercase が表示も担保する。
   const tagText = activeTagNames.map((s): string => s.toLowerCase()).join(' · ')
 
+  const PARCHMENT = "url('/themes/paper-atelier/parchment-bg.png')"
+  const isPaper = themeId === 'paper-atelier'
+  const edgeStyle: CSSProperties = isPaper
+    ? { backgroundColor: '#e9dfc8', backgroundImage: PARCHMENT, backgroundSize: 'cover' }
+    : { backgroundColor: custom?.edgeColor ?? '#0a0a0a' }
+  const boardStyle: CSSProperties = isPaper
+    ? { backgroundColor: '#efe6d2', backgroundImage: PARCHMENT, backgroundSize: 'cover' }
+    : {
+        backgroundColor: custom?.boardColor ?? '#0a0a0a',
+        backgroundImage: custom && patternSvgDataUri(custom) ? `url("${patternSvgDataUri(custom)}")` : undefined,
+        backgroundSize: custom ? `${custom.patternSize}px ${custom.patternSize}px` : undefined,
+      }
+  const titleColor = isPaper ? 'rgba(43,39,34,0.85)' : (custom?.titleColor ?? 'rgba(255,255,255,0.95)')
+  const titleFont = isPaper ? 'Georgia, serif' : undefined
+
   return (
     <div className={styles.frame} ref={setFrameRef} data-testid="mirror-frame">
       {/* Bg replica: outerFrame band + canvas + cards, scaled to fit frame width.
@@ -120,18 +144,19 @@ export function ShareMirror({
         className={styles.outerBand}
         data-testid="mirror-outer-band"
         style={{
+          ...edgeStyle,
           transformOrigin: '0 0',
           transform: `scale(${scale})`,
           width: bgFullScreenWidth,
           height: bgFullScreenHeight,
         }}
       >
-        <div className={styles.canvasReplica} data-testid="mirror-canvas-replica">
+        <div className={styles.canvasReplica} data-testid="mirror-canvas-replica" style={boardStyle}>
           {/* Background typography behind the cards (a later sibling floats on
               top). Empty bgTypoText (TITLE toggle off) renders nothing. */}
           {bgTypoText ? (
             <div className={styles.bgTypo} data-testid="mirror-bg-typo" aria-hidden="true">
-              <span className={styles.bgTypoText} style={{ fontSize: bgTypoFontSize }}>{bgTypoText}</span>
+              <span className={styles.bgTypoText} style={{ fontSize: bgTypoFontSize, color: titleColor, fontFamily: titleFont }}>{bgTypoText}</span>
             </div>
           ) : null}
           <div
@@ -164,12 +189,12 @@ export function ShareMirror({
       {/* Brand strips overlay the bg-replica at frame edges (= they appear at
           the OG image edges, regardless of bg-replica scaling). */}
       {activeTagNames.length > 0 ? (
-        <div className={styles.tagStrip} data-testid="mirror-tag-strip">{tagText}</div>
+        <div className={styles.tagStrip} data-testid="mirror-tag-strip" style={{ color: titleColor }}>{tagText}</div>
       ) : null}
 
       <div className={styles.bottomStrip}>
-        <span className={styles.wordmark}>ALLMARKS</span>
-        <span className={styles.caption}>
+        <span className={styles.wordmark} style={{ color: titleColor }}>ALLMARKS</span>
+        <span className={styles.caption} style={{ color: titleColor }}>
           <span className={styles.captionDot} aria-hidden="true" />
           {captionText}
         </span>

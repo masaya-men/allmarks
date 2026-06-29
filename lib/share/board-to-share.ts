@@ -4,6 +4,7 @@ import {
   SHARE_SCHEMA_VERSION_V2,
   type ShareCardType,
   type ShareCardV2,
+  type ShareCustomization,
   type ShareDataV2,
   type TagDict,
 } from './types-v2'
@@ -41,6 +42,8 @@ export type BuildShareArgs = {
   readonly gap?: number
   /** Sender's default card width in px (= cardWidthPx). */
   readonly defaultWidth?: number
+  /** Sender's resolved customization for the active theme (pattern themes only). */
+  readonly custom?: ShareCustomization
   readonly detectType?: (url: string) => ShareCardType
 }
 
@@ -93,6 +96,7 @@ export function buildShareDataFromBoard(args: BuildShareArgs): ShareDataV2 {
     tags: tagDict,
     filter: args.filter ?? undefined,
     ...(args.themeId ? { theme: args.themeId } : {}),
+    ...(args.custom ? { custom: args.custom } : {}),
     ...(typeof args.gap === 'number' ? { gap: args.gap } : {}),
     ...(typeof args.defaultWidth === 'number' ? { w: args.defaultWidth } : {}),
     createdAt: args.now,

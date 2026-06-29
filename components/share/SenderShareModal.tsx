@@ -1,8 +1,10 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
-import type { ShareDataV2 } from '@/lib/share/types-v2'
+import type { ShareDataV2, ShareCustomization } from '@/lib/share/types-v2'
+import type { ThemeId } from '@/lib/board/types'
 import styles from './SenderShareModal.module.css'
 import { captureMirrorToWebP } from '@/lib/share/capture-mirror'
+import { renderShareImage } from '@/lib/share/render-share-image'
 import { createShare } from '@/lib/share/api-client'
 import { ShareMirror, type MirrorItem, type MirrorPosition } from './ShareMirror'
 
@@ -44,6 +46,10 @@ type Props = {
   readonly bgTypoEnabled?: boolean
   /** The background typography string (= deriveBoardBgTypoText). Empty hides it. */
   readonly bgTypoText?: string
+  /** Active theme id — passed through to ShareMirror for surface theming. */
+  readonly themeId: ThemeId
+  /** Resolved customization for pattern themes; null for fixed 'work' themes. */
+  readonly custom: ShareCustomization | null
 }
 
 export function SenderShareModal({
@@ -62,10 +68,13 @@ export function SenderShareModal({
   bgCanvasWidth,
   bgTypoEnabled = true,
   bgTypoText = '',
+  themeId,
+  custom,
 }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
   const mirrorFrameRef = useRef<HTMLDivElement | null>(null)
+  const captureRef = useRef<HTMLDivElement | null>(null)
 
   // ESC handler
   useEffect((): (() => void) | undefined => {
@@ -96,29 +105,43 @@ export function SenderShareModal({
     return getShareData().cards.length
   }, [open, getShareData])
 
+  // Cards whose skyline rect intersects the band currently shown in the 1.91:1
+  // preview. Only these enter the capture DOM ⇒ the captured subtree is ~10-20
+  // cards, never the full board — this is what avoids the 2026 dom-to-image
+  // memory explosion (which pre-fetched EVERY card's image).
+  const visibleItems = useMemo(() => {
+    const band = viewportHeight
+    return items.filter((it) => {
+      const p = positions.find((q) => q.id === it.id)
+      return p != null && p.y + p.h > scrollY - 8 && p.y < scrollY + band + 8
+    })
+  }, [items, positions, scrollY, viewportHeight])
+
   const handleShareConfirm = useCallback(async (): Promise<void> => {
     setState({ kind: 'capturing' })
     try {
       const share = getShareData()
-      const thumbDataUrl = await captureMirrorToWebP({
-        mirrorFrame: mirrorFrameRef.current,
-        items: items.map((it) => ({
-          url: it.url,
-          title: it.title,
-          thumbnailUrl: it.thumbnailUrl,
-        })),
-        sharedCardCount: share.cards.length,
-        activeTagNames,
-        totalBoardCount,
-        bgTypoText: bgTypoEnabled ? bgTypoText : '',
-        width: 1200,
-        height: 628,
-        // OGP 推奨: 目標 ~180KB に収まるよう品質自動調整 (= SNS は縮小表示、 軽いほど
-        // クローラ取得成功率も上がる)。 写真が密でも min 品質まで落として必ず成立させる。
-        targetBytes: 180 * 1024,
-        startQuality: 0.82,
-        minQuality: 0.4,
-      })
+      const captureFrame = captureRef.current?.querySelector<HTMLElement>('[data-testid="mirror-frame"]') ?? null
+      let thumbDataUrl: string | null = null
+      if (captureFrame) {
+        thumbDataUrl = await renderShareImage(captureFrame, { width: 1200, height: 628, targetBytes: 180 * 1024, startQuality: 0.82, minQuality: 0.4 })
+      }
+      // Fallback: the legacy hand-drawn canvas (never let sharing break).
+      if (!thumbDataUrl) {
+        thumbDataUrl = await captureMirrorToWebP({
+          mirrorFrame: captureFrame,
+          items: visibleItems.map((it) => ({ url: it.url, title: it.title, thumbnailUrl: it.thumbnailUrl })),
+          sharedCardCount: share.cards.length,
+          activeTagNames,
+          totalBoardCount,
+          bgTypoText: bgTypoEnabled ? bgTypoText : '',
+          width: 1200,
+          height: 628,
+          targetBytes: 180 * 1024,
+          startQuality: 0.82,
+          minQuality: 0.4,
+        })
+      }
       if (!thumbDataUrl) {
         setState({ kind: 'error', message: 'capture failed' })
         return
@@ -134,11 +157,12 @@ export function SenderShareModal({
     } catch (e) {
       setState({ kind: 'error', message: e instanceof Error ? e.message : 'unknown error' })
     }
-  }, [getShareData, items, activeTagNames, totalBoardCount, bgTypoEnabled, bgTypoText])
+  }, [getShareData, visibleItems, activeTagNames, totalBoardCount, bgTypoEnabled, bgTypoText])
 
   if (!open) return null
 
   return (
+    <>
     <div className={styles.backdrop} onClick={handleBackdrop} onWheel={handleWheel}>
       <div className={styles.panel} role="dialog" aria-label="Share board">
         <header className={styles.header}>
@@ -160,6 +184,8 @@ export function SenderShareModal({
             viewportHeight={viewportHeight}
             bgTypoText={bgTypoEnabled ? bgTypoText : ''}
             frameRef={mirrorFrameRef}
+            themeId={themeId}
+            custom={custom}
           />
         </div>
 
@@ -210,5 +236,26 @@ export function SenderShareModal({
         </div>
       </div>
     </div>
+    {/* Hidden 1200×628 capture node — off-screen so dom-to-image can measure it,
+        but invisible to the user. Renders only visibleItems to avoid the 2026
+        dom-to-image memory explosion that hit the full-board subtree. */}
+    <div style={{ position: 'fixed', left: '-99999px', top: 0, width: 1200, height: 628, pointerEvents: 'none' }} aria-hidden ref={captureRef}>
+      <ShareMirror
+        items={visibleItems}
+        positions={positions}
+        bgViewportWidth={bgViewportWidth}
+        bgCanvasWidth={bgCanvasWidth}
+        activeTagNames={activeTagNames}
+        totalBoardCount={totalBoardCount}
+        sharedCardCount={sharedCardCount}
+        scrollY={scrollY}
+        contentHeight={contentHeight}
+        viewportHeight={viewportHeight}
+        bgTypoText={bgTypoEnabled ? bgTypoText : ''}
+        themeId={themeId}
+        custom={custom}
+      />
+    </div>
+    </>
   )
 }

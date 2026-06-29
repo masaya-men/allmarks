@@ -1,5 +1,18 @@
 // lib/share/types-v2.ts
-import type { ThemeId } from '@/lib/board/types'
+import type { ThemeId, PatternType } from '@/lib/board/types'
+
+/** Sender's resolved per-theme customization (the effective values they saw —
+ *  edge/board/pattern colour, pattern style + density, title colour). Carried so
+ *  the receiver + the OG image reproduce the exact look. All 6 fields required
+ *  because the sender always sends the fully-resolved set (= ResolvedThemeCustomization). */
+export type ShareCustomization = {
+  readonly edgeColor: string
+  readonly boardColor: string
+  readonly patternColor: string
+  readonly patternType: PatternType
+  readonly patternSize: number
+  readonly titleColor: string
+}
 
 /** Schema version. v1 (old fragment-based) is dropped — see migration in design doc §4. */
 export const SHARE_SCHEMA_VERSION_V2 = 2 as const
@@ -53,6 +66,10 @@ export type ShareDataV2 = {
     readonly tagIds: ReadonlyArray<string>
   }
   readonly theme?: ThemeId
+  /** Sender's resolved customization for `theme` (pattern themes only; absent for
+   *  fixed 'work' themes like Paper, and for old shares — receiver falls back to
+   *  theme defaults). */
+  readonly custom?: ShareCustomization
   /** Sender's global card gap in px (= the masonry spacing the sender saw).
    *  Per-card widths live on each card's `cw`; this is the one remaining
    *  global layout input. Optional for back-compat — shares created before

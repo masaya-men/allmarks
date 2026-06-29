@@ -6,6 +6,7 @@ import {
   isDefaultCustomization,
   isLightColor,
 } from './theme-customization'
+import { patternSvgDataUri } from './theme-customization'
 
 describe('theme-customization', () => {
   it('Sound Wave defaults are byte-identical to the pre-feature look (solid #0a0a0a, no pattern)', () => {
@@ -57,5 +58,16 @@ describe('theme-customization', () => {
     expect(isDefaultCustomization('grid-paper', { patternType: 'grid', patternSize: 40 })).toBe(true)
     expect(isDefaultCustomization('grid-paper', { patternType: 'dots' })).toBe(false)
     expect(isDefaultCustomization('dotted-notebook', { edgeColor: '#123456' })).toBe(false)
+  })
+})
+
+describe('patternSvgDataUri', () => {
+  it('returns empty for none', () => {
+    expect(patternSvgDataUri({ patternType: 'none', patternColor: '#fff', patternSize: 40 })).toBe('')
+  })
+  it('encodes a tiling svg data-uri for grid', () => {
+    const u = patternSvgDataUri({ patternType: 'grid', patternColor: 'rgba(255,255,255,0.18)', patternSize: 40 })
+    expect(u.startsWith('data:image/svg+xml,')).toBe(true)
+    expect(decodeURIComponent(u)).toContain('width=\'40\'')
   })
 })

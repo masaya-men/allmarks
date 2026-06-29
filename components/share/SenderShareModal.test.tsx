@@ -10,6 +10,11 @@ vi.mock('@/lib/share/api-client', () => ({
 vi.mock('@/lib/share/capture-mirror', () => ({
   captureMirrorToWebP: vi.fn(),
 }))
+// renderShareImage is mocked to null by default so the fallback path (captureMirrorToWebP)
+// always runs in unit tests — dom-to-image-more requires a real browser environment.
+vi.mock('@/lib/share/render-share-image', () => ({
+  renderShareImage: vi.fn().mockResolvedValue(null),
+}))
 
 import { createShare } from '@/lib/share/api-client'
 import { captureMirrorToWebP } from '@/lib/share/capture-mirror'
@@ -48,6 +53,8 @@ const defaultMirrorProps = {
   positions: makePositions(3),
   bgViewportWidth: 1200,
   bgCanvasWidth: 1218,
+  themeId: 'dotted-notebook' as const,
+  custom: null,
 }
 
 beforeEach(() => {
@@ -74,7 +81,7 @@ describe('SenderShareModal', () => {
   })
 
   it('renders mirror + SHARE confirm button when open', () => {
-    const { getByRole, queryByTestId } = render(
+    const { getByRole, queryAllByTestId } = render(
       <SenderShareModal
         open={true}
         onClose={vi.fn()}
@@ -89,9 +96,12 @@ describe('SenderShareModal', () => {
         positions={makePositions(5)}
         bgViewportWidth={1200}
         bgCanvasWidth={1218}
+        themeId="dotted-notebook"
+        custom={null}
       />,
     )
-    expect(queryByTestId('mirror-frame')).toBeTruthy()
+    // Two mirror-frame elements: the visible preview + the hidden capture node.
+    expect(queryAllByTestId('mirror-frame').length).toBeGreaterThanOrEqual(1)
     expect(getByRole('button', { name: /SHARE NOW/i })).toBeTruthy()
   })
 

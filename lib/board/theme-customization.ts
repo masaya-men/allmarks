@@ -156,3 +156,37 @@ export const TITLE_SWATCHES: ReadonlyArray<string> = [
   '#ffc478',
   '#78b4ff',
 ]
+
+/** Build a single-layer tiling SVG (data-URI) for a pattern. Used by the share
+ *  preview + OG capture so dom-to-image renders the pattern faithfully (it drops
+ *  one direction of stacked CSS gradients — see 2026-06-29 spike). Mirrors
+ *  themes.module.css `.patternLayer[data-pattern]` geometry. `none` → ''. */
+export function patternSvgDataUri(c: {
+  readonly patternType: PatternType
+  readonly patternColor: string
+  readonly patternSize: number
+}): string {
+  const s = c.patternSize
+  const col = c.patternColor
+  let body: string
+  switch (c.patternType) {
+    case 'none':
+      return ''
+    case 'grid':
+      // line on the right + bottom edge so the tile repeats into a full grid
+      body = `<path d='M${s} 0V${s}M0 ${s}H${s}' stroke='${col}' stroke-width='1' fill='none'/>`
+      break
+    case 'dots':
+      body = `<circle cx='${s / 2}' cy='${s / 2}' r='1.4' fill='${col}'/>`
+      break
+    case 'diagonal':
+      // 45° line through the tile; tiling continues the stripe
+      body = `<path d='M0 ${s}L${s} 0' stroke='${col}' stroke-width='1' fill='none'/>`
+      break
+    case 'crosshatch':
+      body = `<path d='M0 ${s}L${s} 0M0 0L${s} ${s}' stroke='${col}' stroke-width='1' fill='none'/>`
+      break
+  }
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${s}' height='${s}'>${body}</svg>`
+  return 'data:image/svg+xml,' + encodeURIComponent(svg)
+}
