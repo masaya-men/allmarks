@@ -17,7 +17,7 @@ import { initDB, addBookmarkBatch, getAllBookmarks } from '@/lib/storage/indexed
 import { orderForImport } from '@/lib/share/receiver-import-order'
 import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
 import { computeSkylineLayout, type SkylineCard, type SkylineResult } from '@/lib/board/skyline-layout'
-import { BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_INNER } from '@/lib/board/constants'
+import { BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_INNER, BOARD_Z_INDEX } from '@/lib/board/constants'
 import { DEFAULT_THEME_ID, getThemeMeta } from '@/lib/board/theme-registry'
 import { resolveThemeCustomization, patternSvgDataUri } from '@/lib/board/theme-customization'
 import themeStyles from '@/components/board/themes.module.css'
@@ -388,8 +388,7 @@ export function SharedBoard(): ReactElement {
 
   // ── ready ──
   const data = state.data
-  // Theme is carried but not applied yet (no theme-application system on the
-  // board). Default styling only; the import indicator reads it.
+  // The shared board renders in the sender's theme: data-theme-id on <html> (effect above) drives the cascade; pattern themes also paint the patternLayer below.
   const themeId = data.theme ?? DEFAULT_THEME_ID
   const lightboxItem = lightboxIndex !== null ? (items[lightboxIndex] ?? null) : null
   const importing = importPhase !== 'idle'
@@ -433,14 +432,19 @@ export function SharedBoard(): ReactElement {
         {(() => {
           const rc = resolveThemeCustomization(themeId, data.custom)
           if (!rc) return null // 'work' theme (Paper) — globals.css blocks handle it
+          const uri = patternSvgDataUri(rc)
           return (
             <div
               aria-hidden="true"
               className={themeStyles.patternLayer}
               data-pattern={rc.patternType}
               style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: BOARD_Z_INDEX.THEME_BG,
+                pointerEvents: 'none',
                 backgroundColor: rc.boardColor,
-                backgroundImage: patternSvgDataUri(rc) ? `url("${patternSvgDataUri(rc)}")` : undefined,
+                backgroundImage: uri ? `url("${uri}")` : undefined,
                 backgroundSize: `${rc.patternSize}px ${rc.patternSize}px`,
               } as CSSProperties}
             />

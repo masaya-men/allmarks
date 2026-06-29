@@ -129,7 +129,11 @@ describe('SharedBoard theme application', () => {
     })
 
     expect(document.documentElement.getAttribute('data-theme-id')).toBe('grid-paper')
-    expect(document.querySelector('[data-pattern="grid"]')).not.toBeNull()
+    const patternEl = document.querySelector('[data-pattern="grid"]') as HTMLElement | null
+    expect(patternEl).not.toBeNull()
+    // The layer must be positioned so it fills the canvas; height:0 means nothing paints.
+    expect(patternEl!.style.position).toBe('absolute')
+    expect(patternEl!.style.inset).toBe('0px')
   })
 
   it('removes data-theme-id from <html> on unmount', async () => {
