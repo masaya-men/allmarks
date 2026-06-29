@@ -143,11 +143,16 @@ export const PATTERN_SWATCHES: ReadonlyArray<string> = [
   'rgba(255, 196, 120, 0.20)',
   'rgba(120, 180, 255, 0.20)',
 ]
+/* TITLE swatches are SOLID/high-opacity so the chip reads faithfully AND the
+   colour stays visible on the board the user actually has. The low-alpha whites
+   were misleading: on the dark panel they looked like dark greys, but on a light
+   board they were near-invisible. '#111111' is the "visible on a light board"
+   ink; '#ffffff' the "visible on a dark board" one. */
 export const TITLE_SWATCHES: ReadonlyArray<string> = [
   'rgba(255, 255, 255, 0.95)',
-  'rgba(255, 255, 255, 0.5)',
-  'rgba(255, 255, 255, 0.16)',
-  'rgba(40, 241, 0, 0.9)',
-  'rgba(255, 196, 120, 0.9)',
-  'rgba(120, 180, 255, 0.9)',
+  '#ffffff',
+  '#111111',
+  '#28f100',
+  '#ffc478',
+  '#78b4ff',
 ]

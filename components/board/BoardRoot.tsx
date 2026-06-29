@@ -106,6 +106,34 @@ const DECOR_PARALLAX_FACTOR = 0.30
  *  translate — the layer is screen-fixed so it stays centred + symmetric). */
 const GRID_BG_PARALLAX_FACTOR = 1 - PAPER_PARALLAX_FACTOR
 
+/** Edge-band chrome (wordmark / MOTION / the FilterPill count readout) is tuned
+ *  light-on-dark. On a LIGHT custom edge, flip the WHOLE chrome token family —
+ *  both the ChromeButton vars (--chrome-btn-*) AND the FilterPill text vars
+ *  (--chrome-text-*, which also carry a dark glow text-shadow) — to dark ink +
+ *  a light stroke + no glow, so every edge-band label stays legible and matches. */
+const LIGHT_EDGE_CHROME = {
+  '--chrome-btn-color': 'rgba(24, 22, 20, 0.9)',
+  '--chrome-btn-stroke-color': 'rgba(255, 255, 255, 0.45)',
+  '--chrome-text-color': 'rgba(24, 22, 20, 0.92)',
+  '--chrome-text-color-hover': 'rgba(24, 22, 20, 1)',
+  '--chrome-text-stroke-color': 'rgba(255, 255, 255, 0.6)',
+  '--chrome-text-stroke-color-hover': 'rgba(255, 255, 255, 0.75)',
+  '--chrome-text-shadow': 'none',
+} as CSSProperties
+
+/** Reset the chrome token family to the dark-theme defaults (globals.css :root)
+ *  on the inner canvas, so the LIGHT_EDGE_CHROME cascade from .outerFrame never
+ *  reaches the header / card chrome that sits on the dark board. */
+const DARK_CHROME_RESET = {
+  '--chrome-btn-color': 'rgba(255, 255, 255, 0.85)',
+  '--chrome-btn-stroke-color': 'rgba(0, 0, 0, 0.45)',
+  '--chrome-text-color': 'rgba(255, 255, 255, 0.92)',
+  '--chrome-text-color-hover': 'rgba(255, 255, 255, 1)',
+  '--chrome-text-stroke-color': 'rgba(0, 0, 0, 0.6)',
+  '--chrome-text-stroke-color-hover': 'rgba(0, 0, 0, 0.75)',
+  '--chrome-text-shadow': '0 0 4px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.45)',
+} as CSSProperties
+
 // Horizontal room past the rightmost card so the user can scroll a little
 // further right. Vertical bottom room is computed per-render from the viewport
 // height (see contentBounds); the fraction below stops the last card around
@@ -2042,12 +2070,9 @@ export function BoardRoot() {
       style={resolvedCustom ? ({
         '--edge-color': resolvedCustom.edgeColor,
         '--bg-typo-color': resolvedCustom.titleColor,
-        // On a LIGHT edge, flip the edge-band chrome (wordmark / MOTION / count)
-        // to dark ink + a light stroke so it stays legible instead of vanishing
-        // white-on-white with a stray dark text-stroke outline.
-        ...(isLightColor(resolvedCustom.edgeColor)
-          ? { '--chrome-btn-color': 'rgba(24, 22, 20, 0.9)', '--chrome-btn-stroke-color': 'rgba(255, 255, 255, 0.45)' }
-          : {}),
+        // On a LIGHT edge, flip the whole edge-band chrome to dark ink (legible
+        // instead of vanishing white-on-white with a stray dark outline + glow).
+        ...(isLightColor(resolvedCustom.edgeColor) ? LIGHT_EDGE_CHROME : {}),
       } as CSSProperties) : undefined}
     >
       {/* Outer-frame chrome — AllMarks wordmark (top-left dark margin) linking
@@ -2110,9 +2135,9 @@ export function BoardRoot() {
         // The edge-band chrome override above cascades into here; reset it to the
         // default light-on-dark chrome so the header + card chrome (which sit on
         // the dark board, not the edge) keep their normal ink.
-        style={resolvedCustom && isLightColor(resolvedCustom.edgeColor)
-          ? ({ '--chrome-btn-color': 'rgba(255, 255, 255, 0.85)', '--chrome-btn-stroke-color': 'rgba(0, 0, 0, 0.45)' } as CSSProperties)
-          : undefined}
+        // (NB: a *light* BOARD colour would also make the header faint, but the
+        // header components don't yet share one chrome token — see follow-up.)
+        style={resolvedCustom && isLightColor(resolvedCustom.edgeColor) ? DARK_CHROME_RESET : undefined}
       >
         <TopHeader
           hidden={!!lightboxItemId}
