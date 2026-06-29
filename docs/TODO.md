@@ -27,6 +27,8 @@
 - **方式**: `ShareDataV2` に `custom` → 送信時に live `themeId`+`resolvedCustom`（DEFAULT placeholder を撤去）→ OG画像は **visible-only な themed ShareMirror を `dom-to-image` でスクショ**（盤面全体処理を避けメモリ安全、失敗時は従来 canvas へ自動 fallback で共有は絶対壊れない）→ 受信ページは `<html data-theme-id>` + 単層SVG patternLayer（dom-to-image が積層gradient片方向を落とす対策）。
 - **検証**: tsc clean / vitest **1813緑** / build OK / **live allmarks.app で Grid 受信ページ実測 PASS**（patternLayer height 583px・SVGグリッド描画）。default(Sound Wave) byte-identical（.module.css 無編集・inline only）、¥0（サーバー無変更）。
 - **最終レビューで発見・修正した統合バグ**: 受信 patternLayer に position 指定が無く Grid が不可視（height 0）だった → BoardRoot と同形に修正（position:absolute/inset:0/zIndex:THEME_BG/pointerEvents:none）+ 退行ガードテスト追加。
+- **追加出荷（同セッション）= Share プレビュー/OG画像の Paper カード一致**（master `c01fa3f`）。簡易レプリカ `ShareMirror` のカードに本物と同じ台紙(mat)・写真窓・serif キャプション・装飾（washi/ピン/クリップ/写真コーナー/印/封蝋）が出る。装飾は本物 `PaperCardDecorations` を**再利用**（素材を足しても Share に自動反映＝二度手間なし）。default・Grid は byte-identical。live で Paper 3面 PASS。
+- **次の最優先 = Paper の品質超アップ**（Figma Community 素材）。在処は `docs/private/IDEAS.md` 末尾。出荷前にライセンス確認要。
 - **follow-up（軽微）**: OG画像生成時の Google Fonts CORS（dom-to-image、現状 fallback でカバー・要観察）。
 - 詳細 narrative は TODO_COMPLETED.md 参照。
 

@@ -2,24 +2,24 @@
 
 ## 今の状態（セッション139で完了・master マージ + allmarks.app 反映済み）
 
-**⑤ SHARE のテーマ化** を **サブエージェント駆動で全6タスク実装・出荷完了**。3面（送信プレビュー・OG画像・受信ページ `/s/`）すべてに送信者のテーマ + カスタマイズが乗る。
+**⑤ SHARE のテーマ化（全6タスク）** に加え、**Share プレビュー/OG画像の Paper カード一致**まで出荷完了。
 
-- **方式**: 見えてる共有プレビューを `dom-to-image` でスクショ（visible-only でメモリ爆発回避、失敗時は従来 canvas へ自動 fallback）。受信ページは `<html data-theme-id>` + 単層SVG patternLayer。
-- **検証**: tsc clean / vitest **1813緑** / build OK / opus 最終レビュー（whole-branch）/ **live allmarks.app で Grid 受信ページ実測 PASS**（patternLayer height 583px・SVGグリッド描画、旧=height0 を修正）。
-- **default(Sound Wave) は byte-identical**（.module.css 無編集・inline only）、**¥0**（サーバー無変更）。
-- 計画: [docs/superpowers/plans/2026-06-29-share-theming-screenshot.md](superpowers/plans/2026-06-29-share-theming-screenshot.md)（6タスク完了）。
-- commit: master `510b7bf`（feature ブランチ `share-theming-screenshot` を no-ff マージ）。
+- Share の3面（送信プレビュー・OG画像・受信ページ `/s/`）に送信者テーマ + カスタマイズが乗る（master `510b7bf`）。
+- **追加: Share レプリカの Paper カード一致**（master `c01fa3f`）。プレビュー/OG画像のカードに、本物と同じ**台紙(mat)・写真窓・serif キャプション・装飾（washi/ピン/クリップ/写真コーナー/アイコン印/封蝋）**が出る。装飾は本物 `PaperCardDecorations` を**再利用**、台紙は同じ決定的シードで一致。default(Sound Wave)・Grid は byte-identical。
+- **検証**: tsc clean / vitest **1816緑** / build OK / **live allmarks.app で Paper の3面（プレビュー6枚に mat+装飾／OG画像JPEG／受信ページ）スクショ確認 PASS**。
 
-## 次にやる（最優先）
+## 次にやる（user 希望の最優先）= Paper テーマの品質超アップ
 
-**⑥ マステ/ピン配置** に着手（user と相談しながら設計から）。
-1. まず `docs/private/IDEAS.md` と TODO.md の該当項目を読む
-2. ブレスト（superpowers:brainstorming）で要件・配置ロジックを固める
-3. spec → plan → 実装の順
+**Figma Community 素材で Paper のクオリティを上げる**。Share はもう reuse ベースなので、素材を `lib/board/paper-assets.ts` に流し込めば**盤面・Share画像の両方に自動反映**（二度手間なし）。
+
+1. 素材の在処（Downloads・session139で user 指定。詳細は `docs/private/IDEAS.md` 末尾 + memory `reference_paper_asset_sources`）:
+   - `Scrapbook Diary Elements (Community)/`（36PNG）／ `透明テープ/`（55PNG）／ `60+ Free Vintage Paper Textures (Community).png`（355MB未カット）
+2. **出荷前にライセンス必須確認**: Figma「(Community)」はパックごとにライセンスが違う。`docs/marketing-asset-licenses.md` に倣って各パックの条文＋帰属要否を記録してから使う。
+3. 切り出し → `paper-assets.ts` マニフェスト + `PaperCardDecorations`/`pickPaperAsset`/`board-decor.ts` に配線。眠り在庫（deckle-edge-mat / foxing / スタンプ）の有効化も候補。
 
 ## 残り（順次）
-⑥ マステ/ピン配置 ／ ⑦ チュートリアル PiP 紹介 ／ ⑧ 枠付きカードの使い道 ／ follow-up: 明色 BOARD のヘッダー色ハードコード対応 ／ follow-up: OG画像の Google Fonts CORS（dom-to-image、現状 fallback でカバー・要観察）。
+⑥ マステ/ピン配置 ／ ⑦ チュートリアル PiP 紹介 ／ ⑧ 枠付きカードの使い道 ／ follow-up: 明色 BOARD のヘッダー色ハードコード ／ follow-up: OG画像の Google Fonts CORS（fallback でカバー）。
 
 ## 守ること（毎回）
 - default 盤面 byte-identical。deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy は `--project-name=allmarks --branch=master`。
-- 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。応答は日本語、UI見た目変更は承認フロー（ただし設計合意済みの実装は継続実行）。
+- 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。応答は日本語。

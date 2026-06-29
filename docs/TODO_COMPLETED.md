@@ -8071,3 +8071,19 @@ tsc clean / vitest **1813緑** / build OK(assert-share-template OK)。**live all
 ### follow-up
 
 OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバー、要観察。
+
+### セッション 139 追加 — Share プレビュー/OG画像の Paper カード一致
+
+ユーザーが「Share プレビューで台紙・装飾が出ない」と指摘。原因 = Share の `ShareMirror` は本物盤面の複製ではなく**簡易レプリカ**で、カードは `MirrorCardContent` がサムネ+タイトルのみ描画。Paper の台紙・装飾は本物のカード部品(CardsLayer/ImageCard/PaperCardDecorations)側にしか無かった（受信ページ `/s/` は本物 CardsLayer を使うので装飾は出ていた＝プレビュー/OG だけの問題）。
+
+ユーザーと「Web は画面を撮れない→自分で描き写すしかない→簡易レプリカは本物と見た目一致させるべき」を1個ずつ合意。業界水準（Satori/@vercel/og・ヘッドレスブラウザ・html2canvas）も確認し、どれもサーバー前提で「サーバーなし・¥0・端末内」の core 設計と衝突するため、端末内描き写し(dom-to-image)が唯一の ¥0 ルートと再確認。手動スクショ案も UX 観点で却下。
+
+実装（master `c01fa3f`、reuse ベース）:
+- **装飾 = 本物 `PaperCardDecorations` を zero-copy 再利用**（cardId=item.id で per-card 一致）。将来素材を足しても自動反映＝二度手間なし。
+- **台紙シェル = 同じ決定的シード(FNV-1a, bookmarkId)＋同じ6種mat候補＋ImageCard.module.css の正確値**で `.paperCard`/`.paperPhoto`(inset 6% 6% 22% 6%)/`.paperCaption`(Yomogi/Caveat serif) を再現。本物 ImageCard は無改造。
+- gating = `getThemeMeta(themeId).decorations === true`（Paper のみ）。default(Sound Wave)・Grid は byte-identical。
+- オーバーハング = 装飾を `.card`(overflow:hidden) の外・`.cardWrapper`(overflow:visible) の兄弟に配置（本物 CardsLayer と同構造）。
+
+検証: opus相当レビュー Approved（named risk 6点クリア、Important=テスト穴を dc4fe87 で解消＝Paper分岐の data-mirror-card-id 1個/カードを確認）。tsc clean / vitest 1816緑 / build OK / **live allmarks.app で Paper 3面スクショ確認 PASS**（プレビュー mat6+装飾6 / OG画像JPEG / 受信ページ）。
+
+副産物: Paper 素材の棚卸し完了（眠り在庫=形stamp3/語stamp7(過去user removed)/deckle-edge-mat/foxing）。ユーザー指定の Figma Community 素材の在処を `docs/private/IDEAS.md` + memory に保存（次セッションの Paper 品質アップ用、出荷前ライセンス確認要）。
