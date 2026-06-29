@@ -8,8 +8,20 @@ import { pickTitleTypography } from '@/lib/embed/title-typography'
 import { cleanTitle } from '@/lib/embed/clean-title'
 import { placeholderArtFrames } from '@/lib/board/placeholder-image'
 import { useSlideshowCycle } from '@/lib/board/use-slideshow-cycle'
+import { paperAssetUrl, pickPaperAsset } from '@/lib/board/paper-assets'
 import { PLACEHOLDER_ASPECT } from './placeholder-aspect'
 import styles from './PlaceholderCard.module.css'
+
+/** Stable 0..1 fraction from a card id (same hash ImageCard uses for its mat),
+ *  so a thumbnail-less card always lands on the same paper-note sheet. */
+function seedFractionFromId(id: string): number {
+  let h = 2166136261
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return ((h >>> 0) % 100000) / 100000
+}
 
 type Props = {
   readonly item: BoardItem
@@ -26,6 +38,11 @@ type Props = {
    *  アートを複数フレーム巡回 (= 複数画像ツイート式) する。 Lightbox / ImageCard
    *  fallback は渡さない → 常に frame[0] 静止 (= B1 と同一の見た目)。 */
   readonly ambientOn?: boolean
+  /** paper-atelier theme: render the thumbnail-less card as a graph / notepad
+   *  paper sheet with the title hand-written on it (parity with ImageCard's
+   *  paper face). Only CardsLayer sets this; Lightbox / triage leave it false
+   *  so they keep the generated-art placeholder. */
+  readonly paper?: boolean
 }
 
 const ASPECT_EPSILON = 0.005
@@ -50,6 +67,7 @@ export function PlaceholderCard({
   reportIntrinsicHeight,
   omitMeta = false,
   ambientOn = false,
+  paper = false,
 }: Props): ReactNode {
   const hostname = hostnameFromUrl(item.url)
   const rawTitle = item.title || hostname || item.url
@@ -152,6 +170,42 @@ export function PlaceholderCard({
   const titleStyle: CSSProperties = {
     fontSize: `${typography.fontSize}px`,
     lineHeight: `${typography.lineHeight}px`,
+  }
+
+  // Paper-atelier text note: a thumbnail-less card rendered as a graph / spiral
+  // notepad sheet (background-size:100% 100%) with the title hand-written on it,
+  // matching ImageCard's paper face. Falls through to the generated-art card
+  // when the paper assets aren't placed.
+  if (paper) {
+    const paperId = pickPaperAsset(seedFractionFromId(item.bookmarkId), [
+      'card-paper-graph',
+      'card-paper-notepad',
+    ])
+    const paperUrl = paperId ? paperAssetUrl(paperId) : null
+    if (paperUrl) {
+      return (
+        <div
+          className={`${styles.placeholderCard} ${styles.paperNote}`}
+          ref={rootRef}
+          data-paper-note="true"
+          style={{ backgroundImage: `url("${paperUrl}")` }}
+        >
+          <div
+            ref={titleScrollRef}
+            className={`${styles.titleScroll} ${styles.paperNoteScroll}`}
+            data-overflow={hasOverflow ? 'true' : 'false'}
+            data-at-bottom={atBottom ? 'true' : 'false'}
+            data-card-scroll="true"
+            onScroll={updateScrollState}
+            onWheel={handleCardWheel}
+          >
+            <div className={`${styles.titleInner} ${styles.paperNoteTitle}`} style={titleStyle}>
+              {title}
+            </div>
+          </div>
+        </div>
+      )
+    }
   }
 
   return (

@@ -36,6 +36,11 @@ export type PaperAssetId =
   // wax (scatter flourish), and a torn-kraft scrap (scatter accent).
   | 'washi-tape-10' | 'washi-tape-11'
   | 'decor-sprig-1' | 'decor-torn-kraft-1'
+  // session 140 — text-card "paper style" backgrounds (ChatGPT kit, user-owned).
+  // Used full-bleed (background-size:100% 100%) as the whole card for
+  // thumbnail-less PlaceholderCards in the paper theme — graph sheet / spiral
+  // notepad, with the title hand-written on top.
+  | 'card-paper-graph' | 'card-paper-notepad'
   | 'stamp-archive' | 'stamp-confidential' | 'stamp-top-secret'
   | 'stamp-received' | 'stamp-classified' | 'stamp-confidential-red' | 'stamp-approved'
   | 'icon-star' | 'icon-heart' | 'icon-check' | 'icon-x' | 'icon-excl' | 'icon-question'
@@ -71,6 +76,7 @@ export const PAPER_ASSETS: Readonly<Record<PaperAssetId, boolean>> = {
   'washi-tape-6': true, 'washi-tape-7': true, 'washi-tape-8': true, 'washi-tape-9': true,
   'washi-tape-10': true, 'washi-tape-11': true,
   'decor-sprig-1': true, 'decor-torn-kraft-1': true,
+  'card-paper-graph': true, 'card-paper-notepad': true,
   'stamp-archive': true, 'stamp-confidential': true, 'stamp-top-secret': true,
   'stamp-received': true, 'stamp-classified': true, 'stamp-confidential-red': true, 'stamp-approved': true,
   'icon-star': true, 'icon-heart': true, 'icon-check': true, 'icon-x': true, 'icon-excl': true, 'icon-question': true,

@@ -140,3 +140,29 @@
   letter-spacing: -0.005em;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
+
+/* --- Paper-atelier text note (paper theme, thumbnail-less card) ---
+   The whole card IS a graph / spiral-notepad sheet (background-size:100% 100%
+   so the holes / spiral / torn edge are preserved), with the title written on
+   it in the same hand-written stack as ImageCard's paper caption. */
+.paperNote {
+  background-color: transparent;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.paperNoteScroll {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* generous insets clear the binder holes (graph, left edge) and the spiral
+     binding (notepad, top edge) so the title never sits on top of them. */
+  padding: 23% 15% 15% 19%;
+}
+.paperNoteTitle {
+  color: var(--text-body, #4a443b);
+  font-family: 'Yomogi', var(--font-handwriting, 'Caveat'), cursive;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-shadow: none;
+}
