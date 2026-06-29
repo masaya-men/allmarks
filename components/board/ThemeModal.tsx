@@ -46,6 +46,7 @@ export function ThemeModal({
 }: ThemeModalProps): ReactElement | null {
   const { t } = useI18n()
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   // Bottom fade hint when the scrollable body has more content below the fold
   // (the CUSTOMIZE section can push it past the panel height). No raw scrollbar.
@@ -85,11 +86,29 @@ export function ThemeModal({
     return (): void => window.removeEventListener('keydown', onKey)
   }, [isOpen, onClose])
 
+  // Outside-click closes the panel. It is non-blocking (the overlay is
+  // pointer-events:none, so clicks fall through to the live board behind), so a
+  // pointerdown anywhere outside the panel — the board, the SETTINGS drawer,
+  // empty chrome — dismisses it. Mirrors the FilterPill dropdown's pointerdown
+  // contract. The CUSTOMIZE colour picker is a native <input type="color"> whose
+  // OS picker opens as a separate window (no in-page pointerdown), so it never
+  // trips this; every other control lives inside the panel.
+  useEffect(() => {
+    if (!isOpen) return
+    const onPointerDown = (e: PointerEvent): void => {
+      if (panelRef.current?.contains(e.target as Node)) return
+      onClose()
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return (): void => document.removeEventListener('pointerdown', onPointerDown)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (
     <div className={styles.overlay} role="presentation" data-testid="theme-modal-overlay">
       <aside
+        ref={panelRef}
         className={styles.panel}
         role="dialog"
         aria-labelledby="theme-modal-title"
