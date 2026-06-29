@@ -60,9 +60,10 @@
 :global(html[data-theme-id='paper-atelier']) .cardNode {
   border-radius: var(--card-radius, 3px);
   box-shadow:
-    0 2px 3px rgba(43, 39, 34, 0.16),
-    0 10px 20px rgba(43, 39, 34, 0.22),
-    0 26px 46px rgba(43, 39, 34, 0.18);
+    0 2px 4px rgba(36, 31, 25, 0.32),
+    0 8px 16px rgba(36, 31, 25, 0.34),
+    0 20px 38px rgba(36, 31, 25, 0.30),
+    0 36px 64px rgba(36, 31, 25, 0.24);
 }
 
 /* Torn-paper text cards (PlaceholderCard's paper face) fill only an irregular
@@ -78,8 +79,9 @@
 :global(html[data-theme-id='paper-atelier']) .cardNode:has([data-paper-note='true']) {
   box-shadow: none;
   filter:
-    drop-shadow(0 2px 3px rgba(43, 39, 34, 0.18))
-    drop-shadow(0 12px 22px rgba(43, 39, 34, 0.22));
+    drop-shadow(0 2px 4px rgba(36, 31, 25, 0.34))
+    drop-shadow(0 12px 22px rgba(36, 31, 25, 0.36))
+    drop-shadow(0 28px 46px rgba(36, 31, 25, 0.26));
 }
 
 .selected {

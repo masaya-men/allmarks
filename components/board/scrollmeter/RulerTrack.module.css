@@ -109,6 +109,9 @@
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
+  /* Deepen the pale cream strip a touch (user: 色見を少し濃く) — slightly
+     darker + warmer/saturated so the tape reads richer against the board. */
+  filter: brightness(0.9) contrast(1.08) saturate(1.22);
 }
 
 /* Paper-scrap thumb PNG replaces the CSS triangle.
