@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
-import type { ResolvedThemeCustomization } from '@/lib/board/theme-customization'
+import { type ResolvedThemeCustomization, themeAllowsPattern } from '@/lib/board/theme-customization'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ThemePicker } from './ThemePicker'
 import { ThemeCustomizeSection } from './ThemeCustomizeSection'
@@ -141,6 +141,7 @@ export function ThemeModal({
             <ThemeCustomizeSection
               value={customization}
               isDefault={isDefaultCustomization}
+              allowsPattern={themeAllowsPattern(themeId)}
               onChange={onCustomize}
             />
           )}

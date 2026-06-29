@@ -42,6 +42,18 @@ export function isCustomizableTheme(id: ThemeId): boolean {
   return getThemeMeta(id).kind === 'pattern' && id in THEME_CUSTOMIZATION_DEFAULTS
 }
 
+/**
+ * Whether a theme exposes PATTERN controls (style / pattern colour / density) on
+ * top of the always-present edge + board colour. Each theme gets the controls
+ * that suit its identity:
+ *  - Sound Wave (default): a clean, pattern-free board — edge + board colour only.
+ *  - Grid: the pattern IS the theme — full controls.
+ */
+const THEMES_WITH_PATTERN_CONTROLS: ReadonlySet<ThemeId> = new Set<ThemeId>(['grid-paper'])
+export function themeAllowsPattern(id: ThemeId): boolean {
+  return THEMES_WITH_PATTERN_CONTROLS.has(id)
+}
+
 /** Merge a theme's defaults with the user's saved overrides into the effective
  *  values. Returns null for non-customizable (work) themes. */
 export function resolveThemeCustomization(

@@ -18,6 +18,9 @@ export interface ThemeCustomizeSectionProps {
   readonly value: ResolvedThemeCustomization
   /** True when the theme is at its byte-identical baseline (hides reset). */
   readonly isDefault: boolean
+  /** Whether to show the pattern controls (style / pattern colour / density).
+   *  False = a pattern-free theme like Sound Wave: edge + board colour only. */
+  readonly allowsPattern: boolean
   /** Merge a field change; null = reset the whole theme to defaults. */
   readonly onChange: (patch: ThemeCustomization | null) => void
 }
@@ -83,7 +86,7 @@ function ColorRow({
  * non-blocking, so the user watches it update behind). Mounted by
  * {@link ThemeModal} only while a pattern theme is active.
  */
-export function ThemeCustomizeSection({ value, isDefault, onChange }: ThemeCustomizeSectionProps): ReactElement {
+export function ThemeCustomizeSection({ value, isDefault, allowsPattern, onChange }: ThemeCustomizeSectionProps): ReactElement {
   return (
     <section className={styles.section} data-testid="theme-customize">
       <div className={styles.headerRow}>
@@ -100,48 +103,55 @@ export function ThemeCustomizeSection({ value, isDefault, onChange }: ThemeCusto
         )}
       </div>
 
-      {/* Pattern style */}
-      <div className={styles.row}>
-        <span className={styles.rowLabel}>STYLE</span>
-        <div className={styles.patternSwatches}>
-          {PATTERN_TYPES.map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={styles.patternSwatch}
-              data-pattern={p}
-              aria-pressed={value.patternType === p}
-              aria-label={PATTERN_LABEL[p]}
-              title={PATTERN_LABEL[p]}
-              onClick={(): void => onChange({ patternType: p })}
-              data-testid={`pattern-${p}`}
-            >
-              <span className={styles.patternPreview} data-pattern={p} aria-hidden="true" />
-            </button>
-          ))}
+      {/* Pattern style — only for themes whose identity is a pattern (Grid). */}
+      {allowsPattern && (
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>STYLE</span>
+          <div className={styles.patternSwatches}>
+            {PATTERN_TYPES.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={styles.patternSwatch}
+                data-pattern={p}
+                aria-pressed={value.patternType === p}
+                aria-label={PATTERN_LABEL[p]}
+                title={PATTERN_LABEL[p]}
+                onClick={(): void => onChange({ patternType: p })}
+                data-testid={`pattern-${p}`}
+              >
+                <span className={styles.patternPreview} data-pattern={p} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <ColorRow label="EDGE" swatches={EDGE_SWATCHES} active={value.edgeColor} onPick={(c): void => onChange({ edgeColor: c })} />
       <ColorRow label="BOARD" swatches={BOARD_SWATCHES} active={value.boardColor} onPick={(c): void => onChange({ boardColor: c })} />
-      <ColorRow label="PATTERN" swatches={PATTERN_SWATCHES} active={value.patternColor} onPick={(c): void => onChange({ patternColor: c })} />
 
-      {/* Density */}
-      <div className={styles.row}>
-        <span className={styles.rowLabel}>DENSITY</span>
-        <input
-          type="range"
-          className={styles.slider}
-          min={PATTERN_SIZE_MIN}
-          max={PATTERN_SIZE_MAX}
-          step={2}
-          // Spacing px → density: invert so dragging RIGHT = denser (smaller gap).
-          value={PATTERN_SIZE_MIN + PATTERN_SIZE_MAX - value.patternSize}
-          onChange={(e): void => onChange({ patternSize: PATTERN_SIZE_MIN + PATTERN_SIZE_MAX - Number(e.target.value) })}
-          aria-label="Pattern density"
-          data-testid="pattern-density"
-        />
-      </div>
+      {allowsPattern && (
+        <>
+          <ColorRow label="PATTERN" swatches={PATTERN_SWATCHES} active={value.patternColor} onPick={(c): void => onChange({ patternColor: c })} />
+
+          {/* Density */}
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>DENSITY</span>
+            <input
+              type="range"
+              className={styles.slider}
+              min={PATTERN_SIZE_MIN}
+              max={PATTERN_SIZE_MAX}
+              step={2}
+              // Spacing px → density: invert so dragging RIGHT = denser (smaller gap).
+              value={PATTERN_SIZE_MIN + PATTERN_SIZE_MAX - value.patternSize}
+              onChange={(e): void => onChange({ patternSize: PATTERN_SIZE_MIN + PATTERN_SIZE_MAX - Number(e.target.value) })}
+              aria-label="Pattern density"
+              data-testid="pattern-density"
+            />
+          </div>
+        </>
+      )}
     </section>
   )
 }
