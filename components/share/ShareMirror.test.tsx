@@ -58,6 +58,30 @@ describe('ShareMirror', () => {
     expect(cards.length).toBe(5)
   })
 
+  it('paper-atelier: renders exactly one [data-mirror-card-id] element per item (no wrapper double-count)', () => {
+    // The paper branch wraps each card in a .cardWrapper + inner .card. This guards
+    // that ONLY one of them carries [data-mirror-card-id] — otherwise the OG-capture
+    // fallback (lib/share/capture-mirror.ts) would double-count cards.
+    const { container } = render(
+      <ShareMirror
+        items={makeItems(5)}
+        positions={makePositions(5)}
+        bgViewportWidth={1200}
+        bgCanvasWidth={1218}
+        activeTagNames={[]}
+        totalBoardCount={5}
+        sharedCardCount={5}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        themeId="paper-atelier"
+        custom={null}
+      />,
+    )
+    const cards = container.querySelectorAll('[data-mirror-card-id]')
+    expect(cards.length).toBe(5)
+  })
+
   it('does NOT render any iframe (MOTION OFF guarantee)', () => {
     const { container } = render(
       <ShareMirror
