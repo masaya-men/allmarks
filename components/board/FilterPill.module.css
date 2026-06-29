@@ -10,11 +10,18 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: inherit;
-  color: var(--chrome-text-color);
-  -webkit-text-stroke: var(--chrome-text-stroke-width) var(--chrome-text-stroke-color);
+  /* Match the rest of the header chrome (ChromeButton): same monospace, size and
+     stroke, and NO glow text-shadow — the --chrome-text-* family (heavier 0.75px
+     stroke + dark glow, for instruments over varied content) made this readout
+     read bolder/blurrier than its siblings. Uses --chrome-btn-* so it adapts with
+     the others on paper + the light-edge override. */
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  color: var(--chrome-btn-color, rgba(255, 255, 255, 0.85));
+  -webkit-text-stroke: var(--chrome-btn-stroke-width, 0.5px) var(--chrome-btn-stroke-color, rgba(0, 0, 0, 0.45));
   paint-order: stroke fill;
-  text-shadow: var(--chrome-text-shadow);
+  text-shadow: none;
   transition:
     color 0.15s ease,
     transform 0.15s ease,
@@ -22,8 +29,7 @@
 }
 
 .pill:hover {
-  color: var(--chrome-text-color-hover);
-  -webkit-text-stroke-color: var(--chrome-text-stroke-color-hover);
+  color: var(--chrome-btn-color-hover, rgba(255, 255, 255, 1));
 }
 
 .pill:focus-visible {

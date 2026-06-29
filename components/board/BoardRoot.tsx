@@ -113,6 +113,7 @@ const GRID_BG_PARALLAX_FACTOR = 1 - PAPER_PARALLAX_FACTOR
  *  a light stroke + no glow, so every edge-band label stays legible and matches. */
 const LIGHT_EDGE_CHROME = {
   '--chrome-btn-color': 'rgba(24, 22, 20, 0.9)',
+  '--chrome-btn-color-hover': 'rgba(24, 22, 20, 1)',
   '--chrome-btn-stroke-color': 'rgba(255, 255, 255, 0.45)',
   '--chrome-text-color': 'rgba(24, 22, 20, 0.92)',
   '--chrome-text-color-hover': 'rgba(24, 22, 20, 1)',
@@ -126,6 +127,7 @@ const LIGHT_EDGE_CHROME = {
  *  reaches the header / card chrome that sits on the dark board. */
 const DARK_CHROME_RESET = {
   '--chrome-btn-color': 'rgba(255, 255, 255, 0.85)',
+  '--chrome-btn-color-hover': 'rgba(255, 255, 255, 1)',
   '--chrome-btn-stroke-color': 'rgba(0, 0, 0, 0.45)',
   '--chrome-text-color': 'rgba(255, 255, 255, 0.92)',
   '--chrome-text-color-hover': 'rgba(255, 255, 255, 1)',
