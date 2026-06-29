@@ -39,11 +39,13 @@ function dataUrlBytes(dataUrl: string): number {
   return Math.floor((b64.length * 3) / 4) - pad
 }
 
+/** Renders a DOM node to a JPEG data URL <= targetBytes via dom-to-image-more, or null on any failure (caller falls back to the legacy canvas). */
 export async function renderShareImage(node: HTMLElement, opts: RenderShareImageOpts): Promise<string | null> {
   try {
     const mod = await import('dom-to-image-more')
     const domtoimage = (mod as { default?: unknown }).default ?? mod
     const toJpeg = (domtoimage as { toJpeg: (n: HTMLElement, o: Record<string, unknown>) => Promise<string> }).toJpeg
+    if (typeof toJpeg !== 'function') return null
     if (typeof document !== 'undefined' && document.fonts?.ready) await document.fonts.ready
     return await jpegUnderTarget(
       (quality) => toJpeg(node, { width: opts.width, height: opts.height, quality, cacheBust: true }).catch(() => null),

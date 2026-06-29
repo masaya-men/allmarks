@@ -128,7 +128,19 @@ export function SenderShareModal({
       }
       // Fallback: the legacy hand-drawn canvas (never let sharing break).
       if (!thumbDataUrl) {
-        thumbDataUrl = await captureMirrorToWebP({ mirrorFrame: captureFrame, items: visibleItems.map((it) => ({ url: it.url, title: it.title, thumbnailUrl: it.thumbnailUrl })), sharedCardCount: share.cards.length, activeTagNames, totalBoardCount, bgTypoText: bgTypoEnabled ? bgTypoText : '', width: 1200, height: 628, targetBytes: 180 * 1024, startQuality: 0.82, minQuality: 0.4 })
+        thumbDataUrl = await captureMirrorToWebP({
+          mirrorFrame: captureFrame,
+          items: visibleItems.map((it) => ({ url: it.url, title: it.title, thumbnailUrl: it.thumbnailUrl })),
+          sharedCardCount: share.cards.length,
+          activeTagNames,
+          totalBoardCount,
+          bgTypoText: bgTypoEnabled ? bgTypoText : '',
+          width: 1200,
+          height: 628,
+          targetBytes: 180 * 1024,
+          startQuality: 0.82,
+          minQuality: 0.4,
+        })
       }
       if (!thumbDataUrl) {
         setState({ kind: 'error', message: 'capture failed' })
