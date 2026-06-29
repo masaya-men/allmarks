@@ -14,14 +14,17 @@ export interface ThemeModalProps {
 }
 
 /**
- * Dedicated full-screen theme picker. Rendered at the board root (like
- * {@link BookmarkletInstallModal}) so it escapes the SETTINGS drawer's
- * `overflow: hidden`, and so it sits close to board state for the live preview
- * that lands in Phase 2. The translucent backdrop keeps the real board faintly
- * visible behind, so a theme change reads immediately.
+ * Theme picker — a right-docked, NON-blocking panel (not a dim modal). The
+ * board stays fully visible and interactive behind it, so clicking a theme
+ * re-themes the real board live (that IS the preview — no separate replica).
  *
- * Selecting a theme applies it but keeps the modal open — the user can try
- * several and watch the board update behind the dim before closing.
+ * Rendered at the board root (like {@link BookmarkletInstallModal}) so it
+ * escapes the SETTINGS drawer's stacking context. The overlay is
+ * pointer-events:none (board keeps panning/scrolling); only the panel itself
+ * is interactive. Dismissed via × or Esc.
+ *
+ * Themes are grouped into PATTERN (customizable — Sound Wave, Grid; the
+ * customize controls land in Phase 3) and WORKS (fixed crafted worlds — Paper).
  */
 export function ThemeModal({ isOpen, onClose, themeId, onThemeChange }: ThemeModalProps): ReactElement | null {
   const { t } = useI18n()
@@ -43,18 +46,11 @@ export function ThemeModal({ isOpen, onClose, themeId, onThemeChange }: ThemeMod
   if (!isOpen) return null
 
   return (
-    <div
-      className={styles.overlay}
-      onClick={onClose}
-      role="presentation"
-      data-testid="theme-modal-overlay"
-    >
-      <div
-        className={styles.modal}
+    <div className={styles.overlay} role="presentation" data-testid="theme-modal-overlay">
+      <aside
+        className={styles.panel}
         role="dialog"
-        aria-modal="true"
         aria-labelledby="theme-modal-title"
-        onClick={(e): void => e.stopPropagation()}
         data-testid="theme-modal"
       >
         <div className={styles.header}>
@@ -77,14 +73,31 @@ export function ThemeModal({ isOpen, onClose, themeId, onThemeChange }: ThemeMod
         </div>
 
         <div className={styles.body}>
-          <ThemePicker
-            themeId={themeId}
-            onThemeChange={onThemeChange}
-            variant="modal"
-            showHeading={false}
-          />
+          <section className={styles.group}>
+            <div className={styles.groupLabel}>PATTERN THEMES</div>
+            <ThemePicker
+              themeId={themeId}
+              onThemeChange={onThemeChange}
+              variant="modal"
+              showHeading={false}
+              filterKind="pattern"
+            />
+          </section>
+
+          <section className={styles.group}>
+            <div className={styles.groupLabel}>WORKS</div>
+            <ThemePicker
+              themeId={themeId}
+              onThemeChange={onThemeChange}
+              variant="modal"
+              showHeading={false}
+              filterKind="work"
+            />
+          </section>
+          {/* Phase 3: a CUSTOMIZE section (edge / board / pattern colour +
+              pattern type) mounts here when a pattern theme is active. */}
         </div>
-      </div>
+      </aside>
     </div>
   )
 }

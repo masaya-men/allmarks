@@ -9,6 +9,7 @@ describe('THEME_REGISTRY contract', () => {
       expect(typeof m.backgroundClassName).toBe('string')
       expect(m.labelKey.startsWith('board.theme.')).toBe(true)
       expect(['free', 'paid']).toContain(m.tier)
+      expect(['pattern', 'work']).toContain(m.kind)
       expect(['light', 'dark']).toContain(m.colorScheme)
       // Plan 2 contract fields:
       expect(['waveform', 'ruler']).toContain(m.scrollMeterVariant)
@@ -46,5 +47,10 @@ describe('THEME_REGISTRY contract', () => {
     expect(DEFAULT_THEME_ID).toBe('dotted-notebook')
     expect(getThemeMeta('dotted-notebook').colorScheme).toBe('dark')
     expect(getThemeMeta('dotted-notebook').tier).toBe('free')
+  })
+  it('classifies the two dark themes as customizable patterns, paper as a fixed work', () => {
+    expect(getThemeMeta('dotted-notebook').kind).toBe('pattern')
+    expect(getThemeMeta('grid-paper').kind).toBe('pattern')
+    expect(getThemeMeta('paper-atelier').kind).toBe('work')
   })
 })

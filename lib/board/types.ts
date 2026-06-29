@@ -60,6 +60,14 @@ export type ThemeMeta = {
   /** Entitlement tier. 'free' = always available; 'paid' = needs a license. */
   readonly tier: 'free' | 'paid'
   /**
+   * Theme family for the picker:
+   * - 'pattern' = a base look the user can customize (edge/board/pattern color,
+   *   pattern type) — Sound Wave, Grid.
+   * - 'work'    = a crafted, fixed world; no customization — Paper Atelier (and
+   *   future SF/military etc.).
+   */
+  readonly kind: 'pattern' | 'work'
+  /**
    * ScrollMeter rendering style. 'waveform' = the default sound-wave bars;
    * 'ruler' = the paper-atelier brass ruler track. Read by ScrollMeter's
    * `variant` prop (default 'waveform') so omitting it is impossible (required).

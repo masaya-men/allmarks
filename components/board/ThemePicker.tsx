@@ -19,6 +19,9 @@ export interface ThemePickerProps {
   /** Show the internal "THEMES" heading. False when a host (the modal) already
    *  provides its own title. Defaults to true. */
   readonly showHeading?: boolean
+  /** Render only themes of this family ('pattern' = customizable, 'work' =
+   *  fixed). Omit to render every theme (the legacy flat list). */
+  readonly filterKind?: 'pattern' | 'work'
 }
 
 /** Swatch grid of every registered theme. Free themes apply on click,
@@ -31,13 +34,17 @@ export function ThemePicker({
   licenses = EMPTY_LICENSES,
   variant = 'inline',
   showHeading = true,
+  filterKind,
 }: ThemePickerProps): ReactElement {
   const { t } = useI18n()
+  const ids = filterKind
+    ? listThemeIds().filter((id) => getThemeMeta(id).kind === filterKind)
+    : listThemeIds()
   return (
     <div className={styles.section} data-variant={variant} data-testid="theme-picker">
       {showHeading && <div className={styles.heading}>THEMES</div>}
       <div className={styles.grid} role="group" aria-label={t('board.theme.pickerGroupLabel')}>
-        {listThemeIds().map((id) => {
+        {ids.map((id) => {
           const meta = getThemeMeta(id)
           const unlocked = isThemeUnlocked(meta, licenses)
           const active = id === themeId

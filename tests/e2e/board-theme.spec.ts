@@ -55,10 +55,10 @@ test('switching to paper-atelier themes the board and persists', async ({ page }
   await settings.scrollIntoViewIfNeeded()
   await settings.hover()
   await settings.dispatchEvent('mouseover')
-  // THEME group → open the dedicated theme screen, which hosts the picker.
+  // THEME group → open the dedicated theme panel (right-docked, hosts the picker).
   await page.getByTestId('open-theme-modal').waitFor({ state: 'visible', timeout: 10_000 })
   await page.getByTestId('open-theme-modal').click({ timeout: 8_000 })
-  await page.getByTestId('theme-picker').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.getByTestId('theme-modal').waitFor({ state: 'visible', timeout: 10_000 })
 
   // pick the paper theme
   await page.getByTestId('theme-button-paper-atelier').click({ timeout: 8_000 })
