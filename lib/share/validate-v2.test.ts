@@ -95,6 +95,30 @@ describe('sanitizeShareDataV2', () => {
   })
 })
 
+describe('sanitizeShareDataV2 custom', () => {
+  it('accepts a valid custom block and round-trips it', () => {
+    const input = {
+      v: 2, createdAt: 1, cards: [{ u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }],
+      theme: 'grid-paper',
+      custom: { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: 'rgba(255,255,255,0.18)', patternType: 'grid', patternSize: 40, titleColor: '#fff' },
+    }
+    const r = parseShareDataV2(input)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.data.custom?.patternType).toBe('grid')
+  })
+
+  it('sanitize drops a malformed custom instead of rejecting the whole payload', () => {
+    const input = {
+      v: 2, createdAt: 1, cards: [{ u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }],
+      theme: 'grid-paper',
+      custom: { patternType: 'not-a-pattern', patternSize: 99999 }, // invalid
+    }
+    const r = sanitizeShareDataV2(input)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.data.custom).toBeUndefined()
+  })
+})
+
 describe('sanitizeShareDataV2 theme', () => {
   const base = { v: SHARE_SCHEMA_VERSION_V2, cards: [{ u: 'https://example.com', t: 'Title', ty: 'website' as const, cw: 200, a: 1.5 }], createdAt: 1735000000000 }
   it('keeps a valid ThemeId', () => {

@@ -91,6 +91,13 @@ describe('buildShareDataFromBoard', () => {
     expect(data.theme).toBeUndefined()
   })
 
+  it('includes custom when provided, omits it when not', () => {
+    const base = { items: [], tags: [], filter: null, now: 1 }
+    const custom = { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: 'rgba(255,255,255,0.18)', patternType: 'grid' as const, patternSize: 40, titleColor: '#fff' }
+    expect(buildShareDataFromBoard({ ...base, themeId: 'grid-paper', custom }).custom).toEqual(custom)
+    expect(buildShareDataFromBoard({ ...base }).custom).toBeUndefined()
+  })
+
   it('carries the sender default card width as w', () => {
     const data = buildShareDataFromBoard({
       items: [{ bookmarkId: 'b1', url: 'https://e.com', title: 't', aspectRatio: 1, tags: [], cardWidth: 300 }],
