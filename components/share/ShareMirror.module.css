@@ -87,8 +87,16 @@
   will-change: transform;
 }
 
+/* Wrapper that holds the .card + (for paper) the decoration overlay sibling.
+   Must NOT clip so washi tape / pins can overhang the card box. */
+.cardWrapper {
+  position: absolute;
+  /* overflow:visible (default) — do NOT set overflow:hidden here */
+}
+
 .card {
   position: absolute;
+  inset: 0;
   background: #1a1a1c;
   /* ボードのカードと同じ角丸 (= --card-radius, 現在 20px) を使う。 直書きの 3px
      だと outerBand の縮小でほぼ 0 になり四角く見えた (session 96)。 var を使うので
@@ -96,6 +104,57 @@
   border-radius: var(--card-radius, 20px);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ---- Paper-atelier card face (mirror replica) ----
+   Exact values copied from ImageCard.module.css .paperCard / .paperPhoto /
+   .paperCaption (source of truth: components/board/cards/ImageCard.module.css).
+   Used only when themeId = 'paper-atelier' (isPaper gate in MirrorCardContent). */
+.paperCard {
+  position: absolute;
+  inset: 0;
+  background-color: #f7f1e3; /* fallback ivory if mat png absent */
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--card-radius, 3px);
+  border: 1px solid rgba(43, 39, 34, 0.14);
+  overflow: hidden;
+}
+
+.paperPhoto {
+  position: absolute;
+  inset: 6% 6% 22% 6%; /* --paper-frame-inset fallback */
+  overflow: hidden;
+  border-radius: 1px;
+  background: #f4eedd; /* --paper-window-bg fallback */
+  box-shadow: inset 0 0 0 1px rgba(43, 39, 34, 0.10), 0 1px 2px rgba(43, 39, 34, 0.14);
+}
+
+/* Thumbnail image inside the paper photo window. object-fit:contain so nothing
+   is cropped (matches ImageCard.module.css .paperPhoto img). */
+.paperThumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.paperCaption {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  bottom: 6%;
+  font-family: 'Yomogi', 'Caveat', cursive;
+  font-size: clamp(8px, 0.85vw, 11px);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: #4a443b; /* --text-body fallback */
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cardThumb {

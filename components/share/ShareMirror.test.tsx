@@ -58,6 +58,30 @@ describe('ShareMirror', () => {
     expect(cards.length).toBe(5)
   })
 
+  it('paper-atelier: renders exactly one [data-mirror-card-id] element per item (no wrapper double-count)', () => {
+    // The paper branch wraps each card in a .cardWrapper + inner .card. This guards
+    // that ONLY one of them carries [data-mirror-card-id] — otherwise the OG-capture
+    // fallback (lib/share/capture-mirror.ts) would double-count cards.
+    const { container } = render(
+      <ShareMirror
+        items={makeItems(5)}
+        positions={makePositions(5)}
+        bgViewportWidth={1200}
+        bgCanvasWidth={1218}
+        activeTagNames={[]}
+        totalBoardCount={5}
+        sharedCardCount={5}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        themeId="paper-atelier"
+        custom={null}
+      />,
+    )
+    const cards = container.querySelectorAll('[data-mirror-card-id]')
+    expect(cards.length).toBe(5)
+  })
+
   it('does NOT render any iframe (MOTION OFF guarantee)', () => {
     const { container } = render(
       <ShareMirror
@@ -281,5 +305,51 @@ describe('ShareMirror', () => {
     />)
     const rep = screen.getByTestId('mirror-canvas-replica') as HTMLElement
     expect(rep.style.backgroundImage).toContain('parchment-bg.png')
+  })
+
+  it('paper-atelier: shows mat shell ([data-paper-mat]) and PaperCardDecorations overlay', () => {
+    const { container } = render(
+      <ShareMirror
+        items={makeItems(3)}
+        positions={makePositions(3)}
+        bgViewportWidth={1200}
+        bgCanvasWidth={1218}
+        activeTagNames={[]}
+        totalBoardCount={3}
+        sharedCardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        themeId="paper-atelier"
+        custom={null}
+      />,
+    )
+    // Each paper card must have [data-paper-mat="true"] (the mat shell)
+    const mats = container.querySelectorAll('[data-paper-mat="true"]')
+    expect(mats.length).toBeGreaterThan(0)
+    // PaperCardDecorations must mount (data-testid="paper-card-decorations")
+    const decos = container.querySelectorAll('[data-testid="paper-card-decorations"]')
+    expect(decos.length).toBeGreaterThan(0)
+  })
+
+  it('non-paper theme (grid-paper): NO mat shell, NO PaperCardDecorations (default-parity guard)', () => {
+    const { container } = render(
+      <ShareMirror
+        items={makeItems(3)}
+        positions={makePositions(3)}
+        bgViewportWidth={1200}
+        bgCanvasWidth={1218}
+        activeTagNames={[]}
+        totalBoardCount={3}
+        sharedCardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        themeId="grid-paper"
+        custom={gridCustom}
+      />,
+    )
+    expect(container.querySelectorAll('[data-paper-mat="true"]').length).toBe(0)
+    expect(container.querySelectorAll('[data-testid="paper-card-decorations"]').length).toBe(0)
   })
 })
