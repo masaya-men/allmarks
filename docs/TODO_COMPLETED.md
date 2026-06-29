@@ -8087,3 +8087,36 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 検証: opus相当レビュー Approved（named risk 6点クリア、Important=テスト穴を dc4fe87 で解消＝Paper分岐の data-mirror-card-id 1個/カードを確認）。tsc clean / vitest 1816緑 / build OK / **live allmarks.app で Paper 3面スクショ確認 PASS**（プレビュー mat6+装飾6 / OG画像JPEG / 受信ページ）。
 
 副産物: Paper 素材の棚卸し完了（眠り在庫=形stamp3/語stamp7(過去user removed)/deckle-edge-mat/foxing）。ユーザー指定の Figma Community 素材の在処を `docs/private/IDEAS.md` + memory に保存（次セッションの Paper 品質アップ用、出荷前ライセンス確認要）。
+
+---
+
+## セッション 140 (2026-06-29〜30) — Paper 品質アップ続き: 台紙PNG高解像度化 + 装飾追加 + テキストカード紙化 + 影/メーター調整
+
+ユーザーと対話しながら Paper テーマの作り込みを進めた。全て `allmarks.app` 反映済・commit/push 済。tsc0 / vitest1816 / build OK、変更は全て paper-atelier scoped（default 無傷）。
+
+### ① カード台紙の高解像度化 + ユーザー選定素材の配線（前半・サマリ要約）
+- Figma Community「60+ Free Vintage Paper Textures」(CC BY 4.0) からユーザー選定6枚を高解像度 `card-mat-4/5` 等に差し替え、ImageCard / ShareMirror / PaperCardDecorations のプールに配線。ライセンスは `docs/paper-theme-asset-licenses.md` に記録（第三者メアド無し）。
+- ユーザー選定4素材（透明セロハンテープ×2 `washi-tape-10/11`・インク植物枝＋緑封蝋 `decor-sprig-1`・破れクラフト `decor-torn-kraft-1`）を切り出し、washi プール / board-decor 散布に配線。
+- 切り出しの教訓: 半透明の紙本体には連結成分ラベリングが効かない → 座標グリッドを重ねて矩形クロップで綺麗に切る方式に確定。
+
+### ② テキストカード（サムネ無し）を紙シート化 — `feat(paper)`
+- サムネ無しカードを Paper テーマで**方眼紙 / リングノート紙**として描画（`card-paper-graph` / `card-paper-notepad`、ChatGPT kit のユーザー所有素材）。タイトルは手書き Yomogi で中央、穴・スパイラルを避ける余白。
+- `PlaceholderCard` に `paper` prop 追加（CardsLayer が `meta.decorations` 時に渡す）。素材未配置なら従来の生成アートにフォールバック。クリップボードは切り出し失敗のためユーザー判断で不採用（方眼＋ノートのみ）。
+
+### ③ テキストカード紙の「明るいフチ」修正（2段階）
+- **第1段（マット除去）**: 紙を明るいクリーム背景から切ったためアンチエイリアスのフチが明るく（graph 83%/notepad 76%）、暗い Lightbox 背景で光っていた → 半透明フチを紙繊維色へ matte-decontaminate + 最薄(<14α)を透明化。明フチ 49%/41% に低減。
+- **第2段（真因＝四角い影板）**: ユーザー指摘「透明な四角い板が見える」。DOM 実測（祖先 computed style 全ダンプ）で確定 = `.cardNode` の**四角い box-shadow**（茶 rgba(43,39,34,0.2)）。紙は破れ形なのに影だけ四角く、暗背景では背景より明るく浮いて「板」に見えていた。→ paper-note カードのみ box-shadow を外し、**形に沿う `drop-shadow`** に置換（`:has([data-paper-note])`、`.cardNode` は overflow:hidden でないので影が切れない）。画像/台紙カードは四角いままで正しいので不変。暗背景 playwright で四角い板消失を確認。
+
+### ④ スクロールメーター: 木ルーラー検討 → 現状維持に決定
+- ユーザー要望で ChatGPT kit (9) から数字付き木ルーラー2種（A=細かい0-10-100 / B=あっさり0-25-50-75-100）を透過切り出し、自然アスペクトのまま使う比較ページ（localhost `/_review/ruler.html`）を作成。
+- **ユーザー判断: メーターは今のまま（木ルーラー不採用）**。代わりに**色味を少し濃く**（`RulerTrack` rail に `filter: brightness(.9) contrast(1.08) saturate(1.22)`）。比較ページ/一時素材は撤去。
+
+### ⑤ 立体感強化（影を強く濃く）— `feat(paper)`
+- ユーザー要望「ボード本体の影・台紙の影をもっと強く濃く」。色を `36,31,25` に暗く・濃度UP・影を長く：
+  - カード台紙 box-shadow（`.cardNode` paper）／ paper-note の drop-shadow ／ ボード紙パネル `.canvas` の lift、3箇所を強化。
+- playwright で盤面プレビュー → 台紙がはっきり浮くのを確認。影の強さは要ユーザー実機判断（更に濃く可）。
+
+### 次回への申し送り
+- **新規バグ（ユーザー報告・未対応）**: ボード中央上に「よくわからない線」がある（要調査）。
+- 影の強度はユーザー実機フィードバック待ち（控えめなら更に濃く・長く / ボードパネルは外側も明るいため出にくく、外側を暗くする等の案あり）。
+- **共有画像のテキストカード紙パリティ（ShareMirror）未対応**: 盤面はサムネ無し=方眼/ノート紙だが、ShareMirror は「台紙＋写真窓プレースホルダ」で見た目が異なる。要相談。

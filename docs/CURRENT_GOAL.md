@@ -1,25 +1,25 @@
-# 次セッションのゴール (= セッション 140)
+# 次セッションのゴール (= セッション 141)
 
-## 今の状態（セッション139で完了・master マージ + allmarks.app 反映済み）
+## 今の状態（セッション140で完了・allmarks.app 反映済み）
 
-**⑤ SHARE のテーマ化（全6タスク）** に加え、**Share プレビュー/OG画像の Paper カード一致**まで出荷完了。
+Paper テーマの作り込みをユーザー対話で継続。全て本番反映済・tsc0/vitest1816/build OK・default 無傷（paper-scoped）。
 
-- Share の3面（送信プレビュー・OG画像・受信ページ `/s/`）に送信者テーマ + カスタマイズが乗る（master `510b7bf`）。
-- **追加: Share レプリカの Paper カード一致**（master `c01fa3f`）。プレビュー/OG画像のカードに、本物と同じ**台紙(mat)・写真窓・serif キャプション・装飾（washi/ピン/クリップ/写真コーナー/アイコン印/封蝋）**が出る。装飾は本物 `PaperCardDecorations` を**再利用**、台紙は同じ決定的シードで一致。default(Sound Wave)・Grid は byte-identical。
-- **検証**: tsc clean / vitest **1816緑** / build OK / **live allmarks.app で Paper の3面（プレビュー6枚に mat+装飾／OG画像JPEG／受信ページ）スクショ確認 PASS**。
+- **台紙の高解像度化 + ユーザー選定素材配線**（Figma CC BY 4.0、透明テープ/枝+緑封蝋/破れクラフト）。ライセンスは `docs/paper-theme-asset-licenses.md`。
+- **テキストカード（サムネ無し）を方眼/ノート紙化**（`card-paper-graph/notepad`、Yomogi 手書き）。`PlaceholderCard.paper` prop。
+- **「四角い影板」修正**: paper-note の四角 box-shadow を**形に沿う drop-shadow** へ（`:has([data-paper-note])`）。DOM 実測で真因確定。
+- **メーターは現状維持**（木ルーラー不採用）+ 色味を少し濃く。
+- **立体感強化**: カード台紙 / paper-note / ボード紙パネルの3影を強く濃く。
 
-## 次にやる（user 希望の最優先）= Paper テーマの品質超アップ
+## 次にやる（セッション141・ユーザーと一緒に）
 
-**Figma Community 素材で Paper のクオリティを上げる**。Share はもう reuse ベースなので、素材を `lib/board/paper-assets.ts` に流し込めば**盤面・Share画像の両方に自動反映**（二度手間なし）。
-
-1. 素材の在処（Downloads・session139で user 指定。詳細は `docs/private/IDEAS.md` 末尾 + memory `reference_paper_asset_sources`）:
-   - `Scrapbook Diary Elements (Community)/`（36PNG）／ `透明テープ/`（55PNG）／ `60+ Free Vintage Paper Textures (Community).png`（355MB未カット）
-2. **出荷前にライセンス必須確認**: Figma「(Community)」はパックごとにライセンスが違う。`docs/marketing-asset-licenses.md` に倣って各パックの条文＋帰属要否を記録してから使う。
-3. 切り出し → `paper-assets.ts` マニフェスト + `PaperCardDecorations`/`pickPaperAsset`/`board-decor.ts` に配線。眠り在庫（deckle-edge-mat / foxing / スタンプ）の有効化も候補。
+1. **ボード中央上の「よくわからない線」を解消**（ユーザー報告 = 最優先）。まず DOM 実測で正体特定（TopHeader ナビ下のルール線 / パネル境界 / 装飾のどれか）→ 解消。TODO.md (N-08)。
+2. **影の強度をユーザー実機判断で微調整**（N-09）。もっと濃く/長く可。ボードパネルは外側も明るく影が出にくい→外側を少し暗くする/縁取り追加も選択肢。
+3. **共有画像テキストカードの紙パリティ**（N-10）を一致させるか相談・実装（ShareMirror に graph/notepad 描画を足す）。
 
 ## 残り（順次）
-⑥ マステ/ピン配置 ／ ⑦ チュートリアル PiP 紹介 ／ ⑧ 枠付きカードの使い道 ／ follow-up: 明色 BOARD のヘッダー色ハードコード ／ follow-up: OG画像の Google Fonts CORS（fallback でカバー）。
+Paper 品質: ⑥マステ/ピン配置 ／ ⑦チュートリアル PiP 紹介 ／ ⑧枠付きカードの使い道 ／ 眠り在庫（deckle-edge-mat/foxing/スタンプ）有効化 ／ follow-up: 明色 BOARD のヘッダー色ハードコード ／ OG画像の Google Fonts CORS（fallback でカバー）。
 
 ## 守ること（毎回）
 - default 盤面 byte-identical。deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy は `--project-name=allmarks --branch=master`。
+- playwright で board カードのクリックは setPointerCapture で不可。Lightbox は開かず祖先 computed style ダンプで調査する手が有効（session140 で実証）。
 - 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。応答は日本語。
