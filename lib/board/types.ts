@@ -143,6 +143,7 @@ export type ThemeCustomization = {
   readonly patternColor?: string   // pattern stroke / dot colour
   readonly patternType?: PatternType
   readonly patternSize?: number    // pattern spacing in px (density)
+  readonly titleColor?: string     // the hero background-typography wordmark colour
 }
 
 export type BoardConfig = {

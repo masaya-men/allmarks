@@ -11,7 +11,7 @@ import {
 import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
-import { resolveThemeCustomization, isDefaultCustomization } from '@/lib/board/theme-customization'
+import { resolveThemeCustomization, isDefaultCustomization, isLightColor } from '@/lib/board/theme-customization'
 import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
@@ -2039,7 +2039,16 @@ export function BoardRoot() {
   return (
     <div
       className={styles.outerFrame}
-      style={resolvedCustom ? ({ '--edge-color': resolvedCustom.edgeColor } as CSSProperties) : undefined}
+      style={resolvedCustom ? ({
+        '--edge-color': resolvedCustom.edgeColor,
+        '--bg-typo-color': resolvedCustom.titleColor,
+        // On a LIGHT edge, flip the edge-band chrome (wordmark / MOTION / count)
+        // to dark ink + a light stroke so it stays legible instead of vanishing
+        // white-on-white with a stray dark text-stroke outline.
+        ...(isLightColor(resolvedCustom.edgeColor)
+          ? { '--chrome-btn-color': 'rgba(24, 22, 20, 0.9)', '--chrome-btn-stroke-color': 'rgba(255, 255, 255, 0.45)' }
+          : {}),
+      } as CSSProperties) : undefined}
     >
       {/* Outer-frame chrome — AllMarks wordmark (top-left dark margin) linking
           to the marketing home, so users have a way back to the LP from the
@@ -2096,7 +2105,15 @@ export function BoardRoot() {
           live inside, so cursor pan never escapes the rounded frame.
           Phase 1A: canvas is now a grid (auto / 1fr) — TopHeader at top,
           canvasWrap holds the existing absolute-layered scroll/cards stage. */}
-      <div className={styles.canvas}>
+      <div
+        className={styles.canvas}
+        // The edge-band chrome override above cascades into here; reset it to the
+        // default light-on-dark chrome so the header + card chrome (which sit on
+        // the dark board, not the edge) keep their normal ink.
+        style={resolvedCustom && isLightColor(resolvedCustom.edgeColor)
+          ? ({ '--chrome-btn-color': 'rgba(255, 255, 255, 0.85)', '--chrome-btn-stroke-color': 'rgba(0, 0, 0, 0.45)' } as CSSProperties)
+          : undefined}
+      >
         <TopHeader
           hidden={!!lightboxItemId}
           actions={

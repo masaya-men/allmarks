@@ -9,7 +9,13 @@ export type ResolvedThemeCustomization = {
   readonly patternColor: string
   readonly patternType: PatternType
   readonly patternSize: number
+  readonly titleColor: string
 }
+
+/** The default hero-typography colour (= BoardBackgroundTypography's
+ *  --bg-typo-color fallback). Shared by both pattern themes so an untouched
+ *  Title is byte-identical. */
+const DEFAULT_TITLE_COLOR = 'rgba(255, 255, 255, 0.95)'
 
 /**
  * Per-theme DEFAULTS. These MUST equal the values hard-coded before this feature
@@ -26,6 +32,7 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     patternColor: 'rgba(255, 255, 255, 0.18)',
     patternType: 'none',
     patternSize: 40,
+    titleColor: DEFAULT_TITLE_COLOR,
   },
   'grid-paper': {
     edgeColor: '#0a0a0a',
@@ -33,6 +40,7 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     patternColor: 'rgba(255, 255, 255, 0.18)',
     patternType: 'grid',
     patternSize: 40,
+    titleColor: DEFAULT_TITLE_COLOR,
   },
 }
 
@@ -69,6 +77,7 @@ export function resolveThemeCustomization(
     patternColor: custom.patternColor ?? base.patternColor,
     patternType: custom.patternType ?? base.patternType,
     patternSize: custom.patternSize ?? base.patternSize,
+    titleColor: custom.titleColor ?? base.titleColor,
   }
 }
 
@@ -84,8 +93,31 @@ export function isDefaultCustomization(id: ThemeId, custom: ThemeCustomization |
     r.boardColor === base.boardColor &&
     r.patternColor === base.patternColor &&
     r.patternType === base.patternType &&
-    r.patternSize === base.patternSize
+    r.patternSize === base.patternSize &&
+    r.titleColor === base.titleColor
   )
+}
+
+/** Rough perceived-luminance test for a CSS colour (hex or rgb/rgba). Used to
+ *  flip edge-band chrome text to dark ink when the user picks a light edge (so
+ *  the wordmark / MOTION labels stay legible instead of vanishing white-on-white
+ *  with a stray dark text-stroke). Unknown formats default to "dark". */
+export function isLightColor(color: string): boolean {
+  let r = 0, g = 0, b = 0
+  const hex = color.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+  if (hex) {
+    const h = hex[1]
+    const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+    r = parseInt(full.slice(0, 2), 16)
+    g = parseInt(full.slice(2, 4), 16)
+    b = parseInt(full.slice(4, 6), 16)
+  } else {
+    const m = color.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i)
+    if (!m) return false
+    r = Number(m[1]); g = Number(m[2]); b = Number(m[3])
+  }
+  // Rec.601 luma; > ~0.6 reads as a light surface needing dark ink.
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6
 }
 
 /** Density slider bounds (pattern spacing in px). */
@@ -110,4 +142,12 @@ export const PATTERN_SWATCHES: ReadonlyArray<string> = [
   'rgba(40, 241, 0, 0.22)',
   'rgba(255, 196, 120, 0.20)',
   'rgba(120, 180, 255, 0.20)',
+]
+export const TITLE_SWATCHES: ReadonlyArray<string> = [
+  'rgba(255, 255, 255, 0.95)',
+  'rgba(255, 255, 255, 0.5)',
+  'rgba(255, 255, 255, 0.16)',
+  'rgba(40, 241, 0, 0.9)',
+  'rgba(255, 196, 120, 0.9)',
+  'rgba(120, 180, 255, 0.9)',
 ]

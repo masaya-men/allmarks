@@ -10,6 +10,7 @@ import {
   EDGE_SWATCHES,
   BOARD_SWATCHES,
   PATTERN_SWATCHES,
+  TITLE_SWATCHES,
 } from '@/lib/board/theme-customization'
 import styles from './ThemeCustomizeSection.module.css'
 
@@ -129,6 +130,7 @@ export function ThemeCustomizeSection({ value, isDefault, allowsPattern, onChang
 
       <ColorRow label="EDGE" swatches={EDGE_SWATCHES} active={value.edgeColor} onPick={(c): void => onChange({ edgeColor: c })} />
       <ColorRow label="BOARD" swatches={BOARD_SWATCHES} active={value.boardColor} onPick={(c): void => onChange({ boardColor: c })} />
+      <ColorRow label="TITLE" swatches={TITLE_SWATCHES} active={value.titleColor} onPick={(c): void => onChange({ titleColor: c })} />
 
       {allowsPattern && (
         <>

@@ -4,6 +4,7 @@ import {
   resolveThemeCustomization,
   isCustomizableTheme,
   isDefaultCustomization,
+  isLightColor,
 } from './theme-customization'
 
 describe('theme-customization', () => {
@@ -12,6 +13,16 @@ describe('theme-customization', () => {
     expect(d.edgeColor).toBe('#0a0a0a')
     expect(d.boardColor).toBe('#0a0a0a')
     expect(d.patternType).toBe('none')
+    expect(d.titleColor).toBe('rgba(255, 255, 255, 0.95)')
+  })
+
+  it('isLightColor flags light surfaces (for dark-ink chrome on a light edge)', () => {
+    expect(isLightColor('#ffffff')).toBe(true)
+    expect(isLightColor('#fff')).toBe(true)
+    expect(isLightColor('rgba(240, 240, 240, 1)')).toBe(true)
+    expect(isLightColor('#0a0a0a')).toBe(false)
+    expect(isLightColor('rgba(14, 14, 17, 1)')).toBe(false)
+    expect(isLightColor('garbage')).toBe(false)
   })
 
   it('Grid defaults match the old gridLines (#0e0e11 board, white grid @ 40px)', () => {
