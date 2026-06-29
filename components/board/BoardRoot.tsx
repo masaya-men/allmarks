@@ -1780,10 +1780,11 @@ export function BoardRoot() {
         ? { mode: activeFilter.mode, tagIds: activeFilter.tagIds }
         : null,
       now: Date.now(),
-      // Share theming is Plan 3 — until then a shared board renders the default
-      // theme. Forward DEFAULT_THEME_ID as a deliberate placeholder; the live
-      // themeId state is intentionally NOT used here yet.
-      themeId: DEFAULT_THEME_ID,
+      // Carry the live theme + its resolved customization so the shared board +
+      // OG image reproduce what the sender sees. resolvedCustom is null for fixed
+      // 'work' themes (Paper) — then themeId alone reproduces the look.
+      themeId,
+      custom: resolvedCustom ?? undefined,
       // Global masonry gap the sender sees. Per-card widths ride on each
       // card's `cw`; this is the only remaining global layout input the
       // receiver needs to reproduce the same arrangement.
@@ -1791,7 +1792,7 @@ export function BoardRoot() {
       // Sender's default card width so the receiver reconstructs board state.
       defaultWidth: cardWidthPx,
     })
-  }, [lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx, cardGapPx])
+  }, [lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx, cardGapPx, themeId, resolvedCustom])
 
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
