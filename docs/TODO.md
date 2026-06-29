@@ -21,6 +21,13 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 138 — ⑤SHARE のテーマ化を設計完了 + テーマパネル外側クリック修正 出荷)
+
+- **⑤SHARE のテーマ化**: ブレスト→調査(並列サブエージェント7体)→スパイク実証→spec→plan を完成、**実装は次セッション(139)でサブエージェント駆動**。方式 = **`dom-to-image` で「見えてる共有プレビューをスクショ」**(user 発案)。本物の画面を撮るのでテーマ100%乗る+未来テーマ全対応。Satori(業界標準サーバー描画)は ¥0/Cloudflare 上限の都合で見送り(将来案)。spec [2026-06-29-share-theming-screenshot-design.md](superpowers/specs/2026-06-29-share-theming-screenshot-design.md) / plan(6タスク全コード入り) [2026-06-29-share-theming-screenshot.md](superpowers/plans/2026-06-29-share-theming-screenshot.md)。
+- **スパイク収穫**: dom-to-image が過去捨てられた真因=盤面全体(300枚+動画)処理で5GB爆発→「見えてる枠だけ」で回避と判明(user 仮説が正しかった)。実測で Paper(本物紙PNG)まで完璧再現、唯一のキズ(格子横線)は単層SVGで対策。
+- **別件出荷**: テーマパネル(ThemeModal)を**外側クリックで閉じる**(document pointerdown・FilterPill 作法)。allmarks.app 反映済、vitest 1802緑、回帰テスト1本追加。
+- **注**: セッション 136-137 の成果(SETTINGS 再設計=テーマ別画面・右ドック非ブロッキングパネル / パターンテーマのカスタマイズ=縁/盤面/パターン色+柄+密度+Title色)は本番反映済だが本 TODO.md 現在状態には未追記だった。詳細は commit ログ / TODO_COMPLETED 参照。
+
 ### 直近の状態 (セッション 135 — paper-atelier ブラッシュアップ: バグ1＋台紙2＋パネル羊皮紙化5面 本番反映)
 
 - 3タスクを優先順どおり実装・全て `allmarks.app` 反映済。**tsc0 / vitest1790 / build OK、default(黒+音波) byte-identical**（全変更 paper-scoped、各 CSS は numstat deleted=0 の純追記で実証）。

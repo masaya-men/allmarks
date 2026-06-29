@@ -1,42 +1,30 @@
-# 次セッションのゴール (= セッション 137)
+# 次セッションのゴール (= セッション 139)
 
-## 今の状態（セッション136で完了・全て本番 `allmarks.app` 反映済み / commit+push 済み）
+## 今の状態（セッション138で完了・commit/push 済み）
 
-Paper/テーマ系のユーザー実機フィードバックを多数反映。tsc0 / vitest1791 / build OK。default(Sound Wave=黒+音波)は全変更 paper/grid-scoped で不変。
+**⑤ SHARE のテーマ化** を **ブレスト → 調査 → スパイク実証 → spec → plan** まで完成。**実装はまだ**（次セッションで着手）。
 
-セッション136 で shipped（4デプロイ）:
-1. **テーマ追従漏れクラスタ**: ①FilterPill ドロップダウン（黒箱→羊皮紙紙片＋墨、フォントも serif 化＝周囲と所帯統一）／②拡張のフローティングタグ strip（save-iframe が **third-party 埋め込みで localStorage 分離**のため暗かった → **IDB board-config からテーマを読む**よう修正、memory `reference_save_iframe_storage_partition`）／③PiP本体＋PiP内タグ窓（data-theme-id を PiP doc にスタンプ＋PiP CSS 4枚 paper override、user確認OK）。
-2. **テーマ名英語統一（全15言語）**: Sound Wave(既定・旧Dotted Notebook)／Grid／Paper Atelier。既定は選択肢に **DEFAULT バッジ**。
-3. **Grid テーマ刷新**: グリッドを**ビューポート固定層**に移設（旧: contentWidth=1963 の panned 層で center が盤面1393とズレ→左右非対称だった）。今は canvas 中央＝対称（端で左右16.5px）＋ **bg-position-y で 0.15x パララックス**（= paper 背景と同強度 `1−PAPER_PARALLAX_FACTOR`、**MOTION トグル無視で常時ON**・OS reduced-motion のみ尊重）。memory `reference_theme_bg_viewport_vs_content`。
+- **方式確定 = 「見えてる共有プレビューを `dom-to-image` でスクショ」**（user 発案・スパイクで実証）。本物の画面を撮るのでテーマが100%乗る＋未来のテーマ全部OK。Satori は ¥0 と Cloudflare 上限の都合で**見送り**（将来オプション、根拠は spec §3）。
+- なぜ過去に dom-to-image が捨てられたか履歴で確認 = **盤面全体(300枚＋動画)を処理して爆発**＝「見えてる枠だけ」なら回避できる、と判明。スパイクで Paper(本物紙PNG)まで完璧再現を確認。唯一のキズ(格子の横線)は単層SVGで対策。
+- 設計書: [docs/superpowers/specs/2026-06-29-share-theming-screenshot-design.md](superpowers/specs/2026-06-29-share-theming-screenshot-design.md)
+- 実装計画: [docs/superpowers/plans/2026-06-29-share-theming-screenshot.md](superpowers/plans/2026-06-29-share-theming-screenshot.md)（6タスク・全コード入り）
+- **別件で出荷済**: テーマパネルの**外側クリックで閉じる**修正（allmarks.app 反映済。ThemeModal.tsx + 新規テスト、vitest 1802 緑）。
 
-## 次にやる（user と合意済みの順番: ④ → ⑤）
+## 次にやる（最優先）
 
-### 1. 【最優先】④ SETTINGS 再設計（方向B確定 = テーマを別枠に）
-user が具体構成を提示済み。横幅広げてグループ＋ラベル化:
-```
-保存設定   : 保存時にすぐタグ付け [ON/OFF]
-テーマ     : テーマを選ぶ [ボタン → 専用テーマ画面]
-使い方     : ブックマークレットで保存 / チュートリアルを見る
-拡張機能   : 拡張機能の詳細設定を開く
-```
-- **Phase 1**: ドロワーをグループ化＋横幅拡大、THEMES を「テーマを選ぶ」ボタンに置換 → クリックで**専用テーマギャラリー**（大きいスウォッチ）。これでドロワーが本来高さに戻り **s136 で判明したスクロール溢れ（中身745px>上限520px、下227px切れ）も解消**。実装は `components/board/ExtensionEntry.tsx`＋`.module.css`、`ThemePicker.tsx` を切り出し/モーダル化。
-- **Phase 2**: テーマギャラリーに「**今の盤面を SHARE ボード風に切り取ったライブプレビュー**」（user 提案）。盤面レンダリング流用が要るので Phase 1 の後。
-- **Phase 3 ＝ パターンテーマのカスタマイズ（user が④に畳み込み希望・2026-06-26）**: テーマを2系統に分ける ―「作品」テーマ（Paper/将来SF軍事は全固定）と「パターン」テーマ（Sound Wave/Grid はカスタム可）。盤面は**独立3レイヤー**（縁`.outerFrame` / 本体`.canvas` / パターン層）で、それぞれ色を CSS変数（`--edge-color`/`--board-color`/`--pattern-color`）に切り出して可変化。パターン種類（格子/斜め45deg/ドット/クロスハッチ=純CSS、複雑系=SVGパターン nucleoapp）・密度・線幅も選択。保存は board-config に per-theme カスタム値。テーマ専用画面に「カスタマイズ」セクションを組み込む（パターンテーマ選択時のみ）。**default(Sound Wave)は無変更時 byte-identical を維持**。詳細は `docs/private/IDEAS.md`「2026-06-26 パターンテーマのカスタマイズ構想」。
-
-### 2. ⑤ SHARE のテーマ化（Plan 3・バイラル核）
-user 指摘: SHARE は**背景色しか変わらず、台紙/マステ/装飾が乗っていない**＝「バイラルが生まれない」。共有レンダリング（A盤面スナップ＋B OGサムネ）に paper の素材を乗せる。原因調査（装飾レイヤーが共有レンダリングに含まれていない等）から。`components/share/SharedBoard.tsx`、共有エンコード/レンダリング経路を追う。
-
-### 3. 残り（順次）
-- **②拡張strip の実機検証**: user が拡張をリロード→ペーパーで保存して確認待ち。まだ暗ければ IDB が拡張コンテキストから読めているか診断ログを仕込む。
-- **⑥マステ/ピンを意味のある位置に**（カードとボードに半分跨ぐ・上下で留める等、貼られて見える配置）。
-- **⑦チュートリアルに PiP 紹介＋PiP に URL コピペで保存できる説明の超リッチアニメ**（IDEAS.md 確認してから）。
-- **⑧枠付きカード（16:08 古紙フレーム(1)）の使い道を決める**（cover で壊れるのでオーバーレイ層 or 専用モード、user と決める）。
+**⑤の実装を サブエージェント駆動で Task 1 から実行**（user 合意 2026-06-29）。各タスク TDD・独立出荷可能。
+1. **Task 1**: 共有データ `ShareDataV2` に `custom` フィールド（型＋Zod＋board-to-share）
+2. **Task 2**: 送信時に本物の `themeId` + `custom`（[BoardRoot.tsx:1786](../components/board/BoardRoot.tsx#L1786) の DEFAULT 固定を外す）
+3. **Task 3**: 単層パターン SVG ヘルパ（dom-to-image の横線落ち対策）
+4. **Task 4**: 受信ページ `/s/` のテーマ適用（`<html data-theme-id>` + patternLayer）← 早期の見える成果
+5. **Task 5**: ShareMirror プレビューのテーマ化（pattern + paper）
+6. **Task 6**: dom-to-image で OG画像生成（visible-only キャプチャ + 従来canvasへ fallback）
 
 ## 守ること（毎回）
-- default(Sound Wave/dotted-notebook)は **byte-identical**。全 paper/grid 変更は scoped（`:global(html[data-theme-id='...'])` か `themeId===` 分岐）。
-- deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy は `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true --commit-message="ASCII"`。応答は日本語。**視覚は user 直接確認**（PiP/拡張は headless 不可、テーマ名/Grid は playwright で UI クリック切替して計測）。
-- **UI見た目変更は承認フロー**（現状→案→承認→実装）。テーマ名/設計は英語 globally-clear。
-- 既知フレーキー: `tests/lib/channel.test.ts`（単独では緑、再実行で pass）。
+- **default(Sound Wave=dotted-notebook) は live 盤面 byte-identical**。変更は share/capture スコープのみ（.module.css の default は触らない）。
+- **¥0**（クライアント生成・`functions/api/share/*` 無変更）。deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。
+- dom-to-image は **Safari で要確認**（失敗時は fallback=従来canvas が保険）。
+- 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。応答は日本語、UI見た目変更は承認フロー。
 
-## 実機検証レシピ（playwright・テーマ切替は UI クリックで）
-dev `pnpm dev`(:3000)。viewport `1489×679` dpr2。`/board` を待ち → IDB に `bookmarks` ダミー（thumbnail付）seed → reload → `extension-settings-wrap` を hover → `theme-button-<id>` をクリックでテーマ確実切替（**IDB board-config の直接 seed はタイミングで切替らないことがある**）。DB名 `booklage-db`。grid 層は `[class*="gridLines"]`（ビューポート固定・canvas中央）。スクリプトはプロジェクト直下に `_x.mjs` で書いて `node` 実行後に削除。
+## 残り（⑤の後・順次）
+⑥ マステ/ピン配置 ／ ⑦ チュートリアル PiP 紹介 ／ ⑧ 枠付きカードの使い道 ／ follow-up: 明色 BOARD のヘッダー色ハードコード対応。
