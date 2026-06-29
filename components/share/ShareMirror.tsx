@@ -1,12 +1,29 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactElement, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactElement, type ReactNode, type RefObject } from 'react'
 import { BOARD_INNER, BOARD_TOP_PAD_PX, CANVAS_MARGIN_PX } from '@/lib/board/constants'
 import { pickPlaceholderImage } from '@/lib/board/placeholder-image'
 import type { ThemeId } from '@/lib/board/types'
 import { patternSvgDataUri } from '@/lib/board/theme-customization'
 import type { ShareCustomization } from '@/lib/share/types-v2'
+import { getThemeMeta } from '@/lib/board/theme-registry'
+import { paperAssetUrl, pickPaperAsset } from '@/lib/board/paper-assets'
+import { PaperCardDecorations } from '@/components/board/decorations/PaperCardDecorations'
 import styles from './ShareMirror.module.css'
+
+/**
+ * FNV-1a 32-bit hash → stable 0..1 fraction. Matches the same function
+ * inlined in ImageCard.tsx so ShareMirror picks the IDENTICAL mat variant
+ * for the same cardId.
+ */
+function seedFractionFromId(id: string): number {
+  let h = 0x811c9dc5
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return (h >>> 0) / 0x100000000
+}
 
 export type MirrorItem = {
   readonly id: string         // = bookmarkId, for position lookup
@@ -122,7 +139,7 @@ export function ShareMirror({
   const tagText = activeTagNames.map((s): string => s.toLowerCase()).join(' · ')
 
   const PARCHMENT = "url('/themes/paper-atelier/parchment-bg.png')"
-  const isPaper = themeId === 'paper-atelier'
+  const isPaper = getThemeMeta(themeId).decorations === true
   const edgeStyle: CSSProperties = isPaper
     ? { backgroundColor: '#e9dfc8', backgroundImage: PARCHMENT, backgroundSize: 'cover' }
     : { backgroundColor: custom?.edgeColor ?? '#0a0a0a' }
@@ -171,6 +188,27 @@ export function ShareMirror({
             {items.map((item): ReactElement | null => {
               const pos = positions.find((p) => p.id === item.id)
               if (!pos) return null
+              // For paper theme: wrap card + decorations in a non-clipping
+              // container (mirrors how CardsLayer places PaperCardDecorations
+              // OUTSIDE the card's overflow:hidden box so tape/pins overhang).
+              if (isPaper) {
+                return (
+                  <div
+                    key={item.url}
+                    className={styles.cardWrapper}
+                    style={{ left: pos.x, top: pos.y, width: pos.w, height: pos.h }}
+                  >
+                    <div
+                      className={styles.card}
+                      data-mirror-card-id={item.url}
+                      style={{ width: '100%', height: '100%' }}
+                    >
+                      <MirrorCardContent item={item} isPaper />
+                    </div>
+                    <PaperCardDecorations cardId={item.id} />
+                  </div>
+                )
+              }
               return (
                 <div
                   key={item.url}
@@ -178,7 +216,7 @@ export function ShareMirror({
                   data-mirror-card-id={item.url}
                   style={{ left: pos.x, top: pos.y, width: pos.w, height: pos.h }}
                 >
-                  <MirrorCardContent item={item} />
+                  <MirrorCardContent item={item} isPaper={false} />
                 </div>
               )
             })}
@@ -210,10 +248,57 @@ export function ShareMirror({
  *  `crossOrigin="anonymous"` requests fail to display). Placeholder = one of
  *  the abstract images in public/placeholders/ picked deterministically by
  *  URL hash, with the card's title centred over a dark scrim that fades at
- *  the bottom edge so long tweet bodies trail off gracefully. */
-function MirrorCardContent({ item }: { readonly item: MirrorItem }): ReactElement {
+ *  the bottom edge so long tweet bodies trail off gracefully.
+ *
+ *  When `isPaper` is true, renders the paper-atelier card face: deterministic
+ *  mat backing (same seed as ImageCard.tsx), mounted-photo inset (.paperPhoto),
+ *  and a serif ink caption (.paperCaption). */
+function MirrorCardContent({ item, isPaper = false }: { readonly item: MirrorItem; readonly isPaper?: boolean }): ReactElement {
   const [imgFailed, setImgFailed] = useState<boolean>(false)
   const showPlaceholder = !item.thumbnailUrl || imgFailed
+
+  // --- Paper mat shell ---
+  if (isPaper) {
+    const matId = pickPaperAsset(
+      seedFractionFromId(item.id),
+      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged', 'card-mat-lined', 'card-mat-grid'],
+    )
+    const matUrl = matId ? paperAssetUrl(matId) : null
+    const thumbContent: ReactNode = showPlaceholder ? (
+      // Placeholder inside the paper photo window
+      <div
+        className={styles.cardPlaceholder}
+        style={{ position: 'absolute', inset: 0, borderRadius: 0 }}
+      >
+        <div className={styles.cardPlaceholderScrim} aria-hidden="true" />
+        <div className={styles.cardPlaceholderTitle}>{item.title}</div>
+      </div>
+    ) : (
+      <img
+        src={item.thumbnailUrl ?? ''}
+        alt=""
+        className={styles.paperThumb}
+        crossOrigin="anonymous"
+        loading="eager"
+        draggable={false}
+        onError={(): void => setImgFailed(true)}
+      />
+    )
+    return (
+      <div
+        className={styles.paperCard}
+        data-paper-mat="true"
+        style={matUrl ? { backgroundImage: `url("${matUrl}")` } : undefined}
+      >
+        <div className={styles.paperPhoto}>
+          {thumbContent}
+        </div>
+        {item.title && <div className={styles.paperCaption}>{item.title}</div>}
+      </div>
+    )
+  }
+
+  // --- Default (non-paper) card content ---
   if (showPlaceholder) {
     const placeholder = pickPlaceholderImage(item.url)
     return (
