@@ -47,6 +47,11 @@ const DECOR_CATEGORIES: readonly DecorCategory[] = [
   { ids: ['decor-ring-1', 'decor-ring-2', 'decor-ring-coffee'], weight: 3, width: [56, 130], opacity: [0.4, 0.6], rotate: 40 },
   // flourishes → faint short ink lines drifting across the sheet.
   { ids: ['decor-flourish-1', 'decor-flourish-2', 'decor-flourish-3'], weight: 2, width: [80, 180], opacity: [0.32, 0.5], rotate: 28 },
+  // session 140 — ink botanical sprig sealed with green wax (user pick). Tall +
+  // delicate; occasional, a touch crisper than the line flourishes so it reads.
+  { ids: ['decor-sprig-1'], weight: 1, width: [70, 132], opacity: [0.42, 0.58], rotate: 26 },
+  // torn-kraft scrap (user pick) → small collage paper drifting in the wash.
+  { ids: ['decor-torn-kraft-1'], weight: 2, width: [92, 188], opacity: [0.46, 0.64], rotate: 52 },
   // small accents — wax seals + icon stamps. NO word/text stamps (ARCHIVE etc.):
   // on a card they get mistaken for tags, and even loose they read as labels.
   {

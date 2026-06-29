@@ -52,6 +52,8 @@ export function PaperCardDecorations({
         const id = pickPaperAsset(w.assetSeed, [
           'washi-tape-1', 'washi-tape-2', 'washi-tape-3', 'washi-tape-4', 'washi-tape-5',
           'washi-tape-6', 'washi-tape-7', 'washi-tape-8', 'washi-tape-9',
+          // session 140 — clear cellophane tapes (user pick)
+          'washi-tape-10', 'washi-tape-11',
         ])
         return (
           <span

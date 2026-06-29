@@ -261,7 +261,7 @@ function MirrorCardContent({ item, isPaper = false }: { readonly item: MirrorIte
   if (isPaper) {
     const matId = pickPaperAsset(
       seedFractionFromId(item.id),
-      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged', 'card-mat-lined', 'card-mat-grid'],
+      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged', 'card-mat-4', 'card-mat-5', 'card-mat-lined', 'card-mat-grid'],
     )
     const matUrl = matId ? paperAssetUrl(matId) : null
     const thumbContent: ReactNode = showPlaceholder ? (

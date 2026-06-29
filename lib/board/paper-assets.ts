@@ -16,6 +16,11 @@ export type PaperAssetId =
   // session 135 — ruled / graph paper mats (cut from master sheet section 2,
   // upscaled). Solid repeating textures that survive background-size:cover.
   | 'card-mat-lined' | 'card-mat-grid'
+  // session 140 — real photographed vintage-paper mats (Figma Community
+  // "60+ Free Vintage Paper Textures", CC BY 4.0). High-res replacements for
+  // the earlier low-res generated mats, plus two extra variants for richer
+  // per-card variety. All solid (no torn/deckle edge) so they survive cover.
+  | 'card-mat-4' | 'card-mat-5'
   | 'washi-tape-1' | 'washi-tape-2' | 'washi-tape-3' | 'washi-tape-4' | 'washi-tape-5'
   | 'push-pin-gold' | 'push-pin-green' | 'paper-clip'
   | 'photo-corner-1' | 'photo-corner-2' | 'photo-corner-3' | 'photo-corner-4'
@@ -26,6 +31,11 @@ export type PaperAssetId =
   | 'deckle-edge-mat' | 'paper-foxing-overlay'
   // session 133 brushup 4 — richer parts (sheets 9/10)
   | 'washi-tape-6' | 'washi-tape-7' | 'washi-tape-8' | 'washi-tape-9'
+  // session 140 — user-picked Scrapbook Diary Elements (CC BY 4.0). Clear
+  // cellophane tapes (washi pool), an ink botanical sprig sealed with green
+  // wax (scatter flourish), and a torn-kraft scrap (scatter accent).
+  | 'washi-tape-10' | 'washi-tape-11'
+  | 'decor-sprig-1' | 'decor-torn-kraft-1'
   | 'stamp-archive' | 'stamp-confidential' | 'stamp-top-secret'
   | 'stamp-received' | 'stamp-classified' | 'stamp-confidential-red' | 'stamp-approved'
   | 'icon-star' | 'icon-heart' | 'icon-check' | 'icon-x' | 'icon-excl' | 'icon-question'
@@ -48,6 +58,7 @@ export const PAPER_ASSETS: Readonly<Record<PaperAssetId, boolean>> = {
   'ink-splat-1': true, 'ink-splat-2': true, 'ink-splat-3': true,
   'card-mat-1': true, 'card-mat-2': true, 'card-mat-3': true, 'card-mat-aged': true,
   'card-mat-lined': true, 'card-mat-grid': true,
+  'card-mat-4': true, 'card-mat-5': true,
   'washi-tape-1': true, 'washi-tape-2': true, 'washi-tape-3': true,
   'washi-tape-4': true, 'washi-tape-5': true,
   'push-pin-gold': true, 'push-pin-green': true, 'paper-clip': true,
@@ -58,6 +69,8 @@ export const PAPER_ASSETS: Readonly<Record<PaperAssetId, boolean>> = {
   'ruler-meter-thumb': true, 'ruler-meter-thumb-2': true,
   'deckle-edge-mat': true, 'paper-foxing-overlay': true,
   'washi-tape-6': true, 'washi-tape-7': true, 'washi-tape-8': true, 'washi-tape-9': true,
+  'washi-tape-10': true, 'washi-tape-11': true,
+  'decor-sprig-1': true, 'decor-torn-kraft-1': true,
   'stamp-archive': true, 'stamp-confidential': true, 'stamp-top-secret': true,
   'stamp-received': true, 'stamp-classified': true, 'stamp-confidential-red': true, 'stamp-approved': true,
   'icon-star': true, 'icon-heart': true, 'icon-check': true, 'icon-x': true, 'icon-excl': true, 'icon-question': true,
