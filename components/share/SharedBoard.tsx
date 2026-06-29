@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type ReactElement,
 } from 'react'
 import { useRouter } from 'next/navigation'
@@ -18,6 +19,8 @@ import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
 import { computeSkylineLayout, type SkylineCard, type SkylineResult } from '@/lib/board/skyline-layout'
 import { BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_INNER } from '@/lib/board/constants'
 import { DEFAULT_THEME_ID, getThemeMeta } from '@/lib/board/theme-registry'
+import { resolveThemeCustomization, patternSvgDataUri } from '@/lib/board/theme-customization'
+import themeStyles from '@/components/board/themes.module.css'
 import type { PresetId } from '@/lib/board/tune-presets'
 import { PRESETS } from '@/lib/board/tune-presets'
 import { detectUrlType } from '@/lib/utils/url'
@@ -319,6 +322,15 @@ export function SharedBoard(): ReactElement {
     return (): void => window.clearTimeout(t)
   }, [importPhase, router, importCounts])
 
+  // ── theme: mirror the board's html[data-theme-id] so globals.css blocks apply ──
+  useEffect((): (() => void) => {
+    if (typeof document === 'undefined') return (): void => undefined
+    const el = document.documentElement
+    const tid = state.kind === 'ready' ? (state.data.theme ?? DEFAULT_THEME_ID) : DEFAULT_THEME_ID
+    el.setAttribute('data-theme-id', tid)
+    return (): void => { el.removeAttribute('data-theme-id') }
+  }, [state])
+
   // ── re-share (Plan 2): build a fresh share payload from the cards the
   // receiver currently sees (after × removals + TUNE width/gap). Reuses the
   // real sender builder so capping / truncation / tag-dict rebuild / type
@@ -418,6 +430,22 @@ export function SharedBoard(): ReactElement {
 
       {/* Inner dark canvas — reuses the board's rounded dark stage. */}
       <div className={frame.canvas}>
+        {(() => {
+          const rc = resolveThemeCustomization(themeId, data.custom)
+          if (!rc) return null // 'work' theme (Paper) — globals.css blocks handle it
+          return (
+            <div
+              aria-hidden="true"
+              className={themeStyles.patternLayer}
+              data-pattern={rc.patternType}
+              style={{
+                backgroundColor: rc.boardColor,
+                backgroundImage: patternSvgDataUri(rc) ? `url("${patternSvgDataUri(rc)}")` : undefined,
+                backgroundSize: `${rc.patternSize}px ${rc.patternSize}px`,
+              } as CSSProperties}
+            />
+          )
+        })()}
         <TopHeader
           hidden={!!lightboxSourceId}
           actions={
