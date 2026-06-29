@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
-import type { ShareDataV2 } from '@/lib/share/types-v2'
+import type { ShareDataV2, ShareCustomization } from '@/lib/share/types-v2'
+import type { ThemeId } from '@/lib/board/types'
 import styles from './SenderShareModal.module.css'
 import { captureMirrorToWebP } from '@/lib/share/capture-mirror'
 import { createShare } from '@/lib/share/api-client'
@@ -44,6 +45,10 @@ type Props = {
   readonly bgTypoEnabled?: boolean
   /** The background typography string (= deriveBoardBgTypoText). Empty hides it. */
   readonly bgTypoText?: string
+  /** Active theme id — passed through to ShareMirror for surface theming. */
+  readonly themeId: ThemeId
+  /** Resolved customization for pattern themes; null for fixed 'work' themes. */
+  readonly custom: ShareCustomization | null
 }
 
 export function SenderShareModal({
@@ -62,6 +67,8 @@ export function SenderShareModal({
   bgCanvasWidth,
   bgTypoEnabled = true,
   bgTypoText = '',
+  themeId,
+  custom,
 }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
@@ -160,6 +167,8 @@ export function SenderShareModal({
             viewportHeight={viewportHeight}
             bgTypoText={bgTypoEnabled ? bgTypoText : ''}
             frameRef={mirrorFrameRef}
+            themeId={themeId}
+            custom={custom}
           />
         </div>
 

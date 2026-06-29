@@ -2468,6 +2468,8 @@ export function BoardRoot() {
         open={shareModalOpen}
         onClose={(): void => setShareModalOpen(false)}
         getShareData={buildShareData}
+        themeId={themeId}
+        custom={resolvedCustom}
         totalBoardCount={lightboxNavItems.length}
         scrollY={viewport.y}
         contentHeight={matchedBookmarkIds == null

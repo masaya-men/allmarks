@@ -48,6 +48,8 @@ const defaultMirrorProps = {
   positions: makePositions(3),
   bgViewportWidth: 1200,
   bgCanvasWidth: 1218,
+  themeId: 'dotted-notebook' as const,
+  custom: null,
 }
 
 beforeEach(() => {
@@ -89,6 +91,8 @@ describe('SenderShareModal', () => {
         positions={makePositions(5)}
         bgViewportWidth={1200}
         bgCanvasWidth={1218}
+        themeId="dotted-notebook"
+        custom={null}
       />,
     )
     expect(queryByTestId('mirror-frame')).toBeTruthy()

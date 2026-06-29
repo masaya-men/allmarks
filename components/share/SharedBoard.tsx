@@ -580,6 +580,8 @@ export function SharedBoard(): ReactElement {
         bgCanvasWidth={containerWidth + 2 * BOARD_INNER.SIDE_PADDING_PX}
         bgTypoEnabled={bgTypoEnabled}
         bgTypoText="SHARED WITH YOU"
+        themeId={themeId}
+        custom={resolveThemeCustomization(themeId, data.custom)}
       />
     </div>
   )
