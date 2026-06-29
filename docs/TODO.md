@@ -21,12 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 138 — ⑤SHARE のテーマ化を設計完了 + テーマパネル外側クリック修正 出荷)
+### 直近の状態 (セッション 139 — ⑤SHARE のテーマ化を全6タスク実装・出荷完了)
 
-- **⑤SHARE のテーマ化**: ブレスト→調査(並列サブエージェント7体)→スパイク実証→spec→plan を完成、**実装は次セッション(139)でサブエージェント駆動**。方式 = **`dom-to-image` で「見えてる共有プレビューをスクショ」**(user 発案)。本物の画面を撮るのでテーマ100%乗る+未来テーマ全対応。Satori(業界標準サーバー描画)は ¥0/Cloudflare 上限の都合で見送り(将来案)。spec [2026-06-29-share-theming-screenshot-design.md](superpowers/specs/2026-06-29-share-theming-screenshot-design.md) / plan(6タスク全コード入り) [2026-06-29-share-theming-screenshot.md](superpowers/plans/2026-06-29-share-theming-screenshot.md)。
-- **スパイク収穫**: dom-to-image が過去捨てられた真因=盤面全体(300枚+動画)処理で5GB爆発→「見えてる枠だけ」で回避と判明(user 仮説が正しかった)。実測で Paper(本物紙PNG)まで完璧再現、唯一のキズ(格子横線)は単層SVGで対策。
-- **別件出荷**: テーマパネル(ThemeModal)を**外側クリックで閉じる**(document pointerdown・FilterPill 作法)。allmarks.app 反映済、vitest 1802緑、回帰テスト1本追加。
-- **注**: セッション 136-137 の成果(SETTINGS 再設計=テーマ別画面・右ドック非ブロッキングパネル / パターンテーマのカスタマイズ=縁/盤面/パターン色+柄+密度+Title色)は本番反映済だが本 TODO.md 現在状態には未追記だった。詳細は commit ログ / TODO_COMPLETED 参照。
+- **⑤SHARE のテーマ化 = 完了・allmarks.app 反映済**（master `510b7bf`、feature ブランチ no-ff マージ）。3面（送信プレビュー・OG画像・受信ページ `/s/`）すべてに送信者のテーマ + カスタマイズ（縁/盤面/パターン色+柄+密度+Title色）が乗る。サブエージェント駆動 + TDD + 各タスク独立レビュー + opus 最終 whole-branch レビュー。
+- **方式**: `ShareDataV2` に `custom` → 送信時に live `themeId`+`resolvedCustom`（DEFAULT placeholder を撤去）→ OG画像は **visible-only な themed ShareMirror を `dom-to-image` でスクショ**（盤面全体処理を避けメモリ安全、失敗時は従来 canvas へ自動 fallback で共有は絶対壊れない）→ 受信ページは `<html data-theme-id>` + 単層SVG patternLayer（dom-to-image が積層gradient片方向を落とす対策）。
+- **検証**: tsc clean / vitest **1813緑** / build OK / **live allmarks.app で Grid 受信ページ実測 PASS**（patternLayer height 583px・SVGグリッド描画）。default(Sound Wave) byte-identical（.module.css 無編集・inline only）、¥0（サーバー無変更）。
+- **最終レビューで発見・修正した統合バグ**: 受信 patternLayer に position 指定が無く Grid が不可視（height 0）だった → BoardRoot と同形に修正（position:absolute/inset:0/zIndex:THEME_BG/pointerEvents:none）+ 退行ガードテスト追加。
+- **follow-up（軽微）**: OG画像生成時の Google Fonts CORS（dom-to-image、現状 fallback でカバー・要観察）。
+- 詳細 narrative は TODO_COMPLETED.md 参照。
 
 ### 直近の状態 (セッション 135 — paper-atelier ブラッシュアップ: バグ1＋台紙2＋パネル羊皮紙化5面 本番反映)
 
