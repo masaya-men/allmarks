@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import { itemSkylineHeight } from './cards'
 import { computeFocusScrollY } from '@/lib/board/scroll-to-card'
@@ -10,7 +10,8 @@ import {
 } from '@/lib/board/theme-registry'
 import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
-import type { ThemeId } from '@/lib/board/types'
+import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
+import { resolveThemeCustomization, isDefaultCustomization } from '@/lib/board/theme-customization'
 import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
@@ -175,6 +176,10 @@ export function BoardRoot() {
       return DEFAULT_THEME_ID
     }
   })
+  // Per-theme customizations for 'pattern' themes (edge/board/pattern colour +
+  // pattern type/density). Hydrated from BoardConfig; absent key = theme defaults.
+  const [themeCustomizations, setThemeCustomizations] =
+    useState<Partial<Record<ThemeId, ThemeCustomization>>>({})
   // While the onboarding tag scene is active, force the hover-gated card +TAG
   // button visible (the user can't hover precisely through the spotlight hole).
   const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
@@ -649,6 +654,7 @@ export function BoardRoot() {
       setDisplayMode(cfg.displayMode)
       setBgTypoEnabled(cfg.bgTypoEnabled)
       setThemeId(resolveThemeId(cfg.themeId, EMPTY_LICENSES))
+      setThemeCustomizations(cfg.themeCustomizations ?? {})
       const prefersReduced =
         typeof window !== 'undefined' &&
         window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
@@ -1659,6 +1665,35 @@ export function BoardRoot() {
     })()
   }, [])
 
+  // Effective (defaults + overrides) customization for the active theme, or null
+  // for fixed 'work' themes. Drives the board's edge/board/pattern CSS vars.
+  const resolvedCustom = useMemo(
+    () => resolveThemeCustomization(themeId, themeCustomizations[themeId]),
+    [themeId, themeCustomizations],
+  )
+
+  // Merge a partial customization into the active theme + persist. An empty
+  // patch from the panel's "reset" clears the theme back to its defaults.
+  const handleCustomizeTheme = useCallback(
+    (patch: ThemeCustomization | null): void => {
+      setThemeCustomizations((prev) => {
+        const next: Partial<Record<ThemeId, ThemeCustomization>> = { ...prev }
+        if (patch === null) {
+          delete next[themeId]
+        } else {
+          next[themeId] = { ...prev[themeId], ...patch }
+        }
+        void (async (): Promise<void> => {
+          const db = await initDB()
+          const cfg = await loadBoardConfig(db)
+          await saveBoardConfig(db, { ...cfg, themeCustomizations: next })
+        })()
+        return next
+      })
+    },
+    [themeId],
+  )
+
   const handleToggleMotion = useCallback((): void => {
     setMotionEnabled((prev) => {
       const next = !prev
@@ -2002,7 +2037,10 @@ export function BoardRoot() {
   }, [isLightboxMode, lightboxNavItems.length, handleLightboxJump, handleScrollMeterJump, meterScrollableHeight])
 
   return (
-    <div className={styles.outerFrame}>
+    <div
+      className={styles.outerFrame}
+      style={resolvedCustom ? ({ '--edge-color': resolvedCustom.edgeColor } as CSSProperties) : undefined}
+    >
       {/* Outer-frame chrome — AllMarks wordmark (top-left dark margin) linking
           to the marketing home, so users have a way back to the LP from the
           board. Session 130: restored as wordmark-only (the bottom marketing
@@ -2147,17 +2185,21 @@ export function BoardRoot() {
                 left/right edges cut symmetrically regardless of content width.
                 It parallaxes vertically via background-position-y (= the grid's
                 drift) so it floats behind the cards instead of sitting glued. */}
-            {themeId === 'grid-paper' && (
+            {themeMeta.kind === 'pattern' && resolvedCustom && (
               <div
                 aria-hidden="true"
-                className={themeStyles.gridLines}
+                className={themeStyles.patternLayer}
+                data-pattern={resolvedCustom.patternType}
                 style={{
                   position: 'absolute',
                   inset: 0,
                   zIndex: BOARD_Z_INDEX.THEME_BG,
                   pointerEvents: 'none',
                   backgroundPosition: `center ${-gridBgPanY}px`,
-                }}
+                  '--board-color': resolvedCustom.boardColor,
+                  '--pattern-color': resolvedCustom.patternColor,
+                  '--pattern-size': `${resolvedCustom.patternSize}px`,
+                } as CSSProperties}
               />
             )}
             {/* Background — full canvas coverage, follows scroll. Paper-atelier
@@ -2373,6 +2415,9 @@ export function BoardRoot() {
         onClose={(): void => setThemeModalOpen(false)}
         themeId={themeId}
         onThemeChange={handleThemeChange}
+        customization={resolvedCustom}
+        isDefaultCustomization={isDefaultCustomization(themeId, themeCustomizations[themeId])}
+        onCustomize={handleCustomizeTheme}
       />
       <SenderShareModal
         open={shareModalOpen}

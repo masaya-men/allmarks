@@ -4,7 +4,9 @@
 .outerFrame {
   position: fixed;
   inset: 0;
-  background: var(--bg-outer);
+  /* --edge-color is set inline by BoardRoot for customizable 'pattern' themes;
+     absent (default / 'work' themes) → falls back to the theme's --bg-outer. */
+  background: var(--edge-color, var(--bg-outer));
   padding: var(--canvas-margin);
   overflow: hidden;
 }

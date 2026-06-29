@@ -129,11 +129,30 @@ export type BoardFilter =
   | { readonly kind: 'dead' }
   | { readonly kind: 'tags'; readonly tagIds: readonly string[]; readonly mode: FilterMode }
 
+/** Board-surface pattern for a customizable ('pattern'-kind) theme. Pure-CSS,
+ *  static (no GPU) — see themes.module.css `.patternLayer[data-pattern]`. */
+export type PatternType = 'none' | 'grid' | 'diagonal' | 'dots' | 'crosshatch'
+
+/** User overrides for a 'pattern'-kind theme (Sound Wave / Grid). Every field is
+ *  optional; an absent field falls back to the theme's default in
+ *  lib/board/theme-customization.ts, so an untouched theme renders byte-identical
+ *  to before this feature existed. */
+export type ThemeCustomization = {
+  readonly edgeColor?: string      // .outerFrame surface (the screen-outer band)
+  readonly boardColor?: string     // the card surface the pattern sits on
+  readonly patternColor?: string   // pattern stroke / dot colour
+  readonly patternType?: PatternType
+  readonly patternSize?: number    // pattern spacing in px (density)
+}
+
 export type BoardConfig = {
   readonly frameRatio: FrameRatio
   readonly themeId: ThemeId
   readonly displayMode: DisplayMode
   readonly activeFilter: BoardFilter
+  /** Per-theme customizations for 'pattern' themes. Keyed by ThemeId; absent =
+   *  theme defaults. Only Sound Wave / Grid are ever present (Paper is fixed). */
+  readonly themeCustomizations?: Partial<Record<ThemeId, ThemeCustomization>>
   /** Tier 1 viewport-playback master switch. true = in-view video cards
    *  autoplay muted + multi-image cards cycle. Default true (reduced-motion
    *  users default false, set at hydrate time in BoardRoot). */

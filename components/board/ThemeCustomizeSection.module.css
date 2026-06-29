@@ -1,0 +1,176 @@
+.section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.groupLabel {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.resetBtn {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.5);
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.resetBtn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rowLabel {
+  flex: 0 0 64px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── colour swatches ─────────────────────────────────────────────────────── */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+}
+.colorSwatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.colorSwatch:hover {
+  transform: translateY(-1px);
+}
+.colorSwatch[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px rgba(12, 12, 12, 0.95), 0 0 0 3.5px var(--color-accent-primary, #28f100);
+}
+
+/* "+" custom swatch wraps a hidden native colour input. */
+.customSwatch {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  overflow: hidden;
+}
+.customSwatch[data-active='true'] {
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 0 2px rgba(12, 12, 12, 0.95), 0 0 0 3.5px var(--color-accent-primary, #28f100);
+  color: transparent;
+}
+.colorInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+/* ── pattern style swatches ──────────────────────────────────────────────── */
+.patternSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.patternSwatch {
+  width: 40px;
+  height: 32px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #0e0e11;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.12s, transform 0.12s;
+}
+.patternSwatch:hover {
+  transform: translateY(-1px);
+}
+.patternSwatch[aria-pressed='true'] {
+  border-color: var(--color-accent-primary, #28f100);
+  box-shadow: 0 0 0 1px var(--color-accent-primary, #28f100);
+}
+.patternPreview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  background-position: center;
+}
+/* Mini-previews mirror themes.module.css .patternLayer, at a tight fixed scale
+   so the shape reads inside the 40x32 chip. White strokes on the chip's dark. */
+.patternPreview[data-pattern='grid'] {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.55) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.55) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+.patternPreview[data-pattern='dots'] {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1.2px);
+  background-size: 8px 8px;
+}
+.patternPreview[data-pattern='diagonal'] {
+  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.55) 0 1px, transparent 1px 8px);
+}
+.patternPreview[data-pattern='crosshatch'] {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.5) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.5) 0 1px, transparent 1px 8px);
+}
+/* data-pattern='none' → empty chip (solid), reads as "no pattern". */
+
+/* ── density slider ──────────────────────────────────────────────────────── */
+.slider {
+  flex: 1 1 auto;
+  accent-color: var(--color-accent-primary, #28f100);
+  cursor: pointer;
+}
+
+/* ── paper-atelier overrides ─────────────────────────────────────────────── */
+:global(html[data-theme-id='paper-atelier']) .section {
+  border-top-color: var(--paper-panel-hairline);
+}
+:global(html[data-theme-id='paper-atelier']) .groupLabel,
+:global(html[data-theme-id='paper-atelier']) .rowLabel {
+  color: var(--text-meta);
+}
+:global(html[data-theme-id='paper-atelier']) .resetBtn {
+  color: var(--text-body);
+  border-color: var(--paper-panel-border);
+}

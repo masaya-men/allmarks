@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef, type ReactElement } from 'react'
-import type { ThemeId } from '@/lib/board/types'
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
+import type { ResolvedThemeCustomization } from '@/lib/board/theme-customization'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ThemePicker } from './ThemePicker'
+import { ThemeCustomizeSection } from './ThemeCustomizeSection'
 import styles from './ThemeModal.module.css'
 
 export interface ThemeModalProps {
@@ -11,6 +13,13 @@ export interface ThemeModalProps {
   readonly onClose: () => void
   readonly themeId: ThemeId
   readonly onThemeChange: (id: ThemeId) => void
+  /** Effective customization for the active theme, or null for fixed 'work'
+   *  themes (then the CUSTOMIZE section is hidden). */
+  readonly customization: ResolvedThemeCustomization | null
+  /** True when the active theme sits at its byte-identical default. */
+  readonly isDefaultCustomization: boolean
+  /** Apply a customization patch live; null = reset the theme to defaults. */
+  readonly onCustomize: (patch: ThemeCustomization | null) => void
 }
 
 /**
@@ -26,13 +35,46 @@ export interface ThemeModalProps {
  * Themes are grouped into PATTERN (customizable — Sound Wave, Grid; the
  * customize controls land in Phase 3) and WORKS (fixed crafted worlds — Paper).
  */
-export function ThemeModal({ isOpen, onClose, themeId, onThemeChange }: ThemeModalProps): ReactElement | null {
+export function ThemeModal({
+  isOpen,
+  onClose,
+  themeId,
+  onThemeChange,
+  customization,
+  isDefaultCustomization,
+  onCustomize,
+}: ThemeModalProps): ReactElement | null {
   const { t } = useI18n()
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  // Bottom fade hint when the scrollable body has more content below the fold
+  // (the CUSTOMIZE section can push it past the panel height). No raw scrollbar.
+  const [moreBelow, setMoreBelow] = useState(false)
+  const recomputeFade = useCallback((): void => {
+    const el = bodyRef.current
+    if (!el) return
+    setMoreBelow(el.scrollHeight - el.scrollTop - el.clientHeight > 4)
+  }, [])
 
   useEffect(() => {
     if (isOpen) closeBtnRef.current?.focus()
   }, [isOpen])
+
+  // Recompute the fade when the body resizes (theme switch shows/hides the
+  // CUSTOMIZE section) or the panel opens.
+  useEffect(() => {
+    if (!isOpen) return
+    const el = bodyRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    recomputeFade()
+    const ro = new ResizeObserver(recomputeFade)
+    ro.observe(el)
+    window.addEventListener('resize', recomputeFade)
+    return (): void => {
+      ro.disconnect()
+      window.removeEventListener('resize', recomputeFade)
+    }
+  }, [isOpen, recomputeFade])
 
   useEffect(() => {
     if (!isOpen) return
@@ -72,7 +114,7 @@ export function ThemeModal({ isOpen, onClose, themeId, onThemeChange }: ThemeMod
           </button>
         </div>
 
-        <div className={styles.body}>
+        <div className={styles.body} ref={bodyRef} onScroll={recomputeFade}>
           <section className={styles.group}>
             <div className={styles.groupLabel}>PATTERN THEMES</div>
             <ThemePicker
@@ -94,9 +136,20 @@ export function ThemeModal({ isOpen, onClose, themeId, onThemeChange }: ThemeMod
               filterKind="work"
             />
           </section>
-          {/* Phase 3: a CUSTOMIZE section (edge / board / pattern colour +
-              pattern type) mounts here when a pattern theme is active. */}
+          {/* CUSTOMIZE — only for 'pattern' themes (customization non-null). */}
+          {customization && (
+            <ThemeCustomizeSection
+              value={customization}
+              isDefault={isDefaultCustomization}
+              onChange={onCustomize}
+            />
+          )}
         </div>
+        <div
+          className={styles.scrollFade}
+          data-visible={moreBelow ? 'true' : 'false'}
+          aria-hidden="true"
+        />
       </aside>
     </div>
   )
