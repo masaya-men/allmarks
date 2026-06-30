@@ -154,9 +154,21 @@
 /* Notebook-sheet backing (graph / spiral notepad): render the WHOLE sheet, same
    as the text-card PlaceholderCard (background-size:100% 100%), so the punched
    holes / spiral binding / red margin / torn edge stay visible around the
-   mounted photo — cover would crop them off. */
+   mounted photo — cover would crop them off. background-color must be
+   TRANSPARENT (not the ivory --card-dark-alt): these sheets have transparent
+   torn edges / holes / binding gaps, and an ivory fill behind them shows through
+   as a white base (the exact "white下地" the user kept seeing). Transparent lets
+   the board parchment show through, same as the text-card .paperNote. */
 .paperCard[data-paper-sheet='true'] {
   background-size: 100% 100%;
+  background-color: transparent;
+}
+/* The card surface BEHIND the sheet is also ivory (.imageCard background). Make
+   it transparent for sheet cards too, so the torn edges / holes show the board,
+   not white. Only matches paper sheet cards (data-paper-sheet is paper-only), so
+   the default theme and vintage-mat cards are unaffected. */
+.imageCard:has(.paperCard[data-paper-sheet='true']) {
+  background: transparent;
 }
 /* The mounted-print window. Absolutely positioned at --paper-frame-inset so it
    matches the live playback overlays exactly (CardsLayer insets them by the

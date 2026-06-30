@@ -120,9 +120,12 @@
   border: 1px solid rgba(43, 39, 34, 0.14);
   overflow: hidden;
 }
-/* Notebook-sheet backing: full sheet (matches ImageCard.module.css). */
+/* Notebook-sheet backing: full sheet (matches ImageCard.module.css). Transparent
+   fill so the sheet's torn edges / holes show the board, not the ivory base
+   (white下地). */
 .paperCard[data-paper-sheet='true'] {
   background-size: 100% 100%;
+  background-color: transparent;
 }
 
 .paperPhoto {

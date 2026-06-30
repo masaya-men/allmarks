@@ -75,8 +75,13 @@
    follows the rendered alpha (the torn paper outline) so the float shadow hugs
    the sheet. .cardNode is NOT overflow:hidden, so the filter shadow isn't
    clipped; image/mat cards keep the rectangular box-shadow (their mat IS
-   rectangular, so it's correct there). */
-:global(html[data-theme-id='paper-atelier']) .cardNode:has([data-paper-note='true']) {
+   rectangular, so it's correct there).
+   data-paper-sheet = image cards backed by a notebook sheet (graph/notepad).
+   Those sheets are ALSO torn-paper silhouettes (transparent edges/holes), so
+   they need the same alpha-following drop-shadow — otherwise the rectangular
+   box-shadow leaks past the torn edge as a brown rim. */
+:global(html[data-theme-id='paper-atelier']) .cardNode:has([data-paper-note='true']),
+:global(html[data-theme-id='paper-atelier']) .cardNode:has([data-paper-sheet='true']) {
   box-shadow: none;
   filter:
     drop-shadow(0 2px 4px rgba(36, 31, 25, 0.34))
