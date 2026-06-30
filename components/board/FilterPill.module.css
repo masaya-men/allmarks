@@ -608,3 +608,42 @@
 :global(html[data-theme-id='paper-atelier']) .renameInput {
   color: var(--text-primary);
 }
+
+/* ── Paper-atelier session 141: tone down the NEON brand green active accents ──
+   The default theme paints the active row (ALL is active by default, so it's the
+   topmost row) with a #28F100 underline + a 6% neon-green wash, and the selected
+   tag dots glow the same neon green. On parchment that bright yellow-green reads
+   as a dirty smear (user report N-11). Swap every hard-coded #28F100 / rgba(40,
+   241,0,…) in this dropdown for the paper FOREST accent (--color-accent-primary =
+   #2f4a37 in the paper token block) so "active" still reads as green, but a muted
+   ink-green that belongs on cream. Default theme untouched (paper-scoped). */
+:global(html[data-theme-id='paper-atelier']) .item.active {
+  background: color-mix(in srgb, var(--color-accent-primary) 9%, transparent);
+}
+:global(html[data-theme-id='paper-atelier']) .item.active .itemLabel {
+  box-shadow: inset 0 -1px 0 var(--color-accent-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .tagItemActive:hover {
+  background: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
+}
+:global(html[data-theme-id='paper-atelier']) .tagDot[data-active='true'] {
+  background: var(--color-accent-primary);
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--color-accent-primary) 45%, transparent);
+}
+/* Small green text accents in the header + the drag insertion line. */
+:global(html[data-theme-id='paper-atelier']) .sectionHeaderHint {
+  color: color-mix(in srgb, var(--color-accent-primary) 80%, transparent);
+}
+:global(html[data-theme-id='paper-atelier']) .sortToggle[data-mode='auto'] {
+  color: var(--color-accent-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .sortToggle[data-mode='auto']:hover {
+  color: var(--color-accent-primary-hover);
+}
+:global(html[data-theme-id='paper-atelier']) .tagItem[data-drop-before='true'] {
+  box-shadow: inset 0 2px 0 var(--color-accent-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .tagItem[data-drop-after='true'] {
+  box-shadow: inset 0 -2px 0 var(--color-accent-primary);
+}
