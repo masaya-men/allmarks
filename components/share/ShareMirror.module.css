@@ -120,6 +120,10 @@
   border: 1px solid rgba(43, 39, 34, 0.14);
   overflow: hidden;
 }
+/* Notebook-sheet backing: full sheet (matches ImageCard.module.css). */
+.paperCard[data-paper-sheet='true'] {
+  background-size: 100% 100%;
+}
 
 .paperPhoto {
   position: absolute;

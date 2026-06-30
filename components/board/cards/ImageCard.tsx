@@ -5,7 +5,7 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import type { MediaSlot } from '@/lib/embed/types'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
-import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_MAT_POOL } from '@/lib/board/paper-assets'
+import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_BACKING_POOL, isPaperSheet } from '@/lib/board/paper-assets'
 import { PlaceholderCard } from './PlaceholderCard'
 import styles from './ImageCard.module.css'
 
@@ -228,8 +228,9 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
   // Paper-atelier card face: deterministic mat backing, mounted-print photo
   // inset, serif ink caption. Only rendered when paper===true.
   if (paper) {
-    const matId = pickPaperAsset(seedFractionFromId(item.bookmarkId), IMAGE_CARD_MAT_POOL)
+    const matId = pickPaperAsset(seedFractionFromId(item.bookmarkId), IMAGE_CARD_BACKING_POOL)
     const matUrl = matId ? paperAssetUrl(matId) : null
+    const sheet = isPaperSheet(matId)
     return (
       <div
         ref={cardRef}
@@ -240,6 +241,7 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
         <div
           className={styles.paperCard}
           data-paper-mat="true"
+          data-paper-sheet={sheet ? 'true' : undefined}
           style={matUrl ? { backgroundImage: `url("${matUrl}")` } : undefined}
         >
           {/* data-paper-window: the Lightbox FLIP lifts a clone of THIS element

@@ -137,6 +137,33 @@ export const IMAGE_CARD_MAT_POOL: readonly PaperAssetId[] = [
 ]
 
 /**
+ * The graph / spiral-notepad sheets. Already used full-bleed (background-size:
+ * 100% 100%) as the whole card for thumbnail-less text cards (PlaceholderCard).
+ * The user wants the SAME sheets used as backings for image cards too (every
+ * URL, not text-only) — rendered the same way, photo mounted in the existing
+ * window. These are framed/torn pieces, so they need 100% 100% (not cover,
+ * which would crop the holes / binding / margin). isPaperSheet() flags them. */
+export const IMAGE_CARD_SHEET_POOL: readonly PaperAssetId[] = [
+  'card-paper-graph',
+  'card-paper-notepad',
+]
+
+/** Full backing pool for a paper image card: the vintage mats + the notebook
+ *  sheets. ImageCard (board) and ShareMirror (share) both pick from this with
+ *  the same card seed, so a card shows the same backing in both. */
+export const IMAGE_CARD_BACKING_POOL: readonly PaperAssetId[] = [
+  ...IMAGE_CARD_MAT_POOL,
+  ...IMAGE_CARD_SHEET_POOL,
+]
+
+/** True if the backing is a notebook sheet (graph/notepad) rather than a solid
+ *  mat — these render at background-size:100% 100% so the holes/binding/margin
+ *  stay visible, instead of cover. */
+export function isPaperSheet(id: PaperAssetId | null): boolean {
+  return id != null && IMAGE_CARD_SHEET_POOL.includes(id)
+}
+
+/**
  * Deterministically pick the asset to use from a candidate list, skipping any
  * not-yet-placed ids. `seedFraction` is a stable 0..1 number (e.g. derived
  * from card.id) so the same card always gets the same variant. Returns null
