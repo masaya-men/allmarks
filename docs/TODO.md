@@ -21,6 +21,13 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 143 — (B)集客/ローンチ計画 確定 + (C)共有画像の allmarks.app 焼き込み 出荷)
+
+- **(B) ローンチ計画を確定・正本化**（正本 `docs/private/2026-07-01-launch-plan-design.md`、gitignored・commit しない）: ビルド・イン・パブリック→花火ドロップ／表現+応援+**FF14オンランプで本人の約600フォロワー（ほぼFF14勢）を起動**／**FANBOX+Patreon両対応**／**解錠=K3確定**（発動回数キャップ・¥0極小サーバー・ブクマ非接触）。モデル(A) §4「サーバー無し」→「署名キー+極小サーバー」へ改訂、memory `project_monetization_model` 更新済。
+- **(C)第1歩=共有画像の焼き込み 出荷・allmarks.app 反映済**: ShareMirror 下帯を **`allmarks.app`（右下・署名位置）** に＝プレビュー/OG画像/保存画像すべてに焼き込み。**SAVE IMAGE ボタン**追加（既出力1200×628画像をDL→Xに直貼り）。内部情報「N OF M CARDS」撤去（ShareMirror+canvas fallback）。`shareImageFilename`純関数+6テスト。**tsc0 / vitest1827 / build OK・default 無傷（share専用）・commit/push 済・ユーザー実機確認済**。
+- **新アイデア記録（IDEAS.md・未着手）**: 選択的シェア（どの100枚を送るか選ぶ＝今は新しい順100枚固定で600枚ユーザーに困る・3案記録）／空き盤面を掴んで「ぐりぐり」動かすパララックス微インタラクション。
+- **次の最優先 = (C)の続き**（プレミアムテーマ or K3設計ブレスト）＋持ち越し実機確認（N-12アニメ／ドラッグ軽さ）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 142 — Paper 台紙リデザイン N-13 完遂 + ドラッグ並べ替えの重大バグ修正)
 
 - 全て `allmarks.app` 反映済・GitHub push 済・**tsc0 / vitest1819 / build OK**・default 無傷。10コミット。詳細 narrative は TODO_COMPLETED.md セッション142。

@@ -8158,3 +8158,36 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 - **収益化モデル(A) ブレスト（superpowers:brainstorming）**: ユーザー「本気で生計を立てたい・月20-30万・継続課金・すぐ」。現状**0人/プレローンチ**（テーマ完成→ツイート告知予定）と判明 → **収入の本当のレバーは集客**と相互確認（試算: 月25万÷¥500≒500人課金→転換2-3%で無料1-2.5万人）。1問ずつ詰めて確定: サポーター型ブレンド／デフォルト＋**Paper は無料の看板**／有料はプレミアム2-3本＋今後を**¥500・¥1,500 の月額2階層**／**署名ライセンスキー・サーバー無し・no-account 解錠**（解約後も使用可・キー共有許容＝応援モデル）／決済 Patreon(global) or pixivFANBOX(JP)（(B)で確定）。**正本 `docs/private/2026-06-30-monetization-model-design.md`（gitignored・commit しない＝CLAUDE.md プライバシー方針）**、memory `project_monetization_model`。
 - **次の最優先 = (B) 集客/ローンチ計画**（次セッション・「生計を立てる」の本丸）。その後 (C) 署名キー解錠＋有料テーマ gating＋プレミアム制作（writing-plans）。
 - 新規メモリ3件: `reference_board_order_desc`（並び順DESC・reorder整合）/ `reference_paper_torn_sheet_cards`（破れ紙カードの透明層・実描画検証）/ `project_monetization_model`。
+
+---
+
+## セッション 143 (2026-07-01) — (B)集客/ローンチ計画 確定 + (C)共有画像の allmarks.app 焼き込み 出荷
+
+### (B) 集客/ローンチ計画をブレストで確定（＝「生計を立てる」の本丸）
+
+「収入の本当のレバーは課金方式でなく集客」という前提で、0人→1万人規模のローンチ計画を1問ずつ詰めて確定。正本は `docs/private/2026-07-01-launch-plan-design.md`（gitignored・機微なので commit しない）。
+
+- **形 = ビルド・イン・パブリック → 花火ドロップの二段**。完成を待たず、0人期間そのものを集客期間に変える。
+- **切り口 = (1)表現ツール主軸 + (3)応援/ソロ開発サブ**。本人の足場＝個人X（LoPo経由）約600フォロワー、ほぼ全員FF14勢。FF14のミラプリ文化＝モードボード文化で「ブクマをコラージュ」と地続き＝**FF14味のオンランプ**で600人を自然に起動（本人は趣味アカでの宣伝に抵抗なし）。彼らはブースターでありコア市場ではないので、Phase0=FF14例→Phase1=一般+動画クリップ→Phase2=ドロップ+Product Hunt。
+- **決済 = FANBOX(日本・円建て) + Patreon(海外) を最初から両対応**（本人意向。Claude の単一先スタート推奨は却下）。
+- **解錠 = K3 確定**: 本人「無限漏れは避けたい（数台までON・無限ダメ）」を受け、当初の「完全サーバー無し」(K1/K2) から更新。署名キー＋極小ライセンスサーバー（Cloudflare Worker+KV）が発動台数をカウントしキャップ。サーバーは「キーID→回数」だけ保存しブクマ/個人情報に非接触＝「データはローカルのみ・¥0」維持。配布非対称: Patreon=OAuth自動発行可／FANBOX=会員確認の公式APIが無い可能性大（実装時確認）。
+- これに伴いモデル(A)正本 §4「サーバー無し」→「署名キー＋極小サーバー」、§5「決済は(B)で確定」→「FANBOX+Patreon両対応」へ改訂。memory `project_monetization_model`（+ MEMORY.md 索引）を K3/両決済/ローンチ計画で更新。
+
+### (C) 第1歩 = 共有画像への allmarks.app 焼き込み + SAVE IMAGE ボタン（出荷済）
+
+ドロップ前に必須な(C)3点（①プレミアムテーマ ②K3 ③共有画像焼き込み）のうち③を実装。build-in-public は今週から始まる＝投稿するスクショに最初から辿れるURLが要る、という理由で③を最優先に。
+
+- **現状をコードで確認**: 共有は SenderShareModal が ShareMirror（軽量レプリカ・可視帯のみ＝メモリ安全）を `renderShareImage`(dom-to-image JPEG, canvas fallback) で 1200×628 画像化し OG サムネにアップロード。**ユーザーに画像を渡す導線は無し**。下帯に「ALLMARKS」ワードマーク＋「N OF M CARDS」キャプションはあるが**辿れるURL表記は無し**。
+- **焼き込み**: 下帯ワードマークを `allmarks.app` に（text-transform:none で小文字URL表示）、位置を**右下**（慣習的な署名/ウォーターマーク角・ユーザー判断で左下→右下に移動）。テーマ色追従（titleColor）で default(白)・Paper(墨) 両方読める。プレビュー/OG画像/保存画像すべてに乗る。
+- **SAVE IMAGE ボタン**: 既に生成済みの同じ画像を `<a download>` でユーザーにDL（`shareImageFilename(id, dataUrl)` でMIMEから拡張子導出・純関数+6テスト）。X はリンクプレビューカードより画像直貼りが大きく目立つ＝build-in-public の起爆に有利。新たな重い処理は無し（既存レプリカ画像の再利用）。
+- **キャプション撤去**: 「N OF M CARDS · NEWEST FIRST」は内部情報で視聴者に意味不明（ユーザー指摘）→ ShareMirror + capture-mirror.ts(canvas fallback) 両方から撤去。ShareMirror テスト2本を「allmarks.app 在/キャプション不在」に更新。
+- 検証 **tsc0 / vitest 1827（+6）/ build OK**。**default 盤面 byte-identical**（変更は share 専用、board 本体無変更）。各段階で本番 allmarks.app にデプロイ→ユーザー実機確認（右下URL/キャプション消失/SAVE IMAGE 動作）→ commit/push。
+
+### 記録した新アイデア（IDEAS.md、未着手）
+
+- **選択的シェア**: 共有上限 100（KV/R2サイズ制約・`SHARE_LIMITS_V2.MAX_CARDS`）に対し、今は「フィルター後の新しい順100枚」を機械的に slice するだけ＝**どの100枚かを選べない**（600枚ユーザー=本人に明確に困る）。ユーザー案「一時シェアタグ」。3案（選択モード/一時シェアセット/フィルター内ピック）記録。`buildShareDataFromBoard` は選択items を渡すだけで cap 等を再利用可。
+- **空き盤面を掴んで「ぐりぐり」**: カードの無い余白をドラッグ→パララックス層が追従する微インタラクション。上澄み polish。
+
+### コミット
+
+- `feat(share): bake allmarks.app into share image + SAVE IMAGE button; drop card-count caption`（7 files、tracked のみ。docs/private の戦略文書は gitignored で未追跡）。
