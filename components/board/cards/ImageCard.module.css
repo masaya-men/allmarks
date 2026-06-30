@@ -150,6 +150,18 @@
   border: 1px solid var(--card-border-dark, rgba(43, 39, 34, 0.14));
   overflow: hidden;
 }
+/* Graph / spiral-notepad SHEET mat: show the whole sheet (holes, ruled / red
+   margin, spiral binding) rather than cover-cropping it, and inset the photo
+   more so it sits ON the notebook page like a taped print with the margins
+   showing. Sheet pixels can stretch a little (image cards aren't square) — fine,
+   it reads as a page. Plain vintage mats (no data-paper-sheet) keep cover-fit. */
+.paperCard[data-paper-sheet='true'] {
+  background-size: 100% 100%;
+}
+.paperCard[data-paper-sheet='true'] .paperPhoto {
+  inset: 17% 11% 23% 21%;
+}
+
 /* The mounted-print window. Absolutely positioned at --paper-frame-inset so it
    matches the live playback overlays exactly (CardsLayer insets them by the
    same token) — a playing video then sits in this same window, framed by the
