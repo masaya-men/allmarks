@@ -307,7 +307,14 @@ export function computeVirtualOrder(params: {
 }): readonly string[] {
   const { items, draggedId, cardWorldX, cardWorldY, simulateLayout } = params
 
-  const ordered = items.slice().sort((a, b) => a.orderIndex - b.orderIndex)
+  // DESC by orderIndex — MUST match the board's display sort (use-board-data
+  // sorts active items DESC: newest-saved at top). If this used ASC while the
+  // board shows DESC, the drag preview would lay cards out reversed from what's
+  // displayed, the dragged card's simulated position would never match its real
+  // one (feedback loop → cards flicker between old/new order on a stationary
+  // grab), and persistOrderBatch would store the order inverted. The returned
+  // ids are therefore in visual top-down order, which persistOrderBatch expects.
+  const ordered = items.slice().sort((a, b) => b.orderIndex - a.orderIndex)
   const withoutDragged = ordered.filter((it) => it.bookmarkId !== draggedId)
 
   // Defensive: if dragged isn't in items, return unchanged order.
