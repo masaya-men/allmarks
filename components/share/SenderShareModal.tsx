@@ -6,12 +6,13 @@ import styles from './SenderShareModal.module.css'
 import { captureMirrorToWebP } from '@/lib/share/capture-mirror'
 import { renderShareImage } from '@/lib/share/render-share-image'
 import { createShare } from '@/lib/share/api-client'
+import { shareImageFilename } from '@/lib/share/share-image-filename'
 import { ShareMirror, type MirrorItem, type MirrorPosition } from './ShareMirror'
 
 type ModalState =
   | { readonly kind: 'idle' }
   | { readonly kind: 'capturing' }
-  | { readonly kind: 'ready'; readonly shareUrl: string }
+  | { readonly kind: 'ready'; readonly shareUrl: string; readonly imageDataUrl: string; readonly shareId: string }
   | { readonly kind: 'error'; readonly message: string }
 
 type Props = {
@@ -153,11 +154,24 @@ export function SenderShareModal({
       }
       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app'
       const shareUrl = `${origin}/s/${result.data.id}`
-      setState({ kind: 'ready', shareUrl })
+      setState({ kind: 'ready', shareUrl, imageDataUrl: thumbDataUrl, shareId: result.data.id })
     } catch (e) {
       setState({ kind: 'error', message: e instanceof Error ? e.message : 'unknown error' })
     }
   }, [getShareData, visibleItems, activeTagNames, totalBoardCount, bgTypoEnabled, bgTypoText])
+
+  // Hand the already-generated share image (the same 1200×628 JPEG used as the
+  // link's OG thumbnail) to the user as a download, so they can post it natively
+  // on X — native image posts dwarf link-preview cards. The allmarks.app URL is
+  // baked into the image (ShareMirror bottom strip), so it travels with the post.
+  const handleSaveImage = useCallback((dataUrl: string, id: string): void => {
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = shareImageFilename(id, dataUrl)
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }, [])
 
   if (!open) return null
 
@@ -212,6 +226,11 @@ export function SenderShareModal({
               <button
                 type="button"
                 className={styles.primaryBtn}
+                onClick={(): void => handleSaveImage(state.imageDataUrl, state.shareId)}
+              >SAVE IMAGE</button>
+              <button
+                type="button"
+                className={styles.secondaryBtn}
                 onClick={(): void => {
                   const intent = `https://twitter.com/intent/tweet?url=${encodeURIComponent(state.shareUrl)}`
                   window.open(intent, '_blank', 'noopener,noreferrer')

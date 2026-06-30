@@ -103,7 +103,7 @@ describe('ShareMirror', () => {
     expect(container.querySelectorAll('audio').length).toBe(0)
   })
 
-  it('renders bottom brand strip with "N CARDS" when no trim', () => {
+  it('bakes the allmarks.app URL into the bottom strip (traceable share image)', () => {
     const { getByText } = render(
       <ShareMirror
         items={makeItems(3)}
@@ -119,11 +119,11 @@ describe('ShareMirror', () => {
         {...baseThemeProps}
       />,
     )
-    expect(getByText(/3 CARDS/)).toBeTruthy()
+    expect(getByText('allmarks.app')).toBeTruthy()
   })
 
-  it('renders "N OF M CARDS · NEWEST FIRST" when trimmed', () => {
-    const { getByText } = render(
+  it('does NOT show the internal "N OF M CARDS" caption (meaningless to viewers)', () => {
+    const { queryByText } = render(
       <ShareMirror
         items={makeItems(3)}
         positions={makePositions(3)}
@@ -138,7 +138,8 @@ describe('ShareMirror', () => {
         {...baseThemeProps}
       />,
     )
-    expect(getByText(/3 OF 10 CARDS · NEWEST FIRST/)).toBeTruthy()
+    expect(queryByText(/CARDS/)).toBeNull()
+    expect(queryByText(/NEWEST FIRST/)).toBeNull()
   })
 
   it('renders top tag strip when activeTagNames non-empty', () => {

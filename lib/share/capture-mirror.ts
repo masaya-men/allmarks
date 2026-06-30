@@ -281,31 +281,14 @@ function drawBrandStrip(ctx: CanvasRenderingContext2D, input: MirrorCaptureInput
     drawClippedText(ctx, text, padding, padding, W - padding * 2)
   }
 
-  // 左下 ALLMARKS wordmark (= 右下 caption と同 font / size / weight、
-  // 2 つで 1 つの chrome バンドに読める)
-  ctx.fillStyle = TEXT_MAIN
-  ctx.font = '500 13px "Geist Mono", ui-monospace, monospace'
-  ctx.textBaseline = 'middle'
-  ctx.textAlign = 'left'
-  ctx.fillText('ALLMARKS', padding, H - padding - 16)
-
-  // 右下 「N CARDS · NEWEST FIRST」 or「N OF M CARDS · NEWEST FIRST」
-  const N = input.sharedCardCount
-  const M = input.totalBoardCount
-  const captionText = M > N
-    ? `${N} OF ${M} CARDS · NEWEST FIRST`
-    : `${N} CARDS`
+  // 右下 allmarks.app — 焼き込み URL (= 画像と一緒に旅をする辿れる導線)。
+  // 右下は慣習的なウォーターマーク/署名の角。内部情報の「N OF M CARDS」
+  // キャプションはユーザーに意味不明なので撤去。
   ctx.fillStyle = TEXT_MAIN
   ctx.font = '500 13px "Geist Mono", ui-monospace, monospace'
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'right'
-  ctx.fillText(captionText, W - padding, H - padding - 16)
-
-  // 右下緑 dot
-  ctx.fillStyle = BRAND_GREEN
-  ctx.beginPath()
-  ctx.arc(W - padding - ctx.measureText(captionText).width - 12, H - padding - 16, 3, 0, Math.PI * 2)
-  ctx.fill()
+  ctx.fillText('allmarks.app', W - padding, H - padding - 16)
 }
 
 /**

@@ -131,9 +131,6 @@ export function ShareMirror({
     return (): void => observer.disconnect()
   }, [bgFullScreenWidth])
 
-  const N = sharedCardCount
-  const M = totalBoardCount
-  const captionText = M > N ? `${N} OF ${M} CARDS · NEWEST FIRST` : `${N} CARDS`
   // タグ名は常に小文字 (= ユーザーが付けた中身)。 capture-mirror (= OG 画像) と揃えて
   // JS 側で小文字化し、 .tagStrip の text-transform: lowercase が表示も担保する。
   const tagText = activeTagNames.map((s): string => s.toLowerCase()).join(' · ')
@@ -236,11 +233,7 @@ export function ShareMirror({
       ) : null}
 
       <div className={styles.bottomStrip}>
-        <span className={styles.wordmark} style={{ color: titleColor }}>ALLMARKS</span>
-        <span className={styles.caption} style={{ color: titleColor }}>
-          <span className={styles.captionDot} aria-hidden="true" />
-          {captionText}
-        </span>
+        <span className={styles.wordmark} style={{ color: titleColor }}>allmarks.app</span>
       </div>
     </div>
   )

@@ -257,7 +257,9 @@
   left: 12px;
   right: 12px;
   display: flex;
-  justify-content: space-between;
+  /* allmarks.app sits bottom-right — the conventional watermark / signature
+     corner (single URL stamp, no left-side caption anymore). */
+  justify-content: flex-end;
   align-items: center;
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: 11px;
@@ -277,7 +279,9 @@
   font-weight: 500;
   letter-spacing: 0.10em;
   color: rgba(255, 255, 255, 0.92);
-  text-transform: uppercase;
+  /* Lowercase: this is now the traceable URL (allmarks.app) baked into every
+     shared/saved image, so it should read as a destination, not a wordmark. */
+  text-transform: none;
   line-height: 1;
 }
 
