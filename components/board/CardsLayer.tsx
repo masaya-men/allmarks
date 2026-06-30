@@ -648,6 +648,18 @@ export function CardsLayer({
     })
   }, [virtualOrderedIds, items, viewportWidth, cardGapPx, buildSkylineCard])
 
+  // Per-card "is the paper backing a torn sheet?" — computed once per items
+  // change (NOT per render). During a drag the board re-renders on every
+  // pointer step; recomputing pickCard/detectUrlType for every card each frame
+  // was needless work. Lookup is O(1) in the render below. Paper-only.
+  const tornBackingById = useMemo(() => {
+    const m = new Map<string, boolean>()
+    if (meta.decorations === true) {
+      for (const it of items) m.set(it.bookmarkId, paperCardHasTornBacking(it))
+    }
+    return m
+  }, [items, meta.decorations])
+
   // Previous-position ledger used to animate masonry reflows via FLIP.
   // Updated at the end of every effect run. Declared above displayedPositions
   // so the useMemo below can read prevPositionsRef.current without hitting
@@ -1119,7 +1131,7 @@ export function CardsLayer({
             {meta.decorations === true && (
               <PaperCardDecorations
                 cardId={it.bookmarkId}
-                tornBacking={paperCardHasTornBacking(it)}
+                tornBacking={tornBackingById.get(it.bookmarkId) ?? false}
               />
             )}
             {receiverMode && (() => {

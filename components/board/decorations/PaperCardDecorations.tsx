@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import { memo, type ReactElement } from 'react'
 import {
   getCardDecorations,
   type DecoCorner,
@@ -20,7 +20,12 @@ import styles from './PaperCardDecorations.module.css'
  * Z-index: BOARD_Z_INDEX.CARD_DECORATION = 11 (above thumbnail, below
  * interactive chrome — resize handle z30, media indicator z50).
  */
-export function PaperCardDecorations({
+// memo: the decoration set is deterministic per (cardId, tornBacking), both
+// primitives, so the default shallow compare skips re-renders. Without this the
+// overlay (getCardDecorations PRNG + ~7 positioned spans) re-rendered for EVERY
+// card on EVERY board re-render — notably each pointer step of a drag-reorder,
+// which is where it hurt (large boards felt heavy to drag).
+export const PaperCardDecorations = memo(function PaperCardDecorations({
   cardId,
   tornBacking = false,
 }: {
@@ -140,7 +145,7 @@ export function PaperCardDecorations({
       })()}
     </div>
   )
-}
+})
 
 /** Word-stamp PNG pool (the word is baked into the art). */
 const STAMP_IDS: readonly PaperAssetId[] = [
