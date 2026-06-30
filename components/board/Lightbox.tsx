@@ -22,6 +22,7 @@ import {
 import { LightboxNavChevron } from './LightboxNavChevron'
 import { useSmoothWheelScroll } from '@/lib/scroll/use-smooth-wheel-scroll'
 import { useTweetTranslation, type TweetTranslationView } from '@/lib/board/use-tweet-translation'
+import { useIsPaperTheme } from '@/lib/board/use-is-paper-theme'
 import { getThemeMeta } from '@/lib/board/theme-registry'
 import type { ThemeId } from '@/lib/board/types'
 import type { LightboxFlipSceneProps } from './LightboxFlipScene'
@@ -2075,6 +2076,12 @@ function LargePlaceholderCardScaler({
 }): ReactElement {
   const boxRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
+  // N-12 (text cards): on the paper theme the thumbnail-less card IS a graph /
+  // notepad sheet on the board, so the Lightbox must show the SAME sheet — not
+  // the dark generated-art placeholder. The board clone (the sheet) then hands
+  // off to a matching sheet here, and the user sees the note enlarged "as paper".
+  // First paint is false (the open clone covers it), then it flips to the sheet.
+  const isPaper = useIsPaperTheme()
   // Merge the internal boxRef (ResizeObserver) with the optional external ref so
   // the translate swap animation can target the same element.
   const setBox = useCallback((el: HTMLDivElement | null): void => {
@@ -2136,6 +2143,7 @@ function LargePlaceholderCardScaler({
           cardWidth={boardW}
           cardHeight={boardH}
           displayMode="visual"
+          paper={isPaper}
         />
       </div>
     </div>

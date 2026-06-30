@@ -153,7 +153,13 @@
 }
 .paperNoteScroll {
   display: flex;
-  align-items: center;
+  /* `safe center` centers SHORT notes vertically, but for a note long enough to
+     overflow it falls back to start (top) alignment instead of clipping the
+     first lines above the scroll area — the same "centred overflow eats the top,
+     and you can't scroll up to it" bug the plain .titleScroll hit and fixed in
+     session 88 (see its comment). Without `safe`, scrollTop:0 still showed the
+     middle and the opening lines were unreachable (N-? user report). */
+  align-items: safe center;
   justify-content: center;
   /* generous insets clear the binder holes (graph, left edge) and the spiral
      binding (notepad, top edge) so the title never sits on top of them. */
