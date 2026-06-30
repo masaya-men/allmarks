@@ -13,14 +13,21 @@ describe('paper-assets manifest', () => {
     expect(paperAssetUrl('card-mat-1')).toBe(`${PAPER_ASSET_BASE}/card-mat-1.png`)
   })
 
-  it('every manifest entry that is true resolves to a /<id>.png URL', () => {
+  it('every manifest entry that is true resolves to a /<id>.<png|jpg> URL', () => {
     for (const [id, placed] of Object.entries(PAPER_ASSETS)) {
       if (placed) {
-        expect(paperAssetUrl(id as keyof typeof PAPER_ASSETS)).toBe(`${PAPER_ASSET_BASE}/${id}.png`)
+        expect(paperAssetUrl(id as keyof typeof PAPER_ASSETS)).toMatch(
+          new RegExp(`^${PAPER_ASSET_BASE}/${id}\\.(png|jpg)$`),
+        )
       } else {
         expect(paperAssetUrl(id as keyof typeof PAPER_ASSETS)).toBeNull()
       }
     }
+  })
+
+  it('the curated session-142 mats are served as JPEG', () => {
+    expect(paperAssetUrl('card-mat-s5')).toBe(`${PAPER_ASSET_BASE}/card-mat-s5.jpg`)
+    expect(paperAssetUrl('card-mat-s41')).toBe(`${PAPER_ASSET_BASE}/card-mat-s41.jpg`)
   })
 
   it('pickPaperAsset is deterministic for a given fraction and skips un-placed ids', () => {

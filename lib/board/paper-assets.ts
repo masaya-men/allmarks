@@ -21,6 +21,13 @@ export type PaperAssetId =
   // the earlier low-res generated mats, plus two extra variants for richer
   // per-card variety. All solid (no torn/deckle edge) so they survive cover.
   | 'card-mat-4' | 'card-mat-5'
+  // session 142 — curated HIGH-RES mats cut from the user's Figma "60+ Free
+  // Vintage Paper Textures" master sheet (9156×29860). The id suffix is the
+  // tile number on that sheet so the source is traceable. Stored as JPEG
+  // (photographic, no alpha) → ~1.2MB total vs ~19MB as PNG. These REPLACE the
+  // earlier low-res mats in IMAGE_CARD_MAT_POOL.
+  | 'card-mat-s5' | 'card-mat-s15' | 'card-mat-s17' | 'card-mat-s28'
+  | 'card-mat-s32' | 'card-mat-s33' | 'card-mat-s35' | 'card-mat-s41' | 'card-mat-s52'
   | 'washi-tape-1' | 'washi-tape-2' | 'washi-tape-3' | 'washi-tape-4' | 'washi-tape-5'
   | 'push-pin-gold' | 'push-pin-green' | 'paper-clip'
   | 'photo-corner-1' | 'photo-corner-2' | 'photo-corner-3' | 'photo-corner-4'
@@ -64,6 +71,8 @@ export const PAPER_ASSETS: Readonly<Record<PaperAssetId, boolean>> = {
   'card-mat-1': true, 'card-mat-2': true, 'card-mat-3': true, 'card-mat-aged': true,
   'card-mat-lined': true, 'card-mat-grid': true,
   'card-mat-4': true, 'card-mat-5': true,
+  'card-mat-s5': true, 'card-mat-s15': true, 'card-mat-s17': true, 'card-mat-s28': true,
+  'card-mat-s32': true, 'card-mat-s33': true, 'card-mat-s35': true, 'card-mat-s41': true, 'card-mat-s52': true,
   'washi-tape-1': true, 'washi-tape-2': true, 'washi-tape-3': true,
   'washi-tape-4': true, 'washi-tape-5': true,
   'push-pin-gold': true, 'push-pin-green': true, 'paper-clip': true,
@@ -88,8 +97,17 @@ export function hasPaperAsset(id: PaperAssetId): boolean {
   return PAPER_ASSETS[id] === true
 }
 
+/** Asset ids stored as JPEG instead of PNG (photographic, no transparency
+ *  needed — far smaller). Everything else is PNG. */
+const JPEG_ASSETS: ReadonlySet<PaperAssetId> = new Set<PaperAssetId>([
+  'card-mat-s5', 'card-mat-s15', 'card-mat-s17', 'card-mat-s28',
+  'card-mat-s32', 'card-mat-s33', 'card-mat-s35', 'card-mat-s41', 'card-mat-s52',
+])
+
 export function paperAssetUrl(id: PaperAssetId): string | null {
-  return hasPaperAsset(id) ? `${PAPER_ASSET_BASE}/${id}.png` : null
+  if (!hasPaperAsset(id)) return null
+  const ext = JPEG_ASSETS.has(id) ? 'jpg' : 'png'
+  return `${PAPER_ASSET_BASE}/${id}.${ext}`
 }
 
 /**
@@ -98,17 +116,24 @@ export function paperAssetUrl(id: PaperAssetId): string | null {
  * sync — both seed pickPaperAsset with the same card id over this exact pool,
  * so a card shows the SAME mat on the board and in its shared OG image.
  *
- * Only HIGH-RES mats: the real photographed vintage papers (card-mat-4/5,
- * Figma CC BY 4.0) and the upscaled ruled/graph textures (card-mat-lined/grid).
- * The earlier low-res generated mats (card-mat-1/2/3/aged) are excluded — they
- * blur when scaled onto a card. All four are solid repeating textures that
- * survive background-size:cover with no torn edge to clip.
+ * The 9 user-curated mats cut from the Figma "60+ Free Vintage Paper Textures"
+ * master sheet (session 142). Genuinely high-res (~2000px native, served at
+ * 1100px JPEG) — a mix the user picked of clean cream (s5/s17/s28/s32) and
+ * crumpled / charactered papers (s33/s41/s52) plus a ribbed laid sheet (s15)
+ * and a speckled tan (s35). All solid textures with no torn edge, so they
+ * survive background-size:cover. Replaces the earlier low-res mats
+ * (card-mat-1/2/3/aged blurred; card-mat-lined/grid were broken 380px crops).
  */
 export const IMAGE_CARD_MAT_POOL: readonly PaperAssetId[] = [
-  'card-mat-4',
-  'card-mat-5',
-  'card-mat-lined',
-  'card-mat-grid',
+  'card-mat-s5',
+  'card-mat-s15',
+  'card-mat-s17',
+  'card-mat-s28',
+  'card-mat-s32',
+  'card-mat-s33',
+  'card-mat-s35',
+  'card-mat-s41',
+  'card-mat-s52',
 ]
 
 /**
