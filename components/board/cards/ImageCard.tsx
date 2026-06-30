@@ -230,21 +230,9 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
   if (paper) {
     const matId = pickPaperAsset(
       seedFractionFromId(item.bookmarkId),
-      // HIGH-QUALITY mats only. The early card-mat-1/2/3/aged were low-res
-      // generated sheets (replaced by the photographed card-mat-4/5) and read as
-      // blurry — dropped at user request. Remaining: the two high-res vintage
-      // sheets, the upscaled ruled/grid mats, and the graph + spiral-notepad
-      // sheets (same full sheets the text cards wear). Default theme never
-      // reaches this branch (paper-gated by the `paper` prop).
-      ['card-mat-4', 'card-mat-5', 'card-mat-lined', 'card-mat-grid', 'card-paper-graph', 'card-paper-notepad'],
+      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged', 'card-mat-4', 'card-mat-5', 'card-mat-lined', 'card-mat-grid'],
     )
     const matUrl = matId ? paperAssetUrl(matId) : null
-    // When the mat is a graph / spiral-notepad SHEET (the same full sheet a
-    // thumbnail-less text card wears), show the WHOLE sheet — holes, ruled/red
-    // margin, spiral binding — instead of cover-cropping it, and inset the photo
-    // more so it reads as a print laid ON the notebook page. Plain vintage mats
-    // stay cover-fit (data-paper-sheet absent).
-    const isSheetMat = matId === 'card-paper-graph' || matId === 'card-paper-notepad'
     return (
       <div
         ref={cardRef}
@@ -255,7 +243,6 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
         <div
           className={styles.paperCard}
           data-paper-mat="true"
-          data-paper-sheet={isSheetMat ? 'true' : undefined}
           style={matUrl ? { backgroundImage: `url("${matUrl}")` } : undefined}
         >
           {/* data-paper-window: the Lightbox FLIP lifts a clone of THIS element

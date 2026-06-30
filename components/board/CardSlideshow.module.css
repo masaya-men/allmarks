@@ -15,11 +15,11 @@
   transition: opacity 800ms ease-in-out;
 }
 
-/* paper-atelier: the resting photo now covers its window (ImageCard.module.css
-   .paperPhoto img: object-fit:cover, no fill), so the slideshow frame must cover
-   too — else the slideshow→photo crossfade would jump. No warm underlay: the
-   media sits directly on the mat. Paper-only. */
+/* paper-atelier: the resting photo is object-fit:contain on a paper window
+   (ImageCard.module.css .paperPhoto), so the ambient still-frame must contain
+   too — else the slideshow→photo crossfade would jump from a cropped fill to a
+   fitted print. Bands read as the warm photo-paper window tone. Paper-only. */
 :global(html[data-theme-id='paper-atelier']) .frame {
-  object-fit: cover;
-  background: transparent;
+  object-fit: contain;
+  background: var(--paper-window-bg, #f4eedd);
 }
