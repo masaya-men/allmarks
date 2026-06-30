@@ -2,7 +2,7 @@
 
 ## 今の状態（セッション142で完了・allmarks.app 反映済・GitHub push 済）
 
-Paper テーマの台紙リデザイン（N-13）をユーザー対話で完遂 ＋ ドラッグ並べ替えの重大バグを発見・修正。全て本番反映・**tsc0 / vitest1819 / build OK**・default(黒+音波) 無傷（全変更 paper-scoped か paper-gate）。今セッション 10 コミット。
+Paper テーマの台紙リデザイン（N-13）をユーザー対話で完遂 ＋ ドラッグ並べ替えの重大バグを発見・修正 ＋ ドラッグ重さの最適化 ＋ **収益化モデル(A)をブレストで確定**。全て本番反映・**tsc0 / vitest1821 / build OK**・default(黒+音波) 無傷。今セッション 13 コミット。**ユーザー実機確認済: 並び順=新しいものが上になった（V3 OK）／白い下地・破れ角の破綻も解消**。PCクラッシュ復旧も完了。
 
 ### 台紙リデザイン（N-13、1コミット=1確認で進行）
 - **②写真は台紙に直接 cover**（白い窓下地 `--paper-window-bg` 撤去、見切れOK）
@@ -15,12 +15,18 @@ Paper テーマの台紙リデザイン（N-13）をユーザー対話で完遂 
 - **真因**: `computeVirtualOrder`(use-card-reorder-drag.ts) が **ASC** ソートなのに盤面表示は **DESC**（新しい順, use-board-data.ts:270）。掴むとプレビューが逆順化→振動、ドロップで並びが逆向きに保存されていた → **DESC に統一**（回帰テスト use-card-reorder-drag.test.ts 2本追加）
 - **重さ**: paper 装飾(PaperCardDecorations)が毎フレーム全カード再描画 → **`React.memo` + tornBacking を useMemo Map 化**で軽量化
 - **並び順の復元**: 逆転保存された並びを **`orderIndexRepairV3`（一度きり）** で savedAt 降順に再ソート＝新しいものが上。非破壊（orderIndex のみ・再導出可、削除/スキーマ変更なし）。V2 と同じ仕組みを flagKey でパラメータ化
+- **ドラッグの重さ最適化**: `computeVirtualOrder` を O(N²)→ほぼ O(N·48) に。挿入候補を直前ベスト位置の近傍（半径48）に窓化＋作業配列使い回し＋窓端で全探索フォールバック（結果は同一）。`lastBestIndexRef` で追跡。テスト2本追加（計4本）。**ユーザー体感の最終確認は次回**（まだ重ければ完全 O(N) 化）
 
-## 次にやる（セッション143）= ユーザー実機確認の集約
-1. **ドラッグの軽さ**（memoize 後）を確認。まだ重ければ `computeVirtualOrder` の窓化最適化（545枚を毎回 simulateLayout している O(N²) を、ドラッグ位置近傍の候補indexだけに絞る）
-2. **並び順 = 新しいものが上**になったか（V3 リロード後の実機確認）
-3. **N-12 ライトボックス開閉アニメ**の実機確認（写真だけ額縁から抜ける/戻る・default LB 無変更）＝ session141 から持ち越し（未確認）
-4. 余力で **N-09 影強度** / **N-10 共有テキストカードの紙パリティ**（ShareMirror に graph/notepad 描画）
+### 収益化モデル(A) 確定（ブレスト済・正本は docs/private/、commit しない）
+- **正本**: `docs/private/2026-06-30-monetization-model-design.md`（gitignored・機微）。memory `project_monetization_model` にも要約。
+- 目標 月20-30万・継続課金・本気。**現状0人/プレローンチ**＝収入の本当のレバーは集客。
+- モデル: サポーター型ブレンド／デフォルト＋**Paper は無料の看板**／有料は**プレミアム2-3本＋今後**を月額（**¥500/¥1,500 の2階層**）／**署名キー・サーバー無し・no-account 解錠**／決済は Patreon or FANBOX（Bで確定）。
+
+## 次にやる（セッション143）= 最優先 (B) 集客/ローンチ計画
+1. **(B) 集客/ローンチ計画のブレスト**（＝「生計を立てる」の本丸）。0人→1万人規模へ: テーマ完成→ツイートの出し方／Product Hunt／作品としての見せ方／無料 Paper の共有画像を拡散の起爆剤に 等。決済プラットフォーム(Patreon/FANBOX)もここで確定。
+2. その後 **(C) 実装**: 署名ライセンスキー解錠＋有料テーマ gating＋プレミアムテーマ2-3本制作（writing-plans へ）。
+3. **ドラッグの軽さ**の体感最終確認（窓化後）。まだ重ければ完全 O(N) 化。
+4. 持ち越し: **N-12 ライトボックス開閉アニメ**実機確認（s141から）／余力で **N-09 影強度** / **N-10 共有テキストカード紙パリティ**。
 
 ## 守ること（毎回）
 - default 盤面 byte-identical。deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy `--project-name=allmarks --branch=master`

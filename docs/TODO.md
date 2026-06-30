@@ -27,8 +27,10 @@
 - **N-13 台紙リデザイン**: ②写真を台紙に直接 cover（白窓撤去）/ ①高解像9種に刷新（ユーザーが Figma「60+ Vintage Paper Textures」シートから番号ピッカーで選定→`card-mat-s*` 1100px JPEG、共有定数 `IMAGE_CARD_BACKING_POOL`）/ 方眼・ノートのシートを画像カード(全URL)にも使用（`100% 100%` 全面表示・写真は窓に乗る）。
 - **白い下地3連バグ修正**: シート透明部の裏の ivory 2層を transparent / 矩形ボーダーの幽霊枠を透明化 / 破れシートの影をアルファ追従 drop-shadow。**実描画 repro + 実CSS grep で検証**（推測で直して3回白を出した教訓）。
 - **破れシートで写真コーナー抑制**（`paperCardHasTornBacking()`）。
-- **ドラッグ並べ替えの重大バグ（既存）発見・修正**: `computeVirtualOrder` が ASC なのに表示は DESC → 掴むと逆順化・振動・ドロップで逆保存。DESC に統一＋回帰テスト2本。装飾を `React.memo`+メモ化で軽量化。逆転保存された並びを **`orderIndexRepairV3`（一度きり savedAt 降順再ソート、非破壊）** で復元。
-- **user 宿題（最優先・実機確認）**: (1)ドラッグの軽さ (2)並び順=新しいものが上(V3リロード後) (3)N-12 ライトボックス開閉アニメ。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **ドラッグ並べ替えの重大バグ（既存）発見・修正**: `computeVirtualOrder` が ASC なのに表示は DESC → 掴むと逆順化・振動・ドロップで逆保存。DESC に統一＋回帰テスト。装飾を `React.memo`+メモ化で軽量化。逆転保存された並びを **`orderIndexRepairV3`（一度きり savedAt 降順再ソート、非破壊）** で復元（**user 確認: 並び順=新しいものが上に直った**）。
+- **ドラッグ重さ最適化**: `computeVirtualOrder` を窓化（候補を直前ベスト近傍 半径48 に絞る＋全探索フォールバック）で O(N²)→ほぼ O(N·48)。tsc0/vitest1821。体感の最終確認は次回。
+- **収益化モデル(A) 確定（ブレスト）**: サポーター型ブレンド／Paper 無料の看板／有料プレミアム2-3本＋今後を **¥500/¥1,500 月額2階層**／**署名キー・サーバー無し・no-account 解錠**／決済 Patreon or FANBOX（(B)で確定）。**正本は `docs/private/2026-06-30-monetization-model-design.md`（gitignored・commit しない）**、memory `project_monetization_model`。**0人/プレローンチ＝収入の本当のレバーは集客**。
+- **次の最優先 = (B) 集客/ローンチ計画**（次セッション・「生計を立てる」の本丸）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 140 — Paper 品質アップ続き: 台紙高解像度化 + テキストカード紙化 + 影/メーター調整)
 

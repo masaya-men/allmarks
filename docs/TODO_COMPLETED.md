@@ -8149,3 +8149,12 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 - **ユーザー宿題**: (1)ドラッグが軽くなったか (2)並び順=新しいものが上になったか（V3 リロード後、要 EXPORT バックアップ推奨）(3)N-12 ライトボックス開閉アニメ（session141 から持ち越し・未確認）。
 - まだ重ければ `computeVirtualOrder` の O(N²)（545枚を毎回 simulateLayout）を窓化最適化。
 - 教訓: **台紙/装飾は実描画(playwright repro)を見てからデプロイ**（推測修正で白い下地を3回出した）。
+
+### セッション 142 後半（同日）— ドラッグ重さ最適化 + 収益化モデル(A) ブレスト + PCクラッシュ復旧
+
+- **PCクラッシュ復旧**: V3 並べ替え修正（orderIndexRepairV3）が未コミットで残存→検証(tsc0/vitest1819/build)→commit `9790552`＋デプロイ＋**GitHub push**（クラッシュ対策バックアップ）。
+- **ドラッグ重さ最適化**（`d66d4ed` の続き→新コミット）: ユーザー「ドラッグがかなり重い」。真因＝`computeVirtualOrder` が挿入候補 N+1 個それぞれで全コピー＋`simulateLayout`（O(N²)）＋大量 GC。**窓化**: 候補を直前ベスト位置（`lastBestIndexRef`）の半径48に絞る＋作業配列使い回し＋窓端に最適解が来た時のみ全探索フォールバック（結果同一・正確性維持）→ O(N²)→ほぼ O(N·48)。テスト2本追加（計4本、vitest1821）。体感の最終確認は次回。
+- **並び順 user 確認OK**: V3 リロードで「新しいものが上」に復元されたことをユーザーが実機確認。
+- **収益化モデル(A) ブレスト（superpowers:brainstorming）**: ユーザー「本気で生計を立てたい・月20-30万・継続課金・すぐ」。現状**0人/プレローンチ**（テーマ完成→ツイート告知予定）と判明 → **収入の本当のレバーは集客**と相互確認（試算: 月25万÷¥500≒500人課金→転換2-3%で無料1-2.5万人）。1問ずつ詰めて確定: サポーター型ブレンド／デフォルト＋**Paper は無料の看板**／有料はプレミアム2-3本＋今後を**¥500・¥1,500 の月額2階層**／**署名ライセンスキー・サーバー無し・no-account 解錠**（解約後も使用可・キー共有許容＝応援モデル）／決済 Patreon(global) or pixivFANBOX(JP)（(B)で確定）。**正本 `docs/private/2026-06-30-monetization-model-design.md`（gitignored・commit しない＝CLAUDE.md プライバシー方針）**、memory `project_monetization_model`。
+- **次の最優先 = (B) 集客/ローンチ計画**（次セッション・「生計を立てる」の本丸）。その後 (C) 署名キー解錠＋有料テーマ gating＋プレミアム制作（writing-plans）。
+- 新規メモリ3件: `reference_board_order_desc`（並び順DESC・reorder整合）/ `reference_paper_torn_sheet_cards`（破れ紙カードの透明層・実描画検証）/ `project_monetization_model`。
