@@ -162,6 +162,13 @@
 .paperCard[data-paper-sheet='true'] {
   background-size: 100% 100%;
   background-color: transparent;
+  /* No rectangular rim: the sheet IS a torn-paper silhouette, so a 1px card-box
+     border draws a ghost rounded-rectangle ("transparent base card") around the
+     torn page. Keep the 1px (box-sizing) but make it invisible so the page floats
+     on the board with only its drop-shadow, exactly like the text-card .paperNote
+     (which has no border). Vintage mats keep their border — their mat fills the
+     rectangle, so the rim reads as the paper's edge. */
+  border-color: transparent;
 }
 /* The card surface BEHIND the sheet is also ivory (.imageCard background). Make
    it transparent for sheet cards too, so the torn edges / holes show the board,

@@ -126,6 +126,7 @@
 .paperCard[data-paper-sheet='true'] {
   background-size: 100% 100%;
   background-color: transparent;
+  border-color: transparent; /* no ghost card rectangle around the torn sheet */
 }
 
 .paperPhoto {
