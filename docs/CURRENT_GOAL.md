@@ -1,25 +1,23 @@
-# 次セッションのゴール (= セッション 141)
+# 次セッションのゴール (= セッション 142)
 
-## 今の状態（セッション140で完了・allmarks.app 反映済み）
+## 今の状態（セッション141で完了・allmarks.app 反映済み）
 
-Paper テーマの作り込みをユーザー対話で継続。全て本番反映済・tsc0/vitest1816/build OK・default 無傷（paper-scoped）。
+Paper テーマをユーザー対話でブラッシュアップ。全て本番反映済・tsc0/vitest1816/build OK・default(黒+音波) 無傷（全変更 paper-scoped or paper-gate）。
 
-- **台紙の高解像度化 + ユーザー選定素材配線**（Figma CC BY 4.0、透明テープ/枝+緑封蝋/破れクラフト）。ライセンスは `docs/paper-theme-asset-licenses.md`。
-- **テキストカード（サムネ無し）を方眼/ノート紙化**（`card-paper-graph/notepad`、Yomogi 手書き）。`PlaceholderCard.paper` prop。
-- **「四角い影板」修正**: paper-note の四角 box-shadow を**形に沿う drop-shadow** へ（`:has([data-paper-note])`）。DOM 実測で真因確定。
-- **メーターは現状維持**（木ルーラー不採用）+ 色味を少し濃く。
-- **立体感強化**: カード台紙 / paper-note / ボード紙パネルの3影を強く濃く。
+- **(N-08) 中央上の「線」解消＋手書き下線** — 正体は閉じた TUNE/SETTINGS drawer の border 漏れ（SETTINGS は body portal で Lightbox 貫通）。羊皮紙サーフェスを `[data-open=true]` 限定に。代わりにメニュー下へ**かすれた筆の連続インク下線**（SVG turbulence filter, TopHeader `.group::after`）。
+- **(N-11) タグ絞り込みの黄緑解消** — active 行/タグドット等の `#28F100` を paper では forest `#2f4a37` に。
+- **(N-12) Lightbox で写真だけ額縁から持ち上げ** — paper 画像カードは台紙＋空窓を盤面に残し写真だけ飛ぶ。clone を `[data-paper-window]` 限定。**開閉アニメは実機未確認（要ユーザー確認）**。
+- **テキストカード**: 先頭が切れる不具合修正（`.paperNoteScroll` を `align-items: safe center`）＋ Lightbox で紙シートのまま拡大（`useIsPaperTheme`）。
+- **画像カードの台紙リデザインは実験→混乱→revert**（pre-N-13 のシンプル状態へ）。詳細・次の段取りは TODO.md (N-13)。
 
-## 次にやる（セッション141・ユーザーと一緒に）
+## 次にやる（セッション142・ユーザーと一緒に、1コミット=1確認で小さく）
 
-1. **ボード中央上の「よくわからない線」を解消**（ユーザー報告 = 最優先）。まず DOM 実測で正体特定（TopHeader ナビ下のルール線 / パネル境界 / 装飾のどれか）→ 解消。TODO.md (N-08)。
-2. **影の強度をユーザー実機判断で微調整**（N-09）。もっと濃く/長く可。ボードパネルは外側も明るく影が出にくい→外側を少し暗くする/縁取り追加も選択肢。
-3. **共有画像テキストカードの紙パリティ**（N-10）を一致させるか相談・実装（ShareMirror に graph/notepad 描画を足す）。
-
-## 残り（順次）
-Paper 品質: ⑥マステ/ピン配置 ／ ⑦チュートリアル PiP 紹介 ／ ⑧枠付きカードの使い道 ／ 眠り在庫（deckle-edge-mat/foxing/スタンプ）有効化 ／ follow-up: 明色 BOARD のヘッダー色ハードコード ／ OG画像の Google Fonts CORS（fallback でカバー）。
+1. **画像カードの台紙リデザインを区切ってやり直す**（TODO.md N-13 の①〜④順）。まず **②写真/動画の乗せ方=「白い下地を出さず台紙に直接 cover で乗せる（見切れOK）」** から。`.paperPhoto` の白窓(`--paper-window-bg`)撤去＋`contain`→`cover`。1つ出して実機確認→次へ。
+2. その後 **①台紙の品質**（低解像 `card-mat-1/2/3/aged` を除外）→ **③シート（方眼/ノート）の見せ方**。
+3. **N-12 の開閉アニメをユーザー実機確認**（写真が額縁から抜ける/戻るか、default LB が無変更か）。
 
 ## 守ること（毎回）
 - default 盤面 byte-identical。deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy は `--project-name=allmarks --branch=master`。
-- playwright で board カードのクリックは setPointerCapture で不可。Lightbox は開かず祖先 computed style ダンプで調査する手が有効（session140 で実証）。
-- 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。応答は日本語。
+- **台紙は一気にいじらない**。1変更=1デプロイ=1実機確認。ユーザーが混乱したら即止めて revert を提案。
+- playwright で board カードのクリックは setPointerCapture で不可（Lightbox 開閉は実機確認に頼る）。paper の実機再現は IDB の `settings/board-config` に `themeId:'paper-atelier'` をシード。
+- 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。応答は日本語、簡潔に。
