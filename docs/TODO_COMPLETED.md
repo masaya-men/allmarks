@@ -8120,3 +8120,32 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 - **新規バグ（ユーザー報告・未対応）**: ボード中央上に「よくわからない線」がある（要調査）。
 - 影の強度はユーザー実機フィードバック待ち（控えめなら更に濃く・長く / ボードパネルは外側も明るいため出にくく、外側を暗くする等の案あり）。
 - **共有画像のテキストカード紙パリティ（ShareMirror）未対応**: 盤面はサムネ無し=方眼/ノート紙だが、ShareMirror は「台紙＋写真窓プレースホルダ」で見た目が異なる。要相談。
+
+---
+
+## セッション 142 (2026-06-30) — Paper 台紙リデザイン N-13 完遂 + ドラッグ並べ替えの重大バグ修正
+
+全て `allmarks.app` 反映済・GitHub push 済。**tsc0 / vitest1819 / build OK・default(黒+音波) 無傷**（全変更 paper-scoped か paper-gate）。10コミット。1コミット=1確認で小さく進行。
+
+### N-13 画像カードの台紙リデザイン（ユーザー対話で完遂）
+1. **②写真を台紙に直接 cover**（`e2a2a14`）: `.paperPhoto` の白窓 `--paper-window-bg` 撤去＋`object-fit:contain→cover`（見切れOK）。CardSlideshow も cover に統一。
+2. **①台紙を高解像9種に刷新**（`7e696c0`→`67b131f`）: 最初は既存 mat を高解像プールに絞ったが、ユーザーが「高品質と感じない」。元素材 `C:/Users/masay/Downloads/60+ Free Vintage Paper Textures (Community).png`（9156×29860 の4列縦長コンタクトシート）の存在を思い出し、**番号付きピッカー HTML を生成**（scratchpad/mat/picker、推奨マーク＋複数選択＋番号コピー）→ ユーザーが **5,15,17,28,32,33,35,41,52** を選定 → 元シートから高解像で切り出し（gutter [120,120,120] を内側INSETで回避）→ **1100px JPEG**（9枚計約1.2MB、PNG 19MB回避）。id=元タイル番号 `card-mat-s*`。`paperAssetUrl` を JPEG 対応化。共有定数 **`IMAGE_CARD_MAT_POOL`/`IMAGE_CARD_BACKING_POOL`**（lib/board/paper-assets.ts）で board(ImageCard) と share(ShareMirror) を同期。
+3. **方眼/ノートのシートを画像カード(全URL)にも使用**（`31fab14`、ユーザー要望「テキストカードだけでなく全URLで」）: `card-paper-graph/notepad` を `IMAGE_CARD_SHEET_POOL` に追加→`IMAGE_CARD_BACKING_POOL`（mat9+sheet2）。シートは `background-size:100% 100%`（穴/綴じ/罫が見える）、写真は既存の窓に乗る＝「ノートに写真を貼った」見た目。`isPaperSheet()` 判定。
+4. **白い下地 3 連バグ修正**（ユーザー「また白い下地」と複数回指摘→**推測で直して3回失敗**→実描画 repro で根本特定する方針に転換）:
+   - (a) **白い下地**（`808f405`）: シート PNG の透明部(破れ端/穴/綴じ)の裏に ivory `#f7f1e3` が **2層**（`.imageCard` 背景 + `.paperCard` 背景色）あり透ける → 両方 `transparent` 化（テキストカード `.paperNote` と同じ）。影も矩形 box-shadow→アルファ追従 drop-shadow（CardNode `:has([data-paper-sheet])`）。
+   - (b) **透明の下地カード（幽霊枠）**（`f0dae94`）: `.paperCard` の 1px 角丸ボーダーが破れ紙の周りに矩形枠として残る → `border-color:transparent`（ヴィンテージ紙はボーダー維持＝紙の縁として正しい）。
+   - **検証手法**: playwright で実CSS値そのままのカードを描画(repro2〜5)→白/枠を目視特定→修正版を比較→ビルド後の実CSS(out/)を grep で確認。
+5. **破れシートで写真コーナー抑制**（`a4ba676`）: 写真コーナーは矩形角に固定なので破れ角で浮いて破綻。`paperCardHasTornBacking()`（cards/index.ts、ImageCard と同じ seed+`IMAGE_CARD_BACKING_POOL` で判定→描画と一致）を CardsLayer/ShareMirror から渡し、破れシート時のみ photoCorners を抑制（washi/pin/clip は維持・rng 不変）。`seedFractionFromId` を paper-assets に共通化。
+
+### ドラッグ並べ替えの重大バグ（既存・今回ユーザー発見→修正）
+- **症状**: ①並び順が反転して見える ②カードを掴んで動かさないだけで他カードが「古い順↔新しい順」を振動 ③ドラッグが重い。
+- **真因（コード追跡で確定）**: `computeVirtualOrder`（use-card-reorder-drag.ts:310）が **ASC**(`a-b`) ソート。だが盤面表示は **DESC**(`b-a`, use-board-data.ts:270 = 新しい順が上)。プレビュー(previewMasonry)が DESC表示と逆になり、掴んだカードの位置が逆順レイアウトと噛み合わず毎フレーム再計算→振動。`persistOrderBatch` は視覚top-down(DESC)を期待するのでドロップで逆保存。**今セッションのテクスチャ変更とは無関係の既存バグ**（「最新が上」DESC化した時に並べ替え側を直し忘れ）。
+- **修正**:
+  - `2d4709f`: `computeVirtualOrder` を DESC に統一（表示と一致）→掴んでも逆転/振動せず保存も正しい向き。回帰テスト `use-card-reorder-drag.test.ts` 2本追加。
+  - `d66d4ed`: ドラッグの重さ＝paper装飾(PaperCardDecorations)が毎フレーム全カード再描画（getCardDecorations PRNG + 多数の span）。**`React.memo`** でラップ + `tornBacking` を CardsLayer で useMemo Map 化（毎フレームの pickCard/detectUrlType を排除）。
+  - `9790552`: **並び順の復元** = `orderIndexRepairV3`（一度きり）。逆転保存された並びを savedAt 降順で再ソート＝新しいものが上。drag-reorder は DESC化以前からずっと壊れていた＝保護すべき正しい手動順は存在しないので全ユーザー安全（壊れた順を直す/既に新しい順の人は無変化）。非破壊（orderIndex のみ更新・削除/スキーマ変更なし）。V2 の関数を flagKey でパラメータ化。
+
+### 次回への申し送り（実機確認待ち）
+- **ユーザー宿題**: (1)ドラッグが軽くなったか (2)並び順=新しいものが上になったか（V3 リロード後、要 EXPORT バックアップ推奨）(3)N-12 ライトボックス開閉アニメ（session141 から持ち越し・未確認）。
+- まだ重ければ `computeVirtualOrder` の O(N²)（545枚を毎回 simulateLayout）を窓化最適化。
+- 教訓: **台紙/装飾は実描画(playwright repro)を見てからデプロイ**（推測修正で白い下地を3回出した）。
