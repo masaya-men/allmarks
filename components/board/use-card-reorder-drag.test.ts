@@ -56,3 +56,36 @@ describe('computeVirtualOrder — order direction matches the DESC board display
     expect(order).toEqual(['a', 'c', 'b'])
   })
 })
+
+describe('computeVirtualOrder — windowed search stays correct beyond the radius', () => {
+  // 120 cards (orderIndex 0..119). DESC display top→bottom: [119, 118, ..., 0].
+  const many = Array.from({ length: 120 }, (_, i) => item(`c${i}`, i))
+
+  it('falls back to a full scan when the target is outside the search window', () => {
+    // Drag c60 (DESC index = 119-60 = 59). searchCenter omitted → centers on 59,
+    // window ≈ [11, 107]. Drop target is the very top (y=0, index 0) — OUTSIDE the
+    // window. The edge-fallback full scan must still place it first.
+    const order = computeVirtualOrder({
+      items: many,
+      draggedId: 'c60',
+      cardWorldX: 0,
+      cardWorldY: 0,
+      simulateLayout: stackLayout,
+    })
+    expect(order[0]).toBe('c60')
+    expect(order.length).toBe(120)
+  })
+
+  it('windowed result matches a near-center drop without needing the fallback', () => {
+    // c60 is at DESC index 59 (y≈5900). Nudge it one slot up (y≈5800 → index 58).
+    const order = computeVirtualOrder({
+      items: many,
+      draggedId: 'c60',
+      cardWorldX: 0,
+      cardWorldY: 58 * 100,
+      simulateLayout: stackLayout,
+      searchCenter: 59,
+    })
+    expect(order.indexOf('c60')).toBe(58)
+  })
+})

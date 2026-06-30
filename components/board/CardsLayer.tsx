@@ -477,6 +477,9 @@ export function CardsLayer({
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
   const lastComputeRef = useRef<{ x: number; y: number } | null>(null)
+  // Last chosen insertion index — windows computeVirtualOrder's search near it
+  // so a large board stays smooth to drag. Reset (null) at each drag's start.
+  const lastBestIndexRef = useRef<number | null>(null)
   const reduceMotion = useReducedMotion()
 
   // ── Tier 1 viewport autoplay ──
@@ -848,7 +851,11 @@ export function CardsLayer({
             resolveWidth: resolveCardWidth,
             intrinsicHeights,
           }),
+          searchCenter: lastBestIndexRef.current ?? undefined,
         })
+        // Remember where the dragged card landed so the next recompute windows
+        // its search around it (keeps drag smooth on large boards).
+        lastBestIndexRef.current = newOrder.indexOf(id)
 
         // Only update state if order actually changed — avoids re-render storms.
         setVirtualOrderedIds((prev) => {
@@ -864,8 +871,9 @@ export function CardsLayer({
     ),
     onDrop: useCallback(
       (_orderedIds: readonly string[]): void => {
-        // Reset throttle ref so next drag starts fresh.
+        // Reset throttle + search-window refs so the next drag starts fresh.
         lastComputeRef.current = null
+        lastBestIndexRef.current = null
 
         const draggedId = dragStateRef.current?.bookmarkId
 

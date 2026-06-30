@@ -295,6 +295,15 @@ type SimulateLayout = (
  * in CardsLayer this stays under a frame for boards up to a few hundred
  * cards.
  */
+/** How many insertion indices on each side of the last best index to test per
+ *  recompute. A drag moves incrementally (≤8px throttle), so the best index
+ *  shifts by ~1 per step and always stays well inside this window. Bounds the
+ *  per-step cost to O(N·R) instead of O(N²) — the difference between smooth and
+ *  janky on a large board (hundreds of cards). The full scan still runs as a
+ *  fallback when the window's optimum lands on its edge (e.g. after an edge-
+ *  auto-scroll jump), so correctness is preserved. */
+const REORDER_SEARCH_RADIUS = 48
+
 export function computeVirtualOrder(params: {
   items: ReadonlyArray<BoardItem>
   draggedId: string
@@ -304,8 +313,12 @@ export function computeVirtualOrder(params: {
   /** Caller-supplied layout simulator. Receives the simulated ordered items
    *  and must return positions for all of them. */
   simulateLayout: SimulateLayout
+  /** Last chosen insertion index, to window the search near it (perf). Omit on
+   *  the first recompute of a drag — it then centers on the dragged card's own
+   *  current index. */
+  searchCenter?: number
 }): readonly string[] {
-  const { items, draggedId, cardWorldX, cardWorldY, simulateLayout } = params
+  const { items, draggedId, cardWorldX, cardWorldY, simulateLayout, searchCenter } = params
 
   // DESC by orderIndex — MUST match the board's display sort (use-board-data
   // sorts active items DESC: newest-saved at top). If this used ASC while the
@@ -321,27 +334,43 @@ export function computeVirtualOrder(params: {
   const draggedItem = items.find((it) => it.bookmarkId === draggedId)
   if (!draggedItem) return ordered.map((it) => it.bookmarkId)
 
-  let bestIdx = 0
-  let bestDist = Infinity
+  const n = withoutDragged.length
+  // One reusable working array — insert dragged at idx, simulate, remove. Avoids
+  // allocating a fresh N-length array per candidate (heavy GC during a drag).
+  const work = withoutDragged.slice()
 
-  for (let idx = 0; idx <= withoutDragged.length; idx++) {
-    // Build simulated items array with dragged inserted at idx.
-    const simulatedItems: BoardItem[] = withoutDragged.slice()
-    simulatedItems.splice(idx, 0, draggedItem)
+  const distAt = (idx: number): number => {
+    work.splice(idx, 0, draggedItem)
+    const positions = simulateLayout(work)
+    work.splice(idx, 1)
+    const p = positions[draggedId]
+    if (!p) return Infinity
+    const dx = p.x - cardWorldX
+    const dy = p.y - cardWorldY
+    return dx * dx + dy * dy
+  }
 
-    const positions = simulateLayout(simulatedItems)
-    const simPos = positions[draggedId]
-    if (!simPos) continue
-
-    // Squared distance between simulated position and current visual top-left.
-    const dx = simPos.x - cardWorldX
-    const dy = simPos.y - cardWorldY
-    const dist = dx * dx + dy * dy
-
-    if (dist < bestDist) {
-      bestDist = dist
-      bestIdx = idx
+  const scan = (lo: number, hi: number): number => {
+    let bi = lo
+    let bd = Infinity
+    for (let idx = lo; idx <= hi; idx++) {
+      const d = distAt(idx)
+      if (d < bd) {
+        bd = d
+        bi = idx
+      }
     }
+    return bi
+  }
+
+  // Windowed scan around the last/own index; full-scan fallback if the optimum
+  // is on the window edge (true best may lie beyond it).
+  const center = searchCenter ?? ordered.findIndex((it) => it.bookmarkId === draggedId)
+  const lo = Math.max(0, center - REORDER_SEARCH_RADIUS)
+  const hi = Math.min(n, center + REORDER_SEARCH_RADIUS)
+  let bestIdx = scan(lo, hi)
+  if ((bestIdx === lo && lo > 0) || (bestIdx === hi && hi < n)) {
+    bestIdx = scan(0, n)
   }
 
   const ids = withoutDragged.map((it) => it.bookmarkId)
