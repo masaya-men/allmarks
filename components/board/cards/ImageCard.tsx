@@ -5,7 +5,7 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import type { MediaSlot } from '@/lib/embed/types'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
-import { paperAssetUrl, pickPaperAsset } from '@/lib/board/paper-assets'
+import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_MAT_POOL } from '@/lib/board/paper-assets'
 import { PlaceholderCard } from './PlaceholderCard'
 import styles from './ImageCard.module.css'
 
@@ -228,10 +228,7 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
   // Paper-atelier card face: deterministic mat backing, mounted-print photo
   // inset, serif ink caption. Only rendered when paper===true.
   if (paper) {
-    const matId = pickPaperAsset(
-      seedFractionFromId(item.bookmarkId),
-      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged', 'card-mat-4', 'card-mat-5', 'card-mat-lined', 'card-mat-grid'],
-    )
+    const matId = pickPaperAsset(seedFractionFromId(item.bookmarkId), IMAGE_CARD_MAT_POOL)
     const matUrl = matId ? paperAssetUrl(matId) : null
     return (
       <div

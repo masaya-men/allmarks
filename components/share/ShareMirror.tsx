@@ -7,7 +7,7 @@ import type { ThemeId } from '@/lib/board/types'
 import { patternSvgDataUri } from '@/lib/board/theme-customization'
 import type { ShareCustomization } from '@/lib/share/types-v2'
 import { getThemeMeta } from '@/lib/board/theme-registry'
-import { paperAssetUrl, pickPaperAsset } from '@/lib/board/paper-assets'
+import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_MAT_POOL } from '@/lib/board/paper-assets'
 import { PaperCardDecorations } from '@/components/board/decorations/PaperCardDecorations'
 import styles from './ShareMirror.module.css'
 
@@ -259,10 +259,7 @@ function MirrorCardContent({ item, isPaper = false }: { readonly item: MirrorIte
 
   // --- Paper mat shell ---
   if (isPaper) {
-    const matId = pickPaperAsset(
-      seedFractionFromId(item.id),
-      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged', 'card-mat-4', 'card-mat-5', 'card-mat-lined', 'card-mat-grid'],
-    )
+    const matId = pickPaperAsset(seedFractionFromId(item.id), IMAGE_CARD_MAT_POOL)
     const matUrl = matId ? paperAssetUrl(matId) : null
     const thumbContent: ReactNode = showPlaceholder ? (
       // Placeholder inside the paper photo window

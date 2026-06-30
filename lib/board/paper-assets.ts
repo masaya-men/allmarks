@@ -93,6 +93,25 @@ export function paperAssetUrl(id: PaperAssetId): string | null {
 }
 
 /**
+ * The mat backings a paper image card may pick from (N-13 ①). Single source of
+ * truth so ImageCard.tsx (board) and ShareMirror.tsx (share replica) stay in
+ * sync — both seed pickPaperAsset with the same card id over this exact pool,
+ * so a card shows the SAME mat on the board and in its shared OG image.
+ *
+ * Only HIGH-RES mats: the real photographed vintage papers (card-mat-4/5,
+ * Figma CC BY 4.0) and the upscaled ruled/graph textures (card-mat-lined/grid).
+ * The earlier low-res generated mats (card-mat-1/2/3/aged) are excluded — they
+ * blur when scaled onto a card. All four are solid repeating textures that
+ * survive background-size:cover with no torn edge to clip.
+ */
+export const IMAGE_CARD_MAT_POOL: readonly PaperAssetId[] = [
+  'card-mat-4',
+  'card-mat-5',
+  'card-mat-lined',
+  'card-mat-grid',
+]
+
+/**
  * Deterministically pick the asset to use from a candidate list, skipping any
  * not-yet-placed ids. `seedFraction` is a stable 0..1 number (e.g. derived
  * from card.id) so the same card always gets the same variant. Returns null
