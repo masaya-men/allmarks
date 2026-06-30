@@ -194,6 +194,12 @@ export interface SettingsRecord {
   migrationFlags?: {
     readonly orderIndexRepairV1?: boolean
     readonly orderIndexRepairV2?: boolean
+    /** v3: a one-shot RE-run of the savedAt-DESC resort. The drag-reorder was
+     *  inverted (ASC vs the DESC display) from the day the board switched to
+     *  newest-first until that was fixed, so every reorder persisted in that
+     *  window is garbage (no valid manual order to preserve). v3 cleans it up
+     *  once; legit reorders done after the fix are preserved (flag stops it). */
+    readonly orderIndexRepairV3?: boolean
   }
 }
 
@@ -772,6 +778,10 @@ export async function nextOrderIndex(db: IDBPDatabase<AllMarksDB>): Promise<numb
  */
 export async function repairOrderIndexIfNeeded(
   db: IDBPDatabase<AllMarksDB>,
+  /** Which one-shot flag gates this run. v2 = the original resort; v3 = the
+   *  one-time re-run that cleans up orders corrupted by the inverted drag-
+   *  reorder bug. Each runs at most once per IDB instance. */
+  flagKey: 'orderIndexRepairV2' | 'orderIndexRepairV3' = 'orderIndexRepairV2',
 ): Promise<{ ran: boolean; updated: number }> {
   // Read the guard flag. CRITICAL: a read FAILURE must not be treated as
   // "not yet migrated" — re-running this migration re-sorts by savedAt and
@@ -784,7 +794,7 @@ export async function repairOrderIndexIfNeeded(
   } catch {
     return { ran: false, updated: 0 }
   }
-  if (existingMigration?.migrationFlags?.orderIndexRepairV2) {
+  if (existingMigration?.migrationFlags?.[flagKey]) {
     return { ran: false, updated: 0 }
   }
 
@@ -816,7 +826,7 @@ export async function repairOrderIndexIfNeeded(
       ...existingMigration,
       migrationFlags: {
         ...(existingMigration?.migrationFlags ?? {}),
-        orderIndexRepairV2: true,
+        [flagKey]: true,
       },
     })
     await tx.done
@@ -826,7 +836,7 @@ export async function repairOrderIndexIfNeeded(
       ...existingMigration,
       migrationFlags: {
         ...(existingMigration?.migrationFlags ?? {}),
-        orderIndexRepairV2: true,
+        [flagKey]: true,
       },
     })
   }

@@ -256,6 +256,24 @@ export function useBoardData(): {
         console.warn('[allmarks] orderIndex repair failed (non-fatal):', e)
       }
       if (cancelled) return
+      // One-shot v3: RE-run the savedAt-DESC resort once. The drag-reorder was
+      // inverted (ASC) against the DESC display from the newest-first switch
+      // until it was fixed, so any order persisted in that window is garbage.
+      // This restores "newest at top" for everyone affected; idempotent for
+      // users already in save-date order. Runs once (orderIndexRepairV3 flag),
+      // so legit reorders done after the fix are preserved.
+      try {
+        const r3 = await repairOrderIndexIfNeeded(
+          db as Parameters<typeof repairOrderIndexIfNeeded>[0],
+          'orderIndexRepairV3',
+        )
+        if (r3.ran && r3.updated > 0) {
+          console.info(`[allmarks] orderIndex migration v3: re-sorted ${r3.updated} bookmarks by save date`)
+        }
+      } catch (e) {
+        console.warn('[allmarks] orderIndex repair v3 failed (non-fatal):', e)
+      }
+      if (cancelled) return
       const bookmarks = await getAllBookmarks(db as Parameters<typeof getAllBookmarks>[0])
       const cards = (await db.getAll('cards')) as CardRecord[]
       const cardByBookmark = new Map<string, CardRecord>()
