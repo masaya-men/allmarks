@@ -34,6 +34,12 @@ export type CardComponentProps = {
   /** When true, renders the paper-atelier card face (mat backing + mounted
    *  photo inset + serif caption). Only consumed by ImageCard. Default false. */
   readonly paper?: boolean
+  /** Paper-only: when true, the mounted photo inside the mat window is held
+   *  invisible while its lifted copy flies to / from the Lightbox — the mat +
+   *  caption + empty paper window stay on the board, so opening reads as taking
+   *  the print out of its frame rather than the whole card vanishing. Only
+   *  consumed by ImageCard's paper branch; ignored otherwise (N-12). */
+  readonly photoHidden?: boolean
 }
 
 export type CardComponent = ComponentType<CardComponentProps>

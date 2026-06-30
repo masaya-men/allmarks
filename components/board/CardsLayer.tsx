@@ -43,7 +43,7 @@ import { useSpotlightRotation } from '@/lib/board/use-spotlight-rotation'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX } from './use-card-reorder-drag'
-import { pickCard, itemSkylineHeight } from './cards'
+import { pickCard, itemSkylineHeight, ImageCard } from './cards'
 import { selectPaperSoftShuffle } from '@/lib/board/paper-soft-shuffle'
 import styles from './CardsLayer.module.css'
 
@@ -969,7 +969,11 @@ export function CardsLayer({
         const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
         const elapsed = ev.timeStamp - startTime
         if (elapsed < CLICK_MAX_MS && distance < CLICK_THRESHOLD_PX) {
-          onClick(bookmarkId, el.getBoundingClientRect())
+          // For a paper image card seed the FLIP from the photo WINDOW rect (the
+          // print), not the whole card — so the Lightbox lifts just the photo out
+          // of the mat. Falls back to the card rect for every other card (N-12).
+          const win = el.querySelector<HTMLElement>('[data-paper-window]')
+          onClick(bookmarkId, (win ?? el).getBoundingClientRect())
         }
       }
       el.addEventListener('pointerup', end)
@@ -1021,6 +1025,12 @@ export function CardsLayer({
         // transition — distracting per session 73 user feedback.
         const isLightboxSource = sourceCardId === it.bookmarkId
         const hoverActive = hoveredBookmarkId === it.bookmarkId && !isLightboxSource
+        // Paper image cards mount their photo in a mat window (ImageCard's paper
+        // branch). For those, the Lightbox lifts only the photo out and leaves
+        // the mat on the board, so the source card must STAY visible (we hide
+        // just the photo via `photoHidden`, below) instead of the whole-card
+        // visibility:hidden used for every other card/theme (N-12).
+        const isPaperWindowCard = meta.decorations === true && pickCard(it) === ImageCard
         return (
           <div
             key={it.bookmarkId}
@@ -1061,7 +1071,11 @@ export function CardsLayer({
                         ? 100
                         : undefined,
               opacity: newlyAddedIds.has(it.bookmarkId) ? 0 : 1,
-              visibility: sourceCardId === it.bookmarkId ? 'hidden' : undefined,
+              // Hide the whole source card while the Lightbox is open — EXCEPT
+              // paper image cards, which keep their mat on the board and only
+              // hide the photo (photoHidden, below) so the print lifts out of
+              // the frame (N-12).
+              visibility: isLightboxSource && !isPaperWindowCard ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
               ['--card-radius' as string]: meta.colorScheme === 'light' ? '3px' : '20px',
             }}
@@ -1097,6 +1111,7 @@ export function CardsLayer({
                     softShuffle={softShuffleSel.crossfade}
                     cycleMs={softShuffleSel.cadenceMs}
                     paper={meta.decorations === true}
+                    photoHidden={isLightboxSource && isPaperWindowCard}
                   />
                 )
               })()}

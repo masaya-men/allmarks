@@ -30,6 +30,10 @@ type Props = {
    *  photo inset + serif caption). Default false = full-bleed thumbnail,
    *  unchanged from the default theme. */
   readonly paper?: boolean
+  /** Paper-only: hold the mounted photo invisible (mat + window + caption stay)
+   *  while its lifted copy flies to / from the Lightbox — see CardComponentProps
+   *  / N-12. No effect off the paper branch. */
+  readonly photoHidden?: boolean
 }
 
 /**
@@ -48,7 +52,7 @@ function seedFractionFromId(id: string): number {
 
 const ASPECT_EPSILON = 0.005
 
-export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200, softShuffle = false, paper = false }: Props): ReactNode {
+export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200, softShuffle = false, paper = false, photoHidden = false }: Props): ReactNode {
   const imgRef = useRef<HTMLImageElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -247,8 +251,19 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
           data-paper-mat="true"
           style={matUrl ? { backgroundImage: `url("${matUrl}")` } : undefined}
         >
-          <div className={styles.paperPhoto}>
-            {renderThumbContent()}
+          {/* data-paper-window: the Lightbox FLIP lifts a clone of THIS element
+              (the print, not the whole card) out toward the lightbox, and seeds
+              the morph from this window's rect — so the mat stays put on the
+              board (N-12). data-photo-content wraps the media so it can be held
+              invisible (the lifted print is mid-flight) while the warm paper
+              window remains, reading as an empty frame. */}
+          <div className={styles.paperPhoto} data-paper-window="true">
+            <div
+              data-photo-content="true"
+              style={{ position: 'absolute', inset: 0, visibility: photoHidden ? 'hidden' : undefined }}
+            >
+              {renderThumbContent()}
+            </div>
           </div>
           {item.title && <div className={styles.paperCaption}>{item.title}</div>}
         </div>

@@ -305,6 +305,14 @@ function createLightboxClone(sourceCard: HTMLElement, rect: CloneRect): HTMLElem
   for (const sel of SELECTORS_TO_STRIP) {
     clone.querySelectorAll(sel).forEach((n) => n.remove())
   }
+  // N-12: when the clone IS a paper photo window (the print lifted out of the
+  // mat), the source's photo is held invisible (photoHidden) so the board shows
+  // an empty frame. The flying copy must show the photo, so force its content
+  // visible — this also covers the rare race where the clone is taken before
+  // the source's hide has committed.
+  clone.querySelectorAll<HTMLElement>('[data-photo-content]').forEach((n) => {
+    n.style.visibility = 'visible'
+  })
   return clone
 }
 
@@ -593,7 +601,10 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
     const liveSourceEl = sourceCardId
       ? document.querySelector<HTMLElement>(`[data-bookmark-id="${sourceCardId}"]`)
       : null
-    const liveSourceRect = liveSourceEl?.getBoundingClientRect() ?? null
+    // N-12: on a paper image card, shrink the photo clone back INTO the mat
+    // window (the empty frame on the board), not the whole card box.
+    const cloneSrc = liveSourceEl?.querySelector<HTMLElement>('[data-paper-window]') ?? liveSourceEl
+    const liveSourceRect = cloneSrc?.getBoundingClientRect() ?? null
     const closeOrigin = liveSourceRect ?? originRect
 
     const mediaEl = mediaRef.current
@@ -631,8 +642,8 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       if (host) clearCloneHost()
       const closeOriginHost = host ? toHostRelativeRect(closeOrigin, host) : null
       const mediaRectHost = host ? toHostRelativeRect(mediaRect, host) : null
-      if (liveSourceEl && host && mediaRectHost && closeOriginHost) {
-        clone = createLightboxClone(liveSourceEl, mediaRectHost)
+      if (cloneSrc && host && mediaRectHost && closeOriginHost) {
+        clone = createLightboxClone(cloneSrc, mediaRectHost)
         // session 35: close は media 大 → source 小 に縮む。 scale-host は source 寸法
         // 固定 + 初期 scale = media/source (= 大)、 tween 中 scale = currentW/sourceW
         // で 1.0 (= source size 実寸) に着地。
@@ -925,10 +936,14 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       const sourceCard = sourceCardId
         ? document.querySelector<HTMLElement>(`[data-bookmark-id="${sourceCardId}"]`)
         : null
-      // Prefer the source card's *live* rect over the captured originRect.
+      // N-12: on a paper image card, fly only the photo (the print) — clone the
+      // mat WINDOW and seed the morph from its rect, leaving the mat on the
+      // board. Every other card clones the whole card from the card rect.
+      const cloneSrc = sourceCard?.querySelector<HTMLElement>('[data-paper-window]') ?? sourceCard
+      // Prefer the source's *live* rect over the captured originRect.
       // originRect was snapshotted at click time and won't track scroll/
       // pan that happened in the brief window before the lightbox mounted.
-      const sourceRect = sourceCard ? sourceCard.getBoundingClientRect() : originRect
+      const sourceRect = cloneSrc ? cloneSrc.getBoundingClientRect() : originRect
 
       const dx = (mediaRect.left + mediaRect.width / 2) - (sourceRect.left + sourceRect.width / 2)
       const dy = (mediaRect.top + mediaRect.height / 2) - (sourceRect.top + sourceRect.height / 2)
@@ -961,8 +976,8 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       const sourceRectHost = host ? toHostRelativeRect(sourceRect, host) : null
       const mediaRectHost = host ? toHostRelativeRect(mediaRect, host) : null
       let scaleHost: HTMLElement | null = null
-      if (sourceCard && host && sourceRectHost) {
-        clone = createLightboxClone(sourceCard, sourceRectHost)
+      if (cloneSrc && host && sourceRectHost) {
+        clone = createLightboxClone(cloneSrc, sourceRectHost)
         // session 35: 文字カード hybrid。 内側に scale-host を仕込んで、 外側
         // width/height tween と同期で内容も拡大させる。 文字以外 (image/video) は
         // null が返り、 従来通りの挙動 (= img が自然 fit) を維持。
