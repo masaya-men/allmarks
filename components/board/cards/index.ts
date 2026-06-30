@@ -2,6 +2,12 @@ import type { ComponentType } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import { detectUrlType } from '@/lib/utils/url'
+import {
+  IMAGE_CARD_BACKING_POOL,
+  isPaperSheet,
+  pickPaperAsset,
+  seedFractionFromId,
+} from '@/lib/board/paper-assets'
 import { VideoThumbCard } from './VideoThumbCard'
 import { ImageCard } from './ImageCard'
 import { PlaceholderCard } from './PlaceholderCard'
@@ -67,6 +73,27 @@ export function pickCard(item: BoardItem): CardComponent {
 /** True when the card renders as a (thumbnail-less) PlaceholderCard. */
 export function isPlaceholderCard(item: BoardItem): boolean {
   return pickCard(item) === PlaceholderCard
+}
+
+/**
+ * Whether a paper card's backing is a TORN-PAPER sheet (graph / spiral notepad)
+ * rather than a rectangular mat or video thumbnail. The corner decorations
+ * (photo corners) sit at the card's rectangular box corners, which on a torn
+ * sheet fall on the torn-away / transparent zone and float detached ("破綻").
+ * The decoration layer suppresses those corners when this is true.
+ *
+ * - PlaceholderCard (text, no thumbnail) → always a sheet → torn.
+ * - ImageCard → torn iff it picked a sheet from IMAGE_CARD_BACKING_POOL. Uses the
+ *   SAME seed + pool as ImageCard so the decision matches what was rendered.
+ * - VideoThumbCard → rectangular thumbnail, never torn.
+ */
+export function paperCardHasTornBacking(item: BoardItem): boolean {
+  const card = pickCard(item)
+  if (card === PlaceholderCard) return true
+  if (card === ImageCard) {
+    return isPaperSheet(pickPaperAsset(seedFractionFromId(item.bookmarkId), IMAGE_CARD_BACKING_POOL))
+  }
+  return false
 }
 
 /**

@@ -205,7 +205,12 @@ export function ShareMirror({
                     >
                       <MirrorCardContent item={item} isPaper />
                     </div>
-                    <PaperCardDecorations cardId={item.id} />
+                    <PaperCardDecorations
+                      cardId={item.id}
+                      tornBacking={isPaperSheet(
+                        pickPaperAsset(seedFractionFromId(item.id), IMAGE_CARD_BACKING_POOL),
+                      )}
+                    />
                   </div>
                 )
               }

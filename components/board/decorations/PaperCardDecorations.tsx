@@ -22,15 +22,25 @@ import styles from './PaperCardDecorations.module.css'
  */
 export function PaperCardDecorations({
   cardId,
+  tornBacking = false,
 }: {
   /** Stable bookmark id used as the deterministic seed (CardNode data-card-id). */
   readonly cardId: string
+  /** True when the card's backing is a torn-paper sheet (graph / notepad). Photo
+   *  corners anchor to the rectangular card-box corners, which on a torn sheet
+   *  fall on the torn-away zone and float detached — so they're suppressed here.
+   *  Edge/center decorations (washi, pin, clip) are unaffected: tape over a torn
+   *  edge reads fine. Other decoration rolls are untouched (no reshuffle). */
+  readonly tornBacking?: boolean
 }): ReactElement {
   const set = getCardDecorations(cardId)
+  // On torn-paper sheets the four box corners aren't where the paper corner is,
+  // so a corner holder sits on empty board → drop them for these cards only.
+  const photoCorners = tornBacking ? [] : set.photoCorners
 
   return (
     <div className={styles.overlay} aria-hidden="true" data-testid="paper-card-decorations">
-      {set.photoCorners.map((c) => {
+      {photoCorners.map((c) => {
         // Use ONE corner asset (photo-corner-1 = top-left pocket) and rotate it
         // to each corner. This guarantees the pocket always points the right way
         // — the 4 source PNGs aren't reliably ordered tl/tr/br/bl, so mapping by

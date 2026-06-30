@@ -5,7 +5,7 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import type { MediaSlot } from '@/lib/embed/types'
 import { detectUrlType, isInstagramReel } from '@/lib/utils/url'
-import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_BACKING_POOL, isPaperSheet } from '@/lib/board/paper-assets'
+import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_BACKING_POOL, isPaperSheet, seedFractionFromId } from '@/lib/board/paper-assets'
 import { PlaceholderCard } from './PlaceholderCard'
 import styles from './ImageCard.module.css'
 
@@ -41,15 +41,6 @@ type Props = {
  * picking. Inlined here because paper-decorations.ts's hashStringToSeed is
  * not exported (and adding an export there for one consumer would be noisy).
  */
-function seedFractionFromId(id: string): number {
-  let h = 0x811c9dc5
-  for (let i = 0; i < id.length; i++) {
-    h ^= id.charCodeAt(i)
-    h = Math.imul(h, 0x01000193)
-  }
-  return (h >>> 0) / 0x100000000
-}
-
 const ASPECT_EPSILON = 0.005
 
 export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, cardWidth, cardHeight, displayMode, autoCycle = false, cycleMs = 2200, softShuffle = false, paper = false, photoHidden = false }: Props): ReactNode {

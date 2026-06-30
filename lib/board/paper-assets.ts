@@ -163,6 +163,19 @@ export function isPaperSheet(id: PaperAssetId | null): boolean {
   return id != null && IMAGE_CARD_SHEET_POOL.includes(id)
 }
 
+/** Stable 0..1 fraction from a card id (FNV-1a). Single source of truth so the
+ *  card (ImageCard) and anything that needs to know which backing it picked
+ *  (decoration layer) derive the SAME variant — keep callers on this, not a
+ *  local copy, or their picks can silently drift apart. */
+export function seedFractionFromId(id: string): number {
+  let h = 0x811c9dc5
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return (h >>> 0) / 0x100000000
+}
+
 /**
  * Deterministically pick the asset to use from a candidate list, skipping any
  * not-yet-placed ids. `seedFraction` is a stable 0..1 number (e.g. derived

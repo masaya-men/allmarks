@@ -43,7 +43,7 @@ import { useSpotlightRotation } from '@/lib/board/use-spotlight-rotation'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX } from './use-card-reorder-drag'
-import { pickCard, itemSkylineHeight, ImageCard } from './cards'
+import { pickCard, itemSkylineHeight, ImageCard, paperCardHasTornBacking } from './cards'
 import { selectPaperSoftShuffle } from '@/lib/board/paper-soft-shuffle'
 import styles from './CardsLayer.module.css'
 
@@ -1117,7 +1117,10 @@ export function CardsLayer({
               })()}
             </CardNode>
             {meta.decorations === true && (
-              <PaperCardDecorations cardId={it.bookmarkId} />
+              <PaperCardDecorations
+                cardId={it.bookmarkId}
+                tornBacking={paperCardHasTornBacking(it)}
+              />
             )}
             {receiverMode && (() => {
               const tagIds = receiverMode.senderTagIdsByCard.get(it.url) ?? []
