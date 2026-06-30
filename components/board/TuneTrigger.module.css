@@ -333,21 +333,27 @@
    Only color / background / border / box-shadow / backdrop-filter touched.
    Layout, sizing, font-family, animation, transition are untouched.       */
 
-/* Panel container — opaque warm cream + subtle grain, no blur */
-:global(html[data-theme-id='paper-atelier']) .drawer {
+/* Panel surface (warm cream + grain + ink border + lift) — applied ONLY to the
+   OPEN drawer. The drawer is always mounted and collapses to max-height:0 when
+   closed; putting the border + background on the closed state too left a 2px
+   parchment strip under the header (the closed box's top+bottom border), which
+   read as a stray ink line beneath the menu. The default theme avoids this by
+   keeping border:0 closed (→ height 0 → invisible); we mirror that by gating the
+   whole surface to [data-open='true']. */
+:global(html[data-theme-id='paper-atelier']) .drawer[data-open='true'] {
   background-color: var(--paper-panel-surface);
   background-image: var(--paper-panel-texture);
   background-size: cover;
   background-position: center;
   border: 1px solid var(--paper-panel-border);
   box-shadow: var(--paper-panel-shadow);
-  backdrop-filter: none;
-  color: var(--text-primary);
 }
 
-/* Re-state the open-state box-shadow so it uses the paper token */
-:global(html[data-theme-id='paper-atelier']) .drawer[data-open='true'] {
-  box-shadow: var(--paper-panel-shadow);
+/* Always-safe paper tweaks (no visible effect at max-height:0): kill the glass
+   blur and set ink text colour for the open contents. */
+:global(html[data-theme-id='paper-atelier']) .drawer {
+  backdrop-filter: none;
+  color: var(--text-primary);
 }
 
 /* Engraved divider between preset column and fader area — replace dark neon

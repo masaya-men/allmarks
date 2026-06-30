@@ -351,20 +351,30 @@
    of default dark glass. All rules scoped to the theme; default bytes untouched.
    Layout / sizing / font-family / animation are never touched here.           */
 
-:global(html[data-theme-id='paper-atelier']) .drawer,
-:global(html[data-theme-id='paper-atelier']) .promo {
+/* Parchment surface (cream + grain + ink border + lift). The .promo popover is
+   only mounted while open, so it can carry the surface unconditionally. The
+   .drawer, by contrast, is ALWAYS mounted and collapses to max-height:0 when
+   closed — a border + background there renders as a 2px ink strip under the
+   header (the closed box's top+bottom border). Because this drawer is portalled
+   to <body> it sits OUTSIDE the TopHeader fade, so that strip even leaked
+   through the Lightbox. Gate the drawer surface to [data-open='true'] so the
+   closed drawer is invisible (mirrors the default theme's border:0 → height 0). */
+:global(html[data-theme-id='paper-atelier']) .promo,
+:global(html[data-theme-id='paper-atelier']) .drawer[data-open='true'] {
   background-color: var(--paper-panel-surface);
   background-image: var(--paper-panel-texture);
   background-size: cover;
   background-position: center;
   border: 1px solid var(--paper-panel-border);
   box-shadow: var(--paper-panel-shadow);
-  backdrop-filter: none;
-  color: var(--text-primary);
 }
 
-:global(html[data-theme-id='paper-atelier']) .drawer[data-open='true'] {
-  box-shadow: var(--paper-panel-shadow);
+/* Always-safe paper tweaks (invisible at max-height:0): drop the glass blur and
+   set ink text colour for the open contents. */
+:global(html[data-theme-id='paper-atelier']) .drawer,
+:global(html[data-theme-id='paper-atelier']) .promo {
+  backdrop-filter: none;
+  color: var(--text-primary);
 }
 
 :global(html[data-theme-id='paper-atelier']) .title {
