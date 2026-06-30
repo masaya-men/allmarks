@@ -226,7 +226,13 @@ export function ImageCard({ item, persistMeasuredAspect, reportIntrinsicHeight, 
   if (paper) {
     const matId = pickPaperAsset(
       seedFractionFromId(item.bookmarkId),
-      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged', 'card-mat-4', 'card-mat-5', 'card-mat-lined', 'card-mat-grid'],
+      // Mostly the solid vintage-paper mats; the graph + spiral-notepad sheets
+      // (otherwise the whole face of a thumbnail-less text card) are folded into
+      // the pool too so ~1 in 5 image cards reads as a photo mounted on ruled /
+      // grid paper. They're cover-fit like the others, so the sheet design may
+      // crop at the edges — acceptable per the user (N-13). Default theme never
+      // reaches this branch (paper-gated by the `paper` prop).
+      ['card-mat-1', 'card-mat-2', 'card-mat-3', 'card-mat-aged', 'card-mat-4', 'card-mat-5', 'card-mat-lined', 'card-mat-grid', 'card-paper-graph', 'card-paper-notepad'],
     )
     const matUrl = matId ? paperAssetUrl(matId) : null
     return (
