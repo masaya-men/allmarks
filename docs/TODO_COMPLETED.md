@@ -8280,3 +8280,36 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 
 ### 据え置き/次
 - N-09 影は user 実機で最終調整余地（さらに濃く/控えめ可）。共有の「本物写真」は画像中継を別セッションで。
+
+---
+
+## セッション 147 (2026-07-01) — 空き盤面「掴んでぐりぐり」微インタラクション（grab-wiggle）
+
+ユーザー発案（IDEAS.md 2026-07-01）を brainstorming→spec→plan→TDD 実装で出荷。空き盤面を左ドラッグで掴むと世界が指につられてズレ、離すとぷるっとバネで戻る「その場の遊び」。実スクロール位置は変えない。全テーマ対応（paper=奥行き3層／default=平ら）。`allmarks.app` 反映済・**default byte-identical / tsc0 / vitest1858 / build OK**。7コミット・1デプロイ。
+
+### 対話で確定した仕様
+- 「動かすの正体」= **(a) その場の遊び（rubber-band→spring-back）**。(b)パン/(c)両方は不採用。
+- **テーマ**: 全テーマ。paper は既存3層（羊皮紙0.15x/散布0.30x/カード1x）を重み付きでズラして奥行き、default は奥行き層が無いのでカード層だけ平らにズレる（default 用背景モチーフは将来別タスク）。
+- **手応え**: 引くほど重く上限90px弱（rubber-band）、離すと少しオーバーシュートして戻る（GSAP elastic.out(1,0.4)/0.7s）。
+- **方向**: 2D 自由。
+- **ジェスチャ**: 素の左ドラッグ×余白のみ wiggle。**中ボタン/Space＋ドラッグのパン・ホイールは温存**（コード読解で「既存の余白ドラッグ＝スクロール」を発見し、素の左だけ置換すると決定）。カード/chrome 上は非発動。reduced-motion 時は従来スクロールにフォールバック。
+- **スマホ**: 今回対象外。将来「ボード長押し→同じ遊び」を別タスク。
+
+### 技術方式（default 無傷を守る作り）
+- カードは1枚も動かさない。掴み量を CSS変数 `--grab-x/--grab-y` に入れ、既存3層の `transform: translate3d(...)` を `calc(base + var(--grab-*,0px) * 重み)` に拡張（カード1.0/散布0.55/羊皮紙0.28、default 背景=重み0）。
+- 変数は cameraRef に**直接書き込み**（React 再描画を通さず 60fps、スクロールと同じ transform 合成に乗るだけ＝4K もスクロール同等負荷）。
+- 素の状態は `var(...,0px)*w = 0px` ＝ transform の評価結果が従来と一致（byte-identical）。`.module.css` は無編集（inline のみ）。
+
+### ファイル
+- 新規: `lib/board/rubber-band.ts`（`rubberBand`/`computeGrabOffset`＋定数 `MAX_GRAB_PX`/`GRAB_LAYER_WEIGHTS`/`GRAB_SPRING`・9テスト）、`lib/board/grab-gesture.ts`（`classifyBoardPointerDown` 分類器・7テスト）、`components/board/use-grab-wiggle.ts`（reduced-motion gate・CSS変数書き込み・GSAP バネ・4テスト）。
+- 改修: `components/board/InteractionLayer.tsx`（素の左ドラッグ→wiggle 分岐＋grab カーソル）、`components/board/BoardRoot.tsx`（`useGrabWiggle` 配線＋3層 transform を calc 化、`bgGrabWeight = paper?0.28:0`）。
+
+### 検証
+- 全 vitest **1858 緑**（`channel.test.ts` 今回は一発緑）、tsc0、build OK。
+- playwright で default 静止時の3層 transform を実測 → 背景=matrix(1,0,0,1,0,0)・カード=matrix(1,0,0,1,9,80)＝**純平行移動**、`--grab-x/y=0px` ＝ calc 構文有効・byte-identical 確認（calc 無効化でカードが左上に崩れる致命リスクを排除）。
+- 掴みドラッグ自体は `setPointerCapture` で playwright 合成ポインタ不可 → 触感は**ユーザー実機確認が宿題**。
+
+### 据え置き/次
+- 実機フィードバックで重み(1.0/0.55/0.28)・上限(90)・バネ(elastic.out(1,0.4)/0.7s)を `lib/board/rubber-band.ts` で微調整。
+- スマホ長押し版・default 用背景モチーフは将来別タスク。
+- 正本 spec/plan: `docs/superpowers/specs|plans/2026-07-01-board-grab-wiggle*`。

@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 147 — 空き盤面「掴んでぐりぐり」微インタラクション 出荷)
+
+- **grab-wiggle 実装・`allmarks.app` 反映済**。全テーマ対応・**default byte-identical / tsc0 / vitest1858 / build OK**。7コミット・1デプロイ。詳細 narrative は TODO_COMPLETED.md セッション147。
+- **ふるまい**: 盤面余白の左ドラッグ → 世界が指につられてズレ（paper=奥行き3層／default=平ら）→ 離すとぷるっと戻る（GSAP elastic）。引くほど重く上限90px弱（rubber-band `tanh`）。実スクロール位置は不変。
+- **方式**: カード非移動。CSS変数 `--grab-x/y` を cameraRef に書き、既存3層 transform が `calc(base + var*重み)` で読む（カード1.0/散布0.55/羊皮紙0.28、default 背景=重み0）。React 再描画を通さず 60fps。素の状態 `var(...,0px)*w=0`＝従来一致。新規 `lib/board/rubber-band.ts`・`grab-gesture.ts`・`components/board/use-grab-wiggle.ts`＋`InteractionLayer`/`BoardRoot` 改修。
+- **温存**: 中ボタン/Space パン・ホイール無変更。reduced-motion→従来スクロール。カード/chrome 上は非発動。
+- **検証**: playwright で default 静止時3層 transform が純平行移動（カード=matrix(1,0,0,1,9,80)）＝byte-identical 実測。掴みドラッグ自体は setPointerCapture のため playwright 不可 → **ユーザー実機確認が宿題**（重み/上限/バネの数値は実機で微調整）。
+- 正本: [spec](superpowers/specs/2026-07-01-board-grab-wiggle-design.md) / [plan](superpowers/plans/2026-07-01-board-grab-wiggle.md)。**次**: 実機フィードバック取り込み → ③テーマ/④K3/選択的シェアから相談。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 146 — ②ボード磨き 3件出荷: paper 影がっつり濃く / フィルタ緑塗り撤去 / 共有テキストカード紙パリティ)
 
 - 全て `allmarks.app` 反映済・**tsc0 / vitest1838（`channel.test.ts` 既知フレーキー→再実行緑）/ build OK・default 無傷**（全変更 paper-scoped or 明示承認済）。6コミット・4デプロイ。詳細 narrative は TODO_COMPLETED.md セッション146。
