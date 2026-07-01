@@ -617,8 +617,12 @@
    241,0,…) in this dropdown for the paper FOREST accent (--color-accent-primary =
    #2f4a37 in the paper token block) so "active" still reads as green, but a muted
    ink-green that belongs on cream. Default theme untouched (paper-scoped). */
+/* Paper (N-11, session 146): drop the horizontal wash on the active row. On
+   parchment the filled rectangle read as a digital "selection bar" foreign to
+   the paper world (user report). The ink underline below is enough to mark the
+   active filter; no background fill. Default theme keeps its wash (paper-scoped). */
 :global(html[data-theme-id='paper-atelier']) .item.active {
-  background: color-mix(in srgb, var(--color-accent-primary) 9%, transparent);
+  background: transparent;
 }
 :global(html[data-theme-id='paper-atelier']) .item.active .itemLabel {
   box-shadow: inset 0 -1px 0 var(--color-accent-primary);
