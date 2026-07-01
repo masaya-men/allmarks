@@ -320,16 +320,12 @@ function MirrorCardContent({
     const matId = pickPaperAsset(seedFractionFromId(item.id), IMAGE_CARD_BACKING_POOL)
     const matUrl = matId ? paperAssetUrl(matId) : null
     const sheet = isPaperSheet(matId)
-    const thumbContent: ReactNode = showPlaceholder ? (
-      // Placeholder inside the paper photo window
-      <div
-        className={styles.cardPlaceholder}
-        style={{ position: 'absolute', inset: 0, borderRadius: 0 }}
-      >
-        <div className={styles.cardPlaceholderScrim} aria-hidden="true" />
-        <div className={styles.cardPlaceholderTitle}>{item.title}</div>
-      </div>
-    ) : (
+    // No thumbnail (or a CORS-blocked one that can't be baked into the OG canvas)
+    // → leave the photo window EMPTY (its light --paper-window-bg shows), exactly
+    // like the board's empty mat window. The title still reads in the caption
+    // below. The old dark scrim + in-window title read as a black rectangle on
+    // the light paper (user report) and had no board equivalent.
+    const thumbContent: ReactNode = showPlaceholder ? null : (
       <img
         src={item.thumbnailUrl ?? ''}
         alt=""

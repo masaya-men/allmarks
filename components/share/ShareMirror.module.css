@@ -94,6 +94,16 @@
   /* overflow:visible (default) — do NOT set overflow:hidden here */
 }
 
+/* Paper cards live inside .cardWrapper; their paper face (.paperCard / .paperNote)
+   fills the box, and torn sheets have transparent edges / holes. The card box must
+   be transparent there — the default theme's dark #1a1a1c showed through the torn
+   areas as a black band below/around the sheet (user report). Board's .cardNode is
+   likewise transparent on paper. */
+.cardWrapper .card {
+  background: transparent;
+  border: none;
+}
+
 .card {
   position: absolute;
   inset: 0;
