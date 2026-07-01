@@ -8247,3 +8247,36 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 ### 進め方の合意
 - **設計・計画は完全クローズ。次回から②ボード磨きに戻る**（0人フェーズで器を作り込みすぎない、という自戒に沿う）。K3 実装（④）は板磨き＋有料テーマ制作（③）の後に、上記工程表を開いて着工。
 - コード変更・デプロイ・commit（機能面）は無し。tracked docs の更新のみ commit。
+
+---
+
+## セッション 146 (2026-07-01) — ②ボード磨き: paper 影がっつり濃く + フィルタ緑塗り撤去 + 共有テキストカード紙パリティ
+
+全て `allmarks.app` 反映済・**tsc0 / vitest1838（`channel.test.ts` 既知フレーキー→再実行緑）/ build OK・default 無傷**（全変更 paper-scoped or 明示承認済）。6コミット・4デプロイ。
+
+### N-09 — paper の3影を「がっつり」濃く（user 要望「もっと濃く。がっつり」）
+- 3影を全て特定して深い墨茶（`26,22,17`）＋高アルファ＋遠層のブラー/落ち拡大：
+  - ボードパネル `.canvas`（BoardRoot）: `.18/.18/.28/.40` → `.28/.24/.42/.56`
+  - 台紙（画像/mat, CardNode box-shadow）: `.32/.34/.30/.24` → `.44/.46/.42/.36`
+  - 破れ紙（paper-note/sheet, CardNode drop-shadow）: `.34/.36/.26` → `.46/.48/.40`
+- playwright で実際の paper 盤面に新値がレンダリングされることを computed 値で実測確認。
+
+### N-11 → 発展: フィルタメニューのアクティブ行の「緑の塗り」を全テーマ撤去
+- s141 の neon→forest 対策は既に本番に載っており、実測で neon 緑ゼロと確認（当初の N-11 は解消済だった）。
+- user 実機スクショで「最上部 ALL 行の**横長の塗り**（森緑9%背景）」が UI バーっぽく紙に浮くと判明 → まず paper で透明化。
+- さらに user 判断で「**どのテーマでも緑の塗り不要**」→ 土台 `.item.active { background }`（default の neon 6%）を全撤去。アクティブは**下線＋文字の明るさ**に一本化。paper 専用上書きは冗長化したので削除（forest 下線は残す）。TRASH/DEAD の赤系ハイライト・タグ緑ドットは温存。
+
+### N-10 — 共有画像のテキストカードを盤面と完全一致（ノート紙化）＋黒問題2件
+- **本体**: ShareMirror（＝dom-to-image で OG 画像も生成）はサムネ無しテキストカードを「mat＋写真窓プレースホルダ」で描いていた。盤面（PlaceholderCard の paper 面）と同じ**方眼/ノート紙シート＋手書きタイトル**に統一。
+  - 共有ヘルパ `pickTextNoteSheet(bookmarkId)` を `paper-assets.ts` に新設（PlaceholderCard の選択＝`%100000` 正規化を厳密再現。`seedFractionFromId` の `/2^32` とは別物なので混同禁止）。PlaceholderCard もこれに置換＝**単一の真実の場所**化、盤面は数式同一で byte-identical。
+  - `isPaperTextNote()` で `pickCard()` を再現（youtube/tiktok は常に VideoThumbCard=mat、サムネ有りは ImageCard=mat、非動画×サムネ無しだけノート紙）。装飾 tornBacking も一致（テキスト=true）。
+  - タイトルは `cleanTitle`＋`pickTitleTypography`（盤面と同じ）。Yomogi 手書き。ShareMirror.module.css に `.paperNote`/`.paperNoteTitle` を複製。
+  - **同一実行**で盤面↔共有を比較：カード面（notes 2 / mats 4）もシート選択も完全一致を実測。
+- **黒帯修正**: ShareMirror の `.card { background:#1a1a1c }` が破れシートの透明部から透けて「全カード下の黒帯」に。paper カード（`.cardWrapper` 内 `.card`）を透明化。
+- **黒窓修正**: サムネ取得失敗（CORS で canvas に焼けない og:image 等）カードが暗いスクリム＋タイトル＝黒い矩形に。→ **明るい空窓＋下キャプション**（盤面の空窓と一致）に。実機で黒帯・黒窓とも消滅を user 確認。
+
+### 記録（IDEAS.md・gitignored）
+- **共有画像に本物の写真を焼き込む＝画像中継（プロキシ）**: tainted canvas/CORS で他ドメイン画像は焼けない理由、Cloudflare Worker で同一オリジン化する解決策、無料枠（egress 無料・Worker 10万req/日・キャッシュ）でローンチ初期は ¥0 可能・巨大化で月¥750 の見積り、X は別対応。独立機能として将来 brainstorm。
+
+### 据え置き/次
+- N-09 影は user 実機で最終調整余地（さらに濃く/控えめ可）。共有の「本物写真」は画像中継を別セッションで。
