@@ -2178,7 +2178,53 @@ export function BoardRoot() {
             a disturbed audio signal. Fully transparent at rest (opacity 0 unless
             [data-grabbing]) so the default board stays byte-identical. */}
         {themeId === DEFAULT_THEME_ID && (
-          <div className={styles.edgeGlitch} aria-hidden="true" />
+          <>
+            {/* Turbulence filter that shatters the rim line while grabbing: the
+                animated seed makes the tear crawl/flicker ("jijiji"), and the
+                displacement rips the continuous border into broken, warped
+                segments. Applied via CSS `filter: url(#edge-shatter)` only under
+                [data-grabbing]; off (clean line) at rest. */}
+            <svg
+              className={styles.edgeGlitchDefs}
+              aria-hidden="true"
+              focusable="false"
+              width="0"
+              height="0"
+            >
+              <filter
+                id="edge-shatter"
+                x="-20%"
+                y="-20%"
+                width="140%"
+                height="140%"
+                colorInterpolationFilters="sRGB"
+              >
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="0.014 0.09"
+                  numOctaves={2}
+                  seed={4}
+                  result="noise"
+                >
+                  <animate
+                    attributeName="seed"
+                    dur="0.14s"
+                    values="1;8;3;9;2;6;4"
+                    calcMode="discrete"
+                    repeatCount="indefinite"
+                  />
+                </feTurbulence>
+                <feDisplacementMap
+                  in="SourceGraphic"
+                  in2="noise"
+                  scale={11}
+                  xChannelSelector="R"
+                  yChannelSelector="G"
+                />
+              </filter>
+            </svg>
+            <div className={styles.edgeGlitch} aria-hidden="true" />
+          </>
         )}
         <TopHeader
           hidden={!!lightboxItemId}

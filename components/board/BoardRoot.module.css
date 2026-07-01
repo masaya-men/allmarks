@@ -97,6 +97,13 @@
    at rest (opacity 0 unless [data-grabbing]) → default board byte-identical.
    Reduced-motion never sets [data-grabbing] (grab-wiggle is gated off), so this
    stays dark too. */
+/* Zero-size host for the SVG turbulence filter def (referenced by CSS filter). */
+.edgeGlitchDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
 .edgeGlitch {
   position: absolute;
   inset: 0;
@@ -112,7 +119,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border: 1.5px solid;
+  border: 2px solid;
   mix-blend-mode: screen; /* cyan + magenta over the dark board = neon glow */
 }
 /* Cyan rim pulled one way, magenta the other → chromatic split scaled by grab. */
@@ -124,16 +131,26 @@
   border-color: rgba(255, 40, 120, 0.85);
   transform: translate(calc(var(--grab-x, 0px) * -0.14), calc(var(--grab-y, 0px) * -0.14));
 }
+/* While grabbing: the rim lights up and flickers (unstable, "struggling"). */
 .canvas[data-grabbing] .edgeGlitch {
   opacity: 1;
+  animation: edge-flicker 0.3s steps(3, end) infinite;
 }
-/* Micro-jitter: the rim vibrates like a disturbed waveform, only while grabbing.
-   Each keyframe re-includes the grab-scaled offset so the split is preserved. */
+/* The turbulence filter rips the continuous rim line into broken, warped
+   segments ("壊れる"); the micro-jitter re-includes the grab-scaled chromatic
+   offset so the cyan/magenta split is preserved as it tears. */
 .canvas[data-grabbing] .edgeGlitch::before {
+  filter: url(#edge-shatter);
   animation: edge-glitch-a 0.18s steps(2, end) infinite;
 }
 .canvas[data-grabbing] .edgeGlitch::after {
+  filter: url(#edge-shatter);
   animation: edge-glitch-b 0.16s steps(2, end) infinite;
+}
+@keyframes edge-flicker {
+  0%, 100% { opacity: 1; }
+  33% { opacity: 0.55; }
+  66% { opacity: 0.85; }
 }
 @keyframes edge-glitch-a {
   0%   { transform: translate(calc(var(--grab-x, 0px) * 0.14), calc(var(--grab-y, 0px) * 0.14)); }
