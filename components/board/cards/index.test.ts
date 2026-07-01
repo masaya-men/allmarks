@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickCard, VideoThumbCard, ImageCard, PlaceholderCard, isPlaceholderCard, itemSkylineHeight, PLACEHOLDER_ASPECT } from './index'
+import { pickCard, VideoThumbCard, ImageCard, PlaceholderCard, isPlaceholderCard, itemSkylineHeight, paperCardHasTornBacking, PLACEHOLDER_ASPECT } from './index'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 
 // vi.mock with primitive-string named exports stopped applying after the
@@ -69,6 +69,33 @@ describe('isPlaceholderCard', () => {
   })
   it('false for video (YouTube/TikTok)', () => {
     expect(isPlaceholderCard({ ...baseItem, url: 'https://youtube.com/watch?v=a' })).toBe(false)
+  })
+})
+
+describe('paperCardHasTornBacking', () => {
+  it('text/no-thumbnail card is always torn (sheet)', () => {
+    expect(paperCardHasTornBacking({ ...baseItem, url: 'https://example.com' })).toBe(true)
+  })
+
+  it('video and image cards with the same bookmarkId agree on torn backing', () => {
+    // Video now renders the same mat face (shared pool + seed) as the image
+    // card, so their torn-backing decision must match — otherwise the
+    // decoration corners would be drawn on a torn sheet ("破綻").
+    const ids = ['b1', 'b2', 'seed-xyz', 'another-one', 'zzz', 'a', 'card-42']
+    for (const bookmarkId of ids) {
+      const video = paperCardHasTornBacking({
+        ...baseItem,
+        bookmarkId,
+        url: 'https://youtube.com/watch?v=a',
+      })
+      const image = paperCardHasTornBacking({
+        ...baseItem,
+        bookmarkId,
+        url: 'https://example.com',
+        thumbnail: 'x.jpg',
+      })
+      expect(video).toBe(image)
+    }
   })
 })
 

@@ -4,10 +4,18 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import { detectUrlType } from '@/lib/utils/url'
-import { getYoutubeThumb } from '@/lib/embed/youtube-thumb'
+import { getYoutubeThumb, isYoutubeShortsUrl } from '@/lib/embed/youtube-thumb'
 import { fetchTikTokMeta } from '@/lib/embed/tiktok-meta'
 import { fetchYoutubeOEmbed, isDegenerateYoutubeTitle } from '@/lib/embed/youtube-oembed'
+import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_BACKING_POOL, isPaperSheet, seedFractionFromId } from '@/lib/board/paper-assets'
 import styles from './VideoThumbCard.module.css'
+// Paper-atelier mat face is shared with ImageCard: the video thumbnail sits in
+// the same ivory-mat window + serif caption so YouTube/TikTok cards match the
+// photo cards on the paper theme (they used to render bare, with no mat — the
+// "台紙に乗ってない" bug). Importing ImageCard's module keeps a single source of
+// truth for the mat CSS (incl. the sheet-transparent :has() rule), so ImageCard
+// stays byte-identical and needs no edit.
+import imageStyles from './ImageCard.module.css'
 
 type Props = {
   readonly item: BoardItem
@@ -15,12 +23,21 @@ type Props = {
   readonly persistMeasuredAspect?: (cardId: string, aspectRatio: number) => Promise<void>
   readonly cardWidth?: number
   readonly cardHeight?: number
+  /** When true, renders the paper-atelier card face (mat backing + mounted
+   *  thumbnail window + serif caption). Default false = bare thumbnail,
+   *  unchanged from the default theme. */
+  readonly paper?: boolean
 }
 
 const ASPECT_EPSILON = 0.005
+/** YouTube Shorts are portrait 9:16. The i.ytimg.com thumbnail is a 16:9
+ *  letterboxed frame, so measuring its pixels would clobber the correct
+ *  portrait aspect back to landscape. Matches estimateAspectRatio('youtube-shorts'). */
+const SHORTS_ASPECT = 9 / 16
 
-export function VideoThumbCard({ item, persistMeasuredAspect }: Props): ReactNode {
+export function VideoThumbCard({ item, persistMeasuredAspect, paper = false }: Props): ReactNode {
   const urlType = detectUrlType(item.url)
+  const isShorts = urlType === 'youtube' && isYoutubeShortsUrl(item.url)
   const [tikTokThumb, setTikTokThumb] = useState<string | null>(null)
   const [tikTokTitle, setTikTokTitle] = useState<string | null>(null)
   const [ytTitle, setYtTitle] = useState<string | null>(null)
@@ -55,11 +72,22 @@ export function VideoThumbCard({ item, persistMeasuredAspect }: Props): ReactNod
   const thumbUrl =
     urlType === 'youtube' ? getYoutubeThumb(item.url, ytLevel) : tikTokThumb
 
-  // Re-measure intrinsic aspect from natural width/height once the thumbnail
-  // loads — corrects stale persisted aspectRatio (e.g. YouTube Shorts saved
-  // as 16:9 by old defaults; the real thumb is 9:16).
+  // Aspect handling:
+  // - Shorts: force / repair to 9:16 and SKIP the pixel measure. The thumbnail
+  //   is a 16:9 letterboxed frame; measuring it would flip the card back to
+  //   landscape (the "縦動画が横長カード" bug). object-fit:cover in a 9:16 card
+  //   then crops the pillarbox bars, showing the vertical video centered.
+  // - Everything else: re-measure intrinsic aspect from natural width/height
+  //   once the thumbnail loads, correcting stale persisted aspectRatio.
   useEffect(() => {
-    if (!persistMeasuredAspect || !thumbUrl) return
+    if (!persistMeasuredAspect) return
+    if (isShorts) {
+      if (Math.abs(item.aspectRatio - SHORTS_ASPECT) >= ASPECT_EPSILON) {
+        void persistMeasuredAspect(item.cardId, SHORTS_ASPECT)
+      }
+      return
+    }
+    if (!thumbUrl) return
     const img = imgRef.current
     if (!img) return
     const measure = (): void => {
@@ -76,7 +104,7 @@ export function VideoThumbCard({ item, persistMeasuredAspect }: Props): ReactNod
     }
     img.addEventListener('load', measure)
     return (): void => img.removeEventListener('load', measure)
-  }, [thumbUrl, item.cardId, item.aspectRatio, persistMeasuredAspect])
+  }, [isShorts, thumbUrl, item.cardId, item.aspectRatio, persistMeasuredAspect])
 
   const handleImgError = (): void => {
     if (urlType === 'youtube' && ytLevel < 3) {
@@ -90,21 +118,47 @@ export function VideoThumbCard({ item, persistMeasuredAspect }: Props): ReactNod
   void tikTokTitle
   void ytTitle
 
+  const thumb = thumbUrl ? (
+    <img
+      ref={imgRef}
+      className={paper ? imageStyles.thumb : styles.thumb}
+      data-active={paper ? 'true' : undefined}
+      src={thumbUrl}
+      onError={handleImgError}
+      alt=""
+      draggable={false}
+      loading="lazy"
+    />
+  ) : null
+
+  // Paper-atelier card face: same mat + window + serif caption as the paper
+  // ImageCard, with the video thumbnail mounted in the window. Reuses the mat
+  // pool so a video can pick a vintage mat or a torn sheet — paperCardHasTornBacking
+  // (cards/index.ts) mirrors this pick so the decoration corners stay consistent.
+  if (paper) {
+    const matId = pickPaperAsset(seedFractionFromId(item.bookmarkId), IMAGE_CARD_BACKING_POOL)
+    const matUrl = matId ? paperAssetUrl(matId) : null
+    const sheet = isPaperSheet(matId)
+    return (
+      <div className={imageStyles.imageCard}>
+        <div
+          className={imageStyles.paperCard}
+          data-paper-mat="true"
+          data-paper-sheet={sheet ? 'true' : undefined}
+          style={matUrl ? { backgroundImage: `url("${matUrl}")` } : undefined}
+        >
+          <div className={imageStyles.paperPhoto} data-paper-window="true">
+            {thumb}
+          </div>
+          {item.title && <div className={imageStyles.paperCaption}>{item.title}</div>}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.videoCard}>
-      {thumbUrl ? (
-        <img
-          ref={imgRef}
-          className={styles.thumb}
-          src={thumbUrl}
-          onError={handleImgError}
-          alt=""
-          draggable={false}
-          loading="lazy"
-        />
-      ) : (
-        <div className={styles.placeholder} aria-hidden="true" />
-      )}
+      {thumb ?? <div className={styles.placeholder} aria-hidden="true" />}
     </div>
   )
 }

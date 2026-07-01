@@ -83,14 +83,15 @@ export function isPlaceholderCard(item: BoardItem): boolean {
  * The decoration layer suppresses those corners when this is true.
  *
  * - PlaceholderCard (text, no thumbnail) → always a sheet → torn.
- * - ImageCard → torn iff it picked a sheet from IMAGE_CARD_BACKING_POOL. Uses the
- *   SAME seed + pool as ImageCard so the decision matches what was rendered.
- * - VideoThumbCard → rectangular thumbnail, never torn.
+ * - ImageCard / VideoThumbCard → torn iff it picked a sheet from
+ *   IMAGE_CARD_BACKING_POOL. Both render the same mat face (video reuses
+ *   ImageCard's paper structure), so they share the SAME seed + pool and this
+ *   decision matches what was rendered.
  */
 export function paperCardHasTornBacking(item: BoardItem): boolean {
   const card = pickCard(item)
   if (card === PlaceholderCard) return true
-  if (card === ImageCard) {
+  if (card === ImageCard || card === VideoThumbCard) {
     return isPaperSheet(pickPaperAsset(seedFractionFromId(item.bookmarkId), IMAGE_CARD_BACKING_POOL))
   }
   return false

@@ -8191,3 +8191,37 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 ### コミット
 
 - `feat(share): bake allmarks.app into share image + SAVE IMAGE button; drop card-count caption`（7 files、tracked のみ。docs/private の戦略文書は gitignored で未追跡）。
+
+---
+
+## セッション 144 (2026-07-01) — 動画カードの Paper 台紙 + ショート縦横比修正 + Paper 装飾（テープ/画鋲）を対話で全面リデザイン
+
+全て `allmarks.app` 反映済・tsc0 / vitest 緑（`channel.test.ts` は既知フレーキー→再実行で緑を確認）/ build OK・**default(黒+音波)無傷**（全変更 paper-scoped）。ユーザー実機確認を各段で取りながら 1変更=1確認で進行。
+
+### ① YouTube/TikTok 動画カードに Paper 台紙（仕様の抜けを修正）
+- `pickCard` が youtube/tiktok を `VideoThumbCard` に振るが、台紙(mat)を描くのは `ImageCard` の paper 分岐だけ。VideoThumbCard は `paper` prop を受け取ってすらおらず、台紙無し＝装飾(テープ)だけ乗るちぐはぐ状態だった。
+- VideoThumbCard に `paper` 分岐を追加。ImageCard.module.css のクラス（`imageCard/paperCard/paperPhoto/thumb/paperCaption`）を流用し、写真カードと同じ mat＋窓＋セリフキャプションに動画サムネを乗せる。**ImageCard は一切触らない**（default＋既存 paper 写真カードを byte-identical に保つため）。
+- 動画も mat プールからシートを引きうるので `paperCardHasTornBacking` を VideoThumbCard にも適用（装飾コーナー破綻防止）。回帰テスト（動画↔画像パリティ）追加。
+
+### ② YouTube ショートが横長カードで保存される不具合
+- 保存時は `detectAspectRatioSource` が `/shorts/`→9:16 と正しく推定。**ところが VideoThumbCard がサムネ実寸で上書き**しており、YouTube はショートでも 16:9 の letterbox サムネを返すため 9:16 が横長に打ち消されていた。
+- shorts URL(`isYoutubeShortsUrl`)のときは実寸上書きをスキップし 9:16 を保持＋既存の誤保存(16:9)を修復。`object-fit:cover` で左右黒帯がクロップされ中央の縦動画が残る。
+
+### ③ Paper 装飾（テープ/画鋲）を対話で全面リデザイン → 最終「超シンプル」
+ユーザーと 6 往復で磨き込み。最終形：
+- **留め方 = 各カード必ず1つ**：「上端中央にテープ1枚」or「画鋲1本」だけ（テープ約62%/画鋲約38%、**無しは廃止=全カード必須**）。中央クリップ・対角・両角・上下・四隅・写真アルバムコーナーは**全廃**（コードも削除）。
+- **「板に貼り付ける」概念の確立**：テープは台紙の縁をまたぎ、上半分が板・下半分が紙＝橋渡しして初めて「貼り付けてる」に見える（内側に引っ込めると意味不明）。**本物の破れシート素材(card-paper-graph/notepad)を playwright で計測**し、紙の上端≈箱の上端／下端は破れて内側、と確定。→ 破れ/リングシートは画鋲だと落ちるので上端テープに置換。
+- **透明テープを目立たせる**：透明テープだけに落ち影(`filter:drop-shadow`)＋斜めの光沢スジ(`::after`)。実素材で BEFORE/AFTER 確認。
+- **不良マステ除外**：`washi-tape-8` は「中央帯が46%だけ＝薄い＋赤い破片」と**opaque bbox 計測で客観確定**し色付きプールから除外。
+- **テープ柄はカード単位で統一**（透明/色を混ぜない、複数時も同じ柄=今は単一化）。
+- 純関数 `getCardDecorations`/`resolveDecorations`（torn 対応）に集約、単体テスト刷新。`PaperCardDecorations` は memo で drag 中の再描画を抑制（維持）。
+
+### 学び
+- **装飾配置は実素材PNGで検証必須**：台紙は `100% 100%` で箱いっぱい描画＝紙の縁は PNG に焼き込まれ、箱の矩形≠紙の形（破れ下端・穴あき左マージン）。推測配置で3回外し、playwright で bbox/縁を測って確定。詳細は memory `reference_paper_torn_sheet_cards`。
+- board のカードクリック/ドラッグは playwright 不可だが、**装飾は決定論・pointer-events:none なので独立HTMLで実素材描画→目視**が有効。
+
+### 持ち越し（実機確認済で消化）
+- **N-12 ライトボックス開閉アニメ / ドラッグの軽さ = ユーザーOK**（さらなる最適化は据え置き＝体感軽い直後に触ると回帰リスク大）。
+
+### コミット
+- `feat(board): paper mat for video cards + shorts aspect fix; redesign paper tape/pin decorations`（8 files）。

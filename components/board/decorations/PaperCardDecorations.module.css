@@ -18,39 +18,51 @@
   pointer-events: none;
 }
 
-/* --- Photo-album corners (match the rendered card radius) --- */
-.photoCorner {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border: 0 solid var(--deco-photo-corner, rgba(43, 39, 34, 0.55));
-}
-.photoCornerTl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: var(--card-radius, 3px); }
-.photoCornerTr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: var(--card-radius, 3px); }
-.photoCornerBl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: var(--card-radius, 3px); }
-.photoCornerBr { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: var(--card-radius, 3px); }
-
-/* --- Washi tape --- */
-.washi {
+/* --- Tape (coloured washi + clear cellophane) ---
+   A single strip centred on the top edge. `left` is set inline (offsetPct ≈ 50%);
+   translate(-50%,-50%) centres it on the top edge line so its upper half overhangs
+   onto the board and its lower half sits on the card (= "taped to the board"). */
+.tape {
   position: absolute;
   width: 76px;
   height: 22px;
   border-radius: 1px;
   opacity: 0.92;
-  /* hand-torn jagged ends */
+  transform-origin: center;
+  /* hand-torn jagged ends (CSS fallback; PNG supplies its own when present) */
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 4px), transparent 100%);
   mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 4px), transparent 100%);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
-.washiTintA { background: var(--deco-washi-a, rgba(201, 178, 122, 0.42)); }
-.washiTintB { background: var(--deco-washi-b, rgba(143, 168, 142, 0.38)); }
-.washiTintC { background: var(--deco-washi-c, rgba(196, 160, 150, 0.40)); }
-.washiTop { top: -11px; }
-.washiBottom { bottom: -11px; }
-.washiLeft { left: -27px; transform-origin: center; }
-.washiRight { right: -27px; transform-origin: center; }
+/* coloured washi fallback (used only if the PNG is missing) */
+.tapeColored { background: var(--deco-washi-a, rgba(201, 178, 122, 0.42)); }
+/* clear cellophane fallback (used only if the PNG is missing) — barely tinted,
+   glossy sheen so it still reads as see-through tape rather than a washi block */
+.tapeClear {
+  background: rgba(255, 255, 255, 0.16);
+  /* Visibility boost for see-through tape (real PNG stays; these follow its alpha
+     and are NOT stripped by .tape[data-asset]):
+     1) a soft dropped contact shadow so it lifts off the paper (reads as stuck
+        on TOP), and 2) a thin diagonal sheen streak (::after) like light catching
+        the cellophane. */
+  filter: drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, 0.30));
+}
+.tapeClear::after {
+  content: '';
+  position: absolute;
+  inset: 0 8px;
+  background: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.5) 48%,
+    rgba(255, 255, 255, 0.14) 53%,
+    transparent 62%
+  );
+  pointer-events: none;
+}
+.tapeEdgeTop { top: 0; }
 
-/* --- Push-pin --- */
+/* --- Push-pin (single, top-center — the only pin placement) --- */
 .pin {
   position: absolute;
   top: -7px;
@@ -63,33 +75,7 @@
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
 }
 
-/* --- Bulldog clip --- */
-.clip {
-  position: absolute;
-  top: -9px;
-  left: 50%;
-  width: 26px;
-  height: 12px;
-  margin-left: -13px;
-  border-radius: 2px 2px 1px 1px;
-  background: linear-gradient(180deg, #9a948a, var(--deco-clip, #6f6a60));
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.22);
-}
-
-/* --- Rubber stamp --- */
-.stamp {
-  position: absolute;
-  padding: 3px 6px;
-  font-family: var(--font-mono, 'Geist Mono', monospace);
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  font-weight: 700;
-  color: var(--deco-stamp-ink, rgba(140, 60, 48, 0.62));
-  border: 1.5px solid var(--deco-stamp-ink, rgba(140, 60, 48, 0.62));
-  border-radius: 2px;
-  /* faded ink */
-  opacity: 0.85;
-}
+/* --- Corner anchors reused by the icon-stamp / wax accents --- */
 .stampTl { top: 6px; left: 6px; }
 .stampTr { top: 6px; right: 6px; }
 .stampBl { bottom: 6px; left: 6px; }
@@ -100,7 +86,7 @@
    These rules remove the CSS-baked paint so the PNG shows cleanly.
    The base class rules remain as graceful CSS fallback when data-asset is absent. */
 
-.washi[data-asset='true'] {
+.tape[data-asset='true'] {
   /* PNG bakes in the tape colour and torn-end appearance */
   background-color: transparent;
   -webkit-mask-image: none;
@@ -110,34 +96,13 @@
   background-repeat: no-repeat;
 }
 
-.pin[data-asset='true'],
-.clip[data-asset='true'] {
-  /* override radial / linear gradient; inline backgroundImage wins */
+.pin[data-asset='true'] {
+  /* override radial gradient; inline backgroundImage wins */
   background: none;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
   box-shadow: none;
-}
-
-.photoCorner[data-asset='true'] {
-  /* PNG bakes in the corner shape; remove the border-only CSS art */
-  border: none;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-.stamp[data-asset='true'] {
-  /* The word is baked into the PNG (no text child) — give the span an explicit
-     box (~4:1, matching the word-stamp art) so the background can render. */
-  border: none;
-  padding: 0;
-  width: 84px;
-  height: 22px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
 }
 
 /* --- Icon stamp (small archival icon: star / heart / camera / …) --- */

@@ -1,10 +1,17 @@
 /**
  * Pure, deterministic per-card decoration model for the paper-atelier theme.
  *
- * Same `cardId` always returns a deep-equal set, so a card's tape/pin/stamp
- * never reshuffle between renders (no flicker on reorder / lightbox close).
- * The generator is a string-seeded mulberry32 PRNG — same variant as the
- * approved placeholder-art mockup (scripts/generate-placeholder-art.mjs L47-55).
+ * Same `cardId` always returns a deep-equal set, so a card's tape/pin never
+ * reshuffle between renders (no flicker on reorder / lightbox close). The
+ * generator is a string-seeded mulberry32 PRNG — same variant as the approved
+ * placeholder-art mockup (scripts/generate-placeholder-art.mjs L47-55).
+ *
+ * MOUNTING MODEL (2026-07-01, simplified): a card is fastened to the board in
+ * exactly ONE of two ways — a single strip of tape centred on the top edge, or a
+ * single top-center push-pin. Every card gets one (no bare cards). Corners /
+ * diagonals / multiple strips were all removed as too busy. The tape straddles
+ * the top edge so its upper half sits on the board and its lower half on the card
+ * (= "taped to the board").
  *
  * Everything here is presentational metadata only; it never affects card box
  * geometry or hit-testing (consumed by a pointer-events:none overlay).
@@ -12,26 +19,18 @@
 
 export type DecoCorner = 'tl' | 'tr' | 'bl' | 'br'
 export type WashiTint = 'a' | 'b' | 'c'
-export type WashiEdge = 'top' | 'right' | 'bottom' | 'left'
+/** Tape is either clear cellophane or coloured washi (per card). */
+export type TapeFamily = 'clear' | 'colored'
 
-export type WashiPiece = {
-  /** Which --deco-washi-{a|b|c} tint token to paint with. */
+/** A single strip of tape, centred on the top edge. */
+export type TapePiece = {
+  /** Which --deco-washi-{a|b|c} tint token to paint with (coloured CSS fallback). */
   readonly tint: WashiTint
-  /** Which card edge the tape straddles. */
-  readonly edge: WashiEdge
-  /** Rotation of the tape strip, degrees (hand-torn look). */
+  /** Hand-torn tilt in degrees. */
   readonly angleDeg: number
-  /** Position along the edge, 0..100 (% of that edge's free span). */
+  /** Horizontal center as a % of the top edge (≈ 50). */
   readonly offsetPct: number
-  /** Stable 0..1 fraction used by the component to pick a washi-tape PNG variant. */
-  readonly assetSeed: number
-}
-
-export type DecoStamp = {
-  readonly corner: DecoCorner
-  readonly angleDeg: number
-  /** Stable 0..1 fraction used by the component to pick a word-stamp PNG
-   *  (ARCHIVE / CONFIDENTIAL / TOP SECRET / RECEIVED / CLASSIFIED / APPROVED). */
+  /** Stable 0..1 fraction used by the component to pick a tape PNG. */
   readonly assetSeed: number
 }
 
@@ -39,28 +38,24 @@ export type DecoStamp = {
 export type DecoIcon = {
   readonly corner: DecoCorner
   readonly angleDeg: number
-  /** Stable 0..1 fraction used by the component to pick an icon-stamp PNG. */
   readonly assetSeed: number
 }
 
 /** A pressed wax-seal accent. */
 export type DecoWax = {
   readonly corner: DecoCorner
-  /** Stable 0..1 fraction used by the component to pick a wax-seal PNG. */
   readonly assetSeed: number
 }
 
 export type CardDecorationSet = {
-  /** Photo-album corner holders. Subset of the 4 corners (often a diagonal pair). */
-  readonly photoCorners: ReadonlyArray<DecoCorner>
-  /** 0..2 washi-tape strips. */
-  readonly washi: ReadonlyArray<WashiPiece>
-  /** Top-edge push-pin (mutually exclusive with `clip`). null = no pin. */
-  readonly pin: { readonly variant: 'gold' | 'green' } | null
-  /** Top-edge bulldog clip (mutually exclusive with `pin`). */
-  readonly clip: boolean
-  /** Optional archival word stamp, or null. */
-  readonly stamp: DecoStamp | null
+  /** The single top-center tape strip, or null (pinned or bare). */
+  readonly tape: TapePiece | null
+  /** Whether the tape is clear cellophane or coloured washi. */
+  readonly tapeFamily: TapeFamily
+  /** A single top-center push-pin (mutually exclusive with `tape`). */
+  readonly pin: boolean
+  /** Colour of the pin when `pin` is true. */
+  readonly pinVariant: 'gold' | 'green'
   /** Optional small icon stamp, or null. */
   readonly iconStamp: DecoIcon | null
   /** Optional pressed wax-seal accent, or null. */
@@ -91,7 +86,6 @@ function hashStringToSeed(input: string): number {
 
 const ALL_CORNERS: ReadonlyArray<DecoCorner> = ['tl', 'tr', 'bl', 'br']
 const TINTS: ReadonlyArray<WashiTint> = ['a', 'b', 'c']
-const EDGES: ReadonlyArray<WashiEdge> = ['top', 'right', 'bottom', 'left']
 
 /** Pick one element of `arr` using rng in [0,1). */
 function pick<T>(rng: () => number, arr: ReadonlyArray<T>): T {
@@ -103,79 +97,46 @@ function floatRange(rng: () => number, min: number, max: number): number {
   return Math.round((min + rng() * (max - min)) * 10) / 10
 }
 
+/** Fraction of cards whose tape is clear cellophane (rest are coloured washi). */
+const CLEAR_TAPE_FRACTION = 0.34
+/** Fastener mix: tape most of the time, a pin the rest. Every card gets one. */
+const TAPE_FRACTION = 0.62
+
+/** Build the single top-center tape strip. */
+function makeTape(rng: () => number, assetSeed: number): TapePiece {
+  return {
+    tint: pick(rng, TINTS),
+    angleDeg: floatRange(rng, -5, 5),
+    offsetPct: floatRange(rng, 46, 54),
+    assetSeed,
+  }
+}
+
 /**
- * Returns the deterministic decoration set for a card.
+ * Returns the deterministic decoration set for a card (untorn).
  * @param cardId Stable bookmark id (CardNode data-card-id / it.bookmarkId).
  */
 export function getCardDecorations(cardId: string): CardDecorationSet {
   const rng = mulberry32(hashStringToSeed(cardId))
 
-  // --- Photo corners: 0, 1 (single accent), or 2 (diagonal pair). ---
-  const photoCorners: DecoCorner[] = []
-  const cornerRoll = rng()
-  if (cornerRoll < 0.45) {
-    // diagonal pair — pick one diagonal, attach both ends
-    if (rng() < 0.5) {
-      photoCorners.push('tl', 'br')
-    } else {
-      photoCorners.push('tr', 'bl')
-    }
-  } else if (cornerRoll < 0.7) {
-    photoCorners.push(pick(rng, ALL_CORNERS))
-  }
-  // else: none
-
-  // --- Washi tape: 0..2 strips, each on a distinct edge. ---
-  const washiCount = (() => {
-    const r = rng()
-    if (r < 0.4) return 0
-    if (r < 0.85) return 1
-    return 2
-  })()
-  const usedEdges = new Set<WashiEdge>()
-  const washi: WashiPiece[] = []
-  for (let i = 0; i < washiCount; i++) {
-    // choose an unused edge (top/bottom favoured for the "taped to wall" look)
-    let edge = pick(rng, EDGES)
-    let guard = 0
-    while (usedEdges.has(edge) && guard < 6) {
-      edge = pick(rng, EDGES)
-      guard++
-    }
-    if (usedEdges.has(edge)) continue
-    usedEdges.add(edge)
-    washi.push({
-      tint: pick(rng, TINTS),
-      edge,
-      angleDeg: floatRange(rng, -14, 14),
-      offsetPct: floatRange(rng, 8, 80),
-      assetSeed: rng(), // appended last — does not shift prior rng() call positions
-    })
-  }
-
-  // --- Fastener: pin XOR clip, biased toward "nothing" so it stays calm. ---
   const fastenerRoll = rng()
-  const pinPresent = fastenerRoll < 0.18
-  // variant rng() consumed after the presence check (appended at end of pin logic)
-  const pin: { readonly variant: 'gold' | 'green' } | null = pinPresent
-    ? { variant: rng() < 0.5 ? 'gold' : 'green' }
-    : null
-  const clip = !pinPresent && fastenerRoll < 0.3
+  const tapeFamily: TapeFamily = rng() < CLEAR_TAPE_FRACTION ? 'clear' : 'colored'
+  const tapeAssetSeed = rng()
 
-  // --- Word stamps REMOVED (user): archival WORD stamps (ARCHIVE / CONFIDENTIAL
-  //     / TOP SECRET / …) read as a TAG when stuck on a card, so cards never show
-  //     them. The same rng() rolls are still consumed so the icon/wax decorations
-  //     below keep their current values (no reshuffle). ---
-  const stamp: DecoStamp | null = null
-  if (rng() < 0.3) {
-    rng() // (was: corner pick)
-    rng() // (was: angleDeg)
-    rng() // (was: assetSeed)
+  // Every card is fastened: a top-center tape, or a top-center pin.
+  let tape: TapePiece | null = null
+  let pin = false
+  if (fastenerRoll < TAPE_FRACTION) {
+    tape = makeTape(rng, tapeAssetSeed)
+  } else {
+    pin = true
   }
 
-  // --- Icon stamp: small archival icon (star / heart / camera / …). ---
+  const pinVariant: 'gold' | 'green' = rng() < 0.5 ? 'gold' : 'green'
+
+  // --- Rare accents (unchanged categories), layered on top of the mount. ---
   let iconStamp: DecoIcon | null = null
-  if (rng() < 0.22) {
+  if (rng() < 0.16) {
     iconStamp = {
       corner: pick(rng, ALL_CORNERS),
       angleDeg: floatRange(rng, -12, 12),
@@ -183,14 +144,33 @@ export function getCardDecorations(cardId: string): CardDecorationSet {
     }
   }
 
-  // --- Wax seal: rare pressed-wax accent. ---
   let wax: DecoWax | null = null
-  if (rng() < 0.14) {
-    wax = {
-      corner: pick(rng, ALL_CORNERS),
-      assetSeed: rng(),
-    }
+  if (rng() < 0.1) {
+    wax = { corner: pick(rng, ALL_CORNERS), assetSeed: rng() }
   }
 
-  return { photoCorners, washi, pin, clip, stamp, iconStamp, wax }
+  return { tape, tapeFamily, pin, pinVariant, iconStamp, wax }
+}
+
+/** A deterministic top-center tape used to replace a push-pin on torn/ring
+ *  sheets (a pin can't hold a loose / ring-bound sheet). Seeded separately so it
+ *  doesn't perturb the base set's PRNG stream. */
+function pinReplacementTape(cardId: string): TapePiece {
+  const rng = mulberry32(hashStringToSeed(`${cardId}:pin-to-tape`))
+  return makeTape(rng, rng())
+}
+
+/**
+ * Resolve the decoration set for how the card is actually backed.
+ *
+ * On torn/ring-bound sheets (graph / notepad) a push-pin would let the loose
+ * sheet fall, so it becomes a top-center tape instead. A tape is already
+ * top-center (fine on a torn sheet, whose top edge reaches the box top), and a
+ * bare card stays bare. Untorn cards pass through unchanged. Pure + deterministic
+ * per (cardId, tornBacking).
+ */
+export function resolveDecorations(cardId: string, tornBacking: boolean): CardDecorationSet {
+  const base = getCardDecorations(cardId)
+  if (!tornBacking || !base.pin) return base
+  return { ...base, pin: false, tape: pinReplacementTape(cardId) }
 }
