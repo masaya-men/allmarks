@@ -53,8 +53,12 @@ describe('computeGrabOffset', () => {
 })
 
 describe('GRAB_LAYER_WEIGHTS', () => {
-  it('orders front (cards) > middle (decor) > back (parchment)', () => {
-    expect(GRAB_LAYER_WEIGHTS.cards).toBeGreaterThan(GRAB_LAYER_WEIGHTS.decor)
-    expect(GRAB_LAYER_WEIGHTS.decor).toBeGreaterThan(GRAB_LAYER_WEIGHTS.parchment)
+  it('makes the mid layers swim more than the calm front, deep backdrop least', () => {
+    // Intentional "feel the parallax" ordering: mid (decor/pattern) > front
+    // (cards) > deep backdrop (parchment). All positive.
+    expect(GRAB_LAYER_WEIGHTS.decor).toBeGreaterThan(GRAB_LAYER_WEIGHTS.pattern)
+    expect(GRAB_LAYER_WEIGHTS.pattern).toBeGreaterThan(GRAB_LAYER_WEIGHTS.cards)
+    expect(GRAB_LAYER_WEIGHTS.cards).toBeGreaterThan(GRAB_LAYER_WEIGHTS.parchment)
+    expect(GRAB_LAYER_WEIGHTS.parchment).toBeGreaterThan(0)
   })
 })

@@ -2,15 +2,16 @@
  *  Applied to the base offset; each layer scales it by GRAB_LAYER_WEIGHTS. */
 export const MAX_GRAB_PX = 90
 
-/** Per-layer depth multipliers for the grab offset. Front (cards) follows the
- *  pointer; deeper layers lag, producing parallax. `pattern` is the viewport-
- *  anchored dots/grid backdrop (pattern themes) driven via background-position;
- *  `decor` is the paper-atelier scatter layer. Cards move a touch less than 1
- *  so the front feels calmer than the moving mid layer. */
+/** Per-layer depth multipliers for the grab offset. Tuned as a "feel the
+ *  parallax" play: the cards (front) stay calm while the MID layer swims the
+ *  most, so grabbing makes the world behind the cards slide noticeably. `decor`
+ *  is the paper-atelier scatter layer; `pattern` is the viewport-anchored
+ *  dots/grid backdrop (pattern themes) driven via background-position;
+ *  `parchment` is the deep paper backdrop (moves least). */
 export const GRAB_LAYER_WEIGHTS = {
-  cards: 0.75,
-  decor: 0.55,
-  pattern: 0.5,
+  cards: 0.4,
+  decor: 0.85,
+  pattern: 0.8,
   parchment: 0.28,
 } as const
 
