@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>FX Lab — Shapes Over Pixels</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; background: #050505; color: #ddd; font-family: ui-monospace, monospace; }
+  header { padding: 10px 14px; font-size: 12px; letter-spacing: 1px; color: #7a7; border-bottom: 1px solid #1a1a1a; }
+  header b { color: #cfc; }
+  .wrap { display: flex; gap: 14px; padding: 14px; flex-wrap: wrap; }
+  .stage { position: relative; }
+  canvas { display: block; max-width: 100%; height: auto; border: 1px solid #1a1a1a; background: #000; }
+  .controls { min-width: 260px; }
+  .row { margin: 8px 0; }
+  label { display: inline-block; width: 130px; font-size: 12px; color: #9ab; }
+  input[type=range] { width: 150px; vertical-align: middle; }
+  .val { display: inline-block; width: 44px; font-size: 12px; color: #cfc; text-align: right; }
+  select, input[type=file] { background: #111; color: #ddd; border: 1px solid #333; font: inherit; font-size: 12px; padding: 3px; }
+  button { background: #123; color: #cfc; border: 1px solid #2a4; font: inherit; font-size: 12px; padding: 5px 10px; cursor: pointer; }
+  .hint { font-size: 11px; color: #667; margin-top: 10px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<header>FX LAB — <b>Shapes Over Pixels</b> (halftone / “content becomes data”). Upload any image (a board screenshot works) and tune the look.</header>
+<div class="wrap">
+  <div class="stage"><canvas id="c" width="1200" height="760"></canvas></div>
+  <div class="controls" id="controls"></div>
+</div>
+
+<script>
+// Faithful adaptation of sabosugi/BypLMMN "Shapes Over Pixels".
+const params = {
+  bgColor: '#000000', bgImageOpacity: 0.55, contrast: 110,
+  effectOpacity: 0.9, blendMode: 'lighter',
+  resolution: 11, sizeMultiplier: 1.5,
+  minBrightness: 0.0, maxBrightness: 0.62,
+};
+const BLEND_MODES = ['lighter','source-over','screen','overlay','multiply','lighten','darken','hard-light','soft-light','color-dodge'];
+
+function pseudoRandom(x,y){ return Math.abs(Math.sin(x*12.9898 + y*78.233) * 43758.5453) % 1; }
+function definePolygon(ctx,x,y,r,sides){ for(let i=0;i<sides;i++){const a=(Math.PI*2*i/sides)-Math.PI/2, px=x+Math.cos(a)*r, py=y+Math.sin(a)*r; i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.closePath(); }
+function defineStar(ctx,x,y,o,inr,pts){ for(let i=0;i<pts*2;i++){const r=i%2?inr:o, a=(Math.PI*i/pts)-Math.PI/2, px=x+Math.cos(a)*r, py=y+Math.sin(a)*r; i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.closePath(); }
+function drawShape(ctx,type,x,y,size){ ctx.beginPath(); const h=size/2,q=size/4;
+  switch(type){
+    case 0: ctx.arc(x,y,h,0,Math.PI*2);break;
+    case 1: ctx.rect(x-h,y-h,size,size);break;
+    case 2: ctx.moveTo(x,y-h);ctx.lineTo(x+h,y+h);ctx.lineTo(x-h,y+h);break;
+    case 3: ctx.moveTo(x-h,y-h);ctx.lineTo(x+h,y-h);ctx.lineTo(x,y+h);break;
+    case 4: ctx.rect(x-h,y-q,size,h);break;
+    case 5: ctx.rect(x-q,y-h,h,size);break;
+    case 6: ctx.moveTo(x,y-h);ctx.lineTo(x+h,y);ctx.lineTo(x,y+h);ctx.lineTo(x-h,y);break;
+    case 7: definePolygon(ctx,x,y,h,5);break;
+    case 8: definePolygon(ctx,x,y,h,6);break;
+    case 9: definePolygon(ctx,x,y,h,8);break;
+    case 10: defineStar(ctx,x,y,h,h/2.5,5);break;
+    case 11: {const t=size/6; ctx.rect(x-t,y-h,t*2,size); ctx.rect(x-h,y-t,size,t*2);break;}
+    case 12: ctx.arc(x,y,h,Math.PI,0);ctx.closePath();break;
+    case 13: ctx.arc(x,y,h,0,Math.PI*2);ctx.arc(x,y,h/2,0,Math.PI*2,true);break;
+  }
+  ctx.fill();
+}
+
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const off=document.createElement('canvas'), offctx=off.getContext('2d',{willReadFrequently:true});
+let img=new Image();
+
+function render(){
+  if(!img.complete || !img.naturalWidth) return;
+  const W=canvas.width, H=canvas.height, res=Math.max(3, params.resolution|0);
+  ctx.clearRect(0,0,W,H);
+  ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
+  ctx.fillStyle=params.bgColor; ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=params.bgImageOpacity; ctx.drawImage(img,0,0,W,H); ctx.globalAlpha=1;
+
+  const gw=Math.ceil(W/res), gh=Math.ceil(H/res);
+  off.width=gw; off.height=gh;
+  offctx.filter=`contrast(${params.contrast}%)`;
+  offctx.drawImage(img,0,0,gw,gh);
+  offctx.filter='none';
+  const d=offctx.getImageData(0,0,gw,gh).data;
+
+  ctx.globalAlpha=params.effectOpacity; ctx.globalCompositeOperation=params.blendMode;
+  for(let row=0;row<gh;row++){ const y=row*res+res/2;
+    for(let col=0;col<gw;col++){ const x=col*res+res/2, i=(row*gw+col)*4;
+      const r=d[i],g=d[i+1],b=d[i+2];
+      const br=(0.299*r+0.587*g+0.114*b)/255;
+      if(br>=params.minBrightness && br<=params.maxBrightness){
+        const size=br*res*params.sizeMultiplier;
+        if(size>0.5){ ctx.fillStyle=`rgb(${r},${g},${b})`; drawShape(ctx, Math.floor(pseudoRandom(col,row)*14), x, y, size); }
+      }
+    }
+  }
+  ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
+  window.__done=true;
+}
+
+function loadImage(src){ img=new Image(); img.crossOrigin='anonymous'; img.onload=()=>{ canvas.width=img.naturalWidth; canvas.height=img.naturalHeight; render(); }; img.src=src; }
+
+// --- minimal control panel (no external deps) ---
+function slider(label, key, min, max, step){
+  const wrap=document.createElement('div'); wrap.className='row';
+  const l=document.createElement('label'); l.textContent=label;
+  const s=document.createElement('input'); s.type='range'; s.min=min; s.max=max; s.step=step; s.value=params[key];
+  const v=document.createElement('span'); v.className='val'; v.textContent=params[key];
+  s.oninput=()=>{ params[key]=parseFloat(s.value); v.textContent=params[key]; render(); };
+  wrap.append(l,s,v); return wrap;
+}
+const controls=document.getElementById('controls');
+controls.append(
+  slider('resolution (格子)', 'resolution', 4, 32, 1),
+  slider('size (粒の大きさ)', 'sizeMultiplier', 0.4, 3, 0.1),
+  slider('effect opacity', 'effectOpacity', 0, 1, 0.02),
+  slider('bg image opacity', 'bgImageOpacity', 0, 1, 0.02),
+  slider('contrast %', 'contrast', 50, 200, 5),
+  slider('min brightness', 'minBrightness', 0, 1, 0.02),
+  slider('max brightness', 'maxBrightness', 0, 1, 0.02),
+);
+const blendRow=document.createElement('div'); blendRow.className='row';
+const bl=document.createElement('label'); bl.textContent='blend mode';
+const bs=document.createElement('select');
+BLEND_MODES.forEach(m=>{ const o=document.createElement('option'); o.value=o.textContent=m; if(m===params.blendMode)o.selected=true; bs.append(o); });
+bs.onchange=()=>{ params.blendMode=bs.value; render(); };
+blendRow.append(bl,bs); controls.append(blendRow);
+
+const upRow=document.createElement('div'); upRow.className='row';
+const ul=document.createElement('label'); ul.textContent='upload image';
+const uf=document.createElement('input'); uf.type='file'; uf.accept='image/*';
+uf.onchange=()=>{ const f=uf.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>loadImage(rd.result); rd.readAsDataURL(f); };
+upRow.append(ul,uf); controls.append(upRow);
+
+const hint=document.createElement('div'); hint.className='hint';
+hint.innerHTML='Tip: upload a screenshot of your board to see it as data.<br>This is the LOOK only. In the app it will be pre-rendered per card once and revealed on grab (cheap).';
+controls.append(hint);
+
+loadImage('fx-lab-sample.jpg');
+</script>
+</body>
+</html>
