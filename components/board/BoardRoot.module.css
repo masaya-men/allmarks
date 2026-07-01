@@ -131,10 +131,10 @@
      panel and a downward-only shadow gave the top corners no lift, making them
      look square at scroll=0). The last two add the directional drop for depth. */
   box-shadow:
-    0 0 0 1px rgba(36, 31, 25, 0.18),
-    0 0 22px rgba(36, 31, 25, 0.18),
-    0 6px 16px rgba(36, 31, 25, 0.28),
-    0 30px 70px rgba(36, 31, 25, 0.40);
+    0 0 0 1px rgba(26, 22, 17, 0.28),
+    0 0 28px rgba(26, 22, 17, 0.24),
+    0 10px 26px rgba(26, 22, 17, 0.42),
+    0 46px 96px rgba(26, 22, 17, 0.56);
 }
 
 /* Outer surface = a second, larger parchment so the panel reads as paper resting
