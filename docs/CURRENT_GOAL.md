@@ -1,26 +1,25 @@
 # 次セッションのゴール (= セッション 148)
 
-## 今の状態（セッション147で出荷・allmarks.app 反映済・ユーザー実機OK）
+## 今の状態（セッション147で出荷・allmarks.app 反映済）
 
-**空き盤面「掴んでぐりぐり」（grab-wiggle）を実装＋実機チューニング＋既存バグ1件修正**。全テーマ対応・**default byte-identical / tsc0 / vitest1858 / build OK**。
+**掴みぐりぐり(grab-wiggle)を全テーマで出荷＋実機チューニング＋既存バグ1件修正。縁エフェクトは試行錯誤の末いったん撤去し、代わりに「縁でデータ化」機能の spec/plan を用意した（実装は次回）。**
 
-- **ふるまい**: 盤面の余白を左ドラッグ → 世界が指につられてズレる → **離すとぷるっとバネで戻る**（GSAP elastic）。引くほど重くなり上限90px弱（rubber-band `tanh`）。**実スクロール位置は変えない**。
-- **方式**: カードは1枚も動かさず、CSS変数 `--grab-x/--grab-y` を cameraRef に書き、既存3層 transform＋patternLayer が `calc(base + var*重み)` で読む。React 再描画を通さず 60fps。素の状態は `var(...,0px)*w=0` で従来と一致。
-- **確定チューニング**: 「パララックスを強く感じる遊び」＝前面静か・中間大きく。**カード0.4／散布シミ0.85／パターン(grid/dots)0.8／羊皮紙0.28**（`lib/board/rubber-band.ts` の `GRAB_LAYER_WEIGHTS`）。上限90 / バネ `elastic.out(1,0.4)`/0.7s。
-- **温存**: 中ボタン/Space＋ドラッグのパン・ホイールは無変更。reduced-motion→従来スクロール。カード/chrome 上では非発動。
-- **🐛 Grid テーマがリロードで消えるバグ修正（既存・grab無関係）**: 静的プリレンダが default 柄（none）で焼かれ、React 18 が hydration の属性不一致を直さず grid が `data-pattern='none'` に固着していた → patternLayer を post-mount フラグでゲートして根絶。playwright 実測。
-- **スコープ外（将来）**: スマホは「ボード長押し→同じ遊び」を別タスク。default 用の奥で動く背景モチーフも別タスク。
-- 正本: [spec](superpowers/specs/2026-07-01-board-grab-wiggle-design.md) / [plan](superpowers/plans/2026-07-01-board-grab-wiggle.md)。
+- **grab-wiggle 確定**：前面静か・中間大きく＝強いパララックス。`GRAB_LAYER_WEIGHTS`＝カード0.4/散布0.85/パターン0.8/羊皮紙0.28。全テーマ。static export の pattern 背景(grid/dots)も grab で動く。
+- **🐛 Grid テーマ消失バグ修正**：静的プリレンダが default 柄(none)で焼かれ、React 18 が hydration の属性不一致を直さず grid が固着。patternLayer を post-mount ゲートで根絶。
+- **縁グリッチは撤去**：RGB分離→乱流シャッター→0/1コード帯…と試したが「イメージと違う」。default から完全撤去済（ベースの掴みぐりぐりは全テーマ維持）。
+- **fx-lab.html 設置**：`allmarks.app/fx-lab.html`（隠しページ）。CodePen「Shapes Over Pixels」を忠実移植した粒々(ハーフトーン)の調整ラボ。ユーザーが値確定：res8/size1.3/effect0.94/bg0.86/contrast125/max0.66/lighter。
 
-## 次にやる（セッション148）= 生計フェーズ or 磨き、相談で1つ
+## 次にやる（セッション148）= 「縁でデータ化」機能を実装
 
-- **③ プレミアムテーマ制作** — paper の次の世界観（テーマ土台は稼働中）。grab-wiggle も全テーマで効くので新テーマにも自動で乗る。
-- **④ K3 実装** — 有料テーマ解錠機構（`docs/private/2026-07-01-k3-unlock-plan.md` の10タスク工程表）。
-- **選択的シェア** — 新しい順100枚固定→手選択（IDEAS.md S1/S2/S3）。
-- grab-wiggle のさらなる微調整（もっと大きく/上限UP 等）も随時可。
+**正本**: [spec](superpowers/specs/2026-07-02-board-edge-data-dissolve-design.md) / [plan](superpowers/plans/2026-07-02-board-edge-data-dissolve.md)（6タスクTDD）。
+
+- **やること**：default テーマで、掴んで動かすとカードが盤面外縁に潜った"その部分だけ"が粒々(データ)になる。あなたの案＝各カードの粒々版を1回だけ作って透明で重ね、縁の帯マスクで掴み中だけ見せる（毎フレーム計算なし＝軽い）。境界線も軽くあばれる。
+- **CORS**：読める画像＝本物色の粒／読めない画像(X等)＝汎用の白シアン粒でフォールバック（映ってても外部画像はピクセル読取不可＝共有画像と同じ制約）。
+- **着手方法**：「plan を実装して」で即開始。Task1(純ロジック,単体テスト)→Task6(実機調整)。canvas は jsdom 不可なので純ロジックのみ単体テスト、見た目は playwright＋実機。
+- 帯の深さ(`--edge-band` 90px)・粒サイズ・reveal 速度は実機で調整。
 
 ## 守ること（毎回）
 - default 盤面 byte-identical。deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy `--project-name=allmarks --branch=master`
 - **機微情報は `docs/private/` のみ。tracked に書かない・commit しない**（CLAUDE.md 厳守）
-- 台紙系・装飾・共有画像は実描画（playwright/実機）を見てからデプロイ。board のドラッグ/カードクリックは playwright 不可
-- 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑・今回は一発緑）。応答は日本語・簡潔に
+- 台紙系・装飾・掴み演出は実描画（playwright/実機）を見てからデプロイ。board のドラッグ/カードクリックは playwright 不可（setPointerCapture）
+- 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。応答は日本語・簡潔に

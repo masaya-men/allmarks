@@ -8323,3 +8323,17 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
   - **修正**：patternLayer を **post-mount フラグ（`hydrated`）でゲート** → サーバー＋初回クライアント描画の両方で出さない（不整合ゼロ）→ mount 後に正しい `data-pattern` で新規描画。定石の「client-state 依存 DOM を SSR で描かない」パターン。
   - **検証**：playwright で grid-paper リロード後 `data-pattern="grid"`＋`linear-gradient` 実描画、default は `none`（不変）、paper 無傷を実測。tsc0 / vitest1858 / build OK。
 - コミット：tuning（calm cards + pattern backdrop）／strong-parallax weights／hydration fix の3本＋docs。デプロイ計4回。
+
+### 追記2 — 縁エフェクト試行錯誤→撤去＋「縁でデータ化」spec/plan＋fx-labラボ（同 session 147, 2026-07-02）
+
+- **ユーザー発案「掴んだ時に盤面の縁が音波の乱れみたいにグリッチ」**を default 向けに試作。3方向を実機で反復：
+  1. **RGB分離リム**（cyan/magenta が grab 量で分離＋微振動）→「悪くないがイメージ違う」
+  2. **乱流シャッター**（SVG feTurbulence+feDisplacementMap で縁線を千切る＋seedコマ送りでじじじ）→まだ違う
+  3. **0/1コード帯**（外周が二進コードに溶ける mask-exclude リング＋流れ/ちらつき）→「ぜんぜん違う」
+  - いずれも default 限定・掴み中のみ・静止時透明で byte-identical は維持。最終的に **default から完全撤去**（`revert` コミット）。ベースの grab-wiggle は全テーマ維持。
+- **正しい狙いが判明**：盤面全部でなく「掴んで動かすとカードが外縁に潜って消える"その部分だけ"がデータ(粒)になる」。ユーザーが CodePen `sabosugi/BypLMMN`「Shapes Over Pixels」を参考提示（canvas 2D：ソースを極小バッファに縮小→ピクセル明るさ→図形サイズ、14種プリミティブ、blend=lighter）。
+- **忠実移植＋ラボ設置**：`public/fx-lab.html`（noindex・隠し・`allmarks.app/fx-lab.html`）。lil-gui 風スライダーで res/粒サイズ/blend/明るさ調整＋画像アップロード。ユーザーが見た目確定：**res8/size1.3/effect0.94/bg0.86/contrast125/max0.66/lighter**。
+- **CORS 制約を確認・合意**：外部サイトのサムネ（X等）は「表示は可・JSでのピクセル読取は不可(tainted canvas)」＝共有画像に本物写真が焼けないのと同根。→ 方針 **(A)**：読める画像は本物色の粒／読めない画像は汎用の白シアン粒でフォールバック（全カードで縁演出は出す）。将来 **(B)** 画像中継で本物度UP。
+- **ユーザーの核心アイデア（採用・性能の鍵）**：前の grab-wiggle と同じ「作り置き→出す」＝各カードの粒々版を1回だけ生成して透明で重ね、縁の帯マスクで掴み中だけ reveal。毎フレーム計算なしで軽い。リアルタイム全盤面ラスタライズは非現実的、が結論。
+- **spec/plan 確定（実装は次セッション）**：[spec](superpowers/specs/2026-07-02-board-edge-data-dissolve-design.md)＝default限定・縁の帯・作り置き方式・CORSフォールバック。[plan](superpowers/plans/2026-07-02-board-edge-data-dissolve.md)＝6タスクTDD（純ロジックのみ単体テスト＝jsdomはcanvas不可、canvas/DOMはplaywright＋実機検証）。
+- **技術メモ（再利用）**：static export は build時に **default テーマ**で prerender される → React 18 は hydration の**属性**不一致をパッチしない。DOM属性/inline-styleがユーザーstate依存の場合は **post-mount ゲート**（サーバー＋初回描画で出さない）で不整合を根絶する（Grid 消失バグの真因・修正パターン）。

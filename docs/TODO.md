@@ -21,9 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 147 — 空き盤面「掴んでぐりぐり」出荷 ＋ Grid テーマ消失バグ修正)
+### 直近の状態 (セッション 147 — 掴みぐりぐり出荷＋Gridバグ修正＋縁エフェクト試行/撤去＋「縁でデータ化」spec/plan 用意)
 
-- **grab-wiggle 実装＋実機チューニング＋既存バグ1件修正・`allmarks.app` 反映済**。全テーマ対応・**default byte-identical / tsc0 / vitest1858 / build OK**。10コミット・4デプロイ。**ユーザー実機OK**。詳細 narrative は TODO_COMPLETED.md セッション147。
+- **grab-wiggle 実装＋実機チューニング＋既存バグ1件修正・`allmarks.app` 反映済**。全テーマ対応・**default byte-identical / tsc0 / vitest1858 / build OK**。**ユーザー実機OK**。詳細 narrative は TODO_COMPLETED.md セッション147。
+- **縁エフェクトは試行錯誤→いったん撤去**：RGB分離→乱流シャッター→0/1コード帯を default に試作したが「イメージと違う」→ **default から完全撤去済**（ベースの掴みぐりぐりは全テーマ維持）。
+- **代わりに「縁でデータ化」機能の spec/plan を用意（次セッションで実装）**：掴んでカードが外縁に潜った"その部分だけ"が粒々(Shapes Over Pixels ハーフトーン)になる。CodePen `sabosugi/BypLMMN` を忠実移植した調整ラボ `allmarks.app/fx-lab.html`（`public/fx-lab.html`）を設置し、ユーザーが見た目を確定（res8/size1.3/effect0.94/bg0.86/contrast125/max0.66/lighter）。正本 [spec](superpowers/specs/2026-07-02-board-edge-data-dissolve-design.md) / [plan](superpowers/plans/2026-07-02-board-edge-data-dissolve.md)。**次 = この plan を実装**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+#### (以下は grab-wiggle 本体の詳細・archive)
+- **grab-wiggle 実装本体**。全テーマ対応・default byte-identical。10コミット・4デプロイ。
 - **ふるまい**: 盤面余白の左ドラッグ → 世界が指につられてズレ → 離すとぷるっと戻る（GSAP elastic）。引くほど重く上限90px弱（rubber-band `tanh`）。実スクロール位置は不変。
 - **方式**: カード非移動。CSS変数 `--grab-x/y` を cameraRef に書き、既存3層 transform＋patternLayer が `calc(base + var*重み)` で読む。React 再描画を通さず 60fps。素の状態 `var(...,0px)*w=0`＝従来一致。新規 `lib/board/rubber-band.ts`・`grab-gesture.ts`・`components/board/use-grab-wiggle.ts`＋`InteractionLayer`/`BoardRoot` 改修。
 - **実機チューニング（確定値）**: 「パララックスを強く感じる遊び」＝前面静か・中間大きく。**カード0.4／散布シミ0.85／パターン(grid/dots)0.8／羊皮紙0.28**。patternLayer（画面固定・background-position）にも grab を配線し、Grid/ドット背景が全テーマで泳ぐように。
