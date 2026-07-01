@@ -1713,6 +1713,18 @@ export function BoardRoot() {
     [themeId, themeCustomizations],
   )
 
+  // The pattern backdrop (dots/grid) is client-state-dependent — its theme comes
+  // from IDB — but the board is statically prerendered with the DEFAULT theme
+  // (patternType 'none'). If the patternLayer rendered during SSR/first hydration
+  // it would bake data-pattern="none" into the HTML, and React 18 does NOT patch
+  // hydration *attribute* mismatches — so a saved non-default pattern theme (e.g.
+  // grid) stays stuck on 'none' and draws nothing. Gate the layer on a post-mount
+  // flag so the server + first client render both omit it (no mismatch), then it
+  // mounts fresh with the correct pattern. (data-theme-id themes like Paper are
+  // unaffected — the pre-paint inline script sets that attribute before hydration.)
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => { setHydrated(true) }, [])
+
   // Merge a partial customization into the active theme + persist. An empty
   // patch from the panel's "reset" clears the theme back to its defaults.
   const handleCustomizeTheme = useCallback(
@@ -2242,7 +2254,7 @@ export function BoardRoot() {
                 left/right edges cut symmetrically regardless of content width.
                 It parallaxes vertically via background-position-y (= the grid's
                 drift) so it floats behind the cards instead of sitting glued. */}
-            {themeMeta.kind === 'pattern' && resolvedCustom && (
+            {hydrated && themeMeta.kind === 'pattern' && resolvedCustom && (
               <div
                 aria-hidden="true"
                 className={themeStyles.patternLayer}
