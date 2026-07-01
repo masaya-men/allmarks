@@ -8,20 +8,9 @@ import { pickTitleTypography } from '@/lib/embed/title-typography'
 import { cleanTitle } from '@/lib/embed/clean-title'
 import { placeholderArtFrames } from '@/lib/board/placeholder-image'
 import { useSlideshowCycle } from '@/lib/board/use-slideshow-cycle'
-import { paperAssetUrl, pickPaperAsset } from '@/lib/board/paper-assets'
+import { paperAssetUrl, pickTextNoteSheet } from '@/lib/board/paper-assets'
 import { PLACEHOLDER_ASPECT } from './placeholder-aspect'
 import styles from './PlaceholderCard.module.css'
-
-/** Stable 0..1 fraction from a card id (same hash ImageCard uses for its mat),
- *  so a thumbnail-less card always lands on the same paper-note sheet. */
-function seedFractionFromId(id: string): number {
-  let h = 2166136261
-  for (let i = 0; i < id.length; i++) {
-    h ^= id.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return ((h >>> 0) % 100000) / 100000
-}
 
 type Props = {
   readonly item: BoardItem
@@ -177,10 +166,7 @@ export function PlaceholderCard({
   // matching ImageCard's paper face. Falls through to the generated-art card
   // when the paper assets aren't placed.
   if (paper) {
-    const paperId = pickPaperAsset(seedFractionFromId(item.bookmarkId), [
-      'card-paper-graph',
-      'card-paper-notepad',
-    ])
+    const paperId = pickTextNoteSheet(item.bookmarkId)
     const paperUrl = paperId ? paperAssetUrl(paperId) : null
     if (paperUrl) {
       return (

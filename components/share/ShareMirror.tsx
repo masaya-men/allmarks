@@ -7,9 +7,24 @@ import type { ThemeId } from '@/lib/board/types'
 import { patternSvgDataUri } from '@/lib/board/theme-customization'
 import type { ShareCustomization } from '@/lib/share/types-v2'
 import { getThemeMeta } from '@/lib/board/theme-registry'
-import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_BACKING_POOL, isPaperSheet } from '@/lib/board/paper-assets'
+import { paperAssetUrl, pickPaperAsset, pickTextNoteSheet, IMAGE_CARD_BACKING_POOL, isPaperSheet } from '@/lib/board/paper-assets'
 import { PaperCardDecorations } from '@/components/board/decorations/PaperCardDecorations'
+import { cleanTitle } from '@/lib/embed/clean-title'
+import { pickTitleTypography } from '@/lib/embed/title-typography'
+import { detectUrlType } from '@/lib/utils/url'
 import styles from './ShareMirror.module.css'
+
+/** True when the board would render this card as a PlaceholderCard text note
+ *  (→ a notebook sheet on paper). Mirrors pickCard(): youtube / tiktok are
+ *  ALWAYS VideoThumbCard (mat), a thumbnail makes it an ImageCard (mat); only a
+ *  non-video card with no thumbnail becomes a text note. Basing this on the
+ *  structural thumbnailUrl (not the runtime img-failed flag) matches the board,
+ *  where a failed thumbnail still renders the mat's empty photo window. */
+function isPaperTextNote(item: MirrorItem): boolean {
+  const t = detectUrlType(item.url)
+  if (t === 'youtube' || t === 'tiktok') return false
+  return !item.thumbnailUrl
+}
 
 /**
  * FNV-1a 32-bit hash → stable 0..1 fraction. Matches the same function
@@ -200,13 +215,20 @@ export function ShareMirror({
                       data-mirror-card-id={item.url}
                       style={{ width: '100%', height: '100%' }}
                     >
-                      <MirrorCardContent item={item} isPaper />
+                      <MirrorCardContent item={item} isPaper cardWidth={pos.w} cardHeight={pos.h} />
                     </div>
                     <PaperCardDecorations
                       cardId={item.id}
-                      tornBacking={isPaperSheet(
-                        pickPaperAsset(seedFractionFromId(item.id), IMAGE_CARD_BACKING_POOL),
-                      )}
+                      // Text-note cards are notebook sheets on the board
+                      // (PlaceholderCard → paperCardHasTornBacking = true always), so
+                      // they get the torn-backing decoration set (top tape). Image /
+                      // video cards follow their mat pick, like ImageCard /
+                      // VideoThumbCard (paperCardHasTornBacking's other branch).
+                      tornBacking={
+                        isPaperTextNote(item)
+                          ? true
+                          : isPaperSheet(pickPaperAsset(seedFractionFromId(item.id), IMAGE_CARD_BACKING_POOL))
+                      }
                     />
                   </div>
                 )
@@ -251,12 +273,50 @@ export function ShareMirror({
  *  When `isPaper` is true, renders the paper-atelier card face: deterministic
  *  mat backing (same seed as ImageCard.tsx), mounted-photo inset (.paperPhoto),
  *  and a serif ink caption (.paperCaption). */
-function MirrorCardContent({ item, isPaper = false }: { readonly item: MirrorItem; readonly isPaper?: boolean }): ReactElement {
+function MirrorCardContent({
+  item,
+  isPaper = false,
+  cardWidth = 280,
+  cardHeight = 360,
+}: {
+  readonly item: MirrorItem
+  readonly isPaper?: boolean
+  readonly cardWidth?: number
+  readonly cardHeight?: number
+}): ReactElement {
   const [imgFailed, setImgFailed] = useState<boolean>(false)
   const showPlaceholder = !item.thumbnailUrl || imgFailed
 
   // --- Paper mat shell ---
   if (isPaper) {
+    // Thumbnail-less text card → the whole card IS a graph / spiral-notepad
+    // sheet with the title hand-written on it, exactly like the board's
+    // PlaceholderCard paper face (not a mat + photo window). Same sheet pick
+    // (pickTextNoteSheet), same hand-written stack (Yomogi) and title
+    // typography (cleanTitle + pickTitleTypography) so preview = OG = board.
+    // Falls through to the mat placeholder only if the sheet asset is absent.
+    if (isPaperTextNote(item)) {
+      const sheetId = pickTextNoteSheet(item.id)
+      const sheetUrl = sheetId ? paperAssetUrl(sheetId) : null
+      if (sheetUrl) {
+        const noteTitle = cleanTitle(item.title || '', item.url)
+        const typo = pickTitleTypography({ title: noteTitle, cardWidth, cardHeight })
+        return (
+          <div
+            className={styles.paperNote}
+            data-paper-note="true"
+            style={{ backgroundImage: `url("${sheetUrl}")` }}
+          >
+            <div
+              className={styles.paperNoteTitle}
+              style={{ fontSize: `${typo.fontSize}px`, lineHeight: `${typo.lineHeight}px` }}
+            >
+              {noteTitle}
+            </div>
+          </div>
+        )
+      }
+    }
     const matId = pickPaperAsset(seedFractionFromId(item.id), IMAGE_CARD_BACKING_POOL)
     const matUrl = matId ? paperAssetUrl(matId) : null
     const sheet = isPaperSheet(matId)

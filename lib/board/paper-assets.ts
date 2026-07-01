@@ -191,3 +191,25 @@ export function pickPaperAsset(
   const clamped = Math.max(0, Math.min(0.999999, seedFraction))
   return placed[Math.floor(clamped * placed.length)] ?? placed[0]
 }
+
+/**
+ * Which notebook sheet (graph vs spiral-notepad) a thumbnail-less TEXT card
+ * shows. Single source of truth so the board (PlaceholderCard) and the share
+ * replica (ShareMirror) pick the IDENTICAL sheet for the same card.
+ *
+ * NOTE the seed normalization: `% 100000 / 100000`, NOT seedFractionFromId's
+ * `/ 0x100000000`. This reproduces PlaceholderCard's historical local hash
+ * exactly, so moving PlaceholderCard onto this helper does not change which
+ * sheet any existing board card already shows. Same FNV-1a constants, different
+ * final fraction — do not "simplify" to seedFractionFromId or every text card's
+ * sheet can flip.
+ */
+export function pickTextNoteSheet(bookmarkId: string): PaperAssetId | null {
+  let h = 0x811c9dc5
+  for (let i = 0; i < bookmarkId.length; i++) {
+    h ^= bookmarkId.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  const frac = ((h >>> 0) % 100000) / 100000
+  return pickPaperAsset(frac, IMAGE_CARD_SHEET_POOL)
+}
