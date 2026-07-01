@@ -90,49 +90,6 @@
   z-index: 80;
 }
 
-/* Default (Sound Wave) theme: while the user grab-wiggles the empty board, the
-   board boundary can no longer hold its line and dissolves into a perimeter band
-   of streaming 0/1 code — card edges that reach the band are covered by code too
-   ("becomes data"). The band grows with the grab (border-width 0→N) and snaps
-   back to nothing on release (returns to a solid boundary). Fully transparent at
-   rest → default board byte-identical. Reduced-motion never sets [data-grabbing]
-   (grab-wiggle is gated off), so this stays dark too.
-
-   The perimeter-only shape uses the mask-exclude "border ring" trick: two masks
-   (padding-box + border-box) composited to reveal ONLY the transparent border. */
-.codeBand {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--canvas-radius);
-  pointer-events: none;
-  z-index: 85; /* above cards + edge scrims (80), below chrome (110) / Lightbox (100) */
-  border: 0 solid transparent;
-  /* code tile on top of a dark base so the band OBSCURES the rim + card edges */
-  background: var(--code-tile) repeat, rgba(2, 12, 16, 0.86);
-  opacity: 0;
-  transition: border-width 0.28s ease, opacity 0.28s ease;
-  transform: translate(calc(var(--grab-x, 0px) * 0.06), calc(var(--grab-y, 0px) * 0.06));
-  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-}
-.canvas[data-grabbing] .codeBand {
-  border-width: 42px; /* the boundary dissolves into a 42px-deep code band */
-  opacity: 1;
-  animation: code-flow 0.5s linear infinite, code-flicker 0.22s steps(3, end) infinite;
-}
-/* Stream the binary field (top layer) while the solid base stays put. */
-@keyframes code-flow {
-  from { background-position: 0 0, 0 0; }
-  to   { background-position: 0 -76px, 0 0; }
-}
-/* Unstable data: the band flickers as it fights to reform. */
-@keyframes code-flicker {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.68; }
-}
-
 .canvasWrap {
   position: absolute;
   inset: 0;

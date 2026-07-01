@@ -108,19 +108,6 @@ const DECOR_PARALLAX_FACTOR = 0.30
  *  translate — the layer is screen-fixed so it stays centred + symmetric). */
 const GRID_BG_PARALLAX_FACTOR = 1 - PAPER_PARALLAX_FACTOR
 
-/** Tileable binary (0/1) field for the default theme's "boundary dissolves into
- *  code" edge band. White~cyan monospace rows, tiled + scrolled while grabbing.
- *  Built as a data-URI here (encodeURIComponent handles all escaping) and passed
- *  to the code band via a CSS var so the .module.css stays static. */
-const CODE_BAND_TILE_SVG =
-  "<svg xmlns='http://www.w3.org/2000/svg' width='104' height='76'>" +
-  "<text x='3' y='16' font-family='ui-monospace,monospace' font-size='14' letter-spacing='1' fill='rgba(198,246,255,0.92)'>01001101</text>" +
-  "<text x='3' y='35' font-family='ui-monospace,monospace' font-size='14' letter-spacing='1' fill='rgba(150,224,255,0.78)'>10110100</text>" +
-  "<text x='3' y='54' font-family='ui-monospace,monospace' font-size='14' letter-spacing='1' fill='rgba(214,250,255,0.96)'>00111001</text>" +
-  "<text x='3' y='73' font-family='ui-monospace,monospace' font-size='14' letter-spacing='1' fill='rgba(168,232,255,0.84)'>11010010</text>" +
-  "</svg>"
-const CODE_BAND_TILE_URL = `url("data:image/svg+xml,${encodeURIComponent(CODE_BAND_TILE_SVG)}")`
-
 /** Edge-band chrome (wordmark / MOTION / the FilterPill count readout) is tuned
  *  light-on-dark. On a LIGHT custom edge, flip the WHOLE chrome token family —
  *  both the ChromeButton vars (--chrome-btn-*) AND the FilterPill text vars
@@ -1396,9 +1383,8 @@ export function BoardRoot() {
   // onboarding overlay is a sibling, so its fixed positioning is unaffected;
   // canvasWrap's overflow:hidden clips the zoom to the board area).
   const cameraRef = useRef<HTMLDivElement>(null)
-  // The board rim (.canvas) — the grab-wiggle CSS vars live here so BOTH the
-  // pan layers (descendants via cameraWrap) AND the default edge-glitch overlay
-  // (a direct .canvas child, NOT under cameraWrap) inherit them.
+  // The board rim (.canvas) hosts the grab-wiggle CSS vars so the pan layers
+  // (descendants via cameraWrap) inherit them.
   const canvasElRef = useRef<HTMLDivElement>(null)
 
   // Empty-board grab-wiggle: writes --grab-x/--grab-y on the .canvas rim; the
@@ -2176,9 +2162,6 @@ export function BoardRoot() {
       <div
         ref={canvasElRef}
         className={styles.canvas}
-        // While a grab-wiggle is active, mark the canvas so the default theme's
-        // sound-wave edge-glitch overlay lights up (CSS-gated, default only).
-        data-grabbing={grabWiggle.grabbing ? '' : undefined}
         // The edge-band chrome override above cascades into here; reset it to the
         // default light-on-dark chrome so the header + card chrome (which sit on
         // the dark board, not the edge) keep their normal ink.
@@ -2186,17 +2169,6 @@ export function BoardRoot() {
         // header components don't yet share one chrome token — see follow-up.)
         style={resolvedCustom && isLightColor(resolvedCustom.edgeColor) ? DARK_CHROME_RESET : undefined}
       >
-        {/* Default (Sound Wave) theme only: the board rim glitches — chromatic
-            RGB split + micro-jitter — while you grab-wiggle the empty board, like
-            a disturbed audio signal. Fully transparent at rest (opacity 0 unless
-            [data-grabbing]) so the default board stays byte-identical. */}
-        {themeId === DEFAULT_THEME_ID && (
-          <div
-            className={styles.codeBand}
-            aria-hidden="true"
-            style={{ ['--code-tile' as string]: CODE_BAND_TILE_URL }}
-          />
-        )}
         <TopHeader
           hidden={!!lightboxItemId}
           actions={
