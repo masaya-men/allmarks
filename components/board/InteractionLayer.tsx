@@ -10,6 +10,8 @@ import {
 } from 'react'
 import { BOARD_Z_INDEX, INTERACTION } from '@/lib/board/constants'
 import type { ScrollDirection } from '@/lib/board/types'
+import { classifyBoardPointerDown } from '@/lib/board/grab-gesture'
+import type { GrabWiggleController } from './use-grab-wiggle'
 
 type InteractionLayerProps = {
   readonly direction: ScrollDirection
@@ -20,6 +22,9 @@ type InteractionLayerProps = {
    * event bubble up to InteractionLayer for pan engagement.
    */
   readonly spaceHeld: boolean
+  /** Empty-board grab-wiggle controller. When enabled, a plain left-drag on the
+   *  bare layer nudges the world and springs back instead of scrolling. */
+  readonly wiggle?: GrabWiggleController
   readonly children?: ReactNode
 }
 
@@ -27,9 +32,15 @@ export function InteractionLayer({
   direction,
   onScroll,
   spaceHeld,
+  wiggle,
   children,
 }: InteractionLayerProps) {
   const dragRef = useRef<{ lastX: number; lastY: number } | null>(null)
+  // Which gesture the current pointer sequence engaged: 'pan' uses dragRef +
+  // onScroll (existing), 'wiggle' delegates to the grab-wiggle controller.
+  const modeRef = useRef<'pan' | 'wiggle' | null>(null)
+  const wiggleRef = useRef<GrabWiggleController | undefined>(wiggle)
+  wiggleRef.current = wiggle
   // Mirror prop in a ref so the pointerdown handler reads the latest value
   // without forcing useCallback to re-bind every time spaceHeld toggles.
   const spaceHeldRef = useRef<boolean>(spaceHeld)
@@ -157,28 +168,39 @@ export function InteractionLayer({
 
   const handlePointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>): void => {
-      // Pan-mode triggers (engage even when the pointer is over a card):
-      //   - middle button (button === 1)
-      //   - left button + Space held
-      // Otherwise fall back to the original behavior: pan only when clicking
-      // the bare interaction layer (no card under pointer).
-      const isPanModifier =
-        e.button === 1 || (e.button === 0 && spaceHeldRef.current)
-      if (!isPanModifier && e.target !== e.currentTarget) return
-      // Suppress the browser's native dragstart + text/element selection that
-      // would otherwise fire when a Space+drag pan starts on a card (event
-      // bubbles up here from CardsLayer's bailed pointerdown). Also covers
-      // middle-button click which would trigger scroll-with-autoscroll on some
-      // browsers — keeps our drag logic in sole control.
+      // Classify the gesture: pan (middle / Space+left / bare-layer when wiggle
+      // off) keeps the original scroll behavior; 'wiggle' is a plain left-drag
+      // on the bare layer when the grab-wiggle interaction is enabled; 'ignore'
+      // is a non-modifier pointer over a card.
+      const w = wiggleRef.current
+      const intent = classifyBoardPointerDown({
+        button: e.button,
+        spaceHeld: spaceHeldRef.current,
+        isSelfTarget: e.target === e.currentTarget,
+        wiggleEnabled: !!w?.enabled,
+      })
+      if (intent === 'ignore') return
+      // Suppress the browser's native dragstart + text/element selection + the
+      // middle-button autoscroll, keeping our drag logic in sole control.
       e.preventDefault()
       e.currentTarget.setPointerCapture(e.pointerId)
-      dragRef.current = { lastX: e.clientX, lastY: e.clientY }
+      if (intent === 'wiggle' && w) {
+        modeRef.current = 'wiggle'
+        w.begin(e.clientX, e.clientY)
+      } else {
+        modeRef.current = 'pan'
+        dragRef.current = { lastX: e.clientX, lastY: e.clientY }
+      }
     },
     [],
   )
 
   const handlePointerMove = useCallback(
     (e: PointerEvent<HTMLDivElement>): void => {
+      if (modeRef.current === 'wiggle') {
+        wiggleRef.current?.move(e.clientX, e.clientY)
+        return
+      }
       const d = dragRef.current
       if (!d) return
       const dx = e.clientX - d.lastX
@@ -206,6 +228,10 @@ export function InteractionLayer({
       if (e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId)
       }
+      if (modeRef.current === 'wiggle') {
+        wiggleRef.current?.end()
+      }
+      modeRef.current = null
       dragRef.current = null
     },
     [],
@@ -225,6 +251,7 @@ export function InteractionLayer({
         zIndex: BOARD_Z_INDEX.INTERACTION_OVERLAY,
         touchAction: 'none',
         overflow: 'hidden',
+        cursor: wiggle?.enabled ? (wiggle.grabbing ? 'grabbing' : 'grab') : undefined,
       }}
     >
       {children}
