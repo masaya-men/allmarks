@@ -90,77 +90,47 @@
   z-index: 80;
 }
 
-/* Default (Sound Wave) theme: the board rim glitches — chromatic RGB split +
-   micro-jitter — while the user grab-wiggles the empty board, like a disturbed
-   audio signal. Driven by the grab CSS vars (--grab-x/--grab-y, set on .canvas)
-   so the split scales with the pull and springs back with it. Fully transparent
-   at rest (opacity 0 unless [data-grabbing]) → default board byte-identical.
-   Reduced-motion never sets [data-grabbing] (grab-wiggle is gated off), so this
-   stays dark too. */
-/* Zero-size host for the SVG turbulence filter def (referenced by CSS filter). */
-.edgeGlitchDefs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-.edgeGlitch {
+/* Default (Sound Wave) theme: while the user grab-wiggles the empty board, the
+   board boundary can no longer hold its line and dissolves into a perimeter band
+   of streaming 0/1 code — card edges that reach the band are covered by code too
+   ("becomes data"). The band grows with the grab (border-width 0→N) and snaps
+   back to nothing on release (returns to a solid boundary). Fully transparent at
+   rest → default board byte-identical. Reduced-motion never sets [data-grabbing]
+   (grab-wiggle is gated off), so this stays dark too.
+
+   The perimeter-only shape uses the mask-exclude "border ring" trick: two masks
+   (padding-box + border-box) composited to reveal ONLY the transparent border. */
+.codeBand {
   position: absolute;
   inset: 0;
   border-radius: var(--canvas-radius);
   pointer-events: none;
   z-index: 85; /* above cards + edge scrims (80), below chrome (110) / Lightbox (100) */
+  border: 0 solid transparent;
+  /* code tile on top of a dark base so the band OBSCURES the rim + card edges */
+  background: var(--code-tile) repeat, rgba(2, 12, 16, 0.86);
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: border-width 0.28s ease, opacity 0.28s ease;
+  transform: translate(calc(var(--grab-x, 0px) * 0.06), calc(var(--grab-y, 0px) * 0.06));
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
-.edgeGlitch::before,
-.edgeGlitch::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 2px solid;
-  mix-blend-mode: screen; /* cyan + magenta over the dark board = neon glow */
-}
-/* Cyan rim pulled one way, magenta the other → chromatic split scaled by grab. */
-.edgeGlitch::before {
-  border-color: rgba(0, 240, 255, 0.85);
-  transform: translate(calc(var(--grab-x, 0px) * 0.14), calc(var(--grab-y, 0px) * 0.14));
-}
-.edgeGlitch::after {
-  border-color: rgba(255, 40, 120, 0.85);
-  transform: translate(calc(var(--grab-x, 0px) * -0.14), calc(var(--grab-y, 0px) * -0.14));
-}
-/* While grabbing: the rim lights up and flickers (unstable, "struggling"). */
-.canvas[data-grabbing] .edgeGlitch {
+.canvas[data-grabbing] .codeBand {
+  border-width: 42px; /* the boundary dissolves into a 42px-deep code band */
   opacity: 1;
-  animation: edge-flicker 0.3s steps(3, end) infinite;
+  animation: code-flow 0.5s linear infinite, code-flicker 0.22s steps(3, end) infinite;
 }
-/* The turbulence filter rips the continuous rim line into broken, warped
-   segments ("壊れる"); the micro-jitter re-includes the grab-scaled chromatic
-   offset so the cyan/magenta split is preserved as it tears. */
-.canvas[data-grabbing] .edgeGlitch::before {
-  filter: url(#edge-shatter);
-  animation: edge-glitch-a 0.18s steps(2, end) infinite;
+/* Stream the binary field (top layer) while the solid base stays put. */
+@keyframes code-flow {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 -76px, 0 0; }
 }
-.canvas[data-grabbing] .edgeGlitch::after {
-  filter: url(#edge-shatter);
-  animation: edge-glitch-b 0.16s steps(2, end) infinite;
-}
-@keyframes edge-flicker {
+/* Unstable data: the band flickers as it fights to reform. */
+@keyframes code-flicker {
   0%, 100% { opacity: 1; }
-  33% { opacity: 0.55; }
-  66% { opacity: 0.85; }
-}
-@keyframes edge-glitch-a {
-  0%   { transform: translate(calc(var(--grab-x, 0px) * 0.14), calc(var(--grab-y, 0px) * 0.14)); }
-  50%  { transform: translate(calc(var(--grab-x, 0px) * 0.14 + 1.5px), calc(var(--grab-y, 0px) * 0.14 - 1px)); }
-  100% { transform: translate(calc(var(--grab-x, 0px) * 0.14 - 1px), calc(var(--grab-y, 0px) * 0.14 + 1.5px)); }
-}
-@keyframes edge-glitch-b {
-  0%   { transform: translate(calc(var(--grab-x, 0px) * -0.14), calc(var(--grab-y, 0px) * -0.14)); }
-  50%  { transform: translate(calc(var(--grab-x, 0px) * -0.14 - 1.5px), calc(var(--grab-y, 0px) * -0.14 + 1px)); }
-  100% { transform: translate(calc(var(--grab-x, 0px) * -0.14 + 1px), calc(var(--grab-y, 0px) * -0.14 - 1.5px)); }
+  50% { opacity: 0.68; }
 }
 
 .canvasWrap {

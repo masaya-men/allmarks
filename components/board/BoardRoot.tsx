@@ -108,6 +108,19 @@ const DECOR_PARALLAX_FACTOR = 0.30
  *  translate — the layer is screen-fixed so it stays centred + symmetric). */
 const GRID_BG_PARALLAX_FACTOR = 1 - PAPER_PARALLAX_FACTOR
 
+/** Tileable binary (0/1) field for the default theme's "boundary dissolves into
+ *  code" edge band. White~cyan monospace rows, tiled + scrolled while grabbing.
+ *  Built as a data-URI here (encodeURIComponent handles all escaping) and passed
+ *  to the code band via a CSS var so the .module.css stays static. */
+const CODE_BAND_TILE_SVG =
+  "<svg xmlns='http://www.w3.org/2000/svg' width='104' height='76'>" +
+  "<text x='3' y='16' font-family='ui-monospace,monospace' font-size='14' letter-spacing='1' fill='rgba(198,246,255,0.92)'>01001101</text>" +
+  "<text x='3' y='35' font-family='ui-monospace,monospace' font-size='14' letter-spacing='1' fill='rgba(150,224,255,0.78)'>10110100</text>" +
+  "<text x='3' y='54' font-family='ui-monospace,monospace' font-size='14' letter-spacing='1' fill='rgba(214,250,255,0.96)'>00111001</text>" +
+  "<text x='3' y='73' font-family='ui-monospace,monospace' font-size='14' letter-spacing='1' fill='rgba(168,232,255,0.84)'>11010010</text>" +
+  "</svg>"
+const CODE_BAND_TILE_URL = `url("data:image/svg+xml,${encodeURIComponent(CODE_BAND_TILE_SVG)}")`
+
 /** Edge-band chrome (wordmark / MOTION / the FilterPill count readout) is tuned
  *  light-on-dark. On a LIGHT custom edge, flip the WHOLE chrome token family —
  *  both the ChromeButton vars (--chrome-btn-*) AND the FilterPill text vars
@@ -2178,53 +2191,11 @@ export function BoardRoot() {
             a disturbed audio signal. Fully transparent at rest (opacity 0 unless
             [data-grabbing]) so the default board stays byte-identical. */}
         {themeId === DEFAULT_THEME_ID && (
-          <>
-            {/* Turbulence filter that shatters the rim line while grabbing: the
-                animated seed makes the tear crawl/flicker ("jijiji"), and the
-                displacement rips the continuous border into broken, warped
-                segments. Applied via CSS `filter: url(#edge-shatter)` only under
-                [data-grabbing]; off (clean line) at rest. */}
-            <svg
-              className={styles.edgeGlitchDefs}
-              aria-hidden="true"
-              focusable="false"
-              width="0"
-              height="0"
-            >
-              <filter
-                id="edge-shatter"
-                x="-20%"
-                y="-20%"
-                width="140%"
-                height="140%"
-                colorInterpolationFilters="sRGB"
-              >
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.014 0.09"
-                  numOctaves={2}
-                  seed={4}
-                  result="noise"
-                >
-                  <animate
-                    attributeName="seed"
-                    dur="0.14s"
-                    values="1;8;3;9;2;6;4"
-                    calcMode="discrete"
-                    repeatCount="indefinite"
-                  />
-                </feTurbulence>
-                <feDisplacementMap
-                  in="SourceGraphic"
-                  in2="noise"
-                  scale={11}
-                  xChannelSelector="R"
-                  yChannelSelector="G"
-                />
-              </filter>
-            </svg>
-            <div className={styles.edgeGlitch} aria-hidden="true" />
-          </>
+          <div
+            className={styles.codeBand}
+            aria-hidden="true"
+            style={{ ['--code-tile' as string]: CODE_BAND_TILE_URL }}
+          />
         )}
         <TopHeader
           hidden={!!lightboxItemId}
