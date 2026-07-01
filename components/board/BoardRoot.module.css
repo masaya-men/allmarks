@@ -90,6 +90,62 @@
   z-index: 80;
 }
 
+/* Default (Sound Wave) theme: the board rim glitches — chromatic RGB split +
+   micro-jitter — while the user grab-wiggles the empty board, like a disturbed
+   audio signal. Driven by the grab CSS vars (--grab-x/--grab-y, set on .canvas)
+   so the split scales with the pull and springs back with it. Fully transparent
+   at rest (opacity 0 unless [data-grabbing]) → default board byte-identical.
+   Reduced-motion never sets [data-grabbing] (grab-wiggle is gated off), so this
+   stays dark too. */
+.edgeGlitch {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--canvas-radius);
+  pointer-events: none;
+  z-index: 85; /* above cards + edge scrims (80), below chrome (110) / Lightbox (100) */
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.edgeGlitch::before,
+.edgeGlitch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid;
+  mix-blend-mode: screen; /* cyan + magenta over the dark board = neon glow */
+}
+/* Cyan rim pulled one way, magenta the other → chromatic split scaled by grab. */
+.edgeGlitch::before {
+  border-color: rgba(0, 240, 255, 0.85);
+  transform: translate(calc(var(--grab-x, 0px) * 0.14), calc(var(--grab-y, 0px) * 0.14));
+}
+.edgeGlitch::after {
+  border-color: rgba(255, 40, 120, 0.85);
+  transform: translate(calc(var(--grab-x, 0px) * -0.14), calc(var(--grab-y, 0px) * -0.14));
+}
+.canvas[data-grabbing] .edgeGlitch {
+  opacity: 1;
+}
+/* Micro-jitter: the rim vibrates like a disturbed waveform, only while grabbing.
+   Each keyframe re-includes the grab-scaled offset so the split is preserved. */
+.canvas[data-grabbing] .edgeGlitch::before {
+  animation: edge-glitch-a 0.18s steps(2, end) infinite;
+}
+.canvas[data-grabbing] .edgeGlitch::after {
+  animation: edge-glitch-b 0.16s steps(2, end) infinite;
+}
+@keyframes edge-glitch-a {
+  0%   { transform: translate(calc(var(--grab-x, 0px) * 0.14), calc(var(--grab-y, 0px) * 0.14)); }
+  50%  { transform: translate(calc(var(--grab-x, 0px) * 0.14 + 1.5px), calc(var(--grab-y, 0px) * 0.14 - 1px)); }
+  100% { transform: translate(calc(var(--grab-x, 0px) * 0.14 - 1px), calc(var(--grab-y, 0px) * 0.14 + 1.5px)); }
+}
+@keyframes edge-glitch-b {
+  0%   { transform: translate(calc(var(--grab-x, 0px) * -0.14), calc(var(--grab-y, 0px) * -0.14)); }
+  50%  { transform: translate(calc(var(--grab-x, 0px) * -0.14 - 1.5px), calc(var(--grab-y, 0px) * -0.14 + 1px)); }
+  100% { transform: translate(calc(var(--grab-x, 0px) * -0.14 + 1px), calc(var(--grab-y, 0px) * -0.14 - 1.5px)); }
+}
+
 .canvasWrap {
   position: absolute;
   inset: 0;

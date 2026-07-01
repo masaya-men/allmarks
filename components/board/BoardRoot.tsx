@@ -1383,11 +1383,15 @@ export function BoardRoot() {
   // onboarding overlay is a sibling, so its fixed positioning is unaffected;
   // canvasWrap's overflow:hidden clips the zoom to the board area).
   const cameraRef = useRef<HTMLDivElement>(null)
+  // The board rim (.canvas) — the grab-wiggle CSS vars live here so BOTH the
+  // pan layers (descendants via cameraWrap) AND the default edge-glitch overlay
+  // (a direct .canvas child, NOT under cameraWrap) inherit them.
+  const canvasElRef = useRef<HTMLDivElement>(null)
 
-  // Empty-board grab-wiggle: writes --grab-x/--grab-y on cameraRef; the layer
-  // transforms below add them scaled per depth. Reset on theme change so an
-  // offset never sticks across a switch.
-  const grabWiggle = useGrabWiggle({ containerRef: cameraRef, resetKey: themeId })
+  // Empty-board grab-wiggle: writes --grab-x/--grab-y on the .canvas rim; the
+  // layer transforms below add them scaled per depth. Reset on theme change so
+  // an offset never sticks across a switch.
+  const grabWiggle = useGrabWiggle({ containerRef: canvasElRef, resetKey: themeId })
   // Parchment/background layer only parallaxes on paper-atelier; other themes
   // keep the bg static under the grab (flat wiggle = cards only).
   const bgGrabWeight = themeId === 'paper-atelier' ? GRAB_LAYER_WEIGHTS.parchment : 0
@@ -2157,7 +2161,11 @@ export function BoardRoot() {
           Phase 1A: canvas is now a grid (auto / 1fr) — TopHeader at top,
           canvasWrap holds the existing absolute-layered scroll/cards stage. */}
       <div
+        ref={canvasElRef}
         className={styles.canvas}
+        // While a grab-wiggle is active, mark the canvas so the default theme's
+        // sound-wave edge-glitch overlay lights up (CSS-gated, default only).
+        data-grabbing={grabWiggle.grabbing ? '' : undefined}
         // The edge-band chrome override above cascades into here; reset it to the
         // default light-on-dark chrome so the header + card chrome (which sit on
         // the dark board, not the edge) keep their normal ink.
@@ -2165,6 +2173,13 @@ export function BoardRoot() {
         // header components don't yet share one chrome token — see follow-up.)
         style={resolvedCustom && isLightColor(resolvedCustom.edgeColor) ? DARK_CHROME_RESET : undefined}
       >
+        {/* Default (Sound Wave) theme only: the board rim glitches — chromatic
+            RGB split + micro-jitter — while you grab-wiggle the empty board, like
+            a disturbed audio signal. Fully transparent at rest (opacity 0 unless
+            [data-grabbing]) so the default board stays byte-identical. */}
+        {themeId === DEFAULT_THEME_ID && (
+          <div className={styles.edgeGlitch} aria-hidden="true" />
+        )}
         <TopHeader
           hidden={!!lightboxItemId}
           actions={
