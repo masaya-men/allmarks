@@ -297,10 +297,11 @@
 /* Active row (= currently selected single-shot filter or tag in the
    current OR set). Green underline accent on the label + brighter
    text so the active state reads at a glance without competing with
-   the editorial muted tonality. */
+   the editorial muted tonality. No background fill in any theme — the
+   faint wash read as a digital "selection bar" (user, session 146); the
+   underline + brighter text carry the active state on their own. */
 .item.active {
   color: #fff;
-  background: rgba(40, 241, 0, 0.06);
 }
 .item.active .itemLabel {
   box-shadow: inset 0 -1px 0 #28F100;
@@ -610,20 +611,15 @@
 }
 
 /* ── Paper-atelier session 141: tone down the NEON brand green active accents ──
-   The default theme paints the active row (ALL is active by default, so it's the
-   topmost row) with a #28F100 underline + a 6% neon-green wash, and the selected
-   tag dots glow the same neon green. On parchment that bright yellow-green reads
-   as a dirty smear (user report N-11). Swap every hard-coded #28F100 / rgba(40,
-   241,0,…) in this dropdown for the paper FOREST accent (--color-accent-primary =
-   #2f4a37 in the paper token block) so "active" still reads as green, but a muted
-   ink-green that belongs on cream. Default theme untouched (paper-scoped). */
-/* Paper (N-11, session 146): drop the horizontal wash on the active row. On
-   parchment the filled rectangle read as a digital "selection bar" foreign to
-   the paper world (user report). The ink underline below is enough to mark the
-   active filter; no background fill. Default theme keeps its wash (paper-scoped). */
-:global(html[data-theme-id='paper-atelier']) .item.active {
-  background: transparent;
-}
+   The default theme marks the active row with a #28F100 underline, and the
+   selected tag dots glow the same neon green. On parchment that bright yellow-
+   green reads as a dirty smear (user report N-11). Swap every hard-coded #28F100
+   / rgba(40,241,0,…) in this dropdown for the paper FOREST accent
+   (--color-accent-primary = #2f4a37 in the paper token block) so "active" still
+   reads as green, but a muted ink-green that belongs on cream. Default theme
+   untouched (paper-scoped). (The active-row background fill was dropped for ALL
+   themes in session 146 — see .item.active above — so there's nothing to
+   re-tint here anymore.) */
 :global(html[data-theme-id='paper-atelier']) .item.active .itemLabel {
   box-shadow: inset 0 -1px 0 var(--color-accent-primary);
 }
