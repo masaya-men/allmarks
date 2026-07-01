@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 145 — (C) 生計まわりの設計フェーズを完全クローズ／コード変更なし・設計と計画のみ)
+
+- **実装ゼロ・設計/調査に専念**。有料テーマ解錠機構（K3）の**設計 spec ＋ 実装計画（10タスク TDD）を確定**し、外部連携の「宿題フラグ（唯一の未知）」を徹底調査で解決。**機微情報は全て `docs/private/`（gitignored・commit しない）に記録**。tracked 側は中立表現のみ。デプロイ・機能 commit は無し。
+- **宿題フラグ解決**：支援系プラットフォームを3方向＋9サービス個別で徹底調査 → 「どこにも固有キー自動配布も会員資格の外部自動確認も無い」→ **配布は自作の"合言葉リンク方式"に一本化**して未知を消した。
+- **K3 = 既存テーマ土台の上に乗る残作業**と確定（`ThemeMeta.tier`/`isThemeUnlocked`/`resolveThemeId`/ピッカー鍵表示は s131〜実装済。`EMPTY_LICENSES` を本物のライセンス集合へ差し替えるのが本体）。5台キャップ／フェイルオープン／ブクマ非接触／¥0／default byte-identical を不変条件に。
+- 記録: `docs/private/` の `2026-07-01-support-platform-research.md` / `-k3-unlock-design.md` / `-k3-unlock-plan.md`、`-launch-plan-design.md`（宿題フラグ解決を追記）。
+- **次の最優先 = ②ボード磨きに戻る**（N-11 タグの緑 / N-09 影 / N-10 共有紙パリティ / 選択的シェア）。③テーマ制作は磨きと一緒に、④K3 実装は後段で上記工程表から着工。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 144 — 動画カードの Paper 台紙 + ショート縦横比修正 + Paper 装飾リデザイン)
 
 - 全て `allmarks.app` 反映済・**tsc0 / vitest 緑（`channel.test.ts` 既知フレーキー→再実行緑）/ build OK・default(黒+音波)無傷**（全変更 paper-scoped）。8ファイル・1コミット。詳細 narrative は TODO_COMPLETED.md セッション144。
