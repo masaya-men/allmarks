@@ -2252,7 +2252,7 @@ export function BoardRoot() {
                   inset: 0,
                   zIndex: BOARD_Z_INDEX.THEME_BG,
                   pointerEvents: 'none',
-                  backgroundPosition: `center ${-gridBgPanY}px`,
+                  backgroundPosition: `calc(50% + var(--grab-x, 0px) * ${GRAB_LAYER_WEIGHTS.pattern}) calc(${-gridBgPanY}px + var(--grab-y, 0px) * ${GRAB_LAYER_WEIGHTS.pattern})`,
                   '--board-color': resolvedCustom.boardColor,
                   '--pattern-color': resolvedCustom.patternColor,
                   '--pattern-size': `${resolvedCustom.patternSize}px`,
