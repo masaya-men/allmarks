@@ -8313,3 +8313,13 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 - 実機フィードバックで重み(1.0/0.55/0.28)・上限(90)・バネ(elastic.out(1,0.4)/0.7s)を `lib/board/rubber-band.ts` で微調整。
 - スマホ長押し版・default 用背景モチーフは将来別タスク。
 - 正本 spec/plan: `docs/superpowers/specs|plans/2026-07-01-board-grab-wiggle*`。
+
+### 追記 — 実機チューニング＋Grid 消失バグ修正（同 session 147・ユーザー実機OK）
+
+- **実機フィードバックで重み確定**：ユーザー「パララックスを強く感じるだけの遊び＝カードは半分くらい静かに・中間層はしっかり」→ `GRAB_LAYER_WEIGHTS` を **カード0.4／散布シミ0.85／パターン(grid/dots)0.8／羊皮紙0.28** に。前面が静かで中間層が最も泳ぐ、意図的な逆順配分。順序テストも新意図に更新。
+- **全テーマで中間層が動くように**：Grid/ドット背景は他層と違い「画面固定＋background-position でドリフトする patternLayer」で描かれていて grab 未配線だった（＝ユーザー指摘「グリッドが動かない」）。patternLayer の `backgroundPosition` を `calc(50% + var(--grab-x)*0.8) calc(... + var(--grab-y)*0.8)` に配線。静止時 `"50% 0px"`＝従来 `center 0px` と computed 一致を playwright 実測（default byte-identical）。
+- **🐛 Grid テーマがハードリロードで default に戻る（格子消失）バグ＝根本修正**（既存・grab 無関係、ユーザーが気づいた）。
+  - **systematic-debugging で真因特定**：board は静的プリレンダ（default=dotted-notebook, `patternType:'none'`）で焼かれる。保存済み grid でリロードすると、React 18 は hydration の**属性**不一致をパッチしない仕様のため、prerender の `data-pattern="none"` が固着し、その後の再描画でも React 内部は「grid のまま」と認識して DOM 属性を更新しない → 格子が永久に描かれない。DIAG ログで「React 値=grid・DOM 属性=none」の乖離を実証。Paper が無傷なのは pre-paint スクリプトが hydration 前に `data-theme-id` を付ける CSS 由来だから（patternLayer 非使用）。
+  - **修正**：patternLayer を **post-mount フラグ（`hydrated`）でゲート** → サーバー＋初回クライアント描画の両方で出さない（不整合ゼロ）→ mount 後に正しい `data-pattern` で新規描画。定石の「client-state 依存 DOM を SSR で描かない」パターン。
+  - **検証**：playwright で grid-paper リロード後 `data-pattern="grid"`＋`linear-gradient` 実描画、default は `none`（不変）、paper 無傷を実測。tsc0 / vitest1858 / build OK。
+- コミット：tuning（calm cards + pattern backdrop）／strong-parallax weights／hydration fix の3本＋docs。デプロイ計4回。
