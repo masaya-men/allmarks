@@ -28,7 +28,7 @@ function prefersReducedMotion(): boolean {
  *  @param opts.resetKey     when this changes (e.g. theme switch), reset to 0
  */
 export function useGrabWiggle(opts: {
-  containerRef: RefObject<HTMLElement>
+  containerRef: RefObject<HTMLElement | null>
   resetKey?: unknown
 }): GrabWiggleController {
   const { containerRef, resetKey } = opts

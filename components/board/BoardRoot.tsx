@@ -88,6 +88,8 @@ import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
+import { useGrabWiggle } from './use-grab-wiggle'
+import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
 import { BoardDecorLayer } from './BoardDecorLayer'
 import styles from './BoardRoot.module.css'
 
@@ -1381,6 +1383,15 @@ export function BoardRoot() {
   // onboarding overlay is a sibling, so its fixed positioning is unaffected;
   // canvasWrap's overflow:hidden clips the zoom to the board area).
   const cameraRef = useRef<HTMLDivElement>(null)
+
+  // Empty-board grab-wiggle: writes --grab-x/--grab-y on cameraRef; the layer
+  // transforms below add them scaled per depth. Reset on theme change so an
+  // offset never sticks across a switch.
+  const grabWiggle = useGrabWiggle({ containerRef: cameraRef, resetKey: themeId })
+  // Parchment/background layer only parallaxes on paper-atelier; other themes
+  // keep the bg static under the grab (flat wiggle = cards only).
+  const bgGrabWeight = themeId === 'paper-atelier' ? GRAB_LAYER_WEIGHTS.parchment : 0
+
   const zoomCameraToOnboardingCard = useCallback((): void => {
     const cam = cameraRef.current
     const card = document.querySelector('[data-onboarding-target="card"]')
@@ -2224,6 +2235,7 @@ export function BoardRoot() {
             direction={themeMeta.direction}
             onScroll={handleScroll}
             spaceHeld={spaceHeld}
+            wiggle={grabWiggle}
           >
             {/* grid-paper: VIEWPORT-anchored grid (screen-fixed, NOT in a pan
                 wrapper) so the pattern always centres on the viewport — the
@@ -2256,7 +2268,7 @@ export function BoardRoot() {
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                transform: `translate3d(${-viewport.x}px, ${-viewport.y + paperParallaxY}px, 0)`,
+                transform: `translate3d(calc(${-viewport.x}px + var(--grab-x, 0px) * ${bgGrabWeight}), calc(${-viewport.y + paperParallaxY}px + var(--grab-y, 0px) * ${bgGrabWeight}), 0)`,
                 willChange: 'transform',
                 pointerEvents: 'none',
               }}
@@ -2281,7 +2293,7 @@ export function BoardRoot() {
                   left: 0,
                   width: contentWidth,
                   height: contentHeight,
-                  transform: `translate3d(${-viewport.x}px, ${-viewport.y + decorParallaxY}px, 0)`,
+                  transform: `translate3d(calc(${-viewport.x}px + var(--grab-x, 0px) * ${GRAB_LAYER_WEIGHTS.decor}), calc(${-viewport.y + decorParallaxY}px + var(--grab-y, 0px) * ${GRAB_LAYER_WEIGHTS.decor}), 0)`,
                   willChange: 'transform',
                   pointerEvents: 'none',
                 }}
@@ -2320,7 +2332,7 @@ export function BoardRoot() {
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                transform: `translate3d(${horizontalOffset - viewport.x}px, ${BOARD_TOP_PAD_PX - viewport.y}px, 0)`,
+                transform: `translate3d(calc(${horizontalOffset - viewport.x}px + var(--grab-x, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), calc(${BOARD_TOP_PAD_PX - viewport.y}px + var(--grab-y, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), 0)`,
                 willChange: 'transform',
                 pointerEvents: 'none',
               }}
