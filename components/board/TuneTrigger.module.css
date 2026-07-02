@@ -106,6 +106,27 @@
   }
 }
 
+/* Grab feedback: while the default board is grabbed (BoardRoot flags
+   html[data-grabbing]), TUNE's collapsed-label RGB ghosts loop continuously —
+   the same glitch it plays on hover, matching the chrome labels + wordmark +
+   meter counter. Only while grabbing → byte-identical at rest. The label also
+   churns via the grab-aware idle scramble in TuneTrigger.tsx. */
+:global(html[data-grabbing]) .trigger[aria-expanded='false']::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 700ms steps(7, end) infinite;
+}
+:global(html[data-grabbing]) .trigger[aria-expanded='false']::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 700ms steps(7, end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(html[data-grabbing]) .trigger[aria-expanded='false']::before,
+  :global(html[data-grabbing]) .trigger[aria-expanded='false']::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 /* Module-scoped keyframes (see ChromeButton.module.css for the same defs
    and the reason — CSS Modules scopes animation-name references). */
 @keyframes glitch-shift-a {

@@ -21,6 +21,41 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 149 — grab-reaction を master に squash マージ・ブランチ整理)
+
+- **`feat/edge-data-dissolve`（正味差分＝grab-reaction のみ）を master に squash マージ**（却下した縁エフェクト系20コミットは畳んで master 履歴をクリーンに保持）。マージ前に **tsc0 / vitest1858 / build OK** を再確認。本番 `allmarks.app` は既にこの状態を反映済（別デプロイ不要）。マージ後にブランチ削除。
+- 実装内容の詳細は下記 s148続き2 エントリ＋ TODO_COMPLETED.md 参照。正本 [spec](superpowers/specs/2026-07-02-board-grab-reaction-design.md) / [plan](superpowers/plans/2026-07-02-board-grab-reaction.md)。
+- **次**：本命バックログに戻る（優先順は相談）＝③プレミアムテーマ制作／④K3 解錠実装／選択的シェア／タグ付け強化。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+### 直近の状態 (セッション 148続き2 — 縁エフェクト全撤去 → 「掴みで盤面UI一斉リアクション(grab-reaction)」に方針転換・本番反映／実機チューニング待ち)
+
+- **grab-reaction 実装・`allmarks.app` 反映済**。**縁のカード加工は3回却下 → 全撤去し、掴み中に既存の chrome スクランブル/グリッチ・波形メーター・ワードマークを一斉に鳴らす方向へ転換**。default 限定・**at-rest byte-identical を Playwright 実測**・**opus 最終レビュー Ready to merge**。tsc0 / vitest1858（`channel.test.ts` フレーキー→再実行緑）/ build OK。ブランチ `feat/edge-data-dissolve`（未マージ）。サブエージェント駆動6タスク＋最終レビュー＋Minor修正。
+- **ふるまい（握ってる間ずっと連続・実機チューニング後の最終形）**：メニュー文字（TITLE/TUNE/SETTINGS 等）スクランブル＋RGBグリッチ／**TUNE**／**メーターの数字**が反応。離すと収まる。握ってないとき何も起きない。**背景ワードマーク(Title)の grab グリッチはユーザー判断で撤去**。
+- **同セッション追加調整**：①TUNE（独自 `TuneTrigger`）とメーター数字（`ScrollMeter` 別経路）も同じ `<html data-grabbing>` に配線して参加。②🐛 TUNE が手を離すとスクランブル途中（例「F7X/」）で固まるバグ修正（effect 開始時 `writeIdleTune()` で復元）。③ワードマーク grab グリッチ撤去。全て `allmarks.app` 反映済・ユーザー実機OK。
+- **配線（軽い・既存再利用）**：掴み中＋default時のみ `<html data-grabbing>`（`grabReacting`）。CSSは `:global(html[data-grabbing])`、スクランブルは MutationObserver 監視で `triggerBurst` を850msループ、メーターは既存 `isInteracting` に掴みを足すだけ。
+- **撤去**：CardGlitch/GlitchFilterDefs/BoardDataLayer/edge-glitch/halftone＋帯マスクCSS を全削除（grep 0・盤面クリーン）。
+- **弱め初期値**：スクランブル850ms／グリッチ700ms／ワードマーク控えめ → 実機で上げる。
+- **改修**：`BoardRoot.tsx`（フラグ＋ScrollMeter prop）/ `use-idle-scramble.ts`（loop）/ `ChromeButton.module.css`（grabグリッチ＋無効ボタン抑制）/ `BoardBackgroundTypography.module.css`（wordmark グリッチ）/ `ScrollMeter.tsx`（grabbing prop）。`lib/board/edge-glitch.ts` 等は削除。
+- **次**：ユーザー実機で握って検証 → 強度チューニング → OK なら master マージ。正本 [spec](superpowers/specs/2026-07-02-board-grab-reaction-design.md) / [plan](superpowers/plans/2026-07-02-board-grab-reaction.md)。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+### 直近の状態 (セッション 148続き — 縁エフェクト3回目「電波が乱れる signal-glitch」を実装・本番反映 → ユーザー却下 → grab-reaction に転換（上記）)
+
+- **縁の signal-glitch 実装・`allmarks.app` 反映済**。**148 の「粒々(halftone)」はユーザー却下 → CRT電源オフ演出の"最初の一瞬"を参考に「電波が悪くて像が乱れる」洗練版に作り直し**。default 限定・**at-rest byte-identical を Playwright 実測**。tsc0 / vitest1860（`channel.test.ts` フレーキー→再実行緑、edge-glitch 単体3件緑）/ build OK。ブランチ `feat/edge-data-dissolve`（未マージ）。サブエージェント駆動5タスク＋opus 最終レビュー Ready。
+- **ふるまい**：掴んで外縁に潜ったカード部分が RGB色ずれ＋細い走査線＋かすかなフリッカーに。深さ連動（帯マスク）・可逆。緑閃光/崩壊/消滅は捨てた。
+- **方式（軽い・CORS無関係）**：canvas 不使用。SVGフィルタ（feColorMatrix+feOffset で色ずれ）＝ピクセル読取なし＝**X画像でも同じに効く**（148のフォールバック問題消滅）。足場（帯マスク＋カード毎オーバーレイ＋掴み同期パン）は148流用、中身を粒々→グリッチに差替、**halftone 4ファイル削除**。
+- **確定初期値（弱め）**：`EDGE_GLITCH`（[edge-glitch.ts](../lib/board/edge-glitch.ts)）に集約＝色ずれ1.5px/走査線3px・0.12/フリッカー0.9・0.5s/帯90px/効果0.85 → 実機で上げる。
+- **新規**：`lib/board/edge-glitch.ts`(+test) / `GlitchFilterDefs.tsx` / `CardGlitch.tsx`(+module.css)。**改修**：`BoardDataLayer.tsx`（CardGlitch 描画）/ `BoardRoot.tsx`（GlitchFilterDefs＋vars＋両軸カリング）/ `BoardRoot.module.css`（reveal opacity var＋data-shimmer→edge-flicker、純追記/retune）。
+- **次**：ユーザー実機で grab 検証 → `EDGE_GLITCH` 微調整 → OK なら master マージ。正本 [spec](superpowers/specs/2026-07-02-board-edge-signal-glitch-design.md) / [plan](superpowers/plans/2026-07-02-board-edge-signal-glitch.md)。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+### 直近の状態 (セッション 148 — 「縁でデータ化」(edge data-dissolve/halftone) 実装・本番反映 → ユーザー却下 → signal-glitch に差替（上記）)
+
+- **「縁でデータ化」実装・`allmarks.app` 反映済**。**default テーマ限定・at-rest byte-identical を Playwright 実測確認**。tsc0 / vitest1866（`channel.test.ts` 既知フレーキー→再実行緑、halftone 単体9件緑）/ build OK。ブランチ `feat/edge-data-dissolve`（未マージ）。6コミット・1デプロイ。
+- **ふるまい**：掴んで盤面を動かすと、外縁に潜ったカードの"その部分だけ"が粒々(Shapes Over Pixels ハーフトーン=データ)に。離すと実カードに戻る。境界は軽くシマー。
+- **方式（軽い）**：各カードの粒々版を1回だけ canvas 生成しキャッシュ→透明 `<img>` で重ね→縁の帯マスク(`--edge-band` 90px)で **grab 中だけ** reveal（毎フレーム再計算なし）。データ層はカード wrapper と同一 transform でパンし 1:1 整合。CORS 読取不可(X等)は汎用の白シアン粒でフォールバック、読める画像(YouTube等)は本物色の粒。確定値 res8/size1.3/effect0.94/bg0.86/contrast125/max0.66/lighter/14shapes（fx-lab.html でユーザー確定）。
+- **新規**：`lib/board/halftone.ts`(+test) / `halftone-canvas.ts` / `components/board/CardHalftone.tsx` / `BoardDataLayer.tsx`。**改修**：`BoardRoot.tsx`（dataCards memo＋band clip 描画、default gate）/ `BoardRoot.module.css`（`.dataBandClip`/`.dataLayer`/シマー、全て純追記）。
+- **プラン補正（実コードで判明）**：`layout.positions[id]`（Map でなくオブジェクト添字・`.w/.h`）／overlay は生 pos.x/pos.y（transform に horizontalOffset/topPad 既included・二重加算しない）／`item.thumbnail`／`DEFAULT_THEME_ID='dotted-notebook'`／データ層は InteractionLayer 内（overflow クリップ継承＋座標原点一致）。
+- **次**：ユーザー実機で grab 検証 → `--edge-band`/`HALFTONE_PARAMS`/シマー 微調整 → OK なら master マージ。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 147 — 掴みぐりぐり出荷＋Gridバグ修正＋縁エフェクト試行/撤去＋「縁でデータ化」spec/plan 用意)
 
 - **grab-wiggle 実装＋実機チューニング＋既存バグ1件修正・`allmarks.app` 反映済**。全テーマ対応・**default byte-identical / tsc0 / vitest1858 / build OK**。**ユーザー実機OK**。詳細 narrative は TODO_COMPLETED.md セッション147。

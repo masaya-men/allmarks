@@ -8337,3 +8337,106 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 - **ユーザーの核心アイデア（採用・性能の鍵）**：前の grab-wiggle と同じ「作り置き→出す」＝各カードの粒々版を1回だけ生成して透明で重ね、縁の帯マスクで掴み中だけ reveal。毎フレーム計算なしで軽い。リアルタイム全盤面ラスタライズは非現実的、が結論。
 - **spec/plan 確定（実装は次セッション）**：[spec](superpowers/specs/2026-07-02-board-edge-data-dissolve-design.md)＝default限定・縁の帯・作り置き方式・CORSフォールバック。[plan](superpowers/plans/2026-07-02-board-edge-data-dissolve.md)＝6タスクTDD（純ロジックのみ単体テスト＝jsdomはcanvas不可、canvas/DOMはplaywright＋実機検証）。
 - **技術メモ（再利用）**：static export は build時に **default テーマ**で prerender される → React 18 は hydration の**属性**不一致をパッチしない。DOM属性/inline-styleがユーザーstate依存の場合は **post-mount ゲート**（サーバー＋初回描画で出さない）で不整合を根絶する（Grid 消失バグの真因・修正パターン）。
+
+---
+
+## セッション 148 (2026-07-02) — 「縁でデータ化」(edge data-dissolve / halftone) を 6タスクTDD 実装・本番反映
+
+前セッション(147)で spec/plan を用意した「縁でデータ化」を実装。掴んで盤面を動かすと、外縁に潜ったカードの"その部分だけ"が粒々(Shapes Over Pixels ハーフトーン=データ)になり、離すと実カードに戻る。**default テーマ限定**。executing-plans スキルで plan を task-by-task 実行、各タスク commit。ブランチ `feat/edge-data-dissolve`（未マージ・実機 grab 検証後にマージ予定）。
+
+### 実装（6タスク）
+
+- **Task1 純ロジック（TDD・単体9件緑）**：`lib/board/halftone.ts` — `HALFTONE_PARAMS`（fx-lab.html でユーザー確定：res8/size1.3/effect0.94/bg0.86/contrast125/max0.66/lighter/14shapes）・`cellBrightness`(Rec.601)・`isCellVisible`・`pseudoRandom`/`pickShapeType`(決定論)・`computeHalftoneCells`（downsampled RGBA → 描画セル列、size≤0.5px は間引き）。jsdom は canvas 不可なので純算だけ切り出してテスト。
+- **Task2 canvas**：`halftone-canvas.ts` — `isImageReadable`(CORS taint 判定)・`drawShape`(14プリミティブ)・`renderHalftoneToCanvas`(薄い原画＋粒、blendMode lighter)・`renderFallbackShapes`(読取不可画像用の汎用白シアン粒)。
+- **Task3 overlay**：`CardHalftone.tsx` — 1カード分の粒々を画像ロード後に**1回だけ**生成し dataURL をモジュール `Map` にキャッシュ。読める→本物色、読めない/onerror→フォールバック粒。透明 `<img>`・pointer-events:none・aria-hidden。
+- **Task4**：`BoardDataLayer.tsx` — 可視カード列 → `<CardHalftone>` を各カード rect に配置（presentational、rect 計算は BoardRoot が単一真実源）。
+- **Task5 配線**：`BoardRoot.tsx` に `dataCards` memo（default gate＋viewport±200pxカリング）と band clip 描画を追加、`BoardRoot.module.css` に `.dataBandClip`/`.dataLayer`（純追記）。
+- **Task6**：境界シマー（grab中のみ・reduced-motion ガード）＋ at-rest byte-identical 実測＋デプロイ。
+
+### プラン補正（実コードで判明・記録）
+
+plan は概念先行だったため、実装時に BoardRoot を読んで以下を補正（＝推測を抑制する5原則どおり、実装本体を追ってから確定）：
+
+- `layout.positions` は **Map でなくオブジェクト添字**（`layout.positions[id]`）、座標は **`.w/.h`**（plan の `.get()`/`.width` は誤り）。
+- overlay は **生の pos.x/pos.y** に置く。カード wrapper transform が既に `horizontalOffset`(=SIDE_PADDING)/`BOARD_TOP_PAD_PX` を含むため、plan の `horizontalOffset+pos.x` は**二重加算バグ**。データ層に同一 transform を当て、CardHalftone を生 pos.x/pos.y に置いて 1:1 整合。
+- サムネフィールドは **`item.thumbnail`**（plan の `thumbnailUrl ?? imageUrl` は不在）。`DEFAULT_THEME_ID='dotted-notebook'`（plan 一致）。
+- データ層は **InteractionLayer 内**に配置（`position:absolute; inset:0; overflow:hidden` を継承＝周縁クリップ、カードと同一座標原点）。`data-grabbing` は clip 要素自身に付け、CSS は `.dataBandClip[data-grabbing]` で自己完結。カード原点＝canvas 左上（TopHeader は absolute オーバーレイなのでヘッダーオフセット無し）。
+
+### 検証
+
+- **tsc0 / vitest1866**（`channel.test.ts` 既知フレーキー→単独再実行で緑、halftone 単体9件緑）/ **build OK**（`out/` 生成・share template assert OK）。
+- **at-rest byte-identical を Playwright 実測**（viewport 1489×679）：`data-theme-id='dotted-notebook'`・`.dataBandClip` は存在するが **`opacity:0`**（不可視＝無影響）・InteractionLayer 直下 3層の transform は純translation（`matrix(1,0,0,1,0,0)` 背景／`matrix(1,0,0,1,9,80)` カード＝padding9+topPad80、grab オフセット無し）。CSS は全て純追記（既存ルール無編集）＝default 盤面 byte-identical。
+- 本番 `allmarks.app` 反映済（direct upload）。**grab の見た目（縁の粒々・帯深さ・シマー・CORS フォールバックの色）は setPointerCapture のため自動化不可 → ユーザー実機確認が次セッション宿題**。
+
+---
+
+## セッション 148続き (2026-07-02) — 縁エフェクト3回目「電波が乱れる signal-glitch」を実装・本番反映（halftone 却下→差替）
+
+セッション148で出荷した「縁でデータ化(halftone 粒々)」をユーザーが実機で確認し「かなり微妙」と却下（147 の縁グリッチ試作に続き2連続却下）。ユーザーから「**TITLE が消えるときの最初の一瞬／タグ絞り込みの一瞬のアニメ（＝CRT電源オフ演出）を参考にできないか**」と要望。brainstorming→spec→plan→サブエージェント駆動5タスク→opus 最終レビューで作り直し、`allmarks.app` に反映（実機チューニング待ち）。
+
+### 何を作ったか
+
+- **参考元**：`lib/animation/tag-shutdown/themes/wave.module.css` の `lbebber-green`（CRT電源オフ：RGB色ずれ→縦膨らみ→横一本に潰れ緑閃光→点→消滅）。その**"最初の一瞬"の質感**（RGB色ずれ＋走査線＋フリッカー）だけを採り、**洗練版＝「電波が悪くて像が乱れる」**方向に。緑閃光・崩壊・消滅は捨てた（＝派手すぎる部分）。
+- **ふるまい**：default テーマで、掴んで外縁に潜ったカード部分が RGB色ずれ＋細い走査線＋かすかなフリッカーに。縁ほど濃い（帯マスクの空間ランプ＝深さ連動）、引き戻すと戻る（可逆）。
+- **方式（canvas 不使用・CORS 無関係）**：各カードのサムネ `<img>` に **インラインSVGフィルタ（feColorMatrix でR/シアン分離→feOffset で±splitPx ずらし→feBlend screen）** を `filter:url(#…)` で当てる＝**ピクセルを読まない合成処理なので X の外部画像でも同じに効く**（148 の「読める/読めない」フォールバック問題が消滅）。走査線＝`repeating-linear-gradient`、フリッカー＝grab中のみのループ opacity（reduced-motion ガード付き）。
+- **足場は148流用**：帯マスク clip＋カード毎オーバーレイ層＋掴み同期パン＋at-rest byte-identical はそのまま。中身の「粒々」を「グリッチ」に差し替え、**halftone 4ファイル（halftone.ts/.test.ts/halftone-canvas.ts/CardHalftone.tsx）を削除**。
+
+### 進め方（サブエージェント駆動 5タスク＋最終レビュー）
+
+- **Task1**（haiku・TDD 単体3件）：`lib/board/edge-glitch.ts` — `EDGE_GLITCH` params（弱め初期値：splitPx1.5/走査線3px・0.12/フリッカー0.9・0.5s/帯90px/効果0.85）・`chromaticDx`・`edgeGlitchStyleVars`。
+- **Task2**（haiku）：`GlitchFilterDefs.tsx` — SVGカラーずれフィルタ（id 単一ソース `EDGE_GLITCH_FILTER_ID`）。
+- **Task3**（haiku）：`CardGlitch.tsx`＋`.module.css` — カード rect にサムネ img（chromatic filter inline）＋走査線 ::after。crossOrigin 無し。
+- **Task4**（sonnet・統合）：`BoardDataLayer` を CardGlitch に差替／`BoardRoot` に GlitchFilterDefs＋`edgeGlitchStyleVars` vars／`BoardRoot.module.css` の reveal を opacity var 化＋`data-shimmer`→`edge-flicker`／halftone 4ファイル削除。tsc0/vitest1861/build OK。
+- **Task5**：at-rest byte-identical を Playwright 実測（clip opacity:0・grab3層 純translation・console エラー無し）→ opus 最終 whole-branch レビュー **Ready with minor follow-ups**（全不変条件 PASS）→ Minor2件（古いhalftoneコメント／dataCards が縦のみカリング）を controller 直修正（コメント刷新＋両軸カリングで画面外の SVGフィルタ img を作らない perf 改善）→ デプロイ。
+- 各タスク独立レビュー（spec＋quality の2判定）＋fix ループ。ledger `.superpowers/sdd/progress.md`。
+
+### 検証・不変条件
+
+- **tsc0 / vitest1860**（`channel.test.ts` 既知フレーキー→単独再実行で緑、edge-glitch 単体3件緑）/ **build OK**。
+- **at-rest byte-identical を Playwright 実測**（default `dotted-notebook`・`.dataBandClip` opacity:0・grab3層 transform 純translation）＝掴んでいない default 盤面は無傷。
+- **opus 最終レビュー**：at-rest byte-identical / reduced-motion 2層ガード / ¥0・no-network・crossOrigin無し / overlay transform がカード wrapper と byte一致＋生 pos.x/pos.y / フィルタid単一ソース / halftone 残存インポート無し / TS strict — 全て PASS。
+- **本番 `allmarks.app` 反映済**。**grab の見た目・強度は setPointerCapture のため自動化不可 → ユーザー実機確認＋`EDGE_GLITCH` チューニングが次セッション宿題**（弱め起点で上げる）。
+
+---
+
+## セッション 148続き2 (2026-07-02) — 縁エフェクト全撤去 → 「掴みで盤面UIが一斉に反応する grab-reaction」に方針転換・本番反映
+
+ユーザーが signal-glitch（縁のカード加工・3回目）も「やはり難しい」と評価。**縁のカード加工路線を断念し、「掴んだ時のフィードバックを盤面の既存UIに乗せる」方向へ全面転換**。ユーザー案＝「メニュー文字のスクランブル＋ホバー時のエフェクトを掴み中に一斉に出す」。brainstorm→spec→plan→サブエージェント駆動6タスク→opus 最終レビューで実装、`allmarks.app` に反映（実機チューニング待ち）。
+
+### 何を作ったか
+
+掴んで盤面を動かしている間ずっと、**default テーマの UI が一斉に反応**する：
+- **メニュー文字（ChromeButton）**：スクランブル（`triggerBurst` を850msループ）＋ RGB色ずれグリッチ（既存 `::before/::after` の `glitch-shift-a/b` をループ）＝ホバー効果を全ラベル同時発火。
+- **背景ワードマーク（BoardBackgroundTypography）**：RGB色ずれグリッチ（既存 `data-wordmark-text` ゴースト＋新 `wordmark-glitch-a/b` keyframes）。
+- **波形メーター（ScrollMeter）**：既存の `isInteracting`（click/hover バーストや scrub 中の "audio static" チャーン）に掴みを足して連続共鳴。
+- 離すと全部収まる。握っていないとき（at rest）は何も起きない。
+
+### 方式（軽い・既存効果の再利用）
+
+- 掴み中**かつ default テーマ**のときだけ `<html>` に `data-grabbing` を立てる（`grabReacting = grabWiggle.grabbing && themeId===DEFAULT_THEME_ID`）。この単一グローバル契約に全 consumer がぶら下がる：
+  - chrome/ワードマークのグリッチ＝`:global(html[data-grabbing])` の純追加CSS（既存ルール無改変）。
+  - スクランブル＝`useChromeScramble` が MutationObserver で `data-grabbing` を監視し、立っている間 `triggerBurst` を850msループ（切れたら停止・unmount で disconnect＋clear、二重開始ガード）。
+  - メーター＝`grabbing?:boolean` prop（default false）→ `grabbingRef` → `isInteracting` に OR。
+- **カード縁機構は全撤去**：`CardGlitch`/`GlitchFilterDefs`/`BoardDataLayer`/`edge-glitch(.test)`/`CardHalftone`/`halftone*` と帯マスクCSSを削除（grep 0・盤面はクリーンな pre-halftone 状態に）。
+- **弱め初期値**（過去2回がやりすぎ寄り）：スクランブル間隔850ms／グリッチ700ms／ワードマーク色ずれ控えめ → 実機で上げる（case B）。
+
+### 進め方（サブエージェント駆動 6タスク＋最終レビュー）
+
+- Task1 撤去（sonnet）→ Task2 htmlフラグ（haiku）→ Task3 スクランブルループ（haiku）→ Task4 chromeグリッチCSS（haiku）→ Task5 ワードマークグリッチCSS（haiku）→ Task6 メーター共鳴（sonnet）。各タスク独立レビュー（spec＋quality の2判定）で全て Spec ✅ / Quality Approved（指摘は Minor 数件のみ）。
+- **opus 最終 whole-branch レビュー = Ready to merge**：全不変条件 PASS（at-rest byte-identical／default限定／reduced-motion 多層／リーク無し／¥0／カード縁機構 grep+tsc で完全消去／TS strict）、共有 `data-grabbing` 契約が producer＋4 consumer で一致。Minor1件＝無効化ボタン（空盤面の SHARE 等）が掴み中もゴースト点滅 → `:global(html[data-grabbing]) .btn:disabled::before/after` 抑制を追加して解消。
+- ledger `.superpowers/sdd/progress.md`。
+
+### 検証・不変条件
+
+- **tsc0 / vitest1858**（`channel.test.ts` フレーキー→再実行緑）/ **build OK**。
+- **at-rest byte-identical を Playwright 実測**：default `dotted-notebook`・`<html>` に `data-grabbing` 無し・`dataBandClip` 要素無し・SHARE `::before` は `animation-name:none`/`opacity:0`・grab3層 transform 純translation。
+- **reduced-motion 多層安全**：grab-wiggle が発動しない（フラグ立たない）＋ `triggerBurst` no-op＋両グリッチCSSに `@media reduce` ガード＋メーター `!reducedMotion` ゲート保持。
+- **本番 `allmarks.app` 反映済**。**握った時の見た目・強度は setPointerCapture のため自動化不可 → ユーザー実機確認＋数値チューニングが次セッション宿題**（弱め起点で上げる）。OK なら master マージ。
+
+### （同セッション追記）grab-reaction 実機チューニング — TUNE/メーター数字を参加させ、ワードマークは撤去
+
+初回出荷後のユーザー実機フィードバックで対話調整：
+- **TUNE と メーターの数字も grab 反応に参加**（ユーザー指摘「TUNE と数字だけ同じアニメにならない」）。原因＝TUNE は共通 `ChromeButton` でなく独自 `TuneTrigger`、数字は `ScrollMeter` 内の別スクランブル/ゴースト経路で、初回は `.btn`＋ワードマーク＋波形ティックにしか配線してなかったため。両者を同じ `<html data-grabbing>` に配線：TUNE は自前 idle スクランブルを grab 中「全文字 churn」化＋grab RGBグリッチCSS、メーター数字は RGBゴースト連続ループ（CSS）＋rAFループで数字を連続スクランブル。default 限定・reduced-motion 安全・byte-identical 維持。
+- **🐛 TUNE がスクランブルから戻らないバグ修正**：grab 中の churn が rAF 実行中に手を離す（grabbing→false）と effect cleanup が rAF をキャンセルし、途中フレーム（例「F7X/」）で固定＝復元は run の settle 分岐でしか行われず途中キャンセルで戻らなかった。idle スクランブル effect の**開始時に `writeIdleTune()`**（プレーン "TUNE" へ復元）を追加し、grabbing 切替の再実行で即復元。ユーザー実機OK。
+- **背景ワードマーク(Title)の grab グリッチは撤去**（ユーザー判断「Title のインタラクションは外す」）。BoardBackgroundTypography.module.css の grab ブロック＋wordmark-glitch keyframes を削除。**残す反応＝メニュー文字（スクランブル＋RGBグリッチ）／TUNE／メーター数字**。
+- 各回 tsc0 / vitest1858 / build OK・`allmarks.app` 反映済。ブランチ `feat/edge-data-dissolve` 未マージ（実機OKでマージ可）。

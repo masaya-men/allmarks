@@ -1391,6 +1391,22 @@ export function BoardRoot() {
   // layer transforms below add them scaled per depth. Reset on theme change so
   // an offset never sticks across a switch.
   const grabWiggle = useGrabWiggle({ containerRef: canvasElRef, resetKey: themeId })
+  // Grab feedback flag. While the DEFAULT-theme board is being grab-wiggled,
+  // set data-grabbing on <html> so the chrome + wordmark glitch (CSS) and the
+  // chrome scramble loop (JS, useChromeScramble) react in lockstep, and the
+  // waveform meter resonates (grabbing prop below). Gated to default + grabbing,
+  // so the flag is NEVER present on other themes or at rest → the reaction is
+  // default-only and the board is byte-identical at rest. Reduced-motion is
+  // inherently safe: grab-wiggle never sets `grabbing` under reduced-motion.
+  const grabReacting = grabWiggle.grabbing && themeId === DEFAULT_THEME_ID
+  useEffect(() => {
+    const html = document.documentElement
+    if (grabReacting) html.setAttribute('data-grabbing', '')
+    else html.removeAttribute('data-grabbing')
+    return (): void => {
+      html.removeAttribute('data-grabbing')
+    }
+  }, [grabReacting])
   // Parchment/background layer only parallaxes on paper-atelier; other themes
   // keep the bg static under the grab (flat wiggle = cards only).
   const bgGrabWeight = themeId === 'paper-atelier' ? GRAB_LAYER_WEIGHTS.parchment : 0
@@ -2449,6 +2465,7 @@ export function BoardRoot() {
             swellFraction={meterSwellFraction}
             onScrub={handleMeterScrub}
             variant={themeMeta.scrollMeterVariant}
+            grabbing={grabReacting}
           />
         )}
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of

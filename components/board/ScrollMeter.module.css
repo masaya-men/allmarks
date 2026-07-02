@@ -109,6 +109,26 @@
   }
 }
 
+/* Grab feedback: while the default board is grabbed (BoardRoot flags
+   html[data-grabbing]), the counter's RGB ghosts loop continuously — same glitch
+   as hover / the click burst, matching the chrome labels + wordmark. Only while
+   grabbing → byte-identical at rest. */
+:global(html[data-grabbing]) .meterCounter::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 700ms steps(7, end) infinite;
+}
+:global(html[data-grabbing]) .meterCounter::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 700ms steps(7, end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(html[data-grabbing]) .meterCounter::before,
+  :global(html[data-grabbing]) .meterCounter::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 /* Module-scoped keyframes (see ChromeButton.module.css for full rationale —
    CSS Modules scopes animation-name references, so the @keyframes must live
    in this same file). Values identical to chrome buttons for app-wide

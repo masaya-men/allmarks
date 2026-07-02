@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { pickRandomChar } from '@/lib/board/scramble'
 
+/** How often each chrome label re-fires its scramble burst while the board is
+ *  being grabbed. Subtle cadence (a burst is ~250-700ms), tune on-device. */
+const GRAB_SCRAMBLE_INTERVAL_MS = 850
+
 type ChromeScrambleApi = {
   /** Text to render — managed by the hook. Either the unaltered label, or
    *  a scrambled variant during an active wobble / burst animation. */
@@ -134,6 +138,43 @@ export function useChromeScramble(label: string): ChromeScrambleApi {
     }
     rafRef.current = requestAnimationFrame(burstTick)
   }, [])
+
+  // Grab feedback: while BoardRoot flags <html data-grabbing> (default board,
+  // grabbing), loop the scramble burst so the label churns continuously. We
+  // observe the global flag (mirroring the codebase's data-theme-id observer
+  // idiom) so no prop-threading through TopHeader's actions is needed.
+  // triggerBurst already no-ops under reduced-motion, and the flag is never set
+  // under reduced-motion, so this stays still there.
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const html = document.documentElement
+    let loop: ReturnType<typeof setTimeout> | null = null
+    const start = (): void => {
+      if (loop !== null) return
+      const tick = (): void => {
+        triggerBurst()
+        loop = setTimeout(tick, GRAB_SCRAMBLE_INTERVAL_MS)
+      }
+      tick()
+    }
+    const stop = (): void => {
+      if (loop !== null) {
+        clearTimeout(loop)
+        loop = null
+      }
+    }
+    const sync = (): void => {
+      if (html.hasAttribute('data-grabbing')) start()
+      else stop()
+    }
+    const obs = new MutationObserver(sync)
+    obs.observe(html, { attributes: true, attributeFilter: ['data-grabbing'] })
+    sync()
+    return (): void => {
+      obs.disconnect()
+      stop()
+    }
+  }, [triggerBurst])
 
   return { display, triggerBurst }
 }

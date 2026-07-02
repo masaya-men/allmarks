@@ -152,6 +152,21 @@ export function TuneTrigger({
   // On paper: calm serif TUNE — suspend the idle character scramble entirely.
   const paper = useIsPaperTheme()
 
+  // Grab feedback: TUNE is its own component (not a ChromeButton), so it needs
+  // to observe the same global grab flag BoardRoot sets on <html> and react in
+  // lockstep with the chrome labels — an active all-char scramble (via the idle
+  // effect below) plus the RGB glitch (CSS). Never set under reduced-motion.
+  const [grabbing, setGrabbing] = useState(false)
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const html = document.documentElement
+    const sync = (): void => setGrabbing(html.hasAttribute('data-grabbing'))
+    const obs = new MutationObserver(sync)
+    obs.observe(html, { attributes: true, attributeFilter: ['data-grabbing'] })
+    sync()
+    return (): void => obs.disconnect()
+  }, [])
+
   // Refs kept in sync with props each render (PrecisionSlider pattern).
   // Used by both drag math and the HTML emitters so an in-flight rAF chain
   // always reads the latest value, not a stale closure capture.
@@ -295,6 +310,13 @@ export function TuneTrigger({
     if (expanded) return
     // Paper theme: no scramble — restore the plain label and bail.
     if (paper) { writeIdleTune(); return }
+    // Always start from the plain idle label. This ALSO restores it whenever the
+    // effect re-runs mid-scramble — e.g. grabbing toggles off and cleanup cancels
+    // an in-flight churn on a scrambled frame — so the label can never get stuck
+    // on garbage like "F7X/" (the cleanup cancels the rAF before its settle
+    // branch would have rewritten the plain label).
+    writeIdleTune()
+
     const mql = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
       ? window.matchMedia('(prefers-reduced-motion: reduce)')
       : null
@@ -314,7 +336,9 @@ export function TuneTrigger({
 
     const schedule = (): void => {
       if (cancelled) return
-      const delay = 3000 + Math.random() * 3000
+      // While grabbing, churn fast + near-continuously to match the chrome
+      // labels; otherwise the calm idle single-char wobble every 3-6s.
+      const delay = grabbing ? 120 + Math.random() * 100 : 3000 + Math.random() * 3000
       timer = setTimeout(run, delay)
     }
 
@@ -337,7 +361,13 @@ export function TuneTrigger({
         const elapsed = performance.now() - start
         if (elapsed < duration) {
           const out = chars.slice()
-          out[idx] = pickRandomChar()
+          if (grabbing) {
+            // grab: churn every non-space char (an all-character burst, like the
+            // chrome labels' triggerBurst) rather than the single idle char.
+            for (const i of validIndices) out[i] = pickRandomChar()
+          } else {
+            out[idx] = pickRandomChar()
+          }
           writeChars(out)
           rafId = requestAnimationFrame(tick)
         } else {
@@ -356,7 +386,7 @@ export function TuneTrigger({
       if (timer) clearTimeout(timer)
       if (rafId !== null) cancelAnimationFrame(rafId)
     }
-  }, [expanded, visibleLabel, paper, writeIdleTune])
+  }, [expanded, visibleLabel, paper, writeIdleTune, grabbing])
 
   const handleMouseEnter = useCallback((): void => {
     if (leaveTimerRef.current) {

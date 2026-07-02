@@ -117,6 +117,10 @@ type Props = {
    *  (RulerTrack). The 0..1 swellFraction-in / onScrub-out contract and the
    *  counter readout are identical across both faces. */
   readonly variant?: 'waveform' | 'ruler'
+  /** True while the board is being grab-wiggled (default theme). Folds into the
+   *  waveform's existing interaction churn so the meter resonates continuously
+   *  while held. Ignored by the ruler variant. */
+  readonly grabbing?: boolean
 }
 
 function pad4(n: number): string {
@@ -156,6 +160,7 @@ export function ScrollMeter({
   swellFraction,
   onScrub,
   variant = 'waveform',
+  grabbing = false,
 }: Props): ReactElement {
   const trackRef = useRef<HTMLDivElement>(null)
   const tickRefs = useRef<HTMLDivElement[]>([])
@@ -177,6 +182,11 @@ export function ScrollMeter({
   // it each frame without restarting. Same idiom as modeRef/swellFractionRef.
   const variantRef = useRef<'waveform' | 'ruler'>(variant)
   useEffect(() => { variantRef.current = variant }, [variant])
+
+  // Mirror grabbing into a ref so the single []-deps rAF loop reads it each
+  // frame. Same idiom as variantRef/modeRef.
+  const grabbingRef = useRef<boolean>(grabbing)
+  useEffect(() => { grabbingRef.current = grabbing }, [grabbing])
 
   // Brass marker for the ruler variant — positioned by the rAF loop via
   // left %, mirroring how the waveform's swell rides centerTickIdx.
@@ -409,6 +419,7 @@ export function ScrollMeter({
       const isInteracting = !reducedMotion && (
         glitchBurstActiveRef.current
         || scrubFractionRef.current !== null
+        || grabbingRef.current
       )
       const swellSigma = TICK_COUNT / 32
       const swellGain = 3.4
@@ -484,6 +495,15 @@ export function ScrollMeter({
           value = settled
         }
         node.textContent = pad4(value)
+      }
+      // Grab feedback: while the board is grabbed, keep all three counter digits
+      // scrambling continuously (hold their scramble deadline ahead of `now`), so
+      // the number reacts in lockstep with the chrome labels. Never under
+      // reduced-motion, and the flag is only set on the default board grabbing.
+      if (!reducedMotion && grabbingRef.current) {
+        n1ScrambleUntilRef.current = now + 250
+        n2ScrambleUntilRef.current = now + 250
+        totalScrambleUntilRef.current = now + 250
       }
       writeDigit(n1Ref.current, n1SettledRef.current, n1ScrambleUntilRef.current, JITTER_PROB_RANGE)
       writeDigit(n2Ref.current, n2SettledRef.current, n2ScrambleUntilRef.current, JITTER_PROB_RANGE)

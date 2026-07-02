@@ -51,6 +51,27 @@
   animation: glitch-shift-b 700ms steps(7, end);
 }
 
+/* Grab feedback: while the default-theme board is grabbed (BoardRoot flags
+   <html data-grabbing>), every chrome label's RGB ghosts loop — the same glitch
+   the label plays on hover, fired on all labels together as board-wide grab
+   feedback. Only present while grabbing → default board byte-identical at rest.
+   The flag is set only on the default theme, so paper/other themes never react. */
+:global(html[data-grabbing]) .btn::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 700ms steps(7, end) infinite;
+}
+:global(html[data-grabbing]) .btn::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 700ms steps(7, end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(html[data-grabbing]) .btn::before,
+  :global(html[data-grabbing]) .btn::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 .btn:disabled {
   color: rgba(255, 255, 255, 0.30);
   cursor: not-allowed;
@@ -58,6 +79,15 @@
 
 .btn:disabled:hover::before,
 .btn:disabled:hover::after {
+  animation: none;
+  opacity: 0;
+}
+
+/* A disabled label (e.g. SHARE on an empty board, POP OUT when PiP is
+   unavailable) must not pulse its RGB ghosts during a grab either — mirror the
+   disabled:hover neutralizer for the grab-feedback path. */
+:global(html[data-grabbing]) .btn:disabled::before,
+:global(html[data-grabbing]) .btn:disabled::after {
   animation: none;
   opacity: 0;
 }
