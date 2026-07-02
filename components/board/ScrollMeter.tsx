@@ -485,6 +485,17 @@ export function ScrollMeter({
         jitterProb: number,
       ): void => {
         if (!node) return
+        // Paper "ruler" variant: the counter is a calm, STATIC ink readout
+        // (目盛り / graduations) — no scramble, micro-jitter, or periodic
+        // churn. Short-circuit to the settled value so a scroll-driven count
+        // change just snaps to the new number instead of scrambling. This is
+        // the single gate that stops ALL digit motion on paper (the periodic
+        // and grab blocks below only *arm* scramble deadlines, which this
+        // ignores). Default (waveform) theme path is untouched.
+        if (isRuler) {
+          node.textContent = pad4(settled)
+          return
+        }
         let value: number
         if (now < scrambleUntil) {
           value = Math.floor(Math.random() * 10000)

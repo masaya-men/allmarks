@@ -250,3 +250,24 @@
 @media (prefers-reduced-motion: reduce) {
   .hoverLine { animation: none; }
 }
+
+/* Paper-atelier: the counter is a calm, static ink readout matching the
+   RulerTrack numerals (charcoal Geist-Mono, no glow) — a tape-measure
+   graduation, not the sound-wave rack's glitchy digital counter. Digit motion
+   (scramble/jitter) is stopped in ScrollMeter.tsx (isRuler short-circuit); here
+   we drop the digital chrome: kill the neon RGB glitch ghosts, remove the
+   dark-bg stroke/shadow, and give the dim separators ink instead of white
+   (they defaulted to rgba(255,255,255,.6) = invisible on parchment).
+   Paper-scoped only → the default (sound-wave) meter is byte-identical. */
+:global(html[data-theme-id='paper-atelier']) .meterCounter {
+  color: var(--meter-ruler-numeral, #2b2722);
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+}
+:global(html[data-theme-id='paper-atelier']) .meterCounter::before,
+:global(html[data-theme-id='paper-atelier']) .meterCounter::after {
+  display: none;
+}
+:global(html[data-theme-id='paper-atelier']) .meterDim {
+  color: var(--meter-ruler-rule, rgba(43, 39, 34, 0.45));
+}
