@@ -1070,6 +1070,15 @@ export function CardsLayer({
             onPointerLeave={(): void => onHoverChange(null)}
             style={{
               position: 'absolute',
+              // The whole card footprint reads as the click pointer (finger).
+              // Without this the wrapper inherits the empty-board `grab` cursor
+              // from InteractionLayer and leaks it into the slivers around the
+              // hover controls (delete / +TAG / play) that aren't covered by a
+              // pointer-events:auto element — flashing a hand just before the
+              // pointer lands on a button. Cards = pointer; the corner
+              // ResizeHandles set their own resize cursors; the bare board keeps
+              // grab. CardNode's :active still shows `grabbing` while dragging.
+              cursor: 'pointer',
               top: 0,
               left: 0,
               width: `${p.w}px`,
