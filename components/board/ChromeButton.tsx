@@ -21,6 +21,9 @@ type Props = {
   readonly 'aria-pressed'?: boolean
   readonly 'aria-label'?: string
   readonly 'data-onboarding-target'?: string
+  /** 'danger' tints the label red (e.g. EMPTY TRASH — a destructive action).
+   *  Omit for the normal chrome treatment. */
+  readonly 'data-variant'?: 'danger'
 }
 
 export function ChromeButton({
@@ -33,6 +36,7 @@ export function ChromeButton({
   'aria-pressed': ariaPressed,
   'aria-label': ariaLabel,
   'data-onboarding-target': dataOnboardingTarget,
+  'data-variant': dataVariant,
 }: Props): ReactElement {
   const { display, triggerBurst } = useChromeScramble(label)
   const cls = className ? `${styles.btn} ${className}` : styles.btn
@@ -53,6 +57,7 @@ export function ChromeButton({
         onMouseEnter={onHover}
         data-testid={dataTestId}
         data-glitch-text={label}
+        data-variant={dataVariant}
         aria-label={ariaLabel}
         data-onboarding-target={dataOnboardingTarget}
       >
@@ -70,6 +75,7 @@ export function ChromeButton({
       disabled={disabled}
       data-testid={dataTestId}
       data-glitch-text={label}
+      data-variant={dataVariant}
       aria-pressed={ariaPressed}
       aria-label={ariaLabel}
       data-onboarding-target={dataOnboardingTarget}

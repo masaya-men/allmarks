@@ -72,6 +72,20 @@
   }
 }
 
+/* Danger variant (EMPTY TRASH — permanently deletes trashed items). Only shown
+   in the TRASH view, so a red label makes the destructive action noticeable.
+   Rest state only tints the label; the RGB glitch ghosts still play on hover. */
+.btn[data-variant='danger'] {
+  color: rgba(255, 95, 85, 0.92);
+}
+.btn[data-variant='danger']:hover {
+  color: rgba(255, 125, 115, 1);
+}
+:global(html[data-theme-id='paper-atelier']) .btn[data-variant='danger'],
+:global(html[data-theme-id='paper-atelier']) .btn[data-variant='danger']:hover {
+  color: rgba(150, 40, 30, 0.95); /* dark red ink on parchment */
+}
+
 .btn:disabled {
   color: rgba(255, 255, 255, 0.30);
   cursor: not-allowed;

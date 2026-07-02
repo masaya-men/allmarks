@@ -5,9 +5,17 @@
   transform: translate(-50%, -50%);
   z-index: 12; /* mirrors BOARD_Z_INDEX.EMPTY_STATE */
   width: min(420px, calc(100vw - 48px));
-  background: var(--color-bg-elevated);
+  /* Near-opaque dark card on the black + green board. The old
+     --color-bg-elevated (#222233) read blue-grey like a legacy modal; this is
+     an on-brand near-black surface with a hairline + soft shadow.
+     NO backdrop-filter: the board's transform / will-change layers make
+     backdrop-filter inert AND (worse) let the background wordmark composite
+     over the panel, so it must use a raw-alpha opaque fill to paint on top
+     (see memory: board backdrop-filter is inert). */
+  background: rgba(18, 18, 20, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
   padding: 36px 32px;
   text-align: center;
   pointer-events: auto;
@@ -23,7 +31,8 @@
 .description {
   font-size: 14px;
   line-height: 1.6;
-  color: var(--color-text-secondary);
+  /* neutral white (was --color-text-secondary #a0a0b8, a blue-grey legacy token) */
+  color: rgba(255, 255, 255, 0.66);
   margin: 0 0 24px;
 }
 

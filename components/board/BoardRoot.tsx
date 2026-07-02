@@ -2256,6 +2256,7 @@ export function BoardRoot() {
                   label="EMPTY TRASH"
                   onClick={handleEmptyTrashRequest}
                   data-testid="empty-trash-button"
+                  data-variant="danger"
                 />
               )}
             </>
