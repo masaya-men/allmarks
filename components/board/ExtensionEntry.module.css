@@ -135,17 +135,38 @@
 .drawer[data-open='true'] {
   /* Capped to the viewport (minus the drawer's top offset + a bottom margin)
      so the tall not-installed state (GET EXTENSION promo, ~575px) never runs
-     off-screen — it scrolls internally instead, hinted by the bottom fade. */
+     off-screen — it scrolls internally instead, hinted by the bottom fade.
+     NOTE: the drawer itself no longer scrolls — the inner .drawerScroll does.
+     If the drawer scrolled, the absolute .scrollFade below (anchored to the
+     drawer's padding box) would scroll away with the content instead of staying
+     at the visible bottom edge. */
   max-height: min(600px, calc(100dvh - 140px));
   padding: 22px 24px 24px;
   pointer-events: auto;
-  overflow-y: auto;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
-/* Bottom scroll fade — pinned to the drawer's visible bottom edge (absolute in
-   the positioned, scrolling drawer → doesn't move with content). Fades content
-   into the drawer surface so there's a clear "more below" cue. */
+/* Inner scroll region — holds the title + every section and does the actual
+   scrolling, so the drawer shell stays a stable positioned box for the bottom
+   fade to anchor to. `min-height: 0` lets this flex child shrink below its
+   content size so overflow-y actually kicks in inside the flex-column drawer. */
+.drawerScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* Raw scrollbar hidden — scrollability is communicated by the bottom fade
+     (.scrollFade), matching the app's no-plain-scrollbars rule. */
+  scrollbar-width: none;
+}
+.drawerScroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Bottom scroll fade — pinned to the drawer's visible bottom edge. The drawer
+   shell does NOT scroll (the inner .drawerScroll does), so this absolute child
+   stays put at the shell's bottom instead of drifting up with the content. JS
+   toggles data-visible from moreBelow. Fades content into the drawer surface so
+   there's a clear "more below" cue. */
 .scrollFade {
   position: absolute;
   left: 0;

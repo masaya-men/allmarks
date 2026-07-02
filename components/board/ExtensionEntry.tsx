@@ -287,17 +287,22 @@ export function ExtensionEntry({
       />
       {mounted && createPortal(
       <div
-        ref={drawerRef}
         className={styles.drawer}
         style={pos ? { position: 'fixed', top: pos.top, right: pos.right } : undefined}
         role="dialog"
         aria-label="AllMarks settings"
         data-open={isOpen ? 'true' : 'false'}
         aria-hidden={!isOpen}
-        onScroll={recomputeFade}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
+        {/* Inner scroll region — the drawer shell itself stays put so the bottom
+            fade below can anchor to its visible bottom edge. */}
+        <div
+          className={styles.drawerScroll}
+          ref={drawerRef}
+          onScroll={recomputeFade}
+        >
         <div className={styles.title}>SETTINGS</div>
 
         {/* ── SAVING ───────────────────────────────────────────────────────
@@ -432,8 +437,10 @@ export function ExtensionEntry({
             </div>
           )}
         </section>
+        </div>
         {/* Bottom fade — hints at scrollable content below on short viewports
-            (no raw scrollbar). Pinned to the drawer's visible bottom edge. */}
+            (no raw scrollbar). Anchored to the drawer shell (which no longer
+            scrolls), so it stays fixed at the visible bottom edge. */}
         <div
           className={styles.scrollFade}
           data-visible={moreBelow ? 'true' : 'false'}
