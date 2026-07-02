@@ -8,7 +8,7 @@
 
 ## 0. パッケージ（アップロードする zip）
 
-- ファイル: `dist/booklage-extension-0.1.20.zip`（`pnpm package:extension` で生成、約100KB）
+- ファイル: `dist/booklage-extension-0.1.22.zip`（`pnpm package:extension` で生成、約105KB）。更新提出は §8 の「新しいパッケージをアップロード」で差し替え（掲載文は据え置きでOK）
 - 中身は `extension/` フォルダ直下を zip 化したもの（manifest がルートに来る正しい構造）
 - 再生成: `pnpm package:extension`（必須ファイルの存在チェック付き）
 

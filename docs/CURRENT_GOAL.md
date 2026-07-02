@@ -1,25 +1,27 @@
 # 次セッションのゴール (= セッション 151)
 
-## 今の状態（ボード磨き＋インタラクション修正を master にマージ済・盤面まわりは一区切り）
+## 今の状態（ボード磨き＋細かい nit を master に集約済・拡張は審査提出済）
 
-**セッション150でやったこと（すべて `allmarks.app` 反映・ユーザー実機OK・master マージ済）：**
+**セッション150＋150続きでやったこと（すべて master マージ済・tsc0/vitest1867/build OK）：**
 
-1. **カード内ボタンにホバー反応**（×/↺/＋TAG/タグpill に ▶ 風「拡大＋明るく」）。default 静止時 byte-identical。
-2. **🐛 ドラッグ移動中の grabbing カーソル**（`<html data-card-dragging>` + globals.css で強制。`.cardNode:active` は pointer capture 中に効かないため）。
-3. **🐛 テキストカードの scrollbar 押下でライトボックスが開く/スクロール強奪**（`pressLandsOnCardScrollbar` で capture 前に bail。classic=幾何厳密／overlay=target フォールバック。実マウスで両モード実証・TDD 9テスト）。
-4. **ブランチ `fix/board-cursor-and-paper-meter` を `--no-ff` で master マージ**（149の磨き5＋docs1＋150の3＝9コミット、ローカル/リモート削除済）。tsc0 / vitest1867 / build OK。
+1. カード内ボタンのホバー反応（▶風 拡大＋明るく）／ドラッグ中 grabbing カーソル／テキストカード scrollbar 誤ライトボックス修正（前半）。
+2. **N-17 EMPTY TRASH を赤 danger 表示**（本番反映・確認OK）。
+3. **N-18 拡張クイックタグ窓の見切れ → 1列スクロール化**。拡張 **v0.1.22** パッケージ → **2026-07-02 Chrome ウェブストア更新提出済（審査待ち）**。承認で既存ユーザーに自動更新。
+4. N-14（Lightbox 中モーション）＝既に停止済で対応不要／ N-16（空ボード青モーダル）＝スマホ限定で保留。
 
-## 次にやる（セッション151）＝本命バックログに戻る（**まず優先順を相談**）
+## 次にやる（セッション151）＝残りの気づき or 本命バックログ（**まず優先順を相談**）
 
-盤面の磨きは一区切り。以下から着手先をユーザーと相談して決める：
+### 残りの細かい気づき（今回の続き）
+- **N-15 拡張の再起動後・初回1回だけ保存失敗するかも** — service worker コールドスタート/接続未確立が疑い。**実 reboot 再現が難点** → まずコード経路（background/SW の接続 readiness、content→SW メッセージのリトライ）を調査し防御的対策。
+- **N-19 カードのサイズ/位置を default に戻す** — 一括 or 個別リセット。要設計（UI 置き場所＝SETTINGS or カード右クリック？／"default" の定義＝自動サイズ＆保存順）。ブレストから。
+- **N-05 LP ナビの格納演出** — Features 等を選ぶとメニューから消え、スクロールで語がヘッダーに入ると緑玉付きで右へ「しゅん」と格納。要設計（IDEAS.md N-05）。
 
-1. **③ プレミアムテーマ制作**（paper-atelier に続く2〜3本。spec は `docs/specs/2026-06-24-theme-system-paper-atelier-design.md` の量産手順、#1 white-sector / #5 celestial-atlas 候補）
-2. **④ K3 解錠実装**（有料テーマのライセンス機構。工程表 `docs/private/2026-07-01-k3-unlock-plan.md`＝10タスクTDD。`EMPTY_LICENSES` を本物のライセンス集合へ。5台キャップ/フェイルオープン/ブクマ非接触/¥0/default byte-identical が不変条件）
-3. **選択的シェア**（今は新しい順100枚固定→どの100枚を送るか選ぶ。3案は IDEAS.md）
-4. **タグ付け強化**（最優先機能と本人発言・s60）
+### 本命バックログ
+- ③プレミアムテーマ制作／④K3 解錠実装（`docs/private/2026-07-01-k3-unlock-plan.md`）／選択的シェア／タグ付け強化。
 
 ## 守ること（毎回）
 - default 盤面 byte-identical。deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`
 - **機微情報は `docs/private/` のみ。tracked に書かない・commit しない**（CLAUDE.md 厳守）
-- board のドラッグ/カードクリックは **Playwright の `page.mouse`（CDP=trusted）なら検証可能**（setPointerCapture が効く）。`page.dispatchEvent` の synthetic は不可。headless=overlay / headed=classic でスクロールバー描画が違う点に注意
+- 拡張の反映はストア審査経由（Web デプロイでは届かない）。即確認は `chrome://extensions`→`extension/` を unpacked ロード
+- board のドラッグ/カードクリック検証は Playwright の `page.mouse`（CDP=trusted）なら可（setPointerCapture 効く）。headless=overlay/headed=classic でスクロールバー描画が違う。拡張UIは実CSSを scratchpad にコピーして独立再現
 - 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。応答は日本語・簡潔に
