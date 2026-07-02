@@ -12,7 +12,14 @@
       "getExtensionBody": "어떤 페이지든 클릭 한 번으로 AllMarks에 저장하세요 — X, YouTube를 비롯한 어디서나. 플로팅 마크와 SNS 자동 저장도 함께 제공됩니다.",
       "addToChrome": "Chrome에 추가",
       "comingSoon": "출시 예정",
-      "chooseTheme": "테마 선택"
+      "chooseTheme": "테마 선택",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "수동으로 정렬한 순서는 사라집니다.",
+      "resetSizesDone": "{n}개의 카드를 기본 크기로 되돌렸습니다",
+      "sortNewestDone": "최신순으로 정렬했습니다"
     },
     "backup": {
       "caption": "기기 내 데이터를 파일로 저장하거나 복원합니다.",

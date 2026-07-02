@@ -12,7 +12,14 @@
       "getExtensionBody": "Сохраняйте любую страницу в AllMarks одним кликом — прямо из X, YouTube и откуда угодно. Плавающая метка и автосохранение для SNS идут в комплекте.",
       "addToChrome": "УСТАНОВИТЬ В CHROME",
       "comingSoon": "СКОРО",
-      "chooseTheme": "Выбрать тему"
+      "chooseTheme": "Выбрать тему",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "Это сбросит ручную сортировку.",
+      "resetSizesDone": "{n} карточек сброшено до размера по умолчанию",
+      "sortNewestDone": "Отсортировано по новизне"
     },
     "backup": {
       "caption": "Сохраните данные в файл или восстановите их.",

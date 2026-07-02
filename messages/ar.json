@@ -12,7 +12,14 @@
       "getExtensionBody": "احفظ أي صفحة في AllMarks بنقرة واحدة — مباشرةً من X وYouTube وأي مكان آخر. وتأتي معها العلامة العائمة والحفظ التلقائي من SNS.",
       "addToChrome": "إضافة إلى Chrome",
       "comingSoon": "قريبًا",
-      "chooseTheme": "اختر سمة"
+      "chooseTheme": "اختر سمة",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "سيؤدي هذا إلى مسح أي ترتيب يدوي.",
+      "resetSizesDone": "تمت إعادة {n} بطاقة إلى الحجم الافتراضي",
+      "sortNewestDone": "تم الترتيب من الأحدث"
     },
     "backup": {
       "caption": "احفظ بياناتك في ملف، أو استعدها.",

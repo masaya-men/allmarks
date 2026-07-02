@@ -845,6 +845,54 @@ export async function repairOrderIndexIfNeeded(
 }
 
 /**
+ * Pure: given bookmark records, compute the newest-first orderIndex each
+ * should have. savedAt DESC (id ASC tiebreak for determinism); the newest
+ * bookmark gets the HIGHEST orderIndex (= n-1) so it appears first under the
+ * board's DESC sort on orderIndex. Shared by the on-demand resort below.
+ */
+export function computeNewestFirstOrder(
+  records: readonly { readonly id: string; readonly savedAt: string }[],
+): { id: string; orderIndex: number }[] {
+  const sorted = [...records].sort((a, b) => {
+    const cmp = b.savedAt.localeCompare(a.savedAt)
+    if (cmp !== 0) return cmp
+    return a.id.localeCompare(b.id)
+  })
+  return sorted.map((r, i) => ({ id: r.id, orderIndex: sorted.length - 1 - i }))
+}
+
+/**
+ * On-demand "sort newest first": re-number every bookmark's orderIndex by
+ * savedAt DESC. Unlike {@link repairOrderIndexIfNeeded} this is NOT gated by a
+ * one-shot migration flag — it is a user-triggered SETTINGS action that can run
+ * any time (N-19). Only rows whose orderIndex actually changes are written.
+ * Discards any manual drag-reorder (that is the point). Does not touch the
+ * migration flags in `settings`.
+ * @returns how many rows were rewritten (for the confirmation toast / tests).
+ */
+export async function resortByNewestFirst(
+  db: IDBPDatabase<AllMarksDB>,
+): Promise<{ updated: number }> {
+  const all = await db.getAll('bookmarks')
+  if (all.length === 0) return { updated: 0 }
+  const desired = computeNewestFirstOrder(all)
+  const byId = new Map(all.map((r) => [r.id, r]))
+  const tx = db.transaction('bookmarks', 'readwrite')
+  const store = tx.objectStore('bookmarks')
+  let updated = 0
+  for (const { id, orderIndex } of desired) {
+    const rec = byId.get(id)
+    if (!rec) continue
+    if ((rec.orderIndex ?? -1) !== orderIndex) {
+      await store.put({ ...rec, orderIndex })
+      updated++
+    }
+  }
+  await tx.done
+  return { updated }
+}
+
+/**
  * Build the BookmarkRecord + its companion CardRecord for a fresh save.
  *
  * Pure construction (no IDB writes) so both `addBookmark` and the atomic

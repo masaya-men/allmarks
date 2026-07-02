@@ -12,7 +12,14 @@
       "getExtensionBody": "Guarda cualquier página en AllMarks con un solo clic, directamente desde X, YouTube y cualquier otro sitio. La marca flotante y el guardado automático en SNS vienen incluidos.",
       "addToChrome": "AÑADIR A CHROME",
       "comingSoon": "PRÓXIMAMENTE",
-      "chooseTheme": "Elegir tema"
+      "chooseTheme": "Elegir tema",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "Esto borra cualquier orden manual.",
+      "resetSizesDone": "{n} tarjetas restablecidas al tamaño predeterminado",
+      "sortNewestDone": "Ordenado por más recientes"
     },
     "backup": {
       "caption": "Guarda tus datos en un archivo o restáuralos.",

@@ -12,7 +12,14 @@
       "getExtensionBody": "Save any page to AllMarks in one click — straight from X, YouTube, and anywhere else. The floating mark and SNS auto-save come with it.",
       "addToChrome": "ADD TO CHROME",
       "comingSoon": "COMING SOON",
-      "chooseTheme": "CHOOSE A THEME"
+      "chooseTheme": "CHOOSE A THEME",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "This clears any manual drag order.",
+      "resetSizesDone": "Reset {n} cards to default size",
+      "sortNewestDone": "Sorted newest first"
     },
     "backup": {
       "caption": "Save your data to a file, or restore it.",

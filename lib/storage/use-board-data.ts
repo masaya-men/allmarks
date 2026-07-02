@@ -15,6 +15,7 @@ import {
   persistCustomCardWidth,
   clearCustomCardWidth,
   clearAllCustomCardWidths,
+  resortByNewestFirst,
   persistPhotos as persistPhotosDb,
   persistMediaSlots as persistMediaSlotsDb,
   updateBookmarkHealth,
@@ -212,6 +213,10 @@ export function useBoardData(): {
    *  it set. Returns the ids that were actually reset so callers can
    *  prune their in-memory override map cheaply. */
   resetAllCustomWidths: () => Promise<readonly string[]>
+  /** Re-number every bookmark's orderIndex by savedAt DESC (newest first),
+   *  then reload so the board shows the new order. Returns how many rows
+   *  changed. User-triggered SETTINGS action (N-19). */
+  resortNewestFirst: () => Promise<number>
   /** @deprecated Use persistFreePosition instead. Will be removed after full pivot. */
   persistCardPosition: (cardId: string, pos: CardPosition) => Promise<void>
   /** Persist link health status from viewport revalidation or the refetch button.
@@ -695,6 +700,18 @@ export function useBoardData(): {
     )
   }, [])
 
+  const resortNewestFirst = useCallback(async (): Promise<number> => {
+    const db = dbRef.current
+    if (!db) return 0
+    const { updated } = await resortByNewestFirst(
+      db as Parameters<typeof resortByNewestFirst>[0],
+    )
+    // reload re-reads bookmarks and sorts active items by orderIndex DESC, so
+    // the freshly-renumbered order is reflected on the board immediately.
+    await reload()
+    return updated
+  }, [reload])
+
   const persistLinkStatus = useCallback(
     async (bookmarkId: string, status: 'alive' | 'gone' | 'unknown', lastCheckedAt: number): Promise<void> => {
       const db = dbRef.current
@@ -752,6 +769,7 @@ export function useBoardData(): {
     persistCustomWidth,
     resetCustomWidth,
     resetAllCustomWidths,
+    resortNewestFirst,
     persistCardPosition,
     persistLinkStatus,
   }

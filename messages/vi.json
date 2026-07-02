@@ -12,7 +12,14 @@
       "getExtensionBody": "Lưu bất kỳ trang nào vào AllMarks chỉ với một cú nhấp — ngay từ X, YouTube và mọi nơi khác. Nút đánh dấu nổi và tính năng tự động lưu SNS đều đi kèm.",
       "addToChrome": "THÊM VÀO CHROME",
       "comingSoon": "SẮP RA MẮT",
-      "chooseTheme": "Chọn giao diện"
+      "chooseTheme": "Chọn giao diện",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "Thao tác này xóa mọi thứ tự sắp xếp thủ công.",
+      "resetSizesDone": "Đã đặt lại {n} thẻ về kích thước mặc định",
+      "sortNewestDone": "Đã sắp xếp mới nhất trước"
     },
     "backup": {
       "caption": "Lưu dữ liệu của bạn vào một tệp, hoặc khôi phục lại.",

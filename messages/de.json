@@ -12,7 +12,14 @@
       "getExtensionBody": "Jede Seite mit einem Klick in AllMarks speichern – direkt von X, YouTube und überall sonst. Die schwebende Markierung und das automatische SNS-Speichern sind inklusive.",
       "addToChrome": "ZU CHROME HINZUFÜGEN",
       "comingSoon": "DEMNÄCHST VERFÜGBAR",
-      "chooseTheme": "Thema wählen"
+      "chooseTheme": "Thema wählen",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "Dies verwirft die manuelle Reihenfolge.",
+      "resetSizesDone": "{n} Karten auf Standardgröße zurückgesetzt",
+      "sortNewestDone": "Nach Neueste sortiert"
     },
     "backup": {
       "caption": "Sichere deine Daten in einer Datei oder stelle sie wieder her.",
