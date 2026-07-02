@@ -28,7 +28,8 @@
   - **SORT: NEWEST FIRST** ＝ `savedAt` 降順で並び直し（新関数 `resortByNewestFirst`＝フラグ非依存で何度でも実行可。マイグレーション `repairOrderIndexIfNeeded` は無変更）。
   - どちらも**その場2タップ確認**＋実行後トースト。EXPORT バックアップが同ドロワーの保険。個別 ↺・TUNE ↺ は温存。
 - 進め方＝brainstorm→spec→plan→**サブエージェント駆動5タスク＋各2段レビュー＋opus 全ブランチレビュー（Ready to merge）**→`--no-ff` マージ→デプロイ。15言語 i18n・機微情報なし。正本 [spec](superpowers/specs/2026-07-02-board-reset-layout-design.md) / [plan](superpowers/plans/2026-07-02-board-reset-layout.md)。narrative は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション152。
-- **次（セッション153）**：まず **N-19 実機目視**（allmarks.app ハードリロード→SETTINGS→LAYOUT の見え方・件数・2タップ・別テーマ馴染み）→ その後 本命バックログ（③テーマ／④K3／選択的シェア／タグ強化）or N-05 LP格納演出。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **フォローアップ修正（同セッション・master `365ddd4`・本番反映済）**：SETTINGS ドロワーのスクロールフェードが下端に固定されず特定項目（チュートリアル行）に黒帯が貼り付いて遅れて消えるバグを修正。根本原因＝`.scrollFade` の `position:absolute` がスクロールコンテナ（flex-column ドロワー）内でコンテンツと一緒に流れていた → 内側 `.drawerScroll` を新設してドロワー本体を非スクロール化、フェードを可視下端に常駐。Playwright 実測で dev＋本番とも合格。ユーザー実機OK（N-19 本体）。
+- **次（セッション153）**：まず **フェード修正の実機目視**（allmarks.app ハードリロード→SETTINGS を少しスクロールし、黒帯が下端に留まり項目に貼り付かないか）→ その後 本命バックログ（③テーマ／④K3／選択的シェア／タグ強化）or N-05 LP格納演出。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 151 — N-15 拡張の再起動後・初回保存失敗を根本修正 → master マージ済 / 拡張 v0.1.23 提出済)
 
