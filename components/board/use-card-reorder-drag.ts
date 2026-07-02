@@ -24,6 +24,50 @@ export type ReorderDragState = {
   readonly currentY: number
 }
 
+/**
+ * True when a pointer press at (clientX, clientY) lands on the scrollbar gutter
+ * of a card's internal scroll region (an element marked [data-card-scroll]).
+ *
+ * Such presses must NOT start a card drag/click. The reorder drag calls
+ * setPointerCapture on the card wrapper, which — as verified in a real browser —
+ * (a) hijacks the native scrollbar so the text can't scroll and a >5px drag
+ * turns into a card reorder, and (b) for a stationary click on the scrollbar,
+ * mis-fires the card click that opens the Lightbox. Bailing lets the browser's
+ * native scrollbar handle the press. Pressing the region's CONTENT returns
+ * false so tapping the text still opens the card.
+ *
+ * Only reports a hit when the region actually overflows (a scrollbar exists);
+ * a non-overflowing region never steals the far-edge click.
+ */
+export function pressLandsOnCardScrollbar(
+  target: EventTarget | null,
+  clientX: number,
+  clientY: number,
+): boolean {
+  if (!(target instanceof Element)) return false
+  const scroller = target.closest<HTMLElement>('[data-card-scroll="true"]')
+  if (!scroller) return false
+  const overflowsV = scroller.scrollHeight > scroller.clientHeight
+  const overflowsH = scroller.scrollWidth > scroller.clientWidth
+  if (!overflowsV && !overflowsH) return false // no scrollbar → nothing to guard
+  const rect = scroller.getBoundingClientRect()
+  // Classic (space-taking) scrollbars — verified as the real Windows-Chrome
+  // rendering (10px gutter). The gutter sits OUTSIDE the client box, so this
+  // geometry is exact: the padding (inside the client box) still opens the card.
+  if (overflowsV && clientX >= rect.left + scroller.clientLeft + scroller.clientWidth) return true
+  if (overflowsH && clientY >= rect.top + scroller.clientTop + scroller.clientHeight) return true
+  // Overlay scrollbars (auto-hide setting) take zero layout width and float over
+  // the content edge, so the geometry above can't see them. In that mode the
+  // scrollbar (and the surrounding padding) hit-tests as the scroll container
+  // itself, while content hits a child — so a press whose target IS the
+  // container is a gutter press. Gated on overlay so classic users keep
+  // padding-clicks opening the card.
+  const overlayV = overflowsV && scroller.offsetWidth - scroller.clientWidth - scroller.clientLeft <= 0
+  const overlayH = overflowsH && scroller.offsetHeight - scroller.clientHeight - scroller.clientTop <= 0
+  if ((overlayV || overlayH) && target === scroller) return true
+  return false
+}
+
 export type UseReorderDragParams = {
   readonly items: ReadonlyArray<BoardItem>
   readonly positions: Readonly<Record<string, CardPosition>>
@@ -86,6 +130,15 @@ export function useCardReorderDrag(params: UseReorderDragParams): {
       // pointer (e.g. some test runners) which we treat as primary.
       if (e.button > 0) return
       if (spaceHeld) return
+      // A press on a text card's internal scrollbar must go to the native
+      // scrollbar, not to us: capturing the pointer here would hijack the
+      // scroll and mis-fire a card click → Lightbox. Stop propagation so the
+      // board pan underneath doesn't engage either, then let the browser drive
+      // the scrollbar. Pressing the text content falls through to a normal drag.
+      if (pressLandsOnCardScrollbar(e.target, e.clientX, e.clientY)) {
+        e.stopPropagation()
+        return
+      }
       e.stopPropagation()
       const el = e.currentTarget
       const pointerId = e.pointerId

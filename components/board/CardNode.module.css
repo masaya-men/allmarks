@@ -2,7 +2,13 @@
   position: relative;
   width: 100%;
   height: 100%;
-  cursor: grab;
+  /* Resting cursor is the normal click pointer (finger) — a card's primary
+     action is click-to-open (Lightbox), and every on-card control has its own
+     pointer + hover feedback. The empty board keeps its grab/grabbing
+     affordance on the InteractionLayer wrapper; a card only shows `grabbing`
+     once you actually press-drag it (see :active below), preserving the
+     reorder hint without making the whole board read as "grabbable". */
+  cursor: pointer;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;

@@ -42,3 +42,17 @@
   white-space: nowrap;
   line-height: 1.4;
 }
+
+/* + TAG corner label — hover-grow to echo the ▶ media control's "grows and
+   brightens on hover" affordance (MediaTypeIndicator). transform-origin sits at
+   the top-left anchor so the label grows INWARD (down-right), away from the
+   card corner. The transition lives inline on the button (alongside the
+   dynamic opacity) so opacity + transform + filter animate together. At rest
+   this class contributes no transform → default board stays byte-identical. */
+.addTagButton {
+  transform-origin: top left;
+}
+.addTagButton:hover {
+  transform: scale(1.15);
+  filter: brightness(1.15);
+}

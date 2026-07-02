@@ -21,6 +21,11 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 149続き — ボード磨き＋バグ修正5件をブランチで出荷・実機OK・未マージ)
+
+- **ブランチ `fix/board-cursor-and-paper-meter`（未マージ・origin push 済・`allmarks.app` 反映済・ユーザー実機OK）**：①テーマ選択モーダルの副題削除 ②カード上カーソル grab→**pointer（指）**（盤面余白は grab、ドラッグ中は grabbing）③**Paper メーター数字を静かな墨の目盛りに**（`isRuler` 短絡で scramble/グリッチ停止 + paper スコープCSS）④🐛 テーマモーダルが盤面クリックで閉じない修正（capture-phase pointerdown＝grab-wiggle の setPointerCapture がバブルを食っていた）⑤🐛 ボタン直前で手のひらが一瞬出る修正（カード外側ラッパーに cursor:pointer＝grab 継承漏れ）。全て tsc0 / vitest1858 / build OK。
+- **次（セッション150）**：まず**カード内ボタンのホバー反応追加**（×/リセット/＋TAG/タグpill に ▶ 風「拡大＋明るく」＝設計提案途中で中断）を同ブランチに載せる → その後 master に一括マージ（finishing-a-development-branch）。実装メモは [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 149 — grab-reaction を master に squash マージ・ブランチ整理)
 
 - **`feat/edge-data-dissolve`（正味差分＝grab-reaction のみ）を master に squash マージ**（却下した縁エフェクト系20コミットは畳んで master 履歴をクリーンに保持）。マージ前に **tsc0 / vitest1858 / build OK** を再確認。本番 `allmarks.app` は既にこの状態を反映済（別デプロイ不要）。マージ後にブランチ削除。

@@ -4,6 +4,7 @@ import type { PointerEvent, ReactElement } from 'react'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useIsPaperTheme } from '@/lib/board/use-is-paper-theme'
 import { paperAssetUrl, pickPaperAsset, type PaperAssetId } from '@/lib/board/paper-assets'
+import styles from './TagIndicatorStrip.module.css'
 
 interface Props {
   /** Tags already resolved (= bookmark.tags[] joined against the tags master).
@@ -144,13 +145,17 @@ export function TagIndicatorStrip({
         // Paper theme: write the tag on a hand-torn washi tape in handwriting
         // ink (theme-following). Tape variant + tilt are stable per tag id.
         let base: React.CSSProperties = TEXT_STYLE
+        // Paper pills tilt. The rotation moves to the --pill-tilt CSS variable
+        // (below) so the hover scale in the stylesheet can compose on top of it
+        // instead of being overridden by an inline transform.
+        let pillTilt: string | undefined
         if (isPaper) {
           const seed = seedFractionFromId(tag.id)
           const washiUrl = paperAssetUrl(pickPaperAsset(seed, WASHI_IDS) ?? 'washi-tape-1')
+          pillTilt = `${((seed - 0.5) * 9).toFixed(1)}deg`
           base = {
             ...PAPER_TEXT_STYLE,
             backgroundImage: washiUrl ? `url("${washiUrl}")` : undefined,
-            transform: `rotate(${((seed - 0.5) * 9).toFixed(1)}deg)`,
           }
         }
         const pillStyle: React.CSSProperties = isContextActive
@@ -165,10 +170,17 @@ export function TagIndicatorStrip({
                   ' 0 1px 2px rgba(0, 0, 0, 0.65)',
               }
           : base
+        // --pill-tilt drives the paper rotation from CSS so the hover scale
+        // (TagIndicatorStrip.module.css) composes on top of it.
+        const finalStyle: React.CSSProperties = pillTilt
+          ? ({ ...pillStyle, '--pill-tilt': pillTilt } as React.CSSProperties)
+          : pillStyle
         return (
           <button
             key={tag.id}
             type="button"
+            className={styles.pill}
+            data-paper={isPaper ? 'true' : undefined}
             data-testid={`tag-pill-${tag.id}`}
             data-tag-id={tag.id}
             onPointerDown={stopDragSeed}
@@ -187,7 +199,7 @@ export function TagIndicatorStrip({
               e.stopPropagation()
               onTagContextMenu({ clientX: e.clientX, clientY: e.clientY }, tag.id)
             }}
-            style={pillStyle}
+            style={finalStyle}
           >
             {tag.name}
           </button>

@@ -1022,6 +1022,19 @@ export function CardsLayer({
     }
   }, [dragState, masonryLayout.positions])
 
+  // While a card is being dragged to a new slot, force the grabbing (closed-
+  // hand) cursor across the surface (see globals.css [data-card-dragging]).
+  // .cardNode:active can't do this: the drag captures the pointer on the card
+  // wrapper, so during capture the cursor no longer follows the :active child.
+  // Keyed on the boolean so it toggles only on drag start/end, not per move.
+  const isReorderDragging = dragState !== null
+  useEffect(() => {
+    if (!isReorderDragging) return
+    const root = document.documentElement
+    root.setAttribute('data-card-dragging', 'true')
+    return (): void => root.removeAttribute('data-card-dragging')
+  }, [isReorderDragging])
+
   return (
     <div
       ref={rootRef}
@@ -1070,6 +1083,15 @@ export function CardsLayer({
             onPointerLeave={(): void => onHoverChange(null)}
             style={{
               position: 'absolute',
+              // The whole card footprint reads as the click pointer (finger).
+              // Without this the wrapper inherits the empty-board `grab` cursor
+              // from InteractionLayer and leaks it into the slivers around the
+              // hover controls (delete / +TAG / play) that aren't covered by a
+              // pointer-events:auto element — flashing a hand just before the
+              // pointer lands on a button. Cards = pointer; the corner
+              // ResizeHandles set their own resize cursors; the bare board keeps
+              // grab. CardNode's :active still shows `grabbing` while dragging.
+              cursor: 'pointer',
               top: 0,
               left: 0,
               width: `${p.w}px`,
@@ -1340,6 +1362,7 @@ export function CardsLayer({
               <>
                 <button
                   type="button"
+                  className={styles.addTagButton}
                   data-testid="card-add-tag-button"
                   data-onboarding-target="card-tag"
                   aria-label="Add tag"
@@ -1374,7 +1397,8 @@ export function CardsLayer({
                     textTransform: 'uppercase',
                     cursor: 'pointer',
                     opacity: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId || forceTagButtonVisible) ? 1 : 0,
-                    transition: 'opacity 120ms',
+                    transition:
+                      'opacity 120ms, transform 160ms cubic-bezier(0.16, 1, 0.3, 1), filter 160ms cubic-bezier(0.16, 1, 0.3, 1)',
                     pointerEvents: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId || forceTagButtonVisible) ? 'auto' : 'none',
                     zIndex: 40,
                   }}
