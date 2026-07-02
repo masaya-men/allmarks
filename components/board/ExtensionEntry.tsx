@@ -97,6 +97,13 @@ export interface ExtensionEntryProps {
   /** Opens the dedicated theme screen (rendered at the board root so it escapes
    *  this drawer's `overflow: hidden`). */
   readonly onOpenThemeModal: () => void
+  /** N-19: number of cards with a manual custom width. Drives the RESET CARD
+   *  SIZES button's count + disabled (0 = nothing to reset). */
+  readonly customWidthCount: number
+  /** N-19: clear every card's manual resize (bulk). */
+  readonly onResetCardSizes: () => void
+  /** N-19: re-sort the board to newest-first. */
+  readonly onSortNewestFirst: () => void
 }
 
 /** Hover-open leave grace, copied from TuneTrigger so the SETTINGS drawer
@@ -111,6 +118,9 @@ export function ExtensionEntry({
   forceOpen = false,
   themeId,
   onOpenThemeModal,
+  customWidthCount,
+  onResetCardSizes,
+  onSortNewestFirst,
 }: ExtensionEntryProps): ReactElement {
   const { t } = useI18n()
   const installed = useExtensionInstalled()
@@ -198,6 +208,41 @@ export function ExtensionEntry({
   // Onboarding's SETTINGS beat forces the drawer open; otherwise it's hover-driven.
   const isOpen = forceOpen || expanded
 
+  // N-19: two-tap confirm shared by the two LAYOUT buttons. First tap arms a
+  // button (label → TAP AGAIN TO CONFIRM) for CONFIRM_MS; second tap fires.
+  // Arming one disarms the other; closing the drawer or the timeout disarms.
+  const CONFIRM_MS = 3000
+  const [confirming, setConfirming] = useState<'sizes' | 'sort' | null>(null)
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const disarm = useCallback((): void => {
+    if (confirmTimerRef.current) {
+      clearTimeout(confirmTimerRef.current)
+      confirmTimerRef.current = null
+    }
+    setConfirming(null)
+  }, [])
+  const armOrFire = useCallback(
+    (which: 'sizes' | 'sort', fire: () => void): void => {
+      if (confirming === which) {
+        disarm()
+        fire()
+        return
+      }
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
+      setConfirming(which)
+      confirmTimerRef.current = setTimeout(() => {
+        setConfirming(null)
+        confirmTimerRef.current = null
+      }, CONFIRM_MS)
+    },
+    [confirming, disarm],
+  )
+  // Disarm whenever the drawer closes so a stale confirm never lingers.
+  useEffect(() => {
+    if (!isOpen) disarm()
+  }, [isOpen, disarm])
+  useEffect(() => () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current) }, [])
+
   // Show the bottom fade only while there's more content below the fold. The
   // drawer caps its height to the viewport (see CSS), so a tall state (e.g. the
   // GET EXTENSION promo on a short window) scrolls; the fade hints at it.
@@ -275,6 +320,39 @@ export function ExtensionEntry({
               <BackupButton buttonClassName={styles.backupBtn} />
             </div>
           </div>
+        </section>
+
+        {/* ── LAYOUT ────────────────────────────────────────────────────────
+            N-19: restore the board to defaults. Both actions two-tap confirm
+            (no modal); the EXPORT backup above is the ultimate safety net. */}
+        <section className={styles.group}>
+          <div className={styles.groupLabel}>{t('board.settings.layoutGroup')}</div>
+          <button
+            type="button"
+            className={styles.panelCta}
+            data-testid="layout-reset-sizes"
+            data-confirming={confirming === 'sizes' ? 'true' : 'false'}
+            disabled={customWidthCount === 0}
+            onClick={(): void => armOrFire('sizes', onResetCardSizes)}
+          >
+            {confirming === 'sizes'
+              ? t('board.settings.tapAgainToConfirm')
+              : customWidthCount > 0
+                ? `${t('board.settings.resetCardSizes')} (${customWidthCount})`
+                : t('board.settings.resetCardSizes')}
+          </button>
+          <button
+            type="button"
+            className={styles.panelCta}
+            data-testid="layout-sort-newest"
+            data-confirming={confirming === 'sort' ? 'true' : 'false'}
+            onClick={(): void => armOrFire('sort', onSortNewestFirst)}
+          >
+            {confirming === 'sort'
+              ? t('board.settings.tapAgainToConfirm')
+              : t('board.settings.sortNewestFirst')}
+          </button>
+          <p className={styles.layoutNote}>{t('board.settings.sortNewestNote')}</p>
         </section>
 
         {/* ── THEME ────────────────────────────────────────────────────────

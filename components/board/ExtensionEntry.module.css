@@ -271,6 +271,24 @@
   margin-top: 8px;
 }
 
+/* N-19 LAYOUT group — reuse .panelCta; add a disabled + armed treatment. */
+.panelCta:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+.panelCta[data-confirming='true'] {
+  color: rgba(255, 120, 90, 0.95);
+  border-color: rgba(255, 120, 90, 0.5);
+  font-weight: 600;
+}
+.layoutNote {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.35);
+}
+
 /* BACKUP — export/restore the in-browser data, inside the SAVING group below
    the QUICK-TAG toggle. The EXPORT/IMPORT labels stay English (brand chrome);
    only the caption is localized. */
