@@ -175,6 +175,8 @@ export function BoardRoot() {
     emptyTrash,
     persistCustomWidth,
     resetCustomWidth,
+    resetAllCustomWidths,
+    resortNewestFirst,
     reload,
     persistLinkStatus,
   } = useBoardData()
@@ -451,6 +453,21 @@ export function BoardRoot() {
     setCardGapPx(BOARD_SLIDERS.CARD_GAP_DEFAULT_PX)
   }, [])
 
+  // N-19: bulk-clear every card's manual resize, then confirm via toast.
+  const handleResetCardSizes = useCallback(async (): Promise<void> => {
+    const cleared = await resetAllCustomWidths()
+    setToast({
+      message: t('board.settings.resetSizesDone').replace('{n}', String(cleared.length)),
+      nonce: Date.now(),
+    })
+  }, [resetAllCustomWidths, t])
+
+  // N-19: re-sort the whole board to newest-first, then confirm via toast.
+  const handleSortNewestFirst = useCallback(async (): Promise<void> => {
+    await resortNewestFirst()
+    setToast({ message: t('board.settings.sortNewestDone'), nonce: Date.now() })
+  }, [resortNewestFirst, t])
+
   // Jump both W and G to a preset (DENSE / TIGHT / DEFAULT / OPEN / AMBIENT).
   // Captures a single undo entry holding both prior values so Ctrl+Z restores
   // them together in one step.
@@ -492,6 +509,13 @@ export function BoardRoot() {
     }
     return map
   }, [items])
+
+  // N-19: number of cards currently on a manual custom width (drives the
+  // SETTINGS RESET CARD SIZES button count + disabled state).
+  const customWidthCount = useMemo(
+    () => items.filter((it) => it.customCardWidth).length,
+    [items],
+  )
 
   // Live resize override during an in-flight drag. Holds at most ONE
   // entry (only the actively-dragged card needs it), so it doesn't
@@ -2213,6 +2237,9 @@ export function BoardRoot() {
                 forceOpen={forceSettingsOpen}
                 themeId={themeId}
                 onOpenThemeModal={() => setThemeModalOpen(true)}
+                customWidthCount={customWidthCount}
+                onResetCardSizes={() => { void handleResetCardSizes() }}
+                onSortNewestFirst={() => { void handleSortNewestFirst() }}
               />
               <TagButton
                 onClick={(): void => {
