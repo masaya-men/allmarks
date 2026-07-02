@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 150 — カード内ボタンのホバー反応 + ドラッグ中grabbingカーソル + テキストカードscrollbar誤ライトボックス修正 → ブランチ master マージ済)
+
+- **3件を実装・`allmarks.app` 反映・ユーザー実機OK → ブランチ `fix/board-cursor-and-paper-meter` を `--no-ff` で master マージ（ローカル/リモート削除済）**。本番は既にブランチ内容反映済＝再デプロイ不要。tsc0 / vitest**1867** / build OK。
+  1. **カード内ボタン（×/↺/＋TAG/タグpill）に ▶ 風「ホバーで拡大＋明るく」**。default 静止時 byte-identical（`:hover` 限定）。paper pill の傾きは `--pill-tilt` CSS変数に逃がして scale と合成。
+  2. **🐛 ドラッグ移動中に grabbing カーソルが出ない**を修正（`.cardNode:active` は pointer capture 中に効かない → `<html data-card-dragging>` + `globals.css` で grabbing 強制）。
+  3. **🐛 テキストカードの scrollbar 押下でライトボックスが開く/スクロール強奪**を修正（`pressLandsOnCardScrollbar` で scrollbar 帯押下を検出し capture せず native 委譲。classic=幾何厳密／overlay=target フォールバックのハイブリッド。実マウスで両モード実証、TDD 9テスト追加）。
+- 詳細 narrative は [TODO_COMPLETED.md](./TODO_COMPLETED.md) セッション150。
+- **次（セッション151）= 本命バックログに戻る（優先順は相談）**：③プレミアムテーマ制作／④K3 解錠実装（`docs/private/2026-07-01-k3-unlock-plan.md`）／選択的シェア／タグ付け強化。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 149続き — ボード磨き＋バグ修正5件をブランチで出荷・実機OK・未マージ)
 
 - **ブランチ `fix/board-cursor-and-paper-meter`（未マージ・origin push 済・`allmarks.app` 反映済・ユーザー実機OK）**：①テーマ選択モーダルの副題削除 ②カード上カーソル grab→**pointer（指）**（盤面余白は grab、ドラッグ中は grabbing）③**Paper メーター数字を静かな墨の目盛りに**（`isRuler` 短絡で scramble/グリッチ停止 + paper スコープCSS）④🐛 テーマモーダルが盤面クリックで閉じない修正（capture-phase pointerdown＝grab-wiggle の setPointerCapture がバブルを食っていた）⑤🐛 ボタン直前で手のひらが一瞬出る修正（カード外側ラッパーに cursor:pointer＝grab 継承漏れ）。全て tsc0 / vitest1858 / build OK。
