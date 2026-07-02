@@ -12,7 +12,14 @@
       "getExtensionBody": "一键将任意网页保存到 AllMarks——无论是 X、YouTube 还是其他任何网站。悬浮标记和 SNS 自动保存也一并附带。",
       "addToChrome": "添加到 Chrome",
       "comingSoon": "即将推出",
-      "chooseTheme": "选择主题"
+      "chooseTheme": "选择主题",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "这会清除手动拖动的排序。",
+      "resetSizesDone": "已将 {n} 张卡片重置为默认大小",
+      "sortNewestDone": "已按最新排序"
     },
     "backup": {
       "caption": "将设备中的数据保存到文件，或从文件恢复。",

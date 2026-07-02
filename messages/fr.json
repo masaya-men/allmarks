@@ -12,7 +12,14 @@
       "getExtensionBody": "Enregistrez n'importe quelle page dans AllMarks en un clic — directement depuis X, YouTube et partout ailleurs. La marque flottante et la sauvegarde automatique des SNS sont incluses.",
       "addToChrome": "AJOUTER À CHROME",
       "comingSoon": "BIENTÔT DISPONIBLE",
-      "chooseTheme": "Choisir un thème"
+      "chooseTheme": "Choisir un thème",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "Cela efface tout ordre manuel.",
+      "resetSizesDone": "{n} cartes réinitialisées à la taille par défaut",
+      "sortNewestDone": "Trié par plus récent"
     },
     "backup": {
       "caption": "Enregistrez vos données dans un fichier, ou restaurez-les.",

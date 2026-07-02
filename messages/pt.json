@@ -12,7 +12,14 @@
       "getExtensionBody": "Salve qualquer página no AllMarks com um clique — direto do X, do YouTube e de qualquer outro lugar. A marca flutuante e o salvamento automático de SNS já vêm junto.",
       "addToChrome": "USAR NO CHROME",
       "comingSoon": "EM BREVE",
-      "chooseTheme": "Escolher tema"
+      "chooseTheme": "Escolher tema",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "Isto apaga qualquer ordem manual.",
+      "resetSizesDone": "{n} cartões redefinidos para o tamanho padrão",
+      "sortNewestDone": "Ordenado por mais recentes"
     },
     "backup": {
       "caption": "Salve seus dados em um arquivo ou restaure-os.",

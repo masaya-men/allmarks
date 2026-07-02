@@ -12,7 +12,14 @@
       "getExtensionBody": "Herhangi bir sayfayı tek tıkla AllMarks'a kaydet — X, YouTube ve diğer her yerden. Yüzen işaret ve SNS otomatik kaydı da onunla birlikte gelir.",
       "addToChrome": "CHROME'A EKLE",
       "comingSoon": "YAKINDA",
-      "chooseTheme": "Tema seç"
+      "chooseTheme": "Tema seç",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "Bu, elle sıralamayı temizler.",
+      "resetSizesDone": "{n} kart varsayılan boyuta sıfırlandı",
+      "sortNewestDone": "En yeniye göre sıralandı"
     },
     "backup": {
       "caption": "Verilerini bir dosyaya kaydet veya geri yükle.",

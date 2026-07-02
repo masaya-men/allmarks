@@ -12,7 +12,14 @@
       "getExtensionBody": "Sla elke pagina met één klik op in AllMarks — rechtstreeks vanuit X, YouTube en overal elders. De zwevende mark en automatisch opslaan van SNS horen erbij.",
       "addToChrome": "TOEVOEGEN AAN Chrome",
       "comingSoon": "BINNENKORT BESCHIKBAAR",
-      "chooseTheme": "Kies een thema"
+      "chooseTheme": "Kies een thema",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "Dit wist elke handmatige volgorde.",
+      "resetSizesDone": "{n} kaarten teruggezet naar standaardformaat",
+      "sortNewestDone": "Gesorteerd op nieuwste"
     },
     "backup": {
       "caption": "Bewaar je gegevens in een bestand, of zet ze terug.",

@@ -12,7 +12,14 @@
       "getExtensionBody": "どのページでもワンクリックで AllMarks に保存 — X や YouTube などからも。フローティングのマークと SNS 自動保存も付いてきます。",
       "addToChrome": "Chrome に追加",
       "comingSoon": "近日公開",
-      "chooseTheme": "テーマを選ぶ"
+      "chooseTheme": "テーマを選ぶ",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "手動で並べ替えた順番は失われます。",
+      "resetSizesDone": "{n}枚のカードを既定サイズに戻しました",
+      "sortNewestDone": "新しい順に並べ替えました"
     },
     "backup": {
       "caption": "端末内のデータをファイルに保存／復元します。",

@@ -12,7 +12,14 @@
       "getExtensionBody": "บันทึกหน้าเว็บใดก็ได้ลง AllMarks ด้วยคลิกเดียว — ตรงจาก X, YouTube และที่อื่น ๆ พร้อมมาร์กแบบลอยและการบันทึก SNS อัตโนมัติ",
       "addToChrome": "เพิ่มลงใน Chrome",
       "comingSoon": "เร็ว ๆ นี้",
-      "chooseTheme": "เลือกธีม"
+      "chooseTheme": "เลือกธีม",
+      "layoutGroup": "LAYOUT",
+      "resetCardSizes": "RESET CARD SIZES",
+      "sortNewestFirst": "SORT: NEWEST FIRST",
+      "tapAgainToConfirm": "TAP AGAIN TO CONFIRM",
+      "sortNewestNote": "การทำเช่นนี้จะล้างลำดับที่จัดเรียงเอง",
+      "resetSizesDone": "รีเซ็ต {n} การ์ดเป็นขนาดเริ่มต้นแล้ว",
+      "sortNewestDone": "เรียงจากใหม่สุดแล้ว"
     },
     "backup": {
       "caption": "บันทึกข้อมูลของคุณเป็นไฟล์ หรือกู้คืนข้อมูล",
