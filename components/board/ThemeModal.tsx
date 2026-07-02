@@ -119,7 +119,6 @@ export function ThemeModal({
             <h2 id="theme-modal-title" className={styles.title}>
               {t('board.theme.modalTitle')}
             </h2>
-            <p className={styles.subtitle}>{t('board.theme.modalSubtitle')}</p>
           </div>
           <button
             ref={closeBtnRef}
