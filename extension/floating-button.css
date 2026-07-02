@@ -244,9 +244,13 @@
 
 .allmarks-tagstrip__drawer {
   box-sizing: border-box;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px 4px;
+  /* Single column: each tag gets the strip's full width so long names
+     ("read later", "ui inspo") never clip. A 2-column grid at this narrow,
+     host-page-overlay width forced ~104px cells that cut names off. Scales to
+     any tag count via the (raw-scrollbar-hidden) vertical scroll. */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   padding-top: 6px;
   max-height: 0;
   overflow: hidden;
@@ -259,10 +263,26 @@
 }
 .allmarks-tagstrip__drawer::-webkit-scrollbar { display: none; }
 
+/* Bottom fade hint that there's more to scroll (raw scrollbar is hidden per the
+   app's no-plain-scrollbar rule). pointer-events:none so chips under it stay
+   clickable. Only shown while the drawer is open. */
+.allmarks-tagstrip[data-open="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(to bottom, transparent, var(--am-strip-bg));
+  pointer-events: none;
+}
+
 .allmarks-tagstrip__chip {
   appearance: none;
   flex: 0 0 auto;
-  justify-self: start;
+  align-self: flex-start;
+  max-width: 100%;
   border: none;
   background: transparent;
   color: color-mix(in srgb, var(--am-strip-fg) 85%, transparent);
@@ -272,6 +292,10 @@
   letter-spacing: 0.08em;
   text-transform: lowercase;
   white-space: nowrap;
+  /* Full-width single column means names fit; ellipsis is only a safety net
+     for an unusually long tag. */
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
   transition: color 120ms;
 }
