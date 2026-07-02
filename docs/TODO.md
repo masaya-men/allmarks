@@ -21,6 +21,13 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 153 — N-19 実機OK＋フェード修正出荷 / N-05 LP格納演出ブレスト継続中)
+
+- **前半＝N-19 実機確認OK ＋ フォローアップ修正**（master 反映済）：SETTINGS スクロールフェードが下端に固定されず特定項目に黒帯が貼り付くバグを修正（内側 `.drawerScroll` 方式・master `365ddd4`・Playwright 実測で dev＋本番合格）。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s152。
+- **後半＝N-05（LP ヘッダーナビ格納演出）のブレスト開始**。仕組み＋演出3段を確定し、スクロールできるプロトタイプ（`dock-proto-v2.html`）まで作成。動きの微調整はユーザー判断で次セッションへ区切り。
+  - 確定：対象＝5サブページ、動く要素＝既存 kicker（緑玉＋ページ名＝ナビ語一致）、演出＝①ガラス帯で1文字ずつ乗りフォントモーフ→②「しゅっ」と右へ→③少しバウンド。**詳細は docs/private/IDEAS.md N-05**。
+- **次（セッション154）**：まず**プロトタイプに Lenis を入れる**（本番 LP は Lenis+ScrollTrigger＝素スクロールと感触が違う）→ 動きを詰める→ spec→plan→実装。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 152 — N-19「サイズ/並び順を default に戻す」出荷 → master マージ済 / allmarks.app 反映済)
 
 - **N-19 完遂**（master `a7be63d`・tsc0 / **vitest1887** / build OK・default 盤面 byte-identical・本番反映済）。SETTINGS ドロワーに新グループ **LAYOUT** を追加し2操作を配線：
