@@ -1,0 +1,29 @@
+/* Per-card tag pills — hover-grow to echo the ▶ media control's "grows and
+   brightens on hover" affordance (MediaTypeIndicator). Default pills brighten
+   (white ink on any thumbnail); paper pills can't brighten (dark ink on a
+   light tape) so they lift with a soft shadow instead.
+
+   The paper tilt lives in the --pill-tilt custom property (set inline per
+   pill) so the hover scale COMPOSES on top of the rotation. An inline
+   `transform` would win over this :hover rule, so the rotation has to move to
+   a variable for the scale to stack. Default pills carry no --pill-tilt and no
+   rest transform → default board stays byte-identical (the class adds only a
+   transition, which has no at-rest visual effect). */
+.pill {
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pill[data-paper] {
+  transform: rotate(var(--pill-tilt, 0deg));
+}
+
+.pill:not([data-paper]):hover {
+  transform: scale(1.12);
+  filter: brightness(1.2);
+}
+
+.pill[data-paper]:hover {
+  transform: rotate(var(--pill-tilt, 0deg)) scale(1.12);
+  filter: drop-shadow(0 2px 3px rgba(58, 42, 28, 0.3));
+}

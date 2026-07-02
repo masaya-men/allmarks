@@ -1349,6 +1349,7 @@ export function CardsLayer({
               <>
                 <button
                   type="button"
+                  className={styles.addTagButton}
                   data-testid="card-add-tag-button"
                   data-onboarding-target="card-tag"
                   aria-label="Add tag"
@@ -1383,7 +1384,8 @@ export function CardsLayer({
                     textTransform: 'uppercase',
                     cursor: 'pointer',
                     opacity: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId || forceTagButtonVisible) ? 1 : 0,
-                    transition: 'opacity 120ms',
+                    transition:
+                      'opacity 120ms, transform 160ms cubic-bezier(0.16, 1, 0.3, 1), filter 160ms cubic-bezier(0.16, 1, 0.3, 1)',
                     pointerEvents: !isLightboxSource && (hoverActive || popoverOpenFor === it.bookmarkId || forceTagButtonVisible) ? 'auto' : 'none',
                     zIndex: 40,
                   }}

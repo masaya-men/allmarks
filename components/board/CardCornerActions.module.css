@@ -22,7 +22,8 @@
   cursor: pointer;
   z-index: 50;
   opacity: 0;
-  transition: opacity 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .delete > svg,
@@ -44,6 +45,7 @@
 
 .delete:hover {
   opacity: 1;
+  transform: scale(1.2);
 }
 
 .delete:hover > svg {
@@ -52,6 +54,7 @@
 
 .reset:hover {
   opacity: 1;
+  transform: scale(1.2);
 }
 
 .reset:hover > svg {
@@ -71,6 +74,9 @@
 .delete {
   top: 4px;
   right: 4px;
+  /* Grow INWARD (down-left) on hover so the corner tip stays clear of the
+     resize hot zone — mirrors the ▶ media control's inward growth. */
+  transform-origin: top right;
 }
 
 /* Bottom-left placement mirrors delete on the opposite diagonal. Only
@@ -78,4 +84,6 @@
 .reset {
   bottom: 4px;
   left: 4px;
+  /* Grow INWARD (up-right) on hover, away from the corner. */
+  transform-origin: bottom left;
 }
