@@ -1022,6 +1022,19 @@ export function CardsLayer({
     }
   }, [dragState, masonryLayout.positions])
 
+  // While a card is being dragged to a new slot, force the grabbing (closed-
+  // hand) cursor across the surface (see globals.css [data-card-dragging]).
+  // .cardNode:active can't do this: the drag captures the pointer on the card
+  // wrapper, so during capture the cursor no longer follows the :active child.
+  // Keyed on the boolean so it toggles only on drag start/end, not per move.
+  const isReorderDragging = dragState !== null
+  useEffect(() => {
+    if (!isReorderDragging) return
+    const root = document.documentElement
+    root.setAttribute('data-card-dragging', 'true')
+    return (): void => root.removeAttribute('data-card-dragging')
+  }, [isReorderDragging])
+
   return (
     <div
       ref={rootRef}
