@@ -89,18 +89,26 @@ export function ThemeModal({
   // Outside-click closes the panel. It is non-blocking (the overlay is
   // pointer-events:none, so clicks fall through to the live board behind), so a
   // pointerdown anywhere outside the panel — the board, the SETTINGS drawer,
-  // empty chrome — dismisses it. Mirrors the FilterPill dropdown's pointerdown
-  // contract. The CUSTOMIZE colour picker is a native <input type="color"> whose
-  // OS picker opens as a separate window (no in-page pointerdown), so it never
-  // trips this; every other control lives inside the panel.
+  // empty chrome — dismisses it. The CUSTOMIZE colour picker is a native
+  // <input type="color"> whose OS picker opens as a separate window (no in-page
+  // pointerdown), so it never trips this; every other control lives inside the
+  // panel.
+  //
+  // CAPTURE phase (3rd arg `true`) is REQUIRED, not bubble: a bare-board
+  // pointerdown makes InteractionLayer call setPointerCapture (grab-wiggle /
+  // pan), which stops the event from reaching a bubble-phase document listener
+  // — so a bubble listener never fires and the panel wouldn't close on a board
+  // click. A capture-phase listener runs first (document → target), before the
+  // board captures the pointer, so it dismisses reliably. Same contract the
+  // other canvas popovers use (see LanguageSwitcher).
   useEffect(() => {
     if (!isOpen) return
     const onPointerDown = (e: PointerEvent): void => {
       if (panelRef.current?.contains(e.target as Node)) return
       onClose()
     }
-    document.addEventListener('pointerdown', onPointerDown)
-    return (): void => document.removeEventListener('pointerdown', onPointerDown)
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return (): void => document.removeEventListener('pointerdown', onPointerDown, true)
   }, [isOpen, onClose])
 
   if (!isOpen) return null
