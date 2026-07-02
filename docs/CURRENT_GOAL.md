@@ -9,10 +9,23 @@
 - **拡張 v0.1.23 を Chrome ストアに提出済**（v0.1.22 は既に承認済＝順当な次版）。承認で既存ユーザーに自動更新。
 - **体感確認は次回 reboot 後の最初の1件**（テスト＋レビューで論理確定済）。恒久記録＝memory `reference_extension_offscreen_iframe_ready_race`。
 
-## 次にやる（セッション152）＝残りの気づき or 本命バックログ（**まず優先順を相談**）
+## 次にやる（セッション152）＝**N-19 から**（ユーザー指定・下ごしらえ済）
 
-### 残りの細かい気づき
-- **N-19 カードのサイズ/位置を default に戻す** — 一括 or 個別リセット。要設計（UI 置き場所＝SETTINGS or カード右クリック？／"default" の定義＝自動サイズ＆保存順）。ブレストから。
+### N-19 下ごしらえ（s151 で実コード調査済・ここから始める）
+
+**重要: N-19 は「ゼロから設計」ではなく、大半が既に実装済みと判明。**
+
+- **カードのサイズ保存**: `BookmarkRecord.cardWidth?: number`（連続px）＋ `customCardWidth?: boolean`（true=手動リサイズ済＝ヘッダー Size スライダー無視）[indexeddb.ts:52-61](../lib/storage/indexeddb.ts#L52)。
+- **個別サイズリセット＝既に存在**: カード隅の ↺ ボタン（`hasCustomWidth===true` の時だけ表示）[CardCornerActions.tsx:103](../components/board/CardCornerActions.tsx#L103) → `handleCardResetSize` [BoardRoot.tsx:584](../components/board/BoardRoot.tsx#L584) → `resetCustomWidth` [use-board-data.ts:670](../lib/storage/use-board-data.ts#L670) → `clearCustomCardWidth` [indexeddb.ts:1239](../lib/storage/indexeddb.ts#L1239)（flag を false に、幅の数値は無害なので残す）。
+- **一括リセット＝ロジックは実装済・UI 未配線の可能性**: `clearAllCustomCardWidths` [indexeddb.ts:1255](../lib/storage/indexeddb.ts#L1255) / `resetAllCustomWidths` [use-board-data.ts:687](../lib/storage/use-board-data.ts#L687)。だが TUNE の `onReset` は**全体スライダー(W/G)を戻すだけ**で個別 override は触らない [TuneTrigger.tsx:128](../components/board/TuneTrigger.tsx#L128) / `handleResetWidthGap` [BoardRoot.tsx:449](../components/board/BoardRoot.tsx#L449)。→ **「全カードのサイズを default に戻す」ボタンの置き場所（SETTINGS or TUNE）を決めて配線するのが実質の残り**。
+- **位置は保存されない**: 常に skyline 自動レイアウト（メイソンリー）で計算 [skyline-layout.ts:94](../lib/board/skyline-layout.ts#L94)。順番は `BookmarkRecord.orderIndex`（DESC=新しい順）[indexeddb.ts:49](../lib/storage/indexeddb.ts#L49)。→ **「位置を default に戻す」は自動配置モデルでは意味を持たない**（要ユーザー確認：位置の話は本当に必要？）。
+
+**次回の最初の相談ポイント**（ブレスト冒頭でユーザーに確認）:
+1. 個別の ↺ リセットが既にあるのを知っているか（知らなければ発見しづらい＝もっと目立たせる？）。
+2. 欲しいのは**「全カードのサイズを一括で default に戻す」**か。置き場所は SETTINGS ドロワー or TUNE のどちらが良いか。
+3. 「位置」も戻したいのか（自動配置なので実質サイズだけで足りるはず。ユーザーの実際の困りごとを聞く）。
+
+### その他候補（N-19 の後 or 別途）
 - **N-05 LP ナビの格納演出** — Features 等を選ぶとメニューから消え、スクロールで語がヘッダーに入ると緑玉付きで右へ「しゅん」と格納。要設計（IDEAS.md N-05）。
 
 ### 本命バックログ
