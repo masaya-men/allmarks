@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 151 — N-15 拡張の再起動後・初回保存失敗を根本修正 → master マージ済 / 拡張 v0.1.23 提出済)
+
+- **N-15 確定した真因＝offscreen→iframe のコールドスタート race**。保存トリガ → SW → offscreen 文書が `allmarks.app/save-iframe` へ postMessage。だが iframe（[SaveIframeClient.tsx:284](../app/save-iframe/SaveIframeClient.tsx#L284)）は `message` リスナーを `useEffect` 内＝React ハイドレーション後に張る。`window.postMessage` は未登録の窓宛てだと**破棄（バッファ無し）**なので、再起動直後の初回 post が消える → 8s timeout → dispatch.js が offscreen を閉じて作り直し（ほぼ温まった iframe を捨てる）→ 遅延 or 失敗。2回目以降は温まって成功＝「初回だけ失敗」の正体。3視点ワークフローで敵対検証（web postMessage 非バッファは WHATWG/MDN で確認、ブックマークレット経路は `fr.onload`+probe で正しく作られていた＝offscreen 経路だけ readiness gate 抜け）。
+- **修正（拡張のみ・web 無変更）**: offscreen.js が envelope を **250ms ごと再送**、iframe が返信（nonce 解決）or 8s 期限まで（新 [lib/offscreen-repost.js](../extension/lib/offscreen-repost.js) の `startRepostPump`＋純関数 `repostTickDecision`）。保存は nonce 重複排除・add-tag は `addTagToBookmark` 冪等・probe はこの経路を通らない → **再送しても二重保存なし**。敵対レビューで blocker 0。
+- 検証: 新テスト8＋**全体 vitest 1875 緑** / tsc0 / offscreen.js は tsc/vitest 対象外なので `node --check` 緑 / build 影響なし（extension 配下のみ）。拡張 **v0.1.23** 再パッケージ→**Chrome ストア提出済**（v0.1.22 は既に承認済＝順当な次版、承認で自動更新）。master `49ed5a9`。memory `reference_extension_offscreen_iframe_ready_race` に恒久記録。
+- **体感確認は次回 reboot 後の初回保存**（テスト＋レビューで論理確定済）。
+- **副次（低確度・未対応）**: コンテキストメニューは `onInstalled` のみ生成で `onStartup` 無し（Chrome が永続化するので実害薄い・直すなら onStartup 冪等生成）。**任意の将来**: 保存不能時に「後で自動保存し直す」保存キュー（業界最上位対応）。
+- **次（セッション152）**：残り＝N-19（サイズ/位置を default に戻す・要設計）／N-05（LPナビ格納演出・要設計）／本命＝③プレミアムテーマ・④K3解錠・選択的シェア・タグ付け強化。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 150続き — 細かい気づき nit バッチ: EMPTY TRASH 赤 / タグ窓見切れ / 空ボード青モーダル調査 → master マージ済)
 
 - **ユーザー実機メモ7件を分類・記録。うち実施2件を `fix/board-small-nits` で出荷 → `--no-ff` で master マージ済（ローカル/リモート削除）。tsc0 / vitest1867 / build OK。**
