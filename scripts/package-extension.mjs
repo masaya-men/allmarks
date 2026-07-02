@@ -34,6 +34,7 @@ const required = [
   'lib/ogp.js',
   'lib/pill-state-machine.js',
   'lib/offscreen-router.js',
+  'lib/offscreen-repost.js',
 ]
 const missing = required.filter((f) => !existsSync(join(root, f)))
 if (missing.length > 0) {
