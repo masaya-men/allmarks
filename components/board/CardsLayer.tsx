@@ -1386,7 +1386,7 @@ export function CardsLayer({
                 is hovered (= silent-board principle — meta UI stays invisible
                 at rest). Pills click → toggle in the board-wide tag filter,
                 same semantics as the chrome TagFilterBar chips. */}
-            {!receiverMode && !taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
+            {!receiverMode && !selectionMode && !taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
               <TagIndicatorStrip
                 tags={it.tags
                   .map((tid) => tagsById.get(tid))
@@ -1407,7 +1407,7 @@ export function CardsLayer({
                 open (so the trigger stays anchored under the user's eye
                 while they're choosing a tag). pointerdown swallow so a
                 click doesn't engage the card-reorder drag underneath. */}
-            {!receiverMode && !taggedOut && allTags !== undefined && onTagToggle !== undefined && onTagCreate !== undefined && (
+            {!receiverMode && !selectionMode && !taggedOut && allTags !== undefined && onTagToggle !== undefined && onTagCreate !== undefined && (
               <>
                 <button
                   type="button"
