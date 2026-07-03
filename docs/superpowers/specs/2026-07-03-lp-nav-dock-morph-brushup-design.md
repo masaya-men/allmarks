@@ -83,3 +83,63 @@
 ## 8. チューニング面
 
 バウンド強さ・ダッシュ速度は従来どおり `NAV_DOCK.zipMs`・zip の cubic-bezier。変身の速さ・波の間隔・キャンセル速度は §2 の新定数。すべて `NAV_DOCK` に集約されているので実機の好みで数値だけ変えられる。
+
+---
+
+## 9. 追補（同日・ユーザー実機フィードバック反映＝v2。§2〜§5 の該当箇所を上書きする）
+
+実機確認で2点の指摘。以下が確定仕様。
+
+### 9-1. ダッシュはスクロール駆動（時間制 zip と docked 状態を廃止）
+
+- 変身完了後も**その場に「結構しっかり」とどまり**（`holdPx: 160` = 発動後のスクロール距離）、さらに下へスクロールすると**スクロール量に応じて**右のナビ枠へ横移動する（`dashPx: 140` の区間で 0→1）。逆に動かせば同じ道を左へ戻る＝**完全可逆のスクラブ**
+- 横位置 = `anchor.left + (target.left - anchor.left) * dashEase(dashProgress(anchorTop))`。毎フレーム実 rect から計算（保存状態なし）
+- `dashEase` = easeOutBack 系（出だし素早く、終端で僅かに行き過ぎて「はまる」。定数 `dashBack: 0.65` ≒ 行き過ぎ約1.5%）
+- **`docked` 状態と `zipMs`/`returnMs` は廃止**。帯上の全期間（とどまり→横移動→枠に定着）は `morphing` 一状態で、位置は anchorTop の純関数
+- **斜め軌跡の根治**: 上スクロールで帯を離れる時（`dockY + releaseGap`）には横スクラブが必ず 0 に戻っているため、本文への帰還は**真下への垂直移動のみ**（`morphCancelMs`）。時間制の斜め帰還は消滅
+- 新純関数: `dashProgress(anchorTop)`（`dockY - holdPx` で 0、そこから `dashPx` 下で 1、clamp）と `dashEase(p)`。どちらもテスト対象
+- 速いスクロールで変身の波と横移動が重なるのは許容（演出が凝縮されるだけで破綻しない）
+
+### 9-2. 着地形はナビ実体と完全一致（実測し直し）
+
+`.navLink` の実体は **`--lp-sans` 14px / weight 450 / letter-spacing -0.005em / text-transform なし（"Features" 混在ケース）/ color ink-soft**。s155 の「uppercase + 0.06em」は誤りだった。
+
+- traveler の着地形（`--mp: 1`）の letter-spacing 目標を **-0.005em** に修正
+- 文字の swap 時に **`text-transform: none`** も掛け替える（大文字 → 本来のケースへ。衣装替えの沈みで切替が隠れる）
+- `SiteHeader.module.css .dockSlot` の誤った上書き（font-size/letter-spacing/text-transform）を削除し、`.navLink` から**継承**させる（幅予約もナビ実体と一致する）
+- 寸法モーフの transition は `.word`（inline が left/top で占有）ではなく **`.txt` に CSS で**掛ける（`--morph-total` はラベル長から render 時に算出）。gap 9→8px の 1px は非遷移スナップで許容
+- `html[data-nav-dock]` の値は `armed / traveling / morphing` の3値になる（landing-tokens の隠しリストから docked を削除）
+
+---
+
+## 10. 追補 v3（同日・境界のマイクロ演出4点。ユーザー全案採用）
+
+「ヘッダーをまたぐ瞬間ががたつかない・じっくり見てもこだわって見える」ための4演出。物語は1本：**玉がノック → 文字が繋がったまま跳ねて乗り込む → 縁で屈折 → 境界線が灯る**。
+
+### 10-1. 乗り上がりのスクロール駆動化（土台。従来の時間制クライムを置換）
+
+- **見た目の変更**: 従来の「実 kicker が消え、文字が下から湧く」を廃止。traveler は**引き継ぎ瞬間に実 kicker と完全同姿**（全文字オフセット0・不透明）で、以後**スクロール量に応じて**左の文字から順に小さく跳ねる（上に最大 3px の弧＝しきい値をまたぐ「ぴょこ」）。消える瞬間が無い＝がたっが原理的に消える
+- 純関数:
+  - `bandClimbProgress(anchorTop)` = `clamp((morphProgress - glassOnAt) / (1 - glassOnAt), 0, 1)`（引き継ぎ点で 0、dockY で 1）
+  - `charHopArc(p, index, count)` = 文字 i の窓 `[i*step, i*step+hopSpan]`（`step=(1-hopSpan)/(count-1)`）に正規化した `sin(π·phase)`。最終文字の弧が p=1 で着地
+- 文字の transform は **CSS 変数 `--hop`（0..1）** に JS が毎フレーム書き、CSS が `translateY(calc(var(--hop) * -3px))` に整形（morphing の dip 規則は transform を丸ごと上書きするので衝突しない）。`.ch` 基底の transition は none（スクラブは無遷移）。旧 `--climb-delay`・opacity 0.001 は削除
+- 定数: `hopSpan: 0.45`（NAV_DOCK）
+
+### 10-2. ガラス縁の屈折（ヘッダー下端 hairline y=headerH を光学面として扱う）
+
+- 各文字がヘッダー下端の線を横切っている間だけ、**線より上に入った部分**（=帯の中）を `+0.5px` 横シフト・opacity 0.85 で描く＝ガラスの縁で像が食い違う
+- 実装: `.ch` に `::after`（`content: attr(data-c)`・書体/ケースは継承＝swap 後も一致）。JS が横断中のみ word に `data-refract` を立て、文字ごとに `--cut`（= `headerH - 文字の実 rect.top`、transform 込み）を書く。基層は `clip-path: inset(var(--cut) 0 0 0)`（線より下だけ）、`::after` は `inset(0 0 calc(100% - var(--cut)) 0)`（線より上だけ）
+- 横断していない間は clip 無し・ghost 非表示（完全に平常描画）。全てスクロール連動＝静止観察可
+
+### 10-3. 玉のノック（一回きりの時間制。衝突の一拍なので時間制が正しい）
+
+- 本文から乗るとき（armed→traveling で武装）、**玉の上端が hairline に触れた瞬間**（下向き横断時のみ）に一度だけ、玉が squash（縦つぶれ→戻り）＋外リングが一度ふわっと広がる。360ms・CSS keyframes（`.word[data-knock] .dot`）。上へ戻る横断では鳴らない。定数 `knockMs: 360`
+- スクラブ原則の例外は意図的（衝撃は完結すべき挙動。凍結された「つぶれ玉」は不自然）
+
+### 10-4. 境界線の応答（世界側が語に気づく）
+
+- hairline のうち**語の真上の区間だけ**が横断中ほのかに灯る（アクセント緑の低アルファ・グラデ両端フェード・高さ2px）。強度は `crossGlow(anchorTop, wordH)`＝横断窓（`headerH - wordH < anchorTop < headerH`）中央でピーク1の三角関数（純関数・テスト対象）。traveler が描画兄弟として持ち、JS が毎フレーム left/width/opacity を書く。z はヘッダーの上・語の下
+
+### 検証（追加分）
+
+①引き継ぎ点で traveler 文字のオフセット ≈ 0（継ぎ目レス） ②帯中央で静止→文字 transform が2回サンプルで不変かつ波形あり（スクロール駆動の証明） ③横断位置で `data-refract` + clip 発効 ④同位置でグロー opacity>0・離脱で0 ⑤ノックが一度だけ発火 ⑥v2 の6項目（スクラブ可逆・パリティ等）回帰

@@ -169,12 +169,11 @@
    html[data-nav-dock] は NavDockTraveler だけが mount 後に書く。
    無属性(SSR/演出オフ)では .dockSlot は display:none = 従来表示のまま。 */
 .dockSlot {
+  /* 文字の見た目は .navLink から継承（上書きしない）＝幅予約も実ラベルと一致。
+     足すのは緑玉ぶんの構造だけ。 */
   display: none;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
