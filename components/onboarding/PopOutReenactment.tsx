@@ -11,80 +11,149 @@ type Props = {
   readonly onAdvance: () => void
 }
 
-// Neutral labels — no borrowed brand. Two cards so the meter ticks 01 → 02,
-// mirroring the real PiP where each save appends to the RIGHT end of the
-// carousel and auto-scrolls the newest to centre.
-const DEMO_CARDS = ['clip', 'article'] as const
+// Two demo cards so the meter ticks 01 → 02 as saves accumulate in the popped-out
+// companion, mirroring the real PiP carousel (new saves append at the RIGHT end +
+// auto-scroll the newest to centre). The last (active/centred) card carries the
+// "+ TAG" affordance the cursor taps.
+const DEMO_CARDS = [
+  { id: 'card0', title: 'design ref' },
+  { id: 'card1', title: 'article' },
+] as const
 
 const pad = (n: number): string => String(n).padStart(2, '0')
 
 /**
- * POP OUT (Document Picture-in-Picture) re-enactment. A faithful mock — the
- * real PiP can't be driven inline (OS window + user gesture), same as the
- * extension/bookmarklet demos. Cards GLIDE IN FROM THE RIGHT and settle at
- * centre (ease-out quart / 0.7s = the real PipStack auto-scroll), and an
- * always-on meter below ticks current/total as the deck grows. Does NOT open
- * real PiP and does NOT import PipStack/PipCompanion (pure visual facsimile).
+ * POP OUT (Document Picture-in-Picture) re-enactment — a faithful visual
+ * facsimile built like ExtensionSaveReenactment: a fake browser on a real LP
+ * screenshot, with a green cursor that auto-drives the demo. The cursor presses
+ * the POP OUT control, a small companion window pops out, saved cards GLIDE IN
+ * FROM THE RIGHT and settle at centre (ease-out quart / 0.7s = the real PipStack
+ * auto-scroll) while an always-on meter ticks current/total, and the cursor taps
+ * "+ TAG" so a tag chip lights. Does NOT open real PiP and does NOT import
+ * PipStack/PipCompanion — pure GSAP + CSS. Loops; pulses NEXT after pass 1.
  */
 export function PopOutReenactment({ caption, buttonLabel, onAdvance }: Props): ReactElement {
-  const rootRef = useRef<HTMLDivElement>(null)
+  const vpRef = useRef<HTMLDivElement>(null)
   const [count, setCount] = useState<number>(0)
   const [cuePulse, setCuePulse] = useState<boolean>(false)
 
   useEffect((): (() => void) | undefined => {
-    const root = rootRef.current
-    if (!root) return undefined
-    const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-anim^="card"]'))
-    if (cards.length < 2) return undefined
+    const vp = vpRef.current
+    if (!vp) return undefined
+    const q = <T extends HTMLElement>(sel: string): T | null => vp.querySelector<T>(sel)
+    const popBtn = q('[data-anim="popoutBtn"]')
+    const pip = q('[data-anim="pip"]')
+    const tagBtn = q('[data-anim="tagBtn"]')
+    const chip = q('[data-anim="chip"]')
+    const cursor = q('[data-anim="cursor"]')
+    const cards = Array.from(vp.querySelectorAll<HTMLElement>('[data-anim^="card"]'))
+    if (!popBtn || !pip || !tagBtn || !chip || !cursor || cards.length < 2) return undefined
+
+    // centre of an element relative to the viewport box (for cursor targeting)
+    const rel = (el: HTMLElement): { x: number; y: number } => {
+      const r = el.getBoundingClientRect()
+      const v = vp.getBoundingClientRect()
+      return { x: r.left - v.left + r.width / 2, y: r.top - v.top + r.height / 2 }
+    }
+    const vw = (): number => vp.getBoundingClientRect().width
+    const vh = (): number => vp.getBoundingClientRect().height
+
+    const reset = (): void => {
+      gsap.set(pip, { scale: 0.5, opacity: 0, transformOrigin: '85% 8%' })
+      gsap.set(cards, { xPercent: 260, opacity: 0 })
+      chip.setAttribute('data-on', 'false')
+      gsap.set(cursor, { left: vw() * 0.22, top: vh() * 0.84, scale: 1, opacity: 0 })
+      setCount(0)
+    }
 
     const reduce =
       typeof window !== 'undefined' && typeof window.matchMedia === 'function'
         ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
         : false
 
-    const reset = (): void => {
-      gsap.set(cards, { xPercent: 260, opacity: 0 }) // parked off to the right
-      setCount(0)
-    }
-
     if (reduce) {
-      // Static end state: both cards centred (last one on top), meter full.
-      gsap.set(cards[0], { xPercent: -110, opacity: 1 })
+      // Static end state: window popped, both cards centred (last on top),
+      // meter full, tag chip lit, cursor hidden.
+      gsap.set(pip, { scale: 1, opacity: 1 })
+      gsap.set(cards[0], { xPercent: -112, opacity: 1 })
       gsap.set(cards[1], { xPercent: 0, opacity: 1 })
+      chip.setAttribute('data-on', 'true')
+      gsap.set(cursor, { opacity: 0 })
       setCount(2)
       setCuePulse(true)
       return undefined
     }
 
-    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.1, onRepeat: () => setCuePulse(true) })
+    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.0, onRepeat: () => setCuePulse(true) })
     tl.call(reset)
-      .to({}, { duration: 0.35 })
-      // card 1 glides in from the right → centre (ease-out quart, 0.7s = real PiP)
+      .to(cursor, { opacity: 1, duration: 0.3, ease: 'power2.out' })
+      // cursor glides to the POP OUT control and presses it
+      .to(cursor, { left: () => rel(popBtn).x, top: () => rel(popBtn).y, duration: 0.9, ease: 'power2.inOut' }, '+=0.1')
+      .to(cursor, { scale: 0.78, duration: 0.13, yoyo: true, repeat: 1, ease: 'power1.inOut' })
+      // the companion window pops out
+      .to(pip, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.05')
+      .to({}, { duration: 0.3 })
+      // card 1 glides in from the right → centre (real PiP auto-scroll values)
       .to(cards[0], { xPercent: 0, opacity: 1, duration: 0.7, ease: 'power4.out' })
       .call(() => setCount(1))
-      .to({}, { duration: 0.9 })
-      // card 2 arrives; card 1 slides left out of the way (the carousel advances)
-      .to(cards[0], { xPercent: -110, duration: 0.7, ease: 'power4.out' }, 'in2')
+      .to({}, { duration: 0.7 })
+      // card 2 arrives; card 1 slides left out of the way (carousel advances)
+      .to(cards[0], { xPercent: -112, duration: 0.7, ease: 'power4.out' }, 'in2')
       .to(cards[1], { xPercent: 0, opacity: 1, duration: 0.7, ease: 'power4.out' }, 'in2')
       .call(() => setCount(2))
-      .to({}, { duration: 1.7 })
+      .to({}, { duration: 0.55 })
+      // cursor taps "+ TAG" on the active card → a tag chip lights green
+      .to(cursor, { left: () => rel(tagBtn).x, top: () => rel(tagBtn).y, duration: 0.6, ease: 'power2.inOut' })
+      .to(cursor, { scale: 0.8, duration: 0.11, yoyo: true, repeat: 1 })
+      .call(() => chip.setAttribute('data-on', 'true'))
+      .to({}, { duration: 1.6 })
 
     return () => { tl.kill() }
   }, [])
 
   return (
     <div className={styles.stage} data-testid="stage-popout-demo">
-      {/* faint suggestion of "other apps" behind the floating companion */}
-      <div className={styles.backdrop} aria-hidden="true" />
-      <div ref={rootRef} className={styles.window} aria-hidden="true">
-        <div className={styles.titlebar}><span className={styles.dot} />POP OUT</div>
-        <div className={styles.carousel}>
-          {DEMO_CARDS.map((c, i) => (
-            <div key={c} data-anim={`card${i}`} className={styles.card}>{c}</div>
-          ))}
+      <div className={styles.browser}>
+        <div className={styles.chrome}>
+          <span className={styles.close} aria-hidden="true" />
+          <span className={styles.urlbar}>allmarks.app</span>
         </div>
-        <div className={styles.meter}>
-          <span className={styles.meterText}>{pad(count)} / {pad(count)}</span>
+        <div ref={vpRef} className={styles.viewport}>
+          {/* the "real screen" — a screenshot of AllMarks being used */}
+          <img className={styles.page} src="/onboarding/lp-hero-shot.webp" alt="" draggable={false} />
+
+          {/* board nav overlay carrying the real POP OUT control */}
+          <div className={styles.nav} aria-hidden="true">
+            <span className={styles.navItem}>SETTINGS</span>
+            <span data-anim="popoutBtn" className={styles.popoutBtn}>
+              <span className={styles.navDot} />POP OUT
+            </span>
+            <span className={styles.navItem}>SHARE</span>
+          </div>
+
+          {/* the companion window that pops out */}
+          <div data-anim="pip" className={styles.pip} aria-hidden="true">
+            <div className={styles.pipBar}><span className={styles.dot} />POP OUT</div>
+            <div className={styles.carousel}>
+              {DEMO_CARDS.map((c, i) => (
+                <div key={c.id} data-anim={`card${i}`} className={styles.card}>
+                  <div className={styles.cardThumb} />
+                  <div className={styles.cardTitle}>{c.title}</div>
+                  {i === DEMO_CARDS.length - 1 && (
+                    <>
+                      <span data-anim="tagBtn" className={styles.tagBtn}>+ TAG</span>
+                      <span data-anim="chip" className={styles.chip} data-on="false">design</span>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className={styles.meter}>
+              <span className={styles.meterText}>{pad(count)} / {pad(count)}</span>
+            </div>
+          </div>
+
+          <span data-anim="cursor" className={styles.cursor} aria-hidden="true" />
         </div>
       </div>
       <p className={styles.caption}>{caption}</p>
