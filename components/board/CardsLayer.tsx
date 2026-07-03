@@ -1350,10 +1350,10 @@ export function CardsLayer({
                 playable (e.g. Instagram link-out) cards show nothing on hover:
                 a non-pressable badge was just noise once the playable ones got
                 a clear button. */}
-            {canPlayInline(it) && (
+            {canPlayInline(it) && !selectionMode && (
               <MediaTypeIndicator
                 type={deriveMediaType(it)}
-                visible={hoverActive && !selectionMode}
+                visible={hoverActive}
                 onActivate={(): void => onToggleAudio(it.bookmarkId)}
                 active={audioActiveId === it.bookmarkId}
               />
