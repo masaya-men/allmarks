@@ -20,6 +20,7 @@ import { OnboardingTagDemo } from './OnboardingTagDemo'
 import { OnboardingPasteCursor } from './OnboardingPasteCursor'
 import { BookmarkletInstallChip } from './BookmarkletInstallChip'
 import { BookmarkletSaveReenactment } from './BookmarkletSaveReenactment'
+import { PopOutReenactment } from './PopOutReenactment'
 import styles from './OnboardingController.module.css'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -332,6 +333,15 @@ export function OnboardingController({
         />,
       )
     }
+    if (sceneId === 'popout') {
+      return wrap(
+        <PopOutReenactment
+          caption={body}
+          buttonLabel="NEXT"
+          onAdvance={advance}
+        />,
+      )
+    }
     return wrap(
       <OnboardingStage
         variant={sceneId === 'finale' ? 'finale' : 'enter'}
@@ -477,6 +487,7 @@ export function OnboardingController({
           <OnboardingSpotlight
             targetSelector={TARGET_SELECTOR['quick-tag-toggle']}
             caption={t('board.onboarding.manage.settingsBody')}
+            captionAtBottom
           >
             <button type="button" className={styles.advanceBtn} onClick={() => setManageBeat('manage')}>NEXT</button>
           </OnboardingSpotlight>

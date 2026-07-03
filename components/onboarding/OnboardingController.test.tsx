@@ -162,7 +162,7 @@ describe('OnboardingController', () => {
     renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
 
     // Walk to the manage scene: paste -> tag -> motion -> extDemo(page,X) ->
-    // install(install/drag -> demo) -> manage(settings -> manage)
+    // install(install/drag -> demo) -> popout -> manage(settings -> manage)
     fireEvent.click(screen.getByRole('button', { name: 'START' }))
     await act(async () => { postBookmarkSaved({ bookmarkId: 'c' }) }) // -> tag
     await act(async () => { postBookmarkUpdated({ bookmarkId: 'c' }) }) // tag applied -> NEXT
@@ -172,7 +172,8 @@ describe('OnboardingController', () => {
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo: page -> X
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo: X -> install (drag/install beat)
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: install (drag) -> demo
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: demo -> manage (settings)
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: demo -> popout
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // popout -> manage (settings)
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // manage: settings -> manage
 
     // The manage beat teaches the real gesture (open MANAGE TAGS); it deliberately
