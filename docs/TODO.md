@@ -28,6 +28,7 @@
   - **v3（境界演出4点・全案採用）**: ①乗り上がり＝跳ねの波にスクロール駆動化（引き継ぎ瞬間は実 kicker と完全同姿＝がたっ根治。**DOM＝純関数 誤差0.000px 実測**）②hairline 屈折（横断中のみ per-char clip 分割・静止観察可）③玉ノック（下向き接触で一度・時間制は意図）④境界線グロー（語の真上だけ緑に灯る）。
   - 純関数 `dashProgress/dashEase/bandClimbProgress/charHopArc/crossGlow`（nav-dock-math **35テスト**）。チューニングは `NAV_DOCK` 定数（hold/dash/hop/knock 等）と `.module.css` の px 値だけ。
 - 正本 spec: [2026-07-03-lp-nav-dock-morph-brushup-design.md](superpowers/specs/2026-07-03-lp-nav-dock-morph-brushup-design.md)（§9=v2 / §10=v3）/ narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s156。
+- **同セッション追加＝LP最下部の黒幕バグ根治**（master `9e7ea1b`・本番実測 PASS）。ユーザー報告の「黒い部分の白い矩形」は **N-05 以前からの既存構造バグ**（s153 ビルドとピクセル同一を実測で確定）: 幕(finale)が footer の横 padding 内側で左右40px を覆えず＋トップLPは z文脈でヘッダーを覆えたことが無かった → ①幕の全幅化（PC全画面時のみ）②幕が上端に達したらヘッダー自身がフェード退場（可逆）。詳細 narrative s156 末尾。
 - **未決（急がない）**: 13言語で演出が出ない件＝kicker を全言語英語に統一すれば全言語発動（見た目が変わるので要ユーザー相談・CURRENT_GOAL 検討メモ）。
 - **次**: 本命バックログの優先順相談＝③プレミアムテーマ制作／④K3 解錠実装（`docs/private/2026-07-01-k3-unlock-plan.md`）／選択的シェア／タグ付け強化。
 
