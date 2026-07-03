@@ -83,3 +83,29 @@
 ## 8. チューニング面
 
 バウンド強さ・ダッシュ速度は従来どおり `NAV_DOCK.zipMs`・zip の cubic-bezier。変身の速さ・波の間隔・キャンセル速度は §2 の新定数。すべて `NAV_DOCK` に集約されているので実機の好みで数値だけ変えられる。
+
+---
+
+## 9. 追補（同日・ユーザー実機フィードバック反映＝v2。§2〜§5 の該当箇所を上書きする）
+
+実機確認で2点の指摘。以下が確定仕様。
+
+### 9-1. ダッシュはスクロール駆動（時間制 zip と docked 状態を廃止）
+
+- 変身完了後も**その場に「結構しっかり」とどまり**（`holdPx: 160` = 発動後のスクロール距離）、さらに下へスクロールすると**スクロール量に応じて**右のナビ枠へ横移動する（`dashPx: 140` の区間で 0→1）。逆に動かせば同じ道を左へ戻る＝**完全可逆のスクラブ**
+- 横位置 = `anchor.left + (target.left - anchor.left) * dashEase(dashProgress(anchorTop))`。毎フレーム実 rect から計算（保存状態なし）
+- `dashEase` = easeOutBack 系（出だし素早く、終端で僅かに行き過ぎて「はまる」。定数 `dashBack: 0.65` ≒ 行き過ぎ約1.5%）
+- **`docked` 状態と `zipMs`/`returnMs` は廃止**。帯上の全期間（とどまり→横移動→枠に定着）は `morphing` 一状態で、位置は anchorTop の純関数
+- **斜め軌跡の根治**: 上スクロールで帯を離れる時（`dockY + releaseGap`）には横スクラブが必ず 0 に戻っているため、本文への帰還は**真下への垂直移動のみ**（`morphCancelMs`）。時間制の斜め帰還は消滅
+- 新純関数: `dashProgress(anchorTop)`（`dockY - holdPx` で 0、そこから `dashPx` 下で 1、clamp）と `dashEase(p)`。どちらもテスト対象
+- 速いスクロールで変身の波と横移動が重なるのは許容（演出が凝縮されるだけで破綻しない）
+
+### 9-2. 着地形はナビ実体と完全一致（実測し直し）
+
+`.navLink` の実体は **`--lp-sans` 14px / weight 450 / letter-spacing -0.005em / text-transform なし（"Features" 混在ケース）/ color ink-soft**。s155 の「uppercase + 0.06em」は誤りだった。
+
+- traveler の着地形（`--mp: 1`）の letter-spacing 目標を **-0.005em** に修正
+- 文字の swap 時に **`text-transform: none`** も掛け替える（大文字 → 本来のケースへ。衣装替えの沈みで切替が隠れる）
+- `SiteHeader.module.css .dockSlot` の誤った上書き（font-size/letter-spacing/text-transform）を削除し、`.navLink` から**継承**させる（幅予約もナビ実体と一致する）
+- 寸法モーフの transition は `.word`（inline が left/top で占有）ではなく **`.txt` に CSS で**掛ける（`--morph-total` はラベル長から render 時に算出）。gap 9→8px の 1px は非遷移スナップで許容
+- `html[data-nav-dock]` の値は `armed / traveling / morphing` の3値になる（landing-tokens の隠しリストから docked を削除）
