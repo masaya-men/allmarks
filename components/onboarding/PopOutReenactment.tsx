@@ -84,7 +84,7 @@ export function PopOutReenactment({ caption, buttonLabel, onAdvance }: Props): R
           ))}
         </div>
         <div className={styles.meter}>
-          {count > 0 && <span className={styles.meterText}>{pad(count)} / {pad(count)}</span>}
+          <span className={styles.meterText}>{pad(count)} / {pad(count)}</span>
         </div>
       </div>
       <p className={styles.caption}>{caption}</p>
