@@ -328,6 +328,14 @@ type CardsLayerProps = {
     /** × handler: remove this card url from the working set. */
     readonly onRemove: (url: string) => void
   }
+  /** Selective-share selection mode (spec 2026-07-03). When set, a card tap
+   *  toggles selection instead of opening the Lightbox; reorder drag, resize,
+   *  hover chrome (+TAG, ×, ↺, play) are all suppressed. Selected cards render
+   *  a green check badge + outline. Null/undefined = normal board (byte-identical). */
+  readonly selectionMode?: {
+    readonly selectedIds: ReadonlySet<string>
+    readonly onToggle: (bookmarkId: string) => void
+  } | null
   /** Active board theme id. Drives per-card decorations (meta.decorations)
    *  and, from Task 5, the entry/shutdown motion keys. */
   readonly themeId: ThemeId
@@ -372,6 +380,7 @@ export function CardsLayer({
   isScrolling = false,
   entryAnimCycle = 0,
   receiverMode,
+  selectionMode,
   forceTagButtonVisible = false,
   themeId,
 }: CardsLayerProps): ReactNode {
@@ -1002,6 +1011,35 @@ export function CardsLayer({
     [onClick],
   )
 
+  // Selective-share tap handler — same tap window as the receiver handler
+  // (< CLICK_MAX_MS, < CLICK_THRESHOLD_PX): a genuine tap toggles selection;
+  // a drag-ish gesture does nothing (no reorder in this mode). Pointer capture
+  // mirrors the receiver handler so interrupted gestures tear down cleanly.
+  const selectionToggle = selectionMode?.onToggle ?? null
+  const handleSelectPointerDown = useCallback(
+    (e: PointerEvent<HTMLDivElement>, bookmarkId: string): void => {
+      if (e.button > 0 || selectionToggle == null) return
+      const el = e.currentTarget
+      const pointerId = e.pointerId
+      const startX = e.clientX
+      const startY = e.clientY
+      const startTime = e.timeStamp
+      el.setPointerCapture?.(pointerId)
+      const end = (ev: globalThis.PointerEvent): void => {
+        el.removeEventListener('pointerup', end)
+        el.removeEventListener('pointercancel', end)
+        if (el.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId)
+        if (ev.type !== 'pointerup') return
+        const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+        const elapsed = ev.timeStamp - startTime
+        if (elapsed < CLICK_MAX_MS && distance < CLICK_THRESHOLD_PX) selectionToggle(bookmarkId)
+      }
+      el.addEventListener('pointerup', end)
+      el.addEventListener('pointercancel', end)
+    },
+    [selectionToggle],
+  )
+
   // Esc during drag → restore dragged card to its pre-drag slot (FLIP handles it).
   useEffect(() => {
     if (!dragState) return
@@ -1075,9 +1113,11 @@ export function CardsLayer({
             data-onboarding-target={cardIdx === 0 ? 'card' : undefined}
             data-link-status={it.linkStatus ?? undefined}
             onPointerDown={(e: PointerEvent<HTMLDivElement>): void =>
-              receiverMode
-                ? handleReceiverPointerDown(e, it.bookmarkId)
-                : handleReorderPointerDown(e, it.bookmarkId)
+              selectionMode
+                ? handleSelectPointerDown(e, it.bookmarkId)
+                : receiverMode
+                  ? handleReceiverPointerDown(e, it.bookmarkId)
+                  : handleReorderPointerDown(e, it.bookmarkId)
             }
             onPointerEnter={(): void => onHoverChange(it.bookmarkId)}
             onPointerLeave={(): void => onHoverChange(null)}
@@ -1163,6 +1203,15 @@ export function CardsLayer({
                 cardId={it.bookmarkId}
                 tornBacking={tornBackingById.get(it.bookmarkId) ?? false}
               />
+            )}
+            {selectionMode && (
+              <div
+                className={styles.selectOverlay}
+                data-selected={selectionMode.selectedIds.has(it.bookmarkId) ? 'true' : 'false'}
+                aria-hidden="true"
+              >
+                <span className={styles.selectCheck}>✓</span>
+              </div>
             )}
             {receiverMode && (() => {
               const tagIds = receiverMode.senderTagIdsByCard.get(it.url) ?? []
@@ -1301,7 +1350,7 @@ export function CardsLayer({
                 playable (e.g. Instagram link-out) cards show nothing on hover:
                 a non-pressable badge was just noise once the playable ones got
                 a clear button. */}
-            {canPlayInline(it) && (
+            {canPlayInline(it) && !selectionMode && (
               <MediaTypeIndicator
                 type={deriveMediaType(it)}
                 visible={hoverActive}
@@ -1314,7 +1363,7 @@ export function CardsLayer({
                 (see ResizeHandle.module.css cross-module rules). Without
                 this ordering, hovering × or ↺ silences the resize hint
                 arcs in the corners they cover. */}
-            {!receiverMode && (
+            {!receiverMode && !selectionMode && (
               <>
                 <CardCornerActions
                   hovered={hoverActive}
@@ -1337,7 +1386,7 @@ export function CardsLayer({
                 is hovered (= silent-board principle — meta UI stays invisible
                 at rest). Pills click → toggle in the board-wide tag filter,
                 same semantics as the chrome TagFilterBar chips. */}
-            {!receiverMode && !taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
+            {!receiverMode && !selectionMode && !taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
               <TagIndicatorStrip
                 tags={it.tags
                   .map((tid) => tagsById.get(tid))
@@ -1358,7 +1407,7 @@ export function CardsLayer({
                 open (so the trigger stays anchored under the user's eye
                 while they're choosing a tag). pointerdown swallow so a
                 click doesn't engage the card-reorder drag underneath. */}
-            {!receiverMode && !taggedOut && allTags !== undefined && onTagToggle !== undefined && onTagCreate !== undefined && (
+            {!receiverMode && !selectionMode && !taggedOut && allTags !== undefined && onTagToggle !== undefined && onTagCreate !== undefined && (
               <>
                 <button
                   type="button"

@@ -247,4 +247,64 @@ describe('SenderShareModal', () => {
     fireEvent.wheel(backdrop, { deltaY: 100 })
     expect(onPanY).toHaveBeenCalledWith(100)
   })
+
+  it('shows SELECT CARDS in idle state and fires the callback', () => {
+    const onSelectCards = vi.fn()
+    const { getByTestId } = render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+        onPanY={vi.fn()}
+        onSelectCards={onSelectCards}
+        {...defaultMirrorProps}
+      />,
+    )
+    const btn = getByTestId('select-cards-button')
+    fireEvent.click(btn)
+    expect(onSelectCards).toHaveBeenCalledOnce()
+  })
+
+  it('hides SELECT CARDS when the prop is null/undefined', () => {
+    const { queryByTestId } = render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+        onPanY={vi.fn()}
+        onSelectCards={null}
+        {...defaultMirrorProps}
+      />,
+    )
+    expect(queryByTestId('select-cards-button')).toBeNull()
+  })
+
+  it('switches the hint copy while previewing a selection', () => {
+    const { getByText } = render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+        onPanY={vi.fn()}
+        selectionActive
+        {...defaultMirrorProps}
+      />,
+    )
+    expect(getByText(/SELECTED CARDS ONLY/)).toBeTruthy()
+  })
 })

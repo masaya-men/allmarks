@@ -67,6 +67,7 @@ export const BOARD_Z_INDEX = {
   CONTEXT_MENU: 90,
   DRAG_GHOST: 100,
   TOOLBAR: 110,
+  SHARE_SELECT_BAR: 115,  // selective-share bottom bar — above toolbar, below popovers
   POPOVER: 120,
   UNDO_TOAST: 130,
   PASTE_FEEDBACK: 135,

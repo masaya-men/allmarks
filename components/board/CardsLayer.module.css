@@ -56,3 +56,40 @@
   transform: scale(1.15);
   filter: brightness(1.15);
 }
+
+/* Selective-share selection overlay — green check badge + outline on the
+ * selected card (pill vocabulary: ✓ green #28F100). pointer-events:none so
+ * the wrapper's tap handler still receives the gesture. */
+.selectOverlay {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--card-radius, 20px);
+  pointer-events: none;
+  z-index: 55; /* above card media overlays (10) & control bar (60 is fine to sit under) */
+}
+
+.selectOverlay[data-selected='true'] {
+  outline: 2px solid #28F100;
+  outline-offset: -2px;
+  box-shadow: 0 0 14px rgba(40, 241, 0, 0.28);
+}
+
+.selectCheck {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #28F100;
+  color: #0a0a0a;
+  font: 700 14px/1 var(--font-sans);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 0 10px rgba(40, 241, 0, 0.5);
+}
+
+.selectOverlay[data-selected='true'] .selectCheck {
+  display: flex;
+}
