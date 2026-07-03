@@ -174,6 +174,9 @@
       },
       "finale": {
         "body": "You're set. Replay this anytime from SETTINGS."
+      },
+      "popout": {
+        "body": "Pop out a little companion window. Keep it floating over your other apps — everything you save slides in from the right while you browse."
       }
     }
   },
