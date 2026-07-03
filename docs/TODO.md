@@ -27,7 +27,8 @@
   - 純関数 `lib/share/selection.ts`(12テスト)＋`ShareSelectBar`(5テスト)＋`SenderShareModal` SELECT CARDS(3テスト)。CardsLayer 選択モードは tap ハンドラ＝receiver のツイン、選択中はホバーchrome を全非マウント。BoardRoot 配線は normal path が旧コードに一致（byte-identical 再検証）。
   - 進め方＝brainstorm→spec→plan→**サブエージェント駆動6タスク＋各2段レビュー＋opus 全ブランチレビュー（Ready to merge）**。レビューで実バグ2件摘出・修正（+TAG/タグpill行の未ゲート／再生トグルが `pointer-events:auto` でタップを奪う）。正本 [spec](superpowers/specs/2026-07-03-selective-share-design.md) / [plan](superpowers/plans/2026-07-03-selective-share.md) / narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s157。
   - **未対応の任意ブラッシュアップ（ユーザー実機判断待ち）**: 緑アウトラインの強さ／選択バッジの登場トランジション（spec通り今は無し）／選択の永続化はしない設計。
-- **次**: 本命バックログの残り＝③プレミアムテーマ制作（Claude推奨）／④K3 解錠実装（`docs/private/2026-07-01-k3-unlock-plan.md`）／タグ付け強化。
+- **同セッションで追加**: ユーザー実機フィードバックを反映＝N-15 解決／拡張ストア審査通過（残＝`EXTENSION_STORE_URL`）／新規 N-20（拡張クイックタグ上だけ2列）N-21・N-22（オンボ）を backlog 追加。**オンボ改善 N-21+N-22 の spec と実装計画を完成**（[spec](superpowers/specs/2026-07-04-onboarding-settings-popout-design.md) / [plan](superpowers/plans/2026-07-04-onboarding-settings-popout.md)・6タスク・**実装は未着手**）。
+- **次（セッション158）**: **オンボ改善計画をサブエージェント駆動で実装**（上記 plan）→ その後 N-20（拡張・URL投入と同回）／③プレミアムテーマ／④K3。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 156 — N-05 ブラッシュアップ v2+v3 完遂・master マージ済・本番反映済。LP はいったん区切り)
 

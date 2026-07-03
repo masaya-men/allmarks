@@ -1,33 +1,35 @@
 # 次セッションのゴール (= セッション 158)
 
-## 今の状態（選択的シェア出荷済み・全部 master マージ済＋本番反映済）
+## 今の状態（選択的シェア出荷済み／オンボ改善は spec+plan 完成・実装は次回）
 
 **セッション157でやったこと：**
 
-- **選択的シェア「SELECT CARDS」を出荷**（merge `1aaeb37`・tsc0 / **vitest1942** / build OK・`allmarks.app` 反映済・Playwright 本番スモーク **12/12 PASS**）。SHARE モーダルに SELECT CARDS → 盤面が選択モード（tap で選択・0枚スタート・緑✓バッジ・下部バー `n/100 SELECTED`＋SELECT ALL＋SHARE(n)＋CANCEL＋琥珀「100 MAX」）→ SHARE(n) で**選んだカードだけ**を盤面順で共有（`filter:null`）。既存の「押したらすぐ新しい順100枚」は無変更・受け取り側 /s/ も無変更。
-- サブエージェント駆動6タスク＋各2段レビュー＋opus 全ブランチレビュー。レビューで実バグ2件（+TAG/タグpill行の未ゲート・再生トグルの pointer-events でタップ横取り）を摘出・修正。default 盤面 byte-identical。
-- 正本 [spec](superpowers/specs/2026-07-03-selective-share-design.md) / [plan](superpowers/plans/2026-07-03-selective-share.md) / narrative [TODO_COMPLETED.md](TODO_COMPLETED.md) s157。
+1. **選択的シェア「SELECT CARDS」出荷**（merge `1aaeb37`・本番反映・Playwright 本番スモーク **12/12 PASS**）。飛び飛び選択→共有→受け取りページが**上から詰め直される**ことも実リンクで実証済み。
+2. **ロードマップを1枚に整理**（Artifact）＋ユーザー実機フィードバック反映：**N-15 解決**／**拡張はストア審査通過**（残＝`EXTENSION_STORE_URL` 投入）／新規 **N-20**（拡張クイックタグが上だけ2列）**N-21/N-22**（オンボ）を backlog 追加。
+3. **オンボ改善 N-21+N-22 の spec と実装計画を完成**（brainstorm→spec→plan）。**実装は未着手**＝次セッションの本題。
 
-## 次にやる（セッション158）＝本命バックログの残り
+## 次にやる（セッション158）＝オンボ改善の実装
 
-1. **③ プレミアムテーマ制作** ← Claude 推奨。サポーター制（¥500/月）の売り物＋build-in-public の発信ネタ。1本目の世界観は要相談（前回は (a) Liquid Glass を推した＝レシピ・コード資産あり／(b) SF軍事／(c) 車。ユーザーは選択的シェアを先にやりたいと言って保留していた）。
-2. **④ K3 解錠実装**（設計・10タスク計画は完成済み `docs/private/2026-07-01-k3-unlock-plan.md`）— ③の1本目が見えたら差し込むのが自然。
-3. **タグ付け強化**（ユーザーが以前「最優先」と言った機能）。
+**計画をサブエージェント駆動で実行する**（前回の選択的シェアと同じ進め方）:
 
-## 選択的シェアの任意ブラッシュアップ（急がない・ユーザー実機判断待ち）
+- 実行スキル：`superpowers:subagent-driven-development`
+- 計画：[docs/superpowers/plans/2026-07-04-onboarding-settings-popout.md](superpowers/plans/2026-07-04-onboarding-settings-popout.md)（6タスク・TDD・完全コード入り）
+- spec：[docs/superpowers/specs/2026-07-04-onboarding-settings-popout-design.md](superpowers/specs/2026-07-04-onboarding-settings-popout-design.md)
+- 中身：**N-21**＝SETTINGS beat のキャプションを下中央に（`captionAtBottom` 1行）／**N-22**＝`install` の後に `popout` cinema シーン追加＋新 `PopOutReenactment`（**右からカードがグライドイン→中央着地** `power4.out`/0.7s＋常時メーター＝実 PiP 挙動どおり／実 PiP は import しない）＋15言語コピー
+- master から `feat/onboarding-polish` 等でブランチを切って開始。BASE＝このセッション終了時の master HEAD（下記引継メッセージ参照）。
+- 完了後：master マージ→デプロイ→**本番実機でオンボを頭から通し**、①SETTINGS 説明が読める②install の次に POP OUT が出て右からカードが入る、を目視確認。
 
-- 緑アウトラインの強さ（実機で見て「強すぎ/ちょうど良い」を判断。デザイン変更は要ユーザー承認）。
-- 選択バッジの登場トランジション（今は spec 通り無し・ポップイン）。
-- ユーザー本人の実機（545枚）で「タグから数枚＋別タグから数枚」の混在選択→共有→受け取りリンクを一度確認してもらえると盤石。
+## その後の本命バックログ（順不同・相談して決める）
 
-## 検討メモ（未決・急がない・s156 から継続）
-
-- 13言語で N-05 演出が出ない件: kicker を全言語英語に統一すれば全言語発動（見た目が変わる13ファイル編集なので**要ユーザー相談**）。
+- **N-20（拡張クイックタグ上だけ2列）** — 直すと拡張の新バージョン再提出。`EXTENSION_STORE_URL` 投入と**同じ回にまとめる**のが得。
+- **③ プレミアムテーマ制作**（Claude 推奨・売り物＋告知の引き金・1本目候補 Liquid Glass）。
+- **④ K3 解錠実装**（計画完成済 `docs/private/2026-07-01-k3-unlock-plan.md`）。
+- タグ付け強化。
 
 ## 守ること（毎回）
 
 - default 盤面 byte-identical。web 変更時は deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build`。deploy `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`
 - **機微情報は `docs/private/` のみ。tracked に書かない・commit しない**（CLAUDE.md 厳守）
-- 既知フレーキー: `tests/lib/channel.test.ts`（再実行で緑）。**vitest は dev サーバー並走禁止**
-- **偽保存対策**: Write/Edit 後は独立 Read、commit/マージ後は**生 `git log --graph`** の実出力で確認（rtk git log はマージコミットを隠すことがある＝s157 で実証）
-- 応答は日本語・簡潔に
+- 既知フレーキー `tests/lib/channel.test.ts`（再実行で緑）。**vitest は dev サーバー並走禁止**
+- **偽保存対策**：Write/Edit 後は独立 Read、commit/マージ後は**生 `git log --graph`** の実出力で確認（rtk git log はマージコミットを隠す＝s157 で実証）
+- アニメは GSAP（Framer Motion 禁止）。応答は日本語・簡潔に
