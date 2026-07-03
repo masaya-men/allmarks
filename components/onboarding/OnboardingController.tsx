@@ -20,6 +20,7 @@ import { OnboardingTagDemo } from './OnboardingTagDemo'
 import { OnboardingPasteCursor } from './OnboardingPasteCursor'
 import { BookmarkletInstallChip } from './BookmarkletInstallChip'
 import { BookmarkletSaveReenactment } from './BookmarkletSaveReenactment'
+import { PopOutReenactment } from './PopOutReenactment'
 import styles from './OnboardingController.module.css'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -328,6 +329,15 @@ export function OnboardingController({
         <OnboardingShareReveal
           caption={body}
           onCloseModal={() => onShareSceneActive?.(false)}
+          onAdvance={advance}
+        />,
+      )
+    }
+    if (sceneId === 'popout') {
+      return wrap(
+        <PopOutReenactment
+          caption={body}
+          buttonLabel="NEXT"
           onAdvance={advance}
         />,
       )
