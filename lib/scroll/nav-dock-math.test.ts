@@ -1,6 +1,6 @@
 // lib/scroll/nav-dock-math.test.ts
 import { describe, expect, it } from 'vitest'
-import { NAV_DOCK, isDockEligible, morphProgress, nextDockMode } from './nav-dock-math'
+import { NAV_DOCK, isDockEligible, morphProgress, morphTotalMs, nextDockMode } from './nav-dock-math'
 
 describe('morphProgress', () => {
   it('glassStart より下では 0', () => {
@@ -24,9 +24,17 @@ describe('nextDockMode（範囲＋ラッチ式＝Lenis の慣性で1フレーム
   it('armed: 帯より下では armed のまま', () => {
     expect(nextDockMode('armed', 400)).toBe('armed')
   })
-  it('traveling: anchorTop <= dockY で docked（大きく飛び越しても範囲判定で捕まえる）', () => {
-    expect(nextDockMode('traveling', NAV_DOCK.dockY)).toBe('docked')
-    expect(nextDockMode('traveling', -500)).toBe('docked')
+  it('traveling: anchorTop <= dockY で morphing（大きく飛び越しても範囲判定で捕まえる）', () => {
+    expect(nextDockMode('traveling', NAV_DOCK.dockY)).toBe('morphing')
+    expect(nextDockMode('traveling', -500)).toBe('morphing')
+  })
+  it('morphing: スクロールでは docked に進まない（昇格はタイマーのみ）', () => {
+    expect(nextDockMode('morphing', NAV_DOCK.dockY)).toBe('morphing')
+    expect(nextDockMode('morphing', -500)).toBe('morphing')
+  })
+  it('morphing: dockY+releaseGap まで戻したらキャンセルで traveling', () => {
+    expect(nextDockMode('morphing', NAV_DOCK.dockY + NAV_DOCK.releaseGap)).toBe('traveling')
+    expect(nextDockMode('morphing', NAV_DOCK.dockY + NAV_DOCK.releaseGap - 1)).toBe('morphing')
   })
   it('traveling: 帯の外（restGap 分のヒステリシス）へ戻ったら armed', () => {
     expect(nextDockMode('traveling', NAV_DOCK.glassStart + NAV_DOCK.restGap + 1)).toBe('armed')
@@ -60,5 +68,17 @@ describe('isDockEligible', () => {
   })
   it('大文字小文字・前後空白は無視して一致扱い（kicker は CSS uppercase 表示のため）', () => {
     expect(isDockEligible({ ...base, kickerText: '  FEATURES ' })).toBe(true)
+  })
+})
+
+describe('morphTotalMs（変身の総時間 = ラベル長で決まる）', () => {
+  it('8文字(FEATURES) = 7*morphCharDelayMs + morphCharMs = 450ms', () => {
+    expect(morphTotalMs(8)).toBe(450)
+  })
+  it('1文字 = morphCharMs のみ', () => {
+    expect(morphTotalMs(1)).toBe(NAV_DOCK.morphCharMs)
+  })
+  it('0 以下でも正の時間を返す（防御）', () => {
+    expect(morphTotalMs(0)).toBe(NAV_DOCK.morphCharMs)
   })
 })
