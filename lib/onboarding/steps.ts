@@ -9,7 +9,7 @@ export const SAMPLE_URL = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
 export type SceneKind = 'cinema' | 'handsOn'
 export type AdvanceTrigger = 'button' | 'saved' | 'tagged' | 'motion' | 'sharePanel'
 export type SceneId =
-  | 'enter' | 'paste' | 'tag' | 'motion' | 'extDemo' | 'install' | 'manage' | 'share' | 'finale'
+  | 'enter' | 'paste' | 'tag' | 'motion' | 'extDemo' | 'install' | 'popout' | 'manage' | 'share' | 'finale'
 export type OnboardingTarget = 'paste-zone' | 'card-tag' | 'card' | 'motion' | 'share' | 'manage' | 'settings' | 'quick-tag-toggle'
 
 export type OnboardingScene = {
@@ -26,6 +26,7 @@ export const ONBOARDING_SCENES: readonly OnboardingScene[] = [
   { id: 'motion',  kind: 'handsOn', advance: 'button',     target: 'motion' },
   { id: 'extDemo', kind: 'cinema',  advance: 'button' },
   { id: 'install', kind: 'handsOn', advance: 'button' },
+  { id: 'popout',  kind: 'cinema',  advance: 'button' },
   { id: 'manage',  kind: 'handsOn', advance: 'button', target: 'manage' },
   { id: 'share',   kind: 'cinema',  advance: 'button' },
   { id: 'finale',  kind: 'cinema',  advance: 'button' },
