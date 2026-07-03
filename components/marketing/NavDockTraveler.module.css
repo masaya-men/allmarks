@@ -1,6 +1,11 @@
 /* NavDockTraveler.module.css — N-05 traveler（乗る→その場で変身→スクロール駆動で横移動）。
    --mp = 姿 0(本文 kicker)↔1(ナビ) の反転スイッチ。寸法モーフの滑らかさは
    .txt の CSS transition が担う（.word の inline transition は left/top 専用）。
+   境界のマイクロ演出（v3）:
+   - 乗り上がりの跳ね: JS が per-char --hop(0..1) を毎フレーム書き、ここで px に整形
+   - hairline 屈折: word[data-refract] 中、--cut(px) で基層=線下 / ::after=線上に分割
+   - 玉ノック: word[data-knock] で一回きりの squash＋リング（時間は NAV_DOCK.knockMs と同期）
+   - hairGlow: hairline 上の応答光（位置/透明度は JS、姿はここ）
    kicker 形: geist-mono 12px w500 ls.2em uppercase ink-soft, dot 7px 緑+4px リング, gap 9px。
    ナビ着地形 = SiteHeader .navLink と完全一致:
    --lp-sans 14px w450 ls-0.005em、大文字化なし（"Features" 混在ケース）、ink-soft。 */
@@ -35,6 +40,30 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
 }
 
+/* 玉のノック: 下から hairline に触れた瞬間の一拍（360ms = NAV_DOCK.knockMs） */
+.word[data-knock='true'] .dot {
+  animation: knock 360ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+@keyframes knock {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+  }
+  30% {
+    transform: scale(1.18, 0.68);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--lp-accent) 20%, transparent);
+  }
+  55% {
+    transform: scale(0.94, 1.08);
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--lp-accent) 7%, transparent);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+  }
+}
+
 /* 寸法モーフの担体。--mp 反転を transition で滑らかに追う */
 .txt {
   display: inline-flex;
@@ -60,49 +89,87 @@
     letter-spacing var(--morph-cancel) ease;
 }
 
-/* 1文字ずつの乗り上がり: traveling 進入時に下から climb する。
-   stagger は --climb-delay（TSX が文字ごとに設定）。 */
+/* 1文字。乗り上がりの跳ねはスクロール駆動（--hop を JS が毎フレーム書く）＝
+   transition なしで即追従。時間制アニメはここには無い（がたっの根治）。 */
 .ch {
+  position: relative;
   display: inline-block;
-  transform: translateY(6px);
-  opacity: 0.001;
-  transition:
-    transform 0.32s cubic-bezier(0.2, 0.85, 0.25, 1),
-    opacity 0.32s ease;
-  transition-delay: var(--climb-delay, 0ms);
-}
-
-.word[data-state='traveling'] .ch,
-.word[data-state='morphing'] .ch {
-  transform: translateY(0);
-  opacity: 1;
+  transform: translateY(calc(var(--hop, 0) * -3px));
 }
 
 /* ── 衣装替えの波（morphing 中のみ・JS がタイマーで dip/swap 印を刻む）──
-   keyframe を使わず transition + data 印で組む＝キャンセル時に滑らかに巻き戻せる。
+   transition + data 印で組む＝キャンセル時に滑らかに巻き戻せる。
    前半: 沈んで減光 → 折り返しで書体とケースをナビ実体へ掛け替え → 後半: 起き上がる */
+.word[data-state='morphing'] .ch {
+  transition:
+    transform var(--morph-half) cubic-bezier(0.2, 0.85, 0.25, 1),
+    opacity var(--morph-half) ease;
+}
+
 .word[data-state='morphing'] .ch[data-dip='true'] {
   transform: translateY(3px);
   opacity: 0.55;
-  transition-duration: var(--morph-half);
-  transition-delay: 0ms;
 }
 
 .word[data-state='morphing'] .ch[data-swap='true'] {
   font-family: var(--lp-sans, system-ui, sans-serif);
   text-transform: none; /* FEATURES → Features（本来のケースへ） */
-  transition-duration: var(--morph-half);
-  transition-delay: 0ms;
 }
 
-/* キャンセル巻き戻し: 全文字一斉・短く（乗り上がり用 stagger を無効化） */
+/* キャンセル巻き戻し: 全文字一斉・短く */
 .word[data-cancel='true'] .ch {
-  transition-duration: var(--morph-cancel);
-  transition-delay: 0ms;
+  transition:
+    transform var(--morph-cancel) ease,
+    opacity var(--morph-cancel) ease;
+}
+
+/* ── hairline 屈折（横断中のみ・スクロール連動）──
+   基層 = 線より下（まだ外の部分）、::after = 線より上（帯に入った部分）を
+   僅かに横へずらして描く＝ガラスの縁で像が食い違う。--cut は JS が毎フレーム書く。 */
+.ch::after {
+  content: attr(data-c);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+}
+
+.word[data-refract='true'] .ch {
+  clip-path: inset(var(--cut, 0px) 0 0 0);
+}
+
+.word[data-refract='true'] .ch::after {
+  display: block;
+  clip-path: inset(0 0 calc(100% - var(--cut, 0px)) 0);
+  transform: translateX(0.5px);
+  opacity: 0.85;
+}
+
+/* ── hairline の応答光: 語の真上の区間だけほのかに灯る ──
+   top はヘッダー高 64px の下端に重ねる（SiteHeader .header height と同期）。
+   left/width/opacity は JS が crossGlow から毎フレーム書く。 */
+.hairGlow {
+  position: fixed;
+  top: 63px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  z-index: 102; /* ヘッダー(100)の上・語(110)の下 */
+  pointer-events: none;
+  opacity: 0;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--lp-accent) 45%, transparent) 25% 75%,
+    transparent
+  );
+  box-shadow: 0 0 6px color-mix(in srgb, var(--lp-accent) 25%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .word {
+  .word,
+  .hairGlow {
     display: none;
   }
 }

@@ -25,8 +25,6 @@ export const NAV_DOCK = {
   releaseGap: 10,
   /** traveling → armed へ戻すヒステリシス(px) */
   restGap: 8,
-  /** 1文字ごとの乗り上がり遅延(ms) */
-  charDelayMs: 28,
   /** 衣装替えの波: 1文字ごとの開始遅延(ms) */
   morphCharDelayMs: 30,
   /** 衣装替え: 1文字の沈み→起き上がり全体(ms)。折り返し(1/2)で書体・ケース切替 */

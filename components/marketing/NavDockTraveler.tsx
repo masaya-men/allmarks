@@ -3,6 +3,9 @@
 import { useEffect, useRef } from 'react'
 import {
   NAV_DOCK,
+  bandClimbProgress,
+  charHopArc,
+  crossGlow,
   dashEase,
   dashProgress,
   isDockEligible,
@@ -19,26 +22,36 @@ import styles from './NavDockTraveler.module.css'
  * スクロール量に応じて右のナビ枠へ横移動し（逆走で左へ戻る＝完全可逆）、
  * ナビの自分のスロットに定着する traveler。
  *
+ * 境界（ヘッダー下端の hairline）のマイクロ演出（v3・全てスクロール駆動）:
+ * - 乗り上がりは「跳ね（hop）」の波: 引き継ぎ瞬間は実 kicker と完全同姿、
+ *   帯に入るほど左の文字から順に小さく跳ねる（--hop 0..1 を JS が毎フレーム書く）
+ * - hairline 横断中の文字は、線より上の部分だけ僅かに横へずれる（屈折・--cut で clip）
+ * - 玉は下から線に触れた瞬間に一度だけノック（squash＋リング、これのみ時間制）
+ * - hairline は語の真上の区間だけほのかに灯る（crossGlow）
+ *
  * - 実 kicker / ナビ実ラベルは CSS（html[data-nav-dock] 属性）で隠すだけ。
  *   属性はこのコンポーネントが mount 後にのみ書く＝SSR/prerender は従来表示のまま。
  * - 判定は nav-dock-math の範囲＋ラッチ式（Lenis の慣性で飛んでもすり抜けない）。
- *   帯上（morphing）の位置は毎フレーム実 rect からの純関数＝保存状態なし。
- *   時間制なのは衣装替えの波と、帯を離れる時の垂直帰還だけ。
  * - reduced-motion / ≤960px / kicker≠ナビ語（ローカライズ言語）→ 属性を書かず演出オフ。
  */
 export function NavDockTraveler({ label }: { label: string }): React.ReactElement {
   const wordRef = useRef<HTMLSpanElement>(null)
+  const glowRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     const word = wordRef.current
+    const glowEl = glowRef.current
     const anchor = document.querySelector<HTMLElement>('[data-nav-dock-anchor]')
     const target = document.querySelector<HTMLElement>('[data-nav-dock-target]')
-    if (!word || !anchor || !target) return
+    if (!word || !glowEl || !anchor || !target) return
 
     const html = document.documentElement
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const spans = Array.from(word.querySelectorAll<HTMLElement>('span[data-ch]'))
     let mode: DockMode = 'armed'
     let settleTimer: number | undefined
+    let knockTimer: number | undefined
+    let knockArmed = false
     const charTimers: number[] = []
     let raf = 0
     let enabled = false
@@ -65,14 +78,18 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
       word.style.setProperty('--mp', p.toFixed(3))
     }
 
-    const chSpans = (): HTMLElement[] =>
-      Array.from(word.querySelectorAll<HTMLElement>('span[data-ch]'))
+    /** 境界演出の後始末（屈折 clip・グロー・跳ね残り） */
+    const clearBoundaryFx = (): void => {
+      delete word.dataset.refract
+      glowEl.style.opacity = '0'
+      spans.forEach((s) => s.style.setProperty('--hop', '0'))
+    }
 
     /** 波のタイマーと文字の dip/swap 印を全て解除（morphing を離れるとき必ず呼ぶ） */
     const clearMorphWave = (): void => {
       charTimers.forEach((t) => window.clearTimeout(t))
       charTimers.length = 0
-      chSpans().forEach((s) => {
+      spans.forEach((s) => {
         delete s.dataset.dip
         delete s.dataset.swap
       })
@@ -84,13 +101,14 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
       mode = 'morphing'
       html.dataset.navDock = 'morphing'
       setWordState('morphing', true)
+      clearBoundaryFx()
       const a = anchor.getBoundingClientRect()
       const t = target.getBoundingClientRect()
       word.style.transition = `left ${NAV_DOCK.morphAlignMs}ms ease-out, top ${NAV_DOCK.morphAlignMs}ms ease-out`
       word.style.left = `${a.left}px`
       word.style.top = `${t.top}px`
       setMorph(1)
-      chSpans().forEach((s, i) => {
+      spans.forEach((s, i) => {
         charTimers.push(
           window.setTimeout(() => {
             s.dataset.dip = 'true'
@@ -145,6 +163,9 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
           toTravelingBack()
           return
         }
+        // 本文から乗るときだけ玉のノックを武装（上へ降りるときは解除）
+        if (mode === 'armed' && next === 'traveling') knockArmed = true
+        if (next === 'armed') knockArmed = false
         mode = next
         html.dataset.navDock = next
         setWordState(next, false)
@@ -160,8 +181,54 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
         word.style.top = `${t.top}px`
         return
       }
+
       follow(a)
       setMorph(0)
+      if (mode !== 'traveling') {
+        clearBoundaryFx()
+        return
+      }
+
+      // ── 境界のマイクロ演出（全てスクロール駆動・毎フレーム位置から算出）──
+      const P = bandClimbProgress(a.top)
+      for (let i = 0; i < spans.length; i++) {
+        spans[i].style.setProperty('--hop', charHopArc(P, i, spans.length).toFixed(4))
+      }
+
+      // hairline 近傍でのみ rect を読む（強制レイアウトを横断窓に限定）
+      const near = a.top < NAV_DOCK.headerH + 8 && a.top > NAV_DOCK.headerH - 48
+      if (!near) {
+        delete word.dataset.refract
+        glowEl.style.opacity = '0'
+        return
+      }
+      const wr = word.getBoundingClientRect()
+      const crossing = a.top < NAV_DOCK.headerH && a.top + wr.height > NAV_DOCK.headerH
+      if (crossing) {
+        word.dataset.refract = 'true'
+        spans.forEach((s) => {
+          const r = s.getBoundingClientRect()
+          s.style.setProperty('--cut', `${(NAV_DOCK.headerH - r.top).toFixed(2)}px`)
+        })
+      } else {
+        delete word.dataset.refract
+      }
+
+      const g = crossGlow(a.top, wr.height)
+      glowEl.style.opacity = g.toFixed(3)
+      if (g > 0) {
+        glowEl.style.left = `${a.left - 10}px`
+        glowEl.style.width = `${wr.width + 20}px`
+      }
+
+      if (knockArmed && a.top <= NAV_DOCK.headerH) {
+        knockArmed = false
+        word.dataset.knock = 'true'
+        window.clearTimeout(knockTimer)
+        knockTimer = window.setTimeout(() => {
+          delete word.dataset.knock
+        }, NAV_DOCK.knockMs + 20)
+      }
     }
 
     const onScroll = (): void => {
@@ -185,8 +252,11 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
       if (!enabled) return
       enabled = false
       window.clearTimeout(settleTimer)
+      window.clearTimeout(knockTimer)
       clearMorphWave()
+      clearBoundaryFx()
       delete word.dataset.cancel
+      delete word.dataset.knock
       delete html.dataset.navDock
       setWordState('armed', false)
     }
@@ -207,6 +277,7 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
       window.removeEventListener('resize', evaluate)
       reduced.removeEventListener('change', evaluate)
       window.clearTimeout(settleTimer)
+      window.clearTimeout(knockTimer)
       clearMorphWave()
       if (raf) window.cancelAnimationFrame(raf)
       delete html.dataset.navDock
@@ -215,32 +286,30 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
 
   const chars = [...label]
   return (
-    <span
-      ref={wordRef}
-      className={styles.word}
-      aria-hidden="true"
-      data-state="armed"
-      data-settling="false"
-      style={{
-        ['--mp' as string]: 0,
-        ['--morph-total' as string]: `${morphTotalMs(chars.length)}ms`,
-        ['--morph-half' as string]: `${NAV_DOCK.morphCharMs / 2}ms`,
-        ['--morph-cancel' as string]: `${NAV_DOCK.morphCancelMs}ms`,
-      }}
-    >
-      <span className={styles.dot} />
-      <span className={styles.txt}>
-        {chars.map((c, i) => (
-          <span
-            key={`${c}-${i}`}
-            data-ch
-            className={styles.ch}
-            style={{ ['--climb-delay' as string]: `${i * NAV_DOCK.charDelayMs}ms` }}
-          >
-            {c}
-          </span>
-        ))}
+    <>
+      <span
+        ref={wordRef}
+        className={styles.word}
+        aria-hidden="true"
+        data-state="armed"
+        data-settling="false"
+        style={{
+          ['--mp' as string]: 0,
+          ['--morph-total' as string]: `${morphTotalMs(chars.length)}ms`,
+          ['--morph-half' as string]: `${NAV_DOCK.morphCharMs / 2}ms`,
+          ['--morph-cancel' as string]: `${NAV_DOCK.morphCancelMs}ms`,
+        }}
+      >
+        <span className={styles.dot} />
+        <span className={styles.txt}>
+          {chars.map((c, i) => (
+            <span key={`${c}-${i}`} data-ch data-c={c} className={styles.ch}>
+              {c}
+            </span>
+          ))}
+        </span>
       </span>
-    </span>
+      <span ref={glowRef} className={styles.hairGlow} aria-hidden="true" />
+    </>
   )
 }
