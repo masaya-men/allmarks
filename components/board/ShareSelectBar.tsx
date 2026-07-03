@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type ReactElement } from 'react'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { SHARE_LIMITS_V2 } from '@/lib/share/types-v2'
 import styles from './ShareSelectBar.module.css'
@@ -24,8 +24,15 @@ const CAP_FLASH_MS = 1600
 
 export function ShareSelectBar({ count, capFlashCycle, onSelectAll, onShare, onCancel }: Props): ReactElement {
   const [capVisible, setCapVisible] = useState<boolean>(false)
+  // Track the last cycle we saw so the pill flashes only on an actual bump
+  // (a change), never on the initial value — mounting with an already-nonzero
+  // capFlashCycle must not flash. Initialising the ref to the incoming value
+  // makes the first effect run a no-op regardless of that value.
+  const prevCycleRef = useRef<number>(capFlashCycle)
 
   useEffect((): (() => void) | undefined => {
+    if (capFlashCycle === prevCycleRef.current) return undefined
+    prevCycleRef.current = capFlashCycle
     if (capFlashCycle === 0) return undefined
     setCapVisible(true)
     const t = setTimeout((): void => setCapVisible(false), CAP_FLASH_MS)
@@ -38,7 +45,7 @@ export function ShareSelectBar({ count, capFlashCycle, onSelectAll, onShare, onC
         <span className={styles.counter} data-testid="select-counter">
           {count} / {SHARE_LIMITS_V2.MAX_CARDS} SELECTED
         </span>
-        {capVisible && <span className={styles.capPill}>100 MAX</span>}
+        {capVisible && <span className={styles.capPill}>{SHARE_LIMITS_V2.MAX_CARDS} MAX</span>}
         <div className={styles.actions}>
           <button type="button" className={styles.secondaryBtn} onClick={onSelectAll} data-testid="select-all-button">
             SELECT ALL

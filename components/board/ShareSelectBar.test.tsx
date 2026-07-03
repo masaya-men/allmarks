@@ -43,7 +43,7 @@ describe('ShareSelectBar', () => {
   })
 
   it('does NOT show the cap pill on mount even with a stale non-zero cycle', () => {
-    render(<ShareSelectBar {...baseProps} capFlashCycle={0} />)
+    render(<ShareSelectBar {...baseProps} capFlashCycle={3} />)
     expect(screen.queryByText('100 MAX')).toBeNull()
   })
 
