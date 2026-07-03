@@ -1,9 +1,9 @@
-/* NavDockTraveler.module.css — N-05 traveler（3段直列: 乗る→その場で変身→ダッシュ）。
-   --mp = 姿 0(本文 kicker)↔1(ナビ) の反転スイッチ。滑らかさは TSX の inline transition
-   （font-size/letter-spacing/font-weight/gap）が担い、スクロール連動スクラブはしない。
-   kicker 実測値(intro-page/legal-page/AboutContent 共通):
-   geist-mono 12px w500 ls.2em uppercase ink-soft, dot 7px 緑+4px リング, gap 9px。
-   ナビ着地形: --lp-sans 14px w450 uppercase ls.06em ink-soft（緑玉は温存）。 */
+/* NavDockTraveler.module.css — N-05 traveler（乗る→その場で変身→スクロール駆動で横移動）。
+   --mp = 姿 0(本文 kicker)↔1(ナビ) の反転スイッチ。寸法モーフの滑らかさは
+   .txt の CSS transition が担う（.word の inline transition は left/top 専用）。
+   kicker 形: geist-mono 12px w500 ls.2em uppercase ink-soft, dot 7px 緑+4px リング, gap 9px。
+   ナビ着地形 = SiteHeader .navLink と完全一致:
+   --lp-sans 14px w450 ls-0.005em、大文字化なし（"Features" 混在ケース）、ink-soft。 */
 
 .word {
   --mp: 0;
@@ -14,26 +14,16 @@
   pointer-events: none;
   display: inline-flex;
   align-items: center;
-  gap: calc(9px + (8px - 9px) * var(--mp));
-  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
-  font-size: calc(12px + (14px - 12px) * var(--mp));
-  font-weight: calc(500 + (450 - 500) * var(--mp));
-  letter-spacing: calc(0.2em + (0.06em - 0.2em) * var(--mp));
-  text-transform: uppercase;
+  gap: calc(9px + (8px - 9px) * var(--mp)); /* 1px 差は非遷移スナップで許容 */
+  text-transform: uppercase; /* kicker 形。swap 済み文字は per-char で解除 */
   color: var(--lp-ink-soft);
   white-space: nowrap;
   visibility: hidden; /* armed(帯の外) では実 kicker が本物を表示 */
 }
 
 .word[data-state='traveling'],
-.word[data-state='morphing'],
-.word[data-state='docked'] {
+.word[data-state='morphing'] {
   visibility: visible;
-}
-
-/* 着地形はナビの書体へ（morphing の波で文字ごとに切替済み＝同じ書体なので継ぎ目なし） */
-.word[data-state='docked'] {
-  font-family: var(--lp-sans, system-ui, sans-serif);
 }
 
 .dot {
@@ -45,8 +35,29 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
 }
 
+/* 寸法モーフの担体。--mp 反転を transition で滑らかに追う */
 .txt {
   display: inline-flex;
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: calc(12px + (14px - 12px) * var(--mp));
+  font-weight: calc(500 + (450 - 500) * var(--mp));
+  letter-spacing: calc(0.2em + (-0.005em - 0.2em) * var(--mp));
+}
+
+/* 変身中: 寸法は波の総時間をかけて変わる（ラベル長依存の --morph-total は TSX が設定） */
+.word[data-state='morphing'] .txt {
+  transition:
+    font-size var(--morph-total) cubic-bezier(0.2, 0.85, 0.25, 1),
+    font-weight var(--morph-total) cubic-bezier(0.2, 0.85, 0.25, 1),
+    letter-spacing var(--morph-total) cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+
+/* キャンセル（帯を離れて本文へ帰る）: 一斉に短く巻き戻す */
+.word[data-cancel='true'] .txt {
+  transition:
+    font-size var(--morph-cancel) ease,
+    font-weight var(--morph-cancel) ease,
+    letter-spacing var(--morph-cancel) ease;
 }
 
 /* 1文字ずつの乗り上がり: traveling 進入時に下から climb する。
@@ -62,15 +73,14 @@
 }
 
 .word[data-state='traveling'] .ch,
-.word[data-state='morphing'] .ch,
-.word[data-state='docked'] .ch {
+.word[data-state='morphing'] .ch {
   transform: translateY(0);
   opacity: 1;
 }
 
 /* ── 衣装替えの波（morphing 中のみ・JS がタイマーで dip/swap 印を刻む）──
    keyframe を使わず transition + data 印で組む＝キャンセル時に滑らかに巻き戻せる。
-   前半: 沈んで減光 → 折り返しで font-family をナビ書体へ掛け替え → 後半: 起き上がる */
+   前半: 沈んで減光 → 折り返しで書体とケースをナビ実体へ掛け替え → 後半: 起き上がる */
 .word[data-state='morphing'] .ch[data-dip='true'] {
   transform: translateY(3px);
   opacity: 0.55;
@@ -80,6 +90,7 @@
 
 .word[data-state='morphing'] .ch[data-swap='true'] {
   font-family: var(--lp-sans, system-ui, sans-serif);
+  text-transform: none; /* FEATURES → Features（本来のケースへ） */
   transition-duration: var(--morph-half);
   transition-delay: 0ms;
 }
