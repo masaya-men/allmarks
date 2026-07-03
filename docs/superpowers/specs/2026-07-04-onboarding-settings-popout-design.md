@@ -54,7 +54,7 @@ Props: `{ caption: string; buttonLabel: string; onAdvance: () => void }`。Onboa
 2. 窓の中の横カルーセルに、**ミニカードが右端からグライドイン → 中央着地**（ease-out quart・約700ms＝実挙動と同じ数値）。これを**2枚**行い、
 3. 窓下の**常時メーター**が `01 / 01` → `02 / 02` と進む（実 PiP の LightboxNavMeter を模した簡易 HUD。実コンポーネントは持ち込まず、見た目だけ再現）。
 4. 下中央キャプション＋**NEXT**（他 cinema シーンと同一操作）。
-- `prefers-reduced-motion` 尊重（グライドを即着地に）。GSAP でなく CSS/WAAPI で軽く（バンドル方針）。実 PiP コンポーネント（PipStack 等）は import しない＝純粋な視覚再現に留める（結合を作らない）。
+- `prefers-reduced-motion` 尊重（グライドを即着地・メーターは最終値）。アニメは **GSAP タイムライン**（既存 `BookmarkletSaveReenactment`/`ExtensionSaveReenactment` と同じ・Framer Motion 禁止＝CLAUDE.md）。実 PiP コンポーネント（PipStack 等）は import しない＝純粋な視覚再現に留める（結合を作らない）。
 
 ### コピー（15言語・`board.onboarding.popout.*`）
 [messages/*.json](../../../messages/en.json)（15言語・`board-onboarding-parity.test.ts` がキー存在を強制）に追加：
