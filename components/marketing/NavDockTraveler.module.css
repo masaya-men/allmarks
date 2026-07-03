@@ -1,5 +1,6 @@
-/* NavDockTraveler.module.css — N-05 traveler。
-   --mp = モーフ進捗 0(本文 kicker 姿)→1(ナビ姿)。
+/* NavDockTraveler.module.css — N-05 traveler（3段直列: 乗る→その場で変身→ダッシュ）。
+   --mp = 姿 0(本文 kicker)↔1(ナビ) の反転スイッチ。滑らかさは TSX の inline transition
+   （font-size/letter-spacing/font-weight/gap）が担い、スクロール連動スクラブはしない。
    kicker 実測値(intro-page/legal-page/AboutContent 共通):
    geist-mono 12px w500 ls.2em uppercase ink-soft, dot 7px 緑+4px リング, gap 9px。
    ナビ着地形: --lp-sans 14px w450 uppercase ls.06em ink-soft（緑玉は温存）。 */
@@ -25,11 +26,12 @@
 }
 
 .word[data-state='traveling'],
+.word[data-state='morphing'],
 .word[data-state='docked'] {
   visibility: visible;
 }
 
-/* 着地形はナビの書体へ（ダッシュ中に切替＝高速移動中で知覚されにくい） */
+/* 着地形はナビの書体へ（morphing の波で文字ごとに切替済み＝同じ書体なので継ぎ目なし） */
 .word[data-state='docked'] {
   font-family: var(--lp-sans, system-ui, sans-serif);
 }
@@ -47,7 +49,8 @@
   display: inline-flex;
 }
 
-/* 1文字ずつの乗り上がり: traveling 進入時に下から climb する */
+/* 1文字ずつの乗り上がり: traveling 進入時に下から climb する。
+   stagger は --climb-delay（TSX が文字ごとに設定）。 */
 .ch {
   display: inline-block;
   transform: translateY(6px);
@@ -55,12 +58,36 @@
   transition:
     transform 0.32s cubic-bezier(0.2, 0.85, 0.25, 1),
     opacity 0.32s ease;
+  transition-delay: var(--climb-delay, 0ms);
 }
 
 .word[data-state='traveling'] .ch,
+.word[data-state='morphing'] .ch,
 .word[data-state='docked'] .ch {
   transform: translateY(0);
   opacity: 1;
+}
+
+/* ── 衣装替えの波（morphing 中のみ・JS がタイマーで dip/swap 印を刻む）──
+   keyframe を使わず transition + data 印で組む＝キャンセル時に滑らかに巻き戻せる。
+   前半: 沈んで減光 → 折り返しで font-family をナビ書体へ掛け替え → 後半: 起き上がる */
+.word[data-state='morphing'] .ch[data-dip='true'] {
+  transform: translateY(3px);
+  opacity: 0.55;
+  transition-duration: var(--morph-half);
+  transition-delay: 0ms;
+}
+
+.word[data-state='morphing'] .ch[data-swap='true'] {
+  font-family: var(--lp-sans, system-ui, sans-serif);
+  transition-duration: var(--morph-half);
+  transition-delay: 0ms;
+}
+
+/* キャンセル巻き戻し: 全文字一斉・短く（乗り上がり用 stagger を無効化） */
+.word[data-cancel='true'] .ch {
+  transition-duration: var(--morph-cancel);
+  transition-delay: 0ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
