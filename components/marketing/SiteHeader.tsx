@@ -43,6 +43,11 @@ export function SiteHeader({
     const el = headerRef.current
     if (!el) return
 
+    // 最下部の黒幕（footer finale）。トップLPでは footer が z-index:1 の
+    // 文脈内にあり z ではヘッダーを覆えないため、幕が画面上端まで来たら
+    // ヘッダー自身が退場して「ヘッダーごと真っ黒」を成立させる。
+    const finale = document.querySelector<HTMLElement>('[data-footer-finale]')
+
     let ticking = false
     const onScroll = (): void => {
       if (ticking) return
@@ -52,6 +57,8 @@ export function SiteHeader({
         if (!el) return
         const scrolled = window.scrollY > 32
         el.setAttribute('data-scrolled', scrolled ? 'true' : 'false')
+        const covered = finale !== null && finale.getBoundingClientRect().top <= 8
+        el.setAttribute('data-finale-covered', covered ? 'true' : 'false')
       })
     }
 

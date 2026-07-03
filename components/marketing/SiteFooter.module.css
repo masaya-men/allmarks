@@ -34,6 +34,9 @@
   justify-content: center;
   /* z-index token — ABOVE SiteHeader(100) so the closing screen is fully black */
   z-index: var(--lp-z-footer-finale, 120);
+  /* .footer の横 padding(40px) を突き抜けて全幅に。これが無いと左右の溝に
+     fixed ヘッダーの半透明バー端が白い矩形として露出する（ヘッダーごと黒にする意図が崩れる） */
+  margin: 0 -40px;
 }
 
 .finaleInner {
@@ -91,6 +94,7 @@
     position: static;
     min-height: auto;
     padding: 60px 40px;
+    margin: 0; /* 全画面化しない静的ブロックでは全幅化も不要（従来どおり） */
   }
 }
 
@@ -100,6 +104,7 @@
     position: static;
     min-height: auto;
     padding: 60px 24px;
+    margin: 0; /* 全画面化しない静的ブロックでは全幅化も不要（従来どおり） */
   }
 }
 

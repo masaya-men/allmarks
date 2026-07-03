@@ -32,7 +32,19 @@
   transition:
     background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
     border-color     0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    backdrop-filter  0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter  0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity          0.25s ease;
+}
+
+/* ── 最下部: footer の黒幕(finale)が画面を覆ったらヘッダーも退場 ──
+   設計意図は「最下部はヘッダーごと完全な黒」。トップLPでは footer が
+   z-index:1 の文脈に入っていて幕(z120)がヘッダー(z100)を z で覆えないため、
+   ヘッダー自身が消える。幕の全画面化はデスクトップ+motion時のみなので同条件に限定。 */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .header[data-finale-covered='true'] {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* ── Scrolled state: translucent bar with hairline ── */
