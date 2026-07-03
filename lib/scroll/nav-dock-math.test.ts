@@ -1,6 +1,14 @@
 // lib/scroll/nav-dock-math.test.ts
 import { describe, expect, it } from 'vitest'
-import { NAV_DOCK, isDockEligible, morphProgress, morphTotalMs, nextDockMode } from './nav-dock-math'
+import {
+  NAV_DOCK,
+  dashEase,
+  dashProgress,
+  isDockEligible,
+  morphProgress,
+  morphTotalMs,
+  nextDockMode,
+} from './nav-dock-math'
 
 describe('morphProgress', () => {
   it('glassStart より下では 0', () => {
@@ -28,7 +36,7 @@ describe('nextDockMode（範囲＋ラッチ式＝Lenis の慣性で1フレーム
     expect(nextDockMode('traveling', NAV_DOCK.dockY)).toBe('morphing')
     expect(nextDockMode('traveling', -500)).toBe('morphing')
   })
-  it('morphing: スクロールでは docked に進まない（昇格はタイマーのみ）', () => {
+  it('morphing: どれだけ下へ飛んでも morphing を維持（帯上の全期間＝位置は anchorTop の純関数）', () => {
     expect(nextDockMode('morphing', NAV_DOCK.dockY)).toBe('morphing')
     expect(nextDockMode('morphing', -500)).toBe('morphing')
   })
@@ -43,10 +51,35 @@ describe('nextDockMode（範囲＋ラッチ式＝Lenis の慣性で1フレーム
     expect(nextDockMode('traveling', 60)).toBe('traveling')
     expect(nextDockMode('traveling', NAV_DOCK.glassStart + 2)).toBe('traveling')
   })
-  it('docked: dockY+releaseGap まで戻ったら traveling（それまでは docked 維持）', () => {
-    expect(nextDockMode('docked', NAV_DOCK.dockY + NAV_DOCK.releaseGap)).toBe('traveling')
-    expect(nextDockMode('docked', NAV_DOCK.dockY + NAV_DOCK.releaseGap - 1)).toBe('docked')
-    expect(nextDockMode('docked', -100)).toBe('docked')
+})
+
+describe('dashProgress（スクロール駆動の横移動 0→1。とどまり holdPx → 横断 dashPx）', () => {
+  const dashStartY = NAV_DOCK.dockY - NAV_DOCK.holdPx
+  it('発動直後〜とどまり区間は 0（その場に留まる）', () => {
+    expect(dashProgress(NAV_DOCK.dockY)).toBe(0)
+    expect(dashProgress(dashStartY)).toBe(0)
+  })
+  it('dashPx 区間で線形に 0→1（中点で 0.5）', () => {
+    expect(dashProgress(dashStartY - NAV_DOCK.dashPx / 2)).toBeCloseTo(0.5, 5)
+  })
+  it('dashPx を越えたら 1 に張り付く（枠に定着）', () => {
+    expect(dashProgress(dashStartY - NAV_DOCK.dashPx)).toBe(1)
+    expect(dashProgress(-10000)).toBe(1)
+  })
+})
+
+describe('dashEase（出だし素早く・終端で僅かに行き過ぎて「はまる」easeOutBack 系）', () => {
+  it('両端は 0 と 1 に一致', () => {
+    expect(dashEase(0)).toBeCloseTo(0, 8)
+    expect(dashEase(1)).toBeCloseTo(1, 8)
+  })
+  it('序盤から速い（0.3 で既に半分を越える）', () => {
+    expect(dashEase(0.3)).toBeGreaterThan(0.5)
+  })
+  it('終端手前で僅かに 1 を行き過ぎる（overshoot ≒ +1.5%）', () => {
+    const peak = dashEase(0.74)
+    expect(peak).toBeGreaterThan(1)
+    expect(peak).toBeLessThan(1.03)
   })
 })
 
