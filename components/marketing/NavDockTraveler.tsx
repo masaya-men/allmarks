@@ -102,6 +102,8 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
       html.dataset.navDock = 'morphing'
       setWordState('morphing', true)
       clearBoundaryFx()
+      // キャンセル整定中に再進入した場合、削除タイマーごと消えるので旗を直接下ろす
+      delete word.dataset.cancel
       const a = anchor.getBoundingClientRect()
       const t = target.getBoundingClientRect()
       word.style.transition = `left ${NAV_DOCK.morphAlignMs}ms ease-out, top ${NAV_DOCK.morphAlignMs}ms ease-out`
@@ -165,7 +167,13 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
         }
         // 本文から乗るときだけ玉のノックを武装（上へ降りるときは解除）
         if (mode === 'armed' && next === 'traveling') knockArmed = true
-        if (next === 'armed') knockArmed = false
+        if (next === 'armed') {
+          knockArmed = false
+          // settling 中に armed へ抜けても後始末が漏れないようここで掃除
+          // （cancel はタイマー任せにせず即下ろす。armed では traveler 非表示）
+          clearBoundaryFx()
+          delete word.dataset.cancel
+        }
         mode = next
         html.dataset.navDock = next
         setWordState(next, false)
