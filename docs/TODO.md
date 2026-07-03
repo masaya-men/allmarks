@@ -66,7 +66,7 @@
 
 **release blocker (= 公開前 必須・残り)**:
 1. **onboarding チュートリアル** — ✅ session 121 でユーザー「一旦OK」。追加ブラッシュアップは公開後でも可(ユーザーと一緒に随時)。
-2. **拡張機能 Chrome Web Store 提出** — ✅ **session 121 で提出済(審査結果待ち)**。掲載文(英＋日併記)・素材(`dist/store-assets/`)・zip(`dist/booklage-extension-0.1.21.zip`, v0.1.21 Aアイコン)。**承認されたら `EXTENSION_STORE_URL` 投入 + 再デプロイ**(これが唯一の残作業、[docs/extension-store-submission.md](./extension-store-submission.md) §7)。却下/修正依頼ならメール文面→該当箇所修正→再提出。
+2. **拡張機能 Chrome Web Store 提出** — ✅ **審査通過（セッション157でユーザー確認）**。残作業＝`EXTENSION_STORE_URL` 投入 + 再デプロイ（[docs/extension-store-submission.md](./extension-store-submission.md) §7）。**ただし下記のクイックタグ2列バグを直すなら新バージョン再提出になる**ので、URL投入と同時に修正版を出すか、URLを先に出して次版で直すかは要判断。
 3. **公開前の残り片付け** — ✅ **実態調査で完了/不要と判明(TODO記載が古かった)**: `chrome-extension/` は不在(本物は `extension/`＝提出対象)。残るは上記2の `EXTENSION_STORE_URL` 投入のみ。
    - **BackupButton.tsx/backup.ts は未描画の孤立コード** → **B5(rank15)で「ユーザー向けバックアップ機能」として復活配線する方針に確定(session123)**。これは将来の DBバージョン上げ前に「ユーザーが自分でバックアップを取れる」安全網を用意する目的(=version bump の前提)。置き場所は SETTINGS ドロワー内が候補(要 user 確認)。
 
@@ -107,13 +107,19 @@
 
 完了済バグは TODO_COMPLETED.md に移動済。 ここはアクティブのみ。
 
+### session 157 で報告（ユーザー実機メモ・新規）
+
+- **(N-20) 拡張クイックタグ窓：上だけ2列のまま** — N-18 で「1列化」したのは**ドロワー（展開時の全タグ）だけ**。折りたたみプレビュー行 `.allmarks-tagstrip__row` が [floating-button.js:453](../extension/floating-button.js#L453) の `tagstripSplit(tags, 2)` で**上位2タグを横並び**にしているのが「上だけ2列」の正体。修正案＝プレビューを1タグに（`tagstripSplit(tags, 1)`）or 開いたら全タグを単一ドロワーに寄せて行を handle だけにする。**拡張は審査通過済＝修正すると新バージョン再提出**（要判断）。`extension/lib/tag-strip-model.js` に純関数、`extension/floating-button.css` L227〜 が row の横並び定義。
+- **(N-21) オンボ：SETTINGS の説明が埋もれる** — `manage` シーンの `settings` beat（[OnboardingController.tsx](../components/onboarding/OnboardingController.tsx) L186〜）で SETTINGS ドロワーを開いてトグルをスポットライトするが、**説明キャプションが開いたドロワーに隠れて読めない**（ユーザー実機・画像）。キャプション位置 or スポットライトの見せ方の修正が要る。
+- **(N-22) オンボ：POP OUT の説明シーンが無い** — シーン列（enter/paste/tag/motion/extDemo/install/manage/share/finale・[lib/onboarding/steps.ts](../lib/onboarding/steps.ts#L22)）に **POP OUT（PiP）のシーンが存在しない**。主要機能なので説明アニメ（他シーン同様の hands-on or cinema）を追加したい。
+
 ### session 150続き で報告（ユーザー実機メモ7件 — 残タスクのみ）
 
 > ✅ 完了（→ TODO_COMPLETED セッション150続き）: **N-17** TRASH の EMPTY TRASH ボタン赤 danger 化（本番反映・確認OK）／ **N-18** 拡張クイックタグ窓の見切れ（1列スクロール化・v0.1.22 パッケージ→**2026-07-02 ストア審査提出済**）。
 > ⏹ 対応不要: **N-14** Lightbox 中のボードモーション（カード/動画/スライドショーは既に `ambientOn` gate で停止済）。
 > 🅿 保留: **N-16** 空ボードの青モーダル＝**スマホ限定**（未対応プラットフォーム）。色トークンだけダーク化済（デスクトップは背景ワードマークに occlude され不可視＝実害なし）。スマホ対応時に再確認。
 
-- **(N-15) PC 電源入れ直し後、初回1回だけ拡張の保存が失敗するかも** — service worker のコールドスタート/接続未確立が疑い。要原因解明＋対策（初回リトライ/ウォームアップ/接続 readiness 待ち）。**再現に実 reboot が要るのが難点** → コード経路の調査＋防御的対策を先に。
+- ~~**(N-15) PC 電源入れ直し後、初回1回だけ拡張の保存が失敗するかも**~~ ✅ **セッション157でユーザー「終わってます」判定**（実機で再現しなくなった＝解決扱い。コード側の恒久対策が要るなら再浮上時に）。
 - ~~(N-19) カードのサイズ/並び順を default に戻す~~ ✅ **セッション152 完了**（SETTINGS→LAYOUT に RESET CARD SIZES / SORT: NEWEST FIRST を2タップ確認付きで出荷。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s152）。
 - ~~(#4 = 既出 N-05) LP ナビの格納演出ブラッシュアップ~~ ✅ **セッション155で実装・156でブラッシュアップ完遂**（3段直列＋スクロール駆動ダッシュ＋境界マイクロ演出4点。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s155/s156）。未決の残メモ: 13言語は kicker≠ナビ語で自動オフ（英語統一案は要相談）。
 
