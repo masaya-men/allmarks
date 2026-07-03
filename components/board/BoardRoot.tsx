@@ -2566,7 +2566,12 @@ export function BoardRoot() {
               onApplySampleTag={() => { void applySampleTag() }}
               onZoomToCard={zoomCameraToOnboardingCard}
               onZoomReset={resetOnboardingCamera}
-              onShareSceneActive={(active): void => setShareModalOpen(active)}
+              onShareSceneActive={(active): void => {
+                setShareModalOpen(active)
+                // Match onClose: closing the modal discards any confirmed
+                // one-shot selection so it can't leak into a later normal share (spec §1).
+                if (!active) setShareSelectedIds(null)
+              }}
               shareModalOpen={shareModalOpen}
             />
           )}
