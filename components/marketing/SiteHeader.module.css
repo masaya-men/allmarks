@@ -164,3 +164,32 @@
     transition: none;
   }
 }
+
+/* ── N-05 nav-dock: active ページの語は traveler が運ぶ ──
+   html[data-nav-dock] は NavDockTraveler だけが mount 後に書く。
+   無属性(SSR/演出オフ)では .dockSlot は display:none = 従来表示のまま。 */
+.dockSlot {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slotDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+:global(html[data-nav-dock]) .navLabelPlain {
+  display: none;
+}
+
+:global(html[data-nav-dock]) .dockSlot {
+  display: inline-flex;
+  visibility: hidden; /* 幅だけ確保。語は traveler が描く */
+}
