@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 158 — オンボ改善 N-21+N-22 出荷・master マージ済・allmarks.app 反映済／ユーザー実機目視のみ残)
+
+- **オンボ改善 N-21+N-22 を出荷**（merge `28931b9`・`--no-ff`・tsc0 / **vitest1945** / build OK・`allmarks.app` 反映済・default 盤面 byte-identical）。
+  - **N-21**＝`manage`/`settings` beat の `OnboardingSpotlight` に `captionAtBottom` 追加（1行）→ SETTINGS 説明が画面下中央に固定され開いたドロワーに埋もれない。
+  - **N-22**＝desktop 専用 `popout` cinema シーンを `install` の後に追加＋新 `PopOutReenactment`（GSAP・**純視覚再現**＝実 PiP は開かず import もしない）：カードが**右からグライドイン→中央着地**（`power4.out`/0.7s）＋**常時メーター**（`00/00→01/01→02/02`）。15言語コピー。cinema 分岐に配線（到達性確認済）。
+  - 進め方＝`superpowers:subagent-driven-development`（6タスク＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge YES**）。レビューで回帰1件捕捉・修正（popout 挿入で manage walk テストが off-by-one＝test-only +1 NEXT）／spec 準拠仕上げ1件（メーター常時表示化 `dc04767`）。正本 [spec](superpowers/specs/2026-07-04-onboarding-settings-popout-design.md) / [plan](superpowers/plans/2026-07-04-onboarding-settings-popout.md)・narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158。
+- **未対応の残り**: **ユーザー実機目視のみ**（`allmarks.app` ハードリロード→オンボを頭から。①SETTINGS 説明が下中央で読める②`install` の次に POP OUT が出て右からカードが入る③メーター `00/00→01/01→02/02`）。メーター空窓 `00/00` が気になれば1行で hidden-when-empty に戻せる。
+- **次（セッション159）**: N-20（拡張クイックタグ2列・`EXTENSION_STORE_URL` 投入と同回）／③プレミアムテーマ／④K3 解錠。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 157 — 選択的シェア「SELECT CARDS」出荷・master マージ済・本番実測 PASS)
 
 - **選択的シェアを出荷**（merge `1aaeb37`・tsc0 / **vitest1942** / build OK・`allmarks.app` 反映済・Playwright 本番スモーク **12/12 PASS**・default 盤面 byte-identical）。SHARE モーダルに **SELECT CARDS** を追加 → 盤面が選択モードに（tap で選択トグル・0枚スタート・緑✓バッジ+緑アウトライン・下部バー `n/100 SELECTED`＋SELECT ALL＋SHARE(n)＋CANCEL＋琥珀「100 MAX」）→ SHARE(n) で確定すると**選んだカードだけ**を盤面順で共有（`filter:null`・タグ帯なし）。既存の「押したらすぐ新しい順100枚」は無変更。**受け取り側 /s/ は無変更**。
@@ -111,8 +120,8 @@
 ### session 157 で報告（ユーザー実機メモ・新規）
 
 - **(N-20) 拡張クイックタグ窓：上だけ2列のまま** — N-18 で「1列化」したのは**ドロワー（展開時の全タグ）だけ**。折りたたみプレビュー行 `.allmarks-tagstrip__row` が [floating-button.js:453](../extension/floating-button.js#L453) の `tagstripSplit(tags, 2)` で**上位2タグを横並び**にしているのが「上だけ2列」の正体。修正案＝プレビューを1タグに（`tagstripSplit(tags, 1)`）or 開いたら全タグを単一ドロワーに寄せて行を handle だけにする。**拡張は審査通過済＝修正すると新バージョン再提出**（要判断）。`extension/lib/tag-strip-model.js` に純関数、`extension/floating-button.css` L227〜 が row の横並び定義。
-- **(N-21) オンボ：SETTINGS の説明が埋もれる** — `manage` シーンの `settings` beat（[OnboardingController.tsx](../components/onboarding/OnboardingController.tsx) L186〜）で SETTINGS ドロワーを開いてトグルをスポットライトするが、**説明キャプションが開いたドロワーに隠れて読めない**（ユーザー実機・画像）。キャプション位置 or スポットライトの見せ方の修正が要る。
-- **(N-22) オンボ：POP OUT の説明シーンが無い** — シーン列（enter/paste/tag/motion/extDemo/install/manage/share/finale・[lib/onboarding/steps.ts](../lib/onboarding/steps.ts#L22)）に **POP OUT（PiP）のシーンが存在しない**。主要機能なので説明アニメ（他シーン同様の hands-on or cinema）を追加したい。
+- ~~**(N-21) オンボ：SETTINGS の説明が埋もれる**~~ ✅ **セッション158 完了**（`captionAtBottom` で下中央固定。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158）。ユーザー実機目視のみ残。
+- ~~**(N-22) オンボ：POP OUT の説明シーンが無い**~~ ✅ **セッション158 完了**（desktop 専用 `popout` cinema シーン＋`PopOutReenactment`＝右グライドイン再現。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158）。ユーザー実機目視のみ残。
 
 ### session 150続き で報告（ユーザー実機メモ7件 — 残タスクのみ）
 
