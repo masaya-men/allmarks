@@ -14,7 +14,7 @@ export function ContactContent(): React.ReactElement {
   return (
     <article className={styles.root}>
       <header className={styles.hero}>
-        <p className={styles.kicker}>
+        <p className={styles.kicker} data-nav-dock-anchor>
           <span className={styles.kickerDot} aria-hidden="true" />
           {t('pages.contact.hero.kicker')}
         </p>

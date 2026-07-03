@@ -1,0 +1,70 @@
+/* NavDockTraveler.module.css — N-05 traveler。
+   --mp = モーフ進捗 0(本文 kicker 姿)→1(ナビ姿)。
+   kicker 実測値(intro-page/legal-page/AboutContent 共通):
+   geist-mono 12px w500 ls.2em uppercase ink-soft, dot 7px 緑+4px リング, gap 9px。
+   ナビ着地形: --lp-sans 14px w450 uppercase ls.06em ink-soft（緑玉は温存）。 */
+
+.word {
+  --mp: 0;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 110; /* SiteHeader(z100) の上 */
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(9px + (8px - 9px) * var(--mp));
+  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
+  font-size: calc(12px + (14px - 12px) * var(--mp));
+  font-weight: calc(500 + (450 - 500) * var(--mp));
+  letter-spacing: calc(0.2em + (0.06em - 0.2em) * var(--mp));
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+  white-space: nowrap;
+  visibility: hidden; /* armed(帯の外) では実 kicker が本物を表示 */
+}
+
+.word[data-state='traveling'],
+.word[data-state='docked'] {
+  visibility: visible;
+}
+
+/* 着地形はナビの書体へ（ダッシュ中に切替＝高速移動中で知覚されにくい） */
+.word[data-state='docked'] {
+  font-family: var(--lp-sans, system-ui, sans-serif);
+}
+
+.dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+}
+
+.txt {
+  display: inline-flex;
+}
+
+/* 1文字ずつの乗り上がり: traveling 進入時に下から climb する */
+.ch {
+  display: inline-block;
+  transform: translateY(6px);
+  opacity: 0.001;
+  transition:
+    transform 0.32s cubic-bezier(0.2, 0.85, 0.25, 1),
+    opacity 0.32s ease;
+}
+
+.word[data-state='traveling'] .ch,
+.word[data-state='docked'] .ch {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word {
+    display: none;
+  }
+}

@@ -20,7 +20,7 @@ export function FaqContent(): React.ReactElement {
   return (
     <article ref={rootRef} className={styles.root}>
       <header className={styles.hero}>
-        <p className={styles.kicker} data-reveal>
+        <p className={styles.kicker} data-reveal data-nav-dock-anchor>
           <span className={styles.kickerDot} aria-hidden="true" />
           {t('pages.faq.hero.kicker')}
         </p>

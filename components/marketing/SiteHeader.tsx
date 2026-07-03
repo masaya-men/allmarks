@@ -22,7 +22,7 @@ import styles from './SiteHeader.module.css'
  * black) and a theme toggle would fight the intentional flow.
  */
 
-const NAV_ITEMS = [
+export const NAV_ITEMS = [
   { subpath: 'features', label: 'Features' },
   { subpath: 'guide',    label: 'Guide'    },
   { subpath: 'about',    label: 'About'    },
@@ -68,11 +68,26 @@ export function SiteHeader({
       </Link>
 
       <nav className={styles.nav} aria-label="Primary navigation">
-        {NAV_ITEMS.map((item) => (
-          <Link key={item.subpath} href={navHref(locale, item.subpath)} className={styles.navLink}>
-            {item.label}
-          </Link>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          // N-05: 現在ページの語は NavDockTraveler が本文から運んでくる。
+          // html[data-nav-dock] が立っている間だけ CSS がスロット(ghost)に切替える。
+          const isDockSlot = item.subpath === subpath
+          return (
+            <Link key={item.subpath} href={navHref(locale, item.subpath)} className={styles.navLink}>
+              {isDockSlot ? (
+                <>
+                  <span className={styles.navLabelPlain}>{item.label}</span>
+                  <span className={styles.dockSlot} data-nav-dock-target aria-hidden="true">
+                    <span className={styles.slotDot} />
+                    {item.label}
+                  </span>
+                </>
+              ) : (
+                item.label
+              )}
+            </Link>
+          )
+        })}
         <Link href="/board" className={styles.openApp}>
           Open Board
           <span className={styles.openArrow} aria-hidden="true">↗</span>
