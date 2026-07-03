@@ -21,6 +21,16 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 155 — N-05 LPナビ格納演出を作り直して出荷・本番反映済 ※s154は全損だった)
+
+- **N-05 完遂**（master `b0d81a6`・tsc0 / **vitest1901** / build OK・`allmarks.app` 反映済・本番実測 PASS）。5サブページで kicker がガラス帯に1文字ずつ乗り上がり→右へダッシュ→ナビの自分のスロットへバウンド着地（可逆）。
+  - 新規 `lib/scroll/nav-dock-math.ts`(+14テスト)＝**範囲＋ラッチ式**判定（Lenis 慣性すり抜け不能・大ホイール実測で証明）／新規 `NavDockTraveler.tsx/.module.css`／配線＝SiteHeader スロット2枚持ち・MarketingShell(Lenis+traveler)・5ページ kicker anchor・landing-tokens ゲート。
+  - **演出オフ条件（確定）**: reduced-motion（ユーザー確定・OS設定尊重）／≤960px／kicker≠ナビ語（**13言語はローカライズ済みで自動オフ**・en/ja は有効）。属性 `html[data-nav-dock]` は mount 後にのみ書く＝SSR/JS無効は従来表示。
+  - 正本 [spec](superpowers/specs/2026-07-03-lp-nav-dock-design.md)（※§2「実コード確認」は s154 の偽読み混入 → [plan](superpowers/plans/2026-07-03-lp-nav-dock.md) 冒頭の訂正対照表が正）/ narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s155。
+- **重大事実**: s154 の「実装済み・commit 88178ff」は**偽保存で実在しなかった**（fsck/reflog/origin/worktree まで捜索し痕跡ゼロ）。ディスクに届いていたのは spec/TODO追記/計測メモのみ。教訓＝**書き込み・commit は独立した実出力で確認**。
+- **残る微調整（任意）**: バウンド強さ/ダッシュ速度/着地書体は実機の好みで `NAV_DOCK` 定数と `.module.css` の `--mp` 補間値をいじるだけ。
+- **次（セッション156）**: ユーザー実機で N-05 の動きを確認→好みチューニング → 本命バックログ（③プレミアムテーマ／④K3 解錠／選択的シェア／タグ強化）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 153 — N-19 実機OK＋フェード修正出荷 / N-05 LP格納演出ブレスト継続中)
 
 - **前半＝N-19 実機確認OK ＋ フォローアップ修正**（master 反映済）：SETTINGS スクロールフェードが下端に固定されず特定項目に黒帯が貼り付くバグを修正（内側 `.drawerScroll` 方式・master `365ddd4`・Playwright 実測で dev＋本番合格）。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s152。
