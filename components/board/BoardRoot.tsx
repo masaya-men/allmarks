@@ -87,6 +87,8 @@ import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
+import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/share/selection'
+import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -364,6 +366,16 @@ export function BoardRoot() {
   const [lightboxOriginRect, setLightboxOriginRect] = useState<DOMRect | null>(null)
   const [newlyAddedIds, setNewlyAddedIds] = useState<ReadonlySet<string>>(new Set())
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
+  // Selective share (spec 2026-07-03). selectMode = the board is in
+  // tap-to-select mode; selectedIds = the working selection while in the mode;
+  // shareSelectedIds = the CONFIRMED selection the share modal previews
+  // (null = normal newest-100 share). selectionScrollY = the modal preview's
+  // local scroll for a selection (the bg board scroll is meaningless there).
+  const [selectMode, setSelectMode] = useState<boolean>(false)
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
+  const [capFlashCycle, setCapFlashCycle] = useState<number>(0)
+  const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
+  const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
   // Onboarding: true while the first-run tutorial overlay is active.
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false)
   // Resume target after the manage scene's /triage detour (undefined = start at
@@ -1822,16 +1834,104 @@ export function BoardRoot() {
     setBookmarkletModalOpen(false)
   }, [])
 
+  // ---- Selective share ------------------------------------------------
+  // Payload/preview items resolve against `items` (live bookmarks, orderIndex
+  // DESC) so the shared set is board-ordered, not click-ordered. Ids selected
+  // under a different tag filter still resolve here (selection survives
+  // filter switches; spec §2).
+  const shareSelectedItems = useMemo(
+    () => (shareSelectedIds == null ? null : selectedInBoardOrder(items, shareSelectedIds)),
+    [items, shareSelectedIds],
+  )
+
+  // Compact skyline of ONLY the selected cards — the same reflow the receiver
+  // reconstructs, so the preview shows what they will actually see (spec §3).
+  const selectionLayout = useMemo(() => {
+    if (shareSelectedItems == null) return null
+    const cards: SkylineCard[] = shareSelectedItems.map((it) => {
+      const w = customWidths[it.bookmarkId] ?? cardWidthPx
+      return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
+    })
+    return computeSkylineLayout({ cards, containerWidth: effectiveLayoutWidth, gap: cardGapPx })
+  }, [shareSelectedItems, customWidths, cardWidthPx, effectiveLayoutWidth, cardGapPx])
+
+  const selectionContentHeight =
+    selectionLayout == null ? 0 : selectionLayout.totalHeight + BOARD_TOP_PAD_PX
+
+  const handleEnterSelectMode = useCallback((): void => {
+    setShareModalOpen(false)
+    setShareSelectedIds(null)
+    setSelectedIds(new Set())
+    setCapFlashCycle(0) // stale cycle would flash the pill on bar mount
+    setSelectMode(true)
+  }, [])
+
+  const handleSelectToggle = useCallback(
+    (bookmarkId: string): void => {
+      const r = toggleSelection(selectedIds, bookmarkId)
+      if (r.capped) {
+        setCapFlashCycle((c) => c + 1)
+        return
+      }
+      setSelectedIds(r.ids)
+    },
+    [selectedIds],
+  )
+
+  const handleSelectAll = useCallback((): void => {
+    const r = addAllVisible(selectedIds, lightboxNavItems.map((it) => it.bookmarkId))
+    if (r.capped) setCapFlashCycle((c) => c + 1)
+    setSelectedIds(r.ids)
+  }, [selectedIds, lightboxNavItems])
+
+  const handleSelectCancel = useCallback((): void => {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+  }, [])
+
+  const handleSelectShare = useCallback((): void => {
+    if (selectedIds.size === 0) return
+    setSelectMode(false)
+    setShareSelectedIds(selectedIds)
+    setSelectionScrollY(0)
+    setShareModalOpen(true)
+  }, [selectedIds])
+
+  // Esc leaves selection mode (= CANCEL). The share modal is closed while the
+  // mode is active, so this never fights the modal's own Esc handler.
+  useEffect((): (() => void) | undefined => {
+    if (!selectMode) return undefined
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') handleSelectCancel()
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [selectMode, handleSelectCancel])
+
+  // Local preview pan for a selection share — clamped to the selection's own
+  // content height; the bg board's viewport is not touched.
+  const handleSelectionPanY = useCallback(
+    (dy: number): void => {
+      const maxY = Math.max(0, selectionContentHeight - viewport.h)
+      setSelectionScrollY((y) => Math.min(Math.max(y + dy, 0), maxY))
+    },
+    [selectionContentHeight, viewport.h],
+  )
+  // ---- /Selective share -----------------------------------------------
+
   // Phase 3 share rebuild (Task 15): build the v2 share payload from the
   // current board view (= filtered visible items + relevant tag dict +
   // active tags filter). Called lazily by SenderShareModal on open.
   const buildShareData = useCallback((): ShareDataV2 => {
+    // Selection share sends the confirmed manual set (board order); normal
+    // share keeps the existing visible-set behaviour.
+    const source = shareSelectedItems ?? lightboxNavItems
     return buildShareDataFromBoard({
       // lightboxNavItems = the cards actually visible on the board (matched set
       // under a tag filter, else the full filtered set). Sharing this — not the
       // mounted-but-hidden `filteredItems` — keeps the payload to the narrowed
       // view the user sees.
-      items: lightboxNavItems.map((it) => ({
+      items: source.map((it) => ({
         bookmarkId: it.bookmarkId,
         url: it.url,
         title: it.title,
@@ -1842,7 +1942,9 @@ export function BoardRoot() {
         cardWidth: customWidths[it.bookmarkId] ?? cardWidthPx,
       })),
       tags: tags.map((tg) => ({ id: tg.id, name: tg.name, color: tg.color })),
-      filter: activeFilter.kind === 'tags'
+      // A manual selection is independent of the tag filter — no filter strip
+      // on the receiver (spec §3).
+      filter: shareSelectedItems == null && activeFilter.kind === 'tags'
         ? { mode: activeFilter.mode, tagIds: activeFilter.tagIds }
         : null,
       now: Date.now(),
@@ -1858,7 +1960,7 @@ export function BoardRoot() {
       // Sender's default card width so the receiver reconstructs board state.
       defaultWidth: cardWidthPx,
     })
-  }, [lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx, cardGapPx, themeId, resolvedCustom])
+  }, [shareSelectedItems, lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx, cardGapPx, themeId, resolvedCustom])
 
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
@@ -2274,7 +2376,7 @@ export function BoardRoot() {
               />
               <ChromeButton
                 label={t('board.chrome.share')}
-                onClick={(): void => setShareModalOpen(true)}
+                onClick={(): void => { if (!selectMode) setShareModalOpen(true) }}
                 data-testid="share-pill"
                 data-onboarding-target="share"
               />
@@ -2445,6 +2547,7 @@ export function BoardRoot() {
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
                 forceTagButtonVisible={forceCardTagVisible}
+                selectionMode={selectMode ? { selectedIds, onToggle: handleSelectToggle } : null}
               />
             </div>
           </InteractionLayer>
@@ -2539,40 +2642,47 @@ export function BoardRoot() {
       />
       <SenderShareModal
         open={shareModalOpen}
-        onClose={(): void => setShareModalOpen(false)}
+        onClose={(): void => {
+          setShareModalOpen(false)
+          setShareSelectedIds(null) // selection is one-shot — discard on close (spec §1)
+        }}
         getShareData={buildShareData}
         themeId={themeId}
         custom={resolvedCustom}
-        totalBoardCount={lightboxNavItems.length}
-        scrollY={viewport.y}
-        contentHeight={matchedBookmarkIds == null
-          ? contentBounds.height
-          : shareLayout.totalHeight + BOARD_TOP_PAD_PX}
+        totalBoardCount={(shareSelectedItems ?? lightboxNavItems).length}
+        scrollY={shareSelectedItems != null ? selectionScrollY : viewport.y}
+        contentHeight={shareSelectedItems != null
+          ? selectionContentHeight
+          : matchedBookmarkIds == null
+            ? contentBounds.height
+            : shareLayout.totalHeight + BOARD_TOP_PAD_PX}
         viewportHeight={viewport.h}
-        activeTagNames={isTagsFilter(activeFilter)
-          ? activeFilter.tagIds.flatMap((id): string[] => {
+        activeTagNames={shareSelectedItems != null || !isTagsFilter(activeFilter)
+          ? []
+          : activeFilter.tagIds.flatMap((id): string[] => {
               const tag = tags.find((t) => t.id === id)
               return tag ? [tag.name] : []
-            })
-          : []}
-        onPanY={(dy: number): void => { handlePanY(dy) }}
-        items={lightboxNavItems.map((it): MirrorItem => ({
+            })}
+        onPanY={shareSelectedItems != null
+          ? handleSelectionPanY
+          : (dy: number): void => { handlePanY(dy) }}
+        items={(shareSelectedItems ?? lightboxNavItems).map((it): MirrorItem => ({
           id: it.bookmarkId,
           url: it.url,
           title: it.title,
           thumbnailUrl: it.thumbnail ?? null,
         }))}
-        positions={Object.entries(shareLayout.positions).map(([id, p]): MirrorPosition => ({
-          id,
-          x: p.x,
-          y: p.y,
-          w: p.w,
-          h: p.h,
-        }))}
+        positions={Object.entries(
+          shareSelectedItems != null && selectionLayout != null
+            ? selectionLayout.positions
+            : shareLayout.positions,
+        ).map(([id, p]): MirrorPosition => ({ id, x: p.x, y: p.y, w: p.w, h: p.h }))}
         bgViewportWidth={effectiveLayoutWidth}
         bgCanvasWidth={viewport.w}
         bgTypoEnabled={bgTypoEnabled}
         bgTypoText={deriveBoardBgTypoText(activeFilter, tags)}
+        onSelectCards={activeFilter.kind === 'archive' ? null : handleEnterSelectMode}
+        selectionActive={shareSelectedItems != null}
       />
       {trashConfirmOpen && (
         <TrashConfirmDialog
@@ -2627,6 +2737,15 @@ export function BoardRoot() {
       </PipPortal>
       <UndoToast input={toast} />
       <PasteSaveFeedback feedback={pasteFeedback} themeId={themeId} />
+      {selectMode && (
+        <ShareSelectBar
+          count={selectedIds.size}
+          capFlashCycle={capFlashCycle}
+          onSelectAll={handleSelectAll}
+          onShare={handleSelectShare}
+          onCancel={handleSelectCancel}
+        />
+      )}
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}
       <LanguageSwitcher />
     </div>
