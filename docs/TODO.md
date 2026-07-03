@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 157 — 選択的シェア「SELECT CARDS」出荷・master マージ済・本番実測 PASS)
+
+- **選択的シェアを出荷**（merge `1aaeb37`・tsc0 / **vitest1942** / build OK・`allmarks.app` 反映済・Playwright 本番スモーク **12/12 PASS**・default 盤面 byte-identical）。SHARE モーダルに **SELECT CARDS** を追加 → 盤面が選択モードに（tap で選択トグル・0枚スタート・緑✓バッジ+緑アウトライン・下部バー `n/100 SELECTED`＋SELECT ALL＋SHARE(n)＋CANCEL＋琥珀「100 MAX」）→ SHARE(n) で確定すると**選んだカードだけ**を盤面順で共有（`filter:null`・タグ帯なし）。既存の「押したらすぐ新しい順100枚」は無変更。**受け取り側 /s/ は無変更**。
+  - 純関数 `lib/share/selection.ts`(12テスト)＋`ShareSelectBar`(5テスト)＋`SenderShareModal` SELECT CARDS(3テスト)。CardsLayer 選択モードは tap ハンドラ＝receiver のツイン、選択中はホバーchrome を全非マウント。BoardRoot 配線は normal path が旧コードに一致（byte-identical 再検証）。
+  - 進め方＝brainstorm→spec→plan→**サブエージェント駆動6タスク＋各2段レビュー＋opus 全ブランチレビュー（Ready to merge）**。レビューで実バグ2件摘出・修正（+TAG/タグpill行の未ゲート／再生トグルが `pointer-events:auto` でタップを奪う）。正本 [spec](superpowers/specs/2026-07-03-selective-share-design.md) / [plan](superpowers/plans/2026-07-03-selective-share.md) / narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s157。
+  - **未対応の任意ブラッシュアップ（ユーザー実機判断待ち）**: 緑アウトラインの強さ／選択バッジの登場トランジション（spec通り今は無し）／選択の永続化はしない設計。
+- **次**: 本命バックログの残り＝③プレミアムテーマ制作（Claude推奨）／④K3 解錠実装（`docs/private/2026-07-01-k3-unlock-plan.md`）／タグ付け強化。
+
 ### 直近の状態 (セッション 156 — N-05 ブラッシュアップ v2+v3 完遂・master マージ済・本番反映済。LP はいったん区切り)
 
 - **N-05 を3段直列＋境界マイクロ演出に刷新**（merge `782dcf6`・tsc0 / **vitest1922** / build OK・`allmarks.app` 実測 **13項目 PASS**・ユーザーOK → LP はいったんここで区切り）。
@@ -142,6 +150,7 @@
 
 ### 共有 (share) — 次セッション着手候補 (session 96 で user 要望)
 
+- ~~**選択的シェア（新しい順100枚固定の改善）**~~ ✅ **セッション157完了**（SELECT CARDS で1枚ずつ選んで共有。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s157）。
 - **受け取り画面 (/s/<id>/triage) をマネージ画面と同じ UI に** (session 96 user 要望) — 現状 [ReceiverTriage.tsx](../components/share/ReceiverTriage.tsx)(239行) はマネージ [TriagePage.tsx](../components/triage/TriagePage.tsx)(857行)/[TriageCard.tsx](../components/triage/TriageCard.tsx) を**全く再利用していない別物**。user は「マネージと同じ UI で文言だけ共有用に変える」体験を希望。ただし目的が違う (マネージ=自分のブクマ整理 / 受け取り=他人のを取り込み + 送り主タグ提案 + 重複検出) ので「共通部品を共有 + 取り込み固有の振る舞いを差し込む」設計が要る。**brainstorming で方針合意してから実装** (大改修、勝手にやらない)。マネージ側には session 95 の「画像ドラッグでタグ付け + ガラス演出」もあり、受け取りにも欲しいか含め要相談。
 - ~~**フィルターのタグ 1 つでもフェードがかかり視認性が落ちる**~~ ✅ **session 122 完了** — 真因は静止時でなく「開くアニメ中に clientHeight が過小なまま→overflow 誤判定→フェードが一瞬タグを隠す」。判定を max-height 基準の安定値に変更（純関数 [computeTagScrollEdge](../lib/board/tag-scroll-edge.ts) に切出し+単体テスト15件）。実機計測で前後検証済。
 
