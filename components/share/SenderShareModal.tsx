@@ -51,6 +51,12 @@ type Props = {
   readonly themeId: ThemeId
   /** Resolved customization for pattern themes; null for fixed 'work' themes. */
   readonly custom: ShareCustomization | null
+  /** Selective share entry — renders a SELECT CARDS button in the idle state.
+   *  Pressing it is expected to close this modal and enter board selection
+   *  mode (parent-owned). Null/undefined hides the button (archive view). */
+  readonly onSelectCards?: (() => void) | null
+  /** True when this modal is previewing a confirmed manual selection. */
+  readonly selectionActive?: boolean
 }
 
 export function SenderShareModal({
@@ -71,6 +77,8 @@ export function SenderShareModal({
   bgTypoText = '',
   themeId,
   custom,
+  onSelectCards = null,
+  selectionActive = false,
 }: Props): ReactElement | null {
   const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
@@ -204,7 +212,9 @@ export function SenderShareModal({
         </div>
 
         <p className={styles.hint}>
-          SCROLL TO POSITION · PRESS SHARE NOW WHEN READY
+          {selectionActive
+            ? 'SELECTED CARDS ONLY · PRESS SHARE NOW WHEN READY'
+            : 'SCROLL TO POSITION · PRESS SHARE NOW WHEN READY'}
         </p>
 
         <div className={styles.actions}>
@@ -243,12 +253,22 @@ export function SenderShareModal({
               <button type="button" className={styles.primaryBtn} onClick={handleShareConfirm}>RETRY</button>
             </>
           ) : (
-            <button
-              type="button"
-              className={styles.primaryBtn}
-              disabled={state.kind === 'capturing'}
-              onClick={handleShareConfirm}
-            >{state.kind === 'capturing' ? 'CAPTURING…' : 'SHARE NOW'}</button>
+            <>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                disabled={state.kind === 'capturing'}
+                onClick={handleShareConfirm}
+              >{state.kind === 'capturing' ? 'CAPTURING…' : 'SHARE NOW'}</button>
+              {onSelectCards && state.kind === 'idle' && (
+                <button
+                  type="button"
+                  className={styles.secondaryBtn}
+                  onClick={onSelectCards}
+                  data-testid="select-cards-button"
+                >SELECT CARDS</button>
+              )}
+            </>
           )}
 
           <button type="button" className={styles.secondaryBtn} onClick={onClose}>CLOSE</button>
