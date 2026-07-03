@@ -477,6 +477,7 @@ export function OnboardingController({
           <OnboardingSpotlight
             targetSelector={TARGET_SELECTOR['quick-tag-toggle']}
             caption={t('board.onboarding.manage.settingsBody')}
+            captionAtBottom
           >
             <button type="button" className={styles.advanceBtn} onClick={() => setManageBeat('manage')}>NEXT</button>
           </OnboardingSpotlight>
