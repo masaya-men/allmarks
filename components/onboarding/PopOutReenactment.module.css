@@ -119,6 +119,7 @@
   box-shadow: 0 20px 46px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(40, 241, 0, 0.07);
   overflow: hidden;
   z-index: 4;
+  opacity: 0;
 }
 .pipBar {
   display: flex;
@@ -151,6 +152,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  opacity: 0;
 }
 .cardThumb {
   position: absolute;
