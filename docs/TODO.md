@@ -25,9 +25,9 @@
 
 - **オンボ改善 N-21+N-22 を出荷**（merge `28931b9`・`--no-ff`・tsc0 / **vitest1945** / build OK・`allmarks.app` 反映済・default 盤面 byte-identical）。
   - **N-21**＝`manage`/`settings` beat の `OnboardingSpotlight` に `captionAtBottom` 追加（1行）→ SETTINGS 説明が画面下中央に固定され開いたドロワーに埋もれない。
-  - **N-22**＝desktop 専用 `popout` cinema シーンを `install` の後に追加＋新 `PopOutReenactment`（GSAP・**純視覚再現**＝実 PiP は開かず import もしない）：カードが**右からグライドイン→中央着地**（`power4.out`/0.7s）＋**常時メーター**（`00/00→01/01→02/02`）。15言語コピー。cinema 分岐に配線（到達性確認済）。
-  - 進め方＝`superpowers:subagent-driven-development`（6タスク＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge YES**）。レビューで回帰1件捕捉・修正（popout 挿入で manage walk テストが off-by-one＝test-only +1 NEXT）／spec 準拠仕上げ1件（メーター常時表示化 `dc04767`）。正本 [spec](superpowers/specs/2026-07-04-onboarding-settings-popout-design.md) / [plan](superpowers/plans/2026-07-04-onboarding-settings-popout.md)・narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158。
-- **未対応の残り**: **ユーザー実機目視のみ**（`allmarks.app` ハードリロード→オンボを頭から。①SETTINGS 説明が下中央で読める②`install` の次に POP OUT が出て右からカードが入る③メーター `00/00→01/01→02/02`）。メーター空窓 `00/00` が気になれば1行で hidden-when-empty に戻せる。
+  - **N-22**＝desktop 専用 `popout` cinema シーンを `install` の後に追加。**当初 v1 はユーザー実機で①詰まり（NEXT 不可・盤面がクリックを奪う＝`.stage` の暗幕/`pointer-events:auto` 欠落）②品質低の2問題→ 同セッションで v2 に全面作り直し**（merge `ca81341`）。v2＝拡張チュートリアルと同方式（偽ブラウザ＋実LPスクショ＋緑カーソルが `POP OUT` をクリック→相棒窓が `back.out` でポップアウト→カードが右からグライドイン `power4.out`/0.7s＋常時メーター `00/00→01/01→02/02`→「+ TAG」でタグチップ点灯）。淡々コピー＋タグ/ジャンプ追記を15言語。実 PiP 非結合。
+  - 進め方＝`superpowers:subagent-driven-development`。v1＝6タスク＋opus 全ブランチレビュー。v2＝2タスク＋各レビュー＋opus 全ブランチレビュー（Ready to merge YES）＋flash 修正 `eff5fc3`。正本 v1 [spec](superpowers/specs/2026-07-04-onboarding-settings-popout-design.md)/[plan](superpowers/plans/2026-07-04-onboarding-settings-popout.md)・v2 [spec](superpowers/specs/2026-07-04-onboarding-popout-reenactment-v2-design.md)/[plan](superpowers/plans/2026-07-04-onboarding-popout-reenactment-v2.md)・narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158。
+- **未対応の残り**: **ユーザー実機目視のみ**（`allmarks.app` ハードリロード→オンボを頭から。①SETTINGS 説明が下中央で読める（N-21）②POP OUT シーンで**暗幕が出て NEXT が押せる・盤面が固まる**（詰まり解消）③緑カーソルが POP OUT を押す→窓がポップ→カードが右から入る→「+ TAG」でチップ点灯、メーター `00/00→01/01→02/02`）。
 - **次（セッション159）**: N-20（拡張クイックタグ2列・`EXTENSION_STORE_URL` 投入と同回）／③プレミアムテーマ／④K3 解錠。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 157 — 選択的シェア「SELECT CARDS」出荷・master マージ済・本番実測 PASS)
