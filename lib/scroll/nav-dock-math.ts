@@ -41,6 +41,10 @@ export const NAV_DOCK = {
   dashPx: 140,
   /** dashEase の easeOutBack 強度（0.65 ≒ 行き過ぎ約 +1.5%） */
   dashBack: 0.65,
+  /** 乗り上がりの跳ね: 1文字の弧が使う進捗幅（0..1 のうち） */
+  hopSpan: 0.45,
+  /** 玉のノック（squash＋リング一拍）の時間(ms) */
+  knockMs: 360,
 } as const
 
 /** kicker の top から帯進入の進捗 0→1 を返す（glassStart で 0, dockY で 1）。
@@ -48,6 +52,32 @@ export const NAV_DOCK = {
 export function morphProgress(anchorTop: number): number {
   const p = (NAV_DOCK.glassStart - anchorTop) / (NAV_DOCK.glassStart - NAV_DOCK.dockY)
   return Math.max(0, Math.min(1, p))
+}
+
+/** 乗り上がり波の進捗 0→1。traveler への引き継ぎ点（glassOnAt）で 0、dockY で 1。
+ *  引き継ぎ瞬間に全文字オフセット 0 ＝実 kicker と完全同姿（継ぎ目レス）にするための正規化。 */
+export function bandClimbProgress(anchorTop: number): number {
+  const p = (morphProgress(anchorTop) - NAV_DOCK.glassOnAt) / (1 - NAV_DOCK.glassOnAt)
+  return Math.max(0, Math.min(1, p))
+}
+
+/** 文字 i の跳ね（しきい値をまたぐ「ぴょこ」）0→1→0 の sin 弧。
+ *  窓 [i*step, i*step + hopSpan]、step は最終文字の弧が進捗 1 で着地するよう配分。
+ *  スクロール駆動（時間を使わない）＝逆走すればそのまま巻き戻る。 */
+export function charHopArc(progress: number, index: number, count: number): number {
+  const span = NAV_DOCK.hopSpan
+  const step = count > 1 ? (1 - span) / (count - 1) : 0
+  const phase = Math.max(0, Math.min(1, (progress - index * step) / span))
+  return Math.sin(Math.PI * phase)
+}
+
+/** hairline（ヘッダー下端）横断の強度 0→1→0。
+ *  語（高さ wordH）の中央が線 y=headerH に重なるときピーク 1、窓の端で 0。 */
+export function crossGlow(anchorTop: number, wordH: number): number {
+  const half = wordH / 2
+  const center = NAV_DOCK.headerH - half
+  const v = 1 - Math.abs(anchorTop - center) / half
+  return Math.max(0, Math.min(1, v))
 }
 
 /** 変身の総時間(ms) = 最終文字の開始遅延 + 1文字分。ラベル長で決まる */
