@@ -68,7 +68,8 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
       setMorph(1)
       window.clearTimeout(settleTimer)
       settleTimer = window.setTimeout(() => {
-        setWordState('docked', false)
+        // settle 中にモードが変わっていても巻き戻さない(現 mode を反映)
+        setWordState(mode, false)
         frame()
       }, NAV_DOCK.zipMs + 40)
     }
@@ -82,7 +83,8 @@ export function NavDockTraveler({ label }: { label: string }): React.ReactElemen
       follow(a)
       window.clearTimeout(settleTimer)
       settleTimer = window.setTimeout(() => {
-        setWordState('traveling', false)
+        // settle 中にモードが変わっていても巻き戻さない(現 mode を反映)
+        setWordState(mode, false)
         frame()
       }, NAV_DOCK.returnMs + 20)
     }
