@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { TweetMeta, MediaSlot } from '@/lib/embed/types'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
+import { upgradeImageResolution } from '@/lib/embed/upgrade-image-resolution'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { normalizeItem, type LightboxItem } from '@/lib/share/lightbox-item'
 import type { ShareCard } from '@/lib/share/types'
@@ -1512,6 +1513,18 @@ function DefaultText({
   )
 }
 
+/** A Lightbox photo that shows its highest-resolution variant (upgradeImage-
+ *  Resolution) and falls back to the ORIGINAL url ONCE if that variant fails to
+ *  load (e.g. a `name=orig` / maxres that 404s), so it never renders worse than
+ *  today. Returns a BARE <img> — no wrapper — so the FLIP open/close rect
+ *  measurement (which reads .media's <img> intrinsic size) is unaffected. Board
+ *  thumbnails are intentionally NOT upgraded, so board perf is byte-identical. */
+function HiResImage({ src, alt }: { readonly src: string; readonly alt: string }): ReactElement {
+  const [current, setCurrent] = useState<string>(() => upgradeImageResolution(src))
+  useEffect(() => { setCurrent(upgradeImageResolution(src)) }, [src])
+  return <img src={current} alt={alt} onError={() => setCurrent((c) => (c === src ? c : src))} />
+}
+
 /** Left-column media for a tweet, driven by the unified mediaSlots[] array.
  *  Each slot renders either an inline `<TweetVideoPlayer>` (type='video') or a
  *  plain `<img>` (type='photo'). When the user swaps slot index, the parent
@@ -1568,7 +1581,7 @@ function TweetMedia({
       )
     }
     if (slot.type === 'photo') {
-      return <img src={slot.url} alt={item.title} />
+      return <HiResImage src={slot.url} alt={item.title} />
     }
   }
 
@@ -1631,11 +1644,11 @@ function TweetMedia({
     )
   }
   if (meta?.photoUrl) {
-    return <img src={meta.photoUrl} alt={item.title} />
+    return <HiResImage src={meta.photoUrl} alt={item.title} />
   }
   // meta 失敗 + thumbnail だけ残ってる稀ケース。
   if (item.thumbnail) {
-    return <img src={item.thumbnail} alt={item.title} />
+    return <HiResImage src={item.thumbnail} alt={item.title} />
   }
   return <div className={styles.placeholder}>{item.title}</div>
 }
