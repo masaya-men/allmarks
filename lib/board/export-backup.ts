@@ -20,6 +20,19 @@ const domDownload: Downloader = (blob, filename) => {
   URL.revokeObjectURL(url)
 }
 
+/** Human-friendly, filesystem-safe download name using the user's LOCAL wall
+ *  clock — so "what time did I make this" matches what the user expects. No ':'
+ *  (Windows forbids it in filenames), so the time is HHMM. The stored backup
+ *  timestamp stays UTC ISO (via recordBackup) for correct date math; only this
+ *  display name is localized. e.g. `AllMarks-backup-2026-07-04-1530.json`. */
+export function backupFilename(nowIso: string): string {
+  const d = new Date(nowIso)
+  const p = (n: number): string => String(n).padStart(2, '0')
+  const date = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+  const time = `${p(d.getHours())}${p(d.getMinutes())}`
+  return `AllMarks-backup-${date}-${time}.json`
+}
+
 /** Dump every IDB store to a downloaded JSON file, then record the backup time
  *  so the SETTINGS status line and the periodic reminder stay accurate.
  *  Returns the number of bookmarks exported. Throws on failure (caller alerts). */
@@ -28,7 +41,7 @@ export async function exportBackupFile(
 ): Promise<number> {
   const dump = await exportAllStores(db)
   const json = JSON.stringify(dump, null, 2)
-  download(new Blob([json], { type: 'application/json' }), `allmarks-backup-${nowIso.slice(0, 10)}.json`)
+  download(new Blob([json], { type: 'application/json' }), backupFilename(nowIso))
   await recordBackup(db, nowIso)
   return dump.bookmarks.length
 }

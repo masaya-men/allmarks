@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { IDBPDatabase } from 'idb'
-import { exportBackupFile, type Downloader } from './export-backup'
+import { exportBackupFile, backupFilename, type Downloader } from './export-backup'
 import { loadLastBackupAt } from '@/lib/storage/backup-reminder'
 
 /** Fake db: bookmarks getAll + settings put/get (in-line key). */
@@ -23,7 +23,19 @@ describe('exportBackupFile', () => {
 
     expect(count).toBe(2)
     expect(download).toHaveBeenCalledTimes(1)
-    expect(download.mock.calls[0][1]).toBe('allmarks-backup-2026-07-04.json')
+    // Branded + dated + HHMM time; exact time is local (TZ-dependent) so match the shape.
+    expect(download.mock.calls[0][1]).toMatch(/^AllMarks-backup-\d{4}-\d{2}-\d{2}-\d{4}\.json$/)
+    // The STORED timestamp stays UTC ISO for correct date math (unchanged).
     expect(await loadLastBackupAt(db)).toBe('2026-07-04T10:00:00.000Z')
+  })
+})
+
+describe('backupFilename', () => {
+  it('is branded, dated, filesystem-safe (no colon), with HHMM time and .json', () => {
+    const name = backupFilename('2026-07-04T10:00:00.000Z')
+    expect(name).toMatch(/^AllMarks-backup-\d{4}-\d{2}-\d{2}-\d{4}\.json$/)
+    expect(name).not.toContain(':')
+    expect(name.startsWith('AllMarks-backup-')).toBe(true)
+    expect(name.endsWith('.json')).toBe(true)
   })
 })
