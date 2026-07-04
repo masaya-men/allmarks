@@ -35,6 +35,19 @@
       "corruptRows": "Parte de esta copia de seguridad está dañada, por lo que se canceló la restauración. Tus datos actuales no han cambiado.",
       "restoreFailed": "No se pudo completar la restauración. Revisa el archivo e inténtalo de nuevo."
     },
+    "dataHome": {
+      "title": "Tus datos se guardan solo en este dispositivo.",
+      "body": "Todos tus datos de AllMarks se almacenan en este navegador, en este dispositivo. No hay cuenta, y nada se guarda en un servidor. Para conservar una copia, usa EXPORT en SETTINGS — hazlo antes de cambiar de dispositivo o borrar los datos de tu navegador."
+    },
+    "backupStatus": {
+      "never": "Última copia de seguridad: nunca",
+      "today": "Última copia de seguridad: hoy",
+      "daysAgo": "Última copia de seguridad: hace {days} días"
+    },
+    "backupReminder": {
+      "body": "Has añadido {n} marcadores desde tu última copia de seguridad. Guarda una copia con EXPORT.",
+      "bodyFirst": "Has guardado {n} marcadores. Guarda una copia con EXPORT para conservarlos."
+    },
     "urlPlaceholder": "Pega una URL...",
     "save": "Guardar",
     "randomPick": "Elección aleatoria",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Tus responsabilidades",
-        "body": "Eres responsable del contenido que guardas y compartes, aceptas no usar el Servicio para ningún fin ilícito ni para perturbarlo, y entiendes que tus datos se almacenan localmente — borrar los datos del navegador elimina permanentemente tu contenido de AllMarks."
+        "body": "Eres responsable del contenido que guardas y compartes, aceptas no usar el Servicio para ningún fin ilícito ni para perturbarlo, y entiendes que tus datos se almacenan localmente — borrar los datos del navegador elimina permanentemente tu contenido de AllMarks. Como tus datos se almacenan únicamente en tu navegador en este dispositivo y no se guarda ninguna copia en un servidor, mantener tus propias copias de seguridad es tu responsabilidad: usa EXPORT en Configuración para guardar una copia regularmente, especialmente antes de cambiar de dispositivo, borrar los datos de tu navegador o restablecer AllMarks. Los datos perdidos por borrado de datos del navegador, pérdida o fallo del dispositivo, actualizaciones de software o cualquier otra causa no se pueden recuperar."
       },
       "ip": {
         "heading": "4. Propiedad intelectual",

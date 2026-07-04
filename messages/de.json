@@ -35,6 +35,19 @@
       "corruptRows": "Ein Teil dieser Sicherung ist beschädigt, daher wurde die Wiederherstellung abgebrochen. Deine aktuellen Daten bleiben unverändert.",
       "restoreFailed": "Die Wiederherstellung ist fehlgeschlagen. Bitte überprüfe die Datei und versuche es erneut."
     },
+    "dataHome": {
+      "title": "Deine Daten werden nur auf diesem Gerät gespeichert.",
+      "body": "Alle deine AllMarks-Daten werden in diesem Browser auf diesem Gerät gespeichert. Es gibt kein Konto, und nichts wird auf einem Server gespeichert. Um eine Kopie zu behalten, nutze EXPORT in SETTINGS — mach das, bevor du das Gerät wechselst oder deine Browserdaten löschst."
+    },
+    "backupStatus": {
+      "never": "Letztes Backup: nie",
+      "today": "Letztes Backup: heute",
+      "daysAgo": "Letztes Backup: vor {days} Tagen"
+    },
+    "backupReminder": {
+      "body": "Du hast {n} Lesezeichen seit deinem letzten Backup hinzugefügt. Speichere eine Kopie mit EXPORT.",
+      "bodyFirst": "Du hast {n} Lesezeichen gespeichert. Speichere eine Kopie mit EXPORT, um sie zu behalten."
+    },
     "urlPlaceholder": "URL einfügen …",
     "save": "Speichern",
     "randomPick": "Zufallsauswahl",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Deine Pflichten",
-        "body": "Du bist für die Inhalte verantwortlich, die du speicherst und teilst; du stimmst zu, den Dienst nicht für rechtswidrige Zwecke oder zur Störung desselben zu nutzen; und du verstehst, dass deine Daten lokal gespeichert werden — das Löschen der Browserdaten löscht deine AllMarks-Inhalte dauerhaft."
+        "body": "Du bist für die Inhalte verantwortlich, die du speicherst und teilst; du stimmst zu, den Dienst nicht für rechtswidrige Zwecke oder zur Störung desselben zu nutzen; und du verstehst, dass deine Daten lokal gespeichert werden — das Löschen der Browserdaten löscht deine AllMarks-Inhalte dauerhaft. Da deine Daten ausschließlich in deinem Browser auf diesem Gerät gespeichert werden und keine Kopie auf einem Server abgelegt wird, liegt es in deiner eigenen Verantwortung, Backups zu erstellen: Nutze EXPORT in den Einstellungen, um regelmäßig eine Kopie zu speichern — besonders bevor du das Gerät wechselst, deine Browserdaten löschst oder AllMarks zurücksetzt. Daten, die durch das Löschen von Browserdaten, Geräteverlust oder -defekt, Software-Updates oder aus anderen Gründen verloren gehen, können nicht wiederhergestellt werden."
       },
       "ip": {
         "heading": "4. Geistiges Eigentum",

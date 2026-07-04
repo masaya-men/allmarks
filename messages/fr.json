@@ -35,6 +35,19 @@
       "corruptRows": "Une partie de cette sauvegarde est endommagée ; la restauration a donc été annulée. Vos données actuelles n'ont pas été modifiées.",
       "restoreFailed": "Échec de la restauration. Veuillez vérifier le fichier et réessayer."
     },
+    "dataHome": {
+      "title": "Vos données sont enregistrées uniquement sur cet appareil.",
+      "body": "Toutes vos données AllMarks sont stockées dans ce navigateur, sur cet appareil. Il n'y a pas de compte, et rien n'est enregistré sur un serveur. Pour conserver une copie, utilisez EXPORT dans SETTINGS — faites-le avant de changer d'appareil ou d'effacer les données de votre navigateur."
+    },
+    "backupStatus": {
+      "never": "Dernière sauvegarde : jamais",
+      "today": "Dernière sauvegarde : aujourd'hui",
+      "daysAgo": "Dernière sauvegarde : il y a {days} jours"
+    },
+    "backupReminder": {
+      "body": "Vous avez ajouté {n} marque-pages depuis votre dernière sauvegarde. Enregistrez une copie avec EXPORT.",
+      "bodyFirst": "Vous avez enregistré {n} marque-pages. Enregistrez une copie avec EXPORT pour les conserver."
+    },
     "urlPlaceholder": "Collez une URL…",
     "save": "Enregistrer",
     "randomPick": "Au hasard",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Vos responsabilités",
-        "body": "Vous êtes responsable du contenu que vous enregistrez et partagez, vous vous engagez à ne pas utiliser le Service à des fins illégales ni à le perturber, et vous comprenez que vos données sont stockées localement — vider les données de votre navigateur supprime définitivement votre contenu AllMarks."
+        "body": "Vous êtes responsable du contenu que vous enregistrez et partagez, vous vous engagez à ne pas utiliser le Service à des fins illégales ni à le perturber, et vous comprenez que vos données sont stockées localement — vider les données de votre navigateur supprime définitivement votre contenu AllMarks. Étant donné que vos données sont stockées uniquement dans votre navigateur sur cet appareil et qu'aucune copie n'est conservée sur un serveur, il vous incombe de conserver vos propres sauvegardes : utilisez EXPORT dans les Paramètres pour enregistrer une copie régulièrement, en particulier avant de changer d'appareil, d'effacer les données de votre navigateur ou de réinitialiser AllMarks. Les données perdues suite à l'effacement des données du navigateur, à la perte ou à la panne de l'appareil, à des mises à jour logicielles ou à toute autre cause ne peuvent pas être récupérées."
       },
       "ip": {
         "heading": "4. Propriété intellectuelle",

@@ -35,6 +35,19 @@
       "corruptRows": "Parte deste backup está danificada, então a restauração foi cancelada. Seus dados atuais permanecem inalterados.",
       "restoreFailed": "A restauração falhou. Verifique o arquivo e tente novamente."
     },
+    "dataHome": {
+      "title": "Seus dados são salvos somente neste dispositivo.",
+      "body": "Todos os seus dados do AllMarks são armazenados neste navegador, neste dispositivo. Não há conta, e nada é salvo em um servidor. Para manter uma cópia, use EXPORT em SETTINGS — faça isso antes de trocar de dispositivo ou limpar os dados do navegador."
+    },
+    "backupStatus": {
+      "never": "Último backup: nunca",
+      "today": "Último backup: hoje",
+      "daysAgo": "Último backup: há {days} dias"
+    },
+    "backupReminder": {
+      "body": "Você adicionou {n} favoritos desde o último backup. Salve uma cópia com EXPORT.",
+      "bodyFirst": "Você salvou {n} favoritos. Salve uma cópia com EXPORT para mantê-los."
+    },
     "urlPlaceholder": "Cole a URL...",
     "save": "Salvar",
     "randomPick": "Escolha aleatória",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Suas responsabilidades",
-        "body": "Você é responsável pelo conteúdo que salva e compartilha, concorda em não usar o Serviço para qualquer finalidade ilícita nem para perturbá-lo, e entende que seus dados são armazenados localmente — limpar os dados do navegador exclui permanentemente seu conteúdo do AllMarks."
+        "body": "Você é responsável pelo conteúdo que salva e compartilha, concorda em não usar o Serviço para qualquer finalidade ilícita nem para perturbá-lo, e entende que seus dados são armazenados localmente — limpar os dados do navegador exclui permanentemente seu conteúdo do AllMarks. Como seus dados são armazenados apenas no seu navegador neste dispositivo e nenhuma cópia é mantida em um servidor, manter seus próprios backups é sua responsabilidade: use o EXPORT em Configurações para salvar uma cópia regularmente, especialmente antes de trocar de dispositivo, limpar os dados do navegador ou redefinir o AllMarks. Dados perdidos por limpeza de dados do navegador, perda ou falha do dispositivo, atualizações de software ou qualquer outra causa não podem ser recuperados."
       },
       "ip": {
         "heading": "4. Propriedade intelectual",

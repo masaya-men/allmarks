@@ -35,6 +35,19 @@
       "corruptRows": "Một phần của bản sao lưu này bị hỏng, nên việc khôi phục đã bị hủy. Dữ liệu hiện tại của bạn không thay đổi.",
       "restoreFailed": "Khôi phục thất bại. Vui lòng kiểm tra lại tệp và thử lại."
     },
+    "dataHome": {
+      "title": "Dữ liệu của bạn chỉ được lưu trên thiết bị này.",
+      "body": "Toàn bộ dữ liệu AllMarks của bạn được lưu trong trình duyệt này, trên thiết bị này. Không có tài khoản, và không có gì được lưu trên máy chủ. Để giữ một bản sao, hãy dùng EXPORT trong SETTINGS — thực hiện việc này trước khi bạn đổi thiết bị hoặc xóa dữ liệu trình duyệt."
+    },
+    "backupStatus": {
+      "never": "Sao lưu gần nhất: chưa từng",
+      "today": "Sao lưu gần nhất: hôm nay",
+      "daysAgo": "Sao lưu gần nhất: {days} ngày trước"
+    },
+    "backupReminder": {
+      "body": "Bạn đã thêm {n} mục đánh dấu kể từ lần sao lưu gần nhất. Hãy lưu một bản sao bằng EXPORT.",
+      "bodyFirst": "Bạn đã lưu {n} mục đánh dấu. Hãy lưu một bản sao bằng EXPORT để giữ lại."
+    },
     "urlPlaceholder": "Dán URL...",
     "save": "Lưu",
     "randomPick": "Chọn ngẫu nhiên",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Trách nhiệm của bạn",
-        "body": "Bạn chịu trách nhiệm về nội dung bạn lưu và chia sẻ, bạn đồng ý không sử dụng Dịch vụ cho bất kỳ mục đích bất hợp pháp hay làm gián đoạn nó, và bạn hiểu rằng dữ liệu được lưu cục bộ — xóa dữ liệu trình duyệt sẽ xóa vĩnh viễn nội dung AllMarks."
+        "body": "Bạn chịu trách nhiệm về nội dung bạn lưu và chia sẻ, bạn đồng ý không sử dụng Dịch vụ cho bất kỳ mục đích bất hợp pháp hay làm gián đoạn nó, và bạn hiểu rằng dữ liệu được lưu cục bộ — xóa dữ liệu trình duyệt sẽ xóa vĩnh viễn nội dung AllMarks. Vì dữ liệu của bạn chỉ được lưu trong trình duyệt trên thiết bị này và không có bản sao nào được lưu trên máy chủ, việc tự sao lưu dữ liệu là trách nhiệm của bạn: hãy dùng EXPORT trong Cài đặt để lưu một bản sao thường xuyên, đặc biệt là trước khi đổi thiết bị, xóa dữ liệu trình duyệt, hoặc đặt lại AllMarks. Dữ liệu bị mất do xóa dữ liệu trình duyệt, mất hoặc hỏng thiết bị, cập nhật phần mềm, hay bất kỳ nguyên nhân nào khác đều không thể khôi phục."
       },
       "ip": {
         "heading": "4. Sở hữu trí tuệ",
