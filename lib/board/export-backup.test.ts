@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { IDBPDatabase } from 'idb'
-import { exportBackupFile } from './export-backup'
+import { exportBackupFile, type Downloader } from './export-backup'
 import { loadLastBackupAt } from '@/lib/storage/backup-reminder'
 
 /** Fake db: bookmarks getAll + settings put/get (in-line key). */
@@ -18,7 +18,7 @@ function fakeDb(bookmarks: unknown[]): IDBPDatabase<unknown> {
 describe('exportBackupFile', () => {
   it('downloads a json file and records the backup timestamp', async () => {
     const db = fakeDb([{ id: 'b1' }, { id: 'b2' }])
-    const download = vi.fn<[Blob, string], void>()
+    const download = vi.fn<Downloader>()
     const count = await exportBackupFile(db, '2026-07-04T10:00:00.000Z', download)
 
     expect(count).toBe(2)
