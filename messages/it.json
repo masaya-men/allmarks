@@ -35,6 +35,19 @@
       "corruptRows": "Una parte di questo backup è danneggiata, quindi il ripristino è stato annullato. I tuoi dati attuali non sono stati modificati.",
       "restoreFailed": "Ripristino non riuscito. Controlla il file e riprova."
     },
+    "dataHome": {
+      "title": "I tuoi dati sono salvati solo su questo dispositivo.",
+      "body": "Tutti i tuoi dati AllMarks sono archiviati in questo browser, su questo dispositivo. Non c'è un account, e nulla viene salvato su un server. Per conservare una copia, usa EXPORT in SETTINGS — fallo prima di cambiare dispositivo o cancellare i dati del browser."
+    },
+    "backupStatus": {
+      "never": "Ultimo backup: mai",
+      "today": "Ultimo backup: oggi",
+      "daysAgo": "Ultimo backup: {days} giorni fa"
+    },
+    "backupReminder": {
+      "body": "Hai aggiunto {n} segnalibri dall'ultimo backup. Salva una copia con EXPORT.",
+      "bodyFirst": "Hai salvato {n} segnalibri. Salva una copia con EXPORT per conservarli."
+    },
     "urlPlaceholder": "Incolla URL...",
     "save": "Salva",
     "randomPick": "Scelta casuale",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Le tue responsabilità",
-        "body": "Sei responsabile dei contenuti che salvi e condividi, accetti di non utilizzare il Servizio per scopi illeciti né di perturbarne il funzionamento, e sei consapevole che i tuoi dati sono archiviati localmente — la cancellazione dei dati del browser elimina definitivamente i tuoi contenuti su AllMarks."
+        "body": "Sei responsabile dei contenuti che salvi e condividi, accetti di non utilizzare il Servizio per scopi illeciti né di perturbarne il funzionamento, e sei consapevole che i tuoi dati sono archiviati localmente — la cancellazione dei dati del browser elimina definitivamente i tuoi contenuti su AllMarks. Poiché i tuoi dati sono archiviati solo nel tuo browser su questo dispositivo e nessuna copia viene conservata su un server, mantenere i tuoi backup è una tua responsabilità: usa EXPORT in Impostazioni per salvare una copia regolarmente, specialmente prima di cambiare dispositivo, cancellare i dati del browser o reimpostare AllMarks. I dati persi a causa della cancellazione dei dati del browser, della perdita o del guasto del dispositivo, di aggiornamenti software o di qualsiasi altra causa non possono essere recuperati."
       },
       "ip": {
         "heading": "4. Proprietà intellettuale",

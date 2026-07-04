@@ -35,6 +35,19 @@
       "corruptRows": "Een deel van deze back-up is beschadigd, daarom is het terugzetten geannuleerd. Je huidige gegevens zijn ongewijzigd.",
       "restoreFailed": "Terugzetten mislukt. Controleer het bestand en probeer het opnieuw."
     },
+    "dataHome": {
+      "title": "Je gegevens worden alleen op dit apparaat opgeslagen.",
+      "body": "Al je AllMarks-gegevens worden opgeslagen in deze browser, op dit apparaat. Er is geen account, en er wordt niets op een server opgeslagen. Gebruik EXPORT in SETTINGS om een kopie te bewaren — doe dit voordat je van apparaat wisselt of je browsergegevens wist."
+    },
+    "backupStatus": {
+      "never": "Laatste back-up: nooit",
+      "today": "Laatste back-up: vandaag",
+      "daysAgo": "Laatste back-up: {days} dagen geleden"
+    },
+    "backupReminder": {
+      "body": "Je hebt {n} bladwijzers toegevoegd sinds je laatste back-up. Sla een kopie op met EXPORT.",
+      "bodyFirst": "Je hebt {n} bladwijzers opgeslagen. Sla een kopie op met EXPORT om ze te bewaren."
+    },
     "urlPlaceholder": "Plak een URL...",
     "save": "Opslaan",
     "randomPick": "Willekeurige keuze",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Jouw verantwoordelijkheden",
-        "body": "Je bent verantwoordelijk voor de inhoud die je opslaat en deelt, je gaat ermee akkoord de Dienst niet te gebruiken voor onrechtmatige doeleinden of de Dienst te verstoren, en je begrijpt dat je gegevens lokaal worden opgeslagen — het wissen van je browsergegevens verwijdert je AllMarks-inhoud permanent."
+        "body": "Je bent verantwoordelijk voor de inhoud die je opslaat en deelt, je gaat ermee akkoord de Dienst niet te gebruiken voor onrechtmatige doeleinden of de Dienst te verstoren, en je begrijpt dat je gegevens lokaal worden opgeslagen — het wissen van je browsergegevens verwijdert je AllMarks-inhoud permanent. Omdat je gegevens uitsluitend in je browser op dit apparaat worden opgeslagen en er geen kopie op een server wordt bewaard, ben je zelf verantwoordelijk voor het maken van back-ups: gebruik EXPORT in Instellingen om regelmatig een kopie op te slaan, vooral voordat je van apparaat wisselt, je browsergegevens wist of AllMarks reset. Gegevens die verloren gaan door het wissen van browsergegevens, verlies of defect van je apparaat, software-updates of een andere oorzaak kunnen niet worden hersteld."
       },
       "ip": {
         "heading": "4. Intellectueel eigendom",

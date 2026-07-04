@@ -35,6 +35,19 @@
       "corruptRows": "Bu yedeğin bir kısmı hasarlı olduğu için geri yükleme iptal edildi. Mevcut verilerin değişmedi.",
       "restoreFailed": "Geri yükleme başarısız oldu. Lütfen dosyayı kontrol edip tekrar deneyin."
     },
+    "dataHome": {
+      "title": "Verileriniz yalnızca bu cihazda saklanır.",
+      "body": "Tüm AllMarks verileriniz bu tarayıcıda, bu cihazda saklanır. Hesap yoktur ve hiçbir şey sunucuda saklanmaz. Bir kopya saklamak için SETTINGS içindeki EXPORT özelliğini kullanın — bunu cihaz değiştirmeden veya tarayıcı verilerinizi temizlemeden önce yapın."
+    },
+    "backupStatus": {
+      "never": "Son yedekleme: hiç",
+      "today": "Son yedekleme: bugün",
+      "daysAgo": "Son yedekleme: {days} gün önce"
+    },
+    "backupReminder": {
+      "body": "Son yedeklemenizden bu yana {n} yer imi eklediniz. EXPORT ile bir kopya kaydedin.",
+      "bodyFirst": "{n} yer imi kaydettiniz. Bunları saklamak için EXPORT ile bir kopya kaydedin."
+    },
     "urlPlaceholder": "URL yapıştır...",
     "save": "Kaydet",
     "randomPick": "Rastgele Seç",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Sorumluluklarınız",
-        "body": "Kaydettiğiniz ve paylaştığınız içerikten siz sorumlusunuz; Hizmeti herhangi bir yasadışı amaç için veya Hizmeti kesintiye uğratmak amacıyla kullanmamayı kabul ediyorsunuz; verilerinizin yerel olarak saklandığını ve tarayıcı verilerinizi temizlemenin AllMarks içeriğinizi kalıcı olarak sileceğini anlıyorsunuz."
+        "body": "Kaydettiğiniz ve paylaştığınız içerikten siz sorumlusunuz; Hizmeti herhangi bir yasadışı amaç için veya Hizmeti kesintiye uğratmak amacıyla kullanmamayı kabul ediyorsunuz; verilerinizin yerel olarak saklandığını ve tarayıcı verilerinizi temizlemenin AllMarks içeriğinizi kalıcı olarak sileceğini anlıyorsunuz. Verileriniz yalnızca bu cihazdaki tarayıcınızda saklandığından ve sunucuda hiçbir kopya tutulmadığından, kendi yedeklerinizi almak sizin sorumluluğunuzdadır: özellikle cihaz değiştirmeden, tarayıcı verilerinizi temizlemeden veya AllMarks'ı sıfırlamadan önce düzenli olarak bir kopya kaydetmek için Ayarlar'daki EXPORT özelliğini kullanın. Tarayıcı verilerinin temizlenmesi, cihazın kaybolması veya arızalanması, yazılım güncellemeleri veya başka herhangi bir nedenle kaybedilen veriler kurtarılamaz."
       },
       "ip": {
         "heading": "4. Fikri mülkiyet",

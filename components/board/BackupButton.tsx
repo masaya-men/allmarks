@@ -12,6 +12,7 @@ import {
   type BackupImportFailure,
   type BackupJson,
 } from '@/lib/storage/backup'
+import { exportBackupFile } from '@/lib/board/export-backup'
 
 /** Shape check for a chosen backup file. Rows themselves stay opaque
  *  (`z.unknown()`) — we never re-validate every bookmark/tag, just that the
@@ -52,16 +53,7 @@ export function BackupButton({ buttonClassName }: BackupButtonProps = {}): React
     setBusy('export')
     try {
       const db = await initDB()
-      const dump = await exportAllStores(db)
-      const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `allmarks-backup-${new Date().toISOString().slice(0, 10)}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      await exportBackupFile(db, new Date().toISOString())
     } catch {
       // Never fail silently — a failed export must tell the user.
       window.alert(t('board.backup.exportFailed'))

@@ -35,6 +35,19 @@
       "corruptRows": "Part of this backup is damaged, so the restore was cancelled. Your current data is unchanged.",
       "restoreFailed": "Restore failed. Please check the file and try again."
     },
+    "dataHome": {
+      "title": "Your data is saved on this device only.",
+      "body": "All your AllMarks data is stored in this browser, on this device. There is no account, and nothing is saved on a server. To keep a copy, use EXPORT in SETTINGS — do this before you change devices or clear your browser data."
+    },
+    "backupStatus": {
+      "never": "Last backup: never",
+      "today": "Last backup: today",
+      "daysAgo": "Last backup: {days} days ago"
+    },
+    "backupReminder": {
+      "body": "You've added {n} bookmarks since your last backup. Save a copy with EXPORT.",
+      "bodyFirst": "You've saved {n} bookmarks. Save a copy with EXPORT to keep them."
+    },
     "urlPlaceholder": "Paste URL...",
     "save": "Save",
     "randomPick": "Random Pick",
@@ -581,7 +594,7 @@
       },
       "responsibilities": {
         "heading": "3. Your responsibilities",
-        "body": "You are responsible for the content you save and share, you agree not to use the Service for any unlawful purpose or to disrupt it, and you understand that your data is stored locally — clearing your browser data permanently deletes your AllMarks content."
+        "body": "You are responsible for the content you save and share, you agree not to use the Service for any unlawful purpose or to disrupt it, and you understand that your data is stored locally — clearing your browser data permanently deletes your AllMarks content. Because your data is stored only in your browser on this device and no copy is kept on a server, keeping your own backups is your responsibility: use EXPORT in Settings to save a copy regularly, especially before you change devices, clear your browser data, or reset AllMarks. Data lost through browser data clearing, device loss or failure, software updates, or any other cause cannot be recovered."
       },
       "ip": {
         "heading": "4. Intellectual property",
