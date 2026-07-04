@@ -37,7 +37,7 @@
     },
     "dataHome": {
       "title": "Your data is saved on this device only.",
-      "body": "All your AllMarks data is stored in this browser, on this device. There is no account, and nothing is saved on a server. To keep a copy, use EXPORT in Settings — do this before you change devices or clear your browser data."
+      "body": "All your AllMarks data is stored in this browser, on this device. There is no account, and nothing is saved on a server. To keep a copy, use EXPORT in SETTINGS — do this before you change devices or clear your browser data."
     },
     "backupStatus": {
       "never": "Last backup: never",
