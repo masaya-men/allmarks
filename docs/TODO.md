@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 159 — 拡張 N-20 完遂＋新規タグ作成／オンボ PopOut ペースト／高解像度は revert／次＝動画Lightbox「がくっと」修正)
+
+- **拡張 N-20 完遂＋機能追加**：クイックタグ帯を「**+ add tag** ハンドル＋ホバー1列ドロワー」に刷新（上だけ2列を根治）＋フォント一致＋**スクロール末尾でフェード消滅**修正。さらに「**+ add tag クリックで新規タグ作成**」を web+拡張の往復で新設（`booklage:add-new-tag`・find-or-create は `applyNewQuickTag` 流用）。**敵対的レビュー2件で実バグ5件**（**IME 変換確定Enter でタグ化＝日本語全滅**／重複タグ→nonceガード＋送信済みSet／bookmarklet 悪用→bookmark存在ゲート＋`getBookmark`／keyup漏れ 等）摘出・全修正。**manifest 0.1.24・zip 生成・ユーザーが審査提出**。web 反映済。tsc0/**vitest1959**。commit `31e1092`/`eb2b5c2`/`958e255`。
+- **オンボ PopOut にペースト保存を追加**：[PopOutReenactment.tsx](../components/onboarding/PopOutReenactment.tsx) に「URL 貼り付け→カード保存」ビート＋**キャプション15言語更新**（拡張もブクマも不要で保存を教える）。commit `419fb4d`・反映済。
+- **アイデア洗い出し**：5レンズ→実現性判定→統合の workflow で **X-01〜X-25** を IDEAS.md に記録（拡張ロードマップ統合版）。
+- **高解像度化（案X=Lightbox の X 写真のみ）を試みて revert**：表示時に新URLへ差し替えると **FLIP 時に未デコードで小さく表示**する劣化 → `6f4621d` でまるごと revert・本番は既知の良い状態に復帰。**教訓＝見た目変更は tsc/vitest 通過≠OK、実機確認してから出す**（次に高解像度を再挑戦するなら「元画像を先に表示→裏で先読み→差し替え」＋実機検証）。
+- **次（セッション160）＝ N-23 動画Lightbox「がくっと」を安全に修正**（下記・ユーザー明示）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 158 — オンボ改善 N-21+N-22 出荷・master マージ済・allmarks.app 反映済／ユーザー実機目視のみ残)
 
 - **オンボ改善 N-21+N-22 を出荷**（merge `28931b9`・`--no-ff`・tsc0 / **vitest1945** / build OK・`allmarks.app` 反映済・default 盤面 byte-identical）。
@@ -120,7 +128,12 @@
 
 ### session 157 で報告（ユーザー実機メモ・新規）
 
-- **(N-20) 拡張クイックタグ窓：上だけ2列のまま** — N-18 で「1列化」したのは**ドロワー（展開時の全タグ）だけ**。折りたたみプレビュー行 `.allmarks-tagstrip__row` が [floating-button.js:453](../extension/floating-button.js#L453) の `tagstripSplit(tags, 2)` で**上位2タグを横並び**にしているのが「上だけ2列」の正体。修正案＝プレビューを1タグに（`tagstripSplit(tags, 1)`）or 開いたら全タグを単一ドロワーに寄せて行を handle だけにする。**拡張は審査通過済＝修正すると新バージョン再提出**（要判断）。`extension/lib/tag-strip-model.js` に純関数、`extension/floating-button.css` L227〜 が row の横並び定義。
+- ~~**(N-20) 拡張クイックタグ窓：上だけ2列のまま**~~ ✅ **セッション159 完了**（折りたたみを「+ add tag」ハンドル1個＋ホバー1列ドロワーに刷新＝2列を根治。さらに「+ add tag クリックで新規タグ作成」まで追加。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s159／manifest 0.1.24 提出）。
+
+### session 159 で報告（ユーザー実機メモ・新規）
+
+- **(N-23) YouTube 動画カード→Lightbox で「がくっと小さくなる」** — 動画カードをクリックして Lightbox に移行する時、FLIP でカードを大きくしてきたのに**最後に急に縮む**。ユーザーは「**前はなかった**」と記憶。**次セッション(160)で安全に修正したいとユーザー明示**。進め方＝systematic-debugging：①`git log` で Lightbox open/FLIP + 動画埋め込み（`resolveLightboxPlayer`・`components/board/embeds`・`TweetVideoEmbed`）のサイズ関連変更を既知の良い時点(s158以前)から検証＋本番再現（「新規か既存か」を憶測で決めない）②仮説＝クローン(ボードカードaspect)→動画埋め込み(16:9=より小さい)への受け渡しで target rect 不一致→急縮。関連 memory `reference_lightbox_flip_content_equivalence`／`.media` rect 計測。③**実機確認してから出す**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **(参考) 高解像度化は s159 で試みて revert 済**（表示時に新URL差し替え→FLIP で未デコード縮小の劣化）。再挑戦時は「元画像を先に表示→裏で先読み→差し替え」or 保存時のみ、＋実機検証。memory `reference_lightbox_flip_content_equivalence` 隣に学びを記録。
 - ~~**(N-21) オンボ：SETTINGS の説明が埋もれる**~~ ✅ **セッション158 完了**（`captionAtBottom` で下中央固定。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158）。ユーザー実機目視のみ残。
 - ~~**(N-22) オンボ：POP OUT の説明シーンが無い**~~ ✅ **セッション158 完了**（desktop 専用 `popout` cinema シーン＋`PopOutReenactment`＝右グライドイン再現。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158）。ユーザー実機目視のみ残。
 

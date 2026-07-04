@@ -1,44 +1,32 @@
-# 次セッションのゴール (= セッション 159)
+# 次セッションのゴール (= セッション 160)
 
-## 今の状態（オンボ N-21/N-22 出荷済＝概ね OK／次は拡張 N-20 修正＋再審査）
+## 今の状態（拡張 N-20 完遂＋オンボ PopOut ペースト＋高解像度は revert／次＝動画 Lightbox の「がくっと」修正）
 
-**セッション158でやったこと（オンボ改善を完遂）:**
-- **N-21（SETTINGS 説明の埋もれ）＋ N-22（POP OUT 説明シーン）を出荷**（v1 `28931b9`）→ 実機フィードバックで **POP OUT を v2 に全面作り直し**（`ca81341`＝暗幕/クリックブロック＋偽ブラウザ＋自動カーソル＋タグ点灯）→ さらに**追い込み修正4連**（`fb16eb8`/`bf34335`/`9305cbd`）で POP OUT タグ被り・SETTINGS のリングずれ/隠れ・キャプション寄り添い・**リングを portal で前面化**まで対応。全て allmarks.app 反映済・tsc0/vitest1945/build OK。詳細 [TODO_COMPLETED.md](TODO_COMPLETED.md) s158。
-- オンボは概ね OK。気になる点が残っていれば冒頭で微調整。
+**セッション159でやったこと:**
+- **拡張 N-20 完遂＋機能追加**：クイックタグ帯を「**+ add tag** ハンドル＋ホバー1列ドロワー」に刷新（上だけ2列を根治）→ フォント一致・**スクロール末尾でフェード消滅**修正 → さらに「**+ add tag クリックで新規タグ作成**」を web+拡張の往復で新設（`booklage:add-new-tag`、find-or-create は `applyNewQuickTag` 流用）。敵対的レビュー2件で実バグ5件（**IME 変換確定Enter でタグ化＝日本語全滅**／重複タグ／bookmarklet 悪用 等）を摘出・全修正。**manifest 0.1.24・zip 生成済・ユーザーが審査提出予定**。web 側は allmarks.app 反映済。
+- **オンボ PopOut にペースト保存を追加**：PopOut シーンに「URL 貼り付け→カード保存」ビート＋キャプション15言語更新（拡張もブクマも不要で保存できることを教える）。反映済。
+- **アイデア洗い出し**：5レンズ→実現性→統合で **X-01〜X-25** を IDEAS.md に記録（詳細下記）。
+- **高解像度化（案X=Lightbox の X 写真のみ）を試みたが revert**：新URLへ差し替えると**FLIP 時に未デコードで小さく表示**する劣化が出た → `6f4621d` でまるごと revert・本番は既知の良い状態に復帰。**教訓＝見た目変更は tsc/vitest 通過≠OK、実機確認してから出す**。
 
-## このセッションのゴール ＝ 拡張 N-20 修正 → v0.1.24 → 再審査提出
+## このセッションのゴール ＝ 動画(YouTube)カード→Lightbox の「がくっと小さくなる」を安全に修正（N-23）
 
-**ユーザー要望**：拡張のクイックタグ窓「上だけ2列」を直して Chrome ウェブストアに再提出したい（前セッション末に「次で安全に」と区切り）。
+**ユーザー報告(s159)**：YouTube 動画カードをクリックして Lightbox に移行する時、カードを FLIP で大きくしてきたのに**最後にがくっと小さくなる**。ユーザーは「**前はなかった**」と記憶（＝新規リグレッションの可能性を尊重して検証する）。
 
-### 事実（前セッションで実コード確認済み）
-- 拡張の本体＝メインリポの **`extension/` フォルダ**（tracked＝提出した本物。`chrome-extension/` は無い）。現バージョン **`0.1.23`**（[extension/manifest.json](../extension/manifest.json)）。
-- 「上だけ2列」の正体＝[extension/floating-button.js:453](../extension/floating-button.js#L453) の `tagstripSplit(tags, 2)`（折りたたみプレビュー行が上位2タグを横並び）。純関数は [extension/lib/tag-strip-model.js](../extension/lib/tag-strip-model.js)、横並び CSS は `extension/floating-button.css`（L227〜）。
-- **拡張は審査通過済（v0.1.23 live）＝コードを直す＝新バージョンにして再提出→審査、が必須。**
+### 進め方（systematic-debugging・安全第一）
+1. **まず「本当に新しいか」を検証**：`git log`/`git show` で **Lightbox の open/FLIP** と **動画埋め込みのサイズ関連**（`resolveLightboxPlayer`・`components/board/embeds`・`TweetVideoEmbed`）の変更を既知の良い時点（s158 以前）から追う＋**本番で再現**。憶測で「元からある/私のせい」と決めない。
+2. **根本原因の仮説**：FLIP のクローン（ボードカードのアスペクト）→ 動画埋め込み（16:9 レターボックス＝より小さい）への**受け渡しでサイズ不一致→急縮**。target rect が埋め込みの最終レイアウトと合っていない可能性。関連: [Lightbox.tsx](../components/board/Lightbox.tsx) の originRect/targetRect/クローン/`.media` サイジング、memory `reference_lightbox_flip_content_equivalence` / `.media` rect 計測（非img wrapper は explicit width 要）。
+3. **修正は実機で確認してから出す**（今回の失敗の本質＝見ずに出した）。ui-design.md の (1)現状確認→(2)変更案→(3)承認→(4)実装 を守る。
 
-### 最初に決めること（ユーザーと相談）
-- プレビュー行の直し方：**(a) 1タグに**（`tagstripSplit(tags, 1)`・最小変更）／**(b) handle だけ**（開くまでタグを出さない）。→ ユーザーの好みを聞いてから着手。
-
-### 手順
-1. **まず [docs/private/IDEAS.md](private/IDEAS.md) を読む**（拡張作業は IDEAS 先読みがルール＝I-05 SNS ボタン等）。
-2. 決めた方式で [floating-button.js:453](../extension/floating-button.js#L453)（＋必要なら `floating-button.css`）を修正。
-3. **`node --check` で構文確認**（拡張の JS は tsc/vitest の対象外＝偽保存/構文ミス防止）。
-4. `extension/manifest.json` を **`0.1.24`** に。
-5. zip でパッケージ化。
-6. **ユーザーがストアに再提出**（審査待ち＝外向きの動き）。
-7. 動作確認は sideload で（拡張 sprint 中は都度質問せず、最後にまとめて検証＝[feedback_batch_extension_verification]）。
-
-### 補足
-- `EXTENSION_STORE_URL`（サイトにストアリンクを載せる）は**別作業**（web 側）。「直した版を通してから公開リンクを広める」のが綺麗。同じ回にまとめるかは提出タイミングで判断。
-
-## その後の本命バックログ（順不同・相談）
-- **③ プレミアムテーマ制作**（Claude 推奨・1本目候補 Liquid Glass）。
-- **④ K3 解錠実装**（計画完成済 `docs/private/2026-07-01-k3-unlock-plan.md`）。
-- タグ付け強化。
+## その後の本命バックログ（おすすめ順の続き・相談）
+- **③ バックアップの法的守り**：利用規約明記＋初回説明＋定期リマインド＋書き出し（既存）＋危険操作前警告。ユーザー要望「法的に安全にしたい」。文面たたき台まで作る（最終は専門家確認を推奨）。
+- **① 自動画像**：保存時に**操作ゼロ**で、og:image が無い記事はページ内の良い画像を自動採用／無ければブランドタイル自動生成（ユーザー厳命＝保存時に手間を増やさない）。
+- **② カラーハント**：土台＝保存時パレット抽出（既存ブクマは後入れ backfill・エクスポート不要／ただし他サイト画像は CORS で読めない＝画像中継が要る）。
+- 高解像度化リトライ（**表示時に新URL差し替えは FLIP で未デコード縮小の罠**。やるなら「元画像を先に出し裏で先読み→差し替え」＋実機検証。または保存時＝新規のみ）。
+- 詳細アイデア＝`docs/private/IDEAS.md` の **拡張ロードマップ統合版（X-01..X-25）**。
 
 ## 守ること（毎回）
-- default 盤面 byte-identical。**web** 変更時は deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build` → `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`。**拡張は web deploy とは別**（wrangler 不要・zip 再提出）。
-- **機微情報は `docs/private/` のみ。tracked に書かない・commit しない**（CLAUDE.md 厳守）
-- 既知フレーキー `tests/lib/channel.test.ts`（再実行で緑）。**vitest は dev サーバー並走禁止**
-- **偽保存対策**：Write/Edit 後は独立 Read、commit/マージ後は**生 `git log --graph`**。**拡張 JS は `node --check`**（tsc/vitest 対象外）
-- オンボ spotlight を触るときは **①ターゲットを可視域に固定②portal パネルより前面にリング(z順)③説明はターゲットに寄り添える** を守る（s158 の教訓）
-- アニメは GSAP（Framer Motion 禁止）。応答は日本語・簡潔に
+- **見た目変更は ui-design.md 準拠＋実機検証してからデプロイ**（s159 の教訓）。
+- default 盤面 byte-identical。web 変更は deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build` → `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`。
+- 機微情報は `docs/private/` のみ。既知フレーキー `tests/lib/channel.test.ts`（再実行で緑）。vitest は dev サーバー並走禁止。
+- Write/Edit 後は独立 Read、commit/マージ後は生 `git log`。拡張 JS は `node --check`。
+- 応答は日本語・簡潔に。ユーザーは非エンジニア＝平易に。
