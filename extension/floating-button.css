@@ -231,23 +231,21 @@
   flex-wrap: nowrap;
   overflow: hidden;
 }
-/* Collapsed handle: an "+ ADD TAG" affordance (uppercase + wider tracking) so it
-   reads as chrome, distinct from the lowercase tag chips revealed on hover. */
+/* Collapsed handle: the "+ add tag" affordance. Same font as the tag chips
+   below it (lowercase, 11px, 0.08em, 85% ink) so it reads as the first row of
+   the list; only the "+ " prefix marks it as the add action. */
 .allmarks-tagstrip__label {
   flex: 0 0 auto;
   padding: 4px 8px;
   font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
   white-space: nowrap;
-  color: color-mix(in srgb, var(--am-strip-fg) 62%, transparent);
+  color: color-mix(in srgb, var(--am-strip-fg) 85%, transparent);
   user-select: none;
   transition: color 120ms;
 }
-.allmarks-tagstrip:hover .allmarks-tagstrip__label,
-.allmarks-tagstrip[data-open="true"] .allmarks-tagstrip__label {
-  color: var(--am-strip-fg);
-}
+.allmarks-tagstrip__label:hover { color: var(--am-strip-fg); }
 .allmarks-tagstrip__hint {
   margin-left: auto;
   flex: 0 0 auto;
@@ -282,8 +280,10 @@
 
 /* Bottom fade hint that there's more to scroll (raw scrollbar is hidden per the
    app's no-plain-scrollbar rule). pointer-events:none so chips under it stay
-   clickable. Only shown while the drawer is open. */
-.allmarks-tagstrip[data-open="true"]::after {
+   clickable. Shown only while open AND not scrolled to the end — floating-button.js
+   sets data-scroll-end="true" at the bottom (or when the list isn't scrollable)
+   so the last tag never sits under a permanent gradient. */
+.allmarks-tagstrip[data-open="true"]:not([data-scroll-end="true"])::after {
   content: "";
   position: absolute;
   left: 0;

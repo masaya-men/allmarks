@@ -470,6 +470,19 @@
     drawer.className = 'allmarks-tagstrip__drawer'
     for (const t of list) drawer.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
     el.appendChild(drawer)
+    // Bottom fade is a "more below" hint only. Drop it once the drawer is
+    // scrolled to the end (or when it isn't scrollable at all) so the last tag
+    // never sits under a permanent gradient. clientHeight only settles after the
+    // open transition, so recompute on transitionend and on every scroll.
+    const updateDrawerEnd = () => {
+      const atEnd = drawer.scrollTop + drawer.clientHeight >= drawer.scrollHeight - 1
+      const scrollable = drawer.scrollHeight > drawer.clientHeight + 1
+      el.dataset.scrollEnd = (!scrollable || atEnd) ? 'true' : 'false'
+    }
+    drawer.addEventListener('scroll', updateDrawerEnd, { passive: true })
+    drawer.addEventListener('transitionend', (e) => {
+      if (e.propertyName === 'max-height') updateDrawerEnd()
+    })
     // TUNE-style hover open/close: hover opens the accordion; leaving closes it
     // after a grace, then the whole strip auto-dismisses.
     el.addEventListener('mouseenter', () => {
