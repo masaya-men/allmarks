@@ -1388,6 +1388,14 @@ export async function getAllBookmarks(
   return db.getAll('bookmarks')
 }
 
+/** Fetch a single bookmark by id (undefined if it doesn't exist). */
+export async function getBookmark(
+  db: IDBPDatabase<AllMarksDB>,
+  id: string,
+): Promise<BookmarkRecord | undefined> {
+  return db.get('bookmarks', id)
+}
+
 /**
  * Add multiple bookmarks in batches with associated cards.
  * Writes are batched across transactions for performance on large imports.

@@ -395,6 +395,10 @@
     if (!isExtensionAlive()) return
     try { chrome.runtime.sendMessage({ type: 'booklage:add-tag-request', bookmarkId, tagId }).catch(() => {}) } catch (_) {}
   }
+  function sendAddNewTag(bookmarkId, name) {
+    if (!isExtensionAlive()) return
+    try { chrome.runtime.sendMessage({ type: 'booklage:add-new-tag-request', bookmarkId, name }).catch(() => {}) } catch (_) {}
+  }
   function applyStripTheme(el, t) {
     if (!t) return
     const set = (k, v) => { if (v) el.style.setProperty(k, v) }
@@ -419,6 +423,18 @@
         tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
       }
     })
+    return chip
+  }
+  // A just-created tag shown in its applied (✓) state. Display-only: the create
+  // round-trip is fire-and-forget (like makeChip's optimistic ✓), so this needs
+  // no click handler; tabIndex -1 keeps it out of the input's focus flow.
+  function makeAppliedChip(name) {
+    const chip = document.createElement('button')
+    chip.type = 'button'
+    chip.className = 'allmarks-tagstrip__chip'
+    chip.textContent = name
+    chip.dataset.on = 'true'
+    chip.tabIndex = -1
     return chip
   }
   // The strip anchors to the floating button's box if it's mounted, otherwise
@@ -483,6 +499,73 @@
     drawer.addEventListener('transitionend', (e) => {
       if (e.propertyName === 'max-height') updateDrawerEnd()
     })
+    // "+ add tag" click → inline input to create a brand-new tag (the app
+    // find-or-creates by name). Typing keeps the strip open + alive; Enter adds
+    // an optimistic ✓ chip and stays focused for another; Esc / blur restores.
+    let inputActive = false
+    let inputEl = null
+    const submitted = new Set() // lowercased names already sent via this input — no dup chips / redundant creates
+    const exitInputMode = () => {
+      if (!inputActive) return
+      inputActive = false
+      if (inputEl && inputEl.parentNode) inputEl.parentNode.removeChild(inputEl)
+      inputEl = null
+      // Bail if this strip was torn down / replaced while typing (fullscreen,
+      // SPA-nav, re-show, error message) — don't touch the current strip's label
+      // or the shared module hide timer.
+      if (tagStripEl !== el) return
+      label.style.display = ''
+      // Pointer still over the strip → mouseleave owns dismissal; otherwise
+      // collapse back to the "+ add tag" chrome and re-arm the collapsed dismiss.
+      if (!el.matches(':hover')) {
+        el.dataset.open = 'false'
+        if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
+        tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
+      }
+    }
+    const enterInputMode = () => {
+      if (inputActive) return
+      inputActive = true
+      if (tagStripLeaveTimer) { clearTimeout(tagStripLeaveTimer); tagStripLeaveTimer = null }
+      if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
+      el.dataset.open = 'true' // reveal the drawer so created chips are visible
+      label.style.display = 'none'
+      inputEl = document.createElement('input')
+      inputEl.type = 'text'
+      inputEl.className = 'allmarks-tagstrip__input'
+      inputEl.setAttribute('placeholder', '+ new tag')
+      inputEl.setAttribute('maxlength', '40')
+      inputEl.addEventListener('keydown', (e) => {
+        e.stopPropagation() // don't let the host page hijack our keystrokes
+        // Let the IME own Enter/Escape while composing — a candidate-confirming
+        // Enter must NOT create a tag from the half-converted text (CJK input).
+        if (e.isComposing || e.keyCode === 229) return
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          const v = inputEl.value.trim()
+          if (!v) return
+          const key = v.toLowerCase()
+          if (!submitted.has(key)) {
+            submitted.add(key)
+            drawer.insertBefore(makeAppliedChip(v), drawer.firstChild)
+            updateDrawerEnd()
+            sendAddNewTag(bookmarkId, v)
+          }
+          inputEl.value = '' // stay focused for another new tag
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          exitInputMode()
+        }
+      })
+      // keydown.stopPropagation alone leaves keyup/keypress-bound host shortcuts
+      // firing while typing; shield those bubble-phase events too.
+      inputEl.addEventListener('keyup', (e) => e.stopPropagation())
+      inputEl.addEventListener('keypress', (e) => e.stopPropagation())
+      inputEl.addEventListener('blur', () => { setTimeout(exitInputMode, 0) })
+      rowEl.insertBefore(inputEl, rowEl.firstChild)
+      inputEl.focus()
+    }
+    label.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); enterInputMode() })
     // TUNE-style hover open/close: hover opens the accordion; leaving closes it
     // after a grace, then the whole strip auto-dismisses.
     el.addEventListener('mouseenter', () => {
@@ -491,6 +574,7 @@
       el.dataset.open = 'true'
     })
     el.addEventListener('mouseleave', () => {
+      if (inputActive) return // keep the strip open while typing a new tag
       if (tagStripLeaveTimer) clearTimeout(tagStripLeaveTimer)
       tagStripLeaveTimer = setTimeout(() => {
         tagStripLeaveTimer = null

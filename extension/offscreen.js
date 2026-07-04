@@ -16,7 +16,8 @@ window.addEventListener('message', (ev) => {
   if (
     data.type === 'booklage:save:result' ||
     data.type === 'booklage:probe:result' ||
-    data.type === 'booklage:add-tag:result'
+    data.type === 'booklage:add-tag:result' ||
+    data.type === 'booklage:add-new-tag:result'
   ) {
     router.resolve(data.nonce, data)
   }

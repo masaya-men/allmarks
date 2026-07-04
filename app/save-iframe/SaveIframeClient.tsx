@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { initDB, persistMediaSlots, getAllBookmarks, saveBookmarkDeduped } from '@/lib/storage/indexeddb'
+import { initDB, persistMediaSlots, getAllBookmarks, getBookmark, saveBookmarkDeduped } from '@/lib/storage/indexeddb'
 import type { BookmarkRecord } from '@/lib/storage/indexeddb'
 import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
+import { applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { loadBoardConfig } from '@/lib/storage/board-config'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
@@ -15,6 +16,7 @@ import {
   parseSaveMessage,
   parseProbeMessage,
   parseAddTagMessage,
+  parseAddNewTagMessage,
   type SaveMessageResult,
   type StripThemeTokens,
 } from '@/lib/utils/save-message'
@@ -166,6 +168,47 @@ export function SaveIframeClient(): ReactElement {
         } catch (err) {
           ev.source?.postMessage(
             { type: 'booklage:add-tag:result', nonce, ok: false, error: err instanceof Error ? err.message : String(err) },
+            { targetOrigin: ev.origin },
+          )
+        }
+        return
+      }
+
+      // Create-and-apply a brand-new tag by name (quick-tag strip "+ add tag"
+      // input). applyNewQuickTag find-or-creates by case-insensitive name, applies
+      // it, and posts the board update — same path PipCompanion uses.
+      const addNewTagParsed = parseAddNewTagMessage(ev.data)
+      if (addNewTagParsed.ok) {
+        const { bookmarkId, name, nonce } = addNewTagParsed.value.payload
+        // Dedup by nonce: the offscreen repost pump re-posts the SAME envelope
+        // until it resolves, and applyNewQuickTag's find-or-create is not atomic,
+        // so a second delivery of one nonce could create a duplicate-named tag.
+        if (handledNonces.current.has(nonce)) return
+        handledNonces.current.add(nonce)
+        try {
+          const db = await initDB()
+          // Only create/apply when the target bookmark exists — guards against a
+          // hostile bookmarklet-mode embed spamming orphan tags, and against a
+          // bookmark deleted between the save and this call.
+          const target = await getBookmark(db, bookmarkId)
+          if (!target) {
+            ev.source?.postMessage(
+              { type: 'booklage:add-new-tag:result', nonce, ok: false, error: 'unknown bookmark' },
+              { targetOrigin: ev.origin },
+            )
+            return
+          }
+          const allTags = await getAllTags(db)
+          const tag = await applyNewQuickTag(db, bookmarkId, name, allTags)
+          ev.source?.postMessage(
+            tag
+              ? { type: 'booklage:add-new-tag:result', nonce, ok: true, tag: { id: tag.id, name: tag.name, color: tag.color } }
+              : { type: 'booklage:add-new-tag:result', nonce, ok: false, error: 'empty tag name' },
+            { targetOrigin: ev.origin },
+          )
+        } catch (err) {
+          ev.source?.postMessage(
+            { type: 'booklage:add-new-tag:result', nonce, ok: false, error: err instanceof Error ? err.message : String(err) },
             { targetOrigin: ev.origin },
           )
         }

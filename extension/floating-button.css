@@ -243,9 +243,32 @@
   white-space: nowrap;
   color: color-mix(in srgb, var(--am-strip-fg) 85%, transparent);
   user-select: none;
+  cursor: pointer;
   transition: color 120ms;
 }
 .allmarks-tagstrip__label:hover { color: var(--am-strip-fg); }
+/* Inline "create a new tag" field, swapped in when "+ add tag" is clicked. Same
+   font as the chips so the row stays visually one list. */
+.allmarks-tagstrip__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--am-strip-fg) 8%, transparent);
+  color: var(--am-strip-fg);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  outline: none;
+}
+.allmarks-tagstrip__input::placeholder {
+  color: color-mix(in srgb, var(--am-strip-fg) 45%, transparent);
+  text-transform: lowercase;
+}
 .allmarks-tagstrip__hint {
   margin-left: auto;
   flex: 0 0 auto;

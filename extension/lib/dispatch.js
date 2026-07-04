@@ -201,3 +201,24 @@ export async function dispatchAddTag({ bookmarkId, tagId }) {
     offscreenInFlight--
   }
 }
+
+// Create-and-apply a brand-new tag by name for the quick-tag strip's "+ add tag"
+// input. Same offscreen bridge + one-shot self-heal as dispatchAddTag; the
+// /save-iframe page find-or-creates the tag by name and applies it.
+export async function dispatchAddNewTag({ bookmarkId, name }) {
+  offscreenInFlight++
+  try {
+    await ensureOffscreen()
+    const nonce = makeNonce('nt')
+    const envelope = { type: 'booklage:add-new-tag', payload: { bookmarkId, name, nonce } }
+    let result = await postToOffscreen(envelope, nonce)
+    if (!result?.ok && (result?.error === 'timeout' || result == null)) {
+      await recreateOffscreenIfAlone()
+      const retryNonce = makeNonce('nt-retry')
+      result = await postToOffscreen({ ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }, retryNonce)
+    }
+    return result
+  } finally {
+    offscreenInFlight--
+  }
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSaveMessage, parseProbeMessage, parseProbeResult } from './save-message'
+import { parseSaveMessage, parseProbeMessage, parseProbeResult, parseAddNewTagMessage } from './save-message'
 
 describe('parseSaveMessage', () => {
   it('accepts a valid booklage:save payload', () => {
@@ -126,5 +126,48 @@ describe('parseProbeResult', () => {
   it('rejects result with non-boolean pipActive', () => {
     const result = parseProbeResult({ type: 'booklage:probe:result', nonce: 'p-abc', pipActive: 'yes' })
     expect(result.ok).toBe(false)
+  })
+})
+
+describe('parseAddNewTagMessage', () => {
+  it('accepts a valid booklage:add-new-tag envelope', () => {
+    const result = parseAddNewTagMessage({
+      type: 'booklage:add-new-tag',
+      payload: { bookmarkId: 'bm-1', name: 'read later', nonce: 'nt-1' },
+    })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.payload.bookmarkId).toBe('bm-1')
+      expect(result.value.payload.name).toBe('read later')
+      expect(result.value.payload.nonce).toBe('nt-1')
+    }
+  })
+
+  it('rejects the wrong type', () => {
+    const result = parseAddNewTagMessage({
+      type: 'booklage:add-tag',
+      payload: { bookmarkId: 'bm-1', name: 'x', nonce: 'n' },
+    })
+    expect(result.ok).toBe(false)
+  })
+
+  it('rejects an empty name', () => {
+    const result = parseAddNewTagMessage({
+      type: 'booklage:add-new-tag',
+      payload: { bookmarkId: 'bm-1', name: '', nonce: 'n' },
+    })
+    expect(result.ok).toBe(false)
+  })
+
+  it('rejects a missing bookmarkId', () => {
+    const result = parseAddNewTagMessage({
+      type: 'booklage:add-new-tag',
+      payload: { name: 'x', nonce: 'n' },
+    })
+    expect(result.ok).toBe(false)
+  })
+
+  it('rejects null', () => {
+    expect(parseAddNewTagMessage(null).ok).toBe(false)
   })
 })

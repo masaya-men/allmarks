@@ -116,3 +116,28 @@ export function parseAddTagMessage(input: unknown): ParseResult<AddTagMessageInp
 export type AddTagResult =
   | { type: 'booklage:add-tag:result'; nonce: string; ok: true }
   | { type: 'booklage:add-tag:result'; nonce: string; ok: false; error: string }
+
+// Create-and-apply a brand-new tag by name (the quick-tag strip's "+ add tag"
+// input). The save-iframe find-or-creates by case-insensitive name, so an
+// existing name is reused rather than duplicated.
+const AddNewTagMessage = z.object({
+  type: z.literal('booklage:add-new-tag'),
+  payload: z.object({
+    bookmarkId: z.string().min(1),
+    name: z.string().min(1),
+    nonce: z.string().min(1),
+  }),
+})
+export type AddNewTagMessageInput = z.infer<typeof AddNewTagMessage>
+export function parseAddNewTagMessage(input: unknown): ParseResult<AddNewTagMessageInput> {
+  const r = AddNewTagMessage.safeParse(input)
+  if (r.success) return { ok: true, value: r.data }
+  return {
+    ok: false,
+    error: r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+  }
+}
+
+export type AddNewTagResult =
+  | { type: 'booklage:add-new-tag:result'; nonce: string; ok: true; tag: { id: string; name: string; color: string } }
+  | { type: 'booklage:add-new-tag:result'; nonce: string; ok: false; error: string }
