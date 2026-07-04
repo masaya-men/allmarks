@@ -46,8 +46,10 @@ export function PopOutReenactment({ caption, buttonLabel, onAdvance }: Props): R
     const tagBtn = q('[data-anim="tagBtn"]')
     const chip = q('[data-anim="chip"]')
     const cursor = q('[data-anim="cursor"]')
+    const pasteUrl = q('[data-anim="pasteUrl"]')
+    const pasteFlash = q('[data-anim="pasteFlash"]')
     const cards = Array.from(vp.querySelectorAll<HTMLElement>('[data-anim^="card"]'))
-    if (!popBtn || !pip || !tagBtn || !chip || !cursor || cards.length < 2) return undefined
+    if (!popBtn || !pip || !tagBtn || !chip || !cursor || !pasteUrl || !pasteFlash || cards.length < 2) return undefined
 
     // centre of an element relative to the viewport box (for cursor targeting)
     const rel = (el: HTMLElement): { x: number; y: number } => {
@@ -57,11 +59,19 @@ export function PopOutReenactment({ caption, buttonLabel, onAdvance }: Props): R
     }
     const vw = (): number => vp.getBoundingClientRect().width
     const vh = (): number => vp.getBoundingClientRect().height
+    // top-centre of the popped-out window — where a pasted link lands
+    const pipPoint = (): { x: number; y: number } => {
+      const r = pip.getBoundingClientRect()
+      const v = vp.getBoundingClientRect()
+      return { x: r.left - v.left + r.width / 2, y: r.top - v.top + r.height * 0.32 }
+    }
 
     const reset = (): void => {
       gsap.set(pip, { scale: 0.5, opacity: 0, transformOrigin: '85% 8%' })
       gsap.set(cards, { xPercent: 260, opacity: 0 })
       chip.setAttribute('data-on', 'false')
+      gsap.set(pasteUrl, { xPercent: -50, y: -8, scale: 0.9, opacity: 0 })
+      gsap.set(pasteFlash, { xPercent: -50, yPercent: -50, scale: 0.4, opacity: 0 })
       gsap.set(cursor, { left: vw() * 0.22, top: vh() * 0.84, scale: 1, opacity: 0 })
       setCount(0)
     }
@@ -78,6 +88,7 @@ export function PopOutReenactment({ caption, buttonLabel, onAdvance }: Props): R
       gsap.set(cards[0], { xPercent: -112, opacity: 1 })
       gsap.set(cards[1], { xPercent: 0, opacity: 1 })
       chip.setAttribute('data-on', 'true')
+      gsap.set([pasteUrl, pasteFlash], { opacity: 0 })
       gsap.set(cursor, { opacity: 0 })
       setCount(2)
       setCuePulse(true)
@@ -92,9 +103,16 @@ export function PopOutReenactment({ caption, buttonLabel, onAdvance }: Props): R
       .to(cursor, { scale: 0.78, duration: 0.13, yoyo: true, repeat: 1, ease: 'power1.inOut' })
       // the companion window pops out
       .to(pip, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.05')
-      .to({}, { duration: 0.3 })
-      // card 1 glides in from the right → centre (real PiP auto-scroll values)
-      .to(cards[0], { xPercent: 0, opacity: 1, duration: 0.7, ease: 'power4.out' })
+      .to({}, { duration: 0.2 })
+      // cursor rests over the companion window; a link is pasted straight into it
+      .to(cursor, { left: () => pipPoint().x, top: () => pipPoint().y, duration: 0.5, ease: 'power2.inOut' })
+      .to(cursor, { scale: 0.8, duration: 0.11, yoyo: true, repeat: 1, ease: 'power1.inOut' })
+      // the pasted URL lands + a flash confirms the save (no extension / bookmarklet)
+      .to(pasteUrl, { y: 0, scale: 1, opacity: 1, duration: 0.34, ease: 'back.out(2)' }, '-=0.05')
+      .fromTo(pasteFlash, { scale: 0.4, opacity: 0.85 }, { scale: 1.5, opacity: 0, duration: 0.55, ease: 'power2.out' }, '-=0.1')
+      // the pasted link becomes the first saved card → glides in from the right
+      .to(cards[0], { xPercent: 0, opacity: 1, duration: 0.7, ease: 'power4.out' }, '-=0.15')
+      .to(pasteUrl, { opacity: 0, duration: 0.3 }, '<')
       .call(() => setCount(1))
       .to({}, { duration: 0.7 })
       // card 2 arrives; card 1 slides left out of the way (carousel advances)
@@ -134,6 +152,9 @@ export function PopOutReenactment({ caption, buttonLabel, onAdvance }: Props): R
           {/* the companion window that pops out */}
           <div data-anim="pip" className={styles.pip} aria-hidden="true">
             <div className={styles.pipBar}><span className={styles.dot} />POP OUT</div>
+            {/* a link pasted straight into the companion window → the first saved card */}
+            <span data-anim="pasteFlash" className={styles.pasteFlash} />
+            <span data-anim="pasteUrl" className={styles.pasteUrl}>youtu.be/dQw4…</span>
             <div className={styles.carousel}>
               {DEMO_CARDS.map((c, i) => (
                 <div key={c.id} data-anim={`card${i}`} className={styles.card}>

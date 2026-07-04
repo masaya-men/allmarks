@@ -176,7 +176,7 @@
         "body": "Xong rồi. Có thể xem lại hướng dẫn này bất cứ lúc nào từ SETTINGS."
       },
       "popout": {
-        "body": "Nhấn POP OUT để mở một cửa sổ nhỏ. Các thẻ bạn lưu sẽ xếp hàng trong đó, và bạn có thể gắn thẻ ngay tại đây. Nhấp vào một thẻ để nhảy đến nó trong AllMarks."
+        "body": "Nhấn POP OUT để mở một cửa sổ nhỏ luôn nổi lên trên cùng. Chỉ cần dán bất kỳ liên kết nào thẳng vào đó để lưu — không cần tiện ích hay bookmarklet. Các thẻ đã lưu sẽ xếp hàng ở đó để bạn gắn thẻ, và bạn có thể nhấp vào một thẻ để nhảy đến nó trong AllMarks."
       }
     }
   },

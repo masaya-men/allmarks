@@ -11,7 +11,7 @@ describe('PopOutReenactment', () => {
     expect(onAdvance).toHaveBeenCalledOnce()
   })
 
-  it('renders the fake browser miniature: POP OUT control, companion window, two cards, tag affordance + chip, and the cursor', () => {
+  it('renders the fake browser miniature: POP OUT control, companion window, two cards, tag affordance + chip, the paste-a-link beat, and the cursor', () => {
     const { container } = render(<PopOutReenactment caption="c" buttonLabel="NEXT" onAdvance={() => {}} />)
     expect(container.querySelector('[data-testid="stage-popout-demo"]')).toBeTruthy()
     expect(container.querySelector('[data-anim="popoutBtn"]')).toBeTruthy()
@@ -19,6 +19,9 @@ describe('PopOutReenactment', () => {
     expect(container.querySelectorAll('[data-anim^="card"]').length).toBe(2)
     expect(container.querySelector('[data-anim="tagBtn"]')).toBeTruthy()
     expect(container.querySelector('[data-anim="chip"]')).toBeTruthy()
+    // the "+ add tag by paste" beat: a link chip that lands in the companion window
+    expect(container.querySelector('[data-anim="pasteUrl"]')).toBeTruthy()
+    expect(container.querySelector('[data-anim="pasteFlash"]')).toBeTruthy()
     expect(container.querySelector('[data-anim="cursor"]')).toBeTruthy()
   })
 })

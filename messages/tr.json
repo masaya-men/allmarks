@@ -176,7 +176,7 @@
         "body": "Hazırsınız. Bu öğreticiyi SETTINGS üzerinden istediğiniz zaman tekrar izleyebilirsiniz."
       },
       "popout": {
-        "body": "Küçük bir pencere açmak için POP OUT'a bas. Kaydettiğin kartlar orada sıralanır ve onları hemen orada etiketleyebilirsin. Bir karta tıklayarak AllMarks'ta o karta atla."
+        "body": "Her zaman üstte kalan küçük bir pencere açmak için POP OUT'a bas. Kaydetmek için herhangi bir bağlantıyı doğrudan içine yapıştır — uzantıya ya da bookmarklet'e gerek yok. Kaydettiğin kartlar etiketlemen için orada sıralanır ve bir karta tıklayarak AllMarks'ta o karta atlayabilirsin."
       }
     }
   },

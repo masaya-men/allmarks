@@ -176,7 +176,7 @@
         "body": "Tudo pronto. Este tutorial pode ser repetido em SETTINGS a qualquer momento."
       },
       "popout": {
-        "body": "Pressione POP OUT para abrir uma pequena janela. Os cards que você salva se alinham ali, e você pode marcá-los ali mesmo. Clique em um card para ir até ele no AllMarks."
+        "body": "Pressione POP OUT para abrir uma pequena janela que fica sempre por cima. Cole qualquer link diretamente nela para salvar — sem precisar de extensão nem bookmarklet. Os cards salvos se alinham ali para você marcá-los, e você pode clicar em um para ir até ele no AllMarks."
       }
     }
   },

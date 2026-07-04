@@ -176,7 +176,7 @@
         "body": "Todo listo. Repite este tutorial desde SETTINGS en cualquier momento."
       },
       "popout": {
-        "body": "Pulsa POP OUT para abrir una ventana pequeña. Las tarjetas que guardas se alinean ahí y puedes etiquetarlas justo en ella. Haz clic en una tarjeta para saltar a ella en AllMarks."
+        "body": "Pulsa POP OUT para abrir una pequeña ventana que se mantiene siempre encima. Pega cualquier enlace directamente en ella para guardarlo, sin necesidad de extensión ni bookmarklet. Las tarjetas guardadas se alinean ahí para etiquetarlas, y puedes hacer clic en una para saltar a ella en AllMarks."
       }
     }
   },
