@@ -24,8 +24,15 @@ export function BackupStatusView({ lastBackupAt, nowMs }: BackupStatusViewProps)
   return <p className={styles.status} data-testid="backup-status">{text}</p>
 }
 
+export interface BackupStatusProps {
+  /** Any value that changes when the readout should re-query IDB (e.g. the
+   *  drawer opening, or an EXPORT completing). Re-reads on every change so the
+   *  "last backup" line updates live instead of only after a page reload. */
+  readonly refreshKey?: unknown
+}
+
 /** Self-loading container mounted in the SETTINGS drawer. */
-export function BackupStatus(): ReactElement | null {
+export function BackupStatus({ refreshKey }: BackupStatusProps = {}): ReactElement | null {
   const [at, setAt] = useState<string | null | undefined>(undefined)
   useEffect(() => {
     let alive = true
@@ -39,7 +46,9 @@ export function BackupStatus(): ReactElement | null {
       }
     })()
     return () => { alive = false }
-  }, [])
+    // Re-read whenever refreshKey changes; `at` keeps its prior value until the
+    // new read resolves, so there is no blank flash on re-read.
+  }, [refreshKey])
   if (at === undefined) return null // don't flash before the first read
   return <BackupStatusView lastBackupAt={at} nowMs={Date.now()} />
 }

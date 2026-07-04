@@ -214,6 +214,8 @@ export function ExtensionEntry({
   // Arming one disarms the other; closing the drawer or the timeout disarms.
   const CONFIRM_MS = 3000
   const [confirming, setConfirming] = useState<'sizes' | 'sort' | null>(null)
+  // Bumped on a successful EXPORT so the "last backup" line re-reads live.
+  const [backupToken, setBackupToken] = useState(0)
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const disarm = useCallback((): void => {
     if (confirmTimerRef.current) {
@@ -340,9 +342,12 @@ export function ExtensionEntry({
           <div className={styles.backupSection} data-testid="backup-section">
             <p className={styles.backupCaption}>{t('board.backup.caption')}</p>
             <div className={styles.backupRow}>
-              <BackupButton buttonClassName={styles.backupBtn} />
+              <BackupButton
+                buttonClassName={styles.backupBtn}
+                onExported={(): void => setBackupToken((n) => n + 1)}
+              />
             </div>
-            <BackupStatus />
+            <BackupStatus refreshKey={`${isOpen ? 'open' : 'closed'}:${backupToken}`} />
           </div>
         </section>
 

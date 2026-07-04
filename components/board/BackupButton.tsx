@@ -42,9 +42,12 @@ export interface BackupButtonProps {
   /** Class applied to the EXPORT / IMPORT buttons so the host (the SETTINGS
    *  drawer) can match its own button vocabulary. */
   readonly buttonClassName?: string
+  /** Called after a successful EXPORT so the host can refresh its "last backup"
+   *  readout without a page reload. */
+  readonly onExported?: () => void
 }
 
-export function BackupButton({ buttonClassName }: BackupButtonProps = {}): ReactElement {
+export function BackupButton({ buttonClassName, onExported }: BackupButtonProps = {}): ReactElement {
   const { t } = useI18n()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState<'export' | 'import' | null>(null)
@@ -54,13 +57,14 @@ export function BackupButton({ buttonClassName }: BackupButtonProps = {}): React
     try {
       const db = await initDB()
       await exportBackupFile(db, new Date().toISOString())
+      onExported?.()
     } catch {
       // Never fail silently — a failed export must tell the user.
       window.alert(t('board.backup.exportFailed'))
     } finally {
       setBusy(null)
     }
-  }, [t])
+  }, [t, onExported])
 
   const onImportClick = useCallback((): void => {
     // Don't let a second import start while an export/import is still running
