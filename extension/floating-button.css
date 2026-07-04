@@ -231,6 +231,23 @@
   flex-wrap: nowrap;
   overflow: hidden;
 }
+/* Collapsed handle: an "+ ADD TAG" affordance (uppercase + wider tracking) so it
+   reads as chrome, distinct from the lowercase tag chips revealed on hover. */
+.allmarks-tagstrip__label {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--am-strip-fg) 62%, transparent);
+  user-select: none;
+  transition: color 120ms;
+}
+.allmarks-tagstrip:hover .allmarks-tagstrip__label,
+.allmarks-tagstrip[data-open="true"] .allmarks-tagstrip__label {
+  color: var(--am-strip-fg);
+}
 .allmarks-tagstrip__hint {
   margin-left: auto;
   flex: 0 0 auto;

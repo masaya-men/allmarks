@@ -368,11 +368,6 @@
   }
 
   // === Quick-tag strip (inlined; source of truth: extension/lib/tag-strip-model.js) ===
-  const STRIP_MAX_CHIPS = 5
-  function tagstripSplit(tags, max) {
-    const list = Array.isArray(tags) ? tags : []
-    return { visible: list.slice(0, max || STRIP_MAX_CHIPS), overflow: list.slice(max || STRIP_MAX_CHIPS) }
-  }
   function tagstripShouldShow(state, tags) {
     if (state !== 'saved' && state !== 'duplicate') return false
     return Array.isArray(tags) && tags.length > 0
@@ -450,42 +445,47 @@
   function showTagStripForButton(bookmarkId, tags, currentTagIds, themeTokens) {
     removeTagStrip()
     const current = new Set(Array.isArray(currentTagIds) ? currentTagIds : [])
-    const { visible, overflow } = tagstripSplit(tags, 2) // collapsed preview = top 2 tags
+    const list = Array.isArray(tags) ? tags : []
     const el = document.createElement('div')
     el.className = 'allmarks-tagstrip'
     // Slide direction + button-handle gutter follow the button's snap side.
     el.dataset.side = settings.floatingButtonSnapSide === 'left' ? 'left' : 'right'
     applyStripTheme(el, themeTokens)
+    // Collapsed state is a single "+ ADD TAG" handle — no tag is pre-shown.
+    // Hovering opens the drawer with every tag in one column, ranked
+    // most-relevant-first (the save reply already orders them). Keeps the strip
+    // one column throughout and never pre-picks a possibly-irrelevant tag.
     const rowEl = document.createElement('div')
     rowEl.className = 'allmarks-tagstrip__row'
-    for (const t of visible) rowEl.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+    const label = document.createElement('span')
+    label.className = 'allmarks-tagstrip__label'
+    label.textContent = '+ ADD TAG'
+    rowEl.appendChild(label)
+    const hint = document.createElement('span')
+    hint.className = 'allmarks-tagstrip__hint'
+    hint.textContent = '▾'
+    rowEl.appendChild(hint)
     el.appendChild(rowEl)
-    if (overflow.length > 0) {
-      const hint = document.createElement('span')
-      hint.className = 'allmarks-tagstrip__hint'
-      hint.textContent = '▾'
-      rowEl.appendChild(hint)
-      const drawer = document.createElement('div')
-      drawer.className = 'allmarks-tagstrip__drawer'
-      for (const t of overflow) drawer.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
-      el.appendChild(drawer)
-      // TUNE-style hover open/close: hover opens the accordion; leaving closes it
-      // after a grace, then the whole strip auto-dismisses.
-      el.addEventListener('mouseenter', () => {
-        if (tagStripLeaveTimer) { clearTimeout(tagStripLeaveTimer); tagStripLeaveTimer = null }
-        if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
-        el.dataset.open = 'true'
-      })
-      el.addEventListener('mouseleave', () => {
-        if (tagStripLeaveTimer) clearTimeout(tagStripLeaveTimer)
-        tagStripLeaveTimer = setTimeout(() => {
-          tagStripLeaveTimer = null
-          el.dataset.open = 'false'
-          if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
-          tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_AFTER_LEAVE_MS)
-        }, TAGSTRIP_LEAVE_GRACE_MS)
-      })
-    }
+    const drawer = document.createElement('div')
+    drawer.className = 'allmarks-tagstrip__drawer'
+    for (const t of list) drawer.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+    el.appendChild(drawer)
+    // TUNE-style hover open/close: hover opens the accordion; leaving closes it
+    // after a grace, then the whole strip auto-dismisses.
+    el.addEventListener('mouseenter', () => {
+      if (tagStripLeaveTimer) { clearTimeout(tagStripLeaveTimer); tagStripLeaveTimer = null }
+      if (tagStripHideTimer) { clearTimeout(tagStripHideTimer); tagStripHideTimer = null }
+      el.dataset.open = 'true'
+    })
+    el.addEventListener('mouseleave', () => {
+      if (tagStripLeaveTimer) clearTimeout(tagStripLeaveTimer)
+      tagStripLeaveTimer = setTimeout(() => {
+        tagStripLeaveTimer = null
+        el.dataset.open = 'false'
+        if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
+        tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_AFTER_LEAVE_MS)
+      }, TAGSTRIP_LEAVE_GRACE_MS)
+    })
     document.documentElement.appendChild(el)
     tagStripEl = el
     const a = getStripAnchor()
