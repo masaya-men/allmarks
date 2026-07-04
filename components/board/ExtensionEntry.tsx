@@ -13,6 +13,7 @@ import { EXTENSION_STORE_URL } from '@/lib/board/constants'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ChromeButton } from './ChromeButton'
 import { BackupButton } from './BackupButton'
+import { BackupStatus } from './BackupStatus'
 import { getThemeMeta } from '@/lib/board/theme-registry'
 import type { ThemeId } from '@/lib/board/types'
 import styles from './ExtensionEntry.module.css'
@@ -341,6 +342,7 @@ export function ExtensionEntry({
             <div className={styles.backupRow}>
               <BackupButton buttonClassName={styles.backupBtn} />
             </div>
+            <BackupStatus />
           </div>
         </section>
 
