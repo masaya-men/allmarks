@@ -93,6 +93,14 @@ import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
 import { BoardDecorLayer } from './BoardDecorLayer'
+import { DataHomeCard } from './DataHomeCard'
+import { BackupReminder } from './BackupReminder'
+import { exportBackupFile } from '@/lib/board/export-backup'
+import {
+  loadDataHomeAck, markDataHomeAck, loadLastBackupAt,
+  loadNudgeDismissedAt, markNudgeDismissed,
+  countSavedAfter, shouldShowBackupReminder,
+} from '@/lib/storage/backup-reminder'
 import styles from './BoardRoot.module.css'
 
 /** Paper middle-scatter layer pan speed, as a fraction of the card scroll. 0.30
@@ -388,6 +396,14 @@ export function BoardRoot() {
   onboardingActiveRef.current = showOnboarding
   // DB ref shared across onboarding helpers (populated on first initDB() call).
   const onboardingDbRef = useRef<DbLike | null>(null)
+  // Backup safety UI (s161 T7): one-time "your data lives here" card, and a
+  // periodic reminder toast when enough new saves have piled up unbacked.
+  const [showDataHomeCard, setShowDataHomeCard] = useState<boolean>(false)
+  const [backupReminder, setBackupReminder] =
+    useState<{ newCount: number; everBackedUp: boolean } | null>(null)
+  // One decision per board load; gates the effect below from re-firing on
+  // every items/loading change once it has already run.
+  const backupUiCheckedRef = useRef(false)
   // When focusCard is called for a bookmark not in the current filtered view
   // (e.g. user is on a tags filter but the PiP-clicked card has different
   // tags), we clear the filter to BOARD_FILTER_ALL and stash the cardId here.
@@ -819,6 +835,65 @@ export function BoardRoot() {
     setOnboardingInitialScene(undefined) // replay always starts from 'enter'
     setShowOnboarding(true)
   }
+
+  // Backup safety UI (s161 T7): after onboarding (or immediately for
+  // returning users), show the one-time data-home card; otherwise maybe the
+  // periodic reminder. Runs once per board load (backupUiCheckedRef gates
+  // re-firing on later loading/showOnboarding flips).
+  useEffect(() => {
+    if (loading || showOnboarding || backupUiCheckedRef.current) return
+    backupUiCheckedRef.current = true
+    let alive = true
+    void (async (): Promise<void> => {
+      const db = onboardingDbRef.current ?? ((await initDB()) as unknown as DbLike)
+      const ack = await loadDataHomeAck(db)
+      if (!alive) return
+      if (ack === null) { setShowDataHomeCard(true); return }
+      const lastBackupAt = await loadLastBackupAt(db)
+      const nudgeDismissedAt = await loadNudgeDismissedAt(db)
+      if (!alive) return
+      // `items` (BoardItem, from useBoardData) doesn't carry `savedAt` — read
+      // it straight from the bookmarks store instead, scoped to non-deleted
+      // records (same "currently displayed" scope the design's count rule
+      // uses for `items`).
+      const activeBookmarks = (await db.getAll('bookmarks')) as { savedAt: string; isDeleted?: boolean }[]
+      const savedAts = activeBookmarks.filter((b) => !b.isDeleted).map((b) => b.savedAt)
+      const newCount = countSavedAfter(savedAts, lastBackupAt)
+      const show = shouldShowBackupReminder({
+        nowMs: Date.now(), newCount, lastBackupAt, dataHomeAck: ack, nudgeDismissedAt,
+      })
+      if (alive && show) setBackupReminder({ newCount, everBackedUp: lastBackupAt !== null })
+    })()
+    return (): void => { alive = false }
+  }, [loading, showOnboarding])
+
+  const onDataHomeGotIt = useCallback((): void => {
+    setShowDataHomeCard(false)
+    void (async (): Promise<void> => {
+      const db = (await initDB()) as unknown as DbLike
+      await markDataHomeAck(db, new Date().toISOString())
+    })()
+  }, [])
+
+  const onReminderExport = useCallback((): void => {
+    setBackupReminder(null)
+    void (async (): Promise<void> => {
+      try {
+        const db = (await initDB()) as unknown as DbLike
+        await exportBackupFile(db, new Date().toISOString())
+      } catch {
+        window.alert(t('board.backup.exportFailed'))
+      }
+    })()
+  }, [t])
+
+  const onReminderLater = useCallback((): void => {
+    setBackupReminder(null)
+    void (async (): Promise<void> => {
+      const db = (await initDB()) as unknown as DbLike
+      await markNudgeDismissed(db, new Date().toISOString())
+    })()
+  }, [])
 
   useEffect(() => {
     const update = (): void => {
@@ -2573,6 +2648,17 @@ export function BoardRoot() {
                 if (!active) setShareSelectedIds(null)
               }}
               shareModalOpen={shareModalOpen}
+            />
+          )}
+          {!loading && !showOnboarding && showDataHomeCard && (
+            <DataHomeCard onDismiss={onDataHomeGotIt} />
+          )}
+          {!loading && !showOnboarding && !showDataHomeCard && backupReminder && (
+            <BackupReminder
+              newCount={backupReminder.newCount}
+              everBackedUp={backupReminder.everBackedUp}
+              onExport={onReminderExport}
+              onLater={onReminderLater}
             />
           )}
           {!loading && !showOnboarding && items.length === 0 && (
