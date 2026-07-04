@@ -5,6 +5,13 @@ import styles from '../Lightbox.module.css'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import { EmbedPosterBox, EmbedPlayButton } from './EmbedShell'
 
+/** Thumbnail quality levels in fallback order — identical to the board card's
+ *  chain (lib/embed/youtube-thumb.ts THUMB_VARIANTS). maxres is 16:9 and crisp;
+ *  hqdefault (4:3) and below are the universal fallbacks. Kept in lockstep with
+ *  VideoThumbCard so the Lightbox poster resolves to the SAME image the board
+ *  settled on → the open-FLIP handoff is seamless (N-23). */
+const YT_THUMB_VARIANTS = ['maxresdefault', 'hqdefault', 'mqdefault', '0'] as const
+
 export function YouTubeEmbed({
   videoId,
   title,
@@ -44,6 +51,11 @@ export function YouTubeEmbed({
   readonly onPlaying?: () => void
 }): ReactNode {
   const [hasInteracted, setHasInteracted] = useState<boolean>(autoStart)
+  // N-23: poster thumbnail level, maxres-first with an onError fallback chain —
+  // exactly like VideoThumbCard on the board. Ensures the pre-play poster shows
+  // the same crisp 16:9 image the board card shows, so the open-FLIP clone→media
+  // handoff no longer "shrinks" from a full maxres cover to a letterboxed 4:3.
+  const [posterLevel, setPosterLevel] = useState<0 | 1 | 2 | 3>(0)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   // Track whether we already fired onUnplayable to guarantee at-most-once.
   const firedUnplayableRef = useRef<boolean>(false)
@@ -147,11 +159,16 @@ export function YouTubeEmbed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasInteracted])
 
-  // YouTube CDN poster — used only as fallback when the bookmarklet
-  // didn't capture an og:image. maxresdefault works for ~95% of videos;
-  // hqdefault is the universal fallback if max isn't available, but we
-  // only reach this code path when item.thumbnail is missing entirely.
-  const poster = thumbnail || `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+  // N-23: build the poster URL from the SAME maxres-first chain the board card
+  // walks — we deliberately IGNORE the item's saved thumbnail (which is the
+  // derived 4:3 hqdefault) so the poster matches the board's crisp 16:9 maxres.
+  // onError steps down the quality ladder (maxres → hq → mq → 0) just like
+  // VideoThumbCard, so videos without a maxres frame still resolve.
+  const posterSrc = `https://i.ytimg.com/vi/${videoId}/${YT_THUMB_VARIANTS[posterLevel]}.jpg`
+  const handlePosterError = (): void => {
+    setPosterLevel((l) => (l < 3 ? ((l + 1) as 0 | 1 | 2 | 3) : l))
+  }
+  void thumbnail // retained in props for API symmetry with other embeds; poster is CDN-derived
 
   // Push the AllMarks default volume preference into the player on load.
   // `enablejsapi=1` (added in the iframe src) is what makes YouTube
@@ -203,8 +220,9 @@ export function YouTubeEmbed({
       <EmbedPosterBox
         aspectRatio={aspectRatio}
         fallbackAspect={vertical ? 9 / 16 : 16 / 9}
-        thumbnail={poster}
+        thumbnail={posterSrc}
         alt={title}
+        onError={handlePosterError}
       >
         <EmbedPlayButton onClick={(): void => setHasInteracted(true)} />
       </EmbedPosterBox>

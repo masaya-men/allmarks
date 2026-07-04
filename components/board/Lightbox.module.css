@@ -176,6 +176,17 @@
 .media img[class*="favicon"] {
   border-radius: 0;
 }
+/* N-23: the embed poster must FILL its box (cover), matching the board card
+   where every video/embed thumbnail is object-fit:cover. `.embedPoster` already
+   declares cover, but the `.media img` rule above (higher specificity) silently
+   overrode it to `contain`, so a YouTube poster whose thumbnail aspect ≠ box
+   aspect got letterboxed — the picture "がくっと小さくなる" at the clone→media
+   handoff. This attribute selector out-specifies `.media img` and restores the
+   intended cover. Scoped to `.embedPoster` so `.imageBox` photos (which want
+   contain, set via `.imageBox > img`) are untouched. */
+.media img[class*="embedPoster"] {
+  object-fit: cover;
+}
 
 .placeholder {
   padding: 32px;

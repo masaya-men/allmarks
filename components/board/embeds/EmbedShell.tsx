@@ -17,12 +17,17 @@ export function EmbedPosterBox({
   thumbnail,
   alt,
   children,
+  onError,
 }: {
   readonly aspectRatio: number | undefined
   readonly fallbackAspect: number
   readonly thumbnail: string | undefined
   readonly alt: string
   readonly children?: ReactNode
+  /** Optional poster load-error handler so an embed (e.g. YouTube) can walk a
+   *  thumbnail-quality fallback chain, mirroring the board card. Omitted → no
+   *  fallback (the poster is simply blank behind the play affordance). N-23. */
+  readonly onError?: () => void
 }): ReactNode {
   const aspect = aspectRatio && aspectRatio > 0 ? aspectRatio : fallbackAspect
   return (
@@ -30,7 +35,7 @@ export function EmbedPosterBox({
       className={styles.embedPosterBox}
       style={{ '--item-aspect': aspect } as CSSProperties}
     >
-      {thumbnail && <img src={thumbnail} alt={alt} className={styles.embedPoster} />}
+      {thumbnail && <img src={thumbnail} alt={alt} className={styles.embedPoster} onError={onError} />}
       {children}
     </div>
   )
