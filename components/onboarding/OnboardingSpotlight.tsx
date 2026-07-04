@@ -2,6 +2,8 @@
 'use client'
 
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import styles from './OnboardingSpotlight.module.css'
 
 type Rect = { top: number; left: number; width: number; height: number }
@@ -21,6 +23,11 @@ type Props = {
    *  the SETTINGS beat) so it hugs the target control while clearing the
    *  right-side SETTINGS drawer. Takes precedence over captionAtBottom. */
   readonly captionLeftOfHole?: boolean
+  /** Portals the highlight ring above app panels (the SETTINGS drawer is a
+   *  body-portalled panel at a higher z-index than the onboarding overlay, so a
+   *  ring drawn in-layer would hide behind it). Used when the target lives inside
+   *  such a panel so the ring stays visible on it. */
+  readonly ringAbovePanels?: boolean
   /** When true, a transparent panel covers the cut-out hole too, so even the
    *  spotlighted element can't be clicked. Used while an automated demo plays
    *  over the target (the tag-typer) and the user must not interfere. */
@@ -60,7 +67,7 @@ function computePlacement(hole: Rect, viewportW: number, viewportH: number): Pla
 
 export function OnboardingSpotlight({
   targetSelector, caption, children, blockOutside = true, captionAtBottom = false,
-  captionLeftOfHole = false, blockHole = false, cardAnchoredSlot,
+  captionLeftOfHole = false, ringAbovePanels = false, blockHole = false, cardAnchoredSlot,
 }: Props): ReactElement {
   const [rect, setRect] = useState<Rect | null>(() => null)
 
@@ -138,7 +145,15 @@ export function OnboardingSpotlight({
               style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }}
             />
           )}
-          <div className={styles.ring} style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }} />
+          {ringAbovePanels
+            ? createPortal(
+                <div
+                  className={styles.ring}
+                  style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height, zIndex: BOARD_Z_INDEX.ONBOARDING_SPOTLIGHT_RING }}
+                />,
+                document.body,
+              )
+            : <div className={styles.ring} style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }} />}
           {cardAnchoredSlot && rect && (
             <div
               className={styles.anchoredSlot}
