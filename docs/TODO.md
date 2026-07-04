@@ -21,6 +21,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 161 — ③バックアップの法的守り A〜D 出荷・本番反映済・opus 全ブランチレビュー「READY」)
+
+- **③ バックアップの法的守り A〜D 完遂**（merge `bb168f5`・`--no-ff`・tsc0 / **vitest1970** / build OK・`allmarks.app` 反映済・default 盤面 byte-identical）。brainstorm→spec→plan→**サブエージェント駆動7タスク＋各2段レビュー＋opus 全ブランチレビュー（READY TO MERGE）**。
+  - **A 利用規約**：§3 に「データは端末内のみ・**控えを取る責任は利用者**・端末変更/ブラウザ消去/故障/更新での消失は復元不可」を15言語追記。**本番 /terms で live 確認済**（"keeping your own backups is your responsibility" / "cannot be recovered"）。
+  - **B 初回「データの住処」カード**：オンボ finale 後（既存ユーザーは初回ロード）に一度だけ・**淡々調（ポエム排除・ユーザー要望）**・「GOT IT」で了解時刻 `data-home-ack` を記録＝二度と出ない。
+  - **C SETTINGS 表示**：`BackupStatus`＝「Last backup: N days ago / never」を SAVING グループに常駐。
+  - **D 定期リマインド**：`shouldShowBackupReminder`＝**新規15件＋前回控えから30日＋dismissから30日**が揃った時だけ1回・×(LATER)で `backup-nudge-dismissed-at` 記録。EXPORT で `last-backup-at` 更新＝自然沈黙（まめな人には出ない）。
+  - EXPORT を共有ヘルパ `lib/board/export-backup.ts` に集約し SETTINGS ボタン／リマインド両方が最終バックアップ時刻を記録。純関数 `lib/storage/backup-reminder.ts`（13テスト）。正本 [spec](superpowers/specs/2026-07-04-backup-legal-safeguard-design.md) / [plan](superpowers/plans/2026-07-04-backup-legal-safeguard.md) / narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s161。
+- **⚠ 公開前ゲート**：バックアップ機能の**13言語（en/ja以外）翻訳、特に Terms 法的条項は未レビュー**（Claude のたたき台）。ワイドローンチ前に**ネイティブ＋法務レビュー**必須。
+- **先送り（next）**：**E＝DB更新前の控え促し**（不可逆スキーマ変更の直前に自動 EXPORT 促し・spec §3）／**複数端末同期（案B＝ユーザー自身のクラウド、課金候補）**は専用セッションで brainstorm（骨子 `docs/private/IDEAS.md` (SYNC) 節）。
+- **学び**：`BoardItem` は `savedAt` 非保持（raw `BookmarkRecord` のみ）→ D は effect 内 `db.getAll('bookmarks')`＋`!isDeleted` で件数算出。vitest4 は `vi.fn<[..],..>()` 2引数ジェネリックが tsc で落ちる（`vi.fn<Fn>()`）。
+- **次（セッション162）＝① 自動画像**（保存時に操作ゼロで良い絵を採用・IDEAS.md X-01/X-11/X-13）→ ② カラーハント。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 160 — N-23 動画Lightbox「がくっと」修正・実機OK／拡張 v0.1.24 審査通過・ストアURLは既に配線済)
 
 - **N-23 完遂（実機確認OK・本番反映済・commit `d05cc48`）**: YouTube 動画カード→Lightbox 移行で絵が「がくっと縮む」を根治。真因＝板は maxresdefault(16:9)/object-fit:cover、Lightbox poster は hqdefault(4:3)/contain（`.media img{contain}` が `.embedPoster{cover}` を詳細度で上書き）で**別サムネ**→ clone が 888幅に育った後、handoff で 667幅にレターボックス縮小＋低解像化。**Playwright 実測で確定**（板=cover/全幅、LB=contain/黒帯）。修正＝①`YouTubeEmbed` の poster を板と同じ maxres→hq→mq→0 の onError 鎖に（`item.thumbnail` 無視）②`.media img[class*="embedPoster"]{object-fit:cover}` で cover 復元（`.imageBox` 写真は無傷）。**新規リグレッションでなく既存の潜在不一致**（コメント自身が「YouTube はレターボックス不一致が一瞬見える」と自認していた）。tsc0/vitest実質全緑/build OK。memory `reference_lightbox_youtube_poster_parity` 記録。
