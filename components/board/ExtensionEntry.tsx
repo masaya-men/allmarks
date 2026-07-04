@@ -252,6 +252,21 @@ export function ExtensionEntry({
     setMoreBelow(el.scrollHeight - el.scrollTop - el.clientHeight > 4)
   }, [])
 
+  // Onboarding SETTINGS beat: pin the QUICK-TAG toggle at the top of the drawer.
+  // The drawer is tall now (LAYOUT/THEME/HOW-TO/EXTENSION), so a stray scroll
+  // would push the toggle out of the visible clip and the spotlight ring — which
+  // tracks the toggle's live rect — would drift onto the header. We reset the
+  // scroll to the top and (via the render below) lock scrolling while the beat is
+  // active, so the ring stays on the toggle. Normal hover-open scrolls freely.
+  useEffect(() => {
+    if (!forceOpen) return
+    const el = drawerRef.current
+    if (!el) return
+    el.scrollTop = 0
+    const raf = requestAnimationFrame(() => { el.scrollTop = 0 })
+    return (): void => cancelAnimationFrame(raf)
+  }, [forceOpen])
+
   useEffect(() => {
     if (!isOpen) {
       setMoreBelow(false)
@@ -302,6 +317,8 @@ export function ExtensionEntry({
           className={styles.drawerScroll}
           ref={drawerRef}
           onScroll={recomputeFade}
+          // Onboarding beat locks the scroll so the spotlighted toggle stays put.
+          style={forceOpen ? { overflowY: 'hidden' } : undefined}
         >
         <div className={styles.title}>SETTINGS</div>
 

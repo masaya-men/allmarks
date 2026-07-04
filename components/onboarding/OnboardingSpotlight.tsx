@@ -17,6 +17,10 @@ type Props = {
   /** When true, the caption sits fixed at the bottom-center instead of anchored
    *  to the hole (so it never covers a popover opening at the target). */
   readonly captionAtBottom?: boolean
+  /** Like captionAtBottom but pinned to the bottom-LEFT — used by the SETTINGS
+   *  beat so the caption clears the right-side SETTINGS drawer instead of hiding
+   *  behind it. Takes precedence over captionAtBottom when both are set. */
+  readonly captionAtBottomLeft?: boolean
   /** When true, a transparent panel covers the cut-out hole too, so even the
    *  spotlighted element can't be clicked. Used while an automated demo plays
    *  over the target (the tag-typer) and the user must not interfere. */
@@ -56,7 +60,7 @@ function computePlacement(hole: Rect, viewportW: number, viewportH: number): Pla
 
 export function OnboardingSpotlight({
   targetSelector, caption, children, blockOutside = true, captionAtBottom = false,
-  blockHole = false, cardAnchoredSlot,
+  captionAtBottomLeft = false, blockHole = false, cardAnchoredSlot,
 }: Props): ReactElement {
   const [rect, setRect] = useState<Rect | null>(() => null)
 
@@ -142,7 +146,9 @@ export function OnboardingSpotlight({
               this component at the same tree position), the bubble remounts so the
               rise-from-bottom entrance re-fires for the new message. */}
           {(caption || children) && (
-            captionAtBottom ? (
+            captionAtBottomLeft ? (
+              <div key={caption} className={styles.bubbleBottomLeft}>{bubbleInner}</div>
+            ) : captionAtBottom ? (
               <div key={caption} className={styles.bubbleBottom}>{bubbleInner}</div>
             ) : placement === 'center' ? (
               <div key={caption} className={styles.bubbleCenterFixed}>{bubbleInner}</div>

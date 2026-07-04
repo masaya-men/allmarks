@@ -181,10 +181,11 @@
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
-/* the tag chip that lights when tapped */
+/* the tag chip that lights when tapped (top-left, opposite the +TAG affordance
+   so it never overlaps the bottom card title) */
 .chip {
   position: absolute;
-  left: 6px; bottom: 6px;
+  top: 6px; left: 6px;
   padding: 3px 8px;
   border-radius: 999px;
   font-size: 8px;
