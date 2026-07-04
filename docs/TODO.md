@@ -21,6 +21,12 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 160 — N-23 動画Lightbox「がくっと」修正・実機OK／拡張 v0.1.24 審査通過・ストアURLは既に配線済)
+
+- **N-23 完遂（実機確認OK・本番反映済・commit `d05cc48`）**: YouTube 動画カード→Lightbox 移行で絵が「がくっと縮む」を根治。真因＝板は maxresdefault(16:9)/object-fit:cover、Lightbox poster は hqdefault(4:3)/contain（`.media img{contain}` が `.embedPoster{cover}` を詳細度で上書き）で**別サムネ**→ clone が 888幅に育った後、handoff で 667幅にレターボックス縮小＋低解像化。**Playwright 実測で確定**（板=cover/全幅、LB=contain/黒帯）。修正＝①`YouTubeEmbed` の poster を板と同じ maxres→hq→mq→0 の onError 鎖に（`item.thumbnail` 無視）②`.media img[class*="embedPoster"]{object-fit:cover}` で cover 復元（`.imageBox` 写真は無傷）。**新規リグレッションでなく既存の潜在不一致**（コメント自身が「YouTube はレターボックス不一致が一瞬見える」と自認していた）。tsc0/vitest実質全緑/build OK。memory `reference_lightbox_youtube_poster_parity` 記録。
+- **拡張 Chrome ウェブストア v0.1.24 審査通過**（N-20 add-new-tag 入り）。**`EXTENSION_STORE_URL` は v0.1.21 時点(commit `108e198`)で既に投入・本番点灯済**（拡張ID `gefnpf…` はバージョン非依存で固定・`chromewebstore.google.com/detail/allmarks/gefnpf…` は HTTP200 実確認）→ **URL投入は追加作業ゼロ**、ストアが自動で v0.1.24 を配信。TODO/release-blocker の「URL投入が残作業」は**古い記述だった**（下記 release blocker #2 訂正済）。
+- **次（セッション161）＝本命バックログ ③バックアップの法的守り**（利用規約明記＋初回説明＋定期リマインド＋危険操作前警告＋文面たたき台）→ ①自動画像 → ②カラーハント。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 159 — 拡張 N-20 完遂＋新規タグ作成／オンボ PopOut ペースト／高解像度は revert／次＝動画Lightbox「がくっと」修正)
 
 - **拡張 N-20 完遂＋機能追加**：クイックタグ帯を「**+ add tag** ハンドル＋ホバー1列ドロワー」に刷新（上だけ2列を根治）＋フォント一致＋**スクロール末尾でフェード消滅**修正。さらに「**+ add tag クリックで新規タグ作成**」を web+拡張の往復で新設（`booklage:add-new-tag`・find-or-create は `applyNewQuickTag` 流用）。**敵対的レビュー2件で実バグ5件**（**IME 変換確定Enter でタグ化＝日本語全滅**／重複タグ→nonceガード＋送信済みSet／bookmarklet 悪用→bookmark存在ゲート＋`getBookmark`／keyup漏れ 等）摘出・全修正。**manifest 0.1.24・zip 生成・ユーザーが審査提出**。web 反映済。tsc0/**vitest1959**。commit `31e1092`/`eb2b5c2`/`958e255`。
@@ -85,7 +91,7 @@
 
 **release blocker (= 公開前 必須・残り)**:
 1. **onboarding チュートリアル** — ✅ session 121 でユーザー「一旦OK」。追加ブラッシュアップは公開後でも可(ユーザーと一緒に随時)。
-2. **拡張機能 Chrome Web Store 提出** — ✅ **審査通過（セッション157でユーザー確認）**。残作業＝`EXTENSION_STORE_URL` 投入 + 再デプロイ（[docs/extension-store-submission.md](./extension-store-submission.md) §7）。**ただし下記のクイックタグ2列バグを直すなら新バージョン再提出になる**ので、URL投入と同時に修正版を出すか、URLを先に出して次版で直すかは要判断。
+2. **拡張機能 Chrome Web Store 提出** — ✅ **完了**。v0.1.21 で初回審査通過→公開、**`EXTENSION_STORE_URL` は commit `108e198` で既に投入・本番点灯済**（`lib/board/constants.ts:34`、ID `gefnpf…` 固定・HTTP200確認）。N-20 を入れた **v0.1.24 も審査通過（セッション160）**＝ストアが自動で最新版配信。**URL投入の残作業はゼロ**（TODO の旧「残作業＝URL投入」記述は誤り）。
 3. **公開前の残り片付け** — ✅ **実態調査で完了/不要と判明(TODO記載が古かった)**: `chrome-extension/` は不在(本物は `extension/`＝提出対象)。残るは上記2の `EXTENSION_STORE_URL` 投入のみ。
    - **BackupButton.tsx/backup.ts は未描画の孤立コード** → **B5(rank15)で「ユーザー向けバックアップ機能」として復活配線する方針に確定(session123)**。これは将来の DBバージョン上げ前に「ユーザーが自分でバックアップを取れる」安全網を用意する目的(=version bump の前提)。置き場所は SETTINGS ドロワー内が候補(要 user 確認)。
 
@@ -132,7 +138,7 @@
 
 ### session 159 で報告（ユーザー実機メモ・新規）
 
-- **(N-23) YouTube 動画カード→Lightbox で「がくっと小さくなる」** — 動画カードをクリックして Lightbox に移行する時、FLIP でカードを大きくしてきたのに**最後に急に縮む**。ユーザーは「**前はなかった**」と記憶。**次セッション(160)で安全に修正したいとユーザー明示**。進め方＝systematic-debugging：①`git log` で Lightbox open/FLIP + 動画埋め込み（`resolveLightboxPlayer`・`components/board/embeds`・`TweetVideoEmbed`）のサイズ関連変更を既知の良い時点(s158以前)から検証＋本番再現（「新規か既存か」を憶測で決めない）②仮説＝クローン(ボードカードaspect)→動画埋め込み(16:9=より小さい)への受け渡しで target rect 不一致→急縮。関連 memory `reference_lightbox_flip_content_equivalence`／`.media` rect 計測。③**実機確認してから出す**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- ~~**(N-23) YouTube 動画カード→Lightbox で「がくっと小さくなる」**~~ ✅ **セッション160 完了（実機OK）**。真因＝板と Lightbox で別サムネ/別 object-fit（板 maxres/cover vs LB hqdefault/contain）→ handoff で絵が 888→667幅にレターボックス縮小。修正＝poster を板と同じ maxres 鎖＋`.embedPoster` を cover 復元。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s160／memory `reference_lightbox_youtube_poster_parity`。既存の潜在不一致（新規リグレッションではなかった）。
 - **(参考) 高解像度化は s159 で試みて revert 済**（表示時に新URL差し替え→FLIP で未デコード縮小の劣化）。再挑戦時は「元画像を先に表示→裏で先読み→差し替え」or 保存時のみ、＋実機検証。memory `reference_lightbox_flip_content_equivalence` 隣に学びを記録。
 - ~~**(N-21) オンボ：SETTINGS の説明が埋もれる**~~ ✅ **セッション158 完了**（`captionAtBottom` で下中央固定。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158）。ユーザー実機目視のみ残。
 - ~~**(N-22) オンボ：POP OUT の説明シーンが無い**~~ ✅ **セッション158 完了**（desktop 専用 `popout` cinema シーン＋`PopOutReenactment`＝右グライドイン再現。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s158）。ユーザー実機目視のみ残。

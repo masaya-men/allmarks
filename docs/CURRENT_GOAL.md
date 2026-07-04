@@ -1,32 +1,31 @@
-# 次セッションのゴール (= セッション 160)
+# 次セッションのゴール (= セッション 161)
 
-## 今の状態（拡張 N-20 完遂＋オンボ PopOut ペースト＋高解像度は revert／次＝動画 Lightbox の「がくっと」修正）
+## 今の状態（N-23 動画Lightbox「がくっと」修正 実機OK／拡張 v0.1.24 通過・URLは既に配線済／次＝③バックアップの法的守り）
 
-**セッション159でやったこと:**
-- **拡張 N-20 完遂＋機能追加**：クイックタグ帯を「**+ add tag** ハンドル＋ホバー1列ドロワー」に刷新（上だけ2列を根治）→ フォント一致・**スクロール末尾でフェード消滅**修正 → さらに「**+ add tag クリックで新規タグ作成**」を web+拡張の往復で新設（`booklage:add-new-tag`、find-or-create は `applyNewQuickTag` 流用）。敵対的レビュー2件で実バグ5件（**IME 変換確定Enter でタグ化＝日本語全滅**／重複タグ／bookmarklet 悪用 等）を摘出・全修正。**manifest 0.1.24・zip 生成済・ユーザーが審査提出予定**。web 側は allmarks.app 反映済。
-- **オンボ PopOut にペースト保存を追加**：PopOut シーンに「URL 貼り付け→カード保存」ビート＋キャプション15言語更新（拡張もブクマも不要で保存できることを教える）。反映済。
-- **アイデア洗い出し**：5レンズ→実現性→統合で **X-01〜X-25** を IDEAS.md に記録（詳細下記）。
-- **高解像度化（案X=Lightbox の X 写真のみ）を試みたが revert**：新URLへ差し替えると**FLIP 時に未デコードで小さく表示**する劣化が出た → `6f4621d` でまるごと revert・本番は既知の良い状態に復帰。**教訓＝見た目変更は tsc/vitest 通過≠OK、実機確認してから出す**。
+**セッション160でやったこと:**
+- **N-23 完遂（実機「完璧」・本番反映・commit `d05cc48`）**: YouTube 動画→Lightbox の「がくっと小さくなる」を根治。真因＝板と Lightbox で**別サムネ・別 object-fit**（板＝maxres 16:9/cover、LB poster＝hqdefault 4:3/contain。`.media img{contain}` が `.embedPoster{cover}` を詳細度で上書きしていた）→ clone が 888幅に育った後 handoff で 667幅にレターボックス縮小＋低解像化。**Playwright 実測で確定**。修正＝①poster を板と同じ maxres→hq→mq→0 の onError 鎖に②`.embedPoster` を cover 復元（写真の `.imageBox` は無傷）。**新規リグレッションでなく既存の潜在不一致**。memory `reference_lightbox_youtube_poster_parity` 記録。
+- **拡張 v0.1.24 審査通過**（N-20 add-new-tag 入り）。**`EXTENSION_STORE_URL` は v0.1.21 で既に投入・本番点灯済**（commit `108e198`、ID 固定・HTTP200確認）＝**追加作業ゼロ**、ストアが自動配信。release-blocker の旧「URL投入残」記述は訂正済。
 
-## このセッションのゴール ＝ 動画(YouTube)カード→Lightbox の「がくっと小さくなる」を安全に修正（N-23）
+## このセッションのゴール ＝ ③ バックアップの法的守り（ユーザー要望「法的に安全にしたい」）
 
-**ユーザー報告(s159)**：YouTube 動画カードをクリックして Lightbox に移行する時、カードを FLIP で大きくしてきたのに**最後にがくっと小さくなる**。ユーザーは「**前はなかった**」と記憶（＝新規リグレッションの可能性を尊重して検証する）。
+**目的**：ローカル保存（IndexedDB）のみでサーバーにデータを持たない設計ゆえ、「端末を変えた／消えた」時にユーザーが自己責任でバックアップを取れるよう、**法的・体験的な安全網**を整える。ユーザーは非エンジニア＝平易に。
 
-### 進め方（systematic-debugging・安全第一）
-1. **まず「本当に新しいか」を検証**：`git log`/`git show` で **Lightbox の open/FLIP** と **動画埋め込みのサイズ関連**（`resolveLightboxPlayer`・`components/board/embeds`・`TweetVideoEmbed`）の変更を既知の良い時点（s158 以前）から追う＋**本番で再現**。憶測で「元からある/私のせい」と決めない。
-2. **根本原因の仮説**：FLIP のクローン（ボードカードのアスペクト）→ 動画埋め込み（16:9 レターボックス＝より小さい）への**受け渡しでサイズ不一致→急縮**。target rect が埋め込みの最終レイアウトと合っていない可能性。関連: [Lightbox.tsx](../components/board/Lightbox.tsx) の originRect/targetRect/クローン/`.media` サイジング、memory `reference_lightbox_flip_content_equivalence` / `.media` rect 計測（非img wrapper は explicit width 要）。
-3. **修正は実機で確認してから出す**（今回の失敗の本質＝見ずに出した）。ui-design.md の (1)現状確認→(2)変更案→(3)承認→(4)実装 を守る。
+### 進め方（brainstorming から。勝手に実装しない）
+1. まず `superpowers:brainstorming` で範囲合意。候補要素＝**①利用規約に「データはブラウザ内のみ・自己バックアップ責任」を明記／②初回起動時の誠実な説明（1回）／③定期リマインド（例：保存数の節目や久しぶり起動）／④危険操作前の警告（DBバージョン上げ・IMPORT 上書き・全消し等。既存 memory `feedback_irreversible_pause`／`project_backup_before_idb_migration` と接続）／⑤既存 EXPORT/IMPORT（B5/SETTINGS）の導線強化**。
+2. **文面のたたき台まで作る**（利用規約の該当節・初回説明・リマインド文・警告文）。**最終は専門家（弁護士等）確認を推奨**とユーザーに明言（Claude は法助言者ではない）。
+3. 機微・戦略・本名/メアドは `docs/private/` のみ。実装は合意後に spec→plan→サブエージェント駆動。
 
-## その後の本命バックログ（おすすめ順の続き・相談）
-- **③ バックアップの法的守り**：利用規約明記＋初回説明＋定期リマインド＋書き出し（既存）＋危険操作前警告。ユーザー要望「法的に安全にしたい」。文面たたき台まで作る（最終は専門家確認を推奨）。
-- **① 自動画像**：保存時に**操作ゼロ**で、og:image が無い記事はページ内の良い画像を自動採用／無ければブランドタイル自動生成（ユーザー厳命＝保存時に手間を増やさない）。
-- **② カラーハント**：土台＝保存時パレット抽出（既存ブクマは後入れ backfill・エクスポート不要／ただし他サイト画像は CORS で読めない＝画像中継が要る）。
-- 高解像度化リトライ（**表示時に新URL差し替えは FLIP で未デコード縮小の罠**。やるなら「元画像を先に出し裏で先読み→差し替え」＋実機検証。または保存時＝新規のみ）。
-- 詳細アイデア＝`docs/private/IDEAS.md` の **拡張ロードマップ統合版（X-01..X-25）**。
+### 参考（既存の土台）
+- 既存 EXPORT/IMPORT＝SETTINGS ドロワー（B5/session124 で正式バックアップ機能として配線済＝撤去禁止）。
+- 関連 memory：`project_backup_before_idb_migration`（DB版上げ前に EXPORT）／`project_idb_irreversibility`（版下げ不可）／`feedback_irreversible_pause`（危険操作前に3リスク列挙）。
+- 利用規約の現物＝`app/(marketing)/terms/`（多言語）。プライバシー＝`/privacy`。
+
+## その後の本命バックログ（順）
+- **① 自動画像**：保存時に**操作ゼロ**で、og:image が無い記事はページ内の良い画像を自動採用／無ければブランドタイル自動生成（ユーザー厳命＝保存時に手間を増やさない。memory `feedback_automatic_capture_no_steps`）。
+- **② カラーハント**：保存時パレット抽出（既存ブクマは backfill・他サイト画像は CORS で画像中継が要る）。詳細＝`docs/private/IDEAS.md` の X-01..X-25。
 
 ## 守ること（毎回）
-- **見た目変更は ui-design.md 準拠＋実機検証してからデプロイ**（s159 の教訓）。
-- default 盤面 byte-identical。web 変更は deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build` → `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`。
+- **見た目変更は ui-design.md 準拠＋実機検証してからデプロイ**（s159 の教訓）。default 盤面 byte-identical。
+- web 変更は deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build` → `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`。
 - 機微情報は `docs/private/` のみ。既知フレーキー `tests/lib/channel.test.ts`（再実行で緑）。vitest は dev サーバー並走禁止。
-- Write/Edit 後は独立 Read、commit/マージ後は生 `git log`。拡張 JS は `node --check`。
-- 応答は日本語・簡潔に。ユーザーは非エンジニア＝平易に。
+- Write/Edit 後は独立 Read、commit/マージ後は生 `git log`。拡張 JS は `node --check`。応答は日本語・簡潔・平易に。
