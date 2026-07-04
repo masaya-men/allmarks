@@ -23,7 +23,7 @@
 /* Shared glass panel for every caption variant — positions differ below.
    Always laid out as a centered column: explanation paragraph on top, action
    button on its own line below (never inline → no text wrapping the button). */
-.bubble, .bubbleCenter, .bubbleCenterFixed, .bubbleBottom, .bubbleBottomLeft {
+.bubble, .bubbleCenter, .bubbleCenterFixed, .bubbleBottom, .bubbleBeside {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -66,14 +66,11 @@
   max-width: 420px;
   text-align: center;
 }
-/* fixed at the bottom-LEFT (SETTINGS beat). The SETTINGS drawer is a tall panel
-   on the right; a bottom-center bubble would hide behind it, so this variant
-   hugs the left edge and clears the drawer entirely. */
-.bubbleBottomLeft {
+/* hugs the spotlighted target from the LEFT (SETTINGS beat). Positioned by its
+   right edge (inline top/right) so it sits snug beside the QUICK-TAG toggle while
+   clearing the right-side SETTINGS drawer. */
+.bubbleBeside {
   position: fixed;
-  bottom: 92px;
-  left: 24px;
-  max-width: min(360px, calc(100vw - 48px));
   align-items: flex-start;
   text-align: left;
 }
@@ -103,7 +100,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .bubble,
   .bubbleCenter,
-  .bubbleBottomLeft { animation: onb-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .bubbleBeside { animation: onb-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .bubbleBottom { animation: onb-rise-cx 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .bubbleCenterFixed { animation: onb-rise-cc 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
 }

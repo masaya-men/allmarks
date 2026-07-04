@@ -17,10 +17,10 @@ type Props = {
   /** When true, the caption sits fixed at the bottom-center instead of anchored
    *  to the hole (so it never covers a popover opening at the target). */
   readonly captionAtBottom?: boolean
-  /** Like captionAtBottom but pinned to the bottom-LEFT — used by the SETTINGS
-   *  beat so the caption clears the right-side SETTINGS drawer instead of hiding
-   *  behind it. Takes precedence over captionAtBottom when both are set. */
-  readonly captionAtBottomLeft?: boolean
+  /** Places the caption immediately to the LEFT of the spotlighted hole (used by
+   *  the SETTINGS beat) so it hugs the target control while clearing the
+   *  right-side SETTINGS drawer. Takes precedence over captionAtBottom. */
+  readonly captionLeftOfHole?: boolean
   /** When true, a transparent panel covers the cut-out hole too, so even the
    *  spotlighted element can't be clicked. Used while an automated demo plays
    *  over the target (the tag-typer) and the user must not interfere. */
@@ -60,7 +60,7 @@ function computePlacement(hole: Rect, viewportW: number, viewportH: number): Pla
 
 export function OnboardingSpotlight({
   targetSelector, caption, children, blockOutside = true, captionAtBottom = false,
-  captionAtBottomLeft = false, blockHole = false, cardAnchoredSlot,
+  captionLeftOfHole = false, blockHole = false, cardAnchoredSlot,
 }: Props): ReactElement {
   const [rect, setRect] = useState<Rect | null>(() => null)
 
@@ -92,6 +92,17 @@ export function OnboardingSpotlight({
 
   const placement: Placement | null = hole
     ? computePlacement(hole, window.innerWidth, window.innerHeight)
+    : null
+
+  // captionLeftOfHole: hug the target from the LEFT, top-aligned with the hole,
+  // so the caption sits right beside the control it points at (e.g. the SETTINGS
+  // beat's QUICK-TAG toggle) while clearing the right-side SETTINGS drawer.
+  // Positioned by its RIGHT edge (28px left of the hole) so it stays snug.
+  const beside = hole && captionLeftOfHole
+    ? {
+        top: Math.max(MARGIN, Math.min(hole.top - 4, window.innerHeight - ESTIMATED_BUBBLE_H - MARGIN)),
+        right: Math.max(MARGIN, window.innerWidth - (hole.left - 28)),
+      }
     : null
 
   // Every caption bubble lays out the same way: the explanation as a block
@@ -146,8 +157,8 @@ export function OnboardingSpotlight({
               this component at the same tree position), the bubble remounts so the
               rise-from-bottom entrance re-fires for the new message. */}
           {(caption || children) && (
-            captionAtBottomLeft ? (
-              <div key={caption} className={styles.bubbleBottomLeft}>{bubbleInner}</div>
+            captionLeftOfHole && beside ? (
+              <div key={caption} className={styles.bubbleBeside} style={{ top: beside.top, right: beside.right }}>{bubbleInner}</div>
             ) : captionAtBottom ? (
               <div key={caption} className={styles.bubbleBottom}>{bubbleInner}</div>
             ) : placement === 'center' ? (
