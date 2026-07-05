@@ -7,8 +7,15 @@ import type { BookmarkRecord, TagRecord } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
 import { postBookmarkSaved } from '@/lib/board/channel'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
+import { loadFullscreenNoticeSeen, markFullscreenNoticeSeen } from '@/lib/storage/fullscreen-save-notice'
 import { queryPipPresence } from '@/lib/board/pip-presence'
-import { planSaveWindow, type SaveOutcome, ERROR_AUTOCLOSE_MS } from '@/lib/bookmarklet/save-window-plan'
+import {
+  planSaveWindow,
+  isOpenedAsTab,
+  type SaveOutcome,
+  type SaveWindowMode,
+  ERROR_AUTOCLOSE_MS,
+} from '@/lib/bookmarklet/save-window-plan'
 import { getAllTags } from '@/lib/storage/tags'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { applyExistingQuickTag, applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
@@ -59,6 +66,7 @@ export function SaveToast(): ReactElement {
 
   const [state, setState] = useState<State>('saving')
   const [tagData, setTagData] = useState<TagData | null>(null)
+  const [mode, setMode] = useState<SaveWindowMode>('normal')
   const startedRef = useRef(false)
   // Cache the db instance so tag handlers can use it without re-awaiting initDB each time.
   const dbRef = useRef<Awaited<ReturnType<typeof initDB>> | null>(null)
@@ -93,11 +101,16 @@ export function SaveToast(): ReactElement {
         })()
         const [{ outcome, bm }] = await Promise.all([work, delay(MIN_SAVING_MS)])
 
-        const [enabled, pipActive] = await Promise.all([
+        // macOS Chrome opens window.open popups as full tabs when in fullscreen;
+        // the /save page detects that by its own (large) viewport and adapts.
+        const openedAsTab = isOpenedAsTab({ innerWidth: window.innerWidth, innerHeight: window.innerHeight })
+        const [enabled, pipActive, noticeSeen] = await Promise.all([
           loadQuickTagEnabled(db),
           queryPipPresence(80),
+          loadFullscreenNoticeSeen(db),
         ])
-        const plan = planSaveWindow(outcome, enabled, pipActive)
+        const plan = planSaveWindow(outcome, enabled, pipActive, openedAsTab, noticeSeen)
+        setMode(plan.mode)
 
         if (plan.showTags) {
           const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
@@ -108,6 +121,11 @@ export function SaveToast(): ReactElement {
             currentTagIds: [...bm.tags],
             suggestedEntries: ordered.slice(0, 5).map((tg) => ({ kind: 'existing' as const, tagId: tg.id })),
           })
+        }
+        // Show the fullscreen explanation only once — record it now so the next
+        // forced-tab save stays quiet (mode becomes 'tab-confirm').
+        if (plan.mode === 'tab-explain') {
+          void markFullscreenNoticeSeen(db)
         }
 
         setState(outcome)
@@ -194,6 +212,59 @@ export function SaveToast(): ReactElement {
     state === 'duplicate' ? `${styles.label} ${styles.duplicate}` :
     state === 'error' ? `${styles.label} ${styles.error}` :
     styles.label
+
+  // Fullscreen forced-tab render: macOS Chrome opened us as a full tab. Show a
+  // calm centered card (never a stretched stage) — tag UI is intentionally
+  // absent here (tag later on the board).
+  if (mode === 'tab-explain' || mode === 'tab-confirm' || mode === 'tab-minimal') {
+    const compact = mode === 'tab-minimal'
+    return (
+      <div
+        className={`${styles.stage} ${styles.tabStage}`}
+        data-state={state}
+        data-mode={mode}
+        data-testid="save-tab-fullscreen"
+      >
+        <div className={`${styles.tabCard} ${compact ? styles.tabCardCompact : ''}`}>
+          <div className={styles.indicator}>
+            {state === 'saved' && (
+              <svg className={styles.checkmark} viewBox="0 0 24 24" role="img" aria-label="Saved" data-role="checkmark">
+                <path d="M5 12 L10 17 L19 7" />
+              </svg>
+            )}
+            {state === 'duplicate' && (
+              <svg className={`${styles.checkmark} ${styles.warn}`} viewBox="0 0 24 24" role="img" aria-label="Already saved" data-role="warn">
+                <path d="M12 3 L22 20 L2 20 Z" /><path d="M12 9 L12 14" /><circle cx="12" cy="17.2" r="1.3" />
+              </svg>
+            )}
+          </div>
+          <div className={styles.brand}>AllMarks</div>
+          <div className={labelClass} aria-label={LABELS[state]} aria-live="polite" data-testid="status-label">
+            <StaggeredLabel text={LABELS[state]} />
+          </div>
+          {mode === 'tab-explain' && (
+            <div className={styles.fsNotice} data-testid="fs-notice">
+              <div className={styles.fsHeading}>You&rsquo;re in fullscreen</div>
+              <p className={styles.fsBody}>
+                Chrome is in fullscreen, so saving opens this tab each time. To avoid it:
+              </p>
+              <ul className={styles.fsList}>
+                <li><b>Exit fullscreen</b> — saves show in a small corner window instead.</li>
+                <li><b>Keep PopOut open</b> — the save appears there and this tab closes instantly.</li>
+                <li><b>Install the extension</b> — saves silently, with no window at all.</li>
+              </ul>
+              <p className={styles.fsBody}>
+                Tagging isn&rsquo;t available on fullscreen bookmarklet saves — you can add tags later on your board.
+              </p>
+              <button type="button" className={styles.fsGotIt} data-testid="fs-got-it" onClick={closeWindow}>
+                GOT IT
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   // Tag-window render: confirmation block + tag UI + ✕ close
   if (tagData) {

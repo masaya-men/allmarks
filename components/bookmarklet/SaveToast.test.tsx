@@ -3,7 +3,18 @@ import { render, screen, act } from '@testing-library/react'
 import { within, fireEvent } from '@testing-library/react'
 import { SaveToast } from './SaveToast'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
+import { loadFullscreenNoticeSeen, markFullscreenNoticeSeen } from '@/lib/storage/fullscreen-save-notice'
+import { queryPipPresence } from '@/lib/board/pip-presence'
 import { addTagToBookmark } from '@/lib/storage/tags'
+
+/** Set the /save window's own viewport — the popup path is ~256×256, a
+ *  fullscreen-forced tab is large. isOpenedAsTab reads window.inner{Width,Height}. */
+function setViewport(w: number, h: number): void {
+  Object.defineProperty(window, 'innerWidth', { value: w, writable: true, configurable: true })
+  Object.defineProperty(window, 'innerHeight', { value: h, writable: true, configurable: true })
+}
+const asMock = <T,>(fn: T): { mockResolvedValue: (v: unknown) => void } =>
+  fn as unknown as { mockResolvedValue: (v: unknown) => void }
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams({ url: 'https://x.com/a/status/1', title: 'Hi' }),
@@ -16,6 +27,10 @@ vi.mock('@/lib/storage/indexeddb', () => ({
   getAllBookmarks: (...a: unknown[]) => (getAllBookmarks as (...args: unknown[]) => unknown)(...a),
 }))
 vi.mock('@/lib/storage/quick-tag-setting', () => ({ loadQuickTagEnabled: vi.fn(async () => false) }))
+vi.mock('@/lib/storage/fullscreen-save-notice', () => ({
+  loadFullscreenNoticeSeen: vi.fn(async () => false),
+  markFullscreenNoticeSeen: vi.fn(async () => {}),
+}))
 vi.mock('@/lib/board/pip-presence', () => ({ queryPipPresence: vi.fn(async () => false) }))
 vi.mock('@/lib/board/channel', () => ({ postBookmarkSaved: vi.fn(), postBookmarkUpdated: vi.fn() }))
 vi.mock('@/lib/utils/url', () => ({ detectUrlType: () => 'tweet' }))
@@ -36,6 +51,7 @@ describe('SaveToast deliberate confirmation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
+    setViewport(256, 256) // windowed popup — not a forced tab
     Object.defineProperty(window, 'close', { value: vi.fn(), writable: true, configurable: true })
     getAllBookmarks.mockResolvedValue([])
     saveBookmarkDeduped.mockResolvedValue({ outcome: 'saved', bookmark: { id: 'b1', tags: [] } })
@@ -73,6 +89,7 @@ describe('SaveToast deliberate confirmation', () => {
 describe('SaveToast tag path (enabled + no PiP)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setViewport(256, 256) // windowed popup — not a forced tab
     Object.defineProperty(window, 'close', { value: vi.fn(), writable: true, configurable: true })
     vi.stubGlobal('matchMedia', (q: string) => ({
       matches: false, media: q, onchange: null,
@@ -125,6 +142,61 @@ describe('SaveToast tag path (enabled + no PiP)', () => {
     render(<SaveToast />)
     const btn = await screen.findByTestId('save-tag-close')
     fireEvent.click(btn)
+    expect(window.close).toHaveBeenCalled()
+  })
+})
+
+describe('SaveToast fullscreen forced-tab (macOS Chrome opened us as a tab)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    setViewport(1440, 900) // forced full tab, not the 256×256 popup
+    Object.defineProperty(window, 'close', { value: vi.fn(), writable: true, configurable: true })
+    asMock(loadQuickTagEnabled).mockResolvedValue(true) // ignored in tab mode
+    asMock(queryPipPresence).mockResolvedValue(false)
+    asMock(loadFullscreenNoticeSeen).mockResolvedValue(false)
+    getAllBookmarks.mockResolvedValue([])
+    saveBookmarkDeduped.mockResolvedValue({ outcome: 'saved', bookmark: { id: 'b1', tags: [] } })
+  })
+
+  it('no PiP + first time → explains, no tag window, no auto-close, records notice seen', async () => {
+    render(<SaveToast />)
+    await flush(500)
+    expect(screen.getByTestId('save-tab-fullscreen').getAttribute('data-mode')).toBe('tab-explain')
+    expect(screen.getByTestId('fs-notice')).toBeTruthy()
+    expect(screen.queryByTestId('save-tag-window')).toBeNull()
+    expect(markFullscreenNoticeSeen).toHaveBeenCalled()
+    await flush(3000)
+    expect(window.close).not.toHaveBeenCalled() // manual GOT IT owns the close
+  })
+
+  it('GOT IT closes the explanation tab', async () => {
+    vi.useRealTimers()
+    render(<SaveToast />)
+    const btn = await screen.findByTestId('fs-got-it')
+    fireEvent.click(btn)
+    expect(window.close).toHaveBeenCalled()
+  })
+
+  it('no PiP + notice already seen → quiet confirm, auto-closes ~1.3s, no explanation', async () => {
+    asMock(loadFullscreenNoticeSeen).mockResolvedValue(true)
+    render(<SaveToast />)
+    await flush(500)
+    expect(screen.getByTestId('save-tab-fullscreen').getAttribute('data-mode')).toBe('tab-confirm')
+    expect(screen.queryByTestId('fs-notice')).toBeNull()
+    expect(markFullscreenNoticeSeen).not.toHaveBeenCalled()
+    expect(window.close).not.toHaveBeenCalled()
+    await flush(1400)
+    expect(window.close).toHaveBeenCalled()
+  })
+
+  it('PiP open → minimal, closes fast (~250ms), no explanation (PopOut shows the card)', async () => {
+    asMock(queryPipPresence).mockResolvedValue(true)
+    render(<SaveToast />)
+    await flush(500)
+    expect(screen.getByTestId('save-tab-fullscreen').getAttribute('data-mode')).toBe('tab-minimal')
+    expect(screen.queryByTestId('fs-notice')).toBeNull()
+    await flush(300)
     expect(window.close).toHaveBeenCalled()
   })
 })
