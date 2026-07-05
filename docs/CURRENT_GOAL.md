@@ -11,6 +11,15 @@
   - EXPORT を共有ヘルパ `exportBackupFile` に集約し **最終バックアップ時刻を記録**（SETTINGS ボタン／リマインド両方）。tsc0 / **vitest1970** / build OK / default 盤面 byte-identical。
 - **重要な学び**：`BoardItem` は `savedAt` を持たない（raw `BookmarkRecord` のみ）→ D の新規件数は effect 内で `db.getAll('bookmarks')` を `!isDeleted` で絞って算出（use-board-data と同じ実削除フィールド）。vitest4 は `vi.fn<[..],..>()` の2引数ジェネリックが tsc で落ちる（`vi.fn<Fn>()` に）。
 
+**セッション161 後半（同日追加）:**
+- **バックアップ磨き2件（本番反映済）**：SETTINGS の「Last backup」を EXPORT で**その場更新**（`refreshKey`・Playwright 実測 PASS）／**ファイル名を親切化** `AllMarks-backup-YYYY-MM-DD-HHMM`（ローカル時刻・commit `f751157`）。
+- **ローンチ方針を確定**：**ローンチ前必須の2本柱＝スマホ本格対応＋端末間同期（案B＝ユーザー自身のクラウド・ポリシー無違反・要1日スパイク）**。告知は「動画＋見せ用の共有ボード（受け取り側はオンボ非発火＝摩擦ゼロ）」。詳細 `docs/private/IDEAS.md` (SYNC)。
+- **友人 Mac(Chrome) 実機フィードバックを大量記録＝TODO の N-24〜N-39**（フラット化 N-26/32/35・タグ/Share 作り直し N-31/34/36/37/38・拡張 N-28/29・個別 N-27/30 等）。
+- **🔴 N-25（タグ0件でクイックタグ帯が出ない＝新規全員が最初のタグ付け不可）を修正**（commit `0f02bdc`・拡張 [floating-button.js:611] の `tags.length>0` ガード撤廃・systematic-debugging で確定）。**残＝ローカル unpacked 実機確認＋拡張ストア再審査（N-28/29 と束ねて1回）**。
+- **N-33（タグ大文字）は調査で“設計判断”と判明**：保存は既にケース保持、`text-transform:lowercase` がアプリ全体の統一デザイン→フラット化 brainstorm に合流（勝手に剥がさない）。
+
+**次にやる順（推奨）**：① 月曜〜スマホ/Mac 実機スプリント（N-24/N-39・mobile）＋同期の1日スパイク → ② 大 brainstorm「フラット化＋Share 生まれ変わり」（N-26/31/32/34/36/37/38＋N-33表示）→ ③ 拡張バッチ再審査（N-25/28/29）。
+
 ## このセッションのゴール ＝ ★ スマホ本格対応（最優先・2026-07-06 月〜開始）
 
 **背景**：ローンチ告知（動画＋共有ボードのツイート）を見据え、X の流入は大半がスマホなので**モバイル UX が最大の穴**（列数過多・テキストカード縦伸び等が未対応＝TODO「レスポンシブ」B-#10 を最優先に格上げ）。**まず実機スマホで LP / 空 board / 共有ボードがどう見えるか実測**→ `superpowers:brainstorming` で範囲合意→spec→plan→サブエージェント駆動。関連 memory：ユーザー実画面は CSS 幅約1489/DPR2.58 だが、一般ユーザー多数派は 375（スマホ）/1920。設計時に基準を毎回明示。
