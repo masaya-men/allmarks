@@ -8,6 +8,8 @@ import { detectUrlType } from '@/lib/utils/url'
 import { postBookmarkSaved } from '@/lib/board/channel'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { loadFullscreenNoticeSeen, markFullscreenNoticeSeen } from '@/lib/storage/fullscreen-save-notice'
+import { resolveInitialLocale } from '@/lib/i18n/locale-store'
+import { getFullscreenSaveCopy } from '@/lib/bookmarklet/save-fullscreen-copy'
 import { queryPipPresence } from '@/lib/board/pip-presence'
 import {
   planSaveWindow,
@@ -218,6 +220,9 @@ export function SaveToast(): ReactElement {
   // absent here (tag later on the board).
   if (mode === 'tab-explain' || mode === 'tab-confirm' || mode === 'tab-minimal') {
     const compact = mode === 'tab-minimal'
+    // Localize the explanation to the board's chosen locale (/save isn't inside
+    // I18nProvider — read the same localStorage the board persists).
+    const fsCopy = mode === 'tab-explain' ? getFullscreenSaveCopy(resolveInitialLocale()) : null
     return (
       <div
         className={`${styles.stage} ${styles.tabStage}`}
@@ -242,20 +247,16 @@ export function SaveToast(): ReactElement {
           <div className={labelClass} aria-label={LABELS[state]} aria-live="polite" data-testid="status-label">
             <StaggeredLabel text={LABELS[state]} />
           </div>
-          {mode === 'tab-explain' && (
+          {fsCopy && (
             <div className={styles.fsNotice} data-testid="fs-notice">
-              <div className={styles.fsHeading}>You&rsquo;re in fullscreen</div>
-              <p className={styles.fsBody}>
-                Chrome is in fullscreen, so saving opens this tab each time. To avoid it:
-              </p>
+              <div className={styles.fsHeading}>{fsCopy.heading}</div>
+              <p className={styles.fsBody}>{fsCopy.intro}</p>
               <ul className={styles.fsList}>
-                <li><b>Exit fullscreen</b> — saves show in a small corner window instead.</li>
-                <li><b>Keep PopOut open</b> — the save appears there and this tab closes instantly.</li>
-                <li><b>Install the extension</b> — saves silently, with no window at all.</li>
+                {fsCopy.bullets.map((b, i) => (
+                  <li key={i}><b>{b.lead}</b> — {b.rest}</li>
+                ))}
               </ul>
-              <p className={styles.fsBody}>
-                Tagging isn&rsquo;t available on fullscreen bookmarklet saves — you can add tags later on your board.
-              </p>
+              <p className={styles.fsBody}>{fsCopy.tagNote}</p>
               <button type="button" className={styles.fsGotIt} data-testid="fs-got-it" onClick={closeWindow}>
                 GOT IT
               </button>
