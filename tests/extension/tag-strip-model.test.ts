@@ -19,13 +19,22 @@ describe('splitChips', () => {
 })
 
 describe('shouldShowStrip', () => {
-  it('shows on saved/duplicate with tags', () => {
+  it('shows on saved/duplicate regardless of existing tag count', () => {
     expect(shouldShowStrip('saved', mk(1))).toBe(true)
     expect(shouldShowStrip('duplicate', mk(1))).toBe(true)
+    // N-25 (launch-critical): zero existing tags MUST still show the strip —
+    // the "+ ADD TAG" input lets a brand-new user create their first tag on
+    // save. Gating on tags.length hid tagging from every new user.
+    expect(shouldShowStrip('saved', [])).toBe(true)
+    expect(shouldShowStrip('duplicate', [])).toBe(true)
   })
-  it('hidden on error, on saving, or with no tags', () => {
+  it('hidden on error or while saving', () => {
     expect(shouldShowStrip('error', mk(1))).toBe(false)
     expect(shouldShowStrip('saving', mk(1))).toBe(false)
-    expect(shouldShowStrip('saved', [])).toBe(false)
+    expect(shouldShowStrip('error', [])).toBe(false)
+  })
+  it('hidden when tags is not a list (malformed reply)', () => {
+    expect(shouldShowStrip('saved', undefined as unknown as [])).toBe(false)
+    expect(shouldShowStrip('saved', null as unknown as [])).toBe(false)
   })
 })

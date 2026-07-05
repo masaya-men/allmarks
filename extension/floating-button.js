@@ -370,7 +370,7 @@
   // === Quick-tag strip (inlined; source of truth: extension/lib/tag-strip-model.js) ===
   function tagstripShouldShow(state, tags) {
     if (state !== 'saved' && state !== 'duplicate') return false
-    return Array.isArray(tags) && tags.length > 0
+    return Array.isArray(tags) // shows even for an empty list — "+ ADD TAG" creates the first tag (N-25)
   }
   let tagStripEl = null
   let tagStripHideTimer = null
@@ -608,7 +608,11 @@
   if (isExtensionAlive()) {
     chrome.runtime.onMessage.addListener((msg) => {
       if (!msg || msg.type !== 'booklage:quick-tag') return
-      if (Array.isArray(msg.tags) && msg.tags.length > 0) {
+      // Show the strip on every quick-tag reply that carries a bookmarkId — even
+      // when `tags` is empty. A brand-new user has zero tags, and the strip's
+      // "+ ADD TAG" input is how they create their first one; the old
+      // `tags.length > 0` gate hid tagging from every new user (N-25).
+      if (Array.isArray(msg.tags) && msg.bookmarkId) {
         // Defer a tick so layout/settings are settled before anchoring.
         setTimeout(() => showTagStripForButton(msg.bookmarkId, msg.tags, msg.currentTagIds, msg.themeTokens), 80)
       }

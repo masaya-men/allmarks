@@ -13,8 +13,11 @@ export function splitChips(tags, max = STRIP_MAX_CHIPS) {
   return { visible, overflow, hasOverflow: overflow.length > 0 }
 }
 
-/** The strip only appears once a save succeeded and the user has tags. */
+/** The strip appears once a save succeeded (or was a duplicate). It shows even
+ *  with ZERO existing tags: the "+ ADD TAG" input still lets a brand-new user
+ *  create their first tag on save. Gating on tags.length hid tagging from every
+ *  new user (N-25, launch-critical). `tags` need only be a (possibly empty) list. */
 export function shouldShowStrip(state, tags) {
   if (state !== 'saved' && state !== 'duplicate') return false
-  return Array.isArray(tags) && tags.length > 0
+  return Array.isArray(tags)
 }
