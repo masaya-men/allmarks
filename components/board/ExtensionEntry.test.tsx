@@ -72,6 +72,26 @@ describe('ExtensionEntry settings drawer', () => {
     expect(onOpen).toHaveBeenCalledTimes(1)
   })
 
+  it('closes the SETTINGS drawer before opening the bookmarklet install modal (stacking regression)', () => {
+    // SAVE WITHOUT EXTENSION opens BookmarkletInstallModal (z-index 200), which
+    // sits under the SETTINGS ChromeDrawer (z-index 405). Pre-refactor this
+    // called closeNow() first; the migration to ChromeDrawer dropped it, so the
+    // drawer stayed open on top of the modal's dim overlay. Guard both calls.
+    const onOpenChange = vi.fn()
+    const onOpen = vi.fn()
+    render(
+      <ExtensionEntry
+        {...baseProps}
+        onOpenBookmarkletModal={onOpen}
+        isOpen
+        onOpenChange={onOpenChange}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('open-bookmarklet-install'))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+    expect(onOpen).toHaveBeenCalledTimes(1)
+  })
+
   it('REPLAY INTRO calls onReplayIntro', () => {
     const onReplay = vi.fn()
     render(<ExtensionEntry {...baseProps} onReplayIntro={onReplay} isOpen onOpenChange={vi.fn()} />)

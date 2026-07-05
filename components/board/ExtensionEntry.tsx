@@ -270,7 +270,7 @@ export function ExtensionEntry({
           <button
             type="button"
             className={styles.panelCta}
-            onClick={onOpenBookmarkletModal}
+            onClick={(): void => { onOpenChange(false); onOpenBookmarkletModal() }}
             data-testid="open-bookmarklet-install"
           >
             {t('board.settings.saveWithoutExtension')}
