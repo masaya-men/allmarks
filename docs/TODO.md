@@ -158,6 +158,7 @@
 - **(N-30) PopOut の「＋タグ」をカード外へ** — PopOut(PiP)で「＋タグ」をカードの外に出して見やすく。memory `project_pip_size_decision` の PiP レイアウトと整合を取る。
 - **(N-31) タグ体験の作り直し：MANAGE TAGS 画面を廃止 → 「選択してタグにドラッグ＆ドロップ」** — 現状のマネージ/Triage（1枚ずつスワイプ）を廃止し、**ボタンで選択モード→カードを選ぶ→タグへ D&D で付与**に。s157 の SELECT CARDS 選択モード＋s95 の「画像ドラッグでタグ付け＋ガラス演出」構想を土台に流用余地。**大改修＝brainstorm 必須**。関連 memory `project_selective_share_shipped` / `project_tagging_top_priority`。
 - **(N-32) メニュー系を全部フラットに刷新（design 方針・N-26 と一体）** — 全メニュー UI をフラット化。N-26（default テーマをフラットにして LP に寄せる）と同じ「フラット化」方針の一部。**まとめて brainstorm**（視覚言語の再定義＝大物）。
+- **(N-33) タグを小文字強制でなく入力どおりのケースを受け付ける** — 「Design」等をそのまま保存できるように。**実装時の勘所**：表示は入力どおりのケースを保持しつつ、**重複判定は大小無視**（Design/design/DESIGN を別タグにしない）＝display はケース保持・照合は case-insensitive が定石。まず現状の lowercase 強制が「視覚統一」か「重複防止」どちらの意図かをコードで確認してから（両立させる）。
 
 ### session 157 で報告（ユーザー実機メモ・新規）
 
