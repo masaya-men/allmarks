@@ -71,39 +71,11 @@
     #0c0c12;
 }
 
-/* Positioned container — anchors the + TAG button to the card's top-left,
- * matching the board card's "+ TAG" affordance placement. The tag menu it
- * opens is rendered as a PiP-window-level overlay in PipCompanion (the
- * carousel's nested overflow:hidden would clip a popover anchored here). */
-.tagAffordance {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 40;
-}
-
-/* Board-style text button — transparent, monospace, uppercase, shadowed so it
- * reads over any thumbnail. Same vocabulary as CardsLayer's "+ TAG". */
-.addTagButton {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.94);
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.65),
-    0 0 4px rgba(0, 0, 0, 0.35);
-  padding: 4px 6px;
-  font: 10px/1 ui-monospace, 'SF Mono', Consolas, monospace;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
 /* ── paper-atelier: card thumbnails are unchanged (the photo covers the card),
    but the hairline ring + no-image placeholders are re-toned for the paper
    world — a warm charcoal edge instead of the white sliver, and an aged-kraft
-   placeholder (kept dark enough that the white "+ TAG" still reads over it).
-   The "+ TAG" button stays white+shadow because it sits over the thumbnail,
-   which is theme-independent. Default theme byte-identical. ─────────────────── */
+   placeholder. The "+ TAG" affordance now lives at the PopOut-window level
+   (PipStack .addTagPill), not on the card. Default theme byte-identical. ────── */
 :global(html[data-theme-id='paper-atelier']) .cardInner {
   box-shadow:
     0 4px 14px rgba(43, 39, 34, 0.22),

@@ -26,4 +26,9 @@ describe('PipCard', () => {
     expect(card.querySelector('img')).toBeNull()
     expect(card.querySelector('[data-role="generic-placeholder"]')).toBeTruthy()
   })
+
+  it('does not render the + TAG button on the card (it now lives at the PopOut-window level)', () => {
+    render(<PipCard id="bm4" thumbnail="" favicon="" title="t" />)
+    expect(screen.queryByTestId('pip-add-tag-button')).toBeNull()
+  })
 })

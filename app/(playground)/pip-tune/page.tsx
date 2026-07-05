@@ -169,7 +169,7 @@ export default function PipTunePage(): ReactElement {
               {visibleCards.length === 0 ? (
                 <div style={{ position: 'absolute', inset: 0, background: '#000' }} />
               ) : (
-                <PipStack cards={visibleCards} onCardClick={() => {}} stageStyle={stackStyle} />
+                <PipStack cards={visibleCards} onCardClick={() => {}} onOpenTags={() => {}} stageStyle={stackStyle} />
               )}
             </div>
             <p className={styles.previewMeta}>

@@ -42,6 +42,25 @@ describe('PipStack', () => {
     expect(onCardClick).not.toHaveBeenCalled()
   })
 
+  it('shows a single window-level + TAG pill that tags the active card', () => {
+    const onOpenTags = vi.fn()
+    render(<PipStack cards={cards} onCardClick={() => {}} onOpenTags={onOpenTags} />)
+    const btns = screen.getAllByTestId('pip-add-tag-button')
+    expect(btns).toHaveLength(1) // one pill for the whole window, not one per card
+    fireEvent.click(btns[0])
+    expect(onOpenTags).toHaveBeenCalledWith('3') // newest = active
+  })
+
+  it('hides the + TAG pill when onOpenTags is not provided', () => {
+    render(<PipStack cards={cards} onCardClick={() => {}} />)
+    expect(screen.queryByTestId('pip-add-tag-button')).toBeNull()
+  })
+
+  it('hides the + TAG pill when tagEnabled is false', () => {
+    render(<PipStack cards={cards} onCardClick={() => {}} onOpenTags={() => {}} tagEnabled={false} />)
+    expect(screen.queryByTestId('pip-add-tag-button')).toBeNull()
+  })
+
   it('clamps activeIdx and re-centres when the last card is removed', async () => {
     const { rerender } = render(<PipStack cards={cards} onCardClick={() => {}} />)
     // Sanity: latest card (idx 2) is the active centred slot.

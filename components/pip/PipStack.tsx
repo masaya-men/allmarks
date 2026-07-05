@@ -320,15 +320,23 @@ export function PipStack({
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSlotClick(idx, card.id)() }}
           >
-            <PipCard
-              {...card}
-              isActive={idx === activeIdx}
-              tagEnabled={tagEnabled}
-              onOpenTags={onOpenTags ? () => onOpenTags(card.id) : undefined}
-            />
+            <PipCard {...card} />
           </div>
         ))}
       </div>
+      {tagEnabled !== false && onOpenTags && activeCard && (
+        <div className={styles.tagBar}>
+          <button
+            type="button"
+            data-testid="pip-add-tag-button"
+            aria-label="Add tag"
+            className={styles.addTagPill}
+            onClick={() => onOpenTags(activeCard.id)}
+          >
+            + TAG
+          </button>
+        </div>
+      )}
       {cards.length > 0 && (
         <div className={styles.meter}>
           <LightboxNavMeter

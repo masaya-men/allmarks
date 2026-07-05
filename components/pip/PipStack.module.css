@@ -71,6 +71,37 @@
   z-index: 2;
 }
 
+/* + TAG affordance — pinned to the PopOut window (not the card), so it stays in
+ * one predictable place regardless of card shape and reads clearly over any
+ * thumbnail. Sibling of .scroller, so clicks on it never reach the carousel. */
+.tagBar {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* only the pill itself is interactive */
+  z-index: 3;
+}
+
+.addTagPill {
+  pointer-events: auto;
+  background: rgba(20, 20, 26, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.94);
+  padding: 5px 12px;
+  font: 10px/1 ui-monospace, 'SF Mono', Consolas, monospace;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.addTagPill:hover { background: rgba(30, 30, 38, 0.78); }
+
 /* Constrain the inner LightboxNavMeter for PiP's narrow canvas. */
 .meter > * {
   --lightbox-meter-w: var(--pip-meter-w);
@@ -92,4 +123,12 @@
   background-image: var(--asset-parchment-bg);
   background-size: cover;
   background-position: center;
+}
+:global(html[data-theme-id='paper-atelier']) .addTagPill {
+  background: var(--paper-panel-btn-bg, rgba(43, 39, 34, 0.08));
+  border-color: var(--paper-panel-border, rgba(43, 39, 34, 0.30));
+  color: var(--text-primary, #2b2722);
+}
+:global(html[data-theme-id='paper-atelier']) .addTagPill:hover {
+  background: var(--paper-panel-btn-bg-hover, rgba(43, 39, 34, 0.14));
 }

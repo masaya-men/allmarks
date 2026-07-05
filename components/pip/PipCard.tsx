@@ -19,14 +19,6 @@ export interface PipCardProps {
    *  When aspect < 1 (vertical reel), the inner thumbnail expands taller
    *  than the carousel frame so verticals read as actually vertical. */
   readonly aspectRatio?: number
-  /** True for the centred/active carousel card — only it shows the + TAG affordance. */
-  readonly isActive?: boolean
-  /** Whole-feature toggle. When false, no + TAG button is rendered. */
-  readonly tagEnabled?: boolean
-  /** Ask the PiP window to open the tag menu for this card. The menu itself
-   *  is rendered at the PipCompanion window level (as an overlay) so it isn't
-   *  clipped by the carousel's overflow. When omitted, no + TAG button shows. */
-  readonly onOpenTags?: () => void
 }
 
 export function PipCard({
@@ -35,17 +27,9 @@ export function PipCard({
   favicon,
   title,
   aspectRatio,
-  isActive,
-  tagEnabled,
-  onOpenTags,
 }: PipCardProps): ReactElement {
   const [imgErrored, setImgErrored] = useState(false)
   const [detectedAspect, setDetectedAspect] = useState<number | undefined>()
-
-  const canTag =
-    isActive === true &&
-    tagEnabled !== false &&
-    onOpenTags !== undefined
 
   const handleLoad = useCallback((e: SyntheticEvent<HTMLImageElement>): void => {
     if (aspectRatio !== undefined) return
@@ -99,24 +83,6 @@ export function PipCard({
           <div className={styles.genericPlaceholder} data-role="generic-placeholder" aria-hidden="true" />
         )}
       </div>
-      {canTag && (
-        <div className={styles.tagAffordance}>
-          <button
-            type="button"
-            data-testid="pip-add-tag-button"
-            aria-label="Add tag"
-            className={styles.addTagButton}
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation()
-              onOpenTags?.()
-            }}
-          >
-            + TAG
-          </button>
-        </div>
-      )}
     </div>
   )
 }
