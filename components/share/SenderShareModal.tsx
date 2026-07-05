@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import type { ShareDataV2, ShareCustomization } from '@/lib/share/types-v2'
 import type { ThemeId } from '@/lib/board/types'
+import { useI18n } from '@/lib/i18n/I18nProvider'
+import { ChromeDrawer } from '@/components/board/ChromeDrawer'
 import styles from './SenderShareModal.module.css'
 import { captureMirrorToWebP } from '@/lib/share/capture-mirror'
 import { renderShareImage } from '@/lib/share/render-share-image'
@@ -80,27 +82,16 @@ export function SenderShareModal({
   onSelectCards = null,
   selectionActive = false,
 }: Props): ReactElement | null {
+  const { t } = useI18n()
   const [state, setState] = useState<ModalState>({ kind: 'idle' })
   const [copied, setCopied] = useState<boolean>(false)
   const mirrorFrameRef = useRef<HTMLDivElement | null>(null)
   const captureRef = useRef<HTMLDivElement | null>(null)
 
-  // ESC handler
-  useEffect((): (() => void) | undefined => {
-    if (!open) return undefined
-    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return (): void => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
-
   // Reset state on close
   useEffect((): void => {
     if (!open) setState({ kind: 'idle' })
   }, [open])
-
-  const handleBackdrop = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
-    if (e.target === e.currentTarget) onClose()
-  }, [onClose])
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>): void => {
     e.preventDefault()
@@ -185,96 +176,93 @@ export function SenderShareModal({
 
   return (
     <>
-    <div className={styles.backdrop} onClick={handleBackdrop} onWheel={handleWheel}>
-      <div className={styles.panel} role="dialog" aria-label="Share board">
-        <header className={styles.header}>
-          <span className={styles.title}>SHARE BOARD</span>
-          <button type="button" className={styles.closeIcon} onClick={onClose} aria-label="Close">✕</button>
-        </header>
+    <ChromeDrawer
+      isOpen={open}
+      onClose={onClose}
+      title="SHARE BOARD"
+      testId="share-modal"
+      closeLabel={t('board.theme.modalCloseLabel')}
+    >
+      <div className={styles.preview} data-testid="share-preview" onWheel={handleWheel}>
+        <ShareMirror
+          items={items}
+          positions={positions}
+          bgViewportWidth={bgViewportWidth}
+          bgCanvasWidth={bgCanvasWidth}
+          activeTagNames={activeTagNames}
+          totalBoardCount={totalBoardCount}
+          sharedCardCount={sharedCardCount}
+          scrollY={scrollY}
+          contentHeight={contentHeight}
+          viewportHeight={viewportHeight}
+          bgTypoText={bgTypoEnabled ? bgTypoText : ''}
+          frameRef={mirrorFrameRef}
+          themeId={themeId}
+          custom={custom}
+        />
+      </div>
 
-        <div className={styles.preview}>
-          <ShareMirror
-            items={items}
-            positions={positions}
-            bgViewportWidth={bgViewportWidth}
-            bgCanvasWidth={bgCanvasWidth}
-            activeTagNames={activeTagNames}
-            totalBoardCount={totalBoardCount}
-            sharedCardCount={sharedCardCount}
-            scrollY={scrollY}
-            contentHeight={contentHeight}
-            viewportHeight={viewportHeight}
-            bgTypoText={bgTypoEnabled ? bgTypoText : ''}
-            frameRef={mirrorFrameRef}
-            themeId={themeId}
-            custom={custom}
-          />
-        </div>
+      <p className={styles.hint}>
+        {selectionActive
+          ? 'SELECTED CARDS ONLY · PRESS SHARE NOW WHEN READY'
+          : 'SCROLL TO POSITION · PRESS SHARE NOW WHEN READY'}
+      </p>
 
-        <p className={styles.hint}>
-          {selectionActive
-            ? 'SELECTED CARDS ONLY · PRESS SHARE NOW WHEN READY'
-            : 'SCROLL TO POSITION · PRESS SHARE NOW WHEN READY'}
-        </p>
-
-        <div className={styles.actions}>
-          {state.kind === 'ready' ? (
-            <>
-              <div className={styles.urlRow}>
-                <code className={styles.url}>{state.shareUrl}</code>
-                <button
-                  type="button"
-                  className={styles.copyBtn}
-                  onClick={(): void => {
-                    void navigator.clipboard.writeText(state.shareUrl).then((): void => {
-                      setCopied(true)
-                      setTimeout((): void => setCopied(false), 1500)
-                    })
-                  }}
-                >{copied ? 'COPIED' : 'COPY'}</button>
-              </div>
+      <div className={styles.actions}>
+        {state.kind === 'ready' ? (
+          <>
+            <div className={styles.urlRow}>
+              <code className={styles.url}>{state.shareUrl}</code>
               <button
                 type="button"
-                className={styles.primaryBtn}
-                onClick={(): void => handleSaveImage(state.imageDataUrl, state.shareId)}
-              >SAVE IMAGE</button>
+                className={styles.copyBtn}
+                onClick={(): void => {
+                  void navigator.clipboard.writeText(state.shareUrl).then((): void => {
+                    setCopied(true)
+                    setTimeout((): void => setCopied(false), 1500)
+                  })
+                }}
+              >{copied ? 'COPIED' : 'COPY'}</button>
+            </div>
+            <button
+              type="button"
+              className={styles.primaryBtn}
+              onClick={(): void => handleSaveImage(state.imageDataUrl, state.shareId)}
+            >SAVE IMAGE</button>
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={(): void => {
+                const intent = `https://twitter.com/intent/tweet?url=${encodeURIComponent(state.shareUrl)}`
+                window.open(intent, '_blank', 'noopener,noreferrer')
+              }}
+            >POST TO X</button>
+          </>
+        ) : state.kind === 'error' ? (
+          <>
+            <code className={styles.url} style={{ color: '#ff8888' }}>⚠ {state.message}</code>
+            <button type="button" className={styles.primaryBtn} onClick={handleShareConfirm}>RETRY</button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className={styles.primaryBtn}
+              disabled={state.kind === 'capturing'}
+              onClick={handleShareConfirm}
+            >{state.kind === 'capturing' ? 'CAPTURING…' : 'SHARE NOW'}</button>
+            {onSelectCards && state.kind === 'idle' && (
               <button
                 type="button"
                 className={styles.secondaryBtn}
-                onClick={(): void => {
-                  const intent = `https://twitter.com/intent/tweet?url=${encodeURIComponent(state.shareUrl)}`
-                  window.open(intent, '_blank', 'noopener,noreferrer')
-                }}
-              >POST TO X</button>
-            </>
-          ) : state.kind === 'error' ? (
-            <>
-              <code className={styles.url} style={{ color: '#ff8888' }}>⚠ {state.message}</code>
-              <button type="button" className={styles.primaryBtn} onClick={handleShareConfirm}>RETRY</button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className={styles.primaryBtn}
-                disabled={state.kind === 'capturing'}
-                onClick={handleShareConfirm}
-              >{state.kind === 'capturing' ? 'CAPTURING…' : 'SHARE NOW'}</button>
-              {onSelectCards && state.kind === 'idle' && (
-                <button
-                  type="button"
-                  className={styles.secondaryBtn}
-                  onClick={onSelectCards}
-                  data-testid="select-cards-button"
-                >SELECT CARDS</button>
-              )}
-            </>
-          )}
-
-          <button type="button" className={styles.secondaryBtn} onClick={onClose}>CLOSE</button>
-        </div>
+                onClick={onSelectCards}
+                data-testid="select-cards-button"
+              >SELECT CARDS</button>
+            )}
+          </>
+        )}
       </div>
-    </div>
+    </ChromeDrawer>
     {/* Hidden 1200×628 capture node — off-screen so dom-to-image can measure it,
         but invisible to the user. Renders only visibleItems to avoid the 2026
         dom-to-image memory explosion that hit the full-board subtree. */}

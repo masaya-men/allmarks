@@ -324,8 +324,8 @@ export function BoardRoot() {
   const [spaceHeld, setSpaceHeld] = useState<boolean>(false)
   const [bookmarkletModalOpen, setBookmarkletModalOpen] = useState<boolean>(false)
   // Unified right-drawer state (TUNE/SETTINGS/SHARE/THEMES) — only one open at
-  // a time. Currently only THEMES is wired through this; SHARE's
-  // `shareModalOpen` and the SETTINGS/TUNE hover state migrate in later tasks.
+  // a time. THEMES and SHARE are wired through this; the SETTINGS/TUNE hover
+  // state migrates in later tasks.
   const [activeDrawer, setActiveDrawer] = useState<ActiveDrawer>(null)
   const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null)
   // True during an active scroll session (any source: wheel, drag, meter jump).
@@ -378,7 +378,6 @@ export function BoardRoot() {
   // via `data-bookmark-id` on close so pan/scroll during open are honoured.
   const [lightboxOriginRect, setLightboxOriginRect] = useState<DOMRect | null>(null)
   const [newlyAddedIds, setNewlyAddedIds] = useState<ReadonlySet<string>>(new Set())
-  const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
   // Selective share (spec 2026-07-03). selectMode = the board is in
   // tap-to-select mode; selectedIds = the working selection while in the mode;
   // shareSelectedIds = the CONFIRMED selection the share modal previews
@@ -1939,7 +1938,7 @@ export function BoardRoot() {
     selectionLayout == null ? 0 : selectionLayout.totalHeight + BOARD_TOP_PAD_PX
 
   const handleEnterSelectMode = useCallback((): void => {
-    setShareModalOpen(false)
+    setActiveDrawer(null)
     setShareSelectedIds(null)
     setSelectedIds(new Set())
     setCapFlashCycle(0) // stale cycle would flash the pill on bar mount
@@ -1974,7 +1973,7 @@ export function BoardRoot() {
     setSelectMode(false)
     setShareSelectedIds(selectedIds)
     setSelectionScrollY(0)
-    setShareModalOpen(true)
+    setActiveDrawer('share')
   }, [selectedIds])
 
   // Esc leaves selection mode (= CANCEL). The share modal is closed while the
@@ -2457,7 +2456,7 @@ export function BoardRoot() {
               />
               <ChromeButton
                 label={t('board.chrome.share')}
-                onClick={(): void => { if (!selectMode) setShareModalOpen(true) }}
+                onClick={(): void => { if (!selectMode) setActiveDrawer('share') }}
                 data-testid="share-pill"
                 data-onboarding-target="share"
               />
@@ -2648,12 +2647,12 @@ export function BoardRoot() {
               onZoomToCard={zoomCameraToOnboardingCard}
               onZoomReset={resetOnboardingCamera}
               onShareSceneActive={(active): void => {
-                setShareModalOpen(active)
+                setActiveDrawer(active ? 'share' : null)
                 // Match onClose: closing the modal discards any confirmed
                 // one-shot selection so it can't leak into a later normal share (spec §1).
                 if (!active) setShareSelectedIds(null)
               }}
-              shareModalOpen={shareModalOpen}
+              shareModalOpen={activeDrawer === 'share'}
             />
           )}
           {!loading && !showOnboarding && showDataHomeCard && (
@@ -2738,9 +2737,9 @@ export function BoardRoot() {
         onCustomize={handleCustomizeTheme}
       />
       <SenderShareModal
-        open={shareModalOpen}
+        open={activeDrawer === 'share'}
         onClose={(): void => {
-          setShareModalOpen(false)
+          setActiveDrawer(null)
           setShareSelectedIds(null) // selection is one-shot — discard on close (spec §1)
         }}
         getShareData={buildShareData}
