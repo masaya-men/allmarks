@@ -6,19 +6,47 @@ beforeEach(() => {
   document.documentElement.dataset.booklageExtension = '1'
 })
 
+const baseProps = {
+  quickTagEnabled: true,
+  onQuickTagToggle: () => {},
+  onOpenBookmarkletModal: () => {},
+  themeId: 'dotted-notebook' as const,
+  onOpenThemeModal: () => {},
+  customWidthCount: 0,
+  onResetCardSizes: () => {},
+  onSortNewestFirst: () => {},
+}
+
 describe('ExtensionEntry settings drawer', () => {
-  it('opens the drawer on hover and reflects the toggle state', () => {
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={() => {}} onOpenBookmarkletModal={() => {}} themeId="dotted-notebook" onOpenThemeModal={() => {}} customWidthCount={0} onResetCardSizes={() => {}} onSortNewestFirst={() => {}} />)
-    // TUNE-style hover open: the drawer expands when the wrapper is entered.
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+  it('opens when the SETTINGS trigger is clicked', () => {
+    const onOpenChange = vi.fn()
+    render(<ExtensionEntry {...baseProps} isOpen={false} onOpenChange={onOpenChange} />)
+    fireEvent.click(screen.getByTestId('extension-settings'))
+    expect(onOpenChange).toHaveBeenCalledWith(true)
+  })
+
+  it('requests close when the SETTINGS trigger is clicked while already open', () => {
+    const onOpenChange = vi.fn()
+    render(<ExtensionEntry {...baseProps} isOpen onOpenChange={onOpenChange} />)
+    fireEvent.click(screen.getByTestId('extension-settings'))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('renders no drawer content while closed', () => {
+    render(<ExtensionEntry {...baseProps} isOpen={false} onOpenChange={vi.fn()} />)
+    expect(screen.queryByTestId('quick-tag-toggle')).toBeNull()
+  })
+
+  it('renders drawer content when isOpen and reflects the toggle state', () => {
+    render(<ExtensionEntry {...baseProps} isOpen onOpenChange={vi.fn()} />)
+    expect(screen.getByTestId('open-theme-modal')).toBeTruthy()
     const toggle = screen.getByTestId('quick-tag-toggle') as HTMLInputElement
     expect(toggle.checked).toBe(true)
   })
 
   it('calls onQuickTagToggle when toggled', () => {
     const onToggle = vi.fn()
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} onOpenBookmarkletModal={() => {}} themeId="dotted-notebook" onOpenThemeModal={() => {}} customWidthCount={0} onResetCardSizes={() => {}} onSortNewestFirst={() => {}} />)
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} onQuickTagToggle={onToggle} isOpen onOpenChange={vi.fn()} />)
     fireEvent.click(screen.getByTestId('quick-tag-toggle'))
     expect(onToggle).toHaveBeenCalledWith(false)
   })
@@ -28,8 +56,7 @@ describe('ExtensionEntry settings drawer', () => {
     // because the /save window reads the same setting.
     delete document.documentElement.dataset.booklageExtension
     const onToggle = vi.fn()
-    render(<ExtensionEntry quickTagEnabled={true} onQuickTagToggle={onToggle} onOpenBookmarkletModal={() => {}} themeId="dotted-notebook" onOpenThemeModal={() => {}} customWidthCount={0} onResetCardSizes={() => {}} onSortNewestFirst={() => {}} />)
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} onQuickTagToggle={onToggle} isOpen onOpenChange={vi.fn()} />)
     expect(screen.getByTestId('extension-settings')).toBeTruthy()
     fireEvent.click(screen.getByTestId('quick-tag-toggle'))
     expect(onToggle).toHaveBeenCalledWith(false)
@@ -40,63 +67,35 @@ describe('ExtensionEntry settings drawer', () => {
 
   it('opens the bookmarklet install modal from SAVE WITHOUT EXTENSION', () => {
     const onOpen = vi.fn()
-    render(
-      <ExtensionEntry
-        quickTagEnabled={true}
-        onQuickTagToggle={() => {}}
-        onOpenBookmarkletModal={onOpen}
-        themeId="dotted-notebook"
-        onOpenThemeModal={() => {}}
-        customWidthCount={0}
-        onResetCardSizes={() => {}}
-        onSortNewestFirst={() => {}}
-      />,
-    )
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} onOpenBookmarkletModal={onOpen} isOpen onOpenChange={vi.fn()} />)
     fireEvent.click(screen.getByTestId('open-bookmarklet-install'))
     expect(onOpen).toHaveBeenCalledTimes(1)
   })
 
   it('REPLAY INTRO calls onReplayIntro', () => {
     const onReplay = vi.fn()
-    render(
-      <ExtensionEntry
-        quickTagEnabled={true}
-        onQuickTagToggle={() => {}}
-        onOpenBookmarkletModal={() => {}}
-        onReplayIntro={onReplay}
-        themeId="dotted-notebook"
-        onOpenThemeModal={() => {}}
-        customWidthCount={0}
-        onResetCardSizes={() => {}}
-        onSortNewestFirst={() => {}}
-      />,
-    )
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} onReplayIntro={onReplay} isOpen onOpenChange={vi.fn()} />)
     fireEvent.click(screen.getByTestId('replay-intro'))
     expect(onReplay).toHaveBeenCalledOnce()
+  })
+
+  it('CHOOSE A THEME calls onOpenThemeModal directly (no internal close call needed)', () => {
+    const onOpenTheme = vi.fn()
+    render(<ExtensionEntry {...baseProps} onOpenThemeModal={onOpenTheme} isOpen onOpenChange={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('open-theme-modal'))
+    expect(onOpenTheme).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('LAYOUT group (N-19)', () => {
-  const baseProps = {
-    quickTagEnabled: true,
-    onQuickTagToggle: () => {},
-    onOpenBookmarkletModal: () => {},
-    themeId: 'dotted-notebook' as const,
-    onOpenThemeModal: () => {},
-  }
-
   it('disables RESET CARD SIZES when no card is resized', () => {
-    render(<ExtensionEntry {...baseProps} customWidthCount={0} onResetCardSizes={() => {}} onSortNewestFirst={() => {}} />)
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} customWidthCount={0} isOpen onOpenChange={vi.fn()} />)
     const btn = screen.getByTestId('layout-reset-sizes') as HTMLButtonElement
     expect(btn.disabled).toBe(true)
   })
 
   it('shows the resized count and enables the button when > 0', () => {
-    render(<ExtensionEntry {...baseProps} customWidthCount={3} onResetCardSizes={() => {}} onSortNewestFirst={() => {}} />)
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} customWidthCount={3} isOpen onOpenChange={vi.fn()} />)
     const btn = screen.getByTestId('layout-reset-sizes') as HTMLButtonElement
     expect(btn.disabled).toBe(false)
     expect(btn.textContent).toContain('3')
@@ -104,8 +103,7 @@ describe('LAYOUT group (N-19)', () => {
 
   it('requires two taps to reset sizes (first tap shows confirm, second fires)', () => {
     const onReset = vi.fn()
-    render(<ExtensionEntry {...baseProps} customWidthCount={3} onResetCardSizes={onReset} onSortNewestFirst={() => {}} />)
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} customWidthCount={3} onResetCardSizes={onReset} isOpen onOpenChange={vi.fn()} />)
     const btn = screen.getByTestId('layout-reset-sizes')
     fireEvent.click(btn)
     expect(onReset).not.toHaveBeenCalled()
@@ -117,8 +115,7 @@ describe('LAYOUT group (N-19)', () => {
 
   it('requires two taps to sort newest first', () => {
     const onSort = vi.fn()
-    render(<ExtensionEntry {...baseProps} customWidthCount={0} onResetCardSizes={() => {}} onSortNewestFirst={onSort} />)
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} onSortNewestFirst={onSort} isOpen onOpenChange={vi.fn()} />)
     const btn = screen.getByTestId('layout-sort-newest')
     fireEvent.click(btn)
     expect(onSort).not.toHaveBeenCalled()
@@ -129,8 +126,7 @@ describe('LAYOUT group (N-19)', () => {
   it('confirming one button cancels the other', () => {
     const onReset = vi.fn()
     const onSort = vi.fn()
-    render(<ExtensionEntry {...baseProps} customWidthCount={3} onResetCardSizes={onReset} onSortNewestFirst={onSort} />)
-    fireEvent.mouseEnter(screen.getByTestId('extension-settings-wrap'))
+    render(<ExtensionEntry {...baseProps} customWidthCount={3} onResetCardSizes={onReset} onSortNewestFirst={onSort} isOpen onOpenChange={vi.fn()} />)
     fireEvent.click(screen.getByTestId('layout-reset-sizes')) // arm A
     fireEvent.click(screen.getByTestId('layout-sort-newest'))  // arms B, cancels A
     expect(screen.getByTestId('layout-reset-sizes').getAttribute('data-confirming')).toBe('false')

@@ -1,8 +1,3 @@
-.wrap {
-  position: relative;
-  display: inline-flex;
-}
-
 /* Promo popover for the GET EXTENSION state. Editorial dark glass, matching
    the FilterPill / TagContextMenu vocabulary. Anchored under the button. */
 .promo {
@@ -46,17 +41,6 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-.title {
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #fff;
-  margin-bottom: 10px;
-  /* keep the title clear of the close button */
-  padding-right: 24px;
-}
-
 .body {
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11.5px;
@@ -94,93 +78,6 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.02);
   cursor: default;
-}
-
-/* SETTINGS drawer for the installed state. Identical mechanics to TUNE's
-   drawer (TuneTrigger.module.css): always mounted, max-height accordion
-   expand on hover, same easing + dark glass. Vertical list, so column
-   layout + an explicit width (TUNE's content sizes its row drawer; ours
-   needs a fixed width). */
-.drawer {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: 320px;
-  background: rgba(10, 10, 10, 0.92);
-  border: 0;
-  border-radius: 8px;
-  padding: 0 24px;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-              padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  /* Portalled to <body>: must sit above the canvas ScrollMeter (z 400). The
-     ThemeModal / bookmarklet modal (z 200) are opened only after this drawer
-     closes itself (closeNow), so there's no modal-behind-drawer conflict. */
-  z-index: 401;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  cursor: default;
-  user-select: none;
-  /* Raw scrollbar hidden — scrollability is communicated by the bottom fade
-     (.scrollFade), matching the app's no-plain-scrollbars rule. */
-  scrollbar-width: none;
-}
-.drawer::-webkit-scrollbar {
-  display: none;
-}
-.drawer[data-open='true'] {
-  /* Capped to the viewport (minus the drawer's top offset + a bottom margin)
-     so the tall not-installed state (GET EXTENSION promo, ~575px) never runs
-     off-screen — it scrolls internally instead, hinted by the bottom fade.
-     NOTE: the drawer itself no longer scrolls — the inner .drawerScroll does.
-     If the drawer scrolled, the absolute .scrollFade below (anchored to the
-     drawer's padding box) would scroll away with the content instead of staying
-     at the visible bottom edge. */
-  max-height: min(600px, calc(100dvh - 140px));
-  padding: 22px 24px 24px;
-  pointer-events: auto;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-}
-
-/* Inner scroll region — holds the title + every section and does the actual
-   scrolling, so the drawer shell stays a stable positioned box for the bottom
-   fade to anchor to. `min-height: 0` lets this flex child shrink below its
-   content size so overflow-y actually kicks in inside the flex-column drawer. */
-.drawerScroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  /* Raw scrollbar hidden — scrollability is communicated by the bottom fade
-     (.scrollFade), matching the app's no-plain-scrollbars rule. */
-  scrollbar-width: none;
-}
-.drawerScroll::-webkit-scrollbar {
-  display: none;
-}
-
-/* Bottom scroll fade — pinned to the drawer's visible bottom edge. The drawer
-   shell does NOT scroll (the inner .drawerScroll does), so this absolute child
-   stays put at the shell's bottom instead of drifting up with the content. JS
-   toggles data-visible from moreBelow. Fades content into the drawer surface so
-   there's a clear "more below" cue. */
-.scrollFade {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 54px;
-  pointer-events: none;
-  border-radius: 0 0 8px 8px;
-  background: linear-gradient(to bottom, rgba(10, 10, 10, 0) 0%, rgba(10, 10, 10, 0.92) 88%);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.scrollFade[data-visible='true'] {
-  opacity: 1;
 }
 
 /* Labelled group block. The title sits above each cluster; groups after the
@@ -369,9 +266,6 @@
 @media (prefers-reduced-motion: reduce) {
   .promo {
     animation: none;
-  }
-  .drawer {
-    transition: none;
   }
 }
 

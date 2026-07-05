@@ -232,9 +232,6 @@ export function BoardRoot() {
   // While the onboarding tag scene is active, force the hover-gated card +TAG
   // button visible (the user can't hover precisely through the spotlight hole).
   const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
-  // While the onboarding SETTINGS beat is active, force the hover-only SETTINGS
-  // drawer open so the tutorial can spotlight the QUICK-TAG ON SAVE toggle inside.
-  const [forceSettingsOpen, setForceSettingsOpen] = useState<boolean>(false)
   // Bumped each time a tag is ADDED to a card from the board UI. The onboarding
   // tag scene watches this to advance — the board's own tag-add doesn't post to
   // the bookmark-updated channel (it reloads locally), so the scene needs a
@@ -2419,7 +2416,8 @@ export function BoardRoot() {
                 onQuickTagToggle={handleQuickTagToggle}
                 onOpenBookmarkletModal={handleOpenBookmarkletModal}
                 onReplayIntro={() => { void startOnboardingReplay() }}
-                forceOpen={forceSettingsOpen}
+                isOpen={activeDrawer === 'settings'}
+                onOpenChange={(open) => setActiveDrawer(open ? 'settings' : null)}
                 themeId={themeId}
                 onOpenThemeModal={() => setActiveDrawer('themes')}
                 customWidthCount={customWidthCount}
@@ -2644,7 +2642,7 @@ export function BoardRoot() {
               initialScene={onboardingInitialScene}
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
-              onSettingsBeatActive={setForceSettingsOpen}
+              onSettingsBeatActive={(active: boolean) => setActiveDrawer(active ? 'settings' : null)}
               tagAddedSignal={tagAddedTick}
               onApplySampleTag={() => { void applySampleTag() }}
               onZoomToCard={zoomCameraToOnboardingCard}
