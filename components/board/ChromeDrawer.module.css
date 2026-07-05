@@ -1,7 +1,6 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 410;
   pointer-events: none;
   display: flex;
   justify-content: flex-end;

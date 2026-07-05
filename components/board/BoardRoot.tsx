@@ -162,6 +162,11 @@ const RESIZE_GATE_PX = 8
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
 
+/** Unified right-drawer state (TUNE/SETTINGS/SHARE/THEMES) — only one panel
+ *  open at a time. Only 'themes' is wired through this today; the others
+ *  migrate onto ChromeDrawer in follow-up tasks. */
+type ActiveDrawer = 'tune' | 'settings' | 'share' | 'themes' | null
+
 /** How long the background-typography (TITLE) node lingers, mounted, after the
  *  user turns it OFF so the CRT shutdown can play, before the parent unmounts
  *  it. = the shutdown duration (--tag-shutdown-duration 0.55s) + a small buffer.
@@ -321,7 +326,10 @@ export function BoardRoot() {
   // InteractionLayer where pan engagement lives.
   const [spaceHeld, setSpaceHeld] = useState<boolean>(false)
   const [bookmarkletModalOpen, setBookmarkletModalOpen] = useState<boolean>(false)
-  const [themeModalOpen, setThemeModalOpen] = useState<boolean>(false)
+  // Unified right-drawer state (TUNE/SETTINGS/SHARE/THEMES) — only one open at
+  // a time. Currently only THEMES is wired through this; SHARE's
+  // `shareModalOpen` and the SETTINGS/TUNE hover state migrate in later tasks.
+  const [activeDrawer, setActiveDrawer] = useState<ActiveDrawer>(null)
   const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null)
   // True during an active scroll session (any source: wheel, drag, meter jump).
   // Goes false 200ms after the last scroll delta. Consumers (CardSlideshow's
@@ -2413,7 +2421,7 @@ export function BoardRoot() {
                 onReplayIntro={() => { void startOnboardingReplay() }}
                 forceOpen={forceSettingsOpen}
                 themeId={themeId}
-                onOpenThemeModal={() => setThemeModalOpen(true)}
+                onOpenThemeModal={() => setActiveDrawer('themes')}
                 customWidthCount={customWidthCount}
                 onResetCardSizes={() => { void handleResetCardSizes() }}
                 onSortNewestFirst={() => { void handleSortNewestFirst() }}
@@ -2723,8 +2731,8 @@ export function BoardRoot() {
         appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
       />
       <ThemeModal
-        isOpen={themeModalOpen}
-        onClose={(): void => setThemeModalOpen(false)}
+        isOpen={activeDrawer === 'themes'}
+        onClose={(): void => setActiveDrawer(null)}
         themeId={themeId}
         onThemeChange={handleThemeChange}
         customization={resolvedCustom}

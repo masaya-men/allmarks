@@ -1,17 +1,21 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import styles from './ChromeDrawer.module.css'
 
 export interface ChromeDrawerProps {
   readonly isOpen: boolean
   readonly onClose: () => void
   readonly title: string
+  /** panel の data-testid。overlay=`${testId}-overlay` / close=`${testId}-close` を派生。 */
   readonly testId: string
   readonly children: ReactNode
+  /** Close ボタンの aria-label。未指定時は英語の 'Close' 固定（呼び出し側で i18n 済み文言を渡すのが望ましい）。 */
+  readonly closeLabel?: string
 }
 
-export function ChromeDrawer({ isOpen, onClose, title, testId, children }: ChromeDrawerProps): ReactElement | null {
+export function ChromeDrawer({ isOpen, onClose, title, testId, children, closeLabel = 'Close' }: ChromeDrawerProps): ReactElement | null {
   const panelRef = useRef<HTMLElement | null>(null)
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const closeBtnRef = useRef<HTMLButtonElement | null>(null)
@@ -50,7 +54,7 @@ export function ChromeDrawer({ isOpen, onClose, title, testId, children }: Chrom
 
   const titleId = `${testId}-title`
   return (
-    <div className={styles.overlay} role="presentation" data-testid={`${testId}-overlay`}>
+    <div className={styles.overlay} role="presentation" data-testid={`${testId}-overlay`} style={{ zIndex: BOARD_Z_INDEX.CHROME_DRAWER }}>
       <aside ref={panelRef} className={styles.panel} role="dialog" aria-labelledby={titleId} data-testid={testId}>
         <div className={styles.header}>
           <h2 id={titleId} className={styles.title}>{title}</h2>
@@ -59,7 +63,7 @@ export function ChromeDrawer({ isOpen, onClose, title, testId, children }: Chrom
             type="button"
             className={styles.closeBtn}
             onClick={onClose}
-            aria-label="Close"
+            aria-label={closeLabel}
             data-testid={`${testId}-close`}
           >×</button>
         </div>
