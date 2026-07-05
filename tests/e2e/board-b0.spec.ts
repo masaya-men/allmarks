@@ -136,18 +136,18 @@ test.describe('B0 board skeleton', () => {
   })
 
   test('theme switch toggles background, ruler meter and decorations', async ({ page }) => {
-    // The THEMES picker lives inside the hover-open SETTINGS drawer; reveal it first.
-    const drawer = page.locator('[data-testid="extension-settings-wrap"]')
-    await drawer.hover()
-    await expect(page.locator('[data-testid="extension-settings"]')).toBeVisible()
+    // The THEMES picker lives inside the click-open SETTINGS drawer; open it,
+    // then open the theme drawer from inside it.
+    await page.getByTestId('extension-settings').click()
+    await expect(page.getByTestId('extension-settings-drawer')).toBeVisible()
+    await page.getByTestId('open-theme-modal').click()
+    await expect(page.getByTestId('theme-modal')).toBeVisible()
 
     // 1) switch to grid-paper → <html data-theme-id="grid-paper">
     await page.locator('[data-theme-button="grid-paper"]').click()
     await expect(page.locator('html[data-theme-id="grid-paper"]')).toHaveCount(1)
 
-    // 2) switch to paper-atelier (re-reveal the drawer in case hover dropped)
-    await drawer.hover()
-    await expect(page.locator('[data-testid="extension-settings"]')).toBeVisible()
+    // 2) switch to paper-atelier (theme drawer stays open across selections)
     await page.locator('[data-theme-button="paper-atelier"]').click()
     await expect(page.locator('html[data-theme-id="paper-atelier"]')).toHaveCount(1)
 
