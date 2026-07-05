@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 162 — Mac実機バグ2件＋N-30出荷・本番反映済／★フラット化の方向性を確定＝次はサブ①から)
+
+- **フルスクリーン保存の改善（N-39＋派生）出荷**（commit `a3d53ed`）：Mac-Chrome はフルスクリーン中に `window.open` を別タブ化する仕様 → `/save` が自分の（大きい）ビューポートで「タブとして開かれた」と検知し、①PopOut あり=最短クローズ ②PopOut 無し初回=中央カードで案内（フルスクリーン説明＋回避法：フルスクリーン解除/PopOut/拡張）③以降=静かに「Saved」→約1.3秒で自動クローズ。フルスクリーン時のみタグ付け省略。**「シークレットでタグ窓が別タブ」も同原因で解消**。純関数 `planSaveWindow`＋`isOpenedAsTab`（テスト）。
+- **保存カードの15言語化出荷**（commit `ccae0f1`）：`/save` は I18nProvider 外なので `localStorage['allmarks-locale']` を読み自己完結の15言語コピー（`lib/bookmarklet/save-fullscreen-copy.ts`）。en/ja 確定・他13は Claude 初回訳＝**ローンチ前ネイティブレビュー対象**。Playwright で日本語表示実測OK。
+- **N-30 PopOut「+ TAG」をカード外へ出荷**（commit `eab12f1`）：カード左上の重ね → **PopOut 窓上部中央の読みやすいピル**（`PipStack .addTagPill`）。PipCard から撤去・`pip-add-tag-button` testid 維持・/pip-tune にも表示。Playwright 実測OK。
+- **★フラット化の方向性を確定**（親 spec [2026-07-05-flat-theme-and-theme-boundary-design.md](superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md)・commit `1212d1f`）：白フラットを新default／音波は温存／テーマは盤面5項目だけ／全メニュー中立＋大パネル右ドロワー統一（例外なし）／角丸トグル＋N-35／N-33 はサブ④／N-27 は切離し。**サブ①（テーマ境界＋メニュー中立化＋右スライド統一）から次セッションで実装**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **端末間同期の1日スパイク完了＝緑**（結果 `docs/private/IDEAS.md` (SYNC)）：Dropbox＝ブラウザ完結・refresh token 有りで最有力／Google Drive＝`drive.file` なら審査ほぼ不要。サーバーレスのまま案B成立。
+- **学び**：Mac-Chrome のフルスクリーンは `window.open` を別タブ化（Chrome 仕様）＝コードのバグでない。ユーザーが「機能を正式名で呼べ」（PopOut を「相棒窓」と呼んで叱責＝memory `feedback_use_real_feature_names`）。
+
 ### 直近の状態 (セッション 161 — ③バックアップの法的守り A〜D 出荷・本番反映済・opus 全ブランチレビュー「READY」)
 
 - **③ バックアップの法的守り A〜D 完遂**（merge `bb168f5`・`--no-ff`・tsc0 / **vitest1970** / build OK・`allmarks.app` 反映済・default 盤面 byte-identical）。brainstorm→spec→plan→**サブエージェント駆動7タスク＋各2段レビュー＋opus 全ブランチレビュー（READY TO MERGE）**。
@@ -150,14 +159,14 @@
 > **前提の要確認（最重要）**: 友人が Mac で使ったのは **Chrome か Safari か**。拡張は Chrome ウェブストア版＝Chrome 専用。Safari だと拡張自体が入らない（＝タグメニュー等が出ないのは想定内で、対応は「Safari 拡張を別ビルド（大）」or「拡張なし導線＝ブックマークレット/貼り付け/PopOut を磨く」）。Mac-Chrome なら実バグ。ここで scope が大きく変わる。
 
 - **(N-24) ★Mac 対応必須（ローンチ前）** — 友人実機で複数箇所うまく動かない。スマホと並ぶ公開前クロスプラットフォーム項目。**ブラウザ＝Chrome 確定（s161）**＝Safari 非対応ではなく Mac-Chrome の実バグ。**タグ窓が出なかった件は N-25（タグ0件バグ）だった可能性大＝修正済**。残りの「複数箇所」＝下記 N-39 ほか、Mac 実機で1つずつ洗い出し（systematic-debugging Phase1）。
-- **(N-39) ブックマークレット保存の `/save` ウィンドウが「画面いっぱいの PiP みたいな見た目」（Mac-Chrome）** — 本来は固定サイズの小窓（memory `project_bookmarklet_popup_flash_deadend`＝No-ext save = real /save window, fixed-size s105）が、Mac-Chrome で全画面/PiP風に化ける。要 repro＝Mac-Chrome で window.open のサイズ指定が効いていない／`/save` の CSS が全ビューポートを埋めている、のどちらか。関連 `lib/bookmarklet/save-window-plan.ts`・`app/save/page.tsx`。Mac 実機が要る＝mobile/Mac スプリントで調査。
+- ~~**(N-39) ブックマークレット保存の `/save` ウィンドウが「画面いっぱいの PiP みたいな見た目」（Mac-Chrome）**~~ ✅ **セッション162 完了（本番反映・commit `a3d53ed`/`ccae0f1`）**。真因＝**Mac-Chrome はフルスクリーン中 `window.open` を別タブ化する Chrome 仕様**（コードのバグでない）。対応＝`/save` が自ビューポートで「タブとして開かれた」と検知→中立な中央カード（間延び解消）＋初回フルスクリーン案内＋最短クローズ＋15言語化。**残＝Mac 実機の目視のみ（「おそらく大丈夫」）**。
 - **拡張の再審査は束ねる**：拡張本体に関わる修正（**N-25 済／N-28 Pinterest／N-29 設定導線**）は**まとめて manifest 版上げ→1回でストア再審査**（審査サイクルを何度も回さない）。N-30(PopOut) は web(PiP) 側なので拡張再審査には不要。
 - ~~**(N-25) タグ付けウィンドウが出ない（タグ0件の初回状態が原因・★ローンチ致命的）**~~ ✅ **コード修正済み（s161・要実機/再審査）**。systematic-debugging で確定：面＝**拡張のフローティングボタン quick-tag 帯**（`getStripAnchor` が画面右端・縦中央＝「別画面で画面中央右」に一致・ホストページ注入）。真因＝**受信側 [floating-button.js:611] の `msg.tags.length > 0` ガードが空配列を捨てていた**（送信側 dispatch.js は0件でも送っている／作成入力欄 `enterInputMode` は0件でも動く）＝**全新規ユーザーが保存時に最初のタグを作れない**。修正＝611 を `Array.isArray(msg.tags) && msg.bookmarkId` に（`tags.length>0` 撤廃）＋源泉 `shouldShowStrip`（tag-strip-model.js）とデッド copy(371) も同期＋テスト更新（tag-strip-model.test.ts）。本体ボード/PiP は0件でも正常（無条件で開く）と確認済。tsc0・拡張テスト131緑・node --check OK。**残＝ユーザー実機（unpacked reload で0件保存→右中央に「+ ADD TAG」帯が出るか）＋ Chrome ストア再審査（他の拡張修正 N-28/29/30 と束ねて1回で出すのが効率的）**。
-- **(N-26) LP の世界観と default テーマが合わない（design 大物）** — default 盤面をもっと**フラット**にして LP（白/エディトリアル）に寄せる。※default 盤面は Phase A で確定した「黒＋白＋音波」＝変更は byte-identical 前提を崩す大改修。**brainstorm 必須**（勝手に変えない）。memory `project_theme_sound_wave` / `project_phase_a_decisions`。
+- **(N-26/32/33/35) フラット化＝方向性を確定（s162）→ 実装はサブ①から** — 親 spec [2026-07-05-flat-theme-and-theme-boundary-design.md](superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md)。**白フラットを新default／現・暗い体験は「音波」テーマとして byte-identical 温存／テーマは盤面5項目だけ／全メニュー中立＋大パネル右ドロワー統一（例外なし）／角丸トグル＋N-35 つまみ／N-33 はサブ④で確定**。分解＝①テーマ境界＋メニュー中立化＋右スライド統一（次セッション）→②白フラットテーマ→③カスタマイズ→④音波命名＋タグ表記。下記の個別 N-26/32/33/35 はこの spec に統合済み（archive 用に残置）。
 - **(N-27) 左右マージンでスナップ** — カードの配置/リサイズ時に左右マージンが「合う位置」でスナップできると綺麗。**要具体化**（列幅にスナップ？ 盤面外周マージン？ 現状どこが不揃いに見えるか）。盤面はグリッド/skyline masonry（自由配置ではない）点に注意。
 - **(N-28) Pinterest 保存対応の検討** — 拡張の保存連動に Pinterest を（※session49 で一旦“自動連動から除外”＝URL保存経路は生存の経緯あり）。**scope 要確認**：Pinterest の保存ボタン連動（自動保存）か／Pinterest URL 保存時の見え方改善か。
 - **(N-29) 拡張の設定、入れてすぐ見れる状態に** — インストール直後に設定/使い方が見える導線（初回 options ページ自動表示 or アイコンからの案内）。現状は気づきにくい。
-- **(N-30) PopOut の「＋タグ」をカード外へ** — PopOut(PiP)で「＋タグ」をカードの外に出して見やすく。memory `project_pip_size_decision` の PiP レイアウトと整合を取る。
+- ~~**(N-30) PopOut の「＋タグ」をカード外へ**~~ ✅ **セッション162 完了（本番反映・commit `eab12f1`）**。カード左上の重ね表示 → PopOut 窓上部中央の読みやすいピル（`PipStack .addTagPill`）。カード形が変わっても位置固定・明るい画像でも埋もれない。spec [2026-07-05-pip-add-tag-outside-card-design.md](superpowers/specs/2026-07-05-pip-add-tag-outside-card-design.md)。**残＝Mac/実機の目視のみ**。
 - **(N-31) タグ体験の作り直し：MANAGE TAGS 画面を廃止 → 「選択してタグにドラッグ＆ドロップ」** — 現状のマネージ/Triage（1枚ずつスワイプ）を廃止し、**ボタンで選択モード→カードを選ぶ→タグへ D&D で付与**に。s157 の SELECT CARDS 選択モード＋s95 の「画像ドラッグでタグ付け＋ガラス演出」構想を土台に流用余地。**大改修＝brainstorm 必須**。関連 memory `project_selective_share_shipped` / `project_tagging_top_priority`。
 - **(N-32) メニュー系を全部フラットに刷新（design 方針・N-26 と一体）** — 全メニュー UI をフラット化。N-26（default テーマをフラットにして LP に寄せる）と同じ「フラット化」方針の一部。**まとめて brainstorm**（視覚言語の再定義＝大物）。
 - **(N-33) タグの大文字表示（＝実は“見た目の設計判断”・brainstorm 合流／s161 調査済）** — **調査結果**：保存側は**既にケース保持**（`applyNewQuickTag` は入力どおり `trimmed` で作成、`addTag` は `input.name` 保存、照合は `toLowerCase()===toLowerCase()` の case-insensitive）＝**機能的に直すものは無い**。「小文字に見える」の正体は**表示側の `text-transform: lowercase` がアプリ全体で一貫**（[CardsLayer.module.css:41] 本体タグ／[FilterPill.module.css:366,419] フィルタ／[TagAddPopover.module.css:89]／triage TagPicker・TriageCard／ShareMirror／拡張 floating-button.css 計8+箇所）＝**意図的な統一デザイン**。→ 大文字を出す＝**アプリ全体の視覚変更**＝**フラット化 brainstorm（N-26/32/35）で「タグの見た目」として決定**（ui-design.md：見た目変更は要ユーザー承認、勝手に剥がさない）。**要確認の小さな別件**：share import (`lib/share/import.ts`) は名を lowercase 保存の疑い（import.test が `'design'` 期待）＝取り込みタグだけケースが落ちる不整合の可能性→ brainstorm 時に確認。
