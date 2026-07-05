@@ -21,6 +21,16 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 163 — ★フラット化 サブ①「メニュー中立化＋右ドロワー統一」出荷・master マージ済・本番反映済)
+
+- **フラット化 サブ① 完遂**（merge `e5aceb0` `--no-ff`・tsc0 / **vitest2008** / build OK・`allmarks.app` 反映済・**盤面はテーマ可変のまま無変更／メニューは意図的に中立化**）。brainstorm→サブ① [spec](superpowers/specs/2026-07-05-flat-sub1-menu-neutrality-right-drawer-design.md)→[plan](superpowers/plans/2026-07-05-flat-sub1-menu-neutrality-right-drawer.md)→**サブエージェント駆動7タスク＋各レビュー＋opus 全ブランチレビュー（要修正1件を修正）**。
+  - **共通右ドロワー基盤 `ChromeDrawer`** 新設（右ドック~400px・非ブロッキング・Esc/外側クリック/×閉じ・**body portal で z-405**）。**TUNE・SETTINGS・SHARE・THEMES を統一**（全クリック開き＝TUNE/SETTINGS の hover 廃止／SHARE は中央モーダル→右ドロワー~400px リフロー・書き出し隠しノード無傷）。`BoardRoot` に単一 `activeDrawer`（同時1枚）。
+  - **絞り込み・カード＋タグ**は据え置き（中立化のみ）。**全メニュー中立化**＝paper chrome（scoped CSS・`--paper-panel-*`/`--chrome-*`・`useIsPaperTheme`）を全メニューから除去＋serif 漏れ防止に mono pin。`--paper-panel-*` 定義は温存（PiP/SaveToast）。`DEFAULT_THEME_ID` 不変（白 default は②）。正味 **約1000行削減**。
+  - **opus 全ブランチレビューの要修正1件を修正**：TUNE/SETTINGS のドロワーが `TopHeader`（z-110 の重なり文脈）内で描画され設計 z-405 に届かず ScrollMeter(400)/オンボ幕(210) の下に潜っていた → **ChromeDrawer overlay を body へ portal**（4パネル全部が root で z-405）。狭い画面＋オンボ settings beat で実機確認済。
+  - **本番目視の残**：シェア窓の実カードリフロー／TUNE 縦レイアウト／ドロワーがヘッダートリガーを覆う点（×/Esc/外側で閉じる）。
+  - **follow-up（非ブロッキング）**：N-07 e2e seed 版数ズレでセレクタ更新は未実行検証／SharedBoard の TUNE・SHARE 同時開き得る／ThemePicker 残色トークンは②送り。
+- **次（セッション164）＝サブ② 白フラット default テーマ**（新テーマ追加＋`DEFAULT_THEME_ID` 差し替え・モックで確認してから）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 162 — Mac実機バグ2件＋N-30出荷・本番反映済／★フラット化の方向性を確定＝次はサブ①から)
 
 - **フルスクリーン保存の改善（N-39＋派生）出荷**（commit `a3d53ed`）：Mac-Chrome はフルスクリーン中に `window.open` を別タブ化する仕様 → `/save` が自分の（大きい）ビューポートで「タブとして開かれた」と検知し、①PopOut あり=最短クローズ ②PopOut 無し初回=中央カードで案内（フルスクリーン説明＋回避法：フルスクリーン解除/PopOut/拡張）③以降=静かに「Saved」→約1.3秒で自動クローズ。フルスクリーン時のみタグ付け省略。**「シークレットでタグ窓が別タブ」も同原因で解消**。純関数 `planSaveWindow`＋`isOpenedAsTab`（テスト）。
@@ -162,7 +172,7 @@
 - ~~**(N-39) ブックマークレット保存の `/save` ウィンドウが「画面いっぱいの PiP みたいな見た目」（Mac-Chrome）**~~ ✅ **セッション162 完了（本番反映・commit `a3d53ed`/`ccae0f1`）**。真因＝**Mac-Chrome はフルスクリーン中 `window.open` を別タブ化する Chrome 仕様**（コードのバグでない）。対応＝`/save` が自ビューポートで「タブとして開かれた」と検知→中立な中央カード（間延び解消）＋初回フルスクリーン案内＋最短クローズ＋15言語化。**残＝Mac 実機の目視のみ（「おそらく大丈夫」）**。
 - **拡張の再審査は束ねる**：拡張本体に関わる修正（**N-25 済／N-28 Pinterest／N-29 設定導線**）は**まとめて manifest 版上げ→1回でストア再審査**（審査サイクルを何度も回さない）。N-30(PopOut) は web(PiP) 側なので拡張再審査には不要。
 - ~~**(N-25) タグ付けウィンドウが出ない（タグ0件の初回状態が原因・★ローンチ致命的）**~~ ✅ **コード修正済み（s161・要実機/再審査）**。systematic-debugging で確定：面＝**拡張のフローティングボタン quick-tag 帯**（`getStripAnchor` が画面右端・縦中央＝「別画面で画面中央右」に一致・ホストページ注入）。真因＝**受信側 [floating-button.js:611] の `msg.tags.length > 0` ガードが空配列を捨てていた**（送信側 dispatch.js は0件でも送っている／作成入力欄 `enterInputMode` は0件でも動く）＝**全新規ユーザーが保存時に最初のタグを作れない**。修正＝611 を `Array.isArray(msg.tags) && msg.bookmarkId` に（`tags.length>0` 撤廃）＋源泉 `shouldShowStrip`（tag-strip-model.js）とデッド copy(371) も同期＋テスト更新（tag-strip-model.test.ts）。本体ボード/PiP は0件でも正常（無条件で開く）と確認済。tsc0・拡張テスト131緑・node --check OK。**残＝ユーザー実機（unpacked reload で0件保存→右中央に「+ ADD TAG」帯が出るか）＋ Chrome ストア再審査（他の拡張修正 N-28/29/30 と束ねて1回で出すのが効率的）**。
-- **(N-26/32/33/35) フラット化＝方向性を確定（s162）→ 実装はサブ①から** — 親 spec [2026-07-05-flat-theme-and-theme-boundary-design.md](superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md)。**白フラットを新default／現・暗い体験は「音波」テーマとして byte-identical 温存／テーマは盤面5項目だけ／全メニュー中立＋大パネル右ドロワー統一（例外なし）／角丸トグル＋N-35 つまみ／N-33 はサブ④で確定**。分解＝①テーマ境界＋メニュー中立化＋右スライド統一（次セッション）→②白フラットテーマ→③カスタマイズ→④音波命名＋タグ表記。下記の個別 N-26/32/33/35 はこの spec に統合済み（archive 用に残置）。
+- **(N-26/32/33/35) フラット化 — サブ①完了（s163）→ 次はサブ②** — 親 spec [2026-07-05-flat-theme-and-theme-boundary-design.md](superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md)。**白フラットを新default／現・暗い体験は「音波」テーマとして盤面 byte-identical 温存／テーマは盤面5項目だけ／全メニュー中立＋大パネル右ドロワー統一／角丸トグル＋N-35 つまみ／N-33 はサブ④で確定**。分解＝~~①テーマ境界＋メニュー中立化＋右スライド統一~~ ✅ **s163完了**（[spec](superpowers/specs/2026-07-05-flat-sub1-menu-neutrality-right-drawer-design.md)/[plan](superpowers/plans/2026-07-05-flat-sub1-menu-neutrality-right-drawer.md)・`ChromeDrawer` 統一＋メニュー中立化）→ **②白フラット default テーマ（次）** →③カスタマイズ（角丸＋N-35）→④音波命名＋N-33 タグ表記。下記の個別 N-26/32/33/35 はこの spec に統合済み（archive 用に残置）。
 - **(N-27) 左右マージンでスナップ** — カードの配置/リサイズ時に左右マージンが「合う位置」でスナップできると綺麗。**要具体化**（列幅にスナップ？ 盤面外周マージン？ 現状どこが不揃いに見えるか）。盤面はグリッド/skyline masonry（自由配置ではない）点に注意。
 - **(N-28) Pinterest 保存対応の検討** — 拡張の保存連動に Pinterest を（※session49 で一旦“自動連動から除外”＝URL保存経路は生存の経緯あり）。**scope 要確認**：Pinterest の保存ボタン連動（自動保存）か／Pinterest URL 保存時の見え方改善か。
 - **(N-29) 拡張の設定、入れてすぐ見れる状態に** — インストール直後に設定/使い方が見える導線（初回 options ページ自動表示 or アイコンからの案内）。現状は気づきにくい。

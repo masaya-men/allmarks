@@ -8753,3 +8753,30 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 ### 学び・memory
 - Mac-Chrome フルスクリーンの `window.open` 別タブ化は Chrome 仕様（コードのバグでない）。
 - ユーザーは製品機能を正式名で呼ぶことを要求（PopOut を「相棒窓」と呼んで叱責）→ memory `feedback_use_real_feature_names` 記録。
+
+---
+
+## セッション 163 (2026-07-05) — ★フラット化 サブ①「メニュー中立化＋右ドロワー統一」
+
+親 spec `docs/superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md`（s162 方向性確定）の分解サブ①を完遂。merge `e5aceb0`（`--no-ff`）・tsc0 / vitest2008 / build OK・`allmarks.app` 反映済。**盤面はテーマ可変のまま無変更／メニューは合意済みで意図的に中立化**（従来の「default 盤面 byte-identical」不変条件を本プロジェクトで意図的に更新）。
+
+進め方＝brainstorm（ユーザーと平易対話で①の範囲を確定）→サブ① spec `2026-07-05-flat-sub1-menu-neutrality-right-drawer-design.md`→plan `2026-07-05-flat-sub1-menu-neutrality-right-drawer.md`→**サブエージェント駆動7タスク＋各タスク2段レビュー＋opus 全ブランチレビュー**。
+
+**確定した設計（s163 ユーザー合意）**：
+- 出方統一＝TUNE・SETTINGS・SHARE・テーマ選択の4つを右ドロワーに（テーマ選択と同じ感じ・クリック開き）。絞り込み・カードの＋タグはその場ポップ据え置き。
+- 進め方＝今回は「形だけ」（右ドロワー統一＋メニューからテーマ着せ替え除去）。メニューの新意匠は白フラット盤面（②）ができてから決める＝ちぐはぐを回避（今回は初期テーマ＝暗いまま）。
+
+**実装（タスク別）**：
+1. **`ChromeDrawer` 共通基盤**新設（`components/board/ChromeDrawer.tsx`/`.module.css`/`.test.tsx`）＝右ドック~400px・非ブロッキング・Esc/capture-phase 外側 pointerdown/×/focus-on-open・内部 scrollFade。ThemeModal の実績 shell を汎用化。
+2. **z 定数 `BOARD_Z_INDEX.CHROME_DRAWER=405`** ＋ `BoardRoot` に単一 `activeDrawer:'tune'|'settings'|'share'|'themes'|null`（同時1枚）＋ THEMES を基盤へ載せ替え。close aria-label は既存 i18n キー流用（closeLabel prop）。
+3. **SETTINGS（ExtensionEntry）**を基盤へ＝createPortal/measure/hover 撤去・外部制御・click 開き・onboarding forceOpen を activeDrawer 経由に。**レビュー要修正1件**＝SAVE WITHOUT EXTENSION が元の `closeNow()`（モーダル前にドロワーを閉じる）を落としていた退行 → `onOpenChange(false)` 復元＋回帰テスト。
+4. **SHARE（SenderShareModal）**を中央モーダル→右ドロワー・~400px リフロー。**書き出し画像用の隠し 1200×628 capture ノードは ChromeDrawer 外に温存**（出力画像は無変更）。
+5. **TUNE（TuneTrigger）**を基盤へ＝hover→click・横→縦レイアウト。**トリガー文字の scramble 位相機械は温存**し、hover でなく `isOpen` 変化の effect で駆動（表示は ChromeDrawer が所有）。SharedBoard.tsx（2つ目の TuneTrigger 利用箇所）にローカル state 追加。
+6. **全メニュー中立化**＝paper-atelier の chrome scoped CSS・`--paper-panel-*`/`--chrome-*` 参照・`useIsPaperTheme` JS分岐を全メニューから除去。serif 漏れ（paper の `--font-sans` 継承）防止に FilterPill/TagAddPopover/ThemePicker に mono/sans を明示 pin。**盤面（カード/背景ワードマーク/スクロールメーター/カード装飾/額縁・封蝋/TagIndicatorStrip/Lightbox/ShareMirror）はテーマ可変のまま無変更**、`--paper-panel-*` 定義は温存（PiP/SaveToast）。
+7. **検証・e2e 更新**（board-theme.spec / board-b0.spec を右ドロワー DOM に）。
+
+**opus 全ブランチレビューの要修正1件（各タスクレビュー＋スモークが見逃した好指摘）**：TUNE/SETTINGS のドロワーが `TopHeader`（`position:absolute; z-index:110` ＝重なり文脈）内で描画され、fixed でも z が 110 に閉じ込められ設計 z-405 に届かず ScrollMeter(400)/オンボ幕(210) の下に潜っていた（移行で SETTINGS の body portal を外したのが原因・広い開発画面ではメーターが右端に届かず気づけず）。修正＝**ChromeDrawer overlay を `document.body` へ portal**（4パネル全部が root で z-405 実現）＋古い z コメント更新。狭い画面(1024)＋オンボ settings beat で実機確認 PASS。
+
+**成果**：4パネルの独立 shell（overlay+panel+開閉+アニメ）を1基盤に統合＝正味 **約1000行削減**（32 files, +706 −1783）。学び＝重なり文脈（`position:absolute`+`z-index` の親）内の `position:fixed` 子は z が親の文脈に閉じ込められる＝ドロワー系は body portal が要る。ヘッダー内描画のパネルを portal 化で救う定石。
+
+**本番目視の残（品質ゲートでは判定不能）**：シェア窓の実カードリフロー／TUNE 縦レイアウトと scramble の感じ／ドロワーがヘッダートリガーを覆う点（×/Esc/外側で閉じる・同ボタン再押しは不可）。**follow-up（非ブロッキング）**：N-07 e2e seed 版数ズレでセレクタ更新は未実行検証／SharedBoard の TUNE・SHARE 同時開き得る／ThemePicker/ThemeCustomizeSection の残色トークンは②送り。
