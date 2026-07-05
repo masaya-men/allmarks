@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { type ReactElement } from 'react'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
-import { useIsPaperTheme } from '@/lib/board/use-is-paper-theme'
 import styles from './ChromeButton.module.css'
 
 type Props = {
@@ -41,27 +40,19 @@ export function ChromeButton({
   const { display, triggerBurst } = useChromeScramble(label)
   const cls = className ? `${styles.btn} ${className}` : styles.btn
 
-  // SSR-safe, live paper-theme flag (shared hook; tracks runtime theme switch).
-  const paper = useIsPaperTheme()
-
-  // On paper: render the static label (calm serif), skip the scramble burst.
-  // On default: byte-identical to original behaviour.
-  const content = paper ? label : display
-  const onHover = paper ? undefined : triggerBurst
-
   if (href) {
     return (
       <Link
         href={href}
         className={cls}
-        onMouseEnter={onHover}
+        onMouseEnter={triggerBurst}
         data-testid={dataTestId}
         data-glitch-text={label}
         data-variant={dataVariant}
         aria-label={ariaLabel}
         data-onboarding-target={dataOnboardingTarget}
       >
-        {content}
+        {display}
       </Link>
     )
   }
@@ -71,7 +62,7 @@ export function ChromeButton({
       type="button"
       className={cls}
       onClick={onClick}
-      onMouseEnter={onHover}
+      onMouseEnter={triggerBurst}
       disabled={disabled}
       data-testid={dataTestId}
       data-glitch-text={label}
@@ -80,7 +71,7 @@ export function ChromeButton({
       aria-label={ariaLabel}
       data-onboarding-target={dataOnboardingTarget}
     >
-      {content}
+      {display}
     </button>
   )
 }

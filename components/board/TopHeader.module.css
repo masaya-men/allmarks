@@ -57,48 +57,12 @@
   pointer-events: auto;
 }
 
-/* ── Paper-atelier: hand-drawn ink rule under the menu ──────────────────────
- * A wobbly pen stroke sits just beneath the chrome menu (TITLE … SHARE), like a
- * marker underline under a masthead. It lives on the actions `.group` (a child
- * of `.header`), so it inherits the header's opacity fade and disappears when
- * the Lightbox opens. This REPLACES the old line, which was an accidental
- * by-product of the closed TUNE / SETTINGS drawers' parchment borders — one of
- * those (SETTINGS) is portalled to <body>, so it leaked through the Lightbox.
- * Paper-only via the :global theme scope; default themes never match. */
-:global(html[data-theme-id='paper-atelier']) .group[data-group='actions'] {
-  position: relative;
-}
-:global(html[data-theme-id='paper-atelier']) .group[data-group='actions']::after {
-  content: '';
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  bottom: 0;
-  height: 12px;
-  pointer-events: none;
-  opacity: 0.5;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  /* A CONTINUOUS dry-brush stroke (no dashes — the earlier dashed version read as
-     a broken line, not kasure). An SVG turbulence filter frays the edges and
-     punches streaky horizontal ink-dropout INTO the stroke, so it reads like a
-     worn brush running low on ink while staying one unbroken line. The filter is
-     baked once into this static background (no per-frame cost). preserveAspect-
-     Ratio='none' stretches it to the menu width. Built/tuned via an isolated
-     preview harness (variant E). */
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20320%2014'%20preserveAspectRatio%3D'none'%3E%3Cdefs%3E%3Cfilter%20id%3D'k'%20x%3D'-3%25'%20y%3D'-70%25'%20width%3D'106%25'%20height%3D'240%25'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.022%201.15'%20numOctaves%3D'3'%20seed%3D'5'%20stitchTiles%3D'stitch'%20result%3D'n'%2F%3E%3CfeDisplacementMap%20in%3D'SourceGraphic'%20in2%3D'n'%20scale%3D'4.2'%20xChannelSelector%3D'R'%20yChannelSelector%3D'G'%20result%3D'd'%2F%3E%3CfeColorMatrix%20in%3D'n'%20type%3D'matrix'%20values%3D'0%200%200%200%200%200%200%200%200%200%200%200%200%200%200%201%200%200%200%200'%20result%3D'na'%2F%3E%3CfeComponentTransfer%20in%3D'na'%20result%3D'm'%3E%3CfeFuncA%20type%3D'table'%20tableValues%3D'0%200%200.3%200.8%201'%2F%3E%3C%2FfeComponentTransfer%3E%3CfeComposite%20in%3D'd'%20in2%3D'm'%20operator%3D'in'%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpath%20d%3D'M3%207%20C%2050%204.5%2092%209.5%20148%206.6%20S%20248%204.4%20298%207.6%20S%20314%206.4%20318%205.6'%20fill%3D'none'%20stroke%3D'%232b2722'%20stroke-width%3D'4'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%20filter%3D'url(%23k)'%2F%3E%3C%2Fsvg%3E");
-}
-
 /* Mobile (≤640px): action row collapses to Share only. */
 @media (max-width: 640px) {
   .header {
     padding: 10px 12px 0;
   }
   .group[data-group="actions"] > :not([data-testid="share-pill"]) {
-    display: none;
-  }
-  /* A pen underline beneath a lone SHARE pill reads as an oddity — drop it. */
-  :global(html[data-theme-id='paper-atelier']) .group[data-group='actions']::after {
     display: none;
   }
 }
