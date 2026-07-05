@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import styles from './ChromeDrawer.module.css'
 
@@ -20,6 +21,10 @@ export function ChromeDrawer({ isOpen, onClose, title, testId, children, closeLa
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const closeBtnRef = useRef<HTMLButtonElement | null>(null)
   const [moreBelow, setMoreBelow] = useState(false)
+  // Portal target only exists in the browser; static-export prerender has no
+  // `document`, and even in the browser we must wait for mount before calling
+  // createPortal (SSR-safe pattern — matches the pre-refactor ExtensionEntry drawer).
+  const [mounted, setMounted] = useState(false)
 
   const recomputeFade = useCallback((): void => {
     const el = bodyRef.current
@@ -28,10 +33,17 @@ export function ChromeDrawer({ isOpen, onClose, title, testId, children, closeLa
   }, [])
 
   useEffect(() => {
-    if (!isOpen) return
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    // `mounted` gates the portal render itself (see below) — until it flips
+    // true, panelRef/closeBtnRef/bodyRef aren't attached to anything, so this
+    // effect must re-run once mounted becomes true (not just on isOpen change).
+    if (!isOpen || !mounted) return
     closeBtnRef.current?.focus()
     recomputeFade()
-  }, [isOpen, recomputeFade])
+  }, [isOpen, mounted, recomputeFade])
 
   useEffect(() => {
     if (!isOpen) return
@@ -50,10 +62,10 @@ export function ChromeDrawer({ isOpen, onClose, title, testId, children, closeLa
     return () => document.removeEventListener('pointerdown', onDown, true)
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
   const titleId = `${testId}-title`
-  return (
+  return createPortal(
     <div className={styles.overlay} role="presentation" data-testid={`${testId}-overlay`} style={{ zIndex: BOARD_Z_INDEX.CHROME_DRAWER }}>
       <aside ref={panelRef} className={styles.panel} role="dialog" aria-labelledby={titleId} data-testid={testId}>
         <div className={styles.header}>
@@ -72,6 +84,7 @@ export function ChromeDrawer({ isOpen, onClose, title, testId, children, closeLa
         </div>
         <div className={styles.scrollFade} data-visible={moreBelow ? 'true' : 'false'} aria-hidden="true" />
       </aside>
-    </div>
+    </div>,
+    document.body
   )
 }

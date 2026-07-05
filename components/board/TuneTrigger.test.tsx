@@ -90,10 +90,12 @@ describe('TuneTrigger — drawer with FaderColumns', () => {
 
   it('drag on W FaderColumn calls onChangeWidth', () => {
     const onChangeWidth = vi.fn()
-    const { container } = render(
+    render(
       <TuneTrigger {...baseProps} onChangeWidth={onChangeWidth} isOpen onOpenChange={vi.fn()} />,
     )
-    const wUnit = container.querySelector('[data-scope="w"] > div') as HTMLElement
+    // ChromeDrawer portals its panel to document.body, so the drawer's DOM
+    // lives outside RTL's render `container` — query the document instead.
+    const wUnit = document.body.querySelector('[data-scope="w"] > div') as HTMLElement
     vi.spyOn(wUnit, 'getBoundingClientRect').mockReturnValue({
       top: 0, bottom: 110, left: 0, right: 40, width: 40, height: 110,
       x: 0, y: 0, toJSON: () => ({}),
