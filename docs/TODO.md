@@ -156,6 +156,8 @@
 - **(N-28) Pinterest 保存対応の検討** — 拡張の保存連動に Pinterest を（※session49 で一旦“自動連動から除外”＝URL保存経路は生存の経緯あり）。**scope 要確認**：Pinterest の保存ボタン連動（自動保存）か／Pinterest URL 保存時の見え方改善か。
 - **(N-29) 拡張の設定、入れてすぐ見れる状態に** — インストール直後に設定/使い方が見える導線（初回 options ページ自動表示 or アイコンからの案内）。現状は気づきにくい。
 - **(N-30) PopOut の「＋タグ」をカード外へ** — PopOut(PiP)で「＋タグ」をカードの外に出して見やすく。memory `project_pip_size_decision` の PiP レイアウトと整合を取る。
+- **(N-31) タグ体験の作り直し：MANAGE TAGS 画面を廃止 → 「選択してタグにドラッグ＆ドロップ」** — 現状のマネージ/Triage（1枚ずつスワイプ）を廃止し、**ボタンで選択モード→カードを選ぶ→タグへ D&D で付与**に。s157 の SELECT CARDS 選択モード＋s95 の「画像ドラッグでタグ付け＋ガラス演出」構想を土台に流用余地。**大改修＝brainstorm 必須**。関連 memory `project_selective_share_shipped` / `project_tagging_top_priority`。
+- **(N-32) メニュー系を全部フラットに刷新（design 方針・N-26 と一体）** — 全メニュー UI をフラット化。N-26（default テーマをフラットにして LP に寄せる）と同じ「フラット化」方針の一部。**まとめて brainstorm**（視覚言語の再定義＝大物）。
 
 ### session 157 で報告（ユーザー実機メモ・新規）
 
