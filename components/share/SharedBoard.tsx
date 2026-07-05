@@ -89,6 +89,8 @@ export function SharedBoard(): ReactElement {
   const [importPhase, setImportPhase] = useState<'idle' | 'importing' | 'done'>('idle')
   // SHARE re-share modal (Plan 2): re-share the currently-visible cards.
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
+  // TUNE ChromeDrawer (session refactor: click-open, externally controlled).
+  const [tuneOpen, setTuneOpen] = useState<boolean>(false)
   // Import result counts for the done-phase summary (mainstream "report only"
   // duplicate UX): how many were newly saved vs already on the user's board.
   const [importCounts, setImportCounts] = useState<{ added: number; skipped: number } | null>(null)
@@ -472,6 +474,8 @@ export function SharedBoard(): ReactElement {
                   setGapPx(data.gap ?? RECEIVER_FALLBACK_GAP_PX)
                 }}
                 onApplyPreset={onApplyPreset}
+                isOpen={tuneOpen}
+                onOpenChange={setTuneOpen}
               />
               <BlockedChrome label="MANAGE TAGS">
                 <ChromeButton label="MANAGE TAGS" onClick={NOOP} />
