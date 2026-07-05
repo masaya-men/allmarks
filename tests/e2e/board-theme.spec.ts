@@ -49,13 +49,13 @@ test('paper-atelier tokens apply when data-theme-id is set', async ({ page }) =>
 test('switching to paper-atelier themes the board and persists', async ({ page }) => {
   await prepBoard(page)
 
-  // open the SETTINGS drawer. React derives onMouseEnter from mouseover, so a
-  // hover + mouseover dispatch is the reliable trigger in headless.
+  // open the SETTINGS drawer (unified right ChromeDrawer, click-open — no
+  // hover behavior post-refactor).
   const settings = page.getByTestId('extension-settings')
   await settings.scrollIntoViewIfNeeded()
-  await settings.hover()
-  await settings.dispatchEvent('mouseover')
-  // THEME group → open the dedicated theme panel (right-docked, hosts the picker).
+  await settings.click()
+  await page.getByTestId('extension-settings-drawer').waitFor({ state: 'visible', timeout: 10_000 })
+  // THEME group → open the dedicated theme drawer (right-docked, hosts the picker).
   await page.getByTestId('open-theme-modal').waitFor({ state: 'visible', timeout: 10_000 })
   await page.getByTestId('open-theme-modal').click({ timeout: 8_000 })
   await page.getByTestId('theme-modal').waitFor({ state: 'visible', timeout: 10_000 })

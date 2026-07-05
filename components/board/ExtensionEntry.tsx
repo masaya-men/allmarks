@@ -8,10 +8,10 @@ import {
   useState,
   type ReactElement,
 } from 'react'
-import { createPortal } from 'react-dom'
 import { EXTENSION_STORE_URL } from '@/lib/board/constants'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ChromeButton } from './ChromeButton'
+import { ChromeDrawer } from './ChromeDrawer'
 import { BackupButton } from './BackupButton'
 import { BackupStatus } from './BackupStatus'
 import { getThemeMeta } from '@/lib/board/theme-registry'
@@ -68,11 +68,11 @@ function useExtensionInstalled(): boolean {
 }
 
 /**
- * Header chrome entry, sits to the right of TUNE.
+ * Header chrome entry, sits to the right of TUNE. Trigger + a {@link ChromeDrawer}
+ * (right-docked panel, click-open/close, shared with THEME/SHARE/TUNE).
  *
- * - Extension installed → label `SETTINGS`; click asks the extension (via the
- *   content-script bridge) to open its options page.
- * - Extension absent → label `GET EXTENSION`; click opens a small promo
+ * - Extension installed → EXTENSION section links to the options page.
+ * - Extension absent → EXTENSION section folds in the GET EXTENSION promo
  *   explaining the one-click save + an `ADD TO CHROME` link to the store.
  *   While {@link EXTENSION_STORE_URL} is empty (pre-launch) the link degrades
  *   to a quiet "coming soon" instead of a dead 404.
@@ -88,10 +88,11 @@ export interface ExtensionEntryProps {
   /** When provided, shows a REPLAY INTRO button in the drawer that restarts
    *  the onboarding animation sequence. */
   readonly onReplayIntro?: () => void
-  /** When true (the onboarding SETTINGS beat), force the drawer open regardless
-   *  of hover so the tutorial can spotlight the QUICK-TAG ON SAVE toggle inside
-   *  (the drawer is hover-only; a guided demo can't hold a hover). */
-  readonly forceOpen?: boolean
+  /** Externally controlled open state (BoardRoot's `activeDrawer === 'settings'`). */
+  readonly isOpen: boolean
+  /** Requests the drawer open/close — the trigger click and the drawer's own
+   *  close (Esc/outside-click/× button) all route through this. */
+  readonly onOpenChange: (open: boolean) => void
   /** Active board theme — shown as the current selection under the THEME group's
    *  "CHOOSE A THEME" button. */
   readonly themeId: ThemeId
@@ -107,16 +108,13 @@ export interface ExtensionEntryProps {
   readonly onSortNewestFirst: () => void
 }
 
-/** Hover-open leave grace, copied from TuneTrigger so the SETTINGS drawer
- *  forgives a brief pointer slip between the trigger and the drawer. */
-const LEAVE_GRACE_MS = 700
-
 export function ExtensionEntry({
   quickTagEnabled,
   onQuickTagToggle,
   onOpenBookmarkletModal,
   onReplayIntro,
-  forceOpen = false,
+  isOpen,
+  onOpenChange,
   themeId,
   onOpenThemeModal,
   customWidthCount,
@@ -126,23 +124,6 @@ export function ExtensionEntry({
   const { t } = useI18n()
   const installed = useExtensionInstalled()
   const currentThemeName = t(getThemeMeta(themeId).labelKey)
-  // SETTINGS is always shown (extension or not) so the QUICK-TAG ON SAVE
-  // toggle is reachable by bookmarklet-only users too. The drawer is
-  // hover-driven via `expanded` (TUNE mechanics). The not-installed state
-  // folds the GET EXTENSION promo into the same drawer.
-  const [expanded, setExpanded] = useState(false)
-  const wrapRef = useRef<HTMLSpanElement>(null)
-  const drawerRef = useRef<HTMLDivElement>(null)
-  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // True when the drawer is taller than the viewport allows AND there's more
-  // content below the fold — drives the bottom fade hint (no raw scrollbar).
-  const [moreBelow, setMoreBelow] = useState(false)
-  // The drawer is portalled to <body> so it escapes the TopHeader's z-index:110
-  // stacking context — otherwise the canvas ScrollMeter (z 400) paints over its
-  // bottom. `pos` anchors the fixed drawer under the SETTINGS button.
-  const [mounted, setMounted] = useState(false)
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
-  useEffect(() => setMounted(true), [])
 
   const openSettings = useCallback((): void => {
     // Mirrors the url-deleted bridge (use-board-data.ts): the content script
@@ -151,63 +132,7 @@ export function ExtensionEntry({
     window.postMessage({ type: 'allmarks:open-settings' }, '*')
   }, [])
 
-  // TUNE-style hover open/close with a 700ms leave grace (no click-pin).
-  const handleMouseEnter = useCallback((): void => {
-    if (leaveTimerRef.current) {
-      clearTimeout(leaveTimerRef.current)
-      leaveTimerRef.current = null
-    }
-    setExpanded(true)
-  }, [])
-
-  const handleMouseLeave = useCallback((): void => {
-    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
-    leaveTimerRef.current = setTimeout(() => {
-      setExpanded(false)
-      leaveTimerRef.current = null
-    }, LEAVE_GRACE_MS)
-  }, [])
-
-  // Close immediately (no leave grace) — used when an action opens a modal so
-  // the modal isn't briefly occluded by the higher-z portalled drawer.
-  const closeNow = useCallback((): void => {
-    if (leaveTimerRef.current) {
-      clearTimeout(leaveTimerRef.current)
-      leaveTimerRef.current = null
-    }
-    setExpanded(false)
-  }, [])
-
-  // Anchor the portalled (fixed) drawer under the SETTINGS button. The header
-  // doesn't move with board scroll, so measuring on open + resize is enough;
-  // the capture-phase scroll listener covers any incidental layout shift.
-  const measure = useCallback((): void => {
-    const el = wrapRef.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    setPos({ top: Math.round(r.bottom), right: Math.round(window.innerWidth - r.right) })
-  }, [])
-
-  useLayoutEffect(() => {
-    if (!mounted) return
-    measure()
-    window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return (): void => {
-      window.removeEventListener('resize', measure)
-      window.removeEventListener('scroll', measure, true)
-    }
-  }, [mounted, measure])
-
-  useEffect(() => {
-    return (): void => {
-      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
-    }
-  }, [])
-
   const hasStore = EXTENSION_STORE_URL.length > 0
-  // Onboarding's SETTINGS beat forces the drawer open; otherwise it's hover-driven.
-  const isOpen = forceOpen || expanded
 
   // N-19: two-tap confirm shared by the two LAYOUT buttons. First tap arms a
   // button (label → TAP AGAIN TO CONFIRM) for CONFIRM_MS; second tap fires.
@@ -246,85 +171,22 @@ export function ExtensionEntry({
   }, [isOpen, disarm])
   useEffect(() => () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current) }, [])
 
-  // Show the bottom fade only while there's more content below the fold. The
-  // drawer caps its height to the viewport (see CSS), so a tall state (e.g. the
-  // GET EXTENSION promo on a short window) scrolls; the fade hints at it.
-  const recomputeFade = useCallback((): void => {
-    const el = drawerRef.current
-    if (!el) return
-    setMoreBelow(el.scrollHeight - el.scrollTop - el.clientHeight > 4)
-  }, [])
-
-  // Onboarding SETTINGS beat: pin the QUICK-TAG toggle at the top of the drawer.
-  // The drawer is tall now (LAYOUT/THEME/HOW-TO/EXTENSION), so a stray scroll
-  // would push the toggle out of the visible clip and the spotlight ring — which
-  // tracks the toggle's live rect — would drift onto the header. We reset the
-  // scroll to the top and (via the render below) lock scrolling while the beat is
-  // active, so the ring stays on the toggle. Normal hover-open scrolls freely.
-  useEffect(() => {
-    if (!forceOpen) return
-    const el = drawerRef.current
-    if (!el) return
-    el.scrollTop = 0
-    const raf = requestAnimationFrame(() => { el.scrollTop = 0 })
-    return (): void => cancelAnimationFrame(raf)
-  }, [forceOpen])
-
-  useEffect(() => {
-    if (!isOpen) {
-      setMoreBelow(false)
-      return
-    }
-    measure() // refresh anchor when the drawer opens
-    // Measure after the max-height open transition settles (clientHeight grows
-    // during it), and once more on the next frame for the fits-immediately case.
-    const raf = requestAnimationFrame(recomputeFade)
-    const timer = window.setTimeout(recomputeFade, 560)
-    window.addEventListener('resize', recomputeFade)
-    return (): void => {
-      cancelAnimationFrame(raf)
-      clearTimeout(timer)
-      window.removeEventListener('resize', recomputeFade)
-    }
-  }, [isOpen, installed, recomputeFade, measure])
-
   return (
-    <span
-      ref={wrapRef}
-      className={styles.wrap}
-      data-testid="extension-settings-wrap"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <>
       <ChromeButton
         label="SETTINGS"
-        onClick={(): void => {}}
+        onClick={(): void => onOpenChange(!isOpen)}
         aria-pressed={isOpen}
         data-testid="extension-settings"
         data-onboarding-target="settings"
       />
-      {mounted && createPortal(
-      <div
-        className={styles.drawer}
-        style={pos ? { position: 'fixed', top: pos.top, right: pos.right } : undefined}
-        role="dialog"
-        aria-label="AllMarks settings"
-        data-open={isOpen ? 'true' : 'false'}
-        aria-hidden={!isOpen}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+      <ChromeDrawer
+        isOpen={isOpen}
+        onClose={(): void => onOpenChange(false)}
+        title="SETTINGS"
+        testId="extension-settings-drawer"
+        closeLabel={t('board.theme.modalCloseLabel')}
       >
-        {/* Inner scroll region — the drawer shell itself stays put so the bottom
-            fade below can anchor to its visible bottom edge. */}
-        <div
-          className={styles.drawerScroll}
-          ref={drawerRef}
-          onScroll={recomputeFade}
-          // Onboarding beat locks the scroll so the spotlighted toggle stays put.
-          style={forceOpen ? { overflowY: 'hidden' } : undefined}
-        >
-        <div className={styles.title}>SETTINGS</div>
-
         {/* ── SAVING ───────────────────────────────────────────────────────
             Everyday data settings: quick-tag-on-save + the file backup. */}
         <section className={styles.group}>
@@ -393,7 +255,7 @@ export function ExtensionEntry({
           <button
             type="button"
             className={styles.themePickBtn}
-            onClick={(): void => { closeNow(); onOpenThemeModal() }}
+            onClick={onOpenThemeModal}
             data-testid="open-theme-modal"
           >
             <span className={styles.themePickLabel}>{t('board.settings.chooseTheme')}</span>
@@ -408,7 +270,7 @@ export function ExtensionEntry({
           <button
             type="button"
             className={styles.panelCta}
-            onClick={(): void => { closeNow(); onOpenBookmarkletModal() }}
+            onClick={(): void => { onOpenChange(false); onOpenBookmarkletModal() }}
             data-testid="open-bookmarklet-install"
           >
             {t('board.settings.saveWithoutExtension')}
@@ -461,18 +323,7 @@ export function ExtensionEntry({
             </div>
           )}
         </section>
-        </div>
-        {/* Bottom fade — hints at scrollable content below on short viewports
-            (no raw scrollbar). Anchored to the drawer shell (which no longer
-            scrolls), so it stays fixed at the visible bottom edge. */}
-        <div
-          className={styles.scrollFade}
-          data-visible={moreBelow ? 'true' : 'false'}
-          aria-hidden="true"
-        />
-      </div>,
-      document.body,
-      )}
-    </span>
+      </ChromeDrawer>
+    </>
   )
 }

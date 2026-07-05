@@ -32,29 +32,26 @@ describe('ChromeButton — basic', () => {
   })
 })
 
-describe('ChromeButton — paper theme live tracking', () => {
+describe('ChromeButton — theme-neutral chrome (Task 6)', () => {
   afterEach(() => {
     document.documentElement.removeAttribute('data-theme-id')
   })
 
-  it('disables triggerBurst (onMouseEnter) when data-theme-id switches to paper-atelier at runtime', async () => {
+  it('renders identically regardless of data-theme-id (menus no longer branch on paper)', async () => {
     const { getByTestId } = render(
       <ChromeButton label="SETTINGS" onClick={vi.fn()} data-testid="settings-btn" />,
     )
-
-    // Before switching: hover should be wired (triggerBurst)
     const btn = getByTestId('settings-btn')
-    expect(btn.onmouseenter).toBe(null) // React attaches via event delegation, not inline
+    expect(btn.textContent).toBe('SETTINGS')
 
-    // Switch to paper-atelier theme
+    // Switching to paper-atelier at runtime must not change ChromeButton's own
+    // behaviour — the paper branch (useIsPaperTheme) was removed in Task 6, so
+    // the chrome vocabulary (label, hover scramble wiring) is theme-agnostic now.
     await act(async () => {
       document.documentElement.setAttribute('data-theme-id', 'paper-atelier')
-      // yield a tick for MutationObserver + React state update
       await new Promise<void>((r) => setTimeout(r, 0))
     })
 
-    // On paper: the label should still be shown (no scramble), and the button
-    // renders the static label text — assert text content equals original label
     expect(btn.textContent).toBe('SETTINGS')
   })
 })

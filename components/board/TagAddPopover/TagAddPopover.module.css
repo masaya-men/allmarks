@@ -10,6 +10,11 @@
   gap: 8px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   z-index: 100;
+  /* Neutral pin: not a ChromeDrawer child, so without an explicit
+     font-family here it inherits --font-sans from <html> — which the
+     paper-atelier theme overrides to a serif (Fraunces). Pin mono
+     explicitly so this popover never picks up a theme's serif override. */
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
   /* Micro open/close motion — grows out of the + TAG corner (top-left) on
      open and folds back into it on close. Easing matches the TUNE / filter
      drawer (cubic-bezier(0.16, 1, 0.3, 1)) so the popover feels part of the
@@ -113,49 +118,5 @@
   outline: none;
 }
 .input:focus {
-  border-color: rgba(40, 241, 0, 0.6);
-}
-
-/* ─── Paper-Atelier theme overrides ─────────────────────────────────────────
-   All rules scoped to the paper theme; default rules above are byte-identical. */
-:global(html[data-theme-id='paper-atelier']) .popover {
-  background-color: var(--paper-panel-surface);
-  background-image: var(--paper-panel-texture);
-  background-size: cover;
-  background-position: center;
-  border: 1px solid var(--paper-panel-border);
-  box-shadow: var(--paper-panel-shadow);
-  backdrop-filter: none;
-  color: var(--text-primary);
-}
-:global(html[data-theme-id='paper-atelier']) .sectionHeader {
-  color: var(--text-meta);
-}
-:global(html[data-theme-id='paper-atelier']) .chip {
-  color: var(--text-body);
-}
-:global(html[data-theme-id='paper-atelier']) .chip:hover {
-  color: var(--text-primary);
-}
-/* Keep the "already added" green signal unchanged */
-:global(html[data-theme-id='paper-atelier']) .chip[data-has='true'] {
-  color: #28F100;
-}
-/* chipNew = "create new tag" row — keep green accent, ensure ink contrast on cream */
-:global(html[data-theme-id='paper-atelier']) .chipNew {
-  color: rgba(40, 241, 0, 0.85);
-}
-:global(html[data-theme-id='paper-atelier']) .chipNew:hover {
-  color: #28F100;
-}
-:global(html[data-theme-id='paper-atelier']) .input {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid var(--paper-panel-border);
-  color: var(--text-primary);
-}
-:global(html[data-theme-id='paper-atelier']) .input::placeholder {
-  color: var(--text-meta);
-}
-:global(html[data-theme-id='paper-atelier']) .input:focus {
   border-color: rgba(40, 241, 0, 0.6);
 }

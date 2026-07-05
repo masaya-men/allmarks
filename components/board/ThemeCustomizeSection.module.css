@@ -161,16 +161,3 @@
   accent-color: var(--color-accent-primary, #28f100);
   cursor: pointer;
 }
-
-/* ── paper-atelier overrides ─────────────────────────────────────────────── */
-:global(html[data-theme-id='paper-atelier']) .section {
-  border-top-color: var(--paper-panel-hairline);
-}
-:global(html[data-theme-id='paper-atelier']) .groupLabel,
-:global(html[data-theme-id='paper-atelier']) .rowLabel {
-  color: var(--text-meta);
-}
-:global(html[data-theme-id='paper-atelier']) .resetBtn {
-  color: var(--text-body);
-  border-color: var(--paper-panel-border);
-}

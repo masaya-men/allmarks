@@ -73,10 +73,12 @@ export const BOARD_Z_INDEX = {
   PASTE_FEEDBACK: 135,
   LANGUAGE_SWITCHER: 140,
   MODAL_OVERLAY: 200,  // App-level modal overlay (Bookmarklet install, etc.)
-  DATA_HOME: 205,       // first-run "your data lives here" card (after onboarding, below drawer 401)
+  /** 統一右ドロワー（TUNE/SETTINGS/SHARE/THEMES）。ScrollMeter(400) の上、onboarding ring(410) の下。 */
+  CHROME_DRAWER: 405,
+  DATA_HOME: 205,       // first-run "your data lives here" card (after onboarding, below CHROME_DRAWER 405)
   BACKUP_REMINDER: 195, // periodic backup nudge toast (below DATA_HOME + drawer)
   ONBOARDING: 210,     // First-run tutorial overlay (above MODAL_OVERLAY)
-  ONBOARDING_SPOTLIGHT_RING: 410,  // portalled spotlight ring — above the SETTINGS drawer (ExtensionEntry .drawer is z-index:401) so the ring shows on a target INSIDE that drawer
+  ONBOARDING_SPOTLIGHT_RING: 410,  // portalled spotlight ring — above the unified CHROME_DRAWER (405) so the ring shows on a target INSIDE that drawer
 } as const
 
 export const INTERACTION = {

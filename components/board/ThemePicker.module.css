@@ -13,7 +13,18 @@
 .preview[data-theme-id='dotted-notebook'] { background: #0a0a0a; }
 .preview[data-theme-id='grid-paper'] { background: #0e0e11; }
 .preview[data-theme-id='paper-atelier'] { background: #efe6d2; }
-.name { font-family: var(--font-heading); font-size: 12px; }
+/* Neutral pin: --font-heading resolves to a serif (Fraunces) on the
+   paper-atelier theme, which would leak into this swatch label even though
+   ThemePicker lives inside ChromeDrawer (which only pins mono on ITS OWN
+   panel — an explicit font-family here overrides that inherited pin). Inline
+   the theme-invariant default-sans stack instead so the label never changes
+   font across themes. */
+.name {
+  font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'Yu Gothic UI', 'Yu Gothic', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Meiryo', system-ui, sans-serif;
+  font-size: 12px;
+}
 .badge { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--text-meta); }
 
 /* ── modal variant ─────────────────────────────────────────────────────────
@@ -45,26 +56,4 @@
   color: var(--accent-gold, #b9924a);
   background: color-mix(in srgb, var(--accent-gold, #b9924a) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-gold, #b9924a) 38%, transparent);
-}
-
-/* ── paper-atelier theme overrides ─────────────────────────────────────────
-   The THEMES sub-section (.section) sits inside the SETTINGS drawer which is
-   already given the parchment surface by ExtensionEntry.module.css. These
-   rules tune only the text/swatch colours within that parchment context.
-   Layout / sizing / font-family untouched.                                   */
-
-:global(html[data-theme-id='paper-atelier']) .heading {
-  color: var(--text-meta);
-}
-
-:global(html[data-theme-id='paper-atelier']) .sectionHeader {
-  color: var(--text-meta);
-}
-
-:global(html[data-theme-id='paper-atelier']) .name {
-  color: var(--text-body);
-}
-
-:global(html[data-theme-id='paper-atelier']) .swatch[aria-pressed='true'] .name {
-  color: var(--text-primary);
 }

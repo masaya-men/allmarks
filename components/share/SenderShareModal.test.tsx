@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { SenderShareModal } from './SenderShareModal'
 import { SHARE_SCHEMA_VERSION_V2, type ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from './ShareMirror'
@@ -186,6 +186,25 @@ describe('SenderShareModal', () => {
     expect(await findByText(/rate limit exceeded/)).toBeTruthy()
   })
 
+  it('renders share content in a drawer when open', () => {
+    render(
+      <SenderShareModal
+        open={true}
+        onClose={vi.fn()}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+        onPanY={vi.fn()}
+        {...defaultMirrorProps}
+      />,
+    )
+    expect(screen.getByTestId('share-modal')).toBeTruthy()
+    expect(screen.getByText('SHARE NOW')).toBeTruthy()
+  })
+
   it('ESC closes modal', () => {
     const onClose = vi.fn()
     render(
@@ -206,9 +225,9 @@ describe('SenderShareModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('backdrop click closes modal', () => {
+  it('outside pointerdown closes the drawer (ChromeDrawer capture-phase dismiss)', () => {
     const onClose = vi.fn()
-    const { container } = render(
+    render(
       <SenderShareModal
         open={true}
         onClose={onClose}
@@ -222,14 +241,33 @@ describe('SenderShareModal', () => {
         {...defaultMirrorProps}
       />,
     )
-    const backdrop = container.firstChild as HTMLElement
-    fireEvent.click(backdrop)
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not close on a pointerdown inside the panel', () => {
+    const onClose = vi.fn()
+    render(
+      <SenderShareModal
+        open={true}
+        onClose={onClose}
+        getShareData={() => makeShare(3)}
+        totalBoardCount={3}
+        scrollY={0}
+        contentHeight={1000}
+        viewportHeight={800}
+        activeTagNames={[]}
+        onPanY={vi.fn()}
+        {...defaultMirrorProps}
+      />,
+    )
+    screen.getByTestId('share-modal').dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   it('forwards wheel events to onPanY', () => {
     const onPanY = vi.fn()
-    const { container } = render(
+    render(
       <SenderShareModal
         open={true}
         onClose={vi.fn()}
@@ -243,8 +281,8 @@ describe('SenderShareModal', () => {
         {...defaultMirrorProps}
       />,
     )
-    const backdrop = container.firstChild as HTMLElement
-    fireEvent.wheel(backdrop, { deltaY: 100 })
+    const preview = screen.getByTestId('share-preview')
+    fireEvent.wheel(preview, { deltaY: 100 })
     expect(onPanY).toHaveBeenCalledWith(100)
   })
 

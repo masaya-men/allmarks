@@ -4,8 +4,8 @@
   line-height: 1;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: var(--chrome-btn-color, rgba(255, 255, 255, 0.85));
-  -webkit-text-stroke: var(--chrome-btn-stroke-width, 0.5px) var(--chrome-btn-stroke-color, rgba(0, 0, 0, 0.45));
+  color: rgba(255, 255, 255, 0.85);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
   paint-order: stroke fill;
   padding: 8px 12px;
   background: none;
@@ -38,7 +38,7 @@
 }
 
 .btn:hover {
-  color: var(--chrome-btn-color-hover, rgba(255, 255, 255, 1));
+  color: rgba(255, 255, 255, 1);
 }
 
 .btn:hover::before {
@@ -80,10 +80,6 @@
 }
 .btn[data-variant='danger']:hover {
   color: rgba(255, 125, 115, 1);
-}
-:global(html[data-theme-id='paper-atelier']) .btn[data-variant='danger'],
-:global(html[data-theme-id='paper-atelier']) .btn[data-variant='danger']:hover {
-  color: rgba(150, 40, 30, 0.95); /* dark red ink on parchment */
 }
 
 .btn:disabled {
@@ -143,28 +139,4 @@
   65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
   80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
   100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
-}
-
-/* Paper-atelier: serif ink lettering, no digital glitch. The scramble JS
-   still runs but the visible font is serif and the RGB ghost keyframes are
-   neutralized so chrome reads as printed type, not a terminal. */
-:global(html[data-theme-id='paper-atelier']) .btn {
-  font-family: var(--font-serif-display, Georgia, 'Times New Roman', serif);
-  text-transform: uppercase;        /* small-caps feel via caps + tracking */
-  letter-spacing: 0.06em;
-}
-:global(html[data-theme-id='paper-atelier']) .btn:hover::before,
-:global(html[data-theme-id='paper-atelier']) .btn:hover::after,
-:global(html[data-theme-id='paper-atelier']) .btn.glitchBurst::before,
-:global(html[data-theme-id='paper-atelier']) .btn.glitchBurst::after {
-  animation: none;
-  opacity: 0;                        /* no RGB ghosts on paper */
-}
-/* gentle ink bleed on hover: a soft darken + 1px settle, motion-gated */
-:global(html[data-theme-id='paper-atelier']) .btn:hover {
-  color: var(--chrome-btn-color-hover, rgba(43, 39, 34, 1));
-  transition: color 160ms ease-out;
-}
-@media (prefers-reduced-motion: reduce) {
-  :global(html[data-theme-id='paper-atelier']) .btn:hover { transition: none; }
 }

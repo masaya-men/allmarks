@@ -162,6 +162,11 @@ const RESIZE_GATE_PX = 8
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
 
+/** Unified right-drawer state (TUNE/SETTINGS/SHARE/THEMES) — only one panel
+ *  open at a time. Only 'themes' is wired through this today; the others
+ *  migrate onto ChromeDrawer in follow-up tasks. */
+type ActiveDrawer = 'tune' | 'settings' | 'share' | 'themes' | null
+
 /** How long the background-typography (TITLE) node lingers, mounted, after the
  *  user turns it OFF so the CRT shutdown can play, before the parent unmounts
  *  it. = the shutdown duration (--tag-shutdown-duration 0.55s) + a small buffer.
@@ -227,9 +232,6 @@ export function BoardRoot() {
   // While the onboarding tag scene is active, force the hover-gated card +TAG
   // button visible (the user can't hover precisely through the spotlight hole).
   const [forceCardTagVisible, setForceCardTagVisible] = useState<boolean>(false)
-  // While the onboarding SETTINGS beat is active, force the hover-only SETTINGS
-  // drawer open so the tutorial can spotlight the QUICK-TAG ON SAVE toggle inside.
-  const [forceSettingsOpen, setForceSettingsOpen] = useState<boolean>(false)
   // Bumped each time a tag is ADDED to a card from the board UI. The onboarding
   // tag scene watches this to advance — the board's own tag-add doesn't post to
   // the bookmark-updated channel (it reloads locally), so the scene needs a
@@ -321,7 +323,10 @@ export function BoardRoot() {
   // InteractionLayer where pan engagement lives.
   const [spaceHeld, setSpaceHeld] = useState<boolean>(false)
   const [bookmarkletModalOpen, setBookmarkletModalOpen] = useState<boolean>(false)
-  const [themeModalOpen, setThemeModalOpen] = useState<boolean>(false)
+  // Unified right-drawer state (TUNE/SETTINGS/SHARE/THEMES) — only one open at
+  // a time. THEMES and SHARE are wired through this; the SETTINGS/TUNE hover
+  // state migrates in later tasks.
+  const [activeDrawer, setActiveDrawer] = useState<ActiveDrawer>(null)
   const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null)
   // True during an active scroll session (any source: wheel, drag, meter jump).
   // Goes false 200ms after the last scroll delta. Consumers (CardSlideshow's
@@ -373,7 +378,6 @@ export function BoardRoot() {
   // via `data-bookmark-id` on close so pan/scroll during open are honoured.
   const [lightboxOriginRect, setLightboxOriginRect] = useState<DOMRect | null>(null)
   const [newlyAddedIds, setNewlyAddedIds] = useState<ReadonlySet<string>>(new Set())
-  const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
   // Selective share (spec 2026-07-03). selectMode = the board is in
   // tap-to-select mode; selectedIds = the working selection while in the mode;
   // shareSelectedIds = the CONFIRMED selection the share modal previews
@@ -1934,7 +1938,7 @@ export function BoardRoot() {
     selectionLayout == null ? 0 : selectionLayout.totalHeight + BOARD_TOP_PAD_PX
 
   const handleEnterSelectMode = useCallback((): void => {
-    setShareModalOpen(false)
+    setActiveDrawer(null)
     setShareSelectedIds(null)
     setSelectedIds(new Set())
     setCapFlashCycle(0) // stale cycle would flash the pill on bar mount
@@ -1969,7 +1973,7 @@ export function BoardRoot() {
     setSelectMode(false)
     setShareSelectedIds(selectedIds)
     setSelectionScrollY(0)
-    setShareModalOpen(true)
+    setActiveDrawer('share')
   }, [selectedIds])
 
   // Esc leaves selection mode (= CANCEL). The share modal is closed while the
@@ -2405,15 +2409,18 @@ export function BoardRoot() {
                 onChangeGap={handleCardGapChange}
                 onReset={handleResetWidthGap}
                 onApplyPreset={onApplyPreset}
+                isOpen={activeDrawer === 'tune'}
+                onOpenChange={(open) => setActiveDrawer(open ? 'tune' : null)}
               />
               <ExtensionEntry
                 quickTagEnabled={quickTagEnabled}
                 onQuickTagToggle={handleQuickTagToggle}
                 onOpenBookmarkletModal={handleOpenBookmarkletModal}
                 onReplayIntro={() => { void startOnboardingReplay() }}
-                forceOpen={forceSettingsOpen}
+                isOpen={activeDrawer === 'settings'}
+                onOpenChange={(open) => setActiveDrawer(open ? 'settings' : null)}
                 themeId={themeId}
-                onOpenThemeModal={() => setThemeModalOpen(true)}
+                onOpenThemeModal={() => setActiveDrawer('themes')}
                 customWidthCount={customWidthCount}
                 onResetCardSizes={() => { void handleResetCardSizes() }}
                 onSortNewestFirst={() => { void handleSortNewestFirst() }}
@@ -2451,7 +2458,7 @@ export function BoardRoot() {
               />
               <ChromeButton
                 label={t('board.chrome.share')}
-                onClick={(): void => { if (!selectMode) setShareModalOpen(true) }}
+                onClick={(): void => { if (!selectMode) setActiveDrawer('share') }}
                 data-testid="share-pill"
                 data-onboarding-target="share"
               />
@@ -2636,18 +2643,18 @@ export function BoardRoot() {
               initialScene={onboardingInitialScene}
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
-              onSettingsBeatActive={setForceSettingsOpen}
+              onSettingsBeatActive={(active: boolean) => setActiveDrawer(active ? 'settings' : null)}
               tagAddedSignal={tagAddedTick}
               onApplySampleTag={() => { void applySampleTag() }}
               onZoomToCard={zoomCameraToOnboardingCard}
               onZoomReset={resetOnboardingCamera}
               onShareSceneActive={(active): void => {
-                setShareModalOpen(active)
+                setActiveDrawer(active ? 'share' : null)
                 // Match onClose: closing the modal discards any confirmed
                 // one-shot selection so it can't leak into a later normal share (spec §1).
                 if (!active) setShareSelectedIds(null)
               }}
-              shareModalOpen={shareModalOpen}
+              shareModalOpen={activeDrawer === 'share'}
             />
           )}
           {!loading && !showOnboarding && showDataHomeCard && (
@@ -2723,8 +2730,8 @@ export function BoardRoot() {
         appUrl={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://allmarks.app')}
       />
       <ThemeModal
-        isOpen={themeModalOpen}
-        onClose={(): void => setThemeModalOpen(false)}
+        isOpen={activeDrawer === 'themes'}
+        onClose={(): void => setActiveDrawer(null)}
         themeId={themeId}
         onThemeChange={handleThemeChange}
         customization={resolvedCustom}
@@ -2732,9 +2739,9 @@ export function BoardRoot() {
         onCustomize={handleCustomizeTheme}
       />
       <SenderShareModal
-        open={shareModalOpen}
+        open={activeDrawer === 'share'}
         onClose={(): void => {
-          setShareModalOpen(false)
+          setActiveDrawer(null)
           setShareSelectedIds(null) // selection is one-shot — discard on close (spec §1)
         }}
         getShareData={buildShareData}
