@@ -8898,3 +8898,11 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 **learnings**: ①出力＝1画面スクショという制約から「アレンジは常に1画面に収める」が正、と設計の背骨が定まった。②`computeSkylineLayout` は width に 1px 下限があるが height/gap には無い→ gap を倍率で縮めないと極端パックで崩壊する。③検証ブリーフのテスト値は**実本番値**でないと再現しないことがある（gap 既定は 6 でなく 97.21）＝実装者の「テストが本当にバグを捉えるか」の確認が効いた。
 
 **shipped commits on master (base 3a7ae63)**: `5ef591b`(T1) `df66109`(T2) `809fbad`(T3・N-41) `2a8c633`(gap fix) ＋ merge `b42c2fe`。
+
+### セッション167 追記（実機ブラッシュアップ・本番反映済 deploy 610c7f06）
+
+ユーザーがウルトラワイド＋100枚＋紙テーマで実機確認 → 3点修正（tsc0 / vitest 2051 / build OK・Playwright 再検証で全確認）:
+- **回転ノブ**：線の**先端（上）にノブ**、線はノブからカード上端へ下ろす形（Figma/Canva 標準）に。DOM でノブを先に置き `justify-content:flex-start`。
+- **紙テーマ装飾がカードに追従しない**：装飾（テープ76/蝋34/画鋲12/アイコン26px）が**固定px**で、コラージュで縮んだカードに対し大きすぎた（テープ/カード比 1.26〜1.48）。`PaperCardDecorations` に `scale` prop→`--deco-scale` を追加し全サイズ/オフセットを `calc(*var)` に。CollageCanvas が一律fit倍率（max p.w/naturalW）を渡す。**盤面は未指定＝1で byte-identical**。比 0.48 に。
+- **100枚が盤面からはみ出す**：コラージュ層は `inset:0` で**ウィンドウ全面**だが、見える盤面パネル `.canvas` は `CANVAS_MARGIN_PX=48`（globals・全テーマ共通）だけ内側。fit rect が左右24pxインセットで**左端6-7枚がパネル外（紙の額の外）へはみ出していた**。→ fit rect を**パネル基準**（ウィンドウ−48）に取り直し、`ARRANGE_SAFE_INSET` をパネル内側の余白（上56/下72/左右16）に再定義。Playwright：枠外 6-7→**0**、画面外 0。
+- 先送り（対象外）：高枚数時のシードの縦余白（詰めの量子化）／紙テーマの React #418（既存）。
