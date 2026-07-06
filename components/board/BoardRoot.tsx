@@ -12,7 +12,7 @@ import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
 import { resolveThemeCustomization, isDefaultCustomization, isLightColor } from '@/lib/board/theme-customization'
-import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX } from '@/lib/board/constants'
+import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
@@ -91,7 +91,7 @@ import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/shar
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { ShareToast } from '@/components/board/ShareToast'
-import { moveElement, resizeElementFromCorner, bringToFront, type CollagePositions } from '@/lib/share/collage-layout'
+import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
@@ -2001,46 +2001,29 @@ export function BoardRoot() {
     setShareTitle(null)
   }, [])
 
-  // Stage 1 → 2: start the arrange stage as an EXACT snapshot of the board grid
-  // you see (WYSIWYG), NOT a fresh re-pack. We reuse each selected card's real
-  // grid position from `layout.positions`, shifted by the board card-layer's
-  // live SCREEN origin — which we measure from any one rendered card
-  // (rect.left − its layout.x). The collage root is viewport-aligned
-  // (position:absolute inset:0), so this places every card pixel-identical to
-  // where it sits on the board. Deriving the origin from a real rect (instead of
-  // re-deriving it from container padding + scroll offsets) is robust to every
-  // stage offset (cf. reference_cardwidth_dual_management); using `layout` for
-  // ALL selected cards — not just the on-screen ones — means virtualized
-  // off-screen selections are placed at their true board position rather than
-  // silently dropped. Unselected cards simply leave their gap.
+  // Stage 1 → 2: 選んだカードを「1画面に収まる中で最大サイズ」に自動配置してアレンジ開始。
+  // fitSelectionToScreen が skyline パック＋収まる最大倍率の二分探索＋安全領域内への
+  // 中央寄せを行うので、何枚選んでも画面外に置かれない（N-40）。倍率は座標に焼き込まれ、
+  // 以降の移動/リサイズ/回転（すべて画面px基準）はそのまま動く。盤面座標(WYSIWYG)は使わない。
   const handleEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
     const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
-    // Measure the card-layer screen origin from one rendered card.
-    let originX = 0
-    let originY = 0
-    if (typeof document !== 'undefined') {
-      const probe = document.querySelector('[data-bookmark-id]')
-      const probeId = probe?.getAttribute('data-bookmark-id')
-      const probePos = probeId ? layout.positions[probeId] : undefined
-      if (probe && probePos) {
-        const r = probe.getBoundingClientRect()
-        originX = r.left - probePos.x
-        originY = r.top - probePos.y
-      }
+    const rect: CollageFitRect = {
+      x: ARRANGE_SAFE_INSET.SIDE_PX,
+      y: ARRANGE_SAFE_INSET.TOP_PX,
+      width: Math.max(0, viewport.w - 2 * ARRANGE_SAFE_INSET.SIDE_PX),
+      height: Math.max(0, viewport.h - ARRANGE_SAFE_INSET.TOP_PX - ARRANGE_SAFE_INSET.BOTTOM_PX),
     }
-    const seeded: Record<string, CardPosition> = {}
-    for (const it of chosen) {
-      const lp = layout.positions[it.bookmarkId]
-      if (!lp) continue
-      seeded[it.bookmarkId] = { ...lp, x: lp.x + originX, y: lp.y + originY }
-    }
-    setCollagePositions(seeded)
+    const cards = chosen.map((it) => {
+      const w = customWidths[it.bookmarkId] ?? cardWidthPx
+      return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
+    })
+    setCollagePositions(fitSelectionToScreen(cards, rect, cardGapPx))
     setCollageOrder(chosen.map((it) => it.bookmarkId))
-    setCollageRotations({}) // re-entry (RESELECT→ARRANGE) reseeds a clean board snapshot: flat, no tilt
+    setCollageRotations({}) // re-entry (RESELECT→ARRANGE) reseeds a clean flat layout, no tilt
     setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))
     setSharePhase('arrange')
-  }, [selectedIds, lightboxNavItems, layout, bgTypoEnabled, viewport.w, viewport.h])
+  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, cardGapPx, viewport.w, viewport.h, bgTypoEnabled])
 
   // Esc leaves SHARE mode from either stage (= CANCEL / DONE). Only bound while
   // a share stage is active.
