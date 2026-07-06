@@ -56,112 +56,103 @@ describe('collage-layout', () => {
   })
 })
 
-describe('fitSelectionToScreen', () => {
-  const rectBig = { x: 0, y: 0, width: 1000, height: 800 }
+describe('fitSelectionToScreen (justified rows fill)', () => {
+  // 幅=aspect*100, 高さ=100 の均一カードを n 枚。
+  const uniform = (n: number, aspect = 1): { id: string; width: number; height: number }[] =>
+    Array.from({ length: n }, (_, i) => ({ id: `c${i}`, width: 100 * aspect, height: 100 }))
 
   it('空 / 幅ゼロ / 高さゼロ は {} を返す', () => {
-    expect(fitSelectionToScreen([], rectBig, 10)).toEqual({})
-    expect(fitSelectionToScreen([{ id: 'a', width: 100, height: 100 }], { x: 0, y: 0, width: 0, height: 800 }, 10)).toEqual({})
-    expect(fitSelectionToScreen([{ id: 'a', width: 100, height: 100 }], { x: 0, y: 0, width: 1000, height: 0 }, 10)).toEqual({})
+    expect(fitSelectionToScreen([], { x: 0, y: 0, width: 1000, height: 800 })).toEqual({})
+    expect(fitSelectionToScreen(uniform(3), { x: 0, y: 0, width: 0, height: 800 })).toEqual({})
+    expect(fitSelectionToScreen(uniform(3), { x: 0, y: 0, width: 1000, height: 0 })).toEqual({})
   })
 
   it('全カードに座標を返す', () => {
-    const pos = fitSelectionToScreen(
-      [{ id: 'a', width: 200, height: 100 }, { id: 'b', width: 200, height: 100 }],
-      rectBig,
-      10,
-    )
-    expect(Object.keys(pos).sort()).toEqual(['a', 'b'])
+    const pos = fitSelectionToScreen(uniform(2), { x: 0, y: 0, width: 1000, height: 800 })
+    expect(Object.keys(pos).sort()).toEqual(['c0', 'c1'])
   })
 
-  it('自然サイズで収まるなら縮小しない（w が自然値のまま = 倍率上限1）', () => {
-    // 2枚 200x100 は 1000x800 に余裕で収まる → scale 1
-    const pos = fitSelectionToScreen(
-      [{ id: 'a', width: 200, height: 100 }, { id: 'b', width: 200, height: 100 }],
-      rectBig,
-      10,
-    )
-    expect(pos.a.w).toBe(200)
-    expect(pos.b.w).toBe(200)
-  })
-
-  it('全カードが rect 内に収まる（右端・下端がはみ出さない）', () => {
-    const cards = Array.from({ length: 40 }, (_, i) => ({ id: `c${i}`, width: 200, height: 260 }))
+  it('全カードが rect 内（左上・右端・下端がはみ出さない）', () => {
     const rect = { x: 24, y: 80, width: 1440, height: 560 }
-    const pos = fitSelectionToScreen(cards, rect, 8)
+    const pos = fitSelectionToScreen(uniform(40, 0.8), rect)
     for (const id in pos) {
       const p = pos[id]
-      expect(p.x).toBeGreaterThanOrEqual(rect.x - 0.001)
-      expect(p.y).toBeGreaterThanOrEqual(rect.y - 0.001)
+      expect(p.x).toBeGreaterThanOrEqual(rect.x - 0.5)
+      expect(p.y).toBeGreaterThanOrEqual(rect.y - 0.5)
       expect(p.x + p.w).toBeLessThanOrEqual(rect.x + rect.width + 0.5)
       expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
     }
   })
 
-  it('収まらないときは縮小する（少なくとも1枚は自然幅より小さい）', () => {
-    const cards = Array.from({ length: 40 }, (_, i) => ({ id: `c${i}`, width: 200, height: 260 }))
-    const rect = { x: 0, y: 0, width: 600, height: 400 }
-    const pos = fitSelectionToScreen(cards, rect, 8)
-    const shrunk = Object.values(pos).some((p) => p.w < 200 - 0.001)
-    expect(shrunk).toBe(true)
+  it('各カードは入力の縦横比を保つ', () => {
+    const cards = [
+      { id: 'a', width: 200, height: 100 }, // aspect 2
+      { id: 'b', width: 150, height: 300 }, // aspect 0.5
+      { id: 'c', width: 120, height: 120 }, // aspect 1
+    ]
+    const pos = fitSelectionToScreen(cards, { x: 0, y: 0, width: 1000, height: 800 })
+    expect(pos.a.w / pos.a.h).toBeCloseTo(2, 3)
+    expect(pos.b.w / pos.b.h).toBeCloseTo(0.5, 3)
+    expect(pos.c.w / pos.c.h).toBeCloseTo(1, 3)
   })
 
-  it('「収まる中で最大」= 1列に強制した縦積みで倍率が境界に一致する', () => {
-    // rect 幅 100・カード幅 100（横に2枚は並ばない）・高さ 100 × 2枚・gap 0。
-    // 縮小後も幅 > 50 を保つので 1 列のまま: 自然 totalHeight=200 を rect.height=120 に
-    // 収める最大倍率は 0.6 → 各 w≈60・contentH≈120（ぴったり埋める＝最大）。
-    const pos = fitSelectionToScreen(
-      [{ id: 'a', width: 100, height: 100 }, { id: 'b', width: 100, height: 100 }],
-      { x: 0, y: 0, width: 100, height: 120 },
-      0,
-    )
-    expect(Math.abs(pos.a.w - 60)).toBeLessThan(0.5)
-    const contentBottom = Math.max(...Object.values(pos).map((p) => p.y + p.h))
-    const contentTop = Math.min(...Object.values(pos).map((p) => p.y))
-    expect(contentBottom - contentTop).toBeLessThanOrEqual(120.001)
-    expect(contentBottom - contentTop).toBeGreaterThan(118) // ほぼ埋めている = 最大
+  it('どのカードも maxCardWidth を超えない（少数でも巨大化しない）', () => {
+    const rect = { x: 0, y: 0, width: 2400, height: 900 }
+    const pos = fitSelectionToScreen(uniform(3), rect, { maxCardWidth: 268, gapRatio: 0.36 })
+    for (const id in pos) expect(pos[id].w).toBeLessThanOrEqual(268 + 0.5)
   })
 
-  it('100枚でも全部 rect 内に収まる（80px 下限は無視される）', () => {
-    const cards = Array.from({ length: 100 }, (_, i) => ({ id: `c${i}`, width: 267, height: 350 }))
+  it('少数カードは中央に寄る（左上に固まらない・上に張り付かない）', () => {
+    const rect = { x: 0, y: 0, width: 2400, height: 900 }
+    const pos = fitSelectionToScreen(uniform(3), rect, { maxCardWidth: 268, gapRatio: 0.36 })
+    const xs = Object.values(pos)
+    const minX = Math.min(...xs.map((p) => p.x))
+    const maxX = Math.max(...xs.map((p) => p.x + p.w))
+    const leftMargin = minX - rect.x
+    const rightMargin = rect.x + rect.width - maxX
+    expect(Math.abs(leftMargin - rightMargin)).toBeLessThan(2) // 左右余白ほぼ均等＝水平中央
+    const minY = Math.min(...xs.map((p) => p.y))
+    expect(minY - rect.y).toBeGreaterThan(50) // 上端に張り付いていない＝垂直中央寄せ
+  })
+
+  it('多数の均一カードは矩形の右端・下端まで充填する（bounding box が rect をほぼ埋める）', () => {
     const rect = { x: 24, y: 80, width: 1440, height: 560 }
-    const pos = fitSelectionToScreen(cards, rect, 6)
-    expect(Object.keys(pos)).toHaveLength(100)
-    for (const id in pos) {
-      const p = pos[id]
-      expect(p.x + p.w).toBeLessThanOrEqual(rect.x + rect.width + 0.5)
-      expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
-    }
+    const pos = fitSelectionToScreen(uniform(60, 0.8), rect, { maxCardWidth: 268, gapRatio: 0.36 })
+    const vals = Object.values(pos)
+    const usedW = Math.max(...vals.map((p) => p.x + p.w)) - Math.min(...vals.map((p) => p.x))
+    const usedH = Math.max(...vals.map((p) => p.y + p.h)) - Math.min(...vals.map((p) => p.y))
+    expect(usedW).toBeGreaterThan(rect.width * 0.95) // 幅は端まで（justified の芯）
+    expect(usedH).toBeGreaterThan(rect.height * 0.8) // 高さもほぼ端まで（旧 masonry の 0.77 を明確に超える）
   })
 
-  it('does not collapse to 1px slivers when many cards pack with real board defaults into a short wide rect (N-40 regression: gap must scale with cards)', () => {
-    // Repro of the Playwright-found collapse: SHARE → ARRANGE with 100 selected cards
-    // at the *board defaults* (CARD_WIDTH_DEFAULT_PX=267.84, CARD_GAP_DEFAULT_PX=97.21 —
-    // lib/board/constants.ts BOARD_SLIDERS) into a 1489x679 viewport's arrange-safe rect
-    // (ARRANGE_SAFE_INSET → 1441x479). Realistic aspect-ratio spread (0.5–2.0).
-    // Confirmed pre-fix: the unscaled gap dominates as scale shrinks, the binary search
-    // never converges above 0, every card floors to exactly 1px, and 10 still overflow
-    // the bottom. (Note: a small uniform gap like 6px does NOT reproduce this — the
-    // board's actual default gap of ~97px, big relative to the shrunk card size, is
-    // what makes it dominate.)
+  it('隙間はカード高さに比例する（≈ gapRatio）', () => {
+    const rect = { x: 0, y: 0, width: 1000, height: 800 }
+    const cards = [
+      { id: 'a', width: 100, height: 100 },
+      { id: 'b', width: 100, height: 100 },
+    ]
+    // maxCardWidth を大きく取り上限を無効化 → 2枚は1行に並び幅いっぱいに拡大。
+    const pos = fitSelectionToScreen(cards, rect, { maxCardWidth: 5000, gapRatio: 0.3 })
+    const gap = pos.b.x - (pos.a.x + pos.a.w)
+    expect(gap / pos.a.h).toBeCloseTo(0.3, 1)
+  })
+
+  it('N-40 回帰：board 実既定比率 × 100枚 × 短く広い rect でも全カード可視サイズ・rect 内（1px 崩壊なし）', () => {
     const CARD_WIDTH_DEFAULT_PX = 267.84
-    const CARD_GAP_DEFAULT_PX = 97.21
+    const GAP_RATIO = 97.21 / 267.84
     const aspects = [0.6, 0.75, 1, 1.33, 1.5, 1.78, 0.5, 2.0]
     const cards = Array.from({ length: 100 }, (_, i) => {
       const ar = aspects[i % aspects.length]
       return { id: `c${i}`, width: CARD_WIDTH_DEFAULT_PX, height: CARD_WIDTH_DEFAULT_PX / ar }
     })
-    const rect = { x: 24, y: 80, width: 1489 - 48, height: 679 - 80 - 120 } // ARRANGE_SAFE_INSET applied to a 1489x679 viewport
-    const pos = fitSelectionToScreen(cards, rect, CARD_GAP_DEFAULT_PX)
+    const rect = { x: 24, y: 80, width: 1489 - 48, height: 679 - 80 - 120 }
+    const pos = fitSelectionToScreen(cards, rect, { maxCardWidth: CARD_WIDTH_DEFAULT_PX, gapRatio: GAP_RATIO })
     expect(Object.keys(pos)).toHaveLength(100)
-    // all within rect (no bottom overflow) — pre-fix, 10 cards spill past the bottom
     for (const id in pos) {
       const p = pos[id]
       expect(p.x + p.w).toBeLessThanOrEqual(rect.x + rect.width + 0.5)
       expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
     }
-    // NO collapse: every card must be a real, visible size (before the fix every
-    // card floored to exactly 1px). This assertion fails pre-fix (maxW === 1).
     const maxW = Math.max(...Object.values(pos).map((p) => p.w))
     expect(maxW).toBeGreaterThan(30)
   })

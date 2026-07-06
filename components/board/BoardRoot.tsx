@@ -12,7 +12,7 @@ import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
 import { resolveThemeCustomization, isDefaultCustomization, isLightColor } from '@/lib/board/theme-customization'
-import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX, COLLAGE_GAP_PX } from '@/lib/board/constants'
+import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
@@ -2025,9 +2025,9 @@ export function BoardRoot() {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    // Pack with a small COLLAGE gap (not the board's large gallery gap) so the
-    // fit search can scale cards much bigger — a tight, filled collage.
-    setCollagePositions(fitSelectionToScreen(cards, rect, COLLAGE_GAP_PX))
+    // justified rows で盤面パネル rect を端まで充填する（縦横比のみ使用・盤面既定サイズを
+    // 上限に頭打ち・隙間はカード高さに比例）。少数カードは中央寄せ、多数は端までびっしり。
+    setCollagePositions(fitSelectionToScreen(cards, rect))
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setCollageRotations({}) // re-entry (RESELECT→ARRANGE) reseeds a clean flat layout, no tilt
     setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))

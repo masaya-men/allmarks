@@ -1,4 +1,5 @@
 import { computeSkylineLayout } from '@/lib/board/skyline-layout'
+import { BOARD_SLIDERS } from '@/lib/board/constants'
 import type { CardPosition } from '@/lib/board/types'
 
 /** 自由配置キャンバスの1要素の実測サイズ（初期詰め込みに使う）。 */
@@ -82,58 +83,149 @@ export type CollageFitRect = {
   readonly height: number
 }
 
+/** justified fill の既定値（spec §3.2）。サイズ上限＝盤面既定カード幅、隙間比＝盤面の
+ *  CARD_GAP:CARD_WIDTH 比。呼び出し側は基本 opts を渡さず、これらの既定で動く。 */
+const DEFAULT_MAX_CARD_WIDTH = BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX
+const DEFAULT_GAP_RATIO = BOARD_SLIDERS.CARD_GAP_DEFAULT_PX / BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX
+
+/** fitSelectionToScreen の任意設定。既定は盤面の値（DEFAULT_*）。 */
+export type FitOptions = {
+  /** カードのレンダリング幅の上限（px）。既定＝盤面既定カード幅。 */
+  readonly maxCardWidth?: number
+  /** 隙間 ÷ カード高さ。既定＝盤面の CARD_GAP:CARD_WIDTH 比。 */
+  readonly gapRatio?: number
+}
+
+/** 1行の確定レイアウト（行高・各カード幅・行内 gap・使用幅）。 */
+type RowLayout = {
+  readonly ids: readonly string[]
+  readonly widths: readonly number[]
+  readonly height: number
+  readonly gap: number
+  readonly rowWidth: number
+}
+
 /**
- * 選択カード（自然サイズ）を skyline で詰め、rect の高さに収まる「最大倍率」を
- * 二分探索して全体を一律縮小し、rect 内に中央寄せで配置した座標を返す。
- * - 倍率の上限は 1（数枚なら盤面と同じ大きさ・膨らませない）。
- * - 収まる中で最大の倍率を採用（横幅いっぱいを使い、縦が rect.height に収まる最大）。
- * - 80px 下限は適用しない（自動配置は「全部1画面に収める」を優先）。
+ * 目標行高 targetH でカードを justified rows に割る。document 順に行へ流し込み、
+ * 目標高での自然幅が rectWidth に達したら行を閉じ、その行を rectWidth ちょうどに満たす
+ * 行高（閉形）で確定する。最後の部分行は引き伸ばさず targetH。各行は「その行の最大幅
+ * カードが maxCardWidth を超えない」よう行高を頭打ちする。総高（行高＋行間 gap の和）も返す。
+ */
+function layoutAtTargetHeight(
+  ids: readonly string[],
+  aspects: readonly number[],
+  targetH: number,
+  rectWidth: number,
+  gapRatio: number,
+  maxCardWidth: number,
+): { readonly rows: RowLayout[]; readonly totalHeight: number } {
+  const n = ids.length
+  const rows: RowLayout[] = []
+  let start = 0
+  while (start < n) {
+    // start から順に足し、目標高 targetH での自然幅が rectWidth に達したら閉じる。
+    let end = start
+    let aspectSum = 0
+    let closed = false
+    while (end < n) {
+      aspectSum += aspects[end]
+      const count = end - start + 1
+      const naturalW = aspectSum * targetH + (count - 1) * gapRatio * targetH
+      end++
+      if (naturalW >= rectWidth) {
+        closed = true
+        break
+      }
+    }
+    const rowIds = ids.slice(start, end)
+    const rowAspects = aspects.slice(start, end)
+    const count = rowIds.length
+    const sumA = rowAspects.reduce((a, b) => a + b, 0)
+    let maxA = 0
+    for (const a of rowAspects) if (a > maxA) maxA = a
+    // 閉じた（満杯）行は幅ちょうどの行高、最後の部分行は目標 targetH。
+    const hFill = closed ? rectWidth / (sumA + (count - 1) * gapRatio) : targetH
+    // per-row cap: 最大幅カード（maxA * h）が maxCardWidth を超えない行高に頭打ち。
+    const h = Math.min(hFill, maxA > 0 ? maxCardWidth / maxA : maxCardWidth)
+    const gap = gapRatio * h
+    const widths = rowAspects.map((a) => a * h)
+    const rowWidth = widths.reduce((a, b) => a + b, 0) + (count - 1) * gap
+    rows.push({ ids: rowIds, widths, height: h, gap, rowWidth })
+    start = end
+  }
+  let totalHeight = 0
+  for (let i = 0; i < rows.length; i++) {
+    totalHeight += rows[i].height
+    if (i < rows.length - 1) totalHeight += rows[i].gap // 行間は上の行の gap
+  }
+  return { rows, totalHeight }
+}
+
+/**
+ * 選択カードを justified rows で rect に充填する（spec §3）。
+ * - カードは縦横比だけ使う（盤面の絶対サイズ＝customWidth は無視）。
+ * - 各行を rect 幅いっぱいに揃え、目標行高 H を二分探索して総高を rect 高さに合わせる
+ *   ＝右も下も端まで充填。H の上限は maxCardWidth（それ以上は per-row cap で頭打ち）。
+ * - 幅を満たさない行（cap が効いた行・最後の部分行）は水平中央寄せ、総高の残余は垂直中央寄せ
+ *   ＝少数カードは巨大化せず中央にまとまる（左上に固まらない）。
+ * - 座標は rect.x/rect.y を加えた画面px絶対座標（移動/リサイズ/回転はこの座標系のまま）。
  * - 空 / 幅ゼロ / 高さゼロ は {} を返す。
  */
 export function fitSelectionToScreen(
   cards: readonly CollageElement[],
   rect: CollageFitRect,
-  gap: number,
+  opts?: FitOptions,
 ): CollagePositions {
   if (cards.length === 0 || rect.width <= 0 || rect.height <= 0) return {}
+  const maxCardWidth = opts?.maxCardWidth ?? DEFAULT_MAX_CARD_WIDTH
+  const gapRatio = opts?.gapRatio ?? DEFAULT_GAP_RATIO
 
-  const packAt = (scale: number): ReturnType<typeof computeSkylineLayout> =>
-    computeSkylineLayout({
-      cards: cards.map((c) => ({ id: c.id, width: c.width * scale, height: c.height * scale })),
-      containerWidth: rect.width,
-      gap: gap * scale,
-    })
+  const ids = cards.map((c) => c.id)
+  const aspects = cards.map((c) => (c.height > 0 ? c.width / c.height : 1))
 
-  // 上限は 1（膨らませない）。自然サイズで収まればそのまま使う。
-  let scale = 1
-  if (packAt(1).totalHeight > rect.height) {
-    // scale が大きいほど totalHeight は増える（単調）＝収まる最大倍率を二分探索。
+  const build = (H: number): { readonly rows: RowLayout[]; readonly totalHeight: number } =>
+    layoutAtTargetHeight(ids, aspects, H, rect.width, gapRatio, maxCardWidth)
+
+  // 目標行高 H を選ぶ。総高は H について概ね単調増加。maxCardWidth を上限に、
+  // その上限でも rect.height に収まる（＝少数カード）ならそのまま中央寄せ。
+  // 収まらなければ「収まる最大の H」を二分探索（＝最も埋まる）。
+  const top = build(maxCardWidth)
+  let chosen: { readonly rows: RowLayout[]; readonly totalHeight: number }
+  if (top.totalHeight <= rect.height) {
+    chosen = top
+  } else {
     let lo = 0
-    let hi = 1
-    for (let i = 0; i < 24; i++) {
+    let hi = maxCardWidth
+    for (let i = 0; i < 30; i++) {
       const mid = (lo + hi) / 2
-      if (packAt(mid).totalHeight <= rect.height) lo = mid
+      if (build(mid).totalHeight <= rect.height) lo = mid
       else hi = mid
     }
-    scale = lo
+    chosen = build(lo)
   }
 
-  const packed = packAt(scale)
-  // 実際に使った幅・高さを測り rect 内に中央寄せ。
-  let contentW = 0
-  let contentH = 0
-  for (const id in packed.positions) {
-    const p = packed.positions[id]
-    if (p.x + p.w > contentW) contentW = p.x + p.w
-    if (p.y + p.h > contentH) contentH = p.y + p.h
-  }
-  const offsetX = rect.x + Math.max(0, (rect.width - contentW) / 2)
-  const offsetY = rect.y + Math.max(0, (rect.height - contentH) / 2)
+  // 縦方向の残余の扱い（spec §3.6）。justified rows は行数が離散なので、多数カードでも
+  // 「収まる最大の行数」の総高が rect.height に届かず下端が余ることがある（均一カードで顕著）。
+  // 実質的に埋まっている（複数行かつ総高が rect.height の一定割合以上）ときは、残余を行間に
+  // 均等配分して上端→下端までブリードさせ、下の帯を消す。少数カード（総高が小さい・1〜2行）は
+  // 配分せず中央寄せのまま＝バラけさせず中央にまとめる（左上/上端に張り付かない）。
+  const residual = Math.max(0, rect.height - chosen.totalHeight)
+  const canSpread = chosen.rows.length >= 3 && chosen.totalHeight >= rect.height * 0.6
+  const extraRowGap = canSpread ? residual / (chosen.rows.length - 1) : 0
+  const offsetY = canSpread ? rect.y : rect.y + residual / 2
 
   const out: Record<string, CardPosition> = {}
-  for (const id in packed.positions) {
-    const p = packed.positions[id]
-    out[id] = { x: p.x + offsetX, y: p.y + offsetY, w: p.w, h: p.h }
+  let y = offsetY
+  for (const row of chosen.rows) {
+    // 幅を満たさない行（cap／部分行）は水平中央寄せ。満杯行は rowWidth≈rect.width で offset≈0。
+    const offsetX = rect.x + Math.max(0, (rect.width - row.rowWidth) / 2)
+    let x = offsetX
+    for (let i = 0; i < row.ids.length; i++) {
+      const w = row.widths[i]
+      out[row.ids[i]] = { x, y, w, h: row.height }
+      x += w + row.gap
+    }
+    y += row.height + row.gap + extraRowGap
   }
   return out
 }
