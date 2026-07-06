@@ -1,0 +1,25 @@
+/* Corner resize hot zone for the SHARE collage title (Task 6). A small
+   bottom-right square, revealed on hover of the title root so it doesn't
+   clutter the collage when the user isn't interacting with the title.
+   No z-index here — this component isn't wired into the board's stacking
+   yet (Task 7 wires it into CollageCanvas / BoardRoot). */
+
+.resizeCorner {
+  position: absolute;
+  right: -14px;
+  bottom: -14px;
+  width: 28px;
+  height: 28px;
+  cursor: nwse-resize;
+  touch-action: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.root:hover .resizeCorner,
+.resizeCorner:active {
+  opacity: 1;
+}
