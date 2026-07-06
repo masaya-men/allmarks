@@ -8780,3 +8780,27 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 **成果**：4パネルの独立 shell（overlay+panel+開閉+アニメ）を1基盤に統合＝正味 **約1000行削減**（32 files, +706 −1783）。学び＝重なり文脈（`position:absolute`+`z-index` の親）内の `position:fixed` 子は z が親の文脈に閉じ込められる＝ドロワー系は body portal が要る。ヘッダー内描画のパネルを portal 化で救う定石。
 
 **本番目視の残（品質ゲートでは判定不能）**：シェア窓の実カードリフロー／TUNE 縦レイアウトと scramble の感じ／ドロワーがヘッダートリガーを覆う点（×/Esc/外側で閉じる・同ボタン再押しは不可）。**follow-up（非ブロッキング）**：N-07 e2e seed 版数ズレでセレクタ更新は未実行検証／SharedBoard の TUNE・SHARE 同時開き得る／ThemePicker/ThemeCustomizeSection の残色トークンは②送り。
+
+---
+
+## セッション 164 (2026-07-06) — SHARE 作り直し brainstorm→spec→plan ＋ TUNE 横並び保管（コード変更なし・ドキュメントのみ）
+
+前セッションでユーザーが本番のサブ① SHARE 右ドロワーを見て「まだ全然違う」と再定義した SHARE 作り直しを、brainstorming スキルで理解確認→選択肢→設計→spec→plan まで通した。実装は次セッション。
+
+### ① SHARE 作り直し（N-34/36/37/38 統合）＝ spec＋plan 完成
+
+ユーザーと1問ずつ相談して確定：
+- **決定① (b) 併記**：SHARE＝スクショが主役／`/s` 取り込みリンクは「COPY LINK」の任意アクションで残し、投稿に画像＋リンクを併記。「画像そのものをクリックで取り込み」は SNS 仕様上不可（画像はただの絵・任意 URL に飛ばせない）＝取り込みには必ず URL が要る、を説明して合意。QR 埋め込みは将来案。
+- **決定② (a) 一時状態**：自由配置はモード中だけ、抜けるとグリッド復帰（盤面グリッド常時法則 `feedback_allmarks_grid_no_tilt` を守る）。ユーザー着想「いずれ本物盤面でも自由配置（デフォルト順に戻す仕組みが出来たので現実的）」は将来案へ。
+- **A案 二段**：SHARE 押下→窓を出さずモード突入→第1段「選ぶ」（s157 選択流用・下部バー primary を ARRANGE に）→第2段「並べる」（自由配置キャンバス＋下部 SHARING… トースト）→ユーザーが**範囲選択スクショ**（Win+Shift+S / ⌘+Shift+4 は範囲選択＝ヘッダー/トーストのクロム写り込みを自然回避）→終了でグリッド復帰。
+- **タイトル今回実装**：ユーザー訂正で「タイトル」＝ヘッダー TITLE ボタンの背景ワードマーク（`BoardBackgroundTypography`/`bgTypoEnabled`）と判明。`ShareTitleConfig{enabled,text,size,x,y}` 単一設定で駆動し、その場編集＋ドラッグ移動＋サイズ＋出し入れ、既定でカードの後ろ。フォント種類ピッカー（N-35）は次。★配線を楽にする肝＝表示テキストが `deriveBoardBgTypoText`＋CSS 固定にハードコードされているのを設定オブジェクト経由に変える（後で font を1プロパティ追加で済む）。
+- **実コード発見（推測でなく調査）**：`/s` 生成のサーバー route（`functions/api/share/create.ts`）は**画像サムネ必須**（thumb 無い/不正で 400・R2→KV の順）。よって「画像を完全に捨ててリンクだけ生成」は不可。→ spec を正確化し、COPY LINK は出荷済みの thumb+リンク生成を**裏で回すヘッドレス版**に縮小（サムネ=リンクの OG プレビュー用・ユーザーが貼るのは自分のスクショ）。
+- **成果物**：spec `2026-07-06-share-collage-screenshot-rebuild-design.md`（13セクション）／plan `2026-07-06-share-collage-screenshot-rebuild.md`（**10タスク・出荷可能3フェーズ**：①コアモード ②タイトル ③取り込みリンク）。plan は3つの並行 Explore 調査でカード drag/resize/描画・`SenderShareModal` リンク生成・z-index/board-config/ヘッダーボタンの実 file:line に接地。純ロジック（collage-layout/share-title/create-import-link）は TDD 実テストコード付き、ジェスチャ系は `setPointerCapture` で Playwright 不可のため純関数テスト＋手動目視と明記。
+
+### ② TUNE 横並び保管 完了
+
+ユーザーが最も気に入っている「右の縦パネルにする前の横並び TUNE」を、作り替え前に保管。`b317fa2`（横並びが生きている最後のコミット・`d2fca70` で縦化）の `TuneTrigger.tsx`＋`TuneTrigger.module.css` を `components/board/_archive/TuneClassicBody.{tsx,module.css}.txt`＋`_archive/README.md` として保管。**ビルド非結合**＝`.txt` 拡張子で tsconfig の型検査に拾わせない（CLAUDE.md が tsconfig 変更を禁止しているため exclude 追加でなく拡張子で回避）。`rtk tsc` 緑で非結合を確認。依存 `FaderColumn`/`TunePresetColumn` は現存、`TunePresetColumn.module.css` の横並び用48行は `d2fca70` で削除済＝git b317fa2 から拾う旨を README に記録（literal scope を守り TunePresetColumn 本体は archive せずポインタで残す）。
+
+### メタ
+- コード/UI 変更ゼロ（docs＋ビルド非結合 `.txt` のみ）＝`out/` 不変のためデプロイ省略。
+- commit: spec（`docs: session 164 - SHARE collage/screenshot rebuild design spec`）／plan+spec 修正／archive（`chore(board): archive classic horizontal TUNE`）／このセッションクローズ docs。

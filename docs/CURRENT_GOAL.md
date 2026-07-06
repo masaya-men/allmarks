@@ -1,38 +1,32 @@
-# 次セッションのゴール (= セッション 164)
+# 次セッションのゴール (= セッション 165)
 
-## 今の状態（s163＝★フラット化 サブ①出荷／本番を見てユーザーが SHARE 作り直し＋TUNE 保管を再定義＝次はその brainstorm 続き）
+## 今の状態（s164＝SHARE 作り直しの brainstorm→spec→plan 完成／TUNE 横並び保管 完了／次は SHARE 実装フェーズ1）
 
-**セッション163でやったこと（master マージ済 `e5aceb0` `--no-ff`／`allmarks.app` 反映済／tsc0・vitest2008・build OK）:**
-- **フラット化 サブ① 完遂**（親 spec `2026-07-05-flat-theme-and-theme-boundary-design.md`／サブ① spec `2026-07-05-flat-sub1-menu-neutrality-right-drawer-design.md`／plan `2026-07-05-flat-sub1-menu-neutrality-right-drawer.md`）。brainstorm→spec→plan→**サブエージェント駆動7タスク＋各レビュー＋opus 全ブランチレビュー（要修正1件を修正）**。
-  - **共通右ドロワー基盤 `ChromeDrawer`** を新設（右ドック~400px・非ブロッキング・Esc/外側クリック/×で閉じる・**body へ portal して z-405**）。**TUNE・SETTINGS・SHARE・THEMES の4パネルを統一**（全部クリックで開く＝TUNE/SETTINGS は hover 廃止／SHARE は中央モーダル→右ドロワー・~400px リフロー／書き出し画像用の隠しノードは無傷）。`BoardRoot` に単一 `activeDrawer` 状態（同時1枚だけ）。
-  - **絞り込み・カードの＋タグ**は据え置き（その場ポップ・見た目だけ中立化）。
-  - **全メニュー中立化**：paper-atelier の chrome 装飾（scoped CSS・`--paper-panel-*`/`--chrome-*` 参照・`useIsPaperTheme` JS分岐）を全メニューから除去＋serif 漏れ防止に中立 mono フォントを pin。**盤面（カード/背景ワードマーク/スクロールメーター/カード装飾/額縁・封蝋）はテーマ可変のまま無変更**。`--paper-panel-*` 定義は PiP/SaveToast のため温存。`DEFAULT_THEME_ID` は不変（暗い dotted-notebook のまま＝白 default は②）。
-  - 正味 **約1000行削減**（4パネルの独立 shell を1基盤に統合）。
+**セッション164でやったこと（コミット済・コード/UI 変更なし＝デプロイ不要）:**
+- **① SHARE 作り直し（N-34/36/37/38 統合）の brainstorm→spec→plan 完了**。ユーザーと相談で確定：
+  - **① (b) 併記**：SHARE＝スクショが主役／`/s` 取り込みリンクは「COPY LINK」の任意アクションで残す（画像＋リンクを併記）。「画像そのものをクリックで取り込み」は SNS 仕様上不可＝リンク併記かQR（QRは将来）。
+  - **② (a) 一時状態**：自由配置はモード中だけ、抜けるとグリッド復帰（本物盤面には反映しない＝グリッド常時法則を守る）。
+  - **A案 二段**：SHARE 押下→窓を出さずモード突入→第1段「選ぶ」（s157 流用・下部バー primary を ARRANGE に）→第2段「並べる」（自由配置キャンバス＋下部「SHARING…」トースト）→ユーザーが**範囲選択スクショ**（クロム写り込み回避）→終了でグリッド復帰。
+  - **タイトル**（＝TITLE ボタンの背景ワードマーク）を今回実装：`ShareTitleConfig{enabled,text,size,x,y}` 単一設定で駆動、その場編集＋**ドラッグ移動**＋サイズ＋出し入れ、既定でカードの後ろ。フォント種類ピッカー（N-35）は次。
+  - **重要な実コード発見**：`/s` 生成のサーバー route は **画像サムネ必須**（thumb 無いと 400）。→ COPY LINK は出荷済みの thumb+リンク生成を**裏で回すヘッドレス版**に縮小（サムネは OG プレビュー用・ユーザーが貼るのは自分のスクショ）。
+  - **spec**: [2026-07-06-share-collage-screenshot-rebuild-design.md](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md)／**plan**: [2026-07-06-share-collage-screenshot-rebuild.md](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)（**10タスク・出荷可能3フェーズ**）。
+- **② TUNE 横並び保管 完了**（commit）：`b317fa2` の横並び TuneTrigger を `components/board/_archive/TuneClassicBody.{tsx,module.css}.txt`＋README にビルド非結合（`.txt`）で保管。tsc 緑で非結合確認。
 
-## ★あなたが本番で目視するチェックリスト（品質ゲートでは判定不能な“見た目”）
-- **シェアの窓**：実カードが並んだ状態での ~400px リフローの見え方（テストは空ボードのみ確認）。
-- **TUNE の窓**：横→縦レイアウトとフェーダー/文字パラパラ演出の“感じ”。
-- **ドロワーがヘッダーのトリガーボタンを覆う**点（×/Esc/外側クリックで閉じる。同ボタン再押しでは閉じない）。気になれば「開いたらヘッダー退避/pressed 表示」等の小調整を検討。
-- 上記が気になる場合の微調整はサブ②以降でまとめて可。
+## このセッションのゴール ＝ SHARE 実装フェーズ1（サブエージェント駆動）
 
-## このセッションのゴール ＝ ①SHARE 作り直しの brainstorm 続き ＋ ②TUNE 保管
-**s163 でユーザーが本番を見て2つ再定義。今日はここから（brainstorm の続き）。実装は設計確定後に別途。**
+**plan の Task 1〜4（フェーズ1＝コアモード：選ぶ→並べる→スクショ／旧ドロワー撤去）を実装。** 進め方＝**サブエージェント駆動開発**（タスクごとに新エージェント＋各後レビュー）。
+- Task 1 `lib/share/collage-layout.ts`（純関数・TDD）→ Task 2 `CollageCanvas.tsx`（自由配置描画/ドラッグ/リサイズ）→ Task 3 `ShareToast.tsx`（下部トースト）→ Task 4 BoardRoot 配線（sharePhase 二段化・SHARE 入口・ShareSelectBar リラベル・旧 SHARE ドロワー撤去）。
+- **フェーズ1 出荷チェックポイント**でゲート緑→本番デプロイ→目視。以降フェーズ2（タイトル Task5-7）／フェーズ3（COPY LINK Task8-10）。
+- ジェスチャ系は `setPointerCapture` で Playwright 不可＝純関数テスト＋手動目視（plan の Global Constraints に明記）。
 
-### ① SHARE 作り直し（最優先・brainstorm 続き）＝ 詳細は `docs/private/IDEAS.md`「SHARE 作り直しの方向（s163）」
-確定済み4点フロー（ユーザー確認済み）：SHARE 押下＝**窓を出さず盤面が「SHARE モード」に入る**（SELECT CARDS と同じ操作感／絞り込んだタグの中身全部も可／**モード中もタグ絞り込み可**）→ そのモードは**自由配置コラージュ**（位置・重なり・大きさ自由）→ **画面下に「シェア中…」トーストだけ**（パネル無し）→ **決定 SHARE ＝ユーザー自身が画面をスクショして SNS 添付**（アプリは画像生成しない＝WYSIWYG・クロスオリジン回避）。
-明日詰める未確定：既存 /s/ 取り込みリンク共有を廃止/両立どちらか（N-38 推奨＝別アクションで両立）／コラージュ配置は一時状態か本物盤面に反映か（N-34 (a)/(b)）／スクショ導線 UX（Win/Mac/モバイル）／「シェア中トースト」の中身（件数/決定/キャンセル/SELECT ALL＝s157 ShareSelectBar 流用）／自由タイトル(N-37)。→ 理解確認は済んでいるので、次は**方針の選択肢提示→設計→spec→plan**。
-
-### ② TUNE 保管＋フラット化 ＝ 詳細は IDEAS.md「TUNE 中身デザインの保管＋フラット化（s163）」
-ユーザーが最も気に入っているのは**「右の縦パネルにする前の“横並び”TUNE」**（サブ① Task 5 `d2fca70` で縦化する前）。正本ソース＝**git `b317fa2:components/board/TuneTrigger.tsx` / `TuneTrigger.module.css`**。作り替え前に `components/board/_archive/` へコメント付きで丸ごと保管（ビルド非結合）→ その後フラットに作り替え。
-
-### （フラット化の続き）サブ②白フラット default テーマ ＝ SHARE/TUNE の後
-新テーマ「白フラット・エディトリアル」を `THEME_REGISTRY` に追加し `DEFAULT_THEME_ID` 差し替え（親 spec §48：パレット/静かなメーター/モーション“無し”をモックで確認してから）。ThemePicker/ThemeCustomizeSection の残色トークンもこの回で白フラットに合わせる。メニューの新意匠（明るいフラット chrome）を白盤面に合わせて決めるならこの回（サブ①で構造は完成済み）。
+## その後に控える大物（順序の目安）
+- **フラット化 サブ②：白フラット default テーマ**（親 spec [2026-07-05-flat-theme-and-theme-boundary-design.md](superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md) §48：新テーマ追加＋`DEFAULT_THEME_ID` 差し替え・モック確認してから）→ ③カスタマイズ（角丸＋N-35 タイトル摘み）→ ④音波命名＋N-33 タグ表記。
+- TUNE 中身のフラット作り替え（保管済みなのでいつでも着手可）。
 
 ## サブ①の残り follow-up（非ブロッキング・次以降）
-- **N-07 e2e**：`board-b0.spec.ts` の IDB seed 版数ズレ（`open(db,9)` vs `DB_VERSION=16`）でこの spec が実行不能。セレクタは右ドロワー用に更新済だが**未実行検証**。seed を現行スキーマへ。
-- **SharedBoard.tsx**（受け取り画面）：TUNE と SHARE が独立 state で同時に開き得る（`activeDrawer` 統一が無い）。稀な組合せ・低優先。
-- **ChromeButton.test.tsx**：paper 削除で書き直した describe が薄い（textContent 不変のみ）。
-- 分解の残り：③カスタマイズ拡張（角丸 ON/OFF＋N-35 つまみ）／④音波テーマ命名＋N-33 タグ表記。
+- **N-07 e2e**：`board-b0.spec.ts` の IDB seed 版数ズレ（`open(db,9)` vs `DB_VERSION=16`）で実行不能。seed を現行スキーマへ。
+- **SharedBoard.tsx**：TUNE と SHARE が独立 state で同時に開き得る（低優先）。
+- **ChromeButton.test.tsx**：paper 削除で薄い describe。
 
 ## その他の保留（従来どおり）
 - **Mac 実機の目視**（フルスクリーン保存カード＋N-30 ピル）。
@@ -40,6 +34,6 @@
 - **ローンチ前必須**：(1)スマホ本格対応（最優先・未着手）(2)端末間同期（案B・スパイク緑）(3)見せ用共有ボード (4)翻訳/法務レビュー。
 
 ## 守ること（毎回）
-- 見た目変更は ui-design.md 準拠＋実機（Playwright）検証してからデプロイ。テーマ作業前に `reference_theme_system_foundation` と親 spec を読む。
+- 見た目変更は ui-design.md 準拠＋実機（Playwright/手動）検証してからデプロイ。テーマ作業前に `reference_theme_system_foundation` と親 spec を読む。
 - web 変更は deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build` → `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`。
 - 機微情報は `docs/private/` のみ。マージ後は生 `git log --graph`。応答は日本語・簡潔・平易。PopOut/PiP 等は正式名で呼ぶ。
