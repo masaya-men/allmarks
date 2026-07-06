@@ -25,9 +25,10 @@ type ResizeHandleProps = {
    *  override in-memory and has nothing to persist. */
   readonly onResizeEnd?: (finalCardWidth: number) => void
   /** Optional: notified when a drag actually starts (after the click
-   *  threshold is exceeded). Used by the parent to mark the card as
-   *  "currently resizing" so it can suppress unrelated chrome. */
-  readonly onResizeStart?: () => void
+   *  threshold is exceeded), with the grabbed corner. Used by the parent to
+   *  mark the card as "currently resizing" (board) or to anchor the opposite
+   *  corner during free-placement resize (CollageCanvas). */
+  readonly onResizeStart?: (corner: ResizeCorner) => void
 }
 
 /**
@@ -109,7 +110,7 @@ function Handle({ corner, cardWidth, cardHeight, maxCardWidth, onResize, onResiz
       let dragStarted = false
 
       setResizing(true)
-      onResizeStart?.()
+      onResizeStart?.(corner)
 
       const move = (ev: globalThis.PointerEvent): void => {
         const totalDx = ev.clientX - startClientX

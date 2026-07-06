@@ -91,7 +91,7 @@ import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/shar
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { ShareToast } from '@/components/board/ShareToast'
-import { seedCollagePositions, moveElement, resizeElement, bringToFront, type CollagePositions } from '@/lib/share/collage-layout'
+import { seedCollagePositions, moveElement, resizeElementFromCorner, bringToFront, type CollagePositions } from '@/lib/share/collage-layout'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -2883,21 +2883,15 @@ export function BoardRoot() {
       {sharePhase === 'arrange' && (
         <>
           <CollageCanvas
-            items={lightboxNavItems
-              .filter((it) => selectedIds.has(it.bookmarkId))
-              .map((it) => ({
-                id: it.bookmarkId,
-                title: it.title,
-                thumbnailUrl: it.thumbnail ?? null,
-                url: it.url,
-              }))}
+            items={lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))}
             positions={collagePositions}
             order={collageOrder}
             onMove={(id, x, y): void => setCollagePositions((p) => moveElement(p, id, x, y))}
-            onResize={(id, w): void => setCollagePositions((p) => resizeElement(p, id, w))}
+            onResize={(id, corner, w): void => setCollagePositions((p) => resizeElementFromCorner(p, id, corner, w))}
             onGrab={(id): void => setCollageOrder((o) => bringToFront(o, id))}
             maxCardWidth={effectiveLayoutWidth}
-            themeId={themeId}
+            displayMode={displayMode}
+            paper={themeMeta.decorations === true}
           />
           <ShareToast
             count={selectedIds.size}

@@ -3,51 +3,57 @@
 import { useRef, type PointerEvent, type ReactElement } from 'react'
 import { CardNode } from './CardNode'
 import { ResizeHandle } from './ResizeHandle'
+import { pickCard } from './cards'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
-import type { ThemeId } from '@/lib/board/types'
-import type { CollagePositions } from '@/lib/share/collage-layout'
+import type { DisplayMode } from '@/lib/board/types'
+import type { BoardItem } from '@/lib/storage/use-board-data'
+import type { CollagePositions, CollageResizeCorner } from '@/lib/share/collage-layout'
 import styles from './CollageCanvas.module.css'
 
-/** One selected card as CollageCanvas needs to see it — id/title/thumbnail for
- *  CardNode, plus the source url (unused for render today, carried so the
- *  parent doesn't need a second lookup once export/link-out lands). */
-export type CollageCanvasItem = {
-  readonly id: string
-  readonly title: string
-  readonly thumbnailUrl: string | null
-  readonly url: string
-}
-
 export type CollageCanvasProps = {
-  readonly items: ReadonlyArray<CollageCanvasItem>
-  /** Current free-placement layout, owned by the parent (BoardRoot). */
+  /** The selected board cards, as full BoardItems — so each renders its REAL
+   *  card face (pickCard → ImageCard / VideoThumbCard / PlaceholderCard), the
+   *  same as on the board. Keyed for layout by `bookmarkId`. */
+  readonly items: ReadonlyArray<BoardItem>
+  /** Current free-placement layout, owned by the parent (BoardRoot). Keyed by bookmarkId. */
   readonly positions: CollagePositions
   /** Overlap order — last id is frontmost. Owned by the parent. */
   readonly order: readonly string[]
   readonly onMove: (id: string, x: number, y: number) => void
-  readonly onResize: (id: string, nextWidth: number) => void
+  /** Resize keeping the grabbed corner's diagonal opposite fixed (the parent
+   *  applies resizeElementFromCorner). */
+  readonly onResize: (id: string, corner: CollageResizeCorner, nextWidth: number) => void
   /** Fired on pointerdown so the parent can bringToFront(order, id). */
   readonly onGrab: (id: string) => void
   /** Upper bound for a card's resized width (board px) — passed straight to the
    *  shared ResizeHandle so a card can grow up to "edge to edge" of the arrange
    *  area. Matches the board's effectiveLayoutWidth. */
   readonly maxCardWidth: number
-  readonly themeId: ThemeId
+  /** Board display mode, forwarded to each card face. */
+  readonly displayMode: DisplayMode
+  /** True on paper themes (themeMeta.decorations) — renders the paper card face. */
+  readonly paper: boolean
 }
 
 /** Intra-canvas stacking floor. This is a LOCAL offset for ordering this
  *  component's own elements relative to each other (via `order.indexOf`) —
  *  it has nothing to do with the canvas root's global stacking, which comes
- *  from BOARD_Z_INDEX once BoardRoot mounts this component (Task 4). */
+ *  from BOARD_Z_INDEX (SHARE_CANVAS, applied to .root below). */
 const INTRA_CANVAS_Z_BASE = 10
 
 /** Free-placement arrange layer for the SHARE collage rebuild. Renders each
- *  selected card as an absolutely-positioned, drag-movable, corner-resizable
- *  element. Layout state (positions/order) is lifted to the parent — this
- *  component only translates pointer gestures into the `onMove`/`onResize`/
- *  `onGrab` callbacks and never mutates layout itself. */
+ *  selected card (its real board face) as an absolutely-positioned,
+ *  drag-movable, corner-resizable element. Layout state (positions/order) is
+ *  lifted to the parent — this component only translates pointer gestures into
+ *  the `onMove`/`onResize`/`onGrab` callbacks and never mutates layout itself.
+ *  Cards render static (autoCycle/ambientOn off) so the arrange view holds still
+ *  for the user's screenshot. */
 export function CollageCanvas(props: CollageCanvasProps): ReactElement {
   const refs = useRef<Record<string, HTMLDivElement | null>>({})
+  /** The corner grabbed for the in-flight resize (one resize at a time), set on
+   *  ResizeHandle's onResizeStart and read on each onResize so the parent can
+   *  anchor the opposite corner. */
+  const activeResizeCorner = useRef<CollageResizeCorner>('br')
 
   /** Shared pointer-gesture plumbing for drag-move: captures the pointer
    *  (best-effort — jsdom/synthetic pointers don't support capture, which is
@@ -102,18 +108,20 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
 
   return (
     <div className={styles.root} style={{ zIndex: BOARD_Z_INDEX.SHARE_CANVAS }} data-testid="collage-canvas">
-      {props.items.map((it) => {
-        const p = props.positions[it.id]
+      {props.items.map((item) => {
+        const id = item.bookmarkId
+        const p = props.positions[id]
         if (!p) return null
-        const z = INTRA_CANVAS_Z_BASE + Math.max(0, props.order.indexOf(it.id))
+        const z = INTRA_CANVAS_Z_BASE + Math.max(0, props.order.indexOf(id))
+        const Card = pickCard(item)
         return (
           <div
-            key={it.id}
+            key={id}
             ref={(el): void => {
-              refs.current[it.id] = el
+              refs.current[id] = el
             }}
             className={styles.element}
-            data-testid={`collage-el-${it.id}`}
+            data-testid={`collage-el-${id}`}
             style={{
               position: 'absolute',
               top: 0,
@@ -123,21 +131,36 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               transform: `translate(${p.x}px, ${p.y}px)`,
               zIndex: z,
             }}
-            onPointerDown={(e): void => handleElementPointerDown(e, it.id)}
+            onPointerDown={(e): void => handleElementPointerDown(e, id)}
           >
-            <CardNode id={it.id} title={it.title} thumbnailUrl={it.thumbnailUrl ?? undefined} />
-            {/* Reuse the board's exact resize affordance: four corner hot
-                zones that reveal a 1/4-circle arc on hover and scale the card
-                (aspect-preserved via resizeElement). Its handles stopPropagation
+            {/* Render the SAME card face the board renders (pickCard body inside
+                CardNode), so text/placeholder and video cards show properly —
+                not just a bare thumbnail+title. Static for a stable screenshot. */}
+            <CardNode id={id} title={item.title} thumbnailUrl={item.thumbnail}>
+              <Card
+                item={item}
+                cardWidth={p.w}
+                cardHeight={p.h}
+                displayMode={item.displayMode ?? props.displayMode}
+                autoCycle={false}
+                ambientOn={false}
+                paper={props.paper}
+              />
+            </CardNode>
+            {/* Reuse the board's exact resize affordance: four corner hot zones
+                that reveal a 1/4-circle arc on hover. Its handles stopPropagation
                 on pointerdown, so grabbing a corner never starts a card move.
-                onResizeStart brings the card forward, matching the drag path's
-                onGrab (the element's own onGrab is suppressed by that stopProp). */}
+                onResizeStart records the grabbed corner (so the parent anchors
+                the opposite corner) and brings the card forward. */}
             <ResizeHandle
               cardWidth={p.w}
               cardHeight={p.h}
               maxCardWidth={props.maxCardWidth}
-              onResize={(w): void => props.onResize(it.id, w)}
-              onResizeStart={(): void => props.onGrab(it.id)}
+              onResizeStart={(corner): void => {
+                activeResizeCorner.current = corner
+                props.onGrab(id)
+              }}
+              onResize={(w): void => props.onResize(id, activeResizeCorner.current, w)}
             />
           </div>
         )
