@@ -43,6 +43,43 @@ const INTRA_CANVAS_Z_BASE = 10
 export function CollageCanvas(props: CollageCanvasProps): ReactElement {
   const refs = useRef<Record<string, HTMLDivElement | null>>({})
 
+  /** Shared pointer-gesture plumbing for both drag-move and corner-resize:
+   *  captures the pointer (best-effort — jsdom/synthetic pointers don't
+   *  support capture, which is fine since it's only a UX nicety, not load
+   *  bearing for either gesture), wires up move/up/cancel listeners, and
+   *  tears everything down (including releasing capture) on end. Callers
+   *  supply only the gesture-specific math via `onMove`; `onEnd` is for any
+   *  extra per-gesture teardown beyond the shared listener/capture cleanup. */
+  function bindPointerGesture(
+    el: HTMLDivElement,
+    pointerId: number,
+    onMove: (ev: globalThis.PointerEvent) => void,
+    onEnd?: () => void,
+  ): void {
+    try {
+      el.setPointerCapture(pointerId)
+    } catch {
+      /* jsdom / synthetic pointer — capture isn't critical for the gesture itself */
+    }
+    const move = (ev: globalThis.PointerEvent): void => {
+      onMove(ev)
+    }
+    const up = (): void => {
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerup', up)
+      el.removeEventListener('pointercancel', up)
+      try {
+        if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId)
+      } catch {
+        /* jsdom / synthetic pointer */
+      }
+      onEnd?.()
+    }
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerup', up)
+    el.addEventListener('pointercancel', up)
+  }
+
   function handleElementPointerDown(e: PointerEvent<HTMLDivElement>, id: string): void {
     if (e.button > 0) return
     e.stopPropagation()
@@ -54,28 +91,9 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
     const startY = e.clientY
     const originX = start.x
     const originY = start.y
-    const pointerId = e.pointerId
-    try {
-      el.setPointerCapture(pointerId)
-    } catch {
-      /* jsdom / synthetic pointer — capture isn't critical for the drag itself */
-    }
-    const move = (ev: globalThis.PointerEvent): void => {
+    bindPointerGesture(el, e.pointerId, (ev) => {
       props.onMove(id, originX + (ev.clientX - startX), originY + (ev.clientY - startY))
-    }
-    const up = (): void => {
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-      try {
-        if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId)
-      } catch {
-        /* jsdom / synthetic pointer */
-      }
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+    })
   }
 
   function handleResizePointerDown(e: PointerEvent<HTMLDivElement>, id: string): void {
@@ -86,28 +104,9 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
     if (!el || !start) return
     const startX = e.clientX
     const startW = start.w
-    const pointerId = e.pointerId
-    try {
-      el.setPointerCapture(pointerId)
-    } catch {
-      /* jsdom / synthetic pointer — capture isn't critical for the drag itself */
-    }
-    const move = (ev: globalThis.PointerEvent): void => {
+    bindPointerGesture(el, e.pointerId, (ev) => {
       props.onResize(id, startW + (ev.clientX - startX) * 2)
-    }
-    const up = (): void => {
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-      try {
-        if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId)
-      } catch {
-        /* jsdom / synthetic pointer */
-      }
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+    })
   }
 
   return (
