@@ -91,7 +91,7 @@ import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/shar
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { ShareToast } from '@/components/board/ShareToast'
-import { seedCollagePositions, moveElement, resizeElementFromCorner, bringToFront, type CollagePositions } from '@/lib/share/collage-layout'
+import { moveElement, resizeElementFromCorner, bringToFront, type CollagePositions } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
@@ -1997,24 +1997,45 @@ export function BoardRoot() {
     setShareTitle(null)
   }, [])
 
-  // Stage 1 → 2: take the working selection in board order, seed a one-shot
-  // skyline packing at real measured sizes as the free-placement start layout,
-  // and switch to the arrange stage.
+  // Stage 1 → 2: start the arrange stage as an EXACT snapshot of the board grid
+  // you see (WYSIWYG), NOT a fresh re-pack. We reuse each selected card's real
+  // grid position from `layout.positions`, shifted by the board card-layer's
+  // live SCREEN origin — which we measure from any one rendered card
+  // (rect.left − its layout.x). The collage root is viewport-aligned
+  // (position:absolute inset:0), so this places every card pixel-identical to
+  // where it sits on the board. Deriving the origin from a real rect (instead of
+  // re-deriving it from container padding + scroll offsets) is robust to every
+  // stage offset (cf. reference_cardwidth_dual_management); using `layout` for
+  // ALL selected cards — not just the on-screen ones — means virtualized
+  // off-screen selections are placed at their true board position rather than
+  // silently dropped. Unselected cards simply leave their gap.
   const handleEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
     const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
-    const cards = chosen.map((it) => {
-      const w = customWidths[it.bookmarkId] ?? cardWidthPx
-      // itemSkylineHeight is the single source of truth for card height
-      // (handles placeholder cards' fixed PLACEHOLDER_ASPECT + aspectRatio<=0
-      // fallback), so the seeded collage matches what the board renders.
-      return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
-    })
-    setCollagePositions(seedCollagePositions(cards, viewport.w, cardGapPx))
+    // Measure the card-layer screen origin from one rendered card.
+    let originX = 0
+    let originY = 0
+    if (typeof document !== 'undefined') {
+      const probe = document.querySelector('[data-bookmark-id]')
+      const probeId = probe?.getAttribute('data-bookmark-id')
+      const probePos = probeId ? layout.positions[probeId] : undefined
+      if (probe && probePos) {
+        const r = probe.getBoundingClientRect()
+        originX = r.left - probePos.x
+        originY = r.top - probePos.y
+      }
+    }
+    const seeded: Record<string, CardPosition> = {}
+    for (const it of chosen) {
+      const lp = layout.positions[it.bookmarkId]
+      if (!lp) continue
+      seeded[it.bookmarkId] = { ...lp, x: lp.x + originX, y: lp.y + originY }
+    }
+    setCollagePositions(seeded)
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))
     setSharePhase('arrange')
-  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, cardGapPx, viewport.w, bgTypoEnabled, viewport.h])
+  }, [selectedIds, lightboxNavItems, layout, bgTypoEnabled, viewport.w, viewport.h])
 
   // Esc leaves SHARE mode from either stage (= CANCEL / DONE). Only bound while
   // a share stage is active.

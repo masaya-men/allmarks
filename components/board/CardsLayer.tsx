@@ -1376,6 +1376,9 @@ export function CardsLayer({
                   cardWidth={p.w}
                   cardHeight={p.h}
                   maxCardWidth={viewportWidth}
+                  // Continuous diagonal-projection resize (same as the collage):
+                  // an off-diagonal drag no longer makes the card leap size.
+                  resizeModel="projection"
                   onResize={(nextW: number): void => onCardResize(it.bookmarkId, nextW)}
                   onResizeEnd={(finalW: number): void => onCardResizeEnd(it.bookmarkId, finalW)}
                 />
