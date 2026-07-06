@@ -21,6 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 168 — ★アレンジのコラージュを「盤面全体を端まで埋める」justified rows に作り替え・本番反映済／ユーザー未解決フィードバック解消)
+
+- **アレンジ自動配置を justified rows（写真ギャラリー方式）に全面書き換え完了**（commit `feat(share): justified-rows fill`＋`fix(share): fill the whole board panel`・tsc0 / **vitest 2054/0** / build OK・`allmarks.app` 反映済 deploy `c9b6f562`）。brainstorm→spec→plan→インライン TDD＋敵対的コードレビュー→Playwright 実測。
+  - 方針（ユーザー合意・平易な相談で確定）：**カードは縦横比だけ見て各行を横いっぱいに揃え、行数を選んで盤面の高さも埋める／盤面での大小（customWidth）は完全無視／上限＝盤面既定サイズ268px／隙間はカード高さに比例（盤面の 97:268 比）**。少数カードは中央寄せ（巨大化させない）、多数は端までびっしり。配置後の移動/拡大/回転は従来どおり（＝自動は「良い初期状態」）。
+  - 純関数 `fitSelectionToScreen`（[lib/share/collage-layout.ts](../lib/share/collage-layout.ts)）を skyline＋一律縮小 から justified rows に差し替え（第3引数 `gap` → `opts?: FitOptions`・`COLLAGE_GAP_PX` 撤去）。行高は閉形、目標行高 H は**密スキャン**で「収まる中で最大総高」を選ぶ。
+  - **L字余白の主因は2つ（実装中に判明・両方修正）**：①`handleEnterArrange` の rect が CANVAS_MARGIN を**二重控除**して縦横とも約96px小さかった（`viewport` は既に内側キャンバス clientW/H＝window−96 なのに更に `-2m`）。純関数はその小さい rect を100%充填していた＝右+下の帯。②`fitSelectionToScreen` の**二分探索が非単調な totalHeight(H) の谷にはまり下埋め不足**（per-row cap＋行分割の離散性）→ H 密スキャンに変更（**敵対的コードレビュー subagent が発見**・最悪 ⅔ 空きを実証）。加えて縦残余を行間へ配分（平均行高で頭打ち）。
+  - **Playwright 実測（1920×1080 / 1489×679 / 2560×1080・100枚）＝ content が safe rect を幅・高さとも 1.000 充填・画面外0・ヘッダー/バー非重複**。旧 masonry は幅0.89/高さ0.77 だった。
+  - **学び**：Next 増分キャッシュで**見た目検証時に stale JS が出る**（out/ 再ビルドしても古い chunk）→ 見た目検証前は `rm -rf .next out` でクリーンビルド必須。
+  - 正本 [spec](superpowers/specs/2026-07-06-share-arrange-justified-fill-design.md) / [plan](superpowers/plans/2026-07-06-share-arrange-justified-fill.md) / narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s168。
+- **次（セッション169）＝ SHARE フェーズ3（COPY LINK・親 plan Task8-10）or フラット化 サブ②（白フラット default）**。ユーザー実機目視の残＝アレンジの移動/リサイズ/回転が新配置でも自然か・少数カードの中央寄せ。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 167 — ★N-40「アレンジで多数カードが出ない」根治＋N-41 回転ノブ刷新・master マージ済・本番反映済／opus 全ブランチレビュー「Ready to merge」)
 
 - **N-40 根治＝SHARE アレンジを「1画面に最大サイズで自動配置」に**（merge `b42c2fe`・tsc0 / **vitest 2051/0** / build OK・`allmarks.app` 反映済 deploy `77a0f06a`）。brainstorm→spec→plan→**サブエージェント駆動4タスク＋各レビュー＋opus 全ブランチレビュー（Ready to merge）**。

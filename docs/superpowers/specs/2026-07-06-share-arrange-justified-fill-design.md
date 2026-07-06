@@ -73,12 +73,16 @@ h_row = min( h_fill,  MAX_CARD_WIDTH / maxAspect_in_row )
 - 上限が効かない（多数カードで `h_fill` が十分小さい）とき → 行は幅いっぱいに充填。
 - 上限が効く（少数カード）とき → カードは board 既定幅で止まり、その行は幅を満たさない → **水平中央寄せ**（無理に巨大化しない）。
 
-### 3.5 行数を選んで高さも埋める
+### 3.5 目標行高 H を選んで高さも埋める
 
-行の割り方（＝行数 R と各行への配分）を変えると総高が変わる。**総高が rect.height を最も埋める割り方**を選ぶ：
+目標行高 H を変えると行の割れ方が変わり総高が変わる。**総高が rect.height に収まる中で最大（＝最も埋まる）** H を選ぶ。
 
-- 実装候補（plan で確定）：**行数 R を探索**（`1..n`）。各 R でカードを document 順に**アスペクト和がなるべく均等**になるよう連続グループへ分割（＝行高が揃い、最後の行だけ極端に小さくならない）。各行に §3.3〜3.4 を適用し総高を算出。**総高が rect.height に収まる中で最大（最も埋まる）R** を採用。総高は R について概ね単調増加（R 大 → 行が高い → 総高増）なので二分探索可。
-- 上限（§3.4）が全 R で効く少数カードのとき → どの R もカードは board 既定サイズ。最も board 的に見える割り方（幅を最大限使う小さめの R）を採り、余白は許容。
+- **実装（確定）＝H の密スキャン**：H を `(0, maxCardWidth]` で等間隔に多点評価（実装は 240 分割）し、`totalHeight ≤ rect.height` の中で総高が最大のレイアウトを採る。**二分探索は使えない**：per-row cap（§3.4）と行分割の離散性により **totalHeight(H) は H について単調でない**（オーバーフローの「谷」ができ、二分探索は谷にはまって大きく下埋めする＝敵対的レビューで最悪 ⅔ 空きを実証）。`build(H)` は O(n) と軽いのでスキャンで十分速い。極小 H の層は必ず収まるのでフォールバック下限になる。
+- 上限（§3.4）が効く少数カードのとき → カードは board 既定サイズで頭打ち、総高が rect.height に届かない → §3.6 の中央寄せで余白を吸収（巨大化させない）。
+
+### 3.5b 縦の残余を行間へ配分（量子化対策）
+
+行数が離散なので、収まる最大の H でも総高が rect.height に少し届かないことがある（均一アスペクトで顕著）。残余は**行間ギャップへ均等配分**して上端→下端まで充填する。ただし**1行あたり平均行高までに頭打ち**し、配分しきれない残余は上下中央に置く（＝数枚を数行のときに行が離れすぎてスカスカにならないようにする）。1行だけ（少数カード）は配分せず中央寄せ。
 
 ### 3.6 中央寄せ（残余の吸収）
 
@@ -114,7 +118,9 @@ h_row = min( h_fill,  MAX_CARD_WIDTH / maxAspect_in_row )
 |---|---|
 | `lib/share/collage-layout.ts` | `fitSelectionToScreen` を justified rows に**全面書き換え**（signature 変更：`gap` 廃止・任意 `opts`）。行の幾何・行数探索・上限・中央寄せの純ロジックを内包。`seedCollagePositions`/`moveElement`/`resizeElement`/`resizeElementFromCorner`/`bringToFront` は**不変**。 |
 | `lib/share/collage-layout.test.ts` | `fitSelectionToScreen` の describe を**新契約に書き直し**（§5 の不変条件）。旧「倍率上限1＝自然サイズ維持」系の期待は破棄（新契約は縦横比のみ・board 既定を上限に充填）。他純関数のテストは温存。 |
-| `components/board/BoardRoot.tsx` | `handleEnterArrange` の `fitSelectionToScreen(cards, rect, COLLAGE_GAP_PX)` → `fitSelectionToScreen(cards, rect)`。`cards` は従来どおり（内部で縦横比のみ使用するので変更不要）。 |
+| `components/board/BoardRoot.tsx` | `handleEnterArrange` の呼び出しを `fitSelectionToScreen(cards, rect)` に。**加えて rect の二重控除バグを是正**（下記）。 |
+
+**実装で判明した既存バグ＝rect の CANVAS_MARGIN 二重控除（重要・これが L 字余白の主因）**：`handleEnterArrange` は rect を `viewport.w/h - 2*CANVAS_MARGIN` で算出していたが、`viewport.w/h` は**既に内側キャンバス(.canvas)の clientWidth/clientHeight**＝window から CANVAS_MARGIN を両側控除済み（実測：window 1489×679 → viewport 1393×583）。そこから更に `-2*m` して**縦横とも約96px 小さい rect**を渡していた（collage-canvas は window 全面座標）。純関数はその小さい rect を100%充填していた＝右と下に約96px の帯が残る＝ユーザーの L 字余白。修正＝`viewport.w/h` を frame とし ARRANGE_SAFE_INSET のみで inset（`- 2*m` を削除）。Playwright 実測で content が safe rect を **幅・高さとも 1.000** 充填、画面外0、ヘッダー/バー非重複。
 | `lib/board/constants.ts` | `COLLAGE_GAP_PX` を撤去 or 用途があれば残置（要確認）。`BOARD_SLIDERS` は不変。 |
 
 **変えないもの（前段から流用）**：安全領域 `ARRANGE_SAFE_INSET`＋`.canvas`（盤面パネル内）／座標焼き込み（移動・リサイズ・回転は画面px座標）／`CollageCanvas` の描画・装飾追従（`--card-w`）・回転ノブ。

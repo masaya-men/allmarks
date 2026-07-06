@@ -8913,3 +8913,33 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 - **装飾がカードに追従しない（盤面本体でも同じ問題）**：round 1 の「一律縮小率」方式が間違いで、サイズ違いのカードで大カードの装飾が小さいまま固定だった。→ 装飾サイズを**各カードの実幅の比例**に。カードラッパー（[CardsLayer.tsx](../components/board/CardsLayer.tsx)＝盤面／CollageCanvas .element＝コラージュ）が `--card-w` を公開し、`PaperCardDecorations.module.css` を `calc(var(--card-w,267.84px)/267.84 * N)` に。一律倍率 `--deco-scale` は撤去。**盤面既定は byte-identical**（fallback 267.84＝既定幅）。検証：テープ/カード比が大カード 0.288・小カード 0.284〜0.289＝**サイズ非依存で一定**。
 - **もっと全体に最大サイズで詰める**：計測でカードは領域の88〜96%を覆うが倍率0.31〜0.37と低い＝**盤面の巨大ギャップ(97px)**が縮小後も約30pxで隙間が面積を食っていた。→ コラージュ専用 `COLLAGE_GAP_PX=16` を `fitSelectionToScreen` に渡す。検証：倍率 0.38〜0.45（**カード約20%大**）、最小 50→61〜71px、ギャップ 30→6〜7px、盤面枠内/画面内維持。
 - 残り（非ブロッキング）：縦の量子化余白 約11%（masonry の性質・必要ならさらに詰め可）／紙テーマ React #418（既存）。
+
+---
+
+## セッション 168 (2026-07-06) — アレンジのコラージュを「盤面全体を端まで埋める」justified rows に作り替え
+
+### 背景（s167 末の未解決フィードバック）
+SHARE アレンジで100枚を全選択すると、カードが左上に固まり**右の縦帯と下の帯が大きく空く**（L字余白）。ユーザー要求＝「その空白が最小になるよう盤面全体に詰めろ」。gap の話ではなく**盤面という長方形を充填できていない**こと。
+
+### 方針決定（brainstorming・平易な相談で確定）
+「①盤面を埋める・②縦横比を保つ・③相対サイズを保つ」は同時に2つまでしか満たせないトレードオフを提示。カードは本物の board カード面（タイトル付き）なので**②は絶対**。ユーザーが**③を完全放棄**（「盤面で拡大されていたかどうかはすべて無視でいい」）→ **①+②＝justified rows（写真ギャラリー方式）**を採用。
+- 1本のルール：**縦横比だけ見て各行を横いっぱいに揃え、行数を選んで高さも埋める／上限＝盤面既定サイズ268px／隙間はカード高さに比例（盤面の 97:268 比）**。少数カードは中央寄せ（巨大化させない）、多数は端までびっしり。少数用の特別分岐は不要（上限1本で自然に両立）＝ユーザー発案。
+- 正本 [spec](superpowers/specs/2026-07-06-share-arrange-justified-fill-design.md) / [plan](superpowers/plans/2026-07-06-share-arrange-justified-fill.md)。
+
+### 実装（インライン TDD）
+- 純関数 `fitSelectionToScreen`（[lib/share/collage-layout.ts](../lib/share/collage-layout.ts)）を skyline masonry＋一律縮小＋中央寄せ から justified rows に全面書き換え。署名 第3引数 `gap:number` → `opts?:FitOptions`（`maxCardWidth`/`gapRatio`・既定は `BOARD_SLIDERS` 由来）。不要になった `COLLAGE_GAP_PX` を撤去。`seedCollagePositions` 等は不変。
+- 行高は閉形（`rectWidth / (Σaspect + (n-1)·gapRatio)`）。per-row cap で最大幅カードが `maxCardWidth` を超えない行高に頭打ち。
+
+### L字余白の主因は2つ（実装中に判明・両方修正）
+1. **rect の CANVAS_MARGIN 二重控除（既存バグ・主因）**：`handleEnterArrange` は rect を `viewport.w/h - 2*CANVAS_MARGIN` で算出していたが、`viewport.w/h` は**既に内側キャンバス(.canvas)の clientWidth/clientHeight**＝window から margin 両側控除済み（実測 window 1489×679 → viewport 1393×583・collage-canvas は window 全面座標）。更に `-2m` して**縦横とも約96px小さい rect**を渡していた。純関数はその小さい rect を100%充填していた＝右+下に約96px の帯。修正＝`viewport.w/h` を frame とし ARRANGE_SAFE_INSET のみ inset。
+2. **非単調な totalHeight での二分探索の谷落ち（敵対的コードレビュー subagent が発見）**：per-row cap＋行分割の離散性で `totalHeight(H)` は H について非単調（オーバーフローの谷）。二分探索が谷にはまり**最悪 ⅔ 空き**（レビューが 200k ケース fuzz で実証・当該入力で 33% しか埋めず）。→ H を `(0, maxCardWidth]` で**密スキャン（240分割）**して「収まる中で総高が最大」を選ぶ方式に変更。加えて縦残余を行間へ均等配分（平均行高で頭打ち・配分しきれない分は中央）で量子化ギャップを解消。
+
+### 検証
+- 純ロジック TDD：17テスト（rect内・縦横比保持・上限超えない・少数中央・多数充填・隙間比・非単調回帰・本番1489相当・N-40崩壊回帰）。全体 **vitest 2054/0・tsc0**。
+- **Playwright 実測（`out/` ローカル配信・100枚・IDB 直 seed）**：1920×1080 / 1489×679(本人) / 2560×1080(ウルトラワイド) の3ビューポートで **content が safe rect を幅・高さとも 1.000 充填・画面外0・ヘッダー/バー非重複**。スクショ目視で右・下の L字余白が完全に消え、盤面全体が justified で埋まることを確認。旧 masonry は幅0.89/高さ0.77 だった。
+- 本番反映済（`allmarks.app`・deploy `c9b6f562`）。
+
+### 学び
+- **Next 増分キャッシュで見た目検証時に stale JS**：out/ を再ビルドしても serve/browser が古い chunk を出し、算法修正が反映されず数値が同一のままになる → 見た目検証前は `rm -rf .next out` でクリーンビルド必須（今回2回ハマった）。
+- placeholder カードは `itemSkylineHeight` で aspectRatio を無視（固定 PLACEHOLDER_ASPECT=1.25）。seed に thumbnail を付ければ image カード＝aspect が効く。
+- 敵対的コードレビュー subagent（fuzz で非単調性を実証）が二分探索の谷落ちを摘出＝インライン TDD だけでは見落としていた実バグを1件捕捉。

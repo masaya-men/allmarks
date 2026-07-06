@@ -1,31 +1,26 @@
-# 次セッションのゴール (= セッション 168)
+# 次セッションのゴール (= セッション 169)
 
-## ★このセッションの最優先 ＝ アレンジのコラージュを「盤面全体を埋める」詰め方に作り直す（ユーザー未解決フィードバック）
+## 前セッション(168)の成果 ＝ アレンジのコラージュが盤面全体を端まで埋まるようになった（ユーザー未解決フィードバック解消）
 
-**症状（s167 末・ユーザー実機・赤マーク付きスクショで指示）**: SHARE アレンジで100枚を全選択すると、カードが**左上に固まり、右側の縦帯と下側の大きな帯が空く**（L字の余白）。ユーザーの要求は「**この空白（赤）が最小になるよう盤面全体に詰めろ**」。
-**s167 でユーザーが明言した誤解の訂正**: これは「カード同士の隙間（gap）」の話ではない。gap は s167 で16pxに縮めて解決済み。**問題は“盤面という長方形を埋めきれていない”こと**（右と下が余る）。
-**根本原因（確定）**: 現行 `fitSelectionToScreen` は「石垣状パック（skyline masonry）＋一律縮小＋中央寄せ」。masonry は端がギザギザで**矩形を充填しない**うえ、一律縮小は縦横どちらかに余白を残す。実測（2560×1080）でも content は rect の幅95%・高さ88%止まり。ウルトラワイド実機では更に余る（幅~89%・高さ~77%）＝右+下のL字空白。
+- **justified rows（写真ギャラリー方式）に作り替え完了**（commit `feat(share): justified-rows fill` ＋ `fix(share): fill the whole board panel`・本番 `allmarks.app` 反映済 deploy `c9b6f562`）。
+- 方針（ユーザー合意）：**縦横比だけ見て端まで詰める／盤面での大小は無視／上限＝盤面既定サイズ268px／隙間はカード高さに比例（盤面と同じ97:268）**。少数は中央寄せ、多数は端までびっしり。配置後の移動/拡大/回転は従来どおり。
+- **L字余白の主因は2つ**（実装中に判明・両方修正）：①`handleEnterArrange` の rect が CANVAS_MARGIN を**二重控除**して縦横とも約96px小さかった（`viewport` は既にパネル内寸なのに更に`-2m`していた）②`fitSelectionToScreen` の**二分探索が非単調な totalHeight の谷にはまって下埋け不足**（→ H の密スキャンに変更・敵対的レビューで発見）。
+- **Playwright 実測（1920/1489/2560・100枚）＝ safe rect を幅・高さとも 1.000 充填・画面外0・ヘッダー/バー非重複**。純ロジック TDD 全緑（vitest 2054/0・tsc0）。
+- 正本 [spec](superpowers/specs/2026-07-06-share-arrange-justified-fill-design.md) / [plan](superpowers/plans/2026-07-06-share-arrange-justified-fill.md)。
 
-**→ 次セッションの実装**: **矩形を埋めるレイアウト**に作り替える。第一候補＝**justified rows（写真コラージュ標準）**：
-- 各行にカードを入れ、その行を**横幅いっぱいにスケール**（行内カードは共通の行高、幅はアスペクト比で可変）。
-- 行を縦に積み、最後に**全体を縦方向も余さず埋めるようスケール**（ラギッドな下端・右端を解消）。
-- 結果：安全領域（盤面パネル）を**端から端まで充填**、赤い空白が最小に。
-- 維持すべき制約：①盤面パネル `.canvas` 内に収める（s167 済）②装飾は各カード幅に比例（`--card-w`・s167 済）③移動/リサイズ/回転は画面px座標で動く（座標に焼き込み）。
-- トレードオフ（要ユーザー確認）：justified は行ごとに高さを揃えるため、**カードの相対サイズが多少ならされる**（巨大カードがそのまま巨大ではなくなる）。ユーザーは「充填 > 相対サイズ忠実」を望んでいる様子。折衷（大カードの上限を緩める等）も検討。
-- 純ロジックは TDD（矩形内充填率が高いこと・全カードがrect内・端が揃うこと）。実機は Playwright で content/rect 充填率が大きく上がることを実測（メモ `reference_playwright_board_share_verify`）。
+## このセッション(169)の最優先候補（ユーザーと相談して決める）
 
-## s167 で出荷済み（ユーザーOK）
-- **N-40 アレンジ「盤面に自動配置」＋N-41 回転ノブ**（Canva/Figma 風・線の先端にノブ）＝**ユーザーOK**。
-- **紙装飾がカード幅に追従（盤面本体でも）**＝`--card-w` 方式＝**ユーザーOK**。
-- **盤面パネル内に収める**（`.canvas`＝ウィンドウ−48基準）＝OK。
-- **コラージュのギャップ16px**（隙間は解決）＝OK。
-- 本番反映済み（`allmarks.app`・最終 deploy `d486acd7`）。
+1. **SHARE フェーズ3＝COPY LINK 併記**（親 plan Task8-10・`docs/superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md`）。`/s` サーバー route は thumb 必須 → COPY LINK は裏で thumb 生成するヘッドレス版に縮小、が確定方針。
+2. **フラット化 サブ②＝白フラット default テーマ**（新テーマ追加＋`DEFAULT_THEME_ID` 差し替え・モックで確認してから）→ ③角丸＋N-35 → ④音波命名＋N-33。
 
-## その後に控える大物
-- **SHARE フェーズ3＝COPY LINK 併記**（親 plan Task8-10）。
-- **フラット化 サブ②＝白フラット default テーマ** → ③角丸＋N-35 → ④音波命名＋N-33。
+## ユーザー実機で見てほしい残（Playwright 不可のジェスチャ）
+
+- アレンジで**掴んで移動／隅リサイズ／回転**が新配置（端まで充填）でも自然に動くか。
+- 少数カード（数枚）選択時に board-ish サイズで中央にまとまるか（巨大化しないか）。
+- 多数選択で右・下の余白が消えて盤面全体が埋まっているか（本人の 1489 実画面で）。
 
 ## 守ること（毎回）
+
 - 見た目/挙動変更は実機（Playwright/手動）検証してからデプロイ。ジェスチャは `setPointerCapture` で Playwright 不可＝純関数 TDD＋手動目視。
-- web 変更は deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build` → `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`。
+- web 変更は deploy 前 `rtk tsc && rtk vitest run && rtk pnpm build` → `npx wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true`。**Next 増分キャッシュで stale JS が出るので、見た目検証前は `rm -rf .next out` してクリーンビルド**（今回ハマった）。
 - 機微情報は `docs/private/` のみ。応答は日本語・簡潔・平易。PopOut/PiP 等は正式名で呼ぶ。盤面/LP は傾けない（傾きは SHARE コラージュ限定）。
