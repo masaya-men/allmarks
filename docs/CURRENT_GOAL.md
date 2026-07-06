@@ -1,31 +1,30 @@
-# 次セッションのゴール (= セッション 166)
+# 次セッションのゴール (= セッション 167)
 
-## 今の状態（s165＝SHARE 作り直しフェーズ1 出荷・本番反映済／次はフェーズ2＝タイトル）
+## 今の状態（s166＝SHARE フェーズ2＝タイトル 出荷・本番反映済／次はフェーズ3＝COPY LINK）
 
-**セッション165でやったこと（HEAD `214e9a8`・tsc0 / vitest 2016/0 / build OK・`allmarks.app` 反映済）:**
-- **SHARE 作り直しフェーズ1（plan Task1-4）をサブエージェント駆動で完遂**。窓を出さない二段モード：SHARE→第1段「選ぶ」（ARRANGE リラベル）→第2段「並べる」（**選択カードだけを空きテーマ背景の自由配置キャンバス**・ドラッグ移動/隅リサイズ/掴んで最前面）＋下部 SHARING トースト→範囲選択スクショ→DONE/CANCEL/Esc でグリッド復帰・一時状態破棄。旧 SHARE ドロワー撤去（`SenderShareModal` は open=false 温存）。
-- 純ロジック `lib/share/collage-layout.ts`（TDD）／`CollageCanvas.tsx`（`bindPointerGesture`）／`ShareToast.tsx`／BoardRoot は `sharePhase:'select'|'arrange'|null` に一般化。
-- **opus 全ブランチレビューで Critical 1件摘出→修正**：arrange 中に背後グリッドが透け見え（spec §1.3 違反）→ CardsLayer を arrange 時 非描画＋CollageCanvas 専用 z 層 `SHARE_CANVAS:95`＋`isolation:isolate`＋ヒント ASCII 化。**Playwright 実測で修正確認**（arrange で `[data-bookmark-id]`=0）。
+**セッション166でやったこと（HEAD `1c07630`・tsc0 / vitest 2026/0 / build OK・`allmarks.app` 反映済）:**
+- **SHARE 作り直しフェーズ2＝編集できるコラージュ見出し（タイトル）をサブエージェント駆動で完遂**（plan Task5-7）。arrange 段で、TITLE トグルで出し入れする**背景の大きな見出し**を、その場インライン編集＋掴んでドラッグ移動＋隅で拡縮できる要素にした。**既定でカードの後ろ**（背景見出し）。
+- 純ロジック `lib/share/share-title.ts`（`ShareTitleConfig{enabled,text,size,x,y}`・TDD）／新規 `ShareTitleElement.tsx`（背景ワードマークの見た目 `.text` を流用・`BoardBackgroundTypography.tsx` は不変＝信頼契約維持・uncontrolled contentEditable で caret 飛び回避）／CollageCanvas は `title` prop でタイトル層を追加（z:auto＝カードの後ろ）／BoardRoot は `shareTitle` state を arrange 入口で seed・離脱で破棄。
+- **opus 全ブランチレビューで跨ぎ seam を1件摘出→修正**：arrange 中の TITLE トグルが**IDB 永続の `handleToggleBgTypo` を呼んでいて、コラージュだけタイトル無しにすると DONE 後も盤面ワードマークが恒久的に消える**（spec §10 違反）→ arrange 中はトグルを ephemeral な `shareTitle.enabled` だけに向ける（`handleToggleShareTitle`）＋sync effect 撤去。併せて編集中スクショの caret focus ring を `outline:none` で抑制。
+- **Playwright 実測（out/ ローカル）**：arrange でタイトル1つだけ・元ワードマーク非描画（二重タイトルなし）・z タイトル auto/カード 10（後ろ）・グリッド隠れ・コラージュ6枚を確認。
 
-## このセッションのゴール ＝ SHARE フェーズ2＝タイトル（サブエージェント駆動）
+## このセッションのゴール ＝ SHARE フェーズ3＝COPY LINK 併記（サブエージェント駆動）
 
-**plan の Task5-7（フェーズ2＝編集/移動できるコラージュ見出し＝タイトル）を実装。** [plan](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md) §フェーズ2。
-- Task5 `lib/share/share-title.ts`（`ShareTitleConfig{enabled,text,size,x,y}`・純関数・TDD）→ Task6 `ShareTitleElement.tsx`（背景ワードマーク流用・inline 編集＋ドラッグ移動＋隅リサイズ・`BoardBackgroundTypography` 本体は不変で別コンポーネント化）→ Task7 CollageCanvas/BoardRoot 接続（既定でカードの後ろ・既存 TITLE トグル連動・離脱で破棄）。
-- **フェーズ2 出荷チェックポイント**でゲート緑→本番デプロイ→目視。
-- ジェスチャ系は `setPointerCapture` で Playwright 不可＝純関数テスト＋手動目視（フェーズ1と同様、seed→SELECT ALL→ARRANGE で arrange 段まで到達しスクショ検証は可能）。
+**plan の Task8-10（取り込みリンクを裏ヘッドレスで生成してトーストに併記）を実装。** [plan](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md) §フェーズ3。
+- Task8 `lib/share/create-import-link.ts`（thumb 生成注入で orchestration だけ純テスト・`vi.fn` は単一ジェネリック形＝memory `reference_vitest4_vi_fn_generic`）→ Task9 ShareToast に COPY LINK ボタン＋arrange 中だけ隠し `ShareMirror` capture ノードで裏 thumb 生成＋`SenderShareModal` 可視 UI 撤去（`render-share-image.ts`/`capture-mirror.ts`/`ShareMirror.tsx` は温存）→ Task10 最終クリーンアップ・全体検証・デプロイ。
+- **サーバー制約**：`/s` 生成 route は thumb 必須（無いと 400・memory `reference_share_create_requires_thumb`）＝リンクだけ生成は不可 → 裏で thumb 生成する縮小ヘルパーにする。
+- **フェーズ3 出荷チェックポイント**でゲート緑→本番デプロイ→目視。
 
-## フェーズ1 = ユーザー実機OK（s165 で確認済み）
-- ドラッグ移動／**4隅リサイズ＋掴んだ隅追従**（`resizeElementFromCorner`）／掴んで最前面／RESELECT 選択維持／DONE 復帰／**本物カード面の表示**（`pickCard` 描画・テキスト/プレースホルダも表示）＝すべて実機OK。
-- **残る目視（気が向いたら）**：オンボーディング SHARE beat の完走（automation 未検証）。cosmetic：初期カードが上部クロム裏に少し潜る（BOARD_TOP_PAD シード補正の follow-up）。
+## フェーズ2 = ユーザー実機目視の残（気が向いたら・automation 不可）
+- タイトルの**その場インライン編集**（クリック→打つ・空で消える）／**掴んでドラッグ移動**／**隅で拡縮**（巨大化・盤面横断OK）／**TITLE トグルで出し入れ**（arrange 中だけ・DONE 後に盤面ワードマークが元のままか＝ephemeral 確認）。すべて `setPointerCapture` で Playwright 不可＝実機目視。
+- cosmetic：初期タイトルはビューポート中央 seed（カードは上部 skyline）＝重なりは掴んで動かせばよい。空にしたタイトルの復帰は RESELECT→ARRANGE で再 seed（spec §4.2「空で消える」準拠）。
 
 ## その後に控える大物（順序の目安）
-- **SHARE フェーズ3＝COPY LINK 併記**（Task8-10・`/s` 生成を裏ヘッドレス化してトーストに併記）。
 - **フラット化 サブ②：白フラット default テーマ**（親 spec [2026-07-05-flat-theme-and-theme-boundary-design.md](superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md) §48）→ ③カスタマイズ（角丸＋N-35）→ ④音波命名＋N-33。
 
-## サブ①の残り follow-up（非ブロッキング・SHARE で拾えるもの）
-- **フェーズ1 defer 済 Minor**：CollageCanvas の `bindPointerGesture` 未使用 `onEnd?` param（inert）／ドラッグ中の全 items.map 再レンダ（一時レイヤなので許容）／arrange 中も FilterPill/toolbar がクリック可＝フィルタ変更で選択カードが落ち得る（低頻度・要時 inert 化）／初期 seed が BOARD_TOP_PAD 未適用で高い。
-- **N-07 e2e**：`board-b0.spec.ts` の IDB seed 版数ズレ。
-- **オンボーディング SHARE reveal** が旧モーダルでなく select 段 UI を覆う形に変化（cosmetic・onboarding-design のコピー/ビジュアル刷新 follow-up）。
+## フェーズ2 の defer 済み follow-up（非ブロッキング・最終レビュー triage 済み）
+- **Minor**：空にしたタイトルの復帰導線が非自明（RESELECT→ARRANGE のみ・spec 準拠）／`ShareTitleElement` の2ジェスチャで pointer-capture 定型が重複（将来 `CollageCanvas.bindPointerGesture` と共通化余地）／drag 閾値が `Math.hypot`（板の InteractionLayer は per-axis abs・両方有効）。
+- フェーズ1 の defer 分（`bindPointerGesture` の未使用 onEnd?・arrange 中もフィルタ/toolbar クリック可で選択落ち得る等）は据え置き。
 
 ## 守ること（毎回）
 - 見た目変更は ui-design.md 準拠＋実機（Playwright/手動）検証してからデプロイ。テーマ作業前に `reference_theme_system_foundation` と親 spec を読む。

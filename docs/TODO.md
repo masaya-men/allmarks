@@ -21,6 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 166 — ★SHARE 作り直しフェーズ2＝タイトル 出荷・本番反映済／サブエージェント駆動＋opus 全ブランチレビューで Important 1件摘出→修正)
+
+- **SHARE 作り直しフェーズ2＝編集できるコラージュ見出し（タイトル）完遂**（HEAD `1c07630`・tsc0 / **vitest 2026/0** / build OK・`allmarks.app` 反映済）。arrange 段で TITLE トグルで出し入れする**背景の大きな見出し**を、その場インライン編集＋掴んでドラッグ移動＋隅で拡縮できる要素にした（**既定でカードの後ろ**＝背景見出し）。
+  - 純ロジック `lib/share/share-title.ts`（`ShareTitleConfig{enabled,text,size,x,y}`・`defaultShareTitleConfig`/`resolveTitleText`/`setTitleSize`(clamp 24..800)/`moveTitle`・TDD）。新規 `ShareTitleElement.tsx`＝背景ワードマークの見た目 `.text` を CSS import で流用・**`BoardBackgroundTypography.tsx` は不変**（「mounted==visible・状態なし」信頼契約維持）・uncontrolled contentEditable（focus 中は imperative に textContent 更新＝caret 飛び回避）・可視性は純状態関数・クリック/ドラッグは距離閾値で切替・隅ドラッグ→フォントサイズ。CollageCanvas は optional `title` prop でタイトル層（z:auto＝カードの正 z より後ろ・`.root` は isolation:isolate）。BoardRoot は `shareTitle` state を `handleEnterArrange` で seed・`handleExitShareMode` で破棄。
+  - 進め方＝**サブエージェント駆動**（Task ごとに実装者→レビュー→修正・モデルは純ロジック=haiku/コンポーネント=sonnet/配線=sonnet）＋**opus 全ブランチレビュー**。
+  - **タスクレビューで Important 1件（Task7）**：TITLE トグルの sync effect が off→on で全編集を破棄→ブリーフ準拠の単純ミラーに修正（編集保持）。
+  - **opus 全ブランチレビューで跨ぎ seam を1件摘出→修正**：arrange 中の TITLE トグルが**IDB 永続の `handleToggleBgTypo` を呼び、コラージュだけタイトル無しにすると DONE 後も盤面ワードマークが恒久的に消える**（spec §10「タイトル設定は React state のみ・永続なし」違反）→ arrange 中はトグルを ephemeral な `shareTitle.enabled` だけに向ける（`handleToggleShareTitle`）＋sync effect 撤去（`handleEnterArrange` の seed で入口の enabled は継承）。併せて編集中スクショの caret focus ring を `outline:none` 抑制。再レビュー＝MERGE YES。
+  - **Playwright 実測（out/ ローカル＝デプロイ成果物）**：arrange で `share-title-element`=1（タイトル1つだけ）・`board-bg-typography`=0（元ワードマーク非描画＝二重タイトルなし）・title text="AllMarks"・z タイトル auto/カード 10（後ろ）・`[data-bookmark-id]`=0（グリッド隠れ）・collage-el 6。スクショ目視も正。
+  - **automation 未検証＝ジェスチャ全般**（`setPointerCapture` で合成ポインタ不可）：インライン編集／ドラッグ移動／隅リサイズ／TITLE トグルの ephemeral（DONE 後に盤面ワードマークが元のままか）＝**ユーザー実機目視**。
+- **次（セッション167）＝ SHARE フェーズ3＝COPY LINK 併記**（plan Task8-10・裏ヘッドレスで thumb 生成→`/s` リンクをトーストに併記）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 165 — ★SHARE 作り直しフェーズ1 出荷・本番反映済／サブエージェント駆動＋opus 全ブランチレビューで Critical 1件摘出→修正)
 
 - **SHARE 作り直しフェーズ1（Task1-4）完遂**（HEAD `214e9a8`・tsc0 / **vitest 2016/0** / build OK・`allmarks.app` 反映済）。**窓を出さない二段モード**：ヘッダー SHARE → 第1段「選ぶ」（s157 選択流用・下部バー primary を **ARRANGE** にリラベル）→ 第2段「並べる」（**選択カードだけを空きテーマ背景の自由配置キャンバスに**・掴んでドラッグ移動/隅リサイズ/掴んで最前面）＋下部 **SHARING… トースト**（RESELECT/DONE）→ ユーザーが範囲選択スクショ → DONE/CANCEL/Esc で**グリッド復帰・一時状態破棄**（IDB 非永続）。**旧 SHARE 右ドロワー撤去**（`SenderShareModal` は open=false で温存＝フェーズ3 で裏ヘルパー化）。

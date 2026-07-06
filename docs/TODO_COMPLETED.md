@@ -8844,3 +8844,24 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 1. **リサイズを掴んだ隅追従に**（ユーザー「掴んだ箇所によってついてくる自然な方が」）：純関数 `resizeElementFromCorner`（対角の隅を固定して x/y も動かす・4隅・TDD）を追加し CollageCanvas から使用。`ResizeHandle.onResizeStart` に掴んだ corner を渡すよう拡張（板は onResizeStart 未使用＝後方互換）。CollageCanvas は active corner を ref で追跡。
 2. **テキストカードが表示されない**（ユーザー報告）を修正：collage は簡易 `CardNode`（title＋サムネのみ）で描いていたためサムネ無し（テキスト系）カードがほぼ空白だった → 板と同じく `CardNode` の子に **`pickCard(item)` の本物カード面**（ImageCard/VideoThumbCard/**PlaceholderCard**＝ホスト名＋生成アート）を描画。CollageCanvas は BoardItem[] を受け取り `displayMode`/`paper`（themeMeta.decorations）も forward、スクショ安定のため静止（autoCycle/ambientOn=false）。
 - tsc0 / vitest 2017 全緑 / build OK。Playwright 実測＝Instagram プレースホルダカードがホスト名＋アートで表示・ハンドル24個（4隅×6）・グリッド非表示・DONE 復帰を確認（動画サムネはローカル取得不可で暗いが本番でロード／掴み追従の実感触は setPointerCapture で自動検証不可＝実機目視）。**ユーザー実機OK**。
+
+---
+
+## セッション 166 (2026-07-06) — SHARE 作り直しフェーズ2＝タイトル（サブエージェント駆動・本番反映済）
+
+**ゴール**：plan Task5-7＝arrange 段で TITLE トグルで出し入れする「背景の大きな見出し（タイトル）」を、その場インライン編集＋掴んでドラッグ移動＋隅で拡縮できる要素にする（既定でカードの後ろ）。進め方＝サブエージェント駆動（実装者→タスクレビュー→修正ループ）＋opus 全ブランチレビュー。純ロジック TDD、ジェスチャは `setPointerCapture` で Playwright 不可＝純関数テスト＋手動目視。
+
+**成果（HEAD `1c07630`・tsc0 / vitest 2026/0 / build OK・`allmarks.app` 反映済・base `886be3c`）**：
+
+- **Task5 `lib/share/share-title.ts`（純ロジック・TDD・haiku 実装）**：`ShareTitleConfig{enabled,text:string|null,size,x,y}`＋`defaultShareTitleConfig`（中央 seed・text:null・size 120）／`resolveTitleText`（無効→''、text??default）／`setTitleSize`（clamp 24..800）／`moveTitle`。`TITLE_DEFAULT/MIN/MAX_PX=120/24/800`。5テスト。レビュー clean。
+- **Task6 `components/board/ShareTitleElement.tsx`（sonnet 実装）**：スタンドアロンの編集/ドラッグ/隅リサイズ要素。**`BoardBackgroundTypography.module.css` の `.text` を CSS import で流用**して字面一致（paper テーマの kasure ::after も継承）・font-size は `config.size` で inline 上書き。**`BoardBackgroundTypography.tsx` は不変**（「mounted==visible・状態なし」信頼契約）。**uncontrolled contentEditable**（focus 中は imperative に textContent を書かない＝React 再レンダで caret が先頭に飛ぶバグ回避）。可視性は純状態関数（`!enabled` or（空 & 非編集）で null）。クリック/ドラッグは距離閾値（4px）でラッチ切替、隅ドラッグ→`setTitleSize`（*2 感度）。マウントテスト3件（既定文言表示／無効で非描画／空で非描画）。レビュー clean（Minor 2：ファイル内 pointer 定型重複／閾値 hypot vs abs＝両方有効・defer）。
+- **Task7 配線（sonnet 実装）**：CollageCanvas に optional `title` prop でタイトル層（`.root` の第1子・**z:auto＝カードの正 z(10+) より後ろ**・`.root` は isolation:isolate）。BoardRoot は `shareTitle` state を `handleEnterArrange` で `defaultShareTitleConfig(bgTypoEnabled,…)` seed・`handleExitShareMode` で破棄。**跨ぎ seam 対策＝arrange 中は元 `BoardBackgroundTypography` を gate off**（`sharePhase !== 'arrange' && bgTypoMount`）＝二重タイトル防止。CollageCanvas に render テスト追加。
+  - **タスクレビューで Important 1件**：当初 sync effect が off→on で `defaultShareTitleConfig` に reseed してユーザー編集（位置/サイズ/文言）を破棄 → ブリーフ準拠の単純ミラー `{...c, enabled: bgTypoEnabled}` に修正（編集保持）。再レビュー Approved。
+- **opus 全ブランチレビュー（886be3c..59b80db）で跨ぎ seam を1件摘出**（タスク単位では見えない）：**arrange 中の TITLE トグルは IDB 永続の `handleToggleBgTypo` を呼んでおり、コラージュだけタイトル無しにして DONE すると盤面の背景ワードマークが恒久的に消える**（リロード後も・spec §10「配置座標・タイトル設定は React state のみ・IDB 永続なし」に違反）。→ **修正（opus 提案の decouple）**：新 `handleToggleShareTitle`（`shareTitle.enabled` だけを反転・IDB 非書込）を追加、ヘッダー `ChromeLedToggle` を phase-aware に（arrange 中は `shareTitle?.enabled`/`handleToggleShareTitle`、それ以外は `bgTypoEnabled`/`handleToggleBgTypo`）、sync effect を撤去。併せて **Minor：編集中スクショの caret focus ring を span inline `outline:'none'` で抑制**。commit `1c07630`。再レビュー＝両項目 Resolved・新規 seam なし・**MERGE YES**。
+- **ship gate**：tsc0 / vitest 2026/0 / `pnpm build` OK（`out/` 生成・assert-share-template OK）。
+- **Playwright 実測（out/ ローカル静的サーブ＝デプロイ成果物・/seed-demos で6枚・onboarding presuppress）**：arrange で `share-title-element`=1（タイトル1つだけ）・`board-bg-typography`=0（元ワードマーク非描画＝**二重タイトルなし**）・title text="AllMarks"（all フィルタ既定）・z タイトル auto/カード 10（**後ろ**）・`[data-bookmark-id]`=0（グリッド隠れ）・collage-el 6・collage-canvas 1。スクショ目視＝巨大「AllMarks」が中央でカードの後ろ、SHARING…6 トースト（ASCII 括弧のスクショ案内）、TITLE LED 緑。
+- **automation 未検証（`setPointerCapture` で合成ポインタ不可）＝ユーザー実機目視**：インライン編集／ドラッグ移動／隅リサイズ／TITLE トグルの ephemeral（DONE 後に盤面ワードマークが元のままか）。
+- **DEPLOYED to `allmarks.app`（--branch=master・deployment `def7ea57`）**。フェーズ2 コミット（master・base 886be3c）：`6a0651b`,`d0a343b`,`f1dde56`,`59b80db`,`1c07630`。
+- 正本 [spec §4](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md)／[plan フェーズ2](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)。
+- **defer 済み follow-up（非ブロッキング・最終レビュー triage）**：空にしたタイトルの復帰導線が非自明（RESELECT→ARRANGE で再 seed・spec §4.2「空で消える」準拠）／`ShareTitleElement` の2ジェスチャで pointer-capture 定型重複（将来 `CollageCanvas.bindPointerGesture` と共通化余地）／drag 閾値 `Math.hypot`（板 InteractionLayer は per-axis abs・両方有効）。
+- **次（セッション167）＝ SHARE フェーズ3＝COPY LINK 併記**（plan Task8-10）。
