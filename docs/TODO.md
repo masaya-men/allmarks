@@ -21,7 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 164 — SHARE 作り直し brainstorm→spec→plan 完成／TUNE 横並び保管 完了／コード変更なし)
+### 直近の状態 (セッション 165 — ★SHARE 作り直しフェーズ1 出荷・本番反映済／サブエージェント駆動＋opus 全ブランチレビューで Critical 1件摘出→修正)
+
+- **SHARE 作り直しフェーズ1（Task1-4）完遂**（HEAD `214e9a8`・tsc0 / **vitest 2016/0** / build OK・`allmarks.app` 反映済）。**窓を出さない二段モード**：ヘッダー SHARE → 第1段「選ぶ」（s157 選択流用・下部バー primary を **ARRANGE** にリラベル）→ 第2段「並べる」（**選択カードだけを空きテーマ背景の自由配置キャンバスに**・掴んでドラッグ移動/隅リサイズ/掴んで最前面）＋下部 **SHARING… トースト**（RESELECT/DONE）→ ユーザーが範囲選択スクショ → DONE/CANCEL/Esc で**グリッド復帰・一時状態破棄**（IDB 非永続）。**旧 SHARE 右ドロワー撤去**（`SenderShareModal` は open=false で温存＝フェーズ3 で裏ヘルパー化）。
+  - 純ロジックは `lib/share/collage-layout.ts`（seed/move/resize/bringToFront・TDD）に切り出し。描画 `CollageCanvas.tsx`（`setPointerCapture` ジェスチャは薄いラッパ・`bindPointerGesture` で共通化）＋`ShareToast.tsx`（z `BOARD_Z_INDEX.SHARE_TOAST:116`）。BoardRoot は `selectMode:boolean` を **`sharePhase:'select'|'arrange'|null`** に一般化。
+  - 進め方＝**サブエージェント駆動**（Task ごとに実装者→2段レビュー→修正ループ・モデルは純ロジック=haiku/統合=sonnet/BoardRoot=opus）＋**opus 全ブランチレビュー**。
+  - **全ブランチレビューで Critical 1件摘出→修正**（タスク単位レビューでは見えない seam）：arrange 中も背後の**実盤面グリッドが透明キャンバス越しに見えていた**（spec §1.3「選んだカードだけを空きキャンバスに出す」違反・スクショに写り込む）→ `sharePhase==='arrange'` 時に **CardsLayer を非描画**（テーマ背景層は残す）＋CollageCanvas に専用 z 層 `SHARE_CANVAS:95`＋`isolation:isolate`（端の暗幕焼き込み防止）＋ヒント全角括弧→ASCII。**修正後 Playwright 実測**（seed→SHARE→SELECT ALL→ARRANGE で `[data-bookmark-id]`=0＝グリッド消滅・collage 6枚・DONE で復帰を確認）。
+  - **automation 未検証＝オンボーディング SHARE beat の完走**（`setPointerCapture` 選択タップは合成ポインタ不可＋オンボ全走が複雑）＝コード経路は2レビュアーが健全と追跡済み・**ユーザー実機目視で確認**。
+  - **本番目視の残（ユーザー）**：arrange のドラッグ移動/隅リサイズ/掴んで最前面／RESELECT で選択維持／DONE でグリッド復帰／**オンボーディング完走**。cosmetic：初期 seed カードが上部クロム裏に少し潜る（BOARD_TOP_PAD 未適用・ドラッグで下げられる・defer）。
+- **次（セッション166）＝ SHARE フェーズ2＝タイトル**（plan Task5-7・`ShareTitleConfig` で背景ワードマークを編集/ドラッグ/サイズ/出し入れ・既定でカード後ろ）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+
 
 - **① SHARE 作り直し（N-34/36/37/38 統合）＝ spec＋plan 完成・実装待ち**。確定：**(b) 併記**（SHARE=スクショ主役／`/s` は「COPY LINK」任意アクション）・**(a) 一時状態**（自由配置はモード中だけ・抜けるとグリッド復帰）・**A案 二段**（窓を出さずモード突入→選ぶ→並べる→範囲選択スクショ）・**タイトル今回実装**（背景ワードマークを `ShareTitleConfig` で駆動・編集/ドラッグ/サイズ/出し入れ）。実コード発見＝`/s` サーバー route は thumb 必須→COPY LINK は裏で thumb 生成するヘッドレス版に縮小。**spec** [2026-07-06-share-collage-screenshot-rebuild-design.md](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md)／**plan** [2026-07-06-share-collage-screenshot-rebuild.md](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)（10タスク3フェーズ）。
 - **② TUNE 横並び保管 完了**（commit）：`b317fa2` の横並び TuneTrigger を `components/board/_archive/TuneClassicBody.{tsx,module.css}.txt`＋README にビルド非結合（`.txt`）で保管。tsc 緑で非結合確認。IDEAS.md「TUNE 中身デザインの保管＋フラット化」の保管ステップ達成、フラット作り替えは今後。
@@ -187,7 +197,7 @@
 - **(N-32) メニュー系を全部フラットに刷新（design 方針・N-26 と一体）** — 全メニュー UI をフラット化。N-26（default テーマをフラットにして LP に寄せる）と同じ「フラット化」方針の一部。**まとめて brainstorm**（視覚言語の再定義＝大物）。
 - **(N-33) タグの大文字表示（＝実は“見た目の設計判断”・brainstorm 合流／s161 調査済）** — **調査結果**：保存側は**既にケース保持**（`applyNewQuickTag` は入力どおり `trimmed` で作成、`addTag` は `input.name` 保存、照合は `toLowerCase()===toLowerCase()` の case-insensitive）＝**機能的に直すものは無い**。「小文字に見える」の正体は**表示側の `text-transform: lowercase` がアプリ全体で一貫**（[CardsLayer.module.css:41] 本体タグ／[FilterPill.module.css:366,419] フィルタ／[TagAddPopover.module.css:89]／triage TagPicker・TriageCard／ShareMirror／拡張 floating-button.css 計8+箇所）＝**意図的な統一デザイン**。→ 大文字を出す＝**アプリ全体の視覚変更**＝**フラット化 brainstorm（N-26/32/35）で「タグの見た目」として決定**（ui-design.md：見た目変更は要ユーザー承認、勝手に剥がさない）。**要確認の小さな別件**：share import (`lib/share/import.ts`) は名を lowercase 保存の疑い（import.test が `'design'` 期待）＝取り込みタグだけケースが落ちる不整合の可能性→ brainstorm 時に確認。
 - **(N-35) 見た目の微調整コントロール：タイトルの font/サイズ、背景の格子の太さ・ドット径 等を変えられる** — ユーザーが盤面の見た目を微調整（タイトル書体・サイズ／背景パターンの格子線の太さ・ドット径 等）。既存 theme-customization（`resolveThemeCustomization`/`patternSvgDataUri`）＋TUNE 資産に接続。※N-26/N-32（フラット化・TUNE 見直し）と**方針の擦り合わせが要る**：default は静かに・でもユーザーに“表現の摘み”は残す＝両立可能。どの摘みを新フラット系で残す/露出するかは brainstorm で確定。
-> **【N-34/36/37/38 は s164 で統合 → spec+plan 化＝実装待ち】** 確定方針: (b)併記・(a)一時・A案二段・タイトル今回実装。[spec](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md)／[plan](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)。以下の N-34/36/37/38 原文は経緯として保持。
+> **【N-34/36/37/38 統合 SHARE 作り直し — フェーズ1 出荷済（s165・本番反映）／フェーズ2・3 残】** [spec](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md)／[plan](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)（10タスク3フェーズ）。**✅ フェーズ1（Task1-4＝コアモード：SHARE→選ぶ→並べる自由配置→範囲選択スクショ→終了でグリッド復帰／旧ドロワー撤去）出荷**。残：**フェーズ2＝編集/移動できるコラージュ・タイトル（Task5-7・N-37）** → **フェーズ3＝COPY LINK 併記（Task8-10・N-38 の /s 併記）**。以下の N-34/36/37/38 原文は経緯として保持。
 
 - **(N-34) Share の作り方そのものを作り直す：選択→“疑似 Share タグ”で本物の盤面に入り、その場でサイズ/並び順を整えて送る** — 現状の選択的シェア(s157)は「選んだら即共有」。新案＝Share で選ぶ＝**疑似的に Share タグ/フィルタが付いた状態**で**本物のボード画面**に切替（複製プレビュー・ShareMirror を挟まない）→その場でカードの**サイズ・並び順を編集**→「この状態で送る」。**要設計判断**：その場の並べ替え/サイズ変更を **(a)** 共有だけの一時状態にして送信後に元の盤面へ戻すか、**(b)** 本物の盤面にも反映して残すか。**N-31（選択→本物の作業ビューで操作→実行）と同じ操作モデル**＝「選択して本物の画面で仕上げて実行」を Share・タグで一貫させる好機。既存 reorder/free-size 資産＋ `project_selective_share_shipped` を流用。
 - **(N-36) 共有画面のときだけ“完全自由配置”解禁＝コラージュモード（N-34 の核心強化）** — N-34 の share 編集画面では通常盤面のグリッド/skyline を外し、**カードを自由配置（位置・重なり・サイズ）できるコラージュ**に。**通常の盤面はグリッド維持**（memory `feedback_allmarks_grid_no_tilt`＝グリッド常時・傾けない は“本体盤面”のルールとして継続）、free 配置は**共有画面限定の意図的な例外**。要設計判断：①傾き/回転まで許すか（従来 no-tilt との関係）②自由配置の座標を**共有データ形式に載せる**（現状は並び順ベース＝x/y を持たせる必要）③**受け取り側 /s も自由配置を再現**できるようにするか④`dom-to-image` 書き出し（シェア画像）との整合。＝データ形式・受け取り・書き出しまで波及する中〜大。

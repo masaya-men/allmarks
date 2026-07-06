@@ -8804,3 +8804,36 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 ### メタ
 - コード/UI 変更ゼロ（docs＋ビルド非結合 `.txt` のみ）＝`out/` 不変のためデプロイ省略。
 - commit: spec（`docs: session 164 - SHARE collage/screenshot rebuild design spec`）／plan+spec 修正／archive（`chore(board): archive classic horizontal TUNE`）／このセッションクローズ docs。
+
+---
+
+## セッション 165 (2026-07-06) — ★SHARE 作り直しフェーズ1 出荷（コラージュ・スクショ方式のコアモード）・本番反映済
+
+**ゴール**: plan `2026-07-06-share-collage-screenshot-rebuild.md` のフェーズ1（Task1-4）を **サブエージェント駆動開発**で実装。窓を出さない二段 SHARE モード（選ぶ→並べる→範囲選択スクショ）＋旧ドロワー撤去。純ロジックは TDD、`setPointerCapture` ジェスチャは合成 Playwright ポインタ不可なので純関数テスト＋手動/スクショ目視。
+
+### 出荷内容（HEAD `214e9a8`・tsc0 / vitest 2016/0 / build OK・`allmarks.app` 反映済）
+
+- **Task1 `lib/share/collage-layout.ts`（純関数・TDD、commit `35c57b9`）**: `seedCollagePositions`（選択カードを `computeSkylineLayout` で1回詰めて初期配置）／`moveElement`（絶対 x/y・未知 id は同一参照）／`resizeElement`（幅変更＋アスペクト維持・下限 80px）／`bringToFront`（重なり順末尾へ）。5テスト。
+- **Task2 `components/board/CollageCanvas.tsx`（自由配置レイヤ、commit `08f5b1f`＋DRY 修正 `658bcaa`）**: 各カードを絶対配置 wrapper（inline transform）で描画・既存 `CardNode` 再利用。掴んでドラッグ移動／隅リサイズ／掴んで最前面。レビュー Important（2ハンドラ間の ~20行ポインタ定型重複）→ `bindPointerGesture` に抽出（挙動 byte-for-byte 保存を再レビューで確認）。マウントテストのみ（ジェスチャは手動）。
+- **Task3 `components/board/ShareToast.tsx`（下部トースト、commit `54ea242`）**: `SHARING… N`＋撮り方ヒント＋RESELECT/DONE。z `BOARD_Z_INDEX.SHARE_TOAST:116`（select-bar 115／popover 120 の間）。ShareSelectBar のガラス見た目流用・クリック域 ≥32px。2テスト。
+- **Task4 BoardRoot 配線（commit `ae9db8a`）**: `selectMode:boolean` を **`sharePhase:'select'|'arrange'|null`** に一般化（全10箇所を意味に応じて `==='select'` か `!==null` にマップ）。SHARE ボタン→モード突入。ShareSelectBar primary を **ARRANGE** にリラベル→`handleEnterArrange`（選択集合を実測サイズで seed）。第2段で CollageCanvas＋ShareToast を mount。DONE/CANCEL/Esc→`handleExitShareMode`（sharePhase/selectedIds/collagePositions/collageOrder を破棄）。**旧 SHARE 右ドロワー撤去**（`ActiveDrawer` から `'share'` 削除・`SenderShareModal` は open=false で温存＝フェーズ3 で裏ヘルパー化・ファイルは残す）。高さは `it.aspectRatio ?? 1` でなく `itemSkylineHeight(it,w)`（aspectRatio===0 の除算回避・sketch より堅牢）。オンボーディング SHARE beat は旧ドロワー結線だったので `sharePhase` に適応（tutorial 完走維持）。
+
+### 進め方＝サブエージェント駆動開発（Task ごとに 実装者→2段レビュー→修正ループ）
+
+- モデル選択：純ロジック=haiku（転記＋TDD）／統合=sonnet／BoardRoot 大改修=opus／レビューは diff サイズに応じ sonnet・opus。台帳 `.superpowers/sdd/progress.md`（gitignored）で進捗管理。
+- **opus 全ブランチレビューで Critical 1件摘出**（タスク単位レビューでは見えない seam）：arrange 中も背後の**実盤面グリッド（CardsLayer）が透明キャンバス越しに見えていた** → spec §1.3「選んだカードだけを空きキャンバスに出す」違反・範囲選択スクショにグリッドが写り込む。**spec を実読して修正方向を確定**（推測せず §1.3 を引用）。
+  - 修正（consolidated fix wave・commit `214e9a8`）：①`sharePhase==='arrange'` 時に **CardsLayer を非描画**（テーマ背景4層＝patternLayer/ThemeLayer/BoardDecorLayer/BoardBackgroundTypography は残す＝空きキャンバスの背景）②CollageCanvas `.root` に専用 z 層 `BOARD_Z_INDEX.SHARE_CANVAS:95`（scrim80 の上・toolbar110/toast116 の下）＋`isolation:isolate`（intra-canvas z 封じ込め・端の暗幕焼き込み防止＝Important）③ヒントの全角括弧 `（）`→ASCII（globally-clear-English 制約）。再レビューで挙動保存確認。
+
+### 検証（Playwright 実測＝ローカル static serve of out/ ＝デプロイ実 artifact）
+
+- `/seed-demos` で6件 seed（正しいスキーマ経由）＋IDB に onboarding-completed / data-home-ack を事前投入してモーダル阻害を回避 → SHARE→SELECT ALL→ARRANGE（全て通常ボタン＝合成ポインタ可）。
+- 結果：select 段＝グリッド6枚＋バー「ARRANGE (0)」。**arrange 段＝`[data-bookmark-id]`=0（グリッド完全非表示＝Critical 修正確証）**・collage-el=6・トースト "SHARING… 6"・hint ASCII 括弧・空きテーマ背景＋暗幕焼き込みなし（スクショで確認）。DONE→グリッド6復帰・collage-canvas=0（一時状態破棄）。
+- **automation 未検証＝オンボーディング SHARE beat 完走**（`setPointerCapture` 選択タップ＋オンボ全走が複雑）＝コード経路は2レビュアーが健全と追跡済み・ユーザー実機目視へ。
+
+### 残（フェーズ2/3・follow-up）
+
+- **フェーズ2＝タイトル（Task5-7・N-37）**：`ShareTitleConfig` で背景ワードマークを編集/ドラッグ/サイズ/出し入れ、既定でカード後ろ。**次セッション**。
+- **フェーズ3＝COPY LINK 併記（Task8-10・N-38）**：`/s` 生成を裏ヘッドレス化してトーストに併記。
+- defer 済 Minor：`bindPointerGesture` の未使用 `onEnd?`／ドラッグ中の全 items.map 再レンダ（一時レイヤ許容）／arrange 中も FilterPill/toolbar クリック可でフィルタ変更が選択カードを落とし得る（低頻度・要時 inert）／初期 seed が BOARD_TOP_PAD 未適用で上部クロム裏に潜る（cosmetic）／resizeElement の p.h===0/NaN 未ガード（実運用到達不能）。オンボーディング reveal が select 段 UI を覆う形に変化（cosmetic・onboarding-design 刷新 follow-up）。
+
+正本 [spec](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md) / [plan](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)。
