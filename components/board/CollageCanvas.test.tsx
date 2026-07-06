@@ -49,6 +49,8 @@ describe('CollageCanvas', () => {
         onMove={() => {}}
         onResize={() => {}}
         onGrab={() => {}}
+        rotations={{}}
+        onRotate={() => {}}
         maxCardWidth={1000}
         displayMode="visual"
         paper={false}
@@ -57,6 +59,52 @@ describe('CollageCanvas', () => {
     const el = getByTestId('collage-el-a')
     expect(el.style.width).toBe('200px')
     expect(el.style.transform).toContain('translate(')
+  })
+
+  it('applies per-card rotation to the element transform and exposes a rotate handle', () => {
+    const item = makeItem({ bookmarkId: 'a' })
+    const positions = seedCollagePositions([{ id: 'a', width: 200, height: 100 }], 1000, 10)
+    const { getByTestId } = render(
+      <CollageCanvas
+        items={[item]}
+        positions={positions}
+        order={['a']}
+        onMove={() => {}}
+        onResize={() => {}}
+        onGrab={() => {}}
+        rotations={{ a: 30 }}
+        onRotate={() => {}}
+        maxCardWidth={1000}
+        displayMode="visual"
+        paper={false}
+      />,
+    )
+    expect(getByTestId('collage-el-a').style.transform).toContain('rotate(30deg)')
+    expect(getByTestId('collage-rotate-a')).toBeTruthy()
+  })
+
+  it('renders the board paper-card decorations layer only on paper themes', () => {
+    const item = makeItem({ bookmarkId: 'a', thumbnail: undefined })
+    const positions = seedCollagePositions([{ id: 'a', width: 200, height: 100 }], 1000, 10)
+    const baseProps = {
+      items: [item],
+      positions,
+      order: ['a'],
+      onMove: () => {},
+      onResize: () => {},
+      onGrab: () => {},
+      rotations: {},
+      onRotate: () => {},
+      maxCardWidth: 1000,
+      displayMode: 'visual' as const,
+    }
+
+    const flat = render(<CollageCanvas {...baseProps} paper={false} />)
+    expect(flat.queryByTestId('paper-card-decorations')).toBeNull()
+    flat.unmount()
+
+    const paper = render(<CollageCanvas {...baseProps} paper={true} />)
+    expect(paper.getByTestId('paper-card-decorations')).toBeTruthy()
   })
 
   it('renders the title layer only when a `title` prop is passed', () => {
@@ -69,6 +117,8 @@ describe('CollageCanvas', () => {
       onMove: () => {},
       onResize: () => {},
       onGrab: () => {},
+      rotations: {},
+      onRotate: () => {},
       maxCardWidth: 1000,
       displayMode: 'visual' as const,
       paper: false,

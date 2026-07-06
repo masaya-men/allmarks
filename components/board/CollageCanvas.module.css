@@ -26,3 +26,46 @@
    zones + hover arc), rendered inside each .element — see CollageCanvas.tsx.
    No local resize CSS needed; ResizeHandle.module.css positions its own
    handles absolutely within the .element box. */
+
+/* Rotation handle — Canva/Figma-style orbit knob on a short stem above the
+   card's top-center. Hover-revealed (opacity + pointer-events gated on
+   .element:hover) so it never sits in the screenshot at rest and its invisible
+   hit-zone can't steal clicks from a card behind. Rotates WITH the card (it's a
+   child of the rotated .element). Hit target ≥32px (feedback_large_pointer). */
+.rotateHandle {
+  position: absolute;
+  left: 50%;
+  top: -38px;
+  width: 32px;
+  height: 40px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: grab;
+  touch-action: none;
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.element:hover .rotateHandle {
+  opacity: 1;
+  pointer-events: auto;
+}
+.rotateHandle:active {
+  cursor: grabbing;
+}
+.rotateStem {
+  width: 1.5px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.75);
+}
+.rotateKnob {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}

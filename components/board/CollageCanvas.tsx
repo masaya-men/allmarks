@@ -4,11 +4,13 @@ import { useRef, type PointerEvent, type ReactElement } from 'react'
 import { CardNode } from './CardNode'
 import { ResizeHandle } from './ResizeHandle'
 import { ShareTitleElement } from './ShareTitleElement'
-import { pickCard } from './cards'
+import { pickCard, paperCardHasTornBacking } from './cards'
+import { PaperCardDecorations } from './decorations/PaperCardDecorations'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import type { DisplayMode } from '@/lib/board/types'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { CollagePositions, CollageResizeCorner } from '@/lib/share/collage-layout'
+import { pointerAngleDeg, rotateFromPointer } from '@/lib/share/collage-rotate'
 import type { ShareTitleConfig } from '@/lib/share/share-title'
 import styles from './CollageCanvas.module.css'
 
@@ -27,6 +29,11 @@ export type CollageCanvasProps = {
   readonly onResize: (id: string, corner: CollageResizeCorner, nextWidth: number) => void
   /** Fired on pointerdown so the parent can bringToFront(order, id). */
   readonly onGrab: (id: string) => void
+  /** Free rotation per card (deg), owned by the parent. Collage-only — the board
+   *  grid never tilts. Missing id = 0°. */
+  readonly rotations: Readonly<Record<string, number>>
+  /** Fired on each rotate-handle move with the new absolute rotation (deg). */
+  readonly onRotate: (id: string, deg: number) => void
   /** Upper bound for a card's resized width (board px) — passed straight to the
    *  shared ResizeHandle so a card can grow up to "edge to edge" of the arrange
    *  area. Matches the board's effectiveLayoutWidth. */
@@ -115,6 +122,29 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
     })
   }
 
+  /** Rotate-handle drag (industry-standard orbit around the card center).
+   *  stopPropagation so grabbing the handle never starts a card move. The
+   *  card center = the element's rect center; since the wrapper rotates around
+   *  its own center, that center is stable through the whole gesture, so we
+   *  capture it once at pointerdown. */
+  function handleRotatePointerDown(e: PointerEvent<HTMLDivElement>, id: string): void {
+    if (e.button > 0) return
+    e.stopPropagation()
+    e.preventDefault()
+    const el = refs.current[id]
+    if (!el) return
+    props.onGrab(id)
+    const rect = el.getBoundingClientRect()
+    const cx = rect.left + rect.width / 2
+    const cy = rect.top + rect.height / 2
+    const startAngle = pointerAngleDeg(cx, cy, e.clientX, e.clientY)
+    const startRotation = props.rotations[id] ?? 0
+    bindPointerGesture(el, e.pointerId, (ev) => {
+      const currentAngle = pointerAngleDeg(cx, cy, ev.clientX, ev.clientY)
+      props.onRotate(id, rotateFromPointer({ startRotation, startAngle, currentAngle }))
+    })
+  }
+
   return (
     <div className={styles.root} style={{ zIndex: BOARD_Z_INDEX.SHARE_CANVAS }} data-testid="collage-canvas">
       {/* Title layer renders FIRST (before the cards below) so it paints
@@ -134,6 +164,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
         const p = props.positions[id]
         if (!p) return null
         const z = INTRA_CANVAS_Z_BASE + Math.max(0, props.order.indexOf(id))
+        const rot = props.rotations[id] ?? 0
         const Card = pickCard(item)
         return (
           <div
@@ -149,7 +180,11 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               left: 0,
               width: `${p.w}px`,
               height: `${p.h}px`,
-              transform: `translate(${p.x}px, ${p.y}px)`,
+              // Rotation applies to the WHOLE element (card + paper shadow +
+              // decorations + handles) so it tilts coherently, around its own
+              // center (transform-origin default). Collage-only tilt — the board
+              // grid never rotates.
+              transform: `translate(${p.x}px, ${p.y}px) rotate(${rot}deg)`,
               zIndex: z,
             }}
             onPointerDown={(e): void => handleElementPointerDown(e, id)}
@@ -168,6 +203,22 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
                 paper={props.paper}
               />
             </CardNode>
+            {/* Paper themes: the SAME decorative craft layer the board draws
+                (washi tape / push-pins), so a paper-theme collage matches the
+                board card exactly. Presentational + pointer-events:none. */}
+            {props.paper && (
+              <PaperCardDecorations cardId={id} tornBacking={paperCardHasTornBacking(item)} />
+            )}
+            {/* Rotation handle — industry-standard orbit affordance above the
+                top-center. Hover-revealed (kept out of the screenshot at rest). */}
+            <div
+              className={styles.rotateHandle}
+              data-testid={`collage-rotate-${id}`}
+              onPointerDown={(e): void => handleRotatePointerDown(e, id)}
+            >
+              <span className={styles.rotateStem} aria-hidden="true" />
+              <span className={styles.rotateKnob} aria-hidden="true" />
+            </div>
             {/* Reuse the board's exact resize affordance: four corner hot zones
                 that reveal a 1/4-circle arc on hover. Its handles stopPropagation
                 on pointerdown, so grabbing a corner never starts a card move.

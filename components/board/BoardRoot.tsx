@@ -397,6 +397,9 @@ export function BoardRoot() {
   // CollageCanvas). Discarded on exit — the temporary collage is never persisted.
   const [collagePositions, setCollagePositions] = useState<CollagePositions>({})
   const [collageOrder, setCollageOrder] = useState<string[]>([])
+  // Free per-card rotation (deg) for the arrange stage. Collage-only tilt — the
+  // board grid never rotates. Discarded on exit like the rest of the temp state.
+  const [collageRotations, setCollageRotations] = useState<Record<string, number>>({})
   // Editable collage title (phase 2). null while not arranging — seeded on
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
@@ -1994,6 +1997,7 @@ export function BoardRoot() {
     setSelectedIds(new Set())
     setCollagePositions({})
     setCollageOrder([])
+    setCollageRotations({})
     setShareTitle(null)
   }, [])
 
@@ -2033,6 +2037,7 @@ export function BoardRoot() {
     }
     setCollagePositions(seeded)
     setCollageOrder(chosen.map((it) => it.bookmarkId))
+    setCollageRotations({}) // re-entry (RESELECT→ARRANGE) reseeds a clean board snapshot: flat, no tilt
     setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))
     setSharePhase('arrange')
   }, [selectedIds, lightboxNavItems, layout, bgTypoEnabled, viewport.w, viewport.h])
@@ -2929,6 +2934,8 @@ export function BoardRoot() {
             onMove={(id, x, y): void => setCollagePositions((p) => moveElement(p, id, x, y))}
             onResize={(id, corner, w): void => setCollagePositions((p) => resizeElementFromCorner(p, id, corner, w))}
             onGrab={(id): void => setCollageOrder((o) => bringToFront(o, id))}
+            rotations={collageRotations}
+            onRotate={(id, deg): void => setCollageRotations((r) => ({ ...r, [id]: deg }))}
             maxCardWidth={effectiveLayoutWidth}
             displayMode={displayMode}
             paper={themeMeta.decorations === true}
