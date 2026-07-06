@@ -8837,3 +8837,5 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 - defer 済 Minor：`bindPointerGesture` の未使用 `onEnd?`／ドラッグ中の全 items.map 再レンダ（一時レイヤ許容）／arrange 中も FilterPill/toolbar クリック可でフィルタ変更が選択カードを落とし得る（低頻度・要時 inert）／初期 seed が BOARD_TOP_PAD 未適用で上部クロム裏に潜る（cosmetic）／resizeElement の p.h===0/NaN 未ガード（実運用到達不能）。オンボーディング reveal が select 段 UI を覆う形に変化（cosmetic・onboarding-design 刷新 follow-up）。
 
 正本 [spec](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md) / [plan](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)。
+
+**s165 追記（フェーズ1 後の実機フィードバック反映・本番デプロイ済）**: ユーザー指摘「リサイズは4隅すべて＋ホバーでハンドルが出る作りをそのまま流用したら」→ CollageCanvas の1隅の見えない箱を撤去し、**既存ボードの `ResizeHandle`（4隅ホットゾーン＋ホバーで1/4円弧・対角アンカーのアスペクト維持スケール）をそのまま流用**。`maxCardWidth={effectiveLayoutWidth}` を追加、`bindPointerGesture` の未使用 `onEnd` も除去。tsc0 / vitest 2015（channel.test.ts は既知フレーク・単体で緑）/ build OK。Playwright 実測＝arrange でリサイズハンドル24個（4隅×6枚）・ホバーで弧が出るのを確認。ドラッグの実リサイズ感は setPointerCapture で自動検証不可＝ユーザー実機目視。**注記**：現状はボード同様「カード左上を固定して幅スケール」＝掴んだ隅自体がカーソル追従はしない（＝対角アンカー移動が欲しければ x/y も動かす小改修が follow-up）。
