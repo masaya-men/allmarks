@@ -89,6 +89,9 @@ import type { ShareDataV2 } from '@/lib/share/types-v2'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/share/selection'
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
+import { CollageCanvas } from '@/components/board/CollageCanvas'
+import { ShareToast } from '@/components/board/ShareToast'
+import { seedCollagePositions, moveElement, resizeElement, bringToFront, type CollagePositions } from '@/lib/share/collage-layout'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -162,10 +165,11 @@ const RESIZE_GATE_PX = 8
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
 
-/** Unified right-drawer state (TUNE/SETTINGS/SHARE/THEMES) — only one panel
- *  open at a time. Only 'themes' is wired through this today; the others
- *  migrate onto ChromeDrawer in follow-up tasks. */
-type ActiveDrawer = 'tune' | 'settings' | 'share' | 'themes' | null
+/** Unified right-drawer state (TUNE/SETTINGS/THEMES) — only one panel open at
+ *  a time. Only 'themes' is wired through this today; the others migrate onto
+ *  ChromeDrawer in follow-up tasks. The old 'share' drawer was retired when
+ *  SHARE became the two-stage select→arrange collage mode (sharePhase). */
+type ActiveDrawer = 'tune' | 'settings' | 'themes' | null
 
 /** How long the background-typography (TITLE) node lingers, mounted, after the
  *  user turns it OFF so the CRT shutdown can play, before the parent unmounts
@@ -378,13 +382,20 @@ export function BoardRoot() {
   // via `data-bookmark-id` on close so pan/scroll during open are honoured.
   const [lightboxOriginRect, setLightboxOriginRect] = useState<DOMRect | null>(null)
   const [newlyAddedIds, setNewlyAddedIds] = useState<ReadonlySet<string>>(new Set())
-  // Selective share (spec 2026-07-03). selectMode = the board is in
-  // tap-to-select mode; selectedIds = the working selection while in the mode;
-  // shareSelectedIds = the CONFIRMED selection the share modal previews
-  // (null = normal newest-100 share). selectionScrollY = the modal preview's
-  // local scroll for a selection (the bg board scroll is meaningless there).
-  const [selectMode, setSelectMode] = useState<boolean>(false)
+  // SHARE collage mode (spec 2026-07-05). sharePhase drives the two-stage flow:
+  //   'select'  = tap-to-select cards on the board (ShareSelectBar visible)
+  //   'arrange' = free-placement collage canvas + ShareToast (screenshot stage)
+  //   null      = not sharing (normal board)
+  // selectedIds = the working selection carried across both stages.
+  // shareSelectedIds = legacy confirmed selection kept only for the dormant
+  // SenderShareModal helper (phase 3 reuse); null in the phase-1 flow.
+  // selectionScrollY = the (dormant) modal preview's local scroll for a selection.
+  const [sharePhase, setSharePhase] = useState<'select' | 'arrange' | null>(null)
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
+  // Free-placement layout for the arrange stage (owned here, passed to
+  // CollageCanvas). Discarded on exit — the temporary collage is never persisted.
+  const [collagePositions, setCollagePositions] = useState<CollagePositions>({})
+  const [collageOrder, setCollageOrder] = useState<string[]>([])
   const [capFlashCycle, setCapFlashCycle] = useState<number>(0)
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
@@ -1942,7 +1953,7 @@ export function BoardRoot() {
     setShareSelectedIds(null)
     setSelectedIds(new Set())
     setCapFlashCycle(0) // stale cycle would flash the pill on bar mount
-    setSelectMode(true)
+    setSharePhase('select')
   }, [])
 
   const handleSelectToggle = useCallback(
@@ -1963,29 +1974,43 @@ export function BoardRoot() {
     setSelectedIds(r.ids)
   }, [selectedIds, lightboxNavItems])
 
-  const handleSelectCancel = useCallback((): void => {
-    setSelectMode(false)
+  // Leave SHARE mode entirely from EITHER stage (CANCEL / Esc / DONE), discarding
+  // the working selection and the temporary collage layout — nothing is persisted.
+  const handleExitShareMode = useCallback((): void => {
+    setSharePhase(null)
     setSelectedIds(new Set())
+    setCollagePositions({})
+    setCollageOrder([])
   }, [])
 
-  const handleSelectShare = useCallback((): void => {
+  // Stage 1 → 2: take the working selection in board order, seed a one-shot
+  // skyline packing at real measured sizes as the free-placement start layout,
+  // and switch to the arrange stage.
+  const handleEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
-    setSelectMode(false)
-    setShareSelectedIds(selectedIds)
-    setSelectionScrollY(0)
-    setActiveDrawer('share')
-  }, [selectedIds])
+    const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
+    const cards = chosen.map((it) => {
+      const w = customWidths[it.bookmarkId] ?? cardWidthPx
+      // itemSkylineHeight is the single source of truth for card height
+      // (handles placeholder cards' fixed PLACEHOLDER_ASPECT + aspectRatio<=0
+      // fallback), so the seeded collage matches what the board renders.
+      return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
+    })
+    setCollagePositions(seedCollagePositions(cards, viewport.w, cardGapPx))
+    setCollageOrder(chosen.map((it) => it.bookmarkId))
+    setSharePhase('arrange')
+  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, cardGapPx, viewport.w])
 
-  // Esc leaves selection mode (= CANCEL). The share modal is closed while the
-  // mode is active, so this never fights the modal's own Esc handler.
+  // Esc leaves SHARE mode from either stage (= CANCEL / DONE). Only bound while
+  // a share stage is active.
   useEffect((): (() => void) | undefined => {
-    if (!selectMode) return undefined
+    if (sharePhase === null) return undefined
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') handleSelectCancel()
+      if (e.key === 'Escape') handleExitShareMode()
     }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
-  }, [selectMode, handleSelectCancel])
+  }, [sharePhase, handleExitShareMode])
 
   // Local preview pan for a selection share — clamped to the selection's own
   // content height; the bg board's viewport is not touched.
@@ -2458,7 +2483,7 @@ export function BoardRoot() {
               />
               <ChromeButton
                 label={t('board.chrome.share')}
-                onClick={(): void => { if (!selectMode) setActiveDrawer('share') }}
+                onClick={(): void => { if (sharePhase === null) handleEnterSelectMode() }}
                 data-testid="share-pill"
                 data-onboarding-target="share"
               />
@@ -2629,7 +2654,7 @@ export function BoardRoot() {
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
                 forceTagButtonVisible={forceCardTagVisible}
-                selectionMode={selectMode ? { selectedIds, onToggle: handleSelectToggle } : null}
+                selectionMode={sharePhase === 'select' ? { selectedIds, onToggle: handleSelectToggle } : null}
               />
             </div>
           </InteractionLayer>
@@ -2649,12 +2674,13 @@ export function BoardRoot() {
               onZoomToCard={zoomCameraToOnboardingCard}
               onZoomReset={resetOnboardingCamera}
               onShareSceneActive={(active): void => {
-                setActiveDrawer(active ? 'share' : null)
-                // Match onClose: closing the modal discards any confirmed
-                // one-shot selection so it can't leak into a later normal share (spec §1).
-                if (!active) setShareSelectedIds(null)
+                // The old 'share' drawer was retired; the tutorial's share beat
+                // now rides the two-stage SHARE mode. Entering = select stage,
+                // leaving = full exit (discards the working selection/collage).
+                if (active) handleEnterSelectMode()
+                else handleExitShareMode()
               }}
-              shareModalOpen={activeDrawer === 'share'}
+              shareModalOpen={sharePhase !== null}
             />
           )}
           {!loading && !showOnboarding && showDataHomeCard && (
@@ -2738,8 +2764,12 @@ export function BoardRoot() {
         isDefaultCustomization={isDefaultCustomization(themeId, themeCustomizations[themeId])}
         onCustomize={handleCustomizeTheme}
       />
+      {/* Old SHARE drawer retired: SHARE is now the two-stage select→arrange
+          collage mode (sharePhase). The modal is kept mounted-but-closed
+          (open=false → renders null) so its share-payload helpers survive for
+          the phase-3 COPY LINK path; it is never opened in the phase-1 flow. */}
       <SenderShareModal
-        open={activeDrawer === 'share'}
+        open={false}
         onClose={(): void => {
           setActiveDrawer(null)
           setShareSelectedIds(null) // selection is one-shot — discard on close (spec §1)
@@ -2835,14 +2865,39 @@ export function BoardRoot() {
       </PipPortal>
       <UndoToast input={toast} />
       <PasteSaveFeedback feedback={pasteFeedback} themeId={themeId} />
-      {selectMode && (
+      {sharePhase === 'select' && (
         <ShareSelectBar
           count={selectedIds.size}
           capFlashCycle={capFlashCycle}
           onSelectAll={handleSelectAll}
-          onShare={handleSelectShare}
-          onCancel={handleSelectCancel}
+          onShare={handleEnterArrange}
+          onCancel={handleExitShareMode}
         />
+      )}
+      {sharePhase === 'arrange' && (
+        <>
+          <CollageCanvas
+            items={lightboxNavItems
+              .filter((it) => selectedIds.has(it.bookmarkId))
+              .map((it) => ({
+                id: it.bookmarkId,
+                title: it.title,
+                thumbnailUrl: it.thumbnail ?? null,
+                url: it.url,
+              }))}
+            positions={collagePositions}
+            order={collageOrder}
+            onMove={(id, x, y): void => setCollagePositions((p) => moveElement(p, id, x, y))}
+            onResize={(id, w): void => setCollagePositions((p) => resizeElement(p, id, w))}
+            onGrab={(id): void => setCollageOrder((o) => bringToFront(o, id))}
+            themeId={themeId}
+          />
+          <ShareToast
+            count={selectedIds.size}
+            onReselect={(): void => setSharePhase('select')}
+            onDone={handleExitShareMode}
+          />
+        </>
       )}
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}
       <LanguageSwitcher />

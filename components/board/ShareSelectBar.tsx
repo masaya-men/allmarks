@@ -14,7 +14,9 @@ type Props = {
   readonly capFlashCycle: number
   /** Add every visible (filtered) card up to the cap, board order. */
   readonly onSelectAll: () => void
-  /** Confirm the selection and reopen the share modal. Disabled at 0. */
+  /** Advance to the arrange stage (free-placement collage) with the current
+   *  selection. Disabled at 0. (Prop name kept as onShare for call-site
+   *  stability; the label now reads ARRANGE.) */
   readonly onShare: () => void
   /** Leave selection mode and discard the selection. */
   readonly onCancel: () => void
@@ -51,7 +53,7 @@ export function ShareSelectBar({ count, capFlashCycle, onSelectAll, onShare, onC
             SELECT ALL
           </button>
           <button type="button" className={styles.primaryBtn} onClick={onShare} disabled={count === 0} data-testid="select-share-button">
-            SHARE ({count})
+            ARRANGE ({count})
           </button>
           <button type="button" className={styles.secondaryBtn} onClick={onCancel} data-testid="select-cancel-button">
             CANCEL

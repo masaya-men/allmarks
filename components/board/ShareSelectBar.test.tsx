@@ -20,13 +20,13 @@ describe('ShareSelectBar', () => {
     expect(screen.getByText('7 / 100 SELECTED')).toBeTruthy()
   })
 
-  it('disables SHARE at 0 and enables it with a count', () => {
+  it('disables ARRANGE at 0 and enables it with a count', () => {
     const { rerender } = render(<ShareSelectBar {...baseProps} count={0} />)
     expect((screen.getByTestId('select-share-button') as HTMLButtonElement).disabled).toBe(true)
     rerender(<ShareSelectBar {...baseProps} count={3} />)
     const btn = screen.getByTestId('select-share-button') as HTMLButtonElement
     expect(btn.disabled).toBe(false)
-    expect(btn.textContent).toContain('SHARE (3)')
+    expect(btn.textContent).toContain('ARRANGE (3)')
   })
 
   it('fires callbacks', () => {
