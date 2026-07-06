@@ -30,7 +30,8 @@
   - **opus 全ブランチレビューで跨ぎ seam を1件摘出→修正**：arrange 中の TITLE トグルが**IDB 永続の `handleToggleBgTypo` を呼び、コラージュだけタイトル無しにすると DONE 後も盤面ワードマークが恒久的に消える**（spec §10「タイトル設定は React state のみ・永続なし」違反）→ arrange 中はトグルを ephemeral な `shareTitle.enabled` だけに向ける（`handleToggleShareTitle`）＋sync effect 撤去（`handleEnterArrange` の seed で入口の enabled は継承）。併せて編集中スクショの caret focus ring を `outline:none` 抑制。再レビュー＝MERGE YES。
   - **Playwright 実測（out/ ローカル＝デプロイ成果物）**：arrange で `share-title-element`=1（タイトル1つだけ）・`board-bg-typography`=0（元ワードマーク非描画＝二重タイトルなし）・title text="AllMarks"・z タイトル auto/カード 10（後ろ）・`[data-bookmark-id]`=0（グリッド隠れ）・collage-el 6。スクショ目視も正。
   - **automation 未検証＝ジェスチャ全般**（`setPointerCapture` で合成ポインタ不可）：インライン編集／ドラッグ移動／隅リサイズ／TITLE トグルの ephemeral（DONE 後に盤面ワードマークが元のままか）＝**ユーザー実機目視**。
-- **次（セッション167）＝ SHARE フェーズ3＝COPY LINK 併記**（plan Task8-10・裏ヘッドレスで thumb 生成→`/s` リンクをトーストに併記）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **同セッション後半＝実機フィードバックを多数反映・出荷**（ユーザーOK・commit `d02b922`/`df8637b`/`383f0b91`）：①リサイズの不連続ジャンプ根治（`resize-math.ts` 対角投影・盤面もコラージュも projection）②**アレンジをボードグリッドの WYSIWYG スナップショット化**（実座標を実測原点でそのまま・Playwright Δ0）③paper 装飾（テープ/画鋲）もコラージュに＋**コラージュ限定の自由回転**（回転ハンドル・15°スナップ・`collage-rotate.ts`）。narrative は [TODO_COMPLETED.md](./TODO_COMPLETED.md) s166 追記1-3。
+- **次（セッション167）最優先＝N-40「SHARE アレンジで多数カードが出ない」を設計し直す**（根本原因確定・brainstorm 必須・ユーザーの一時 Share タグ案＋業界標準の pan/zoom キャンバスを評価）→ その後 N-41 回転ノブ刷新 → SHARE フェーズ3（COPY LINK・plan Task8-10）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 165 — ★SHARE 作り直しフェーズ1 出荷・本番反映済／サブエージェント駆動＋opus 全ブランチレビューで Critical 1件摘出→修正)
 
@@ -195,6 +196,8 @@
 
 > **前提の要確認（最重要）**: 友人が Mac で使ったのは **Chrome か Safari か**。拡張は Chrome ウェブストア版＝Chrome 専用。Safari だと拡張自体が入らない（＝タグメニュー等が出ないのは想定内で、対応は「Safari 拡張を別ビルド（大）」or「拡張なし導線＝ブックマークレット/貼り付け/PopOut を磨く」）。Mac-Chrome なら実バグ。ここで scope が大きく変わる。
 
+- **(N-40) ★SHARE アレンジで多数カードが表示されない（次セッション最優先・s166 ユーザー報告）** — 症状＝「並べる」画面で選択したカードの多数が出ない。**根本原因確定（s166 調査）**＝アレンジの `CollageCanvas .root` が `position:absolute; inset:0` で**固定1画面＝スクロールしない**。WYSIWYG 化で各カードは盤面の実座標に置かれ、**スクロールで画面外のカードは画面外座標に置かれて見えない**（ドロップではなく不可視）。多数選択（縦長ボード）で顕著。**設計方針の brainstorm 必須**：(a) ユーザー案＝一時 Share タグ＋ボード絞り込み表示でボードのスクロール/仮想化/レイアウトを再利用（取りこぼしゼロ・ただし自由配置/回転を grid reflow とどう両立するか）／(b) 自由配置キャンバスをスクロール可 or ズーム to fit に。核＝「1固定画面に閉じ込めない・盤面の表示能力を捨てない」（＝業界標準の pan/zoom キャンバス）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **(N-41) コラージュ回転ノブのデザインを業界水準に（s166 ユーザー指摘）** — 現状＝白丸＋細ステム（`CollageCanvas.module.css` `.rotateHandle/.rotateStem/.rotateKnob`）が業界水準でない。Canva/Figma 風の回転アイコン（弧＋矢印等）へ。角度ロジック `lib/share/collage-rotate.ts` は流用。機能は動作OK＝見た目のみ。
 - **(N-24) ★Mac 対応必須（ローンチ前）** — 友人実機で複数箇所うまく動かない。スマホと並ぶ公開前クロスプラットフォーム項目。**ブラウザ＝Chrome 確定（s161）**＝Safari 非対応ではなく Mac-Chrome の実バグ。**タグ窓が出なかった件は N-25（タグ0件バグ）だった可能性大＝修正済**。残りの「複数箇所」＝下記 N-39 ほか、Mac 実機で1つずつ洗い出し（systematic-debugging Phase1）。
 - ~~**(N-39) ブックマークレット保存の `/save` ウィンドウが「画面いっぱいの PiP みたいな見た目」（Mac-Chrome）**~~ ✅ **セッション162 完了（本番反映・commit `a3d53ed`/`ccae0f1`）**。真因＝**Mac-Chrome はフルスクリーン中 `window.open` を別タブ化する Chrome 仕様**（コードのバグでない）。対応＝`/save` が自ビューポートで「タブとして開かれた」と検知→中立な中央カード（間延び解消）＋初回フルスクリーン案内＋最短クローズ＋15言語化。**残＝Mac 実機の目視のみ（「おそらく大丈夫」）**。
 - **拡張の再審査は束ねる**：拡張本体に関わる修正（**N-25 済／N-28 Pinterest／N-29 設定導線**）は**まとめて manifest 版上げ→1回でストア再審査**（審査サイクルを何度も回さない）。N-30(PopOut) は web(PiP) 側なので拡張再審査には不要。
