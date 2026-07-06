@@ -1,0 +1,79 @@
+/* ShareToast — collage-screenshot SHARE の "arrange" 段階で出す下部固定バー。
+ * ShareSelectBar.module.css と同系のガラス板デザインを踏襲（sibling bar）。 */
+
+.root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  /* z-index applied inline from BOARD_Z_INDEX.SHARE_TOAST */
+}
+
+.bar {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: rgba(18, 18, 22, 0.88);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.40),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  max-width: min(92vw, 720px);
+}
+
+.counter {
+  font: 600 12px/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+}
+
+.hint {
+  font: 400 12px/1.4 var(--font-sans);
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.primaryBtn,
+.secondaryBtn {
+  min-height: 34px;
+  min-width: 32px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font: 600 12px/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primaryBtn {
+  border: 1px solid rgba(40, 241, 0, 0.45);
+  background: rgba(40, 241, 0, 0.14);
+  color: #28F100;
+  box-shadow: 0 0 14px rgba(40, 241, 0, 0.18);
+}
+
+.secondaryBtn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.secondaryBtn:hover,
+.primaryBtn:hover {
+  filter: brightness(1.2);
+}
