@@ -217,7 +217,25 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               onPointerDown={(e): void => handleRotatePointerDown(e, id)}
             >
               <span className={styles.rotateStem} aria-hidden="true" />
-              <span className={styles.rotateKnob} aria-hidden="true" />
+              <span className={styles.rotateKnob} aria-hidden="true">
+                {/* Canva/Figma 風の回転アイコン（ほぼ全周の弧＋矢頭）。currentColor で白。 */}
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+                  <path
+                    d="M19.5 12a7.5 7.5 0 1 1-2.6-5.7"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <polyline
+                    points="17.2 3.8 17.2 6.9 14.1 6.9"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
             </div>
             {/* Reuse the board's exact resize affordance: four corner hot zones
                 that reveal a 1/4-circle arc on hover. Its handles stopPropagation
