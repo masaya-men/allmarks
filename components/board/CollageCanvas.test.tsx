@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import { CollageCanvas } from './CollageCanvas'
 import { seedCollagePositions } from '@/lib/share/collage-layout'
+import { defaultShareTitleConfig } from '@/lib/share/share-title'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 
 // jsdom lacks IntersectionObserver; the real card faces may reference it.
@@ -56,5 +57,37 @@ describe('CollageCanvas', () => {
     const el = getByTestId('collage-el-a')
     expect(el.style.width).toBe('200px')
     expect(el.style.transform).toContain('translate(')
+  })
+
+  it('renders the title layer only when a `title` prop is passed', () => {
+    const item = makeItem({ bookmarkId: 'a' })
+    const positions = seedCollagePositions([{ id: 'a', width: 200, height: 100 }], 1000, 10)
+    const baseProps = {
+      items: [item],
+      positions,
+      order: ['a'],
+      onMove: () => {},
+      onResize: () => {},
+      onGrab: () => {},
+      maxCardWidth: 1000,
+      displayMode: 'visual' as const,
+      paper: false,
+    }
+
+    const withoutTitle = render(<CollageCanvas {...baseProps} />)
+    expect(withoutTitle.queryByTestId('share-title-element')).toBeNull()
+    withoutTitle.unmount()
+
+    const withTitle = render(
+      <CollageCanvas
+        {...baseProps}
+        title={{
+          config: defaultShareTitleConfig(true, 1000, 600),
+          defaultText: 'my tag',
+          onChange: () => {},
+        }}
+      />,
+    )
+    expect(withTitle.getByTestId('share-title-element')).toBeTruthy()
   })
 })

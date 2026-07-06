@@ -92,6 +92,7 @@ import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { ShareToast } from '@/components/board/ShareToast'
 import { seedCollagePositions, moveElement, resizeElementFromCorner, bringToFront, type CollagePositions } from '@/lib/share/collage-layout'
+import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -396,6 +397,10 @@ export function BoardRoot() {
   // CollageCanvas). Discarded on exit — the temporary collage is never persisted.
   const [collagePositions, setCollagePositions] = useState<CollagePositions>({})
   const [collageOrder, setCollageOrder] = useState<string[]>([])
+  // Editable collage title (phase 2). null while not arranging — seeded on
+  // entering arrange, discarded on exit. Never persisted (matches the rest of
+  // the temporary collage layout state above).
+  const [shareTitle, setShareTitle] = useState<ShareTitleConfig | null>(null)
   const [capFlashCycle, setCapFlashCycle] = useState<number>(0)
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
@@ -1981,6 +1986,7 @@ export function BoardRoot() {
     setSelectedIds(new Set())
     setCollagePositions({})
     setCollageOrder([])
+    setShareTitle(null)
   }, [])
 
   // Stage 1 → 2: take the working selection in board order, seed a one-shot
@@ -1998,8 +2004,9 @@ export function BoardRoot() {
     })
     setCollagePositions(seedCollagePositions(cards, viewport.w, cardGapPx))
     setCollageOrder(chosen.map((it) => it.bookmarkId))
+    setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))
     setSharePhase('arrange')
-  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, cardGapPx, viewport.w])
+  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, cardGapPx, viewport.w, bgTypoEnabled, viewport.h])
 
   // Esc leaves SHARE mode from either stage (= CANCEL / DONE). Only bound while
   // a share stage is active.
@@ -2011,6 +2018,20 @@ export function BoardRoot() {
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
   }, [sharePhase, handleExitShareMode])
+
+  // During arrange, the header TITLE toggle puts the editable collage title in
+  // and out. Turning it back ON reseeds a fresh default title (so a title that
+  // was hidden — toggled off, or edited to empty then toggled — comes back);
+  // turning it OFF just disables the current one. No-op outside arrange.
+  useEffect((): void => {
+    if (sharePhase !== 'arrange') return
+    setShareTitle((c) => {
+      if (!c) return c
+      if (bgTypoEnabled && !c.enabled) return defaultShareTitleConfig(true, viewport.w, viewport.h)
+      if (!bgTypoEnabled && c.enabled) return { ...c, enabled: false }
+      return c
+    })
+  }, [bgTypoEnabled, sharePhase, viewport.w, viewport.h])
 
   // Local preview pan for a selection share — clamped to the selection's own
   // content height; the bg board's viewport is not touched.
@@ -2582,8 +2603,12 @@ export function BoardRoot() {
                 what made it flicker/vanish). On a user toggle ON it mounts fresh
                 and plays the boot-up; on a user toggle OFF it stays mounted with
                 closing=true to play the CRT shutdown, then the parent timer
-                unmounts it. Never animation-driven visibility. */}
-            {bgTypoMount && (
+                unmounts it. Never animation-driven visibility.
+                Gated off during 'arrange': the editable ShareTitleElement inside
+                CollageCanvas takes over as the title in that stage, so this
+                original background wordmark must NOT also render — otherwise
+                the two titles would stack. */}
+            {sharePhase !== 'arrange' && bgTypoMount && (
               <BoardBackgroundTypography
                 themeId={themeId}
                 activeFilter={activeFilter}
@@ -2892,6 +2917,11 @@ export function BoardRoot() {
             maxCardWidth={effectiveLayoutWidth}
             displayMode={displayMode}
             paper={themeMeta.decorations === true}
+            title={
+              shareTitle
+                ? { config: shareTitle, defaultText: deriveBoardBgTypoText(activeFilter, tags), onChange: setShareTitle }
+                : undefined
+            }
           />
           <ShareToast
             count={selectedIds.size}

@@ -3,11 +3,13 @@
 import { useRef, type PointerEvent, type ReactElement } from 'react'
 import { CardNode } from './CardNode'
 import { ResizeHandle } from './ResizeHandle'
+import { ShareTitleElement } from './ShareTitleElement'
 import { pickCard } from './cards'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import type { DisplayMode } from '@/lib/board/types'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { CollagePositions, CollageResizeCorner } from '@/lib/share/collage-layout'
+import type { ShareTitleConfig } from '@/lib/share/share-title'
 import styles from './CollageCanvas.module.css'
 
 export type CollageCanvasProps = {
@@ -33,6 +35,13 @@ export type CollageCanvasProps = {
   readonly displayMode: DisplayMode
   /** True on paper themes (themeMeta.decorations) — renders the paper card face. */
   readonly paper: boolean
+  /** Editable collage title (phase 2), owned by the parent. Omitted/undefined
+   *  renders no title layer at all — the arrange stage can run without one. */
+  readonly title?: {
+    readonly config: ShareTitleConfig
+    readonly defaultText: string
+    readonly onChange: (next: ShareTitleConfig) => void
+  }
 }
 
 /** Intra-canvas stacking floor. This is a LOCAL offset for ordering this
@@ -108,6 +117,18 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
 
   return (
     <div className={styles.root} style={{ zIndex: BOARD_Z_INDEX.SHARE_CANVAS }} data-testid="collage-canvas">
+      {/* Title layer renders FIRST (before the cards below) so it paints
+          behind them within this stacking context: cards carry explicit
+          positive zIndex (INTRA_CANVAS_Z_BASE+), while the title's root stays
+          at the CSS default z-index:auto — DOM order alone then puts it under
+          any card, matching spec's "title behind cards by default". */}
+      {props.title && (
+        <ShareTitleElement
+          config={props.title.config}
+          defaultText={props.title.defaultText}
+          onChange={props.title.onChange}
+        />
+      )}
       {props.items.map((item) => {
         const id = item.bookmarkId
         const p = props.positions[id]
