@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { seedCollagePositions, moveElement, resizeElement, resizeElementFromCorner, bringToFront } from './collage-layout'
+import { seedCollagePositions, moveElement, resizeElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen } from './collage-layout'
 
 const cards = [
   { id: 'a', width: 200, height: 100 },
@@ -53,5 +53,84 @@ describe('collage-layout', () => {
   it('bringToFront moves the id to the end of the order', () => {
     expect(bringToFront(['a', 'b', 'c'], 'a')).toEqual(['b', 'c', 'a'])
     expect(bringToFront(['a', 'b'], 'zzz')).toEqual(['a', 'b'])
+  })
+})
+
+describe('fitSelectionToScreen', () => {
+  const rectBig = { x: 0, y: 0, width: 1000, height: 800 }
+
+  it('空 / 幅ゼロ / 高さゼロ は {} を返す', () => {
+    expect(fitSelectionToScreen([], rectBig, 10)).toEqual({})
+    expect(fitSelectionToScreen([{ id: 'a', width: 100, height: 100 }], { x: 0, y: 0, width: 0, height: 800 }, 10)).toEqual({})
+    expect(fitSelectionToScreen([{ id: 'a', width: 100, height: 100 }], { x: 0, y: 0, width: 1000, height: 0 }, 10)).toEqual({})
+  })
+
+  it('全カードに座標を返す', () => {
+    const pos = fitSelectionToScreen(
+      [{ id: 'a', width: 200, height: 100 }, { id: 'b', width: 200, height: 100 }],
+      rectBig,
+      10,
+    )
+    expect(Object.keys(pos).sort()).toEqual(['a', 'b'])
+  })
+
+  it('自然サイズで収まるなら縮小しない（w が自然値のまま = 倍率上限1）', () => {
+    // 2枚 200x100 は 1000x800 に余裕で収まる → scale 1
+    const pos = fitSelectionToScreen(
+      [{ id: 'a', width: 200, height: 100 }, { id: 'b', width: 200, height: 100 }],
+      rectBig,
+      10,
+    )
+    expect(pos.a.w).toBe(200)
+    expect(pos.b.w).toBe(200)
+  })
+
+  it('全カードが rect 内に収まる（右端・下端がはみ出さない）', () => {
+    const cards = Array.from({ length: 40 }, (_, i) => ({ id: `c${i}`, width: 200, height: 260 }))
+    const rect = { x: 24, y: 80, width: 1440, height: 560 }
+    const pos = fitSelectionToScreen(cards, rect, 8)
+    for (const id in pos) {
+      const p = pos[id]
+      expect(p.x).toBeGreaterThanOrEqual(rect.x - 0.001)
+      expect(p.y).toBeGreaterThanOrEqual(rect.y - 0.001)
+      expect(p.x + p.w).toBeLessThanOrEqual(rect.x + rect.width + 0.5)
+      expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
+    }
+  })
+
+  it('収まらないときは縮小する（少なくとも1枚は自然幅より小さい）', () => {
+    const cards = Array.from({ length: 40 }, (_, i) => ({ id: `c${i}`, width: 200, height: 260 }))
+    const rect = { x: 0, y: 0, width: 600, height: 400 }
+    const pos = fitSelectionToScreen(cards, rect, 8)
+    const shrunk = Object.values(pos).some((p) => p.w < 200 - 0.001)
+    expect(shrunk).toBe(true)
+  })
+
+  it('「収まる中で最大」= 1列に強制した縦積みで倍率が境界に一致する', () => {
+    // rect 幅 100・カード幅 100（横に2枚は並ばない）・高さ 100 × 2枚・gap 0。
+    // 縮小後も幅 > 50 を保つので 1 列のまま: 自然 totalHeight=200 を rect.height=120 に
+    // 収める最大倍率は 0.6 → 各 w≈60・contentH≈120（ぴったり埋める＝最大）。
+    const pos = fitSelectionToScreen(
+      [{ id: 'a', width: 100, height: 100 }, { id: 'b', width: 100, height: 100 }],
+      { x: 0, y: 0, width: 100, height: 120 },
+      0,
+    )
+    expect(Math.abs(pos.a.w - 60)).toBeLessThan(0.5)
+    const contentBottom = Math.max(...Object.values(pos).map((p) => p.y + p.h))
+    const contentTop = Math.min(...Object.values(pos).map((p) => p.y))
+    expect(contentBottom - contentTop).toBeLessThanOrEqual(120.001)
+    expect(contentBottom - contentTop).toBeGreaterThan(118) // ほぼ埋めている = 最大
+  })
+
+  it('100枚でも全部 rect 内に収まる（80px 下限は無視される）', () => {
+    const cards = Array.from({ length: 100 }, (_, i) => ({ id: `c${i}`, width: 267, height: 350 }))
+    const rect = { x: 24, y: 80, width: 1440, height: 560 }
+    const pos = fitSelectionToScreen(cards, rect, 6)
+    expect(Object.keys(pos)).toHaveLength(100)
+    for (const id in pos) {
+      const p = pos[id]
+      expect(p.x + p.w).toBeLessThanOrEqual(rect.x + rect.width + 0.5)
+      expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
+    }
   })
 })

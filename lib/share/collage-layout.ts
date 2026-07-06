@@ -73,3 +73,67 @@ export function bringToFront(order: readonly string[], id: string): string[] {
   if (!order.includes(id)) return [...order]
   return [...order.filter((x) => x !== id), id]
 }
+
+/** アレンジで使える安全領域（画面px矩形）。上部クロム／下部 ShareToast に潜らせない。 */
+export type CollageFitRect = {
+  readonly x: number
+  readonly y: number
+  readonly width: number
+  readonly height: number
+}
+
+/**
+ * 選択カード（自然サイズ）を skyline で詰め、rect の高さに収まる「最大倍率」を
+ * 二分探索して全体を一律縮小し、rect 内に中央寄せで配置した座標を返す。
+ * - 倍率の上限は 1（数枚なら盤面と同じ大きさ・膨らませない）。
+ * - 収まる中で最大の倍率を採用（横幅いっぱいを使い、縦が rect.height に収まる最大）。
+ * - 80px 下限は適用しない（自動配置は「全部1画面に収める」を優先）。
+ * - 空 / 幅ゼロ / 高さゼロ は {} を返す。
+ */
+export function fitSelectionToScreen(
+  cards: readonly CollageElement[],
+  rect: CollageFitRect,
+  gap: number,
+): CollagePositions {
+  if (cards.length === 0 || rect.width <= 0 || rect.height <= 0) return {}
+
+  const packAt = (scale: number): ReturnType<typeof computeSkylineLayout> =>
+    computeSkylineLayout({
+      cards: cards.map((c) => ({ id: c.id, width: c.width * scale, height: c.height * scale })),
+      containerWidth: rect.width,
+      gap,
+    })
+
+  // 上限は 1（膨らませない）。自然サイズで収まればそのまま使う。
+  let scale = 1
+  if (packAt(1).totalHeight > rect.height) {
+    // scale が大きいほど totalHeight は増える（単調）＝収まる最大倍率を二分探索。
+    let lo = 0
+    let hi = 1
+    for (let i = 0; i < 24; i++) {
+      const mid = (lo + hi) / 2
+      if (packAt(mid).totalHeight <= rect.height) lo = mid
+      else hi = mid
+    }
+    scale = lo
+  }
+
+  const packed = packAt(scale)
+  // 実際に使った幅・高さを測り rect 内に中央寄せ。
+  let contentW = 0
+  let contentH = 0
+  for (const id in packed.positions) {
+    const p = packed.positions[id]
+    if (p.x + p.w > contentW) contentW = p.x + p.w
+    if (p.y + p.h > contentH) contentH = p.y + p.h
+  }
+  const offsetX = rect.x + Math.max(0, (rect.width - contentW) / 2)
+  const offsetY = rect.y + Math.max(0, (rect.height - contentH) / 2)
+
+  const out: Record<string, CardPosition> = {}
+  for (const id in packed.positions) {
+    const p = packed.positions[id]
+    out[id] = { x: p.x + offsetX, y: p.y + offsetY, w: p.w, h: p.h }
+  }
+  return out
+}

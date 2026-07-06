@@ -178,3 +178,12 @@ export const SIZE_PRESET_SPAN: Readonly<Record<'S' | 'M' | 'L', number>> = {
   M: 2,
   L: 3,
 }
+
+/** SHARE アレンジ（自由配置キャンバス）で使える安全領域のインセット（画面px）。
+ *  上＝上部クロム、下＝ShareToast（bottom:24 + バー高さ）、左右＝端に貼り付かない余白。
+ *  fitSelectionToScreen はこの内側に全カードを収める（画面外・スクロールを起こさない）。 */
+export const ARRANGE_SAFE_INSET = {
+  TOP_PX: 80,
+  BOTTOM_PX: 120,
+  SIDE_PX: 24,
+} as const
