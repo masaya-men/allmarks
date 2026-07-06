@@ -29,7 +29,9 @@
   - **N-41＝回転ノブを Canva/Figma 風の円形回転アイコン**に刷新（[CollageCanvas.tsx](../components/board/CollageCanvas.tsx)/`.module.css`・見た目のみ・`collage-rotate.ts` の角度ロジック不変・testid/hover 維持）。
   - 正本 [spec](superpowers/specs/2026-07-06-share-arrange-fit-to-screen-design.md) / [plan](superpowers/plans/2026-07-06-share-arrange-fit-to-screen.md) / narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s167。
 - **ユーザー実機目視の残（Playwright 不可のジェスチャ/見た目）**：少数/多数選択の収まり、移動/リサイズ/回転、回転ノブ新デザインの見た目。**非ブロッキング磨き**：多数選択時に小カードが角丸で「楕円/ピル」に見える件（ユーザー判断）。
-- **次（セッション168）＝ SHARE フェーズ3＝COPY LINK 併記**（親 plan Task8-10）or フラット化 サブ②。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **同セッション後半＝実機ブラッシュアップ2ラウンド出荷（ユーザーOK / deploy `d486acd7`）**：①回転ノブを線の先端(上)に（Figma/Canva）②紙装飾を**各カード幅に比例**（`--card-w`・盤面本体でもリサイズ追従）③アレンジを**盤面パネル(`.canvas`＝ウィンドウ−48)内**に収める④コラージュのギャップ16px（隙間解消）。**回転ノブ・装飾はユーザーOK**。
+- **★ただし未解決の最優先フィードバック（s167末）＝アレンジが「盤面全体を埋めていない」**：100枚全選択で**右の縦帯と下の帯が大きく空く**（L字余白）。ユーザー要求＝「その空白が最小になるよう盤面全体に詰めろ」。gap の話ではなく**矩形を充填していない**こと（現行 masonry＋一律縮小は端がギザギザで埋めきれない）。→ **次セッション最優先＝justified rows 等の“矩形を埋める”レイアウトに作り替え**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **次（セッション168）＝上記「盤面を埋める詰め方」→ その後 SHARE フェーズ3（COPY LINK）or フラット化 サブ②**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 166 — ★SHARE 作り直しフェーズ2＝タイトル 出荷・本番反映済／サブエージェント駆動＋opus 全ブランチレビューで Important 1件摘出→修正)
 
