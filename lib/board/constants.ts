@@ -65,6 +65,7 @@ export const BOARD_Z_INDEX = {
   ROTATION_HANDLE: 32,
   DROP_INDICATOR: 40,
   CONTEXT_MENU: 90,
+  SHARE_CANVAS: 95,  // SHARE stage-2 (arrange) collage layer — above the canvas edge scrims (BoardRoot.module.css .canvas::before/::after z:80) + THEME_BG, below TOOLBAR (110) + SHARE_TOAST (116). isolation:isolate on CollageCanvas .root contains its INTRA_CANVAS_Z_BASE (~10+) order.
   DRAG_GHOST: 100,
   TOOLBAR: 110,
   SHARE_SELECT_BAR: 115,  // selective-share bottom bar — above toolbar, below popovers

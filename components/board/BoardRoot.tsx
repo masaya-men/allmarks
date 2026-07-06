@@ -2595,7 +2595,12 @@ export function BoardRoot() {
             )}
             {/* Cards — full-canvas-width with destefanis half-gap padding.
                 Vertical transform adds BOARD_TOP_PAD_PX so the first row gets
-                breathing room below the canvas top edge / toolbar pill. */}
+                breathing room below the canvas top edge / toolbar pill.
+                Hidden during SHARE stage 2 ('arrange') so the collage sits on an
+                EMPTY themed canvas (spec §1.3): the theme background layers above
+                stay, but the live grid must NOT show through the collage gaps.
+                Stage 'select' and null keep the grid rendering normally. */}
+            {sharePhase !== 'arrange' && (
             <div
               style={{
                 position: 'absolute',
@@ -2657,6 +2662,7 @@ export function BoardRoot() {
                 selectionMode={sharePhase === 'select' ? { selectedIds, onToggle: handleSelectToggle } : null}
               />
             </div>
+            )}
           </InteractionLayer>
           </div>
           {!loading && showOnboarding && onboardingDbRef.current && (

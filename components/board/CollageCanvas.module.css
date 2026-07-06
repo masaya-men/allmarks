@@ -5,6 +5,12 @@
 .root {
   position: absolute;
   inset: 0;
+  /* Contain the intra-canvas z-order (INTRA_CANVAS_Z_BASE ~10+, per card via
+     order.indexOf) inside this canvas so the collage cards never compete in the
+     board frame's global stacking (e.g. the .canvas edge scrims at z:80 would
+     otherwise paint over them). The root's own layer sits at
+     BOARD_Z_INDEX.SHARE_CANVAS, applied inline in CollageCanvas.tsx. */
+  isolation: isolate;
 }
 
 .element {

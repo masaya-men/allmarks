@@ -21,7 +21,7 @@ export function ShareToast({ count, onReselect, onDone }: Props): ReactElement {
           SHARING… {count}
         </span>
         <span className={styles.hint}>
-          Screenshot the collage area to share（Win: Win+Shift+S / Mac: ⌘+Shift+4）
+          Screenshot the collage area to share (Win: Win+Shift+S / Mac: ⌘+Shift+4)
         </span>
         <div className={styles.actions}>
           <button type="button" className={styles.secondaryBtn} onClick={onReselect} data-testid="share-toast-reselect">

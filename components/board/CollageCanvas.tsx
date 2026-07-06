@@ -2,6 +2,7 @@
 
 import { useRef, type PointerEvent, type ReactElement } from 'react'
 import { CardNode } from './CardNode'
+import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import type { ThemeId } from '@/lib/board/types'
 import type { CollagePositions } from '@/lib/share/collage-layout'
 import styles from './CollageCanvas.module.css'
@@ -110,7 +111,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
   }
 
   return (
-    <div className={styles.root} data-testid="collage-canvas">
+    <div className={styles.root} style={{ zIndex: BOARD_Z_INDEX.SHARE_CANVAS }} data-testid="collage-canvas">
       {props.items.map((it) => {
         const p = props.positions[it.id]
         if (!p) return null
