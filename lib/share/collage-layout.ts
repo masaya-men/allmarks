@@ -101,7 +101,7 @@ export function fitSelectionToScreen(
     computeSkylineLayout({
       cards: cards.map((c) => ({ id: c.id, width: c.width * scale, height: c.height * scale })),
       containerWidth: rect.width,
-      gap,
+      gap: gap * scale,
     })
 
   // 上限は 1（膨らませない）。自然サイズで収まればそのまま使う。

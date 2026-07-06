@@ -133,4 +133,36 @@ describe('fitSelectionToScreen', () => {
       expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
     }
   })
+
+  it('does not collapse to 1px slivers when many cards pack with real board defaults into a short wide rect (N-40 regression: gap must scale with cards)', () => {
+    // Repro of the Playwright-found collapse: SHARE → ARRANGE with 100 selected cards
+    // at the *board defaults* (CARD_WIDTH_DEFAULT_PX=267.84, CARD_GAP_DEFAULT_PX=97.21 —
+    // lib/board/constants.ts BOARD_SLIDERS) into a 1489x679 viewport's arrange-safe rect
+    // (ARRANGE_SAFE_INSET → 1441x479). Realistic aspect-ratio spread (0.5–2.0).
+    // Confirmed pre-fix: the unscaled gap dominates as scale shrinks, the binary search
+    // never converges above 0, every card floors to exactly 1px, and 10 still overflow
+    // the bottom. (Note: a small uniform gap like 6px does NOT reproduce this — the
+    // board's actual default gap of ~97px, big relative to the shrunk card size, is
+    // what makes it dominate.)
+    const CARD_WIDTH_DEFAULT_PX = 267.84
+    const CARD_GAP_DEFAULT_PX = 97.21
+    const aspects = [0.6, 0.75, 1, 1.33, 1.5, 1.78, 0.5, 2.0]
+    const cards = Array.from({ length: 100 }, (_, i) => {
+      const ar = aspects[i % aspects.length]
+      return { id: `c${i}`, width: CARD_WIDTH_DEFAULT_PX, height: CARD_WIDTH_DEFAULT_PX / ar }
+    })
+    const rect = { x: 24, y: 80, width: 1489 - 48, height: 679 - 80 - 120 } // ARRANGE_SAFE_INSET applied to a 1489x679 viewport
+    const pos = fitSelectionToScreen(cards, rect, CARD_GAP_DEFAULT_PX)
+    expect(Object.keys(pos)).toHaveLength(100)
+    // all within rect (no bottom overflow) — pre-fix, 10 cards spill past the bottom
+    for (const id in pos) {
+      const p = pos[id]
+      expect(p.x + p.w).toBeLessThanOrEqual(rect.x + rect.width + 0.5)
+      expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
+    }
+    // NO collapse: every card must be a real, visible size (before the fix every
+    // card floored to exactly 1px). This assertion fails pre-fix (maxW === 1).
+    const maxW = Math.max(...Object.values(pos).map((p) => p.w))
+    expect(maxW).toBeGreaterThan(30)
+  })
 })
