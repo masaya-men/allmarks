@@ -1,0 +1,28 @@
+/* Free-placement arrange layer (SHARE collage rebuild). Absolutely-positioned
+   canvas covering its parent; each child element is itself absolutely
+   positioned via inline transform (Task 2 — temporary display, no FLIP). */
+
+.root {
+  position: absolute;
+  inset: 0;
+}
+
+.element {
+  cursor: grab;
+  touch-action: none;
+}
+
+.element:active {
+  cursor: grabbing;
+}
+
+/* Corner-resize hot zone. 28px min click target (memory: feedback_large_pointer). */
+.resizeCorner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  height: 28px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
