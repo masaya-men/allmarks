@@ -8876,3 +8876,25 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 1. **テーマごとの装飾もコラージュに**（ユーザー「テーマごと送るのが当たり前」）：paper テーマの装飾（マスキングテープ／画鋲）＝盤面と**同じ `PaperCardDecorations`** を CollageCanvas でも `props.paper` 時に描画。マウントテストで paper=true→装飾あり／false→なしを検証。
 2. **撮影モード＝現状維持で正**（ユーザー「明示的に撮影モードに入って動き/ホバーボタンを消せばいいだけ」）：arrange 段が既にそれ（明示モード突入・`autoCycle/ambientOn=off`・ホバー操作 UI 非描画）。追加変更なし＋上記装飾で忠実度完成。
 3. **コラージュ限定のカード自由回転を実装**（ユーザー「コラージュのときだけ角度も自由に・業界水準でよい」／`feedback_allmarks_grid_no_tilt` の意図的例外）：Canva/Figma 式の**回転ハンドル**（カード上端中央のノブ＋ステム・ホバーで出現・rest では非表示でスクショに写らない・ヒット域≥32px）。純ロジック `lib/share/collage-rotate.ts`（`pointerAngleDeg`/`normalizeAngle`/`rotateFromPointer`＝中心周りの角度＋15°磁気スナップ・TDD 6テスト）。回転は**要素 wrapper 全体**に適用（カード＋紙影＋装飾＋ハンドルが一体で傾く・回転中心＝要素中心）。回転は一時 state（`collageRotations`）＝離脱破棄・RESELECT→ARRANGE で 0 リセット。tsc0 / **vitest2043** / build OK。Playwright 実測＝arrange で回転ハンドル6個・ホバーで opacity 1（出現）。ジェスチャ（ドラッグ回転）は setPointerCapture で自動不可＝純関数テスト＋実機目視。memory `feedback_allmarks_grid_no_tilt` にコラージュ例外を追記。
+
+---
+
+## セッション 167 (2026-07-06) — N-40「アレンジで多数カードが出ない」根治 ＋ N-41 回転ノブ刷新（本番反映済）
+
+**背景（N-40 の正体）**: SHARE 第2段「並べる（アレンジ）」の共有手段は**ユーザー自身の範囲スクショ**（アプリ内画像化は他サイトサムネのクロスオリジンで黒くなる技術壁のため不採用）＝出力は常に「1画面」。ところが s166 で「盤面そっくり（WYSIWYG）」座標に置くようにした結果、`CollageCanvas .root` が `position:absolute; inset:0`（固定1画面・スクロール無し）のため、**縦長選択では画面下のカードが画面外座標に置かれ「見えない・触れない・スクショにも写らない」**。
+
+**方針（brainstorm でユーザーと確定）**: スクロールさせず**「選んだカードを何枚でも・サイズがバラバラでも1画面に“できるだけ大きく”自動配置」**→ その後つまんで移動/拡大/回転して仕上げてスクショ。ズーム/パンは足さない（シンプル最優先）。数枚は盤面と同じ大きさ（倍率上限1）＝s166 の忠実さも維持、多数は忠実に縮小。
+
+**実装（サブエージェント駆動4タスク＋各レビュー＋opus 全ブランチレビュー「Ready to merge」）**:
+- **Task1** 新純関数 `fitSelectionToScreen(cards, rect, gap)`（`lib/share/collage-layout.ts`・TDD）＝既存 `computeSkylineLayout` で詰め、**安全領域(rect)の高さに収まる最大倍率を二分探索**して全体を一律縮小、rect 内に中央寄せ。倍率上限1・80px 下限は自動配置では無視。安全領域定数 `ARRANGE_SAFE_INSET`（上80/下120/左右24）を `lib/board/constants.ts` に新設。
+- **Task2** `handleEnterArrange`（`BoardRoot.tsx`）を **WYSIWYG 盤面座標シード → フィットシードに差し替え**。旧スクリーン原点実測（`document.querySelector('[data-bookmark-id]')`）と `layout.positions` 参照を撤去。倍率を座標に焼き込むので移動/リサイズ/回転（全て画面px基準）は無変更で動作。
+- **Task3（N-41）** 回転ノブを「細ステム＋白丸」→ **Canva/Figma 風の円形回転アイコン（弧＋矢頭 SVG・28×28 ガラスボタン）**に。角度ロジック `collage-rotate.ts` と配線 `handleRotatePointerDown` は不変、testid `collage-rotate-*`・hover 出現も維持＝見た目のみ。
+- **Task4（Playwright 実測）** で**二次バグを発見→修正**（TDD/検証の価値）：`packAt` が `gap` を倍率で縮めておらず、100枚×小画面（本番の gap 既定 **97.21px**）で「収まる」判定が倍率 1px 下限まで**崩壊し全カード不可視**に。修正＝`gap: gap * scale`（cards も gap も一律縮小・commit `2a8c633`）。回帰テストは実本番値（幅267.84・gap97.21・実 safe rect）で **RED→GREEN 実証**（当初ブリーフの gap:6 では再現しなかったのを実装者が是正）。**再検証**：1920×1080 と 1489×679 × 40枚/100枚の全4通りで**画面外0・崩壊なし**（1489×679/100枚は 34–77px・1920×1080/100枚は 57–128px）。スクショでヘッダー/SHARING バーからも離れて配置を確認。
+
+**ゲート**: tsc0 / **vitest 2051/0** / build OK（out/ 生成・share OG アンカー確認）。**master `--no-ff` マージ `b42c2fe`** → **deploy `77a0f06a`（`allmarks.app`・--branch=master）**。
+
+**残（ユーザー実機目視・Playwright 不可）**: 少数/多数選択の収まり、移動/リサイズ/回転、回転ノブ新デザインの見た目。**非ブロッキング磨き**: 多数選択で小カードが角丸により「楕円/ピル」に見える件（ユーザー判断）。
+
+**learnings**: ①出力＝1画面スクショという制約から「アレンジは常に1画面に収める」が正、と設計の背骨が定まった。②`computeSkylineLayout` は width に 1px 下限があるが height/gap には無い→ gap を倍率で縮めないと極端パックで崩壊する。③検証ブリーフのテスト値は**実本番値**でないと再現しないことがある（gap 既定は 6 でなく 97.21）＝実装者の「テストが本当にバグを捉えるか」の確認が効いた。
+
+**shipped commits on master (base 3a7ae63)**: `5ef591b`(T1) `df66109`(T2) `809fbad`(T3・N-41) `2a8c633`(gap fix) ＋ merge `b42c2fe`。

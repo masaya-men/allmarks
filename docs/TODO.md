@@ -21,6 +21,16 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 167 — ★N-40「アレンジで多数カードが出ない」根治＋N-41 回転ノブ刷新・master マージ済・本番反映済／opus 全ブランチレビュー「Ready to merge」)
+
+- **N-40 根治＝SHARE アレンジを「1画面に最大サイズで自動配置」に**（merge `b42c2fe`・tsc0 / **vitest 2051/0** / build OK・`allmarks.app` 反映済 deploy `77a0f06a`）。brainstorm→spec→plan→**サブエージェント駆動4タスク＋各レビュー＋opus 全ブランチレビュー（Ready to merge）**。
+  - 新純関数 `fitSelectionToScreen`（[lib/share/collage-layout.ts](../lib/share/collage-layout.ts)）＝選択カードを skyline で詰め、**安全領域に収まる最大倍率を二分探索して全体を一律縮小**（倍率上限1＝数枚は盤面と同じ大きさ）。倍率は座標に焼き込み＝移動/リサイズ/回転はそのまま。定数 `ARRANGE_SAFE_INSET`（上80/下120/左右24）で上部クロム・下部 SHARING バー回避（s165 の「上に潜る」cosmetic も同時解消）。`handleEnterArrange` を WYSIWYG 盤面座標→フィットシードに差し替え。
+  - **Playwright 実測で二次バグ発見→修正**（TDD の価値）：`packAt` が gap を倍率で縮めておらず、100枚×小画面（本番 gap 既定 97.21）で倍率が 1px 下限まで**崩壊→全カード不可視**。`gap*scale` に修正（commit `2a8c633`）。再検証で 1920×1080/1489×679 × 40/100 枚すべて**画面外0・崩壊なし**。回帰テストは実本番値で RED→GREEN 実証。
+  - **N-41＝回転ノブを Canva/Figma 風の円形回転アイコン**に刷新（[CollageCanvas.tsx](../components/board/CollageCanvas.tsx)/`.module.css`・見た目のみ・`collage-rotate.ts` の角度ロジック不変・testid/hover 維持）。
+  - 正本 [spec](superpowers/specs/2026-07-06-share-arrange-fit-to-screen-design.md) / [plan](superpowers/plans/2026-07-06-share-arrange-fit-to-screen.md) / narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s167。
+- **ユーザー実機目視の残（Playwright 不可のジェスチャ/見た目）**：少数/多数選択の収まり、移動/リサイズ/回転、回転ノブ新デザインの見た目。**非ブロッキング磨き**：多数選択時に小カードが角丸で「楕円/ピル」に見える件（ユーザー判断）。
+- **次（セッション168）＝ SHARE フェーズ3＝COPY LINK 併記**（親 plan Task8-10）or フラット化 サブ②。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 166 — ★SHARE 作り直しフェーズ2＝タイトル 出荷・本番反映済／サブエージェント駆動＋opus 全ブランチレビューで Important 1件摘出→修正)
 
 - **SHARE 作り直しフェーズ2＝編集できるコラージュ見出し（タイトル）完遂**（HEAD `1c07630`・tsc0 / **vitest 2026/0** / build OK・`allmarks.app` 反映済）。arrange 段で TITLE トグルで出し入れする**背景の大きな見出し**を、その場インライン編集＋掴んでドラッグ移動＋隅で拡縮できる要素にした（**既定でカードの後ろ**＝背景見出し）。
@@ -196,8 +206,8 @@
 
 > **前提の要確認（最重要）**: 友人が Mac で使ったのは **Chrome か Safari か**。拡張は Chrome ウェブストア版＝Chrome 専用。Safari だと拡張自体が入らない（＝タグメニュー等が出ないのは想定内で、対応は「Safari 拡張を別ビルド（大）」or「拡張なし導線＝ブックマークレット/貼り付け/PopOut を磨く」）。Mac-Chrome なら実バグ。ここで scope が大きく変わる。
 
-- **(N-40) ★SHARE アレンジで多数カードが表示されない（次セッション最優先・s166 ユーザー報告）** — 症状＝「並べる」画面で選択したカードの多数が出ない。**根本原因確定（s166 調査）**＝アレンジの `CollageCanvas .root` が `position:absolute; inset:0` で**固定1画面＝スクロールしない**。WYSIWYG 化で各カードは盤面の実座標に置かれ、**スクロールで画面外のカードは画面外座標に置かれて見えない**（ドロップではなく不可視）。多数選択（縦長ボード）で顕著。**設計方針の brainstorm 必須**：(a) ユーザー案＝一時 Share タグ＋ボード絞り込み表示でボードのスクロール/仮想化/レイアウトを再利用（取りこぼしゼロ・ただし自由配置/回転を grid reflow とどう両立するか）／(b) 自由配置キャンバスをスクロール可 or ズーム to fit に。核＝「1固定画面に閉じ込めない・盤面の表示能力を捨てない」（＝業界標準の pan/zoom キャンバス）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
-- **(N-41) コラージュ回転ノブのデザインを業界水準に（s166 ユーザー指摘）** — 現状＝白丸＋細ステム（`CollageCanvas.module.css` `.rotateHandle/.rotateStem/.rotateKnob`）が業界水準でない。Canva/Figma 風の回転アイコン（弧＋矢印等）へ。角度ロジック `lib/share/collage-rotate.ts` は流用。機能は動作OK＝見た目のみ。
+- ~~**(N-40) ★SHARE アレンジで多数カードが表示されない**~~ ✅ **セッション167 完了（本番反映・merge `b42c2fe`）**。「1画面に最大サイズで自動配置」＝新純関数 `fitSelectionToScreen`（skyline パック＋収まる最大倍率の二分探索＋安全領域中央寄せ・gap も倍率で縮小）で何枚でも画面外に出ない。`handleEnterArrange` を WYSIWYG→フィットシードに。Playwright で 40/100枚×一般/実機画面すべて画面外0 実測。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s167。**残＝ユーザー実機目視のみ**。
+- ~~**(N-41) コラージュ回転ノブのデザインを業界水準に**~~ ✅ **セッション167 完了（本番反映・N-40 と同回）**。Canva/Figma 風の円形回転アイコン（弧＋矢印 SVG）に刷新。角度ロジック `collage-rotate.ts` 不変・見た目のみ。**残＝ユーザー実機目視のみ**。
 - **(N-24) ★Mac 対応必須（ローンチ前）** — 友人実機で複数箇所うまく動かない。スマホと並ぶ公開前クロスプラットフォーム項目。**ブラウザ＝Chrome 確定（s161）**＝Safari 非対応ではなく Mac-Chrome の実バグ。**タグ窓が出なかった件は N-25（タグ0件バグ）だった可能性大＝修正済**。残りの「複数箇所」＝下記 N-39 ほか、Mac 実機で1つずつ洗い出し（systematic-debugging Phase1）。
 - ~~**(N-39) ブックマークレット保存の `/save` ウィンドウが「画面いっぱいの PiP みたいな見た目」（Mac-Chrome）**~~ ✅ **セッション162 完了（本番反映・commit `a3d53ed`/`ccae0f1`）**。真因＝**Mac-Chrome はフルスクリーン中 `window.open` を別タブ化する Chrome 仕様**（コードのバグでない）。対応＝`/save` が自ビューポートで「タブとして開かれた」と検知→中立な中央カード（間延び解消）＋初回フルスクリーン案内＋最短クローズ＋15言語化。**残＝Mac 実機の目視のみ（「おそらく大丈夫」）**。
 - **拡張の再審査は束ねる**：拡張本体に関わる修正（**N-25 済／N-28 Pinterest／N-29 設定導線**）は**まとめて manifest 版上げ→1回でストア再審査**（審査サイクルを何度も回さない）。N-30(PopOut) は web(PiP) 側なので拡張再審査には不要。
