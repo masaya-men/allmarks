@@ -1,0 +1,431 @@
+/*
+ * ============================================================================
+ *  TuneClassicBody.module.css — 横並び TUNE のスタイル（復刻候補・s163）
+ *  正本: git b317fa2:components/board/TuneTrigger.module.css / 保管: 2026-07-06 s164
+ *  ペア: ./TuneClassicBody.tsx.txt。ビルド非結合（.css.txt）。復刻時 .module.css にリネーム。
+ * ============================================================================
+ */
+
+/* TuneTrigger — Apple v3 chrome label, identical typographic profile to
+   POP OUT / SHARE / FilterPill: 11px monospace ALL CAPS, no background,
+   thin black stroke for legibility over canvas content.
+
+   Amendment 1 (session 41 後半): readout は短いピル track + 黒 chip の
+   number-as-handle 形式。 chip 内 digit cell は scramble 対象、 chip
+   位置は value に応じて track 上を slide する。 */
+
+.trigger {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
+  paint-order: stroke fill;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s;
+  position: relative;
+}
+
+/* RGB ghost copies for glitch hover (= same pattern as ChromeButton). */
+.trigger::before,
+.trigger::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  -webkit-text-stroke: 0;
+  paint-order: fill;
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+.trigger:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Idle TUNE hover (= aria-expanded='false'): button-wide ghost on the 4-char
+   "TUNE" label, comparable width to POPOUT/SHARE. When expanded, this rule
+   doesn't match → button ghost suppressed → only the per-numGroup ghosts
+   below fire, keeping the visual glitch width comparable to other chrome
+   (~50px per number block instead of ~195px for the full readout). */
+.trigger[aria-expanded='false']:hover::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 700ms steps(7, end);
+}
+
+.trigger[aria-expanded='false']:hover::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 700ms steps(7, end);
+}
+
+/* Expanded TUNE: glitch ghost lives on each W/G number group (= "267.84" and
+   "97.21" each get their own ::before/::after RGB copy). The " · " separators
+   and "DEFAULT" label stay static — only the digits glitch. */
+.numGroup {
+  position: relative;
+  display: inline-block;
+}
+
+.numGroup::before,
+.numGroup::after {
+  content: attr(data-glitch-text);
+  position: absolute;
+  inset: 0;
+  display: inline-block;
+  pointer-events: none;
+  opacity: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  -webkit-text-stroke: 0;
+  paint-order: fill;
+  white-space: nowrap;
+}
+
+.trigger:hover .numGroup::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 700ms steps(7, end);
+}
+
+.trigger:hover .numGroup::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 700ms steps(7, end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger[aria-expanded='false']:hover::before,
+  .trigger[aria-expanded='false']:hover::after,
+  .trigger:hover .numGroup::before,
+  .trigger:hover .numGroup::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Grab feedback: while the default board is grabbed (BoardRoot flags
+   html[data-grabbing]), TUNE's collapsed-label RGB ghosts loop continuously —
+   the same glitch it plays on hover, matching the chrome labels + wordmark +
+   meter counter. Only while grabbing → byte-identical at rest. The label also
+   churns via the grab-aware idle scramble in TuneTrigger.tsx. */
+:global(html[data-grabbing]) .trigger[aria-expanded='false']::before {
+  color: #ff9d3f;
+  animation: glitch-shift-a 700ms steps(7, end) infinite;
+}
+:global(html[data-grabbing]) .trigger[aria-expanded='false']::after {
+  color: #50c8ff;
+  animation: glitch-shift-b 700ms steps(7, end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(html[data-grabbing]) .trigger[aria-expanded='false']::before,
+  :global(html[data-grabbing]) .trigger[aria-expanded='false']::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Module-scoped keyframes (see ChromeButton.module.css for the same defs
+   and the reason — CSS Modules scopes animation-name references). */
+@keyframes glitch-shift-a {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(3px, -1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(-5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(-3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+@keyframes glitch-shift-b {
+  0%   { opacity: 0; transform: translate(0, 0); clip-path: none; }
+  5%   { opacity: 1; transform: translate(4px, 0); clip-path: inset(0 0 70% 0); }
+  20%  { opacity: 1; transform: translate(-3px, 1px); clip-path: inset(25% 0 30% 0); }
+  35%  { opacity: 1; transform: translate(5px, 0); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: 1; transform: translate(-4px, 0); clip-path: inset(0 0 75% 0); }
+  65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
+  80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
+  100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+.trigger:focus-visible {
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.cell {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+.cell.num { color: rgba(255, 200, 120, 0.95); }
+.cell.dim { color: rgba(255, 255, 255, 0.30); }
+.cell.reset {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.cell.reset:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* "DEFAULT" 文字列は W も G も default 値のまま (= reset 不要) のとき grey、
+   どちらか動いてたら通常の白。 reset の意味があるかどうかが一目で分かる視覚 cue。 */
+.cell.reset.resetIdle {
+  color: rgba(255, 255, 255, 0.35);
+}
+.cell.reset.resetIdle:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* === Audio redesign: wrap span + drawer === */
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.drawer {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: rgba(10, 10, 10, 0.92);
+  border: 0;
+  border-radius: 8px;
+  padding: 0 24px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 50;
+  pointer-events: none;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  /* Hardware control surface, not document text: default (arrow) cursor and
+     no selection across the whole drawer. Interactive children (preset cells,
+     faders, reset) keep their own pointer/grab cursors via more specific
+     rules; this only suppresses the I-beam on the plain labels (preset names,
+     W/G, legend, ALLMARKS · MK-1). cursor + user-select both inherit. */
+  cursor: default;
+  user-select: none;
+}
+
+/* Thin engraved divider between the preset column and the fader group.
+   Reads like the inset metal-on-metal separators on audio interface
+   chassis: a deep dark line with adjacent thin bright highlights on
+   both sides, so the eye reads it as a recessed groove rather than a
+   flat line. Fades at both ends so it doesn't bleed into the drawer
+   borders. Iteration 5: tighter margins for higher information density,
+   stronger contrast for better visibility. */
+.drawerDivider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  /* Asymmetric margins: small left margin keeps the divider close to the
+     preset column (preserves the tightened look), larger right margin
+     leaves the fader area properly breathing room from the engraved
+     groove. Iteration 6: right pushed from 2 → 10 px. */
+  margin: 4px 10px 4px 2px;
+  background: linear-gradient(180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.88) 10%,
+    rgba(0, 0, 0, 0.88) 90%,
+    rgba(0, 0, 0, 0) 100%);
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.12),
+    -1px 0 0 rgba(255, 255, 255, 0.04);
+}
+
+.drawerRight {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1 1 auto;
+}
+
+.drawer[data-open='true'] {
+  max-height: 320px;
+  padding: 22px 24px 24px;
+  pointer-events: auto;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    transition: none;
+  }
+}
+
+.faderGroup {
+  display: flex;
+  gap: 28px;
+  align-items: flex-end;
+}
+
+/* Session 43 round 3: AG03 audio mixer 風 LED + label panel。
+   ゲインフェーダー横幅程度に収めて縦に並べる、 各行は
+   小さい LED ドット + 短い大文字テキスト。 */
+.opsLegend {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.opsRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Domed status lamp for the ops legend rows. Iteration 5: matched to the
+   preset column LEDs so all status indicators in the drawer share one
+   visual language. Stacks two background layers on top of currentColor:
+     1. A small off-center bright reflection (= panel light on the dome)
+     2. A subtle outer darkening (= the dome's far-edge curvature)
+   plus an inset border for the bezel and a soft outer halo to keep the
+   "lit" feel. The pulse animation modulates opacity only, so the dome
+   shape is preserved through the cycle. */
+.led {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  background-image:
+    radial-gradient(circle at 30% 28%,
+      rgba(255, 255, 255, 0.65) 0%,
+      rgba(255, 255, 255, 0) 36%),
+    radial-gradient(circle at 50% 60%,
+      rgba(0, 0, 0, 0) 55%,
+      rgba(0, 0, 0, 0.32) 100%);
+  background-repeat: no-repeat;
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.5),
+    0 0 3px currentColor,
+    0 0 7px color-mix(in srgb, currentColor 60%, transparent);
+}
+.led[data-color="orange"] { color: #ff9d3f; }
+.led[data-color="yellow"] { color: #ffd84a; }
+.led[data-color="green"]  { color: #4cd56a; }
+.led[data-color="red"]    { color: #ff5050; }
+
+/* Iteration 6: pulse animation removed at user request — the dome
+   already provides the "alive" feel without the rhythmic opacity
+   breathing, which competed with the active preset's tactile snap. */
+
+.opsText {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+
+/* Paper-atelier: serif ink TUNE label, no RGB glitch. .trigger hard-codes white
+   for the dark board, so on paper switch to charcoal ink + drop the white stroke. */
+:global(html[data-theme-id='paper-atelier']) .trigger {
+  font-family: var(--font-serif-display, Georgia, 'Times New Roman', serif);
+  color: var(--chrome-text-color, rgba(43, 39, 34, 0.92));
+  -webkit-text-stroke: 0;
+}
+:global(html[data-theme-id='paper-atelier']) .trigger:hover {
+  color: var(--chrome-text-color-hover, rgba(43, 39, 34, 1));
+}
+:global(html[data-theme-id='paper-atelier']) .trigger::before,
+:global(html[data-theme-id='paper-atelier']) .trigger::after {
+  content: none; /* remove the RGB glitch ghosts on paper */
+}
+
+/* ── Paper-atelier: TUNE drawer panel ──────────────────────────────────────
+   Converts the dark-glass drawer into an aged-parchment note.
+   Only color / background / border / box-shadow / backdrop-filter touched.
+   Layout, sizing, font-family, animation, transition are untouched.       */
+
+/* Panel surface (warm cream + grain + ink border + lift) — applied ONLY to the
+   OPEN drawer. The drawer is always mounted and collapses to max-height:0 when
+   closed; putting the border + background on the closed state too left a 2px
+   parchment strip under the header (the closed box's top+bottom border), which
+   read as a stray ink line beneath the menu. The default theme avoids this by
+   keeping border:0 closed (→ height 0 → invisible); we mirror that by gating the
+   whole surface to [data-open='true']. */
+:global(html[data-theme-id='paper-atelier']) .drawer[data-open='true'] {
+  background-color: var(--paper-panel-surface);
+  background-image: var(--paper-panel-texture);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--paper-panel-border);
+  box-shadow: var(--paper-panel-shadow);
+}
+
+/* Always-safe paper tweaks (no visible effect at max-height:0): kill the glass
+   blur and set ink text colour for the open contents. */
+:global(html[data-theme-id='paper-atelier']) .drawer {
+  backdrop-filter: none;
+  color: var(--text-primary);
+}
+
+/* Engraved divider between preset column and fader area — replace dark neon
+   gradient with a charcoal hairline that fades at both ends */
+:global(html[data-theme-id='paper-atelier']) .drawerDivider {
+  background: linear-gradient(180deg,
+    rgba(43, 39, 34, 0) 0%,
+    var(--paper-panel-hairline) 10%,
+    var(--paper-panel-hairline) 90%,
+    rgba(43, 39, 34, 0) 100%);
+  box-shadow: none;
+}
+
+/* Numeric values (W / G readout in the trigger) — body ink, not orange */
+:global(html[data-theme-id='paper-atelier']) .cell.num {
+  color: var(--text-body);
+}
+
+/* Dim separators ("·") */
+:global(html[data-theme-id='paper-atelier']) .cell.dim {
+  color: var(--text-meta);
+}
+
+/* "DEFAULT" reset label — strong ink when active, muted when idle */
+:global(html[data-theme-id='paper-atelier']) .cell.reset {
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .cell.reset:hover {
+  color: var(--text-primary);
+}
+:global(html[data-theme-id='paper-atelier']) .cell.reset.resetIdle {
+  color: var(--text-meta);
+}
+:global(html[data-theme-id='paper-atelier']) .cell.reset.resetIdle:hover {
+  color: var(--text-body);
+}
+
+/* Ops legend separator — hairline ink rule instead of white dashed */
+:global(html[data-theme-id='paper-atelier']) .opsLegend {
+  border-top-color: var(--paper-panel-hairline);
+}
+
+/* Ops legend text rows — muted ink */
+:global(html[data-theme-id='paper-atelier']) .opsText {
+  color: var(--text-meta);
+}
