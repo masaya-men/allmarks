@@ -177,6 +177,10 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               cardWidth={p.w}
               cardHeight={p.h}
               maxCardWidth={props.maxCardWidth}
+              // Free-floating collage cards: continuous diagonal-projection resize
+              // so an off-diagonal drag can't make the card leap size (the board's
+              // default per-axis 'dominant' model does — see resize-math.ts).
+              resizeModel="projection"
               onResizeStart={(corner): void => {
                 activeResizeCorner.current = corner
                 props.onGrab(id)

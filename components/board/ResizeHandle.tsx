@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, type PointerEvent, type ReactElement } from 'react'
 import { MIN_CARD_WIDTH } from '@/lib/board/size-migration'
+import { resizeWidthFromPointer, type ResizeModel } from '@/lib/board/resize-math'
 import styles from './ResizeHandle.module.css'
 
 export type ResizeCorner = 'tl' | 'tr' | 'bl' | 'br'
@@ -29,6 +30,11 @@ type ResizeHandleProps = {
    *  mark the card as "currently resizing" (board) or to anchor the opposite
    *  corner during free-placement resize (CollageCanvas). */
   readonly onResizeStart?: (corner: ResizeCorner) => void
+  /** Which pointer→width mapping to use. Defaults to 'dominant' (the board's
+   *  original per-axis feel, unchanged). The SHARE collage passes 'projection'
+   *  so a free-floating card resizes continuously (no sudden multi-fold jump on
+   *  an off-diagonal drag). See lib/board/resize-math.ts. */
+  readonly resizeModel?: ResizeModel
 }
 
 /**
@@ -53,20 +59,21 @@ export function ResizeHandle({
   onResize,
   onResizeEnd,
   onResizeStart,
+  resizeModel,
 }: ResizeHandleProps): ReactElement {
   return (
     <>
-      <Handle corner="tl" cardWidth={cardWidth} cardHeight={cardHeight} maxCardWidth={maxCardWidth} onResize={onResize} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} />
-      <Handle corner="tr" cardWidth={cardWidth} cardHeight={cardHeight} maxCardWidth={maxCardWidth} onResize={onResize} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} />
-      <Handle corner="bl" cardWidth={cardWidth} cardHeight={cardHeight} maxCardWidth={maxCardWidth} onResize={onResize} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} />
-      <Handle corner="br" cardWidth={cardWidth} cardHeight={cardHeight} maxCardWidth={maxCardWidth} onResize={onResize} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} />
+      <Handle corner="tl" cardWidth={cardWidth} cardHeight={cardHeight} maxCardWidth={maxCardWidth} onResize={onResize} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} resizeModel={resizeModel} />
+      <Handle corner="tr" cardWidth={cardWidth} cardHeight={cardHeight} maxCardWidth={maxCardWidth} onResize={onResize} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} resizeModel={resizeModel} />
+      <Handle corner="bl" cardWidth={cardWidth} cardHeight={cardHeight} maxCardWidth={maxCardWidth} onResize={onResize} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} resizeModel={resizeModel} />
+      <Handle corner="br" cardWidth={cardWidth} cardHeight={cardHeight} maxCardWidth={maxCardWidth} onResize={onResize} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} resizeModel={resizeModel} />
     </>
   )
 }
 
 type HandleProps = ResizeHandleProps & { readonly corner: ResizeCorner }
 
-function Handle({ corner, cardWidth, cardHeight, maxCardWidth, onResize, onResizeEnd, onResizeStart }: HandleProps): ReactElement {
+function Handle({ corner, cardWidth, cardHeight, maxCardWidth, onResize, onResizeEnd, onResizeStart, resizeModel }: HandleProps): ReactElement {
   const [resizing, setResizing] = useState<boolean>(false)
   const latestWidthRef = useRef<number>(cardWidth)
   latestWidthRef.current = cardWidth
@@ -94,11 +101,6 @@ function Handle({ corner, cardWidth, cardHeight, maxCardWidth, onResize, onResiz
       }
 
       const aspect = cardHeight > 0 ? cardWidth / cardHeight : 1
-      // Sign-per-corner: which direction along each axis grows the card?
-      // BR grows on +x and +y; TL grows on -x and -y; etc.
-      const signX = corner === 'tr' || corner === 'br' ? 1 : -1
-      const signY = corner === 'bl' || corner === 'br' ? 1 : -1
-
       const startClientX = e.clientX
       const startClientY = e.clientY
       const startWidth = cardWidth
@@ -118,18 +120,20 @@ function Handle({ corner, cardWidth, cardHeight, maxCardWidth, onResize, onResiz
         if (!dragStarted && Math.abs(totalDx) < 2 && Math.abs(totalDy) < 2) return
         dragStarted = true
 
-        // Convert raw pointer movement to width-equivalent growth on
-        // each axis (positive = grow direction, negative = shrink).
-        const dx = totalDx * signX
-        const dyW = aspect > 0 ? totalDy * signY * aspect : 0
-        // Pick the dominant axis, keeping its sign so shrink works.
-        // Using a dominant axis (vs averaging) keeps the gesture
-        // predictable when the user drags mostly along one axis.
-        const dom = Math.abs(dx) >= Math.abs(dyW) ? dx : dyW
-        const next = Math.max(
-          MIN_CARD_WIDTH,
-          Math.min(maxCardWidth, startWidth + dom * SENSITIVITY),
-        )
+        // Map pointer movement → new width. Board default ('dominant') keeps the
+        // original per-axis feel; the collage passes 'projection' so an
+        // off-diagonal drag can't leap the width (see lib/board/resize-math.ts).
+        const next = resizeWidthFromPointer({
+          corner,
+          startWidth,
+          aspect,
+          totalDx,
+          totalDy,
+          sensitivity: SENSITIVITY,
+          min: MIN_CARD_WIDTH,
+          max: maxCardWidth,
+          model: resizeModel,
+        })
         latestWidthRef.current = next
         onResize(next)
       }
@@ -154,7 +158,7 @@ function Handle({ corner, cardWidth, cardHeight, maxCardWidth, onResize, onResiz
       el.addEventListener('pointerup', end)
       el.addEventListener('pointercancel', end)
     },
-    [corner, cardWidth, cardHeight, maxCardWidth, onResize, onResizeEnd, onResizeStart],
+    [corner, cardWidth, cardHeight, maxCardWidth, onResize, onResizeEnd, onResizeStart, resizeModel],
   )
 
   const handleClass = [
