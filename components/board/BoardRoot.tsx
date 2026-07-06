@@ -1922,6 +1922,14 @@ export function BoardRoot() {
     })
   }, [])
 
+  // During arrange, the header TITLE toggle drives ONLY the ephemeral collage
+  // title (React state, discarded on exit — spec §10). It must NOT persist to
+  // BoardConfig/IDB: toggling the collage title off to get a title-free shot
+  // leaves the board's own background wordmark exactly as it was after DONE.
+  const handleToggleShareTitle = useCallback((): void => {
+    setShareTitle((c) => (c ? { ...c, enabled: !c.enabled } : c))
+  }, [])
+
   const handleOpenBookmarkletModal = useCallback((): void => {
     setBookmarkletModalOpen(true)
   }, [])
@@ -2018,18 +2026,6 @@ export function BoardRoot() {
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
   }, [sharePhase, handleExitShareMode])
-
-  // During arrange, the header TITLE toggle puts the editable collage title in
-  // and out. It mirrors `enabled` in both directions and PRESERVES the user's
-  // manual edits (position / size / text) across an off→on cycle — a full reseed
-  // would silently discard them. Recovering a title that was edited to empty is
-  // handled by re-entering arrange (RESELECT → ARRANGE reseeds a fresh default).
-  // Returns the same config ref when nothing changes so a viewport scroll re-run
-  // doesn't churn renders. No-op outside arrange.
-  useEffect((): void => {
-    if (sharePhase !== 'arrange') return
-    setShareTitle((c) => (c && c.enabled !== bgTypoEnabled ? { ...c, enabled: bgTypoEnabled } : c))
-  }, [bgTypoEnabled, sharePhase])
 
   // Local preview pan for a selection share — clamped to the selection's own
   // content height; the bg board's viewport is not touched.
@@ -2440,8 +2436,8 @@ export function BoardRoot() {
             <>
               <ChromeLedToggle
                 label="TITLE"
-                on={bgTypoEnabled}
-                onToggle={handleToggleBgTypo}
+                on={sharePhase === 'arrange' ? !!shareTitle?.enabled : bgTypoEnabled}
+                onToggle={sharePhase === 'arrange' ? handleToggleShareTitle : handleToggleBgTypo}
                 wrapTestId="bgtypo-toggle-wrap"
                 ledTestId="bgtypo-led"
                 btnTestId="bgtypo-toggle"

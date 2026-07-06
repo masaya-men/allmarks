@@ -171,7 +171,7 @@ export function ShareTitleElement(props: ShareTitleElementProps): ReactElement |
         suppressContentEditableWarning
         data-testid="share-title-text"
         data-wordmark-text={text}
-        style={{ fontSize: `${config.size}px` }}
+        style={{ fontSize: `${config.size}px`, outline: 'none' }}
         onInput={handleInput}
         onFocus={(): void => setIsEditing(true)}
         onBlur={(): void => setIsEditing(false)}
