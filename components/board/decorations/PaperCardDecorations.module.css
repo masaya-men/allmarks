@@ -24,10 +24,14 @@
    onto the board and its lower half sits on the card (= "taped to the board"). */
 .tape {
   position: absolute;
-  /* --deco-scale (default 1) lets the SHARE collage shrink decorations WITH the
-     cards; absent on the board = full size. */
-  width: calc(76px * var(--deco-scale, 1));
-  height: calc(22px * var(--deco-scale, 1));
+  /* Decoration sizes/offsets are a fraction of the card's rendered width
+     (--card-w, set by the board card wrapper AND the SHARE collage element).
+     Fallback 267.84px = board default card width, so an unset card renders the
+     original px. Result: tape/pin/wax/icon scale WITH the card at ANY size —
+     board-resized big cards get bigger decorations, shrunk collage cards get
+     smaller ones. (Was fixed px = the "stuck small / too big" bug.) */
+  width: calc(var(--card-w, 267.84px) / 267.84 * 76);
+  height: calc(var(--card-w, 267.84px) / 267.84 * 22);
   border-radius: 1px;
   opacity: 0.92;
   transform-origin: center;
@@ -67,21 +71,21 @@
 /* --- Push-pin (single, top-center — the only pin placement) --- */
 .pin {
   position: absolute;
-  top: calc(-7px * var(--deco-scale, 1));
+  top: calc(var(--card-w, 267.84px) / 267.84 * -7);
   left: 50%;
-  width: calc(12px * var(--deco-scale, 1));
-  height: calc(12px * var(--deco-scale, 1));
-  margin-left: calc(-6px * var(--deco-scale, 1));
+  width: calc(var(--card-w, 267.84px) / 267.84 * 12);
+  height: calc(var(--card-w, 267.84px) / 267.84 * 12);
+  margin-left: calc(var(--card-w, 267.84px) / 267.84 * -6);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #ffffff80, transparent 55%), var(--deco-pin, #2f4a37);
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
 }
 
 /* --- Corner anchors reused by the icon-stamp / wax accents --- */
-.stampTl { top: calc(6px * var(--deco-scale, 1)); left: calc(6px * var(--deco-scale, 1)); }
-.stampTr { top: calc(6px * var(--deco-scale, 1)); right: calc(6px * var(--deco-scale, 1)); }
-.stampBl { bottom: calc(6px * var(--deco-scale, 1)); left: calc(6px * var(--deco-scale, 1)); }
-.stampBr { bottom: calc(6px * var(--deco-scale, 1)); right: calc(6px * var(--deco-scale, 1)); }
+.stampTl { top: calc(var(--card-w, 267.84px) / 267.84 * 6); left: calc(var(--card-w, 267.84px) / 267.84 * 6); }
+.stampTr { top: calc(var(--card-w, 267.84px) / 267.84 * 6); right: calc(var(--card-w, 267.84px) / 267.84 * 6); }
+.stampBl { bottom: calc(var(--card-w, 267.84px) / 267.84 * 6); left: calc(var(--card-w, 267.84px) / 267.84 * 6); }
+.stampBr { bottom: calc(var(--card-w, 267.84px) / 267.84 * 6); right: calc(var(--card-w, 267.84px) / 267.84 * 6); }
 
 /* --- PNG asset overrides (data-asset='true') ---
    When a real PNG is available the inline backgroundImage supplies the art.
@@ -110,8 +114,8 @@
 /* --- Icon stamp (small archival icon: star / heart / camera / …) --- */
 .iconStamp {
   position: absolute;
-  width: calc(26px * var(--deco-scale, 1));
-  height: calc(26px * var(--deco-scale, 1));
+  width: calc(var(--card-w, 267.84px) / 267.84 * 26);
+  height: calc(var(--card-w, 267.84px) / 267.84 * 26);
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -121,8 +125,8 @@
 /* --- Wax-seal accent (pressed wax) --- */
 .waxDeco {
   position: absolute;
-  width: calc(34px * var(--deco-scale, 1));
-  height: calc(34px * var(--deco-scale, 1));
+  width: calc(var(--card-w, 267.84px) / 267.84 * 34);
+  height: calc(var(--card-w, 267.84px) / 267.84 * 34);
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

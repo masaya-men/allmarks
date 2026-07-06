@@ -42,10 +42,6 @@ export type CollageCanvasProps = {
   readonly displayMode: DisplayMode
   /** True on paper themes (themeMeta.decorations) — renders the paper card face. */
   readonly paper: boolean
-  /** Uniform fit scale (≤1) applied when seeding the collage, forwarded to the
-   *  paper decorations so tape/pin/wax shrink WITH the shrunk cards. Omitted or 1
-   *  = full board size (the board itself passes nothing). */
-  readonly decoScale?: number
   /** Editable collage title (phase 2), owned by the parent. Omitted/undefined
    *  renders no title layer at all — the arrange stage can run without one. */
   readonly title?: {
@@ -184,6 +180,9 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               left: 0,
               width: `${p.w}px`,
               height: `${p.h}px`,
+              // Card's rendered width, read by PaperCardDecorations so tape/pin/
+              // wax scale WITH the (shrunk) collage card — same var the board sets.
+              ['--card-w' as string]: `${p.w}px`,
               // Rotation applies to the WHOLE element (card + paper shadow +
               // decorations + handles) so it tilts coherently, around its own
               // center (transform-origin default). Collage-only tilt — the board
@@ -211,7 +210,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
                 (washi tape / push-pins), so a paper-theme collage matches the
                 board card exactly. Presentational + pointer-events:none. */}
             {props.paper && (
-              <PaperCardDecorations cardId={id} tornBacking={paperCardHasTornBacking(item)} scale={props.decoScale ?? 1} />
+              <PaperCardDecorations cardId={id} tornBacking={paperCardHasTornBacking(item)} />
             )}
             {/* Rotation handle — industry-standard orbit affordance above the
                 top-center. Hover-revealed (kept out of the screenshot at rest). */}

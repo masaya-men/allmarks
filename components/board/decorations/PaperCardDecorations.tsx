@@ -27,30 +27,22 @@ import styles from './PaperCardDecorations.module.css'
 export const PaperCardDecorations = memo(function PaperCardDecorations({
   cardId,
   tornBacking = false,
-  scale = 1,
 }: {
   /** Stable bookmark id used as the deterministic seed (CardNode data-card-id). */
   readonly cardId: string
   /** True when the card's backing is a torn-paper / ring-bound sheet (graph /
    *  notepad). A push-pin becomes a top-center tape (see resolveDecorations). */
   readonly tornBacking?: boolean
-  /** Uniform size multiplier for every decoration (tape/pin/wax/icon/anchor
-   *  offsets). 1 on the board (default → no inline style, board byte-identical);
-   *  the SHARE collage passes its fit scale so decorations shrink WITH the shrunk
-   *  cards. Consumed as the --deco-scale CSS var in the module stylesheet. */
-  readonly scale?: number
 }): ReactElement {
   const set = resolveDecorations(cardId, tornBacking)
 
+  // Every decoration size/offset is a fraction of the card's rendered width,
+  // read from the --card-w CSS var the card wrapper sets (both the board card
+  // wrapper and the SHARE collage element). So the tape/pin/wax/icon scale WITH
+  // the card at any size — enlarge a card and its decorations grow too; shrink
+  // it in the collage and they shrink. No JS scaling; see the module stylesheet.
   return (
-    <div
-      className={styles.overlay}
-      aria-hidden="true"
-      data-testid="paper-card-decorations"
-      // Only emit the var when scaling (collage); scale 1 leaves the board DOM
-      // untouched. calc() in the module falls back to 1 when the var is absent.
-      style={scale === 1 ? undefined : ({ '--deco-scale': scale } as CSSProperties)}
-    >
+    <div className={styles.overlay} aria-hidden="true" data-testid="paper-card-decorations">
       {set.tape && (() => {
         const t = set.tape
         const id = pickPaperAsset(t.assetSeed, set.tapeFamily === 'clear' ? CLEAR_TAPE_IDS : COLORED_TAPE_IDS)

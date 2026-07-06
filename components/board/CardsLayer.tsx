@@ -1160,6 +1160,9 @@ export function CardsLayer({
               visibility: isLightboxSource && !isPaperWindowCard ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
               ['--card-radius' as string]: meta.colorScheme === 'light' ? '3px' : '20px',
+              // Card's rendered width, read by PaperCardDecorations so tape/pin/
+              // wax scale WITH the card (resize a card → its decorations follow).
+              ['--card-w' as string]: `${p.w}px`,
             }}
           >
             {/* Tag-shutdown wrapper. The outer div above carries the GSAP

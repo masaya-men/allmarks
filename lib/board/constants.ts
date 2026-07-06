@@ -190,3 +190,10 @@ export const ARRANGE_SAFE_INSET = {
   BOTTOM_PX: 72,
   SIDE_PX: 16,
 } as const
+
+/** SHARE アレンジのカード間ギャップ（natural px。fitSelectionToScreen が倍率で縮める）。
+ *  盤面の既定ギャップ（BOARD_SLIDERS.CARD_GAP_DEFAULT_PX ≈ 97px＝ギャラリーの余白）は
+ *  コラージュには大きすぎ、縮小時に隙間だけで面積を食ってカードが小さいまま＝スカスカに
+ *  見える。小さいギャップにすると隙間が減り、同じ領域にカードを「より大きく」詰められる
+ *  （＝全体に最大サイズで詰め込む）。 */
+export const COLLAGE_GAP_PX = 16

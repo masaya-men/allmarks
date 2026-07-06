@@ -12,7 +12,7 @@ import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
 import { resolveThemeCustomization, isDefaultCustomization, isLightColor } from '@/lib/board/theme-customization'
-import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX } from '@/lib/board/constants'
+import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX, COLLAGE_GAP_PX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
@@ -400,10 +400,6 @@ export function BoardRoot() {
   // Free per-card rotation (deg) for the arrange stage. Collage-only tilt — the
   // board grid never rotates. Discarded on exit like the rest of the temp state.
   const [collageRotations, setCollageRotations] = useState<Record<string, number>>({})
-  // Uniform fit scale (≤1) applied when seeding the arrange collage. Passed to
-  // CollageCanvas so paper decorations (tape/pin/wax) shrink WITH the cards.
-  // Resets to 1 outside arrange (paper board decorations stay full size).
-  const [collageDecoScale, setCollageDecoScale] = useState<number>(1)
   // Editable collage title (phase 2). null while not arranging — seeded on
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
@@ -2002,7 +1998,6 @@ export function BoardRoot() {
     setCollagePositions({})
     setCollageOrder([])
     setCollageRotations({})
-    setCollageDecoScale(1)
     setShareTitle(null)
   }, [])
 
@@ -2030,22 +2025,14 @@ export function BoardRoot() {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    const seeded = fitSelectionToScreen(cards, rect, cardGapPx)
-    // Uniform fit scale actually applied = the max of (rendered width / natural
-    // width) across cards. Max (not first) so a card clamped to the container
-    // width can't under-report the true scale. Drives paper-decoration scaling.
-    let decoScale = 0
-    for (const c of cards) {
-      const p = seeded[c.id]
-      if (p && c.width > 0) decoScale = Math.max(decoScale, p.w / c.width)
-    }
-    setCollageDecoScale(decoScale > 0 ? decoScale : 1)
-    setCollagePositions(seeded)
+    // Pack with a small COLLAGE gap (not the board's large gallery gap) so the
+    // fit search can scale cards much bigger — a tight, filled collage.
+    setCollagePositions(fitSelectionToScreen(cards, rect, COLLAGE_GAP_PX))
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setCollageRotations({}) // re-entry (RESELECT→ARRANGE) reseeds a clean flat layout, no tilt
     setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))
     setSharePhase('arrange')
-  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, cardGapPx, viewport.w, viewport.h, bgTypoEnabled])
+  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, viewport.w, viewport.h, bgTypoEnabled])
 
   // Esc leaves SHARE mode from either stage (= CANCEL / DONE). Only bound while
   // a share stage is active.
@@ -2944,7 +2931,6 @@ export function BoardRoot() {
             maxCardWidth={effectiveLayoutWidth}
             displayMode={displayMode}
             paper={themeMeta.decorations === true}
-            decoScale={collageDecoScale}
             title={
               shareTitle
                 ? { config: shareTitle, defaultText: deriveBoardBgTypoText(activeFilter, tags), onChange: setShareTitle }
