@@ -2020,18 +2020,16 @@ export function BoardRoot() {
   }, [sharePhase, handleExitShareMode])
 
   // During arrange, the header TITLE toggle puts the editable collage title in
-  // and out. Turning it back ON reseeds a fresh default title (so a title that
-  // was hidden — toggled off, or edited to empty then toggled — comes back);
-  // turning it OFF just disables the current one. No-op outside arrange.
+  // and out. It mirrors `enabled` in both directions and PRESERVES the user's
+  // manual edits (position / size / text) across an off→on cycle — a full reseed
+  // would silently discard them. Recovering a title that was edited to empty is
+  // handled by re-entering arrange (RESELECT → ARRANGE reseeds a fresh default).
+  // Returns the same config ref when nothing changes so a viewport scroll re-run
+  // doesn't churn renders. No-op outside arrange.
   useEffect((): void => {
     if (sharePhase !== 'arrange') return
-    setShareTitle((c) => {
-      if (!c) return c
-      if (bgTypoEnabled && !c.enabled) return defaultShareTitleConfig(true, viewport.w, viewport.h)
-      if (!bgTypoEnabled && c.enabled) return { ...c, enabled: false }
-      return c
-    })
-  }, [bgTypoEnabled, sharePhase, viewport.w, viewport.h])
+    setShareTitle((c) => (c && c.enabled !== bgTypoEnabled ? { ...c, enabled: bgTypoEnabled } : c))
+  }, [bgTypoEnabled, sharePhase])
 
   // Local preview pan for a selection share — clamped to the selection's own
   // content height; the bg board's viewport is not touched.
