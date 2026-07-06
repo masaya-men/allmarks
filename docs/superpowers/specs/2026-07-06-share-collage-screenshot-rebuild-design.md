@@ -114,16 +114,21 @@ ShareTitleConfig = {
 
 ## 7. 取り込みリンク（決定①b・併記・任意）
 
-- **スクショ SHARE 自体はサーバー不使用のまま**（純粋スクショ）。
-- トーストの任意ボタン「取り込みリンクをコピー」を押した時**だけ**、選択カードから `/s/<id>` を生成する：
-  - 既存の `/s` リンク生成（`buildShareDataFromBoard` [lib/share/board-to-share.ts](../../../lib/share/board-to-share.ts) → KV/R2 アップロード → URL）を流用。
-  - **画像プレビュー / ミラー（ShareMirror）は使わない**（リンク URL をクリップボードにコピーするだけ）。
-- これで「スクショ画像 ＋ 取り込みリンク」を投稿に**併記**できる。
-- ペイロードは選択カードを盤面順（新しい順）で渡す＝現行選択的シェアと同じ。受け取り側（/s = SharedBoard）は**変更なし**。
+- **スクショ SHARE 本体（＝ユーザーが撮る画像）はサーバー不使用**（純粋スクショ）。
+- トーストの任意ボタン「取り込みリンクをコピー」を押した時**だけ**、選択カードから `/s/<id>` を生成して URL をクリップボードにコピーする。
+- これで「スクショ画像 ＋ 取り込みリンク」を投稿に**併記**できる。ペイロードは選択カードを盤面順（新しい順）＝現行選択的シェアと同じ。受け取り側（/s = SharedBoard）は**変更なし**。
+
+### 既知のインフラ制約（実コード確認・重要）
+リンク生成のサーバー route（[functions/api/share/create.ts](../../../functions/api/share/create.ts)）は **画像サムネ `thumb`（`data:image/...`）を必須**とする（無い/不正だと 400、R2 へ thumb を書いてから KV に入れる）。よって「画像を完全に捨ててリンクだけ生成」は**今のエンドポイントでは不可能**。
+
+- **採用（A・reuse）**: 既存の（出荷済み・動作実績あり）**サムネ生成 ＋ リンク生成のパスをそのまま裏で回す**。このサムネは**リンクの OG ソーシャルプレビュー用の小さい画像**であって、ユーザーが実際に SNS に貼るのは**自分のスクショ**。可視モーダル/ミラープレビュー・SAVE IMAGE・POST TO X・右ドロワーだけ撤去し、**リンク生成部を「裏で thumb 生成 → `createShare` → URL コピー」のヘッドレスなヘルパー**に縮小する。
+  - 流用チェーン（[SenderShareModal.tsx](../../../components/share/SenderShareModal.tsx) `handleShareConfirm` の中身）: `getShareData()`（= `buildShareData` [BoardRoot.tsx](../../../components/board/BoardRoot.tsx) → `buildShareDataFromBoard` [lib/share/board-to-share.ts](../../../lib/share/board-to-share.ts)）→ `renderShareImage`/`captureMirrorToWebP` で thumb → `createShare({share, thumb})` [lib/share/api-client.ts](../../../lib/share/api-client.ts) → `POST /api/share/create` → `{ id }` → `origin + '/s/' + id` → `navigator.clipboard.writeText`。
+- **不採用（B・将来案）**: サーバー route を thumb 任意に緩め、OG 画像を fallback にして**完全に画像フリーなリンク生成**にする（server 変更＋ OG serving の fallback 確認が要る）。今回はやらない。
 
 ## 8. 撤去・整理
 
-- 旧 SHARE ドロワーの「盤面まるごと画像プレビュー」（[SenderShareModal](../../../components/share/SenderShareModal.tsx) のミラー表示 / 画像生成 / SAVE IMAGE / POST TO X）は役目終了。**リンク生成部だけ残して縮小/切り出し**する。
+- 旧 SHARE ドロワー（[SenderShareModal](../../../components/share/SenderShareModal.tsx)）の**可視 UI は役目終了**：ミラー表示（`ShareMirror` の on-screen プレビュー）／SAVE IMAGE ボタン（`handleSaveImage`）／POST TO X ボタン／`ChromeDrawer` シェル。
+- **残すのはリンク生成ロジックだけ**（§7 のヘッドレスヘルパーに切り出す）：`getShareData` チェーン＋裏の thumb 生成（`renderShareImage`/`captureMirrorToWebP` は OG サムネ用に温存）＋`createShare`＋URL コピー。`lib/share/render-share-image.ts`・`capture-mirror.ts`・`ShareMirror.tsx` は**消さない**（サムネ生成に使う）。
 - `activeDrawer === 'share'` は廃止。ヘッダー SHARE ボタンは**モード突入**に配線し直す。
   - サブ①（[flat-sub1 spec](./2026-07-05-flat-sub1-menu-neutrality-right-drawer-design.md)）で SHARE/TUNE/SETTINGS/THEMES を右ドロワー `ChromeDrawer` に統一したが、**SHARE だけがドロワーから外れてモードに戻る**。TUNE/SETTINGS/THEMES の統一は維持。新 SHARE は本質的にパネルでなくモードなので妥当な部分巻き戻し。
 - 旧「SELECT CARDS」入口（ドロワー内ボタン `onSelectCards` → `handleEnterSelectMode`）は、ヘッダー SHARE がその役目を担うため統合。
@@ -161,7 +166,7 @@ ShareTitleConfig = {
 - タイトルの**フォント種類ピッカー**（N-35＝次回。今回は既定フォント）
 - タイトルの**前後（z-order）切替 UI**（今回は既定で背面固定）
 - **QR 埋め込み型**の併記（今回は「画像＋リンク併記」まで。将来案へ）
-- アプリによる**画像生成**（スクショはユーザー責務＝WYSIWYG の肝）
+- アプリが**ユーザーの投稿画像を生成すること**（＝コラージュのスクショはユーザー責務＝WYSIWYG の肝）。※「取り込みリンク」の OG プレビュー用サムネは裏で生成する（§7）が、これはユーザーが貼る画像ではない
 - 受け取り側（/s = SharedBoard）の変更
 - スマホ本格対応（盤面自体が未対応プラットフォーム。撮り方の一言だけ添える）
 - 100 枚上限の撤廃
