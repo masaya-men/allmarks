@@ -179,11 +179,14 @@ export const SIZE_PRESET_SPAN: Readonly<Record<'S' | 'M' | 'L', number>> = {
   L: 3,
 }
 
-/** SHARE アレンジ（自由配置キャンバス）で使える安全領域のインセット（画面px）。
- *  上＝上部クロム、下＝ShareToast（bottom:24 + バー高さ）、左右＝端に貼り付かない余白。
- *  fitSelectionToScreen はこの内側に全カードを収める（画面外・スクロールを起こさない）。 */
+/** SHARE アレンジ（自由配置キャンバス）の安全領域インセット（px）。値は「見える
+ *  盤面パネル（.canvas＝ウィンドウから CANVAS_MARGIN_PX 内側）」の内側からの余白で、
+ *  BoardRoot が canvas パネル矩形に対して適用する（ウィンドウ全面ではない）。こうする
+ *  ことで端のカードがパネル（紙の額）からはみ出さない。上＝盤面ヘッダー行（TITLE/TUNE
+ *  …/SHARE）、下＝ShareToast（下部バー）、左右＝パネル端の余白。fitSelectionToScreen は
+ *  この内側に全カードを収める。 */
 export const ARRANGE_SAFE_INSET = {
-  TOP_PX: 80,
-  BOTTOM_PX: 120,
-  SIDE_PX: 24,
+  TOP_PX: 56,
+  BOTTOM_PX: 72,
+  SIDE_PX: 16,
 } as const

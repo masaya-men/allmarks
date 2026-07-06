@@ -24,8 +24,10 @@
    onto the board and its lower half sits on the card (= "taped to the board"). */
 .tape {
   position: absolute;
-  width: 76px;
-  height: 22px;
+  /* --deco-scale (default 1) lets the SHARE collage shrink decorations WITH the
+     cards; absent on the board = full size. */
+  width: calc(76px * var(--deco-scale, 1));
+  height: calc(22px * var(--deco-scale, 1));
   border-radius: 1px;
   opacity: 0.92;
   transform-origin: center;
@@ -65,21 +67,21 @@
 /* --- Push-pin (single, top-center — the only pin placement) --- */
 .pin {
   position: absolute;
-  top: -7px;
+  top: calc(-7px * var(--deco-scale, 1));
   left: 50%;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
+  width: calc(12px * var(--deco-scale, 1));
+  height: calc(12px * var(--deco-scale, 1));
+  margin-left: calc(-6px * var(--deco-scale, 1));
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #ffffff80, transparent 55%), var(--deco-pin, #2f4a37);
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
 }
 
 /* --- Corner anchors reused by the icon-stamp / wax accents --- */
-.stampTl { top: 6px; left: 6px; }
-.stampTr { top: 6px; right: 6px; }
-.stampBl { bottom: 6px; left: 6px; }
-.stampBr { bottom: 6px; right: 6px; }
+.stampTl { top: calc(6px * var(--deco-scale, 1)); left: calc(6px * var(--deco-scale, 1)); }
+.stampTr { top: calc(6px * var(--deco-scale, 1)); right: calc(6px * var(--deco-scale, 1)); }
+.stampBl { bottom: calc(6px * var(--deco-scale, 1)); left: calc(6px * var(--deco-scale, 1)); }
+.stampBr { bottom: calc(6px * var(--deco-scale, 1)); right: calc(6px * var(--deco-scale, 1)); }
 
 /* --- PNG asset overrides (data-asset='true') ---
    When a real PNG is available the inline backgroundImage supplies the art.
@@ -108,8 +110,8 @@
 /* --- Icon stamp (small archival icon: star / heart / camera / …) --- */
 .iconStamp {
   position: absolute;
-  width: 26px;
-  height: 26px;
+  width: calc(26px * var(--deco-scale, 1));
+  height: calc(26px * var(--deco-scale, 1));
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -119,8 +121,8 @@
 /* --- Wax-seal accent (pressed wax) --- */
 .waxDeco {
   position: absolute;
-  width: 34px;
-  height: 34px;
+  width: calc(34px * var(--deco-scale, 1));
+  height: calc(34px * var(--deco-scale, 1));
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

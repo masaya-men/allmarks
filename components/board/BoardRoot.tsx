@@ -12,7 +12,7 @@ import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
 import { resolveThemeCustomization, isDefaultCustomization, isLightColor } from '@/lib/board/theme-customization'
-import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET } from '@/lib/board/constants'
+import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX } from '@/lib/board/constants'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
@@ -400,6 +400,10 @@ export function BoardRoot() {
   // Free per-card rotation (deg) for the arrange stage. Collage-only tilt — the
   // board grid never rotates. Discarded on exit like the rest of the temp state.
   const [collageRotations, setCollageRotations] = useState<Record<string, number>>({})
+  // Uniform fit scale (≤1) applied when seeding the arrange collage. Passed to
+  // CollageCanvas so paper decorations (tape/pin/wax) shrink WITH the cards.
+  // Resets to 1 outside arrange (paper board decorations stay full size).
+  const [collageDecoScale, setCollageDecoScale] = useState<number>(1)
   // Editable collage title (phase 2). null while not arranging — seeded on
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
@@ -1998,27 +2002,45 @@ export function BoardRoot() {
     setCollagePositions({})
     setCollageOrder([])
     setCollageRotations({})
+    setCollageDecoScale(1)
     setShareTitle(null)
   }, [])
 
-  // Stage 1 → 2: 選んだカードを「1画面に収まる中で最大サイズ」に自動配置してアレンジ開始。
-  // fitSelectionToScreen が skyline パック＋収まる最大倍率の二分探索＋安全領域内への
-  // 中央寄せを行うので、何枚選んでも画面外に置かれない（N-40）。倍率は座標に焼き込まれ、
-  // 以降の移動/リサイズ/回転（すべて画面px基準）はそのまま動く。盤面座標(WYSIWYG)は使わない。
+  // Stage 1 → 2: 選んだカードを「盤面パネルに収まる中で最大サイズ」に自動配置してアレンジ開始。
+  // fit rect は「見える盤面パネル（.canvas＝ウィンドウから CANVAS_MARGIN_PX 内側）」を基準に
+  // 取り、ヘッダー行（上）と SHARING バー（下）を避ける。fitSelectionToScreen が skyline パック
+  // ＋収まる最大倍率の二分探索＋中央寄せを行うので、何枚選んでも盤面からはみ出さない（N-40）。
+  // 倍率は座標に焼き込まれ、移動/リサイズ/回転（画面px基準）はそのまま動く。WYSIWYG 座標は使わない。
   const handleEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
     const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
+    // Fit INTO the visible board panel (.canvas = window minus CANVAS_MARGIN_PX on
+    // every side), not the whole window — so no card overhangs the parchment/frame
+    // edge. Then inset for the in-canvas header row (top) + the SHARING toast (bottom).
+    const m = CANVAS_MARGIN_PX
+    const frameW = Math.max(0, viewport.w - 2 * m)
+    const frameH = Math.max(0, viewport.h - 2 * m)
     const rect: CollageFitRect = {
-      x: ARRANGE_SAFE_INSET.SIDE_PX,
-      y: ARRANGE_SAFE_INSET.TOP_PX,
-      width: Math.max(0, viewport.w - 2 * ARRANGE_SAFE_INSET.SIDE_PX),
-      height: Math.max(0, viewport.h - ARRANGE_SAFE_INSET.TOP_PX - ARRANGE_SAFE_INSET.BOTTOM_PX),
+      x: m + ARRANGE_SAFE_INSET.SIDE_PX,
+      y: m + ARRANGE_SAFE_INSET.TOP_PX,
+      width: Math.max(0, frameW - 2 * ARRANGE_SAFE_INSET.SIDE_PX),
+      height: Math.max(0, frameH - ARRANGE_SAFE_INSET.TOP_PX - ARRANGE_SAFE_INSET.BOTTOM_PX),
     }
     const cards = chosen.map((it) => {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    setCollagePositions(fitSelectionToScreen(cards, rect, cardGapPx))
+    const seeded = fitSelectionToScreen(cards, rect, cardGapPx)
+    // Uniform fit scale actually applied = the max of (rendered width / natural
+    // width) across cards. Max (not first) so a card clamped to the container
+    // width can't under-report the true scale. Drives paper-decoration scaling.
+    let decoScale = 0
+    for (const c of cards) {
+      const p = seeded[c.id]
+      if (p && c.width > 0) decoScale = Math.max(decoScale, p.w / c.width)
+    }
+    setCollageDecoScale(decoScale > 0 ? decoScale : 1)
+    setCollagePositions(seeded)
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setCollageRotations({}) // re-entry (RESELECT→ARRANGE) reseeds a clean flat layout, no tilt
     setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))
@@ -2922,6 +2944,7 @@ export function BoardRoot() {
             maxCardWidth={effectiveLayoutWidth}
             displayMode={displayMode}
             paper={themeMeta.decorations === true}
+            decoScale={collageDecoScale}
             title={
               shareTitle
                 ? { config: shareTitle, defaultText: deriveBoardBgTypoText(activeFilter, tags), onChange: setShareTitle }

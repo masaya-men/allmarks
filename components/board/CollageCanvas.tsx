@@ -42,6 +42,10 @@ export type CollageCanvasProps = {
   readonly displayMode: DisplayMode
   /** True on paper themes (themeMeta.decorations) — renders the paper card face. */
   readonly paper: boolean
+  /** Uniform fit scale (≤1) applied when seeding the collage, forwarded to the
+   *  paper decorations so tape/pin/wax shrink WITH the shrunk cards. Omitted or 1
+   *  = full board size (the board itself passes nothing). */
+  readonly decoScale?: number
   /** Editable collage title (phase 2), owned by the parent. Omitted/undefined
    *  renders no title layer at all — the arrange stage can run without one. */
   readonly title?: {
@@ -207,7 +211,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
                 (washi tape / push-pins), so a paper-theme collage matches the
                 board card exactly. Presentational + pointer-events:none. */}
             {props.paper && (
-              <PaperCardDecorations cardId={id} tornBacking={paperCardHasTornBacking(item)} />
+              <PaperCardDecorations cardId={id} tornBacking={paperCardHasTornBacking(item)} scale={props.decoScale ?? 1} />
             )}
             {/* Rotation handle — industry-standard orbit affordance above the
                 top-center. Hover-revealed (kept out of the screenshot at rest). */}
@@ -216,7 +220,9 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               data-testid={`collage-rotate-${id}`}
               onPointerDown={(e): void => handleRotatePointerDown(e, id)}
             >
-              <span className={styles.rotateStem} aria-hidden="true" />
+              {/* Knob sits at the FAR END of the stem (top), the stem drops from
+                  it down to the card's top edge — the Figma/Canva convention the
+                  user asked for. Knob first in DOM + column layout = knob on top. */}
               <span className={styles.rotateKnob} aria-hidden="true">
                 {/* Canva/Figma 風の回転アイコン（ほぼ全周の弧＋矢頭）。currentColor で白。 */}
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
@@ -236,6 +242,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
                   />
                 </svg>
               </span>
+              <span className={styles.rotateStem} aria-hidden="true" />
             </div>
             {/* Reuse the board's exact resize affordance: four corner hot zones
                 that reveal a 1/4-circle arc on hover. Its handles stopPropagation
