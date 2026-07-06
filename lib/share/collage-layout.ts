@@ -186,33 +186,34 @@ export function fitSelectionToScreen(
   const build = (H: number): { readonly rows: RowLayout[]; readonly totalHeight: number } =>
     layoutAtTargetHeight(ids, aspects, H, rect.width, gapRatio, maxCardWidth)
 
-  // 目標行高 H を選ぶ。総高は H について概ね単調増加。maxCardWidth を上限に、
-  // その上限でも rect.height に収まる（＝少数カード）ならそのまま中央寄せ。
-  // 収まらなければ「収まる最大の H」を二分探索（＝最も埋まる）。
-  const top = build(maxCardWidth)
-  let chosen: { readonly rows: RowLayout[]; readonly totalHeight: number }
-  if (top.totalHeight <= rect.height) {
-    chosen = top
-  } else {
-    let lo = 0
-    let hi = maxCardWidth
-    for (let i = 0; i < 30; i++) {
-      const mid = (lo + hi) / 2
-      if (build(mid).totalHeight <= rect.height) lo = mid
-      else hi = mid
+  // 目標行高 H を選ぶ。総高は per-row cap と行分割の離散性のため H について単調でない
+  // （＝二分探索は谷にはまり下側を大きく空ける）。そこで H を (0, maxCardWidth] で密にスキャンし、
+  // rect.height に収まる中で総高が最大（＝最も埋まる）レイアウトを採る。build は O(n) と軽いので
+  // スキャンで十分速い。極小 H の層は必ず収まるのでフォールバック下限になる。
+  const STEPS = 240
+  let chosen = build(maxCardWidth / STEPS)
+  for (let i = 2; i <= STEPS; i++) {
+    const laid = build((maxCardWidth * i) / STEPS)
+    if (laid.totalHeight <= rect.height + 0.5 && laid.totalHeight > chosen.totalHeight) {
+      chosen = laid
     }
-    chosen = build(lo)
   }
 
-  // 縦方向の残余の扱い（spec §3.6）。justified rows は行数が離散なので、多数カードでも
-  // 「収まる最大の行数」の総高が rect.height に届かず下端が余ることがある（均一カードで顕著）。
-  // 実質的に埋まっている（複数行かつ総高が rect.height の一定割合以上）ときは、残余を行間に
-  // 均等配分して上端→下端までブリードさせ、下の帯を消す。少数カード（総高が小さい・1〜2行）は
-  // 配分せず中央寄せのまま＝バラけさせず中央にまとめる（左上/上端に張り付かない）。
+  // 縦方向の残余の扱い（spec §3.6）。justified rows は行数が離散なので、収まる最大の行数でも
+  // 総高が rect.height に届かず下端が余ることがある。残余は行間に配分して上端→下端まで
+  // ブリードさせ、下の帯を消す。ただし配分は「1行あたり平均行高まで」に頭打ちする＝行数が
+  // 少ないとき（数枚を数行）に行が離れすぎてスカスカにならないようにし、配分しきれない残余は
+  // 上下中央に置く。1行だけ（少数カード）は配分せず中央寄せ＝左上/上端に張り付かない。
+  const rows = chosen.rows
   const residual = Math.max(0, rect.height - chosen.totalHeight)
-  const canSpread = chosen.rows.length >= 3 && chosen.totalHeight >= rect.height * 0.6
-  const extraRowGap = canSpread ? residual / (chosen.rows.length - 1) : 0
-  const offsetY = canSpread ? rect.y : rect.y + residual / 2
+  const gapsCount = rows.length - 1
+  let extraRowGap = 0
+  let offsetY = rect.y + residual / 2
+  if (gapsCount >= 1 && residual > 0) {
+    const avgRowHeight = rows.reduce((s, r) => s + r.height, 0) / rows.length
+    extraRowGap = Math.min(residual / gapsCount, avgRowHeight)
+    offsetY = rect.y + (residual - extraRowGap * gapsCount) / 2
+  }
 
   const out: Record<string, CardPosition> = {}
   let y = offsetY

@@ -2009,17 +2009,20 @@ export function BoardRoot() {
   const handleEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
     const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
-    // Fit INTO the visible board panel (.canvas = window minus CANVAS_MARGIN_PX on
-    // every side), not the whole window — so no card overhangs the parchment/frame
-    // edge. Then inset for the in-canvas header row (top) + the SHARING toast (bottom).
+    // Fit INTO the visible board panel (.canvas). NOTE: `viewport.w/h` already IS the
+    // panel size — it's the canvasWrap clientWidth/clientHeight, i.e. the window MINUS
+    // CANVAS_MARGIN_PX on every side (measured: 1489x679 window -> viewport 1393x583).
+    // The collage canvas spans the FULL window, so we place the safe rect at the panel
+    // origin (m, m) in window coords and inset it by ARRANGE_SAFE_INSET (top = header
+    // row, bottom = SHARING toast, sides = small margin). Do NOT subtract CANVAS_MARGIN
+    // again here — that was double-counting it and shrank the rect ~96px in each axis,
+    // leaving the right+bottom L-shaped empty band the fill was blamed for.
     const m = CANVAS_MARGIN_PX
-    const frameW = Math.max(0, viewport.w - 2 * m)
-    const frameH = Math.max(0, viewport.h - 2 * m)
     const rect: CollageFitRect = {
       x: m + ARRANGE_SAFE_INSET.SIDE_PX,
       y: m + ARRANGE_SAFE_INSET.TOP_PX,
-      width: Math.max(0, frameW - 2 * ARRANGE_SAFE_INSET.SIDE_PX),
-      height: Math.max(0, frameH - ARRANGE_SAFE_INSET.TOP_PX - ARRANGE_SAFE_INSET.BOTTOM_PX),
+      width: Math.max(0, viewport.w - 2 * ARRANGE_SAFE_INSET.SIDE_PX),
+      height: Math.max(0, viewport.h - ARRANGE_SAFE_INSET.TOP_PX - ARRANGE_SAFE_INSET.BOTTOM_PX),
     }
     const cards = chosen.map((it) => {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx

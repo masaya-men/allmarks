@@ -137,6 +137,41 @@ describe('fitSelectionToScreen (justified rows fill)', () => {
     expect(gap / pos.a.h).toBeCloseTo(0.3, 1)
   })
 
+  it('非単調な totalHeight でも下端まで埋める（谷にはまらない）', () => {
+    // per-row cap × 行分割の離散性で totalHeight(H) は H について非単調。二分探索だと谷に
+    // はまり 33% しか埋めなかった敵対的ケース（レビュー指摘）。H スキャン方式は「収まる中で
+    // 総高が最大」を選ぶので、achievable な ~99% 充填レイアウトを取りこぼさない。
+    const aspects = [4.88, 0.85, 0.56, 2.75, 2.98, 0.83]
+    const cards = aspects.map((a, i) => ({ id: `c${i}`, width: a * 100, height: 100 }))
+    const rect = { x: 0, y: 0, width: 1396.3, height: 164.9 }
+    const pos = fitSelectionToScreen(cards, rect)
+    const vals = Object.values(pos)
+    for (const p of vals) expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
+    const usedH = Math.max(...vals.map((p) => p.y + p.h)) - Math.min(...vals.map((p) => p.y))
+    expect(usedH).toBeGreaterThan(rect.height * 0.9) // 旧二分探索は ~0.33 しか埋めなかった
+  })
+
+  it('本番 1489×679 相当（100枚・盤面既定・varied aspect）で safe rect の高さをほぼ埋める', () => {
+    // handleEnterArrange と同条件：width=267.84（cardWidthPx）, height=267.84/aspect,
+    // rect = 1489×679 に ARRANGE_SAFE_INSET を適用（x64 y104 w1361 h455）, 既定 opts。
+    const A = [0.56, 0.75, 1.0, 1.33, 1.5, 1.78, 0.66, 1.0, 0.8, 1.25]
+    const cards = Array.from({ length: 100 }, (_, i) => {
+      const a = A[i % A.length]
+      return { id: `c${i}`, width: 267.84, height: 267.84 / a }
+    })
+    const rect = { x: 64, y: 104, width: 1361, height: 455 }
+    const pos = fitSelectionToScreen(cards, rect)
+    const vals = Object.values(pos)
+    for (const p of vals) {
+      expect(p.x + p.w).toBeLessThanOrEqual(rect.x + rect.width + 0.5)
+      expect(p.y + p.h).toBeLessThanOrEqual(rect.y + rect.height + 0.5)
+    }
+    const usedH = Math.max(...vals.map((p) => p.y + p.h)) - Math.min(...vals.map((p) => p.y))
+    const usedW = Math.max(...vals.map((p) => p.x + p.w)) - Math.min(...vals.map((p) => p.x))
+    expect(usedW).toBeGreaterThan(rect.width * 0.95)
+    expect(usedH).toBeGreaterThan(rect.height * 0.9) // 下端の帯を消す
+  })
+
   it('N-40 回帰：board 実既定比率 × 100枚 × 短く広い rect でも全カード可視サイズ・rect 内（1px 崩壊なし）', () => {
     const CARD_WIDTH_DEFAULT_PX = 267.84
     const GAP_RATIO = 97.21 / 267.84
