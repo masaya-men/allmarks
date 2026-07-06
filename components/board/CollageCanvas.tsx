@@ -2,6 +2,7 @@
 
 import { useRef, type PointerEvent, type ReactElement } from 'react'
 import { CardNode } from './CardNode'
+import { ResizeHandle } from './ResizeHandle'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import type { ThemeId } from '@/lib/board/types'
 import type { CollagePositions } from '@/lib/share/collage-layout'
@@ -27,6 +28,10 @@ export type CollageCanvasProps = {
   readonly onResize: (id: string, nextWidth: number) => void
   /** Fired on pointerdown so the parent can bringToFront(order, id). */
   readonly onGrab: (id: string) => void
+  /** Upper bound for a card's resized width (board px) — passed straight to the
+   *  shared ResizeHandle so a card can grow up to "edge to edge" of the arrange
+   *  area. Matches the board's effectiveLayoutWidth. */
+  readonly maxCardWidth: number
   readonly themeId: ThemeId
 }
 
@@ -44,18 +49,17 @@ const INTRA_CANVAS_Z_BASE = 10
 export function CollageCanvas(props: CollageCanvasProps): ReactElement {
   const refs = useRef<Record<string, HTMLDivElement | null>>({})
 
-  /** Shared pointer-gesture plumbing for both drag-move and corner-resize:
-   *  captures the pointer (best-effort — jsdom/synthetic pointers don't
-   *  support capture, which is fine since it's only a UX nicety, not load
-   *  bearing for either gesture), wires up move/up/cancel listeners, and
-   *  tears everything down (including releasing capture) on end. Callers
-   *  supply only the gesture-specific math via `onMove`; `onEnd` is for any
-   *  extra per-gesture teardown beyond the shared listener/capture cleanup. */
+  /** Shared pointer-gesture plumbing for drag-move: captures the pointer
+   *  (best-effort — jsdom/synthetic pointers don't support capture, which is
+   *  fine since it's only a UX nicety, not load bearing), wires up
+   *  move/up/cancel listeners, and tears everything down (including releasing
+   *  capture) on end. The caller supplies the gesture-specific math via
+   *  `onMove`. (Corner-resize is delegated to the shared ResizeHandle, which
+   *  has its own capture plumbing — see below.) */
   function bindPointerGesture(
     el: HTMLDivElement,
     pointerId: number,
     onMove: (ev: globalThis.PointerEvent) => void,
-    onEnd?: () => void,
   ): void {
     try {
       el.setPointerCapture(pointerId)
@@ -74,7 +78,6 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
       } catch {
         /* jsdom / synthetic pointer */
       }
-      onEnd?.()
     }
     el.addEventListener('pointermove', move)
     el.addEventListener('pointerup', up)
@@ -94,19 +97,6 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
     const originY = start.y
     bindPointerGesture(el, e.pointerId, (ev) => {
       props.onMove(id, originX + (ev.clientX - startX), originY + (ev.clientY - startY))
-    })
-  }
-
-  function handleResizePointerDown(e: PointerEvent<HTMLDivElement>, id: string): void {
-    e.stopPropagation()
-    e.preventDefault()
-    const el = refs.current[id]
-    const start = props.positions[id]
-    if (!el || !start) return
-    const startX = e.clientX
-    const startW = start.w
-    bindPointerGesture(el, e.pointerId, (ev) => {
-      props.onResize(id, startW + (ev.clientX - startX) * 2)
     })
   }
 
@@ -136,12 +126,18 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
             onPointerDown={(e): void => handleElementPointerDown(e, it.id)}
           >
             <CardNode id={it.id} title={it.title} thumbnailUrl={it.thumbnailUrl ?? undefined} />
-            {/* Single corner is enough for basic-scope free resize (uniform
-                scale via resizeElement's aspect-preserving height). */}
-            <div
-              className={styles.resizeCorner}
-              data-testid={`collage-resize-${it.id}`}
-              onPointerDown={(e): void => handleResizePointerDown(e, it.id)}
+            {/* Reuse the board's exact resize affordance: four corner hot
+                zones that reveal a 1/4-circle arc on hover and scale the card
+                (aspect-preserved via resizeElement). Its handles stopPropagation
+                on pointerdown, so grabbing a corner never starts a card move.
+                onResizeStart brings the card forward, matching the drag path's
+                onGrab (the element's own onGrab is suppressed by that stopProp). */}
+            <ResizeHandle
+              cardWidth={p.w}
+              cardHeight={p.h}
+              maxCardWidth={props.maxCardWidth}
+              onResize={(w): void => props.onResize(it.id, w)}
+              onResizeStart={(): void => props.onGrab(it.id)}
             />
           </div>
         )

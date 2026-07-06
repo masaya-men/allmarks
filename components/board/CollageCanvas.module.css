@@ -22,13 +22,7 @@
   cursor: grabbing;
 }
 
-/* Corner-resize hot zone. 28px min click target (memory: feedback_large_pointer). */
-.resizeCorner {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 28px;
-  height: 28px;
-  cursor: nwse-resize;
-  touch-action: none;
-}
+/* Corner resize affordance is the shared board ResizeHandle (four corner hot
+   zones + hover arc), rendered inside each .element — see CollageCanvas.tsx.
+   No local resize CSS needed; ResizeHandle.module.css positions its own
+   handles absolutely within the .element box. */

@@ -15,6 +15,7 @@ describe('CollageCanvas', () => {
         onMove={() => {}}
         onResize={() => {}}
         onGrab={() => {}}
+        maxCardWidth={1000}
         themeId="dotted-notebook"
       />,
     )

@@ -2896,6 +2896,7 @@ export function BoardRoot() {
             onMove={(id, x, y): void => setCollagePositions((p) => moveElement(p, id, x, y))}
             onResize={(id, w): void => setCollagePositions((p) => resizeElement(p, id, w))}
             onGrab={(id): void => setCollageOrder((o) => bringToFront(o, id))}
+            maxCardWidth={effectiveLayoutWidth}
             themeId={themeId}
           />
           <ShareToast
