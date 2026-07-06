@@ -14,8 +14,9 @@
 - **フェーズ2 出荷チェックポイント**でゲート緑→本番デプロイ→目視。
 - ジェスチャ系は `setPointerCapture` で Playwright 不可＝純関数テスト＋手動目視（フェーズ1と同様、seed→SELECT ALL→ARRANGE で arrange 段まで到達しスクショ検証は可能）。
 
-## まず最初に（ユーザー実機目視の確認を促す）
-- **フェーズ1の本番目視**：`allmarks.app` をハードリロード → SHARE → カード選択 → ARRANGE → **ドラッグ移動/隅リサイズ/掴んで最前面／RESELECT で選択維持／DONE でグリッド復帰**／**オンボーディング完走**（automation 未検証の唯一項目）。cosmetic：初期カードが上部クロム裏に潜る点（気になれば Task で BOARD_TOP_PAD シード補正）。
+## フェーズ1 = ユーザー実機OK（s165 で確認済み）
+- ドラッグ移動／**4隅リサイズ＋掴んだ隅追従**（`resizeElementFromCorner`）／掴んで最前面／RESELECT 選択維持／DONE 復帰／**本物カード面の表示**（`pickCard` 描画・テキスト/プレースホルダも表示）＝すべて実機OK。
+- **残る目視（気が向いたら）**：オンボーディング SHARE beat の完走（automation 未検証）。cosmetic：初期カードが上部クロム裏に少し潜る（BOARD_TOP_PAD シード補正の follow-up）。
 
 ## その後に控える大物（順序の目安）
 - **SHARE フェーズ3＝COPY LINK 併記**（Task8-10・`/s` 生成を裏ヘッドレス化してトーストに併記）。

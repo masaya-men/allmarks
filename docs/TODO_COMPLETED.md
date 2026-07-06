@@ -8839,3 +8839,8 @@ Mac 実機スプリントの一環。友人 Mac(Chrome) と本人シークレッ
 正本 [spec](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md) / [plan](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)。
 
 **s165 追記（フェーズ1 後の実機フィードバック反映・本番デプロイ済）**: ユーザー指摘「リサイズは4隅すべて＋ホバーでハンドルが出る作りをそのまま流用したら」→ CollageCanvas の1隅の見えない箱を撤去し、**既存ボードの `ResizeHandle`（4隅ホットゾーン＋ホバーで1/4円弧・対角アンカーのアスペクト維持スケール）をそのまま流用**。`maxCardWidth={effectiveLayoutWidth}` を追加、`bindPointerGesture` の未使用 `onEnd` も除去。tsc0 / vitest 2015（channel.test.ts は既知フレーク・単体で緑）/ build OK。Playwright 実測＝arrange でリサイズハンドル24個（4隅×6枚）・ホバーで弧が出るのを確認。ドラッグの実リサイズ感は setPointerCapture で自動検証不可＝ユーザー実機目視。**注記**：現状はボード同様「カード左上を固定して幅スケール」＝掴んだ隅自体がカーソル追従はしない（＝対角アンカー移動が欲しければ x/y も動かす小改修が follow-up）。
+
+**s165 追記2（フェーズ1 実機フィードバック2件・本番反映済・ユーザーOK）**:
+1. **リサイズを掴んだ隅追従に**（ユーザー「掴んだ箇所によってついてくる自然な方が」）：純関数 `resizeElementFromCorner`（対角の隅を固定して x/y も動かす・4隅・TDD）を追加し CollageCanvas から使用。`ResizeHandle.onResizeStart` に掴んだ corner を渡すよう拡張（板は onResizeStart 未使用＝後方互換）。CollageCanvas は active corner を ref で追跡。
+2. **テキストカードが表示されない**（ユーザー報告）を修正：collage は簡易 `CardNode`（title＋サムネのみ）で描いていたためサムネ無し（テキスト系）カードがほぼ空白だった → 板と同じく `CardNode` の子に **`pickCard(item)` の本物カード面**（ImageCard/VideoThumbCard/**PlaceholderCard**＝ホスト名＋生成アート）を描画。CollageCanvas は BoardItem[] を受け取り `displayMode`/`paper`（themeMeta.decorations）も forward、スクショ安定のため静止（autoCycle/ambientOn=false）。
+- tsc0 / vitest 2017 全緑 / build OK。Playwright 実測＝Instagram プレースホルダカードがホスト名＋アートで表示・ハンドル24個（4隅×6）・グリッド非表示・DONE 復帰を確認（動画サムネはローカル取得不可で暗いが本番でロード／掴み追従の実感触は setPointerCapture で自動検証不可＝実機目視）。**ユーザー実機OK**。
