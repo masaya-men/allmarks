@@ -5,6 +5,7 @@ import { ShareToast } from './ShareToast'
 const noop = (): void => {}
 const baseProps = {
   count: 0,
+  hint: '',
   onReselect: noop,
   onDone: noop,
 }
@@ -23,5 +24,10 @@ describe('ShareToast', () => {
     fireEvent.click(screen.getByTestId('share-toast-done'))
     expect(onReselect).toHaveBeenCalledOnce()
     expect(onDone).toHaveBeenCalledOnce()
+  })
+
+  it('renders the injected OS hint instead of a hardcoded string', () => {
+    render(<ShareToast count={3} hint="Press Win+Shift+S, then drag the collage area." onReselect={() => {}} onDone={() => {}} />)
+    expect(screen.getByText('Press Win+Shift+S, then drag the collage area.')).toBeInTheDocument()
   })
 })

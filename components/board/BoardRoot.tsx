@@ -94,6 +94,7 @@ import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { ShareToast } from '@/components/board/ShareToast'
 import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
+import { detectSharePlatform, pickScreenshotHint } from '@/lib/share/screenshot-hint'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -1962,6 +1963,14 @@ export function BoardRoot() {
     return computeSkylineLayout({ cards, containerWidth: effectiveLayoutWidth, gap: cardGapPx })
   }, [shareSelectedItems, customWidths, cardWidthPx, effectiveLayoutWidth, cardGapPx])
 
+  // OS-aware one-line screenshot instruction for ShareToast (computed once;
+  // navigator.userAgentData is high-entropy but not in default TS lib types).
+  const screenshotHint = useMemo((): string => {
+    if (typeof navigator === 'undefined') return pickScreenshotHint('other')
+    const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
+    return pickScreenshotHint(detectSharePlatform(navigator.userAgent, nav.userAgentData?.platform))
+  }, [])
+
   const selectionContentHeight =
     selectionLayout == null ? 0 : selectionLayout.totalHeight + BOARD_TOP_PAD_PX
 
@@ -2943,6 +2952,7 @@ export function BoardRoot() {
           />
           <ShareToast
             count={selectedIds.size}
+            hint={screenshotHint}
             onReselect={(): void => setSharePhase('select')}
             onDone={handleExitShareMode}
           />
