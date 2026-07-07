@@ -10,10 +10,12 @@
    - .hidden fades the whole meter out (Lightbox open swap), 0.25s ease */
 
 .meterWrap {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* s170: moved from the canvas floor (absolute; bottom:24px; centered by
+     translateX) into the outer frame's bottom margin band (BoardRoot
+     .frameBottomChrome), which centers it via flex. So this is now a plain
+     flex child — position:relative keeps z-index honored without pinning
+     coordinates. */
+  position: relative;
   display: flex;
   align-items: center;
   /* z 400 sits above Lightbox `.stage` (z 300) so the meter renders ON

@@ -2499,6 +2499,29 @@ export function BoardRoot() {
           onCycleTagOrder={(): void => { void setTagOrderMode(nextTagOrderMode(tagOrderMode)) }}
         />
       </div>
+      {/* Bottom frame band — mirror of frameTopChrome. Hosts the ScrollMeter in
+          the outer frame's BOTTOM margin (OUTSIDE the dark canvas) so the meter's
+          scrub hit-area never overlaps card operations near the board floor
+          (user goal s170). Outside the canvas — which clips its own overflow and
+          carries the pan/zoom transforms — so no fixed/transform containing-block
+          pitfall. The band is z 400 (see CSS) so the unified meter still renders
+          above the Lightbox (z 300) exactly as it did in-canvas; it stays visible
+          during the Lightbox and only hides for onboarding / arrange via
+          shouldShowScrollMeter. */}
+      <div className={styles.frameBottomChrome}>
+        {shouldShowScrollMeter(showOnboarding, sharePhase) && (
+          <ScrollMeter
+            mode={meterMode}
+            n1={meterN1}
+            n2={meterN2}
+            total={filteredItems.length}
+            swellFraction={meterSwellFraction}
+            onScrub={handleMeterScrub}
+            variant={themeMeta.scrollMeterVariant}
+            grabbing={grabReacting}
+          />
+        )}
+      </div>
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
           live inside, so cursor pan never escapes the rounded frame.
           Phase 1A: canvas is now a grid (auto / 1fr) — TopHeader at top,
@@ -2809,28 +2832,10 @@ export function BoardRoot() {
             />
           )}
         </div>
-        {/* Session 39 phase 6 (B-#20 refactor): single unified meter for
-            both board and Lightbox states. Earlier multi-component +
-            crossfade approach (phase 1-5) collapsed into ONE ScrollMeter
-            that swaps its content via mode prop. The bulge eases between
-            scroll-fraction and card-fraction targets via ease-in-out tween
-            on mode change AND on lightbox-mode card swaps. No slot
-            wrapper, no freeze refs, no glide-arm React state — all the
-            transition logic lives inside ScrollMeter itself. */}
-        {/* Hidden during onboarding — the tutorial owns the bottom of the screen
-            (its bottom captions + paste cue would otherwise fight the meter). */}
-        {shouldShowScrollMeter(showOnboarding, sharePhase) && (
-          <ScrollMeter
-            mode={meterMode}
-            n1={meterN1}
-            n2={meterN2}
-            total={filteredItems.length}
-            swellFraction={meterSwellFraction}
-            onScrub={handleMeterScrub}
-            variant={themeMeta.scrollMeterVariant}
-            grabbing={grabReacting}
-          />
-        )}
+        {/* ScrollMeter moved OUT of the canvas to the bottom frame band
+            (frameBottomChrome, above) so its scrub hit-area never overlaps card
+            operations near the board floor (s170). The single unified meter
+            still swaps board/Lightbox content via its mode prop, unchanged. */}
         {/* Lightbox is a sibling of TopHeader + canvasWrap, NOT a child of
             canvasWrap. This way its backdrop (position: absolute; inset: 0)
             fills the FULL canvas — including the TopHeader band — so the

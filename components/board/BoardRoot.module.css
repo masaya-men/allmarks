@@ -33,6 +33,36 @@
   pointer-events: none;
 }
 
+/* Bottom frame band — mirror of .frameTopChrome. Hosts the ScrollMeter in the
+   outer frame's BOTTOM margin (outside the dark canvas), centered. Living here
+   — outside the canvas, which clips its own overflow and carries the pan/zoom
+   transforms — keeps the meter's scrub hit-area off the cards (s170 goal) and
+   avoids any fixed/transform containing-block pitfall. pointer-events:none so
+   the empty band never swallows clicks; the meter's own .track re-enables them.
+   z-index 400 keeps it above the Lightbox (z 300), matching the meter's old
+   in-canvas stacking, so the unified meter still shows over the Lightbox. */
+.frameBottomChrome {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* s170: lift the meter clearly off the screen edge. The meter is only ~25px
+     tall and the bottom margin is 48px, so centering it (the previous default)
+     already put its bottom ~12px from the edge — the sound-wave ribbon hugged
+     the screen floor and read as "cut off" when calm. Measured on prod: canvas
+     bottom sits 48px from the edge, so with a 25px meter the max lift without
+     overlapping the board is bottom:23px. 20px gives the ribbon 20px of air
+     below (was 12) while keeping a ~3px gap under the canvas — no overlap.
+     Auto height + flex-end anchors the whole meter to this bottom gap so a tall
+     swell grows upward and never clips at the edge. Tune `bottom` to taste. */
+  bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 400;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
 .canvas {
   position: relative;
   width: 100%;
