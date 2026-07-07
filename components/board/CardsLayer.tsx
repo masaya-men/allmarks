@@ -1159,7 +1159,18 @@ export function CardsLayer({
               // the frame (N-12).
               visibility: isLightboxSource && !isPaperWindowCard ? 'hidden' : undefined,
               animation: newlyAddedIds.has(it.bookmarkId) ? 'booklage-entrance-a 400ms ease-out forwards' : undefined,
-              ['--card-radius' as string]: meta.colorScheme === 'light' ? '3px' : '20px',
+              // Size-aware corner radius. A fixed 20px reads as a pill/circle
+              // once a card is resized small enough that 20px exceeds ~half the
+              // box (CSS then clamps it to a full round). Scale the radius with
+              // the card's own width — min(20px, w*0.12) — so small cards keep a
+              // natural corner and never collapse to a circle, while large cards
+              // hit the 20px cap and look exactly as before. Light/paper keeps
+              // its flat 3px print corner (already too small to ever round off).
+              // The lightbox mirrors this per-card value onto :root while open
+              // (see Lightbox useLayoutEffect) so the open/close morph shares one
+              // radius end-to-end — no corner snap.
+              ['--card-radius' as string]:
+                meta.colorScheme === 'light' ? '3px' : `${Math.min(20, p.w * 0.12).toFixed(1)}px`,
               // Card's rendered width, read by PaperCardDecorations so tape/pin/
               // wax scale WITH the card (resize a card → its decorations follow).
               ['--card-w' as string]: `${p.w}px`,

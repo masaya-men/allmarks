@@ -444,6 +444,35 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
   // (Playwright measured chev/click ratio = 0.86 exact) — 2026-05-11.
   const prevIdentityRef = useRef<string | null>(null)
   const prevNavIndexRef = useRef<number | null>(null)
+
+  // ── Per-card corner radius across the open/close morph ────────────────
+  // The board gives each card a size-aware --card-radius (small cards get a
+  // smaller corner so they never round into a circle — see CardsLayer). But
+  // the lightbox clone + enlarged .media read --card-radius / --lightbox-
+  // media-radius from :root, NOT from the source card: cloneNode()+cssText=''
+  // drops the per-card inline value, and .media is a separate element. Left
+  // alone, a small card (say 8px) would jump to the global 20px the instant
+  // it opens, and jump back on close — exactly the corner "snap" we must
+  // avoid. While the lightbox is open, mirror the SOURCE card's own radius
+  // onto :root so every handoff (source → clone → media → clone → source)
+  // shares one value and the corner never changes. Board cards keep their own
+  // inline --card-radius, so this :root override never touches them. Runs as
+  // a layout effect (before paint) so the clone — built in a later passive
+  // effect — is created with the correct radius from its first frame.
+  useLayoutEffect(() => {
+    if (!sourceCardId) return
+    const src = document.querySelector<HTMLElement>(`[data-bookmark-id="${sourceCardId}"]`)
+    const r = src ? getComputedStyle(src).getPropertyValue('--card-radius').trim() : ''
+    if (!r) return
+    const rootStyle = document.documentElement.style
+    rootStyle.setProperty('--card-radius', r)
+    rootStyle.setProperty('--lightbox-media-radius', r)
+    return () => {
+      rootStyle.removeProperty('--card-radius')
+      rootStyle.removeProperty('--lightbox-media-radius')
+    }
+  }, [sourceCardId])
+
   useSmoothWheelScroll(textRef, { disabled: !item })
   // closeButtonRef intentionally absent — see "No programmatic auto-focus"
   // comment near the keyboard handler below.
