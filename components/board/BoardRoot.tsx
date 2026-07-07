@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import { itemSkylineHeight } from './cards'
 import { computeFocusScrollY } from '@/lib/board/scroll-to-card'
+import { shouldShowScrollMeter } from '@/lib/board/scroll-meter-visibility'
 import {
   DEFAULT_THEME_ID,
   getThemeMeta,
@@ -2757,7 +2758,7 @@ export function BoardRoot() {
             transition logic lives inside ScrollMeter itself. */}
         {/* Hidden during onboarding — the tutorial owns the bottom of the screen
             (its bottom captions + paste cue would otherwise fight the meter). */}
-        {!showOnboarding && (
+        {shouldShowScrollMeter(showOnboarding, sharePhase) && (
           <ScrollMeter
             mode={meterMode}
             n1={meterN1}
