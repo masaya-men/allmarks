@@ -20,7 +20,15 @@ export type CopyShareLinkDeps = {
 /** Create a /s share link for the current selection and copy its URL to the
  *  clipboard. Generates NO image (decision B: no replica). */
 export async function copyShareLink(deps: CopyShareLinkDeps): Promise<CopyShareLinkResult> {
-  const share = deps.buildShare()
+  let share: ShareDataV2
+  try {
+    share = deps.buildShare()
+  } catch (e) {
+    // Harden the caller's button: a throw while building the payload surfaces
+    // as an ok:false result (COULDN'T COPY) rather than an unhandled rejection
+    // that freezes the button on its pre-click label.
+    return { ok: false, message: e instanceof Error ? e.message : 'build error' }
+  }
   const result = await deps.createShare({ share })
   if (!result.ok) {
     return { ok: false, message: result.message }

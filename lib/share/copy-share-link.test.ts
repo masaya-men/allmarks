@@ -42,4 +42,16 @@ describe('copyShareLink', () => {
     })
     expect(res).toEqual({ ok: false, message: 'denied' })
   })
+
+  it('returns not-ok when buildShare throws (button never freezes)', async () => {
+    const createShare = vi.fn(async () => ({ ok: true as const, data: { id: 'x', expiresAt: 1 } }))
+    const res = await copyShareLink({
+      buildShare: () => { throw new Error('build failed') },
+      createShare,
+      writeClipboard: async () => {},
+      origin: 'https://allmarks.app',
+    })
+    expect(res).toEqual({ ok: false, message: 'build failed' })
+    expect(createShare).not.toHaveBeenCalled()
+  })
 })
