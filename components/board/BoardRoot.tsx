@@ -2019,6 +2019,44 @@ export function BoardRoot() {
     return (): void => window.removeEventListener('keydown', onKey)
   }, [tagMode, tagDraft, handleExitTagMode])
 
+  // Tap an empty area to leave TAG MODE: the frame edge outside the board, or a
+  // gap between cards. "Empty" = a tap (no drag/pan) that isn't on a card, the
+  // tag panel, or an interactive control. Capture-phase so it sees the gesture
+  // even though InteractionLayer captures the pointer for its own pan/wiggle.
+  useEffect((): (() => void) | undefined => {
+    if (!tagMode) return undefined
+    let sx = 0
+    let sy = 0
+    let tracking = false
+    const TAP_SLOP_PX = 6
+    const onDown = (e: globalThis.PointerEvent): void => {
+      if (e.button !== 0) { tracking = false; return }
+      sx = e.clientX
+      sy = e.clientY
+      tracking = true
+    }
+    const onUp = (e: globalThis.PointerEvent): void => {
+      if (!tracking) return
+      tracking = false
+      // Mid tag-create: let the input's own blur commit/cancel; don't exit.
+      if (tagDraft) return
+      // A drag/pan (board scroll, card→tag drag) is not a dismiss tap.
+      if (Math.hypot(e.clientX - sx, e.clientY - sy) > TAP_SLOP_PX) return
+      const t = e.target as Element | null
+      if (!t || typeof t.closest !== 'function') return
+      if (t.closest('[data-bookmark-id]')) return                                   // a card (selection toggle)
+      if (t.closest('[data-tag-panel]')) return                                     // the tag panel
+      if (t.closest('button, a, input, textarea, select, [role="button"]')) return // chrome control
+      handleExitTagMode()
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    document.addEventListener('pointerup', onUp, true)
+    return (): void => {
+      document.removeEventListener('pointerdown', onDown, true)
+      document.removeEventListener('pointerup', onUp, true)
+    }
+  }, [tagMode, tagDraft, handleExitTagMode])
+
   // Latest items, read inside the drop handler without stale-closing over one
   // render's snapshot (a drop can land many renders after entering TAG MODE).
   const itemsRef = useRef(items)

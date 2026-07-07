@@ -86,7 +86,7 @@ export function TagDropPanel({
   }
 
   return (
-    <div className={styles.root} style={{ zIndex: BOARD_Z_INDEX.TAG_PANEL }} role="region" aria-label="Tag selected cards">
+    <div className={styles.root} style={{ zIndex: BOARD_Z_INDEX.TAG_PANEL }} role="region" aria-label="Tag selected cards" data-tag-panel="true">
       <div className={styles.menu}>
         <div className={styles.header}>
           <span className={styles.count} data-testid="tag-mode-count">{selectedCount} SELECTED</span>
