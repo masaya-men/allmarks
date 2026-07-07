@@ -1404,11 +1404,14 @@ export function CardsLayer({
                 onResetSize={(): void => {}}
               />
             )}
-            {audioActiveId === it.bookmarkId && canPlayInline(it) && (
+            {audioActiveId === it.bookmarkId && canPlayInline(it) && !sourceCardId && (
               // Tier 3 inline player overlay. stopPropagation on pointerdown
               // so interacting with the player (scrub, volume, fullscreen)
               // never engages the card's reorder-drag / open-lightbox gesture
-              // wired on the wrapper above.
+              // wired on the wrapper above. Gated on !sourceCardId so this
+              // UNMUTED player is torn down while the lightbox is open — a
+              // hidden-but-mounted video keeps emitting audio, which is the
+              // "video blips with sound on lightbox open" bug.
               <div
                 onPointerDown={(e: PointerEvent<HTMLDivElement>): void => e.stopPropagation()}
                 style={{

@@ -1260,6 +1260,23 @@ export function BoardRoot() {
     doFocus(cardId, pos)
   }, [layout.positions, doFocus])
 
+  // #7 helper: is a card scrolled off-screen relative to the current viewport?
+  // (computeNavReturnScrollY returns null when the card is fully visible.) Used
+  // by the Lightbox close to decide whether it needs to glide+glow the board to
+  // the last-viewed card so the return location is obvious.
+  const cardNeedsScrollIntoView = useCallback((cardId: string): boolean => {
+    const pos = layout.positions[cardId]
+    if (!pos) return false
+    return computeNavReturnScrollY({
+      cardY: pos.y,
+      cardH: pos.h,
+      topPad: BOARD_TOP_PAD_PX,
+      viewportY: viewport.y,
+      viewportH: viewport.h,
+      contentH: contentBounds.height,
+    }) !== null
+  }, [layout.positions, viewport.y, viewport.h, contentBounds.height])
+
   // Filter 変化 → 3 つの side-effect:
   //   (1) entryAnimCycle bump で復活カードに CRT bootup アニメ
   //   (2a) tags → 非 tags (= 絞り込み解除) + source 記憶あり → focusCard で
@@ -1392,6 +1409,11 @@ export function BoardRoot() {
     // unreachable so opening the Lightbox would only show a broken embed.
     const clickedItem = items.find((it) => it.bookmarkId === bookmarkId)
     if (clickedItem?.linkStatus === 'gone') return
+    // Silence any sound-on board card (Tier 3): its unmuted player would keep
+    // playing AUDIO behind the lightbox (the source card is only hidden, and a
+    // hidden <video>/<iframe> still plays), which reads as "a video card blips
+    // with sound as the lightbox opens". Clearing it stops that at the source.
+    setAudioActiveId(null)
     setLightboxOriginRect(originRect)
     setLightboxItemId(bookmarkId)
     setLightboxSourceItemId(bookmarkId)
@@ -1614,13 +1636,21 @@ export function BoardRoot() {
   }, [])
 
   const handleLightboxClose = useCallback((): void => {
+    // Capture the last-viewed card BEFORE clearing so #7 can return there.
+    const last = lightboxItemId
     setLightboxItemId(null)
     // sourceItemId should already be null via the cross-fade callback
     // above, but clear defensively in case the callback path was skipped
     // (fallback close, no source card, etc.).
     setLightboxSourceItemId(null)
     setLightboxOriginRect(null)
-  }, [])
+    // #7: if the user navigated to a card that's scrolled off-screen, glide the
+    // board to it + glow so it's obvious where the lightbox returned. Fires
+    // after the close tween (backdrop already gone) so the smooth scroll is
+    // fully visible and costs no moving-blur. On-screen returns keep the FLIP
+    // morph (handled in the Lightbox) and skip this.
+    if (last && cardNeedsScrollIntoView(last)) focusCard(last)
+  }, [lightboxItemId, cardNeedsScrollIntoView, focusCard])
 
   // Nav scope = lightboxNavItems (what's currently visible on canvas, i.e.
   // the matched set when a tag filter is active). Items not on the board
@@ -1632,26 +1662,16 @@ export function BoardRoot() {
   )
   const lightboxItem = lightboxIndex >= 0 ? lightboxNavItems[lightboxIndex] : null
 
-  // #7: on chevron-nav the source card follows the viewed card, and if that
-  // card is off-screen the board jumps (instant — a tween behind the frosted
-  // backdrop would re-blur every frame) to centre it. So closing returns the
-  // FLIP to the LAST-VIEWED card (scrolled into view), not the first click.
+  // #7: keep the board STILL while the lightbox is open (it sits behind a
+  // frosted backdrop — scrolling it there re-blurs every frame = shake/low-FPS).
+  // Instead, point the close's FLIP source at the viewed card only when it's
+  // on-screen (so the media morphs into it, visibly). When the viewed card is
+  // scrolled off-screen, drop the FLIP (source = null → plain fade) — the board
+  // then glides + glows to it AFTER close (handleLightboxClose), so the return
+  // location is unmistakable.
   const returnToViewedCard = useCallback((cardId: string): void => {
-    setLightboxSourceItemId(cardId)
-    const pos = layout.positions[cardId]
-    if (!pos) return
-    const targetY = computeNavReturnScrollY({
-      cardY: pos.y,
-      cardH: pos.h,
-      topPad: BOARD_TOP_PAD_PX,
-      viewportY: viewport.y,
-      viewportH: viewport.h,
-      contentH: contentBounds.height,
-    })
-    if (targetY !== null) {
-      setViewport((v) => ({ ...v, y: Math.max(0, Math.min(targetY, contentBounds.height - v.h)) }))
-    }
-  }, [layout.positions, viewport.y, viewport.h, contentBounds.height])
+    setLightboxSourceItemId(cardNeedsScrollIntoView(cardId) ? null : cardId)
+  }, [cardNeedsScrollIntoView])
 
   const handleLightboxNav = useCallback((dir: -1 | 1): void => {
     if (lightboxNavItems.length === 0 || lightboxIndex < 0) return
