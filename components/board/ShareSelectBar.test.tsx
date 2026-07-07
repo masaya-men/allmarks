@@ -1,20 +1,16 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { ShareSelectBar } from './ShareSelectBar'
 
 const noop = (): void => {}
 const baseProps = {
   count: 0,
-  capFlashCycle: 0,
   onSelectAll: noop,
   onShare: noop,
   onCancel: noop,
 }
 
 describe('ShareSelectBar', () => {
-  beforeEach(() => vi.useFakeTimers())
-  afterEach(() => vi.useRealTimers())
-
   it('shows the counter with the shared cap', () => {
     render(<ShareSelectBar {...baseProps} count={7} />)
     expect(screen.getByText('7 / 100 SELECTED')).toBeTruthy()
@@ -40,18 +36,5 @@ describe('ShareSelectBar', () => {
     expect(onSelectAll).toHaveBeenCalledOnce()
     expect(onShare).toHaveBeenCalledOnce()
     expect(onCancel).toHaveBeenCalledOnce()
-  })
-
-  it('does NOT show the cap pill on mount even with a stale non-zero cycle', () => {
-    render(<ShareSelectBar {...baseProps} capFlashCycle={3} />)
-    expect(screen.queryByText('100 MAX')).toBeNull()
-  })
-
-  it('flashes 100 MAX when capFlashCycle bumps, then hides after ~1.6s', () => {
-    const { rerender } = render(<ShareSelectBar {...baseProps} capFlashCycle={0} />)
-    rerender(<ShareSelectBar {...baseProps} capFlashCycle={1} />)
-    expect(screen.getByText('100 MAX')).toBeTruthy()
-    act((): void => { vi.advanceTimersByTime(1700) })
-    expect(screen.queryByText('100 MAX')).toBeNull()
   })
 })

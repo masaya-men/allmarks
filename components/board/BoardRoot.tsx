@@ -408,7 +408,6 @@ export function BoardRoot() {
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
   const [shareTitle, setShareTitle] = useState<ShareTitleConfig | null>(null)
-  const [capFlashCycle, setCapFlashCycle] = useState<number>(0)
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
   // Onboarding: true while the first-run tutorial overlay is active.
@@ -1980,17 +1979,13 @@ export function BoardRoot() {
     setActiveDrawer(null)
     setShareSelectedIds(null)
     setSelectedIds(new Set())
-    setCapFlashCycle(0) // stale cycle would flash the pill on bar mount
     setSharePhase('select')
   }, [])
 
   const handleSelectToggle = useCallback(
     (bookmarkId: string): void => {
       const r = toggleSelection(selectedIds, bookmarkId)
-      if (r.capped) {
-        setCapFlashCycle((c) => c + 1)
-        return
-      }
+      if (r.capped) return
       setSelectedIds(r.ids)
     },
     [selectedIds],
@@ -1998,7 +1993,6 @@ export function BoardRoot() {
 
   const handleSelectAll = useCallback((): void => {
     const r = addAllVisible(selectedIds, lightboxNavItems.map((it) => it.bookmarkId))
-    if (r.capped) setCapFlashCycle((c) => c + 1)
     setSelectedIds(r.ids)
   }, [selectedIds, lightboxNavItems])
 
@@ -2981,7 +2975,6 @@ export function BoardRoot() {
       {sharePhase === 'select' && (
         <ShareSelectBar
           count={selectedIds.size}
-          capFlashCycle={capFlashCycle}
           onSelectAll={handleSelectAll}
           onShare={handleEnterArrange}
           onCancel={handleExitShareMode}

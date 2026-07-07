@@ -35,19 +35,6 @@
   white-space: nowrap;
 }
 
-.capPill {
-  display: inline-flex;
-  align-items: center;
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: rgba(255, 176, 32, 0.15);
-  border: 1px solid rgba(255, 176, 32, 0.35);
-  box-shadow: 0 0 16px rgba(255, 176, 32, 0.20);
-  font: 500 12px/1 var(--font-sans);
-  color: #FFB020;
-  white-space: nowrap;
-}
-
 .actions {
   display: flex;
   align-items: center;
