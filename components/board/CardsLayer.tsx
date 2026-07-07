@@ -43,6 +43,7 @@ import { useSpotlightRotation } from '@/lib/board/use-spotlight-rotation'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
 import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX } from './use-card-reorder-drag'
+import { resolveDropTargets } from '@/lib/board/tag-assign'
 import { pickCard, itemSkylineHeight, ImageCard, paperCardHasTornBacking } from './cards'
 import { selectPaperSoftShuffle } from '@/lib/board/paper-soft-shuffle'
 import styles from './CardsLayer.module.css'
@@ -53,6 +54,10 @@ import styles from './CardsLayer.module.css'
  *  press-and-hold is NOT treated as a tap. Paired with CLICK_THRESHOLD_PX
  *  (imported) for the 5px + 200ms tap window. */
 const CLICK_MAX_MS = 200
+
+/** Stable empty selection set — used as the fallback when a selection-mode card
+ *  has no selectedIds yet, so resolveDropTargets never sees null. */
+const EMPTY_ID_SET: ReadonlySet<string> = new Set()
 
 /** Minimum width for the playback control bar = the DENSE preset card width
  *  (207.80px). The bar tracks the active card's width but never shrinks below
@@ -335,6 +340,10 @@ type CardsLayerProps = {
   readonly selectionMode?: {
     readonly selectedIds: ReadonlySet<string>
     readonly onToggle: (bookmarkId: string) => void
+    /** TAG MODE Phase 2/3: when present, a >threshold drag on a card starts a
+     *  tag-drag. `targetKey` is a tag id, or the sentinel `'__new__'` for the
+     *  "+ NEW TAG" drop target; `cardIds` is the set the drop should tag. */
+    readonly onTagDrop?: (targetKey: string, cardIds: readonly string[]) => void
   } | null
   /** Active board theme id. Drives per-card decorations (meta.decorations)
    *  and, from Task 5, the entry/shutdown motion keys. */
@@ -1011,11 +1020,29 @@ export function CardsLayer({
     [onClick],
   )
 
-  // Selective-share tap handler — same tap window as the receiver handler
-  // (< CLICK_MAX_MS, < CLICK_THRESHOLD_PX): a genuine tap toggles selection;
-  // a drag-ish gesture does nothing (no reorder in this mode). Pointer capture
+  // Selective-share / TAG MODE card handler. A genuine tap (< CLICK_MAX_MS,
+  // < CLICK_THRESHOLD_PX) toggles selection. In TAG MODE (onTagDrop present) a
+  // >threshold drag instead becomes a tag-drag: a cursor-following ghost + a
+  // live hit-test against the right-edge tag panel's drop targets
+  // ([data-tag-id] / [data-tag-new]). Dropping over a target assigns the tag to
+  // the selection (or just the grabbed card, if it wasn't selected); dropping
+  // elsewhere is a no-op. Selective-share (no onTagDrop) never enters drag, so
+  // its tap-toggle behaviour is byte-identical to before. Pointer capture
   // mirrors the receiver handler so interrupted gestures tear down cleanly.
   const selectionToggle = selectionMode?.onToggle ?? null
+  const selectionSelectedIds = selectionMode?.selectedIds ?? null
+  const onTagDrop = selectionMode?.onTagDrop ?? null
+  const tagGhostRef = useRef<HTMLDivElement | null>(null)
+
+  // Tear down any lingering tag-drag ghost / attribute if we unmount mid-drag.
+  useEffect(() => {
+    return (): void => {
+      tagGhostRef.current?.remove()
+      tagGhostRef.current = null
+      document.documentElement.removeAttribute('data-tag-dragging')
+    }
+  }, [])
+
   const handleSelectPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>, bookmarkId: string): void => {
       if (e.button > 0 || selectionToggle == null) return
@@ -1025,19 +1052,104 @@ export function CardsLayer({
       const startY = e.clientY
       const startTime = e.timeStamp
       el.setPointerCapture?.(pointerId)
+
+      const canTagDrag = onTagDrop != null
+      // The cards a drop tags: the whole selection when the grabbed card is part
+      // of it, else just the grabbed card (quick single-card tag).
+      const targetIds = (): readonly string[] =>
+        resolveDropTargets(bookmarkId, selectionSelectedIds ?? EMPTY_ID_SET)
+      let dragging = false
+      let hoverEl: Element | null = null
+
+      const clearHover = (): void => {
+        if (hoverEl) {
+          hoverEl.removeAttribute('data-drop-hover')
+          hoverEl.removeAttribute('data-drop-count')
+          hoverEl = null
+        }
+      }
+      const positionGhost = (x: number, y: number): void => {
+        const g = tagGhostRef.current
+        if (g) g.style.transform = `translate(${x + 16}px, ${y + 16}px)`
+      }
+
+      const move = (ev: globalThis.PointerEvent): void => {
+        const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+        if (!dragging) {
+          if (!canTagDrag || distance < CLICK_THRESHOLD_PX) return
+          dragging = true
+          const count = targetIds().length
+          const g = document.createElement('div')
+          g.setAttribute('data-tag-drag-ghost', 'true')
+          g.style.cssText =
+            'position:fixed;left:0;top:0;z-index:2147483000;pointer-events:none;' +
+            'display:flex;align-items:center;gap:8px;padding:8px 13px 8px 11px;' +
+            'border-radius:999px;background:rgba(18,18,22,0.92);' +
+            'border:1px solid rgba(40,241,0,0.5);color:#eaffea;' +
+            'font:700 12px/1 var(--font-sans, system-ui);letter-spacing:0.04em;' +
+            'box-shadow:0 10px 30px rgba(0,0,0,0.45),0 0 16px rgba(40,241,0,0.25);' +
+            'white-space:nowrap;will-change:transform;'
+          g.innerHTML =
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
+            'stroke="#28F100" stroke-width="2" stroke-linecap="round" ' +
+            'stroke-linejoin="round"><rect x="7" y="3" width="12" height="15" rx="2"/>' +
+            '<path d="M4 7v12a2 2 0 0 0 2 2h9"/></svg><span>' +
+            count + (count > 1 ? ' cards' : ' card') + '</span>'
+          document.body.appendChild(g)
+          tagGhostRef.current = g
+          document.documentElement.setAttribute('data-tag-dragging', 'true')
+        }
+        positionGhost(ev.clientX, ev.clientY)
+        const hit =
+          document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[data-tag-id],[data-tag-new]') ?? null
+        if (hit !== hoverEl) {
+          clearHover()
+          if (hit) {
+            hit.setAttribute('data-drop-hover', 'true')
+            hit.setAttribute('data-drop-count', String(targetIds().length))
+            hoverEl = hit
+          }
+        }
+      }
+
       const end = (ev: globalThis.PointerEvent): void => {
+        el.removeEventListener('pointermove', move)
         el.removeEventListener('pointerup', end)
         el.removeEventListener('pointercancel', end)
         if (el.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId)
-        if (ev.type !== 'pointerup') return
-        const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
-        const elapsed = ev.timeStamp - startTime
-        if (elapsed < CLICK_MAX_MS && distance < CLICK_THRESHOLD_PX) selectionToggle(bookmarkId)
+        tagGhostRef.current?.remove()
+        tagGhostRef.current = null
+        document.documentElement.removeAttribute('data-tag-dragging')
+        const dropTarget = hoverEl
+        clearHover()
+
+        if (!dragging) {
+          if (ev.type !== 'pointerup') return
+          const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+          const elapsed = ev.timeStamp - startTime
+          if (elapsed < CLICK_MAX_MS && distance < CLICK_THRESHOLD_PX) selectionToggle(bookmarkId)
+          return
+        }
+        // Drag end: assign only on a genuine pointerup over a drop target.
+        if (ev.type === 'pointerup' && dropTarget && onTagDrop) {
+          const key =
+            dropTarget.getAttribute('data-tag-new') != null
+              ? '__new__'
+              : dropTarget.getAttribute('data-tag-id')
+          if (key) {
+            onTagDrop(key, targetIds())
+            // brief confirmation pulse on the dropped-on row
+            dropTarget.setAttribute('data-dropped', 'true')
+            window.setTimeout((): void => dropTarget.removeAttribute('data-dropped'), 420)
+          }
+        }
       }
+
+      el.addEventListener('pointermove', move)
       el.addEventListener('pointerup', end)
       el.addEventListener('pointercancel', end)
     },
-    [selectionToggle],
+    [selectionToggle, selectionSelectedIds, onTagDrop],
   )
 
   // Esc during drag → restore dragged card to its pre-drag slot (FLIP handles it).

@@ -28,6 +28,7 @@ import { backfillTweetMeta } from '@/lib/board/tweet-backfill'
 import { fetchTikTokMeta } from '@/lib/embed/tiktok-meta'
 import { useTags } from '@/lib/storage/use-tags'
 import { nextTagOrderMode } from '@/lib/board/tag-order'
+import { computeTagAssignments } from '@/lib/board/tag-assign'
 import {
   BOARD_FILTER_ALL,
   boardFilterEquals,
@@ -196,6 +197,7 @@ export function BoardRoot() {
     persistMediaSlots,
     persistVideoFlag,
     persistTitle,
+    persistTags,
     persistSoftDelete,
     emptyTrash,
     persistCustomWidth,
@@ -206,7 +208,7 @@ export function BoardRoot() {
     persistLinkStatus,
   } = useBoardData()
   const {
-    tags, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
+    tags, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
     orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
   } = useTags()
   const router = useRouter()
@@ -400,6 +402,9 @@ export function BoardRoot() {
   // TAG MODE (drag-drop tagging) — in-page replacement for the Triage manage
   // page. Reuses the SHARE selection machinery (selectedIds + handleSelectToggle).
   const [tagMode, setTagMode] = useState<boolean>(false)
+  // Phase 3: pending "+ NEW TAG" inline create. Holds the cards the tag will be
+  // assigned to once the name is committed. null = the create input is closed.
+  const [tagDraft, setTagDraft] = useState<{ readonly cardIds: readonly string[] } | null>(null)
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
   // Free-placement layout for the arrange stage (owned here, passed to
   // CollageCanvas). Discarded on exit — the temporary collage is never persisted.
@@ -1999,15 +2004,74 @@ export function BoardRoot() {
 
   const handleExitTagMode = useCallback((): void => {
     setTagMode(false)
+    setTagDraft(null)
     setSelectedIds(new Set())
   }, [])
 
   useEffect((): (() => void) | undefined => {
     if (!tagMode) return undefined
-    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') handleExitTagMode() }
+    const onKey = (e: KeyboardEvent): void => {
+      // While the "+ NEW TAG" input is open, Esc is handled by the input (it
+      // just closes the draft) — don't also drop out of TAG MODE.
+      if (e.key === 'Escape' && !tagDraft) handleExitTagMode()
+    }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
-  }, [tagMode, handleExitTagMode])
+  }, [tagMode, tagDraft, handleExitTagMode])
+
+  // Latest items, read inside the drop handler without stale-closing over one
+  // render's snapshot (a drop can land many renders after entering TAG MODE).
+  const itemsRef = useRef(items)
+  itemsRef.current = items
+
+  // Assign an existing tag to a set of cards, additively (union with each
+  // card's current tags; already-tagged cards are skipped). Fired by a drop on
+  // a [data-tag-id] row. Selection persists — continuous multi-tagging.
+  const assignTagToCards = useCallback(
+    (tagId: string, cardIds: readonly string[]): void => {
+      const writes = computeTagAssignments(itemsRef.current, cardIds, tagId)
+      for (const w of writes) void persistTags(w.bookmarkId, w.nextTags)
+    },
+    [persistTags],
+  )
+
+  // TAG MODE drop router — CardsLayer emits this on a genuine drop. A real tag
+  // id assigns immediately; "__new__" opens the inline create input (Phase 3)
+  // for the dropped cards.
+  const handleTagDrop = useCallback(
+    (targetKey: string, cardIds: readonly string[]): void => {
+      if (cardIds.length === 0) return
+      if (targetKey === '__new__') {
+        setTagDraft({ cardIds: [...cardIds] })
+        return
+      }
+      assignTagToCards(targetKey, cardIds)
+    },
+    [assignTagToCards],
+  )
+
+  // "+ NEW TAG" clicked (no drag) — create a tag for the current selection.
+  const handleStartNewTag = useCallback((): void => {
+    setTagDraft({ cardIds: [...selectedIds] })
+  }, [selectedIds])
+
+  const handleCommitNewTag = useCallback(
+    (name: string): void => {
+      const trimmed = name.trim()
+      const draft = tagDraft
+      setTagDraft(null)
+      if (!trimmed) return
+      void (async (): Promise<void> => {
+        const colors = ['#7c5cfc', '#e066d7', '#4ecdc4', '#f5a623', '#ff6b6b']
+        const color = colors[tags.length % colors.length]
+        const created = await createTag({ name: trimmed, color, order: tags.length })
+        if (draft && draft.cardIds.length > 0) assignTagToCards(created.id, draft.cardIds)
+      })()
+    },
+    [tagDraft, tags.length, createTag, assignTagToCards],
+  )
+
+  const handleCancelNewTag = useCallback((): void => setTagDraft(null), [])
 
   const handleSelectToggle = useCallback(
     (bookmarkId: string): void => {
@@ -2805,7 +2869,13 @@ export function BoardRoot() {
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
                 forceTagButtonVisible={forceCardTagVisible}
-                selectionMode={sharePhase === 'select' || tagMode ? { selectedIds, onToggle: handleSelectToggle } : null}
+                selectionMode={
+                  tagMode
+                    ? { selectedIds, onToggle: handleSelectToggle, onTagDrop: handleTagDrop }
+                    : sharePhase === 'select'
+                      ? { selectedIds, onToggle: handleSelectToggle }
+                      : null
+                }
               />
             </div>
             )}
@@ -3000,7 +3070,15 @@ export function BoardRoot() {
       <UndoToast input={toast} />
       <PasteSaveFeedback feedback={pasteFeedback} themeId={themeId} />
       {tagMode && (
-        <TagDropPanel tags={tags} selectedCount={selectedIds.size} onDone={handleExitTagMode} />
+        <TagDropPanel
+          tags={tags}
+          selectedCount={selectedIds.size}
+          onDone={handleExitTagMode}
+          creating={tagDraft !== null}
+          onStartNewTag={handleStartNewTag}
+          onCommitNewTag={handleCommitNewTag}
+          onCancelNewTag={handleCancelNewTag}
+        />
       )}
       {sharePhase === 'select' && (
         <ShareSelectBar

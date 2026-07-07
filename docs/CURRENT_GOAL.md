@@ -10,10 +10,9 @@
 
 ## バックログ（順不同・どれからでも）
 
-1. **#3 タグ付け刷新【最優先・着手中】** — spec: `docs/superpowers/specs/2026-07-07-tag-mode-drag-drop-design.md`。パネルは**右端に浮く小さめのタグ専用・上下中央・程よい高さで内部スクロール**（ユーザー確定）。
-   - ✅ **Phase 1 完了（commit 済・未デプロイ）**: MANAGE TAGS → in-page TAG MODE（`tagMode` state・Share 選択機構を流用・`TagDropPanel` 右端浮動パネル・DONE/Esc）。tsc0/vitest2070。
-   - ⚠️ **デプロイ禁止（Phase 2 完了まで）**: 今デプロイすると MANAGE TAGS が機能しないパネルを開き、Triage タグ付けが到達不能。Phase 2 で drag-drop が動いてから初めてデプロイ。
-   - ⏭ **Phase 2（次）**: 選択カードをドラッグ → 右端タグ行（`data-tag-id`）/`+ NEW TAG`（`data-tag-new`）にドロップ → `persistTags(id, union(既存, tagId))` で追加付与・ホバーハイライト/「+N」。GSAP Draggable + ドロップ hit-test。→ Phase 3: `+ NEW TAG` で `useTags.create` 新規作成。→ Phase 4: Triage 撤去。
+1. **#3 タグ付け刷新【Phase 2+3 完了・デプロイ済】** — spec: `docs/superpowers/specs/2026-07-07-tag-mode-drag-drop-design.md`。パネルは**右端に浮く小さめのタグ専用・上下中央・程よい高さで内部スクロール**。
+   - ✅ **Phase 1〜3 完了（s171・デプロイ済）**: MANAGE TAGS → in-page TAG MODE。カードをタップで複数選択 → 右端タグ行へドラッグ&ドロップで追加付与（union・既存タグ保持・選択は継続）。ドラッグ中はカーソル追従ゴースト＋対象行のグリーン強調「+N」バッジ＋着地パルス。`+ NEW TAG` にドロップ/クリックでインライン作成→即付与。ロジックは `lib/board/tag-assign.ts`（`resolveDropTargets`/`computeTagAssignments`・単体9本）。CardsLayer の選択 pointer handler にドラッグ検出＋`elementFromPoint` hit-test を追加、BoardRoot が `handleTagDrop`/`persistTags`/`createTag` を配線。tsc0・tag-assign 9/9・Playwright で IDB 書込みまで実測。
+   - ⏭ **Phase 4（次）**: Triage コード撤去（TAG MODE が置換確定なので dormant → 削除）。オンボーディングの `/triage?onboarding=1` 経路だけは要確認（まだ実 Triage を使う）。
 2. **TUNE 刷新セット** — (#2) 前に気に入っていた版へ**戻す**（カード間ギャップ調整時に**右端カードが見えず**調整しづらい問題）＋ **TUNE をテーマ追従**に（タグ絞り込みも追従要否を検討）。(#1) **角丸 ON/OFF** トグルを TUNE に同居（盤面/Share 共通で効くはず）。(#4) カード幅/ギャップ調整時、**盤面左右端の余白が揃う所でスナップ**。
 3. **#7 ライトボックスの戻り先** — ナビ後に閉じると「**最後に見ていたカード**」の位置へスクロールして戻す（現状は最初のクリックカードに戻る＝`BoardRoot handleLightboxNav` が source を更新しない意図的実装）。①source 更新 ＋ ②画面外なら盤面スクロール + FLIP 着地。
 4. **#6 ライトボックス自動再生** — タグでスライドショー、動画は再生 → 終了で次カードへ。
