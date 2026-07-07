@@ -80,7 +80,8 @@ export function TagDropPanel({
               data-testid={`tag-drop-${t.id}`}
               title={t.name}
             >
-              {t.name}
+              <span className={styles.swatch} style={{ background: t.color }} aria-hidden="true" />
+              <span className={styles.tagName}>{t.name}</span>
             </div>
           ))}
           {creating ? (
