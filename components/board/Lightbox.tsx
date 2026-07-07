@@ -49,7 +49,13 @@ import styles from './Lightbox.module.css'
 // backdrop blur (vs reference 6px). Soften OPEN_EASE → 'power3.out' if
 // you want flat decel; sharpen CLOSE_EASE → 'power3.out' for snappier.
 // =====================================================================
-const OPEN_BASE_DUR = 0.5
+// s170: sped up from 0.5 → 0.34. The open/close morph is a width/height
+// reflow of a large element, which is composite-heavy at DPR 2.58 and can
+// show a faint stutter. A shorter travel shrinks the window that stutter is
+// visible in (same trick as the session128 backdrop-fade speed-up) while the
+// power3.out decel keeps the arrival feeling deliberate, not abrupt. Tune to
+// taste — raise for a calmer feel, lower for snappier.
+const OPEN_BASE_DUR = 0.34
 const OPEN_DIST_DIVISOR = 2000  // px of travel that buys 1s of bonus
 const OPEN_DIST_BONUS_MAX = 0.2 // …capped at this many extra seconds
 // Flat decel, no spring overshoot. The earlier `back.out(0.7)` baseline
@@ -73,7 +79,7 @@ const OPEN_FALLBACK_DUR = 0.42
 // opacity fade right at landing covers any residual sub-pixel rounding
 // difference. User-described feel: 「斜めにまっすぐ帰っていく」.
 const CLOSE_FRAME_DELAY = 0.1   // wait this long after text starts fading before moving
-const CLOSE_TWEEN_DUR = 0.45    // diagonal travel duration
+const CLOSE_TWEEN_DUR = 0.30    // diagonal travel duration (s170: 0.45→0.30, snappier to mask DPR-2.58 stutter)
 const CLOSE_TWEEN_EASE = 'power2.out' // gentle decel into source rect
 // border-radius pre-rolls inside the text-fade window, fully completing
 // BEFORE position/scale motion begins at CLOSE_FRAME_DELAY. Mirrors the
