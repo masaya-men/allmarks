@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import { itemSkylineHeight } from './cards'
 import { computeFocusScrollY } from '@/lib/board/scroll-to-card'
+import { shouldShowScrollMeter } from '@/lib/board/scroll-meter-visibility'
 import {
   DEFAULT_THEME_ID,
   getThemeMeta,
@@ -86,6 +87,8 @@ import { usePipWindow } from '@/lib/board/pip-window'
 import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
+import { copyShareLink } from '@/lib/share/copy-share-link'
+import { createShare } from '@/lib/share/api-client'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/share/selection'
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
@@ -93,6 +96,7 @@ import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { ShareToast } from '@/components/board/ShareToast'
 import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
+import { detectSharePlatform, pickScreenshotHint } from '@/lib/share/screenshot-hint'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -1961,6 +1965,14 @@ export function BoardRoot() {
     return computeSkylineLayout({ cards, containerWidth: effectiveLayoutWidth, gap: cardGapPx })
   }, [shareSelectedItems, customWidths, cardWidthPx, effectiveLayoutWidth, cardGapPx])
 
+  // OS-aware one-line screenshot instruction for ShareToast (computed once;
+  // navigator.userAgentData is high-entropy but not in default TS lib types).
+  const screenshotHint = useMemo((): string => {
+    if (typeof navigator === 'undefined') return pickScreenshotHint('other')
+    const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
+    return pickScreenshotHint(detectSharePlatform(navigator.userAgent, nav.userAgentData?.platform))
+  }, [])
+
   const selectionContentHeight =
     selectionLayout == null ? 0 : selectionLayout.totalHeight + BOARD_TOP_PAD_PX
 
@@ -2048,6 +2060,21 @@ export function BoardRoot() {
     return (): void => window.removeEventListener('keydown', onKey)
   }, [sharePhase, handleExitShareMode])
 
+  // Task 8: one-shot panel-edge glow on arrange entry — shows the capture
+  // rectangle (the existing .canvas edge), then fades within ~900ms so it is
+  // gone before the user takes their screenshot. Cosmetic only; no layout
+  // change (see BoardRoot.module.css .canvasArrangeGuide).
+  const [arrangeGuidePulse, setArrangeGuidePulse] = useState(false)
+  useEffect((): (() => void) | undefined => {
+    if (sharePhase !== 'arrange') {
+      setArrangeGuidePulse(false)
+      return undefined
+    }
+    setArrangeGuidePulse(true)
+    const t = window.setTimeout((): void => setArrangeGuidePulse(false), 900)
+    return (): void => window.clearTimeout(t)
+  }, [sharePhase])
+
   // Local preview pan for a selection share — clamped to the selection's own
   // content height; the bg board's viewport is not touched.
   const handleSelectionPanY = useCallback(
@@ -2101,6 +2128,41 @@ export function BoardRoot() {
       defaultWidth: cardWidthPx,
     })
   }, [shareSelectedItems, lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx, cardGapPx, themeId, resolvedCustom])
+
+  // COPY LINK (arrange stage): build the /s payload from the ARRANGE selection
+  // (selectedIds — NOT shareSelectedItems, which is null here) in board order,
+  // filter:null. Generates NO image (thumb-less createShare); the /s OG falls
+  // back to the default card server-side.
+  const handleCopyShareLink = useCallback(async (): Promise<boolean> => {
+    const chosen = selectedInBoardOrder(items, selectedIds)
+    if (chosen.length === 0) return false
+    const buildShare = (): ShareDataV2 => buildShareDataFromBoard({
+      items: chosen.map((it) => ({
+        bookmarkId: it.bookmarkId,
+        url: it.url,
+        title: it.title,
+        description: it.description ?? undefined,
+        thumbnail: it.thumbnail ?? undefined,
+        aspectRatio: it.aspectRatio,
+        tags: it.tags,
+        cardWidth: customWidths[it.bookmarkId] ?? cardWidthPx,
+      })),
+      tags: tags.map((tg) => ({ id: tg.id, name: tg.name, color: tg.color })),
+      filter: null,
+      now: Date.now(),
+      themeId,
+      custom: resolvedCustom ?? undefined,
+      gap: cardGapPx,
+      defaultWidth: cardWidthPx,
+    })
+    const res = await copyShareLink({
+      buildShare,
+      createShare,
+      writeClipboard: (t: string): Promise<void> => navigator.clipboard.writeText(t),
+      origin: typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app',
+    })
+    return res.ok
+  }, [items, selectedIds, customWidths, cardWidthPx, tags, themeId, resolvedCustom, cardGapPx])
 
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
@@ -2443,7 +2505,7 @@ export function BoardRoot() {
           canvasWrap holds the existing absolute-layered scroll/cards stage. */}
       <div
         ref={canvasElRef}
-        className={styles.canvas}
+        className={arrangeGuidePulse ? `${styles.canvas} ${styles.canvasArrangeGuide}` : styles.canvas}
         // The edge-band chrome override above cascades into here; reset it to the
         // default light-on-dark chrome so the header + card chrome (which sit on
         // the dark board, not the edge) keep their normal ink.
@@ -2757,7 +2819,7 @@ export function BoardRoot() {
             transition logic lives inside ScrollMeter itself. */}
         {/* Hidden during onboarding — the tutorial owns the bottom of the screen
             (its bottom captions + paste cue would otherwise fight the meter). */}
-        {!showOnboarding && (
+        {shouldShowScrollMeter(showOnboarding, sharePhase) && (
           <ScrollMeter
             mode={meterMode}
             n1={meterN1}
@@ -2942,6 +3004,8 @@ export function BoardRoot() {
           />
           <ShareToast
             count={selectedIds.size}
+            hint={screenshotHint}
+            onCopyLink={handleCopyShareLink}
             onReselect={(): void => setSharePhase('select')}
             onDone={handleExitShareMode}
           />

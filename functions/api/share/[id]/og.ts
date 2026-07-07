@@ -61,8 +61,10 @@ export async function onRequestGet(ctx: PagesContext): Promise<Response> {
 
   const thumb = decoded.data.thumb
   if (!thumb) {
-    // R2 にも KV thumb にも無い (= R2 put 後に何か起きた稀ケース)。
-    return new Response('not found', { status: 404 })
+    // No custom OG image (COPY LINK shares carry no reconstructed thumb).
+    // Fall back to the site's default social card so the link still unfurls.
+    const origin = new URL(ctx.request.url).origin
+    return Response.redirect(`${origin}/og.png`, 302)
   }
   const match = thumb.match(/^data:image\/(jpeg|webp);base64,(.+)$/)
   if (!match || !match[2]) {

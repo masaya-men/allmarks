@@ -108,24 +108,29 @@ export async function onRequestPost(ctx: PagesContext): Promise<Response> {
   }
 
   const bodyObj = body as Partial<KVShareEntry>
-  if (!bodyObj.share || typeof bodyObj.thumb !== 'string') {
-    return errResponse(400, 'invalid', 'missing share or thumb field')
-  }
-  if (bodyObj.thumb.length > SHARE_LIMITS_V2.MAX_THUMB_BYTES * 2) {
-    return errResponse(413, 'invalid', 'thumbnail too large')
+  if (!bodyObj.share) {
+    return errResponse(400, 'invalid', 'missing share field')
   }
 
-  // thumb は data:image/<jpeg|webp>;base64,... 形式。 bytes に分解して R2 へ。
-  const thumbMatch = bodyObj.thumb.match(/^data:image\/(jpeg|webp);base64,(.+)$/)
-  if (!thumbMatch || !thumbMatch[2]) {
-    return errResponse(400, 'invalid', 'thumb must be a jpeg/webp data URL')
-  }
-  const contentType = thumbMatch[1] === 'webp' ? 'image/webp' : 'image/jpeg'
-  let thumbBytes: Uint8Array
-  try {
-    thumbBytes = base64ToBytes(thumbMatch[2])
-  } catch {
-    return errResponse(400, 'invalid', 'thumb base64 decode failed')
+  // thumb は任意。 有る場合だけ検証して R2 用の bytes を用意する。 無ければ OG は
+  // 既定カード (/og.png) に fall back する (= COPY LINK は画像を再構成しない)。
+  let thumbBytes: Uint8Array | null = null
+  let contentType: 'image/jpeg' | 'image/webp' = 'image/jpeg'
+  if (typeof bodyObj.thumb === 'string' && bodyObj.thumb.length > 0) {
+    if (bodyObj.thumb.length > SHARE_LIMITS_V2.MAX_THUMB_BYTES * 2) {
+      return errResponse(413, 'invalid', 'thumbnail too large')
+    }
+    // thumb は data:image/<jpeg|webp>;base64,... 形式。 bytes に分解して R2 へ。
+    const thumbMatch = bodyObj.thumb.match(/^data:image\/(jpeg|webp);base64,(.+)$/)
+    if (!thumbMatch || !thumbMatch[2]) {
+      return errResponse(400, 'invalid', 'thumb must be a jpeg/webp data URL')
+    }
+    contentType = thumbMatch[1] === 'webp' ? 'image/webp' : 'image/jpeg'
+    try {
+      thumbBytes = base64ToBytes(thumbMatch[2])
+    } catch {
+      return errResponse(400, 'invalid', 'thumb base64 decode failed')
+    }
   }
 
   const parsed = parseShareDataV2(bodyObj.share)
@@ -151,11 +156,14 @@ export async function onRequestPost(ctx: PagesContext): Promise<Response> {
     return errResponse(500, 'server', 'ID allocation failed')
   }
 
-  // 画像を先に R2 へ。 失敗したら KV を書かずに終わる (= og が画像欠けにならないように)。
-  try {
-    await ctx.env.SHARE_OG.put(id, thumbBytes, { httpMetadata: { contentType } })
-  } catch {
-    return errResponse(500, 'server', 'image upload failed')
+  // 画像がある時だけ R2 へ。 無ければ og.ts が /og.png に fall back する。
+  // (画像がある場合は) 先に R2 へ。 失敗したら KV を書かずに終わる (= og が画像欠けにならないように)。
+  if (thumbBytes) {
+    try {
+      await ctx.env.SHARE_OG.put(id, thumbBytes, { httpMetadata: { contentType } })
+    } catch {
+      return errResponse(500, 'server', 'image upload failed')
+    }
   }
 
   await ctx.env.SHARE_KV.put(id, encoded, { expirationTtl: SHARE_LIMITS_V2.TTL_SECONDS })

@@ -96,6 +96,23 @@
   overflow: hidden;
 }
 
+@keyframes arrangeEdgePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(40, 241, 0, 0); }
+  30%  { box-shadow: 0 0 0 2px rgba(40, 241, 0, 0.35), 0 0 24px rgba(40, 241, 0, 0.22); }
+  100% { box-shadow: 0 0 0 0 rgba(40, 241, 0, 0); }
+}
+/* One-shot on arrange entry: shows the capture rectangle (the existing panel
+   edge) then fades — gone before the user screenshots, so it never appears in
+   the shot. No layout change (box-shadow never affects box geometry). .canvas
+   has overflow:hidden (above) but that only clips descendant CONTENT overflow,
+   not the element's own box-shadow — already proven in this file: the
+   paper-atelier .canvas rule below applies a non-inset, multi-layer box-shadow
+   (up to a 96px blur) directly to this same overflow:hidden .canvas and it
+   renders as an intentionally visible "lifted panel" effect. */
+.canvasArrangeGuide {
+  animation: arrangeEdgePulse 900ms ease-out 1;
+}
+
 /* paper-atelier: the top/bottom edge scrims (.canvas::before / ::after) are a
    positioned z-index:80 descendant sitting ON the top edge of a rounded (14px)
    overflow:hidden .canvas. In Chromium that defeats the TOP corner's clip of

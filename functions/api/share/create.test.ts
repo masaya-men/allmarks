@@ -62,6 +62,27 @@ describe('POST /api/share/create (R2 migration)', () => {
     }
   })
 
+  it('accepts a share with no thumb: writes KV, skips R2 (COPY LINK has no image)', async () => {
+    const { ctx, env, kvStore } = makeCtx({ share: validShare })
+    const res = await onRequestPost(ctx as never)
+    expect(res.status).toBe(200)
+    const out = await res.json() as { id: string }
+    expect(out.id).toBeTruthy()
+
+    // KV にはデータ本体が書かれる
+    const encoded = kvStore.get(out.id)
+    expect(encoded).toBeTruthy()
+    const decoded = await decodeKVPayload(encoded as string)
+    expect(decoded.ok).toBe(true)
+    if (decoded.ok) {
+      expect(decoded.data.share.cards.length).toBe(1)
+      expect(decoded.data.thumb).toBeUndefined()
+    }
+
+    // R2 には書かない (thumb が無いので)
+    expect(env.SHARE_OG.put).not.toHaveBeenCalled()
+  })
+
   it('rejects a non-image data URL thumb', async () => {
     const { ctx } = makeCtx({ share: validShare, thumb: 'data:text/plain;base64,AAAA' })
     const res = await onRequestPost(ctx as never)
