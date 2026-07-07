@@ -45,4 +45,13 @@ describe('board config storage', () => {
     loaded = await loadBoardConfig(db)
     expect(loaded.motionEnabled).toBe(false)
   })
+
+  it('defaults roundedCorners to true and round-trips it', async () => {
+    let loaded = await loadBoardConfig(db)
+    expect(loaded.roundedCorners).toBe(true)
+
+    await saveBoardConfig(db, { ...loaded, roundedCorners: false })
+    loaded = await loadBoardConfig(db)
+    expect(loaded.roundedCorners).toBe(false)
+  })
 })

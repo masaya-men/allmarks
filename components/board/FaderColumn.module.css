@@ -64,6 +64,22 @@
   pointer-events: none;
 }
 
+/* Fill marks — the values where the board's cards reach both edges evenly
+   (equal left/right margin). Green so they read as "align here" points,
+   distinct from the neutral default mark. Releasing the fader near one snaps
+   onto it (see FaderColumn handlePointerUp). Slightly wider than the default
+   mark so it stays visible under it when the two coincide. */
+.fillMark {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 1px;
+  background: rgba(76, 213, 106, 0.60);
+  box-shadow: 0 0 3px rgba(76, 213, 106, 0.55);
+  pointer-events: none;
+}
+
 /* Tall vertical 3-D fader cap, modeled on real audio mixer thumb-grips.
    Iteration 7: rotated from a wide horizontal cap (26×22) to a tall
    vertical cap (20×34) per the user's reference. The taller profile

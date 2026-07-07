@@ -2,18 +2,27 @@ import { describe, it, expect, vi } from 'vitest'
 import { fireEvent, render } from '@testing-library/react'
 import { TuneTrigger } from './TuneTrigger'
 
+type Overrides = Partial<Parameters<typeof TuneTrigger>[0]>
+
+function renderTune(props: Overrides = {}): ReturnType<typeof render> {
+  return render(
+    <TuneTrigger
+      widthPx={267.84}
+      gapPx={97.21}
+      onChangeWidth={vi.fn()}
+      onChangeGap={vi.fn()}
+      onReset={vi.fn()}
+      onApplyPreset={vi.fn()}
+      roundedCorners={true}
+      onToggleCorners={vi.fn()}
+      {...props}
+    />,
+  )
+}
+
 describe('TuneTrigger — skeleton', () => {
   it('renders TUNE as a button with proper data-testid in idle state', () => {
-    const { getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { getByTestId } = renderTune()
     const btn = getByTestId('tune-trigger')
     expect(btn.tagName).toBe('BUTTON')
     expect(btn.textContent).toBe('TUNE')
@@ -22,16 +31,7 @@ describe('TuneTrigger — skeleton', () => {
   })
 
   it('renders a wrap span with button and empty drawer slot when collapsed', () => {
-    const { getByTestId, container } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { getByTestId, container } = renderTune()
     const btn = getByTestId('tune-trigger')
     const wrap = container.querySelector('[data-testid="tune-wrap"]')
     expect(wrap).not.toBeNull()
@@ -44,16 +44,7 @@ describe('TuneTrigger — skeleton', () => {
 
 describe('TuneTrigger — flat readout', () => {
   it('settled readout has flat number spans, not chip or sliderWrap', async () => {
-    const { getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { getByTestId } = renderTune()
     const btn = getByTestId('tune-trigger')
     const wrap = getByTestId('tune-wrap')
     fireEvent.mouseEnter(wrap)
@@ -66,16 +57,7 @@ describe('TuneTrigger — flat readout', () => {
 
 describe('TuneTrigger — hover open', () => {
   it('on mouseenter, expands aria-expanded=true and renders the W/G readout', async () => {
-    const { getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { getByTestId } = renderTune()
     const btn = getByTestId('tune-trigger')
     const wrap = getByTestId('tune-wrap')
 
@@ -91,16 +73,7 @@ describe('TuneTrigger — hover open', () => {
 
 describe('TuneTrigger — close on mouseleave', () => {
   it('mouseleave after 1000ms grace returns to idle TUNE label', async () => {
-    const { getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { getByTestId } = renderTune()
     const btn = getByTestId('tune-trigger')
     const wrap = getByTestId('tune-wrap')
 
@@ -116,16 +89,7 @@ describe('TuneTrigger — close on mouseleave', () => {
   })
 
   it('mouseenter during grace cancels the pending close', async () => {
-    const { getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { getByTestId } = renderTune()
     const btn = getByTestId('tune-trigger')
     const wrap = getByTestId('tune-wrap')
     fireEvent.mouseEnter(wrap)
@@ -141,16 +105,7 @@ describe('TuneTrigger — close on mouseleave', () => {
 
 describe('TuneTrigger — drawer with FaderColumns', () => {
   it('drawer contains W and G FaderColumns when expanded', async () => {
-    const { getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { getByTestId } = renderTune()
     const wrap = getByTestId('tune-wrap')
     fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
@@ -162,16 +117,7 @@ describe('TuneTrigger — drawer with FaderColumns', () => {
 
   it('drag on W FaderColumn calls onChangeWidth', async () => {
     const onChangeWidth = vi.fn()
-    const { container, getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={onChangeWidth}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { container, getByTestId } = renderTune({ onChangeWidth })
     fireEvent.mouseEnter(getByTestId('tune-wrap'))
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
     const wUnit = container.querySelector('[data-scope="w"] > div') as HTMLElement
@@ -185,22 +131,34 @@ describe('TuneTrigger — drawer with FaderColumns', () => {
     fireEvent.pointerMove(wUnit, { clientX: 20, clientY: 40, movementY: -10, pointerId: 1 })
     expect(onChangeWidth).toHaveBeenCalled()
   })
+
+  it('renders fill marks on the faders when containerWidth is provided', async () => {
+    const { container, getByTestId } = renderTune({ containerWidth: 1471 })
+    fireEvent.mouseEnter(getByTestId('tune-wrap'))
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    // Both faders show at least one green fill mark for the current other-axis.
+    const marks = container.querySelectorAll('[data-testid="fader-fill-mark"]')
+    expect(marks.length).toBeGreaterThan(0)
+  })
+})
+
+describe('TuneTrigger — CORNERS toggle', () => {
+  it('shows the CORNERS switch in the drawer and toggling calls onToggleCorners', async () => {
+    const onToggleCorners = vi.fn()
+    const { getByTestId } = renderTune({ roundedCorners: true, onToggleCorners })
+    fireEvent.mouseEnter(getByTestId('tune-wrap'))
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    const toggle = getByTestId('tune-corners-toggle')
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(toggle)
+    expect(onToggleCorners).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('TuneTrigger — reset', () => {
   it('clicking the ↺ cell calls onReset', async () => {
     const onReset = vi.fn()
-    const { getByTestId, container } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={onReset}
-        onApplyPreset={vi.fn()}
-      />,
-    )
-    const btn = getByTestId('tune-trigger')
+    const { getByTestId, container } = renderTune({ onReset })
     const wrap = getByTestId('tune-wrap')
     fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
@@ -212,16 +170,7 @@ describe('TuneTrigger — reset', () => {
   })
 
   it('clicking the TUNE button does not pin it open (mouseleave still closes)', async () => {
-    const { getByTestId } = render(
-      <TuneTrigger
-        widthPx={267.84}
-        gapPx={97.21}
-        onChangeWidth={vi.fn()}
-        onChangeGap={vi.fn()}
-        onReset={vi.fn()}
-        onApplyPreset={vi.fn()}
-      />,
-    )
+    const { getByTestId } = renderTune()
     const btn = getByTestId('tune-trigger')
     const wrap = getByTestId('tune-wrap')
 

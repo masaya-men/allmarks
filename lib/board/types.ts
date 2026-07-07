@@ -161,6 +161,12 @@ export type BoardConfig = {
   /** Background typography (the big wordmark / filter title behind the cards).
    *  true = shown on the board AND reproduced in the share image. Default true. */
   readonly bgTypoEnabled: boolean
+  /** Card corner style. true = rounded (each card keeps its size-aware
+   *  --card-radius); false = square (0 radius on every card, lightbox morph
+   *  included). Default true, so an install that never toggled looks unchanged.
+   *  Applied in CardsLayer's per-card --card-radius (see the TUNE CORNERS
+   *  toggle). */
+  readonly roundedCorners: boolean
 }
 
 export type SnapGuideLine =

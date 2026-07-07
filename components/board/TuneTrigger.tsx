@@ -127,6 +127,12 @@ type Props = {
   readonly onReset: () => void
   readonly onApplyPreset: (id: import('@/lib/board/tune-presets').PresetId) => void
   readonly label?: string
+  /** Card corner style + toggle for the CORNERS switch in the preset column. */
+  readonly roundedCorners: boolean
+  readonly onToggleCorners: () => void
+  /** Board packing width (viewport − 2·side padding). Feeds the faders' fill
+   *  marks + release-snap so W/G click onto even-margin configurations. */
+  readonly containerWidth?: number
 }
 
 export function TuneTrigger({
@@ -137,6 +143,9 @@ export function TuneTrigger({
   onReset,
   onApplyPreset,
   label,
+  roundedCorners,
+  onToggleCorners,
+  containerWidth,
 }: Props): ReactElement {
   const { t } = useI18n()
   const visibleLabel = label ?? t('board.chrome.tune')
@@ -478,6 +487,8 @@ export function TuneTrigger({
           widthPx={widthPx}
           gapPx={gapPx}
           onApply={onApplyPreset}
+          roundedCorners={roundedCorners}
+          onToggleCorners={onToggleCorners}
         />
         <span className={styles.drawerDivider} aria-hidden="true" />
         <div className={styles.drawerRight}>
@@ -490,6 +501,8 @@ export function TuneTrigger({
               def={BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX}
               onChange={onChangeWidth}
               label="W"
+              containerWidth={containerWidth}
+              otherValue={gapPx}
             />
             <FaderColumn
               scope="g"
@@ -499,6 +512,8 @@ export function TuneTrigger({
               def={BOARD_SLIDERS.CARD_GAP_DEFAULT_PX}
               onChange={onChangeGap}
               label="G"
+              containerWidth={containerWidth}
+              otherValue={widthPx}
             />
           </div>
           <div className={styles.opsLegend} aria-hidden="true">

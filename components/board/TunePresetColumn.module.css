@@ -233,6 +233,59 @@
   color: rgba(232, 227, 216, 0.95);
 }
 
+/* CORNERS toggle row: same LED + lever + label grid as the preset rows, but a
+   boolean switch (ROUND / SQUARE). A dashed hairline above separates it from
+   the density radios so it reads as a different class of control. */
+.cornersRow {
+  display: grid;
+  grid-template-columns: 10px 18px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px 2px;
+  margin-top: 10px;
+  border: none;
+  border-top: 1px dashed rgba(255, 255, 255, 0.10);
+  background: transparent;
+  cursor: pointer;
+  user-select: none;
+  font: inherit;
+  text-align: left;
+}
+
+.cornersRow:focus-visible {
+  outline: 1px solid rgba(232, 227, 216, 0.35);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Label cell holds the printed name (CORNERS) plus the current-state readout
+   (ROUND / SQUARE), pushed to opposite ends of the 1fr cell. */
+.cornerLabelWrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cornersRow:hover .label {
+  color: rgba(232, 227, 216, 0.95);
+}
+
+/* State readout: dim grey for SQUARE, lit green for ROUND — matches the LED so
+   the on/off reads at a glance. */
+.cornerState {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.38);
+  transition: color 140ms ease-out;
+}
+
+.cornerStateOn {
+  color: rgba(108, 234, 154, 0.92);
+}
+
 /* Maker mark: free-floating engraved text at the bottom-left. No box, no
    border, no fill — just etched panel text that establishes the drawer
    as a piece of hardware without competing with the controls above.

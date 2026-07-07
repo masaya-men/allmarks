@@ -14,6 +14,7 @@ export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   activeFilter: BOARD_FILTER_ALL,
   motionEnabled: true,
   bgTypoEnabled: true,
+  roundedCorners: true,
 }
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */

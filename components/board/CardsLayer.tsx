@@ -252,6 +252,11 @@ type CardsLayerProps = {
   readonly inTrash?: boolean
   readonly persistMeasuredAspect?: (cardId: string, aspectRatio: number) => Promise<void>
   readonly displayMode: DisplayMode
+  /** Card corner style. true = each card keeps its size-aware rounded radius;
+   *  false = square (0 radius). Flows into the per-card --card-radius so the
+   *  board, its shutdown/receiver overlays, and the lightbox morph all follow.
+   *  Defaults true so existing render paths are unchanged. */
+  readonly roundedCorners?: boolean
   readonly newlyAddedIds: ReadonlySet<string>
   /** Default per-card width for cards with no custom width — derived from
    *  the active size slider level so the board still distributes evenly
@@ -370,6 +375,7 @@ export function CardsLayer({
   inTrash = false,
   persistMeasuredAspect,
   displayMode,
+  roundedCorners = true,
   newlyAddedIds,
   defaultCardWidth,
   customWidths,
@@ -1323,8 +1329,12 @@ export function CardsLayer({
               // The lightbox mirrors this per-card value onto :root while open
               // (see Lightbox useLayoutEffect) so the open/close morph shares one
               // radius end-to-end — no corner snap.
-              ['--card-radius' as string]:
-                meta.colorScheme === 'light' ? '3px' : `${Math.min(20, p.w * 0.12).toFixed(1)}px`,
+              // roundedCorners=false forces square cards (0 radius) across the
+              // board, its overlays, and the lightbox morph (which mirrors this
+              // per-card value). true keeps the size-aware rounded radius.
+              ['--card-radius' as string]: !roundedCorners
+                ? '0px'
+                : meta.colorScheme === 'light' ? '3px' : `${Math.min(20, p.w * 0.12).toFixed(1)}px`,
               // Card's rendered width, read by PaperCardDecorations so tape/pin/
               // wax scale WITH the card (resize a card → its decorations follow).
               ['--card-w' as string]: `${p.w}px`,

@@ -252,6 +252,11 @@ export function BoardRoot() {
   // Background typography (the big wordmark / filter title behind the cards)
   // master switch. Persisted in BoardConfig; the share image follows it too.
   const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
+  // Card corner style (TUNE → CORNERS switch). true = rounded, false = square.
+  // Default true so the initial render matches the current look; the persisted
+  // BoardConfig reconciles it on hydrate. Flows into CardsLayer's per-card
+  // --card-radius.
+  const [roundedCorners, setRoundedCorners] = useState<boolean>(true)
   // True once the user has toggled TITLE this session, so the boot-up effect
   // plays on a user toggle but NOT on the initial page load / config hydration.
   const [bgTypoUserToggled, setBgTypoUserToggled] = useState<boolean>(false)
@@ -772,6 +777,7 @@ export function BoardRoot() {
       setActiveFilter(cfg.activeFilter)
       setDisplayMode(cfg.displayMode)
       setBgTypoEnabled(cfg.bgTypoEnabled)
+      setRoundedCorners(cfg.roundedCorners)
       setThemeId(resolveThemeId(cfg.themeId, EMPTY_LICENSES))
       setThemeCustomizations(cfg.themeCustomizations ?? {})
       const prefersReduced =
@@ -1942,6 +1948,18 @@ export function BoardRoot() {
     })
   }, [])
 
+  const handleToggleRoundedCorners = useCallback((): void => {
+    setRoundedCorners((prev) => {
+      const next = !prev
+      void (async (): Promise<void> => {
+        const db = await initDB()
+        const cfg = await loadBoardConfig(db)
+        await saveBoardConfig(db, { ...cfg, roundedCorners: next })
+      })()
+      return next
+    })
+  }, [])
+
   // During arrange, the header TITLE toggle drives ONLY the ephemeral collage
   // title (React state, discarded on exit — spec §10). It must NOT persist to
   // BoardConfig/IDB: toggling the collage title off to get a title-free shot
@@ -2683,6 +2701,9 @@ export function BoardRoot() {
                 onChangeGap={handleCardGapChange}
                 onReset={handleResetWidthGap}
                 onApplyPreset={onApplyPreset}
+                roundedCorners={roundedCorners}
+                onToggleCorners={handleToggleRoundedCorners}
+                containerWidth={effectiveLayoutWidth}
               />
               <ExtensionEntry
                 quickTagEnabled={quickTagEnabled}
@@ -2868,6 +2889,7 @@ export function BoardRoot() {
                 viewport={viewport}
                 viewportWidth={effectiveLayoutWidth}
                 cardGapPx={cardGapPx}
+                roundedCorners={roundedCorners}
                 hoveredBookmarkId={hoveredBookmarkId}
                 audioActiveId={audioActiveId}
                 onToggleAudio={handleToggleAudio}

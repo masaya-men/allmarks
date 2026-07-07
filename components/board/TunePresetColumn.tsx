@@ -8,9 +8,18 @@ type Props = {
   readonly widthPx: number
   readonly gapPx: number
   readonly onApply: (id: PresetId) => void
+  /** Card corner style. true = rounded, false = square. */
+  readonly roundedCorners: boolean
+  readonly onToggleCorners: () => void
 }
 
-export function TunePresetColumn({ widthPx, gapPx, onApply }: Props): ReactElement {
+export function TunePresetColumn({
+  widthPx,
+  gapPx,
+  onApply,
+  roundedCorners,
+  onToggleCorners,
+}: Props): ReactElement {
   const activeId = findActivePreset(widthPx, gapPx)
 
   return (
@@ -45,6 +54,38 @@ export function TunePresetColumn({ widthPx, gapPx, onApply }: Props): ReactEleme
           )
         })}
       </div>
+      {/* CORNERS toggle — a switch in the same lever/LED language as the preset
+          rows, but a boolean (ROUND / SQUARE) rather than a density radio. Sits
+          under the presets, above the maker mark, so the shorter left column
+          uses its spare height without growing the drawer. */}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={roundedCorners}
+        aria-label="Card corners"
+        className={styles.cornersRow}
+        data-testid="tune-corners-toggle"
+        onClick={onToggleCorners}
+      >
+        <span
+          className={`${styles.led} ${roundedCorners ? styles.ledOn : ''}`}
+          aria-hidden="true"
+        />
+        <span
+          className={`${styles.lever} ${roundedCorners ? styles.leverDown : ''}`}
+          aria-hidden="true"
+        >
+          <span className={styles.handle} />
+        </span>
+        <span className={styles.cornerLabelWrap}>
+          <span className={styles.label}>CORNERS</span>
+          <span
+            className={`${styles.cornerState} ${roundedCorners ? styles.cornerStateOn : ''}`}
+          >
+            {roundedCorners ? 'ROUND' : 'SQUARE'}
+          </span>
+        </span>
+      </button>
       <div className={styles.maker} aria-hidden="true">
         ALLMARKS · MK-1
       </div>

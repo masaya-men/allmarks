@@ -86,6 +86,10 @@ export function SharedBoard(): ReactElement {
   const [gapPx, setGapPx] = useState<number>(RECEIVER_FALLBACK_GAP_PX)
   const [bgTypoEnabled, setBgTypoEnabled] = useState<boolean>(true)
   const [motionEnabled, setMotionEnabled] = useState<boolean>(true)
+  // Local view preference for the receiver — like W/G, it isn't persisted (the
+  // shared payload carries no corner style; the viewer just adjusts how they
+  // look at it). Default rounded.
+  const [roundedCorners, setRoundedCorners] = useState<boolean>(true)
   const [importPhase, setImportPhase] = useState<'idle' | 'importing' | 'done'>('idle')
   // SHARE re-share modal (Plan 2): re-share the currently-visible cards.
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false)
@@ -472,6 +476,9 @@ export function SharedBoard(): ReactElement {
                   setGapPx(data.gap ?? RECEIVER_FALLBACK_GAP_PX)
                 }}
                 onApplyPreset={onApplyPreset}
+                roundedCorners={roundedCorners}
+                onToggleCorners={(): void => setRoundedCorners((v) => !v)}
+                containerWidth={containerWidth}
               />
               <BlockedChrome label="MANAGE TAGS">
                 <ChromeButton label="MANAGE TAGS" onClick={NOOP} />
@@ -503,6 +510,7 @@ export function SharedBoard(): ReactElement {
                 CardsLayer becomes scrollable (it has no intrinsic height). */}
             <div aria-hidden style={{ height: `${spacerHeight}px` }} />
             <CardsLayer
+              roundedCorners={roundedCorners}
               items={items}
               viewport={{ x: 0, y: 0, w: containerWidth, h: UNCULLED_VIEWPORT_H }}
               viewportWidth={containerWidth}

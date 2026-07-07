@@ -9037,3 +9037,27 @@ Phase 1（s170）で入れた TAG MODE（右端浮動パネル・複数選択機
 - **Playwright**（/board・デフォルト WAVE・seed-demos で itemCount>0 にしオンボ回避＋DataHomeCard dismiss）で **hover→`data-open=true`・aria-expanded=true・319×310 の横並びパネル・プリセット5・W/G フェーダー各1・区切り・凡例5行・読み出し `267.84·97.21·DEFAULT`** を実測。目視で中立ダーク（paper 装飾なし）を確認。
 - commit `92a9ec0` → deploy `4a0e1653`（`allmarks.app` 反映）。
 - **学び**: 復刻タスクは「戻す対象の行が本当にその機能の行か」「消したのは本当にそのコミットか」を **git diff の実体で確認**してから着手（今回 plan の「48 行＝横並び用」前提が誤り）。CLAUDE.md のアンチ推測 5 原則がそのまま効いた。
+
+---
+
+## セッション 173 (2026-07-08) — #2 TUNE 刷新セット完了：角丸 ON/OFF トグル ＋ 幅/ギャップの余白スナップ
+
+CURRENT_GOAL の「#2 の残り2点」を実装 → 検証 → デプロイまで自走。**推測せず実コード確認**（CardsLayer が per-card で `--card-radius` をインライン設定＝`<html>` 上書きは効かない、盤面は skyline 左詰めで端数が右端だけに残る、等）してから設計を確定した。
+
+### (#1) 角丸 ON/OFF トグルを TUNE に同居
+- TUNE ドロワーの左（プリセット）列の下に、破線区切りを挟んで mixer 風スイッチ `CORNERS ROUND/SQUARE` を新設（プリセット行と同じ LED＋レバーの視覚言語。ROUND=緑LED＋レバー下、SQUARE=消灯＋レバー上）。短い左列の余白を使うので**パネル高さは伸びない**。
+- OFF で全カード角ゼロ、ON で従来の size-aware 角丸（`min(20, 幅×0.12)px`、light/paper は 3px）。CardsLayer の per-card `--card-radius` 式に `!roundedCorners ? '0px' : …` を差し込み＝shutdown ラッパ・CardNode・receiver overlay・**ライトボックスの morph ミラー**まで 1 変数で追従（角の snap なし）。
+- `BoardConfig.roundedCorners`（既定 true＝現状の見た目を維持）を追加し IDB `settings/board-config` に永続（`motionEnabled`/`bgTypoEnabled` と同じ器・`handleToggleRoundedCorners` は既存トグルのミラー）。受信側 `SharedBoard` にもローカルビュー設定（非永続・W/G と同格）として同トグルを配線。
+
+### (#4) カード幅/ギャップの「左右余白が揃う所」スナップ
+- 純関数 `lib/board/fill-snap.ts`（`fillCandidates`/`snapToFill`・`DEFAULT_FILL_SNAP_THRESHOLD_PX=10`・10 テスト）：整数列数 N について `N×幅 + (N−1)×ギャップ = 盤面幅`（他軸固定）の解を列挙。幅は `(C−(N−1)g)/N`、ギャップは `(C−Nw)/(N−1)` で単調減少 → min 割れで打ち切り。
+- `FaderColumn` に `containerWidth`/`otherValue` を追加：緑の目印 `.fillMark` を候補位置に描画し、**pointerup（離した瞬間）**に `snapToFill` で ±10px 以内なら吸着。**ドラッグ中は完全自由・Shift 中は無効**（precision＝微調整を邪魔しない）。BoardRoot→TuneTrigger→両フェーダーへ `containerWidth=effectiveLayoutWidth`＋他軸値を配線。
+- 発見：DEFAULT（幅267.84/ギャップ97.21・1489画面）は**どちらの軸でも fill しない**（右に約108px の帯）。スナップは W なら 294.84(4列)/216.43(5列)…、G なら 133.21(4列)/32.95(5列) 等へ導く。
+
+### 検証
+- tsc0 / **vitest 2097/0**（+20：fill-snap 10・board-config 1・FaderColumn 5・TunePresetColumn 2・TuneTrigger 2）/ `rm -rf .next out` 後のクリーンビルド OK。
+- Playwright e2e `tests/e2e/tune-corners-and-snap.spec.ts`（seed 40枚＋onboarding/data-home ack でモーダル回避）で ①CORNERS で `--card-radius` が 20px⇔0px ②リロード後も square 永続 ③フェーダーに目印描画、を実測 PASS。スクショで丸⇔四角の盤面＋緑目印を目視。
+- **フェーダーの吸着は Playwright で駆動不可**（`setPointerCapture` が合成ポインタを拒否）→ 純関数＋`fireEvent` 単体テストで担保。実機の吸着の効き・目印視認性はユーザー目視の残。
+
+### 既知の非対応（任意・ユーザー判断）
+- 角丸 OFF は SHARE のアレンジコラージュ/共有画像には未追従（`CollageCanvas` は `var(--card-radius,20px)` フォールバック＝盤面 CardsLayer とは別描画）。必要なら follow-up。

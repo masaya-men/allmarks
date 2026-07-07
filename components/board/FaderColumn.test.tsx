@@ -240,6 +240,75 @@ describe('FaderColumn — drag symmetry around centered default', () => {
   })
 })
 
+describe('FaderColumn — fill snap', () => {
+  // User's board width: container 1471; W in [120,720]; G held at 97.21.
+  const CONTAINER = 1471
+  const GAP = 97.21
+
+  it('renders no fill marks when container/other are absent', () => {
+    const { container } = render(
+      <FaderColumn scope="w" value={267.84} min={120} max={720} def={267.84}
+        onChange={vi.fn()} label="W" />,
+    )
+    expect(container.querySelectorAll('[data-testid="fader-fill-mark"]').length).toBe(0)
+  })
+
+  it('renders a fill mark for each even-margin width when enabled', () => {
+    const { container } = render(
+      <FaderColumn scope="w" value={267.84} min={120} max={720} def={267.84}
+        onChange={vi.fn()} label="W" containerWidth={CONTAINER} otherValue={GAP} />,
+    )
+    const marks = container.querySelectorAll('[data-testid="fader-fill-mark"]')
+    // 6 fill widths fall inside [120,720] for gap 97.21 (see fill-snap tests).
+    expect(marks.length).toBe(6)
+    // One of them is the 4-column fill ≈ 294.84.
+    const values = Array.from(marks).map((m) => Number((m as HTMLElement).dataset.fillValue))
+    expect(values.some((v) => Math.abs(v - 294.84) < 0.1)).toBe(true)
+  })
+
+  it('snaps to the nearest fill width on release when dropped within threshold', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <FaderColumn scope="w" value={292} min={120} max={720} def={267.84}
+        onChange={onChange} label="W" containerWidth={CONTAINER} otherValue={GAP} />,
+    )
+    const unit = container.querySelector('[data-scope="w"] > div') as HTMLElement
+    mockRect(unit)
+    fireEvent.pointerDown(unit, { clientX: 20, clientY: 55, pointerId: 1 })
+    fireEvent.pointerUp(unit, { clientX: 20, clientY: 55, pointerId: 1 })
+    // 292 is 2.84 px from the 4-column fill 294.84 → snaps.
+    const snapped = onChange.mock.calls.find((c) => Math.abs((c[0] as number) - 294.84) < 0.1)
+    expect(snapped).toBeTruthy()
+  })
+
+  it('does NOT snap when Shift is held on release (precision mode)', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <FaderColumn scope="w" value={292} min={120} max={720} def={267.84}
+        onChange={onChange} label="W" containerWidth={CONTAINER} otherValue={GAP} />,
+    )
+    const unit = container.querySelector('[data-scope="w"] > div') as HTMLElement
+    mockRect(unit)
+    fireEvent.pointerDown(unit, { clientX: 20, clientY: 55, pointerId: 1 })
+    fireEvent.pointerUp(unit, { clientX: 20, clientY: 55, shiftKey: true, pointerId: 1 })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('does NOT snap a value far from every fill point', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <FaderColumn scope="w" value={267.84} min={120} max={720} def={267.84}
+        onChange={onChange} label="W" containerWidth={CONTAINER} otherValue={GAP} />,
+    )
+    const unit = container.querySelector('[data-scope="w"] > div') as HTMLElement
+    mockRect(unit)
+    fireEvent.pointerDown(unit, { clientX: 20, clientY: 55, pointerId: 1 })
+    fireEvent.pointerUp(unit, { clientX: 20, clientY: 55, pointerId: 1 })
+    // 267.84 (DEFAULT) is ~27 px from the nearest fill → no onChange.
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
 describe('FaderColumn — ruler tick highlight', () => {
   it('ticks within ±10% of handle have hi class', () => {
     const { container } = render(

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useRef, type PointerEvent, type ReactElement } from 'react'
+import { fillCandidates, snapToFill } from '@/lib/board/fill-snap'
 import styles from './FaderColumn.module.css'
 
 /** Linear position mapping: value → fraction along the track, min → 0%,
@@ -49,6 +50,13 @@ type Props = {
   readonly def: number
   readonly onChange: (next: number) => void
   readonly label: string
+  /** Board packing width (viewport − 2·side padding). When set together with
+   *  `otherValue`, the fader shows fill marks (the values that make the board's
+   *  left/right margins equal) and snaps onto the nearest one on release. */
+  readonly containerWidth?: number
+  /** The fixed other-axis value used to compute fill points: the gap when this
+   *  fader is W (scope='w'), the width when this fader is G (scope='g'). */
+  readonly otherValue?: number
 }
 
 export function FaderColumn({
@@ -59,6 +67,8 @@ export function FaderColumn({
   def,
   onChange,
   label,
+  containerWidth,
+  otherValue,
 }: Props): ReactElement {
   const valueRef = useRef(value)
   valueRef.current = value
@@ -69,6 +79,17 @@ export function FaderColumn({
   // Default value's position on the track (top%), so the reset reference mark
   // sits at the real default rather than a forced 50% center.
   const defaultTopPct = (1 - valueToFraction(def, min, max)) * 100
+
+  // Fill snapping: enabled once the board width and the other-axis value are
+  // known. `axis` picks which side of N·width + (N−1)·gap = containerWidth this
+  // fader drives. `fillMarks` are the values that make the board's left/right
+  // margins equal (rendered as green notches on the track).
+  const axis = scope === 'w' ? 'width' : 'gap'
+  const snapEnabled =
+    typeof containerWidth === 'number' && containerWidth > 0 && typeof otherValue === 'number'
+  const fillMarks = snapEnabled
+    ? fillCandidates(otherValue as number, containerWidth as number, axis, min, max)
+    : []
 
   const isHi = (tickPct: number): boolean => {
     const tickFraction = 1 - tickPct / 100
@@ -163,7 +184,27 @@ export function FaderColumn({
     ) {
       target.releasePointerCapture(e.pointerId)
     }
-  }, [cancelJumpTimer])
+    // Fill snap on release: if the dropped value lands near an even-margin
+    // configuration, click onto it. Skipped while Shift is held (precision
+    // mode — the user is fine-tuning and doesn't want a magnet) and when the
+    // board container / other-axis value aren't known (snap disabled).
+    if (
+      !e.shiftKey &&
+      typeof containerWidth === 'number' &&
+      containerWidth > 0 &&
+      typeof otherValue === 'number'
+    ) {
+      const snapped = snapToFill({
+        value: valueRef.current,
+        other: otherValue,
+        containerWidth,
+        axis,
+        min,
+        max,
+      })
+      if (snapped !== valueRef.current) onChange(snapped)
+    }
+  }, [cancelJumpTimer, onChange, containerWidth, otherValue, axis, min, max])
 
   return (
     <div className={styles.column} data-scope={scope}>
@@ -181,6 +222,15 @@ export function FaderColumn({
             data-testid="fader-default-mark"
             style={{ top: `${defaultTopPct}%` }}
           />
+          {fillMarks.map((m) => (
+            <div
+              key={m}
+              className={styles.fillMark}
+              data-testid="fader-fill-mark"
+              data-fill-value={m.toFixed(2)}
+              style={{ top: `${(1 - valueToFraction(m, min, max)) * 100}%` }}
+            />
+          ))}
           <div
             className={styles.handle}
             data-testid="fader-handle"
