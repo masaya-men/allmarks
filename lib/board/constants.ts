@@ -75,6 +75,7 @@ export const BOARD_Z_INDEX = {
   PASTE_FEEDBACK: 135,
   LANGUAGE_SWITCHER: 140,
   MODAL_OVERLAY: 200,  // App-level modal overlay (Bookmarklet install, etc.)
+  SCROLL_METER: 400,   // sound-wave scroll/counter meter. Board: positioned by the outer-frame bottom band; receive view (SharedBoard): its own canvas-bottom anchor. Mirrors the raw z-index:400 in ScrollMeter/BoardRoot CSS.
   /** 統一右ドロワー（TUNE/SETTINGS/SHARE/THEMES）。ScrollMeter(400) の上、onboarding ring(410) の下。 */
   CHROME_DRAWER: 405,
   DATA_HOME: 205,       // first-run "your data lives here" card (after onboarding, below CHROME_DRAWER 405)

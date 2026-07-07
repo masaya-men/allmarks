@@ -544,16 +544,32 @@ export function SharedBoard(): ReactElement {
           </div>
         </div>
 
-        {/* Sound-wave scroll meter, placed at the canvas bottom like the board. */}
-        <ScrollMeter
-          mode="board"
-          n1={1}
-          n2={visibleCards.length}
-          total={visibleCards.length}
-          swellFraction={swell}
-          onScrub={handleMeterScrub}
-          variant={getThemeMeta(themeId).scrollMeterVariant}
-        />
+        {/* Sound-wave scroll meter, pinned to the canvas bottom (centered).
+            s170: the shared ScrollMeter's .meterWrap is now position:relative
+            (on the main board it's positioned by the outer-frame bottom band).
+            The receive view has no such band, so it supplies its own
+            canvas-bottom anchor here — without it the (now in-flow) meter would
+            jump to the top of the stage, since canvasWrap is absolute. */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: BOARD_Z_INDEX.SCROLL_METER,
+            pointerEvents: 'none',
+          }}
+        >
+          <ScrollMeter
+            mode="board"
+            n1={1}
+            n2={visibleCards.length}
+            total={visibleCards.length}
+            swellFraction={swell}
+            onScrub={handleMeterScrub}
+            variant={getThemeMeta(themeId).scrollMeterVariant}
+          />
+        </div>
 
         {/* Theme-driven import overlay (backdrop covers the canvas at z 300). */}
         <ImportProgressIndicator phase={importPhase} themeId={themeId} counts={importCounts} />

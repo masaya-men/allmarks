@@ -183,6 +183,14 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               // Card's rendered width, read by PaperCardDecorations so tape/pin/
               // wax scale WITH the (shrunk) collage card — same var the board sets.
               ['--card-w' as string]: `${p.w}px`,
+              // Size-aware corner radius — MUST mirror the board (CardsLayer).
+              // The collage reuses the same card face (CardNode/pickCard) but this
+              // wrapper is separate, so it has to set --card-radius itself; without
+              // it the cards inherit the flat :root 20px and small collage cards
+              // round into circles. min(20px, w*0.12) matches the board exactly so
+              // a card looks identical whether on the board or in a shared collage.
+              ['--card-radius' as string]:
+                props.paper ? '3px' : `${Math.min(20, p.w * 0.12).toFixed(1)}px`,
               // Rotation applies to the WHOLE element (card + paper shadow +
               // decorations + handles) so it tilts coherently, around its own
               // center (transform-origin default). Collage-only tilt — the board
