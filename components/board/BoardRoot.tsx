@@ -2060,6 +2060,18 @@ export function BoardRoot() {
     return (): void => window.removeEventListener('keydown', onKey)
   }, [sharePhase, handleExitShareMode])
 
+  // Task 8: one-shot panel-edge glow on arrange entry — shows the capture
+  // rectangle (the existing .canvas edge), then fades within ~900ms so it is
+  // gone before the user takes their screenshot. Cosmetic only; no layout
+  // change (see BoardRoot.module.css .canvasArrangeGuide).
+  const [arrangeGuidePulse, setArrangeGuidePulse] = useState(false)
+  useEffect((): (() => void) | undefined => {
+    if (sharePhase !== 'arrange') return undefined
+    setArrangeGuidePulse(true)
+    const t = window.setTimeout((): void => setArrangeGuidePulse(false), 900)
+    return (): void => window.clearTimeout(t)
+  }, [sharePhase])
+
   // Local preview pan for a selection share — clamped to the selection's own
   // content height; the bg board's viewport is not touched.
   const handleSelectionPanY = useCallback(
@@ -2490,7 +2502,7 @@ export function BoardRoot() {
           canvasWrap holds the existing absolute-layered scroll/cards stage. */}
       <div
         ref={canvasElRef}
-        className={styles.canvas}
+        className={arrangeGuidePulse ? `${styles.canvas} ${styles.canvasArrangeGuide}` : styles.canvas}
         // The edge-band chrome override above cascades into here; reset it to the
         // default light-on-dark chrome so the header + card chrome (which sit on
         // the dark board, not the edge) keep their normal ink.
