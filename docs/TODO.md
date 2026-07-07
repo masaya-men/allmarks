@@ -21,6 +21,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 169 — ★SHARE 手動スクショの仕上げ＋COPY LINK（画像再構成なし）出荷・master マージ済・本番反映済／opus 全ブランチレビュー「READY TO MERGE」)
+
+- **4点を実装完了**（merge `--no-ff`・tsc0 / **vitest 2072/0** / クリーンビルドOK・`allmarks.app` 反映済 deploy `b6c16360`）。brainstorm→調査（getDisplayMedia/Web Share/永続許可）→spec→plan→**サブエージェント駆動8タスク＋各レビュー＋opus 全ブランチレビュー（READY TO MERGE）**。
+  - **① メーター重なり解消**：配置(arrange)中はスクロールメーター(z400)を隠す（SHARING バー z116 の上に潜る件・ユーザー最初の指摘）。純関数 `shouldShowScrollMeter`（[lib/board/scroll-meter-visibility.ts](../lib/board/scroll-meter-visibility.ts)）。
+  - **② 撮り方1行・OS判定**：`detectSharePlatform`/`pickScreenshotHint`（[lib/share/screenshot-hint.ts](../lib/share/screenshot-hint.ts)）で Windows/Mac/スマホ の該当1行だけ。ShareToast は `hint` prop 化。
+  - **③ COPY LINK（画像再構成なし）**：配置トーストに追加。選択(`selectedIds`)から盤面順・`filter:null` で `/s` ペイロードを組み、**thumb 無しで** `createShare` → URL コピー。`copyShareLink`（[lib/share/copy-share-link.ts](../lib/share/copy-share-link.ts)・DI・**`captureMirrorToWebP`/`renderShareImage` を呼ばない**）。サーバー：create.ts の thumb を任意化（無ければ R2 put スキップ）＋og.ts を既定カード `/og.png` に 302 フォールバック（KV 実在時のみ・genuinely-missing は 404 維持）。`patch-share-html.ts` 無変更。
+  - **④ 撮影ガイド**：配置に入るとパネル縁（`.canvas`）が一瞬だけ緑グロー→フェード（`box-shadow`/animation のみ・**レイアウト不変**・スクショに写らない）。
+  - **方式決定の根拠（調査で裏取り）**：モバイルは `getDisplayMedia` 全滅（caniuse）・canvas系は全ライブラリがクロスオリジン汚染で撮れない・PC の getDisplayMedia も毎回許可が仕様で必須 → **全環境で手動スクショ＋URL併記**が業界水準。**レプリカ再構成は完全排除**（ユーザー決定・バグの温床）。
+  - **全ブランチレビュー**：跨ぎ seam 3点（thumb-less create→KV→既定OG／選択は selectedIds 由来で全件化しない／既存 SHARE 無回帰）すべて ✅。Minor 1件（`buildShare` throw で凍結）は**その場で堅牢化**（try/catch＋テスト・fix commit）。
+  - 正本 [spec](superpowers/specs/2026-07-07-share-manual-screenshot-polish-and-copy-link-design.md) / [plan](superpowers/plans/2026-07-07-share-manual-screenshot-polish-and-copy-link.md) / narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s169。
+- **ユーザー実機目視の残**：メーター重なり消失・COPY LINK 動作（LINK COPIED→貼付で `/s/<id>`→開くと本物ボード）・撮り方1行が Windows 版・撮影ガイドが自然でスクショに写らないか。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **次（セッション170）＝ フラット化 サブ②（白フラット default テーマ・モック確認してから）**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 168 — ★アレンジのコラージュを「盤面全体を端まで埋める」justified rows に作り替え・本番反映済／ユーザー未解決フィードバック解消)
 
 - **アレンジ自動配置を justified rows（写真ギャラリー方式）に全面書き換え完了**（commit `feat(share): justified-rows fill`＋`fix(share): fill the whole board panel`・tsc0 / **vitest 2054/0** / build OK・`allmarks.app` 反映済 deploy `c9b6f562`）。brainstorm→spec→plan→インライン TDD＋敵対的コードレビュー→Playwright 実測。
