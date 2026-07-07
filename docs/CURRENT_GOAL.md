@@ -13,16 +13,23 @@
 1. **#3 タグ付け刷新【完了・デプロイ済】** — spec: `docs/superpowers/specs/2026-07-07-tag-mode-drag-drop-design.md`。
    - ✅ **Phase 1〜3 ＋ トンマナ一致 ＋ 空クリック解除（s171・デプロイ済）**: MANAGE TAGS → in-page TAG MODE。タップ複数選択 → 右端パネルのタグ行へドラッグ&ドロップで追加付与（union・選択継続）。ドラッグ中ゴースト＋対象行グリーン強調「+N」＋着地パルス。`+ NEW TAG`（最上部固定）にドロップ/クリックでインライン作成→即付与。**パネルは FilterPill と同じ等幅・中空ドット・小文字名・3桁カウント**（`reference_allmarks_chrome_vocab_filterpill`）。タグ付け中もカード hover で既存タグ表示（`TagIndicatorStrip` readOnly）。ドラッグ端で自動スクロール。**盤面の縁/カード隙間の空クリックで解除**（DONE/Esc に加え）。ロジック `lib/board/tag-assign.ts`（単体9本）。tsc0・vitest2079・Playwright で IDB 書込み/挙動を実測。
    - ⏭ **Phase 4（任意・後回し）**: Triage コード撤去。オンボーディングの `/triage?onboarding=1` だけまだ実 Triage を使う点に注意（低優先・見た目価値なし・オンボ破壊リスクあり）。
-2. **TUNE 刷新セット** — (#2) 前に気に入っていた版へ**戻す** = **s163 の「横並び（横アコーディオン）TUNE」を復刻**。**保管場所（確定）**: `components/board/_archive/TuneClassicBody.tsx.txt` ＋ `TuneClassicBody.module.css.txt`（正本 git `b317fa2:TuneTrigger.tsx`／`b317fa2:TuneTrigger.module.css`。`d2fca70` で右縦ドロワーに置換された前の姿）。復刻手順は同 `_archive/README.md` 参照（`.txt`→実ファイル、import 再配線、`FaderColumn`/`TunePresetColumn` は現存、`TunePresetColumn.module.css` の横並び用48行だけ `git show b317fa2:components/board/TunePresetColumn.module.css` から拾い直し）。横並び版なら「ギャップ調整時に右端カードが見えない」問題は元々起きていなかった。併せて **TUNE をテーマ追従**に（タグ絞り込みも追従要否を検討）。(#1) **角丸 ON/OFF** トグルを TUNE に同居。(#4) カード幅/ギャップ調整時、**盤面左右端の余白が揃う所でスナップ**。
+2. **TUNE 刷新セット** — (#2) **✅ s163 の横並び（横アコーディオン）TUNE 復刻・完了（s172・本番反映 deploy `4a0e1653`）**。右縦ドロワー版（`d2fca70`）→ b317fa2 の hover 開閉・横並び（プリセット列｜区切り｜W/G フェーダー＋操作凡例）へ差し替え。**中立（WAVE デフォルト見た目）で統一**（paper 分岐は入れない）。詳細＝ [TODO.md](TODO.md) 現在の状態 s172。
+   - **⚠ plan の誤り訂正済み**: 「TunePresetColumn の横並び用48行」は実体が **paper テーマの色上書き**で、消したのは `d2fca70` ではなく別コミット `489caf7`（全メニュー中立化・s163 合意）。→ **48行は戻していない**。
+   - **未決（要ユーザー判断）**: 「**TUNE をテーマ追従に**（タグ絞り込みも追従要否）」は s163 中立化と衝突。TUNE だけ追従だと他メニューとちぐはぐ→やるなら**全メニュー一括**で別セッション（案C）。
+   - **残（未着手）**: (#1) **角丸 ON/OFF** トグルを TUNE に同居。(#4) カード幅/ギャップ調整時、**盤面左右端の余白が揃う所でスナップ**。
 3. **#7 ライトボックスの戻り先【見送り・撤去済】** — v1（不可視ジャンプ）も v2（閉じた後にスクロール＋グロー）も「戻り先がきれいに出せない」とユーザー判断で**撤去**（s171）。挙動は元の B-#11（常に最初のクリックカードへ戻る）に復帰。再挑戦するなら別アプローチが必要（ライトボックスは Playwright で開けず目視必須なのも難点）。`lib/board/lightbox-return.ts` は削除済。
    - ✅ **バグ修正は残した（デプロイ済）**: ライトボックス開時に音あり盤面カード（Tier3 audioActive）の音が背後で鳴り続けるバグ → 開時に `setAudioActiveId(null)` ＋ CardsLayer の unmuted プレイヤを `!sourceCardId` でゲート。**目視確認推奨**。
 4. **#6 ライトボックス自動再生** — タグでスライドショー、動画は再生 → 終了で次カードへ。
 5. **#8 Share 画像の一時サーバー保管** — スクショ画像を一時的にサーバー（R2 等）へ → URL 付き画像を用意 → SNS 投稿で「本物画像 ＋ クリックで開ける」。s169 の「再構成しない」判断の再検討。
 6. **#5 収益化** — 機微につき詳細は `docs/private/IDEAS.md` 参照（アカウント無しで全機能無料、端末間同期のみ有料の案）。
 
-## 完了済（s170 この会話）
+## 完了済（s172 この会話）
 
-- **角丸を大きさ連動**（`min(20px, w*0.12)`）：盤面（CardsLayer）＋ Share collage（CollageCanvas）＋ 受信 /s（CardsLayer）。ライトボックス開閉のカクッ無し（`:root` 上書き）。
-- **ライトボックス開閉を高速化**（open 0.34 / close 0.30）。
-- **スクロールメーターを盤面外の下端バンドへ移動**（+20px lift・実測確認）。受信 /s メーターのリグレッション修正。
-- **Share select の「100 MAX」ピル削除**（重複＋ガタつき）。**Share バーをメーターより前面**（z 401/402）。
+- **#2 横並び TUNE 復刻**（commit `92a9ec0` / deploy `4a0e1653`・`allmarks.app` 反映）: 右縦ドロワー→ b317fa2 の hover 開閉・横アコーディオン。TSX/CSS を `_archive/TuneClassicBody.*`（＝b317fa2）から復元、paper 分岐（`useIsPaperTheme`＋paper CSS ブロック）は除いて**中立統一**。呼び出し側（BoardRoot/SharedBoard）の `isOpen`/`onOpenChange` を巻き戻し。テストは hover ベースへ。
+- 検証: **tsc0 / vitest 2077/0 / build OK**、Playwright（/board・WAVE）で hover→319×310 横並びパネル・プリセット5・W/G フェーダー・区切り・凡例5行を実測。
+- **事実訂正**: plan の「横並び用48行」は paper テーマ上書きで、`489caf7`（全メニュー中立化）が削除したもの → 復元しない判断。
+
+### 次セッションのキックオフ候補
+- **#2 の残**: (#1) 角丸 ON/OFF トグルを TUNE に同居／(#4) カード幅・ギャップのスナップ。
+- or **TUNE テーマ追従（案C・全メニュー一括）** をやるか、s163 中立化を維持するかをまず決める。
+- or 別バックログ（#6 ライトボックス自動再生／#8 Share 画像の一時サーバー保管）。

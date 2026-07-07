@@ -9011,3 +9011,29 @@ Phase 1（s170）で入れた TAG MODE（右端浮動パネル・複数選択機
 
 ### s171 追補2 — #7 は見送り撤去、音バグ修正は残す
 ライトボックスの「最後に見ていたカードへ戻る」(#7) は 2 案とも戻り先がきれいに出せずユーザー判断で撤去。元の B-#11（常に最初のクリックカードへ戻る）に復帰、`lib/board/lightbox-return.ts` 削除。**学び**: ライトボックスは Playwright で開けない（reorder-drag の setPointerCapture）ため FLIP/スクロール系は自動実測できず目視依存＝この手の繊細な視覚変更は着手前に「自動検証できない」前提を共有すべき。副産物の音バグ修正（開時に audioActive の音が裏で鳴り続ける → `setAudioActiveId(null)` ＋ `!sourceCardId` ゲート）は有用なので保持・デプロイ済。
+
+---
+
+## セッション 172 (2026-07-07) — #2 TUNE 復刻：s163 の横並び（横アコーディオン）TUNE を復活
+
+**ゴール**: 右縦ドロワー版 TUNE を、ユーザーが最も気に入っていた s163 の「横並び」TUNE（`components/board/_archive/TuneClassicBody.tsx.txt` ＝ 正本 `b317fa2:TuneTrigger.tsx`）へ差し替え復刻。実装→検証→デプロイまで自走。
+
+### 実施
+- **本体差し替え**: `TuneTrigger.tsx` / `.module.css` を b317fa2（横並び・hover 開閉）から復元。構成＝プリセット列｜彫り込み区切り｜W/G フェーダー＋操作凡例、`data-testid="tune-wrap"` の hover で `expanded`、700ms grace で close（クリック開閉・`ChromeDrawer`・`isOpen`/`onOpenChange` は撤去）。
+- **中立化（WAVE デフォルト見た目で統一）**: 復元にあたり **paper（羊皮紙）テーマ分岐は入れない**。TSX から `useIsPaperTheme` import と `paper` 分岐を除去、CSS から `:global(html[data-theme-id='paper-atelier'])` ブロック（b317fa2 の 337 行目以降）を除外。理由＝ s163 のメニュー中立化（`489caf7`「全メニューのテーマ分岐を剥がす」・ユーザー合意）に整合。
+- **呼び出し側巻き戻し**: `BoardRoot.tsx`（`isOpen={activeDrawer==='tune'}`/`onOpenChange` の 2 行削除・TUNE は `activeDrawer` 非参加に）、`SharedBoard.tsx`（`tuneOpen` state ＋ prop 2 行削除）。`d2fca70` の逆適用。
+- **テスト**: `TuneTrigger.test.tsx` を b317fa2 の hover ベース版（10 本）へ差し替え。
+
+### ★重要な事実訂正（plan/README の誤り・アンチ推測で確認）
+- CURRENT_GOAL/`_archive/README.md` が言う「TunePresetColumn.module.css の**横並び用 48 行**」は、実際に b317fa2↔HEAD で差分となる 48 行を確認したところ**全部 paper テーマの色上書き**（`.presetRow`/`.label`/`.led`/`.maker`）で、レイアウトとは無関係だった。
+- しかも 48 行を削除したのは横→縦の置換 `d2fca70` ではなく、**別の意図的コミット `489caf7`「全メニュー中立化」**（s163 ユーザー合意）。
+- → **48 行は復元しない**判断。README の記述前提が誤りだった旨を記録（将来 paper 追従を全メニューでやるなら別途）。
+
+### 未決（ユーザー判断待ち）
+- CURRENT_GOAL の「**併せて TUNE をテーマ追従に**（タグ絞り込みも追従要否を検討）」は s163 の中立化と正面衝突。TUNE だけ追従にすると SETTINGS/THEMES/SHARE/絞り込みと**ちぐはぐ**になるため、やるなら**全メニュー一括**で別セッション。今回は横並び復活のみ（案A）で確定。ユーザーも「いったん WAVE（デフォルト音波テーマ）の TUNE を復活」で合意。
+
+### 検証・出荷
+- **tsc0 / vitest 2077/0 / `pnpm build`（static export）OK**。
+- **Playwright**（/board・デフォルト WAVE・seed-demos で itemCount>0 にしオンボ回避＋DataHomeCard dismiss）で **hover→`data-open=true`・aria-expanded=true・319×310 の横並びパネル・プリセット5・W/G フェーダー各1・区切り・凡例5行・読み出し `267.84·97.21·DEFAULT`** を実測。目視で中立ダーク（paper 装飾なし）を確認。
+- commit `92a9ec0` → deploy `4a0e1653`（`allmarks.app` 反映）。
+- **学び**: 復刻タスクは「戻す対象の行が本当にその機能の行か」「消したのは本当にそのコミットか」を **git diff の実体で確認**してから着手（今回 plan の「48 行＝横並び用」前提が誤り）。CLAUDE.md のアンチ推測 5 原則がそのまま効いた。

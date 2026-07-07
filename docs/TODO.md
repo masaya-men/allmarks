@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 172 — ★#2 TUNE 復刻：s163 の横並び（横アコーディオン）TUNE を復活・本番反映済 deploy `4a0e1653`)
+
+- **横並び TUNE を復活**（commit `92a9ec0`・tsc0 / **vitest 2077/0** / クリーンビルドOK・`allmarks.app` 反映済）。右縦ドロワー版（`d2fca70`）→ **b317fa2 の hover 開閉・横アコーディオン**（プリセット列｜彫り込み区切り｜W/G フェーダー＋操作凡例）へ差し替え。正本は `components/board/_archive/TuneClassicBody.*`。Playwright（/board・デフォルト WAVE）で hover→319×310 パネル展開・プリセット5・W/G フェーダー・区切り・凡例5行を実測。
+- **★重要な事実訂正（plan/README の誤り）**：復刻手順が言う「TunePresetColumn.module.css の**横並び用48行**」は、実体は全部 **paper（羊皮紙）テーマの色上書き**で、レイアウトとは無関係。しかも消したのは `d2fca70` ではなく**別の意図的コミット `489caf7`「全メニュー中立化」**（s163 ユーザー合意：テーマは盤面だけに乗せ、メニューはどのテーマでも中立ダーク）。→ **48行は戻していない**。TUNE も paper 分岐（`useIsPaperTheme`）と paper CSS ブロックを除いて**中立（WAVE デフォルト見た目）で統一**した。
+- **未決（ユーザー判断待ち）**：CURRENT_GOAL の「TUNE をテーマ追従に／タグ絞り込みも追従要否」は s163 中立化と正面衝突する。TUNE だけ追従にすると他メニュー（SETTINGS/THEMES/SHARE/絞り込み）と**ちぐはぐ**。→ やるなら**全メニュー一括**で別セッション（案C）。今回は横並び復活のみ（案A）で確定。
+- **残りの TUNE 刷新セット（未着手）**：(#1) 角丸 ON/OFF トグルを TUNE に同居／(#4) カード幅・ギャップ調整で盤面左右端の余白が揃う所でスナップ。
+- **ユーザー実機目視の残**：横並び TUNE の hover 開閉が自然か・盤面上での位置（TUNE ラベル直下に展開）・フェーダー/プリセットの操作感。
+
 ### 直近の状態 (セッション 169 — ★SHARE 手動スクショの仕上げ＋COPY LINK（画像再構成なし）出荷・master マージ済・本番反映済／opus 全ブランチレビュー「READY TO MERGE」)
 
 - **4点を実装完了**（merge `--no-ff`・tsc0 / **vitest 2072/0** / クリーンビルドOK・`allmarks.app` 反映済 deploy `b6c16360`）。brainstorm→調査（getDisplayMedia/Web Share/永続許可）→spec→plan→**サブエージェント駆動8タスク＋各レビュー＋opus 全ブランチレビュー（READY TO MERGE）**。
