@@ -9008,3 +9008,6 @@ Phase 1（s170）で入れた TAG MODE（右端浮動パネル・複数選択機
 - **#4 ドラッグ端で自動スクロール**: CardsLayer のドラッグに rAF ループを追加、`[data-tag-scroll]` の上下バンドに入ったらリストをスクロール＋停止中でも再 hit-test。
 - SHARE 下部バーのボタンも丸ピル→角ばりに（前段）。
 - 検証: tsc0 / vitest 2079。実機で「16タグでも全名表示・切れ無し」「カード hover で art+gaming 表示」「端で scrollTop 0→244」「ドラッグ付与の union」を確認。本番反映。
+
+### s171 追補2 — #7 は見送り撤去、音バグ修正は残す
+ライトボックスの「最後に見ていたカードへ戻る」(#7) は 2 案とも戻り先がきれいに出せずユーザー判断で撤去。元の B-#11（常に最初のクリックカードへ戻る）に復帰、`lib/board/lightbox-return.ts` 削除。**学び**: ライトボックスは Playwright で開けない（reorder-drag の setPointerCapture）ため FLIP/スクロール系は自動実測できず目視依存＝この手の繊細な視覚変更は着手前に「自動検証できない」前提を共有すべき。副産物の音バグ修正（開時に audioActive の音が裏で鳴り続ける → `setAudioActiveId(null)` ＋ `!sourceCardId` ゲート）は有用なので保持・デプロイ済。
