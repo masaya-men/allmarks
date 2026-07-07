@@ -2066,7 +2066,10 @@ export function BoardRoot() {
   // change (see BoardRoot.module.css .canvasArrangeGuide).
   const [arrangeGuidePulse, setArrangeGuidePulse] = useState(false)
   useEffect((): (() => void) | undefined => {
-    if (sharePhase !== 'arrange') return undefined
+    if (sharePhase !== 'arrange') {
+      setArrangeGuidePulse(false)
+      return undefined
+    }
     setArrangeGuidePulse(true)
     const t = window.setTimeout((): void => setArrangeGuidePulse(false), 900)
     return (): void => window.clearTimeout(t)
