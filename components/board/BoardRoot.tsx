@@ -87,6 +87,8 @@ import { usePipWindow } from '@/lib/board/pip-window'
 import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
+import { copyShareLink } from '@/lib/share/copy-share-link'
+import { createShare } from '@/lib/share/api-client'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/share/selection'
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
@@ -2112,6 +2114,41 @@ export function BoardRoot() {
     })
   }, [shareSelectedItems, lightboxNavItems, tags, activeFilter, customWidths, cardWidthPx, cardGapPx, themeId, resolvedCustom])
 
+  // COPY LINK (arrange stage): build the /s payload from the ARRANGE selection
+  // (selectedIds — NOT shareSelectedItems, which is null here) in board order,
+  // filter:null. Generates NO image (thumb-less createShare); the /s OG falls
+  // back to the default card server-side.
+  const handleCopyShareLink = useCallback(async (): Promise<boolean> => {
+    const chosen = selectedInBoardOrder(items, selectedIds)
+    if (chosen.length === 0) return false
+    const buildShare = (): ShareDataV2 => buildShareDataFromBoard({
+      items: chosen.map((it) => ({
+        bookmarkId: it.bookmarkId,
+        url: it.url,
+        title: it.title,
+        description: it.description ?? undefined,
+        thumbnail: it.thumbnail ?? undefined,
+        aspectRatio: it.aspectRatio,
+        tags: it.tags,
+        cardWidth: customWidths[it.bookmarkId] ?? cardWidthPx,
+      })),
+      tags: tags.map((tg) => ({ id: tg.id, name: tg.name, color: tg.color })),
+      filter: null,
+      now: Date.now(),
+      themeId,
+      custom: resolvedCustom ?? undefined,
+      gap: cardGapPx,
+      defaultWidth: cardWidthPx,
+    })
+    const res = await copyShareLink({
+      buildShare,
+      createShare,
+      writeClipboard: (t: string): Promise<void> => navigator.clipboard.writeText(t),
+      origin: typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app',
+    })
+    return res.ok
+  }, [items, selectedIds, customWidths, cardWidthPx, tags, themeId, resolvedCustom, cardGapPx])
+
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
   // new path also persists mediaSlots from the same fetchTweetMeta call
@@ -2953,6 +2990,7 @@ export function BoardRoot() {
           <ShareToast
             count={selectedIds.size}
             hint={screenshotHint}
+            onCopyLink={handleCopyShareLink}
             onReselect={(): void => setSharePhase('select')}
             onDone={handleExitShareMode}
           />
