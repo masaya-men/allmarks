@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import { itemSkylineHeight } from './cards'
 import { computeFocusScrollY } from '@/lib/board/scroll-to-card'
+import { computeNavReturnScrollY } from '@/lib/board/lightbox-return'
 import { shouldShowScrollMeter } from '@/lib/board/scroll-meter-visibility'
 import {
   DEFAULT_THEME_ID,
@@ -1631,24 +1632,47 @@ export function BoardRoot() {
   )
   const lightboxItem = lightboxIndex >= 0 ? lightboxNavItems[lightboxIndex] : null
 
+  // #7: on chevron-nav the source card follows the viewed card, and if that
+  // card is off-screen the board jumps (instant — a tween behind the frosted
+  // backdrop would re-blur every frame) to centre it. So closing returns the
+  // FLIP to the LAST-VIEWED card (scrolled into view), not the first click.
+  const returnToViewedCard = useCallback((cardId: string): void => {
+    setLightboxSourceItemId(cardId)
+    const pos = layout.positions[cardId]
+    if (!pos) return
+    const targetY = computeNavReturnScrollY({
+      cardY: pos.y,
+      cardH: pos.h,
+      topPad: BOARD_TOP_PAD_PX,
+      viewportY: viewport.y,
+      viewportH: viewport.h,
+      contentH: contentBounds.height,
+    })
+    if (targetY !== null) {
+      setViewport((v) => ({ ...v, y: Math.max(0, Math.min(targetY, contentBounds.height - v.h)) }))
+    }
+  }, [layout.positions, viewport.y, viewport.h, contentBounds.height])
+
   const handleLightboxNav = useCallback((dir: -1 | 1): void => {
     if (lightboxNavItems.length === 0 || lightboxIndex < 0) return
     const next = ((lightboxIndex + dir) % lightboxNavItems.length + lightboxNavItems.length) % lightboxNavItems.length
     const nextId = lightboxNavItems[next]?.bookmarkId ?? null
     setLightboxItemId(nextId)
-    if (nextId) revalidateOnNav(nextId)
-    // Source id and origin rect are NOT touched here — close always
-    // returns to the originally clicked card regardless of how many
-    // chevron-navs the user performed in between (B-#11).
-  }, [lightboxNavItems, lightboxIndex, revalidateOnNav])
+    if (nextId) {
+      returnToViewedCard(nextId)
+      revalidateOnNav(nextId)
+    }
+  }, [lightboxNavItems, lightboxIndex, revalidateOnNav, returnToViewedCard])
 
   const handleLightboxJump = useCallback((index: number): void => {
     if (index < 0 || index >= lightboxNavItems.length) return
     const nextId = lightboxNavItems[index]?.bookmarkId ?? null
     setLightboxItemId(nextId)
-    if (nextId) revalidateOnIntent(nextId)
-    // Source id / origin rect preserved — see handleLightboxNav (B-#11).
-  }, [lightboxNavItems, revalidateOnIntent])
+    if (nextId) {
+      returnToViewedCard(nextId)
+      revalidateOnIntent(nextId)
+    }
+  }, [lightboxNavItems, revalidateOnIntent, returnToViewedCard])
 
   const handleDropOrder = useCallback(
     (orderedBookmarkIds: readonly string[]): void => {
