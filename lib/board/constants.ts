@@ -68,8 +68,8 @@ export const BOARD_Z_INDEX = {
   SHARE_CANVAS: 95,  // SHARE stage-2 (arrange) collage layer — above the canvas edge scrims (BoardRoot.module.css .canvas::before/::after z:80) + THEME_BG, below TOOLBAR (110) + SHARE_TOAST (116). isolation:isolate on CollageCanvas .root contains its INTRA_CANVAS_Z_BASE (~10+) order.
   DRAG_GHOST: 100,
   TOOLBAR: 110,
-  SHARE_SELECT_BAR: 115,  // selective-share bottom bar — above toolbar, below popovers
-  SHARE_TOAST: 116,  // collage-screenshot SHARE arrange-stage bottom bar — above select-bar, below popovers
+  SHARE_SELECT_BAR: 401,  // selective-share bottom bar — ABOVE the scroll meter (400) so it isn't covered during the select stage (s170); below CHROME_DRAWER (405). The select stage keeps the meter visible (unlike arrange, which hides it), so the bar must out-stack it.
+  SHARE_TOAST: 402,  // collage-screenshot SHARE arrange-stage bottom bar — above select-bar + scroll meter, below CHROME_DRAWER (405)
   POPOVER: 120,
   UNDO_TOAST: 130,
   PASTE_FEEDBACK: 135,
