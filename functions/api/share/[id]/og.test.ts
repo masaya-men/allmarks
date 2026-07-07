@@ -82,10 +82,17 @@ describe('GET /api/share/:id/og', () => {
     expect(buf.byteLength).toBeGreaterThan(0)
   })
 
-  it('returns 404 when R2 miss and KV entry has no thumb (= new share, R2 object lost)', async () => {
+  it('falls back to the default OG card when a share carries no thumb (= COPY LINK share, R2 miss + no KV thumb)', async () => {
     const noThumb: KVShareEntry = { share: sampleEntry.share }
     const encoded = await encodeKVPayload(noThumb)
     const ctx = makeCtx('aB3xY9', encoded, null)
+    const res = await onRequestGet(ctx as never)
+    expect(res.status).toBe(302)
+    expect(res.headers.get('location')).toBe('https://test.local/og.png')
+  })
+
+  it('still 404s a genuinely missing id (= KV entry does not exist)', async () => {
+    const ctx = makeCtx('qQ7wZ2', null, null)
     const res = await onRequestGet(ctx as never)
     expect(res.status).toBe(404)
   })
