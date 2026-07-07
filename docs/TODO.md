@@ -27,7 +27,8 @@
 - **(#1) 角丸 ON/OFF トグルを TUNE に同居**：TUNE ドロワー左列（プリセット下・破線区切り）に mixer 風スイッチ `CORNERS ROUND/SQUARE`（LED＋レバー、プリセット行と同じ視覚言語）。OFF で全カード角ゼロ、ON で従来の size-aware 角丸（`min(20, 幅×0.12)px`）。**ライトボックスも per-card `--card-radius` を継承して追従**。`BoardConfig.roundedCorners`（既定 true）で IDB 永続（`motionEnabled`/`bgTypoEnabled` と同じ器）。配線＝CardsLayer の per-card `--card-radius` に `!roundedCorners ? '0px' : …`。受信側 SharedBoard もローカルビュー設定として同トグルを配線。
 - **(#4) カード幅/ギャップの「左右余白が揃う所」スナップ**：盤面は skyline で左詰め＝端数が右端だけに帯として残る（左右不揃い）。純関数 `lib/board/fill-snap.ts`（`fillCandidates`/`snapToFill`・10テスト）で `N×幅 + (N−1)×ギャップ = 盤面幅` の値を算出。W/G フェーダーに**緑の目印**（`.fillMark`）を描画し、**離した瞬間**その近く（±10px）なら吸着。**ドラッグ中は自由・Shift 微調整中は無効**（precision モード尊重）。`containerWidth`(effectiveLayoutWidth) と他軸値を BoardRoot→TuneTrigger→FaderColumn へ配線。
 - 検証：Playwright e2e（`tests/e2e/tune-corners-and-snap.spec.ts`）で①角丸トグルが `--card-radius` を 20px⇔0px に切替②リロード後も square 永続③目印描画、を実測。スクショで丸⇔四角＋緑目印を目視。**フェーダー吸着は Playwright 駆動不可（setPointerCapture）→ 純関数＋fireEvent 単体テストで担保**。
-- **ユーザー実機目視の残**：CORNERS の操作感、スナップ吸着の強さ（±10px）、緑目印の視認性。
+- **同セッションで実機フィードバック2件も修正・本番反映・実機OK**：①角丸OFF時のライトボックス復帰で角が丸まる（radius ミラーの削除タイミングをモーフ完了後のみに分離）②再生中動画クリック→移行時の一瞬音（モーフのクローン `<video>` を muted 化。cloneNode は muted プロパティを引き継がない）。詳細は [TODO_COMPLETED.md](./TODO_COMPLETED.md) s173 追記。**#2 TUNE 刷新セットは完了。**
+- **残（任意の磨き）**：CORNERS の操作感、スナップ吸着の強さ（±10px）、緑目印の視認性。
 - **既知の非対応（任意）**：角丸 OFF は SHARE のコラージュ/共有画像には未追従（CollageCanvas は `var(--card-radius,20px)` フォールバック）。必要ならユーザー判断で追加。
 
 ### 直近の状態 (セッション 172 — ★#2 TUNE 復刻：s163 の横並び（横アコーディオン）TUNE を復活・本番反映済 deploy `4a0e1653`)
