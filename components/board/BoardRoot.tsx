@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
 import { itemSkylineHeight } from './cards'
 import { computeFocusScrollY } from '@/lib/board/scroll-to-card'
-import { computeNavReturnScrollY } from '@/lib/board/lightbox-return'
 import { shouldShowScrollMeter } from '@/lib/board/scroll-meter-visibility'
 import {
   DEFAULT_THEME_ID,
@@ -1260,23 +1259,6 @@ export function BoardRoot() {
     doFocus(cardId, pos)
   }, [layout.positions, doFocus])
 
-  // #7 helper: is a card scrolled off-screen relative to the current viewport?
-  // (computeNavReturnScrollY returns null when the card is fully visible.) Used
-  // by the Lightbox close to decide whether it needs to glide+glow the board to
-  // the last-viewed card so the return location is obvious.
-  const cardNeedsScrollIntoView = useCallback((cardId: string): boolean => {
-    const pos = layout.positions[cardId]
-    if (!pos) return false
-    return computeNavReturnScrollY({
-      cardY: pos.y,
-      cardH: pos.h,
-      topPad: BOARD_TOP_PAD_PX,
-      viewportY: viewport.y,
-      viewportH: viewport.h,
-      contentH: contentBounds.height,
-    }) !== null
-  }, [layout.positions, viewport.y, viewport.h, contentBounds.height])
-
   // Filter 変化 → 3 つの side-effect:
   //   (1) entryAnimCycle bump で復活カードに CRT bootup アニメ
   //   (2a) tags → 非 tags (= 絞り込み解除) + source 記憶あり → focusCard で
@@ -1636,21 +1618,13 @@ export function BoardRoot() {
   }, [])
 
   const handleLightboxClose = useCallback((): void => {
-    // Capture the last-viewed card BEFORE clearing so #7 can return there.
-    const last = lightboxItemId
     setLightboxItemId(null)
     // sourceItemId should already be null via the cross-fade callback
     // above, but clear defensively in case the callback path was skipped
     // (fallback close, no source card, etc.).
     setLightboxSourceItemId(null)
     setLightboxOriginRect(null)
-    // #7: if the user navigated to a card that's scrolled off-screen, glide the
-    // board to it + glow so it's obvious where the lightbox returned. Fires
-    // after the close tween (backdrop already gone) so the smooth scroll is
-    // fully visible and costs no moving-blur. On-screen returns keep the FLIP
-    // morph (handled in the Lightbox) and skip this.
-    if (last && cardNeedsScrollIntoView(last)) focusCard(last)
-  }, [lightboxItemId, cardNeedsScrollIntoView, focusCard])
+  }, [])
 
   // Nav scope = lightboxNavItems (what's currently visible on canvas, i.e.
   // the matched set when a tag filter is active). Items not on the board
@@ -1662,37 +1636,24 @@ export function BoardRoot() {
   )
   const lightboxItem = lightboxIndex >= 0 ? lightboxNavItems[lightboxIndex] : null
 
-  // #7: keep the board STILL while the lightbox is open (it sits behind a
-  // frosted backdrop — scrolling it there re-blurs every frame = shake/low-FPS).
-  // Instead, point the close's FLIP source at the viewed card only when it's
-  // on-screen (so the media morphs into it, visibly). When the viewed card is
-  // scrolled off-screen, drop the FLIP (source = null → plain fade) — the board
-  // then glides + glows to it AFTER close (handleLightboxClose), so the return
-  // location is unmistakable.
-  const returnToViewedCard = useCallback((cardId: string): void => {
-    setLightboxSourceItemId(cardNeedsScrollIntoView(cardId) ? null : cardId)
-  }, [cardNeedsScrollIntoView])
-
   const handleLightboxNav = useCallback((dir: -1 | 1): void => {
     if (lightboxNavItems.length === 0 || lightboxIndex < 0) return
     const next = ((lightboxIndex + dir) % lightboxNavItems.length + lightboxNavItems.length) % lightboxNavItems.length
     const nextId = lightboxNavItems[next]?.bookmarkId ?? null
     setLightboxItemId(nextId)
-    if (nextId) {
-      returnToViewedCard(nextId)
-      revalidateOnNav(nextId)
-    }
-  }, [lightboxNavItems, lightboxIndex, revalidateOnNav, returnToViewedCard])
+    if (nextId) revalidateOnNav(nextId)
+    // Source id and origin rect are NOT touched here — close always
+    // returns to the originally clicked card regardless of how many
+    // chevron-navs the user performed in between (B-#11).
+  }, [lightboxNavItems, lightboxIndex, revalidateOnNav])
 
   const handleLightboxJump = useCallback((index: number): void => {
     if (index < 0 || index >= lightboxNavItems.length) return
     const nextId = lightboxNavItems[index]?.bookmarkId ?? null
     setLightboxItemId(nextId)
-    if (nextId) {
-      returnToViewedCard(nextId)
-      revalidateOnIntent(nextId)
-    }
-  }, [lightboxNavItems, revalidateOnIntent, returnToViewedCard])
+    if (nextId) revalidateOnIntent(nextId)
+    // Source id / origin rect preserved — see handleLightboxNav (B-#11).
+  }, [lightboxNavItems, revalidateOnIntent])
 
   const handleDropOrder = useCallback(
     (orderedBookmarkIds: readonly string[]): void => {
