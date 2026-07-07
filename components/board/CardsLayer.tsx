@@ -1032,6 +1032,9 @@ export function CardsLayer({
   const selectionToggle = selectionMode?.onToggle ?? null
   const selectionSelectedIds = selectionMode?.selectedIds ?? null
   const onTagDrop = selectionMode?.onTagDrop ?? null
+  // TAG MODE = the selection machinery is being used to tag (vs. selective
+  // share). Only TAG MODE wires onTagDrop, so its presence is the signal.
+  const isTagMode = onTagDrop != null
   const tagGhostRef = useRef<HTMLDivElement | null>(null)
 
   // Tear down any lingering tag-drag ghost / attribute if we unmount mid-drag.
@@ -1073,35 +1076,15 @@ export function CardsLayer({
         if (g) g.style.transform = `translate(${x + 16}px, ${y + 16}px)`
       }
 
-      const move = (ev: globalThis.PointerEvent): void => {
-        const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
-        if (!dragging) {
-          if (!canTagDrag || distance < CLICK_THRESHOLD_PX) return
-          dragging = true
-          const count = targetIds().length
-          const g = document.createElement('div')
-          g.setAttribute('data-tag-drag-ghost', 'true')
-          g.style.cssText =
-            'position:fixed;left:0;top:0;z-index:2147483000;pointer-events:none;' +
-            'display:flex;align-items:center;gap:8px;padding:8px 13px 8px 11px;' +
-            'border-radius:999px;background:rgba(18,18,22,0.92);' +
-            'border:1px solid rgba(40,241,0,0.5);color:#eaffea;' +
-            'font:700 12px/1 var(--font-sans, system-ui);letter-spacing:0.04em;' +
-            'box-shadow:0 10px 30px rgba(0,0,0,0.45),0 0 16px rgba(40,241,0,0.25);' +
-            'white-space:nowrap;will-change:transform;'
-          g.innerHTML =
-            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
-            'stroke="#28F100" stroke-width="2" stroke-linecap="round" ' +
-            'stroke-linejoin="round"><rect x="7" y="3" width="12" height="15" rx="2"/>' +
-            '<path d="M4 7v12a2 2 0 0 0 2 2h9"/></svg><span>' +
-            count + (count > 1 ? ' cards' : ' card') + '</span>'
-          document.body.appendChild(g)
-          tagGhostRef.current = g
-          document.documentElement.setAttribute('data-tag-dragging', 'true')
-        }
-        positionGhost(ev.clientX, ev.clientY)
-        const hit =
-          document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[data-tag-id],[data-tag-new]') ?? null
+      // Latest pointer, mirrored so the rAF auto-scroll ticker can re-hit-test
+      // after it scrolls the tag list under a stationary pointer.
+      let latestX = startX
+      let latestY = startY
+      let rafId: number | null = null
+
+      const updateHover = (x: number, y: number): void => {
+        positionGhost(x, y)
+        const hit = document.elementFromPoint(x, y)?.closest('[data-tag-id],[data-tag-new]') ?? null
         if (hit !== hoverEl) {
           clearHover()
           if (hit) {
@@ -1112,10 +1095,69 @@ export function CardsLayer({
         }
       }
 
+      // Auto-scroll the panel's tag list when the pointer nears its top/bottom
+      // edge (so tags pushed out of the capped-height window are reachable
+      // mid-drag). Mirrors FilterPill's drag edge-scroll.
+      const EDGE_BAND_PX = 46
+      const EDGE_MAX_SPEED_PX = 14
+      const autoScrollTick = (): void => {
+        if (!dragging) { rafId = null; return }
+        const sc = document.querySelector('[data-tag-scroll="true"]')
+        if (sc instanceof HTMLElement && sc.scrollHeight > sc.clientHeight + 1) {
+          const r = sc.getBoundingClientRect()
+          let dy = 0
+          if (latestY < r.top + EDGE_BAND_PX) {
+            dy = -EDGE_MAX_SPEED_PX * Math.min(1, (r.top + EDGE_BAND_PX - latestY) / EDGE_BAND_PX)
+          } else if (latestY > r.bottom - EDGE_BAND_PX) {
+            dy = EDGE_MAX_SPEED_PX * Math.min(1, (latestY - (r.bottom - EDGE_BAND_PX)) / EDGE_BAND_PX)
+          }
+          if (dy !== 0) {
+            const before = sc.scrollTop
+            sc.scrollTop += dy
+            if (sc.scrollTop !== before) updateHover(latestX, latestY)
+          }
+        }
+        rafId = requestAnimationFrame(autoScrollTick)
+      }
+
+      const move = (ev: globalThis.PointerEvent): void => {
+        latestX = ev.clientX
+        latestY = ev.clientY
+        const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+        if (!dragging) {
+          if (!canTagDrag || distance < CLICK_THRESHOLD_PX) return
+          dragging = true
+          const count = targetIds().length
+          const g = document.createElement('div')
+          g.setAttribute('data-tag-drag-ghost', 'true')
+          g.style.cssText =
+            'position:fixed;left:0;top:0;z-index:2147483000;pointer-events:none;' +
+            'display:flex;align-items:center;gap:7px;padding:7px 12px 7px 10px;' +
+            'border-radius:7px;background:rgba(8,8,10,0.94);' +
+            'border:1px solid rgba(40,241,0,0.45);color:rgba(255,255,255,0.94);' +
+            'font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:11px;' +
+            'font-weight:600;letter-spacing:0.08em;text-transform:uppercase;' +
+            'box-shadow:0 10px 30px rgba(0,0,0,0.5),0 0 16px rgba(40,241,0,0.2);' +
+            'white-space:nowrap;will-change:transform;'
+          g.innerHTML =
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" ' +
+            'stroke="#28F100" stroke-width="2" stroke-linecap="round" ' +
+            'stroke-linejoin="round"><rect x="7" y="3" width="12" height="15" rx="1.5"/>' +
+            '<path d="M4 7v12a2 2 0 0 0 2 2h9"/></svg><span>' +
+            count + (count > 1 ? ' cards' : ' card') + '</span>'
+          document.body.appendChild(g)
+          tagGhostRef.current = g
+          document.documentElement.setAttribute('data-tag-dragging', 'true')
+          rafId = requestAnimationFrame(autoScrollTick)
+        }
+        updateHover(ev.clientX, ev.clientY)
+      }
+
       const end = (ev: globalThis.PointerEvent): void => {
         el.removeEventListener('pointermove', move)
         el.removeEventListener('pointerup', end)
         el.removeEventListener('pointercancel', end)
+        if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null }
         if (el.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId)
         tagGhostRef.current?.remove()
         tagGhostRef.current = null
@@ -1515,7 +1557,10 @@ export function CardsLayer({
                 is hovered (= silent-board principle — meta UI stays invisible
                 at rest). Pills click → toggle in the board-wide tag filter,
                 same semantics as the chrome TagFilterBar chips. */}
-            {!receiverMode && !selectionMode && !taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
+            {/* Existing-tag strip. Shown on the normal board AND in TAG MODE
+                (read-only there, so the user can see which cards are already
+                tagged while dragging) — but NOT in selective-share. */}
+            {!receiverMode && (!selectionMode || isTagMode) && !taggedOut && it.tags.length > 0 && onTagFilterToggle !== undefined && (
               <TagIndicatorStrip
                 tags={it.tags
                   .map((tid) => tagsById.get(tid))
@@ -1528,6 +1573,7 @@ export function CardsLayer({
                 onTagClick={(tagId): void => onTagFilterToggle?.(tagId, it.bookmarkId)}
                 onTagContextMenu={onTagContextMenu}
                 activeContextTagId={activeContextTagId}
+                readOnly={isTagMode}
               />
             )}
             {/* + TAG affordance — top-left corner, mirrors the visual language

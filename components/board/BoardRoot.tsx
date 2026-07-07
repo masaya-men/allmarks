@@ -3072,6 +3072,7 @@ export function BoardRoot() {
       {tagMode && (
         <TagDropPanel
           tags={tags}
+          tagCounts={tagCounts}
           selectedCount={selectedIds.size}
           onDone={handleExitTagMode}
           creating={tagDraft !== null}

@@ -8999,3 +8999,12 @@ Phase 1（s170）で入れた TAG MODE（右端浮動パネル・複数選択機
 
 ### 残り
 - Phase 4: Triage コード撤去（オンボーディングの `/triage?onboarding=1` 経路だけ実 Triage を使う点に注意）。
+
+### s171 追補 — TAG パネルを AllMarks のトンマナに一致（FilterPill 化）+ 2機能
+
+ユーザー指摘（角丸四角/色チップは AllMarks で未使用・タグ名が切れる破綻・トンマナが違う）を受けて、TAG パネルを**FilterPill ドロップダウンの双子**に作り直した。破綻の真因は `.list` が flex 列で、タグ超過時に `flex-shrink` で各行が潰れて字が切れていたこと（実機再現で `clientHeight 16px < line-height 17px` を確認）。
+- **トンマナ一致**: 等幅フォント（ui-monospace）、**中空の丸ドット**＋小文字タグ名＋3桁カウント（`tagCounts`）、行は箱・色チップ無し。`+ NEW TAG` を**最上部に固定**（FilterPill の ALL 固定と同じ作法）、タグは中央スクロール＋上下フェード（`computeTagScrollEdge`）。ドロップ強調は FilterPill の active 行と同じ「緑ドット＋緑アンダーライン＋+N」。DONE はカプセルをやめ緑テキスト。ドラッグゴーストも等幅・角ばりに。
+- **#3 タグ付け中もカード hover で既存タグ表示**: `TagIndicatorStrip` に `readOnly` を追加し、TAG MODE で表示専用描画（ポインタは常にカードへ抜けるのでドラッグ開始を邪魔しない）。CardsLayer のゲートを `!selectionMode || isTagMode` に。
+- **#4 ドラッグ端で自動スクロール**: CardsLayer のドラッグに rAF ループを追加、`[data-tag-scroll]` の上下バンドに入ったらリストをスクロール＋停止中でも再 hit-test。
+- SHARE 下部バーのボタンも丸ピル→角ばりに（前段）。
+- 検証: tsc0 / vitest 2079。実機で「16タグでも全名表示・切れ無し」「カード hover で art+gaming 表示」「端で scrollTop 0→244」「ドラッグ付与の union」を確認。本番反映。

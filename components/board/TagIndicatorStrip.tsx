@@ -23,6 +23,10 @@ interface Props {
   readonly activeContextTagId?: string | null
   /** Maximum pills rendered before collapsing the tail into a "+N" badge. */
   readonly maxVisible?: number
+  /** Display-only mode (TAG MODE): show the card's existing tags on hover but
+   *  never capture pointer events — a press must fall through to the card so it
+   *  can start a select / tag-drag gesture. Clicks/right-clicks are inert. */
+  readonly readOnly?: boolean
 }
 
 // Bleed offsets — small negative values let the strip overhang the card's
@@ -103,6 +107,7 @@ export function TagIndicatorStrip({
   onTagContextMenu,
   activeContextTagId,
   maxVisible = 3,
+  readOnly = false,
 }: Props): ReactElement | null {
   const isPaper = useIsPaperTheme()
   if (tags.length === 0) return null
@@ -136,7 +141,7 @@ export function TagIndicatorStrip({
         // the theft onto the popover, so the low z is what actually fixes it.)
         zIndex: isPaper ? 15 : STRIP_Z_INDEX,
         opacity: isHovered ? 1 : 0,
-        pointerEvents: isHovered ? 'auto' : 'none',
+        pointerEvents: readOnly ? 'none' : isHovered ? 'auto' : 'none',
         transition: 'opacity 120ms ease-out',
       }}
     >
