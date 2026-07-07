@@ -320,6 +320,16 @@ function createLightboxClone(sourceCard: HTMLElement, rect: CloneRect): HTMLElem
   clone.querySelectorAll<HTMLElement>('[data-photo-content]').forEach((n) => {
     n.style.visibility = 'visible'
   })
+  // The morph clone must never emit audio. cloneNode copies ATTRIBUTES, not the
+  // `muted` PROPERTY (React sets muted as a property only), so a cloned board
+  // <video> — which was muted on the board — mounts UNMUTED and autoplays with
+  // SOUND for the duration of the open/close morph ("a playing video blips with
+  // sound as the lightbox opens"). Force every cloned video muted; the frame
+  // still shows (visual unchanged), only the audio is killed. YouTube/iframe
+  // Tier-1 players are muted via their &mute=1 URL and Tier-3 sound-on cards are
+  // already silenced on click (handleCardClick → setAudioActiveId(null)), so
+  // only <video> needs this belt-and-braces mute.
+  clone.querySelectorAll('video').forEach((v) => { (v as HTMLVideoElement).muted = true })
   return clone
 }
 
@@ -465,6 +475,16 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
   // inline --card-radius, so this :root override never touches them. Runs as
   // a layout effect (before paint) so the clone — built in a later passive
   // effect — is created with the correct radius from its first frame.
+  // Split into two effects on purpose. The SET runs per source card (so it
+  // updates on nav) and deliberately has NO cleanup: at the close cross-fade
+  // the parent nulls `sourceCardId` ~150ms BEFORE unmount (to reveal the source
+  // card under the still-flying return clone — see handleLightboxSourceShouldShow).
+  // If the set-effect tore the override down there, :root would fall back to the
+  // GLOBAL radius (20px) and a square (corners-off) card would visibly ROUND its
+  // corners for the last frames of the return morph. Removal is owned by the
+  // open→closed effect below, which fires only once the whole lightbox is gone
+  // (item === null, i.e. after the close tween's onComplete) — by then the
+  // board's own per-card inline --card-radius has taken over cleanly.
   useLayoutEffect(() => {
     if (!sourceCardId) return
     const src = document.querySelector<HTMLElement>(`[data-bookmark-id="${sourceCardId}"]`)
@@ -473,11 +493,21 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
     const rootStyle = document.documentElement.style
     rootStyle.setProperty('--card-radius', r)
     rootStyle.setProperty('--lightbox-media-radius', r)
-    return () => {
+  }, [sourceCardId])
+
+  const isLightboxOpen = item != null
+  useLayoutEffect(() => {
+    const rootStyle = document.documentElement.style
+    const clear = (): void => {
       rootStyle.removeProperty('--card-radius')
       rootStyle.removeProperty('--lightbox-media-radius')
     }
-  }, [sourceCardId])
+    // Open: keep the mirror; only clear on a true unmount-while-open. Closed
+    // (item gone, morph finished): clear now so the board owns the radius again.
+    if (isLightboxOpen) return clear
+    clear()
+    return undefined
+  }, [isLightboxOpen])
 
   useSmoothWheelScroll(textRef, { disabled: !item })
   // closeButtonRef intentionally absent — see "No programmatic auto-focus"
