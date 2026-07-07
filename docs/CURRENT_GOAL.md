@@ -10,11 +10,11 @@
 
 ## バックログ（順不同・どれからでも）
 
-1. **#3 タグ付け刷新【Phase 2+3 完了・デプロイ済】** — spec: `docs/superpowers/specs/2026-07-07-tag-mode-drag-drop-design.md`。パネルは**右端に浮く小さめのタグ専用・上下中央・程よい高さで内部スクロール**。
-   - ✅ **Phase 1〜3 完了（s171・デプロイ済）**: MANAGE TAGS → in-page TAG MODE。カードをタップで複数選択 → 右端タグ行へドラッグ&ドロップで追加付与（union・既存タグ保持・選択は継続）。ドラッグ中はカーソル追従ゴースト＋対象行のグリーン強調「+N」バッジ＋着地パルス。`+ NEW TAG` にドロップ/クリックでインライン作成→即付与。ロジックは `lib/board/tag-assign.ts`（`resolveDropTargets`/`computeTagAssignments`・単体9本）。CardsLayer の選択 pointer handler にドラッグ検出＋`elementFromPoint` hit-test を追加、BoardRoot が `handleTagDrop`/`persistTags`/`createTag` を配線。tsc0・tag-assign 9/9・Playwright で IDB 書込みまで実測。
-   - ⏭ **Phase 4（次）**: Triage コード撤去（TAG MODE が置換確定なので dormant → 削除）。オンボーディングの `/triage?onboarding=1` 経路だけは要確認（まだ実 Triage を使う）。
+1. **#3 タグ付け刷新【完了・デプロイ済】** — spec: `docs/superpowers/specs/2026-07-07-tag-mode-drag-drop-design.md`。
+   - ✅ **Phase 1〜3 ＋ トンマナ一致 ＋ 空クリック解除（s171・デプロイ済）**: MANAGE TAGS → in-page TAG MODE。タップ複数選択 → 右端パネルのタグ行へドラッグ&ドロップで追加付与（union・選択継続）。ドラッグ中ゴースト＋対象行グリーン強調「+N」＋着地パルス。`+ NEW TAG`（最上部固定）にドロップ/クリックでインライン作成→即付与。**パネルは FilterPill と同じ等幅・中空ドット・小文字名・3桁カウント**（`reference_allmarks_chrome_vocab_filterpill`）。タグ付け中もカード hover で既存タグ表示（`TagIndicatorStrip` readOnly）。ドラッグ端で自動スクロール。**盤面の縁/カード隙間の空クリックで解除**（DONE/Esc に加え）。ロジック `lib/board/tag-assign.ts`（単体9本）。tsc0・vitest2079・Playwright で IDB 書込み/挙動を実測。
+   - ⏭ **Phase 4（任意・後回し）**: Triage コード撤去。オンボーディングの `/triage?onboarding=1` だけまだ実 Triage を使う点に注意（低優先・見た目価値なし・オンボ破壊リスクあり）。
 2. **TUNE 刷新セット** — (#2) 前に気に入っていた版へ**戻す**（カード間ギャップ調整時に**右端カードが見えず**調整しづらい問題）＋ **TUNE をテーマ追従**に（タグ絞り込みも追従要否を検討）。(#1) **角丸 ON/OFF** トグルを TUNE に同居（盤面/Share 共通で効くはず）。(#4) カード幅/ギャップ調整時、**盤面左右端の余白が揃う所でスナップ**。
-3. **#7 ライトボックスの戻り先** — ナビ後に閉じると「**最後に見ていたカード**」の位置へスクロールして戻す（現状は最初のクリックカードに戻る＝`BoardRoot handleLightboxNav` が source を更新しない意図的実装）。①source 更新 ＋ ②画面外なら盤面スクロール + FLIP 着地。
+3. **#7 ライトボックスの戻り先** — ナビ後に閉じると「**最後に見ていたカード**」の位置へスクロールして戻す（現状は最初のクリックカードに戻る＝`BoardRoot handleLightboxNav` が source を更新しない意図的実装 B-#11）。①source 更新 ＋ ②画面外なら盤面スクロール + FLIP 着地。**⚠ 検証注意**: ライトボックスは Playwright で開けない（reorder-drag の `setPointerCapture` が合成/CDP ポインタを弾く。probe 済 s171）。純粋ロジック（scroll-target / source 更新）を単体テストし、FLIP/スクロールの見た目は**本番 目視**で確認する前提。#6 も同様。
 4. **#6 ライトボックス自動再生** — タグでスライドショー、動画は再生 → 終了で次カードへ。
 5. **#8 Share 画像の一時サーバー保管** — スクショ画像を一時的にサーバー（R2 等）へ → URL 付き画像を用意 → SNS 投稿で「本物画像 ＋ クリックで開ける」。s169 の「再構成しない」判断の再検討。
 6. **#5 収益化** — 機微につき詳細は `docs/private/IDEAS.md` 参照（アカウント無しで全機能無料、端末間同期のみ有料の案）。
