@@ -2683,8 +2683,6 @@ export function BoardRoot() {
                 onChangeGap={handleCardGapChange}
                 onReset={handleResetWidthGap}
                 onApplyPreset={onApplyPreset}
-                isOpen={activeDrawer === 'tune'}
-                onOpenChange={(open) => setActiveDrawer(open ? 'tune' : null)}
               />
               <ExtensionEntry
                 quickTagEnabled={quickTagEnabled}

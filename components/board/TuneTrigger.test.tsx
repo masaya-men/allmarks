@@ -1,20 +1,18 @@
 import { describe, it, expect, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { TuneTrigger } from './TuneTrigger'
-
-const baseProps = {
-  widthPx: 267.84,
-  gapPx: 97.21,
-  onChangeWidth: vi.fn(),
-  onChangeGap: vi.fn(),
-  onReset: vi.fn(),
-  onApplyPreset: vi.fn(),
-}
 
 describe('TuneTrigger — skeleton', () => {
   it('renders TUNE as a button with proper data-testid in idle state', () => {
     const { getByTestId } = render(
-      <TuneTrigger {...baseProps} isOpen={false} onOpenChange={vi.fn()} />,
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
     )
     const btn = getByTestId('tune-trigger')
     expect(btn.tagName).toBe('BUTTON')
@@ -23,83 +21,166 @@ describe('TuneTrigger — skeleton', () => {
     expect(btn.getAttribute('aria-expanded')).toBe('false')
   })
 
-  it('does not render the drawer when closed', () => {
-    render(<TuneTrigger {...baseProps} isOpen={false} onOpenChange={vi.fn()} />)
-    expect(screen.queryByTestId('tune-drawer')).toBeNull()
+  it('renders a wrap span with button and empty drawer slot when collapsed', () => {
+    const { getByTestId, container } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    const wrap = container.querySelector('[data-testid="tune-wrap"]')
+    expect(wrap).not.toBeNull()
+    expect(wrap?.contains(btn)).toBe(true)
+    const drawer = wrap?.querySelector('[data-testid="tune-drawer"]')
+    expect(drawer).not.toBeNull()
+    expect(drawer?.getAttribute('data-open')).toBe('false')
   })
 })
 
-describe('TuneTrigger — click open', () => {
-  it('requests open when the trigger is clicked', () => {
-    const onOpenChange = vi.fn()
-    render(<TuneTrigger {...baseProps} isOpen={false} onOpenChange={onOpenChange} />)
-    fireEvent.click(screen.getByTestId('tune-trigger'))
-    expect(onOpenChange).toHaveBeenCalledWith(true)
-  })
-
-  it('requests close when the trigger is clicked while open', () => {
-    const onOpenChange = vi.fn()
-    render(<TuneTrigger {...baseProps} isOpen onOpenChange={onOpenChange} />)
-    fireEvent.click(screen.getByTestId('tune-trigger'))
-    expect(onOpenChange).toHaveBeenCalledWith(false)
-  })
-
-  it('renders faders when isOpen', () => {
-    render(<TuneTrigger {...baseProps} isOpen onOpenChange={vi.fn()} />)
-    expect(screen.getByTestId('tune-drawer')).toBeTruthy()
-  })
-
-  it('aria-expanded reflects isOpen', () => {
-    render(<TuneTrigger {...baseProps} isOpen onOpenChange={vi.fn()} />)
-    expect(screen.getByTestId('tune-trigger').getAttribute('aria-expanded')).toBe('true')
-  })
-})
-
-describe('TuneTrigger — settled readout while open', () => {
-  it('shows flat W/G readout after the scramble settles', async () => {
-    const { rerender } = render(<TuneTrigger {...baseProps} isOpen={false} onOpenChange={vi.fn()} />)
-    const btn = screen.getByTestId('tune-trigger')
-    rerender(<TuneTrigger {...baseProps} isOpen onOpenChange={vi.fn()} />)
+describe('TuneTrigger — flat readout', () => {
+  it('settled readout has flat number spans, not chip or sliderWrap', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
     expect(btn.querySelector('[data-cell-kind^="num-"]')).toBeNull()
+    expect(btn.querySelector('[data-scope]')).toBeNull()
     expect(btn.textContent).toBe('267.84 · 97.21 · DEFAULT')
   })
 })
 
-describe('TuneTrigger — close scramble', () => {
-  it('closing (isOpen -> false) returns the trigger label to TUNE', async () => {
-    const { rerender } = render(<TuneTrigger {...baseProps} isOpen={false} onOpenChange={vi.fn()} />)
-    const btn = screen.getByTestId('tune-trigger')
-    rerender(<TuneTrigger {...baseProps} isOpen onOpenChange={vi.fn()} />)
+describe('TuneTrigger — hover open', () => {
+  it('on mouseenter, expands aria-expanded=true and renders the W/G readout', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
+
+    fireEvent.mouseEnter(wrap)
+    // Wait for full settle (≈ 21*11ms + 190ms = 421ms), pad to 500ms
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+
+    expect(btn.getAttribute('aria-expanded')).toBe('true')
+    // Settled readout text (whitespace-collapsed cells together)
+    expect(btn.textContent).toBe('267.84 · 97.21 · DEFAULT')
+  })
+})
+
+describe('TuneTrigger — close on mouseleave', () => {
+  it('mouseleave after 1000ms grace returns to idle TUNE label', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
+
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
     expect(btn.textContent).toBe('267.84 · 97.21 · DEFAULT')
 
-    rerender(<TuneTrigger {...baseProps} isOpen={false} onOpenChange={vi.fn()} />)
-    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    fireEvent.mouseLeave(wrap)
+    // Wait grace (1000ms) + close animation (≈ 21*11 + 190 = 421ms) = ~1500ms safe
+    await new Promise<void>((resolve) => setTimeout(resolve, 1500))
+    expect(btn.getAttribute('aria-expanded')).toBe('false')
     expect(btn.textContent).toBe('TUNE')
+  })
+
+  it('mouseenter during grace cancels the pending close', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    fireEvent.mouseLeave(wrap)
+    // Re-enter during grace
+    await new Promise<void>((resolve) => setTimeout(resolve, 50))
+    fireEvent.mouseEnter(wrap)
+    await new Promise<void>((resolve) => setTimeout(resolve, 200))
+    expect(btn.getAttribute('aria-expanded')).toBe('true')
   })
 })
 
 describe('TuneTrigger — drawer with FaderColumns', () => {
-  it('drawer contains W and G FaderColumns when open', () => {
-    render(<TuneTrigger {...baseProps} isOpen onOpenChange={vi.fn()} />)
-    const drawer = screen.getByTestId('tune-drawer')
+  it('drawer contains W and G FaderColumns when expanded', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
+    )
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    const drawer = getByTestId('tune-drawer')
+    expect(drawer.getAttribute('data-open')).toBe('true')
     expect(drawer.querySelector('[data-scope="w"]')).not.toBeNull()
     expect(drawer.querySelector('[data-scope="g"]')).not.toBeNull()
   })
 
-  it('drag on W FaderColumn calls onChangeWidth', () => {
+  it('drag on W FaderColumn calls onChangeWidth', async () => {
     const onChangeWidth = vi.fn()
-    render(
-      <TuneTrigger {...baseProps} onChangeWidth={onChangeWidth} isOpen onOpenChange={vi.fn()} />,
+    const { container, getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={onChangeWidth}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
     )
-    // ChromeDrawer portals its panel to document.body, so the drawer's DOM
-    // lives outside RTL's render `container` — query the document instead.
-    const wUnit = document.body.querySelector('[data-scope="w"] > div') as HTMLElement
+    fireEvent.mouseEnter(getByTestId('tune-wrap'))
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    const wUnit = container.querySelector('[data-scope="w"] > div') as HTMLElement
     vi.spyOn(wUnit, 'getBoundingClientRect').mockReturnValue({
       top: 0, bottom: 110, left: 0, right: 40, width: 40, height: 110,
       x: 0, y: 0, toJSON: () => ({}),
     } as DOMRect)
+    // Iteration 7: pointerDown alone no longer jumps. A pointerMove with
+    // a non-zero movementY is required to fire onChange via the drag path.
     fireEvent.pointerDown(wUnit, { clientX: 20, clientY: 50, pointerId: 1 })
     fireEvent.pointerMove(wUnit, { clientX: 20, clientY: 40, movementY: -10, pointerId: 1 })
     expect(onChangeWidth).toHaveBeenCalled()
@@ -107,27 +188,50 @@ describe('TuneTrigger — drawer with FaderColumns', () => {
 })
 
 describe('TuneTrigger — reset', () => {
-  it('clicking the ↺ cell calls onReset without toggling the drawer', async () => {
+  it('clicking the ↺ cell calls onReset', async () => {
     const onReset = vi.fn()
-    const onOpenChange = vi.fn()
-    const { container, rerender } = render(
-      <TuneTrigger {...baseProps} onReset={onReset} isOpen={false} onOpenChange={onOpenChange} />,
+    const { getByTestId, container } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={onReset}
+        onApplyPreset={vi.fn()}
+      />,
     )
-    rerender(<TuneTrigger {...baseProps} onReset={onReset} isOpen onOpenChange={onOpenChange} />)
+    const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
+    fireEvent.mouseEnter(wrap)
     await new Promise<void>((resolve) => setTimeout(resolve, 500))
+
     const resetCell = container.querySelector('[data-cell-kind="reset"]') as HTMLElement
     expect(resetCell).toBeTruthy()
     fireEvent.click(resetCell)
     expect(onReset).toHaveBeenCalledOnce()
-    expect(onOpenChange).not.toHaveBeenCalled()
   })
-})
 
-describe('TuneTrigger — ChromeDrawer close affordances', () => {
-  it('clicking the ChromeDrawer close button requests close', () => {
-    const onOpenChange = vi.fn()
-    render(<TuneTrigger {...baseProps} isOpen onOpenChange={onOpenChange} />)
-    fireEvent.click(screen.getByTestId('tune-drawer-close'))
-    expect(onOpenChange).toHaveBeenCalledWith(false)
+  it('clicking the TUNE button does not pin it open (mouseleave still closes)', async () => {
+    const { getByTestId } = render(
+      <TuneTrigger
+        widthPx={267.84}
+        gapPx={97.21}
+        onChangeWidth={vi.fn()}
+        onChangeGap={vi.fn()}
+        onReset={vi.fn()}
+        onApplyPreset={vi.fn()}
+      />,
+    )
+    const btn = getByTestId('tune-trigger')
+    const wrap = getByTestId('tune-wrap')
+
+    fireEvent.mouseEnter(wrap)
+    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    fireEvent.click(btn)
+    // No click-to-pin — leaving still closes after the grace + close animation.
+    fireEvent.mouseLeave(wrap)
+    await new Promise<void>((resolve) => setTimeout(resolve, 1500))
+    expect(btn.getAttribute('aria-expanded')).toBe('false')
+    expect(btn.textContent).toBe('TUNE')
   })
 })

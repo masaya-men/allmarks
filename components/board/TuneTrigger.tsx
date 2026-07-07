@@ -5,7 +5,6 @@ import { pickRandomChar } from '@/lib/board/scramble'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { PRESETS, findActivePreset } from '@/lib/board/tune-presets'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { ChromeDrawer } from './ChromeDrawer'
 import { FaderColumn } from './FaderColumn'
 import { TunePresetColumn } from './TunePresetColumn'
 import styles from './TuneTrigger.module.css'
@@ -24,6 +23,7 @@ function getActiveLabel(widthPx: number, gapPx: number): string {
 const STAGGER_MS = 11
 const SCRAMBLE_MIN_MS = 125
 const SCRAMBLE_MAX_MS = 190
+const LEAVE_GRACE_MS = 700
 
 type CellKind = 'label' | 'num' | 'dim'
 type CellScope = 'w' | 'g' | 'reset' | null
@@ -126,8 +126,6 @@ type Props = {
   readonly onChangeGap: (next: number) => void
   readonly onReset: () => void
   readonly onApplyPreset: (id: import('@/lib/board/tune-presets').PresetId) => void
-  readonly isOpen: boolean
-  readonly onOpenChange: (open: boolean) => void
   readonly label?: string
 }
 
@@ -138,17 +136,18 @@ export function TuneTrigger({
   onChangeGap,
   onReset,
   onApplyPreset,
-  isOpen,
-  onOpenChange,
   label,
 }: Props): ReactElement {
   const { t } = useI18n()
   const visibleLabel = label ?? t('board.chrome.tune')
   const btnRef = useRef<HTMLButtonElement>(null)
+  const wrapRef = useRef<HTMLSpanElement>(null)
   const phaseRef = useRef<Phase>('idle-tune')
   const cellsRef = useRef<AnimatedCell[]>([])
   const phaseStartRef = useRef<number>(0)
   const rafIdRef = useRef<number | null>(null)
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [expanded, setExpanded] = useState(false)
 
   // Grab feedback: TUNE is its own component (not a ChromeButton), so it needs
   // to observe the same global grab flag BoardRoot sets on <html> and react in
@@ -240,6 +239,7 @@ export function TuneTrigger({
     }))
     phaseRef.current = 'opening'
     phaseStartRef.current = performance.now()
+    setExpanded(true)
     if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
     tick()
   }, [tick])
@@ -264,6 +264,7 @@ export function TuneTrigger({
       rafIdRef.current = requestAnimationFrame(closingTick)
     } else {
       phaseRef.current = 'idle-tune'
+      setExpanded(false)
       writeIdleTune()
       rafIdRef.current = null
     }
@@ -293,16 +294,17 @@ export function TuneTrigger({
     writeIdleTune()
     return (): void => {
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
     }
   }, [writeIdleTune])
 
   // Idle micro-scramble (= ScrollMeter-style single-char wobble) while
-  // closed. Picks a random non-space index every 3-6s, scrambles that
-  // char for 100-160ms, then resets. Suspended while the drawer is open
-  // (= the reveal scramble owns the button content). Respects
+  // collapsed. Picks a random non-space index every 3-6s, scrambles that
+  // char for 100-160ms, then resets. Suspended when expanded (= hover/
+  // sticky open: the reveal scramble owns the button content). Respects
   // prefers-reduced-motion.
   useEffect(() => {
-    if (isOpen) return
+    if (expanded) return
     // Always start from the plain idle label. This ALSO restores it whenever the
     // effect re-runs mid-scramble — e.g. grabbing toggles off and cleanup cancels
     // an in-flight churn on a scrambled frame — so the label can never get stuck
@@ -379,29 +381,34 @@ export function TuneTrigger({
       if (timer) clearTimeout(timer)
       if (rafId !== null) cancelAnimationFrame(rafId)
     }
-  }, [isOpen, visibleLabel, writeIdleTune, grabbing])
+  }, [expanded, visibleLabel, writeIdleTune, grabbing])
 
-  // The scramble is purely a reaction to isOpen transitions now — visibility
-  // itself is owned by ChromeDrawer via the isOpen prop.
-  const prevOpenRef = useRef(isOpen)
-  useEffect(() => {
-    if (isOpen === prevOpenRef.current) return
-    prevOpenRef.current = isOpen
-    if (isOpen) startOpen(); else startClose()
-  }, [isOpen, startOpen, startClose])
+  const handleMouseEnter = useCallback((): void => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+    startOpen()
+  }, [startOpen])
 
-  // Click handles the reset cell (↺) when the readout is showing, otherwise
-  // toggles the drawer open/closed.
+  const handleMouseLeave = useCallback((): void => {
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    leaveTimerRef.current = setTimeout(() => {
+      startClose()
+      leaveTimerRef.current = null
+    }, LEAVE_GRACE_MS)
+  }, [startClose])
+
+  // Click only handles the reset cell (↺). The drawer is hover-controlled;
+  // there is no click-to-pin (removed at user request — hover open/close only).
   const handleClick = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
     const target = e.target as HTMLElement
     if (target.dataset.cellKind === 'reset') {
       e.preventDefault()
       e.stopPropagation()
       onReset()
-      return
     }
-    onOpenChange(!isOpen)
-  }, [onReset, onOpenChange, isOpen])
+  }, [onReset])
 
   // While the readout is rendered, value changes from drag (= FaderColumn
   // in the drawer) must reflow the readout text immediately. We re-render
@@ -442,32 +449,38 @@ export function TuneTrigger({
   }, [activeLabel, tick])
 
   return (
-    <>
+    <span
+      ref={wrapRef}
+      className={styles.wrap}
+      data-testid="tune-wrap"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <button
         ref={btnRef}
         type="button"
         data-testid="tune-trigger"
         className={styles.trigger}
         aria-haspopup="dialog"
-        aria-expanded={isOpen}
+        aria-expanded={expanded}
         onClick={handleClick}
         data-glitch-text={visibleLabel}
       >
         {visibleLabel}
       </button>
-      <ChromeDrawer
-        isOpen={isOpen}
-        onClose={(): void => onOpenChange(false)}
-        title="TUNE"
-        testId="tune-drawer"
-        closeLabel={t('board.theme.modalCloseLabel')}
+      <div
+        className={styles.drawer}
+        data-testid="tune-drawer"
+        data-open={expanded ? 'true' : 'false'}
+        aria-hidden={!expanded}
       >
-        <div className={styles.tuneBody}>
-          <TunePresetColumn
-            widthPx={widthPx}
-            gapPx={gapPx}
-            onApply={onApplyPreset}
-          />
+        <TunePresetColumn
+          widthPx={widthPx}
+          gapPx={gapPx}
+          onApply={onApplyPreset}
+        />
+        <span className={styles.drawerDivider} aria-hidden="true" />
+        <div className={styles.drawerRight}>
           <div className={styles.faderGroup}>
             <FaderColumn
               scope="w"
@@ -511,7 +524,7 @@ export function TuneTrigger({
             </div>
           </div>
         </div>
-      </ChromeDrawer>
-    </>
+      </div>
+    </span>
   )
 }
