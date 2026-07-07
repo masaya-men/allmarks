@@ -63,6 +63,7 @@ import { ExtensionEntry } from './ExtensionEntry'
 import { ThemeModal } from './ThemeModal'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
+import { TagDropPanel } from './TagDropPanel'
 import { BoardChrome } from './BoardChrome'
 import { PaperFramePlate } from './chrome/PaperFramePlate'
 import { PaperWaxSeal } from './chrome/PaperWaxSeal'
@@ -396,6 +397,9 @@ export function BoardRoot() {
   // SenderShareModal helper (phase 3 reuse); null in the phase-1 flow.
   // selectionScrollY = the (dormant) modal preview's local scroll for a selection.
   const [sharePhase, setSharePhase] = useState<'select' | 'arrange' | null>(null)
+  // TAG MODE (drag-drop tagging) — in-page replacement for the Triage manage
+  // page. Reuses the SHARE selection machinery (selectedIds + handleSelectToggle).
+  const [tagMode, setTagMode] = useState<boolean>(false)
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
   // Free-placement layout for the arrange stage (owned here, passed to
   // CollageCanvas). Discarded on exit — the temporary collage is never persisted.
@@ -1979,8 +1983,31 @@ export function BoardRoot() {
     setActiveDrawer(null)
     setShareSelectedIds(null)
     setSelectedIds(new Set())
+    setTagMode(false)
     setSharePhase('select')
   }, [])
+
+  // TAG MODE mirrors SHARE select but tags the selection instead of collaging
+  // it. Same selectedIds + handleSelectToggle; the two modes are mutually
+  // exclusive (entering one clears the other).
+  const handleEnterTagMode = useCallback((): void => {
+    setActiveDrawer(null)
+    setSharePhase(null)
+    setSelectedIds(new Set())
+    setTagMode(true)
+  }, [])
+
+  const handleExitTagMode = useCallback((): void => {
+    setTagMode(false)
+    setSelectedIds(new Set())
+  }, [])
+
+  useEffect((): (() => void) | undefined => {
+    if (!tagMode) return undefined
+    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') handleExitTagMode() }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [tagMode, handleExitTagMode])
 
   const handleSelectToggle = useCallback(
     (bookmarkId: string): void => {
@@ -2583,11 +2610,11 @@ export function BoardRoot() {
                   // otherwise → 'untagged'). A single-tag board filter
                   // still passes through with its mode so the user keeps
                   // their cohort context.
-                  if (activeFilter.kind === 'tags' && activeFilter.tagIds.length === 1) {
-                    router.push(`/triage?mode=tag:${activeFilter.tagIds[0]}`)
-                  } else {
-                    router.push('/triage')
-                  }
+                  // s170: MANAGE TAGS now opens the in-page TAG MODE (drag-drop
+                  // tagging) instead of navigating to the Triage swipe page.
+                  // Triage stays reachable via the onboarding branch above and
+                  // is otherwise dormant (removed in a later phase).
+                  handleEnterTagMode()
                 }}
               />
               <ChromeButton
@@ -2778,7 +2805,7 @@ export function BoardRoot() {
                 isScrolling={isScrolling}
                 entryAnimCycle={entryAnimCycle}
                 forceTagButtonVisible={forceCardTagVisible}
-                selectionMode={sharePhase === 'select' ? { selectedIds, onToggle: handleSelectToggle } : null}
+                selectionMode={sharePhase === 'select' || tagMode ? { selectedIds, onToggle: handleSelectToggle } : null}
               />
             </div>
             )}
@@ -2972,6 +2999,9 @@ export function BoardRoot() {
       </PipPortal>
       <UndoToast input={toast} />
       <PasteSaveFeedback feedback={pasteFeedback} themeId={themeId} />
+      {tagMode && (
+        <TagDropPanel tags={tags} selectedCount={selectedIds.size} onDone={handleExitTagMode} />
+      )}
       {sharePhase === 'select' && (
         <ShareSelectBar
           count={selectedIds.size}
