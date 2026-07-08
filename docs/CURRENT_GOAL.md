@@ -1,34 +1,27 @@
-# 次セッションのゴール — ★スマホ専用ライトボックスを作る（束A の続き）
+# 次セッションのゴール — ★スマホのネイティブスクロールが実機で効かない件を直す（最優先・ほぼ原因確定）
 
-## 正本計画（毎回最初に読む）
+## 状況（s179 末）
+- モバイル盤面を **JS パン/慣性 → ブラウザ標準の overflow スクロール**に載せ替えた（本番反映済）。
+- Playwright では構造・回帰OK（`.mobileScrollContainer` = overflow-y:auto/pan-y、scrollTop=400 でカード400px移動、**デスクトップ回帰ゼロ**）。
+- **だが実機（スマホ）でスクロールが全く反応しない**（ユーザー確認）。
 
-**`docs/private/2026-07-08-release-runway-plan.md`**（非公開）＋ このファイル。
-s178 でモバイル盤面の土台が本番反映済み（下記「直近の完了」）。次は**スマホ専用ライトボックス**。
+## 原因の見立て（最有力・ほぼ確実）
+- **カード自体（CardNode）の `touch-action: none` が残っている**（[CardNode.module.css:12](../components/board/CardNode.module.css#L12)）。
+- モバイルは密グリッドでカードが画面をほぼ埋める → 指が必ずカードに落ちる → カードの `touch-action:none` がネイティブ縦スクロールを塞ぐ。
+- InteractionLayer は `pan-y` に緩めた（[InteractionLayer.tsx](../components/board/InteractionLayer.tsx) の isMobile 分岐）が、**カード（CardNode）を緩め忘れた**。
+- **Playwright は JS で直接 scrollTop を動かしたので touch-action を無視＝すり抜けた**。この種のタッチスクロールは**実機でしか検証できない**（重要な教訓）。
 
-## ★次にやること = スマホ専用ライトボックス（ユーザー確定仕様）
+## 次にやること（ここ一点でほぼ直る見込み）
+1. **モバイル時、カードの `touch-action` を `pan-y` に緩める**（CardNode。`data-lock-card-scroll` 経由 or media query or isMobile prop）。
+2. ③テキストカード内部停止は **`.titleScroll` だけ `touch-action:none`** で維持（globals.css の `[data-lock-card-scroll] [data-card-scroll]`）。カード全体は pan-y、内部スクロール要素だけ none。
+3. 他に `touch-action:none` で塞いでいる要素がないか洗い出す（`.cardNode` の子、ResizeHandle 等。モバイル非表示のはずだが要確認）。
+4. **実機で必ず確認**（Playwright はすり抜ける）。スクロールが効いたら、タップでライトボックス／②上部タップ／③テキスト停止も実機で再確認。
 
-- **タップでメディアを中央に大きく表示**（画像・動画・テキストカード）。
-- **キャプションは画面下部にチラ見せ（peek）→ タップで下から上にスライドイン**（ボトムシート）。
-- **縦スワイプで前後のカードへめくる**（PCの左右送りと同じ意味。現状はホイール/矢印のみ＝タッチ swipe が無い）。
-- **閉じる**＝提案: 下スワイプで閉じる＋✕も残す（ユーザーに1行確認してから）。
-- 言語ボタンは既にモバイル非表示済み（この中で最終確認）。
-- **デスクトップのライトボックスは1pxも変えない**（全部 `isMobile` / `@media(max-width:640px)` ゲート）。
+## s179 で完成・信じてよい土台（Playwright実測済み）
+- `.mobileScrollContainer`（overflow-y:auto + 高さ contentBounds.height の spacer）を BoardRoot に isMobile 分岐で配線済み・構造は正しい。
+- scroll→viewport.y 同期（`handleMobileScroll`＝モバイル唯一の viewport.y writer）、深リンク/②タップの `scrollTo` 化、済み。
+- 全部 `isMobile` 分岐で**デスクトップは回帰ゼロ**（Playwrightで実測）。JS 慣性/跳ね返り・momentum-scroll.ts は撤去済み。
+- 残るは **touch-action の塞ぎを外すだけ**の見込み。
 
-### 実装の勘所（s178 調査済・信じてよい／行番号はズレ得る）
-
-- 本体 [Lightbox.tsx](../components/board/Lightbox.tsx)（**2264行・大型**）。構造: `.backdrop`(dim/クリックで閉じる z100) → `.stage`(z300, 中央寄せ, ナビchevron) → `.frame`(内容, クリックで閉じる, 閉じる✕ + メディア + テキスト)。非tweetは `.media`(LightboxMedia) + `.text`(DefaultText) の2カラム。tweetは `<TweetColumns>`。カード種別ごとに分岐レンダラ多数（image/instagram/video/tweet/text）。
-- ナビは**ホイール(deltaX/deltaY)＋矢印キー＋nav prop(chevron/dots)**。`nav.onNav(-1|1)`。**タッチ swipe ハンドラは無い**＝追加が必要（縦スワイプ→ `nav.onNav`、下スワイプ→ close）。既存 wheel の deltaY→nav の向きに合わせる。
-- FLIP開閉モーフ（カード矩形から拡大）は既存で優秀＝**モバイルでも流用**。レイアウトだけ `@media` でモバイル化（メディア全幅中央＋テキストをボトムシート化）。
-- CSS: [Lightbox.module.css](../components/board/Lightbox.module.css)。`.frame`/`.media`/`.text`/`.backdrop`。ここに `@media(max-width:640px)` を足す。
-- キャプション peek→展開は**新規 state（collapsed/expanded）＋タップ＋CSS transition**。`.text` をモバイルでは下部固定シート化。
-- 検証: モバイル実測は 390×844/dsf3。**CDP合成タッチは1ドラッグにつき pointermove を1回しか配信しない**＝swipe/滑らかさは実機確認（memory `reference_playwright_board_share_verify`）。カードタップ→ライトボックス移行の合成ポインタも不可＝実機。
-
-## その後（順番確定・ユーザー承認済）
-
-1. スマホ専用ライトボックス（今回） → 2. **スマホ専用タグ付け**（選択→下部の横スクロールタグをタップで付与） → 3. **ピンチでカードリサイズ**（仕上げ）。
-
-## 直近の完了（s178 — モバイル盤面の土台＋操作系、本番反映済）
-
-- 外枠なし全画面・**3列密グリッド**・左上 AllMarks・右上 FILTER・**ボトムナビ**(TAG/THEME/MOTION/MORE⋯)。全部 `MOBILE_BP_PX=640` ゲート、デスクトップは回帰なし（1489確認）。
-- **タップ=Lightbox / ドラッグ=盤面スクロール（カード上でも）/ 並べ替え・リサイズハンドル・hover操作系・言語ボタンはモバイル非表示**。絞り込みメニュー開時のタップは閉じるだけ（Lightbox並行を防止）。
-- 詳細は memory `project_mobile_board_direction` と TODO_COMPLETED s178。
+## 本番の状態（要ユーザー判断）
+- 現在の本番 `allmarks.app` は**モバイルでスクロール不能**。前版に戻す選択肢あり（ただし前版も感触は今ひとつ）。次セッション冒頭で touch-action を直して即デプロイが最短。

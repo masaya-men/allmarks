@@ -21,6 +21,12 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 179 — スマホスクロールを慣性→跳ね返り→本物のネイティブスクロールへ転換／★実機でスクロール不能・次で touch-action 修正)
+
+- **当初 (a) JS慣性を実装**（`momentum-scroll.ts`・業界標準値 τ=325/POWER0.8/rubberband0.15、22テスト）→ ①慣性減速 ②上部タップで先頭 ③テキストカード内部スクロール停止 ④端の跳ね返り を順に出荷。だが**ユーザー実機で「スクロールがストレス・カードにタップ取られる・途中でビヨン」**＝(a)方式の限界。
+- **方針転換 (b)：スマホだけブラウザ標準の overflow スクロールに載せ替え**（ユーザー承認）。CardsLayer の自前パン/慣性/跳ね返り撤去・カードタップを native click に／BoardRoot に `.mobileScrollContainer`(overflow-y:auto)+spacer、scroll→viewport.y 同期(`handleMobileScroll`＝モバイル唯一の writer)／InteractionLayer touch-action モバイル pan-y／②・深リンク(`handleScrollMeterJump`)を `scrollTo` 化。**全て isMobile 分岐でデスクトップ回帰ゼロ**。`momentum-scroll.ts` 削除。tsc0/vitest2154/ビルドOK。**Playwright実測でデスクトップ回帰ゼロ＋モバイル scrollTop=400でカード400px移動**を確認して本番反映。
+- **★だが実機でスクロール全く効かず**。**原因確定的**＝カード自体 [CardNode.module.css:12](../components/board/CardNode.module.css#L12) `touch-action:none` の緩め忘れ（密グリッドで指が必ずカードに落ち塞がれる）。**Playwright は JS scroll で touch-action すり抜け＝実機のみで露見**。次セッションで touch-action を `pan-y` に緩めれば直る見込み。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 178 — ★スマホ盤面の土台＋操作系を出荷・本番反映済／次はスマホ専用ライトボックス)
 
 - **モバイル盤面を全面的にスマホ仕様に**（ユーザー方針＝計画書の「上部chrome整理」案を破棄して**全画面・ボトムナビ**に転換）。全部 `MOBILE_BP_PX=640` / `@media(max-width:640px)` ゲート＝**デスクトップは1pxも変わらない**（1489回帰スクショ確認済）。tsc0 / vitest 2154 全緑 / ビルドOK / 本番 `allmarks.app` 反映済（4回デプロイ）。
