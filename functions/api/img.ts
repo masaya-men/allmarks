@@ -45,6 +45,13 @@ function errResponse(status: number, message: string): Response {
   })
 }
 
+// 「画像として取得できない」失敗はすべて 404 で返す。理由: Cloudflare は Worker/Pages
+// が返す 5xx を自前の "error code: 5xx" ページに差し替える (400/415 等の 4xx は素通し)。
+// 呼び出し側 (<img> / dom-to-image の XHR) は「200 画像かどうか」だけを見て、非 2xx なら
+// onError → PlaceholderCard にフォールバックするので、正確な status より「CF に差し替え
+// られず・キャッシュされず素直に届く 4xx」の方が撮影フォールバックとして確実。
+const UPSTREAM_UNAVAILABLE = 404
+
 /**
  * レスポンス body を最大 maxBytes まで読む。超過したら残りをキャンセルして null を返す
  * (画像は途中で切ると壊れるので、truncate ではなく reject)。ピークメモリは maxBytes +
@@ -111,7 +118,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
       signal: AbortSignal.timeout(8000),
     })
   } catch {
-    return errResponse(502, 'Upstream fetch failed')
+    return errResponse(UPSTREAM_UNAVAILABLE, 'Upstream fetch failed')
   }
 
   // 早期リターンする前に upstream の body を必ず捨てる。workerd は fetch 済み body を
@@ -146,7 +153,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
     }
 
     if (!res.ok) {
-      return bail(502, `Upstream returned ${res.status}`)
+      return bail(UPSTREAM_UNAVAILABLE, `Upstream returned ${res.status}`)
     }
 
     const contentType = normalizeContentType(res.headers.get('content-type'))
@@ -158,7 +165,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
 
     const bytes = await readCappedBytes(res, MAX_IMAGE_BYTES)
     if (!bytes) {
-      return errResponse(502, 'Image too large or unreadable')
+      return errResponse(UPSTREAM_UNAVAILABLE, 'Image too large or unreadable')
     }
 
     return new Response(bytes, {
@@ -173,8 +180,8 @@ export async function onRequest(context: PagesContext): Promise<Response> {
       },
     })
   } catch {
-    // 想定外の例外 (body stream error 等) でも CF に 502 クラッシュを返させず、自前の
-    // errResponse で綺麗に閉じる → 呼び出し側の <img> は placeholder にフォールバック。
-    return bail(502, 'Image processing failed')
+    // 想定外の例外 (body stream error 等) でも自前の errResponse で綺麗に閉じる →
+    // 呼び出し側の <img> は placeholder にフォールバック。
+    return bail(UPSTREAM_UNAVAILABLE, 'Image processing failed')
   }
 }

@@ -97,17 +97,17 @@ describe('img proxy — rejects non-images', () => {
   })
 })
 
-describe('img proxy — upstream failures', () => {
-  it('502 when upstream is not ok', async () => {
+describe('img proxy — upstream failures (404 so Cloudflare passes it through, not a rebranded 5xx)', () => {
+  it('404 when upstream is not ok', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => imgResponse(PNG, { status: 404, contentType: 'image/png' })))
     const res = await onRequest(makeCtx('https://pbs.twimg.com/dead.png'))
-    expect(res.status).toBe(502)
+    expect(res.status).toBe(404)
   })
 
-  it('502 when fetch throws', async () => {
+  it('404 when fetch throws', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network') }))
     const res = await onRequest(makeCtx('https://cdn.example.com/a.png'))
-    expect(res.status).toBe(502)
+    expect(res.status).toBe(404)
   })
 
   it('400 when a redirect lands on a blocked host', async () => {
