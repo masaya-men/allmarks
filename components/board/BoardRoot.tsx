@@ -320,11 +320,10 @@ export function BoardRoot() {
   // without going through stale closures.
   const viewportRef = useRef(viewport)
   viewportRef.current = viewport
-  // Mobile rubber-band: pixels the board is over-scrolled past an edge (the
-  // clamped viewport.y cannot express this). CardsLayer's fling/drag computes
-  // the rubberbanded offset and pushes it here; it is added to the card
-  // transform below, mobile only. Stays 0 on desktop.
-  const [mobileOverscrollY, setMobileOverscrollY] = useState(0)
+  // Mobile native scroll: the real overflow container that owns touch scrolling
+  // (built below, mobile only). Its scrollTop is mirrored into viewport.y so the
+  // background / culling / deep-links keep following, exactly as on desktop.
+  const mobileScrollRef = useRef<HTMLDivElement | null>(null)
 
   // Undo / redo: in-memory only (clears on reload, matches Figma / Notion
   // industry-standard behaviour). Each mutating board action pushes a
@@ -1187,10 +1186,15 @@ export function BoardRoot() {
     [contentBounds.height, markScrollActive],
   )
 
-  // Mobile rubber-band setter: CardsLayer computes the (rubberbanded) overscroll
-  // offset and pushes it here; it is added to the card transform (mobile only).
-  const handleOverscrollY = useCallback((offset: number): void => {
-    setMobileOverscrollY(offset)
+  // Mobile native scroll → mirror scrollTop into viewport.y (one-way). This is
+  // the SOLE writer of viewport.y on mobile, so background / culling / deep-links
+  // follow with no two-way sync. Desktop keeps its own wheel / reorder writers.
+  const handleMobileScroll = useCallback((): void => {
+    const el = mobileScrollRef.current
+    if (!el) return
+    const y = el.scrollTop
+    viewportRef.current = { ...viewportRef.current, y }
+    setViewport((v) => (v.y === y ? v : { ...v, y }))
   }, [])
 
   // ScrollMeter click/drag → animated scroll-to-y. requestAnimationFrame loop
@@ -1207,6 +1211,13 @@ export function BoardRoot() {
   const scrollAnimRef = useRef<number | null>(null)
   const lastJumpAtRef = useRef<number>(0)
   const handleScrollMeterJump = useCallback((targetY: number): void => {
+    // Mobile owns scrolling natively: drive the real scroll container so the
+    // background / culling follow via handleMobileScroll. Animating viewport.y
+    // (the desktop path below) would NOT move the native scroll position.
+    if (isMobile) {
+      mobileScrollRef.current?.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' })
+      return
+    }
     const now = performance.now()
     const isDragLike = now - lastJumpAtRef.current < 80
     lastJumpAtRef.current = now
@@ -1251,7 +1262,7 @@ export function BoardRoot() {
       }
     }
     scrollAnimRef.current = requestAnimationFrame(tick)
-  }, [viewport.y, contentBounds.height, markScrollActive])
+  }, [viewport.y, contentBounds.height, markScrollActive, isMobile])
 
   // Inner scroll-and-glow primitive driven by the layout's stored position
   // for the card, NOT a DOM measurement. CardsLayer culls off-screen cards
@@ -2959,6 +2970,7 @@ export function BoardRoot() {
             onScroll={handleScroll}
             spaceHeld={spaceHeld}
             wiggle={grabWiggle}
+            isMobile={isMobile}
           >
             {/* grid-paper: VIEWPORT-anchored grid (screen-fixed, NOT in a pan
                 wrapper) so the pattern always centres on the viewport — the
@@ -3062,78 +3074,103 @@ export function BoardRoot() {
                 EMPTY themed canvas (spec §1.3): the theme background layers above
                 stay, but the live grid must NOT show through the collage gaps.
                 Stage 'select' and null keep the grid rendering normally. */}
-            {sharePhase !== 'arrange' && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                transform: `translate3d(calc(${horizontalOffset - viewport.x}px + var(--grab-x, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), calc(${BOARD_TOP_PAD_PX - viewport.y - (isMobile ? mobileOverscrollY : 0)}px + var(--grab-y, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), 0)`,
-                willChange: 'transform',
-                pointerEvents: 'none',
-              }}
-            >
-              <CardsLayer
-                themeId={themeId}
-                items={filteredItems}
-                viewport={viewport}
-                viewportWidth={effectiveLayoutWidth}
-                cardGapPx={layoutCardGapPx}
-                roundedCorners={roundedCorners}
-                hoveredBookmarkId={hoveredBookmarkId}
-                audioActiveId={audioActiveId}
-                onToggleAudio={handleToggleAudio}
-                audioVolume={audioVolume}
-                audioPaused={audioPaused}
-                onAudioVolumeChange={setAudioVolume}
-                onAudioTogglePause={handleAudioTogglePause}
-                spaceHeld={spaceHeld}
-                onHoverChange={setHoveredBookmarkId}
-                onClick={handleCardClick}
-                onDrop={handleDropOrder}
-                onDelete={handleCardDelete}
-                inTrash={activeFilter.kind === 'archive'}
-                persistMeasuredAspect={persistMeasuredAspect}
-                displayMode={displayMode}
-                newlyAddedIds={newlyAddedIds}
-                defaultCardWidth={layoutCardWidthPx}
-                customWidths={layoutCustomWidths}
-                onCardResize={handleCardResize}
-                onCardResizeEnd={handleCardResizeEnd}
-                onCardResetSize={handleCardResetSize}
-                sourceCardId={lightboxSourceItemId}
-                onPanY={handlePanY}
-                onOverscrollY={handleOverscrollY}
-                isMobile={isMobile}
-                motionEnabled={motionEnabled}
-                matchedBookmarkIds={matchedBookmarkIds}
-                allTags={tags}
-                onTagToggle={handleTagToggle}
-                onTagCreate={handleTagCreate}
-                onTagFilterToggle={(tagId, sourceBookmarkId): void => {
-                  // カードのタグピル click 時の source bookmarkId を memo。
-                  // 解除時の useEffect で focusCard に渡して元 scroll 位置に
-                  // 戻す source-aware navigation を実現する (= dropdown 経由
-                  // の filter 変化は sourceBookmarkId undefined なので
-                  // scroll-to-top に流れる、 既存挙動と互換)。
-                  if (sourceBookmarkId) lastClickedSourceRef.current = sourceBookmarkId
-                  handleFilterChange(toggleTagInFilter(activeFilter, tagId))
-                }}
-                onTagContextMenu={openTagContextMenu}
-                activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
-                isScrolling={isScrolling}
-                entryAnimCycle={entryAnimCycle}
-                forceTagButtonVisible={forceCardTagVisible}
-                selectionMode={
-                  tagMode
-                    ? { selectedIds, onToggle: handleSelectToggle, onTagDrop: handleTagDrop }
-                    : sharePhase === 'select'
-                      ? { selectedIds, onToggle: handleSelectToggle }
-                      : null
-                }
-              />
-            </div>
-            )}
+            {sharePhase !== 'arrange' && (() => {
+              const cards = (
+                <CardsLayer
+                  themeId={themeId}
+                  items={filteredItems}
+                  viewport={viewport}
+                  viewportWidth={effectiveLayoutWidth}
+                  cardGapPx={layoutCardGapPx}
+                  roundedCorners={roundedCorners}
+                  hoveredBookmarkId={hoveredBookmarkId}
+                  audioActiveId={audioActiveId}
+                  onToggleAudio={handleToggleAudio}
+                  audioVolume={audioVolume}
+                  audioPaused={audioPaused}
+                  onAudioVolumeChange={setAudioVolume}
+                  onAudioTogglePause={handleAudioTogglePause}
+                  spaceHeld={spaceHeld}
+                  onHoverChange={setHoveredBookmarkId}
+                  onClick={handleCardClick}
+                  onDrop={handleDropOrder}
+                  onDelete={handleCardDelete}
+                  inTrash={activeFilter.kind === 'archive'}
+                  persistMeasuredAspect={persistMeasuredAspect}
+                  displayMode={displayMode}
+                  newlyAddedIds={newlyAddedIds}
+                  defaultCardWidth={layoutCardWidthPx}
+                  customWidths={layoutCustomWidths}
+                  onCardResize={handleCardResize}
+                  onCardResizeEnd={handleCardResizeEnd}
+                  onCardResetSize={handleCardResetSize}
+                  sourceCardId={lightboxSourceItemId}
+                  onPanY={handlePanY}
+                  isMobile={isMobile}
+                  motionEnabled={motionEnabled}
+                  matchedBookmarkIds={matchedBookmarkIds}
+                  allTags={tags}
+                  onTagToggle={handleTagToggle}
+                  onTagCreate={handleTagCreate}
+                  onTagFilterToggle={(tagId, sourceBookmarkId): void => {
+                    if (sourceBookmarkId) lastClickedSourceRef.current = sourceBookmarkId
+                    handleFilterChange(toggleTagInFilter(activeFilter, tagId))
+                  }}
+                  onTagContextMenu={openTagContextMenu}
+                  activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
+                  isScrolling={isScrolling}
+                  entryAnimCycle={entryAnimCycle}
+                  forceTagButtonVisible={forceCardTagVisible}
+                  selectionMode={
+                    tagMode
+                      ? { selectedIds, onToggle: handleSelectToggle, onTagDrop: handleTagDrop }
+                      : sharePhase === 'select'
+                        ? { selectedIds, onToggle: handleSelectToggle }
+                        : null
+                  }
+                />
+              )
+              // Mobile: a REAL overflow-scroll container owns touch scrolling
+              // (native inertia / rubber-band, zero JS). Its scrollTop mirrors
+              // into viewport.y via handleMobileScroll. A tall spacer supplies the
+              // scroll range; the inner wrapper offsets cards by the top pad +
+              // h-offset to match the desktop transform's origin. Desktop is the
+              // exact same node as before (untouched).
+              return isMobile ? (
+                <div
+                  ref={mobileScrollRef}
+                  onScroll={handleMobileScroll}
+                  className={styles.mobileScrollContainer}
+                >
+                  <div style={{ position: 'relative', width: '100%', height: `${contentBounds.height}px` }}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        transform: `translate(${horizontalOffset}px, ${BOARD_TOP_PAD_PX}px)`,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {cards}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    transform: `translate3d(calc(${horizontalOffset - viewport.x}px + var(--grab-x, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), calc(${BOARD_TOP_PAD_PX - viewport.y}px + var(--grab-y, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), 0)`,
+                    willChange: 'transform',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {cards}
+                </div>
+              )
+            })()}
           </InteractionLayer>
           </div>
           {!loading && showOnboarding && onboardingDbRef.current && (

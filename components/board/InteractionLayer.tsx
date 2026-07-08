@@ -25,6 +25,11 @@ type InteractionLayerProps = {
   /** Empty-board grab-wiggle controller. When enabled, a plain left-drag on the
    *  bare layer nudges the world and springs back instead of scrolling. */
   readonly wiggle?: GrabWiggleController
+  /** Mobile (touch): the board scrolls natively via a real overflow container
+   *  (BoardRoot), so this overlay must NOT swallow touch. When true it drops
+   *  touch-action to pan-y and disables its own pointer/wheel handlers, letting
+   *  taps reach cards (onClick) and swipes reach the native scroller. */
+  readonly isMobile?: boolean
   readonly children?: ReactNode
 }
 
@@ -33,6 +38,7 @@ export function InteractionLayer({
   onScroll,
   spaceHeld,
   wiggle,
+  isMobile = false,
   children,
 }: InteractionLayerProps) {
   const dragRef = useRef<{ lastX: number; lastY: number } | null>(null)
@@ -240,16 +246,18 @@ export function InteractionLayer({
   return (
     <div
       data-interaction-layer
-      onWheel={handleWheel}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      onWheel={isMobile ? undefined : handleWheel}
+      onPointerDown={isMobile ? undefined : handlePointerDown}
+      onPointerMove={isMobile ? undefined : handlePointerMove}
+      onPointerUp={isMobile ? undefined : handlePointerUp}
+      onPointerCancel={isMobile ? undefined : handlePointerUp}
       style={{
         position: 'absolute',
         inset: 0,
         zIndex: BOARD_Z_INDEX.INTERACTION_OVERLAY,
-        touchAction: 'none',
+        // Mobile: let the native scroll container inside own vertical touch;
+        // desktop keeps 'none' so its custom wheel / drag owns the gesture.
+        touchAction: isMobile ? 'pan-y' : 'none',
         overflow: 'hidden',
         cursor: wiggle?.enabled ? (wiggle.grabbing ? 'grabbing' : 'grab') : undefined,
       }}

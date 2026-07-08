@@ -87,6 +87,21 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Mobile: the REAL native scroll container for the board. overflow-y:auto hands
+   scrolling to the browser (its own inertia + rubber-band, zero JS). Fills the
+   canvas; horizontal overflow hidden. overscroll-behavior:contain stops the page
+   from scroll-chaining. Desktop never mounts this (it keeps the transform-pan
+   node); this class only exists under the isMobile branch. */
+.mobileScrollContainer {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
 /* Bottom frame band — mirror of .frameTopChrome. Hosts the ScrollMeter in the
    outer frame's BOTTOM margin (outside the dark canvas), centered. Living here
    — outside the canvas, which clips its own overflow and carries the pan/zoom
