@@ -1,0 +1,78 @@
+/* Mobile board bottom navigation (≤640px). Fixed to the viewport floor, full
+   width, thumb-reachable. Dark chrome consistent with the board's neutral menu
+   tonality (matches ChromeDrawer / FilterPill dropdown). Rendered only on
+   mobile (BoardRoot gates on useIsMobile), so desktop never sees it. */
+.nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150; /* above cards / toolbar (110) + popover (120); below modals
+                   (200), onboarding (210), and the chrome drawers (405). */
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  gap: 2px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  background: rgba(9, 9, 11, 0.9);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  /* Pin monospace so a theme's serif override (paper-atelier) never leaks in. */
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
+/* FILTER slot — hosts the reused <FilterPill>. Its pill shows the active
+   filter + count (doubles as the "current view" readout) and opens its menu
+   upward (FilterPill.module.css mobile variant). */
+/* Wider than the icon tabs so the reused FilterPill ("<filter> · NNN") fits
+   without clipping at the screen edge, and so its upward menu (anchored to the
+   pill's left) sits inset from the viewport edge. */
+.filterSlot {
+  flex: 1.55 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* Action tabs — icon over a tiny mono label. Neutral by default, brand green
+   when active/on. */
+.tab {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 2px;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.62);
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
+}
+
+.tab:active {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.tab[data-active='true'] {
+  color: #28f100; /* brand green (logo check) — the on/selected state */
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.tabLabel {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}

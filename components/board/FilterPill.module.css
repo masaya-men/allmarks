@@ -505,3 +505,28 @@
 }
 
 .wrap { position: relative; }
+
+/* Mobile (≤640px): FilterPill lives in the bottom nav (BoardMobileNav), so its
+   dropdown must open UPWARD out of the pill (anchored to the pill's top edge)
+   instead of downward off the bottom of the screen. Left-anchored + clamped to
+   the viewport width. The pill itself shrinks to fit a nav slot. Desktop is
+   untouched. */
+@media (max-width: 640px) {
+  .pill {
+    padding: 6px 8px;
+    max-width: 100%;
+  }
+  .pill .label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 92px;
+  }
+  .menu {
+    top: auto;
+    bottom: calc(100% + 8px);
+    right: auto;
+    left: 0;
+    max-width: min(320px, calc(100vw - 24px));
+  }
+}

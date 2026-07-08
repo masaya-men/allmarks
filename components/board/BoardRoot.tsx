@@ -13,7 +13,8 @@ import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
 import { resolveThemeCustomization, isDefaultCustomization, isLightColor } from '@/lib/board/theme-customization'
-import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX } from '@/lib/board/constants'
+import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX, MOBILE_LAYOUT } from '@/lib/board/constants'
+import { useIsMobile } from '@/lib/board/use-is-mobile'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
@@ -48,6 +49,7 @@ import {
 } from './BoardBackgroundTypography'
 import { gsap } from 'gsap'
 import { CardsLayer } from './CardsLayer'
+import { BoardMobileNav } from './BoardMobileNav'
 import { InteractionLayer } from './InteractionLayer'
 import { TopHeader } from './TopHeader'
 import { FilterPill } from './FilterPill'
@@ -186,6 +188,11 @@ type ActiveDrawer = 'tune' | 'settings' | 'themes' | null
  *  The unmount is driven by THIS timer, never by the animation's finish event,
  *  so visibility stays a pure function of state (session 94 reliability rule). */
 const BG_TYPO_SHUTDOWN_MS = 620
+
+/** Stable empty map passed as `customWidths` on mobile so per-card free-resize
+ *  widths are ignored (uniform N-column masonry). Module-scope = stable ref, so
+ *  it never re-triggers the layout memos. */
+const EMPTY_CUSTOM_WIDTHS: Readonly<Record<string, number>> = {}
 
 export function BoardRoot() {
   const { t } = useI18n()
@@ -1048,19 +1055,36 @@ export function BoardRoot() {
   // No sidebar reservation, no max-width cap — the canvas is the whole stage.
   const effectiveLayoutWidth = Math.max(0, viewport.w - 2 * BOARD_INNER.SIDE_PADDING_PX)
 
+  // ── Mobile layout override (A1) ──────────────────────────────────────────
+  // On a narrow viewport the board renders a uniform N-column masonry sized to
+  // the (already-thinner) canvas, ignoring the desktop card-width/gap dial and
+  // per-card free-resize widths. This is DISPLAY-ONLY: cardWidthPx / cardGapPx /
+  // customWidths in IDB+localStorage are never mutated, so the user's desktop
+  // arrangement is preserved and simply overridden while the viewport is narrow.
+  const isMobile = useIsMobile()
+  const mobileCardWidth = useMemo<number>(() => {
+    const cols = MOBILE_LAYOUT.COLUMNS
+    return Math.max(1, (effectiveLayoutWidth - (cols - 1) * MOBILE_LAYOUT.GAP_PX) / cols)
+  }, [effectiveLayoutWidth])
+  // Effective values fed to every on-board geometry path (board scroll bounds,
+  // CardsLayer render, Lightbox FLIP) so layout and render never diverge.
+  const layoutCardWidthPx = isMobile ? mobileCardWidth : cardWidthPx
+  const layoutCardGapPx = isMobile ? MOBILE_LAYOUT.GAP_PX : cardGapPx
+  const layoutCustomWidths = isMobile ? EMPTY_CUSTOM_WIDTHS : customWidths
+
   // Card width slider drives every card's default width directly (px-absolute).
   // Cards that the user has freely resized (`customWidths[id]`) keep their own
   // width — the slider intentionally doesn't override per-card customizations.
   const skylineCards = useMemo<SkylineCard[]>(
     () =>
       filteredItems.map((it) => {
-        const w = customWidths[it.bookmarkId] ?? cardWidthPx
+        const w = layoutCustomWidths[it.bookmarkId] ?? layoutCardWidthPx
         // Same deterministic height the render layer (CardsLayer) uses, so the
         // scroll-range / contentBounds never diverge from the actual cards for
         // thumbnail-less placeholder cards.
         return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
       }),
-    [filteredItems, cardWidthPx, customWidths],
+    [filteredItems, layoutCardWidthPx, layoutCustomWidths],
   )
 
   const layout = useMemo(
@@ -1068,9 +1092,9 @@ export function BoardRoot() {
       computeSkylineLayout({
         cards: skylineCards,
         containerWidth: effectiveLayoutWidth,
-        gap: cardGapPx,
+        gap: layoutCardGapPx,
       }),
-    [skylineCards, effectiveLayoutWidth, cardGapPx],
+    [skylineCards, effectiveLayoutWidth, layoutCardGapPx],
   )
 
   const horizontalOffset = BOARD_INNER.SIDE_PADDING_PX
@@ -1116,11 +1140,11 @@ export function BoardRoot() {
   const shareLayout = useMemo(() => {
     if (matchedBookmarkIds == null) return layout
     const cards: SkylineCard[] = lightboxNavItems.map((it) => {
-      const w = customWidths[it.bookmarkId] ?? cardWidthPx
+      const w = layoutCustomWidths[it.bookmarkId] ?? layoutCardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    return computeSkylineLayout({ cards, containerWidth: effectiveLayoutWidth, gap: cardGapPx })
-  }, [matchedBookmarkIds, layout, lightboxNavItems, customWidths, cardWidthPx, effectiveLayoutWidth, cardGapPx])
+    return computeSkylineLayout({ cards, containerWidth: effectiveLayoutWidth, gap: layoutCardGapPx })
+  }, [matchedBookmarkIds, layout, lightboxNavItems, layoutCustomWidths, layoutCardWidthPx, effectiveLayoutWidth, layoutCardGapPx])
 
   const handleScroll = useCallback(
     (dx: number, dy: number): void => {
@@ -2687,6 +2711,31 @@ export function BoardRoot() {
     }
   }, [isLightboxMode, lightboxNavItems.length, handleLightboxJump, handleScrollMeterJump, meterScrollableHeight])
 
+  // Single FilterPill element reused by BOTH the desktop top band and the mobile
+  // bottom nav. Only one is ever mounted (the band renders when !isMobile, the
+  // nav when isMobile), so its testids stay unique.
+  const filterPillEl = (
+    <FilterPill
+      value={activeFilter}
+      onChange={handleFilterChange}
+      tags={tags}
+      counts={sidebarCounts}
+      tagCounts={tagCounts}
+      tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
+      onTagContextMenu={openTagContextMenu}
+      activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
+      onReorder={(orderedIds): void => { void reorderTags(orderedIds) }}
+      editingTagId={tagRenameTarget?.tagId ?? null}
+      onRenameSubmit={(tagId, name): void => {
+        void renameTag(tagId, name)
+        setTagRenameTarget(null)
+      }}
+      onRenameCancel={(): void => setTagRenameTarget(null)}
+      tagOrderMode={tagOrderMode}
+      onCycleTagOrder={(): void => { void setTagOrderMode(nextTagOrderMode(tagOrderMode)) }}
+    />
+  )
+
   return (
     <div
       ref={boardFrameRef}
@@ -2726,31 +2775,15 @@ export function BoardRoot() {
           canvas, which clips its own overflow — lets them sit ABOVE the
           TUNE/POP OUT/SHARE row without ever shifting it (user requirement).
           Fades out with the rest of the chrome while the Lightbox is open. */}
-      <div
-        className={lightboxItemId ? `${styles.frameTopChrome} ${styles.frameTopChromeHidden}` : styles.frameTopChrome}
-        aria-hidden={lightboxItemId ? 'true' : undefined}
-      >
-        <MotionToggle enabled={motionEnabled} onToggle={handleToggleMotion} />
-        <FilterPill
-          value={activeFilter}
-          onChange={handleFilterChange}
-          tags={tags}
-          counts={sidebarCounts}
-          tagCounts={tagCounts}
-          tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
-          onTagContextMenu={openTagContextMenu}
-          activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
-          onReorder={(orderedIds): void => { void reorderTags(orderedIds) }}
-          editingTagId={tagRenameTarget?.tagId ?? null}
-          onRenameSubmit={(tagId, name): void => {
-            void renameTag(tagId, name)
-            setTagRenameTarget(null)
-          }}
-          onRenameCancel={(): void => setTagRenameTarget(null)}
-          tagOrderMode={tagOrderMode}
-          onCycleTagOrder={(): void => { void setTagOrderMode(nextTagOrderMode(tagOrderMode)) }}
-        />
-      </div>
+      {!isMobile && (
+        <div
+          className={lightboxItemId ? `${styles.frameTopChrome} ${styles.frameTopChromeHidden}` : styles.frameTopChrome}
+          aria-hidden={lightboxItemId ? 'true' : undefined}
+        >
+          <MotionToggle enabled={motionEnabled} onToggle={handleToggleMotion} />
+          {filterPillEl}
+        </div>
+      )}
       {/* Bottom frame band — mirror of frameTopChrome. Hosts the ScrollMeter in
           the outer frame's BOTTOM margin (OUTSIDE the dark canvas) so the meter's
           scrub hit-area never overlaps card operations near the board floor
@@ -2761,7 +2794,7 @@ export function BoardRoot() {
           during the Lightbox and only hides for onboarding / arrange via
           shouldShowScrollMeter. */}
       <div className={styles.frameBottomChrome}>
-        {shouldShowScrollMeter(showOnboarding, sharePhase) && (
+        {!isMobile && shouldShowScrollMeter(showOnboarding, sharePhase) && (
           <ScrollMeter
             mode={meterMode}
             n1={meterN1}
@@ -2774,6 +2807,23 @@ export function BoardRoot() {
           />
         )}
       </div>
+      {/* Mobile bottom navigation (A2b) — hosts FILTER / TAG / THEME / MOTION /
+          SETTINGS since the desktop top chrome is hidden on mobile. Hidden while
+          the Lightbox is open (the lightbox surface owns the screen) and during
+          onboarding (the tutorial drives its own chrome). */}
+      {isMobile && !lightboxItemId && !showOnboarding && (
+        <BoardMobileNav
+          filter={filterPillEl}
+          onTag={handleEnterTagMode}
+          tagActive={tagMode}
+          onThemes={() => setActiveDrawer(activeDrawer === 'themes' ? null : 'themes')}
+          themesActive={activeDrawer === 'themes'}
+          motionOn={motionEnabled}
+          onToggleMotion={handleToggleMotion}
+          onSettings={() => setActiveDrawer(activeDrawer === 'settings' ? null : 'settings')}
+          settingsActive={activeDrawer === 'settings'}
+        />
+      )}
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
           live inside, so cursor pan never escapes the rounded frame.
           Phase 1A: canvas is now a grid (auto / 1fr) — TopHeader at top,
@@ -2961,7 +3011,11 @@ export function BoardRoot() {
                 CollageCanvas takes over as the title in that stage, so this
                 original background wordmark must NOT also render — otherwise
                 the two titles would stack. */}
-            {sharePhase !== 'arrange' && bgTypoMount && (
+            {/* Mobile: the giant centered wordmark is far wider than a 390px
+                viewport (only a couple of stray strokes would show), so it's not
+                rendered on mobile — a pure breakpoint gate, not animation-driven
+                visibility. */}
+            {!isMobile && sharePhase !== 'arrange' && bgTypoMount && (
               <BoardBackgroundTypography
                 themeId={themeId}
                 activeFilter={activeFilter}
@@ -2994,7 +3048,7 @@ export function BoardRoot() {
                 items={filteredItems}
                 viewport={viewport}
                 viewportWidth={effectiveLayoutWidth}
-                cardGapPx={cardGapPx}
+                cardGapPx={layoutCardGapPx}
                 roundedCorners={roundedCorners}
                 hoveredBookmarkId={hoveredBookmarkId}
                 audioActiveId={audioActiveId}
@@ -3012,8 +3066,8 @@ export function BoardRoot() {
                 persistMeasuredAspect={persistMeasuredAspect}
                 displayMode={displayMode}
                 newlyAddedIds={newlyAddedIds}
-                defaultCardWidth={cardWidthPx}
-                customWidths={customWidths}
+                defaultCardWidth={layoutCardWidthPx}
+                customWidths={layoutCustomWidths}
                 onCardResize={handleCardResize}
                 onCardResizeEnd={handleCardResizeEnd}
                 onCardResetSize={handleCardResetSize}

@@ -39,6 +39,30 @@ export const EXTENSION_STORE_URL: string = 'https://chromewebstore.google.com/de
  *  without parsing CSS vars. Must stay in sync with --canvas-margin. */
 export const CANVAS_MARGIN_PX = 48
 
+/** Viewport width (window CSS px) at/below which the board switches to its
+ *  MOBILE presentation: a thinner frame, an N-column masonry sized to the
+ *  narrow canvas, and stacked/pruned header chrome. Must match the
+ *  `@media (max-width: 640px)` breakpoint used in the board CSS. Desktop
+ *  (> 640px) is untouched — every mobile branch is gated on this value, so the
+ *  default board stays byte-identical above the breakpoint. */
+export const MOBILE_BP_PX = 640
+
+/** Mobile-only board layout, applied at DISPLAY time only (never written to the
+ *  user's stored card-width / card-gap or IDB BoardConfig — the desktop dial is
+ *  preserved and simply overridden while the viewport is narrow). Per the user's
+ *  s178 direction the mobile board is FULL-BLEED (no outer frame) and packs a
+ *  dense uniform N-column masonry with tight gaps; per-card free-resize widths
+ *  are ignored on mobile so the columns stay even. COLUMNS is decided on a real
+ *  phone at A5 (user asked for 3 or 4) — both work; the widths recompute from
+ *  the live container width, so only this number (and GAP) change. */
+export const MOBILE_LAYOUT = {
+  COLUMNS: 3,
+  GAP_PX: 6,
+  /** Full-bleed on mobile: no outer frame margin (vs 48 on desktop). Mirrored in
+   *  globals.css `@media (max-width: 640px)` as `--canvas-margin: 0`. */
+  CANVAS_MARGIN_PX: 0,
+} as const
+
 export const RESIZE = {
   MIN_PX: 80,
   MAX_PX: 1200,

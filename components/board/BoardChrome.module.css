@@ -23,3 +23,16 @@
     left: var(--canvas-margin, 48px);
   }
 }
+
+/* Mobile (A2): full-bleed board (--canvas-margin: 0) → the top margin band has
+   no height, so anchor the wordmark over the canvas top-left with explicit
+   padding. Legible against the canvas top scrim; sits opposite the (removed)
+   action row. Raised above the bottom nav's stacking is unnecessary — this is
+   top-left. */
+@media (max-width: 640px) {
+  .brandSlot {
+    top: 10px;
+    left: 14px;
+    height: auto;
+  }
+}

@@ -57,12 +57,13 @@
   pointer-events: auto;
 }
 
-/* Mobile (≤640px): action row collapses to Share only. */
+/* Mobile (≤640px): the top action row is removed entirely — every board control
+   moves to the bottom nav (BoardMobileNav: FILTER / TAG / THEME / MOTION /
+   SETTINGS), leaving only the AllMarks wordmark at the top-left. TITLE / TUNE /
+   POP OUT / SHARE are desktop-only for v1 (arrangement / an unsupported phone
+   API / the desktop-tuned SHARE flow). Desktop (>640px) keeps every action. */
 @media (max-width: 640px) {
   .header {
-    padding: 10px 12px 0;
-  }
-  .group[data-group="actions"] > :not([data-testid="share-pill"]) {
     display: none;
   }
 }

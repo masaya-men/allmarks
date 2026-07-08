@@ -389,6 +389,17 @@ ol {
   --canvas-radius: 0px;
 }
 
+/* Mobile (A1): full-bleed board — remove the outer frame entirely (48px each
+   side eats 25% of a 390px phone). The board's dense N-column mobile masonry
+   (BoardRoot MOBILE_LAYOUT) fills the whole viewport width. Desktop (> 640px)
+   keeps the 48px frame unchanged. Kept in sync with
+   MOBILE_LAYOUT.CANVAS_MARGIN_PX in lib/board/constants.ts. */
+@media (max-width: 640px) {
+  :root {
+    --canvas-margin: 0px;
+  }
+}
+
 /* ── Light Mode Overrides ──────────────────────────────────── */
 
 [data-theme="light"] {

@@ -46,6 +46,15 @@
   pointer-events: none;
 }
 
+/* Mobile (A2): MOTION + FilterPill move to the bottom nav (BoardMobileNav), so
+   the top band is hidden — the top-left AllMarks wordmark is the only top chrome.
+   Desktop keeps the band in the frame margin. */
+@media (max-width: 640px) {
+  .frameTopChrome {
+    display: none;
+  }
+}
+
 /* Bottom frame band — mirror of .frameTopChrome. Hosts the ScrollMeter in the
    outer frame's BOTTOM margin (outside the dark canvas), centered. Living here
    — outside the canvas, which clips its own overflow and carries the pan/zoom
