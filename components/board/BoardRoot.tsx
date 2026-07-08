@@ -89,19 +89,18 @@ import { usePipWindow } from '@/lib/board/pip-window'
 import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
-import { copyShareLink } from '@/lib/share/copy-share-link'
 import { createHostedShare } from '@/lib/share/create-hosted-share'
-import { normalizeShotToJpegDataUrl } from '@/lib/share/normalize-shot'
+import { captureCollageShareImage } from '@/lib/share/capture-collage'
+import { shareImageFilename } from '@/lib/share/share-image-filename'
 import { buildTweetIntentUrl } from '@/lib/share/share-actions'
 import { createShare } from '@/lib/share/api-client'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/share/selection'
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
-import { ShareToast, ShareSnipHint } from '@/components/board/ShareToast'
+import { ShareToast } from '@/components/board/ShareToast'
 import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
-import { detectSharePlatform, getScreenshotHint } from '@/lib/share/screenshot-hint'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -189,7 +188,7 @@ type ActiveDrawer = 'tune' | 'settings' | 'themes' | null
 const BG_TYPO_SHUTDOWN_MS = 620
 
 export function BoardRoot() {
-  const { t, locale } = useI18n()
+  const { t } = useI18n()
   const {
     items,
     deletedItems,
@@ -425,15 +424,13 @@ export function BoardRoot() {
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
   const [shareTitle, setShareTitle] = useState<ShareTitleConfig | null>(null)
-  // #8 hosted-image share (arrange stage): the user's normalized screenshot
-  // (1200×630 JPEG data-url), the resulting hosted /s link, and the create state.
-  const [shotDataUrl, setShotDataUrl] = useState<string | null>(null)
+  // SHARE auto-capture (arrange stage): the auto-generated 1200×630 JPEG data-url
+  // (dom-to-image of the real collage via the same-origin image proxy — kept for
+  // the ready-state SAVE IMAGE download), the resulting hosted /s link, and the
+  // create state. No manual screenshot: select → arrange → CREATE.
+  const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null)
   const [hostedShareUrl, setHostedShareUrl] = useState<string | null>(null)
   const [shareCreateState, setShareCreateState] = useState<'idle' | 'creating' | 'error'>('idle')
-  // #2: hide ONLY the SHARING bar (not other menus) so the user can take a clean
-  // screenshot. Restored by click/paste/timeout (see effect below).
-  const [shareBarHidden, setShareBarHidden] = useState<boolean>(false)
-  const shotFileInputRef = useRef<HTMLInputElement | null>(null)
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
   // Onboarding: true while the first-run tutorial overlay is active.
@@ -2008,15 +2005,6 @@ export function BoardRoot() {
     return computeSkylineLayout({ cards, containerWidth: effectiveLayoutWidth, gap: cardGapPx })
   }, [shareSelectedItems, customWidths, cardWidthPx, effectiveLayoutWidth, cardGapPx])
 
-  // OS-aware one-line screenshot instruction for ShareToast (computed once;
-  // navigator.userAgentData is high-entropy but not in default TS lib types).
-  const screenshotHint = useMemo((): string => {
-    const platform = typeof navigator === 'undefined'
-      ? 'other'
-      : detectSharePlatform(navigator.userAgent, (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform)
-    return getScreenshotHint(locale, platform)
-  }, [locale])
-
   const selectionContentHeight =
     selectionLayout == null ? 0 : selectionLayout.totalHeight + BOARD_TOP_PAD_PX
 
@@ -2170,28 +2158,10 @@ export function BoardRoot() {
     setCollageOrder([])
     setCollageRotations({})
     setShareTitle(null)
-    setShotDataUrl(null)
+    setCapturedImageUrl(null)
     setHostedShareUrl(null)
     setShareCreateState('idle')
-    setShareBarHidden(false)
   }, [])
-
-  // #2: while the arrange bar is hidden for a clean snip, bring it back on the
-  // next click or after a timeout. Armed after a short delay so the HIDE click
-  // itself doesn't immediately restore it. (Paste restores separately, above.)
-  useEffect((): (() => void) | undefined => {
-    if (sharePhase !== 'arrange' || !shareBarHidden) return undefined
-    let armed = false
-    const armTimer = window.setTimeout((): void => { armed = true }, 500)
-    const restore = (): void => { if (armed) setShareBarHidden(false) }
-    const fallback = window.setTimeout((): void => setShareBarHidden(false), 12000)
-    document.addEventListener('pointerdown', restore)
-    return (): void => {
-      window.clearTimeout(armTimer)
-      window.clearTimeout(fallback)
-      document.removeEventListener('pointerdown', restore)
-    }
-  }, [sharePhase, shareBarHidden])
 
   // Stage 1 → 2: 選んだカードを「盤面パネルに収まる中で最大サイズ」に自動配置してアレンジ開始。
   // fit rect は「見える盤面パネル（.canvas＝ウィンドウから CANVAS_MARGIN_PX 内側）」を基準に
@@ -2340,46 +2310,42 @@ export function BoardRoot() {
 
   const shareOrigin = (): string => (typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app')
 
-  // COPY LINK (arrange stage): thumb-less /s share; the /s OG falls back to the
-  // default card server-side. Generates NO image.
-  const handleCopyShareLink = useCallback(async (): Promise<boolean> => {
-    if (selectedInBoardOrder(items, selectedIds).length === 0) return false
-    const res = await copyShareLink({
-      buildShare: buildArrangeShare,
-      createShare,
-      writeClipboard: (t: string): Promise<void> => navigator.clipboard.writeText(t),
-      origin: shareOrigin(),
-    })
-    return res.ok
-  }, [items, selectedIds, buildArrangeShare])
-
-  // #8: accept a user screenshot (paste/drop/file) → normalize to 1200×630 JPEG.
-  // A new shot invalidates any previously-created link.
-  const handleAcceptShotBlob = useCallback(async (blob: Blob): Promise<void> => {
-    if (!blob.type.startsWith('image/')) return
-    const dataUrl = await normalizeShotToJpegDataUrl(blob)
-    if (dataUrl) {
-      setShotDataUrl(dataUrl)
-      setHostedShareUrl(null)
-      setShareCreateState('idle')
-      setShareBarHidden(false) // pasting after a snip brings the bar back with the result
+  // 撮影で使う盤面の地色 (JPEG はアルファを持てないので、カード間の隙間や上下の余白を
+  // この色で塗る)。pattern テーマは resolvedCustom.boardColor、それ以外 (default/paper) は
+  // .canvas の --bg-dark を実測 (default=near-black / paper=parchment を両方正しく拾う)。
+  const deriveCaptureBoardColor = useCallback((): string => {
+    if (resolvedCustom?.boardColor) return resolvedCustom.boardColor
+    const el = canvasElRef.current
+    if (el && typeof getComputedStyle === 'function') {
+      const bg = getComputedStyle(el).backgroundColor
+      if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') return bg
     }
-  }, [])
+    return '#0a0a0c'
+  }, [resolvedCustom])
 
-  const clearShotState = useCallback((): void => {
-    setShotDataUrl(null)
-    setHostedShareUrl(null)
-    setShareCreateState('idle')
-  }, [])
-
-  // CREATE LINK: create the /s share WITH the attached screenshot (hosted on R2),
-  // then warm the /og/<id>.jpg cache. Returns a link whose preview IS the collage.
+  // CREATE (③作る): アレンジ済みの「本物の」コラージュ DOM を自動撮影する。
+  //   1. dom-to-image で CollageCanvas をそのまま画像化 (位置・回転・背景・タイトル WYSIWYG)。
+  //      撮影時だけ clone のカード <img> を同一オリジン画像 proxy (/api/img) 経由に差し替え、
+  //      クロスオリジン汚染を回避する (= 手動スクショが不要になった唯一の理由)。
+  //   2. その 1200×630 JPEG を thumb にして /s 共有を R2 上に作成 → /og キャッシュを温める。
+  // 撮影が失敗しても thumb 無しで作成する (= 共有を絶対に壊さない。OG は既定カードにフォールバック)。
   const handleCreateHostedShare = useCallback(async (): Promise<void> => {
     if (selectedInBoardOrder(items, selectedIds).length === 0) return
     setShareCreateState('creating')
+    let thumb: string | null = null
+    const node = typeof document !== 'undefined'
+      ? document.querySelector<HTMLElement>('[data-testid="collage-canvas"]')
+      : null
+    if (node) {
+      thumb = await captureCollageShareImage(node, {
+        origin: shareOrigin(),
+        boardColor: deriveCaptureBoardColor(),
+      })
+    }
+    setCapturedImageUrl(thumb)
     const res = await createHostedShare({
       buildShare: buildArrangeShare,
-      thumb: shotDataUrl ?? undefined,
+      thumb: thumb ?? undefined,
       createShare,
       origin: shareOrigin(),
       warm: (u: string): void => { void fetch(u).catch((): void => {}) },
@@ -2390,56 +2356,45 @@ export function BoardRoot() {
     } else {
       setShareCreateState('error')
     }
-  }, [items, selectedIds, buildArrangeShare, shotDataUrl])
+  }, [items, selectedIds, buildArrangeShare, deriveCaptureBoardColor])
 
-  // COPY LINK in the ready state copies the already-hosted url (no new share);
-  // before creation it does the thumb-less copy path.
+  // Ready-state COPY LINK copies the already-hosted url.
   const handleShareCopyLink = useCallback(async (): Promise<boolean> => {
-    if (hostedShareUrl) {
-      try { await navigator.clipboard.writeText(hostedShareUrl); return true } catch { return false }
+    if (!hostedShareUrl) return false
+    try {
+      await navigator.clipboard.writeText(hostedShareUrl)
+      return true
+    } catch {
+      return false
     }
-    return handleCopyShareLink()
-  }, [hostedShareUrl, handleCopyShareLink])
+  }, [hostedShareUrl])
 
   const handlePostToX = useCallback((): void => {
     if (!hostedShareUrl) return
     window.open(buildTweetIntentUrl(hostedShareUrl), '_blank', 'noopener,noreferrer')
   }, [hostedShareUrl])
 
-  // While arranging, accept a screenshot from anywhere: Ctrl+V paste or a
-  // drag-drop of an image file. The visible PASTE/DROP chip is just the
-  // affordance; capture is document-wide so the user can't miss it.
-  useEffect((): (() => void) | undefined => {
-    if (sharePhase !== 'arrange') return undefined
-    const onPaste = (e: ClipboardEvent): void => {
-      const items = e.clipboardData?.items
-      if (!items) return
-      for (let i = 0; i < items.length; i++) {
-        const it = items[i]
-        if (it && it.type.startsWith('image/')) {
-          const file = it.getAsFile()
-          if (file) { e.preventDefault(); void handleAcceptShotBlob(file); break }
-        }
-      }
-    }
-    const onDragOver = (e: DragEvent): void => {
-      if (e.dataTransfer?.types.includes('Files')) e.preventDefault()
-    }
-    const onDrop = (e: DragEvent): void => {
-      const files = e.dataTransfer?.files
-      if (!files || files.length === 0) return
-      const img = Array.from(files).find((f) => f.type.startsWith('image/'))
-      if (img) { e.preventDefault(); void handleAcceptShotBlob(img) }
-    }
-    document.addEventListener('paste', onPaste)
-    document.addEventListener('dragover', onDragOver)
-    document.addEventListener('drop', onDrop)
-    return (): void => {
-      document.removeEventListener('paste', onPaste)
-      document.removeEventListener('dragover', onDragOver)
-      document.removeEventListener('drop', onDrop)
-    }
-  }, [sharePhase, handleAcceptShotBlob])
+  // Ready-state SAVE IMAGE: hand the auto-captured 1200×630 JPEG to the user as a
+  // download so they can post it natively on X (native image posts dwarf link cards).
+  // The allmarks.app URL is baked into the image so it travels with the post.
+  const handleSaveShareImage = useCallback((): void => {
+    if (!capturedImageUrl || typeof document === 'undefined') return
+    const id = hostedShareUrl?.split('/').pop() || 'board'
+    const a = document.createElement('a')
+    a.href = capturedImageUrl
+    a.download = shareImageFilename(id, capturedImageUrl)
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }, [capturedImageUrl, hostedShareUrl])
+
+  // RESELECT: back to card selection, discarding the created link + captured image.
+  const handleShareReselect = useCallback((): void => {
+    setCapturedImageUrl(null)
+    setHostedShareUrl(null)
+    setShareCreateState('idle')
+    setSharePhase('select')
+  }, [])
 
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
@@ -3304,38 +3259,17 @@ export function BoardRoot() {
                 : undefined
             }
           />
-          <input
-            ref={shotFileInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            data-testid="share-shot-file-input"
-            onChange={(e): void => {
-              const f = e.target.files?.[0]
-              if (f) void handleAcceptShotBlob(f)
-              e.target.value = ''
-            }}
+          <ShareToast
+            count={selectedIds.size}
+            createState={shareCreateState}
+            onCreate={(): void => { void handleCreateHostedShare() }}
+            shareUrl={hostedShareUrl}
+            onCopyLink={handleShareCopyLink}
+            onPostToX={handlePostToX}
+            onSaveImage={capturedImageUrl ? handleSaveShareImage : undefined}
+            onReselect={handleShareReselect}
+            onDone={handleExitShareMode}
           />
-          {shareBarHidden ? (
-            <ShareSnipHint />
-          ) : (
-            <ShareToast
-              count={selectedIds.size}
-              hint={screenshotHint}
-              hasImage={shotDataUrl !== null}
-              imagePreviewUrl={shotDataUrl}
-              onPickFile={(): void => shotFileInputRef.current?.click()}
-              onClearImage={clearShotState}
-              onHideForSnip={(): void => setShareBarHidden(true)}
-              createState={shareCreateState}
-              onCreate={(): void => { void handleCreateHostedShare() }}
-              shareUrl={hostedShareUrl}
-              onCopyLink={handleShareCopyLink}
-              onPostToX={handlePostToX}
-              onReselect={(): void => { clearShotState(); setSharePhase('select') }}
-              onDone={handleExitShareMode}
-            />
-          )}
         </>
       )}
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}

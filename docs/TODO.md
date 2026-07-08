@@ -21,6 +21,13 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 176 — ★SHARE 自動画像化 出荷：手動スクショ撤廃・自動撮影で「①選ぶ②並べる③作る」の1ボタン化)
+
+- **手動スクショを完全撤廃**。CREATE 1ボタンで、本物のアレンジ画面（CollageCanvas）を dom-to-image でそのまま自動撮影 → 1200×630 → 既存 R2／`/og/<id>.jpg` に接続 → LINK READY（COPY LINK / SAVE IMAGE / POST TO X）。
+- **要（クロスオリジン汚染回避）＝同一オリジン画像 proxy `functions/api/img.ts`**（新規、`ogp.ts` の `isBlockedHost` 再利用・raster allowlist・16MB上限・リダイレクト再検証・immutable+nosniff）。撮影時だけ dom-to-image の clone の `<img src>` を `/api/img?u=` に差し替え（`render-share-image` の `rewriteImageSrc`／ライブ DOM 無改変）。取得失敗カードはアレンジ時点で既に文字カード化されているので新規劣化ゼロ。
+- **検証**：tsc0／vitest 全緑／build OK。ローカル wrangler pages dev で `/api/img`（200画像・SSRF400・非画像415）＋ Playwright で SELECT ALL→ARRANGE→CREATE→LINK READY、撮影 6/6 本物写真の WYSIWYG を確認。**本番 edge 実測＋SHARE 実撮り目視はデプロイ後に実施**。
+- 新規 `lib/share/proxy-image.ts`／`capture-collage.ts`、`ShareToast`・`BoardRoot` 簡素化。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s176 ／ `docs/private/IDEAS.md`「SHARE 自動画像化」§ s176。
+
 ### 直近の状態 (セッション 175 — ★SHARE 自動画像化の「実測」完了＝方向A（自動化全振り）確定・実装は次セッション)
 
 - **全 722 ブクマ（削除56除く）をサーバー側 fetch して実測**（ユーザーのバックアップ JSON・非コミット）。各カードの表示画像URL（`mediaSlots[0].url`→`photos[0]`→`thumbnail`、YouTubeは i.ytimg 導出）をブラウザ相当UAで取得。
