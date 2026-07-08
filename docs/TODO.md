@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 177 — リリース滑走路の統合実行計画を作成・実装は次セッションから)
+
+- **コード変更なし（計画セッション）**。方針相談 → リリースまでの統合実行計画を **`docs/private/2026-07-08-release-runway-plan.md`**（非公開）に作成。束A スマホ閲覧 → 束B スマホ保存 → 束C 13言語仕上げ＋規約正文条項 → 束D 公開素材 → 束E 総仕上げ・公開、の5束・8〜10セッション想定。
+- 計画の土台に**実コード調査2本**を実施済み（結果は計画書に焼き込み済・行番号付き）: ①モバイル対応の現状（viewport meta あり／LP レスポンシブ済／列計算は幅追従だが既定値がデスクトップ用／**スマホの保存経路は実質ゼロ**＝ブックマークレット導線はドラッグ前提・share_target は manifest 宣言のみで受け側なし）②i18n 全対象の棚卸し（15 locale × 403キー＋自前マップ2つ／parity テスト6本あり・placeholder 検査なし／**規約に正文条項なし**／ar は RTL 未対応）。
+- 保存経路の再利用入口も確定: `ingestPastedUrl`（[lib/board/paste-ingest.ts](../lib/board/paste-ingest.ts)）＋既存 OGP プロキシ（[functions/api/ogp.ts](../functions/api/ogp.ts)）＝新設 URL 入力欄からそのまま呼べる。
+- 方針まわりの記録は `docs/private/IDEAS.md` #5 の s177 節（機微につき tracked に書かない）。
+- **次＝束A（スマホ閲覧）から実行**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 176 — ★SHARE 自動画像化 出荷：手動スクショ撤廃・自動撮影で「①選ぶ②並べる③作る」の1ボタン化)
 
 - **手動スクショを完全撤廃**。CREATE 1ボタンで、本物のアレンジ画面（CollageCanvas）を dom-to-image でそのまま自動撮影 → 1200×630 → 既存 R2／`/og/<id>.jpg` に接続 → LINK READY（COPY LINK / SAVE IMAGE / POST TO X）。
