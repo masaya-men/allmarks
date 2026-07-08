@@ -9123,8 +9123,10 @@ s175 の実測（写真で撮れる 98.8%・自動化での新規劣化ゼロ）
 ### 検証
 - tsc 0 エラー／vitest 全緑（既存フレーク `channel.test` は BroadcastChannel タイミングで全体並列時のみ落ちるが単独で通過＝本変更と無関係）／クリーンビルド＋assert-share-template OK。
 - **ローカル実地（wrangler pages dev + local KV/R2 + functions）**：`/api/img` を curl で 200画像（picsum リダイレクト追従）／SSRF 127.0.0.1=400／非画像 HTML=415／immutable+nosniff を確認。Playwright で seed→SELECT ALL→ARRANGE→CREATE→**LINK READY** 全通し、撮影画像は **6/6 が本物写真**（proxy 経由・汚染ゼロ・空白ゼロ）・暗い地色・AllMarks タイトル・1.91:1・回転/リサイズハンドル非表示の WYSIWYG。証拠画像 scratchpad。
-- **本番 edge 実測＋SHARE 実撮り目視**：デプロイ後に実施（下記 CURRENT_GOAL / このセッション末尾）。
+- **本番 edge 実測＋SHARE 実撮り目視＝完了**（allmarks.app デプロイ済）：`/api/img` は CDN（ytimg/unsplash/github OG/rust-lang）で 200画像、SSRF=400／SVG=415／dead画像=404。本番 Playwright で seed→ARRANGE→CREATE→**LINK READY**、6/6 本物写真の WYSIWYG を目視確認。
+  - **本番で判明した Cloudflare の恒久知見**：Worker/Pages が返す **5xx は CF が自前の「error code: 5xx」ページに差し替える**（4xx は素通し・edge cache されることも）。当初 upstream 失敗を 502 で返して全滅→**404（4xx）に変更で解決**（`wrangler pages deployment tail` の `outcome:ok/exceptions:[]` でクラッシュでは無く CF の rebrand と確認）。また `www.w3.org` 等一部 website は **CF datacenter IP からの fetch を 403 で弾く**＝s175 予告の edge-IP 差異（該当画像は 404→placeholder に graceful フォールバック、real corpus は twimg/ytimg 中心で影響軽微）。
 
 ### 既知の残り（任意・後日）
 - pattern/paper テーマは撮影時に背景テクスチャが平坦地色になる（v1 簡略化・default 多数派は正確）。
+- 一部 website ホスト（CF datacenter IP を弾く / hotlink 保護）は撮影で 404→placeholder（rare・graceful）。real corpus は CDN 中心で影響軽微だが、増えるようなら Referer 再試行等の余地。
 - `lib/share/screenshot-hint.ts`／`lib/share/copy-share-link.ts` は本変更で未使用化（テストは残置・無害）。将来クリーンアップ候補。

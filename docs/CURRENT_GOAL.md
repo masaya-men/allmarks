@@ -9,7 +9,7 @@
 
 - **SHARE が「①選ぶ ②並べる ③作る」の1ボタン**に。CREATE で本物のアレンジ画面を dom-to-image で自動撮影 → 1200×630 → 既存 R2／`/og/<id>.jpg` → LINK READY（COPY LINK / SAVE IMAGE / POST TO X）。HIDE TO SNIP／貼付／BROWSE を撤去。
 - 要＝同一オリジン画像 proxy `functions/api/img.ts`（`ogp.ts` の `isBlockedHost` 再利用）。撮影時だけ clone の `<img src>` を `/api/img?u=` に差し替えてクロスオリジン汚染を回避。取得失敗カードは既に文字カード化済みで新規劣化ゼロ。
-- tsc0／vitest 全緑／build OK。ローカル wrangler で `/api/img`＋Playwright 全通し（撮影 6/6 本物写真の WYSIWYG）を確認。**本番デプロイ + edge 実測 + SHARE 実撮り目視まで s176 で実施済**（下の「残る手動確認」除く）。
+- tsc0／vitest 全緑／build OK。**本番 allmarks.app デプロイ済 + edge 実測（CDN=200/SSRF=400/SVG=415/dead=404）+ 本番 Playwright で CREATE→LINK READY・6/6 本物写真の WYSIWYG 目視まで完了**。学び：CF は Worker の 5xx を自前エラーページに差し替える→proxy の失敗は 404 で返す。一部 website は CF edge IP を 403 で弾く（rare・placeholder フォールバック）。
 - 詳細＝`docs/TODO_COMPLETED.md` s176 ／ `docs/private/IDEAS.md`「SHARE 自動画像化」§ s176。
 
 ### s176 の残る手動確認（クローラー相手で自動不可・任意）
