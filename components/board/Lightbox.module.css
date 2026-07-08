@@ -275,6 +275,38 @@
   display: block;
 }
 
+/* ==========================================================================
+   Mobile (<=640px) — immersive MobileLightbox. These media classes render
+   inside MobileLightbox's full-screen .main; the desktop 2-column frame never
+   mounts at this width, so these overrides only affect the mobile lightbox.
+   The desktop widths (60vw / 920px / 50vw) leave media tiny on a phone; here we
+   let each type fill the screen (aspect-correct contain) so the open morph
+   grows the tapped card into a near-full-screen target (s180 device feedback).
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* No nav-meter / no close clearance eats the envelope on mobile; use the
+     dynamic viewport height so the browser's URL bar is accounted for. */
+  :root {
+    --lightbox-media-max-h: 94dvh;
+  }
+  .imageBox {
+    width: min(100vw, calc(var(--item-aspect, 1) * var(--lightbox-media-max-h)));
+    max-height: var(--lightbox-media-max-h);
+  }
+  .iframeWrap16x9 {
+    width: 100vw;
+    max-height: var(--lightbox-media-max-h);
+  }
+  .iframeWrap9x16 {
+    /* Cap height so the derived (9:16) width never exceeds the viewport. */
+    height: min(var(--lightbox-media-max-h), calc(100vw * 16 / 9));
+    max-width: 100vw;
+  }
+  .iframeWrap1x1 {
+    width: min(100vw, var(--lightbox-media-max-h));
+  }
+}
+
 /* SoundCloud custom volume control overlay — auto-hides on mouse leave.
    Positioned bottom-right of the square iframe wrap to match X (Twitter)
    video controls, which is the placement most users expect. Visible only

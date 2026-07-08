@@ -1,5 +1,6 @@
 'use client'
-import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { gsap } from 'gsap'
 import { useLightboxSwipe } from './use-lightbox-swipe'
 import { LightboxInfoSheet } from './LightboxInfoSheet'
 import type { LightboxItem } from '@/lib/share/lightbox-item'
@@ -24,9 +25,10 @@ type MobileLightboxProps = {
 }
 
 /** Immersive, full-screen mobile lightbox (session 180). Tap opens it big in the
- *  center; left/right swipes navigate, down closes, up (or the sheet handle)
- *  reveals the info sheet. Desktop keeps the two-column Lightbox frame — this
- *  mounts only under isMobile (see Lightbox.tsx). */
+ *  center (the shared morph grows the tapped card into `.main`); left/right
+ *  swipes slide to the prev/next card with an elastic settle, down closes, up
+ *  (or the sheet handle) reveals the info sheet. Desktop keeps the two-column
+ *  Lightbox frame — this mounts only under isMobile (see Lightbox.tsx). */
 export function MobileLightbox({
   view,
   mediaRef,
@@ -38,42 +40,117 @@ export function MobileLightbox({
 }: MobileLightboxProps): ReactNode {
   const stageRef = useRef<HTMLDivElement>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const sheetOpenRef = useRef(false)
+  sheetOpenRef.current = sheetOpen
+  // 0 = not navigating; ±1 = a nav is mid-flight, tells the enter effect which
+  // side the incoming card should fly in from.
+  const navDirRef = useRef<-1 | 0 | 1>(0)
+  const navAnimatingRef = useRef(false)
 
-  const atEnd = useCallback(
-    () => ({
-      prev: nav ? nav.currentIndex <= 0 : true,
-      next: nav ? nav.currentIndex >= nav.total - 1 : true,
-    }),
-    [nav],
+  // Enter animation: after nav.onNav swaps `view`, slide the (now new) `.main`
+  // in from the side the finger was heading, with an elastic settle. Skipped on
+  // the initial open (navDir 0) — the shared card→fullscreen morph owns that.
+  useLayoutEffect(() => {
+    const mainEl = mediaRef.current
+    const dir = navDirRef.current
+    if (!mainEl || dir === 0) return
+    navDirRef.current = 0
+    const w = window.innerWidth
+    gsap.fromTo(
+      mainEl,
+      { x: dir * w * 1.05, scale: 0.82, opacity: 0.15, rotate: -dir * 6 },
+      {
+        x: 0,
+        scale: 1,
+        opacity: 1,
+        rotate: 0,
+        duration: 0.62,
+        ease: 'back.out(1.5)',
+        onComplete: (): void => {
+          navAnimatingRef.current = false
+          gsap.set(mainEl, { clearProps: 'transform,opacity' })
+        },
+      },
+    )
+  }, [view.url, mediaRef])
+
+  const springBack = useCallback((): void => {
+    const mainEl = mediaRef.current
+    const stage = stageRef.current
+    if (mainEl) gsap.to(mainEl, { x: 0, rotate: 0, scale: 1, duration: 0.42, ease: 'elastic.out(1, 0.6)' })
+    if (stage) gsap.to(stage, { y: 0, scale: 1, duration: 0.42, ease: 'elastic.out(1, 0.6)' })
+  }, [mediaRef])
+
+  const doNav = useCallback(
+    (dir: -1 | 1): void => {
+      const mainEl = mediaRef.current
+      if (!mainEl || !nav || navAnimatingRef.current) return
+      navAnimatingRef.current = true
+      navDirRef.current = dir
+      const w = window.innerWidth
+      // Current card is flung off in the swipe direction, tilting + shrinking
+      // (the "deform as it leaves") — then onNav swaps `view` and the enter
+      // effect above flies the next card in from the opposite edge.
+      gsap.to(mainEl, {
+        x: -dir * w * 1.05,
+        scale: 0.8,
+        opacity: 0.15,
+        rotate: dir * 6,
+        duration: 0.26,
+        ease: 'power2.in',
+        onComplete: (): void => nav.onNav(dir),
+      })
+    },
+    [mediaRef, nav],
   )
 
   const { bind } = useLightboxSwipe({
     contentScrollable,
-    atEnd,
+    atEnd: useCallback(
+      () => ({
+        prev: nav ? nav.currentIndex <= 0 : true,
+        next: nav ? nav.currentIndex >= nav.total - 1 : true,
+      }),
+      [nav],
+    ),
     onDrag: (axis, dx, dy): void => {
+      if (navAnimatingRef.current) return
       const stage = stageRef.current
       const mainEl = mediaRef.current
-      if (axis === 'vertical' && stage) {
-        // Down follows 1:1; up is damped because the sheet, not the main, is
-        // the upward affordance.
-        const shift = dy > 0 ? dy : dy * 0.35
-        stage.style.transform = `translateY(${shift}px) scale(${Math.max(0.9, 1 - Math.abs(dy) / 1600)})`
-      } else if (axis === 'horizontal' && mainEl) {
-        mainEl.style.transform = `translateX(${dx}px)`
-      } else if (axis === 'none') {
-        if (stage) stage.style.transform = ''
-        if (mainEl) mainEl.style.transform = ''
+      if (axis === 'horizontal' && mainEl) {
+        // Follow the finger, deforming (tilt + slight shrink) toward the drag.
+        gsap.set(mainEl, { x: dx, rotate: dx / 42, scale: 1 - Math.min(Math.abs(dx) / 2400, 0.1) })
+      } else if (axis === 'vertical' && stage && !sheetOpenRef.current) {
+        // Down follows 1:1 + shrinks (peel-to-dismiss); up is damped (the sheet
+        // is the real upward affordance, not the stage).
+        const shift = dy > 0 ? dy : dy * 0.3
+        gsap.set(stage, { y: shift, scale: dy > 0 ? Math.max(0.9, 1 - dy / 1600) : 1 })
       }
     },
     onIntent: (intent): void => {
-      const stage = stageRef.current
-      const mainEl = mediaRef.current
-      if (stage) stage.style.transform = ''
-      if (mainEl) mainEl.style.transform = ''
-      if (intent === 'close') onClose()
-      else if (intent === 'next') nav?.onNav(1)
-      else if (intent === 'prev') nav?.onNav(-1)
-      else if (intent === 'sheet') setSheetOpen(true)
+      if (intent === 'close') {
+        // With the sheet open, a downward swipe closes the SHEET, not the card.
+        if (sheetOpenRef.current) {
+          setSheetOpen(false)
+          springBack()
+          return
+        }
+        // Let the shared close morph shrink the card back into its board slot;
+        // reset the follow transform first so it starts from the true rect.
+        const stage = stageRef.current
+        if (stage) gsap.set(stage, { clearProps: 'transform' })
+        onClose()
+      } else if (intent === 'next') {
+        doNav(1)
+      } else if (intent === 'prev') {
+        doNav(-1)
+      } else if (intent === 'sheet') {
+        setSheetOpen(true)
+        springBack()
+      } else {
+        // Sub-threshold release — settle back with a soft bounce.
+        springBack()
+      }
     },
   })
 
