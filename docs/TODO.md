@@ -21,7 +21,10 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 180 — ★スマホのネイティブスクロール不能を修正／カードの touch-action を pan-y に緩めた・実機確認待ち)
+### 直近の状態 (セッション 180 — ★スマホのネイティブスクロール不能を修正／カードの touch-action を pan-y に緩めた・✅実機OK確認済)
+
+- **✅ 実機確認済（ユーザー）**: スマホで `allmarks.app` を上下スワイプ → ネイティブスクロールが効くようになった。s179 の載せ替えが完成。次は本命の「スマホ専用ライトボックス」へ。
+
 
 - **原因を確定**（コード追跡で検証）: [CardNode.module.css:12](../components/board/CardNode.module.css#L12) `.cardNode { touch-action: none }` が**常時**適用され、カードは `width/height:100%` で枠を埋める。密グリッドのモバイルでは指が必ずカードに落ち、`.mobileScrollContainer`（`touch-action:pan-y`）のネイティブ縦スクロールが `none` にキャンセルされていた。**唯一の塞ぎ元**（ResizeHandle/CardCornerActions は [CardsLayer.tsx:1587](../components/board/CardsLayer.tsx#L1587) `!isMobile` ゲート＝モバイル未描画。`CardsLayer.module.css` は touch-action 未設定）。
 - **修正**: `.cardNode` を **`[data-lock-card-scroll="true"]` 祖先スコープで `pan-y` に緩めた**（[CardNode.module.css](../components/board/CardNode.module.css)、CSS Modules の `:global()`）。この属性は `isMobile` の時だけ CardsLayer が各カードに付与（③の text-scroll ロックと同じスコープ）。**デスクトップは属性なし＝`none` のまま**＝並べ替えドラッグ無傷（回帰ゼロ）。内部 `[data-card-scroll]`（.titleScroll）は globals.css の `none` を維持＝③温存。
