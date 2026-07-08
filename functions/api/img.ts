@@ -114,49 +114,67 @@ export async function onRequest(context: PagesContext): Promise<Response> {
     return errResponse(502, 'Upstream fetch failed')
   }
 
-  // リダイレクトで内部ホストに着地していないか、body を読む前に再検証する (ogp.ts と同じ)。
-  if (res.url) {
-    let landed: URL
+  // 早期リターンする前に upstream の body を必ず捨てる。workerd は fetch 済み body を
+  // 未消費のまま別レスポンスを返すと例外を投げ (= CF が 502 を返す)、これが「404/非画像/
+  // リダイレクト拒否」で全滅していた原因。cancel してから errResponse を返す。
+  const bail = (status: number, msg: string): Response => {
     try {
-      landed = new URL(res.url)
+      void res.body?.cancel()
     } catch {
-      return errResponse(400, 'Redirected to an unverifiable host')
+      /* already closed */
     }
-    if (
-      (landed.protocol !== 'http:' && landed.protocol !== 'https:') ||
-      isBlockedHost(landed.hostname)
-    ) {
-      return errResponse(400, 'Redirected to a disallowed host')
+    return errResponse(status, msg)
+  }
+
+  try {
+    // リダイレクトで内部ホストに着地していないか、body を読む前に再検証する (ogp.ts と同じ)。
+    if (res.url) {
+      let landed: URL
+      try {
+        landed = new URL(res.url)
+      } catch {
+        return bail(400, 'Redirected to an unverifiable host')
+      }
+      if (
+        (landed.protocol !== 'http:' && landed.protocol !== 'https:') ||
+        isBlockedHost(landed.hostname)
+      ) {
+        return bail(400, 'Redirected to a disallowed host')
+      }
+    } else if (res.redirected) {
+      return bail(400, 'Redirected to an unverifiable host')
     }
-  } else if (res.redirected) {
-    return errResponse(400, 'Redirected to an unverifiable host')
-  }
 
-  if (!res.ok) {
-    return errResponse(502, `Upstream returned ${res.status}`)
-  }
+    if (!res.ok) {
+      return bail(502, `Upstream returned ${res.status}`)
+    }
 
-  const contentType = normalizeContentType(res.headers.get('content-type'))
-  if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
-    // 画像でない (HTML ソフト 404 / mp4 / svg 等) → 撮影に使えないので拒否。呼び出し側の
-    // <img> は onError → PlaceholderCard にフォールバックする (= 新規劣化なし)。
-    return errResponse(415, `Unsupported content-type: ${contentType || 'unknown'}`)
-  }
+    const contentType = normalizeContentType(res.headers.get('content-type'))
+    if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
+      // 画像でない (HTML ソフト 404 / mp4 / svg 等) → 撮影に使えないので拒否。呼び出し側の
+      // <img> は onError → PlaceholderCard にフォールバックする (= 新規劣化なし)。
+      return bail(415, `Unsupported content-type: ${contentType || 'unknown'}`)
+    }
 
-  const bytes = await readCappedBytes(res, MAX_IMAGE_BYTES)
-  if (!bytes) {
-    return errResponse(502, 'Image too large or unreadable')
-  }
+    const bytes = await readCappedBytes(res, MAX_IMAGE_BYTES)
+    if (!bytes) {
+      return errResponse(502, 'Image too large or unreadable')
+    }
 
-  return new Response(bytes, {
-    status: 200,
-    headers: {
-      'Content-Type': contentType,
-      // 撮影用の一時取得。画像 bytes は不変なので長期 immutable キャッシュで CF エッジに
-      // 載せ、2 回目以降のエッジ fetch を省く。
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      // 返す content-type を allowlist 済みなので、ブラウザに sniff させない。
-      'X-Content-Type-Options': 'nosniff',
-    },
-  })
+    return new Response(bytes, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        // 撮影用の一時取得。画像 bytes は不変なので長期 immutable キャッシュで CF エッジに
+        // 載せ、2 回目以降のエッジ fetch を省く。
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        // 返す content-type を allowlist 済みなので、ブラウザに sniff させない。
+        'X-Content-Type-Options': 'nosniff',
+      },
+    })
+  } catch {
+    // 想定外の例外 (body stream error 等) でも CF に 502 クラッシュを返させず、自前の
+    // errResponse で綺麗に閉じる → 呼び出し側の <img> は placeholder にフォールバック。
+    return bail(502, 'Image processing failed')
+  }
 }
