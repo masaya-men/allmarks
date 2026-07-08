@@ -9130,3 +9130,11 @@ s175 の実測（写真で撮れる 98.8%・自動化での新規劣化ゼロ）
 - pattern/paper テーマは撮影時に背景テクスチャが平坦地色になる（v1 簡略化・default 多数派は正確）。
 - 一部 website ホスト（CF datacenter IP を弾く / hotlink 保護）は撮影で 404→placeholder（rare・graceful）。real corpus は CDN 中心で影響軽微だが、増えるようなら Referer 再試行等の余地。
 - `lib/share/screenshot-hint.ts`／`lib/share/copy-share-link.ts` は本変更で未使用化（テストは残置・無害）。将来クリーンアップ候補。
+
+### セッション 176 追補 — SHARE の「本物のボードのまま」化（枠込み撮影＋端まで移動→枠でクリップ）
+
+s176 出荷後のユーザーフィードバックで 2 点追い込み（本番反映済）:
+
+1. **共有画像を「本物のボード枠込み」に**（平らな黒塗り→実物）。撮影対象を CollageCanvas ではなく**外枠 `.outerFrame` まるごと**へ変更（枠・左上 AllMarks ワードマーク・並べたカード・背景・タイトルまで WYSIWYG）。撮影の一瞬だけ `data-capturing` を立て、CSS で**操作系クロームだけ隠す**（右上メニュー `board-top-header`／`.frameTopChrome` の MOTION・フィルタ／SHARING バー・言語切替は `data-no-capture` で）。左上ロゴと枠は残す（ユーザー合意: 枠とロゴは入れる・メニューは入れない）。`normalize-shot` に `fit:'contain'`＋`bgColor` レターボックスを追加し、枠を切らずに 1200×630 に収める。地色は外枠（`resolvedCustom.edgeColor` or `--bg-outer`）に合わせる。
+2. **カードをボードの端まで動かせる／端で見切れる**。最初のクランプ（枠内に閉じ込め）は真逆だったので撤去。代わりに CollageCanvas の root を**枠の矩形で `clip-path: inset(var(--canvas-margin) round var(--canvas-radius))` クリップ**。root は全画面座標系（絶対配置は外枠の padding box=全画面に対して inset:0）なので、座標は触らずクリップだけ枠に合わせられる。結果、カードを端まで押し込む/拡大して一部だけ見せる、がコラージュらしくでき、外余白に浮かず枠でスパッと切れる。ユーザー確認 OK。
+- 検証: tsc0／vitest 全緑（167）／build OK。本番デプロイ＋ユーザー実機確認で「OKでした」。撮影が `clip-path` を反映しきれないケースだけ将来の注意点として残す（その時は撮影側にも同クリップを足す）。

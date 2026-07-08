@@ -27,6 +27,7 @@
 - **要（クロスオリジン汚染回避）＝同一オリジン画像 proxy `functions/api/img.ts`**（新規、`ogp.ts` の `isBlockedHost` 再利用・raster allowlist・16MB上限・リダイレクト再検証・immutable+nosniff）。撮影時だけ dom-to-image の clone の `<img src>` を `/api/img?u=` に差し替え（`render-share-image` の `rewriteImageSrc`／ライブ DOM 無改変）。取得失敗カードはアレンジ時点で既に文字カード化されているので新規劣化ゼロ。
 - **検証＝本番まで完了**：tsc0／vitest 全緑／build OK。ローカル＋**本番 allmarks.app デプロイ済**。`/api/img` 本番 edge 実測（CDN=200画像／SSRF=400／SVG=415／dead=404）＋ **本番 Playwright で ARRANGE→CREATE→LINK READY、6/6 本物写真の WYSIWYG を目視**。学び：CF は Worker の 5xx を自前エラーページに差し替える→upstream 失敗は 404 で返す。一部 website は CF edge IP を 403 で弾く（rare・placeholder フォールバック）。
 - 新規 `lib/share/proxy-image.ts`／`capture-collage.ts`、`ShareToast`・`BoardRoot` 簡素化。詳細 [TODO_COMPLETED.md](./TODO_COMPLETED.md) s176 ／ `docs/private/IDEAS.md`「SHARE 自動画像化」§ s176。
+- **s176 追補（ユーザーFB反映・本番OK）**: 共有画像を**本物のボード枠込み**に（外枠 `.outerFrame` を撮影、撮影時だけ右上メニュー等の操作クロームを `data-capturing`/`data-no-capture` で隠す、左上ロゴ＋枠は残す、`fit:contain` レターボックス）。カードは**ボードの端まで移動・拡大でき、枠でクリップ**（root を `clip-path: inset(--canvas-margin round --canvas-radius)`、クランプは撤去）。
 
 ### 直近の状態 (セッション 175 — ★SHARE 自動画像化の「実測」完了＝方向A（自動化全振り）確定・実装は次セッション)
 
