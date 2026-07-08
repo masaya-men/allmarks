@@ -18,7 +18,7 @@ import {
   BOARD_Z_INDEX,
   CULLING,
 } from '@/lib/board/constants'
-import { estimateVelocity, hasSettled, MOMENTUM, type VelocitySample } from '@/lib/board/momentum-scroll'
+import { estimateVelocity, hasSettled, rubberband, springStep, MOMENTUM, type VelocitySample } from '@/lib/board/momentum-scroll'
 import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel, safeExternalUrl } from '@/lib/utils/url'
@@ -295,6 +295,10 @@ type CardsLayerProps = {
    *  through to useCardReorderDrag. Optional so the share-view caller
    *  (which currently has no scroll) can omit it. */
   readonly onPanY?: (requestedDy: number) => number
+  /** Mobile (touch) rubber-band: receives the (rubberbanded) pixels the board is
+   *  over-scrolled past an edge during a fling or an edge-drag; 0 when settled.
+   *  Omitted by the share view (which has no scroll). */
+  readonly onOverscrollY?: (offset: number) => void
   /** Mobile (touch) mode. When true, a card press uses the tap-or-scroll
    *  gesture instead of drag-to-reorder: a tap opens the Lightbox, a drag pans
    *  the board (via onPanY) so a dense edge-to-edge grid is still scrollable.
@@ -397,6 +401,7 @@ export function CardsLayer({
   onCardResetSize,
   sourceCardId,
   onPanY,
+  onOverscrollY,
   isMobile = false,
   motionEnabled,
   matchedBookmarkIds,
@@ -518,9 +523,12 @@ export function CardsLayer({
   // Last chosen insertion index — windows computeVirtualOrder's search near it
   // so a large board stays smooth to drag. Reset (null) at each drag's start.
   const lastBestIndexRef = useRef<number | null>(null)
-  // Mobile inertia: id of the running fling rAF loop, or null when idle. A new
-  // pointerdown cancels it so a tap during a fling stops the board instantly.
+  // Mobile inertia: id of the running fling / rubber-band rAF loop, or null when
+  // idle. A new pointerdown cancels it so a tap during a fling stops the board.
   const momentumRafRef = useRef<number | null>(null)
+  // Raw pixels the board is over-scrolled past an edge (pre-rubberband). Drives
+  // the parent's mobileOverscrollY via applyOverscroll.
+  const overscrollRawRef = useRef(0)
   const reduceMotion = useReducedMotion()
 
   // ── Tier 1 viewport autoplay ──
@@ -1043,8 +1051,10 @@ export function CardsLayer({
     [onClick],
   )
 
-  // Cancels any running inertia fling (called on a fresh pointerdown and on
-  // unmount) so the board never keeps gliding under a new touch.
+  // Cancels any running inertia fling / rubber-band spring (on a fresh
+  // pointerdown and on unmount) so the board never keeps moving under a new
+  // touch. Leaves the current overscroll value in place — the next move unwinds
+  // it, or the release settles it.
   const cancelMomentum = useCallback((): void => {
     if (momentumRafRef.current != null) {
       cancelAnimationFrame(momentumRafRef.current)
@@ -1052,13 +1062,53 @@ export function CardsLayer({
     }
   }, [])
 
+  // Pushes the current raw overscroll to the parent as a rubberbanded offset
+  // (sublinear resistance, so the edge feels progressively stiffer). 0 clears it.
+  const applyOverscroll = useCallback((): void => {
+    if (!onOverscrollY) return
+    const raw = overscrollRawRef.current
+    const dim = window.innerHeight || 1
+    onOverscrollY(raw === 0 ? 0 : rubberband(Math.abs(raw), dim) * Math.sign(raw))
+  }, [onOverscrollY])
+
+  // Springs the raw overscroll back to 0 from its current value at `initialVel`
+  // (px/s). Used both when releasing while over-scrolled (initialVel 0) and when
+  // a fling reaches an edge (initialVel = the leftover board speed → a bounce).
+  const settleOverscroll = useCallback(
+    (initialVel: number): void => {
+      if (!onOverscrollY) return
+      let vel = initialVel
+      let prev = performance.now()
+      const loop = (now: number): void => {
+        const dt = Math.min(now - prev, 32) // clamp so a stalled frame can't blow up the spring
+        prev = now
+        const stepped = springStep(
+          overscrollRawRef.current, vel, 0,
+          MOMENTUM.SPRING_STIFFNESS, MOMENTUM.SPRING_DAMPING, dt,
+        )
+        overscrollRawRef.current = stepped.pos
+        vel = stepped.vel
+        applyOverscroll()
+        if (hasSettled(overscrollRawRef.current, 0) && Math.abs(vel) < MOMENTUM.OVERSCROLL_REST_VEL) {
+          overscrollRawRef.current = 0
+          onOverscrollY(0)
+          momentumRafRef.current = null
+          return
+        }
+        momentumRafRef.current = requestAnimationFrame(loop)
+      }
+      momentumRafRef.current = requestAnimationFrame(loop)
+    },
+    [applyOverscroll, onOverscrollY],
+  )
+
   // Starts an inertia glide from the release velocity. Reproduces the
   // industry-standard exponential deceleration (Framer Motion / Apple) via the
   // sourced constants in momentum-scroll.ts: the "finger" keeps travelling
   // POWER · v0 px, easing out with time constant τ, and each frame's advance is
   // pushed through the same clamped `onPanY` the drag uses. Clamping returns the
-  // applied delta, so hitting an edge (actual === 0) ends the glide. No
-  // rubber-band yet — the edge stop is a hard clamp (overscroll comes next).
+  // applied delta; when a frame is fully clamped (edge reached) the leftover
+  // board speed is handed to settleOverscroll for the rubber-band bounce.
   const startMomentum = useCallback(
     (samples: readonly VelocitySample[], panY: ((dy: number) => number) | null | undefined): void => {
       if (!panY) return
@@ -1077,6 +1127,12 @@ export function CardsLayer({
         // Board scrolls opposite the finger (finger down → earlier cards).
         const actual = panY(-dFinger)
         const stalledAtEdge = dFinger !== 0 && actual === 0
+        if (stalledAtEdge && onOverscrollY) {
+          // Edge reached mid-fling: hand the leftover board speed to the bounce.
+          const vFingerPerMs = (amplitude / tau) * Math.exp(-t / tau) // px/ms, signed finger
+          settleOverscroll(-vFingerPerMs * 1000) // px/s, board / overscroll direction
+          return
+        }
         if (hasSettled(finger, amplitude) || t >= MOMENTUM.MAX_MS || stalledAtEdge) {
           momentumRafRef.current = null
           return
@@ -1085,10 +1141,10 @@ export function CardsLayer({
       }
       momentumRafRef.current = requestAnimationFrame(step)
     },
-    [],
+    [onOverscrollY, settleOverscroll],
   )
 
-  // Stop the fling if the layer unmounts mid-glide.
+  // Stop the fling / spring if the layer unmounts mid-motion.
   useEffect(() => cancelMomentum, [cancelMomentum])
 
   // Mobile (touch) board handler — tap-or-scroll, no reorder. On a dense
@@ -1139,18 +1195,49 @@ export function CardsLayer({
         }
         // Finger moving DOWN (dyStep > 0) should reveal earlier cards → the
         // board scrolls up (viewport.y decreases), so request the negated delta.
-        if (panY && dyStep !== 0) panY(-dyStep)
+        if (panY && dyStep !== 0) {
+          let requested = -dyStep
+          // Unwind any existing overscroll before the board scrolls back through
+          // the edge (the rubber-band gives way first).
+          if (overscrollRawRef.current !== 0 && onOverscrollY) {
+            const os = overscrollRawRef.current
+            const combined = os + requested
+            if (combined === 0 || Math.sign(combined) === Math.sign(os)) {
+              overscrollRawRef.current = combined
+              requested = 0
+            } else {
+              overscrollRawRef.current = 0
+              requested = combined
+            }
+            applyOverscroll()
+          }
+          if (requested !== 0) {
+            const actual = panY(requested)
+            const leftover = requested - actual
+            // Whatever the clamp rejected went past an edge → rubber-band it.
+            if (leftover !== 0 && onOverscrollY) {
+              overscrollRawRef.current += leftover
+              applyOverscroll()
+            }
+          }
+        }
       }
       const end = (ev: globalThis.PointerEvent): void => {
         window.removeEventListener('pointermove', move)
         window.removeEventListener('pointerup', end)
         window.removeEventListener('pointercancel', end)
-        if (ev.type !== 'pointerup') return
+        if (ev.type !== 'pointerup') {
+          // Cancelled mid-gesture: unwind any overscroll so it doesn't stick.
+          if (overscrollRawRef.current !== 0) settleOverscroll(0)
+          return
+        }
         // A scrolling release flings (inertia); a still press opens the card. A
         // tap never pans (scrolling stays false → no re-render), so `el` is
         // still live for its rect.
         if (scrolling) {
-          startMomentum(samples, panY)
+          // Released while over-scrolled → spring straight back (no fling).
+          if (overscrollRawRef.current !== 0) settleOverscroll(0)
+          else startMomentum(samples, panY)
           return
         }
         const win = el.querySelector<HTMLElement>('[data-paper-window]')
@@ -1160,7 +1247,7 @@ export function CardsLayer({
       window.addEventListener('pointerup', end)
       window.addEventListener('pointercancel', end)
     },
-    [onClick, onPanY, cancelMomentum, startMomentum],
+    [onClick, onPanY, cancelMomentum, startMomentum, settleOverscroll, applyOverscroll, onOverscrollY],
   )
 
   // Selective-share / TAG MODE card handler. A genuine tap (< CLICK_MAX_MS,

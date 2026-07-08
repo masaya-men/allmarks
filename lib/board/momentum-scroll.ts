@@ -50,6 +50,9 @@ export const MOMENTUM = {
   MIN_FLING_VELOCITY_PX_S: 50,
   /** Trailing window used to estimate release velocity, ms. */
   VELOCITY_WINDOW_MS: 100,
+  /** The overscroll bounce ends when it has settled AND |velocity| drops below
+   *  this (px/s), so the spring doesn't stop mid-swing while still moving fast. */
+  OVERSCROLL_REST_VEL: 8,
 } as const
 
 /**

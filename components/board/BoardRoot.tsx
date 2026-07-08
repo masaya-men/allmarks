@@ -320,6 +320,11 @@ export function BoardRoot() {
   // without going through stale closures.
   const viewportRef = useRef(viewport)
   viewportRef.current = viewport
+  // Mobile rubber-band: pixels the board is over-scrolled past an edge (the
+  // clamped viewport.y cannot express this). CardsLayer's fling/drag computes
+  // the rubberbanded offset and pushes it here; it is added to the card
+  // transform below, mobile only. Stays 0 on desktop.
+  const [mobileOverscrollY, setMobileOverscrollY] = useState(0)
 
   // Undo / redo: in-memory only (clears on reload, matches Figma / Notion
   // industry-standard behaviour). Each mutating board action pushes a
@@ -1181,6 +1186,12 @@ export function BoardRoot() {
     },
     [contentBounds.height, markScrollActive],
   )
+
+  // Mobile rubber-band setter: CardsLayer computes the (rubberbanded) overscroll
+  // offset and pushes it here; it is added to the card transform (mobile only).
+  const handleOverscrollY = useCallback((offset: number): void => {
+    setMobileOverscrollY(offset)
+  }, [])
 
   // ScrollMeter click/drag → animated scroll-to-y. requestAnimationFrame loop
   // with easeOutQuint (= 1 - (1-t)^5)。 動き出し即座、 終わりだけ深く
@@ -3057,7 +3068,7 @@ export function BoardRoot() {
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                transform: `translate3d(calc(${horizontalOffset - viewport.x}px + var(--grab-x, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), calc(${BOARD_TOP_PAD_PX - viewport.y}px + var(--grab-y, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), 0)`,
+                transform: `translate3d(calc(${horizontalOffset - viewport.x}px + var(--grab-x, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), calc(${BOARD_TOP_PAD_PX - viewport.y - (isMobile ? mobileOverscrollY : 0)}px + var(--grab-y, 0px) * ${GRAB_LAYER_WEIGHTS.cards}), 0)`,
                 willChange: 'transform',
                 pointerEvents: 'none',
               }}
@@ -3092,6 +3103,7 @@ export function BoardRoot() {
                 onCardResetSize={handleCardResetSize}
                 sourceCardId={lightboxSourceItemId}
                 onPanY={handlePanY}
+                onOverscrollY={handleOverscrollY}
                 isMobile={isMobile}
                 motionEnabled={motionEnabled}
                 matchedBookmarkIds={matchedBookmarkIds}
