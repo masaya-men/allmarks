@@ -98,10 +98,10 @@ import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/share/selection'
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
-import { ShareToast } from '@/components/board/ShareToast'
+import { ShareToast, ShareSnipHint } from '@/components/board/ShareToast'
 import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
-import { detectSharePlatform, pickScreenshotHint } from '@/lib/share/screenshot-hint'
+import { detectSharePlatform, getScreenshotHint } from '@/lib/share/screenshot-hint'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -189,7 +189,7 @@ type ActiveDrawer = 'tune' | 'settings' | 'themes' | null
 const BG_TYPO_SHUTDOWN_MS = 620
 
 export function BoardRoot() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const {
     items,
     deletedItems,
@@ -430,6 +430,9 @@ export function BoardRoot() {
   const [shotDataUrl, setShotDataUrl] = useState<string | null>(null)
   const [hostedShareUrl, setHostedShareUrl] = useState<string | null>(null)
   const [shareCreateState, setShareCreateState] = useState<'idle' | 'creating' | 'error'>('idle')
+  // #2: hide ONLY the SHARING bar (not other menus) so the user can take a clean
+  // screenshot. Restored by click/paste/timeout (see effect below).
+  const [shareBarHidden, setShareBarHidden] = useState<boolean>(false)
   const shotFileInputRef = useRef<HTMLInputElement | null>(null)
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
@@ -2008,10 +2011,11 @@ export function BoardRoot() {
   // OS-aware one-line screenshot instruction for ShareToast (computed once;
   // navigator.userAgentData is high-entropy but not in default TS lib types).
   const screenshotHint = useMemo((): string => {
-    if (typeof navigator === 'undefined') return pickScreenshotHint('other')
-    const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
-    return pickScreenshotHint(detectSharePlatform(navigator.userAgent, nav.userAgentData?.platform))
-  }, [])
+    const platform = typeof navigator === 'undefined'
+      ? 'other'
+      : detectSharePlatform(navigator.userAgent, (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform)
+    return getScreenshotHint(locale, platform)
+  }, [locale])
 
   const selectionContentHeight =
     selectionLayout == null ? 0 : selectionLayout.totalHeight + BOARD_TOP_PAD_PX
@@ -2169,7 +2173,25 @@ export function BoardRoot() {
     setShotDataUrl(null)
     setHostedShareUrl(null)
     setShareCreateState('idle')
+    setShareBarHidden(false)
   }, [])
+
+  // #2: while the arrange bar is hidden for a clean snip, bring it back on the
+  // next click or after a timeout. Armed after a short delay so the HIDE click
+  // itself doesn't immediately restore it. (Paste restores separately, above.)
+  useEffect((): (() => void) | undefined => {
+    if (sharePhase !== 'arrange' || !shareBarHidden) return undefined
+    let armed = false
+    const armTimer = window.setTimeout((): void => { armed = true }, 500)
+    const restore = (): void => { if (armed) setShareBarHidden(false) }
+    const fallback = window.setTimeout((): void => setShareBarHidden(false), 12000)
+    document.addEventListener('pointerdown', restore)
+    return (): void => {
+      window.clearTimeout(armTimer)
+      window.clearTimeout(fallback)
+      document.removeEventListener('pointerdown', restore)
+    }
+  }, [sharePhase, shareBarHidden])
 
   // Stage 1 → 2: 選んだカードを「盤面パネルに収まる中で最大サイズ」に自動配置してアレンジ開始。
   // fit rect は「見える盤面パネル（.canvas＝ウィンドウから CANVAS_MARGIN_PX 内側）」を基準に
@@ -2340,6 +2362,7 @@ export function BoardRoot() {
       setShotDataUrl(dataUrl)
       setHostedShareUrl(null)
       setShareCreateState('idle')
+      setShareBarHidden(false) // pasting after a snip brings the bar back with the result
     }
   }, [])
 
@@ -3274,6 +3297,7 @@ export function BoardRoot() {
             maxCardWidth={effectiveLayoutWidth}
             displayMode={displayMode}
             paper={themeMeta.decorations === true}
+            roundedCorners={roundedCorners}
             title={
               shareTitle
                 ? { config: shareTitle, defaultText: deriveBoardBgTypoText(activeFilter, tags), onChange: setShareTitle }
@@ -3292,21 +3316,26 @@ export function BoardRoot() {
               e.target.value = ''
             }}
           />
-          <ShareToast
-            count={selectedIds.size}
-            hint={screenshotHint}
-            hasImage={shotDataUrl !== null}
-            imagePreviewUrl={shotDataUrl}
-            onPickFile={(): void => shotFileInputRef.current?.click()}
-            onClearImage={clearShotState}
-            createState={shareCreateState}
-            onCreate={(): void => { void handleCreateHostedShare() }}
-            shareUrl={hostedShareUrl}
-            onCopyLink={handleShareCopyLink}
-            onPostToX={handlePostToX}
-            onReselect={(): void => { clearShotState(); setSharePhase('select') }}
-            onDone={handleExitShareMode}
-          />
+          {shareBarHidden ? (
+            <ShareSnipHint />
+          ) : (
+            <ShareToast
+              count={selectedIds.size}
+              hint={screenshotHint}
+              hasImage={shotDataUrl !== null}
+              imagePreviewUrl={shotDataUrl}
+              onPickFile={(): void => shotFileInputRef.current?.click()}
+              onClearImage={clearShotState}
+              onHideForSnip={(): void => setShareBarHidden(true)}
+              createState={shareCreateState}
+              onCreate={(): void => { void handleCreateHostedShare() }}
+              shareUrl={hostedShareUrl}
+              onCopyLink={handleShareCopyLink}
+              onPostToX={handlePostToX}
+              onReselect={(): void => { clearShotState(); setSharePhase('select') }}
+              onDone={handleExitShareMode}
+            />
+          )}
         </>
       )}
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}

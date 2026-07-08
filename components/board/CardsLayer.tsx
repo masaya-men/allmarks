@@ -12,6 +12,7 @@ import {
 } from 'react'
 import { gsap } from 'gsap'
 import { computeSkylineLayout, type SkylineCard } from '@/lib/board/skyline-layout'
+import { cardCornerRadiusPx } from '@/lib/board/card-radius'
 import type { CardPosition, DisplayMode, ThemeId } from '@/lib/board/types'
 import {
   BOARD_Z_INDEX,
@@ -1332,9 +1333,7 @@ export function CardsLayer({
               // roundedCorners=false forces square cards (0 radius) across the
               // board, its overlays, and the lightbox morph (which mirrors this
               // per-card value). true keeps the size-aware rounded radius.
-              ['--card-radius' as string]: !roundedCorners
-                ? '0px'
-                : meta.colorScheme === 'light' ? '3px' : `${Math.min(20, p.w * 0.12).toFixed(1)}px`,
+              ['--card-radius' as string]: cardCornerRadiusPx({ width: p.w, roundedCorners, flat: meta.colorScheme === 'light' }),
               // Card's rendered width, read by PaperCardDecorations so tape/pin/
               // wax scale WITH the card (resize a card → its decorations follow).
               ['--card-w' as string]: `${p.w}px`,

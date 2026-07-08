@@ -9,6 +9,7 @@ const baseProps = {
   hasImage: false,
   onPickFile: noop,
   onClearImage: noop,
+  onHideForSnip: noop,
   createState: 'idle' as const,
   onCreate: noop,
   onPostToX: noop,
@@ -19,7 +20,14 @@ const baseProps = {
 describe('ShareToast — state A (before a screenshot)', () => {
   it('shows the SHARING counter', () => {
     render(<ShareToast {...baseProps} count={3} />)
-    expect(screen.getByText('SHARING… 3')).toBeTruthy()
+    expect(screen.getByText('SHARING · 3')).toBeTruthy()
+  })
+
+  it('HIDE TO SNIP fires onHideForSnip (hides only this bar for a clean shot)', () => {
+    const onHideForSnip = vi.fn()
+    render(<ShareToast {...baseProps} count={3} onHideForSnip={onHideForSnip} />)
+    fireEvent.click(screen.getByTestId('share-toast-hide'))
+    expect(onHideForSnip).toHaveBeenCalledOnce()
   })
 
   it('fires callbacks on RESELECT and DONE', () => {
@@ -37,12 +45,12 @@ describe('ShareToast — state A (before a screenshot)', () => {
     expect(screen.getByText('Press Win+Shift+S, then drag the collage area.')).toBeInTheDocument()
   })
 
-  it('shows the PASTE / DROP SHOT affordance and fires onPickFile', () => {
+  it('shows a flat BROWSE fallback and fires onPickFile', () => {
     const onPickFile = vi.fn()
     render(<ShareToast {...baseProps} count={2} onPickFile={onPickFile} />)
-    const chip = screen.getByTestId('share-toast-paste')
-    expect(chip).toHaveTextContent('PASTE / DROP SHOT')
-    fireEvent.click(chip)
+    const browse = screen.getByTestId('share-toast-paste')
+    expect(browse).toHaveTextContent('BROWSE')
+    fireEvent.click(browse)
     expect(onPickFile).toHaveBeenCalledOnce()
   })
 

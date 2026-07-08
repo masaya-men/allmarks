@@ -1,11 +1,12 @@
 /* ShareToast — collage-screenshot SHARE の "arrange" 段階で出す下部固定バー。
- * ShareSelectBar.module.css と同系のガラス板デザインを踏襲（sibling bar）。 */
+ * トーンは盤面上部クロム（TITLE/TUNE/SETTINGS…）に寄せた「細いテキスト主体・
+ * 軽いガラス」。濃いガラス板＋光るピル（SaaS/AI っぽさ）を避ける。 */
 
 .root {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 24px;
+  bottom: 22px;
   display: flex;
   justify-content: center;
   pointer-events: none;
@@ -16,111 +17,111 @@
   pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 20px;
-  border-radius: 16px;
-  background: rgba(18, 18, 22, 0.88);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.40),
-    0 1px 0 rgba(255, 255, 255, 0.05) inset;
-  max-width: min(92vw, 720px);
+  gap: 14px;
+  width: min(94vw, 860px);
+  padding: 9px 16px;
+  border-radius: 12px;
+  /* Lighter than a glass card — a slim legible strip, not a chunky panel. */
+  background: rgba(10, 10, 12, 0.66);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.32);
 }
 
-.counter {
-  font: 600 12px/1 var(--font-sans);
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.72);
+.spacer { flex: 1 1 auto; }
+
+.status {
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.58);
   white-space: nowrap;
 }
 
 .hint {
   font: 400 12px/1.4 var(--font-sans);
-  color: rgba(255, 255, 255, 0.52);
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.primaryBtn,
-.secondaryBtn {
-  min-height: 34px;
-  min-width: 32px;
-  padding: 0 18px;
-  border-radius: 999px;
-  font: 600 12px/1 var(--font-sans);
-  letter-spacing: 0.08em;
-  cursor: pointer;
+  color: rgba(255, 255, 255, 0.62);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.primaryBtn {
-  border: 1px solid rgba(40, 241, 0, 0.45);
-  background: rgba(40, 241, 0, 0.14);
+/* Flat text buttons — the top-chrome language: uppercase, thin, no fill. */
+.textBtn,
+.primaryText,
+.snipBtn {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  border-radius: 7px;
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.textBtn {
+  color: rgba(255, 255, 255, 0.62);
+}
+.textBtn:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Primary action (DONE / CREATE LINK) — green TEXT accent (matches the chrome's
+ * green dots), no glowing filled pill. */
+.primaryText {
   color: #28F100;
-  box-shadow: 0 0 14px rgba(40, 241, 0, 0.18);
 }
-
-.secondaryBtn {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.78);
+.primaryText:hover {
+  background: rgba(40, 241, 0, 0.10);
 }
-
-.secondaryBtn:hover,
-.primaryBtn:hover {
-  filter: brightness(1.2);
-}
-
-.primaryBtn:disabled {
+.primaryText:disabled {
+  color: rgba(255, 255, 255, 0.35);
+  background: none;
   cursor: default;
-  opacity: 0.55;
-  filter: none;
 }
 
-/* State A: the "paste / drop your screenshot" affordance. Dashed to read as a
- * drop target, same muted chrome tone (no new accent, no gradient). */
-.pasteChip {
-  min-height: 34px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px dashed rgba(255, 255, 255, 0.32);
-  background: rgba(255, 255, 255, 0.03);
+/* HIDE TO SNIP — the "get the bar out of my screenshot" helper. Slightly
+ * outlined so it's discoverable, still flat. */
+.snipBtn {
   color: rgba(255, 255, 255, 0.82);
-  font: 600 12px/1 var(--font-sans);
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0 12px;
+}
+.snipBtn:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.pasteChip:hover {
-  border-color: rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.07);
-}
-
-/* State B: small confirmation thumbnail of the pasted screenshot + clear. */
-.shot {
-  display: flex;
+/* State C "LINK READY" with a small green dot, echoing the header dots. */
+.ready {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+  gap: 7px;
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.14em;
+  color: #28F100;
+  white-space: nowrap;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #28F100;
 }
 
+/* State B confirmation thumbnail + clear. */
 .shotThumb {
-  height: 30px;
+  height: 28px;
   width: auto;
-  max-width: 72px;
+  max-width: 64px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.14);
 }
-
 .clearBtn {
   display: flex;
   align-items: center;
@@ -129,21 +130,31 @@
   height: 20px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.72);
+  background: none;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
 }
+.clearBtn:hover { color: rgba(255, 255, 255, 0.95); }
 
-.clearBtn:hover {
-  filter: brightness(1.3);
+/* Brief hint shown while the bar is hidden for a clean snip. Auto-fades so it is
+ * not in the user's screenshot; click/Esc/timeout brings the bar back. */
+.snipAwayHint {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 1;
+  pointer-events: none;
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+  animation: snipHintFade 2.4s ease forwards;
 }
-
-/* State C: "link ready" confirmation, reuses the green check accent. */
-.ready {
-  font: 600 12px/1 var(--font-sans);
-  letter-spacing: 0.12em;
-  color: #28F100;
-  white-space: nowrap;
+@keyframes snipHintFade {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { detectSharePlatform, pickScreenshotHint } from './screenshot-hint'
+import { detectSharePlatform, pickScreenshotHint, getScreenshotHint } from './screenshot-hint'
 
 describe('detectSharePlatform', () => {
   it('detects windows', () => {
@@ -25,5 +25,17 @@ describe('pickScreenshotHint', () => {
     expect(pickScreenshotHint('mac')).toContain('Shift+4')
     expect(pickScreenshotHint('mobile')).toContain('screenshot')
     expect(pickScreenshotHint('other')).toContain('Screenshot')
+  })
+})
+
+describe('getScreenshotHint (localized instruction)', () => {
+  it('localizes the lead per locale, keeping the OS key as a literal', () => {
+    expect(getScreenshotHint('ja', 'windows')).toBe('コラージュを撮って、ここに貼り付け (Win+Shift+S)')
+    expect(getScreenshotHint('en', 'windows')).toBe('Snip the collage, then paste it here (Win+Shift+S)')
+    expect(getScreenshotHint('en', 'mac')).toContain('(⌘+Shift+4)')
+  })
+  it('omits the key hint on mobile/other', () => {
+    expect(getScreenshotHint('ja', 'mobile')).toBe('コラージュを撮って、ここに貼り付け')
+    expect(getScreenshotHint('en', 'other')).toBe('Snip the collage, then paste it here')
   })
 })
