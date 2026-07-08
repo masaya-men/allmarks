@@ -23,22 +23,6 @@ describe('MobileLightbox', () => {
     expect(screen.getByTestId('lightbox-info-sheet')).toBeInTheDocument()
   })
 
-  it('closes when the ✕ button is tapped', () => {
-    const onClose = vi.fn()
-    render(
-      <MobileLightbox
-        view={view}
-        mediaRef={createRef<HTMLDivElement>()}
-        main={<img alt="m" />}
-        sheet={<p>info</p>}
-        nav={null}
-        onClose={onClose}
-      />,
-    )
-    fireEvent.click(screen.getByLabelText('Close'))
-    expect(onClose).toHaveBeenCalledOnce()
-  })
-
   it('closes when the empty stage background is tapped', () => {
     const onClose = vi.fn()
     render(

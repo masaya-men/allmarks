@@ -284,10 +284,12 @@
    grows the tapped card into a near-full-screen target (s180 device feedback).
    ========================================================================== */
 @media (max-width: 640px) {
-  /* No nav-meter / no close clearance eats the envelope on mobile; use the
-     dynamic viewport height so the browser's URL bar is accounted for. */
+  /* Reserve room so a tall (portrait) image, centered in the stage, clears the
+     info sheet's 34px grab handle peeking at the bottom (until the user pulls it
+     up). 76px = ~2× the handle so the symmetric top/bottom margins each exceed
+     it. Uses dvh so the browser's URL bar is accounted for. */
   :root {
-    --lightbox-media-max-h: 94dvh;
+    --lightbox-media-max-h: calc(100dvh - 76px);
   }
   .imageBox {
     width: min(100vw, calc(var(--item-aspect, 1) * var(--lightbox-media-max-h)));

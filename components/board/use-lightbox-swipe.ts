@@ -8,8 +8,10 @@ export type UseLightboxSwipeOpts = {
   readonly contentScrollable?: () => { top: boolean; bottom: boolean }
   /** Navigation boundaries so an end-swipe is a no-op. */
   readonly atEnd?: () => { prev: boolean; next: boolean }
-  /** Fired once on pointer release with the resolved gesture. */
-  readonly onIntent: (intent: SwipeIntent) => void
+  /** Fired once on pointer release with the resolved gesture. `speed` is the
+   *  release velocity (px/ms, absolute) along the locked axis — drives how many
+   *  cards a hard horizontal flick advances (inertia). */
+  readonly onIntent: (intent: SwipeIntent, info: { speed: number }) => void
   /** Fired on every move (and once with 'none'/0/0 on release) so the caller
    *  can translate the stage/main to follow the finger. */
   readonly onDrag?: (axis: SwipeAxis, dx: number, dy: number) => void
@@ -72,8 +74,9 @@ export function useLightboxSwipe(opts: UseLightboxSwipeOpts): {
     const dx = last.x - start.x
     const dy = last.y - start.y
     const dt = Math.max(1, last.t - start.t)
+    const axis = axisRef.current
     const intent = resolveIntent({
-      axis: axisRef.current,
+      axis,
       dx,
       dy,
       vx: dx / dt,
@@ -82,8 +85,9 @@ export function useLightboxSwipe(opts: UseLightboxSwipeOpts): {
       viewportH: window.innerHeight,
       atEnd: opts.atEnd?.(),
     })
+    const speed = Math.abs((axis === 'horizontal' ? dx : dy) / dt)
     axisRef.current = 'none'
-    opts.onIntent(intent)
+    opts.onIntent(intent, { speed })
   }, [opts])
 
   return {
