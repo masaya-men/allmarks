@@ -109,9 +109,12 @@ const CLOSE_FALLBACK_DUR = 0.3
 // desktop keeps its clean power3.out / power2.out. Session 180 device feedback:
 // "make the open/close dramatically better, mimic Apple".
 const OPEN_BASE_DUR_MOBILE = 0.52
-const OPEN_EASE_MOBILE = 'back.out(1.5)'
-const CLOSE_TWEEN_DUR_MOBILE = 0.44
-const CLOSE_TWEEN_EASE_MOBILE = 'back.in(1.2)'
+const OPEN_EASE_MOBILE = 'back.out(1.4)'
+// Close heads STRAIGHT into the board slot (no back.in anticipation — that
+// "moves away first" read as the card failing to return, and left the slot
+// empty longer = the "穴/hole" report). Decisive decel into the slot instead.
+const CLOSE_TWEEN_DUR_MOBILE = 0.4
+const CLOSE_TWEEN_EASE_MOBILE = 'power2.out'
 
 // =====================================================================
 // I-07-#5: Lightbox text mask-reveal-up.
@@ -806,7 +809,11 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       // visually identical (clone was made from source), so this lead
       // is just safety margin for React reflow on visibility flip.
       const landingAt = CLOSE_FRAME_DELAY + (isMobile ? CLOSE_TWEEN_DUR_MOBILE : CLOSE_TWEEN_DUR)
-      const revealAt = Math.max(0, landingAt - CLOSE_REVEAL_LEAD)
+      // Mobile: reveal the source card the moment the shrink begins. The clone
+      // covers the slot while shrinking onto it, so the card is never seen
+      // double — but the slot is filled the whole time, so no empty "hole" can
+      // appear even if the tween is interrupted before it lands.
+      const revealAt = isMobile ? CLOSE_FRAME_DELAY : Math.max(0, landingAt - CLOSE_REVEAL_LEAD)
       if (onSourceShouldShow) {
         tl.call(() => { onSourceShouldShow() }, undefined, revealAt)
       }
@@ -964,7 +971,13 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
   // first paint. .frame's CSS opacity:0 + will-change keeps the GPU
   // layer warm before the tween fires.
   useLayoutEffect(() => {
-    if (!identity || !frameRef.current) return
+    // Mobile renders MobileLightbox (no .frame) instead of the 2-column frame,
+    // so gate on identity only and key the morph off .media (mediaRef) — which
+    // both layouts have. Without this the whole open morph + backdrop fade was
+    // silently skipped on mobile (frameRef null): the lightbox just popped in
+    // with no animation and no dimming (s180 device feedback). el-specific ops
+    // below are guarded with `if (el)`.
+    if (!identity || (!frameRef.current && !mediaRef.current)) return
     const el = frameRef.current
     const backdrop = backdropRef.current
 
@@ -992,7 +1005,7 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
     // and ready; flip the SCENE_ENABLED flag below to re-enable
     // once we've added a load timeout + texture fallback path.
     const SCENE_ENABLED = false
-    if (SCENE_ENABLED && originRect && SceneComp && view?.thumbnail) {
+    if (SCENE_ENABLED && el && originRect && SceneComp && view?.thumbnail) {
       const targetRect = el.getBoundingClientRect()
       setTargetRectState(targetRect)
       sceneActiveRef.current = true
@@ -1053,7 +1066,7 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       // Frame stays opaque; .media is invisible while the clone covers
       // its real estate. Handoff flips .media back to visible at
       // onComplete.
-      gsap.set(el, { opacity: 1 })
+      if (el) gsap.set(el, { opacity: 1 })
       gsap.set(mediaEl, { opacity: 0, clearProps: 'transform' })
       mediaEl.style.borderRadius = ''
 
@@ -1157,7 +1170,12 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
     }
 
     // No-originRect fallback — gentle scale-in on .frame itself, kept
-    // opaque to match the main path's "no opacity drama" character.
+    // opaque to match the main path's "no opacity drama" character. On mobile
+    // (no .frame) there's nothing to scale, so just make .media visible.
+    if (!el) {
+      if (mediaEl) gsap.set(mediaEl, { opacity: 1 })
+      return
+    }
     const tween = gsap.fromTo(
       el,
       { scale: 0.96, opacity: 0 },
