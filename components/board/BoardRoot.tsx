@@ -3358,8 +3358,11 @@ export function BoardRoot() {
           </div>
         </>
       )}
-      {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}
-      <div data-no-capture><LanguageSwitcher /></div>
+      {/* Language switcher — fixed bottom-right, self-anchors via position:fixed
+          in CSS. Hidden on mobile: it would collide with the bottom nav and show
+          through the Lightbox. Language will live in the MORE panel on mobile
+          (follow-up); the LP keeps its own switcher. */}
+      {!isMobile && <div data-no-capture><LanguageSwitcher /></div>}
     </div>
   )
 }

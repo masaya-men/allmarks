@@ -1050,6 +1050,11 @@ export function CardsLayer({
   const handleMobilePointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>, bookmarkId: string): void => {
       if (e.button > 0) return
+      // While a popover (the top-right FILTER menu) is open, a tap anywhere is a
+      // "dismiss" — it must ONLY close the menu (handled by the menu's own
+      // outside-pointerdown), never also open this card's Lightbox. Bail so the
+      // first tap just closes; a second tap opens the card.
+      if (document.querySelector('[data-testid="filter-pill-menu"][data-open="true"]')) return
       // A press on a text card's internal scrollbar goes to the native scroller.
       if (pressLandsOnCardScrollbar(e.target, e.clientX, e.clientY)) return
       const el = e.currentTarget
@@ -1324,7 +1329,12 @@ export function CardsLayer({
         // visibly enlarge with the card during the lightbox open
         // transition — distracting per session 73 user feedback.
         const isLightboxSource = sourceCardId === it.bookmarkId
-        const hoverActive = hoveredBookmarkId === it.bookmarkId && !isLightboxSource
+        // Mobile: never show the hover chrome (resize handles / +TAG / delete /
+        // hover-play). Touch fires pointerenter, so without this a card lights up
+        // its corner handles mid-scroll and the drag "catches" on them. The
+        // finger-friendly equivalents live elsewhere (pinch to resize, TAG mode
+        // to tag) — desktop hover behaviour is unchanged.
+        const hoverActive = !isMobile && hoveredBookmarkId === it.bookmarkId && !isLightboxSource
         // Paper image cards mount their photo in a mat window (ImageCard's paper
         // branch). For those, the Lightbox lifts only the photo out and leaves
         // the mat on the board, so the source card must STAY visible (we hide
@@ -1613,7 +1623,13 @@ export function CardsLayer({
                 (see ResizeHandle.module.css cross-module rules). Without
                 this ordering, hovering × or ↺ silences the resize hint
                 arcs in the corners they cover. */}
-            {!receiverMode && !selectionMode && (
+            {/* Corner delete/reset + the resize handle are hover chrome and
+                desktop-only. On mobile they must not render at all: the
+                ResizeHandle has no hover prop (its visibility is CSS-driven, and
+                touch triggers a sticky :hover), so a bare corner handle would
+                otherwise appear mid-scroll and the drag would "catch" on it.
+                Resize on mobile is a pinch gesture (follow-up), not a corner. */}
+            {!receiverMode && !selectionMode && !isMobile && (
               <>
                 <CardCornerActions
                   hovered={hoverActive}
