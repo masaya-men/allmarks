@@ -9159,3 +9159,33 @@ s176 出荷後のユーザーフィードバックで 2 点追い込み（本番
 ### 残（順番確定・ユーザー承認済）
 1. **スマホ専用ライトボックス**（中央大表示／キャプション下部peek→上スライド／縦スワイプで前後／下スワイプ閉じる案）— 次セッション。詳細 CURRENT_GOAL.md。
 2. スマホ専用タグ付け（選択→下部横スクロールタグをタップで付与）。3. ピンチでカードリサイズ（仕上げ）。
+
+---
+
+## セッション 180 (2026-07-08) — スマホのネイティブスクロール不能を修正（カードの touch-action 緩め）
+
+s179 で「スマホ盤面を JS 慣性 → ブラウザ標準の overflow スクロール」へ載せ替えたが、**実機でスクロールが全く効かない**まま本番反映されていた（Playwright は構造 OK と誤判定）。s180 はこの一点を修正。
+
+### 根本原因（systematic-debugging Phase1-2、コード追跡で確定）
+- [CardNode.module.css:12](../components/board/CardNode.module.css#L12) の `.cardNode { touch-action: none }` が**常時**適用されていた（PCの並べ替えドラッグをブラウザに奪われないための指定）。
+- カードは `width/height:100%` で枠を埋め、モバイルは3列密グリッドで画面をほぼ埋める → 指が必ず `.cardNode` に落ちる → `.mobileScrollContainer`（`touch-action:pan-y`）のネイティブ縦スクロールが `none` にキャンセルされる。**これが唯一の塞ぎ元**。
+- 他の `touch-action:none` 要素（ResizeHandle / CardCornerActions）は [CardsLayer.tsx:1587](../components/board/CardsLayer.tsx#L1587) で `!isMobile` ゲート済み＝モバイル未描画。`CardsLayer.module.css`（.addTagButton 等）は touch-action を一切設定せず（grep 全文確認）。→ CURRENT_GOAL 項目3クリア。
+- **なぜ Playwright ですり抜けたか**: テストは JS で直接 `scrollTop` を代入したが、`scrollTop` 代入は `touch-action` を無視する。実タッチのパンだけが `touch-action` に従う → **実機でしか露見しない**（memory `reference_native_scroll_touch_action_playwright`）。
+
+### 修正（1箇所のみ）
+```css
+/* CardNode.module.css */
+:global([data-lock-card-scroll='true']) .cardNode {
+  touch-action: pan-y;
+}
+```
+- `data-lock-card-scroll="true"` は [CardsLayer.tsx:1304](../components/board/CardsLayer.tsx#L1304) が `isMobile` の時だけ各カードラッパーに付与（③の text-scroll ロックと同じスコープを再利用）。`useIsMobile` = `window.matchMedia('(max-width:640px)')` ＝ CSS の `@media(max-width:640px)` と厳密一致。
+- **デスクトップは属性が付かない → `.cardNode` は `touch-action:none` のまま**＝ポインタ駆動の並べ替えドラッグ無傷（回帰ゼロ）。
+- 内部 `[data-card-scroll]`（PlaceholderCard の `.titleScroll`）は globals.css で `touch-action:none` を維持 → ③「モバイルではライトボックス以外でテキストカード内部を動かさない」を温存。カード全体は pan-y、内部スクロール要素だけ none。
+
+### 検証
+- tsc 0 / vitest 2154 全緑 / `pnpm build`（static export）OK。ただし **tsc/vitest/Playwright は touch-action 挙動そのものは検証不能**（ビルド健全性の確認のみ）。実際のスクロールは**実機のみ**で確認可 → ユーザーの実機確認待ちで本番反映。
+
+### 学び
+- タッチスクロールの回帰は自動テストの死角。`touch-action` が絡む修正は「Playwright 緑＝直った」と誤認しない。実機確認をゲートに置く。
+

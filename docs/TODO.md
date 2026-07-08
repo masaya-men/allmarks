@@ -21,6 +21,12 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 180 — ★スマホのネイティブスクロール不能を修正／カードの touch-action を pan-y に緩めた・実機確認待ち)
+
+- **原因を確定**（コード追跡で検証）: [CardNode.module.css:12](../components/board/CardNode.module.css#L12) `.cardNode { touch-action: none }` が**常時**適用され、カードは `width/height:100%` で枠を埋める。密グリッドのモバイルでは指が必ずカードに落ち、`.mobileScrollContainer`（`touch-action:pan-y`）のネイティブ縦スクロールが `none` にキャンセルされていた。**唯一の塞ぎ元**（ResizeHandle/CardCornerActions は [CardsLayer.tsx:1587](../components/board/CardsLayer.tsx#L1587) `!isMobile` ゲート＝モバイル未描画。`CardsLayer.module.css` は touch-action 未設定）。
+- **修正**: `.cardNode` を **`[data-lock-card-scroll="true"]` 祖先スコープで `pan-y` に緩めた**（[CardNode.module.css](../components/board/CardNode.module.css)、CSS Modules の `:global()`）。この属性は `isMobile` の時だけ CardsLayer が各カードに付与（③の text-scroll ロックと同じスコープ）。**デスクトップは属性なし＝`none` のまま**＝並べ替えドラッグ無傷（回帰ゼロ）。内部 `[data-card-scroll]`（.titleScroll）は globals.css の `none` を維持＝③温存。
+- **検証**: tsc 0 / vitest 2154 全緑 / `pnpm build` OK。ただし tsc/vitest は touch-action 挙動自体は検証不能（ビルド健全性のみ）。**実際のスクロールは実機のみで確認可**（Playwright は JS scrollTop で touch-action すり抜け＝memory `reference_native_scroll_touch_action_playwright`）。本番反映済、**ユーザーの実機確認待ち**。
+
 ### 直近の状態 (セッション 179 — スマホスクロールを慣性→跳ね返り→本物のネイティブスクロールへ転換／★実機でスクロール不能・次で touch-action 修正)
 
 - **当初 (a) JS慣性を実装**（`momentum-scroll.ts`・業界標準値 τ=325/POWER0.8/rubberband0.15、22テスト）→ ①慣性減速 ②上部タップで先頭 ③テキストカード内部スクロール停止 ④端の跳ね返り を順に出荷。だが**ユーザー実機で「スクロールがストレス・カードにタップ取られる・途中でビヨン」**＝(a)方式の限界。

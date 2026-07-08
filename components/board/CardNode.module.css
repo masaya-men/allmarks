@@ -18,6 +18,22 @@
   cursor: grabbing;
 }
 
+/* Mobile board: let a vertical finger-swipe fall THROUGH the card to the native
+   scroller (.mobileScrollContainer, touch-action:pan-y). The dense mobile grid
+   fills the viewport with cards, so every touch lands on a .cardNode; without
+   this its touch-action:none cancels the browser's native scroll and the board
+   is dead on a real device (Playwright's JS-driven scrollTop ignores
+   touch-action, so this only shows up on hardware — session 180).
+   Scoped to the per-card [data-lock-card-scroll="true"] flag, which CardsLayer
+   sets iff isMobile (mirrors the ③ text-scroll lock in globals.css). Desktop
+   never gets the attribute, so .cardNode keeps touch-action:none there and the
+   pointer-driven reorder drag isn't hijacked by the browser. The inner
+   .titleScroll [data-card-scroll] stays touch-action:none (globals.css) so text
+   cards still never scroll their own body on mobile (③). */
+:global([data-lock-card-scroll='true']) .cardNode {
+  touch-action: pan-y;
+}
+
 /* Focus blink — fires AFTER the smooth scroll settles, NEVER during.
  * Three opacity blinks at 1800ms each (5400ms total). Opacity rather
  * than box-shadow because a white card on a light background swallows
