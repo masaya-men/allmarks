@@ -21,11 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 180 — ★スマホスクロール修正（✅実機OK）＋スマホ専用ライトボックス（没入型）実装・本番反映／次は実機確認＆ツイート詰め)
+### 直近の状態 (セッション 180 — ★スマホスクロール修正（✅実機OK）＋スマホ専用ライトボックス（没入型）を実装・実機フィードバック6ラウンドで大幅磨き込み／次はキャプション実機確認＆ツイート対応)
 
 - **① スマホのネイティブスクロール修正（✅実機OK）**: カード `.cardNode` の `touch-action:none` をモバイル時だけ `pan-y` に緩めて解決（`[data-lock-card-scroll]` スコープ、③維持、デスクトップ不変）。ユーザー実機で上下スワイプ確認済。
-- **② スマホ専用ライトボックス（没入型）を新規実装・本番反映**: カードタップで主役を中央に大きく／**左右=前後・下=閉じる・上/つまみ=情報シート**の4方向。開閉はPCと同じモーフ流用（主役ラッパに既存 `mediaRef` を付与）。新規: `lightbox-swipe.ts`(純判定+16test)／`use-lightbox-swipe.ts`／`LightboxInfoSheet.tsx`／`MobileLightbox.tsx`／`lightbox-nav-types.ts`。`Lightbox.tsx` は `isMobile ? <MobileLightbox/> : <既存2カラム/>` の1分岐のみ＝**デスクトップ回帰ゼロ**（tsc0/vitest2176/build OK）。画像・動画・サイト・文字カードは機能済み。
-- **★次セッション**: 実機で ② を確認（モーフ/スワイプ/サイズ感）。**ツイートの ①動画再生 ②複数画像ドット ③翻訳トグルは延期**（`useTweetTranslation` 共有が絡むため実機フィードバック駆動で作り込む）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。spec `docs/superpowers/specs/2026-07-08-mobile-lightbox-design.md`／plan `docs/superpowers/plans/2026-07-08-mobile-lightbox.md`。
+- **② スマホ専用ライトボックス（没入型）を新規実装 → ユーザー実機フィードバック6ラウンドで磨き込み・全て本番反映**。最終形:
+  - 開閉 = **transform ベースのモーフ**（カード⇄全画面。クローン方式は点滅＋reflowカクツキだったので `.main` 直接 transform-scale に。Apple風）。**開閉モーフ・backdrop フェードは元々 frameRef ゲートでモバイル全 bail していた**のを mediaRef 起点に修正（＝開くが無アニメ・背景が暗くならなかった真因）。
+  - 左右スワイプ = 前後送り。**強フリックで複数枚を慣性減速**（瞬間速度＋最新 onNav 参照。古い onNav を握って進まないバグ修正）。
+  - 上スワイプ = **キャプション2画面**（カード超縮小して上、キャプション下から連結。背景はPC同様「ぼかし backdrop の上に透明」。黒シート廃止＝`LightboxInfoSheet` 削除）。下スワイプ = 戻る/閉じる。✕廃止。縦長画像はシート域を見越したサイズ。
+  - 新規: `MobileLightbox.tsx`／`use-lightbox-swipe.ts`／`lightbox-swipe.ts`(16test)／`lightbox-nav-types.ts`。`Lightbox.tsx` は `isMobile` 分岐＝**デスクトップ回帰ゼロ**（tsc0/vitest2172/build OK）。
+- **★次セッション**: キャプション新モデルの実機微調整＋**ツイート対応**（動画再生/複数画像ドット/翻訳トグル＝ずっと延期中、`useTweetTranslation` 共有が絡む）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。spec/plan は `docs/superpowers/`。
 
 
 - **原因を確定**（コード追跡で検証）: [CardNode.module.css:12](../components/board/CardNode.module.css#L12) `.cardNode { touch-action: none }` が**常時**適用され、カードは `width/height:100%` で枠を埋める。密グリッドのモバイルでは指が必ずカードに落ち、`.mobileScrollContainer`（`touch-action:pan-y`）のネイティブ縦スクロールが `none` にキャンセルされていた。**唯一の塞ぎ元**（ResizeHandle/CardCornerActions は [CardsLayer.tsx:1587](../components/board/CardsLayer.tsx#L1587) `!isMobile` ゲート＝モバイル未描画。`CardsLayer.module.css` は touch-action 未設定）。
