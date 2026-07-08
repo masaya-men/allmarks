@@ -37,12 +37,35 @@ export function computeCoverRect(srcW: number, srcH: number, dstW: number, dstH:
   return { sx: 0, sy: (srcH - sh) / 2, sw: srcW, sh }
 }
 
+/** contain 配置の描画先矩形 (dst キャンバス上の位置とサイズ)。src 全体が dst 内に
+ *  収まるよう縮小し、余白 (レターボックス) は中央寄せで残す。 */
+export interface ContainRect {
+  readonly dx: number
+  readonly dy: number
+  readonly dw: number
+  readonly dh: number
+}
+
+/** src 全体を dst 内に収める (contain) 描画矩形を返す。src が dst より横長なら上下、
+ *  縦長なら左右にレターボックス余白が出る。中央寄せ。 */
+export function computeContainRect(srcW: number, srcH: number, dstW: number, dstH: number): ContainRect {
+  if (srcW <= 0 || srcH <= 0) return { dx: 0, dy: 0, dw: dstW, dh: dstH }
+  const scale = Math.min(dstW / srcW, dstH / srcH)
+  const dw = srcW * scale
+  const dh = srcH * scale
+  return { dx: (dstW - dw) / 2, dy: (dstH - dh) / 2, dw, dh }
+}
+
 export interface NormalizeShotOptions {
   readonly width?: number
   readonly height?: number
   readonly targetBytes?: number
   readonly startQuality?: number
   readonly minQuality?: number
+  /** 'cover' (既定・切り出して全面を埋める) か 'contain' (全体を収めてレターボックス)。 */
+  readonly fit?: 'cover' | 'contain'
+  /** contain のレターボックス余白 (と描画前のベース) を塗る色。既定は透明→JPEG では黒。 */
+  readonly bgColor?: string
 }
 
 type ShotSource = Blob | HTMLImageElement | ImageBitmap
@@ -150,6 +173,7 @@ export async function normalizeShotToJpegDataUrl(
   const targetBytes = opts?.targetBytes ?? 180 * 1024
   const startQuality = opts?.startQuality ?? 0.85
   const minQuality = opts?.minQuality ?? 0.4
+  const fit = opts?.fit ?? 'cover'
 
   const drawable = await toDrawable(source)
   if (!drawable) return null
@@ -165,9 +189,19 @@ export async function normalizeShotToJpegDataUrl(
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
 
-  const { sx, sy, sw, sh } = computeCoverRect(drawable.w, drawable.h, width, height)
   try {
-    ctx.drawImage(drawable.img, sx, sy, sw, sh, 0, 0, width, height)
+    if (fit === 'contain') {
+      // レターボックス余白を地色で塗ってから、src 全体を収めて中央に描く (枠を切らない)。
+      if (opts?.bgColor) {
+        ctx.fillStyle = opts.bgColor
+        ctx.fillRect(0, 0, width, height)
+      }
+      const { dx, dy, dw, dh } = computeContainRect(drawable.w, drawable.h, width, height)
+      ctx.drawImage(drawable.img, dx, dy, dw, dh)
+    } else {
+      const { sx, sy, sw, sh } = computeCoverRect(drawable.w, drawable.h, width, height)
+      ctx.drawImage(drawable.img, sx, sy, sw, sh, 0, 0, width, height)
+    }
   } catch {
     // クロスオリジン汚染など (ユーザー自身の画像では通常起きない)
     return null

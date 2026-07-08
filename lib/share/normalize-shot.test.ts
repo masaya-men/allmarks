@@ -1,5 +1,30 @@
 import { describe, it, expect } from 'vitest'
-import { computeCoverRect, dataUrlByteLength, normalizeShotToJpegDataUrl } from './normalize-shot'
+import { computeCoverRect, computeContainRect, dataUrlByteLength, normalizeShotToJpegDataUrl } from './normalize-shot'
+
+describe('computeContainRect', () => {
+  it('wider-than-target source fits full width, letterboxes top/bottom', () => {
+    const r = computeContainRect(2190, 1000, 1200, 630) // src 2.19 > dst 1.905 → fit width
+    expect(r.dw).toBeCloseTo(1200, 4)
+    expect(r.dh).toBeCloseTo(1000 * (1200 / 2190), 4)
+    expect(r.dx).toBeCloseTo(0, 4)
+    expect(r.dy).toBeCloseTo((630 - r.dh) / 2, 4) // centered vertically
+    expect(r.dh).toBeLessThan(630) // real letterbox bands exist
+  })
+
+  it('taller-than-target source fits full height, pillarboxes left/right', () => {
+    const r = computeContainRect(1000, 1000, 1200, 630) // src 1.0 < 1.905 → fit height
+    expect(r.dh).toBeCloseTo(630, 4)
+    expect(r.dw).toBeCloseTo(1000 * (630 / 1000), 4)
+    expect(r.dy).toBeCloseTo(0, 4)
+    expect(r.dx).toBeCloseTo((1200 - r.dw) / 2, 4)
+  })
+
+  it('never crops — whole source always fits within dst', () => {
+    const r = computeContainRect(3000, 400, 1200, 630)
+    expect(r.dw).toBeLessThanOrEqual(1200 + 1e-6)
+    expect(r.dh).toBeLessThanOrEqual(630 + 1e-6)
+  })
+})
 
 describe('computeCoverRect', () => {
   it('wider-than-target source crops left/right, keeps full height', () => {

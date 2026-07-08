@@ -11,6 +11,19 @@
   overflow: hidden;
 }
 
+/* SHARE auto-capture: while data-capturing is set (a couple frames during
+   CREATE), hide the operation chrome so it never bakes into the shared image —
+   the right-side header menus, the MOTION/filter top band, the SHARING bar, the
+   language switcher. The AllMarks wordmark (BoardChrome) and the framed board
+   stay. visibility:hidden keeps layout stable (no reflow) so the collage doesn't
+   shift for the shot. */
+.outerFrame[data-capturing] .frameTopChrome,
+.outerFrame[data-capturing] .frameBottomChrome,
+.outerFrame[data-capturing] [data-testid='board-top-header'],
+.outerFrame[data-capturing] [data-no-capture] {
+  visibility: hidden !important;
+}
+
 /* MOTION switch + active-filter readout, placed in the outer frame's TOP BAND
    (the empty margin above the dark canvas). Living here — outside the canvas,
    which clips its own overflow — lets this chrome sit ABOVE the in-canvas

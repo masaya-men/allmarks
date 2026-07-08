@@ -1552,6 +1552,13 @@ export function BoardRoot() {
   // The board rim (.canvas) hosts the grab-wiggle CSS vars so the pan layers
   // (descendants via cameraWrap) inherit them.
   const canvasElRef = useRef<HTMLDivElement>(null)
+  // The outer board frame (.outerFrame) — captured whole for the SHARE image so
+  // the shared picture IS the real framed board (edge + wordmark + collage), not
+  // a flat redraw. `capturing` briefly stamps data-capturing on it so CSS can
+  // hide the operation chrome (menus / SHARING bar / language switcher) just for
+  // the shot; the AllMarks wordmark and the frame stay.
+  const boardFrameRef = useRef<HTMLDivElement>(null)
+  const [capturing, setCapturing] = useState<boolean>(false)
 
   // Empty-board grab-wiggle: writes --grab-x/--grab-y on the .canvas rim; the
   // layer transforms below add them scaled per depth. Reset on theme change so
@@ -2163,6 +2170,31 @@ export function BoardRoot() {
     setShareCreateState('idle')
   }, [])
 
+  // The visible board rect the collage lives in (window coords): the .canvas panel
+  // inset by the header row (top), SHARING bar (bottom), and a small side margin.
+  // Shared by the initial fit AND the drag/resize clamp below so cards can never be
+  // dragged out of the board frame (user goal: keep the framed board state).
+  const arrangeSafeRect = useMemo((): CollageFitRect => {
+    const m = CANVAS_MARGIN_PX
+    return {
+      x: m + ARRANGE_SAFE_INSET.SIDE_PX,
+      y: m + ARRANGE_SAFE_INSET.TOP_PX,
+      width: Math.max(0, viewport.w - 2 * ARRANGE_SAFE_INSET.SIDE_PX),
+      height: Math.max(0, viewport.h - ARRANGE_SAFE_INSET.TOP_PX - ARRANGE_SAFE_INSET.BOTTOM_PX),
+    }
+  }, [viewport.w, viewport.h])
+
+  // Clamp a card's top-left so its whole box stays inside the board frame rect.
+  // If the card is larger than the rect on an axis, it pins to the rect's start
+  // edge (can't do better than "fully inside" when it doesn't fit).
+  const clampToFrame = useCallback((x: number, y: number, w: number, h: number): { x: number; y: number } => {
+    const r = arrangeSafeRect
+    return {
+      x: Math.max(r.x, Math.min(x, r.x + Math.max(0, r.width - w))),
+      y: Math.max(r.y, Math.min(y, r.y + Math.max(0, r.height - h))),
+    }
+  }, [arrangeSafeRect])
+
   // Stage 1 → 2: 選んだカードを「盤面パネルに収まる中で最大サイズ」に自動配置してアレンジ開始。
   // fit rect は「見える盤面パネル（.canvas＝ウィンドウから CANVAS_MARGIN_PX 内側）」を基準に
   // 取り、ヘッダー行（上）と SHARING バー（下）を避ける。fitSelectionToScreen が skyline パック
@@ -2171,21 +2203,8 @@ export function BoardRoot() {
   const handleEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
     const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
-    // Fit INTO the visible board panel (.canvas). NOTE: `viewport.w/h` already IS the
-    // panel size — it's the canvasWrap clientWidth/clientHeight, i.e. the window MINUS
-    // CANVAS_MARGIN_PX on every side (measured: 1489x679 window -> viewport 1393x583).
-    // The collage canvas spans the FULL window, so we place the safe rect at the panel
-    // origin (m, m) in window coords and inset it by ARRANGE_SAFE_INSET (top = header
-    // row, bottom = SHARING toast, sides = small margin). Do NOT subtract CANVAS_MARGIN
-    // again here — that was double-counting it and shrank the rect ~96px in each axis,
-    // leaving the right+bottom L-shaped empty band the fill was blamed for.
-    const m = CANVAS_MARGIN_PX
-    const rect: CollageFitRect = {
-      x: m + ARRANGE_SAFE_INSET.SIDE_PX,
-      y: m + ARRANGE_SAFE_INSET.TOP_PX,
-      width: Math.max(0, viewport.w - 2 * ARRANGE_SAFE_INSET.SIDE_PX),
-      height: Math.max(0, viewport.h - ARRANGE_SAFE_INSET.TOP_PX - ARRANGE_SAFE_INSET.BOTTOM_PX),
-    }
+    // Fit INTO the visible board panel (.canvas), using the shared safe rect.
+    const rect = arrangeSafeRect
     const cards = chosen.map((it) => {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
@@ -2197,7 +2216,7 @@ export function BoardRoot() {
     setCollageRotations({}) // re-entry (RESELECT→ARRANGE) reseeds a clean flat layout, no tilt
     setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))
     setSharePhase('arrange')
-  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, viewport.w, viewport.h, bgTypoEnabled])
+  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, arrangeSafeRect, viewport.w, viewport.h, bgTypoEnabled])
 
   // Esc leaves SHARE mode from either stage (= CANCEL / DONE). Only bound while
   // a share stage is active.
@@ -2310,12 +2329,12 @@ export function BoardRoot() {
 
   const shareOrigin = (): string => (typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app')
 
-  // 撮影で使う盤面の地色 (JPEG はアルファを持てないので、カード間の隙間や上下の余白を
-  // この色で塗る)。pattern テーマは resolvedCustom.boardColor、それ以外 (default/paper) は
-  // .canvas の --bg-dark を実測 (default=near-black / paper=parchment を両方正しく拾う)。
+  // 撮影の地色 (JPEG はアルファを持てないので、透明部分＝枠外の余白や contain の
+  // レターボックスをこの色で塗る)。外枠 (.outerFrame) の地色に合わせる: pattern テーマは
+  // resolvedCustom.edgeColor、それ以外は外枠の computed 背景 (= --bg-outer) を実測。
   const deriveCaptureBoardColor = useCallback((): string => {
-    if (resolvedCustom?.boardColor) return resolvedCustom.boardColor
-    const el = canvasElRef.current
+    if (resolvedCustom?.edgeColor) return resolvedCustom.edgeColor
+    const el = boardFrameRef.current
     if (el && typeof getComputedStyle === 'function') {
       const bg = getComputedStyle(el).backgroundColor
       if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') return bg
@@ -2323,24 +2342,34 @@ export function BoardRoot() {
     return '#0a0a0c'
   }, [resolvedCustom])
 
-  // CREATE (③作る): アレンジ済みの「本物の」コラージュ DOM を自動撮影する。
-  //   1. dom-to-image で CollageCanvas をそのまま画像化 (位置・回転・背景・タイトル WYSIWYG)。
-  //      撮影時だけ clone のカード <img> を同一オリジン画像 proxy (/api/img) 経由に差し替え、
-  //      クロスオリジン汚染を回避する (= 手動スクショが不要になった唯一の理由)。
-  //   2. その 1200×630 JPEG を thumb にして /s 共有を R2 上に作成 → /og キャッシュを温める。
-  // 撮影が失敗しても thumb 無しで作成する (= 共有を絶対に壊さない。OG は既定カードにフォールバック)。
+  // CREATE (③作る): 「本物のボードそのまま」を自動撮影する。
+  //   1. data-capturing を外枠に立てて、操作用クローム (右上メニュー / SHARING バー /
+  //      言語切替 / MOTION・フィルタ) だけ撮影の一瞬だけ隠す。左上 AllMarks ワードマークと
+  //      枠 (.canvas の縁) は残す (ユーザー合意: 枠とロゴは入れる、メニューは入れない)。
+  //   2. dom-to-image で外枠 (.outerFrame) をそのまま画像化 (枠・ロゴ・並べたカード・
+  //      背景・タイトルまで WYSIWYG)。撮影時だけ clone のカード <img> を同一オリジン画像
+  //      proxy (/api/img) 経由に差し替えクロスオリジン汚染を回避。fit=contain＋地色で
+  //      レターボックスし、枠を切らずに 1200×630 に収める。
+  //   3. その JPEG を thumb にして /s 共有を R2 上に作成 → /og キャッシュを温める。
+  // 撮影が失敗しても thumb 無しで作成する (= 共有を絶対に壊さない。OG は既定カードに fallback)。
   const handleCreateHostedShare = useCallback(async (): Promise<void> => {
     if (selectedInBoardOrder(items, selectedIds).length === 0) return
     setShareCreateState('creating')
     let thumb: string | null = null
-    const node = typeof document !== 'undefined'
-      ? document.querySelector<HTMLElement>('[data-testid="collage-canvas"]')
-      : null
-    if (node) {
-      thumb = await captureCollageShareImage(node, {
-        origin: shareOrigin(),
-        boardColor: deriveCaptureBoardColor(),
-      })
+    const node = boardFrameRef.current
+    if (node && typeof requestAnimationFrame === 'function') {
+      setCapturing(true)
+      // data-capturing の CSS (メニュー等を隠す) が確実に paint されてから撮る。
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+      try {
+        thumb = await captureCollageShareImage(node, {
+          origin: shareOrigin(),
+          boardColor: deriveCaptureBoardColor(),
+          fit: 'contain',
+        })
+      } finally {
+        setCapturing(false)
+      }
     }
     setCapturedImageUrl(thumb)
     const res = await createHostedShare({
@@ -2671,7 +2700,9 @@ export function BoardRoot() {
 
   return (
     <div
+      ref={boardFrameRef}
       className={styles.outerFrame}
+      data-capturing={capturing ? 'true' : undefined}
       style={resolvedCustom ? ({
         '--edge-color': resolvedCustom.edgeColor,
         '--bg-typo-color': resolvedCustom.titleColor,
@@ -3244,8 +3275,23 @@ export function BoardRoot() {
             items={lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))}
             positions={collagePositions}
             order={collageOrder}
-            onMove={(id, x, y): void => setCollagePositions((p) => moveElement(p, id, x, y))}
-            onResize={(id, corner, w): void => setCollagePositions((p) => resizeElementFromCorner(p, id, corner, w))}
+            onMove={(id, x, y): void => setCollagePositions((p) => {
+              // Keep the card inside the board frame — no dragging cards out of
+              // the framed board (user goal). Clamp against the card's own box.
+              const el = p[id]
+              if (!el) return p
+              const c = clampToFrame(x, y, el.w, el.h)
+              return moveElement(p, id, c.x, c.y)
+            })}
+            onResize={(id, corner, w): void => setCollagePositions((p) => {
+              // Resize, then nudge the (possibly corner-shifted) box back inside
+              // the frame so growth from an edge can't push it out.
+              const next = resizeElementFromCorner(p, id, corner, w)
+              const el = next[id]
+              if (!el) return next
+              const c = clampToFrame(el.x, el.y, el.w, el.h)
+              return moveElement(next, id, c.x, c.y)
+            })}
             onGrab={(id): void => setCollageOrder((o) => bringToFront(o, id))}
             rotations={collageRotations}
             onRotate={(id, deg): void => setCollageRotations((r) => ({ ...r, [id]: deg }))}
@@ -3259,21 +3305,25 @@ export function BoardRoot() {
                 : undefined
             }
           />
-          <ShareToast
-            count={selectedIds.size}
-            createState={shareCreateState}
-            onCreate={(): void => { void handleCreateHostedShare() }}
-            shareUrl={hostedShareUrl}
-            onCopyLink={handleShareCopyLink}
-            onPostToX={handlePostToX}
-            onSaveImage={capturedImageUrl ? handleSaveShareImage : undefined}
-            onReselect={handleShareReselect}
-            onDone={handleExitShareMode}
-          />
+          {/* Operation bar — hidden from the SHARE capture (data-no-capture) so it
+              never appears baked into the shared image, but stays on screen. */}
+          <div data-no-capture>
+            <ShareToast
+              count={selectedIds.size}
+              createState={shareCreateState}
+              onCreate={(): void => { void handleCreateHostedShare() }}
+              shareUrl={hostedShareUrl}
+              onCopyLink={handleShareCopyLink}
+              onPostToX={handlePostToX}
+              onSaveImage={capturedImageUrl ? handleSaveShareImage : undefined}
+              onReselect={handleShareReselect}
+              onDone={handleExitShareMode}
+            />
+          </div>
         </>
       )}
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed in CSS */}
-      <LanguageSwitcher />
+      <div data-no-capture><LanguageSwitcher /></div>
     </div>
   )
 }

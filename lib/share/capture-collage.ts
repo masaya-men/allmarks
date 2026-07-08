@@ -28,6 +28,9 @@ export type CaptureCollageOpts = {
   /** 撮影全体のタイムアウト (ms, 既定 20000)。dom-to-image が病的画像等でハングしても
    *  CREATE ボタンを永久に固めないための安全網。超過時は null を返す。 */
   readonly timeoutMs?: number
+  /** 'cover' (既定・切り出し) か 'contain' (枠を切らずレターボックス)。本物のボード枠を
+   *  丸ごと写したいときは 'contain'。余白は boardColor で塗る。 */
+  readonly fit?: 'cover' | 'contain'
 }
 
 /** `p` が `ms` 以内に解決しなければ null を返す (元の promise は放置)。 */
@@ -111,5 +114,7 @@ export async function captureCollageShareImage(
     width: finalW,
     height: finalH,
     targetBytes: opts.targetBytes ?? 180 * 1024,
+    fit: opts.fit ?? 'cover',
+    bgColor: opts.boardColor,
   })
 }
