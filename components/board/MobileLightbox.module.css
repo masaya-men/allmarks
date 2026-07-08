@@ -7,6 +7,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Parent .stage (Lightbox.module.css) is pointer-events:none so empty areas
+     fall through to the backdrop; re-enable here so gestures/taps land. */
+  pointer-events: auto;
   touch-action: none;
   will-change: transform;
 }

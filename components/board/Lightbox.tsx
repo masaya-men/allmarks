@@ -20,6 +20,9 @@ import {
   resolveLightboxPlayer,
 } from './embeds'
 import { LightboxNavChevron } from './LightboxNavChevron'
+import { MobileLightbox } from './MobileLightbox'
+import type { LightboxNav } from './lightbox-nav-types'
+import { useIsMobile } from '@/lib/board/use-is-mobile'
 import { useSmoothWheelScroll } from '@/lib/scroll/use-smooth-wheel-scroll'
 import { useTweetTranslation, type TweetTranslationView } from '@/lib/board/use-tweet-translation'
 import { useIsPaperTheme } from '@/lib/board/use-is-paper-theme'
@@ -387,12 +390,7 @@ function wrapCloneWithScaleHost(
 /** Optional nav controls — when provided, chevron + dots + arrow-key
  *  nav become available. Caller (BoardRoot or SharedView) owns the
  *  index state and loop logic; Lightbox just forwards user gestures. */
-type LightboxNav = {
-  readonly currentIndex: number
-  readonly total: number
-  readonly onNav: (dir: -1 | 1) => void
-  readonly onJump: (index: number) => void
-}
+// LightboxNav lives in ./lightbox-nav-types so MobileLightbox shares one type.
 
 type Props = {
   /** Either a BoardItem (my own board) or a ShareCard (received share view).
@@ -448,6 +446,9 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
   // untransformed .frame is invisible — only its children show.
   const mediaRef = useRef<HTMLDivElement>(null)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  // Mobile swaps the two-column .frame for the immersive MobileLightbox. Same
+  // breakpoint as the board (max-width:640px); desktop is byte-identical.
+  const isMobile = useIsMobile()
   // Tracks the identity from the previous render. Hoisted to the top of
   // the component (out of the nav-transition effect below) so the open
   // animation effect can also read it, and skip its fallback entry
@@ -1380,6 +1381,17 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
         aria-labelledby="lightbox-title"
         data-testid="lightbox"
       >
+      {isMobile ? (
+        <MobileLightbox
+          view={view}
+          mediaRef={mediaRef}
+          nav={nav ?? null}
+          onClose={requestClose}
+          main={<LightboxMedia key={view.url} item={view} />}
+          sheet={<DefaultText item={view} host={host} />}
+        />
+      ) : (
+        <>
       {nav && nav.total > 1 && (
         <>
           <LightboxNavChevron dir="prev" onClick={() => nav.onNav(-1)} />
@@ -1456,6 +1468,8 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
             </>
           )}
       </div>
+        </>
+      )}
     </div>
     </>
   )
