@@ -9138,3 +9138,24 @@ s176 出荷後のユーザーフィードバックで 2 点追い込み（本番
 1. **共有画像を「本物のボード枠込み」に**（平らな黒塗り→実物）。撮影対象を CollageCanvas ではなく**外枠 `.outerFrame` まるごと**へ変更（枠・左上 AllMarks ワードマーク・並べたカード・背景・タイトルまで WYSIWYG）。撮影の一瞬だけ `data-capturing` を立て、CSS で**操作系クロームだけ隠す**（右上メニュー `board-top-header`／`.frameTopChrome` の MOTION・フィルタ／SHARING バー・言語切替は `data-no-capture` で）。左上ロゴと枠は残す（ユーザー合意: 枠とロゴは入れる・メニューは入れない）。`normalize-shot` に `fit:'contain'`＋`bgColor` レターボックスを追加し、枠を切らずに 1200×630 に収める。地色は外枠（`resolvedCustom.edgeColor` or `--bg-outer`）に合わせる。
 2. **カードをボードの端まで動かせる／端で見切れる**。最初のクランプ（枠内に閉じ込め）は真逆だったので撤去。代わりに CollageCanvas の root を**枠の矩形で `clip-path: inset(var(--canvas-margin) round var(--canvas-radius))` クリップ**。root は全画面座標系（絶対配置は外枠の padding box=全画面に対して inset:0）なので、座標は触らずクリップだけ枠に合わせられる。結果、カードを端まで押し込む/拡大して一部だけ見せる、がコラージュらしくでき、外余白に浮かず枠でスパッと切れる。ユーザー確認 OK。
 - 検証: tsc0／vitest 全緑（167）／build OK。本番デプロイ＋ユーザー実機確認で「OKでした」。撮影が `clip-path` を反映しきれないケースだけ将来の注意点として残す（その時は撮影側にも同クリップを足す）。
+
+---
+
+## セッション 178 (2026-07-08) — ★スマホ盤面の土台＋操作系（束A 前半）本番反映
+
+計画書(束A)の「上部chrome整理」案を、ユーザー指示で**全画面・ボトムナビのスマホ専用UI**に転換。全変更を `MOBILE_BP_PX=640` / `@media(max-width:640px)` でゲートし、**デスクトップは byte-identical**（1489回帰確認）。tsc0 / vitest 2154 全緑 / 4回デプロイ。
+
+### 出荷内容
+- **A0/A1 土台**: `MOBILE_BP_PX`＋`useIsMobile()`フック＋`MOBILE_LAYOUT`(3列/gap6/margin0)。外枠撤去(`--canvas-margin:0`)・3列密グリッド。表示時 override のみ（保存 card-width/gap・customWidths は不変）。
+- **A2 chrome**: 上部アクション行・MOTION/FilterPill帯・ScrollMeter・背景巨大ワードマーク・言語ボタンをモバイル非表示。左上 AllMarks ワードマーク維持。
+- **ボトムナビ** `BoardMobileNav`（新規、z150）: TAG/THEME/MOTION/MORE(⋯)。既存 handleEnterTagMode/setActiveDrawer/handleToggleMotion に配線。タップ press-scale＋アクティブglyphポップ。
+- **FILTER を右上ヘッダー**へ（`.mobileTopFilter`）。既存 FilterPill 再利用（タップで下開き・外側タップ/Escでのみ閉じる＝タッチにホバー閉じ無し）。
+- **タッチ操作**（`handleMobilePointerDown` in CardsLayer）: タップ=Lightbox / **ドラッグ=盤面パン**（`onPanY`、カード上から始めてもスクロール）/ 並べ替え=PCのみ。window listener で per-pan 再レンダー耐性。リサイズハンドル・CardCornerActions・+TAG・hover系はモバイル非描画/不可視（`hoverActive=!isMobile&&…`＋ResizeHandleフラグメントを`!isMobile`ゲート）。絞り込みメニュー開時のカードタップは bail（閉じるのみ）。
+
+### 学び
+- **CDP合成タッチ = 1ドラッグにつき pointermove 1回**しか配信されない（10回 touchMove→1 pointermove を実測）。swipe/スクロールの滑らかさは Playwright では測れず実機のみ。カードタップ→Lightbox の合成ポインタも `setPointerCapture` で不可（既知）。
+- 背景タイポ(BoardBackgroundTypography)は viewport中央固定＝390pxだと巨大ワードマークの筆画だけ見えて崩れる→モバイル無効化。
+
+### 残（順番確定・ユーザー承認済）
+1. **スマホ専用ライトボックス**（中央大表示／キャプション下部peek→上スライド／縦スワイプで前後／下スワイプ閉じる案）— 次セッション。詳細 CURRENT_GOAL.md。
+2. スマホ専用タグ付け（選択→下部横スクロールタグをタップで付与）。3. ピンチでカードリサイズ（仕上げ）。

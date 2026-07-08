@@ -1,23 +1,34 @@
-# 次セッションのゴール — リリース滑走路の実行（束A から順に）
+# 次セッションのゴール — ★スマホ専用ライトボックスを作る（束A の続き）
 
 ## 正本計画（毎回最初に読む）
 
-**`docs/private/2026-07-08-release-runway-plan.md`**（非公開・gitignored）— s177 で作成した統合実行計画。
-束A（スマホ閲覧）→ 束B（スマホ保存）→ 束C（13言語仕上げ＋規約正文条項）→ 束D（公開素材）→ 束E（総仕上げ・公開）。
-チェックボックスを計画書に直接付けて進める。**新しく計画は立てない。**
+**`docs/private/2026-07-08-release-runway-plan.md`**（非公開）＋ このファイル。
+s178 でモバイル盤面の土台が本番反映済み（下記「直近の完了」）。次は**スマホ専用ライトボックス**。
 
-## 進め方（固定）
+## ★次にやること = スマホ専用ライトボックス（ユーザー確定仕様）
 
-- 1セッション＝1束（またはその一部）。実装→検証→デプロイまで自走。
-- デスクトップは1pxも変えない（モバイル変更は breakpoint でゲート＋1489 回帰スクショ）。
-- 検証: `rtk tsc` / `rtk vitest run` / `pnpm build` → Playwright（モバイルは 390×844 / dsf3）→ deploy `--branch=master`。
-- 束C（翻訳レビュー）は Sonnet 以上のモデルで。機微は必ず `docs/private/`。応答は日本語・簡潔。
+- **タップでメディアを中央に大きく表示**（画像・動画・テキストカード）。
+- **キャプションは画面下部にチラ見せ（peek）→ タップで下から上にスライドイン**（ボトムシート）。
+- **縦スワイプで前後のカードへめくる**（PCの左右送りと同じ意味。現状はホイール/矢印のみ＝タッチ swipe が無い）。
+- **閉じる**＝提案: 下スワイプで閉じる＋✕も残す（ユーザーに1行確認してから）。
+- 言語ボタンは既にモバイル非表示済み（この中で最終確認）。
+- **デスクトップのライトボックスは1pxも変えない**（全部 `isMobile` / `@media(max-width:640px)` ゲート）。
 
-## ★次にやること = 束A: スマホ閲覧（計画書のタスク A0〜A5）
+### 実装の勘所（s178 調査済・信じてよい／行番号はズレ得る）
 
-- A0 breakpoint 基盤（MOBILE_BP=640）→ A1 盤面のモバイル既定（余白12-16px・2列想定）→ A2 chrome 縦積み（POP OUT/TUNE/TITLE/SHARE をモバイル非表示）→ A3 /s/ 受信のモバイル対応 → A4 オンボのモバイルゲート → A5 実測＋ユーザー実機。
-- 前提事実（調査済の配線先・行番号）は全部計画書に書いてある。推測しない。
+- 本体 [Lightbox.tsx](../components/board/Lightbox.tsx)（**2264行・大型**）。構造: `.backdrop`(dim/クリックで閉じる z100) → `.stage`(z300, 中央寄せ, ナビchevron) → `.frame`(内容, クリックで閉じる, 閉じる✕ + メディア + テキスト)。非tweetは `.media`(LightboxMedia) + `.text`(DefaultText) の2カラム。tweetは `<TweetColumns>`。カード種別ごとに分岐レンダラ多数（image/instagram/video/tweet/text）。
+- ナビは**ホイール(deltaX/deltaY)＋矢印キー＋nav prop(chevron/dots)**。`nav.onNav(-1|1)`。**タッチ swipe ハンドラは無い**＝追加が必要（縦スワイプ→ `nav.onNav`、下スワイプ→ close）。既存 wheel の deltaY→nav の向きに合わせる。
+- FLIP開閉モーフ（カード矩形から拡大）は既存で優秀＝**モバイルでも流用**。レイアウトだけ `@media` でモバイル化（メディア全幅中央＋テキストをボトムシート化）。
+- CSS: [Lightbox.module.css](../components/board/Lightbox.module.css)。`.frame`/`.media`/`.text`/`.backdrop`。ここに `@media(max-width:640px)` を足す。
+- キャプション peek→展開は**新規 state（collapsed/expanded）＋タップ＋CSS transition**。`.text` をモバイルでは下部固定シート化。
+- 検証: モバイル実測は 390×844/dsf3。**CDP合成タッチは1ドラッグにつき pointermove を1回しか配信しない**＝swipe/滑らかさは実機確認（memory `reference_playwright_board_share_verify`）。カードタップ→ライトボックス移行の合成ポインタも不可＝実機。
 
-## 直近の完了（s177）
+## その後（順番確定・ユーザー承認済）
 
-- 方針相談＋統合実行計画の作成（詳細はすべて `docs/private/` 側: IDEAS.md #5 s177 節＋上記計画書）。コード変更なし。
+1. スマホ専用ライトボックス（今回） → 2. **スマホ専用タグ付け**（選択→下部の横スクロールタグをタップで付与） → 3. **ピンチでカードリサイズ**（仕上げ）。
+
+## 直近の完了（s178 — モバイル盤面の土台＋操作系、本番反映済）
+
+- 外枠なし全画面・**3列密グリッド**・左上 AllMarks・右上 FILTER・**ボトムナビ**(TAG/THEME/MOTION/MORE⋯)。全部 `MOBILE_BP_PX=640` ゲート、デスクトップは回帰なし（1489確認）。
+- **タップ=Lightbox / ドラッグ=盤面スクロール（カード上でも）/ 並べ替え・リサイズハンドル・hover操作系・言語ボタンはモバイル非表示**。絞り込みメニュー開時のタップは閉じるだけ（Lightbox並行を防止）。
+- 詳細は memory `project_mobile_board_direction` と TODO_COMPLETED s178。

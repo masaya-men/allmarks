@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 178 — ★スマホ盤面の土台＋操作系を出荷・本番反映済／次はスマホ専用ライトボックス)
+
+- **モバイル盤面を全面的にスマホ仕様に**（ユーザー方針＝計画書の「上部chrome整理」案を破棄して**全画面・ボトムナビ**に転換）。全部 `MOBILE_BP_PX=640` / `@media(max-width:640px)` ゲート＝**デスクトップは1pxも変わらない**（1489回帰スクショ確認済）。tsc0 / vitest 2154 全緑 / ビルドOK / 本番 `allmarks.app` 反映済（4回デプロイ）。
+  - **外枠なし全画面・3列密グリッド（gap6）**（`MOBILE_LAYOUT` in [lib/board/constants.ts](../lib/board/constants.ts)、表示時 override のみ・保存値は不変）。左上 AllMarks ワードマーク・右上 FILTER ピル（タップで下開き・外側タップ/Escでのみ閉じる）・**ボトムナビ** `BoardMobileNav`（TAG/THEME/MOTION/MORE⋯、既存フローに配線）。背景巨大ワードマーク・ScrollMeter・言語ボタンはモバイル非表示。
+  - **タッチ操作**＝タップ=Lightbox / **ドラッグ=盤面スクロール（カード上からでも）** / 並べ替え・リサイズハンドル・hover操作系はモバイル非表示（`handleMobilePointerDown` in [CardsLayer.tsx](../components/board/CardsLayer.tsx)、`onPanY`でパン・window listenerで再レンダー耐性）。絞り込み開時のカードタップは閉じるだけ。
+  - 学び: **CDP合成タッチは1ドラッグ=pointermove1回**しか配信しない→swipe/滑らかさは実機のみ。詳細 memory `project_mobile_board_direction`、narrative は TODO_COMPLETED s178。
+- **次＝スマホ専用ライトボックス**（中央大表示／キャプション下部peek→上スライド／縦スワイプで前後）→ その後 スマホ専用タグ付け → ピンチリサイズ。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 177 — リリース滑走路の統合実行計画を作成・実装は次セッションから)
 
 - **コード変更なし（計画セッション）**。方針相談 → リリースまでの統合実行計画を **`docs/private/2026-07-08-release-runway-plan.md`**（非公開）に作成。束A スマホ閲覧 → 束B スマホ保存 → 束C 13言語仕上げ＋規約正文条項 → 束D 公開素材 → 束E 総仕上げ・公開、の5束・8〜10セッション想定。
