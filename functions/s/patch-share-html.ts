@@ -35,11 +35,16 @@ export function patchShareHTML(template: string, vars: PatchShareHTMLVars): stri
   const { id, cardCount, baseUrl, page } = vars
   const pagePath = page === 'triage' ? `/s/${id}/triage` : `/s/${id}`
   const ogUrl = `${baseUrl}${pagePath}`
-  // 配信関数は functions/api/share/[id]/og.ts = ルート /api/share/<id>/og。
-  // 以前は末尾に .webp を付けていたが、 そのパスにはどの関数も当たらず Next の 404
-  // HTML が返り、 SNS クローラーが OG 画像を取得できていなかった (session 96 本番実測で確定)。
-  // 関数側が Content-Type: image/webp を返すので拡張子は不要。
-  const ogImage = `${baseUrl}/api/share/${id}/og`
+  // OG 画像は functions/og/[id].ts = ルート /og/<id>.jpg から 200 直接配信する。
+  // なぜ /api/share/<id>/og ではなくこちらか (s174・LoPo recipe 移植):
+  //   LoPo が「Discord は出るが X だけ小さい summary カード」を解決した記録では、
+  //   効いた修正が「OG 画像を /api/ 配下から外し、静的ファイル風の URL で 200 直接
+  //   (無リダイレクト) 配信」だった (X クローラーが /api/ プレフィックスを嫌う)。
+  //   末尾 .jpg は「静的ファイルらしさ」のため (関数側で拡張子を剥がして処理)。
+  //   ⚠ 過去 .webp が「どの関数にも当たらず Next 404」を返した傷 (下記コメント参照) が
+  //   あるので、deploy 後に /og/<id>.jpg が 200 を返すか curl で必ず実機確認する。
+  //   404 なら無拡張 /og/<id> に退避する。旧 /api/share/<id>/og は後方互換で残置。
+  const ogImage = `${baseUrl}/og/${id}.jpg`
   const description = `A curated set of ${cardCount} bookmarks shared via AllMarks`
 
   let html = template
@@ -68,7 +73,7 @@ export function patchShareHTML(template: string, vars: PatchShareHTMLVars): stri
     `<meta property="og:url" content="${ogUrl}"/>`,
     `<meta property="og:image" content="${ogImage}"/>`,
     `<meta property="og:image:width" content="1200"/>`,
-    `<meta property="og:image:height" content="628"/>`,
+    `<meta property="og:image:height" content="630"/>`,
     `<meta name="twitter:image" content="${ogImage}"/>`,
   ].join('')
   html = html.replace(

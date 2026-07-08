@@ -60,9 +60,17 @@ describe('patchShareHTML', () => {
     expect(out).toContain('content="https://booklage.pages.dev/s/k3p9xv/triage"')
   })
 
-  it('injects og:image pointing to /api/share/<id>/og', () => {
+  it('injects og:image pointing to the non-/api /og/<id>.jpg static-looking URL (LoPo X recipe)', () => {
     const out = patchShareHTML(sampleTemplate, baseVars)
-    expect(out).toContain('property="og:image" content="https://booklage.pages.dev/api/share/k3p9xv/og"')
+    expect(out).toContain('property="og:image" content="https://booklage.pages.dev/og/k3p9xv.jpg"')
+    // must NOT sit under /api/ (X crawler dislikes the /api/ prefix)
+    expect(out).not.toContain('/api/share/k3p9xv/og')
+  })
+
+  it('injects og:image:height=630 (matches 1200x630 normalized screenshot)', () => {
+    const out = patchShareHTML(sampleTemplate, baseVars)
+    expect(out).toContain('property="og:image:height" content="630"')
+    expect(out).toContain('property="og:image:width" content="1200"')
   })
 
   it('emits exactly ONE og:image and drops the template default /og.png (B3 regression guard)', () => {
@@ -73,12 +81,12 @@ describe('patchShareHTML', () => {
     // twitter:image too — only the per-share one survives.
     const twImages = out.match(/<meta\s+name="twitter:image"\s+content="[^"]*"/g) ?? []
     expect(twImages).toHaveLength(1)
-    expect(twImages[0]).toContain('/api/share/k3p9xv/og')
+    expect(twImages[0]).toContain('/og/k3p9xv.jpg')
   })
 
   it('injects twitter:image so X cards show the per-id thumbnail', () => {
     const out = patchShareHTML(sampleTemplate, baseVars)
-    expect(out).toMatch(/<meta\s+name="twitter:image"\s+content="https:\/\/booklage\.pages\.dev\/api\/share\/k3p9xv\/og"/)
+    expect(out).toMatch(/<meta\s+name="twitter:image"\s+content="https:\/\/booklage\.pages\.dev\/og\/k3p9xv\.jpg"/)
   })
 
   it('injects window.__SHARE_ID__ and window.__SHARE_CARD_COUNT__ early in <head>', () => {
@@ -108,7 +116,7 @@ describe('patchShareHTML', () => {
   it('supports an alternative base URL (= future allmarks.app swap)', () => {
     const out = patchShareHTML(sampleTemplate, { ...baseVars, baseUrl: 'https://allmarks.app' })
     expect(out).toContain('content="https://allmarks.app/s/k3p9xv"')
-    expect(out).toContain('content="https://allmarks.app/api/share/k3p9xv/og"')
+    expect(out).toContain('content="https://allmarks.app/og/k3p9xv.jpg"')
   })
 
   it('handles cardCount=0 gracefully', () => {
