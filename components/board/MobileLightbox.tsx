@@ -135,10 +135,9 @@ export function MobileLightbox({
           springBack()
           return
         }
-        // Let the shared close morph shrink the card back into its board slot;
-        // reset the follow transform first so it starts from the true rect.
-        const stage = stageRef.current
-        if (stage) gsap.set(stage, { clearProps: 'transform' })
+        // Close morph reads .main's live rect, so leaving the drag transform in
+        // place lets the card keep shrinking from where the finger left it,
+        // straight back into its board slot — no snap-to-center first.
         onClose()
       } else if (intent === 'next') {
         doNav(1)

@@ -100,6 +100,19 @@ const CLOSE_BACKDROP_FADE_DUR = 0.24 // session128: was 0.42 — snappier blur f
 const CLOSE_BACKDROP_DELAY = 0.15
 const CLOSE_FALLBACK_DUR = 0.3
 
+// ---- Mobile (isMobile) open/close character ----------------------------------
+// The immersive MobileLightbox grows the tapped card into a near-full-screen
+// target, so the morph travels much further than the desktop 2-column frame.
+// Mobile leans into that: a longer, springier expand (back.out overshoot = the
+// card "pops" open, Apple app-icon style) and a close with a slight anticipation
+// swell before it shoots back into its board slot. Gated on isMobile only —
+// desktop keeps its clean power3.out / power2.out. Session 180 device feedback:
+// "make the open/close dramatically better, mimic Apple".
+const OPEN_BASE_DUR_MOBILE = 0.52
+const OPEN_EASE_MOBILE = 'back.out(1.5)'
+const CLOSE_TWEEN_DUR_MOBILE = 0.44
+const CLOSE_TWEEN_EASE_MOBILE = 'back.in(1.2)'
+
 // =====================================================================
 // I-07-#5: Lightbox text mask-reveal-up.
 // CSS デザイントークン (--lightbox-text-reveal-*) を root から読み、
@@ -653,12 +666,15 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
     closingRef.current = true
     const el = frameRef.current
     const backdrop = backdropRef.current
-    if (!el) {
+    // Mobile has no .frame (the immersive MobileLightbox renders instead), so
+    // the close morph keys off .media (mediaRef) — which mobile DOES have. Only
+    // bail to an instant close when neither exists.
+    if (!el && !mediaRef.current) {
       onClose()
       return
     }
     // Kill any in-flight open tween so we animate from current state.
-    gsap.killTweensOf(el)
+    if (el) gsap.killTweensOf(el)
     if (backdrop) gsap.killTweensOf(backdrop)
 
     // Prefer the source card's *current* DOM rect so the close FLIP tracks
@@ -762,8 +778,10 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
           left: Math.round(closeOriginHost.left),
           width: Math.round(closeOriginHost.width),
           height: Math.round(closeOriginHost.height),
-          duration: CLOSE_TWEEN_DUR,
-          ease: CLOSE_TWEEN_EASE,
+          // Mobile: longer travel + a back.in anticipation swell before it
+          // shoots back into the board slot (Apple-style). Desktop unchanged.
+          duration: isMobile ? CLOSE_TWEEN_DUR_MOBILE : CLOSE_TWEEN_DUR,
+          ease: isMobile ? CLOSE_TWEEN_EASE_MOBILE : CLOSE_TWEEN_EASE,
           onUpdate: () => {
             // session 35: 文字カードの hybrid scale-host を outer width に追従。
             // zoom = currentOuterW / sourceW → 大 (= media) から 1.0 (= source) へ縮む。
@@ -787,12 +805,12 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       // Reveal source card a hair before the clone lands. Both are
       // visually identical (clone was made from source), so this lead
       // is just safety margin for React reflow on visibility flip.
-      const landingAt = CLOSE_FRAME_DELAY + CLOSE_TWEEN_DUR
+      const landingAt = CLOSE_FRAME_DELAY + (isMobile ? CLOSE_TWEEN_DUR_MOBILE : CLOSE_TWEEN_DUR)
       const revealAt = Math.max(0, landingAt - CLOSE_REVEAL_LEAD)
       if (onSourceShouldShow) {
         tl.call(() => { onSourceShouldShow() }, undefined, revealAt)
       }
-    } else {
+    } else if (el) {
       gsap.to(el, {
         scale: 0.96,
         opacity: 0,
@@ -800,8 +818,12 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
         ease: 'power2.in',
         onComplete: () => onClose(),
       })
+    } else {
+      // Mobile with no source rect to shrink into (culled card) — nothing to
+      // animate, just close.
+      onClose()
     }
-  }, [onClose, originRect, sourceCardId])
+  }, [onClose, originRect, sourceCardId, isMobile])
 
   // Escape key closes
   useEffect(() => {
@@ -1015,7 +1037,11 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       const dx = (mediaRect.left + mediaRect.width / 2) - (sourceRect.left + sourceRect.width / 2)
       const dy = (mediaRect.top + mediaRect.height / 2) - (sourceRect.top + sourceRect.height / 2)
       const distance = Math.hypot(dx, dy)
-      const dur = OPEN_BASE_DUR + Math.min(distance / OPEN_DIST_DIVISOR, OPEN_DIST_BONUS_MAX)
+      // Mobile: longer base + springy overshoot ease (Apple-style pop). Desktop
+      // unchanged. distance bonus still applies on top of the base.
+      const dur = (isMobile ? OPEN_BASE_DUR_MOBILE : OPEN_BASE_DUR)
+        + Math.min(distance / OPEN_DIST_DIVISOR, OPEN_DIST_BONUS_MAX)
+      const openEase = isMobile ? OPEN_EASE_MOBILE : OPEN_EASE
 
       const revealTokens = readRevealTokens()
       const prefersReduce = getPrefersReducedMotion()
@@ -1065,7 +1091,7 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
           width: Math.round(mediaRectHost.width),
           height: Math.round(mediaRectHost.height),
           duration: dur,
-          ease: OPEN_EASE,
+          ease: openEase,
           onUpdate: () => {
             // session 35: scale-host があるとき (= 文字カード) のみ、 外側 width に
             // 合わせて内側 zoom を更新。 image/video は scale-host=null = skip。
