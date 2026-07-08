@@ -7,30 +7,30 @@ import type { LightboxItem } from '@/lib/share/lightbox-item'
 const view = { url: 'https://x.test/a', title: 'T', description: '', thumbnail: null } as unknown as LightboxItem
 
 describe('MobileLightbox', () => {
-  it('renders the big-center main and the info sheet', () => {
+  it('renders the big-center main and the caption screen', () => {
     render(
       <MobileLightbox
         view={view}
         mediaRef={createRef<HTMLDivElement>()}
         main={<img alt="m" />}
-        sheet={<p>info</p>}
+        caption={<p>info</p>}
         nav={null}
         onClose={() => {}}
       />,
     )
     expect(screen.getByTestId('mobile-lightbox')).toBeInTheDocument()
     expect(screen.getByAltText('m')).toBeInTheDocument()
-    expect(screen.getByTestId('lightbox-info-sheet')).toBeInTheDocument()
+    expect(screen.getByTestId('lightbox-caption')).toBeInTheDocument()
   })
 
-  it('closes when the empty stage background is tapped', () => {
+  it('closes when the empty stage background is tapped (from the card screen)', () => {
     const onClose = vi.fn()
     render(
       <MobileLightbox
         view={view}
         mediaRef={createRef<HTMLDivElement>()}
         main={<img alt="m" />}
-        sheet={<p>info</p>}
+        caption={<p>info</p>}
         nav={null}
         onClose={onClose}
       />,

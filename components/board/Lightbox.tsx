@@ -1503,7 +1503,7 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
           nav={nav ?? null}
           onClose={requestClose}
           main={<LightboxMedia key={view.url} item={view} />}
-          sheet={<DefaultText item={view} host={host} />}
+          caption={<DefaultText item={view} host={host} />}
         />
       ) : (
         <>

@@ -31,3 +31,23 @@
   max-height: 100vh;
   object-fit: contain;
 }
+
+/* Caption screen. Sits directly on the frosted board backdrop (Lightbox's
+   .backdrop = dim + blur, like the desktop text panel) — NO opaque sheet.
+   Rests fully below the fold (translateY 100%); a swipe up rides it into the
+   lower two-thirds while the card shrinks to the top. pan-y so long captions
+   scroll natively; the gesture layer defers to that scroll until it's at top. */
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34vh;
+  bottom: 0;
+  z-index: 2;
+  overflow-y: auto;
+  padding: 8px 26px 40px;
+  color: #fff;
+  transform: translateY(100%);
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}

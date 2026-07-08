@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { gsap } from 'gsap'
 import { useLightboxSwipe } from './use-lightbox-swipe'
-import { LightboxInfoSheet } from './LightboxInfoSheet'
 import type { LightboxItem } from '@/lib/share/lightbox-item'
 import type { LightboxNav } from './lightbox-nav-types'
 import styles from './MobileLightbox.module.css'
@@ -15,13 +14,11 @@ type MobileLightboxProps = {
   readonly mediaRef: RefObject<HTMLDivElement | null>
   /** The big-center primary content (image / video / tweet body / large text). */
   readonly main: ReactNode
-  /** Secondary info for the bottom sheet. */
-  readonly sheet: ReactNode
+  /** Secondary info (title / description / source) — shown on the caption
+   *  screen, sitting directly on the frosted backdrop like the desktop panel. */
+  readonly caption: ReactNode
   readonly nav: LightboxNav | null
   readonly onClose: () => void
-  /** Reports whether the main content can still scroll up/down, so a vertical
-   *  drag defers to inner scroll before close/sheet engage. */
-  readonly contentScrollable?: () => { top: boolean; bottom: boolean }
 }
 
 // A hard flick advances more cards, decelerating — like the board's inertial
@@ -29,43 +26,37 @@ type MobileLightboxProps = {
 // card, capped so a violent flick can't spin forever.
 const FLICK_CARD_DIVISOR = 0.9
 const FLICK_MAX_CARDS = 6
-// Belt-and-suspenders: no matter what, a flick can never leave the nav frozen
-// longer than this (the animating guard is force-cleared).
 const FLICK_FAILSAFE_MS = 1800
+// Caption screen: the card shrinks to this scale and rides up near the top,
+// the caption slides up under it onto the frosted board.
+const CAPTION_CARD_SCALE = 0.42
+const CAPTION_CARD_RISE = 0.3 // × viewport height
 
-/** Immersive, full-screen mobile lightbox (session 180). Tap opens it big in the
- *  center; left/right swipes slide to the prev/next card — a hard flick coasts
- *  through several with decelerating inertia — down closes, up (or the sheet
- *  handle) reveals the info sheet. Desktop keeps the two-column Lightbox frame. */
+/** Immersive, full-screen mobile lightbox (session 180). Tap opens the card big
+ *  in the center; left/right swipes slide to the prev/next card (a hard flick
+ *  coasts through several, decelerating); swipe UP rides to the caption screen
+ *  (card shrinks to the top, caption slides up on the frosted board); swipe DOWN
+ *  returns to the card, or — from the card screen — closes. */
 export function MobileLightbox({
   view,
   mediaRef,
   main,
-  sheet,
+  caption,
   nav,
   onClose,
-  contentScrollable,
 }: MobileLightboxProps): ReactNode {
   const stageRef = useRef<HTMLDivElement>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const sheetOpenRef = useRef(false)
-  sheetOpenRef.current = sheetOpen
-  // Always the LATEST nav. A flick's later steps fire from setTimeout, which
-  // would otherwise capture the nav (and its stale currentIndex) from the render
-  // that started the flick — so every step re-navigated from the ORIGINAL index
-  // to the same card: N enter animations played but the deck never advanced.
+  const captionRef = useRef<HTMLDivElement>(null)
+  const [captionOpen, setCaptionOpen] = useState(false)
+  const captionOpenRef = useRef(false)
+  captionOpenRef.current = captionOpen
   const navRef = useRef(nav)
   navRef.current = nav
-  // Direction the incoming card should fly in from (0 = not navigating).
   const navDirRef = useRef<-1 | 0 | 1>(0)
   const navAnimatingRef = useRef(false)
-  // Multi-card inertial flick: how many more onNav steps to fire, decelerating.
   const flickRef = useRef<{ dir: -1 | 1; remaining: number; total: number } | null>(null)
   const flickTimerRef = useRef<number | null>(null)
   const failsafeRef = useRef<number | null>(null)
-  // Bumped once per onNav step. The enter effect keys on THIS (not view.url):
-  // adjacent cards can share a URL (duplicates are allowed), which would leave
-  // the animating guard stuck true forever — the "strong flick kills swipe" bug.
   const [navSeq, setNavSeq] = useState(0)
 
   const clearTimers = useCallback((): void => {
@@ -85,8 +76,31 @@ export function MobileLightbox({
     if (mainEl) gsap.set(mainEl, { clearProps: 'transform,opacity' })
   }, [clearTimers, mediaRef])
 
-  // Enter animation after each onNav step. Intermediate cards in a flick slide
-  // in quick + flat; the last one settles with an elastic overshoot.
+  // Card ⇄ caption screen transition (coordinated: card rises + shrinks, caption
+  // slides up under it). Not the open/close morph — that's Lightbox's.
+  const setCaption = useCallback(
+    (open: boolean): void => {
+      setCaptionOpen(open)
+      const mainEl = mediaRef.current
+      const capEl = captionRef.current
+      if (mainEl) {
+        gsap.to(mainEl, {
+          scale: open ? CAPTION_CARD_SCALE : 1,
+          y: open ? -window.innerHeight * CAPTION_CARD_RISE : 0,
+          duration: 0.52,
+          ease: 'power3.inOut',
+          onComplete: open
+            ? undefined
+            : (): void => {
+                gsap.set(mainEl, { clearProps: 'transform' })
+              },
+        })
+      }
+      if (capEl) gsap.to(capEl, { yPercent: open ? 0 : 100, duration: 0.52, ease: 'power3.inOut' })
+    },
+    [mediaRef],
+  )
+
   useLayoutEffect(() => {
     const mainEl = mediaRef.current
     const dir = navDirRef.current
@@ -107,18 +121,15 @@ export function MobileLightbox({
         onComplete: last ? endNav : undefined,
       },
     )
-    // navSeq is the real trigger (unique per step); view drives the deps lint.
   }, [navSeq, view.url, mediaRef, endNav])
 
   const springBack = useCallback((): void => {
     const mainEl = mediaRef.current
     const stage = stageRef.current
-    if (mainEl) gsap.to(mainEl, { x: 0, rotate: 0, scale: 1, duration: 0.42, ease: 'elastic.out(1, 0.6)' })
+    if (mainEl && !captionOpenRef.current) gsap.to(mainEl, { x: 0, rotate: 0, scale: 1, duration: 0.42, ease: 'elastic.out(1, 0.6)' })
     if (stage) gsap.to(stage, { y: 0, scale: 1, duration: 0.42, ease: 'elastic.out(1, 0.6)' })
   }, [mediaRef])
 
-  // Fire the next onNav in an in-flight flick, scheduling the following one on a
-  // widening interval so the run visibly decelerates before it settles.
   const stepFlick = useCallback((): void => {
     const f = flickRef.current
     const liveNav = navRef.current
@@ -132,8 +143,7 @@ export function MobileLightbox({
     f.remaining -= 1
     if (f.remaining > 0) {
       const progress = 1 - f.remaining / f.total
-      const delay = 90 + progress * 170
-      flickTimerRef.current = window.setTimeout(stepFlick, delay)
+      flickTimerRef.current = window.setTimeout(stepFlick, 90 + progress * 170)
     } else {
       flickRef.current = null
     }
@@ -144,7 +154,6 @@ export function MobileLightbox({
       const mainEl = mediaRef.current
       if (!mainEl || !navRef.current || navAnimatingRef.current) return
       navAnimatingRef.current = true
-      // Guaranteed recovery even if an enter never fires.
       failsafeRef.current = window.setTimeout(endNav, FLICK_FAILSAFE_MS)
       const w = window.innerWidth
       gsap.to(mainEl, {
@@ -164,37 +173,41 @@ export function MobileLightbox({
   )
 
   const { bind } = useLightboxSwipe({
-    contentScrollable,
+    // On the caption screen, a vertical drag first scrolls the caption; only at
+    // its top does a down-swipe return to the card.
+    contentScrollable: (): { top: boolean; bottom: boolean } => {
+      const cap = captionRef.current
+      if (!captionOpenRef.current || !cap) return { top: true, bottom: true }
+      return {
+        top: cap.scrollTop <= 0,
+        bottom: cap.scrollTop + cap.clientHeight >= cap.scrollHeight - 1,
+      }
+    },
     onDrag: (axis, dx, dy): void => {
-      if (navAnimatingRef.current) return
+      if (navAnimatingRef.current || captionOpenRef.current) return
       const stage = stageRef.current
       const mainEl = mediaRef.current
       if (axis === 'horizontal' && mainEl) {
         gsap.set(mainEl, { x: dx, rotate: dx / 42, scale: 1 - Math.min(Math.abs(dx) / 2400, 0.1) })
-      } else if (axis === 'vertical' && stage && !sheetOpenRef.current) {
-        const shift = dy > 0 ? dy : dy * 0.3
-        gsap.set(stage, { y: shift, scale: dy > 0 ? Math.max(0.9, 1 - dy / 1600) : 1 })
+      } else if (axis === 'vertical' && stage && dy > 0) {
+        gsap.set(stage, { y: dy, scale: Math.max(0.9, 1 - dy / 1600) })
       }
     },
     onIntent: (intent, info): void => {
-      if (intent === 'close') {
-        if (sheetOpenRef.current) {
-          setSheetOpen(false)
-          springBack()
+      if (intent === 'sheet') {
+        // swipe up → caption screen (only from the card screen)
+        if (!captionOpenRef.current) setCaption(true)
+      } else if (intent === 'close') {
+        // swipe down → back to the card screen, or close if already there
+        if (captionOpenRef.current) {
+          setCaption(false)
           return
         }
-        // Reset any drag transform so the transform-based close morph starts
-        // from .main's true full-screen rect.
-        const st = stageRef.current
-        if (st) gsap.set(st, { clearProps: 'transform' })
         onClose()
-      } else if (intent === 'next' || intent === 'prev') {
+      } else if ((intent === 'next' || intent === 'prev') && !captionOpenRef.current) {
         const dir = intent === 'next' ? 1 : -1
         const count = Math.max(1, Math.min(FLICK_MAX_CARDS, 1 + Math.floor(info.speed / FLICK_CARD_DIVISOR)))
         doNav(dir, count)
-      } else if (intent === 'sheet') {
-        setSheetOpen(true)
-        springBack()
       } else {
         springBack()
       }
@@ -210,16 +223,24 @@ export function MobileLightbox({
       aria-modal="true"
       aria-label={view.title || 'Bookmark'}
       onClick={(e): void => {
-        if (e.target === stageRef.current) onClose()
+        if (e.target !== stageRef.current) return
+        if (captionOpenRef.current) setCaption(false)
+        else onClose()
       }}
       {...bind}
     >
       <div ref={mediaRef} className={styles.main} onClick={(e): void => e.stopPropagation()}>
         {main}
       </div>
-      <LightboxInfoSheet open={sheetOpen} onToggle={(): void => setSheetOpen((v) => !v)}>
-        {sheet}
-      </LightboxInfoSheet>
+      <div
+        ref={captionRef}
+        className={styles.caption}
+        data-testid="lightbox-caption"
+        data-open={captionOpen ? 'true' : 'false'}
+        onClick={(e): void => e.stopPropagation()}
+      >
+        {caption}
+      </div>
     </div>
   )
 }
