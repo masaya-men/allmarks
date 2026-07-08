@@ -43,7 +43,7 @@ import { useViewportPlaybackPool } from '@/lib/board/use-viewport-playback-pool'
 import { useSpotlightRotation } from '@/lib/board/use-spotlight-rotation'
 import { ResizeHandle } from './ResizeHandle'
 import { CardCornerActions } from './CardCornerActions'
-import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX } from './use-card-reorder-drag'
+import { useCardReorderDrag, computeVirtualOrder, makeSkylineSimulator, CLICK_THRESHOLD_PX, pressLandsOnCardScrollbar } from './use-card-reorder-drag'
 import { resolveDropTargets } from '@/lib/board/tag-assign'
 import { pickCard, itemSkylineHeight, ImageCard, paperCardHasTornBacking } from './cards'
 import { selectPaperSoftShuffle } from '@/lib/board/paper-soft-shuffle'
@@ -55,6 +55,12 @@ import styles from './CardsLayer.module.css'
  *  press-and-hold is NOT treated as a tap. Paired with CLICK_THRESHOLD_PX
  *  (imported) for the 5px + 200ms tap window. */
 const CLICK_MAX_MS = 200
+
+/** Finger travel (px) past which a mobile card press becomes a board scroll (a
+ *  vertical pan) instead of a tap. A touch below this on release opens the
+ *  Lightbox. Slightly larger than the 5px desktop click slop so a natural
+ *  finger tap isn't mistaken for a drag. */
+const MOBILE_SCROLL_ENGAGE_PX = 8
 
 /** Stable empty selection set — used as the fallback when a selection-mode card
  *  has no selectedIds yet, so resolveDropTargets never sees null. */
@@ -288,6 +294,11 @@ type CardsLayerProps = {
    *  through to useCardReorderDrag. Optional so the share-view caller
    *  (which currently has no scroll) can omit it. */
   readonly onPanY?: (requestedDy: number) => number
+  /** Mobile (touch) mode. When true, a card press uses the tap-or-scroll
+   *  gesture instead of drag-to-reorder: a tap opens the Lightbox, a drag pans
+   *  the board (via onPanY) so a dense edge-to-edge grid is still scrollable.
+   *  Reorder is a desktop-only power gesture. Defaults to false (desktop). */
+  readonly isMobile?: boolean
   /** Tier 1 master switch — when false, no viewport autoplay. */
   readonly motionEnabled: boolean
   /** Onboarding tag scene: force the hover-gated +TAG button visible &
@@ -385,6 +396,7 @@ export function CardsLayer({
   onCardResetSize,
   sourceCardId,
   onPanY,
+  isMobile = false,
   motionEnabled,
   matchedBookmarkIds,
   allTags,
@@ -1027,6 +1039,62 @@ export function CardsLayer({
     [onClick],
   )
 
+  // Mobile (touch) board handler — tap-or-scroll, no reorder. On a dense
+  // edge-to-edge mobile grid there's almost no bare board to grab, so a drag
+  // that starts ON a card must scroll the board (industry standard: Pinterest /
+  // Instagram / Are.na). A press that stays put opens the Lightbox; once the
+  // finger travels past MOBILE_SCROLL_ENGAGE_PX the gesture becomes a vertical
+  // pan driven through onPanY (the same clamped scroll the board uses). Reorder
+  // is intentionally desktop-only. Pointer capture mirrors the other handlers so
+  // an interrupted gesture tears its listeners down cleanly.
+  const handleMobilePointerDown = useCallback(
+    (e: PointerEvent<HTMLDivElement>, bookmarkId: string): void => {
+      if (e.button > 0) return
+      // A press on a text card's internal scrollbar goes to the native scroller.
+      if (pressLandsOnCardScrollbar(e.target, e.clientX, e.clientY)) return
+      const el = e.currentTarget
+      const startX = e.clientX
+      const startY = e.clientY
+      let lastY = e.clientY
+      let scrolling = false
+      const panY = onPanY
+      // Listen on WINDOW (not the card element) and DON'T setPointerCapture:
+      // every pan step calls setViewport → BoardRoot re-renders → the card node
+      // can be re-created/re-culled, which would silently drop element-bound
+      // listeners after the first move (the whole gesture would stall at one
+      // step). Window listeners survive re-renders and still see the bubbling
+      // pointer stream, so the pan accumulates the full drag. We don't
+      // stopPropagation either: InteractionLayer classifies a card-targeted
+      // press as 'ignore', so the bare-layer pan never double-engages.
+      const move = (ev: globalThis.PointerEvent): void => {
+        const dyStep = ev.clientY - lastY
+        lastY = ev.clientY
+        if (!scrolling) {
+          const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+          if (dist < MOBILE_SCROLL_ENGAGE_PX) return
+          scrolling = true
+        }
+        // Finger moving DOWN (dyStep > 0) should reveal earlier cards → the
+        // board scrolls up (viewport.y decreases), so request the negated delta.
+        if (panY && dyStep !== 0) panY(-dyStep)
+      }
+      const end = (ev: globalThis.PointerEvent): void => {
+        window.removeEventListener('pointermove', move)
+        window.removeEventListener('pointerup', end)
+        window.removeEventListener('pointercancel', end)
+        // Only a genuine, non-scrolling pointerup opens the card. A tap never
+        // pans (scrolling stays false → no re-render), so `el` is still live.
+        if (ev.type !== 'pointerup' || scrolling) return
+        const win = el.querySelector<HTMLElement>('[data-paper-window]')
+        onClick(bookmarkId, (win ?? el).getBoundingClientRect())
+      }
+      window.addEventListener('pointermove', move)
+      window.addEventListener('pointerup', end)
+      window.addEventListener('pointercancel', end)
+    },
+    [onClick, onPanY],
+  )
+
   // Selective-share / TAG MODE card handler. A genuine tap (< CLICK_MAX_MS,
   // < CLICK_THRESHOLD_PX) toggles selection. In TAG MODE (onTagDrop present) a
   // >threshold drag instead becomes a tag-drag: a cursor-following ghost + a
@@ -1276,9 +1344,11 @@ export function CardsLayer({
             onPointerDown={(e: PointerEvent<HTMLDivElement>): void =>
               selectionMode
                 ? handleSelectPointerDown(e, it.bookmarkId)
-                : receiverMode
-                  ? handleReceiverPointerDown(e, it.bookmarkId)
-                  : handleReorderPointerDown(e, it.bookmarkId)
+                : isMobile
+                  ? handleMobilePointerDown(e, it.bookmarkId)
+                  : receiverMode
+                    ? handleReceiverPointerDown(e, it.bookmarkId)
+                    : handleReorderPointerDown(e, it.bookmarkId)
             }
             onPointerEnter={(): void => onHoverChange(it.bookmarkId)}
             onPointerLeave={(): void => onHoverChange(null)}

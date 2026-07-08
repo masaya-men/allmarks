@@ -1,18 +1,14 @@
 'use client'
 
-import type { ReactElement, ReactNode } from 'react'
+import type { ReactElement } from 'react'
 import styles from './BoardMobileNav.module.css'
 
-/** Fixed bottom navigation for the mobile board (≤640px). Hosts the board's
- *  core controls — FILTER / TAG / THEME / MOTION / SETTINGS — since the desktop
- *  top-right action row and the MOTION+FilterPill top band are hidden on mobile
- *  (view-first, thumb-reachable). FILTER reuses the existing <FilterPill> (its
- *  menu opens UPWARD on mobile — see FilterPill.module.css); the other tabs are
- *  simple action buttons wired to the same handlers the desktop chrome uses.
- *  Rendered only when `useIsMobile()` is true, so desktop is untouched. */
+/** Fixed bottom navigation for the mobile board (≤640px). Hosts TAG / THEME /
+ *  MOTION / MORE. FILTER lives in the top-right header (opposite the AllMarks
+ *  wordmark) — not here — so the two chrome anchors bracket the top of the
+ *  board. Wired to the same handlers the desktop chrome uses. Rendered only
+ *  when `useIsMobile()` is true, so desktop is untouched. */
 export type BoardMobileNavProps = {
-  /** The reused <FilterPill> node — its pill IS the FILTER tab. */
-  readonly filter: ReactNode
   readonly onTag: () => void
   readonly tagActive: boolean
   readonly onThemes: () => void
@@ -51,17 +47,19 @@ function MotionIcon({ className }: IconProps): ReactElement {
     </svg>
   )
 }
-function SettingsIcon({ className }: IconProps): ReactElement {
+/** MORE = three dots (universal overflow glyph) — clearer than a gear, which
+ *  read as a theme/contrast icon next to the THEME tab. */
+function MoreIcon({ className }: IconProps): ReactElement {
   return (
-    <svg className={className} viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="2.6" />
-      <path d="M11 2.5v2.4M11 17.1v2.4M2.5 11h2.4M17.1 11h2.4M4.9 4.9l1.7 1.7M15.4 15.4l1.7 1.7M17.1 4.9l-1.7 1.7M6.6 15.4l-1.7 1.7" />
+    <svg className={className} viewBox="0 0 22 22" fill="none" aria-hidden="true">
+      <circle cx="5" cy="11" r="1.7" fill="currentColor" />
+      <circle cx="11" cy="11" r="1.7" fill="currentColor" />
+      <circle cx="17" cy="11" r="1.7" fill="currentColor" />
     </svg>
   )
 }
 
 export function BoardMobileNav({
-  filter,
   onTag,
   tagActive,
   onThemes,
@@ -73,7 +71,6 @@ export function BoardMobileNav({
 }: BoardMobileNavProps): ReactElement {
   return (
     <nav className={styles.nav} data-testid="board-mobile-nav" aria-label="Board controls">
-      <div className={styles.filterSlot}>{filter}</div>
       <button
         type="button"
         className={styles.tab}
@@ -112,7 +109,7 @@ export function BoardMobileNav({
         onClick={onSettings}
         data-testid="mobile-nav-settings"
       >
-        <SettingsIcon className={styles.icon} />
+        <MoreIcon className={styles.icon} />
         <span className={styles.tabLabel}>MORE</span>
       </button>
     </nav>

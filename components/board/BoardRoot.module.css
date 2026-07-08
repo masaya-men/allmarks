@@ -46,13 +46,26 @@
   pointer-events: none;
 }
 
-/* Mobile (A2): MOTION + FilterPill move to the bottom nav (BoardMobileNav), so
-   the top band is hidden — the top-left AllMarks wordmark is the only top chrome.
-   Desktop keeps the band in the frame margin. */
+/* Mobile (A2): MOTION moves to the bottom nav and the desktop top band is
+   hidden; FILTER moves to its own top-right slot (.mobileTopFilter). Desktop
+   keeps the band in the frame margin. */
 @media (max-width: 640px) {
   .frameTopChrome {
     display: none;
   }
+}
+
+/* Mobile FILTER anchor — top-right header, mirroring the AllMarks wordmark at
+   top-left. The reused FilterPill opens its menu downward from here (its default
+   direction). z above cards/toolbar; fades away with the rest when the Lightbox
+   takes over (unmounted by BoardRoot on lightbox open). */
+.mobileTopFilter {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
 }
 
 /* Bottom frame band — mirror of .frameTopChrome. Hosts the ScrollMeter in the

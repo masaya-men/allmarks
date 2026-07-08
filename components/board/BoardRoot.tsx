@@ -2784,6 +2784,14 @@ export function BoardRoot() {
           {filterPillEl}
         </div>
       )}
+      {/* Mobile: the FILTER pill lives in the top-RIGHT header (opposite the
+          AllMarks wordmark top-left). Tap opens its menu downward; it closes on
+          outside-tap / Esc only (no hover auto-close on touch). */}
+      {isMobile && !lightboxItemId && (
+        <div className={styles.mobileTopFilter}>
+          {filterPillEl}
+        </div>
+      )}
       {/* Bottom frame band — mirror of frameTopChrome. Hosts the ScrollMeter in
           the outer frame's BOTTOM margin (OUTSIDE the dark canvas) so the meter's
           scrub hit-area never overlaps card operations near the board floor
@@ -2813,7 +2821,6 @@ export function BoardRoot() {
           onboarding (the tutorial drives its own chrome). */}
       {isMobile && !lightboxItemId && !showOnboarding && (
         <BoardMobileNav
-          filter={filterPillEl}
           onTag={handleEnterTagMode}
           tagActive={tagMode}
           onThemes={() => setActiveDrawer(activeDrawer === 'themes' ? null : 'themes')}
@@ -3073,6 +3080,7 @@ export function BoardRoot() {
                 onCardResetSize={handleCardResetSize}
                 sourceCardId={lightboxSourceItemId}
                 onPanY={handlePanY}
+                isMobile={isMobile}
                 motionEnabled={motionEnabled}
                 matchedBookmarkIds={matchedBookmarkIds}
                 allTags={tags}

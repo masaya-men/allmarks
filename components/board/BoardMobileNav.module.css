@@ -22,22 +22,8 @@
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
 }
 
-/* FILTER slot — hosts the reused <FilterPill>. Its pill shows the active
-   filter + count (doubles as the "current view" readout) and opens its menu
-   upward (FilterPill.module.css mobile variant). */
-/* Wider than the icon tabs so the reused FilterPill ("<filter> · NNN") fits
-   without clipping at the screen edge, and so its upward menu (anchored to the
-   pill's left) sits inset from the viewport edge. */
-.filterSlot {
-  flex: 1.55 1 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-}
-
 /* Action tabs — icon over a tiny mono label. Neutral by default, brand green
-   when active/on. */
+   when active/on. A quick spring-scale on press gives tactile feedback. */
 .tab {
   flex: 1 1 0;
   display: flex;
@@ -45,18 +31,19 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  padding: 4px 2px;
+  padding: 6px 2px;
   min-width: 0;
   background: transparent;
   border: 0;
   cursor: pointer;
   color: rgba(255, 255, 255, 0.62);
   -webkit-tap-highlight-color: transparent;
-  transition: color 0.15s ease;
+  transition: color 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tab:active {
   color: rgba(255, 255, 255, 0.95);
+  transform: scale(0.9);
 }
 
 .tab[data-active='true'] {
@@ -67,6 +54,12 @@
   width: 22px;
   height: 22px;
   display: block;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Active tab's glyph pops slightly — a small "on" motion when a tab engages. */
+.tab[data-active='true'] .icon {
+  transform: scale(1.14);
 }
 
 .tabLabel {
