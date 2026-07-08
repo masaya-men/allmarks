@@ -716,6 +716,37 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       }
       if (closeEl) gsap.killTweensOf(closeEl)
 
+      if (isMobile) {
+        // Mobile: transform-scale .main straight back into the board slot — NO
+        // clone and NO opacity swap (that clone→.media handoff blinked on the
+        // way out). Reveal the source card up front: .main covers the slot while
+        // it shrinks onto it, so nothing is seen double and the slot is never
+        // empty (no "hole", even if interrupted). GPU transform = no reflow jank.
+        if (onSourceShouldShow) onSourceShouldShow()
+        const sx = mediaRect.width > 0 ? closeOrigin.width / mediaRect.width : 1
+        const sy = mediaRect.height > 0 ? closeOrigin.height / mediaRect.height : 1
+        const tx = closeOrigin.left - mediaRect.left
+        const ty = closeOrigin.top - mediaRect.top
+        const tl = gsap.timeline({ onComplete: () => onClose() })
+        tl.to(
+          mediaEl,
+          {
+            transformOrigin: 'top left',
+            x: tx,
+            y: ty,
+            scaleX: sx,
+            scaleY: sy,
+            duration: CLOSE_TWEEN_DUR_MOBILE,
+            ease: CLOSE_TWEEN_EASE_MOBILE,
+          },
+          0,
+        )
+        if (backdrop) {
+          tl.to(backdrop, { opacity: 0, duration: CLOSE_BACKDROP_FADE_DUR, ease: 'power2.in' }, CLOSE_BACKDROP_DELAY)
+        }
+        return
+      }
+
       // Stand up the close clone at .media's current rect, then hide
       // .media so the clone takes over the visual immediately. Both
       // start and end rects are converted to host-relative coords

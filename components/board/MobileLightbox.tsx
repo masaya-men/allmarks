@@ -50,6 +50,12 @@ export function MobileLightbox({
   const [sheetOpen, setSheetOpen] = useState(false)
   const sheetOpenRef = useRef(false)
   sheetOpenRef.current = sheetOpen
+  // Always the LATEST nav. A flick's later steps fire from setTimeout, which
+  // would otherwise capture the nav (and its stale currentIndex) from the render
+  // that started the flick — so every step re-navigated from the ORIGINAL index
+  // to the same card: N enter animations played but the deck never advanced.
+  const navRef = useRef(nav)
+  navRef.current = nav
   // Direction the incoming card should fly in from (0 = not navigating).
   const navDirRef = useRef<-1 | 0 | 1>(0)
   const navAnimatingRef = useRef(false)
@@ -115,12 +121,13 @@ export function MobileLightbox({
   // widening interval so the run visibly decelerates before it settles.
   const stepFlick = useCallback((): void => {
     const f = flickRef.current
-    if (!f || !nav) {
+    const liveNav = navRef.current
+    if (!f || !liveNav) {
       endNav()
       return
     }
     navDirRef.current = f.dir
-    nav.onNav(f.dir)
+    liveNav.onNav(f.dir)
     setNavSeq((n) => n + 1)
     f.remaining -= 1
     if (f.remaining > 0) {
@@ -130,12 +137,12 @@ export function MobileLightbox({
     } else {
       flickRef.current = null
     }
-  }, [nav, endNav])
+  }, [endNav])
 
   const doNav = useCallback(
     (dir: -1 | 1, count: number): void => {
       const mainEl = mediaRef.current
-      if (!mainEl || !nav || navAnimatingRef.current) return
+      if (!mainEl || !navRef.current || navAnimatingRef.current) return
       navAnimatingRef.current = true
       // Guaranteed recovery even if an enter never fires.
       failsafeRef.current = window.setTimeout(endNav, FLICK_FAILSAFE_MS)
@@ -153,7 +160,7 @@ export function MobileLightbox({
         },
       })
     },
-    [mediaRef, nav, stepFlick, endNav],
+    [mediaRef, stepFlick, endNav],
   )
 
   const { bind } = useLightboxSwipe({
@@ -176,6 +183,10 @@ export function MobileLightbox({
           springBack()
           return
         }
+        // Reset any drag transform so the transform-based close morph starts
+        // from .main's true full-screen rect.
+        const st = stageRef.current
+        if (st) gsap.set(st, { clearProps: 'transform' })
         onClose()
       } else if (intent === 'next' || intent === 'prev') {
         const dir = intent === 'next' ? 1 : -1
