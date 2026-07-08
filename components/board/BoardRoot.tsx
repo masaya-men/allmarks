@@ -90,6 +90,9 @@ import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import { copyShareLink } from '@/lib/share/copy-share-link'
+import { createHostedShare } from '@/lib/share/create-hosted-share'
+import { normalizeShotToJpegDataUrl } from '@/lib/share/normalize-shot'
+import { buildTweetIntentUrl } from '@/lib/share/share-actions'
 import { createShare } from '@/lib/share/api-client'
 import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/share/selection'
@@ -422,6 +425,12 @@ export function BoardRoot() {
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
   const [shareTitle, setShareTitle] = useState<ShareTitleConfig | null>(null)
+  // #8 hosted-image share (arrange stage): the user's normalized screenshot
+  // (1200×630 JPEG data-url), the resulting hosted /s link, and the create state.
+  const [shotDataUrl, setShotDataUrl] = useState<string | null>(null)
+  const [hostedShareUrl, setHostedShareUrl] = useState<string | null>(null)
+  const [shareCreateState, setShareCreateState] = useState<'idle' | 'creating' | 'error'>('idle')
+  const shotFileInputRef = useRef<HTMLInputElement | null>(null)
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
   // Onboarding: true while the first-run tutorial overlay is active.
@@ -2157,6 +2166,9 @@ export function BoardRoot() {
     setCollageOrder([])
     setCollageRotations({})
     setShareTitle(null)
+    setShotDataUrl(null)
+    setHostedShareUrl(null)
+    setShareCreateState('idle')
   }, [])
 
   // Stage 1 → 2: 選んだカードを「盤面パネルに収まる中で最大サイズ」に自動配置してアレンジ開始。
@@ -2279,10 +2291,11 @@ export function BoardRoot() {
   // (selectedIds — NOT shareSelectedItems, which is null here) in board order,
   // filter:null. Generates NO image (thumb-less createShare); the /s OG falls
   // back to the default card server-side.
-  const handleCopyShareLink = useCallback(async (): Promise<boolean> => {
+  // Build the /s payload from the ARRANGE selection (selectedIds) in board order,
+  // filter:null. Shared by COPY LINK (thumb-less) and CREATE LINK (with image).
+  const buildArrangeShare = useCallback((): ShareDataV2 => {
     const chosen = selectedInBoardOrder(items, selectedIds)
-    if (chosen.length === 0) return false
-    const buildShare = (): ShareDataV2 => buildShareDataFromBoard({
+    return buildShareDataFromBoard({
       items: chosen.map((it) => ({
         bookmarkId: it.bookmarkId,
         url: it.url,
@@ -2301,14 +2314,109 @@ export function BoardRoot() {
       gap: cardGapPx,
       defaultWidth: cardWidthPx,
     })
+  }, [items, selectedIds, customWidths, cardWidthPx, tags, themeId, resolvedCustom, cardGapPx])
+
+  const shareOrigin = (): string => (typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app')
+
+  // COPY LINK (arrange stage): thumb-less /s share; the /s OG falls back to the
+  // default card server-side. Generates NO image.
+  const handleCopyShareLink = useCallback(async (): Promise<boolean> => {
+    if (selectedInBoardOrder(items, selectedIds).length === 0) return false
     const res = await copyShareLink({
-      buildShare,
+      buildShare: buildArrangeShare,
       createShare,
       writeClipboard: (t: string): Promise<void> => navigator.clipboard.writeText(t),
-      origin: typeof window !== 'undefined' ? window.location.origin : 'https://allmarks.app',
+      origin: shareOrigin(),
     })
     return res.ok
-  }, [items, selectedIds, customWidths, cardWidthPx, tags, themeId, resolvedCustom, cardGapPx])
+  }, [items, selectedIds, buildArrangeShare])
+
+  // #8: accept a user screenshot (paste/drop/file) → normalize to 1200×630 JPEG.
+  // A new shot invalidates any previously-created link.
+  const handleAcceptShotBlob = useCallback(async (blob: Blob): Promise<void> => {
+    if (!blob.type.startsWith('image/')) return
+    const dataUrl = await normalizeShotToJpegDataUrl(blob)
+    if (dataUrl) {
+      setShotDataUrl(dataUrl)
+      setHostedShareUrl(null)
+      setShareCreateState('idle')
+    }
+  }, [])
+
+  const clearShotState = useCallback((): void => {
+    setShotDataUrl(null)
+    setHostedShareUrl(null)
+    setShareCreateState('idle')
+  }, [])
+
+  // CREATE LINK: create the /s share WITH the attached screenshot (hosted on R2),
+  // then warm the /og/<id>.jpg cache. Returns a link whose preview IS the collage.
+  const handleCreateHostedShare = useCallback(async (): Promise<void> => {
+    if (selectedInBoardOrder(items, selectedIds).length === 0) return
+    setShareCreateState('creating')
+    const res = await createHostedShare({
+      buildShare: buildArrangeShare,
+      thumb: shotDataUrl ?? undefined,
+      createShare,
+      origin: shareOrigin(),
+      warm: (u: string): void => { void fetch(u).catch((): void => {}) },
+    })
+    if (res.ok) {
+      setHostedShareUrl(res.url)
+      setShareCreateState('idle')
+    } else {
+      setShareCreateState('error')
+    }
+  }, [items, selectedIds, buildArrangeShare, shotDataUrl])
+
+  // COPY LINK in the ready state copies the already-hosted url (no new share);
+  // before creation it does the thumb-less copy path.
+  const handleShareCopyLink = useCallback(async (): Promise<boolean> => {
+    if (hostedShareUrl) {
+      try { await navigator.clipboard.writeText(hostedShareUrl); return true } catch { return false }
+    }
+    return handleCopyShareLink()
+  }, [hostedShareUrl, handleCopyShareLink])
+
+  const handlePostToX = useCallback((): void => {
+    if (!hostedShareUrl) return
+    window.open(buildTweetIntentUrl(hostedShareUrl), '_blank', 'noopener,noreferrer')
+  }, [hostedShareUrl])
+
+  // While arranging, accept a screenshot from anywhere: Ctrl+V paste or a
+  // drag-drop of an image file. The visible PASTE/DROP chip is just the
+  // affordance; capture is document-wide so the user can't miss it.
+  useEffect((): (() => void) | undefined => {
+    if (sharePhase !== 'arrange') return undefined
+    const onPaste = (e: ClipboardEvent): void => {
+      const items = e.clipboardData?.items
+      if (!items) return
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i]
+        if (it && it.type.startsWith('image/')) {
+          const file = it.getAsFile()
+          if (file) { e.preventDefault(); void handleAcceptShotBlob(file); break }
+        }
+      }
+    }
+    const onDragOver = (e: DragEvent): void => {
+      if (e.dataTransfer?.types.includes('Files')) e.preventDefault()
+    }
+    const onDrop = (e: DragEvent): void => {
+      const files = e.dataTransfer?.files
+      if (!files || files.length === 0) return
+      const img = Array.from(files).find((f) => f.type.startsWith('image/'))
+      if (img) { e.preventDefault(); void handleAcceptShotBlob(img) }
+    }
+    document.addEventListener('paste', onPaste)
+    document.addEventListener('dragover', onDragOver)
+    document.addEventListener('drop', onDrop)
+    return (): void => {
+      document.removeEventListener('paste', onPaste)
+      document.removeEventListener('dragover', onDragOver)
+      document.removeEventListener('drop', onDrop)
+    }
+  }, [sharePhase, handleAcceptShotBlob])
 
   // Phase B: rate-limit-driven backfill for every tweet bookmark. Replaces
   // the prior sequential loop (which persisted thumbnail + hasVideo). The
@@ -3172,11 +3280,31 @@ export function BoardRoot() {
                 : undefined
             }
           />
+          <input
+            ref={shotFileInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            data-testid="share-shot-file-input"
+            onChange={(e): void => {
+              const f = e.target.files?.[0]
+              if (f) void handleAcceptShotBlob(f)
+              e.target.value = ''
+            }}
+          />
           <ShareToast
             count={selectedIds.size}
             hint={screenshotHint}
-            onCopyLink={handleCopyShareLink}
-            onReselect={(): void => setSharePhase('select')}
+            hasImage={shotDataUrl !== null}
+            imagePreviewUrl={shotDataUrl}
+            onPickFile={(): void => shotFileInputRef.current?.click()}
+            onClearImage={clearShotState}
+            createState={shareCreateState}
+            onCreate={(): void => { void handleCreateHostedShare() }}
+            shareUrl={hostedShareUrl}
+            onCopyLink={handleShareCopyLink}
+            onPostToX={handlePostToX}
+            onReselect={(): void => { clearShotState(); setSharePhase('select') }}
             onDone={handleExitShareMode}
           />
         </>

@@ -96,7 +96,7 @@ describe('handleShareRequest', () => {
     expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
     const body = await res.text()
     expect(body).toContain('<title>Shared collection on AllMarks</title>')
-    expect(body).toContain('content="https://preview.booklage.pages.dev/api/share/abc123/og"')
+    expect(body).toContain('content="https://preview.booklage.pages.dev/og/abc123.jpg"')
     expect(body).toContain('content="https://preview.booklage.pages.dev/s/abc123"')
     expect(body).toMatch(/3 bookmarks/)
     expect(body).toContain('self.__next_f.push([0])') // RSC data preserved
