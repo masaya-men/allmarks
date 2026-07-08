@@ -68,15 +68,16 @@ async function toDrawable(source: ShotSource): Promise<Drawable | null> {
   if (typeof ImageBitmap !== 'undefined' && source instanceof ImageBitmap) {
     return { img: source, w: source.width, h: source.height }
   }
-  // Blob
+  // Blob (HTMLImageElement / ImageBitmap は上で return 済みなので実質 Blob)
+  const blob = source as Blob
   if (typeof createImageBitmap === 'function') {
     try {
-      const bmp = await createImageBitmap(source)
+      const bmp = await createImageBitmap(blob)
       return { img: bmp, w: bmp.width, h: bmp.height }
     } catch { /* fall through to <img> path */ }
   }
   if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function' && typeof Image !== 'undefined') {
-    const url = URL.createObjectURL(source)
+    const url = URL.createObjectURL(blob)
     try {
       const img = new Image()
       img.src = url

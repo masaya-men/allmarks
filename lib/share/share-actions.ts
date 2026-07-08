@@ -19,17 +19,20 @@ export function dataUrlToFile(dataUrl: string, filename: string): File | null {
   const isBase64 = match[2] === ';base64'
   const raw = match[3] ?? ''
   try {
-    let bytes: Uint8Array
+    // ArrayBuffer を直接 BlobPart に渡す (Uint8Array<ArrayBufferLike> は BlobPart に
+    // 割り当て不可な TS lib の厳格化を回避)。
+    let buffer: ArrayBuffer
     if (isBase64) {
       if (typeof atob !== 'function') return null
       const binary = atob(raw)
-      bytes = new Uint8Array(binary.length)
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const view = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i)
+      buffer = view.buffer
     } else {
-      bytes = new TextEncoder().encode(decodeURIComponent(raw))
+      buffer = new TextEncoder().encode(decodeURIComponent(raw)).buffer as ArrayBuffer
     }
     if (typeof File !== 'function') return null
-    return new File([bytes], filename, { type: mime })
+    return new File([buffer], filename, { type: mime })
   } catch {
     return null
   }
