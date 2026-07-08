@@ -18,6 +18,7 @@ import {
   BOARD_Z_INDEX,
   CULLING,
 } from '@/lib/board/constants'
+import { estimateVelocity, hasSettled, MOMENTUM, type VelocitySample } from '@/lib/board/momentum-scroll'
 import { PRESETS } from '@/lib/board/tune-presets'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import { detectUrlType, isInstagramReel, safeExternalUrl } from '@/lib/utils/url'
@@ -517,6 +518,9 @@ export function CardsLayer({
   // Last chosen insertion index — windows computeVirtualOrder's search near it
   // so a large board stays smooth to drag. Reset (null) at each drag's start.
   const lastBestIndexRef = useRef<number | null>(null)
+  // Mobile inertia: id of the running fling rAF loop, or null when idle. A new
+  // pointerdown cancels it so a tap during a fling stops the board instantly.
+  const momentumRafRef = useRef<number | null>(null)
   const reduceMotion = useReducedMotion()
 
   // ── Tier 1 viewport autoplay ──
@@ -1039,6 +1043,54 @@ export function CardsLayer({
     [onClick],
   )
 
+  // Cancels any running inertia fling (called on a fresh pointerdown and on
+  // unmount) so the board never keeps gliding under a new touch.
+  const cancelMomentum = useCallback((): void => {
+    if (momentumRafRef.current != null) {
+      cancelAnimationFrame(momentumRafRef.current)
+      momentumRafRef.current = null
+    }
+  }, [])
+
+  // Starts an inertia glide from the release velocity. Reproduces the
+  // industry-standard exponential deceleration (Framer Motion / Apple) via the
+  // sourced constants in momentum-scroll.ts: the "finger" keeps travelling
+  // POWER · v0 px, easing out with time constant τ, and each frame's advance is
+  // pushed through the same clamped `onPanY` the drag uses. Clamping returns the
+  // applied delta, so hitting an edge (actual === 0) ends the glide. No
+  // rubber-band yet — the edge stop is a hard clamp (overscroll comes next).
+  const startMomentum = useCallback(
+    (samples: readonly VelocitySample[], panY: ((dy: number) => number) | null | undefined): void => {
+      if (!panY) return
+      const v0 = estimateVelocity(samples) // px/s, +down (finger)
+      if (Math.abs(v0) < MOMENTUM.MIN_FLING_VELOCITY_PX_S) return
+      const amplitude = MOMENTUM.POWER * v0
+      const tau = MOMENTUM.TAU_MS
+      const t0 = performance.now()
+      let prevFinger = 0
+      const step = (now: number): void => {
+        const t = now - t0
+        // Finger displacement so far along the decay (0 → amplitude).
+        const finger = amplitude * (1 - Math.exp(-t / tau))
+        const dFinger = finger - prevFinger
+        prevFinger = finger
+        // Board scrolls opposite the finger (finger down → earlier cards).
+        const actual = panY(-dFinger)
+        const stalledAtEdge = dFinger !== 0 && actual === 0
+        if (hasSettled(finger, amplitude) || t >= MOMENTUM.MAX_MS || stalledAtEdge) {
+          momentumRafRef.current = null
+          return
+        }
+        momentumRafRef.current = requestAnimationFrame(step)
+      }
+      momentumRafRef.current = requestAnimationFrame(step)
+    },
+    [],
+  )
+
+  // Stop the fling if the layer unmounts mid-glide.
+  useEffect(() => cancelMomentum, [cancelMomentum])
+
   // Mobile (touch) board handler — tap-or-scroll, no reorder. On a dense
   // edge-to-edge mobile grid there's almost no bare board to grab, so a drag
   // that starts ON a card must scroll the board (industry standard: Pinterest /
@@ -1057,12 +1109,17 @@ export function CardsLayer({
       if (document.querySelector('[data-testid="filter-pill-menu"][data-open="true"]')) return
       // A press on a text card's internal scrollbar goes to the native scroller.
       if (pressLandsOnCardScrollbar(e.target, e.clientX, e.clientY)) return
+      // A new touch stops any inertia glide instantly (catch the moving board
+      // with your finger — industry standard).
+      cancelMomentum()
       const el = e.currentTarget
       const startX = e.clientX
       const startY = e.clientY
       let lastY = e.clientY
       let scrolling = false
       const panY = onPanY
+      // Trailing pointer samples → release velocity for the inertia fling.
+      const samples: VelocitySample[] = [{ y: e.clientY, t: e.timeStamp }]
       // Listen on WINDOW (not the card element) and DON'T setPointerCapture:
       // every pan step calls setViewport → BoardRoot re-renders → the card node
       // can be re-created/re-culled, which would silently drop element-bound
@@ -1074,6 +1131,7 @@ export function CardsLayer({
       const move = (ev: globalThis.PointerEvent): void => {
         const dyStep = ev.clientY - lastY
         lastY = ev.clientY
+        samples.push({ y: ev.clientY, t: ev.timeStamp })
         if (!scrolling) {
           const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY)
           if (dist < MOBILE_SCROLL_ENGAGE_PX) return
@@ -1087,9 +1145,14 @@ export function CardsLayer({
         window.removeEventListener('pointermove', move)
         window.removeEventListener('pointerup', end)
         window.removeEventListener('pointercancel', end)
-        // Only a genuine, non-scrolling pointerup opens the card. A tap never
-        // pans (scrolling stays false → no re-render), so `el` is still live.
-        if (ev.type !== 'pointerup' || scrolling) return
+        if (ev.type !== 'pointerup') return
+        // A scrolling release flings (inertia); a still press opens the card. A
+        // tap never pans (scrolling stays false → no re-render), so `el` is
+        // still live for its rect.
+        if (scrolling) {
+          startMomentum(samples, panY)
+          return
+        }
         const win = el.querySelector<HTMLElement>('[data-paper-window]')
         onClick(bookmarkId, (win ?? el).getBoundingClientRect())
       }
@@ -1097,7 +1160,7 @@ export function CardsLayer({
       window.addEventListener('pointerup', end)
       window.addEventListener('pointercancel', end)
     },
-    [onClick, onPanY],
+    [onClick, onPanY, cancelMomentum, startMomentum],
   )
 
   // Selective-share / TAG MODE card handler. A genuine tap (< CLICK_MAX_MS,
@@ -1351,6 +1414,7 @@ export function CardsLayer({
             data-bookmark-id={it.bookmarkId}
             data-onboarding-target={cardIdx === 0 ? 'card' : undefined}
             data-link-status={it.linkStatus ?? undefined}
+            data-lock-card-scroll={isMobile ? 'true' : undefined}
             onPointerDown={(e: PointerEvent<HTMLDivElement>): void =>
               selectionMode
                 ? handleSelectPointerDown(e, it.bookmarkId)

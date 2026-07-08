@@ -2787,6 +2787,18 @@ export function BoardRoot() {
       {/* Mobile: the FILTER pill lives in the top-RIGHT header (opposite the
           AllMarks wordmark top-left). Tap opens its menu downward; it closes on
           outside-tap / Esc only (no hover auto-close on touch). */}
+      {/* Mobile: invisible tap band across the top header. Tapping the empty gap
+          between the wordmark and FILTER scrolls the board to the top (the iOS
+          status-bar-tap idiom). z below the wordmark/FILTER (120) so those keep
+          their own tap; above the cards, which start below BOARD_TOP_PAD. */}
+      {isMobile && !lightboxItemId && (
+        <button
+          type="button"
+          className={styles.mobileScrollTopZone}
+          aria-label="Scroll to top"
+          onClick={(): void => handleScrollMeterJump(0)}
+        />
+      )}
       {isMobile && !lightboxItemId && (
         <div className={styles.mobileTopFilter}>
           {filterPillEl}

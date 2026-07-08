@@ -68,6 +68,25 @@
   align-items: center;
 }
 
+/* Mobile: invisible "tap to top" band across the header. Between the wordmark
+   (top-left, z 120) and FILTER (top-right, z 120) — both sit above this band, so
+   tapping them still fires their own action while a tap on the empty gap scrolls
+   to the top. Height stays within BOARD_TOP_PAD (80px) so it never overlaps the
+   first card row. Mobile-only (rendered under isMobile); desktop never mounts. */
+.mobileScrollTopZone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  z-index: 110;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Bottom frame band — mirror of .frameTopChrome. Hosts the ScrollMeter in the
    outer frame's BOTTOM margin (outside the dark canvas), centered. Living here
    — outside the canvas, which clips its own overflow and carries the pan/zoom
