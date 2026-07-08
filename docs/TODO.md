@@ -21,6 +21,18 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 174 — ★#8 共有画像の一時保管「画像＋リンクで SNS 投稿・X でも確実に画像表示」出荷／#6 ライトボックス自動再生は見送り)
+
+- **#6 見送り**（ユーザー合意）：ライトボックス自動再生は要否低。看板の「動画は終了で次へ」が5種中2種しかきれいに作れない（残りは時間切れ代替）＝一番高コストな部分が一番不確実。再挑戦は静止スライドショーの軽版から。
+- **#8 完遂・本番反映済**（tsc0 / **vitest 全緑** / クリーンビルド＋assert-share-template OK）。ユーザー発案の流れ「自分でスクショ→貼付→共有リンク作成→X投稿/コピー」＋**LoPo(lopoly.app) の X 実証レシピ**を移植。
+  - **なぜ手動スクショ**：盤面カードは外部オリジン画像を crossOrigin 無しで読む＝自動撮影はクロスオリジン汚染で真っ白（s169 が手動に倒した理由）。ユーザー自身のスクショは同一オリジンで汚染ゼロ。
+  - **X 確実表示の土台（新規サーバー）**：OG 画像を **`/api/` の外の静的風 URL `/og/<id>.jpg`** から **リダイレクトせず 200 直接**配信（`functions/og/[id].ts`・R2 SHARE_OG・ミス時 og.png を 200・immutable）＋`patch-share-html` を新 URL に向け直し＋作成直後にキャッシュ温め。保管路(create.ts)・R2/KV は無改造。旧 `/api/share/<id>/og` は後方互換で残置。`twitter:card=summary_large_image` は成功ページに既存。
+  - **クライアント**：`normalize-shot`(1200×630 JPEG)・`create-hosted-share`(作成+温め)・`share-actions`(intent+WebShare)・`ShareToast` 3状態（PASTE/DROP→CREATE LINK→LINK READY+POST TO X）・BoardRoot 配線(paste/drop/file→正規化→作成→アクション)。**スマホ Web Share は後日まとめて対応**（ヘルパー温存）。
+  - **本番実測**：`.jpg` ルーティング preview 先行確認(scar 無し)→デプロイ→API 直投で `/og/<id>.jpg`=200 image/jpeg・`/s` メタ正・**Playwright 本番 E2E で貼付→CREATE→LINK READY 全 OK**(実共有 `WziUuM`)。
+  - **残る手動確認のみ**：X に実際に貼って大画像カードが出るか（クローラー相手で自動不可）。
+  - 正本 [spec](superpowers/specs/2026-07-08-share-hosted-image-og-x-reliable-design.md) / [plan](superpowers/plans/2026-07-08-share-hosted-image-og-x-reliable.md) / narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s174。
+- **既知の非対応（任意・後日）**：スマホのワンタップ Web Share（画像添付投稿）。ヘルパー(`dataUrlToFile`/`canWebShareFiles`)実装・テスト済で、スマホ本格対応セッションで UI 配線するだけ。
+
 ### 直近の状態 (セッション 173 — ★#2 TUNE 刷新セット完了：角丸 ON/OFF トグル＋幅/ギャップの余白スナップを出荷)
 
 - **#2 の残り2点を実装・本番反映済**（tsc0 / **vitest 2097/0**（+20）/ クリーンビルド / e2e 3本 PASS）。
