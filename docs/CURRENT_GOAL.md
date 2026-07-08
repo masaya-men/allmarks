@@ -1,22 +1,21 @@
-# 次セッションのゴール — スマホのネイティブスクロール修正を実機で確認 → OK なら「スマホ専用ライトボックス」へ
+# 次セッションのゴール — スマホ専用ライトボックスを実機で確認 → ツイートの粗さを実機フィードバックで詰める
 
 ## まず最初に（ユーザーへの確認）
-- **s180 でスマホのスクロール不能を修正して本番反映済**。カード（CardNode）の `touch-action:none` を、モバイル時だけ `pan-y` に緩めた（③のテキストカード内部停止は維持）。
-- **セッション冒頭でユーザーに実機の結果を聞く**: 「`allmarks.app` をスマホでハードリロード → 指で盤面を上下スワイプしてスクロールできますか？」
-  - **効いた** → タップでライトボックス／②上部タップで先頭／③テキストカード内部が動かない、も実機で再確認 → 問題なければ「スマホ専用ライトボックス」へ進む。
-  - **まだ効かない** → 下の「もし直っていなかったら」へ。
+- **s180 でスマホ専用ライトボックス（没入型）を実装・本番反映済**。カードタップで主役を中央に大きく／**左右スワイプ=前後・下スワイプ=閉じる・上スワイプ or 下端のつまみ=情報シート**。開閉はPCと同じモーフ流用。
+- **セッション冒頭で実機の結果を聞く**（`allmarks.app` をスマホでハードリロード）:
+  1. 画像/動画/一般サイト/文字カードをタップ → 中央に大きく開くか、モーフ（元の位置から拡大→閉じで元へ縮む）は気持ちいいか
+  2. **左右スワイプで前後**送りできるか／**下スワイプで閉じる**か／**上スワイプ or 下のつまみで情報シート**が出るか
+  3. 主役の**サイズ感**（もっと大きく/余白調整したい等）
+  4. 情報シートの中身・見た目（タイトル/説明/出典）
 
-## もし直っていなかったら（追加調査ポイント）
-- `.mobileScrollContainer` 自身の高さ/spacer が 0 でスクロール余地がない可能性（contentBounds.height の spacer が実機で正しく積まれているか devtools で確認）。
-- `-webkit-overflow-scrolling: touch` と `overscroll-behavior: contain` の相性、iOS Safari の慣性周り。
-- カードの子で `touch-action:none` を持つ要素の取りこぼし（今回 `.cardNode` と ③のみと確認済だが、実機 devtools で pointerdown 対象の computed `touch-action` を実測する）。
-- InteractionLayer がモバイルで pointer/wheel を本当に手放しているか（isMobile 分岐の実挙動）。
+## 実機で粗いはずの既知ポイント（フィードバックで詰める）
+- **ツイート**: 現状は画像ツイート＝画像＋本文（タイトル）＋出典は出るが、**①ツイート動画の再生 ②複数画像のドット切替 ③翻訳トグル**が未対応（`TweetColumns` の `useTweetTranslation` 共有が絡み、実機検証なしに作ると壊すリスクが高いので延期した）。実機で「ツイートをこうしたい」を聞いてから `main`/`sheet` を種別分岐で作り込む。
+- **主役の中身サイズ**: 動画（iframe）や画像フォールバックが `.main`（flex中央・max 100vw/100vh・contain）で正しく収まるか実機確認。はみ出し/余白があれば CSS 調整。
+- **閾値**: 送り35%幅・閉じ25%高・シート18%高・フリック0.5px/ms は初期値（`lightbox-swipe.ts` の `SWIPE`）。実機の感触で調整。
+- **内部スクロール**: 現状の主役は非スクロール（画像/動画/大テキスト）なので `contentScrollable` 未配線。将来ツイート本文などスクロールが要る主役を入れるときに配線する（フックは対応済み）。
 
-## その次（スクロールが直ったら本命）
-- **スマホ専用ライトボックス**（memory `project_mobile_board_direction` の "mobile-specific Lightbox pending"）。フルスクリーン・スワイプで前後・下スワイプで閉じる等、スマホネイティブな操作に。
-- **スマホでのタグ付け**（同 pending）。ボトムナビ TAG からの導線を実機フローで。
-
-## s180 で確定・信じてよいこと
-- 修正は [CardNode.module.css](../components/board/CardNode.module.css) の `:global([data-lock-card-scroll='true']) .cardNode { touch-action: pan-y }` 一箇所のみ。
-- `data-lock-card-scroll="true"` は [CardsLayer.tsx:1304](../components/board/CardsLayer.tsx#L1304) が `isMobile` の時だけ各カードに付与（= `@media(max-width:640px)` と厳密一致、`useIsMobile`）。デスクトップは属性なし＝`touch-action:none` のまま＝回帰ゼロ（tsc0/vitest2154/build OK）。
-- **教訓（重要）**: この種のタッチスクロールは **Playwright ですり抜ける**（JS scrollTop は touch-action を無視）。**実機でしか検証できない**。memory `reference_native_scroll_touch_action_playwright`。
+## s180 で完成・信じてよいこと（実装済み）
+- 新規: `lightbox-swipe.ts`（純判定＋16テスト）／`use-lightbox-swipe.ts`（pointer配線）／`LightboxInfoSheet.tsx`（下シート＋つまみ）／`MobileLightbox.tsx`（没入ステージ・4方向）／`lightbox-nav-types.ts`。
+- `Lightbox.tsx` は `isMobile ? <MobileLightbox/> : <既存2カラム/>` の分岐1つのみ追加。**デスクトップ経路の JSX は不変**（回帰ゼロ、tsc0/vitest2176/build OK）。主役ラッパに既存 `mediaRef` を付け、モーフeffectを無改造で流用。
+- spec: `docs/superpowers/specs/2026-07-08-mobile-lightbox-design.md` / plan: `docs/superpowers/plans/2026-07-08-mobile-lightbox.md`。
+- **教訓**: ジェスチャ・モーフ・スクロールは Playwright ですり抜ける＝実機のみ検証可（s179→s180 の一貫した学び。memory `reference_native_scroll_touch_action_playwright`）。

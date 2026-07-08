@@ -21,9 +21,11 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 180 — ★スマホのネイティブスクロール不能を修正／カードの touch-action を pan-y に緩めた・✅実機OK確認済)
+### 直近の状態 (セッション 180 — ★スマホスクロール修正（✅実機OK）＋スマホ専用ライトボックス（没入型）実装・本番反映／次は実機確認＆ツイート詰め)
 
-- **✅ 実機確認済（ユーザー）**: スマホで `allmarks.app` を上下スワイプ → ネイティブスクロールが効くようになった。s179 の載せ替えが完成。次は本命の「スマホ専用ライトボックス」へ。
+- **① スマホのネイティブスクロール修正（✅実機OK）**: カード `.cardNode` の `touch-action:none` をモバイル時だけ `pan-y` に緩めて解決（`[data-lock-card-scroll]` スコープ、③維持、デスクトップ不変）。ユーザー実機で上下スワイプ確認済。
+- **② スマホ専用ライトボックス（没入型）を新規実装・本番反映**: カードタップで主役を中央に大きく／**左右=前後・下=閉じる・上/つまみ=情報シート**の4方向。開閉はPCと同じモーフ流用（主役ラッパに既存 `mediaRef` を付与）。新規: `lightbox-swipe.ts`(純判定+16test)／`use-lightbox-swipe.ts`／`LightboxInfoSheet.tsx`／`MobileLightbox.tsx`／`lightbox-nav-types.ts`。`Lightbox.tsx` は `isMobile ? <MobileLightbox/> : <既存2カラム/>` の1分岐のみ＝**デスクトップ回帰ゼロ**（tsc0/vitest2176/build OK）。画像・動画・サイト・文字カードは機能済み。
+- **★次セッション**: 実機で ② を確認（モーフ/スワイプ/サイズ感）。**ツイートの ①動画再生 ②複数画像ドット ③翻訳トグルは延期**（`useTweetTranslation` 共有が絡むため実機フィードバック駆動で作り込む）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。spec `docs/superpowers/specs/2026-07-08-mobile-lightbox-design.md`／plan `docs/superpowers/plans/2026-07-08-mobile-lightbox.md`。
 
 
 - **原因を確定**（コード追跡で検証）: [CardNode.module.css:12](../components/board/CardNode.module.css#L12) `.cardNode { touch-action: none }` が**常時**適用され、カードは `width/height:100%` で枠を埋める。密グリッドのモバイルでは指が必ずカードに落ち、`.mobileScrollContainer`（`touch-action:pan-y`）のネイティブ縦スクロールが `none` にキャンセルされていた。**唯一の塞ぎ元**（ResizeHandle/CardCornerActions は [CardsLayer.tsx:1587](../components/board/CardsLayer.tsx#L1587) `!isMobile` ゲート＝モバイル未描画。`CardsLayer.module.css` は touch-action 未設定）。
