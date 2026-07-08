@@ -11,6 +11,15 @@
      otherwise paint over them). The root's own layer sits at
      BOARD_Z_INDEX.SHARE_CANVAS, applied inline in CollageCanvas.tsx. */
   isolation: isolate;
+  /* Clip cards to the real board frame (the .canvas rect). This root spans the
+     FULL window (absolute inset:0 covers the outer frame's padding too), so we
+     clip its paint to the framed board = inset by the canvas margin, rounded to
+     the canvas radius. Result: cards can be dragged/zoomed all the way to the
+     board edge and BLEED OFF it — the frame crops the overflow (a card can show
+     as just a sliver at the edge), instead of floating loose in the outer
+     margin. clip-path keeps card coordinates untouched (unlike overflow:hidden,
+     which would need the box inset). */
+  clip-path: inset(var(--canvas-margin, 48px) round var(--canvas-radius, 0px));
 }
 
 .element {

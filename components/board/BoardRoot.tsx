@@ -2170,10 +2170,10 @@ export function BoardRoot() {
     setShareCreateState('idle')
   }, [])
 
-  // The visible board rect the collage lives in (window coords): the .canvas panel
-  // inset by the header row (top), SHARING bar (bottom), and a small side margin.
-  // Shared by the initial fit AND the drag/resize clamp below so cards can never be
-  // dragged out of the board frame (user goal: keep the framed board state).
+  // The rect the initial collage layout is fit into (window coords): the .canvas
+  // panel inset by the header row (top), SHARING bar (bottom), and a small side
+  // margin — so cards START nicely inside the frame. After that the user can drag
+  // them anywhere (incl. off the edge); the frame clip below crops the overflow.
   const arrangeSafeRect = useMemo((): CollageFitRect => {
     const m = CANVAS_MARGIN_PX
     return {
@@ -2183,17 +2183,6 @@ export function BoardRoot() {
       height: Math.max(0, viewport.h - ARRANGE_SAFE_INSET.TOP_PX - ARRANGE_SAFE_INSET.BOTTOM_PX),
     }
   }, [viewport.w, viewport.h])
-
-  // Clamp a card's top-left so its whole box stays inside the board frame rect.
-  // If the card is larger than the rect on an axis, it pins to the rect's start
-  // edge (can't do better than "fully inside" when it doesn't fit).
-  const clampToFrame = useCallback((x: number, y: number, w: number, h: number): { x: number; y: number } => {
-    const r = arrangeSafeRect
-    return {
-      x: Math.max(r.x, Math.min(x, r.x + Math.max(0, r.width - w))),
-      y: Math.max(r.y, Math.min(y, r.y + Math.max(0, r.height - h))),
-    }
-  }, [arrangeSafeRect])
 
   // Stage 1 → 2: 選んだカードを「盤面パネルに収まる中で最大サイズ」に自動配置してアレンジ開始。
   // fit rect は「見える盤面パネル（.canvas＝ウィンドウから CANVAS_MARGIN_PX 内側）」を基準に
@@ -3275,23 +3264,8 @@ export function BoardRoot() {
             items={lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))}
             positions={collagePositions}
             order={collageOrder}
-            onMove={(id, x, y): void => setCollagePositions((p) => {
-              // Keep the card inside the board frame — no dragging cards out of
-              // the framed board (user goal). Clamp against the card's own box.
-              const el = p[id]
-              if (!el) return p
-              const c = clampToFrame(x, y, el.w, el.h)
-              return moveElement(p, id, c.x, c.y)
-            })}
-            onResize={(id, corner, w): void => setCollagePositions((p) => {
-              // Resize, then nudge the (possibly corner-shifted) box back inside
-              // the frame so growth from an edge can't push it out.
-              const next = resizeElementFromCorner(p, id, corner, w)
-              const el = next[id]
-              if (!el) return next
-              const c = clampToFrame(el.x, el.y, el.w, el.h)
-              return moveElement(next, id, c.x, c.y)
-            })}
+            onMove={(id, x, y): void => setCollagePositions((p) => moveElement(p, id, x, y))}
+            onResize={(id, corner, w): void => setCollagePositions((p) => resizeElementFromCorner(p, id, corner, w))}
             onGrab={(id): void => setCollageOrder((o) => bringToFront(o, id))}
             rotations={collageRotations}
             onRotate={(id, deg): void => setCollageRotations((r) => ({ ...r, [id]: deg }))}
