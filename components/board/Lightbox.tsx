@@ -1047,6 +1047,46 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
       // pan that happened in the brief window before the lightbox mounted.
       const sourceRect = cloneSrc ? cloneSrc.getBoundingClientRect() : originRect
 
+      if (isMobile) {
+        // Mobile: transform-scale .main straight from the tapped card's rect to
+        // full screen — NO clone handoff (which blinked at the clone→.media
+        // swap) and NO width/height reflow (which janked at DPR 2.58). A GPU
+        // transform is smooth (Apple-style expand); the non-uniform scale also
+        // stretches the card as it grows = the "deformation" the user wanted.
+        // .main stays fully painted the whole way, so there's nothing to blink.
+        const sx = mediaRect.width > 0 ? sourceRect.width / mediaRect.width : 1
+        const sy = mediaRect.height > 0 ? sourceRect.height / mediaRect.height : 1
+        const tx = sourceRect.left - mediaRect.left
+        const ty = sourceRect.top - mediaRect.top
+        const dist = Math.hypot(
+          (mediaRect.left + mediaRect.width / 2) - (sourceRect.left + sourceRect.width / 2),
+          (mediaRect.top + mediaRect.height / 2) - (sourceRect.top + sourceRect.height / 2),
+        )
+        const openDur = OPEN_BASE_DUR_MOBILE + Math.min(dist / OPEN_DIST_DIVISOR, OPEN_DIST_BONUS_MAX)
+        gsap.set(mediaEl, { transformOrigin: 'top left', x: tx, y: ty, scaleX: sx, scaleY: sy, opacity: 1 })
+        const tween = gsap.to(mediaEl, {
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+          duration: openDur,
+          ease: OPEN_EASE_MOBILE,
+          onComplete: (): void => { gsap.set(mediaEl, { clearProps: 'transform' }) },
+        })
+        let mBackdropTween: gsap.core.Tween | null = null
+        if (backdrop) {
+          mBackdropTween = gsap.fromTo(
+            backdrop,
+            { opacity: 0 },
+            { opacity: 1, duration: OPEN_BACKDROP_FADE_DUR, ease: 'power2.out' },
+          )
+        }
+        return (): void => {
+          tween.kill()
+          mBackdropTween?.kill()
+        }
+      }
+
       const dx = (mediaRect.left + mediaRect.width / 2) - (sourceRect.left + sourceRect.width / 2)
       const dy = (mediaRect.top + mediaRect.height / 2) - (sourceRect.top + sourceRect.height / 2)
       const distance = Math.hypot(dx, dy)

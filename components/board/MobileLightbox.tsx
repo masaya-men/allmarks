@@ -10,8 +10,8 @@ import styles from './MobileLightbox.module.css'
 type MobileLightboxProps = {
   readonly view: LightboxItem
   /** Morph target: the big-center wrapper the desktop attaches to `.media`.
-   *  On mobile the same ref lands on `.main`, so the existing open/close
-   *  morph in Lightbox.tsx grows the card into it unchanged. */
+   *  On mobile the same ref lands on `.main`, so the open/close morph in
+   *  Lightbox.tsx grows the card into it. */
   readonly mediaRef: RefObject<HTMLDivElement | null>
   /** The big-center primary content (image / video / tweet body / large text). */
   readonly main: ReactNode
@@ -25,16 +25,18 @@ type MobileLightboxProps = {
 }
 
 // A hard flick advances more cards, decelerating — like the board's inertial
-// scroll. speed is px/ms; every ~1.5 px/ms of release velocity buys one extra
+// scroll. speed is px/ms; every ~0.9 px/ms of release velocity buys one extra
 // card, capped so a violent flick can't spin forever.
-const FLICK_CARD_DIVISOR = 1.5
-const FLICK_MAX_CARDS = 5
+const FLICK_CARD_DIVISOR = 0.9
+const FLICK_MAX_CARDS = 6
+// Belt-and-suspenders: no matter what, a flick can never leave the nav frozen
+// longer than this (the animating guard is force-cleared).
+const FLICK_FAILSAFE_MS = 1800
 
 /** Immersive, full-screen mobile lightbox (session 180). Tap opens it big in the
- *  center (the shared morph grows the tapped card into `.main`); left/right
- *  swipes slide to the prev/next card — a hard flick coasts through several with
- *  decelerating inertia — down closes, up (or the sheet handle) reveals the info
- *  sheet. Desktop keeps the two-column Lightbox frame. */
+ *  center; left/right swipes slide to the prev/next card — a hard flick coasts
+ *  through several with decelerating inertia — down closes, up (or the sheet
+ *  handle) reveals the info sheet. Desktop keeps the two-column Lightbox frame. */
 export function MobileLightbox({
   view,
   mediaRef,
@@ -54,16 +56,31 @@ export function MobileLightbox({
   // Multi-card inertial flick: how many more onNav steps to fire, decelerating.
   const flickRef = useRef<{ dir: -1 | 1; remaining: number; total: number } | null>(null)
   const flickTimerRef = useRef<number | null>(null)
+  const failsafeRef = useRef<number | null>(null)
+  // Bumped once per onNav step. The enter effect keys on THIS (not view.url):
+  // adjacent cards can share a URL (duplicates are allowed), which would leave
+  // the animating guard stuck true forever — the "strong flick kills swipe" bug.
+  const [navSeq, setNavSeq] = useState(0)
 
-  useEffect(
-    () => (): void => {
-      if (flickTimerRef.current !== null) window.clearTimeout(flickTimerRef.current)
-    },
-    [],
-  )
+  const clearTimers = useCallback((): void => {
+    if (flickTimerRef.current !== null) window.clearTimeout(flickTimerRef.current)
+    if (failsafeRef.current !== null) window.clearTimeout(failsafeRef.current)
+    flickTimerRef.current = null
+    failsafeRef.current = null
+  }, [])
 
-  // Enter animation after each onNav swaps `view`. Intermediate cards in a flick
-  // slide in quick + flat; the last one settles with an elastic overshoot.
+  useEffect(() => (): void => clearTimers(), [clearTimers])
+
+  const endNav = useCallback((): void => {
+    navAnimatingRef.current = false
+    flickRef.current = null
+    clearTimers()
+    const mainEl = mediaRef.current
+    if (mainEl) gsap.set(mainEl, { clearProps: 'transform,opacity' })
+  }, [clearTimers, mediaRef])
+
+  // Enter animation after each onNav step. Intermediate cards in a flick slide
+  // in quick + flat; the last one settles with an elastic overshoot.
   useLayoutEffect(() => {
     const mainEl = mediaRef.current
     const dir = navDirRef.current
@@ -81,15 +98,11 @@ export function MobileLightbox({
         rotate: 0,
         duration: last ? 0.6 : 0.16,
         ease: last ? 'back.out(1.5)' : 'power1.out',
-        onComplete: last
-          ? (): void => {
-              navAnimatingRef.current = false
-              gsap.set(mainEl, { clearProps: 'transform,opacity' })
-            }
-          : undefined,
+        onComplete: last ? endNav : undefined,
       },
     )
-  }, [view.url, mediaRef])
+    // navSeq is the real trigger (unique per step); view drives the deps lint.
+  }, [navSeq, view.url, mediaRef, endNav])
 
   const springBack = useCallback((): void => {
     const mainEl = mediaRef.current
@@ -102,24 +115,30 @@ export function MobileLightbox({
   // widening interval so the run visibly decelerates before it settles.
   const stepFlick = useCallback((): void => {
     const f = flickRef.current
-    if (!f || !nav) return
+    if (!f || !nav) {
+      endNav()
+      return
+    }
     navDirRef.current = f.dir
     nav.onNav(f.dir)
+    setNavSeq((n) => n + 1)
     f.remaining -= 1
     if (f.remaining > 0) {
       const progress = 1 - f.remaining / f.total
-      const delay = 80 + progress * 170
+      const delay = 90 + progress * 170
       flickTimerRef.current = window.setTimeout(stepFlick, delay)
     } else {
       flickRef.current = null
     }
-  }, [nav])
+  }, [nav, endNav])
 
   const doNav = useCallback(
     (dir: -1 | 1, count: number): void => {
       const mainEl = mediaRef.current
       if (!mainEl || !nav || navAnimatingRef.current) return
       navAnimatingRef.current = true
+      // Guaranteed recovery even if an enter never fires.
+      failsafeRef.current = window.setTimeout(endNav, FLICK_FAILSAFE_MS)
       const w = window.innerWidth
       gsap.to(mainEl, {
         x: -dir * w * 1.05,
@@ -134,7 +153,7 @@ export function MobileLightbox({
         },
       })
     },
-    [mediaRef, nav, stepFlick],
+    [mediaRef, nav, stepFlick, endNav],
   )
 
   const { bind } = useLightboxSwipe({
@@ -157,8 +176,6 @@ export function MobileLightbox({
           springBack()
           return
         }
-        // Close morph reads .main's live rect, so leaving the drag transform in
-        // place lets the card keep shrinking from where the finger left it.
         onClose()
       } else if (intent === 'next' || intent === 'prev') {
         const dir = intent === 'next' ? 1 : -1

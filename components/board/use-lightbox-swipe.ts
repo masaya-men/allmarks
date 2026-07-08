@@ -33,6 +33,10 @@ export function useLightboxSwipe(opts: UseLightboxSwipeOpts): {
 } {
   const startRef = useRef<Sample | null>(null)
   const lastRef = useRef<Sample | null>(null)
+  // The sample before `last`, so release velocity is the INSTANTANEOUS speed at
+  // lift-off (a flick that starts slow then whips) rather than the whole-gesture
+  // average (which under-reads flicks and pinned every nav to a single card).
+  const prevRef = useRef<Sample | null>(null)
   const axisRef = useRef<SwipeAxis>('none')
 
   const onPointerDown = useCallback((e: ReactPointerEvent): void => {
@@ -40,6 +44,7 @@ export function useLightboxSwipe(opts: UseLightboxSwipeOpts): {
     const s: Sample = { x: e.clientX, y: e.clientY, t: performance.now() }
     startRef.current = s
     lastRef.current = s
+    prevRef.current = s
     axisRef.current = 'none'
   }, [])
 
@@ -48,6 +53,7 @@ export function useLightboxSwipe(opts: UseLightboxSwipeOpts): {
     if (!start) return
     const dx = e.clientX - start.x
     const dy = e.clientY - start.y
+    prevRef.current = lastRef.current
     lastRef.current = { x: e.clientX, y: e.clientY, t: performance.now() }
     if (axisRef.current === 'none') {
       const axis = resolveAxis(dx, dy)
@@ -73,19 +79,24 @@ export function useLightboxSwipe(opts: UseLightboxSwipeOpts): {
     }
     const dx = last.x - start.x
     const dy = last.y - start.y
-    const dt = Math.max(1, last.t - start.t)
     const axis = axisRef.current
+    // Instantaneous release velocity from the last two samples (min 8ms so a
+    // pair of near-simultaneous events can't explode it).
+    const prev = prevRef.current ?? start
+    const vdt = Math.max(8, last.t - prev.t)
+    const vx = (last.x - prev.x) / vdt
+    const vy = (last.y - prev.y) / vdt
     const intent = resolveIntent({
       axis,
       dx,
       dy,
-      vx: dx / dt,
-      vy: dy / dt,
+      vx,
+      vy,
       viewportW: window.innerWidth,
       viewportH: window.innerHeight,
       atEnd: opts.atEnd?.(),
     })
-    const speed = Math.abs((axis === 'horizontal' ? dx : dy) / dt)
+    const speed = Math.abs(axis === 'horizontal' ? vx : vy)
     axisRef.current = 'none'
     opts.onIntent(intent, { speed })
   }, [opts])
