@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "URL yapıştır...",
     "save": "Kaydet",
+    "saveInvalidHint": "Bu bir bağlantı değil",
     "randomPick": "Rastgele Seç",
     "newFolder": "+ Yeni Klasör",
     "folderNamePlaceholder": "Klasör adı...",

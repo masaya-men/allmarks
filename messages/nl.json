@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "Plak een URL...",
     "save": "Opslaan",
+    "saveInvalidHint": "Dat is geen link",
     "randomPick": "Willekeurige keuze",
     "newFolder": "+ Nieuwe map",
     "folderNamePlaceholder": "Mapnaam...",

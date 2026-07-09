@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "URLをペースト...",
     "save": "保存",
+    "saveInvalidHint": "リンクではありません",
     "randomPick": "ランダムピック",
     "newFolder": "+ 新しいフォルダ",
     "folderNamePlaceholder": "フォルダ名...",

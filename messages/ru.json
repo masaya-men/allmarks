@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "Вставьте ссылку...",
     "save": "Сохранить",
+    "saveInvalidHint": "Это не ссылка",
     "randomPick": "Случайный выбор",
     "newFolder": "+ Новая папка",
     "folderNamePlaceholder": "Название папки...",

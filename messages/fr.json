@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "Collez une URL…",
     "save": "Enregistrer",
+    "saveInvalidHint": "Ce n'est pas un lien",
     "randomPick": "Au hasard",
     "newFolder": "+ Nouveau dossier",
     "folderNamePlaceholder": "Nom du dossier…",

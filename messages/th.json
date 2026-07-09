@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "วาง URL...",
     "save": "บันทึก",
+    "saveInvalidHint": "นั่นไม่ใช่ลิงก์",
     "randomPick": "สุ่มหยิบ",
     "newFolder": "+ โฟลเดอร์ใหม่",
     "folderNamePlaceholder": "ชื่อโฟลเดอร์...",

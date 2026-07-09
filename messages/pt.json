@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "Cole a URL...",
     "save": "Salvar",
+    "saveInvalidHint": "Isso não é um link",
     "randomPick": "Escolha aleatória",
     "newFolder": "+ Nova pasta",
     "folderNamePlaceholder": "Nome da pasta...",
