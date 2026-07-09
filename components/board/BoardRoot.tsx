@@ -79,6 +79,7 @@ import { MobileSaveButton } from './MobileSaveButton'
 import { MobileSaveSheet } from './MobileSaveSheet'
 import { normalizeToUrl } from '@/lib/board/paste-url'
 import { PasteSaveFeedback } from './PasteSaveFeedback'
+import { ShareCreatingIndicator } from './ShareCreatingIndicator'
 import { type UndoEntry, MAX_UNDO_STACK, pushBounded } from '@/lib/board/undo-stack'
 import { PRESETS, type PresetId } from '@/lib/board/tune-presets'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -2805,6 +2806,7 @@ export function BoardRoot() {
   )
 
   return (
+    <>
     <div
       ref={boardFrameRef}
       className={styles.outerFrame}
@@ -3508,5 +3510,10 @@ export function BoardRoot() {
           (follow-up); the LP keeps its own switcher. */}
       {!isMobile && <div data-no-capture><LanguageSwitcher /></div>}
     </div>
+    {/* Sibling of .outerFrame (the SHARE capture subtree), not a descendant —
+        ShareCreatingIndicator itself portals to document.body, but keeping the
+        JSX call site outside the capture root too avoids any future doubt. */}
+    <ShareCreatingIndicator active={shareCreateState === 'creating'} />
+    </>
   )
 }

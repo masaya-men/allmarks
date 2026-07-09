@@ -109,6 +109,7 @@ export const BOARD_Z_INDEX = {
   BACKUP_REMINDER: 195, // periodic backup nudge toast (below DATA_HOME + drawer)
   ONBOARDING: 210,     // First-run tutorial overlay (above MODAL_OVERLAY)
   ONBOARDING_SPOTLIGHT_RING: 410,  // portalled spotlight ring — above the unified CHROME_DRAWER (405) so the ring shows on a target INSIDE that drawer
+  SHARE_CREATING: 500,  // body-portal "creating your link…" indicator (outside the capture subtree; above all board chrome)
 } as const
 
 export const INTERACTION = {
