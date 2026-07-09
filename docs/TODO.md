@@ -29,7 +29,11 @@
   - **②複数画像ドット**: `LightboxImageDots` に `mobile`＝メディア下部に**オーバーレイ**（デスクトップは `.media` 下にぶら下げ＝`.main` では画面外）。モバイルは左右スワイプ=カード送りなので**画像切替はドットタップ**。
   - **③翻訳**: `TweetTranslateControls` 抽出。写真動画ツイート=本文+トグルはキャプション画面。**文字ツイート=本文(22px)+トグルをカード画面に同居**（読む画面で翻訳・ユーザー決定）＝caption は著者+出典（`TweetText hideToggle`）。翻訳は `playEntry(el=null)` で**アニメ無しの即差し替え**。
   - **検証**: tsc0 / vitest2172（1件 flaky BroadcastChannel は単体で緑）/ build OK / **Playwright(390px) で ②ドット2＋main画像＋文字ツイート22px＋ページエラー0** を実測。①動画・③翻訳の実動作は X syndication/翻訳 API 依存＝**実機のみ検証可**。
-- **★次セッション**: (1) **実機フィードバック反映**（(A)(B) を触ってもらう）(2) **スマホのタグ付け**（未着手）(3) 任意でピンチリサイズ／キャプション微調整。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **★同セッション後半：実機フィードバック3件を根治・本番反映**（systematic-debugging＋Playwright 実測で原因確定）:
+  - **(1)(2) ツイートメディアが大きすぎ・上スワイプで見切れる**: 新ツイート経路が `100vh` 制約だったが、他のライトボックスメディアは `--lightbox-media-max-h`（モバイル＝`100dvh - 76px`）を使う。実機の `100vh` はブラウザツールバー分を含む→はみ出し。`.main img/video` と fullBleed video wrapper を `--lightbox-media-max-h` に統一。**実測: 縦長写真ツイートが 281×844(端接触)→256×768(上下38px余白)＝通常画像カードと一致**。非ツイートは不変。
+  - **(3) ボードでテキストカード上スクロール不能**: `PlaceholderCard` の `.titleScroll`(`[data-card-scroll]`) が `touch-action:none`（s180 由来）でネイティブ board pan も殺していた（s179 の意図＝「指スワイプでボードをパン」の逆）。`overflow:hidden` で内部スクロールは既に無効なので `touch-action:pan-y` に（board へフォールスルー）。**実測: hit chain が none→pan-y**。
+  - **(新規要望) スマホでカード角丸 ON/OFF**: デスクトップは TUNE ドロワーだがモバイルに TUNE 無し→**ボトムナビに CORNERS タブ追加**（MOTION と MORE の間、同 `roundedCorners`/`handleToggleRoundedCorners`・IDB 永続）。アイコンが角丸⇔角ばりで状態表示。**実測: タップで `--card-radius` 14.4px⇔0px・リロード永続**。
+- **★次セッション**: (1) **実機で再確認**（ツイートメディアの収まり・上スワイプ・ボードのテキストカードスクロール・CORNERS トグル）(2) **スマホのタグ付け**（未着手）(3) 任意でピンチリサイズ／キャプション微調整。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 180 — ★スマホスクロール修正（✅実機OK）＋スマホ専用ライトボックス（没入型）を実装・実機フィードバック6ラウンドで大幅磨き込み／次はキャプション実機確認＆ツイート対応)
 
