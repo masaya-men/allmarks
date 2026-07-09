@@ -73,7 +73,8 @@
 
 /* Scrollable title area — fills remaining vertical space, scrolls
    internally when title overflows. title は上端から自然に流れ、 overflow
-   したら下端 fade で続き示唆 + scroll で全文 access 可。
+   したら両端 fade で続き示唆 (data-scroll-edge、 下の Edge fade 参照) + scroll
+   で全文 access 可。
    session 88 修正: 当初 display: flex + align-items: center で「短い title は
    中央寄せ」 を意図したが、 長い title で vertical center anchor になって
    上端が overflow 領域に押し出される (= 冒頭が見えない) bug。 旧 TextCard
@@ -88,42 +89,23 @@
   /* 上下に scrim と hostname 用の余白を残す。 左右は 22px = TextCard と同じ
      感覚で文字が card 端に張り付かない。 */
   padding: 28px 22px 22px;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  transition: scrollbar-color 0.18s ease;
+  scrollbar-width: none;           /* Firefox — no native bar */
 }
-.titleScroll:hover {
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
-}
-.titleScroll::-webkit-scrollbar {
-  width: 4px;
-}
-.titleScroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.titleScroll::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 2px;
-  transition: background 0.18s ease;
-}
-.titleScroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
-}
+.titleScroll::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
-/* Bottom fade — Title が overflow したときに、 スクロール底端で fade して
-   「続きがある」 ことを示す。 底まで scroll し切ったら fade を解除して、
-   最後の行を完全に読めるようにする。 旧 TextCard と同じ挙動。 */
-.titleScroll[data-overflow='true'][data-at-bottom='false'] {
-  -webkit-mask-image: linear-gradient(to bottom,
-    black 0%,
-    black 75%,
-    rgba(0, 0, 0, 0.5) 90%,
-    transparent 100%);
-          mask-image: linear-gradient(to bottom,
-    black 0%,
-    black 75%,
-    rgba(0, 0, 0, 0.5) 90%,
-    transparent 100%);
+/* Edge fade (no-plain-scrollbar house rule): fade the cut-off end(s); the fade
+   clears at whichever end you've scrolled to. Mirrors FilterPill's tag list. */
+.titleScroll[data-scroll-edge='middle'] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+.titleScroll[data-scroll-edge='top'] {
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 82%, rgba(0,0,0,0.5) 92%, transparent 100%);
+          mask-image: linear-gradient(to bottom, black 0%, black 82%, rgba(0,0,0,0.5) 92%, transparent 100%);
+}
+.titleScroll[data-scroll-edge='bottom'] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 8%, black 18%, black 100%);
+          mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 8%, black 18%, black 100%);
 }
 
 /* Title text — font-size + line-height は pickTitleTypography から inline
