@@ -1303,6 +1303,12 @@ export function CardsLayer({
             data-link-status={it.linkStatus ?? undefined}
             data-lock-card-scroll={isMobile ? 'true' : undefined}
             onPointerDown={(e: PointerEvent<HTMLDivElement>): void => {
+              // Mobile TAG MODE tags via the bottom bar (tap a tag), so a card
+              // only needs tap=select + drag=native board scroll. Do NOT capture
+              // the pointer here (capture breaks native scroll and would start a
+              // desktop-style tag-drag) — the onClick below toggles selection.
+              // Desktop tag-drag and mobile SHARE-select keep the capture path.
+              if (isMobile && isTagMode) return
               if (selectionMode) { handleSelectPointerDown(e, it.bookmarkId); return }
               // Mobile: native scroll owns the gesture; a genuine tap fires the
               // onClick below (the browser suppresses click during a scroll).
@@ -1311,9 +1317,11 @@ export function CardsLayer({
               handleReorderPointerDown(e, it.bookmarkId)
             }}
             onClick={
-              isMobile && !selectionMode
-                ? (e: ReactMouseEvent<HTMLDivElement>): void => handleMobileCardClick(e, it.bookmarkId)
-                : undefined
+              isMobile && isTagMode
+                ? (): void => selectionToggle?.(it.bookmarkId)
+                : isMobile && !selectionMode
+                  ? (e: ReactMouseEvent<HTMLDivElement>): void => handleMobileCardClick(e, it.bookmarkId)
+                  : undefined
             }
             onPointerEnter={(): void => onHoverChange(it.bookmarkId)}
             onPointerLeave={(): void => onHoverChange(null)}

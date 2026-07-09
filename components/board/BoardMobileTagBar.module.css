@@ -1,0 +1,154 @@
+/* Mobile TAG MODE bar (≤640px). Fixed to the viewport floor in place of
+   BoardMobileNav while tagging. Dark chrome matching the nav / FilterPill
+   dropdown. A header line (selection + DONE) over a horizontal, left-right
+   scrolling strip of tag chips. FilterPill vocab — hollow dot, lowercase name,
+   3-digit count — no colour capsules. */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  background: rgba(9, 9, 11, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 16px;
+}
+.count {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.done {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 6px 4px;
+  margin: -6px -4px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: rgba(40, 241, 0, 0.9);
+  cursor: pointer;
+}
+
+/* Horizontal strip — the only scrolling region, left-right. Raw scrollbar hidden
+   (house rule); pan-x so a horizontal swipe scrolls the tags. */
+.strip {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 10px;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.strip::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* Chip baseline — a tap target, not a capsule: transparent at rest, faint fill
+   only on press. Leading hollow dot marks each item; ≥40px tall for the thumb. */
+.chip,
+.newChip {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 110ms ease, opacity 110ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip:active { background: rgba(255, 255, 255, 0.07); }
+.chip[aria-disabled='true'] { opacity: 0.38; cursor: default; }
+
+/* "+ NEW TAG" — green-accented, leads the strip. */
+.newChip { color: rgba(40, 241, 0, 0.9); }
+.newChip:active { background: rgba(40, 241, 0, 0.1); }
+.plus { font-size: 14px; line-height: 1; color: #28f100; }
+.newLabel { text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
+
+.tagDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: background 110ms, border-color 110ms, box-shadow 110ms;
+}
+.tagLabel {
+  text-transform: lowercase; /* tag names are user content — always lowercase */
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tagCount {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Applied flash — a brief green wash + filled dot so a tap reads as "applied". */
+.chip[data-applied='true'] { animation: tagApplied 420ms ease-out; }
+.chip[data-applied='true'] .tagDot {
+  background: #28f100;
+  border-color: #28f100;
+  box-shadow: 0 0 6px rgba(40, 241, 0, 0.55);
+}
+@keyframes tagApplied {
+  0% { background: rgba(40, 241, 0, 0.26); }
+  100% { background: transparent; }
+}
+
+/* Inline create field — replaces the "+ NEW TAG" chip while typing. */
+.newInput {
+  flex-shrink: 0;
+  min-width: 160px;
+  margin: 4px 6px;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(40, 241, 0, 0.6);
+  padding: 4px 2px 5px;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: #fff;
+  caret-color: #28f100;
+  outline: none;
+}
+.newInput::placeholder { color: rgba(40, 241, 0, 0.5); letter-spacing: 0.12em; text-transform: uppercase; }

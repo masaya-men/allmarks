@@ -67,6 +67,7 @@ import { ThemeModal } from './ThemeModal'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
 import { TagDropPanel } from './TagDropPanel'
+import { BoardMobileTagBar } from './BoardMobileTagBar'
 import { BoardChrome } from './BoardChrome'
 import { PaperFramePlate } from './chrome/PaperFramePlate'
 import { PaperWaxSeal } from './chrome/PaperWaxSeal'
@@ -2165,6 +2166,14 @@ export function BoardRoot() {
     [assignTagToCards],
   )
 
+  // Mobile TAG MODE: tap a tag in the bottom bar → assign it to the whole
+  // current selection (additive; no-op when nothing is selected). Selection
+  // persists so the user can keep tapping tags for continuous multi-tagging.
+  const handleAssignTagToSelection = useCallback((tagId: string): void => {
+    if (selectedIds.size === 0) return
+    assignTagToCards(tagId, [...selectedIds])
+  }, [assignTagToCards, selectedIds])
+
   // "+ NEW TAG" clicked (no drag) — create a tag for the current selection.
   const handleStartNewTag = useCallback((): void => {
     setTagDraft({ cardIds: [...selectedIds] })
@@ -2851,9 +2860,10 @@ export function BoardRoot() {
       </div>
       {/* Mobile bottom navigation (A2b) — hosts FILTER / TAG / THEME / MOTION /
           SETTINGS since the desktop top chrome is hidden on mobile. Hidden while
-          the Lightbox is open (the lightbox surface owns the screen) and during
-          onboarding (the tutorial drives its own chrome). */}
-      {isMobile && !lightboxItemId && !showOnboarding && (
+          the Lightbox is open (the lightbox surface owns the screen), during
+          onboarding (the tutorial drives its own chrome), and during TAG MODE
+          (the mobile tag bar takes the floor in its place — s182). */}
+      {isMobile && !lightboxItemId && !showOnboarding && !tagMode && (
         <BoardMobileNav
           onTag={handleEnterTagMode}
           tagActive={tagMode}
@@ -3363,11 +3373,24 @@ export function BoardRoot() {
       </PipPortal>
       <UndoToast input={toast} />
       <PasteSaveFeedback feedback={pasteFeedback} themeId={themeId} />
-      {tagMode && (
+      {tagMode && !isMobile && (
         <TagDropPanel
           tags={tags}
           tagCounts={tagCounts}
           selectedCount={selectedIds.size}
+          onDone={handleExitTagMode}
+          creating={tagDraft !== null}
+          onStartNewTag={handleStartNewTag}
+          onCommitNewTag={handleCommitNewTag}
+          onCancelNewTag={handleCancelNewTag}
+        />
+      )}
+      {tagMode && isMobile && (
+        <BoardMobileTagBar
+          tags={tags}
+          tagCounts={tagCounts}
+          selectedCount={selectedIds.size}
+          onAssignTag={handleAssignTagToSelection}
           onDone={handleExitTagMode}
           creating={tagDraft !== null}
           onStartNewTag={handleStartNewTag}
