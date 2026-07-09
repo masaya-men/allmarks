@@ -223,11 +223,11 @@ export function FaderColumn({
         axis,
         min,
         max,
-        thresholdPx: ((max - min) * 8) / 110,
+        thresholdPx: snapThresholdValue,
       })
       if (snapped !== valueRef.current) onChange(snapped)
     }
-  }, [cancelJumpTimer, onChange, containerWidth, otherValue, axis, min, max])
+  }, [cancelJumpTimer, onChange, containerWidth, otherValue, axis, min, max, snapThresholdValue])
 
   return (
     <div className={styles.column} data-scope={scope}>
