@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, type PointerEvent, type ReactElement } from 'react'
-import { fillCandidates, snapToFill } from '@/lib/board/fill-snap'
+import { currentColumnCount, fillValueAtColumns, snapToFillAtCurrentColumns } from '@/lib/board/fill-snap'
 import styles from './FaderColumn.module.css'
 
 /** Linear position mapping: value → fraction along the track, min → 0%,
@@ -82,14 +82,36 @@ export function FaderColumn({
 
   // Fill snapping: enabled once the board width and the other-axis value are
   // known. `axis` picks which side of N·width + (N−1)·gap = containerWidth this
-  // fader drives. `fillMarks` are the values that make the board's left/right
-  // margins equal (rendered as green notches on the track).
+  // fader drives.
   const axis = scope === 'w' ? 'width' : 'gap'
   const snapEnabled =
     typeof containerWidth === 'number' && containerWidth > 0 && typeof otherValue === 'number'
-  const fillMarks = snapEnabled
-    ? fillCandidates(otherValue as number, containerWidth as number, axis, min, max)
-    : []
+
+  // Value-space snap radius that maps to a comfortable ~8 CSS px on the 110px
+  // track (regardless of the axis's value range). The s173 fixed 10-"value-px"
+  // radius was ~1.8 px for W / ~3.7 px for G — effectively unreachable.
+  const TRACK_HEIGHT_PX = 110  // mirrors FaderColumn.module.css .fader height
+  const SNAP_SCREEN_PX = 8
+  const snapThresholdValue = ((max - min) * SNAP_SCREEN_PX) / TRACK_HEIGHT_PX
+
+  // The ONE fill value for the CURRENT column count (equal L/R margins without
+  // changing how many columns are shown). null when snapping is disabled or the
+  // fill value is out of range at the current count.
+  const fillTarget = snapEnabled
+    ? fillValueAtColumns(
+        currentColumnCount(
+          axis === 'width' ? value : (otherValue as number),
+          axis === 'width' ? (otherValue as number) : value,
+          containerWidth as number,
+        ),
+        otherValue as number,
+        containerWidth as number,
+        axis,
+        min,
+        max,
+      )
+    : null
+  const fillInRange = fillTarget !== null && Math.abs(fillTarget - value) <= snapThresholdValue
 
   const isHi = (tickPct: number): boolean => {
     const tickFraction = 1 - tickPct / 100
@@ -194,13 +216,14 @@ export function FaderColumn({
       containerWidth > 0 &&
       typeof otherValue === 'number'
     ) {
-      const snapped = snapToFill({
+      const snapped = snapToFillAtCurrentColumns({
         value: valueRef.current,
         other: otherValue,
         containerWidth,
         axis,
         min,
         max,
+        thresholdPx: ((max - min) * 8) / 110,
       })
       if (snapped !== valueRef.current) onChange(snapped)
     }
@@ -222,15 +245,15 @@ export function FaderColumn({
             data-testid="fader-default-mark"
             style={{ top: `${defaultTopPct}%` }}
           />
-          {fillMarks.map((m) => (
+          {fillTarget !== null && (
             <div
-              key={m}
               className={styles.fillMark}
               data-testid="fader-fill-mark"
-              data-fill-value={m.toFixed(2)}
-              style={{ top: `${(1 - valueToFraction(m, min, max)) * 100}%` }}
+              data-fill-value={fillTarget.toFixed(2)}
+              data-in-range={fillInRange ? 'true' : 'false'}
+              style={{ top: `${(1 - valueToFraction(fillTarget, min, max)) * 100}%` }}
             />
-          ))}
+          )}
           <div
             className={styles.handle}
             data-testid="fader-handle"

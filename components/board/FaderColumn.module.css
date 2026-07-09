@@ -80,6 +80,16 @@
   pointer-events: none;
 }
 
+/* In-range glow — the fill mark brightens and thickens once the handle is
+   within the release snap threshold, so the user can see the magnet zone
+   before letting go instead of discovering the snap only after release. */
+.fillMark[data-in-range='true'] {
+  height: 3px;
+  background: var(--accent, #28f100);
+  opacity: 1;
+  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--accent, #28f100) 70%, transparent);
+}
+
 /* Tall vertical 3-D fader cap, modeled on real audio mixer thumb-grips.
    Iteration 7: rotated from a wide horizontal cap (26×22) to a tall
    vertical cap (20×34) per the user's reference. The taller profile
