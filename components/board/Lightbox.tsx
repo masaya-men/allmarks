@@ -1502,7 +1502,15 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
           mediaRef={mediaRef}
           nav={nav ?? null}
           onClose={requestClose}
-          main={<LightboxMedia key={view.url} item={view} />}
+          main={
+            // Text card (no image): on mobile render the text at the caption's
+            // own size (.title = 22px) instead of the scaled-to-fill giant the
+            // desktop uses, so the card view and caption read at one size (user
+            // request s181). Everything else keeps LightboxMedia.
+            !view.thumbnail && shouldRenderLargePlaceholderCard(view)
+              ? <div className={styles.mobileTextMain}>{cleanTitle(view.title, view.url)}</div>
+              : <LightboxMedia key={view.url} item={view} />
+          }
           caption={<DefaultText item={view} host={host} />}
         />
       ) : (
