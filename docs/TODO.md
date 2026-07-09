@@ -29,8 +29,8 @@
   - 左右スワイプ = 前後送り。**強フリックで複数枚を慣性減速**（瞬間速度＋最新 onNav 参照。古い onNav を握って進まないバグ修正）。
   - 上スワイプ = **キャプション2画面**（カード超縮小して上、キャプション下から連結。背景はPC同様「ぼかし backdrop の上に透明」。黒シート廃止＝`LightboxInfoSheet` 削除）。下スワイプ = 戻る/閉じる。✕廃止。縦長画像はシート域を見越したサイズ。
   - 新規: `MobileLightbox.tsx`／`use-lightbox-swipe.ts`／`lightbox-swipe.ts`(16test)／`lightbox-nav-types.ts`。`Lightbox.tsx` は `isMobile` 分岐＝**デスクトップ回帰ゼロ**（tsc0/vitest2172/build OK）。
-- **s181 追加修正**（ユーザー実機OK）: キャプションを**縦2画面ページャー**に（カードは縮小せず上へスクロールアウト、キャプションはカードと同じ**中央**に。gsap を y(px) 統一で「上スワイプで出ない」バグ解消）。**文字カード本文をキャプションと同じ 22px**に（`.mobileTextMain`）。
-- **★次セッション = ツイート対応のみ**（ユーザーが「他はOK」と明言）: ①動画再生 ②複数画像ドット ③翻訳トグル（`useTweetTranslation` 共有が絡む）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。spec/plan は `docs/superpowers/`。
+- **s181 追加修正**（ユーザー実機OK）: キャプションを**縦2画面ページャー**に（カードは縮小せず上へスクロールアウト、キャプションはカードと同じ**中央**に。gsap を y(px) 統一で「上スワイプで出ない」バグ解消）。
+- **★次セッション（ユーザー確定）**: (A)**文字カードの文字サイズ = キャプション 22px**（s181で半分だけ修正、実機で未変化。原因＝サムネ持ち文字カードは `LargePlaceholderCardScaler` の zoom 拡大経路を通り未修正。直し方は同 Scaler をモバイルで zoom せず 22px 直描画に）。(B)**ツイート対応**（①動画再生 ②複数画像ドット ③翻訳トグル）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 
 - **原因を確定**（コード追跡で検証）: [CardNode.module.css:12](../components/board/CardNode.module.css#L12) `.cardNode { touch-action: none }` が**常時**適用され、カードは `width/height:100%` で枠を埋める。密グリッドのモバイルでは指が必ずカードに落ち、`.mobileScrollContainer`（`touch-action:pan-y`）のネイティブ縦スクロールが `none` にキャンセルされていた。**唯一の塞ぎ元**（ResizeHandle/CardCornerActions は [CardsLayer.tsx:1587](../components/board/CardsLayer.tsx#L1587) `!isMobile` ゲート＝モバイル未描画。`CardsLayer.module.css` は touch-action 未設定）。
