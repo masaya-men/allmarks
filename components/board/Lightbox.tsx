@@ -1497,20 +1497,37 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
         data-testid="lightbox"
       >
       {isMobile ? (
-        <MobileLightbox
-          view={view}
-          mediaRef={mediaRef}
-          nav={nav ?? null}
-          onClose={requestClose}
-          // Text / failed-image cards render at the caption's own 22px scale
-          // (not the desktop zoom-to-fill giant) inside LargePlaceholderCardScaler's
-          // own mobile branch, reached through LightboxMedia for BOTH the
-          // no-thumbnail path (LightboxMedia → Scaler) and the small/failed-image
-          // fallback path (LightboxImageWithFallback → Scaler). One chokepoint
-          // (s182); s181's explicit branch here only caught the no-thumbnail one.
-          main={<LightboxMedia key={view.url} item={view} />}
-          caption={<DefaultText item={view} host={host} />}
-        />
+        tweetId ? (
+          // Tweets need the shared translation hook across the card screen
+          // (media) and the caption screen (text), so they route through a
+          // dedicated wrapper instead of the generic main/caption split (s182).
+          <MobileTweetLightbox
+            view={view}
+            meta={tweetMeta}
+            slots={tweetSlots}
+            slotIdx={tweetSlotIdx}
+            onJump={setTweetSlotIdx}
+            themeId={themeId}
+            mediaRef={mediaRef}
+            nav={nav ?? null}
+            onClose={requestClose}
+          />
+        ) : (
+          <MobileLightbox
+            view={view}
+            mediaRef={mediaRef}
+            nav={nav ?? null}
+            onClose={requestClose}
+            // Text / failed-image cards render at the caption's own 22px scale
+            // (not the desktop zoom-to-fill giant) inside LargePlaceholderCardScaler's
+            // own mobile branch, reached through LightboxMedia for BOTH the
+            // no-thumbnail path (LightboxMedia → Scaler) and the small/failed-image
+            // fallback path (LightboxImageWithFallback → Scaler). One chokepoint
+            // (s182); s181's explicit branch here only caught the no-thumbnail one.
+            main={<LightboxMedia key={view.url} item={view} />}
+            caption={<DefaultText item={view} host={host} />}
+          />
+        )
       ) : (
         <>
       {nav && nav.total > 1 && (
@@ -1735,11 +1752,15 @@ function TweetMedia({
   translatedText,
   bodyRef,
   bodyClassName,
+  mobile = false,
 }: {
   readonly item: LightboxItem
   readonly meta: TweetMeta | null
   readonly slots: readonly MediaSlot[]
   readonly slotIdx: number
+  /** Mobile immersive stage: video fills the viewport (no text column). Photos /
+   *  text-only already size via the mobile `.main` rules (session 182). */
+  readonly mobile?: boolean
   /** For text-only tweets: the current (possibly translated) body text to show
    *  in the left card. Idle value === the canonical card text, so the FLIP open
    *  morph is unaffected (session 130). */
@@ -1764,6 +1785,7 @@ function TweetMedia({
           item={{ url: item.url, title: item.title, thumbnail: item.thumbnail ?? undefined, mediaSlots: slots }}
           source={{ videoUrl: slot.videoUrl, posterUrl: slot.url, aspect: slot.aspect }}
           variant="lightbox"
+          fullBleed={mobile}
         />
       )
     }
@@ -1827,6 +1849,7 @@ function TweetMedia({
         item={{ url: item.url, title: item.title, thumbnail: item.thumbnail ?? undefined }}
         source={{ videoUrl: meta.videoUrl, posterUrl: meta.videoPosterUrl ?? item.thumbnail ?? undefined, aspect: meta.videoAspectRatio }}
         variant="lightbox"
+        fullBleed={mobile}
       />
     )
   }
@@ -1898,13 +1921,18 @@ function LightboxImageDots({
   slots,
   currentIdx,
   onJump,
+  mobile = false,
 }: {
   readonly slots: readonly MediaSlot[]
   readonly currentIdx: number
   readonly onJump: (idx: number) => void
+  /** Mobile immersive stage: the desktop container hangs 22px below `.media`
+   *  (off-screen when anchored to `.main`), so overlay the dots on the media
+   *  bottom instead (session 182). */
+  readonly mobile?: boolean
 }): ReactNode {
   return (
-    <div className={styles.lightboxImageDots} role="tablist" aria-label="メディア切替">
+    <div className={mobile ? styles.mobileTweetDots : styles.lightboxImageDots} role="tablist" aria-label="メディア切替">
       {slots.map((slot, i) => (
         <button
           key={i}
@@ -1924,6 +1952,30 @@ function LightboxImageDots({
   )
 }
 
+/** Translate toggle + failure notice, shared by the desktop right panel and the
+ *  mobile card screen (text-only tweets put this next to the body on the same
+ *  screen — session 182). Extracted so both hosts render identical controls. */
+function TweetTranslateControls({ tr }: { readonly tr: TweetTranslationView }): ReactNode {
+  const { t } = useI18n()
+  return (
+    <>
+      {tr.showButton && (
+        <button
+          type="button"
+          className={styles.translateToggle}
+          onClick={(e): void => { e.stopPropagation(); tr.toggle() }}
+          aria-pressed={tr.buttonLabel === t('board.lightbox.showOriginal')}
+        >
+          {tr.buttonLabel}
+        </button>
+      )}
+      {tr.failed && (
+        <span className={styles.translateFailed}>{t('board.lightbox.translationFailed')}</span>
+      )}
+    </>
+  )
+}
+
 /** Right-column text panel for a tweet: avatar + author name + handle, then
  *  the full tweet body. Renders item-level fallbacks (title) until syndication
  *  metadata arrives, so the panel never flashes empty. */
@@ -1931,6 +1983,7 @@ function TweetText({
   item,
   meta,
   hideBody = false,
+  hideToggle = false,
   tr,
 }: {
   readonly item: LightboxItem
@@ -1940,6 +1993,10 @@ function TweetText({
    *  toggle still shows — for text-only tweets the body (and its swap animation)
    *  lives in the left card, driven by the same `tr` hook (session 130 fix). */
   readonly hideBody?: boolean
+  /** Suppress the translate control here when it is hosted elsewhere — the
+   *  mobile card screen renders it beside the body for text-only tweets so you
+   *  read and translate on one screen (session 182). */
+  readonly hideToggle?: boolean
   /** Translation state, owned by the parent so both columns share one hook. */
   readonly tr: TweetTranslationView
 }): ReactNode {
@@ -1972,19 +2029,7 @@ function TweetText({
         </p>
       )}
       <div className={styles.metaCtaGroup}>
-        {tr.showButton && (
-          <button
-            type="button"
-            className={styles.translateToggle}
-            onClick={(e): void => { e.stopPropagation(); tr.toggle() }}
-            aria-pressed={tr.buttonLabel === t('board.lightbox.showOriginal')}
-          >
-            {tr.buttonLabel}
-          </button>
-        )}
-        {tr.failed && (
-          <span className={styles.translateFailed}>{t('board.lightbox.translationFailed')}</span>
-        )}
+        {!hideToggle && <TweetTranslateControls tr={tr} />}
         <a
           href={safeExternalUrl(item.url)}
           target="_blank"
@@ -2061,6 +2106,93 @@ function TweetColumns({
         <TweetText item={view} meta={meta} hideBody={hideBody} tr={tr} />
       </div>
     </>
+  )
+}
+
+/** Mobile immersive lightbox for a tweet (session 182). Reuses the desktop tweet
+ *  parts inside MobileLightbox's gesture/morph shell, sharing ONE
+ *  useTweetTranslation across the card screen (media) and the caption screen
+ *  (text) — the same reason TweetColumns hoists the hook.
+ *
+ *  - Media tweet: card screen = media (video full-bleed / photos) + dots when
+ *    multi-image; caption screen = author + body + translate + source.
+ *  - Text-only tweet: card screen = body (22px) + translate control together, so
+ *    you read and translate on ONE screen (user decision s182); caption screen =
+ *    author + source only (body/toggle hosted on the card screen). */
+function MobileTweetLightbox({
+  view,
+  meta,
+  slots,
+  slotIdx,
+  onJump,
+  themeId,
+  mediaRef,
+  nav,
+  onClose,
+}: {
+  readonly view: LightboxItem
+  readonly meta: TweetMeta | null
+  readonly slots: readonly MediaSlot[]
+  readonly slotIdx: number
+  readonly onJump: (idx: number) => void
+  readonly themeId: ThemeId
+  readonly mediaRef: React.RefObject<HTMLDivElement | null>
+  readonly nav: LightboxNav | null
+  readonly onClose: () => void
+}): ReactNode {
+  const textOnly = isTweetTextOnly(meta, slots)
+  const hideBody = shouldHideTweetBody(meta, slots)
+  // Canonical body text — idle value === the card text, so the open morph is
+  // unaffected. Mirrors TweetColumns.
+  const originalText = textOnly
+    ? (view.title || meta?.text || cleanTweetTitle(view.title ?? ''))
+    : (meta?.text ?? view.title)
+  const tr = useTweetTranslation({ originalText, themeId: getThemeMeta(themeId).motion.text })
+
+  const main = textOnly ? (
+    <div className={styles.mobileTweetTextMain}>
+      {/* translatedText drives the 22px body; the swap animation ref is desktop-
+          only (LargePlaceholderCardScaler ignores it on mobile), so toggling
+          settles the text immediately — see playEntry(el=null). */}
+      <TweetMedia
+        key={view.url}
+        item={view}
+        meta={meta}
+        slots={slots}
+        slotIdx={slotIdx}
+        mobile
+        translatedText={tr.displayText}
+      />
+      <TweetTranslateControls tr={tr} />
+    </div>
+  ) : (
+    <div className={styles.mobileTweetMediaMain}>
+      <TweetMedia key={view.url} item={view} meta={meta} slots={slots} slotIdx={slotIdx} mobile />
+      {slots.length > 1 && (
+        <LightboxImageDots slots={slots} currentIdx={slotIdx} onJump={onJump} mobile />
+      )}
+    </div>
+  )
+
+  const caption = (
+    <TweetText
+      item={view}
+      meta={meta}
+      hideBody={textOnly ? true : hideBody}
+      hideToggle={textOnly}
+      tr={tr}
+    />
+  )
+
+  return (
+    <MobileLightbox
+      view={view}
+      mediaRef={mediaRef}
+      main={main}
+      caption={caption}
+      nav={nav}
+      onClose={onClose}
+    />
   )
 }
 

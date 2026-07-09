@@ -52,6 +52,7 @@ export function TweetVideoEmbed({
   source: sourceProp,
   variant,
   autoStart = false,
+  fullBleed = false,
   volume,
   paused,
   muted,
@@ -63,6 +64,11 @@ export function TweetVideoEmbed({
   readonly source?: TweetVideoSource
   readonly variant: MediaVariant
   readonly autoStart?: boolean
+  /** Mobile lightbox: the desktop `lightbox` wrapper caps width at 60vw to leave
+   *  room for the text column; on the immersive mobile stage there is no text
+   *  column, so fill the viewport by aspect instead (session 182). Behaviour
+   *  (play disc, controls gating) stays identical to `variant='lightbox'`. */
+  readonly fullBleed?: boolean
   /** Controlled per-card volume (0–100). When set, overrides the global
    *  default and inline volume changes are NOT written back to it. */
   readonly volume?: number
@@ -189,7 +195,17 @@ export function TweetVideoEmbed({
     : { position: 'relative', aspectRatio: aspect, width: `min(920px, 60vw, calc(var(--lightbox-media-max-h) * ${aspect}))`, maxHeight: 'var(--lightbox-media-max-h)', maxWidth: 'min(920px, 60vw)', background: 'black', borderRadius: 'var(--lightbox-media-radius)', overflow: 'hidden' }
   // Inline (board): fill the card; the CardsLayer overlay already centers + clips.
   const inlineWrapper: CSSProperties = { position: 'absolute', inset: 0, background: 'black', overflow: 'hidden' }
-  const wrapperStyle = variant === 'lightbox' ? lightboxWrapper : inlineWrapper
+  // Mobile lightbox: fill the immersive stage by aspect (no text column to leave
+  // room for). Contained within the viewport (min of width-fit / height-fit).
+  const mobileWrapper: CSSProperties = {
+    position: 'relative', aspectRatio: aspect,
+    width: `min(100vw, calc(100vh * ${aspect}))`,
+    maxWidth: '100vw', maxHeight: '100vh',
+    background: 'black', borderRadius: 'var(--lightbox-media-radius)', overflow: 'hidden',
+  }
+  const wrapperStyle = fullBleed
+    ? mobileWrapper
+    : variant === 'lightbox' ? lightboxWrapper : inlineWrapper
 
   const proxiedSrc = `/api/tweet-video?url=${encodeURIComponent(source.videoUrl)}`
   const handleOverlayClick = (): void => {

@@ -573,6 +573,36 @@
   overflow-wrap: break-word;
 }
 
+/* Mobile tweet — text-only (session 182): the 22px body (.mobileTextMain, from
+   TweetMedia's text-only path) and its translate control stacked on the ONE card
+   screen, so you read and translate together. */
+.mobileTweetTextMain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.mobileTweetTextMain .translateToggle { align-self: center; }
+
+/* Mobile tweet — media (session 182): wraps the full-bleed video / photo so the
+   image dots can overlay its bottom edge (the desktop dots hang below .media,
+   which lands off-screen when anchored to the immersive .main). */
+.mobileTweetMediaMain {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mobileTweetDots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 24px;
+}
+
 .description {
   font-size: 15px;
   line-height: 1.65;
