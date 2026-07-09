@@ -95,6 +95,7 @@ export const BOARD_Z_INDEX = {
   SHARE_SELECT_BAR: 401,  // selective-share bottom bar — ABOVE the scroll meter (400) so it isn't covered during the select stage (s170); below CHROME_DRAWER (405). The select stage keeps the meter visible (unlike arrange, which hides it), so the bar must out-stack it.
   SHARE_TOAST: 402,  // collage-screenshot SHARE arrange-stage bottom bar — above select-bar + scroll meter, below CHROME_DRAWER (405)
   POPOVER: 120,
+  SAVE_BUTTON: 125,  // mobile/tablet floating "+" save button (above POPOVER 120, below UNDO_TOAST 130). Touch devices only.
   UNDO_TOAST: 130,
   PASTE_FEEDBACK: 135,
   LANGUAGE_SWITCHER: 140,
@@ -104,6 +105,7 @@ export const BOARD_Z_INDEX = {
   /** 統一右ドロワー（TUNE/SETTINGS/SHARE/THEMES）。ScrollMeter(400) の上、onboarding ring(410) の下。 */
   CHROME_DRAWER: 405,
   DATA_HOME: 205,       // first-run "your data lives here" card (after onboarding, below CHROME_DRAWER 405)
+  SAVE_SHEET: 208,   // mobile/tablet URL input sheet (modal tier: above MODAL_OVERLAY 200 / DATA_HOME 205, below ONBOARDING 210).
   BACKUP_REMINDER: 195, // periodic backup nudge toast (below DATA_HOME + drawer)
   ONBOARDING: 210,     // First-run tutorial overlay (above MODAL_OVERLAY)
   ONBOARDING_SPOTLIGHT_RING: 410,  // portalled spotlight ring — above the unified CHROME_DRAWER (405) so the ring shows on a target INSIDE that drawer
