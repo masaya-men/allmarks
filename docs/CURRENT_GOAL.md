@@ -1,26 +1,19 @@
-# 次セッションのゴール — スマホ閲覧の締め：実機フィードバック反映 →（残れば）スマホのタグ付け着手
+# 次セッションのゴール — スマホ保存（束B）に着手 or 残りのモバイル磨き
 
 ## まず最初に（ユーザーへの確認）
-- **s182 でスマホ専用ライトボックスの残り2つ＋実機フィードバック3件を実装・本番反映済み**。実機で再確認をお願いしたい点：
-  - **(A) 文字カード 22px**：サムネ持ちで小さい/失敗するカードも 22px（キャプションと同じ）に。Playwright で両経路 font=22px 実測済み。
-  - **(B) ツイート対応**：①動画（ディスクをタップ→inline 再生）②複数画像ドット（下部・タップで切替）③翻訳（写真動画=キャプション画面／文字=カード画面）。
-  - **(修正1/2) ツイートメディアの大きすぎ・上スワイプで見切れ → 直した**：他のメディアと同じ envelope（`--lightbox-media-max-h`＝ツールバー考慮）に統一。承認済み画像と同サイズに（Playwright で 256×768 一致を実測）。
-  - **(修正3) ボードのテキストカード上でスクロール不能 → 直した**：`.titleScroll` の touch-action を none→pan-y（board へフォールスルー）。
-  - **(新規) スマホでカード角丸 ON/OFF**：ボトムナビに **CORNERS タブ**追加（MOTION と MORE の間）。タップで角丸⇔角ばり切替＋永続（Playwright 実測）。
-  - **(新規) スマホのタグ付け**：TAG →**画面下部に横スクロールのタグ帯**（ナビは隠れる）。カードをタップで選択→**タグをタップで付与**（ドラッグ不要）。「+ NEW TAG」で作成、DONE で終了。Playwright で 帯表示・選択・作成付与・チップ付与・退出を実測。**横スクロールの感触・実機タッチは要実機確認**。
-  - → **`allmarks.app` をスマホでハードリロードして、上記が実機で OK か確認**。①動画・③翻訳の実動作は X の syndication/翻訳 API 依存＝実機のみ検証可。
+- **s182 は全て実機OK・本番反映済み**（スマホ閲覧まわりが一通り完成）:
+  - スマホ専用ライトボックス（没入型・4方向ジェスチャ・キャプション2画面）
+  - 文字カード22px（サムネ失敗経路も根治）／ツイート対応（動画・複数画像ドット・翻訳）
+  - リグレッション3件根治（ツイートメディアの大きすぎ→envelope統一／ボードのテキストカードスクロール→pan-y）
+  - スマホで角丸ON/OFF（CORNERS タブ）／**スマホのタグ付け（下部の横スクロールタグ帯・タップ付与）**
+- ここで**スマホ閲覧（束A相当）は一区切り**。次は下記のどちらかをユーザーと決めて進める。
 
-## 次セッションでやること
-1. **実機で今回分を再確認**（ツイート＝動画/複数画像ドット/翻訳・文字カード22px・メディア収まり・テキストカードのボードスクロール・CORNERS・**タグ付け帯**）→ 気になる点を反映。
-2. その後 **スマホ保存（束B）** or 残りのモバイル磨き（ピンチリサイズ・キャプション微調整）。詳細は [TODO.md](TODO.md) と `docs/private/2026-07-08-release-runway-plan.md`（束B）。
+## 次セッションでやること（開始時にユーザーへ確認）
+1. **本命＝スマホ保存（束B）**: 現状スマホの保存導線は実質ゼロ（ブックマークレットはドラッグ前提、share_target は manifest 宣言のみで受け側なし）。**URL 入力欄 or Share Sheet 受信**を作る。再利用入口: `ingestPastedUrl`（[lib/board/paste-ingest.ts](../lib/board/paste-ingest.ts)）＋既存 OGP プロキシ（[functions/api/ogp.ts](../functions/api/ogp.ts)）。詳細計画 `docs/private/2026-07-08-release-runway-plan.md` 束B。
+2. **or 残りのモバイル磨き**: ピンチリサイズ／キャプション新モデルの微調整／長文テキストカードのスクロール（カード画面で touch-action:none のため不可＝pan-y化 or キャプション送りを検討）。
 
-### 実機で見るときの既知の調整候補
-- ツイート動画/複数画像ドット/翻訳ボタンの見え方・当たり。文字ツイートの翻訳は `playEntry(el=null)` で**アニメ無しの即差し替え**（物足りなければ swap アニメ配線）。
-- 長い文字ツイート/文字カードの本文はカード画面で**スクロール不可**（`.mobileTextMain`）。長文が切れるなら pan-y 化 or キャプション送りを検討。
-- タグ帯の横スクロールの感触・チップの当たり・「選択→タップ付与」の分かりやすさ。
+## 直近のリリース段取り（参考・`docs/private/2026-07-08-release-runway-plan.md`）
+束A スマホ閲覧（ほぼ完了）→ **束B スマホ保存** → ここで公開日宣言可 → 束C 13言語仕上げ＋規約 → 束D 公開素材 → 束E 総仕上げ・公開。課金の線引き（無料=手動EXPORT/IMPORT・有料=端末間同期の案B）は `docs/private/IDEAS.md` #5 と一体。
 
-## s182 で信じてよい実装（全て isMobile/tweetId 分岐＝デスクトップ不変、tsc0/vitest2172/build OK・本番反映済）
-- **(A)**: `LargePlaceholderCardScaler` をモバイルで zoom せず `.mobileTextMain`(22px) を直描画に集約（サムネ無し経路＋サムネ失敗 fallback 経路の**両方を1箇所で捕捉**）。s181 の暫定分岐と dead `shouldRenderLargePlaceholderCard` は撤去。
-- **(B)**: 新規 `MobileTweetLightbox`（Lightbox.tsx 内）が `useTweetTranslation` を1回呼んで main/caption に共有し、既存の `TweetMedia`/`LightboxImageDots`/`TweetText` を `MobileLightbox` シェルに載せ替え。`TweetVideoEmbed` に `fullBleed`、`TweetMedia`/`LightboxImageDots` に `mobile`、`TweetText` に `hideToggle`、`TweetTranslateControls` を抽出。mobile 分岐＝`tweetId ? <MobileTweetLightbox/> : <MobileLightbox generic/>`。
-- CSS: `.mobileTweetTextMain`／`.mobileTweetMediaMain`／`.mobileTweetDots`（Lightbox.module.css）。
-- spec/plan は s180 の `docs/superpowers/specs|plans/2026-07-08-mobile-lightbox*` を継承（本セッションは追補実装）。
+## s182 の実装の在り処（次セッションが触るとき用）
+- モバイル系は全て `isMobile`/`tweetId` 分岐＝**デスクトップ不変**。ライトボックス=`MobileLightbox.tsx`/`Lightbox.tsx`（`MobileTweetLightbox`）、ナビ=`BoardMobileNav.tsx`（CORNERS）、タグ帯=`BoardMobileTagBar.tsx`＋`CardsLayer.tsx`（モバイルタグモードは capture せず native click 選択）。メディアの高さは `--lightbox-media-max-h`（=100dvh-76px, memory `reference_mobile_lightbox_media_envelope`）。

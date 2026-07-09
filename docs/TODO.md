@@ -21,7 +21,9 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 182 — ★スマホ専用ライトボックスの残り2つを実装・本番反映済／次は実機フィードバック反映＆スマホのタグ付け)
+### 直近の状態 (セッション 182 — ★スマホ閲覧を一通り完成・全て実機OK／次はスマホ保存=束B)
+
+**このセッションの成果（全て実機OK・本番反映済）**: 文字カード22px根治／ツイート対応（動画・複数画像ドット・翻訳）／リグレッション3件根治（ツイートメディアの大きすぎ・ボードのテキストカードスクロール等）／スマホで角丸ON/OFF（CORNERS）／スマホのタグ付け（下部の横スクロールタグ帯・タップ付与）。→ **スマホ閲覧（束A相当）は一区切り。次は束B スマホ保存**（[CURRENT_GOAL.md](CURRENT_GOAL.md)）。
 
 - **(A) 文字カード 22px を根治・本番反映済**（実機確認待ち）: s181 は `!view.thumbnail`(サムネ無し) 経路だけ 22px 化していたが、**サムネ持ちで小さい/失敗するカードは `LightboxImageWithFallback`→`LargePlaceholderCardScaler` の zoom 拡大経路**を通り未修正だった（＝ユーザーの「変わってない」）。**直し方**：`LargePlaceholderCardScaler` をモバイルだけ zoom せず `.mobileTextMain`(22px, `--text-primary`) を直描画に集約＝**サムネ無し経路もサムネ失敗 fallback 経路も1箇所で捕捉**。s181 の暫定分岐と dead `shouldRenderLargePlaceholderCard` は撤去。デスクトップ不変。**Playwright(390px)で両経路 font=22px 実測**。
 - **(B) ツイート対応を実装・本番反映済**（①動画 ②複数画像ドット ③翻訳、実機確認待ち）: 新規 `MobileTweetLightbox`（Lightbox.tsx 内）が `useTweetTranslation` を1回呼んで **main/caption に共有**し、既存の承認済み部品 `TweetMedia`/`LightboxImageDots`/`TweetText` を `MobileLightbox` シェルに載せ替え。
