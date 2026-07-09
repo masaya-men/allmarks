@@ -196,11 +196,14 @@ export function TweetVideoEmbed({
   // Inline (board): fill the card; the CardsLayer overlay already centers + clips.
   const inlineWrapper: CSSProperties = { position: 'absolute', inset: 0, background: 'black', overflow: 'hidden' }
   // Mobile lightbox: fill the immersive stage by aspect (no text column to leave
-  // room for). Contained within the viewport (min of width-fit / height-fit).
+  // room for). Bounded by the lightbox's chrome-aware envelope (mobile:
+  // 100dvh - 76px), NOT 100vh — on real devices 100vh includes the browser
+  // toolbar, so a 100vh-sized video overflows the visible area (s182).
+  const envH = 'var(--lightbox-media-max-h, 85vh)'
   const mobileWrapper: CSSProperties = {
     position: 'relative', aspectRatio: aspect,
-    width: `min(100vw, calc(100vh * ${aspect}))`,
-    maxWidth: '100vw', maxHeight: '100vh',
+    width: `min(100vw, calc(${envH} * ${aspect}))`,
+    maxWidth: '100vw', maxHeight: envH,
     background: 'black', borderRadius: 'var(--lightbox-media-radius)', overflow: 'hidden',
   }
   const wrapperStyle = fullBleed

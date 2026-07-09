@@ -71,7 +71,12 @@ html {
    returns false and the press engages the board pan instead. */
 [data-lock-card-scroll="true"] [data-card-scroll="true"] {
   overflow: hidden !important;
-  touch-action: none;
+  /* pan-y, NOT none: overflow:hidden already disables the card's internal scroll
+     ("never the card body"), but touch-action:none also cancelled the NATIVE
+     board pan when a finger landed on the text body = "board scroll dead over
+     text cards" (s182 user report). pan-y lets the vertical swipe fall through
+     to the board scroller (the s179 intent: finger swipe pans the board). */
+  touch-action: pan-y;
 }
 
 html,

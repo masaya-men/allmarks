@@ -28,7 +28,12 @@
 .main :global(img),
 .main :global(video) {
   max-width: 100vw;
-  max-height: 100vh;
+  /* Use the lightbox's chrome-aware envelope (mobile: 100dvh - 76px), NOT 100vh.
+     On real devices 100vh includes the browser toolbar area, so 100vh-sized
+     media overflows the visible viewport = "card too big / cut off on swipe-up"
+     (s182). Non-tweet images already size via .imageBox with this same var; this
+     keeps tweet media (bare img / fullBleed video) consistent with them. */
+  max-height: var(--lightbox-media-max-h, 85vh);
   object-fit: contain;
 }
 
