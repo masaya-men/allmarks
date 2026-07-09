@@ -21,6 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 183 — ★スマホ・タブレット保存=束B を出荷・本番反映／次は実機確認→公開日宣言 or 束C)
+
+**このセッションの成果（本番反映済・実機確認待ち）**: スマホ/タブレットの**保存導線を新設**（束B）。中心＝**賢い「+」ボタン**（右下フローティング・全タッチ端末＝`pointer: coarse`）: タップ→コピー済み URL を自動保存、読めない時だけ**下から出る入力シート**。加えて **Android 共有メニュー受け口**（`?shared=true` を起動時に読み保存→クエリ除去）。iOS/iPad は Apple 仕様で共有メニュー不可＝「+」が本命。**マウスのデスクトップには「+」を出さない＝byte-identical**。
+
+- 3入口（+・シート・Android 共有）は `normalizeToUrl`（`https://`補完＋検証・裸単語は「.」必須でシート送り）→ `useSaveUrl`（保存の芯）→ 既存 `ingestPastedUrl`（重複排除/OGP/保存）に集約。`useUrlPasteSave` は芯を使う薄いラッパ化＝**PC 貼り付け＆ PiP は挙動不変**。テーマは CSS 変数＋`[data-theme-id]` で着せ替え可能（将来 `saveButtonVariant` 縫い代のみ予約）。
+- 新規: `lib/board/{paste-url(normalizeToUrl),use-save-url,use-is-touch-device}.ts`、`components/board/MobileSave{Button,Sheet}.tsx`、i18n `board.saveInvalidHint`×15、`tests/e2e/mobile-save.spec.ts`。**検証**: tsc0 / vitest 2188 / build OK / e2e 5本 / opus 全ブランチレビュー READY TO MERGE。`merge --no-ff` で master 反映・`allmarks.app` デプロイ済。
+- **★次セッション**: (1) **実機確認**（スマホ/タブレットで「+」保存・iOS のペースト確認1回・Android 共有メニュー）(2) 実機OKなら**公開日宣言可**→ 束C（13言語仕上げ＋規約正文条項）or 残りのモバイル磨き。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。deferred: B3 ホーム追加案内 / iPhone ショートカット / タブレット盤面最適化。
+
 ### 直近の状態 (セッション 182 — ★スマホ閲覧を一通り完成・全て実機OK／次はスマホ保存=束B)
 
 **このセッションの成果（全て実機OK・本番反映済）**: 文字カード22px根治／ツイート対応（動画・複数画像ドット・翻訳）／リグレッション3件根治（ツイートメディアの大きすぎ・ボードのテキストカードスクロール等）／スマホで角丸ON/OFF（CORNERS）／スマホのタグ付け（下部の横スクロールタグ帯・タップ付与）。→ **スマホ閲覧（束A相当）は一区切り。次は束B スマホ保存**（[CURRENT_GOAL.md](CURRENT_GOAL.md)）。
