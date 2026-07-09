@@ -2861,6 +2861,8 @@ export function BoardRoot() {
           themesActive={activeDrawer === 'themes'}
           motionOn={motionEnabled}
           onToggleMotion={handleToggleMotion}
+          cornersRounded={roundedCorners}
+          onToggleCorners={handleToggleRoundedCorners}
           onSettings={() => setActiveDrawer(activeDrawer === 'settings' ? null : 'settings')}
           settingsActive={activeDrawer === 'settings'}
         />

@@ -4,9 +4,9 @@ import type { ReactElement } from 'react'
 import styles from './BoardMobileNav.module.css'
 
 /** Fixed bottom navigation for the mobile board (≤640px). Hosts TAG / THEME /
- *  MOTION / MORE. FILTER lives in the top-right header (opposite the AllMarks
- *  wordmark) — not here — so the two chrome anchors bracket the top of the
- *  board. Wired to the same handlers the desktop chrome uses. Rendered only
+ *  MOTION / CORNERS / MORE. FILTER lives in the top-right header (opposite the
+ *  AllMarks wordmark) — not here — so the two chrome anchors bracket the top of
+ *  the board. Wired to the same handlers the desktop chrome uses. Rendered only
  *  when `useIsMobile()` is true, so desktop is untouched. */
 export type BoardMobileNavProps = {
   readonly onTag: () => void
@@ -15,6 +15,10 @@ export type BoardMobileNavProps = {
   readonly themesActive: boolean
   readonly motionOn: boolean
   readonly onToggleMotion: () => void
+  /** Card corner style — true = rounded, false = square (TUNE → CORNERS on
+   *  desktop). Exposed here so mobile can toggle it too (no TUNE drawer). */
+  readonly cornersRounded: boolean
+  readonly onToggleCorners: () => void
   readonly onSettings: () => void
   readonly settingsActive: boolean
 }
@@ -47,6 +51,15 @@ function MotionIcon({ className }: IconProps): ReactElement {
     </svg>
   )
 }
+/** CORNERS = a card glyph whose own corners follow the current state (rounded
+ *  square when on, sharp square when off) so the icon shows what cards look like. */
+function CornersIcon({ className, rounded }: IconProps & { readonly rounded: boolean }): ReactElement {
+  return (
+    <svg className={className} viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="4" y="4" width="14" height="14" rx={rounded ? 4.5 : 0} />
+    </svg>
+  )
+}
 /** MORE = three dots (universal overflow glyph) — clearer than a gear, which
  *  read as a theme/contrast icon next to the THEME tab. */
 function MoreIcon({ className }: IconProps): ReactElement {
@@ -66,6 +79,8 @@ export function BoardMobileNav({
   themesActive,
   motionOn,
   onToggleMotion,
+  cornersRounded,
+  onToggleCorners,
   onSettings,
   settingsActive,
 }: BoardMobileNavProps): ReactElement {
@@ -101,6 +116,17 @@ export function BoardMobileNav({
       >
         <MotionIcon className={styles.icon} />
         <span className={styles.tabLabel}>MOTION</span>
+      </button>
+      <button
+        type="button"
+        className={styles.tab}
+        data-active={cornersRounded ? 'true' : 'false'}
+        aria-pressed={cornersRounded}
+        onClick={onToggleCorners}
+        data-testid="mobile-nav-corners"
+      >
+        <CornersIcon className={styles.icon} rounded={cornersRounded} />
+        <span className={styles.tabLabel}>CORNERS</span>
       </button>
       <button
         type="button"
