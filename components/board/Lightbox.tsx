@@ -1502,15 +1502,13 @@ export function Lightbox({ item, originRect, sourceCardId, onClose, onSourceShou
           mediaRef={mediaRef}
           nav={nav ?? null}
           onClose={requestClose}
-          main={
-            // Text card (no image): on mobile render the text at the caption's
-            // own size (.title = 22px) instead of the scaled-to-fill giant the
-            // desktop uses, so the card view and caption read at one size (user
-            // request s181). Everything else keeps LightboxMedia.
-            !view.thumbnail && shouldRenderLargePlaceholderCard(view)
-              ? <div className={styles.mobileTextMain}>{cleanTitle(view.title, view.url)}</div>
-              : <LightboxMedia key={view.url} item={view} />
-          }
+          // Text / failed-image cards render at the caption's own 22px scale
+          // (not the desktop zoom-to-fill giant) inside LargePlaceholderCardScaler's
+          // own mobile branch, reached through LightboxMedia for BOTH the
+          // no-thumbnail path (LightboxMedia → Scaler) and the small/failed-image
+          // fallback path (LightboxImageWithFallback → Scaler). One chokepoint
+          // (s182); s181's explicit branch here only caught the no-thumbnail one.
+          main={<LightboxMedia key={view.url} item={view} />}
           caption={<DefaultText item={view} host={host} />}
         />
       ) : (
@@ -2127,18 +2125,6 @@ function LightboxMedia({ item }: { readonly item: LightboxItem }): ReactNode {
   return <LargePlaceholderCardScaler fakeItem={fakeBoardItem} aspect={textAspect} />
 }
 
-/** 右パネルで h1 を抑制すべきか — Lightbox で左に大 TextDisplay を描画する
- *  item では h1 と左カードの title が重複するので suppress。 session 32 user 決定:
- *  一般 webpage は OG image 有無に関わらず全部大 TextDisplay → 常に true。
- *  専用 embed (YouTube/TikTok/Instagram) と tweet は別経路なので false。 */
-function shouldRenderLargePlaceholderCard(item: LightboxItem): boolean {
-  const urlType = detectUrlType(item.url)
-  if (urlType === 'youtube' || urlType === 'tiktok' || urlType === 'instagram') return false
-  if (urlType === 'vimeo' || urlType === 'soundcloud') return false
-  if (urlType === 'tweet') return false
-  return true
-}
-
 /** Lightbox 用に LightboxItem を BoardItem 互換形に詰め直す。 pickCard 判定と
  *  大 TextCard 描画の両方で同じ fake item を使う。 cardWidth は board 側で
  *  rendering されていたものをそのまま保ち、 Lightbox 側で transform:scale して
@@ -2284,6 +2270,14 @@ function LargePlaceholderCardScaler({
   // off to a matching sheet here, and the user sees the note enlarged "as paper".
   // First paint is false (the open clone covers it), then it flips to the sheet.
   const isPaper = useIsPaperTheme()
+  // Mobile (session 182): a text-only card or an image that failed / is too small
+  // renders here. The desktop zoom-to-fill giant reads far larger than the
+  // caption; on mobile show the title at the caption's own 22px scale instead
+  // (same .mobileTextMain the no-thumbnail path used in s181). This is the single
+  // chokepoint for BOTH text paths — LightboxMedia (no thumbnail) and
+  // LightboxImageWithFallback (small/failed image) — so both land at 22px.
+  // Desktop is untouched (isMobile stays false there).
+  const isMobile = useIsMobile()
   // Merge the internal boxRef (ResizeObserver) with the optional external ref so
   // the translate swap animation can target the same element.
   const setBox = useCallback((el: HTMLDivElement | null): void => {
@@ -2300,6 +2294,8 @@ function LargePlaceholderCardScaler({
   const boardH = boardW / aspect
 
   useLayoutEffect(() => {
+    // Mobile bails: the plain 22px text below has no zoomed inner to size.
+    if (isMobile) return
     const box = boxRef.current
     const inner = innerRef.current
     if (!box || !inner) return
@@ -2315,7 +2311,14 @@ function LargePlaceholderCardScaler({
     const observer = new ResizeObserver(update)
     observer.observe(box)
     return (): void => observer.disconnect()
-  }, [boardW])
+  }, [boardW, isMobile])
+
+  // Mobile: title at the caption's 22px scale (see note where isMobile is read).
+  // fakeItem.title is already the cleaned board title (cleanTitle in LightboxMedia
+  // / the tweet path), so this matches what s181's .mobileTextMain rendered.
+  if (isMobile) {
+    return <div className={styles.mobileTextMain}>{fakeItem.title}</div>
+  }
 
   return (
     <div
