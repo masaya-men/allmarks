@@ -73,6 +73,11 @@ import { PaperFramePlate } from './chrome/PaperFramePlate'
 import { PaperWaxSeal } from './chrome/PaperWaxSeal'
 import { UndoToast, type UndoToastInput } from './UndoToast'
 import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
+import { useSaveUrl } from '@/lib/board/use-save-url'
+import { useIsTouchDevice } from '@/lib/board/use-is-touch-device'
+import { MobileSaveButton } from './MobileSaveButton'
+import { MobileSaveSheet } from './MobileSaveSheet'
+import { normalizeToUrl } from '@/lib/board/paste-url'
 import { PasteSaveFeedback } from './PasteSaveFeedback'
 import { type UndoEntry, MAX_UNDO_STACK, pushBounded } from '@/lib/board/undo-stack'
 import { PRESETS, type PresetId } from '@/lib/board/tune-presets'
@@ -2583,30 +2588,62 @@ export function BoardRoot() {
 
   // Paste-to-save: listen for clipboard paste events on the board canvas and
   // save valid URLs directly to IDB. Mirrors the same reload + entrance
-  // highlight path used by the bookmarklet BroadcastChannel above.
-  const { feedback: pasteFeedback } = useUrlPasteSave({
-    onSaved: async (bookmarkId: string): Promise<void> => {
-      await reload()
+  // highlight path used by the bookmarklet BroadcastChannel above. Shared with
+  // the mobile save paths (smart + button, input sheet, Android share
+  // receiver) below via handleUrlSaved.
+  const handleUrlSaved = useCallback(async (bookmarkId: string): Promise<void> => {
+    await reload()
+    setNewlyAddedIds((prev) => {
+      const next = new Set(prev)
+      next.add(bookmarkId)
+      return next
+    })
+    setTimeout(() => {
       setNewlyAddedIds((prev) => {
         const next = new Set(prev)
-        next.add(bookmarkId)
+        next.delete(bookmarkId)
         return next
       })
-      setTimeout(() => {
-        setNewlyAddedIds((prev) => {
-          const next = new Set(prev)
-          next.delete(bookmarkId)
-          return next
-        })
-      }, 800)
-      // Broadcast to other surfaces (PiP companion, second board tab) so they
-      // reload and show the new card. The local `subscribeBookmarkSaved` listener
-      // above will also fire from this broadcast — a benign second reload that is
-      // acceptable (no entrance highlight on other tabs is intentional).
-      postBookmarkSaved({ bookmarkId })
-    },
+    }, 800)
+    // Broadcast to other surfaces (PiP companion, second board tab) so they
+    // reload and show the new card. The local `subscribeBookmarkSaved` listener
+    // above will also fire from this broadcast — a benign second reload that is
+    // acceptable (no entrance highlight on other tabs is intentional).
+    postBookmarkSaved({ bookmarkId })
+  }, [reload])
+
+  const { feedback: pasteFeedback } = useUrlPasteSave({
+    onSaved: handleUrlSaved,
     flagOnboardingRef: onboardingActiveRef,
   })
+
+  // Mobile save entries (smart + button, input sheet, Android share receiver)
+  // share the same handleUrlSaved core as desktop paste but through a second
+  // useSaveUrl instance — desktop paste (useUrlPasteSave above) is untouched.
+  // isTouchDevice gates the + button / sheet mount below (pointer: coarse
+  // only, so a mouse desktop never renders them). The two feedback sources
+  // never fire together in practice, so mergedSaveFeedback below just prefers
+  // whichever is non-null.
+  const isTouchDevice = useIsTouchDevice()
+  const { feedback: mobileSaveFeedback, saveUrl: mobileSaveUrl } = useSaveUrl({ onSaved: handleUrlSaved })
+  const [saveSheetOpen, setSaveSheetOpen] = useState(false)
+  const mergedSaveFeedback = pasteFeedback.kind ? pasteFeedback : mobileSaveFeedback
+
+  // Android Web Share Target: manifest points share intents at
+  // /board?shared=true&(url|text)=…. Read the query once on mount (static export
+  // → client-side), save via the shared core, then strip the query so a reload
+  // never re-saves. iOS never reaches here (it can't register a share target).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('shared') !== 'true') return
+    const raw = params.get('url') || params.get('text') || ''
+    const url = normalizeToUrl(raw)
+    // Always strip the shared params regardless of validity (avoid re-fire).
+    window.history.replaceState(null, '', window.location.pathname)
+    if (url) void mobileSaveUrl(url)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // BroadcastChannel: reload (no entrance highlight) when an existing bookmark
   // changes — e.g., a tag added from the extension's quick-tag strip or the
@@ -2875,6 +2912,27 @@ export function BoardRoot() {
           onToggleCorners={handleToggleRoundedCorners}
           onSettings={() => setActiveDrawer(activeDrawer === 'settings' ? null : 'settings')}
           settingsActive={activeDrawer === 'settings'}
+        />
+      )}
+      {/* Mobile/tablet smart "+" save entry (s183) — touch-only via
+          useIsTouchDevice (pointer: coarse), independent of the width-based
+          isMobile layout gate above so tablets in landscape still get it.
+          Hidden under the same conditions as the bottom nav, plus during
+          SHARE arrange (the floating + would collide with the collage
+          canvas). */}
+      {isTouchDevice && !lightboxItemId && !showOnboarding && !tagMode && sharePhase !== 'arrange' && (
+        <MobileSaveButton
+          themeId={themeId}
+          onSave={(url): void => { void mobileSaveUrl(url) }}
+          onNeedInput={(): void => setSaveSheetOpen(true)}
+        />
+      )}
+      {isTouchDevice && (
+        <MobileSaveSheet
+          open={saveSheetOpen}
+          onClose={(): void => setSaveSheetOpen(false)}
+          onSave={mobileSaveUrl}
+          themeId={themeId}
         />
       )}
       {/* Inner dark canvas — destefanis-style stage. The whole pan/cards/
@@ -3372,7 +3430,7 @@ export function BoardRoot() {
         />
       </PipPortal>
       <UndoToast input={toast} />
-      <PasteSaveFeedback feedback={pasteFeedback} themeId={themeId} />
+      <PasteSaveFeedback feedback={mergedSaveFeedback} themeId={themeId} />
       {tagMode && !isMobile && (
         <TagDropPanel
           tags={tags}
