@@ -21,6 +21,16 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 182 — ★スマホ専用ライトボックスの残り2つを実装・本番反映済／次は実機フィードバック反映＆スマホのタグ付け)
+
+- **(A) 文字カード 22px を根治・本番反映済**（実機確認待ち）: s181 は `!view.thumbnail`(サムネ無し) 経路だけ 22px 化していたが、**サムネ持ちで小さい/失敗するカードは `LightboxImageWithFallback`→`LargePlaceholderCardScaler` の zoom 拡大経路**を通り未修正だった（＝ユーザーの「変わってない」）。**直し方**：`LargePlaceholderCardScaler` をモバイルだけ zoom せず `.mobileTextMain`(22px, `--text-primary`) を直描画に集約＝**サムネ無し経路もサムネ失敗 fallback 経路も1箇所で捕捉**。s181 の暫定分岐と dead `shouldRenderLargePlaceholderCard` は撤去。デスクトップ不変。**Playwright(390px)で両経路 font=22px 実測**。
+- **(B) ツイート対応を実装・本番反映済**（①動画 ②複数画像ドット ③翻訳、実機確認待ち）: 新規 `MobileTweetLightbox`（Lightbox.tsx 内）が `useTweetTranslation` を1回呼んで **main/caption に共有**し、既存の承認済み部品 `TweetMedia`/`LightboxImageDots`/`TweetText` を `MobileLightbox` シェルに載せ替え。
+  - **①動画**: `TweetVideoEmbed` に `fullBleed`（没入ステージは横に文字カラムが無いので、デスクトップの 60vw キャップでなくアスペクトで viewport 充填）。再生ディスクをタップ→inline 再生は変わらず。
+  - **②複数画像ドット**: `LightboxImageDots` に `mobile`＝メディア下部に**オーバーレイ**（デスクトップは `.media` 下にぶら下げ＝`.main` では画面外）。モバイルは左右スワイプ=カード送りなので**画像切替はドットタップ**。
+  - **③翻訳**: `TweetTranslateControls` 抽出。写真動画ツイート=本文+トグルはキャプション画面。**文字ツイート=本文(22px)+トグルをカード画面に同居**（読む画面で翻訳・ユーザー決定）＝caption は著者+出典（`TweetText hideToggle`）。翻訳は `playEntry(el=null)` で**アニメ無しの即差し替え**。
+  - **検証**: tsc0 / vitest2172（1件 flaky BroadcastChannel は単体で緑）/ build OK / **Playwright(390px) で ②ドット2＋main画像＋文字ツイート22px＋ページエラー0** を実測。①動画・③翻訳の実動作は X syndication/翻訳 API 依存＝**実機のみ検証可**。
+- **★次セッション**: (1) **実機フィードバック反映**（(A)(B) を触ってもらう）(2) **スマホのタグ付け**（未着手）(3) 任意でピンチリサイズ／キャプション微調整。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 180 — ★スマホスクロール修正（✅実機OK）＋スマホ専用ライトボックス（没入型）を実装・実機フィードバック6ラウンドで大幅磨き込み／次はキャプション実機確認＆ツイート対応)
 
 - **① スマホのネイティブスクロール修正（✅実機OK）**: カード `.cardNode` の `touch-action:none` をモバイル時だけ `pan-y` に緩めて解決（`[data-lock-card-scroll]` スコープ、③維持、デスクトップ不変）。ユーザー実機で上下スワイプ確認済。

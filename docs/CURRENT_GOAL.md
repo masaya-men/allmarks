@@ -1,30 +1,26 @@
-# 次セッションのゴール — スマホ専用ライトボックスの残り = ツイート対応（他はユーザーOK済み）
+# 次セッションのゴール — スマホ閲覧の締め：実機フィードバック反映 →（残れば）スマホのタグ付け着手
 
 ## まず最初に（ユーザーへの確認）
-- **s180-181 でスマホ専用ライトボックス（没入型）を完成させ、実機フィードバックで磨き込み済み**。ユーザーは画像/動画/サイト/文字カード/操作系すべてOK確認済み。現状:
-  - タップで開く／閉じる = **transform ベースのモーフ**（カード⇄全画面、点滅なし・カクツキなし・Apple風）。
-  - 左右スワイプ = 前後送り。**強フリックで複数枚を慣性減速**（最新 onNav 参照で実際に進む）。
-  - 上スワイプ = **キャプション画面**（s181で修正: カードは縮小せず上へスクロールアウト、キャプションが**カードと同じ中央スポット**に。gsap を y(px) 統一で「上スワイプで出ない」バグも解消）。背景は PC と同じ「ぼかした暗いボード（backdrop）の上に透明」。下スワイプ = カードへ戻る／カード画面なら閉じる。
-  - ✕廃止。縦長画像はシート域を見越したサイズ。
+- **s182 でスマホ専用ライトボックスの残り2つを実装・本番反映済み**。実機確認をお願いする2点：
+  - **(A) 文字カード 22px**：サムネ持ちで小さい/失敗するカード（`LargePlaceholderCardScaler` の zoom 経路）も含めて 22px（キャプションと同じ）になった。**サムネ持ち文字カードを開いて確認**。Playwright でも両経路 font=22px 実測済み。
+  - **(B) ツイート対応**：モバイルライトボックスで ①動画（再生ディスクをタップ→inline 再生）②複数画像ドット（下部オーバーレイ・タップで画像切替）③翻訳（写真動画ツイート=キャプション画面／文字ツイート=カード画面にボタン）。**実機で開いて動作確認**。※Playwright は②ドット＋文字22px＋クラッシュ無しを実測済み。①動画・③翻訳は X の syndication/翻訳が要る=**実機のみ検証可**。
 
-## 次セッションでやること（ユーザー確定）
-### (A) ★文字カードの文字サイズをキャプションと同じ 22px に（s181で未完・実機で「変わってない」）
-- **原因確定（コード検証済み）**: 文字カードの描画経路が2つあり、s181の修正は片方しか捕まえていない。
-  - 経路A（サムネ無し `!view.thumbnail`）: 私が入れた `.mobileTextMain`(22px) が効く。
-  - **経路B（サムネ持ちだが小さい/失敗→文字に落ちる）**: `LightboxMedia`→`LightboxImageWithFallback`→実行時フォールバック→**`LargePlaceholderCardScaler`**（[Lightbox.tsx:2302-2318](../components/board/Lightbox.tsx#L2302)）。`zoom = boxWidth/boardW`（モバイルで約3倍）で board カードを拡大＝**巨大文字**。`!view.thumbnail` を通らないので未修正。← ユーザーの文字カードはこれ。
-- **直し方（推奨）**: Lightbox.tsx isMobile 分岐の暫定 `.mobileTextMain` 条件は**撤去**し、代わりに **`LargePlaceholderCardScaler` をモバイルで zoom せず 22px 直描画**に（＝両経路を1箇所で捕捉）。`useIsMobile` を渡すか、`@media(max-width:640px)` で `.imageBox` 内の zoom を無効化＋`.mobileTextMain` 相当の 22px テキストに置換。文字色は `var(--text-primary)`（キャプションと同じ・実証済み）。
-- 完了判定: 実機でサムネ持ち文字カードを開いて 22px（キャプションと同一）か確認。
+## 次セッションでやること
+### 1. ★実機フィードバックの反映（最優先）
+- 上記 (A)(B) を実機で触ってもらい、気になる点を潰す。想定調整ポイント：
+  - ツイート動画のサイズ感（`fullBleed`＝アスペクトで viewport 充填）。
+  - 複数画像ドットの位置（`.mobileTweetDots` 下部16px オーバーレイ）・タップの当たり。
+  - 文字ツイートの本文＋翻訳ボタンの見え方（カード画面に同居・`align-self:center`）。翻訳は `playEntry(el=null)` で**アニメ無しの即差し替え**（実機で物足りなければ swap アニメ配線を検討）。
+  - 長い文字ツイート本文はカード画面で**スクロール不可**（`.mobileTextMain` は touch-action:none 配下）。長文が切れるなら pan-y 化 or キャプション送りを検討（Task A の文字カードと同じ既知制約）。
 
-### (B) ツイート対応（ユーザー「他はOK、123を次で」）
-- ①ツイート動画の再生 ②複数画像ドット ③翻訳トグル。`useTweetTranslation` 共有が絡む（memory `project_mobile_board_direction`）。現状は画像＋タイトル＋出典のみ。
+### 2. スマホ専用タグ付け（未着手）
+- モバイルでのタグ付けフロー。既存タグ UI（`FilterPill` twin・memory `reference_allmarks_chrome_vocab_filterpill`）とボトムナビ TAG を土台に。
 
-## 次にやること（優先順）
-1. **キャプション新モデルの実機微調整**（カード縮小率 0.42・上げ量 0.30vh・キャプション開始位置 top:34vh・トランジション 0.52s power3.inOut は初期値。上スワイプの発見性ヒントが要るかも）。
-2. **ツイート対応**（ずっと延期中）: 現状ツイートは画像＋タイトル＋出典のみ。**①ツイート動画の再生 ②複数画像ドット ③翻訳トグル**を種別分岐で作り込む（`useTweetTranslation` 共有が絡む。memory `project_mobile_board_direction` 参照）。
-3. その後: スマホのタグ付け（未着手）。
+### 3. その後（任意）
+- ピンチリサイズ／キャプション新モデルの微調整（カード縮小率・上げ量・timing は初期値のまま）。
 
-## s180 で信じてよい実装（全て isMobile 分岐＝デスクトップ不変、tsc0/vitest2172/build OK）
-- 新規: `MobileLightbox.tsx`（没入ステージ・4方向ジェスチャ・フリック慣性・キャプション2画面）／`use-lightbox-swipe.ts`（瞬間速度）／`lightbox-swipe.ts`（純判定16test）／`lightbox-nav-types.ts`。**`LightboxInfoSheet` は廃止・削除済**。
-- `Lightbox.tsx`: `isMobile ? <MobileLightbox/> : <既存2カラム/>` の分岐。開閉モーフは**モバイルだけ transform ベース**（`isMobile` 分岐、`*_MOBILE` 定数）。**開閉モーフ・backdrop フェードは元々 frameRef ゲートでモバイル全 bail していたのを mediaRef 起点に修正**（重要）。
-- **教訓**（memory 反映済み）: ①アニメ完了判定は view.url でなく単調カウンタ（重複URLで固まる）＋フェイルセーフ ②フリックは瞬間速度＆最新 onNav 参照 ③モバイルは transform-scale（クローンは点滅・reflowカクツキ）④ジェスチャ・モーフは実機のみ検証可。
-- spec `docs/superpowers/specs/2026-07-08-mobile-lightbox-design.md` / plan `docs/superpowers/plans/2026-07-08-mobile-lightbox.md`。
+## s182 で信じてよい実装（全て isMobile/tweetId 分岐＝デスクトップ不変、tsc0/vitest2172/build OK・本番反映済）
+- **(A)**: `LargePlaceholderCardScaler` をモバイルで zoom せず `.mobileTextMain`(22px) を直描画に集約（サムネ無し経路＋サムネ失敗 fallback 経路の**両方を1箇所で捕捉**）。s181 の暫定分岐と dead `shouldRenderLargePlaceholderCard` は撤去。
+- **(B)**: 新規 `MobileTweetLightbox`（Lightbox.tsx 内）が `useTweetTranslation` を1回呼んで main/caption に共有し、既存の `TweetMedia`/`LightboxImageDots`/`TweetText` を `MobileLightbox` シェルに載せ替え。`TweetVideoEmbed` に `fullBleed`、`TweetMedia`/`LightboxImageDots` に `mobile`、`TweetText` に `hideToggle`、`TweetTranslateControls` を抽出。mobile 分岐＝`tweetId ? <MobileTweetLightbox/> : <MobileLightbox generic/>`。
+- CSS: `.mobileTweetTextMain`／`.mobileTweetMediaMain`／`.mobileTweetDots`（Lightbox.module.css）。
+- spec/plan は s180 の `docs/superpowers/specs|plans/2026-07-08-mobile-lightbox*` を継承（本セッションは追補実装）。
