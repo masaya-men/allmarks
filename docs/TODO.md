@@ -33,7 +33,12 @@
   - **(1)(2) ツイートメディアが大きすぎ・上スワイプで見切れる**: 新ツイート経路が `100vh` 制約だったが、他のライトボックスメディアは `--lightbox-media-max-h`（モバイル＝`100dvh - 76px`）を使う。実機の `100vh` はブラウザツールバー分を含む→はみ出し。`.main img/video` と fullBleed video wrapper を `--lightbox-media-max-h` に統一。**実測: 縦長写真ツイートが 281×844(端接触)→256×768(上下38px余白)＝通常画像カードと一致**。非ツイートは不変。
   - **(3) ボードでテキストカード上スクロール不能**: `PlaceholderCard` の `.titleScroll`(`[data-card-scroll]`) が `touch-action:none`（s180 由来）でネイティブ board pan も殺していた（s179 の意図＝「指スワイプでボードをパン」の逆）。`overflow:hidden` で内部スクロールは既に無効なので `touch-action:pan-y` に（board へフォールスルー）。**実測: hit chain が none→pan-y**。
   - **(新規要望) スマホでカード角丸 ON/OFF**: デスクトップは TUNE ドロワーだがモバイルに TUNE 無し→**ボトムナビに CORNERS タブ追加**（MOTION と MORE の間、同 `roundedCorners`/`handleToggleRoundedCorners`・IDB 永続）。アイコンが角丸⇔角ばりで状態表示。**実測: タップで `--card-radius` 14.4px⇔0px・リロード永続**。
-- **★次セッション**: (1) **実機で再確認**（ツイートメディアの収まり・上スワイプ・ボードのテキストカードスクロール・CORNERS トグル）(2) **スマホのタグ付け**（未着手）(3) 任意でピンチリサイズ／キャプション微調整。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **★同セッション：スマホのタグ付けを実装・本番反映**（未着手だったもの）: デスクトップは「カードをタグ行へ**ドラッグ**」だがスマホはドラッグ＝スクロールなので不適→**タップ式**に。ユーザー記憶の「下部で横スクロールのタグ帯」＋Triage「tag chip 下部並べ」決定に合わせて設計・承認。
+  - 新規 `BoardMobileTagBar`（画面下部・横スクロールのタグチップ帯・FilterPill 語彙）。TAG→タグモードで**ボトムナビを隠し帯を出す**。カードをタップで選択→**タグチップをタップで選択カード全部に付与**（緑フラッシュ）。「+ NEW TAG」で作成＋付与。選択は残し連続タグ付け可。DONE で退出。
+  - `CardsLayer`: **モバイルのタグモードは pointer capture しない**（capture するとネイティブ board scroll が死に、デスクトップのタグドラッグが誤発火）。`onPointerDown` は bail（ドラッグ＝ネイティブスクロール）、`onClick`（native）で選択トグル。デスクトップのドラッグ付与と SHARE 選択は不変。
+  - `BoardRoot`: `tagMode` で desktop=既存 `TagDropPanel`／mobile=`BoardMobileTagBar`。`handleAssignTagToSelection` は既存 `assignTagToCards`（additive）流用。spec `docs/superpowers/specs/2026-07-09-mobile-tagging-bottom-bar-design.md`。
+  - **検証**: tsc0 / vitest2172 / build OK / **Playwright(390px) で 帯表示＋ナビ非表示・タップ選択でカウント更新・+NEW TAG 作成＋付与・既存チップ付与・DONE 退出** を実測（IDB の tags 反映を確認）。※横スクロールの感触・実機タッチのタップ／スクロール共存は**実機のみ**。学び: Next dev のインジケータが左下ナビに重なる→テストは dispatchEvent 駆動（本番にインジケータ無し）。
+- **★次セッション**: (1) **実機で再確認**（ツイートメディア収まり・ボードのテキストカードスクロール・CORNERS・**スマホのタグ付け帯**）(2) その後 **スマホ保存（束B）** or 残りのモバイル磨き（ピンチリサイズ等）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 180 — ★スマホスクロール修正（✅実機OK）＋スマホ専用ライトボックス（没入型）を実装・実機フィードバック6ラウンドで大幅磨き込み／次はキャプション実機確認＆ツイート対応)
 
