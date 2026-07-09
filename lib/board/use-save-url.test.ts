@@ -40,4 +40,34 @@ describe('useSaveUrl', () => {
     await act(async () => { await result.current.saveUrl('https://real-link.com') })
     expect(performSave).toHaveBeenLastCalledWith('https://real-link.com', false)
   })
+
+  it('blocks a second saveUrl call while the first is still in flight (busy guard)', async () => {
+    const onSaved = vi.fn()
+    let resolveFirst: (value: { outcome: 'saved'; bookmarkId: string }) => void = () => {}
+    const deferred = new Promise<{ outcome: 'saved'; bookmarkId: string }>((resolve) => {
+      resolveFirst = resolve
+    })
+    const performSave = vi.fn(() => deferred)
+    const { result } = renderHook(() => useSaveUrl({ onSaved, performSave }))
+
+    let firstOutcome: string = ''
+    let secondOutcome: string = ''
+    await act(async () => {
+      const firstPromise = result.current.saveUrl('https://example.com/first')
+      // Fired while the first save is still pending (deferred not yet resolved).
+      secondOutcome = await result.current.saveUrl('https://example.com/second')
+      resolveFirst({ outcome: 'saved', bookmarkId: 'bk-busy' })
+      firstOutcome = await firstPromise
+    })
+
+    expect(secondOutcome).toBe('duplicate')
+    expect(firstOutcome).toBe('saved')
+    // The busy guard must have short-circuited the second call before it ever
+    // reached performSave / onSaved a second time.
+    expect(performSave).toHaveBeenCalledTimes(1)
+    expect(onSaved).toHaveBeenCalledTimes(1)
+    expect(onSaved).toHaveBeenCalledWith('bk-busy')
+    // isBusy() must reflect the guard clearing once the in-flight save settles.
+    expect(result.current.isBusy()).toBe(false)
+  })
 })

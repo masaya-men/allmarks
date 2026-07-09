@@ -31,11 +31,20 @@ const defaultPerformSave: PerformSave = async (url, flagDemo) => {
 export function useSaveUrl(opts: {
   onSaved: (bookmarkId: string) => void | Promise<void>
   /** When current is true AND the url is the tutorial SAMPLE_URL, flag the saved
-   *  bookmark as an onboarding demo so the end-of-tutorial sweep removes it. */
+   *  bookmark as an onboarding demo so the end-of-tutorial sweep removes it. A
+   *  real link pasted during onboarding (any URL ≠ SAMPLE_URL) is NEVER flagged
+   *  (audit rank7 — previously every onboarding-time paste was flagged and
+   *  silently deleted). */
   flagOnboardingRef?: { readonly current: boolean }
   /** Injectable for tests; defaults to the real DB-backed ingest. */
   performSave?: PerformSave
-}): { feedback: PasteFeedback; saveUrl: (url: string) => Promise<SaveOutcome> } {
+}): {
+  feedback: PasteFeedback
+  saveUrl: (url: string) => Promise<SaveOutcome>
+  /** Stable read accessor for the in-flight guard, so callers (e.g. the paste
+   *  listener) can pre-check busy state before their own preventDefault(). */
+  isBusy: () => boolean
+} {
   const [feedback, setFeedback] = useState<PasteFeedback>({ kind: null })
   const onSavedRef = useRef(opts.onSaved)
   onSavedRef.current = opts.onSaved
@@ -80,5 +89,7 @@ export function useSaveUrl(opts: {
     }
   }
 
-  return { feedback, saveUrl }
+  const isBusy = (): boolean => busyRef.current
+
+  return { feedback, saveUrl, isBusy }
 }
