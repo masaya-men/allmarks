@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "粘贴网址……",
     "save": "保存",
+    "saveInvalidHint": "这不是链接",
     "randomPick": "随机挑选",
     "newFolder": "+ 新建文件夹",
     "folderNamePlaceholder": "文件夹名称……",

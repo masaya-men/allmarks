@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "Dán URL...",
     "save": "Lưu",
+    "saveInvalidHint": "Đó không phải là liên kết",
     "randomPick": "Chọn ngẫu nhiên",
     "newFolder": "+ Thư mục mới",
     "folderNamePlaceholder": "Tên thư mục...",

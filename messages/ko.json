@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "URL 붙여넣기...",
     "save": "저장",
+    "saveInvalidHint": "링크가 아닙니다",
     "randomPick": "랜덤 추천",
     "newFolder": "+ 새 폴더",
     "folderNamePlaceholder": "폴더 이름...",

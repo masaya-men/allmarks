@@ -50,6 +50,7 @@
     },
     "urlPlaceholder": "الصق الرابط...",
     "save": "حفظ",
+    "saveInvalidHint": "هذا ليس رابطًا",
     "randomPick": "اختيار عشوائي",
     "newFolder": "+ مجلد جديد",
     "folderNamePlaceholder": "اسم المجلد...",
