@@ -8,6 +8,19 @@ export function extractSinglePastedUrl(text: string): string | null {
   return isValidUrl(trimmed) ? trimmed : null
 }
 
+/** Normalizes clipboard/input/share text into a single http(s) URL, or null.
+ *  Same single-token rule as extractSinglePastedUrl, but first prepends
+ *  "https://" when no scheme is present so a bare "example.com" is accepted.
+ *  Used by the mobile save entries (smart + button, input sheet, Android
+ *  share receiver). The desktop global-paste path keeps extractSinglePastedUrl
+ *  (no scheme prepend) unchanged. */
+export function normalizeToUrl(raw: string): string | null {
+  const trimmed = raw.trim()
+  if (trimmed === '' || /\s/.test(trimmed)) return null
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  return extractSinglePastedUrl(withScheme)
+}
+
 /** True when el (or an ancestor) is a text-editable element, so we must NOT
  *  hijack the paste. */
 export function isEditableTarget(el: EventTarget | null): boolean {
