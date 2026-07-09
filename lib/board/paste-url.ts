@@ -11,13 +11,20 @@ export function extractSinglePastedUrl(text: string): string | null {
 /** Normalizes clipboard/input/share text into a single http(s) URL, or null.
  *  Same single-token rule as extractSinglePastedUrl, but first prepends
  *  "https://" when no scheme is present so a bare "example.com" is accepted.
- *  Used by the mobile save entries (smart + button, input sheet, Android
- *  share receiver). The desktop global-paste path keeps extractSinglePastedUrl
- *  (no scheme prepend) unchanged. */
+ *  A schemeless token is only treated as a domain (and gets the scheme
+ *  prepended) when it contains a "." — a bare word like "hello" has no dot,
+ *  so it is not a domain and normalizeToUrl returns null (falls through to
+ *  the input sheet instead of saving a bogus single-label-host URL). A token
+ *  that already has an explicit http(s):// scheme is trusted as-is, dot or
+ *  not. Used by the mobile save entries (smart + button, input sheet,
+ *  Android share receiver). The desktop global-paste path keeps
+ *  extractSinglePastedUrl (no scheme prepend) unchanged. */
 export function normalizeToUrl(raw: string): string | null {
   const trimmed = raw.trim()
   if (trimmed === '' || /\s/.test(trimmed)) return null
-  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  const hasScheme = /^https?:\/\//i.test(trimmed)
+  if (!hasScheme && !trimmed.includes('.')) return null
+  const withScheme = hasScheme ? trimmed : `https://${trimmed}`
   return extractSinglePastedUrl(withScheme)
 }
 

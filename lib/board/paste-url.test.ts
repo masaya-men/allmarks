@@ -25,7 +25,13 @@ describe('normalizeToUrl', () => {
     expect(normalizeToUrl('')).toBeNull()
     expect(normalizeToUrl('   ')).toBeNull()
   })
-  it('rejects a non-URL token', () => {
-    expect(normalizeToUrl('just-text')).toBe('https://just-text')
+  it('rejects a schemeless token without a dot (not a domain)', () => {
+    expect(normalizeToUrl('just-text')).toBeNull()
+  })
+  it('rejects a bare word with no dot', () => {
+    expect(normalizeToUrl('hello')).toBeNull()
+  })
+  it('still accepts an explicit-scheme single-label host (tightening only affects schemeless prepend)', () => {
+    expect(normalizeToUrl('https://just-text')).toBe('https://just-text')
   })
 })
