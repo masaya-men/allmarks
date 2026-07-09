@@ -50,6 +50,9 @@ export function MobileSaveSheet({
     try {
       await onSave(url) // saved OR duplicate → close; board shows the pill
       onClose()
+    } catch {
+      // onSave failed (e.g. a storage error) — keep the sheet open so the user
+      // can retry; the board's own feedback surface reports errors elsewhere.
     } finally {
       setBusy(false)
     }
