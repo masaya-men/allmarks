@@ -27,10 +27,10 @@ type MobileLightboxProps = {
 const FLICK_CARD_DIVISOR = 0.9
 const FLICK_MAX_CARDS = 6
 const FLICK_FAILSAFE_MS = 1800
-// Caption screen: the card shrinks to this scale and rides up near the top,
-// the caption slides up under it onto the frosted board.
-const CAPTION_CARD_SCALE = 0.42
-const CAPTION_CARD_RISE = 0.3 // × viewport height
+// Card ⇄ caption is a vertical two-screen pager: swipe up scrolls the card off
+// the top and brings the caption into the SAME centered spot the card occupied
+// (no shrink-to-corner). Transition timing:
+const CAPTION_SLIDE_DUR = 0.5
 
 /** Immersive, full-screen mobile lightbox (session 180). Tap opens the card big
  *  in the center; left/right swipes slide to the prev/next card (a hard flick
@@ -47,6 +47,7 @@ export function MobileLightbox({
 }: MobileLightboxProps): ReactNode {
   const stageRef = useRef<HTMLDivElement>(null)
   const captionRef = useRef<HTMLDivElement>(null)
+  const captionInnerRef = useRef<HTMLDivElement>(null)
   const [captionOpen, setCaptionOpen] = useState(false)
   const captionOpenRef = useRef(false)
   captionOpenRef.current = captionOpen
@@ -76,18 +77,27 @@ export function MobileLightbox({
     if (mainEl) gsap.set(mainEl, { clearProps: 'transform,opacity' })
   }, [clearTimers, mediaRef])
 
-  // Card ⇄ caption screen transition (coordinated: card rises + shrinks, caption
-  // slides up under it). Not the open/close morph — that's Lightbox's.
+  // Caption starts one screen below (gsap-managed in px so units never clash
+  // with a CSS transform — the previous CSS translateY(100%) vs gsap yPercent
+  // mismatch left the caption stuck off-screen = "swipe up shows nothing").
+  useLayoutEffect(() => {
+    const cap = captionRef.current
+    if (cap) gsap.set(cap, { y: window.innerHeight })
+  }, [])
+
+  // Card ⇄ caption vertical pager: swipe up scrolls the card off the top and the
+  // caption up into the card's centered spot (no shrink). Not the open/close
+  // morph — that's Lightbox's.
   const setCaption = useCallback(
     (open: boolean): void => {
       setCaptionOpen(open)
       const mainEl = mediaRef.current
       const capEl = captionRef.current
+      const h = window.innerHeight
       if (mainEl) {
         gsap.to(mainEl, {
-          scale: open ? CAPTION_CARD_SCALE : 1,
-          y: open ? -window.innerHeight * CAPTION_CARD_RISE : 0,
-          duration: 0.52,
+          y: open ? -h : 0,
+          duration: CAPTION_SLIDE_DUR,
           ease: 'power3.inOut',
           onComplete: open
             ? undefined
@@ -96,7 +106,7 @@ export function MobileLightbox({
               },
         })
       }
-      if (capEl) gsap.to(capEl, { yPercent: open ? 0 : 100, duration: 0.52, ease: 'power3.inOut' })
+      if (capEl) gsap.to(capEl, { y: open ? 0 : h, duration: CAPTION_SLIDE_DUR, ease: 'power3.inOut' })
     },
     [mediaRef],
   )
@@ -176,7 +186,7 @@ export function MobileLightbox({
     // On the caption screen, a vertical drag first scrolls the caption; only at
     // its top does a down-swipe return to the card.
     contentScrollable: (): { top: boolean; bottom: boolean } => {
-      const cap = captionRef.current
+      const cap = captionInnerRef.current
       if (!captionOpenRef.current || !cap) return { top: true, bottom: true }
       return {
         top: cap.scrollTop <= 0,
@@ -239,7 +249,9 @@ export function MobileLightbox({
         data-open={captionOpen ? 'true' : 'false'}
         onClick={(e): void => e.stopPropagation()}
       >
-        {caption}
+        <div ref={captionInnerRef} className={styles.captionInner}>
+          {caption}
+        </div>
       </div>
     </div>
   )

@@ -32,22 +32,32 @@
   object-fit: contain;
 }
 
-/* Caption screen. Sits directly on the frosted board backdrop (Lightbox's
-   .backdrop = dim + blur, like the desktop text panel) — NO opaque sheet.
-   Rests fully below the fold (translateY 100%); a swipe up rides it into the
-   lower two-thirds while the card shrinks to the top. pan-y so long captions
-   scroll natively; the gesture layer defers to that scroll until it's at top. */
+/* Caption screen — the second screen of the vertical pager. Fills the stage and
+   centers the caption in the SAME spot the card occupied (no shrink-to-corner).
+   Sits directly on the frosted board backdrop (Lightbox's .backdrop = dim +
+   blur, like the desktop text panel) — NO opaque sheet. Its y offset is driven
+   entirely by GSAP (rests one screen below); no CSS transform here, so the units
+   never clash with the tween. */
 .caption {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 34vh;
-  bottom: 0;
+  inset: 0;
   z-index: 2;
-  overflow-y: auto;
-  padding: 8px 26px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #fff;
-  transform: translateY(100%);
+  will-change: transform;
+}
+
+/* Scrolls internally when a caption is long; centered (align-items) when short.
+   pan-y so it scrolls natively; the gesture layer defers to this until it's at
+   the top, where a down-swipe returns to the card. */
+.captionInner {
+  width: 100%;
+  max-width: 600px;
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 0 30px;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
