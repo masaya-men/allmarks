@@ -20,9 +20,15 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--accent, #28f100);
-  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--accent, #28f100) 70%, transparent);
+  /* Brand green (A-motif check). Literal, not var(--accent-primary): this pill
+     is theme-neutral chrome and must stay green even under the paper theme
+     (where --accent-primary is a muted #2f4a37). */
+  background: #28F100;
+  box-shadow: 0 0 8px 1px color-mix(in srgb, #28F100 70%, transparent);
   animation: sci-pulse 1s ease-in-out infinite;
+}
+.label {
+  white-space: nowrap;
 }
 @keyframes sci-pulse {
   0%, 100% { opacity: 1; }
