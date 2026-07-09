@@ -17,7 +17,8 @@ import { initDB, addBookmarkBatch, getAllBookmarks } from '@/lib/storage/indexed
 import { orderForImport } from '@/lib/share/receiver-import-order'
 import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
 import { computeSkylineLayout, type SkylineCard, type SkylineResult } from '@/lib/board/skyline-layout'
-import { BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_INNER, BOARD_Z_INDEX } from '@/lib/board/constants'
+import { BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_INNER, BOARD_Z_INDEX, MOBILE_LAYOUT } from '@/lib/board/constants'
+import { useIsMobile } from '@/lib/board/use-is-mobile'
 import { DEFAULT_THEME_ID, getThemeMeta } from '@/lib/board/theme-registry'
 import { resolveThemeCustomization, patternSvgDataUri } from '@/lib/board/theme-customization'
 import themeStyles from '@/components/board/themes.module.css'
@@ -48,6 +49,12 @@ const NOOP = (): void => {}
 /** Stable empty collection — passing a fresh `new Set()` inline would give
  *  CardsLayer a new reference each render and defeat its memoization. */
 const EMPTY_SET: ReadonlySet<string> = new Set()
+
+/** Stable empty per-card width map — fed in place of the sender's customWidths
+ *  while the mobile layout override is active (mirrors BoardRoot's
+ *  EMPTY_CUSTOM_WIDTHS at BoardRoot.tsx:202), so every card falls back to the
+ *  uniform mobile column width instead of the sender's free-resized width. */
+const EMPTY_CUSTOM_WIDTHS: Readonly<Record<string, number>> = {}
 
 /** Huge viewport height so CardsLayer's culling window never drops a card.
  *  The receiver board is a normal scrolling container (capped at 100 cards),
@@ -255,6 +262,24 @@ export function SharedBoard(): ReactElement {
     [visibleCards],
   )
 
+  // ── Mobile layout override (mirrors BoardRoot.tsx:1069-1084) ──────────────
+  // On a narrow viewport the receiver renders a uniform N-column masonry sized
+  // to the (already full-bleed) scroller width, ignoring the sender's saved
+  // card-width/gap and per-card widths — same DISPLAY-ONLY override the real
+  // board applies. `containerWidth` is the receiver's equivalent of
+  // BoardRoot's `effectiveLayoutWidth` (both are the usable width the masonry
+  // packs into). The raw `cardWidthPx`/`gapPx`/`customWidths` state is left
+  // untouched (still the sender's arrangement) — only the values fed to the
+  // skyline layout and CardsLayer below switch on mobile.
+  const isMobile = useIsMobile()
+  const mobileCardWidth = useMemo<number>(() => {
+    const cols = MOBILE_LAYOUT.COLUMNS
+    return Math.max(1, (containerWidth - (cols - 1) * MOBILE_LAYOUT.GAP_PX) / cols)
+  }, [containerWidth])
+  const layoutCardWidthPx = isMobile ? mobileCardWidth : cardWidthPx
+  const layoutCardGapPx = isMobile ? MOBILE_LAYOUT.GAP_PX : gapPx
+  const layoutCustomWidths = isMobile ? EMPTY_CUSTOM_WIDTHS : customWidths
+
   // CardsLayer's root is position:absolute (zero intrinsic height), so the
   // normal-scroll container needs an explicit spacer to become scrollable.
   // Replicate the SAME skyline layout CardsLayer renders to get the content's
@@ -266,12 +291,12 @@ export function SharedBoard(): ReactElement {
       return { positions: {}, totalWidth: 0, totalHeight: 0 }
     }
     const cards: SkylineCard[] = items.map((it) => {
-      const w = customWidths[it.bookmarkId] ?? cardWidthPx
+      const w = layoutCustomWidths[it.bookmarkId] ?? layoutCardWidthPx
       const h = it.aspectRatio > 0 ? w / it.aspectRatio : w
       return { id: it.bookmarkId, width: w, height: h }
     })
-    return computeSkylineLayout({ cards, containerWidth, gap: gapPx })
-  }, [items, containerWidth, customWidths, gapPx, cardWidthPx])
+    return computeSkylineLayout({ cards, containerWidth, gap: layoutCardGapPx })
+  }, [items, containerWidth, layoutCustomWidths, layoutCardGapPx, layoutCardWidthPx])
   const spacerHeight = skyline.totalHeight
 
   // ── bulk import → board ──
@@ -514,7 +539,7 @@ export function SharedBoard(): ReactElement {
               items={items}
               viewport={{ x: 0, y: 0, w: containerWidth, h: UNCULLED_VIEWPORT_H }}
               viewportWidth={containerWidth}
-              cardGapPx={gapPx}
+              cardGapPx={layoutCardGapPx}
               hoveredBookmarkId={hovered}
               onHoverChange={setHovered}
               audioActiveId={null}
@@ -533,8 +558,8 @@ export function SharedBoard(): ReactElement {
               onCardResetSize={NOOP}
               displayMode={'visual'}
               newlyAddedIds={EMPTY_SET}
-              defaultCardWidth={cardWidthPx}
-              customWidths={customWidths}
+              defaultCardWidth={layoutCardWidthPx}
+              customWidths={layoutCustomWidths}
               themeId={themeId}
               motionEnabled={motionEnabled}
               matchedBookmarkIds={null}
@@ -548,22 +573,17 @@ export function SharedBoard(): ReactElement {
           </div>
         </div>
 
-        {/* Sound-wave scroll meter, pinned to the canvas bottom (centered).
-            s170: the shared ScrollMeter's .meterWrap is now position:relative
-            (on the main board it's positioned by the outer-frame bottom band).
-            The receive view has no such band, so it supplies its own
-            canvas-bottom anchor here — without it the (now in-flow) meter would
-            jump to the top of the stage, since canvasWrap is absolute. */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '24px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: BOARD_Z_INDEX.SCROLL_METER,
-            pointerEvents: 'none',
-          }}
-        >
+        {/* Theme-driven import overlay (backdrop covers the canvas at z 300). */}
+        <ImportProgressIndicator phase={importPhase} themeId={themeId} counts={importCounts} />
+      </div>
+
+      {/* Bottom frame band — mirror of BoardRoot's frameBottomChrome
+          (BoardRoot.tsx:2886-2899). Hosts the ScrollMeter in the outer frame's
+          bottom margin, OUTSIDE the dark canvas, so it matches the real
+          board's current position (s170) instead of the old hand-rolled
+          canvas-bottom overlay. Hidden on mobile, matching the real board. */}
+      <div className={frame.frameBottomChrome}>
+        {!isMobile && (
           <ScrollMeter
             mode="board"
             n1={1}
@@ -573,10 +593,7 @@ export function SharedBoard(): ReactElement {
             onScrub={handleMeterScrub}
             variant={getThemeMeta(themeId).scrollMeterVariant}
           />
-        </div>
-
-        {/* Theme-driven import overlay (backdrop covers the canvas at z 300). */}
-        <ImportProgressIndicator phase={importPhase} themeId={themeId} counts={importCounts} />
+        )}
       </div>
 
       {lightboxItem && (

@@ -9,6 +9,7 @@ import { cleanTitle } from '@/lib/embed/clean-title'
 import { placeholderArtFrames } from '@/lib/board/placeholder-image'
 import { useSlideshowCycle } from '@/lib/board/use-slideshow-cycle'
 import { paperAssetUrl, pickTextNoteSheet } from '@/lib/board/paper-assets'
+import { computeTagScrollEdge, type TagScrollEdge } from '@/lib/board/tag-scroll-edge'
 import { PLACEHOLDER_ASPECT } from './placeholder-aspect'
 import styles from './PlaceholderCard.module.css'
 
@@ -116,19 +117,17 @@ export function PlaceholderCard({
   }, [item.cardId, item.bookmarkId, item.aspectRatio, cardWidth, persistMeasuredAspect, reportIntrinsicHeight])
 
   const titleScrollRef = useRef<HTMLDivElement>(null)
-  const [hasOverflow, setHasOverflow] = useState<boolean>(false)
-  const [atBottom, setAtBottom] = useState<boolean>(false)
+  const [scrollEdge, setScrollEdge] = useState<TagScrollEdge>('none')
 
   const updateScrollState = useCallback((): void => {
     const el = titleScrollRef.current
     if (!el) return
-    const overflow = el.scrollHeight > el.clientHeight + 1
-    setHasOverflow(overflow)
-    if (!overflow) {
-      setAtBottom(false)
-      return
-    }
-    setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 2)
+    setScrollEdge(computeTagScrollEdge({
+      scrollHeight: el.scrollHeight,
+      scrollTop: el.scrollTop,
+      clientHeight: el.clientHeight,
+      maxHeight: el.clientHeight, // cards don't animate open; clientHeight is stable
+    }))
   }, [])
 
   useEffect((): (() => void) => {
@@ -144,7 +143,7 @@ export function PlaceholderCard({
   // wheel event so InteractionLayer / Lightbox don't steal it for pan / nav.
   // At scroll edges let the wheel bubble so board pan still feels responsive.
   const handleCardWheel = useCallback((e: ReactWheelEvent<HTMLDivElement>): void => {
-    if (!hasOverflow) return
+    if (scrollEdge === 'none') return
     const el = titleScrollRef.current
     if (!el) return
     const dy = e.deltaY
@@ -154,7 +153,7 @@ export function PlaceholderCard({
     if ((dy > 0 && !atEnd) || (dy < 0 && !atTop)) {
       e.stopPropagation()
     }
-  }, [hasOverflow])
+  }, [scrollEdge])
 
   const titleStyle: CSSProperties = {
     fontSize: `${typography.fontSize}px`,
@@ -179,8 +178,7 @@ export function PlaceholderCard({
           <div
             ref={titleScrollRef}
             className={`${styles.titleScroll} ${styles.paperNoteScroll}`}
-            data-overflow={hasOverflow ? 'true' : 'false'}
-            data-at-bottom={atBottom ? 'true' : 'false'}
+            data-scroll-edge={scrollEdge}
             data-card-scroll="true"
             onScroll={updateScrollState}
             onWheel={handleCardWheel}
@@ -213,8 +211,7 @@ export function PlaceholderCard({
       <div
         ref={titleScrollRef}
         className={styles.titleScroll}
-        data-overflow={hasOverflow ? 'true' : 'false'}
-        data-at-bottom={atBottom ? 'true' : 'false'}
+        data-scroll-edge={scrollEdge}
         data-card-scroll="true"
         onScroll={updateScrollState}
         onWheel={handleCardWheel}

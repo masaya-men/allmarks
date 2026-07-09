@@ -64,11 +64,11 @@
   pointer-events: none;
 }
 
-/* Fill marks — the values where the board's cards reach both edges evenly
-   (equal left/right margin). Green so they read as "align here" points,
-   distinct from the neutral default mark. Releasing the fader near one snaps
-   onto it (see FaderColumn handlePointerUp). Slightly wider than the default
-   mark so it stays visible under it when the two coincide. */
+/* Fill mark — the single value (for the CURRENT column count) where the board's
+   cards reach both edges evenly (equal left/right margin). Green so it reads as
+   an "align here" point, distinct from the neutral default mark. Releasing the
+   fader near it snaps onto it (see FaderColumn handlePointerUp). Slightly wider
+   than the default mark so it stays visible under it when the two coincide. */
 .fillMark {
   position: absolute;
   left: 50%;
@@ -78,6 +78,18 @@
   background: rgba(76, 213, 106, 0.60);
   box-shadow: 0 0 3px rgba(76, 213, 106, 0.55);
   pointer-events: none;
+}
+
+/* In-range glow — the fill mark brightens and thickens once the handle is
+   within the release snap threshold, so the user can see the magnet zone
+   before letting go instead of discovering the snap only after release. */
+.fillMark[data-in-range='true'] {
+  height: 3px;
+  /* Brand green (literal, not var(--accent-primary)): the TUNE drawer is neutral
+     chrome across themes, so the magnet-zone glow stays green under paper too. */
+  background: #28F100;
+  opacity: 1;
+  box-shadow: 0 0 6px 1px color-mix(in srgb, #28F100 70%, transparent);
 }
 
 /* Tall vertical 3-D fader cap, modeled on real audio mixer thumb-grips.

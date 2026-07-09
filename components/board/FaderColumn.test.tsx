@@ -253,17 +253,22 @@ describe('FaderColumn — fill snap', () => {
     expect(container.querySelectorAll('[data-testid="fader-fill-mark"]').length).toBe(0)
   })
 
-  it('renders a fill mark for each even-margin width when enabled', () => {
+  it('renders exactly one fill mark, for the CURRENT column count only', () => {
+    // Task 2: no more "all N columns" marks (the s173 jump-5-to-4 bug source).
+    // At value 267.84 / gap 97.21 / container 1471, currentColumnCount is 4,
+    // so the single mark is the 4-column fill ≈ 294.84 — not the 6 marks the
+    // old fillCandidates() rendered for every reachable N.
     const { container } = render(
       <FaderColumn scope="w" value={267.84} min={120} max={720} def={267.84}
         onChange={vi.fn()} label="W" containerWidth={CONTAINER} otherValue={GAP} />,
     )
     const marks = container.querySelectorAll('[data-testid="fader-fill-mark"]')
-    // 6 fill widths fall inside [120,720] for gap 97.21 (see fill-snap tests).
-    expect(marks.length).toBe(6)
-    // One of them is the 4-column fill ≈ 294.84.
-    const values = Array.from(marks).map((m) => Number((m as HTMLElement).dataset.fillValue))
-    expect(values.some((v) => Math.abs(v - 294.84) < 0.1)).toBe(true)
+    expect(marks.length).toBe(1)
+    const mark = marks[0] as HTMLElement
+    expect(Math.abs(Number(mark.dataset.fillValue) - 294.84)).toBeLessThan(0.1)
+    // 267.84 is ~27 value-px from 294.84, inside the new screen-px-based
+    // threshold (~43.6 for this [120,720] range) — the glow should be on.
+    expect(mark.dataset.inRange).toBe('true')
   })
 
   it('snaps to the nearest fill width on release when dropped within threshold', () => {
@@ -294,17 +299,22 @@ describe('FaderColumn — fill snap', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('does NOT snap a value far from every fill point', () => {
+  it('does NOT snap a value far from its current-column fill point', () => {
+    // Task 2 widened the release threshold from the old fixed 10 value-px to
+    // a screen-px-based ~8px (≈43.6 value-px for this [120,720] range), so
+    // 267.84 (only ~27 away from the 4-col fill 294.84) now DOES snap — see
+    // the "snaps to the nearest fill width" test below for that case. To
+    // stay genuinely unreachable, use 230: still in the 4-column bucket
+    // (216.43, 294.84], but ~64.8 value-px from its fill target 294.84.
     const onChange = vi.fn()
     const { container } = render(
-      <FaderColumn scope="w" value={267.84} min={120} max={720} def={267.84}
+      <FaderColumn scope="w" value={230} min={120} max={720} def={267.84}
         onChange={onChange} label="W" containerWidth={CONTAINER} otherValue={GAP} />,
     )
     const unit = container.querySelector('[data-scope="w"] > div') as HTMLElement
     mockRect(unit)
     fireEvent.pointerDown(unit, { clientX: 20, clientY: 55, pointerId: 1 })
     fireEvent.pointerUp(unit, { clientX: 20, clientY: 55, pointerId: 1 })
-    // 267.84 (DEFAULT) is ~27 px from the nearest fill → no onChange.
     expect(onChange).not.toHaveBeenCalled()
   })
 })
