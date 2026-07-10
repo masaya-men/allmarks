@@ -1,0 +1,151 @@
+/**
+ * SharedBoard.mobile-scroll.test.tsx
+ *
+ * Guards the N-46 fix: on a phone the receiver must hand vertical scrolling to
+ * the browser, exactly like the real board does.
+ *
+ * The mechanism is CardsLayer's per-card `data-lock-card-scroll="true"` flag,
+ * which relaxes `.cardNode`'s `touch-action: none` to `pan-y`
+ * (CardNode.module.css). Without it every finger press on the dense 3-column
+ * grid cancels the native scroll — measured on the built receiver: 0/100 cards
+ * carried the flag and `.cardNode` computed `touch-action: none`, while the
+ * real board's cards computed `pan-y`.
+ *
+ * The receiver must reach that flag WITHOUT passing `isMobile`: CardsLayer
+ * derives `hoverActive` from `!isMobile` (CardsLayer.tsx), so an `isMobile`
+ * receiver would lose its per-card × delete button and the sender's tag pills,
+ * and would swap its dedicated tap detector for the board's click path. Hence
+ * the dedicated `lockCardScroll` prop — these tests pin both halves of that
+ * contract.
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, act } from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { SHARE_SCHEMA_VERSION_V2, type GetShareResponse } from '@/lib/share/types-v2'
+
+// ── Captured CardsLayer props (the subject under test) ──
+const cardsLayerProps: Record<string, unknown>[] = []
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}))
+
+vi.mock('@/components/board/CardsLayer', () => ({
+  CardsLayer: (props: Record<string, unknown>): ReactElement => {
+    cardsLayerProps.push(props)
+    return <div data-testid="mock-cards-layer" />
+  },
+}))
+vi.mock('@/components/board/TopHeader', () => ({
+  TopHeader: (): ReactElement => <div data-testid="mock-top-header" />,
+}))
+vi.mock('@/components/board/ScrollMeter', () => ({
+  ScrollMeter: (): ReactElement => <div data-testid="mock-scroll-meter" />,
+}))
+vi.mock('@/components/board/Lightbox', () => ({
+  Lightbox: (): ReactElement => <div data-testid="mock-lightbox" />,
+}))
+vi.mock('@/components/board/MotionToggle', () => ({
+  MotionToggle: (): ReactElement => <div data-testid="mock-motion-toggle" />,
+}))
+vi.mock('@/components/board/ChromeLedToggle', () => ({
+  ChromeLedToggle: (): ReactElement => <span data-testid="mock-chrome-led-toggle" />,
+}))
+vi.mock('@/components/board/ChromeButton', () => ({
+  ChromeButton: (): ReactElement => <button data-testid="mock-chrome-button" />,
+}))
+vi.mock('@/components/board/TuneTrigger', () => ({
+  TuneTrigger: (): ReactElement => <span data-testid="mock-tune-trigger" />,
+}))
+vi.mock('@/components/board/BlockedChrome', () => ({
+  BlockedChrome: (): ReactElement => <span data-testid="mock-blocked-chrome" />,
+}))
+vi.mock('./ImportProgressIndicator', () => ({
+  ImportProgressIndicator: (): ReactElement => <div data-testid="mock-import-progress" />,
+}))
+vi.mock('./SenderShareModal', () => ({
+  SenderShareModal: (): ReactElement => <div data-testid="mock-sender-share-modal" />,
+}))
+vi.mock('@/lib/storage/indexeddb', () => ({
+  initDB: vi.fn(),
+  addBookmarkBatch: vi.fn(),
+  getAllBookmarks: vi.fn().mockResolvedValue([]),
+}))
+vi.mock('@/lib/share/extract-share-id', () => ({
+  extractShareIdFromPathname: () => ({ ok: true, id: 'abc123' }),
+}))
+vi.mock('@/lib/share/api-client', () => ({
+  fetchShare: vi.fn(),
+}))
+
+// The one knob these tests turn.
+vi.mock('@/lib/board/use-is-mobile', () => ({
+  useIsMobile: vi.fn(),
+}))
+
+import { SharedBoard } from './SharedBoard'
+import { fetchShare } from '@/lib/share/api-client'
+import { useIsMobile } from '@/lib/board/use-is-mobile'
+
+const mockedFetchShare = vi.mocked(fetchShare)
+const mockedUseIsMobile = vi.mocked(useIsMobile)
+
+const SHARE_DATA = {
+  v: SHARE_SCHEMA_VERSION_V2,
+  cards: [
+    { u: 'https://example.com/a', t: 'A', ty: 'website' as const, cw: 320, a: 1.6 },
+    { u: 'https://example.com/b', t: 'B', ty: 'website' as const, cw: 320, a: 1.6 },
+  ],
+  createdAt: Date.now(),
+} satisfies import('@/lib/share/types-v2').ShareDataV2
+
+async function renderReady(): Promise<void> {
+  const response: GetShareResponse = { share: SHARE_DATA }
+  mockedFetchShare.mockResolvedValue({ ok: true, data: response })
+  render(<SharedBoard />)
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+}
+
+/** Props of the last CardsLayer render (state settles before we assert). */
+function lastProps(): Record<string, unknown> {
+  const p = cardsLayerProps.at(-1)
+  if (!p) throw new Error('CardsLayer never rendered')
+  return p
+}
+
+describe('SharedBoard → CardsLayer mobile scroll wiring (N-46)', () => {
+  beforeEach(() => {
+    cardsLayerProps.length = 0
+  })
+
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-theme-id')
+    vi.clearAllMocks()
+  })
+
+  it('hands vertical scrolling to the browser on mobile by locking card scroll', async () => {
+    mockedUseIsMobile.mockReturnValue(true)
+    await renderReady()
+
+    expect(lastProps().lockCardScroll).toBe(true)
+  })
+
+  it('never passes isMobile, which would strip the receiver × and tag pills', async () => {
+    mockedUseIsMobile.mockReturnValue(true)
+    await renderReady()
+
+    // Passing isMobile would force CardsLayer's hoverActive permanently false.
+    expect(lastProps().isMobile).toBeUndefined()
+  })
+
+  it('leaves desktop cards untouched so drag gestures keep touch-action: none', async () => {
+    mockedUseIsMobile.mockReturnValue(false)
+    await renderReady()
+
+    expect(lastProps().lockCardScroll).toBe(false)
+    expect(lastProps().isMobile).toBeUndefined()
+  })
+})

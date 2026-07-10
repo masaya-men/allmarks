@@ -294,6 +294,12 @@ type CardsLayerProps = {
    *  the board (via onPanY) so a dense edge-to-edge grid is still scrollable.
    *  Reorder is a desktop-only power gesture. Defaults to false (desktop). */
   readonly isMobile?: boolean
+  /** Relax each card's `touch-action: none` to `pan-y` so a vertical finger
+   *  swipe falls through to an enclosing native scroller. `isMobile` already
+   *  implies this; the share receiver needs it WITHOUT `isMobile`, because
+   *  `hoverActive` keys off `!isMobile` and the receiver's × / tag pills would
+   *  vanish on touch. Defaults to false (desktop keeps `none` for reorder). */
+  readonly lockCardScroll?: boolean
   /** Tier 1 master switch — when false, no viewport autoplay. */
   readonly motionEnabled: boolean
   /** Onboarding tag scene: force the hover-gated +TAG button visible &
@@ -392,6 +398,7 @@ export function CardsLayer({
   sourceCardId,
   onPanY,
   isMobile = false,
+  lockCardScroll = false,
   motionEnabled,
   matchedBookmarkIds,
   allTags,
@@ -1301,7 +1308,7 @@ export function CardsLayer({
             data-bookmark-id={it.bookmarkId}
             data-onboarding-target={cardIdx === 0 ? 'card' : undefined}
             data-link-status={it.linkStatus ?? undefined}
-            data-lock-card-scroll={isMobile ? 'true' : undefined}
+            data-lock-card-scroll={isMobile || lockCardScroll ? 'true' : undefined}
             onPointerDown={(e: PointerEvent<HTMLDivElement>): void => {
               // Mobile TAG MODE tags via the bottom bar (tap a tag), so a card
               // only needs tap=select + drag=native board scroll. Do NOT capture

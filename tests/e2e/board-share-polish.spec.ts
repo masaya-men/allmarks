@@ -296,4 +296,52 @@ test.describe('② shared receiver layout (mobile 3-col + desktop meter position
       page.locator('[class*="frameBottomChrome"] [data-testid="scroll-meter"]'),
     ).toHaveCount(1)
   })
+
+  // N-46: the receiver's 3-column grid covers the viewport, so every finger
+  // press lands on a card, and a card's base `touch-action: none` then cancels
+  // the browser's native scroll — the exact session-180 bug, which the real
+  // board fixed and the receiver never got. Playwright cannot drive a native
+  // touch scroll (JS scrollTop ignores touch-action), so assert the computed
+  // property that governs it.
+  test('mobile (390×844): cards release the vertical swipe to the native scroller', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await gotoMockedShare(page, 'abc125', buildMockShareData(6))
+
+    const cards = page.locator('[data-bookmark-id]')
+    // useIsMobile starts false (SSR-safe) and flips post-mount.
+    await expect
+      .poll(async () => cards.first().getAttribute('data-lock-card-scroll'), { timeout: 5_000 })
+      .toBe('true')
+
+    const touchActions = await cards.evaluateAll((els) =>
+      els.map((el) => {
+        const node = el.querySelector('[class*="cardNode"]')
+        return node ? getComputedStyle(node).touchAction : 'MISSING'
+      }),
+    )
+    expect(touchActions).toEqual(Array(6).fill('pan-y'))
+
+    const overscroll = await page
+      .locator('[class*="scroller"]')
+      .first()
+      .evaluate((el) => getComputedStyle(el).overscrollBehaviorY)
+    expect(overscroll).toBe('contain')
+  })
+
+  test('desktop (1489×679): cards keep touch-action none so the reorder drag is not hijacked', async ({ page }) => {
+    await page.setViewportSize({ width: 1489, height: 679 })
+    await gotoMockedShare(page, 'abc126', buildMockShareData(6))
+
+    const cards = page.locator('[data-bookmark-id]')
+    await expect(cards).toHaveCount(6)
+
+    const hasLock = await cards.evaluateAll((els) => els.some((el) => el.hasAttribute('data-lock-card-scroll')))
+    expect(hasLock).toBe(false)
+
+    const touchAction = await cards.first().evaluate((el) => {
+      const node = el.querySelector('[class*="cardNode"]')
+      return node ? getComputedStyle(node).touchAction : 'MISSING'
+    })
+    expect(touchAction).toBe('none')
+  })
 })

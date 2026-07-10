@@ -560,6 +560,10 @@ export function SharedBoard(): ReactElement {
               newlyAddedIds={EMPTY_SET}
               defaultCardWidth={layoutCardWidthPx}
               customWidths={layoutCustomWidths}
+              // NOT isMobile: that would key off hoverActive and strip the ×
+              // and the sender's tag pills. This only relaxes the cards'
+              // touch-action so .scroller owns the vertical swipe (N-46).
+              lockCardScroll={isMobile}
               themeId={themeId}
               motionEnabled={motionEnabled}
               matchedBookmarkIds={null}
