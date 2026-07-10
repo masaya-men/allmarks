@@ -56,6 +56,16 @@
   touch-action: pan-y;
 }
 
+/* Phone: widen the side margin so the sender's theme reads at the edges instead
+   of being covered by an edge-to-edge grid (N-51). Kept in step with
+   MOBILE_LAYOUT.SIDE_MARGIN_PX, which the masonry packs against. */
+@media (max-width: 640px) {
+  .scroller {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 .scroller::-webkit-scrollbar {
   width: 0;
   height: 0;

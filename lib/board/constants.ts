@@ -57,7 +57,12 @@ export const MOBILE_BP_PX = 640
  *  the live container width, so only this number (and GAP) change. */
 export const MOBILE_LAYOUT = {
   COLUMNS: 3,
-  GAP_PX: 6,
+  GAP_PX: 14,
+  /** Left/right breathing room inside the canvas. A 3-column grid packed edge to
+   *  edge covered the board, so the theme the user chose — pattern, board colour
+   *  — never showed on a phone (N-51). Mirrored in SharedBoard.module.css's
+   *  mobile block for the share receiver. */
+  SIDE_MARGIN_PX: 16,
   /** Full-bleed on mobile: no outer frame margin (vs 48 on desktop). Mirrored in
    *  globals.css `@media (max-width: 640px)` as `--canvas-margin: 0`. */
   CANVAS_MARGIN_PX: 0,

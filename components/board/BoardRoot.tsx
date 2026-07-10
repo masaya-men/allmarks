@@ -1061,11 +1061,6 @@ export function BoardRoot() {
   // backdrop's 0.15× speed.
   const gridBgPanY = usePaperParallax({ themeId, viewportY: viewport.y, factor: GRID_BG_PARALLAX_FACTOR })
 
-  // Cards span the full width of the inner dark canvas with a destefanis-
-  // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
-  // No sidebar reservation, no max-width cap — the canvas is the whole stage.
-  const effectiveLayoutWidth = Math.max(0, viewport.w - 2 * BOARD_INNER.SIDE_PADDING_PX)
-
   // ── Mobile layout override (A1) ──────────────────────────────────────────
   // On a narrow viewport the board renders a uniform N-column masonry sized to
   // the (already-thinner) canvas, ignoring the desktop card-width/gap dial and
@@ -1073,6 +1068,14 @@ export function BoardRoot() {
   // customWidths in IDB+localStorage are never mutated, so the user's desktop
   // arrangement is preserved and simply overridden while the viewport is narrow.
   const isMobile = useIsMobile()
+
+  // Cards span the full width of the inner dark canvas with a destefanis-
+  // style half-gap on each side (SIDE_PADDING_PX = COLUMN_MASONRY.GAP_PX / 2).
+  // No sidebar reservation, no max-width cap — the canvas is the whole stage.
+  // A phone takes a wider margin so the board's theme reads at the edges (N-51).
+  const layoutSidePaddingPx = isMobile ? MOBILE_LAYOUT.SIDE_MARGIN_PX : BOARD_INNER.SIDE_PADDING_PX
+  const effectiveLayoutWidth = Math.max(0, viewport.w - 2 * layoutSidePaddingPx)
+
   const mobileCardWidth = useMemo<number>(() => {
     const cols = MOBILE_LAYOUT.COLUMNS
     return Math.max(1, (effectiveLayoutWidth - (cols - 1) * MOBILE_LAYOUT.GAP_PX) / cols)
@@ -1108,7 +1111,7 @@ export function BoardRoot() {
     [skylineCards, effectiveLayoutWidth, layoutCardGapPx],
   )
 
-  const horizontalOffset = BOARD_INNER.SIDE_PADDING_PX
+  const horizontalOffset = layoutSidePaddingPx
 
   // Actual content bounds — tracks the furthest right/bottom any card reaches,
   // using masonry positions (freePos not used in masonry mode) plus overrides
