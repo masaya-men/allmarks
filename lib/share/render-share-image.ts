@@ -20,6 +20,10 @@ export type RenderShareImageOpts = {
    *  is same-origin, so the CORS-cache workaround cacheBust exists for is moot,
    *  and a stable URL lets the CF edge cache hit). */
   readonly rewriteImageSrc?: (src: string) => string
+  /** dom-to-image の出力 canvas 倍率（`canvas.width = width * scale`）。省略時は 1
+   *  ＝ライブラリ既定。スマホは `1200 / 画面幅` を渡し、切り出す帯が原寸 1200px の
+   *  raster になるようにする（渡さないと引き伸ばしでぼやける）。 */
+  readonly scale?: number
 }
 
 /** Pure: pick the first quality whose encoded size fits, else the smallest.
@@ -72,6 +76,7 @@ export async function renderShareImage(node: HTMLElement, opts: RenderShareImage
       cacheBust: rewrite == null,
     }
     if (opts.bgColor) baseOpts.bgcolor = opts.bgColor
+    if (typeof opts.scale === 'number') baseOpts.scale = opts.scale
     if (rewrite) {
       baseOpts.adjustClonedNode = (
         _original: Node,
