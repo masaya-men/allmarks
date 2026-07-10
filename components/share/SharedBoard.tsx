@@ -36,6 +36,7 @@ import { ChromeButton } from '@/components/board/ChromeButton'
 import { TuneTrigger } from '@/components/board/TuneTrigger'
 import { BlockedChrome } from '@/components/board/BlockedChrome'
 import { ImportProgressIndicator } from './ImportProgressIndicator'
+import { ReceiverImportBar } from './ReceiverImportBar'
 import { SenderShareModal } from './SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { MirrorItem, MirrorPosition } from './ShareMirror'
@@ -273,11 +274,12 @@ export function SharedBoard(): ReactElement {
   // untouched (still the sender's arrangement) — only the values fed to the
   // skyline layout and CardsLayer below switch on mobile.
   const isMobile = useIsMobile()
-  // A tablet clears the 640px mobile breakpoint but still scrolls with a
-  // finger, so the layout gate above is the wrong signal for touch-action.
-  // The receiver's cards never reorder or resize, so nothing here needs to
-  // hold on to the pointer (N-47).
   const isTouchDevice = useIsTouchDevice()
+  // Size by input, lay out by width. `isMobile` (640px) decides the masonry;
+  // this decides everything a finger touches — cards must release the vertical
+  // swipe (N-46/N-47), the 27px-tall top IMPORT must give way to a thumb-sized
+  // bottom bar, and the 18px scrub meter has no business on a touchscreen (N-48).
+  const isTouchSurface = isMobile || isTouchDevice
   const mobileCardWidth = useMemo<number>(() => {
     const cols = MOBILE_LAYOUT.COLUMNS
     return Math.max(1, (containerWidth - (cols - 1) * MOBILE_LAYOUT.GAP_PX) / cols)
@@ -448,14 +450,17 @@ export function SharedBoard(): ReactElement {
         className={frame.frameTopChrome}
         style={importing ? { pointerEvents: 'none' } : undefined}
       >
-        <ChromeButton
-          label={`IMPORT ${visibleCards.length} TO YOUR BOARD`}
-          onClick={(): void => {
-            void handleSave()
-          }}
-          disabled={visibleCards.length === 0 || importPhase !== 'idle'}
-          data-testid="import-button"
-        />
+        {/* A finger gets the bottom bar instead — this 27px button is for a mouse. */}
+        {!isTouchSurface && (
+          <ChromeButton
+            label={`IMPORT ${visibleCards.length} TO YOUR BOARD`}
+            onClick={(): void => {
+              void handleSave()
+            }}
+            disabled={visibleCards.length === 0 || importPhase !== 'idle'}
+            data-testid="import-button"
+          />
+        )}
         <MotionToggle enabled={motionEnabled} onToggle={(): void => setMotionEnabled((v) => !v)} />
         <BlockedChrome label="FILTER">
           <ChromeButton label={`AllMarks · ${String(visibleCards.length).padStart(3, '0')}`} onClick={NOOP} />
@@ -569,7 +574,7 @@ export function SharedBoard(): ReactElement {
               // NOT isMobile: that would key off hoverActive and strip the ×
               // and the sender's tag pills. This only relaxes the cards'
               // touch-action so .scroller owns the vertical swipe (N-46/N-47).
-              lockCardScroll={isMobile || isTouchDevice}
+              lockCardScroll={isTouchSurface}
               themeId={themeId}
               motionEnabled={motionEnabled}
               matchedBookmarkIds={null}
@@ -583,6 +588,18 @@ export function SharedBoard(): ReactElement {
           </div>
         </div>
 
+        {/* Touch surfaces import from the canvas floor, where the thumb is. The
+            overlay below (inset:0, z 300) covers this bar while a save runs. */}
+        {isTouchSurface && (
+          <ReceiverImportBar
+            count={visibleCards.length}
+            disabled={visibleCards.length === 0 || importPhase !== 'idle'}
+            onImport={(): void => {
+              void handleSave()
+            }}
+          />
+        )}
+
         {/* Theme-driven import overlay (backdrop covers the canvas at z 300). */}
         <ImportProgressIndicator phase={importPhase} themeId={themeId} counts={importCounts} />
       </div>
@@ -591,9 +608,11 @@ export function SharedBoard(): ReactElement {
           (BoardRoot.tsx:2886-2899). Hosts the ScrollMeter in the outer frame's
           bottom margin, OUTSIDE the dark canvas, so it matches the real
           board's current position (s170) instead of the old hand-rolled
-          canvas-bottom overlay. Hidden on mobile, matching the real board. */}
+          canvas-bottom overlay. Hidden on every touch surface: its scrub track
+          is 18px tall — unusable with a finger — and it would collide with the
+          import bar at the screen's foot (N-48). */}
       <div className={frame.frameBottomChrome}>
-        {!isMobile && (
+        {!isTouchSurface && (
           <ScrollMeter
             mode="board"
             n1={1}

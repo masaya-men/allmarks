@@ -344,6 +344,36 @@ test.describe('② shared receiver layout (mobile 3-col + desktop meter position
     })
     expect(touchAction).toBe('none')
   })
+
+  // N-48: the desktop IMPORT is a 27px button inside a band that display:none's
+  // under 640px, so a phone had no way at all to import a shared collection.
+  test('mobile (390×844): the only IMPORT is a thumb-sized button in the bottom bar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await gotoMockedShare(page, 'abc128', buildMockShareData(6))
+
+    const bar = page.locator('[data-testid="receiver-import-bar"]')
+    await expect(bar).toBeVisible()
+
+    const buttons = page.locator('[data-testid="import-button"]')
+    await expect(buttons).toHaveCount(1)
+    await expect(bar.locator('[data-testid="import-button"]')).toHaveCount(1)
+    await expect(buttons).toHaveText('IMPORT 6 TO YOUR BOARD')
+
+    const box = await buttons.boundingBox()
+    expect(box!.height).toBeGreaterThanOrEqual(44)
+
+    // An 18px scrub track has no business on a touchscreen, and it sat where the bar now is.
+    await expect(page.locator('[data-testid="scroll-meter"]')).toHaveCount(0)
+  })
+
+  test('desktop (1489×679): keeps the top IMPORT, no bottom bar, meter intact', async ({ page }) => {
+    await page.setViewportSize({ width: 1489, height: 679 })
+    await gotoMockedShare(page, 'abc129', buildMockShareData(6))
+
+    await expect(page.locator('[data-testid="import-button"]')).toHaveCount(1)
+    await expect(page.locator('[data-testid="receiver-import-bar"]')).toHaveCount(0)
+    await expect(page.locator('[data-testid="scroll-meter"]')).toHaveCount(1)
+  })
 })
 
 // N-47: a tablet clears the 640px mobile breakpoint, so the width gate alone
@@ -371,5 +401,20 @@ test.describe('② shared receiver on a tablet (wide, coarse pointer)', () => {
       }),
     )
     expect(touchActions).toEqual(Array(6).fill('pan-y'))
+  })
+
+  // Size by input, lay out by width: a tablet is wide, but its IMPORT is still
+  // pressed with a thumb, so it gets the bar and loses the 18px scrub meter.
+  test('IMPORT moves to the bottom bar and the scrub meter goes away', async ({ page }) => {
+    await gotoMockedShare(page, 'abc130', buildMockShareData(6))
+
+    const bar = page.locator('[data-testid="receiver-import-bar"]')
+    await expect(bar).toBeVisible()
+    await expect(bar.locator('[data-testid="import-button"]')).toHaveCount(1)
+    await expect(page.locator('[data-testid="import-button"]')).toHaveCount(1)
+    await expect(page.locator('[data-testid="scroll-meter"]')).toHaveCount(0)
+
+    const box = await bar.locator('[data-testid="import-button"]').boundingBox()
+    expect(box!.height).toBeGreaterThanOrEqual(44)
   })
 })

@@ -99,6 +99,7 @@ export const BOARD_Z_INDEX = {
   UNDO_TOAST: 130,
   PASTE_FEEDBACK: 135,
   LANGUAGE_SWITCHER: 140,
+  TOUCH_BOTTOM_BAR: 150,  // fixed bottom action bar on touch surfaces (receiver's IMPORT bar). Above the canvas scrims (80) / TOOLBAR (110) / POPOVER (120); below MODAL_OVERLAY (200), the import overlay + Lightbox (both raw 300). Same tier as BoardMobileNav's raw 150.
   MODAL_OVERLAY: 200,  // App-level modal overlay (Bookmarklet install, etc.)
   SCROLL_METER: 400,   // sound-wave scroll/counter meter. Board: positioned by the outer-frame bottom band; receive view (SharedBoard): its own canvas-bottom anchor. Mirrors the raw z-index:400 in ScrollMeter/BoardRoot CSS.
   TAG_PANEL: 403,      // TAG MODE right-edge tag panel (drag-drop tagging) — above the meter + share bars, below CHROME_DRAWER (405).

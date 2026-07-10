@@ -51,9 +51,8 @@ vi.mock('@/components/board/MotionToggle', () => ({
 vi.mock('@/components/board/ChromeLedToggle', () => ({
   ChromeLedToggle: (): ReactElement => <span data-testid="mock-chrome-led-toggle" />,
 }))
-vi.mock('@/components/board/ChromeButton', () => ({
-  ChromeButton: (): ReactElement => <button data-testid="mock-chrome-button" />,
-}))
+// ChromeButton is NOT mocked: it forwards data-testid, and the whole point of
+// these tests is which IMPORT button exists.
 vi.mock('@/components/board/TuneTrigger', () => ({
   TuneTrigger: (): ReactElement => <span data-testid="mock-tune-trigger" />,
 }))
@@ -165,5 +164,71 @@ describe('SharedBoard → CardsLayer mobile scroll wiring (N-46)', () => {
 
     expect(lastProps().lockCardScroll).toBe(false)
     expect(lastProps().isMobile).toBeUndefined()
+  })
+})
+
+/** N-48: the desktop IMPORT is a 27px button in a band that `display:none`s
+ *  under 640px — invisible on a phone, unusable with a finger on a tablet. */
+describe('SharedBoard touch import bar (N-48)', () => {
+  beforeEach(() => {
+    cardsLayerProps.length = 0
+  })
+
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-theme-id')
+    vi.clearAllMocks()
+  })
+
+  const importButtons = (): HTMLElement[] =>
+    Array.from(document.querySelectorAll<HTMLElement>('[data-testid="import-button"]'))
+  const bar = (): HTMLElement | null => document.querySelector('[data-testid="receiver-import-bar"]')
+  const meter = (): HTMLElement | null => document.querySelector('[data-testid="mock-scroll-meter"]')
+
+  it('puts the only IMPORT button in the bottom bar on a phone', async () => {
+    mockedUseIsMobile.mockReturnValue(true)
+    mockedUseIsTouchDevice.mockReturnValue(true)
+    await renderReady()
+
+    expect(bar()).not.toBeNull()
+    expect(importButtons()).toHaveLength(1)
+    expect(bar()!.contains(importButtons()[0]!)).toBe(true)
+    expect(importButtons()[0]!.textContent).toBe('IMPORT 2 TO YOUR BOARD')
+  })
+
+  it('does the same on a wide touch device (tablet), where the top button is only 27px tall', async () => {
+    mockedUseIsMobile.mockReturnValue(false)
+    mockedUseIsTouchDevice.mockReturnValue(true)
+    await renderReady()
+
+    expect(bar()).not.toBeNull()
+    expect(importButtons()).toHaveLength(1)
+    expect(bar()!.contains(importButtons()[0]!)).toBe(true)
+  })
+
+  it('keeps the top IMPORT and no bar on a mouse desktop', async () => {
+    mockedUseIsMobile.mockReturnValue(false)
+    mockedUseIsTouchDevice.mockReturnValue(false)
+    await renderReady()
+
+    expect(bar()).toBeNull()
+    expect(importButtons()).toHaveLength(1)
+  })
+
+  // The scrub track is 18px tall — below the finger minimum — and would sit
+  // under the bar's footprint.
+  it('hides the scroll meter on a touch surface', async () => {
+    mockedUseIsMobile.mockReturnValue(false)
+    mockedUseIsTouchDevice.mockReturnValue(true)
+    await renderReady()
+
+    expect(meter()).toBeNull()
+  })
+
+  it('keeps the scroll meter for a mouse', async () => {
+    mockedUseIsMobile.mockReturnValue(false)
+    mockedUseIsTouchDevice.mockReturnValue(false)
+    await renderReady()
+
+    expect(meter()).not.toBeNull()
   })
 })
