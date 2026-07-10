@@ -12,7 +12,7 @@ import {
 import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
-import { resolveThemeCustomization, isDefaultCustomization, isLightColor } from '@/lib/board/theme-customization'
+import { resolveThemeCustomization, isDefaultCustomization, isLightColor, effectivePatternStroke } from '@/lib/board/theme-customization'
 import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX, MOBILE_LAYOUT } from '@/lib/board/constants'
 import { useIsMobile } from '@/lib/board/use-is-mobile'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
@@ -3063,6 +3063,10 @@ export function BoardRoot() {
                   '--board-color': resolvedCustom.boardColor,
                   '--pattern-color': resolvedCustom.patternColor,
                   '--pattern-size': `${resolvedCustom.patternSize}px`,
+                  // Same clamp the share's SVG applies, so the board and the link
+                  // it produces can't disagree on line weight.
+                  '--pattern-stroke': `${effectivePatternStroke(resolvedCustom.patternStroke, resolvedCustom.patternSize)}px`,
+                  '--pattern-dot-r': `${effectivePatternStroke(resolvedCustom.patternStroke, resolvedCustom.patternSize)}px`,
                 } as CSSProperties}
               />
             )}

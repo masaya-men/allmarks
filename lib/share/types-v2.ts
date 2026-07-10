@@ -2,15 +2,20 @@
 import type { ThemeId, PatternType } from '@/lib/board/types'
 
 /** Sender's resolved per-theme customization (the effective values they saw —
- *  edge/board/pattern colour, pattern style + density, title colour). Carried so
- *  the receiver + the OG image reproduce the exact look. All 6 fields required
- *  because the sender always sends the fully-resolved set (= ResolvedThemeCustomization). */
+ *  edge/board/pattern colour, pattern style + density + thickness, title colour).
+ *  Carried so the receiver + the OG image reproduce the exact look. The six
+ *  original fields are required because the sender always sends the fully-resolved
+ *  set (= ResolvedThemeCustomization). */
 export type ShareCustomization = {
   readonly edgeColor: string
   readonly boardColor: string
   readonly patternColor: string
   readonly patternType: PatternType
   readonly patternSize: number
+  /** Optional, unlike its siblings: links created before the thickness slider
+   *  carry no value and the receiver falls back to the historic per-type default.
+   *  Requiring it would drop `custom` from every existing share. */
+  readonly patternStroke?: number
   readonly titleColor: string
 }
 

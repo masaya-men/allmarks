@@ -6,7 +6,7 @@ import {
   isDefaultCustomization,
   isLightColor,
 } from './theme-customization'
-import { patternSvgDataUri } from './theme-customization'
+import { patternSvgDataUri, defaultPatternStroke, effectivePatternStroke } from './theme-customization'
 
 describe('theme-customization', () => {
   it('Sound Wave defaults are byte-identical to the pre-feature look (solid #0a0a0a, no pattern)', () => {
@@ -69,5 +69,50 @@ describe('patternSvgDataUri', () => {
     const u = patternSvgDataUri({ patternType: 'grid', patternColor: 'rgba(255,255,255,0.18)', patternSize: 40 })
     expect(u.startsWith('data:image/svg+xml,')).toBe(true)
     expect(decodeURIComponent(u)).toContain('width=\'40\'')
+  })
+})
+
+/** The thickness slider. Its whole contract is that a board which never touches
+ *  it paints exactly as it always did, so the default cases below are regression
+ *  guards on literal SVG output. */
+describe('pattern thickness', () => {
+  const svg = (c: Parameters<typeof patternSvgDataUri>[0]): string => decodeURIComponent(patternSvgDataUri(c))
+
+  it('defaults to a 1px stroke for line patterns and a 1.4px radius for dots', () => {
+    expect(defaultPatternStroke('grid')).toBe(1)
+    expect(defaultPatternStroke('diagonal')).toBe(1)
+    expect(defaultPatternStroke('crosshatch')).toBe(1)
+    expect(defaultPatternStroke('dots')).toBe(1.4)
+  })
+
+  it('an absent stroke reproduces the pre-slider SVG exactly', () => {
+    expect(svg({ patternType: 'grid', patternColor: '#fff', patternSize: 40 })).toContain("stroke-width='1'")
+    expect(svg({ patternType: 'diagonal', patternColor: '#fff', patternSize: 40 })).toContain("stroke-width='1'")
+    expect(svg({ patternType: 'crosshatch', patternColor: '#fff', patternSize: 40 })).toContain("stroke-width='1'")
+    expect(svg({ patternType: 'dots', patternColor: '#fff', patternSize: 40 })).toContain("r='1.4'")
+  })
+
+  it('carries a chosen stroke into the SVG', () => {
+    expect(svg({ patternType: 'grid', patternColor: '#fff', patternSize: 40, patternStroke: 3.5 })).toContain("stroke-width='3.5'")
+    expect(svg({ patternType: 'dots', patternColor: '#fff', patternSize: 40, patternStroke: 4 })).toContain("r='4'")
+  })
+
+  it('resolves the stroke from the PATTERN TYPE, so switching to dots keeps r=1.4', () => {
+    expect(resolveThemeCustomization('grid-paper', { patternType: 'dots' })!.patternStroke).toBe(1.4)
+    expect(resolveThemeCustomization('grid-paper', undefined)!.patternStroke).toBe(1)
+    expect(resolveThemeCustomization('grid-paper', { patternStroke: 4 })!.patternStroke).toBe(4)
+  })
+
+  it('clamps the stroke below half the spacing so a dense pattern never fills solid', () => {
+    expect(effectivePatternStroke(1, 40)).toBe(1)
+    expect(effectivePatternStroke(6, 40)).toBe(6)
+    expect(effectivePatternStroke(6, 16)).toBe(6) // 16/2 − 1 = 7 → untouched
+    expect(effectivePatternStroke(6, 12)).toBe(5) // 12/2 − 1 = 5 → capped
+    expect(effectivePatternStroke(6, 8)).toBe(3) // the share schema's floor spacing
+    expect(effectivePatternStroke(1, 2)).toBe(0.5) // never thinner than a hairline
+  })
+
+  it('applies the clamp inside the SVG, matching what the CSS var will carry', () => {
+    expect(svg({ patternType: 'grid', patternColor: '#fff', patternSize: 8, patternStroke: 6 })).toContain("stroke-width='3'")
   })
 })

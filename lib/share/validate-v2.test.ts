@@ -117,6 +117,35 @@ describe('sanitizeShareDataV2 custom', () => {
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.data.custom).toBeUndefined()
   })
+
+  // A required patternStroke would have silently dropped `custom` from every
+  // link created before the thickness slider.
+  it('keeps custom on a link created before patternStroke existed', () => {
+    const input = {
+      v: 2, createdAt: 1, cards: [{ u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }],
+      theme: 'grid-paper',
+      custom: { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: '#fff', patternType: 'grid', patternSize: 40, titleColor: '#fff' },
+    }
+    const r = sanitizeShareDataV2(input)
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.data.custom).toBeDefined()
+      expect(r.data.custom?.patternStroke).toBeUndefined()
+    }
+  })
+
+  it('round-trips patternStroke, and drops the custom block when it is out of range', () => {
+    const base = { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: '#fff', patternType: 'grid', patternSize: 40, titleColor: '#fff' }
+    const card = { u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }
+
+    const ok = sanitizeShareDataV2({ v: 2, createdAt: 1, cards: [card], theme: 'grid-paper', custom: { ...base, patternStroke: 3.5 } })
+    expect(ok.ok).toBe(true)
+    if (ok.ok) expect(ok.data.custom?.patternStroke).toBe(3.5)
+
+    const bad = sanitizeShareDataV2({ v: 2, createdAt: 1, cards: [card], theme: 'grid-paper', custom: { ...base, patternStroke: 999 } })
+    expect(bad.ok).toBe(true)
+    if (bad.ok) expect(bad.data.custom).toBeUndefined()
+  })
 })
 
 describe('sanitizeShareDataV2 theme', () => {

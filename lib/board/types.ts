@@ -143,6 +143,10 @@ export type ThemeCustomization = {
   readonly patternColor?: string   // pattern stroke / dot colour
   readonly patternType?: PatternType
   readonly patternSize?: number    // pattern spacing in px (density)
+  /** Stroke width for the line patterns, dot radius for `dots`, in px. An absent
+   *  field falls back per type (lines 1, dots 1.4) — the values hard-coded before
+   *  the thickness slider existed, so an untouched theme stays byte-identical. */
+  readonly patternStroke?: number
   readonly titleColor?: string     // the hero background-typography wordmark colour
 }
 

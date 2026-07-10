@@ -7,6 +7,8 @@ import {
   PATTERN_TYPES,
   PATTERN_SIZE_MIN,
   PATTERN_SIZE_MAX,
+  PATTERN_STROKE_MIN,
+  PATTERN_STROKE_MAX,
   EDGE_SWATCHES,
   BOARD_SWATCHES,
   PATTERN_SWATCHES,
@@ -150,6 +152,25 @@ export function ThemeCustomizeSection({ value, isDefault, allowsPattern, onChang
               onChange={(e): void => onChange({ patternSize: PATTERN_SIZE_MIN + PATTERN_SIZE_MAX - Number(e.target.value) })}
               aria-label="Pattern density"
               data-testid="pattern-density"
+            />
+          </div>
+
+          {/* Thickness — stroke width for the line patterns, dot radius for dots.
+              Right = thicker (DENSITY inverts; this one must not). */}
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>THICKNESS</span>
+            <input
+              type="range"
+              className={styles.slider}
+              min={PATTERN_STROKE_MIN}
+              max={PATTERN_STROKE_MAX}
+              // 0.2, not 0.5: dots rest at r=1.4, and an off-step value can't be
+              // dialled back once the user drags away from it.
+              step={0.2}
+              value={value.patternStroke}
+              onChange={(e): void => onChange({ patternStroke: Number(e.target.value) })}
+              aria-label="Pattern thickness"
+              data-testid="pattern-thickness"
             />
           </div>
         </>

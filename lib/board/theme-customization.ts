@@ -9,7 +9,15 @@ export type ResolvedThemeCustomization = {
   readonly patternColor: string
   readonly patternType: PatternType
   readonly patternSize: number
+  readonly patternStroke: number
   readonly titleColor: string
+}
+
+/** The thickness each pattern was drawn at before the slider existed: 1px stroke
+ *  for the line patterns, 1.4px radius for the dots. `dots` differs because its
+ *  number is a circle radius, not a stroke width. */
+export function defaultPatternStroke(type: PatternType): number {
+  return type === 'dots' ? 1.4 : 1
 }
 
 /** The default hero-typography colour (= BoardBackgroundTypography's
@@ -32,6 +40,7 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     patternColor: 'rgba(255, 255, 255, 0.18)',
     patternType: 'none',
     patternSize: 40,
+    patternStroke: 1,
     titleColor: DEFAULT_TITLE_COLOR,
   },
   'grid-paper': {
@@ -40,6 +49,7 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     patternColor: 'rgba(255, 255, 255, 0.18)',
     patternType: 'grid',
     patternSize: 40,
+    patternStroke: 1,
     titleColor: DEFAULT_TITLE_COLOR,
   },
 }
@@ -71,14 +81,33 @@ export function resolveThemeCustomization(
   const base = THEME_CUSTOMIZATION_DEFAULTS[id]
   if (!base) return null
   if (!custom) return base
+  // Stroke falls back per PATTERN TYPE, not per theme: switching a grid theme to
+  // dots without touching the slider must still draw the historic r=1.4 circle.
+  const patternType = custom.patternType ?? base.patternType
   return {
     edgeColor: custom.edgeColor ?? base.edgeColor,
     boardColor: custom.boardColor ?? base.boardColor,
     patternColor: custom.patternColor ?? base.patternColor,
-    patternType: custom.patternType ?? base.patternType,
+    patternType,
     patternSize: custom.patternSize ?? base.patternSize,
+    patternStroke: custom.patternStroke ?? defaultPatternStroke(patternType),
     titleColor: custom.titleColor ?? base.titleColor,
   }
+}
+
+/** Thickness slider bounds (px). */
+export const PATTERN_STROKE_MIN = 1
+export const PATTERN_STROKE_MAX = 6
+
+/**
+ * The thickness actually painted. A stroke wider than half the spacing fills the
+ * tile solid — at PATTERN_SIZE_MIN (16px) a 6px grid line would leave a 4px gap,
+ * and a share can carry a spacing as low as 8px. Cap it, and never go below a
+ * hairline. Both the live board's CSS var and the share's SVG go through here so
+ * a collage and the link it produced can't disagree on line weight.
+ */
+export function effectivePatternStroke(stroke: number, patternSize: number): number {
+  return Math.max(0.5, Math.min(stroke, patternSize / 2 - 1))
 }
 
 /** True when the saved override is empty / equal to defaults (so the theme is at
@@ -94,6 +123,7 @@ export function isDefaultCustomization(id: ThemeId, custom: ThemeCustomization |
     r.patternColor === base.patternColor &&
     r.patternType === base.patternType &&
     r.patternSize === base.patternSize &&
+    r.patternStroke === base.patternStroke &&
     r.titleColor === base.titleColor
   )
 }
@@ -165,26 +195,28 @@ export function patternSvgDataUri(c: {
   readonly patternType: PatternType
   readonly patternColor: string
   readonly patternSize: number
+  readonly patternStroke?: number
 }): string {
   const s = c.patternSize
   const col = c.patternColor
+  const t = effectivePatternStroke(c.patternStroke ?? defaultPatternStroke(c.patternType), s)
   let body: string
   switch (c.patternType) {
     case 'none':
       return ''
     case 'grid':
       // line on the right + bottom edge so the tile repeats into a full grid
-      body = `<path d='M${s} 0V${s}M0 ${s}H${s}' stroke='${col}' stroke-width='1' fill='none'/>`
+      body = `<path d='M${s} 0V${s}M0 ${s}H${s}' stroke='${col}' stroke-width='${t}' fill='none'/>`
       break
     case 'dots':
-      body = `<circle cx='${s / 2}' cy='${s / 2}' r='1.4' fill='${col}'/>`
+      body = `<circle cx='${s / 2}' cy='${s / 2}' r='${t}' fill='${col}'/>`
       break
     case 'diagonal':
       // 45° line through the tile; tiling continues the stripe
-      body = `<path d='M0 ${s}L${s} 0' stroke='${col}' stroke-width='1' fill='none'/>`
+      body = `<path d='M0 ${s}L${s} 0' stroke='${col}' stroke-width='${t}' fill='none'/>`
       break
     case 'crosshatch':
-      body = `<path d='M0 ${s}L${s} 0M0 0L${s} ${s}' stroke='${col}' stroke-width='1' fill='none'/>`
+      body = `<path d='M0 ${s}L${s} 0M0 0L${s} ${s}' stroke='${col}' stroke-width='${t}' fill='none'/>`
       break
   }
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${s}' height='${s}'>${body}</svg>`

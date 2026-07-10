@@ -31,6 +31,9 @@ const customSchema = z.object({
   patternColor: z.string().max(64),
   patternType: z.enum(['none', 'grid', 'diagonal', 'dots', 'crosshatch']),
   patternSize: z.number().min(8).max(200),
+  // Optional: links predating the thickness slider carry no value and must keep
+  // their `custom` block. The bound is generous; the render path clamps to spacing.
+  patternStroke: z.number().min(0.5).max(20).optional(),
   titleColor: z.string().max(64),
 })
 
