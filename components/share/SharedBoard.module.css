@@ -46,6 +46,12 @@
   overflow-x: hidden;
   padding: 84px 9px 120px;
   scrollbar-width: none;
+  /* Match the board's mobile scroller (BoardRoot.module.css .mobileScrollContainer):
+     keep the rubber-band from chaining out to the page, and declare the vertical
+     pan up front so the compositor can scroll without waiting on a listener. */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .scroller::-webkit-scrollbar {

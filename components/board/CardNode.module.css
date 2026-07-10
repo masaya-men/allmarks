@@ -25,7 +25,9 @@
    is dead on a real device (Playwright's JS-driven scrollTop ignores
    touch-action, so this only shows up on hardware — session 180).
    Scoped to the per-card [data-lock-card-scroll="true"] flag, which CardsLayer
-   sets iff isMobile (mirrors the ③ text-scroll lock in globals.css). Desktop
+   sets when isMobile OR when a caller asks for it via lockCardScroll — the share
+   receiver takes the latter route, since it needs native scroll while keeping
+   hover-revealed chrome (mirrors the ③ text-scroll lock in globals.css). Desktop
    never gets the attribute, so .cardNode keeps touch-action:none there and the
    pointer-driven reorder drag isn't hijacked by the browser. The inner
    .titleScroll [data-card-scroll] stays touch-action:none (globals.css) so text
