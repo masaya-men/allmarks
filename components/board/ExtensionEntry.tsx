@@ -106,6 +106,11 @@ export interface ExtensionEntryProps {
   readonly onResetCardSizes: () => void
   /** N-19: re-sort the board to newest-first. */
   readonly onSortNewestFirst: () => void
+  /** Mobile only: MOTION lives here because the bottom nav gave its slot to
+   *  SHARE (N-49). BoardRoot passes this only when `useIsMobile()` is true, so
+   *  the desktop drawer — which already has MOTION in the top chrome — is
+   *  byte-identical. */
+  readonly motion?: { readonly enabled: boolean; readonly onToggle: () => void }
 }
 
 export function ExtensionEntry({
@@ -120,6 +125,7 @@ export function ExtensionEntry({
   customWidthCount,
   onResetCardSizes,
   onSortNewestFirst,
+  motion,
 }: ExtensionEntryProps): ReactElement {
   const { t } = useI18n()
   const installed = useExtensionInstalled()
@@ -212,6 +218,27 @@ export function ExtensionEntry({
             <BackupStatus refreshKey={`${isOpen ? 'open' : 'closed'}:${backupToken}`} />
           </div>
         </section>
+
+        {/* ── VIEW ──────────────────────────────────────────────────────────
+            Mobile only. MOTION used to be a bottom-nav tab; SHARE took that
+            slot (N-49). It is a set-once display preference, so a drawer row
+            is the right home. Desktop keeps its top-chrome MotionToggle and
+            never renders this section (BoardRoot passes no `motion` prop). */}
+        {motion && (
+          <section className={styles.group}>
+            <div className={styles.groupLabel}>VIEW</div>
+            <label className={styles.toggleRow}>
+              <span className={styles.toggleLabel}>MOTION</span>
+              <input
+                type="checkbox"
+                className={styles.toggle}
+                checked={motion.enabled}
+                onChange={(): void => motion.onToggle()}
+                data-testid="settings-motion-toggle"
+              />
+            </label>
+          </section>
+        )}
 
         {/* ── LAYOUT ────────────────────────────────────────────────────────
             N-19: restore the board to defaults. Both actions two-tap confirm
