@@ -21,6 +21,16 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 184 — ★N-46 共有受け取りのスマホ・スクロール不全を根治・本番反映／実機確認待ち)
+
+**systematic-debugging で真因を確定→最小修正→本番反映**（tsc0 / vitest 2201 / e2e 6本 / `merge --no-ff` 8d4495c0 / `allmarks.app` デプロイ済）。
+
+- **真因＝カードの `touch-action:none` の緩め忘れ**。`SharedBoard` が `CardsLayer` に `isMobile` を渡さない→`data-lock-card-scroll` が付かない→`.cardNode` が `none` のまま→3列密グリッドで指が必ずカードに落ち、ブラウザのネイティブ縦スクロールが打ち消される（**s180 と同一のバグが受け取り側だけ未修正**）。
+- **実測で確定**（実 Chromium・390×844・ビルド済 out/）: 受け取り `.cardNode`=`none` / lock属性 **0-of-100**、本物盤面=`pan-y` / **51-of-51**。修正後は受け取りも `pan-y` **100-of-100**、盤面は不変。
+- **`isMobile` 直渡しは不可**（`hoverActive = !isMobile && …` で `×`・タグピルが消える）→ 属性のみ駆動する専用 prop **`lockCardScroll`** を新設。`.scroller` も本物の `.mobileScrollContainer` に整合。**`setPointerCapture` は仕様上スクロールを止めないので温存**（W3C Pointer Events 3）。
+- **CDP `Input.synthesizeScrollGesture` は実スクロールを再現できないと確定**（既知の正解=盤面すら動かず）＝ネイティブ触りスクロールは**実機のみ**検証可、を追認。
+- **★実機確認の残**: ①受け取りが実際に滑るか ②100枚全マウント由来の残ジャンク ③スクロール中の `×`／タグピルの一瞬の点灯。**新規 (N-47)**: タブレット（>640px の触り端末）は未対応のまま＝ユーザー判断待ち。
+
 ### 直近の状態 (セッション 183 後半 — ★PC盤面＋共有の磨き4点(①②③④)を出荷・本番反映／次は⑤Pinterest(N-28)or 公開)
 
 **束B（スマホ保存）実機OK後にユーザーが挙げた5件を調査・整理→①②③④を実装・本番反映**（⑤Pinterest=N-28 は来週）。サブエージェント駆動6タスク＋各レビュー＋opus 全ブランチレビュー READY TO MERGE。tsc0 / vitest 2198 / build OK / e2e 4本 / `merge --no-ff`・`allmarks.app` デプロイ済。
@@ -361,7 +371,12 @@
 - ~~**(N-43) ② 共有リンク受け取り画面の乱れ（本物のボード機構の“移植し忘れ”2点）**~~ ✅ **s183完了・本番反映**（スマホ3列幅移植＝1列解消／メーターを枠下帯へ）。**実機確認の残**＝スマホ受け取りの3列/タップ開閉/×削除・メーター位置。 — 旧: 受け取り画面 `SharedBoard`（[components/share/SharedBoard.tsx](../components/share/SharedBoard.tsx)）は**再発明ではなく本物の `CardsLayer`/`ScrollMeter`/`computeSkylineLayout` を既に再利用**。乱れの原因は2つだけ：**(a) スマホで1列**＝`BoardRoot` の「モバイル=3列・カード幅上書き（`MOBILE_LAYOUT`）」が受け取り側に**未移植**→送信者の広い幅のまま→狭画面で1枚/行。**(b) PC メーターが古い**＝部品は最新だが**配置が s170 以前**（画面下中央 absolute・canvas 内）のまま。今の本物は `.frameBottomChrome`（枠下帯・canvas 外）。→ (a) `useIsMobile`+`MOBILE_LAYOUT` 由来の幅/gap/customWidths を CardsLayer と spacer に流す、(b) メーターを `frame.frameBottomChrome` に移す。**規模：小〜中**。※要注意＝`CardsLayer` の onPointerDown は `isMobile` を `receiverMode` より先に判定するので、受け取り側で isMobile=true にすると受け取り専用タップ処理が飛ばされ得る＝実機確認必須（memory `reference_native_scroll_touch_action_playwright`）。
 - ~~**(N-44) ③ SHARE の「作成中」インジケーターが撮影中に消える**~~ ✅ **s183完了・本番反映**（body への portal「CREATING YOUR LINK…」で撮影〜完了まで常時表示・撮影に写らない）。 — 旧: CREATE 押下→自動撮影中は唯一の進捗表示（ボタンの「CREATING…」）が**撮影対象の枠内**にあり、`.outerFrame[data-capturing]` の `[data-no-capture]{visibility:hidden}` で**丸ごと非表示**。100枚だと画像100枚取得で数秒〜十数秒、その間「何も出ない＝スクショ撮れと言われてる?」に見える（ユーザー不安）。手動スクショ文言は既に未使用（残骸のみ）。→ **進捗表示を撮影対象の外（body への portal）に出す**（`shareCreateState==='creating'` で表示・撮影に写り込まず完了まで見える）。[ShareToast.tsx](../components/board/ShareToast.tsx) / `handleCreateHostedShare`（[BoardRoot.tsx](../components/board/BoardRoot.tsx)）。**規模：小**。
 
-- **(N-46) ★共有受け取り画面：スマホでスクロールがカクつく／スムーズに動かない（s183 実機・必須改善）** — 100件を共有→スマホのプライベートウィンドウで開くと**3列にはなった（N-43 の幅移植OK）が、スクロールがさくさく動かない**。受け取り側がスムーズに見られないのは大きなストレス＝**必須改善**。**原因は未断定（要調査）**、候補: **(a) 本命＝ネイティブスクロール機構の移植漏れ**。s183(N-43)は受け取り側に**幅（3列）だけ**移植し、本物の盤面が s179/s180 で入れた**モバイル用ネイティブスクロール**（`.mobileScrollContainer` overflow-y:auto ＋ カードの `touch-action` を `none→pan-y` に緩める `[data-lock-card-scroll]`）は**移植していない**。`SharedBoard`/受け取りの `CardsLayer` はデスクトップのパン機構 or カードの `touch-action:none` のままで、指がカードに落ちてネイティブ縦スクロールが殺される＝**s180 と同じ症状が受け取り側で再発**の疑いが濃い。 (b) 画像/URL読み込みのジャンク（多数の画像デコード）＝(a)とは別問題。**着手＝systematic-debugging**：受け取り側に本物のモバイルスクロール機構（container＋touch-action 緩和）を移植 → **実機で確認**（memory `reference_native_scroll_touch_action_playwright`＝合成イベント不可・実機のみ、`project_mobile_board_direction`／s179/s180 narrative 参照）。関連 memory `reference_share_receiver_reuses_board`。
+- ~~**(N-46) ★共有受け取り画面：スマホでスクロールがさくさく動かない**~~ ✅ **s184 で根治・本番反映**（**実機確認待ち**）。**真因＝カードの `touch-action:none` の緩め忘れ**（候補(a)が的中）。`SharedBoard` が `CardsLayer` に `isMobile` を渡していない → `data-lock-card-scroll` が付かない（[CardsLayer.tsx:1304](../components/board/CardsLayer.tsx#L1304)）→ `.cardNode` が `touch-action:none` のまま（[CardNode.module.css:12](../components/board/CardNode.module.css#L12)）→ 3列密グリッドでは指が必ずカードに落ちネイティブ縦スクロールが打ち消される＝**s180 と同一のバグが受け取り側だけ未修正**。**実 Chromium 計測で確定**（390×844・ビルド済 out/）：受け取り `.cardNode` = `none` / lock属性 0-of-100、本物盤面 = `pan-y` / 51-of-51。
+  - **`isMobile` をそのまま渡すのは不可**（`hoverActive = !isMobile && …`＝受け取りの `×`・タグピルが消える）→ 属性だけを駆動する専用 prop **`lockCardScroll`** を新設し `lockCardScroll={isMobile}` を渡す。`.scroller` も本物の `.mobileScrollContainer` に揃えた（`overscroll-behavior:contain` / `-webkit-overflow-scrolling:touch` / `touch-action:pan-y`）。
+  - **`setPointerCapture` は温存**（W3C Pointer Events 3：パン/ズームは pointer event の default action ではなく capture では抑止不能、かつ触りは pointerdown 時点で暗黙キャプチャ済み）。スクロール開始時は `pointercancel` が飛び既存コードが正しく弾く。
+  - **検証**：tsc0 / vitest **2201**（+3 配線テスト）/ e2e 6本 / 修正後の再計測で受け取り `pan-y` 100-of-100・盤面は不変。e2e 回帰ガード2本は「修正を外すと落ちる」ことを確認済。**CDP `Input.synthesizeScrollGesture` は既知の正解（盤面）すらスクロールさせられず、合成での実スクロール再現は不可と確定**（memory `reference_native_scroll_touch_action_playwright` を追認）。
+  - **残（実機のみ）**：①受け取りのスクロールが実際に滑るか ②100枚全マウント（受け取りは `UNCULLED_VIEWPORT_H` で間引き無効・盤面は51枚）による残ジャンクの有無 ③スクロール中に触れたカードの `×`／タグピルが一瞬光る点が気になるか。
+- **(N-47) 共有受け取り：タブレット（>640px の触り端末）でも同じスクロール不全が残る（s184 発見・未着手）** — `lockCardScroll={isMobile}` は 640px 以下だけ。iPad 等は `useIsMobile()`=false のままなのでカードは `touch-action:none` → 指がカードに落ちると縦スクロールが死ぬ（隙間に落ちた時だけ動く）。受け取り側のカードは並べ替えもリサイズもしない＝`none` に用は無い。**候補＝`lockCardScroll={isMobile || isTouchDevice}`**（既存 `lib/board/use-is-touch-device.ts`＝`pointer: coarse`、s183 の「+」ボタンと同じ判定）。注意＝`[data-lock-card-scroll] [data-card-scroll]` が効くとテキストカードの内部スクロール（N-42 の両端フェード）が止まるので、タブレットでのその見え方は要判断。**ユーザー判断待ち**。
 - **(N-45) 掃除：古い SHARE e2e 3本が消えた testid を参照（s183 発見・非ブロック）** — `tests/e2e/{share-composer-edit,share-fullscreen,share-sender}.spec.ts` が s165 の SHARE 作り直しで消えた `[data-testid="share-composer"]` を参照＝**フル e2e 実行時に赤**（このブランチ由来でない既存腐り）。削除 or 現行 SHARE フローに書き直し。ついでに `lib/board/fill-snap.ts` の旧 `fillCandidates`/`snapToFill` は N-27 で本番未使用化＝テストのみ生存（再利用可・任意で prune）。
 
 ### session 161 で報告（Mac 実機・友人フィードバック ＋ 雑多改善 — ★ローンチ前クロスプラットフォーム）
