@@ -57,11 +57,11 @@
   pointer-events: auto;
 }
 
-/* Mobile (≤640px): the top action row is removed entirely — every board control
-   moves to the bottom nav (BoardMobileNav: FILTER / TAG / THEME / MOTION /
-   SETTINGS), leaving only the AllMarks wordmark at the top-left. TITLE / TUNE /
-   POP OUT / SHARE are desktop-only for v1 (arrangement / an unsupported phone
-   API / the desktop-tuned SHARE flow). Desktop (>640px) keeps every action. */
+/* Mobile (≤640px): the top action row is removed entirely — the board controls
+   live in the bottom nav (BoardMobileNav: TAG / THEME / SHARE / CORNERS / MORE)
+   and FILTER sits in the top-right header. TITLE / TUNE / POP OUT are
+   desktop-only for v1 (arrangement / an unsupported phone API). Desktop (>640px)
+   keeps every action. */
 @media (max-width: 640px) {
   .header {
     display: none;

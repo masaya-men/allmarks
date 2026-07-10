@@ -31,6 +31,8 @@ export type CaptureCollageOpts = {
   /** 'cover' (既定・切り出し) か 'contain' (枠を切らずレターボックス)。本物のボード枠を
    *  丸ごと写したいときは 'contain'。余白は boardColor で塗る。 */
   readonly fit?: 'cover' | 'contain'
+  /** 撮影 canvas の倍率。スマホは `mobileCaptureScale(画面幅)` を渡す。省略時は 1。 */
+  readonly scale?: number
 }
 
 /** `p` が `ms` 以内に解決しなければ null を返す (元の promise は放置)。 */
@@ -102,6 +104,7 @@ export async function captureCollageShareImage(
       minQuality: 0.94,
       bgColor: opts.boardColor,
       rewriteImageSrc: (src): string => rewriteToProxy(src, opts.origin),
+      ...(typeof opts.scale === 'number' ? { scale: opts.scale } : {}),
     }),
     opts.timeoutMs ?? 20000,
   )

@@ -140,4 +140,29 @@ describe('CollageCanvas', () => {
     )
     expect(withTitle.getByTestId('share-title-element')).toBeTruthy()
   })
+
+  it('keeps the rotate knob out of the share capture', () => {
+    // Touch devices show the knob at rest (no hover), so it MUST be excluded
+    // from the capture or it bakes into the shared image.
+    const item = makeItem({ bookmarkId: 'a' })
+    const positions = seedCollagePositions([{ id: 'a', width: 200, height: 100 }], 1000, 10)
+    const { container } = render(
+      <CollageCanvas
+        items={[item]}
+        positions={positions}
+        order={['a']}
+        onMove={() => {}}
+        onResize={() => {}}
+        onGrab={() => {}}
+        rotations={{}}
+        onRotate={() => {}}
+        maxCardWidth={1000}
+        displayMode="visual"
+        paper={false}
+      />,
+    )
+    const knob = container.querySelector('[data-testid^="collage-rotate-"]')
+    expect(knob).not.toBeNull()
+    expect(knob?.hasAttribute('data-no-capture')).toBe(true)
+  })
 })

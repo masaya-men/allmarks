@@ -222,10 +222,13 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               <PaperCardDecorations cardId={id} tornBacking={paperCardHasTornBacking(item)} />
             )}
             {/* Rotation handle — industry-standard orbit affordance above the
-                top-center. Hover-revealed (kept out of the screenshot at rest). */}
+                top-center. Hover-revealed on desktop; always visible on touch,
+                which has no hover. It stays out of the SHARE screenshot because
+                of data-no-capture, not because it happens to be hidden. */}
             <div
               className={styles.rotateHandle}
               data-testid={`collage-rotate-${id}`}
+              data-no-capture
               onPointerDown={(e): void => handleRotatePointerDown(e, id)}
             >
               {/* Knob sits at the FAR END of the stem (top), the stem drops from

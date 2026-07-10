@@ -1,0 +1,102 @@
+/* SHARE stage 1 on phones. Same material as BoardMobileNav / ReceiverImportBar:
+   dark neutral glass, hairline top edge, safe-area padding, monospace pinned so
+   a theme's serif override (paper-atelier) cannot leak in. */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(9, 9, 11, 0.9);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.counter {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.62);
+  white-space: nowrap;
+}
+
+/* SELECT ALL is a quiet text action, not a third slab. 32px tall is fine for a
+   secondary target sitting above two 52px primaries. */
+.textBtn {
+  min-height: 32px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.78);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* 52px clears Apple's 44pt minimum with room for the press spring. */
+.secondary,
+.primary {
+  min-height: 52px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease, opacity 200ms ease;
+}
+
+.secondary {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.primary {
+  flex: 2;
+  color: #28f100;
+  background: rgba(40, 241, 0, 0.12);
+  border: 1px solid rgba(40, 241, 0, 0.4);
+}
+
+.primary:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.secondary:active,
+.primary:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondary,
+  .primary {
+    transition: none;
+  }
+
+  .secondary:active,
+  .primary:active:not(:disabled) {
+    transform: none;
+  }
+}

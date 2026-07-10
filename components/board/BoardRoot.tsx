@@ -108,6 +108,9 @@ import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/shar
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { ShareToast } from '@/components/board/ShareToast'
+import { MobileShareSelectBar } from '@/components/board/MobileShareSelectBar'
+import { MobileShareResult } from '@/components/board/MobileShareResult'
+import { mobileCollageBandRect, mobileCaptureScale } from '@/lib/share/mobile-band'
 import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
@@ -2440,6 +2443,75 @@ export function BoardRoot() {
     }
   }, [items, selectedIds, buildArrangeShare, deriveCaptureBoardColor])
 
+  // スマホの CREATE。並べる段を「見せる編集画面」ではなく「撮るための一瞬の状態」として使う:
+  //   1. 選択カードを画面中央の 1.91:1 の帯へ自動配置し sharePhase='arrange' に入る
+  //   2. paint を 2 フレーム待ってから .outerFrame を fit:'cover' で撮る
+  //      → computeCoverRect は中央を切るので、切り出し結果は帯と一致する（黒帯ゼロ）
+  //   3. その JPEG を thumb にして /s 共有を作る
+  // 撮影が失敗しても thumb 無しで作成する（＝共有を絶対に壊さない）。
+  // タイトル（ワードマーク）は載せない: スマホの盤面はそもそも描いていないので、
+  // 載せると盤面と共有リンクが食い違う（BoardRoot の bgTypo は !isMobile ゲート）。
+  const handleMobileCreateShare = useCallback(async (): Promise<void> => {
+    if (selectedIds.size === 0) return
+    const frame = boardFrameRef.current
+    const box = frame?.getBoundingClientRect()
+    const frameW = box?.width ?? viewport.w
+    const frameH = box?.height ?? viewport.h
+
+    // 帯 = 画面に内接する中央の 1.91:1 矩形 = cover 切り出しが残す矩形そのもの。
+    const band = mobileCollageBandRect(frameW, frameH)
+
+    const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
+    const cards = chosen.map((it) => {
+      const w = customWidths[it.bookmarkId] ?? cardWidthPx
+      return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
+    })
+    setCollagePositions(fitSelectionToScreen(cards, band))
+    setCollageOrder(chosen.map((it) => it.bookmarkId))
+    setCollageRotations({})
+    setShareTitle(null)
+    setCapturedImageUrl(null)
+    setHostedShareUrl(null)
+    setSharePhase('arrange')
+    setShareCreateState('creating')
+
+    let thumb: string | null = null
+    if (frame && typeof requestAnimationFrame === 'function') {
+      setCapturing(true)
+      // 帯の描画と data-capturing の CSS が確実に paint されてから撮る。
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+      try {
+        thumb = await captureCollageShareImage(frame, {
+          origin: shareOrigin(),
+          boardColor: deriveCaptureBoardColor(),
+          fit: 'cover',
+          // 帯の幅（画面幅ではない）を渡す — 切り出す帯が原寸 1200px の raster になる。
+          scale: mobileCaptureScale(band.width),
+        })
+      } finally {
+        setCapturing(false)
+      }
+    }
+    setCapturedImageUrl(thumb)
+
+    const res = await createHostedShare({
+      buildShare: buildArrangeShare,
+      thumb: thumb ?? undefined,
+      createShare,
+      origin: shareOrigin(),
+      warm: (u: string): void => { void fetch(u).catch((): void => {}) },
+    })
+    if (res.ok) {
+      setHostedShareUrl(res.url)
+      setShareCreateState('idle')
+    } else {
+      setShareCreateState('error')
+    }
+  }, [
+    selectedIds, lightboxNavItems, customWidths, cardWidthPx,
+    viewport.w, viewport.h, buildArrangeShare, deriveCaptureBoardColor,
+  ])
+
   // Ready-state COPY LINK copies the already-hosted url.
   const handleShareCopyLink = useCallback(async (): Promise<boolean> => {
     if (!hostedShareUrl) return false
@@ -2900,19 +2972,20 @@ export function BoardRoot() {
           />
         )}
       </div>
-      {/* Mobile bottom navigation (A2b) — hosts FILTER / TAG / THEME / MOTION /
-          SETTINGS since the desktop top chrome is hidden on mobile. Hidden while
-          the Lightbox is open (the lightbox surface owns the screen), during
-          onboarding (the tutorial drives its own chrome), and during TAG MODE
-          (the mobile tag bar takes the floor in its place — s182). */}
-      {isMobile && !lightboxItemId && !showOnboarding && !tagMode && (
+      {/* Mobile bottom navigation (A2b) — hosts TAG / THEME / SHARE / CORNERS /
+          MORE since the desktop top chrome is hidden on mobile (MOTION moved into
+          MORE, FILTER into the top-right header — N-49). Hidden while the Lightbox
+          is open (the lightbox surface owns the screen), during onboarding (the
+          tutorial drives its own chrome), during TAG MODE (the mobile tag bar
+          takes the floor in its place — s182), and during any SHARE stage (the
+          select bar / result sheet own the bottom). */}
+      {isMobile && !lightboxItemId && !showOnboarding && !tagMode && sharePhase === null && (
         <BoardMobileNav
           onTag={handleEnterTagMode}
           tagActive={tagMode}
           onThemes={() => setActiveDrawer(activeDrawer === 'themes' ? null : 'themes')}
           themesActive={activeDrawer === 'themes'}
-          motionOn={motionEnabled}
-          onToggleMotion={handleToggleMotion}
+          onShare={handleEnterSelectMode}
           cornersRounded={roundedCorners}
           onToggleCorners={handleToggleRoundedCorners}
           onSettings={() => setActiveDrawer(activeDrawer === 'settings' ? null : 'settings')}
@@ -2922,10 +2995,10 @@ export function BoardRoot() {
       {/* Mobile/tablet smart "+" save entry (s183) — touch-only via
           useIsTouchDevice (pointer: coarse), independent of the width-based
           isMobile layout gate above so tablets in landscape still get it.
-          Hidden under the same conditions as the bottom nav, plus during
-          SHARE arrange (the floating + would collide with the collage
-          canvas). */}
-      {isTouchDevice && !lightboxItemId && !showOnboarding && !tagMode && sharePhase !== 'arrange' && (
+          Hidden under the same conditions as the bottom nav, plus during any
+          SHARE stage (select or arrange — the floating + would collide with
+          the select bar / collage canvas). */}
+      {isTouchDevice && !lightboxItemId && !showOnboarding && !tagMode && sharePhase === null && (
         <MobileSaveButton
           themeId={themeId}
           onSave={(url): void => { void mobileSaveUrl(url) }}
@@ -2989,6 +3062,7 @@ export function BoardRoot() {
                 customWidthCount={customWidthCount}
                 onResetCardSizes={() => { void handleResetCardSizes() }}
                 onSortNewestFirst={() => { void handleSortNewestFirst() }}
+                motion={isMobile ? { enabled: motionEnabled, onToggle: handleToggleMotion } : undefined}
               />
               <TagButton
                 onClick={(): void => {
@@ -3465,11 +3539,21 @@ export function BoardRoot() {
           onCancelNewTag={handleCancelNewTag}
         />
       )}
-      {sharePhase === 'select' && (
+      {sharePhase === 'select' && !isMobile && (
         <ShareSelectBar
           count={selectedIds.size}
           onSelectAll={handleSelectAll}
           onShare={handleEnterArrange}
+          onCancel={handleExitShareMode}
+        />
+      )}
+      {/* Phones skip the arrange stage entirely: CREATE arranges into the
+          capture band, shoots it, and mints the link in one tap (N-49). */}
+      {sharePhase === 'select' && isMobile && (
+        <MobileShareSelectBar
+          count={selectedIds.size}
+          onSelectAll={handleSelectAll}
+          onCreate={(): void => { void handleMobileCreateShare() }}
           onCancel={handleExitShareMode}
         />
       )}
@@ -3497,17 +3581,32 @@ export function BoardRoot() {
           {/* Operation bar — hidden from the SHARE capture (data-no-capture) so it
               never appears baked into the shared image, but stays on screen. */}
           <div data-no-capture>
-            <ShareToast
-              count={selectedIds.size}
-              createState={shareCreateState}
-              onCreate={(): void => { void handleCreateHostedShare() }}
-              shareUrl={hostedShareUrl}
-              onCopyLink={handleShareCopyLink}
-              onPostToX={handlePostToX}
-              onSaveImage={capturedImageUrl ? handleSaveShareImage : undefined}
-              onReselect={handleShareReselect}
-              onDone={handleExitShareMode}
-            />
+            {isMobile ? (
+              // While 'creating' nothing renders here: ShareCreatingIndicator
+              // portals to document.body and covers the forming collage.
+              (hostedShareUrl !== null || shareCreateState === 'error') && (
+                <MobileShareResult
+                  imageUrl={capturedImageUrl}
+                  shareUrl={hostedShareUrl}
+                  createState={shareCreateState}
+                  onCopyLink={handleShareCopyLink}
+                  onRetry={(): void => { void handleMobileCreateShare() }}
+                  onDone={handleExitShareMode}
+                />
+              )
+            ) : (
+              <ShareToast
+                count={selectedIds.size}
+                createState={shareCreateState}
+                onCreate={(): void => { void handleCreateHostedShare() }}
+                shareUrl={hostedShareUrl}
+                onCopyLink={handleShareCopyLink}
+                onPostToX={handlePostToX}
+                onSaveImage={capturedImageUrl ? handleSaveShareImage : undefined}
+                onReselect={handleShareReselect}
+                onDone={handleExitShareMode}
+              />
+            )}
           </div>
         </>
       )}
