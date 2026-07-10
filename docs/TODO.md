@@ -21,6 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 185 — ★N-49 スマホから SHARE できるようにした・本番反映／ミッションの根幹が開通)
+
+**サブエージェント駆動9タスク＋各レビュー＋opus 全ブランチレビュー（READY TO MERGE・Critical/Important ゼロ）**。tsc0 / vitest **2246**（+31）/ クリーンビルド / `merge --no-ff b9c43511` / `allmarks.app` デプロイ済。詳細は上の N-49 と [spec](superpowers/specs/2026-07-10-mobile-share-bottom-nav-design.md)。
+
+- **ボトムナビ再設計**＝`TAG / THEME / SHARE / CORNERS / MORE`（MOTION は MORE パネルへ）。スマホは**選ぶ→CREATE の2手**で共有リンクと 1200×630 の画像ができる。
+- **黒帯を消した方法が肝**＝画面外にレプリカを組まず、**画面に内接する中央の 1.91:1 の帯**に自動配置して `.outerFrame` を `fit:'cover'` で撮る。`computeCoverRect` は中央を切るので帯と一致する。背景・パターン・カードは全部本物＝**盤面と共有リンクが食い違う余地がない**。
+- **レビューが設計の穴を2つ潰した**: ①横長画面で帯≠切り出し ②**`fit:'cover'` を誰も固定していなかった**（`contain` に戻しても全テスト緑だった）→ 黒帯検出テストを追加。
+- **★e2e の実態が判明（N-53 を書き換え）**: 「board-b0 の6本」ではなく **master 単体で 58本中 30本が落ちる**（本ブランチと同数＝新規混入ゼロを A/B 実測）。`Test timeout` 20件・`VersionError` 13件。**回帰検出網が半分死んでいる**。
+- **★実機確認の残**: ①選択モードの指スクロール ②`SHARE` の OS シートで X / Instagram / LINE が画像とリンクをどう拾うか ③画像の文字が読めるか ④タブレットの回転ノブ。
+- **★次**: N-54（グリッド交点が濃くなる）→ N-51 の残り（スマホに背景タイトル）→ N-50（タブレットの作法）。掃除として N-53。
+
 ### 直近の状態 (セッション 184 — ★スマホ/タブレットの致命傷を5件連続で出荷・全て本番反映)
 
 **N-46 実機OK（ユーザー確認済「完璧に直ってました」）。以降 N-47 / N-48 / N-51 / N-52 を同セッションで出荷**（各: tsc0 / vitest 2215 / e2e / `allmarks.app` デプロイ済）。掃除 N-45 も完了（フル e2e 19 passed）。
@@ -387,14 +398,15 @@
 - ~~**(N-47) 共有受け取り：タブレット（>640px の触り端末）でも同じスクロール不全**~~ ✅ **s184 完了・本番反映**（ユーザー承認「タブレットも指スクロールなので直して」）。判定を**幅ではなくポインタ**に変更＝`lockCardScroll={isMobile || isTouchDevice}`（既存 `lib/board/use-is-touch-device.ts`＝`(pointer: coarse)`、s183 の「+」ボタンと同じフック）。受け取り側のカードは並べ替えもリサイズもしないので `touch-action:none` に用は無い。副作用（承認済）＝タブレットでもテキストカードの内部スクロールは止まる。**実測**: Chromium は `hasTouch` だけで 1024px でも `(pointer: coarse)` を返すと確認 → e2e 1024×768 で `pan-y` を固定。
 
 - ~~**(N-48) ★共有受け取り：スマホ・タブレットに「取り込む」導線が無い**~~ ✅ **s184 完了・本番反映**（実機確認待ち）。**実測**（本番 `/s/LJ41eU`）: スマホ 390px は `.frameTopChrome` が `display:none` で **IMPORT が 0×0 ＝完全に不可視**、タブレットは 196×**27px**＝指の最小 32px も Apple の 44pt も下回る。**確立した規則＝「大きさは入力で決める。並べ方は幅で決める」**（Apple HIG 44pt / Material 48dp は入力基準、Google は `isTablet` 型のレイアウト分岐を明確に非推奨）。→ 触り端末（`isMobile || isTouchDevice`）に `ReceiverImportBar`（盤面の床に `position:absolute`・高さ 52px・`BoardMobileNav` と同素材・`BOARD_Z_INDEX.TOUCH_BOTTOM_BAR=150`）。上部の 27px IMPORT と **ScrollMeter（掴む部分 360×18px）は触り端末では描画しない**。押下は既存 `handleSave` のまま。**検証**: tsc0 / vitest 2207 / e2e 10本 / 本番実測（スマホ 366×52・タブレット 904×52・PC は 196×27＋メーター維持・エラー0）。[spec](superpowers/specs/2026-07-10-receiver-touch-import-bar-design.md)。
-- **(N-49) ★スマホ・タブレットから SHARE できない（s184 発見・ローンチ前・規模M・★次セッション最優先）** — 本体ボードも 640px 以下で `TopHeader` ごと `display:none`（[TopHeader.module.css:65](../components/board/TopHeader.module.css#L65)「TITLE / TUNE / POP OUT / SHARE are desktop-only for v1」）＝**スマホから共有リンクを作れない**。「コラージュを画像で SNS シェアさせてバイラルを起こす」というミッションの根幹。**ユーザー確定＝入口はボトムナビに置く。今のボトムナビ（TAG/THEME/MOTION/CORNERS/MORE）を整理して、押しやすい位置に SHARE を配置する**（＝ナビの再設計込み）。**調査済（s184）＝真のブロッカーは2つだけ**:
-  - **(a) 入口が無い**（SHARE ピルが消える／`BoardMobileNav` に SHARE タブ無し）→ `handleEnterSelectMode()` を呼ぶ入口を足すだけ。
-  - **(b) 回転ノブが指で触れない**（`CollageCanvas.module.css` で `.element:hover` まで `pointer-events:none`＝触りに hover は無い）。
-  - **既に指で動く**: カード選択（`handleSelectPointerDown` のタップ判定が `if (isMobile) return` より**先**に走る）／並べる段のドラッグ移動／リサイズ（掴めるが弧が hover 依存で**見えない**）／撮影・リンク作成・COPY・POST TO X。
-  - **要デザイン**: `ARRANGE_SAFE_INSET`（56/72/16）とデスクトップ前提の `m=48` がスマホで右に約32px はみ出す／縦長盤面の撮影は 1200×630 に対し左右に約454px ずつ黒帯／`ShareSelectBar`・`ShareToast` が 11px 文字の密な行。
-  - **未配線の資産**: `canWebShareFiles` / `dataUrlToFile`（s174 実装・テスト済、UI 未接続）＝ワンタップのネイティブ共有に使える。
-  - **最小 MVP**: 「並べる」を自由編集させず、既存 `fitSelectionToScreen` の自動配置のまま **選ぶ→CREATE**。失うもの＝回転と見える リサイズ、横長 OG（縦長のレターボックスになる）。
-  - **未検証（実機のみ）**: 選択モードの `setPointerCapture` と `touch-action:pan-y` が同居してスクロールが生きるか。
+- ~~**(N-49) ★スマホ・タブレットから SHARE できない**~~ ✅ **s185 完了・本番反映**（実機確認待ち）。[spec](superpowers/specs/2026-07-10-mobile-share-bottom-nav-design.md) / [plan](superpowers/plans/2026-07-10-mobile-share-bottom-nav.md)。サブエージェント駆動9タスク＋各レビュー＋opus 全ブランチレビュー **READY TO MERGE**（Critical/Important ゼロ）。tsc0 / vitest **2246** / クリーンビルド / e2e 新規5本（フルスイートでも緑）/ `merge --no-ff b9c43511` / `allmarks.app` デプロイ済。
+  - **ボトムナビ = `TAG / THEME / SHARE / CORNERS / MORE`**。MOTION は MORE パネル（`ExtensionEntry` の VIEW 行・**モバイル時のみ描画**＝デスクトップは 1 行も増えない）へ降格。SHARE は中央・`data-active` 無し（共有中はナビ自体が引っ込むので点く瞬間が無い）。
+  - **スマホに「並べる段」は無い**。CREATE が `sharePhase='arrange'` に**一瞬だけ**入り、選択カードを**画面に内接する中央の 1.91:1 の帯**に自動配置 → 2 フレーム待つ → `.outerFrame` を `fit:'cover'` で撮る → `computeCoverRect` が中央を切る＝**帯とぴったり一致**。**黒帯ゼロ・レプリカゼロ**（s169 の「レプリカ再構成は排除」を守る＝背景の二重管理を増やさない）。
+  - **新規純関数** `lib/share/mobile-band.ts`（`mobileCollageBandRect` / `mobileCaptureScale(bandWidth)`）。鮮明さは `dom-to-image` の `scale = 1200/帯幅`（`renderShareImage`・`capture-collage` に `scale?` を新設。**未指定なら `scale` キー自体が付かない**＝デスクトップ撮影はバイト同一）。
+  - **結果シート** `MobileShareResult`＝撮った 1200×630 を大きく見せ、`SHARE`（`navigator.share({files,url})`／files 不可なら url のみ／Web Share 無しなら非表示）・`COPY LINK`・`DONE`。`AbortError`（OS シートを閉じた）は**何も出さない**。撮影失敗でもリンクは作る。
+  - **回転ノブ**を `@media (hover: none)` で常時表示に。**先に `data-no-capture` を付けた**（付けずに開けると、タブレットの共有画像にノブが焼き付く）。
+  - **設計の穴を2つ、レビューで潰した**: ①初版の `mobileCollageBandRect` は帯の高さを画面に切り詰めており、横長画面で帯≠切り出しになった（帯を「内接する中央の 1.91:1 矩形」と定義し直して無条件成立に）②**`fit:'cover'` を誰も固定していなかった**（`'contain'` に戻しても全テストが緑だった）→ 画像の左右300pxを8px格子でサンプルして色数を数える**黒帯検出テスト**を追加。`contain` で確実に赤くなることを実装者とレビュアーが独立に確認。
+  - **★実機確認の残**: ①選択モードで指スクロールが生きるか（`setPointerCapture` × `touch-action:pan-y`）②`SHARE` の OS シートで X / Instagram / LINE が画像とリンクをどう拾うか ③出来た画像でカードの文字が読めるか（`scale` が効いているか）④低スペック端末で 1200×2597 の canvas を焼けるか ⑤タブレットの並べる段で回転ノブが掴めるか・共有画像にノブが写っていないか。
+- **(N-55) 撮影成功後もコラージュがシートの裏で触れる（s185 最終レビュー発見・非ブロック・実害なし）** — 成功後も `sharePhase` は `'arrange'` のままなので `CollageCanvas` が生きており、帯のカードを指で動かせてしまう（回転ノブも `hover:none` で見えている）。画像は既に撮り終えて R2 に載っているので**共有内容は 1mm も変わらない**が、「動かせるのに何も起きない」のは小さな UX の傷。直すなら成功時に当たり判定を殺す。
 - **(N-50) タブレットの作法（s184 発見・ローンチ前）** — **このアプリにタブレット用レイアウトは存在しない**。分岐は `useIsMobile()` の 640px だけで、**744〜1180px は 1489px の PC と同一描画**。結果、iPad では SHARE 60×27 / TITLE 60×27 / TUNE 53×28 / POP OUT 74×27 / MANAGE TAGS 103×27 / メーター 18px と、**主要操作が全て指の最小寸法未満**。合格は「＋」保存ボタン 56×56 のみ。規則は N-48 で確立済（大きさ＝入力／並べ方＝幅）。適用先の棚卸しが要る。
 - ~~**(N-51) スマホでボード背景が見えず、テーマの意味が薄い**~~ ✅ **s184 完了・本番反映**（ユーザーがモック5案から **(c) 3列のまま左右16px・すき間14px** を選択）。`MOBILE_LAYOUT` に `SIDE_MARGIN_PX: 16` を追加＋`GAP_PX: 6→14`。`BoardRoot` の `layoutSidePaddingPx`（モバイルのみ16／PCは `BOARD_INNER.SIDE_PADDING_PX`=9）で幅とオフセットを一本化。受け取り画面の `.scroller` も 640px 以下で左右16px。390px でカード幅は 120→110px、列数は3のまま。PC は不変。
   - **★残り（ユーザー判断）**: **スマホのボードでは背景ワードマーク（タイトル）はいまも描画されない**（`!isMobile` ゲート）。今回で見えるようになったのは**パターンと盤面色だけ**。タイトルも出すなら別対応（モック案 (e) 相当）。
@@ -403,7 +415,13 @@
   - **候補の直し方**: 本物盤面も同じ SVG data-URI を背景に使う（`background-image: url(data:...)` ＋ `background-size`）。**副次効果**＝`theme-customization.ts:160-163` が言う「dom-to-image は重ねた CSS グラデーションの片方向を落とす」問題も同時に解消し、SHARE スクショの忠実度が上がる。`patternSvgDataUri` は毎回 `encodeURIComponent` するので `useMemo` 必須。パララックス（`background-position-y`）と `background-size` の互換を要確認。
   - **必ず受け取り画面でも確認**（memory `feedback_board_change_check_receiver`）。
 - **(N-51 の残り) ★スマホのボードに背景タイトル（ワードマーク）を出す（s184 ユーザー確定）** — 現状 `BoardBackgroundTypography` は `!isMobile` ゲートで**スマホでは描画されない**。受け取り画面では出ている。**ユーザーの理由**＝「ボトムナビの THEME からカスタマイズできるように見えるのに、実際は見えないのはおかしい」。s184 で左右16px・すき間14px の余白ができたので出す余地はある。TITLE 色は既に `ThemeCustomization.titleColor` で可変。
-- **(N-53) e2e `board-b0.spec.ts` が既存腐り（s184 発見・非ブロック）** — 7本中 6本が `VersionError: The requested version (9) is less than the existing version (16)` で落ちる。原因＝`seedBoard` が `/board` を開いた**後**に `indexedDB.open(dbName, 9)` する（`[data-theme-id]` は React マウント前のプリペイント script が付けるので待機になっていない）。アプリが先に v16 で開き終えると失敗、開発サーバーが冷えていると偶然通る**競合状態**。**シードを無版数 open に直すと 6→2 件に減るが、残る2件**（「empty-area drag scrolls like wheel」／「theme switch ...」）は旧シードが **v9→v16 の移行処理による行の正規化に依存**していた可能性がある（無版数 open だと移行が走らない）。**要腰を据えた修正**。N-45 と同種の掃除。※s184 の N-51 変更とは**無関係**（変更前のコードでも同じく落ちることを A/B で確認済）。
+- **(N-53) ★フル e2e が半分落ちる（s184 発見／s185 で実態が判明・想定よりずっと大きい・非ブロック）** — s184 は「`board-b0.spec.ts` の7本中6本」と書いたが、**s185 のフル実行で 58本中 30本が落ちると判明**。しかも **master 単体で 30本落ちる**（s185 ブランチと同数＝新規混入ゼロ、A/B 実測済）。
+  - **失敗の内訳**（s185 実測）: `Test timeout of 30000ms exceeded` 20件／`VersionError: The requested version (9) is less than the existing version (16)` 13件／`toHaveAttribute` 8件／`element(s) not found` 2件。
+  - **落ちる20ファイル**: `board-b0` `board-b-embeds` `board-mixed-media` `lightbox-video-flip-regression` `board-share-polish` `board-i-07-multi-image` `save-iframe` `bookmarklet-save` `board-theme` `triage-flow` `mobile-save` `lightbox-flow` `display-mode` `destefanis-save-flow` `board-b0-perf` `b-11-debug-open-scale` `board-backfill` `board-b-11-source-hide` `tune-corners-and-snap` `board-lightbox-nav`。
+  - **VersionError の原因**＝`seedBoard` が `/board` を開いた**後**に `indexedDB.open(dbName, 9)` する（`[data-theme-id]` は React マウント前のプリペイント script が付けるので待機になっていない）。アプリが先に v16 で開き終えると失敗、開発サーバーが冷えていると偶然通る**競合状態**。無版数 open に直すと減るが、一部は v9→v16 移行による行の正規化に依存していた可能性がある。
+  - **`Test timeout` 20件は未診断**。VersionError とは別の病気かもしれない（要調査）。
+  - **1本 flaky**（連続実行で 29↔30 failed が揺れる）。
+  - **腰を据えた掃除が要る**。単体 `vitest`（2246 全緑）と `tsc`(0) は健全なので、リリースの直接ブロッカーではない。ただし**この状態では「e2e が緑」と誰も名乗れない**＝回帰検出網が半分機能していない。
 - **(N-45) 掃除：古い SHARE e2e 3本が消えた testid を参照（s183 発見・非ブロック）** — `tests/e2e/{share-composer-edit,share-fullscreen,share-sender}.spec.ts` が s165 の SHARE 作り直しで消えた `[data-testid="share-composer"]` を参照＝**フル e2e 実行時に赤**（このブランチ由来でない既存腐り）。削除 or 現行 SHARE フローに書き直し。ついでに `lib/board/fill-snap.ts` の旧 `fillCandidates`/`snapToFill` は N-27 で本番未使用化＝テストのみ生存（再利用可・任意で prune）。
 
 ### session 161 で報告（Mac 実機・友人フィードバック ＋ 雑多改善 — ★ローンチ前クロスプラットフォーム）
