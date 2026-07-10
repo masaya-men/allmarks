@@ -4,7 +4,7 @@ import type { ReactElement } from 'react'
 import styles from './BoardMobileNav.module.css'
 
 /** Fixed bottom navigation for the mobile board (≤640px). Hosts TAG / THEME /
- *  MOTION / CORNERS / MORE. FILTER lives in the top-right header (opposite the
+ *  SHARE / CORNERS / MORE. FILTER lives in the top-right header (opposite the
  *  AllMarks wordmark) — not here — so the two chrome anchors bracket the top of
  *  the board. Wired to the same handlers the desktop chrome uses. Rendered only
  *  when `useIsMobile()` is true, so desktop is untouched. */
@@ -13,8 +13,9 @@ export type BoardMobileNavProps = {
   readonly tagActive: boolean
   readonly onThemes: () => void
   readonly themesActive: boolean
-  readonly motionOn: boolean
-  readonly onToggleMotion: () => void
+  /** Enter SHARE select mode (BoardRoot's handleEnterSelectMode). No active
+   *  state: the nav unmounts while a share stage is running. */
+  readonly onShare: () => void
   /** Card corner style — true = rounded, false = square (TUNE → CORNERS on
    *  desktop). Exposed here so mobile can toggle it too (no TUNE drawer). */
   readonly cornersRounded: boolean
@@ -44,10 +45,14 @@ function ThemeIcon({ className }: IconProps): ReactElement {
     </svg>
   )
 }
-function MotionIcon({ className }: IconProps): ReactElement {
+/** SHARE = the universal export glyph (a tray with an arrow leaving it). Same
+ *  22px / 1.6-stroke line language as the other tabs; no filled SaaS icon. */
+function ShareIcon({ className }: IconProps): ReactElement {
   return (
     <svg className={className} viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M7 4.5l10 6.5-10 6.5z" />
+      <path d="M11 14V3.5" />
+      <path d="M7.5 7L11 3.5 14.5 7" />
+      <path d="M5 11.5v6a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5v-6" />
     </svg>
   )
 }
@@ -77,8 +82,7 @@ export function BoardMobileNav({
   tagActive,
   onThemes,
   themesActive,
-  motionOn,
-  onToggleMotion,
+  onShare,
   cornersRounded,
   onToggleCorners,
   onSettings,
@@ -109,13 +113,11 @@ export function BoardMobileNav({
       <button
         type="button"
         className={styles.tab}
-        data-active={motionOn ? 'true' : 'false'}
-        aria-pressed={motionOn}
-        onClick={onToggleMotion}
-        data-testid="mobile-nav-motion"
+        onClick={onShare}
+        data-testid="mobile-nav-share"
       >
-        <MotionIcon className={styles.icon} />
-        <span className={styles.tabLabel}>MOTION</span>
+        <ShareIcon className={styles.icon} />
+        <span className={styles.tabLabel}>SHARE</span>
       </button>
       <button
         type="button"
