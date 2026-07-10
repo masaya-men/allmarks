@@ -96,18 +96,22 @@ sy            = (2597 - 630) / 2 = 983.5       → CSS px に戻すと 319.6 = (
 /** 共有 OG 画像の縦横比（1200×630）。 */
 export const SHARE_OG_ASPECT = { WIDTH: 1200, HEIGHT: 630 } as const
 
-/** スマホの自動配置矩形＝ .outerFrame の縦中央にある 1.91:1 の帯。
+/** スマホの自動配置矩形＝ .outerFrame に内接する、中央の 1.91:1 の矩形。
+ *  これは cover 切り出しが残す矩形そのものなので、両者は**無条件に一致する**。
  *  座標系は .outerFrame（= CollageCanvas の .root が inset:0 で張る空間）。 */
 export function mobileCollageBandRect(frameW: number, frameH: number): CollageFitRect
 
 /** 帯の幅がちょうど 1200px の raster になる撮影倍率。1〜4 に丸める。 */
-export function mobileCaptureScale(frameW: number): number
+export function mobileCaptureScale(bandWidth: number): number
 ```
 
-- `mobileCollageBandRect(390, 844)` → `{ x: 0, y: 319.625, width: 390, height: 204.75 }`
-- `frameH < bandH` の退化ケース（極端な横向き）では `y = 0`、`height = min(bandH, frameH)`
+- 縦長（すべてのスマホ）: 幅いっぱい・上下を削る。`mobileCollageBandRect(390, 844)` → `{ x: 0, y: 319.625, width: 390, height: 204.75 }`
+- 横長で背が低い: 高さいっぱい・左右を削る。`mobileCollageBandRect(844, 390)` → `{ x: 50.571…, y: 0, width: 742.857…, height: 390 }`
+- 分岐は `frameW * 630 > frameH * 1200` の**たすき掛け**で判定する（`computeCoverRect` と同じ流儀・浮動小数誤差を避ける）
 - `frameW <= 0` は `{ x:0, y:0, width:0, height:0 }`
-- `mobileCaptureScale(390)` → `3.0769…`、`mobileCaptureScale(1489)` → `1`（1 未満に落とさない）、`mobileCaptureScale(300)` → `4`（上限）
+- `mobileCaptureScale` は**帯の幅**を受け取る（画面幅ではない）。`mobileCaptureScale(390)` → `3.0769…`、`mobileCaptureScale(1489)` → `1`（1 未満に落とさない）、`mobileCaptureScale(300)` → `4`（上限）
+
+> **初版の欠陥（Task 1 のレビューで発覚・修正済み）**: 当初は「帯の高さを画面の高さに切り詰める」設計だった。その分岐では cover 切り出しが左右を余計に削り、**帯と切り出しが食い違う**。スマホ判定（幅 ≤640px）では到達しないが、コメントは無条件の一致を謳っていた。帯を「内接する中央の 1.91:1 矩形」と定義し直すと、不変条件が無条件に成り立つ。
 
 ### 3.4 撮影の配線
 

@@ -1313,12 +1313,15 @@ import { mobileCollageBandRect, mobileCaptureScale } from '@/lib/share/mobile-ba
     const frameW = box?.width ?? viewport.w
     const frameH = box?.height ?? viewport.h
 
+    // 帯 = 画面に内接する中央の 1.91:1 矩形 = cover 切り出しが残す矩形そのもの。
+    const band = mobileCollageBandRect(frameW, frameH)
+
     const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
     const cards = chosen.map((it) => {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    setCollagePositions(fitSelectionToScreen(cards, mobileCollageBandRect(frameW, frameH)))
+    setCollagePositions(fitSelectionToScreen(cards, band))
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setCollageRotations({})
     setShareTitle(null)
@@ -1337,7 +1340,8 @@ import { mobileCollageBandRect, mobileCaptureScale } from '@/lib/share/mobile-ba
           origin: shareOrigin(),
           boardColor: deriveCaptureBoardColor(),
           fit: 'cover',
-          scale: mobileCaptureScale(frameW),
+          // 帯の幅（画面幅ではない）を渡す — 切り出す帯が原寸 1200px の raster になる。
+          scale: mobileCaptureScale(band.width),
         })
       } finally {
         setCapturing(false)
