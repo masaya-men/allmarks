@@ -226,6 +226,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
             <div
               className={styles.rotateHandle}
               data-testid={`collage-rotate-${id}`}
+              data-no-capture
               onPointerDown={(e): void => handleRotatePointerDown(e, id)}
             >
               {/* Knob sits at the FAR END of the stem (top), the stem drops from

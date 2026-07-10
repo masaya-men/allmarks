@@ -37,10 +37,10 @@
    handles absolutely within the .element box. */
 
 /* Rotation handle — Canva/Figma-style orbit knob on a short stem above the
-   card's top-center. Hover-revealed (opacity + pointer-events gated on
-   .element:hover) so it never sits in the screenshot at rest and its invisible
-   hit-zone can't steal clicks from a card behind. Rotates WITH the card (it's a
-   child of the rotated .element). Hit target ≥32px (feedback_large_pointer). */
+   card's top-center. On desktop, hover-revealed (opacity + pointer-events gated
+   on .element:hover); on touch, always visible at rest (no hover). Safe from
+   SHARE screenshot by data-no-capture. Rotates WITH the card (it's a child of
+   the rotated .element). Hit target ≥32px (feedback_large_pointer). */
 .rotateHandle {
   position: absolute;
   left: 50%;
@@ -64,6 +64,15 @@
 .element:hover .rotateHandle {
   opacity: 1;
   pointer-events: auto;
+}
+/* Touch surfaces have no hover, so the knob would be unreachable forever
+   (N-49 blocker b). Show it at rest there. It carries data-no-capture, so the
+   SHARE screenshot still never sees it. */
+@media (hover: none) {
+  .rotateHandle {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 .rotateHandle:active {
   cursor: grabbing;
