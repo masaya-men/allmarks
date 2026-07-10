@@ -287,6 +287,31 @@ test.describe('② shared receiver layout (mobile 3-col + desktop meter position
     expect(lefts[1]).toBeLessThan(lefts[2])
   })
 
+  // CardsLayer is position:absolute against .scroller's PADDING box, so it
+  // ignores the padding that `containerWidth` subtracts — the grid went flush
+  // left with the whole margin dumped on the right (N-51 regression).
+  test('mobile (390×844): the grid is centred, not flush left', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await gotoMockedShare(page, 'abc131', buildMockShareData(6))
+
+    const cards = page.locator('[data-bookmark-id]')
+    // Poll both edges together, and on geometry rather than the isMobile flip:
+    // the ResizeObserver that feeds containerWidth lands a frame after the
+    // attribute does, so a half-settled grid reads left=16 with a stale right.
+    await expect
+      .poll(
+        async () =>
+          cards.evaluateAll((els) => {
+            const rects = els.map((el) => el.getBoundingClientRect())
+            const left = Math.round(Math.min(...rects.map((r) => r.left)))
+            const right = Math.round(390 - Math.max(...rects.map((r) => r.right)))
+            return `${left}/${right}`
+          }),
+        { timeout: 5_000 },
+      )
+      .toBe('16/16')
+  })
+
   test('desktop (1489×679): ScrollMeter sits inside frameBottomChrome (frame bottom band)', async ({ page }) => {
     await page.setViewportSize({ width: 1489, height: 679 })
     await gotoMockedShare(page, 'abc124', buildMockShareData(6))

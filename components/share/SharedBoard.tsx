@@ -545,6 +545,18 @@ export function SharedBoard(): ReactElement {
             {/* Flow spacer reserves the masonry's total height so the absolute
                 CardsLayer becomes scrollable (it has no intrinsic height). */}
             <div aria-hidden style={{ height: `${spacerHeight}px` }} />
+            {/* CardsLayer's root is position:absolute, and its containing block is
+                .scroller's PADDING box — so it ignores .scroller's padding while
+                `containerWidth` (contentRect) subtracts it. Left flush, margin all
+                on the right. This wrapper re-applies the phone's side margin so the
+                grid sits centred inside it (N-51). Desktop keeps its historic 0. */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: isMobile ? `${MOBILE_LAYOUT.SIDE_MARGIN_PX}px` : 0,
+              }}
+            >
             <CardsLayer
               roundedCorners={roundedCorners}
               items={items}
@@ -585,6 +597,7 @@ export function SharedBoard(): ReactElement {
                 onRemove: onRemoveCard,
               }}
             />
+            </div>
           </div>
         </div>
 
