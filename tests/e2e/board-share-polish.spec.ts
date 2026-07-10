@@ -345,3 +345,31 @@ test.describe('② shared receiver layout (mobile 3-col + desktop meter position
     expect(touchAction).toBe('none')
   })
 })
+
+// N-47: a tablet clears the 640px mobile breakpoint, so the width gate alone
+// leaves its cards at touch-action:none and the finger cannot scroll. The
+// signal is the pointer, not the width. `hasTouch` makes Chromium report
+// `(pointer: coarse)` even at 1024px — verified before writing this test.
+test.describe('② shared receiver on a tablet (wide, coarse pointer)', () => {
+  test.use({ hasTouch: true, viewport: { width: 1024, height: 768 } })
+
+  test('cards release the vertical swipe even above the mobile breakpoint', async ({ page }) => {
+    expect(await page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true)
+
+    await gotoMockedShare(page, 'abc127', buildMockShareData(6))
+
+    const cards = page.locator('[data-bookmark-id]')
+    // useIsTouchDevice starts false (SSR-safe) and flips post-mount.
+    await expect
+      .poll(async () => cards.first().getAttribute('data-lock-card-scroll'), { timeout: 5_000 })
+      .toBe('true')
+
+    const touchActions = await cards.evaluateAll((els) =>
+      els.map((el) => {
+        const node = el.querySelector('[class*="cardNode"]')
+        return node ? getComputedStyle(node).touchAction : 'MISSING'
+      }),
+    )
+    expect(touchActions).toEqual(Array(6).fill('pan-y'))
+  })
+})

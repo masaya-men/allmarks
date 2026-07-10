@@ -78,17 +78,22 @@ vi.mock('@/lib/share/api-client', () => ({
   fetchShare: vi.fn(),
 }))
 
-// The one knob these tests turn.
+// The two knobs these tests turn.
 vi.mock('@/lib/board/use-is-mobile', () => ({
   useIsMobile: vi.fn(),
+}))
+vi.mock('@/lib/board/use-is-touch-device', () => ({
+  useIsTouchDevice: vi.fn(),
 }))
 
 import { SharedBoard } from './SharedBoard'
 import { fetchShare } from '@/lib/share/api-client'
 import { useIsMobile } from '@/lib/board/use-is-mobile'
+import { useIsTouchDevice } from '@/lib/board/use-is-touch-device'
 
 const mockedFetchShare = vi.mocked(fetchShare)
 const mockedUseIsMobile = vi.mocked(useIsMobile)
+const mockedUseIsTouchDevice = vi.mocked(useIsTouchDevice)
 
 const SHARE_DATA = {
   v: SHARE_SCHEMA_VERSION_V2,
@@ -126,8 +131,19 @@ describe('SharedBoard → CardsLayer mobile scroll wiring (N-46)', () => {
     vi.clearAllMocks()
   })
 
-  it('hands vertical scrolling to the browser on mobile by locking card scroll', async () => {
+  it('hands vertical scrolling to the browser on a phone by locking card scroll', async () => {
     mockedUseIsMobile.mockReturnValue(true)
+    mockedUseIsTouchDevice.mockReturnValue(true)
+    await renderReady()
+
+    expect(lastProps().lockCardScroll).toBe(true)
+  })
+
+  // A tablet is wider than the 640px mobile breakpoint but still scrolls with a
+  // finger, so the width gate alone leaves its cards at touch-action: none.
+  it('locks card scroll on a wide touch device (tablet) despite the width gate', async () => {
+    mockedUseIsMobile.mockReturnValue(false)
+    mockedUseIsTouchDevice.mockReturnValue(true)
     await renderReady()
 
     expect(lastProps().lockCardScroll).toBe(true)
@@ -135,14 +151,16 @@ describe('SharedBoard → CardsLayer mobile scroll wiring (N-46)', () => {
 
   it('never passes isMobile, which would strip the receiver × and tag pills', async () => {
     mockedUseIsMobile.mockReturnValue(true)
+    mockedUseIsTouchDevice.mockReturnValue(true)
     await renderReady()
 
     // Passing isMobile would force CardsLayer's hoverActive permanently false.
     expect(lastProps().isMobile).toBeUndefined()
   })
 
-  it('leaves desktop cards untouched so drag gestures keep touch-action: none', async () => {
+  it('leaves mouse desktops untouched so the reorder drag keeps touch-action: none', async () => {
     mockedUseIsMobile.mockReturnValue(false)
+    mockedUseIsTouchDevice.mockReturnValue(false)
     await renderReady()
 
     expect(lastProps().lockCardScroll).toBe(false)

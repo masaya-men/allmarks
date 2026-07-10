@@ -19,6 +19,7 @@ import { shareCardToBoardItem } from '@/lib/share/share-card-to-board-item'
 import { computeSkylineLayout, type SkylineCard, type SkylineResult } from '@/lib/board/skyline-layout'
 import { BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_INNER, BOARD_Z_INDEX, MOBILE_LAYOUT } from '@/lib/board/constants'
 import { useIsMobile } from '@/lib/board/use-is-mobile'
+import { useIsTouchDevice } from '@/lib/board/use-is-touch-device'
 import { DEFAULT_THEME_ID, getThemeMeta } from '@/lib/board/theme-registry'
 import { resolveThemeCustomization, patternSvgDataUri } from '@/lib/board/theme-customization'
 import themeStyles from '@/components/board/themes.module.css'
@@ -272,6 +273,11 @@ export function SharedBoard(): ReactElement {
   // untouched (still the sender's arrangement) — only the values fed to the
   // skyline layout and CardsLayer below switch on mobile.
   const isMobile = useIsMobile()
+  // A tablet clears the 640px mobile breakpoint but still scrolls with a
+  // finger, so the layout gate above is the wrong signal for touch-action.
+  // The receiver's cards never reorder or resize, so nothing here needs to
+  // hold on to the pointer (N-47).
+  const isTouchDevice = useIsTouchDevice()
   const mobileCardWidth = useMemo<number>(() => {
     const cols = MOBILE_LAYOUT.COLUMNS
     return Math.max(1, (containerWidth - (cols - 1) * MOBILE_LAYOUT.GAP_PX) / cols)
@@ -562,8 +568,8 @@ export function SharedBoard(): ReactElement {
               customWidths={layoutCustomWidths}
               // NOT isMobile: that would key off hoverActive and strip the ×
               // and the sender's tag pills. This only relaxes the cards'
-              // touch-action so .scroller owns the vertical swipe (N-46).
-              lockCardScroll={isMobile}
+              // touch-action so .scroller owns the vertical swipe (N-46/N-47).
+              lockCardScroll={isMobile || isTouchDevice}
               themeId={themeId}
               motionEnabled={motionEnabled}
               matchedBookmarkIds={null}
