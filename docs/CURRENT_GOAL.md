@@ -1,31 +1,38 @@
-# 次セッションのゴール — 実機確認（②④中心）→ ⑤Pinterest(N-28) or 公開
+# 次セッションのゴール — N-49（スマホから SHARE できない）を設計して出荷する
 
-## まず最初に（ユーザーへの確認）
-- **s183 後半で PC盤面＋共有の磨き4点を出荷・本番反映済み**（実機確認待ち）:
-  - **① テキストカードのフェード**：PC の醜いスクロールバー→両端フェード＋バー非表示（端まで行くとその側のフェードが解ける）
-  - **② 共有受け取り画面**：スマホで3列に（1列化を解消）＋PCのメーターを今の位置に
-  - **③ SHARE「作成中」表示**：撮影中に消えていた進捗を body に出して完了までずっと表示
-  - **④ TUNEスナップ**：中央寄せ無し・左詰め維持・**今の列数のまま**左右マージン一致値に吸着（5列→4列に飛ばない）＋範囲で緑マークが光る
-- **実機で確認してほしいこと**（Playwright 不可・実機のみ）:
-  1. **②** スマホで共有リンク（`/s/...`）を開く→3列で並ぶ・カードのタップで開く/×で消える・メーターの位置
-  2. **④** TUNE で W/G を動かす→離すと今の列数のまま左右が揃う（列数が変わらない）・範囲に入ると緑マークが光る
-  3. **①** テキストカードのスクロールが両端フェードで自然か
-  4. **③** 100枚シェアで CREATE→「CREATING YOUR LINK…」がずっと見えるか
-- 束B（スマホ保存）も実機OK済み。**束A＋束B＝スマホで閲覧＋保存が揃った＝公開日宣言できる状態**。
+## まず最初に（ユーザーへの確認 = s184 で出荷した5件の実機チェック）
+
+すべて `allmarks.app` に反映済み。**スマホ実機**で見てほしいのは3点：
+
+1. **(N-48) 受け取り画面の下部「IMPORT n TO YOUR BOARD」バー** — 共有リンクをスマホ／タブレットで開く → 画面下端に幅いっぱいの緑ボタン（高さ52px）。押すと今までどおり取り込み → ボードへ。**上部の細い IMPORT と、スクロールメーターは触り端末では消えている**のが正。
+   - テスト用リンク（100枚・約30日で失効）: `https://allmarks.app/s/LJ41eU` ※プライベートウィンドウで開くこと（IMPORT を押すと本当に100件入る）
+2. **(N-51) スマホのボード** — 3列のまま、左右に16px・カード間に14px の余白ができ、**テーマのパターン／盤面色が覗く**。カード幅は 120→110px。
+   - **要判断**: スマホのボードでは**背景タイトル（ワードマーク）はまだ出していない**（別ゲート）。出しますか？
+3. **(N-52) THEMES → CUSTOMIZE** — グリッド系テーマ選択時、DENSITY の下に **THICKNESS** 行。右に動かすと線が太く（ドットは大きく）なる。**既定のままなら見た目は1px も変わらない**のが正。
+
+（N-46 スマホスクロール・N-47 タブレットスクロールは実機OK済）
 
 ## 次セッションでやること
-0. **★最優先＝(N-46) 共有受け取り画面のスマホ・スクロール不全（必須改善・s183 実機FB）**: 100件共有→スマホ（プライベートウィンドウ）で開くと**3列にはなったがスクロールがさくさく動かない**。受け取り側がスムーズに見られないのは致命的ストレス。**原因未断定・要 systematic-debugging**。本命候補＝s183(N-43)で受け取り側に**幅（3列）だけ**移植し、本物盤面の**モバイル用ネイティブスクロール**（s179/s180 の `.mobileScrollContainer` overflow-y:auto ＋ カードの `touch-action:none→pan-y` 緩和）を**移植していない**→指がカードに落ちて縦スクロールが殺される s180 と同じ症状が受け取り側で再発の疑い。別候補＝画像多数のデコードジャンク。**受け取り側にモバイルスクロール機構を移植→実機確認**（合成イベント不可＝実機のみ、`reference_native_scroll_touch_action_playwright`／`reference_share_receiver_reuses_board`／s179/s180 narrative）。
-1. **⑤ Pinterest 保存ボタン連動（N-28・優先度高・ユーザー確定）**: 拡張で Pinterest 自身の「保存」ボタン押下→AllMarks にも自動保存（X like / YouTube like と同じ per-site 方式）。**s49 で一度作って実機で動かず外した所**＝まず**実機で保存ボタンの実 DOM をダンプして本当の属性を特定**する1手から（note.js/vimeo.js が s49 でやった手法）。code は git history に生存。他の拡張修正（N-25 タグ0件・N-29 設定導線）と**束ねて1回でストア再審査**。
-   - ※Pinterest の URL を通常保存するのは今でも動く（Pin ページの OGP 完備）。未対応は「Pinterest のボタン連動」だけ。
-2. **or 公開関連**（束C 13言語・規約正文条項 / 公開素材 / 束E 総仕上げ）。
-3. **N-45 掃除**（任意）: 旧 SHARE e2e 3本が消えた `share-composer` testid を参照＝フル e2e で赤（本ブランチ由来でない既存腐り）。削除 or 書き直し。
 
-## s183 後半の実装の在り処（次セッションが触るとき用）
-- **④** 純関数 `lib/board/fill-snap.ts`（`currentColumnCount`/`fillValueAtColumns`/`snapToFillAtCurrentColumns`）＋`components/board/FaderColumn.tsx`（単一候補マーク＋`data-in-range` 光る）。
-- **①** `components/board/cards/PlaceholderCard.tsx`（`computeTagScrollEdge` 流用・`data-scroll-edge`）＋`.module.css`。
-- **②** `components/share/SharedBoard.tsx`（`useIsMobile`＋`MOBILE_LAYOUT` 幅導出・メーターを `frame.frameBottomChrome`）。
-- **③** `components/board/ShareCreatingIndicator.tsx`（body portal・`BOARD_Z_INDEX.SHARE_CREATING`）＋`BoardRoot.tsx`。
-- 正本 [spec](superpowers/specs/2026-07-09-board-share-polish-batch-design.md) / [plan](superpowers/plans/2026-07-09-board-share-polish-batch.md)。
+0. **★最優先＝(N-49) スマホ・タブレットから SHARE できない**（ローンチ前・規模M）。本体ボードは 640px 以下で `TopHeader` ごと `display:none`＝**スマホから共有リンクを作れない**。「コラージュを画像で SNS シェアさせてバイラルを起こす」というミッションの根幹。**s184 で調査済（TODO.md の N-49 参照）**:
+   - **真のブロッカーは2つだけ**: (a) 入口が無い（`handleEnterSelectMode()` を呼ぶ導線を足すだけ） (b) 回転ノブが `.element:hover` 依存で指では触れない。
+   - **既に指で動く**: カード選択・並べる段のドラッグ移動・撮影・リンク作成・COPY・POST TO X。
+   - **要デザイン**: `ARRANGE_SAFE_INSET`(56/72/16) と `m=48` がスマホで右に約32px はみ出す／縦長盤面の撮影は 1200×630 で左右に約454px の黒帯／`ShareSelectBar`・`ShareToast` が 11px 文字の密な行。
+   - **未配線の資産**: `canWebShareFiles` / `dataUrlToFile`（s174 実装・テスト済）＝ワンタップのネイティブ共有。
+   - **最小 MVP 候補**: 「並べる」を自由編集させず自動配置のまま **選ぶ→CREATE**。失うもの＝回転・見えるリサイズ・横長 OG。
+   - 進め方＝**brainstorming → spec → plan**（新規 UI なので承認を取ってから実装）。
+1. **(N-50) タブレットの作法**（ローンチ前）— 744〜1180px は PC と同一描画＝ SHARE 60×27 / TITLE 60×27 / TUNE 53×28 / POP OUT 74×27 / MANAGE TAGS 103×27 / メーター18px と、主要操作が全て指の最小寸法未満。合格は「＋」保存の 56×56 のみ。**規則は N-48 で確立済（大きさ＝入力／並べ方＝幅）**。適用先の棚卸しから。
+2. **(N-51 の残り)** スマホのボードに背景タイトルを出すか（ユーザー判断）。
+3. **(N-53) e2e `board-b0.spec.ts` の腐り**（非ブロック）— `seedBoard` が `/board` を開いた後に `indexedDB.open(db, 9)` する競合。詳細は TODO.md。
+4. **or 公開関連**（束C 13言語・規約正文条項 / 束D 公開素材 / 束E 総仕上げ）。
+
+## s184 の実装の在り処
+
+- **N-46/47**: `CardsLayer` の新 prop `lockCardScroll`（属性 `data-lock-card-scroll` だけを駆動・**`isMobile` は渡さない**＝`×`/タグピルが消えるため）。`SharedBoard` は `lockCardScroll={isMobile || isTouchDevice}`。
+- **N-48**: `components/share/ReceiverImportBar.tsx` + `.module.css`、`BOARD_Z_INDEX.TOUCH_BOTTOM_BAR=150`、`SharedBoard` の `isTouchSurface` が上部 IMPORT / ScrollMeter / バーの3箇所を分岐。[spec](superpowers/specs/2026-07-10-receiver-touch-import-bar-design.md)。
+- **N-51**: `MOBILE_LAYOUT.SIDE_MARGIN_PX=16` / `GAP_PX=14`、`BoardRoot` の `layoutSidePaddingPx`、`SharedBoard.module.css` の 640px ブロック。
+- **N-52**: `patternStroke` + `defaultPatternStroke` + `effectivePatternStroke`（`lib/board/theme-customization.ts`）、`themes.module.css` の `--pattern-stroke` / `--pattern-dot-r`、`ThemeCustomizeSection` の THICKNESS 行。
 
 ## 直近のリリース段取り（参考・`docs/private/2026-07-08-release-runway-plan.md`）
-束A スマホ閲覧（完了）→ 束B スマホ保存（完了・実機OK）→ **公開日宣言可** → 束C 13言語＋規約 → 束D 公開素材 → 束E 総仕上げ・公開。拡張の Pinterest(⑤/N-28) は並行の別枠。
+
+束A スマホ閲覧（完了）→ 束B スマホ保存（完了・実機OK）→ **公開日宣言可** → 束C 13言語＋規約 → 束D 公開素材 → 束E 総仕上げ・公開。拡張の Pinterest(N-28) は並行の別枠。**s184 で N-46〜N-52 のスマホ/タブレット致命傷を潰したので、残る大物は N-49（スマホ SHARE）と N-50（タブレット作法）。**
