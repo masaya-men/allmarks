@@ -172,6 +172,68 @@ test.describe('mobile SHARE — phone', () => {
     })
     expect(dims).toEqual({ w: 1200, h: 630, src: 'data:image/jpeg;base64' })
   })
+
+  // handleMobileCreateShare (BoardRoot.tsx) captures with `fit: 'cover'`. If that
+  // ever regresses to `fit: 'contain'`, a 390×844 portrait board gets scaled to fit
+  // *inside* 1200×630 (normalize-shot.ts computeContainRect: scale = min(1200/390,
+  // 630/844) ≈ 0.746, drawn width ≈ 291px) and the ~450px on each side is a flat
+  // fillRect(boardColor) letterbox — reintroducing the exact bug this whole feature
+  // exists to kill.
+  //
+  // No other assertion in this suite (or anywhere in the repo) can catch that
+  // regression. `fitSelectionToScreen` lays the collage into the band identically
+  // regardless of what `fit` the *capture* later uses, so the band's DOM geometry
+  // (tested above) is unchanged either way. And normalizeShotToJpegDataUrl always
+  // sets `canvas.width = 1200; canvas.height = 630` for both fits, so the produced
+  // image's *dimensions* (tested just above) are identical too. The difference only
+  // shows up in the pixel *content* of the produced JPEG — so this test decodes it.
+  test('the preview image has no cover→contain letterbox bars', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+
+    const preview = page.locator('[data-testid="mobile-share-preview"]')
+    await expect(preview).toBeVisible({ timeout: 30_000 })
+
+    // Draw the already-decoded <img> (a same-origin data: URL) into a canvas and
+    // count distinct (quantised) colours in a strip along each side edge. Sample a
+    // grid, not a single row, so one unlucky gap between cards can't produce a
+    // false "many colours" or a lucky single-colour row fool the count either way.
+    // Quantise (>> 3 per channel) to absorb JPEG ringing/compression noise around
+    // hard edges. `contain`'s letterbox bars are a single flat boardColor fill, so
+    // under `contain` each strip collapses to exactly 1 distinct colour; under
+    // `cover` the strip crosses real card pixels and board background and is many.
+    const edges = await preview.evaluate((el) => {
+      const img = el as HTMLImageElement
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('no 2d context')
+      ctx.drawImage(img, 0, 0)
+
+      const countDistinct = (x0: number, x1: number): number => {
+        const seen = new Set<string>()
+        for (let x = x0; x < x1; x += 8) {
+          for (let y = 0; y < canvas.height; y += 8) {
+            const [r, g, b] = ctx.getImageData(x, y, 1, 1).data
+            seen.add(`${r >> 3},${g >> 3},${b >> 3}`)
+          }
+        }
+        return seen.size
+      }
+
+      return {
+        left: countDistinct(0, 300),
+        right: countDistinct(canvas.width - 300, canvas.width),
+      }
+    })
+
+    expect(edges.left).toBeGreaterThan(1)
+    expect(edges.right).toBeGreaterThan(1)
+  })
 })
 
 test.describe('desktop SHARE — unchanged', () => {
