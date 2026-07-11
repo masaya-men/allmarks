@@ -1,5 +1,17 @@
 # 次セッションのゴール — 実行フェーズ再開: N-56（★★ローンチブロッカー）から
 
+## ★毎セッション共通のキックオフ（ユーザーはこれを貼るだけ・Sonnet で開始）
+
+```
+セッション開始。docs/CURRENT_GOAL.md → docs/superpowers/plans/2026-07-11-s186-remaining-work-roadmap.md
+の順に読み、実行順の先頭にある未完了タスクを、その詳細計画書どおりに実行して。
+- superpowers:subagent-driven-development で、計画書の各タスク見出しの推奨モデル
+  （【Haiku 可】【Sonnet 推奨】）どおりにサブエージェントへ割り当てること。迷ったら1つ上。
+- 検証（rtk tsc / rtk vitest run / pnpm build / 計画書指定の Playwright）→ デプロイ →
+  TODO.md・CURRENT_GOAL.md の更新 → commit/push まで自走する。
+- 私（ユーザー）に頼るのは「実機確認」「計画書に書かれた1行判断」だけ。依頼はコピペ形式で。
+```
+
 ## ★セッションの始め方
 
 1. **s186〜s187 の計画フェーズは完了**（詳細計画書 10 本＋見取り図）。ここからは実行フェーズ。安価モデル（Sonnet 中心・純関数は Haiku）で、計画書どおりに（superpowers:executing-plans または subagent-driven-development）。
