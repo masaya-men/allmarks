@@ -24,6 +24,9 @@ export type RenderShareImageOpts = {
    *  ＝ライブラリ既定。スマホは `1200 / 画面幅` を渡し、切り出す帯が原寸 1200px の
    *  raster になるようにする（渡さないと引き伸ばしでぼやける）。 */
   readonly scale?: number
+  /** 失敗時に捕捉できた例外の文字列を受け取る(診断用・N-56)。呼ばれても戻り値は
+   *  従来どおり null(挙動は変えない、理由が見えるようになるだけ)。 */
+  readonly onError?: (message: string) => void
 }
 
 /** Pure: pick the first quality whose encoded size fits, else the smallest.
@@ -56,12 +59,23 @@ function dataUrlBytes(dataUrl: string): number {
 
 /** Renders a DOM node to a JPEG data URL <= targetBytes via dom-to-image-more, or null on any failure (caller falls back to the legacy canvas). */
 export async function renderShareImage(node: HTMLElement, opts: RenderShareImageOpts): Promise<string | null> {
+  const fail = (e: unknown): null => {
+    opts.onError?.(e instanceof Error ? `${e.name}: ${e.message}` : String(e))
+    return null
+  }
   try {
     const mod = await import('dom-to-image-more')
     const domtoimage = (mod as { default?: unknown }).default ?? mod
     const toJpeg = (domtoimage as { toJpeg: (n: HTMLElement, o: Record<string, unknown>) => Promise<string> }).toJpeg
     if (typeof toJpeg !== 'function') return null
-    if (typeof document !== 'undefined' && document.fonts?.ready) await document.fonts.ready
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      // 実機で fonts.ready が解決しない事例への保険。フォントは盤面表示の時点で
+      // ほぼ確実にロード済みなので、3 秒待って進んで実害はない。
+      await Promise.race([
+        document.fonts.ready,
+        new Promise<void>((r): void => { setTimeout(r, 3000) }),
+      ])
+    }
 
     // dom-to-image-more clones the node, then for each cloned <img> reads its
     // src attribute and XHR-fetches it to inline as a data URL. We hook
@@ -92,10 +106,10 @@ export async function renderShareImage(node: HTMLElement, opts: RenderShareImage
     }
 
     return await jpegUnderTarget(
-      (quality) => toJpeg(node, { ...baseOpts, quality }).catch(() => null),
+      (quality) => toJpeg(node, { ...baseOpts, quality }).catch((e: unknown) => fail(e)),
       opts.targetBytes, opts.startQuality, opts.minQuality,
     )
-  } catch {
-    return null
+  } catch (e) {
+    return fail(e)
   }
 }
