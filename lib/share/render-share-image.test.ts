@@ -35,4 +35,35 @@ describe('renderShareImage onError (N-56 diagnostics)', () => {
     expect(messages.length).toBeGreaterThan(0)
     expect(messages[0]).toContain('boom')
   })
+
+  it('resolves null when toJpeg rejects and no onError is given', async () => {
+    toJpeg.mockReset()
+    toJpeg.mockRejectedValueOnce(new Error('boom'))
+    const node = document.createElement('div')
+    const out = await renderShareImage(node, {
+      width: 100,
+      height: 100,
+      targetBytes: 1024,
+      startQuality: 0.9,
+      minQuality: 0.9,
+    })
+    expect(out).toBeNull()
+  })
+
+  it('reaches the outer catch when toJpeg throws synchronously', async () => {
+    toJpeg.mockReset()
+    toJpeg.mockImplementation((): never => { throw new Error('sync boom') })
+    const messages: string[] = []
+    const node = document.createElement('div')
+    const out = await renderShareImage(node, {
+      width: 100,
+      height: 100,
+      targetBytes: 1024,
+      startQuality: 0.9,
+      minQuality: 0.9,
+      onError: (m): void => { messages.push(m) },
+    })
+    expect(out).toBeNull()
+    expect(messages).toContain('Error: sync boom')
+  })
 })
