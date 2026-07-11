@@ -17,7 +17,14 @@
 | 3 | s189 | **(N-57)+(N-59) スマホ盤面の小物2点**（背景タイトル＋列数/余白） | [n57/n59 計画](2026-07-11-n57-n59-mobile-board-polish.md) | Haiku 中心 |
 | 4 | s190 | **(N-54) グリッド交点の濃さ＝盤面もSVG化**（盤面と共有の食い違い解消） | [n54 計画](2026-07-11-n54-pattern-svg-unification.md) | Sonnet |
 | 5 | s191〜 | **(N-53)+(N-45) e2e の修理**（58本中30本落ち→回帰網の復旧） | [n53 計画](2026-07-11-n53-n45-e2e-repair.md) | Sonnet |
-| 6 | 以降 | **リリース滑走路 束C→D→E**（13言語＋規約→公開素材→総仕上げ） | `docs/private/2026-07-08-release-runway-plan.md`（非公開・既存） | 束C は Sonnet 以上必須 |
+| 6 | 以降 | **(N-58 段階2) ピンチズーム＋パン**（段階1の実機の感触を反映して実行） | [n58 段階2 計画](2026-07-11-n58-stage2-pinch-zoom-pan.md) | Sonnet（純関数は Haiku 可） |
+| 7 | 以降 | **(CUTOUT) 切り抜きコラージュ MVP**（提案: 束C と並行・束D の素材づくりに間に合わせる） | [cutout 計画](2026-07-11-cutout-collage-mvp.md) | Sonnet 中心 |
+| 8 | 公開前 | **(TOWER) シェーダーテーマB=超高層の窓**（★ユーザー確定「公開までに作る」・無料の看板候補） | [tower 計画](2026-07-12-shader-theme-b-tower.md) | Sonnet |
+| 9 | 以降 | **リリース滑走路 束C→D→E**（13言語＋規約→公開素材→総仕上げ） | `docs/private/2026-07-08-release-runway-plan.md`（非公開・既存） | 束C は Sonnet 以上必須 |
+| 10 | 公開後 | **(BULK-IMPORT) 拡張一括取り込み第1弾**（提案: 拡張再審査を N-28/N-29 と束ねるため公開後。前倒し希望ならユーザー判断） | [bulk-import 計画](2026-07-11-bulk-import-x-youtube.md) | Task 0 は実 DOM 採取（ユーザー協働）・実装 Sonnet |
+| 11 | 花火 | **(SHADER-A) cyber-space テーマ**（K3 と同じ束・プレミアム1本目） | [cyber-space 計画](2026-07-12-shader-theme-a-cyber-space.md) | Sonnet |
+
+**s187 追記**: 新規5計画（6〜8, 10〜11）の差し込み位置のうち **8（TOWER=公開前）はユーザー確定**。7（CUTOUT）と 10（BULK-IMPORT）の時期は提案＝実行が近づいたら 1 行確認。無料/有料の割り当ての正本は `docs/private/2026-07-12-monetization-recheck-s187.md`。
 
 - **N-56 が最優先**。直らない限り N-58 で編集できても画像に写らない（実機検証が成立しない）。
 - N-58 の**実機最終確認は N-56 修正後**。実装自体は先行できる。
