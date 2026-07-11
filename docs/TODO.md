@@ -21,6 +21,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 186 — ★計画セッション: Fable で残タスク全棚卸し＋詳細計画書5本＋見取り図を作成・コード変更なし)
+
+**コード変更ゼロ（計画のみ）**。並行調査エージェント4本で N-56/N-58/N-54/N-53 の実コードを行番号つきで全網羅→**安価モデルがそのまま写経できる粒度**（s185 基準・実コード/実テスト/実コマンド埋め込み済み）の計画書を作成:
+
+- **見取り図（正本ロードマップ）**: [2026-07-11-s186-remaining-work-roadmap.md](superpowers/plans/2026-07-11-s186-remaining-work-roadmap.md) — 全残タスクの分類・セッション割り・モデル割り当て
+- **(N-56)★★** [診断可視化＋倍率フォールバック](superpowers/plans/2026-07-11-n56-mobile-share-image-fix.md) — 調査で**失敗の握り潰し13箇所・ログゼロ・UI無表示**を確定。倍率3.08→canvas 約1200×2597 が最有力容疑。診断行を画面に出し実機1回で真因特定できる設計
+- **(N-58)★** [スマホのコラージュ編集・段階1](superpowers/plans/2026-07-11-n58-mobile-collage-editing.md) — CREATE を「ARRANGE で止まる→編集→CREATE」に二分割。CollageCanvas は既に編集フル装備＝新規は帯ガイド＋編集バーの2部品のみ。**N-55 もスクリムで同時解消**。段階2（ピンチズーム）は実機の感触を見てから
+- **(N-57)+(N-59)** [スマホ盤面の小物2点](superpowers/plans/2026-07-11-n57-n59-mobile-board-polish.md) — ゲート1行＋文字サイズ緩和／列数2/3/4・余白S/M/L を MORE パネルに（board-config 器で DB bump 不要）
+- **(N-54)** [盤面パターンの SVG 統一](superpowers/plans/2026-07-11-n54-pattern-svg-unification.md) — 交点の二重合成を根治＋dom-to-image のグラデ片方向落ちも同時解消
+- **(N-53)** [e2e 修理](superpowers/plans/2026-07-11-n53-e2e-repair.md) — 病巣3つ特定済み（v9 固定 seed／偽 readiness＝プリペイント script／dev サーバーに networkidle）。**版数を固定しない共有 seed ヘルパー**へ集約
+- **★調査での発見**: (N-45) は commit `ac0b35da` で**実は完了済み**（下の記載を訂正済み）。(N-07) は N-53 に吸収。
+- **★次 = s187 で N-56 計画を実行**（冒頭でユーザーに症状 a/b/c と端末を聞く）。以降 N-58 → N-57/59 → N-54 → N-53 → 束C。
+
 ### 直近の状態 (セッション 185 — ★N-49 スマホから SHARE できるようにした・本番反映／ミッションの根幹が開通)
 
 **サブエージェント駆動9タスク＋各レビュー＋opus 全ブランチレビュー（READY TO MERGE・Critical/Important ゼロ）**。tsc0 / vitest **2246**（+31）/ クリーンビルド / `merge --no-ff b9c43511` / `allmarks.app` デプロイ済。詳細は上の N-49 と [spec](superpowers/specs/2026-07-10-mobile-share-bottom-nav-design.md)。
@@ -435,7 +448,7 @@
   - **`Test timeout` 20件は未診断**。VersionError とは別の病気かもしれない（要調査）。
   - **1本 flaky**（連続実行で 29↔30 failed が揺れる）。
   - **腰を据えた掃除が要る**。単体 `vitest`（2246 全緑）と `tsc`(0) は健全なので、リリースの直接ブロッカーではない。ただし**この状態では「e2e が緑」と誰も名乗れない**＝回帰検出網が半分機能していない。
-- **(N-45) 掃除：古い SHARE e2e 3本が消えた testid を参照（s183 発見・非ブロック）** — `tests/e2e/{share-composer-edit,share-fullscreen,share-sender}.spec.ts` が s165 の SHARE 作り直しで消えた `[data-testid="share-composer"]` を参照＝**フル e2e 実行時に赤**（このブランチ由来でない既存腐り）。削除 or 現行 SHARE フローに書き直し。ついでに `lib/board/fill-snap.ts` の旧 `fillCandidates`/`snapToFill` は N-27 で本番未使用化＝テストのみ生存（再利用可・任意で prune）。
+- ~~**(N-45) 掃除：古い SHARE e2e 3本が消えた testid を参照**~~ ✅ **実は完了済みと s186 調査で判明**（3本は commit `ac0b35da` で削除済み・この記載が古かった）。残る `lib/board/fill-snap.ts` の旧 `fillCandidates`/`snapToFill` prune は [N-53 計画](superpowers/plans/2026-07-11-n53-e2e-repair.md) Task 6 に組込み済み。
 
 ### session 161 で報告（Mac 実機・友人フィードバック ＋ 雑多改善 — ★ローンチ前クロスプラットフォーム）
 
