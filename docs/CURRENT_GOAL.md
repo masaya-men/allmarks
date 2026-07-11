@@ -2,12 +2,9 @@
 
 ## ★セッションの始め方
 
-1. **最初にユーザーへ 3 問**（[N-56 計画](superpowers/plans/2026-07-11-n56-mobile-share-image-fix.md) の Task 0）:
-   - 症状はどれ？ (a) プレビューが出ない (b) リンクはできるが OG が既定カード (c) CREATE がエラー
-   - 端末（機種 / OS / ブラウザ）
-   - 選択枚数（少数でも起きるか）
-2. 回答を計画書の Task 0 回答欄に書き、**Task 1 から計画書どおりに実行**（superpowers:subagent-driven-development か executing-plans。Task 1/2/4 は Haiku 可・Task 3/5 は Sonnet）。
-3. Task 6 でデプロイ→ユーザー実機→**診断行を読んで対応表から恒久対応を選ぶ**。
+1. **症状は s186 で回答済み**（[N-56 計画](superpowers/plans/2026-07-11-n56-mobile-share-image-fix.md) Task 0 に記入済み）: **(a) プレビュー不生成・iPhone Safari・4枚でも発生**＝最有力は WebKit の dom-to-image 失敗（真っ白 or render 例外）、次点が高倍率 canvas。回線タイムアウト説はほぼ消えた。
+2. **Task 1 から計画書どおりに実行**（superpowers:subagent-driven-development か executing-plans。Task 1/2/4 は Haiku 可・Task 3/5 は Sonnet）。
+3. Task 6 でデプロイ→ユーザー実機（iPhone Safari）→**診断行を読んで対応表から恒久対応を選ぶ**。
 
 ## s186 で作ったもの（コード変更なし・計画のみ）
 

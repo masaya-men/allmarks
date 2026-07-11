@@ -40,12 +40,17 @@
 - [ ] Q2. 端末の機種・OS・ブラウザ（例: iPhone 14 / iOS 17 / Safari、Pixel 7 / Android 14 / Chrome）
 - [ ] Q3. 選択したカード枚数（少数でも起きるか、全選択だけか）
 
-回答欄:
+回答欄（**s186 でユーザー回答済み**）:
 ```
-Q1:
-Q2:
-Q3:
+Q1: (a) プレビューが出ない。リンクはできたが、そもそも画像が生成されていなさそう
+Q2: iPhone / Safari（iOS 版数は未聴取。必要になったら聞く）
+Q3: 4 枚程度（少数でも発生）
 ```
+
+**回答を受けた仮説の優先順位（実装内容は不変・Task 6 の読み解きで使う）:**
+- 4 枚でも失敗 ＝ モバイル回線での画像取り直し 20 秒超え（旧候補③）は**ほぼ消えた**。
+- iPhone Safari ＝ 最有力は **(1) WebKit の dom-to-image（SVG foreignObject）失敗**（診断行では `render` の例外 or `blank`＝真っ白成功として出る）、次点 **(2) scale≈3.08 の canvas 確保失敗**（`render` の RangeError/InvalidStateError、fallback x1 で成功するはず）。
+- つまり Task 3 の `rejectUniform`（真っ白検出）と `fallbackScales:[1]` がそのまま一次対応になる見込み。診断行で (1)/(2) を確定させてから恒久対応（F1/F4）を選ぶ。
 
 ---
 
