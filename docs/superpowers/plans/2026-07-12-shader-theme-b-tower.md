@@ -326,47 +326,140 @@ rtk git commit -m "feat(board): mount TowerLayer, anchor facade grid to the card
 **Files:**
 - Create: `tests/e2e/theme-tower.spec.ts`
 
-- [ ] **Step 1: テストを書く**（seed とテーマ選択は Plan A の `selectCyberSpace` パターンの `themeId: 'tower'` 版。カード 12 枚 seed）:
+- [ ] **Step 1: テストを書く**（spec 全文。カードは**幅をバラして** seed する＝「保存値が生きている」ことを既定テーマ側で検証できるように）:
 
 ```ts
+import { expect, test, type Page } from '@playwright/test'
+
+const DB_NAME = 'booklage-db'
+
+/** 幅がバラバラの 12 枚を seed（tower で等寸に、戻すとバラバラに戻ることを見る）。 */
+async function seedVariedBoard(page: Page): Promise<void> {
+  await page.goto('/board')
+  await page.waitForSelector('[data-theme-id]')
+  await page.waitForTimeout(400)
+  await page.evaluate(async (dbName) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open(dbName)
+      req.onsuccess = (): void => resolve(req.result)
+      req.onerror = (): void => reject(req.error)
+    })
+    const tx = db.transaction(['bookmarks', 'cards', 'settings'], 'readwrite')
+    tx.objectStore('settings').put({ key: 'onboarding-completed', value: true })
+    tx.objectStore('settings').put({ key: 'data-home-ack', value: true })
+    tx.objectStore('settings').put({ key: 'last-backup-at', value: new Date().toISOString() })
+    for (let i = 0; i < 12; i++) {
+      tx.objectStore('bookmarks').put({
+        id: `tw-b-${i}`, url: `https://example.com/${i}`, title: `Card ${i}`,
+        description: '', thumbnail: '', favicon: '', siteName: 'Example',
+        type: 'website', savedAt: new Date(Date.now() - i * 1000).toISOString(),
+        ogpStatus: 'ok', tags: [], orderIndex: i, sizePreset: 'S', linkStatus: 'alive',
+        cardWidth: 180 + (i % 4) * 40, customCardWidth: true, // ← 幅バラバラ（保存値）
+      })
+      tx.objectStore('cards').put({
+        id: `tw-c-${i}`, bookmarkId: `tw-b-${i}`, width: 180 + (i % 4) * 40, height: 160,
+        isManuallyPlaced: false, gridIndex: i,
+      })
+    }
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = (): void => resolve()
+      tx.onerror = (): void => reject(tx.error)
+    })
+    db.close()
+  }, DB_NAME)
+  await page.reload()
+  await page.waitForSelector('[data-bookmark-id]')
+}
+
+/** IDB board-config の themeId を書き換えてリロード（Plan A の selectCyberSpace と同型）。 */
+async function selectTheme(page: Page, themeId: string): Promise<void> {
+  await page.evaluate(async ({ dbName, id }) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open(dbName)
+      req.onsuccess = (): void => resolve(req.result)
+      req.onerror = (): void => reject(req.error)
+    })
+    const tx = db.transaction(['settings'], 'readwrite')
+    const store = tx.objectStore('settings')
+    const cur = await new Promise<{ key: string; value: Record<string, unknown> } | undefined>((resolve) => {
+      const r = store.get('board-config')
+      r.onsuccess = (): void => resolve(r.result as { key: string; value: Record<string, unknown> } | undefined)
+      r.onerror = (): void => resolve(undefined)
+    })
+    store.put({ key: 'board-config', value: { ...(cur?.value ?? {}), themeId: id } })
+    await new Promise<void>((resolve) => { tx.oncomplete = (): void => resolve() })
+    db.close()
+  }, { dbName: DB_NAME, id: themeId })
+  await page.reload()
+  await page.waitForSelector(`html[data-theme-id="${themeId}"]`)
+  await page.waitForSelector('[data-bookmark-id]')
+}
+
+async function cardRects(page: Page): Promise<ReadonlyArray<{ x: number; w: number; h: number }>> {
+  return page.locator('[data-bookmark-id]').evaluateAll((els) =>
+    els.map((el) => {
+      const r = el.getBoundingClientRect()
+      return { x: Math.round(r.x), w: Math.round(r.width), h: Math.round(r.height) }
+    }),
+  )
+}
+
+async function facadeOrigin(page: Page): Promise<{ x: number; y: number }> {
+  return page.getByTestId('tower-root').evaluate((el) => ({
+    x: Number((el as HTMLElement).dataset.originX),
+    y: Number((el as HTMLElement).dataset.originY),
+  }))
+}
+
+test.use({ viewport: { width: 1489, height: 679 } })
+
 test('tower turns the board into a uniform window grid (stored sizes untouched)', async ({ page }) => {
-  // seed 12 cards → tower 選択 → 全カードの rect が同一寸・列 x が towerCols 本に揃う
-  const rects = await page.locator('[data-bookmark-id]').evaluateAll((els) =>
-    els.map((el) => { const r = el.getBoundingClientRect(); return { x: Math.round(r.x), w: Math.round(r.width), h: Math.round(r.height) } }))
-  const w0 = rects[0]?.w; const h0 = rects[0]?.h
-  for (const r of rects) { expect(r.w).toBe(w0); expect(r.h).toBe(h0) }
-  const xs = new Set(rects.map((r) => r.x))
-  expect(xs.size).toBeLessThanOrEqual(8) // 列の x が有限本に量子化されている＝格子
+  await seedVariedBoard(page)
+  const before = await cardRects(page)
+  expect(new Set(before.map((r) => r.w)).size).toBeGreaterThan(1) // 既定テーマ＝保存幅バラバラ
+  await selectTheme(page, 'tower')
+  const rects = await cardRects(page)
+  const w0 = rects[0]?.w
+  const h0 = rects[0]?.h
+  for (const r of rects) {
+    expect(r.w).toBe(w0)
+    expect(r.h).toBe(h0)
+  }
+  expect(new Set(rects.map((r) => r.x)).size).toBeLessThanOrEqual(8) // 列 x が有限本＝格子
 })
 
-test('facade grid origin tracks the first card within 1px', async ({ page }) => {
-  const origin = await page.getByTestId('tower-root').evaluate((el) => ({
-    x: Number((el as HTMLElement).dataset.originX), y: Number((el as HTMLElement).dataset.originY),
-  }))
+test('facade grid origin tracks the first card within 1px, even after scroll', async ({ page }) => {
+  await seedVariedBoard(page)
+  await selectTheme(page, 'tower')
+  const origin = await facadeOrigin(page)
   const card = await page.locator('[data-bookmark-id]').first().boundingBox()
   expect(Math.abs((card?.x ?? 0) - origin.x)).toBeLessThanOrEqual(1)
   expect(Math.abs((card?.y ?? 0) - origin.y)).toBeLessThanOrEqual(1)
-  // スクロール後も追従する
   await page.mouse.wheel(0, 600)
   await page.waitForTimeout(400)
-  const origin2 = await page.getByTestId('tower-root').evaluate((el) => ({
-    x: Number((el as HTMLElement).dataset.originX), y: Number((el as HTMLElement).dataset.originY),
-  }))
+  const origin2 = await facadeOrigin(page)
   const card2 = await page.locator('[data-bookmark-id]').first().boundingBox()
   expect(Math.abs((card2?.x ?? 0) - origin2.x)).toBeLessThanOrEqual(1)
   expect(Math.abs((card2?.y ?? 0) - origin2.y)).toBeLessThanOrEqual(1)
 })
 
 test('switching back to the default theme restores the stored layout (no writes)', async ({ page }) => {
-  // tower → dotted-notebook に戻す → カード幅がバラバラ（保存値のまま）に戻る・tower-root は消える
+  await seedVariedBoard(page)
+  await selectTheme(page, 'tower')
+  await selectTheme(page, 'dotted-notebook')
+  const rects = await cardRects(page)
+  expect(new Set(rects.map((r) => r.w)).size).toBeGreaterThan(1) // 保存幅が完全復元
+  await expect(page.getByTestId('tower-root')).toHaveCount(0)
 })
 
 test('default theme never mounts tower (byte-identical guard)', async ({ page }) => {
+  await seedVariedBoard(page)
+  await page.waitForSelector('html[data-theme-id="dotted-notebook"]')
   await expect(page.getByTestId('tower-root')).toHaveCount(0)
 })
 ```
 
-（フル実装は Plan A の spec と同じ道具立て。原点整合テストが**この機能の回帰網の本体**。）
+※ seed の `cardWidth`/`customCardWidth` フィールド名は `tests/e2e/mobile-share.spec.ts` の seed と `lib/storage/indexeddb.ts` の BookmarkRecord（L47-61）を照合し、実フィールド名に合わせて調整してよい（**検証内容は変えない**: 「既定=バラバラ／tower=等寸／戻すと復元」）。原点整合テストが**この機能の回帰網の本体**。
 
 - [ ] **Step 2:**
 
