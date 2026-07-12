@@ -2512,8 +2512,12 @@ export function BoardRoot() {
       .filter((w): w is number => typeof w === 'number' && w > 0)
       .sort((a, b) => a - b)
     const medianBandW = bandWidths.length ? (bandWidths[Math.floor(bandWidths.length / 2)] ?? 0) : 0
+    // flat は arrange-stage CollageCanvas の paper prop (themeMeta.decorations === true) と
+    // 同じ値を渡す。ここがずれると paper/light テーマ (角3px固定) で盤面と共有画像の角丸が食い違う。
     const roundedCornersPx =
-      parseFloat(cardCornerRadiusPx({ width: medianBandW, roundedCorners, flat: false })) * bandToOutScale
+      parseFloat(
+        cardCornerRadiusPx({ width: medianBandW, roundedCorners, flat: themeMeta.decorations === true }),
+      ) * bandToOutScale
 
     // renderer 用カード列。rect が無い (positions に未登場) カードはスキップ。
     // BoardItem.thumbnail は string|undefined、renderer は string|null を取るので ?? null で正規化。
@@ -2596,7 +2600,7 @@ export function BoardRoot() {
     }
   }, [
     selectedIds, lightboxNavItems, customWidths, cardWidthPx,
-    viewport.w, viewport.h, buildArrangeShare, deriveCaptureBoardColor, roundedCorners,
+    viewport.w, viewport.h, buildArrangeShare, deriveCaptureBoardColor, roundedCorners, themeMeta,
   ])
 
   // Ready-state COPY LINK copies the already-hosted url.
