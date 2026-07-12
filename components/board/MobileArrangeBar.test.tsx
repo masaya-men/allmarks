@@ -21,8 +21,18 @@ describe('MobileArrangeBar', () => {
     expect(screen.getByTestId('mobile-arrange-back')).toBeDisabled()
   })
 
-  it('shows the tap-select / pinch / two-finger-zoom hint (N-58 stage 2)', () => {
+  it('shows the tap-select / pinch / slider-zoom hint (N-58 stage 2)', () => {
     render(<MobileArrangeBar onBack={() => {}} onCreate={() => {}} creating={false} />)
-    expect(screen.getByText('TAP A CARD TO SELECT — PINCH TO RESIZE OR ROTATE — TWO FINGERS ZOOM THE BOARD')).toBeTruthy()
+    expect(screen.getByText('TAP A CARD TO SELECT — PINCH TO RESIZE OR ROTATE — SLIDER ZOOMS THE BOARD')).toBeTruthy()
+  })
+
+  it('renders the zoom slider only when the zoom prop is provided', () => {
+    const without = render(<MobileArrangeBar onBack={() => {}} onCreate={() => {}} creating={false} />)
+    expect(without.queryByTestId('mobile-zoom-slider')).toBeNull()
+    without.unmount()
+    const withZoom = render(
+      <MobileArrangeBar onBack={() => {}} onCreate={() => {}} creating={false} zoom={{ scale: 2, onScaleChange: () => {} }} />,
+    )
+    expect(withZoom.getByTestId('mobile-zoom-slider')).toBeTruthy()
   })
 })

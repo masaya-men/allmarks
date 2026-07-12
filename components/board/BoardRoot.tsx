@@ -122,7 +122,9 @@ import { MobileArrangeGestures } from './MobileArrangeGestures'
 import {
   createCollageGestureArbiter,
   IDENTITY_STAGE_TRANSFORM,
+  zoomStageToScale,
   type CollageGestureArbiter,
+  type StagePoint,
   type StageTransform,
 } from '@/lib/share/stage-zoom'
 import { ShareToast } from '@/components/board/ShareToast'
@@ -2512,6 +2514,30 @@ export function BoardRoot() {
     [effectiveLayoutWidth],
   )
 
+  // スマホ ARRANGE のズーム・スライダー: 選択カード中心（無選択は画面中心）にボードをズーム。
+  // stageTransform だけを触る（撮影は state 由来＝画像に無影響）。関数型 setState で
+  // prev から pivot を計算＝stale closure を避ける。
+  const handleZoomSliderChange = useCallback(
+    (nextScale: number): void => {
+      const box = boardFrameRef.current?.getBoundingClientRect()
+      const vw = box?.width ?? viewport.w
+      const vh = box?.height ?? viewport.h
+      setStageTransform((prev) => {
+        const pos = selectedCollageId ? collagePositions[selectedCollageId] : undefined
+        let pivot: StagePoint
+        if (pos) {
+          const cx = pos.x + pos.w / 2
+          const cy = pos.y + pos.h / 2
+          pivot = { x: cx * prev.scale + prev.tx, y: cy * prev.scale + prev.ty }
+        } else {
+          pivot = { x: vw / 2, y: vh / 2 }
+        }
+        return zoomStageToScale(prev, nextScale, pivot, vw, vh)
+      })
+    },
+    [selectedCollageId, collagePositions, viewport.w, viewport.h],
+  )
+
   // スマホの ARRANGE（tap 1）: 選択カードを帯に自動配置して編集段に入る（撮影はまだしない・N-58）。
   const handleMobileEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
@@ -3751,6 +3777,7 @@ export function BoardRoot() {
                     onBack={handleShareReselect}
                     onCreate={(): void => { void handleMobileCaptureAndCreate() }}
                     creating={shareCreateState === 'creating'}
+                    zoom={{ scale: stageTransform.scale, onScaleChange: handleZoomSliderChange }}
                   />
                 )}
                 {(hostedShareUrl !== null || shareCreateState === 'error') && (

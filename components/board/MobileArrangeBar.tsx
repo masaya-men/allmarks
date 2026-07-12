@@ -2,6 +2,7 @@
 
 import type { ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
+import { MobileZoomSlider } from './MobileZoomSlider'
 import styles from './MobileArrangeBar.module.css'
 
 export type MobileArrangeBarProps = {
@@ -11,6 +12,11 @@ export type MobileArrangeBarProps = {
   readonly onCreate: () => void
   /** 撮影〜リンク作成中は CREATE を無効化。 */
   readonly creating: boolean
+  /** スマホのボードズーム・スライダー（省略時は出さない＝デスクトップ/従来不変）。 */
+  readonly zoom?: {
+    readonly scale: number
+    readonly onScaleChange: (nextScale: number) => void
+  }
 }
 
 /** スマホのコラージュ編集段のボトムバー。デスクトップの ShareToast(CREATE) の
@@ -23,7 +29,8 @@ export function MobileArrangeBar(props: MobileArrangeBarProps): ReactElement {
       data-no-capture
       data-testid="mobile-arrange-bar"
     >
-      <span className={styles.hint}>TAP A CARD TO SELECT — PINCH TO RESIZE OR ROTATE — TWO FINGERS ZOOM THE BOARD</span>
+      {props.zoom && <MobileZoomSlider scale={props.zoom.scale} onScaleChange={props.zoom.onScaleChange} />}
+      <span className={styles.hint}>TAP A CARD TO SELECT — PINCH TO RESIZE OR ROTATE — SLIDER ZOOMS THE BOARD</span>
       <div className={styles.actions}>
         <button type="button" className={styles.ghost} onClick={props.onBack} disabled={props.creating} data-testid="mobile-arrange-back">
           BACK
