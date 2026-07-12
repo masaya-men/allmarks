@@ -21,7 +21,9 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 189 — ★N-56 スマホ共有画像を「canvas 直描画」に移行・出荷／iOS foreignObject 回避・実機で「写真が出るか」確認待ち)
+### 直近の状態 (セッション 189 — ★N-56 スマホ共有画像を「canvas 直描画」に移行・出荷・✅実機確認済（写真が出た）／次は N-58 段階1)
+
+**✅実機確認済（2026-07-12・ユーザー報告「100枚のプレビューに写真が出た」）＝N-56 完了。** iOS の dom-to-image foreignObject 制限を canvas 直描画で回避できた。**次セッションは N-58 段階1（スマホのコラージュ編集）**。任意の微調整（角丸 per-card 化・パターン背景・ツイート/動画カードの描画）は要望が出たら。
 
 **実行フェーズ。N-56 続き（canvas 直描画レンダラー）を計画書どおり subagent-driven-development で完遂・本番反映済**（Task 1〜4＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge・Critical/Important ゼロ**）。tsc0 / **vitest 2291/2291** / build OK（assert-share-template OK）/ `merge --no-ff 9c40a6a2` / `allmarks.app` デプロイ済。
 
