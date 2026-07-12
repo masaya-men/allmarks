@@ -1,0 +1,7 @@
+.band {
+  position: absolute;
+  pointer-events: none;
+  border: 1px dashed rgba(255, 255, 255, 0.45);
+  /* 帯の外側だけを減光する。内側（＝画像に写る範囲）は素通し。 */
+  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.55);
+}

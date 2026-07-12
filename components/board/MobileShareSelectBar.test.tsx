@@ -17,7 +17,7 @@ describe('MobileShareSelectBar', () => {
     rerender(<MobileShareSelectBar {...baseProps} count={3} />)
     const btn = screen.getByTestId('mobile-select-create') as HTMLButtonElement
     expect(btn.disabled).toBe(false)
-    expect(btn.textContent).toBe('CREATE (3)')
+    expect(btn.textContent).toBe('ARRANGE (3)')
   })
 
   it('fires each callback', () => {

@@ -29,6 +29,10 @@ export type CollageCanvasCard = {
   readonly thumbnailUrl: string | null // = item.thumbnail
   readonly url: string // = item.url（生成アートの seed）
   readonly rect: { x: number; y: number; w: number; h: number } // band 空間
+  /** Free rotation in degrees, matching CollageCanvas's on-screen
+   *  transform: rotate(deg). Undefined / 0 = upright. Rotates around the
+   *  card's center in output space. */
+  readonly rotation?: number
 }
 
 export type RenderCollageCanvasInput = {
@@ -173,6 +177,19 @@ async function drawCard(
 
   const radius = input.roundedCornersPx
 
+  const rotationDeg = card.rotation ?? 0
+
+  ctx.save()
+  if (rotationDeg !== 0) {
+    // Rotate about the card's center = same as CSS transform-origin:center
+    // + transform: rotate(deg) that CollageCanvas applies on-screen.
+    const cx = out.x + out.w / 2
+    const cy = out.y + out.h / 2
+    ctx.translate(cx, cy)
+    ctx.rotate((rotationDeg * Math.PI) / 180)
+    ctx.translate(-cx, -cy)
+  }
+
   // 角丸でクリップしてから背景塗り + 画像描画 (角が四角く残らない)
   ctx.save()
   roundRectPath(ctx, out.x, out.y, out.w, out.h, radius)
@@ -229,6 +246,7 @@ async function drawCard(
       Math.max(1, maxLines)
     )
   }
+  ctx.restore()
   ctx.restore()
 }
 

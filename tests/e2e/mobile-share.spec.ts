@@ -99,14 +99,18 @@ test.describe('mobile SHARE — phone', () => {
 
     await page.locator('[data-testid="mobile-select-create"]').click()
 
-    const sheet = page.locator('[data-testid="mobile-share-result"]')
-    await expect(sheet).toBeVisible({ timeout: 30_000 })
-    await expect(page.locator('[data-testid="mobile-share-ready"]')).toBeVisible()
-    await expect(page.locator('[data-testid="mobile-share-copy"]')).toBeVisible()
+    // ARRANGE (tap 1) → edit stage: the selection is auto-placed into the band
+    // and the arrange bar + band guide come up, but nothing has been shot yet.
+    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-band-overlay"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-share-result"]')).toHaveCount(0)
 
-    // The collage is still mounted (sharePhase stays 'arrange'), so the band can
-    // be measured directly. This — not the final image's size — is what proves
-    // there are no letterbox bars: contain would leave the sides empty.
+    // The collage is mounted in the edit stage, so the band can be measured
+    // directly here — before the CREATE tap, since the arrangement doesn't
+    // change afterwards. Asserting it here also proves the edit stage opens
+    // with a correct initial layout. This — not the final image's size — is
+    // what proves there are no letterbox bars: contain would leave the sides
+    // empty.
     const band = await page.evaluate(() => {
       const els = Array.from(document.querySelectorAll('[data-testid^="collage-el-"]'))
       const rects = els.map((el) => el.getBoundingClientRect())
@@ -155,6 +159,14 @@ test.describe('mobile SHARE — phone', () => {
       expect(row.minX).toBeLessThanOrEqual(1)
       expect(row.maxX).toBeGreaterThanOrEqual(band.vw - 1)
     }
+
+    // CREATE (tap 2) → shoot the arrangement just verified above and produce
+    // the link.
+    await page.locator('[data-testid="mobile-arrange-create"]').click()
+    const sheet = page.locator('[data-testid="mobile-share-result"]')
+    await expect(sheet).toBeVisible({ timeout: 30_000 })
+    await expect(page.locator('[data-testid="mobile-share-ready"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-share-copy"]')).toBeVisible()
   })
 
   test('the preview is a real 1200x630 image', async ({ page }) => {
@@ -163,6 +175,12 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-nav-share"]').click()
     await page.locator('[data-testid="mobile-select-all"]').click()
     await page.locator('[data-testid="mobile-select-create"]').click()
+
+    // ARRANGE → edit stage, then CREATE → shoot (N-58 two-tap flow).
+    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-band-overlay"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-share-result"]')).toHaveCount(0)
+    await page.locator('[data-testid="mobile-arrange-create"]').click()
 
     const preview = page.locator('[data-testid="mobile-share-preview"]')
     await expect(preview).toBeVisible({ timeout: 30_000 })
@@ -173,7 +191,7 @@ test.describe('mobile SHARE — phone', () => {
     expect(dims).toEqual({ w: 1200, h: 630, src: 'data:image/jpeg;base64' })
   })
 
-  // handleMobileCreateShare (BoardRoot.tsx) captures with `fit: 'cover'`. If that
+  // handleMobileCaptureAndCreate (BoardRoot.tsx) captures with `fit: 'cover'`. If that
   // ever regresses to `fit: 'contain'`, a 390×844 portrait board gets scaled to fit
   // *inside* 1200×630 (normalize-shot.ts computeContainRect: scale = min(1200/390,
   // 630/844) ≈ 0.746, drawn width ≈ 291px) and the ~450px on each side is a flat
@@ -193,6 +211,12 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-nav-share"]').click()
     await page.locator('[data-testid="mobile-select-all"]').click()
     await page.locator('[data-testid="mobile-select-create"]').click()
+
+    // ARRANGE → edit stage, then CREATE → shoot (N-58 two-tap flow).
+    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-band-overlay"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-share-result"]')).toHaveCount(0)
+    await page.locator('[data-testid="mobile-arrange-create"]').click()
 
     const preview = page.locator('[data-testid="mobile-share-preview"]')
     await expect(preview).toBeVisible({ timeout: 30_000 })
@@ -233,6 +257,44 @@ test.describe('mobile SHARE — phone', () => {
 
     expect(edges.left).toBeGreaterThan(1)
     expect(edges.right).toBeGreaterThan(1)
+  })
+
+  test('BACK returns to selection without creating anything', async ({ page }) => {
+    await seedBoard(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toBeVisible()
+
+    await page.locator('[data-testid="mobile-arrange-back"]').click()
+
+    await expect(page.locator('[data-testid="mobile-share-select-bar"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toHaveCount(0)
+    await expect(page.locator('[data-testid="mobile-share-result"]')).toHaveCount(0)
+  })
+
+  test('the result scrim covers the collage frame (N-55)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await page.locator('[data-testid="mobile-arrange-create"]').click()
+
+    await expect(page.locator('[data-testid="mobile-share-result"]')).toBeVisible({ timeout: 30_000 })
+    const scrim = page.locator('[data-testid="mobile-share-scrim"]')
+    await expect(scrim).toBeVisible()
+
+    // The shield covers the whole collage frame (same extent as collage-canvas —
+    // both are position:absolute; inset:0 against the same outerFrame ancestor).
+    const frame = await page.locator('[data-testid="collage-canvas"]').boundingBox()
+    const box = await scrim.boundingBox()
+    expect(frame).not.toBeNull()
+    expect(box).not.toBeNull()
+    if (frame && box) {
+      expect(box.width).toBeGreaterThanOrEqual(frame.width - 1)
+      expect(box.height).toBeGreaterThanOrEqual(frame.height - 1)
+    }
   })
 })
 

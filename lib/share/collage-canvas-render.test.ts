@@ -231,6 +231,8 @@ describe('renderCollageCanvasToJpeg (mock 2d context — draw loop coverage)', (
     fillText: ReturnType<typeof vi.fn>
     measureText: ReturnType<typeof vi.fn>
     createLinearGradient: ReturnType<typeof vi.fn>
+    translate: ReturnType<typeof vi.fn>
+    rotate: ReturnType<typeof vi.fn>
     fillStyle: string
     font: string
     textAlign: string
@@ -251,6 +253,8 @@ describe('renderCollageCanvasToJpeg (mock 2d context — draw loop coverage)', (
       fillText: vi.fn(),
       measureText: vi.fn((s: string) => ({ width: s.length * 6 })),
       createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      translate: vi.fn(),
+      rotate: vi.fn(),
       fillStyle: '',
       font: '',
       textAlign: '',
@@ -464,5 +468,38 @@ describe('renderCollageCanvasToJpeg (mock 2d context — draw loop coverage)', (
     await expect(renderCollageCanvasToJpeg(input)).resolves.toBeNull()
     // The throw happened before any drawImage for this card could run.
     expect(fakeCtx.drawImage).not.toHaveBeenCalled()
+  })
+
+  it('(f) rotates a card about its center when rotation is set, and leaves an upright card unrotated', async () => {
+    const toProxyUrl = vi.fn((src: string): string => `/api/img?u=${encodeURIComponent(src)}`)
+    const cards: CollageCanvasCard[] = [
+      {
+        id: 'rot',
+        title: 'Rotated card',
+        thumbnailUrl: 'https://example.com/rot.jpg',
+        url: 'https://example.com/rot',
+        rect: { x: 100, y: 100, w: 200, h: 100 },
+        rotation: 30,
+      },
+      {
+        id: 'flat',
+        title: 'Upright card',
+        thumbnailUrl: 'https://example.com/flat.jpg',
+        url: 'https://example.com/flat',
+        rect: { x: 400, y: 100, w: 200, h: 100 },
+        // no rotation field => upright
+      },
+    ]
+    const input: RenderCollageCanvasInput = { ...baseInput, toProxyUrl, cards }
+
+    await renderCollageCanvasToJpeg(input)
+
+    // Exactly one card rotated => rotate called exactly once, with 30° in radians.
+    expect(fakeCtx.rotate).toHaveBeenCalledTimes(1)
+    expect(fakeCtx.rotate).toHaveBeenCalledWith((30 * Math.PI) / 180)
+    // The rotate is bracketed by translate(center) then translate(-center).
+    // band is 1:1 so output center = (100 + 200/2, 100 + 100/2) = (200, 150).
+    expect(fakeCtx.translate).toHaveBeenCalledWith(200, 150)
+    expect(fakeCtx.translate).toHaveBeenCalledWith(-200, -150)
   })
 })
