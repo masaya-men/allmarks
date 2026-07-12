@@ -95,6 +95,8 @@ export const BOARD_Z_INDEX = {
   DROP_INDICATOR: 40,
   CONTEXT_MENU: 90,
   SHARE_CANVAS: 95,  // SHARE stage-2 (arrange) collage layer — above the canvas edge scrims (BoardRoot.module.css .canvas::before/::after z:80) + THEME_BG, below TOOLBAR (110) + SHARE_TOAST (116). isolation:isolate on CollageCanvas .root contains its INTRA_CANVAS_Z_BASE (~10+) order.
+  SHARE_BAND_OVERLAY: 96,  // スマホ編集段の「撮影される帯」ガイド — SHARE_CANVAS(95) の直上・DRAG_GHOST(100) 未満。pointer-events:none で編集を邪魔しない。
+  SHARE_RESULT_SCRIM: 399, // スマホ結果シート表示中にコラージュへのタッチを遮る透明盾 (N-55) — SHARE_CANVAS(95) より上・SHARE_TOAST(402) 未満。
   DRAG_GHOST: 100,
   TOOLBAR: 110,
   SHARE_SELECT_BAR: 401,  // selective-share bottom bar — ABOVE the scroll meter (400) so it isn't covered during the select stage (s170); below CHROME_DRAWER (405). The select stage keeps the meter visible (unlike arrange, which hides it), so the bar must out-stack it.
