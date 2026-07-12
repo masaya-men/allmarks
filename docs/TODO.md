@@ -456,8 +456,10 @@
   - **★s188.1 出荷済（本番反映）＝クラッシュ耐性パンくず**: `lib/share/capture-breadcrumb.ts`（localStorage 同期）＋`CaptureCrashNotice.tsx`（次回起動時に琥珀枠で読み返し）。撮影直前に `枚数・canvas WxH・元画像総MP(sourceMP)` を記録→無事終われば消す→落ちて残れば次回表示。tsc0 / vitest 2269 / build OK。
   - **★主犯確定（実機パンくず）**: `100 cards · canvas 1200×1744 (x3.2) · images 78MP`。canvas=210万画素(無害)、**images 78MP=撮影時に全カード画像を原寸展開で約310MB→タブ上限超過が主犯**（canvas の約37倍）。
   - **★s188.2 恒久修正 出荷済（本番反映）＝撮影時のカード画像 適応縮小**: `lib/share/capture-thumbnails.ts`（`captureThumbnailMaxPx`＝合計約12MP予算・100枚→346px・少数→原寸1200／`buildCaptureThumbnailMap`＝proxy 経由 fetch＋canvas 縮小・同時実行4）。`capture-collage.ts` に `captureThumbnails?` opt（**デスクトップは渡さず byte-identical**）。BoardRoot モバイル多枚数時のみサムネ Map を渡す（少数は原寸＝不変）。tsc0 / vitest 2277 / build OK。
-  - **★次セッション＝実機で100枚が出るか確認**（手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)）。出れば N-56 完了→N-58段階1。まだ落ちれば `images ◯◯MP` が下がっているはず→予算をさらに下げる等。
-  - 計画書 [n56](superpowers/plans/2026-07-11-n56-mobile-share-image-fix.md) Task 6 §対応表 ／ narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s188。
+  - **★s188.2 でクラッシュは解消（実機確認済）**。だが **6枚でも 100枚でも画像が出ない（暗い）＝枚数非依存**。→ **iOS Safari の dom-to-image が foreignObject 内の画像を描けない**制限が確定（PC Chrome では出る＝iOS 固有・候補①/F4 が現実化）。小技では直らない。
+  - **★恒久修正＝canvas 直描画へ移行**（foreignObject 不使用）。計画書 **[2026-07-12-n56-mobile-canvas-renderer.md](superpowers/plans/2026-07-12-n56-mobile-canvas-renderer.md)**（Task 1〜5）。土台 `lib/share/capture-mirror.ts`（既存の canvas 直描画レンダラー・primitives 完成）を流用し、`chosen`＋`collagePositions`＋`band` から直接描く。**デスクトップは dom-to-image のまま触らない**。ユーザー承認済（¥0・安全確認済）。
+  - **★次セッション最優先＝この計画書を subagent-driven-development で実装** → 実機で写真が出るか確認 → 出れば N-56 完了→N-58段階1。
+  - 旧計画 [n56](superpowers/plans/2026-07-11-n56-mobile-share-image-fix.md)（診断・縮小）／ narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s188。
 - **(N-57) スマホのボードに背景タイトル（ワードマーク）が出ていない** — **これは s185 のスコープ外**（N-51 の残りとして次に置いてあった）。`BoardBackgroundTypography` の `!isMobile` ゲートを外すだけ。ユーザーの理由＝「ボトムナビの THEME からカスタマイズできるように見えるのに見えないのはおかしい」。出したら**スマホの共有画像にもタイトルを載せるか**を決める（s185 は盤面に無いので `setShareTitle(null)` にしてある）。
 - **(N-58) ★スマホでもコラージュさせたい（＝s185 の「並べる段を出さない」決定を撤回）** — ユーザー曰く「簡素でもコラージュしたい。表現の場なのでスマホでもきちんと表現させたい」。s185 spec §2.1 でユーザー自身が「並べる段は出さない（失うもの＝移動・回転・拡縮・タイトル編集）」を承認していたが、実機で触って**表現できないことが受け入れられないと判明**。
   - **既に指で動く**（s184 調査）: 並べる段のドラッグ移動／リサイズ（掴めるが弧が hover 依存で見えなかった → s185 で `@media (hover:none)` により**回転ノブは指で触れるようになっている**）。
