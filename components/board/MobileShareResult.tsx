@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { canWebShareFiles, dataUrlToFile } from '@/lib/share/share-actions'
+import { formatCaptureAttempts, type CaptureAttempt } from '@/lib/share/capture-collage'
 import type { ShareCreateState } from './ShareToast'
 import styles from './MobileShareResult.module.css'
 
@@ -21,6 +22,10 @@ export type MobileShareResultProps = {
   readonly onRetry: () => void
   /** Leave SHARE mode entirely. */
   readonly onDone: () => void
+  /** 撮影の試行記録（診断表示用・N-56）。 */
+  readonly captureAttempts?: readonly CaptureAttempt[] | null
+  /** リンク作成が失敗した時の理由（診断表示用・N-56）。 */
+  readonly errorMessage?: string | null
 }
 
 type CopyState = 'idle' | 'copied' | 'error'
@@ -37,7 +42,7 @@ function hasWebShare(): boolean {
  *  without us building a button for each. Platforms that refuse files still get
  *  the link; platforms without Web Share fall back to COPY LINK. */
 export function MobileShareResult(props: MobileShareResultProps): ReactElement {
-  const { imageUrl, shareUrl, createState, onCopyLink, onRetry, onDone } = props
+  const { imageUrl, shareUrl, createState, onCopyLink, onRetry, onDone, captureAttempts, errorMessage } = props
 
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const timerRef = useRef<number | null>(null)
@@ -80,6 +85,9 @@ export function MobileShareResult(props: MobileShareResultProps): ReactElement {
       {failed ? (
         <>
           <span className={styles.error} data-testid="mobile-share-error">COULDN&apos;T CREATE THE LINK</span>
+          {errorMessage && (
+            <code className={styles.diag} data-testid="mobile-share-error-detail">{errorMessage}</code>
+          )}
           <div className={styles.actions}>
             <button type="button" className={styles.primary} onClick={onRetry} data-testid="mobile-share-retry">RETRY</button>
             <button type="button" className={styles.ghost} onClick={onDone} data-testid="mobile-share-done">DONE</button>
@@ -90,6 +98,30 @@ export function MobileShareResult(props: MobileShareResultProps): ReactElement {
           {imageUrl && (
             /* eslint-disable-next-line @next/next/no-img-element -- a data-URL, not a remote asset */
             <img className={styles.preview} src={imageUrl} alt="Your collage" data-testid="mobile-share-preview" />
+          )}
+          {!imageUrl && (
+            <div className={styles.imageFailed} data-testid="mobile-share-image-failed">
+              <span className={styles.imageFailedTitle}>NO IMAGE — LINK ONLY</span>
+              <span className={styles.imageFailedBody}>
+                The picture could not be made on this phone. The link below still works.
+              </span>
+              {captureAttempts && captureAttempts.length > 0 && (
+                <code className={styles.diag} data-testid="mobile-share-diag">
+                  {formatCaptureAttempts(captureAttempts)}
+                </code>
+              )}
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={onRetry}
+                data-testid="mobile-share-retry-image"
+              >RETRY IMAGE</button>
+            </div>
+          )}
+          {imageUrl && captureAttempts && captureAttempts.length > 1 && (
+            <code className={styles.diag} data-testid="mobile-share-diag">
+              {formatCaptureAttempts(captureAttempts)}
+            </code>
           )}
           <span className={styles.status} data-testid="mobile-share-ready">
             <span className={styles.dot} />LINK READY

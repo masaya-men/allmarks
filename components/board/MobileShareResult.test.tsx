@@ -84,4 +84,60 @@ describe('MobileShareResult', () => {
     fireEvent.click(screen.getByTestId('mobile-share-copy'))
     await waitFor(() => expect(screen.getByTestId('mobile-share-copy').textContent).toBe('LINK COPIED'))
   })
+
+  it('shows the NO IMAGE warning + diag line when the link exists but the image is null', () => {
+    render(
+      <MobileShareResult
+        imageUrl={null}
+        shareUrl="https://allmarks.app/s/abc123"
+        createState="idle"
+        captureAttempts={[
+          { scale: 3.08, timeoutMs: 20000, elapsedMs: 20003, stage: 'timeout', message: null },
+          { scale: 1, timeoutMs: 12000, elapsedMs: 12001, stage: 'timeout', message: null },
+        ]}
+        onCopyLink={async () => true}
+        onRetry={() => {}}
+        onDone={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('mobile-share-image-failed')).toBeInTheDocument()
+    expect(screen.getByTestId('mobile-share-diag').textContent).toContain('#1 x3.08 timeout')
+    expect(screen.queryByTestId('mobile-share-preview')).toBeNull()
+    expect(screen.getByTestId('mobile-share-retry-image')).toBeInTheDocument()
+  })
+
+  it('shows the diag line on success too when a fallback attempt was needed', () => {
+    render(
+      <MobileShareResult
+        imageUrl="data:image/jpeg;base64,xxxx"
+        shareUrl="https://allmarks.app/s/abc123"
+        createState="idle"
+        captureAttempts={[
+          { scale: 3.08, timeoutMs: 20000, elapsedMs: 9000, stage: 'render', message: 'RangeError: too big' },
+          { scale: 1, timeoutMs: 12000, elapsedMs: 2100, stage: null, message: null },
+        ]}
+        onCopyLink={async () => true}
+        onRetry={() => {}}
+        onDone={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('mobile-share-preview')).toBeInTheDocument()
+    expect(screen.getByTestId('mobile-share-diag').textContent).toContain('RangeError')
+  })
+
+  it('shows the create-error detail message when the link itself failed', () => {
+    render(
+      <MobileShareResult
+        imageUrl={null}
+        shareUrl={null}
+        createState="error"
+        errorMessage="fetch failed"
+        onCopyLink={async () => true}
+        onRetry={() => {}}
+        onDone={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('mobile-share-error')).toBeInTheDocument()
+    expect(screen.getByTestId('mobile-share-error-detail').textContent).toBe('fetch failed')
+  })
 })
