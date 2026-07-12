@@ -116,6 +116,8 @@ import type { MirrorItem, MirrorPosition } from '@/components/share/ShareMirror'
 import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/share/selection'
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
+import { MobileBandOverlay } from './MobileBandOverlay'
+import { MobileArrangeBar } from './MobileArrangeBar'
 import { ShareToast } from '@/components/board/ShareToast'
 import { MobileShareSelectBar } from '@/components/board/MobileShareSelectBar'
 import { MobileShareResult } from '@/components/board/MobileShareResult'
@@ -451,6 +453,9 @@ export function BoardRoot() {
   // Free per-card rotation (deg) for the arrange stage. Collage-only tilt — the
   // board grid never rotates. Discarded on exit like the rest of the temp state.
   const [collageRotations, setCollageRotations] = useState<Record<string, number>>({})
+  // スマホ編集段の帯（.outerFrame 座標）。ARRANGE 進入時に確定し、CREATE の撮影と
+  // 帯ガイドの描画が同じ値を共有する。exit で null に戻す。
+  const [mobileBandRect, setMobileBandRect] = useState<CollageFitRect | null>(null)
   // Editable collage title (phase 2). null while not arranging — seeded on
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
@@ -2259,6 +2264,7 @@ export function BoardRoot() {
     setShareCreateState('idle')
     setCaptureAttempts(null)
     setShareErrorMessage(null)
+    setMobileBandRect(null)
   }, [])
 
   // The rect the initial collage layout is fit into (window coords): the .canvas
@@ -2467,15 +2473,8 @@ export function BoardRoot() {
     }
   }, [items, selectedIds, buildArrangeShare, deriveCaptureBoardColor])
 
-  // スマホの CREATE。並べる段を「見せる編集画面」ではなく「撮るための一瞬の状態」として使う:
-  //   1. 選択カードを画面中央の 1.91:1 の帯へ自動配置し sharePhase='arrange' に入る
-  //   2. paint を 2 フレーム待ってから .outerFrame を fit:'cover' で撮る
-  //      → computeCoverRect は中央を切るので、切り出し結果は帯と一致する（黒帯ゼロ）
-  //   3. その JPEG を thumb にして /s 共有を作る
-  // 撮影が失敗しても thumb 無しで作成する（＝共有を絶対に壊さない）。
-  // タイトル（ワードマーク）は載せない: スマホの盤面はそもそも描いていないので、
-  // 載せると盤面と共有リンクが食い違う（BoardRoot の bgTypo は !isMobile ゲート）。
-  const handleMobileCreateShare = useCallback(async (): Promise<void> => {
+  // スマホの ARRANGE（tap 1）: 選択カードを帯に自動配置して編集段に入る（撮影はまだしない・N-58）。
+  const handleMobileEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
     const frame = boardFrameRef.current
     const box = frame?.getBoundingClientRect()
@@ -2490,74 +2489,89 @@ export function BoardRoot() {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    const positions = fitSelectionToScreen(cards, band)
-    setCollagePositions(positions)
+    setCollagePositions(fitSelectionToScreen(cards, band))
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setCollageRotations({})
     setShareTitle(null)
     setCapturedImageUrl(null)
     setHostedShareUrl(null)
+    setShareCreateState('idle')
+    setCaptureAttempts(null)
+    setShareErrorMessage(null)
+    setMobileBandRect(band)
     setSharePhase('arrange')
+  }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, viewport.w, viewport.h])
+
+  // スマホの CREATE（tap 2）: いま編集されている配置のまま撮影してリンクを作る（再配置しない・N-58）。
+  // canvasCards は現在の state（collageOrder=重なり順 / collagePositions=位置サイズ /
+  // collageRotations=回転）から組む。撮影経路そのもの（renderCollageCanvasToJpeg・scale・
+  // 2フレーム待ち・パンくず）は N-56 のまま 1 行も変えない。
+  const handleMobileCaptureAndCreate = useCallback(async (): Promise<void> => {
+    const frame = boardFrameRef.current
+    const band = mobileBandRect
+    if (!band) return
+    setCapturedImageUrl(null)
+    setHostedShareUrl(null)
     setCaptureAttempts(null)
     setShareErrorMessage(null)
     setShareCreateState('creating')
 
-    // canvas レンダラーは per-card ではなく出力空間 (1200x630) の単一 roundedCornersPx を取る。
-    // 盤面の半径は幅依存 (cardCornerRadiusPx) なので、帯内カード幅の中央値を代表値にして
-    // 単一の情報源 (cardCornerRadiusPx) を再利用しつつ出力空間へスケールする — roundRectPath は
-    // カードごとに w/h でクランプするので過丸めにはならない。per-card 完全忠実化は後続。
+    // renderer 用カード列 — 重なり順（collageOrder）で並べ、各 id の位置(collagePositions)・
+    // 回転(collageRotations)・カードメタ(lightboxNavItems) を突き合わせる。位置の無い id は除外。
+    const itemById = new Map(lightboxNavItems.map((it) => [it.bookmarkId, it]))
+    const canvasCards: CollageCanvasCard[] = collageOrder
+      .map((id): CollageCanvasCard | null => {
+        const it = itemById.get(id)
+        const rect = collagePositions[id]
+        if (!it || !rect) return null
+        return {
+          id,
+          title: it.title,
+          thumbnailUrl: it.thumbnail ?? null,
+          url: it.url,
+          rect,
+          rotation: collageRotations[id] ?? 0,
+        }
+      })
+      .filter((c): c is CollageCanvasCard => c !== null)
+
+    // canvas レンダラーは出力空間(1200x630)の単一 roundedCornersPx を取る。盤面の半径は
+    // 幅依存(cardCornerRadiusPx)なので、帯内カード幅の中央値を代表値にして出力空間へスケール。
+    // flat は arrange-stage CollageCanvas の paper prop(themeMeta.decorations===true)と同値。
     const bandToOutScale = band.width > 0 ? 1200 / band.width : 1
-    const bandWidths = chosen
-      .map((it) => (it.bookmarkId ? positions[it.bookmarkId]?.w : undefined))
+    const bandWidths = canvasCards
+      .map((c) => c.rect.w)
       .filter((w): w is number => typeof w === 'number' && w > 0)
       .sort((a, b) => a - b)
     const medianBandW = bandWidths.length ? (bandWidths[Math.floor(bandWidths.length / 2)] ?? 0) : 0
-    // flat は arrange-stage CollageCanvas の paper prop (themeMeta.decorations === true) と
-    // 同じ値を渡す。ここがずれると paper/light テーマ (角3px固定) で盤面と共有画像の角丸が食い違う。
     const roundedCornersPx =
       parseFloat(
         cardCornerRadiusPx({ width: medianBandW, roundedCorners, flat: themeMeta.decorations === true }),
       ) * bandToOutScale
 
-    // renderer 用カード列。rect が無い (positions に未登場) カードはスキップ。
-    // BoardItem.thumbnail は string|undefined、renderer は string|null を取るので ?? null で正規化。
-    const canvasCards: CollageCanvasCard[] = chosen
-      .map((it): CollageCanvasCard | null => {
-        const id = it.bookmarkId
-        const rect = id ? positions[id] : undefined
-        return id && rect ? { id, title: it.title, thumbnailUrl: it.thumbnail ?? null, url: it.url, rect } : null
-      })
-      .filter((c): c is CollageCanvasCard => c !== null)
-
     let thumb: string | null = null
     if (frame && typeof requestAnimationFrame === 'function') {
       setCapturing(true)
-      // 帯の描画と data-capturing の CSS が確実に paint されてから撮る。
+      // data-capturing の CSS が確実に paint されてから撮る（N-56 と同じ 2 フレーム待ち）。
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
       try {
         const scale = mobileCaptureScale(band.width)
         const captureW = frame.offsetWidth || 1200
         const captureH = frame.offsetHeight || 630
-        // 撮影に写る全画像の元解像度の合計 (メモリ主犯 = canvas か画像埋め込みか の切り分け用・N-56)。
         let sourceMP = 0
         frame.querySelectorAll('img').forEach((im): void => {
           sourceMP += (im.naturalWidth * im.naturalHeight) / 1_000_000
         })
-        // 撮影の直前に「枚数・canvas 寸法・元画像総画素」を localStorage へ同期記録。
-        // iOS がメモリでタブごと落ちても、次回起動時にこの記録で真因が読める (N-56)。
         writeCaptureBreadcrumb({
           ts: Date.now(),
-          cardCount: chosen.length,
-          frameW,
-          frameH,
+          cardCount: canvasCards.length,
+          frameW: band.width,
+          frameH: band.height,
           scale,
           canvasW: Math.round(captureW * scale),
           canvasH: Math.round(captureH * scale),
           sourceMP,
         })
-        // dom-to-image (SVG foreignObject) は iOS Safari 実機で <img> を描けない (N-56 確定)。
-        // DOM を撮る代わりに、配置データ (canvasCards/band) から直接 <canvas> に描く
-        // iOS-safe レンダラーへ差し替え。画像は 1 枚ずつ順に読むので大量カードでも安全。
         thumb = await renderCollageCanvasToJpeg({
           cards: canvasCards,
           band,
@@ -2570,9 +2584,7 @@ export function BoardRoot() {
           startQuality: 0.82,
           minQuality: 0.5,
         })
-        // ここに到達 ＝ タブは生きている。パンくずを消す (残れば ＝ クラッシュの証拠)。
         clearCaptureBreadcrumb()
-        // canvas 経路の撮影診断は簡素化: 成功は null、失敗のみ最小記録で NO IMAGE 診断を出す。
         setCaptureAttempts(
           thumb ? null : [{ scale: 1, timeoutMs: 0, elapsedMs: 0, stage: 'render', message: 'canvas render returned null' }],
         )
@@ -2599,8 +2611,8 @@ export function BoardRoot() {
       setShareCreateState('error')
     }
   }, [
-    selectedIds, lightboxNavItems, customWidths, cardWidthPx,
-    viewport.w, viewport.h, buildArrangeShare, deriveCaptureBoardColor, roundedCorners, themeMeta,
+    mobileBandRect, collageOrder, collagePositions, collageRotations, lightboxNavItems,
+    roundedCorners, themeMeta, buildArrangeShare, deriveCaptureBoardColor,
   ])
 
   // Ready-state COPY LINK copies the already-hosted url.
@@ -3638,13 +3650,13 @@ export function BoardRoot() {
           onCancel={handleExitShareMode}
         />
       )}
-      {/* Phones skip the arrange stage entirely: CREATE arranges into the
-          capture band, shoots it, and mints the link in one tap (N-49). */}
+      {/* Phones: ARRANGE places the selection into the capture band and enters
+          the edit stage (N-58); a later CREATE in the arrange bar shoots it. */}
       {sharePhase === 'select' && isMobile && (
         <MobileShareSelectBar
           count={selectedIds.size}
           onSelectAll={handleSelectAll}
-          onCreate={(): void => { void handleMobileCreateShare() }}
+          onCreate={handleMobileEnterArrange}
           onCancel={handleExitShareMode}
         />
       )}
@@ -3669,24 +3681,40 @@ export function BoardRoot() {
                 : undefined
             }
           />
+          {isMobile && mobileBandRect && <MobileBandOverlay band={mobileBandRect} />}
           {/* Operation bar — hidden from the SHARE capture (data-no-capture) so it
               never appears baked into the shared image, but stays on screen. */}
           <div data-no-capture>
             {isMobile ? (
-              // While 'creating' nothing renders here: ShareCreatingIndicator
-              // portals to document.body and covers the forming collage.
-              (hostedShareUrl !== null || shareCreateState === 'error') && (
-                <MobileShareResult
-                  imageUrl={capturedImageUrl}
-                  shareUrl={hostedShareUrl}
-                  createState={shareCreateState}
-                  captureAttempts={captureAttempts}
-                  errorMessage={shareErrorMessage}
-                  onCopyLink={handleShareCopyLink}
-                  onRetry={(): void => { void handleMobileCreateShare() }}
-                  onDone={handleExitShareMode}
-                />
-              )
+              <>
+                {hostedShareUrl === null && shareCreateState !== 'error' && (
+                  <MobileArrangeBar
+                    onBack={handleShareReselect}
+                    onCreate={(): void => { void handleMobileCaptureAndCreate() }}
+                    creating={shareCreateState === 'creating'}
+                  />
+                )}
+                {(hostedShareUrl !== null || shareCreateState === 'error') && (
+                  <>
+                    <div
+                      className={styles.resultScrim}
+                      style={{ zIndex: BOARD_Z_INDEX.SHARE_RESULT_SCRIM }}
+                      data-no-capture
+                      data-testid="mobile-share-scrim"
+                    />
+                    <MobileShareResult
+                      imageUrl={capturedImageUrl}
+                      shareUrl={hostedShareUrl}
+                      createState={shareCreateState}
+                      captureAttempts={captureAttempts}
+                      errorMessage={shareErrorMessage}
+                      onCopyLink={handleShareCopyLink}
+                      onRetry={(): void => { void handleMobileCaptureAndCreate() }}
+                      onDone={handleExitShareMode}
+                    />
+                  </>
+                )}
+              </>
             ) : (
               <ShareToast
                 count={selectedIds.size}

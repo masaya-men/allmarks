@@ -22,6 +22,16 @@
   clip-path: inset(var(--canvas-margin, 48px) round var(--canvas-radius, 0px));
 }
 
+/* N-58: スマホの編集段では、コラージュ上のどの指ドラッグもカード操作（または何もしない）で
+   あって、ページ/盤面スクロールではない。カード面(.element)は touch-action:none で既に
+   守られているが、カードの無い余白から始まる指ドラッグが背後の盤面スクロールに化けるのを
+   止める。デスクトップはマウスなので影響なし。 */
+@media (max-width: 640px) {
+  .root {
+    touch-action: none;
+  }
+}
+
 .element {
   cursor: grab;
   touch-action: none;

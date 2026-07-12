@@ -10,7 +10,8 @@ type Props = {
   readonly count: number
   /** Add every visible (filtered) card up to the cap, board order. */
   readonly onSelectAll: () => void
-  /** Auto-arrange into the capture band, shoot it, mint the hosted /s link. */
+  /** Auto-arrange the selection into the capture band and enter the edit
+   *  (arrange) stage — this does not shoot yet (N-58). */
   readonly onCreate: () => void
   /** Leave selection mode and discard the selection. */
   readonly onCancel: () => void
@@ -18,8 +19,9 @@ type Props = {
 
 /** SHARE stage 1 on phones (≤640px). Two rows, because 390px cannot hold three
  *  52px buttons side by side. Same chrome material as BoardMobileNav /
- *  ReceiverImportBar so the board's touch surfaces read as one system. Phones
- *  never see the arrange stage, so CREATE — not ARRANGE — is the primary. */
+ *  ReceiverImportBar so the board's touch surfaces read as one system. Tapping
+ *  this button now ENTERS the arrange/edit stage (a later CREATE in the arrange
+ *  bar shoots) — kept the label ARRANGE and the prop name `onCreate` (N-58). */
 export function MobileShareSelectBar({ count, onSelectAll, onCreate, onCancel }: Props): ReactElement {
   return (
     <div
@@ -49,7 +51,7 @@ export function MobileShareSelectBar({ count, onSelectAll, onCreate, onCancel }:
           disabled={count === 0}
           data-testid="mobile-select-create"
         >
-          CREATE ({count})
+          ARRANGE ({count})
         </button>
       </div>
     </div>

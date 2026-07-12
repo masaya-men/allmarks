@@ -297,3 +297,9 @@
 /* Session 43: chromeButton rule は ChromeButton.module.css に移動
    (= scramble + crackle と一体運用)。 */
 
+/* N-55: 結果シート表示中、背後のコラージュへのタッチを遮る透明の盾。 */
+.resultScrim {
+  position: absolute;
+  inset: 0;
+}
+
