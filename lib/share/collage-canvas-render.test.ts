@@ -501,5 +501,13 @@ describe('renderCollageCanvasToJpeg (mock 2d context — draw loop coverage)', (
     // band is 1:1 so output center = (100 + 200/2, 100 + 100/2) = (200, 150).
     expect(fakeCtx.translate).toHaveBeenCalledWith(200, 150)
     expect(fakeCtx.translate).toHaveBeenCalledWith(-200, -150)
+    // 順序を保証: translate(center) -> rotate -> translate(-center)。
+    const centerIdx = fakeCtx.translate.mock.calls.findIndex((c) => c[0] === 200 && c[1] === 150)
+    const backIdx = fakeCtx.translate.mock.calls.findIndex((c) => c[0] === -200 && c[1] === -150)
+    const orderCenter = fakeCtx.translate.mock.invocationCallOrder[centerIdx]
+    const orderRotate = fakeCtx.rotate.mock.invocationCallOrder[0]
+    const orderBack = fakeCtx.translate.mock.invocationCallOrder[backIdx]
+    expect(orderCenter).toBeLessThan(orderRotate)
+    expect(orderRotate).toBeLessThan(orderBack)
   })
 })
