@@ -74,6 +74,27 @@ export function panStageTransform(
   return clampStageTransform({ scale: base.scale, tx: base.tx + dx, ty: base.ty + dy }, viewportW, viewportH)
 }
 
+/** スライダー等で「拡大率だけ」を nextScale に変える。pivot（screen 座標）の下にある
+ *  コンテンツ点を画面上の同じ位置に保ったままスケールを変える（＝pivot を中心にズーム）。
+ *  pinchStageTransform と同じ「点固定ズーム」を1点で行う版。current.scale は常に >=1
+ *  （clamp 済み状態）なので除算は安全。 */
+export function zoomStageToScale(
+  current: StageTransform,
+  nextScale: number,
+  pivot: StagePoint,
+  viewportW: number,
+  viewportH: number,
+): StageTransform {
+  const scale = Math.min(STAGE_ZOOM_MAX, Math.max(STAGE_ZOOM_MIN, nextScale))
+  const contentX = (pivot.x - current.tx) / current.scale
+  const contentY = (pivot.y - current.ty) / current.scale
+  return clampStageTransform(
+    { scale, tx: pivot.x - contentX * scale, ty: pivot.y - contentY * scale },
+    viewportW,
+    viewportH,
+  )
+}
+
 /** 1本指のカード操作（移動）を、2本目の指が下りた瞬間に中断する調停役。
  *  CollageCanvas がドラッグ開始時に自分の後始末（リスナー解除）を register し、
  *  MobileArrangeGestures がピンチ開始時に cancelActive を呼ぶ。同時に生きるカード操作は

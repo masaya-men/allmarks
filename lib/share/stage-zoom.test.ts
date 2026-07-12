@@ -6,6 +6,7 @@ import {
   panStageTransform,
   pinchStageTransform,
   STAGE_ZOOM_MAX,
+  zoomStageToScale,
 } from './stage-zoom'
 
 const VW = 390
@@ -116,5 +117,34 @@ describe('createCollageGestureArbiter', () => {
     arbiter.clear()
     arbiter.cancelActive()
     expect(cancel).not.toHaveBeenCalled()
+  })
+})
+
+describe('zoomStageToScale', () => {
+  const VW = 390
+  const VH = 844
+
+  it('keeps the content point under the pivot fixed on screen while changing scale', () => {
+    const cur = { scale: 2, tx: -100, ty: -200 }
+    const pivot = { x: 195, y: 400 }
+    // content under pivot now: ((195-(-100))/2, (400-(-200))/2) = (147.5, 300)
+    const next = zoomStageToScale(cur, 3, pivot, VW, VH)
+    expect(next.scale).toBe(3)
+    // that content point must map back under the pivot at the new scale (not clamped here)
+    expect(147.5 * next.scale + next.tx).toBeCloseTo(195)
+    expect(300 * next.scale + next.ty).toBeCloseTo(400)
+  })
+
+  it('zooming in about the screen center from identity keeps the center fixed', () => {
+    const next = zoomStageToScale(IDENTITY_STAGE_TRANSFORM, 2, { x: VW / 2, y: VH / 2 }, VW, VH)
+    expect(next.scale).toBe(2)
+    // center content (195, 422) stays centered: 195*2 + tx = 195 => tx = -195
+    expect(next.tx).toBeCloseTo(-195)
+    expect(next.ty).toBeCloseTo(-422)
+  })
+
+  it('clamps scale into [1, MAX] and pins to the origin at scale 1', () => {
+    expect(zoomStageToScale({ scale: 2, tx: -50, ty: -50 }, 0.2, { x: 100, y: 100 }, VW, VH)).toEqual(IDENTITY_STAGE_TRANSFORM)
+    expect(zoomStageToScale(IDENTITY_STAGE_TRANSFORM, 99, { x: 0, y: 0 }, VW, VH).scale).toBe(STAGE_ZOOM_MAX)
   })
 })
