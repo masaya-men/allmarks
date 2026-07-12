@@ -118,12 +118,19 @@ import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { MobileBandOverlay } from './MobileBandOverlay'
 import { MobileArrangeBar } from './MobileArrangeBar'
+import { MobileArrangeGestures } from './MobileArrangeGestures'
+import {
+  createCollageGestureArbiter,
+  IDENTITY_STAGE_TRANSFORM,
+  type CollageGestureArbiter,
+  type StageTransform,
+} from '@/lib/share/stage-zoom'
 import { ShareToast } from '@/components/board/ShareToast'
 import { MobileShareSelectBar } from '@/components/board/MobileShareSelectBar'
 import { MobileShareResult } from '@/components/board/MobileShareResult'
 import { CaptureCrashNotice } from '@/components/board/CaptureCrashNotice'
 import { mobileCollageBandRect, mobileCaptureScale } from '@/lib/share/mobile-band'
-import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
+import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, scaleElementFromCenter, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
@@ -456,6 +463,14 @@ export function BoardRoot() {
   // スマホ編集段の帯（.outerFrame 座標）。ARRANGE 進入時に確定し、CREATE の撮影と
   // 帯ガイドの描画が同じ値を共有する。exit で null に戻す。
   const [mobileBandRect, setMobileBandRect] = useState<CollageFitRect | null>(null)
+  // スマホ編集段: タップ選択のカード id（null=非選択）。2本指の行き先と選択枠を決める（N-58 段階2）。
+  const [selectedCollageId, setSelectedCollageId] = useState<string | null>(null)
+  // ボードのズーム/パン（編集専用・撮影に無影響）。段の出入りで IDENTITY に戻す。
+  const [stageTransform, setStageTransform] = useState<StageTransform>(IDENTITY_STAGE_TRANSFORM)
+  // 2本目の指で進行中のカード移動を止める調停役（インスタンスは1個を維持）。
+  const [collageArbiter] = useState<CollageGestureArbiter>(() => createCollageGestureArbiter())
+  // 選択カードのピンチ開始時の base（絶対計算で誤差を溜めないためのスナップショット）。
+  const pinchBaseRef = useRef<{ positions: CollagePositions; rotation: number; id: string } | null>(null)
   // Editable collage title (phase 2). null while not arranging — seeded on
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
@@ -2265,6 +2280,8 @@ export function BoardRoot() {
     setCaptureAttempts(null)
     setShareErrorMessage(null)
     setMobileBandRect(null)
+    setSelectedCollageId(null)
+    setStageTransform(IDENTITY_STAGE_TRANSFORM)
   }, [])
 
   // The rect the initial collage layout is fit into (window coords): the .canvas
@@ -2473,6 +2490,28 @@ export function BoardRoot() {
     }
   }, [items, selectedIds, buildArrangeShare, deriveCaptureBoardColor])
 
+  // スマホ: 選択カードの2本指ピンチ開始 — 進行中のカード移動を止め、base をスナップショット。
+  const handleSelectedPinchStart = useCallback((): void => {
+    collageArbiter.cancelActive()
+    if (selectedCollageId === null) return
+    pinchBaseRef.current = {
+      positions: collagePositions,
+      rotation: collageRotations[selectedCollageId] ?? 0,
+      id: selectedCollageId,
+    }
+  }, [collageArbiter, selectedCollageId, collagePositions, collageRotations])
+
+  // スマホ: 選択カードの2本指ピンチ中 — base から絶対計算で拡縮（中心軸）+回転。
+  const handleSelectedPinch = useCallback(
+    (change: { readonly factor: number; readonly deltaDeg: number }): void => {
+      const base = pinchBaseRef.current
+      if (!base) return
+      setCollagePositions(scaleElementFromCenter(base.positions, base.id, change.factor, effectiveLayoutWidth))
+      setCollageRotations((r) => ({ ...r, [base.id]: base.rotation + change.deltaDeg }))
+    },
+    [effectiveLayoutWidth],
+  )
+
   // スマホの ARRANGE（tap 1）: 選択カードを帯に自動配置して編集段に入る（撮影はまだしない・N-58）。
   const handleMobileEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
@@ -2499,6 +2538,8 @@ export function BoardRoot() {
     setCaptureAttempts(null)
     setShareErrorMessage(null)
     setMobileBandRect(band)
+    setSelectedCollageId(null)
+    setStageTransform(IDENTITY_STAGE_TRANSFORM)
     setSharePhase('arrange')
   }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, viewport.w, viewport.h])
 
@@ -2519,6 +2560,7 @@ export function BoardRoot() {
     // renderer 用カード列 — 重なり順（collageOrder）で並べ、各 id の位置(collagePositions)・
     // 回転(collageRotations)・カードメタ(lightboxNavItems) を突き合わせる。位置の無い id は除外。
     const itemById = new Map(lightboxNavItems.map((it) => [it.bookmarkId, it]))
+    // 重なり順（collageOrder）で並べて焼く（盤面の並び順ではない）。z 順＝collageOrder が正。
     const canvasCards: CollageCanvasCard[] = collageOrder
       .map((id): CollageCanvasCard | null => {
         const it = itemById.get(id)
@@ -2650,6 +2692,8 @@ export function BoardRoot() {
     setCapturedImageUrl(null)
     setHostedShareUrl(null)
     setShareCreateState('idle')
+    setSelectedCollageId(null)
+    setStageTransform(IDENTITY_STAGE_TRANSFORM)
     setSharePhase('select')
   }, [])
 
@@ -3662,26 +3706,41 @@ export function BoardRoot() {
       )}
       {sharePhase === 'arrange' && (
         <>
-          <CollageCanvas
-            items={lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))}
-            positions={collagePositions}
-            order={collageOrder}
-            onMove={(id, x, y): void => setCollagePositions((p) => moveElement(p, id, x, y))}
-            onResize={(id, corner, w): void => setCollagePositions((p) => resizeElementFromCorner(p, id, corner, w))}
-            onGrab={(id): void => setCollageOrder((o) => bringToFront(o, id))}
-            rotations={collageRotations}
-            onRotate={(id, deg): void => setCollageRotations((r) => ({ ...r, [id]: deg }))}
-            maxCardWidth={effectiveLayoutWidth}
-            displayMode={displayMode}
-            paper={themeMeta.decorations === true}
-            roundedCorners={roundedCorners}
-            title={
-              shareTitle
-                ? { config: shareTitle, defaultText: deriveBoardBgTypoText(activeFilter, tags), onChange: setShareTitle }
-                : undefined
-            }
-          />
-          {isMobile && mobileBandRect && <MobileBandOverlay band={mobileBandRect} />}
+          <MobileArrangeGestures
+            enabled={isMobile}
+            transform={stageTransform}
+            onTransformChange={setStageTransform}
+            selectedId={selectedCollageId}
+            onSelectedPinchStart={handleSelectedPinchStart}
+            onSelectedPinch={handleSelectedPinch}
+            onDeselect={(): void => setSelectedCollageId(null)}
+          >
+            <CollageCanvas
+              items={lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))}
+              positions={collagePositions}
+              order={collageOrder}
+              onMove={(id, x, y): void => setCollagePositions((p) => moveElement(p, id, x, y))}
+              onResize={(id, corner, w): void => setCollagePositions((p) => resizeElementFromCorner(p, id, corner, w))}
+              onGrab={(id): void => setCollageOrder((o) => bringToFront(o, id))}
+              rotations={collageRotations}
+              onRotate={(id, deg): void => setCollageRotations((r) => ({ ...r, [id]: deg }))}
+              maxCardWidth={effectiveLayoutWidth}
+              displayMode={displayMode}
+              paper={themeMeta.decorations === true}
+              roundedCorners={roundedCorners}
+              title={
+                shareTitle
+                  ? { config: shareTitle, defaultText: deriveBoardBgTypoText(activeFilter, tags), onChange: setShareTitle }
+                  : undefined
+              }
+              pointerScale={isMobile ? stageTransform.scale : undefined}
+              selectedId={isMobile ? selectedCollageId : undefined}
+              onSelect={isMobile ? (id): void => setSelectedCollageId(id) : undefined}
+              touchMode={isMobile}
+              gestureArbiter={isMobile ? collageArbiter : undefined}
+            />
+            {isMobile && mobileBandRect && <MobileBandOverlay band={mobileBandRect} />}
+          </MobileArrangeGestures>
           {/* Operation bar — hidden from the SHARE capture (data-no-capture) so it
               never appears baked into the shared image, but stays on screen. */}
           <div data-no-capture>

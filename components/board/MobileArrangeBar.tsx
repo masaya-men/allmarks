@@ -23,9 +23,9 @@ export function MobileArrangeBar(props: MobileArrangeBarProps): ReactElement {
       data-no-capture
       data-testid="mobile-arrange-bar"
     >
-      <span className={styles.hint}>DRAG TO ARRANGE — THE BRIGHT BAND BECOMES THE IMAGE</span>
+      <span className={styles.hint}>TAP A CARD TO SELECT — PINCH TO RESIZE OR ROTATE — TWO FINGERS ZOOM THE BOARD</span>
       <div className={styles.actions}>
-        <button type="button" className={styles.ghost} onClick={props.onBack} data-testid="mobile-arrange-back">
+        <button type="button" className={styles.ghost} onClick={props.onBack} disabled={props.creating} data-testid="mobile-arrange-back">
           BACK
         </button>
         <button

@@ -100,7 +100,11 @@ export function MobileArrangeGestures(props: MobileArrangeGesturesProps): ReactE
         viewportW: rect?.width ?? 0,
         viewportH: rect?.height ?? 0,
       }
-      if (mode === 'card') props.onSelectedPinchStart()
+      // Fire on ANY pinch start (card OR stage). BoardRoot's handler always cancels the in-flight
+      // 1-finger card drag via the arbiter, and only snapshots a base when a card is actually
+      // selected — this guards the selectedId setState race where a 2nd finger could land in stage
+      // mode while a card drag is still live and leak its listeners.
+      props.onSelectedPinchStart()
       const vp = viewportRef.current
       if (vp) {
         try {

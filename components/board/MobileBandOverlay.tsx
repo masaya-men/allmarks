@@ -16,7 +16,7 @@ export type MobileBandOverlayProps = {
  *  data-no-capture なので撮影には写らない。 */
 export function MobileBandOverlay(props: MobileBandOverlayProps): ReactElement | null {
   const { band } = props
-  if (band.width <= 0 || band.height <= 0) return null
+  if (!(band.width > 0) || !(band.height > 0)) return null
   return (
     <div
       className={styles.band}

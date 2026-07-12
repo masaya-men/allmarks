@@ -121,6 +121,40 @@ describe('MobileArrangeGestures', () => {
     expect(onDeselect).toHaveBeenCalledTimes(1)
   })
 
+  it('with NO card selected, two fingers still fire onSelectedPinchStart once (arbiter cleanup on any pinch)', () => {
+    const { vp, onSelectedPinchStart } = renderGestures({ selectedId: null })
+    fireEvent.pointerDown(vp, { button: 0, pointerId: 1, clientX: 150, clientY: 400 })
+    expect(onSelectedPinchStart).not.toHaveBeenCalled()
+    fireEvent.pointerDown(vp, { button: 0, pointerId: 2, clientX: 250, clientY: 400 })
+    expect(onSelectedPinchStart).toHaveBeenCalledTimes(1)
+  })
+
+  it('a lone finger landing on a card passes through untouched (no deselect, no transform)', () => {
+    const onTransformChange = vi.fn()
+    const onDeselect = vi.fn()
+    render(
+      <MobileArrangeGestures
+        enabled
+        transform={IDENTITY_STAGE_TRANSFORM}
+        onTransformChange={onTransformChange}
+        selectedId="a"
+        onSelectedPinchStart={noop}
+        onSelectedPinch={noop}
+        onDeselect={onDeselect}
+      >
+        <div data-testid="collage-el-x" />
+      </MobileArrangeGestures>,
+    )
+    const vp = screen.getByTestId('mobile-arrange-viewport')
+    mockRect(vp)
+    const card = screen.getByTestId('collage-el-x')
+    fireEvent.pointerDown(card, { button: 0, pointerId: 1, clientX: 120, clientY: 120 })
+    fireEvent.pointerMove(card, { pointerId: 1, clientX: 200, clientY: 200 })
+    fireEvent.pointerUp(card, { pointerId: 1, clientX: 200, clientY: 200 })
+    expect(onDeselect).not.toHaveBeenCalled()
+    expect(onTransformChange).not.toHaveBeenCalled()
+  })
+
   it('lifting either finger ends the pinch', () => {
     const { vp, onTransformChange } = renderGestures({ selectedId: null })
     fireEvent.pointerDown(vp, { button: 0, pointerId: 1, clientX: 150, clientY: 400 })
