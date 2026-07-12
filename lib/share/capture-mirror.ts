@@ -347,7 +347,7 @@ export function wrapTextToLines(
   return lines
 }
 
-function drawWrappedText(
+export function drawWrappedText(
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
@@ -364,7 +364,7 @@ function drawWrappedText(
   }
 }
 
-function drawClippedText(
+export function drawClippedText(
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
@@ -385,7 +385,7 @@ function drawClippedText(
 
 /** 角丸の矩形パスを現在の path に積む (= roundRect 非対応環境でも動くよう arcTo で構築)。
  *  半径は幅 / 高さの半分でクランプして潰れを防ぐ。 */
-function roundRectPath(
+export function roundRectPath(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -403,7 +403,7 @@ function roundRectPath(
   ctx.closePath()
 }
 
-function loadCrossOriginImage(url: string): Promise<HTMLImageElement | null> {
+export function loadCrossOriginImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve): void => {
     if (typeof Image === 'undefined') { resolve(null); return }
     const img = new Image()
@@ -433,7 +433,7 @@ function canvasToJpeg(canvas: HTMLCanvasElement, quality: number): Promise<strin
 }
 
 /** dataURL (base64) の実バイト数を概算する (= base64 長 × 3/4、 prefix 除外)。 */
-function dataUrlByteLength(dataUrl: string): number {
+export function dataUrlByteLength(dataUrl: string): number {
   const comma = dataUrl.indexOf(',')
   const b64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
   // base64 4 文字 = 3 byte。 padding '=' は実バイトに含めない。
@@ -444,7 +444,7 @@ function dataUrlByteLength(dataUrl: string): number {
 /** 目標バイト数に収まる JPEG dataURL を返す。 startQuality から段階的に品質を
  *  落とし、 収まった時点で返す。 minQuality まで下げても超過する場合は minQuality
  *  の結果をそのまま返す (= 失敗させず、 多少大きくても共有を成立させる)。 */
-async function canvasToJpegUnderTarget(
+export async function canvasToJpegUnderTarget(
   canvas: HTMLCanvasElement,
   targetBytes: number,
   startQuality: number,
