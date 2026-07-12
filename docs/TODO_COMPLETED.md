@@ -9510,3 +9510,32 @@ tsc0 / **vitest 2291/2291**（276 files・flake なし）/ `pnpm build` OK（ass
 ### 残（次セッション）
 
 実タッチのピンチ/回転は**実機のみ**検証可 → ユーザーの実機確認待ち。OK なら **N-57+59**（スマホ盤面の小物）へ。感触の調整は `STAGE_ZOOM_MAX`/`PAN_SLOP_PX` の1箇所で可能。INFORMATIONAL: `/s` **ページ**再構成は盤面順（共有**画像**は編集どおり・N-58 の回帰ではない）＝/s ページにも配置を載せるかはユーザー判断の別タスク。
+
+---
+
+## セッション 191 追補 (2026-07-13) — N-58 スマホ ARRANGE のボードズーム・スライダー（実機で判明した穴を塞ぐ）
+
+段階2 の実機確認で「機能は全部OK。ただし**100枚選ぶと帯がカードで埋まって余白が無く、選択解除できない → 2本指ボードズームに入れない**」とユーザー報告。根因＝selection-gated（ボードズーム＝非選択が前提）なのに、埋まった盤面では非選択状態に到達できない。ユーザーが「画面下部にズーム用スライダー」を提案。
+
+### 再ブレスト → 方針A確定（ユーザー承認）
+
+- **見えるズーム操作を足す**: ARRANGE バーの最上段に**ズーム・スライダー**を常設。**選択と無関係にいつでも効く**＝解除不要。
+- **拡大は「選択中のカードを中心に」**（無選択は画面中心）＝選びたい一枚が真ん中で大きくなり、パンがほぼ要らない。
+- 既存の**2本指ボードズームは残す**（両者は同じ `stageTransform` を読み書き＝常に一致・スライダーは controlled）。
+- ミニマルなモノトーン（数字なし）・虫めがねグリフ。
+
+### 実装（Task 1〜3・各レビュー clean・subagent-driven）
+
+1. **`zoomStageToScale`**（`stage-zoom.ts` に純関数追加）＝pivot（screen 座標）の下のコンテンツ点を画面上の同じ位置に保ったままスケールだけ変える（`clampStageTransform` 再利用）。
+2. **`MobileZoomSlider`**（新コンポーネント）＝controlled（つまみ位置＝`scale` prop）・トラックへ pointer で `onScaleChange`（`STAGE_ZOOM_MIN..MAX` 線形）・位置指定なし（バーの縦積みに載る）・`data-no-capture`・testids。
+3. **配線**＝`MobileArrangeBar` に任意 `zoom` prop（省略時バイト同一）＋ヒント文言更新／`BoardRoot handleZoomSliderChange`（pivot＝選択カード中心 or 画面中心を **prev から関数型 setState で**計算＝stale closure 回避・`setStageTransform` だけ触る＝**撮影に無影響**）＋ e2e（**カード選択中でもスライダーでボードが拡大する**＝穴の回帰テスト）。
+
+### 検証・出荷
+
+- tsc0 / **vitest 281 files 2334 passed** / build OK / **playwright mobile-share 11/11**。
+- **opus 全ブランチレビュー（a1a1f478..64f7715e・4 commit）= MERGE READINESS YES**。5つの不変条件（ボードズームは画像に無影響／デスクトップ不変／pivot ズーム drift-free／スライダー↔2本指の同期／z-index・TS strict）を実コード直読で検証。段階2 ジェスチャとの共存もクリーン（スライダーは `MobileArrangeGestures` の外＋自前 pointer capture＝クロストークなし）。deferred Minor は全て defer。
+- `merge --no-ff` → master **c374ff1f** → `allmarks.app` デプロイ済。spec `docs/superpowers/specs/2026-07-13-n58-mobile-zoom-slider-design.md`・plan `docs/superpowers/plans/2026-07-13-n58-mobile-zoom-slider.md`。
+
+### 残（次セッション）
+
+実タッチ・スライダーの感触は実機のみ → ユーザーの実機確認待ち（100枚でスライダーズームできるか＝穴が塞がったか）。非ブロッキング: スライダーへのキーボード（矢印）操作は未対応（タッチ主体の割り切り）。
