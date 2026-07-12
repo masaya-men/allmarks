@@ -69,6 +69,26 @@ export function resizeElementFromCorner(
   return { ...positions, [id]: { x, y, w, h } }
 }
 
+/** 要素を「中心を固定」して factor 倍する（2本指ピンチのカード拡縮）。幅は
+ *  [COLLAGE_MIN_WIDTH_PX, maxCardWidth] にクランプ、高さはアスペクト維持。中心を保つよう
+ *  x,y を再計算。未知 id は同一参照。呼び出し側は「ピンチ開始時の base positions」を渡す
+ *  ＝毎フレーム絶対計算で誤差が溜まらない（N-58 段階2）。 */
+export function scaleElementFromCenter(
+  positions: CollagePositions,
+  id: string,
+  factor: number,
+  maxCardWidth: number,
+): CollagePositions {
+  const p = positions[id]
+  if (!p) return positions
+  const aspect = p.w / p.h
+  const cx = p.x + p.w / 2
+  const cy = p.y + p.h / 2
+  const w = Math.min(maxCardWidth, Math.max(COLLAGE_MIN_WIDTH_PX, p.w * factor))
+  const h = w / aspect
+  return { ...positions, [id]: { x: cx - w / 2, y: cy - h / 2, w, h } }
+}
+
 /** 重なり順配列で id を最前面（末尾）へ。未知 id は複製を返す。 */
 export function bringToFront(order: readonly string[], id: string): string[] {
   if (!order.includes(id)) return [...order]

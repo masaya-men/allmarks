@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { seedCollagePositions, moveElement, resizeElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen } from './collage-layout'
+import { seedCollagePositions, moveElement, resizeElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, scaleElementFromCenter, COLLAGE_MIN_WIDTH_PX } from './collage-layout'
 
 const cards = [
   { id: 'a', width: 200, height: 100 },
@@ -190,5 +190,36 @@ describe('fitSelectionToScreen (justified rows fill)', () => {
     }
     const maxW = Math.max(...Object.values(pos).map((p) => p.w))
     expect(maxW).toBeGreaterThan(30)
+  })
+})
+
+describe('scaleElementFromCenter', () => {
+  const base = { a: { x: 100, y: 100, w: 200, h: 100 } } // center (200,150), aspect 2
+
+  it('scales width/height about the card center (center stays fixed)', () => {
+    const out = scaleElementFromCenter(base, 'a', 2, 5000)
+    expect(out.a.w).toBeCloseTo(400)
+    expect(out.a.h).toBeCloseTo(200)
+    // center preserved: x = 200 - 400/2 = 0, y = 150 - 200/2 = 50
+    expect(out.a.x).toBeCloseTo(0)
+    expect(out.a.y).toBeCloseTo(50)
+  })
+
+  it('clamps width to the lower bound and keeps aspect', () => {
+    const out = scaleElementFromCenter(base, 'a', 0.01, 5000)
+    expect(out.a.w).toBe(COLLAGE_MIN_WIDTH_PX)
+    expect(out.a.h).toBeCloseTo(COLLAGE_MIN_WIDTH_PX / 2)
+    // still centered on (200,150)
+    expect(out.a.x).toBeCloseTo(200 - COLLAGE_MIN_WIDTH_PX / 2)
+  })
+
+  it('clamps width to maxCardWidth', () => {
+    const out = scaleElementFromCenter(base, 'a', 100, 600)
+    expect(out.a.w).toBe(600)
+    expect(out.a.h).toBeCloseTo(300)
+  })
+
+  it('returns the same reference for an unknown id', () => {
+    expect(scaleElementFromCenter(base, 'zzz', 2, 5000)).toBe(base)
   })
 })
