@@ -99,19 +99,16 @@ import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import { createHostedShare } from '@/lib/share/create-hosted-share'
-import { captureCollageShareImage, captureCollageShareImageDetailed, type CaptureAttempt } from '@/lib/share/capture-collage'
+import { captureCollageShareImage, type CaptureAttempt } from '@/lib/share/capture-collage'
 import {
   clearCaptureBreadcrumb,
   readStaleCaptureBreadcrumb,
   writeCaptureBreadcrumb,
   type CaptureBreadcrumb,
 } from '@/lib/share/capture-breadcrumb'
-import {
-  buildCaptureThumbnailMap,
-  captureThumbnailMaxPx,
-  downscaleImageViaCanvas,
-} from '@/lib/share/capture-thumbnails'
 import { rewriteToProxy } from '@/lib/share/proxy-image'
+import { renderCollageCanvasToJpeg, type CollageCanvasCard } from '@/lib/share/collage-canvas-render'
+import { cardCornerRadiusPx } from '@/lib/board/card-radius'
 import { shareImageFilename } from '@/lib/share/share-image-filename'
 import { buildTweetIntentUrl } from '@/lib/share/share-actions'
 import { createShare } from '@/lib/share/api-client'
@@ -2493,7 +2490,8 @@ export function BoardRoot() {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    setCollagePositions(fitSelectionToScreen(cards, band))
+    const positions = fitSelectionToScreen(cards, band)
+    setCollagePositions(positions)
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setCollageRotations({})
     setShareTitle(null)
@@ -2503,6 +2501,29 @@ export function BoardRoot() {
     setCaptureAttempts(null)
     setShareErrorMessage(null)
     setShareCreateState('creating')
+
+    // canvas レンダラーは per-card ではなく出力空間 (1200x630) の単一 roundedCornersPx を取る。
+    // 盤面の半径は幅依存 (cardCornerRadiusPx) なので、帯内カード幅の中央値を代表値にして
+    // 単一の情報源 (cardCornerRadiusPx) を再利用しつつ出力空間へスケールする — roundRectPath は
+    // カードごとに w/h でクランプするので過丸めにはならない。per-card 完全忠実化は後続。
+    const bandToOutScale = band.width > 0 ? 1200 / band.width : 1
+    const bandWidths = chosen
+      .map((it) => (it.bookmarkId ? positions[it.bookmarkId]?.w : undefined))
+      .filter((w): w is number => typeof w === 'number' && w > 0)
+      .sort((a, b) => a - b)
+    const medianBandW = bandWidths.length ? (bandWidths[Math.floor(bandWidths.length / 2)] ?? 0) : 0
+    const roundedCornersPx =
+      parseFloat(cardCornerRadiusPx({ width: medianBandW, roundedCorners, flat: false })) * bandToOutScale
+
+    // renderer 用カード列。rect が無い (positions に未登場) カードはスキップ。
+    // BoardItem.thumbnail は string|undefined、renderer は string|null を取るので ?? null で正規化。
+    const canvasCards: CollageCanvasCard[] = chosen
+      .map((it): CollageCanvasCard | null => {
+        const id = it.bookmarkId
+        const rect = id ? positions[id] : undefined
+        return id && rect ? { id, title: it.title, thumbnailUrl: it.thumbnail ?? null, url: it.url, rect } : null
+      })
+      .filter((c): c is CollageCanvasCard => c !== null)
 
     let thumb: string | null = null
     if (frame && typeof requestAnimationFrame === 'function') {
@@ -2530,35 +2551,27 @@ export function BoardRoot() {
           canvasH: Math.round(captureH * scale),
           sourceMP,
         })
-        // 多枚数だけ: カード画像を縮小サムネ化してから撮る。原寸のまま全部を埋め込むと
-        // dom-to-image が巨大 Image をデコードして iOS のタブメモリを超え、タブごと落ちる
-        // (実機で確定・N-56)。少数は maxPx が 1200 に張り付く＝縮小せず原寸のまま撮る。
-        const thumbMaxPx = captureThumbnailMaxPx(chosen.length)
-        const captureThumbnails =
-          thumbMaxPx < 1200
-            ? await buildCaptureThumbnailMap(
-                Array.from(frame.querySelectorAll('img'), (im): string => im.getAttribute('src') ?? ''),
-                (src): Promise<string | null> =>
-                  downscaleImageViaCanvas(rewriteToProxy(src, shareOrigin()), thumbMaxPx),
-              )
-            : undefined
-        const outcome = await captureCollageShareImageDetailed(frame, {
-          origin: shareOrigin(),
-          boardColor: deriveCaptureBoardColor(),
-          fit: 'cover',
-          // 帯の幅（画面幅ではない）を渡す — 切り出す帯が原寸 1200px の raster になる。
-          scale,
-          // 実機で高倍率が死ぬ場合に備え、倍率 1 でもう一度だけ撮り直す (N-56)。
-          fallbackScales: [1],
-          // iOS の「真っ白な成功画像」を失敗として検出する (N-56)。
-          rejectUniform: true,
-          // 多枚数はカード画像を縮小してから埋め込む (メモリ枯渇クラッシュ回避・N-56)。
-          captureThumbnails,
+        // dom-to-image (SVG foreignObject) は iOS Safari 実機で <img> を描けない (N-56 確定)。
+        // DOM を撮る代わりに、配置データ (canvasCards/band) から直接 <canvas> に描く
+        // iOS-safe レンダラーへ差し替え。画像は 1 枚ずつ順に読むので大量カードでも安全。
+        thumb = await renderCollageCanvasToJpeg({
+          cards: canvasCards,
+          band,
+          width: 1200,
+          height: 630,
+          bgColor: deriveCaptureBoardColor(),
+          roundedCornersPx,
+          toProxyUrl: (s: string): string => rewriteToProxy(s, shareOrigin()),
+          targetBytes: 180 * 1024,
+          startQuality: 0.82,
+          minQuality: 0.5,
         })
         // ここに到達 ＝ タブは生きている。パンくずを消す (残れば ＝ クラッシュの証拠)。
         clearCaptureBreadcrumb()
-        thumb = outcome.dataUrl
-        setCaptureAttempts(outcome.attempts)
+        // canvas 経路の撮影診断は簡素化: 成功は null、失敗のみ最小記録で NO IMAGE 診断を出す。
+        setCaptureAttempts(
+          thumb ? null : [{ scale: 1, timeoutMs: 0, elapsedMs: 0, stage: 'render', message: 'canvas render returned null' }],
+        )
       } finally {
         setCapturing(false)
       }
@@ -2583,7 +2596,7 @@ export function BoardRoot() {
     }
   }, [
     selectedIds, lightboxNavItems, customWidths, cardWidthPx,
-    viewport.w, viewport.h, buildArrangeShare, deriveCaptureBoardColor,
+    viewport.w, viewport.h, buildArrangeShare, deriveCaptureBoardColor, roundedCorners,
   ])
 
   // Ready-state COPY LINK copies the already-hosted url.
