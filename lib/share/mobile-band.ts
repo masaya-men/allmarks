@@ -14,6 +14,9 @@ import type { CollageFitRect } from './collage-layout'
 /** 共有 OG 画像の寸法（X の summary_large_image が期待する 1.91:1）。 */
 export const SHARE_OG_ASPECT = { WIDTH: 1200, HEIGHT: 630 } as const
 
+/** モバイルのコラージュ主役＝縦 4:5（保存＆縦向き共有）。段階1 は 4:5 固定。 */
+export const SHARE_PORTRAIT_ASPECT = { WIDTH: 1080, HEIGHT: 1350 } as const
+
 /** 撮影倍率の下限（原寸より縮めない）と上限（canvas 爆発の予防）。 */
 const MIN_SCALE = 1
 const MAX_SCALE = 4
@@ -21,23 +24,34 @@ const MAX_SCALE = 4
 const EMPTY_RECT: CollageFitRect = { x: 0, y: 0, width: 0, height: 0 }
 
 /**
- * スマホの自動配置矩形 ＝ `.outerFrame` 内に中央に収まる 1.91:1 の帯。
- * これは computeCoverRect が中央から切り出す、ちょうどその 1200×630 矩形である。
- * 座標系は `.outerFrame`（= CollageCanvas の `.root` が `inset:0` で張る空間）。
- * スマホは `--canvas-margin: 0` なので、これは画面座標と一致する。
+ * フレーム内に中央に収まる `aspectW:aspectH` の帯（`.outerFrame` 座標）。
+ * フレームが指定比より横長 → 全高を使い左右を削る。縦長 → 全幅を使い上下を削る。
+ * クロス乗算で誤差を避ける。
  */
-export function mobileCollageBandRect(frameW: number, frameH: number): CollageFitRect {
+export function collageBandRect(
+  frameW: number,
+  frameH: number,
+  aspectW: number,
+  aspectH: number,
+): CollageFitRect {
   if (frameW <= 0 || frameH <= 0) return EMPTY_RECT
-  // frameW/frameH > 1200/630  ⇔  frameW*630 > frameH*1200 (cross-multiply で誤差回避)
-  const frameIsWider = frameW * SHARE_OG_ASPECT.HEIGHT > frameH * SHARE_OG_ASPECT.WIDTH
+  const frameIsWider = frameW * aspectH > frameH * aspectW
   if (frameIsWider) {
-    // Short & wide: the crop keeps the full height and cuts the sides.
-    const width = (frameH * SHARE_OG_ASPECT.WIDTH) / SHARE_OG_ASPECT.HEIGHT
+    const width = (frameH * aspectW) / aspectH
     return { x: (frameW - width) / 2, y: 0, width, height: frameH }
   }
-  // Portrait (every phone): the crop keeps the full width and cuts top/bottom.
-  const height = (frameW * SHARE_OG_ASPECT.HEIGHT) / SHARE_OG_ASPECT.WIDTH
+  const height = (frameW * aspectH) / aspectW
   return { x: 0, y: (frameH - height) / 2, width: frameW, height }
+}
+
+/** スマホの自動配置矩形（横 1.91:1・リンクカード相当）。後方互換で温存。 */
+export function mobileCollageBandRect(frameW: number, frameH: number): CollageFitRect {
+  return collageBandRect(frameW, frameH, SHARE_OG_ASPECT.WIDTH, SHARE_OG_ASPECT.HEIGHT)
+}
+
+/** スマホの自動配置矩形（縦 4:5・モバイル主役）。 */
+export function mobileCollagePortraitBandRect(frameW: number, frameH: number): CollageFitRect {
+  return collageBandRect(frameW, frameH, SHARE_PORTRAIT_ASPECT.WIDTH, SHARE_PORTRAIT_ASPECT.HEIGHT)
 }
 
 /**
