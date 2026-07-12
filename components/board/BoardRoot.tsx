@@ -99,7 +99,7 @@ import { SenderShareModal } from '@/components/share/SenderShareModal'
 import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import { createHostedShare } from '@/lib/share/create-hosted-share'
-import { captureCollageShareImage } from '@/lib/share/capture-collage'
+import { captureCollageShareImage, captureCollageShareImageDetailed, type CaptureAttempt } from '@/lib/share/capture-collage'
 import { shareImageFilename } from '@/lib/share/share-image-filename'
 import { buildTweetIntentUrl } from '@/lib/share/share-actions'
 import { createShare } from '@/lib/share/api-client'
@@ -452,6 +452,8 @@ export function BoardRoot() {
   const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null)
   const [hostedShareUrl, setHostedShareUrl] = useState<string | null>(null)
   const [shareCreateState, setShareCreateState] = useState<'idle' | 'creating' | 'error'>('idle')
+  const [captureAttempts, setCaptureAttempts] = useState<readonly CaptureAttempt[] | null>(null)
+  const [shareErrorMessage, setShareErrorMessage] = useState<string | null>(null)
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
   // Onboarding: true while the first-run tutorial overlay is active.
@@ -2235,6 +2237,8 @@ export function BoardRoot() {
     setCapturedImageUrl(null)
     setHostedShareUrl(null)
     setShareCreateState('idle')
+    setCaptureAttempts(null)
+    setShareErrorMessage(null)
   }, [])
 
   // The rect the initial collage layout is fit into (window coords): the .canvas
@@ -2473,6 +2477,8 @@ export function BoardRoot() {
     setCapturedImageUrl(null)
     setHostedShareUrl(null)
     setSharePhase('arrange')
+    setCaptureAttempts(null)
+    setShareErrorMessage(null)
     setShareCreateState('creating')
 
     let thumb: string | null = null
@@ -2481,16 +2487,24 @@ export function BoardRoot() {
       // 帯の描画と data-capturing の CSS が確実に paint されてから撮る。
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
       try {
-        thumb = await captureCollageShareImage(frame, {
+        const outcome = await captureCollageShareImageDetailed(frame, {
           origin: shareOrigin(),
           boardColor: deriveCaptureBoardColor(),
           fit: 'cover',
           // 帯の幅（画面幅ではない）を渡す — 切り出す帯が原寸 1200px の raster になる。
           scale: mobileCaptureScale(band.width),
+          // 実機で高倍率が死ぬ場合に備え、倍率 1 でもう一度だけ撮り直す (N-56)。
+          fallbackScales: [1],
+          // iOS の「真っ白な成功画像」を失敗として検出する (N-56)。
+          rejectUniform: true,
         })
+        thumb = outcome.dataUrl
+        setCaptureAttempts(outcome.attempts)
       } finally {
         setCapturing(false)
       }
+    } else {
+      setCaptureAttempts([{ scale: 1, timeoutMs: 0, elapsedMs: 0, stage: 'no-frame', message: null }])
     }
     setCapturedImageUrl(thumb)
 
@@ -2505,6 +2519,7 @@ export function BoardRoot() {
       setHostedShareUrl(res.url)
       setShareCreateState('idle')
     } else {
+      setShareErrorMessage(res.message)
       setShareCreateState('error')
     }
   }, [
@@ -3589,6 +3604,8 @@ export function BoardRoot() {
                   imageUrl={capturedImageUrl}
                   shareUrl={hostedShareUrl}
                   createState={shareCreateState}
+                  captureAttempts={captureAttempts}
+                  errorMessage={shareErrorMessage}
                   onCopyLink={handleShareCopyLink}
                   onRetry={(): void => { void handleMobileCreateShare() }}
                   onDone={handleExitShareMode}
