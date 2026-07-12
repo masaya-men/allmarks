@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 188 — ★N-56 スマホ共有画像の「診断可視化＋倍率フォールバック＋真っ白検出」を出荷・本番反映／次は実機で診断行を1回読む)
+
+**実行フェーズ開始。N-56（★★ローンチブロッカー）を計画書どおり subagent-driven-development で完遂・本番反映済**（Task 1〜5＝Sonnet 中心・各タスクレビュー＋**opus 全ブランチレビュー READY TO MERGE・Critical/Important ゼロ**）。tsc0 / **vitest 2262/2262** / build OK（assert-share-template OK）/ playwright mobile-share **5/5**（"desktop SHARE — unchanged" 含む）/ `merge --no-ff`・`allmarks.app` デプロイ済。
+
+- **狙い**＝スマホの撮影失敗が**静かに成功に見える**のを止める。今まで失敗は 13 箇所で `null` に握り潰され、結果シートは無言で LINK READY を出していた。
+- **入れたもの**（計画書 Task 1〜5）: ①`lib/share/uniform-image.ts`＝真っ白（一様色）出力の検出器。②`render-share-image.ts`＝失敗理由の持ち帰り口 `onError` ＋ `document.fonts.ready` を3秒で見切り。③`capture-collage.ts`＝`captureCollageShareImageDetailed`（段階別診断 no-frame/timeout/render/decode/blank/normalize ＋倍率フォールバック連鎖 ＋`formatCaptureAttempts`）。旧 `captureCollageShareImage` は薄いラッパで**デスクトップ挙動はバイト同一**。④`MobileShareResult.tsx`＝**NO IMAGE — LINK ONLY** の琥珀警告枠＋RETRY IMAGE＋**1行診断文字列**（コピペ可）＋リンク作成失敗時の理由行。⑤`BoardRoot.tsx`＝モバイル撮影を Detailed＋`fallbackScales:[1]`＋`rejectUniform:true` に配線。**デスクトップ `handleCreateHostedShare` は無改変**。
+- **不変条件は死守**（レビュアーが呼び出し元・パイプラインを読んで検証）: デスクトップ SHARE バイト同一／撮影失敗でもリンクは必ず作る（`captureCollageShareImageDetailed` は絶対 throw しない）／`fit:'cover'` 固定。
+- **★次セッション最優先＝実機で診断行を1回読む**（下の N-56 backlog に手順と真因→恒久対応 F1/F2/F3/F4 の対応表）。ユーザーに iPhone で `allmarks.app` → SHARE → SELECT ALL → CREATE を頼み、黄枠 or プレビュー下の灰色英数字の**1行**を報告してもらう→真因確定→恒久対応を1つ選んで実装。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 187 — ★計画セッション第2弾: Fable で s186 新規4件＋αの計画書5本・コード変更なし)
 
 **コード変更ゼロ（計画のみ）**。並行 Explore で実コードを行番号採取→安価モデル写経粒度（s185/s186 基準）の計画書を作成:
@@ -435,10 +444,15 @@
 
 ### session 185 実機フィードバック（★次セッション最優先・N-56 は致命）
 
-- **(N-56) ★★スマホで共有画像が作成されない（実機・致命・ローンチブロッカー）** — s185 の実機確認でユーザー報告。**症状の粒度が未確定**（要ヒアリング）: (a) 結果シートにプレビューが出ない (b) リンクは出来ているが OG が既定カード (c) CREATE が error になる、のどれか。
-  - **設計上、撮影が失敗しても共有リンクは作られる**（`captureCollageShareImage` が `null` → `thumb` 無しで `createHostedShare`）。**この退路のせいで「静かに壊れたまま成功に見える」**。まずここに気づける表示を入れるべき。
-  - **原因候補（未検証・実測で潰すこと）**: ①`scale = 1200/390 ≈ 3.08` で 1200×2597 の canvas を焼くのが実機で重すぎ／メモリ超過 ②iOS Safari の `foreignObject` 制限（dom-to-image が SVG 経由で描く） ③`captureCollageShareImage` の 20 秒タイムアウト（カード画像を全部 `/api/img` proxy 経由で取り直すので、モバイル回線だと超えうる） ④`document.fonts.ready` が解決しない ⑤`crossOrigin` 汚染（proxy 経由なので理屈上は無いはず）。
-  - **診断の入口**: `captureCollageShareImage` が `null` を返しているのか、`renderShareImage` の `toJpeg` が throw しているのか、`normalizeShotToJpegDataUrl` が `null` なのかを実機で切り分ける（一時的に画面へ出す）。`scale` を 1 に落として再現するかも見る（＝倍率が犯人か切り分けられる）。
+- **(N-56) ★★スマホで共有画像が作成されない（実機・致命・ローンチブロッカー）** — 症状（s186 でユーザー確定）＝**(a) プレビューが出ない・iPhone Safari・4枚でも発生**。
+  - **✅ s188 で「診断可視化＋倍率フォールバック＋真っ白検出」を実装・本番反映済**（計画書 Task 1〜5 完了・opus 全ブランチレビュー READY TO MERGE・Critical/Important ゼロ）。撮影を段階別（no-frame/timeout/render/decode/blank/normalize）に診断し、失敗したら**倍率1で撮り直し**、iOS の「真っ白な成功画像」を失敗扱いにする。結果シートに **NO IMAGE — LINK ONLY** の琥珀枠＋**1行の診断文字列**（例 `#1 x3.08 render 9000ms RangeError… / #2 x1 ok 2100ms`）を出す。**デスクトップはバイト同一**（レビュアーが呼び出し元で検証）・**撮影失敗でもリンクは必ず作る**。
+  - **★次セッション最優先＝実機で診断行を1回読む**: ユーザーに iPhone で `allmarks.app` → SHARE → SELECT ALL → CREATE を実行してもらい、結果シートの診断行（黄枠 or プレビュー下の灰色英数字）を報告してもらう。**その1行で真因が確定**し、恒久対応（下表）を1つ選んで別セッションで実装する:
+    - `#1 x3.08 … → #2 x1 ok`（倍率が犯人）＝ F1: `fallbackScales` を `[2,1]` にして中間画質を確保＋将来「帯だけ撮る」最適化（canvas 面積 1/4）。**この場合は既にフォールバックで救えている**（画像は出る）ので、診断で確定させるだけ。
+    - `blank`（iOS foreignObject 空振り＝真っ白）＝ F4: ユーザーと相談。canvas 直描画のモバイル専用レンダラー（大工事）か、「この端末は画像なし」を正直に出す（現状の NO IMAGE 表示のまま）か。
+    - 両方 `timeout` ＝ F2: `timeoutMs` を 30000 に＋arrange 進入時に proxy URL を先読みして CF edge を温める。
+    - `render SecurityError` ＝ F3: proxy 対象漏れ（srcset/CSS 背景）を特定。**この F3 で診断行の URL 切り詰めも同時に行う**（レビュアー Minor #2・現状は自端末・自データ・非送信なので出荷可）。
+  - **N-58 との関係**: retry は現状「全再実行」（新しい /s リンクを作る）。N-58 実装後に「撮影だけ再実行」へ差し替わる（計画書明記）。
+  - 計画書 [n56](superpowers/plans/2026-07-11-n56-mobile-share-image-fix.md) Task 6 §対応表 ／ narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s188。
 - **(N-57) スマホのボードに背景タイトル（ワードマーク）が出ていない** — **これは s185 のスコープ外**（N-51 の残りとして次に置いてあった）。`BoardBackgroundTypography` の `!isMobile` ゲートを外すだけ。ユーザーの理由＝「ボトムナビの THEME からカスタマイズできるように見えるのに見えないのはおかしい」。出したら**スマホの共有画像にもタイトルを載せるか**を決める（s185 は盤面に無いので `setShareTitle(null)` にしてある）。
 - **(N-58) ★スマホでもコラージュさせたい（＝s185 の「並べる段を出さない」決定を撤回）** — ユーザー曰く「簡素でもコラージュしたい。表現の場なのでスマホでもきちんと表現させたい」。s185 spec §2.1 でユーザー自身が「並べる段は出さない（失うもの＝移動・回転・拡縮・タイトル編集）」を承認していたが、実機で触って**表現できないことが受け入れられないと判明**。
   - **既に指で動く**（s184 調査）: 並べる段のドラッグ移動／リサイズ（掴めるが弧が hover 依存で見えなかった → s185 で `@media (hover:none)` により**回転ノブは指で触れるようになっている**）。
