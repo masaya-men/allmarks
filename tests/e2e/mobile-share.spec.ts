@@ -392,6 +392,43 @@ test.describe('mobile SHARE — phone', () => {
     const scale = Number(/scale\(([\d.]+)\)/.exec(t)?.[1])
     expect(scale).toBeGreaterThan(1.5)
   })
+
+  test('the zoom slider zooms the board even while a card is selected (N-58 packed-board fix)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+
+    // select a card first (tap = pointerdown+up, no move) so we're in the "card selected" state
+    const first = page.locator('[data-testid^="collage-el-"]').first()
+    const id = await first.evaluate((el) => el.getAttribute('data-testid')?.replace('collage-el-', '') ?? '')
+    await first.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const x = r.left + r.width / 2
+      const y = r.top + r.height / 2
+      const fire = (t: string): void =>
+        void el.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 1, clientX: x, clientY: y, pointerType: 'touch', isPrimary: true }))
+      fire('pointerdown')
+      fire('pointerup')
+    })
+    await expect(page.getByTestId(`collage-selection-${id}`)).toBeVisible()
+
+    // drag the zoom slider track to the right — must zoom the board WITHOUT any deselect
+    await page.getByTestId('mobile-zoom-slider-track').evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const y = r.top + r.height / 2
+      const fire = (t: string, x: number): void =>
+        void el.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 5, clientX: x, clientY: y, pointerType: 'touch', isPrimary: true }))
+      fire('pointerdown', r.left + 2)
+      fire('pointermove', r.left + r.width * 0.8)
+      fire('pointerup', r.left + r.width * 0.8)
+    })
+    const t = await page.getByTestId('mobile-arrange-stage').evaluate((el) => (el as HTMLElement).style.transform)
+    const scale = Number(/scale\(([\d.]+)\)/.exec(t)?.[1])
+    expect(scale).toBeGreaterThan(1.5)
+  })
 })
 
 test.describe('desktop SHARE — unchanged', () => {
