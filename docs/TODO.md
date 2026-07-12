@@ -21,7 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 191 — ★N-58 段階2 スマホのコラージュ編集の操作系を再設計・出荷・本番反映／次は実機確認)
+### 直近の状態 (セッション 191 追補2 — ★スマホのコラージュ＝縦4:5 ネイティブ再設計を決定・設計書＋段階1計画を作成／次は段階1を安価モデルで実装)
+
+**コード変更なし（設計・計画のみ）。** 実機で「機能は動くがスマホ最適化に見えない／縦が普通では」とユーザー。業界水準を調査（Explore＋WebSearch）→ 縦4:5の目標モックを作成・ユーザー承認 → 現行の撮影→ホスティング→OGパイプラインを事実採取 → **設計書＋段階1計画**を作成。
+
+- **方針(A)確定**: モバイルのコラージュ＝**縦 4:5 が主役**（保存＆縦向き共有）。**リンクカード用 1.91:1 は縦画像を中央レターボックスで自動併産**（サーバー・OG route・payload 無改変＝ホストOGは1.91:1のまま）。段階1＝土台（縦の形と出力・チロムは現状）／段階2＝業界水準チロム（選択時ツールバー・レイヤー・スナップ+触覚・ドラッグ削除・undo/redo・ズームはスライダー廃止→ピンチ+ダブルタップfit）。
+- **鍵**: `renderCollageCanvasToJpeg` は出力w/hを引数で受けるアスペクト非依存＝縦帯(4:5)＋縦w/h(1080×1350)を渡すだけ。縦帯→縦出力は `mapBandToOutput` の x/y スケールが等しく無歪み。1.91:1 は `letterboxImageToAspect` で併産。
+- 設計書 `docs/superpowers/specs/2026-07-13-mobile-portrait-collage-redesign-design.md`・計画 `docs/superpowers/plans/2026-07-13-mobile-portrait-collage-stage1.md`（完全コード・4タスク）・目標モック https://claude.ai/code/artifact/c624f258-08b7-4694-8cb0-39c610c9f476。
+- **★次＝段階1を安価モデルで実装**（Claude が subagent-driven で指揮）。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **バックログ（ユーザー要望・後で）**: PC（デスクトップ）のコラージュが業界水準かの調査（競合名は `docs/private/` へ）。
+
+### 直近の状態 (セッション 191 — ★N-58 段階2 スマホのコラージュ編集の操作系を再設計・出荷・本番反映／縦4:5再設計へ発展)
 
 **再ブレスト → 実装まで自走。superpowers:brainstorming で操作モデルを作り直し → writing-plans → subagent-driven-development（Task 1〜6＋各タスクレビュー＋opus 全ブランチレビュー MERGE READINESS=YES・Critical/Important ゼロ）。** tsc0 / **vitest 2326/2326** / build OK（assert-share-template OK）/ playwright mobile-share **10/10**（7 段階1 + 3 新規）/ `merge --no-ff` f6497904 / `allmarks.app` デプロイ済。spec `docs/superpowers/specs/2026-07-12-n58-stage2-mobile-gesture-model-design.md`・plan `docs/superpowers/plans/2026-07-12-n58-stage2-mobile-gesture-model.md`。
 
