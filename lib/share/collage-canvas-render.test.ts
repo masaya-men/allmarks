@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { coverRect, mapBandToOutput } from './collage-canvas-render'
+import {
+  coverRect,
+  mapBandToOutput,
+  renderCollageCanvasToJpeg,
+  type CollageCanvasCard,
+  type RenderCollageCanvasInput,
+} from './collage-canvas-render'
 
 describe('coverRect', () => {
   it('should crop vertically for square image into landscape dst', () => {
@@ -112,5 +118,86 @@ describe('mapBandToOutput', () => {
     expect(result.y).toBeCloseTo(315, 1)
     expect(result.w).toBe(100)
     expect(result.h).toBeCloseTo(100.318, 2)
+  })
+})
+
+// jsdom implements no real canvas 2d context, so renderCollageCanvasToJpeg always
+// hits the `if (!ctx) return null` early exit in this environment. What matters
+// here is the safety CONTRACT: capture must never throw / never reject, even for
+// inputs that would normally involve image loads and drawing — a thrown error
+// would break the caller's ability to still create a share link. Real drawing is
+// verified on-device (Task 5/7); jsdom cannot rasterize a canvas.
+describe('renderCollageCanvasToJpeg (never-throw / graceful-null contract)', () => {
+  const band = { x: 0, y: 0, width: 1200, height: 628 }
+  const toProxyUrl = (src: string): string => `/api/img?src=${encodeURIComponent(src)}`
+
+  const baseInput = {
+    band,
+    width: 1200,
+    height: 630,
+    bgColor: '#0a0a0c',
+    roundedCornersPx: 20,
+    toProxyUrl,
+    targetBytes: 180 * 1024,
+    startQuality: 0.82,
+    minQuality: 0.4,
+  } as const
+
+  it('resolves null (never throws) for a normal multi-card input', async () => {
+    const cards: CollageCanvasCard[] = [
+      {
+        id: 'a',
+        title: 'Card A',
+        thumbnailUrl: 'https://example.com/a.jpg',
+        url: 'https://example.com/a',
+        rect: { x: 0, y: 0, w: 300, h: 200 },
+      },
+      {
+        id: 'b',
+        title: 'Card B with no thumbnail falls back to placeholder art',
+        thumbnailUrl: null,
+        url: 'https://example.com/b',
+        rect: { x: 320, y: 0, w: 300, h: 200 },
+      },
+      {
+        id: 'c',
+        title: 'Off-screen card should be skipped',
+        thumbnailUrl: 'https://example.com/c.jpg',
+        url: 'https://example.com/c',
+        rect: { x: -5000, y: -5000, w: 100, h: 100 },
+      },
+    ]
+    const input: RenderCollageCanvasInput = { ...baseInput, cards }
+
+    await expect(renderCollageCanvasToJpeg(input)).resolves.toBeNull()
+  })
+
+  it('resolves null (never throws) for an empty cards array', async () => {
+    const input: RenderCollageCanvasInput = { ...baseInput, cards: [] }
+
+    await expect(renderCollageCanvasToJpeg(input)).resolves.toBeNull()
+  })
+
+  it('never rejects even when toProxyUrl throws inside the per-card loop', async () => {
+    // A misbehaving caller-supplied toProxyUrl must not turn into an unhandled
+    // rejection — the outer try/catch must still resolve null.
+    const cards: CollageCanvasCard[] = [
+      {
+        id: 'a',
+        title: 'Card A',
+        thumbnailUrl: 'https://example.com/a.jpg',
+        url: 'https://example.com/a',
+        rect: { x: 0, y: 0, w: 300, h: 200 },
+      },
+    ]
+    const input: RenderCollageCanvasInput = {
+      ...baseInput,
+      cards,
+      toProxyUrl: (): string => {
+        throw new Error('boom')
+      },
+    }
+
+    await expect(renderCollageCanvasToJpeg(input)).resolves.toBeNull()
   })
 })
