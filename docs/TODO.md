@@ -21,14 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 190 — ★N-58 段階1 スマホのコラージュ編集を出荷・本番反映／N-55 同時解消／次は実機確認→段階2 ピンチズーム)
+### 直近の状態 (セッション 190 — ★N-58 段階1 スマホのコラージュ編集を出荷・✅実機確認済／N-55 同時解消／次は段階2 の操作系を再設計)
 
 **実行フェーズ。N-58 段階1 を計画書どおり subagent-driven-development で完遂・本番反映済**（Task 1〜4＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge・Critical/Important ゼロ**）。tsc0 / **vitest 2296/2296** / build OK（assert-share-template OK）/ playwright mobile-share **7/7** / `merge --no-ff` / `allmarks.app` デプロイ済。
 
 - **狙い**＝スマホの共有を「CREATE で即撮影」から「**ARRANGE で編集段に入る→指で動かす/大きさ/回す/重なり順→CREATE で撮影**」の2手に分割。スマホでも PC と同じようにコラージュできる（s185「並べる段は出さない」をユーザーが実機体験で撤回した件）。**N-55（撮影成功後もシート裏でコラージュが触れる）もスクリムで同時解消**。
 - **入れたもの**（計画書 Task 1〜4・ただし Task 3 は N-56 が canvas 直描画で完成済のため実関数分割に適合）: ①`MobileBandOverlay`（撮影される中央 1.91:1 の帯を減光で示すガイド・`data-no-capture`・z=`SHARE_BAND_OVERLAY:96`）。②`MobileArrangeBar`（編集段の下部バー・BACK/CREATE・`MobileShareResult` と同素材＝視覚一致）。③**canvas レンダラーにカード回転を追加**（`renderCollageCanvasToJpeg` が各カード中心まわりに `rotate`＝CSS の `rotate(deg)` と一致）＝**ユーザー確定「PC と同じく回転も画像に反映」**。④`BoardRoot handleMobileCreateShare` を `handleMobileEnterArrange`（配置して止まる・撮影しない）＋`handleMobileCaptureAndCreate`（**編集後の state=collagePositions/collageOrder/collageRotations から**撮影）に二分割・N-55 スクリム（`SHARE_RESULT_SCRIM:399`）・選択バー CREATE→ARRANGE（testid 不変）・`CollageCanvas` root の `touch-action:none`（余白からの指ドラッグが盤面スクロールに化けない）。
 - **不変条件は死守**（opus が呼び出し元を直読で検証）: デスクトップ(>640px) SHARE **バイト同一**（`handleCreateHostedShare`/`ShareToast`/dom-to-image は無改変・diff に不在）／撮影失敗でもリンクは必ず作る（レンダラー失敗→null→`thumb ?? undefined`）／撮影機構は N-56 のまま（`fit:'cover'`・帯・`mobileCaptureScale`・2フレーム待ち・パンくず）／**編集した位置/サイズ/回転/重なり順がすべて画像に到達**（z順は `collageOrder`・回転は中心まわり・stale closure なし）。
-- **★次セッション最優先＝実機確認**（撮影は実機のみ検証可・Playwright 5/5 でも実機で壊れた実績あり）。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。OKなら**段階2（ピンチズーム＋パン）**へ（[計画書](superpowers/plans/2026-07-11-n58-stage2-pinch-zoom-pan.md)あり）。
+- **✅実機確認済（2026-07-12・ユーザー「画像、編集したとおりに出た」＝回転も反映）＝N-58 段階1 完了。**
+- **★次セッション＝N-58 段階2 の操作系を「再ブレスト → 実装」**。段階1 実機でユーザーが**段階2の操作モデルを提案**（旧計画 `2026-07-11-n58-stage2-pinch-zoom-pan.md` の「1本指=カード/2本指=ステージ」とは別）。**旧計画はそのまま実行しない**（計画書頭に ⚠️ バナー差し込み済）。正本フィードバック＝①常時回転ノブが出っぱなしで操作しづらい②スマホ標準（Canva 等）＝**カードをタップ選択→ピンチで拡縮・二本指で回転**・四隅リサイズ+常時ノブは廃止方向③ボード自体の拡縮も要る。**回転は残す**（表現を削らない）。着手前に superpowers:brainstorming。手順・deferred minor は [CURRENT_GOAL.md](CURRENT_GOAL.md)、方針は memory `project_n58_stage2_gesture_model`。
 - **既知の残（任意・非ブロッキング・opus 指摘＝段階2で opportunistically 取り込む）**: ①撮影中に BACK を押すと放棄した /s シェアが1件できる（クラッシュではない・BACK を creating 中 disable するか撮影後にガード）②`MobileBandOverlay` の NaN 帯素通り（呼び出し元が NaN を作らない＝防御のみ）③回転テストは呼び出し確認で translate→rotate→translate 順序は未検証④**/s ページの再構成は盤面順**（`buildArrangeShare`＝`selectedInBoardOrder`。**共有画像は編集どおり**・デスクトップと同一挙動＝N-58 の回帰ではない・不変条件は「画像」に scoped）⑤z順切替の意図を示す1行コメント追加（将来の refactor 予防）。
 
 ### 直近の状態 (セッション 189 — ★N-56 スマホ共有画像を「canvas 直描画」に移行・出荷・✅実機確認済（写真が出た）／次は N-58 段階1)

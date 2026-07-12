@@ -2,6 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> ## ⚠️ s190 実機フィードバックで操作モデルを見直し（着手前に必ずブレスト）
+>
+> 段階1 を実機確認したユーザー（2026-07-12）から、下の「1本指＝カード操作（常時ノブで回転）／2本指＝ステージ」モデルとは**別のモデル**の要望が出た。**この計画をそのまま実行しない。着手時に superpowers:brainstorming で再設計する。**
+>
+> - **常時表示の回転ノブが「出っぱなしで操作しづらい」**（現状の弱点・実機で確認）。
+> - ユーザー提案＝**スマホの標準（Canva 等）: カードを1回タップで選択 → その選択カードを「ピンチで拡縮」「二本指で回転」**。四隅リサイズ＋常時ノブはスマホでは廃止方向。
+> - 未解決の設計論点（ブレストで詰める）: ①「選択カードのピンチ＝カード変形」と「ステージ全体のピンチズーム／パン」をどう両立するか（例: 選択中は2本指=カード変形／非選択時は2本指=ステージ、等）。②タップ選択の選択枠 UI。③ドラッグ移動の扱い。④100枚時のステージズーム自体はやはり要る（ボード拡縮の要望あり）。
+> - **不変**: 撮影系は段階1のまま（編集中だけ transform、撮影直前にリセット）。デスクトップ >640px は不変。回転は canvas レンダラーが既に画像へ反映（段階1 で実装済）。
+>
+> ↓以下は s186 時点の旧モデル。ブレストの出発点として残すが、確定事項ではない。
+
 **Goal:** スマホのコラージュ編集段（N-58 段階1）で、2 本指ピンチでステージ全体を拡縮・パンできるようにする。1 本指は従来どおりカード操作（移動・リサイズ・回転）。これで上限 100 枚のコラージュがスマホで実用になる（ユーザー確定ゴール s186）。
 
 **Architecture:** 編集中だけ、CollageCanvas と帯ガイドを包む新しい wrapper（`MobileZoomStage`）に CSS transform（`translate + scale`）を掛ける。**撮影直前に transform を IDENTITY に戻してから撮る**ので、撮影系（帯・`fit:'cover'`・`mobileCaptureScale`・dom-to-image）は 1 行も変わらない。カード操作のドラッグ量は screen px なので、ズーム中は**ポインタ差分をズーム倍率で割って**レイアウト座標に戻す（`pointerScale` prop）。2 本目の指が下りた瞬間は、進行中のカード操作を調停役（`CollageGestureArbiter`）で中断してからピンチ追跡に入る。
