@@ -100,6 +100,12 @@ import { buildShareDataFromBoard } from '@/lib/share/board-to-share'
 import type { ShareDataV2 } from '@/lib/share/types-v2'
 import { createHostedShare } from '@/lib/share/create-hosted-share'
 import { captureCollageShareImage, captureCollageShareImageDetailed, type CaptureAttempt } from '@/lib/share/capture-collage'
+import {
+  clearCaptureBreadcrumb,
+  readStaleCaptureBreadcrumb,
+  writeCaptureBreadcrumb,
+  type CaptureBreadcrumb,
+} from '@/lib/share/capture-breadcrumb'
 import { shareImageFilename } from '@/lib/share/share-image-filename'
 import { buildTweetIntentUrl } from '@/lib/share/share-actions'
 import { createShare } from '@/lib/share/api-client'
@@ -110,6 +116,7 @@ import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { ShareToast } from '@/components/board/ShareToast'
 import { MobileShareSelectBar } from '@/components/board/MobileShareSelectBar'
 import { MobileShareResult } from '@/components/board/MobileShareResult'
+import { CaptureCrashNotice } from '@/components/board/CaptureCrashNotice'
 import { mobileCollageBandRect, mobileCaptureScale } from '@/lib/share/mobile-band'
 import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
@@ -454,6 +461,16 @@ export function BoardRoot() {
   const [shareCreateState, setShareCreateState] = useState<'idle' | 'creating' | 'error'>('idle')
   const [captureAttempts, setCaptureAttempts] = useState<readonly CaptureAttempt[] | null>(null)
   const [shareErrorMessage, setShareErrorMessage] = useState<string | null>(null)
+  // N-56: a breadcrumb left over from a previous capture that never cleared it
+  // means the tab crashed mid-capture (iOS OOM). Surface it once on load.
+  const [captureCrash, setCaptureCrash] = useState<CaptureBreadcrumb | null>(null)
+  useEffect((): void => {
+    const stale = readStaleCaptureBreadcrumb()
+    if (stale) {
+      setCaptureCrash(stale)
+      clearCaptureBreadcrumb()
+    }
+  }, [])
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
   // Onboarding: true while the first-run tutorial overlay is active.
@@ -2487,17 +2504,39 @@ export function BoardRoot() {
       // 帯の描画と data-capturing の CSS が確実に paint されてから撮る。
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
       try {
+        const scale = mobileCaptureScale(band.width)
+        const captureW = frame.offsetWidth || 1200
+        const captureH = frame.offsetHeight || 630
+        // 撮影に写る全画像の元解像度の合計 (メモリ主犯 = canvas か画像埋め込みか の切り分け用・N-56)。
+        let sourceMP = 0
+        frame.querySelectorAll('img').forEach((im): void => {
+          sourceMP += (im.naturalWidth * im.naturalHeight) / 1_000_000
+        })
+        // 撮影の直前に「枚数・canvas 寸法・元画像総画素」を localStorage へ同期記録。
+        // iOS がメモリでタブごと落ちても、次回起動時にこの記録で真因が読める (N-56)。
+        writeCaptureBreadcrumb({
+          ts: Date.now(),
+          cardCount: chosen.length,
+          frameW,
+          frameH,
+          scale,
+          canvasW: Math.round(captureW * scale),
+          canvasH: Math.round(captureH * scale),
+          sourceMP,
+        })
         const outcome = await captureCollageShareImageDetailed(frame, {
           origin: shareOrigin(),
           boardColor: deriveCaptureBoardColor(),
           fit: 'cover',
           // 帯の幅（画面幅ではない）を渡す — 切り出す帯が原寸 1200px の raster になる。
-          scale: mobileCaptureScale(band.width),
+          scale,
           // 実機で高倍率が死ぬ場合に備え、倍率 1 でもう一度だけ撮り直す (N-56)。
           fallbackScales: [1],
           // iOS の「真っ白な成功画像」を失敗として検出する (N-56)。
           rejectUniform: true,
         })
+        // ここに到達 ＝ タブは生きている。パンくずを消す (残れば ＝ クラッシュの証拠)。
+        clearCaptureBreadcrumb()
         thumb = outcome.dataUrl
         setCaptureAttempts(outcome.attempts)
       } finally {
@@ -3637,6 +3676,12 @@ export function BoardRoot() {
         ShareCreatingIndicator itself portals to document.body, but keeping the
         JSX call site outside the capture root too avoids any future doubt. */}
     <ShareCreatingIndicator active={shareCreateState === 'creating'} />
+    {captureCrash && (
+      <CaptureCrashNotice
+        breadcrumb={captureCrash}
+        onDismiss={(): void => setCaptureCrash(null)}
+      />
+    )}
     </>
   )
 }

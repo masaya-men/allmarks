@@ -1,0 +1,68 @@
+/* N-56: crash-durable read-back notice. Amber = "attention, but nothing is
+   broken now" — same visual language as the s188 NO IMAGE diagnostic. */
+.wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  /* The band spans the width but only the card itself should catch taps. */
+  pointer-events: none;
+}
+
+.card {
+  pointer-events: auto;
+  max-width: 520px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 196, 0, 0.35);
+  border-radius: 12px;
+  background: rgba(20, 18, 8, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ffc400;
+}
+
+.body {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+}
+
+/* The diagnostic the user copies/screenshots to report — must be selectable. */
+.diag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-all;
+  user-select: text;
+  -webkit-user-select: text;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dismiss {
+  align-self: flex-end;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 6px 16px;
+  min-height: 32px;
+  cursor: pointer;
+}
