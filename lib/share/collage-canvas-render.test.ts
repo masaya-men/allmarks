@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   coverRect,
   mapBandToOutput,
@@ -122,14 +122,17 @@ describe('mapBandToOutput', () => {
 })
 
 // jsdom implements no real canvas 2d context, so renderCollageCanvasToJpeg always
-// hits the `if (!ctx) return null` early exit in this environment. What matters
-// here is the safety CONTRACT: capture must never throw / never reject, even for
-// inputs that would normally involve image loads and drawing — a thrown error
-// would break the caller's ability to still create a share link. Real drawing is
-// verified on-device (Task 5/7); jsdom cannot rasterize a canvas.
-describe('renderCollageCanvasToJpeg (never-throw / graceful-null contract)', () => {
+// hits the `if (!ctx) return null` early exit in THIS suite. What matters here is
+// the safety CONTRACT: capture must never throw / never reject, even for inputs
+// that would normally involve image loads and drawing — a thrown error would
+// break the caller's ability to still create a share link. The per-card draw
+// loop itself (cover-fit, proxy routing, off-screen skip, placeholder fallback)
+// is NOT exercised by this suite — see the "mock 2d context" suite below, which
+// stubs a fake canvas context so the loop actually runs. Pixel-level rasterizing
+// is still verified on-device only (Task 5/7); jsdom cannot rasterize a canvas.
+describe('renderCollageCanvasToJpeg (never-throw / graceful-null contract, ctx-less jsdom path)', () => {
   const band = { x: 0, y: 0, width: 1200, height: 628 }
-  const toProxyUrl = (src: string): string => `/api/img?src=${encodeURIComponent(src)}`
+  const toProxyUrl = (src: string): string => `/api/img?u=${encodeURIComponent(src)}`
 
   const baseInput = {
     band,
@@ -178,9 +181,12 @@ describe('renderCollageCanvasToJpeg (never-throw / graceful-null contract)', () 
     await expect(renderCollageCanvasToJpeg(input)).resolves.toBeNull()
   })
 
-  it('never rejects even when toProxyUrl throws inside the per-card loop', async () => {
-    // A misbehaving caller-supplied toProxyUrl must not turn into an unhandled
-    // rejection — the outer try/catch must still resolve null.
+  it('resolves null (never throws) when toProxyUrl throws, given the ctx-less jsdom early exit', async () => {
+    // NOTE: under jsdom, `if (!ctx) return null` fires before the per-card loop
+    // ever runs, so a throwing toProxyUrl here never actually reaches the loop —
+    // this only proves the ctx-less early-return path is safe. The genuine
+    // "throws mid-loop, caught, resolves null" behavior is covered below in the
+    // mock-ctx suite, where the loop is actually reached.
     const cards: CollageCanvasCard[] = [
       {
         id: 'a',
@@ -199,5 +205,264 @@ describe('renderCollageCanvasToJpeg (never-throw / graceful-null contract)', () 
     }
 
     await expect(renderCollageCanvasToJpeg(input)).resolves.toBeNull()
+  })
+})
+
+// The suite above only ever reaches `if (!ctx) return null` — jsdom has no real
+// canvas 2d context, so the per-card draw loop (cover-fit, proxy routing,
+// off-screen skip, placeholder fallback) had ZERO coverage. This suite stubs
+// document.createElement('canvas') to return a spy-backed fake 2D context (same
+// idea as capture-collage.test.ts's InstantImage stub for `new Image()`, applied
+// here to the canvas side too) so the loop actually runs and its control flow can
+// be asserted directly. `canvas.toBlob` is intentionally left unimplemented, so
+// the final encode step still resolves null — only the DRAW-LOOP behavior is
+// under test here, independent of the final encoded output.
+describe('renderCollageCanvasToJpeg (mock 2d context — draw loop coverage)', () => {
+  type FakeCtx2D = {
+    save: ReturnType<typeof vi.fn>
+    restore: ReturnType<typeof vi.fn>
+    fillRect: ReturnType<typeof vi.fn>
+    drawImage: ReturnType<typeof vi.fn>
+    clip: ReturnType<typeof vi.fn>
+    beginPath: ReturnType<typeof vi.fn>
+    moveTo: ReturnType<typeof vi.fn>
+    arcTo: ReturnType<typeof vi.fn>
+    closePath: ReturnType<typeof vi.fn>
+    fillText: ReturnType<typeof vi.fn>
+    measureText: ReturnType<typeof vi.fn>
+    createLinearGradient: ReturnType<typeof vi.fn>
+    fillStyle: string
+    font: string
+    textAlign: string
+    textBaseline: string
+  }
+
+  function makeFakeCtx(): FakeCtx2D {
+    return {
+      save: vi.fn(),
+      restore: vi.fn(),
+      fillRect: vi.fn(),
+      drawImage: vi.fn(),
+      clip: vi.fn(),
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      arcTo: vi.fn(),
+      closePath: vi.fn(),
+      fillText: vi.fn(),
+      measureText: vi.fn((s: string) => ({ width: s.length * 6 })),
+      createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      fillStyle: '',
+      font: '',
+      textAlign: '',
+      textBaseline: '',
+    }
+  }
+
+  // Records `start:<src>` when an Image's src is set and `end:<src>` right
+  // before its onload fires (in a queued microtask, like capture-collage.test.ts's
+  // InstantImage) — lets a test prove the per-card loop truly awaits each image
+  // one at a time (sequential `start,end,start,end`) rather than firing all loads
+  // in parallel (which would interleave as `start,start,end,end`).
+  let loadEvents: string[] = []
+  class SequentialImage {
+    onload: (() => void) | null = null
+    onerror: (() => void) | null = null
+    naturalWidth = 400
+    naturalHeight = 300
+    crossOrigin = ''
+    private _src = ''
+    get src(): string {
+      return this._src
+    }
+    set src(v: string) {
+      this._src = v
+      loadEvents.push(`start:${v}`)
+      queueMicrotask((): void => {
+        loadEvents.push(`end:${v}`)
+        this.onload?.()
+      })
+    }
+  }
+
+  let fakeCtx: FakeCtx2D
+
+  beforeEach(() => {
+    loadEvents = []
+    fakeCtx = makeFakeCtx()
+    vi.stubGlobal('Image', SequentialImage)
+    const realCreateElement = document.createElement.bind(document)
+    vi.spyOn(document, 'createElement').mockImplementation(((tagName: string, options?: unknown) => {
+      if (tagName === 'canvas') {
+        return {
+          width: 0,
+          height: 0,
+          getContext: vi.fn(() => fakeCtx as unknown as CanvasRenderingContext2D),
+          // toBlob intentionally absent: canvasToJpeg's `typeof toBlob !== 'function'`
+          // guard makes the final encode resolve null — irrelevant to this suite.
+        } as unknown as HTMLCanvasElement
+      }
+      return realCreateElement(tagName as keyof HTMLElementTagNameMap, options as ElementCreationOptions)
+    }) as typeof document.createElement)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  const band = { x: 0, y: 0, width: 1200, height: 630 }
+  const baseInput = {
+    band,
+    width: 1200,
+    height: 630,
+    bgColor: '#0a0a0c',
+    roundedCornersPx: 20,
+    targetBytes: 180 * 1024,
+    startQuality: 0.82,
+    minQuality: 0.4,
+  } as const
+
+  it('(a) draws each on-screen thumbnailed card — the loop runs, and images load sequentially not in parallel', async () => {
+    const toProxyUrl = vi.fn((src: string): string => `/api/img?u=${encodeURIComponent(src)}`)
+    const cards: CollageCanvasCard[] = [
+      {
+        id: 'a',
+        title: 'Card A',
+        thumbnailUrl: 'https://example.com/a.jpg',
+        url: 'https://example.com/a',
+        rect: { x: 0, y: 0, w: 300, h: 200 },
+      },
+      {
+        id: 'b',
+        title: 'Card B',
+        thumbnailUrl: 'https://example.com/b.jpg',
+        url: 'https://example.com/b',
+        rect: { x: 320, y: 0, w: 300, h: 200 },
+      },
+    ]
+    const input: RenderCollageCanvasInput = { ...baseInput, toProxyUrl, cards }
+
+    await renderCollageCanvasToJpeg(input)
+
+    // Both cards actually reached ctx.drawImage — the loop ran, not just the
+    // early `if (!ctx) return null` exit.
+    expect(fakeCtx.drawImage).toHaveBeenCalledTimes(2)
+
+    const proxiedA = '/api/img?u=' + encodeURIComponent('https://example.com/a.jpg')
+    const proxiedB = '/api/img?u=' + encodeURIComponent('https://example.com/b.jpg')
+    // Sequential: card B's image load does not START until card A's has fully
+    // ENDed. A Promise.all-style parallel implementation would produce
+    // [start:A, start:B, end:A, end:B] instead — this ordering is exactly the
+    // "one at a time" memory-safety contract the renderer's docstring promises.
+    expect(loadEvents).toEqual([`start:${proxiedA}`, `end:${proxiedA}`, `start:${proxiedB}`, `end:${proxiedB}`])
+  })
+
+  it('(b) routes a thumbnailed card through toProxyUrl, and does NOT proxy a card with no thumbnail', async () => {
+    const toProxyUrl = vi.fn((src: string): string => `/api/img?u=${encodeURIComponent(src)}`)
+    const cards: CollageCanvasCard[] = [
+      {
+        id: 'a',
+        title: 'Card A',
+        thumbnailUrl: 'https://example.com/a.jpg',
+        url: 'https://example.com/a',
+        rect: { x: 0, y: 0, w: 300, h: 200 },
+      },
+      {
+        id: 'b',
+        title: 'Card B no thumbnail',
+        thumbnailUrl: null,
+        url: 'https://example.com/b',
+        rect: { x: 320, y: 0, w: 300, h: 200 },
+      },
+    ]
+    const input: RenderCollageCanvasInput = { ...baseInput, toProxyUrl, cards }
+
+    await renderCollageCanvasToJpeg(input)
+
+    expect(toProxyUrl).toHaveBeenCalledTimes(1)
+    expect(toProxyUrl).toHaveBeenCalledWith('https://example.com/a.jpg')
+  })
+
+  it('(c) skips a fully off-screen card entirely: no drawImage and no proxy call for it', async () => {
+    const toProxyUrl = vi.fn((src: string): string => `/api/img?u=${encodeURIComponent(src)}`)
+    const cards: CollageCanvasCard[] = [
+      {
+        id: 'onscreen',
+        title: 'Visible card',
+        thumbnailUrl: 'https://example.com/vis.jpg',
+        url: 'https://example.com/vis',
+        rect: { x: 0, y: 0, w: 300, h: 200 },
+      },
+      {
+        id: 'off',
+        title: 'Off-screen card',
+        thumbnailUrl: 'https://example.com/off.jpg',
+        url: 'https://example.com/off',
+        // Fully outside the 1200x630 output — mapBandToOutput leaves it far negative.
+        rect: { x: -5000, y: -5000, w: 100, h: 100 },
+      },
+    ]
+    const input: RenderCollageCanvasInput = { ...baseInput, toProxyUrl, cards }
+
+    await renderCollageCanvasToJpeg(input)
+
+    // Only the on-screen card reached drawImage / the proxy — the off-screen
+    // card's `return` before any image load fired.
+    expect(fakeCtx.drawImage).toHaveBeenCalledTimes(1)
+    expect(toProxyUrl).toHaveBeenCalledTimes(1)
+    expect(toProxyUrl).toHaveBeenCalledWith('https://example.com/vis.jpg')
+    expect(toProxyUrl).not.toHaveBeenCalledWith('https://example.com/off.jpg')
+  })
+
+  it('(d) still draws a no-thumbnail card via the placeholder-art branch, not a silent no-op', async () => {
+    const toProxyUrl = vi.fn((src: string): string => `/api/img?u=${encodeURIComponent(src)}`)
+    const cards: CollageCanvasCard[] = [
+      {
+        id: 'noThumb',
+        title: 'No thumbnail card',
+        thumbnailUrl: null,
+        url: 'https://example.com/no-thumb',
+        rect: { x: 0, y: 0, w: 300, h: 200 },
+      },
+    ]
+    const input: RenderCollageCanvasInput = { ...baseInput, toProxyUrl, cards }
+
+    await renderCollageCanvasToJpeg(input)
+
+    // Placeholder art image drew (drawImage fires for the generated-art image),
+    // and its scrim gradient (readability treatment) ran too — this card was not
+    // silently skipped just because it has no thumbnail.
+    expect(fakeCtx.drawImage).toHaveBeenCalledTimes(1)
+    expect(fakeCtx.createLinearGradient).toHaveBeenCalledTimes(1)
+    // Placeholder art is a same-origin static asset — never routed through the proxy.
+    expect(toProxyUrl).not.toHaveBeenCalled()
+  })
+
+  it('(e) never rejects when toProxyUrl throws INSIDE the per-card loop (loop is actually reached here)', async () => {
+    // Unlike the ctx-less suite above, the loop genuinely runs here (ctx is
+    // truthy), so a throwing toProxyUrl exercises the real catch path: drawCard
+    // throws synchronously while building the proxied URL, the awaited drawCard
+    // promise rejects, and the outer try/catch in renderCollageCanvasToJpeg must
+    // still resolve null instead of propagating an unhandled rejection.
+    const cards: CollageCanvasCard[] = [
+      {
+        id: 'a',
+        title: 'Card A',
+        thumbnailUrl: 'https://example.com/a.jpg',
+        url: 'https://example.com/a',
+        rect: { x: 0, y: 0, w: 300, h: 200 },
+      },
+    ]
+    const input: RenderCollageCanvasInput = {
+      ...baseInput,
+      cards,
+      toProxyUrl: (): string => {
+        throw new Error('boom')
+      },
+    }
+
+    await expect(renderCollageCanvasToJpeg(input)).resolves.toBeNull()
+    // The throw happened before any drawImage for this card could run.
+    expect(fakeCtx.drawImage).not.toHaveBeenCalled()
   })
 })
