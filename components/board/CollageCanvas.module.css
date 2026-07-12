@@ -108,3 +108,16 @@
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
+
+/* N-58 段階2: スマホのタップ選択枠。回転済み .element の内側に敷くので角丸・回転に自動追従。
+   白 2px + 淡い暗い影でどんな写真の上でも視認できる。拡縮/回転は2本指なのでハンドルの点は出さない。
+   pointer-events:none で編集の邪魔をせず、data-no-capture で撮影にも写らない（撮影は state 由来だが念のため）。 */
+.selectionFrame {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--card-radius, 0px);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 30;
+}

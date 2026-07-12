@@ -13,6 +13,7 @@ import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { CollagePositions, CollageResizeCorner } from '@/lib/share/collage-layout'
 import { pointerAngleDeg, rotateFromPointer } from '@/lib/share/collage-rotate'
 import type { ShareTitleConfig } from '@/lib/share/share-title'
+import type { CollageGestureArbiter } from '@/lib/share/stage-zoom'
 import styles from './CollageCanvas.module.css'
 
 export type CollageCanvasProps = {
@@ -53,6 +54,17 @@ export type CollageCanvasProps = {
     readonly defaultText: string
     readonly onChange: (next: ShareTitleConfig) => void
   }
+  /** ステージのズーム倍率（スマホ編集段のみ渡る。省略時1=等倍）。ポインタ差分は screen px
+   *  なので、layout 座標へ戻すときこの値で割る（N-58 段階2）。 */
+  readonly pointerScale?: number
+  /** いま選択中のカード id（スマホのみ）。一致するカードに選択枠を出す。 */
+  readonly selectedId?: string | null
+  /** カード grab で選択にする（スマホのみ）。 */
+  readonly onSelect?: (id: string) => void
+  /** true（スマホ）で回転ノブと四隅リサイズを描かず、選択枠を出す（拡縮/回転は2本指へ）。 */
+  readonly touchMode?: boolean
+  /** 2本指ピンチ開始で進行中のカード移動を中断する調停役（スマホのみ）。 */
+  readonly gestureArbiter?: CollageGestureArbiter
 }
 
 /** Intra-canvas stacking floor. This is a LOCAL offset for ordering this
@@ -86,6 +98,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
     el: HTMLDivElement,
     pointerId: number,
     onMove: (ev: globalThis.PointerEvent) => void,
+    arbiter?: CollageGestureArbiter,
   ): void {
     try {
       el.setPointerCapture(pointerId)
@@ -104,10 +117,13 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
       } catch {
         /* jsdom / synthetic pointer */
       }
+      arbiter?.clear()
     }
     el.addEventListener('pointermove', move)
     el.addEventListener('pointerup', up)
     el.addEventListener('pointercancel', up)
+    // ピンチ（2本目の指）が始まったら up がそのまま中断処理として呼ばれる。
+    arbiter?.register(up)
   }
 
   function handleElementPointerDown(e: PointerEvent<HTMLDivElement>, id: string): void {
@@ -117,13 +133,21 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
     const start = props.positions[id]
     if (!el || !start) return
     props.onGrab(id)
+    props.onSelect?.(id)
     const startX = e.clientX
     const startY = e.clientY
     const originX = start.x
     const originY = start.y
-    bindPointerGesture(el, e.pointerId, (ev) => {
-      props.onMove(id, originX + (ev.clientX - startX), originY + (ev.clientY - startY))
-    })
+    // ズーム中は指の移動量(screen px)を倍率で割って layout 座標に戻す（等倍は /1 で従来完全一致）。
+    const scale = props.pointerScale ?? 1
+    bindPointerGesture(
+      el,
+      e.pointerId,
+      (ev) => {
+        props.onMove(id, originX + (ev.clientX - startX) / scale, originY + (ev.clientY - startY) / scale)
+      },
+      props.gestureArbiter,
+    )
   }
 
   /** Rotate-handle drag (industry-standard orbit around the card center).
@@ -221,59 +245,77 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
             {props.paper && (
               <PaperCardDecorations cardId={id} tornBacking={paperCardHasTornBacking(item)} />
             )}
+            {/* Touch selection frame — replaces the always-on rotate knob /
+                resize handles under touchMode (拡縮/回転 move to two-finger
+                gestures owned by the mobile stage). Follows --card-radius and
+                the element's own rotation since it's a plain child of the
+                (already rotated) .element box. pointer-events:none + data-
+                no-capture so it never interferes with editing or the SHARE
+                screenshot. */}
+            {props.touchMode && props.selectedId === id && (
+              <div className={styles.selectionFrame} data-testid={`collage-selection-${id}`} data-no-capture aria-hidden="true" />
+            )}
             {/* Rotation handle — industry-standard orbit affordance above the
                 top-center. Hover-revealed on desktop; always visible on touch,
                 which has no hover. It stays out of the SHARE screenshot because
-                of data-no-capture, not because it happens to be hidden. */}
-            <div
-              className={styles.rotateHandle}
-              data-testid={`collage-rotate-${id}`}
-              data-no-capture
-              onPointerDown={(e): void => handleRotatePointerDown(e, id)}
-            >
-              {/* Knob sits at the FAR END of the stem (top), the stem drops from
-                  it down to the card's top edge — the Figma/Canva convention the
-                  user asked for. Knob first in DOM + column layout = knob on top. */}
-              <span className={styles.rotateKnob} aria-hidden="true">
-                {/* Canva/Figma 風の回転アイコン（ほぼ全周の弧＋矢頭）。currentColor で白。 */}
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
-                  <path
-                    d="M19.5 12a7.5 7.5 0 1 1-2.6-5.7"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <polyline
-                    points="17.2 3.8 17.2 6.9 14.1 6.9"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              <span className={styles.rotateStem} aria-hidden="true" />
-            </div>
+                of data-no-capture, not because it happens to be hidden.
+                Desktop-only knob: touchMode drives rotation via a two-finger
+                gesture on the mobile stage instead. */}
+            {!props.touchMode && (
+              <div
+                className={styles.rotateHandle}
+                data-testid={`collage-rotate-${id}`}
+                data-no-capture
+                onPointerDown={(e): void => handleRotatePointerDown(e, id)}
+              >
+                {/* Knob sits at the FAR END of the stem (top), the stem drops from
+                    it down to the card's top edge — the Figma/Canva convention the
+                    user asked for. Knob first in DOM + column layout = knob on top. */}
+                <span className={styles.rotateKnob} aria-hidden="true">
+                  {/* Canva/Figma 風の回転アイコン（ほぼ全周の弧＋矢頭）。currentColor で白。 */}
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+                    <path
+                      d="M19.5 12a7.5 7.5 0 1 1-2.6-5.7"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <polyline
+                      points="17.2 3.8 17.2 6.9 14.1 6.9"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span className={styles.rotateStem} aria-hidden="true" />
+              </div>
+            )}
             {/* Reuse the board's exact resize affordance: four corner hot zones
                 that reveal a 1/4-circle arc on hover. Its handles stopPropagation
                 on pointerdown, so grabbing a corner never starts a card move.
                 onResizeStart records the grabbed corner (so the parent anchors
-                the opposite corner) and brings the card forward. */}
-            <ResizeHandle
-              cardWidth={p.w}
-              cardHeight={p.h}
-              maxCardWidth={props.maxCardWidth}
-              // Free-floating collage cards: continuous diagonal-projection resize
-              // so an off-diagonal drag can't make the card leap size (the board's
-              // default per-axis 'dominant' model does — see resize-math.ts).
-              resizeModel="projection"
-              onResizeStart={(corner): void => {
-                activeResizeCorner.current = corner
-                props.onGrab(id)
-              }}
-              onResize={(w): void => props.onResize(id, activeResizeCorner.current, w)}
-            />
+                the opposite corner) and brings the card forward.
+                Desktop-only: touchMode drives resize via a two-finger pinch on
+                the mobile stage instead. */}
+            {!props.touchMode && (
+              <ResizeHandle
+                cardWidth={p.w}
+                cardHeight={p.h}
+                maxCardWidth={props.maxCardWidth}
+                // Free-floating collage cards: continuous diagonal-projection resize
+                // so an off-diagonal drag can't make the card leap size (the board's
+                // default per-axis 'dominant' model does — see resize-math.ts).
+                resizeModel="projection"
+                onResizeStart={(corner): void => {
+                  activeResizeCorner.current = corner
+                  props.onGrab(id)
+                }}
+                onResize={(w): void => props.onResize(id, activeResizeCorner.current, w)}
+              />
+            )}
           </div>
         )
       })}
