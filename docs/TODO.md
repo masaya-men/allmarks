@@ -454,7 +454,9 @@
   - **N-58 との関係**: retry は現状「全再実行」（新しい /s リンクを作る）。N-58 実装後に「撮影だけ再実行」へ差し替わる（計画書明記）。
   - **★s188 実機結果（想定より深刻）＝OOM タブクラッシュ**: 100枚 SELECT ALL で、共有ボードは表示されるが CREATE（撮影）で**タブごと強制終了**（黒画面→再読込→ボードに戻る→繰り返すと Safari が止める）。リンクも作られない＝`createHostedShare` 到達前に死亡＝catch 不能なメモリ枯渇。**画面表示の診断（s188）はページごと消えて読めない**。s188 の倍率フォールバックも**タブが死ぬと土台ごと消えるので効かない**＝1回目の撮影を軽くするしかない。
   - **★s188.1 出荷済（本番反映）＝クラッシュ耐性パンくず**: `lib/share/capture-breadcrumb.ts`（localStorage 同期）＋`CaptureCrashNotice.tsx`（次回起動時に琥珀枠で読み返し）。撮影直前に `枚数・canvas WxH・元画像総MP(sourceMP)` を記録→無事終われば消す→落ちて残れば次回表示。tsc0 / vitest 2269 / build OK。
-  - **★次セッション最優先＝パンくずの数字を1回読む**（手順・主犯判定は [CURRENT_GOAL.md](CURRENT_GOAL.md)）: `images ###MP` 巨大＝画像埋め込みが主犯→撮影用サムネ縮小。`canvas` 大＝帯だけ撮る＋倍率 budget。**確定してから恒久対応を1つ実装**（当てずっぽうで画質を落とさない）。
+  - **★主犯確定（実機パンくず）**: `100 cards · canvas 1200×1744 (x3.2) · images 78MP`。canvas=210万画素(無害)、**images 78MP=撮影時に全カード画像を原寸展開で約310MB→タブ上限超過が主犯**（canvas の約37倍）。
+  - **★s188.2 恒久修正 出荷済（本番反映）＝撮影時のカード画像 適応縮小**: `lib/share/capture-thumbnails.ts`（`captureThumbnailMaxPx`＝合計約12MP予算・100枚→346px・少数→原寸1200／`buildCaptureThumbnailMap`＝proxy 経由 fetch＋canvas 縮小・同時実行4）。`capture-collage.ts` に `captureThumbnails?` opt（**デスクトップは渡さず byte-identical**）。BoardRoot モバイル多枚数時のみサムネ Map を渡す（少数は原寸＝不変）。tsc0 / vitest 2277 / build OK。
+  - **★次セッション＝実機で100枚が出るか確認**（手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)）。出れば N-56 完了→N-58段階1。まだ落ちれば `images ◯◯MP` が下がっているはず→予算をさらに下げる等。
   - 計画書 [n56](superpowers/plans/2026-07-11-n56-mobile-share-image-fix.md) Task 6 §対応表 ／ narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s188。
 - **(N-57) スマホのボードに背景タイトル（ワードマーク）が出ていない** — **これは s185 のスコープ外**（N-51 の残りとして次に置いてあった）。`BoardBackgroundTypography` の `!isMobile` ゲートを外すだけ。ユーザーの理由＝「ボトムナビの THEME からカスタマイズできるように見えるのに見えないのはおかしい」。出したら**スマホの共有画像にもタイトルを載せるか**を決める（s185 は盤面に無いので `setShareTitle(null)` にしてある）。
 - **(N-58) ★スマホでもコラージュさせたい（＝s185 の「並べる段を出さない」決定を撤回）** — ユーザー曰く「簡素でもコラージュしたい。表現の場なのでスマホでもきちんと表現させたい」。s185 spec §2.1 でユーザー自身が「並べる段は出さない（失うもの＝移動・回転・拡縮・タイトル編集）」を承認していたが、実機で触って**表現できないことが受け入れられないと判明**。
