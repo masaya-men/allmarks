@@ -9434,3 +9434,37 @@ tsc0 / **vitest 2291/2291**（276 files・flake なし）/ `pnpm build` OK（ass
 ### ★次セッション（最優先・ユーザー協働）
 
 **実機で「写真が出るか」を1回確認**。iPhone Safari を閉じ開き直し → `allmarks.app` → SHARE → SELECT ALL → CREATE → プレビューに写真入り画像が出れば **N-56 完了 → N-58 段階1**。出ない場合はスクショで症状採取 → systematic-debugging（proxy 取得失敗 / canvas taint / 配置ズレ / SVG placeholder の iOS 空描画）。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。残る任意磨き（角丸 per-card 化・パターン背景再現・ツイート/動画カードの描画）は写真が出た後に判断。
+
+---
+
+## セッション 190 (2026-07-12) — ★N-58 段階1: スマホのコラージュ編集を解禁（ARRANGE→編集→CREATE）＋N-55 同時解消
+
+**subagent-driven-development で N-58 段階1 を完遂・本番反映**（Task 1〜4＋各タスクレビュー＋opus 全ブランチレビュー Ready to merge・Critical/Important ゼロ）。tsc0 / **vitest 2296/2296**（278 files）/ `pnpm build` OK（assert-share-template OK）/ playwright mobile-share **7/7** / `merge --no-ff` で master 反映 / `allmarks.app` デプロイ済（1676 files）。
+
+### 狙い
+
+スマホの共有が「CREATE で選ぶ→即撮影」で**並びを直せなかった**のを、「**ARRANGE で編集段に入る → 指で動かす・大きさを変える・回す・重なり順を変える → CREATE で撮影**」の2手に分割。スマホでも PC と同じようにコラージュ（表現）できる。s185 で「並べる段は出さない」と決めたが、ユーザーが実機体験で撤回（「簡素でもコラージュしたい。表現の場なのでスマホでもきちんと表現させたい」）。同時に **N-55（撮影成功後もシートの裏でコラージュが触れてしまう）**をタッチ遮蔽スクリムで解消。
+
+### 計画とのズレ（プリフライトで検出・ユーザー1行判断あり）
+
+計画書 Task 3 は N-56 を「診断ビルド版（dom-to-image スクショ＝`captureCollageShareImageDetailed`）」前提で書かれていたが、実際に s189 で完成した N-56 は**別方式（配置データから直接 canvas に描く `renderCollageCanvasToJpeg`）**。そのため Task 3 を**実関数の分割に適合**させた。加えて canvas レンダラーは位置・サイズは描くが**回転を描かない**（旧フローは撮影直前に必ず回転リセットしていたので表面化せず）＝N-58 で回せるようになると画像に写らない WYSIWYG ギャップを発見。**ユーザーに1行判断を仰ぎ「a＝PC と同じく回転も画像に反映」で確定**（「PCと同じようにコラージュしてもらいたいので」）。
+
+### 入れたもの（Task 1〜4）
+
+- **Task 1**（`MobileBandOverlay`）: 撮影される中央 1.91:1 の帯を、外側を巨大 box-shadow で減光して示すガイド（＝写らない領域がそのまま暗く見える WYSIWYG）。`data-no-capture`・`pointer-events:none`・z=`BOARD_Z_INDEX.SHARE_BAND_OVERLAY:96`。degenerate 帯は null。
+- **Task 2**（`MobileArrangeBar`）: 編集段の下部バー（BACK/CREATE・CREATING…）。`.actions`/`.primary`/`.ghost` は `MobileShareResult.module.css` から**verbatim コピー**で結果シートと視覚一致（52px タップ域込み）。`data-no-capture`・z=`SHARE_TOAST:402`。
+- **Task 3a**（canvas レンダラーに回転）: `CollageCanvasCard` に optional `rotation?:number`。`drawCard` が両描画ブロックを1つの外側 save/restore で包み、`if(rotationDeg!==0)` で `translate(cx,cy)/rotate(deg*π/180)/translate(-cx,-cy)`＝CSS の `transform-origin:center + rotate(deg)` と一致。save/restore は 3/3 で釣り合い（回転が他カード/ブランドに漏れない）。モック 2d ctx に translate/rotate スパイ＋新テスト(f)。
+- **Task 3b**（`BoardRoot` 二分割＋N-55）: `handleMobileCreateShare` を **`handleMobileEnterArrange`**（帯に自動配置して sharePhase='arrange'・撮影しない）＋ **`handleMobileCaptureAndCreate`**（**編集後の state=`collagePositions`/`collageOrder`/`collageRotations` から** `canvasCards` を組んで撮影・再配置しない＝RETRY で編集が消えない）に分割。z順は `collageOrder`・回転は `collageRotations[id] ?? 0`。撮影機構（`renderCollageCanvasToJpeg`・`mobileCaptureScale`・2フレーム待ち・パンくず・fit:cover）は N-56 のまま。N-55 スクリム（`mobile-share-scrim`・absolute inset:0・`data-no-capture`・z=`SHARE_RESULT_SCRIM:399`）。選択バー CREATE→ARRANGE（testid 不変）。`CollageCanvas` root に `@media(max-width:640px){touch-action:none}`。
+- **Task 4**（e2e）: 既存5本を「ARRANGE→CREATE の2タップ」に整形（帯配置の幾何検証は arrange 段に前倒し＝編集段の初期配置検証も兼ねる）＋新規2本（BACK で選択に戻り何も作らない／結果スクリムが枠を覆う=N-55）。既存の実質アサーション（帯幾何・1200×630・黒帯 cover-fit・デスクトップ非回帰）は全て保持。**7/7 緑**。
+
+### 不変条件（opus が呼び出し元を直読で検証）
+
+デスクトップ(>640px) SHARE **バイト同一**（`handleCreateHostedShare`/`ShareToast`/dom-to-image は無改変で diff に不在／新 UI は全て `isMobile` ゲート内／レンダラー回転は 0° で no-op）。撮影失敗でもリンクは必ず作る（レンダラー try/catch→null→`thumb ?? undefined`）。撮影機構は N-56 のまま。**編集した位置/サイズ/回転/重なり順がすべて画像に到達**（z順3経路一致＝レンダラー配列順・画面 z=BASE+order.indexOf・bringToFront は末尾追加＝最前面／回転は中心まわり／deps 正で stale closure なし）。2つの描画分岐は De Morgan 補で網羅（dead zone/二重描画なし）。opus 判定＝**Ready to merge・Critical/Important ゼロ**。
+
+### 既知の残（任意・非ブロッキング・opus 指摘＝段階2で opportunistically 取り込む）
+
+①撮影中に BACK を押すと放棄した /s シェアが1件できる（クラッシュではない）②`MobileBandOverlay` の NaN 帯素通り（呼び出し元が NaN を作らない＝防御のみ）③回転テストは呼び出し確認で translate→rotate→translate 順序未検証④**/s ページ再構成は盤面順**（`buildArrangeShare`＝`selectedInBoardOrder`。**共有画像は編集どおり**・デスクトップと同一＝N-58 の回帰ではない・不変条件は「画像」に scoped）⑤z順切替の意図を示す1行コメント追加。
+
+### ★次セッション（最優先・ユーザー協働）
+
+**実機で確認**（撮影は実機のみ検証可）: `allmarks.app` → SHARE → 選ぶ → ARRANGE（帯とバー）→ 指で動かす/大きさ/回す → CREATE → **画像が「並べたとおり」（回転込み）**か／結果シート後にコラージュが動かないか（N-55）／RETRY で配置が保たれるか。OK なら **N-58 段階2（ピンチズーム＋パン）**。手順・deferred minor は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
