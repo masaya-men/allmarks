@@ -106,6 +106,12 @@ import {
   writeCaptureBreadcrumb,
   type CaptureBreadcrumb,
 } from '@/lib/share/capture-breadcrumb'
+import {
+  buildCaptureThumbnailMap,
+  captureThumbnailMaxPx,
+  downscaleImageViaCanvas,
+} from '@/lib/share/capture-thumbnails'
+import { rewriteToProxy } from '@/lib/share/proxy-image'
 import { shareImageFilename } from '@/lib/share/share-image-filename'
 import { buildTweetIntentUrl } from '@/lib/share/share-actions'
 import { createShare } from '@/lib/share/api-client'
@@ -2524,6 +2530,18 @@ export function BoardRoot() {
           canvasH: Math.round(captureH * scale),
           sourceMP,
         })
+        // 多枚数だけ: カード画像を縮小サムネ化してから撮る。原寸のまま全部を埋め込むと
+        // dom-to-image が巨大 Image をデコードして iOS のタブメモリを超え、タブごと落ちる
+        // (実機で確定・N-56)。少数は maxPx が 1200 に張り付く＝縮小せず原寸のまま撮る。
+        const thumbMaxPx = captureThumbnailMaxPx(chosen.length)
+        const captureThumbnails =
+          thumbMaxPx < 1200
+            ? await buildCaptureThumbnailMap(
+                Array.from(frame.querySelectorAll('img'), (im): string => im.getAttribute('src') ?? ''),
+                (src): Promise<string | null> =>
+                  downscaleImageViaCanvas(rewriteToProxy(src, shareOrigin()), thumbMaxPx),
+              )
+            : undefined
         const outcome = await captureCollageShareImageDetailed(frame, {
           origin: shareOrigin(),
           boardColor: deriveCaptureBoardColor(),
@@ -2534,6 +2552,8 @@ export function BoardRoot() {
           fallbackScales: [1],
           // iOS の「真っ白な成功画像」を失敗として検出する (N-56)。
           rejectUniform: true,
+          // 多枚数はカード画像を縮小してから埋め込む (メモリ枯渇クラッシュ回避・N-56)。
+          captureThumbnails,
         })
         // ここに到達 ＝ タブは生きている。パンくずを消す (残れば ＝ クラッシュの証拠)。
         clearCaptureBreadcrumb()

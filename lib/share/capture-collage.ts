@@ -42,6 +42,10 @@ export type CaptureCollageOpts = {
   /** true なら「ほぼ一様色」の出力を失敗として扱い、次の再挑戦に回す
    *  （iOS Safari の foreignObject 空振り＝真っ白画像の検出）。 */
   readonly rejectUniform?: boolean
+  /** 撮影時にカード画像を縮小サムネへ差し替える写像 (原寸 src → 縮小 data-URL)。
+   *  多枚数での dom-to-image メモリ枯渇クラッシュを避けるため (N-56)。写像に無い src は
+   *  従来どおり原寸 proxy にフォールバックする。省略時＝デスクトップは全て原寸 proxy。 */
+  readonly captureThumbnails?: ReadonlyMap<string, string>
 }
 
 /** 撮影がどの段で死んだか。null は成功。 */
@@ -141,7 +145,7 @@ async function attemptCapture(
       startQuality: 0.94,
       minQuality: 0.94,
       bgColor: opts.boardColor,
-      rewriteImageSrc: (src): string => rewriteToProxy(src, opts.origin),
+      rewriteImageSrc: (src): string => opts.captureThumbnails?.get(src) ?? rewriteToProxy(src, opts.origin),
       onError: (m): void => {
         renderMessage = m
       },
