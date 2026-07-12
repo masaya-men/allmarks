@@ -9468,3 +9468,45 @@ tsc0 / **vitest 2291/2291**（276 files・flake なし）/ `pnpm build` OK（ass
 ### ★次セッション（最優先・ユーザー協働）
 
 **実機で確認**（撮影は実機のみ検証可）: `allmarks.app` → SHARE → 選ぶ → ARRANGE（帯とバー）→ 指で動かす/大きさ/回す → CREATE → **画像が「並べたとおり」（回転込み）**か／結果シート後にコラージュが動かないか（N-55）／RETRY で配置が保たれるか。OK なら **N-58 段階2（ピンチズーム＋パン）**。手順・deferred minor は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+---
+
+## セッション 191 (2026-07-12) — ★N-58 段階2 スマホのコラージュ編集「操作系の再設計」を出荷・本番反映
+
+段階1 の実機フィードバックを受け、スマホのコラージュ編集を「標準的なマルチタッチ」に作り直した。1セッションで **再ブレスト（superpowers:brainstorming）→ 設計書 → 実装計画（writing-plans）→ subagent-driven-development（Task 1〜6）→ opus 全ブランチレビュー → merge → デプロイ → docs** まで自走。
+
+### 操作モデル（selection-gated・ユーザー承認）
+
+- カードを**1回タップ＝選択**（白い枠が出る・最前面へ）。
+- **選択中は指をどこに置いても2本指＝そのカードを拡縮＋回転**（カード中心が軸・drift-free 絶対計算）。
+- **非選択（余白タップで解除）でだけ2本指＝ボードのズーム/パン**（1〜6倍）。1本指＝カード移動 or 余白パン。
+- **常時回転ノブと四隅リサイズはスマホで廃止**（回転は2本指へ移設＝表現は削らない。memory `feedback_mobile_must_express_too`）。
+
+### 発見（設計を大きく単純化）
+
+スマホの撮影は `renderCollageCanvasToJpeg`（canvas 直描画）で **state（位置/サイズ/回転/重なり順）＋band から再描画**しており、編集画面の DOM をスクショしない。よって**編集面に CSS transform でズーム/パンをかけても共有画像には一切影響しない**（ユーザー確認済）。旧計画 `2026-07-11-n58-stage2-pinch-zoom-pan.md`（1本指=カード/2本指=ステージ）が心配した「撮影直前に transform をリセット」は、スマホでは撮影が DOM を見ないので不要。旧計画は出発点として参照し、実行はしなかった。
+
+### 実装（Task 1〜6・全て各タスクレビュー clean）
+
+1. **`lib/share/stage-zoom.ts`**（純関数）＝clamp/pinch/pan の数学＋「2本目の指で進行中のカード操作を止める」調停役。ズーム倍率 1〜6 は定数。
+2. **`scaleElementFromCenter`**（`collage-layout.ts` に追加）＝カード中心を固定して factor 倍する純関数（アスペクト維持・下限/上限クランプ）。
+3. **`MobileArrangeGestures`**（新コンポーネント）＝多点タッチ担当ラッパー。capture 相で 2本指を選択有無で仕分け（カード変形 or ボードズーム）、1本指はカードへ素通し、余白はパン/タップ解除。`enabled=false`（デスクトップ）は wrapper DOM を足さず `<>{children}</>`。
+4. **`CollageCanvas`**＝選択枠（白・角丸/回転に追従・`data-no-capture`）／`pointerScale`（ズーム中の指移動を倍率で割る）／`touchMode` でノブ・四隅を非表示／調停役の配線。全 prop 省略可＝**デスクトップはバイト同一**。
+5. **`BoardRoot`**＝`selectedCollageId`/`stageTransform` state・ピンチ base の ref スナップショット（drift-free）・enter/exit/reselect でリセット・arrange ブロックを `MobileArrangeGestures` で包む（バー/シートは transform の外）。撮影ハンドラは無改変。s190 deferred minor #1（撮影中 BACK 無効）/#2（帯 NaN ガード）/#4（collageOrder コメント）を同梱。
+6. **テスト**＝回転の呼び出し順（translate→rotate→translate）を `mock.invocationCallOrder` で検証（deferred #3）＋スマホ選択/ピンチ/ズームの e2e 3本。
+
+### レビューでの堅牢化（Task 3 レビュアー指摘 → Task 5 で対処）
+
+- **I1**: 2本目の指着地で覗き窓が pointer を capture する際、`selectedId` の setState 競合で stage モードに落ちるとカードの drag リスナーが漏れ得る → **ピンチ開始時は mode 問わず調停役を必ず cancel**（`onSelectedPinchStart` を両モードで呼ぶ。stage モードでは base を取らず早期 return）。
+- **I2**: 1本指=カード素通しの経路に単体カバレッジが無い → **`collage-el-` 子への lone finger 素通しテスト**を追加。
+
+### 検証・出荷
+
+- tsc0 / **vitest 280 files 2326 passed** / `pnpm build` OK（assert-share-template OK）/ **playwright mobile-share 10/10**（7 段階1 + 3 新規）。
+- **opus 全ブランチレビュー（b7d0e9a9..f98b200a・6 commit）= MERGE READINESS YES**。6つの不変条件（デスクトップ >640px バイト同一／ボードズームは画像に無影響／WYSIWYG／drift-free ピンチ／ジェスチャ配線の健全性／z-index・TS strict）を実コード直読で検証。新規 Critical/Important ゼロ。deferred Minor は全て defer 可。
+- `merge --no-ff` → master **f6497904**（マージ木＝ブランチ HEAD で一致）→ `npx wrangler pages deploy out/ --project-name=allmarks --branch=master` → **`allmarks.app` 反映済**。
+- spec `docs/superpowers/specs/2026-07-12-n58-stage2-mobile-gesture-model-design.md`・plan `docs/superpowers/plans/2026-07-12-n58-stage2-mobile-gesture-model.md`。
+
+### 残（次セッション）
+
+実タッチのピンチ/回転は**実機のみ**検証可 → ユーザーの実機確認待ち。OK なら **N-57+59**（スマホ盤面の小物）へ。感触の調整は `STAGE_ZOOM_MAX`/`PAN_SLOP_PX` の1箇所で可能。INFORMATIONAL: `/s` **ページ**再構成は盤面順（共有**画像**は編集どおり・N-58 の回帰ではない）＝/s ページにも配置を載せるかはユーザー判断の別タスク。

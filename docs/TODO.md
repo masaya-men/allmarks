@@ -21,6 +21,20 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 191 — ★N-58 段階2 スマホのコラージュ編集の操作系を再設計・出荷・本番反映／次は実機確認)
+
+**再ブレスト → 実装まで自走。superpowers:brainstorming で操作モデルを作り直し → writing-plans → subagent-driven-development（Task 1〜6＋各タスクレビュー＋opus 全ブランチレビュー MERGE READINESS=YES・Critical/Important ゼロ）。** tsc0 / **vitest 2326/2326** / build OK（assert-share-template OK）/ playwright mobile-share **10/10**（7 段階1 + 3 新規）/ `merge --no-ff` f6497904 / `allmarks.app` デプロイ済。spec `docs/superpowers/specs/2026-07-12-n58-stage2-mobile-gesture-model-design.md`・plan `docs/superpowers/plans/2026-07-12-n58-stage2-mobile-gesture-model.md`。
+
+- **狙い**＝スマホのコラージュ編集を「標準的なマルチタッチ」に。段階1 実機でユーザーが提案した操作モデルを、旧計画（1本指=カード/2本指=ステージ）を捨てて再設計。
+- **操作モデル（selection-gated・ユーザー承認）**: カードを**1回タップ＝選択**（白枠）。**選択中は2本指＝そのカードを拡縮＋回転**（中心軸・drift-free 絶対計算）。**非選択（余白タップで解除）で2本指＝ボードのズーム/パン**（1〜6倍）。1本指＝カード移動 or 余白パン。**常時回転ノブと四隅リサイズはスマホで廃止**（回転は2本指へ移設＝表現は削らない）。
+- **★不変（ユーザー確認済）＝ボードのズームは編集専用で共有画像に一切影響しない**。スマホの撮影は `renderCollageCanvasToJpeg`（canvas 直描画）で state（位置/サイズ/回転/重なり順）＋band から再描画＝編集画面の CSS transform を見ない。だから旧計画が心配した「撮影直前リセット」は不要。
+- **入れたもの**: ①`lib/share/stage-zoom.ts`（純関数＝clamp/pinch/pan＋2本目の指でカード操作を止める調停役）。②`scaleElementFromCenter`（中心軸スケール純関数）。③`MobileArrangeGestures`（多点タッチ担当ラッパー＝2本指を選択有無で仕分け・1本指はカードへ素通し・enabled=false でデスクトップは wrapper 無し）。④`CollageCanvas` に選択枠/倍率(pointerScale)/touchMode でハンドル非表示/調停役。⑤`BoardRoot` 配線（selectedCollageId/stageTransform・base スナップショット・enter/exit/reselect リセット）。⑥s190 deferred minor #1(撮影中 BACK 無効)/#2(帯 NaN ガード)/#3(回転呼び出し順テスト)/#4(collageOrder コメント) を同梱。
+- **不変条件は死守**（opus が実コード直読で検証）: デスクトップ(>640px) **バイト同一**（新 prop は全て isMobile のみ・`ShareToast`/`handleCreateHostedShare`/`handleMobileCaptureAndCreate` 無改変・diff に不在）／WYSIWYG（編集した位置/サイズ/回転/z順が画像に到達）／drift-free ピンチ（base ref スナップショット・stale closure なし）／fixed のバー/シートは transform ラッパーの外。
+- **★次セッション最優先＝実機確認**（実タッチのピンチ/回転は実機のみ）。`allmarks.app` をハードリロード → SHARE → 全選択 → ARRANGE →（手順は下）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+  - OK → **N-57+59（スマホ盤面の小物）** へ（ロードマップ次点）。
+  - 気になる点（ズーム上限/追従/選択の感触）→ `STAGE_ZOOM_MAX`（stage-zoom.ts）/ `PAN_SLOP_PX`（MobileArrangeGestures.tsx）を1箇所調整して再デプロイ。
+- **既知の残（非ブロッキング・opus が defer 判定）**: `isOnCard` が `collage-el-` testid にカップリング（将来 `data-collage-card` 化が最有力の掃除）／`scaleElementFromCenter` の maxCardWidth<MIN・h===0 は実呼び出し元が作らない／3本目の指はピンチ中に握らない。**INFORMATIONAL（ユーザー判断・別タスク）**: `/s` **ページ**再構成は盤面順（`buildArrangeShare`）＝**共有画像は編集どおり**・N-58 の回帰ではない。/s ページにも編集配置を載せるかは要望次第で payload 拡張の別タスク。
+
 ### 直近の状態 (セッション 190 — ★N-58 段階1 スマホのコラージュ編集を出荷・✅実機確認済／N-55 同時解消／次は段階2 の操作系を再設計)
 
 **実行フェーズ。N-58 段階1 を計画書どおり subagent-driven-development で完遂・本番反映済**（Task 1〜4＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge・Critical/Important ゼロ**）。tsc0 / **vitest 2296/2296** / build OK（assert-share-template OK）/ playwright mobile-share **7/7** / `merge --no-ff` / `allmarks.app` デプロイ済。
