@@ -1,20 +1,27 @@
 import { test, expect, type Page } from '@playwright/test'
 
 const DB_NAME = 'booklage-db'
-// The brief's default (6) and its suggested fallback (24) both leave the last
-// justified row a centred partial (fitSelectionToScreen centres any row that
-// doesn't reach the band's width — collage-layout.ts:169-170,222). With this
-// card aspect (placeholder cards, PLACEHOLDER_ASPECT=1.25) and the board's
-// default card width (BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX=267.84), 24 lays out
-// as 7+7+7+3 — the trailing row of 3 is centred and does NOT reach the edges.
-// A naive min/max-over-all-cards check still passes at 24 (rows 1-3 reach the
-// edges, masking row 4's centred gap in the aggregate), which is exactly the
-// "passes for the wrong reason" trap: it would not catch a regression that
-// broke only the last row. 28 (verified by directly probing
-// fitSelectionToScreen with this env's real constants — see task-9 report) is
-// the smallest count above 24 that packs into 4 full rows of 7 with none left
-// over, so every row — not just the aggregate extremes — reaches both edges.
-const SEED_COUNT = 28
+// N-58 stage1 changed the mobile arrange band from landscape 1.91:1 to
+// portrait 4:5 (mobileCollagePortraitBandRect). The band's WIDTH is unchanged
+// (still the full frame width), but it is now much TALLER — on a 390×844
+// frame the band is {x:0, y:178.25, width:390, height:487.5} vs the old
+// {width:390, height:204.75} — so the same justified-row packing
+// (fitSelectionToScreen, collage-layout.ts) fits far fewer, wider cards per
+// row before closing a row, and the old landscape calibration (SEED_COUNT=28,
+// 4 rows of 7) no longer lands on a clean pack here (verified by directly
+// probing fitSelectionToScreen with this env's real constants — see task-4
+// report). With this card aspect (placeholder cards, PLACEHOLDER_ASPECT=1.25)
+// and the board's default card width (BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX=
+// 267.84) laid into the portrait band, 13 lays out as 4+4+4+1 — the trailing
+// single card is centred and does NOT reach the edges (fitSelectionToScreen
+// centres any row that doesn't reach the band's width — collage-layout.ts
+// ~241-242). A naive min/max-over-all-cards check still passes at 13 (rows
+// 1-3 reach the edges, masking row 4's centred gap in the aggregate), which
+// is exactly the "passes for the wrong reason" trap: it would not catch a
+// regression that broke only the last row. 16 is the next clean count: it
+// packs into 4 full rows of 4 with none left over, so every row — not just
+// the aggregate extremes — reaches both edges.
+const SEED_COUNT = 16
 
 /** Seed cards + the acks that suppress every first-run modal. Mirrors
  *  tests/e2e/mobile-save.spec.ts (memory: reference_playwright_board_share_verify). */
@@ -89,7 +96,7 @@ test.describe('mobile SHARE — phone', () => {
     await expect(page.locator('[data-testid="mobile-select-counter"]')).toHaveText('0 / 100 SELECTED')
   })
 
-  test('SELECT ALL → CREATE arranges into the centred 1.91:1 band and yields a link', async ({ page }) => {
+  test('SELECT ALL → CREATE arranges into the centred 4:5 band and yields a link', async ({ page }) => {
     await seedBoard(page)
     await stubCreate(page)
 
@@ -126,7 +133,7 @@ test.describe('mobile SHARE — phone', () => {
     })
     expect(band.count).toBe(SEED_COUNT)
 
-    const bandH = band.vw * (630 / 1200)
+    const bandH = band.vw * (1350 / 1080) // portrait 4:5 = width × 1.25
     const bandTop = (band.vh - bandH) / 2
     // Cards reach both side edges (no left/right letterbox).
     expect(band.left).toBeLessThanOrEqual(1)
@@ -169,7 +176,7 @@ test.describe('mobile SHARE — phone', () => {
     await expect(page.locator('[data-testid="mobile-share-copy"]')).toBeVisible()
   })
 
-  test('the preview is a real 1200x630 image', async ({ page }) => {
+  test('the preview is a real 1080x1350 image', async ({ page }) => {
     await seedBoard(page)
     await stubCreate(page)
     await page.locator('[data-testid="mobile-nav-share"]').click()
@@ -188,24 +195,31 @@ test.describe('mobile SHARE — phone', () => {
       const img = el as HTMLImageElement
       return { w: img.naturalWidth, h: img.naturalHeight, src: img.src.slice(0, 22) }
     })
-    expect(dims).toEqual({ w: 1200, h: 630, src: 'data:image/jpeg;base64' })
+    expect(dims).toEqual({ w: 1080, h: 1350, src: 'data:image/jpeg;base64' })
   })
 
-  // handleMobileCaptureAndCreate (BoardRoot.tsx) captures with `fit: 'cover'`. If that
-  // ever regresses to `fit: 'contain'`, a 390×844 portrait board gets scaled to fit
-  // *inside* 1200×630 (normalize-shot.ts computeContainRect: scale = min(1200/390,
-  // 630/844) ≈ 0.746, drawn width ≈ 291px) and the ~450px on each side is a flat
-  // fillRect(boardColor) letterbox — reintroducing the exact bug this whole feature
-  // exists to kill.
+  // handleMobileCaptureAndCreate (BoardRoot.tsx) no longer shoots via
+  // normalizeShotToJpegDataUrl's `fit: 'cover' | 'contain'` toggle at all — it
+  // renders straight from placement data via renderCollageCanvasToJpeg
+  // (collage-canvas-render.ts), which maps the whole band (band-space) onto the
+  // whole output canvas with a single linear scale (mapBandToOutput: sx =
+  // outW/band.width, sy = outH/band.height). Portrait band (4:5, via
+  // mobileCollagePortraitBandRect) and portrait output (1080×1350, also 4:5)
+  // share the same aspect ratio, so sx === sy and there is no "fit" mode left
+  // that could reintroduce a flat letterbox bar.
   //
-  // No other assertion in this suite (or anywhere in the repo) can catch that
-  // regression. `fitSelectionToScreen` lays the collage into the band identically
-  // regardless of what `fit` the *capture* later uses, so the band's DOM geometry
-  // (tested above) is unchanged either way. And normalizeShotToJpegDataUrl always
-  // sets `canvas.width = 1200; canvas.height = 630` for both fits, so the produced
-  // image's *dimensions* (tested just above) are identical too. The difference only
-  // shows up in the pixel *content* of the produced JPEG — so this test decodes it.
-  test('the preview image has no cover→contain letterbox bars', async ({ page }) => {
+  // What a regression WOULD still look like: if the band ever stopped reaching
+  // the frame's full width (e.g. someone swaps back in the old landscape
+  // mobileCollageBandRect, or band.width/x is computed wrong), mapBandToOutput
+  // only paints inside the mapped card rects — any strip of the output canvas
+  // the band doesn't cover stays the flat bgColor fill. The DOM assertions in
+  // the "SELECT ALL → CREATE" test above only prove the ARRANGE-stage on-screen
+  // geometry (fitSelectionToScreen); they say nothing about the actual captured
+  // raster (a different code path: renderCollageCanvasToJpeg + mapBandToOutput).
+  // So this test decodes the produced JPEG's pixels directly to prove the
+  // captured image itself — not just the edit-stage DOM — fills to both side
+  // edges.
+  test('the preview image fills to both side edges (no flat band edges)', async ({ page }) => {
     await seedBoard(page)
     await stubCreate(page)
     await page.locator('[data-testid="mobile-nav-share"]').click()
@@ -226,9 +240,9 @@ test.describe('mobile SHARE — phone', () => {
     // grid, not a single row, so one unlucky gap between cards can't produce a
     // false "many colours" or a lucky single-colour row fool the count either way.
     // Quantise (>> 3 per channel) to absorb JPEG ringing/compression noise around
-    // hard edges. `contain`'s letterbox bars are a single flat boardColor fill, so
-    // under `contain` each strip collapses to exactly 1 distinct colour; under
-    // `cover` the strip crosses real card pixels and board background and is many.
+    // hard edges. A flat letterbox/margin is a single boardColor fill, so a strip
+    // that never leaves that margin collapses to exactly 1 distinct colour; a
+    // strip that crosses real card pixels and board background is many.
     const edges = await preview.evaluate((el) => {
       const img = el as HTMLImageElement
       const canvas = document.createElement('canvas')
