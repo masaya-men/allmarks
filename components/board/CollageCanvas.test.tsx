@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { CollageCanvas } from './CollageCanvas'
 import { seedCollagePositions } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig } from '@/lib/share/share-title'
+import { createCollageGestureArbiter } from '@/lib/share/stage-zoom'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 
 // jsdom lacks IntersectionObserver; the real card faces may reference it.
@@ -164,5 +165,112 @@ describe('CollageCanvas', () => {
     const knob = container.querySelector('[data-testid^="collage-rotate-"]')
     expect(knob).not.toBeNull()
     expect(knob?.hasAttribute('data-no-capture')).toBe(true)
+  })
+
+  it('divides drag deltas by pointerScale so a zoomed stage moves cards in layout px (N-58 stage 2)', () => {
+    const item = makeItem({ bookmarkId: 'a' })
+    const positions = { a: { x: 10, y: 20, w: 200, h: 100 } }
+    const onMove = vi.fn()
+    const { getByTestId } = render(
+      <CollageCanvas
+        items={[item]}
+        positions={positions}
+        order={['a']}
+        onMove={onMove}
+        onResize={() => {}}
+        onGrab={() => {}}
+        rotations={{}}
+        onRotate={() => {}}
+        maxCardWidth={1000}
+        displayMode="visual"
+        paper={false}
+        pointerScale={2}
+      />,
+    )
+    const el = getByTestId('collage-el-a')
+    fireEvent.pointerDown(el, { button: 0, pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerMove(el, { pointerId: 1, clientX: 100, clientY: 60 })
+    // screen (100,60) / scale 2 = layout (+50,+30) => (10+50, 20+30) = (60, 50)
+    expect(onMove).toHaveBeenLastCalledWith('a', 60, 50)
+    fireEvent.pointerUp(el, { pointerId: 1 })
+  })
+
+  it('calls onSelect when a card is grabbed', () => {
+    const item = makeItem({ bookmarkId: 'a' })
+    const positions = { a: { x: 0, y: 0, w: 200, h: 100 } }
+    const onSelect = vi.fn()
+    const { getByTestId } = render(
+      <CollageCanvas
+        items={[item]}
+        positions={positions}
+        order={['a']}
+        onMove={() => {}}
+        onResize={() => {}}
+        onGrab={() => {}}
+        rotations={{}}
+        onRotate={() => {}}
+        maxCardWidth={1000}
+        displayMode="visual"
+        paper={false}
+        onSelect={onSelect}
+      />,
+    )
+    fireEvent.pointerDown(getByTestId('collage-el-a'), { button: 0, pointerId: 1, clientX: 0, clientY: 0 })
+    expect(onSelect).toHaveBeenCalledWith('a')
+  })
+
+  it('touchMode hides the rotate knob and the four-corner resize handles, and shows a selection frame on the selected card', () => {
+    const item = makeItem({ bookmarkId: 'a' })
+    const positions = { a: { x: 0, y: 0, w: 200, h: 100 } }
+    const { queryByTestId, container } = render(
+      <CollageCanvas
+        items={[item]}
+        positions={positions}
+        order={['a']}
+        onMove={() => {}}
+        onResize={() => {}}
+        onGrab={() => {}}
+        rotations={{}}
+        onRotate={() => {}}
+        maxCardWidth={1000}
+        displayMode="visual"
+        paper={false}
+        touchMode
+        selectedId="a"
+      />,
+    )
+    expect(queryByTestId('collage-rotate-a')).toBeNull()
+    expect(container.querySelector('[data-testid^="resize-handle-"]')).toBeNull()
+    expect(queryByTestId('collage-selection-a')).toBeTruthy()
+  })
+
+  it('cancelActive on the gesture arbiter stops an in-flight drag (pinch takeover)', () => {
+    const item = makeItem({ bookmarkId: 'a' })
+    const positions = { a: { x: 0, y: 0, w: 200, h: 100 } }
+    const onMove = vi.fn()
+    const arbiter = createCollageGestureArbiter()
+    const { getByTestId } = render(
+      <CollageCanvas
+        items={[item]}
+        positions={positions}
+        order={['a']}
+        onMove={onMove}
+        onResize={() => {}}
+        onGrab={() => {}}
+        rotations={{}}
+        onRotate={() => {}}
+        maxCardWidth={1000}
+        displayMode="visual"
+        paper={false}
+        gestureArbiter={arbiter}
+      />,
+    )
+    const el = getByTestId('collage-el-a')
+    fireEvent.pointerDown(el, { button: 0, pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerMove(el, { pointerId: 1, clientX: 10, clientY: 0 })
+    const callsBefore = onMove.mock.calls.length
+    arbiter.cancelActive()
+    fireEvent.pointerMove(el, { pointerId: 1, clientX: 200, clientY: 0 })
+    expect(onMove.mock.calls.length).toBe(callsBefore)
   })
 })

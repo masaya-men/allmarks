@@ -1,0 +1,17 @@
+/* N-58 段階2: スマホ編集段の多点タッチ覗き窓。拡大した stage を画面サイズで切り取る。
+   z-index は SHARE_CANVAS（inline style）— transform が作る stacking context の中に
+   CollageCanvas が入るため、覗き窓自体が盤面カード層より上に居る必要がある。 */
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* 編集ステージ上の指は全部こちらで解釈する（ブラウザのピンチ/スクロールに取られない） */
+  touch-action: none;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  /* transform の実値は inline style（zoom/pan） */
+}

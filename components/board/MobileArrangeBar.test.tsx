@@ -14,9 +14,15 @@ describe('MobileArrangeBar', () => {
     expect(onCreate).toHaveBeenCalledTimes(1)
   })
 
-  it('disables CREATE while creating', () => {
+  it('disables CREATE and BACK while creating (no orphan /s from BACK mid-capture)', () => {
     render(<MobileArrangeBar onBack={() => {}} onCreate={() => {}} creating={true} />)
     expect(screen.getByTestId('mobile-arrange-create')).toBeDisabled()
     expect(screen.getByTestId('mobile-arrange-create').textContent).toBe('CREATING…')
+    expect(screen.getByTestId('mobile-arrange-back')).toBeDisabled()
+  })
+
+  it('shows the tap-select / pinch / two-finger-zoom hint (N-58 stage 2)', () => {
+    render(<MobileArrangeBar onBack={() => {}} onCreate={() => {}} creating={false} />)
+    expect(screen.getByText('TAP A CARD TO SELECT — PINCH TO RESIZE OR ROTATE — TWO FINGERS ZOOM THE BOARD')).toBeTruthy()
   })
 })

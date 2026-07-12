@@ -296,6 +296,102 @@ test.describe('mobile SHARE — phone', () => {
       expect(box.height).toBeGreaterThanOrEqual(frame.height - 1)
     }
   })
+
+  test('tapping a card selects it (selection frame appears) (N-58 stage 2)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+    const first = page.locator('[data-testid^="collage-el-"]').first()
+    const id = await first.evaluate((el) => el.getAttribute('data-testid')?.replace('collage-el-', '') ?? '')
+    await first.evaluate((el) => {
+      const fire = (type: string, x: number, y: number): void => {
+        const r = el.getBoundingClientRect()
+        el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, clientX: r.left + r.width / 2 + x, clientY: r.top + r.height / 2 + y, pointerType: 'touch', isPrimary: true }))
+      }
+      fire('pointerdown', 0, 0)
+      fire('pointerup', 0, 0) // tap (no move) => select only
+    })
+    await expect(page.getByTestId(`collage-selection-${id}`)).toBeVisible()
+  })
+
+  test('two fingers on a selected card resize it; the image is unaffected by board zoom (N-58 stage 2)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+
+    const first = page.locator('[data-testid^="collage-el-"]').first()
+    const id = await first.evaluate((el) => el.getAttribute('data-testid')?.replace('collage-el-', '') ?? '')
+    const beforeW = await first.evaluate((el) => (el as HTMLElement).style.width)
+
+    // Tap-select first, in its OWN evaluate() — MobileArrangeGestures reads
+    // props.selectedId (React state set by the tap's onSelect) to decide
+    // pinch mode ('card' vs 'stage'). Firing the tap and the pinch in the
+    // SAME synchronous evaluate() outraces React's re-render: the pinch's
+    // pointerdown would still see the stale (null) selectedId and fall into
+    // board-zoom mode instead of card-resize mode. Waiting on the selection
+    // frame below forces a real commit before the pinch starts.
+    await first.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const fire = (type: string): void =>
+        void el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, pointerType: 'touch', isPrimary: true }))
+      fire('pointerdown')
+      fire('pointerup')
+    })
+    await expect(page.getByTestId(`collage-selection-${id}`)).toBeVisible()
+
+    // Now the two-finger spread ON the card (dist 100 -> 200 = 2x) via the viewport.
+    await page.evaluate(() => {
+      const card = document.querySelector('[data-testid^="collage-el-"]') as HTMLElement | null
+      const vp = document.querySelector('[data-testid="mobile-arrange-viewport"]')
+      if (!card || !vp) throw new Error('not found')
+      const r = card.getBoundingClientRect()
+      const cx = r.left + r.width / 2
+      const cy = r.top + r.height / 2
+      const fireVp = (type: string, id: number, x: number, y: number): void =>
+        void vp.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, clientX: x, clientY: y, pointerType: 'touch', isPrimary: id === 1 }))
+      fireVp('pointerdown', 1, cx - 50, cy)
+      fireVp('pointerdown', 2, cx + 50, cy)
+      fireVp('pointermove', 2, cx + 150, cy)
+      fireVp('pointerup', 1, cx - 50, cy)
+      fireVp('pointerup', 2, cx + 150, cy)
+    })
+    const afterW = await first.evaluate((el) => (el as HTMLElement).style.width)
+    expect(parseFloat(afterW)).toBeGreaterThan(parseFloat(beforeW) * 1.5)
+
+    // Capture still succeeds and yields an image (board zoom/card edits are baked from state).
+    await page.getByTestId('mobile-arrange-create').tap()
+    await expect(page.getByTestId('mobile-share-result')).toBeVisible()
+  })
+
+  test('with nothing selected, two fingers zoom the board (N-58 stage 2)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+    await page.evaluate(() => {
+      const vp = document.querySelector('[data-testid="mobile-arrange-viewport"]')
+      if (!vp) throw new Error('viewport not found')
+      const fire = (type: string, id: number, x: number, y: number): void =>
+        void vp.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, clientX: x, clientY: y, pointerType: 'touch', isPrimary: id === 1 }))
+      // no card selected (fresh arrange) => two fingers zoom the stage
+      fire('pointerdown', 1, 150, 420)
+      fire('pointerdown', 2, 250, 420) // dist 100
+      fire('pointermove', 2, 350, 420) // dist 200 => 2x
+      fire('pointerup', 1, 150, 420)
+      fire('pointerup', 2, 350, 420)
+    })
+    const t = await page.getByTestId('mobile-arrange-stage').evaluate((el) => (el as HTMLElement).style.transform)
+    const scale = Number(/scale\(([\d.]+)\)/.exec(t)?.[1])
+    expect(scale).toBeGreaterThan(1.5)
+  })
 })
 
 test.describe('desktop SHARE — unchanged', () => {

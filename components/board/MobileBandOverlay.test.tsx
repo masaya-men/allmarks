@@ -17,4 +17,9 @@ describe('MobileBandOverlay', () => {
     const { container } = render(<MobileBandOverlay band={{ x: 0, y: 0, width: 0, height: 0 }} />)
     expect(container.firstChild).toBeNull()
   })
+
+  it('renders nothing for a NaN band (e.g. a divide-by-zero upstream)', () => {
+    const { container } = render(<MobileBandOverlay band={{ x: 0, y: 0, width: NaN, height: 204.75 }} />)
+    expect(container.firstChild).toBeNull()
+  })
 })
