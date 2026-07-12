@@ -1,31 +1,29 @@
-# 次セッションのゴール — N-56 スマホ共有画像を「canvas 直描画」で作る（iOS foreignObject 回避）。計画書あり
+# 次セッションのゴール — N-56 実機確認: canvas 直描画のスマホ共有画像で「写真が出るか」を1回読む（出れば N-56 完了 → N-58 段階1）
 
-## ★最優先タスク: [2026-07-12-n56-mobile-canvas-renderer.md](superpowers/plans/2026-07-12-n56-mobile-canvas-renderer.md) を subagent-driven-development で実装
+## ★このセッションでやったこと（s189・全て本番反映済 `allmarks.app` deploy `9c40a6a2`）
 
-**この計画書を頭から実装する**（Task 1〜5・モデル指定あり）。土台 `lib/share/capture-mirror.ts`（canvas 直描画・primitives 完成）を流用し、`chosen`＋`collagePositions`＋`band` から直接 canvas に drawImage。**デスクトップは dom-to-image のまま一切触らない**。最後は実機で「写真入り画像が出るか」を確認。
+計画書 [2026-07-12-n56-mobile-canvas-renderer.md](superpowers/plans/2026-07-12-n56-mobile-canvas-renderer.md) を subagent-driven-development で完遂。**スマホの共有画像を dom-to-image（iOS が foreignObject 内の画像を描けない）から canvas 直描画へ全面移行**。
 
-## ★ここまでの道のり（全て本番反映済・s188）
+- Task1 `capture-mirror.ts` primitives を export／Task2 `coverRect`+`mapBandToOutput` 純関数（TDD）／Task3 `renderCollageCanvasToJpeg`（配置データから直接 canvas 描画・never-throw・1枚ずつロード・cover-fit・proxy 経由・placeholder）／Task4 `BoardRoot handleMobileCreateShare` を配線。
+- 検証: tsc0 / **vitest 2291/2291** / build OK / **opus 全ブランチレビュー Ready to merge・Critical/Important ゼロ**。**デスクトップ SHARE はバイト同一**（無改変）。
 
-1. **s188 診断可視化＋倍率フォールバック＋真っ白検出**（出荷）。
-2. **実機 = iOS OOM タブクラッシュ**（100枚 CREATE でタブごと落ちる）。s188.1 **クラッシュ耐性パンくず**（`capture-breadcrumb.ts`＋`CaptureCrashNotice.tsx`）を出荷 → 実機で `100 cards · canvas 1200×1744 · images 78MP` を取得。
-3. **s188.2 画像適応縮小**（`capture-thumbnails.ts`）を出荷 → **クラッシュ解消**（メモリ主犯＝画像埋め込みで正しかった・canvas 経路移行後は撤去予定）。
-4. **だが 6枚でも画像が出ない（暗い）**＝**iOS Safari の dom-to-image が foreignObject 内の画像を描けない**制限が確定（枚数非依存・PC Chrome では出る）。→ **canvas 直描画へ移行** = 上の計画書。
-
-## ★実機確認の依頼（計画 Task 5・コピペ）
+## ★実機確認の依頼（ユーザーへ・コピペ）
 
 ```
-スマホ Safari を閉じて開き直し → allmarks.app → SHARE → SELECT ALL → CREATE
-→ プレビューに「写真入りの画像」が出れば成功🎉。見た目（写真/角丸/文字/余白）も教えてください。
+スマホ Safari を完全に閉じて開き直し → allmarks.app → SHARE → SELECT ALL → CREATE
+→ プレビューに「写真入りの画像」が出れば成功🎉。
+出た画像の見た目（写真/角丸/文字/余白）も教えてください。
+少数（6枚）と多数（100枚 SELECT ALL）の両方だと理想です。
 ```
 
-- **写真が出た** → N-56 完了 → **N-58 段階1** へ。見た目の微調整（パターン背景等）は必要なら次で。
-- **出ない** → スクショで症状採取 → systematic-debugging（proxy 取得失敗 / canvas taint / 配置ズレ）。
+- **写真が出た** → **N-56 完了** → **N-58 段階1**（CREATE を「ARRANGE で止まる→編集→CREATE」に二分割）へ。見た目の微調整（パターン背景の再現・余白・文字サイズ）は必要なら次で。
+- **出ない** → スクショで症状採取 → systematic-debugging で切り分け（proxy 取得失敗 / canvas taint / 配置ズレ / **SVG placeholder が iOS Safari で空描画**＝ただし写真カードは raster proxy なので無関係のはず）。
 
-## ★不変条件（死守）
+## ★不変条件（死守・継承）
 
-- **デスクトップ SHARE はバイト同一**（dom-to-image・`handleCreateHostedShare`・`capture-collage.ts` を触らない）。
+- **デスクトップ SHARE はバイト同一**（`handleCreateHostedShare`・`capture-collage.ts`・dom-to-image 経路を触らない）。
 - 撮影失敗でもリンクは必ず作る／出力 1200×630 cover／画像は同一オリジン proxy 経由（canvas taint 回避）。
-- 撮影は実機でしか検証できない（Playwright は canvas を再現しない）＝効果確認は**必ず実機**。
+- 撮影は**実機でしか検証できない**（Playwright は canvas を再現しない）＝効果確認は必ず実機。
 
 ## ★毎セッション共通のキックオフ（ユーザーはこれを貼るだけ・実行フェーズは Sonnet 中心で開始）
 
@@ -41,7 +39,7 @@
 
 ## 実行順（ロードマップ §1・s187 更新版）
 
-N-56（★s188 診断出荷済・実機読み待ち）→ N-58段階1 → N-58段階2 → N-57+59 → N-54 → N-53 → CUTOUT → **TOWER（公開前）** → 束C → 束D → 束E（公開）→ 公開後: BULK-IMPORT → 花火: K3 + cyber-space（シェーダーA）＋プレミアム群
+N-56（★s189 canvas 直描画・**実機で写真確認待ち**）→ N-58段階1 → N-58段階2 → N-57+59 → N-54 → N-53 → CUTOUT → **TOWER（公開前）** → 束C → 束D → 束E（公開）→ 公開後: BULK-IMPORT → 花火: K3 + cyber-space（シェーダーA）＋プレミアム群
 
 ## 絶対に守ること（恒久ルール・継承）
 

@@ -21,6 +21,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 189 — ★N-56 スマホ共有画像を「canvas 直描画」に移行・出荷／iOS foreignObject 回避・実機で「写真が出るか」確認待ち)
+
+**実行フェーズ。N-56 続き（canvas 直描画レンダラー）を計画書どおり subagent-driven-development で完遂・本番反映済**（Task 1〜4＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge・Critical/Important ゼロ**）。tsc0 / **vitest 2291/2291** / build OK（assert-share-template OK）/ `merge --no-ff 9c40a6a2` / `allmarks.app` デプロイ済。
+
+- **狙い**＝実機で確定した「iOS Safari は dom-to-image（SVG foreignObject）内の `<img>` を描けない（枚数非依存でプレビューが暗い）」を根治。**スマホの撮影を DOM スクショ→canvas 直描画（`drawImage`）へ全面移行**。デスクトップは dom-to-image のまま**バイト同一**。
+- **入れたもの**（計画書 Task 1〜4）: ①`capture-mirror.ts` の描画 primitives 6個を `export`（ロジック不変）。②`collage-canvas-render.ts` に純関数 `coverRect`（cover-fit 切り出し）＋`mapBandToOutput`（band 座標→1200×630 写像・TDD 数値検証）。③同ファイルに `renderCollageCanvasToJpeg`＝**DOM を読まず配置データから直接 canvas に描く**本体（全体 try/catch→null で絶対 throw しない／画像は**1枚ずつ**読み込み＝100枚でも OOM しない／cover-fit／角丸クリップ／写真は同一オリジン proxy 経由でロード＝汚染回避／placeholder+scrim+タイトル／`allmarks.app` 焼き込み）。④`BoardRoot.tsx handleMobileCreateShare` を canvas レンダラーに配線（`chosen`＋`collagePositions`＋`band` から描く・s188.2 の縮小 Map は撤去・**パンくず write/clear は安全網で温存**・角丸は median カード幅×スケールで一律・テーマの flat 角も追従）。
+- **不変条件は死守**（opus レビュアーが呼び出し元を直読して検証）: デスクトップ SHARE **バイト同一**（`handleCreateHostedShare`/`capture-collage.ts`/dom-to-image 経路は無改変・diff に不在・`capture-mirror` の diff は export 追加のみ）／撮影失敗でもリンクは必ず作る（レンダラー失敗時 null→`thumb ?? undefined`）／画像は同一オリジン proxy 経由（canvas taint 回避）／出力 1200×630 cover。
+- **描画ループの自動テストを追加**（opus レビュー指摘）: mock 2d context で①逐次ロード（Promise.all 退行を検出）②proxy はサムネのみ③画面外スキップ④placeholder 分岐⑤ループ内 throw→null、を実測。従来「canvas 不可で早期 return」しか通っていなかった見せかけテストを是正。
+- **★次セッション最優先＝実機で「写真が出るか」を1回確認**。iPhone Safari を閉じて開き直し → `allmarks.app` → SHARE → SELECT ALL → CREATE → プレビューに**写真入りの画像**が出れば N-56 完了🎉。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+  - **出た** → N-56 完了 → **N-58 段階1** へ。見た目の微調整（パターン背景の再現・余白・文字サイズ）は必要なら次で。
+  - **出ない** → スクショで症状採取 → systematic-debugging（proxy 取得失敗 / canvas taint / 配置ズレ / **SVG placeholder が iOS で空描画**＝写真カードは raster なので無関係）。
+- **既知の残（任意・非ブロッキング）**: ①カード単位 try/catch なし＝1枚の予期せぬ例外で全体 null（リンクは作る）②角丸は per-card でなく median 一律③ツイート/動画カードは簡略描画（写真 or placeholder のみ）④cover-fit の stretch-fallback と img.onerror→placeholder はテスト未網羅。
+
 ### 直近の状態 (セッション 188 — ★N-56 スマホ共有画像の「診断可視化＋倍率フォールバック＋真っ白検出」を出荷・本番反映／次は実機で診断行を1回読む)
 
 **実行フェーズ開始。N-56（★★ローンチブロッカー）を計画書どおり subagent-driven-development で完遂・本番反映済**（Task 1〜5＝Sonnet 中心・各タスクレビュー＋**opus 全ブランチレビュー READY TO MERGE・Critical/Important ゼロ**）。tsc0 / **vitest 2262/2262** / build OK（assert-share-template OK）/ playwright mobile-share **5/5**（"desktop SHARE — unchanged" 含む）/ `merge --no-ff`・`allmarks.app` デプロイ済。
