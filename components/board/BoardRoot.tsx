@@ -3896,7 +3896,10 @@ export function BoardRoot() {
           <div data-no-capture>
             {isMobile ? (
               <>
-                {hostedShareUrl === null && shareCreateState !== 'error' && (
+                {/* Top bar hides during the ~1-2s capture ('creating') so DELETE/UNDO/REDO
+                    can't edit the collage while handleMobileCaptureAndCreate is shooting it
+                    (the bottom bar stays, showing CREATING…). */}
+                {hostedShareUrl === null && shareCreateState === 'idle' && (
                   <MobileArrangeTopBar
                     canUndo={collageUndoStack.length > 0}
                     canRedo={collageRedoStack.length > 0}
