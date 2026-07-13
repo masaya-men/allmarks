@@ -111,6 +111,7 @@ export const BOARD_Z_INDEX = {
   MODAL_OVERLAY: 200,  // App-level modal overlay (Bookmarklet install, etc.)
   SCROLL_METER: 400,   // sound-wave scroll/counter meter. Board: positioned by the outer-frame bottom band; receive view (SharedBoard): its own canvas-bottom anchor. Mirrors the raw z-index:400 in ScrollMeter/BoardRoot CSS.
   TAG_PANEL: 403,      // TAG MODE right-edge tag panel (drag-drop tagging) — above the meter + share bars, below CHROME_DRAWER (405).
+  SHARE_REMOVE_TOAST: 404,  // mobile-arrange-redesign "removed from image" confirmation toast — above MobileArrangeDock (SHARE_TOAST 402) so the pill + its UNDO button aren't hidden behind the dock, below CHROME_DRAWER (405).
   /** 統一右ドロワー（TUNE/SETTINGS/SHARE/THEMES）。ScrollMeter(400) の上、onboarding ring(410) の下。 */
   CHROME_DRAWER: 405,
   DATA_HOME: 205,       // first-run "your data lives here" card (after onboarding, below CHROME_DRAWER 405)

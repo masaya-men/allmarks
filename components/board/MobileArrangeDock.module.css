@@ -1,0 +1,144 @@
+/* N-58/redesign: single consolidated bottom dock for the mobile arrange stage.
+   Replaces the separate top undo/redo bar + bottom actions bar + zoom slider.
+   Same glass material as MobileArrangeBar / MobileShareResult so it reads as
+   one chrome family. */
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: rgba(9, 9, 11, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+}
+
+.rowContext,
+.rowTools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.group {
+  display: flex;
+  gap: 6px;
+}
+
+/* Shared button reset for all dock controls. */
+.icon,
+.chip,
+.chipDanger,
+.ghost,
+.create {
+  font: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease, opacity 200ms ease;
+}
+
+/* Undo/redo/zoom — icon-only, square-ish, finger-sized. */
+.icon {
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* TO FRONT / TO BACK — short text chips. */
+.chip {
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0 12px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* REMOVE — danger variant (matches .imageFailed amber-sibling but red, since
+   this is a destructive action, not a warning). */
+.chipDanger {
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #ff6a5e;
+  background: rgba(255, 106, 94, 0.12);
+  border: 1px solid rgba(255, 106, 94, 0.4);
+}
+
+/* BACK — quiet ghost text button, same material as MobileArrangeBar/.ghost. */
+.ghost {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+  background: none;
+  border: 0;
+}
+
+/* CREATE — the dominant action, same green material as MobileShareResult's
+   .primary button. */
+.create {
+  min-height: 52px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #28f100;
+  background: rgba(40, 241, 0, 0.12);
+  border: 1px solid rgba(40, 241, 0, 0.4);
+}
+
+.icon:active,
+.chip:active,
+.chipDanger:active,
+.ghost:active,
+.create:active {
+  transform: scale(0.985);
+}
+
+.icon:disabled,
+.chip:disabled,
+.chipDanger:disabled,
+.ghost:disabled,
+.create:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon,
+  .chip,
+  .chipDanger,
+  .ghost,
+  .create {
+    transition: none;
+  }
+
+  .icon:active,
+  .chip:active,
+  .chipDanger:active,
+  .ghost:active,
+  .create:active {
+    transform: none;
+  }
+}
