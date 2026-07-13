@@ -1,31 +1,15 @@
 import { test, expect, type Page } from '@playwright/test'
+import { seedDb, firstRunSuppressors } from './helpers/seed-db'
 
 const SHOT_DIR = 'C:/Users/masay/AppData/Local/Temp/claude/c--Users-masay-Desktop--------/72921115-d5cc-4020-bf0a-b2e69d458762/scratchpad'
 
-/** Load the board with onboarding marked complete so its first-run overlay
- *  (which auto-starts on an empty board) doesn't block UI interaction or dirty
- *  the calibration screenshots. Mirrors the board-b0 pattern of preparing IDB
- *  then reloading. */
+/** Load the board with onboarding + DataHomeCard + backup-reminder all
+ *  suppressed so no first-run modal blocks UI interaction or dirties the
+ *  calibration screenshots. Uses the shared seed helper (race-fixed,
+ *  version-agnostic) instead of a hand-rolled indexedDB.open. */
 async function prepBoard(page: Page): Promise<void> {
-  await page.goto('/board')
+  await seedDb(page, [...firstRunSuppressors()])
   await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
-  await page.waitForTimeout(500)
-  await page.evaluate(async () => {
-    await new Promise<void>((resolve, reject) => {
-      const req = indexedDB.open('booklage-db')
-      req.onsuccess = () => {
-        const db = req.result
-        const tx = db.transaction('settings', 'readwrite')
-        tx.objectStore('settings').put({ key: 'onboarding-completed', completed: true })
-        tx.oncomplete = () => resolve()
-        tx.onerror = () => reject(tx.error)
-      }
-      req.onerror = () => reject(req.error)
-    })
-  })
-  await page.reload()
-  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
-  await page.waitForTimeout(300)
 }
 
 test('paper-atelier tokens apply when data-theme-id is set', async ({ page }) => {
