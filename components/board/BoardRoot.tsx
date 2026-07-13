@@ -134,6 +134,10 @@ import { CaptureCrashNotice } from '@/components/board/CaptureCrashNotice'
 import { mobileCaptureScale, SHARE_OG_ASPECT, SHARE_PORTRAIT_ASPECT, mobileCollagePortraitBandRect } from '@/lib/share/mobile-band'
 import { letterboxImageToAspect } from '@/lib/share/letterbox'
 import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, scaleElementFromCenter, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
+import { sendToBack } from '@/lib/share/collage-layer-order'
+import { removeFromCollage } from '@/lib/share/collage-remove'
+import { snapshotsEqual, pushSnapshot, MAX_COLLAGE_HISTORY, type CollageSnapshot } from '@/lib/share/collage-history'
+import { MobileArrangeTopBar } from './MobileArrangeTopBar'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
@@ -474,6 +478,16 @@ export function BoardRoot() {
   const [collageArbiter] = useState<CollageGestureArbiter>(() => createCollageGestureArbiter())
   // 選択カードのピンチ開始時の base（絶対計算で誤差を溜めないためのスナップショット）。
   const pinchBaseRef = useRef<{ positions: CollagePositions; rotation: number; id: string } | null>(null)
+  // コラージュ編集の取り消し/やり直し履歴（stage2）。
+  const [collageUndoStack, setCollageUndoStack] = useState<CollageSnapshot[]>([])
+  const [collageRedoStack, setCollageRedoStack] = useState<CollageSnapshot[]>([])
+  // 3マップの現在値（同期スナップショット捕捉用）。setState は非同期なので ref でミラー。
+  const collageStateRef = useRef<CollageSnapshot>({ positions: {}, order: [], rotations: {} })
+  // undo/redo スタックの ref ミラー（ハンドラ内で updater をネストしないため）。
+  const collageUndoRef = useRef<CollageSnapshot[]>([])
+  const collageRedoRef = useRef<CollageSnapshot[]>([])
+  // 連続ジェスチャ開始時の「変更前」スナップショット（終了時に差分ありなら積む）。
+  const pendingHistoryRef = useRef<CollageSnapshot | null>(null)
   // Editable collage title (phase 2). null while not arranging — seeded on
   // entering arrange, discarded on exit. Never persisted (matches the rest of
   // the temporary collage layout state above).
@@ -497,6 +511,13 @@ export function BoardRoot() {
       clearCaptureBreadcrumb()
     }
   }, [])
+  // コラージュ3マップ・undo/redoスタックの ref ミラー（setState は非同期なので、
+  // ハンドラが「今の値」を同期的に読むための同期先）。
+  useEffect(() => {
+    collageStateRef.current = { positions: collagePositions, order: collageOrder, rotations: collageRotations }
+  }, [collagePositions, collageOrder, collageRotations])
+  useEffect(() => { collageUndoRef.current = collageUndoStack }, [collageUndoStack])
+  useEffect(() => { collageRedoRef.current = collageRedoStack }, [collageRedoStack])
   const [shareSelectedIds, setShareSelectedIds] = useState<ReadonlySet<string> | null>(null)
   const [selectionScrollY, setSelectionScrollY] = useState<number>(0)
   // Onboarding: true while the first-run tutorial overlay is active.
@@ -2268,6 +2289,90 @@ export function BoardRoot() {
     setSelectedIds(r.ids)
   }, [selectedIds, lightboxNavItems])
 
+  // 連続ジェスチャ開始: 変更前スナップショットを捕捉。移動は掴んだ id を最前面にした
+  // 状態を「変更前」とする（選択タップの自動前面化は履歴に含めない）。ピンチは id なし。
+  const handleCollageGestureStart = useCallback((reorderId?: string): void => {
+    const s = collageStateRef.current
+    pendingHistoryRef.current = {
+      positions: s.positions,
+      order: reorderId ? bringToFront(s.order, reorderId) : s.order,
+      rotations: s.rotations,
+    }
+  }, [])
+
+  // 連続ジェスチャ終了: 実際に変わっていれば pending を undo に積む・redo を空に。
+  const handleCollageGestureEnd = useCallback((): void => {
+    const before = pendingHistoryRef.current
+    pendingHistoryRef.current = null
+    if (!before) return
+    if (snapshotsEqual(before, collageStateRef.current)) return
+    setCollageUndoStack((s) => pushSnapshot(s, before, MAX_COLLAGE_HISTORY))
+    setCollageRedoStack([])
+  }, [])
+
+  // 離散操作（前面/背面/削除）用: 実行の直前に現在状態を undo に積む・redo を空に。
+  const pushHistoryBeforeDiscreteEdit = useCallback((): void => {
+    setCollageUndoStack((s) => pushSnapshot(s, collageStateRef.current, MAX_COLLAGE_HISTORY))
+    setCollageRedoStack([])
+  }, [])
+
+  const applyCollageSnapshot = useCallback((snap: CollageSnapshot): void => {
+    setCollagePositions(snap.positions)
+    setCollageOrder([...snap.order])
+    setCollageRotations({ ...snap.rotations })
+    setSelectedCollageId((cur) => (cur && !snap.order.includes(cur) ? null : cur))
+  }, [])
+
+  const handleCollageUndo = useCallback((): void => {
+    const stack = collageUndoRef.current
+    if (stack.length === 0) return
+    const prev = stack[stack.length - 1]
+    if (!prev) return
+    setCollageRedoStack((r) => pushSnapshot(r, collageStateRef.current, MAX_COLLAGE_HISTORY))
+    setCollageUndoStack(stack.slice(0, -1))
+    applyCollageSnapshot(prev)
+  }, [applyCollageSnapshot])
+
+  const handleCollageRedo = useCallback((): void => {
+    const stack = collageRedoRef.current
+    if (stack.length === 0) return
+    const next = stack[stack.length - 1]
+    if (!next) return
+    setCollageUndoStack((u) => pushSnapshot(u, collageStateRef.current, MAX_COLLAGE_HISTORY))
+    setCollageRedoStack(stack.slice(0, -1))
+    applyCollageSnapshot(next)
+  }, [applyCollageSnapshot])
+
+  const handleDeleteSelectedCollage = useCallback((): void => {
+    const id = selectedCollageId
+    if (!id) return
+    pushHistoryBeforeDiscreteEdit()
+    const s = collageStateRef.current
+    const r = removeFromCollage(s.positions, s.order, s.rotations, id)
+    setCollagePositions(r.positions)
+    setCollageOrder(r.order)
+    setCollageRotations(r.rotations)
+    setSelectedCollageId(null)
+  }, [selectedCollageId, pushHistoryBeforeDiscreteEdit])
+
+  const handleBringSelectedToFront = useCallback((): void => {
+    const id = selectedCollageId
+    if (!id) return
+    pushHistoryBeforeDiscreteEdit()
+    setCollageOrder((o) => bringToFront(o, id))
+  }, [selectedCollageId, pushHistoryBeforeDiscreteEdit])
+
+  const handleSendSelectedToBack = useCallback((): void => {
+    const id = selectedCollageId
+    if (!id) return
+    pushHistoryBeforeDiscreteEdit()
+    setCollageOrder((o) => sendToBack(o, id))
+  }, [selectedCollageId, pushHistoryBeforeDiscreteEdit])
+
+  const handleDoubleTapFit = useCallback((): void => {
+    setStageTransform(IDENTITY_STAGE_TRANSFORM)
+  }, [])
+
   // Leave SHARE mode entirely from EITHER stage (CANCEL / Esc / DONE), discarding
   // the working selection and the temporary collage layout — nothing is persisted.
   const handleExitShareMode = useCallback((): void => {
@@ -2285,6 +2390,9 @@ export function BoardRoot() {
     setMobileBandRect(null)
     setSelectedCollageId(null)
     setStageTransform(IDENTITY_STAGE_TRANSFORM)
+    setCollageUndoStack([])
+    setCollageRedoStack([])
+    pendingHistoryRef.current = null
   }, [])
 
   // The rect the initial collage layout is fit into (window coords): the .canvas
@@ -2495,6 +2603,7 @@ export function BoardRoot() {
 
   // スマホ: 選択カードの2本指ピンチ開始 — 進行中のカード移動を止め、base をスナップショット。
   const handleSelectedPinchStart = useCallback((): void => {
+    handleCollageGestureStart()
     collageArbiter.cancelActive()
     if (selectedCollageId === null) return
     pinchBaseRef.current = {
@@ -2502,7 +2611,7 @@ export function BoardRoot() {
       rotation: collageRotations[selectedCollageId] ?? 0,
       id: selectedCollageId,
     }
-  }, [collageArbiter, selectedCollageId, collagePositions, collageRotations])
+  }, [handleCollageGestureStart, collageArbiter, selectedCollageId, collagePositions, collageRotations])
 
   // スマホ: 選択カードの2本指ピンチ中 — base から絶対計算で拡縮（中心軸）+回転。
   const handleSelectedPinch = useCallback(
@@ -2567,6 +2676,9 @@ export function BoardRoot() {
     setMobileBandRect(band)
     setSelectedCollageId(null)
     setStageTransform(IDENTITY_STAGE_TRANSFORM)
+    setCollageUndoStack([])
+    setCollageRedoStack([])
+    pendingHistoryRef.current = null
     setSharePhase('arrange')
   }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, viewport.w, viewport.h])
 
@@ -3747,7 +3859,9 @@ export function BoardRoot() {
             selectedId={selectedCollageId}
             onSelectedPinchStart={handleSelectedPinchStart}
             onSelectedPinch={handleSelectedPinch}
+            onSelectedPinchEnd={handleCollageGestureEnd}
             onDeselect={(): void => setSelectedCollageId(null)}
+            onDoubleTapFit={handleDoubleTapFit}
           >
             <CollageCanvas
               items={lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))}
@@ -3762,6 +3876,8 @@ export function BoardRoot() {
               displayMode={displayMode}
               paper={themeMeta.decorations === true}
               roundedCorners={roundedCorners}
+              onEditGestureStart={isMobile ? handleCollageGestureStart : undefined}
+              onEditGestureEnd={isMobile ? handleCollageGestureEnd : undefined}
               title={
                 shareTitle
                   ? { config: shareTitle, defaultText: deriveBoardBgTypoText(activeFilter, tags), onChange: setShareTitle }
@@ -3780,6 +3896,18 @@ export function BoardRoot() {
           <div data-no-capture>
             {isMobile ? (
               <>
+                {hostedShareUrl === null && shareCreateState !== 'error' && (
+                  <MobileArrangeTopBar
+                    canUndo={collageUndoStack.length > 0}
+                    canRedo={collageRedoStack.length > 0}
+                    onUndo={handleCollageUndo}
+                    onRedo={handleCollageRedo}
+                    hasSelection={selectedCollageId !== null}
+                    onBringToFront={handleBringSelectedToFront}
+                    onSendToBack={handleSendSelectedToBack}
+                    onDelete={handleDeleteSelectedCollage}
+                  />
+                )}
                 {hostedShareUrl === null && shareCreateState !== 'error' && (
                   <MobileArrangeBar
                     onBack={handleShareReselect}
