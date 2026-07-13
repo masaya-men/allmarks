@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SHARE_OG_ASPECT, mobileCollageBandRect, mobileCaptureScale } from './mobile-band'
+import { SHARE_OG_ASPECT, mobileCollageBandRect, mobileCaptureScale, SHARE_PORTRAIT_ASPECT, mobileCollagePortraitBandRect, collageBandRect } from './mobile-band'
 
 describe('mobileCollageBandRect', () => {
   it('centres a 1.91:1 band inside a 390x844 phone frame', () => {
@@ -65,5 +65,29 @@ describe('mobileCaptureScale', () => {
   it('falls back to 1 for a degenerate band width', () => {
     expect(mobileCaptureScale(0)).toBe(1)
     expect(mobileCaptureScale(-5)).toBe(1)
+  })
+})
+
+describe('mobileCollagePortraitBandRect (4:5 portrait)', () => {
+  it('inscribes a centred 4:5 band in a tall phone frame', () => {
+    // 390x844: portrait band keeps full width, height = 390 * 1350/1080 = 487.5, y-centred
+    expect(mobileCollagePortraitBandRect(390, 844)).toEqual({ x: 0, y: 178.25, width: 390, height: 487.5 })
+  })
+
+  it('keeps the 4:5 ratio and caps sides on a wide frame', () => {
+    // 844x390 wide: keeps full height, width = 390 * 1080/1350 = 312, x-centred
+    const b = mobileCollagePortraitBandRect(844, 390)
+    expect(b).toEqual({ x: 266, y: 0, width: 312, height: 390 })
+    expect(b.width / b.height).toBeCloseTo(1080 / 1350) // 0.8 = 4:5
+  })
+
+  it('returns empty on a degenerate frame', () => {
+    expect(mobileCollagePortraitBandRect(0, 844)).toEqual({ x: 0, y: 0, width: 0, height: 0 })
+  })
+})
+
+describe('collageBandRect (generalised)', () => {
+  it('matches mobileCollageBandRect for the 1.91:1 aspect', () => {
+    expect(collageBandRect(390, 844, 1200, 630)).toEqual(mobileCollageBandRect(390, 844))
   })
 })

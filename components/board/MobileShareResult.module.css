@@ -22,11 +22,12 @@
   to { transform: none; }
 }
 
-/* The preview IS the shared image — same 1.91:1 the OG card uses. */
+/* The preview IS the portrait 4:5 image we save/native-share. The hosted OG link
+   card is a 1.91:1 letterbox of this same portrait, generated separately. */
 .preview {
   display: block;
   width: 100%;
-  aspect-ratio: 1200 / 630;
+  aspect-ratio: 1080 / 1350;
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);

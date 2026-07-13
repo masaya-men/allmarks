@@ -131,7 +131,8 @@ import { ShareToast } from '@/components/board/ShareToast'
 import { MobileShareSelectBar } from '@/components/board/MobileShareSelectBar'
 import { MobileShareResult } from '@/components/board/MobileShareResult'
 import { CaptureCrashNotice } from '@/components/board/CaptureCrashNotice'
-import { mobileCollageBandRect, mobileCaptureScale } from '@/lib/share/mobile-band'
+import { mobileCaptureScale, SHARE_OG_ASPECT, SHARE_PORTRAIT_ASPECT, mobileCollagePortraitBandRect } from '@/lib/share/mobile-band'
+import { letterboxImageToAspect } from '@/lib/share/letterbox'
 import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, scaleElementFromCenter, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
@@ -2546,8 +2547,8 @@ export function BoardRoot() {
     const frameW = box?.width ?? viewport.w
     const frameH = box?.height ?? viewport.h
 
-    // 帯 = 画面に内接する中央の 1.91:1 矩形 = cover 切り出しが残す矩形そのもの。
-    const band = mobileCollageBandRect(frameW, frameH)
+    // 帯 = 画面に内接する中央の 縦4:5 矩形（モバイル主役）。fit も overlay もこれで縦になる。
+    const band = mobileCollagePortraitBandRect(frameW, frameH)
 
     const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
     const cards = chosen.map((it) => {
@@ -2606,7 +2607,7 @@ export function BoardRoot() {
     // canvas レンダラーは出力空間(1200x630)の単一 roundedCornersPx を取る。盤面の半径は
     // 幅依存(cardCornerRadiusPx)なので、帯内カード幅の中央値を代表値にして出力空間へスケール。
     // flat は arrange-stage CollageCanvas の paper prop(themeMeta.decorations===true)と同値。
-    const bandToOutScale = band.width > 0 ? 1200 / band.width : 1
+    const bandToOutScale = band.width > 0 ? SHARE_PORTRAIT_ASPECT.WIDTH / band.width : 1
     const bandWidths = canvasCards
       .map((c) => c.rect.w)
       .filter((w): w is number => typeof w === 'number' && w > 0)
@@ -2643,8 +2644,8 @@ export function BoardRoot() {
         thumb = await renderCollageCanvasToJpeg({
           cards: canvasCards,
           band,
-          width: 1200,
-          height: 630,
+          width: SHARE_PORTRAIT_ASPECT.WIDTH,
+          height: SHARE_PORTRAIT_ASPECT.HEIGHT,
           bgColor: deriveCaptureBoardColor(),
           roundedCornersPx,
           toProxyUrl: (s: string): string => rewriteToProxy(s, shareOrigin()),
@@ -2664,9 +2665,16 @@ export function BoardRoot() {
     }
     setCapturedImageUrl(thumb)
 
+    // リンクカード用: 縦画像を 1.91:1 のボード色キャンバス中央にレターボックス併産。
+    // ホストする OG は 1.91:1 のまま（og:image:width/height=1200/630 と一致）。失敗時は
+    // 画像なしでもリンクは作る（メタが嘘にならない・ネイティブ共有は縦画像で成立）。
+    const linkCardThumb = thumb
+      ? await letterboxImageToAspect(thumb, SHARE_OG_ASPECT.WIDTH, SHARE_OG_ASPECT.HEIGHT, deriveCaptureBoardColor())
+      : null
+
     const res = await createHostedShare({
       buildShare: buildArrangeShare,
-      thumb: thumb ?? undefined,
+      thumb: linkCardThumb ?? undefined,
       createShare,
       origin: shareOrigin(),
       warm: (u: string): void => { void fetch(u).catch((): void => {}) },
@@ -2699,7 +2707,7 @@ export function BoardRoot() {
     window.open(buildTweetIntentUrl(hostedShareUrl), '_blank', 'noopener,noreferrer')
   }, [hostedShareUrl])
 
-  // Ready-state SAVE IMAGE: hand the auto-captured 1200×630 JPEG to the user as a
+  // Ready-state SAVE IMAGE: hand the auto-captured 1080×1350 portrait JPEG to the user as a
   // download so they can post it natively on X (native image posts dwarf link cards).
   // The allmarks.app URL is baked into the image so it travels with the post.
   const handleSaveShareImage = useCallback((): void => {
