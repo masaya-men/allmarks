@@ -65,6 +65,10 @@ export type CollageCanvasProps = {
   readonly touchMode?: boolean
   /** 2本指ピンチ開始で進行中のカード移動を中断する調停役（スマホのみ）。 */
   readonly gestureArbiter?: CollageGestureArbiter
+  /** 1本指カード移動の開始（掴んだ id）。BoardRoot が履歴 pending を捕捉（モバイルのみ）。 */
+  readonly onEditGestureStart?: (id: string) => void
+  /** 1本指カード移動の終了（pointerup）。BoardRoot が差分ありなら履歴に積む（モバイルのみ）。 */
+  readonly onEditGestureEnd?: () => void
 }
 
 /** Intra-canvas stacking floor. This is a LOCAL offset for ordering this
@@ -99,6 +103,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
     pointerId: number,
     onMove: (ev: globalThis.PointerEvent) => void,
     arbiter?: CollageGestureArbiter,
+    onEnd?: () => void,
   ): void {
     try {
       el.setPointerCapture(pointerId)
@@ -118,6 +123,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
         /* jsdom / synthetic pointer */
       }
       arbiter?.clear()
+      onEnd?.()
     }
     el.addEventListener('pointermove', move)
     el.addEventListener('pointerup', up)
@@ -134,6 +140,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
     if (!el || !start) return
     props.onGrab(id)
     props.onSelect?.(id)
+    props.onEditGestureStart?.(id)
     const startX = e.clientX
     const startY = e.clientY
     const originX = start.x
@@ -147,6 +154,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
         props.onMove(id, originX + (ev.clientX - startX) / scale, originY + (ev.clientY - startY) / scale)
       },
       props.gestureArbiter,
+      props.onEditGestureEnd,
     )
   }
 
