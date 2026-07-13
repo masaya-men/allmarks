@@ -1,34 +1,14 @@
-import { test, expect, type Page } from '@playwright/test'
-
-const DB_NAME = 'booklage-db'
-const DB_VERSION = 9
-
-async function clearDb(page: Page): Promise<void> {
-  await page.evaluate(
-    async ({ dbName, dbVersion }) => {
-      await new Promise<void>((resolve, reject) => {
-        const req = indexedDB.open(dbName, dbVersion)
-        req.onsuccess = () => {
-          const db = req.result
-          const tx = db.transaction(['bookmarks', 'cards', 'moods'], 'readwrite')
-          tx.objectStore('bookmarks').clear()
-          tx.objectStore('cards').clear()
-          tx.objectStore('moods').clear()
-          tx.oncomplete = () => { db.close(); resolve() }
-          tx.onerror = () => reject(new Error('clear tx error'))
-        }
-        req.onerror = () => reject(new Error('open error'))
-      })
-    },
-    { dbName: DB_NAME, dbVersion: DB_VERSION },
-  )
-}
+import { test, expect } from '@playwright/test'
+import { seedDb, firstRunSuppressors } from './helpers/seed-db'
 
 test('save via /save popup → board tab fades in new card without manual refresh', async ({ context }) => {
   const boardPage = await context.newPage()
-  await boardPage.goto('/board')
-  await boardPage.waitForLoadState('networkidle')
-  await clearDb(boardPage)
+  // No bookmark/card rows to seed here — the old clearDb only ever CLEARED
+  // the bookmarks/cards/moods stores (defensive; a fresh browser context's
+  // IDB is already empty). seedDb still does real work: it navigates,
+  // reaches the app's current (version-agnostic) schema, and writes the
+  // first-run suppressors so no onboarding modal can interfere below.
+  await seedDb(boardPage, [...firstRunSuppressors()])
 
   const savePage = await context.newPage()
   const params = new URLSearchParams({
