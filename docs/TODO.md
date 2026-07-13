@@ -21,13 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 195 — ★PC リリースにピボット／N-53 e2e 修理を完遂・master マージ／スマホは後回し)
+### 直近の状態 (セッション 195 — ★PC リリースにピボット／N-53 e2e 修理＋N-54 交点バグ修正を完遂・本番反映／スマホは後回し)
 
-**ユーザー判断でスマホのアレンジ作り直し（s194）を「あまりにもダメ」と後回しにし、PC リリース（ソフトローンチ滑走路）に舵を戻した。** 手始めに **N-53（フル e2e が30本落ち＝回帰検出網が半死）を完遂**・master マージ済（`d453ba21`・test infra＋死コード prune なので**デプロイ不要**）。
+**ユーザー判断でスマホのアレンジ作り直し（s194）を「あまりにもダメ」と後回しにし、PC リリース（ソフトローンチ滑走路）に舵を戻した。** 同一セッションで **N-53（e2e 30本落ち＝回帰検出網が半死）→ N-54（盤面グリッドの交点が濃くなるバグ）** を連続で完遂。
 
-- **N-53 結果**: 30本落ち → **0本**（フル 72 pass / 0 fail / 5 skip・2回連続で安定）。真因は版数固定 seed／`networkidle`／dead-link ガード／**撤去・変更済み機能の古いテスト**の4系統。**検証は一切弱めず**、古いテストは現挙動へ再ターゲット（むしろ強化）or 撤去済みは削除。詳細は下の N-53 backlog（✅）＋ [TODO_COMPLETED.md](./TODO_COMPLETED.md) s195。subagent-driven・全レビュー clean・opus 全ブランチ Ready=YES。
-- **スマホのアレンジ作り直し（s194）は後回し**。実機フィードバック3点（①常時チロムはボトムナビ1行だけ ②ズームはスライダーに戻す ③ボード移動のパンモードをボタンで切替）は `docs/private/IDEAS.md` に「次に作り直す時の厳守要件」として保存。s194 の本番反映はそのまま（公開前で実害なし）。
-- **★次セッション＝PC リリース滑走路の続き**。残り: **N-54（グリッド交点SVG統一）／TOWER（公開前の無料看板テーマ・ユーザー確定）／束C（13言語仕上げ＋規約正文条項＝最大の関門）→ 束D（公開素材）→ 束E（公開）**。束A/B（スマホ閲覧・保存）は完了済。どれから着手するかはユーザーが選ぶ（推奨は N-54 か TOWER の可視な前進、その後 束C の長丁場）。正本は `docs/private/2026-07-08-release-runway-plan.md` ＋ ロードマップ `docs/superpowers/plans/2026-07-11-s186-remaining-work-roadmap.md`。
+- **N-53 完了**（master `d453ba21`・非デプロイ）: 30本落ち → **0本**（72 pass / 0 fail / 5 skip・2回安定）。真因＝版数固定 seed／`networkidle`／dead-link ガード／**撤去・変更済み機能の古いテスト**の4系統。**検証は一切弱めず**、古いテストは現挙動へ再ターゲット or 撤去済みは削除。詳細は下 N-53 backlog（✅）。
+- **N-54 完了**（master `62f2a934`・`allmarks.app` デプロイ済）: 盤面の grid/crosshatch を受け取り/OG と同じ**単層 SVG**に統一＝交点の二重合成を根治（実測 58/ch→**0/ch**）。副次効果で SHARE スクショの背景忠実度も向上。**★ユーザー実機目視待ち**（薄い色グリッドで交点の粒々が消えたか＋受け取り画面でも一致するか）。詳細は下 N-54 backlog（✅）。
+- **スマホのアレンジ作り直し（s194）は後回し**。実機FB3点（①常時チロムは1行 ②ズームはスライダー ③パンモード切替ボタン）は `docs/private/IDEAS.md` に「次に作り直す時の厳守要件」で保存。s194 本番反映はそのまま（公開前で実害なし）。
+- **★次セッション＝PC リリース滑走路の続き**（N-54 は完了）。残り: **TOWER（公開前の無料看板テーマ・ユーザー確定）／束C（13言語仕上げ＋規約正文条項＝最大の関門）→ 束D（公開素材）→ 束E（公開）**。束A/B（スマホ閲覧・保存）＋N-53＋N-54 は完了済。次はユーザーが選ぶ（推奨＝TOWER の可視な前進、その後 束C の長丁場）。正本 `docs/private/2026-07-08-release-runway-plan.md` ＋ ロードマップ `docs/superpowers/plans/2026-07-11-s186-remaining-work-roadmap.md`。
 
 ### 直近の状態 (セッション 194 — ★スマホのアレンジUX作り直しを計画どおり実装・本番反映／後回しに)
 
@@ -574,9 +575,7 @@
 - ~~**(N-51) スマホでボード背景が見えず、テーマの意味が薄い**~~ ✅ **s184 完了・本番反映**（ユーザーがモック5案から **(c) 3列のまま左右16px・すき間14px** を選択）。`MOBILE_LAYOUT` に `SIDE_MARGIN_PX: 16` を追加＋`GAP_PX: 6→14`。`BoardRoot` の `layoutSidePaddingPx`（モバイルのみ16／PCは `BOARD_INNER.SIDE_PADDING_PX`=9）で幅とオフセットを一本化。受け取り画面の `.scroller` も 640px 以下で左右16px。390px でカード幅は 120→110px、列数は3のまま。PC は不変。
   - **★残り（ユーザー判断）**: **スマホのボードでは背景ワードマーク（タイトル）はいまも描画されない**（`!isMobile` ゲート）。今回で見えるようになったのは**パターンと盤面色だけ**。タイトルも出すなら別対応（モック案 (e) 相当）。
 - ~~**(N-52) パターン（グリッド・ドット等）の太さをスライダーで調整したい**~~ ✅ **s184 完了・本番反映**。THEMES→CUSTOMIZE の DENSITY 直下に **THICKNESS** 行（1〜6px・刻み0.2・右で太く）。**太さは2箇所にベタ書きだった**＝`patternSvgDataUri`（受け取り画面・OG 画像）と `themes.module.css` の CSS グラデーション（本物盤面・SHARE スクショ）→ 両方を `patternStroke` と純関数 `effectivePatternStroke`（`min(太さ, 間隔/2 − 1)`、下限0.5）に集約＝**盤面と共有リンクで線の太さが食い違わない**。**既定は1px も動かない**（線=1・ドット=1.4、**パターン種別ごとの既定**なのでグリッド→ドットに変えても r=1.4 のまま）。DB バージョン上げ不要（`board-config` の JSON 塊内）。共有スキーマは `.optional()`（必須にすると既存リンクの `custom` が丸ごと落ちる）。opus 敵対的レビュー＝SHIP・欠陥0。tsc0 / vitest 2215。
-- **(N-54) ★グリッド/クロスハッチの「線が交わる所だけ濃くなる」（s184 実機FB・N-52 出荷後に判明）** — 薄い色ほど目立つ。**原因（要確認だが濃厚）＝本物盤面はパターンを CSS の重ね合わせグラデーション2枚で描いており、半透明の線が交点で二重合成される**（[themes.module.css](../components/board/themes.module.css) `.patternLayer[data-pattern='grid'|'crosshatch']`）。一方 **受け取り画面／OG 画像は `patternSvgDataUri` の SVG（1本の path に2本のサブパス＝1回の描画）なので交点は濃くならない**＝ここでも盤面と共有リンクで見た目が食い違っている疑い。
-  - **候補の直し方**: 本物盤面も同じ SVG data-URI を背景に使う（`background-image: url(data:...)` ＋ `background-size`）。**副次効果**＝`theme-customization.ts:160-163` が言う「dom-to-image は重ねた CSS グラデーションの片方向を落とす」問題も同時に解消し、SHARE スクショの忠実度が上がる。`patternSvgDataUri` は毎回 `encodeURIComponent` するので `useMemo` 必須。パララックス（`background-position-y`）と `background-size` の互換を要確認。
-  - **必ず受け取り画面でも確認**（memory `feedback_board_change_check_receiver`）。
+- ~~**(N-54) ★グリッド/クロスハッチの交点だけ濃くなる**~~ ✅ **s195 完了・master マージ済（`62f2a934`）・`allmarks.app` デプロイ済**。原因＝本物盤面が CSS の重ねグラデ2枚で描き交点が二重合成。修正＝**盤面も受け取り/OG と同じ単層 SVG（`patternSvgDataUri`）をタイル**（`BoardRoot` の `.patternLayer` を inline SVG background に・useMemo・間隔/太さ/色/パララックスは不変）＋ `themes.module.css` の死んだ 4 グラデ規則を削除（副次効果＝dom-to-image のグラデ片方向落ちも解消）。**交点の濃さを実測**: 修正前 CSS は交点が **58/ch 濃い**（バグ）→ 本ブランチ **0/ch**（根治・α合成の理論値と一致）。tsc0 / vitest 2350 / board-theme e2e 3/3 / opus 全ブランチ Ready=YES・Crit/Important 0。**★残＝ユーザー実機目視**（薄い色グリッドで交点の粒々が消えたか＋受け取り画面 /s/ でも一致するか）。
 - **(N-51 の残り) ★スマホのボードに背景タイトル（ワードマーク）を出す（s184 ユーザー確定）** — 現状 `BoardBackgroundTypography` は `!isMobile` ゲートで**スマホでは描画されない**。受け取り画面では出ている。**ユーザーの理由**＝「ボトムナビの THEME からカスタマイズできるように見えるのに、実際は見えないのはおかしい」。s184 で左右16px・すき間14px の余白ができたので出す余地はある。TITLE 色は既に `ThemeCustomization.titleColor` で可変。
 - ~~**(N-53) ★フル e2e が半分落ちる（回帰検出網が半分死んでいた）**~~ ✅ **s195 完了・master マージ済（`d453ba21`・非デプロイ）**。**30本落ち → 0本**（フル 72 pass / 0 fail / 5 skip・2回連続で安定）。真因は3系統＋想定外の「陳腐化」: ①版数固定 seed（`open(dbName,9)`＝VersionError）→ **版数非固定の共有ヘルパー `tests/e2e/helpers/seed-db.ts`**（スキーマ完成までポーリング＋無版数 open・自分では作らない＝race 修正込み）に全移植 ②`networkidle` 待ち→実要素待ち ③dead-link ガード（ogp が Pages Function 化し dev で404）→ seed に `linkStatus:'alive'`+`lastCheckedAt` ④**多数が撤去/変更済み機能の古いテスト**（display-mode 撤去・swipe /triage 撤去・再生オーバーレイ撤去・hover が cross-fade 化・FLIP が clone-tween 化・save が全画面タブ化）→ **現挙動へ再ターゲット（検証は弱めず・むしろ強化・確立コミットを引用）or 撤去済みは削除**。display-mode.spec は削除（機能が非マウント）、triage-flow は削除でなく**現 TriagePage 用に書き直し**（タグ作成フローは生存）、board-b0:81 は**文書化した skip**（素の左ドラッグは grab-wiggle で元に戻る＝意図的挙動・pan は Space/中クリック）。`lib/board/fill-snap.ts` の死コード `fillCandidates`/`snapToFill` も prune（**N-45/N-07 吸収**）。tsc0 / vitest 2350 / opus 全ブランチレビュー Ready=YES・Crit/Important 0。**フォロー（非ブロッキング）**: drag-pan(Space/中クリック)の e2e 追加／`DisplayModeSwitch.tsx`＋孤立 `handleDisplayModeChange` は**既存の死んだ製品コード**（別途掃除）／`waitForStableBox` を helpers に集約。
   - **(N-45)** ✅ 完了済（旧 SHARE e2e 3本は `ac0b35da` で削除済・fill-snap prune は本タスクに吸収）。**(N-07)** ✅ 本タスクの VersionError 修正に吸収。

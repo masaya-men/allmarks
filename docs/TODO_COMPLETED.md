@@ -9655,3 +9655,19 @@ s193 で設計＋計画（コード未実装で区切り）したスマホのア
 - **進め方**: subagent-driven-development（安価モデル中心・各タスクレビュー＋opus 全ブランチ）。バックグラウンド subagent で1ファイルずつ移植→単体緑→commit を徹底。ユーザーは非エンジニアのため、途中の「古いテスト削除」と「実機能欠落かもの疑い（display-mode）」は平易な言葉で説明し**削除前に一度確認**（display-mode は実バグでないと確認＝画像中心グリッドに絞った時の意図的撤去）。
 - **フォロー（非ブロッキング・opus defer）**: drag-pan(Space/中クリック)の e2e 追加（board-b0:81 skip 置換）／`DisplayModeSwitch.tsx`＋孤立 `handleDisplayModeChange` の掃除（既存の死んだ製品コード・N-53 スコープ外）／`waitForStableBox` を helpers に集約。
 - **残 = PC リリース滑走路の続き**（N-54／TOWER／束C→D→E）。次セッション冒頭でユーザーが着手順を選ぶ。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+---
+
+## セッション 195 追補 (2026-07-13) — ★N-54 盤面パターンSVG統一（交点が濃くなるバグ根治）・本番反映
+
+N-53 完了に続けて同一セッションで **N-54** を完遂。実機で「グリッド/クロスハッチの線が交わる所だけ濃くなる」（薄い色ほど目立つ）バグを根治。
+
+**原因**: 本物盤面はパターンを **CSS の重ねグラデーション2枚**で描いていたため、半透明の線が交点で**二重合成**され濃くなる。受け取り画面（/s/）と OG 画像は既に `patternSvgDataUri`（1本の path＝1回の描画）で描いており濃くならない＝盤面と共有で見た目が食い違っていた。
+
+**修正**（計画 Task 1〜2）: 盤面の `.patternLayer`（`BoardRoot`）も受け取り/OG と**同じ単層 SVG data-URI** をタイルするよう変更（`patternSvgDataUri(resolvedCustom)` を `useMemo` で作り `backgroundImage: url(...)` に・`backgroundColor`/`backgroundSize` も inline＝`SharedBoard` と同型）。5つの CSS 変数（`--board-color`/`--pattern-color`/`--pattern-size`/`--pattern-stroke`/`--pattern-dot-r`）を撤去し、`themes.module.css` の死んだ4グラデ規則（grid/dots/diagonal/crosshatch）を削除。間隔・太さ・色・パララックス・grab 微動はすべて不変（値は SVG 内に移動＝同じ `effectivePatternStroke` クランプ）。**副次効果**＝dom-to-image が重ねた CSS グラデの片方向を落とす問題も解消し、SHARE スクショの背景忠実度が上がる。描画の二重管理（盤面 CSS／共有 SVG）が単一ソースに統一。
+
+**検証**（Task 3・自動・数値実測）: board-theme e2e **3/3**（パターンテーマは従来どおり適用）。盤面の `.patternLayer` の `backgroundImage` が `url("data:image/svg+xml`（＝SVG 描画）であることを grid/crosshatch で構造確認。**交点の濃さを実測**＝修正前 CSS（同一パラメータで単独描画）は交点が **58/ch 濃い**（＝バグ・α合成の理論値と一致）→ 本ブランチ **0/ch**（＝根治）。翻訳色に半透明 `rgba(0,0,0,0.35)` を使って合成バグを可視化。
+
+- **進め方**: subagent-driven（T1 sonnet／T2 haiku／T3 sonnet 自動検証＋各タスクレビュー clean）→ opus 全ブランチレビュー **Ready=YES・Crit/Important 0**（唯一の Minor＝基底 `.patternLayer` の古いコメントを controller が修正）。tsc0 / vitest 2350 / build OK（assert-share-template OK）/ merge --no-ff `62f2a934` / `allmarks.app` デプロイ済。
+- **残 = ユーザー実機目視**（薄い色グリッドで交点の粒々が消えたか＋受け取り画面 /s/ でも一致するか）。恒久ルール「盤面を変えたら受け取り画面も確認」に従い目視は必須。
+- **次 = リリース滑走路の続き**（TOWER or 束C）。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
