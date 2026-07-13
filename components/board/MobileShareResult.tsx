@@ -10,7 +10,7 @@ import styles from './MobileShareResult.module.css'
 const FILENAME = 'allmarks-collage.jpg'
 
 export type MobileShareResultProps = {
-  /** The captured 1200×630 JPEG data-URL, or null when the capture failed. */
+  /** The captured 1080×1350 portrait JPEG data-URL, or null when the capture failed. */
   readonly imageUrl: string | null
   /** The hosted /s link, or null while the create is still failing. */
   readonly shareUrl: string | null

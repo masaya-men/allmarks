@@ -2707,7 +2707,7 @@ export function BoardRoot() {
     window.open(buildTweetIntentUrl(hostedShareUrl), '_blank', 'noopener,noreferrer')
   }, [hostedShareUrl])
 
-  // Ready-state SAVE IMAGE: hand the auto-captured 1200×630 JPEG to the user as a
+  // Ready-state SAVE IMAGE: hand the auto-captured 1080×1350 portrait JPEG to the user as a
   // download so they can post it natively on X (native image posts dwarf link cards).
   // The allmarks.app URL is baked into the image so it travels with the post.
   const handleSaveShareImage = useCallback((): void => {
