@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { firstRunSuppressors } from './helpers/seed-db'
 
 const DB_NAME = 'booklage-db'
 
@@ -21,6 +22,27 @@ async function clearDb(page: Page): Promise<void> {
       req.onerror = () => reject(new Error('open error'))
     })
   }, DB_NAME)
+}
+
+// Writes the onboarding/data-notice suppressor settings so the final
+// page.goto('/board') below doesn't surface the "AllMarks data notice"
+// modal (DataHomeCard) — it steals pointer events and blocks the card
+// click this test depends on. clearDb() above only clears
+// bookmarks/cards/moods, so 'settings' survives from here to the reload.
+async function suppressFirstRun(page: Page): Promise<void> {
+  await page.evaluate(async ({ dbName, rows }) => {
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open(dbName)
+      req.onsuccess = () => {
+        const db = req.result
+        const tx = db.transaction(['settings'], 'readwrite')
+        for (const r of rows) tx.objectStore('settings').put(r.value)
+        tx.oncomplete = () => { db.close(); resolve() }
+        tx.onerror = () => reject(new Error('suppress tx error'))
+      }
+      req.onerror = () => reject(new Error('open error'))
+    })
+  }, { dbName: DB_NAME, rows: firstRunSuppressors().map((r) => ({ value: r.value })) })
 }
 
 async function seed(page: Page, slug: string, title: string): Promise<void> {
@@ -59,12 +81,45 @@ async function seed(page: Page, slug: string, title: string): Promise<void> {
     `https://example.com/${slug}`,
     { timeout: 5000 },
   )
+  // Under `pnpm dev`, /api/ogp 404s (it's a Cloudflare Pages Function, not a
+  // Next dev route). The board's viewport RevalidationQueue treats that as
+  // "gone" and BoardRoot's handleCardClick silently no-ops the click for any
+  // bookmark with linkStatus:'gone' (dead-link guard). Stamp both
+  // linkStatus:'alive' and a fresh lastCheckedAt so shouldRevalidate() skips
+  // re-checking this seeded row before the test's own click fires.
+  await page.evaluate(async (url) => {
+    const req = indexedDB.open('booklage-db')
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result)
+      req.onerror = () => reject(new Error('open error'))
+    })
+    const tx = db.transaction(['bookmarks'], 'readwrite')
+    const store = tx.objectStore('bookmarks')
+    const all = await new Promise<unknown[]>((resolve) => {
+      const r = store.getAll()
+      r.onsuccess = () => resolve((r.result as unknown[]) ?? [])
+      r.onerror = () => resolve([])
+    })
+    const row = all.find((b) => (b as { url?: string }).url === url) as
+      | { linkStatus?: string; lastCheckedAt?: number }
+      | undefined
+    if (row) {
+      row.linkStatus = 'alive'
+      row.lastCheckedAt = Date.now()
+      store.put(row)
+    }
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => reject(new Error('patch tx error'))
+    })
+  }, `https://example.com/${slug}`)
 }
 
 test('open animation actually grows from source rect', async ({ page }) => {
   await page.goto('/board')
-  await page.waitForLoadState('networkidle')
+  await page.waitForSelector('[data-testid="board-top-header"]', { timeout: 10000 })
   await clearDb(page)
+  await suppressFirstRun(page)
   await seed(page, 'a', 'Alpha')
   await seed(page, 'b', 'Beta')
   await page.goto('/board')
