@@ -9636,3 +9636,22 @@ s193 で設計＋計画（コード未実装で区切り）したスマホのア
 - **opus 全ブランチレビュー（6コミット・base 9579953c）= Ready to merge YES**。7つの拘束不変条件を全て実コードで検証（リンク payload 無改変／撮影 state ベース＝mobile は `renderCollageCanvasToJpeg` で3マップから描画＝撮影中ズームでも壊れない／ジェスチャー無改変／デスクトップ×以外バイト同一／9:16 定数1箇所+OG 1.91:1／15言語／撮影窓 gating）。Critical/Important ゼロ。Minor は全て defer、唯一「今直す」= BoardRoot の古いコメント（PC トーストは未発火と誤記）を controller が1ハンク直接修正（`docs(board):` commit `04dcdb2f`・ロジック無変更）。
 - **ゲート**: tsc0 / vitest 287ファイル2360 / build OK（assert-share-template OK）/ playwright mobile-share 19/19。**merge --no-ff** → master `2a6b10dd`（`git diff branch..master` 空＝木同一）。**deploy**: master で再ビルド → `npx wrangler pages deploy out/ --branch=master`＝`allmarks.app`（1676 files）。origin master + branch push 済。
 - **残 = ユーザー実機確認**（作り直し版・手順 CURRENT_GOAL.md）。OK → 段階2の残り（複製[instanceID]・吸着+触覚・ドラッグ削除演出・単一ステップ order）の詳細計画。
+
+---
+
+## セッション 195 (2026-07-13) — ★PC リリースにピボット／N-53 e2e 修理を完遂（subagent-driven・自走）
+
+**s194 直後、ユーザーが「スマホのアレンジ作り直しはあまりにもダメ、一旦後回し。PC リリースに向けて立てた計画をちゃんと終わらせたい」と方向転換。** スマホの実機フィードバック3点（①常時チロムはボトムナビ1行だけ ②ズームはスライダーに戻す ③ボード移動のパンモードをボタンで切替）を `docs/private/IDEAS.md` に保存し、リリース滑走路（`docs/private/2026-07-08-release-runway-plan.md`）の残りに復帰。手始めに **N-53（フル e2e が58本中30本落ち＝回帰検出網が半死）** を選んで完遂。
+
+**結果**: 30本落ち → **0本**（フル 72 pass / 0 fail / 5 skip・2回連続で安定＝flaky なし）。master マージ `d453ba21`（**デプロイ不要**＝test infra＋死コード prune）。tsc0 / vitest 287f 2350 / opus 全ブランチレビュー Ready=YES・Critical/Important 0。
+
+- **真因は4系統**（当初計画は seed+networkidle の2系統想定だったが、実際は「陳腐化」が大きかった）:
+  ①**版数固定 seed**（`indexedDB.open(dbName,9)` vs アプリ v16 = VersionError 13件）→ 新規 **版数非固定の共有ヘルパー `tests/e2e/helpers/seed-db.ts`**（`/board` を開いてアプリがスキーマを作り終えるまでポーリング→無版数 open。自分では作らない＝`onupgradeneeded` を abort する race 修正込み。この race は実装中に実機で発見・修正 commit `284c7c67`）に全移植。
+  ②**`networkidle` 待ち**（dev サーバーは idle にならず30秒 timeout 20件）→ 実要素の出現待ちに置換。
+  ③**dead-link ガード**（`/api/ogp` が Cloudflare Pages Function 化し `pnpm dev` では404→リンク切れ判定でカードクリックが塞がれる）→ seed に `linkStatus:'alive'`+`lastCheckedAt`。
+  ④**撤去・変更済み機能の古いテスト**（display-mode 切替の撤去／swipe /triage の撤去／カードの再生オーバーレイ撤去／hover 画像切替の cross-fade 化／Lightbox の FLIP が clone-tween 化／保存の全画面タブ化）→ **現挙動へ再ターゲット**（検証は弱めず・むしろ強化・確立コミットを引用）or **撤去済みは削除**。
+- **判断（全て git 証拠つき・検証を弱めない）**: `display-mode.spec.ts` は削除（`DisplayModeSwitch` が非マウント＝機能が無い）。`triage-flow.spec.ts` は一旦削除→**レビュー指摘で撤回し現 TriagePage 用に書き直し**（タグ作成フローは生存）。`board-b0.spec.ts:81`（素の左ドラッグでスクロール）は**文書化した skip**（素の左ドラッグは grab-wiggle で元位置に戻る＝s149 の意図的挙動・pan は Space/中クリック）。retarget した6本（board-mixed-media/board-i-07/lightbox-video-flip-regression/board-b-embeds/bookmarklet-save/triage-flow）は専用レビューで「全て real/falsifiable・意図保持・むしろ強化」と独立検証。
+- **死コード prune**: `lib/board/fill-snap.ts` の未使用 `fillCandidates`/`snapToFill`＋テスト削除（`snapToFillAtCurrentColumns` は保持）。**N-45**（旧 SHARE e2e 3本は `ac0b35da` で削除済＝完了済）と **N-07**（VersionError 群）を吸収。
+- **進め方**: subagent-driven-development（安価モデル中心・各タスクレビュー＋opus 全ブランチ）。バックグラウンド subagent で1ファイルずつ移植→単体緑→commit を徹底。ユーザーは非エンジニアのため、途中の「古いテスト削除」と「実機能欠落かもの疑い（display-mode）」は平易な言葉で説明し**削除前に一度確認**（display-mode は実バグでないと確認＝画像中心グリッドに絞った時の意図的撤去）。
+- **フォロー（非ブロッキング・opus defer）**: drag-pan(Space/中クリック)の e2e 追加（board-b0:81 skip 置換）／`DisplayModeSwitch.tsx`＋孤立 `handleDisplayModeChange` の掃除（既存の死んだ製品コード・N-53 スコープ外）／`waitForStableBox` を helpers に集約。
+- **残 = PC リリース滑走路の続き**（N-54／TOWER／束C→D→E）。次セッション冒頭でユーザーが着手順を選ぶ。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。

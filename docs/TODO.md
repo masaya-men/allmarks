@@ -21,7 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 194 — ★スマホのアレンジUX作り直しを計画どおり実装・本番反映／次は実機確認→段階2の残り)
+### 直近の状態 (セッション 195 — ★PC リリースにピボット／N-53 e2e 修理を完遂・master マージ／スマホは後回し)
+
+**ユーザー判断でスマホのアレンジ作り直し（s194）を「あまりにもダメ」と後回しにし、PC リリース（ソフトローンチ滑走路）に舵を戻した。** 手始めに **N-53（フル e2e が30本落ち＝回帰検出網が半死）を完遂**・master マージ済（`d453ba21`・test infra＋死コード prune なので**デプロイ不要**）。
+
+- **N-53 結果**: 30本落ち → **0本**（フル 72 pass / 0 fail / 5 skip・2回連続で安定）。真因は版数固定 seed／`networkidle`／dead-link ガード／**撤去・変更済み機能の古いテスト**の4系統。**検証は一切弱めず**、古いテストは現挙動へ再ターゲット（むしろ強化）or 撤去済みは削除。詳細は下の N-53 backlog（✅）＋ [TODO_COMPLETED.md](./TODO_COMPLETED.md) s195。subagent-driven・全レビュー clean・opus 全ブランチ Ready=YES。
+- **スマホのアレンジ作り直し（s194）は後回し**。実機フィードバック3点（①常時チロムはボトムナビ1行だけ ②ズームはスライダーに戻す ③ボード移動のパンモードをボタンで切替）は `docs/private/IDEAS.md` に「次に作り直す時の厳守要件」として保存。s194 の本番反映はそのまま（公開前で実害なし）。
+- **★次セッション＝PC リリース滑走路の続き**。残り: **N-54（グリッド交点SVG統一）／TOWER（公開前の無料看板テーマ・ユーザー確定）／束C（13言語仕上げ＋規約正文条項＝最大の関門）→ 束D（公開素材）→ 束E（公開）**。束A/B（スマホ閲覧・保存）は完了済。どれから着手するかはユーザーが選ぶ（推奨は N-54 か TOWER の可視な前進、その後 束C の長丁場）。正本は `docs/private/2026-07-08-release-runway-plan.md` ＋ ロードマップ `docs/superpowers/plans/2026-07-11-s186-remaining-work-roadmap.md`。
+
+### 直近の状態 (セッション 194 — ★スマホのアレンジUX作り直しを計画どおり実装・本番反映／後回しに)
 
 **s193 で設計＋計画したスマホのアレンジ作り直しを、`mobile-arrange-ux-redesign` ブランチで subagent-driven-development で完遂・本番反映済。** 6タスク＝安価モデル中心（T1/T2 haiku・T3〜T6 sonnet）＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge=YES・Critical/Important ゼロ**。tsc0 / **vitest 287ファイル 2360** / build OK（assert-share-template OK）/ **playwright mobile-share 19/19**（旧15→19・ドック/ボードズームボタン/削除トースト+リンク不変/9:16/PC×）/ `merge --no-ff` master `2a6b10dd` / `allmarks.app` デプロイ済。
 
@@ -570,13 +578,8 @@
   - **候補の直し方**: 本物盤面も同じ SVG data-URI を背景に使う（`background-image: url(data:...)` ＋ `background-size`）。**副次効果**＝`theme-customization.ts:160-163` が言う「dom-to-image は重ねた CSS グラデーションの片方向を落とす」問題も同時に解消し、SHARE スクショの忠実度が上がる。`patternSvgDataUri` は毎回 `encodeURIComponent` するので `useMemo` 必須。パララックス（`background-position-y`）と `background-size` の互換を要確認。
   - **必ず受け取り画面でも確認**（memory `feedback_board_change_check_receiver`）。
 - **(N-51 の残り) ★スマホのボードに背景タイトル（ワードマーク）を出す（s184 ユーザー確定）** — 現状 `BoardBackgroundTypography` は `!isMobile` ゲートで**スマホでは描画されない**。受け取り画面では出ている。**ユーザーの理由**＝「ボトムナビの THEME からカスタマイズできるように見えるのに、実際は見えないのはおかしい」。s184 で左右16px・すき間14px の余白ができたので出す余地はある。TITLE 色は既に `ThemeCustomization.titleColor` で可変。
-- **(N-53) ★フル e2e が半分落ちる（s184 発見／s185 で実態が判明・想定よりずっと大きい・非ブロック）** — s184 は「`board-b0.spec.ts` の7本中6本」と書いたが、**s185 のフル実行で 58本中 30本が落ちると判明**。しかも **master 単体で 30本落ちる**（s185 ブランチと同数＝新規混入ゼロ、A/B 実測済）。
-  - **失敗の内訳**（s185 実測）: `Test timeout of 30000ms exceeded` 20件／`VersionError: The requested version (9) is less than the existing version (16)` 13件／`toHaveAttribute` 8件／`element(s) not found` 2件。
-  - **落ちる20ファイル**: `board-b0` `board-b-embeds` `board-mixed-media` `lightbox-video-flip-regression` `board-share-polish` `board-i-07-multi-image` `save-iframe` `bookmarklet-save` `board-theme` `triage-flow` `mobile-save` `lightbox-flow` `display-mode` `destefanis-save-flow` `board-b0-perf` `b-11-debug-open-scale` `board-backfill` `board-b-11-source-hide` `tune-corners-and-snap` `board-lightbox-nav`。
-  - **VersionError の原因**＝`seedBoard` が `/board` を開いた**後**に `indexedDB.open(dbName, 9)` する（`[data-theme-id]` は React マウント前のプリペイント script が付けるので待機になっていない）。アプリが先に v16 で開き終えると失敗、開発サーバーが冷えていると偶然通る**競合状態**。無版数 open に直すと減るが、一部は v9→v16 移行による行の正規化に依存していた可能性がある。
-  - **`Test timeout` 20件は未診断**。VersionError とは別の病気かもしれない（要調査）。
-  - **1本 flaky**（連続実行で 29↔30 failed が揺れる）。
-  - **腰を据えた掃除が要る**。単体 `vitest`（2246 全緑）と `tsc`(0) は健全なので、リリースの直接ブロッカーではない。ただし**この状態では「e2e が緑」と誰も名乗れない**＝回帰検出網が半分機能していない。
+- ~~**(N-53) ★フル e2e が半分落ちる（回帰検出網が半分死んでいた）**~~ ✅ **s195 完了・master マージ済（`d453ba21`・非デプロイ）**。**30本落ち → 0本**（フル 72 pass / 0 fail / 5 skip・2回連続で安定）。真因は3系統＋想定外の「陳腐化」: ①版数固定 seed（`open(dbName,9)`＝VersionError）→ **版数非固定の共有ヘルパー `tests/e2e/helpers/seed-db.ts`**（スキーマ完成までポーリング＋無版数 open・自分では作らない＝race 修正込み）に全移植 ②`networkidle` 待ち→実要素待ち ③dead-link ガード（ogp が Pages Function 化し dev で404）→ seed に `linkStatus:'alive'`+`lastCheckedAt` ④**多数が撤去/変更済み機能の古いテスト**（display-mode 撤去・swipe /triage 撤去・再生オーバーレイ撤去・hover が cross-fade 化・FLIP が clone-tween 化・save が全画面タブ化）→ **現挙動へ再ターゲット（検証は弱めず・むしろ強化・確立コミットを引用）or 撤去済みは削除**。display-mode.spec は削除（機能が非マウント）、triage-flow は削除でなく**現 TriagePage 用に書き直し**（タグ作成フローは生存）、board-b0:81 は**文書化した skip**（素の左ドラッグは grab-wiggle で元に戻る＝意図的挙動・pan は Space/中クリック）。`lib/board/fill-snap.ts` の死コード `fillCandidates`/`snapToFill` も prune（**N-45/N-07 吸収**）。tsc0 / vitest 2350 / opus 全ブランチレビュー Ready=YES・Crit/Important 0。**フォロー（非ブロッキング）**: drag-pan(Space/中クリック)の e2e 追加／`DisplayModeSwitch.tsx`＋孤立 `handleDisplayModeChange` は**既存の死んだ製品コード**（別途掃除）／`waitForStableBox` を helpers に集約。
+  - **(N-45)** ✅ 完了済（旧 SHARE e2e 3本は `ac0b35da` で削除済・fill-snap prune は本タスクに吸収）。**(N-07)** ✅ 本タスクの VersionError 修正に吸収。
 - ~~**(N-45) 掃除：古い SHARE e2e 3本が消えた testid を参照**~~ ✅ **実は完了済みと s186 調査で判明**（3本は commit `ac0b35da` で削除済み・この記載が古かった）。残る `lib/board/fill-snap.ts` の旧 `fillCandidates`/`snapToFill` prune は [N-53 計画](superpowers/plans/2026-07-11-n53-e2e-repair.md) Task 6 に組込み済み。
 
 ### session 161 で報告（Mac 実機・友人フィードバック ＋ 雑多改善 — ★ローンチ前クロスプラットフォーム）
