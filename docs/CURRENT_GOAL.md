@@ -1,43 +1,39 @@
-# 次セッションのゴール — スマホのアレンジUX作り直しを「計画どおり実装 → デプロイ」まで
+# 次セッションのゴール — スマホのアレンジUX作り直しの「実機確認」→ OK なら段階2の残りへ
 
-## ★このセッション（s193）でやったこと
+## ★このセッション（s194）でやったこと＝作り直しを実装・本番反映（自走）
 
-1. **段階1（縦4:5）＋段階2第1弾（編集チロム）を出荷・本番反映**（`allmarks.app`）。
-2. その後、実機スクショを受けて**スマホのアレンジ体験を作り直す設計＋計画を完成**（コードは未実装）。段階1/2第1弾の一部（4:5・上部バー）を revert・置換する内容。
+`mobile-arrange-ux-redesign` ブランチで subagent-driven-development（6タスク・安価モデル中心：T1/T2 haiku・T3〜T6 sonnet＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge=YES・Critical/Important ゼロ**）→ ゲート → `merge --no-ff`（master `2a6b10dd`）→ `allmarks.app` デプロイ済 → docs 更新。
 
-## ★次セッション最優先＝作り直しの実装（subagent-driven → デプロイ）
+- tsc0 / **vitest 287ファイル 2360** / build OK（assert-share-template OK）/ **playwright mobile-share 19/19**。
+- 入れたもの: ①9:16縦（`SHARE_PORTRAIT_ASPECT` 1080×1920・定数1箇所）②削除トースト i18n `board.collageRemoveToast`（15言語）③`MobileArrangeDock`（チロム集約：↺↻／−⤢＋／BACK／CREATE＋選択時に TO FRONT/TO BACK/🗑）＋`MobileArrangeToast`（母国語トースト＋UNDO・body portal・z=`SHARE_REMOVE_TOAST` 404）④BoardRoot 配線（旧 TopBar+Bar+スライダー撤去・ボードズームボタン・削除トースト・撮影中は編集不可 gating）⑤PC ホバー×削除（`collage-remove-<id>`・承認済みの意図的デスクトップ変更）⑥e2e。
+- 不変条件（opus 実コード検証）: **リンク payload（`buildArrangeShare`）無改変＝DELETE は画像だけ**（e2e が実 POST body で全URL残存を検証・モバイル＋PC 両方）／撮影 state ベース／ジェスチャー無改変／デスクトップは PC 削除以外バイト同一／9:16 定数1箇所（ホストOGは1.91:1のまま）。
 
-- **ブランチ**: `mobile-arrange-ux-redesign`（spec＋plan コミット済み・master にもマージ済み）。ここで実装を続ける。
-- **計画書（完全・6タスク）**: `docs/superpowers/plans/2026-07-13-mobile-arrange-ux-redesign.md`
-- **設計書**: `docs/superpowers/specs/2026-07-13-mobile-arrange-ux-redesign-design.md`
-- **進め方**: subagent-driven-development（各タスクレビュー＋opus 全ブランチレビュー）→ 全体ゲート → `merge --no-ff` → `allmarks.app` デプロイ → docs 更新 → 実機確認依頼。
-- **モデル割当**: T1(9:16定数) haiku／T2(トースト15言語) haiku／T3(ドック＋トースト部品) sonnet／T4(BoardRoot配線) sonnet／T5(PCホバー×) sonnet／T6(e2e＋ゲート) sonnet／最終 opus。
+## ★次セッション最優先＝実機確認（作り直し版をまとめて）
 
-### 作り直しの中身（ユーザー承認済み・実装の要点）
-- **指＝カード**（タップ選択／1本指移動／2本指＝選択カード拡縮回転）。**2本指ボードズームは温存**（`MobileArrangeGestures` 無改変）。
-- **ボードズーム＝専用ドックの −／⤢(fit)／＋ ボタン**。
-- **チロムを1つの `MobileArrangeDock` に集約＝画面最大**（`MobileArrangeTopBar`＋単体スライダー＋`MobileArrangeBar` を置換・上部バーと説明文は廃止）。取消/やり直し＝矢印アイコンのみ。
-- **DELETE＝共有画像から外すだけ**（`buildArrangeShare`＝リンクのURLは無改変・ブックマークも無傷）。**外すたびに母国語トースト**（`board.collageRemoveToast`・15言語）＋UNDO。**モバイル＋PC 両方**（PC はカードにホバー×＝承認済みの意図的なデスクトップ変更）。
-- **シェア画像＝9:16 縦**（`SHARE_PORTRAIT_ASPECT` を 1080×1920 に・定数1箇所で撮影/帯/レターボックス元が追従）。リンクカードは1.91:1中央帯（割り切り）。サーバー/OG 無改変。
-- **流用（無改変）**: ジェスチャー・取消/やり直しの中身・純関数（`sendToBack`/`removeFromCollage`/`collage-history`）。
+`allmarks.app` を**ハードリロード**（ブランチ preview URL は使わない）→ SHARE → 全選択 → ARRANGE:
+1. 画面がほぼコラージュ＋下に細い専用ドック（↺↻／−⤢＋／BACK／CREATE）だけになっているか。
+2. カードをタップ→上に 前面へ/背面へ/🗑 が出る。1本指移動・2本指で拡縮回転できるか。
+3. −／＋ でボードが拡縮、⤢ で全体表示に戻るか。
+4. 🗑 で画像から外れ、母国語トースト「画像から外しました…」が出て、UNDO で戻るか。
+5. CREATE の画像が縦長(9:16)でスマホを埋める形か。貼ったリンクのカードは横長中央に縦帯か。
+6. PC でも SHARE→並べる→カードにマウス→× が出て、押すと画像から外れる（リンクは減らない）か。
 
-## ★実装後＝実機確認（作り直し版をまとめて）
+## ★OK だったら → 段階2の残りの詳細計画（着手前に superpowers:brainstorming）
 
-`allmarks.app` ハードリロード → SHARE → 全選択 → ARRANGE:
-1. 画面がほぼコラージュ＋下に細い専用ドック（↺↻／− ⤢ ＋／BACK／CREATE）だけか。
-2. カードをタップ→前面へ/背面へ/🗑 が出る。1本指移動・2本指拡縮回転。
-3. −／＋ でボード拡縮、⤢ で全体表示。
-4. 🗑 で画像から外れ、母国語トースト「画像から外しました…」＋UNDO で戻る。
-5. CREATE の画像が 9:16 縦でスマホを埋める形か。リンクは横長中央に縦帯か。
-6. PC でカードにマウス→× で画像から外せる（リンクは減らない）か。
+複製（instanceID・in-memory・DB移行なし）／位置スナップ＋触覚（`navigator.vibrate`）／ドラッグ削除の演出／重なり順の単一ステップ（前へ/後ろへ）。
 
-OK → 段階2の残り（複製[instanceID]・吸着＋触覚・ドラッグ削除演出）の詳細計画へ。
+## 既知の残（opus が defer 判定・非ブロッキング・実機で気になれば拾う）
+- トーストが連続削除で「毎回」再アニメしない（同一インスタンスが残る＝nonce key 化で解決可能）。
+- ドックの↺ とトーストの UNDO が両方 `handleCollageUndo`＝4秒以内に両方押すと二重 undo で1つ前の編集まで戻り得る（空スタック guard で有界・低確率）。
+- 旧 `MobileArrangeTopBar`/`MobileArrangeBar`/`MobileZoomSlider`＋3テストが未使用で残存（tree-shake 済・後日まとめて削除）。
+- PC ×は 24×24px（≥32px 方針より小さいが、回転ノブ等の兄弟デスクトップ affordance と同格・マウス専用）。
 
 ## 言語方針（s124＋s193 確定・恒久）
 1単語の標準アクション（UNDO/CREATE 等）＝英語 or アイコン／**説明を含む文＝母国語（i18n・15言語）**。
 
 ## 絶対に守ること（恒久・継承）
 - スマホ撮影は canvas 直描画（`renderCollageCanvasToJpeg`）。デスクトップ撮影は dom-to-image。
-- **DELETE は画像だけ**（`buildArrangeShare` 無改変＝リンク＝選んだ全URL）。撮影は state ベース・ボードズームは `stageTransform` のみ＝画像無影響。
-- デスクトップは PC 削除の追加を除き 1px 不変／`rtk` 前置・`--no-verify` 禁止／機微・競合名は `docs/private/`／vitest・playwright は素の `npx`。
+- **DELETE は画像だけ**（`buildArrangeShare` 無改変）。撮影は state ベース・ボードズームは `stageTransform` のみ。
+- デプロイは `--project-name=allmarks --branch=master`。ユーザーは常に `allmarks.app` で確認。
+- `rtk` 前置・`--no-verify` 禁止／機微・競合名は `docs/private/`／vitest・playwright は素の `npx`。
 - 新しい操作系・見た目は着手前に superpowers:brainstorming。
