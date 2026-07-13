@@ -2603,8 +2603,8 @@ export function BoardRoot() {
 
   // スマホ: 選択カードの2本指ピンチ開始 — 進行中のカード移動を止め、base をスナップショット。
   const handleSelectedPinchStart = useCallback((): void => {
-    handleCollageGestureStart()
     collageArbiter.cancelActive()
+    handleCollageGestureStart()
     if (selectedCollageId === null) return
     pinchBaseRef.current = {
       positions: collagePositions,
