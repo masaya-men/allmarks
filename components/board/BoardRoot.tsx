@@ -2346,8 +2346,10 @@ export function BoardRoot() {
     applyCollageSnapshot(next)
   }, [applyCollageSnapshot])
 
-  const handleDeleteSelectedCollage = useCallback((): void => {
-    const id = selectedCollageId
+  /** Generic id-based remover — shared by the mobile dock's REMOVE (acting on
+   *  the current selection) and the desktop per-card hover × (acting on
+   *  whichever card it sits on, selected or not). */
+  const removeCollageCardById = useCallback((id: string): void => {
     if (!id) return
     pushHistoryBeforeDiscreteEdit()
     const s = collageStateRef.current
@@ -2355,9 +2357,15 @@ export function BoardRoot() {
     setCollagePositions(r.positions)
     setCollageOrder(r.order)
     setCollageRotations(r.rotations)
-    setSelectedCollageId(null)
+    setSelectedCollageId((cur) => (cur === id ? null : cur))
     setRemoveToast(true)
-  }, [selectedCollageId, pushHistoryBeforeDiscreteEdit])
+  }, [pushHistoryBeforeDiscreteEdit])
+
+  const handleDeleteSelectedCollage = useCallback((): void => {
+    const id = selectedCollageId
+    if (!id) return
+    removeCollageCardById(id)
+  }, [selectedCollageId, removeCollageCardById])
 
   const handleBringSelectedToFront = useCallback((): void => {
     const id = selectedCollageId
@@ -3904,6 +3912,7 @@ export function BoardRoot() {
               onSelect={isMobile ? (id): void => setSelectedCollageId(id) : undefined}
               touchMode={isMobile}
               gestureArbiter={isMobile ? collageArbiter : undefined}
+              onRemoveCard={!isMobile ? removeCollageCardById : undefined}
             />
             {isMobile && mobileBandRect && <MobileBandOverlay band={mobileBandRect} />}
           </MobileArrangeGestures>

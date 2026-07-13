@@ -69,6 +69,9 @@ export type CollageCanvasProps = {
   readonly onEditGestureStart?: (id: string) => void
   /** 1本指カード移動の終了（pointerup）。BoardRoot が差分ありなら履歴に積む（モバイルのみ）。 */
   readonly onEditGestureEnd?: () => void
+  /** カードを画像から外す（PC のみ）。渡されているときだけ、カード右上にホバー×を描く
+   *  （モバイルはドックの REMOVE を使うので undefined を渡す＝×は出ない）。 */
+  readonly onRemoveCard?: (id: string) => void
 }
 
 /** Intra-canvas stacking floor. This is a LOCAL offset for ordering this
@@ -323,6 +326,28 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
                 }}
                 onResize={(w): void => props.onResize(id, activeResizeCorner.current, w)}
               />
+            )}
+            {/* Remove-from-image — desktop parity with the mobile dock's REMOVE
+                (mobile-arrange-ux-redesign Task 5). Hover-revealed like the
+                rotate knob; stopPropagation on pointerdown so grabbing it never
+                starts a card move. Only rendered when the parent wires
+                onRemoveCard (desktop only — BoardRoot passes undefined on
+                mobile, where the dock button owns removal instead). Carries
+                data-no-capture, though removed cards already unmount (props.positions
+                lookup returns null) so the SHARE screenshot would exclude them
+                regardless. */}
+            {!props.touchMode && props.onRemoveCard && (
+              <button
+                type="button"
+                className={styles.removeButton}
+                data-testid={`collage-remove-${id}`}
+                data-no-capture
+                aria-label="Remove from image"
+                onPointerDown={(e): void => { e.stopPropagation() }}
+                onClick={(e): void => { e.stopPropagation(); props.onRemoveCard?.(id) }}
+              >
+                ×
+              </button>
             )}
           </div>
         )
