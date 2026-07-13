@@ -117,7 +117,8 @@ import { addAllVisible, selectedInBoardOrder, toggleSelection } from '@/lib/shar
 import { ShareSelectBar } from '@/components/board/ShareSelectBar'
 import { CollageCanvas } from '@/components/board/CollageCanvas'
 import { MobileBandOverlay } from './MobileBandOverlay'
-import { MobileArrangeBar } from './MobileArrangeBar'
+import { MobileArrangeDock } from './MobileArrangeDock'
+import { MobileArrangeToast } from './MobileArrangeToast'
 import { MobileArrangeGestures } from './MobileArrangeGestures'
 import {
   createCollageGestureArbiter,
@@ -137,7 +138,6 @@ import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScree
 import { sendToBack } from '@/lib/share/collage-layer-order'
 import { removeFromCollage } from '@/lib/share/collage-remove'
 import { snapshotsEqual, pushSnapshot, MAX_COLLAGE_HISTORY, type CollageSnapshot } from '@/lib/share/collage-history'
-import { MobileArrangeTopBar } from './MobileArrangeTopBar'
 import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
@@ -481,6 +481,9 @@ export function BoardRoot() {
   // コラージュ編集の取り消し/やり直し履歴（stage2）。
   const [collageUndoStack, setCollageUndoStack] = useState<CollageSnapshot[]>([])
   const [collageRedoStack, setCollageRedoStack] = useState<CollageSnapshot[]>([])
+  // カードを画像から外した直後の確認トースト（mobile-arrange-ux-redesign）。ARRANGE
+  // 再入場・SHARE 全体終了で false に戻す（古いトーストが次のセッションに残らないように）。
+  const [removeToast, setRemoveToast] = useState<boolean>(false)
   // 3マップの現在値（同期スナップショット捕捉用）。setState は非同期なので ref でミラー。
   const collageStateRef = useRef<CollageSnapshot>({ positions: {}, order: [], rotations: {} })
   // undo/redo スタックの ref ミラー（ハンドラ内で updater をネストしないため）。
@@ -2353,6 +2356,7 @@ export function BoardRoot() {
     setCollageOrder(r.order)
     setCollageRotations(r.rotations)
     setSelectedCollageId(null)
+    setRemoveToast(true)
   }, [selectedCollageId, pushHistoryBeforeDiscreteEdit])
 
   const handleBringSelectedToFront = useCallback((): void => {
@@ -2392,6 +2396,7 @@ export function BoardRoot() {
     setStageTransform(IDENTITY_STAGE_TRANSFORM)
     setCollageUndoStack([])
     setCollageRedoStack([])
+    setRemoveToast(false)
     pendingHistoryRef.current = null
   }, [])
 
@@ -2648,6 +2653,16 @@ export function BoardRoot() {
     [selectedCollageId, collagePositions, viewport.w, viewport.h],
   )
 
+  // モバイル ARRANGE ドックの -/+ ボタン: handleZoomSliderChange は絶対スケールを受け取り
+  // 内部で [1,6] にクランプ済み（重複クランプ不要）。fit は既存 handleDoubleTapFit を再利用。
+  const BOARD_ZOOM_STEP = 1
+  const handleBoardZoomIn = useCallback((): void => {
+    handleZoomSliderChange(stageTransform.scale + BOARD_ZOOM_STEP)
+  }, [handleZoomSliderChange, stageTransform.scale])
+  const handleBoardZoomOut = useCallback((): void => {
+    handleZoomSliderChange(stageTransform.scale - BOARD_ZOOM_STEP)
+  }, [handleZoomSliderChange, stageTransform.scale])
+
   // スマホの ARRANGE（tap 1）: 選択カードを帯に自動配置して編集段に入る（撮影はまだしない・N-58）。
   const handleMobileEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
@@ -2678,6 +2693,7 @@ export function BoardRoot() {
     setStageTransform(IDENTITY_STAGE_TRANSFORM)
     setCollageUndoStack([])
     setCollageRedoStack([])
+    setRemoveToast(false)
     pendingHistoryRef.current = null
     setSharePhase('arrange')
   }, [selectedIds, lightboxNavItems, customWidths, cardWidthPx, viewport.w, viewport.h])
@@ -3896,27 +3912,27 @@ export function BoardRoot() {
           <div data-no-capture>
             {isMobile ? (
               <>
-                {/* Top bar hides during the ~1-2s capture ('creating') so DELETE/UNDO/REDO
-                    can't edit the collage while handleMobileCaptureAndCreate is shooting it
-                    (the bottom bar stays, showing CREATING…). */}
-                {hostedShareUrl === null && shareCreateState === 'idle' && (
-                  <MobileArrangeTopBar
-                    canUndo={collageUndoStack.length > 0}
-                    canRedo={collageRedoStack.length > 0}
+                {/* Single dock replaces the old top bar + bottom bar (mobile-arrange-ux-redesign).
+                    Edit affordances (undo/redo/selection tools) are gated to the 'idle' state so
+                    they can't fire during the ~1-2s capture window while
+                    handleMobileCaptureAndCreate is shooting the collage — CREATE alone stays live
+                    (shown disabled + CREATING…) so the user sees progress. */}
+                {hostedShareUrl === null && shareCreateState !== 'error' && (
+                  <MobileArrangeDock
+                    canUndo={shareCreateState === 'idle' && collageUndoStack.length > 0}
+                    canRedo={shareCreateState === 'idle' && collageRedoStack.length > 0}
                     onUndo={handleCollageUndo}
                     onRedo={handleCollageRedo}
-                    hasSelection={selectedCollageId !== null}
+                    onZoomOut={handleBoardZoomOut}
+                    onZoomIn={handleBoardZoomIn}
+                    onZoomFit={handleDoubleTapFit}
+                    hasSelection={shareCreateState === 'idle' && selectedCollageId !== null}
                     onBringToFront={handleBringSelectedToFront}
                     onSendToBack={handleSendSelectedToBack}
-                    onDelete={handleDeleteSelectedCollage}
-                  />
-                )}
-                {hostedShareUrl === null && shareCreateState !== 'error' && (
-                  <MobileArrangeBar
+                    onRemove={handleDeleteSelectedCollage}
                     onBack={handleShareReselect}
                     onCreate={(): void => { void handleMobileCaptureAndCreate() }}
                     creating={shareCreateState === 'creating'}
-                    zoom={{ scale: stageTransform.scale, onScaleChange: handleZoomSliderChange }}
                   />
                 )}
                 {(hostedShareUrl !== null || shareCreateState === 'error') && (
@@ -3954,6 +3970,21 @@ export function BoardRoot() {
               />
             )}
           </div>
+          {/* Sibling of the isMobile ternary above (not nested inside it) so Task 5's
+              desktop remove flow can also trigger this same portal toast — a body
+              portal doesn't care where it's mounted in the tree. On desktop
+              removeToast stays false until that wiring lands, so this renders
+              nothing there today. */}
+          {removeToast && (
+            <MobileArrangeToast
+              message={t('board.collageRemoveToast')}
+              onUndo={(): void => {
+                handleCollageUndo()
+                setRemoveToast(false)
+              }}
+              onDismiss={(): void => setRemoveToast(false)}
+            />
+          )}
         </>
       )}
       {/* Language switcher — fixed bottom-right, self-anchors via position:fixed
