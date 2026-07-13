@@ -1,50 +1,43 @@
-# 次セッションのゴール — スマホ縦4:5（段階1＋段階2第1弾）の実機確認 → OK なら段階2 第2弾の詳細計画
+# 次セッションのゴール — スマホのアレンジUX作り直しを「計画どおり実装 → デプロイ」まで
 
-## ★出荷済（s193・2026-07-13）: スマホ縦4:5 段階2・第1弾（編集チロムの核）を本番反映
+## ★このセッション（s193）でやったこと
 
-段階1（縦4:5 土台）に続けて、同一セッションで段階2・第1弾まで subagent-driven で完遂・デプロイ済（`allmarks.app`・merge 1ff07486）。tsc0 / vitest 286ファイル2357 / build OK / playwright 15/15 / opus 全ブランチレビュー Ready=YES。
+1. **段階1（縦4:5）＋段階2第1弾（編集チロム）を出荷・本番反映**（`allmarks.app`）。
+2. その後、実機スクショを受けて**スマホのアレンジ体験を作り直す設計＋計画を完成**（コードは未実装）。段階1/2第1弾の一部（4:5・上部バー）を revert・置換する内容。
 
-**段階2 第1弾＝縦4:5 の上に載せた編集道具の核**（データ変更ゼロ・in-memory）:
-- **選択時ツールバー**（上部・`data-no-capture`）: カード選択で **TO FRONT / TO BACK / DELETE**。常時 **UNDO / REDO**。撮影中(~1-2秒)は上部バー非表示（編集不可）。
-- **取り消し/やり直し**（1操作=1手・退場で破棄）。
-- **余白ダブルタップで整列**（ボードズームを1倍に戻す・既存スライダー/2本指ズームは温存）。
-- 計画 `docs/superpowers/plans/2026-07-13-mobile-portrait-collage-stage2-increment1.md`・設計 `docs/superpowers/specs/2026-07-13-mobile-portrait-collage-stage2-increment1-design.md`。
+## ★次セッション最優先＝作り直しの実装（subagent-driven → デプロイ）
 
-## ★最優先＝実機確認（段階1＋段階2第1弾をまとめて。実タッチ・共有カードは実機のみ）
+- **ブランチ**: `mobile-arrange-ux-redesign`（spec＋plan コミット済み・master にもマージ済み）。ここで実装を続ける。
+- **計画書（完全・6タスク）**: `docs/superpowers/plans/2026-07-13-mobile-arrange-ux-redesign.md`
+- **設計書**: `docs/superpowers/specs/2026-07-13-mobile-arrange-ux-redesign-design.md`
+- **進め方**: subagent-driven-development（各タスクレビュー＋opus 全ブランチレビュー）→ 全体ゲート → `merge --no-ff` → `allmarks.app` デプロイ → docs 更新 → 実機確認依頼。
+- **モデル割当**: T1(9:16定数) haiku／T2(トースト15言語) haiku／T3(ドック＋トースト部品) sonnet／T4(BoardRoot配線) sonnet／T5(PCホバー×) sonnet／T6(e2e＋ゲート) sonnet／最終 opus。
 
-スマホで `https://allmarks.app` をハードリロードして:
+### 作り直しの中身（ユーザー承認済み・実装の要点）
+- **指＝カード**（タップ選択／1本指移動／2本指＝選択カード拡縮回転）。**2本指ボードズームは温存**（`MobileArrangeGestures` 無改変）。
+- **ボードズーム＝専用ドックの −／⤢(fit)／＋ ボタン**。
+- **チロムを1つの `MobileArrangeDock` に集約＝画面最大**（`MobileArrangeTopBar`＋単体スライダー＋`MobileArrangeBar` を置換・上部バーと説明文は廃止）。取消/やり直し＝矢印アイコンのみ。
+- **DELETE＝共有画像から外すだけ**（`buildArrangeShare`＝リンクのURLは無改変・ブックマークも無傷）。**外すたびに母国語トースト**（`board.collageRemoveToast`・15言語）＋UNDO。**モバイル＋PC 両方**（PC はカードにホバー×＝承認済みの意図的なデスクトップ変更）。
+- **シェア画像＝9:16 縦**（`SHARE_PORTRAIT_ASPECT` を 1080×1920 に・定数1箇所で撮影/帯/レターボックス元が追従）。リンクカードは1.91:1中央帯（割り切り）。サーバー/OG 無改変。
+- **流用（無改変）**: ジェスチャー・取消/やり直しの中身・純関数（`sendToBack`/`removeFromCollage`/`collage-history`）。
 
-**段階1（縦4:5）**
-1. SHARE → 全選択 → ARRANGE。編集エリアが**縦長(4:5)**か。並べて CREATE → **縦のプレビュー画像**か。
-2. リンクを PC の X 等に貼ると、カードは横長(1.91:1)で中央に縦コラージュが載るか。100枚で破綻しないか。
+## ★実装後＝実機確認（作り直し版をまとめて）
 
-**段階2 第1弾（編集道具）**
-3. ARRANGE で上部に **UNDO / REDO** が出ているか。
-4. カードを1つタップ → 上部に **TO FRONT / TO BACK / DELETE** が出るか。TO BACK で後ろへ・TO FRONT で最前面へ来るか。
-5. **DELETE** でカードが消え、**UNDO** で戻り、**REDO** でまた消えるか。指1本で動かした後・2本指で拡縮/回転した後の **UNDO** も効くか。
-6. 指2本 or スライダーでズーム → **余白を素早く2回タップ** → 全体表示に戻るか。
-7. CREATE で作った画像に編集結果（重なり順・削除）が反映され、UNDO/REDO/上部バーは**写らない**か。
+`allmarks.app` ハードリロード → SHARE → 全選択 → ARRANGE:
+1. 画面がほぼコラージュ＋下に細い専用ドック（↺↻／− ⤢ ＋／BACK／CREATE）だけか。
+2. カードをタップ→前面へ/背面へ/🗑 が出る。1本指移動・2本指拡縮回転。
+3. −／＋ でボード拡縮、⤢ で全体表示。
+4. 🗑 で画像から外れ、母国語トースト「画像から外しました…」＋UNDO で戻る。
+5. CREATE の画像が 9:16 縦でスマホを埋める形か。リンクは横長中央に縦帯か。
+6. PC でカードにマウス→× で画像から外せる（リンクは減らない）か。
 
-- **OK** → 段階2 第2弾へ。**気になる点**（見た目・操作感）→ その1点をブレスト→調整して再デプロイ。
+OK → 段階2の残り（複製[instanceID]・吸着＋触覚・ドラッグ削除演出）の詳細計画へ。
 
-## ★OK後＝段階2 第2弾の詳細計画（着手前に superpowers:brainstorming）
+## 言語方針（s124＋s193 確定・恒久）
+1単語の標準アクション（UNDO/CREATE 等）＝英語 or アイコン／**説明を含む文＝母国語（i18n・15言語）**。
 
-第1弾の上に載せる（設計概要は spec §段階2 / §スコープ外）:
-- **複製**（`bookmarkId` 単一キー→**インスタンスID層**が要る＝positions/order/rotations/render key/capture の5箇所を貫く・in-memory・DB移行なし）。
-- **吸着＋触覚**（位置スナップ＋緑ガイド＋`navigator.vibrate`・回転スナップ `collage-rotate.ts` が手本・ドラッグ choke point は `onMove`→`moveElement`）。
-- **ドラッグ削除の演出**（ゴミ箱ゾーン・TAG モードの `elementFromPoint`+`data-*` が手本）。
-- **前へ/後ろへ の単一ステップ**重なり順（第1弾は前面/背面のみ）。
-- **ズームのスライダー廃止**（ピンチ＋ダブルタップ整列が100枚で到達性を担保できると実機確認できてから）。
-- 事実マップ: memory `reference_stage2_mobile_collage_factmap`（何が既存/再利用/新規か）。
-
-## バックログ（後で・ユーザー要望）
-
-- **PC（デスクトップ）のコラージュが業界水準かの調査**（四隅リサイズ・ホバー回転ノブ・レイヤー・整列を業界水準と比較。競合名は `docs/private/` へ）。
-
-## 絶対に守ること（恒久ルール・継承）
-
-- スマホ SHARE の撮影は canvas 直描画（`renderCollageCanvasToJpeg`）＝dom-to-image に戻さない。デスクトップ SHARE は dom-to-image のままバイト同一。
-- **縦4:5 の二本立てを崩さない**: `capturedImageUrl`＝縦（プレビュー＆ネイティブ共有）／ホスト `thumb`＝1.91:1 レターボックス（リンクカード）。
-- 編集した位置/サイズ/回転/重なり順は完成画像に反映（z順=`collageOrder`）。削除は3マップから実除去。取り消し/やり直しは編集 state 差し替え。ボードズーム（ダブルタップ整列含む）は `stageTransform` のみ＝画像無影響。
-- デスクトップ >640px は 1px 不変（承認済み新機能の意図された変更を除く）／`rtk` 前置・`--no-verify` 禁止／機微・競合名は `docs/private/`／vitest・playwright は素の `npx`。
-- 新しい操作系・見た目は着手前に superpowers:brainstorming（勝手に設計しない）。
+## 絶対に守ること（恒久・継承）
+- スマホ撮影は canvas 直描画（`renderCollageCanvasToJpeg`）。デスクトップ撮影は dom-to-image。
+- **DELETE は画像だけ**（`buildArrangeShare` 無改変＝リンク＝選んだ全URL）。撮影は state ベース・ボードズームは `stageTransform` のみ＝画像無影響。
+- デスクトップは PC 削除の追加を除き 1px 不変／`rtk` 前置・`--no-verify` 禁止／機微・競合名は `docs/private/`／vitest・playwright は素の `npx`。
+- 新しい操作系・見た目は着手前に superpowers:brainstorming。
