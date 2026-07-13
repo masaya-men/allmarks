@@ -30,19 +30,34 @@ export async function seedDb(page: Page, records: readonly SeedRecord[]): Promis
   await page.goto('/board')
   await page.evaluate(
     async ({ dbName, requiredStores, rows }) => {
-      const openCurrent = (): Promise<IDBDatabase> =>
-        new Promise((resolve, reject) => {
+      const openCurrent = (): Promise<IDBDatabase | null> =>
+        new Promise((resolve) => {
           const req = indexedDB.open(dbName) // 無版数 = 既存版に接続
+          // If the DB doesn't exist yet, an unversioned open() would create it
+          // at version 1 with an empty schema (browser default) — and we'd be
+          // the ones "winning" that race instead of the app's own versioned
+          // initDB(). That permanently strands the DB: the app's real open
+          // later sees oldVersion=1 (not <1) and skips its base-schema step,
+          // so every later migration step throws "object store not found."
+          // Refuse to be that creator: abort our own upgrade so nothing is
+          // persisted, and retry until the app's real open has created the
+          // schema for us to connect to.
+          req.onupgradeneeded = (): void => {
+            req.transaction?.abort()
+          }
           req.onsuccess = (): void => resolve(req.result)
-          req.onerror = (): void => reject(req.error)
+          req.onerror = (): void => resolve(null) // AbortError from the guard above, or genuinely not ready yet
+          req.onblocked = (): void => resolve(null)
         })
       const deadline = Date.now() + 15_000
       let db = await openCurrent()
       // アプリが全ストアを作り終えるまで待つ。開きっぱなしはアプリ側の
       // versionchange を塞ぐので、確認したら即 close して少し待って再接続。
-      while (!requiredStores.every((s: string) => db.objectStoreNames.contains(s))) {
-        db.close()
-        if (Date.now() > deadline) throw new Error(`app schema not ready in 15s (has: ${Array.from(db.objectStoreNames).join(',')})`)
+      while (!db || !requiredStores.every((s: string) => (db as IDBDatabase).objectStoreNames.contains(s))) {
+        db?.close()
+        if (Date.now() > deadline) {
+          throw new Error(`app schema not ready in 15s (has: ${db ? Array.from(db.objectStoreNames).join(',') : 'no connection'})`)
+        }
         await new Promise((r) => setTimeout(r, 150))
         db = await openCurrent()
       }
