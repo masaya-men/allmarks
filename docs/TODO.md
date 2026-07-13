@@ -21,6 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 192 — ★スマホのコラージュ＝縦4:5 段階1（土台）を出荷・本番反映／次は実機確認→段階2の詳細計画)
+
+**実行フェーズ。縦4:5 段階1 を計画書どおり subagent-driven-development で完遂・本番反映済**（Task 1〜4＝安価モデル中心[T1/T2 haiku・T3/T4 sonnet]＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge=YES・Critical/Important ゼロ**）。tsc0 / **vitest 282ファイル 2341 全緑** / build OK（assert-share-template OK＝OGメタ1200/630 無改変）/ playwright mobile-share **11/11** / `merge --no-ff` 808e2ad1 / `allmarks.app` デプロイ済。
+
+- **狙い**＝スマホの SHARE コラージュを**縦 4:5 ネイティブ**に。編集エリア（帯）・自動配置・撮影・保存を縦4:5（1080×1350）へ。リンクカード用 1.91:1 は**縦画像を中央レターボックスで自動併産**（サーバー・OG route・payload 無改変＝ホストOGは1.91:1のまま＝メタは正しい）。見た目のチロムは現状のまま（プレミアム化は段階2）。
+- **入れたもの**（計画書 Task 1〜4）: ①`lib/share/mobile-band.ts`＝帯計算をアスペクト引数で一般化（`collageBandRect`）＋`SHARE_PORTRAIT_ASPECT{1080,1350}`＋`mobileCollagePortraitBandRect`（縦4:5帯）。既存 `mobileCollageBandRect` は `collageBandRect(...,1200,630)` に委譲＝後方互換。②`lib/share/letterbox.ts`（新規）＝`containFitRect`（純関数・contain-fit中央配置）＋`letterboxImageToAspect`（縦画像を1.91:1ボード色canvasの中央に描いてJPEG併産・失敗/SSRはnull）。③`BoardRoot.tsx` モバイル撮影経路＝`handleMobileEnterArrange` を縦帯に／`handleMobileCaptureAndCreate` を縦撮影(1080×1350)＋リンクカード併産（**`capturedImageUrl`＝縦のまま＝プレビュー＆ネイティブ共有／ホスト`thumb`＝1.91:1レターボックス**の二本立て）。④`MobileShareResult.module.css` プレビューを 4:5。
+- **不変条件は死守**（opus が実コード直読で検証）: デスクトップ(>640px) **バイト同一**（変更は全て isMobile 経路・`handleCreateHostedShare`/dom-to-image/`ShareToast`/`buildArrangeShare` 無改変・diff に不在）／**共有サーバー・OG route・payload 無改変**（ホストOGは1.91:1のまま＝`og:image:width/height=1200/630` 正当・`assert-share-template` 通過）／**`renderCollageCanvasToJpeg` 本体無改変**（縦帯4:5＋縦w/h を渡すだけ＝`mapBandToOutput` の x/y スケール等しく無歪み）／WYSIWYG（z順=`collageOrder`・回転）維持／レターボックス失敗→`thumb: undefined`＝リンクは作る（メタが嘘にならない・ネイティブ共有は縦で成立）。
+- **e2e は縦前提に更新**（Task 4）: 帯高 `vw*(1350/1080)`・プレビュー寸法 1080×1350・SEED_COUNT 28→16（縦帯で行分割が変わる＝4行×4＝全行が両端到達・厳密性維持の再校正であって弱体化ではない・レビュアーが packer 実演で独立検証）。黒帯ピクセル検査は寸法非依存で温存。
+- **★次セッション最優先＝実機確認**（下・[CURRENT_GOAL.md](CURRENT_GOAL.md)）。OK → **段階2（業界水準の編集チロム）の詳細計画**を書いて実装（選択時ツールバー・レイヤー操作・スナップ+触覚・ドラッグ削除・undo/redo・ズームはスライダー廃止→ピンチ+ダブルタップfit）。設計概要は spec §段階2。
+- **既知の残（非ブロッキング・opus が defer 判定）**: ①撮影パンくずの診断値が landscape 基準のまま（`mobileCaptureScale(band.width)` は1200基準・`||630`/`||1200` フォールバック＝**診断専用でレンダラーに渡らない＝挙動無影響**・計画が「診断デフォルトは触らない」と明示）②レターボックス出力にバイト上限なし（フラット余白は高圧縮＝サーバー上限300KB内に余裕で収まる・実害なし）。
+
 ### 直近の状態 (セッション 191 追補2 — ★スマホのコラージュ＝縦4:5 ネイティブ再設計を決定・設計書＋段階1計画を作成／次は段階1を安価モデルで実装)
 
 **コード変更なし（設計・計画のみ）。** 実機で「機能は動くがスマホ最適化に見えない／縦が普通では」とユーザー。業界水準を調査（Explore＋WebSearch）→ 縦4:5の目標モックを作成・ユーザー承認 → 現行の撮影→ホスティング→OGパイプラインを事実採取 → **設計書＋段階1計画**を作成。

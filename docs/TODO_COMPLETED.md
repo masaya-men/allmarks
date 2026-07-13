@@ -9539,3 +9539,30 @@ tsc0 / **vitest 2291/2291**（276 files・flake なし）/ `pnpm build` OK（ass
 ### 残（次セッション）
 
 実タッチ・スライダーの感触は実機のみ → ユーザーの実機確認待ち（100枚でスライダーズームできるか＝穴が塞がったか）。非ブロッキング: スライダーへのキーボード（矢印）操作は未対応（タッチ主体の割り切り）。
+
+---
+
+## セッション 192 (2026-07-13) — ★スマホのコラージュ＝縦4:5 段階1（土台）を出荷・本番反映
+
+**実行フェーズ。s191 で決めた「スマホのコラージュ＝縦4:5 ネイティブ再設計」の段階1（土台）を、計画書どおり subagent-driven-development で完遂・本番反映。** ユーザー指示＝「縦4:5 段階1 を安価モデルで実装、検証→デプロイ→docs更新まで自走」。
+
+### 進め方（安価モデル指揮）
+フィーチャーブランチ `mobile-portrait-collage-stage1`（base 70ff582d）で subagent-driven。**モデル割り当て**＝完全コード付きの転記タスク（T1/T2）は haiku、統合タスク（T3/T4）は sonnet、各タスクレビューは sonnet、最終全ブランチレビューは opus。事前レビューで計画書の行番号・コード・全テスト期待値を現物照合（矛盾なし）。
+
+### 入れたもの（計画書 Task 1〜4）
+- **T1 `lib/share/mobile-band.ts`（haiku・14/14）**: 帯計算をアスペクト引数で一般化した `collageBandRect(fw,fh,aspectW,aspectH)`＋`SHARE_PORTRAIT_ASPECT{1080,1350}`＋`mobileCollagePortraitBandRect`（縦4:5帯）。既存 `mobileCollageBandRect` は `collageBandRect(...,1200,630)` に委譲＝代数的に同一（後方互換・既存10テストはバイト不変）。レビュアーが3数値ケースを手計算で再導出。
+- **T2 `lib/share/letterbox.ts`（新規・haiku・3/3）**: `containFitRect`（純関数・contain-fit中央配置矩形）＋`letterboxImageToAspect`（bgColor塗り→containFitRect→drawImage→JPEG／SSR・ctx null・load失敗・taint 全て null）。純関数のみ単体テスト（canvas は e2e/実機）。
+- **T3 `BoardRoot.tsx`＋CSS（sonnet・不変条件全検証）**: `handleMobileEnterArrange` 帯を縦に／`handleMobileCaptureAndCreate` を縦撮影(1080×1350)＋リンクカード併産。**`capturedImageUrl`＝縦のまま**（プレビュー＆ネイティブ共有）／ホスト `thumb`＝`letterboxImageToAspect(thumb,1200,630,boardColor)`（1.91:1 レターボックス）の二本立て。`MobileShareResult.module.css` プレビュー 1080/1350。tsc0 / vitest 2341 / build OK。
+- **T4 e2e（sonnet・11/11・指摘ゼロ）**: `tests/e2e/mobile-share.spec.ts` を縦前提に。帯高 `vw*(1350/1080)`・プレビュー寸法 1080×1350・SEED_COUNT 28→16（縦帯で行分割が変わり旧値が行端チェックに失敗＝厳密性を保つ再校正。レビュアーが `fitSelectionToScreen`＋実定数を移植実演し n=28失敗/n=13は集約マスクの罠/n=16=4行×4で全行両端到達を独立再現＝弱体化ではないと確認）。黒帯ピクセル検査は寸法非依存で温存。
+
+### 不変条件（opus 全ブランチレビュー Ready to merge=YES で実コード直読検証・8項目全成立）
+デスクトップ(>640px) **バイト同一**（変更は全て isMobile・`handleCreateHostedShare`/`captureCollageShareImage`(dom-to-image)/`ShareToast`/`buildArrangeShare` は diff に不在）／**共有サーバー・OG route・payload 無改変**（ホストOGは1.91:1のまま＝`og:image:width/height=1200/630` 正当・`assert-share-template OK`）／**`renderCollageCanvasToJpeg` 本体無改変**（縦帯4:5＋縦w/h を渡すだけ・`mapBandToOutput` は sx==sy で無歪み）／二本立て（縦プレビュー／1.91:1ホスト）／レターボックス失敗→`thumb: undefined`＝リンクは作る（メタが嘘にならない）／WYSIWYG（z順=`collageOrder`・回転）。指摘は古いコメント4件（コスメティック）＋診断パンくずの nit のみ＝プロダクト無影響。
+
+### 最終レビュー後のクリーンアップ
+opus 推奨どおり古い 1.91:1/1200×630 コメント4件を1コミットで更新（`BoardRoot.tsx:2710`・`MobileShareResult.tsx:13`・`MobileShareResult.module.css:25`・`mobile-band.ts` ヘッダ／コード変更ゼロ）。
+
+### 検証・出荷
+全体ゲート@HEAD: tsc0 / **vitest 282ファイル2341全緑** / pnpm build OK（`assert-share-template OK`）/ playwright mobile-share **11/11**。`merge --no-ff` **808e2ad1**（マージ木＝ブランチHEAD・`git diff branch..master` 空）→ master 再ビルド → `npx wrangler pages deploy out/ --project-name=allmarks --branch=master` で `allmarks.app` 反映済。
+
+### 残（USER 実機確認）
+`allmarks.app` ハードリロード → SHARE → 全選択 → ARRANGE が縦長(4:5)か → 並べて CREATE → 縦プレビュー画像が出るか → リンクを X 等に貼るとカードは横長(1.91:1)で中央に縦コラージュか → 100枚で破綻しないか。OK なら段階2（業界水準チロム）の詳細計画へ。非ブロッキング残＝撮影パンくずの診断値が landscape 基準のまま（診断専用・レンダラーに渡らない＝挙動無影響）／レターボックス出力にバイト上限なし（フラット余白は高圧縮でサーバー上限内・実害なし）。
