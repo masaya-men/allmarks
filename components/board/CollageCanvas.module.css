@@ -121,3 +121,53 @@
   pointer-events: none;
   z-index: 30;
 }
+
+/* Remove-from-image — desktop-only hover × (mobile-arrange-ux-redesign
+   Task 5), parity with the mobile dock's REMOVE. Same hover-reveal
+   convention as .rotateHandle above (opacity 0 → 1 + pointer-events gated
+   on .element:hover, transition-only, no @media(hover:none) fallback since
+   this button never renders on touch at all — CollageCanvas.tsx gates it on
+   !props.touchMode).
+   z-index 31 sits just above the shared ResizeHandle's corner hot zones
+   (.handle=30, .handle.resizing=31 — see ResizeHandle.module.css) so the ×
+   wins the top-right corner the same way the board's CardCornerActions ×
+   wins over its resize hint (that file's z:50 vs resize's 30/31 — same
+   pattern, smaller gap since this stacking context is local to one card),
+   and stays below .rotateHandle's 40 so the rotate knob is never occluded. */
+.removeButton {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
+  background: rgba(18, 18, 22, 0.72);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 31;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+.element:hover .removeButton {
+  opacity: 1;
+  pointer-events: auto;
+}
+.removeButton:hover {
+  /* Restrained emphasis on direct hover — scale + brighten, no red (this is
+     a quiet desktop affordance, not a destructive-warning button). */
+  background: rgba(38, 38, 44, 0.88);
+  transform: scale(1.12);
+}
+.removeButton:active {
+  transform: scale(0.96);
+}

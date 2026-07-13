@@ -136,6 +136,7 @@
       "popout": "POP OUT",
       "share": "SHARE"
     },
+    "collageRemoveToast": "이미지에서 제거되었습니다. 링크에는 선택한 모든 URL이 남아있습니다.",
     "tune": {
       "width": "W",
       "gap": "G",

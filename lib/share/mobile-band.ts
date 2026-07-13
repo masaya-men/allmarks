@@ -5,7 +5,7 @@
 // その比を保ち、中央に収まる（フレームより大きくならない）。だから撮影結果は帯とぴったり
 // 一致し、黒帯もはみ出しも出ない（= レプリカ舞台の不要）。
 //
-// モバイルの主役は縦 4:5（mobileCollagePortraitBandRect＝保存＆縦向き共有）。
+// モバイルの主役は縦 9:16（mobileCollagePortraitBandRect＝保存＆縦向き共有）。
 // 1.91:1 の帯（mobileCollageBandRect）はリンクカード用レターボックスの後方互換で温存。
 //
 // フレームが比より横長 → 帯は全高を使い、幅は削られる (左右 cap)。
@@ -16,8 +16,8 @@ import type { CollageFitRect } from './collage-layout'
 /** 共有 OG 画像の寸法（X の summary_large_image が期待する 1.91:1）。 */
 export const SHARE_OG_ASPECT = { WIDTH: 1200, HEIGHT: 630 } as const
 
-/** モバイルのコラージュ主役＝縦 4:5（保存＆縦向き共有）。段階1 は 4:5 固定。 */
-export const SHARE_PORTRAIT_ASPECT = { WIDTH: 1080, HEIGHT: 1350 } as const
+/** モバイルのコラージュ主役＝縦 9:16（保存＆縦向き共有）。段階1 は 9:16 固定。 */
+export const SHARE_PORTRAIT_ASPECT = { WIDTH: 1080, HEIGHT: 1920 } as const
 
 /** 撮影倍率の下限（原寸より縮めない）と上限（canvas 爆発の予防）。 */
 const MIN_SCALE = 1
@@ -51,7 +51,7 @@ export function mobileCollageBandRect(frameW: number, frameH: number): CollageFi
   return collageBandRect(frameW, frameH, SHARE_OG_ASPECT.WIDTH, SHARE_OG_ASPECT.HEIGHT)
 }
 
-/** スマホの自動配置矩形（縦 4:5・モバイル主役）。 */
+/** スマホの自動配置矩形（縦 9:16・モバイル主役）。 */
 export function mobileCollagePortraitBandRect(frameW: number, frameH: number): CollageFitRect {
   return collageBandRect(frameW, frameH, SHARE_PORTRAIT_ASPECT.WIDTH, SHARE_PORTRAIT_ASPECT.HEIGHT)
 }

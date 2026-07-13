@@ -136,6 +136,7 @@
       "popout": "POP OUT",
       "share": "SHARE"
     },
+    "collageRemoveToast": "Đã xóa khỏi hình ảnh. Liên kết của bạn vẫn chứa tất cả các URL bạn chọn.",
     "tune": {
       "width": "W",
       "gap": "G",

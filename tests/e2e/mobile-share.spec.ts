@@ -1,27 +1,26 @@
 import { test, expect, type Page } from '@playwright/test'
 
 const DB_NAME = 'booklage-db'
-// N-58 stage1 changed the mobile arrange band from landscape 1.91:1 to
-// portrait 4:5 (mobileCollagePortraitBandRect). The band's WIDTH is unchanged
-// (still the full frame width), but it is now much TALLER — on a 390×844
-// frame the band is {x:0, y:178.25, width:390, height:487.5} vs the old
-// {width:390, height:204.75} — so the same justified-row packing
-// (fitSelectionToScreen, collage-layout.ts) fits far fewer, wider cards per
-// row before closing a row, and the old landscape calibration (SEED_COUNT=28,
-// 4 rows of 7) no longer lands on a clean pack here (verified by directly
-// probing fitSelectionToScreen with this env's real constants — see task-4
-// report). With this card aspect (placeholder cards, PLACEHOLDER_ASPECT=1.25)
-// and the board's default card width (BOARD_SLIDERS.CARD_WIDTH_DEFAULT_PX=
-// 267.84) laid into the portrait band, 13 lays out as 4+4+4+1 — the trailing
-// single card is centred and does NOT reach the edges (fitSelectionToScreen
+// mobile-arrange-ux-redesign (Task 4) changed the mobile arrange band's aspect
+// from portrait 4:5 to portrait 9:16 (SHARE_PORTRAIT_ASPECT, mobile-band.ts).
+// The band's WIDTH is unchanged (still the full frame width, 390 on this
+// viewport), but it is TALLER again (height ratio 16:9 ≈1.778 vs the old
+// 5:4=1.25) — more vertical room lets fitSelectionToScreen's H-scan
+// (collage-layout.ts) choose a layout with MORE rows, so the previous
+// SEED_COUNT=16 (4 clean rows of 4 under 4:5) no longer lands on a clean pack
+// under 9:16: it comes out as 5 rows of 3 + 1 trailing single card, and that
+// trailing row is centred and does NOT reach the edges (fitSelectionToScreen
 // centres any row that doesn't reach the band's width — collage-layout.ts
-// ~241-242). A naive min/max-over-all-cards check still passes at 13 (rows
-// 1-3 reach the edges, masking row 4's centred gap in the aggregate), which
-// is exactly the "passes for the wrong reason" trap: it would not catch a
-// regression that broke only the last row. 16 is the next clean count: it
-// packs into 4 full rows of 4 with none left over, so every row — not just
-// the aggregate extremes — reaches both edges.
-const SEED_COUNT = 16
+// ~241-242). A naive min/max-over-all-cards check still passes at 16 (rows
+// 1-5 reach the edges, masking row 6's centred gap in the aggregate), which
+// is exactly the "passes for the wrong reason" trap the per-row assertion
+// below exists to catch. The next clean count was found by directly probing
+// fitSelectionToScreen's real output (seeding N bookmarks, entering the 9:16
+// arrange stage, and grouping the rendered `collage-el-*` rects by row) for a
+// range of candidates — 20 is the smallest one at or above 16 that packs into
+// full rows with none left over: 5 rows of 4, so every row — not just the
+// aggregate extremes — reaches both edges.
+const SEED_COUNT = 20
 
 /** Seed cards + the acks that suppress every first-run modal. Mirrors
  *  tests/e2e/mobile-save.spec.ts (memory: reference_playwright_board_share_verify). */
@@ -69,13 +68,33 @@ async function seedBoard(page: Page): Promise<void> {
 }
 
 /** functions/api/share/create.ts is a Pages Function; it does not exist under
- *  `next dev`. Fulfil it so the flow reaches LINK READY. */
-async function stubCreate(page: Page, id = 'e2eshare'): Promise<void> {
-  await page.route('**/api/share/create', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id }) }),
-  )
+ *  `next dev`. Fulfil it so the flow reaches LINK READY.
+ *
+ *  `capturedBody`, when passed, receives the raw POST body (api-client.ts's
+ *  createShare does a plain `JSON.stringify(entry)` with no compression —
+ *  verified by logging `route.request().postData()` directly — so this is a
+ *  real, complete `{ share: ShareDataV2, thumb? }` payload, not an opaque
+ *  blob) so a test can assert the link payload's card count/URLs after the
+ *  create round-trips. */
+async function stubCreate(
+  page: Page,
+  id = 'e2eshare',
+  capturedBody: { value: string | null } | null = null,
+): Promise<void> {
+  await page.route('**/api/share/create', async (route) => {
+    if (capturedBody) capturedBody.value = route.request().postData()
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id }) })
+  })
   // The post-create cache warm hits /og/<id>.jpg, which also does not exist.
   await page.route('**/og/*.jpg', (route) => route.fulfill({ status: 200, contentType: 'image/jpeg', body: '' }))
+}
+
+/** Shape of the POST body posted to /api/share/create — only the fields this
+ *  spec needs to inspect (the real ShareDataV2/ShareCardV2 types have more). */
+type PostedSharePayload = {
+  readonly share: {
+    readonly cards: ReadonlyArray<{ readonly u: string }>
+  }
 }
 
 test.describe('mobile SHARE — phone', () => {
@@ -96,7 +115,31 @@ test.describe('mobile SHARE — phone', () => {
     await expect(page.locator('[data-testid="mobile-select-counter"]')).toHaveText('0 / 100 SELECTED')
   })
 
-  test('SELECT ALL → CREATE arranges into the centred 4:5 band and yields a link', async ({ page }) => {
+  test('the arrange stage shows the consolidated dock, not the old top/bottom bars (mobile-arrange-ux-redesign)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+
+    // The old top bar (undo/redo/selection tools) and bottom bar (zoom
+    // slider/back/create) are gone entirely, replaced by one dock.
+    await expect(page.getByTestId('mobile-arrange-topbar')).toHaveCount(0)
+    await expect(page.getByTestId('mobile-arrange-bar')).toHaveCount(0)
+    await expect(page.getByTestId('mobile-arrange-dock')).toBeVisible()
+
+    // Core controls always present (selection-only controls are covered by
+    // the "tapping a card shows the selection tools" test below).
+    await expect(page.getByTestId('mobile-arrange-undo')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-redo')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-zoom-out')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-zoom-in')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-zoom-fit')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-back')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-create')).toBeVisible()
+  })
+
+  test('SELECT ALL → CREATE arranges into the centred 9:16 band and yields a link', async ({ page }) => {
     await seedBoard(page)
     await stubCreate(page)
 
@@ -107,8 +150,8 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-select-create"]').click()
 
     // ARRANGE (tap 1) → edit stage: the selection is auto-placed into the band
-    // and the arrange bar + band guide come up, but nothing has been shot yet.
-    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toBeVisible()
+    // and the dock + band guide come up, but nothing has been shot yet.
+    await expect(page.locator('[data-testid="mobile-arrange-dock"]')).toBeVisible()
     await expect(page.locator('[data-testid="mobile-band-overlay"]')).toBeVisible()
     await expect(page.locator('[data-testid="mobile-share-result"]')).toHaveCount(0)
 
@@ -133,7 +176,7 @@ test.describe('mobile SHARE — phone', () => {
     })
     expect(band.count).toBe(SEED_COUNT)
 
-    const bandH = band.vw * (1350 / 1080) // portrait 4:5 = width × 1.25
+    const bandH = band.vw * (1920 / 1080) // portrait 9:16
     const bandTop = (band.vh - bandH) / 2
     // Cards reach both side edges (no left/right letterbox).
     expect(band.left).toBeLessThanOrEqual(1)
@@ -176,7 +219,7 @@ test.describe('mobile SHARE — phone', () => {
     await expect(page.locator('[data-testid="mobile-share-copy"]')).toBeVisible()
   })
 
-  test('the preview is a real 1080x1350 image', async ({ page }) => {
+  test('the preview is a real 1080x1920 image', async ({ page }) => {
     await seedBoard(page)
     await stubCreate(page)
     await page.locator('[data-testid="mobile-nav-share"]').click()
@@ -184,7 +227,7 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-select-create"]').click()
 
     // ARRANGE → edit stage, then CREATE → shoot (N-58 two-tap flow).
-    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-arrange-dock"]')).toBeVisible()
     await expect(page.locator('[data-testid="mobile-band-overlay"]')).toBeVisible()
     await expect(page.locator('[data-testid="mobile-share-result"]')).toHaveCount(0)
     await page.locator('[data-testid="mobile-arrange-create"]').click()
@@ -195,7 +238,7 @@ test.describe('mobile SHARE — phone', () => {
       const img = el as HTMLImageElement
       return { w: img.naturalWidth, h: img.naturalHeight, src: img.src.slice(0, 22) }
     })
-    expect(dims).toEqual({ w: 1080, h: 1350, src: 'data:image/jpeg;base64' })
+    expect(dims).toEqual({ w: 1080, h: 1920, src: 'data:image/jpeg;base64' })
   })
 
   // handleMobileCaptureAndCreate (BoardRoot.tsx) no longer shoots via
@@ -203,10 +246,10 @@ test.describe('mobile SHARE — phone', () => {
   // renders straight from placement data via renderCollageCanvasToJpeg
   // (collage-canvas-render.ts), which maps the whole band (band-space) onto the
   // whole output canvas with a single linear scale (mapBandToOutput: sx =
-  // outW/band.width, sy = outH/band.height). Portrait band (4:5, via
-  // mobileCollagePortraitBandRect) and portrait output (1080×1350, also 4:5)
-  // share the same aspect ratio, so sx === sy and there is no "fit" mode left
-  // that could reintroduce a flat letterbox bar.
+  // outW/band.width, sy = outH/band.height). Portrait band (9:16, via
+  // mobileCollagePortraitBandRect/SHARE_PORTRAIT_ASPECT) and portrait output
+  // (1080×1920, also 9:16) share the same aspect ratio, so sx === sy and there
+  // is no "fit" mode left that could reintroduce a flat letterbox bar.
   //
   // What a regression WOULD still look like: if the band ever stopped reaching
   // the frame's full width (e.g. someone swaps back in the old landscape
@@ -227,7 +270,7 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-select-create"]').click()
 
     // ARRANGE → edit stage, then CREATE → shoot (N-58 two-tap flow).
-    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-arrange-dock"]')).toBeVisible()
     await expect(page.locator('[data-testid="mobile-band-overlay"]')).toBeVisible()
     await expect(page.locator('[data-testid="mobile-share-result"]')).toHaveCount(0)
     await page.locator('[data-testid="mobile-arrange-create"]').click()
@@ -278,12 +321,12 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-nav-share"]').click()
     await page.locator('[data-testid="mobile-select-all"]').click()
     await page.locator('[data-testid="mobile-select-create"]').click()
-    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toBeVisible()
+    await expect(page.locator('[data-testid="mobile-arrange-dock"]')).toBeVisible()
 
     await page.locator('[data-testid="mobile-arrange-back"]').click()
 
     await expect(page.locator('[data-testid="mobile-share-select-bar"]')).toBeVisible()
-    await expect(page.locator('[data-testid="mobile-arrange-bar"]')).toHaveCount(0)
+    await expect(page.locator('[data-testid="mobile-arrange-dock"]')).toHaveCount(0)
     await expect(page.locator('[data-testid="mobile-share-result"]')).toHaveCount(0)
   })
 
@@ -407,7 +450,7 @@ test.describe('mobile SHARE — phone', () => {
     expect(scale).toBeGreaterThan(1.5)
   })
 
-  test('the zoom slider zooms the board even while a card is selected (N-58 packed-board fix)', async ({ page }) => {
+  test('the dock zoom buttons zoom the board; ZOOM FIT returns to scale 1 (mobile-arrange-ux-redesign)', async ({ page }) => {
     await seedBoard(page)
     await stubCreate(page)
     await page.locator('[data-testid="mobile-nav-share"]').click()
@@ -415,33 +458,49 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-select-create"]').click()
     await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
 
-    // select a card first (tap = pointerdown+up, no move) so we're in the "card selected" state
+    const stage = page.getByTestId('mobile-arrange-stage')
+    const readScale = async (): Promise<number> => {
+      const t = await stage.evaluate((el) => (el as HTMLElement).style.transform)
+      return Number(/scale\(([\d.]+)\)/.exec(t)?.[1])
+    }
+
+    expect(await readScale()).toBe(1)
+
+    await page.getByTestId('mobile-arrange-zoom-in').click()
+    await page.getByTestId('mobile-arrange-zoom-in').click()
+    await page.getByTestId('mobile-arrange-zoom-in').click()
+    expect(await readScale()).toBeGreaterThan(1)
+
+    await page.getByTestId('mobile-arrange-zoom-fit').click()
+    expect(await readScale()).toBe(1)
+  })
+
+  test('the dock zoom buttons zoom the board even while a card is selected (N-58 packed-board fix)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+
+    // select a card first (plain click, like "tapping a card shows the selection tools" below)
+    // so we're in the "card selected" state
     const first = page.locator('[data-testid^="collage-el-"]').first()
     const id = await first.evaluate((el) => el.getAttribute('data-testid')?.replace('collage-el-', '') ?? '')
-    await first.evaluate((el) => {
-      const r = el.getBoundingClientRect()
-      const x = r.left + r.width / 2
-      const y = r.top + r.height / 2
-      const fire = (t: string): void =>
-        void el.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 1, clientX: x, clientY: y, pointerType: 'touch', isPrimary: true }))
-      fire('pointerdown')
-      fire('pointerup')
-    })
+    await first.click()
     await expect(page.getByTestId(`collage-selection-${id}`)).toBeVisible()
 
-    // drag the zoom slider track to the right — must zoom the board WITHOUT any deselect
-    await page.getByTestId('mobile-zoom-slider-track').evaluate((el) => {
-      const r = el.getBoundingClientRect()
-      const y = r.top + r.height / 2
-      const fire = (t: string, x: number): void =>
-        void el.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 5, clientX: x, clientY: y, pointerType: 'touch', isPrimary: true }))
-      fire('pointerdown', r.left + 2)
-      fire('pointermove', r.left + r.width * 0.8)
-      fire('pointerup', r.left + r.width * 0.8)
-    })
+    // click the dock's zoom-in a few times — must zoom the board WITHOUT any
+    // deselect (the dock lives outside mobile-arrange-viewport, so it never
+    // fires the viewport's blank-tap deselect handler).
+    await page.getByTestId('mobile-arrange-zoom-in').click()
+    await page.getByTestId('mobile-arrange-zoom-in').click()
+    await page.getByTestId('mobile-arrange-zoom-in').click()
+
     const t = await page.getByTestId('mobile-arrange-stage').evaluate((el) => (el as HTMLElement).style.transform)
     const scale = Number(/scale\(([\d.]+)\)/.exec(t)?.[1])
     expect(scale).toBeGreaterThan(1.5)
+    await expect(page.getByTestId(`collage-selection-${id}`)).toBeVisible()
   })
 
   test('tapping a card shows the selection tools; a blank tap clears them (N-58 stage2 increment1)', async ({ page }) => {
@@ -452,9 +511,10 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-select-create"]').click()
     await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
 
-    // UNDO/REDO are always present; the front/back/delete group only shows up
-    // once something is selected.
-    await expect(page.getByTestId('mobile-arrange-topbar')).toBeVisible()
+    // UNDO/REDO are always present; the front/back/remove group only shows up
+    // once something is selected (they now live in the same dock, not a
+    // separate top bar).
+    await expect(page.getByTestId('mobile-arrange-dock')).toBeVisible()
     await expect(page.getByTestId('mobile-arrange-selection-tools')).toHaveCount(0)
 
     const first = page.locator('[data-testid^="collage-el-"]').first()
@@ -462,7 +522,7 @@ test.describe('mobile SHARE — phone', () => {
     await expect(page.getByTestId('mobile-arrange-selection-tools')).toBeVisible()
     await expect(page.getByTestId('mobile-arrange-to-front')).toBeVisible()
     await expect(page.getByTestId('mobile-arrange-to-back')).toBeVisible()
-    await expect(page.getByTestId('mobile-arrange-delete')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-remove')).toBeVisible()
 
     // A blank-area tap (dispatched straight on the viewport, same pattern as
     // the pinch tests above — e.target is then the viewport itself, which
@@ -498,7 +558,7 @@ test.describe('mobile SHARE — phone', () => {
 
     await cards.first().click()
     await expect(page.getByTestId('mobile-arrange-selection-tools')).toBeVisible()
-    await page.getByTestId('mobile-arrange-delete').click()
+    await page.getByTestId('mobile-arrange-remove').click()
 
     await expect(cards).toHaveCount(before - 1)
     await expect(page.getByTestId('mobile-arrange-selection-tools')).toHaveCount(0)
@@ -510,6 +570,56 @@ test.describe('mobile SHARE — phone', () => {
     await expect(page.getByTestId('mobile-arrange-redo')).toBeEnabled()
     await page.getByTestId('mobile-arrange-redo').click()
     await expect(cards).toHaveCount(before - 1)
+  })
+
+  test('REMOVE shows an UNDO toast; the toast UNDO restores the card, and the link payload never shrinks (image != link invariant)', async ({ page }) => {
+    await seedBoard(page)
+    const capturedBody: { value: string | null } = { value: null }
+    await stubCreate(page, 'e2eshare', capturedBody)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+
+    const cards = page.locator('[data-testid^="collage-el-"]')
+    const before = await cards.count()
+    expect(before).toBe(SEED_COUNT)
+
+    // Remove one card from the image.
+    await cards.first().click()
+    await expect(page.getByTestId('mobile-arrange-selection-tools')).toBeVisible()
+    await page.getByTestId('mobile-arrange-remove').click()
+    await expect(cards).toHaveCount(before - 1)
+
+    const toast = page.getByTestId('mobile-arrange-remove-toast')
+    await expect(toast).toBeVisible()
+
+    // The toast's OWN UNDO (not the dock's general history undo) restores the card.
+    await page.getByTestId('mobile-arrange-remove-toast-undo').click()
+    await expect(cards).toHaveCount(before)
+
+    // Remove again and leave it removed — this is the state CREATE fires from.
+    await cards.first().click()
+    await expect(page.getByTestId('mobile-arrange-selection-tools')).toBeVisible()
+    await page.getByTestId('mobile-arrange-remove').click()
+    await expect(cards).toHaveCount(before - 1)
+
+    // CREATE with a card missing from the image. buildArrangeShare (BoardRoot.tsx)
+    // builds the link payload from `selectedIds` (the original selection made
+    // BEFORE entering arrange) — removeCollageCardById only mutates the collage's
+    // own positions/order/rotations state, never selectedIds — so the posted
+    // payload must still carry every originally-selected URL even though the
+    // captured IMAGE now has one fewer card.
+    await page.getByTestId('mobile-arrange-create').click()
+    await expect(page.getByTestId('mobile-share-result')).toBeVisible({ timeout: 30_000 })
+
+    expect(capturedBody.value).not.toBeNull()
+    const posted = JSON.parse(capturedBody.value ?? '{}') as PostedSharePayload
+    expect(posted.share.cards).toHaveLength(SEED_COUNT)
+    const postedUrls = new Set(posted.share.cards.map((c) => c.u))
+    for (let i = 0; i < SEED_COUNT; i++) {
+      expect(postedUrls.has(`https://example.com/${i}`)).toBe(true)
+    }
   })
 
   test('a two-finger resize commits to history; UNDO reverts the width (N-58 stage2 increment1 — Critical fix regression guard)', async ({ page }) => {
@@ -574,17 +684,10 @@ test.describe('mobile SHARE — phone', () => {
     await page.locator('[data-testid="mobile-select-create"]').click()
     await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
 
-    // Zoom the board via the slider track (no card selection involved — same
-    // pattern as "the zoom slider zooms the board..." above).
-    await page.getByTestId('mobile-zoom-slider-track').evaluate((el) => {
-      const r = el.getBoundingClientRect()
-      const y = r.top + r.height / 2
-      const fire = (t: string, x: number): void =>
-        void el.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 5, clientX: x, clientY: y, pointerType: 'touch', isPrimary: true }))
-      fire('pointerdown', r.left + 2)
-      fire('pointermove', r.left + r.width * 0.8)
-      fire('pointerup', r.left + r.width * 0.8)
-    })
+    // Zoom the board via the dock's zoom-in button (no card selection involved —
+    // same pattern as "the dock zoom buttons zoom the board..." above).
+    await page.getByTestId('mobile-arrange-zoom-in').click()
+    await page.getByTestId('mobile-arrange-zoom-in').click()
     const stage = page.getByTestId('mobile-arrange-stage')
     const scaleBefore = await stage.evaluate((el) => Number(/scale\(([\d.]+)\)/.exec((el as HTMLElement).style.transform)?.[1]))
     expect(scaleBefore).toBeGreaterThan(1.5)
@@ -624,8 +727,47 @@ test.describe('desktop SHARE — unchanged', () => {
     await page.locator('[data-testid="select-all-button"]').click()
     await page.locator('[data-testid="select-share-button"]').click()
     await expect(page.locator('[data-testid="share-toast-create"]')).toBeVisible()
-    // N-58 stage2: the mobile-only top bar (UNDO/REDO/TO FRONT/TO BACK/DELETE)
-    // must never mount on desktop.
-    await expect(page.locator('[data-testid="mobile-arrange-topbar"]')).toHaveCount(0)
+    // mobile-arrange-ux-redesign: the mobile-only dock (UNDO/REDO/zoom/TO
+    // FRONT/TO BACK/REMOVE/BACK/CREATE) must never mount on desktop.
+    await expect(page.locator('[data-testid="mobile-arrange-dock"]')).toHaveCount(0)
+  })
+
+  test('hovering a collage card reveals a remove ×; removing it drops the card from the image but not from the link (desktop parity)', async ({ page }) => {
+    await seedBoard(page)
+    const capturedBody: { value: string | null } = { value: null }
+    await stubCreate(page, 'e2eshare', capturedBody)
+
+    await page.locator('[data-testid="share-pill"]').click()
+    await page.locator('[data-testid="select-all-button"]').click()
+    await page.locator('[data-testid="select-share-button"]').click()
+    await expect(page.locator('[data-testid="share-toast-create"]')).toBeVisible()
+
+    const cards = page.locator('[data-testid^="collage-el-"]')
+    const before = await cards.count()
+    expect(before).toBe(SEED_COUNT)
+
+    const first = cards.first()
+    const id = await first.evaluate((el) => el.getAttribute('data-testid')?.replace('collage-el-', '') ?? '')
+    // The × is pointer-events:none until `.element:hover` — hover for real,
+    // then click it (force: true bypasses only the receives-events re-check,
+    // not the hover precondition itself, which already applied above).
+    await first.hover()
+    await page.locator(`[data-testid="collage-remove-${id}"]`).click({ force: true })
+
+    await expect(cards).toHaveCount(before - 1)
+
+    // CREATE with a card missing from the image — same invariant as the mobile
+    // REMOVE test: buildArrangeShare reads `selectedIds`, which the desktop
+    // hover-× never touches (only collage positions/order/rotations).
+    await page.locator('[data-testid="share-toast-create"]').click()
+    await expect(page.locator('[data-testid="share-toast-ready"]')).toBeVisible({ timeout: 30_000 })
+
+    expect(capturedBody.value).not.toBeNull()
+    const posted = JSON.parse(capturedBody.value ?? '{}') as PostedSharePayload
+    expect(posted.share.cards).toHaveLength(SEED_COUNT)
+    const postedUrls = new Set(posted.share.cards.map((c) => c.u))
+    for (let i = 0; i < SEED_COUNT; i++) {
+      expect(postedUrls.has(`https://example.com/${i}`)).toBe(true)
+    }
   })
 })

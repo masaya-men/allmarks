@@ -68,21 +68,21 @@ describe('mobileCaptureScale', () => {
   })
 })
 
-describe('mobileCollagePortraitBandRect (4:5 portrait)', () => {
-  it('inscribes a centred 4:5 band in a tall phone frame', () => {
-    // 390x844: portrait band keeps full width, height = 390 * 1350/1080 = 487.5, y-centred
-    expect(mobileCollagePortraitBandRect(390, 844)).toEqual({ x: 0, y: 178.25, width: 390, height: 487.5 })
+describe('mobileCollagePortraitBandRect (9:16 portrait)', () => {
+  it('inscribes a centred 9:16 band in a tall phone frame', () => {
+    // 360x900: portrait band keeps full width, height = 360 * 1920/1080 = 640, y-centred
+    expect(mobileCollagePortraitBandRect(360, 900)).toEqual({ x: 0, y: 130, width: 360, height: 640 })
   })
 
-  it('keeps the 4:5 ratio and caps sides on a wide frame', () => {
-    // 844x390 wide: keeps full height, width = 390 * 1080/1350 = 312, x-centred
-    const b = mobileCollagePortraitBandRect(844, 390)
-    expect(b).toEqual({ x: 266, y: 0, width: 312, height: 390 })
-    expect(b.width / b.height).toBeCloseTo(1080 / 1350) // 0.8 = 4:5
+  it('keeps the 9:16 ratio and caps sides on a wide frame', () => {
+    // 900x360 wide: keeps full height, width = 360 * 1080/1920 = 202.5, x-centred
+    const b = mobileCollagePortraitBandRect(900, 360)
+    expect(b).toEqual({ x: 348.75, y: 0, width: 202.5, height: 360 })
+    expect(b.width / b.height).toBeCloseTo(1080 / 1920) // 0.5625 = 9:16
   })
 
   it('returns empty on a degenerate frame', () => {
-    expect(mobileCollagePortraitBandRect(0, 844)).toEqual({ x: 0, y: 0, width: 0, height: 0 })
+    expect(mobileCollagePortraitBandRect(0, 900)).toEqual({ x: 0, y: 0, width: 0, height: 0 })
   })
 })
 
