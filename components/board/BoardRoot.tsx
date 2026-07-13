@@ -12,7 +12,7 @@ import {
 import { resolveThemeId } from '@/lib/board/theme-resolve'
 import { EMPTY_LICENSES } from '@/lib/board/theme-entitlement'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
-import { resolveThemeCustomization, isDefaultCustomization, isLightColor, effectivePatternStroke } from '@/lib/board/theme-customization'
+import { resolveThemeCustomization, isDefaultCustomization, isLightColor, patternSvgDataUri } from '@/lib/board/theme-customization'
 import { BOARD_INNER, BOARD_SLIDERS, BOARD_TOP_PAD_PX, BOARD_Z_INDEX, ARRANGE_SAFE_INSET, CANVAS_MARGIN_PX, MOBILE_LAYOUT } from '@/lib/board/constants'
 import { useIsMobile } from '@/lib/board/use-is-mobile'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
@@ -2033,6 +2033,17 @@ export function BoardRoot() {
     [themeId, themeCustomizations],
   )
 
+  // N-54: draw the board pattern from the same single-pass SVG the receiver/OG use.
+  // Two stacked CSS gradients double-composite semi-transparent lines at crossings
+  // (dark intersections); one SVG path = one draw = no darkening. Side effect:
+  // dom-to-image drops one direction of stacked CSS gradients (2026-06-29 spike), so
+  // SHARE screenshot pattern fidelity improves. useMemo: patternSvgDataUri runs
+  // encodeURIComponent every call.
+  const patternUri = useMemo((): string => {
+    if (!resolvedCustom) return ''
+    return patternSvgDataUri(resolvedCustom)
+  }, [resolvedCustom])
+
   // The pattern backdrop (dots/grid) is client-state-dependent — its theme comes
   // from IDB — but the board is statically prerendered with the DEFAULT theme
   // (patternType 'none'). If the patternLayer rendered during SSR/first hydration
@@ -3454,14 +3465,10 @@ export function BoardRoot() {
                   zIndex: BOARD_Z_INDEX.THEME_BG,
                   pointerEvents: 'none',
                   backgroundPosition: `calc(50% + var(--grab-x, 0px) * ${GRAB_LAYER_WEIGHTS.pattern}) calc(${-gridBgPanY}px + var(--grab-y, 0px) * ${GRAB_LAYER_WEIGHTS.pattern})`,
-                  '--board-color': resolvedCustom.boardColor,
-                  '--pattern-color': resolvedCustom.patternColor,
-                  '--pattern-size': `${resolvedCustom.patternSize}px`,
-                  // Same clamp the share's SVG applies, so the board and the link
-                  // it produces can't disagree on line weight.
-                  '--pattern-stroke': `${effectivePatternStroke(resolvedCustom.patternStroke, resolvedCustom.patternSize)}px`,
-                  '--pattern-dot-r': `${effectivePatternStroke(resolvedCustom.patternStroke, resolvedCustom.patternSize)}px`,
-                } as CSSProperties}
+                  backgroundColor: resolvedCustom.boardColor,
+                  backgroundImage: patternUri ? `url("${patternUri}")` : undefined,
+                  backgroundSize: `${resolvedCustom.patternSize}px ${resolvedCustom.patternSize}px`,
+                }}
               />
             )}
             {/* Background — full canvas coverage, follows scroll. Paper-atelier
