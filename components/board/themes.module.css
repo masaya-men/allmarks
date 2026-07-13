@@ -16,9 +16,10 @@
    (inset:0 on the static InteractionLayer) so the pattern always centres on the
    viewport — left/right edges cut symmetrically regardless of content width or
    horizontal pan. Vertical parallax is applied inline (background-position-y).
-   The board colour + pattern colour + spacing come from CSS vars set inline by
-   BoardRoot (resolved per-theme); the fallbacks below equal the Sound Wave /
-   Grid defaults so an untouched theme is byte-identical. */
+   BoardRoot / SharedBoard / ShareMirror set background-color, background-image
+   (the single-pass SVG, see below) and background-size inline per-theme; the
+   var(--board-color) fallback here is just a dark default if an inline colour is
+   ever omitted. background-repeat:repeat is load-bearing — it tiles that SVG. */
 .patternLayer {
   background-color: var(--board-color, #0a0a0a);
   background-position: center;
