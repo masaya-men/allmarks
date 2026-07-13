@@ -3979,11 +3979,10 @@ export function BoardRoot() {
               />
             )}
           </div>
-          {/* Sibling of the isMobile ternary above (not nested inside it) so Task 5's
-              desktop remove flow can also trigger this same portal toast — a body
-              portal doesn't care where it's mounted in the tree. On desktop
-              removeToast stays false until that wiring lands, so this renders
-              nothing there today. */}
+          {/* Sibling of the isMobile ternary above (not nested inside it) so this
+              one portal toast serves BOTH remove flows: the mobile dock REMOVE and
+              the desktop hover-x — both call removeCollageCardById, which sets
+              removeToast. A body portal doesn't care where it's mounted. */}
           {removeToast && (
             <MobileArrangeToast
               message={t('board.collageRemoveToast')}
