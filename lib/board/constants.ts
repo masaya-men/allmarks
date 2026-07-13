@@ -101,6 +101,7 @@ export const BOARD_Z_INDEX = {
   TOOLBAR: 110,
   SHARE_SELECT_BAR: 401,  // selective-share bottom bar — ABOVE the scroll meter (400) so it isn't covered during the select stage (s170); below CHROME_DRAWER (405). The select stage keeps the meter visible (unlike arrange, which hides it), so the bar must out-stack it.
   SHARE_TOAST: 402,  // collage-screenshot SHARE arrange-stage bottom bar — above select-bar + scroll meter, below CHROME_DRAWER (405)
+  SHARE_ARRANGE_TOOLBAR: 402,  // mobile collage arrange TOP bar (undo/redo + selection tools). Same tier as SHARE_TOAST (bottom bar) — they don't overlap (top vs bottom). data-no-capture.
   POPOVER: 120,
   SAVE_BUTTON: 125,  // mobile/tablet floating "+" save button (above POPOVER 120, below UNDO_TOAST 130). Touch devices only.
   UNDO_TOAST: 130,
