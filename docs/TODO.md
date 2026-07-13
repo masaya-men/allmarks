@@ -21,6 +21,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 193 — ★スマホ縦4:5 段階2・第1弾（編集チロムの核）を出荷・本番反映／次は実機確認→段階2 第2弾)
+
+**同一セッションで段階1に続けて段階2・第1弾まで自走。ユーザーは「おすすめで全部進めてOK・後でまとめて確認」。** superpowers:brainstorming（事実採取＋選択肢提案・ユーザーが (a)〜(d) 全承認）→ writing-plans → subagent-driven-development（Task 1〜7＝安価モデル中心[T1〜4 haiku・T5〜7 sonnet]＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge=YES**）。tsc0 / **vitest 286ファイル2357** / build OK（assert-share-template OK）/ playwright mobile-share **15/15**（既存10＋新規5）/ `merge --no-ff` 1ff07486 / `allmarks.app` デプロイ済。
+
+- **狙い**＝縦4:5 の上に「業界水準の編集道具の核」を載せる。**選択時ツールバー（前面/背面・削除）＋取り消し/やり直し（1操作=1手）＋余白ダブルタップで整列**。データ変更ゼロ（in-memory・IDB 非永続）。
+- **確定判断（ユーザー承認）**: (a) 第1弾＝この4機能／(b) ズームスライダーは当面**残す**＋ダブルタップ整列を追加／(c) **複製は第2弾へ先送り**（`bookmarkId` 単一キー→インスタンスID層が要る・DB移行は不要）／(d) 取り消しは1操作=1手。
+- **入れたもの**（計画 Task 1〜7）: ①`collage-layer-order.ts`（`sendToBack`＝`bringToFront` の対称）②`collage-remove.ts`（3マップから不変除去）③`collage-history.ts`（`CollageSnapshot`/`snapshotsEqual`＝**値比較**/`pushSnapshot`・上限40）④`MobileArrangeTopBar`＋z-index `SHARE_ARRANGE_TOOLBAR`（UNDO/REDO常時・選択中は TO FRONT/TO BACK/DELETE・`data-no-capture`）⑤`CollageCanvas`/`MobileArrangeGestures` に任意フック（移動/ピンチの開始・終了・余白ダブルタップ）⑥BoardRoot 配線（履歴 state/ref・各ハンドラ・上部バーのマウント）⑦e2e。
+- **★per-task レビューで Critical を1件捕捉＋修正**（opus）: `handleSelectedPinchStart` で `handleCollageGestureStart()` を `collageArbiter.cancelActive()` の**前**に置くと、arbiter の同期ドラッグ終了がピンチ用 pending を消費→**2本指ピンチが undo に積まれない**。修正＝順序入替（cancelActive を先に）。e2e にピンチ→undo の回帰テストを追加済。**計画 Step 5-1 の「1行目に」指示が誤り**（コードは修正済・下記で計画doc注記）。
+- **不変条件は死守**（opus が実コード直読で検証）: デスクトップ(>640px) **バイト同一**（新 prop は `isMobile ? x : undefined`・`enabled=false` で wrapper 無し・回転ノブ経路は `onEnd` 無し・`ShareToast`/`handleCreateHostedShare`/`handleMobileCaptureAndCreate` 無改変）／**撮影は state ベース**（削除＝3マップから実除去で撮影にも消える・取り消し/やり直しは編集 state 差し替え・ボードズーム/ダブルタップ整列は `stageTransform` のみ＝画像無影響）／`renderCollageCanvasToJpeg`・サーバー・OG 無改変。
+- **最終レビューの Minor#3 を出荷前に修正**（opus 提案）: 撮影中(~1-2秒 `creating`)も上部バーが押せた→上部バーを `shareCreateState==='idle'` のみ表示に（撮影中は編集不可・下部バーは CREATING… 表示で据え置き）。再ゲート緑。
+- **★次セッション最優先＝実機確認**（段階1＋段階2第1弾をまとめて）。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。OK → **段階2 第2弾**（複製[instanceID]・吸着＋触覚・ドラッグ削除の演出・前へ/後ろへ単一ステップ・ズームのスライダー廃止検討）の詳細計画。
+- **既知の残（非ブロッキング・opus が defer 判定）**: ①16ms未満の連打 UNDO/REDO で ref が stale（人間のタップでは非現実的・データ損失なし・将来 hold-to-repeat 追加時は関数型 setState 化）②`lastBlankTap` が割り込みジェスチャで消えず稀に誤整列（無害＝ズームが1に戻るだけ）。
+
 ### 直近の状態 (セッション 192 — ★スマホのコラージュ＝縦4:5 段階1（土台）を出荷・本番反映／次は実機確認→段階2の詳細計画)
 
 **実行フェーズ。縦4:5 段階1 を計画書どおり subagent-driven-development で完遂・本番反映済**（Task 1〜4＝安価モデル中心[T1/T2 haiku・T3/T4 sonnet]＋各タスクレビュー＋**opus 全ブランチレビュー Ready to merge=YES・Critical/Important ゼロ**）。tsc0 / **vitest 282ファイル 2341 全緑** / build OK（assert-share-template OK＝OGメタ1200/630 無改変）/ playwright mobile-share **11/11** / `merge --no-ff` 808e2ad1 / `allmarks.app` デプロイ済。
