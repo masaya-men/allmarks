@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { DB_NAME } from './helpers/seed-db'
 
 test.describe('/save-iframe postMessage flow', () => {
   test('writes a bookmark to IDB on valid booklage:save message', async ({ page }) => {
@@ -123,10 +124,16 @@ test.describe('/save-iframe postMessage flow', () => {
 
     // Poll IDB until the fire-and-forget syndication fetch lands. 5s is
     // generous to absorb route-mock latency + IDB transaction overhead.
+    // This is a read-back of the save RESULT (the bookmark was written by
+    // the app's own save-iframe handler above, not pre-seeded by this
+    // test), so open version-less like the shared seed helper -- a
+    // hardcoded version would throw VersionError once DB_VERSION advances
+    // past it (opening below the DB's current version is a spec-level
+    // error).
     await expect.poll(async () => {
-      return await page.evaluate(async (id) => {
+      return await page.evaluate(async ({ id, dbName }) => {
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
-          const req = indexedDB.open('booklage-db', 13)
+          const req = indexedDB.open(dbName)
           req.onsuccess = () => resolve(req.result)
           req.onerror = () => reject(req.error)
         })
@@ -136,8 +143,9 @@ test.describe('/save-iframe postMessage flow', () => {
           get.onsuccess = () => resolve(get.result as never)
           get.onerror = () => reject(get.error)
         })
+        db.close()
         return bm?.mediaSlots?.map((s) => s.type) ?? []
-      }, bookmarkId)
+      }, { id: bookmarkId, dbName: DB_NAME })
     }, { timeout: 5000, intervals: [100, 200, 400, 800] }).toEqual(['video', 'photo'])
   })
 

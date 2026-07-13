@@ -1,76 +1,54 @@
 import { test, expect, type Page } from '@playwright/test'
-
-const DB_NAME = 'booklage-db'
+import { seedDb, firstRunSuppressors, type SeedRecord } from './helpers/seed-db'
 
 async function seedBoard(page: Page, seedCount: number): Promise<void> {
   page.on('pageerror', (err) => console.log(`[browser] pageerror: ${err.message}`))
 
-  await page.goto('/board')
-  await page.locator('[data-theme-id]').first().waitFor({ timeout: 15_000 })
-  await page.waitForTimeout(500)
+  const now = new Date().toISOString()
+  const rows: SeedRecord[] = []
+  for (let i = 0; i < seedCount; i++) {
+    const aspect = 0.5 + Math.random() * 2.5
+    const h = 180
+    const w = Math.round(h * aspect)
+    rows.push({
+      store: 'bookmarks',
+      value: {
+        id: `perf-b-${i}`,
+        url: `https://example.com/${i}`,
+        title: `Perf card ${i}`,
+        description: '',
+        thumbnail: '',
+        favicon: '',
+        siteName: '',
+        type: 'website',
+        savedAt: now,
+        tags: [],
+        displayMode: null,
+        ogpStatus: 'fetched',
+        sizePreset: 'S',
+        orderIndex: i,
+      },
+    })
+    rows.push({
+      store: 'cards',
+      value: {
+        id: `perf-c-${i}`,
+        bookmarkId: `perf-b-${i}`,
+        folderId: '',
+        x: 0,
+        y: 0,
+        rotation: 0,
+        scale: 1,
+        zIndex: 0,
+        gridIndex: i,
+        isManuallyPlaced: false,
+        width: w,
+        height: h,
+      },
+    })
+  }
 
-  await page.evaluate(
-    async ({ dbName, count }) => {
-      await new Promise<void>((resolve, reject) => {
-        const req = indexedDB.open(dbName, 9)
-        req.onsuccess = () => {
-          const db = req.result
-          const tx = db.transaction(['bookmarks', 'cards'], 'readwrite')
-          const bStore = tx.objectStore('bookmarks')
-          const cStore = tx.objectStore('cards')
-          const now = new Date().toISOString()
-          for (let i = 0; i < count; i++) {
-            const aspect = 0.5 + Math.random() * 2.5
-            const h = 180
-            const w = Math.round(h * aspect)
-            bStore.put({
-              id: `perf-b-${i}`,
-              url: `https://example.com/${i}`,
-              title: `Perf card ${i}`,
-              description: '',
-              thumbnail: '',
-              favicon: '',
-              siteName: '',
-              type: 'website',
-              savedAt: now,
-              tags: [],
-              displayMode: null,
-              ogpStatus: 'fetched',
-              sizePreset: 'S',
-              orderIndex: i,
-            })
-            cStore.put({
-              id: `perf-c-${i}`,
-              bookmarkId: `perf-b-${i}`,
-              folderId: '',
-              x: 0,
-              y: 0,
-              rotation: 0,
-              scale: 1,
-              zIndex: 0,
-              gridIndex: i,
-              isManuallyPlaced: false,
-              width: w,
-              height: h,
-            })
-          }
-          tx.oncomplete = () => {
-            db.close()
-            resolve()
-          }
-          tx.onerror = () => {
-            db.close()
-            reject(tx.error)
-          }
-        }
-        req.onerror = () => reject(req.error)
-        req.onblocked = () => reject(new Error('seed open blocked'))
-      })
-    },
-    { dbName: DB_NAME, count: seedCount },
-  )
-
-  await page.reload()
+  await seedDb(page, [...firstRunSuppressors(), ...rows])
   await page.locator('[data-card-id]').first().waitFor({ timeout: 20_000 })
 }
 
