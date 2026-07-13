@@ -622,8 +622,12 @@
         "heading": "9. Droit applicable",
         "body": "Ces conditions sont régies par le droit japonais, et tout litige relève de la compétence exclusive des tribunaux de Tokyo, au Japon."
       },
+      "language": {
+        "heading": "10. Langue faisant foi",
+        "body": "La version japonaise des présentes conditions constitue le texte faisant foi. Les traductions dans d’autres langues sont fournies à titre indicatif uniquement et, en cas de divergence entre la version japonaise et une traduction, la version japonaise prévaut."
+      },
       "contact": {
-        "heading": "10. Questions",
+        "heading": "11. Questions",
         "body": "Si vous avez des questions sur ces conditions, veuillez nous contacter via la page de contact."
       }
     },

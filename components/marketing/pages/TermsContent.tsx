@@ -7,7 +7,7 @@ import styles from './legal-page.module.css'
 
 const SECTIONS = [
   'acceptance', 'service', 'responsibilities', 'ip', 'sharing',
-  'warranty', 'liability', 'modifications', 'law', 'contact',
+  'warranty', 'liability', 'modifications', 'law', 'language', 'contact',
 ] as const
 
 /**

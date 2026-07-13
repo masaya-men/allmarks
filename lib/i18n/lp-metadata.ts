@@ -9,7 +9,7 @@ import { localePath, hreflangAlternates } from './locale-urls'
 const OG_LOCALE: Partial<Record<SupportedLocale, string>> = {
   ja: 'ja_JP', en: 'en_US', zh: 'zh_CN', ko: 'ko_KR', es: 'es_ES',
   fr: 'fr_FR', de: 'de_DE', pt: 'pt_BR', it: 'it_IT', nl: 'nl_NL',
-  tr: 'tr_TR', ru: 'ru_RU', ar: 'ar_AR', th: 'th_TH', vi: 'vi_VN',
+  tr: 'tr_TR', ru: 'ru_RU', ar: 'ar_SA', th: 'th_TH', vi: 'vi_VN',
 }
 
 /** Per-locale LP metadata: localized title + description, hreflang alternates, self canonical. */

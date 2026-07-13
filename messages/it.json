@@ -622,8 +622,12 @@
         "heading": "9. Legge applicabile",
         "body": "I presenti termini sono disciplinati dalla legge giapponese, e qualsiasi controversia è soggetta alla giurisdizione esclusiva dei tribunali di Tokyo, Giappone."
       },
+      "language": {
+        "heading": "10. Lingua prevalente",
+        "body": "La versione giapponese dei presenti termini costituisce il testo autentico. Le traduzioni in altre lingue sono fornite a solo scopo di riferimento e, in caso di discrepanza tra la versione giapponese e una traduzione, prevale la versione giapponese."
+      },
       "contact": {
-        "heading": "10. Domande",
+        "heading": "11. Domande",
         "body": "Per domande relative ai presenti termini, contattaci tramite la pagina contatti."
       }
     },
