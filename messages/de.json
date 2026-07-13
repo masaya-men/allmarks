@@ -136,6 +136,7 @@
       "popout": "POP OUT",
       "share": "SHARE"
     },
+    "collageRemoveToast": "Aus dem Bild entfernt. Dein Link enthält alle URLs, die du gewählt hast.",
     "tune": {
       "width": "W",
       "gap": "G",
