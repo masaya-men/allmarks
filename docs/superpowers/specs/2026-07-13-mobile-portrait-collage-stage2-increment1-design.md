@@ -57,12 +57,14 @@
 ### BoardRoot 配線（モバイル経路のみ）
 
 - **履歴（確定検知＝開始で捕捉・終了で差分あれば push）**: ARRANGE 入場時（`handleMobileEnterArrange`）に undo/redo スタックを空に初期化。1操作＝1手を実現するため、**連続ジェスチャは「開始時に現在 state のスナップショットを pending ref に捕捉 → 終了時に現在 state と `snapshotsEqual` で比較し、変わっていれば pending を undo に push・redo を空に」** する（＝実際に動いた時だけ1手・逐次 move では積まない）。
-  - 連続ジェスチャの開始/終了フック: 1本指の移動・四隅リサイズ・回転ノブ・回転（`bindPointerGesture` の pointerdown/pointerup）と、二本指ピンチ（拡縮＋回転・`MobileArrangeGestures` の pinch start/end）。ピンチは開始時に base snapshot を既に持つ（段階2 gesture model）ので同じ start/end 規則に乗せる。BoardRoot に `pendingHistoryRef: CollageSnapshot | null` と `onEditGestureStart`（pending 捕捉）/`onEditGestureEnd`（差分判定 push）を新設し、モバイル経路のみ配線。
+  - **モバイルの連続ジェスチャは2種だけ**（四隅リサイズ・回転ノブは `!touchMode`＝デスクトップ専用なのでモバイルには無い）: ①1本指カード移動（`CollageCanvas.handleElementPointerDown`→`bindPointerGesture` の pointerdown/pointerup）②2本指ピンチ拡縮＋回転（`MobileArrangeGestures` の pinch start/end）。BoardRoot に `collageStateRef`（3マップの現在値・useEffect でミラー）＋`pendingHistoryRef: CollageSnapshot | null` ＋`handleCollageGestureStart`（`collageStateRef` から pending 捕捉）/`handleCollageGestureEnd`（`snapshotsEqual` で差分ありなら pending を push・redo 空）を新設。
+    - ①移動: `CollageCanvas` に任意 prop `onEditGestureStart?/onEditGestureEnd?`（`isMobile ? handler : undefined`＝desktop はバイト同一）。`handleElementPointerDown` で `onGrab` の前に `onEditGestureStart?.()`、`bindPointerGesture` の `up` teardown で `onEditGestureEnd?.()`（`bindPointerGesture` に任意 `onEnd` 引数を追加＝移動経路からのみ渡す）。
+    - ②ピンチ: 既存の `onSelectedPinchStart`（BoardRoot `handleSelectedPinchStart`）で pinch base に加えて history pending も捕捉。`MobileArrangeGestures` に任意 `onSelectedPinchEnd?: () => void` を追加し `handlePointerEndCapture` のピンチ終了で発火→BoardRoot `handleCollageGestureEnd`。
   - **離散操作（TO FRONT/TO BACK/DELETE）は即時**: 実行の直前に変更前 snapshot を undo に push・redo を空に（連続ジェスチャの start/end は通さない）。
 - **削除**: `handleDeleteSelectedCollage` = 変更前 snapshot push → `removeFromCollage(...)` の結果を3 setState → 削除 id が `selectedCollageId` なら `setSelectedCollageId(null)`。
 - **重なり順**: `handleBringSelectedToFront`/`handleSendSelectedToBack` = 変更前 snapshot push → `setCollageOrder(bringToFront/sendToBack)`。
 - **取り消し/やり直し**: `handleCollageUndo` = 現在 snapshot を redo に push → undo から pop → 3 setState で適用（選択は維持 or 消えたカードなら解除）。`handleCollageRedo` は対称。
-- **ダブルタップ整列**: `MobileArrangeGestures` にダブルタップ検知を追加（前回タップの時刻＋位置を記憶し、~300ms・小移動の2連タップで `onDoubleTapFit` を発火）。BoardRoot の `handleDoubleTapFit` = `setStageTransform(IDENTITY_STAGE_TRANSFORM)`（＝帯全体が見える＝整列。既存スライダー・2本指ズームは温存し同じ `stageTransform` を共有）。カード上/余白どちらのダブルタップでも整列（第1弾は単純化）。
+- **ダブルタップ整列**: `MobileArrangeGestures` の**余白1本指タップ経路**にダブルタップ検知を追加（前回の余白タップの時刻＋位置を記憶し、~300ms・小移動の2連タップで `onDoubleTapFit` を発火＝1回目は従来どおり `onDeselect`、2回目が整列）。BoardRoot の `handleDoubleTapFit` = `setStageTransform(IDENTITY_STAGE_TRANSFORM)`（＝ズームを1倍に戻す＝帯全体が見える＝整列。既存スライダー・2本指ズームは温存し同じ `stageTransform` を共有）。**第1弾は余白のダブルタップのみ**（カード上のダブルタップ整列は第2弾＝カードのタップ経路は CollageCanvas 側で干渉回避が要るため）。
 
 ## テスト
 
