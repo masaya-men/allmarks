@@ -443,6 +443,174 @@ test.describe('mobile SHARE — phone', () => {
     const scale = Number(/scale\(([\d.]+)\)/.exec(t)?.[1])
     expect(scale).toBeGreaterThan(1.5)
   })
+
+  test('tapping a card shows the selection tools; a blank tap clears them (N-58 stage2 increment1)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+
+    // UNDO/REDO are always present; the front/back/delete group only shows up
+    // once something is selected.
+    await expect(page.getByTestId('mobile-arrange-topbar')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-selection-tools')).toHaveCount(0)
+
+    const first = page.locator('[data-testid^="collage-el-"]').first()
+    await first.click()
+    await expect(page.getByTestId('mobile-arrange-selection-tools')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-to-front')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-to-back')).toBeVisible()
+    await expect(page.getByTestId('mobile-arrange-delete')).toBeVisible()
+
+    // A blank-area tap (dispatched straight on the viewport, same pattern as
+    // the pinch tests above — e.target is then the viewport itself, which
+    // MobileArrangeGestures.isOnCard() reads as "not a card") deselects.
+    await page.evaluate(() => {
+      const vp = document.querySelector('[data-testid="mobile-arrange-viewport"]')
+      if (!vp) throw new Error('viewport not found')
+      const fire = (type: string): void =>
+        void vp.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 42, clientX: 5, clientY: 5, pointerType: 'touch', isPrimary: true }))
+      fire('pointerdown')
+      fire('pointerup')
+    })
+    await expect(page.getByTestId('mobile-arrange-selection-tools')).toHaveCount(0)
+  })
+
+  test('DELETE removes the selected card; UNDO restores it; REDO removes it again (N-58 stage2 increment1)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+
+    const cards = page.locator('[data-testid^="collage-el-"]')
+    const before = await cards.count()
+    expect(before).toBe(SEED_COUNT)
+
+    // Nothing to undo yet — plain tap-select alone must not push a history
+    // entry (the self-review calls this out explicitly: the auto-bring-to-front
+    // on select is folded into the "before" snapshot of the NEXT gesture, not
+    // recorded as its own step).
+    await expect(page.getByTestId('mobile-arrange-undo')).toBeDisabled()
+
+    await cards.first().click()
+    await expect(page.getByTestId('mobile-arrange-selection-tools')).toBeVisible()
+    await page.getByTestId('mobile-arrange-delete').click()
+
+    await expect(cards).toHaveCount(before - 1)
+    await expect(page.getByTestId('mobile-arrange-selection-tools')).toHaveCount(0)
+
+    await expect(page.getByTestId('mobile-arrange-undo')).toBeEnabled()
+    await page.getByTestId('mobile-arrange-undo').click()
+    await expect(cards).toHaveCount(before)
+
+    await expect(page.getByTestId('mobile-arrange-redo')).toBeEnabled()
+    await page.getByTestId('mobile-arrange-redo').click()
+    await expect(cards).toHaveCount(before - 1)
+  })
+
+  test('a two-finger resize commits to history; UNDO reverts the width (N-58 stage2 increment1 — Critical fix regression guard)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+
+    const first = page.locator('[data-testid^="collage-el-"]').first()
+    const id = await first.evaluate((el) => el.getAttribute('data-testid')?.replace('collage-el-', '') ?? '')
+    const beforeW = await first.evaluate((el) => (el as HTMLElement).style.width)
+
+    await expect(page.getByTestId('mobile-arrange-undo')).toBeDisabled()
+
+    // Tap-select first, in its OWN evaluate() — see the note on the sibling
+    // "two fingers on a selected card resize it" test above (React state
+    // race between the tap's onSelect and the pinch's pointerdown).
+    await first.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const fire = (type: string): void =>
+        void el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, pointerType: 'touch', isPrimary: true }))
+      fire('pointerdown')
+      fire('pointerup')
+    })
+    await expect(page.getByTestId(`collage-selection-${id}`)).toBeVisible()
+
+    // Two-finger spread (dist 100 -> 200 = 2x) on the selected card.
+    await page.evaluate(() => {
+      const card = document.querySelector('[data-testid^="collage-el-"]') as HTMLElement | null
+      const vp = document.querySelector('[data-testid="mobile-arrange-viewport"]')
+      if (!card || !vp) throw new Error('not found')
+      const r = card.getBoundingClientRect()
+      const cx = r.left + r.width / 2
+      const cy = r.top + r.height / 2
+      const fireVp = (type: string, id: number, x: number, y: number): void =>
+        void vp.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, clientX: x, clientY: y, pointerType: 'touch', isPrimary: id === 1 }))
+      fireVp('pointerdown', 1, cx - 50, cy)
+      fireVp('pointerdown', 2, cx + 50, cy)
+      fireVp('pointermove', 2, cx + 150, cy)
+      fireVp('pointerup', 1, cx - 50, cy)
+      fireVp('pointerup', 2, cx + 150, cy)
+    })
+    const pinchedW = await first.evaluate((el) => (el as HTMLElement).style.width)
+    expect(parseFloat(pinchedW)).toBeGreaterThan(parseFloat(beforeW) * 1.5)
+
+    // The pinch gesture is ONE history step (committed on pinch-end, not per
+    // frame) — UNDO must revert the width in a single click.
+    await expect(page.getByTestId('mobile-arrange-undo')).toBeEnabled()
+    await page.getByTestId('mobile-arrange-undo').click()
+
+    const revertedW = await first.evaluate((el) => (el as HTMLElement).style.width)
+    expect(parseFloat(revertedW)).toBeCloseTo(parseFloat(beforeW), 0)
+  })
+
+  test('double-tapping blank space resets the board zoom to fit (N-58 stage2 increment1)', async ({ page }) => {
+    await seedBoard(page)
+    await stubCreate(page)
+    await page.locator('[data-testid="mobile-nav-share"]').click()
+    await page.locator('[data-testid="mobile-select-all"]').click()
+    await page.locator('[data-testid="mobile-select-create"]').click()
+    await expect(page.getByTestId('mobile-arrange-stage')).toBeVisible()
+
+    // Zoom the board via the slider track (no card selection involved — same
+    // pattern as "the zoom slider zooms the board..." above).
+    await page.getByTestId('mobile-zoom-slider-track').evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const y = r.top + r.height / 2
+      const fire = (t: string, x: number): void =>
+        void el.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 5, clientX: x, clientY: y, pointerType: 'touch', isPrimary: true }))
+      fire('pointerdown', r.left + 2)
+      fire('pointermove', r.left + r.width * 0.8)
+      fire('pointerup', r.left + r.width * 0.8)
+    })
+    const stage = page.getByTestId('mobile-arrange-stage')
+    const scaleBefore = await stage.evaluate((el) => Number(/scale\(([\d.]+)\)/.exec((el as HTMLElement).style.transform)?.[1]))
+    expect(scaleBefore).toBeGreaterThan(1.5)
+
+    // Two blank-area taps (pointerdown+up, no move), dispatched directly on
+    // the viewport within the double-tap window (DOUBLE_TAP_MS=300,
+    // DOUBLE_TAP_SLOP_PX=24 in MobileArrangeGestures.tsx) — dispatchEvent sets
+    // e.target to the viewport itself regardless of what visually sits on top
+    // of that screen point (chrome/cards), which is exactly what "blank"
+    // means to isOnCard(). Real double-tap timing/registration is best
+    // verified on a real device; this proves the state transition the gesture
+    // drives (onDoubleTapFit -> setStageTransform(IDENTITY)).
+    await page.evaluate(() => {
+      const vp = document.querySelector('[data-testid="mobile-arrange-viewport"]')
+      if (!vp) throw new Error('viewport not found')
+      const fire = (type: string, id: number): void =>
+        void vp.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, clientX: 20, clientY: 20, pointerType: 'touch', isPrimary: true }))
+      fire('pointerdown', 61)
+      fire('pointerup', 61)
+      fire('pointerdown', 62)
+      fire('pointerup', 62)
+    })
+
+    const scaleAfter = await stage.evaluate((el) => Number(/scale\(([\d.]+)\)/.exec((el as HTMLElement).style.transform)?.[1]))
+    expect(scaleAfter).toBe(1)
+  })
 })
 
 test.describe('desktop SHARE — unchanged', () => {
@@ -456,5 +624,8 @@ test.describe('desktop SHARE — unchanged', () => {
     await page.locator('[data-testid="select-all-button"]').click()
     await page.locator('[data-testid="select-share-button"]').click()
     await expect(page.locator('[data-testid="share-toast-create"]')).toBeVisible()
+    // N-58 stage2: the mobile-only top bar (UNDO/REDO/TO FRONT/TO BACK/DELETE)
+    // must never mount on desktop.
+    await expect(page.locator('[data-testid="mobile-arrange-topbar"]')).toHaveCount(0)
   })
 })

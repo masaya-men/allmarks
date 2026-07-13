@@ -20,6 +20,10 @@ export type MobileArrangeGesturesProps = {
   readonly onSelectedPinch: (change: { readonly factor: number; readonly deltaDeg: number }) => void
   /** 余白の1本指タップで選択解除。 */
   readonly onDeselect: () => void
+  /** 選択カードのピンチ終了で1回（BoardRoot が履歴を確定）。 */
+  readonly onSelectedPinchEnd?: () => void
+  /** 余白のダブルタップで「整列」（ボードズームを1倍に戻す）。 */
+  readonly onDoubleTapFit?: () => void
   readonly children: ReactNode
 }
 
@@ -46,6 +50,8 @@ type SingleState = {
 }
 
 const PAN_SLOP_PX = 4
+const DOUBLE_TAP_MS = 300
+const DOUBLE_TAP_SLOP_PX = 24
 
 function angleDeg(a: StagePoint, b: StagePoint): number {
   return (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI
@@ -61,6 +67,7 @@ export function MobileArrangeGestures(props: MobileArrangeGesturesProps): ReactE
   const pointers = useRef<Map<number, StagePoint>>(new Map())
   const pinch = useRef<PinchState | null>(null)
   const single = useRef<SingleState | null>(null)
+  const lastBlankTap = useRef<{ t: number; x: number; y: number } | null>(null)
 
   if (!props.enabled) return <>{props.children}</>
 
@@ -175,12 +182,24 @@ export function MobileArrangeGestures(props: MobileArrangeGesturesProps): ReactE
     if (p !== null && (e.pointerId === p.idA || e.pointerId === p.idB)) {
       pinch.current = null
       e.stopPropagation()
+      props.onSelectedPinchEnd?.()
       return
     }
 
     const s = single.current
     if (s !== null && e.pointerId === s.id) {
-      if (!s.moved) props.onDeselect() // 余白タップ = 選択解除
+      if (!s.moved) {
+        // 余白タップ: 1回目=選択解除、~300ms 内の近接2回目=整列（ダブルタップ）。
+        const now = Date.now()
+        const prev = lastBlankTap.current
+        if (prev && now - prev.t < DOUBLE_TAP_MS && Math.hypot(s.startX - prev.x, s.startY - prev.y) < DOUBLE_TAP_SLOP_PX) {
+          lastBlankTap.current = null
+          props.onDoubleTapFit?.()
+        } else {
+          lastBlankTap.current = { t: now, x: s.startX, y: s.startY }
+          props.onDeselect()
+        }
+      }
       single.current = null
     }
   }
