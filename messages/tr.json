@@ -622,8 +622,12 @@
         "heading": "9. Geçerli hukuk",
         "body": "Bu şartlar Japonya hukukuna tabidir; tüm anlaşmazlıklar Japonya'nın Tokyo mahkemelerinin münhasır yargı yetkisine tabidir."
       },
+      "language": {
+        "heading": "10. Geçerli dil",
+        "body": "Bu koşulların Japonca sürümü asıl metindir. Diğer dillere yapılan çeviriler yalnızca bilgilendirme amacıyla sağlanır; Japonca sürüm ile bir çeviri arasında herhangi bir tutarsızlık olması durumunda Japonca sürüm geçerli olur."
+      },
       "contact": {
-        "heading": "10. Sorularınız",
+        "heading": "11. Sorularınız",
         "body": "Bu şartlara ilişkin sorularınız için iletişim sayfamızdan bize ulaşabilirsiniz."
       }
     },

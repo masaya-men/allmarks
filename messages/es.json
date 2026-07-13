@@ -622,8 +622,12 @@
         "heading": "9. Legislación aplicable",
         "body": "Estos términos se rigen por las leyes de Japón, y cualquier disputa estará sujeta a la jurisdicción exclusiva de los tribunales de Tokio, Japón."
       },
+      "language": {
+        "heading": "10. Idioma rector",
+        "body": "La versión japonesa de estos términos es el texto auténtico. Las traducciones a otros idiomas se ofrecen únicamente a título de referencia y, en caso de discrepancia entre la versión japonesa y una traducción, prevalecerá la versión japonesa."
+      },
       "contact": {
-        "heading": "10. Preguntas",
+        "heading": "11. Preguntas",
         "body": "Si tienes preguntas sobre estos términos, contáctanos a través de la página de contacto."
       }
     },

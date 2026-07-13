@@ -622,8 +622,12 @@
         "heading": "9. Governing law",
         "body": "These terms are governed by the laws of Japan, and any disputes are subject to the exclusive jurisdiction of the courts of Tokyo, Japan."
       },
+      "language": {
+        "heading": "10. Governing language",
+        "body": "The Japanese version of these terms is the authoritative text. Translations into other languages are provided for reference only, and in the event of any discrepancy between the Japanese version and a translation, the Japanese version prevails."
+      },
       "contact": {
-        "heading": "10. Questions",
+        "heading": "11. Questions",
         "body": "If you have questions about these terms, please reach us through the contact page."
       }
     },
