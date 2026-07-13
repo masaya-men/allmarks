@@ -24,52 +24,11 @@
   background-position: center;
   background-repeat: repeat;
 }
-/* none → solid board colour, no strokes (the default for Sound Wave). */
-/* --pattern-stroke / --pattern-dot-r carry the (clamped) thickness, set inline by
-   BoardRoot alongside --pattern-size. The fallbacks are the numbers these rules
-   hard-coded before the thickness slider, so a board that never sets them paints
-   exactly as it always did. patternSvgDataUri() must stay in step: it draws the
-   same geometry for the receiver and the OG image. */
-.patternLayer[data-pattern='grid'] {
-  background-image:
-    linear-gradient(to right, var(--pattern-color, rgba(255, 255, 255, 0.18)) var(--pattern-stroke, 1px), transparent var(--pattern-stroke, 1px)),
-    linear-gradient(to bottom, var(--pattern-color, rgba(255, 255, 255, 0.18)) var(--pattern-stroke, 1px), transparent var(--pattern-stroke, 1px));
-  background-size: var(--pattern-size, 40px) var(--pattern-size, 40px);
-}
-.patternLayer[data-pattern='dots'] {
-  background-image:
-    radial-gradient(var(--pattern-color, rgba(255, 255, 255, 0.18)) var(--pattern-dot-r, 1.4px), transparent calc(var(--pattern-dot-r, 1.4px) + 0.2px));
-  background-size: var(--pattern-size, 40px) var(--pattern-size, 40px);
-}
-/* 45° patterns repeat with a SCREEN-space period of (spacing × √2) in both x and
-   y. Pinning background-size to exactly that period makes every repeated tile
-   start on a period boundary, so the vertical parallax offset (background-
-   position-y) can never land mid-period and produce a wrap seam. */
-.patternLayer[data-pattern='diagonal'] {
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      var(--pattern-color, rgba(255, 255, 255, 0.18)) 0 var(--pattern-stroke, 1px),
-      transparent var(--pattern-stroke, 1px) var(--pattern-size, 40px)
-    );
-  background-size:
-    calc(var(--pattern-size, 40px) * 1.41421356) calc(var(--pattern-size, 40px) * 1.41421356);
-}
-.patternLayer[data-pattern='crosshatch'] {
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      var(--pattern-color, rgba(255, 255, 255, 0.18)) 0 var(--pattern-stroke, 1px),
-      transparent var(--pattern-stroke, 1px) var(--pattern-size, 40px)
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      var(--pattern-color, rgba(255, 255, 255, 0.18)) 0 var(--pattern-stroke, 1px),
-      transparent var(--pattern-stroke, 1px) var(--pattern-size, 40px)
-    );
-  background-size:
-    calc(var(--pattern-size, 40px) * 1.41421356) calc(var(--pattern-size, 40px) * 1.41421356);
-}
+/* Pattern geometry lives in ONE place: patternSvgDataUri() (theme-customization.ts).
+   The board (BoardRoot), the receiver (SharedBoard) and the OG mirror (ShareMirror)
+   all tile that same single-pass SVG inline — semi-transparent lines can't
+   double-composite at crossings, and dom-to-image captures it faithfully (it
+   drops one direction of stacked CSS gradients — 2026-06-29 spike). */
 
 .paperAtelier {
   /* Session 133: the real aged-parchment image is now a FIXED, cover-sized
