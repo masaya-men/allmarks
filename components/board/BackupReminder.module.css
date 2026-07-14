@@ -43,3 +43,10 @@
 :global(html[data-theme-id="flat"]) .btn:hover {
   background: rgba(var(--chrome-ink-rgb), 0.08);
 }
+/* Keep the "recommended" green accent on the primary (EXPORT) button — the flat
+   .btn border override above shares its specificity and would otherwise flatten
+   the green to plain ink. Use the flat theme's own accent green so it reads on
+   the light surface. */
+:global(html[data-theme-id="flat"]) .primary {
+  border-color: var(--accent-primary, rgba(40, 241, 0, 0.55));
+}
