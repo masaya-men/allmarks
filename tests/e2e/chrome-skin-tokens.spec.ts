@@ -157,6 +157,43 @@ test('FilterPill menu (dropdown) font-family and item row color are byte-identic
   expect(allRowColor).toBe('rgba(255, 255, 255, 0.85)')
 })
 
+/*
+ * Regression lock for the paper-atelier fix: sub1 made --chrome-btn-color
+ * live (ChromeButton/ChromeDrawer/FilterPill now read it via var()), but
+ * 489caf7e had already neutralized paper-atelier's menu SURFACES to dark
+ * glass while leaving a dead --chrome-btn-color: rgba(43, 39, 34, 0.9) (dark
+ * ink) override sitting in the paper-atelier CSS block. Once sub1 made the
+ * token live, that dead override woke up and painted the FilterPill dropdown
+ * rows (and ChromeDrawer panel text) dark-ink-on-dark-glass = invisible.
+ * The fix neutralizes the paper-atelier --chrome-btn-color override so it
+ * falls back to the :root light value — this pins that fallback down.
+ */
+test('FilterPill menu item color falls back to the light default on paper-atelier (dark-on-dark regression lock)', async ({ page }) => {
+  await prepBoard(page)
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme-id', 'paper-atelier'))
+
+  const pill = page.getByTestId('filter-pill')
+  await pill.scrollIntoViewIfNeeded()
+  await pill.click()
+  const menu = page.getByTestId('filter-pill-menu')
+  await expect(menu).toHaveAttribute('data-open', 'true')
+
+  // ALL starts active (`.active` override, not the `.item` base color this
+  // locks) — switch to TRASH first so re-checking ALL reads the plain base
+  // row color, same as the default-theme sibling test above.
+  const trashRow = menu.getByRole('button', { name: /TRASH/ })
+  await trashRow.click()
+  await pill.click() // picking a row closes the menu — reopen it
+  await expect(menu).toHaveAttribute('data-open', 'true')
+  const allRow = menu.getByRole('button', { name: /^ALL/ })
+  const allRowColor = await allRow.evaluate((el) => getComputedStyle(el).color)
+
+  // Neutralized override -> falls back to the :root light value (exact
+  // pre-sub1 paper rendering), NOT the dead dark-ink override.
+  expect(allRowColor).toBe('rgba(255, 255, 255, 0.85)')
+  expect(allRowColor).not.toBe('rgba(43, 39, 34, 0.9)')
+})
+
 test('TUNE trigger + drawer computed style is unchanged on default theme (out of scope for sub1 tokenization)', async ({ page }) => {
   await prepBoard(page)
   const trigger = page.getByTestId('tune-trigger')
