@@ -114,9 +114,10 @@ type Props = {
   readonly onScrub: (fraction: number) => void
   /** Which meter face to render. 'waveform' = the default sound-wave ticks
    *  (dotted-notebook / grid-paper). 'ruler' = the paper-atelier tape-measure
-   *  (RulerTrack). The 0..1 swellFraction-in / onScrub-out contract and the
-   *  counter readout are identical across both faces. */
-  readonly variant?: 'waveform' | 'ruler'
+   *  (RulerTrack). 'line' = the flat theme's quiet editorial line. The 0..1
+   *  swellFraction-in / onScrub-out contract and the counter readout are
+   *  identical across all faces. */
+  readonly variant?: 'waveform' | 'ruler' | 'line'
   /** True while the board is being grab-wiggled (default theme). Folds into the
    *  waveform's existing interaction churn so the meter resonates continuously
    *  while held. Ignored by the ruler variant. */
@@ -180,7 +181,7 @@ export function ScrollMeter({
 
   // Mirror variant into a ref so the single []-deps rAF loop can branch on
   // it each frame without restarting. Same idiom as modeRef/swellFractionRef.
-  const variantRef = useRef<'waveform' | 'ruler'>(variant)
+  const variantRef = useRef<'waveform' | 'ruler' | 'line'>(variant)
   useEffect(() => { variantRef.current = variant }, [variant])
 
   // Mirror grabbing into a ref so the single []-deps rAF loop reads it each

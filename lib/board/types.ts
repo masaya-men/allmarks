@@ -1,6 +1,6 @@
 export type ScrollDirection = 'vertical' | 'horizontal' | '2d' | 'sphere'
 
-export type ThemeId = 'dotted-notebook' | 'grid-paper' | 'paper-atelier'
+export type ThemeId = 'dotted-notebook' | 'grid-paper' | 'paper-atelier' | 'flat'
 
 export type CardPosition = {
   readonly x: number
@@ -69,10 +69,11 @@ export type ThemeMeta = {
   readonly kind: 'pattern' | 'work'
   /**
    * ScrollMeter rendering style. 'waveform' = the default sound-wave bars;
-   * 'ruler' = the paper-atelier brass ruler track. Read by ScrollMeter's
+   * 'ruler' = the paper-atelier brass ruler; 'line' = the flat theme's quiet
+   * editorial line (sparse ticks, static counter). Read by ScrollMeter's
    * `variant` prop (default 'waveform') so omitting it is impossible (required).
    */
-  readonly scrollMeterVariant: 'waveform' | 'ruler'
+  readonly scrollMeterVariant: 'waveform' | 'ruler' | 'line'
   /**
    * Per-theme animation keys (NOT ThemeIds — a decoupled namespace:
    * 'wave' | 'paper-drift' | 'paper-fade' | 'ink-underline' | 'glitch-crt').

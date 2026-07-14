@@ -12,6 +12,10 @@
   background-color: transparent;
 }
 
+.flat {
+  background-color: transparent;
+}
+
 /* Viewport-anchored pattern layer for 'pattern' themes: a screen-fixed layer
    (inset:0 on the static InteractionLayer) so the pattern always centres on the
    viewport — left/right edges cut symmetrically regardless of content width or
