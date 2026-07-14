@@ -28,3 +28,18 @@
 }
 .btn:hover { background: rgba(255, 255, 255, 0.08); }
 .primary { border-color: rgba(40, 241, 0, 0.55); }
+
+/* Flat: light surface + dark ink so the toast belongs to the flat world. */
+:global(html[data-theme-id="flat"]) .toast {
+  background: var(--chrome-panel-surface);
+  color: rgba(var(--chrome-ink-rgb), 0.9);
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.10);
+}
+
+:global(html[data-theme-id="flat"]) .btn {
+  color: rgba(var(--chrome-ink-rgb), 0.9);
+  border-color: rgba(var(--chrome-ink-rgb), 0.22);
+}
+:global(html[data-theme-id="flat"]) .btn:hover {
+  background: rgba(var(--chrome-ink-rgb), 0.08);
+}
