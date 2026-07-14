@@ -82,3 +82,26 @@ test('default theme is unchanged (regression)', async ({ page }) => {
   expect(bg).toBe('#0a0a0a') // dotted-notebook canvas unchanged
   await page.screenshot({ path: `${SHOT_DIR}/default-board.png`, fullPage: false })
 })
+
+test('flat theme applies a light board with dark chrome ink', async ({ page }) => {
+  await prepBoard(page)
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme-id', 'flat'))
+  const board = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim().toLowerCase())
+  expect(board).toBe('#faf9f6')
+  const scheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+  expect(scheme).toContain('light')
+  // panels are a light surface, chrome text is dark ink (paired — the s197 trap).
+  // Reading a raw custom-property value (not a resolved CSS property like
+  // `color`/`background-color`) surfaces the build's LightningCSS color
+  // minification verbatim: our rgba(...) source is rewritten to #rrggbbaa hex
+  // before it reaches the browser (same pre-existing quirk documented in
+  // chrome-skin-tokens.spec.ts's header for backdrop-filter), so these assert
+  // the hex form rather than an rgba() substring.
+  const panel = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--chrome-panel-surface').trim().toLowerCase())
+  expect(panel).toMatch(/^#ffffff/) // white surface
+  const btn = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--chrome-btn-color').trim().toLowerCase())
+  expect(btn).toMatch(/^#14130f|^#181614/) // dark ink (rgb(20,19,15) / rgb(24,22,20) as hex)
+})

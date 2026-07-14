@@ -662,6 +662,77 @@ html[data-theme-id="dotted-notebook"] {
   --chrome-hover-fx: glitch;
 }
 
+/* ── Flat (light editorial) — LP と地続きの白盤面 ──
+   opt-in の明テーマ。sub1 chrome トークンをここで初めて視覚的に消費する。
+   font は body/chrome を sans(Geist)維持、serif はワードマークのみ（紙のような
+   全面 serif 化はしない）。--card-radius は上書きしない＝既定の丸みを継承。 */
+html[data-theme-id="flat"] {
+  color-scheme: light;
+
+  /* board canvas + card surface */
+  --bg-dark: #faf9f6;                 /* board ground (= --lp-bg) */
+  --bg-outer: #f1efe8;                /* edge band */
+  --card-dark-alt: #ffffff;
+  --card-white: #ffffff;
+  --card-border-dark: rgba(20, 19, 15, 0.10);
+
+  /* text (destefanis family) */
+  --text-primary: #14130f;            /* = --lp-ink */
+  --text-body: #2c2a25;
+  --text-meta: #6b675e;
+  --text-muted: #8a867b;
+  --text-signature: #a7a294;
+  --color-bg-primary: #faf9f6;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: #14130f;
+  --color-text-secondary: #57544c;    /* = --lp-ink-soft */
+  --color-text-tertiary: #8a867b;
+
+  /* accent — one green, legible as UI ink on light */
+  --color-accent-primary: #1c9a00;
+  --color-accent-primary-hover: #178400;
+  --accent-primary: #1c9a00;
+
+  /* floating chrome TEXT (edge band: wordmark / MOTION / counter) — dark ink */
+  --chrome-text-color: rgba(20, 19, 15, 0.92);
+  --chrome-text-color-hover: rgba(20, 19, 15, 1);
+  --chrome-text-stroke-color: rgba(255, 255, 255, 0.55);
+  --chrome-text-stroke-color-hover: rgba(255, 255, 255, 0.7);
+  --chrome-text-shadow: 0 1px 2px rgba(20, 19, 15, 0.12);
+
+  /* chrome SKIN panels (sub1 tokens) — quiet white + dark ink, no glitch */
+  --chrome-panel-surface: rgba(255, 255, 255, 0.97);
+  --chrome-panel-border: rgba(20, 19, 15, 0.10);
+  --chrome-panel-radius: 14px;
+  --chrome-panel-blur: 8px;
+  --chrome-panel-shadow: 0 22px 60px -22px rgba(20, 19, 15, 0.28);
+  --chrome-btn-color: rgba(20, 19, 15, 0.9);
+  --chrome-btn-hover: rgba(20, 19, 15, 1);
+  --chrome-font: var(--font-sans);    /* Geist（flat は --font-sans を上書きしない） */
+  --chrome-hover-fx: none;
+
+  /* scroll meter — quiet 'line' variant tokens (QuietTrack が読む) */
+  --meter-line-rail: rgba(20, 19, 15, 0.14);
+  --meter-line-tick: rgba(20, 19, 15, 0.22);
+  --meter-line-thumb: rgba(20, 19, 15, 0.85);
+  --meter-line-numeral: rgba(20, 19, 15, 0.5);
+
+  /* big background wordmark — serif ink（既定/音は fallback で不変） */
+  --bg-typo-font: var(--font-serif-display), Georgia, 'Times New Roman', serif;
+  --bg-typo-color: rgba(20, 19, 15, 0.5);
+
+  /* motion — gentle fade tuning（getEntryAnimation('fade') が読む・§Task4） */
+  --flat-fade-duration: 420ms;
+  --flat-fade-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --flat-fade-offset-y: 6;
+  --flat-fade-stagger-step: 16;
+  --flat-fade-stagger-cap: 320;
+
+  /* soft light shadows */
+  --shadow-grid-card: 0 2px 8px rgba(20, 19, 15, 0.08);
+  --shadow-collage-card: 0 10px 28px rgba(20, 19, 15, 0.12);
+}
+
 /* ── Reduced Motion ────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
