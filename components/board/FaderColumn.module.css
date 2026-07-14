@@ -197,3 +197,35 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
+
+/* ── Flat theme skin: thin rail + flat round handle, no metal / grip / 42-tick ── */
+:global(html[data-theme-id="flat"]) .track {
+  width: 3px;
+  background: rgba(20, 19, 15, 0.14);
+  box-shadow: none;
+  border-radius: 2px;
+}
+:global(html[data-theme-id="flat"]) .handle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(20, 19, 15, 0.20);
+  box-shadow: 0 2px 6px -1px rgba(20, 19, 15, 0.3);
+}
+:global(html[data-theme-id="flat"]) .handle::before { display: none; }         /* grip ridges off */
+:global(html[data-theme-id="flat"]) .handle::after {                            /* index line → center dot */
+  left: 50%;
+  right: auto;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(20, 19, 15, 0.9);
+  box-shadow: none;
+  transform: translate(-50%, -50%);
+}
+:global(html[data-theme-id="flat"]) .ruler .tick { display: none; }             /* hide the 42-tick radio ruler */
+:global(html[data-theme-id="flat"]) .defaultMark { background: rgba(20, 19, 15, 0.35); box-shadow: none; }
+:global(html[data-theme-id="flat"]) .label { color: rgba(20, 19, 15, 0.55); }
+/* fillMark green stays (§spec: そろえ点の緑は明背景でも見える) — no override */
