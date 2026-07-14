@@ -358,3 +358,13 @@
    white circular handle when the toggle was OFF (square corners). */
 :global(html[data-theme-id="flat"]) .cornersRow .lever .handle::before { display: none; }
 
+/* Hover state: base .presetRow:hover/.cornersRow:hover .label rules (0,3,0)
+   are tuned for the dark sound drawer (near-white cream on hover). On the
+   flat theme's white drawer that reverts the label to cream-on-white, which
+   is effectively invisible. Override at higher specificity (0,4,1) so flat's
+   dark-ink label color from line 326 also wins on hover. */
+:global(html[data-theme-id="flat"]) .presetRow:hover .label,
+:global(html[data-theme-id="flat"]) .cornersRow:hover .label {
+  color: rgba(20, 19, 15, 0.9);
+}
+
