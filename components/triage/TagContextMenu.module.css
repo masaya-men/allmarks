@@ -9,7 +9,7 @@
   z-index: 1500;
   min-width: 200px;
   background: rgba(8, 8, 10, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.08);
   border-radius: 8px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   padding: 6px 0;
@@ -17,7 +17,7 @@
   -webkit-backdrop-filter: blur(6px);
   animation: menuIn 100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(var(--chrome-ink-rgb), 0.92);
 }
 @keyframes menuIn {
   from { opacity: 0; transform: translateY(4px); }
@@ -33,14 +33,14 @@
   justify-content: space-between;
   gap: 12px;
   padding: 6px 14px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(var(--chrome-ink-rgb), 0.06);
   margin-bottom: 4px;
 }
 .headerName {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(var(--chrome-ink-rgb), 0.92);
   font-weight: 500;
   /* Truncate long names; the right-side count is still visible. */
   overflow: hidden;
@@ -51,7 +51,7 @@
   font-size: 9px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--chrome-ink-rgb), 0.35);
   flex-shrink: 0;
 }
 
@@ -71,19 +71,19 @@
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.90);
+  color: rgba(var(--chrome-ink-rgb), 0.90);
   cursor: pointer;
   text-align: left;
   transition: background-color 100ms, color 100ms;
 }
 .row:hover,
 .row:focus-visible {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: rgba(var(--chrome-ink-rgb), 0.06);
+  color: rgb(var(--chrome-ink-rgb));
   outline: none;
 }
 .row:active {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(var(--chrome-ink-rgb), 0.10);
 }
 
 /* Destructive variant (DELETE). Placed after the base so its hover/active
@@ -102,7 +102,7 @@
 
 .rowIcon {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(var(--chrome-ink-rgb), 0.55);
   line-height: 1;
   width: 14px;
   display: inline-flex;
@@ -118,4 +118,11 @@
 @media (prefers-reduced-motion: reduce) {
   .panel { animation: none; }
   .row { transition: none; }
+}
+
+/* Flat: re-skin the dropdown surface to the light panel so the token-driven
+   dark-ink rows read (fixes dark-ink-on-dark-glass = invisible). */
+:global(html[data-theme-id="flat"]) .panel {
+  background: var(--chrome-panel-surface);
+  border-color: rgba(var(--chrome-ink-rgb), 0.10);
 }

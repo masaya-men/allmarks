@@ -26,11 +26,11 @@
 }
 
 .pill:hover {
-  color: rgba(255, 255, 255, 1);
+  color: rgba(var(--chrome-ink-rgb), 1);
 }
 
 .pill:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.4);
+  outline: 1px solid rgba(var(--chrome-ink-rgb), 0.4);
   outline-offset: 4px;
   border-radius: 4px;
 }
@@ -101,7 +101,7 @@
 }
 
 .separator {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--chrome-ink-rgb), 0.5);
   margin: 0 6px;
   font-size: 11px;
 }
@@ -160,7 +160,7 @@
   background: rgba(8, 8, 10, 0.96);
   /* Border width is 0 while collapsed (→ a true 0-height panel, no sliver),
      and 1px when open. Colour is set up front so only the width animates in. */
-  border: 0 solid rgba(255, 255, 255, 0.08);
+  border: 0 solid rgba(var(--chrome-ink-rgb), 0.08);
   border-radius: 8px;
   min-width: 240px;
   max-width: min(320px, calc(100vw - 32px));
@@ -171,7 +171,7 @@
      the paper-atelier theme overrides to a serif (Fraunces). Pin mono
      explicitly so the menu never picks up a theme's serif override. */
   font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(var(--chrome-ink-rgb), 0.92);
   /* Collapsed accordion, same feel as the TUNE drawer: the grid row animates
      0fr → content-height over the same easing/duration, so the panel grows
      down out of the pill on hover and folds back into it on leave (both
@@ -250,7 +250,7 @@
    without scrolling. */
 .bottomGroup {
   flex-shrink: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--chrome-ink-rgb), 0.06);
   padding-top: 2px;
 }
 .item {
@@ -272,12 +272,12 @@
 }
 .item:hover,
 .item:focus-visible {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: rgba(var(--chrome-ink-rgb), 0.06);
+  color: rgb(var(--chrome-ink-rgb));
   outline: none;
 }
 .item:active {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(var(--chrome-ink-rgb), 0.10);
 }
 
 .itemLabel {
@@ -289,7 +289,7 @@
 }
 .itemCount {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.40);
+  color: rgba(var(--chrome-ink-rgb), 0.40);
   letter-spacing: 0.12em;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
@@ -302,13 +302,13 @@
    faint wash read as a digital "selection bar" (user, session 146); the
    underline + brighter text carry the active state on their own. */
 .item.active {
-  color: #fff;
+  color: rgb(var(--chrome-ink-rgb));
 }
 .item.active .itemLabel {
   box-shadow: inset 0 -1px 0 #28F100;
 }
 .item.active .itemCount {
-  color: rgba(255, 255, 255, 0.70);
+  color: rgba(var(--chrome-ink-rgb), 0.70);
 }
 
 /* TRASH — muted rose. Distinct from DEAD LINKS' bright warning red so
@@ -373,7 +373,7 @@
 /* Grabbed row lifts with the pointer (inline translateY drives the position). */
 .tagItem[data-dragging="true"] {
   cursor: grabbing;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--chrome-ink-rgb), 0.08);
   border-radius: 6px;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
 }
@@ -381,7 +381,7 @@
 .tagItem[data-drop-before="true"] { box-shadow: inset 0 2px 0 #28F100; }
 .tagItem[data-drop-after="true"]  { box-shadow: inset 0 -2px 0 #28F100; }
 .tagItemActive {
-  color: #fff;
+  color: rgb(var(--chrome-ink-rgb));
 }
 .tagItemActive:hover {
   background: rgba(40, 241, 0, 0.10);
@@ -392,7 +392,7 @@
   border-radius: 50%;
   flex-shrink: 0;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.25);
   transition: background 100ms, border-color 100ms, box-shadow 100ms;
 }
 .tagDot[data-active='true'] {
@@ -418,7 +418,7 @@
   font-size: 11px;
   letter-spacing: 0.10em;
   text-transform: lowercase;
-  color: #fff;
+  color: rgb(var(--chrome-ink-rgb));
   caret-color: #28F100;
   outline: none;
 }
@@ -455,12 +455,12 @@
   justify-content: space-between;
   padding: 14px 14px 6px;
   margin-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--chrome-ink-rgb), 0.06);
   font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--chrome-ink-rgb), 0.35);
 }
 .sectionHeaderHint {
   color: rgba(40, 241, 0, 0.55);
@@ -487,15 +487,15 @@
   font-size: 9px;
   letter-spacing: 0.12em;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.40);
+  color: rgba(var(--chrome-ink-rgb), 0.40);
   cursor: pointer;
   transition: color 120ms;
 }
-.sortToggle:hover { color: rgba(255, 255, 255, 0.85); }
+.sortToggle:hover { color: rgba(var(--chrome-ink-rgb), 0.85); }
 .sortToggle[data-mode='auto'] { color: rgba(40, 241, 0, 0.70); }
 .sortToggle[data-mode='auto']:hover { color: rgba(40, 241, 0, 0.95); }
 .sortToggle:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.4);
+  outline: 1px solid rgba(var(--chrome-ink-rgb), 0.4);
   outline-offset: 2px;
   border-radius: 3px;
 }
@@ -517,4 +517,11 @@
     white-space: nowrap;
     max-width: 44vw;
   }
+}
+
+/* Flat: re-skin the dropdown surface to the light panel so the token-driven
+   dark-ink rows read (fixes dark-ink-on-dark-glass = invisible). */
+:global(html[data-theme-id="flat"]) .menu {
+  background: var(--chrome-panel-surface);
+  border-color: rgba(var(--chrome-ink-rgb), 0.10);
 }

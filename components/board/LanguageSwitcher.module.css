@@ -22,7 +22,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--chrome-btn-color, rgba(255, 255, 255, 0.85));
   -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
   paint-order: stroke fill;
   font-family: inherit;
@@ -32,9 +32,9 @@
   text-transform: uppercase;
   transition: color 0.15s;
 }
-.toggle:hover { color: rgba(255, 255, 255, 1); }
+.toggle:hover { color: rgba(var(--chrome-ink-rgb), 1); }
 .toggle:focus-visible {
-  outline: 1px dashed rgba(255, 255, 255, 0.5);
+  outline: 1px dashed rgba(var(--chrome-ink-rgb), 0.5);
   outline-offset: 2px;
 }
 
@@ -87,7 +87,7 @@
   max-height: 300px;
   overflow-y: auto;
   background: rgba(10, 10, 10, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.10);
   border-radius: 10px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -111,14 +111,14 @@
   background: transparent;
   border: 0;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(var(--chrome-ink-rgb), 0.82);
   font-family: inherit;
   font-size: 13px;
   letter-spacing: 0.02em;
   transition: color 0.15s;
 }
-.option:hover { color: #fff; }
-.option[aria-selected='true'] { color: #fff; }
+.option:hover { color: rgb(var(--chrome-ink-rgb)); }
+.option[aria-selected='true'] { color: rgb(var(--chrome-ink-rgb)); }
 .label {
   position: relative;
   display: inline-block;
@@ -164,4 +164,11 @@
   65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
   80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
   100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+/* Flat: re-skin the dropdown surface to the light panel so the token-driven
+   dark-ink rows read (fixes dark-ink-on-dark-glass = invisible). */
+:global(html[data-theme-id="flat"]) .list {
+  background: var(--chrome-panel-surface);
+  border-color: rgba(var(--chrome-ink-rgb), 0.10);
 }
