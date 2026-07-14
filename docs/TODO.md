@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 196 — ★束C C0+C1 出荷＋テーマ大改修を設計・計画／課金監査完遂／割り込み多数)
+
+**盛りだくさんの1セッション。①束C の C0+C1 を出荷・本番反映 ②割り込みで課金安全の徹底監査を完遂 ③紙テーマ点滅バグの真因特定 ④テーマ大改修の原則を再設計→親 spec＋写経 plan 2本を作成。** 詳細は各項目へ。**次セッション＝テーマ実行フェーズ（波0＋サブ1 並行）**。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+- **束C C0+C1 完了・本番反映**（master `4c2a1ffd` merge・`allmarks.app` デプロイ済）: C0＝`messages/placeholder-parity.test.ts`（14 locale ×`{…}`トークン多重集合＝en 一致・mutation 検証済）＋OG ロケール `ar_AR`→`ar_SA`（lp-metadata/page-metadata 両方）＋`bookmarklet.toast.*` 未使用確定（C2 除外）。C1＝規約に第10節「正文（Governing language）」＝日本語版優先を全15言語 JSON＋TermsContent に追加（en/ja 確定訳・他13一次訳・contact を11に繰下）。検証: tsc0/vitest 2365/build/全ロケール描画/opus レビュー MERGE READY。**残り＝束C C2（13言語仕上げ・次以降）**。
+- **★課金安全の徹底監査 完了**（正本 `docs/private/2026-07-14-cloudflare-cost-audit.md`）: サブエージェント2本＋Claude 直読＋料金一次情報。**結論＝現状 Workers Free なら悪用されても請求ほぼ0**（KV write 1,000/日・Workers 10万/日の日次上限が間接レート制限として R2 無料枠を超えさせない）。構造的費用＝R2 超過分（現実ほぼ0）＋.app 更新 約$14/年のみ。隠れ課金リソースゼロ（D1/Queues/Actions/有料API/K3課金endpoint 無し・実照会）。**ユーザーが Budget alert $0.01 設定済**（唯一の早期警報・Cloudflare にハード停止機能無し）。悪用経路 A〜D（クエリでキャッシュ迂回／create 無レート制限／img 未キャッシュ/oembed 未使用）＝防御は N-62。
+- **★テーマ大改修を再設計＋写経 plan 化**（親 spec `docs/superpowers/specs/2026-07-14-theme-scope-principle-design.md`）: brainstorming で「テーマの適用範囲」を再確定。**2層モデル**（肌＝全テーマ必須で安全／世界＝凝ったテーマだけ opt-in）／**chrome (a)＝1つの共通スキン系トークンで揃える（器は各自維持・TUNE は横型温存）**／**TUNE 骨/皮＋甲（作り込んでから公開）**／surface 地図（受け取りも世界の層まで・拡張設定はフラット中立+15言語）。写経 plan 2本作成: [サブ1 chrome-skin-tokens](superpowers/plans/2026-07-14-theme-sub1-chrome-skin-tokens.md)（7タスク・バイト維持配線）／[サブ6 拡張 flat+i18n](superpowers/plans/2026-07-14-extension-options-flat-i18n.md)（15言語×38キー・パリティ機械検証済）。奥行きズームの参考コード保存（`docs/private/2026-07-14-infinite-zoom-gallery-reference.md`・WebGL でなく CSS transform と判明）。
+- **★次セッション＝テーマ実行フェーズ**（波0＝サブ6/N-62/N-60/N-61/C2 ＋ 波1＝サブ1 を並行）。サブ2/3（フラット/Grid/紙の TUNE 皮）は各回頭でモック承認→写経。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 195 — ★PC リリースにピボット／N-53 e2e 修理＋N-54 交点バグ修正を完遂・本番反映／スマホは後回し)
 
 **ユーザー判断でスマホのアレンジ作り直し（s194）を「あまりにもダメ」と後回しにし、PC リリース（ソフトローンチ滑走路）に舵を戻した。** 同一セッションで **N-53（e2e 30本落ち＝回帰検出網が半死）→ N-54（盤面グリッドの交点が濃くなるバグ）** を連続で完遂。

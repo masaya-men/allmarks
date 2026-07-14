@@ -1,30 +1,33 @@
-# 次セッションのゴール — 言語の仕上げ（束C）を始める → 残タスクもいくつか
+# 次セッションのゴール — テーマ大改修の実行フェーズ（波0＋サブ1 を並行）＋残タスク
 
-## ★ユーザー確定（s195 末・2026-07-13）
-- **規約の正文＝日本語で確定**（束C の正文条項に使う・差し替え不要）。
-- 次セッションは **①まず束C（言語の仕上げ）を始める → ②残タスクもいくつか進める**、とユーザー指示。
-- N-53（e2e 修理）＋N-54（盤面グリッド交点バグ）は完了・本番反映済（`allmarks.app`）。N-54 実機OK。スマホのアレンジ作り直しは後回し（要件は `docs/private/IDEAS.md`）。
+## ★s196 で確定した進め方（Opus＝司令塔・実装は安価モデルが並行自走）
+正本＝設計書 [docs/superpowers/specs/2026-07-14-theme-scope-principle-design.md](superpowers/specs/2026-07-14-theme-scope-principle-design.md)。
+実行の**並行マップ**（依存順）:
+- **波0（即・完全独立・並列）**: サブ6 拡張フラット化+i18n（[plan](superpowers/plans/2026-07-14-extension-options-flat-i18n.md)・写経可）／N-62 防御バッチ1（監査報告 §4）／N-60 オンボ文言／N-61 影焼き込み（素材待ち）／C2 言語13（runway・Sonnet+）
+- **波1（基盤・臨界路）**: サブ1 chrome 骨/皮基盤（[plan](superpowers/plans/2026-07-14-theme-sub1-chrome-skin-tokens.md)・写経可・Sonnet）
+- **波2（サブ1後・並列）**: サブ2 フラット＋TUNE皮／サブ3 Grid・紙皮 ← **各回頭でモック承認が要る**（甲の必然）
+- **波3（世界の層）**: サブ4 TOWER（既存 plan・受け取りフォールバック追記）→ サブ5 受け取りテーマ完全化
 
-## ★次セッション最優先＝束C（多言語仕上げ＋規約正文条項）を開始
+## ★次セッションの最短スタート
+**「サブ1＋サブ6 を並行実装（両方 写経 plan 完備）＋ C2 バッチ1（zh/ko）」** を subagent-driven で。各タスクレビュー＋opus 全ブランチレビュー→マージ→デプロイ。
+- サブ2/3 は各回の頭で小さなモック→ユーザー承認→写経、の順（「紙っぽく」だけでは安価モデルが写経できない＝美的判断が中身）。
+- サブ4 TOWER は s187 モック承認済＝写経可。
 
-正本: `docs/private/2026-07-08-release-runway-plan.md` §束C。**このセッションではまず C0＋C1 まで**（言語バッチ C2 は次以降）:
+## ★確定した設計の要点（実装者が守る）
+- **chrome は"1つの箱"に統合しない**。器は各自維持（**TUNE＝横型ホバー／SETTINGS・THEMES＝右ドロワー**）、共通は"スキン・トークン"（`--chrome-*`）。ミキサーは音テーマの皮・未定義テーマは中立フォールバック（＝抜けゼロ）。
+- **受け取り画面にも世界の層を乗せる**（ユーザー「おすすめでOK」で確定・相手の端末不明ゆえフォールバック必須）。
+- **拡張設定＝テーマ非適用・フラット中立＋15言語**（現状はサウンド演出＋英語固定）。翻訳AI下書きは Sonnet+ レビュー。
 
-- **C0 守りを先に足す（小）**: ①`messages/` に placeholder パリティテスト追加（各 locale の値の `{…}` トークン集合が en と一致するか全キー検査）②`bookmarklet.*` 3キーの消費箇所を grep（未使用ならレビュー対象外とメモ）③`lib/i18n/lp-metadata.ts:12` の `ar_AR`→`ar_SA` 修正。
-- **C1 正文条項（正文＝日本語で確定済み）**: `TermsContent.tsx` の SECTIONS に1節（id 例 `language`）＋全15 JSON に `pages.terms.languageHeading/language` 追加（parity テストが守る）。文言＝「**本規約の正文は日本語版。他言語は参考訳であり、齟齬がある場合は日本語版が優先**」。**en/ja はこのセッションで確定訳**、他13言語は C2 の各バッチで。
-- **C2（次セッション以降・4バッチ）**: zh/ko → es/fr/pt/it → de/nl/tr/ru → ar/th/vi。1言語＝法務98キー→アプリUI165キー→集客140キーの順で全キー照合。**翻訳レビューは Sonnet 以上（Haiku 不可）**。不変則: placeholder `{…}` 一字一句保持／機能名（AllMarks/SHARE/TUNE/SETTINGS 等）と "Open Board" は訳さない／文体は乾いた事実調。
+## ★公開ラインナップ（甲＝作り込んでから公開）
+音（ミキサー温存）・Grid・紙・フラット の4テーマを世界観まで作り込む。TOWER は間に合えば。
 
-進め方＝subagent-driven（各タスクレビュー＋opus 全ブランチ）。既存の守り: `messages/all-keys-parity.test.ts` 等 vitest 6本。
-
-## ★「残タスクもいくつか」＝ユーザーが選ぶ（束C の合間 or 後）
-公開前で束C 以外に残るもの（冒頭で「束C の後にどれ？」を軽く確認）:
-- **TOWER**（公開前の無料看板テーマ・WebGL・ユーザー確定）`plans/2026-07-12-shader-theme-b-tower.md`
-- 小物: スマホ盤面に背景タイトル（N-51残）／タブレットの作法（N-50）
-- （希望あれば前倒し可）白フラット default テーマ（フラット化サブ②・現状は公開後枠）
-
-参考: 残タスク全体は `docs/superpowers/plans/2026-07-11-s186-remaining-work-roadmap.md`。フラット化サブ①（メニュー中立化）は s163 完了済。
+## 残タスク（束C の続き・公開前）
+- **束C C2**: 13言語仕上げ（zh/ko→es/fr/pt/it→de/nl/tr/ru→ar/th/vi）。正文条項の en/ja は確定済（s196）、他13の language 節も一次訳済（C2 で本レビュー）。
+- N-60/61/62（TODO §未対応バグに手順）／TOWER／束D 公開素材／束E 公開。
 
 ## 恒久ルール（継承）
-- 束C の翻訳は Sonnet 以上（言語の自然さ判定が本体）。placeholder `{…}` 保持・機能名は訳さない（parity テストが落ちる）・法務節は直訳寄り。
-- 機微（支援・値付け・戦略）は tracked に書かない＝`docs/private/`。規約の正文＝日本語（法的リスクをこの条項で束ねる）。
-- `rtk` 前置・`--no-verify` 禁止／vitest・playwright は素の `npx`／盤面を変えたら受け取り画面も確認／デスクトップ 1px 原則不変。
-- 新しい見た目・操作系・大改修は着手前に superpowers:brainstorming。
+- 翻訳は Sonnet+（Haiku 不可）。placeholder `{…}` 保持・機能名は訳さない（parity テストが守る）。
+- 機微（支援・値付け・戦略）は tracked に書かない＝`docs/private/`。**支援ページの早期化**は非公開ローンチ計画（束D2）で前倒し検討（ユーザー要望 s196）。
+- `rtk` 前置・`--no-verify` 禁止／vitest・playwright は素の `npx`／盤面を変えたら受け取り画面も確認／デスクトップ 1px 原則不変／Framer Motion 禁止。
+- 新しい見た目・大改修は着手前に superpowers:brainstorming（テーマ原則は s196 で完了済）。
+- **課金**: 監査済（`docs/private/2026-07-14-cloudflare-cost-audit.md`）。Free なら悪用されても請求ほぼ0。ユーザーが Budget alert $0.01 設定済。
