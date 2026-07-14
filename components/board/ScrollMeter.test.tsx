@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ScrollMeter } from './ScrollMeter'
 import { getThemeMeta } from '@/lib/board/theme-registry'
@@ -218,4 +218,11 @@ describe('ScrollMeter variant is registry-driven', () => {
     expect(getByTestId('scroll-meter').getAttribute('data-meter-variant')).toBe('waveform')
     expect(queryByTestId('ruler-track')).toBeNull()
   })
+})
+
+it('line variant renders QuietTrack and does not scramble the counter', () => {
+  render(<ScrollMeter mode="board" n1={1} n2={9} total={410} swellFraction={0.2} onScrub={() => {}} variant="line" />)
+  expect(screen.getByTestId('quiet-track')).toBeInTheDocument()
+  // total renders as the settled value immediately (no scramble churn on line).
+  expect(screen.getByTestId('scroll-meter')).toHaveAttribute('data-meter-variant', 'line')
 })
