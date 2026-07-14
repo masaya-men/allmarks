@@ -23,4 +23,16 @@ describe('getShutdownAnimationClass', () => {
       getShutdownAnimationClass('wave'),
     )
   })
+
+  it('fade テーマで flat の静かな fade-out CSS class が返る', () => {
+    const c = getShutdownAnimationClass('fade')
+    expect(typeof c).toBe('string')
+    expect(c).toBeTruthy()
+  })
+
+  it('fade と wave は別 class (= テーマごとに別 module)', () => {
+    expect(getShutdownAnimationClass('fade')).not.toBe(
+      getShutdownAnimationClass('wave'),
+    )
+  })
 })

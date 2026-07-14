@@ -715,7 +715,6 @@ html[data-theme-id="flat"] {
   --meter-line-rail: rgba(20, 19, 15, 0.14);
   --meter-line-tick: rgba(20, 19, 15, 0.22);
   --meter-line-thumb: rgba(20, 19, 15, 0.85);
-  --meter-line-numeral: rgba(20, 19, 15, 0.5);
 
   /* big background wordmark — serif ink（既定/音は fallback で不変） */
   --bg-typo-font: var(--font-serif-display), Georgia, 'Times New Roman', serif;
