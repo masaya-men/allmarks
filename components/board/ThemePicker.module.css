@@ -57,3 +57,10 @@
   background: color-mix(in srgb, var(--accent-gold, #b9924a) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-gold, #b9924a) 38%, transparent);
 }
+
+/* Flat: glass tokens are undefined here (inherit the dark :root defaults),
+   so give the swatch a faint dark-ink surface/outline that reads on white. */
+:global(html[data-theme-id="flat"]) .swatch {
+  background: rgba(var(--chrome-ink-rgb), 0.03);
+  border-color: rgba(var(--chrome-ink-rgb), 0.14);
+}
