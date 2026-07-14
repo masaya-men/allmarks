@@ -125,6 +125,13 @@ s162 で「テーマは盤面のみ・メニューは全テーマ中立」に決
 - **サブ6【独立】拡張設定の脱テーマ・フラット化＋15言語 i18n**: §4。拡張コードベース（`extension/`）内で完結・盤面と別系統。TOWER 等と無関係なので**いつでも並行可**。
 - **公開後（世界の層の追加）**: 横スクロール本棚 / 奥行き無限ズーム。各々専用 spec（奥行きは §2-5 の設計判断＝有限 vs 無限を先に詰める）。
 
+### ★実装状況（s197 追記）
+- **サブ6 出荷済**（s197・master merge/push・`extension/` のみ＝盤面不変ゆえデプロイ不要）: options フラット中立化＋15言語 `_locales`（parity テスト付き）。翻訳は AI 下書き＝公開前に native/Sonnet+ レビュー。
+- **サブ1 出荷済**（s197・merge/push/`allmarks.app` デプロイ・T1-3,5,6,7＋fix-1）: 既定(dotted-notebook)はバイト同一・全テーマ×全 chrome パネルの抜けゼロ検査を固定。**視覚は不変＝基盤のみ**。
+- **旧サブ1 Task 4（light-BOARD の chrome 反転）は保留**: 明色盤面テーマ（フラット/紙）が出るまで意味を持たず、視覚変更ゆえ**サブ2/3 とモック承認つきで一緒に**やる。
+- **サブ2/3 が読む chrome トークン**（`app/globals.css :root` に中立既定・テーマは `html[data-theme-id]` で上書き）: `--chrome-panel-surface / -border / -radius / -blur / -shadow`（パネル面）・`--chrome-btn-color`（文字色）・`--chrome-btn-hover`・`--chrome-font`・`--chrome-hover-fx`。
+  - **皮を着せる時の掟（s197 fix-1 で踏んだ罠）**: 文字色（`--chrome-btn-color`）を暗インクにするなら**同じテーマで面（`--chrome-panel-*` or 各メニューの暗ガラス面）もクリーム/明色にする**。片方だけ＝暗インク×暗ガラス＝不可視。既存 `--paper-panel-*`（クリーム面トークン）は 489caf7e が面消費を剥がしたので、紙皮はこれを再配線する。
+
 ---
 
 ## 8. 不変条件・リスク（全サブ共通で死守）

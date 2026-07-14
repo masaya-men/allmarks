@@ -21,6 +21,15 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 197 — ★テーマ実行フェーズ: サブ6＋サブ1 を subagent-driven で本番出荷／サブ1 で紙退行を捕捉・修正／T4 保留)
+
+**司令塔=Opus・実装=安価モデル（機械的 haiku／芯 Sonnet）の subagent-driven で、テーマ大改修の波0（サブ6）と波1（サブ1）を1セッションで出荷。** 各タスクレビュー＋opus 全ブランチレビュー→merge --no-ff。
+- **サブ6 出荷**（拡張 options フラット中立化＋15言語 `_locales` i18n・parity テスト）。`extension/` のみ＝**盤面不変ゆえ allmarks デプロイ不要**（拡張は Web Store 別配布）。master merge `9daa80b7`・push 済。T1(UI/i18n配線)／T2(15言語逐語)／T3(parity)＝各レビュー緑＋opus 全ブランチ Ready=YES。翻訳は AI 下書き＝公開前に native/Sonnet+ レビュー。
+- **サブ1 出荷**（chrome スキントークン基盤・master merge `1122314a`・push・`allmarks.app` デプロイ済）。T1+2(トークン定義+ChromeDrawer/Button化)／T3(残りパネル)／T5(dotted-notebook器)／T6(抜けゼロ検査)／T7(ゲート+doc)＋fix-1。**既定テーマはバイト同一**（computed-style e2e で lock・全プロパティで「token :root 値=元値」を静的証明）。**視覚は不変＝基盤のみ**。tsc0／vitest2400／build／e2e(chrome-skin-tokens 8＋board-theme 3＋coverage 5)。
+- **★opus 全ブランチレビューが統括の見落とした退行を捕捉**: sub1 が `--chrome-btn-color` を live 化→紙テーマ(`html[data-theme-id="paper-atelier"]`)の死蔵上書き(489caf7e が面消費を剥がした残骸)が発火→FilterPill ドロップダウン等が暗インク×暗ガラス＝不可視。**fix-1 で中立化**＝紙を sub1 以前に厳密復元＋paper e2e で lock。再レビュー RESOLVED。多層レビューが効いた好例。
+- **★旧 Task 4（light-BOARD の chrome 反転）は保留**: 明色盤面テーマが出るまで意味を持たず、視覚変更ゆえサブ2/3 とモック承認つきで一緒に。教訓を memory `reference_token_fallback_dead_when_root_defined` に保存。
+- **★次セッション＝テーマ実行の続き（サブ2 or サブ3 の皮作り込み・各回頭でモック承認→写経）**＋独立の C2 バッチ1（zh/ko）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 196 — ★束C C0+C1 出荷＋テーマ大改修を設計・計画／課金監査完遂／割り込み多数)
 
 **盛りだくさんの1セッション。①束C の C0+C1 を出荷・本番反映 ②割り込みで課金安全の徹底監査を完遂 ③紙テーマ点滅バグの真因特定 ④テーマ大改修の原則を再設計→親 spec＋写経 plan 2本を作成。** 詳細は各項目へ。**次セッション＝テーマ実行フェーズ（波0＋サブ1 並行）**。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。

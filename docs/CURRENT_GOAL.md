@@ -1,33 +1,25 @@
-# 次セッションのゴール — テーマ大改修の実行フェーズ（波0＋サブ1 を並行）＋残タスク
+# 次セッションのゴール — テーマ実行の続き（サブ2 or サブ3 の皮作り込み）＋残タスク
 
-## ★s196 で確定した進め方（Opus＝司令塔・実装は安価モデルが並行自走）
-正本＝設計書 [docs/superpowers/specs/2026-07-14-theme-scope-principle-design.md](superpowers/specs/2026-07-14-theme-scope-principle-design.md)。
-実行の**並行マップ**（依存順）:
-- **波0（即・完全独立・並列）**: サブ6 拡張フラット化+i18n（[plan](superpowers/plans/2026-07-14-extension-options-flat-i18n.md)・写経可）／N-62 防御バッチ1（監査報告 §4）／N-60 オンボ文言／N-61 影焼き込み（素材待ち）／C2 言語13（runway・Sonnet+）
-- **波1（基盤・臨界路）**: サブ1 chrome 骨/皮基盤（[plan](superpowers/plans/2026-07-14-theme-sub1-chrome-skin-tokens.md)・写経可・Sonnet）
-- **波2（サブ1後・並列）**: サブ2 フラット＋TUNE皮／サブ3 Grid・紙皮 ← **各回頭でモック承認が要る**（甲の必然）
-- **波3（世界の層）**: サブ4 TOWER（既存 plan・受け取りフォールバック追記）→ サブ5 受け取りテーマ完全化
+## ★s197 の到達点（2つ本番出荷済・司令塔Opus＋安価モデル subagent-driven）
+- **サブ6 出荷**（拡張 options フラット中立化＋15言語 i18n・parity テスト付き）。`extension/` のみ＝**盤面不変ゆえ allmarks デプロイ不要**（拡張は Web Store 別配布）。master merge/push 済。
+- **サブ1 出荷**（chrome スキントークン基盤・merge/push/`allmarks.app` デプロイ済）。既定テーマはバイト同一・全テーマ×全 chrome パネル抜けゼロ検査を固定。**視覚は不変＝基盤のみ**。
+  - **保留＝旧 Task 4（light-BOARD の chrome 反転）**: 明色盤面テーマ（フラット/紙）が出るまで意味を持たず、視覚変更ゆえサブ2/3 とモック承認つきで一緒に。
+  - fix-1 で紙テーマの退行（死蔵 `--chrome-btn-color` 上書きが sub1 で発火→ドロップダウン暗×暗）を修正済＝紙は sub1 以前に厳密復元。
 
-## ★次セッションの最短スタート
-**「サブ1＋サブ6 を並行実装（両方 写経 plan 完備）＋ C2 バッチ1（zh/ko）」** を subagent-driven で。各タスクレビュー＋opus 全ブランチレビュー→マージ→デプロイ。
-- サブ2/3 は各回の頭で小さなモック→ユーザー承認→写経、の順（「紙っぽく」だけでは安価モデルが写経できない＝美的判断が中身）。
-- サブ4 TOWER は s187 モック承認済＝写経可。
+## ★次セッションの最優先（甲＝作り込んでから公開・各回頭でモック承認→写経）
+テーマ実行の続き。以下から1つを深く（親 spec §7）:
+1. **サブ2 フラットパターンテーマ＋その TUNE 皮**（`kind:'pattern'`・一般ユーザーの標準・静かなメーター/モーション・清潔な TUNE 皮）。
+2. **サブ3 Grid・紙の TUNE 皮**（Grid＝方眼世界／紙＝道具箱の皮）。
+- **手順（掟）**: 「紙っぽく」だけでは安価モデルが写経できない＝美的判断が中身。**小さなモック→ユーザー承認→写経 plan→subagent-driven**。着手前に superpowers:brainstorming。
+- **サブ1 が用意したトークン**（皮が読む・`globals.css :root`）: `--chrome-panel-surface/-border/-radius/-blur/-shadow`・`--chrome-btn-color`・`--chrome-btn-hover`・`--chrome-font`・`--chrome-hover-fx`。**皮の掟**: 文字色を暗インクにするなら面もクリーム/明色に（片方だけ＝不可視の罠・s197 fix-1）。紙は既存 `--paper-panel-*` クリーム面を再配線（489caf7e が面消費を剥がした）。
 
-## ★確定した設計の要点（実装者が守る）
-- **chrome は"1つの箱"に統合しない**。器は各自維持（**TUNE＝横型ホバー／SETTINGS・THEMES＝右ドロワー**）、共通は"スキン・トークン"（`--chrome-*`）。ミキサーは音テーマの皮・未定義テーマは中立フォールバック（＝抜けゼロ）。
-- **受け取り画面にも世界の層を乗せる**（ユーザー「おすすめでOK」で確定・相手の端末不明ゆえフォールバック必須）。
-- **拡張設定＝テーマ非適用・フラット中立＋15言語**（現状はサウンド演出＋英語固定）。翻訳AI下書きは Sonnet+ レビュー。
-
-## ★公開ラインナップ（甲＝作り込んでから公開）
-音（ミキサー温存）・Grid・紙・フラット の4テーマを世界観まで作り込む。TOWER は間に合えば。
-
-## 残タスク（束C の続き・公開前）
-- **束C C2**: 13言語仕上げ（zh/ko→es/fr/pt/it→de/nl/tr/ru→ar/th/vi）。正文条項の en/ja は確定済（s196）、他13の language 節も一次訳済（C2 で本レビュー）。
-- N-60/61/62（TODO §未対応バグに手順）／TOWER／束D 公開素材／束E 公開。
+## ★独立・いつでも（波0 残）
+- **C2 バッチ1（zh/ko）盤面翻訳仕上げレビュー**（Sonnet+・s196 で一次訳済の 13言語の本レビュー・正文条項 en/ja は確定）。以降 es/fr/pt/it→de/nl/tr/ru→ar/th/vi。
+- N-62 課金防御バッチ1（監査 §4・任意）／N-60 オンボ文言／N-61 影焼き込み（素材待ち）。
 
 ## 恒久ルール（継承）
-- 翻訳は Sonnet+（Haiku 不可）。placeholder `{…}` 保持・機能名は訳さない（parity テストが守る）。
-- 機微（支援・値付け・戦略）は tracked に書かない＝`docs/private/`。**支援ページの早期化**は非公開ローンチ計画（束D2）で前倒し検討（ユーザー要望 s196）。
-- `rtk` 前置・`--no-verify` 禁止／vitest・playwright は素の `npx`／盤面を変えたら受け取り画面も確認／デスクトップ 1px 原則不変／Framer Motion 禁止。
-- 新しい見た目・大改修は着手前に superpowers:brainstorming（テーマ原則は s196 で完了済）。
-- **課金**: 監査済（`docs/private/2026-07-14-cloudflare-cost-audit.md`）。Free なら悪用されても請求ほぼ0。ユーザーが Budget alert $0.01 設定済。
+- 翻訳は Sonnet+（Haiku 不可）。placeholder 保持・機能名は訳さない（parity テストが守る）。
+- **視覚変更は ui-design.md「承認後」**（(1)現状→(2)変更案→(3)承認→(4)実装）。`rtk` 前置・`--no-verify` 禁止・vitest/playwright は素の npx・Framer Motion 禁止・デスクトップ既定はバイト同一原則・盤面を変えたら受け取り画面も確認。
+- 機微（支援・値付け・戦略）は tracked に書かない＝`docs/private/`。支援ページ早期化（束D2）はユーザー要望として保留中。
+- 課金: 監査済（Free なら悪用されても請求ほぼ0・Budget alert $0.01 設定済）。
+- **テーマ実装の教訓**: `var(--x, fb)` の fb は `--x` が :root 定義済みなら死にコード＝トークン化のバイト維持は「元値=:root 値」で判定。トークンを live 化すると死蔵テーマ上書きが復活しうる（memory `reference_token_fallback_dead_when_root_defined`）。
