@@ -353,4 +353,8 @@
 :global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown { background: #28f100; }
 :global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown .handle { top: 2px; left: 18px; }
 :global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown .handle::before { display: none; }
+/* iOS-toggle handle should never show the base grip-ridge stripes in either
+   state — the ON-only rule above left stripe fragments visible inside the
+   white circular handle when the toggle was OFF (square corners). */
+:global(html[data-theme-id="flat"]) .cornersRow .lever .handle::before { display: none; }
 

@@ -115,6 +115,14 @@ test('flat TUNE drawer wears the white flat skin', async ({ page }) => {
   await expect.poll(async () =>
     drawer.evaluate((el) => getComputedStyle(el).backgroundColor)
   , { timeout: 5000 }).toMatch(/255, 255, 255/)
+
+  // Collapsed "TUNE" label must render in dark ink (flat --chrome-btn-color),
+  // not the base rule's hardcoded white — otherwise it's invisible on the
+  // flat light board.
+  const trigger = page.getByTestId('tune-trigger')
+  const triggerColor = await trigger.evaluate((el) => getComputedStyle(el).color)
+  expect(triggerColor).toMatch(/20, 19, 15/)
+  expect(triggerColor).not.toMatch(/255, 255, 255/)
 })
 
 test('switching to flat drives the quiet line meter end-to-end', async ({ page }) => {

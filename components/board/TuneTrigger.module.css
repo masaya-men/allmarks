@@ -370,3 +370,10 @@
   height: 5px;
 }
 :global(html[data-theme-id="flat"]) .opsText { color: rgba(20, 19, 15, 0.5); }
+/* Collapsed "TUNE" label: base .trigger hardcodes white text, which is
+   invisible on the flat light board. Tokenize to the flat chrome ink so it
+   matches its ChromeButton siblings (TITLE, settings) instead of vanishing. */
+:global(html[data-theme-id="flat"]) .trigger {
+  color: var(--chrome-btn-color, rgba(20, 19, 15, 0.9));
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+}
