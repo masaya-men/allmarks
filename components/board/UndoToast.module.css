@@ -41,3 +41,14 @@
   color: rgba(255, 255, 255, 0.55);
   line-height: 1;
 }
+
+/* Flat: light surface + dark ink so the toast belongs to the flat world. */
+:global(html[data-theme-id="flat"]) .toast {
+  background: var(--chrome-panel-surface);
+  color: rgba(var(--chrome-ink-rgb), 0.94);
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.10);
+}
+
+:global(html[data-theme-id="flat"]) .icon {
+  color: rgba(var(--chrome-ink-rgb), 0.55);
+}

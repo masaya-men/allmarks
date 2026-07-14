@@ -158,3 +158,56 @@
   70% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+/* Flat: light surface + dark ink so the bar belongs to the flat world.
+ * .primaryText / .ready / .dot stay untouched — green is the app's
+ * semantic positive/success accent, not a neutral chrome color. */
+:global(html[data-theme-id="flat"]) .bar {
+  background: var(--chrome-panel-surface);
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.10);
+}
+
+:global(html[data-theme-id="flat"]) .status {
+  color: rgba(var(--chrome-ink-rgb), 0.58);
+}
+
+:global(html[data-theme-id="flat"]) .hint {
+  color: rgba(var(--chrome-ink-rgb), 0.62);
+}
+
+:global(html[data-theme-id="flat"]) .textBtn {
+  color: rgba(var(--chrome-ink-rgb), 0.62);
+}
+:global(html[data-theme-id="flat"]) .textBtn:hover {
+  color: rgba(var(--chrome-ink-rgb), 0.95);
+  background: rgba(var(--chrome-ink-rgb), 0.05);
+}
+
+:global(html[data-theme-id="flat"]) .primaryText:disabled {
+  color: rgba(var(--chrome-ink-rgb), 0.35);
+}
+
+:global(html[data-theme-id="flat"]) .snipBtn {
+  color: rgba(var(--chrome-ink-rgb), 0.82);
+  border-color: rgba(var(--chrome-ink-rgb), 0.18);
+}
+:global(html[data-theme-id="flat"]) .snipBtn:hover {
+  border-color: rgba(var(--chrome-ink-rgb), 0.4);
+  background: rgba(var(--chrome-ink-rgb), 0.05);
+}
+
+:global(html[data-theme-id="flat"]) .shotThumb {
+  border-color: rgba(var(--chrome-ink-rgb), 0.14);
+}
+
+:global(html[data-theme-id="flat"]) .clearBtn {
+  border-color: rgba(var(--chrome-ink-rgb), 0.14);
+  color: rgba(var(--chrome-ink-rgb), 0.7);
+}
+:global(html[data-theme-id="flat"]) .clearBtn:hover {
+  color: rgba(var(--chrome-ink-rgb), 0.95);
+}
+
+:global(html[data-theme-id="flat"]) .snipAwayHint {
+  color: rgba(var(--chrome-ink-rgb), 0.5);
+}

@@ -35,6 +35,17 @@
   color: rgba(255, 255, 255, 0.60);
 }
 
+/* Flat: light surface + dark ink so the panel belongs to the flat world.
+ * .pill stays untouched — amber is a semantic warning color. */
+:global(html[data-theme-id="flat"]) .panel {
+  background: var(--chrome-panel-surface);
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.10);
+}
+
+:global(html[data-theme-id="flat"]) .label {
+  color: rgba(var(--chrome-ink-rgb), 0.60);
+}
+
 /* Duplicate pill: amber — matches AllMarks ⚠ amber vocabulary */
 .pill {
   display: inline-flex;
