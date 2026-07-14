@@ -358,6 +358,17 @@ ol {
   --chrome-text-stroke-color-hover: rgba(0, 0, 0, 0.75);
   --chrome-text-shadow: 0 0 4px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.45);
 
+  /* ── chrome skin tokens（テーマが html[data-theme-id] で上書き。未定義＝この中立既定＝現行の見た目）── */
+  --chrome-panel-surface: rgba(12, 12, 12, 0.94);
+  --chrome-panel-border: rgba(255, 255, 255, 0.10);
+  --chrome-panel-radius: 14px;
+  --chrome-panel-blur: 14px;
+  --chrome-panel-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --chrome-btn-color: rgba(255, 255, 255, 0.85);
+  --chrome-btn-hover: rgba(255, 255, 255, 1);
+  --chrome-font: ui-monospace, "SF Mono", Consolas, monospace;
+  --chrome-hover-fx: glitch;
+
   /* === card hover micro-interaction (I-07-#2) ===
      Cross-fade duration + easing shared by the multi-slot hover swap
      (opacity transition on layered <img>s) AND the destefanis-style
