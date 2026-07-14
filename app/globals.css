@@ -358,6 +358,17 @@ ol {
   --chrome-text-stroke-color-hover: rgba(0, 0, 0, 0.75);
   --chrome-text-shadow: 0 0 4px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.45);
 
+  /* ── chrome skin tokens（テーマが html[data-theme-id] で上書き。未定義＝この中立既定＝現行の見た目）── */
+  --chrome-panel-surface: rgba(12, 12, 12, 0.94);
+  --chrome-panel-border: rgba(255, 255, 255, 0.10);
+  --chrome-panel-radius: 14px;
+  --chrome-panel-blur: 14px;
+  --chrome-panel-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --chrome-btn-color: rgba(255, 255, 255, 0.85);
+  --chrome-btn-hover: rgba(255, 255, 255, 1);
+  --chrome-font: ui-monospace, "SF Mono", Consolas, monospace;
+  --chrome-hover-fx: glitch;
+
   /* === card hover micro-interaction (I-07-#2) ===
      Cross-fade duration + easing shared by the multi-slot hover swap
      (opacity transition on layered <img>s) AND the destefanis-style
@@ -591,11 +602,18 @@ html[data-theme-id="paper-atelier"] {
   --wax-letter: rgba(255, 253, 246, 0.92);   /* IVORY pressed "A" */
   --stamp-ink: var(--accent-gold);           /* GOLD PEEL decorative "+" */
 
-  /* header chrome buttons (TITLE/TUNE/SETTINGS…) — dark, no stroke on paper */
+  /* header chrome buttons — paper chrome coloring DEFERRED to sub2/3 paper skin.
+     These dark-ink overrides only read correctly paired with cream --paper-panel-*
+     menu surfaces, but 489caf7e neutralized those menu surfaces to dark glass.
+     sub1 made --chrome-btn-color live (tokenized ChromeButton/ChromeDrawer/FilterPill);
+     leaving these active turned the FILTER dropdown rows + drawer text
+     dark-ink-on-dark-glass = invisible. Neutralized so paper chrome falls back to the
+     :root light value (= exact pre-sub1 paper rendering). Restore alongside the cream
+     panel skin in sub2/3.
   --chrome-btn-color: rgba(43, 39, 34, 0.9);
   --chrome-btn-color-hover: rgba(43, 39, 34, 1);
   --chrome-btn-stroke-width: 0px;
-  --chrome-btn-stroke-color: transparent;
+  --chrome-btn-stroke-color: transparent; */
 
   /* serif headings + body (Fraunces, already loaded as --font-serif-display).
      --font-sans is overridden too so portalled UI (Lightbox / PiP / popovers)
@@ -626,6 +644,22 @@ html[data-theme-id="paper-atelier"] {
      Portals inherit because data-theme-id lives on <html>, so the body-level
      lightbox portal still resolves this var. */
   --lightbox-backdrop: rgba(43, 39, 34, 0.34);   /* CHARCOAL ink @ low alpha over PARCHMENT */
+}
+
+/* ── Sound Wave (dotted-notebook) — default theme chrome skin home ──
+   音(Sound Wave)テーマの chrome 皮＝ミキサー。現状は :root 中立既定と同値(＝音は現行どおり・
+   バイト同一)。サブ2 でフラット中立が :root に入ったら、ミキサー固有の chrome トークンはこの
+   ブロックへ集約する(所番地の確定)。 */
+html[data-theme-id="dotted-notebook"] {
+  --chrome-panel-surface: rgba(12, 12, 12, 0.94);
+  --chrome-panel-border: rgba(255, 255, 255, 0.10);
+  --chrome-panel-radius: 14px;
+  --chrome-panel-blur: 14px;
+  --chrome-panel-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --chrome-btn-color: rgba(255, 255, 255, 0.85);
+  --chrome-btn-hover: rgba(255, 255, 255, 1);
+  --chrome-font: ui-monospace, "SF Mono", Consolas, monospace;
+  --chrome-hover-fx: glitch;
 }
 
 /* ── Reduced Motion ────────────────────────────────────────── */
