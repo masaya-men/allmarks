@@ -1,4 +1,19 @@
 const $ = (id) => document.getElementById(id)
+
+// ── i18n: replace [data-i18n*] with chrome.i18n messages (browser UI language) ──
+function applyI18n() {
+  for (const el of document.querySelectorAll('[data-i18n]')) {
+    const msg = chrome.i18n.getMessage(el.dataset.i18n)
+    if (msg) el.textContent = msg
+  }
+  for (const el of document.querySelectorAll('[data-i18n-placeholder]')) {
+    const msg = chrome.i18n.getMessage(el.dataset.i18nPlaceholder)
+    if (msg) el.setAttribute('placeholder', msg)
+  }
+  const title = chrome.i18n.getMessage('optDocTitle')
+  if (title) document.title = title
+  document.documentElement.lang = chrome.i18n.getUILanguage()
+}
 const AUTO_SAVE_KEYS = [
   'autoSaveXLike',
   'autoSaveXBookmark',
@@ -32,14 +47,8 @@ function pulseSaved(controlEl) {
   const saved = card && card.querySelector('.saved')
   if (!saved) return
   saved.classList.add('is-saving')
-  setTimeout(() => {
-    saved.classList.remove('is-saving')
-    saved.classList.remove('flash')
-    // reflow to restart the dot flash animation
-    void saved.offsetWidth
-    saved.classList.add('flash')
-    setTimeout(() => saved.classList.remove('flash'), 650)
-  }, 420)
+  clearTimeout(saved._t)
+  saved._t = setTimeout(() => saved.classList.remove('is-saving'), 1200)
 }
 
 // ── Idle-opacity slider (stored 0..1, shown 0..60%) ──
@@ -47,8 +56,8 @@ function applyIdleOpacityUi(percent) {
   const slider = $('floatingButtonIdleOpacity')
   const label = $('idleOpacityLabel')
   slider.style.setProperty('--fill', (percent / Number(slider.max)) * 100 + '%')
-  if (percent === 0) label.textContent = '0% (HIDDEN UNTIL HOVER)'
-  else if (percent === 30) label.textContent = '30% (DEFAULT)'
+  if (percent === 0) label.textContent = chrome.i18n.getMessage('optIdleOpacityHidden')
+  else if (percent === 30) label.textContent = chrome.i18n.getMessage('optIdleOpacityDefault')
   else label.textContent = percent + '%'
 }
 
@@ -75,7 +84,7 @@ function renderDisabledDomains(list) {
   if (!list.length) {
     const empty = document.createElement('p')
     empty.className = 'domain-empty'
-    empty.textContent = 'NO SITES HIDDEN YET.'
+    empty.textContent = chrome.i18n.getMessage('optFloatingNoSites')
     root.appendChild(empty)
     return
   }
@@ -88,7 +97,7 @@ function renderDisabledDomains(list) {
     const btn = document.createElement('button')
     btn.type = 'button'
     btn.className = 'am flat'
-    btn.textContent = 'REMOVE'
+    btn.textContent = chrome.i18n.getMessage('optFloatingRemove')
     btn.addEventListener('click', async () => {
       const stored = await chrome.storage.sync.get({ floatingButtonDisabledDomains: [] })
       const next = (stored.floatingButtonDisabledDomains || []).filter((d) => d !== domain)
@@ -197,7 +206,6 @@ function applyVersion() {
   try {
     const m = chrome.runtime.getManifest()
     $('verNum').textContent = m.version
-    $('buildNum').textContent = String(m.version).replace(/\./g, '').padStart(4, '0')
   } catch {
     /* leave dashes */
   }
@@ -247,6 +255,7 @@ function setupNav() {
   onScroll()
 }
 
+applyI18n()
 applyVersion()
 applySavedCount()
 setupNav()
