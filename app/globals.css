@@ -368,6 +368,7 @@ ol {
   --chrome-btn-hover: rgba(255, 255, 255, 1);
   --chrome-font: ui-monospace, "SF Mono", Consolas, monospace;
   --chrome-hover-fx: glitch;
+  --chrome-ink-rgb: 255, 255, 255;   /* chrome 中身インクの基色（暗テーマ=白）。flat が 20,19,15 に反転 */
 
   /* === card hover micro-interaction (I-07-#2) ===
      Cross-fade duration + easing shared by the multi-slot hover swap
@@ -660,6 +661,7 @@ html[data-theme-id="dotted-notebook"] {
   --chrome-btn-hover: rgba(255, 255, 255, 1);
   --chrome-font: ui-monospace, "SF Mono", Consolas, monospace;
   --chrome-hover-fx: glitch;
+  --chrome-ink-rgb: 255, 255, 255;
 }
 
 /* ── Flat (light editorial) — LP と地続きの白盤面 ──
@@ -710,6 +712,7 @@ html[data-theme-id="flat"] {
   --chrome-btn-hover: rgba(20, 19, 15, 1);
   --chrome-font: var(--font-sans);    /* Geist（flat は --font-sans を上書きしない） */
   --chrome-hover-fx: none;
+  --chrome-ink-rgb: 20, 19, 15;
 
   /* scroll meter — quiet 'line' variant tokens (QuietTrack が読む) */
   --meter-line-rail: rgba(20, 19, 15, 0.14);
