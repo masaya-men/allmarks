@@ -19,7 +19,7 @@
   color: rgba(255, 255, 255, 0.42);
 }
 .resetBtn {
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
   font-size: 9.5px;
   letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.5);

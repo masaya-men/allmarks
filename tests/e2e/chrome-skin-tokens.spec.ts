@@ -71,3 +71,111 @@ test('ChromeDrawer .panel computed style is byte-identical on default theme', as
   expect(style.color).toBe('rgba(255, 255, 255, 0.85)')
   expect(style.fontFamily).toBe('ui-monospace, "SF Mono", Consolas, monospace')
 })
+
+/*
+ * Task 3 extends the same net to the remaining chrome panels: ExtensionEntry's
+ * .panelCta (LAYOUT buttons, inside the already-open SETTINGS drawer), the
+ * THEMES modal (a second ChromeDrawer consumer opened via a different
+ * trigger), FilterPill (trigger pill + dropdown menu), and TUNE (trigger +
+ * horizontal drawer — NOT tokenized this task, scope was restricted to
+ * ChromeDrawer/ChromeButton-style panels; this locks in that TUNE's own
+ * literal values are untouched by the refactor).
+ */
+
+test('ExtensionEntry .panelCta (LAYOUT reset button) font-family is byte-identical on default theme', async ({ page }) => {
+  await prepBoard(page)
+  const settingsBtn = page.getByTestId('extension-settings')
+  await settingsBtn.scrollIntoViewIfNeeded()
+  await settingsBtn.click()
+  const resetBtn = page.getByTestId('layout-reset-sizes')
+  await resetBtn.waitFor({ state: 'visible', timeout: 10_000 })
+  const fontFamily = await resetBtn.evaluate((el) => getComputedStyle(el).fontFamily)
+  expect(fontFamily).toBe('ui-monospace, "SF Mono", Consolas, monospace')
+})
+
+test('THEMES modal panel (second ChromeDrawer consumer) computed style is byte-identical on default theme', async ({ page }) => {
+  await prepBoard(page)
+  const settingsBtn = page.getByTestId('extension-settings')
+  await settingsBtn.scrollIntoViewIfNeeded()
+  await settingsBtn.click()
+  const openThemeModalBtn = page.getByTestId('open-theme-modal')
+  await openThemeModalBtn.waitFor({ state: 'visible', timeout: 10_000 })
+  await openThemeModalBtn.click()
+  const modal = page.getByTestId('theme-modal')
+  await modal.waitFor({ state: 'visible', timeout: 10_000 })
+  const style = await modal.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    return {
+      backgroundColor: cs.backgroundColor,
+      borderColor: cs.borderColor,
+      borderRadius: cs.borderRadius,
+      boxShadow: cs.boxShadow,
+      color: cs.color,
+      fontFamily: cs.fontFamily,
+    }
+  })
+  expect(style.backgroundColor).toBe('rgba(12, 12, 12, 0.94)')
+  expect(style.borderColor).toBe('rgba(255, 255, 255, 0.1)')
+  expect(style.borderRadius).toBe('14px')
+  expect(style.boxShadow).toBe('rgba(0, 0, 0, 0.55) 0px 18px 50px 0px')
+  expect(style.color).toBe('rgba(255, 255, 255, 0.85)')
+  expect(style.fontFamily).toBe('ui-monospace, "SF Mono", Consolas, monospace')
+})
+
+test('FilterPill trigger computed style is byte-identical on default theme', async ({ page }) => {
+  await prepBoard(page)
+  const pill = page.getByTestId('filter-pill')
+  await pill.scrollIntoViewIfNeeded()
+  const style = await pill.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    return { color: cs.color, fontFamily: cs.fontFamily }
+  })
+  expect(style.color).toBe('rgba(255, 255, 255, 0.85)')
+  expect(style.fontFamily).toBe('ui-monospace, "SF Mono", Consolas, monospace')
+})
+
+test('FilterPill menu (dropdown) font-family and item row color are byte-identical on default theme', async ({ page }) => {
+  await prepBoard(page)
+  const pill = page.getByTestId('filter-pill')
+  await pill.scrollIntoViewIfNeeded()
+  await pill.click()
+  const menu = page.getByTestId('filter-pill-menu')
+  await expect(menu).toHaveAttribute('data-open', 'true')
+  const menuFontFamily = await menu.evaluate((el) => getComputedStyle(el).fontFamily)
+  expect(menuFontFamily).toBe('ui-monospace, "SF Mono", Consolas, monospace')
+
+  // ALL is the default active filter, so it carries the `.active` override
+  // (color: #fff) rather than the plain `.item` base color this task
+  // tokenized. Switch to TRASH first so re-checking ALL reads the
+  // non-active base state.
+  const trashRow = menu.getByRole('button', { name: /TRASH/ })
+  await trashRow.click()
+  await pill.click() // picking a row closes the menu — reopen it
+  await expect(menu).toHaveAttribute('data-open', 'true')
+  const allRow = menu.getByRole('button', { name: /^ALL/ })
+  const allRowColor = await allRow.evaluate((el) => getComputedStyle(el).color)
+  expect(allRowColor).toBe('rgba(255, 255, 255, 0.85)')
+})
+
+test('TUNE trigger + drawer computed style is unchanged on default theme (out of scope for sub1 tokenization)', async ({ page }) => {
+  await prepBoard(page)
+  const trigger = page.getByTestId('tune-trigger')
+  await trigger.scrollIntoViewIfNeeded()
+  const triggerStyle = await trigger.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    return { color: cs.color, fontFamily: cs.fontFamily }
+  })
+  expect(triggerStyle.color).toBe('rgba(255, 255, 255, 0.85)')
+  expect(triggerStyle.fontFamily).toBe('ui-monospace, "SF Mono", Consolas, monospace')
+
+  await trigger.click()
+  const drawer = page.getByTestId('tune-drawer')
+  await expect(drawer).toHaveAttribute('data-open', 'true')
+  const drawerStyle = await drawer.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    return { backgroundColor: cs.backgroundColor, borderRadius: cs.borderRadius, boxShadow: cs.boxShadow }
+  })
+  expect(drawerStyle.backgroundColor).toBe('rgba(10, 10, 10, 0.92)')
+  expect(drawerStyle.borderRadius).toBe('8px')
+  expect(drawerStyle.boxShadow).toBe('rgba(0, 0, 0, 0.5) 0px 6px 20px 0px')
+})
