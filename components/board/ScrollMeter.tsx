@@ -11,6 +11,7 @@ import {
 } from 'react'
 import styles from './ScrollMeter.module.css'
 import { RulerTrack } from './scrollmeter/RulerTrack'
+import { QuietTrack } from './scrollmeter/QuietTrack'
 
 /** Number of tick marks rendered on the ruler. Decoupled from any external
  *  count — the meter is a pure visual waveform, with current scroll OR
@@ -114,9 +115,10 @@ type Props = {
   readonly onScrub: (fraction: number) => void
   /** Which meter face to render. 'waveform' = the default sound-wave ticks
    *  (dotted-notebook / grid-paper). 'ruler' = the paper-atelier tape-measure
-   *  (RulerTrack). The 0..1 swellFraction-in / onScrub-out contract and the
-   *  counter readout are identical across both faces. */
-  readonly variant?: 'waveform' | 'ruler'
+   *  (RulerTrack). 'line' = the flat theme's quiet editorial line. The 0..1
+   *  swellFraction-in / onScrub-out contract and the counter readout are
+   *  identical across all faces. */
+  readonly variant?: 'waveform' | 'ruler' | 'line'
   /** True while the board is being grab-wiggled (default theme). Folds into the
    *  waveform's existing interaction churn so the meter resonates continuously
    *  while held. Ignored by the ruler variant. */
@@ -180,7 +182,7 @@ export function ScrollMeter({
 
   // Mirror variant into a ref so the single []-deps rAF loop can branch on
   // it each frame without restarting. Same idiom as modeRef/swellFractionRef.
-  const variantRef = useRef<'waveform' | 'ruler'>(variant)
+  const variantRef = useRef<'waveform' | 'ruler' | 'line'>(variant)
   useEffect(() => { variantRef.current = variant }, [variant])
 
   // Mirror grabbing into a ref so the single []-deps rAF loop reads it each
@@ -424,7 +426,8 @@ export function ScrollMeter({
       const swellSigma = TICK_COUNT / 32
       const swellGain = 3.4
       const isRuler = variantRef.current === 'ruler'
-      if (!isRuler) {
+      const isQuiet = isRuler || variantRef.current === 'line'
+      if (!isQuiet) {
         for (let i = 0; i < TICK_COUNT; i++) {
           const el = tickRefs.current[i]
           if (!el) continue
@@ -450,7 +453,7 @@ export function ScrollMeter({
           el.style.height = `${Math.max(1, h).toFixed(1)}px`
         }
       } else {
-        // Ruler: no per-tick height writes; just slide the brass marker to the
+        // Ruler / line: no per-tick height writes; just slide the marker to the
         // centerTickIdx position (same 0..1 mapping, expressed as left %).
         const marker = rulerMarkerRef.current
         if (marker) {
@@ -485,14 +488,15 @@ export function ScrollMeter({
         jitterProb: number,
       ): void => {
         if (!node) return
-        // Paper "ruler" variant: the counter is a calm, STATIC ink readout
-        // (目盛り / graduations) — no scramble, micro-jitter, or periodic
-        // churn. Short-circuit to the settled value so a scroll-driven count
-        // change just snaps to the new number instead of scrambling. This is
-        // the single gate that stops ALL digit motion on paper (the periodic
-        // and grab blocks below only *arm* scramble deadlines, which this
-        // ignores). Default (waveform) theme path is untouched.
-        if (isRuler) {
+        // Paper "ruler" / flat "line" variants: the counter is a calm, STATIC
+        // ink readout (目盛り / graduations) — no scramble, micro-jitter, or
+        // periodic churn. Short-circuit to the settled value so a
+        // scroll-driven count change just snaps to the new number instead of
+        // scrambling. This is the single gate that stops ALL digit motion on
+        // ruler/line (the periodic and grab blocks below only *arm* scramble
+        // deadlines, which this ignores). Default (waveform) theme path is
+        // untouched.
+        if (isQuiet) {
           node.textContent = pad4(settled)
           return
         }
@@ -653,6 +657,8 @@ export function ScrollMeter({
         >
           {variant === 'ruler' ? (
             <RulerTrack markerRef={rulerMarkerRef} />
+          ) : variant === 'line' ? (
+            <QuietTrack markerRef={rulerMarkerRef} />
           ) : (
             <>
               <div className={styles.baseline} aria-hidden="true" />

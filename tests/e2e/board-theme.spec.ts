@@ -82,3 +82,69 @@ test('default theme is unchanged (regression)', async ({ page }) => {
   expect(bg).toBe('#0a0a0a') // dotted-notebook canvas unchanged
   await page.screenshot({ path: `${SHOT_DIR}/default-board.png`, fullPage: false })
 })
+
+test('flat theme applies a light board with dark chrome ink', async ({ page }) => {
+  await prepBoard(page)
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme-id', 'flat'))
+  const board = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim().toLowerCase())
+  expect(board).toBe('#faf9f6')
+  const scheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+  expect(scheme).toContain('light')
+  // panels are a light surface, chrome text is dark ink (paired — the s197 trap).
+  // Reading a raw custom-property value (not a resolved CSS property like
+  // `color`/`background-color`) surfaces the build's LightningCSS color
+  // minification verbatim: our rgba(...) source is rewritten to #rrggbbaa hex
+  // before it reaches the browser (same pre-existing quirk documented in
+  // chrome-skin-tokens.spec.ts's header for backdrop-filter), so these assert
+  // the hex form rather than an rgba() substring.
+  const panel = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--chrome-panel-surface').trim().toLowerCase())
+  expect(panel).toMatch(/^#ffffff/) // white surface
+  const btn = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--chrome-btn-color').trim().toLowerCase())
+  expect(btn).toMatch(/^#14130f|^#181614/) // dark ink (rgb(20,19,15) / rgb(24,22,20) as hex)
+})
+
+test('flat TUNE drawer wears the white flat skin', async ({ page }) => {
+  await prepBoard(page)
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme-id', 'flat'))
+  // hover-open the TUNE drawer
+  await page.getByTestId('tune-wrap').hover()
+  const drawer = page.getByTestId('tune-drawer')
+  await expect.poll(async () =>
+    drawer.evaluate((el) => getComputedStyle(el).backgroundColor)
+  , { timeout: 5000 }).toMatch(/255, 255, 255/)
+
+  // Collapsed "TUNE" label must render in dark ink (flat --chrome-btn-color),
+  // not the base rule's hardcoded white — otherwise it's invisible on the
+  // flat light board.
+  const trigger = page.getByTestId('tune-trigger')
+  const triggerColor = await trigger.evaluate((el) => getComputedStyle(el).color)
+  expect(triggerColor).toMatch(/20, 19, 15/)
+  expect(triggerColor).not.toMatch(/255, 255, 255/)
+})
+
+test('switching to flat drives the quiet line meter end-to-end', async ({ page }) => {
+  await prepBoard(page)
+
+  // same real-selection flow as the paper-atelier test above — the meter
+  // variant is React-driven (BoardRoot's themeMeta.scrollMeterVariant), not
+  // attribute-driven, so this must go through the UI and cannot be faked via
+  // page.evaluate(setAttribute).
+  const settings = page.getByTestId('extension-settings')
+  await settings.scrollIntoViewIfNeeded()
+  await settings.click()
+  await page.getByTestId('extension-settings-drawer').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.getByTestId('open-theme-modal').waitFor({ state: 'visible', timeout: 10_000 })
+  await page.getByTestId('open-theme-modal').click({ timeout: 8_000 })
+  await page.getByTestId('theme-modal').waitFor({ state: 'visible', timeout: 10_000 })
+
+  await page.getByTestId('theme-button-flat').click({ timeout: 8_000 })
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme-id')), { timeout: 10_000 })
+    .toBe('flat')
+
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('quiet-track')).toBeVisible({ timeout: 10_000 })
+})

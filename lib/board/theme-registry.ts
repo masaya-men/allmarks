@@ -35,6 +35,17 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     motion: { entry: 'paper-drift', text: 'ink-underline', shutdown: 'paper-fade' },
     decorations: true,
   },
+  flat: {
+    id: 'flat',
+    direction: 'vertical',
+    backgroundClassName: 'flat',
+    labelKey: 'board.theme.flat',
+    colorScheme: 'light',
+    tier: 'free',
+    kind: 'pattern',
+    scrollMeterVariant: 'line',
+    motion: { entry: 'fade', text: 'default', shutdown: 'fade' },
+  },
 }
 
 export const DEFAULT_THEME_ID: ThemeId = 'dotted-notebook'

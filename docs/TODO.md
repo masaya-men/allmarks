@@ -21,6 +21,16 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 198 — ★テーマ実行の続き: サブ2 フラットテーマ＋フラット TUNE 皮を subagent-driven で本番出荷)
+
+**掟どおり「頭でモック→ユーザー承認→写経 spec/plan→subagent-driven→opus 全ブランチレビュー」を1セッションで完遂。** 新 opt-in 明テーマ **Flat**（LP 白エディトリアル `#faf9f6`・Fraunces ワードマーク・`kind:'pattern'`）＋その TUNE 皮を出荷。`theme-sub2-flat` 6タスク（T1 登録=Haiku／T2-6=Sonnet）＋各 per-task レビュー＋fix＋**opus 全ブランチレビュー Ready=WITH FIXES→hover 欠陥1件 fix**→merge --no-ff→`allmarks.app` デプロイ。tsc0／**vitest 2407**／build／e2e 14（board-theme6＋chrome-skin-tokens8）。
+
+- **入れたもの**: ①テーマ登録（`ThemeId`+`'flat'`／`scrollMeterVariant`+`'line'`／registry／customization 既定／`.flat` 背景クラス／15言語 "Flat"）②`globals.css` の flat トークンブロック（白パネル+暗インク・serif ワードマーク・meter-line・flat-fade）③**旧サブ1 Task 4 完成**＝`BoardRoot` の `DARK_CHROME_RESET` を `themeMeta.colorScheme==='dark'` で gate（明盤面は内側白リセットを回避＝暗インク header）④静音メーター新 variant `'line'`＝`QuietTrack`（紙 PNG 非依存・ScrollMeter を `isRuler→isQuiet` 一般化＝waveform/ruler は superset で不変）⑤静か motion `'fade'`（tag-entry/shutdown）⑥**TUNE フラット皮**＝`data-theme-id="flat"` scoped の CSS append-only（金属フェーダー→細レール+白丸／金属レバー→ドット選択+iOS CORNERS／LED 凡例→静音／暗ガラス→白ドロワー）。
+- **不変条件は死守**（opus が全ブランチで5拘束を独立トレース）: **既定(dotted-notebook)＋音/Grid/紙はバイト同一**（全 CSS が flat scoped or append-only・0 deletions）／BoardRoot gate は全テーマクラスで正（dark は no-op・paper は resolvedCustom null で短絡・flat のみ挙動変化）／`isQuiet` は `isRuler` の strict superset＝波形/ruler 無退行／s197 の面+インク対ペア成立。
+- **既定は音のまま**（`DEFAULT_THEME_ID` 不変）。**フラット既定化は実機承認後に別途1行**。
+- **★次セッション最優先＝実機確認**（`allmarks.app` ハードリロード→Flat 選択→白盤面・白 TUNE・静音メーター・音に戻すとバイト同一）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。OK なら **サブ3（Grid・紙の TUNE 皮）** or **C2 翻訳**。
+- **既知の残（deferred・非ブロッキング）**: フラット TUNE の `.trigger` RGB-glitch hover が音の言語のまま（実機で判断）／明色スウォッチのプリセット追加（共有スウォッチ非改変）／受け取り画面(/s/)のフラット化＝サブ5／死 regex `#181614`（無害）。
+
 ### 直近の状態 (セッション 197 — ★テーマ実行フェーズ: サブ6＋サブ1 を subagent-driven で本番出荷／サブ1 で紙退行を捕捉・修正／T4 保留)
 
 **司令塔=Opus・実装=安価モデル（機械的 haiku／芯 Sonnet）の subagent-driven で、テーマ大改修の波0（サブ6）と波1（サブ1）を1セッションで出荷。** 各タスクレビュー＋opus 全ブランチレビュー→merge --no-ff。

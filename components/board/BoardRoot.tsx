@@ -3351,9 +3351,16 @@ export function BoardRoot() {
         // The edge-band chrome override above cascades into here; reset it to the
         // default light-on-dark chrome so the header + card chrome (which sit on
         // the dark board, not the edge) keep their normal ink.
-        // (NB: a *light* BOARD colour would also make the header faint, but the
-        // header components don't yet share one chrome token — see follow-up.)
-        style={resolvedCustom && isLightColor(resolvedCustom.edgeColor) ? DARK_CHROME_RESET : undefined}
+        // DARK_CHROME_RESET は「暗い盤面＋明るい縁」用（内側 header/card を白インクに戻す）。
+        // flat のような LIGHT 盤面ではリセットすると header が白インク×明盤面で消える —
+        // 明盤面テーマは flat ブロックの暗 chrome トークンをそのまま継承させる。
+        style={
+          resolvedCustom &&
+          isLightColor(resolvedCustom.edgeColor) &&
+          themeMeta.colorScheme === 'dark'
+            ? DARK_CHROME_RESET
+            : undefined
+        }
       >
         <TopHeader
           hidden={!!lightboxItemId}

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ScrollMeter } from './ScrollMeter'
 import { getThemeMeta } from '@/lib/board/theme-registry'
@@ -218,4 +218,29 @@ describe('ScrollMeter variant is registry-driven', () => {
     expect(getByTestId('scroll-meter').getAttribute('data-meter-variant')).toBe('waveform')
     expect(queryByTestId('ruler-track')).toBeNull()
   })
+
+  it('renders the QuietTrack (line) face when fed the flat registry variant', () => {
+    const variant = getThemeMeta('flat').scrollMeterVariant
+    expect(variant).toBe('line')
+    const { getByTestId } = render(
+      <ScrollMeter
+        mode="board" n1={1} n2={1} total={1}
+        swellFraction={0} onScrub={() => {}} variant={variant}
+      />,
+    )
+    expect(getByTestId('quiet-track')).toBeTruthy()
+  })
+})
+
+it('line variant renders QuietTrack and does not scramble the counter', () => {
+  const { container } = render(
+    <ScrollMeter mode="board" n1={1} n2={9} total={410} swellFraction={0.2} onScrub={() => {}} variant="line" />,
+  )
+  expect(screen.getByTestId('quiet-track')).toBeInTheDocument()
+  expect(screen.getByTestId('scroll-meter')).toHaveAttribute('data-meter-variant', 'line')
+  // The counter row pre-renders the settled total (zero-padded) before any
+  // rAF/scramble loop runs — jsdom never fires rAF, so this initial JSX
+  // render is what we assert against (same pattern as the padded-counter
+  // test above).
+  expect(container.textContent).toContain('0410')
 })

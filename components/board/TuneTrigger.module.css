@@ -339,3 +339,41 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
+
+/* ── Flat theme skin: white drawer, hairline divider, quiet ops legend ── */
+:global(html[data-theme-id="flat"]) .drawer {
+  background: var(--chrome-panel-surface, rgba(255, 255, 255, 0.97));
+  border: 1px solid var(--chrome-panel-border, rgba(20, 19, 15, 0.10));
+  border-radius: var(--chrome-panel-radius, 14px);
+  backdrop-filter: blur(var(--chrome-panel-blur, 8px));
+  -webkit-backdrop-filter: blur(var(--chrome-panel-blur, 8px));
+}
+:global(html[data-theme-id="flat"]) .drawer[data-open='true'] {
+  box-shadow: var(--chrome-panel-shadow, 0 22px 60px -22px rgba(20, 19, 15, 0.28));
+}
+:global(html[data-theme-id="flat"]) .drawerDivider {
+  background: var(--chrome-panel-border, rgba(20, 19, 15, 0.10));
+  box-shadow: none;
+}
+/* readout numbers on the trigger button → ink on light */
+:global(html[data-theme-id="flat"]) .cell.num { color: #1c9a00; }
+:global(html[data-theme-id="flat"]) .cell.dim { color: rgba(20, 19, 15, 0.3); }
+:global(html[data-theme-id="flat"]) .cell.reset { color: rgba(20, 19, 15, 0.85); }
+:global(html[data-theme-id="flat"]) .cell.reset.resetIdle { color: rgba(20, 19, 15, 0.35); }
+/* ops legend → quiet muted hints (no domed LEDs) */
+:global(html[data-theme-id="flat"]) .opsLegend { border-top-color: rgba(20, 19, 15, 0.10); }
+:global(html[data-theme-id="flat"]) .led {
+  background-color: rgba(20, 19, 15, 0.3);
+  background-image: none;
+  box-shadow: none;
+  width: 5px;
+  height: 5px;
+}
+:global(html[data-theme-id="flat"]) .opsText { color: rgba(20, 19, 15, 0.5); }
+/* Collapsed "TUNE" label: base .trigger hardcodes white text, which is
+   invisible on the flat light board. Tokenize to the flat chrome ink so it
+   matches its ChromeButton siblings (TITLE, settings) instead of vanishing. */
+:global(html[data-theme-id="flat"]) .trigger {
+  color: var(--chrome-btn-color, rgba(20, 19, 15, 0.9));
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+}

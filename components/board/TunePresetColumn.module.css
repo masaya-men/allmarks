@@ -305,3 +305,66 @@
   text-align: left;
 }
 
+/* ── Flat theme skin: dot-selected preset rows + iOS toggle for CORNERS ── */
+/* status LED → simple dot */
+:global(html[data-theme-id="flat"]) .led {
+  background: transparent;
+  border: 1.5px solid rgba(20, 19, 15, 0.35);
+  box-shadow: none;
+}
+:global(html[data-theme-id="flat"]) .ledOn {
+  background: #28f100;
+  border-color: #1c9a00;
+  box-shadow: 0 0 0 3px rgba(40, 241, 0, 0.14);
+}
+/* preset rows: hide the metal lever (the dot carries selection); tint the active row */
+:global(html[data-theme-id="flat"]) .presetRow .lever { display: none; }
+:global(html[data-theme-id="flat"]) .presetRow:has(.ledOn) {
+  background: rgba(20, 19, 15, 0.05);
+  border-radius: 9px;
+}
+:global(html[data-theme-id="flat"]) .label { color: rgba(20, 19, 15, 0.78); }
+:global(html[data-theme-id="flat"]) .maker { display: none; }
+:global(html[data-theme-id="flat"]) .cornerState { color: rgba(20, 19, 15, 0.4); }
+:global(html[data-theme-id="flat"]) .cornerStateOn { color: #1c9a00; }
+/* CORNERS row: turn the lever cell into an iOS toggle */
+:global(html[data-theme-id="flat"]) .cornersRow { border-top-color: rgba(20, 19, 15, 0.10); }
+:global(html[data-theme-id="flat"]) .cornersRow .lever {
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(20, 19, 15, 0.16);
+  border: none;
+  box-shadow: none;
+}
+:global(html[data-theme-id="flat"]) .cornersRow .lever::before,
+:global(html[data-theme-id="flat"]) .cornersRow .lever::after { display: none; }
+:global(html[data-theme-id="flat"]) .cornersRow .lever .handle {
+  display: block;
+  left: 2px;
+  right: auto;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+}
+:global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown { background: #28f100; }
+:global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown .handle { top: 2px; left: 18px; }
+:global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown .handle::before { display: none; }
+/* iOS-toggle handle should never show the base grip-ridge stripes in either
+   state — the ON-only rule above left stripe fragments visible inside the
+   white circular handle when the toggle was OFF (square corners). */
+:global(html[data-theme-id="flat"]) .cornersRow .lever .handle::before { display: none; }
+
+/* Hover state: base .presetRow:hover/.cornersRow:hover .label rules (0,3,0)
+   are tuned for the dark sound drawer (near-white cream on hover). On the
+   flat theme's white drawer that reverts the label to cream-on-white, which
+   is effectively invisible. Override at higher specificity (0,4,1) so flat's
+   dark-ink label color from line 326 also wins on hover. */
+:global(html[data-theme-id="flat"]) .presetRow:hover .label,
+:global(html[data-theme-id="flat"]) .cornersRow:hover .label {
+  color: rgba(20, 19, 15, 0.9);
+}
+

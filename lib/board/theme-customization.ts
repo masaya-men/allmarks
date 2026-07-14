@@ -52,6 +52,15 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     patternStroke: 1,
     titleColor: DEFAULT_TITLE_COLOR,
   },
+  flat: {
+    edgeColor: '#f1efe8',
+    boardColor: '#faf9f6',
+    patternColor: 'rgba(20, 19, 15, 0.10)',
+    patternType: 'none',
+    patternSize: 40,
+    patternStroke: 1,
+    titleColor: 'rgba(20, 19, 15, 0.55)',
+  },
 }
 
 /** True when this theme exposes the CUSTOMIZE controls (= a 'pattern' theme with
