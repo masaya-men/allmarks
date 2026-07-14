@@ -639,6 +639,22 @@ html[data-theme-id="paper-atelier"] {
   --lightbox-backdrop: rgba(43, 39, 34, 0.34);   /* CHARCOAL ink @ low alpha over PARCHMENT */
 }
 
+/* ── Sound Wave (dotted-notebook) — default theme chrome skin home ──
+   音(Sound Wave)テーマの chrome 皮＝ミキサー。現状は :root 中立既定と同値(＝音は現行どおり・
+   バイト同一)。サブ2 でフラット中立が :root に入ったら、ミキサー固有の chrome トークンはこの
+   ブロックへ集約する(所番地の確定)。 */
+html[data-theme-id="dotted-notebook"] {
+  --chrome-panel-surface: rgba(12, 12, 12, 0.94);
+  --chrome-panel-border: rgba(255, 255, 255, 0.10);
+  --chrome-panel-radius: 14px;
+  --chrome-panel-blur: 14px;
+  --chrome-panel-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --chrome-btn-color: rgba(255, 255, 255, 0.85);
+  --chrome-btn-hover: rgba(255, 255, 255, 1);
+  --chrome-font: ui-monospace, "SF Mono", Consolas, monospace;
+  --chrome-hover-fx: glitch;
+}
+
 /* ── Reduced Motion ────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
