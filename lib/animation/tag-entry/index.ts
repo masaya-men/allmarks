@@ -4,7 +4,7 @@ import './themes/wave.module.css'
 // PAPER-ATELIER テーマの CSS variables を side-effect で :root に注入する。
 import './themes/paper.module.css'
 
-export type SupportedTheme = 'wave' | 'paper-drift'
+export type SupportedTheme = 'wave' | 'paper-drift' | 'fade'
 
 interface EntryAnimation {
   readonly keyframes: Keyframe[]
@@ -147,6 +147,25 @@ export function getEntryAnimation(theme: string): EntryAnimation | undefined {
             transform: 'translateY(0) rotate(0deg)',
             opacity: '1',
           },
+        ],
+        options: { duration, easing, fill: 'none' },
+        staggerStepMs,
+        staggerCapMs,
+      }
+    }
+    case 'fade': {
+      // FLAT theme entry: a calm opacity fade with a tiny lift. No colour flash,
+      // no glitch, minimal amplitude (light editorial + 4K fill-rate budget).
+      // Values read from the flat block --flat-fade-* with safe fallbacks.
+      const duration = readCssVar('--flat-fade-duration', 420)
+      const easing = readCssVarRaw('--flat-fade-easing', 'cubic-bezier(0.16, 1, 0.3, 1)')
+      const offsetY = readCssVar('--flat-fade-offset-y', 6)
+      const staggerStepMs = readCssVar('--flat-fade-stagger-step', 16)
+      const staggerCapMs = readCssVar('--flat-fade-stagger-cap', 320)
+      return {
+        keyframes: [
+          { offset: 0, transform: `translateY(${offsetY}px)`, opacity: '0' },
+          { offset: 1, transform: 'translateY(0)', opacity: '1' },
         ],
         options: { duration, easing, fill: 'none' },
         staggerStepMs,

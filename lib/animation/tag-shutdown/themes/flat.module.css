@@ -1,0 +1,8 @@
+/* FLAT theme MOTION-off shutdown: a calm fade-out (mirror of the fade entry). */
+.fade {
+  animation: flat-fade-out 320ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+@keyframes flat-fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(4px); }
+}
