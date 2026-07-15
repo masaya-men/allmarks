@@ -78,7 +78,7 @@ describe('chrome no-gap coverage — every theme renders every chrome panel', ()
     }
   })
 
-  it('THEMES drawer (ThemeModal) renders the full swatch grid + (when customizable) CUSTOMIZE for every theme', () => {
+  it('THEMES drawer (ThemeModal) renders the full theme list + (when customizable) CUSTOMIZE for every theme', () => {
     for (const id of ids) {
       setThemeAttr(id)
       const customization = resolveThemeCustomization(id, undefined)
@@ -94,8 +94,8 @@ describe('chrome no-gap coverage — every theme renders every chrome panel', ()
         />,
       )
       expect(getByTestId('theme-modal'), `theme=${id}`).toBeTruthy()
-      // Every registered theme must appear as a pickable swatch regardless of
-      // which one is currently active — the picker (split PATTERN/WORKS) must
+      // Every registered theme must appear as a pickable row regardless of
+      // which one is currently active — the picker (one flat list) must
       // never gap a theme out.
       for (const otherId of ids) {
         expect(getByTestId(`theme-button-${otherId}`), `active=${id} button=${otherId}`).toBeTruthy()

@@ -50,8 +50,8 @@ describe('ThemeModal outside-click dismiss', () => {
     const { onClose } = renderModal()
     firePointerDown(screen.getByTestId('theme-modal'))
     firePointerDown(screen.getByTestId('theme-modal-close'))
-    // a deep descendant (the stubbed picker — there are two, pattern + works)
-    firePointerDown(screen.getAllByTestId('mock-picker')[0])
+    // a deep descendant (the stubbed picker — now a single flat list)
+    firePointerDown(screen.getByTestId('mock-picker'))
     expect(onClose).not.toHaveBeenCalled()
   })
 

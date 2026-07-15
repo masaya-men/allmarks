@@ -1,50 +1,62 @@
+/* Theme list — one row per theme, name only (no preview art: the live board
+   behind the non-blocking drawer is the preview). Colors ride --text-body,
+   which flips per theme (light on dark themes, ink on paper/flat), so every
+   row stays legible in the drawer whatever the active world. Hover/active
+   tints use currentColor so they follow the same ink with no per-theme rule. */
 .section { display: flex; flex-direction: column; gap: 6px; }
-.heading { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--text-meta); }
-.grid { display: flex; gap: 8px; flex-wrap: wrap; }
-.swatch {
-  display: flex; flex-direction: column; align-items: stretch; gap: 4px;
-  width: 84px; padding: 6px; border-radius: 8px; cursor: pointer;
-  background: var(--color-glass-bg); border: 1px solid var(--color-glass-border);
-  color: var(--text-body); transition: border-color 140ms ease, background 140ms ease;
+
+.list { display: flex; flex-direction: column; gap: 2px; }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  /* ≥32px tall hit target (large-pointer accessibility). */
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-body);
+  cursor: pointer;
+  text-align: left;
+  transition: background 140ms ease, color 140ms ease;
 }
-.swatch[aria-pressed='true'] { border-color: var(--color-accent-primary); }
-.swatch:disabled { opacity: 0.55; cursor: default; }
-.preview { height: 38px; border-radius: 4px; }
-.preview[data-theme-id='dotted-notebook'] { background: #0a0a0a; }
-.preview[data-theme-id='grid-paper'] { background: #0e0e11; }
-.preview[data-theme-id='paper-atelier'] { background: #efe6d2; }
+.row:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.row[aria-pressed='true'] {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.row[aria-pressed='true'] .name { font-weight: 600; }
+.row:disabled { cursor: default; }
+
+/* Fixed-width tick column so names stay left-aligned whether or not the row is
+   active. The tick inherits the row's ink via currentColor (no brand color). */
+.check {
+  flex: 0 0 14px;
+  width: 14px;
+  font-size: 12px;
+  line-height: 1;
+  text-align: center;
+  color: currentColor;
+}
+
 /* Neutral pin: --font-heading resolves to a serif (Fraunces) on the
-   paper-atelier theme, which would leak into this swatch label even though
-   ThemePicker lives inside ChromeDrawer (which only pins mono on ITS OWN
-   panel — an explicit font-family here overrides that inherited pin). Inline
-   the theme-invariant default-sans stack instead so the label never changes
-   font across themes. */
+   paper-atelier theme, which would leak into this label even though ThemePicker
+   lives inside ChromeDrawer. Inline the theme-invariant default-sans stack so
+   the name never changes font across themes. */
 .name {
+  flex: 1 1 auto;
   font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI',
     'Yu Gothic UI', 'Yu Gothic', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
     'Meiryo', system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 14px;
 }
-.badge { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--text-meta); }
 
-/* ── modal variant ─────────────────────────────────────────────────────────
-   Larger swatches for the dedicated theme screen. The grid breathes (wider
-   gap), each swatch shows a taller preview so the world reads at a glance. */
-.section[data-variant='modal'] .grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-.section[data-variant='modal'] .swatch {
-  width: auto;
-  padding: 12px;
-  gap: 8px;
-  border-radius: 12px;
-}
-.section[data-variant='modal'] .preview { height: 92px; border-radius: 7px; }
-.section[data-variant='modal'] .name { font-size: 14px; }
-.section[data-variant='modal'] .badge { font-size: 10px; }
 .lockedPill {
+  flex: 0 0 auto;
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.04em;
@@ -56,11 +68,4 @@
   color: var(--accent-gold, #b9924a);
   background: color-mix(in srgb, var(--accent-gold, #b9924a) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-gold, #b9924a) 38%, transparent);
-}
-
-/* Flat: glass tokens are undefined here (inherit the dark :root defaults),
-   so give the swatch a faint dark-ink surface/outline that reads on white. */
-:global(html[data-theme-id="flat"]) .swatch {
-  background: rgba(var(--chrome-ink-rgb), 0.03);
-  border-color: rgba(var(--chrome-ink-rgb), 0.14);
 }

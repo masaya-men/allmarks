@@ -7,7 +7,6 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ChromeDrawer } from './ChromeDrawer'
 import { ThemePicker } from './ThemePicker'
 import { ThemeCustomizeSection } from './ThemeCustomizeSection'
-import styles from './ThemeModal.module.css'
 
 export interface ThemeModalProps {
   readonly isOpen: boolean
@@ -34,8 +33,9 @@ export interface ThemeModalProps {
  * {@link ChromeDrawer} (the shared right-drawer primitive); this component
  * only supplies the title and the theme-picking content.
  *
- * Themes are grouped into PATTERN (customizable — Sound Wave, Grid; the
- * customize controls land in Phase 3) and WORKS (fixed crafted worlds — Paper).
+ * Themes render as one flat name list (ThemePicker); selecting a customizable
+ * ('pattern') theme reveals the CUSTOMIZE controls directly below it. Fixed
+ * ('work') themes like Paper have no customization, so the section is hidden.
  */
 export function ThemeModal({
   isOpen,
@@ -56,27 +56,9 @@ export function ThemeModal({
       testId="theme-modal"
       closeLabel={t('board.theme.modalCloseLabel')}
     >
-      <section className={styles.group}>
-        <div className={styles.groupLabel}>PATTERN THEMES</div>
-        <ThemePicker
-          themeId={themeId}
-          onThemeChange={onThemeChange}
-          variant="modal"
-          showHeading={false}
-          filterKind="pattern"
-        />
-      </section>
-
-      <section className={styles.group}>
-        <div className={styles.groupLabel}>WORKS</div>
-        <ThemePicker
-          themeId={themeId}
-          onThemeChange={onThemeChange}
-          variant="modal"
-          showHeading={false}
-          filterKind="work"
-        />
-      </section>
+      {/* One flat list of every theme (names only). No PATTERN/WORKS grouping —
+          the list is short and the board behind is the live preview. */}
+      <ThemePicker themeId={themeId} onThemeChange={onThemeChange} />
       {/* CUSTOMIZE — only for 'pattern' themes (customization non-null). */}
       {customization && (
         <ThemeCustomizeSection

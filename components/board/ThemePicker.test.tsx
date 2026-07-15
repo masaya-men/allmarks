@@ -76,7 +76,8 @@ describe('ThemePicker', () => {
     )
     const paid = screen.getByTestId('theme-button-paid-x')
     expect(paid.hasAttribute('disabled')).toBe(false)
-    expect(paid.textContent).toContain('FREE')
+    // no longer locked → the amber unlock pill is gone
+    expect(paid.querySelector('[data-locked-pill]')).toBeNull()
     fireEvent.click(paid)
     expect(onChange).toHaveBeenCalledWith('paid-x')
   })
