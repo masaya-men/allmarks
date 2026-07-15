@@ -61,3 +61,16 @@ test('flat: FilterPill dropdown is a light panel with dark ink rows (fixes dark-
   const rowColor = await allRow.evaluate((el) => getComputedStyle(el).color)
   expect(isDarkInk(rowColor)).toBe(true)
 })
+
+test('flat: closed TUNE drawer shows no border sliver (fully tucked away)', async ({ page }) => {
+  await prepFlatBoard(page)
+  // The TUNE drawer is ALWAYS in the DOM (max-height accordion), unlike the
+  // conditionally-mounted dropdowns. When closed it must have border-width 0,
+  // else a 1px hairline sliver of the panel border shows across the light
+  // board (the bug the flat skin introduced by bordering the drawer always).
+  const drawer = page.getByTestId('tune-drawer')
+  await drawer.waitFor({ state: 'attached', timeout: 10_000 })
+  await expect(drawer).not.toHaveAttribute('data-open', 'true')
+  const borderWidth = await drawer.evaluate((el) => getComputedStyle(el).borderTopWidth)
+  expect(borderWidth).toBe('0px')
+})

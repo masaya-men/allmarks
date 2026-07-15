@@ -343,12 +343,19 @@
 /* ── Flat theme skin: white drawer, hairline divider, quiet ops legend ── */
 :global(html[data-theme-id="flat"]) .drawer {
   background: var(--chrome-panel-surface, rgba(255, 255, 255, 0.97));
-  border: 1px solid var(--chrome-panel-border, rgba(20, 19, 15, 0.10));
+  /* Border WIDTH stays 0 while the drawer is collapsed (max-height:0), so the
+     closed panel is a true 0-height box with no visible hairline sliver on the
+     light board — the width animates to 1px only when open. Colour is set up
+     front so only the width changes. (Same "gate the edge on [data-open]" idiom
+     the FilterPill .menu documents; the dark base .drawer has border:0, which is
+     why this sliver only ever appeared on the light flat skin.) */
+  border: 0 solid var(--chrome-panel-border, rgba(20, 19, 15, 0.10));
   border-radius: var(--chrome-panel-radius, 14px);
   backdrop-filter: blur(var(--chrome-panel-blur, 8px));
   -webkit-backdrop-filter: blur(var(--chrome-panel-blur, 8px));
 }
 :global(html[data-theme-id="flat"]) .drawer[data-open='true'] {
+  border-width: 1px;
   box-shadow: var(--chrome-panel-shadow, 0 22px 60px -22px rgba(20, 19, 15, 0.28));
 }
 :global(html[data-theme-id="flat"]) .drawerDivider {
