@@ -13,18 +13,6 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     chromeMotion: 'signature',
     motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' },
   },
-  'grid-paper': {
-    id: 'grid-paper',
-    direction: 'vertical',
-    backgroundClassName: 'gridPaper',
-    labelKey: 'board.theme.gridPaper',
-    colorScheme: 'dark',
-    tier: 'free',
-    kind: 'pattern',
-    scrollMeterVariant: 'waveform',
-    chromeMotion: 'quiet',
-    motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' },
-  },
   'paper-atelier': {
     id: 'paper-atelier',
     direction: 'vertical',

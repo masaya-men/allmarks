@@ -3,6 +3,7 @@
 import type { ReactElement } from 'react'
 import type { ThemeId, ThemeCustomization } from '@/lib/board/types'
 import { type ResolvedThemeCustomization, themeAllowsPattern } from '@/lib/board/theme-customization'
+import { getThemeMeta } from '@/lib/board/theme-registry'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ChromeDrawer } from './ChromeDrawer'
 import { ThemePicker } from './ThemePicker'
@@ -65,6 +66,7 @@ export function ThemeModal({
           value={customization}
           isDefault={isDefaultCustomization}
           allowsPattern={themeAllowsPattern(themeId)}
+          colorScheme={getThemeMeta(themeId).colorScheme}
           onChange={onCustomize}
         />
       )}

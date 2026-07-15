@@ -160,8 +160,9 @@ import styles from './BoardRoot.module.css'
  *  the full content height) for uniform on-screen density with no wasted items. */
 const DECOR_PARALLAX_FACTOR = 0.30
 
-/** grid-paper background drift. usePaperParallax returns viewportY * (1 − factor),
- *  so `1 − PAPER_PARALLAX_FACTOR` makes the grid move at exactly the same speed
+/** Pattern background drift (Sound Wave's grid/dots, = the retired grid-paper's
+ *  look). usePaperParallax returns viewportY * (1 − factor), so
+ *  `1 − PAPER_PARALLAX_FACTOR` makes the pattern move at exactly the same speed
  *  as the paper-atelier backdrop (0.15× the card scroll = a slow, deep drift).
  *  Applied as background-position-y on the viewport-anchored grid layer (NOT a
  *  translate — the layer is screen-fixed so it stays centred + symmetric). */
@@ -1132,9 +1133,9 @@ export function BoardRoot() {
   // for a strong, clearly-felt depth read — much slower than cards, a touch
   // faster than the near-static bg stains (0.15x). See DECOR_PARALLAX_FACTOR.
   const decorParallaxY = usePaperParallax({ themeId, viewportY: viewport.y, factor: DECOR_PARALLAX_FACTOR })
-  // grid-paper: the grid lives on a viewport-anchored layer (see render below),
-  // so it drifts via background-position-y instead of a translated layer.
-  // Returns viewport.y * (1 − factor) = the grid's drift, matching the paper
+  // Pattern themes: the pattern lives on a viewport-anchored layer (see render
+  // below), so it drifts via background-position-y instead of a translated layer.
+  // Returns viewport.y * (1 − factor) = the pattern's drift, matching the paper
   // backdrop's 0.15× speed.
   const gridBgPanY = usePaperParallax({ themeId, viewportY: viewport.y, factor: GRID_BG_PARALLAX_FACTOR })
 
@@ -3451,9 +3452,9 @@ export function BoardRoot() {
             wiggle={grabWiggle}
             isMobile={isMobile}
           >
-            {/* grid-paper: VIEWPORT-anchored grid (screen-fixed, NOT in a pan
-                wrapper) so the pattern always centres on the viewport — the
-                left/right edges cut symmetrically regardless of content width.
+            {/* Pattern themes (Sound Wave / Flat): VIEWPORT-anchored pattern
+                (screen-fixed, NOT in a pan wrapper) so it always centres on the
+                viewport — the left/right edges cut symmetrically regardless of width.
                 It parallaxes vertically via background-position-y (= the grid's
                 drift) so it floats behind the cards instead of sitting glued. */}
             {hydrated && themeMeta.kind === 'pattern' && resolvedCustom && (

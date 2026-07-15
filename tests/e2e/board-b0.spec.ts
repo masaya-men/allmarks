@@ -145,9 +145,9 @@ test.describe('B0 board skeleton', () => {
     await page.getByTestId('open-theme-modal').click()
     await expect(page.getByTestId('theme-modal')).toBeVisible()
 
-    // 1) switch to grid-paper → <html data-theme-id="grid-paper">
-    await page.locator('[data-theme-button="grid-paper"]').click()
-    await expect(page.locator('html[data-theme-id="grid-paper"]')).toHaveCount(1)
+    // 1) switch to flat → <html data-theme-id="flat"> (grid-paper was retired)
+    await page.locator('[data-theme-button="flat"]').click()
+    await expect(page.locator('html[data-theme-id="flat"]')).toHaveCount(1)
 
     // 2) switch to paper-atelier (theme drawer stays open across selections)
     await page.locator('[data-theme-button="paper-atelier"]').click()

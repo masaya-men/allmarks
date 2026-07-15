@@ -33,24 +33,22 @@ describe('THEME_REGISTRY contract', () => {
     expect(m.motion.shutdown).toBe('paper-fade')
     expect(m.decorations).toBe(true)
   })
-  it('keeps the two dark themes on the waveform meter + wave/glitch motion', () => {
-    for (const id of ['dotted-notebook', 'grid-paper'] as const) {
-      const m = getThemeMeta(id)
-      expect(m.scrollMeterVariant).toBe('waveform')
-      expect(m.motion.entry).toBe('wave')
-      expect(m.motion.text).toBe('glitch-crt')
-      expect(m.motion.shutdown).toBe('wave')
-      expect(m.decorations).toBeUndefined()
-    }
+  it('keeps Sound Wave on the waveform meter + wave/glitch motion', () => {
+    const m = getThemeMeta('dotted-notebook')
+    expect(m.scrollMeterVariant).toBe('waveform')
+    expect(m.motion.entry).toBe('wave')
+    expect(m.motion.text).toBe('glitch-crt')
+    expect(m.motion.shutdown).toBe('wave')
+    expect(m.decorations).toBeUndefined()
   })
   it('keeps the default theme dark + free', () => {
     expect(DEFAULT_THEME_ID).toBe('dotted-notebook')
     expect(getThemeMeta('dotted-notebook').colorScheme).toBe('dark')
     expect(getThemeMeta('dotted-notebook').tier).toBe('free')
   })
-  it('classifies the two dark themes as customizable patterns, paper as a fixed work', () => {
+  it('classifies the live-world themes as customizable patterns, paper as a fixed work', () => {
     expect(getThemeMeta('dotted-notebook').kind).toBe('pattern')
-    expect(getThemeMeta('grid-paper').kind).toBe('pattern')
+    expect(getThemeMeta('flat').kind).toBe('pattern')
     expect(getThemeMeta('paper-atelier').kind).toBe('work')
   })
   it('is registered as a free, light, pattern theme with the line meter', () => {
@@ -70,7 +68,6 @@ describe('THEME_REGISTRY contract', () => {
   })
   test('chromeMotion: only dotted-notebook is signature', () => {
     expect(getThemeMeta('dotted-notebook').chromeMotion).toBe('signature')
-    expect(getThemeMeta('grid-paper').chromeMotion).toBe('quiet')
     expect(getThemeMeta('paper-atelier').chromeMotion).toBe('quiet')
     expect(getThemeMeta('flat').chromeMotion).toBe('quiet')
   })

@@ -281,7 +281,7 @@ describe('ShareMirror', () => {
       scrollY={0}
       contentHeight={1000}
       viewportHeight={800}
-      themeId="grid-paper"
+      themeId="dotted-notebook"
       custom={gridCustom}
     />)
     const rep = screen.getByTestId('mirror-canvas-replica') as HTMLElement
@@ -333,7 +333,7 @@ describe('ShareMirror', () => {
     expect(decos.length).toBeGreaterThan(0)
   })
 
-  it('non-paper theme (grid-paper): NO mat shell, NO PaperCardDecorations (default-parity guard)', () => {
+  it('non-paper theme (Sound Wave + grid): NO mat shell, NO PaperCardDecorations (default-parity guard)', () => {
     const { container } = render(
       <ShareMirror
         items={makeItems(3)}
@@ -346,7 +346,7 @@ describe('ShareMirror', () => {
         scrollY={0}
         contentHeight={1000}
         viewportHeight={800}
-        themeId="grid-paper"
+        themeId="dotted-notebook"
         custom={gridCustom}
       />,
     )

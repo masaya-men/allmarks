@@ -7,7 +7,7 @@ const baseProps = {
   quickTagEnabled: false, onQuickTagToggle: noop,
   onOpenBookmarkletModal: noop,
   isOpen: true, onOpenChange: noop,
-  themeId: 'grid-paper' as const, // ThemeId = 'dotted-notebook' | 'grid-paper' | 'paper-atelier'
+  themeId: 'flat' as const, // ThemeId = 'dotted-notebook' | 'paper-atelier' | 'flat'
   onOpenThemeModal: noop,
   customWidthCount: 0, onResetCardSizes: noop, onSortNewestFirst: noop,
 }

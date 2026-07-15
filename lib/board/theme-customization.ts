@@ -29,8 +29,10 @@ const DEFAULT_TITLE_COLOR = 'rgba(255, 255, 255, 0.95)'
  * Per-theme DEFAULTS. These MUST equal the values hard-coded before this feature
  * existed so an untouched theme renders byte-identical:
  *  - Sound Wave: edge/board #0a0a0a (= --bg-outer / --bg-dark), no pattern.
- *  - Grid:       edge #0a0a0a, board #0e0e11, white grid lines @ 40px
- *                (= themes.module.css `.gridLines`).
+ *  - Flat:       light editorial board, no pattern by default.
+ * Grid was a standalone theme (edge #0a0a0a, board #0e0e11, white grid @ 40px);
+ * it is retired and migrated to Sound Wave + a grid customization (board-config.ts)
+ * — see GRID_MIGRATION_CUSTOMIZATION below.
  * Only 'pattern'-kind themes appear here; 'work' themes are fixed (not editable).
  */
 export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedThemeCustomization>> = {
@@ -39,15 +41,6 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     boardColor: '#0a0a0a',
     patternColor: 'rgba(255, 255, 255, 0.18)',
     patternType: 'none',
-    patternSize: 40,
-    patternStroke: 1,
-    titleColor: DEFAULT_TITLE_COLOR,
-  },
-  'grid-paper': {
-    edgeColor: '#0a0a0a',
-    boardColor: '#0e0e11',
-    patternColor: 'rgba(255, 255, 255, 0.18)',
-    patternType: 'grid',
     patternSize: 40,
     patternStroke: 1,
     titleColor: DEFAULT_TITLE_COLOR,
@@ -71,14 +64,28 @@ export function isCustomizableTheme(id: ThemeId): boolean {
 
 /**
  * Whether a theme exposes PATTERN controls (style / pattern colour / density) on
- * top of the always-present edge + board colour. Each theme gets the controls
- * that suit its identity:
- *  - Sound Wave (default): a clean, pattern-free board — edge + board colour only.
- *  - Grid: the pattern IS the theme — full controls.
+ * top of the always-present edge + board colour. Both live-world 'pattern' themes
+ * get them — grid/dots/etc. are a customization, not a separate theme:
+ *  - Sound Wave: pattern-free by default (patternType 'none'), but the user can
+ *    add a grid (this is what the retired Grid theme became).
+ *  - Flat: same, on the light editorial board.
  */
-const THEMES_WITH_PATTERN_CONTROLS: ReadonlySet<ThemeId> = new Set<ThemeId>(['grid-paper'])
+const THEMES_WITH_PATTERN_CONTROLS: ReadonlySet<ThemeId> = new Set<ThemeId>(['dotted-notebook', 'flat'])
 export function themeAllowsPattern(id: ThemeId): boolean {
   return THEMES_WITH_PATTERN_CONTROLS.has(id)
+}
+
+/** The customization that reproduces the retired Grid theme on Sound Wave (its
+ *  board #0e0e11 + a white grid). board-config's migration writes this into the
+ *  dotted-notebook slot for anyone whose saved theme was 'grid-paper', so their
+ *  board stays pixel-identical. edge/title match Sound Wave's defaults, so they
+ *  resolve from there and don't need overriding here. */
+export const GRID_MIGRATION_CUSTOMIZATION: ThemeCustomization = {
+  boardColor: '#0e0e11',
+  patternType: 'grid',
+  patternColor: 'rgba(255, 255, 255, 0.18)',
+  patternSize: 40,
+  patternStroke: 1,
 }
 
 /** Merge a theme's defaults with the user's saved overrides into the effective
@@ -165,16 +172,21 @@ export const PATTERN_SIZE_MAX = 96
 
 export const PATTERN_TYPES: ReadonlyArray<PatternType> = ['none', 'grid', 'diagonal', 'dots', 'crosshatch']
 
-/** Curated swatches per slot — tasteful darks + a few expressive accents, so the
- *  picker reads as "expression tool", not a raw colour wheel. Custom colours go
- *  through the native picker (appended at the end of each row in the UI). */
-export const EDGE_SWATCHES: ReadonlyArray<string> = [
+/* Curated swatches per slot — the picker reads as "expression tool", not a raw
+   colour wheel. Two board-brightness sets: DARK for the dark world (Sound Wave)
+   and LIGHT for the light editorial world (Flat). Each set's FIRST entry is that
+   world's default colour, so opening CUSTOMIZE highlights the current swatch
+   instead of pre-selecting the "+" custom chip. Custom colours still go through
+   the native picker (appended after each row in the UI). */
+
+// ── Dark world (Sound Wave) — unchanged values (byte-identical) ──
+export const EDGE_SWATCHES_DARK: ReadonlyArray<string> = [
   '#0a0a0a', '#000000', '#15140f', '#0d1413', '#161210', '#1c1c1f',
 ]
-export const BOARD_SWATCHES: ReadonlyArray<string> = [
+export const BOARD_SWATCHES_DARK: ReadonlyArray<string> = [
   '#0a0a0a', '#0e0e11', '#101015', '#13110b', '#0b1210', '#1a1a1a',
 ]
-export const PATTERN_SWATCHES: ReadonlyArray<string> = [
+export const PATTERN_SWATCHES_DARK: ReadonlyArray<string> = [
   'rgba(255, 255, 255, 0.18)',
   'rgba(255, 255, 255, 0.32)',
   'rgba(255, 255, 255, 0.08)',
@@ -182,12 +194,7 @@ export const PATTERN_SWATCHES: ReadonlyArray<string> = [
   'rgba(255, 196, 120, 0.20)',
   'rgba(120, 180, 255, 0.20)',
 ]
-/* TITLE swatches are SOLID/high-opacity so the chip reads faithfully AND the
-   colour stays visible on the board the user actually has. The low-alpha whites
-   were misleading: on the dark panel they looked like dark greys, but on a light
-   board they were near-invisible. '#111111' is the "visible on a light board"
-   ink; '#ffffff' the "visible on a dark board" one. */
-export const TITLE_SWATCHES: ReadonlyArray<string> = [
+export const TITLE_SWATCHES_DARK: ReadonlyArray<string> = [
   'rgba(255, 255, 255, 0.95)',
   '#ffffff',
   '#111111',
@@ -195,6 +202,43 @@ export const TITLE_SWATCHES: ReadonlyArray<string> = [
   '#ffc478',
   '#78b4ff',
 ]
+
+// ── Light world (Flat) — first entry = Flat's default. Board + pattern carry the
+//    user's picked palette (Mint Julep / Starship / Corn Field boards; Highland /
+//    Jelly Bean / Tickle-Me-Pink patterns); edge + title stay neutral, since the
+//    low-contrast pairs would be illegible as a wordmark. ──
+export const EDGE_SWATCHES_LIGHT: ReadonlyArray<string> = [
+  '#f1efe8', '#ffffff', '#eae6df', '#e9e4d9', '#efece4', '#e4e0d6',
+]
+export const BOARD_SWATCHES_LIGHT: ReadonlyArray<string> = [
+  '#faf9f6', '#ffffff', '#f0f1be', '#cff740', '#f8f7c8',
+]
+export const PATTERN_SWATCHES_LIGHT: ReadonlyArray<string> = [
+  'rgba(20, 19, 15, 0.10)',
+  '#749469',
+  '#227798',
+  '#fd8ab6',
+]
+export const TITLE_SWATCHES_LIGHT: ReadonlyArray<string> = [
+  'rgba(20, 19, 15, 0.55)',
+  '#14130f',
+  '#57544c',
+  '#6b675e',
+  '#1c9a00',
+]
+
+export type ThemeSwatchSets = {
+  readonly edge: ReadonlyArray<string>
+  readonly board: ReadonlyArray<string>
+  readonly pattern: ReadonlyArray<string>
+  readonly title: ReadonlyArray<string>
+}
+/** Pick the swatch sets for a board world by its colour scheme. */
+export function swatchesForScheme(scheme: 'dark' | 'light'): ThemeSwatchSets {
+  return scheme === 'light'
+    ? { edge: EDGE_SWATCHES_LIGHT, board: BOARD_SWATCHES_LIGHT, pattern: PATTERN_SWATCHES_LIGHT, title: TITLE_SWATCHES_LIGHT }
+    : { edge: EDGE_SWATCHES_DARK, board: BOARD_SWATCHES_DARK, pattern: PATTERN_SWATCHES_DARK, title: TITLE_SWATCHES_DARK }
+}
 
 /** Build a single-layer tiling SVG (data-URI) for a pattern. Used by the share
  *  preview + OG capture so dom-to-image renders the pattern faithfully (it drops

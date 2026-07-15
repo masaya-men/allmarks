@@ -9,10 +9,7 @@ import {
   PATTERN_SIZE_MAX,
   PATTERN_STROKE_MIN,
   PATTERN_STROKE_MAX,
-  EDGE_SWATCHES,
-  BOARD_SWATCHES,
-  PATTERN_SWATCHES,
-  TITLE_SWATCHES,
+  swatchesForScheme,
 } from '@/lib/board/theme-customization'
 import styles from './ThemeCustomizeSection.module.css'
 
@@ -21,9 +18,11 @@ export interface ThemeCustomizeSectionProps {
   readonly value: ResolvedThemeCustomization
   /** True when the theme is at its byte-identical baseline (hides reset). */
   readonly isDefault: boolean
-  /** Whether to show the pattern controls (style / pattern colour / density).
-   *  False = a pattern-free theme like Sound Wave: edge + board colour only. */
+  /** Whether to show the pattern controls (style / pattern colour / density). */
   readonly allowsPattern: boolean
+  /** The active theme's board world, which selects the colour swatch presets:
+   *  'dark' = Sound Wave's darks, 'light' = Flat's light editorial palette. */
+  readonly colorScheme: 'dark' | 'light'
   /** Merge a field change; null = reset the whole theme to defaults. */
   readonly onChange: (patch: ThemeCustomization | null) => void
 }
@@ -89,7 +88,8 @@ function ColorRow({
  * non-blocking, so the user watches it update behind). Mounted by
  * {@link ThemeModal} only while a pattern theme is active.
  */
-export function ThemeCustomizeSection({ value, isDefault, allowsPattern, onChange }: ThemeCustomizeSectionProps): ReactElement {
+export function ThemeCustomizeSection({ value, isDefault, allowsPattern, colorScheme, onChange }: ThemeCustomizeSectionProps): ReactElement {
+  const sw = swatchesForScheme(colorScheme)
   return (
     <section className={styles.section} data-testid="theme-customize">
       <div className={styles.headerRow}>
@@ -106,7 +106,8 @@ export function ThemeCustomizeSection({ value, isDefault, allowsPattern, onChang
         )}
       </div>
 
-      {/* Pattern style — only for themes whose identity is a pattern (Grid). */}
+      {/* Pattern style — grid/dots/etc. are a customization of the live-world
+          'pattern' themes (Sound Wave, Flat), not a separate theme. */}
       {allowsPattern && (
         <div className={styles.row}>
           <span className={styles.rowLabel}>STYLE</span>
@@ -130,13 +131,13 @@ export function ThemeCustomizeSection({ value, isDefault, allowsPattern, onChang
         </div>
       )}
 
-      <ColorRow label="EDGE" swatches={EDGE_SWATCHES} active={value.edgeColor} onPick={(c): void => onChange({ edgeColor: c })} />
-      <ColorRow label="BOARD" swatches={BOARD_SWATCHES} active={value.boardColor} onPick={(c): void => onChange({ boardColor: c })} />
-      <ColorRow label="TITLE" swatches={TITLE_SWATCHES} active={value.titleColor} onPick={(c): void => onChange({ titleColor: c })} />
+      <ColorRow label="EDGE" swatches={sw.edge} active={value.edgeColor} onPick={(c): void => onChange({ edgeColor: c })} />
+      <ColorRow label="BOARD" swatches={sw.board} active={value.boardColor} onPick={(c): void => onChange({ boardColor: c })} />
+      <ColorRow label="TITLE" swatches={sw.title} active={value.titleColor} onPick={(c): void => onChange({ titleColor: c })} />
 
       {allowsPattern && (
         <>
-          <ColorRow label="PATTERN" swatches={PATTERN_SWATCHES} active={value.patternColor} onPick={(c): void => onChange({ patternColor: c })} />
+          <ColorRow label="PATTERN" swatches={sw.pattern} active={value.patternColor} onPick={(c): void => onChange({ patternColor: c })} />
 
           {/* Density */}
           <div className={styles.row}>

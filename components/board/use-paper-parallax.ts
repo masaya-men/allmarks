@@ -24,9 +24,10 @@ export type PaperParallaxInput = {
 }
 
 /** 背景レイヤーを視差で動かすテーマ。 paper-atelier = 奥の羊皮紙バックドロップ。
- *  grid-paper = グリッドがカードの背後でゆっくり流れる (= キャンバスに張り付かない、
- *  奥行きが出る)。 dotted-notebook (既定) は無地なので視差対象外 = 従来どおり 1:1。 */
-const BG_PARALLAX_THEMES: ReadonlySet<ThemeId> = new Set<ThemeId>(['paper-atelier', 'grid-paper'])
+ *  dotted-notebook (Sound Wave) = 模様 (格子など) を乗せたときに背後でゆっくり流れる
+ *  = 旧 grid-paper の drift をそのまま引き継ぐ。 既定は無地なので drift は不可視 =
+ *  バイト同一。 flat の模様は据え置き (drift なし)。 */
+const BG_PARALLAX_THEMES: ReadonlySet<ThemeId> = new Set<ThemeId>(['paper-atelier', 'dotted-notebook'])
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined'
@@ -34,7 +35,7 @@ function prefersReducedMotion(): boolean {
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-/** 視差の translateY 補正 (px)。0 = 視差なし。 paper-atelier と grid-paper で有効。
+/** 視差の translateY 補正 (px)。0 = 視差なし。 paper-atelier と dotted-notebook で有効。
  *  MOTION トグルには依存しない (常時 ON)。 reduced-motion のみ 0 に落とす。 */
 export function usePaperParallax({ themeId, viewportY, factor = PAPER_PARALLAX_FACTOR }: PaperParallaxInput): number {
   // 初期値も同期で正しく解決 (reduced-motion 環境でのマウント時 1 回の余分な

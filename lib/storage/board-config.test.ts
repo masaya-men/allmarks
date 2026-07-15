@@ -26,11 +26,40 @@ describe('board config storage', () => {
     const saved: BoardConfig = {
       ...DEFAULT_BOARD_CONFIG,
       frameRatio: { kind: 'preset', presetId: 'story-reels' },
-      themeId: 'grid-paper',
+      themeId: 'flat',
     }
     await saveBoardConfig(db, saved)
     const loaded = await loadBoardConfig(db)
     expect(loaded).toEqual(saved)
+  })
+
+  it('migrates the retired grid-paper theme to Sound Wave, carrying the grid into that slot', async () => {
+    // Simulate an old saved config that still names the removed theme.
+    await saveBoardConfig(db, { ...DEFAULT_BOARD_CONFIG, themeId: 'grid-paper' } as unknown as BoardConfig)
+    const loaded = await loadBoardConfig(db)
+    expect(loaded.themeId).toBe('dotted-notebook')
+    // Sound Wave now carries the classic grid so the board stays the same.
+    expect(loaded.themeCustomizations?.['dotted-notebook']).toEqual({
+      boardColor: '#0e0e11',
+      patternType: 'grid',
+      patternColor: 'rgba(255, 255, 255, 0.18)',
+      patternSize: 40,
+      patternStroke: 1,
+    })
+    // The retired key is not left dangling.
+    expect((loaded.themeCustomizations as Record<string, unknown>)?.['grid-paper']).toBeUndefined()
+  })
+
+  it("carries a grid-paper user's own customization into the Sound Wave slot", async () => {
+    const tweaked = { boardColor: '#111111', patternType: 'dots' as const, patternSize: 24 }
+    await saveBoardConfig(db, {
+      ...DEFAULT_BOARD_CONFIG,
+      themeId: 'grid-paper',
+      themeCustomizations: { 'grid-paper': tweaked },
+    } as unknown as BoardConfig)
+    const loaded = await loadBoardConfig(db)
+    expect(loaded.themeId).toBe('dotted-notebook')
+    expect(loaded.themeCustomizations?.['dotted-notebook']).toEqual(tweaked)
   })
 
   it('persists motionEnabled', async () => {

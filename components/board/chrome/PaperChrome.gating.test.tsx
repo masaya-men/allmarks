@@ -15,7 +15,7 @@ describe('paper chrome gating', () => {
   it('only paper-atelier opts into the decorative chrome', () => {
     expect(showsPaperChrome('paper-atelier')).toBe(true)
     expect(showsPaperChrome('dotted-notebook')).toBe(false)
-    expect(showsPaperChrome('grid-paper')).toBe(false)
+    expect(showsPaperChrome('flat')).toBe(false)
   })
 
   it('renders nothing for non-paper themes when the gate is false (simulated)', () => {

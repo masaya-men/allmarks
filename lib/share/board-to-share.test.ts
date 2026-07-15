@@ -81,9 +81,9 @@ describe('buildShareDataFromBoard', () => {
 
   it('carries the provided themeId', () => {
     const data = buildShareDataFromBoard({
-      items: [], tags: [], filter: null, now: 1, themeId: 'grid-paper',
+      items: [], tags: [], filter: null, now: 1, themeId: 'dotted-notebook',
     })
-    expect(data.theme).toBe('grid-paper')
+    expect(data.theme).toBe('dotted-notebook')
   })
 
   it('omits theme when no themeId provided', () => {
@@ -94,7 +94,7 @@ describe('buildShareDataFromBoard', () => {
   it('includes custom when provided, omits it when not', () => {
     const base = { items: [], tags: [], filter: null, now: 1 }
     const custom = { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: 'rgba(255,255,255,0.18)', patternType: 'grid' as const, patternSize: 40, titleColor: '#fff' }
-    expect(buildShareDataFromBoard({ ...base, themeId: 'grid-paper', custom }).custom).toEqual(custom)
+    expect(buildShareDataFromBoard({ ...base, themeId: 'dotted-notebook', custom }).custom).toEqual(custom)
     expect(buildShareDataFromBoard({ ...base }).custom).toBeUndefined()
   })
 

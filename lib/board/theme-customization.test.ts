@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   THEME_CUSTOMIZATION_DEFAULTS,
+  GRID_MIGRATION_CUSTOMIZATION,
   resolveThemeCustomization,
   isCustomizableTheme,
   isDefaultCustomization,
@@ -26,18 +27,18 @@ describe('theme-customization', () => {
     expect(isLightColor('garbage')).toBe(false)
   })
 
-  it('Grid defaults match the old gridLines (#0e0e11 board, white grid @ 40px)', () => {
-    const d = THEME_CUSTOMIZATION_DEFAULTS['grid-paper']!
-    expect(d.edgeColor).toBe('#0a0a0a')
-    expect(d.boardColor).toBe('#0e0e11')
-    expect(d.patternColor).toBe('rgba(255, 255, 255, 0.18)')
-    expect(d.patternType).toBe('grid')
-    expect(d.patternSize).toBe(40)
+  it('the retired Grid migrates to Sound Wave + a grid customization that reproduces it (#0e0e11 board, white grid @ 40px)', () => {
+    const r = resolveThemeCustomization('dotted-notebook', GRID_MIGRATION_CUSTOMIZATION)!
+    expect(r.edgeColor).toBe('#0a0a0a') // Sound Wave default edge
+    expect(r.boardColor).toBe('#0e0e11')
+    expect(r.patternColor).toBe('rgba(255, 255, 255, 0.18)')
+    expect(r.patternType).toBe('grid')
+    expect(r.patternSize).toBe(40)
   })
 
   it('only pattern themes are customizable; the fixed work theme is not', () => {
     expect(isCustomizableTheme('dotted-notebook')).toBe(true)
-    expect(isCustomizableTheme('grid-paper')).toBe(true)
+    expect(isCustomizableTheme('flat')).toBe(true)
     expect(isCustomizableTheme('paper-atelier')).toBe(false)
   })
 
@@ -54,9 +55,9 @@ describe('theme-customization', () => {
   })
 
   it('isDefaultCustomization is true for undefined / equal-to-default overrides, false otherwise', () => {
-    expect(isDefaultCustomization('grid-paper', undefined)).toBe(true)
-    expect(isDefaultCustomization('grid-paper', { patternType: 'grid', patternSize: 40 })).toBe(true)
-    expect(isDefaultCustomization('grid-paper', { patternType: 'dots' })).toBe(false)
+    expect(isDefaultCustomization('dotted-notebook', undefined)).toBe(true)
+    expect(isDefaultCustomization('dotted-notebook', { patternType: 'none', patternSize: 40 })).toBe(true)
+    expect(isDefaultCustomization('dotted-notebook', { patternType: 'grid' })).toBe(false)
     expect(isDefaultCustomization('dotted-notebook', { edgeColor: '#123456' })).toBe(false)
   })
 })
@@ -98,9 +99,9 @@ describe('pattern thickness', () => {
   })
 
   it('resolves the stroke from the PATTERN TYPE, so switching to dots keeps r=1.4', () => {
-    expect(resolveThemeCustomization('grid-paper', { patternType: 'dots' })!.patternStroke).toBe(1.4)
-    expect(resolveThemeCustomization('grid-paper', undefined)!.patternStroke).toBe(1)
-    expect(resolveThemeCustomization('grid-paper', { patternStroke: 4 })!.patternStroke).toBe(4)
+    expect(resolveThemeCustomization('dotted-notebook', { patternType: 'dots' })!.patternStroke).toBe(1.4)
+    expect(resolveThemeCustomization('dotted-notebook', undefined)!.patternStroke).toBe(1)
+    expect(resolveThemeCustomization('dotted-notebook', { patternStroke: 4 })!.patternStroke).toBe(4)
   })
 
   it('clamps the stroke below half the spacing so a dense pattern never fills solid', () => {

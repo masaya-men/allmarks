@@ -3,7 +3,7 @@ import { isThemeUnlocked, EMPTY_LICENSES } from './theme-entitlement'
 import type { ThemeMeta } from './types'
 
 const free: ThemeMeta = { id: 'paper-atelier', direction: 'vertical', backgroundClassName: 'paperAtelier', labelKey: 'board.theme.paperAtelier', colorScheme: 'light', tier: 'free', kind: 'work', scrollMeterVariant: 'waveform', chromeMotion: 'quiet', motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' } }
-const paid: ThemeMeta = { ...free, id: 'grid-paper', tier: 'paid' }
+const paid: ThemeMeta = { ...free, id: 'flat', tier: 'paid' }
 
 describe('isThemeUnlocked', () => {
   it('free themes are always unlocked', () => {
@@ -13,6 +13,6 @@ describe('isThemeUnlocked', () => {
     expect(isThemeUnlocked(paid, EMPTY_LICENSES)).toBe(false)
   })
   it('paid themes unlock when their id is licensed', () => {
-    expect(isThemeUnlocked(paid, new Set(['grid-paper']))).toBe(true)
+    expect(isThemeUnlocked(paid, new Set(['flat']))).toBe(true)
   })
 })

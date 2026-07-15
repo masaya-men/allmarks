@@ -2,7 +2,7 @@
  * SharedBoard.test.tsx
  *
  * Tests that the receiver page applies the sender's theme to <html> and renders
- * the pattern layer when the share has a pattern theme (e.g. 'grid-paper').
+ * the pattern layer when the share has a pattern theme (e.g. 'dotted-notebook').
  *
  * Strategy: component test with stubbed heavy children (CardsLayer, TopHeader,
  * ScrollMeter, Lightbox, SenderShareModal, ImportProgressIndicator, etc.) so
@@ -77,7 +77,8 @@ import { fetchShare } from '@/lib/share/api-client'
 
 const mockedFetchShare = vi.mocked(fetchShare)
 
-/** Minimal ShareDataV2 with a grid-paper theme + sender customization.
+/** Minimal ShareDataV2 with a pattern theme (Sound Wave) + a grid customization
+ *  — the look the retired grid-paper theme became.
  *  Must have at least 1 card (sanitizeShareDataV2 → schema min(1)). */
 const GRID_PAPER_SHARE_DATA = {
   v: SHARE_SCHEMA_VERSION_V2,
@@ -90,7 +91,7 @@ const GRID_PAPER_SHARE_DATA = {
       a: 1.6,
     },
   ],
-  theme: 'grid-paper' as const,
+  theme: 'dotted-notebook' as const,
   custom: {
     edgeColor: '#0a0a0a',
     boardColor: '#0e0e11',
@@ -128,7 +129,7 @@ describe('SharedBoard theme application', () => {
       await Promise.resolve() // two microtask ticks: fetchShare + setState
     })
 
-    expect(document.documentElement.getAttribute('data-theme-id')).toBe('grid-paper')
+    expect(document.documentElement.getAttribute('data-theme-id')).toBe('dotted-notebook')
     const patternEl = document.querySelector('[data-pattern="grid"]') as HTMLElement | null
     expect(patternEl).not.toBeNull()
     // The layer must be positioned so it fills the canvas; height:0 means nothing paints.
@@ -146,7 +147,7 @@ describe('SharedBoard theme application', () => {
       await Promise.resolve()
     })
 
-    expect(document.documentElement.getAttribute('data-theme-id')).toBe('grid-paper')
+    expect(document.documentElement.getAttribute('data-theme-id')).toBe('dotted-notebook')
     unmount()
     expect(document.documentElement.hasAttribute('data-theme-id')).toBe(false)
   })

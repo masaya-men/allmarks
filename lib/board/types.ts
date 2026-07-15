@@ -1,6 +1,6 @@
 export type ScrollDirection = 'vertical' | 'horizontal' | '2d' | 'sphere'
 
-export type ThemeId = 'dotted-notebook' | 'grid-paper' | 'paper-atelier' | 'flat'
+export type ThemeId = 'dotted-notebook' | 'paper-atelier' | 'flat'
 
 export type CardPosition = {
   readonly x: number

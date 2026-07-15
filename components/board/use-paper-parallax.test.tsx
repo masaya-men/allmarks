@@ -23,9 +23,9 @@ describe('usePaperParallax', () => {
     expect(result.current).toBeCloseTo(1000 * 0.85, 5)
   })
 
-  it('enabled for grid-paper too: the grid drifts behind the cards', () => {
+  it('enabled for Sound Wave too: its pattern (grid/dots) drifts behind the cards', () => {
     const { result } = renderHook(() =>
-      usePaperParallax({ themeId: 'grid-paper', viewportY: 1000 }))
+      usePaperParallax({ themeId: 'dotted-notebook', viewportY: 1000 }))
     expect(result.current).toBeCloseTo(1000 * 0.85, 5)
   })
 
@@ -38,9 +38,9 @@ describe('usePaperParallax', () => {
     expect(result.current).toBeCloseTo(1000 * 0.85, 5)
   })
 
-  it('disabled for the plain default theme (dotted-notebook) → 0 (no parallax)', () => {
+  it('disabled for flat → 0 (its pattern stays static; drift is opt-in per theme)', () => {
     const { result } = renderHook(() =>
-      usePaperParallax({ themeId: 'dotted-notebook', viewportY: 1000 }))
+      usePaperParallax({ themeId: 'flat', viewportY: 1000 }))
     expect(result.current).toBe(0)
   })
 

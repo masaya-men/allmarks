@@ -99,7 +99,7 @@ describe('sanitizeShareDataV2 custom', () => {
   it('accepts a valid custom block and round-trips it', () => {
     const input = {
       v: 2, createdAt: 1, cards: [{ u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }],
-      theme: 'grid-paper',
+      theme: 'dotted-notebook',
       custom: { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: 'rgba(255,255,255,0.18)', patternType: 'grid', patternSize: 40, titleColor: '#fff' },
     }
     const r = parseShareDataV2(input)
@@ -110,7 +110,7 @@ describe('sanitizeShareDataV2 custom', () => {
   it('sanitize drops a malformed custom instead of rejecting the whole payload', () => {
     const input = {
       v: 2, createdAt: 1, cards: [{ u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }],
-      theme: 'grid-paper',
+      theme: 'dotted-notebook',
       custom: { patternType: 'not-a-pattern', patternSize: 99999 }, // invalid
     }
     const r = sanitizeShareDataV2(input)
@@ -123,7 +123,7 @@ describe('sanitizeShareDataV2 custom', () => {
   it('keeps custom on a link created before patternStroke existed', () => {
     const input = {
       v: 2, createdAt: 1, cards: [{ u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }],
-      theme: 'grid-paper',
+      theme: 'dotted-notebook',
       custom: { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: '#fff', patternType: 'grid', patternSize: 40, titleColor: '#fff' },
     }
     const r = sanitizeShareDataV2(input)
@@ -138,11 +138,11 @@ describe('sanitizeShareDataV2 custom', () => {
     const base = { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: '#fff', patternType: 'grid', patternSize: 40, titleColor: '#fff' }
     const card = { u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }
 
-    const ok = sanitizeShareDataV2({ v: 2, createdAt: 1, cards: [card], theme: 'grid-paper', custom: { ...base, patternStroke: 3.5 } })
+    const ok = sanitizeShareDataV2({ v: 2, createdAt: 1, cards: [card], theme: 'dotted-notebook', custom: { ...base, patternStroke: 3.5 } })
     expect(ok.ok).toBe(true)
     if (ok.ok) expect(ok.data.custom?.patternStroke).toBe(3.5)
 
-    const bad = sanitizeShareDataV2({ v: 2, createdAt: 1, cards: [card], theme: 'grid-paper', custom: { ...base, patternStroke: 999 } })
+    const bad = sanitizeShareDataV2({ v: 2, createdAt: 1, cards: [card], theme: 'dotted-notebook', custom: { ...base, patternStroke: 999 } })
     expect(bad.ok).toBe(true)
     if (bad.ok) expect(bad.data.custom).toBeUndefined()
   })
@@ -151,11 +151,15 @@ describe('sanitizeShareDataV2 custom', () => {
 describe('sanitizeShareDataV2 theme', () => {
   const base = { v: SHARE_SCHEMA_VERSION_V2, cards: [{ u: 'https://example.com', t: 'Title', ty: 'website' as const, cw: 200, a: 1.5 }], createdAt: 1735000000000 }
   it('keeps a valid ThemeId', () => {
-    const r = sanitizeShareDataV2({ ...base, theme: 'grid-paper' })
-    expect(r.ok && r.data.theme).toBe('grid-paper')
+    const r = sanitizeShareDataV2({ ...base, theme: 'dotted-notebook' })
+    expect(r.ok && r.data.theme).toBe('dotted-notebook')
   })
   it('drops an unknown theme value (e.g. legacy "wave") to undefined', () => {
     const r = sanitizeShareDataV2({ ...base, theme: 'wave' })
+    expect(r.ok && r.data.theme).toBeUndefined()
+  })
+  it('drops the retired "grid-paper" theme to undefined, so old grid shares fall back to the default world (their grid still rides in `custom`)', () => {
+    const r = sanitizeShareDataV2({ ...base, theme: 'grid-paper' })
     expect(r.ok && r.data.theme).toBeUndefined()
   })
 })

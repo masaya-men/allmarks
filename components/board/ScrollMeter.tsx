@@ -114,7 +114,7 @@ type Props = {
    *  state setters without per-pointer-event flooding. */
   readonly onScrub: (fraction: number) => void
   /** Which meter face to render. 'waveform' = the default sound-wave ticks
-   *  (dotted-notebook / grid-paper). 'ruler' = the paper-atelier tape-measure
+   *  (dotted-notebook). 'ruler' = the paper-atelier tape-measure
    *  (RulerTrack). 'line' = the flat theme's quiet editorial line. The 0..1
    *  swellFraction-in / onScrub-out contract and the counter readout are
    *  identical across all faces. */
