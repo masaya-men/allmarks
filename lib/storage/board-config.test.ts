@@ -50,7 +50,7 @@ describe('board config storage', () => {
     expect((loaded.themeCustomizations as Record<string, unknown>)?.['grid-paper']).toBeUndefined()
   })
 
-  it("carries a grid-paper user's own customization into the Sound Wave slot", async () => {
+  it("carries a grid-paper user's own customization into the Sound Wave slot (base-merged onto the grid)", async () => {
     const tweaked = { boardColor: '#111111', patternType: 'dots' as const, patternSize: 24 }
     await saveBoardConfig(db, {
       ...DEFAULT_BOARD_CONFIG,
@@ -59,7 +59,27 @@ describe('board config storage', () => {
     } as unknown as BoardConfig)
     const loaded = await loadBoardConfig(db)
     expect(loaded.themeId).toBe('dotted-notebook')
-    expect(loaded.themeCustomizations?.['dotted-notebook']).toEqual(tweaked)
+    // their tweaks win; untouched fields keep the grid look (not Sound Wave defaults)
+    expect(loaded.themeCustomizations?.['dotted-notebook']).toEqual({
+      boardColor: '#111111', // user
+      patternType: 'dots', // user
+      patternColor: 'rgba(255, 255, 255, 0.18)', // grid base
+      patternSize: 24, // user
+      patternStroke: 1, // grid base
+    })
+  })
+
+  it('a PARTIAL grid-paper tweak (only pattern colour) still keeps the grid — untouched fields fall back to the grid, not to Sound Wave', async () => {
+    await saveBoardConfig(db, {
+      ...DEFAULT_BOARD_CONFIG,
+      themeId: 'grid-paper',
+      themeCustomizations: { 'grid-paper': { patternColor: '#ff0000' } },
+    } as unknown as BoardConfig)
+    const loaded = await loadBoardConfig(db)
+    const c = loaded.themeCustomizations?.['dotted-notebook']
+    expect(c?.patternType).toBe('grid') // NOT 'none' — the grid survives
+    expect(c?.boardColor).toBe('#0e0e11') // grid board, not Sound Wave's #0a0a0a
+    expect(c?.patternColor).toBe('#ff0000') // the user's tweak applied
   })
 
   it('persists motionEnabled', async () => {

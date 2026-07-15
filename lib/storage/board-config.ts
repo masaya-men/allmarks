@@ -13,12 +13,17 @@ const RETIRED_GRID_THEME_ID: string = 'grid-paper'
 
 /** Migrate a config whose saved theme was the retired Grid: point it at Sound
  *  Wave (dotted-notebook) and carry the grid look into that slot so the board
- *  stays pixel-identical. Prefer the user's own grid-paper tweaks if present;
- *  otherwise the classic grid. Idempotent — a non-grid config passes through. */
+ *  stays pixel-identical. Stored customizations are ACCUMULATED PARTIAL patches
+ *  (one field per control), so we base-merge the user's grid-paper tweaks ONTO
+ *  the full grid look — otherwise an untouched field (e.g. patternType) would
+ *  fall back to Sound Wave's default ('none') and the grid would vanish. With no
+ *  saved tweaks the spread of `undefined` is a no-op → the classic grid. This
+ *  overwrites any inactive dotted-notebook customization the user had (they were
+ *  looking at grid-paper, so its look wins). Idempotent — non-grid passes through. */
 function migrateRetiredGridTheme(config: BoardConfig): BoardConfig {
   if (config.themeId !== RETIRED_GRID_THEME_ID) return config
   const customs = { ...(config.themeCustomizations ?? {}) } as Record<string, ThemeCustomization>
-  const carried = customs[RETIRED_GRID_THEME_ID] ?? GRID_MIGRATION_CUSTOMIZATION
+  const carried: ThemeCustomization = { ...GRID_MIGRATION_CUSTOMIZATION, ...customs[RETIRED_GRID_THEME_ID] }
   customs['dotted-notebook'] = carried
   delete customs[RETIRED_GRID_THEME_ID]
   return { ...config, themeId: 'dotted-notebook', themeCustomizations: customs }
