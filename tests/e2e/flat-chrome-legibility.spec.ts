@@ -185,3 +185,40 @@ test('flat: board cards float (soft shadow) and edge fades are light not black',
   expect(canvasBefore).toContain('rgb(250, 249, 246)')
   expect(canvasBefore).not.toMatch(/rgba\(0, 0, 0, 0\.\d/)
 })
+
+// Opening the real lightbox via a synthetic pointer is unreliable (card click
+// uses setPointerCapture, which rejects Playwright's synthetic pointers — see
+// reference_board_card_click_pointer_capture.md), so this verifies the fix at
+// the token level instead: the lightbox backdrop must no longer be the dark
+// default (rgba(0,0,0,0.5)), since the info text renders in dark-ink
+// --text-* tokens under flat and would be invisible on a dark scrim.
+//
+// Chromium serializes a computed custom-property color as hex (e.g.
+// "#00000080"), NOT as the "rgba(0, 0, 0, 0.5)" source text — a plain
+// substring check against "0, 0, 0" would silently pass even against the
+// unfixed dark default. Parse both hex and rgb()/rgba() forms and assert the
+// resolved channels are actually light.
+function parseColorChannels(value: string): { r: number; g: number; b: number } {
+  const hex = value.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i)
+  if (hex) {
+    return { r: parseInt(hex[1], 16), g: parseInt(hex[2], 16), b: parseInt(hex[3], 16) }
+  }
+  const rgb = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+  if (rgb) {
+    return { r: Number(rgb[1]), g: Number(rgb[2]), b: Number(rgb[3]) }
+  }
+  throw new Error(`flat lightbox backdrop: unparseable computed color "${value}"`)
+}
+
+test('flat: lightbox backdrop is light (so dark-ink info text is legible)', async ({ page }) => {
+  await prepFlatBoard(page)
+  const backdrop = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--lightbox-backdrop').trim())
+  expect(backdrop).not.toBe('')
+  const { r, g, b } = parseColorChannels(backdrop)
+  // The dark default (rgba(0,0,0,0.5) → #00000080) resolves to r=g=b=0.
+  // The flat-theme override must be a light parchment tone, all channels bright.
+  expect(r).toBeGreaterThan(200)
+  expect(g).toBeGreaterThan(200)
+  expect(b).toBeGreaterThan(200)
+})
