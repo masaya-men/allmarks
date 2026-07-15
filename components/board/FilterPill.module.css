@@ -13,8 +13,8 @@
   /* Match the rest of the header chrome (ChromeButton): same monospace, size,
      stroke, and NO glow text-shadow (neutral across all themes). */
   font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
-  font-size: 11px;
-  letter-spacing: 0.10em;
+  font-size: var(--chrome-label-size, 11px);
+  letter-spacing: var(--chrome-label-tracking, 0.10em);
   color: var(--chrome-btn-color, rgba(255, 255, 255, 0.85));
   -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
   paint-order: stroke fill;
@@ -36,9 +36,9 @@
 }
 
 .label {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-size: var(--chrome-label-size, 11px);
+  font-weight: var(--chrome-label-weight, 400);
+  letter-spacing: var(--chrome-label-tracking, 0.10em);
   font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
   font-variant-numeric: tabular-nums;
   position: relative;
@@ -60,12 +60,12 @@
   white-space: nowrap;
 }
 
-.pill:hover .label::before {
+:global(html[data-theme-id="dotted-notebook"]) .pill:hover .label::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.pill:hover .label::after {
+:global(html[data-theme-id="dotted-notebook"]) .pill:hover .label::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }
@@ -108,7 +108,9 @@
 
 .count {
   font-family: ui-monospace, Menlo, monospace;
-  font-size: 11px;
+  font-size: var(--chrome-label-size, 11px);
+  letter-spacing: var(--chrome-label-tracking, 0.10em);
+  font-weight: var(--chrome-label-weight, 400);
   font-variant-numeric: tabular-nums;
   position: relative;
   display: inline-block;
@@ -129,12 +131,12 @@
   white-space: nowrap;
 }
 
-.pill:hover .count::before {
+:global(html[data-theme-id="dotted-notebook"]) .pill:hover .count::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.pill:hover .count::after {
+:global(html[data-theme-id="dotted-notebook"]) .pill:hover .count::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }

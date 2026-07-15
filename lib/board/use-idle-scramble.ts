@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { pickRandomChar } from '@/lib/board/scramble'
+import { useSignatureChromeMotion } from './use-chrome-motion'
 
 /** How often each chrome label re-fires its scramble burst while the board is
  *  being grabbed. Subtle cadence (a burst is ~250-700ms), tune on-device. */
@@ -29,7 +30,12 @@ export function useChromeScramble(label: string): ChromeScrambleApi {
   const rafRef = useRef<number | null>(null)
   const modeRef = useRef<'idle' | 'wobble' | 'burst'>('idle')
   const reducedMotionRef = useRef(false)
+  const signatureRef = useRef(false)
   const scheduleWobbleRef = useRef<() => void>(() => {})
+
+  // Quiet themes (everything but dotted-notebook) get zero scramble motion:
+  // no idle wobble timers, and triggerBurst becomes a no-op below.
+  const signature = useSignatureChromeMotion()
 
   // Keep `display` in sync when the label prop changes externally.
   useEffect(() => {
@@ -37,6 +43,14 @@ export function useChromeScramble(label: string): ChromeScrambleApi {
   }, [label])
 
   useEffect(() => {
+    signatureRef.current = signature
+    if (!signature) {
+      // Reset in case a wobble/burst was mid-flight when the theme flipped
+      // from signature to quiet (mirrors TuneTrigger's writeIdleTune reset).
+      setDisplay(labelRef.current)
+      return
+    }
+
     const mql = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
       ? window.matchMedia('(prefers-reduced-motion: reduce)')
       : null
@@ -96,10 +110,10 @@ export function useChromeScramble(label: string): ChromeScrambleApi {
       if (timerRef.current) clearTimeout(timerRef.current)
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [])
+  }, [signature])
 
   const triggerBurst = useCallback((): void => {
-    if (reducedMotionRef.current) return
+    if (reducedMotionRef.current || !signatureRef.current) return
 
     // Cancel any in-flight wobble / pending idle timer.
     if (timerRef.current) {

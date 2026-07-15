@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { isThemeUnlocked, EMPTY_LICENSES } from './theme-entitlement'
 import type { ThemeMeta } from './types'
 
-const free: ThemeMeta = { id: 'paper-atelier', direction: 'vertical', backgroundClassName: 'paperAtelier', labelKey: 'board.theme.paperAtelier', colorScheme: 'light', tier: 'free', kind: 'work', scrollMeterVariant: 'waveform', motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' } }
+const free: ThemeMeta = { id: 'paper-atelier', direction: 'vertical', backgroundClassName: 'paperAtelier', labelKey: 'board.theme.paperAtelier', colorScheme: 'light', tier: 'free', kind: 'work', scrollMeterVariant: 'waveform', chromeMotion: 'quiet', motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' } }
 const paid: ThemeMeta = { ...free, id: 'grid-paper', tier: 'paid' }
 
 describe('isThemeUnlocked', () => {

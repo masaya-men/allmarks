@@ -66,13 +66,13 @@
   opacity: 0;
   white-space: nowrap;
 }
-.toggle:hover .code::before,
-.option:hover .label::before {
+:global(html[data-theme-id="dotted-notebook"]) .toggle:hover .code::before,
+:global(html[data-theme-id="dotted-notebook"]) .option:hover .label::before {
   color: #ff9d3f;
   animation: lang-glitch-a 700ms steps(7, end);
 }
-.toggle:hover .code::after,
-.option:hover .label::after {
+:global(html[data-theme-id="dotted-notebook"]) .toggle:hover .code::after,
+:global(html[data-theme-id="dotted-notebook"]) .option:hover .label::after {
   color: #50c8ff;
   animation: lang-glitch-b 700ms steps(7, end);
 }

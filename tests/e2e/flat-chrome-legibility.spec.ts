@@ -74,3 +74,46 @@ test('flat: closed TUNE drawer shows no border sliver (fully tucked away)', asyn
   const borderWidth = await drawer.evaluate((el) => getComputedStyle(el).borderTopWidth)
   expect(borderWidth).toBe('0px')
 })
+
+test('flat: chrome buttons have NO glitch ghost and DO show an underline on hover', async ({ page }) => {
+  await prepFlatBoard(page)
+  const btn = page.getByTestId('extension-settings')
+  await btn.scrollIntoViewIfNeeded()
+  await btn.hover()
+  const ghostOpacity = await btn.evaluate((el) => getComputedStyle(el, '::before').opacity)
+  expect(ghostOpacity).toBe('0')
+  const underlineTransform = await btn.evaluate((el) => getComputedStyle(el, '::after').transform)
+  // underline drawn in on hover → scaleX(1) → identity-ish matrix, NOT the collapsed scaleX(0)=matrix(0,0,0,1,0,0)
+  expect(underlineTransform).not.toBe('matrix(0, 0, 0, 1, 0, 0)')
+  expect(underlineTransform).not.toBe('none')
+  // MUST be a 1.5px hairline, NOT a ~16px block (regression: base padding 8px
+  // + border-box floored height to 16px = dark block over the label).
+  const underlineHeight = await btn.evaluate((el) => getComputedStyle(el, '::after').height)
+  expect(underlineHeight).toBe('1.5px')
+})
+test('sound wave: chrome button glitch ghost fires on hover (signature unchanged)', async ({ page }) => {
+  await seedDb(page, [...firstRunSuppressors()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  // default theme is dotted-notebook — do NOT switch away
+  const btn = page.getByTestId('extension-settings')
+  await btn.scrollIntoViewIfNeeded()
+  await btn.hover()
+  const ghostColor = await btn.evaluate((el) => getComputedStyle(el, '::before').color)
+  expect(ghostColor).toBe('rgb(255, 157, 63)')  // #ff9d3f orange ghost
+})
+
+test('flat: filter pill label typography matches the header buttons (linked)', async ({ page }) => {
+  await prepFlatBoard(page)
+  const btn = page.getByTestId('extension-settings')
+  const pillLabel = page.getByTestId('filter-pill').locator('[class*="label"]').first()
+  const read = (l: ReturnType<Page['locator']>): Promise<{ family: string; weight: string; size: string; tracking: string }> => l.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    return { family: cs.fontFamily, weight: cs.fontWeight, size: cs.fontSize, tracking: cs.letterSpacing }
+  })
+  const b = await read(btn)
+  const p = await read(pillLabel)
+  expect(p.family).toBe(b.family)
+  expect(p.weight).toBe(b.weight)
+  expect(p.size).toBe(b.size)
+  expect(p.tracking).toBe(b.tracking)
+})

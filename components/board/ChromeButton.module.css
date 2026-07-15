@@ -1,8 +1,9 @@
 .btn {
   font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
-  font-size: 11px;
+  font-size: var(--chrome-label-size, 11px);
   line-height: 1;
-  letter-spacing: 0.10em;
+  letter-spacing: var(--chrome-label-tracking, 0.10em);
+  font-weight: var(--chrome-label-weight, 400);
   text-transform: uppercase;
   color: var(--chrome-btn-color, rgba(255, 255, 255, 0.85));
   -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);
@@ -41,12 +42,12 @@
   color: rgba(255, 255, 255, 1);
 }
 
-.btn:hover::before {
+:global(html[data-theme-id="dotted-notebook"]) .btn:hover::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.btn:hover::after {
+:global(html[data-theme-id="dotted-notebook"]) .btn:hover::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }
@@ -139,4 +140,34 @@
   65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
   80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
   100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+/* Flat: quiet underline on hover instead of the sound-world RGB glitch. ::after
+   is free on flat because the glitch ghost is scoped to the signature theme
+   above. Draw a 1.5px ink underline from the left. */
+:global(html[data-theme-id="flat"]) .btn::after {
+  content: "";
+  position: absolute;
+  /* padding:0 is REQUIRED: the base .btn::before,::after rule sets
+     padding:8px 12px, and with box-sizing:border-box a 1.5px height is floored
+     by the 16px vertical padding → the "underline" becomes a ~16px dark block
+     over the label. Reset padding so height:1.5px is honoured. */
+  padding: 0;
+  /* top:auto is REQUIRED: the base .btn::before,::after rule sets inset:0
+     (=top:0). Without resetting top, top+height+bottom are all constrained and
+     the browser ignores `bottom`, pinning the line to the TOP of the button.
+     top:auto un-constrains it so `bottom:5px` anchors it under the label. */
+  top: auto;
+  left: 12px; right: 12px; bottom: 5px;
+  height: 1.5px;
+  background: rgba(var(--chrome-ink-rgb), 0.9);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+  opacity: 1;
+  animation: none;
+}
+:global(html[data-theme-id="flat"]) .btn:hover::after { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  :global(html[data-theme-id="flat"]) .btn::after { transition: none; }
 }

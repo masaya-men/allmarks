@@ -75,6 +75,13 @@ export type ThemeMeta = {
    */
   readonly scrollMeterVariant: 'waveform' | 'ruler' | 'line'
   /**
+   * Chrome (menu) animation language. 'signature' = this theme opts into the
+   * scramble + RGB-glitch chrome micro-interactions (Sound Wave's identity);
+   * 'quiet' = no scramble/glitch (calm hover only). Required so a new theme
+   * must declare it → no theme silently inherits the loud chrome.
+   */
+  readonly chromeMotion: 'signature' | 'quiet'
+  /**
    * Per-theme animation keys (NOT ThemeIds — a decoupled namespace:
    * 'wave' | 'paper-drift' | 'paper-fade' | 'ink-underline' | 'glitch-crt').
    * Consumers resolve via getEntryAnimation/getShutdownAnimationClass/getTextTransition.

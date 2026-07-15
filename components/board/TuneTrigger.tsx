@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react'
 import { pickRandomChar } from '@/lib/board/scramble'
+import { useSignatureChromeMotion } from '@/lib/board/use-chrome-motion'
 import { BOARD_SLIDERS } from '@/lib/board/constants'
 import { PRESETS, findActivePreset } from '@/lib/board/tune-presets'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -157,6 +158,10 @@ export function TuneTrigger({
   const rafIdRef = useRef<number | null>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [expanded, setExpanded] = useState(false)
+
+  // Quiet themes: TUNE's own idle micro-scramble is gated off entirely (label
+  // stays fixed). See the idle-scramble effect below.
+  const signature = useSignatureChromeMotion()
 
   // Grab feedback: TUNE is its own component (not a ChromeButton), so it needs
   // to observe the same global grab flag BoardRoot sets on <html> and react in
@@ -321,6 +326,12 @@ export function TuneTrigger({
     // branch would have rewritten the plain label).
     writeIdleTune()
 
+    // Quiet themes: no idle wobble, no grab-churn (grab-churn is already
+    // signature-only upstream — BoardRoot only sets data-grabbing for
+    // dotted-notebook — so this early return doesn't change grab behavior,
+    // it just keeps the plain "TUNE" label fixed on quiet themes).
+    if (!signature) return
+
     const mql = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
       ? window.matchMedia('(prefers-reduced-motion: reduce)')
       : null
@@ -390,7 +401,7 @@ export function TuneTrigger({
       if (timer) clearTimeout(timer)
       if (rafId !== null) cancelAnimationFrame(rafId)
     }
-  }, [expanded, visibleLabel, writeIdleTune, grabbing])
+  }, [expanded, visibleLabel, writeIdleTune, grabbing, signature])
 
   const handleMouseEnter = useCallback((): void => {
     if (leaveTimerRef.current) {
