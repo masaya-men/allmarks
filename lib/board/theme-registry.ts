@@ -10,6 +10,7 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     tier: 'free',
     kind: 'pattern',
     scrollMeterVariant: 'waveform',
+    chromeMotion: 'signature',
     motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' },
   },
   'grid-paper': {
@@ -21,6 +22,7 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     tier: 'free',
     kind: 'pattern',
     scrollMeterVariant: 'waveform',
+    chromeMotion: 'quiet',
     motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' },
   },
   'paper-atelier': {
@@ -32,6 +34,7 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     tier: 'free',
     kind: 'work',
     scrollMeterVariant: 'ruler',
+    chromeMotion: 'quiet',
     motion: { entry: 'paper-drift', text: 'ink-underline', shutdown: 'paper-fade' },
     decorations: true,
   },
@@ -44,7 +47,8 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     tier: 'free',
     kind: 'pattern',
     scrollMeterVariant: 'line',
-    motion: { entry: 'fade', text: 'default', shutdown: 'fade' },
+    chromeMotion: 'quiet',
+    motion: { entry: 'fade', text: 'quiet', shutdown: 'fade' },
   },
 }
 

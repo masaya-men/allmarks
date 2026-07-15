@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, test, expect } from 'vitest'
 import { listThemeIds, getThemeMeta, DEFAULT_THEME_ID } from './theme-registry'
 
 describe('THEME_REGISTRY contract', () => {
@@ -62,10 +62,16 @@ describe('THEME_REGISTRY contract', () => {
     expect(m.direction).toBe('vertical')
     expect(m.backgroundClassName).toBe('flat')
     expect(m.labelKey).toBe('board.theme.flat')
-    expect(m.motion).toEqual({ entry: 'fade', text: 'default', shutdown: 'fade' })
+    expect(m.motion).toEqual({ entry: 'fade', text: 'quiet', shutdown: 'fade' })
     expect(m.decorations).toBeUndefined()
   })
   it('does not change the default theme', () => {
     expect(DEFAULT_THEME_ID).toBe('dotted-notebook')
+  })
+  test('chromeMotion: only dotted-notebook is signature', () => {
+    expect(getThemeMeta('dotted-notebook').chromeMotion).toBe('signature')
+    expect(getThemeMeta('grid-paper').chromeMotion).toBe('quiet')
+    expect(getThemeMeta('paper-atelier').chromeMotion).toBe('quiet')
+    expect(getThemeMeta('flat').chromeMotion).toBe('quiet')
   })
 })
