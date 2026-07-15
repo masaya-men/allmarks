@@ -226,7 +226,7 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
               // (cardCornerRadiusPx, used by CardsLayer too) so the collage can
               // never drift from the board again. Honors the CORNERS toggle:
               // roundedCorners=false → square, matching the board.
-              ['--card-radius' as string]: cardCornerRadiusPx({ width: p.w, roundedCorners: props.roundedCorners ?? true, flat: props.paper }),
+              ['--card-radius' as string]: cardCornerRadiusPx({ width: p.w, roundedCorners: props.roundedCorners ?? true, minimalRadius: props.paper }),
               // Rotation applies to the WHOLE element (card + paper shadow +
               // decorations + handles) so it tilts coherently, around its own
               // center (transform-origin default). Collage-only tilt — the board

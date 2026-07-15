@@ -2753,7 +2753,7 @@ export function BoardRoot() {
 
     // canvas レンダラーは出力空間(1200x630)の単一 roundedCornersPx を取る。盤面の半径は
     // 幅依存(cardCornerRadiusPx)なので、帯内カード幅の中央値を代表値にして出力空間へスケール。
-    // flat は arrange-stage CollageCanvas の paper prop(themeMeta.decorations===true)と同値。
+    // minimalRadius は arrange-stage CollageCanvas の paper prop(themeMeta.decorations===true)と同値。
     const bandToOutScale = band.width > 0 ? SHARE_PORTRAIT_ASPECT.WIDTH / band.width : 1
     const bandWidths = canvasCards
       .map((c) => c.rect.w)
@@ -2762,7 +2762,7 @@ export function BoardRoot() {
     const medianBandW = bandWidths.length ? (bandWidths[Math.floor(bandWidths.length / 2)] ?? 0) : 0
     const roundedCornersPx =
       parseFloat(
-        cardCornerRadiusPx({ width: medianBandW, roundedCorners, flat: themeMeta.decorations === true }),
+        cardCornerRadiusPx({ width: medianBandW, roundedCorners, minimalRadius: themeMeta.decorations === true }),
       ) * bandToOutScale
 
     let thumb: string | null = null

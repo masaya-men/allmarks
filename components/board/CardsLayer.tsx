@@ -1375,15 +1375,17 @@ export function CardsLayer({
               // box (CSS then clamps it to a full round). Scale the radius with
               // the card's own width — min(20px, w*0.12) — so small cards keep a
               // natural corner and never collapse to a circle, while large cards
-              // hit the 20px cap and look exactly as before. Light/paper keeps
-              // its flat 3px print corner (already too small to ever round off).
+              // hit the 20px cap and look exactly as before. Paper keeps its
+              // minimal 3px print corner (already too small to ever round off);
+              // every other theme (including flat) uses the same size-aware
+              // formula as Sound Wave.
               // The lightbox mirrors this per-card value onto :root while open
               // (see Lightbox useLayoutEffect) so the open/close morph shares one
               // radius end-to-end — no corner snap.
               // roundedCorners=false forces square cards (0 radius) across the
               // board, its overlays, and the lightbox morph (which mirrors this
               // per-card value). true keeps the size-aware rounded radius.
-              ['--card-radius' as string]: cardCornerRadiusPx({ width: p.w, roundedCorners, flat: meta.colorScheme === 'light' }),
+              ['--card-radius' as string]: cardCornerRadiusPx({ width: p.w, roundedCorners, minimalRadius: meta.id === 'paper-atelier' }),
               // Card's rendered width, read by PaperCardDecorations so tape/pin/
               // wax scale WITH the card (resize a card → its decorations follow).
               ['--card-w' as string]: `${p.w}px`,
