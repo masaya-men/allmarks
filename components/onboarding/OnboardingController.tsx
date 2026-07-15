@@ -268,20 +268,20 @@ export function OnboardingController({
       )
     }
     if (sceneId === 'share') {
-      // Closing beat: just glow the real SHARE button, one caption, NEXT. No
-      // real panel, no forced click — the two-stage SHARE flow is self-evident,
-      // so the tour only needs to point out where it lives.
+      // Closing beat: glow the real SHARE button (spotlight ring) but BLOCK it —
+      // `blockHole` covers the button so it can't be pressed mid-tour, and the
+      // dim blocks the rest of the board. The user only advances with NEXT; the
+      // two-stage SHARE flow is theirs to explore after the tour. No green cursor
+      // (that would imply a click we're intentionally disabling).
       return wrap(
-        <>
-          <OnboardingSpotlight
-            targetSelector={TARGET_SELECTOR.share}
-            caption={body}
-            captionAtBottom
-          >
-            <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
-          </OnboardingSpotlight>
-          <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.share} />
-        </>,
+        <OnboardingSpotlight
+          targetSelector={TARGET_SELECTOR.share}
+          caption={body}
+          captionAtBottom
+          blockHole
+        >
+          <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
+        </OnboardingSpotlight>,
       )
     }
     if (sceneId === 'popout') {
