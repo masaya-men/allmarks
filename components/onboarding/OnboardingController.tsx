@@ -13,7 +13,6 @@ import { detectUrlType } from '@/lib/utils/url'
 import { OnboardingStage } from './OnboardingStage'
 import { ExtensionSaveReenactment } from './ExtensionSaveReenactment'
 import { ExtensionXSaveReenactment } from './ExtensionXSaveReenactment'
-import { OnboardingShareReveal } from './OnboardingShareReveal'
 import { OnboardingSpotlight } from './OnboardingSpotlight'
 import { OnboardingCursorGuide } from './OnboardingCursorGuide'
 import { OnboardingTagDemo } from './OnboardingTagDemo'
@@ -38,9 +37,6 @@ type Props = {
   /** True while the tag scene is active so the board can force the hover-gated
    *  +TAG button visible (the user can't hover through the spotlight). */
   readonly onTagSceneActive?: (active: boolean) => void
-  /** True only during the manage scene's SETTINGS beat, so the board can force
-   *  the hover-only SETTINGS drawer open (to spotlight the toggle inside it). */
-  readonly onSettingsBeatActive?: (active: boolean) => void
   /** Bumped by the board each time a tag is added to a card. The tag scene
    *  advances on a change here — the board's own tag-add reloads locally and
    *  does NOT post to the bookmark-updated channel, so this in-process signal
@@ -54,16 +50,7 @@ type Props = {
    *  lands centered + enlarged) and reset it afterward. */
   readonly onZoomToCard?: () => void
   readonly onZoomReset?: () => void
-  /** Share scene: open/close the REAL share panel (BoardRoot's SenderShareModal)
-   *  so the tutorial shows the genuine share screen (non-interactive) rather
-   *  than a re-enactment. Never confirms the share, so no server share is made. */
-  readonly onShareSceneActive?: (active: boolean) => void
-  /** Whether BoardRoot's real share panel is currently open. The share scene
-   *  uses this to detect the user's REAL click on the SHARE button (press beat →
-   *  shown beat) instead of scripting the open itself. */
-  readonly shareModalOpen?: boolean
-  /** Start at a specific scene instead of 'enter'. Used to RESUME the tutorial
-   *  after the manage scene navigates out to the real /triage screen and back. */
+  /** Start at a specific scene instead of 'enter' (RESUME support). */
   readonly initialScene?: SceneId
 }
 
@@ -73,7 +60,6 @@ const TARGET_SELECTOR: Record<OnboardingTarget, string> = {
   card: '[data-onboarding-target="card"]',
   motion: '[data-onboarding-target="motion"]',
   share: '[data-onboarding-target="share"]',
-  manage: '[data-onboarding-target="manage"]',
   settings: '[data-onboarding-target="settings"]',
   'quick-tag-toggle': '[data-onboarding-target="quick-tag-toggle"]',
 }
@@ -86,8 +72,7 @@ const TAG_TYPE_CHAR_MS = 140    // ~2.5x the old 55ms — deliberate, readable t
 
 export function OnboardingController({
   db, motionEnabled, appUrl, onComplete, onRequestMotionOff, onTagSceneActive,
-  onSettingsBeatActive, tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset,
-  onShareSceneActive, shareModalOpen = false, initialScene,
+  tagAddedSignal = 0, onApplySampleTag, onZoomToCard, onZoomReset, initialScene,
 }: Props): ReactElement {
   const { t } = useI18n()
   const [sceneId, setSceneId] = useState<SceneId>(initialScene ?? 'enter')
@@ -113,13 +98,6 @@ export function OnboardingController({
   // Extension demo plays as two beats: 'page' (floating-button save on a normal
   // page) → 'x' (the X bookmark → AllMarks auto-save = famous-site integration).
   const [extBeat, setExtBeat] = useState<'page' | 'x'>('page')
-  // Manage scene plays as two beats: 'settings' (point at SETTINGS — the save
-  // window can be turned off there) → 'manage' (point at MANAGE TAGS → triage).
-  const [manageBeat, setManageBeat] = useState<'settings' | 'manage'>('settings')
-  // rank39 fallback: true when the manage beat's real MANAGE TAGS button can't
-  // be found after a grace period, so we can offer a NEXT instead of trapping
-  // the user (whose only exit would otherwise be SKIP).
-  const [manageTargetMissing, setManageTargetMissing] = useState(false)
   const scene = sceneById(sceneId)
   const finishingRef = useRef(false)
   const prevMotionRef = useRef(motionEnabled)
@@ -181,16 +159,7 @@ export function OnboardingController({
     setInstallBeat('install') // setup (drag) is taught first, then the save demo
     setInstallDragged(false)
     setExtBeat('page')
-    setManageBeat('settings')
   }, [sceneId])
-
-  // Force the hover-only SETTINGS drawer open while (and only while) the manage
-  // scene's SETTINGS beat is on, so the spotlight can land on the toggle inside.
-  useEffect(() => {
-    onSettingsBeatActive?.(sceneId === 'manage' && manageBeat === 'settings')
-    return () => onSettingsBeatActive?.(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sceneId, manageBeat])
 
   // Bookmarklet chip dragged → hold a brief "installed!" beat, then move on to the
   // save re-enactment on its own (no NEXT needed once they've done the gesture).
@@ -199,19 +168,6 @@ export function OnboardingController({
     const t = setTimeout(() => setInstallBeat('demo'), 1600)
     return () => clearTimeout(t)
   }, [installDragged])
-
-  // rank39: the manage gesture beat has no NEXT (teach-by-doing). If the real
-  // MANAGE TAGS button never appears (a broken/edge state), the user would be
-  // stuck with only SKIP. Grace-check the target; if it's still absent after a
-  // beat, reveal a fallback NEXT. Normal runs (button present) never see it.
-  useEffect(() => {
-    setManageTargetMissing(false)
-    if (sceneId !== 'manage' || manageBeat !== 'manage') return
-    const t = setTimeout(() => {
-      if (!document.querySelector(TARGET_SELECTOR.manage)) setManageTargetMissing(true)
-    }, 2500)
-    return () => clearTimeout(t)
-  }, [sceneId, manageBeat])
 
   // Tag scene: mark "applied" (→ show the result + NEXT) when a tag lands on the
   // card, via the cross-context channel (PiP/extension) or the in-process
@@ -312,25 +268,20 @@ export function OnboardingController({
       )
     }
     if (sceneId === 'share') {
-      // Press beat: the user clicks the REAL SHARE button (spotlight + green
-      // cursor guide, no NEXT — it's a gesture to learn). Clicking it opens
-      // BoardRoot's real share panel, which flips shareModalOpen.
-      if (!shareModalOpen) {
-        return wrap(
-          <>
-            <OnboardingSpotlight targetSelector={TARGET_SELECTOR.share} caption={t('board.onboarding.share.pressBody')} />
-            <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.share} />
-          </>,
-        )
-      }
-      // Shown beat: the real panel is open — hold it look-don't-touch + caption +
-      // NEXT (advancing closes the panel; SHARE NOW is never pressed → no server share).
+      // Closing beat: just glow the real SHARE button, one caption, NEXT. No
+      // real panel, no forced click — the two-stage SHARE flow is self-evident,
+      // so the tour only needs to point out where it lives.
       return wrap(
-        <OnboardingShareReveal
-          caption={body}
-          onCloseModal={() => onShareSceneActive?.(false)}
-          onAdvance={advance}
-        />,
+        <>
+          <OnboardingSpotlight
+            targetSelector={TARGET_SELECTOR.share}
+            caption={body}
+            captionAtBottom
+          >
+            <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
+          </OnboardingSpotlight>
+          <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.share} />
+        </>,
       )
     }
     if (sceneId === 'popout') {
@@ -460,56 +411,6 @@ export function OnboardingController({
           <div>{t('board.onboarding.motion.done')}</div>
           <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
         </div>
-      </>,
-    )
-  }
-
-  // ---- Manage scene -------------------------------------------------------
-  // Spotlight the real MANAGE TAGS button. The caption notes the save window
-  // can be turned off in SETTINGS and that bulk tagging lives behind MANAGE
-  // TAGS. Clicking the real button (through the spotlight hole) navigates to the
-  // genuine /triage screen in onboarding mode (BoardRoot routes it there + sets
-  // the resume flag); the tutorial resumes at the share scene on return. The
-  // 'manage' beat has NO NEXT on purpose (teach-by-doing) — SKIP is the manual
-  // exit, plus a fallback NEXT that appears only if the button can't be found.
-  if (sceneId === 'manage') {
-    // Beat 'settings': point at SETTINGS — the save window can be turned off
-    // there (explanation only; advance with NEXT). Beat 'manage': point at
-    // MANAGE TAGS — clicking the real button (through the spotlight hole) opens
-    // the genuine /triage. No NEXT here (the gesture is the lesson); a fallback
-    // NEXT surfaces only when the target button is missing (rank39).
-    if (manageBeat === 'settings') {
-      return wrap(
-        <>
-          {/* Point at the QUICK-TAG ON SAVE toggle INSIDE the drawer (the board
-              forces the hover-only drawer open via onSettingsBeatActive), so the
-              user sees exactly which control turns the save window off. */}
-          <OnboardingSpotlight
-            targetSelector={TARGET_SELECTOR['quick-tag-toggle']}
-            caption={t('board.onboarding.manage.settingsBody')}
-            captionLeftOfHole
-            ringAbovePanels
-          >
-            <button type="button" className={styles.advanceBtn} onClick={() => setManageBeat('manage')}>NEXT</button>
-          </OnboardingSpotlight>
-          <OnboardingCursorGuide targetSelector={TARGET_SELECTOR['quick-tag-toggle']} />
-        </>,
-      )
-    }
-    // No NEXT here: the goal is to LEARN the gesture (open MANAGE TAGS). Offering
-    // NEXT let users skip past it without doing it. The caption + spotlight +
-    // green cursor all point at the real button; clicking it advances. SKIP
-    // (top-right) remains the escape hatch for anyone who wants out entirely.
-    // EXCEPTION (rank39): if the real button can't be found after a grace
-    // period, surface a fallback NEXT so a broken state can't trap the user.
-    return wrap(
-      <>
-        <OnboardingSpotlight targetSelector={TARGET_SELECTOR.manage} caption={t('board.onboarding.manage.body')}>
-          {manageTargetMissing && (
-            <button type="button" className={styles.advanceBtn} onClick={advance}>NEXT</button>
-          )}
-        </OnboardingSpotlight>
-        <OnboardingCursorGuide targetSelector={TARGET_SELECTOR.manage} />
       </>,
     )
   }

@@ -3401,16 +3401,6 @@ export function BoardRoot() {
               />
               <TagButton
                 onClick={(): void => {
-                  // Onboarding 'manage' scene → show the REAL /triage in
-                  // onboarding mode (demo-card auto-demo + the swipe pan), then
-                  // resume the tutorial at the next scene on return. MANAGE is
-                  // only clickable during that scene (the overlay blocks it
-                  // otherwise), so gating on showOnboarding is enough.
-                  if (onboardingActiveRef.current) {
-                    try { sessionStorage.setItem('allmarks-onboarding-resume', 'share') } catch { /* private mode */ }
-                    router.push('/triage?onboarding=1')
-                    return
-                  }
                   // Session 81: entry picker removed. TriagePage now auto-
                   // selects mode based on the untagged backlog (= empty
                   // backlog → 'all' so the user can review existing tags,
@@ -3666,19 +3656,10 @@ export function BoardRoot() {
               initialScene={onboardingInitialScene}
               onRequestMotionOff={() => setMotionEnabled(false)}
               onTagSceneActive={setForceCardTagVisible}
-              onSettingsBeatActive={(active: boolean) => setActiveDrawer(active ? 'settings' : null)}
               tagAddedSignal={tagAddedTick}
               onApplySampleTag={() => { void applySampleTag() }}
               onZoomToCard={zoomCameraToOnboardingCard}
               onZoomReset={resetOnboardingCamera}
-              onShareSceneActive={(active): void => {
-                // The old 'share' drawer was retired; the tutorial's share beat
-                // now rides the two-stage SHARE mode. Entering = select stage,
-                // leaving = full exit (discards the working selection/collage).
-                if (active) handleEnterSelectMode()
-                else handleExitShareMode()
-              }}
-              shareModalOpen={sharePhase !== null}
             />
           )}
           {!loading && !showOnboarding && showDataHomeCard && (

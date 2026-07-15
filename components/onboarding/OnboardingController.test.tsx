@@ -141,7 +141,7 @@ describe('OnboardingController', () => {
     expect(screen.getByTestId('scene-motion')).not.toBeNull()
   })
 
-  it('manage scene teaches the real MANAGE TAGS gesture with no NEXT escape', async () => {
+  it('tour flows popout -> share -> finale (manage scene removed)', async () => {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     function Wrapper({ db, onComplete }: { db: IDBPDatabase<any>; onComplete: () => void }) {
       const [motion, setMotion] = useState(false)
@@ -161,8 +161,8 @@ describe('OnboardingController', () => {
     const onComplete = vi.fn()
     renderWithLocale(<Wrapper db={db} onComplete={onComplete} />, 'en', en as Messages)
 
-    // Walk to the manage scene: paste -> tag -> motion -> extDemo(page,X) ->
-    // install(install/drag -> demo) -> popout -> manage(settings -> manage)
+    // Walk the desktop tour: paste -> tag -> motion -> extDemo(page,X) ->
+    // install(install/drag -> demo) -> popout -> share (manage is gone) -> finale
     fireEvent.click(screen.getByRole('button', { name: 'START' }))
     await act(async () => { postBookmarkSaved({ bookmarkId: 'c' }) }) // -> tag
     await act(async () => { postBookmarkUpdated({ bookmarkId: 'c' }) }) // tag applied -> NEXT
@@ -173,21 +173,16 @@ describe('OnboardingController', () => {
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // extDemo: X -> install (drag/install beat)
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: install (drag) -> demo
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // install: demo -> popout
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // popout -> manage (settings)
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // manage: settings -> manage
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // popout -> share (NOT manage)
 
-    // The manage beat teaches the real gesture (open MANAGE TAGS); it deliberately
-    // has NO NEXT — it advances only when the user clicks the real button
-    // (BoardRoot routes to /triage, then resumes at the share scene). SKIP remains
-    // the escape hatch.
-    expect(screen.getByTestId('scene-manage')).not.toBeNull()
-    expect(screen.queryByRole('button', { name: 'NEXT' })).toBeNull()
+    // Share is a light closing beat now: it has its own NEXT that advances
+    // straight to finale (no /triage detour, no real panel).
+    expect(screen.getByTestId('scene-share')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // share -> finale
+    expect(screen.getByTestId('scene-finale')).not.toBeNull()
   })
 
-  it('share press beat guides the real SHARE click with no NEXT escape', async () => {
-    // Reached via resume (initialScene) after the /triage detour. With the panel
-    // not yet open, the press beat spotlights the real SHARE button — no NEXT
-    // (the user must actually click SHARE, like the manage beat).
+  it('share closing beat spotlights SHARE and advances to finale on NEXT', async () => {
     const db = await initDB()
     renderWithLocale(
       <OnboardingController
@@ -197,21 +192,8 @@ describe('OnboardingController', () => {
       'en', en as Messages,
     )
     expect(screen.getByTestId('scene-share')).not.toBeNull()
-    expect(screen.queryByRole('button', { name: 'NEXT' })).toBeNull()
-  })
-
-  it('share shown beat (panel open) holds the panel and advances on NEXT', async () => {
-    // Once the user's real SHARE click opens BoardRoot's panel (shareModalOpen),
-    // the shown beat appears with a NEXT that advances to finale.
-    const db = await initDB()
-    renderWithLocale(
-      <OnboardingController
-        db={db} motionEnabled={false} appUrl="https://allmarks.app"
-        onComplete={vi.fn()} initialScene="share" shareModalOpen
-      />,
-      'en', en as Messages,
-    )
-    expect(screen.getByTestId('onboarding-share-reveal')).not.toBeNull()
+    // the SHARE button is glowed via the spotlight overlay
+    expect(screen.getByTestId('onboarding-spotlight')).not.toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' })) // share -> finale
     expect(screen.getByTestId('scene-finale')).not.toBeNull()
   })
