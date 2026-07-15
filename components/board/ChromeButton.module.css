@@ -148,6 +148,11 @@
 :global(html[data-theme-id="flat"]) .btn::after {
   content: "";
   position: absolute;
+  /* padding:0 is REQUIRED: the base .btn::before,::after rule sets
+     padding:8px 12px, and with box-sizing:border-box a 1.5px height is floored
+     by the 16px vertical padding → the "underline" becomes a ~16px dark block
+     over the label. Reset padding so height:1.5px is honoured. */
+  padding: 0;
   /* top:auto is REQUIRED: the base .btn::before,::after rule sets inset:0
      (=top:0). Without resetting top, top+height+bottom are all constrained and
      the browser ignores `bottom`, pinning the line to the TOP of the button.

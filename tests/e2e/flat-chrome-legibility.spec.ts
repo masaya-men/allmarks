@@ -86,6 +86,10 @@ test('flat: chrome buttons have NO glitch ghost and DO show an underline on hove
   // underline drawn in on hover → scaleX(1) → identity-ish matrix, NOT the collapsed scaleX(0)=matrix(0,0,0,1,0,0)
   expect(underlineTransform).not.toBe('matrix(0, 0, 0, 1, 0, 0)')
   expect(underlineTransform).not.toBe('none')
+  // MUST be a 1.5px hairline, NOT a ~16px block (regression: base padding 8px
+  // + border-box floored height to 16px = dark block over the label).
+  const underlineHeight = await btn.evaluate((el) => getComputedStyle(el, '::after').height)
+  expect(underlineHeight).toBe('1.5px')
 })
 test('sound wave: chrome button glitch ghost fires on hover (signature unchanged)', async ({ page }) => {
   await seedDb(page, [...firstRunSuppressors()])
