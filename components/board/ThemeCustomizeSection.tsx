@@ -94,16 +94,18 @@ export function ThemeCustomizeSection({ value, isDefault, allowsPattern, colorSc
     <section className={styles.section} data-testid="theme-customize">
       <div className={styles.headerRow}>
         <div className={styles.groupLabel}>CUSTOMIZE</div>
-        {!isDefault && (
-          <button
-            type="button"
-            className={styles.resetBtn}
-            onClick={(): void => onChange(null)}
-            data-testid="customize-reset"
-          >
-            RESET
-          </button>
-        )}
+        {/* Always shown so it's discoverable; disabled (dimmed) at the byte-
+            identical default when there's nothing to reset — same affordance as
+            the board's RESET CARD SIZES. */}
+        <button
+          type="button"
+          className={styles.resetBtn}
+          onClick={(): void => onChange(null)}
+          disabled={isDefault}
+          data-testid="customize-reset"
+        >
+          RESET
+        </button>
       </div>
 
       {/* Pattern style — grid/dots/etc. are a customization of the live-world
