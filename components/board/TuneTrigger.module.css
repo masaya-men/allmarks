@@ -15,9 +15,10 @@
 
 .trigger {
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--chrome-label-size, 11px);
   line-height: 1;
-  letter-spacing: 0.10em;
+  letter-spacing: var(--chrome-label-tracking, 0.10em);
+  font-weight: var(--chrome-label-weight, 400);
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85);
   -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.45);

@@ -97,3 +97,19 @@ test('sound wave: chrome button glitch ghost fires on hover (signature unchanged
   const ghostColor = await btn.evaluate((el) => getComputedStyle(el, '::before').color)
   expect(ghostColor).toBe('rgb(255, 157, 63)')  // #ff9d3f orange ghost
 })
+
+test('flat: filter pill label typography matches the header buttons (linked)', async ({ page }) => {
+  await prepFlatBoard(page)
+  const btn = page.getByTestId('extension-settings')
+  const pillLabel = page.getByTestId('filter-pill').locator('[class*="label"]').first()
+  const read = (l: ReturnType<Page['locator']>): Promise<{ family: string; weight: string; size: string; tracking: string }> => l.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    return { family: cs.fontFamily, weight: cs.fontWeight, size: cs.fontSize, tracking: cs.letterSpacing }
+  })
+  const b = await read(btn)
+  const p = await read(pillLabel)
+  expect(p.family).toBe(b.family)
+  expect(p.weight).toBe(b.weight)
+  expect(p.size).toBe(b.size)
+  expect(p.tracking).toBe(b.tracking)
+})

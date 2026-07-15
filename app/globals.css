@@ -370,6 +370,16 @@ ol {
   --chrome-hover-fx: glitch;
   --chrome-ink-rgb: 255, 255, 255;   /* chrome 中身インクの基色（暗テーマ=白）。flat が 20,19,15 に反転 */
 
+  /* Shared chrome label typography — ChromeButton .btn / TuneTrigger .trigger /
+     FilterPill .label,.count,.pill all read these so the header buttons, TUNE
+     trigger, and filter pill stay linked (same source) across every theme.
+     Values match the pre-existing ChromeButton/TuneTrigger hardcodes exactly,
+     so adopting the tokens there is byte-identical. FilterPill's old bespoke
+     weight 500 / size 12px / tracking 0.04em is intentionally harmonized away. */
+  --chrome-label-size: 11px;
+  --chrome-label-tracking: 0.1em;
+  --chrome-label-weight: 400;
+
   /* === card hover micro-interaction (I-07-#2) ===
      Cross-fade duration + easing shared by the multi-slot hover swap
      (opacity transition on layered <img>s) AND the destefanis-style
