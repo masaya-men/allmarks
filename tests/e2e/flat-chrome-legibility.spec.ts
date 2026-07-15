@@ -1,9 +1,60 @@
 import { test, expect, type Page } from '@playwright/test'
-import { seedDb, firstRunSuppressors } from './helpers/seed-db'
+import { seedDb, firstRunSuppressors, type SeedRecord } from './helpers/seed-db'
 
 async function prepFlatBoard(page: Page): Promise<void> {
   await seedDb(page, [...firstRunSuppressors()])
   await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme-id', 'flat'))
+}
+
+// Chrome-only tests above never need a real card, so prepFlatBoard seeds none.
+// The shadow/lift test needs one actual .cardNode to measure — same seeded
+// bookmark+card shape as lightbox-flow.spec.ts's seedBoard (linkStatus:'alive'
+// + fresh lastCheckedAt so the dead-link guard doesn't intervene; not needed
+// here since we never click the card, but kept for parity/future reuse).
+async function prepFlatBoardWithCard(page: Page): Promise<void> {
+  const now = new Date().toISOString()
+  const rows: SeedRecord[] = [
+    {
+      store: 'bookmarks',
+      value: {
+        id: 'seed-b-flat-shadow',
+        url: 'https://example.com/flat-shadow',
+        title: 'Flat shadow card',
+        description: '',
+        thumbnail: 'https://via.placeholder.com/200',
+        favicon: '',
+        siteName: 'Example',
+        type: 'website',
+        savedAt: now,
+        tags: [],
+        displayMode: null,
+        ogpStatus: 'fetched',
+        orderIndex: 0,
+        linkStatus: 'alive',
+        lastCheckedAt: Date.now(),
+      },
+    },
+    {
+      store: 'cards',
+      value: {
+        id: 'seed-c-flat-shadow',
+        bookmarkId: 'seed-b-flat-shadow',
+        folderId: '',
+        x: 0,
+        y: 0,
+        rotation: 0,
+        scale: 1,
+        zIndex: 0,
+        gridIndex: 0,
+        isManuallyPlaced: false,
+        width: 240,
+        height: 180,
+      },
+    },
+  ]
+  await seedDb(page, [...firstRunSuppressors(), ...rows])
+  await page.locator('[data-card-id]').first().waitFor({ timeout: 10_000 })
   await page.evaluate(() => document.documentElement.setAttribute('data-theme-id', 'flat'))
 }
 
@@ -116,4 +167,21 @@ test('flat: filter pill label typography matches the header buttons (linked)', a
   expect(p.weight).toBe(b.weight)
   expect(p.size).toBe(b.size)
   expect(p.tracking).toBe(b.tracking)
+})
+
+test('flat: board cards float (soft shadow) and edge fades are light not black', async ({ page }) => {
+  await prepFlatBoardWithCard(page)
+  const card = page.locator('[class*="cardNode"]').first()
+  await card.waitFor({ state: 'visible', timeout: 15_000 })
+  const shadow = await card.evaluate((el) => getComputedStyle(el).boxShadow)
+  expect(shadow).not.toBe('none')
+  const canvasBefore = await page.locator('[class*="canvas"]').first()
+    .evaluate((el) => getComputedStyle(el, '::before').backgroundImage)
+  // Must start from the board's own light colour, not black. The final
+  // gradient stop is the CSS `transparent` keyword, which getComputedStyle
+  // legitimately resolves to `rgba(0, 0, 0, 0)` (fully transparent — same
+  // pixel either way) — so assert there's no non-zero-alpha black band
+  // rather than banning the substring "rgba(0, 0, 0" outright.
+  expect(canvasBefore).toContain('rgb(250, 249, 246)')
+  expect(canvasBefore).not.toMatch(/rgba\(0, 0, 0, 0\.\d/)
 })
