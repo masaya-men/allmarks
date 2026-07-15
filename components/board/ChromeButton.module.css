@@ -147,6 +147,11 @@
 :global(html[data-theme-id="flat"]) .btn::after {
   content: "";
   position: absolute;
+  /* top:auto is REQUIRED: the base .btn::before,::after rule sets inset:0
+     (=top:0). Without resetting top, top+height+bottom are all constrained and
+     the browser ignores `bottom`, pinning the line to the TOP of the button.
+     top:auto un-constrains it so `bottom:5px` anchors it under the label. */
+  top: auto;
   left: 12px; right: 12px; bottom: 5px;
   height: 1.5px;
   background: rgba(var(--chrome-ink-rgb), 0.9);
