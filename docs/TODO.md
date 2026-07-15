@@ -21,6 +21,18 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 199 — ★フラットの仕上げを実機フィードバック駆動で5回出荷／次＝②Grid をフラットに統合)
+
+**s198 の Flat を実機で叩きながら、掟どおり「調査→モック/根本原因→承認→subagent 実装＋各レビュー＋opus 全ブランチ→ゲート→デプロイ」を5サイクル完遂。** すべて `allmarks.app` 反映済・master merge --no-ff。音/Grid はバイト同一、紙は不変を全回で死守。
+
+- **① フラットのメニュー可読化**（merge `38c046c2`）: s198 のフラット皮が「枠とボタン」までで、中身が白×白／暗×暗で不可視だった。新トークン **`--chrome-ink-rgb`**（:root=255,255,255／flat=20,19,15）で全 chrome 文字を一括反転＋Pattern B の暗ドロップダウン面を flat で白面化（SETTINGS/THEME/CUSTOMIZE/絞り込み/言語/タグ/トースト）。opus 指摘の BackupReminder 緑枠消失も修正。tsc0/vitest2407/e2e17。
+- **TUNE の「しまい切れない線」修正**（`b4eafbe4` 系）: フラット `.drawer` が閉時も枠 1px を常時描画＝線。**閉時 border-width:0・開時 1px**（FilterPill と同作法）に。再発防止 e2e 追加。
+- **① chrome アニメのテーマ化**（merge `38c046c2`→実際は別 merge）: **`ThemeMeta.chromeMotion`（signature|quiet・必須）**新設。音のみ signature（スクランブル＋グリッチ維持）、他は静か。スクランブルは共有フック `useSignatureChromeMotion`（html data-theme-id 監視）で全消費者一括ゲート。CSS グリッチは5ファイルとも `html[data-theme-id="dotted-notebook"]` にスコープ。**フラット＝ホバー下線(B)**。フラットのツイート翻訳を `quiet` 遷移に。**絞り込みピルの字体を `--chrome-label-*` 共通トークンでヘッダーボタンと連動**（別書体問題を解消）。opus 指摘の下線バグ2件（top:auto・padding:0＝16px塊化）修正。tsc0/vitest2412/e2e21。
+- **フラット白系シャドウ/浮遊/エッジ/ライトボックス**（merge 直近）: カード角丸を **Wave と同じ式**に（`card-radius.ts` param `flat`→`minimalRadius`・紙のみ3px）／カードに**軽い層状シャドウ＋ホバーで影深化**（持ち上げ transform は入れない＝兄弟の操作子とズレるため・opus 指摘）／ライトボックスを **`--lightbox-backdrop` 明フロスト**化＝暗インク文字が読める＋メディアに影。tsc0/vitest2414/e2e23。
+- **盤面上下フェード撤去**（最後の1手）: 実機で「内側フェードがカードを隠す」→ フラットの `.canvas::before/::after` を **display:none**（紙と同じ）。
+- **★残（実機で軽く見る・非ブロッキング）**: ライトボックスの @ハンドル/meta（`--text-meta` #6b675e）が明フロスト上で最薄＝薄すぎたら少し濃く（小修正）。
+- **★次セッション最優先＝②「Grid をフラットに統合」**（着手前にモック承認）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 198 — ★テーマ実行の続き: サブ2 フラットテーマ＋フラット TUNE 皮を subagent-driven で本番出荷)
 
 **掟どおり「頭でモック→ユーザー承認→写経 spec/plan→subagent-driven→opus 全ブランチレビュー」を1セッションで完遂。** 新 opt-in 明テーマ **Flat**（LP 白エディトリアル `#faf9f6`・Fraunces ワードマーク・`kind:'pattern'`）＋その TUNE 皮を出荷。`theme-sub2-flat` 6タスク（T1 登録=Haiku／T2-6=Sonnet）＋各 per-task レビュー＋fix＋**opus 全ブランチレビュー Ready=WITH FIXES→hover 欠陥1件 fix**→merge --no-ff→`allmarks.app` デプロイ。tsc0／**vitest 2407**／build／e2e 14（board-theme6＋chrome-skin-tokens8）。
