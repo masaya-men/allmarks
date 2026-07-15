@@ -56,9 +56,9 @@ export function OnboardingStage({ variant, caption, buttonLabel, onAdvance }: Pr
   }, [variant])
 
   // Finale advance gets a soft exit beat: the content lifts + fades out over the
-  // still-opaque black curtain, then we hand off (clearOnboardingDemo → empty
-  // board / EmptyStateWelcome fades in). The curtain stays opaque through the
-  // fade — board ≈ curtain colour, so the unmount is a seamless black→black.
+  // still-opaque black curtain, then we hand off (clearOnboardingDemo → the real
+  // board). The curtain stays opaque through the fade — board ≈ curtain colour,
+  // so the unmount is a seamless black→black.
   const handleAdvance = (): void => {
     const root = rootRef.current
     const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches

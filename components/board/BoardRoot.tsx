@@ -84,7 +84,6 @@ import { type UndoEntry, MAX_UNDO_STACK, pushBounded } from '@/lib/board/undo-st
 import { PRESETS, type PresetId } from '@/lib/board/tune-presets'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { BookmarkletInstallModal } from '@/components/bookmarklet/BookmarkletInstallModal'
-import { EmptyStateWelcome } from '@/components/bookmarklet/EmptyStateWelcome'
 import { OnboardingController } from '@/components/onboarding/OnboardingController'
 import { shouldAutoStartOnboarding } from '@/lib/onboarding/onboarding-state'
 import type { SceneId } from '@/lib/onboarding/steps'
@@ -982,6 +981,12 @@ export function BoardRoot() {
   // re-firing on later loading/showOnboarding flips).
   useEffect(() => {
     if (loading || showOnboarding || backupUiCheckedRef.current) return
+    // Empty board (brand-new user fresh off the tutorial, or someone who cleared
+    // everything): nothing to back up yet, so don't fire the data-home notice.
+    // Leave the guard unset so this effect re-checks once they actually have a
+    // card (items.length is in the deps), then the notice lands at a moment when
+    // "keep a copy of your data" is meaningful.
+    if (items.length === 0) return
     backupUiCheckedRef.current = true
     let alive = true
     void (async (): Promise<void> => {
@@ -1005,7 +1010,7 @@ export function BoardRoot() {
       if (alive && show) setBackupReminder({ newCount, everBackedUp: lastBackupAt !== null })
     })()
     return (): void => { alive = false }
-  }, [loading, showOnboarding])
+  }, [loading, showOnboarding, items.length])
 
   const onDataHomeGotIt = useCallback((): void => {
     setShowDataHomeCard(false)
@@ -3673,12 +3678,10 @@ export function BoardRoot() {
               onLater={onReminderLater}
             />
           )}
-          {!loading && !showOnboarding && items.length === 0 && (
-            <EmptyStateWelcome
-              onOpenModal={handleOpenBookmarkletModal}
-              onReplayIntro={() => { void startOnboardingReplay() }}
-            />
-          )}
+          {/* No empty-board welcome: the first-run tutorial already onboards new
+              users, so an extra welcome card was redundant (it also flashed under
+              the DataHomeCard). REPLAY INTRO + bookmarklet install stay reachable
+              from SETTINGS. */}
         </div>
         {/* ScrollMeter moved OUT of the canvas to the bottom frame band
             (frameBottomChrome, above) so its scrub hit-area never overlaps card
