@@ -169,21 +169,21 @@ test('flat: filter pill label typography matches the header buttons (linked)', a
   expect(p.tracking).toBe(b.tracking)
 })
 
-test('flat: board cards float (soft shadow) and edge fades are light not black', async ({ page }) => {
+test('flat: board cards float (soft shadow) and top/bottom edge scrims are removed', async ({ page }) => {
   await prepFlatBoardWithCard(page)
   const card = page.locator('[class*="cardNode"]').first()
   await card.waitFor({ state: 'visible', timeout: 15_000 })
   const shadow = await card.evaluate((el) => getComputedStyle(el).boxShadow)
   expect(shadow).not.toBe('none')
-  const canvasBefore = await page.locator('[class*="canvas"]').first()
-    .evaluate((el) => getComputedStyle(el, '::before').backgroundImage)
-  // Must start from the board's own light colour, not black. The final
-  // gradient stop is the CSS `transparent` keyword, which getComputedStyle
-  // legitimately resolves to `rgba(0, 0, 0, 0)` (fully transparent — same
-  // pixel either way) — so assert there's no non-zero-alpha black band
-  // rather than banning the substring "rgba(0, 0, 0" outright.
-  expect(canvasBefore).toContain('rgb(250, 249, 246)')
-  expect(canvasBefore).not.toMatch(/rgba\(0, 0, 0, 0\.\d/)
+  // The top/bottom edge scrims are removed on flat (display:none) — a fade over
+  // the white board veils cards near the edges, so it's gone entirely (s199).
+  // (Note: display:none does NOT reset background, so we assert display, not the
+  // background gradient which still computes to the base black stops.)
+  const canvas = page.locator('[class*="canvas"]').first()
+  const beforeDisplay = await canvas.evaluate((el) => getComputedStyle(el, '::before').display)
+  const afterDisplay = await canvas.evaluate((el) => getComputedStyle(el, '::after').display)
+  expect(beforeDisplay).toBe('none')
+  expect(afterDisplay).toBe('none')
 })
 
 // Opening the real lightbox via a synthetic pointer is unreliable (card click

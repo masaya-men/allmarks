@@ -227,14 +227,15 @@
   display: none;
 }
 
-/* Flat: fade the top/bottom scrim to the board colour, not black (a dark
-   gradient over #faf9f6 = ugly bands). Keeps floating chrome legible over
-   scrolling cards while matching the white world. */
-:global(html[data-theme-id="flat"]) .canvas::before {
-  background: linear-gradient(180deg, #faf9f6 0%, rgba(250, 249, 246, 0.75) 40%, transparent 100%);
-}
+/* Flat: remove the top/bottom edge scrims entirely (same as paper). Any fade
+   over the white board is a net negative — a dark fade shows ugly bands, and a
+   light fade veils/hides the cards near the edges (user report s199). The flat
+   chrome text is dark ink on the light board and reads without a scrim.
+   display:none also restores the rounded top corners at y=0 (see the paper note
+   above). Other themes keep both scrims byte-identical. */
+:global(html[data-theme-id="flat"]) .canvas::before,
 :global(html[data-theme-id="flat"]) .canvas::after {
-  background: linear-gradient(0deg, #faf9f6 0%, rgba(250, 249, 246, 0.75) 40%, transparent 100%);
+  display: none;
 }
 
 /* Paper-atelier "paper on paper": the board .canvas is a rounded parchment
