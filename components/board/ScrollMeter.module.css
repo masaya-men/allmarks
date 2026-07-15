@@ -76,8 +76,14 @@
   white-space: nowrap;
 }
 
+/* The em-dash / slash separators. Default follows the theme's chrome ink
+   (--chrome-ink-rgb: white on dark themes, dark ink on flat) so the dim
+   separators auto-track the digits' color per theme — no per-theme override
+   needed. Sound/Grid ink is 255,255,255 → byte-identical to the old white
+   fallback. A theme can still hard-set --meter-dim-color to opt out (paper
+   uses its own scoped rule below instead). */
 .meterDim {
-  color: var(--meter-dim-color, rgba(255, 255, 255, 0.6));
+  color: var(--meter-dim-color, rgba(var(--chrome-ink-rgb, 255, 255, 255), 0.6));
 }
 
 /* Session 43: glitch on counter hover — unified with chrome buttons

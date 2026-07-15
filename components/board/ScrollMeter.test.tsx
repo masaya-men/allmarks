@@ -106,7 +106,10 @@ describe('ScrollMeter color tokenization (waveform default unchanged)', () => {
     expect(css).toContain('var(--meter-tick-color, rgba(255, 255, 255, 0.55))')
     expect(css).toContain('var(--meter-hover-line-color, rgba(255, 255, 255, 0.5))')
     expect(css).toContain('var(--meter-hover-line-shadow, rgba(255, 255, 255, 0.3))')
-    expect(css).toContain('var(--meter-dim-color, rgba(255, 255, 255, 0.6))')
+    // Separators (— /) default to the theme's chrome ink so they auto-track the
+    // digits per theme; --chrome-ink-rgb is 255,255,255 on dark themes (=
+    // byte-identical to the old white literal) and dark ink on flat.
+    expect(css).toContain('var(--meter-dim-color, rgba(var(--chrome-ink-rgb, 255, 255, 255), 0.6))')
   })
 })
 
