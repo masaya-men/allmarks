@@ -743,6 +743,10 @@ html[data-theme-id="flat"] {
   /* soft light shadows */
   --shadow-grid-card: 0 2px 8px rgba(20, 19, 15, 0.08);
   --shadow-collage-card: 0 10px 28px rgba(20, 19, 15, 0.12);
+
+  /* lightbox: light frost so the dark-ink info text (via --text-* tokens) reads.
+     The default rgba(0,0,0,0.5) left dark text on a dark scrim = invisible. */
+  --lightbox-backdrop: rgba(250, 249, 246, 0.86);
 }
 
 /* ── Reduced Motion ────────────────────────────────────────── */

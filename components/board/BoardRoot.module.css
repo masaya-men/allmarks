@@ -227,6 +227,16 @@
   display: none;
 }
 
+/* Flat: fade the top/bottom scrim to the board colour, not black (a dark
+   gradient over #faf9f6 = ugly bands). Keeps floating chrome legible over
+   scrolling cards while matching the white world. */
+:global(html[data-theme-id="flat"]) .canvas::before {
+  background: linear-gradient(180deg, #faf9f6 0%, rgba(250, 249, 246, 0.75) 40%, transparent 100%);
+}
+:global(html[data-theme-id="flat"]) .canvas::after {
+  background: linear-gradient(0deg, #faf9f6 0%, rgba(250, 249, 246, 0.75) 40%, transparent 100%);
+}
+
 /* Paper-atelier "paper on paper": the board .canvas is a rounded parchment
    PANEL lifted off an outer parchment surface (.outerFrame). The panel image is
    FIXED/cover (the camera scrolls inside it) so cards travel OVER a still

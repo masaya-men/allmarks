@@ -188,6 +188,16 @@
   object-fit: cover;
 }
 
+/* Flat theme: give the lightbox media a soft floating shadow. .media is the
+   universal wrapper (image / video / embed / tweet — see LightboxMedia and
+   TweetColumns, both render into this same class), so shadowing it once
+   covers every media type without per-branch duplication. Other themes are
+   untouched (dark themes already read as "floating" against a dark scrim;
+   paper has its own torn-card shadow language elsewhere). */
+:global(html[data-theme-id="flat"]) .media {
+  box-shadow: 0 1px 2px rgba(20, 19, 15, 0.05), 0 6px 18px rgba(20, 19, 15, 0.09);
+}
+
 .placeholder {
   padding: 32px;
   color: var(--text-body);
