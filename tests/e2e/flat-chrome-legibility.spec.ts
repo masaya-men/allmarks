@@ -74,3 +74,26 @@ test('flat: closed TUNE drawer shows no border sliver (fully tucked away)', asyn
   const borderWidth = await drawer.evaluate((el) => getComputedStyle(el).borderTopWidth)
   expect(borderWidth).toBe('0px')
 })
+
+test('flat: chrome buttons have NO glitch ghost and DO show an underline on hover', async ({ page }) => {
+  await prepFlatBoard(page)
+  const btn = page.getByTestId('extension-settings')
+  await btn.scrollIntoViewIfNeeded()
+  await btn.hover()
+  const ghostOpacity = await btn.evaluate((el) => getComputedStyle(el, '::before').opacity)
+  expect(ghostOpacity).toBe('0')
+  const underlineTransform = await btn.evaluate((el) => getComputedStyle(el, '::after').transform)
+  // underline drawn in on hover → scaleX(1) → identity-ish matrix, NOT the collapsed scaleX(0)=matrix(0,0,0,1,0,0)
+  expect(underlineTransform).not.toBe('matrix(0, 0, 0, 1, 0, 0)')
+  expect(underlineTransform).not.toBe('none')
+})
+test('sound wave: chrome button glitch ghost fires on hover (signature unchanged)', async ({ page }) => {
+  await seedDb(page, [...firstRunSuppressors()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  // default theme is dotted-notebook — do NOT switch away
+  const btn = page.getByTestId('extension-settings')
+  await btn.scrollIntoViewIfNeeded()
+  await btn.hover()
+  const ghostColor = await btn.evaluate((el) => getComputedStyle(el, '::before').color)
+  expect(ghostColor).toBe('rgb(255, 157, 63)')  // #ff9d3f orange ghost
+})

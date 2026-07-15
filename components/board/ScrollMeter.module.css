@@ -89,14 +89,14 @@
    force reflow → 700ms 後に外す、 で一回限りのパルス glitch になる。
    常時 glitch (= うっとうしい) は避け、 インタラクションの「節目」 だけ
    音波 motif と同調するスパイクで効かせる。 */
-.meterCounter:hover::before,
-.meterCounter.glitchBurst::before {
+:global(html[data-theme-id="dotted-notebook"]) .meterCounter:hover::before,
+:global(html[data-theme-id="dotted-notebook"]) .meterCounter.glitchBurst::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.meterCounter:hover::after,
-.meterCounter.glitchBurst::after {
+:global(html[data-theme-id="dotted-notebook"]) .meterCounter:hover::after,
+:global(html[data-theme-id="dotted-notebook"]) .meterCounter.glitchBurst::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }

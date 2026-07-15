@@ -60,12 +60,12 @@
    doesn't match → button ghost suppressed → only the per-numGroup ghosts
    below fire, keeping the visual glitch width comparable to other chrome
    (~50px per number block instead of ~195px for the full readout). */
-.trigger[aria-expanded='false']:hover::before {
+:global(html[data-theme-id="dotted-notebook"]) .trigger[aria-expanded='false']:hover::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.trigger[aria-expanded='false']:hover::after {
+:global(html[data-theme-id="dotted-notebook"]) .trigger[aria-expanded='false']:hover::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }
@@ -93,12 +93,12 @@
   white-space: nowrap;
 }
 
-.trigger:hover .numGroup::before {
+:global(html[data-theme-id="dotted-notebook"]) .trigger:hover .numGroup::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.trigger:hover .numGroup::after {
+:global(html[data-theme-id="dotted-notebook"]) .trigger:hover .numGroup::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }

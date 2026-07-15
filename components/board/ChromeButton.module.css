@@ -41,12 +41,12 @@
   color: rgba(255, 255, 255, 1);
 }
 
-.btn:hover::before {
+:global(html[data-theme-id="dotted-notebook"]) .btn:hover::before {
   color: #ff9d3f;
   animation: glitch-shift-a 700ms steps(7, end);
 }
 
-.btn:hover::after {
+:global(html[data-theme-id="dotted-notebook"]) .btn:hover::after {
   color: #50c8ff;
   animation: glitch-shift-b 700ms steps(7, end);
 }
@@ -139,4 +139,24 @@
   65%  { opacity: 1; transform: translate(3px, 0); clip-path: inset(45% 0 20% 0); }
   80%  { opacity: 0.85; transform: translate(-2px, 0); clip-path: inset(15% 0 55% 0); }
   100% { opacity: 0; transform: translate(0, 0); clip-path: none; }
+}
+
+/* Flat: quiet underline on hover instead of the sound-world RGB glitch. ::after
+   is free on flat because the glitch ghost is scoped to the signature theme
+   above. Draw a 1.5px ink underline from the left. */
+:global(html[data-theme-id="flat"]) .btn::after {
+  content: "";
+  position: absolute;
+  left: 12px; right: 12px; bottom: 5px;
+  height: 1.5px;
+  background: rgba(var(--chrome-ink-rgb), 0.9);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+  opacity: 1;
+  animation: none;
+}
+:global(html[data-theme-id="flat"]) .btn:hover::after { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  :global(html[data-theme-id="flat"]) .btn::after { transition: none; }
 }
