@@ -48,14 +48,14 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     boardRounded: false, // square frame (= --canvas-radius 0px at :root)
   },
   flat: {
-    edgeColor: '#f1efe8',
+    edgeColor: '#ffffff',      // pure-white margin (user-chosen default)
     boardColor: '#faf9f6',
     patternColor: 'rgba(20, 19, 15, 0.10)',
     patternType: 'none',
     patternSize: 40,
     patternStroke: 1,
     titleColor: 'rgba(20, 19, 15, 0.55)',
-    boardRounded: false,
+    boardRounded: true,        // rounded board frame by default
   },
 }
 
@@ -213,7 +213,7 @@ export const TITLE_SWATCHES_DARK: ReadonlyArray<string> = [
 //    Jelly Bean / Tickle-Me-Pink patterns); edge + title stay neutral, since the
 //    low-contrast pairs would be illegible as a wordmark. ──
 export const EDGE_SWATCHES_LIGHT: ReadonlyArray<string> = [
-  '#f1efe8', '#ffffff', '#eae6df', '#e9e4d9', '#efece4', '#e4e0d6',
+  '#ffffff', '#f1efe8', '#eae6df', '#e9e4d9', '#efece4', '#e4e0d6',
 ]
 export const BOARD_SWATCHES_LIGHT: ReadonlyArray<string> = [
   '#faf9f6', '#ffffff', '#f0f1be', '#cff740', '#f8f7c8',

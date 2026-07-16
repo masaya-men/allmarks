@@ -19,14 +19,20 @@ describe('theme-customization', () => {
     expect(d.boardRounded).toBe(false) // square frame (= --canvas-radius 0px)
   })
 
+  it('Flat defaults to a pure-white margin + rounded board frame (user-chosen default)', () => {
+    const d = THEME_CUSTOMIZATION_DEFAULTS['flat']!
+    expect(d.edgeColor).toBe('#ffffff')
+    expect(d.boardRounded).toBe(true)
+  })
+
   it('boardRounded (board-frame corners) resolves and gates the reset like any other field', () => {
-    expect(THEME_CUSTOMIZATION_DEFAULTS['flat']!.boardRounded).toBe(false)
-    // opting in flips the resolved value + marks the theme non-default
-    const r = resolveThemeCustomization('flat', { boardRounded: true })!
+    // Sound Wave defaults to a square frame; flipping it marks the theme non-default.
+    expect(THEME_CUSTOMIZATION_DEFAULTS['dotted-notebook']!.boardRounded).toBe(false)
+    const r = resolveThemeCustomization('dotted-notebook', { boardRounded: true })!
     expect(r.boardRounded).toBe(true)
-    expect(isDefaultCustomization('flat', { boardRounded: true })).toBe(false)
-    // explicitly false is still the default
-    expect(isDefaultCustomization('flat', { boardRounded: false })).toBe(true)
+    expect(isDefaultCustomization('dotted-notebook', { boardRounded: true })).toBe(false)
+    // explicitly matching the default is still the default (square for Sound Wave)
+    expect(isDefaultCustomization('dotted-notebook', { boardRounded: false })).toBe(true)
   })
 
   it('isLightColor flags light surfaces (for dark-ink chrome on a light edge)', () => {

@@ -618,24 +618,28 @@ export function ScrollMeter({
       <div className={styles.meterStack}>
         {/* Session 43: 操作ヒントは TUNE drawer の opsLegend に集約済 (= 機械の
             注意書き的に readout panel 内へ移動)。 ScrollMeter は数値 counter
-            + track のみのミニマム表示に戻す。 */}
-        <div
-          ref={counterWrapRef}
-          className={styles.meterCounter}
-          aria-hidden="true"
-          data-glitch-text=""
-          onPointerEnter={handleCounterEnter}
-        >
-          <span ref={n1Ref}>{pad4(n1)}</span>
-          {' '}
-          <span className={styles.meterDim}>—</span>
-          {' '}
-          <span ref={n2Ref}>{pad4(n2)}</span>
-          {' '}
-          <span className={styles.meterDim}>/</span>
-          {' '}
-          <span ref={totalSpanRef}>{pad4(total)}</span>
-        </div>
+            + track のみのミニマム表示に戻す。
+            'line' (flat) variant: the counter is hidden — flat wants just a bare
+            line + handle, so the digit readout is dropped for it. */}
+        {variant !== 'line' && (
+          <div
+            ref={counterWrapRef}
+            className={styles.meterCounter}
+            aria-hidden="true"
+            data-glitch-text=""
+            onPointerEnter={handleCounterEnter}
+          >
+            <span ref={n1Ref}>{pad4(n1)}</span>
+            {' '}
+            <span className={styles.meterDim}>—</span>
+            {' '}
+            <span ref={n2Ref}>{pad4(n2)}</span>
+            {' '}
+            <span className={styles.meterDim}>/</span>
+            {' '}
+            <span ref={totalSpanRef}>{pad4(total)}</span>
+          </div>
+        )}
         <div
           ref={trackRef}
           className={styles.track}

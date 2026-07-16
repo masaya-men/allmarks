@@ -235,15 +235,13 @@ describe('ScrollMeter variant is registry-driven', () => {
   })
 })
 
-it('line variant renders QuietTrack and does not scramble the counter', () => {
+it('line variant renders QuietTrack with NO digit counter (flat = just a line + handle)', () => {
   const { container } = render(
     <ScrollMeter mode="board" n1={1} n2={9} total={410} swellFraction={0.2} onScrub={() => {}} variant="line" />,
   )
   expect(screen.getByTestId('quiet-track')).toBeInTheDocument()
   expect(screen.getByTestId('scroll-meter')).toHaveAttribute('data-meter-variant', 'line')
-  // The counter row pre-renders the settled total (zero-padded) before any
-  // rAF/scramble loop runs — jsdom never fires rAF, so this initial JSX
-  // render is what we assert against (same pattern as the padded-counter
-  // test above).
-  expect(container.textContent).toContain('0410')
+  // The digit counter is dropped for the line variant — flat's meter is just the
+  // bare line + handle, so no number readout renders.
+  expect(container.textContent).not.toContain('0410')
 })
