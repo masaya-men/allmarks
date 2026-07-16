@@ -157,11 +157,13 @@ export function ShareMirror({
     : { backgroundColor: custom?.edgeColor ?? '#0a0a0a' }
   const boardStyle: CSSProperties = isPaper
     ? { backgroundColor: '#efe6d2', backgroundImage: PARCHMENT, backgroundSize: 'cover' }
-    : {
+    : ({
         backgroundColor: custom?.boardColor ?? '#0a0a0a',
         backgroundImage: custom && patternSvgDataUri(custom) ? `url("${patternSvgDataUri(custom)}")` : undefined,
         backgroundSize: custom ? `${custom.patternSize}px ${custom.patternSize}px` : undefined,
-      }
+        // Board-frame corner rounding so the OG image matches the sender's choice.
+        '--canvas-radius': custom?.boardRounded ? '14px' : '0px',
+      } as CSSProperties)
   const titleColor = isPaper ? 'rgba(43,39,34,0.85)' : (custom?.titleColor ?? 'rgba(255,255,255,0.95)')
   const titleFont = isPaper ? 'Georgia, serif' : undefined
 

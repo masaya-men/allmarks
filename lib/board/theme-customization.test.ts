@@ -10,12 +10,23 @@ import {
 import { patternSvgDataUri, defaultPatternStroke, effectivePatternStroke } from './theme-customization'
 
 describe('theme-customization', () => {
-  it('Sound Wave defaults are byte-identical to the pre-feature look (solid #0a0a0a, no pattern)', () => {
+  it('Sound Wave defaults are byte-identical to the pre-feature look (solid #0a0a0a, no pattern, square frame)', () => {
     const d = THEME_CUSTOMIZATION_DEFAULTS['dotted-notebook']!
     expect(d.edgeColor).toBe('#0a0a0a')
     expect(d.boardColor).toBe('#0a0a0a')
     expect(d.patternType).toBe('none')
     expect(d.titleColor).toBe('rgba(255, 255, 255, 0.95)')
+    expect(d.boardRounded).toBe(false) // square frame (= --canvas-radius 0px)
+  })
+
+  it('boardRounded (board-frame corners) resolves and gates the reset like any other field', () => {
+    expect(THEME_CUSTOMIZATION_DEFAULTS['flat']!.boardRounded).toBe(false)
+    // opting in flips the resolved value + marks the theme non-default
+    const r = resolveThemeCustomization('flat', { boardRounded: true })!
+    expect(r.boardRounded).toBe(true)
+    expect(isDefaultCustomization('flat', { boardRounded: true })).toBe(false)
+    // explicitly false is still the default
+    expect(isDefaultCustomization('flat', { boardRounded: false })).toBe(true)
   })
 
   it('isLightColor flags light surfaces (for dark-ink chrome on a light edge)', () => {

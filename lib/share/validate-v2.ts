@@ -35,6 +35,8 @@ const customSchema = z.object({
   // their `custom` block. The bound is generous; the render path clamps to spacing.
   patternStroke: z.number().min(0.5).max(20).optional(),
   titleColor: z.string().max(64),
+  // Optional: predates this field on old links; receiver falls back to square.
+  boardRounded: z.boolean().optional(),
 })
 
 const shareDataSchema = z.object({

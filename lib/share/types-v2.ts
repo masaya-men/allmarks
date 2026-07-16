@@ -17,6 +17,10 @@ export type ShareCustomization = {
    *  Requiring it would drop `custom` from every existing share. */
   readonly patternStroke?: number
   readonly titleColor: string
+  /** Board-frame corner rounding (--canvas-radius). Optional, like patternStroke:
+   *  links created before this existed carry no value and the receiver falls back
+   *  to square (the historic default for the non-paper frame). */
+  readonly boardRounded?: boolean
 }
 
 /** Schema version. v1 (old fragment-based) is dropped — see migration in design doc §4. */

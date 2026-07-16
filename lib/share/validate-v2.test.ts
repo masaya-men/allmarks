@@ -100,11 +100,14 @@ describe('sanitizeShareDataV2 custom', () => {
     const input = {
       v: 2, createdAt: 1, cards: [{ u: 'https://x.com/a', t: 'a', ty: 'tweet', cw: 200, a: 1 }],
       theme: 'dotted-notebook',
-      custom: { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: 'rgba(255,255,255,0.18)', patternType: 'grid', patternSize: 40, titleColor: '#fff' },
+      custom: { edgeColor: '#0a0a0a', boardColor: '#0e0e11', patternColor: 'rgba(255,255,255,0.18)', patternType: 'grid', patternSize: 40, titleColor: '#fff', boardRounded: true },
     }
     const r = parseShareDataV2(input)
     expect(r.ok).toBe(true)
-    if (r.ok) expect(r.data.custom?.patternType).toBe('grid')
+    if (r.ok) {
+      expect(r.data.custom?.patternType).toBe('grid')
+      expect(r.data.custom?.boardRounded).toBe(true) // board-frame corners survive the round-trip
+    }
   })
 
   it('sanitize drops a malformed custom instead of rejecting the whole payload', () => {

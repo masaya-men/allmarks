@@ -108,6 +108,32 @@ export function ThemeCustomizeSection({ value, isDefault, allowsPattern, colorSc
         </button>
       </div>
 
+      {/* Board-frame corners (the whole board's outer rounding, NOT the cards) —
+          per theme, so Flat can be rounded while Sound Wave stays square. */}
+      <div className={styles.row}>
+        <span className={styles.rowLabel}>CORNERS</span>
+        <div className={styles.cornerToggle}>
+          <button
+            type="button"
+            className={styles.cornerBtn}
+            aria-pressed={!value.boardRounded}
+            onClick={(): void => onChange({ boardRounded: false })}
+            data-testid="corners-square"
+          >
+            SQUARE
+          </button>
+          <button
+            type="button"
+            className={styles.cornerBtn}
+            aria-pressed={value.boardRounded}
+            onClick={(): void => onChange({ boardRounded: true })}
+            data-testid="corners-round"
+          >
+            ROUND
+          </button>
+        </div>
+      </div>
+
       {/* Pattern style — grid/dots/etc. are a customization of the live-world
           'pattern' themes (Sound Wave, Flat), not a separate theme. */}
       {allowsPattern && (

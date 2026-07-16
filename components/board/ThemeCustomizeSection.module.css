@@ -40,6 +40,35 @@
   cursor: default;
 }
 
+/* CORNERS segmented toggle (SQUARE / ROUND) — small twin buttons, the active one
+   filled with a faint ink so the choice reads at a glance. Ink-token driven so it
+   stays legible on both the dark and light drawers. */
+.cornerToggle {
+  display: flex;
+  gap: 6px;
+}
+.cornerBtn {
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: rgba(var(--chrome-ink-rgb), 0.5);
+  background: none;
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.16);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.cornerBtn:hover {
+  color: rgb(var(--chrome-ink-rgb));
+  border-color: rgba(var(--chrome-ink-rgb), 0.32);
+}
+.cornerBtn[aria-pressed='true'] {
+  color: rgb(var(--chrome-ink-rgb));
+  border-color: rgba(var(--chrome-ink-rgb), 0.4);
+  background: rgba(var(--chrome-ink-rgb), 0.08);
+}
+
 .row {
   display: flex;
   align-items: center;

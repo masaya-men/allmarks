@@ -441,8 +441,16 @@ export function SharedBoard(): ReactElement {
     ([id, p]): MirrorPosition => ({ id, x: p.x, y: p.y, w: p.w, h: p.h }),
   )
 
+  // Board-frame corner rounding from the sender's customization (pattern themes
+  // only; work themes keep the globals value). Mirrors the live board's inline
+  // --canvas-radius so the receiver's frame matches what the sender saw.
+  const frameCustom = resolveThemeCustomization(themeId, data.custom)
+  const frameStyle = frameCustom
+    ? ({ '--canvas-radius': frameCustom.boardRounded ? '14px' : '0px' } as CSSProperties)
+    : undefined
+
   return (
-    <div className={frame.outerFrame} data-theme={themeId}>
+    <div className={frame.outerFrame} data-theme={themeId} style={frameStyle}>
       {/* Outer top band — the receiver's primary actions (IMPORT) plus the
           reused MOTION switch and a blocked FILTER readout. Made inert while an
           import is running. */}

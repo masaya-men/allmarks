@@ -156,6 +156,11 @@ export type ThemeCustomization = {
    *  the thickness slider existed, so an untouched theme stays byte-identical. */
   readonly patternStroke?: number
   readonly titleColor?: string     // the hero background-typography wordmark colour
+  /** The whole BOARD FRAME's corner rounding (--canvas-radius): true = rounded
+   *  (14px, like Paper), false = square. Per-theme; default false so Sound Wave /
+   *  Flat keep their square frame (byte-identical). Not the card corners — those
+   *  are the global roundedCorners / TUNE CORNERS toggle. */
+  readonly boardRounded?: boolean
 }
 
 export type BoardConfig = {

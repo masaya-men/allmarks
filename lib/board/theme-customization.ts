@@ -11,6 +11,7 @@ export type ResolvedThemeCustomization = {
   readonly patternSize: number
   readonly patternStroke: number
   readonly titleColor: string
+  readonly boardRounded: boolean
 }
 
 /** The thickness each pattern was drawn at before the slider existed: 1px stroke
@@ -44,6 +45,7 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     patternSize: 40,
     patternStroke: 1,
     titleColor: DEFAULT_TITLE_COLOR,
+    boardRounded: false, // square frame (= --canvas-radius 0px at :root)
   },
   flat: {
     edgeColor: '#f1efe8',
@@ -53,6 +55,7 @@ export const THEME_CUSTOMIZATION_DEFAULTS: Partial<Record<ThemeId, ResolvedTheme
     patternSize: 40,
     patternStroke: 1,
     titleColor: 'rgba(20, 19, 15, 0.55)',
+    boardRounded: false,
   },
 }
 
@@ -108,6 +111,7 @@ export function resolveThemeCustomization(
     patternSize: custom.patternSize ?? base.patternSize,
     patternStroke: custom.patternStroke ?? defaultPatternStroke(patternType),
     titleColor: custom.titleColor ?? base.titleColor,
+    boardRounded: custom.boardRounded ?? base.boardRounded,
   }
 }
 
@@ -140,7 +144,8 @@ export function isDefaultCustomization(id: ThemeId, custom: ThemeCustomization |
     r.patternType === base.patternType &&
     r.patternSize === base.patternSize &&
     r.patternStroke === base.patternStroke &&
-    r.titleColor === base.titleColor
+    r.titleColor === base.titleColor &&
+    r.boardRounded === base.boardRounded
   )
 }
 

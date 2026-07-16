@@ -3223,6 +3223,9 @@ export function BoardRoot() {
       style={resolvedCustom ? ({
         '--edge-color': resolvedCustom.edgeColor,
         '--bg-typo-color': resolvedCustom.titleColor,
+        // Board-frame corner rounding, per theme: rounded (like Paper) or square.
+        // Default false → 0px = the :root value for Sound Wave / Flat (byte-identical).
+        '--canvas-radius': resolvedCustom.boardRounded ? '14px' : '0px',
         // On a LIGHT edge, flip the whole edge-band chrome to dark ink (legible
         // instead of vanishing white-on-white with a stray dark outline + glow).
         ...(isLightColor(resolvedCustom.edgeColor) ? LIGHT_EDGE_CHROME : {}),
