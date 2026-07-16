@@ -718,7 +718,11 @@ html[data-theme-id="flat"] {
   --chrome-panel-radius: 14px;
   --chrome-panel-blur: 8px;
   --chrome-panel-shadow: 0 22px 60px -22px rgba(20, 19, 15, 0.28);
-  --chrome-btn-color: rgba(20, 19, 15, 0.9);
+  /* Menu ink is a muted charcoal at rest, going to full ink on hover (+ the
+     underline) — an editorial "wakes up" reaction that suits the light board,
+     instead of the old dark-world white-on-hover (which inverted flat's menu
+     text to unreadable white). */
+  --chrome-btn-color: rgba(20, 19, 15, 0.62);
   --chrome-btn-hover: rgba(20, 19, 15, 1);
   --chrome-font: var(--font-sans);    /* Geist（flat は --font-sans を上書きしない） */
   --chrome-hover-fx: none;

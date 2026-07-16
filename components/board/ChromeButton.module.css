@@ -39,7 +39,10 @@
 }
 
 .btn:hover {
-  color: rgba(255, 255, 255, 1);
+  /* Hover ink is theme-aware: white on the dark worlds, dark ink on flat's light
+     board (the hardcoded white used to invert flat's menu text to white =
+     unreadable). Fallback keeps dark themes byte-identical. */
+  color: var(--chrome-btn-hover, rgba(255, 255, 255, 1));
 }
 
 :global(html[data-theme-id="dotted-notebook"]) .btn:hover::before {
