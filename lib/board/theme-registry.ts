@@ -13,6 +13,19 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     chromeMotion: 'signature',
     motion: { entry: 'wave', text: 'glitch-crt', shutdown: 'wave' },
   },
+  // Flat sits second (user-chosen order): Sound Wave → Flat → Paper.
+  flat: {
+    id: 'flat',
+    direction: 'vertical',
+    backgroundClassName: 'flat',
+    labelKey: 'board.theme.flat',
+    colorScheme: 'light',
+    tier: 'free',
+    kind: 'pattern',
+    scrollMeterVariant: 'line',
+    chromeMotion: 'quiet',
+    motion: { entry: 'fade', text: 'quiet', shutdown: 'fade' },
+  },
   'paper-atelier': {
     id: 'paper-atelier',
     direction: 'vertical',
@@ -25,18 +38,6 @@ export const THEME_REGISTRY: Record<ThemeId, ThemeMeta> = {
     chromeMotion: 'quiet',
     motion: { entry: 'paper-drift', text: 'ink-underline', shutdown: 'paper-fade' },
     decorations: true,
-  },
-  flat: {
-    id: 'flat',
-    direction: 'vertical',
-    backgroundClassName: 'flat',
-    labelKey: 'board.theme.flat',
-    colorScheme: 'light',
-    tier: 'free',
-    kind: 'pattern',
-    scrollMeterVariant: 'line',
-    chromeMotion: 'quiet',
-    motion: { entry: 'fade', text: 'quiet', shutdown: 'fade' },
   },
 }
 
