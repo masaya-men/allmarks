@@ -9696,3 +9696,23 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - ゲート最終: tsc0／vitest2400／build（165p・share assert OK）／e2e chrome-skin-tokens 8＋board-theme 3＋coverage 5。教訓を spec §7・memory `reference_token_fallback_dead_when_root_defined` に保存。
 
 **C2 バッチ1（zh/ko 盤面翻訳仕上げ）は集中を要する翻訳レビューゆえ次セッションへ。** 次＝テーマ実行の続き（サブ2 or サブ3 の皮作り込み・各回頭でモック承認→写経）＋C2。
+
+---
+
+## セッション 200 (2026-07-16) — ★テーマ大改修（模様を Sound Wave/Flat に統合＋独立 Grid 撤去）＋Flat 仕上げを実機FB駆動で多数出荷
+
+**ユーザーとの高速な往復で、テーマまわりを一気に前進。** 各出荷 tsc0／vitest（最終2414）／build／`allmarks.app` デプロイ済。音(dotted-notebook)/紙(paper-atelier)はバイト同一を全回死守。視覚変更は都度ユーザー承認（ui-design.md）。
+
+- **スクロールメーター区切り修正**: `— / ` が白固定だった（`--meter-dim-color` フォールバック）→ `--chrome-ink-rgb` に連動させ全テーマで数字と同色に（音/Grid=白でバイト同一・Flat=墨）。
+- **テーマ選択を名前リスト化**: 大きい四角プレビュー（PATTERN/WORKS 2群）を撤去し、単一の縦名前リストに（盤面が本物のプレビュー）。`ThemePicker` から variant/filterKind/preview/badge を除去、孤立 `ThemeModal.module.css` 削除。
+- **支援受け皿の調査**（ユーザー要望＝多言語ゆえ受け皿を多く）: グローバル支援PF比較表を subagent 調査。**Stripe は LoPo で審査落ち**が判明→Ko-fi/BMAC(Stripe経由)も危険→**FANBOX(日本)＋Patreon(世界)** が安全策。**ユーザーが「収益系は余裕がない」で保留**。
+- **チュートリアル整理**: (1) tour の **manage シーンを完全撤去**（/triage 寄り道・設定連動も）。(2) **share を軽い締めビートに**＝SHARE ボタンを spotlight で光らせ「SHARE から選んだブクマをコラージュしてシェアできます」(15言語)＋NEXT のみ。**`blockHole` でボタンは押せない**（要望）。旧 `OnboardingShareReveal` 削除。(3) **空の歓迎(EmptyStateWelcome)を撤去**（チュートリアルが担う）。(4) **データ通知(DataHomeCard)をカード1枚以上で表示**に（新規シークレットで完了後に一瞬モーダルが被る問題を解消）。
+- **テーマ順**を Sound Wave → Flat → Paper（Flat を2番目）。
+- **★模様統合＋Grid 撤去（本命）**: `THEMES_WITH_PATTERN_CONTROLS` に `dotted-notebook`,`flat` を追加＝両テーマの CUSTOMIZE で格子/ドット/斜線/クロス＋色＋間隔を選べる（既定 patternType 'none'＝バイト同一）。**独立 Grid(`grid-paper`) をレジストリ/型/CSS から撤去**、`loadBoardConfig` で `grid-paper`→`dotted-notebook`＋グリッド custom へ**安全移行**（クラッシュ防止）。古い Grid 共有リンクは validator の未知テーマ→undefined→既定で生存（格子は `custom` に残る）。**盤面明暗別スウォッチ**（`swatchesForScheme`）＋先頭=既定色で**「＋」誤選択を修正**。Flat 明色プリセット＝ユーザー提供配色。**adversarial review(subagent) が「部分カスタムのユーザーで格子が消える(patternType が 'none' に落ちる)」HIGH バグを捕捉→`{...GRID_MIGRATION_CUSTOMIZATION, ...userTweak}` の base-merge で修正＋回帰テスト**。spec `docs/superpowers/specs/2026-07-16-patterns-on-soundwave-flat-grid-removal-design.md`。
+- **CUSTOMIZE の RESET を常時表示**（未変更は無効・淡く＝盤面 RESET CARD SIZES と同作法）。
+- **per-theme BOARD CORNERS(round/square) トグル**を CUSTOMIZE に追加＝外枠 `--canvas-radius`（`ThemeCustomization.boardRounded`・既定 false=角）。ライブ盤面 `.outerFrame` インライン＋受け取り `/s`＋OG ShareMirror＋共有 payload まで一致（optional で旧リンク後方互換）。
+- **Flat 既定を「白マージン(#ffffff)＋丸枠(14px)」に**（opt-in テーマゆえ既定変更OK・音は不変）。**Flat スクロールメーター＝線＋ハンドルのみ**（QuietTrack のティック撤去＋'line' variant の数字カウンター非表示）。
+- **Flat メニューのホバー白反転を修正**: `.btn:hover` の白直書き→`--chrome-btn-hover` トークン化（音=白でバイト同一・Flat=黒）＋Flat の rest ink を墨0.62 に（hover=黒＋下線が"反応"に）。FilterPill は元から正しく無改変。
+- **TUNE の CORNERS 行の iOS トグルを廃しプリセット行に整列**（Flat のみ・ドット＋ラベル＋状態＝上のプリセットと揃う・破線で別項目）。
+
+**次セッション＝ユーザーの指示待ち**（さらなる Flat 磨き／支援受け皿再開[FANBOX＋Patreon]／拡張の一括保存=公開後 fast-follow／C2 翻訳）。

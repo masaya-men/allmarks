@@ -21,6 +21,19 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 200 — ★テーマ大改修＝模様を Sound Wave/Flat に統合＋独立 Grid 撤去／Flat 仕上げを実機FB駆動で多数出荷)
+
+**テーマまわりを実機フィードバック駆動で一気に前進。全出荷 tsc0/vitest2414/build/`allmarks.app` 反映済・音/紙はバイト同一を死守。** 詳細は [CURRENT_GOAL.md](CURRENT_GOAL.md)。要点:
+
+- **模様(格子/ドット/斜線/クロス)を Sound Wave と Flat の CUSTOMIZE に統合し、独立 Grid テーマ(`grid-paper`)を撤去**。`board-config.ts` の `loadBoardConfig` で `grid-paper`→`dotted-notebook`＋グリッド custom へ**安全移行**（クラッシュ防止・古い Grid 共有リンクも validator の未知テーマ→既定フォールバックで生存・格子は `custom` に残る）。**adversarial review(subagent) が「部分カスタムのユーザーで格子が消える」HIGH バグを捕捉→base-merge で修正＋回帰テスト**。盤面レンダラは元から `kind:'pattern'` 全対応（`.patternLayer`）。視差 drift も `BG_PARALLAX_THEMES` に `dotted-notebook` を足して継承（既定は模様なしで不可視＝バイト同一）。
+- **色スウォッチを盤面の明暗別に**（`swatchesForScheme`・暗=Sound Wave 従来値／明=Flat）＋各先頭を既定色にして**「＋(自由色)」誤選択を修正**。Flat の明色プリセットはユーザー提供の配色（Mint Julep/Starship/Corn Field 盤面・Highland/Jelly Bean/Tickle Me Pink 模様）。
+- **per-theme BOARD CORNERS(round/square) トグルを CUSTOMIZE に追加**（外枠 `--canvas-radius`・`ThemeCustomization.boardRounded`・共有/受け取り/OG まで一致）。**CUSTOMIZE の RESET を常時表示**（未変更は無効）。
+- **Flat の既定を「白マージン＋丸枠」に**／**Flat スクロールメーター＝線＋ハンドルのみ**（数字・目盛り撤去）／**Flat メニューのホバー白反転を修正**（`--chrome-btn-hover` トークン化・rest=墨0.62→hover=黒＋下線）／**TUNE の CORNERS 行の iOS トグルを廃しプリセット行に整列**。
+- **テーマ選択を名前リスト化**（大きい四角撤去）／テーマ順 **Sound Wave→Flat→Paper**／スクロールメーター区切り(— /)をテーマインク連動。
+- **チュートリアル整理**: manage シーン撤去・share は「SHARE を光らせて一言(押せない)」の締めに・空の歓迎(EmptyStateWelcome)撤去・データ通知はカード1枚以上で表示（新規シークレットの一瞬モーダル解消）。
+- **支援受け皿(収益系)はユーザー保留**（余裕待ち）。比較表は会話に有り＝**Stripe は LoPo で審査落ち**ゆえ Ko-fi/BMAC も危険→**FANBOX＋Patreon** が安全策。
+- **★次セッション＝ユーザーの指示待ち**（さらなる Flat 磨き／支援受け皿再開／拡張の一括保存=公開後 fast-follow）。[CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 199 — ★フラットの仕上げを実機フィードバック駆動で5回出荷／次＝②Grid をフラットに統合)
 
 **s198 の Flat を実機で叩きながら、掟どおり「調査→モック/根本原因→承認→subagent 実装＋各レビュー＋opus 全ブランチ→ゲート→デプロイ」を5サイクル完遂。** すべて `allmarks.app` 反映済・master merge --no-ff。音/Grid はバイト同一、紙は不変を全回で死守。
