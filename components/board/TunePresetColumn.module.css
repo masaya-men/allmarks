@@ -327,36 +327,13 @@
 :global(html[data-theme-id="flat"]) .maker { display: none; }
 :global(html[data-theme-id="flat"]) .cornerState { color: rgba(20, 19, 15, 0.4); }
 :global(html[data-theme-id="flat"]) .cornerStateOn { color: #1c9a00; }
-/* CORNERS row: turn the lever cell into an iOS toggle */
+/* CORNERS row: match the preset rows above — hide the lever entirely so the row
+   is just dot + label + state. The dot (led / ledOn, green when ROUND) carries
+   the on/off, and the ROUND / SQUARE readout confirms it. The old flat skin
+   turned the lever into a cramped iOS toggle that broke the alignment; the
+   dashed rule already marks this as a separate class of control. */
 :global(html[data-theme-id="flat"]) .cornersRow { border-top-color: rgba(20, 19, 15, 0.10); }
-:global(html[data-theme-id="flat"]) .cornersRow .lever {
-  width: 38px;
-  height: 22px;
-  border-radius: 999px;
-  background: rgba(20, 19, 15, 0.16);
-  border: none;
-  box-shadow: none;
-}
-:global(html[data-theme-id="flat"]) .cornersRow .lever::before,
-:global(html[data-theme-id="flat"]) .cornersRow .lever::after { display: none; }
-:global(html[data-theme-id="flat"]) .cornersRow .lever .handle {
-  display: block;
-  left: 2px;
-  right: auto;
-  top: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
-}
-:global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown { background: #28f100; }
-:global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown .handle { top: 2px; left: 18px; }
-:global(html[data-theme-id="flat"]) .cornersRow .lever.leverDown .handle::before { display: none; }
-/* iOS-toggle handle should never show the base grip-ridge stripes in either
-   state — the ON-only rule above left stripe fragments visible inside the
-   white circular handle when the toggle was OFF (square corners). */
-:global(html[data-theme-id="flat"]) .cornersRow .lever .handle::before { display: none; }
+:global(html[data-theme-id="flat"]) .cornersRow .lever { display: none; }
 
 /* Hover state: base .presetRow:hover/.cornersRow:hover .label rules (0,3,0)
    are tuned for the dark sound drawer (near-white cream on hover). On the
