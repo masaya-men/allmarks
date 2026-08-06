@@ -9705,7 +9705,7 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 
 - **スクロールメーター区切り修正**: `— / ` が白固定だった（`--meter-dim-color` フォールバック）→ `--chrome-ink-rgb` に連動させ全テーマで数字と同色に（音/Grid=白でバイト同一・Flat=墨）。
 - **テーマ選択を名前リスト化**: 大きい四角プレビュー（PATTERN/WORKS 2群）を撤去し、単一の縦名前リストに（盤面が本物のプレビュー）。`ThemePicker` から variant/filterKind/preview/badge を除去、孤立 `ThemeModal.module.css` 削除。
-- **支援受け皿の調査**（ユーザー要望＝多言語ゆえ受け皿を多く）: グローバル支援PF比較表を subagent 調査。**Stripe は LoPo で審査落ち**が判明→Ko-fi/BMAC(Stripe経由)も危険→**FANBOX(日本)＋Patreon(世界)** が安全策。**ユーザーが「収益系は余裕がない」で保留**。
+- **支援まわりの調査**（ユーザー要望）: グローバル比較を subagent 調査し、前提・結論は非公開 `docs/private/IDEAS.md` に退避。**ユーザーが「今は余裕がない」で保留**。
 - **チュートリアル整理**: (1) tour の **manage シーンを完全撤去**（/triage 寄り道・設定連動も）。(2) **share を軽い締めビートに**＝SHARE ボタンを spotlight で光らせ「SHARE から選んだブクマをコラージュしてシェアできます」(15言語)＋NEXT のみ。**`blockHole` でボタンは押せない**（要望）。旧 `OnboardingShareReveal` 削除。(3) **空の歓迎(EmptyStateWelcome)を撤去**（チュートリアルが担う）。(4) **データ通知(DataHomeCard)をカード1枚以上で表示**に（新規シークレットで完了後に一瞬モーダルが被る問題を解消）。
 - **テーマ順**を Sound Wave → Flat → Paper（Flat を2番目）。
 - **★模様統合＋Grid 撤去（本命）**: `THEMES_WITH_PATTERN_CONTROLS` に `dotted-notebook`,`flat` を追加＝両テーマの CUSTOMIZE で格子/ドット/斜線/クロス＋色＋間隔を選べる（既定 patternType 'none'＝バイト同一）。**独立 Grid(`grid-paper`) をレジストリ/型/CSS から撤去**、`loadBoardConfig` で `grid-paper`→`dotted-notebook`＋グリッド custom へ**安全移行**（クラッシュ防止）。古い Grid 共有リンクは validator の未知テーマ→undefined→既定で生存（格子は `custom` に残る）。**盤面明暗別スウォッチ**（`swatchesForScheme`）＋先頭=既定色で**「＋」誤選択を修正**。Flat 明色プリセット＝ユーザー提供配色。**adversarial review(subagent) が「部分カスタムのユーザーで格子が消える(patternType が 'none' に落ちる)」HIGH バグを捕捉→`{...GRID_MIGRATION_CUSTOMIZATION, ...userTweak}` の base-merge で修正＋回帰テスト**。spec `docs/superpowers/specs/2026-07-16-patterns-on-soundwave-flat-grid-removal-design.md`。
