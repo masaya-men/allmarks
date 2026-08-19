@@ -20,7 +20,7 @@ export function BackupReminder({ newCount, everBackedUp, onExport, onLater }: Ba
   const text = t(key).replace('{n}', String(newCount))
   return (
     <div className={styles.toast} style={{ zIndex: BOARD_Z_INDEX.BACKUP_REMINDER }}
-         role="status" data-testid="backup-reminder">
+         role="status" data-testid="backup-reminder" data-no-capture>
       <p className={styles.body}>{text}</p>
       <div className={styles.actions}>
         <button type="button" className={`${styles.btn} ${styles.primary}`} onClick={onExport}>EXPORT</button>

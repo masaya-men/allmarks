@@ -16,7 +16,7 @@ export function DataHomeCard({ onDismiss }: DataHomeCardProps): ReactElement {
   const { t } = useI18n()
   return (
     <div className={styles.backdrop} style={{ zIndex: BOARD_Z_INDEX.DATA_HOME }}
-         role="dialog" aria-modal="true" aria-label="AllMarks data notice">
+         role="dialog" aria-modal="true" aria-label="AllMarks data notice" data-no-capture>
       <div className={styles.card}>
         <p className={styles.title}>{t('board.dataHome.title')}</p>
         <p className={styles.body}>{t('board.dataHome.body')}</p>

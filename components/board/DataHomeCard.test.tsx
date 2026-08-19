@@ -11,4 +11,8 @@ describe('DataHomeCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /got it/i }))
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
+  it('carries data-no-capture so it never bakes into the SHARE screenshot', () => {
+    render(<DataHomeCard onDismiss={vi.fn()} />)
+    expect(screen.getByRole('dialog').hasAttribute('data-no-capture')).toBe(true)
+  })
 })

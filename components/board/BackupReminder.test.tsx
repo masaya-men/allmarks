@@ -18,4 +18,8 @@ describe('BackupReminder', () => {
     // en bodyFirst: "You've saved 30 bookmarks..."
     expect(screen.getByTestId('backup-reminder').textContent).toContain('30')
   })
+  it('carries data-no-capture so it never bakes into the SHARE screenshot', () => {
+    render(<BackupReminder newCount={5} everBackedUp onExport={vi.fn()} onLater={vi.fn()} />)
+    expect(screen.getByTestId('backup-reminder').hasAttribute('data-no-capture')).toBe(true)
+  })
 })
