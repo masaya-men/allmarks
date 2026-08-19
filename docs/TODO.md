@@ -21,6 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 201 — ★SHARE OGP バグ修正・出荷済／★Private(鍵付き秘密ブックマーク)を brainstorm→spec→plan まで完了・実装は次セッション)
+
+**前半: OGP バグ調査→修正→出荷。** ユーザー報告の共有リンク(`/s/cAYiu6`)を実機で取得し原因特定: SHARE の自動撮影が「操作クローム」を撮影から除外する仕組み(`data-no-capture`)を持つが、**`BackupReminder`(バックアップお知らせ)と `DataHomeCard`(初回データ案内)だけこの属性が抜けていた**ため、撮影の瞬間に画面に出ていると共有画像にそのまま写り込む(実例: バックアップ通知が丸ごと写った画像)。両コンポーネントに `data-no-capture` を追加+回帰テスト2件。tsc0/vitest2416/build/`allmarks.app` デプロイ済。
+
+**後半: 新アイデア「Private」タグを brainstorm→spec→plan の正規フローで完走。** 要件: 鍵付きにできるタグは「Private」1つだけ(汎用の全タグ鍵付きは不採用)・パスワードから AES-GCM で**本当に暗号化**(見た目だけのUIガードは不採用)・生体認証(WebAuthn)は後日のパスワードの近道・Private+普通タグの併用可だが**Privateを明示的に踏まない限り他のタグ単体では絶対に出ない**(all/inbox/archive含め全部)・SHAREはロック中は物理的に不可、解錠中に選んだ時だけ確認ダイアログ付きで許可・EXPORTには暗号化済みのまま含む・再ロックはリロードのみ(手動ロックUIなし)・救済はヒント文のみ(バックドア無し)。
+
+- **spec**: `docs/superpowers/specs/2026-08-20-private-vault-design.md`(commit `0e8ed5f3`)。
+- **plan**: `docs/superpowers/plans/2026-08-20-private-vault.md`。フェーズ1(パスワード版)のみ15タスク、TDD形式で全コード具体化済み。**セルフレビューで設計バグを1件発見し修正**: `privateTagId`(どのタグがPrivateか)を「ロック中は隠す」フィルタ後の `tags` 配列から導出すると、ロックした瞬間に判定自体が `null` になり除外が効かなくなる致命的バグになるところだった → `useTags()` が「表示用一覧(ロック中は隠す)」と「常にわかる `privateTagId`(ロック中でも判定に使う、rawTags 由来)」を別々に返す形に修正。デスクトップ/モバイル両方の SHARE 作成パスを実コードで検証済み(`buildArrangeShare` 経由で両方とも `selectedIds` ベース→同じゲートで対応可)。
+- **フェーズ2(生体認証)は別 plan**(この plan の対象外、明示的に除外)。
+- **★次セッション最優先＝ plan 実装**。ユーザー指定: **subagent-driven-development で1タスクずつ**。Task 1(暗号コア `lib/private/crypto.ts`)から順に。plan 内の Global Constraints(依存追加禁止・IDBバージョン不変・鍵は必ずメモリのみ等)は毎タスク遵守。
+
 ### 直近の状態 (セッション 200 — ★テーマ大改修＝模様を Sound Wave/Flat に統合＋独立 Grid 撤去／Flat 仕上げを実機FB駆動で多数出荷)
 
 **テーマまわりを実機フィードバック駆動で一気に前進。全出荷 tsc0/vitest2414/build/`allmarks.app` 反映済・音/紙はバイト同一を死守。** 詳細は [CURRENT_GOAL.md](CURRENT_GOAL.md)。要点:
