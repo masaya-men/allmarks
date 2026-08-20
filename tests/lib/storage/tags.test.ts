@@ -162,4 +162,20 @@ describe('tags storage', () => {
     const out = await filterBookmarks(db, { tagIds: ['a', 'b'], mode: 'or' })
     expect(out.map((b) => b.id).sort()).toEqual(['b1', 'b2'])
   })
+
+  // -------------------------------------------------------------------------
+  // v16 additions: Private vault support
+  // -------------------------------------------------------------------------
+
+  it('addTag accepts isPrivateVault and getAllTags round-trips it', async () => {
+    const created = await addTag(db, {
+      name: 'Private',
+      color: '#000000',
+      order: 0,
+      isPrivateVault: true,
+    })
+    expect(created.isPrivateVault).toBe(true)
+    const all = await getAllTags(db)
+    expect(all.find((t) => t.id === created.id)?.isPrivateVault).toBe(true)
+  })
 })
