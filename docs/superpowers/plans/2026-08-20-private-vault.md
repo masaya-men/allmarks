@@ -1078,7 +1078,7 @@ git commit -m "feat(private): applyFilter containment — Private items need an 
 
 **Interfaces:**
 - Consumes: `resolvePrivateVisibility` from `@/lib/private/resolve-visibility` (Task 6); `usePrivateVaultSession` from `@/lib/private/vault-session` (Task 2).
-- Produces: `useBoardData(privateTagId: string | null): { ...same shape as today... }` — signature gains one required param (Task 13 updates the one call site at `BoardRoot.tsx:254`).
+- Produces: `useBoardData(privateTagId: string | null = null): { ...same shape as today... }` — the new param DEFAULTS to `null` (same reasoning as Task 8's `applyFilter`): `BoardRoot.tsx`'s call site isn't updated to actually pass it until Task 13, three tasks later (Tasks 10-12 land first). A required param would leave the whole app failing `tsc --noEmit` for that entire window; a default keeps it green throughout and Task 13's edit is then just "start passing the real value," not "fix a break."
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1145,7 +1145,7 @@ async function buildBoardItems(
 }
 ```
 
-Change the hook signature (`:156`) to `export function useBoardData(privateTagId: string | null): { ... }` (same return type as before — no change to the type block itself).
+Change the hook signature (`:156`) to `export function useBoardData(privateTagId: string | null = null): { ... }` (default `null` — same return type as before, no change to the type block itself). The default is load-bearing, not cosmetic: it's what keeps `BoardRoot.tsx`'s existing no-arg call site compiling through Tasks 10-12, before Task 13 updates it to pass the real value.
 
 Inside the hook body, add near the top: `const privateSession = usePrivateVaultSession()`.
 
@@ -1192,7 +1192,7 @@ Add a new effect right after the mount effect so unlocking/locking mid-session r
 - [ ] **Step 4: Run to verify it passes**
 
 Run: `npx vitest run lib/storage/use-board-data.test.ts`
-Expected: PASS (all existing tests unchanged + 2 new). This file has many existing tests (per the repo's 2400+ total) — a signature change to `useBoardData` WILL break any test that calls `useBoardData()` with no args; fix each call site to `useBoardData(null)` (preserves old behavior exactly, since `null` privateTagId is a no-op per Task 6/8/9's designs). Grep the test file for `useBoardData(` to find every call site before declaring this step done.
+Expected: PASS (all existing tests unchanged + 2 new). Because the new param defaults to `null`, existing tests that call `useBoardData()` with no args keep compiling and behaving identically (no call-site fixes needed in the test file, unlike a required param would force) — confirm this by running the full existing `use-board-data.test.ts` suite, not just the two new tests.
 
 - [ ] **Step 5: Commit**
 
