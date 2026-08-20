@@ -1,23 +1,42 @@
 import { describe, it, expect, vi } from 'vitest'
-import { shouldRevalidate, RevalidationQueue, REVALIDATE_AGE_MS } from '@/lib/board/revalidate'
+import {
+  shouldRevalidate, RevalidationQueue, REVALIDATE_AGE_MS, REVALIDATE_RETRY_AFTER_FAILURE_MS,
+} from '@/lib/board/revalidate'
 
 describe('shouldRevalidate', () => {
   it('returns true for never-checked', () => {
-    expect(shouldRevalidate(undefined, Date.now())).toBe(true)
+    expect(shouldRevalidate(undefined, undefined, Date.now())).toBe(true)
   })
 
-  it('returns true if last check older than max age', () => {
+  it('returns true if last check older than max age (resolved status)', () => {
     const old = Date.now() - REVALIDATE_AGE_MS - 1000
-    expect(shouldRevalidate(old, Date.now())).toBe(true)
+    expect(shouldRevalidate(old, 'alive', Date.now())).toBe(true)
   })
 
-  it('returns false for fresh check', () => {
-    expect(shouldRevalidate(Date.now() - 1000, Date.now())).toBe(false)
+  it('returns false for fresh check (resolved status)', () => {
+    expect(shouldRevalidate(Date.now() - 1000, 'alive', Date.now())).toBe(false)
   })
 
-  it('returns false if last check within max age boundary', () => {
+  it('returns false if last check within max age boundary (resolved status)', () => {
     const exact = Date.now() - REVALIDATE_AGE_MS + 1000
-    expect(shouldRevalidate(exact, Date.now())).toBe(false)
+    expect(shouldRevalidate(exact, 'alive', Date.now())).toBe(false)
+  })
+
+  it('uses the full max age (not the short failure cooldown) when linkStatus is "gone"', () => {
+    const justFailed = Date.now() - REVALIDATE_RETRY_AFTER_FAILURE_MS - 1000
+    expect(shouldRevalidate(justFailed, 'gone', Date.now())).toBe(false)
+  })
+
+  it('a transient failure (linkStatus "unknown") is NOT due again immediately', () => {
+    const justFailed = Date.now() - 1000
+    expect(shouldRevalidate(justFailed, 'unknown', Date.now())).toBe(false)
+  })
+
+  it('a transient failure becomes due again after REVALIDATE_RETRY_AFTER_FAILURE_MS, not the full 7-day age', () => {
+    const pastFailureCooldown = Date.now() - REVALIDATE_RETRY_AFTER_FAILURE_MS - 1000
+    expect(shouldRevalidate(pastFailureCooldown, 'unknown', Date.now())).toBe(true)
+    // still well inside the 7-day window a resolved status would use
+    expect(Date.now() - pastFailureCooldown).toBeLessThan(REVALIDATE_AGE_MS)
   })
 })
 

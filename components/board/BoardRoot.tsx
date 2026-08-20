@@ -1534,8 +1534,14 @@ export function BoardRoot() {
           if (r.data?.image) await persistThumbnail(id, r.data.image, true)
         } else if (r.kind === 'gone') {
           await persistLinkStatus(id, 'gone', now)
+        } else {
+          // unknown (transient failure) — still record the attempt so
+          // shouldRevalidate applies the shorter REVALIDATE_RETRY_AFTER_FAILURE_MS
+          // cooldown instead of treating this bookmark as still "never
+          // checked" (which retried on every items-array change with no
+          // backoff at all — see revalidate.ts's doc comment).
+          await persistLinkStatus(id, 'unknown', now)
         }
-        // unknown → no state change (will retry on the next intent or viewport entry)
       },
     })
   }
@@ -1548,7 +1554,7 @@ export function BoardRoot() {
     if (!q) return
     const it = items.find((x) => x.bookmarkId === bookmarkId)
     if (!it) return
-    if (shouldRevalidate(it.lastCheckedAt, Date.now())) q.enqueue(bookmarkId, it.url)
+    if (shouldRevalidate(it.lastCheckedAt, it.linkStatus, Date.now())) q.enqueue(bookmarkId, it.url)
   }, [items])
 
   // Wheel-scroll through Lightbox can fire handleLightboxNav 10× per second.
@@ -3173,7 +3179,7 @@ export function BoardRoot() {
           if (!id) continue
           const item = items.find((it) => it.bookmarkId === id)
           if (!item) continue
-          if (shouldRevalidate(item.lastCheckedAt, now)) {
+          if (shouldRevalidate(item.lastCheckedAt, item.linkStatus, now)) {
             queue.enqueue(id, item.url)
           }
         }
