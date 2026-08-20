@@ -12,7 +12,12 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary)
 }
 
-function base64ToBytes(b64: string): Uint8Array {
+// Explicit <ArrayBuffer> (not the bare `Uint8Array` alias, which TS 5.7+
+// defaults to the wider `Uint8Array<ArrayBufferLike>`): callers pass this
+// straight into Web Crypto params (BufferSource), which require the
+// ArrayBuffer-backed variant specifically. `new Uint8Array(n)` already
+// constructs one; this only tightens the type annotation to match.
+function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
   const binary = atob(b64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
