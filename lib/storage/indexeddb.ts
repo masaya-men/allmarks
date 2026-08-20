@@ -1184,6 +1184,11 @@ export async function updateBookmarkOgp(
 ): Promise<void> {
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
+  // Never write into a Private (encrypted) record's plaintext columns — same
+  // guard as persistThumbnail/persistTitle/persistPhotos/persistMediaSlots
+  // (this function currently has no callers, but a future OGP-refetch
+  // feature must not reopen the leak those were fixed for).
+  if (existing.encryptedPayload) return
   const updated: BookmarkRecord = { ...existing, ...ogpData }
   await db.put('bookmarks', updated)
 }
