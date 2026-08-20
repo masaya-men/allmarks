@@ -60,3 +60,52 @@ describe('applyFilter', () => {
     expect(applyFilter(items, makeTagsFilter([], 'and')).map((x) => x.bookmarkId)).toEqual(['a', 'b', 'd'])
   })
 })
+
+describe('applyFilter — Private containment', () => {
+  function item(overrides: Partial<BoardItem>): BoardItem {
+    return {
+      bookmarkId: 'b',
+      cardId: 'c',
+      title: 't',
+      url: 'https://x',
+      aspectRatio: 1,
+      gridIndex: 0,
+      orderIndex: 0,
+      cardWidth: 240,
+      customCardWidth: false,
+      isRead: false,
+      isDeleted: false,
+      tags: [],
+      displayMode: null,
+      ...overrides,
+    }
+  }
+
+  const privateItem = item({ bookmarkId: 'priv', tags: ['priv-1', 'travel'] })
+  const normalItem = item({ bookmarkId: 'norm', tags: ['travel'] })
+  const items = [privateItem, normalItem]
+
+  it('all: Private item never appears even when privateTagId is passed', () => {
+    expect(applyFilter(items, { kind: 'all' }, 'priv-1').map((i) => i.bookmarkId)).toEqual(['norm'])
+  })
+
+  it('tags filter on a NON-private tag alone excludes the Private item', () => {
+    const result = applyFilter(items, { kind: 'tags', tagIds: ['travel'], mode: 'or' }, 'priv-1')
+    expect(result.map((i) => i.bookmarkId)).toEqual(['norm'])
+  })
+
+  it('tags filter that explicitly includes the Private tag id shows it', () => {
+    const result = applyFilter(items, { kind: 'tags', tagIds: ['priv-1'], mode: 'or' }, 'priv-1')
+    expect(result.map((i) => i.bookmarkId)).toEqual(['priv'])
+  })
+
+  it('tags filter combining Private + travel (AND) shows the Private item', () => {
+    const result = applyFilter(items, { kind: 'tags', tagIds: ['priv-1', 'travel'], mode: 'and' }, 'priv-1')
+    expect(result.map((i) => i.bookmarkId)).toEqual(['priv'])
+  })
+
+  it("privateTagId omitted (default null) preserves today's exact behavior", () => {
+    const result = applyFilter(items, { kind: 'tags', tagIds: ['travel'], mode: 'or' })
+    expect(result.map((i) => i.bookmarkId).sort()).toEqual(['norm', 'priv'])
+  })
+})
