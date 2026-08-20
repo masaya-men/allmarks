@@ -1701,6 +1701,13 @@ export function BoardRoot() {
       // case-insensitive — so the new-input pathway doesn't silently create
       // duplicates of "YouTube" / "youtube" etc.
       const existing = tags.find((t) => t.name.toLowerCase() === trimmed.toLowerCase())
+      // Typing "private" (case-insensitive) while unlocked would otherwise
+      // name-match the real vault tag here and attach it through this raw,
+      // non-encrypting path — the same bug class closed for the quick-tag
+      // surfaces (C1) and drag-and-drop (M3), reachable from the per-card
+      // + TAG popover's new-tag input. Only the board's individual card
+      // toggle may attach Private, because only that path encrypts.
+      if (existing && existing.id === privateTagId) return
       const target = existing ?? (await addTag(db, {
         name: trimmed, color: '#28F100', order: tags.length,
         // Flag tags born during the tutorial (e.g. the demo "sample") so they're
@@ -1712,7 +1719,7 @@ export function BoardRoot() {
       await reloadTags()
       await reload()
     },
-    [tags, reload, reloadTags],
+    [tags, reload, reloadTags, privateTagId],
   )
 
   // Onboarding tag scene: tag the newest card (highest orderIndex = the card the
