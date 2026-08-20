@@ -21,6 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 202 — ★Private vault Phase 1 実装完走＋最終全ブランチレビュー2巡／merge・デプロイはユーザー実機確認待ち)
+
+**s201で作った計画(15タスク)をsubagent-driven-developmentで実装完走 → 最終全ブランチレビュー → fix → 再レビュー → fix、を1セッションで完遂。ブランチ`private-vault-phase1`(未merge・未デプロイ)。**
+
+- **実装**: 15タスク(暗号コア→vault保存→表示ゲート→BoardRoot配線→SHARE警告→EXPORT/IMPORT→e2e)+follow-up 1件(TriagePageの同種漏れ)。各タスクレビュー緑。
+- **最終全ブランチレビュー(opus)**: 2件Critical+6件Important+9件Minor検出。①quick-tag系3経路(拡張保存ストリップ・/save ポップアップ・PiP)が`useTags()`を経由せず生の`getAllTags`を叩いていたため、ロック中でもPrivateタグが選べて暗号化なしで付けられた。②解錠中に走るツイート/TikTokの裏メタデータ取得が、復号済みの表示データを見て暗号化済みレコードのタイトル/サムネイルを平文のまま永久に書き込んでいた。他: mediaSlots/photosが暗号化対象外だった、TRASH/`/triage`にPrivate除外ゲートが無かった、初回読込のレース条件、vault作成の二重送信レース、Privateタグの削除で暗号化データが孤立、等。
+- **fix round(1回)**: 司令塔が全該当ファイルを事前に読み込み、逐語のfind/replaceまで書いたbriefを作成 → sonnetサブエージェントが13件まとめて機械的に適用・commit。tsc0/vitest 2478全緑。
+- **scoped re-review(opus)**: fix commitを検証 → 新たに1件Critical発見(カード個別の「+ TAG」新規タグ入力欄に同じ名前衝突の抜け穴)。司令塔が1行の外科修正で直接fix(サブエージェント無し・診断済みの数行修正のため)。
+- **post-plan gate**: tsc0 / vitest 300ファイル2478テスト全緑 / `pnpm build`成功(`assert-share-template` OK)。
+- **★次セッション最優先＝ユーザー実機確認 → merge → デプロイ**。手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。台帳(全記録)は`.superpowers/sdd/2026-08-20-private-vault/progress.md`。
+
 ### 直近の状態 (セッション 201 — ★SHARE OGP バグ修正・出荷済／★Private(鍵付き秘密ブックマーク)を brainstorm→spec→plan まで完了・実装は次セッション)
 
 **前半: OGP バグ調査→修正→出荷。** ユーザー報告の共有リンク(`/s/cAYiu6`)を実機で取得し原因特定: SHARE の自動撮影が「操作クローム」を撮影から除外する仕組み(`data-no-capture`)を持つが、**`BackupReminder`(バックアップお知らせ)と `DataHomeCard`(初回データ案内)だけこの属性が抜けていた**ため、撮影の瞬間に画面に出ていると共有画像にそのまま写り込む(実例: バックアップ通知が丸ごと写った画像)。両コンポーネントに `data-no-capture` を追加+回帰テスト2件。tsc0/vitest2416/build/`allmarks.app` デプロイ済。

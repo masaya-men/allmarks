@@ -1,27 +1,31 @@
-# 次セッション(s202)のゴール — Private(鍵付き秘密ブックマーク)plan を subagent-driven で実装開始
+# 次セッション(s203)のゴール — Private vault: ユーザー実機確認 → merge → デプロイ
 
-## ★s201 の到達点
-- **OGP バグ修正・出荷済**: SHARE 自動撮影が `BackupReminder`/`DataHomeCard` を撮影除外リスト(`data-no-capture`)から漏らしていて、撮影の瞬間に画面に出ていると共有画像に写り込むバグを修正。tsc0/vitest2416/build/`allmarks.app` デプロイ済。
-- **Private(鍵付き秘密ブックマーク)を brainstorm→spec→plan の正規フローで完走**（実装はまだ・次セッション）。
-  - spec: `docs/superpowers/specs/2026-08-20-private-vault-design.md`
-  - plan: `docs/superpowers/plans/2026-08-20-private-vault.md`（フェーズ1=パスワード版、15タスク、TDD具体コード込み）
-  - 要件の芯: 鍵付きタグは「Private」1つだけ／パスワードでAES-GCM**本当に暗号化**／生体認証はフェーズ2(後日)／Private+普通タグ併用可だがPrivateを明示的に踏まない限り絶対に出ない／SHAREはロック中不可・解錠中選択時は確認ダイアログ付きで許可／EXPORTは暗号化済みのまま含む／再ロックはリロードのみ／救済はヒント文のみ
-  - **plan 自己レビューで致命的バグを1件発見・修正済**: `privateTagId` の導出元を「ロック中に隠すフィルタ後」ではなく「常に見える rawTags」にする分離が必要だった（さもないとロックした瞬間に除外判定自体が壊れる）
+## ★s202 の到達点
+- **Private(鍵付き秘密ブックマーク)Phase 1、実装+レビュー完走。ブランチ `private-vault-phase1`(未merge・未デプロイ)。**
+  - 15タスク + follow-up 1件(TriagePage漏れ修正)を subagent-driven-development で完遂。
+  - **最終全ブランチレビュー(opus)実施 → 2件のCritical + 6件のImportant + 9件のMinorを検出 → 1回のfix dispatchで13件まとめて修正**(quick-tag系3経路が暗号化なしでPrivateタグを付けられた問題／解錠中の裏メタデータ取得が暗号化済みレコードに平文を書き込んでいた問題、他)。
+  - **その修正コミットへのscoped re-review(opus)を実施 → 新たに1件Critical発見**(カード個別の「+ TAG」新規タグ入力欄が同じ抜け穴を持っていた)→ **司令塔が1行の外科修正で直接fix**。
+  - 検証: tsc 0エラー / vitest 300ファイル2478テスト全緑 / `pnpm build` 成功(`assert-share-template` OK)。
+  - **未着手のまま次に持ち越したMinor 4件**(いずれ非ブロッキング・詳細は台帳): `lib/private/resolve-visibility.ts`の型定義がI1のフィールド追加に追随していない(実害なし・型のみ)／新規タグのorder値が僅かに重複しうる(見た目のみ)／`updateBookmarkOgp`に暗号化ガード無し(現状呼び出し元ゼロ・死コード)／ツイート/TikTokの裏メタデータ取得がPrivate項目でもURLをx.com/tiktok.comに送っている(書き込みは阻止済・通信は未対応)。
+  - 台帳(全記録): `.superpowers/sdd/2026-08-20-private-vault/progress.md`
 
-## ★次セッション最優先＝ plan 実装
-- **ユーザー指定: subagent-driven-development で1タスクずつ**（`/execute` 相当・各タスクごとに fresh subagent + レビュー）。
-- **Task 1 (`lib/private/crypto.ts`) から順番に**。plan 内の Global Constraints（新規依存禁止・IDBバージョン不変・鍵は必ずメモリのみ・rtk はテストコードに書かない・新規ダイアログは全部 `data-no-capture`）を毎タスク遵守。
-- Task 13 (BoardRoot.tsx wiring) が一番大きい・plan 内に実コード(handleTagToggle/handleCreateHostedShare/handleMobileCaptureAndCreate の実際の現行コードごと)を書き込み済みなので、そのまま写経できる。
-- 全タスク完了後の post-plan gate: tsc0 / vitest full green / `pnpm build` / ユーザー実機確認(Private作成→リロードで消える→解錠→SHAREで警告確認)。
-- **フェーズ2(WebAuthn生体認証)はこの plan の対象外**、別 plan として後日。
+## ★次セッション最優先＝ユーザー実機確認 → merge → デプロイ
+1. **ブランチをローカルで実機確認**(spec通りの動作確認、CLAUDE.mdの安全ルールによりmerge/deployはユーザー確認必須):
+   - SETTINGS → PRIVATE → パスワード設定 → カードにPrivateタグを付ける → リロード → 消えることを確認
+   - 解錠 → フィルタでPrivateを明示的に選んだ時だけ見えることを確認(他フィルタ・ALL・TRASHには絶対出ない)
+   - 解錠中にPrivate項目を選んでSHARE → 確認ダイアログが出ることを確認
+   - EXPORT → 別ブラウザ/シークレットウィンドウにIMPORT → 同じパスワードで解錠できることを確認
+2. OKなら: `master` へ merge(`--no-ff`推奨) → `pnpm build` → `wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true` → `allmarks.app`をハードリロードして本番確認。
+3. merge後: `.superpowers/sdd/2026-08-20-private-vault/`(台帳・brief類)は削除してよい(完了記録は本ファイル+TODO_COMPLETED.mdに残る)。
+4. **フェーズ2(WebAuthn生体認証)はこのplanの対象外**、要望が出たら別plan。
 
-## 保留中（s200以前から継続、いつでも合流可）
-- さらなるテーマ/Flat 磨き（実機で気になる点があれば）。
-- 支援まわり（ユーザー保留中、詳細は非公開 `docs/private/IDEAS.md`）。
-- 拡張の一括保存＝公開後 fast-follow。C2 翻訳(13言語)仕上げ。
+## 保留中(いつでも合流可)
+- TODO.mdが873行(目安200行を大幅超過)→ 古いセッションnarrativeをTODO_COMPLETED.mdへ移動する軽い掃除タスク(非ブロッキング、手が空いた時に)。
+- dashboard.html(`docs/private/`)がs202の内容未反映(次のセッション終了時にまとめて更新)。
+- さらなるテーマ/Flat磨き、支援まわり(非公開`docs/private/IDEAS.md`)、拡張の一括保存、C2翻訳仕上げ。
 
-## 恒久ルール（継承）
-- 視覚変更は `ui-design.md`「承認後」（現状→変更案→承認→実装）。`rtk` 前置・`--no-verify` 禁止・vitest/playwright は素の npx・Framer Motion 禁止。
+## 恒久ルール(継承)
+- 視覚変更は`ui-design.md`「承認後」。`rtk`前置・`--no-verify`禁止・vitest/playwrightは素の npx・Framer Motion禁止。
 - 音(dotted-notebook)/紙(paper-atelier)＝バイト同一を死守。
-- 機微（支援・値付け・戦略）は tracked に書かない＝`docs/private/`。
-- 新規の共有撮影に写り込むフローティングUI(トースト・モーダル)は必ず `data-no-capture` を付ける（s201 で2件の抜けを実例として発見）。
+- 機微(支援・値付け・戦略)はtrackedに書かない＝`docs/private/`。
+- merge/push/deployは必ずユーザー確認後(CLAUDE.md安全ルール)。
