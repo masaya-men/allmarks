@@ -1,31 +1,33 @@
-# 次セッション(s203)のゴール — Private vault: ユーザー実機確認 → merge → デプロイ
+# 次セッション(s203)のゴール — private-vault-phase1 を master へ merge
 
 ## ★s202 の到達点
-- **Private(鍵付き秘密ブックマーク)Phase 1、実装+レビュー完走。ブランチ `private-vault-phase1`(未merge・未デプロイ)。**
-  - 15タスク + follow-up 1件(TriagePage漏れ修正)を subagent-driven-development で完遂。
-  - **最終全ブランチレビュー(opus)実施 → 2件のCritical + 6件のImportant + 9件のMinorを検出 → 1回のfix dispatchで13件まとめて修正**(quick-tag系3経路が暗号化なしでPrivateタグを付けられた問題／解錠中の裏メタデータ取得が暗号化済みレコードに平文を書き込んでいた問題、他)。
-  - **その修正コミットへのscoped re-review(opus)を実施 → 新たに1件Critical発見**(カード個別の「+ TAG」新規タグ入力欄が同じ抜け穴を持っていた)→ **司令塔が1行の外科修正で直接fix**。
-  - 検証: tsc 0エラー / vitest 300ファイル2478テスト全緑 / `pnpm build` 成功(`assert-share-template` OK)。
-  - **未着手のまま次に持ち越したMinor 4件**(いずれ非ブロッキング・詳細は台帳): `lib/private/resolve-visibility.ts`の型定義がI1のフィールド追加に追随していない(実害なし・型のみ)／新規タグのorder値が僅かに重複しうる(見た目のみ)／`updateBookmarkOgp`に暗号化ガード無し(現状呼び出し元ゼロ・死コード)／ツイート/TikTokの裏メタデータ取得がPrivate項目でもURLをx.com/tiktok.comに送っている(書き込みは阻止済・通信は未対応)。
+- **Private(鍵付き秘密ブックマーク)Phase 1、実装+最終レビュー+本番デプロイまで完走。ユーザー実機確認済み。ただし`private-vault-phase1`ブランチはまだ`master`に未merge。**
+  - 最終全ブランチレビュー(opus) → 2件Critical含む17件検出 → 1回のfix dispatchでまとめて修正 → 修正のscoped re-reviewでもう1件Critical発見 → 司令塔が1行で直接fix。
+  - ユーザーが実機で「作成→タグ付け→リロードで消える→解錠→絞り込みで見える」を確認済み。
+  - **本番(`allmarks.app`)には2回デプロイ済・動作確認済**(direct uploadなのでbranch/merge状態は問わない仕様)。
+  - 実機確認中に偶然見つけた副産物バグ2件も同セッションで修正・本番反映済(①テーマ切替時のハイドレーション警告 ②リンク健全性チェックの無限リトライ)。
   - 台帳(全記録): `.superpowers/sdd/2026-08-20-private-vault/progress.md`
 
-## ★次セッション最優先＝ユーザー実機確認 → merge → デプロイ
-1. **ブランチをローカルで実機確認**(spec通りの動作確認、CLAUDE.mdの安全ルールによりmerge/deployはユーザー確認必須):
-   - SETTINGS → PRIVATE → パスワード設定 → カードにPrivateタグを付ける → リロード → 消えることを確認
-   - 解錠 → フィルタでPrivateを明示的に選んだ時だけ見えることを確認(他フィルタ・ALL・TRASHには絶対出ない)
-   - 解錠中にPrivate項目を選んでSHARE → 確認ダイアログが出ることを確認
-   - EXPORT → 別ブラウザ/シークレットウィンドウにIMPORT → 同じパスワードで解錠できることを確認
-2. OKなら: `master` へ merge(`--no-ff`推奨) → `pnpm build` → `wrangler pages deploy out/ --project-name=allmarks --branch=master --commit-dirty=true` → `allmarks.app`をハードリロードして本番確認。
-3. merge後: `.superpowers/sdd/2026-08-20-private-vault/`(台帳・brief類)は削除してよい(完了記録は本ファイル+TODO_COMPLETED.mdに残る)。
-4. **フェーズ2(WebAuthn生体認証)はこのplanの対象外**、要望が出たら別plan。
+## ★次セッション最優先＝ master へ merge
+1. `private-vault-phase1` → `master` へ merge(`--no-ff`推奨、本番は既に動作確認済なので実機再確認は不要)。
+2. merge後: `.superpowers/sdd/2026-08-20-private-vault/`(台帳・briefなど作業用ファイル)は削除してよい(完了記録は`docs/TODO_COMPLETED.md`に残る)。
+3. **フェーズ2(WebAuthn生体認証)はこのplanの対象外**、要望が出たら別plan。
+
+## 次点(いつでも着手可、着手前にbrainstormingから)
+- **N-63**: バックアップ提案(`BackupReminder`)の表示位置がScrollMeterに被るバグ。中央+最前面に変更希望。視覚変更のためモック→承認後に実装(`docs/TODO.md`§未対応バグ)。
+- **Private Phase 2構想4件**(詳細`docs/private/IDEAS.md`「s202 Private Phase 2構想まとめ」):
+  - ①発見導線(常時表示エントリーポイント。メインのタグ絞り込み列＋カードの＋ボタンにPrivateを常に表示)
+  - ②クイック保存面対応(PopOut/拡張機能/ブックマークレット。**ユーザーは「案B」=鍵をstructured cloneで安全に別ウィンドウへ渡す本格版を希望**、後回しでよいので急がない)
+  - ③まとめてPrivate化(複数選択→一括暗号化、専用インジケーター+アニメーション)
+  - ④Privateの存在自体を隠すオプション(①の上乗せ、デフォルトOFF)
 
 ## 保留中(いつでも合流可)
-- TODO.mdが873行(目安200行を大幅超過)→ 古いセッションnarrativeをTODO_COMPLETED.mdへ移動する軽い掃除タスク(非ブロッキング、手が空いた時に)。
-- dashboard.html(`docs/private/`)がs202の内容未反映(次のセッション終了時にまとめて更新)。
+- TODO.mdが900行超(目安200行を大幅超過)→ 古いセッションnarrativeをTODO_COMPLETED.mdへ移動する軽い掃除タスク(非ブロッキング)。
+- dashboard.html(`docs/private/`)はhero-strip部分のみs202反映済(深い panel 群は以前から意図的に古いまま=source of truthはTODO.md)。
 - さらなるテーマ/Flat磨き、支援まわり(非公開`docs/private/IDEAS.md`)、拡張の一括保存、C2翻訳仕上げ。
 
 ## 恒久ルール(継承)
 - 視覚変更は`ui-design.md`「承認後」。`rtk`前置・`--no-verify`禁止・vitest/playwrightは素の npx・Framer Motion禁止。
 - 音(dotted-notebook)/紙(paper-atelier)＝バイト同一を死守。
 - 機微(支援・値付け・戦略)はtrackedに書かない＝`docs/private/`。
-- merge/push/deployは必ずユーザー確認後(CLAUDE.md安全ルール)。
+- merge/push/deployは必ずユーザー確認後(CLAUDE.md安全ルール)。ただしdeployは「本番で見たい」等の明示的な合図があれば即実行可。
