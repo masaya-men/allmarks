@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import styles from './PrivateSetupDialog.module.css'
 
 type Props = {
@@ -25,6 +25,14 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
     }
     onCreate(password, hint.length > 0 ? hint : undefined)
   }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') { e.preventDefault(); onCancel() }
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [onCancel])
 
   return (
     <div

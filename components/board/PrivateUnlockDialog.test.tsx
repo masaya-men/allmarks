@@ -35,4 +35,11 @@ describe('PrivateUnlockDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(onCancel).toHaveBeenCalledTimes(1)
   })
+
+  it('Escape key fires onCancel', () => {
+    const onCancel = vi.fn()
+    render(<PrivateUnlockDialog onSubmit={vi.fn().mockResolvedValue(true)} onCancel={onCancel} />)
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onCancel).toHaveBeenCalledTimes(1)
+  })
 })

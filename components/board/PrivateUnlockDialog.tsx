@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import styles from './PrivateUnlockDialog.module.css'
 
 type Props = {
@@ -20,6 +20,14 @@ export function PrivateUnlockDialog({ hint, onSubmit, onCancel }: Props): ReactE
     setSubmitting(false)
     if (!ok) setError('Wrong password.')
   }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') { e.preventDefault(); onCancel() }
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [onCancel])
 
   return (
     <div
