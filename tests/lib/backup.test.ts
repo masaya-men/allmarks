@@ -8,6 +8,8 @@ import {
   importAllStores,
   BackupImportError,
 } from '@/lib/storage/backup'
+import { addTag } from '@/lib/storage/tags'
+import { createVault, unlockVault } from '@/lib/private/vault-store'
 
 let db: IDBPDatabase<unknown> | null = null
 
@@ -65,6 +67,33 @@ describe('backup', () => {
     const restored = await d2.getAll('bookmarks')
     expect(restored).toHaveLength(1)
     expect((restored[0] as { id: string }).id).toBe('bm-x')
+  })
+
+  it('EXPORT then IMPORT preserves the Private vault — same password unlocks after restore', async () => {
+    const d1 = await initDB()
+    db = d1 as unknown as IDBPDatabase<unknown>
+    // A dump with zero bookmarks is refused outright (see "refuses a backup
+    // that has zero bookmarks" below) — that guard is orthogonal to the vault,
+    // but still applies, so give the dump one bookmark like a real backup would have.
+    await d1.put('bookmarks', {
+      id: 'bm-1', url: 'https://example.com', title: 't', description: '',
+      thumbnail: '', favicon: '', siteName: 'Example', type: 'website',
+      savedAt: '2026-05-25T00:00:00Z', ogpStatus: 'fetched', tags: [],
+    })
+    const tag = await addTag(d1, { name: 'Private', color: '#000', order: 0, isPrivateVault: true })
+    await createVault(d1, tag.id, 'hunter2', 'my hint')
+    const dump = await exportAllStores(d1)
+    d1.close()
+    db = null
+
+    // wipe + reimport into a fresh, initially-empty db instance
+    indexedDB.deleteDatabase('booklage-db')
+    const d2 = await initDB()
+    db = d2 as unknown as IDBPDatabase<unknown>
+    await importAllStores(d2, dump)
+
+    const session = await unlockVault(d2, 'hunter2')
+    expect(session?.tagId).toBe(tag.id)
   })
 
   it('importAllStores wipes existing rows before restore (= avoid id collision)', async () => {
