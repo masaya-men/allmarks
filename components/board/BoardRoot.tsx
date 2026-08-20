@@ -63,6 +63,12 @@ import { MotionToggle } from './MotionToggle'
 import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ExtensionEntry } from './ExtensionEntry'
+import { usePrivateVaultSession, setPrivateVaultSession } from '@/lib/private/vault-session'
+import { createVault, unlockVault, loadVaultRecord } from '@/lib/private/vault-store'
+import { addPrivateTag, removePrivateTag } from '@/lib/private/apply-tag-change'
+import { PrivateSetupDialog } from './PrivateSetupDialog'
+import { PrivateUnlockDialog } from './PrivateUnlockDialog'
+import { PrivateShareConfirmDialog } from './PrivateShareConfirmDialog'
 import { ThemeModal } from './ThemeModal'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
@@ -232,6 +238,26 @@ const EMPTY_CUSTOM_WIDTHS: Readonly<Record<string, number>> = {}
 
 export function BoardRoot() {
   const { t } = useI18n()
+  // Private vault (Phase 1). `privateTagId` MUST come from useTags()'s own
+  // return value — it is computed there from the UNFILTERED tag list, so it
+  // stays non-null even while the vault is locked. Re-deriving it from the
+  // `tags` array below would return null exactly when locked (that array is
+  // lock-filtered), which would silently disable every exclusion this feature
+  // exists for.
+  const privateSession = usePrivateVaultSession()
+  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | null>(null)
+  const [privateHint, setPrivateHint] = useState<string | undefined>(undefined)
+  // Set when a SHARE was attempted while the selection contains Private cards.
+  // `resume` records which capture path asked, so the single confirm dialog
+  // can continue the right one.
+  const [pendingPrivateShare, setPendingPrivateShare] =
+    useState<{ count: number; resume: 'desktop' | 'mobile' } | null>(null)
+  // Declared before useBoardData because useBoardData(privateTagId) consumes
+  // it (the vault-locked exclusion happens inside the data hook).
+  const {
+    tags, privateTagId, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
+    orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
+  } = useTags()
   const {
     items,
     deletedItems,
@@ -251,11 +277,7 @@ export function BoardRoot() {
     resortNewestFirst,
     reload,
     persistLinkStatus,
-  } = useBoardData()
-  const {
-    tags, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
-    orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
-  } = useTags()
+  } = useBoardData(privateTagId)
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
@@ -1087,9 +1109,9 @@ export function BoardRoot() {
     // 演出 → GSAP-FLIP で該当カードが reflow)。 ここで除外してしまうと
     // 演出を発火させる対象が消えるので、 tags の時は全件 (= non-deleted
     // のみ) を通す。 他 kind は従来通り単純絞り込み。
-    if (activeFilter.kind === 'tags') return applyFilter(items, BOARD_FILTER_ALL)
-    return applyFilter(items, activeFilter)
-  }, [items, deletedItems, activeFilter])
+    if (activeFilter.kind === 'tags') return applyFilter(items, BOARD_FILTER_ALL, privateTagId)
+    return applyFilter(items, activeFilter, privateTagId)
+  }, [items, deletedItems, activeFilter, privateTagId])
 
   // Tag filter overlay on top of filteredItems. null = no tag filter active
   // (= every card matches). When set, cards whose id is NOT in the set are
@@ -1633,7 +1655,22 @@ export function BoardRoot() {
       const item = items.find((it) => it.bookmarkId === bookmarkId)
       if (!item) return
       const db = await initDB()
-      if (item.tags.includes(tagId)) {
+      if (tagId === privateTagId) {
+        // Private tag: adding encrypts the bookmark's sensitive fields and
+        // blanks the plaintext columns; removing decrypts them back.
+        if (privateSession === null) {
+          // Unreachable in practice — the Private tag is excluded from `tags`
+          // whenever the vault is locked, so it can't be offered as a toggle
+          // target. Defensive guard, not a normal-path branch.
+          console.warn('[allmarks] Private tag toggled while locked — ignoring')
+          return
+        }
+        if (item.tags.includes(tagId)) {
+          await removePrivateTag(db, bookmarkId, tagId, privateSession)
+        } else {
+          await addPrivateTag(db, bookmarkId, tagId, privateSession)
+        }
+      } else if (item.tags.includes(tagId)) {
         await removeTagFromBookmark(db, bookmarkId, tagId)
       } else {
         await addTagToBookmark(db, bookmarkId, tagId)
@@ -1641,7 +1678,7 @@ export function BoardRoot() {
       }
       await reload()
     },
-    [items, reload],
+    [items, reload, privateTagId, privateSession],
   )
 
   const handleTagCreate = useCallback(
@@ -2596,7 +2633,7 @@ export function BoardRoot() {
   //      レターボックスし、枠を切らずに 1200×630 に収める。
   //   3. その JPEG を thumb にして /s 共有を R2 上に作成 → /og キャッシュを温める。
   // 撮影が失敗しても thumb 無しで作成する (= 共有を絶対に壊さない。OG は既定カードに fallback)。
-  const handleCreateHostedShare = useCallback(async (): Promise<void> => {
+  const proceedCreateHostedShare = useCallback(async (): Promise<void> => {
     if (selectedInBoardOrder(items, selectedIds).length === 0) return
     setShareCreateState('creating')
     let thumb: string | null = null
@@ -2630,6 +2667,19 @@ export function BoardRoot() {
       setShareCreateState('error')
     }
   }, [items, selectedIds, buildArrangeShare, deriveCaptureBoardColor])
+
+  // Private gate (desktop). Selections without Private cards proceed exactly as
+  // before — no dialog, no behaviour change. Only a selection that actually
+  // contains Private cards stops here for an explicit confirmation.
+  const handleCreateHostedShare = useCallback(async (): Promise<void> => {
+    const privateCount = privateTagId === null ? 0
+      : selectedInBoardOrder(items, selectedIds).filter((it) => it.tags.includes(privateTagId)).length
+    if (privateCount > 0) {
+      setPendingPrivateShare({ count: privateCount, resume: 'desktop' })
+      return
+    }
+    await proceedCreateHostedShare()
+  }, [items, selectedIds, privateTagId, proceedCreateHostedShare])
 
   // スマホ: 選択カードの2本指ピンチ開始 — 進行中のカード移動を止め、base をスナップショット。
   const handleSelectedPinchStart = useCallback((): void => {
@@ -2727,7 +2777,7 @@ export function BoardRoot() {
   // canvasCards は現在の state（collageOrder=重なり順 / collagePositions=位置サイズ /
   // collageRotations=回転）から組む。撮影経路そのもの（renderCollageCanvasToJpeg・scale・
   // 2フレーム待ち・パンくず）は N-56 のまま 1 行も変えない。
-  const handleMobileCaptureAndCreate = useCallback(async (): Promise<void> => {
+  const proceedMobileCaptureAndCreate = useCallback(async (): Promise<void> => {
     const frame = boardFrameRef.current
     const band = mobileBandRect
     if (!band) return
@@ -2843,6 +2893,19 @@ export function BoardRoot() {
     mobileBandRect, collageOrder, collagePositions, collageRotations, lightboxNavItems,
     roundedCorners, themeMeta, buildArrangeShare, deriveCaptureBoardColor,
   ])
+
+  // Private gate (mobile). Same rule as the desktop wrapper above: gated on the
+  // CURRENT selection, because buildArrangeShare recomputes its payload from
+  // selectedIds at call time regardless of the visual arrangement state.
+  const handleMobileCaptureAndCreate = useCallback(async (): Promise<void> => {
+    const privateCount = privateTagId === null ? 0
+      : selectedInBoardOrder(items, selectedIds).filter((it) => it.tags.includes(privateTagId)).length
+    if (privateCount > 0) {
+      setPendingPrivateShare({ count: privateCount, resume: 'mobile' })
+      return
+    }
+    await proceedMobileCaptureAndCreate()
+  }, [items, selectedIds, privateTagId, proceedMobileCaptureAndCreate])
 
   // Ready-state COPY LINK copies the already-hosted url.
   const handleShareCopyLink = useCallback(async (): Promise<boolean> => {
@@ -3407,6 +3470,19 @@ export function BoardRoot() {
                 onResetCardSizes={() => { void handleResetCardSizes() }}
                 onSortNewestFirst={() => { void handleSortNewestFirst() }}
                 motion={isMobile ? { enabled: motionEnabled, onToggle: handleToggleMotion } : undefined}
+                privateStatus={privateTagId === null ? 'none' : privateSession === null ? 'locked' : 'unlocked'}
+                onOpenPrivate={() => {
+                  if (privateTagId === null) { setPrivateDialog('setup'); return }
+                  if (privateSession === null) {
+                    // Load the hint lazily, right as the unlock dialog opens.
+                    void (async (): Promise<void> => {
+                      const db = await initDB()
+                      const record = await loadVaultRecord(db)
+                      setPrivateHint(record?.hint)
+                      setPrivateDialog('unlock')
+                    })()
+                  }
+                }}
               />
               <TagButton
                 onClick={(): void => {
@@ -3785,6 +3861,48 @@ export function BoardRoot() {
           count={deletedItems.length}
           onConfirm={(): void => { void handleEmptyTrashConfirm() }}
           onCancel={(): void => setTrashConfirmOpen(false)}
+        />
+      )}
+      {/* Private vault dialogs. Opened from the SETTINGS drawer's PRIVATE
+          entry (setup / unlock) and from a SHARE that touches Private cards. */}
+      {privateDialog === 'setup' && (
+        <PrivateSetupDialog
+          onCreate={(password, hint): void => {
+            void (async (): Promise<void> => {
+              const db = await initDB()
+              const tag = await createTag({ name: 'Private', color: '#000000', order: tags.length, isPrivateVault: true })
+              const session = await createVault(db, tag.id, password, hint)
+              setPrivateVaultSession(session)
+              void reloadTags()
+              setPrivateDialog(null)
+            })()
+          }}
+          onCancel={(): void => setPrivateDialog(null)}
+        />
+      )}
+      {privateDialog === 'unlock' && (
+        <PrivateUnlockDialog
+          hint={privateHint}
+          onSubmit={async (password): Promise<boolean> => {
+            const db = await initDB()
+            const session = await unlockVault(db, password)
+            if (!session) return false
+            setPrivateVaultSession(session)
+            setPrivateDialog(null)
+            return true
+          }}
+          onCancel={(): void => setPrivateDialog(null)}
+        />
+      )}
+      {pendingPrivateShare && (
+        <PrivateShareConfirmDialog
+          count={pendingPrivateShare.count}
+          onConfirm={(): void => {
+            const resume = pendingPrivateShare.resume
+            setPendingPrivateShare(null)
+            void (resume === 'desktop' ? proceedCreateHostedShare() : proceedMobileCaptureAndCreate())
+          }}
+          onCancel={(): void => setPendingPrivateShare(null)}
         />
       )}
       {/* Tag right-click context menu (board side). Open from FilterPill
