@@ -18,7 +18,7 @@ import { useIsMobile } from '@/lib/board/use-is-mobile'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
-import { useBoardData } from '@/lib/storage/use-board-data'
+import { useBoardData, type BoardItem } from '@/lib/storage/use-board-data'
 import { RevalidationQueue, defaultFetcher, shouldRevalidate } from '@/lib/board/revalidate'
 import { createCompositeFetcher } from '@/lib/board/tweet-liveness'
 import { subscribeBookmarkSaved, subscribeBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
@@ -1109,7 +1109,16 @@ export function BoardRoot() {
     // 演出 → GSAP-FLIP で該当カードが reflow)。 ここで除外してしまうと
     // 演出を発火させる対象が消えるので、 tags の時は全件 (= non-deleted
     // のみ) を通す。 他 kind は従来通り単純絞り込み。
-    if (activeFilter.kind === 'tags') return applyFilter(items, BOARD_FILTER_ALL, privateTagId)
+    if (activeFilter.kind === 'tags') {
+      // BOARD_FILTER_ALL above is a display-mechanism substitute (the CRT
+      // shutdown animation needs non-matching cards to stay mounted — see the
+      // comment above), not the user's real filter, so privateGatePasses can't
+      // see the real activeFilter.tagIds through it. Suppress the gate only
+      // when the real filter already includes Private — otherwise keep gating
+      // so Private stays out of every other tag's view.
+      const privateFilterActive = privateTagId !== null && activeFilter.tagIds.includes(privateTagId)
+      return applyFilter(items, BOARD_FILTER_ALL, privateFilterActive ? null : privateTagId)
+    }
     return applyFilter(items, activeFilter, privateTagId)
   }, [items, deletedItems, activeFilter, privateTagId])
 
@@ -3164,17 +3173,35 @@ export function BoardRoot() {
     return () => observer.disconnect()
   }, [items])
 
+  // Private must never be a drag/bulk-assign target — assigning it triggers
+  // real per-card encryption and should only happen via the individual card's
+  // own tag toggle (handleTagToggle -> addPrivateTag), never a casual
+  // multi-card drop or tap. Both bulk-tagging UIs route through
+  // assignTagToCards -> persistTags, a plain tag-array write that does NOT
+  // encrypt, so offering Private there would look protected while leaving
+  // title/url/thumbnail in plaintext.
+  const bulkAssignableTags = useMemo(
+    () => (privateTagId === null ? tags : tags.filter((t) => t.id !== privateTagId)),
+    [tags, privateTagId],
+  )
+
   const sidebarCounts = useMemo(() => {
     // items is already the active (= non-deleted) set; deletedItems
     // is the parallel TRASH-only state. Counting items.isDeleted would
     // always yield 0 since useBoardData filters them out before render.
+    // Private items are excluded from every count: while unlocked they're in
+    // `items`, but the board hides them outside the Private filter, so
+    // counting them would leak their existence via an inflated ALL total.
+    const isPrivate = (i: BoardItem): boolean => privateTagId !== null && i.tags.includes(privateTagId)
+    const visibleItems = items.filter((i) => !isPrivate(i))
+    const visibleDeleted = deletedItems.filter((i) => !isPrivate(i))
     return {
-      all: items.length,
-      inbox: items.filter((i) => i.tags.length === 0).length,
-      archive: deletedItems.length,
-      dead: items.filter((i) => i.linkStatus === 'gone').length,
+      all: visibleItems.length,
+      inbox: visibleItems.filter((i) => i.tags.length === 0).length,
+      archive: visibleDeleted.length,
+      dead: visibleItems.filter((i) => i.linkStatus === 'gone').length,
     }
-  }, [items, deletedItems])
+  }, [items, deletedItems, privateTagId])
 
   // Per-tag bookmark count for the FilterPill dropdown rows. Counts the
   // active (= non-deleted) set only, so the number matches what the user
@@ -3184,12 +3211,14 @@ export function BoardRoot() {
     const m: Record<string, number> = {}
     for (const tag of tags) m[tag.id] = 0
     for (const it of items) {
+      const isPrivate = privateTagId !== null && it.tags.includes(privateTagId)
       for (const tagId of it.tags) {
+        if (isPrivate && tagId !== privateTagId) continue // don't inflate OTHER tags' counts
         if (tagId in m) m[tagId] += 1
       }
     }
     return m
-  }, [items, tags])
+  }, [items, tags, privateTagId])
 
   const contentWidth = Math.max(viewport.w, contentBounds.width)
   const contentHeight = Math.max(viewport.h, contentBounds.height)
@@ -3472,16 +3501,26 @@ export function BoardRoot() {
                 motion={isMobile ? { enabled: motionEnabled, onToggle: handleToggleMotion } : undefined}
                 privateStatus={privateTagId === null ? 'none' : privateSession === null ? 'locked' : 'unlocked'}
                 onOpenPrivate={() => {
-                  if (privateTagId === null) { setPrivateDialog('setup'); return }
-                  if (privateSession === null) {
-                    // Load the hint lazily, right as the unlock dialog opens.
-                    void (async (): Promise<void> => {
+                  // Ask the DB directly every time rather than branching on
+                  // `privateTagId`: that state is null for the whole async
+                  // window before useTags()'s mount effect resolves, and a
+                  // click in that window would route to setup — where
+                  // createVault overwrites the vault record unconditionally,
+                  // orphaning every already-encrypted bookmark's key.
+                  void (async (): Promise<void> => {
+                    try {
                       const db = await initDB()
                       const record = await loadVaultRecord(db)
-                      setPrivateHint(record?.hint)
+                      if (record === null) {
+                        setPrivateDialog('setup')
+                        return
+                      }
+                      setPrivateHint(record.hint)
                       setPrivateDialog('unlock')
-                    })()
-                  }
+                    } catch (e) {
+                      console.error('[AllMarks] failed to check Private vault state', e)
+                    }
+                  })()
                 }}
               />
               <TagButton
@@ -3869,12 +3908,16 @@ export function BoardRoot() {
         <PrivateSetupDialog
           onCreate={(password, hint): void => {
             void (async (): Promise<void> => {
-              const db = await initDB()
-              const tag = await createTag({ name: 'Private', color: '#000000', order: tags.length, isPrivateVault: true })
-              const session = await createVault(db, tag.id, password, hint)
-              setPrivateVaultSession(session)
-              void reloadTags()
-              setPrivateDialog(null)
+              try {
+                const db = await initDB()
+                const tag = await createTag({ name: 'Private', color: '#000000', order: tags.length, isPrivateVault: true })
+                const session = await createVault(db, tag.id, password, hint)
+                setPrivateVaultSession(session)
+                void reloadTags()
+                setPrivateDialog(null)
+              } catch (e) {
+                console.error('[AllMarks] failed to create Private vault', e)
+              }
             })()
           }}
           onCancel={(): void => setPrivateDialog(null)}
@@ -3884,12 +3927,19 @@ export function BoardRoot() {
         <PrivateUnlockDialog
           hint={privateHint}
           onSubmit={async (password): Promise<boolean> => {
-            const db = await initDB()
-            const session = await unlockVault(db, password)
-            if (!session) return false
-            setPrivateVaultSession(session)
-            setPrivateDialog(null)
-            return true
+            try {
+              const db = await initDB()
+              const session = await unlockVault(db, password)
+              if (!session) return false
+              setPrivateVaultSession(session)
+              setPrivateDialog(null)
+              return true
+            } catch (e) {
+              // Returning false (not throwing) re-enables the dialog's submit
+              // button — an uncaught throw would leave it stuck disabled.
+              console.error('[AllMarks] failed to unlock Private vault', e)
+              return false
+            }
           }}
           onCancel={(): void => setPrivateDialog(null)}
         />
@@ -3953,7 +4003,7 @@ export function BoardRoot() {
       <PasteSaveFeedback feedback={mergedSaveFeedback} themeId={themeId} />
       {tagMode && !isMobile && (
         <TagDropPanel
-          tags={tags}
+          tags={bulkAssignableTags}
           tagCounts={tagCounts}
           selectedCount={selectedIds.size}
           onDone={handleExitTagMode}
@@ -3965,7 +4015,7 @@ export function BoardRoot() {
       )}
       {tagMode && isMobile && (
         <BoardMobileTagBar
-          tags={tags}
+          tags={bulkAssignableTags}
           tagCounts={tagCounts}
           selectedCount={selectedIds.size}
           onAssignTag={handleAssignTagToSelection}
