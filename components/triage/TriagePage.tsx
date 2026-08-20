@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent, type ReactElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useBoardData } from '@/lib/storage/use-board-data'
+import type { BoardItem } from '@/lib/storage/use-board-data'
 import { useTags } from '@/lib/storage/use-tags'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { TriageCard } from './TriageCard'
@@ -81,8 +82,28 @@ export function TriagePage(): ReactElement {
     [tags, privateTagId],
   )
 
-  const untaggedItems = useMemo(() => items.filter((it) => !it.isDeleted && it.tags.length === 0), [items])
-  const allItems = useMemo(() => items.filter((it) => !it.isDeleted), [items])
+  // Containment gate mirroring lib/board/filter.ts's privateGatePasses — a
+  // Private-tagged item must never surface here unless `mode` explicitly
+  // targets the Private tag itself (mode = {tagId: privateTagId}), even
+  // while unlocked. useBoardData(privateTagId) already drops/decrypts based
+  // on LOCK state; this additionally enforces the "never via an unrelated
+  // filter" containment rule the board itself enforces via applyFilter
+  // (final whole-branch review finding).
+  const privateModeActive = privateTagId !== null && typeof mode === 'object' && mode !== null && mode.tagId === privateTagId
+  const passesPrivateGate = useCallback(
+    (it: BoardItem): boolean =>
+      privateTagId === null || !it.tags.includes(privateTagId) || privateModeActive,
+    [privateTagId, privateModeActive],
+  )
+
+  const untaggedItems = useMemo(
+    () => items.filter((it) => !it.isDeleted && it.tags.length === 0 && passesPrivateGate(it)),
+    [items, passesPrivateGate],
+  )
+  const allItems = useMemo(
+    () => items.filter((it) => !it.isDeleted && passesPrivateGate(it)),
+    [items, passesPrivateGate],
+  )
 
   // No mode in the URL = come straight from the board. Redirect into the
   // appropriate triage mode: untagged backlog if there is one, otherwise
@@ -101,10 +122,10 @@ export function TriagePage(): ReactElement {
     if (mode === 'untagged') return untaggedItems
     if (mode === 'all') return allItems
     if (mode && typeof mode === 'object') {
-      return items.filter((it) => !it.isDeleted && it.tags.includes(mode.tagId))
+      return items.filter((it) => !it.isDeleted && it.tags.includes(mode.tagId) && passesPrivateGate(it))
     }
     return []
-  }, [onboarding, mode, untaggedItems, allItems, items])
+  }, [onboarding, mode, untaggedItems, allItems, items, passesPrivateGate])
 
   // Review mode = the user is editing existing tag assignments (= 'all'
   // or a single 'tag:X' filter), so pre-arm the chips with the current
@@ -462,12 +483,17 @@ export function TriagePage(): ReactElement {
      state). */
   const tagBookmarkCount = useCallback(
     (tagId: string): number => {
+      // Never let a Private-tagged item (visible here only while unlocked)
+      // inflate a DIFFERENT tag's count — same containment rule as the
+      // gate above, applied to this aggregate instead of a rendered list.
+      const countsFor = (it: BoardItem): boolean =>
+        it.tags.includes(tagId) && (tagId === privateTagId || privateTagId === null || !it.tags.includes(privateTagId))
       let n = 0
-      for (const it of items) if (it.tags.includes(tagId)) n++
-      for (const it of deletedItems) if (it.tags.includes(tagId)) n++
+      for (const it of items) if (countsFor(it)) n++
+      for (const it of deletedItems) if (countsFor(it)) n++
       return n
     },
-    [items, deletedItems],
+    [items, deletedItems, privateTagId],
   )
 
   /* Run the actual cascade: scrub the tag from every bookmark + drop

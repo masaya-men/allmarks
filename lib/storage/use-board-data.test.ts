@@ -160,3 +160,59 @@ describe('useBoardData — Private vault locked exclusion + decrypt overlay', ()
     await waitFor(() => expect(result.current.items.some((i) => i.tags.includes('priv-1'))).toBe(false))
   })
 })
+
+describe('persistThumbnail / persistTitle — Private (encrypted) record guard', () => {
+  afterEach(async () => {
+    setPrivateVaultSession(null)
+    const databases = await indexedDB.databases()
+    for (const info of databases) {
+      if (info.name) indexedDB.deleteDatabase(info.name)
+    }
+  })
+
+  it('persistThumbnail is a no-op on a Private (encrypted) record', async () => {
+    const database = await initDB()
+    const priv = await addBookmark(database, {
+      url: 'https://example.com/secret', title: 'placeholder', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'website',
+      tags: ['priv-1'],
+    })
+    await database.put('bookmarks', {
+      ...priv,
+      title: '', url: '', description: '', thumbnail: '', favicon: '', siteName: '',
+      encryptedPayload: { iv: 'x', ciphertext: 'y' },
+    })
+
+    const { result } = renderHook(() => useBoardData('priv-1'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await result.current.persistThumbnail(priv.id, 'https://evil.example/leak.jpg', true)
+
+    const stored = await database.get('bookmarks', priv.id)
+    expect(stored?.thumbnail).toBe('')
+    expect(stored?.encryptedPayload).toEqual({ iv: 'x', ciphertext: 'y' })
+  })
+
+  it('persistTitle is a no-op on a Private (encrypted) record', async () => {
+    const database = await initDB()
+    const priv = await addBookmark(database, {
+      url: 'https://example.com/secret', title: 'placeholder', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'website',
+      tags: ['priv-1'],
+    })
+    await database.put('bookmarks', {
+      ...priv,
+      title: '', url: '', description: '', thumbnail: '', favicon: '', siteName: '',
+      encryptedPayload: { iv: 'x', ciphertext: 'y' },
+    })
+
+    const { result } = renderHook(() => useBoardData('priv-1'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await result.current.persistTitle(priv.id, 'Evil leaked title')
+
+    const stored = await database.get('bookmarks', priv.id)
+    expect(stored?.title).toBe('')
+    expect(stored?.encryptedPayload).toEqual({ iv: 'x', ciphertext: 'y' })
+  })
+})

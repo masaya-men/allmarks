@@ -108,4 +108,25 @@ describe('applyFilter — Private containment', () => {
     const result = applyFilter(items, { kind: 'tags', tagIds: ['travel'], mode: 'or' })
     expect(result.map((i) => i.bookmarkId).sort()).toEqual(['norm', 'priv'])
   })
+
+  it('inbox: Private item is excluded even when it has no other tags', () => {
+    const untaggedPrivate = item({ bookmarkId: 'up', tags: ['priv-1'] })
+    const untaggedNormal = item({ bookmarkId: 'un', tags: [] })
+    const result = applyFilter([untaggedPrivate, untaggedNormal], { kind: 'inbox' }, 'priv-1')
+    expect(result.map((i) => i.bookmarkId)).toEqual(['un'])
+  })
+
+  it('archive: Private item stays out of TRASH even when soft-deleted', () => {
+    const deletedPrivate = item({ bookmarkId: 'dp', tags: ['priv-1'], isDeleted: true })
+    const deletedNormal = item({ bookmarkId: 'dn', tags: [], isDeleted: true })
+    const result = applyFilter([deletedPrivate, deletedNormal], { kind: 'archive' }, 'priv-1')
+    expect(result.map((i) => i.bookmarkId)).toEqual(['dn'])
+  })
+
+  it('dead: Private item is excluded from the broken-link view', () => {
+    const deadPrivate = item({ bookmarkId: 'lp', tags: ['priv-1'], linkStatus: 'gone' })
+    const deadNormal = item({ bookmarkId: 'ln', tags: [], linkStatus: 'gone' })
+    const result = applyFilter([deadPrivate, deadNormal], { kind: 'dead' }, 'priv-1')
+    expect(result.map((i) => i.bookmarkId)).toEqual(['ln'])
+  })
 })

@@ -95,9 +95,19 @@ export function useTags(): {
   const remove = useCallback(async (id: string): Promise<void> => {
     const db = dbRef.current
     if (!db) return
+    // The Private vault tag is deletable only through vault lifecycle
+    // actions (none exist in Phase 1) — deleting it via the generic
+    // tag-delete flow would strip the tag reference from every bookmark
+    // while leaving their encryptedPayload + blanked plaintext columns in
+    // place, permanently orphaning that content (no UI ever re-
+    // encrypts/restores without the tag id to route through). No-op rather
+    // than throw, matching this hook's existing silent-failure style
+    // (final whole-branch review finding).
+    const target = rawTags.find((t) => t.id === id)
+    if (target?.isPrivateVault === true) return
     await delTag(db, id)
     setRawTags((prev) => prev.filter((m) => m.id !== id))
-  }, [])
+  }, [rawTags])
 
   /** Persist a new complete tag order (each id gets its array index as
    *  `order`) AND switch to manual mode — a hand drag means "I want this exact

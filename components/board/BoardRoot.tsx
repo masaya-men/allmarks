@@ -1103,7 +1103,7 @@ export function BoardRoot() {
     // TRASH (= archive) は items に居ない (soft-deleted は別 state)、
     // deletedItems を直接返す。 これによりカード本体がレンダされる + ×
     // ボタンの handler が BoardRoot 側で restore 意味になる。
-    if (activeFilter.kind === 'archive') return deletedItems
+    if (activeFilter.kind === 'archive') return applyFilter(deletedItems, activeFilter, privateTagId)
     // Tags filter は CardsLayer 側で matchedBookmarkIds + CRT shutdown
     // アニメ経由で表現する (= 非該当カードを items に残しておく → shutdown
     // 演出 → GSAP-FLIP で該当カードが reflow)。 ここで除外してしまうと
@@ -1623,12 +1623,14 @@ export function BoardRoot() {
      isDeleted state). */
   const tagBookmarkCount = useCallback(
     (tagId: string): number => {
+      const countsFor = (it: BoardItem): boolean =>
+        it.tags.includes(tagId) && (tagId === privateTagId || privateTagId === null || !it.tags.includes(privateTagId))
       let n = 0
-      for (const it of items) if (it.tags.includes(tagId)) n++
-      for (const it of deletedItems) if (it.tags.includes(tagId)) n++
+      for (const it of items) if (countsFor(it)) n++
+      for (const it of deletedItems) if (countsFor(it)) n++
       return n
     },
-    [items, deletedItems],
+    [items, deletedItems, privateTagId],
   )
 
   /* Run the cascade: scrub the tag from every bookmark + drop the tag
@@ -2289,10 +2291,16 @@ export function BoardRoot() {
   // a [data-tag-id] row. Selection persists — continuous multi-tagging.
   const assignTagToCards = useCallback(
     (tagId: string, cardIds: readonly string[]): void => {
+      // Private is never bulk-assignable through drag-and-drop — only the
+      // board's individual card tag toggle may attach it, because only that
+      // path encrypts. No UI currently renders a Private drop target, but
+      // this direct check makes that a structural guarantee instead of a
+      // rendering coincidence (final whole-branch review finding).
+      if (tagId === privateTagId) return
       const writes = computeTagAssignments(itemsRef.current, cardIds, tagId)
       for (const w of writes) void persistTags(w.bookmarkId, w.nextTags)
     },
-    [persistTags],
+    [persistTags, privateTagId],
   )
 
   // TAG MODE drop router — CardsLayer emits this on a genuine drop. A real tag
@@ -3906,19 +3914,28 @@ export function BoardRoot() {
           entry (setup / unlock) and from a SHARE that touches Private cards. */}
       {privateDialog === 'setup' && (
         <PrivateSetupDialog
-          onCreate={(password, hint): void => {
-            void (async (): Promise<void> => {
-              try {
-                const db = await initDB()
-                const tag = await createTag({ name: 'Private', color: '#000000', order: tags.length, isPrivateVault: true })
-                const session = await createVault(db, tag.id, password, hint)
-                setPrivateVaultSession(session)
-                void reloadTags()
-                setPrivateDialog(null)
-              } catch (e) {
-                console.error('[AllMarks] failed to create Private vault', e)
-              }
-            })()
+          onCreate={async (password, hint): Promise<boolean> => {
+            try {
+              const db = await initDB()
+              // Re-check for a concurrently-created vault record right
+              // before writing — closes a double-submit race where two
+              // CREATE clicks could each mint their own isPrivateVault tag,
+              // leaving privateTagId pointed at one while the vault record
+              // points at the other (final whole-branch review finding;
+              // PrivateSetupDialog's own submitting-state guard makes this
+              // very unlikely in practice, this is the structural backstop).
+              const alreadyExists = await loadVaultRecord(db)
+              if (alreadyExists) return false
+              const tag = await createTag({ name: 'Private', color: '#000000', order: tags.length, isPrivateVault: true })
+              const session = await createVault(db, tag.id, password, hint)
+              setPrivateVaultSession(session)
+              void reloadTags()
+              setPrivateDialog(null)
+              return true
+            } catch (e) {
+              console.error('[AllMarks] failed to create Private vault', e)
+              return false
+            }
           }}
           onCancel={(): void => setPrivateDialog(null)}
         />

@@ -28,8 +28,10 @@ describe('PrivateSetupDialog', () => {
   it('shows a mismatch error and does not call onCreate when passwords differ', () => {
     const onCreate = vi.fn()
     render(<PrivateSetupDialog onCreate={onCreate} onCancel={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'a' } })
-    fireEvent.change(screen.getByLabelText(/confirm/i), { target: { value: 'b' } })
+    // Both ≥4 chars so the length check passes and the mismatch branch is
+    // the one that actually fires.
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'aaaa' } })
+    fireEvent.change(screen.getByLabelText(/confirm/i), { target: { value: 'bbbb' } })
     fireEvent.click(screen.getByRole('button', { name: /create/i }))
     expect(onCreate).not.toHaveBeenCalled()
     expect(screen.getByText(/match/i)).toBeInTheDocument()

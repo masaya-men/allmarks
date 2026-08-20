@@ -32,7 +32,12 @@ export async function resolvePrivateVisibility(
     }
     if (session === null) continue
     if (!b.encryptedPayload) {
-      result.push(b)
+      // Fail closed like the decrypt-failure branch below: a Private-
+      // tagged row with no encryptedPayload should never happen once every
+      // write path routes Private tagging through addPrivateTag (which
+      // sets both atomically) — if a future bypass ever re-introduces a
+      // raw write, dropping this row keeps that a silent-safe failure
+      // instead of a silent leak (final whole-branch review finding).
       continue
     }
     try {

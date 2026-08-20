@@ -52,4 +52,12 @@ describe('private/resolve-visibility', () => {
     const result = await resolvePrivateVisibility([b], 'priv-1', session)
     expect(result).toEqual([])
   })
+
+  it('drops a Private-tagged bookmark that has no encryptedPayload, even when unlocked (fail closed)', async () => {
+    const key = await deriveKey('pw', generateSalt(), 1000)
+    const session: PrivateVaultSession = { tagId: 'priv-1', key }
+    const b = makeBookmark({ tags: ['priv-1'] }) // no encryptedPayload set
+    const result = await resolvePrivateVisibility([b], 'priv-1', session)
+    expect(result).toEqual([])
+  })
 })

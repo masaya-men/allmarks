@@ -2,6 +2,7 @@
 
 import { useMemo, type ReactElement } from 'react'
 import { useBoardData } from '@/lib/storage/use-board-data'
+import { useTags } from '@/lib/storage/use-tags'
 import styles from './BoardBackdrop.module.css'
 
 /**
@@ -16,7 +17,8 @@ import styles from './BoardBackdrop.module.css'
  * Sized + dimmed + blurred by CSS so this component stays purely about data.
  */
 export function BoardBackdrop(): ReactElement | null {
-  const { items, loading } = useBoardData()
+  const { privateTagId } = useTags()
+  const { items, loading } = useBoardData(privateTagId)
   const cards = useMemo(
     () => items.filter((it) => !it.isDeleted && it.thumbnail).slice(0, 60),
     [items],

@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactElement } from 'react'
 import styles from './PrivateSetupDialog.module.css'
 
 type Props = {
-  readonly onCreate: (password: string, hint?: string) => void
+  readonly onCreate: (password: string, hint?: string) => Promise<boolean>
   readonly onCancel: () => void
 }
 
@@ -13,17 +13,25 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
   const [confirm, setConfirm] = useState('')
   const [hint, setHint] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const submit = (): void => {
-    if (password.length === 0) {
-      setError('Enter a password.')
+  const submit = async (): Promise<void> => {
+    if (submitting) return
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters.')
       return
     }
     if (password !== confirm) {
       setError('Passwords do not match.')
       return
     }
-    onCreate(password, hint.length > 0 ? hint : undefined)
+    setSubmitting(true)
+    const ok = await onCreate(password, hint.length > 0 ? hint : undefined)
+    if (!ok) {
+      setSubmitting(false)
+      setError('Could not create the vault. Try again.')
+    }
+    // On success the parent closes this dialog — no local state to reset.
   }
 
   useEffect(() => {
@@ -75,7 +83,13 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
           <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-setup-cancel">
             CANCEL
           </button>
-          <button type="button" className={styles.createBtn} onClick={submit} data-testid="private-setup-create">
+          <button
+            type="button"
+            className={styles.createBtn}
+            onClick={(): void => { void submit() }}
+            disabled={submitting}
+            data-testid="private-setup-create"
+          >
             CREATE
           </button>
         </div>

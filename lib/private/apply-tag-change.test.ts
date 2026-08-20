@@ -91,4 +91,22 @@ describe('private/apply-tag-change', () => {
     await db.put('bookmarks', bookmark)
     await expect(addPrivateTag(db, bookmark.id, 'private-tag-id', null)).rejects.toThrow('locked')
   })
+
+  it('addPrivateTag also encrypts photos/mediaSlots and blanks them at rest', async () => {
+    const bookmark = makeBookmark('b4', {
+      photos: ['https://pbs.twimg.com/a.jpg'],
+      mediaSlots: [{ type: 'photo', url: 'https://pbs.twimg.com/a.jpg' }],
+    })
+    await db.put('bookmarks', bookmark)
+    const session = await makeSession()
+    await addPrivateTag(db, bookmark.id, 'private-tag-id', session)
+    const updated = await db.get('bookmarks', bookmark.id)
+    expect(updated.photos).toBeUndefined()
+    expect(updated.mediaSlots).toBeUndefined()
+
+    await removePrivateTag(db, bookmark.id, 'private-tag-id', session)
+    const restored = await db.get('bookmarks', bookmark.id)
+    expect(restored.photos).toEqual(['https://pbs.twimg.com/a.jpg'])
+    expect(restored.mediaSlots).toEqual([{ type: 'photo', url: 'https://pbs.twimg.com/a.jpg' }])
+  })
 })

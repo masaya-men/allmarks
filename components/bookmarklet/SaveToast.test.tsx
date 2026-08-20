@@ -22,7 +22,9 @@ vi.mock('next/navigation', () => ({
 const saveBookmarkDeduped = vi.fn(async (): Promise<unknown> => ({ outcome: 'saved', bookmark: { id: 'b1', tags: [] } }))
 const getAllBookmarks = vi.fn(async () => [] as Array<{ id: string; url: string; isDeleted?: boolean; tags: string[] }>)
 vi.mock('@/lib/storage/indexeddb', () => ({
-  initDB: vi.fn(async () => ({})),
+  // .get supports applyExistingQuickTag's isPrivateVaultTagId re-check
+  // (db.get('tags', tagId)) — undefined = "not the Private vault tag".
+  initDB: vi.fn(async () => ({ get: vi.fn(async () => undefined) })),
   saveBookmarkDeduped: (...a: unknown[]) => (saveBookmarkDeduped as (...args: unknown[]) => unknown)(...a),
   getAllBookmarks: (...a: unknown[]) => (getAllBookmarks as (...args: unknown[]) => unknown)(...a),
 }))
@@ -115,7 +117,11 @@ describe('SaveToast tag path (enabled + no PiP)', () => {
     vi.useRealTimers()
     render(<SaveToast />)
     const win = await screen.findByTestId('save-tag-window')
-    fireEvent.click(await within(win).findByText('design'))
+    const chip = await within(win).findByText('design')
+    // applyExistingQuickTag now awaits an extra DB read (the Private-tag
+    // re-check) before writing — flush that microtask inside act() so the
+    // assertion below doesn't race it.
+    await act(async () => { fireEvent.click(chip) })
     expect(addTagToBookmark).toHaveBeenCalledWith(expect.anything(), 'b1', 't1')
   })
 

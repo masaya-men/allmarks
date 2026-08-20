@@ -1231,6 +1231,10 @@ export async function persistPhotos(
 ): Promise<void> {
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
+  // Private (encrypted) records keep photos inside encryptedPayload now
+  // (see the addPrivateTag change below) — never write into the plaintext
+  // column for one.
+  if (existing.encryptedPayload) return
 
   const next = photos.length === 0 ? undefined : photos
   const existingArr = existing.photos
@@ -1264,6 +1268,7 @@ export async function persistMediaSlots(
 ): Promise<void> {
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
+  if (existing.encryptedPayload) return
 
   const next = mediaSlots.length === 0 ? undefined : mediaSlots
   const cur = existing.mediaSlots

@@ -255,6 +255,20 @@ export function useBoardData(privateTagId: string | null = null): {
   const [loading, setLoading] = useState(true)
   const dbRef = useRef<DbLike | null>(null)
   const privateSession = usePrivateVaultSession()
+  // The mount effect below is deps=[] (runs once, on purpose — it also runs
+  // one-shot IDB migrations that must not repeat). Its closure would
+  // otherwise capture render-1's privateTagId/privateSession (usually
+  // null/null, since useTags() resolves privateTagId asynchronously).
+  // Reading through these refs instead means the mount effect's FINAL
+  // buildBoardItems call (after several awaited IDB steps) always sees
+  // whatever value is current by the time it actually runs — closing a
+  // race where an existing Private tag could render ungated on first load
+  // if privateTagId resolved before this effect finished (final
+  // whole-branch review finding).
+  const privateTagIdRef = useRef(privateTagId)
+  privateTagIdRef.current = privateTagId
+  const privateSessionRef = useRef(privateSession)
+  privateSessionRef.current = privateSession
 
   useEffect(() => {
     let cancelled = false
@@ -312,7 +326,7 @@ export function useBoardData(privateTagId: string | null = null): {
       const cardByBookmark = new Map<string, CardRecord>()
       for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
       if (cancelled) return
-      const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, privateTagId, privateSession)
+      const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, privateTagIdRef.current, privateSessionRef.current)
       if (cancelled) return
       setItems(active)
       setDeletedItems(trashed)
@@ -454,6 +468,11 @@ export function useBoardData(privateTagId: string | null = null): {
       if (!force && !thumbnail) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
+      // Never write into a Private (encrypted) record's plaintext columns —
+      // this backfill runs off DECRYPTED items while unlocked, so without
+      // this guard a real title/thumbnail permanently lands in plaintext
+      // (final whole-branch review Critical finding).
+      if (existing.encryptedPayload) return
       if (!force && existing.thumbnail && !isXDefaultThumbnail(existing.thumbnail)) return
       // No-op when the value is already what we'd write. Without this guard,
       // force=true callers can spin React: setItems creates a fresh array
@@ -552,6 +571,7 @@ export function useBoardData(privateTagId: string | null = null): {
       if (!db || !bookmarkId) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
+      if (existing.encryptedPayload) return
       // No-op when already at the desired value. Defense against the
       // backfill loop firing repeatedly on items.length changes — without
       // this guard each "true" call would invalidate items reference and
@@ -574,6 +594,7 @@ export function useBoardData(privateTagId: string | null = null): {
       if (!title) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
+      if (existing.encryptedPayload) return
       if (existing.title === title) return
       await db.put('bookmarks', { ...existing, title })
       setItems((prev) =>
