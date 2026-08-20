@@ -34,7 +34,7 @@ describe('useTags — Private vault filtering', () => {
     await addTag(database, { name: 'normal', color: '#fff', order: 0 })
     const privateTag = await addTag(database, { name: 'Private', color: '#000', order: 1, isPrivateVault: true })
 
-    const { result } = renderHook(() => useTags())
+    const { result, unmount } = renderHook(() => useTags())
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(result.current.tags).toHaveLength(1)
@@ -48,6 +48,7 @@ describe('useTags — Private vault filtering', () => {
       setPrivateVaultSession(null)
     })
     expect(result.current.tags).toHaveLength(1)
+    unmount()
   })
 
   it('privateTagId is stable regardless of lock state (the bug this task must not reintroduce)', async () => {
@@ -55,7 +56,7 @@ describe('useTags — Private vault filtering', () => {
     db = database as unknown as IDBPDatabase<AllMarksDB>
     const privateTag = await addTag(database, { name: 'Private', color: '#000', order: 0, isPrivateVault: true })
 
-    const { result } = renderHook(() => useTags())
+    const { result, unmount } = renderHook(() => useTags())
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     // Locked — privateTagId must still resolve (this is the whole point of the task).
@@ -66,6 +67,7 @@ describe('useTags — Private vault filtering', () => {
     })
     // Unlocked — must be the exact same id, unchanged by lock state.
     expect(result.current.privateTagId).toBe(privateTag.id)
+    unmount()
   })
 
   it('privateTagId is null when no Private tag has been created yet', async () => {
@@ -73,9 +75,10 @@ describe('useTags — Private vault filtering', () => {
     db = database as unknown as IDBPDatabase<AllMarksDB>
     await addTag(database, { name: 'normal', color: '#fff', order: 0 })
 
-    const { result } = renderHook(() => useTags())
+    const { result, unmount } = renderHook(() => useTags())
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(result.current.privateTagId).toBeNull()
+    unmount()
   })
 })
