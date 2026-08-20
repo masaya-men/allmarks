@@ -62,8 +62,24 @@ export function TriagePage(): ReactElement {
   // to the demo cards and auto-plays the tag + swipe-pan so the user sees the
   // real MANAGE TAGS screen in action, then CONTINUE resumes the tutorial.
   const onboarding = searchParams.get('onboarding') === '1'
-  const { items, deletedItems, persistTags, reload: reloadBoardData, loading } = useBoardData()
-  const { tags, create, remove: removeTag, rename: renameTag, reorder: reorderTag } = useTags()
+  // Private vault (Phase 1). `privateTagId` MUST come from useTags()'s own
+  // return value — it is computed there from the UNFILTERED tag list, so it
+  // stays non-null even while the vault is locked. Re-deriving it from the
+  // `tags` array below would return null exactly when locked (that array is
+  // lock-filtered), which would silently disable every exclusion this
+  // feature exists for. Declared before useBoardData because
+  // useBoardData(privateTagId) consumes it (the vault-locked exclusion
+  // happens inside the data hook, mirroring BoardRoot.tsx).
+  const { tags, privateTagId, create, remove: removeTag, rename: renameTag, reorder: reorderTag } = useTags()
+  const { items, deletedItems, persistTags, reload: reloadBoardData, loading } = useBoardData(privateTagId)
+
+  // Private must never be a swipe-to-tag target — assigning it triggers real
+  // per-card encryption and should only happen via the board's own individual
+  // card tag toggle, never a bulk/rapid-fire triage swipe. Exclude it here.
+  const bulkAssignableTags = useMemo(
+    () => (privateTagId === null ? tags : tags.filter((t) => t.id !== privateTagId)),
+    [tags, privateTagId],
+  )
 
   const untaggedItems = useMemo(() => items.filter((it) => !it.isDeleted && it.tags.length === 0), [items])
   const allItems = useMemo(() => items.filter((it) => !it.isDeleted), [items])
@@ -518,7 +534,13 @@ export function TriagePage(): ReactElement {
   }, [exit, handleYes, handleNo, mode, contextMenu, deleteConfirm, onboarding])
 
   useTagPickerKeys({
-    tags,
+    // Same list as TopTagStrip's `tags` prop below (bulkAssignableTags) —
+    // the 1-9 keys index into whatever is actually rendered/numbered on the
+    // chips, so this MUST stay in lockstep with that prop. Using the raw
+    // `tags` here would both misnumber the shortcuts once Private sits
+    // before another tag AND let a keyboard shortcut arm the Private tag
+    // that the strip deliberately hides.
+    tags: bulkAssignableTags,
     onToggleArmed: toggleArmed,
     onNo: handleNo,
     onUndo: lastAction ? handleUndo : null,
@@ -799,7 +821,7 @@ export function TriagePage(): ReactElement {
           onWheel={handleTagStripWheel}
         >
           <TopTagStrip
-            tags={tags}
+            tags={bulkAssignableTags}
             armedTagIds={armedTagIds}
             onToggle={toggleArmed}
             onChipContextMenu={openChipContextMenu}
