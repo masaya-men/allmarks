@@ -596,6 +596,14 @@
 
 完了済バグは TODO_COMPLETED.md に移動済。 ここはアクティブのみ。
 
+### session 202 で報告（バックアップ提案の表示位置が不適切）
+
+- **(N-63) バックアップ提案(BackupReminder)の表示位置がおかしい** — 未着手（視覚変更のためモック→承認後に実装、`ui-design.md` の承認フロー適用）。
+  - **現状**（確認済）: `components/board/BackupReminder.module.css` の `.toast` は `position: fixed; bottom: 22px`（画面下部中央のトースト）、z-index は `lib/board/constants.ts` の `BOARD_Z_INDEX.BACKUP_REMINDER = 195`。
+  - **問題**: `SCROLL_METER = 400` の方が高いため、画面下部で**スクロールメーターに視覚的に覆われる**位置関係になっている。ユーザー報告: 位置が下すぎる＋メーターに被っている。
+  - **要望**: 画面**中央**かつ**最前面**に表示し、ユーザーに確実に見せて反応させる(確認させる)ようにする。現状のトースト的な「気づかなくても流れていく」表示から、モーダルに近い「見なかったことにできない」表示への変更。
+  - **着手時**: 中央配置後は`BOARD_Z_INDEX`の中で最上位に近い値を新設(既存最大は`ONBOARDING`系410前後 — 実装時に現在の最大値を再確認して割り当てる)。他の modal 系(`MODAL_OVERLAY`/`SAVE_SHEET`/`CHROME_DRAWER`)との重なり方も要確認。
+
 ### session 196 で報告（Cloudflare コスト・悪用耐性 — 監査完了・防御は未実装）
 
 > ★徹底監査完了（s196）。正本レポート = `docs/private/2026-07-14-cloudflare-cost-audit.md`（全経路・最悪額試算・防御プラン・ダッシュボード手順）。**結論: 現状 Workers Free なら悪用されても請求ほぼ0（日次上限が間接レート制限として働き R2 無料枠を超えない）。構造的費用は R2 超過分（現実的にほぼ0）と .app 更新 約$14/年のみ。** ハード上限機能が無いので Budget alert $1 が唯一の防衛線。
