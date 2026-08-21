@@ -1,29 +1,25 @@
-# 次セッション(s203)のゴール — private-vault-phase1 を master へ merge
+# 次セッション(s203)のゴール — Private Phase 2 に進む(着手前にbrainstorming必須)
 
 ## ★s202 の到達点
-- **Private(鍵付き秘密ブックマーク)Phase 1、実装+最終レビュー+本番デプロイまで完走。ユーザー実機確認済み。ただし`private-vault-phase1`ブランチはまだ`master`に未merge。**
-  - 最終全ブランチレビュー(opus) → 2件Critical含む17件検出 → 1回のfix dispatchでまとめて修正 → 修正のscoped re-reviewでもう1件Critical発見 → 司令塔が1行で直接fix。
-  - ユーザーが実機で「作成→タグ付け→リロードで消える→解錠→絞り込みで見える」を確認済み。
-  - **本番(`allmarks.app`)には2回デプロイ済・動作確認済**(direct uploadなのでbranch/merge状態は問わない仕様)。
-  - 実機確認中に偶然見つけた副産物バグ2件も同セッションで修正・本番反映済(①テーマ切替時のハイドレーション警告 ②リンク健全性チェックの無限リトライ)。
-  - 台帳(全記録): `.superpowers/sdd/2026-08-20-private-vault/progress.md`
+- **Private(鍵付き秘密ブックマーク)Phase 1、完全に完了。`master`へmerge済・GitHubへpush済・本番デプロイ済・ユーザー実機確認済。**
+  - `master`のコミット`be763ad3`(`--no-ff`マージ)。作業ブランチ`private-vault-phase1`は削除済み。台帳(`.superpowers/sdd/2026-08-20-private-vault/`)も削除済み(完了記録は`docs/TODO_COMPLETED.md`に残る)。
+  - 最終全ブランチレビュー(opus)→2件Critical含む17件検出→fix→scoped re-reviewでもう1件Critical発見→修正、まで完遂。
+  - セッション中に偶然見つけたPrivateとは無関係のバグ3件も同セッションで修正・本番反映済み(テーマ切替時のハイドレーション警告／リンク健全性チェックの無限リトライ／Lightboxで画像ツイートが縮むN-23再発)。
 
-## ★次セッション最優先＝ master へ merge
-1. `private-vault-phase1` → `master` へ merge(`--no-ff`推奨、本番は既に動作確認済なので実機再確認は不要)。
-2. merge後: `.superpowers/sdd/2026-08-20-private-vault/`(台帳・briefなど作業用ファイル)は削除してよい(完了記録は`docs/TODO_COMPLETED.md`に残る)。
-3. **フェーズ2(WebAuthn生体認証)はこのplanの対象外**、要望が出たら別plan。
+## ★次セッション最優先＝ Private Phase 2 に進むなら、まず superpowers:brainstorming から
+**いきなり実装に入らないこと。** 4つの構想候補があり、優先順位・組み合わせ方はまだ確定していない。詳細・技術的な勘所は `docs/private/IDEAS.md`「s202 Private Phase 2構想まとめ」節を必ず読むこと:
 
-## 次点(いつでも着手可、着手前にbrainstormingから)
+1. **①発見導線**: メインのタグ絞り込み列＋カードの＋ボタンにPrivateを常に表示(未設定/ロック中でも)。クリック時の状態別の挙動(未設定→説明+設定へ、ロック中→解錠へ、解錠中→通常トグル)を設計。
+2. **②クイック保存面対応**: PopOut/拡張機能/ブックマークレットからもPrivate化できるようにする。**ユーザーは「案B」(暗号化の鍵をstructured cloneで別ウィンドウへ安全に渡す本格版)を希望**、案A(簡易な「保留フラグで即座に隠す」版)は不採用。
+3. **③まとめてPrivate化**: 複数選択→一括暗号化。専用インジケーター+アニメーション、失敗時は原子的処理+どのカードが失敗したか通知。
+4. **④存在を隠すオプション**: ①の上乗せ(デフォルトOFF)。SETTINGS内にパスワードを打つと初めてPrivateの入り口が現れる、という追加の隠し層。
+
+## 次点(Private Phase 2と並行 or 別途、いつでも着手可)
 - **N-63**: バックアップ提案(`BackupReminder`)の表示位置がScrollMeterに被るバグ。中央+最前面に変更希望。視覚変更のためモック→承認後に実装(`docs/TODO.md`§未対応バグ)。
-- **Private Phase 2構想4件**(詳細`docs/private/IDEAS.md`「s202 Private Phase 2構想まとめ」):
-  - ①発見導線(常時表示エントリーポイント。メインのタグ絞り込み列＋カードの＋ボタンにPrivateを常に表示)
-  - ②クイック保存面対応(PopOut/拡張機能/ブックマークレット。**ユーザーは「案B」=鍵をstructured cloneで安全に別ウィンドウへ渡す本格版を希望**、後回しでよいので急がない)
-  - ③まとめてPrivate化(複数選択→一括暗号化、専用インジケーター+アニメーション)
-  - ④Privateの存在自体を隠すオプション(①の上乗せ、デフォルトOFF)
+- **Lightbox複数画像ツイートの理想形**: 「開く瞬間だけ盤面と揃えて切り取り／開いた後は手動切り替えで全体表示」への改善。詳細`docs/private/IDEAS.md`「s202 複数画像ツイートのLightbox内ブラウズを...」節。
 
 ## 保留中(いつでも合流可)
 - TODO.mdが900行超(目安200行を大幅超過)→ 古いセッションnarrativeをTODO_COMPLETED.mdへ移動する軽い掃除タスク(非ブロッキング)。
-- dashboard.html(`docs/private/`)はhero-strip部分のみs202反映済(深い panel 群は以前から意図的に古いまま=source of truthはTODO.md)。
 - さらなるテーマ/Flat磨き、支援まわり(非公開`docs/private/IDEAS.md`)、拡張の一括保存、C2翻訳仕上げ。
 
 ## 恒久ルール(継承)
