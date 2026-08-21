@@ -33,6 +33,7 @@
 - **本番デプロイ2回実施**(`allmarks.app`、ユーザー確認済)。**ただし`master`へのmergeはまだ**。
 - **Private Phase 2の構想を会話で多数発掘、`docs/private/IDEAS.md`に一括記録**: ①発見導線(常時表示) ②クイック保存面(PopOut/拡張/ブックマークレット)対応(ユーザーは鍵をstructured cloneで安全に渡す本格版=案Bを希望) ③まとめてPrivate化 ④存在自体を隠すオプション。着手は次回以降。
 - **N-63(新規バグ)**: バックアップ提案(`BackupReminder`)の表示位置がScrollMeterに被る。記録のみ(視覚変更のためモック承認要)。§未対応バグ参照。
+- **もう1件バグ発見・systematic-debuggingで根治・本番反映**: カードクリックでLightboxを開く際に画像ツイートが「がくっと縮む」現象が再発とユーザー報告(Private vaultとは無関係と証拠つきで確認)。過去のN-23(YouTube動画ポスターの同種バグ)の修正が、ツイートの複数画像`<img>`だけ対象外だったのが原因(`Lightbox.tsx`/`Lightbox.module.css`、`tweetPhoto`クラス追加・`4a368096`)。ユーザー実機確認済(`allmarks.app`)。副作用として「Lightbox内で2枚目以降に手動で切り替えた時は全体表示」が失われる点はユーザーと合意の上で許容・理想形は次点タスクとして記録(下記✨新機能アイデア参照)。
 - **post-plan gate**: tsc0 / vitest 300ファイル2481テスト全緑 / `pnpm build`成功(`assert-share-template` OK)。
 - **★次セッション最優先＝`private-vault-phase1`を`master`へmerge**(本番は動作確認済)。手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。台帳(全記録)は`.superpowers/sdd/2026-08-20-private-vault/progress.md`。
 
