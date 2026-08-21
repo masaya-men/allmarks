@@ -90,6 +90,14 @@ export default function RootLayout({ children }: RootLayoutProps): React.ReactEl
       data-theme="dark"
       data-card-style="glass"
       data-ui-theme="auto"
+      // The (app) route group's pre-paint script sets data-theme-id on this
+      // element directly (before hydration, to avoid a theme-flash) — React
+      // has no way to know about that attribute since it's not part of this
+      // JSX, so it always flags a mismatch here. suppressHydrationWarning is
+      // React's documented opt-out for exactly this "unavoidable, intentional"
+      // case; it only silences warnings for this element's own attributes,
+      // nothing else in the tree.
+      suppressHydrationWarning
     >
       <head>
         {/* Suppress Chrome's "translate this page?" offer. The app has its own

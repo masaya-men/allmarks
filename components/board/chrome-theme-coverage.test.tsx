@@ -53,6 +53,8 @@ const extensionEntryBaseProps = {
   customWidthCount: 0,
   onResetCardSizes: (): void => {},
   onSortNewestFirst: (): void => {},
+  privateStatus: 'none' as const,
+  onOpenPrivate: (): void => {},
 }
 
 describe('chrome no-gap coverage — every theme renders every chrome panel', () => {

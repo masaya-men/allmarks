@@ -1790,7 +1790,7 @@ function TweetMedia({
       )
     }
     if (slot.type === 'photo') {
-      return <img src={slot.url} alt={item.title} />
+      return <img src={slot.url} alt={item.title} className={styles.tweetPhoto} />
     }
   }
 
@@ -1854,11 +1854,11 @@ function TweetMedia({
     )
   }
   if (meta?.photoUrl) {
-    return <img src={meta.photoUrl} alt={item.title} />
+    return <img src={meta.photoUrl} alt={item.title} className={styles.tweetPhoto} />
   }
   // meta 失敗 + thumbnail だけ残ってる稀ケース。
   if (item.thumbnail) {
-    return <img src={item.thumbnail} alt={item.title} />
+    return <img src={item.thumbnail} alt={item.title} className={styles.tweetPhoto} />
   }
   return <div className={styles.placeholder}>{item.title}</div>
 }

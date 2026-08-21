@@ -1,27 +1,33 @@
-# 次セッション(s202)のゴール — Private(鍵付き秘密ブックマーク)plan を subagent-driven で実装開始
+# 次セッション(s203)のゴール — private-vault-phase1 を master へ merge
 
-## ★s201 の到達点
-- **OGP バグ修正・出荷済**: SHARE 自動撮影が `BackupReminder`/`DataHomeCard` を撮影除外リスト(`data-no-capture`)から漏らしていて、撮影の瞬間に画面に出ていると共有画像に写り込むバグを修正。tsc0/vitest2416/build/`allmarks.app` デプロイ済。
-- **Private(鍵付き秘密ブックマーク)を brainstorm→spec→plan の正規フローで完走**（実装はまだ・次セッション）。
-  - spec: `docs/superpowers/specs/2026-08-20-private-vault-design.md`
-  - plan: `docs/superpowers/plans/2026-08-20-private-vault.md`（フェーズ1=パスワード版、15タスク、TDD具体コード込み）
-  - 要件の芯: 鍵付きタグは「Private」1つだけ／パスワードでAES-GCM**本当に暗号化**／生体認証はフェーズ2(後日)／Private+普通タグ併用可だがPrivateを明示的に踏まない限り絶対に出ない／SHAREはロック中不可・解錠中選択時は確認ダイアログ付きで許可／EXPORTは暗号化済みのまま含む／再ロックはリロードのみ／救済はヒント文のみ
-  - **plan 自己レビューで致命的バグを1件発見・修正済**: `privateTagId` の導出元を「ロック中に隠すフィルタ後」ではなく「常に見える rawTags」にする分離が必要だった（さもないとロックした瞬間に除外判定自体が壊れる）
+## ★s202 の到達点
+- **Private(鍵付き秘密ブックマーク)Phase 1、実装+最終レビュー+本番デプロイまで完走。ユーザー実機確認済み。ただし`private-vault-phase1`ブランチはまだ`master`に未merge。**
+  - 最終全ブランチレビュー(opus) → 2件Critical含む17件検出 → 1回のfix dispatchでまとめて修正 → 修正のscoped re-reviewでもう1件Critical発見 → 司令塔が1行で直接fix。
+  - ユーザーが実機で「作成→タグ付け→リロードで消える→解錠→絞り込みで見える」を確認済み。
+  - **本番(`allmarks.app`)には2回デプロイ済・動作確認済**(direct uploadなのでbranch/merge状態は問わない仕様)。
+  - 実機確認中に偶然見つけた副産物バグ2件も同セッションで修正・本番反映済(①テーマ切替時のハイドレーション警告 ②リンク健全性チェックの無限リトライ)。
+  - 台帳(全記録): `.superpowers/sdd/2026-08-20-private-vault/progress.md`
 
-## ★次セッション最優先＝ plan 実装
-- **ユーザー指定: subagent-driven-development で1タスクずつ**（`/execute` 相当・各タスクごとに fresh subagent + レビュー）。
-- **Task 1 (`lib/private/crypto.ts`) から順番に**。plan 内の Global Constraints（新規依存禁止・IDBバージョン不変・鍵は必ずメモリのみ・rtk はテストコードに書かない・新規ダイアログは全部 `data-no-capture`）を毎タスク遵守。
-- Task 13 (BoardRoot.tsx wiring) が一番大きい・plan 内に実コード(handleTagToggle/handleCreateHostedShare/handleMobileCaptureAndCreate の実際の現行コードごと)を書き込み済みなので、そのまま写経できる。
-- 全タスク完了後の post-plan gate: tsc0 / vitest full green / `pnpm build` / ユーザー実機確認(Private作成→リロードで消える→解錠→SHAREで警告確認)。
-- **フェーズ2(WebAuthn生体認証)はこの plan の対象外**、別 plan として後日。
+## ★次セッション最優先＝ master へ merge
+1. `private-vault-phase1` → `master` へ merge(`--no-ff`推奨、本番は既に動作確認済なので実機再確認は不要)。
+2. merge後: `.superpowers/sdd/2026-08-20-private-vault/`(台帳・briefなど作業用ファイル)は削除してよい(完了記録は`docs/TODO_COMPLETED.md`に残る)。
+3. **フェーズ2(WebAuthn生体認証)はこのplanの対象外**、要望が出たら別plan。
 
-## 保留中（s200以前から継続、いつでも合流可）
-- さらなるテーマ/Flat 磨き（実機で気になる点があれば）。
-- 支援まわり（ユーザー保留中、詳細は非公開 `docs/private/IDEAS.md`）。
-- 拡張の一括保存＝公開後 fast-follow。C2 翻訳(13言語)仕上げ。
+## 次点(いつでも着手可、着手前にbrainstormingから)
+- **N-63**: バックアップ提案(`BackupReminder`)の表示位置がScrollMeterに被るバグ。中央+最前面に変更希望。視覚変更のためモック→承認後に実装(`docs/TODO.md`§未対応バグ)。
+- **Private Phase 2構想4件**(詳細`docs/private/IDEAS.md`「s202 Private Phase 2構想まとめ」):
+  - ①発見導線(常時表示エントリーポイント。メインのタグ絞り込み列＋カードの＋ボタンにPrivateを常に表示)
+  - ②クイック保存面対応(PopOut/拡張機能/ブックマークレット。**ユーザーは「案B」=鍵をstructured cloneで安全に別ウィンドウへ渡す本格版を希望**、後回しでよいので急がない)
+  - ③まとめてPrivate化(複数選択→一括暗号化、専用インジケーター+アニメーション)
+  - ④Privateの存在自体を隠すオプション(①の上乗せ、デフォルトOFF)
 
-## 恒久ルール（継承）
-- 視覚変更は `ui-design.md`「承認後」（現状→変更案→承認→実装）。`rtk` 前置・`--no-verify` 禁止・vitest/playwright は素の npx・Framer Motion 禁止。
+## 保留中(いつでも合流可)
+- TODO.mdが900行超(目安200行を大幅超過)→ 古いセッションnarrativeをTODO_COMPLETED.mdへ移動する軽い掃除タスク(非ブロッキング)。
+- dashboard.html(`docs/private/`)はhero-strip部分のみs202反映済(深い panel 群は以前から意図的に古いまま=source of truthはTODO.md)。
+- さらなるテーマ/Flat磨き、支援まわり(非公開`docs/private/IDEAS.md`)、拡張の一括保存、C2翻訳仕上げ。
+
+## 恒久ルール(継承)
+- 視覚変更は`ui-design.md`「承認後」。`rtk`前置・`--no-verify`禁止・vitest/playwrightは素の npx・Framer Motion禁止。
 - 音(dotted-notebook)/紙(paper-atelier)＝バイト同一を死守。
-- 機微（支援・値付け・戦略）は tracked に書かない＝`docs/private/`。
-- 新規の共有撮影に写り込むフローティングUI(トースト・モーダル)は必ず `data-no-capture` を付ける（s201 で2件の抜けを実例として発見）。
+- 機微(支援・値付け・戦略)はtrackedに書かない＝`docs/private/`。
+- merge/push/deployは必ずユーザー確認後(CLAUDE.md安全ルール)。ただしdeployは「本番で見たい」等の明示的な合図があれば即実行可。

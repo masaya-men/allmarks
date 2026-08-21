@@ -9716,3 +9716,23 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **TUNE の CORNERS 行の iOS トグルを廃しプリセット行に整列**（Flat のみ・ドット＋ラベル＋状態＝上のプリセットと揃う・破線で別項目）。
 
 **次セッション＝ユーザーの指示待ち**（さらなる Flat 磨き／支援受け皿再開[FANBOX＋Patreon]／拡張の一括保存=公開後 fast-follow／C2 翻訳）。
+
+## セッション 202 (2026-08-20〜21) — ★Private vault Phase 1 最終レビュー〜fix〜デプロイまで完走／副産物バグ2件も同セッションで発見・修正・本番反映
+
+**s201で作った15タスクの計画をsubagent-driven-developmentで実装完走したブランチ(`private-vault-phase1`)の、最終全ブランチレビュー〜mergeまでを1セッションで進めた。**mergeまでは行かず、本番デプロイのみ完了(次セッション先頭でmerge予定)。
+
+- **最終全ブランチレビュー(opus, base 13446dc6→head e454bec2)**: 2件Critical+6件Important+9件Minor検出。Critical①=拡張機能の保存欄・`/save`ポップアップ・PiPの3経路が`useTags()`を経由せず生の`getAllTags`を叩いていたため、ロック中でもPrivateタグを暗号化なしで付けられた。Critical②=解錠中に走るツイート/TikTokの裏メタデータ取得が、暗号化済みレコードのタイトル/サムネイルを平文のまま永久に書き込んでいた。他Important6件(mediaSlots/photos未暗号化・TRASH/`/triage`の除外ゲート漏れ・初回読込のレース・vault作成の二重送信レース・Privateタグ削除で暗号化データ孤立)+Minor9件。
+- **fix round 1回**: 司令塔が該当ファイル全てを事前に読み込み、逐語のfind/replaceを書いたbriefを作成→sonnetサブエージェントが13件まとめて機械的に適用・commit(`88400b84`)。tsc0/vitest2478全緑。
+- **scoped re-review(opus)**: fix commitを検証→新たに1件Critical発見(カード個別の「+ TAG」新規タグ入力欄に、タグ名を「private」と手打ちすると本物のVaultタグに誤って一致してしまう同種の抜け穴)。司令塔が1行の外科修正で直接fix(`ba6ed6e2`)。診断済みの数行修正だったためサブエージェント無しで対応。
+- **ユーザー実機確認完了**: ローカルdevサーバーでPrivate作成→タグ付け→リロードで消える→解錠→絞り込みで明示的に選んだ時だけ見える、を確認。「ちゃんと隠せたし見れました」。
+- **同セッションで発見・修正・本番反映した副産物バグ2件**（Privateとは無関係、実機確認中に偶然発見）:
+  - **ハイドレーション警告**: `app/(app)/layout.tsx`のテーマ一瞬チラつき防止スクリプトが`<html>`に`data-theme-id`を直接書き込むため、Reactが「サーバーと食い違う」と警告。`app/layout.tsx`の`<html>`に`suppressHydrationWarning`を追加して解消（`b6e0ce57`）。
+  - **リンク健全性チェックの無限リトライ**: `lib/board/revalidate.ts`の`shouldRevalidate`が、チェック失敗(502等)時に結果を一切記録しない設計だったため、盤面が再読込されるたび(Private実機確認中のタグ付け/ロック/解錠のたびに何度も発生)に同じカードを再チェックし続けていた。ユーザーが実際に1つのYouTube動画で14回連続の502エラーに遭遇して発覚。失敗結果も記録するようにし、失敗直後は成功時の7日間隔より短い**1時間のバックオフ**を入れて解決（`63cad10b`）。DBスキーマ変更なし(既存の`linkStatus:'unknown'`を初めて実際に書き込むようにしただけ)。
+  - 既存の`updateBookmarkOgp`(呼び出し元ゼロの死コード)にも同種の暗号化ガードを予防的に追加（`0c5d7481`）。
+- **本番デプロイ2回実施**（`private-vault-phase1`ブランチのまま、`master`への merge はまだ）。1回目=Private vault一式+ハイドレーション修正、2回目=リビルド後のバックオフ修正込み。ユーザーが両方とも`allmarks.app`で確認。
+- **Private Phase 2構想を会話で多数発掘、`docs/private/IDEAS.md`に一括記録**: ①発見導線(常時表示エントリーポイント、Private未設定でもタグ一覧に🔒表示)②クイック保存面(PopOut/拡張機能/ブックマークレット)への対応(案A=即座に隠す簡易版、案B=鍵をstructured cloneで安全に渡す本格版→**ユーザーは案Bを希望**)③まとめてPrivate化(複数選択→一括暗号化、アニメーション付き)④Privateの存在自体を隠すオプション(①の上乗せ、デフォルトはOFF)。いずれも着手は次回以降、brainstormingから。
+- **バグ報告1件を記録のみ**: N-63(バックアップ提案`BackupReminder`の表示位置がScrollMeterに被る・中央+最前面に変更希望、視覚変更のためモック承認後に実装)。`docs/TODO.md`§未対応バグに記録。
+
+**追補: セッション終了直前にもう1件バグ発見・systematic-debuggingで根治・本番反映**（コミット`4a368096`）。ユーザー報告「カードクリックでLightboxを開くと画像ツイートが縮む」（過去に完全に直したN-23と同じ症状）。Private vaultとは無関係と`git diff`で証拠つきに確認してから本調査へ。実機再現条件（PC・画像ツイート・特定のツイートは毎回・他は起きない）を聞き取り、コード読解で確定: N-23（YouTube動画ポスター）の修正時、`.media img{object-fit:contain}`という汎用CSSルールを打ち消す専用クラスを`EmbedPosterBox`（YouTube/TikTok/Vimeo/SoundCloud/Instagram共通部品）にだけ付けたが、**ツイートの複数画像`<img>`はこの共通部品を使わない独自実装でクラス名が無く、対象から漏れていた**。他に同じ穴が無いことも確認済み（動画ポスター系は共通部品で保護済、通常写真は別方式で元々安全）。`tweetPhoto`クラスを3箇所の該当`<img>`に追加して解決。ユーザーとの対話で「Lightbox内で2枚目以降に手動で切り替えた時は今まで全体表示だったのが失われる」という副作用が判明→ユーザー了承の上で今回はシンプルな修正のまま出荷、理想形（開く瞬間だけ盤面と揃え、開いた後は全体表示に切り替える設計）は`docs/private/IDEAS.md`に詳細記録して次点タスク化。ユーザー実機確認済（`allmarks.app`）。
+
+**次セッション最優先＝`private-vault-phase1`を`master`へmerge**（本番は既に動作確認済）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。

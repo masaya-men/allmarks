@@ -4,11 +4,29 @@
 // on demand, so viewport cadence is the safety net, not the only path.
 export const REVALIDATE_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
-// Decide whether a bookmark is due for revalidation based on its
-// lastCheckedAt timestamp. undefined / null = never checked = due.
-export function shouldRevalidate(lastCheckedAt: number | undefined, now: number): boolean {
+// A transient failure (network error, upstream 4xx/5xx, timeout) is retried
+// much sooner than a resolved status re-check -- but with real backoff, not
+// on every single board reload. Previously an 'unknown' result was never
+// persisted at all, so a bookmark stuck failing (e.g. an upstream that's
+// rate-limiting scrapers) got re-enqueued on every items-array change while
+// visible -- one card produced 14 back-to-back /api/ogp calls in a single
+// session with no delay between them.
+export const REVALIDATE_RETRY_AFTER_FAILURE_MS = 60 * 60 * 1000 // 1 hour
+
+// Decide whether a bookmark is due for revalidation. undefined / null
+// lastCheckedAt = never attempted = due. Otherwise the required gap depends
+// on the outcome of the last attempt: a transient failure (linkStatus ===
+// 'unknown') only needs REVALIDATE_RETRY_AFTER_FAILURE_MS before trying
+// again; a resolved status (alive/gone, or never attempted) uses the full
+// REVALIDATE_AGE_MS cadence.
+export function shouldRevalidate(
+  lastCheckedAt: number | undefined,
+  linkStatus: 'alive' | 'gone' | 'unknown' | undefined,
+  now: number,
+): boolean {
   if (lastCheckedAt == null) return true
-  return now - lastCheckedAt > REVALIDATE_AGE_MS
+  const interval = linkStatus === 'unknown' ? REVALIDATE_RETRY_AFTER_FAILURE_MS : REVALIDATE_AGE_MS
+  return now - lastCheckedAt > interval
 }
 
 export type RevalidationResult =

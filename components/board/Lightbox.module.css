@@ -188,6 +188,22 @@
   object-fit: cover;
 }
 
+/* Recurrence of N-23, same root cause, different <img>: a tweet's photo
+   slot(s) (mediaSlots carousel + the legacy meta.photoUrl / item.thumbnail
+   fallbacks in TweetMedia) rendered with no className, so the generic
+   `.media img` rule above silently won and forced `contain` — a photo
+   whose own aspect differs from the box appeared letterboxed/smaller at
+   the clone→media handoff ("がくっと小さくなる"), deterministically per
+   tweet (only when that tweet's specific photo aspect ≠ the box aspect —
+   never for tweets whose photo already matches). The board's ImageCard
+   renders the identical photo with object-fit:cover (.thumb); this
+   restores parity so the Lightbox never redraws a differently-cropped
+   image at handoff. N-23's fix never reached this <img> — it's a
+   separate render path (tweet photo slots, not the video/embed poster). */
+.media img.tweetPhoto {
+  object-fit: cover;
+}
+
 /* Flat theme: give the lightbox media a soft floating shadow. .media is the
    universal wrapper (image / video / embed / tweet — see LightboxMedia and
    TweetColumns, both render into this same class), so shadowing it once

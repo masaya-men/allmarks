@@ -32,6 +32,8 @@ export async function addTag(db: DbLike, input: TagInput): Promise<TagRecord> {
     theme: null,
     // Only present when the onboarding demo created it; absent on real tags.
     ...(input.onboardingDemo ? { onboardingDemo: true } : {}),
+    // Only present when creating the Private vault tag; absent on regular tags.
+    ...(input.isPrivateVault ? { isPrivateVault: true } : {}),
   }
   await db.put('tags', tag)
   return tag

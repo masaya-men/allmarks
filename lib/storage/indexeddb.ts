@@ -88,6 +88,13 @@ export interface BookmarkRecord {
   /** v14: 最後に link 健全性を再 scrape した Unix ms。 undefined = 未チェック。
    *  viewport 入場時に Date.now() - lastCheckedAt > 30 日なら再 check 候補。 */
   lastCheckedAt?: number
+  /** v16+: present only on bookmarks tagged Private. When present,
+   *  title/url/description/thumbnail/favicon/siteName are stored as empty
+   *  strings and the real values live only here, encrypted. iv/ciphertext
+   *  are base64 (see lib/private/crypto.ts). Never decrypt-and-write-back —
+   *  decrypted fields exist only transiently in memory
+   *  (lib/private/resolve-visibility.ts). */
+  encryptedPayload?: { readonly iv: string; readonly ciphertext: string }
   /** v15+: Phase 3 カラーハント (タグ別テーマ) 用のドミナントカラー hex。
    *  Phase 1 では常に null/undefined。 backfill が走るまで未設定。 */
   dominantColor?: string | null
@@ -118,10 +125,14 @@ export interface TagRecord {
   /** Created by the first-run onboarding tag demo — swept on completion/next
    *  load alongside the demo cards. Absent on every real user tag. */
   onboardingDemo?: boolean
+  /** v16+: true on at most one tag — the "Private" vault tag (app-enforced
+   *  singleton, not a DB constraint; see lib/private/vault-store.ts). Display
+   *  name is freely renamable; this flag is what makes it the vault. */
+  isPrivateVault?: boolean
 }
 
 /** Input for creating a new tag (id and createdAt are auto-generated) */
-export type TagInput = Pick<TagRecord, 'name' | 'color' | 'order' | 'onboardingDemo'>
+export type TagInput = Pick<TagRecord, 'name' | 'color' | 'order' | 'onboardingDemo' | 'isPrivateVault'>
 
 /** Card record — visual position of a bookmark on the canvas */
 export interface CardRecord {
@@ -1173,6 +1184,11 @@ export async function updateBookmarkOgp(
 ): Promise<void> {
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
+  // Never write into a Private (encrypted) record's plaintext columns — same
+  // guard as persistThumbnail/persistTitle/persistPhotos/persistMediaSlots
+  // (this function currently has no callers, but a future OGP-refetch
+  // feature must not reopen the leak those were fixed for).
+  if (existing.encryptedPayload) return
   const updated: BookmarkRecord = { ...existing, ...ogpData }
   await db.put('bookmarks', updated)
 }
@@ -1220,6 +1236,10 @@ export async function persistPhotos(
 ): Promise<void> {
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
+  // Private (encrypted) records keep photos inside encryptedPayload now
+  // (see the addPrivateTag change below) — never write into the plaintext
+  // column for one.
+  if (existing.encryptedPayload) return
 
   const next = photos.length === 0 ? undefined : photos
   const existingArr = existing.photos
@@ -1253,6 +1273,7 @@ export async function persistMediaSlots(
 ): Promise<void> {
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
+  if (existing.encryptedPayload) return
 
   const next = mediaSlots.length === 0 ? undefined : mediaSlots
   const cur = existing.mediaSlots

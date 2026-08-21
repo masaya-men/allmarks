@@ -10,6 +10,7 @@ const baseProps = {
   themeId: 'flat' as const, // ThemeId = 'dotted-notebook' | 'paper-atelier' | 'flat'
   onOpenThemeModal: noop,
   customWidthCount: 0, onResetCardSizes: noop, onSortNewestFirst: noop,
+  privateStatus: 'none' as const, onOpenPrivate: noop,
 }
 
 describe('ExtensionEntry — MOTION row', () => {

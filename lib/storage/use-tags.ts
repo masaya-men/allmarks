@@ -7,13 +7,19 @@ import { initDB } from './indexeddb'
 import { addTag, getAllTags, updateTag as updTag, deleteTagCascade as delTag, reorderTags as reorderTagsDb } from './tags'
 import { loadTagOrderMode, saveTagOrderMode } from './tag-order-mode'
 import { DEFAULT_TAG_ORDER_MODE, sortTagsByMode, type TagOrderMode } from '@/lib/board/tag-order'
+import { usePrivateVaultSession } from '@/lib/private/vault-session'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
 
 export function useTags(): {
-  /** Tags in display order (name-sorted in an auto mode, hand order in manual). */
+  /** Tags in display order (name-sorted in an auto mode, hand order in manual).
+   *  Excludes the Private vault tag while locked. */
   tags: TagRecord[]
+  /** The Private vault tag's id, or null if none exists yet. Computed from
+   *  the unfiltered raw tag list — resolves regardless of lock state, unlike
+   *  `tags` above (which deliberately hides that row while locked). */
+  privateTagId: string | null
   loading: boolean
   /** Current ordering mode (auto-asc / auto-desc / manual). */
   orderMode: TagOrderMode
@@ -33,7 +39,17 @@ export function useTags(): {
   const [loading, setLoading] = useState(true)
   const dbRef = useRef<DbLike | null>(null)
 
-  const tags = useMemo(() => sortTagsByMode(rawTags, orderMode), [rawTags, orderMode])
+  const privateSession = usePrivateVaultSession()
+  // Computed from rawTags (UNFILTERED) — must stay resolvable while locked.
+  // See this task's "Important" note above before changing this.
+  const privateTagId = useMemo(
+    () => rawTags.find((t) => t.isPrivateVault === true)?.id ?? null,
+    [rawTags],
+  )
+  const tags = useMemo(() => {
+    const sorted = sortTagsByMode(rawTags, orderMode)
+    return privateSession === null ? sorted.filter((t) => t.isPrivateVault !== true) : sorted
+  }, [rawTags, orderMode, privateSession])
 
   const reload = useCallback(async (): Promise<void> => {
     const db = dbRef.current
@@ -79,9 +95,19 @@ export function useTags(): {
   const remove = useCallback(async (id: string): Promise<void> => {
     const db = dbRef.current
     if (!db) return
+    // The Private vault tag is deletable only through vault lifecycle
+    // actions (none exist in Phase 1) — deleting it via the generic
+    // tag-delete flow would strip the tag reference from every bookmark
+    // while leaving their encryptedPayload + blanked plaintext columns in
+    // place, permanently orphaning that content (no UI ever re-
+    // encrypts/restores without the tag id to route through). No-op rather
+    // than throw, matching this hook's existing silent-failure style
+    // (final whole-branch review finding).
+    const target = rawTags.find((t) => t.id === id)
+    if (target?.isPrivateVault === true) return
     await delTag(db, id)
     setRawTags((prev) => prev.filter((m) => m.id !== id))
-  }, [])
+  }, [rawTags])
 
   /** Persist a new complete tag order (each id gets its array index as
    *  `order`) AND switch to manual mode — a hand drag means "I want this exact
@@ -113,5 +139,5 @@ export function useTags(): {
     if (db) await saveTagOrderMode(db, mode)
   }, [])
 
-  return { tags, loading, orderMode, setOrderMode, create, rename, remove, reorder, reload }
+  return { tags, privateTagId, loading, orderMode, setOrderMode, create, rename, remove, reorder, reload }
 }

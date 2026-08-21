@@ -111,6 +111,13 @@ export interface ExtensionEntryProps {
    *  the desktop drawer — which already has MOTION in the top chrome — is
    *  byte-identical. */
   readonly motion?: { readonly enabled: boolean; readonly onToggle: () => void }
+  /** Private vault status: 'none' = never set up, 'locked' = set up but not
+   *  unlocked this session, 'unlocked' = currently open. Drives the PRIVATE
+   *  entry button's label/disabled state. */
+  readonly privateStatus: 'none' | 'locked' | 'unlocked'
+  /** Opens the Private vault flow (setup / unlock / already-open screen —
+   *  all vault logic lives in BoardRoot, this button only reports the click). */
+  readonly onOpenPrivate: () => void
 }
 
 export function ExtensionEntry({
@@ -126,6 +133,8 @@ export function ExtensionEntry({
   onResetCardSizes,
   onSortNewestFirst,
   motion,
+  privateStatus,
+  onOpenPrivate,
 }: ExtensionEntryProps): ReactElement {
   const { t } = useI18n()
   const installed = useExtensionInstalled()
@@ -271,6 +280,24 @@ export function ExtensionEntry({
               : t('board.settings.sortNewestFirst')}
           </button>
           <p className={styles.layoutNote}>{t('board.settings.sortNewestNote')}</p>
+        </section>
+
+        {/* ── PRIVATE ──────────────────────────────────────────────────────
+            Entry point to the Private vault (Task 13, BoardRoot). This
+            component only reports the click + reflects the current status;
+            all setup/unlock/lock logic lives upstream. */}
+        <section className={styles.group}>
+          <div className={styles.groupLabel}>PRIVATE</div>
+          <button
+            type="button"
+            className={styles.panelCta}
+            onClick={onOpenPrivate}
+            data-testid="private-entry-button"
+            data-unlocked={privateStatus === 'unlocked' ? 'true' : undefined}
+            disabled={privateStatus === 'unlocked'}
+          >
+            {privateStatus === 'unlocked' ? '🔓 PRIVATE (UNLOCKED)' : '🔒 PRIVATE'}
+          </button>
         </section>
 
         {/* ── THEME ────────────────────────────────────────────────────────

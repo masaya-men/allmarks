@@ -1,0 +1,53 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.panel {
+  width: min(360px, calc(100% - 32px));
+  background: rgba(20, 20, 20, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.heading {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: #f2f2f2;
+  margin-bottom: 8px;
+}
+
+.body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(242, 242, 242, 0.85);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.cancelBtn,
+.shareBtn {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: #f2f2f2;
+  cursor: pointer;
+}
+
+.shareBtn {
+  border-color: rgba(40, 241, 0, 0.55);
+}

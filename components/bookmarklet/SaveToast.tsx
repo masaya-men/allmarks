@@ -115,7 +115,8 @@ export function SaveToast(): ReactElement {
         setMode(plan.mode)
 
         if (plan.showTags) {
-          const [corpus, allTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+          const [corpus, rawTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+          const allTags = rawTags.filter((t) => t.isPrivateVault !== true)
           const ordered = orderTagsForSave(bm, corpus, allTags)
           setTagData({
             bookmarkId: bm.id,
@@ -178,7 +179,8 @@ export function SaveToast(): ReactElement {
     if (!tagData) return
     if (tagData.currentTagIds.includes(tagId)) return
     const db = dbRef.current ?? (await initDB())
-    await applyExistingQuickTag(db, tagData.bookmarkId, tagId)
+    const applied = await applyExistingQuickTag(db, tagData.bookmarkId, tagId)
+    if (!applied) return
     setTagData((d) => d ? { ...d, currentTagIds: [...d.currentTagIds, tagId] } : d)
   }
 
@@ -187,7 +189,7 @@ export function SaveToast(): ReactElement {
     const db = dbRef.current ?? (await initDB())
     const tag = await applyNewQuickTag(db, tagData.bookmarkId, name, tagData.allTags)
     if (!tag) return
-    const fresh = await getAllTags(db)
+    const fresh = (await getAllTags(db)).filter((t) => t.isPrivateVault !== true)
     setTagData((d) => d ? {
       ...d, allTags: fresh,
       currentTagIds: d.currentTagIds.includes(tag.id) ? d.currentTagIds : [...d.currentTagIds, tag.id],

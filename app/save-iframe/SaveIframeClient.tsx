@@ -4,14 +4,14 @@ import { useEffect, useRef, type ReactElement } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { initDB, persistMediaSlots, getAllBookmarks, getBookmark, saveBookmarkDeduped } from '@/lib/storage/indexeddb'
 import type { BookmarkRecord } from '@/lib/storage/indexeddb'
-import { getAllTags, addTagToBookmark } from '@/lib/storage/tags'
-import { applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
+import { getAllTags } from '@/lib/storage/tags'
+import { applyExistingQuickTag, applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { loadBoardConfig } from '@/lib/storage/board-config'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
-import { postBookmarkSaved, postBookmarkUpdated } from '@/lib/board/channel'
+import { postBookmarkSaved } from '@/lib/board/channel'
 import {
   parseSaveMessage,
   parseProbeMessage,
@@ -58,12 +58,13 @@ async function buildSavePayload(
   themeTokens: StripThemeTokens
   quickTagEnabled: boolean
 }> {
-  const [corpus, allTags, quickTagEnabled, boardConfig] = await Promise.all([
+  const [corpus, rawTags, quickTagEnabled, boardConfig] = await Promise.all([
     getAllBookmarks(db),
     getAllTags(db),
     loadQuickTagEnabled(db),
     loadBoardConfig(db),
   ])
+  const allTags = rawTags.filter((t) => t.isPrivateVault !== true)
   // Apply the board's theme to THIS document before reading the strip tokens.
   // The layout's pre-paint script reads localStorage, but this iframe is
   // embedded in a third-party host page (e.g. twitter.com), so Chrome's storage
@@ -157,12 +158,11 @@ export function SaveIframeClient(): ReactElement {
         const { bookmarkId, tagId, nonce } = addTagParsed.value.payload
         try {
           const db = await initDB()
-          await addTagToBookmark(db, bookmarkId, tagId)
-          // Tell any open board to re-read so the new tag shows immediately
-          // (add-tag is a mutation of an existing bookmark, not a new save).
-          postBookmarkUpdated({ bookmarkId })
+          const applied = await applyExistingQuickTag(db, bookmarkId, tagId)
           ev.source?.postMessage(
-            { type: 'booklage:add-tag:result', nonce, ok: true },
+            applied
+              ? { type: 'booklage:add-tag:result', nonce, ok: true }
+              : { type: 'booklage:add-tag:result', nonce, ok: false, error: 'tag not allowed' },
             { targetOrigin: ev.origin },
           )
         } catch (err) {

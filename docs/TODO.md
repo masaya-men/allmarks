@@ -21,6 +21,22 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 202 — ★Private vault Phase 1 最終レビュー〜fix〜本番デプロイまで完走／副産物バグ2件も同セッションで修正・反映／merge待ち)
+
+**s201で作った計画(15タスク)をsubagent-driven-developmentで実装完走したブランチの、最終全ブランチレビュー → fix → 再レビュー → fix → ユーザー実機確認 → 本番デプロイ、を1セッションで完遂。`private-vault-phase1`ブランチのまま(まだ`master`未merge)。**
+
+- **最終全ブランチレビュー(opus)**: 2件Critical+6件Important+9件Minor検出。①quick-tag系3経路(拡張保存ストリップ・/save ポップアップ・PiP)が`useTags()`を経由せず生の`getAllTags`を叩いていたため、ロック中でもPrivateタグが選べて暗号化なしで付けられた。②解錠中に走るツイート/TikTokの裏メタデータ取得が、復号済みの表示データを見て暗号化済みレコードのタイトル/サムネイルを平文のまま永久に書き込んでいた。他: mediaSlots/photosが暗号化対象外だった、TRASH/`/triage`にPrivate除外ゲートが無かった、初回読込のレース条件、vault作成の二重送信レース、Privateタグの削除で暗号化データが孤立、等。
+- **fix round(1回)**: 司令塔が全該当ファイルを事前に読み込み、逐語のfind/replaceまで書いたbriefを作成 → sonnetサブエージェントが13件まとめて機械的に適用・commit(`88400b84`)。tsc0/vitest 2478全緑。
+- **scoped re-review(opus)**: fix commitを検証 → 新たに1件Critical発見(カード個別の「+ TAG」新規タグ入力欄に同じ名前衝突の抜け穴)。司令塔が1行の外科修正で直接fix(`ba6ed6e2`・サブエージェント無し・診断済みの数行修正のため)。
+- **ユーザー実機確認済**: ローカルdevサーバーでPrivate作成→タグ付け→リロードで消える→解錠→絞り込みで明示的に選んだ時だけ見える、を確認。
+- **副産物バグ2件を同セッションで発見・修正・本番反映**(実機確認中に偶然発見、Privateとは無関係): ①テーマチラつき防止スクリプトによるハイドレーション警告(`app/layout.tsx`の`<html>`に`suppressHydrationWarning`追加・`b6e0ce57`) ②リンク健全性チェックの無限リトライ(失敗結果を記録しない設計だったため盤面再読込のたびに再チェック→実際に同一YouTube動画で14回連続502が発生して発覚。失敗時も記録+1時間バックオフを追加・`63cad10b`)。
+- **本番デプロイ2回実施**(`allmarks.app`、ユーザー確認済)。**ただし`master`へのmergeはまだ**。
+- **Private Phase 2の構想を会話で多数発掘、`docs/private/IDEAS.md`に一括記録**: ①発見導線(常時表示) ②クイック保存面(PopOut/拡張/ブックマークレット)対応(ユーザーは鍵をstructured cloneで安全に渡す本格版=案Bを希望) ③まとめてPrivate化 ④存在自体を隠すオプション。着手は次回以降。
+- **N-63(新規バグ)**: バックアップ提案(`BackupReminder`)の表示位置がScrollMeterに被る。記録のみ(視覚変更のためモック承認要)。§未対応バグ参照。
+- **もう1件バグ発見・systematic-debuggingで根治・本番反映**: カードクリックでLightboxを開く際に画像ツイートが「がくっと縮む」現象が再発とユーザー報告(Private vaultとは無関係と証拠つきで確認)。過去のN-23(YouTube動画ポスターの同種バグ)の修正が、ツイートの複数画像`<img>`だけ対象外だったのが原因(`Lightbox.tsx`/`Lightbox.module.css`、`tweetPhoto`クラス追加・`4a368096`)。ユーザー実機確認済(`allmarks.app`)。副作用として「Lightbox内で2枚目以降に手動で切り替えた時は全体表示」が失われる点はユーザーと合意の上で許容・理想形は次点タスクとして記録(下記✨新機能アイデア参照)。
+- **post-plan gate**: tsc0 / vitest 300ファイル2481テスト全緑 / `pnpm build`成功(`assert-share-template` OK)。
+- **★次セッション最優先＝`private-vault-phase1`を`master`へmerge**(本番は動作確認済)。手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。台帳(全記録)は`.superpowers/sdd/2026-08-20-private-vault/progress.md`。
+
 ### 直近の状態 (セッション 201 — ★SHARE OGP バグ修正・出荷済／★Private(鍵付き秘密ブックマーク)を brainstorm→spec→plan まで完了・実装は次セッション)
 
 **前半: OGP バグ調査→修正→出荷。** ユーザー報告の共有リンク(`/s/cAYiu6`)を実機で取得し原因特定: SHARE の自動撮影が「操作クローム」を撮影から除外する仕組み(`data-no-capture`)を持つが、**`BackupReminder`(バックアップお知らせ)と `DataHomeCard`(初回データ案内)だけこの属性が抜けていた**ため、撮影の瞬間に画面に出ていると共有画像にそのまま写り込む(実例: バックアップ通知が丸ごと写った画像)。両コンポーネントに `data-no-capture` を追加+回帰テスト2件。tsc0/vitest2416/build/`allmarks.app` デプロイ済。
@@ -585,6 +601,14 @@
 
 完了済バグは TODO_COMPLETED.md に移動済。 ここはアクティブのみ。
 
+### session 202 で報告（バックアップ提案の表示位置が不適切）
+
+- **(N-63) バックアップ提案(BackupReminder)の表示位置がおかしい** — 未着手（視覚変更のためモック→承認後に実装、`ui-design.md` の承認フロー適用）。
+  - **現状**（確認済）: `components/board/BackupReminder.module.css` の `.toast` は `position: fixed; bottom: 22px`（画面下部中央のトースト）、z-index は `lib/board/constants.ts` の `BOARD_Z_INDEX.BACKUP_REMINDER = 195`。
+  - **問題**: `SCROLL_METER = 400` の方が高いため、画面下部で**スクロールメーターに視覚的に覆われる**位置関係になっている。ユーザー報告: 位置が下すぎる＋メーターに被っている。
+  - **要望**: 画面**中央**かつ**最前面**に表示し、ユーザーに確実に見せて反応させる(確認させる)ようにする。現状のトースト的な「気づかなくても流れていく」表示から、モーダルに近い「見なかったことにできない」表示への変更。
+  - **着手時**: 中央配置後は`BOARD_Z_INDEX`の中で最上位に近い値を新設(既存最大は`ONBOARDING`系410前後 — 実装時に現在の最大値を再確認して割り当てる)。他の modal 系(`MODAL_OVERLAY`/`SAVE_SHEET`/`CHROME_DRAWER`)との重なり方も要確認。
+
 ### session 196 で報告（Cloudflare コスト・悪用耐性 — 監査完了・防御は未実装）
 
 > ★徹底監査完了（s196）。正本レポート = `docs/private/2026-07-14-cloudflare-cost-audit.md`（全経路・最悪額試算・防御プラン・ダッシュボード手順）。**結論: 現状 Workers Free なら悪用されても請求ほぼ0（日次上限が間接レート制限として働き R2 無料枠を超えない）。構造的費用は R2 超過分（現実的にほぼ0）と .app 更新 約$14/年のみ。** ハード上限機能が無いので Budget alert $1 が唯一の防衛線。
@@ -833,6 +857,7 @@
 
 `docs/private/IDEAS.md` 参照。 ここはタグだけ:
 
+- **(s202 新規・必ずやる)** 複数画像ツイートのLightbox表示を「開く瞬間だけ盤面と揃えて切り取り／開いた後に手動で画像を切り替えたら全体を見せる」に分離。今回(s202)はシンプルな「常にcover統一」で暫定出荷、理想形は別途設計して実装。詳細・技術的な勘所はIDEAS.md「s202 複数画像ツイートのLightbox内ブラウズを...」節参照。
 - **(s186 新規)** 切り抜きコラージュ（clipart.studio 型・手動なげなわ→AI 背景除去の2段）
 - **(s186 新規)** シェーダーテーマ（WebGL 1 枚 canvas の擬似 3D 背景・超軽量）
 - **(s186 新規)** 既存分の一括取り込み — **方針確定「対応サイトは基本全部、拡張で一括取り込みできるようにする」**（X ブクマ/いいね・YouTube 高評価/後で見る・note/Vimeo/SoundCloud。拡張の自動スクロール収穫が本命＋Takeout CSV 等は拡張なしの受け皿。per-site 見立ては IDEAS.md s186 節）

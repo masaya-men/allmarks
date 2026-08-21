@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest'
-import { computeAspectRatio, deriveThumbnail } from './use-board-data'
+import { describe, it, expect, afterEach } from 'vitest'
+import 'fake-indexeddb/auto'
+import { renderHook, waitFor } from '@testing-library/react'
+import { computeAspectRatio, deriveThumbnail, useBoardData } from './use-board-data'
+import { initDB, addBookmark } from './indexeddb'
 import type { BookmarkRecord, CardRecord } from './indexeddb'
+import { setPrivateVaultSession } from '@/lib/private/vault-session'
+import { encryptJson, deriveKey, generateSalt } from '@/lib/private/crypto'
 
 const baseBookmark: BookmarkRecord = {
   id: 'b1',
@@ -95,5 +100,119 @@ describe('deriveThumbnail', () => {
 
   it('returns undefined for a non-YouTube bookmark with no thumbnail', () => {
     expect(deriveThumbnail({ ...baseBookmark, thumbnail: '' })).toBeUndefined()
+  })
+})
+
+describe('useBoardData — Private vault locked exclusion + decrypt overlay', () => {
+  afterEach(async () => {
+    setPrivateVaultSession(null)
+    const databases = await indexedDB.databases()
+    for (const info of databases) {
+      if (info.name) indexedDB.deleteDatabase(info.name)
+    }
+  })
+
+  it('items excludes a bookmark tagged with privateTagId while locked', async () => {
+    const database = await initDB()
+    await addBookmark(database, {
+      url: 'https://example.com/normal', title: 'Normal', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'website',
+    })
+    const priv = await addBookmark(database, {
+      url: 'https://example.com/secret', title: 'placeholder', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'website',
+      tags: ['priv-1'],
+    })
+    // Mirror apply-tag-change's shape: plaintext fields blanked, real content
+    // moved into encryptedPayload.
+    await database.put('bookmarks', {
+      ...priv,
+      title: '', url: '', description: '', thumbnail: '', favicon: '', siteName: '',
+      encryptedPayload: { iv: 'x', ciphertext: 'y' },
+    })
+
+    const { result } = renderHook(() => useBoardData('priv-1'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.items.some((i) => i.tags.includes('priv-1'))).toBe(false)
+  })
+
+  it('items includes the decrypted bookmark once the vault session is set, and drops it again once cleared', async () => {
+    const database = await initDB()
+    const key = await deriveKey('pw', generateSalt(), 1000)
+    const encryptedPayload = await encryptJson(key, {
+      title: 'Real', url: 'https://secret.example', description: '', thumbnail: '', favicon: '', siteName: '',
+    })
+    const priv = await addBookmark(database, {
+      url: 'https://example.com/secret', title: 'placeholder', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'website',
+      tags: ['priv-1'],
+    })
+    await database.put('bookmarks', {
+      ...priv, title: '', url: '', encryptedPayload,
+    })
+
+    setPrivateVaultSession({ tagId: 'priv-1', key })
+    const { result } = renderHook(() => useBoardData('priv-1'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.items.find((i) => i.tags.includes('priv-1'))?.title).toBe('Real')
+
+    setPrivateVaultSession(null)
+    await waitFor(() => expect(result.current.items.some((i) => i.tags.includes('priv-1'))).toBe(false))
+  })
+})
+
+describe('persistThumbnail / persistTitle — Private (encrypted) record guard', () => {
+  afterEach(async () => {
+    setPrivateVaultSession(null)
+    const databases = await indexedDB.databases()
+    for (const info of databases) {
+      if (info.name) indexedDB.deleteDatabase(info.name)
+    }
+  })
+
+  it('persistThumbnail is a no-op on a Private (encrypted) record', async () => {
+    const database = await initDB()
+    const priv = await addBookmark(database, {
+      url: 'https://example.com/secret', title: 'placeholder', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'website',
+      tags: ['priv-1'],
+    })
+    await database.put('bookmarks', {
+      ...priv,
+      title: '', url: '', description: '', thumbnail: '', favicon: '', siteName: '',
+      encryptedPayload: { iv: 'x', ciphertext: 'y' },
+    })
+
+    const { result } = renderHook(() => useBoardData('priv-1'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await result.current.persistThumbnail(priv.id, 'https://evil.example/leak.jpg', true)
+
+    const stored = await database.get('bookmarks', priv.id)
+    expect(stored?.thumbnail).toBe('')
+    expect(stored?.encryptedPayload).toEqual({ iv: 'x', ciphertext: 'y' })
+  })
+
+  it('persistTitle is a no-op on a Private (encrypted) record', async () => {
+    const database = await initDB()
+    const priv = await addBookmark(database, {
+      url: 'https://example.com/secret', title: 'placeholder', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'website',
+      tags: ['priv-1'],
+    })
+    await database.put('bookmarks', {
+      ...priv,
+      title: '', url: '', description: '', thumbnail: '', favicon: '', siteName: '',
+      encryptedPayload: { iv: 'x', ciphertext: 'y' },
+    })
+
+    const { result } = renderHook(() => useBoardData('priv-1'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await result.current.persistTitle(priv.id, 'Evil leaked title')
+
+    const stored = await database.get('bookmarks', priv.id)
+    expect(stored?.title).toBe('')
+    expect(stored?.encryptedPayload).toEqual({ iv: 'x', ciphertext: 'y' })
   })
 })

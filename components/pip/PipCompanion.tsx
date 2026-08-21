@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback, type ReactElement } from 'react'
 import { initDB, getAllBookmarks, type TagRecord } from '@/lib/storage/indexeddb'
-import { getAllTags, addTagToBookmark, addTag } from '@/lib/storage/tags'
+import { getAllTags } from '@/lib/storage/tags'
+import { applyExistingQuickTag, applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
-import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
+import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkSaved } from '@/lib/board/channel'
 import { broadcastPipOpen, broadcastPipClosed, subscribePipPresence } from '@/lib/board/pip-presence'
 import { resolveThumbnail } from '@/lib/pip/resolve-thumbnail'
 import { pipDisplayThumbnail } from '@/lib/pip/pip-thumbnail'
@@ -99,7 +100,7 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   useEffect(() => {
     void (async () => {
       const db = await initDB()
-      setAllTags(await getAllTags(db))
+      setAllTags((await getAllTags(db)).filter((t) => t.isPrivateVault !== true))
     })()
   }, [])
 
@@ -112,7 +113,8 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
       // IDB (real og:image for Apple/news, X default or empty for tweets).
       // Then upgrade asynchronously via the resolver — the syndication /
       // oEmbed / CDN derive that the board does for non-OG sources.
-      const [corpus, freshTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+      const [corpus, rawTags] = await Promise.all([getAllBookmarks(db), getAllTags(db)])
+      const freshTags = rawTags.filter((t) => t.isPrivateVault !== true)
       // Refresh the picker's tag master — a save elsewhere may have created tags.
       setAllTags(freshTags)
       const ordered = orderTagsForSave(bm, corpus, freshTags)
@@ -178,7 +180,8 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
     const already = (cardsRef.current.find((c) => c.id === bookmarkId)?.currentTagIds ?? []).includes(tagId)
     if (already) return
     const db = await initDB()
-    await addTagToBookmark(db, bookmarkId, tagId)
+    const applied = await applyExistingQuickTag(db, bookmarkId, tagId)
+    if (!applied) return
     setCards((prev) =>
       prev.map((c) =>
         c.id === bookmarkId && !(c.currentTagIds ?? []).includes(tagId)
@@ -186,21 +189,17 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
           : c,
       ),
     )
-    postBookmarkUpdated({ bookmarkId })
   }, [])
 
-  // Create-or-reuse a tag by name, then attach it. Mirrors the board's
-  // create logic: trim, case-insensitive dedupe against the tag master
-  // (reuse if found), else mint a new tag with the AllMarks green.
+  // Create-or-reuse a tag by name, then attach it. applyNewQuickTag mirrors
+  // the prior inline logic (trim, case-insensitive dedupe, mint AllMarks
+  // green on miss) but additionally refuses a name that resolves to the
+  // Private vault tag.
   const handleAddNew = useCallback(async (bookmarkId: string, name: string) => {
-    const trimmed = name.trim()
-    if (!trimmed) return
     const db = await initDB()
-    const existing = allTagsRef.current.find((t) => t.name.toLowerCase() === trimmed.toLowerCase())
-    const target = existing ?? (await addTag(db, { name: trimmed, color: '#28F100', order: allTagsRef.current.length }))
-    await addTagToBookmark(db, bookmarkId, target.id)
-    const fresh = await getAllTags(db)
-    setAllTags(fresh)
+    const target = await applyNewQuickTag(db, bookmarkId, name, allTagsRef.current)
+    if (!target) return
+    setAllTags((await getAllTags(db)).filter((t) => t.isPrivateVault !== true))
     setCards((prev) =>
       prev.map((c) =>
         c.id === bookmarkId && !(c.currentTagIds ?? []).includes(target.id)
@@ -208,7 +207,6 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
           : c,
       ),
     )
-    postBookmarkUpdated({ bookmarkId })
   }, [])
 
   const menuCard = tagMenuFor !== null ? cards.find((c) => c.id === tagMenuFor) : undefined

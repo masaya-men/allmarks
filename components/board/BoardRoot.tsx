@@ -18,7 +18,7 @@ import { useIsMobile } from '@/lib/board/use-is-mobile'
 import { getDefaultVolume } from '@/lib/embed/default-volume'
 import type { BoardFilter, CardPosition, DisplayMode } from '@/lib/board/types'
 import { applyFilter } from '@/lib/board/filter'
-import { useBoardData } from '@/lib/storage/use-board-data'
+import { useBoardData, type BoardItem } from '@/lib/storage/use-board-data'
 import { RevalidationQueue, defaultFetcher, shouldRevalidate } from '@/lib/board/revalidate'
 import { createCompositeFetcher } from '@/lib/board/tweet-liveness'
 import { subscribeBookmarkSaved, subscribeBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
@@ -63,6 +63,12 @@ import { MotionToggle } from './MotionToggle'
 import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ExtensionEntry } from './ExtensionEntry'
+import { usePrivateVaultSession, setPrivateVaultSession } from '@/lib/private/vault-session'
+import { createVault, unlockVault, loadVaultRecord } from '@/lib/private/vault-store'
+import { addPrivateTag, removePrivateTag } from '@/lib/private/apply-tag-change'
+import { PrivateSetupDialog } from './PrivateSetupDialog'
+import { PrivateUnlockDialog } from './PrivateUnlockDialog'
+import { PrivateShareConfirmDialog } from './PrivateShareConfirmDialog'
 import { ThemeModal } from './ThemeModal'
 import { ChromeButton } from './ChromeButton'
 import { ScrollMeter } from './ScrollMeter'
@@ -232,6 +238,26 @@ const EMPTY_CUSTOM_WIDTHS: Readonly<Record<string, number>> = {}
 
 export function BoardRoot() {
   const { t } = useI18n()
+  // Private vault (Phase 1). `privateTagId` MUST come from useTags()'s own
+  // return value — it is computed there from the UNFILTERED tag list, so it
+  // stays non-null even while the vault is locked. Re-deriving it from the
+  // `tags` array below would return null exactly when locked (that array is
+  // lock-filtered), which would silently disable every exclusion this feature
+  // exists for.
+  const privateSession = usePrivateVaultSession()
+  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | null>(null)
+  const [privateHint, setPrivateHint] = useState<string | undefined>(undefined)
+  // Set when a SHARE was attempted while the selection contains Private cards.
+  // `resume` records which capture path asked, so the single confirm dialog
+  // can continue the right one.
+  const [pendingPrivateShare, setPendingPrivateShare] =
+    useState<{ count: number; resume: 'desktop' | 'mobile' } | null>(null)
+  // Declared before useBoardData because useBoardData(privateTagId) consumes
+  // it (the vault-locked exclusion happens inside the data hook).
+  const {
+    tags, privateTagId, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
+    orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
+  } = useTags()
   const {
     items,
     deletedItems,
@@ -251,11 +277,7 @@ export function BoardRoot() {
     resortNewestFirst,
     reload,
     persistLinkStatus,
-  } = useBoardData()
-  const {
-    tags, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
-    orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
-  } = useTags()
+  } = useBoardData(privateTagId)
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
@@ -1081,15 +1103,24 @@ export function BoardRoot() {
     // TRASH (= archive) は items に居ない (soft-deleted は別 state)、
     // deletedItems を直接返す。 これによりカード本体がレンダされる + ×
     // ボタンの handler が BoardRoot 側で restore 意味になる。
-    if (activeFilter.kind === 'archive') return deletedItems
+    if (activeFilter.kind === 'archive') return applyFilter(deletedItems, activeFilter, privateTagId)
     // Tags filter は CardsLayer 側で matchedBookmarkIds + CRT shutdown
     // アニメ経由で表現する (= 非該当カードを items に残しておく → shutdown
     // 演出 → GSAP-FLIP で該当カードが reflow)。 ここで除外してしまうと
     // 演出を発火させる対象が消えるので、 tags の時は全件 (= non-deleted
     // のみ) を通す。 他 kind は従来通り単純絞り込み。
-    if (activeFilter.kind === 'tags') return applyFilter(items, BOARD_FILTER_ALL)
-    return applyFilter(items, activeFilter)
-  }, [items, deletedItems, activeFilter])
+    if (activeFilter.kind === 'tags') {
+      // BOARD_FILTER_ALL above is a display-mechanism substitute (the CRT
+      // shutdown animation needs non-matching cards to stay mounted — see the
+      // comment above), not the user's real filter, so privateGatePasses can't
+      // see the real activeFilter.tagIds through it. Suppress the gate only
+      // when the real filter already includes Private — otherwise keep gating
+      // so Private stays out of every other tag's view.
+      const privateFilterActive = privateTagId !== null && activeFilter.tagIds.includes(privateTagId)
+      return applyFilter(items, BOARD_FILTER_ALL, privateFilterActive ? null : privateTagId)
+    }
+    return applyFilter(items, activeFilter, privateTagId)
+  }, [items, deletedItems, activeFilter, privateTagId])
 
   // Tag filter overlay on top of filteredItems. null = no tag filter active
   // (= every card matches). When set, cards whose id is NOT in the set are
@@ -1503,8 +1534,14 @@ export function BoardRoot() {
           if (r.data?.image) await persistThumbnail(id, r.data.image, true)
         } else if (r.kind === 'gone') {
           await persistLinkStatus(id, 'gone', now)
+        } else {
+          // unknown (transient failure) — still record the attempt so
+          // shouldRevalidate applies the shorter REVALIDATE_RETRY_AFTER_FAILURE_MS
+          // cooldown instead of treating this bookmark as still "never
+          // checked" (which retried on every items-array change with no
+          // backoff at all — see revalidate.ts's doc comment).
+          await persistLinkStatus(id, 'unknown', now)
         }
-        // unknown → no state change (will retry on the next intent or viewport entry)
       },
     })
   }
@@ -1517,7 +1554,7 @@ export function BoardRoot() {
     if (!q) return
     const it = items.find((x) => x.bookmarkId === bookmarkId)
     if (!it) return
-    if (shouldRevalidate(it.lastCheckedAt, Date.now())) q.enqueue(bookmarkId, it.url)
+    if (shouldRevalidate(it.lastCheckedAt, it.linkStatus, Date.now())) q.enqueue(bookmarkId, it.url)
   }, [items])
 
   // Wheel-scroll through Lightbox can fire handleLightboxNav 10× per second.
@@ -1592,12 +1629,14 @@ export function BoardRoot() {
      isDeleted state). */
   const tagBookmarkCount = useCallback(
     (tagId: string): number => {
+      const countsFor = (it: BoardItem): boolean =>
+        it.tags.includes(tagId) && (tagId === privateTagId || privateTagId === null || !it.tags.includes(privateTagId))
       let n = 0
-      for (const it of items) if (it.tags.includes(tagId)) n++
-      for (const it of deletedItems) if (it.tags.includes(tagId)) n++
+      for (const it of items) if (countsFor(it)) n++
+      for (const it of deletedItems) if (countsFor(it)) n++
       return n
     },
-    [items, deletedItems],
+    [items, deletedItems, privateTagId],
   )
 
   /* Run the cascade: scrub the tag from every bookmark + drop the tag
@@ -1633,7 +1672,22 @@ export function BoardRoot() {
       const item = items.find((it) => it.bookmarkId === bookmarkId)
       if (!item) return
       const db = await initDB()
-      if (item.tags.includes(tagId)) {
+      if (tagId === privateTagId) {
+        // Private tag: adding encrypts the bookmark's sensitive fields and
+        // blanks the plaintext columns; removing decrypts them back.
+        if (privateSession === null) {
+          // Unreachable in practice — the Private tag is excluded from `tags`
+          // whenever the vault is locked, so it can't be offered as a toggle
+          // target. Defensive guard, not a normal-path branch.
+          console.warn('[allmarks] Private tag toggled while locked — ignoring')
+          return
+        }
+        if (item.tags.includes(tagId)) {
+          await removePrivateTag(db, bookmarkId, tagId, privateSession)
+        } else {
+          await addPrivateTag(db, bookmarkId, tagId, privateSession)
+        }
+      } else if (item.tags.includes(tagId)) {
         await removeTagFromBookmark(db, bookmarkId, tagId)
       } else {
         await addTagToBookmark(db, bookmarkId, tagId)
@@ -1641,7 +1695,7 @@ export function BoardRoot() {
       }
       await reload()
     },
-    [items, reload],
+    [items, reload, privateTagId, privateSession],
   )
 
   const handleTagCreate = useCallback(
@@ -1653,6 +1707,13 @@ export function BoardRoot() {
       // case-insensitive — so the new-input pathway doesn't silently create
       // duplicates of "YouTube" / "youtube" etc.
       const existing = tags.find((t) => t.name.toLowerCase() === trimmed.toLowerCase())
+      // Typing "private" (case-insensitive) while unlocked would otherwise
+      // name-match the real vault tag here and attach it through this raw,
+      // non-encrypting path — the same bug class closed for the quick-tag
+      // surfaces (C1) and drag-and-drop (M3), reachable from the per-card
+      // + TAG popover's new-tag input. Only the board's individual card
+      // toggle may attach Private, because only that path encrypts.
+      if (existing && existing.id === privateTagId) return
       const target = existing ?? (await addTag(db, {
         name: trimmed, color: '#28F100', order: tags.length,
         // Flag tags born during the tutorial (e.g. the demo "sample") so they're
@@ -1664,7 +1725,7 @@ export function BoardRoot() {
       await reloadTags()
       await reload()
     },
-    [tags, reload, reloadTags],
+    [tags, reload, reloadTags, privateTagId],
   )
 
   // Onboarding tag scene: tag the newest card (highest orderIndex = the card the
@@ -2243,10 +2304,16 @@ export function BoardRoot() {
   // a [data-tag-id] row. Selection persists — continuous multi-tagging.
   const assignTagToCards = useCallback(
     (tagId: string, cardIds: readonly string[]): void => {
+      // Private is never bulk-assignable through drag-and-drop — only the
+      // board's individual card tag toggle may attach it, because only that
+      // path encrypts. No UI currently renders a Private drop target, but
+      // this direct check makes that a structural guarantee instead of a
+      // rendering coincidence (final whole-branch review finding).
+      if (tagId === privateTagId) return
       const writes = computeTagAssignments(itemsRef.current, cardIds, tagId)
       for (const w of writes) void persistTags(w.bookmarkId, w.nextTags)
     },
-    [persistTags],
+    [persistTags, privateTagId],
   )
 
   // TAG MODE drop router — CardsLayer emits this on a genuine drop. A real tag
@@ -2596,7 +2663,7 @@ export function BoardRoot() {
   //      レターボックスし、枠を切らずに 1200×630 に収める。
   //   3. その JPEG を thumb にして /s 共有を R2 上に作成 → /og キャッシュを温める。
   // 撮影が失敗しても thumb 無しで作成する (= 共有を絶対に壊さない。OG は既定カードに fallback)。
-  const handleCreateHostedShare = useCallback(async (): Promise<void> => {
+  const proceedCreateHostedShare = useCallback(async (): Promise<void> => {
     if (selectedInBoardOrder(items, selectedIds).length === 0) return
     setShareCreateState('creating')
     let thumb: string | null = null
@@ -2630,6 +2697,19 @@ export function BoardRoot() {
       setShareCreateState('error')
     }
   }, [items, selectedIds, buildArrangeShare, deriveCaptureBoardColor])
+
+  // Private gate (desktop). Selections without Private cards proceed exactly as
+  // before — no dialog, no behaviour change. Only a selection that actually
+  // contains Private cards stops here for an explicit confirmation.
+  const handleCreateHostedShare = useCallback(async (): Promise<void> => {
+    const privateCount = privateTagId === null ? 0
+      : selectedInBoardOrder(items, selectedIds).filter((it) => it.tags.includes(privateTagId)).length
+    if (privateCount > 0) {
+      setPendingPrivateShare({ count: privateCount, resume: 'desktop' })
+      return
+    }
+    await proceedCreateHostedShare()
+  }, [items, selectedIds, privateTagId, proceedCreateHostedShare])
 
   // スマホ: 選択カードの2本指ピンチ開始 — 進行中のカード移動を止め、base をスナップショット。
   const handleSelectedPinchStart = useCallback((): void => {
@@ -2727,7 +2807,7 @@ export function BoardRoot() {
   // canvasCards は現在の state（collageOrder=重なり順 / collagePositions=位置サイズ /
   // collageRotations=回転）から組む。撮影経路そのもの（renderCollageCanvasToJpeg・scale・
   // 2フレーム待ち・パンくず）は N-56 のまま 1 行も変えない。
-  const handleMobileCaptureAndCreate = useCallback(async (): Promise<void> => {
+  const proceedMobileCaptureAndCreate = useCallback(async (): Promise<void> => {
     const frame = boardFrameRef.current
     const band = mobileBandRect
     if (!band) return
@@ -2843,6 +2923,19 @@ export function BoardRoot() {
     mobileBandRect, collageOrder, collagePositions, collageRotations, lightboxNavItems,
     roundedCorners, themeMeta, buildArrangeShare, deriveCaptureBoardColor,
   ])
+
+  // Private gate (mobile). Same rule as the desktop wrapper above: gated on the
+  // CURRENT selection, because buildArrangeShare recomputes its payload from
+  // selectedIds at call time regardless of the visual arrangement state.
+  const handleMobileCaptureAndCreate = useCallback(async (): Promise<void> => {
+    const privateCount = privateTagId === null ? 0
+      : selectedInBoardOrder(items, selectedIds).filter((it) => it.tags.includes(privateTagId)).length
+    if (privateCount > 0) {
+      setPendingPrivateShare({ count: privateCount, resume: 'mobile' })
+      return
+    }
+    await proceedMobileCaptureAndCreate()
+  }, [items, selectedIds, privateTagId, proceedMobileCaptureAndCreate])
 
   // Ready-state COPY LINK copies the already-hosted url.
   const handleShareCopyLink = useCallback(async (): Promise<boolean> => {
@@ -3086,7 +3179,7 @@ export function BoardRoot() {
           if (!id) continue
           const item = items.find((it) => it.bookmarkId === id)
           if (!item) continue
-          if (shouldRevalidate(item.lastCheckedAt, now)) {
+          if (shouldRevalidate(item.lastCheckedAt, item.linkStatus, now)) {
             queue.enqueue(id, item.url)
           }
         }
@@ -3101,17 +3194,35 @@ export function BoardRoot() {
     return () => observer.disconnect()
   }, [items])
 
+  // Private must never be a drag/bulk-assign target — assigning it triggers
+  // real per-card encryption and should only happen via the individual card's
+  // own tag toggle (handleTagToggle -> addPrivateTag), never a casual
+  // multi-card drop or tap. Both bulk-tagging UIs route through
+  // assignTagToCards -> persistTags, a plain tag-array write that does NOT
+  // encrypt, so offering Private there would look protected while leaving
+  // title/url/thumbnail in plaintext.
+  const bulkAssignableTags = useMemo(
+    () => (privateTagId === null ? tags : tags.filter((t) => t.id !== privateTagId)),
+    [tags, privateTagId],
+  )
+
   const sidebarCounts = useMemo(() => {
     // items is already the active (= non-deleted) set; deletedItems
     // is the parallel TRASH-only state. Counting items.isDeleted would
     // always yield 0 since useBoardData filters them out before render.
+    // Private items are excluded from every count: while unlocked they're in
+    // `items`, but the board hides them outside the Private filter, so
+    // counting them would leak their existence via an inflated ALL total.
+    const isPrivate = (i: BoardItem): boolean => privateTagId !== null && i.tags.includes(privateTagId)
+    const visibleItems = items.filter((i) => !isPrivate(i))
+    const visibleDeleted = deletedItems.filter((i) => !isPrivate(i))
     return {
-      all: items.length,
-      inbox: items.filter((i) => i.tags.length === 0).length,
-      archive: deletedItems.length,
-      dead: items.filter((i) => i.linkStatus === 'gone').length,
+      all: visibleItems.length,
+      inbox: visibleItems.filter((i) => i.tags.length === 0).length,
+      archive: visibleDeleted.length,
+      dead: visibleItems.filter((i) => i.linkStatus === 'gone').length,
     }
-  }, [items, deletedItems])
+  }, [items, deletedItems, privateTagId])
 
   // Per-tag bookmark count for the FilterPill dropdown rows. Counts the
   // active (= non-deleted) set only, so the number matches what the user
@@ -3121,12 +3232,14 @@ export function BoardRoot() {
     const m: Record<string, number> = {}
     for (const tag of tags) m[tag.id] = 0
     for (const it of items) {
+      const isPrivate = privateTagId !== null && it.tags.includes(privateTagId)
       for (const tagId of it.tags) {
+        if (isPrivate && tagId !== privateTagId) continue // don't inflate OTHER tags' counts
         if (tagId in m) m[tagId] += 1
       }
     }
     return m
-  }, [items, tags])
+  }, [items, tags, privateTagId])
 
   const contentWidth = Math.max(viewport.w, contentBounds.width)
   const contentHeight = Math.max(viewport.h, contentBounds.height)
@@ -3407,6 +3520,29 @@ export function BoardRoot() {
                 onResetCardSizes={() => { void handleResetCardSizes() }}
                 onSortNewestFirst={() => { void handleSortNewestFirst() }}
                 motion={isMobile ? { enabled: motionEnabled, onToggle: handleToggleMotion } : undefined}
+                privateStatus={privateTagId === null ? 'none' : privateSession === null ? 'locked' : 'unlocked'}
+                onOpenPrivate={() => {
+                  // Ask the DB directly every time rather than branching on
+                  // `privateTagId`: that state is null for the whole async
+                  // window before useTags()'s mount effect resolves, and a
+                  // click in that window would route to setup — where
+                  // createVault overwrites the vault record unconditionally,
+                  // orphaning every already-encrypted bookmark's key.
+                  void (async (): Promise<void> => {
+                    try {
+                      const db = await initDB()
+                      const record = await loadVaultRecord(db)
+                      if (record === null) {
+                        setPrivateDialog('setup')
+                        return
+                      }
+                      setPrivateHint(record.hint)
+                      setPrivateDialog('unlock')
+                    } catch (e) {
+                      console.error('[AllMarks] failed to check Private vault state', e)
+                    }
+                  })()
+                }}
               />
               <TagButton
                 onClick={(): void => {
@@ -3787,6 +3923,68 @@ export function BoardRoot() {
           onCancel={(): void => setTrashConfirmOpen(false)}
         />
       )}
+      {/* Private vault dialogs. Opened from the SETTINGS drawer's PRIVATE
+          entry (setup / unlock) and from a SHARE that touches Private cards. */}
+      {privateDialog === 'setup' && (
+        <PrivateSetupDialog
+          onCreate={async (password, hint): Promise<boolean> => {
+            try {
+              const db = await initDB()
+              // Re-check for a concurrently-created vault record right
+              // before writing — closes a double-submit race where two
+              // CREATE clicks could each mint their own isPrivateVault tag,
+              // leaving privateTagId pointed at one while the vault record
+              // points at the other (final whole-branch review finding;
+              // PrivateSetupDialog's own submitting-state guard makes this
+              // very unlikely in practice, this is the structural backstop).
+              const alreadyExists = await loadVaultRecord(db)
+              if (alreadyExists) return false
+              const tag = await createTag({ name: 'Private', color: '#000000', order: tags.length, isPrivateVault: true })
+              const session = await createVault(db, tag.id, password, hint)
+              setPrivateVaultSession(session)
+              void reloadTags()
+              setPrivateDialog(null)
+              return true
+            } catch (e) {
+              console.error('[AllMarks] failed to create Private vault', e)
+              return false
+            }
+          }}
+          onCancel={(): void => setPrivateDialog(null)}
+        />
+      )}
+      {privateDialog === 'unlock' && (
+        <PrivateUnlockDialog
+          hint={privateHint}
+          onSubmit={async (password): Promise<boolean> => {
+            try {
+              const db = await initDB()
+              const session = await unlockVault(db, password)
+              if (!session) return false
+              setPrivateVaultSession(session)
+              setPrivateDialog(null)
+              return true
+            } catch (e) {
+              // Returning false (not throwing) re-enables the dialog's submit
+              // button — an uncaught throw would leave it stuck disabled.
+              console.error('[AllMarks] failed to unlock Private vault', e)
+              return false
+            }
+          }}
+          onCancel={(): void => setPrivateDialog(null)}
+        />
+      )}
+      {pendingPrivateShare && (
+        <PrivateShareConfirmDialog
+          count={pendingPrivateShare.count}
+          onConfirm={(): void => {
+            const resume = pendingPrivateShare.resume
+            setPendingPrivateShare(null)
+            void (resume === 'desktop' ? proceedCreateHostedShare() : proceedMobileCaptureAndCreate())
+          }}
+          onCancel={(): void => setPendingPrivateShare(null)}
+        />
+      )}
       {/* Tag right-click context menu (board side). Open from FilterPill
           dropdown rows or per-card TagIndicatorStrip pills. Targeted tag
           is looked up live so the menu vanishes if the tag is removed
@@ -3835,7 +4033,7 @@ export function BoardRoot() {
       <PasteSaveFeedback feedback={mergedSaveFeedback} themeId={themeId} />
       {tagMode && !isMobile && (
         <TagDropPanel
-          tags={tags}
+          tags={bulkAssignableTags}
           tagCounts={tagCounts}
           selectedCount={selectedIds.size}
           onDone={handleExitTagMode}
@@ -3847,7 +4045,7 @@ export function BoardRoot() {
       )}
       {tagMode && isMobile && (
         <BoardMobileTagBar
-          tags={tags}
+          tags={bulkAssignableTags}
           tagCounts={tagCounts}
           selectedCount={selectedIds.size}
           onAssignTag={handleAssignTagToSelection}

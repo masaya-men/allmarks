@@ -26,6 +26,8 @@ import type { MediaSlot } from '@/lib/embed/types'
 import { presetToCardWidth } from '@/lib/board/size-migration'
 import { postBookmarkDeleted } from '@/lib/board/channel'
 import { requestPersistentStorage } from './persist'
+import { resolvePrivateVisibility } from '@/lib/private/resolve-visibility'
+import { usePrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
 
 export type BoardItem = {
   readonly bookmarkId: string
@@ -153,7 +155,32 @@ function toItem(b: BookmarkRecord, c: CardRecord | undefined): BoardItem {
   }
 }
 
-export function useBoardData(): {
+/** Shared "bookmarks -> active/trashed BoardItem[]" pipeline used by both the
+ *  mount effect and `reload`. Routes through resolvePrivateVisibility first
+ *  so a locked Private-tagged bookmark never reaches toItem (indistinguishable
+ *  from not existing), and decrypted fields are overlaid before mapping when
+ *  unlocked. DESC by orderIndex = newest-saved (= highest orderIndex) appears
+ *  first on the board. Industry-standard "newest at top" matches Pocket /
+ *  Raindrop / Instapaper / mymind etc. TRASH is sorted newest-deleted-first. */
+async function buildBoardItems(
+  bookmarks: readonly BookmarkRecord[],
+  cardByBookmark: ReadonlyMap<string, CardRecord>,
+  privateTagId: string | null,
+  session: PrivateVaultSession,
+): Promise<{ active: BoardItem[]; trashed: BoardItem[] }> {
+  const visible = await resolvePrivateVisibility(bookmarks, privateTagId, session)
+  const active = visible
+    .filter((b) => !b.isDeleted)
+    .map((b) => toItem(b, cardByBookmark.get(b.id)))
+    .sort((a, b) => b.orderIndex - a.orderIndex)
+  const trashed = visible
+    .filter((b) => b.isDeleted)
+    .map((b) => toItem(b, cardByBookmark.get(b.id)))
+    .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
+  return { active, trashed }
+}
+
+export function useBoardData(privateTagId: string | null = null): {
   items: BoardItem[]
   /** Soft-deleted bookmarks (= TRASH contents). Sorted newest-first by
    *  `deletedAt`. Mutated in lockstep with `items` by persistSoftDelete /
@@ -227,6 +254,21 @@ export function useBoardData(): {
   const [deletedItems, setDeletedItems] = useState<BoardItem[]>([])
   const [loading, setLoading] = useState(true)
   const dbRef = useRef<DbLike | null>(null)
+  const privateSession = usePrivateVaultSession()
+  // The mount effect below is deps=[] (runs once, on purpose — it also runs
+  // one-shot IDB migrations that must not repeat). Its closure would
+  // otherwise capture render-1's privateTagId/privateSession (usually
+  // null/null, since useTags() resolves privateTagId asynchronously).
+  // Reading through these refs instead means the mount effect's FINAL
+  // buildBoardItems call (after several awaited IDB steps) always sees
+  // whatever value is current by the time it actually runs — closing a
+  // race where an existing Private tag could render ungated on first load
+  // if privateTagId resolved before this effect finished (final
+  // whole-branch review finding).
+  const privateTagIdRef = useRef(privateTagId)
+  privateTagIdRef.current = privateTagId
+  const privateSessionRef = useRef(privateSession)
+  privateSessionRef.current = privateSession
 
   useEffect(() => {
     let cancelled = false
@@ -284,17 +326,8 @@ export function useBoardData(): {
       const cardByBookmark = new Map<string, CardRecord>()
       for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
       if (cancelled) return
-      // DESC by orderIndex = newest-saved (= highest orderIndex) appears first
-      // on the board. Industry-standard "newest at top" matches Pocket /
-      // Raindrop / Instapaper / mymind etc.
-      const active = bookmarks
-        .filter(b => !b.isDeleted)
-        .map((b) => toItem(b, cardByBookmark.get(b.id)))
-        .sort((a, b) => b.orderIndex - a.orderIndex)
-      const trashed = bookmarks
-        .filter(b => b.isDeleted)
-        .map((b) => toItem(b, cardByBookmark.get(b.id)))
-        .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
+      const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, privateTagIdRef.current, privateSessionRef.current)
+      if (cancelled) return
       setItems(active)
       setDeletedItems(trashed)
       setLoading(false)
@@ -435,6 +468,11 @@ export function useBoardData(): {
       if (!force && !thumbnail) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
+      // Never write into a Private (encrypted) record's plaintext columns —
+      // this backfill runs off DECRYPTED items while unlocked, so without
+      // this guard a real title/thumbnail permanently lands in plaintext
+      // (final whole-branch review Critical finding).
+      if (existing.encryptedPayload) return
       if (!force && existing.thumbnail && !isXDefaultThumbnail(existing.thumbnail)) return
       // No-op when the value is already what we'd write. Without this guard,
       // force=true callers can spin React: setItems creates a fresh array
@@ -533,6 +571,7 @@ export function useBoardData(): {
       if (!db || !bookmarkId) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
+      if (existing.encryptedPayload) return
       // No-op when already at the desired value. Defense against the
       // backfill loop firing repeatedly on items.length changes — without
       // this guard each "true" call would invalidate items reference and
@@ -555,6 +594,7 @@ export function useBoardData(): {
       if (!title) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
+      if (existing.encryptedPayload) return
       if (existing.title === title) return
       await db.put('bookmarks', { ...existing, title })
       setItems((prev) =>
@@ -637,18 +677,17 @@ export function useBoardData(): {
     const cards = (await db.getAll('cards')) as CardRecord[]
     const cardByBookmark = new Map<string, CardRecord>()
     for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
-    // DESC by orderIndex — see initial load comment for rationale.
-    const active = bookmarks
-      .filter((b) => !b.isDeleted)
-      .map((b) => toItem(b, cardByBookmark.get(b.id)))
-      .sort((a, b) => b.orderIndex - a.orderIndex)
-    const trashed = bookmarks
-      .filter((b) => b.isDeleted)
-      .map((b) => toItem(b, cardByBookmark.get(b.id)))
-      .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
+    const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, privateTagId, privateSession)
     setItems(active)
     setDeletedItems(trashed)
-  }, [])
+  }, [privateTagId, privateSession])
+
+  useEffect(() => {
+    if (!dbRef.current) return
+    void reload()
+    // Only re-run when the lock state itself changes — reload is already
+    // memoized on [privateTagId, privateSession] so this stays in sync.
+  }, [privateSession, privateTagId, reload])
 
   const persistCustomWidth = useCallback(
     async (bookmarkId: string, width: number): Promise<void> => {

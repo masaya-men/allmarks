@@ -15,6 +15,8 @@ const baseProps = {
   customWidthCount: 0,
   onResetCardSizes: () => {},
   onSortNewestFirst: () => {},
+  privateStatus: 'none' as const,
+  onOpenPrivate: () => {},
 }
 
 describe('ExtensionEntry settings drawer', () => {
@@ -104,6 +106,22 @@ describe('ExtensionEntry settings drawer', () => {
     render(<ExtensionEntry {...baseProps} onOpenThemeModal={onOpenTheme} isOpen onOpenChange={vi.fn()} />)
     fireEvent.click(screen.getByTestId('open-theme-modal'))
     expect(onOpenTheme).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('PRIVATE group', () => {
+  it('renders a PRIVATE entry that calls onOpenPrivate when clicked', () => {
+    const onOpenPrivate = vi.fn()
+    render(<ExtensionEntry {...baseProps} privateStatus="none" onOpenPrivate={onOpenPrivate} isOpen onOpenChange={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('private-entry-button'))
+    expect(onOpenPrivate).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows a locked vs unlocked indicator based on privateStatus', () => {
+    const { rerender } = render(<ExtensionEntry {...baseProps} privateStatus="locked" onOpenPrivate={vi.fn()} isOpen onOpenChange={vi.fn()} />)
+    expect(screen.getByTestId('private-entry-button').textContent).toMatch(/private/i)
+    rerender(<ExtensionEntry {...baseProps} privateStatus="unlocked" onOpenPrivate={vi.fn()} isOpen onOpenChange={vi.fn()} />)
+    expect(screen.getByTestId('private-entry-button').getAttribute('data-unlocked')).toBe('true')
   })
 })
 

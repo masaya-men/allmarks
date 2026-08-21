@@ -1,0 +1,48 @@
+'use client'
+
+import { useEffect, type ReactElement } from 'react'
+import styles from './PrivateShareConfirmDialog.module.css'
+
+type Props = {
+  readonly count: number
+  readonly onConfirm: () => void
+  readonly onCancel: () => void
+}
+
+export function PrivateShareConfirmDialog({ count, onConfirm, onCancel }: Props): ReactElement {
+  // Esc to cancel
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') { e.preventDefault(); onCancel() }
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [onCancel])
+
+  return (
+    <div
+      className={styles.backdrop}
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="private-share-confirm-heading"
+      data-testid="private-share-confirm-dialog"
+      data-no-capture
+    >
+      <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
+        <div id="private-share-confirm-heading" className={styles.heading}>SHARE INCLUDES PRIVATE</div>
+        <div className={styles.body}>
+          This selection includes {count} {count === 1 ? 'item' : 'items'} from Private. Share anyway?
+        </div>
+        <div className={styles.actions}>
+          <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-share-confirm-cancel">
+            CANCEL
+          </button>
+          <button type="button" className={styles.shareBtn} onClick={onConfirm} data-testid="private-share-confirm-share">
+            SHARE
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
