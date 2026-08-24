@@ -478,4 +478,16 @@ test('Private-tagged card shows its own hover pill, same as any other tag', asyn
   const pill = card.getByTestId(`tag-pill-${privateTagId}`)
   await expect(pill).toBeVisible()
   await expect(pill).toHaveText('Private')
+
+  // 6. Regression check for the follow-up fix: right-clicking this pill must
+  // NOT open the generic TagContextMenu (RENAME/DELETE). Before this pill
+  // existed at all, right-clicking a Private tag anywhere in the app was
+  // structurally impossible (FilterPill's generic rows exclude Private, and
+  // its own pinned Private row never wires onTagContextMenu) — restoring the
+  // pill's resolvability in tagsById must not accidentally restore this menu
+  // too. CardsLayer.tsx's TagIndicatorStrip call site now skips invoking the
+  // parent's onTagContextMenu specifically when the pill's tagId is the
+  // Private tag's id.
+  await pill.click({ button: 'right' })
+  await expect(page.getByTestId('tag-context-menu')).toHaveCount(0)
 })

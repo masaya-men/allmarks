@@ -1671,7 +1671,24 @@ export function CardsLayer({
                 // user is behind the spotlight, not hovering the card).
                 isHovered={hoverActive || forceTagButtonVisible}
                 onTagClick={(tagId): void => onTagFilterToggle?.(tagId, it.bookmarkId)}
-                onTagContextMenu={onTagContextMenu}
+                // Private's pill is resolvable here (tagsById above) purely so
+                // its OWN name shows — it must NOT gain the generic tag
+                // right-click menu (TagContextMenu's RENAME/DELETE), which is
+                // structurally excluded everywhere else Private appears (never
+                // in FilterPill's generic rows, no menu wired on its own
+                // pinned Private row). Still forward a defined function when
+                // the parent supplies one, so TagIndicatorStrip's own
+                // onContextMenu still preventDefaults the native menu for every
+                // pill — the private id is just never actually routed through
+                // to the parent's openTagContextMenu.
+                onTagContextMenu={
+                  onTagContextMenu === undefined
+                    ? undefined
+                    : (e, tagId): void => {
+                        if (privateTag && tagId === privateTag.id) return
+                        onTagContextMenu(e, tagId)
+                      }
+                }
                 activeContextTagId={activeContextTagId}
                 readOnly={isTagMode}
               />
