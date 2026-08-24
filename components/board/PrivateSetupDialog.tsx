@@ -54,6 +54,12 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
         <div id="private-setup-heading" className={styles.heading}>SET UP PRIVATE</div>
+        <div className={styles.explanation} data-testid="private-setup-explanation">
+          Encrypts the title, URL, thumbnail and photos of anything tagged Private
+          with this password — the real content is never stored in plain text.
+          There is no recovery besides the hint below: if you forget the password,
+          the content stays encrypted forever.
+        </div>
         <label className={styles.label} htmlFor="private-setup-password">Password</label>
         <input
           id="private-setup-password"

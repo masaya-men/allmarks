@@ -51,6 +51,24 @@ type Props = {
   /** Cycle the ordering mode (manual → A→Z → Z→A → A→Z …). When omitted, the
    *  sort toggle is not rendered. */
   readonly onCycleTagOrder?: () => void
+  /** 3-state Private status — drives the "🔒 Private" row's tone. Always
+   *  rendered as the sort-exempt last row of the tag scroll list (never
+   *  mixed into the sortable `tags` array itself — see the tagScroll render
+   *  below). */
+  readonly privateStatus: 'none' | 'locked' | 'unlocked'
+  /** True when the active filter already includes the Private tag. */
+  readonly privateActive: boolean
+  /** The Private tag's real id once the vault exists (null before setup).
+   *  Private is deliberately excluded from the `tags` prop above (it's
+   *  rendered as its own fixed last row instead of a spot in the sortable
+   *  list), so the trigger label's tag-name lookup needs this passed
+   *  separately to resolve the id when it's the active filter — see
+   *  labelFor. */
+  readonly privateTagId: string | null
+  /** Click the Private row. The parent decides what happens (open a dialog,
+   *  or toggle the filter) based on privateStatus — this component only
+   *  renders and forwards the click. */
+  readonly onPrivateClick: () => void
 }
 
 /** Tiny editorial label for the sort toggle. manual prompts "sort"; an auto
@@ -63,8 +81,17 @@ function sortToggleLabel(mode: TagOrderMode | undefined): string {
 
 /** Chrome label vocab — fixed English across all 15 languages
  *  (= session 42 chrome-English policy, AllMarks branding aligned).
- *  The 'all' filter doubles as the brand mark — AllMarks. */
-function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>): string {
+ *  The 'all' filter doubles as the brand mark — AllMarks. `privateTagId` is
+ *  looked up separately from `tags`: the Private tag is deliberately
+ *  excluded from the `tags` array the caller passes in (it gets its own
+ *  fixed last row instead of a spot in the sortable list), so a plain
+ *  `tags.find` for its id would always miss and fall through to the '—'
+ *  stale/deleted-tag fallback — even though the id itself is perfectly
+ *  valid. Special-casing it here keeps '—' meaningful for genuinely
+ *  stale ids while still resolving the one id excluded from `tags` by
+ *  design (session 203 fix — the trigger read "—" instead of "private"
+ *  whenever the Private tag was the active filter). */
+function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>, privateTagId: string | null): string {
   switch (f.kind) {
     case 'all': return 'AllMarks'
     case 'inbox': return 'INBOX'
@@ -73,7 +100,9 @@ function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>): string {
     case 'tags': {
       // タグ名は常に小文字で表示 (= ユーザーが付けた中身)。 'AllMarks' や 'INBOX'
       // 等のアプリ枠ラベルは大文字のまま、 タグ名の枝だけ toLowerCase で揃える。
-      const names = f.tagIds.map((id) => tags.find((t) => t.id === id)?.name.toLowerCase() ?? '—')
+      const names = f.tagIds.map((id) =>
+        id === privateTagId ? 'private' : tags.find((t) => t.id === id)?.name.toLowerCase() ?? '—',
+      )
       if (names.length === 0) return 'AllMarks'
       if (names.length === 1) return names[0]
       return `${names[0]} +${names.length - 1}`
@@ -102,6 +131,7 @@ const LEAVE_GRACE_MS = 700
 export function FilterPill({
   value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId, onReorder,
   editingTagId, onRenameSubmit, onRenameCancel, tagOrderMode, onCycleTagOrder,
+  privateStatus, privateActive, privateTagId, onPrivateClick,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   /* Sticky-open pin: a click on the pill latches the menu open so it stays
@@ -146,7 +176,7 @@ export function FilterPill({
   const contextOpenRef = useRef<boolean>(activeContextTagId != null)
   useEffect(() => { contextOpenRef.current = activeContextTagId != null }, [activeContextTagId])
 
-  const effectiveLabel = labelFor(value, tags)
+  const effectiveLabel = labelFor(value, tags, privateTagId)
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
   const { display: displayLabel, triggerBurst } = useChromeScramble(effectiveLabel)
   const { display: displayCount, triggerBurst: triggerCountBurst } = useChromeScramble(effectiveCount)
@@ -385,107 +415,129 @@ export function FilterPill({
           {/* TAGS — scrollable middle region. When the list grows past
               MAX, it scrolls internally with a top/bottom fade mask (no
               raw scrollbar) so ALL stays on top and TRASH/DEAD stay pinned
-              at the bottom regardless of how many tags exist. */}
+              at the bottom regardless of how many tags exist. The header
+              (name + sort toggle) only makes sense once real tags exist, but
+              the scroll region itself always renders — Private lives inside
+              it as the sort-exempt last row, so it must render even with
+              zero real tags (user request, session 203 follow-up: Private
+              should sink below the fold as the tag count grows, exactly
+              like any other scrollable list, rather than staying pinned in
+              a separate always-visible spot). */}
           {tags.length > 0 && (
-            <>
-              <div className={styles.sectionHeader}>
-                <span>TAGS</span>
-                <span className={styles.sectionHeaderRight}>
-                  {activeTagIds.length > 0 && (
-                    <span className={styles.sectionHeaderHint}>
-                      {activeTagIds.length} OF {tags.length} · OR
-                    </span>
-                  )}
-                  {onCycleTagOrder && (
-                    <button
-                      type="button"
-                      className={styles.sortToggle}
-                      data-mode={tagOrderMode === 'manual' ? 'manual' : 'auto'}
-                      // Don't bubble to the menu's outside-click / row handlers;
-                      // just cycle the order and keep the dropdown open.
-                      onClick={(e): void => { e.stopPropagation(); onCycleTagOrder() }}
-                      title="Sort tags by name (A→Z / Z→A)"
-                      aria-label="Sort tags by name"
-                      data-testid="tag-sort-toggle"
-                    >
-                      {sortToggleLabel(tagOrderMode)}
-                    </button>
-                  )}
-                </span>
-              </div>
-              <div
-                ref={tagScrollRef}
-                className={styles.tagScroll}
-                data-card-scroll="true"
-                data-scroll-edge={tagScrollEdge}
-                onScroll={updateTagScroll}
-              >
-                {tags.map((m, index) => {
-                  const active = tagsActiveSet.has(m.id)
-                  const contextActive = activeContextTagId === m.id
-                  const n = tagCounts?.[m.id] ?? 0
-                  const isEditing = editingTagId === m.id
-                  const isDragging = drag?.id === m.id
-                  const dropBefore = drag != null && !isDragging && drag.gapIndex === index
-                  const dropAfter =
-                    drag != null && !isDragging && drag.gapIndex >= tags.length && index === tags.length - 1
-                  const cls = [
-                    styles.item,
-                    styles.tagItem,
-                    active && styles.tagItemActive,
-                    contextActive && styles.contextActive,
-                  ].filter(Boolean).join(' ')
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      className={cls}
-                      onPointerDown={(e): void => { if (!isEditing) dr.onItemPointerDown(m.id, e) }}
-                      onClick={() => {
-                        if (dr.shouldSuppressClick()) return
-                        if (!isEditing) toggleTag(m.id)
-                      }}
-                      onContextMenu={(e): void => {
-                        if (!onTagContextMenu) return
-                        e.preventDefault()
-                        e.stopPropagation()
-                        onTagContextMenu({ clientX: e.clientX, clientY: e.clientY }, m.id)
-                      }}
-                      aria-pressed={active}
-                      data-tag-id={m.id}
-                      data-dragging={isDragging ? 'true' : undefined}
-                      data-drop-before={dropBefore ? 'true' : undefined}
-                      data-drop-after={dropAfter ? 'true' : undefined}
-                      style={isDragging && drag ? { transform: `translateY(${drag.offset}px)`, position: 'relative', zIndex: 3 } : undefined}
-                    >
-                      <span className={styles.tagDot} data-active={active ? 'true' : 'false'} aria-hidden="true" />
-                      {isEditing && onRenameSubmit && onRenameCancel ? (
-                        <InlineTagRenameInput
-                          className={styles.renameInput}
-                          duplicateClassName={styles.renameInputDuplicate}
-                          currentName={m.name}
-                          otherNames={tags.filter((t) => t.id !== m.id).map((t) => t.name)}
-                          onSubmit={(name): void => onRenameSubmit(m.id, name)}
-                          onCancel={onRenameCancel}
-                          data-testid={`tag-rename-input-${m.id}`}
-                        />
-                      ) : (
-                        <>
-                          <span className={styles.itemLabel}>{m.name}</span>
-                          <span
-                            className={styles.itemCount}
-                            data-empty={n === 0 ? 'true' : 'false'}
-                          >
-                            {String(n).padStart(3, '0')}
-                          </span>
-                        </>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </>
+            <div className={styles.sectionHeader}>
+              <span>TAGS</span>
+              <span className={styles.sectionHeaderRight}>
+                {activeTagIds.length > 0 && (
+                  <span className={styles.sectionHeaderHint}>
+                    {activeTagIds.length} OF {tags.length} · OR
+                  </span>
+                )}
+                {onCycleTagOrder && (
+                  <button
+                    type="button"
+                    className={styles.sortToggle}
+                    data-mode={tagOrderMode === 'manual' ? 'manual' : 'auto'}
+                    // Don't bubble to the menu's outside-click / row handlers;
+                    // just cycle the order and keep the dropdown open.
+                    onClick={(e): void => { e.stopPropagation(); onCycleTagOrder() }}
+                    title="Sort tags by name (A→Z / Z→A)"
+                    aria-label="Sort tags by name"
+                    data-testid="tag-sort-toggle"
+                  >
+                    {sortToggleLabel(tagOrderMode)}
+                  </button>
+                )}
+              </span>
+            </div>
           )}
+          <div
+            ref={tagScrollRef}
+            className={styles.tagScroll}
+            data-card-scroll="true"
+            data-scroll-edge={tagScrollEdge}
+            onScroll={updateTagScroll}
+          >
+            {tags.map((m, index) => {
+              const active = tagsActiveSet.has(m.id)
+              const contextActive = activeContextTagId === m.id
+              const n = tagCounts?.[m.id] ?? 0
+              const isEditing = editingTagId === m.id
+              const isDragging = drag?.id === m.id
+              const dropBefore = drag != null && !isDragging && drag.gapIndex === index
+              const dropAfter =
+                drag != null && !isDragging && drag.gapIndex >= tags.length && index === tags.length - 1
+              const cls = [
+                styles.item,
+                styles.tagItem,
+                active && styles.tagItemActive,
+                contextActive && styles.contextActive,
+              ].filter(Boolean).join(' ')
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={cls}
+                  onPointerDown={(e): void => { if (!isEditing) dr.onItemPointerDown(m.id, e) }}
+                  onClick={() => {
+                    if (dr.shouldSuppressClick()) return
+                    if (!isEditing) toggleTag(m.id)
+                  }}
+                  onContextMenu={(e): void => {
+                    if (!onTagContextMenu) return
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onTagContextMenu({ clientX: e.clientX, clientY: e.clientY }, m.id)
+                  }}
+                  aria-pressed={active}
+                  data-tag-id={m.id}
+                  data-dragging={isDragging ? 'true' : undefined}
+                  data-drop-before={dropBefore ? 'true' : undefined}
+                  data-drop-after={dropAfter ? 'true' : undefined}
+                  style={isDragging && drag ? { transform: `translateY(${drag.offset}px)`, position: 'relative', zIndex: 3 } : undefined}
+                >
+                  <span className={styles.tagDot} data-active={active ? 'true' : 'false'} aria-hidden="true" />
+                  {isEditing && onRenameSubmit && onRenameCancel ? (
+                    <InlineTagRenameInput
+                      className={styles.renameInput}
+                      duplicateClassName={styles.renameInputDuplicate}
+                      currentName={m.name}
+                      otherNames={tags.filter((t) => t.id !== m.id).map((t) => t.name)}
+                      onSubmit={(name): void => onRenameSubmit(m.id, name)}
+                      onCancel={onRenameCancel}
+                      data-testid={`tag-rename-input-${m.id}`}
+                    />
+                  ) : (
+                    <>
+                      <span className={styles.itemLabel}>{m.name}</span>
+                      <span
+                        className={styles.itemCount}
+                        data-empty={n === 0 ? 'true' : 'false'}
+                      >
+                        {String(n).padStart(3, '0')}
+                      </span>
+                    </>
+                  )}
+                </button>
+              )
+            })}
+            {/* Private — sort-exempt, always the LAST row in the scroll
+                region regardless of tagOrderMode (manual / A→Z / Z→A). It's
+                a sibling of the mapped tag buttons above, not a separately
+                sorted entry, so it never participates in useDragReorder's
+                hit-testing (that hook only queries `[data-tag-id]`, which
+                this button deliberately doesn't carry) or the A→Z/Z→A
+                toggle (which only ever reorders the `tags` array). */}
+            <button
+              type="button"
+              className={`${styles.item} ${styles.privateItem} ${privateActive ? styles.active : ''}`.trim()}
+              data-private-status={privateStatus}
+              data-testid="filter-pill-private"
+              onClick={onPrivateClick}
+            >
+              <span className={styles.privateIcon} aria-hidden="true">🔒</span>
+              <span className={styles.itemLabel}>Private</span>
+            </button>
+          </div>
 
           {/* TRASH + DEAD LINKS — pinned at the bottom, always visible so
               the user can see how many items are pending cleanup without

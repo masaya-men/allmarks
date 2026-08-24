@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactElement } from 'rea
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { computeTagScrollEdge } from '@/lib/board/tag-scroll-edge'
 import type { TagRecord } from '@/lib/storage/indexeddb'
+import { PRIVATE_DROP_KEY } from '@/lib/private/apply-tag-change'
 import styles from './TagDropPanel.module.css'
 
 type Props = {
@@ -27,6 +28,8 @@ type Props = {
   readonly onCommitNewTag: (name: string) => void
   /** Abandon the inline create input (Esc / empty blur). */
   readonly onCancelNewTag: () => void
+  /** 3-state Private status — drives the pinned Private row's tone. */
+  readonly privateStatus: 'none' | 'locked' | 'unlocked'
 }
 
 /** Right-edge tag panel for TAG MODE. Styled as the FilterPill dropdown's twin
@@ -44,6 +47,7 @@ export function TagDropPanel({
   onStartNewTag,
   onCommitNewTag,
   onCancelNewTag,
+  privateStatus,
 }: Props): ReactElement {
   const [name, setName] = useState('')
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -147,6 +151,23 @@ export function TagDropPanel({
               <span className={styles.tagCount}>{String(tagCounts[t.id] ?? 0).padStart(3, '0')}</span>
             </div>
           ))}
+          {/* Private — always the LAST row inside the scrolling list (sibling
+              of the mapped tag rows above), so it sinks below the fold as the
+              real tag count grows instead of staying pinned in a fixed spot.
+              Still hit-tested the same way as any other [data-tag-id] drop
+              target (CardsLayer's drag hit-test is a live
+              document.elementFromPoint lookup, unaffected by which container
+              this row lives in or its current scroll position). */}
+          <div
+            className={styles.tagItem}
+            data-tag-id={PRIVATE_DROP_KEY}
+            data-private-status={privateStatus}
+            data-testid="tag-drop-private"
+            title="Private"
+          >
+            <span className={styles.privateIcon} aria-hidden="true">🔒</span>
+            <span className={styles.tagLabel}>Private</span>
+          </div>
         </div>
       </div>
     </div>

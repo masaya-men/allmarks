@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { seedDb, firstRunSuppressors, type SeedRecord } from './helpers/seed-db'
+import { seedDb, firstRunSuppressors, DB_NAME, type SeedRecord } from './helpers/seed-db'
 
 // Private vault (Phase 1) end-to-end coverage — task 15 of the private-vault
 // plan. Locators below are sourced from the real shipped components (read
@@ -10,14 +10,22 @@ import { seedDb, firstRunSuppressors, type SeedRecord } from './helpers/seed-db'
 //   - components/board/PrivateUnlockDialog.tsx: private-unlock-dialog/cancel/submit,
 //     input at #private-unlock-password
 //   - components/board/PrivateShareConfirmDialog.tsx: private-share-confirm-dialog/cancel/share
-//   - components/board/CardsLayer.tsx (~1655-1730): the ONLY still-valid way to
-//     assign the Private tag to a card is the per-card "+ TAG" popover
+//   - components/board/CardsLayer.tsx (~1655-1740): a card's "+ TAG" popover
 //     (data-testid="card-add-tag-button", hover-revealed, pointer-events:none
-//     until hovered) -> TagAddPopover chip click (onAddExisting -> handleTagToggle,
-//     which branches on tagId === privateTagId to call the real
-//     addPrivateTag/removePrivateTag encrypting path). TagDropPanel (drag-drop)
-//     and BoardMobileTagBar (bulk) both deliberately exclude the Private tag
-//     post security-fix, so they are NOT used here.
+//     until hovered) -> TagAddPopover now renders a dedicated pinned
+//     data-testid="tag-add-popover-private" chip (privateEntry prop), routed
+//     through BoardRoot's handlePrivateEntry — NOT the generic
+//     onAddExisting/handleTagToggle path used by ordinary tags.
+//   - components/board/TagDropPanel.tsx: MANAGE TAGS' right-edge panel now
+//     also renders a pinned data-testid="tag-drop-private" row
+//     (data-tag-id="__private__", CardsLayer's generic drag hit-test treats
+//     it like any other [data-tag-id] drop target) for batch-encrypting the
+//     current card selection.
+//   - components/board/BoardMobileTagBar.tsx: same batch-encrypt path on
+//     mobile via a tap on data-testid="mobile-tag-private".
+//   - components/board/FilterPill.tsx: a pinned data-testid="filter-pill-private"
+//     row (below TRASH/DEAD LINKS) in every state — not-set-up/locked open the
+//     setup/unlock dialog with auto-resume, unlocked toggles the filter.
 //   - components/board/FilterPill.tsx: filter-pill (trigger) / filter-pill-menu
 //     (always-mounted dropdown), tag rows render the tag's own name as their
 //     label text (see labelFor/itemLabel) — verified against
@@ -78,6 +86,54 @@ function seedOneBookmark(): SeedRecord[] {
   ]
 }
 
+/** Two alive, untagged bookmarks + their cards — same shape as
+ *  seedOneBookmark, distinct ids/urls, for the batch-encrypt (multi-select)
+ *  test below. */
+function seedTwoBookmarks(): SeedRecord[] {
+  const now = new Date().toISOString()
+  const ids = [BOOKMARK_ID, 'priv-b-1']
+  return ids.flatMap((id, i) => [
+    {
+      store: 'bookmarks',
+      value: {
+        id,
+        url: `https://example.com/private-vault-e2e-${i}`,
+        title: `Private vault e2e card ${i}`,
+        description: '',
+        thumbnail: '',
+        favicon: '',
+        siteName: '',
+        type: 'website',
+        savedAt: now,
+        tags: [],
+        displayMode: null,
+        ogpStatus: 'fetched',
+        sizePreset: 'S',
+        orderIndex: i,
+        linkStatus: 'alive',
+        lastCheckedAt: Date.now(),
+      },
+    },
+    {
+      store: 'cards',
+      value: {
+        id: `priv-c-${i}`,
+        bookmarkId: id,
+        folderId: '',
+        x: i * 260,
+        y: 0,
+        rotation: 0,
+        scale: 1,
+        zIndex: i,
+        gridIndex: i,
+        isManuallyPlaced: false,
+        width: 240,
+        height: 180,
+      },
+    },
+  ] as SeedRecord[])
+}
+
 /** Open the unified right-docked SETTINGS drawer (ExtensionEntry's
  *  ChromeDrawer). Mirrors tests/e2e/board-theme.spec.ts's
  *  "switching to paper-atelier..." test (extension-settings ->
@@ -129,13 +185,11 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   // the collage remove ×), not the pointer-events gate.
   await card.hover()
   await card.getByTestId('card-add-tag-button').click({ force: true })
-  // The popover's existing-tag chip renders as plain text `tag.name` (has:false)
-  // or `✓ ${tag.name}` (has:true) — TagAddPopover/index.tsx renderExistingChip.
-  // A heuristic "+ Private" NEW-tag suggestion could also appear (our title
-  // contains the word "Private"), but that renders as "+ Private" (chipNew),
-  // which an exact-text match for "Private" does not match — so this is
-  // unambiguous even if the suggestion engine fires.
-  await card.getByText('Private', { exact: true }).click()
+  // Private Phase 2 (s203): the popover no longer offers Private as a generic
+  // chip (TagAddPopover/index.tsx renderExistingChip) — it's a dedicated,
+  // always-rendered privateEntry slot instead, routed through BoardRoot's
+  // handlePrivateEntry (not onAddExisting/handleTagToggle).
+  await card.getByTestId('tag-add-popover-private').click()
   // Containment is immediate, not merely a post-reload effect: the moment
   // the write lands, BoardRoot's `items` state updates and filteredItems
   // (lib/board/filter.ts's privateGatePasses) drops any item carrying the
@@ -156,13 +210,13 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
 
   // 5. Locked: the bookmark must not render at all (lib/board/filter.ts's
   // privateGatePasses excludes it from the default ALL view outright — not
-  // just visually hidden), and the Private tag must not appear in FilterPill
-  // (useTags().tags filters isPrivateVault rows out while privateSession is
-  // null). The dropdown doesn't need to be open for a DOM-presence check —
-  // FilterPill's menu is always mounted (FilterPill.tsx comment ~109-111).
+  // just visually hidden). The Private ROW ITSELF is Phase 2 (s203)
+  // always-visible chrome, though — it stays in FilterPill's DOM in every
+  // state, rendered with a 'locked' tone instead of being removed.
   await expect(card).toHaveCount(0)
-  const privateTagLabel = page.getByTestId('filter-pill-menu').getByText('Private', { exact: true })
-  await expect(privateTagLabel).toHaveCount(0)
+  const privateRow = page.getByTestId('filter-pill-private')
+  await expect(privateRow).toBeVisible()
+  await expect(privateRow).toHaveAttribute('data-private-status', 'locked')
 
   // 6. SETTINGS -> PRIVATE -> enter the password -> UNLOCK.
   await openSettings(page)
@@ -182,12 +236,12 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('extension-settings-drawer')).toHaveCount(0)
 
-  // 7. Click the Private tag in FilterPill — now visible in the tag list —
-  // and assert the bookmark reappears. Clicking the pill toggles it open +
-  // sticky (FilterPill.tsx pill onClick), independent of hover timing.
+  // 7. Click the Private row in FilterPill — now unlocked-toned — and assert
+  // the bookmark reappears. Clicking the pill toggles it open + sticky
+  // (FilterPill.tsx pill onClick), independent of hover timing.
   await page.getByTestId('filter-pill').click()
-  await expect(privateTagLabel).toHaveCount(1)
-  await privateTagLabel.click()
+  await expect(privateRow).toHaveAttribute('data-private-status', 'unlocked')
+  await privateRow.click()
   await expect(card).toBeVisible()
 
   // 8. Containment: switch to the ALL view (tags filter has only this one
@@ -203,8 +257,7 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   // SHARE. Desktop flow verified against tests/e2e/board-share-polish.spec.ts's
   // "still uses the arrange stage with ShareSelectBar -> ShareToast" test.
   await page.getByTestId('filter-pill').click()
-  await expect(privateTagLabel).toHaveCount(1)
-  await privateTagLabel.click()
+  await privateRow.click()
   await expect(card).toBeVisible()
   // Toggling a tag row (unlike ALL/TRASH/DEAD) leaves the dropdown open
   // (FilterPill.tsx toggleTag never touches `open`) — it now overlaps
@@ -235,4 +288,335 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   await expect(confirmDialog).toHaveCount(0)
   await expect(page.getByTestId('share-toast-ready')).toHaveCount(0)
   await expect(page.getByTestId('share-toast-create')).toHaveText('CREATE')
+})
+
+test('FilterPill Private row opens setup when not set up, and resumes as a filter toggle', async ({ page }) => {
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  const card = page.locator(`[data-bookmark-id="${BOOKMARK_ID}"]`)
+  await expect(card).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTestId('filter-pill').click()
+  const privateRow = page.getByTestId('filter-pill-private')
+  await expect(privateRow).toHaveAttribute('data-private-status', 'none')
+  await privateRow.click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+  await expect(privateRow).toHaveAttribute('data-private-status', 'unlocked')
+  // Resumed automatically as a `filter` action, straight into the active tag
+  // filter — no second click needed. A `tags`-kind filter keeps every card
+  // MOUNTED though (BoardRoot.tsx filteredItems comment: the CRT shutdown
+  // animation needs non-matching cards to stay in the DOM), so the seeded
+  // card — carrying no tags yet — is marked tagged-out rather than removed.
+  await expect(card.locator('[data-tagged-out]')).toHaveAttribute('data-tagged-out', 'true')
+  // FilterPill's trigger label special-cases the Private tag id (labelFor,
+  // FilterPill.tsx) so it reads "private" here instead of falling through to
+  // the stale/deleted-tag "—" fallback — tagsExcludingPrivate never contains
+  // the Private tag itself, so a plain tags.find lookup for its id would
+  // always miss otherwise.
+  await expect(page.getByTestId('filter-pill')).toContainText('private')
+})
+
+test('card + button Private chip opens setup when not set up, and resumes as an encrypt', async ({ page }) => {
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  const card = page.locator(`[data-bookmark-id="${BOOKMARK_ID}"]`)
+  await expect(card).toBeVisible({ timeout: 15_000 })
+
+  await card.hover()
+  // Wait for the button's hover-reveal opacity transition to actually settle
+  // before force-clicking it — CardsLayer.tsx fades it in over 120ms, and a
+  // click mid-transition can land before the popover's own open-state update
+  // has taken effect (observed while iterating on this test: the popover
+  // simply never opened when this wasn't awaited first).
+  await expect(card.getByTestId('card-add-tag-button')).toHaveCSS('opacity', '1')
+  // Plain/force click both real-hit-test the browser at the button's screen
+  // coordinates, and ResizeHandle's 56x56 corner .hint square (z-index 25,
+  // pointer-events: auto, ResizeHandle.module.css) geometrically fully
+  // contains the +TAG button's own box at this card size — so either kind of
+  // click can land on the resize hint instead, silently never opening the
+  // popover (observed while iterating on this test). dispatchEvent bypasses
+  // hit-testing and fires 'click' straight on the button node, which is all
+  // its onClick handler needs (it doesn't depend on a preceding real
+  // pointerdown/mousedown).
+  await card.getByTestId('card-add-tag-button').dispatchEvent('click')
+  const privateChip = page.getByTestId('tag-add-popover-private')
+  await expect(privateChip).toHaveAttribute('data-private-status', 'none')
+  await privateChip.click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+  // Resumed automatically as a `toggle-tag` action — the card is now
+  // Private and vanishes from the default (non-Private) board view.
+  await expect(card).toHaveCount(0)
+})
+
+test('mobile TAG MODE: tapping Private after selecting two cards encrypts them both', async ({ page }) => {
+  await seedDb(page, [...firstRunSuppressors(), ...seedTwoBookmarks()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  // Create the vault at the default (desktop) viewport — openSettings' trigger
+  // (extension-settings) is desktop chrome; BoardMobileNav has its own
+  // mobile-nav-settings entry, but reusing the already-established helper here
+  // is simpler and the vault-creation UI itself isn't what this test targets.
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+
+  // Now switch to mobile for the TAG MODE tap-to-assign path (< 640px
+  // breakpoint, lib/board/use-is-mobile.ts).
+  await page.setViewportSize({ width: 390, height: 844 })
+  // Next.js's own dev-mode indicator (<nextjs-portal>, a shadow-DOM custom
+  // element with a real fixed-position badge inside its shadow root that its
+  // OWN host element's bounding rect doesn't reflect) sits bottom-left of the
+  // viewport at this mobile size — the same corner as the leftmost
+  // BoardMobileNav icon. dispatchEvent bypasses hit-testing (fires 'click'
+  // straight on the node instead of a real OS-level click at its screen
+  // coordinates), which a plain/force .click() can't: both still real-hit-
+  // test the browser and can land on the dev-only overlay instead (observed
+  // while iterating on this test — a force click "succeeded" but tagMode
+  // never actually engaged, so the very next card tap opened the Lightbox
+  // instead of registering a TAG MODE selection).
+  await page.getByTestId('mobile-nav-tag').dispatchEvent('click')
+  const cardA = page.locator(`[data-bookmark-id="${BOOKMARK_ID}"]`)
+  const cardB = page.locator('[data-bookmark-id="priv-b-1"]')
+  await cardA.click()
+  await cardB.click()
+  const privateChip = page.getByTestId('mobile-tag-private')
+  await expect(privateChip).toHaveAttribute('data-private-status', 'unlocked')
+  await privateChip.click()
+  await page.getByTestId('mobile-tag-done').click()
+  await page.reload()
+  await expect(cardA).toHaveCount(0)
+  await expect(cardB).toHaveCount(0)
+})
+
+test('Private-tagged card shows its own hover pill, same as any other tag', async ({ page }) => {
+  // Regression coverage for the bug fixed alongside this test: CardsLayer.tsx's
+  // tagsById map was built ONLY from `allTags` (= BoardRoot's tagsExcludingPrivate,
+  // deliberately Private-free so the "+TAG" popover's generic chip list and
+  // tag-filter dropdowns don't double-offer Private). CardsLayer separately
+  // reused that SAME map to resolve a card's tags[] ids into TagRecords for the
+  // per-card hover pill strip (TagIndicatorStrip) — so tagsById.get(privateTagId)
+  // was always undefined and the Private pill silently never rendered, unlike
+  // every other tag. Fix: CardsLayer now takes a dedicated `privateTag` prop
+  // (BoardRoot resolves it from useTags()'s own unfiltered `tags`) merged into
+  // tagsById ALONGSIDE allTags, never into allTags itself.
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  const card = page.locator(`[data-bookmark-id="${BOOKMARK_ID}"]`)
+  await expect(card).toBeVisible({ timeout: 15_000 })
+
+  // 1. SETTINGS -> PRIVATE -> setup dialog -> CREATE (same flow as the first
+  // test in this file).
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+
+  // 2. Tag the seeded card Private via the per-card "+ TAG" popover.
+  await card.hover()
+  await card.getByTestId('card-add-tag-button').click({ force: true })
+  await card.getByTestId('tag-add-popover-private').click()
+  // Vanishes from the default ALL view immediately (privateGatePasses) — same
+  // assertion as the first test in this file.
+  await expect(card).toHaveCount(0)
+
+  // 3. Switch the board's filter to the Private tag itself so the card (now
+  // genuinely Private-tagged, vault unlocked) is back on screen to hover.
+  await page.getByTestId('filter-pill').click()
+  const privateRow = page.getByTestId('filter-pill-private')
+  await expect(privateRow).toHaveAttribute('data-private-status', 'unlocked')
+  await privateRow.click()
+  await expect(card).toBeVisible()
+  // Toggling a tag row leaves the dropdown open (FilterPill.tsx toggleTag
+  // never touches `open`) — close it before hovering the card underneath.
+  await page.keyboard.press('Escape')
+
+  // 4. No UI element exposes the Private tag's real id directly (FilterPill's
+  // own row only special-cases the id internally for its label — see
+  // labelFor/privateTagId in FilterPill.tsx), so read it straight from
+  // IndexedDB's 'tags' store, the same direct-IDB pattern this suite's sibling
+  // specs (e.g. board-b-11-source-hide.spec.ts) use for verification reads.
+  const privateTagId = await page.evaluate(async (dbName) => {
+    return new Promise<string | null>((resolve, reject) => {
+      const req = indexedDB.open(dbName)
+      req.onsuccess = (): void => {
+        const db = req.result
+        const getAll = db.transaction(['tags'], 'readonly').objectStore('tags').getAll()
+        getAll.onsuccess = (): void => {
+          const found = (getAll.result as Array<{ id: string; isPrivateVault?: boolean }>)
+            .find((t) => t.isPrivateVault === true)
+          db.close()
+          resolve(found?.id ?? null)
+        }
+        getAll.onerror = (): void => reject(getAll.error)
+      }
+      req.onerror = (): void => reject(req.error)
+    })
+  }, DB_NAME)
+  expect(privateTagId).not.toBeNull()
+
+  // 5. Hover the card and assert its own Private pill renders — the actual
+  // regression check. TagIndicatorStrip's pill testid pattern is
+  // `tag-pill-${tag.id}` (components/board/TagIndicatorStrip.tsx ~189), text
+  // content is the tag's own name (~209: `{tag.name}`), and the Private tag
+  // is always created with name 'Private' (BoardRoot.tsx's createTag call).
+  await card.hover()
+  const pill = card.getByTestId(`tag-pill-${privateTagId}`)
+  await expect(pill).toBeVisible()
+  await expect(pill).toHaveText('Private')
+
+  // 6. Regression check for the follow-up fix: right-clicking this pill must
+  // NOT open the generic TagContextMenu (RENAME/DELETE). Before this pill
+  // existed at all, right-clicking a Private tag anywhere in the app was
+  // structurally impossible (FilterPill's generic rows exclude Private, and
+  // its own pinned Private row never wires onTagContextMenu) — restoring the
+  // pill's resolvability in tagsById must not accidentally restore this menu
+  // too. CardsLayer.tsx's TagIndicatorStrip call site now skips invoking the
+  // parent's onTagContextMenu specifically when the pill's tagId is the
+  // Private tag's id.
+  await pill.click({ button: 'right' })
+  await expect(page.getByTestId('tag-context-menu')).toHaveCount(0)
+})
+
+// Regression coverage for the stale-reload-closure race (private-vault-phase2
+// discovery batch): PrivateSetupDialog.onCreate / PrivateUnlockDialog.onSubmit
+// call `void runPrivateAction(...)` fire-and-forget. `runPrivateAction` is a
+// useCallback captured at whatever render produced THAT dialog's JSX — i.e.
+// BEFORE the vault existed, before privateTagId/privateSession updated in
+// React state. Its internal `await reload()` used to call reload() with ZERO
+// args, so it fell back to reload's OWN closed-over privateTagId/privateSession
+// (still null/null from that stale render), even though executePrivateAction
+// itself got the FRESH tagId/session as real parameters and encrypted
+// correctly. resolvePrivateVisibility(bookmarks, null, null) short-circuits
+// on its first line and returns bookmarks completely unchanged — so the
+// just-encrypted bookmark (title/url/thumbnail blanked, real content only in
+// encryptedPayload) landed in `items` as-is, rendering as an unopenable
+// PlaceholderCard. Fix: runPrivateAction now calls `reload(resolvedPrivateTagId,
+// session)`, passing the SAME fresh values it already received, so it can no
+// longer matter whether its own reload closure is stale.
+//
+// A real, non-empty thumbnail is required to reproduce this (unlike
+// seedOneBookmark's thumbnail: '', which would render as PlaceholderCard
+// regardless of the bug) — via.placeholder.com is mocked to a 1x1 PNG so the
+// test doesn't depend on real network access (same fix as
+// tests/e2e/board-i-07-multi-image.spec.ts: the app's Service Worker
+// intercepts image fetches itself, bypassing page.route() unless blocked).
+test.describe('stale-reload-closure race (real thumbnail, immediate filter click)', () => {
+  test.use({ serviceWorkers: 'block' })
+
+  const TINY_PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  )
+  const RACE_BOOKMARK_ID = 'priv-race-b-0'
+  const THUMB_URL = 'https://via.placeholder.com/400x300?text=private-race'
+
+  function seedOneBookmarkWithThumbnail(): SeedRecord[] {
+    const now = new Date().toISOString()
+    return [
+      {
+        store: 'bookmarks',
+        value: {
+          id: RACE_BOOKMARK_ID,
+          url: 'https://example.com/private-vault-race-e2e',
+          title: 'Private vault race e2e card',
+          description: '',
+          thumbnail: THUMB_URL,
+          favicon: '',
+          siteName: '',
+          type: 'website',
+          savedAt: now,
+          tags: [],
+          displayMode: null,
+          ogpStatus: 'fetched',
+          sizePreset: 'S',
+          orderIndex: 0,
+          linkStatus: 'alive',
+          lastCheckedAt: Date.now(),
+        },
+      },
+      {
+        store: 'cards',
+        value: {
+          id: 'priv-race-c-0',
+          bookmarkId: RACE_BOOKMARK_ID,
+          folderId: '',
+          x: 0,
+          y: 0,
+          rotation: 0,
+          scale: 1,
+          zIndex: 0,
+          gridIndex: 0,
+          isManuallyPlaced: false,
+          width: 240,
+          height: 180,
+        },
+      },
+    ]
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await page.route('https://via.placeholder.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: TINY_PNG }),
+    )
+  })
+
+  test('card keeps its real thumbnail after setup-then-immediate-filter-click, not a blank PlaceholderCard', async ({ page }) => {
+    // 1. Seed a bookmark with a REAL thumbnail, load /board, confirm the
+    // baseline: a real ImageCard with a non-empty <img src>, not a placeholder.
+    await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmarkWithThumbnail()])
+    await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+    const card = page.locator(`[data-bookmark-id="${RACE_BOOKMARK_ID}"]`)
+    await expect(card).toBeVisible({ timeout: 15_000 })
+    const thumb = card.locator('img[data-active="true"]')
+    await expect(thumb).toHaveAttribute('src', THUMB_URL)
+    await expect(card.locator('[class*="placeholderCard"]')).toHaveCount(0)
+
+    // 2. Trigger the not-set-up Private toggle from the card's own popover
+    // (hover-revealed +TAG button -> dedicated Private chip) -> opens
+    // PrivateSetupDialog with a `toggle-tag` pendingPrivateAction (NOT
+    // `filter` — that's the kind that actually calls reload() on completion).
+    await card.hover()
+    await card.getByTestId('card-add-tag-button').click({ force: true })
+    await card.getByTestId('tag-add-popover-private').click()
+    const setupDialog = page.getByTestId('private-setup-dialog')
+    await expect(setupDialog).toBeVisible()
+    await page.locator('#private-setup-password').fill(PASSWORD)
+    await page.locator('#private-setup-confirm').fill(PASSWORD)
+
+    // 3. Submit, then IMMEDIATELY (no extra wait inserted) click the
+    // FilterPill's Private row to filter down to just the Private tag — the
+    // exact race trigger. Playwright's own .click() actionability waits are
+    // the only "wait" here, matching the live-reproduced sequence.
+    await page.getByTestId('private-setup-create').click()
+    await page.getByTestId('filter-pill').click()
+    await page.getByTestId('filter-pill-private').click()
+
+    // 4. Give the async writes/reloads a short, realistic window to settle —
+    // long enough for everything to finish, short enough to still land inside
+    // the race window that used to fail (a full extra reload only happens on
+    // page.reload(), never automatically).
+    await page.waitForTimeout(500)
+
+    // 5. The card must show its real thumbnail again — NOT a blank
+    // PlaceholderCard rendered from the stale reload's null/null-gated,
+    // still-blanked-at-rest bookmark record.
+    await expect(card).toBeVisible({ timeout: 5_000 })
+    await expect(thumb).toHaveAttribute('src', THUMB_URL)
+    await expect(card.locator('[class*="placeholderCard"]')).toHaveCount(0)
+  })
 })

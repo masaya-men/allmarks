@@ -228,7 +228,7 @@ export function useBoardData(privateTagId: string | null = null): {
   persistMediaSlots: (bookmarkId: string, mediaSlots: readonly MediaSlot[]) => Promise<void>
   persistTags: (bookmarkId: string, tags: readonly string[]) => Promise<void>
   persistDisplayMode: (bookmarkId: string, displayMode: BoardItem['displayMode']) => Promise<void>
-  reload: () => Promise<void>
+  reload: (overridePrivateTagId?: string | null, overrideSession?: PrivateVaultSession) => Promise<void>
   /** Write a manual resize: stores the new width AND flips
    *  `customCardWidth` to true so the header SizePicker stops touching
    *  this card. Called from ResizeHandle pointerup. */
@@ -670,14 +670,26 @@ export function useBoardData(privateTagId: string | null = null): {
     [],
   )
 
-  const reload = useCallback(async (): Promise<void> => {
+  const reload = useCallback(async (
+    overridePrivateTagId?: string | null,
+    overrideSession?: PrivateVaultSession,
+  ): Promise<void> => {
     const db = dbRef.current
     if (!db) return
     const bookmarks = await getAllBookmarks(db as Parameters<typeof getAllBookmarks>[0])
     const cards = (await db.getAll('cards')) as CardRecord[]
     const cardByBookmark = new Map<string, CardRecord>()
     for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
-    const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, privateTagId, privateSession)
+    // Callers that just created/unlocked the vault (runPrivateAction) already
+    // have the FRESH tagId/session as real parameters — React state hasn't
+    // re-rendered with them yet at that call site, so this hook's own
+    // privateTagId/privateSession closure can still be stale (null/null).
+    // Passing them through here (instead of relying on this callback's
+    // memoized closure) avoids a race where the stale reload wins and
+    // renders the just-encrypted bookmark with its blanked-at-rest fields.
+    const effectivePrivateTagId = overridePrivateTagId !== undefined ? overridePrivateTagId : privateTagId
+    const effectiveSession = overrideSession !== undefined ? overrideSession : privateSession
+    const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, effectivePrivateTagId, effectiveSession)
     setItems(active)
     setDeletedItems(trashed)
   }, [privateTagId, privateSession])

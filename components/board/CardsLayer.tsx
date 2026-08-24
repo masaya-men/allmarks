@@ -313,6 +313,28 @@ type CardsLayerProps = {
   /** All tags the user has created so far. Drives the popover's "existing tags"
    *  list. */
   readonly allTags?: readonly TagRecord[]
+  /** 3-state Private status, forwarded into each card's TagAddPopover as
+   *  `privateEntry.status`. Optional alongside allTags/onTagToggle/onTagCreate
+   *  — views structurally incapable of tagging (e.g. the share receiver)
+   *  omit the whole trio rather than fake it. */
+  readonly privateStatus?: 'none' | 'locked' | 'unlocked'
+  /** The Private tag's id, or null if the vault has never been set up.
+   *  Used only to compute `privateEntry.isTagged` per card — never mixed
+   *  into `allTags`. */
+  readonly privateTagId?: string | null
+  /** Fired when a card's TagAddPopover Private chip is clicked. The parent
+   *  (BoardRoot) routes this through handlePrivateEntry. Its presence gates
+   *  whether a card's popover gets a privateEntry at all. */
+  readonly onPrivateToggle?: (bookmarkId: string, currentlyTagged: boolean) => void
+  /** The resolved Private TagRecord (name/color/etc.), or null/undefined
+   *  when not applicable. Used ONLY to make tagsById resolve the Private
+   *  tag for the per-card hover pill strip (TagIndicatorStrip) — NEVER
+   *  merged into allTags itself, so it still can't appear in the "+TAG"
+   *  popover's generic chip list or any tag-filter dropdown. A
+   *  Private-tagged card can only ever be visible while the vault is
+   *  unlocked (resolvePrivateVisibility excludes it entirely while
+   *  locked), so this is only ever non-null in the unlocked state. */
+  readonly privateTag?: TagRecord | null
   /** Toggle an existing tag on a bookmark — add if absent, remove if present. */
   readonly onTagToggle?: (bookmarkId: string, tagId: string) => Promise<void> | void
   /** Create a brand-new tag and immediately attach it to the bookmark.
@@ -402,6 +424,10 @@ export function CardsLayer({
   motionEnabled,
   matchedBookmarkIds,
   allTags,
+  privateStatus,
+  privateTagId,
+  onPrivateToggle,
+  privateTag,
   onTagToggle,
   onTagCreate,
   onTagFilterToggle,
@@ -510,8 +536,12 @@ export function CardsLayer({
   // Per-render lookup so the per-card TagIndicatorStrip can resolve
   // bookmark.tags[] (ids) into the TagRecord shape it needs in O(1).
   const tagsById = useMemo<ReadonlyMap<string, TagRecord>>(
-    () => new Map((allTags ?? []).map((t) => [t.id, t])),
-    [allTags],
+    () => {
+      const map = new Map((allTags ?? []).map((t) => [t.id, t]))
+      if (privateTag) map.set(privateTag.id, privateTag)
+      return map
+    },
+    [allTags, privateTag],
   )
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.
@@ -1641,7 +1671,24 @@ export function CardsLayer({
                 // user is behind the spotlight, not hovering the card).
                 isHovered={hoverActive || forceTagButtonVisible}
                 onTagClick={(tagId): void => onTagFilterToggle?.(tagId, it.bookmarkId)}
-                onTagContextMenu={onTagContextMenu}
+                // Private's pill is resolvable here (tagsById above) purely so
+                // its OWN name shows — it must NOT gain the generic tag
+                // right-click menu (TagContextMenu's RENAME/DELETE), which is
+                // structurally excluded everywhere else Private appears (never
+                // in FilterPill's generic rows, no menu wired on its own
+                // pinned Private row). Still forward a defined function when
+                // the parent supplies one, so TagIndicatorStrip's own
+                // onContextMenu still preventDefaults the native menu for every
+                // pill — the private id is just never actually routed through
+                // to the parent's openTagContextMenu.
+                onTagContextMenu={
+                  onTagContextMenu === undefined
+                    ? undefined
+                    : (e, tagId): void => {
+                        if (privateTag && tagId === privateTag.id) return
+                        onTagContextMenu(e, tagId)
+                      }
+                }
                 activeContextTagId={activeContextTagId}
                 readOnly={isTagMode}
               />
@@ -1724,6 +1771,14 @@ export function CardsLayer({
                         beginPopoverClose()
                       }}
                       onClose={beginPopoverClose}
+                      privateEntry={onPrivateToggle ? {
+                        status: privateStatus ?? 'none',
+                        isTagged: privateTagId != null && it.tags.includes(privateTagId),
+                        onClick: (): void => onPrivateToggle(
+                          it.bookmarkId,
+                          privateTagId != null && it.tags.includes(privateTagId),
+                        ),
+                      } : undefined}
                     />
                   </div>
                 )}

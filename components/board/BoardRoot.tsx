@@ -63,9 +63,12 @@ import { MotionToggle } from './MotionToggle'
 import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ExtensionEntry } from './ExtensionEntry'
-import { usePrivateVaultSession, setPrivateVaultSession } from '@/lib/private/vault-session'
+import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
 import { createVault, unlockVault, loadVaultRecord } from '@/lib/private/vault-store'
-import { addPrivateTag, removePrivateTag } from '@/lib/private/apply-tag-change'
+import {
+  addPrivateTag, removePrivateTag, resolvePrivateStatus, executePrivateAction, PRIVATE_DROP_KEY,
+  type PendingPrivateAction, type PrivateStatus,
+} from '@/lib/private/apply-tag-change'
 import { PrivateSetupDialog } from './PrivateSetupDialog'
 import { PrivateUnlockDialog } from './PrivateUnlockDialog'
 import { PrivateShareConfirmDialog } from './PrivateShareConfirmDialog'
@@ -252,12 +255,21 @@ export function BoardRoot() {
   // can continue the right one.
   const [pendingPrivateShare, setPendingPrivateShare] =
     useState<{ count: number; resume: 'desktop' | 'mobile' } | null>(null)
+  // Deferred Private action (toggle one bookmark / apply the filter / batch-
+  // encrypt many bookmarks) — set when the user interacted with a "🔒
+  // Private" row while the vault is not-set-up or locked, and resumed
+  // automatically once PrivateSetupDialog/PrivateUnlockDialog succeeds
+  // (see handlePrivateEntry below).
+  const [pendingPrivateAction, setPendingPrivateAction] = useState<PendingPrivateAction | null>(null)
   // Declared before useBoardData because useBoardData(privateTagId) consumes
   // it (the vault-locked exclusion happens inside the data hook).
   const {
     tags, privateTagId, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
     orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
   } = useTags()
+  // Always-current 3-state Private status — drives every "🔒 Private" row's
+  // click/drop routing (handlePrivateEntry) and its rendered tone.
+  const privateStatus: PrivateStatus = resolvePrivateStatus(privateTagId, privateSession)
   const {
     items,
     deletedItems,
@@ -1672,22 +1684,7 @@ export function BoardRoot() {
       const item = items.find((it) => it.bookmarkId === bookmarkId)
       if (!item) return
       const db = await initDB()
-      if (tagId === privateTagId) {
-        // Private tag: adding encrypts the bookmark's sensitive fields and
-        // blanks the plaintext columns; removing decrypts them back.
-        if (privateSession === null) {
-          // Unreachable in practice — the Private tag is excluded from `tags`
-          // whenever the vault is locked, so it can't be offered as a toggle
-          // target. Defensive guard, not a normal-path branch.
-          console.warn('[allmarks] Private tag toggled while locked — ignoring')
-          return
-        }
-        if (item.tags.includes(tagId)) {
-          await removePrivateTag(db, bookmarkId, tagId, privateSession)
-        } else {
-          await addPrivateTag(db, bookmarkId, tagId, privateSession)
-        }
-      } else if (item.tags.includes(tagId)) {
+      if (item.tags.includes(tagId)) {
         await removeTagFromBookmark(db, bookmarkId, tagId)
       } else {
         await addTagToBookmark(db, bookmarkId, tagId)
@@ -1695,7 +1692,7 @@ export function BoardRoot() {
       }
       await reload()
     },
-    [items, reload, privateTagId, privateSession],
+    [items, reload],
   )
 
   const handleTagCreate = useCallback(
@@ -2084,6 +2081,68 @@ export function BoardRoot() {
     })()
   }, [])
 
+  /** Executes an already-unlocked Private action and reports/reloads. `filter`
+   *  has no IDB write — it just flips the board's active tag filter. Callers
+   *  that resume from a just-completed setup/unlock dialog pass the freshly
+   *  returned tagId/session directly (React state hasn't re-rendered with
+   *  them yet at that point); the direct/unlocked call site below passes the
+   *  current `privateTagId`/`privateSession`. */
+  const runPrivateAction = useCallback(
+    async (action: PendingPrivateAction, resolvedPrivateTagId: string, session: PrivateVaultSession): Promise<void> => {
+      if (action.kind === 'filter') {
+        handleFilterChange(toggleTagInFilter(activeFilter, resolvedPrivateTagId))
+        setPendingPrivateAction(null)
+        return
+      }
+      const db = await initDB()
+      const { failed } = await executePrivateAction(db, action, resolvedPrivateTagId, session)
+      if (failed.length > 0) {
+        setToast({
+          message: `Could not encrypt ${failed.length} card${failed.length === 1 ? '' : 's'}`,
+          nonce: Date.now(),
+        })
+      }
+      setPendingPrivateAction(null)
+      // Pass the SAME fresh tagId/session this function itself received as
+      // parameters — overrides reload()'s own possibly-stale closure (this
+      // useCallback can still be the pre-vault-creation closure when invoked
+      // fire-and-forget from PrivateSetupDialog.onCreate / PrivateUnlockDialog
+      // .onSubmit, before React re-renders with the new privateTagId/session).
+      await reload(resolvedPrivateTagId, session)
+    },
+    [activeFilter, handleFilterChange, reload],
+  )
+
+  /** Single entry point for every "🔒 Private" row/chip's click or drop.
+   *  Not-set-up -> opens PrivateSetupDialog; locked -> opens
+   *  PrivateUnlockDialog (both remember `action` as pendingPrivateAction, to
+   *  auto-resume on success); unlocked -> executes immediately, no dialog. */
+  const handlePrivateEntry = useCallback(
+    (action: PendingPrivateAction): void => {
+      if (privateTagId === null) {
+        setPendingPrivateAction(action)
+        setPrivateDialog('setup')
+        return
+      }
+      if (privateSession === null) {
+        setPendingPrivateAction(action)
+        // Mirrors onOpenPrivate's SETTINGS-path hint load below — the hint is
+        // the only recovery mechanism this feature has (no backdoor, by
+        // design), so it must appear on these 3 new entry points too, not
+        // just the pre-existing SETTINGS entry (final whole-branch review
+        // finding).
+        void (async (): Promise<void> => {
+          const record = await loadVaultRecord(await initDB())
+          if (record) setPrivateHint(record.hint)
+        })()
+        setPrivateDialog('unlock')
+        return
+      }
+      void runPrivateAction(action, privateTagId, privateSession)
+    },
+    [privateTagId, privateSession, runPrivateAction],
+  )
+
   const handleThemeChange = useCallback((next: ThemeId): void => {
     setThemeId(next)
     void (async (): Promise<void> => {
@@ -2326,9 +2385,13 @@ export function BoardRoot() {
         setTagDraft({ cardIds: [...cardIds] })
         return
       }
+      if (targetKey === PRIVATE_DROP_KEY) {
+        handlePrivateEntry({ kind: 'batch-encrypt', bookmarkIds: [...cardIds] })
+        return
+      }
       assignTagToCards(targetKey, cardIds)
     },
-    [assignTagToCards],
+    [assignTagToCards, handlePrivateEntry],
   )
 
   // Mobile TAG MODE: tap a tag in the bottom bar → assign it to the whole
@@ -2338,6 +2401,13 @@ export function BoardRoot() {
     if (selectedIds.size === 0) return
     assignTagToCards(tagId, [...selectedIds])
   }, [assignTagToCards, selectedIds])
+
+  // Mobile TAG MODE Private tap: batch-encrypt the whole current selection
+  // (no-op when nothing is selected, mirrors handleAssignTagToSelection).
+  const handleAssignPrivateToSelection = useCallback((): void => {
+    if (selectedIds.size === 0) return
+    handlePrivateEntry({ kind: 'batch-encrypt', bookmarkIds: [...selectedIds] })
+  }, [selectedIds, handlePrivateEntry])
 
   // "+ NEW TAG" clicked (no drag) — create a tag for the current selection.
   const handleStartNewTag = useCallback((): void => {
@@ -3194,14 +3264,16 @@ export function BoardRoot() {
     return () => observer.disconnect()
   }, [items])
 
-  // Private must never be a drag/bulk-assign target — assigning it triggers
-  // real per-card encryption and should only happen via the individual card's
-  // own tag toggle (handleTagToggle -> addPrivateTag), never a casual
-  // multi-card drop or tap. Both bulk-tagging UIs route through
-  // assignTagToCards -> persistTags, a plain tag-array write that does NOT
-  // encrypt, so offering Private there would look protected while leaving
-  // title/url/thumbnail in plaintext.
-  const bulkAssignableTags = useMemo(
+  // Private is never mixed into the generic tag list any UI enumerates —
+  // every surface that shows/assigns "ordinary" tags (FilterPill, the card
+  // + button popover, MANAGE TAGS drag-and-drop, mobile tag bar) gets this
+  // Private-free list, and renders its own dedicated "🔒 Private" row/chip
+  // separately (routed through handlePrivateEntry, not this array). Assigning
+  // Private through the *generic* tag machinery would use assignTagToCards ->
+  // persistTags, a plain tag-array write that does NOT encrypt — offering it
+  // there would look protected while leaving title/url/thumbnail in
+  // plaintext.
+  const tagsExcludingPrivate = useMemo(
     () => (privateTagId === null ? tags : tags.filter((t) => t.id !== privateTagId)),
     [tags, privateTagId],
   )
@@ -3309,7 +3381,7 @@ export function BoardRoot() {
     <FilterPill
       value={activeFilter}
       onChange={handleFilterChange}
-      tags={tags}
+      tags={tagsExcludingPrivate}
       counts={sidebarCounts}
       tagCounts={tagCounts}
       tagsMatchCount={isTagsFilter(activeFilter) ? matchedBookmarkIds?.size ?? 0 : undefined}
@@ -3324,6 +3396,10 @@ export function BoardRoot() {
       onRenameCancel={(): void => setTagRenameTarget(null)}
       tagOrderMode={tagOrderMode}
       onCycleTagOrder={(): void => { void setTagOrderMode(nextTagOrderMode(tagOrderMode)) }}
+      privateStatus={privateStatus}
+      privateActive={privateTagId !== null && isTagsFilter(activeFilter) && activeFilter.tagIds.includes(privateTagId)}
+      privateTagId={privateTagId}
+      onPrivateClick={(): void => handlePrivateEntry({ kind: 'filter' })}
     />
   )
 
@@ -3520,7 +3596,7 @@ export function BoardRoot() {
                 onResetCardSizes={() => { void handleResetCardSizes() }}
                 onSortNewestFirst={() => { void handleSortNewestFirst() }}
                 motion={isMobile ? { enabled: motionEnabled, onToggle: handleToggleMotion } : undefined}
-                privateStatus={privateTagId === null ? 'none' : privateSession === null ? 'locked' : 'unlocked'}
+                privateStatus={privateStatus}
                 onOpenPrivate={() => {
                   // Ask the DB directly every time rather than branching on
                   // `privateTagId`: that state is null for the whole async
@@ -3728,7 +3804,7 @@ export function BoardRoot() {
                   isMobile={isMobile}
                   motionEnabled={motionEnabled}
                   matchedBookmarkIds={matchedBookmarkIds}
-                  allTags={tags}
+                  allTags={tagsExcludingPrivate}
                   onTagToggle={handleTagToggle}
                   onTagCreate={handleTagCreate}
                   onTagFilterToggle={(tagId, sourceBookmarkId): void => {
@@ -3737,6 +3813,19 @@ export function BoardRoot() {
                   }}
                   onTagContextMenu={openTagContextMenu}
                   activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
+                  privateStatus={privateStatus}
+                  privateTagId={privateTagId}
+                  // `tags` (unlike tagsExcludingPrivate passed as allTags above)
+                  // is useTags()'s own list, which includes the Private tag's
+                  // real record whenever the vault is unlocked — that's exactly
+                  // what CardsLayer needs to resolve the per-card hover pill for
+                  // a Private-tagged card. While locked, `tags` omits it too, so
+                  // this resolves to null — a no-op, since no Private-tagged
+                  // card is ever rendered while locked anyway.
+                  privateTag={privateTagId !== null ? (tags.find((t) => t.id === privateTagId) ?? null) : null}
+                  onPrivateToggle={(bookmarkId, currentlyTagged): void =>
+                    handlePrivateEntry({ kind: 'toggle-tag', bookmarkId, currentlyTagged })
+                  }
                   isScrolling={isScrolling}
                   entryAnimCycle={entryAnimCycle}
                   forceTagButtonVisible={forceCardTagVisible}
@@ -3942,15 +4031,22 @@ export function BoardRoot() {
               const tag = await createTag({ name: 'Private', color: '#000000', order: tags.length, isPrivateVault: true })
               const session = await createVault(db, tag.id, password, hint)
               setPrivateVaultSession(session)
-              void reloadTags()
+              // Awaited (not fire-and-forget) so `privateTagId` in React state
+              // is settled before the resumed action's own reload() runs —
+              // otherwise the board can render the just-encrypted card with
+              // blanked fields for one frame while privateGatePasses still
+              // sees the stale (null) privateTagId (final whole-branch review
+              // finding).
+              await reloadTags()
               setPrivateDialog(null)
+              if (pendingPrivateAction) void runPrivateAction(pendingPrivateAction, tag.id, session)
               return true
             } catch (e) {
               console.error('[AllMarks] failed to create Private vault', e)
               return false
             }
           }}
-          onCancel={(): void => setPrivateDialog(null)}
+          onCancel={(): void => { setPrivateDialog(null); setPendingPrivateAction(null) }}
         />
       )}
       {privateDialog === 'unlock' && (
@@ -3963,6 +4059,7 @@ export function BoardRoot() {
               if (!session) return false
               setPrivateVaultSession(session)
               setPrivateDialog(null)
+              if (pendingPrivateAction && privateTagId) void runPrivateAction(pendingPrivateAction, privateTagId, session)
               return true
             } catch (e) {
               // Returning false (not throwing) re-enables the dialog's submit
@@ -3971,7 +4068,7 @@ export function BoardRoot() {
               return false
             }
           }}
-          onCancel={(): void => setPrivateDialog(null)}
+          onCancel={(): void => { setPrivateDialog(null); setPendingPrivateAction(null) }}
         />
       )}
       {pendingPrivateShare && (
@@ -4033,7 +4130,7 @@ export function BoardRoot() {
       <PasteSaveFeedback feedback={mergedSaveFeedback} themeId={themeId} />
       {tagMode && !isMobile && (
         <TagDropPanel
-          tags={bulkAssignableTags}
+          tags={tagsExcludingPrivate}
           tagCounts={tagCounts}
           selectedCount={selectedIds.size}
           onDone={handleExitTagMode}
@@ -4041,11 +4138,12 @@ export function BoardRoot() {
           onStartNewTag={handleStartNewTag}
           onCommitNewTag={handleCommitNewTag}
           onCancelNewTag={handleCancelNewTag}
+          privateStatus={privateStatus}
         />
       )}
       {tagMode && isMobile && (
         <BoardMobileTagBar
-          tags={bulkAssignableTags}
+          tags={tagsExcludingPrivate}
           tagCounts={tagCounts}
           selectedCount={selectedIds.size}
           onAssignTag={handleAssignTagToSelection}
@@ -4054,6 +4152,8 @@ export function BoardRoot() {
           onStartNewTag={handleStartNewTag}
           onCommitNewTag={handleCommitNewTag}
           onCancelNewTag={handleCancelNewTag}
+          privateStatus={privateStatus}
+          onPrivateTap={handleAssignPrivateToSelection}
         />
       )}
       {sharePhase === 'select' && !isMobile && (
