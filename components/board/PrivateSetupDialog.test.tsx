@@ -50,4 +50,9 @@ describe('PrivateSetupDialog', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(onCancel).toHaveBeenCalledTimes(1)
   })
+
+  it('explains what setting up Private does, before any input', () => {
+    render(<PrivateSetupDialog onCreate={vi.fn()} onCancel={vi.fn()} />)
+    expect(screen.getByTestId('private-setup-explanation')).toBeInTheDocument()
+  })
 })
