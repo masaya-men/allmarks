@@ -2121,6 +2121,15 @@ export function BoardRoot() {
       }
       if (privateSession === null) {
         setPendingPrivateAction(action)
+        // Mirrors onOpenPrivate's SETTINGS-path hint load below — the hint is
+        // the only recovery mechanism this feature has (no backdoor, by
+        // design), so it must appear on these 3 new entry points too, not
+        // just the pre-existing SETTINGS entry (final whole-branch review
+        // finding).
+        void (async (): Promise<void> => {
+          const record = await loadVaultRecord(await initDB())
+          if (record) setPrivateHint(record.hint)
+        })()
         setPrivateDialog('unlock')
         return
       }
@@ -4009,7 +4018,13 @@ export function BoardRoot() {
               const tag = await createTag({ name: 'Private', color: '#000000', order: tags.length, isPrivateVault: true })
               const session = await createVault(db, tag.id, password, hint)
               setPrivateVaultSession(session)
-              void reloadTags()
+              // Awaited (not fire-and-forget) so `privateTagId` in React state
+              // is settled before the resumed action's own reload() runs —
+              // otherwise the board can render the just-encrypted card with
+              // blanked fields for one frame while privateGatePasses still
+              // sees the stale (null) privateTagId (final whole-branch review
+              // finding).
+              await reloadTags()
               setPrivateDialog(null)
               if (pendingPrivateAction) void runPrivateAction(pendingPrivateAction, tag.id, session)
               return true
@@ -4018,7 +4033,7 @@ export function BoardRoot() {
               return false
             }
           }}
-          onCancel={(): void => setPrivateDialog(null)}
+          onCancel={(): void => { setPrivateDialog(null); setPendingPrivateAction(null) }}
         />
       )}
       {privateDialog === 'unlock' && (
@@ -4040,7 +4055,7 @@ export function BoardRoot() {
               return false
             }
           }}
-          onCancel={(): void => setPrivateDialog(null)}
+          onCancel={(): void => { setPrivateDialog(null); setPendingPrivateAction(null) }}
         />
       )}
       {pendingPrivateShare && (

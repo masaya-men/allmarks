@@ -164,12 +164,22 @@ export async function executePrivateAction(
   session: PrivateVaultSession,
 ): Promise<{ readonly failed: readonly string[] }> {
   if (action.kind === 'toggle-tag') {
-    if (action.currentlyTagged) {
-      await removePrivateTag(db, action.bookmarkId, privateTagId, session)
-    } else {
-      await addPrivateTag(db, action.bookmarkId, privateTagId, session)
+    try {
+      if (action.currentlyTagged) {
+        await removePrivateTag(db, action.bookmarkId, privateTagId, session)
+      } else {
+        await addPrivateTag(db, action.bookmarkId, privateTagId, session)
+      }
+      return { failed: [] }
+    } catch {
+      // Matches addPrivateTagBatch's per-card contract (see below): never
+      // throw, always report failures via the return value. A throw here
+      // would propagate out of the fire-and-forget `void runPrivateAction(...)`
+      // call in BoardRoot.tsx as an unhandled rejection, skipping the
+      // setPendingPrivateAction(null) cleanup that must always run (final
+      // whole-branch review finding).
+      return { failed: [action.bookmarkId] }
     }
-    return { failed: [] }
   }
   const { failed } = await addPrivateTagBatch(db, action.bookmarkIds, privateTagId, session)
   return { failed }

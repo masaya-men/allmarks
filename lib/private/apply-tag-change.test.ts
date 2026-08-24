@@ -202,6 +202,20 @@ describe('private/apply-tag-change', () => {
       expect(stored.title).toBe('My Title')
     })
 
+    it('toggle-tag reports a failure instead of throwing (session null)', async () => {
+      await db.put('bookmarks', makeBookmark('b9'))
+      // session === null makes addPrivateTag throw ("vault is locked"); the
+      // toggle-tag branch must catch it and report the id as failed, never
+      // propagate — symmetric with addPrivateTagBatch's per-card contract
+      // (final whole-branch review finding).
+      const result = await executePrivateAction(
+        db, { kind: 'toggle-tag', bookmarkId: 'b9', currentlyTagged: false }, 'private-tag-id', null,
+      )
+      expect(result.failed).toEqual(['b9'])
+      const stored = await db.get('bookmarks', 'b9')
+      expect(stored.encryptedPayload).toBeUndefined()
+    })
+
     it('batch-encrypt delegates to addPrivateTagBatch and surfaces failed ids', async () => {
       await db.put('bookmarks', makeBookmark('b8'))
       const session = await makeSession()
