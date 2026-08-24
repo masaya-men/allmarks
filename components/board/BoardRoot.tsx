@@ -3384,6 +3384,7 @@ export function BoardRoot() {
       onCycleTagOrder={(): void => { void setTagOrderMode(nextTagOrderMode(tagOrderMode)) }}
       privateStatus={privateStatus}
       privateActive={privateTagId !== null && isTagsFilter(activeFilter) && activeFilter.tagIds.includes(privateTagId)}
+      privateTagId={privateTagId}
       onPrivateClick={(): void => handlePrivateEntry({ kind: 'filter' })}
     />
   )

@@ -149,6 +149,7 @@ describe('chrome no-gap coverage — every theme renders every chrome panel', ()
           counts={{ all: 0, inbox: 0, archive: 0, dead: 0 }}
           privateStatus="none"
           privateActive={false}
+          privateTagId={null}
           onPrivateClick={(): void => {}}
         />,
       )

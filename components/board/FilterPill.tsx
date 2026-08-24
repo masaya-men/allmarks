@@ -56,6 +56,12 @@ type Props = {
   readonly privateStatus: 'none' | 'locked' | 'unlocked'
   /** True when the active filter already includes the Private tag. */
   readonly privateActive: boolean
+  /** The Private tag's real id once the vault exists (null before setup).
+   *  Private is deliberately excluded from the `tags` prop above (its own
+   *  pinned row replaces a spot in the sortable list), so the trigger
+   *  label's tag-name lookup needs this passed separately to resolve the
+   *  id when it's the active filter — see labelFor. */
+  readonly privateTagId: string | null
   /** Click the Private row. The parent decides what happens (open a dialog,
    *  or toggle the filter) based on privateStatus — this component only
    *  renders and forwards the click. */
@@ -72,8 +78,17 @@ function sortToggleLabel(mode: TagOrderMode | undefined): string {
 
 /** Chrome label vocab — fixed English across all 15 languages
  *  (= session 42 chrome-English policy, AllMarks branding aligned).
- *  The 'all' filter doubles as the brand mark — AllMarks. */
-function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>): string {
+ *  The 'all' filter doubles as the brand mark — AllMarks. `privateTagId` is
+ *  looked up separately from `tags`: the Private tag is deliberately
+ *  excluded from the `tags` array the caller passes in (it gets its own
+ *  pinned row instead of a spot in the sortable list), so a plain
+ *  `tags.find` for its id would always miss and fall through to the '—'
+ *  stale/deleted-tag fallback — even though the id itself is perfectly
+ *  valid. Special-casing it here keeps '—' meaningful for genuinely
+ *  stale ids while still resolving the one id excluded from `tags` by
+ *  design (session 203 fix — the trigger read "—" instead of "private"
+ *  whenever the Private tag was the active filter). */
+function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>, privateTagId: string | null): string {
   switch (f.kind) {
     case 'all': return 'AllMarks'
     case 'inbox': return 'INBOX'
@@ -82,7 +97,9 @@ function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>): string {
     case 'tags': {
       // タグ名は常に小文字で表示 (= ユーザーが付けた中身)。 'AllMarks' や 'INBOX'
       // 等のアプリ枠ラベルは大文字のまま、 タグ名の枝だけ toLowerCase で揃える。
-      const names = f.tagIds.map((id) => tags.find((t) => t.id === id)?.name.toLowerCase() ?? '—')
+      const names = f.tagIds.map((id) =>
+        id === privateTagId ? 'private' : tags.find((t) => t.id === id)?.name.toLowerCase() ?? '—',
+      )
       if (names.length === 0) return 'AllMarks'
       if (names.length === 1) return names[0]
       return `${names[0]} +${names.length - 1}`
@@ -111,7 +128,7 @@ const LEAVE_GRACE_MS = 700
 export function FilterPill({
   value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId, onReorder,
   editingTagId, onRenameSubmit, onRenameCancel, tagOrderMode, onCycleTagOrder,
-  privateStatus, privateActive, onPrivateClick,
+  privateStatus, privateActive, privateTagId, onPrivateClick,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   /* Sticky-open pin: a click on the pill latches the menu open so it stays
@@ -156,7 +173,7 @@ export function FilterPill({
   const contextOpenRef = useRef<boolean>(activeContextTagId != null)
   useEffect(() => { contextOpenRef.current = activeContextTagId != null }, [activeContextTagId])
 
-  const effectiveLabel = labelFor(value, tags)
+  const effectiveLabel = labelFor(value, tags, privateTagId)
   const effectiveCount = countDigits(value, counts, tagsMatchCount)
   const { display: displayLabel, triggerBurst } = useChromeScramble(effectiveLabel)
   const { display: displayCount, triggerBurst: triggerCountBurst } = useChromeScramble(effectiveCount)

@@ -312,10 +312,13 @@ test('FilterPill Private row opens setup when not set up, and resumes as a filte
   // MOUNTED though (BoardRoot.tsx filteredItems comment: the CRT shutdown
   // animation needs non-matching cards to stay in the DOM), so the seeded
   // card — carrying no tags yet — is marked tagged-out rather than removed.
-  // (FilterPill's own trigger label falls back to "—": tagsExcludingPrivate
-  // never contains the Private tag itself, so labelFor's tags.find lookup
-  // for the id always misses — a real, separate quirk, not asserted here.)
   await expect(card.locator('[data-tagged-out]')).toHaveAttribute('data-tagged-out', 'true')
+  // FilterPill's trigger label special-cases the Private tag id (labelFor,
+  // FilterPill.tsx) so it reads "private" here instead of falling through to
+  // the stale/deleted-tag "—" fallback — tagsExcludingPrivate never contains
+  // the Private tag itself, so a plain tags.find lookup for its id would
+  // always miss otherwise.
+  await expect(page.getByTestId('filter-pill')).toContainText('private')
 })
 
 test('card + button Private chip opens setup when not set up, and resumes as an encrypt', async ({ page }) => {
