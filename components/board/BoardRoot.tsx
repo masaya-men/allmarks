@@ -1684,22 +1684,7 @@ export function BoardRoot() {
       const item = items.find((it) => it.bookmarkId === bookmarkId)
       if (!item) return
       const db = await initDB()
-      if (tagId === privateTagId) {
-        // Private tag: adding encrypts the bookmark's sensitive fields and
-        // blanks the plaintext columns; removing decrypts them back.
-        if (privateSession === null) {
-          // Unreachable in practice — the Private tag is excluded from `tags`
-          // whenever the vault is locked, so it can't be offered as a toggle
-          // target. Defensive guard, not a normal-path branch.
-          console.warn('[allmarks] Private tag toggled while locked — ignoring')
-          return
-        }
-        if (item.tags.includes(tagId)) {
-          await removePrivateTag(db, bookmarkId, tagId, privateSession)
-        } else {
-          await addPrivateTag(db, bookmarkId, tagId, privateSession)
-        }
-      } else if (item.tags.includes(tagId)) {
+      if (item.tags.includes(tagId)) {
         await removeTagFromBookmark(db, bookmarkId, tagId)
       } else {
         await addTagToBookmark(db, bookmarkId, tagId)
@@ -1707,7 +1692,7 @@ export function BoardRoot() {
       }
       await reload()
     },
-    [items, reload, privateTagId, privateSession],
+    [items, reload],
   )
 
   const handleTagCreate = useCallback(
@@ -3793,7 +3778,7 @@ export function BoardRoot() {
                   isMobile={isMobile}
                   motionEnabled={motionEnabled}
                   matchedBookmarkIds={matchedBookmarkIds}
-                  allTags={tags}
+                  allTags={tagsExcludingPrivate}
                   onTagToggle={handleTagToggle}
                   onTagCreate={handleTagCreate}
                   onTagFilterToggle={(tagId, sourceBookmarkId): void => {
@@ -3802,6 +3787,11 @@ export function BoardRoot() {
                   }}
                   onTagContextMenu={openTagContextMenu}
                   activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
+                  privateStatus={privateStatus}
+                  privateTagId={privateTagId}
+                  onPrivateToggle={(bookmarkId, currentlyTagged): void =>
+                    handlePrivateEntry({ kind: 'toggle-tag', bookmarkId, currentlyTagged })
+                  }
                   isScrolling={isScrolling}
                   entryAnimCycle={entryAnimCycle}
                   forceTagButtonVisible={forceCardTagVisible}

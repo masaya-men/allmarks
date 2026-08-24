@@ -313,6 +313,16 @@ type CardsLayerProps = {
   /** All tags the user has created so far. Drives the popover's "existing tags"
    *  list. */
   readonly allTags?: readonly TagRecord[]
+  /** 3-state Private status, forwarded into each card's TagAddPopover as
+   *  `privateEntry.status`. */
+  readonly privateStatus: 'none' | 'locked' | 'unlocked'
+  /** The Private tag's id, or null if the vault has never been set up.
+   *  Used only to compute `privateEntry.isTagged` per card — never mixed
+   *  into `allTags`. */
+  readonly privateTagId: string | null
+  /** Fired when a card's TagAddPopover Private chip is clicked. The parent
+   *  (BoardRoot) routes this through handlePrivateEntry. */
+  readonly onPrivateToggle: (bookmarkId: string, currentlyTagged: boolean) => void
   /** Toggle an existing tag on a bookmark — add if absent, remove if present. */
   readonly onTagToggle?: (bookmarkId: string, tagId: string) => Promise<void> | void
   /** Create a brand-new tag and immediately attach it to the bookmark.
@@ -402,6 +412,9 @@ export function CardsLayer({
   motionEnabled,
   matchedBookmarkIds,
   allTags,
+  privateStatus,
+  privateTagId,
+  onPrivateToggle,
   onTagToggle,
   onTagCreate,
   onTagFilterToggle,
@@ -1724,6 +1737,14 @@ export function CardsLayer({
                         beginPopoverClose()
                       }}
                       onClose={beginPopoverClose}
+                      privateEntry={{
+                        status: privateStatus,
+                        isTagged: privateTagId !== null && it.tags.includes(privateTagId),
+                        onClick: (): void => onPrivateToggle(
+                          it.bookmarkId,
+                          privateTagId !== null && it.tags.includes(privateTagId),
+                        ),
+                      }}
                     />
                   </div>
                 )}

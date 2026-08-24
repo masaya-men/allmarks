@@ -34,11 +34,22 @@ export interface TagAddPopoverProps {
    *  scrolls internally instead of growing. The board leaves this off and
    *  keeps the default wrap layout. */
   compact?: boolean
+  /** Always-rendered "🔒 Private" chip, pinned at the very bottom (below the
+   *  new-tag input). Separate from allTags/suggestedEntries — Private is
+   *  never mixed into the generic chip list (see BoardRoot's
+   *  tagsExcludingPrivate doc comment). Omitted entirely by callers that
+   *  should not offer Private at all (e.g. the PopOut/extension quick-tag
+   *  popovers — Phase 2 scope ②, not built yet). */
+  privateEntry?: {
+    readonly status: 'none' | 'locked' | 'unlocked'
+    readonly isTagged: boolean
+    readonly onClick: () => void
+  }
 }
 
 export function TagAddPopover({
   allTags, currentTagIds, suggestedEntries, onAddExisting, onAddNew, onClose,
-  closing = false, onExited, compact = false,
+  closing = false, onExited, compact = false, privateEntry,
 }: TagAddPopoverProps): JSX.Element {
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -183,6 +194,19 @@ export function TagAddPopover({
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleEnter}
       />
+      {privateEntry && (
+        <button
+          type="button"
+          className={styles.chipPrivate}
+          data-private-status={privateEntry.status}
+          data-has={privateEntry.isTagged ? 'true' : 'false'}
+          data-testid="tag-add-popover-private"
+          onMouseDown={(e): void => e.preventDefault()}
+          onClick={privateEntry.onClick}
+        >
+          🔒 {privateEntry.isTagged ? '✓ ' : ''}Private
+        </button>
+      )}
     </div>
   )
 }

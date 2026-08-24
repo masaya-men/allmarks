@@ -120,3 +120,25 @@
 .input:focus {
   border-color: rgba(40, 241, 0, 0.6);
 }
+.chipPrivate {
+  appearance: none;
+  border: none;
+  background: transparent;
+  align-self: flex-start;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 4px 8px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color 120ms;
+}
+.chipPrivate:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+.chipPrivate[data-private-status='unlocked'] {
+  color: rgba(255, 255, 255, 0.85);
+}
+.chipPrivate[data-has='true'] {
+  color: #28F100;
+}
