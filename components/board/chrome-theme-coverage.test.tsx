@@ -147,6 +147,9 @@ describe('chrome no-gap coverage — every theme renders every chrome panel', ()
           onChange={(): void => {}}
           tags={[]}
           counts={{ all: 0, inbox: 0, archive: 0, dead: 0 }}
+          privateStatus="none"
+          privateActive={false}
+          onPrivateClick={(): void => {}}
         />,
       )
       expect(getByTestId('filter-pill'), `theme=${id}`).toBeTruthy()

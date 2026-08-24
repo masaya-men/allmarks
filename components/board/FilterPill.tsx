@@ -51,6 +51,15 @@ type Props = {
   /** Cycle the ordering mode (manual → A→Z → Z→A → A→Z …). When omitted, the
    *  sort toggle is not rendered. */
   readonly onCycleTagOrder?: () => void
+  /** 3-state Private status — drives the pinned "🔒 Private" row's tone.
+   *  Always rendered (never mixed into the sortable `tags` list above). */
+  readonly privateStatus: 'none' | 'locked' | 'unlocked'
+  /** True when the active filter already includes the Private tag. */
+  readonly privateActive: boolean
+  /** Click the Private row. The parent decides what happens (open a dialog,
+   *  or toggle the filter) based on privateStatus — this component only
+   *  renders and forwards the click. */
+  readonly onPrivateClick: () => void
 }
 
 /** Tiny editorial label for the sort toggle. manual prompts "sort"; an auto
@@ -102,6 +111,7 @@ const LEAVE_GRACE_MS = 700
 export function FilterPill({
   value, onChange, tags, counts, tagCounts, tagsMatchCount, onTagContextMenu, activeContextTagId, onReorder,
   editingTagId, onRenameSubmit, onRenameCancel, tagOrderMode, onCycleTagOrder,
+  privateStatus, privateActive, onPrivateClick,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
   /* Sticky-open pin: a click on the pill latches the menu open so it stays
@@ -509,6 +519,16 @@ export function FilterPill({
               <span className={styles.itemCount}>{String(counts.dead).padStart(3, '0')}</span>
             </button>
           </div>
+          <button
+            type="button"
+            className={`${styles.item} ${styles.privateItem} ${privateActive ? styles.active : ''}`.trim()}
+            data-private-status={privateStatus}
+            data-testid="filter-pill-private"
+            onClick={onPrivateClick}
+          >
+            <span className={styles.privateIcon} aria-hidden="true">🔒</span>
+            <span className={styles.itemLabel}>Private</span>
+          </button>
         </div>
       </div>
     </div>

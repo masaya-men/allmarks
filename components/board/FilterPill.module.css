@@ -356,6 +356,27 @@
   flex-shrink: 0;
 }
 
+/* Private — always rendered, pinned last (below TRASH/DEAD LINKS). Muted at
+   rest; the icon alone signals lock state, no separate glyph swap needed. */
+.item.privateItem {
+  color: rgba(var(--chrome-ink-rgb), 0.5);
+}
+.item.privateItem:hover {
+  background: rgba(var(--chrome-ink-rgb), 0.06);
+  color: rgba(var(--chrome-ink-rgb), 0.8);
+}
+.item.privateItem[data-private-status='unlocked'] {
+  color: rgba(var(--chrome-ink-rgb), 0.85);
+}
+.item.privateItem.active .itemLabel {
+  box-shadow: inset 0 -1px 0 #28F100;
+}
+.privateIcon {
+  font-size: 10px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
 /* Tag rows — editorial dot indicator on the left. Inactive = hollow
    outline circle, active = filled green so the OR multi-select state
    reads as a row of switched-on lights. */
