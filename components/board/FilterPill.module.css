@@ -356,8 +356,10 @@
   flex-shrink: 0;
 }
 
-/* Private — always rendered, pinned last (below TRASH/DEAD LINKS). Muted at
-   rest; the icon alone signals lock state, no separate glyph swap needed. */
+/* Private — always rendered, as the sort-exempt last row inside .tagScroll
+   (so it sinks below the fold as the real tag count grows, same as any other
+   scrollable list — session 203 follow-up). Muted at rest; the icon alone
+   signals lock state, no separate glyph swap needed. */
 .item.privateItem {
   color: rgba(var(--chrome-ink-rgb), 0.5);
 }

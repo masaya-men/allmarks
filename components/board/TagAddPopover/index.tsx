@@ -34,12 +34,14 @@ export interface TagAddPopoverProps {
    *  scrolls internally instead of growing. The board leaves this off and
    *  keeps the default wrap layout. */
   compact?: boolean
-  /** Always-rendered "🔒 Private" chip, pinned at the very bottom (below the
-   *  new-tag input). Separate from allTags/suggestedEntries — Private is
-   *  never mixed into the generic chip list (see BoardRoot's
-   *  tagsExcludingPrivate doc comment). Omitted entirely by callers that
-   *  should not offer Private at all (e.g. the PopOut/extension quick-tag
-   *  popovers — Phase 2 scope ②, not built yet). */
+  /** Always-rendered "🔒 Private" chip. Renders as the sort-exempt LAST chip
+   *  inside the ALL TAGS section's chipRow (above the new-tag input, which
+   *  stays the popover's true last element). Separate from
+   *  allTags/suggestedEntries — Private is never mixed into the generic chip
+   *  list itself (see BoardRoot's tagsExcludingPrivate doc comment).
+   *  Omitted entirely by callers that should not offer Private at all (e.g.
+   *  the PopOut/extension quick-tag popovers — Phase 2 scope ②, not built
+   *  yet). */
   privateEntry?: {
     readonly status: 'none' | 'locked' | 'unlocked'
     readonly isTagged: boolean
@@ -175,13 +177,30 @@ export function TagAddPopover({
           </div>
         </div>
       )}
-      {otherTags.length > 0 && (
+      {(otherTags.length > 0 || privateEntry) && (
         <div className={styles.section}>
           {suggestedEntries.length > 0 && (
             <div className={styles.sectionHeader}>ALL TAGS</div>
           )}
           <div className={styles.chipRow}>
             {otherTags.map(renderExistingChip)}
+            {/* Private — sort-exempt, always the LAST chip in ALL TAGS
+                (never mixed into otherTags/allTags — see the privateEntry
+                doc comment above). Renders even when otherTags is empty, so
+                the section itself is gated on `privateEntry` too. */}
+            {privateEntry && (
+              <button
+                type="button"
+                className={styles.chipPrivate}
+                data-private-status={privateEntry.status}
+                data-has={privateEntry.isTagged ? 'true' : 'false'}
+                data-testid="tag-add-popover-private"
+                onMouseDown={(e): void => e.preventDefault()}
+                onClick={privateEntry.onClick}
+              >
+                🔒 {privateEntry.isTagged ? '✓ ' : ''}Private
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -194,19 +213,6 @@ export function TagAddPopover({
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleEnter}
       />
-      {privateEntry && (
-        <button
-          type="button"
-          className={styles.chipPrivate}
-          data-private-status={privateEntry.status}
-          data-has={privateEntry.isTagged ? 'true' : 'false'}
-          data-testid="tag-add-popover-private"
-          onMouseDown={(e): void => e.preventDefault()}
-          onClick={privateEntry.onClick}
-        >
-          🔒 {privateEntry.isTagged ? '✓ ' : ''}Private
-        </button>
-      )}
     </div>
   )
 }
