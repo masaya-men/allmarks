@@ -21,6 +21,22 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 203 — ★Private Phase 2 サブプロジェクト1(①発見導線＋③まとめてPrivate化)完全完了・本番デプロイ済・master merge済／次は②クイック保存面)
+
+**s202で構想だけまとめていたPrivate Phase 2の4候補のうち①+③を、brainstorming→spec→plan→subagent-driven-developmentの正規フローで完走。本番デプロイ後のユーザー実機フィードバックから2件の追加バグ(1件は憶測を排して実機再現までやって根治)も同セッションで修正・再デプロイ・master merge。**
+
+- **設計**: 「🔒 Private」をFilterPill・カードの＋ボタン・MANAGE TAGSの3箇所に常時表示。未設定/ロック中/解錠中の3状態を、`handlePrivateEntry`という1つの共通ロジックで統一(未設定→setupダイアログ、ロック中→unlockダイアログ+保留アクションを覚えて自動再開、解錠中→即実行)。spec `docs/superpowers/specs/2026-08-24-private-phase2-discovery-and-batch-design.md`・plan `docs/superpowers/plans/2026-08-24-private-phase2-discovery-and-batch.md`(6タスク)。
+- **実装**: subagent-driven-developmentで6タスク完走。Task4(CardsLayerの新規propsを必須にしてしまい既存呼び出し元を壊しかけた→optionalに修正)とTask6(e2eで見つけたFilterPillのラベル「—」表示バグ→修正)でそれぞれ1回fix round。post-flightスキャンで計画そのもののミス(brief内の行番号引用違い等)も複数事前検出。
+- **最終全ブランチレビュー(opus)**: Important 2件検出・修正(①ダイアログをキャンセルしても保留中の操作が消えず、後で無関係な解錠時に不意打ちで実行されてしまう②新しい3つの入口から解錠すると、Phase1では表示されていたはずのパスワードヒント文が出ない)。UI見た目に関わる1件(カード自体の🔒ピル表示が一部状況で消える)は無断で直さずユーザー確認待ちで保留(→後述の通り、後でユーザーが「直してほしい」と明言したため同セッション内で解決)。
+- **本番デプロイ後、ユーザー実機フィードバックから2件追加修正**:
+  1. カードのホバー時ピル表示の消失を修正 → 副作用で「Privateタグの右クリックメニュー(削除/リネーム)が今回初めて到達可能になっていた」ことをレビューが検出、追加fixで抑制。ユーザーとの対話で「一番下固定表示」の合意事項が誤解されていないか確認するやり取りもあり、選択ボックス(AskUserQuestion)の誤用への指摘を受けてmemory化。
+  2. ユーザー報告「1枚Private化→即座に絞り込んだら空っぽのカードになり、3時間後に見たら直っていた。暗号化に時間がかかっている？」→ systematic-debuggingで正式に調査。2つの有力説(リンク切れチェックの誤動作／サムネイル再取得の平文漏洩)はコードを実際に読んで**両方とも既に対策済みと判明、憶測を却下**。Playwrightで実際に再現(パスワード作成直後に絞り込みボタンを押す手順)し、**Reactの古いクロージャが`reload()`を握ったままレースする表示バグ**と特定(`useBoardData`の`reload`が内部で`privateTagId`/`privateSession`を閉じ込めており、`runPrivateAction`のfire-and-forget呼び出しがヴォールト作成前の古いクロージャを掴んだままreloadしてしまう)。`reload`に上書き引数を追加し、`runPrivateAction`側から新鮮な値を明示的に渡す形で修正。回帰テスト(RED→GREEN確認済み)つき。暗号化そのものは最初から正しく一瞬で完了していたことも確認。
+- **ユーザー要望でPrivateの並び順を変更**: 当初「TRASH/DEAD LINKSの下に固定表示」だったものを、「スクロールする本来のタグ一覧の中に、実タグの一番後ろ(並び替えモード対象外)」に変更。タグが増えるほど自然に下へ隠れる設計に。3箇所(FilterPill・カード＋ボタン・MANAGE TAGS)を修正、モバイルのMANAGE TAGSは元から正しい形だった。
+- **post-plan gate**: tsc0 / vitest 300ファイル2494テスト全緑(1件のみ既知の無関係な既存flaky test=BroadcastChannelタイミング起因、単体では毎回通過・このブランチとは無関係と確認済み) / `pnpm build`成功。
+- **`master`へmerge済(`--no-ff`)・本番デプロイ済(`allmarks.app`)・ユーザー実機確認済**。作業ブランチ`private-vault-phase2-discovery-batch`は削除済み。SDD台帳(`.superpowers/sdd/2026-08-24-private-phase2-discovery-and-batch/`)も削除済み。GitHubへのpushはこのセッション終了時に実施。
+- **保留(次回以降、着手前にユーザー確認/承認が要る)**: ResizeHandleの装飾オーバーレイが小さいカードで＋TAGボタンの当たり判定を奪うバグ(s203最終レビューでPlaywright実診断により発見・Private機能とは無関係の既存バグ)。
+- **★次セッション最優先＝Private Phase 2の続き(②クイック保存面対応)**、着手前に必ずsuperpowers:brainstormingから。手順・積み残しの軽微項目は[CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 202 — ★Private vault Phase 1 完全完了(実装〜レビュー〜デプロイ〜master merge〜push)／次はPhase 2)
 
 **s201で作った計画(15タスク)をsubagent-driven-developmentで実装完走したブランチの、最終全ブランチレビュー → fix → 再レビュー → fix → ユーザー実機確認 → 本番デプロイ → `master`へmerge(`--no-ff`, `be763ad3`) → GitHubへpush、まで1セッションで完遂。作業ブランチ`private-vault-phase1`・SDD台帳は削除済み。次セッションはPrivate Phase 2(下記構想)、着手前に必ずbrainstormingから。**

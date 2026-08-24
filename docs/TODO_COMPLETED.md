@@ -9736,3 +9736,22 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 **追補: セッション終了直前にもう1件バグ発見・systematic-debuggingで根治・本番反映**（コミット`4a368096`）。ユーザー報告「カードクリックでLightboxを開くと画像ツイートが縮む」（過去に完全に直したN-23と同じ症状）。Private vaultとは無関係と`git diff`で証拠つきに確認してから本調査へ。実機再現条件（PC・画像ツイート・特定のツイートは毎回・他は起きない）を聞き取り、コード読解で確定: N-23（YouTube動画ポスター）の修正時、`.media img{object-fit:contain}`という汎用CSSルールを打ち消す専用クラスを`EmbedPosterBox`（YouTube/TikTok/Vimeo/SoundCloud/Instagram共通部品）にだけ付けたが、**ツイートの複数画像`<img>`はこの共通部品を使わない独自実装でクラス名が無く、対象から漏れていた**。他に同じ穴が無いことも確認済み（動画ポスター系は共通部品で保護済、通常写真は別方式で元々安全）。`tweetPhoto`クラスを3箇所の該当`<img>`に追加して解決。ユーザーとの対話で「Lightbox内で2枚目以降に手動で切り替えた時は今まで全体表示だったのが失われる」という副作用が判明→ユーザー了承の上で今回はシンプルな修正のまま出荷、理想形（開く瞬間だけ盤面と揃え、開いた後は全体表示に切り替える設計）は`docs/private/IDEAS.md`に詳細記録して次点タスク化。ユーザー実機確認済（`allmarks.app`）。
 
 **次セッション最優先＝`private-vault-phase1`を`master`へmerge**（本番は既に動作確認済）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+## セッション 203 (2026-08-24) — ★Private Phase 2 サブプロジェクト1(①発見導線＋③まとめてPrivate化)完全完了・本番デプロイ・master merge済／本番実機で発見した2件のバグも同セッションで根治
+
+**s202で構想だけまとめていたPrivate Phase 2の4候補のうち①+③を、superpowers:brainstorming→spec→plan→subagent-driven-developmentの正規フローで完走した1セッション。**
+
+- **brainstorming**: ①発見導線と③まとめてPrivate化をこの順で先に着手(推奨案どおり)。当初「独立したUI」を想定していたが、ユーザーから「Privateにドラッグアンドドロップしたらその場でパスワードを求めればいいんじゃないの？新しい操作覚えさせる必要ある？」と根本的な指摘があり、**MANAGE TAGSの既存タグ付け操作(ドラッグ&ドロップ/モバイルタップ)にそのまま統合し、その場でパスワード入力ダイアログを出す**設計に転換。「🔒 Private」をFilterPillの絞り込み・カードの＋TAGボタン・MANAGE TAGSの3箇所すべてに常時表示し、未設定/ロック中/解錠中の3状態を`handlePrivateEntry`という1つの共通ロジックで統一(未設定→setupダイアログ、ロック中→unlockダイアログ+保留アクションを記憶して自動再開、解錠中→即実行)。
+- **spec/plan**: `docs/superpowers/specs/2026-08-24-private-phase2-discovery-and-batch-design.md`、`docs/superpowers/plans/2026-08-24-private-phase2-discovery-and-batch.md`(6タスク)。
+- **実装(subagent-driven-development)**: 6タスク完走。Task4(CardsLayerの新規propsを必須にして既存の読み取り専用共有ビューを壊しかけた→レビューが検出→optionalに修正)とTask6(e2eで見つけたFilterPillのラベル表示バグ)でそれぞれ1回fix round。
+- **最終全ブランチレビュー(opus)**: Important2件検出・修正(①ダイアログをキャンセルしても保留中の操作が消えず、無関係な解錠時に不意打ちで実行されてしまう②新しい3つの入口から解錠するとパスワードヒント文が出ない)。UI見た目に関わる1件(カード自体のPrivateピル表示が一部状況で消える)は無断で直さずユーザー確認待ちで保留(→後に本番実機フィードバックで同じ現象が報告されたため、同セッション内で解決)。
+- **本番デプロイ後、ユーザー実機フィードバックから2件追加バグを発見・修正・再デプロイ**:
+  1. カードのホバー時ピル表示の消失を修正 → 副作用で「Privateタグの右クリックメニュー(削除/リネーム)が今回初めて到達可能になっていた」ことをレビューが検出、追加fixで抑制。
+  2. ユーザー報告「1枚Private化→即座に絞り込んだら空っぽのカードになり、3時間後に見たら直っていた。暗号化に時間がかかっている？この暗号化は業界水準且つ無料のものか？」→ **superpowers:systematic-debuggingで正式に調査**。憶測を排し、有力2説(リンク切れチェックの誤動作／サムネイル再取得による平文漏洩)はどちらもコードを実際に読んで既に対策済みと確認(却下)。Playwrightで実際に再現(パスワード作成直後に絞り込みボタンを押す手順)し、**Reactの古いクロージャが`reload()`を握ったままレースする表示バグ**と特定(`useBoardData`の`reload`が内部で`privateTagId`/`privateSession`を閉じ込めており、`runPrivateAction`のfire-and-forget呼び出しがヴォールト作成前の古いクロージャを掴んだままreloadしてしまう)。`reload`に上書き引数を追加し、`runPrivateAction`側から新鮮な値を明示的に渡す形で修正。回帰テスト(RED→GREEN確認)つき。**暗号化(AES-256-GCM+PBKDF2 600,000回)自体は最初から業界標準・$0コストで正しく実装済み、一瞬で完了していたことも確認**(車輪の再発明ではないと回答)。
+- **ユーザー要望でPrivateの並び順を変更**: 当初「TRASH/DEAD LINKSの下に固定表示」だったものを、「スクロールする本来のタグ一覧の中に、実タグの一番後ろ(並び替えモード対象外)」に変更(タグが多くない人ほど上に出て、タグが増えるほど自然に下へ隠れる設計)。3箇所(FilterPill・カード＋ボタン・MANAGE TAGS)を修正、モバイルのMANAGE TAGSは元から正しい形だった。
+- **post-plan gate**: tsc0 / vitest 300ファイル2494テスト全緑(1件のみ既知の無関係な既存flaky test=BroadcastChannelタイミング起因) / `pnpm build`成功。
+- **`master`へmerge済(`--no-ff`)・本番(allmarks.app)デプロイ済・ユーザー実機確認済**。作業ブランチ`private-vault-phase2-discovery-batch`・SDD台帳とも削除済。
+- **プロセス上の指摘を1件受け、恒久メモリ化**: 調査/デバッグ中の質問にAskUserQuestion(選択ボックス)を使ったところ「会話が出来なくて決められた回答しかしづらい」と明確な訂正。以後、調査・デバッグ中は普通の会話文で1問ずつ聞くルールを`feedback_no_question_box_for_debugging`として記録。
+- **保留(次回以降、着手前にユーザー確認/承認が要る)**: ResizeHandleの装飾オーバーレイが小さいカードで＋TAGボタンの当たり判定を奪うバグ(最終レビューでPlaywright実診断により発見・Private機能とは無関係の既存バグ)。
+
+**次セッション最優先＝Private Phase 2の続き(②クイック保存面対応、PopOut/拡張機能/ブックマークレット、案B=鍵の安全な受け渡し)**。着手前に必ずsuperpowers:brainstormingから。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
