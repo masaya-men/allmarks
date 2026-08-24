@@ -598,9 +598,6 @@ export function SharedBoard(): ReactElement {
               themeId={themeId}
               motionEnabled={motionEnabled}
               matchedBookmarkIds={null}
-              privateStatus="none"
-              privateTagId={null}
-              onPrivateToggle={NOOP}
               receiverMode={{
                 removedUrls,
                 senderTags: data.tags ?? {},
