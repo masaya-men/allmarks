@@ -491,3 +491,132 @@ test('Private-tagged card shows its own hover pill, same as any other tag', asyn
   await pill.click({ button: 'right' })
   await expect(page.getByTestId('tag-context-menu')).toHaveCount(0)
 })
+
+// Regression coverage for the stale-reload-closure race (private-vault-phase2
+// discovery batch): PrivateSetupDialog.onCreate / PrivateUnlockDialog.onSubmit
+// call `void runPrivateAction(...)` fire-and-forget. `runPrivateAction` is a
+// useCallback captured at whatever render produced THAT dialog's JSX — i.e.
+// BEFORE the vault existed, before privateTagId/privateSession updated in
+// React state. Its internal `await reload()` used to call reload() with ZERO
+// args, so it fell back to reload's OWN closed-over privateTagId/privateSession
+// (still null/null from that stale render), even though executePrivateAction
+// itself got the FRESH tagId/session as real parameters and encrypted
+// correctly. resolvePrivateVisibility(bookmarks, null, null) short-circuits
+// on its first line and returns bookmarks completely unchanged — so the
+// just-encrypted bookmark (title/url/thumbnail blanked, real content only in
+// encryptedPayload) landed in `items` as-is, rendering as an unopenable
+// PlaceholderCard. Fix: runPrivateAction now calls `reload(resolvedPrivateTagId,
+// session)`, passing the SAME fresh values it already received, so it can no
+// longer matter whether its own reload closure is stale.
+//
+// A real, non-empty thumbnail is required to reproduce this (unlike
+// seedOneBookmark's thumbnail: '', which would render as PlaceholderCard
+// regardless of the bug) — via.placeholder.com is mocked to a 1x1 PNG so the
+// test doesn't depend on real network access (same fix as
+// tests/e2e/board-i-07-multi-image.spec.ts: the app's Service Worker
+// intercepts image fetches itself, bypassing page.route() unless blocked).
+test.describe('stale-reload-closure race (real thumbnail, immediate filter click)', () => {
+  test.use({ serviceWorkers: 'block' })
+
+  const TINY_PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  )
+  const RACE_BOOKMARK_ID = 'priv-race-b-0'
+  const THUMB_URL = 'https://via.placeholder.com/400x300?text=private-race'
+
+  function seedOneBookmarkWithThumbnail(): SeedRecord[] {
+    const now = new Date().toISOString()
+    return [
+      {
+        store: 'bookmarks',
+        value: {
+          id: RACE_BOOKMARK_ID,
+          url: 'https://example.com/private-vault-race-e2e',
+          title: 'Private vault race e2e card',
+          description: '',
+          thumbnail: THUMB_URL,
+          favicon: '',
+          siteName: '',
+          type: 'website',
+          savedAt: now,
+          tags: [],
+          displayMode: null,
+          ogpStatus: 'fetched',
+          sizePreset: 'S',
+          orderIndex: 0,
+          linkStatus: 'alive',
+          lastCheckedAt: Date.now(),
+        },
+      },
+      {
+        store: 'cards',
+        value: {
+          id: 'priv-race-c-0',
+          bookmarkId: RACE_BOOKMARK_ID,
+          folderId: '',
+          x: 0,
+          y: 0,
+          rotation: 0,
+          scale: 1,
+          zIndex: 0,
+          gridIndex: 0,
+          isManuallyPlaced: false,
+          width: 240,
+          height: 180,
+        },
+      },
+    ]
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await page.route('https://via.placeholder.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: TINY_PNG }),
+    )
+  })
+
+  test('card keeps its real thumbnail after setup-then-immediate-filter-click, not a blank PlaceholderCard', async ({ page }) => {
+    // 1. Seed a bookmark with a REAL thumbnail, load /board, confirm the
+    // baseline: a real ImageCard with a non-empty <img src>, not a placeholder.
+    await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmarkWithThumbnail()])
+    await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+    const card = page.locator(`[data-bookmark-id="${RACE_BOOKMARK_ID}"]`)
+    await expect(card).toBeVisible({ timeout: 15_000 })
+    const thumb = card.locator('img[data-active="true"]')
+    await expect(thumb).toHaveAttribute('src', THUMB_URL)
+    await expect(card.locator('[class*="placeholderCard"]')).toHaveCount(0)
+
+    // 2. Trigger the not-set-up Private toggle from the card's own popover
+    // (hover-revealed +TAG button -> dedicated Private chip) -> opens
+    // PrivateSetupDialog with a `toggle-tag` pendingPrivateAction (NOT
+    // `filter` — that's the kind that actually calls reload() on completion).
+    await card.hover()
+    await card.getByTestId('card-add-tag-button').click({ force: true })
+    await card.getByTestId('tag-add-popover-private').click()
+    const setupDialog = page.getByTestId('private-setup-dialog')
+    await expect(setupDialog).toBeVisible()
+    await page.locator('#private-setup-password').fill(PASSWORD)
+    await page.locator('#private-setup-confirm').fill(PASSWORD)
+
+    // 3. Submit, then IMMEDIATELY (no extra wait inserted) click the
+    // FilterPill's Private row to filter down to just the Private tag — the
+    // exact race trigger. Playwright's own .click() actionability waits are
+    // the only "wait" here, matching the live-reproduced sequence.
+    await page.getByTestId('private-setup-create').click()
+    await page.getByTestId('filter-pill').click()
+    await page.getByTestId('filter-pill-private').click()
+
+    // 4. Give the async writes/reloads a short, realistic window to settle —
+    // long enough for everything to finish, short enough to still land inside
+    // the race window that used to fail (a full extra reload only happens on
+    // page.reload(), never automatically).
+    await page.waitForTimeout(500)
+
+    // 5. The card must show its real thumbnail again — NOT a blank
+    // PlaceholderCard rendered from the stale reload's null/null-gated,
+    // still-blanked-at-rest bookmark record.
+    await expect(card).toBeVisible({ timeout: 5_000 })
+    await expect(thumb).toHaveAttribute('src', THUMB_URL)
+    await expect(card.locator('[class*="placeholderCard"]')).toHaveCount(0)
+  })
+})

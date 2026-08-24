@@ -2103,7 +2103,12 @@ export function BoardRoot() {
         })
       }
       setPendingPrivateAction(null)
-      await reload()
+      // Pass the SAME fresh tagId/session this function itself received as
+      // parameters — overrides reload()'s own possibly-stale closure (this
+      // useCallback can still be the pre-vault-creation closure when invoked
+      // fire-and-forget from PrivateSetupDialog.onCreate / PrivateUnlockDialog
+      // .onSubmit, before React re-renders with the new privateTagId/session).
+      await reload(resolvedPrivateTagId, session)
     },
     [activeFilter, handleFilterChange, reload],
   )
