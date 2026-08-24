@@ -22,6 +22,10 @@ type Props = {
   readonly onStartNewTag: () => void
   readonly onCommitNewTag: (name: string) => void
   readonly onCancelNewTag: () => void
+  /** 3-state Private status — drives the pinned chip's tone. */
+  readonly privateStatus: 'none' | 'locked' | 'unlocked'
+  /** Tap the Private chip. No-op when nothing is selected (mirrors onAssignTag). */
+  readonly onPrivateTap: () => void
 }
 
 /** Mobile TAG MODE bar (session 182). The desktop tags by DRAGGING cards onto a
@@ -40,6 +44,8 @@ export function BoardMobileTagBar({
   onStartNewTag,
   onCommitNewTag,
   onCancelNewTag,
+  privateStatus,
+  onPrivateTap,
 }: Props): ReactElement {
   const [name, setName] = useState('')
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -133,6 +139,18 @@ export function BoardMobileTagBar({
             <span className={styles.tagCount}>{String(tagCounts[t.id] ?? 0).padStart(3, '0')}</span>
           </button>
         ))}
+
+        <button
+          type="button"
+          className={styles.chip}
+          data-private-status={privateStatus}
+          aria-disabled={!hasSelection}
+          onClick={onPrivateTap}
+          data-testid="mobile-tag-private"
+          title="Private"
+        >
+          <span className={styles.tagLabel}>🔒 Private</span>
+        </button>
       </div>
     </div>
   )

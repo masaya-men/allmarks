@@ -92,6 +92,7 @@
 }
 .chip:active { background: rgba(255, 255, 255, 0.07); }
 .chip[aria-disabled='true'] { opacity: 0.38; cursor: default; }
+.chip[data-private-status='unlocked'] { color: rgba(255, 255, 255, 0.92); }
 
 /* "+ NEW TAG" — green-accented, leads the strip. */
 .newChip { color: rgba(40, 241, 0, 0.9); }

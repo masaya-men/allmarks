@@ -66,7 +66,7 @@ import { ExtensionEntry } from './ExtensionEntry'
 import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
 import { createVault, unlockVault, loadVaultRecord } from '@/lib/private/vault-store'
 import {
-  addPrivateTag, removePrivateTag, resolvePrivateStatus, executePrivateAction,
+  addPrivateTag, removePrivateTag, resolvePrivateStatus, executePrivateAction, PRIVATE_DROP_KEY,
   type PendingPrivateAction, type PrivateStatus,
 } from '@/lib/private/apply-tag-change'
 import { PrivateSetupDialog } from './PrivateSetupDialog'
@@ -2371,9 +2371,13 @@ export function BoardRoot() {
         setTagDraft({ cardIds: [...cardIds] })
         return
       }
+      if (targetKey === PRIVATE_DROP_KEY) {
+        handlePrivateEntry({ kind: 'batch-encrypt', bookmarkIds: [...cardIds] })
+        return
+      }
       assignTagToCards(targetKey, cardIds)
     },
-    [assignTagToCards],
+    [assignTagToCards, handlePrivateEntry],
   )
 
   // Mobile TAG MODE: tap a tag in the bottom bar → assign it to the whole
@@ -2383,6 +2387,13 @@ export function BoardRoot() {
     if (selectedIds.size === 0) return
     assignTagToCards(tagId, [...selectedIds])
   }, [assignTagToCards, selectedIds])
+
+  // Mobile TAG MODE Private tap: batch-encrypt the whole current selection
+  // (no-op when nothing is selected, mirrors handleAssignTagToSelection).
+  const handleAssignPrivateToSelection = useCallback((): void => {
+    if (selectedIds.size === 0) return
+    handlePrivateEntry({ kind: 'batch-encrypt', bookmarkIds: [...selectedIds] })
+  }, [selectedIds, handlePrivateEntry])
 
   // "+ NEW TAG" clicked (no drag) — create a tag for the current selection.
   const handleStartNewTag = useCallback((): void => {
@@ -4098,6 +4109,7 @@ export function BoardRoot() {
           onStartNewTag={handleStartNewTag}
           onCommitNewTag={handleCommitNewTag}
           onCancelNewTag={handleCancelNewTag}
+          privateStatus={privateStatus}
         />
       )}
       {tagMode && isMobile && (
@@ -4111,6 +4123,8 @@ export function BoardRoot() {
           onStartNewTag={handleStartNewTag}
           onCommitNewTag={handleCommitNewTag}
           onCancelNewTag={handleCancelNewTag}
+          privateStatus={privateStatus}
+          onPrivateTap={handleAssignPrivateToSelection}
         />
       )}
       {sharePhase === 'select' && !isMobile && (

@@ -176,6 +176,13 @@
   border: 1px solid rgba(var(--chrome-ink-rgb), 0.25);
   transition: background 110ms, border-color 110ms, box-shadow 110ms;
 }
+.privateIcon {
+  width: 8px;
+  text-align: center;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.tagItem[data-private-status='unlocked'] { color: rgba(var(--chrome-ink-rgb), 0.92); }
 .tagLabel {
   flex: 1;
   min-width: 0;
