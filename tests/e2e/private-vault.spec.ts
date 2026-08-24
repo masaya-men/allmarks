@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { seedDb, firstRunSuppressors, type SeedRecord } from './helpers/seed-db'
+import { seedDb, firstRunSuppressors, DB_NAME, type SeedRecord } from './helpers/seed-db'
 
 // Private vault (Phase 1) end-to-end coverage — task 15 of the private-vault
 // plan. Locators below are sourced from the real shipped components (read
@@ -397,4 +397,85 @@ test('mobile TAG MODE: tapping Private after selecting two cards encrypts them b
   await page.reload()
   await expect(cardA).toHaveCount(0)
   await expect(cardB).toHaveCount(0)
+})
+
+test('Private-tagged card shows its own hover pill, same as any other tag', async ({ page }) => {
+  // Regression coverage for the bug fixed alongside this test: CardsLayer.tsx's
+  // tagsById map was built ONLY from `allTags` (= BoardRoot's tagsExcludingPrivate,
+  // deliberately Private-free so the "+TAG" popover's generic chip list and
+  // tag-filter dropdowns don't double-offer Private). CardsLayer separately
+  // reused that SAME map to resolve a card's tags[] ids into TagRecords for the
+  // per-card hover pill strip (TagIndicatorStrip) — so tagsById.get(privateTagId)
+  // was always undefined and the Private pill silently never rendered, unlike
+  // every other tag. Fix: CardsLayer now takes a dedicated `privateTag` prop
+  // (BoardRoot resolves it from useTags()'s own unfiltered `tags`) merged into
+  // tagsById ALONGSIDE allTags, never into allTags itself.
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  const card = page.locator(`[data-bookmark-id="${BOOKMARK_ID}"]`)
+  await expect(card).toBeVisible({ timeout: 15_000 })
+
+  // 1. SETTINGS -> PRIVATE -> setup dialog -> CREATE (same flow as the first
+  // test in this file).
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+
+  // 2. Tag the seeded card Private via the per-card "+ TAG" popover.
+  await card.hover()
+  await card.getByTestId('card-add-tag-button').click({ force: true })
+  await card.getByTestId('tag-add-popover-private').click()
+  // Vanishes from the default ALL view immediately (privateGatePasses) — same
+  // assertion as the first test in this file.
+  await expect(card).toHaveCount(0)
+
+  // 3. Switch the board's filter to the Private tag itself so the card (now
+  // genuinely Private-tagged, vault unlocked) is back on screen to hover.
+  await page.getByTestId('filter-pill').click()
+  const privateRow = page.getByTestId('filter-pill-private')
+  await expect(privateRow).toHaveAttribute('data-private-status', 'unlocked')
+  await privateRow.click()
+  await expect(card).toBeVisible()
+  // Toggling a tag row leaves the dropdown open (FilterPill.tsx toggleTag
+  // never touches `open`) — close it before hovering the card underneath.
+  await page.keyboard.press('Escape')
+
+  // 4. No UI element exposes the Private tag's real id directly (FilterPill's
+  // own row only special-cases the id internally for its label — see
+  // labelFor/privateTagId in FilterPill.tsx), so read it straight from
+  // IndexedDB's 'tags' store, the same direct-IDB pattern this suite's sibling
+  // specs (e.g. board-b-11-source-hide.spec.ts) use for verification reads.
+  const privateTagId = await page.evaluate(async (dbName) => {
+    return new Promise<string | null>((resolve, reject) => {
+      const req = indexedDB.open(dbName)
+      req.onsuccess = (): void => {
+        const db = req.result
+        const getAll = db.transaction(['tags'], 'readonly').objectStore('tags').getAll()
+        getAll.onsuccess = (): void => {
+          const found = (getAll.result as Array<{ id: string; isPrivateVault?: boolean }>)
+            .find((t) => t.isPrivateVault === true)
+          db.close()
+          resolve(found?.id ?? null)
+        }
+        getAll.onerror = (): void => reject(getAll.error)
+      }
+      req.onerror = (): void => reject(req.error)
+    })
+  }, DB_NAME)
+  expect(privateTagId).not.toBeNull()
+
+  // 5. Hover the card and assert its own Private pill renders — the actual
+  // regression check. TagIndicatorStrip's pill testid pattern is
+  // `tag-pill-${tag.id}` (components/board/TagIndicatorStrip.tsx ~189), text
+  // content is the tag's own name (~209: `{tag.name}`), and the Private tag
+  // is always created with name 'Private' (BoardRoot.tsx's createTag call).
+  await card.hover()
+  const pill = card.getByTestId(`tag-pill-${privateTagId}`)
+  await expect(pill).toBeVisible()
+  await expect(pill).toHaveText('Private')
 })

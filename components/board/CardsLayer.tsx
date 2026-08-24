@@ -326,6 +326,15 @@ type CardsLayerProps = {
    *  (BoardRoot) routes this through handlePrivateEntry. Its presence gates
    *  whether a card's popover gets a privateEntry at all. */
   readonly onPrivateToggle?: (bookmarkId: string, currentlyTagged: boolean) => void
+  /** The resolved Private TagRecord (name/color/etc.), or null/undefined
+   *  when not applicable. Used ONLY to make tagsById resolve the Private
+   *  tag for the per-card hover pill strip (TagIndicatorStrip) — NEVER
+   *  merged into allTags itself, so it still can't appear in the "+TAG"
+   *  popover's generic chip list or any tag-filter dropdown. A
+   *  Private-tagged card can only ever be visible while the vault is
+   *  unlocked (resolvePrivateVisibility excludes it entirely while
+   *  locked), so this is only ever non-null in the unlocked state. */
+  readonly privateTag?: TagRecord | null
   /** Toggle an existing tag on a bookmark — add if absent, remove if present. */
   readonly onTagToggle?: (bookmarkId: string, tagId: string) => Promise<void> | void
   /** Create a brand-new tag and immediately attach it to the bookmark.
@@ -418,6 +427,7 @@ export function CardsLayer({
   privateStatus,
   privateTagId,
   onPrivateToggle,
+  privateTag,
   onTagToggle,
   onTagCreate,
   onTagFilterToggle,
@@ -526,8 +536,12 @@ export function CardsLayer({
   // Per-render lookup so the per-card TagIndicatorStrip can resolve
   // bookmark.tags[] (ids) into the TagRecord shape it needs in O(1).
   const tagsById = useMemo<ReadonlyMap<string, TagRecord>>(
-    () => new Map((allTags ?? []).map((t) => [t.id, t])),
-    [allTags],
+    () => {
+      const map = new Map((allTags ?? []).map((t) => [t.id, t]))
+      if (privateTag) map.set(privateTag.id, privateTag)
+      return map
+    },
+    [allTags, privateTag],
   )
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   // Throttle: skip recomputing virtual order if card hasn't moved >8px since last compute.

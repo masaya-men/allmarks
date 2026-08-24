@@ -3810,6 +3810,14 @@ export function BoardRoot() {
                   activeContextTagId={tagContextMenu?.tagId ?? tagDeleteConfirm?.tagId ?? null}
                   privateStatus={privateStatus}
                   privateTagId={privateTagId}
+                  // `tags` (unlike tagsExcludingPrivate passed as allTags above)
+                  // is useTags()'s own list, which includes the Private tag's
+                  // real record whenever the vault is unlocked — that's exactly
+                  // what CardsLayer needs to resolve the per-card hover pill for
+                  // a Private-tagged card. While locked, `tags` omits it too, so
+                  // this resolves to null — a no-op, since no Private-tagged
+                  // card is ever rendered while locked anyway.
+                  privateTag={privateTagId !== null ? (tags.find((t) => t.id === privateTagId) ?? null) : null}
                   onPrivateToggle={(bookmarkId, currentlyTagged): void =>
                     handlePrivateEntry({ kind: 'toggle-tag', bookmarkId, currentlyTagged })
                   }
