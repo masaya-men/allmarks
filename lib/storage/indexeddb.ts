@@ -90,11 +90,12 @@ export interface BookmarkRecord {
   lastCheckedAt?: number
   /** v16+: present only on bookmarks tagged Private. When present,
    *  title/url/description/thumbnail/favicon/siteName are stored as empty
-   *  strings and the real values live only here, encrypted. iv/ciphertext
-   *  are base64 (see lib/private/crypto.ts). Never decrypt-and-write-back —
-   *  decrypted fields exist only transiently in memory
-   *  (lib/private/resolve-visibility.ts). */
-  encryptedPayload?: { readonly iv: string; readonly ciphertext: string }
+   *  strings and the real values live only here, encrypted under the
+   *  vault's public key (lib/private/crypto.ts encryptWithPublicKey) —
+   *  ephemeralPublicKey/iv/ciphertext are all base64. Never
+   *  decrypt-and-write-back — decrypted fields exist only transiently in
+   *  memory (lib/private/resolve-visibility.ts). */
+  encryptedPayload?: { readonly ephemeralPublicKey: string; readonly iv: string; readonly ciphertext: string }
   /** v15+: Phase 3 カラーハント (タグ別テーマ) 用のドミナントカラー hex。
    *  Phase 1 では常に null/undefined。 backfill が走るまで未設定。 */
   dominantColor?: string | null
