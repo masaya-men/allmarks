@@ -32,6 +32,8 @@
 - **post-plan gate**: tsc0 / vitest 300ファイル2509テスト全緑(既知の無関係flaky=`channel.test.ts`のBroadcastChannelタイミング起因を再確認、単体でも毎回結果が変わることを確認済み) / playwright 101 pass・5 skip / `pnpm build`成功。
 - **`master`へmerge済(`--no-ff`)・GitHubへpush済・本番デプロイ済(`allmarks.app`)**。作業ブランチ`private-phase2-quicksave-pubkey-crypto`・SDD台帳は削除済み。
 - **★次セッション最優先**: ユーザーに本番での動作確認(FilterPillのPrivate行が未設定表示→新パスワードで再設定できるか)をお願いした上で、**拡張機能自身のコンテンツスクリプトUI配線**(Private Phase 2の最後のピース、着手前に必ずbrainstormingから)。手順・積み残しは[CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **ユーザー実機確認の結果**: PopOutからPrivateタグ付けOK。ブックマークレット/拡張機能ではPrivateの項目が出なかった → 調査の結果バグではなく`lib/utils/bookmarklet.ts`の既存仕様(拡張機能が入っていると、ブックマークレットクリック時もポップアップ(SaveToast.tsx)を開かず拡張機能側の保存処理に回す分岐)が原因と判明。SaveToast.tsx自体のPrivate配線はPopOutと構造的に同一でPopOutで動作確認済のため、これは正常。ユーザーの環境では拡張機能を一時的に無効化しない限りSaveToast.tsx側のPrivate機能を直接は確認できない(実害なし・将来のユーザーは拡張無しなら通常に見える)。
+- **ユーザーからの新規指摘**: 現状アプリ内にPrivateパスワードの再設定・変更フローが無い(忘れた場合の正規の救済手段が無い)。次回以降、ちゃんと設計してから追加する価値のある機能として要検討(brainstorming推奨)。
 
 ### 直近の状態 (セッション 203 — ★Private Phase 2 サブプロジェクト1(①発見導線＋③まとめてPrivate化)完全完了・本番デプロイ済・master merge済／次は②クイック保存面)
 
