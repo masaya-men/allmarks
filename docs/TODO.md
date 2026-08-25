@@ -21,6 +21,18 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 204 — ★Private Phase 2 サブプロジェクト2(②クイック保存面: PopOut/拡張機能/ブックマークレット)完全完了・本番デプロイ済・master merge済／次は拡張機能UI配線)
+
+**設計を対称鍵暗号→公開鍵暗号(ECDH)へ全面ピボット。ユーザー自身の指摘(「タグ付けにパスワードは要らないはず」)がきっかけ。**「タグ付け(暗号化)はパスワード不要でどこからでも可能、閲覧・削除(復号)のみパスワードが必要」という理想形を実現。spec `docs/superpowers/specs/2026-08-25-private-phase2-quicksave-pubkey-crypto-design.md`・plan `docs/superpowers/plans/2026-08-25-private-phase2-quicksave-pubkey-crypto.md`(13タスク)。
+
+- **実装**: subagent-driven-developmentで13タスク完走。Task3/4間の依存逆転をpre-flightで検出しdispatch順を修正、Task7で発覚した周辺2ファイルの型不整合、Task12のe2eで既存の無関係なCardsLayerバグ(N-64)を発見しワークアラウンドで回避。
+- **superpowers:security-review**で4件の実在する脆弱性を発見・修正(コミット`2a95d4bc`): ①`addPrivateTag`の二重実行防止漏れ(データ破壊バグ、チップ連打で再現可能だった)②nonce重複排除の抜け(防御目的)③ブックマークレット経由の任意origin flowが、他人のブックマークIDを推測して勝手に中身を隠せる権限過多④保存確認の返信データにPrivateタグの有無が漏れるオラクル。confidence 8のLOW severity 2件(生鍵のJSメモリ通過/拡張機能側の再送ポンプの落とし穴)はN-65/N-66として記録のみ。
+- **最終全ブランチレビュー(opus)**でさらに2件Important検出・修正(コミット`f86b8a53`): ①security-reviewで入れた二重実行防止ガードがトランザクションの外にあり、実は不完全だった(2つの呼び出しが両方ガードを通過してから書き込む競合が起こり得た)→トランザクション内の既存の読み込みに移動して修正②PopOut/拡張機能/ブックマークレットの3つの新経路がPrivate化後に盤面へ更新を知らせておらず、開いたままの盤面(特にPopOutは盤面と同じJSレルム)に中身が残り続ける→兄弟のタグ付け経路と同じbroadcastを追加。軽微2件(明るいテーマで通知文字が読めない/存在しないブックマークへの操作が「成功」と返る)も同時に修正。UIフィードバック欠如(N-67)とメディア欠落(N-68)はレビュアー自身の推奨により拡張機能UI配線と合わせて次回対応。
+- **本番の古いPhase1 Private設定をユーザー確認の上で安全に削除**: デプロイ前にユーザーへ「以前パスワード設定したことは？」と確認したところ本番で設定済と判明(中身は退避済み)。新方式は鍵の形が根本的に異なり、古い設定を放置すると「パスワードが違います」が永久に続き復旧不能になることが判明したため、EXPORTバックアップ後、ユーザー自身がDevToolsコンソールで古いvault設定+古いPrivateタグ(タグ参照の scrub込み)を削除。ブックマーク本体は無傷。
+- **post-plan gate**: tsc0 / vitest 300ファイル2509テスト全緑(既知の無関係flaky=`channel.test.ts`のBroadcastChannelタイミング起因を再確認、単体でも毎回結果が変わることを確認済み) / playwright 101 pass・5 skip / `pnpm build`成功。
+- **`master`へmerge済(`--no-ff`)・GitHubへpush済・本番デプロイ済(`allmarks.app`)**。作業ブランチ`private-phase2-quicksave-pubkey-crypto`・SDD台帳は削除済み。
+- **★次セッション最優先**: ユーザーに本番での動作確認(FilterPillのPrivate行が未設定表示→新パスワードで再設定できるか)をお願いした上で、**拡張機能自身のコンテンツスクリプトUI配線**(Private Phase 2の最後のピース、着手前に必ずbrainstormingから)。手順・積み残しは[CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
 ### 直近の状態 (セッション 203 — ★Private Phase 2 サブプロジェクト1(①発見導線＋③まとめてPrivate化)完全完了・本番デプロイ済・master merge済／次は②クイック保存面)
 
 **s202で構想だけまとめていたPrivate Phase 2の4候補のうち①+③を、brainstorming→spec→plan→subagent-driven-developmentの正規フローで完走。本番デプロイ後のユーザー実機フィードバックから2件の追加バグ(1件は憶測を排して実機再現までやって根治)も同セッションで修正・再デプロイ・master merge。**
