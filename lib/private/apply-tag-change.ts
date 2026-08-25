@@ -40,6 +40,10 @@ export async function addPrivateTag(
   if (!record) return
   const bookmark = await getBookmark(db, bookmarkId)
   if (!bookmark) return
+  // Idempotence guard: a second call on an already-Private bookmark would
+  // otherwise re-encrypt the just-blanked plaintext fields, permanently
+  // destroying the original content. Mirrors addPrivateTagBatch's own guard.
+  if (bookmark.tags.includes(privateTagId)) return
   const fields: PrivateFields = {
     title: bookmark.title,
     url: bookmark.url,

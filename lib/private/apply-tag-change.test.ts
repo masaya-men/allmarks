@@ -93,6 +93,21 @@ describe('private/apply-tag-change', () => {
     expect(updated.tags).toContain('private-tag-id')
   })
 
+  it('addPrivateTag called twice does not re-encrypt (would destroy the original content)', async () => {
+    const bookmark = makeBookmark('b1dup')
+    await db.put('bookmarks', bookmark)
+    const session = await makeVault()
+    await addPrivateTag(db, bookmark.id, 'private-tag-id')
+    const afterFirst = await db.get('bookmarks', bookmark.id)
+    await addPrivateTag(db, bookmark.id, 'private-tag-id')
+    const afterSecond = await db.get('bookmarks', bookmark.id)
+    expect(afterSecond.encryptedPayload).toEqual(afterFirst.encryptedPayload)
+    await removePrivateTag(db, bookmark.id, 'private-tag-id', session)
+    const restored = await db.get('bookmarks', bookmark.id)
+    expect(restored.title).toBe('My Title')
+    expect(restored.url).toBe('https://example.com')
+  })
+
   it('addPrivateTag is a no-op when no vault has been set up yet', async () => {
     const bookmark = makeBookmark('b0')
     await db.put('bookmarks', bookmark)
