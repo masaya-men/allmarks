@@ -626,6 +626,13 @@
   - **回避策（今回のe2eテストで採用）**: 同じ場面をテストする際はページをリロードしてから操作する（`tests/e2e/private-vault.spec.ts`の「removing the Private tag...」テストのコメント参照）。
   - **修正案（未実装）**: `popoverOpenFor`を`items`の変化を監視するeffectでガードする（対象bookmarkIdが`items`から消えたら`popoverOpenFor`/`popoverClosing`を即座にリセット）か、そもそも`items`ベースで`popoverOpenFor`の妥当性を毎レンダー検証する形に直す。
 
+### session 204 で判明（security-review — Private ②クイック保存面、優先度低・未修正）
+
+Private Phase 2 ②の実装後にsuperpowers:security-reviewを実施。confidence 9/10の3件(データ破壊バグ・過剰権限・タグ有無の漏洩オラクル)は同セッション内で直接修正済み(コミット`2a95d4bc`)。以下2件はconfidence基準は満たすが深刻度LOWかつ修正コストが見合わないため見送り、記録のみ:
+
+- **(N-65) ECDH秘密鍵のunwrap時、生のPKCS8バイト列が一瞬JS側の変数(文字列/Uint8Array)を経由する** — `lib/private/crypto.ts`の`unwrapPrivateKey`(112-124行目)。`crypto.subtle.unwrapKey`のネイティブ経路(生バイトをJSに一切渡さない)を使わず、既存の`decryptJson`(汎用JSONブロブ復号)を流用しているため。旧・対称鍵方式には無かった経路で、今回のECDH移行で新規に生じた。**実害は限定的**: 悪用にはこのページ内で既にJS実行権限を握っている攻撃者が必要で、その時点で他にもっと直接的な手段(復号関数を直接呼ぶ等)がある。根治には保存形式自体を`wrapKey`/`unwrapKey`ネイティブ対応に変更する設計変更が必要で、v0の優先度としては見送り。
+- **(N-66) 拡張機能側(`extension/offscreen.js`)の`router.resolve`許可リストに`add-private-tag:result`が入っていない** — 今回のブランチでは`extension/`側に`add-private-tag`メッセージの送信元が一切存在しない(未配線)ため現状は無害。ただし**将来「拡張機能自身のコンテンツスクリプトUI」を配線する際の落とし穴**: このまま繋ぐと、save-iframe側からの返信が握りつぶされ続け、オフスクリーンの再送ポンプ(`offscreen-repost.js`、250ms間隔・最大8秒)が同一操作を最大30回超再送してしまう。次にその配線に着手するセッションで`extension/offscreen.js`の許可リストに追加すること。
+
 ### session 202 で報告（バックアップ提案の表示位置が不適切）
 
 - **(N-63) バックアップ提案(BackupReminder)の表示位置がおかしい** — 未着手（視覚変更のためモック→承認後に実装、`ui-design.md` の承認フロー適用）。
