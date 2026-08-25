@@ -797,3 +797,100 @@ test.describe('stale-reload-closure race (real thumbnail, immediate filter click
     await expect(card.locator('[class*="placeholderCard"]')).toHaveCount(0)
   })
 })
+
+// Locks the postMessage contract the extension's new dispatchAddPrivateTag
+// (and the bookmarklet toast's handlePrivateChip) depend on. Task 11 shipped
+// app/save-iframe/SaveIframeClient.tsx's booklage:add-private-tag handler
+// with only a throwaway, never-committed Playwright spec as evidence -- this
+// is that coverage made permanent, ahead of wiring a real sender to it.
+test('extension/bookmarklet quick-save can tag Private via postMessage, matching the board flow', async ({ page }) => {
+  // 1. Seed one bookmark, load /board, create the vault via the real UI --
+  // real Web Crypto is the only reliable way to get a genuine, working ECDH
+  // key pair + vault record (see file header for why every other test here
+  // does the same instead of seeding a fake vault record).
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+
+  // 2. Read the vault's tagId straight from IDB (same origin, same DB) --
+  // this is exactly what the save-iframe reply's privateTagId field carries
+  // to a real extension/bookmarklet caller.
+  const privateTagId = await page.evaluate(async (dbName) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open(dbName)
+      req.onsuccess = () => resolve(req.result)
+      req.onerror = () => reject(req.error)
+    })
+    const tx = db.transaction('settings', 'readonly')
+    const record = await new Promise<{ tagId: string } | undefined>((resolve, reject) => {
+      const r = tx.objectStore('settings').get('private-vault')
+      r.onsuccess = () => resolve(r.result as never)
+      r.onerror = () => reject(r.error)
+    })
+    db.close()
+    return record?.tagId
+  }, DB_NAME)
+  expect(privateTagId).toBeTruthy()
+
+  // 3. Navigate to /save-iframe -- the same postMessage backend the
+  // extension and the bookmarklet both talk to -- and post
+  // booklage:add-private-tag for the already-seeded bookmark, exactly like
+  // the extension's dispatchAddPrivateTag or the bookmarklet toast's
+  // handlePrivateChip would.
+  await page.goto('/save-iframe')
+  await page.waitForSelector('[data-testid="save-iframe-mounted"]', { state: 'attached' })
+  await page.evaluate(() => {
+    const w = globalThis as { __BOOKLAGE_ALLOWED_ORIGINS__?: string[] }
+    w.__BOOKLAGE_ALLOWED_ORIGINS__ = [window.location.origin]
+  })
+  const resultPromise = page.evaluate(() => {
+    return new Promise<unknown>((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error('result timeout')), 5000)
+      const listener = (ev: MessageEvent): void => {
+        if ((ev.data as { type?: string } | null)?.type === 'booklage:add-private-tag:result') {
+          window.clearTimeout(timer)
+          window.removeEventListener('message', listener)
+          resolve(ev.data)
+        }
+      }
+      window.addEventListener('message', listener)
+    })
+  })
+  await page.evaluate((bookmarkId) => {
+    window.postMessage({
+      type: 'booklage:add-private-tag',
+      payload: { bookmarkId, nonce: 'add-private-e2e-1' },
+    }, window.location.origin)
+  }, BOOKMARK_ID)
+  const result = (await resultPromise) as { ok: boolean; nonce: string }
+  expect(result.ok).toBe(true)
+  expect(result.nonce).toBe('add-private-e2e-1')
+
+  // 4. Verify the bookmark was actually encrypted at rest, not just replied
+  // to with ok:true.
+  const updated = await page.evaluate(async ({ dbName, id }) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open(dbName)
+      req.onsuccess = () => resolve(req.result)
+      req.onerror = () => reject(req.error)
+    })
+    const tx = db.transaction('bookmarks', 'readonly')
+    const bm = await new Promise<{ tags: string[]; encryptedPayload?: unknown; title: string } | undefined>((resolve, reject) => {
+      const r = tx.objectStore('bookmarks').get(id)
+      r.onsuccess = () => resolve(r.result as never)
+      r.onerror = () => reject(r.error)
+    })
+    db.close()
+    return bm
+  }, { dbName: DB_NAME, id: BOOKMARK_ID })
+  expect(updated?.tags).toContain(privateTagId)
+  expect(updated?.encryptedPayload).toBeDefined()
+  expect(updated?.title).toBe('')
+})
