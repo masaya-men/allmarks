@@ -17,10 +17,13 @@ import {
   parseProbeMessage,
   parseAddTagMessage,
   parseAddNewTagMessage,
+  parseAddPrivateTagMessage,
   type SaveMessageResult,
   type StripThemeTokens,
 } from '@/lib/utils/save-message'
 import { subscribePipPresence, queryPipPresence } from '@/lib/board/pip-presence'
+import { loadVaultRecord } from '@/lib/private/vault-store'
+import { addPrivateTag } from '@/lib/private/apply-tag-change'
 
 type SaveDb = Awaited<ReturnType<typeof initDB>>
 
@@ -57,12 +60,14 @@ async function buildSavePayload(
   currentTagIds: string[]
   themeTokens: StripThemeTokens
   quickTagEnabled: boolean
+  privateTagId?: string
 }> {
-  const [corpus, rawTags, quickTagEnabled, boardConfig] = await Promise.all([
+  const [corpus, rawTags, quickTagEnabled, boardConfig, vaultRecord] = await Promise.all([
     getAllBookmarks(db),
     getAllTags(db),
     loadQuickTagEnabled(db),
     loadBoardConfig(db),
+    loadVaultRecord(db),
   ])
   const allTags = rawTags.filter((t) => t.isPrivateVault !== true)
   // Apply the board's theme to THIS document before reading the strip tokens.
@@ -79,6 +84,7 @@ async function buildSavePayload(
     currentTagIds: bookmark.tags,
     themeTokens: readThemeTokens(),
     quickTagEnabled,
+    ...(vaultRecord ? { privateTagId: vaultRecord.tagId } : {}),
   }
 }
 
@@ -209,6 +215,33 @@ export function SaveIframeClient(): ReactElement {
         } catch (err) {
           ev.source?.postMessage(
             { type: 'booklage:add-new-tag:result', nonce, ok: false, error: err instanceof Error ? err.message : String(err) },
+            { targetOrigin: ev.origin },
+          )
+        }
+        return
+      }
+
+      const addPrivateTagParsed = parseAddPrivateTagMessage(ev.data)
+      if (addPrivateTagParsed.ok) {
+        const { bookmarkId, nonce } = addPrivateTagParsed.value.payload
+        try {
+          const db = await initDB()
+          const record = await loadVaultRecord(db)
+          if (!record) {
+            ev.source?.postMessage(
+              { type: 'booklage:add-private-tag:result', nonce, ok: false, error: 'no vault set up' },
+              { targetOrigin: ev.origin },
+            )
+            return
+          }
+          await addPrivateTag(db, bookmarkId, record.tagId)
+          ev.source?.postMessage(
+            { type: 'booklage:add-private-tag:result', nonce, ok: true },
+            { targetOrigin: ev.origin },
+          )
+        } catch (err) {
+          ev.source?.postMessage(
+            { type: 'booklage:add-private-tag:result', nonce, ok: false, error: err instanceof Error ? err.message : String(err) },
             { targetOrigin: ev.origin },
           )
         }

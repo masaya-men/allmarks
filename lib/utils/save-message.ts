@@ -63,6 +63,13 @@ export type SaveMessageResult =
        *  suppresses its host-page strip when true (PiP handles tagging on the
        *  card instead) — avoids the two surfaces colliding. */
       pipActive?: boolean
+      /** The Private tag's id, present only when a vault has been set up.
+       *  Absent = no vault yet = the strip should not offer a Private option
+       *  (tagging Private through this un-encrypting quick-tag path is
+       *  never allowed regardless — see isPrivateVaultTagId — so this field
+       *  exists purely so the strip UI knows whether to show the option at
+       *  all, not as a permission check). */
+      privateTagId?: string
     }
   | { type: 'booklage:save:result'; nonce: string; ok: false; error: string }
 
@@ -141,3 +148,29 @@ export function parseAddNewTagMessage(input: unknown): ParseResult<AddNewTagMess
 export type AddNewTagResult =
   | { type: 'booklage:add-new-tag:result'; nonce: string; ok: true; tag: { id: string; name: string; color: string } }
   | { type: 'booklage:add-new-tag:result'; nonce: string; ok: false; error: string }
+
+// Applies the Private tag to the just-saved bookmark by encrypting it under
+// the vault's public key — no password/session needed (lib/private/
+// apply-tag-change.ts addPrivateTag). A no-op (ok: false) if no vault has
+// been set up yet; the caller (extension strip) is expected to only show
+// this option when the save reply's `privateTagId` field is present.
+const AddPrivateTagMessage = z.object({
+  type: z.literal('booklage:add-private-tag'),
+  payload: z.object({
+    bookmarkId: z.string().min(1),
+    nonce: z.string().min(1),
+  }),
+})
+export type AddPrivateTagMessageInput = z.infer<typeof AddPrivateTagMessage>
+export function parseAddPrivateTagMessage(input: unknown): ParseResult<AddPrivateTagMessageInput> {
+  const r = AddPrivateTagMessage.safeParse(input)
+  if (r.success) return { ok: true, value: r.data }
+  return {
+    ok: false,
+    error: r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+  }
+}
+
+export type AddPrivateTagResult =
+  | { type: 'booklage:add-private-tag:result'; nonce: string; ok: true }
+  | { type: 'booklage:add-private-tag:result'; nonce: string; ok: false; error: string }
