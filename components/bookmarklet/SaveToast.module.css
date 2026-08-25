@@ -354,3 +354,11 @@
   border-color: var(--paper-panel-border, rgba(43, 39, 34, 0.30));
   background: var(--paper-panel-btn-bg, rgba(43, 39, 34, 0.05));
 }
+
+.privateSetupNotice {
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
