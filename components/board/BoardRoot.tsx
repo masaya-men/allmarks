@@ -67,6 +67,7 @@ import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSessio
 import { createVault, unlockVault, loadVaultRecord } from '@/lib/private/vault-store'
 import {
   addPrivateTag, removePrivateTag, resolvePrivateStatus, executePrivateAction, PRIVATE_DROP_KEY,
+  privateActionNeedsUnlock,
   type PendingPrivateAction, type PrivateStatus,
 } from '@/lib/private/apply-tag-change'
 import { PrivateSetupDialog } from './PrivateSetupDialog'
@@ -2114,9 +2115,13 @@ export function BoardRoot() {
   )
 
   /** Single entry point for every "🔒 Private" row/chip's click or drop.
-   *  Not-set-up -> opens PrivateSetupDialog; locked -> opens
-   *  PrivateUnlockDialog (both remember `action` as pendingPrivateAction, to
-   *  auto-resume on success); unlocked -> executes immediately, no dialog. */
+   *  Not-set-up -> opens PrivateSetupDialog. Otherwise: actions that only
+   *  encrypt (adding the tag, batch-encrypting — privateActionNeedsUnlock
+   *  === false) run immediately regardless of lock state, since encryption
+   *  only needs the vault's public key, never the password. Actions that
+   *  need to decrypt (removing the tag, filtering/viewing) open
+   *  PrivateUnlockDialog when locked (remembered as pendingPrivateAction,
+   *  to auto-resume on success). */
   const handlePrivateEntry = useCallback(
     (action: PendingPrivateAction): void => {
       if (privateTagId === null) {
@@ -2124,12 +2129,12 @@ export function BoardRoot() {
         setPrivateDialog('setup')
         return
       }
-      if (privateSession === null) {
+      if (privateActionNeedsUnlock(action) && privateSession === null) {
         setPendingPrivateAction(action)
         // Mirrors onOpenPrivate's SETTINGS-path hint load below — the hint is
         // the only recovery mechanism this feature has (no backdoor, by
-        // design), so it must appear on these 3 new entry points too, not
-        // just the pre-existing SETTINGS entry (final whole-branch review
+        // design), so it must appear on these entry points too, not just
+        // the pre-existing SETTINGS entry (final whole-branch review
         // finding).
         void (async (): Promise<void> => {
           const record = await loadVaultRecord(await initDB())
