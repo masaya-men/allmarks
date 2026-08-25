@@ -1,5 +1,5 @@
 import type { BookmarkRecord } from '@/lib/storage/indexeddb'
-import { decryptJson } from './crypto'
+import { decryptWithPrivateKey } from './crypto'
 import type { PrivateVaultSession } from './vault-session'
 
 type PrivateFields = {
@@ -41,7 +41,7 @@ export async function resolvePrivateVisibility(
       continue
     }
     try {
-      const fields = await decryptJson<PrivateFields>(session.key, b.encryptedPayload.iv, b.encryptedPayload.ciphertext)
+      const fields = await decryptWithPrivateKey<PrivateFields>(session.privateKey, b.encryptedPayload)
       result.push({ ...b, ...fields })
     } catch {
       continue
