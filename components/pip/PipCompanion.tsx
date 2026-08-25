@@ -5,7 +5,7 @@ import { initDB, getAllBookmarks, type TagRecord } from '@/lib/storage/indexeddb
 import { getAllTags } from '@/lib/storage/tags'
 import { applyExistingQuickTag, applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
-import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkSaved } from '@/lib/board/channel'
+import { subscribeBookmarkSaved, subscribeBookmarkDeleted, postBookmarkSaved, postBookmarkUpdated } from '@/lib/board/channel'
 import { broadcastPipOpen, broadcastPipClosed, subscribePipPresence } from '@/lib/board/pip-presence'
 import { resolveThumbnail } from '@/lib/pip/resolve-thumbnail'
 import { pipDisplayThumbnail } from '@/lib/pip/pip-thumbnail'
@@ -238,6 +238,9 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
     void (async () => {
       const db = await initDB()
       await addPrivateTag(db, bookmarkId, tagId)
+      // Same-realm board (PopOut) doesn't reload on its own — broadcast so
+      // it drops this card immediately, matching the other quick-tag paths.
+      postBookmarkUpdated({ bookmarkId })
     })()
   }, [privateTagId])
 

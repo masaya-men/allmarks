@@ -87,3 +87,7 @@
   text-align: center;
 }
 
+:global(html[data-theme-id='paper-atelier']) .privateSetupNotice {
+  color: var(--text-body, #4a443b);
+}
+

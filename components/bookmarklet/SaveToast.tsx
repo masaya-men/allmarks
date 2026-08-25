@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { initDB, getAllBookmarks, saveBookmarkDeduped } from '@/lib/storage/indexeddb'
 import type { BookmarkRecord, TagRecord } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
-import { postBookmarkSaved } from '@/lib/board/channel'
+import { postBookmarkSaved, postBookmarkUpdated } from '@/lib/board/channel'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { loadFullscreenNoticeSeen, markFullscreenNoticeSeen } from '@/lib/storage/fullscreen-save-notice'
 import { resolveInitialLocale } from '@/lib/i18n/locale-store'
@@ -211,6 +211,9 @@ export function SaveToast(): ReactElement {
     }
     const db = dbRef.current ?? (await initDB())
     await addPrivateTag(db, tagData.bookmarkId, privateTagId)
+    // If a board tab is open, it doesn't reload on its own — broadcast so it
+    // drops this card immediately, matching the other quick-tag paths.
+    postBookmarkUpdated({ bookmarkId: tagData.bookmarkId })
   }
 
   if (!url) {

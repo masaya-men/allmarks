@@ -60,7 +60,14 @@ export async function addPrivateTag(
   const store = tx.objectStore('bookmarks')
   const current = await store.get(bookmarkId)
   if (!current) { await tx.done; return }
-  const tags = current.tags.includes(privateTagId) ? current.tags : [...current.tags, privateTagId]
+  // Re-check inside the transaction: the pre-transaction guard above only
+  // rules out an already-Private bookmark as of BEFORE the (multi-await)
+  // encryption work started. Two overlapping calls (e.g. a double-click)
+  // can both pass that early check and both reach here — without this
+  // in-transaction re-check, the second one would re-encrypt the
+  // already-blanked fields the first one just wrote, destroying them.
+  if (current.tags.includes(privateTagId)) { await tx.done; return }
+  const tags = [...current.tags, privateTagId]
   await store.put({ ...current, ...BLANK_FIELDS, encryptedPayload, tags })
   await tx.done
 }

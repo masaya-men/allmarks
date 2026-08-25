@@ -11,7 +11,7 @@ import { loadBoardConfig } from '@/lib/storage/board-config'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
-import { postBookmarkSaved } from '@/lib/board/channel'
+import { postBookmarkSaved, postBookmarkUpdated } from '@/lib/board/channel'
 import {
   parseSaveMessage,
   parseProbeMessage,
@@ -259,7 +259,19 @@ export function SaveIframeClient(): ReactElement {
             )
             return
           }
+          const target = await getBookmark(db, bookmarkId)
+          if (!target) {
+            ev.source?.postMessage(
+              { type: 'booklage:add-private-tag:result', nonce, ok: false, error: 'unknown bookmark' },
+              { targetOrigin: ev.origin },
+            )
+            return
+          }
           await addPrivateTag(db, bookmarkId, record.tagId)
+          // If a board tab is open, it doesn't reload on its own — broadcast
+          // so it drops this card immediately, matching the other quick-tag
+          // paths (applyExistingQuickTag / applyNewQuickTag).
+          postBookmarkUpdated({ bookmarkId })
           ev.source?.postMessage(
             { type: 'booklage:add-private-tag:result', nonce, ok: true },
             { targetOrigin: ev.origin },
