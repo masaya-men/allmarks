@@ -492,6 +492,183 @@ test('Private-tagged card shows its own hover pill, same as any other tag', asyn
   await expect(page.getByTestId('tag-context-menu')).toHaveCount(0)
 })
 
+test('card + button Private chip encrypts immediately while locked, no unlock dialog', async ({ page }) => {
+  // Task 5/7: adding the Private tag (encrypting) no longer requires the
+  // vault to be unlocked — only removing/viewing does. Reproduces this
+  // file's first test's lock round-trip (create vault, reload to drop the
+  // session) but then adds the tag from the LOCKED state, asserting no
+  // unlock dialog ever appears.
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  const card = page.locator(`[data-bookmark-id="${BOOKMARK_ID}"]`)
+  await expect(card).toBeVisible({ timeout: 15_000 })
+
+  // 1. Create the vault (leaves the session unlocked in this tab).
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+
+  // 2. Reload — the vault's entire re-lock mechanism (vault-session.ts is a
+  // plain module singleton, reset by any reload). privateTagId (from
+  // useTags()) survives the reload; privateSession does not.
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await expect(card).toBeVisible({ timeout: 15_000 })
+
+  // 3. From this locked state, tag the card Private via the card's own
+  // +TAG popover.
+  await card.hover()
+  await card.getByTestId('card-add-tag-button').click({ force: true })
+  const privateChip = card.getByTestId('tag-add-popover-private')
+  await expect(privateChip).toHaveAttribute('data-private-status', 'locked')
+  await privateChip.click()
+
+  // 4. No unlock dialog should ever appear — adding Private doesn't need
+  // the password.
+  await expect(page.getByTestId('private-unlock-dialog')).toHaveCount(0)
+
+  // 5. The tag landed for real: the card is now Private-tagged and drops
+  // out of the default ALL view (resolvePrivateVisibility, same signal
+  // this file's other tests already use).
+  await expect(card).toHaveCount(0)
+})
+
+test('mobile TAG MODE: tapping Private after selecting two cards encrypts them both, even while locked', async ({ page }) => {
+  await seedDb(page, [...firstRunSuppressors(), ...seedTwoBookmarks()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+
+  // Reload to lock the vault (same re-lock mechanism as the previous test)
+  // before switching to the mobile viewport.
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByTestId('mobile-nav-tag').dispatchEvent('click')
+  const cardA = page.locator(`[data-bookmark-id="${BOOKMARK_ID}"]`)
+  const cardB = page.locator('[data-bookmark-id="priv-b-1"]')
+  await cardA.click()
+  await cardB.click()
+  const privateChip = page.getByTestId('mobile-tag-private')
+  await expect(privateChip).toHaveAttribute('data-private-status', 'locked')
+  await privateChip.click()
+
+  // No unlock dialog — batch-encrypting doesn't need the password either.
+  await expect(page.getByTestId('private-unlock-dialog')).toHaveCount(0)
+
+  await page.getByTestId('mobile-tag-done').click()
+  await page.reload()
+  await expect(cardA).toHaveCount(0)
+  await expect(cardB).toHaveCount(0)
+})
+
+test('removing the Private tag while unlocked still decrypts and restores the card (fail-closed retained)', async ({ page }) => {
+  // Task 5/7 made ADDING Private lock-independent, but REMOVING it (which
+  // must decrypt the stored payload back to plaintext) is untouched — still
+  // gated on an unlocked session (removePrivateTag throws otherwise).
+  // Locked-state removal can't be driven through the UI at all: a
+  // Private-tagged card is never rendered while locked
+  // (resolvePrivateVisibility drops it outright), so there's no chip to
+  // click in that state. This test instead confirms the still-gated remove
+  // path itself keeps working correctly end-to-end while unlocked, guarding
+  // against Task 5's rewrite of removePrivateTag/executePrivateAction
+  // accidentally breaking (not just accidentally un-gating) removal.
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  const card = page.locator(`[data-bookmark-id="${BOOKMARK_ID}"]`)
+  await expect(card).toBeVisible({ timeout: 15_000 })
+
+  // 1. Create the vault and tag the card Private (mirrors this file's first
+  // test, steps 2-3).
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+  await card.hover()
+  await card.getByTestId('card-add-tag-button').click({ force: true })
+  await card.getByTestId('tag-add-popover-private').click()
+  await expect(card).toHaveCount(0)
+
+  // 2. Reload then unlock again via SETTINGS, rather than re-filtering to
+  // Private in the same never-reloaded session. This is a deliberate
+  // workaround for a PRE-EXISTING, unrelated bug in CardsLayer.tsx (not
+  // touched by this branch — confirmed via `git diff master...HEAD --
+  // components/board/CardsLayer.tsx` being empty): `popoverOpenFor` is
+  // never reset when a card's own popover is still conceptually "open" at
+  // the moment the card disappears from `items` (here, because tagging it
+  // Private hides it from the default ALL view). The stale value survives
+  // in CardsLayer's component state, so when the SAME card later
+  // reappears (e.g. via the Private-tag filter) its popover auto-remounts
+  // from that stale flag, and a subsequent `card-add-tag-button` click
+  // meant to OPEN it instead reads "already open" and calls the CLOSE
+  // branch — while that popover is still mid-close-animation from a
+  // preceding Escape/outside-click, so it never successfully reopens
+  // (reproduced directly: `card-add-tag-button` click never mounts
+  // `tag-add-popover-private` at all afterward). A reload gives CardsLayer
+  // a fresh `popoverOpenFor=null` with no such carry-over, so the popover
+  // opens normally on first use post-reload — this test's actual target
+  // (removePrivateTag/executePrivateAction) is exercised identically
+  // either way. Logged as a new backlog item in docs/TODO.md; out of scope
+  // to fix here.
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const unlockDialog = page.getByTestId('private-unlock-dialog')
+  await expect(unlockDialog).toBeVisible()
+  await page.locator('#private-unlock-password').fill(PASSWORD)
+  await page.getByTestId('private-unlock-submit').click()
+  await expect(unlockDialog).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('extension-settings-drawer')).toHaveCount(0)
+
+  // 3. Filter to the Private tag to bring the card back on screen.
+  await page.getByTestId('filter-pill').click()
+  const privateRow = page.getByTestId('filter-pill-private')
+  await expect(privateRow).toHaveAttribute('data-private-status', 'unlocked')
+  await privateRow.click()
+  await expect(card).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // 4. Open the card's own +TAG popover for the first time in this
+  // (post-reload) session and click its Private chip — now isTagged: true,
+  // so this routes through the currentlyTagged:true (remove) branch.
+  await card.hover()
+  await card.getByTestId('card-add-tag-button').click({ force: true })
+  const privateChip = card.getByTestId('tag-add-popover-private')
+  await expect(privateChip).toHaveAttribute('data-has', 'true')
+  await privateChip.click()
+
+  // 5. The card is no longer Private-tagged, so it no longer matches the
+  // active Private-tag filter — but a tags-kind filter keeps every card
+  // MOUNTED (BoardRoot.tsx filteredItems: the CRT shutdown animation needs
+  // non-matching cards to stay in the DOM), so it's marked tagged-out
+  // rather than removed (same signal as the 'FilterPill Private row opens
+  // setup...' test above, line ~315).
+  await expect(card.locator('[data-tagged-out]')).toHaveAttribute('data-tagged-out', 'true')
+
+  // 6. ...and reappears, decrypted, in the default ALL view with its real
+  // title restored — proving removePrivateTag's decrypt-and-restore path
+  // still works after Task 5's rewrite.
+  await page.getByTestId('filter-pill').click()
+  await page.getByTestId('filter-pill-menu').getByText('ALL', { exact: true }).click()
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('Private vault e2e card')
+})
+
 // Regression coverage for the stale-reload-closure race (private-vault-phase2
 // discovery batch): PrivateSetupDialog.onCreate / PrivateUnlockDialog.onSubmit
 // call `void runPrivateAction(...)` fire-and-forget. `runPrivateAction` is a

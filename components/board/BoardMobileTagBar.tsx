@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import type { TagRecord } from '@/lib/storage/indexeddb'
+import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import styles from './BoardMobileTagBar.module.css'
 
 type Props = {
@@ -149,7 +150,7 @@ export function BoardMobileTagBar({
           data-testid="mobile-tag-private"
           title="Private"
         >
-          <span className={styles.tagLabel}>🔒 Private</span>
+          <span className={styles.tagLabel}>{PRIVATE_LOCKED_ICON}{PRIVATE_LABEL}</span>
         </button>
       </div>
     </div>

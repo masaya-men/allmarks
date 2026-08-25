@@ -5,6 +5,7 @@ import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { computeTagScrollEdge } from '@/lib/board/tag-scroll-edge'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { PRIVATE_DROP_KEY } from '@/lib/private/apply-tag-change'
+import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import styles from './TagDropPanel.module.css'
 
 type Props = {
@@ -165,8 +166,8 @@ export function TagDropPanel({
             data-testid="tag-drop-private"
             title="Private"
           >
-            <span className={styles.privateIcon} aria-hidden="true">🔒</span>
-            <span className={styles.tagLabel}>Private</span>
+            <span className={styles.privateIcon} aria-hidden="true">{PRIVATE_LOCKED_ICON}</span>
+            <span className={styles.tagLabel}>{PRIVATE_LABEL}</span>
           </div>
         </div>
       </div>

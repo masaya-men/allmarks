@@ -617,6 +617,24 @@
 
 完了済バグは TODO_COMPLETED.md に移動済。 ここはアクティブのみ。
 
+### session 204 で発見（カードの＋TAGポップオーバーが2回目に開けなくなることがある）
+
+- **(N-64) `CardsLayer.tsx`の`popoverOpenFor`が、カードが一時的にDOMから消えると古い値のまま残る** — 未着手。Private Phase 2 ②(公開鍵暗号移行)のe2eテスト作成中に実機再現で発見（Private機能自体とは無関係の既存バグ、`git diff master...HEAD -- components/board/CardsLayer.tsx`が空であることを確認済＝今回のブランチは無関係）。
+  - **再現手順**: あるカードの＋TAGポップオーバーを開いて何かタグを付ける操作をし、そのカードがフィルタ等の理由で一瞬盤面から消える（例: Privateタグを付けてALL表示から除外される）→ 別のフィルタで同じカードを再表示 → もう一度そのカードの＋TAGボタンをクリックしてポップオーバーを開こうとする → **二度と開かない**（`popoverOpenFor`が前回の"開いていた"状態のまま残っているため、クリックが「閉じる」と誤判定される。閉じ処理自体はアニメーション待ちの状態と競合し、結果的にどちらも成立しない）。
+  - **根本原因**（`components/board/CardsLayer.tsx:476-482, 1714-1718`実コード確認済）: `popoverOpenFor`はカードが`items`から消える際にリセットされる仕組みが無い。カードが再表示されると古い`popoverOpenFor`と一致してポップオーバーが自動的に再マウントされてしまい、直後の他操作（Escape等）でそれが閉じるアニメーション中に、次の意図的な「開く」クリックが「(既に開いているので)閉じる」ブランチに落ちてしまう。
+  - **影響範囲**: Private機能に限らず、タグ付け操作でカードが一時的に非表示になり、別経路で再表示された後にもう一度＋TAGを開こうとする、あらゆる場面で起こりうる（低頻度・気づきにくいが実害あり）。
+  - **回避策（今回のe2eテストで採用）**: 同じ場面をテストする際はページをリロードしてから操作する（`tests/e2e/private-vault.spec.ts`の「removing the Private tag...」テストのコメント参照）。
+  - **修正案（未実装）**: `popoverOpenFor`を`items`の変化を監視するeffectでガードする（対象bookmarkIdが`items`から消えたら`popoverOpenFor`/`popoverClosing`を即座にリセット）か、そもそも`items`ベースで`popoverOpenFor`の妥当性を毎レンダー検証する形に直す。
+
+### session 204 で判明（security-review — Private ②クイック保存面、優先度低・未修正）
+
+Private Phase 2 ②の実装後にsuperpowers:security-reviewを実施。confidence 9/10の3件(データ破壊バグ・過剰権限・タグ有無の漏洩オラクル)は同セッション内で直接修正済み(コミット`2a95d4bc`)。以下2件はconfidence基準は満たすが深刻度LOWかつ修正コストが見合わないため見送り、記録のみ:
+
+- **(N-65) ECDH秘密鍵のunwrap時、生のPKCS8バイト列が一瞬JS側の変数(文字列/Uint8Array)を経由する** — `lib/private/crypto.ts`の`unwrapPrivateKey`(112-124行目)。`crypto.subtle.unwrapKey`のネイティブ経路(生バイトをJSに一切渡さない)を使わず、既存の`decryptJson`(汎用JSONブロブ復号)を流用しているため。旧・対称鍵方式には無かった経路で、今回のECDH移行で新規に生じた。**実害は限定的**: 悪用にはこのページ内で既にJS実行権限を握っている攻撃者が必要で、その時点で他にもっと直接的な手段(復号関数を直接呼ぶ等)がある。根治には保存形式自体を`wrapKey`/`unwrapKey`ネイティブ対応に変更する設計変更が必要で、v0の優先度としては見送り。
+- **(N-67) PopOut/ブックマークレットのPrivateチップに成功/失敗のフィードバックが無い** — 全ブランチ最終レビュー(opus)で指摘。`components/pip/PipCompanion.tsx`の`handlePrivateChip`と`components/bookmarklet/SaveToast.tsx`の同名関数はどちらも`isTagged: false`固定・✓表示なし・例外も握りつぶし。成功しても失敗しても見た目が同じで、「隠したはず」という信頼が前提の機能としては要修正。板側の同種処理(`BoardRoot.tsx`の"Could not encrypt N cards"パターン)を流用予定。次回の拡張機能UI配線プランと合わせて着手。
+- **(N-68) 保存直後にPrivate化すると、ツイート等の非同期メディア取得(mediaSlots)が永久に反映されない** — 同レビューで指摘。`persistMediaSlots`等(`lib/storage/indexeddb.ts`)は`encryptedPayload`があると平文漏洩防止のため正しく書き込みを止めるが、拡張保存パスの非同期メディア取得は保存直後の数秒後に完了するため、「保存した瞬間にPrivateタグを付ける」動線だとほぼ確実に間に合わずメディアが空のままになる。Phase 1からある制限だが、②の実装で「保存と同時にPrivate化」が主要動線になったため顕在化。今は公開鍵暗号化なのでパスワード無しでも解決可能(根治は非同期メディア取得側を公開鍵暗号化対応にする)。方針決めと実装は次回以降。
+- **(N-66) 拡張機能側(`extension/offscreen.js`)の`router.resolve`許可リストに`add-private-tag:result`が入っていない** — 今回のブランチでは`extension/`側に`add-private-tag`メッセージの送信元が一切存在しない(未配線)ため現状は無害。ただし**将来「拡張機能自身のコンテンツスクリプトUI」を配線する際の落とし穴**: このまま繋ぐと、save-iframe側からの返信が握りつぶされ続け、オフスクリーンの再送ポンプ(`offscreen-repost.js`、250ms間隔・最大8秒)が同一操作を最大30回超再送してしまう。次にその配線に着手するセッションで`extension/offscreen.js`の許可リストに追加すること。
+
 ### session 202 で報告（バックアップ提案の表示位置が不適切）
 
 - **(N-63) バックアップ提案(BackupReminder)の表示位置がおかしい** — 未着手（視覚変更のためモック→承認後に実装、`ui-design.md` の承認フロー適用）。

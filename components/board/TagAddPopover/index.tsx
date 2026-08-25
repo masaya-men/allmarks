@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { JSX } from 'react'
 import type { TagRecord } from '@/lib/storage/indexeddb'
+import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import styles from './TagAddPopover.module.css'
 
 /** Pre-ranked suggestion row. The popover renders these top-to-bottom in
@@ -39,9 +40,12 @@ export interface TagAddPopoverProps {
    *  stays the popover's true last element). Separate from
    *  allTags/suggestedEntries — Private is never mixed into the generic chip
    *  list itself (see BoardRoot's tagsExcludingPrivate doc comment).
-   *  Omitted entirely by callers that should not offer Private at all (e.g.
-   *  the PopOut/extension quick-tag popovers — Phase 2 scope ②, not built
-   *  yet). */
+   *  Wired in by the board (CardsLayer), PopOut (PipCompanion), and the
+   *  bookmarklet (SaveToast) — each calls the session-less `addPrivateTag`
+   *  directly since adding Private only needs the vault's public key.
+   *  Omitted only by the extension's own content-script quick-tag strip,
+   *  which sends messages to a different (non-React) UI, not this
+   *  component — that surface is a separate follow-up, not yet built. */
   privateEntry?: {
     readonly status: 'none' | 'locked' | 'unlocked'
     readonly isTagged: boolean
@@ -198,7 +202,7 @@ export function TagAddPopover({
                 onMouseDown={(e): void => e.preventDefault()}
                 onClick={privateEntry.onClick}
               >
-                🔒 {privateEntry.isTagged ? '✓ ' : ''}Private
+                {PRIVATE_LOCKED_ICON}{privateEntry.isTagged ? '✓ ' : ''}{PRIVATE_LABEL}
               </button>
             )}
           </div>

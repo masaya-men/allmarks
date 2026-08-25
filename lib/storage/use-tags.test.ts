@@ -40,7 +40,7 @@ describe('useTags — Private vault filtering', () => {
     expect(result.current.tags).toHaveLength(1)
 
     act(() => {
-      setPrivateVaultSession({ tagId: privateTag.id, key: fakeKey })
+      setPrivateVaultSession({ tagId: privateTag.id, privateKey: fakeKey })
     })
     expect(result.current.tags).toHaveLength(2)
 
@@ -63,7 +63,7 @@ describe('useTags — Private vault filtering', () => {
     expect(result.current.privateTagId).toBe(privateTag.id)
 
     act(() => {
-      setPrivateVaultSession({ tagId: privateTag.id, key: fakeKey })
+      setPrivateVaultSession({ tagId: privateTag.id, privateKey: fakeKey })
     })
     // Unlocked — must be the exact same id, unchanged by lock state.
     expect(result.current.privateTagId).toBe(privateTag.id)

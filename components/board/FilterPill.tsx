@@ -8,6 +8,7 @@ import {
   boardFilterEquals,
   toggleTagInFilter,
 } from '@/lib/board/board-filter-helpers'
+import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import { useDragReorder } from '@/lib/board/use-drag-reorder'
@@ -534,8 +535,8 @@ export function FilterPill({
               data-testid="filter-pill-private"
               onClick={onPrivateClick}
             >
-              <span className={styles.privateIcon} aria-hidden="true">🔒</span>
-              <span className={styles.itemLabel}>Private</span>
+              <span className={styles.privateIcon} aria-hidden="true">{PRIVATE_LOCKED_ICON}</span>
+              <span className={styles.itemLabel}>{PRIVATE_LABEL}</span>
             </button>
           </div>
 

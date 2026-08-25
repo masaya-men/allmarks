@@ -11,16 +11,19 @@ import { loadBoardConfig } from '@/lib/storage/board-config'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
-import { postBookmarkSaved } from '@/lib/board/channel'
+import { postBookmarkSaved, postBookmarkUpdated } from '@/lib/board/channel'
 import {
   parseSaveMessage,
   parseProbeMessage,
   parseAddTagMessage,
   parseAddNewTagMessage,
+  parseAddPrivateTagMessage,
   type SaveMessageResult,
   type StripThemeTokens,
 } from '@/lib/utils/save-message'
 import { subscribePipPresence, queryPipPresence } from '@/lib/board/pip-presence'
+import { loadVaultRecord } from '@/lib/private/vault-store'
+import { addPrivateTag } from '@/lib/private/apply-tag-change'
 
 type SaveDb = Awaited<ReturnType<typeof initDB>>
 
@@ -57,12 +60,14 @@ async function buildSavePayload(
   currentTagIds: string[]
   themeTokens: StripThemeTokens
   quickTagEnabled: boolean
+  privateTagId?: string
 }> {
-  const [corpus, rawTags, quickTagEnabled, boardConfig] = await Promise.all([
+  const [corpus, rawTags, quickTagEnabled, boardConfig, vaultRecord] = await Promise.all([
     getAllBookmarks(db),
     getAllTags(db),
     loadQuickTagEnabled(db),
     loadBoardConfig(db),
+    loadVaultRecord(db),
   ])
   const allTags = rawTags.filter((t) => t.isPrivateVault !== true)
   // Apply the board's theme to THIS document before reading the strip tokens.
@@ -76,9 +81,14 @@ async function buildSavePayload(
   }
   return {
     tags: orderTagsForSave(bookmark, corpus, allTags),
-    currentTagIds: bookmark.tags,
+    // Exclude the Private tag id itself — a host page reading the reply
+    // could otherwise test `currentTagIds.includes(privateTagId)` as a
+    // boolean oracle for "is this URL already marked Private," even though
+    // the tag never appears in `tags` (filtered above) or renders in the UI.
+    currentTagIds: vaultRecord ? bookmark.tags.filter((id) => id !== vaultRecord.tagId) : bookmark.tags,
     themeTokens: readThemeTokens(),
     quickTagEnabled,
+    ...(vaultRecord ? { privateTagId: vaultRecord.tagId } : {}),
   }
 }
 
@@ -98,6 +108,16 @@ export function SaveIframeClient(): ReactElement {
   const searchParams = useSearchParams()
   const isBookmarkletFlow = searchParams.get('bookmarklet') === '1'
   const handledNonces = useRef<Set<string>>(new Set())
+  // Bookmark ids this iframe instance has itself vended via a successful
+  // `booklage:save:result` reply. In the bookmarklet flow (any origin
+  // accepted — see originAllowed below), a hostile host page could otherwise
+  // probe for an existing bookmark's id via a duplicate `booklage:save`
+  // reply, then target it with `booklage:add-private-tag` to blank+hide
+  // content it never saved. Gating that message to ids this same instance
+  // just vended preserves the legitimate flow (a save's own toast/strip
+  // tagging Private on the bookmark it was just handed) while closing the
+  // arbitrary-target path.
+  const savedBookmarkIds = useRef<Set<string>>(new Set())
   const pipActiveRef = useRef<boolean>(false)
   const seenPresenceRef = useRef<boolean>(false)
 
@@ -215,6 +235,56 @@ export function SaveIframeClient(): ReactElement {
         return
       }
 
+      const addPrivateTagParsed = parseAddPrivateTagMessage(ev.data)
+      if (addPrivateTagParsed.ok) {
+        const { bookmarkId, nonce } = addPrivateTagParsed.value.payload
+        // Dedup by nonce, same reason as add-new-tag above: the offscreen
+        // repost pump re-posts the same envelope until it resolves.
+        if (handledNonces.current.has(nonce)) return
+        handledNonces.current.add(nonce)
+        if (isBookmarkletFlow && !savedBookmarkIds.current.has(bookmarkId)) {
+          ev.source?.postMessage(
+            { type: 'booklage:add-private-tag:result', nonce, ok: false, error: 'unknown bookmark' },
+            { targetOrigin: ev.origin },
+          )
+          return
+        }
+        try {
+          const db = await initDB()
+          const record = await loadVaultRecord(db)
+          if (!record) {
+            ev.source?.postMessage(
+              { type: 'booklage:add-private-tag:result', nonce, ok: false, error: 'no vault set up' },
+              { targetOrigin: ev.origin },
+            )
+            return
+          }
+          const target = await getBookmark(db, bookmarkId)
+          if (!target) {
+            ev.source?.postMessage(
+              { type: 'booklage:add-private-tag:result', nonce, ok: false, error: 'unknown bookmark' },
+              { targetOrigin: ev.origin },
+            )
+            return
+          }
+          await addPrivateTag(db, bookmarkId, record.tagId)
+          // If a board tab is open, it doesn't reload on its own — broadcast
+          // so it drops this card immediately, matching the other quick-tag
+          // paths (applyExistingQuickTag / applyNewQuickTag).
+          postBookmarkUpdated({ bookmarkId })
+          ev.source?.postMessage(
+            { type: 'booklage:add-private-tag:result', nonce, ok: true },
+            { targetOrigin: ev.origin },
+          )
+        } catch (err) {
+          ev.source?.postMessage(
+            { type: 'booklage:add-private-tag:result', nonce, ok: false, error: err instanceof Error ? err.message : String(err) },
+            { targetOrigin: ev.origin },
+          )
+        }
+        return
+      }
+
       const parsed = parseSaveMessage(ev.data)
       if (!parsed.ok) return
       const { payload } = parsed.value
@@ -290,6 +360,12 @@ export function SaveIframeClient(): ReactElement {
         }
 
         const bm = result.bookmark
+        // Only the fresh-insert path vends into savedBookmarkIds (see the
+        // ref's own comment) — deliberately NOT the 'duplicate' branch above,
+        // since a hostile page could otherwise probe an existing bookmark
+        // (skipIfDuplicate:true) purely to get its id added to this trusted
+        // set, then target it with add-private-tag.
+        savedBookmarkIds.current.add(bm.id)
         postBookmarkSaved({ bookmarkId: bm.id })
         const savePayload = await buildSavePayload(db, bm)
         reply({

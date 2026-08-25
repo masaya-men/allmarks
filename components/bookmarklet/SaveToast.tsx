@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { initDB, getAllBookmarks, saveBookmarkDeduped } from '@/lib/storage/indexeddb'
 import type { BookmarkRecord, TagRecord } from '@/lib/storage/indexeddb'
 import { detectUrlType } from '@/lib/utils/url'
-import { postBookmarkSaved } from '@/lib/board/channel'
+import { postBookmarkSaved, postBookmarkUpdated } from '@/lib/board/channel'
 import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { loadFullscreenNoticeSeen, markFullscreenNoticeSeen } from '@/lib/storage/fullscreen-save-notice'
 import { resolveInitialLocale } from '@/lib/i18n/locale-store'
@@ -22,6 +22,8 @@ import { getAllTags } from '@/lib/storage/tags'
 import { orderTagsForSave } from '@/lib/tagger/order-tags-for-save'
 import { applyExistingQuickTag, applyNewQuickTag } from '@/lib/tagger/quick-tag-apply'
 import { TagAddPopover, type SuggestionEntry } from '@/components/board/TagAddPopover'
+import { loadVaultRecord } from '@/lib/private/vault-store'
+import { addPrivateTag } from '@/lib/private/apply-tag-change'
 import styles from './SaveToast.module.css'
 
 type State = 'saving' | SaveOutcome // 'saving' | 'saved' | 'duplicate' | 'error'
@@ -68,6 +70,8 @@ export function SaveToast(): ReactElement {
 
   const [state, setState] = useState<State>('saving')
   const [tagData, setTagData] = useState<TagData | null>(null)
+  const [privateTagId, setPrivateTagId] = useState<string | null>(null)
+  const [privateSetupNotice, setPrivateSetupNotice] = useState(false)
   const [mode, setMode] = useState<SaveWindowMode>('normal')
   const startedRef = useRef(false)
   // Cache the db instance so tag handlers can use it without re-awaiting initDB each time.
@@ -124,6 +128,8 @@ export function SaveToast(): ReactElement {
             currentTagIds: [...bm.tags],
             suggestedEntries: ordered.slice(0, 5).map((tg) => ({ kind: 'existing' as const, tagId: tg.id })),
           })
+          const vaultRecord = await loadVaultRecord(db)
+          setPrivateTagId(vaultRecord?.tagId ?? null)
         }
         // Show the fullscreen explanation only once — record it now so the next
         // forced-tab save stays quiet (mode becomes 'tab-confirm').
@@ -194,6 +200,20 @@ export function SaveToast(): ReactElement {
       ...d, allTags: fresh,
       currentTagIds: d.currentTagIds.includes(tag.id) ? d.currentTagIds : [...d.currentTagIds, tag.id],
     } : d)
+  }
+
+  async function handlePrivateChip(): Promise<void> {
+    if (!tagData) return
+    if (privateTagId === null) {
+      setPrivateSetupNotice(true)
+      setTimeout(() => setPrivateSetupNotice(false), 3000)
+      return
+    }
+    const db = dbRef.current ?? (await initDB())
+    await addPrivateTag(db, tagData.bookmarkId, privateTagId)
+    // If a board tab is open, it doesn't reload on its own — broadcast so it
+    // drops this card immediately, matching the other quick-tag paths.
+    postBookmarkUpdated({ bookmarkId: tagData.bookmarkId })
   }
 
   if (!url) {
@@ -321,7 +341,17 @@ export function SaveToast(): ReactElement {
             onAddExisting={(id) => { void handleAddExisting(id) }}
             onAddNew={(name) => { void handleAddNew(name) }}
             onClose={() => { /* lifecycle owns dismissal */ }}
+            privateEntry={{
+              status: privateTagId === null ? 'none' : 'locked',
+              isTagged: false,
+              onClick: (): void => { void handlePrivateChip() },
+            }}
           />
+          {privateSetupNotice && (
+            <div className={styles.privateSetupNotice} data-testid="save-toast-private-setup-notice">
+              Set up Private in the AllMarks board first.
+            </div>
+          )}
         </div>
       </div>
     )

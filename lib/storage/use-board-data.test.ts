@@ -5,7 +5,7 @@ import { computeAspectRatio, deriveThumbnail, useBoardData } from './use-board-d
 import { initDB, addBookmark } from './indexeddb'
 import type { BookmarkRecord, CardRecord } from './indexeddb'
 import { setPrivateVaultSession } from '@/lib/private/vault-session'
-import { encryptJson, deriveKey, generateSalt } from '@/lib/private/crypto'
+import { generateEcdhKeyPair, encryptWithPublicKey } from '@/lib/private/crypto'
 
 const baseBookmark: BookmarkRecord = {
   id: 'b1',
@@ -138,8 +138,8 @@ describe('useBoardData — Private vault locked exclusion + decrypt overlay', ()
 
   it('items includes the decrypted bookmark once the vault session is set, and drops it again once cleared', async () => {
     const database = await initDB()
-    const key = await deriveKey('pw', generateSalt(), 1000)
-    const encryptedPayload = await encryptJson(key, {
+    const { publicKey, privateKey } = await generateEcdhKeyPair()
+    const encryptedPayload = await encryptWithPublicKey(publicKey, {
       title: 'Real', url: 'https://secret.example', description: '', thumbnail: '', favicon: '', siteName: '',
     })
     const priv = await addBookmark(database, {
@@ -151,7 +151,7 @@ describe('useBoardData — Private vault locked exclusion + decrypt overlay', ()
       ...priv, title: '', url: '', encryptedPayload,
     })
 
-    setPrivateVaultSession({ tagId: 'priv-1', key })
+    setPrivateVaultSession({ tagId: 'priv-1', privateKey })
     const { result } = renderHook(() => useBoardData('priv-1'))
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.items.find((i) => i.tags.includes('priv-1'))?.title).toBe('Real')

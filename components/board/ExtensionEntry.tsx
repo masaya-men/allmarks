@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { EXTENSION_STORE_URL } from '@/lib/board/constants'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { PRIVATE_LOCKED_ICON, PRIVATE_UNLOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import { ChromeButton } from './ChromeButton'
 import { ChromeDrawer } from './ChromeDrawer'
 import { BackupButton } from './BackupButton'
@@ -296,7 +297,9 @@ export function ExtensionEntry({
             data-unlocked={privateStatus === 'unlocked' ? 'true' : undefined}
             disabled={privateStatus === 'unlocked'}
           >
-            {privateStatus === 'unlocked' ? '🔓 PRIVATE (UNLOCKED)' : '🔒 PRIVATE'}
+            {privateStatus === 'unlocked'
+              ? `${PRIVATE_UNLOCKED_ICON}${PRIVATE_LABEL.toUpperCase()} (UNLOCKED)`
+              : `${PRIVATE_LOCKED_ICON}${PRIVATE_LABEL.toUpperCase()}`}
           </button>
         </section>
 
