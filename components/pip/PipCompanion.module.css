@@ -79,3 +79,11 @@
   color: var(--text-primary, #2b2722);
 }
 
+.privateSetupNotice {
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+

@@ -13,6 +13,8 @@ import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
 import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
 import { TagAddPopover } from '@/components/board/TagAddPopover'
 import { PasteSaveFeedback } from '@/components/board/PasteSaveFeedback'
+import { loadVaultRecord } from '@/lib/private/vault-store'
+import { addPrivateTag } from '@/lib/private/apply-tag-change'
 import { PipEmptyState } from './PipEmptyState'
 import { PipStack, type PipStackCard } from './PipStack'
 import styles from './PipCompanion.module.css'
@@ -63,6 +65,15 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   const allTagsRef = useRef(allTags)
   useEffect(() => { allTagsRef.current = allTags }, [allTags])
 
+  // Whether a Private vault has ever been set up — learned once from IDB (the
+  // vault record's public key is not secret, so this needs no unlock). null
+  // until the initial load resolves; the chip stays hidden-behavior-wise
+  // (status 'none') until then, same as "not set up yet".
+  const [privateTagId, setPrivateTagId] = useState<string | null>(null)
+  // Shows a brief "set up Private in the app first" notice when the user
+  // taps the chip before any vault exists. Auto-clears.
+  const [privateSetupNotice, setPrivateSetupNotice] = useState(false)
+
   // Tag menu is rendered as a PiP-window-level overlay (a sibling of the
   // carousel inside .host), NOT inside PipCard — the carousel's nested
   // overflow:hidden (.host / .stage / .scroller) clips anything a card tries
@@ -101,6 +112,14 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
     void (async () => {
       const db = await initDB()
       setAllTags((await getAllTags(db)).filter((t) => t.isPrivateVault !== true))
+    })()
+  }, [])
+
+  useEffect(() => {
+    void (async () => {
+      const db = await initDB()
+      const record = await loadVaultRecord(db)
+      setPrivateTagId(record?.tagId ?? null)
     })()
   }, [])
 
@@ -209,6 +228,19 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
     )
   }, [])
 
+  const handlePrivateChip = useCallback((bookmarkId: string) => {
+    if (privateTagId === null) {
+      setPrivateSetupNotice(true)
+      setTimeout(() => setPrivateSetupNotice(false), 3000)
+      return
+    }
+    const tagId = privateTagId
+    void (async () => {
+      const db = await initDB()
+      await addPrivateTag(db, bookmarkId, tagId)
+    })()
+  }, [privateTagId])
+
   const menuCard = tagMenuFor !== null ? cards.find((c) => c.id === tagMenuFor) : undefined
 
   return (
@@ -255,7 +287,17 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
               onAddExisting={(tagId) => { void handleAddExisting(tagMenuFor, tagId) }}
               onAddNew={(name) => { void handleAddNew(tagMenuFor, name); beginCloseTagMenu() }}
               onClose={beginCloseTagMenu}
+              privateEntry={{
+                status: privateTagId === null ? 'none' : 'locked',
+                isTagged: false,
+                onClick: (): void => handlePrivateChip(tagMenuFor),
+              }}
             />
+            {privateSetupNotice && (
+              <div className={styles.privateSetupNotice} data-testid="pip-private-setup-notice">
+                Set up Private in the AllMarks board first.
+              </div>
+            )}
           </div>
         </>
       )}
