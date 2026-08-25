@@ -1,4 +1,4 @@
-import { dispatchSave, dispatchAddTag, dispatchAddNewTag } from './lib/dispatch.js'
+import { dispatchSave, dispatchAddTag, dispatchAddNewTag, dispatchAddPrivateTag } from './lib/dispatch.js'
 import { isAutoSaveEnabled } from './lib/auto-save-config.js'
 import { removeUrl as mirrorRemoveUrl } from './lib/saved-urls-mirror.js'
 import { normalizeUrl } from './lib/normalize-url.js'
@@ -85,6 +85,13 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     if (typeof msg.bookmarkId !== 'string' || typeof msg.name !== 'string' || !msg.name.trim()) return
     void dispatchAddNewTag({ bookmarkId: msg.bookmarkId, name: msg.name }).catch((e) => {
       console.warn('[booklage] add-new-tag failed:', e)
+    })
+    return
+  }
+  if (msg.type === 'booklage:add-private-tag-request') {
+    if (typeof msg.bookmarkId !== 'string') return
+    void dispatchAddPrivateTag({ bookmarkId: msg.bookmarkId }).catch((e) => {
+      console.warn('[booklage] add-private-tag failed:', e)
     })
     return
   }

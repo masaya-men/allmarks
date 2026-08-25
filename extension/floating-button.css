@@ -279,6 +279,12 @@
   transition: transform 300ms cubic-bezier(0.16,1,0.3,1);
 }
 .allmarks-tagstrip[data-open="true"] .allmarks-tagstrip__hint { transform: rotate(180deg); }
+.allmarks-tagstrip__notice {
+  padding: 6px 8px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--am-strip-fg) 60%, transparent);
+}
 
 .allmarks-tagstrip__drawer {
   box-sizing: border-box;

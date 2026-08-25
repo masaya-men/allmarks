@@ -399,6 +399,50 @@
     if (!isExtensionAlive()) return
     try { chrome.runtime.sendMessage({ type: 'booklage:add-new-tag-request', bookmarkId, name }).catch(() => {}) } catch (_) {}
   }
+  function sendAddPrivateTag(bookmarkId) {
+    if (!isExtensionAlive()) return
+    try { chrome.runtime.sendMessage({ type: 'booklage:add-private-tag-request', bookmarkId }).catch(() => {}) } catch (_) {}
+  }
+  let privateNoticeTimer = null
+  // Shown when the Private chip is clicked but no vault has been set up yet —
+  // mirrors the exact copy already shipped in PipCompanion.tsx / SaveToast.tsx
+  // ("Set up Private in the AllMarks board first.").
+  function showPrivateSetupNotice() {
+    if (!tagStripEl) return
+    const existing = tagStripEl.querySelector('.allmarks-tagstrip__notice')
+    if (existing) existing.remove()
+    const notice = document.createElement('div')
+    notice.className = 'allmarks-tagstrip__notice'
+    notice.textContent = 'Set up Private in the AllMarks board first.'
+    tagStripEl.appendChild(notice)
+    if (privateNoticeTimer) clearTimeout(privateNoticeTimer)
+    privateNoticeTimer = setTimeout(() => { if (notice.parentNode) notice.remove() }, 3000)
+  }
+  // Mirrors makeChip's shape (optimistic ✓ via data-on, same CSS as regular
+  // chips) but hardcodes its own label/message instead of a tag record, and
+  // routes to the vault-required message when Private hasn't been set up yet
+  // instead of ever sending the request.
+  function makePrivateChip(bookmarkId, privateTagId) {
+    const chip = document.createElement('button')
+    chip.type = 'button'
+    chip.className = 'allmarks-tagstrip__chip'
+    chip.textContent = '🔒 Private'
+    chip.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation()
+      if (chip.dataset.on === 'true') return
+      if (privateTagId === null) {
+        showPrivateSetupNotice()
+        return
+      }
+      chip.dataset.on = 'true'
+      sendAddPrivateTag(bookmarkId)
+      if (!tagStripEl || tagStripEl.dataset.open !== 'true') {
+        if (tagStripHideTimer) clearTimeout(tagStripHideTimer)
+        tagStripHideTimer = setTimeout(() => removeTagStrip(true), TAGSTRIP_HIDE_MS)
+      }
+    })
+    return chip
+  }
   function applyStripTheme(el, t) {
     if (!t) return
     const set = (k, v) => { if (v) el.style.setProperty(k, v) }
@@ -458,7 +502,7 @@
     }
   }
 
-  function showTagStripForButton(bookmarkId, tags, currentTagIds, themeTokens) {
+  function showTagStripForButton(bookmarkId, tags, currentTagIds, themeTokens, privateTagId) {
     removeTagStrip()
     const current = new Set(Array.isArray(currentTagIds) ? currentTagIds : [])
     const list = Array.isArray(tags) ? tags : []
@@ -485,6 +529,10 @@
     const drawer = document.createElement('div')
     drawer.className = 'allmarks-tagstrip__drawer'
     for (const t of list) drawer.appendChild(makeChip(bookmarkId, t, current.has(t.id)))
+    // Private — always the LAST chip, sort-exempt, never mixed into `list`
+    // (mirrors the same convention already shipped in the board's TagAddPopover
+    // and the PopOut/bookmarklet quick-tag surfaces).
+    drawer.appendChild(makePrivateChip(bookmarkId, privateTagId))
     el.appendChild(drawer)
     // Bottom fade is a "more below" hint only. Drop it once the drawer is
     // scrolled to the end (or when it isn't scrollable at all) so the last tag
@@ -614,7 +662,7 @@
       // `tags.length > 0` gate hid tagging from every new user (N-25).
       if (Array.isArray(msg.tags) && msg.bookmarkId) {
         // Defer a tick so layout/settings are settled before anchoring.
-        setTimeout(() => showTagStripForButton(msg.bookmarkId, msg.tags, msg.currentTagIds, msg.themeTokens), 80)
+        setTimeout(() => showTagStripForButton(msg.bookmarkId, msg.tags, msg.currentTagIds, msg.themeTokens, msg.privateTagId ?? null), 80)
       }
     })
   }

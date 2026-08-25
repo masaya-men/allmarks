@@ -172,6 +172,7 @@ export async function dispatchSave({ trigger, tabId, linkUrl, ogpFromBookmarklet
       tags: Array.isArray(result.tags) ? result.tags : [],
       currentTagIds: Array.isArray(result.currentTagIds) ? result.currentTagIds : [],
       themeTokens: result.themeTokens || null,
+      privateTagId: result.privateTagId || null,
     }).catch(() => {})
   }
 }
@@ -194,6 +195,29 @@ export async function dispatchAddTag({ bookmarkId, tagId }) {
     if (!result?.ok && (result?.error === 'timeout' || result == null)) {
       await recreateOffscreenIfAlone()
       const retryNonce = makeNonce('t-retry')
+      result = await postToOffscreen({ ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }, retryNonce)
+    }
+    return result
+  } finally {
+    offscreenInFlight--
+  }
+}
+
+// Add-private-tag round-trip for the quick-tag strip's Private chip. Same
+// offscreen bridge + one-shot self-heal as dispatchAddTag. No tagId param —
+// the /save-iframe page reads its own vault record to find the Private tag
+// id and encrypts under its public key; the caller here never needs to know
+// or handle a password.
+export async function dispatchAddPrivateTag({ bookmarkId }) {
+  offscreenInFlight++
+  try {
+    await ensureOffscreen()
+    const nonce = makeNonce('p')
+    const envelope = { type: 'booklage:add-private-tag', payload: { bookmarkId, nonce } }
+    let result = await postToOffscreen(envelope, nonce)
+    if (!result?.ok && (result?.error === 'timeout' || result == null)) {
+      await recreateOffscreenIfAlone()
+      const retryNonce = makeNonce('p-retry')
       result = await postToOffscreen({ ...envelope, payload: { ...envelope.payload, nonce: retryNonce } }, retryNonce)
     }
     return result
