@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from 'react'
 
-/** The unlocked Private vault's tag id + decryption key, held ONLY in this
+/** The unlocked Private vault's tag id + private key, held ONLY in this
  *  module-scoped variable — never written to IndexedDB/localStorage/
  *  sessionStorage. A full page reload or tab close resets this module's
  *  state to null, which is the entire re-lock mechanism (see spec §5.3 —
@@ -15,7 +15,7 @@ import { useSyncExternalStore } from 'react'
  *  NOT reset this module (same JS runtime) — only a hard reload does, which
  *  is the desired "stays unlocked while you navigate the app this session"
  *  behavior. */
-export type PrivateVaultSession = { readonly tagId: string; readonly key: CryptoKey } | null
+export type PrivateVaultSession = { readonly tagId: string; readonly privateKey: CryptoKey } | null
 
 let currentSession: PrivateVaultSession = null
 const listeners = new Set<() => void>()
