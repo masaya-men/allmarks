@@ -72,6 +72,11 @@ export function SaveToast(): ReactElement {
   const [tagData, setTagData] = useState<TagData | null>(null)
   const [privateTagId, setPrivateTagId] = useState<string | null>(null)
   const [privateSetupNotice, setPrivateSetupNotice] = useState(false)
+  // Whether this window's single bookmark has been successfully encrypted —
+  // drives the chip's checked state (isTagged) for visible success feedback.
+  const [privateTagged, setPrivateTagged] = useState(false)
+  // Shows a brief failure notice when the encrypt call throws. Auto-clears.
+  const [privateErrorNotice, setPrivateErrorNotice] = useState(false)
   const [mode, setMode] = useState<SaveWindowMode>('normal')
   const startedRef = useRef(false)
   // Cache the db instance so tag handlers can use it without re-awaiting initDB each time.
@@ -204,16 +209,23 @@ export function SaveToast(): ReactElement {
 
   async function handlePrivateChip(): Promise<void> {
     if (!tagData) return
+    if (privateTagged) return
     if (privateTagId === null) {
       setPrivateSetupNotice(true)
       setTimeout(() => setPrivateSetupNotice(false), 3000)
       return
     }
-    const db = dbRef.current ?? (await initDB())
-    await addPrivateTag(db, tagData.bookmarkId, privateTagId)
-    // If a board tab is open, it doesn't reload on its own — broadcast so it
-    // drops this card immediately, matching the other quick-tag paths.
-    postBookmarkUpdated({ bookmarkId: tagData.bookmarkId })
+    try {
+      const db = dbRef.current ?? (await initDB())
+      await addPrivateTag(db, tagData.bookmarkId, privateTagId)
+      setPrivateTagged(true)
+      // If a board tab is open, it doesn't reload on its own — broadcast so it
+      // drops this card immediately, matching the other quick-tag paths.
+      postBookmarkUpdated({ bookmarkId: tagData.bookmarkId })
+    } catch {
+      setPrivateErrorNotice(true)
+      setTimeout(() => setPrivateErrorNotice(false), 3000)
+    }
   }
 
   if (!url) {
@@ -343,13 +355,18 @@ export function SaveToast(): ReactElement {
             onClose={() => { /* lifecycle owns dismissal */ }}
             privateEntry={{
               status: privateTagId === null ? 'none' : 'locked',
-              isTagged: false,
+              isTagged: privateTagged,
               onClick: (): void => { void handlePrivateChip() },
             }}
           />
           {privateSetupNotice && (
             <div className={styles.privateSetupNotice} data-testid="save-toast-private-setup-notice">
               Set up Private in the AllMarks board first.
+            </div>
+          )}
+          {privateErrorNotice && (
+            <div className={styles.privateSetupNotice} data-testid="save-toast-private-error-notice">
+              Could not encrypt — try again.
             </div>
           )}
         </div>

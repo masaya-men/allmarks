@@ -73,6 +73,11 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   // Shows a brief "set up Private in the app first" notice when the user
   // taps the chip before any vault exists. Auto-clears.
   const [privateSetupNotice, setPrivateSetupNotice] = useState(false)
+  // Bookmark ids successfully encrypted this session — drives the chip's
+  // checked state (isTagged) so a successful click gets visible feedback.
+  const [privateTaggedIds, setPrivateTaggedIds] = useState<Set<string>>(new Set())
+  // Shows a brief failure notice when the encrypt call throws. Auto-clears.
+  const [privateErrorNotice, setPrivateErrorNotice] = useState(false)
 
   // Tag menu is rendered as a PiP-window-level overlay (a sibling of the
   // carousel inside .host), NOT inside PipCard — the carousel's nested
@@ -229,6 +234,7 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
   }, [])
 
   const handlePrivateChip = useCallback((bookmarkId: string) => {
+    if (privateTaggedIds.has(bookmarkId)) return
     if (privateTagId === null) {
       setPrivateSetupNotice(true)
       setTimeout(() => setPrivateSetupNotice(false), 3000)
@@ -236,13 +242,19 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
     }
     const tagId = privateTagId
     void (async () => {
-      const db = await initDB()
-      await addPrivateTag(db, bookmarkId, tagId)
-      // Same-realm board (PopOut) doesn't reload on its own — broadcast so
-      // it drops this card immediately, matching the other quick-tag paths.
-      postBookmarkUpdated({ bookmarkId })
+      try {
+        const db = await initDB()
+        await addPrivateTag(db, bookmarkId, tagId)
+        setPrivateTaggedIds((prev) => new Set(prev).add(bookmarkId))
+        // Same-realm board (PopOut) doesn't reload on its own — broadcast so
+        // it drops this card immediately, matching the other quick-tag paths.
+        postBookmarkUpdated({ bookmarkId })
+      } catch {
+        setPrivateErrorNotice(true)
+        setTimeout(() => setPrivateErrorNotice(false), 3000)
+      }
     })()
-  }, [privateTagId])
+  }, [privateTagId, privateTaggedIds])
 
   const menuCard = tagMenuFor !== null ? cards.find((c) => c.id === tagMenuFor) : undefined
 
@@ -292,13 +304,18 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
               onClose={beginCloseTagMenu}
               privateEntry={{
                 status: privateTagId === null ? 'none' : 'locked',
-                isTagged: false,
+                isTagged: privateTaggedIds.has(tagMenuFor),
                 onClick: (): void => handlePrivateChip(tagMenuFor),
               }}
             />
             {privateSetupNotice && (
               <div className={styles.privateSetupNotice} data-testid="pip-private-setup-notice">
                 Set up Private in the AllMarks board first.
+              </div>
+            )}
+            {privateErrorNotice && (
+              <div className={styles.privateSetupNotice} data-testid="pip-private-error-notice">
+                Could not encrypt — try again.
               </div>
             )}
           </div>
