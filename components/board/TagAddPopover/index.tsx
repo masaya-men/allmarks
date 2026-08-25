@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { JSX } from 'react'
 import type { TagRecord } from '@/lib/storage/indexeddb'
+import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import styles from './TagAddPopover.module.css'
 
 /** Pre-ranked suggestion row. The popover renders these top-to-bottom in
@@ -198,7 +199,7 @@ export function TagAddPopover({
                 onMouseDown={(e): void => e.preventDefault()}
                 onClick={privateEntry.onClick}
               >
-                🔒 {privateEntry.isTagged ? '✓ ' : ''}Private
+                {PRIVATE_LOCKED_ICON}{privateEntry.isTagged ? '✓ ' : ''}{PRIVATE_LABEL}
               </button>
             )}
           </div>

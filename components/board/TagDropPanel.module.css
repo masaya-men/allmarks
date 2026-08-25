@@ -167,6 +167,9 @@
 
 .tagItem { cursor: default; } /* a drop target, not a click action */
 
+.tagItem[data-private-status] {
+  gap: 0;
+}
 .tagDot {
   width: 8px;
   height: 8px;
