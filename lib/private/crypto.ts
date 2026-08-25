@@ -75,3 +75,100 @@ export async function decryptJson<T>(key: CryptoKey, iv: string, ciphertext: str
   )
   return JSON.parse(new TextDecoder().decode(plainBuf)) as T
 }
+
+/** ECDH (P-256) key pair for the vault's public/private split: the public
+ *  half is safe to store in plaintext (it's not secret) and lets ANY
+ *  context encrypt (tag something Private) without the password. Only the
+ *  matching private half (wrapped elsewhere under the password-derived
+ *  key) can decrypt. */
+export async function generateEcdhKeyPair(): Promise<CryptoKeyPair> {
+  return crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey', 'deriveBits'])
+}
+
+export async function exportPublicKeyB64(key: CryptoKey): Promise<string> {
+  const raw = await crypto.subtle.exportKey('spki', key)
+  return bytesToBase64(new Uint8Array(raw))
+}
+
+export async function importPublicKey(b64: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey('spki', base64ToBytes(b64), { name: 'ECDH', namedCurve: 'P-256' }, true, [])
+}
+
+/** Wraps (encrypts) a private key with `wrappingKey` (the PBKDF2-derived
+ *  password key) for storage. Reuses encryptJson rather than adding new
+ *  low-level byte-encryption code. */
+export async function wrapPrivateKey(
+  key: CryptoKey,
+  wrappingKey: CryptoKey,
+): Promise<{ iv: string; ciphertext: string }> {
+  const pkcs8 = await crypto.subtle.exportKey('pkcs8', key)
+  return encryptJson(wrappingKey, { pkcs8: bytesToBase64(new Uint8Array(pkcs8)) })
+}
+
+/** Inverse of wrapPrivateKey. Throws (DOMException) if `wrappingKey` is
+ *  wrong — same contract as decryptJson, and this doubles as the vault's
+ *  password-correctness check (no separate check-blob needed). Imports the
+ *  recovered key as non-extractable. */
+export async function unwrapPrivateKey(
+  wrapped: { iv: string; ciphertext: string },
+  wrappingKey: CryptoKey,
+): Promise<CryptoKey> {
+  const { pkcs8 } = await decryptJson<{ pkcs8: string }>(wrappingKey, wrapped.iv, wrapped.ciphertext)
+  return crypto.subtle.importKey(
+    'pkcs8',
+    base64ToBytes(pkcs8),
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    ['deriveKey', 'deriveBits'],
+  )
+}
+
+/** ECDH shared secret -> HKDF-SHA256 -> AES-256-GCM key. Shared by
+ *  encryptWithPublicKey/decryptWithPrivateKey so both sides derive the
+ *  identical key (ECDH is symmetric: derive(A_priv, B_pub) ==
+ *  derive(B_priv, A_pub)). No HKDF salt (zero-length — the shared secret is
+ *  already unique per call via the ephemeral key, so no extra randomness is
+ *  needed); `info` fixes the derivation to this one purpose. */
+async function deriveAesKeyFromEcdh(privateKey: CryptoKey, publicKey: CryptoKey): Promise<CryptoKey> {
+  const sharedBits = await crypto.subtle.deriveBits({ name: 'ECDH', public: publicKey }, privateKey, 256)
+  const hkdfKey = await crypto.subtle.importKey('raw', sharedBits, 'HKDF', false, ['deriveKey'])
+  return crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new Uint8Array(0),
+      info: new TextEncoder().encode('allmarks-private-v1'),
+    },
+    hkdfKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+/** Encrypts `data` under `publicKey` — usable from ANY context that can
+ *  read the (non-secret) public key, no password/session required. Each
+ *  call generates a fresh disposable (ephemeral) key pair; only its public
+ *  half is included in the result (safe) so decryptWithPrivateKey can
+ *  reconstruct the same AES key. */
+export async function encryptWithPublicKey(
+  publicKey: CryptoKey,
+  data: unknown,
+): Promise<{ ephemeralPublicKey: string; iv: string; ciphertext: string }> {
+  const ephemeral = await generateEcdhKeyPair()
+  const aesKey = await deriveAesKeyFromEcdh(ephemeral.privateKey, publicKey)
+  const { iv, ciphertext } = await encryptJson(aesKey, data)
+  const ephemeralPublicKey = await exportPublicKeyB64(ephemeral.publicKey)
+  return { ephemeralPublicKey, iv, ciphertext }
+}
+
+/** Inverse of encryptWithPublicKey. Requires the vault's own (unwrapped,
+ *  password-gated) static private key. */
+export async function decryptWithPrivateKey<T>(
+  privateKey: CryptoKey,
+  envelope: { ephemeralPublicKey: string; iv: string; ciphertext: string },
+): Promise<T> {
+  const ephemeralPublicKey = await importPublicKey(envelope.ephemeralPublicKey)
+  const aesKey = await deriveAesKeyFromEcdh(privateKey, ephemeralPublicKey)
+  return decryptJson<T>(aesKey, envelope.iv, envelope.ciphertext)
+}
