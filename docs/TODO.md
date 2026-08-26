@@ -21,19 +21,14 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 206 — ★N-69完了／Private行アイコン統一(拡張機能含む)／YouTubeサムネ再発バグ根治／全項目本番デプロイ済)
+### 直近の状態 (セッション 206 — ★N-69・N-75完了／Private行アイコン統一(拡張機能含む)／YouTubeサムネ再発バグ根治／全項目本番デプロイ済)
 
-**session 204提案の残り5件(N-69/74〜76/78)からN-69に着手、完了。加えてユーザー発の追加修正2件を同セッションで完遂。**
+**session 204提案の残り5件からN-69・N-75の2件を完了。詳細narrative(Private行アイコン統一の4段階・YouTubeサムネ根治調査・N-75の4ラウンド・プロセス教訓2件)は[TODO_COMPLETED.md](TODO_COMPLETED.md)「セッション206」参照。**
 
-- **N-69**(タグ絞り込みに「タグ無し」フィルタ): 調査の結果、`BoardFilter`の`kind:'inbox'`は`filter.ts`/`sidebarCounts`/`BoardBackgroundTypography`まで既に完全配線済み(過去の「Inbox」概念の名残)だったが、`FilterPill`の絞り込みメニューに選択ボタンが1つも無かった、という配線漏れだと判明。ボタンを追加して解決。ラベルは当初案「INBOX」だとメール受信箱と誤解されるとユーザー指摘 → 話し合いの末「NO TAGS」に決定。
-- **Private行の表記統一(ユーザー発見→提案→実装の3段階)**: ①FilterPill/TagDropPanel/BoardMobileTagBarの3箇所全てで、Private行だけ他のタグ行の「中空ドット+ラベル+件数」という視覚文法と違う独自デザインだった件をユーザーが指摘。中空ドット追加+施錠/解錠アイコンの出し分けに統一する過程で`PRIVATE_UNLOCKED_ICON`(🔓)が一度も使われていなかったバグも発覚・解消。②実装直後に「アイコンとPrivateの間に不要な隙間ができた」という回帰をユーザーが発見→アイコンをラベルのspan内にネストする形に修正。③ユーザーが絵文字🔒🔓自体をモノクロ線画アイコンに変えたいと提案、貼られたFramer Motion+Tailwindのコード例は本プロジェクトの規約に反するため理由を説明の上、ReiconのMITアイコンライブラリからlock/unlockペア(Outlineウェイト)を調査・特定して採用。`PrivateLockGlyph.tsx`新規、CSS `@keyframes`のみでポップインアニメーション(新規ライブラリ追加なし)。**ユーザー指摘で拡張機能(`extension/floating-button.js`)の同種チップも未修正と判明**→同じアイコンに統一、ついでにv0.1.26へバージョンアップ+`dist/`zip再生成(審査待ちのzh_CN/pt_BR修正コミットと合流、**次回提出はv0.1.25の審査結果待ち**でユーザー保留)。
-- **YouTubeサムネ「まだグレー」の根治**(systematic-debugging正式フロー): ユーザーから実例URL3本の報告を受け、N-77(s205)の修正では直っていないと判明。curlで実際のCDNレスポンスを直接検証し、`i.ytimg.com`は`maxresdefault.jpg`が存在しない動画に対し**HTTP404を返しつつ中身は本物の120x90pxのJPEGプレースホルダー**を返すことを確認(N-77とは無関係の別バグ)。ブラウザの`<img onError>`は「画像として読めたか」しか見ないため一切発火せず、既存のフォールバック連鎖(maxres→hq→mq→0)が永久に発動しなかったのが真因。Playwrightで使い捨て調査スクリプトを書き、スクロール無しの単一カードでも再現すること・アンビエントスライドショーとは無関係なことを実証。TDDで`isYoutubeThumbPlaceholder()`(読み込んだ画像のサイズが怪しく小さければ次の画質へ)を追加、`VideoThumbCard`の`onLoad`に配線して解決。3本中2本で実機相当のPlaywright確認+ユーザー本番実機確認(「なおってました」)。
-- **検証**: 全項目 tsc0 / vitest 303ファイル2533緑(新規テスト計16件) / 関連e2e多数緑(private-vault・tag-mode-click-to-tag・board-b0・chrome-skin-tokens・flat-chrome-legibility・board-dead-links-bulk-trash・trash-tag-delete-hold-label・board-b-embeds・lightbox-video-flip-regression) / 拡張機能テスト161件緑 / `pnpm build`成功。
-- **全項目push・`allmarks.app`にデプロイ済**。
-- **教訓**: セッション冒頭、残り5件からどれに着手するか選ぶだけの軽い場面でAskUserQuestion(選択ボックス)を使ってユーザーから強く否定された。「意思決定には使わない」というルールは、重い設計判断だけでなくこの程度の軽い選択にも例外なく適用される(memory `feedback_no_question_box_for_decisions`に追記済み)。その直後、3件の作業順序を確認する完全なyes/no質問にすら同じツールを使ってしまい、口先の謝罪が行動を変えていなかったと自認・memory強化。
-- **ユーザー方針(s206終盤)**: N-78(画像無しツイート専用カード)は収益化の仕組みに着手した後に回す。まずN-74/75/76の3件を進める。
-- **N-75完了**(SHARE画面の文言を多言語化+平易化): 当初「文章っぽい長文4箇所だけ」で提案したところ、ユーザーから「ARRANGE/CANCEL/DONE等の短い操作ボタンも含めて全部わかりやすくしたい」と明確な訂正。「短い動作語は英語のまま」という全体規約を、SHARE画面に限り例外的に上書き(既存ユーザー以外も見る画面のため、という理屈で合意)。`share.*`名前空間に約28キー(+`private.shareIncludesPrivateHeading`)を新設、15言語対応(英日精査・他13言語AI下訳)。`SenderShareModal.tsx`/`MobileArrangeTopBar.tsx`/`MobileArrangeBar.tsx`はBoardRoot.tsx自身のコメントで「退役済み」と明記された死んだコードのためスキップ。検証: tsc0/vitest2533緑/e2e40件緑/`pnpm build`成功。push・`allmarks.app`デプロイ済。
-- **★次セッション最優先**: N-74/76から次を選ぶ(N-75は完了)。着手前に該当項目だけ改めてsuperpowers:brainstormingから。優先順位の考え方は`docs/private/IDEAS.md`参照。
+- 検証: tsc0 / vitest2532〜2533緑(既知の無関係flaky=channel.test.ts) / e2e多数緑 / 拡張機能テスト161件緑 / `pnpm build`成功。全項目push・`allmarks.app`デプロイ済。
+- **ユーザー方針**: N-78(画像無しツイート専用カード)は収益化の仕組みに着手した後に回す。
+- **拡張機能**: v0.1.26まで用意済(zip生成済)だが、v0.1.25の審査結果が出るまで提出はユーザー判断で保留。
+- **★次セッション最優先**: N-74/76から次を選ぶ。着手前に該当項目だけ改めてsuperpowers:brainstormingから。優先順位の考え方は`docs/private/IDEAS.md`参照。
 
 ### 直近の状態 (セッション 205 — ★N-77・N-70・N-73・N-71・N-72完了)
 

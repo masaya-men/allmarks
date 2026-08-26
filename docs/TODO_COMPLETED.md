@@ -9824,3 +9824,43 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **ドラッグの当たり判定を壊さない設計判断**: 未選択時に行を薄く見せる案(`aria-disabled`のopacityダウン)は、**ドラッグ&ドロップは選択に関係なく常に有効**(掴んだカード自身が対象になるフォールバックがある)なため、見た目だけ「使えなさそう」に見せるのは誤解を招くと判断し、`aria-disabled`属性(スクリーンリーダー向けの意味づけ)は残しつつ視覚的な減光は付けなかった。
 - **TDD**: `tests/e2e/tag-mode-click-to-tag.spec.ts`新規。①選択→クリックで一括タグ付け+フラッシュ+ロールアップ+フィルタで永続確認、②未選択時のクリックは無反応(Playwrightの`aria-disabled`アクショナビリティガードを`force:true`で越えて実際にクリックし、アプリ側のno-opガードを直接検証)。
 - **検証**: tsc0 / vitest全302ファイル2523テスト緑 / 新規e2e2件緑 / 関連の既存e2e(`private-vault.spec.ts`10件、モバイルTAG MODE/Private drop回帰含む)緑 / `pnpm build`成功。
+
+---
+
+## セッション 206 — N-69完了・Private行アイコン統一(拡張機能含む)・YouTubeサムネ再発バグ根治・N-75(SHARE多言語化)完了
+
+**session 204提案の残り5件(N-69/74〜76/78)からN-69に着手、完了。ユーザー発の追加修正・バグ報告・N-75まで、盛りだくさんの1セッション。**
+
+### N-69: タグ絞り込みに「タグ無し」フィルタ
+
+調査の結果、`BoardFilter`の`kind:'inbox'`は`filter.ts`/`sidebarCounts`/`BoardBackgroundTypography`まで既に完全配線済み(過去の「Inbox」概念の名残)だったが、`FilterPill`の絞り込みメニューに選択ボタンが1つも無かった、という配線漏れだと判明。ボタンを追加して解決。ラベルは当初案「INBOX」だとメール受信箱と誤解されるとユーザー指摘 → 話し合いの末「NO TAGS」に決定。
+
+### Private行の表記統一(ユーザー発見→提案→実装→拡張機能まで4段階)
+
+1. FilterPill/TagDropPanel/BoardMobileTagBarの3箇所全てで、Private行だけ他のタグ行の「中空ドット+ラベル+件数」という視覚文法と違う独自デザインだった件をユーザーが指摘。中空ドット追加+施錠/解錠アイコンの出し分けに統一する過程で`PRIVATE_UNLOCKED_ICON`(🔓)が一度も使われていなかったバグも発覚・解消。
+2. 実装直後に「アイコンとPrivateの間に不要な隙間ができた」という回帰をユーザーが発見 → アイコンをラベルのspan内にネストする形に修正。
+3. ユーザーが絵文字🔒🔓自体をモノクロ線画アイコンに変えたいと提案、貼られたFramer Motion+Tailwindのコード例は本プロジェクトの規約(Framer Motion禁止=バンドルサイズ、Tailwind禁止=量産SaaS感回避)に反するため理由を説明の上、Reiconのlock/unlockペア(Outlineウェイト、MIT)を`https://reicon.dev/icons`から特定して採用。`PrivateLockGlyph.tsx`新規、CSS `@keyframes`のみでポップインアニメーション(新規ライブラリ追加なし)。
+4. ユーザー指摘で拡張機能(`extension/floating-button.js`)の同種チップが未修正と判明 → 同じアイコンに統一、v0.1.26へバージョンアップ+`dist/`zip再生成(審査待ちのzh_CN/pt_BR修正コミットと合流、**次回提出はv0.1.25の審査結果待ち**でユーザー保留)。
+
+### YouTubeサムネ「まだグレー」の根治(systematic-debugging正式フロー)
+
+ユーザーから実例URL3本の報告を受け、N-77(s205)の修正では直っていないと判明。curlで実際のCDNレスポンスを直接検証し、`i.ytimg.com`は`maxresdefault.jpg`が存在しない動画に対し**HTTP404を返しつつ中身は本物の120x90pxのJPEGプレースホルダー**を返すことを確認(N-77とは無関係の別バグ)。ブラウザの`<img onError>`は「画像として読めたか」しか見ないため一切発火せず、既存のフォールバック連鎖(maxres→hq→mq→0)が永久に発動しなかったのが真因。Playwrightで使い捨て調査スクリプトを書き、スクロール無しの単一カードでも再現すること・アンビエントスライドショー(`CardSlideshow`)とは無関係なことを実証。TDDで`isYoutubeThumbPlaceholder()`(読み込んだ画像のサイズが怪しく小さければ次の画質へ)を追加、`VideoThumbCard`の`onLoad`に配線して解決。3本中2本で実機相当のPlaywright確認+ユーザー本番実機確認(「なおってました」)。
+
+### N-75: SHARE画面の文言を多言語化+平易化(全4ラウンド)
+
+- **ラウンド1**: 当初「文章っぽい長文4箇所(CaptureCrashNotice/ShareCreatingIndicator/MobileShareResult/PrivateShareConfirmDialogの見出し)だけ」で提案・EN/JA文面を見せて承認を得て実装。
+- **ラウンド2**: ユーザーから「ARRANGE/CANCEL/DONE等の短い操作ボタンも含めて全部わかりやすくしたい」と明確な訂正。「短い動作語は英語のまま」という全体規約を、SHARE画面に限り例外的に上書き(既存ユーザー以外＝初めてAllMarksに触れる相手も見る画面、という理屈で合意)。ただしこのラウンドでは英語ラベルの一覧だけ見せて実装に進んでしまい、日本語訳を見せずに15言語ぶん書き込んでしまうミスを犯した → ユーザーから「何でまず文言確認してからやってくれないんですかね」と明確な指摘、memory `feedback_show_copy_before_implementing`新規保存。
+- **ラウンド3**: 指摘を受け実装済みの全キー(約28個)の英日対訳表を事後提示。ユーザーが「ARRANGE」「DONE」を名指しで「意味不明」と指摘 → アイデア提示(ARRANGE→MAKE COLLAGE/LAY OUT/NEXT: LAYOUT、DONE→BACK TO BOARD/CLOSE/FINISH)→ユーザーが「NEXT: LAYOUT (N)」と「BACK TO BOARD」を選択→日本語訳も2案提示(「次へ：レイアウト」or「レイアウトへ進む」)→「レイアウトへ進む」に決定→実装。「BACK TO BOARD」は`triage.done_back`(「ボードへ戻る」)という既存の確立済みフレーズをそのまま15言語ぶん流用できたため、翻訳品質面でも好都合だった。
+- **ラウンド4**: 続けてユーザーが「作成」(CREATE)も不明瞭と指摘 → アイデア提示(CREATE LINK/MAKE LINK/SHARE NOW)→「CREATE LINK」(直後の「CREATING YOUR LINK…」「COULDN'T CREATE THE LINK」とボキャブラリーが揃う、という理由)を選択 → 実装、合わせて処理中ラベル(CREATING…→CREATING LINK…)も追随。
+- **技術**: `share.*`名前空間に約28キー(+`private.shareIncludesPrivateHeading`)を新設、15言語対応(英日精査・他13言語AI下訳・公開前ネイティブレビューという既存慣例通り)。`SenderShareModal.tsx`/`MobileArrangeTopBar.tsx`/`MobileArrangeBar.tsx`はBoardRoot.tsx自身のコメントで「退役済み・render されない」と明記された死んだコードのため翻訳をスキップ(確認してから判断、憶測でスキップしていない)。
+- **検証(全ラウンド累計)**: tsc0 / vitest2532〜2533緑(既知の無関係flaky=channel.test.tsを都度再確認) / e2e(mobile-share・board-share-polish・private-vault)計40件緑 / `pnpm build`成功。
+
+### プロセス上の教訓(2件、両方memory化済み)
+
+1. **AskUserQuestion(選択ボックス)の誤用が2回連続で発生**: セッション冒頭、残り5件からどれに着手するか選ぶ軽い場面で使用→即否定(「何度も言ってますよね？」)。直後、3件の作業順序を確認する完全なyes/no質問にも同じツールを使ってしまい、口先の謝罪が行動を変えていなかったと自認。`feedback_no_question_box_for_decisions`に両方の事例を追記、「yes/noでも例外なし」を明文化。
+2. **文言(コピー)は実装前に実際の文面を見せる**: 上記N-75ラウンド2参照。新規memory `feedback_show_copy_before_implementing`として保存、方針(スコープ)確認と文面確認は別物であることを明記。
+
+### 本番反映
+
+全項目push・`allmarks.app`にデプロイ済(複数回に分けて)。拡張機能は`dist/booklage-extension-0.1.26.zip`生成済だが、ユーザー判断でv0.1.25の審査結果が出るまで提出保留。
+
