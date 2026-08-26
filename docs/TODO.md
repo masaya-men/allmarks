@@ -30,9 +30,10 @@
 - **YouTubeサムネ「まだグレー」の根治**(systematic-debugging正式フロー): ユーザーから実例URL3本の報告を受け、N-77(s205)の修正では直っていないと判明。curlで実際のCDNレスポンスを直接検証し、`i.ytimg.com`は`maxresdefault.jpg`が存在しない動画に対し**HTTP404を返しつつ中身は本物の120x90pxのJPEGプレースホルダー**を返すことを確認(N-77とは無関係の別バグ)。ブラウザの`<img onError>`は「画像として読めたか」しか見ないため一切発火せず、既存のフォールバック連鎖(maxres→hq→mq→0)が永久に発動しなかったのが真因。Playwrightで使い捨て調査スクリプトを書き、スクロール無しの単一カードでも再現すること・アンビエントスライドショーとは無関係なことを実証。TDDで`isYoutubeThumbPlaceholder()`(読み込んだ画像のサイズが怪しく小さければ次の画質へ)を追加、`VideoThumbCard`の`onLoad`に配線して解決。3本中2本で実機相当のPlaywright確認+ユーザー本番実機確認(「なおってました」)。
 - **検証**: 全項目 tsc0 / vitest 303ファイル2533緑(新規テスト計16件) / 関連e2e多数緑(private-vault・tag-mode-click-to-tag・board-b0・chrome-skin-tokens・flat-chrome-legibility・board-dead-links-bulk-trash・trash-tag-delete-hold-label・board-b-embeds・lightbox-video-flip-regression) / 拡張機能テスト161件緑 / `pnpm build`成功。
 - **全項目push・`allmarks.app`にデプロイ済**。
-- **教訓**: セッション冒頭、残り5件からどれに着手するか選ぶだけの軽い場面でAskUserQuestion(選択ボックス)を使ってユーザーから強く否定された。「意思決定には使わない」というルールは、重い設計判断だけでなくこの程度の軽い選択にも例外なく適用される(memory `feedback_no_question_box_for_decisions`に追記済み)。
+- **教訓**: セッション冒頭、残り5件からどれに着手するか選ぶだけの軽い場面でAskUserQuestion(選択ボックス)を使ってユーザーから強く否定された。「意思決定には使わない」というルールは、重い設計判断だけでなくこの程度の軽い選択にも例外なく適用される(memory `feedback_no_question_box_for_decisions`に追記済み)。その直後、3件の作業順序を確認する完全なyes/no質問にすら同じツールを使ってしまい、口先の謝罪が行動を変えていなかったと自認・memory強化。
 - **ユーザー方針(s206終盤)**: N-78(画像無しツイート専用カード)は収益化の仕組みに着手した後に回す。まずN-74/75/76の3件を進める。
-- **★次セッション最優先**: N-74/75/76から次を選ぶ。着手前に該当項目だけ改めてsuperpowers:brainstormingから。優先順位の考え方は`docs/private/IDEAS.md`参照。
+- **N-75完了**(SHARE画面の文言を多言語化+平易化): 当初「文章っぽい長文4箇所だけ」で提案したところ、ユーザーから「ARRANGE/CANCEL/DONE等の短い操作ボタンも含めて全部わかりやすくしたい」と明確な訂正。「短い動作語は英語のまま」という全体規約を、SHARE画面に限り例外的に上書き(既存ユーザー以外も見る画面のため、という理屈で合意)。`share.*`名前空間に約28キー(+`private.shareIncludesPrivateHeading`)を新設、15言語対応(英日精査・他13言語AI下訳)。`SenderShareModal.tsx`/`MobileArrangeTopBar.tsx`/`MobileArrangeBar.tsx`はBoardRoot.tsx自身のコメントで「退役済み」と明記された死んだコードのためスキップ。検証: tsc0/vitest2533緑/e2e40件緑/`pnpm build`成功。push・`allmarks.app`デプロイ済。
+- **★次セッション最優先**: N-74/76から次を選ぶ(N-75は完了)。着手前に該当項目だけ改めてsuperpowers:brainstormingから。優先順位の考え方は`docs/private/IDEAS.md`参照。
 
 ### 直近の状態 (セッション 205 — ★N-77・N-70・N-73・N-71・N-72完了)
 
