@@ -40,6 +40,7 @@
 - **Private関連文言を15言語に対応**(ユーザー指摘、その通りだった。コミット`03660568`): `messages/*.json`の新規`private`名前空間(board側)・`lib/bookmarklet/save-private-copy.ts`(新規、`/save`はI18nProvider外のため既存の`save-fullscreen-copy.ts`と同じ自己完結マップ方式)・`extension/_locales/*/messages.json`(拡張機能側)の3系統に配線。ダイアログ見出し・ボタン文言・「Private」自体は既存の「短い動作系は英語のまま」慣例を踏襲し対象外。英語・日本語は精査、他13言語はAI下訳(公開前にnative review要、既存慣例通り)。
   - **司令塔の指示漏れで発見が遅れたバグ**: サブエージェントへの検証指示にvitest/tscのみ含めplaywrightを含めなかったため、「共有確認ダイアログの件数表示」が単数/複数の作り分けごと1本の文言に統合されて「1 items」という文法崩れを起こしていたのを見逃し、後で自分でe2eを回して発見。`shareConfirmBodyOne`/`shareConfirmBodyMany`に分割して修正(コミット`545dd5d7`)。教訓を[CURRENT_GOAL.md](CURRENT_GOAL.md)の恒久ルールに追記。
 - **post-plan gate(最終)**: tsc0 / vitest 300ファイル2509テスト全緑 / playwright 102 pass・5 skip / `pnpm build`成功。
+- **拡張機能をv0.1.25としてChrome Web Storeに再提出**(審査待ち、コミット`9f97b6e2`): 新しい権限リクエストなし。提出後、ダッシュボードで対応言語が15言語中13言語しか出ていないことが判明 → 調査の結果、**Chromeの拡張機能は`zh`/`pt`という裸のロケールコードを認識せず、`zh_CN`/`pt_BR`等の地域つきコードが必須**と判明(公式ドキュメントで確認)。セッション197あたりからの既存の命名ミスで、今回初めてストア提出して初めて表面化した。v0.1.25は審査中で差し替え不可のためそのまま進行、フォルダ名を`zh_CN`/`pt_BR`に修正済み(コミット`b225a96e`)。**次に拡張機能を提出するタイミングで一緒にバージョンを上げて提出すること**(現状バージョンは0.1.25のまま、次はv0.1.26)。
 - **★次セッション最優先**: ユーザーに本番での動作確認(FilterPillのPrivate行が未設定表示→新パスワードで再設定/拡張機能含む3経路でのPrivateタグ付け/多言語表示)をお願いする。手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 203 — ★Private Phase 2 サブプロジェクト1(①発見導線＋③まとめてPrivate化)完全完了・本番デプロイ済・master merge済／次は②クイック保存面)
