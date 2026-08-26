@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { JSX } from 'react'
 import type { TagRecord } from '@/lib/storage/indexeddb'
-import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
+import { PRIVATE_LABEL } from '@/lib/private/ui-labels'
+import { PrivateLockGlyph } from '../PrivateLockGlyph'
 import styles from './TagAddPopover.module.css'
 
 /** Pre-ranked suggestion row. The popover renders these top-to-bottom in
@@ -35,9 +36,10 @@ export interface TagAddPopoverProps {
    *  scrolls internally instead of growing. The board leaves this off and
    *  keeps the default wrap layout. */
   compact?: boolean
-  /** Always-rendered "🔒 Private" chip. Renders as the sort-exempt LAST chip
-   *  inside the ALL TAGS section's chipRow (above the new-tag input, which
-   *  stays the popover's true last element). Separate from
+  /** Always-rendered Private chip (PrivateLockGlyph, same mono icon as
+   *  FilterPill/TagDropPanel/BoardMobileTagBar). Renders as the sort-exempt
+   *  LAST chip inside the ALL TAGS section's chipRow (above the new-tag
+   *  input, which stays the popover's true last element). Separate from
    *  allTags/suggestedEntries — Private is never mixed into the generic chip
    *  list itself (see BoardRoot's tagsExcludingPrivate doc comment).
    *  Wired in by the board (CardsLayer), PopOut (PipCompanion), and the
@@ -45,7 +47,8 @@ export interface TagAddPopoverProps {
    *  directly since adding Private only needs the vault's public key.
    *  Omitted only by the extension's own content-script quick-tag strip,
    *  which sends messages to a different (non-React) UI, not this
-   *  component — that surface is a separate follow-up, not yet built. */
+   *  component — that surface has its own equivalent chip in
+   *  extension/floating-button.js. */
   privateEntry?: {
     readonly status: 'none' | 'locked' | 'unlocked'
     readonly isTagged: boolean
@@ -202,7 +205,7 @@ export function TagAddPopover({
                 onMouseDown={(e): void => e.preventDefault()}
                 onClick={privateEntry.onClick}
               >
-                {PRIVATE_LOCKED_ICON}{privateEntry.isTagged ? '✓ ' : ''}{PRIVATE_LABEL}
+                <span className={styles.privateIcon}><PrivateLockGlyph locked={privateEntry.status !== 'unlocked'} /></span>{privateEntry.isTagged ? '✓ ' : ''}{PRIVATE_LABEL}
               </button>
             )}
           </div>

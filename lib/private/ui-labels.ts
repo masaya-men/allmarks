@@ -1,6 +1,6 @@
-/** Single source for the "🔒 Private" icon+label rendered across FilterPill,
+/** Single source for the "Private" label rendered across FilterPill,
  *  TagDropPanel, BoardMobileTagBar, ExtensionEntry, and TagAddPopover —
- *  change the icon here once to change it everywhere it appears. */
-export const PRIVATE_LOCKED_ICON = '🔒'
-export const PRIVATE_UNLOCKED_ICON = '🔓'
+ *  change it here once to change it everywhere it appears. The icon itself
+ *  is the mono padlock glyph (PrivateLockGlyph.tsx), rendered separately by
+ *  each consumer since it's a component, not a string. */
 export const PRIVATE_LABEL = 'Private'
