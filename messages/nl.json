@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "Ik heb een bladwijzercollage gemaakt en het is prachtig geworden ✨ #AllMarks"
+    "defaultText": "Ik heb een bladwijzercollage gemaakt en het is prachtig geworden ✨ #AllMarks",
+    "selectedCount": "{count} / {max} GESELECTEERD",
+    "selectAll": "ALLES SELECTEREN",
+    "cancel": "ANNULEREN",
+    "arrange": "SCHIKKEN ({count})",
+    "sharingCount": "DELEN · {count}",
+    "create": "MAKEN",
+    "creating": "BEZIG MET MAKEN…",
+    "retry": "OPNIEUW PROBEREN",
+    "chooseAgain": "OPNIEUW KIEZEN",
+    "done": "KLAAR",
+    "linkReady": "LINK KLAAR",
+    "copyLink": "LINK KOPIËREN",
+    "linkCopied": "LINK GEKOPIEERD",
+    "couldntCopy": "KOPIËREN MISLUKT",
+    "saveImage": "AFBEELDING OPSLAAN",
+    "postToX": "PLAATSEN OP X",
+    "nativeShare": "DELEN",
+    "retryImage": "AFBEELDING OPNIEUW MAKEN",
+    "toFront": "NAAR VOREN",
+    "toBack": "NAAR ACHTEREN",
+    "back": "TERUG",
+    "creatingLink": "JE LINK WORDT GEMAAKT…",
+    "couldntCreateLink": "LINK KON NIET WORDEN GEMAAKT",
+    "noPictureTitle": "GEEN AFBEELDING — DE LINK WERKT WEL",
+    "noPictureBody": "De afbeelding kon niet worden gemaakt op deze telefoon. De link hieronder werkt wel.",
+    "captureCrashTitle": "JE LAATSTE DELEN KON DE AFBEELDING NIET MAKEN",
+    "captureCrashBody": "Je telefoon had niet genoeg geheugen tijdens het maken van de afbeelding en moest opnieuw laden. De code hieronder vertelt ons waarom — stuur die alsjeblieft naar ons. Probeer deze keer minder kaarten te delen."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "Deze selectie bevat 1 item uit Private. Toch delen?",
     "shareConfirmBodyMany": "Deze selectie bevat {count} items uit Private. Toch delen?",
     "setupRequiredNotice": "Stel Private eerst in op het AllMarks-bord.",
-    "encryptErrorNotice": "Versleutelen mislukt — probeer het opnieuw."
+    "encryptErrorNotice": "Versleutelen mislukt — probeer het opnieuw.",
+    "shareIncludesPrivateHeading": "DEZE DEELACTIE BEVAT EEN PRIVÉ-ITEM"
   },
   "landing": {
     "hero": {

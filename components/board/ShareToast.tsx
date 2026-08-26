@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './ShareToast.module.css'
 
 export type ShareCreateState = 'idle' | 'creating' | 'error'
@@ -35,6 +36,7 @@ type CopyState = 'idle' | 'copied' | 'error'
  *  screenshot: select → arrange → create. */
 export function ShareToast(props: Props): ReactElement {
   const { count, createState, onCreate, shareUrl, onCopyLink, onPostToX, onSaveImage, onReselect, onDone } = props
+  const { t } = useI18n()
 
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const timerRef = useRef<number | null>(null)
@@ -50,8 +52,8 @@ export function ShareToast(props: Props): ReactElement {
     timerRef.current = window.setTimeout((): void => setCopyState('idle'), 1600)
   }, [onCopyLink])
 
-  const copyLabel = copyState === 'copied' ? 'LINK COPIED' : copyState === 'error' ? "COULDN'T COPY" : 'COPY LINK'
-  const createLabel = createState === 'creating' ? 'CREATING…' : createState === 'error' ? 'RETRY' : 'CREATE'
+  const copyLabel = copyState === 'copied' ? t('share.linkCopied') : copyState === 'error' ? t('share.couldntCopy') : t('share.copyLink')
+  const createLabel = createState === 'creating' ? t('share.creating') : createState === 'error' ? t('share.retry') : t('share.create')
 
   const copyBtn = onCopyLink && (
     <button type="button" className={styles.textBtn} onClick={(): void => { void handleCopy() }} data-testid="share-toast-copy-link">
@@ -65,19 +67,19 @@ export function ShareToast(props: Props): ReactElement {
         {shareUrl ? (
           // ── State B: hosted link ready ──
           <>
-            <span className={styles.ready} data-testid="share-toast-ready"><span className={styles.dot} />LINK READY</span>
+            <span className={styles.ready} data-testid="share-toast-ready"><span className={styles.dot} />{t('share.linkReady')}</span>
             <div className={styles.spacer} />
             {copyBtn}
             {onSaveImage && (
-              <button type="button" className={styles.textBtn} onClick={onSaveImage} data-testid="share-toast-save-image">SAVE IMAGE</button>
+              <button type="button" className={styles.textBtn} onClick={onSaveImage} data-testid="share-toast-save-image">{t('share.saveImage')}</button>
             )}
-            <button type="button" className={styles.textBtn} onClick={onPostToX} data-testid="share-toast-post-x">POST TO X</button>
-            <button type="button" className={styles.primaryText} onClick={onDone} data-testid="share-toast-done">DONE</button>
+            <button type="button" className={styles.textBtn} onClick={onPostToX} data-testid="share-toast-post-x">{t('share.postToX')}</button>
+            <button type="button" className={styles.primaryText} onClick={onDone} data-testid="share-toast-done">{t('share.done')}</button>
           </>
         ) : (
           // ── State A: arranged, ready to auto-create ──
           <>
-            <span className={styles.status} data-testid="share-toast-count">SHARING · {count}</span>
+            <span className={styles.status} data-testid="share-toast-count">{t('share.sharingCount').replace('{count}', String(count))}</span>
             <div className={styles.spacer} />
             <button
               type="button"
@@ -86,8 +88,8 @@ export function ShareToast(props: Props): ReactElement {
               disabled={createState === 'creating'}
               data-testid="share-toast-create"
             >{createLabel}</button>
-            <button type="button" className={styles.textBtn} onClick={onReselect} data-testid="share-toast-reselect">RESELECT</button>
-            <button type="button" className={styles.textBtn} onClick={onDone} data-testid="share-toast-done">DONE</button>
+            <button type="button" className={styles.textBtn} onClick={onReselect} data-testid="share-toast-reselect">{t('share.chooseAgain')}</button>
+            <button type="button" className={styles.textBtn} onClick={onDone} data-testid="share-toast-done">{t('share.done')}</button>
           </>
         )}
       </div>

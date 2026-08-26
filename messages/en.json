@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "Made a bookmark collage and it turned out amazing ✨ #AllMarks"
+    "defaultText": "Made a bookmark collage and it turned out amazing ✨ #AllMarks",
+    "selectedCount": "{count} / {max} SELECTED",
+    "selectAll": "SELECT ALL",
+    "cancel": "CANCEL",
+    "arrange": "ARRANGE ({count})",
+    "sharingCount": "SHARING · {count}",
+    "create": "CREATE",
+    "creating": "CREATING…",
+    "retry": "RETRY",
+    "chooseAgain": "CHOOSE AGAIN",
+    "done": "DONE",
+    "linkReady": "LINK READY",
+    "copyLink": "COPY LINK",
+    "linkCopied": "LINK COPIED",
+    "couldntCopy": "COULDN'T COPY",
+    "saveImage": "SAVE IMAGE",
+    "postToX": "POST TO X",
+    "nativeShare": "SHARE",
+    "retryImage": "RETRY IMAGE",
+    "toFront": "TO FRONT",
+    "toBack": "TO BACK",
+    "back": "BACK",
+    "creatingLink": "CREATING YOUR LINK…",
+    "couldntCreateLink": "COULDN'T CREATE THE LINK",
+    "noPictureTitle": "NO PICTURE — THE LINK STILL WORKS",
+    "noPictureBody": "The picture couldn't be made on this phone. The link below still works.",
+    "captureCrashTitle": "YOUR LAST SHARE COULDN'T MAKE THE PICTURE",
+    "captureCrashBody": "Your phone ran out of memory while making the picture and had to reload. The code below tells us why — please send it to us. Try sharing fewer cards this time."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "This selection includes 1 item from Private. Share anyway?",
     "shareConfirmBodyMany": "This selection includes {count} items from Private. Share anyway?",
     "setupRequiredNotice": "Set up Private in the AllMarks board first.",
-    "encryptErrorNotice": "Could not encrypt — try again."
+    "encryptErrorNotice": "Could not encrypt — try again.",
+    "shareIncludesPrivateHeading": "THIS SHARE INCLUDES A PRIVATE ITEM"
   },
   "landing": {
     "hero": {

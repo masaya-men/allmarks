@@ -3,6 +3,7 @@
 import { type ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { SHARE_LIMITS_V2 } from '@/lib/share/types-v2'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './ShareSelectBar.module.css'
 
 type Props = {
@@ -19,21 +20,22 @@ type Props = {
 }
 
 export function ShareSelectBar({ count, onSelectAll, onShare, onCancel }: Props): ReactElement {
+  const { t } = useI18n()
   return (
     <div className={styles.root} style={{ zIndex: BOARD_Z_INDEX.SHARE_SELECT_BAR }} role="toolbar" aria-label="Select cards to share">
       <div className={styles.bar}>
         <span className={styles.counter} data-testid="select-counter">
-          {count} / {SHARE_LIMITS_V2.MAX_CARDS} SELECTED
+          {t('share.selectedCount').replace('{count}', String(count)).replace('{max}', String(SHARE_LIMITS_V2.MAX_CARDS))}
         </span>
         <div className={styles.actions}>
           <button type="button" className={styles.secondaryBtn} onClick={onSelectAll} data-testid="select-all-button">
-            SELECT ALL
+            {t('share.selectAll')}
           </button>
           <button type="button" className={styles.primaryBtn} onClick={onShare} disabled={count === 0} data-testid="select-share-button">
-            ARRANGE ({count})
+            {t('share.arrange').replace('{count}', String(count))}
           </button>
           <button type="button" className={styles.secondaryBtn} onClick={onCancel} data-testid="select-cancel-button">
-            CANCEL
+            {t('share.cancel')}
           </button>
         </div>
       </div>

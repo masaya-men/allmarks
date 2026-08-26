@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "Hice un collage de marcadores y quedó increíble ✨ #AllMarks"
+    "defaultText": "Hice un collage de marcadores y quedó increíble ✨ #AllMarks",
+    "selectedCount": "{count} / {max} SELECCIONADAS",
+    "selectAll": "SELECCIONAR TODO",
+    "cancel": "CANCELAR",
+    "arrange": "ORGANIZAR ({count})",
+    "sharingCount": "COMPARTIENDO · {count}",
+    "create": "CREAR",
+    "creating": "CREANDO…",
+    "retry": "REINTENTAR",
+    "chooseAgain": "ELEGIR DE NUEVO",
+    "done": "LISTO",
+    "linkReady": "ENLACE LISTO",
+    "copyLink": "COPIAR ENLACE",
+    "linkCopied": "ENLACE COPIADO",
+    "couldntCopy": "NO SE PUDO COPIAR",
+    "saveImage": "GUARDAR IMAGEN",
+    "postToX": "PUBLICAR EN X",
+    "nativeShare": "COMPARTIR",
+    "retryImage": "REINTENTAR IMAGEN",
+    "toFront": "AL FRENTE",
+    "toBack": "AL FONDO",
+    "back": "ATRÁS",
+    "creatingLink": "CREANDO TU ENLACE…",
+    "couldntCreateLink": "NO SE PUDO CREAR EL ENLACE",
+    "noPictureTitle": "SIN IMAGEN — EL ENLACE SIGUE FUNCIONANDO",
+    "noPictureBody": "No se pudo crear la imagen en este teléfono. El enlace de abajo sigue funcionando.",
+    "captureCrashTitle": "TU ÚLTIMO COMPARTIDO NO PUDO CREAR LA IMAGEN",
+    "captureCrashBody": "A tu teléfono se le acabó la memoria mientras creaba la imagen y tuvo que recargar. El código de abajo nos dice por qué — envíanoslo, por favor. Prueba compartiendo menos tarjetas esta vez."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "Esta selección incluye 1 elemento de Private. ¿Compartir de todos modos?",
     "shareConfirmBodyMany": "Esta selección incluye {count} elementos de Private. ¿Compartir de todos modos?",
     "setupRequiredNotice": "Primero configura Private en el tablero de AllMarks.",
-    "encryptErrorNotice": "No se pudo cifrar. Inténtalo de nuevo."
+    "encryptErrorNotice": "No se pudo cifrar. Inténtalo de nuevo.",
+    "shareIncludesPrivateHeading": "ESTE ENVÍO INCLUYE UN ELEMENTO PRIVADO"
   },
   "landing": {
     "hero": {

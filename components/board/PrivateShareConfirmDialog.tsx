@@ -32,7 +32,7 @@ export function PrivateShareConfirmDialog({ count, onConfirm, onCancel }: Props)
       data-no-capture
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
-        <div id="private-share-confirm-heading" className={styles.heading}>SHARE INCLUDES PRIVATE</div>
+        <div id="private-share-confirm-heading" className={styles.heading}>{t('private.shareIncludesPrivateHeading')}</div>
         <div className={styles.body}>
           {count === 1
             ? t('private.shareConfirmBodyOne')
@@ -40,10 +40,10 @@ export function PrivateShareConfirmDialog({ count, onConfirm, onCancel }: Props)
         </div>
         <div className={styles.actions}>
           <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-share-confirm-cancel">
-            CANCEL
+            {t('share.cancel')}
           </button>
           <button type="button" className={styles.shareBtn} onClick={onConfirm} data-testid="private-share-confirm-share">
-            SHARE
+            {t('share.nativeShare')}
           </button>
         </div>
       </div>

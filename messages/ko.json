@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "북마크 콜라주를 만들었더니 너무 멋지게 나왔어요 ✨ #AllMarks"
+    "defaultText": "북마크 콜라주를 만들었더니 너무 멋지게 나왔어요 ✨ #AllMarks",
+    "selectedCount": "{count} / {max} 선택됨",
+    "selectAll": "전체 선택",
+    "cancel": "취소",
+    "arrange": "배치 ({count})",
+    "sharingCount": "공유 중 · {count}",
+    "create": "만들기",
+    "creating": "만드는 중…",
+    "retry": "다시 시도",
+    "chooseAgain": "다시 선택",
+    "done": "완료",
+    "linkReady": "링크 준비됨",
+    "copyLink": "링크 복사",
+    "linkCopied": "복사됨",
+    "couldntCopy": "복사하지 못했습니다",
+    "saveImage": "이미지 저장",
+    "postToX": "X에 게시",
+    "nativeShare": "공유",
+    "retryImage": "이미지 다시 만들기",
+    "toFront": "맨 앞으로",
+    "toBack": "맨 뒤로",
+    "back": "뒤로",
+    "creatingLink": "링크 만드는 중…",
+    "couldntCreateLink": "링크를 만들지 못했습니다",
+    "noPictureTitle": "이미지는 없지만 링크는 사용할 수 있어요",
+    "noPictureBody": "이 휴대폰에서는 이미지를 만들 수 없었어요. 아래 링크는 그대로 사용할 수 있습니다.",
+    "captureCrashTitle": "지난 공유에서 이미지를 만들지 못했어요",
+    "captureCrashBody": "이미지를 만드는 동안 휴대폰 메모리가 부족해져 다시 불러왔어요. 아래 코드가 원인을 알려주니 저희에게 보내주세요. 이번에는 카드 수를 줄여서 시도해 보세요."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "이 선택에는 Private 항목 1개가 포함되어 있습니다. 그래도 공유하시겠습니까?",
     "shareConfirmBodyMany": "이 선택에는 Private 항목 {count}개가 포함되어 있습니다. 그래도 공유하시겠습니까?",
     "setupRequiredNotice": "먼저 AllMarks 보드에서 Private를 설정하세요.",
-    "encryptErrorNotice": "암호화하지 못했습니다 — 다시 시도해 주세요."
+    "encryptErrorNotice": "암호화하지 못했습니다 — 다시 시도해 주세요.",
+    "shareIncludesPrivateHeading": "공유 항목에 비공개 항목이 포함되어 있습니다"
   },
   "landing": {
     "hero": {

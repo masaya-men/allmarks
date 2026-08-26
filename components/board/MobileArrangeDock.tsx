@@ -2,6 +2,7 @@
 
 import type { ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './MobileArrangeDock.module.css'
 
 export type MobileArrangeDockProps = {
@@ -22,12 +23,13 @@ export type MobileArrangeDockProps = {
 }
 
 export function MobileArrangeDock(props: MobileArrangeDockProps): ReactElement {
+  const { t } = useI18n()
   return (
     <div className={styles.dock} style={{ zIndex: BOARD_Z_INDEX.SHARE_TOAST }} data-no-capture data-testid="mobile-arrange-dock">
       {props.hasSelection && (
         <div className={styles.rowContext} data-testid="mobile-arrange-selection-tools">
-          <button type="button" className={styles.chip} onClick={props.onBringToFront} data-testid="mobile-arrange-to-front">TO FRONT</button>
-          <button type="button" className={styles.chip} onClick={props.onSendToBack} data-testid="mobile-arrange-to-back">TO BACK</button>
+          <button type="button" className={styles.chip} onClick={props.onBringToFront} data-testid="mobile-arrange-to-front">{t('share.toFront')}</button>
+          <button type="button" className={styles.chip} onClick={props.onSendToBack} data-testid="mobile-arrange-to-back">{t('share.toBack')}</button>
           <button type="button" className={styles.chipDanger} onClick={props.onRemove} data-testid="mobile-arrange-remove" aria-label="Remove from image">🗑</button>
         </div>
       )}
@@ -41,10 +43,10 @@ export function MobileArrangeDock(props: MobileArrangeDockProps): ReactElement {
           <button type="button" className={styles.icon} onClick={props.onZoomFit} data-testid="mobile-arrange-zoom-fit" aria-label="Fit board">⤢</button>
           <button type="button" className={styles.icon} onClick={props.onZoomIn} data-testid="mobile-arrange-zoom-in" aria-label="Zoom in">＋</button>
         </div>
-        <button type="button" className={styles.ghost} onClick={props.onBack} disabled={props.creating} data-testid="mobile-arrange-back">BACK</button>
+        <button type="button" className={styles.ghost} onClick={props.onBack} disabled={props.creating} data-testid="mobile-arrange-back">{t('share.back')}</button>
       </div>
       <button type="button" className={styles.create} onClick={props.onCreate} disabled={props.creating} data-testid="mobile-arrange-create">
-        {props.creating ? 'CREATING…' : 'CREATE'}
+        {props.creating ? t('share.creating') : t('share.create')}
       </button>
     </div>
   )

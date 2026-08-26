@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "Vừa làm một bộ sưu tập dấu trang và kết quả tuyệt vời luôn ✨ #AllMarks"
+    "defaultText": "Vừa làm một bộ sưu tập dấu trang và kết quả tuyệt vời luôn ✨ #AllMarks",
+    "selectedCount": "{count} / {max} ĐÃ CHỌN",
+    "selectAll": "CHỌN TẤT CẢ",
+    "cancel": "HỦY",
+    "arrange": "SẮP XẾP ({count})",
+    "sharingCount": "ĐANG CHIA SẺ · {count}",
+    "create": "TẠO",
+    "creating": "ĐANG TẠO…",
+    "retry": "THỬ LẠI",
+    "chooseAgain": "CHỌN LẠI",
+    "done": "XONG",
+    "linkReady": "LIÊN KẾT ĐÃ SẴN SÀNG",
+    "copyLink": "SAO CHÉP LIÊN KẾT",
+    "linkCopied": "ĐÃ SAO CHÉP",
+    "couldntCopy": "KHÔNG SAO CHÉP ĐƯỢC",
+    "saveImage": "LƯU HÌNH ẢNH",
+    "postToX": "ĐĂNG LÊN X",
+    "nativeShare": "CHIA SẺ",
+    "retryImage": "TẠO LẠI HÌNH ẢNH",
+    "toFront": "ĐƯA RA TRƯỚC",
+    "toBack": "ĐƯA RA SAU",
+    "back": "QUAY LẠI",
+    "creatingLink": "ĐANG TẠO LIÊN KẾT CỦA BẠN…",
+    "couldntCreateLink": "KHÔNG TẠO ĐƯỢC LIÊN KẾT",
+    "noPictureTitle": "KHÔNG CÓ HÌNH ẢNH — LIÊN KẾT VẪN HOẠT ĐỘNG",
+    "noPictureBody": "Không thể tạo hình ảnh trên điện thoại này. Liên kết bên dưới vẫn hoạt động bình thường.",
+    "captureCrashTitle": "LẦN CHIA SẺ TRƯỚC KHÔNG TẠO ĐƯỢC HÌNH ẢNH",
+    "captureCrashBody": "Điện thoại của bạn hết bộ nhớ khi đang tạo hình ảnh và phải tải lại. Đoạn mã bên dưới cho chúng tôi biết lý do — vui lòng gửi nó cho chúng tôi. Hãy thử chia sẻ ít thẻ hơn trong lần này."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "Lựa chọn này bao gồm 1 mục từ Private. Vẫn chia sẻ chứ?",
     "shareConfirmBodyMany": "Lựa chọn này bao gồm {count} mục từ Private. Vẫn chia sẻ chứ?",
     "setupRequiredNotice": "Hãy thiết lập Private trên bảng AllMarks trước.",
-    "encryptErrorNotice": "Không thể mã hoá — hãy thử lại."
+    "encryptErrorNotice": "Không thể mã hoá — hãy thử lại.",
+    "shareIncludesPrivateHeading": "LƯỢT CHIA SẺ NÀY CÓ CHỨA MỘT MỤC RIÊNG TƯ"
   },
   "landing": {
     "hero": {

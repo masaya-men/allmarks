@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "Fiz uma colagem de favoritos e ficou incrível ✨ #AllMarks"
+    "defaultText": "Fiz uma colagem de favoritos e ficou incrível ✨ #AllMarks",
+    "selectedCount": "{count} / {max} SELECIONADOS",
+    "selectAll": "SELECIONAR TUDO",
+    "cancel": "CANCELAR",
+    "arrange": "ORGANIZAR ({count})",
+    "sharingCount": "COMPARTILHANDO · {count}",
+    "create": "CRIAR",
+    "creating": "CRIANDO…",
+    "retry": "TENTAR NOVAMENTE",
+    "chooseAgain": "ESCOLHER DE NOVO",
+    "done": "CONCLUÍDO",
+    "linkReady": "LINK PRONTO",
+    "copyLink": "COPIAR LINK",
+    "linkCopied": "LINK COPIADO",
+    "couldntCopy": "NÃO FOI POSSÍVEL COPIAR",
+    "saveImage": "SALVAR IMAGEM",
+    "postToX": "PUBLICAR NO X",
+    "nativeShare": "COMPARTILHAR",
+    "retryImage": "REFAZER IMAGEM",
+    "toFront": "PARA FRENTE",
+    "toBack": "PARA TRÁS",
+    "back": "VOLTAR",
+    "creatingLink": "CRIANDO SEU LINK…",
+    "couldntCreateLink": "NÃO FOI POSSÍVEL CRIAR O LINK",
+    "noPictureTitle": "SEM IMAGEM — O LINK AINDA FUNCIONA",
+    "noPictureBody": "Não foi possível criar a imagem neste celular. O link abaixo ainda funciona.",
+    "captureCrashTitle": "SEU ÚLTIMO COMPARTILHAMENTO NÃO CRIOU A IMAGEM",
+    "captureCrashBody": "Seu celular ficou sem memória ao criar a imagem e precisou recarregar. O código abaixo nos diz o motivo — por favor, envie para nós. Tente compartilhar menos cartões desta vez."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "Esta seleção inclui 1 item de Private. Compartilhar mesmo assim?",
     "shareConfirmBodyMany": "Esta seleção inclui {count} itens de Private. Compartilhar mesmo assim?",
     "setupRequiredNotice": "Configure o Private primeiro no painel do AllMarks.",
-    "encryptErrorNotice": "Não foi possível criptografar — tente novamente."
+    "encryptErrorNotice": "Não foi possível criptografar — tente novamente.",
+    "shareIncludesPrivateHeading": "ESTE COMPARTILHAMENTO INCLUI UM ITEM PRIVADO"
   },
   "landing": {
     "hero": {

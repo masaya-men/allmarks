@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "Ho creato un collage di segnalibri ed è venuto benissimo ✨ #AllMarks"
+    "defaultText": "Ho creato un collage di segnalibri ed è venuto benissimo ✨ #AllMarks",
+    "selectedCount": "{count} / {max} SELEZIONATE",
+    "selectAll": "SELEZIONA TUTTO",
+    "cancel": "ANNULLA",
+    "arrange": "DISPONI ({count})",
+    "sharingCount": "CONDIVISIONE · {count}",
+    "create": "CREA",
+    "creating": "CREAZIONE…",
+    "retry": "RIPROVA",
+    "chooseAgain": "SCEGLI DI NUOVO",
+    "done": "FATTO",
+    "linkReady": "LINK PRONTO",
+    "copyLink": "COPIA LINK",
+    "linkCopied": "LINK COPIATO",
+    "couldntCopy": "COPIA NON RIUSCITA",
+    "saveImage": "SALVA IMMAGINE",
+    "postToX": "PUBBLICA SU X",
+    "nativeShare": "CONDIVIDI",
+    "retryImage": "RIFAI IMMAGINE",
+    "toFront": "IN PRIMO PIANO",
+    "toBack": "SULLO SFONDO",
+    "back": "INDIETRO",
+    "creatingLink": "CREAZIONE DEL TUO LINK…",
+    "couldntCreateLink": "IMPOSSIBILE CREARE IL LINK",
+    "noPictureTitle": "NESSUNA IMMAGINE — IL LINK FUNZIONA COMUNQUE",
+    "noPictureBody": "Non è stato possibile creare l'immagine su questo telefono. Il link qui sotto funziona comunque.",
+    "captureCrashTitle": "L'ULTIMA CONDIVISIONE NON HA CREATO L'IMMAGINE",
+    "captureCrashBody": "Il telefono ha esaurito la memoria mentre creava l'immagine ed è stato ricaricato. Il codice qui sotto ci dice perché — inviacelo, per favore. Prova a condividere meno schede questa volta."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "Questa selezione include 1 elemento da Private. Condividere comunque?",
     "shareConfirmBodyMany": "Questa selezione include {count} elementi da Private. Condividere comunque?",
     "setupRequiredNotice": "Configura prima Private nella bacheca di AllMarks.",
-    "encryptErrorNotice": "Impossibile cifrare — riprova."
+    "encryptErrorNotice": "Impossibile cifrare — riprova.",
+    "shareIncludesPrivateHeading": "QUESTA CONDIVISIONE INCLUDE UN ELEMENTO PRIVATO"
   },
   "landing": {
     "hero": {

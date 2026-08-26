@@ -3,6 +3,7 @@
 import type { ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { SHARE_LIMITS_V2 } from '@/lib/share/types-v2'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './MobileShareSelectBar.module.css'
 
 type Props = {
@@ -23,6 +24,7 @@ type Props = {
  *  this button now ENTERS the arrange/edit stage (a later CREATE in the arrange
  *  bar shoots) — kept the label ARRANGE and the prop name `onCreate` (N-58). */
 export function MobileShareSelectBar({ count, onSelectAll, onCreate, onCancel }: Props): ReactElement {
+  const { t } = useI18n()
   return (
     <div
       className={styles.bar}
@@ -34,15 +36,15 @@ export function MobileShareSelectBar({ count, onSelectAll, onCreate, onCancel }:
     >
       <div className={styles.meta}>
         <span className={styles.counter} data-testid="mobile-select-counter">
-          {count} / {SHARE_LIMITS_V2.MAX_CARDS} SELECTED
+          {t('share.selectedCount').replace('{count}', String(count)).replace('{max}', String(SHARE_LIMITS_V2.MAX_CARDS))}
         </span>
         <button type="button" className={styles.textBtn} onClick={onSelectAll} data-testid="mobile-select-all">
-          SELECT ALL
+          {t('share.selectAll')}
         </button>
       </div>
       <div className={styles.actions}>
         <button type="button" className={styles.secondary} onClick={onCancel} data-testid="mobile-select-cancel">
-          CANCEL
+          {t('share.cancel')}
         </button>
         <button
           type="button"
@@ -51,7 +53,7 @@ export function MobileShareSelectBar({ count, onSelectAll, onCreate, onCancel }:
           disabled={count === 0}
           data-testid="mobile-select-create"
         >
-          ARRANGE ({count})
+          {t('share.arrange').replace('{count}', String(count))}
         </button>
       </div>
     </div>

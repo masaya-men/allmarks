@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactElement } from 'rea
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { canWebShareFiles, dataUrlToFile } from '@/lib/share/share-actions'
 import { formatCaptureAttempts, type CaptureAttempt } from '@/lib/share/capture-collage'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { ShareCreateState } from './ShareToast'
 import styles from './MobileShareResult.module.css'
 
@@ -43,6 +44,7 @@ function hasWebShare(): boolean {
  *  the link; platforms without Web Share fall back to COPY LINK. */
 export function MobileShareResult(props: MobileShareResultProps): ReactElement {
   const { imageUrl, shareUrl, createState, onCopyLink, onRetry, onDone, captureAttempts, errorMessage } = props
+  const { t } = useI18n()
 
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const timerRef = useRef<number | null>(null)
@@ -84,13 +86,13 @@ export function MobileShareResult(props: MobileShareResultProps): ReactElement {
     >
       {failed ? (
         <>
-          <span className={styles.error} data-testid="mobile-share-error">COULDN&apos;T CREATE THE LINK</span>
+          <span className={styles.error} data-testid="mobile-share-error">{t('share.couldntCreateLink')}</span>
           {errorMessage && (
             <code className={styles.diag} data-testid="mobile-share-error-detail">{errorMessage}</code>
           )}
           <div className={styles.actions}>
-            <button type="button" className={styles.primary} onClick={onRetry} data-testid="mobile-share-retry">RETRY</button>
-            <button type="button" className={styles.ghost} onClick={onDone} data-testid="mobile-share-done">DONE</button>
+            <button type="button" className={styles.primary} onClick={onRetry} data-testid="mobile-share-retry">{t('share.retry')}</button>
+            <button type="button" className={styles.ghost} onClick={onDone} data-testid="mobile-share-done">{t('share.done')}</button>
           </div>
         </>
       ) : (
@@ -101,9 +103,9 @@ export function MobileShareResult(props: MobileShareResultProps): ReactElement {
           )}
           {!imageUrl && (
             <div className={styles.imageFailed} data-testid="mobile-share-image-failed">
-              <span className={styles.imageFailedTitle}>NO IMAGE — LINK ONLY</span>
+              <span className={styles.imageFailedTitle}>{t('share.noPictureTitle')}</span>
               <span className={styles.imageFailedBody}>
-                The picture could not be made on this phone. The link below still works.
+                {t('share.noPictureBody')}
               </span>
               {captureAttempts && captureAttempts.length > 0 && (
                 <code className={styles.diag} data-testid="mobile-share-diag">
@@ -115,7 +117,7 @@ export function MobileShareResult(props: MobileShareResultProps): ReactElement {
                 className={styles.secondary}
                 onClick={onRetry}
                 data-testid="mobile-share-retry-image"
-              >RETRY IMAGE</button>
+              >{t('share.retryImage')}</button>
             </div>
           )}
           {imageUrl && captureAttempts && captureAttempts.length > 1 && (
@@ -124,7 +126,7 @@ export function MobileShareResult(props: MobileShareResultProps): ReactElement {
             </code>
           )}
           <span className={styles.status} data-testid="mobile-share-ready">
-            <span className={styles.dot} />LINK READY
+            <span className={styles.dot} />{t('share.linkReady')}
           </span>
           <div className={styles.actions}>
             {hasWebShare() && (
@@ -133,7 +135,7 @@ export function MobileShareResult(props: MobileShareResultProps): ReactElement {
                 className={styles.primary}
                 onClick={(): void => { void handleNativeShare() }}
                 data-testid="mobile-share-native"
-              >SHARE</button>
+              >{t('share.nativeShare')}</button>
             )}
             <button
               type="button"
@@ -141,9 +143,9 @@ export function MobileShareResult(props: MobileShareResultProps): ReactElement {
               onClick={(): void => { void handleCopy() }}
               data-testid="mobile-share-copy"
             >
-              {copyState === 'copied' ? 'LINK COPIED' : copyState === 'error' ? "COULDN'T COPY" : 'COPY LINK'}
+              {copyState === 'copied' ? t('share.linkCopied') : copyState === 'error' ? t('share.couldntCopy') : t('share.copyLink')}
             </button>
-            <button type="button" className={styles.ghost} onClick={onDone} data-testid="mobile-share-done">DONE</button>
+            <button type="button" className={styles.ghost} onClick={onDone} data-testid="mobile-share-done">{t('share.done')}</button>
           </div>
         </>
       )}

@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "Bir yer imi kolajı yaptım ve harika oldu ✨ #AllMarks"
+    "defaultText": "Bir yer imi kolajı yaptım ve harika oldu ✨ #AllMarks",
+    "selectedCount": "{count} / {max} SEÇİLDİ",
+    "selectAll": "TÜMÜNÜ SEÇ",
+    "cancel": "İPTAL",
+    "arrange": "DÜZENLE ({count})",
+    "sharingCount": "PAYLAŞILIYOR · {count}",
+    "create": "OLUŞTUR",
+    "creating": "OLUŞTURULUYOR…",
+    "retry": "TEKRAR DENE",
+    "chooseAgain": "YENİDEN SEÇ",
+    "done": "BİTTİ",
+    "linkReady": "BAĞLANTI HAZIR",
+    "copyLink": "BAĞLANTIYI KOPYALA",
+    "linkCopied": "KOPYALANDI",
+    "couldntCopy": "KOPYALANAMADI",
+    "saveImage": "GÖRSELİ KAYDET",
+    "postToX": "X'TE PAYLAŞ",
+    "nativeShare": "PAYLAŞ",
+    "retryImage": "GÖRSELİ YENİDEN OLUŞTUR",
+    "toFront": "ÖNE GETİR",
+    "toBack": "ARKAYA GÖNDER",
+    "back": "GERİ",
+    "creatingLink": "BAĞLANTINIZ OLUŞTURULUYOR…",
+    "couldntCreateLink": "BAĞLANTI OLUŞTURULAMADI",
+    "noPictureTitle": "GÖRSEL YOK — BAĞLANTI YİNE DE ÇALIŞIYOR",
+    "noPictureBody": "Bu telefonda görsel oluşturulamadı. Aşağıdaki bağlantı yine de çalışıyor.",
+    "captureCrashTitle": "SON PAYLAŞIMINIZDA GÖRSEL OLUŞTURULAMADI",
+    "captureCrashBody": "Telefonunuzun belleği görsel oluşturulurken yetersiz kaldı ve yeniden yüklenmesi gerekti. Aşağıdaki kod nedenini bize söylüyor — lütfen bize gönderin. Bu sefer daha az kart paylaşmayı deneyin."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "Bu seçim Private'tan 1 öğe içeriyor. Yine de paylaşılsın mı?",
     "shareConfirmBodyMany": "Bu seçim Private'tan {count} öğe içeriyor. Yine de paylaşılsın mı?",
     "setupRequiredNotice": "Önce AllMarks panosunda Private'ı ayarlayın.",
-    "encryptErrorNotice": "Şifrelenemedi — tekrar deneyin."
+    "encryptErrorNotice": "Şifrelenemedi — tekrar deneyin.",
+    "shareIncludesPrivateHeading": "BU PAYLAŞIM GİZLİ BİR ÖĞE İÇERİYOR"
   },
   "landing": {
     "hero": {

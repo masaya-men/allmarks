@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "ลองทำคอลลาจบุ๊กมาร์กดู ออกมาสวยมาก ✨ #AllMarks"
+    "defaultText": "ลองทำคอลลาจบุ๊กมาร์กดู ออกมาสวยมาก ✨ #AllMarks",
+    "selectedCount": "{count} / {max} รายการที่เลือก",
+    "selectAll": "เลือกทั้งหมด",
+    "cancel": "ยกเลิก",
+    "arrange": "จัดวาง ({count})",
+    "sharingCount": "กำลังแชร์ · {count}",
+    "create": "สร้าง",
+    "creating": "กำลังสร้าง…",
+    "retry": "ลองอีกครั้ง",
+    "chooseAgain": "เลือกใหม่",
+    "done": "เสร็จสิ้น",
+    "linkReady": "ลิงก์พร้อมแล้ว",
+    "copyLink": "คัดลอกลิงก์",
+    "linkCopied": "คัดลอกแล้ว",
+    "couldntCopy": "คัดลอกไม่สำเร็จ",
+    "saveImage": "บันทึกรูปภาพ",
+    "postToX": "โพสต์ลง X",
+    "nativeShare": "แชร์",
+    "retryImage": "สร้างรูปใหม่",
+    "toFront": "ไปด้านหน้า",
+    "toBack": "ไปด้านหลัง",
+    "back": "ย้อนกลับ",
+    "creatingLink": "กำลังสร้างลิงก์ของคุณ…",
+    "couldntCreateLink": "สร้างลิงก์ไม่สำเร็จ",
+    "noPictureTitle": "ไม่มีรูปภาพ — แต่ลิงก์ยังใช้งานได้",
+    "noPictureBody": "โทรศัพท์เครื่องนี้สร้างรูปภาพไม่สำเร็จ ลิงก์ด้านล่างยังใช้งานได้ตามปกติ",
+    "captureCrashTitle": "การแชร์ครั้งล่าสุดสร้างรูปภาพไม่สำเร็จ",
+    "captureCrashBody": "โทรศัพท์ของคุณหน่วยความจำไม่พอขณะสร้างรูปภาพ จึงต้องโหลดใหม่ โค้ดด้านล่างบอกสาเหตุให้เราทราบ — โปรดส่งมาให้เรา ลองแชร์การ์ดจำนวนน้อยลงในครั้งนี้"
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "การเลือกนี้มี 1 รายการจาก Private รวมอยู่ด้วย ยืนยันแชร์หรือไม่?",
     "shareConfirmBodyMany": "การเลือกนี้มี {count} รายการจาก Private รวมอยู่ด้วย ยืนยันแชร์หรือไม่?",
     "setupRequiredNotice": "โปรดตั้งค่า Private ในบอร์ด AllMarks ก่อน",
-    "encryptErrorNotice": "เข้ารหัสไม่สำเร็จ ลองอีกครั้ง"
+    "encryptErrorNotice": "เข้ารหัสไม่สำเร็จ ลองอีกครั้ง",
+    "shareIncludesPrivateHeading": "การแชร์นี้มีรายการส่วนตัวรวมอยู่ด้วย"
   },
   "landing": {
     "hero": {

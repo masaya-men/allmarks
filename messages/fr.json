@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "J'ai créé un collage de favoris et le rendu est superbe ✨ #AllMarks"
+    "defaultText": "J'ai créé un collage de favoris et le rendu est superbe ✨ #AllMarks",
+    "selectedCount": "{count} / {max} SÉLECTIONNÉS",
+    "selectAll": "TOUT SÉLECTIONNER",
+    "cancel": "ANNULER",
+    "arrange": "DISPOSER ({count})",
+    "sharingCount": "PARTAGE · {count}",
+    "create": "CRÉER",
+    "creating": "CRÉATION…",
+    "retry": "RÉESSAYER",
+    "chooseAgain": "RECHOISIR",
+    "done": "TERMINÉ",
+    "linkReady": "LIEN PRÊT",
+    "copyLink": "COPIER LE LIEN",
+    "linkCopied": "LIEN COPIÉ",
+    "couldntCopy": "ÉCHEC DE LA COPIE",
+    "saveImage": "ENREGISTRER L'IMAGE",
+    "postToX": "PUBLIER SUR X",
+    "nativeShare": "PARTAGER",
+    "retryImage": "REFAIRE L'IMAGE",
+    "toFront": "AU PREMIER PLAN",
+    "toBack": "À L'ARRIÈRE-PLAN",
+    "back": "RETOUR",
+    "creatingLink": "CRÉATION DE VOTRE LIEN…",
+    "couldntCreateLink": "IMPOSSIBLE DE CRÉER LE LIEN",
+    "noPictureTitle": "PAS D'IMAGE — LE LIEN FONCTIONNE QUAND MÊME",
+    "noPictureBody": "L'image n'a pas pu être créée sur ce téléphone. Le lien ci-dessous fonctionne quand même.",
+    "captureCrashTitle": "VOTRE DERNIER PARTAGE N'A PAS PU CRÉER L'IMAGE",
+    "captureCrashBody": "Votre téléphone a manqué de mémoire en créant l'image et a dû recharger. Le code ci-dessous nous dit pourquoi — merci de nous l'envoyer. Essayez de partager moins de cartes cette fois."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "Cette sélection inclut 1 élément de Private. Partager quand même ?",
     "shareConfirmBodyMany": "Cette sélection inclut {count} éléments de Private. Partager quand même ?",
     "setupRequiredNotice": "Configurez d'abord Private dans le tableau AllMarks.",
-    "encryptErrorNotice": "Échec du chiffrement — réessayez."
+    "encryptErrorNotice": "Échec du chiffrement — réessayez.",
+    "shareIncludesPrivateHeading": "CE PARTAGE INCLUT UN ÉLÉMENT PRIVÉ"
   },
   "landing": {
     "hero": {

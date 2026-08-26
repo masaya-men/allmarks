@@ -2,6 +2,7 @@
 import { useEffect, useState, type ReactElement } from 'react'
 import { createPortal } from 'react-dom'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './ShareCreatingIndicator.module.css'
 
 /** "Creating your link…" progress indicator for the SHARE auto-capture flow.
@@ -11,6 +12,7 @@ import styles from './ShareCreatingIndicator.module.css'
  *  visibility rule, unlike the in-frame ShareToast button. Stays visible across
  *  BOTH the capture and upload phases until the link is ready. */
 export function ShareCreatingIndicator({ active }: { readonly active: boolean }): ReactElement | null {
+  const { t } = useI18n()
   const [mounted, setMounted] = useState(false)
   useEffect((): void => setMounted(true), [])
   if (!active || !mounted || typeof document === 'undefined') return null
@@ -23,7 +25,7 @@ export function ShareCreatingIndicator({ active }: { readonly active: boolean })
       data-testid="share-creating-indicator"
     >
       <span className={styles.dot} />
-      <span className={styles.label}>CREATING YOUR LINK…</span>
+      <span className={styles.label}>{t('share.creatingLink')}</span>
     </div>,
     document.body,
   )

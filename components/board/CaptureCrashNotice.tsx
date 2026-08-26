@@ -3,6 +3,7 @@
 import type { ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { formatCaptureBreadcrumb, type CaptureBreadcrumb } from '@/lib/share/capture-breadcrumb'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './CaptureCrashNotice.module.css'
 
 export type CaptureCrashNoticeProps = {
@@ -20,6 +21,7 @@ export type CaptureCrashNoticeProps = {
  * This is the crash-durable read-back: the numbers that survived the crash.
  */
 export function CaptureCrashNotice({ breadcrumb, onDismiss }: CaptureCrashNoticeProps): ReactElement {
+  const { t } = useI18n()
   return (
     <div
       className={styles.wrap}
@@ -28,11 +30,9 @@ export function CaptureCrashNotice({ breadcrumb, onDismiss }: CaptureCrashNotice
       data-testid="capture-crash-notice"
     >
       <div className={styles.card}>
-        <span className={styles.title}>LAST SHARE COULDN&apos;T MAKE THE PICTURE</span>
+        <span className={styles.title}>{t('share.captureCrashTitle')}</span>
         <span className={styles.body}>
-          The phone ran out of memory while building the image and reloaded. The
-          line below tells us why — please send it to us. Sharing fewer cards may
-          work now.
+          {t('share.captureCrashBody')}
         </span>
         <code className={styles.diag} data-testid="capture-crash-diag">
           {formatCaptureBreadcrumb(breadcrumb)}

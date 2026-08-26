@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "صنعتُ كولاجًا من إشاراتي المرجعية وجاء رائعًا ✨ #AllMarks"
+    "defaultText": "صنعتُ كولاجًا من إشاراتي المرجعية وجاء رائعًا ✨ #AllMarks",
+    "selectedCount": "{count} / {max} محدد",
+    "selectAll": "تحديد الكل",
+    "cancel": "إلغاء",
+    "arrange": "ترتيب ({count})",
+    "sharingCount": "مشاركة · {count}",
+    "create": "إنشاء",
+    "creating": "جارٍ الإنشاء…",
+    "retry": "إعادة المحاولة",
+    "chooseAgain": "اختيار مرة أخرى",
+    "done": "تم",
+    "linkReady": "الرابط جاهز",
+    "copyLink": "نسخ الرابط",
+    "linkCopied": "تم النسخ",
+    "couldntCopy": "تعذّر النسخ",
+    "saveImage": "حفظ الصورة",
+    "postToX": "نشر على X",
+    "nativeShare": "مشاركة",
+    "retryImage": "إعادة إنشاء الصورة",
+    "toFront": "إلى الأمام",
+    "toBack": "إلى الخلف",
+    "back": "رجوع",
+    "creatingLink": "جارٍ إنشاء رابطك…",
+    "couldntCreateLink": "تعذّر إنشاء الرابط",
+    "noPictureTitle": "لا توجد صورة — الرابط يعمل رغم ذلك",
+    "noPictureBody": "تعذّر إنشاء الصورة على هذا الهاتف. الرابط أدناه لا يزال يعمل.",
+    "captureCrashTitle": "لم تتمكن آخر مشاركة من إنشاء الصورة",
+    "captureCrashBody": "نفدت ذاكرة هاتفك أثناء إنشاء الصورة واضطر لإعادة التحميل. الرمز أدناه يخبرنا بالسبب — يرجى إرساله إلينا. جرّب مشاركة عدد أقل من البطاقات هذه المرة."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "يتضمّن هذا التحديد عنصرًا واحدًا من Private. هل تريد المشاركة على أي حال؟",
     "shareConfirmBodyMany": "يتضمّن هذا التحديد {count} عنصرًا من Private. هل تريد المشاركة على أي حال؟",
     "setupRequiredNotice": "قم أولاً بإعداد Private في لوحة AllMarks.",
-    "encryptErrorNotice": "تعذّر التشفير — حاول مرة أخرى."
+    "encryptErrorNotice": "تعذّر التشفير — حاول مرة أخرى.",
+    "shareIncludesPrivateHeading": "تتضمن هذه المشاركة عنصرًا خاصًا"
   },
   "landing": {
     "hero": {

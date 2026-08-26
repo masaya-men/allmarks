@@ -197,7 +197,34 @@
     }
   },
   "share": {
-    "defaultText": "Hab eine Bookmark-Collage gemacht und sie ist richtig schön geworden ✨ #AllMarks"
+    "defaultText": "Hab eine Bookmark-Collage gemacht und sie ist richtig schön geworden ✨ #AllMarks",
+    "selectedCount": "{count} / {max} AUSGEWÄHLT",
+    "selectAll": "ALLE AUSWÄHLEN",
+    "cancel": "ABBRECHEN",
+    "arrange": "ANORDNEN ({count})",
+    "sharingCount": "TEILEN · {count}",
+    "create": "ERSTELLEN",
+    "creating": "WIRD ERSTELLT…",
+    "retry": "ERNEUT VERSUCHEN",
+    "chooseAgain": "NEU AUSWÄHLEN",
+    "done": "FERTIG",
+    "linkReady": "LINK BEREIT",
+    "copyLink": "LINK KOPIEREN",
+    "linkCopied": "LINK KOPIERT",
+    "couldntCopy": "KOPIEREN FEHLGESCHLAGEN",
+    "saveImage": "BILD SPEICHERN",
+    "postToX": "AUF X POSTEN",
+    "nativeShare": "TEILEN",
+    "retryImage": "BILD ERNEUT ERSTELLEN",
+    "toFront": "NACH VORNE",
+    "toBack": "NACH HINTEN",
+    "back": "ZURÜCK",
+    "creatingLink": "DEIN LINK WIRD ERSTELLT…",
+    "couldntCreateLink": "LINK KONNTE NICHT ERSTELLT WERDEN",
+    "noPictureTitle": "KEIN BILD — DER LINK FUNKTIONIERT TROTZDEM",
+    "noPictureBody": "Das Bild konnte auf diesem Handy nicht erstellt werden. Der Link unten funktioniert trotzdem.",
+    "captureCrashTitle": "DEIN LETZTES TEILEN KONNTE DAS BILD NICHT ERSTELLEN",
+    "captureCrashBody": "Deinem Handy ist beim Erstellen des Bildes der Speicher ausgegangen, und es musste neu laden. Der Code unten verrät uns, warum — bitte schick ihn uns. Versuch es diesmal mit weniger Karten."
   },
   "bookmarklet": {
     "toast": {
@@ -259,7 +286,8 @@
     "shareConfirmBodyOne": "Diese Auswahl enthält 1 Element aus Private. Trotzdem teilen?",
     "shareConfirmBodyMany": "Diese Auswahl enthält {count} Elemente aus Private. Trotzdem teilen?",
     "setupRequiredNotice": "Richte Private zuerst im AllMarks-Board ein.",
-    "encryptErrorNotice": "Verschlüsselung fehlgeschlagen — versuche es erneut."
+    "encryptErrorNotice": "Verschlüsselung fehlgeschlagen — versuche es erneut.",
+    "shareIncludesPrivateHeading": "DIESE FREIGABE ENTHÄLT EIN PRIVATES ELEMENT"
   },
   "landing": {
     "hero": {
