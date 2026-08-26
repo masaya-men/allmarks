@@ -254,7 +254,8 @@
     "errorMismatch": "パスワードが一致しません。",
     "errorCreateFailed": "作成に失敗しました。もう一度お試しください。",
     "errorWrongPassword": "パスワードが違います。",
-    "shareConfirmBody": "この選択にはPrivateの{count}件が含まれています。それでも共有しますか？",
+    "shareConfirmBodyOne": "この選択にはPrivateの1件が含まれています。それでも共有しますか？",
+    "shareConfirmBodyMany": "この選択にはPrivateの{count}件が含まれています。それでも共有しますか？",
     "setupRequiredNotice": "先にAllMarksの盤面でPrivateを設定してください。",
     "encryptErrorNotice": "暗号化できませんでした。もう一度お試しください。"
   },

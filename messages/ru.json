@@ -254,7 +254,8 @@
     "errorMismatch": "Пароли не совпадают.",
     "errorCreateFailed": "Не удалось создать хранилище. Попробуйте снова.",
     "errorWrongPassword": "Неверный пароль.",
-    "shareConfirmBody": "В этот выбор входит {count} элементов из Private. Всё равно поделиться?",
+    "shareConfirmBodyOne": "В этот выбор входит 1 элемент из Private. Всё равно поделиться?",
+    "shareConfirmBodyMany": "В этот выбор входит {count} элементов из Private. Всё равно поделиться?",
     "setupRequiredNotice": "Сначала настройте Private на доске AllMarks.",
     "encryptErrorNotice": "Не удалось зашифровать — попробуйте снова."
   },

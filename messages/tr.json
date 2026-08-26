@@ -254,7 +254,8 @@
     "errorMismatch": "Şifreler eşleşmiyor.",
     "errorCreateFailed": "Kasa oluşturulamadı. Tekrar deneyin.",
     "errorWrongPassword": "Yanlış şifre.",
-    "shareConfirmBody": "Bu seçim Private'tan {count} öğe içeriyor. Yine de paylaşılsın mı?",
+    "shareConfirmBodyOne": "Bu seçim Private'tan 1 öğe içeriyor. Yine de paylaşılsın mı?",
+    "shareConfirmBodyMany": "Bu seçim Private'tan {count} öğe içeriyor. Yine de paylaşılsın mı?",
     "setupRequiredNotice": "Önce AllMarks panosunda Private'ı ayarlayın.",
     "encryptErrorNotice": "Şifrelenemedi — tekrar deneyin."
   },

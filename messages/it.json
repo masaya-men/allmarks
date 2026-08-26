@@ -254,7 +254,8 @@
     "errorMismatch": "Le password non coincidono.",
     "errorCreateFailed": "Impossibile creare il vault. Riprova.",
     "errorWrongPassword": "Password errata.",
-    "shareConfirmBody": "Questa selezione include {count} elementi da Private. Condividere comunque?",
+    "shareConfirmBodyOne": "Questa selezione include 1 elemento da Private. Condividere comunque?",
+    "shareConfirmBodyMany": "Questa selezione include {count} elementi da Private. Condividere comunque?",
     "setupRequiredNotice": "Configura prima Private nella bacheca di AllMarks.",
     "encryptErrorNotice": "Impossibile cifrare — riprova."
   },

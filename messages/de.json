@@ -254,7 +254,8 @@
     "errorMismatch": "Die Passwörter stimmen nicht überein.",
     "errorCreateFailed": "Der Tresor konnte nicht erstellt werden. Versuche es erneut.",
     "errorWrongPassword": "Falsches Passwort.",
-    "shareConfirmBody": "Diese Auswahl enthält {count} Elemente aus Private. Trotzdem teilen?",
+    "shareConfirmBodyOne": "Diese Auswahl enthält 1 Element aus Private. Trotzdem teilen?",
+    "shareConfirmBodyMany": "Diese Auswahl enthält {count} Elemente aus Private. Trotzdem teilen?",
     "setupRequiredNotice": "Richte Private zuerst im AllMarks-Board ein.",
     "encryptErrorNotice": "Verschlüsselung fehlgeschlagen — versuche es erneut."
   },

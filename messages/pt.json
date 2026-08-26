@@ -254,7 +254,8 @@
     "errorMismatch": "As senhas não coincidem.",
     "errorCreateFailed": "Não foi possível criar o cofre. Tente novamente.",
     "errorWrongPassword": "Senha incorreta.",
-    "shareConfirmBody": "Esta seleção inclui {count} itens de Private. Compartilhar mesmo assim?",
+    "shareConfirmBodyOne": "Esta seleção inclui 1 item de Private. Compartilhar mesmo assim?",
+    "shareConfirmBodyMany": "Esta seleção inclui {count} itens de Private. Compartilhar mesmo assim?",
     "setupRequiredNotice": "Configure o Private primeiro no painel do AllMarks.",
     "encryptErrorNotice": "Não foi possível criptografar — tente novamente."
   },

@@ -254,7 +254,8 @@
     "errorMismatch": "Wachtwoorden komen niet overeen.",
     "errorCreateFailed": "Kon de kluis niet aanmaken. Probeer het opnieuw.",
     "errorWrongPassword": "Onjuist wachtwoord.",
-    "shareConfirmBody": "Deze selectie bevat {count} items uit Private. Toch delen?",
+    "shareConfirmBodyOne": "Deze selectie bevat 1 item uit Private. Toch delen?",
+    "shareConfirmBodyMany": "Deze selectie bevat {count} items uit Private. Toch delen?",
     "setupRequiredNotice": "Stel Private eerst in op het AllMarks-bord.",
     "encryptErrorNotice": "Versleutelen mislukt — probeer het opnieuw."
   },

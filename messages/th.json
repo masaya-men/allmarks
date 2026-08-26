@@ -254,7 +254,8 @@
     "errorMismatch": "รหัสผ่านไม่ตรงกัน",
     "errorCreateFailed": "สร้างตู้นิรภัยไม่สำเร็จ ลองอีกครั้ง",
     "errorWrongPassword": "รหัสผ่านไม่ถูกต้อง",
-    "shareConfirmBody": "การเลือกนี้มี {count} รายการจาก Private รวมอยู่ด้วย ยืนยันแชร์หรือไม่?",
+    "shareConfirmBodyOne": "การเลือกนี้มี 1 รายการจาก Private รวมอยู่ด้วย ยืนยันแชร์หรือไม่?",
+    "shareConfirmBodyMany": "การเลือกนี้มี {count} รายการจาก Private รวมอยู่ด้วย ยืนยันแชร์หรือไม่?",
     "setupRequiredNotice": "โปรดตั้งค่า Private ในบอร์ด AllMarks ก่อน",
     "encryptErrorNotice": "เข้ารหัสไม่สำเร็จ ลองอีกครั้ง"
   },

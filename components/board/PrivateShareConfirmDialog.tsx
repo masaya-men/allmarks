@@ -34,7 +34,9 @@ export function PrivateShareConfirmDialog({ count, onConfirm, onCancel }: Props)
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
         <div id="private-share-confirm-heading" className={styles.heading}>SHARE INCLUDES PRIVATE</div>
         <div className={styles.body}>
-          {t('private.shareConfirmBody').replace('{count}', String(count))}
+          {count === 1
+            ? t('private.shareConfirmBodyOne')
+            : t('private.shareConfirmBodyMany').replace('{count}', String(count))}
         </div>
         <div className={styles.actions}>
           <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-share-confirm-cancel">

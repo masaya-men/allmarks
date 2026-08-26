@@ -254,7 +254,8 @@
     "errorMismatch": "Passwords do not match.",
     "errorCreateFailed": "Could not create the vault. Try again.",
     "errorWrongPassword": "Wrong password.",
-    "shareConfirmBody": "This selection includes {count} items from Private. Share anyway?",
+    "shareConfirmBodyOne": "This selection includes 1 item from Private. Share anyway?",
+    "shareConfirmBodyMany": "This selection includes {count} items from Private. Share anyway?",
     "setupRequiredNotice": "Set up Private in the AllMarks board first.",
     "encryptErrorNotice": "Could not encrypt — try again."
   },

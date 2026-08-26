@@ -254,7 +254,8 @@
     "errorMismatch": "Las contraseñas no coinciden.",
     "errorCreateFailed": "No se pudo crear la bóveda. Inténtalo de nuevo.",
     "errorWrongPassword": "Contraseña incorrecta.",
-    "shareConfirmBody": "Esta selección incluye {count} elementos de Private. ¿Compartir de todos modos?",
+    "shareConfirmBodyOne": "Esta selección incluye 1 elemento de Private. ¿Compartir de todos modos?",
+    "shareConfirmBodyMany": "Esta selección incluye {count} elementos de Private. ¿Compartir de todos modos?",
     "setupRequiredNotice": "Primero configura Private en el tablero de AllMarks.",
     "encryptErrorNotice": "No se pudo cifrar. Inténtalo de nuevo."
   },

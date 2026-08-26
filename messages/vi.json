@@ -254,7 +254,8 @@
     "errorMismatch": "Mật khẩu không khớp.",
     "errorCreateFailed": "Không thể tạo kho lưu trữ. Hãy thử lại.",
     "errorWrongPassword": "Sai mật khẩu.",
-    "shareConfirmBody": "Lựa chọn này bao gồm {count} mục từ Private. Vẫn chia sẻ chứ?",
+    "shareConfirmBodyOne": "Lựa chọn này bao gồm 1 mục từ Private. Vẫn chia sẻ chứ?",
+    "shareConfirmBodyMany": "Lựa chọn này bao gồm {count} mục từ Private. Vẫn chia sẻ chứ?",
     "setupRequiredNotice": "Hãy thiết lập Private trên bảng AllMarks trước.",
     "encryptErrorNotice": "Không thể mã hoá — hãy thử lại."
   },

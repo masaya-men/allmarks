@@ -254,7 +254,8 @@
     "errorMismatch": "Les mots de passe ne correspondent pas.",
     "errorCreateFailed": "Impossible de créer le coffre. Réessayez.",
     "errorWrongPassword": "Mot de passe incorrect.",
-    "shareConfirmBody": "Cette sélection inclut {count} éléments de Private. Partager quand même ?",
+    "shareConfirmBodyOne": "Cette sélection inclut 1 élément de Private. Partager quand même ?",
+    "shareConfirmBodyMany": "Cette sélection inclut {count} éléments de Private. Partager quand même ?",
     "setupRequiredNotice": "Configurez d'abord Private dans le tableau AllMarks.",
     "encryptErrorNotice": "Échec du chiffrement — réessayez."
   },
