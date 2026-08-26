@@ -173,9 +173,6 @@
  * aria-disabled is still set (screen-reader users can't drag, so the click
  * affordance genuinely is inert for them) — it just isn't styled. */
 
-.tagItem[data-private-status] {
-  gap: 0;
-}
 .tagDot {
   width: 8px;
   height: 8px;

@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState, type ReactElement } from 'rea
 import type { BoardFilter } from '@/lib/board/types'
 import {
   isTagsFilter,
-  BOARD_FILTER_ALL, BOARD_FILTER_ARCHIVE, BOARD_FILTER_DEAD,
+  BOARD_FILTER_ALL, BOARD_FILTER_INBOX, BOARD_FILTER_ARCHIVE, BOARD_FILTER_DEAD,
   boardFilterEquals,
   toggleTagInFilter,
 } from '@/lib/board/board-filter-helpers'
-import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
+import { PRIVATE_LOCKED_ICON, PRIVATE_UNLOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import { useDragReorder } from '@/lib/board/use-drag-reorder'
@@ -95,11 +95,11 @@ function sortToggleLabel(mode: TagOrderMode | undefined): string {
 function labelFor(f: BoardFilter, tags: ReadonlyArray<TagRecord>, privateTagId: string | null): string {
   switch (f.kind) {
     case 'all': return 'AllMarks'
-    case 'inbox': return 'INBOX'
+    case 'inbox': return 'NO TAGS'
     case 'archive': return 'TRASH'
     case 'dead': return 'DEAD LINKS'
     case 'tags': {
-      // タグ名は常に小文字で表示 (= ユーザーが付けた中身)。 'AllMarks' や 'INBOX'
+      // タグ名は常に小文字で表示 (= ユーザーが付けた中身)。 'AllMarks' や 'NO TAGS'
       // 等のアプリ枠ラベルは大文字のまま、 タグ名の枝だけ toLowerCase で揃える。
       const names = f.tagIds.map((id) =>
         id === privateTagId ? 'private' : tags.find((t) => t.id === id)?.name.toLowerCase() ?? '—',
@@ -413,6 +413,20 @@ export function FilterPill({
             <span className={styles.itemCount}>{String(counts.all).padStart(3, '0')}</span>
           </button>
 
+          {/* NO TAGS — bookmarks with zero tags. The 'inbox' filter kind and
+              its count/label plumbing already existed (board-filter-helpers,
+              filter.ts, sidebarCounts) from an older "Inbox" concept; this
+              row is the missing entry point to actually select it. */}
+          <button
+            type="button"
+            className={`${styles.item} ${boardFilterEquals(value, BOARD_FILTER_INBOX) ? styles.active : ''}`.trim()}
+            onClick={() => pickExclusive(BOARD_FILTER_INBOX)}
+            data-testid="filter-pill-no-tags"
+          >
+            <span className={styles.itemLabel}>NO TAGS</span>
+            <span className={styles.itemCount}>{String(counts.inbox).padStart(3, '0')}</span>
+          </button>
+
           {/* TAGS — scrollable middle region. When the list grows past
               MAX, it scrolls internally with a top/bottom fade mask (no
               raw scrollbar) so ALL stays on top and TRASH/DEAD stay pinned
@@ -535,7 +549,10 @@ export function FilterPill({
               data-testid="filter-pill-private"
               onClick={onPrivateClick}
             >
-              <span className={styles.privateIcon} aria-hidden="true">{PRIVATE_LOCKED_ICON}</span>
+              <span className={styles.tagDot} data-active={privateActive ? 'true' : 'false'} aria-hidden="true" />
+              <span className={styles.privateIcon} aria-hidden="true">
+                {privateStatus === 'unlocked' ? PRIVATE_UNLOCKED_ICON : PRIVATE_LOCKED_ICON}
+              </span>
               <span className={styles.itemLabel}>{PRIVATE_LABEL}</span>
             </button>
           </div>

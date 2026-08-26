@@ -6,7 +6,7 @@ import { computeTagScrollEdge } from '@/lib/board/tag-scroll-edge'
 import { useRollingCount } from '@/lib/board/use-rolling-count'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { PRIVATE_DROP_KEY } from '@/lib/private/apply-tag-change'
-import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
+import { PRIVATE_LOCKED_ICON, PRIVATE_UNLOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import styles from './TagDropPanel.module.css'
 
 type Props = {
@@ -200,7 +200,10 @@ export function TagDropPanel({
               flashTimer.current = setTimeout(() => setFlashId(null), 420)
             }}
           >
-            <span className={styles.privateIcon} aria-hidden="true">{PRIVATE_LOCKED_ICON}</span>
+            <span className={styles.tagDot} aria-hidden="true" />
+            <span className={styles.privateIcon} aria-hidden="true">
+              {privateStatus === 'unlocked' ? PRIVATE_UNLOCKED_ICON : PRIVATE_LOCKED_ICON}
+            </span>
             <span className={styles.tagLabel}>{PRIVATE_LABEL}</span>
           </button>
         </div>

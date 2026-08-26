@@ -16,8 +16,8 @@ describe('deriveBoardBgTypoText', () => {
     expect(deriveBoardBgTypoText(BOARD_FILTER_ALL, [])).toBe('AllMarks')
   })
 
-  it('returns "Inbox" / "Archive" / "Dead Links" for their fixed filters', () => {
-    expect(deriveBoardBgTypoText(BOARD_FILTER_INBOX, [])).toBe('Inbox')
+  it('returns "No Tags" / "Archive" / "Dead Links" for their fixed filters', () => {
+    expect(deriveBoardBgTypoText(BOARD_FILTER_INBOX, [])).toBe('No Tags')
     expect(deriveBoardBgTypoText(BOARD_FILTER_ARCHIVE, [])).toBe('Archive')
     expect(deriveBoardBgTypoText(BOARD_FILTER_DEAD, [])).toBe('Dead Links')
   })
