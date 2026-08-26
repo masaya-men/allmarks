@@ -223,6 +223,7 @@
     "delete": "Suppression annulée",
     "resize": "Redimensionnement annulé",
     "add": "Ajout annulé",
+    "deleteMany": "Suppression multiple annulée",
     "cardWidth": "Taille annulée",
     "cardGap": "Espacement annulé",
     "tunePreset": "Préréglage annulé"
@@ -232,6 +233,7 @@
     "delete": "Suppression rétablie",
     "resize": "Redimensionnement rétabli",
     "add": "Ajout rétabli",
+    "deleteMany": "Suppression multiple rétablie",
     "cardWidth": "Taille rétablie",
     "cardGap": "Espacement rétabli",
     "tunePreset": "Préréglage rétabli"

@@ -223,6 +223,7 @@
     "delete": "삭제 되돌림",
     "resize": "크기 변경 되돌림",
     "add": "추가 되돌림",
+    "deleteMany": "일괄 삭제 되돌림",
     "cardWidth": "크기 되돌림",
     "cardGap": "간격 되돌림",
     "tunePreset": "프리셋 되돌림"
@@ -232,6 +233,7 @@
     "delete": "삭제 다시 실행",
     "resize": "크기 변경 다시 실행",
     "add": "추가 다시 실행",
+    "deleteMany": "일괄 삭제 다시 실행",
     "cardWidth": "크기 다시 실행",
     "cardGap": "간격 다시 실행",
     "tunePreset": "프리셋 다시 실행"

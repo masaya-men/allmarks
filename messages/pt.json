@@ -223,6 +223,7 @@
     "delete": "Exclusão desfeita",
     "resize": "Redimensionamento desfeito",
     "add": "Adição desfeita",
+    "deleteMany": "Exclusão em massa desfeita",
     "cardWidth": "Tamanho desfeito",
     "cardGap": "Espaçamento desfeito",
     "tunePreset": "Predefinição desfeita"
@@ -232,6 +233,7 @@
     "delete": "Exclusão refeita",
     "resize": "Redimensionamento refeito",
     "add": "Adição refeita",
+    "deleteMany": "Exclusão em massa refeita",
     "cardWidth": "Tamanho refeito",
     "cardGap": "Espaçamento refeito",
     "tunePreset": "Predefinição refeita"

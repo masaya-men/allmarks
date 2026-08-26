@@ -223,6 +223,7 @@
     "delete": "Eliminazione annullata",
     "resize": "Ridimensionamento annullato",
     "add": "Aggiunta annullata",
+    "deleteMany": "Eliminazione multipla annullata",
     "cardWidth": "Dimensione annullata",
     "cardGap": "Spaziatura annullata",
     "tunePreset": "Preset annullato"
@@ -232,6 +233,7 @@
     "delete": "Eliminazione ripristinata",
     "resize": "Ridimensionamento ripristinato",
     "add": "Aggiunta ripristinata",
+    "deleteMany": "Eliminazione multipla ripristinata",
     "cardWidth": "Dimensione ripristinata",
     "cardGap": "Spaziatura ripristinata",
     "tunePreset": "Preset ripristinato"

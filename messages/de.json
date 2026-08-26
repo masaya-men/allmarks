@@ -223,6 +223,7 @@
     "delete": "Löschen rückgängig gemacht",
     "resize": "Größenänderung rückgängig gemacht",
     "add": "Hinzufügen rückgängig gemacht",
+    "deleteMany": "Mehrfachlöschen rückgängig gemacht",
     "cardWidth": "Größe rückgängig gemacht",
     "cardGap": "Abstand rückgängig gemacht",
     "tunePreset": "Voreinstellung rückgängig gemacht"
@@ -232,6 +233,7 @@
     "delete": "Löschen wiederhergestellt",
     "resize": "Größenänderung wiederhergestellt",
     "add": "Hinzufügen wiederhergestellt",
+    "deleteMany": "Mehrfachlöschen wiederhergestellt",
     "cardWidth": "Größe wiederhergestellt",
     "cardGap": "Abstand wiederhergestellt",
     "tunePreset": "Voreinstellung wiederhergestellt"

@@ -223,6 +223,7 @@
     "delete": "Đã hoàn tác xóa",
     "resize": "Đã hoàn tác đổi kích thước",
     "add": "Đã hoàn tác thêm",
+    "deleteMany": "Đã hoàn tác xóa hàng loạt",
     "cardWidth": "Đã hoàn tác chỉnh cỡ",
     "cardGap": "Đã hoàn tác chỉnh khoảng cách",
     "tunePreset": "Đã hoàn tác cài đặt sẵn"
@@ -232,6 +233,7 @@
     "delete": "Đã làm lại xóa",
     "resize": "Đã làm lại đổi kích thước",
     "add": "Đã làm lại thêm",
+    "deleteMany": "Đã làm lại xóa hàng loạt",
     "cardWidth": "Đã làm lại chỉnh cỡ",
     "cardGap": "Đã làm lại chỉnh khoảng cách",
     "tunePreset": "Đã làm lại cài đặt sẵn"

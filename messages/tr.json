@@ -223,6 +223,7 @@
     "delete": "Silme geri alındı",
     "resize": "Boyutlandırma geri alındı",
     "add": "Ekleme geri alındı",
+    "deleteMany": "Toplu silme geri alındı",
     "cardWidth": "Boyut geri alındı",
     "cardGap": "Aralık geri alındı",
     "tunePreset": "Hazır ayar geri alındı"
@@ -232,6 +233,7 @@
     "delete": "Silme yeniden yapıldı",
     "resize": "Boyutlandırma yeniden yapıldı",
     "add": "Ekleme yeniden yapıldı",
+    "deleteMany": "Toplu silme yeniden yapıldı",
     "cardWidth": "Boyut yeniden yapıldı",
     "cardGap": "Aralık yeniden yapıldı",
     "tunePreset": "Hazır ayar yeniden yapıldı"

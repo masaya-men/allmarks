@@ -223,6 +223,7 @@
     "delete": "已撤销删除",
     "resize": "已撤销调整大小",
     "add": "已撤销添加",
+    "deleteMany": "已撤销批量删除",
     "cardWidth": "已撤销尺寸调整",
     "cardGap": "已撤销间距调整",
     "tunePreset": "已撤销预设"
@@ -232,6 +233,7 @@
     "delete": "已重做删除",
     "resize": "已重做调整大小",
     "add": "已重做添加",
+    "deleteMany": "已重做批量删除",
     "cardWidth": "已重做尺寸调整",
     "cardGap": "已重做间距调整",
     "tunePreset": "已重做预设"

@@ -223,6 +223,7 @@
     "delete": "Delete undone",
     "resize": "Resize undone",
     "add": "Add undone",
+    "deleteMany": "Deletes undone",
     "cardWidth": "Size undone",
     "cardGap": "Gap undone",
     "tunePreset": "Preset undone"
@@ -232,6 +233,7 @@
     "delete": "Delete redone",
     "resize": "Resize redone",
     "add": "Add redone",
+    "deleteMany": "Deletes redone",
     "cardWidth": "Size redone",
     "cardGap": "Gap redone",
     "tunePreset": "Preset redone"

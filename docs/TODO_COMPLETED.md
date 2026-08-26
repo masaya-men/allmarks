@@ -9782,3 +9782,16 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **TDD**: `tests/lib/tweet-liveness.test.ts`の既存3テスト(TweetTombstone / 空body / id_str無しTweet)の期待値を`gone`→`unknown`に書き換えてRED確認 → `lib/board/tweet-liveness.ts`の該当1行(`isLiveTweet(data) ? {kind:'alive'} : {kind:'gone'}` → `... : {kind:'unknown'}`)を修正してGREEN確認。
 - **検証**: tsc0/vitest全301ファイル2514テスト緑/e2e(board-b-11-source-hide, triage-flow)緑/`pnpm build`成功。
 - **未デプロイ**: 実装・検証完了、次はユーザー確認のうえ本番デプロイ。
+
+---
+
+## セッション 205 追補2 — N-73(デッドリンクにもTRASHのような一括「TRASH DEAD LINKS」ボタン)をbrainstorming→TDDで実装
+
+**N-77・N-70の修正・デプロイ完了後、同じセッションで続けてN-73に着手。superpowers:brainstormingをBoundedパスで実施(=境界確定タスク、短い設計をチャットで提示→承認待ち)。**
+
+- **調査**: TRASH側の「EMPTY TRASH」ボタン(`TrashConfirmDialog.tsx`+`BoardRoot.tsx`)を実装本体まで読み、ヘッダーの`ChromeButton`列に`activeFilter.kind==='archive' && deletedItems.length>0`で条件表示される既存パターンを確認。EMPTY TRASHは完全削除(不可逆)なので2秒長押し確認ダイアログが付いている、という設計意図も把握。
+- **設計提示→ユーザー承認**: デッドリンク版はTRASHへの**ソフト削除**(取り消し可能)なので確認ダイアログ無し、即実行+一括取り消しトーストの方針を提示 → ユーザー承認(「OK」)。
+- **実装**: ①`lib/board/undo-stack.ts`に`deleteMany`(`bookmarkIds`配列)を新規追加(既存の`add`と同じ複数形パターン)。②`BoardRoot.tsx`の`applyEntry`switchに`case 'deleteMany'`追加(direction引数で`undo`=復元/`redo`=再送りを明示的に切り替え、既存の単体`delete`/`add`ケースが常に同じ挙動を返す書き方とは違い、双方向を正しく扱う設計にした)。③`handleTrashDeadLinksRequest`ハンドラ(dead-link全件のbookmarkIdを集めて`persistSoftDelete(id,true)`を回し、`pushUndo({kind:'deleteMany',...})`)。④ヘッダーに「TRASH DEAD LINKS」ボタン(EMPTY TRASHと同じ`ChromeButton`列、`activeFilter.kind==='dead'`かつ1件以上で表示)。⑤`undo.deleteMany`/`redo.deleteMany`のトースト文言を全15言語の`messages/*.json`に追加(Node script経由で機械挿入、diffはlocaleごと2行のみ、英日は精査・他13言語は既存の`delete`/`add`パターンに倣ったAI下訳)。
+- **TDD**: `tests/e2e/board-dead-links-bulk-trash.spec.ts`新規。まずボタンが存在しない状態でRED確認(3件のdead-linkカードがDEAD LINKS表示に出ているところまでは正しく進み、新ボタンが見つからず失敗する、を確認)→実装→GREEN。検証内容: ①一括TRASH移動で3件ともDEAD LINKS表示から消え、TRASH表示に移る②ボタン自体もDEAD LINKSが空になると同時に非表示になる③1回のCtrl+Zで3件まとめて復元④DEAD LINKSが元から空ならボタンは出ない。
+- **検証**: tsc0 / vitest全301ファイル2514テスト緑 / 新規e2e2件緑 / `pnpm build`成功。
+- **未push・未デプロイ**: 実装・検証完了、次はユーザー確認のうえcommit・push・本番デプロイ。

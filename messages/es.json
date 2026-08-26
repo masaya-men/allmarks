@@ -223,6 +223,7 @@
     "delete": "Eliminación deshecha",
     "resize": "Redimensión deshecha",
     "add": "Adición deshecha",
+    "deleteMany": "Eliminación múltiple deshecha",
     "cardWidth": "Tamaño deshecho",
     "cardGap": "Espaciado deshecho",
     "tunePreset": "Ajuste deshecho"
@@ -232,6 +233,7 @@
     "delete": "Eliminación rehecha",
     "resize": "Redimensión rehecha",
     "add": "Adición rehecha",
+    "deleteMany": "Eliminación múltiple rehecha",
     "cardWidth": "Tamaño rehecho",
     "cardGap": "Espaciado rehecho",
     "tunePreset": "Ajuste rehecho"

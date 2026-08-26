@@ -223,6 +223,7 @@
     "delete": "Verwijderen ongedaan gemaakt",
     "resize": "Formaat ongedaan gemaakt",
     "add": "Toevoeging ongedaan gemaakt",
+    "deleteMany": "Meervoudig verwijderen ongedaan gemaakt",
     "cardWidth": "Grootte ongedaan gemaakt",
     "cardGap": "Tussenruimte ongedaan gemaakt",
     "tunePreset": "Voorinstelling ongedaan gemaakt"
@@ -232,6 +233,7 @@
     "delete": "Verwijderen opnieuw uitgevoerd",
     "resize": "Formaat opnieuw uitgevoerd",
     "add": "Toevoeging opnieuw uitgevoerd",
+    "deleteMany": "Meervoudig verwijderen opnieuw uitgevoerd",
     "cardWidth": "Grootte opnieuw uitgevoerd",
     "cardGap": "Tussenruimte opnieuw uitgevoerd",
     "tunePreset": "Voorinstelling opnieuw uitgevoerd"

@@ -1677,6 +1677,21 @@ export function BoardRoot() {
     await emptyTrash()
   }, [emptyTrash])
 
+  // Bulk "TRASH DEAD LINKS" (N-73) — soft-deletes every currently
+  // dead-linked card in one action, mirroring EMPTY TRASH's header-button
+  // placement but NOT its destructive hold-to-confirm dialog: this is a
+  // reversible move to TRASH (same as a single card's delete button), so
+  // it fires immediately and relies on the single-step bulk undo entry
+  // below rather than a blocking confirmation.
+  const handleTrashDeadLinksRequest = useCallback(async (): Promise<void> => {
+    const deadIds = items.filter((it) => it.linkStatus === 'gone').map((it) => it.bookmarkId)
+    if (deadIds.length === 0) return
+    pushUndo({ kind: 'deleteMany', bookmarkIds: deadIds })
+    for (const id of deadIds) {
+      await persistSoftDelete(id, true)
+    }
+  }, [items, persistSoftDelete, pushUndo])
+
   // Tag mutation handlers. Phase 1: simple reload-after-mutation. A later
   // pass can swap in optimistic state updates if perceived latency is bad
   // on slow devices; for now ~50ms reload feels fine on desktop.
@@ -1940,6 +1955,19 @@ export function BoardRoot() {
             inverse = { kind: 'delete', bookmarkId: entry.bookmarkId }
             await persistSoftDelete(entry.bookmarkId, false)
             messageKey = `${direction}.delete`
+            break
+          }
+          case 'deleteMany': {
+            inverse = { kind: 'deleteMany', bookmarkIds: entry.bookmarkIds }
+            // Unlike the single-item 'delete' case above, this batch is
+            // reachable from BOTH directions (undo restores it, a
+            // subsequent redo re-trashes it), so the mutation must switch
+            // on direction explicitly rather than always restoring.
+            const restore = direction === 'undo'
+            for (const id of entry.bookmarkIds) {
+              await persistSoftDelete(id, !restore)
+            }
+            messageKey = `${direction}.deleteMany`
             break
           }
           case 'resize': {
@@ -3658,6 +3686,13 @@ export function BoardRoot() {
                   onClick={handleEmptyTrashRequest}
                   data-testid="empty-trash-button"
                   data-variant="danger"
+                />
+              )}
+              {activeFilter.kind === 'dead' && items.some((it) => it.linkStatus === 'gone') && (
+                <ChromeButton
+                  label="TRASH DEAD LINKS"
+                  onClick={() => { void handleTrashDeadLinksRequest() }}
+                  data-testid="trash-dead-links-button"
                 />
               )}
             </>

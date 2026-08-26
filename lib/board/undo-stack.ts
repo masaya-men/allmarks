@@ -21,6 +21,7 @@ export type UndoEntry =
       }>
     }
   | { readonly kind: 'delete'; readonly bookmarkId: string }
+  | { readonly kind: 'deleteMany'; readonly bookmarkIds: readonly string[] }
   | {
       readonly kind: 'resize'
       readonly bookmarkId: string
