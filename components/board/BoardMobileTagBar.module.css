@@ -122,8 +122,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Applied flash — a brief green wash + filled dot so a tap reads as "applied". */
-.chip[data-applied='true'] { animation: tagApplied 420ms ease-out; }
+/* Applied flash — a brief green wash + filled dot + settle-bounce so a tap
+ * reads as "applied" even while the count digit is mid-roll (see
+ * use-rolling-count.ts) beside it. */
+.chip[data-applied='true'] { animation: tagApplied 420ms ease-out, tagChipBounce 420ms ease-out; }
 .chip[data-applied='true'] .tagDot {
   background: #28f100;
   border-color: #28f100;
@@ -132,6 +134,16 @@
 @keyframes tagApplied {
   0% { background: rgba(40, 241, 0, 0.26); }
   100% { background: transparent; }
+}
+@keyframes tagChipBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.035); }
+  60% { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip[data-applied='true'] { animation: tagApplied 420ms ease-out; }
 }
 
 /* Inline create field — replaces the "+ NEW TAG" chip while typing. */

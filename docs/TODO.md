@@ -21,20 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
-### 直近の状態 (セッション 205 — ★N-77・N-70をsystematic-debuggingで根治(push・デプロイ済)+N-73(デッドリンク一括TRASH)+N-71(長押し削除ラベル)実装(brainstorming→TDD、未push))
+### 直近の状態 (セッション 205 — ★N-77・N-70・N-73・N-71・N-72完了)
 
-**session 204で出た9件のブラッシュアップ候補(N-69〜N-77)から「好きに進めてOK・がんがん進めてOK」を受けて、N-77→N-70→N-73→N-71の順に選定・着手。** 詳細は[TODO_COMPLETED.md](TODO_COMPLETED.md)。
+**session 204で出た9件のブラッシュアップ候補(N-69〜N-77)から「好きに進めてOK・がんがん進めてOK」を受けて、N-77→N-70→N-73→N-71→N-72の順に選定・着手。5件完了、全て`allmarks.app`にデプロイ済。** 詳細は[TODO_COMPLETED.md](TODO_COMPLETED.md)。
 
-**N-77・N-70(修正・push・デプロイ済)**:
-- N-77根本原因: `public/sw.js`のService Workerがサードパーティ画像(i.ytimg.com等)まで無差別にインターセプトしており、スクロールでカードがアンマウントされ画像読み込みがキャンセルされた際に`respondWith(undefined)`経路に落ちてネットワークエラー(=壊れた画像アイコン=灰色)になっていた。クロスオリジンの早期returnで修正。
-- N-70根本原因: `lib/board/tweet-liveness.ts`の`checkTweetLiveness`が「200だがTweet形式のペイロードでなければ`gone`」と判定していた。本番`curl`で実CDN検証し、「本当に存在しないツイートは404、200のtombstoneは鍵アカウント等で匿名チェッカーから見えないだけ」と実証、後者を`gone`→`unknown`(安全側)に変更。副産物: `functions/api/ogp.ts`の502丸め込みバグ(一般サイト側は`gone`に絶対到達しない)を発見、原因ではないと確認済(修正は別スコープ)。
-- 両方ともTDD・tsc0/vitest2514緑/関連e2e緑/build成功。**push・`allmarks.app`デプロイ済**。
-
-**N-73(デッドリンクにも「TRASH DEAD LINKS」一括ボタン)+N-71(長押し削除ボタンのラベル修正)、実装・未push**:
-- N-73: **brainstorming(Bounded path)**でTRASH側「EMPTY TRASH」ボタンの実装を先に読み、ユーザー承認を得てから着手。確認ダイアログは不要(ソフト削除=取り消し可能と判断)。`lib/board/undo-stack.ts`に`deleteMany`種別を追加(1回のCtrl+Zで一括復元)。`BoardRoot.tsx`に`handleTrashDeadLinksRequest`+ヘッダーの「TRASH DEAD LINKS」ボタン。取り消し/やり直しトースト文言を15言語に追加。TDD(`tests/e2e/board-dead-links-bulk-trash.spec.ts`新規)。
-- N-71: 当初「ボタンにラベルが無い」と誤って報告していたが、実装本体(CSS)まで読んで訂正。**実際はCSSの`::before`で「押している間だけ」DELETE→HOLD TO DELETEに切り替わる仕組みがあり、「触る前は分からない」のが真のギャップだった**(TrashConfirmDialog.module.css / TagDeleteConfirmDialog.module.css、同一パターンが2箇所)。brainstormingで訂正版の設計をユーザーに提示・承認を得て、待機状態から常時「HOLD TO DELETE」表示に変更(トグル廃止)。TDD(`tests/e2e/trash-tag-delete-hold-label.spec.ts`新規、`getComputedStyle(el,'::before').content`で実際のCSS描画を検証、先にRED確認→修正→GREEN)。
-- **検証**: tsc0/vitest全301ファイル2514緑(既知の無関係flaky=`channel.test.ts`単体では緑と確認済)/新規e2e計3件緑/`pnpm build`成功。
-- **★次セッション最優先**: ユーザーにN-73+N-71のcommit・push・本番デプロイ可否を確認。OK後は残り5件(N-69/72/74〜76)から次を選ぶ。
+- **N-77**: `public/sw.js`のService Workerがサードパーティ画像まで無差別インターセプトし、スクロールでのアンマウント時に`respondWith(undefined)`→ネットワークエラー(=壊れた画像アイコン=灰色)。クロスオリジンの早期returnで修正。
+- **N-70**: `lib/board/tweet-liveness.ts`の`checkTweetLiveness`が「200だがTweet形式でなければgone」と誤判定。本番`curl`で実CDN検証し「本当に存在しないツイートは404、200のtombstoneは鍵アカウント等で匿名チェッカーから見えないだけ」と実証、後者を`unknown`に変更。副産物: `functions/api/ogp.ts`の502丸め込みバグ(一般サイト側は`gone`に絶対到達しない)を発見、原因ではないと確認済(修正は別スコープ)。
+- **N-73**: デッドリンクにも「TRASH DEAD LINKS」一括ボタン(brainstorming Bounded path→ユーザー承認→実装)。ソフト削除なので確認ダイアログ無し、`deleteMany`という新undo種別で1回のCtrl+Zで一括復元。15言語対応。
+- **N-71**: 長押し削除ボタン、当初「ラベルが無い」と誤って報告→CSS実装まで読んで訂正(実際は押している間だけHOLD TO DELETEに切り替わる仕組みで、待機状態では分からないのが真のギャップ)。常時「HOLD TO DELETE」表示に変更(2箇所)。
+- **N-72**: MANAGE TAGSのタグ名クリックでも一括タグ付け。**既にモバイル版(`BoardMobileTagBar.tsx`)には同機能があった**ため、既存の`handleAssignTagToSelection`をデスクトップ(`TagDropPanel.tsx`)にも配線するだけで実現(新規ロジックほぼゼロ)。ユーザーから「フィードバックが弱いので業界水準にしたい」と追加要望 → プロセス会話で複数案(件数ロールアップ/カード側反応/トースト/バウンス)を提示 → **件数ロールアップ+行バウンス+既存の緑フラッシュ**の組み合わせで承認。`lib/board/use-rolling-count.ts`(rAFベースのオドメーター風カウントアニメ、純粋関数を先にTDD)を新規作成し、デスクトップ・モバイル両方の件数表示に適用。CSSに`prefers-reduced-motion`対応のバウンスキーフレームを追加。
+- **検証**: 全項目 tsc0/vitest全302ファイル2523緑/新規e2e計5件緑/`pnpm build`成功。
+- **★次セッション最優先**: 残り4件(N-69/74〜76)から次を選ぶ。着手前に該当項目だけ改めてsuperpowers:brainstormingから。
 
 ### 直近の状態 (セッション 204 — ★Private Phase 2 サブプロジェクト2(②クイック保存面: PopOut/拡張機能/ブックマークレット)完全完了・本番デプロイ済・master merge済／次は拡張機能UI配線)
 
@@ -677,7 +674,6 @@ Private Phase 2 ②の実装後にsuperpowers:security-reviewを実施。confide
 Private Phase 2完了後、ユーザーから次の一括インプット。**次回セッションはこの中から1つを選んで着手**（着手前に該当項目だけ改めてbrainstormingへ）。優先度・着手順は未確定、ユーザー判断待ち。
 
 - **(N-69) タグ絞り込みに「タグ無し」を追加してほしい** — あとからタグが1つも付いていないブックマークだけを絞り込んで整理したい、というユーザー要望。現状のFilterPill/絞り込みロジックに「タグ無し」専用のフィルタ条件が無い（実装調査は未着手）。
-- **(N-72) MANAGE TAGSの複数選択で、タグ名クリックでも一括タグ付けできるようにしたい** — 現状はドラッグ&ドロップのみ。複数カード選択中にタグ名をクリックするだけでも一括タグ付けできる導線を追加してほしい、というユーザー提案。
 - **(N-74) SHARE画面のボードタイトルの配置オプション** — 現状のタイトル文字配置に加え、「文字を最前面に置く」等、最低2パターンくらい選べるようにしてほしい、というユーザー要望。視覚変更のため`ui-design.md`の承認フロー適用。
 - **(N-75) SHARE画面の操作UI文言をもっと平易に＋多言語化してほしい** — 現状のSHARE画面の文言がわかりにくい、かつ多言語対応もされていない、というユーザー指摘。Private Phase 2でi18n化した際の知見（`useI18n()`/`messages/*.json`パターン、板側は`I18nProvider`配下）がそのまま使える見込み。
 - **(N-76) SHARE画面の自動配置を、何もしなくても最初から「良い感じ」に仕上げたい** — 現状の自動配置ロジック（`computeSkylineLayout`等）に代えて、業界標準のコラージュ/ビンパッキング系ライブラリやアルゴリズムがあればそれを活用できないか、というユーザー提案。技術調査（スパイク）から着手するのが妥当。

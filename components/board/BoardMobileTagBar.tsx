@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
+import { useRollingCount } from '@/lib/board/use-rolling-count'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { PRIVATE_LOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import styles from './BoardMobileTagBar.module.css'
@@ -125,20 +126,14 @@ export function BoardMobileTagBar({
         )}
 
         {tags.map((t) => (
-          <button
+          <TagChip
             key={t.id}
-            type="button"
-            className={styles.chip}
-            data-applied={flashId === t.id ? 'true' : 'false'}
-            aria-disabled={!hasSelection}
-            onClick={(): void => handleTap(t.id)}
-            data-testid={`mobile-tag-${t.id}`}
-            title={t.name}
-          >
-            <span className={styles.tagDot} aria-hidden="true" />
-            <span className={styles.tagLabel}>{t.name}</span>
-            <span className={styles.tagCount}>{String(tagCounts[t.id] ?? 0).padStart(3, '0')}</span>
-          </button>
+            tag={t}
+            count={tagCounts[t.id] ?? 0}
+            applied={flashId === t.id}
+            disabled={!hasSelection}
+            onTap={handleTap}
+          />
         ))}
 
         <button
@@ -154,5 +149,37 @@ export function BoardMobileTagBar({
         </button>
       </div>
     </div>
+  )
+}
+
+type TagChipProps = {
+  readonly tag: TagRecord
+  readonly count: number
+  /** True for ~420ms right after this chip was tapped. */
+  readonly applied: boolean
+  readonly disabled: boolean
+  readonly onTap: (tagId: string) => void
+}
+
+/** One tag chip. Its own component (not inlined in the .map) so the count's
+ *  roll-up hook — which must run every render regardless of whether count
+ *  changed — is scoped to just this chip instead of firing for every tag
+ *  whenever any single chip's count changes. */
+function TagChip({ tag, count, applied, disabled, onTap }: TagChipProps): ReactElement {
+  const displayCount = useRollingCount(count)
+  return (
+    <button
+      type="button"
+      className={styles.chip}
+      data-applied={applied ? 'true' : 'false'}
+      aria-disabled={disabled}
+      onClick={(): void => onTap(tag.id)}
+      data-testid={`mobile-tag-${tag.id}`}
+      title={tag.name}
+    >
+      <span className={styles.tagDot} aria-hidden="true" />
+      <span className={styles.tagLabel}>{tag.name}</span>
+      <span className={styles.tagCount}>{String(displayCount).padStart(3, '0')}</span>
+    </button>
   )
 }

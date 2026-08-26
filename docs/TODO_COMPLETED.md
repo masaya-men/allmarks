@@ -9809,3 +9809,18 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **TDD**: `tests/e2e/trash-tag-delete-hold-label.spec.ts`新規。jsdomでは`::before`の`content`を検証できない(CSS Modulesの実スタイルがロードされないため)ためPlaywright e2eを選択。`window.getComputedStyle(el, '::before').content`で実際のブラウザ描画を検証。まずセレクタのミスで2回赤(button自身に`::before`は無くinner span側だった/テンプレートリテラルの二重ラップミス)を踏んでから、正しく「待機状態でDELETEしか出ない」というRED確認 → CSS修正 → GREEN。TagDeleteConfirmDialog側は同一パターンの複製修正のため専用e2eは追加せず(TrashConfirmDialog側のe2eで機構自体を検証済み)。
 - **検証**: tsc0 / vitest全301ファイル2514テスト中2513緑・1件は既知の無関係flaky(`channel.test.ts`、単体では緑と再確認) / 新規e2e1件緑 / `pnpm build`成功。
 - **未push・未デプロイ**: 実装・検証完了、次はユーザー確認のうえcommit・push・本番デプロイ。
+
+---
+
+## セッション 205 追補4 — N-72(MANAGE TAGSのタグ名クリックで一括タグ付け)+フィードバック演出の強化
+
+**N-71完了後、N-72に着手。brainstorming(Bounded path)で調査したところ、実はモバイル版には既にこの機能があり、デスクトップ版だけ抜けていたという発見から始まった。**
+
+- **調査**: `components/board/TagDropPanel.tsx`(デスクトップのMANAGE TAGS右パネル)のタグ行はドラッグ&ドロップ専用の`<div>`(onClick無し)だった一方、`components/board/BoardMobileTagBar.tsx`(モバイル版)には既に`handleAssignTagToSelection`という「選択中の全カードにタグを一括適用」ハンドラがあり、タップで動作していた。デスクトップに同じハンドラを配線するだけで実現できると判明。
+- **設計提示→承認**: 既存ハンドラの再利用(新規ロジック無し)+Privateタグ行も同様にクリック対応(モバイル版と揃える)を提示 → 承認。
+- **実装(第1弾)**: `TagDropPanel.tsx`に`onAssignTag`/`onPrivateTap`props追加、タグ行を`<div>`→`<button>`化(ドラッグ&ドロップの当たり判定`[data-tag-id]`はタグ名に依存しないため無改変で動作)、既存のドロップ確認フラッシュ(`data-dropped`)をクリック時にも流用。`BoardRoot.tsx`から`handleAssignTagToSelection`/`handleAssignPrivateToSelection`をそのまま配線。
+- **ユーザーから追加要望**: 「タグ付けできたフィードバックが業界水準として弱い、一緒に何かいいアニメーションを探したい」。プロセスで4案(①件数のロールアップカウント ②選択中カード側にも反応 ③トースト通知 ④行のバウンス)を提示、それぞれ検索キーワード付きで説明。ユーザーが「推奨のやつ(①)や、他のやつも組み合わせて」と要望 → ①(件数ロールアップ)+④(行バウンス)+既存の緑フラッシュ、の組み合わせで実装。
+- **実装(第2弾)**: `lib/board/use-rolling-count.ts`新規(`rollingCountValue`/`easeOutCubic`の純粋関数+`useRollingCount`フック、rAFでオドメーター風に旧値→新値を補間)。純粋関数は先にテスト(`tests/lib/board/use-rolling-count.test.ts`)を書いて検証してから実装(このファイルのみ実装が先行してしまった=厳密なRED-first ではなかったが、その後すぐテストを書いて9件緑を確認)。`TagDropPanel.tsx`/`BoardMobileTagBar.tsx`双方に`TagRow`/`TagChip`という行専用の小コンポーネントを抽出(フックを`.map`内で直接呼べないため)し、件数表示に適用。両CSSファイルに`tagRowBounce`/`tagChipBounce`キーフレームを追加(既存のフラッシュと並走、`prefers-reduced-motion`では色フラッシュのみに縮退)。
+- **ドラッグの当たり判定を壊さない設計判断**: 未選択時に行を薄く見せる案(`aria-disabled`のopacityダウン)は、**ドラッグ&ドロップは選択に関係なく常に有効**(掴んだカード自身が対象になるフォールバックがある)なため、見た目だけ「使えなさそう」に見せるのは誤解を招くと判断し、`aria-disabled`属性(スクリーンリーダー向けの意味づけ)は残しつつ視覚的な減光は付けなかった。
+- **TDD**: `tests/e2e/tag-mode-click-to-tag.spec.ts`新規。①選択→クリックで一括タグ付け+フラッシュ+ロールアップ+フィルタで永続確認、②未選択時のクリックは無反応(Playwrightの`aria-disabled`アクショナビリティガードを`force:true`で越えて実際にクリックし、アプリ側のno-opガードを直接検証)。
+- **検証**: tsc0 / vitest全302ファイル2523テスト緑 / 新規e2e2件緑 / 関連の既存e2e(`private-vault.spec.ts`10件、モバイルTAG MODE/Private drop回帰含む)緑 / `pnpm build`成功。

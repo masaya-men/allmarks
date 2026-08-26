@@ -4173,6 +4173,8 @@ export function BoardRoot() {
           tags={tagsExcludingPrivate}
           tagCounts={tagCounts}
           selectedCount={selectedIds.size}
+          onAssignTag={handleAssignTagToSelection}
+          onPrivateTap={handleAssignPrivateToSelection}
           onDone={handleExitTagMode}
           creating={tagDraft !== null}
           onStartNewTag={handleStartNewTag}
