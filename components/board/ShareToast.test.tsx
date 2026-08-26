@@ -43,10 +43,10 @@ describe('ShareToast — state A (arranged, before create)', () => {
     expect(onDone).toHaveBeenCalledOnce()
   })
 
-  it('CREATE is disabled and labeled CREATING… while creating', () => {
+  it('CREATE is disabled and labeled CREATING LINK… while creating', () => {
     render(<ShareToast {...baseProps} createState="creating" />)
     const create = screen.getByTestId('share-toast-create') as HTMLButtonElement
-    expect(create).toHaveTextContent('CREATING…')
+    expect(create).toHaveTextContent('CREATING LINK…')
     expect(create.disabled).toBe(true)
   })
 
