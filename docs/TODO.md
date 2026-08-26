@@ -21,6 +21,17 @@
 
 ## 現在の状態 (次セッションはここから読む)
 
+### 直近の状態 (セッション 206 — ★N-69完了・本番デプロイ済／副産物としてPrivate行の表記統一も完遂)
+
+**session 204提案の残り5件(N-69/74〜76/78)からN-69に着手、完了・デプロイ済。**
+
+- **N-69**(タグ絞り込みに「タグ無し」フィルタ): 調査の結果、`BoardFilter`の`kind:'inbox'`は`filter.ts`/`sidebarCounts`/`BoardBackgroundTypography`まで既に完全配線済み(過去の「Inbox」概念の名残)だったが、`FilterPill`の絞り込みメニューに選択ボタンが1つも無かった、という配線漏れだと判明。ボタンを追加して解決。ラベルは当初案「INBOX」だとメール受信箱と誤解されるとユーザー指摘 → 話し合いの末「NO TAGS」に決定。
+- **副産物(ユーザー発見・同セッションで対応)**: FilterPill/TagDropPanel/BoardMobileTagBarの3箇所全てで、Private行だけ他のタグ行の「中空ドット+ラベル+件数」という視覚文法と違う独自デザイン(ロックアイコン+ラベルのみ)だった件をユーザーが指摘。加えて`PRIVATE_UNLOCKED_ICON`(🔓)が定義されているのに一度も使われておらず、解錠中でも常に🔒表示のままだったバグも発覚。3箇所とも中空ドット追加+施錠/解錠アイコンの出し分けに統一(件数は非表示のまま=ロック中に中身の存在を数字で漏らさないため)。
+- **検証**: tsc0 / vitest 303ファイル2527緑(新規`FilterPill.test.tsx`含む) / 関連e2e37件緑(private-vault・tag-mode-click-to-tag・board-b0・chrome-skin-tokens・flat-chrome-legibility・board-dead-links-bulk-trash・trash-tag-delete-hold-label) / `pnpm build`成功。
+- **本番`allmarks.app`にデプロイ済**。
+- **教訓**: セッション冒頭、残り5件からどれに着手するか選ぶだけの軽い場面でAskUserQuestion(選択ボックス)を使ってユーザーから強く否定された。「意思決定には使わない」というルールは、重い設計判断だけでなくこの程度の軽い選択にも例外なく適用される(memory `feedback_no_question_box_for_decisions`に追記済み)。
+- **★次セッション最優先**: 残り4件(N-74/75/76/78)から次を選ぶ。着手前に該当項目だけ改めてsuperpowers:brainstormingから。優先順位の考え方は`docs/private/IDEAS.md`参照。
+
 ### 直近の状態 (セッション 205 — ★N-77・N-70・N-73・N-71・N-72完了)
 
 **session 204で出た9件のブラッシュアップ候補(N-69〜N-77)から「好きに進めてOK・がんがん進めてOK」を受けて、N-77→N-70→N-73→N-71→N-72の順に選定・着手。5件完了、全て`allmarks.app`にデプロイ済。** 詳細は[TODO_COMPLETED.md](TODO_COMPLETED.md)。
