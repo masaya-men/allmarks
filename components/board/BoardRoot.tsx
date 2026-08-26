@@ -143,7 +143,8 @@ import { MobileShareResult } from '@/components/board/MobileShareResult'
 import { CaptureCrashNotice } from '@/components/board/CaptureCrashNotice'
 import { mobileCaptureScale, SHARE_OG_ASPECT, SHARE_PORTRAIT_ASPECT, mobileCollagePortraitBandRect } from '@/lib/share/mobile-band'
 import { letterboxImageToAspect } from '@/lib/share/letterbox'
-import { moveElement, resizeElementFromCorner, bringToFront, fitSelectionToScreen, scaleElementFromCenter, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
+import { moveElement, resizeElementFromCorner, bringToFront, scaleElementFromCenter, type CollagePositions, type CollageFitRect } from '@/lib/share/collage-layout'
+import { seedArrangeLayout } from '@/lib/share/collage-arrange-mode'
 import { sendToBack } from '@/lib/share/collage-layer-order'
 import { removeFromCollage } from '@/lib/share/collage-remove'
 import { snapshotsEqual, pushSnapshot, MAX_COLLAGE_HISTORY, type CollageSnapshot } from '@/lib/share/collage-history'
@@ -2611,9 +2612,9 @@ export function BoardRoot() {
 
   // Stage 1 → 2: 選んだカードを「盤面パネルに収まる中で最大サイズ」に自動配置してアレンジ開始。
   // fit rect は「見える盤面パネル（.canvas＝ウィンドウから CANVAS_MARGIN_PX 内側）」を基準に
-  // 取り、ヘッダー行（上）と SHARING バー（下）を避ける。fitSelectionToScreen が skyline パック
-  // ＋収まる最大倍率の二分探索＋中央寄せを行うので、何枚選んでも盤面からはみ出さない（N-40）。
-  // 倍率は座標に焼き込まれ、移動/リサイズ/回転（画面px基準）はそのまま動く。WYSIWYG 座標は使わない。
+  // 取り、ヘッダー行（上）と SHARING バー（下）を避ける。seedArrangeLayout が盤面パネル rect を
+  // 隙間なく充填するので、何枚選んでも盤面からはみ出さない（N-40）。倍率は座標に焼き込まれ、
+  // 移動/リサイズ/回転（画面px基準）はそのまま動く。WYSIWYG 座標は使わない。
   const handleEnterArrange = useCallback((): void => {
     if (selectedIds.size === 0) return
     const chosen = lightboxNavItems.filter((it) => selectedIds.has(it.bookmarkId))
@@ -2623,9 +2624,9 @@ export function BoardRoot() {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    // justified rows で盤面パネル rect を端まで充填する（縦横比のみ使用・盤面既定サイズを
-    // 上限に頭打ち・隙間はカード高さに比例）。少数カードは中央寄せ、多数は端までびっしり。
-    setCollagePositions(fitSelectionToScreen(cards, rect))
+    // ARRANGE_AUTOLAYOUT が選ぶ方式で盤面パネル rect を端まで充填する（N-76: squarified
+    // treemap を試験導入・justified rows へは1行のスイッチで復帰可、lib/share/collage-arrange-mode.ts）。
+    setCollagePositions(seedArrangeLayout(cards, rect))
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setCollageRotations({}) // re-entry (RESELECT→ARRANGE) reseeds a clean flat layout, no tilt
     setShareTitle(defaultShareTitleConfig(bgTypoEnabled, viewport.w, viewport.h))
@@ -2887,7 +2888,7 @@ export function BoardRoot() {
       const w = customWidths[it.bookmarkId] ?? cardWidthPx
       return { id: it.bookmarkId, width: w, height: itemSkylineHeight(it, w) }
     })
-    setCollagePositions(fitSelectionToScreen(cards, band))
+    setCollagePositions(seedArrangeLayout(cards, band))
     setCollageOrder(chosen.map((it) => it.bookmarkId))
     setCollageRotations({})
     setShareTitle(null)

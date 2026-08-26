@@ -185,29 +185,35 @@ test.describe('mobile SHARE — phone', () => {
     expect(band.top).toBeGreaterThanOrEqual(bandTop - 1)
     expect(band.bottom).toBeLessThanOrEqual(bandTop + bandH + 1)
 
-    // A min/max taken over ALL cards can pass even when one row is a centred
-    // partial (a different, full-width row would still supply the extremes
-    // and mask it) — SEED_COUNT is chosen so this can't happen (see comment
-    // above), but assert it directly too: group by row (rounded top) and
-    // require EVERY row, not just the aggregate, to reach both edges.
-    const rows = await page.evaluate(() => {
-      const els = Array.from(document.querySelectorAll('[data-testid^="collage-el-"]'))
-      const byRow = new Map<number, { minX: number; maxX: number; count: number }>()
-      for (const el of els) {
-        const r = el.getBoundingClientRect()
-        const key = Math.round(r.top)
-        const row = byRow.get(key) ?? { minX: Infinity, maxX: -Infinity, count: 0 }
-        row.minX = Math.min(row.minX, r.left)
-        row.maxX = Math.max(row.maxX, r.right)
-        row.count += 1
-        byRow.set(key, row)
-      }
-      return Array.from(byRow.values())
-    })
-    expect(rows.length).toBeGreaterThan(1) // more than one row, or the aggregate check above would be the only proof
-    for (const row of rows) {
-      expect(row.minX).toBeLessThanOrEqual(1)
-      expect(row.maxX).toBeGreaterThanOrEqual(band.vw - 1)
+    // A min/max taken over ALL cards can pass even when the middle of the
+    // band has a gap the aggregate doesn't reveal — assert full-width
+    // coverage more directly by sampling several horizontal scanlines
+    // through the band and requiring every one to be spanned edge-to-edge
+    // by whichever cards cross it. This holds for any true zero-gap
+    // rectangular partition of the band, not just one organized into
+    // uniform full-width rows — deliberately generalized off the old
+    // DOM-row-grouping check (which assumed a justified-rows shape) so it
+    // still passes under a squarified-treemap layout (N-76), which nests
+    // cells into columns as well as rows.
+    const scanlines = await page.evaluate(
+      ({ bandTop, bandH }: { bandTop: number; bandH: number }) => {
+        const els = Array.from(document.querySelectorAll('[data-testid^="collage-el-"]'))
+        const rects = els.map((el) => el.getBoundingClientRect())
+        const SAMPLES = 8
+        return Array.from({ length: SAMPLES }, (_, i) => {
+          const y = bandTop + (bandH * (i + 0.5)) / SAMPLES
+          const crossing = rects.filter((r) => r.top <= y && r.bottom >= y)
+          return {
+            minX: crossing.length ? Math.min(...crossing.map((r) => r.left)) : Infinity,
+            maxX: crossing.length ? Math.max(...crossing.map((r) => r.right)) : -Infinity,
+          }
+        })
+      },
+      { bandTop, bandH },
+    )
+    for (const line of scanlines) {
+      expect(line.minX).toBeLessThanOrEqual(1)
+      expect(line.maxX).toBeGreaterThanOrEqual(band.vw - 1)
     }
 
     // CREATE (tap 2) → shoot the arrangement just verified above and produce
