@@ -22,7 +22,7 @@ describe('ShareSelectBar', () => {
     rerender(<ShareSelectBar {...baseProps} count={3} />)
     const btn = screen.getByTestId('select-share-button') as HTMLButtonElement
     expect(btn.disabled).toBe(false)
-    expect(btn.textContent).toContain('ARRANGE (3)')
+    expect(btn.textContent).toContain('NEXT: LAYOUT (3)')
   })
 
   it('fires callbacks', () => {
