@@ -9795,3 +9795,17 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **TDD**: `tests/e2e/board-dead-links-bulk-trash.spec.ts`新規。まずボタンが存在しない状態でRED確認(3件のdead-linkカードがDEAD LINKS表示に出ているところまでは正しく進み、新ボタンが見つからず失敗する、を確認)→実装→GREEN。検証内容: ①一括TRASH移動で3件ともDEAD LINKS表示から消え、TRASH表示に移る②ボタン自体もDEAD LINKSが空になると同時に非表示になる③1回のCtrl+Zで3件まとめて復元④DEAD LINKSが元から空ならボタンは出ない。
 - **検証**: tsc0 / vitest全301ファイル2514テスト緑 / 新規e2e2件緑 / `pnpm build`成功。
 - **未push・未デプロイ**: 実装・検証完了、次はユーザー確認のうえcommit・push・本番デプロイ。
+
+---
+
+## セッション 205 追補3 — N-71(長押し削除ボタンのラベル)をbrainstorming→TDDで修正、当初の誤った報告を実装確認で訂正
+
+**N-73完了後、N-71に着手。当初「ボタンに文字ラベルが無い」とユーザーに報告していたが、CSSまで確認すると誤りだったため訂正して進めた事例。**
+
+- **最初の誤り**: N-73調査時に`TrashConfirmDialog.tsx`のJSXだけを見て「`deleteBtnLabel`が空spanのまま=ラベル無し」と判断し、ユーザーに「すぐ直せます」と報告していた。
+- **CSSを実際に読んで訂正**: `TrashConfirmDialog.module.css`/`TagDeleteConfirmDialog.module.css`を確認すると、`.deleteBtnLabel::before`で`content`を`[data-holding="true"]`の有無によって「DELETE」⇄「HOLD TO DELETE」に切り替える仕組みが既に実装済みだった。つまりラベル自体は存在し、**「押している間だけ」HOLD TO DELETEに変わる**設計。ユーザーの「初見でわかりにくい」という指摘は、待機状態(触る前)では「DELETE」としか見えず、長押しが必要だと分かるのは指を置いた"後"という、真により細かいギャップだったと判明。
+- ユーザーに誤りを認め訂正した上で、新しい設計案(待機状態から常時「HOLD TO DELETE」表示、トグル廃止)を提示 → 承認。
+- **修正**: `TrashConfirmDialog.module.css`と`TagDeleteConfirmDialog.module.css`の両方で、`[data-holding="true"]`条件付きの2つのルールを、無条件の1ルール(`content: "HOLD TO DELETE"`常時)に統合。
+- **TDD**: `tests/e2e/trash-tag-delete-hold-label.spec.ts`新規。jsdomでは`::before`の`content`を検証できない(CSS Modulesの実スタイルがロードされないため)ためPlaywright e2eを選択。`window.getComputedStyle(el, '::before').content`で実際のブラウザ描画を検証。まずセレクタのミスで2回赤(button自身に`::before`は無くinner span側だった/テンプレートリテラルの二重ラップミス)を踏んでから、正しく「待機状態でDELETEしか出ない」というRED確認 → CSS修正 → GREEN。TagDeleteConfirmDialog側は同一パターンの複製修正のため専用e2eは追加せず(TrashConfirmDialog側のe2eで機構自体を検証済み)。
+- **検証**: tsc0 / vitest全301ファイル2514テスト中2513緑・1件は既知の無関係flaky(`channel.test.ts`、単体では緑と再確認) / 新規e2e1件緑 / `pnpm build`成功。
+- **未push・未デプロイ**: 実装・検証完了、次はユーザー確認のうえcommit・push・本番デプロイ。

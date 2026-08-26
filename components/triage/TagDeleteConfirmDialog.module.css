@@ -146,11 +146,11 @@
   z-index: 1;
 }
 
-.deleteBtn[data-holding="true"] .deleteBtnLabel::before {
+/* Always "HOLD TO DELETE", at rest and while held — mirrors
+   TrashConfirmDialog.module.css's fix (N-71: a resting "DELETE" label was
+   indistinguishable from a normal single-click button). */
+.deleteBtnLabel::before {
   content: "HOLD TO DELETE";
-}
-.deleteBtn:not([data-holding="true"]) .deleteBtnLabel::before {
-  content: "DELETE";
 }
 
 @media (prefers-reduced-motion: reduce) {

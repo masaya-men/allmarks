@@ -126,13 +126,13 @@
   z-index: 1;
 }
 
-/* On hold, swap the label to "HOLD TO DELETE" so the gesture intent is
-   confirmed by the UI (the press itself is otherwise silent). */
-.deleteBtn[data-holding="true"] .deleteBtnLabel::before {
+/* Always "HOLD TO DELETE", at rest and while held — the gesture must be
+   clear before the user ever touches the button, not just once they're
+   already mid-press (N-71: a resting "DELETE" label reads as a normal
+   single-click button, so the hold requirement was invisible until too
+   late to matter). */
+.deleteBtnLabel::before {
   content: "HOLD TO DELETE";
-}
-.deleteBtn:not([data-holding="true"]) .deleteBtnLabel::before {
-  content: "DELETE";
 }
 
 @media (prefers-reduced-motion: reduce) {
