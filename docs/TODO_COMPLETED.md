@@ -9755,3 +9755,17 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **保留(次回以降、着手前にユーザー確認/承認が要る)**: ResizeHandleの装飾オーバーレイが小さいカードで＋TAGボタンの当たり判定を奪うバグ(最終レビューでPlaywright実診断により発見・Private機能とは無関係の既存バグ)。
 
 **次セッション最優先＝Private Phase 2の続き(②クイック保存面対応、PopOut/拡張機能/ブックマークレット、案B=鍵の安全な受け渡し)**。着手前に必ずsuperpowers:brainstormingから。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+---
+
+## セッション 205 (2026-08-26) — N-77(YouTubeサムネがスクロール中に灰色になる)をsystematic-debuggingで根治
+
+**session 204で出た9件のブラッシュアップ候補(N-69〜N-77)からユーザーが「好きに進めてOK」→ 影響が大きく頻発するN-77を選定、systematic-debuggingスキルで着手。**
+
+- **調査**: まずPlaywrightで実機相当の再現を試行(60枚のYouTubeカードを擬似DB seed→スクロール往復で意図的にカードのマウント/アンマウントを繰り返す、実ネットワーク→擬似遅延ネットワークの2パターン)。いずれも0件しか再現できず(`<img>`のブラウザ側キャンセルは正常にクリーンアップされる)。この否定的証拠を受けて仮説を再構築。
+- **根本原因特定**（コード直読、実プロダクトへの`curl`で裏付け）: `public/sw.js`のfetchハンドラが`/api/`と`/_next/static/`以外の**全リクエストを無差別にインターセプト**しており、これにはi.ytimg.com等の**サードパーティCDN画像リクエストも含まれていた**。これらはno-corsの不透明(opaque)レスポンスのため`response.ok`が常にfalseになりキャッシュ保存は元々スキップされる(=SW経由の利点はゼロ)。にもかかわらず、SW自身の内部`fetch(request)`が何らかの理由で reject すると(スクロールでカードがアンマウントされ元の画像読み込みがブラウザ側でキャンセルされた場合に実際に起きる、Chromiumの既知動作)、catchが`caches.match(request)`にフォールバックし、**未キャッシュのURLなので`undefined`を返す** → `event.respondWith(undefined)`は仕様上「ネットワークエラー」として扱われ、`<img>`はブラウザ標準の壊れた画像アイコン(灰色)になる。「スクロール中」「よく起きる」という報告と完全に整合。
+  - 副次的に本番`curl`で`/api/ogp`への同一YouTube URL連続リクエストが`502/502/200`と揺れる実例も確認(YouTube側がCloudflare Workersの共有egress IPを断続的にブロックしている可能性)。こちらは別の実在バグ(`functions/api/ogp.ts`が上流の非2xxを常に502に丸めてしまい、`gone`判定に絶対到達しない)と判明、直接の修正対象ではないためN-70の手がかりとして`docs/TODO.md`に記録。
+- **TDD**: `tests/sw-fetch-routing.test.ts`を新規作成(`public/sw.js`のソースを直接評価し、モックの`ServiceWorkerGlobalScope`で`fetch`リスナーを直接叩くユニットテスト)。クロスオリジンリクエストで`respondWith`が呼ばれないことを検証するテストが**先にRED**であることを確認してから修正。
+- **修正**（`public/sw.js`）: `/api/`スキップと同じ書き味で`if (url.origin !== self.location.origin) return`を追加、クロスオリジンリクエストをSWインターセプトの対象外に(=SWが無い場合と同じ、ブラウザネイティブの挙動に委譲)。`CACHE_VERSION`もbump(`v98-2026-08-26-cross-origin-fetch-skip`)して既存クライアントのキャッシュを確実に更新。
+- **検証**: 新規テスト5件GREEN(修正前は1件RED)。tsc0。vitest全301ファイル2514テスト全緑。関連e2e(board-b-embeds/lightbox-video-flip-regression/board-mixed-media)実行、1件の失敗は単体再実行でPASSする既知の無関係なタイミング依存flaky(GSAP FLIPアニメーションの幅測定、並列実行によるCPU競合が原因)と確認。`pnpm build`成功。
+- **未デプロイ**: 実装・検証完了、次はユーザー確認のうえ本番デプロイ。

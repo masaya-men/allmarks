@@ -6,7 +6,7 @@
 //   - Skip: API calls, non-GET requests
 
 // Bump on each deploy to force clients to flush old caches.
-const CACHE_VERSION = 'v97-2026-06-22-audit-sweep'
+const CACHE_VERSION = 'v98-2026-08-26-cross-origin-fetch-skip'
 const CACHE_NAME = 'booklage-' + CACHE_VERSION
 
 var PRECACHE_URLS = [
@@ -54,6 +54,20 @@ self.addEventListener('fetch', function (event) {
   if (request.method !== 'GET') return
 
   var url = new URL(request.url)
+
+  // Skip cross-origin requests entirely (third-party CDN thumbnails: YouTube,
+  // TikTok, Twitter/X, generic OGP images, etc). These are never cached below
+  // anyway — they're opaque (no-cors) responses, so `response.ok` is always
+  // false and the cache.put branch never runs for them — so intercepting them
+  // buys nothing. It does carry a real risk: if the underlying request gets
+  // cancelled (e.g. an <img> unmounted mid-load when the board's viewport
+  // culling removes its card during a fast scroll), the SW's own fetch()
+  // rejects, the catch below falls through to caches.match(), which resolves
+  // to undefined for a never-cached URL, and respondWith(undefined) makes the
+  // browser report a network error — visible as a broken/gray thumbnail.
+  // Skipping interception lets the browser handle these requests/cancellation
+  // natively, the same as if no Service Worker were installed at all.
+  if (url.origin !== self.location.origin) return
 
   // Skip API calls — OGP fetch requires network
   if (url.pathname.startsWith('/api/')) return
