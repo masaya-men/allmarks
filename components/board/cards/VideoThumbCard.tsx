@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import { detectUrlType } from '@/lib/utils/url'
-import { getYoutubeThumb, isYoutubeShortsUrl } from '@/lib/embed/youtube-thumb'
+import { getYoutubeThumb, isYoutubeShortsUrl, isYoutubeThumbPlaceholder } from '@/lib/embed/youtube-thumb'
 import { fetchTikTokMeta } from '@/lib/embed/tiktok-meta'
 import { fetchYoutubeOEmbed, isDegenerateYoutubeTitle } from '@/lib/embed/youtube-oembed'
 import { paperAssetUrl, pickPaperAsset, IMAGE_CARD_BACKING_POOL, isPaperSheet, seedFractionFromId } from '@/lib/board/paper-assets'
@@ -112,6 +112,20 @@ export function VideoThumbCard({ item, persistMeasuredAspect, paper = false }: P
     }
   }
 
+  // i.ytimg.com returns HTTP 404 *with a valid, decodable ~120x90 JPEG
+  // placeholder body* when a quality level doesn't exist for a video —
+  // browsers only fire <img onError> for responses that fail to decode as an
+  // image at all, so this 404 quietly "succeeds" as a tiny gray thumbnail
+  // instead (the bug the user reported as "still gray" after N-77, which
+  // fixed an unrelated scroll-cancellation issue). onLoad must inspect the
+  // loaded image's own size to catch what onError structurally cannot.
+  const handleImgLoad = (e: React.SyntheticEvent<HTMLImageElement>): void => {
+    if (urlType !== 'youtube') return
+    if (isYoutubeThumbPlaceholder(ytLevel, e.currentTarget.naturalWidth)) {
+      setYtLevel((l) => (l + 1) as 0 | 1 | 2 | 3)
+    }
+  }
+
   // Touch unused state setters so tsc doesn't warn — these will feed the
   // Lightbox's tweet-style title resolution in a follow-up pass (currently
   // the bookmarklet-saved title is used directly).
@@ -125,6 +139,7 @@ export function VideoThumbCard({ item, persistMeasuredAspect, paper = false }: P
       data-active={paper ? 'true' : undefined}
       src={thumbUrl}
       onError={handleImgError}
+      onLoad={handleImgLoad}
       alt=""
       draggable={false}
       loading="lazy"
