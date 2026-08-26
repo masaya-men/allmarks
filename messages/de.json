@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Tag-Verwaltung öffnen"
   },
+  "private": {
+    "setupExplanation": "Verschlüsselt Titel, URL, Vorschaubild und Fotos von allem, was mit Private markiert ist, mit diesem Passwort — der eigentliche Inhalt wird niemals im Klartext gespeichert. Es gibt keine Wiederherstellung außer dem Hinweis unten: Wenn du das Passwort vergisst, bleibt der Inhalt für immer verschlüsselt.",
+    "passwordLabel": "Passwort",
+    "confirmPasswordLabel": "Passwort bestätigen",
+    "hintLabel": "Hinweis (optional)",
+    "errorTooShort": "Das Passwort muss mindestens 4 Zeichen lang sein.",
+    "errorMismatch": "Die Passwörter stimmen nicht überein.",
+    "errorCreateFailed": "Der Tresor konnte nicht erstellt werden. Versuche es erneut.",
+    "errorWrongPassword": "Falsches Passwort.",
+    "shareConfirmBody": "Diese Auswahl enthält {count} Elemente aus Private. Trotzdem teilen?",
+    "setupRequiredNotice": "Richte Private zuerst im AllMarks-Board ein.",
+    "encryptErrorNotice": "Verschlüsselung fehlgeschlagen — versuche es erneut."
+  },
   "landing": {
     "hero": {
       "label": "Visueller Lesezeichen-Manager",

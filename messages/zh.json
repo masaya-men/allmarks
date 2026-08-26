@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "打开标签管理"
   },
+  "private": {
+    "setupExplanation": "此密码会加密所有标记为 Private 的内容的标题、网址、缩略图和图片——真实内容绝不会以明文形式存储。除了下方的提示外没有其他找回方式：如果忘记密码，内容将永远保持加密状态。",
+    "passwordLabel": "密码",
+    "confirmPasswordLabel": "确认密码",
+    "hintLabel": "提示（可选）",
+    "errorTooShort": "密码至少需要 4 个字符。",
+    "errorMismatch": "两次输入的密码不一致。",
+    "errorCreateFailed": "无法创建保险库，请重试。",
+    "errorWrongPassword": "密码错误。",
+    "shareConfirmBody": "此选择中包含 {count} 个来自 Private 的项目。仍要共享吗？",
+    "setupRequiredNotice": "请先在 AllMarks 面板中设置 Private。",
+    "encryptErrorNotice": "加密失败，请重试。"
+  },
   "landing": {
     "hero": {
       "label": "可视化书签管理",

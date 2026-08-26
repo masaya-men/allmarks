@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "فتح لوحة AllMarks →" },
   "optSaved": { "message": "تم الحفظ" },
   "popupOpenSettings": { "message": "فتح الإعدادات" },
-  "popupHint": { "message": "اضغط Ctrl+Shift+B في أي صفحة للحفظ." }
+  "popupHint": { "message": "اضغط Ctrl+Shift+B في أي صفحة للحفظ." },
+  "privateSetupRequiredNotice": { "message": "قم أولاً بإعداد Private في لوحة AllMarks." }
 }

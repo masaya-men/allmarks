@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "Mở bảng AllMarks →" },
   "optSaved": { "message": "Đã lưu" },
   "popupOpenSettings": { "message": "Mở cài đặt" },
-  "popupHint": { "message": "Nhấn Ctrl+Shift+B trên bất kỳ trang nào để lưu." }
+  "popupHint": { "message": "Nhấn Ctrl+Shift+B trên bất kỳ trang nào để lưu." },
+  "privateSetupRequiredNotice": { "message": "Hãy thiết lập Private trên bảng AllMarks trước." }
 }

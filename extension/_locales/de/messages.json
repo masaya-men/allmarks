@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "AllMarks-Board öffnen →" },
   "optSaved": { "message": "Gespeichert" },
   "popupOpenSettings": { "message": "Einstellungen öffnen" },
-  "popupHint": { "message": "Drücke auf einer beliebigen Seite Ctrl+Shift+B zum Speichern." }
+  "popupHint": { "message": "Drücke auf einer beliebigen Seite Ctrl+Shift+B zum Speichern." },
+  "privateSetupRequiredNotice": { "message": "Richte Private zuerst im AllMarks-Board ein." }
 }

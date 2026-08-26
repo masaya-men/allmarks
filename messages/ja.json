@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Open tag management"
   },
+  "private": {
+    "setupExplanation": "このパスワードで、Privateタグを付けたものすべてのタイトル・URL・サムネイル・画像を暗号化します。実際の中身は平文では一切保存されません。下のヒント以外に救済手段はありません。パスワードを忘れると、中身は永久に暗号化されたままになります。",
+    "passwordLabel": "パスワード",
+    "confirmPasswordLabel": "パスワード(確認)",
+    "hintLabel": "ヒント(任意)",
+    "errorTooShort": "パスワードは4文字以上で入力してください。",
+    "errorMismatch": "パスワードが一致しません。",
+    "errorCreateFailed": "作成に失敗しました。もう一度お試しください。",
+    "errorWrongPassword": "パスワードが違います。",
+    "shareConfirmBody": "この選択にはPrivateの{count}件が含まれています。それでも共有しますか？",
+    "setupRequiredNotice": "先にAllMarksの盤面でPrivateを設定してください。",
+    "encryptErrorNotice": "暗号化できませんでした。もう一度お試しください。"
+  },
   "landing": {
     "hero": {
       "label": "Visual Bookmark Manager",

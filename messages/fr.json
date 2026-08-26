@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Ouvrir la gestion des tags"
   },
+  "private": {
+    "setupExplanation": "Chiffre le titre, l'URL, la miniature et les photos de tout ce qui est marqué Private avec ce mot de passe — le contenu réel n'est jamais stocké en clair. Il n'existe aucun autre recours que l'indice ci-dessous : si vous oubliez le mot de passe, le contenu reste chiffré pour toujours.",
+    "passwordLabel": "Mot de passe",
+    "confirmPasswordLabel": "Confirmer le mot de passe",
+    "hintLabel": "Indice (facultatif)",
+    "errorTooShort": "Le mot de passe doit comporter au moins 4 caractères.",
+    "errorMismatch": "Les mots de passe ne correspondent pas.",
+    "errorCreateFailed": "Impossible de créer le coffre. Réessayez.",
+    "errorWrongPassword": "Mot de passe incorrect.",
+    "shareConfirmBody": "Cette sélection inclut {count} éléments de Private. Partager quand même ?",
+    "setupRequiredNotice": "Configurez d'abord Private dans le tableau AllMarks.",
+    "encryptErrorNotice": "Échec du chiffrement — réessayez."
+  },
   "landing": {
     "hero": {
       "label": "Gestionnaire visuel de favoris",

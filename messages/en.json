@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Open tag management"
   },
+  "private": {
+    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. There is no recovery besides the hint below: if you forget the password, the content stays encrypted forever.",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm password",
+    "hintLabel": "Hint (optional)",
+    "errorTooShort": "Password must be at least 4 characters.",
+    "errorMismatch": "Passwords do not match.",
+    "errorCreateFailed": "Could not create the vault. Try again.",
+    "errorWrongPassword": "Wrong password.",
+    "shareConfirmBody": "This selection includes {count} items from Private. Share anyway?",
+    "setupRequiredNotice": "Set up Private in the AllMarks board first.",
+    "encryptErrorNotice": "Could not encrypt — try again."
+  },
   "landing": {
     "hero": {
       "label": "Visual Bookmark Manager",

@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Mở quản lý thẻ"
   },
+  "private": {
+    "setupExplanation": "Mã hoá tiêu đề, URL, ảnh thu nhỏ và ảnh của mọi thứ được gắn thẻ Private bằng mật khẩu này — nội dung thật không bao giờ được lưu dưới dạng văn bản thuần. Không có cách khôi phục nào ngoài gợi ý bên dưới: nếu bạn quên mật khẩu, nội dung sẽ mãi mãi ở trạng thái mã hoá.",
+    "passwordLabel": "Mật khẩu",
+    "confirmPasswordLabel": "Xác nhận mật khẩu",
+    "hintLabel": "Gợi ý (không bắt buộc)",
+    "errorTooShort": "Mật khẩu phải có ít nhất 4 ký tự.",
+    "errorMismatch": "Mật khẩu không khớp.",
+    "errorCreateFailed": "Không thể tạo kho lưu trữ. Hãy thử lại.",
+    "errorWrongPassword": "Sai mật khẩu.",
+    "shareConfirmBody": "Lựa chọn này bao gồm {count} mục từ Private. Vẫn chia sẻ chứ?",
+    "setupRequiredNotice": "Hãy thiết lập Private trên bảng AllMarks trước.",
+    "encryptErrorNotice": "Không thể mã hoá — hãy thử lại."
+  },
   "landing": {
     "hero": {
       "label": "Trình quản lý dấu trang trực quan",

@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "เปิดบอร์ด AllMarks →" },
   "optSaved": { "message": "บันทึกแล้ว" },
   "popupOpenSettings": { "message": "เปิดการตั้งค่า" },
-  "popupHint": { "message": "กด Ctrl+Shift+B ในหน้าใดก็ได้เพื่อบันทึก" }
+  "popupHint": { "message": "กด Ctrl+Shift+B ในหน้าใดก็ได้เพื่อบันทึก" },
+  "privateSetupRequiredNotice": { "message": "โปรดตั้งค่า Private ในบอร์ด AllMarks ก่อน" }
 }

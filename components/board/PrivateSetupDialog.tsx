@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactElement } from 'react'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './PrivateSetupDialog.module.css'
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 }
 
 export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement {
+  const { t } = useI18n()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [hint, setHint] = useState('')
@@ -18,18 +20,18 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
   const submit = async (): Promise<void> => {
     if (submitting) return
     if (password.length < 4) {
-      setError('Password must be at least 4 characters.')
+      setError(t('private.errorTooShort'))
       return
     }
     if (password !== confirm) {
-      setError('Passwords do not match.')
+      setError(t('private.errorMismatch'))
       return
     }
     setSubmitting(true)
     const ok = await onCreate(password, hint.length > 0 ? hint : undefined)
     if (!ok) {
       setSubmitting(false)
-      setError('Could not create the vault. Try again.')
+      setError(t('private.errorCreateFailed'))
     }
     // On success the parent closes this dialog — no local state to reset.
   }
@@ -55,12 +57,9 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
         <div id="private-setup-heading" className={styles.heading}>SET UP PRIVATE</div>
         <div className={styles.explanation} data-testid="private-setup-explanation">
-          Encrypts the title, URL, thumbnail and photos of anything tagged Private
-          with this password — the real content is never stored in plain text.
-          There is no recovery besides the hint below: if you forget the password,
-          the content stays encrypted forever.
+          {t('private.setupExplanation')}
         </div>
-        <label className={styles.label} htmlFor="private-setup-password">Password</label>
+        <label className={styles.label} htmlFor="private-setup-password">{t('private.passwordLabel')}</label>
         <input
           id="private-setup-password"
           type="password"
@@ -68,7 +67,7 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
           value={password}
           onChange={(e): void => setPassword(e.target.value)}
         />
-        <label className={styles.label} htmlFor="private-setup-confirm">Confirm password</label>
+        <label className={styles.label} htmlFor="private-setup-confirm">{t('private.confirmPasswordLabel')}</label>
         <input
           id="private-setup-confirm"
           type="password"
@@ -76,7 +75,7 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
           value={confirm}
           onChange={(e): void => setConfirm(e.target.value)}
         />
-        <label className={styles.label} htmlFor="private-setup-hint">Hint (optional)</label>
+        <label className={styles.label} htmlFor="private-setup-hint">{t('private.hintLabel')}</label>
         <input
           id="private-setup-hint"
           type="text"

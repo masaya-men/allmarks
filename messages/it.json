@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Apri la gestione dei tag"
   },
+  "private": {
+    "setupExplanation": "Cifra titolo, URL, miniatura e foto di tutto ciò che è contrassegnato come Private con questa password — il contenuto reale non viene mai salvato in chiaro. Non esiste altro recupero oltre al suggerimento qui sotto: se dimentichi la password, il contenuto resterà cifrato per sempre.",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Conferma password",
+    "hintLabel": "Suggerimento (facoltativo)",
+    "errorTooShort": "La password deve contenere almeno 4 caratteri.",
+    "errorMismatch": "Le password non coincidono.",
+    "errorCreateFailed": "Impossibile creare il vault. Riprova.",
+    "errorWrongPassword": "Password errata.",
+    "shareConfirmBody": "Questa selezione include {count} elementi da Private. Condividere comunque?",
+    "setupRequiredNotice": "Configura prima Private nella bacheca di AllMarks.",
+    "encryptErrorNotice": "Impossibile cifrare — riprova."
+  },
   "landing": {
     "hero": {
       "label": "Gestore visivo di segnalibri",

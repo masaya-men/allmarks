@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Abrir gerenciamento de tags"
   },
+  "private": {
+    "setupExplanation": "Criptografa o título, URL, miniatura e fotos de tudo marcado como Private com esta senha — o conteúdo real nunca é armazenado em texto simples. Não há recuperação além da dica abaixo: se você esquecer a senha, o conteúdo permanecerá criptografado para sempre.",
+    "passwordLabel": "Senha",
+    "confirmPasswordLabel": "Confirmar senha",
+    "hintLabel": "Dica (opcional)",
+    "errorTooShort": "A senha deve ter pelo menos 4 caracteres.",
+    "errorMismatch": "As senhas não coincidem.",
+    "errorCreateFailed": "Não foi possível criar o cofre. Tente novamente.",
+    "errorWrongPassword": "Senha incorreta.",
+    "shareConfirmBody": "Esta seleção inclui {count} itens de Private. Compartilhar mesmo assim?",
+    "setupRequiredNotice": "Configure o Private primeiro no painel do AllMarks.",
+    "encryptErrorNotice": "Não foi possível criptografar — tente novamente."
+  },
   "landing": {
     "hero": {
       "label": "Gerenciador visual de favoritos",

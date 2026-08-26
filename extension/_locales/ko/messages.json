@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "AllMarks 보드 열기 →" },
   "optSaved": { "message": "저장됨" },
   "popupOpenSettings": { "message": "설정 열기" },
-  "popupHint": { "message": "아무 페이지에서나 Ctrl+Shift+B를 눌러 저장하세요." }
+  "popupHint": { "message": "아무 페이지에서나 Ctrl+Shift+B를 눌러 저장하세요." },
+  "privateSetupRequiredNotice": { "message": "먼저 AllMarks 보드에서 Private를 설정하세요." }
 }

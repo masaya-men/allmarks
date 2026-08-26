@@ -413,7 +413,7 @@
     if (existing) existing.remove()
     const notice = document.createElement('div')
     notice.className = 'allmarks-tagstrip__notice'
-    notice.textContent = 'Set up Private in the AllMarks board first.'
+    notice.textContent = chrome.i18n.getMessage('privateSetupRequiredNotice') || 'Set up Private in the AllMarks board first.'
     tagStripEl.appendChild(notice)
     if (privateNoticeTimer) clearTimeout(privateNoticeTimer)
     privateNoticeTimer = setTimeout(() => { if (notice.parentNode) notice.remove() }, 3000)

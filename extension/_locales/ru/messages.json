@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "Открыть доску AllMarks →" },
   "optSaved": { "message": "Сохранено" },
   "popupOpenSettings": { "message": "Открыть настройки" },
-  "popupHint": { "message": "Нажмите Ctrl+Shift+B на любой странице, чтобы сохранить." }
+  "popupHint": { "message": "Нажмите Ctrl+Shift+B на любой странице, чтобы сохранить." },
+  "privateSetupRequiredNotice": { "message": "Сначала настройте Private на доске AllMarks." }
 }

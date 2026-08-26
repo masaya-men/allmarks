@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "AllMarks panosunu aç →" },
   "optSaved": { "message": "Kaydedildi" },
   "popupOpenSettings": { "message": "Ayarları aç" },
-  "popupHint": { "message": "Kaydetmek için herhangi bir sayfada Ctrl+Shift+B tuşlarına basın." }
+  "popupHint": { "message": "Kaydetmek için herhangi bir sayfada Ctrl+Shift+B tuşlarına basın." },
+  "privateSetupRequiredNotice": { "message": "Önce AllMarks panosunda Private'ı ayarlayın." }
 }

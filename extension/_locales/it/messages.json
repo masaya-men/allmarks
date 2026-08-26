@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "Apri la bacheca di AllMarks →" },
   "optSaved": { "message": "Salvato" },
   "popupOpenSettings": { "message": "Apri le impostazioni" },
-  "popupHint": { "message": "Premi Ctrl+Shift+B su qualsiasi pagina per salvare." }
+  "popupHint": { "message": "Premi Ctrl+Shift+B su qualsiasi pagina per salvare." },
+  "privateSetupRequiredNotice": { "message": "Configura prima Private nella bacheca di AllMarks." }
 }

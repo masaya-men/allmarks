@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "Abrir el tablero de AllMarks →" },
   "optSaved": { "message": "Guardado" },
   "popupOpenSettings": { "message": "Abrir ajustes" },
-  "popupHint": { "message": "Pulsa Ctrl+Shift+B en cualquier página para guardar." }
+  "popupHint": { "message": "Pulsa Ctrl+Shift+B en cualquier página para guardar." },
+  "privateSetupRequiredNotice": { "message": "Primero configura Private en el tablero de AllMarks." }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactElement } from 'react'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './PrivateUnlockDialog.module.css'
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export function PrivateUnlockDialog({ hint, onSubmit, onCancel }: Props): ReactElement {
+  const { t } = useI18n()
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -18,7 +20,7 @@ export function PrivateUnlockDialog({ hint, onSubmit, onCancel }: Props): ReactE
     setSubmitting(true)
     const ok = await onSubmit(password)
     setSubmitting(false)
-    if (!ok) setError('Wrong password.')
+    if (!ok) setError(t('private.errorWrongPassword'))
   }
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export function PrivateUnlockDialog({ hint, onSubmit, onCancel }: Props): ReactE
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
         <div id="private-unlock-heading" className={styles.heading}>UNLOCK PRIVATE</div>
         {hint && <div className={styles.hint}>{hint}</div>}
-        <label className={styles.label} htmlFor="private-unlock-password">Password</label>
+        <label className={styles.label} htmlFor="private-unlock-password">{t('private.passwordLabel')}</label>
         <input
           id="private-unlock-password"
           type="password"

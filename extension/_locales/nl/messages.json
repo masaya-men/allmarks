@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "AllMarks-bord openen →" },
   "optSaved": { "message": "Opgeslagen" },
   "popupOpenSettings": { "message": "Instellingen openen" },
-  "popupHint": { "message": "Druk op elke pagina op Ctrl+Shift+B om op te slaan." }
+  "popupHint": { "message": "Druk op elke pagina op Ctrl+Shift+B om op te slaan." },
+  "privateSetupRequiredNotice": { "message": "Stel Private eerst in op het AllMarks-bord." }
 }

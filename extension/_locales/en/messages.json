@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "Open AllMarks board →", "description": "Keep 'AllMarks' literal; keep the arrow." },
   "optSaved": { "message": "Saved", "description": "Save-confirmation indicator on each card." },
   "popupOpenSettings": { "message": "Open settings", "description": "Popup button." },
-  "popupHint": { "message": "Press Ctrl+Shift+B on any page to save.", "description": "Keep 'Ctrl+Shift+B' literal." }
+  "popupHint": { "message": "Press Ctrl+Shift+B on any page to save.", "description": "Keep 'Ctrl+Shift+B' literal." },
+  "privateSetupRequiredNotice": { "message": "Set up Private in the AllMarks board first.", "description": "Shown in the quick-tag strip's Private chip when no vault has been set up yet." }
 }

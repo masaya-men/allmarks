@@ -36,5 +36,6 @@
   "optAboutOpenBoard": { "message": "打开 AllMarks 面板 →" },
   "optSaved": { "message": "已保存" },
   "popupOpenSettings": { "message": "打开设置" },
-  "popupHint": { "message": "在任意页面按 Ctrl+Shift+B 即可保存。" }
+  "popupHint": { "message": "在任意页面按 Ctrl+Shift+B 即可保存。" },
+  "privateSetupRequiredNotice": { "message": "请先在 AllMarks 面板中设置 Private。" }
 }

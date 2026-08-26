@@ -10,6 +10,7 @@ import { loadQuickTagEnabled } from '@/lib/storage/quick-tag-setting'
 import { loadFullscreenNoticeSeen, markFullscreenNoticeSeen } from '@/lib/storage/fullscreen-save-notice'
 import { resolveInitialLocale } from '@/lib/i18n/locale-store'
 import { getFullscreenSaveCopy } from '@/lib/bookmarklet/save-fullscreen-copy'
+import { SAVE_PRIVATE_COPY } from '@/lib/bookmarklet/save-private-copy'
 import { queryPipPresence } from '@/lib/board/pip-presence'
 import {
   planSaveWindow,
@@ -303,6 +304,9 @@ export function SaveToast(): ReactElement {
 
   // Tag-window render: confirmation block + tag UI + ✕ close
   if (tagData) {
+    // /save isn't inside I18nProvider — resolve the board's stored locale
+    // the same way the fullscreen-explain copy above does.
+    const privateCopy = SAVE_PRIVATE_COPY[resolveInitialLocale()]
     return (
       <div
         className={`${styles.stage} ${styles.tagStage}`}
@@ -361,12 +365,12 @@ export function SaveToast(): ReactElement {
           />
           {privateSetupNotice && (
             <div className={styles.privateSetupNotice} data-testid="save-toast-private-setup-notice">
-              Set up Private in the AllMarks board first.
+              {privateCopy.setupNotice}
             </div>
           )}
           {privateErrorNotice && (
             <div className={styles.privateSetupNotice} data-testid="save-toast-private-error-notice">
-              Could not encrypt — try again.
+              {privateCopy.errorNotice}
             </div>
           )}
         </div>

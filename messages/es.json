@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Abrir gestión de etiquetas"
   },
+  "private": {
+    "setupExplanation": "Esto cifra el título, la URL, la miniatura y las fotos de todo lo etiquetado como Private con esta contraseña; el contenido real nunca se almacena en texto plano. No hay más recuperación que la pista de abajo: si olvidas la contraseña, el contenido queda cifrado para siempre.",
+    "passwordLabel": "Contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "hintLabel": "Pista (opcional)",
+    "errorTooShort": "La contraseña debe tener al menos 4 caracteres.",
+    "errorMismatch": "Las contraseñas no coinciden.",
+    "errorCreateFailed": "No se pudo crear la bóveda. Inténtalo de nuevo.",
+    "errorWrongPassword": "Contraseña incorrecta.",
+    "shareConfirmBody": "Esta selección incluye {count} elementos de Private. ¿Compartir de todos modos?",
+    "setupRequiredNotice": "Primero configura Private en el tablero de AllMarks.",
+    "encryptErrorNotice": "No se pudo cifrar. Inténtalo de nuevo."
+  },
   "landing": {
     "hero": {
       "label": "Gestor visual de marcadores",

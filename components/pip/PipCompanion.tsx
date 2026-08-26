@@ -11,6 +11,7 @@ import { resolveThumbnail } from '@/lib/pip/resolve-thumbnail'
 import { pipDisplayThumbnail } from '@/lib/pip/pip-thumbnail'
 import { useUrlPasteSave } from '@/lib/board/use-url-paste-save'
 import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import { TagAddPopover } from '@/components/board/TagAddPopover'
 import { PasteSaveFeedback } from '@/components/board/PasteSaveFeedback'
 import { loadVaultRecord } from '@/lib/private/vault-store'
@@ -30,6 +31,7 @@ export interface PipCompanionProps {
 }
 
 export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps): ReactElement {
+  const { t } = useI18n()
   // Per-session card buffer — starts empty every time PiP opens. Cards
   // accumulate without a cap so the user sees every bookmark they saved
   // while the companion was visible (a "look how many you grabbed today"
@@ -310,12 +312,12 @@ export function PipCompanion({ onCardClick, quickTagEnabled }: PipCompanionProps
             />
             {privateSetupNotice && (
               <div className={styles.privateSetupNotice} data-testid="pip-private-setup-notice">
-                Set up Private in the AllMarks board first.
+                {t('private.setupRequiredNotice')}
               </div>
             )}
             {privateErrorNotice && (
               <div className={styles.privateSetupNotice} data-testid="pip-private-error-notice">
-                Could not encrypt — try again.
+                {t('private.encryptErrorNotice')}
               </div>
             )}
           </div>

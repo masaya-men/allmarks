@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Tagbeheer openen"
   },
+  "private": {
+    "setupExplanation": "Versleutelt de titel, URL, thumbnail en foto's van alles wat als Private is getagd met dit wachtwoord — de echte inhoud wordt nooit onversleuteld opgeslagen. Er is geen herstel behalve de hint hieronder: als je het wachtwoord vergeet, blijft de inhoud voor altijd versleuteld.",
+    "passwordLabel": "Wachtwoord",
+    "confirmPasswordLabel": "Wachtwoord bevestigen",
+    "hintLabel": "Hint (optioneel)",
+    "errorTooShort": "Het wachtwoord moet minstens 4 tekens bevatten.",
+    "errorMismatch": "Wachtwoorden komen niet overeen.",
+    "errorCreateFailed": "Kon de kluis niet aanmaken. Probeer het opnieuw.",
+    "errorWrongPassword": "Onjuist wachtwoord.",
+    "shareConfirmBody": "Deze selectie bevat {count} items uit Private. Toch delen?",
+    "setupRequiredNotice": "Stel Private eerst in op het AllMarks-bord.",
+    "encryptErrorNotice": "Versleutelen mislukt — probeer het opnieuw."
+  },
   "landing": {
     "hero": {
       "label": "Visuele bladwijzermanager",

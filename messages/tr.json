@@ -245,6 +245,19 @@
     "buttonLabel": "TAG",
     "buttonAria": "Etiket yönetimini aç"
   },
+  "private": {
+    "setupExplanation": "Bu şifre, Private olarak etiketlenen her şeyin başlığını, URL'sini, küçük resmini ve fotoğraflarını şifreler — gerçek içerik asla düz metin olarak saklanmaz. Aşağıdaki ipucu dışında kurtarma yöntemi yoktur: şifreyi unutursanız içerik sonsuza dek şifreli kalır.",
+    "passwordLabel": "Şifre",
+    "confirmPasswordLabel": "Şifreyi onayla",
+    "hintLabel": "İpucu (isteğe bağlı)",
+    "errorTooShort": "Şifre en az 4 karakter olmalıdır.",
+    "errorMismatch": "Şifreler eşleşmiyor.",
+    "errorCreateFailed": "Kasa oluşturulamadı. Tekrar deneyin.",
+    "errorWrongPassword": "Yanlış şifre.",
+    "shareConfirmBody": "Bu seçim Private'tan {count} öğe içeriyor. Yine de paylaşılsın mı?",
+    "setupRequiredNotice": "Önce AllMarks panosunda Private'ı ayarlayın.",
+    "encryptErrorNotice": "Şifrelenemedi — tekrar deneyin."
+  },
   "landing": {
     "hero": {
       "label": "Görsel Yer İmi Yöneticisi",

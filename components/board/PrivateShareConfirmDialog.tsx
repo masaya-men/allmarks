@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, type ReactElement } from 'react'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './PrivateShareConfirmDialog.module.css'
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export function PrivateShareConfirmDialog({ count, onConfirm, onCancel }: Props): ReactElement {
+  const { t } = useI18n()
   // Esc to cancel
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -32,7 +34,7 @@ export function PrivateShareConfirmDialog({ count, onConfirm, onCancel }: Props)
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
         <div id="private-share-confirm-heading" className={styles.heading}>SHARE INCLUDES PRIVATE</div>
         <div className={styles.body}>
-          This selection includes {count} {count === 1 ? 'item' : 'items'} from Private. Share anyway?
+          {t('private.shareConfirmBody').replace('{count}', String(count))}
         </div>
         <div className={styles.actions}>
           <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-share-confirm-cancel">
