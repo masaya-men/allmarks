@@ -347,4 +347,9 @@
 }
 .allmarks-tagstrip__chip:hover { color: var(--am-strip-fg); }
 .allmarks-tagstrip__chip[data-on="true"] { color: var(--am-strip-accent); }
+.allmarks-tagstrip__private-icon {
+  display: inline-flex;
+  vertical-align: -1px;
+  opacity: 0.85;
+}
 .allmarks-tagstrip__chip[data-on="true"]::before { content: "\2713\00a0"; }
