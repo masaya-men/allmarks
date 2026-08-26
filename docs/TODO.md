@@ -31,9 +31,16 @@
 - **本番の古いPhase1 Private設定をユーザー確認の上で安全に削除**: デプロイ前にユーザーへ「以前パスワード設定したことは？」と確認したところ本番で設定済と判明(中身は退避済み)。新方式は鍵の形が根本的に異なり、古い設定を放置すると「パスワードが違います」が永久に続き復旧不能になることが判明したため、EXPORTバックアップ後、ユーザー自身がDevToolsコンソールで古いvault設定+古いPrivateタグ(タグ参照の scrub込み)を削除。ブックマーク本体は無傷。
 - **post-plan gate**: tsc0 / vitest 300ファイル2509テスト全緑(既知の無関係flaky=`channel.test.ts`のBroadcastChannelタイミング起因を再確認、単体でも毎回結果が変わることを確認済み) / playwright 101 pass・5 skip / `pnpm build`成功。
 - **`master`へmerge済(`--no-ff`)・GitHubへpush済・本番デプロイ済(`allmarks.app`)**。作業ブランチ`private-phase2-quicksave-pubkey-crypto`・SDD台帳は削除済み。
-- **★次セッション最優先**: ユーザーに本番での動作確認(FilterPillのPrivate行が未設定表示→新パスワードで再設定できるか)をお願いした上で、**拡張機能自身のコンテンツスクリプトUI配線**(Private Phase 2の最後のピース、着手前に必ずbrainstormingから)。手順・積み残しは[CURRENT_GOAL.md](CURRENT_GOAL.md)。
-- **ユーザー実機確認の結果**: PopOutからPrivateタグ付けOK。ブックマークレット/拡張機能ではPrivateの項目が出なかった → 調査の結果バグではなく`lib/utils/bookmarklet.ts`の既存仕様(拡張機能が入っていると、ブックマークレットクリック時もポップアップ(SaveToast.tsx)を開かず拡張機能側の保存処理に回す分岐)が原因と判明。SaveToast.tsx自体のPrivate配線はPopOutと構造的に同一でPopOutで動作確認済のため、これは正常。ユーザーの環境では拡張機能を一時的に無効化しない限りSaveToast.tsx側のPrivate機能を直接は確認できない(実害なし・将来のユーザーは拡張無しなら通常に見える)。
-- **ユーザーからの新規指摘**: 現状アプリ内にPrivateパスワードの再設定・変更フローが無い(忘れた場合の正規の救済手段が無い)。次回以降、ちゃんと設計してから追加する価値のある機能として要検討(brainstorming推奨)。
+- **ユーザー実機確認の結果**: PopOutからPrivateタグ付けOK。ブックマークレット/拡張機能ではPrivateの項目が出なかった → 調査の結果バグではなく`lib/utils/bookmarklet.ts`の既存仕様(拡張機能が入っていると、ブックマークレットクリック時もポップアップ(SaveToast.tsx)を開かず拡張機能側の保存処理に回す分岐)が原因と判明。SaveToast.tsx自体のPrivate配線はPopOutと構造的に同一でPopOutで動作確認済のため、これは正常。
+- **ユーザーからの新規指摘を受けて追加開発、同セッション内で完遂**: 「拡張機能でも使えるように、パスワード再設定もやってほしい、完成させたい」との要望。パスワード再設定は技術調査の結果「変更」は事実上の鍵作り直しが必要と判明し理想仕様のみ`docs/private/IDEAS.md`に記録して後回しに(ユーザー了承)。代わりに以下2件を完遂:
+  1. **拡張機能のfloating-buttonにPrivateチップを配線**(コミット`ddc6d5e5`): `dispatch.js`/`background.js`/`offscreen.js`/`floating-button.js`/`.css`の5ファイル。N-66(再送ポンプが8秒спин)も同時修正。
+  2. **PopOut/ブックマークレットのPrivateチップに成功/失敗フィードバックを追加**(N-67、コミット`88258188`): それまで押しても✓もエラーも出なかった問題を修正。
+  - 両方とも事前に`tests/e2e/private-vault.spec.ts`へ`booklage:add-private-tag`の永続的な契約テストを追加(コミット`f5c87adb`)してから着手。
+  - **最終全ブランチレビュー相当の直接検証**で全diff確認、フル回帰(tsc/vitest2509/playwright102)通過。
+- **Private関連文言を15言語に対応**(ユーザー指摘、その通りだった。コミット`03660568`): `messages/*.json`の新規`private`名前空間(board側)・`lib/bookmarklet/save-private-copy.ts`(新規、`/save`はI18nProvider外のため既存の`save-fullscreen-copy.ts`と同じ自己完結マップ方式)・`extension/_locales/*/messages.json`(拡張機能側)の3系統に配線。ダイアログ見出し・ボタン文言・「Private」自体は既存の「短い動作系は英語のまま」慣例を踏襲し対象外。英語・日本語は精査、他13言語はAI下訳(公開前にnative review要、既存慣例通り)。
+  - **司令塔の指示漏れで発見が遅れたバグ**: サブエージェントへの検証指示にvitest/tscのみ含めplaywrightを含めなかったため、「共有確認ダイアログの件数表示」が単数/複数の作り分けごと1本の文言に統合されて「1 items」という文法崩れを起こしていたのを見逃し、後で自分でe2eを回して発見。`shareConfirmBodyOne`/`shareConfirmBodyMany`に分割して修正(コミット`545dd5d7`)。教訓を[CURRENT_GOAL.md](CURRENT_GOAL.md)の恒久ルールに追記。
+- **post-plan gate(最終)**: tsc0 / vitest 300ファイル2509テスト全緑 / playwright 102 pass・5 skip / `pnpm build`成功。
+- **★次セッション最優先**: ユーザーに本番での動作確認(FilterPillのPrivate行が未設定表示→新パスワードで再設定/拡張機能含む3経路でのPrivateタグ付け/多言語表示)をお願いする。手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ### 直近の状態 (セッション 203 — ★Private Phase 2 サブプロジェクト1(①発見導線＋③まとめてPrivate化)完全完了・本番デプロイ済・master merge済／次は②クイック保存面)
 
