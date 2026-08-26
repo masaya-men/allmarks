@@ -8,7 +8,8 @@
 
 ## 0. パッケージ（アップロードする zip）
 
-- ファイル: `dist/booklage-extension-0.1.22.zip`（`pnpm package:extension` で生成、約105KB）。更新提出は §8 の「新しいパッケージをアップロード」で差し替え（掲載文は据え置きでOK）
+- ファイル: `dist/booklage-extension-0.1.25.zip`（`pnpm package:extension` で生成、約129KB）。更新提出は §8 の「新しいパッケージをアップロード」で差し替え（掲載文は据え置きでOK）
+- v0.1.25の変更点: クイック保存の3経路(PopOut/拡張機能/ブックマークレット)にPrivateタグ付けを追加(拡張機能はfloating-buttonのタグ帯に「🔒 Private」を新規配線)。**新しい権限リクエストは無し**(既存のoffscreen/storageのみ使用、審査は軽めのはず)。
 - 中身は `extension/` フォルダ直下を zip 化したもの（manifest がルートに来る正しい構造）
 - 再生成: `pnpm package:extension`（必須ファイルの存在チェック付き）
 
