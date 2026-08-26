@@ -9769,3 +9769,16 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **修正**（`public/sw.js`）: `/api/`スキップと同じ書き味で`if (url.origin !== self.location.origin) return`を追加、クロスオリジンリクエストをSWインターセプトの対象外に(=SWが無い場合と同じ、ブラウザネイティブの挙動に委譲)。`CACHE_VERSION`もbump(`v98-2026-08-26-cross-origin-fetch-skip`)して既存クライアントのキャッシュを確実に更新。
 - **検証**: 新規テスト5件GREEN(修正前は1件RED)。tsc0。vitest全301ファイル2514テスト全緑。関連e2e(board-b-embeds/lightbox-video-flip-regression/board-mixed-media)実行、1件の失敗は単体再実行でPASSする既知の無関係なタイミング依存flaky(GSAP FLIPアニメーションの幅測定、並列実行によるCPU競合が原因)と確認。`pnpm build`成功。
 - **未デプロイ**: 実装・検証完了、次はユーザー確認のうえ本番デプロイ。
+
+---
+
+## セッション 205 追補 — N-70(デッドリンクの誤判定)をsystematic-debuggingで根治
+
+**N-77修正・デプロイ完了後、同じセッションで続けてN-70に着手。前回調査で得た手がかり(「一般サイト側かtweet側、どちらが本命か」)を出発点に。**
+
+- **一般サイト(非tweet)側のルートアウト**: `functions/api/ogp.ts`は上流が404等どんな非2xxを返しても常に自前で502を返す実装(専用テストあり=意図的)。クライアント側`defaultFetcher`は`res.status===404||410`の時だけ`gone`と判定するため、この経路では**非tweet URLは理論上`gone`に絶対到達しない**(常に`unknown`扱い)。よってN-70の原因ではないと結論(副産物として記録のみ、修正は別スコープ)。
+- **tweet側の根本原因**: `lib/board/tweet-liveness.ts`の`checkTweetLiveness`が「`/api/tweet-meta`が200を返したがTweet形式のペイロードでなければ`gone`」というヒューリスティックを持っていた(コメントに「tombstone: suspended/protected/age-restricted = gone」と明記、意図的な設計だった)。本番`curl`で実際の`cdn.syndication.twimg.com`を直接検証: 存在しないツイートID(`id=1`, `id=0`)は綺麗な404を返し、200のtombstoneにはならないことを実証。さらに意図的に不正なtokenを付けてもCDNは200で正しいツイートデータを返す(=token検証は厳密ではなく、token計算の数値精度懸念は的外れと判明)ことも確認。→ 200+非Tweet形式が発生するのは「ツイートID自体は有効だが、鍵アカウント(protected)や年齢制限コンテンツで、ログインしていない匿名チェッカーからは中身が見えない」場合のみと結論。ユーザー自身がフォローしている鍵アカウントのツイートは本人には生きて見えているのに、この経路では永久に「デッドリンク」(`data-link-status='gone'`のCSSでグレースケール60%+破損リンクの赤リボン表示、かつ`BoardRoot.tsx`の`linkStatus==='gone'`ガードでLightboxクリックもブロック)として扱われ続ける構造だった。
+- **修正方針**: 「本当に存在しない(404)」と「匿名チェッカーからは見えないだけ(200+非Tweet形式)」を区別し、後者は安全側の`unknown`(見た目は変えず1時間毎に再試行し続けるだけ、グレー化・クリックブロックなし)に倒す。誤って「消えた」と確定させるより、判定を保留し続ける方が実害が小さいという判断。
+- **TDD**: `tests/lib/tweet-liveness.test.ts`の既存3テスト(TweetTombstone / 空body / id_str無しTweet)の期待値を`gone`→`unknown`に書き換えてRED確認 → `lib/board/tweet-liveness.ts`の該当1行(`isLiveTweet(data) ? {kind:'alive'} : {kind:'gone'}` → `... : {kind:'unknown'}`)を修正してGREEN確認。
+- **検証**: tsc0/vitest全301ファイル2514テスト緑/e2e(board-b-11-source-hide, triage-flow)緑/`pnpm build`成功。
+- **未デプロイ**: 実装・検証完了、次はユーザー確認のうえ本番デプロイ。

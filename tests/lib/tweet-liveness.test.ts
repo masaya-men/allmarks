@@ -20,19 +20,30 @@ describe('checkTweetLiveness', () => {
     expect(await checkTweetLiveness('20', fetchImpl)).toEqual({ kind: 'alive' })
   })
 
-  it('maps 200 + TweetTombstone to gone (suspended / protected / age-restricted)', async () => {
+  // N-70: a genuinely nonexistent tweet id returns a clean 404 from the CDN
+  // (verified empirically against the real cdn.syndication.twimg.com — see
+  // functions/api/tweet-meta.ts's doc comment). A 200 + non-live-shaped body
+  // only happens when the tweet id IS valid but access is restricted for
+  // OUR anonymous, logged-out checker specifically (protected account,
+  // age-gated content) — content that can still be genuinely alive to the
+  // bookmarking user (e.g. they follow the protected account). Mapping that
+  // straight to 'gone' was a false positive: it visually grays the card out
+  // AND blocks opening it (BoardRoot.tsx's linkStatus==='gone' guard) for a
+  // link the user can actually still see. 'unknown' is the safe bucket —
+  // retried hourly, never visually demoted.
+  it('maps 200 + TweetTombstone to unknown, not gone (suspended / protected / age-restricted — may still be alive to this user)', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(res(200, { __typename: 'TweetTombstone', tombstone: { text: {} } }))
-    expect(await checkTweetLiveness('123', fetchImpl)).toEqual({ kind: 'gone' })
+    expect(await checkTweetLiveness('123', fetchImpl)).toEqual({ kind: 'unknown' })
   })
 
-  it('maps 200 + body with no __typename to gone', async () => {
+  it('maps 200 + body with no __typename to unknown, not gone', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(res(200, {}))
-    expect(await checkTweetLiveness('123', fetchImpl)).toEqual({ kind: 'gone' })
+    expect(await checkTweetLiveness('123', fetchImpl)).toEqual({ kind: 'unknown' })
   })
 
-  it('maps 200 + Tweet WITHOUT id_str to gone (defensive)', async () => {
+  it('maps 200 + Tweet WITHOUT id_str to unknown, not gone (defensive)', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(res(200, { __typename: 'Tweet' }))
-    expect(await checkTweetLiveness('123', fetchImpl)).toEqual({ kind: 'gone' })
+    expect(await checkTweetLiveness('123', fetchImpl)).toEqual({ kind: 'unknown' })
   })
 
   it('maps HTTP 5xx to unknown (transient)', async () => {

@@ -2,9 +2,17 @@ import type { RevalidationResult, Fetcher } from './revalidate'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 
 // The proxy that relays cdn.syndication.twimg.com (token computed server-side
-// in functions/api/tweet-meta.ts). 404 = deleted/nonexistent. 200 +
-// __typename:"Tweet" = live. Any other 200 (tombstone: suspended / protected /
-// age-restricted) = gone.
+// in functions/api/tweet-meta.ts). 404 = deleted/nonexistent (verified
+// empirically against the real CDN: a genuinely nonexistent tweet id returns
+// a clean 404, never a 200 tombstone). 200 + __typename:"Tweet" = live. Any
+// other 200 (tombstone: suspended / protected / age-restricted) = unknown,
+// NOT gone (N-70) — this anonymous, logged-out check can't tell "the tweet
+// doesn't exist" apart from "this account is protected/age-gated and
+// invisible to OUR checker specifically". A protected-account tweet the
+// bookmarking user still follows is genuinely alive to them, so treating
+// every non-live-shaped 200 as gone produced false "dead link" cards
+// (grayed out AND click-blocked — see BoardRoot.tsx's linkStatus==='gone'
+// guard) for links the user could still open fine themselves.
 const PROXY_ENDPOINT = '/api/tweet-meta'
 
 // Minimal injectable fetch contract so the mapping is unit-testable without a
@@ -43,7 +51,7 @@ export async function checkTweetLiveness(
     if (res.status === 404) return { kind: 'gone' }
     if (!res.ok) return { kind: 'unknown' }
     const data: unknown = await res.json()
-    return isLiveTweet(data) ? { kind: 'alive' } : { kind: 'gone' }
+    return isLiveTweet(data) ? { kind: 'alive' } : { kind: 'unknown' }
   } catch {
     return { kind: 'unknown' }
   }
