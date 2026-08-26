@@ -115,6 +115,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Nested inside .tagLabel (not a flex sibling) so it sits flush against
+   "private" with zero gap. The SVG itself is keyed by lock state
+   (PrivateLockGlyph), so it remounts and replays this pop-in on every
+   locked⇄unlocked toggle. */
+.privateIcon {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -1px;
+  margin-right: 4px;
+}
+.privateIcon svg {
+  animation: privateIconPop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes privateIconPop {
+  0% { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
+}
 .tagCount {
   font-size: 10px;
   letter-spacing: 0.12em;
@@ -144,6 +161,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .chip[data-applied='true'] { animation: tagApplied 420ms ease-out; }
+  .privateIcon svg { animation: none; }
 }
 
 /* Inline create field — replaces the "+ NEW TAG" chip while typing. */

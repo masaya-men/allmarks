@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState, type ReactElement } from 'rea
 import { BOARD_Z_INDEX } from '@/lib/board/constants'
 import { useRollingCount } from '@/lib/board/use-rolling-count'
 import type { TagRecord } from '@/lib/storage/indexeddb'
-import { PRIVATE_LOCKED_ICON, PRIVATE_UNLOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
+import { PRIVATE_LABEL } from '@/lib/private/ui-labels'
+import { PrivateLockGlyph } from './PrivateLockGlyph'
 import styles from './BoardMobileTagBar.module.css'
 
 type Props = {
@@ -146,9 +147,7 @@ export function BoardMobileTagBar({
           title="Private"
         >
           <span className={styles.tagDot} aria-hidden="true" />
-          <span className={styles.tagLabel}>
-            {privateStatus === 'unlocked' ? PRIVATE_UNLOCKED_ICON : PRIVATE_LOCKED_ICON}{PRIVATE_LABEL}
-          </span>
+          <span className={styles.tagLabel}><span className={styles.privateIcon}><PrivateLockGlyph locked={privateStatus !== 'unlocked'} /></span>{PRIVATE_LABEL}</span>
         </button>
       </div>
     </div>

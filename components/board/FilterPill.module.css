@@ -358,8 +358,9 @@
 
 /* Private — always rendered, as the sort-exempt last row inside .tagScroll
    (so it sinks below the fold as the real tag count grows, same as any other
-   scrollable list — session 203 follow-up). Muted at rest; the icon alone
-   signals lock state, no separate glyph swap needed. */
+   scrollable list — session 203 follow-up). Muted at rest; dot + lock/unlock
+   icon match the visual grammar of the regular tag rows above it (session
+   206 — was previously icon+label only, no dot, no icon swap). */
 .item.privateItem {
   color: rgba(var(--chrome-ink-rgb), 0.5);
 }
@@ -373,10 +374,23 @@
 .item.privateItem.active .itemLabel {
   box-shadow: inset 0 -1px 0 #28F100;
 }
+/* Nested inside .itemLabel (not a flex sibling) so it sits flush against
+   "Private" with zero gap — see the FilterPill.tsx render comment. The SVG
+   itself is keyed by lock state (PrivateLockGlyph), so it remounts and
+   replays this pop-in on every locked⇄unlocked toggle. */
 .privateIcon {
-  font-size: 10px;
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -1px;
+  margin-right: 4px;
   opacity: 0.85;
+}
+.privateIcon svg {
+  animation: privateIconPop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes privateIconPop {
+  0% { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* Tag rows — editorial dot indicator on the left. Inactive = hollow
@@ -527,6 +541,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .item, .tagDot { transition: none; }
+  .privateIcon svg { animation: none; }
 }
 
 .wrap { position: relative; }

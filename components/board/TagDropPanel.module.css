@@ -182,11 +182,25 @@
   border: 1px solid rgba(var(--chrome-ink-rgb), 0.25);
   transition: background 110ms, border-color 110ms, box-shadow 110ms;
 }
+/* Nested inside .tagLabel (not a flex sibling) so it sits flush against
+   "Private" with zero gap — see the TagDropPanel.tsx render comment. The SVG
+   itself is keyed by lock state (PrivateLockGlyph), so it remounts and
+   replays this pop-in on every locked⇄unlocked toggle. */
 .privateIcon {
-  width: 8px;
-  text-align: center;
-  font-size: 10px;
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -1px;
+  margin-right: 4px;
+}
+.privateIcon svg {
+  animation: privateIconPop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes privateIconPop {
+  0% { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .privateIcon svg { animation: none; }
 }
 .tagItem[data-private-status='unlocked'] { color: rgba(var(--chrome-ink-rgb), 0.92); }
 .tagLabel {

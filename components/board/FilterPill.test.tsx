@@ -48,7 +48,8 @@ describe('FilterPill — NO TAGS row (N-69)', () => {
 })
 
 describe('FilterPill — Private row visual parity with regular tag rows (session 206)', () => {
-  it('shows the locked icon when not unlocked, and the unlocked icon once unlocked', () => {
+  it('shows the locked glyph path when not unlocked, and the unlocked glyph path once unlocked', () => {
+    const pathD = (el: HTMLElement): string | null => el.querySelector('path')?.getAttribute('d') ?? null
     const { getByTestId, rerender } = render(
       <FilterPill
         {...baseProps}
@@ -59,7 +60,9 @@ describe('FilterPill — Private row visual parity with regular tag rows (sessio
         onPrivateClick={(): void => {}}
       />,
     )
-    expect(getByTestId('filter-pill-private').textContent).toContain('🔒')
+    // LOCK_PATH and UNLOCK_PATH (PrivateLockGlyph.tsx) diverge from their very
+    // first coordinate — this prefix alone tells the two paths apart.
+    expect(pathD(getByTestId('filter-pill-private'))).toMatch(/^M5\.25 9\.30277/)
 
     rerender(
       <FilterPill
@@ -71,7 +74,7 @@ describe('FilterPill — Private row visual parity with regular tag rows (sessio
         onPrivateClick={(): void => {}}
       />,
     )
-    expect(getByTestId('filter-pill-private').textContent).toContain('🔓')
+    expect(pathD(getByTestId('filter-pill-private'))).toMatch(/^M12 1\.25C9\.10051/)
   })
 
   it('fills the leading dot only when the Private filter is active, matching regular tag rows', () => {

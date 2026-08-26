@@ -8,13 +8,14 @@ import {
   boardFilterEquals,
   toggleTagInFilter,
 } from '@/lib/board/board-filter-helpers'
-import { PRIVATE_LOCKED_ICON, PRIVATE_UNLOCKED_ICON, PRIVATE_LABEL } from '@/lib/private/ui-labels'
+import { PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import { useDragReorder } from '@/lib/board/use-drag-reorder'
 import { computeTagScrollEdge } from '@/lib/board/tag-scroll-edge'
 import type { TagOrderMode } from '@/lib/board/tag-order'
 import { InlineTagRenameInput } from './InlineTagRenameInput'
+import { PrivateLockGlyph } from './PrivateLockGlyph'
 import styles from './FilterPill.module.css'
 
 type Props = {
@@ -550,10 +551,10 @@ export function FilterPill({
               onClick={onPrivateClick}
             >
               <span className={styles.tagDot} data-active={privateActive ? 'true' : 'false'} aria-hidden="true" />
-              <span className={styles.privateIcon} aria-hidden="true">
-                {privateStatus === 'unlocked' ? PRIVATE_UNLOCKED_ICON : PRIVATE_LOCKED_ICON}
-              </span>
-              <span className={styles.itemLabel}>{PRIVATE_LABEL}</span>
+              {/* Icon nested inside the label span (not a separate flex sibling) so it
+                  sits flush against "Private" with no gap — only the dot gets the row's
+                  standard 10px spacing, matching every other tag row's dot+label rhythm. */}
+              <span className={styles.itemLabel}><span className={styles.privateIcon}><PrivateLockGlyph locked={privateStatus !== 'unlocked'} /></span>{PRIVATE_LABEL}</span>
             </button>
           </div>
 
