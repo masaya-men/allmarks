@@ -10,6 +10,7 @@ function makeConfig(overrides: Partial<ShareTitleConfig>): ShareTitleConfig {
     size: TITLE_DEFAULT_PX,
     x: 500,
     y: 300,
+    layer: 'behind',
     ...overrides,
   }
 }
@@ -54,5 +55,18 @@ describe('ShareTitleElement', () => {
       />,
     )
     expect(queryByTestId('share-title-element')).toBeNull()
+  })
+
+  it('N-74: applies frontZIndex only when layer is "front"', () => {
+    const behind = render(
+      <ShareTitleElement config={makeConfig({ layer: 'behind' })} defaultText="x" onChange={vi.fn()} frontZIndex={999} />,
+    )
+    expect(behind.getByTestId('share-title-element').style.zIndex).toBe('')
+    behind.unmount()
+
+    const front = render(
+      <ShareTitleElement config={makeConfig({ layer: 'front' })} defaultText="x" onChange={vi.fn()} frontZIndex={999} />,
+    )
+    expect(front.getByTestId('share-title-element').style.zIndex).toBe('999')
   })
 })

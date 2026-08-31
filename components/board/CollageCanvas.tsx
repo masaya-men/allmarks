@@ -187,15 +187,19 @@ export function CollageCanvas(props: CollageCanvasProps): ReactElement {
   return (
     <div className={styles.root} style={{ zIndex: BOARD_Z_INDEX.SHARE_CANVAS }} data-testid="collage-canvas">
       {/* Title layer renders FIRST (before the cards below) so it paints
-          behind them within this stacking context: cards carry explicit
-          positive zIndex (INTRA_CANVAS_Z_BASE+), while the title's root stays
-          at the CSS default z-index:auto — DOM order alone then puts it under
-          any card, matching spec's "title behind cards by default". */}
+          behind them within this stacking context by default: cards carry
+          explicit positive zIndex (INTRA_CANVAS_Z_BASE+), while the title's
+          root stays at the CSS default z-index:auto — DOM order alone then
+          puts it under any card, matching spec's "title behind cards by
+          default". config.layer==='front' (N-74) overrides that: frontZIndex
+          is one above the highest possible card zIndex (INTRA_CANVAS_Z_BASE +
+          order.length), which ShareTitleElement applies only in that case. */}
       {props.title && (
         <ShareTitleElement
           config={props.title.config}
           defaultText={props.title.defaultText}
           onChange={props.title.onChange}
+          frontZIndex={INTRA_CANVAS_Z_BASE + props.order.length}
         />
       )}
       {props.items.map((item) => {

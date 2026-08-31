@@ -142,6 +142,46 @@ describe('CollageCanvas', () => {
     expect(withTitle.getByTestId('share-title-element')).toBeTruthy()
   })
 
+  it('N-74: title stays behind every card by default, but layer:"front" puts it above all of them', () => {
+    const items = [makeItem({ bookmarkId: 'a' }), makeItem({ bookmarkId: 'b' }), makeItem({ bookmarkId: 'c' })]
+    const positions = seedCollagePositions(
+      [{ id: 'a', width: 200, height: 100 }, { id: 'b', width: 200, height: 100 }, { id: 'c', width: 200, height: 100 }],
+      1000,
+      10,
+    )
+    const baseProps = {
+      items,
+      positions,
+      order: ['a', 'b', 'c'],
+      onMove: () => {},
+      onResize: () => {},
+      onGrab: () => {},
+      rotations: {},
+      onRotate: () => {},
+      maxCardWidth: 1000,
+      displayMode: 'visual' as const,
+      paper: false,
+    }
+    const maxCardZ = (container: HTMLElement): number =>
+      Math.max(...['a', 'b', 'c'].map((id) => Number(container.querySelector(`[data-testid="collage-el-${id}"]`)?.getAttribute('style')?.match(/z-index:\s*(\d+)/)?.[1] ?? 0)))
+
+    const behind = render(
+      <CollageCanvas {...baseProps} title={{ config: defaultShareTitleConfig(true, 1000, 600), defaultText: 'x', onChange: () => {} }} />,
+    )
+    const behindTitleZ = behind.getByTestId('share-title-element').style.zIndex
+    expect(behindTitleZ === '' || Number(behindTitleZ) <= maxCardZ(behind.container)).toBe(true)
+    behind.unmount()
+
+    const front = render(
+      <CollageCanvas
+        {...baseProps}
+        title={{ config: { ...defaultShareTitleConfig(true, 1000, 600), layer: 'front' }, defaultText: 'x', onChange: () => {} }}
+      />,
+    )
+    const frontTitleZ = Number(front.getByTestId('share-title-element').style.zIndex)
+    expect(frontTitleZ).toBeGreaterThan(maxCardZ(front.container))
+  })
+
   it('keeps the rotate knob out of the share capture', () => {
     // Touch devices show the knob at rest (no hover), so it MUST be excluded
     // from the capture or it bakes into the shared image.

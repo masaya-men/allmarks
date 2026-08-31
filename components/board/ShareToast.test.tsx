@@ -56,6 +56,32 @@ describe('ShareToast — state A (arranged, before create)', () => {
   })
 })
 
+describe('ShareToast — title front/back (N-74)', () => {
+  it('hides the toggle when there is no title (titleLayer omitted)', () => {
+    render(<ShareToast {...baseProps} />)
+    expect(screen.queryByTestId('share-toast-title-layer')).toBeNull()
+  })
+
+  it('shows "TO FRONT" when the title is behind, and fires onToggleTitleLayer on click', () => {
+    const onToggleTitleLayer = vi.fn()
+    render(<ShareToast {...baseProps} titleLayer="behind" onToggleTitleLayer={onToggleTitleLayer} />)
+    const btn = screen.getByTestId('share-toast-title-layer')
+    expect(btn).toHaveTextContent('TO FRONT')
+    fireEvent.click(btn)
+    expect(onToggleTitleLayer).toHaveBeenCalledOnce()
+  })
+
+  it('shows "TO BACK" when the title is front', () => {
+    render(<ShareToast {...baseProps} titleLayer="front" onToggleTitleLayer={vi.fn()} />)
+    expect(screen.getByTestId('share-toast-title-layer')).toHaveTextContent('TO BACK')
+  })
+
+  it('is absent once the link is ready (state B)', () => {
+    render(<ShareToast {...baseProps} shareUrl="https://allmarks.app/s/abc" titleLayer="behind" onToggleTitleLayer={vi.fn()} />)
+    expect(screen.queryByTestId('share-toast-title-layer')).toBeNull()
+  })
+})
+
 describe('ShareToast — state B (hosted link ready)', () => {
   it('shows LINK READY + COPY LINK + POST TO X, no CREATE', () => {
     const onPostToX = vi.fn()

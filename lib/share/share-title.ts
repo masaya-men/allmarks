@@ -1,9 +1,13 @@
+/** 'behind' (既定) = 全カードの後ろ / 'front' = 全カードの手前（N-74）。 */
+export type ShareTitleLayer = 'behind' | 'front'
+
 export type ShareTitleConfig = {
   readonly enabled: boolean
   readonly text: string | null // null = 既定（絞り込み中のタグ名）を使う
   readonly size: number        // フォント px
   readonly x: number
   readonly y: number
+  readonly layer: ShareTitleLayer
 }
 
 export const TITLE_DEFAULT_PX = 120
@@ -11,7 +15,12 @@ export const TITLE_MIN_PX = 24
 export const TITLE_MAX_PX = 800
 
 export function defaultShareTitleConfig(enabled: boolean, viewportW: number, viewportH: number): ShareTitleConfig {
-  return { enabled, text: null, size: TITLE_DEFAULT_PX, x: Math.round(viewportW / 2), y: Math.round(viewportH / 2) }
+  return { enabled, text: null, size: TITLE_DEFAULT_PX, x: Math.round(viewportW / 2), y: Math.round(viewportH / 2), layer: 'behind' }
+}
+
+/** Flips the title between behind-cards (default) and front-of-cards (N-74). */
+export function toggleTitleLayer(c: ShareTitleConfig): ShareTitleConfig {
+  return { ...c, layer: c.layer === 'front' ? 'behind' : 'front' }
 }
 
 export function resolveTitleText(c: ShareTitleConfig, defaultText: string): string {

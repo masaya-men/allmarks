@@ -26,6 +26,11 @@ type Props = {
   readonly onReselect: () => void
   /** Leave SHARE mode entirely. */
   readonly onDone: () => void
+  /** Current title z-layer (N-74) — omitted/undefined when there's no title
+   *  (TITLE toggled off), which hides the button entirely: nothing to move. */
+  readonly titleLayer?: 'behind' | 'front'
+  /** Flips titleLayer. Only called when titleLayer is defined. */
+  readonly onToggleTitleLayer?: () => void
 }
 
 type CopyState = 'idle' | 'copied' | 'error'
@@ -35,7 +40,7 @@ type CopyState = 'idle' | 'copied' | 'error'
  *  and mints the hosted /s link whose preview IS that image. No manual
  *  screenshot: select → arrange → create. */
 export function ShareToast(props: Props): ReactElement {
-  const { count, createState, onCreate, shareUrl, onCopyLink, onPostToX, onSaveImage, onReselect, onDone } = props
+  const { count, createState, onCreate, shareUrl, onCopyLink, onPostToX, onSaveImage, onReselect, onDone, titleLayer, onToggleTitleLayer } = props
   const { t } = useI18n()
 
   const [copyState, setCopyState] = useState<CopyState>('idle')
@@ -88,6 +93,16 @@ export function ShareToast(props: Props): ReactElement {
               disabled={createState === 'creating'}
               data-testid="share-toast-create"
             >{createLabel}</button>
+            {/* Title front/back (N-74) — only when there's a title to move.
+                Reuses the existing share.toFront/toBack vocabulary (already
+                15-language, used for the mobile dock's per-card front/back)
+                instead of a single toggle: one relevant action shown at a
+                time, same as that sibling pattern. */}
+            {titleLayer && onToggleTitleLayer && (
+              <button type="button" className={styles.textBtn} onClick={onToggleTitleLayer} data-testid="share-toast-title-layer">
+                {titleLayer === 'front' ? t('share.toBack') : t('share.toFront')}
+              </button>
+            )}
             <button type="button" className={styles.textBtn} onClick={onReselect} data-testid="share-toast-reselect">{t('share.chooseAgain')}</button>
             <button type="button" className={styles.textBtn} onClick={onDone} data-testid="share-toast-done">{t('share.done')}</button>
           </>

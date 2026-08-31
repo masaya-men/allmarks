@@ -148,7 +148,7 @@ import { seedArrangeLayout } from '@/lib/share/collage-arrange-mode'
 import { sendToBack } from '@/lib/share/collage-layer-order'
 import { removeFromCollage } from '@/lib/share/collage-remove'
 import { snapshotsEqual, pushSnapshot, MAX_COLLAGE_HISTORY, type CollageSnapshot } from '@/lib/share/collage-history'
-import { defaultShareTitleConfig, type ShareTitleConfig } from '@/lib/share/share-title'
+import { defaultShareTitleConfig, toggleTitleLayer, type ShareTitleConfig } from '@/lib/share/share-title'
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
@@ -2283,6 +2283,12 @@ export function BoardRoot() {
     setShareTitle((c) => (c ? { ...c, enabled: !c.enabled } : c))
   }, [])
 
+  // N-74: flips the collage title between behind-cards (default) and
+  // front-of-cards. Same ephemeral/non-persisted state as handleToggleShareTitle.
+  const handleToggleTitleLayer = useCallback((): void => {
+    setShareTitle((c) => (c ? toggleTitleLayer(c) : c))
+  }, [])
+
   const handleOpenBookmarkletModal = useCallback((): void => {
     setBookmarkletModalOpen(true)
   }, [])
@@ -4319,6 +4325,8 @@ export function BoardRoot() {
                 onSaveImage={capturedImageUrl ? handleSaveShareImage : undefined}
                 onReselect={handleShareReselect}
                 onDone={handleExitShareMode}
+                titleLayer={shareTitle?.enabled ? shareTitle.layer : undefined}
+                onToggleTitleLayer={handleToggleTitleLayer}
               />
             )}
           </div>

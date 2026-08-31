@@ -777,3 +777,42 @@ test.describe('desktop SHARE — unchanged', () => {
     }
   })
 })
+
+test.describe('desktop SHARE — title front/back (N-74)', () => {
+  test.use({ viewport: { width: 1489, height: 679 } })
+
+  test('TO FRONT/TO BACK toggles the title above/below the cards, and is absent without a title', async ({ page }) => {
+    await seedBoard(page)
+    await page.locator('[data-testid="share-pill"]').click()
+    await page.locator('[data-testid="select-all-button"]').click()
+    await page.locator('[data-testid="select-share-button"]').click()
+    await expect(page.locator('[data-testid="share-toast-create"]')).toBeVisible()
+
+    // Ensure TITLE is ON (its default follows the board's own bg-typography
+    // setting, which isn't fixed by this seed) — the header LED reports its
+    // own state via aria-pressed.
+    const titleToggle = page.locator('[data-testid="bgtypo-toggle"]')
+    if ((await titleToggle.getAttribute('aria-pressed')) !== 'true') {
+      await titleToggle.click()
+    }
+    const title = page.locator('[data-testid="share-title-element"]')
+    await expect(title).toBeVisible()
+
+    const layerBtn = page.locator('[data-testid="share-toast-title-layer"]')
+    await expect(layerBtn).toHaveText('TO FRONT')
+
+    const cardZ = await page.locator('[data-testid^="collage-el-"]').first().evaluate((el) => Number(getComputedStyle(el).zIndex))
+    const behindZ = await title.evaluate((el) => getComputedStyle(el).zIndex)
+    expect(behindZ === 'auto' || Number(behindZ) <= cardZ).toBe(true)
+
+    await layerBtn.click()
+    await expect(layerBtn).toHaveText('TO BACK')
+    const frontZ = await title.evaluate((el) => Number(getComputedStyle(el).zIndex))
+    expect(frontZ).toBeGreaterThan(cardZ)
+
+    // Turning TITLE back off removes the toggle entirely (nothing to move).
+    await titleToggle.click()
+    await expect(title).toHaveCount(0)
+    await expect(layerBtn).toHaveCount(0)
+  })
+})

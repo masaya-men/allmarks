@@ -17,6 +17,13 @@ export type ShareTitleElementProps = {
    *  `config.text` is `null` (= user hasn't retitled yet). */
   readonly defaultText: string
   readonly onChange: (next: ShareTitleConfig) => void
+  /** z-index to apply when `config.layer === 'front'` (N-74) — computed by
+   *  the parent (CollageCanvas owns the local intra-canvas z-index scale, see
+   *  INTRA_CANVAS_Z_BASE) so it's always above every card regardless of card
+   *  count. Ignored when layer is 'behind' (default): the root then keeps
+   *  z-index:auto, the exact pre-N-74 stacking (DOM order puts it under the
+   *  cards' own explicit positive z-index). */
+  readonly frontZIndex?: number
 }
 
 /** Font-size growth per pixel of pointer travel while dragging the corner
@@ -43,7 +50,7 @@ const RESIZE_SENSITIVITY = 2.0
  * JSX children, which would reset the caret to the start on every keystroke.
  */
 export function ShareTitleElement(props: ShareTitleElementProps): ReactElement | null {
-  const { config, defaultText, onChange } = props
+  const { config, defaultText, onChange, frontZIndex } = props
   const textRef = useRef<HTMLSpanElement>(null)
   const [isEditing, setIsEditing] = useState<boolean>(false)
 
@@ -156,6 +163,7 @@ export function ShareTitleElement(props: ShareTitleElementProps): ReactElement |
         left: 0,
         top: 0,
         transform: `translate(${config.x}px, ${config.y}px) translate(-50%, -50%)`,
+        zIndex: config.layer === 'front' ? frontZIndex : undefined,
         pointerEvents: 'auto',
         cursor: 'grab',
         touchAction: 'none',
