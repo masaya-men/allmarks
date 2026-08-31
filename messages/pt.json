@@ -218,6 +218,8 @@
     "retryImage": "REFAZER IMAGEM",
     "toFront": "PARA FRENTE",
     "toBack": "PARA TRÁS",
+    "titleToFront": "TÍTULO PARA FRENTE",
+    "titleToBack": "TÍTULO PARA TRÁS",
     "back": "VOLTAR",
     "creatingLink": "CRIANDO SEU LINK…",
     "couldntCreateLink": "NÃO FOI POSSÍVEL CRIAR O LINK",

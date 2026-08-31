@@ -218,6 +218,8 @@
     "retryImage": "이미지 다시 만들기",
     "toFront": "맨 앞으로",
     "toBack": "맨 뒤로",
+    "titleToFront": "제목 맨 앞으로",
+    "titleToBack": "제목 맨 뒤로",
     "back": "뒤로",
     "creatingLink": "링크 만드는 중…",
     "couldntCreateLink": "링크를 만들지 못했습니다",

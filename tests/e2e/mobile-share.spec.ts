@@ -799,14 +799,14 @@ test.describe('desktop SHARE — title front/back (N-74)', () => {
     await expect(title).toBeVisible()
 
     const layerBtn = page.locator('[data-testid="share-toast-title-layer"]')
-    await expect(layerBtn).toHaveText('TO FRONT')
+    await expect(layerBtn).toHaveText('TITLE TO FRONT')
 
     const cardZ = await page.locator('[data-testid^="collage-el-"]').first().evaluate((el) => Number(getComputedStyle(el).zIndex))
     const behindZ = await title.evaluate((el) => getComputedStyle(el).zIndex)
     expect(behindZ === 'auto' || Number(behindZ) <= cardZ).toBe(true)
 
     await layerBtn.click()
-    await expect(layerBtn).toHaveText('TO BACK')
+    await expect(layerBtn).toHaveText('TITLE TO BACK')
     const frontZ = await title.evaluate((el) => Number(getComputedStyle(el).zIndex))
     expect(frontZ).toBeGreaterThan(cardZ)
 

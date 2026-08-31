@@ -218,6 +218,8 @@
     "retryImage": "重新生成图片",
     "toFront": "置于最前",
     "toBack": "置于最后",
+    "titleToFront": "标题置于最前",
+    "titleToBack": "标题置于最后",
     "back": "返回",
     "creatingLink": "正在创建你的链接…",
     "couldntCreateLink": "链接创建失败",

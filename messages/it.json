@@ -218,6 +218,8 @@
     "retryImage": "RIFAI IMMAGINE",
     "toFront": "IN PRIMO PIANO",
     "toBack": "SULLO SFONDO",
+    "titleToFront": "TITOLO IN PRIMO PIANO",
+    "titleToBack": "TITOLO SULLO SFONDO",
     "back": "INDIETRO",
     "creatingLink": "CREAZIONE DEL TUO LINK…",
     "couldntCreateLink": "IMPOSSIBILE CREARE IL LINK",

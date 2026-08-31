@@ -94,13 +94,15 @@ export function ShareToast(props: Props): ReactElement {
               data-testid="share-toast-create"
             >{createLabel}</button>
             {/* Title front/back (N-74) — only when there's a title to move.
-                Reuses the existing share.toFront/toBack vocabulary (already
-                15-language, used for the mobile dock's per-card front/back)
-                instead of a single toggle: one relevant action shown at a
-                time, same as that sibling pattern. */}
+                Dedicated titleToFront/titleToBack strings (not the bare
+                toFront/toBack the mobile dock uses for a selected CARD):
+                user feedback was that "TO FRONT" alone doesn't say WHAT
+                moves, so these spell out "title" per language. One relevant
+                action shown at a time, same sibling pattern as the dock's
+                per-card front/back either way. */}
             {titleLayer && onToggleTitleLayer && (
               <button type="button" className={styles.textBtn} onClick={onToggleTitleLayer} data-testid="share-toast-title-layer">
-                {titleLayer === 'front' ? t('share.toBack') : t('share.toFront')}
+                {titleLayer === 'front' ? t('share.titleToBack') : t('share.titleToFront')}
               </button>
             )}
             <button type="button" className={styles.textBtn} onClick={onReselect} data-testid="share-toast-reselect">{t('share.chooseAgain')}</button>

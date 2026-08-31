@@ -218,6 +218,8 @@
     "retryImage": "RETRY IMAGE",
     "toFront": "TO FRONT",
     "toBack": "TO BACK",
+    "titleToFront": "TITLE TO FRONT",
+    "titleToBack": "TITLE TO BACK",
     "back": "BACK",
     "creatingLink": "CREATING YOUR LINK…",
     "couldntCreateLink": "COULDN'T CREATE THE LINK",

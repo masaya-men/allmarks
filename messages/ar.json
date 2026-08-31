@@ -218,6 +218,8 @@
     "retryImage": "إعادة إنشاء الصورة",
     "toFront": "إلى الأمام",
     "toBack": "إلى الخلف",
+    "titleToFront": "العنوان إلى الأمام",
+    "titleToBack": "العنوان إلى الخلف",
     "back": "رجوع",
     "creatingLink": "جارٍ إنشاء رابطك…",
     "couldntCreateLink": "تعذّر إنشاء الرابط",

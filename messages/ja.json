@@ -218,6 +218,8 @@
     "retryImage": "画像を作り直す",
     "toFront": "最前面へ",
     "toBack": "最背面へ",
+    "titleToFront": "タイトルを最前面へ",
+    "titleToBack": "タイトルを最背面へ",
     "back": "戻る",
     "creatingLink": "リンクを作成中…",
     "couldntCreateLink": "リンクを作成できませんでした",

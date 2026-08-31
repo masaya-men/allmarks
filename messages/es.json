@@ -218,6 +218,8 @@
     "retryImage": "REINTENTAR IMAGEN",
     "toFront": "AL FRENTE",
     "toBack": "AL FONDO",
+    "titleToFront": "TÍTULO AL FRENTE",
+    "titleToBack": "TÍTULO AL FONDO",
     "back": "ATRÁS",
     "creatingLink": "CREANDO TU ENLACE…",
     "couldntCreateLink": "NO SE PUDO CREAR EL ENLACE",

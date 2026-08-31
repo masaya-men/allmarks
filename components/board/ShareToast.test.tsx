@@ -62,18 +62,18 @@ describe('ShareToast — title front/back (N-74)', () => {
     expect(screen.queryByTestId('share-toast-title-layer')).toBeNull()
   })
 
-  it('shows "TO FRONT" when the title is behind, and fires onToggleTitleLayer on click', () => {
+  it('shows "TITLE TO FRONT" when the title is behind, and fires onToggleTitleLayer on click', () => {
     const onToggleTitleLayer = vi.fn()
     render(<ShareToast {...baseProps} titleLayer="behind" onToggleTitleLayer={onToggleTitleLayer} />)
     const btn = screen.getByTestId('share-toast-title-layer')
-    expect(btn).toHaveTextContent('TO FRONT')
+    expect(btn).toHaveTextContent('TITLE TO FRONT')
     fireEvent.click(btn)
     expect(onToggleTitleLayer).toHaveBeenCalledOnce()
   })
 
-  it('shows "TO BACK" when the title is front', () => {
+  it('shows "TITLE TO BACK" when the title is front', () => {
     render(<ShareToast {...baseProps} titleLayer="front" onToggleTitleLayer={vi.fn()} />)
-    expect(screen.getByTestId('share-toast-title-layer')).toHaveTextContent('TO BACK')
+    expect(screen.getByTestId('share-toast-title-layer')).toHaveTextContent('TITLE TO BACK')
   })
 
   it('is absent once the link is ready (state B)', () => {

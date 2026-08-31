@@ -218,6 +218,8 @@
     "retryImage": "REFAIRE L'IMAGE",
     "toFront": "AU PREMIER PLAN",
     "toBack": "À L'ARRIÈRE-PLAN",
+    "titleToFront": "TITRE AU PREMIER PLAN",
+    "titleToBack": "TITRE À L'ARRIÈRE-PLAN",
     "back": "RETOUR",
     "creatingLink": "CRÉATION DE VOTRE LIEN…",
     "couldntCreateLink": "IMPOSSIBLE DE CRÉER LE LIEN",
