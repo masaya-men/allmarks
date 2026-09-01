@@ -9141,6 +9141,16 @@ s176 出荷後のユーザーフィードバックで 2 点追い込み（本番
 
 ---
 
+## セッション 177 — リリース滑走路の統合実行計画を作成・実装は次セッションから
+
+- **コード変更なし（計画セッション）**。方針相談 → リリースまでの統合実行計画を **`docs/private/2026-07-08-release-runway-plan.md`**（非公開）に作成。束A スマホ閲覧 → 束B スマホ保存 → 束C 13言語仕上げ＋規約正文条項 → 束D 公開素材 → 束E 総仕上げ・公開、の5束・8〜10セッション想定。
+- 計画の土台に**実コード調査2本**を実施済み（結果は計画書に焼き込み済・行番号付き）: ①モバイル対応の現状（viewport meta あり／LP レスポンシブ済／列計算は幅追従だが既定値がデスクトップ用／**スマホの保存経路は実質ゼロ**＝ブックマークレット導線はドラッグ前提・share_target は manifest 宣言のみで受け側なし）②i18n 全対象の棚卸し（15 locale × 403キー＋自前マップ2つ／parity テスト6本あり・placeholder 検査なし／**規約に正文条項なし**／ar は RTL 未対応）。
+- 保存経路の再利用入口も確定: `ingestPastedUrl`（[lib/board/paste-ingest.ts](../lib/board/paste-ingest.ts)）＋既存 OGP プロキシ（[functions/api/ogp.ts](../functions/api/ogp.ts)）＝新設 URL 入力欄からそのまま呼べる。
+- 方針まわりの記録は `docs/private/IDEAS.md` #5 の s177 節（機微につき tracked に書かない）。
+- **次＝束A（スマホ閲覧）から実行**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+---
+
 ## セッション 178 (2026-07-08) — ★スマホ盤面の土台＋操作系（束A 前半）本番反映
 
 計画書(束A)の「上部chrome整理」案を、ユーザー指示で**全画面・ボトムナビのスマホ専用UI**に転換。全変更を `MOBILE_BP_PX=640` / `@media(max-width:640px)` でゲートし、**デスクトップは byte-identical**（1489回帰確認）。tsc0 / vitest 2154 全緑 / 4回デプロイ。
@@ -9159,6 +9169,14 @@ s176 出荷後のユーザーフィードバックで 2 点追い込み（本番
 ### 残（順番確定・ユーザー承認済）
 1. **スマホ専用ライトボックス**（中央大表示／キャプション下部peek→上スライド／縦スワイプで前後／下スワイプ閉じる案）— 次セッション。詳細 CURRENT_GOAL.md。
 2. スマホ専用タグ付け（選択→下部横スクロールタグをタップで付与）。3. ピンチでカードリサイズ（仕上げ）。
+
+---
+
+## セッション 179 — スマホスクロールを慣性→跳ね返り→本物のネイティブスクロールへ転換／★実機でスクロール不能・次で touch-action 修正
+
+- **当初 (a) JS慣性を実装**（`momentum-scroll.ts`・業界標準値 τ=325/POWER0.8/rubberband0.15、22テスト）→ ①慣性減速 ②上部タップで先頭 ③テキストカード内部スクロール停止 ④端の跳ね返り を順に出荷。だが**ユーザー実機で「スクロールがストレス・カードにタップ取られる・途中でビヨン」**＝(a)方式の限界。
+- **方針転換 (b)：スマホだけブラウザ標準の overflow スクロールに載せ替え**（ユーザー承認）。CardsLayer の自前パン/慣性/跳ね返り撤去・カードタップを native click に／BoardRoot に `.mobileScrollContainer`(overflow-y:auto)+spacer、scroll→viewport.y 同期(`handleMobileScroll`＝モバイル唯一の writer)／InteractionLayer touch-action モバイル pan-y／②・深リンク(`handleScrollMeterJump`)を `scrollTo` 化。**全て isMobile 分岐でデスクトップ回帰ゼロ**。`momentum-scroll.ts` 削除。tsc0/vitest2154/ビルドOK。**Playwright実測でデスクトップ回帰ゼロ＋モバイル scrollTop=400でカード400px移動**を確認して本番反映。
+- **★だが実機でスクロール全く効かず**。**原因確定的**＝カード自体 [CardNode.module.css:12](../components/board/CardNode.module.css#L12) `touch-action:none` の緩め忘れ（密グリッドで指が必ずカードに落ち塞がれる）。**Playwright は JS scroll で touch-action すり抜け＝実機のみで露見**。次セッションで touch-action を `pan-y` に緩めれば直る見込み。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ---
 
@@ -9357,6 +9375,19 @@ s179 で「スマホ盤面を JS 慣性 → ブラウザ標準の overflow ス�
 
 ---
 
+## セッション 185 — ★N-49 スマホから SHARE できるようにした・本番反映／ミッションの根幹が開通
+
+**サブエージェント駆動9タスク＋各レビュー＋opus 全ブランチレビュー（READY TO MERGE・Critical/Important ゼロ）**。tsc0 / vitest **2246**（+31）/ クリーンビルド / `merge --no-ff b9c43511` / `allmarks.app` デプロイ済。詳細は上の N-49 と [spec](superpowers/specs/2026-07-10-mobile-share-bottom-nav-design.md)。
+
+- **ボトムナビ再設計**＝`TAG / THEME / SHARE / CORNERS / MORE`（MOTION は MORE パネルへ）。スマホは**選ぶ→CREATE の2手**で共有リンクと 1200×630 の画像ができる。
+- **黒帯を消した方法が肝**＝画面外にレプリカを組まず、**画面に内接する中央の 1.91:1 の帯**に自動配置して `.outerFrame` を `fit:'cover'` で撮る。`computeCoverRect` は中央を切るので帯と一致する。背景・パターン・カードは全部本物＝**盤面と共有リンクが食い違う余地がない**。
+- **レビューが設計の穴を2つ潰した**: ①横長画面で帯≠切り出し ②**`fit:'cover'` を誰も固定していなかった**（`contain` に戻しても全テスト緑だった）→ 黒帯検出テストを追加。
+- **★e2e の実態が判明（N-53 を書き換え）**: 「board-b0 の6本」ではなく **master 単体で 58本中 30本が落ちる**（本ブランチと同数＝新規混入ゼロを A/B 実測）。`Test timeout` 20件・`VersionError` 13件。**回帰検出網が半分死んでいる**。
+- **★実機確認の残**: ①選択モードの指スクロール ②`SHARE` の OS シートで X / Instagram / LINE が画像とリンクをどう拾うか ③画像の文字が読めるか ④タブレットの回転ノブ。
+- **★次**: N-54（グリッド交点が濃くなる）→ N-51 の残り（スマホに背景タイトル）→ N-50（タブレットの作法）。掃除として N-53。
+
+---
+
 ## セッション 186 (2026-07-11) — 計画セッション: Fable で残タスク全棚卸し＋安価モデル実行用の詳細計画書5本
 
 **コード変更ゼロ**。CURRENT_GOAL の指示どおり「まず計画」。並行 Explore エージェント4本で N-56 撮影パイプライン／モバイル盤面＋アレンジ／パターン描画／e2e 腐りの実コードを行番号つきで全網羅し、s185 基準の粒度（実コード・実テスト・実コマンド埋め込み＝Haiku が写経で完遂できる）で計画書を作成。
@@ -9375,6 +9406,19 @@ s179 で「スマホ盤面を JS 慣性 → ブラウザ標準の overflow ス�
 - `fill-snap.ts` 旧 `fillCandidates`/`snapToFill` は本番未使用を再確認（prune は N-53 Task 6）。
 
 **次**: s187 = N-56 実行（冒頭でユーザーに症状 a/b/c・端末・枚数を聞く）→ s188 N-58 → s189 N-57+59 → s190 N-54 → s191〜 N-53 → 束C。
+
+---
+
+## セッション 187 — ★計画セッション第2弾: Fable で s186 新規4件＋αの計画書5本・コード変更なし
+
+**コード変更ゼロ（計画のみ）**。並行 Explore で実コードを行番号採取→安価モデル写経粒度（s185/s186 基準）の計画書を作成:
+
+- **(N-58 段階2)** [ピンチズーム＋パン](superpowers/plans/2026-07-11-n58-stage2-pinch-zoom-pan.md) — 2本指=ステージ・1本指=カード。調査で「回転は角度計算なので無修正・移動とリサイズだけ倍率で割る」を確定。撮影直前に transform リセット＝撮影系 0 行変更
+- **(BULK-IMPORT 第1弾)** [X ブクマ＋YouTube LL/WL](superpowers/plans/2026-07-11-bulk-import-x-youtube.md) — **Task 0=ログイン済みブラウザの実 DOM 採取（ユーザー協働）を掟として先頭に**（s49 教訓）。収穫→古い順に直列保存（250ms 間隔=レート制御）＋進捗パネル＋中断再開。`dispatchBulkSave`（演出なし・結果を返す）を新設・アプリ側 0 行変更
+- **(CUTOUT MVP)** [なげなわ切り抜きコラージュ](superpowers/plans/2026-07-11-cutout-collage-mvp.md) — 散文相談で確定: **コラージュ側のみ・形はブクマ本体に永続（DB bump 不要）・適用は `cutoutClipPath` 1関数＝将来ボードにも1行で広げられる**。専用オーバーレイでなぞる。撮影が clip-path を焼けるかが実機最重要確認
+- **(SHADER-THEME)** 元ツイートの技術を事実確認 → **インテリアマッピング**（FH4 の窓と同じ・板1枚で3D の部屋を錯覚）と判明し、動くモック（WebGL・Artifact）を2往復で磨いてユーザー承認。**A=[cyber-space](superpowers/plans/2026-07-12-shader-theme-a-cyber-space.md)（純背景・計画のみ・実装は花火で）／B=[TOWER](superpowers/plans/2026-07-12-shader-theme-b-tower.md)（★超高層の全窓=カード・ユーザー確定「公開までに実装」）**。B が共通土台（raw WebGL runtime）を先に作る取り決め
+- **第5項目（ユーザー要望）**: 非公開の方針メモを照合・改訂（`docs/private/2026-07-12-monetization-recheck-s187.md`。新機能の位置づけ・公開前必須事項の現状・実行順提案）
+- **ロードマップ更新済み**（新規5計画を差し込み・TOWER=公開前はユーザー確定、CUTOUT/BULK-IMPORT の時期は提案）。**次=実行フェーズ・N-56 から**。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)
 
 ---
 
@@ -9542,6 +9586,18 @@ tsc0 / **vitest 2291/2291**（276 files・flake なし）/ `pnpm build` OK（ass
 
 ---
 
+## セッション 191 追補2 — ★スマホのコラージュ＝縦4:5 ネイティブ再設計を決定・設計書＋段階1計画を作成／次は段階1を安価モデルで実装
+
+**コード変更なし（設計・計画のみ）。** 実機で「機能は動くがスマホ最適化に見えない／縦が普通では」とユーザー。業界水準を調査（Explore＋WebSearch）→ 縦4:5の目標モックを作成・ユーザー承認 → 現行の撮影→ホスティング→OGパイプラインを事実採取 → **設計書＋段階1計画**を作成。
+
+- **方針(A)確定**: モバイルのコラージュ＝**縦 4:5 が主役**（保存＆縦向き共有）。**リンクカード用 1.91:1 は縦画像を中央レターボックスで自動併産**（サーバー・OG route・payload 無改変＝ホストOGは1.91:1のまま）。段階1＝土台（縦の形と出力・チロムは現状）／段階2＝業界水準チロム（選択時ツールバー・レイヤー・スナップ+触覚・ドラッグ削除・undo/redo・ズームはスライダー廃止→ピンチ+ダブルタップfit）。
+- **鍵**: `renderCollageCanvasToJpeg` は出力w/hを引数で受けるアスペクト非依存＝縦帯(4:5)＋縦w/h(1080×1350)を渡すだけ。縦帯→縦出力は `mapBandToOutput` の x/y スケールが等しく無歪み。1.91:1 は `letterboxImageToAspect` で併産。
+- 設計書 `docs/superpowers/specs/2026-07-13-mobile-portrait-collage-redesign-design.md`・計画 `docs/superpowers/plans/2026-07-13-mobile-portrait-collage-stage1.md`（完全コード・4タスク）・目標モック https://claude.ai/code/artifact/c624f258-08b7-4694-8cb0-39c610c9f476。
+- **★次＝段階1を安価モデルで実装**（Claude が subagent-driven で指揮）。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+- **バックログ（ユーザー要望・後で）**: PC（デスクトップ）のコラージュが業界水準かの調査（競合名は `docs/private/` へ）。
+
+---
+
 ## セッション 192 (2026-07-13) — ★スマホのコラージュ＝縦4:5 段階1（土台）を出荷・本番反映
 
 **実行フェーズ。s191 で決めた「スマホのコラージュ＝縦4:5 ネイティブ再設計」の段階1（土台）を、計画書どおり subagent-driven-development で完遂・本番反映。** ユーザー指示＝「縦4:5 段階1 を安価モデルで実装、検証→デプロイ→docs更新まで自走」。
@@ -9674,6 +9730,17 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 
 ---
 
+## セッション 196 — ★束C C0+C1 出荷＋テーマ大改修を設計・計画／課金監査完遂／割り込み多数
+
+**盛りだくさんの1セッション。①束C の C0+C1 を出荷・本番反映 ②割り込みで課金安全の徹底監査を完遂 ③紙テーマ点滅バグの真因特定 ④テーマ大改修の原則を再設計→親 spec＋写経 plan 2本を作成。** 詳細は各項目へ。**次セッション＝テーマ実行フェーズ（波0＋サブ1 並行）**。手順は [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+- **束C C0+C1 完了・本番反映**（master `4c2a1ffd` merge・`allmarks.app` デプロイ済）: C0＝`messages/placeholder-parity.test.ts`（14 locale ×`{…}`トークン多重集合＝en 一致・mutation 検証済）＋OG ロケール `ar_AR`→`ar_SA`（lp-metadata/page-metadata 両方）＋`bookmarklet.toast.*` 未使用確定（C2 除外）。C1＝規約に第10節「正文（Governing language）」＝日本語版優先を全15言語 JSON＋TermsContent に追加（en/ja 確定訳・他13一次訳・contact を11に繰下）。検証: tsc0/vitest 2365/build/全ロケール描画/opus レビュー MERGE READY。**残り＝束C C2（13言語仕上げ・次以降）**。
+- **★課金安全の徹底監査 完了**（正本 `docs/private/2026-07-14-cloudflare-cost-audit.md`）: サブエージェント2本＋Claude 直読＋料金一次情報。**結論＝現状 Workers Free なら悪用されても請求ほぼ0**（KV write 1,000/日・Workers 10万/日の日次上限が間接レート制限として R2 無料枠を超えさせない）。構造的費用＝R2 超過分（現実ほぼ0）＋.app 更新 約$14/年のみ。隠れ課金リソースゼロ（D1/Queues/Actions/有料API/K3課金endpoint 無し・実照会）。**ユーザーが Budget alert $0.01 設定済**（唯一の早期警報・Cloudflare にハード停止機能無し）。悪用経路 A〜D（クエリでキャッシュ迂回／create 無レート制限／img 未キャッシュ/oembed 未使用）＝防御は N-62。
+- **★テーマ大改修を再設計＋写経 plan 化**（親 spec `docs/superpowers/specs/2026-07-14-theme-scope-principle-design.md`）: brainstorming で「テーマの適用範囲」を再確定。**2層モデル**（肌＝全テーマ必須で安全／世界＝凝ったテーマだけ opt-in）／**chrome (a)＝1つの共通スキン系トークンで揃える（器は各自維持・TUNE は横型温存）**／**TUNE 骨/皮＋甲（作り込んでから公開）**／surface 地図（受け取りも世界の層まで・拡張設定はフラット中立+15言語）。写経 plan 2本作成: [サブ1 chrome-skin-tokens](superpowers/plans/2026-07-14-theme-sub1-chrome-skin-tokens.md)（7タスク・バイト維持配線）／[サブ6 拡張 flat+i18n](superpowers/plans/2026-07-14-extension-options-flat-i18n.md)（15言語×38キー・パリティ機械検証済）。奥行きズームの参考コード保存（`docs/private/2026-07-14-infinite-zoom-gallery-reference.md`・WebGL でなく CSS transform と判明）。
+- **★次セッション＝テーマ実行フェーズ**（波0＝サブ6/N-62/N-60/N-61/C2 ＋ 波1＝サブ1 を並行）。サブ2/3（フラット/Grid/紙の TUNE 皮）は各回頭でモック承認→写経。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+---
+
 ## セッション 197 (2026-07-14) — テーマ大改修の実行フェーズ: サブ6＋サブ1 を subagent-driven で本番出荷
 
 **司令塔=Opus・実装=安価モデル（機械的=haiku／芯=Sonnet）の subagent-driven-development で、テーマ大改修の波0（サブ6 拡張フラット化+i18n）と波1（サブ1 chrome スキントークン基盤）を1セッションで完遂・出荷。** 各タスクに実装→タスクレビュー、サブ末に opus 全ブランチレビュー→merge --no-ff。「サブ1+サブ6 を並行」の指示は、同一ブランチ同時実行が git 衝突を招くため（worktree は不使用方針）、サブ6→サブ1 の連続実行に安全側で調整。
@@ -9699,6 +9766,32 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 
 ---
 
+## セッション 198 — ★テーマ実行の続き: サブ2 フラットテーマ＋フラット TUNE 皮を subagent-driven で本番出荷
+
+**掟どおり「頭でモック→ユーザー承認→写経 spec/plan→subagent-driven→opus 全ブランチレビュー」を1セッションで完遂。** 新 opt-in 明テーマ **Flat**（LP 白エディトリアル `#faf9f6`・Fraunces ワードマーク・`kind:'pattern'`）＋その TUNE 皮を出荷。`theme-sub2-flat` 6タスク（T1 登録=Haiku／T2-6=Sonnet）＋各 per-task レビュー＋fix＋**opus 全ブランチレビュー Ready=WITH FIXES→hover 欠陥1件 fix**→merge --no-ff→`allmarks.app` デプロイ。tsc0／**vitest 2407**／build／e2e 14（board-theme6＋chrome-skin-tokens8）。
+
+- **入れたもの**: ①テーマ登録（`ThemeId`+`'flat'`／`scrollMeterVariant`+`'line'`／registry／customization 既定／`.flat` 背景クラス／15言語 "Flat"）②`globals.css` の flat トークンブロック（白パネル+暗インク・serif ワードマーク・meter-line・flat-fade）③**旧サブ1 Task 4 完成**＝`BoardRoot` の `DARK_CHROME_RESET` を `themeMeta.colorScheme==='dark'` で gate（明盤面は内側白リセットを回避＝暗インク header）④静音メーター新 variant `'line'`＝`QuietTrack`（紙 PNG 非依存・ScrollMeter を `isRuler→isQuiet` 一般化＝waveform/ruler は superset で不変）⑤静か motion `'fade'`（tag-entry/shutdown）⑥**TUNE フラット皮**＝`data-theme-id="flat"` scoped の CSS append-only（金属フェーダー→細レール+白丸／金属レバー→ドット選択+iOS CORNERS／LED 凡例→静音／暗ガラス→白ドロワー）。
+- **不変条件は死守**（opus が全ブランチで5拘束を独立トレース）: **既定(dotted-notebook)＋音/Grid/紙はバイト同一**（全 CSS が flat scoped or append-only・0 deletions）／BoardRoot gate は全テーマクラスで正（dark は no-op・paper は resolvedCustom null で短絡・flat のみ挙動変化）／`isQuiet` は `isRuler` の strict superset＝波形/ruler 無退行／s197 の面+インク対ペア成立。
+- **既定は音のまま**（`DEFAULT_THEME_ID` 不変）。**フラット既定化は実機承認後に別途1行**。
+- **★次セッション最優先＝実機確認**（`allmarks.app` ハードリロード→Flat 選択→白盤面・白 TUNE・静音メーター・音に戻すとバイト同一）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。OK なら **サブ3（Grid・紙の TUNE 皮）** or **C2 翻訳**。
+- **既知の残（deferred・非ブロッキング）**: フラット TUNE の `.trigger` RGB-glitch hover が音の言語のまま（実機で判断）／明色スウォッチのプリセット追加（共有スウォッチ非改変）／受け取り画面(/s/)のフラット化＝サブ5／死 regex `#181614`（無害）。
+
+---
+
+## セッション 199 — ★フラットの仕上げを実機フィードバック駆動で5回出荷／次＝②Grid をフラットに統合
+
+**s198 の Flat を実機で叩きながら、掟どおり「調査→モック/根本原因→承認→subagent 実装＋各レビュー＋opus 全ブランチ→ゲート→デプロイ」を5サイクル完遂。** すべて `allmarks.app` 反映済・master merge --no-ff。音/Grid はバイト同一、紙は不変を全回で死守。
+
+- **① フラットのメニュー可読化**（merge `38c046c2`）: s198 のフラット皮が「枠とボタン」までで、中身が白×白／暗×暗で不可視だった。新トークン **`--chrome-ink-rgb`**（:root=255,255,255／flat=20,19,15）で全 chrome 文字を一括反転＋Pattern B の暗ドロップダウン面を flat で白面化（SETTINGS/THEME/CUSTOMIZE/絞り込み/言語/タグ/トースト）。opus 指摘の BackupReminder 緑枠消失も修正。tsc0/vitest2407/e2e17。
+- **TUNE の「しまい切れない線」修正**（`b4eafbe4` 系）: フラット `.drawer` が閉時も枠 1px を常時描画＝線。**閉時 border-width:0・開時 1px**（FilterPill と同作法）に。再発防止 e2e 追加。
+- **① chrome アニメのテーマ化**（merge `38c046c2`→実際は別 merge）: **`ThemeMeta.chromeMotion`（signature|quiet・必須）**新設。音のみ signature（スクランブル＋グリッチ維持）、他は静か。スクランブルは共有フック `useSignatureChromeMotion`（html data-theme-id 監視）で全消費者一括ゲート。CSS グリッチは5ファイルとも `html[data-theme-id="dotted-notebook"]` にスコープ。**フラット＝ホバー下線(B)**。フラットのツイート翻訳を `quiet` 遷移に。**絞り込みピルの字体を `--chrome-label-*` 共通トークンでヘッダーボタンと連動**（別書体問題を解消）。opus 指摘の下線バグ2件（top:auto・padding:0＝16px塊化）修正。tsc0/vitest2412/e2e21。
+- **フラット白系シャドウ/浮遊/エッジ/ライトボックス**（merge 直近）: カード角丸を **Wave と同じ式**に（`card-radius.ts` param `flat`→`minimalRadius`・紙のみ3px）／カードに**軽い層状シャドウ＋ホバーで影深化**（持ち上げ transform は入れない＝兄弟の操作子とズレるため・opus 指摘）／ライトボックスを **`--lightbox-backdrop` 明フロスト**化＝暗インク文字が読める＋メディアに影。tsc0/vitest2414/e2e23。
+- **盤面上下フェード撤去**（最後の1手）: 実機で「内側フェードがカードを隠す」→ フラットの `.canvas::before/::after` を **display:none**（紙と同じ）。
+- **★残（実機で軽く見る・非ブロッキング）**: ライトボックスの @ハンドル/meta（`--text-meta` #6b675e）が明フロスト上で最薄＝薄すぎたら少し濃く（小修正）。
+- **★次セッション最優先＝②「Grid をフラットに統合」**（着手前にモック承認）。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+---
+
 ## セッション 200 (2026-07-16) — ★テーマ大改修（模様を Sound Wave/Flat に統合＋独立 Grid 撤去）＋Flat 仕上げを実機FB駆動で多数出荷
 
 **ユーザーとの高速な往復で、テーマまわりを一気に前進。** 各出荷 tsc0／vitest（最終2414）／build／`allmarks.app` デプロイ済。音(dotted-notebook)/紙(paper-atelier)はバイト同一を全回死守。視覚変更は都度ユーザー承認（ui-design.md）。
@@ -9716,6 +9809,19 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **TUNE の CORNERS 行の iOS トグルを廃しプリセット行に整列**（Flat のみ・ドット＋ラベル＋状態＝上のプリセットと揃う・破線で別項目）。
 
 **次セッション＝ユーザーの指示待ち**（さらなる Flat 磨き／支援受け皿再開[FANBOX＋Patreon]／拡張の一括保存=公開後 fast-follow／C2 翻訳）。
+
+## セッション 201 — ★SHARE OGP バグ修正・出荷済／★Private(鍵付き秘密ブックマーク)を brainstorm→spec→plan まで完了・実装は次セッション
+
+**前半: OGP バグ調査→修正→出荷。** ユーザー報告の共有リンク(`/s/cAYiu6`)を実機で取得し原因特定: SHARE の自動撮影が「操作クローム」を撮影から除外する仕組み(`data-no-capture`)を持つが、**`BackupReminder`(バックアップお知らせ)と `DataHomeCard`(初回データ案内)だけこの属性が抜けていた**ため、撮影の瞬間に画面に出ていると共有画像にそのまま写り込む(実例: バックアップ通知が丸ごと写った画像)。両コンポーネントに `data-no-capture` を追加+回帰テスト2件。tsc0/vitest2416/build/`allmarks.app` デプロイ済。
+
+**後半: 新アイデア「Private」タグを brainstorm→spec→plan の正規フローで完走。** 要件: 鍵付きにできるタグは「Private」1つだけ(汎用の全タグ鍵付きは不採用)・パスワードから AES-GCM で**本当に暗号化**(見た目だけのUIガードは不採用)・生体認証(WebAuthn)は後日のパスワードの近道・Private+普通タグの併用可だが**Privateを明示的に踏まない限り他のタグ単体では絶対に出ない**(all/inbox/archive含め全部)・SHAREはロック中は物理的に不可、解錠中に選んだ時だけ確認ダイアログ付きで許可・EXPORTには暗号化済みのまま含む・再ロックはリロードのみ(手動ロックUIなし)・救済はヒント文のみ(バックドア無し)。
+
+- **spec**: `docs/superpowers/specs/2026-08-20-private-vault-design.md`(commit `0e8ed5f3`)。
+- **plan**: `docs/superpowers/plans/2026-08-20-private-vault.md`。フェーズ1(パスワード版)のみ15タスク、TDD形式で全コード具体化済み。**セルフレビューで設計バグを1件発見し修正**: `privateTagId`(どのタグがPrivateか)を「ロック中は隠す」フィルタ後の `tags` 配列から導出すると、ロックした瞬間に判定自体が `null` になり除外が効かなくなる致命的バグになるところだった → `useTags()` が「表示用一覧(ロック中は隠す)」と「常にわかる `privateTagId`(ロック中でも判定に使う、rawTags 由来)」を別々に返す形に修正。デスクトップ/モバイル両方の SHARE 作成パスを実コードで検証済み(`buildArrangeShare` 経由で両方とも `selectedIds` ベース→同じゲートで対応可)。
+- **フェーズ2(生体認証)は別 plan**(この plan の対象外、明示的に除外)。
+- **★次セッション最優先＝ plan 実装**。ユーザー指定: **subagent-driven-development で1タスクずつ**。Task 1(暗号コア `lib/private/crypto.ts`)から順に。plan 内の Global Constraints(依存追加禁止・IDBバージョン不変・鍵は必ずメモリのみ等)は毎タスク遵守。
+
+---
 
 ## セッション 202 (2026-08-20〜21) — ★Private vault Phase 1 最終レビュー〜fix〜デプロイまで完走／副産物バグ2件も同セッションで発見・修正・本番反映
 
@@ -9755,6 +9861,30 @@ N-53 完了に続けて同一セッションで **N-54** を完遂。実機で�
 - **保留(次回以降、着手前にユーザー確認/承認が要る)**: ResizeHandleの装飾オーバーレイが小さいカードで＋TAGボタンの当たり判定を奪うバグ(最終レビューでPlaywright実診断により発見・Private機能とは無関係の既存バグ)。
 
 **次セッション最優先＝Private Phase 2の続き(②クイック保存面対応、PopOut/拡張機能/ブックマークレット、案B=鍵の安全な受け渡し)**。着手前に必ずsuperpowers:brainstormingから。詳細 [CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
+---
+
+## セッション 204 — ★Private Phase 2 サブプロジェクト2(②クイック保存面: PopOut/拡張機能/ブックマークレット)完全完了・本番デプロイ済・master merge済／次は拡張機能UI配線
+
+**設計を対称鍵暗号→公開鍵暗号(ECDH)へ全面ピボット。ユーザー自身の指摘(「タグ付けにパスワードは要らないはず」)がきっかけ。**「タグ付け(暗号化)はパスワード不要でどこからでも可能、閲覧・削除(復号)のみパスワードが必要」という理想形を実現。spec `docs/superpowers/specs/2026-08-25-private-phase2-quicksave-pubkey-crypto-design.md`・plan `docs/superpowers/plans/2026-08-25-private-phase2-quicksave-pubkey-crypto.md`(13タスク)。
+
+- **実装**: subagent-driven-developmentで13タスク完走。Task3/4間の依存逆転をpre-flightで検出しdispatch順を修正、Task7で発覚した周辺2ファイルの型不整合、Task12のe2eで既存の無関係なCardsLayerバグ(N-64)を発見しワークアラウンドで回避。
+- **superpowers:security-review**で4件の実在する脆弱性を発見・修正(コミット`2a95d4bc`): ①`addPrivateTag`の二重実行防止漏れ(データ破壊バグ、チップ連打で再現可能だった)②nonce重複排除の抜け(防御目的)③ブックマークレット経由の任意origin flowが、他人のブックマークIDを推測して勝手に中身を隠せる権限過多④保存確認の返信データにPrivateタグの有無が漏れるオラクル。confidence 8のLOW severity 2件(生鍵のJSメモリ通過/拡張機能側の再送ポンプの落とし穴)はN-65/N-66として記録のみ。
+- **最終全ブランチレビュー(opus)**でさらに2件Important検出・修正(コミット`f86b8a53`): ①security-reviewで入れた二重実行防止ガードがトランザクションの外にあり、実は不完全だった(2つの呼び出しが両方ガードを通過してから書き込む競合が起こり得た)→トランザクション内の既存の読み込みに移動して修正②PopOut/拡張機能/ブックマークレットの3つの新経路がPrivate化後に盤面へ更新を知らせておらず、開いたままの盤面(特にPopOutは盤面と同じJSレルム)に中身が残り続ける→兄弟のタグ付け経路と同じbroadcastを追加。軽微2件(明るいテーマで通知文字が読めない/存在しないブックマークへの操作が「成功」と返る)も同時に修正。UIフィードバック欠如(N-67)とメディア欠落(N-68)はレビュアー自身の推奨により拡張機能UI配線と合わせて次回対応。
+- **本番の古いPhase1 Private設定をユーザー確認の上で安全に削除**: デプロイ前にユーザーへ「以前パスワード設定したことは？」と確認したところ本番で設定済と判明(中身は退避済み)。新方式は鍵の形が根本的に異なり、古い設定を放置すると「パスワードが違います」が永久に続き復旧不能になることが判明したため、EXPORTバックアップ後、ユーザー自身がDevToolsコンソールで古いvault設定+古いPrivateタグ(タグ参照の scrub込み)を削除。ブックマーク本体は無傷。
+- **post-plan gate**: tsc0 / vitest 300ファイル2509テスト全緑(既知の無関係flaky=`channel.test.ts`のBroadcastChannelタイミング起因を再確認、単体でも毎回結果が変わることを確認済み) / playwright 101 pass・5 skip / `pnpm build`成功。
+- **`master`へmerge済(`--no-ff`)・GitHubへpush済・本番デプロイ済(`allmarks.app`)**。作業ブランチ`private-phase2-quicksave-pubkey-crypto`・SDD台帳は削除済み。
+- **ユーザー実機確認の結果**: PopOutからPrivateタグ付けOK。ブックマークレット/拡張機能ではPrivateの項目が出なかった → 調査の結果バグではなく`lib/utils/bookmarklet.ts`の既存仕様(拡張機能が入っていると、ブックマークレットクリック時もポップアップ(SaveToast.tsx)を開かず拡張機能側の保存処理に回す分岐)が原因と判明。SaveToast.tsx自体のPrivate配線はPopOutと構造的に同一でPopOutで動作確認済のため、これは正常。
+- **ユーザーからの新規指摘を受けて追加開発、同セッション内で完遂**: 「拡張機能でも使えるように、パスワード再設定もやってほしい、完成させたい」との要望。パスワード再設定は技術調査の結果「変更」は事実上の鍵作り直しが必要と判明し理想仕様のみ`docs/private/IDEAS.md`に記録して後回しに(ユーザー了承)。代わりに以下2件を完遂:
+  1. **拡張機能のfloating-buttonにPrivateチップを配線**(コミット`ddc6d5e5`): `dispatch.js`/`background.js`/`offscreen.js`/`floating-button.js`/`.css`の5ファイル。N-66(再送ポンプが8秒спин)も同時修正。
+  2. **PopOut/ブックマークレットのPrivateチップに成功/失敗フィードバックを追加**(N-67、コミット`88258188`): それまで押しても✓もエラーも出なかった問題を修正。
+  - 両方とも事前に`tests/e2e/private-vault.spec.ts`へ`booklage:add-private-tag`の永続的な契約テストを追加(コミット`f5c87adb`)してから着手。
+  - **最終全ブランチレビュー相当の直接検証**で全diff確認、フル回帰(tsc/vitest2509/playwright102)通過。
+- **Private関連文言を15言語に対応**(ユーザー指摘、その通りだった。コミット`03660568`): `messages/*.json`の新規`private`名前空間(board側)・`lib/bookmarklet/save-private-copy.ts`(新規、`/save`はI18nProvider外のため既存の`save-fullscreen-copy.ts`と同じ自己完結マップ方式)・`extension/_locales/*/messages.json`(拡張機能側)の3系統に配線。ダイアログ見出し・ボタン文言・「Private」自体は既存の「短い動作系は英語のまま」慣例を踏襲し対象外。英語・日本語は精査、他13言語はAI下訳(公開前にnative review要、既存慣例通り)。
+  - **司令塔の指示漏れで発見が遅れたバグ**: サブエージェントへの検証指示にvitest/tscのみ含めplaywrightを含めなかったため、「共有確認ダイアログの件数表示」が単数/複数の作り分けごと1本の文言に統合されて「1 items」という文法崩れを起こしていたのを見逃し、後で自分でe2eを回して発見。`shareConfirmBodyOne`/`shareConfirmBodyMany`に分割して修正(コミット`545dd5d7`)。教訓を[CURRENT_GOAL.md](CURRENT_GOAL.md)の恒久ルールに追記。
+- **post-plan gate(最終)**: tsc0 / vitest 300ファイル2509テスト全緑 / playwright 102 pass・5 skip / `pnpm build`成功。
+- **拡張機能をv0.1.25としてChrome Web Storeに再提出**(審査待ち、コミット`9f97b6e2`): 新しい権限リクエストなし。提出後、ダッシュボードで対応言語が15言語中13言語しか出ていないことが判明 → 調査の結果、**Chromeの拡張機能は`zh`/`pt`という裸のロケールコードを認識せず、`zh_CN`/`pt_BR`等の地域つきコードが必須**と判明(公式ドキュメントで確認)。セッション197あたりからの既存の命名ミスで、今回初めてストア提出して初めて表面化した。v0.1.25は審査中で差し替え不可のためそのまま進行、フォルダ名を`zh_CN`/`pt_BR`に修正済み(コミット`b225a96e`)。**次に拡張機能を提出するタイミングで一緒にバージョンを上げて提出すること**(現状バージョンは0.1.25のまま、次はv0.1.26)。
+- **★次セッション最優先**: ユーザーに本番での動作確認(FilterPillのPrivate行が未設定表示→新パスワードで再設定/拡張機能含む3経路でのPrivateタグ付け/多言語表示)をお願いする。手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
 ---
 
