@@ -794,6 +794,17 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
 // ---------------------------------------------------------------------------
 
 /**
+ * Pure stamp: return a copy of the bookmark with `updatedAt` set to now.
+ * NOT a DB write — wrap the record you're about to `put` with this so the
+ * device-sync merge can do last-write-wins. Apply only on user-initiated or
+ * content-adding writes; passive system writes (link-health revalidation,
+ * migrations, startup repairs) must NOT bump — see the plan's bump policy.
+ */
+export function touchBookmark(rec: BookmarkRecord): BookmarkRecord {
+  return { ...rec, updatedAt: Date.now() }
+}
+
+/**
  * Compute the next safe orderIndex for a new bookmark.
  *
  * Returns max(existing orderIndex) + 1, or 0 if no bookmarks exist. This is
@@ -947,7 +958,7 @@ export async function resortByNewestFirst(
     const rec = byId.get(id)
     if (!rec) continue
     if ((rec.orderIndex ?? -1) !== orderIndex) {
-      await store.put({ ...rec, orderIndex })
+      await store.put(touchBookmark({ ...rec, orderIndex }))
       updated++
     }
   }
@@ -979,6 +990,7 @@ function buildBookmarkAndCard(
     siteName: input.siteName,
     type: input.type,
     savedAt: new Date().toISOString(),
+    updatedAt: Date.now(),
     ogpStatus: input.ogpStatus ?? 'fetched',
     orderIndex,
     sizePreset: 'S',
@@ -1241,7 +1253,7 @@ export async function updateBookmarkOgp(
   // (this function currently has no callers, but a future OGP-refetch
   // feature must not reopen the leak those were fixed for).
   if (existing.encryptedPayload) return
-  const updated: BookmarkRecord = { ...existing, ...ogpData }
+  const updated: BookmarkRecord = touchBookmark({ ...existing, ...ogpData })
   await db.put('bookmarks', updated)
 }
 
@@ -1267,11 +1279,11 @@ export async function persistCustomCardWidth(
   const safeWidth = Number.isFinite(width)
     ? Math.max(MIN_CARD_WIDTH, width)
     : DEFAULT_CARD_WIDTH
-  await db.put('bookmarks', {
+  await db.put('bookmarks', touchBookmark({
     ...existing,
     cardWidth: safeWidth,
     customCardWidth: true,
-  })
+  }))
 }
 
 /**
@@ -1306,7 +1318,7 @@ export async function persistPhotos(
     return
   }
 
-  const updated: BookmarkRecord = { ...existing, photos: next }
+  const updated: BookmarkRecord = touchBookmark({ ...existing, photos: next })
   await db.put('bookmarks', updated)
 }
 
@@ -1347,7 +1359,7 @@ export async function persistMediaSlots(
     return
   }
 
-  const updated: BookmarkRecord = { ...existing, mediaSlots: next }
+  const updated: BookmarkRecord = touchBookmark({ ...existing, mediaSlots: next })
   await db.put('bookmarks', updated)
 }
 
@@ -1364,7 +1376,7 @@ export async function clearCustomCardWidth(
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
   if (existing.customCardWidth !== true) return
-  await db.put('bookmarks', { ...existing, customCardWidth: false })
+  await db.put('bookmarks', touchBookmark({ ...existing, customCardWidth: false }))
 }
 
 /**
@@ -1383,7 +1395,7 @@ export async function clearAllCustomCardWidths(
   while (cursor) {
     const rec = cursor.value
     if (rec.customCardWidth === true) {
-      await cursor.update({ ...rec, customCardWidth: false })
+      await cursor.update(touchBookmark({ ...rec, customCardWidth: false }))
       cleared.push(rec.id)
     }
     cursor = await cursor.continue()
@@ -1404,7 +1416,7 @@ export async function updateBookmarkOrderIndex(
 ): Promise<void> {
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
-  await db.put('bookmarks', { ...existing, orderIndex })
+  await db.put('bookmarks', touchBookmark({ ...existing, orderIndex }))
 }
 
 /**
@@ -1427,7 +1439,7 @@ export async function updateBookmarkOrderBatch(
     const id = orderedBookmarkIds[i]
     const existing = await store.get(id)
     if (!existing) continue
-    await store.put({ ...existing, orderIndex: n - 1 - i })
+    await store.put(touchBookmark({ ...existing, orderIndex: n - 1 - i }))
   }
   await tx.done
 }
@@ -1509,6 +1521,7 @@ export async function addBookmarkBatch(
         siteName: input.siteName,
         type: input.type,
         savedAt: new Date().toISOString(),
+        updatedAt: Date.now(),
         ogpStatus: input.ogpStatus ?? 'fetched',
         orderIndex: nextOrder++,
         sizePreset: 'S',
