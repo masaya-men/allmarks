@@ -1,5 +1,5 @@
 import type { IDBPDatabase } from 'idb'
-import { getBookmark } from '@/lib/storage/indexeddb'
+import { getBookmark, touchBookmark } from '@/lib/storage/indexeddb'
 import { encryptWithPublicKey, decryptWithPrivateKey, importPublicKey } from './crypto'
 import { loadVaultRecord } from './vault-store'
 import type { PrivateVaultSession } from './vault-session'
@@ -68,7 +68,7 @@ export async function addPrivateTag(
   // already-blanked fields the first one just wrote, destroying them.
   if (current.tags.includes(privateTagId)) { await tx.done; return }
   const tags = [...current.tags, privateTagId]
-  await store.put({ ...current, ...BLANK_FIELDS, encryptedPayload, tags })
+  await store.put(touchBookmark({ ...current, ...BLANK_FIELDS, encryptedPayload, tags }))
   await tx.done
 }
 
@@ -95,7 +95,7 @@ export async function removePrivateTag(
   if (!current) { await tx.done; return }
   const { encryptedPayload: _drop, ...rest } = current
   const tags = current.tags.filter((t: string) => t !== privateTagId)
-  await store.put(fields ? { ...rest, ...fields, tags } : { ...rest, tags })
+  await store.put(touchBookmark(fields ? { ...rest, ...fields, tags } : { ...rest, tags }))
   await tx.done
 }
 

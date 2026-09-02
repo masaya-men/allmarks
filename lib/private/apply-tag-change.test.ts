@@ -81,7 +81,7 @@ describe('private/apply-tag-change', () => {
   }
 
   it('addPrivateTag encrypts the sensitive fields and blanks the plaintext columns', async () => {
-    const bookmark = makeBookmark('b1')
+    const bookmark = makeBookmark('b1', { updatedAt: 1000 })
     await db.put('bookmarks', bookmark)
     await makeVault()
     await addPrivateTag(db, bookmark.id, 'private-tag-id')
@@ -91,6 +91,8 @@ describe('private/apply-tag-change', () => {
     expect(updated.encryptedPayload).toBeDefined()
     expect(updated.encryptedPayload.ephemeralPublicKey).toBeDefined()
     expect(updated.tags).toContain('private-tag-id')
+    // updatedAt is bumped when the Private tag is applied
+    expect(updated.updatedAt).toBeGreaterThan(1000)
   })
 
   it('addPrivateTag called twice does not re-encrypt (would destroy the original content)', async () => {

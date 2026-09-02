@@ -27,6 +27,7 @@ async function makeDb(): Promise<TestDb> {
       const cs = db.createObjectStore('cards', { keyPath: 'id' })
       cs.createIndex('by-bookmark', 'bookmarkId')
       db.createObjectStore('settings', { keyPath: 'key' })
+      db.createObjectStore('tags', { keyPath: 'id' })
     },
   })
 }
@@ -135,5 +136,31 @@ describe('bookmark write paths bump updatedAt', () => {
     await updateBookmarkHealth(db as any, 'b1', { linkStatus: 'alive', lastCheckedAt: Date.now() })
     const b = await db.get('bookmarks', 'b1')
     expect(b.updatedAt).toBe(1000)
+  })
+
+  it('addTagToBookmark bumps updatedAt', async () => {
+    const { addTagToBookmark } = await import('@/lib/storage/tags')
+    await db.put('bookmarks', seedBookmark('b1', { updatedAt: 1000 }))
+    await addTagToBookmark(db as any, 'b1', 'tag-x')
+    const b = await db.get('bookmarks', 'b1')
+    expect(b.updatedAt).toBeGreaterThan(1000)
+  })
+
+  it('removeTagFromBookmark bumps updatedAt', async () => {
+    const { removeTagFromBookmark } = await import('@/lib/storage/tags')
+    await db.put('bookmarks', seedBookmark('b1', { updatedAt: 1000, tags: ['tag-x'] }))
+    await removeTagFromBookmark(db as any, 'b1', 'tag-x')
+    const b = await db.get('bookmarks', 'b1')
+    expect(b.updatedAt).toBeGreaterThan(1000)
+  })
+
+  it('deleteTagCascade bumps updatedAt on scrubbed bookmarks', async () => {
+    const { deleteTagCascade } = await import('@/lib/storage/tags')
+    await db.put('tags', { id: 'g1', name: 'x', color: '#000', order: 0, createdAt: 1 })
+    await db.put('bookmarks', seedBookmark('b1', { updatedAt: 1000, tags: ['g1'] }))
+    await deleteTagCascade(db as any, 'g1')
+    const b = await db.get('bookmarks', 'b1')
+    expect(b.tags).toEqual([])
+    expect(b.updatedAt).toBeGreaterThan(1000)
   })
 })

@@ -1,4 +1,5 @@
 import type { IDBPDatabase } from 'idb'
+import { touchBookmark } from './indexeddb'
 import type { TagRecord, TagInput, BookmarkRecord, AllMarksDB } from './indexeddb'
 
 /** The typed handle the tag helpers operate on. Was `IDBPDatabase<any>` (audit
@@ -89,7 +90,7 @@ export async function deleteTagCascade(db: DbLike, tagId: string): Promise<void>
   const all = (await bookmarkStore.getAll()) as BookmarkRecord[]
   for (const b of all) {
     if (b.tags.includes(tagId)) {
-      await bookmarkStore.put({ ...b, tags: b.tags.filter((t: string) => t !== tagId) })
+      await bookmarkStore.put(touchBookmark({ ...b, tags: b.tags.filter((t: string) => t !== tagId) }))
     }
   }
   await tx.done
@@ -141,7 +142,7 @@ export async function addTagToBookmark(
     await tx.done
     return
   }
-  await store.put({ ...bookmark, tags: [...bookmark.tags, tagId] })
+  await store.put(touchBookmark({ ...bookmark, tags: [...bookmark.tags, tagId] }))
   await tx.done
 }
 
@@ -170,10 +171,10 @@ export async function removeTagFromBookmark(
     await tx.done
     return
   }
-  await store.put({
+  await store.put(touchBookmark({
     ...bookmark,
     tags: bookmark.tags.filter((t: string) => t !== tagId),
-  })
+  }))
   await tx.done
 }
 
