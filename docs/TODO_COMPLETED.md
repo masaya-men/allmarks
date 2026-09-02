@@ -10038,3 +10038,46 @@ superpowers:brainstormingをスパイクとして開始。まず技術調査: �
 
 **★次セッション最優先＝収益化の仕組みに着手**(未確定事項が残るため必ずsuperpowers:brainstormingから)。N-78(画像無しツイート専用カード)はその後に回す方針継続。手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
+---
+
+## セッション 208 (2026-09-02) — 収益化の仕組み＝端末間同期の設計フェーズ完了(実装コードはゼロ)
+
+**前セッションから引き継いだ「収益化の仕組み」に着手。superpowers:brainstormingで方針を固め、業界調査を挟んで端末間同期の設計書を作成。センシティブな方針(値付け・配布先・戦略)は全て`docs/private/`に格納、本エントリは技術面のみ記録。**
+
+### 方針決め(brainstorming)
+
+未確定だった複数の論点をユーザーとの対話で確定(詳細は`docs/private/IDEAS.md`「s208」節)。技術面の確定事項:
+- 収益化の中心機能＝**端末間同期**(複数端末で同じブクマ/タグ/ボードを持つ)。これまで「案B(BYOS)」として構想のみだったもの。
+- 「自動同期は本当に可能か」というユーザーの問いに対し、s162の1日調査(緑)＋今回の追加調査で「BYOS=ユーザー自身のGoogle Drive/Dropboxへの読み書きで成立」と再確認。Google Driveでも中継Function経由で放置運転の完全自動同期まで可能と整理(トークンモデルの1時間制限は回避手段あり)。
+- Private(金庫)ブクマも同期対象にできると、暗号設計(`lib/private/vault-store.ts`のPBKDF2 60万回でパスワード包んだECDH秘密鍵)を確認して判断。KeePassを Drive に置くのと同じ構図。
+
+### 業界調査(subagentに委譲)
+
+「サーバーもデータも持たない前提でのローカルファースト同期」の業界水準を、一次ソース付きで徹底調査(`docs/private/raw-research/sync-research.md`、約34KB)。要点:
+- 本格的な同期エンジン(Yjs/Automerge/ElectricSQL/RxDB/Dexie Cloud/Zero/PouchDB等)は**例外なく専用サーバーを運営が立てる前提** → 「運営は何も持たない」理念と衝突するため不採用。
+- 最も近い先例＝**KeePass**(`.kdbx`をDropbox/Driveに置き、ID単位でマージ、負けた版は履歴に残す)。**Joplin**(1アイテム1ファイルの差分同期)は今回の規模には過剰。
+- Google Drive `drive.file`権限は**「非センシティブ」に分類** → 年次セキュリティ監査(CASA)も100人上限も無い(本番公開すれば無制限)。「Google審査が怖いからDropbox先」という懸念は不要と確認、Google Drive先行の判断が正しいと裏付け。
+- 「まるごとファイル＋ID単位の足し算マージ」がこのアプリの規模・使い方には**業界水準的に正しい選択**(過剰実装ではない)と、失敗パターンの網羅分析で確認。ブクマに`updatedAt`が無いのが唯一の要改修点。
+
+### 設計書作成: `docs/private/2026-09-02-device-sync-design.md`
+
+architectural設計としてフルに仕様化(gitignored、commitしない)。主な確定事項:
+- **方式**: ユーザー自身のGoogle Driveに可視フォルダ`AllMarks/`＋store別の複数JSON(manifest/bookmarks/tags/cards/board-config/vault)。Dropboxは後日(phase 2、ブラウザPKCEで中継不要)。
+- **理念チェック(§1)**: ①運営はユーザー情報を持たない ②サーバー(DB)を持たない ③¥0インフラ、を全て維持する根拠を明記。やわらぐのは「同期利用者だけ自分のGoogleに1回ログイン」の1点のみ。「あなたのDrive」等の曖昧表現を排し「ユーザーの」「開発者の」を厳密に使い分け(ユーザー指摘)。
+- **アルゴリズム(§6)**: 取り込みは「置き換え」ではなく「id で足し算マージ」(union by id)。追加は絶対に消えない。3大ルール=①id単位でマージ ②pullは合体でありclear()しない ③負けた版も30日退避。ブクマのtags配列は集合和(スマホでタグX・PCでタグYを両方残す)。
+- **自動同期を最初から(§4)**: Googleのログイン受け渡しだけを中継する極小Cloudflare Function(`functions/api/gauth/*`、GISコードモデルで認可code→中継でrefresh token交換、何も保存しない)を1個追加、放置運転の裏同期を実現。ユーザー方針「理想の状態で出す」。
+- **Private(金庫)も同期対象(§9)**: `encryptedPayload`(暗号文)＋`private-vault`レコード(パスワードで包んだECDH秘密鍵、PBKDF2 60万回=OWASP推奨値でオフライン総当たり耐性あり)を一緒に運ぶ。別端末で同じパスワードを1回入力して解錠。代償(強パスワード推奨・パスワードマネージャー生成推奨・忘れると全端末で開けない・プライバシー表記を「端末から出ない」→「自分のDriveに暗号化保存」に変更・Privateパスワード再設定フローの優先度上昇)を明記。ユーザーの「パスワードは端末に覚えさせる時代なのでそれで良い」という判断を受けて、v1から同期対象に決定。
+- **下ごしらえ(§3、単独でデプロイ可・既存挙動不変)**: `BookmarkRecord`に`updatedAt`追加(v16→v17 migration、既存は`Date.parse(savedAt)`で埋める・全書き込み経路でbump)、`TagRecord`にソフト削除印(`deleteTag`を物理削除→ソフト削除に)、`CardRecord`に`updatedAt`、`deviceId`(無意味なUUID)。
+- **安全弁(§8)**: zod全ファイル検証、1回の同期で総数の2〜3割超が消えるなら停止してユーザー確認(rclone `--max-delete`相当)、IDB書き込みは`importAllStores`と同じall-or-nothingトランザクション、楽観ロック(`headRevisionId`比較→変わってたら先にpull再マージ)。
+- **有料ゲート(§10)**: 「準備中」表示ではなく本物の最小K3(合言葉リンクの発券`/claim`＋発動`/activate`＋5台キャップ＋`lib/board/license-store.ts`＋`isSyncUnlocked`)を同期と同時に作る。「最初から有料で同期」で出す方針(Obsidian Sync/Bear Pro/Logseq Sync等の業界標準・"後出し課金"のbetrayal批判を避ける、ユーザー決定)。K3を後段フェーズから前倒し。テーマ課金(per-theme scope)・Patreon OAuth自動発行・Gumroad・解約無効化は後回し(設計書§10「v1で作らない」)。
+- **実装分割(§14)**: 7束(①下ごしらえ ②Function+認証+Google Cloud設定 ③アダプタ+マージ純関数 ④エンジン ⑤最小K3 ⑥SyncPanel UI+文言 ⑦e2e)。
+
+### 成果物
+
+- `docs/private/2026-09-02-device-sync-design.md`(設計書・新規・gitignored)
+- `docs/private/raw-research/sync-research.md`(業界調査・新規・gitignored)
+- `docs/private/IDEAS.md`「s208」節(収益モデル確定＋方針更新を反映)
+- **コード変更ゼロ**(設計フェーズのみ)。tsc/vitest/build等の検証は該当なし。
+
+**★次セッション最優先＝superpowers:writing-plansで設計書を実装計画(束ごとのタスク)に落とす。束1(下ごしらえ)から着手。ユーザーにGoogle Cloud側の初期設定(OAuthクライアント作成)を1回お願いする必要あり。** 手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。
+
