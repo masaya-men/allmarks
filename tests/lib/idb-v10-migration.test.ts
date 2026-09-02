@@ -144,6 +144,15 @@ describe('IDB v10 migration', () => {
     // v10 migration: sizePreset 'L' → cardWidth 320
     expect(bm.cardWidth).toBe(320)
 
+    // v17 migration: updatedAt backfilled from savedAt. This is the row the
+    // concurrent-cursor serialization (bookmarkMutationChain) exists to
+    // protect on a v8→v17 single hop — if the v17 sweep raced the v9/v10
+    // sweeps, one of these three would be wrong. All three together are the
+    // regression guard.
+    expect(bm.updatedAt).toBe(Date.parse('2026-04-02T00:00:00Z'))
+    expect(Array.isArray(bm.tags)).toBe(true)
+    expect(typeof bm.cardWidth).toBe('number')
+
     // v9 migration: folder → moods store
     const moods = await raw.getAll('moods')
     expect(moods).toHaveLength(1)

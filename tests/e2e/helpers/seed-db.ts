@@ -3,7 +3,7 @@
 //   1. /board を開く（アプリの initDB が現行スキーマを作る/開く）
 //   2. 無版数 open でアプリが作り終えたスキーマに「接続」できるまでポーリング
 //   3. readwrite でレコードを書き、reload で盤面に反映
-// これにより VersionError(9)<(16) が構造的に消え、将来 DB_VERSION が上がっても
+// これにより VersionError(9)<(17) が構造的に消え、将来 DB_VERSION が上がっても
 // このヘルパーは修正不要。スキーマの正本は lib/storage/indexeddb.ts だけに保つ。
 
 import type { Page } from '@playwright/test'
