@@ -23,7 +23,9 @@
 
 過去のセッション詳細ログは全て [TODO_COMPLETED.md](./TODO_COMPLETED.md) に移動済み(session207でのクリーンアップ)。**次にやること・直近の到達点は [CURRENT_GOAL.md](./CURRENT_GOAL.md) を参照**(毎回最初に読むファイル)。
 
-**s208 (2026-09-02)**: 収益化の仕組み＝**端末間同期**の設計フェーズ完了(実装コードはゼロ)。設計書=`docs/private/2026-09-02-device-sync-design.md`(非公開)。方式=BYOS(ユーザー自身のGoogle Drive)・id で足し算マージ・放置運転の自動同期・Private金庫も同期・最小K3ゲートを同時に。次セッション=superpowers:writing-plansで実装計画→束1(下ごしらえ: bookmarks に updatedAt 追加 v17 migration 等)から着手。
+**s209 (2026-09-03)**: 端末間同期 **束1(下ごしらえ)実装・本番反映済**。`BookmarkRecord`/`CardRecord` に `updatedAt`(v16→v17 migration・実機545件で通過確認)、`touchBookmark` スタンプを全書き込み経路に、タグのソフト削除、`lib/sync/device-id.ts`。同期ロジックはまだゼロ=既存挙動は完全不変。実装計画=`docs/superpowers/plans/2026-09-02-device-sync-bundle-1-groundwork.md`。**束2〜4への必須制約は設計書 `docs/private/2026-09-02-device-sync-design.md` §15 に集約**(特に束3のマージは `updatedAt` を `typeof x === 'number' ? x : 0` で読む)。次=束2(極小 Function + 認証 + Google Cloud OAuth 設定)。詳細は CURRENT_GOAL.md。
+
+**s208 (2026-09-02)**: 端末間同期の設計フェーズ完了。設計書=`docs/private/2026-09-02-device-sync-design.md`。方式=BYOS(ユーザー自身のGoogle Drive)・id で足し算マージ・放置運転の自動同期・Private金庫も同期・最小K3ゲートを同時に。
 
 ## 🐛 未対応バグ・改善 (active backlog)
 

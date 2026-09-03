@@ -10081,3 +10081,46 @@ architectural設計としてフルに仕様化(gitignored、commitしない)。�
 
 **★次セッション最優先＝superpowers:writing-plansで設計書を実装計画(束ごとのタスク)に落とす。束1(下ごしらえ)から着手。ユーザーにGoogle Cloud側の初期設定(OAuthクライアント作成)を1回お願いする必要あり。** 手順は[CURRENT_GOAL.md](CURRENT_GOAL.md)。
 
+---
+
+## セッション 209 (2026-09-03) — 端末間同期 束1(下ごしらえ) 実装・本番反映
+
+s208 の設計書を superpowers:writing-plans で実装計画に落とし(`docs/superpowers/plans/2026-09-02-device-sync-bundle-1-groundwork.md`・tracked)、subagent-driven-development で束1を実装。**束2〜7 は各着手時に個別計画書**(束3〜7の細部は束1〜2の実装で決まるため、今フル詳細化すると手戻り)。
+
+### 実装した束1(同期ロジックはゼロ。データ層の下ごしらえのみ)
+
+7タスク、各タスクに実装サブエージェント + 2段レビュー(spec + 品質)、最後に opus 全ブランチレビュー:
+
+1. **`BookmarkRecord.updatedAt?: number` + v16→v17 migration** — 全既存ブクマを `Date.parse(savedAt)` で backfill。壊れた `savedAt` は `updatedAt: 0`(計画の `Date.now()` 指定を上書き=腐った行が LWW で勝つのを防ぐ)。v17 sweep は既存の v9/v10 bookmarks cursor と競合するため `bookmarkMutationChain` に直列化(サブエージェントが計画のミスを発見・修正)。
+2. **`touchBookmark(rec)` 純関数スタンプ + `indexeddb.ts` の全書き込み経路に適用** — ユーザー起点・内容追加の書き込みでのみ bump。`updateBookmarkHealth`(リンク健全性の受動チェック)/`repairOrderIndexIfNeeded`/migration sweep は bump しない。
+3. **同スタンプを `use-board-data.ts` の persist* / `tags.ts` / `apply-tag-change.ts`(Private金庫)に適用**。
+4. **`CardRecord.updatedAt?`**(migration なし・読みは `?? 0`)。
+5. **タグのソフト削除** — `TagRecord.isDeleted?`/`deletedAt?` 墓標。`deleteTag`/`deleteTagCascade` は物理削除せず墓標を書く。`getAllTags` が `!isDeleted` で弾く(全一覧読み取りの唯一の choke-point)。ブクマ側 `tags[]` scrub は従来通り継続=非同期ユーザーの UX は完全不変。
+6. **`lib/sync/device-id.ts`** — `getDeviceId(db)`:1トランザクション内で get-or-create の安定UUID。この束では呼び出し元ゼロ。
+7. 検証ゲート。
+
+### レビュー結果
+
+- opus 全ブランチレビュー = **Ready to merge: YES**。Critical ゼロ。ソースレベルのチェックアウト検証で「v16ガードの修正が唯一のコールバック全体return(他に v17 を黙って飛ばすものは無い)」「v17 sweep は live な versionchange tx 内で確実に実行」「`db.version=17` かつ backfill 未実行の経路は存在しない」「`toItem` が明示射影なので `updatedAt` は BoardItem/共有リンクに漏れない」を確認。
+- Important 2件はいずれも**後続の束の落とし穴**(この束の出荷挙動の欠陥ではない):
+  - **IMP-1(束3へ持ち越し)**: v17前のバックアップ復元で `updatedAt` 無し行が残る。今は無害(アプリはまだ読まない)。**束3のマージは `updatedAt` を必ず `typeof x === 'number' ? x : 0` で読む**、と設計書§15に明記。
+  - **IMP-2(セッション内で修正済)**: `getDeviceId` の初回同時呼び出しレース → 1トランザクション get-or-create に。
+- マイナー(墓標リテラル重複・古いコメント・テストの薄さ等)は**束2の頭でまとめて片付ける**。設計書§15に一覧。
+- 既知の別件: `tests/lib/channel.test.ts`(BroadcastChannel・本ブランチと無関係)がフルスイート同時実行時のみ ~1/3 で落ちる既存 flake。単独6/6・再実行で 2581/2581。
+
+### 検証・出荷
+
+- tsc 0 / フルスイート **2581/2581(クリーン実行)** / 本番ビルド成功。
+- 7コミット(計画書1 + コード6・全て `Co-Authored-By: Claude Sonnet 5` トレーラ付き) `805905db`〜`e16f0ea8`。
+- `git merge --no-ff` = merge commit `c5c70c98`。master を origin に push(前セッションの docs 3コミットも同梱)。`feat/device-sync` ブランチ削除。
+- `npx wrangler pages deploy out/ --project-name=allmarks --branch=master` で `allmarks.app` にデプロイ。
+- **ユーザーが v16 のバックアップを取得**(`Downloads/AllMarks-backup-2026-09-03-1112.json`)→ デプロイ後ハードリロード → **実機で「いつも通り」確認**(v17 migration が本番545件で無事通過)。
+
+### 成果物
+
+- `docs/superpowers/plans/2026-09-02-device-sync-bundle-1-groundwork.md`(実装計画・新規・tracked)
+- `docs/private/2026-09-02-device-sync-design.md` §15「実装状況・申し送り」追記(束2〜4への必須制約を集約)
+- コード: `lib/storage/indexeddb.ts` / `lib/constants.ts` / `lib/storage/tags.ts` / `lib/storage/use-board-data.ts` / `lib/private/apply-tag-change.ts` / `lib/sync/device-id.ts`(新規) + テスト6ファイル
+
+**★次セッション = 束2(極小 Function `/api/gauth/*` + `lib/sync/auth.ts` + Google Cloud OAuth クライアント作成手順)。着手前に束2の計画書を writing-plans で作る。冒頭で設計書§15の「束2 の頭でまとめて片付けるマイナー」を消化。**
+
