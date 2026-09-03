@@ -25,6 +25,12 @@ export interface SyncTokens {
   expiresAt: number
   /** Google が返したスコープ (space 区切り)。 */
   scope: string
+  /**
+   * OpenID Connect ID token (JWT). Present on the code exchange when the
+   * `openid` scope was granted; absent on refresh. Bundle 6 decodes its
+   * payload to show which Google account is connected.
+   */
+  idToken?: string
   /** 初回の code 交換でのみ返る。refresh では返らない。 */
   refreshToken?: string
 }
@@ -99,10 +105,34 @@ export async function refreshAccessToken(refreshToken: string): Promise<SyncToke
   return toSyncTokens(res)
 }
 
+/**
+ * 非 2xx の GauthError メッセージに、Function の JSON エラー body
+ * ({ error, google_error }) を best-effort で添える。bundles 4/6 が
+ * 「再接続」(invalid_grant) と「デプロイ設定ミス」(invalid_client 等) を
+ * 見分けられるようにする。JSON でない (CF の HTML 5xx 等) なら素の文言だけ。
+ */
+async function describeGauthFailure(res: Response): Promise<string> {
+  const base = `gauth endpoint returned ${res.status}`
+  try {
+    const body: unknown = await res.json()
+    if (body !== null && typeof body === 'object') {
+      const parts: string[] = []
+      for (const key of ['error', 'google_error'] as const) {
+        const val = (body as Record<string, unknown>)[key]
+        if (typeof val === 'string' && val.length > 0) parts.push(val)
+      }
+      if (parts.length > 0) return `${base} (${parts.join(': ')})`
+    }
+  } catch {
+    // body が JSON でない — 素の文言で返す
+  }
+  return base
+}
+
 /** Function の応答を検証して SyncTokens に写す。失敗は全部 GauthError。 */
 async function toSyncTokens(res: Response): Promise<SyncTokens> {
   if (!res.ok) {
-    throw new GauthError(`gauth endpoint returned ${res.status}`)
+    throw new GauthError(await describeGauthFailure(res))
   }
   let body: unknown
   try {
@@ -118,7 +148,8 @@ async function toSyncTokens(res: Response): Promise<SyncTokens> {
   return {
     accessToken: g.access_token,
     expiresAt: computeExpiresAt(g.expires_in, Date.now()),
-    scope: g.scope,
+    scope: g.scope ?? '',
+    idToken: g.id_token,
     refreshToken: g.refresh_token,
   }
 }

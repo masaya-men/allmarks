@@ -65,6 +65,7 @@ describe('POST /api/gauth/refresh', () => {
       new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 })))
     const res = await onRequestPost(makeCtx({ refreshToken: '1//dead' }) as never)
     expect(res.status).toBe(400)
+    expect((await res.json() as { google_error?: string }).google_error).toBe('invalid_grant')
   })
 
   it('502 when the fetch to Google throws', async () => {

@@ -16,6 +16,7 @@ interface PagesContext {
   env: Env
 }
 
+/** { refreshToken } のみ。余裕を見て 8KB (token.ts と同じ)。 */
 const MAX_BODY_BYTES = 8 * 1024
 
 export async function onRequestPost(ctx: PagesContext): Promise<Response> {

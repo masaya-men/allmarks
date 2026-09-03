@@ -61,11 +61,34 @@ export async function postToGoogleToken(
 }
 
 /**
+ * Google の OAuth エラー body から短い `error` コードだけを取り出す。
+ * Google の失敗 body は `{ error, error_description }` の 2 フィールドだけで、
+ * access token も client_secret も含まない。よって `error` コード
+ * (invalid_grant / invalid_client / unauthorized_client / invalid_scope 等) を
+ * クライアントへ転送しても機密は漏れない。
+ * JSON でない / object でない / `error` が文字列でない / 長さが 1..64 の範囲外なら
+ * undefined を返す (= 転送しない)。
+ */
+function extractGoogleError(text: string): string | undefined {
+  try {
+    const parsed: unknown = JSON.parse(text)
+    if (parsed !== null && typeof parsed === 'object' && 'error' in parsed) {
+      const err = (parsed as { error: unknown }).error
+      if (typeof err === 'string' && err.length >= 1 && err.length <= 64) return err
+    }
+  } catch {
+    // text が JSON でない (CF の HTML 差し替え等) — 転送するコードは無い
+  }
+  return undefined
+}
+
+/**
  * Google の生 status を、この束の Function が返すべき Response に写す。
  * - 2xx: Google のトークン JSON をそのまま 200 で通過 (no-store)
  * - 0  : 到達不可 → 502
- * - 5xx: Google 障害 → 502
- * - それ以外 (4xx): クライアント起因 (invalid_grant 等) → 400
+ * - 408 / 429 / 5xx: 一時障害 (timeout / rate limit / Google 障害) → 502 (バックオフして再試行)
+ * - それ以外 (4xx): クライアント起因 (invalid_grant 等) → 400。判別できれば Google の
+ *   `error` コードを `google_error` として添える (機密は含まれない)。
  * CF が 5xx を HTML に差し替えても、auth.ts は「非 2xx = 失敗」で扱うので問題ない。
  */
 export function relayGoogleTokenResponse(status: number, text: string): Response {
@@ -75,6 +98,12 @@ export function relayGoogleTokenResponse(status: number, text: string): Response
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
     })
   }
-  if (status === 0 || status >= 500) return jsonResponse(502, { error: 'upstream_unreachable' })
-  return jsonResponse(400, { error: 'google_rejected' })
+  if (status === 0 || status === 408 || status === 429 || status >= 500) {
+    return jsonResponse(502, { error: 'upstream_unreachable' })
+  }
+  const googleError = extractGoogleError(text)
+  return jsonResponse(
+    400,
+    googleError ? { error: 'google_rejected', google_error: googleError } : { error: 'google_rejected' },
+  )
 }

@@ -10,6 +10,7 @@ import {
 } from './auth'
 import { loadGoogleIdentityServices } from './google-identity'
 import type { GoogleCodeClientConfig, GoogleCodeClient } from './google-identity'
+import { GOOGLE_OAUTH_CLIENT_ID } from '@/lib/constants'
 
 const mockLoad = vi.mocked(loadGoogleIdentityServices)
 
@@ -46,6 +47,7 @@ describe('requestAuthCode', () => {
     await expect(requestAuthCode()).resolves.toBe('4/xyz')
     expect(captured!.scope).toBe(SYNC_OAUTH_SCOPE)
     expect(captured!.ux_mode).toBe('popup')
+    expect(captured!.client_id).toBe(GOOGLE_OAUTH_CLIENT_ID)
   })
 
   it('rejects with GauthError when the callback carries an error', async () => {
@@ -64,6 +66,7 @@ describe('requestAuthCode', () => {
 const GOOGLE_OK = {
   access_token: 'ya29.a', expires_in: 3599, token_type: 'Bearer',
   scope: 'https://www.googleapis.com/auth/drive.file openid', refresh_token: '1//r',
+  id_token: 'eyJfake.jwt.token',
 }
 
 describe('exchangeCode', () => {
@@ -75,17 +78,33 @@ describe('exchangeCode', () => {
     const tokens = await exchangeCode('4/xyz', 'https://allmarks.app')
     expect(tokens.accessToken).toBe('ya29.a')
     expect(tokens.refreshToken).toBe('1//r')
+    expect(tokens.idToken).toBe('eyJfake.jwt.token')
     expect(tokens.scope).toBe(GOOGLE_OK.scope)
     expect(tokens.expiresAt).toBe(1_000_000 + (3599 - 60) * 1000)
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('/api/gauth/token')
+    expect(init.method).toBe('POST')
+    expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/json')
     expect(JSON.parse(init.body as string)).toEqual({ code: '4/xyz', redirectUri: 'https://allmarks.app' })
   })
 
-  it('throws GauthError on a non-2xx response', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"error":"google_rejected"}', { status: 400 })))
+  it('defaults redirectUri to window.location.origin when the origin arg is omitted', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(GOOGLE_OK), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await exchangeCode('4/x')
+
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    const sent = JSON.parse(init.body as string) as { redirectUri: string }
+    expect(sent.redirectUri).toBe(window.location.origin)
+  })
+
+  it('throws GauthError on a non-2xx response, surfacing the forwarded google_error', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      new Response('{"error":"google_rejected","google_error":"invalid_client"}', { status: 400 })))
     await expect(exchangeCode('4/bad', 'https://allmarks.app')).rejects.toBeInstanceOf(GauthError)
+    await expect(exchangeCode('4/bad', 'https://allmarks.app')).rejects.toThrow(/invalid_client/)
   })
 
   it('throws GauthError when the response is not JSON', async () => {
@@ -109,6 +128,7 @@ describe('refreshAccessToken', () => {
     const tokens = await refreshAccessToken('1//r')
     expect(tokens.accessToken).toBe('ya29.new')
     expect(tokens.refreshToken).toBeUndefined()
+    expect(tokens.idToken).toBeUndefined()
     expect(tokens.expiresAt).toBe(2_000_000 + (3599 - 60) * 1000)
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]

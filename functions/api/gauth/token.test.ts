@@ -77,7 +77,9 @@ describe('POST /api/gauth/token', () => {
       new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 })))
     const res = await onRequestPost(makeCtx({ code: '4/bad', redirectUri: 'https://allmarks.app' }) as never)
     expect(res.status).toBe(400)
-    expect((await res.json() as { error: string }).error).toBeTruthy()
+    const body = await res.json() as { error: string; google_error?: string }
+    expect(body.error).toBeTruthy()
+    expect(body.google_error).toBe('invalid_grant')
   })
 
   it('502 when Google returns a 5xx', async () => {

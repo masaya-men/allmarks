@@ -55,6 +55,7 @@ describe('private/apply-tag-change', () => {
   })
 
   afterEach(() => {
+    vi.restoreAllMocks()
     db.close()
   })
 
@@ -86,7 +87,6 @@ describe('private/apply-tag-change', () => {
     await makeVault()
     vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
     await addPrivateTag(db, bookmark.id, 'private-tag-id')
-    vi.restoreAllMocks()
     const updated = await db.get('bookmarks', bookmark.id)
     expect(updated.title).toBe('')
     expect(updated.url).toBe('')
@@ -142,7 +142,6 @@ describe('private/apply-tag-change', () => {
     const afterAdd = (await db.get('bookmarks', bookmark.id)).updatedAt as number
     vi.spyOn(Date, 'now').mockReturnValue(afterAdd + 5_000)
     await removePrivateTag(db, bookmark.id, 'private-tag-id', session)
-    vi.restoreAllMocks()
     expect((await db.get('bookmarks', bookmark.id)).updatedAt).toBe(afterAdd + 5_000)
   })
 
