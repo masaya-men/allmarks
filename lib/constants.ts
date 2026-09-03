@@ -11,6 +11,11 @@ export const SITE_URL = APP_URL.startsWith('http://localhost')
   ? 'https://allmarks.app'
   : APP_URL
 
+/** Google OAuth 2.0 "Web application" client ID for device-sync. Public value
+ *  — baked into the client bundle (NEXT_PUBLIC_*). Empty in dev and until the
+ *  Cloud Console client exists; the sync UI (bundle 6) stays gated while empty. */
+export const GOOGLE_OAUTH_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID ?? ''
+
 /** Predefined folder accent colors */
 export const FOLDER_COLORS = [
   '#ff6b6b', '#ff922b', '#ffd43b', '#51cf66', '#20c997',
