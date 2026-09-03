@@ -174,6 +174,10 @@ export interface CardRecord {
   isUserResized?: boolean
   /** Cached aspect ratio estimation */
   aspectRatio?: number
+  /** v17+: 最後にこのカード(配置・手動リサイズ)を変更した Unix epoch ms。
+   *  配置は「装飾」なので migration での backfill はしない — 読み取りは `?? 0`。
+   *  updateCard とカード生成時に常にセットされる。 */
+  updatedAt?: number
 }
 
 export interface UserPreferencesRecord {
@@ -1015,6 +1019,7 @@ function buildBookmarkAndCard(
     isManuallyPlaced: false,
     width: dimensions.width,
     height: dimensions.height,
+    updatedAt: Date.now(),
   }
   return { bookmark, card }
 }
@@ -1171,7 +1176,7 @@ export async function updateCard(
   if (!existing) {
     throw new Error(`Card not found: ${cardId}`)
   }
-  const updated: CardRecord = { ...existing, ...updates }
+  const updated: CardRecord = { ...existing, ...updates, updatedAt: Date.now() }
   await db.put('cards', updated)
 }
 
@@ -1547,6 +1552,7 @@ export async function addBookmarkBatch(
         isManuallyPlaced: false,
         width: dimensions.width,
         height: dimensions.height,
+        updatedAt: Date.now(),
       }
       await cardStore.put(card)
       results.push(bookmark)
