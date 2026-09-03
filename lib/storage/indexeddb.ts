@@ -136,6 +136,13 @@ export interface TagRecord {
    *  singleton, not a DB constraint; see lib/private/vault-store.ts). Display
    *  name is freely renamable; this flag is what makes it the vault. */
   isPrivateVault?: boolean
+  /** v17+: ソフト削除の tombstone。端末間同期で「端末Aで削除したタグ」と
+   *  「端末Bでまだ作っていないタグ」を区別するため物理削除をやめる。
+   *  getAllTags は isDeleted を弾く(表示・フィルタ・quick-tag 全経路が
+   *  getAllTags 経由)。物理 purge は将来(30日超のみ)。 */
+  isDeleted?: boolean
+  /** v17+: ソフト削除した時刻(ISO 8601 — BookmarkRecord.deletedAt と同型)。 */
+  deletedAt?: string
 }
 
 /** Input for creating a new tag (id and createdAt are auto-generated) */
