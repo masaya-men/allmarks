@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import 'fake-indexeddb/auto'
 import { openDB, type IDBPDatabase } from 'idb'
 import {
@@ -84,15 +84,17 @@ describe('private/apply-tag-change', () => {
     const bookmark = makeBookmark('b1', { updatedAt: 1000 })
     await db.put('bookmarks', bookmark)
     await makeVault()
+    vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
     await addPrivateTag(db, bookmark.id, 'private-tag-id')
+    vi.restoreAllMocks()
     const updated = await db.get('bookmarks', bookmark.id)
     expect(updated.title).toBe('')
     expect(updated.url).toBe('')
     expect(updated.encryptedPayload).toBeDefined()
     expect(updated.encryptedPayload.ephemeralPublicKey).toBeDefined()
     expect(updated.tags).toContain('private-tag-id')
-    // updatedAt is bumped when the Private tag is applied
-    expect(updated.updatedAt).toBeGreaterThan(1000)
+    // touchBookmark() stamps updatedAt when the Private tag is applied
+    expect(updated.updatedAt).toBe(1_700_000_000_000)
   })
 
   it('addPrivateTag called twice does not re-encrypt (would destroy the original content)', async () => {
@@ -130,6 +132,18 @@ describe('private/apply-tag-change', () => {
     expect(restored.url).toBe('https://example.com')
     expect(restored.encryptedPayload).toBeUndefined()
     expect(restored.tags).not.toContain('private-tag-id')
+  })
+
+  it('removePrivateTag stamps updatedAt via touchBookmark on the restored record', async () => {
+    const bookmark = makeBookmark('bTouch', { updatedAt: 1000 })
+    await db.put('bookmarks', bookmark)
+    const session = await makeVault()
+    await addPrivateTag(db, bookmark.id, 'private-tag-id')
+    const afterAdd = (await db.get('bookmarks', bookmark.id)).updatedAt as number
+    vi.spyOn(Date, 'now').mockReturnValue(afterAdd + 5_000)
+    await removePrivateTag(db, bookmark.id, 'private-tag-id', session)
+    vi.restoreAllMocks()
+    expect((await db.get('bookmarks', bookmark.id)).updatedAt).toBe(afterAdd + 5_000)
   })
 
   it('removePrivateTag throws if the vault is locked (session null)', async () => {

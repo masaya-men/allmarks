@@ -35,9 +35,11 @@ export async function applyExistingQuickTag(db: DbLike, bookmarkId: string, tagI
 /** Find-or-create a tag by case-insensitive name, apply it, notify boards.
  *  Returns the tag used, or null for blank input OR when the matched name
  *  belongs to the Private vault tag (never created/reused through this
- *  path — always re-checks a FRESH unfiltered tag list from the DB for
- *  this, ignoring whatever `allTags` the caller passed in, since a caller
- *  may have already filtered Private out of its own display list). */
+ *  path — always re-checks a FRESH tag list straight from the DB via
+ *  getAllTags, ignoring whatever `allTags` the caller passed in, since a
+ *  caller may have already filtered Private out of its own display list.
+ *  getAllTags drops soft-deleted tombstones but keeps the Private tag, so
+ *  this guard stays intact). */
 export async function applyNewQuickTag(
   db: DbLike,
   bookmarkId: string,

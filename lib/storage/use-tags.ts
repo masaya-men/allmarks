@@ -40,8 +40,9 @@ export function useTags(): {
   const dbRef = useRef<DbLike | null>(null)
 
   const privateSession = usePrivateVaultSession()
-  // Computed from rawTags (UNFILTERED) — must stay resolvable while locked.
-  // See this task's "Important" note above before changing this.
+  // Derived from rawTags BEFORE the Private-lock filter that `tags` applies
+  // below, so the vault tag id stays resolvable even while locked. (rawTags
+  // itself already excludes soft-deleted tombstones — getAllTags drops them.)
   const privateTagId = useMemo(
     () => rawTags.find((t) => t.isPrivateVault === true)?.id ?? null,
     [rawTags],
