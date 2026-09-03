@@ -1,4 +1,5 @@
 import type { IDBPDatabase } from 'idb'
+import { touchBookmark } from './indexeddb'
 import type { TagRecord, TagInput, BookmarkRecord, AllMarksDB } from './indexeddb'
 
 /** The typed handle the tag helpers operate on. Was `IDBPDatabase<any>` (audit
@@ -46,7 +47,7 @@ export async function addTag(db: DbLike, input: TagInput): Promise<TagRecord> {
  */
 export async function getAllTags(db: DbLike): Promise<TagRecord[]> {
   const list = (await db.getAll('tags')) as TagRecord[]
-  return list.sort((a, b) => a.order - b.order)
+  return list.filter((t) => !t.isDeleted).sort((a, b) => a.order - b.order)
 }
 
 /**
@@ -67,29 +68,51 @@ export async function updateTag(
 }
 
 /**
- * Delete a tag by id. No-op if it doesn't exist.
+ * Soft-delete a tag by id — writes an isDeleted/deletedAt tombstone rather
+ * than physically removing it, so the device-sync merge can tell a deleted
+ * tag from a not-yet-created one. No-op if it doesn't exist. getAllTags
+ * filters tombstones out of every read path.
  * @param db - The database instance
  * @param id - The tag ID to delete
  */
 export async function deleteTag(db: DbLike, id: string): Promise<void> {
-  await db.delete('tags', id)
+  const existing = (await db.get('tags', id)) as TagRecord | undefined
+  if (!existing) return
+  await db.put('tags', {
+    ...existing,
+    isDeleted: true,
+    deletedAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+  })
 }
 
 /**
- * Delete a tag AND scrub every bookmark's `tags[]` of the same id.
- * Single transaction over both stores so we never leave dangling refs
- * even if the user navigates / refreshes mid-write.
+ * Soft-delete a tag (isDeleted/deletedAt tombstone) AND scrub every bookmark's
+ * `tags[]` of the same id. The scrub is unchanged from the physical-delete era —
+ * non-sync UX is identical: the tag vanishes from every getAllTags read path and
+ * no bookmark is left pointing at it; the tombstone only sleeps in the `tags`
+ * store until a sync merge needs it. Single transaction over both stores so we
+ * never leave dangling refs even if the user navigates / refreshes mid-write.
  * @param db - The database instance
  * @param tagId - The tag ID to delete and scrub
  */
 export async function deleteTagCascade(db: DbLike, tagId: string): Promise<void> {
   const tx = db.transaction(['tags', 'bookmarks'], 'readwrite')
-  await tx.objectStore('tags').delete(tagId)
+  const tagStore = tx.objectStore('tags')
+  const existing = (await tagStore.get(tagId)) as TagRecord | undefined
+  if (existing) {
+    await tagStore.put({
+      ...existing,
+      isDeleted: true,
+      deletedAt: new Date().toISOString(),
+      updatedAt: Date.now(),
+    })
+  }
   const bookmarkStore = tx.objectStore('bookmarks')
   const all = (await bookmarkStore.getAll()) as BookmarkRecord[]
   for (const b of all) {
     if (b.tags.includes(tagId)) {
-      await bookmarkStore.put({ ...b, tags: b.tags.filter((t: string) => t !== tagId) })
+      await bookmarkStore.put(touchBookmark({ ...b, tags: b.tags.filter((t: string) => t !== tagId) }))
     }
   }
   await tx.done
@@ -141,7 +164,7 @@ export async function addTagToBookmark(
     await tx.done
     return
   }
-  await store.put({ ...bookmark, tags: [...bookmark.tags, tagId] })
+  await store.put(touchBookmark({ ...bookmark, tags: [...bookmark.tags, tagId] }))
   await tx.done
 }
 
@@ -170,10 +193,10 @@ export async function removeTagFromBookmark(
     await tx.done
     return
   }
-  await store.put({
+  await store.put(touchBookmark({
     ...bookmark,
     tags: bookmark.tags.filter((t: string) => t !== tagId),
-  })
+  }))
   await tx.done
 }
 

@@ -88,6 +88,12 @@ export interface BookmarkRecord {
   /** v14: 最後に link 健全性を再 scrape した Unix ms。 undefined = 未チェック。
    *  viewport 入場時に Date.now() - lastCheckedAt > 30 日なら再 check 候補。 */
   lastCheckedAt?: number
+  /** v17+: 最後にこのブクマ(スカラーフィールド・タグ配列・ソフト削除状態)を
+   *  変更した Unix epoch ms。端末間同期の LWW 判定に使う。v17 migration が
+   *  全既存レコードを Date.parse(savedAt) で埋める。読み取り側は `?? 0`。
+   *  受動的なシステム書き込み(リンク健全性チェック等)では bump しない
+   *  (計画書「updatedAt bump 方針」表を参照)。 */
+  updatedAt?: number
   /** v16+: present only on bookmarks tagged Private. When present,
    *  title/url/description/thumbnail/favicon/siteName are stored as empty
    *  strings and the real values live only here, encrypted under the
@@ -130,6 +136,13 @@ export interface TagRecord {
    *  singleton, not a DB constraint; see lib/private/vault-store.ts). Display
    *  name is freely renamable; this flag is what makes it the vault. */
   isPrivateVault?: boolean
+  /** v17+: ソフト削除の tombstone。端末間同期で「端末Aで削除したタグ」と
+   *  「端末Bでまだ作っていないタグ」を区別するため物理削除をやめる。
+   *  getAllTags は isDeleted を弾く(表示・フィルタ・quick-tag 全経路が
+   *  getAllTags 経由)。物理 purge は将来(30日超のみ)。 */
+  isDeleted?: boolean
+  /** v17+: ソフト削除した時刻(ISO 8601 — BookmarkRecord.deletedAt と同型)。 */
+  deletedAt?: string
 }
 
 /** Input for creating a new tag (id and createdAt are auto-generated) */
@@ -168,6 +181,10 @@ export interface CardRecord {
   isUserResized?: boolean
   /** Cached aspect ratio estimation */
   aspectRatio?: number
+  /** v17+: 最後にこのカード(配置・手動リサイズ)を変更した Unix epoch ms。
+   *  配置は「装飾」なので migration での backfill はしない — 読み取りは `?? 0`。
+   *  updateCard とカード生成時に常にセットされる。 */
+  updatedAt?: number
 }
 
 export interface UserPreferencesRecord {
@@ -222,7 +239,7 @@ export interface SettingsRecord {
 /** Input for creating a new bookmark (id and savedAt are auto-generated) */
 export type BookmarkInput = Omit<
   BookmarkRecord,
-  'id' | 'savedAt' | 'ogpStatus' | 'tags' | 'displayMode' | 'folderId'
+  'id' | 'savedAt' | 'ogpStatus' | 'tags' | 'displayMode' | 'folderId' | 'updatedAt'
 > & {
   /** Mood id array. Default [] (Inbox). */
   tags?: string[]
@@ -583,14 +600,23 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
         }
       }
 
+      // Tail of the v9/v10 bookmark sweeps within this versionchange
+      // transaction (it does NOT track the v4/v6/v8 sweeps). Later blocks that
+      // also open a cursor on `bookmarks` (v17 updatedAt backfill) MUST
+      // serialize behind this — two concurrent cursors on the same store
+      // clobber each other's writes with their own stale `{ ...rec }` copy.
+      // Starts as the v9 rewrite promise; the v10 block below extends it with
+      // its own sweep.
+      let bookmarkMutationChain: Promise<void> = v9BookmarkRewritePromise
+
       // ── v9 → v10: seed cardWidth from sizePreset ──
       // Chain on v9BookmarkRewritePromise to avoid a cursor race when upgrading
       // from v8 directly to v10: the v9 rewrite must finish writing tags before
       // the v10 cursor reads and re-writes each record.
       if (oldVersion < 10) {
-        void v9BookmarkRewritePromise.then(() => {
+        bookmarkMutationChain = v9BookmarkRewritePromise.then(() => {
           const bookmarkStore = transaction.objectStore('bookmarks')
-          void bookmarkStore.openCursor().then(function seedCardWidth(
+          return bookmarkStore.openCursor().then(function seedCardWidth(
             cursor: Awaited<ReturnType<typeof bookmarkStore.openCursor>>,
           ): Promise<void> | undefined {
             if (!cursor) return
@@ -702,30 +728,66 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
       // side import; upgrade callbacks should stay self-contained per
       // existing convention). Idempotent on already-migrated object values.
       if (oldVersion < 16) {
-        // Defensive: settings store is created in v3, so production always
-        // has it. But migration tests sometimes spin up at intermediate
-        // versions without seeding the full schema — skip cleanly in that
-        // case rather than aborting the whole upgrade transaction.
-        if (!db.objectStoreNames.contains('settings')) return
-        const settingsStore = transaction.objectStore('settings')
-        void settingsStore.get('board-config').then((rec) => {
-          if (!rec) return
-          const r = rec as { key: string; config?: Record<string, unknown> }
-          const legacy = r.config?.activeFilter
-          let migrated: unknown = { kind: 'all' }
-          if (legacy && typeof legacy === 'object' && 'kind' in legacy) {
-            migrated = legacy
-          } else if (typeof legacy === 'string') {
-            if (legacy === 'all' || legacy === 'inbox' || legacy === 'archive' || legacy === 'dead') {
-              migrated = { kind: legacy }
-            } else if (legacy.startsWith('mood:')) {
-              const id = legacy.slice(5)
-              if (id.length > 0) migrated = { kind: 'tags', tagIds: [id], mode: 'and' }
+        // Defensive: the settings store is created in the v0→v1 initial
+        // schema, so production always has it. But migration tests sometimes
+        // spin up at intermediate versions without seeding the full schema —
+        // skip THIS block cleanly in that case. Block-scoped guard, NOT an
+        // early `return` from the whole upgrade callback: later migration
+        // blocks (v17+) must still run.
+        if (db.objectStoreNames.contains('settings')) {
+          const settingsStore = transaction.objectStore('settings')
+          void settingsStore.get('board-config').then((rec) => {
+            if (!rec) return
+            const r = rec as { key: string; config?: Record<string, unknown> }
+            const legacy = r.config?.activeFilter
+            let migrated: unknown = { kind: 'all' }
+            if (legacy && typeof legacy === 'object' && 'kind' in legacy) {
+              migrated = legacy
+            } else if (typeof legacy === 'string') {
+              if (legacy === 'all' || legacy === 'inbox' || legacy === 'archive' || legacy === 'dead') {
+                migrated = { kind: legacy }
+              } else if (legacy.startsWith('mood:')) {
+                const id = legacy.slice(5)
+                if (id.length > 0) migrated = { kind: 'tags', tagIds: [id], mode: 'and' }
+              }
             }
-          }
-          const nextConfig = { ...(r.config ?? {}), activeFilter: migrated }
-          void settingsStore.put({ key: r.key, config: nextConfig } as never)
-        })
+            const nextConfig = { ...(r.config ?? {}), activeFilter: migrated }
+            void settingsStore.put({ key: r.key, config: nextConfig } as never)
+          })
+        }
+      }
+
+      // ── v16 → v17: seed BookmarkRecord.updatedAt (Unix epoch ms) on every
+      //    existing bookmark from Date.parse(savedAt). New writes set it via
+      //    touchBookmark(); this backfill makes it observable on legacy rows
+      //    so the device-sync merge can do LWW without a null branch.
+      //    tags/cards get updatedAt lazily (read as `?? 0`), so no sweep for them.
+      //    Chained on bookmarkMutationChain so a v8/v9 → v17 single hop runs
+      //    this sweep AFTER the v9 rewrite / v10 cardWidth sweep finish — a
+      //    second concurrent cursor on `bookmarks` would clobber their writes.
+      //    Unparseable savedAt → updatedAt: 0 (a corrupt/legacy row must LOSE
+      //    at merge, never win by getting a fresh Date.now() stamp).
+      if (oldVersion < 17) {
+        if (db.objectStoreNames.contains('bookmarks')) {
+          void bookmarkMutationChain.then(() => {
+            const bookmarkStore = transaction.objectStore('bookmarks')
+            return bookmarkStore.openCursor().then(function seedUpdatedAt(
+              cursor: Awaited<ReturnType<typeof bookmarkStore.openCursor>>,
+            ): Promise<void> | undefined {
+              if (!cursor) return
+              const rec = cursor.value as BookmarkRecord
+              if (typeof rec.updatedAt !== 'number') {
+                const parsed = Date.parse(rec.savedAt)
+                const next: BookmarkRecord = {
+                  ...rec,
+                  updatedAt: Number.isNaN(parsed) ? 0 : parsed,
+                }
+                void cursor.update(next)
+              }
+              return cursor.continue().then(seedUpdatedAt)
+            })
+          })
+        }
       }
     },
   })
@@ -741,6 +803,17 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
 // ---------------------------------------------------------------------------
 // Bookmark CRUD
 // ---------------------------------------------------------------------------
+
+/**
+ * Pure stamp: return a copy of the bookmark with `updatedAt` set to now.
+ * NOT a DB write — wrap the record you're about to `put` with this so the
+ * device-sync merge can do last-write-wins. Apply only on user-initiated or
+ * content-adding writes; passive system writes (link-health revalidation,
+ * migrations, startup repairs) must NOT bump — see the plan's bump policy.
+ */
+export function touchBookmark(rec: BookmarkRecord): BookmarkRecord {
+  return { ...rec, updatedAt: Date.now() }
+}
 
 /**
  * Compute the next safe orderIndex for a new bookmark.
@@ -896,7 +969,7 @@ export async function resortByNewestFirst(
     const rec = byId.get(id)
     if (!rec) continue
     if ((rec.orderIndex ?? -1) !== orderIndex) {
-      await store.put({ ...rec, orderIndex })
+      await store.put(touchBookmark({ ...rec, orderIndex }))
       updated++
     }
   }
@@ -928,6 +1001,7 @@ function buildBookmarkAndCard(
     siteName: input.siteName,
     type: input.type,
     savedAt: new Date().toISOString(),
+    updatedAt: Date.now(),
     ogpStatus: input.ogpStatus ?? 'fetched',
     orderIndex,
     sizePreset: 'S',
@@ -952,6 +1026,7 @@ function buildBookmarkAndCard(
     isManuallyPlaced: false,
     width: dimensions.width,
     height: dimensions.height,
+    updatedAt: Date.now(),
   }
   return { bookmark, card }
 }
@@ -1108,7 +1183,7 @@ export async function updateCard(
   if (!existing) {
     throw new Error(`Card not found: ${cardId}`)
   }
-  const updated: CardRecord = { ...existing, ...updates }
+  const updated: CardRecord = { ...existing, ...updates, updatedAt: Date.now() }
   await db.put('cards', updated)
 }
 
@@ -1190,7 +1265,7 @@ export async function updateBookmarkOgp(
   // (this function currently has no callers, but a future OGP-refetch
   // feature must not reopen the leak those were fixed for).
   if (existing.encryptedPayload) return
-  const updated: BookmarkRecord = { ...existing, ...ogpData }
+  const updated: BookmarkRecord = touchBookmark({ ...existing, ...ogpData })
   await db.put('bookmarks', updated)
 }
 
@@ -1216,11 +1291,11 @@ export async function persistCustomCardWidth(
   const safeWidth = Number.isFinite(width)
     ? Math.max(MIN_CARD_WIDTH, width)
     : DEFAULT_CARD_WIDTH
-  await db.put('bookmarks', {
+  await db.put('bookmarks', touchBookmark({
     ...existing,
     cardWidth: safeWidth,
     customCardWidth: true,
-  })
+  }))
 }
 
 /**
@@ -1255,7 +1330,7 @@ export async function persistPhotos(
     return
   }
 
-  const updated: BookmarkRecord = { ...existing, photos: next }
+  const updated: BookmarkRecord = touchBookmark({ ...existing, photos: next })
   await db.put('bookmarks', updated)
 }
 
@@ -1296,7 +1371,7 @@ export async function persistMediaSlots(
     return
   }
 
-  const updated: BookmarkRecord = { ...existing, mediaSlots: next }
+  const updated: BookmarkRecord = touchBookmark({ ...existing, mediaSlots: next })
   await db.put('bookmarks', updated)
 }
 
@@ -1313,7 +1388,7 @@ export async function clearCustomCardWidth(
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
   if (existing.customCardWidth !== true) return
-  await db.put('bookmarks', { ...existing, customCardWidth: false })
+  await db.put('bookmarks', touchBookmark({ ...existing, customCardWidth: false }))
 }
 
 /**
@@ -1332,7 +1407,7 @@ export async function clearAllCustomCardWidths(
   while (cursor) {
     const rec = cursor.value
     if (rec.customCardWidth === true) {
-      await cursor.update({ ...rec, customCardWidth: false })
+      await cursor.update(touchBookmark({ ...rec, customCardWidth: false }))
       cleared.push(rec.id)
     }
     cursor = await cursor.continue()
@@ -1353,7 +1428,7 @@ export async function updateBookmarkOrderIndex(
 ): Promise<void> {
   const existing = await db.get('bookmarks', bookmarkId)
   if (!existing) return
-  await db.put('bookmarks', { ...existing, orderIndex })
+  await db.put('bookmarks', touchBookmark({ ...existing, orderIndex }))
 }
 
 /**
@@ -1376,7 +1451,7 @@ export async function updateBookmarkOrderBatch(
     const id = orderedBookmarkIds[i]
     const existing = await store.get(id)
     if (!existing) continue
-    await store.put({ ...existing, orderIndex: n - 1 - i })
+    await store.put(touchBookmark({ ...existing, orderIndex: n - 1 - i }))
   }
   await tx.done
 }
@@ -1458,6 +1533,7 @@ export async function addBookmarkBatch(
         siteName: input.siteName,
         type: input.type,
         savedAt: new Date().toISOString(),
+        updatedAt: Date.now(),
         ogpStatus: input.ogpStatus ?? 'fetched',
         orderIndex: nextOrder++,
         sizePreset: 'S',
@@ -1483,6 +1559,7 @@ export async function addBookmarkBatch(
         isManuallyPlaced: false,
         width: dimensions.width,
         height: dimensions.height,
+        updatedAt: Date.now(),
       }
       await cardStore.put(card)
       results.push(bookmark)

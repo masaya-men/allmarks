@@ -6,7 +6,7 @@ import { seedDb, firstRunSuppressors, DB_NAME } from './helpers/seed-db'
 // app's DB, so there's no upgrade/creation race to lose (same reasoning as
 // seed-db.ts's own openCurrent()). This used to be a version-pinned
 // indexedDB.open(dbName, 9), which would VersionError now that the app is on
-// DB_VERSION = 16 (lib/constants.ts).
+// DB_VERSION = 17 (lib/constants.ts).
 async function readAllBookmarks(page: Page): Promise<Array<{ id: string; tags: string[] }>> {
   return page.evaluate(
     async (dbName) =>

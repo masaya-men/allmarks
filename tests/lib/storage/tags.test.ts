@@ -90,10 +90,12 @@ describe('tags storage', () => {
     expect(list[0].updatedAt).toBeGreaterThan(t.createdAt)
   })
 
-  it('deleteTag removes the tag', async () => {
+  it('deleteTag tombstones the tag (soft delete) and hides it from getAllTags', async () => {
     const t = await addTag(db, { name: 'x', color: '#000', order: 0 })
     await deleteTag(db, t.id)
     expect(await getAllTags(db)).toEqual([])
+    const raw = await db.get('tags', t.id)
+    expect(raw?.isDeleted).toBe(true)
   })
 
   it('reorderTags assigns new order from id sequence', async () => {

@@ -19,6 +19,7 @@ import {
   persistPhotos as persistPhotosDb,
   persistMediaSlots as persistMediaSlotsDb,
   updateBookmarkHealth,
+  touchBookmark,
   type BookmarkRecord,
   type CardRecord,
 } from './indexeddb'
@@ -437,7 +438,7 @@ export function useBoardData(privateTagId: string | null = null): {
       if (!db || !bookmarkId) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
-      await db.put('bookmarks', { ...existing, isRead })
+      await db.put('bookmarks', touchBookmark({ ...existing, isRead }))
       // Mirror the write into in-memory state so the board reflects the new read
       // state without a reload — matches persistThumbnail / persistSoftDelete
       // (rank26). A soft-deleted bookmark lives in deletedItems (not items), so
@@ -481,7 +482,7 @@ export function useBoardData(privateTagId: string | null = null): {
       // call back into persistThumbnail. Cheap O(1) check, defense in depth.
       const normalized = thumbnail || undefined
       if ((existing.thumbnail ?? undefined) === normalized) return
-      await db.put('bookmarks', { ...existing, thumbnail })
+      await db.put('bookmarks', touchBookmark({ ...existing, thumbnail }))
       setItems((prev) =>
         prev.map((it) =>
           it.bookmarkId === bookmarkId
@@ -499,11 +500,11 @@ export function useBoardData(privateTagId: string | null = null): {
       if (!db || !bookmarkId) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
-      const updated: BookmarkRecord = {
+      const updated: BookmarkRecord = touchBookmark({
         ...existing,
         isDeleted,
         deletedAt: isDeleted ? new Date().toISOString() : undefined,
-      }
+      })
       await db.put('bookmarks', updated)
       // Get the card record once for the toItem reconstruction in both
       // branches (used by deletedItems on delete, items on restore).
@@ -577,7 +578,7 @@ export function useBoardData(privateTagId: string | null = null): {
       // this guard each "true" call would invalidate items reference and
       // re-trigger every effect that depends on it.
       if ((existing.hasVideo ?? false) === hasVideo) return
-      await db.put('bookmarks', { ...existing, hasVideo })
+      await db.put('bookmarks', touchBookmark({ ...existing, hasVideo }))
       setItems((prev) =>
         prev.map((it) =>
           it.bookmarkId === bookmarkId ? { ...it, hasVideo } : it,
@@ -596,7 +597,7 @@ export function useBoardData(privateTagId: string | null = null): {
       if (!existing) return
       if (existing.encryptedPayload) return
       if (existing.title === title) return
-      await db.put('bookmarks', { ...existing, title })
+      await db.put('bookmarks', touchBookmark({ ...existing, title }))
       setItems((prev) =>
         prev.map((it) =>
           it.bookmarkId === bookmarkId ? { ...it, title } : it,
@@ -650,7 +651,7 @@ export function useBoardData(privateTagId: string | null = null): {
       if (!db || !bookmarkId) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
-      await db.put('bookmarks', { ...existing, tags: [...tags] })
+      await db.put('bookmarks', touchBookmark({ ...existing, tags: [...tags] }))
       setItems((prev) => prev.map((it) => (it.bookmarkId === bookmarkId ? { ...it, tags: [...tags] } : it)))
     },
     [],
@@ -662,7 +663,7 @@ export function useBoardData(privateTagId: string | null = null): {
       if (!db || !bookmarkId) return
       const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
       if (!existing) return
-      await db.put('bookmarks', { ...existing, displayMode })
+      await db.put('bookmarks', touchBookmark({ ...existing, displayMode }))
       setItems((prev) =>
         prev.map((it) => (it.bookmarkId === bookmarkId ? { ...it, displayMode } : it)),
       )
