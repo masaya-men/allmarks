@@ -59,7 +59,7 @@ spec §4.1 の「refresh token 管理」は、束2 では「渡された refresh
 | ファイル | 責務 | 新規/変更 |
 |---|---|---|
 | `lib/sync/gauth-types.ts` | Function の入力 zod スキーマ・Google トークン応答 zod スキーマ・共有型。Function と `auth.ts` の両方が import する唯一のインターフェース点 | 新規 |
-| `functions/api/gauth/_shared.ts` | `readCappedText`（body 上限読み）と `jsonResponse` ヘルパー。`_` 始まりなので route にならない | 新規 |
+| `functions/api/gauth/_shared.ts` | `readCappedText`（body 上限読み）/ `jsonResponse` / `postToGoogleToken`（Google への form POST）/ `relayGoogleTokenResponse`（status → Response 変換）。token と refresh の共通機構。`_` 始まりなので route にならない | 新規 |
 | `functions/api/gauth/token.ts` | `POST /api/gauth/token` — `{code, redirectUri}` → Google に `client_secret` を足して `grant_type=authorization_code` 交換 → Google の JSON をそのまま返す | 新規 |
 | `functions/api/gauth/refresh.ts` | `POST /api/gauth/refresh` — `{refreshToken}` → `grant_type=refresh_token` 交換 → Google の JSON をそのまま返す | 新規 |
 | `lib/sync/google-identity.ts` | GIS スクリプト（`accounts.google.com/gsi/client`）の 1 回ロード。`window.google` を resolve | 新規 |
@@ -264,7 +264,11 @@ EOF
 **Interfaces:**
 - Consumes: `parseTokenExchangeRequest` from `../../../lib/sync/gauth-types`
 - Produces:
-  - `functions/api/gauth/_shared.ts`: `readCappedText(request: Request, maxBytes: number): Promise<string | null>`（超過で `null`）、`jsonResponse(status: number, body: unknown): Response`（`Content-Type: application/json` + `Cache-Control: no-store`）
+  - `functions/api/gauth/_shared.ts`（token / refresh 両方が使う）:
+    - `readCappedText(request: Request, maxBytes: number): Promise<string | null>`（超過で `null`）
+    - `jsonResponse(status: number, body: unknown): Response`（`Content-Type: application/json` + `Cache-Control: no-store`）
+    - `postToGoogleToken(params: Readonly<Record<string, string>>): Promise<{ status: number; text: string }>`（`oauth2.googleapis.com/token` に form POST・fetch 例外は `status: 0`）
+    - `relayGoogleTokenResponse(status: number, text: string): Response`（2xx → 200 通過 / 0・5xx → 502 / その他 → 400）
   - `functions/api/gauth/token.ts`: `onRequestPost(ctx: { request: Request; env: { GOOGLE_OAUTH_CLIENT_ID: string; GOOGLE_OAUTH_CLIENT_SECRET: string } }): Promise<Response>`
   - 契約: 200 のとき body は Google のトークン JSON をそのまま。エラーは `{ error: string }` JSON（400 = 入力不正 / google_rejected の 4xx、413 = body 過大、500 = env 未設定、502 = Google 到達不可 or Google 5xx）
 
@@ -397,7 +401,11 @@ Expected: FAIL（`./token` が無い）
 
 ```ts
 // functions/api/gauth/_shared.ts
-// gauth の 2 route 共通ヘルパー。`_` 始まりなので Pages は route にしない。
+// gauth の 2 route (token / refresh) 共通ヘルパー。`_` 始まりなので Pages は
+// route にしない。ここに置くのは「両 route で完全に同じ振る舞いをする部品」だけ。
+
+const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
+const UPSTREAM_TIMEOUT_MS = 10_000
 
 /**
  * request body を最大 maxBytes まで読む。超過したら残りをキャンセルして null。
@@ -432,6 +440,46 @@ export function jsonResponse(status: number, body: unknown): Response {
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   })
 }
+
+/**
+ * Google のトークンエンドポイントに form-urlencoded で POST する。
+ * fetch 自体が投げたら `status: 0` を返す (= 到達不可)。呼び出し側が status で
+ * 200 / 4xx / 5xx / 0 を分岐する。トークンの JSON は解釈しない (通過するだけ)。
+ */
+export async function postToGoogleToken(
+  params: Readonly<Record<string, string>>,
+): Promise<{ status: number; text: string }> {
+  try {
+    const res = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString(),
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    })
+    return { status: res.status, text: await res.text() }
+  } catch {
+    return { status: 0, text: '' }
+  }
+}
+
+/**
+ * Google の生 status を、この束の Function が返すべき Response に写す。
+ * - 2xx: Google のトークン JSON をそのまま 200 で通過 (no-store)
+ * - 0  : 到達不可 → 502
+ * - 5xx: Google 障害 → 502
+ * - それ以外 (4xx): クライアント起因 (invalid_grant 等) → 400
+ * CF が 5xx を HTML に差し替えても、auth.ts は「非 2xx = 失敗」で扱うので問題ない。
+ */
+export function relayGoogleTokenResponse(status: number, text: string): Response {
+  if (status >= 200 && status < 300) {
+    return new Response(text, {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    })
+  }
+  if (status === 0 || status >= 500) return jsonResponse(502, { error: 'upstream_unreachable' })
+  return jsonResponse(400, { error: 'google_rejected' })
+}
 ```
 
 - [ ] **Step 4: `token.ts` を実装**
@@ -450,7 +498,7 @@ export function jsonResponse(status: number, body: unknown): Response {
 // PKCE は使わない ("ウェブアプリケーション" 型 = client_secret 認証)。詳細は
 // docs/superpowers/plans/2026-09-03-device-sync-bundle-2-auth.md「設計上の判断」。
 import { parseTokenExchangeRequest } from '../../../lib/sync/gauth-types'
-import { readCappedText, jsonResponse } from './_shared'
+import { readCappedText, jsonResponse, postToGoogleToken, relayGoogleTokenResponse } from './_shared'
 
 interface Env {
   GOOGLE_OAUTH_CLIENT_ID: string
@@ -461,10 +509,8 @@ interface PagesContext {
   env: Env
 }
 
-const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 /** code (~2KB 未満) + redirectUri。余裕を見て 8KB。 */
 const MAX_BODY_BYTES = 8 * 1024
-const UPSTREAM_TIMEOUT_MS = 10_000
 
 export async function onRequestPost(ctx: PagesContext): Promise<Response> {
   if (!ctx.env.GOOGLE_OAUTH_CLIENT_ID || !ctx.env.GOOGLE_OAUTH_CLIENT_SECRET) {
@@ -487,38 +533,14 @@ export async function onRequestPost(ctx: PagesContext): Promise<Response> {
   const parsed = parseTokenExchangeRequest(body)
   if (!parsed.ok) return jsonResponse(400, { error: 'invalid_request' })
 
-  const form = new URLSearchParams({
+  const { status, text } = await postToGoogleToken({
     code: parsed.value.code,
     client_id: ctx.env.GOOGLE_OAUTH_CLIENT_ID,
     client_secret: ctx.env.GOOGLE_OAUTH_CLIENT_SECRET,
     redirect_uri: parsed.value.redirectUri,
     grant_type: 'authorization_code',
   })
-
-  let googleRes: Response
-  try {
-    googleRes = await fetch(GOOGLE_TOKEN_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form.toString(),
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    })
-  } catch {
-    return jsonResponse(502, { error: 'upstream_unreachable' })
-  }
-
-  const text = await googleRes.text()
-  if (!googleRes.ok) {
-    // Google の 4xx (invalid_grant 等) はクライアント起因 → 400 に丸める。
-    // Google の 5xx は 502 (CF が HTML に差し替えても auth.ts は非 2xx を失敗扱い)。
-    return jsonResponse(googleRes.status >= 500 ? 502 : 400, { error: 'google_rejected' })
-  }
-
-  // Google のトークン JSON をそのまま返す (中身は user 自身のトークン・運営は保存しない)。
-  return new Response(text, {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-  })
+  return relayGoogleTokenResponse(status, text)
 }
 ```
 
@@ -542,7 +564,7 @@ Expected: PASS（9）
 
 - [ ] **Step 7: ログ・保存が無いことを確認**
 
-Run: `grep -n "console\.\|env\.SHARE\|KVNamespace\|R2Bucket" functions/api/gauth/`
+Run: `grep -rn "console\.\|env\.SHARE\|KVNamespace\|R2Bucket" functions/api/gauth/`
 Expected: 出力なし
 
 - [ ] **Step 8: tsc**
@@ -575,7 +597,7 @@ EOF
 - Test: `functions/api/gauth/refresh.test.ts`
 
 **Interfaces:**
-- Consumes: `parseTokenRefreshRequest` from `../../../lib/sync/gauth-types`、`readCappedText` / `jsonResponse` from `./_shared`
+- Consumes: `parseTokenRefreshRequest` from `../../../lib/sync/gauth-types`、`readCappedText` / `jsonResponse` / `postToGoogleToken` / `relayGoogleTokenResponse` from `./_shared`（Task 2 で作成済み）
 - Produces: `onRequestPost(ctx: { request: Request; env: { GOOGLE_OAUTH_CLIENT_ID: string; GOOGLE_OAUTH_CLIENT_SECRET: string } }): Promise<Response>`。契約は token.ts と同じ（200 = Google の JSON そのまま・`refresh_token` は通常含まれない / エラーは `{ error }` JSON）
 
 - [ ] **Step 1: 失敗するテストを書く**
@@ -675,7 +697,7 @@ Expected: FAIL
 //   やること: client_secret を足して grant_type=refresh_token で交換 → JSON をそのまま返す。
 //   保存しない・ログを出さない (stateless)。設計 §4.2。
 import { parseTokenRefreshRequest } from '../../../lib/sync/gauth-types'
-import { readCappedText, jsonResponse } from './_shared'
+import { readCappedText, jsonResponse, postToGoogleToken, relayGoogleTokenResponse } from './_shared'
 
 interface Env {
   GOOGLE_OAUTH_CLIENT_ID: string
@@ -686,9 +708,7 @@ interface PagesContext {
   env: Env
 }
 
-const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 const MAX_BODY_BYTES = 8 * 1024
-const UPSTREAM_TIMEOUT_MS = 10_000
 
 export async function onRequestPost(ctx: PagesContext): Promise<Response> {
   if (!ctx.env.GOOGLE_OAUTH_CLIENT_ID || !ctx.env.GOOGLE_OAUTH_CLIENT_SECRET) {
@@ -711,34 +731,13 @@ export async function onRequestPost(ctx: PagesContext): Promise<Response> {
   const parsed = parseTokenRefreshRequest(body)
   if (!parsed.ok) return jsonResponse(400, { error: 'invalid_request' })
 
-  const form = new URLSearchParams({
+  const { status, text } = await postToGoogleToken({
     refresh_token: parsed.value.refreshToken,
     client_id: ctx.env.GOOGLE_OAUTH_CLIENT_ID,
     client_secret: ctx.env.GOOGLE_OAUTH_CLIENT_SECRET,
     grant_type: 'refresh_token',
   })
-
-  let googleRes: Response
-  try {
-    googleRes = await fetch(GOOGLE_TOKEN_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form.toString(),
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    })
-  } catch {
-    return jsonResponse(502, { error: 'upstream_unreachable' })
-  }
-
-  const text = await googleRes.text()
-  if (!googleRes.ok) {
-    return jsonResponse(googleRes.status >= 500 ? 502 : 400, { error: 'google_rejected' })
-  }
-
-  return new Response(text, {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-  })
+  return relayGoogleTokenResponse(status, text)
 }
 ```
 
@@ -1429,6 +1428,7 @@ cp .dev.vars.example .dev.vars
 - `GoogleTokenResponse`（snake_case: `access_token` 等）は Task 1 定義、`auth.ts` の `toSyncTokens` で camelCase の `SyncTokens` に写す — 変換点は 1 箇所のみ。
 - `GoogleCodeClientConfig` / `GoogleCodeResponse` / `GoogleGsiError` を Task 4 で定義、Task 5 の `requestAuthCode` と両テストが import — 名前一致。
 - Function の `ctx.env` 型（`GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`）は Task 2/3 で同一の `interface Env` — 一致。
+- `_shared.ts` の `postToGoogleToken` / `relayGoogleTokenResponse` を Task 2 で定義、Task 3 が import — token.ts と refresh.ts はこの 2 関数を共有し、違いは渡す params（`grant_type` と `redirect_uri` の有無）だけ。**verbatim duplication は無い**（レビュー rubric 対策・preflight ruling 済み）。
 
 ---
 
