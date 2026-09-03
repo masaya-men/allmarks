@@ -1,0 +1,6 @@
+# ローカルで `npx wrangler pages dev out --port 3000` を使うとき用。
+# このファイルを `.dev.vars` にコピーして実値を入れる (.dev.vars は git 管理外)。
+# 実値は Google Cloud Console の OAuth 2.0 クライアント (ウェブアプリケーション型)。
+# 取得手順 = docs/superpowers/plans/2026-09-03-device-sync-bundle-2-auth.md Task 6
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
