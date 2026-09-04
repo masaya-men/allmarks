@@ -1,38 +1,36 @@
-# 次セッションのゴール — 端末間同期 束2(極小 Function + 認証 + Google Cloud 設定)
+# 次セッションのゴール — 端末間同期 束3(Drive 読み書き + 足し算マージ)
 
-## ★s209 の到達点(束1 = 下ごしらえ・完了・本番反映済み)
-- 設計書(s208)を `superpowers:writing-plans` で実装計画に落とし(`docs/superpowers/plans/2026-09-02-device-sync-bundle-1-groundwork.md`・tracked)、`subagent-driven-development` で束1を実装。7タスク・各2段レビュー・opus 全ブランチレビュー = Ready to merge。
-- 出荷: `BookmarkRecord.updatedAt?` + **v16→v17 migration**(`Date.parse(savedAt)` backfill・壊れた savedAt は `0`)/ `CardRecord.updatedAt?`(migration なし・`?? 0`)/ `touchBookmark(rec)` 純関数を全ユーザー起点書き込みに(受動書き込み=`updateBookmarkHealth`/`repairOrderIndexIfNeeded`/migration は bump しない)/ タグのソフト削除(`isDeleted`/`deletedAt` 墓標・`getAllTags` が弾く・ブクマ scrub は従来通り)/ `lib/sync/device-id.ts`(呼び出し元ゼロ)。
-- **同期ロジックはゼロ。同期未接続の挙動は完全不変。** master マージ(`c5c70c98`)・`allmarks.app` デプロイ・ユーザー実機で「いつも通り」確認済(本番545件で v17 migration 通過)。
-- tsc 0 / フルスイート 2581/2581 / ビルド OK。`feat/device-sync` ブランチは削除済(次の束は新ブランチ)。
+## ★s210 の到達点(束2 = ログイン受け渡し・完了・本番反映済み)
+- 計画書 `docs/superpowers/plans/2026-09-03-device-sync-bundle-2-auth.md`(tracked)。subagent-driven で5コードタスク・各2段レビュー・opus 全ブランチレビュー・修正1波・再レビュー clean。master マージ `c63d1724`、`allmarks.app` デプロイ済。
+- 出荷: `functions/api/gauth/token.ts`/`refresh.ts`(stateless OAuth 中継・無保存無ログ)＋ `_shared.ts`(`readCappedText`/`jsonResponse`/`postToGoogleToken`/`relayGoogleTokenResponse`/`extractGoogleError`)/ `lib/sync/gauth-types.ts`(zod)/ `lib/sync/google-identity.ts`(GIS ローダ)/ `lib/sync/auth.ts`(`requestAuthCode`/`exchangeCode`/`refreshAccessToken`＋純関数 `computeExpiresAt`/`isAccessTokenExpired`・`SyncTokens{accessToken,expiresAt,scope,refreshToken?,idToken?}`・IDB 非依存)。
+- **同期ロジック・UI はゼロ配線 = 既存挙動は完全不変**(`auth.ts` の import 元が components/app/lib-board/lib-storage に 0 件)。
+- 本番実機確認済: `POST /api/gauth/token` に `{}` → 400 `invalid_request` / ダミー code → 400 `google_rejected:invalid_grant`(= CF シークレット読込 + Google 到達 + 中継の全チェーン生存)。
+- Google Cloud: プロジェクト `allmarks-sync`・OAuth 同意画面(External・**テスト中**)・非機密スコープ `drive.file`/`userinfo.email`/`userinfo.profile`・OAuth クライアント "AllMarks Web"。client_id → `.env.production` + CF env、client_secret → CF 暗号化シークレット + `.dev.vars`。JSON は `docs/private/secrets/`(git 管理外)。
+- tsc 0 / フルスイート **2642/2642** / ビルド OK。`channel.test.ts` の既存 flake も修正済(`vi.waitFor` 化)。
 
-## ★次セッション = 束2
+## ★次セッション = 束3(設計書 §14)
 
-### 0. 冒頭でやる(束1のレビュー積み残し・小)
-設計書 `docs/private/2026-09-02-device-sync-design.md` **§15「束2 の頭でまとめて片付けるマイナー」**を消化:
-- `lib/storage/tags.ts` の墓標リテラル重複 → `tombstone(tag)` ヘルパー抽出
-- 古いコメント修正: `lib/tagger/quick-tag-apply.ts:38-40`、`lib/storage/use-tags.ts:43`(「UNFILTERED」記述)
-- テスト補強: 純 `touchBookmark` の入力非変更 / `removePrivateTag` の bump / `apply-tag-change.test.ts` のアサート強化 / `clearCustomCardWidth` 系の専用ケース
-- 見た目: `CardRecord.updatedAt` のコメントブロック位置 / `idb-v10-migration.test.ts:101` のタイトル
-- (任意)`tests/lib/channel.test.ts` のフルスイート flake 調査
+### 0. ★ユーザー作業(束3 実装前・1回)— Google Drive API を有効化
+- `console.cloud.google.com` → プロジェクト `AllMarks Sync` を選択 → 検索バーで「Google Drive API」→「**有効にする**」。これをしないと `drive-adapter` の Drive REST 呼び出しが弾かれる。所要1分。**費用は発生しない**(無料枠・カード未登録)。
 
-### 1. 束2 の計画書を writing-plans で作る
-分割は設計書 §14。束2 = 極小 Function `functions/api/gauth/*`(token 交換 + refresh・**何も保存しない**)＋ `lib/sync/auth.ts`(GIS コードモデル `initCodeClient` + refresh token 管理)＋ `_routes.json` 追加。設計 §4.2 が下敷き。
+### 1. 束3 の計画書を writing-plans で作る
+- `lib/sync/drive-adapter.ts` — Google Drive REST v3 の read/write/list(fetch のみ・認証は**注入**＝`auth.ts` の `SyncTokens.accessToken` を受け取る。`postToGoogleToken` と違い secret は使わない)。可視フォルダ `AllMarks/` の探索(名前 + `appProperties`)、各 `.json` の GET、`files.get(fileId, fields=headRevisionId)` の楽観ロック用取得、multipart PATCH。
+- `lib/sync/merge.ts` — **純関数・IDB 非依存・テストの主戦場**。store 別の足し算マージ(設計 §6)。bookmarks/tags/cards/board-config/vault。
+- 設計 §5(Drive 上のファイル構成)・§6(マージ規則)が下敷き。
 
-### 2. ★ユーザーに Google Cloud の初期設定を1回お願いする
-設計 §4.3 が下敷き。**束2 の計画書に、画面ステップで手順を書く**:
-- 新規プロジェクト作成 / OAuth 同意画面(External・本番・スコープ `drive.file` `openid` `email` `profile`)/ OAuth 2.0 クライアントID = ウェブアプリケーション型(`client_secret` 発行)/ 承認済み JS 生成元 `http://localhost:3000` + `https://allmarks.app` / リダイレクト URI `https://allmarks.app`(+ローカル)
-- `client_id` → `.env.production` 等 / `client_secret` → Cloudflare Pages のシークレット + `.dev.vars`
+### 2. 束3 の実装(subagent-driven)
+- テスト厚め: 片側のみ追加 / 両側で別ブクマ追加(3+2=5) / 同一ブクマ scalar 衝突(新しい方) / tags 衝突(集合和) / トゥームストーン vs 編集(時刻境界) / 復元がトゥームストーンに勝つ / **Private ブクマ(`encryptedPayload`)を中身を見ず id 単位でマージ** / 決定性(順序非依存)。
+- `drive-adapter` は fetch モックで単体テスト。
+- deploy 前ゲート: `npx tsc --noEmit && npx vitest run && rtk pnpm build`。
 
-### 3. 束2 の実装(subagent-driven)
-- `functions/api/gauth/token.ts` / `refresh.ts`(stateless・ログなし・zod で入力検証)
-- `lib/sync/auth.ts` — 純関数中心・fetch モックで単体テスト
-- deploy 前ゲート: `rtk tsc && npx vitest run && rtk pnpm build`
+## ★束3 の必須制約(設計書 §15・忘れると手戻り)
+- **`merge.ts` は `updatedAt` を必ず `typeof x === 'number' ? x : 0` で読む**(v17前バックアップ復元で `updatedAt` 無し行が残る・migration 再実行不可・生の値の数値比較は `NaN`)。代替=`importAllStores` に3行 backfill。**どちらか明示的に選ぶ**。
+- 並び替え(`updateBookmarkOrderBatch`/`resortByNewestFirst`)とツイートメディア後追い取得は `updatedAt` を bump する。「device B が板を開いただけ」が「device A のタイトル編集」に LWW で勝ちうる。§6.5 衝突退避の文脈で扱う。
+- `emptyTrash`/`deleteBookmark` はブクマを**墓標なしで物理削除** → 足し算マージだとクラウドから復活する。設計 §6 が「EMPTY TRASH は端末ローカル」を実際にカバーしているか、束4着手前に確認。
 
-## 束3 以降への必須制約(設計書 §15・忘れると手戻り)
-- **束3 の `merge.ts` は `updatedAt` を必ず `typeof x === 'number' ? x : 0` で読む**(v17前バックアップ復元で `updatedAt` 無し行が残る・migration 再実行不可・生の値の数値比較は `NaN`)。代替=`importAllStores` に3行 backfill。どちらか明示的に選ぶ。
-- 並び替え / ツイートメディア後追い取得が `updatedAt` を bump する点を §6.5 衝突退避の文脈で扱う。
-- `emptyTrash` / `deleteBookmark` はブクマを墓標なしで物理削除 → 束4着手前に設計 §6 が「EMPTY TRASH は端末ローカル」を実際にカバーしているか確認。
+## ★公開前タスク(束2 で発生・忘れない — 詳細は docs/TODO.md §公開前)
+- **PL-1**: OAuth 同意画面のメールを個人 Gmail → 専用アドレス(Google グループ)。memory `project_oauth_support_email_swap`。
+- **PL-2**: OAuth アプリを「テスト中」→「本番」公開 + Search Console で `allmarks.app` ドメイン検証(束4 の放置運転自動同期の前に必須。テスト中だと refresh token が7日で失効)。
 
 ## 恒久ルール(継承)
 - 視覚変更は `ui-design.md`「承認後」。`rtk` 前置・`--no-verify` 禁止・vitest/playwright は素の npx(`rtk npx` は既知の不具合)・Framer Motion 禁止。

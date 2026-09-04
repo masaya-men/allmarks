@@ -10124,3 +10124,71 @@ s208 の設計書を superpowers:writing-plans で実装計画に落とし(`docs
 
 **★次セッション = 束2(極小 Function `/api/gauth/*` + `lib/sync/auth.ts` + Google Cloud OAuth クライアント作成手順)。着手前に束2の計画書を writing-plans で作る。冒頭で設計書§15の「束2 の頭でまとめて片付けるマイナー」を消化。**
 
+
+---
+
+## セッション 210 (2026-09-03〜04) — 端末間同期 束2(ログイン受け渡し)実装・本番反映
+
+### スコープ
+
+設計書 §14 の束2 = ユーザー自身の Google に安全にログインさせ、放置運転の裏同期に必要な refresh token を取得する「ログイン受け渡し」層。**同期本体・UI は作らない**(束3〜6)。有料(応援プラン)の柱=端末間同期の一部。
+
+### 段取り
+
+1. **§15 minors 消化**(コミット `03962277`・司令塔直編集): `lib/storage/tags.ts` に `tombstone(tag)` ヘルパー抽出 / `quick-tag-apply.ts`・`use-tags.ts` の「UNFILTERED」古コメント修正 / `CardRecord.updatedAt` を `// v17 additions` 区分へ / `idb-v10-migration.test.ts` タイトルを「v8→current」に / テスト補強(`touchBookmark` 入力非変更・`persistMediaSlots`/`clearCustomCardWidth`/`clearAllCustomCardWidths`/`updateBookmarkOrderIndex` の positive bump・add/removePrivateTag の `updatedAt` を実値固定)。
+2. **計画書**(`writing-plans` / `docs/superpowers/plans/2026-09-03-device-sync-bundle-2-auth.md`・tracked): 6タスク。GIS コードモデルの挙動を Google 公式ドキュメントで確認(`initCodeClient` popup・callback で `code` 直取り・トークン交換の `redirect_uri` = 呼び出しページ origin・PKCE オプション無し)。
+3. **subagent-driven で5コードタスク**: 各 fresh subagent(haiku/sonnet)・各2段レビュー(sonnet)。
+   - Task1 `lib/sync/gauth-types.ts` — zod スキーマ3種 + parser(`e9f6d80b`)
+   - Task2 `functions/api/gauth/_shared.ts` + `token.ts` + `.dev.vars.example`(`feae4d06`)
+   - Task3 `functions/api/gauth/refresh.ts`(`4ba814e0`)
+   - Task4 `lib/sync/google-identity.ts` — GIS スクリプト1回ロード(`75c7dd72`)
+   - Task5 `lib/sync/auth.ts` + env 配線(`3278fe13`)
+4. **opus 全ブランチレビュー** → 0 Critical・4 Important。**修正1波**(`095d74e6`)+ 再レビュー clean。
+
+### 出荷物
+
+- **`functions/api/gauth/token.ts` / `refresh.ts`** — stateless OAuth 中継。認可コード / refresh token を受け取り、`client_secret` を足して `oauth2.googleapis.com/token` に中継、返った JSON をそのまま返す。**KV/R2 バインディング無し・`console.*` ゼロ・何も保存しない**。`interface Env` は `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` の2つだけ。
+- **`functions/api/gauth/_shared.ts`**(`_` 始まり=route にならない)— `readCappedText`(body 上限・`share/create.ts` の写し)/ `jsonResponse` / `postToGoogleToken` / `relayGoogleTokenResponse`(2xx 通過 / **0・408・429・5xx → 502**(再試行可) / 他4xx → 400 + **Google の `error` コードを `google_error` で転送**)/ `extractGoogleError`(64字上限・string のみ)。
+- **`lib/sync/gauth-types.ts`** — zod。`googleTokenResponseSchema` は `id_token?`/`scope?`/`refresh_token?` を optional。`tokenExchangeRequestSchema.redirectUri` は `.url().refine(http(s) のみ)`。
+- **`lib/sync/google-identity.ts`** — `soundcloud-widget.ts` と同型(inject once / shared promise / エラー時 singleton リセット)。
+- **`lib/sync/auth.ts`** — `requestAuthCode()`(GIS `initCodeClient` popup → code)/ `exchangeCode(code, origin?)` / `refreshAccessToken(rt)` / 純関数 `computeExpiresAt`(60秒マージン)・`isAccessTokenExpired`。`SyncTokens { accessToken; expiresAt; scope; refreshToken?; idToken? }`。**IDB は触らない**(refresh token は引数・tokens は戻り値=永続化は束4)。失敗は全部 `GauthError`。`toSyncTokens` は `res.ok` を先に見る(CF の 5xx→HTML 差し替えを吸収)+ 失敗 body を `describeGauthFailure` でメッセージに載せる。
+- env: `lib/constants.ts` に `GOOGLE_OAUTH_CLIENT_ID` / `.env.production` に client_id(公開値)/ `.dev.vars.example`(tracked・空)。
+- おまけ: `channel.test.ts` の既存 flake も修正(`vi.waitFor` 化・コミット `c5336a5a`)。
+
+### 設計書からの意図的なズレ(計画書「設計上の判断」§1-4・全部レビューで妥当と確認)
+
+- **`_routes.json` は追加しない** — リポジトリに存在せず、無いと Pages が `functions/**` を自動 route。新設は既存13 route の全列挙が要り危険(cost-audit N-62 の領分)。
+- **PKCE 不使用** — `initCodeClient` に `code_challenge` オプションが無い。`client_secret` を持つ「ウェブアプリ」型なので不要。トークン交換の `redirect_uri` = 呼び出しページの origin。
+- **`refresh_token` は初回同意のみ** → スキーマ・`SyncTokens` で optional。
+- **identity スコープ(`openid email profile`)は維持し `id_token` を保持** — 束6 が「〇〇@gmail.com で接続中」表示に使う。スコープ削減は既存ユーザー全員の再同意を招く。
+
+### Google Cloud / Cloudflare(ユーザー作業 + 司令塔)
+
+- ユーザーが Google Cloud Console で: プロジェクト `allmarks-sync`(proj# 353966595543)・OAuth 同意画面(Google Auth Platform・External・**テスト中**・アプリ名 AllMarks・サポート/開発者メール = 個人 Gmail)・非機密スコープ3種を手動貼付(`drive.file` + `userinfo.email` + `userinfo.profile`、`openid` 自動 — Google 審査キュー無し)・OAuth クライアント "AllMarks Web"(ウェブアプリ型・JS 生成元 + リダイレクト URI 両方 `http://localhost:3000` + `https://allmarks.app`)。
+- **本番公開は見送り** — Search Console で `allmarks.app` のドメイン所有権検証が必要で、束2/3 のテストには不要。→ **PL-2**(TODO §公開前)。
+- secret 取り扱い(**client_secret は一切チャット/コミット/ログに出さず**): `.dev.vars`(gitignored)にファイル→ファイルで投入 / `.env.production` は client_id のみ(コミット `5e49a6b5`・gitleaks 通過)/ **Cloudflare Pages 本番シークレット** `GOOGLE_OAUTH_CLIENT_ID` + `GOOGLE_OAUTH_CLIENT_SECRET` を `wrangler pages secret put`(node→pipe・argv に出さない)で登録・`secret list` で "Value Encrypted" 確認 / ダウンロード JSON を `Downloads/` → `docs/private/secrets/google-oauth-client-allmarks-web.json`(gitignored)へ移動。
+
+### 検証・出荷
+
+- tsc 0 / フルスイート **2642/2642**(`channel.test.ts` 修正後・クリーン実行)/ 本番ビルド成功 / 秘密の漏れなし(tracked ファイル・`out/` とも `GOCSPX` grep 0)。
+- 11コミット `03962277`〜`c5336a5a`(計画書2 + §15minors1 + コード5 + fix波1 + client_id 1 + channel fix 1・全て `Co-Authored-By: Claude Sonnet 5` トレーラ)。
+- `git merge --no-ff` = merge commit `c63d1724`。`feat/device-sync-bundle-2` 削除。
+- `npx wrangler pages deploy out/ --project-name=allmarks --branch=master` で `allmarks.app` デプロイ。
+- **本番実機確認**: `POST /api/gauth/token` に `{}` → 400 `{"error":"invalid_request"}` / `{"code":"4/bogus...","redirectUri":"https://allmarks.app"}` → 400 `{"error":"google_rejected","google_error":"invalid_grant"}`(= Function デプロイ + CF シークレット読込 + Google 到達 + エラーコード転送の**全チェーン生存**)。サイトは `/` 200。
+- ※ `GET /api/gauth/token` は 404(405 ではない)= CF Pages のメソッド不一致挙動。POST 専用・`auth.ts` は POST しか投げないので無害。
+
+### 成果物
+
+- `docs/superpowers/plans/2026-09-03-device-sync-bundle-2-auth.md`(実装計画・新規・tracked)
+- `docs/private/2026-09-02-device-sync-design.md` §15 に束2 節を追記(出荷物・ズレ4件・deferred minor・束3 制約)
+- `docs/private/2026-09-03-google-oauth-setup-guide.md`(ユーザー向け手順書・gitignored)
+- コード: `functions/api/gauth/*`(新規4)/ `lib/sync/{gauth-types,google-identity,auth}.ts`(新規3)/ `lib/constants.ts` / `.env.production` / `.dev.vars.example`(新規)/ §15 minors 7ファイル + `channel.test.ts` + テスト計7ファイル
+
+### 申し送り(束3〜)
+
+- **束3 `merge.ts` は `updatedAt` を `typeof x === 'number' ? x : 0` で読む**(設計 §15)。`drive-adapter` は access_token 注入型(secret 不使用)。
+- **束3 冒頭でユーザーに Google Drive API の有効化を依頼**(console → 「Google Drive API」→ 有効にする・1分)。しないと Drive REST 呼び出しが弾かれる。
+- deferred minor: `functions/_lib/` への `readCappedText` 集約(create.ts/ogp.ts/img.ts/_shared.ts の4near-copy)/ `requestAuthCode` の client-ID 空ガードは束6 / `hasRequiredScopes` は束4 / GIS ポップアップ放置タイムアウトは束4/6。
+- **公開前**: PL-1(同意画面メール差替)・PL-2(OAuth 本番公開 + ドメイン検証)。
+
+**★次セッション = 束3(`lib/sync/drive-adapter.ts` + `lib/sync/merge.ts`)。着手前に束3の計画書を writing-plans で作る。冒頭でユーザーに Google Drive API 有効化を依頼。**
