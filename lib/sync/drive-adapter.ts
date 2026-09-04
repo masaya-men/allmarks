@@ -144,3 +144,89 @@ export async function createSyncFolder(accessToken: string): Promise<string> {
   }
   return id
 }
+
+/** DriveFileListItem を DriveFileMeta に写す（id/name が文字列の行のみ）。 */
+function toFileMeta(raw: unknown): DriveFileMeta | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const item = raw as DriveFileListItem
+  if (typeof item.id !== 'string' || typeof item.name !== 'string') return null
+  return typeof item.headRevisionId === 'string'
+    ? { id: item.id, name: item.name, headRevisionId: item.headRevisionId }
+    : { id: item.id, name: item.name }
+}
+
+/** フォルダ直下の（ゴミ箱でない）ファイルを列挙。ページングは扱わない
+ *  （AllMarks/ は 6 ファイル程度・設計 §5）。 */
+export async function listFolderFiles(accessToken: string, folderId: string): Promise<DriveFileMeta[]> {
+  const q = `'${folderId}' in parents and trashed = false`
+  const url =
+    `${DRIVE_API}/files?q=${encodeURIComponent(q)}` +
+    `&fields=${encodeURIComponent('files(id,name,headRevisionId)')}&spaces=drive&pageSize=100`
+  const json = await readJson(await driveFetch(accessToken, url))
+  const files = (json as { files?: unknown }).files
+  if (!Array.isArray(files)) return []
+  return files.map(toFileMeta).filter((m): m is DriveFileMeta => m !== null)
+}
+
+/** ファイル本文をテキストで取得（alt=media）。JSON パースは呼び出し側で。 */
+export async function downloadFileText(accessToken: string, fileId: string): Promise<string> {
+  const url = `${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`
+  return (await driveFetch(accessToken, url)).text()
+}
+
+/** 現行リビジョン id を取得（楽観ロック・設計 §7.4）。 */
+export async function getHeadRevisionId(accessToken: string, fileId: string): Promise<string> {
+  const url = `${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=headRevisionId`
+  const json = await readJson(await driveFetch(accessToken, url))
+  const rev = (json as { headRevisionId?: unknown }).headRevisionId
+  if (typeof rev !== 'string' || rev.length === 0) {
+    throw new DriveError(500, 'getHeadRevisionId: response had no headRevisionId')
+  }
+  return rev
+}
+
+function metaFromUploadResponse(json: unknown, ctx: string): DriveFileMeta {
+  const meta = toFileMeta(json)
+  if (!meta) throw new DriveError(500, `${ctx}: response had no id/name`)
+  return meta
+}
+
+/** フォルダ内に新規テキストファイルを作る（multipart・メタ + 本文）。 */
+export async function createTextFile(
+  accessToken: string,
+  folderId: string,
+  name: string,
+  content: string,
+): Promise<DriveFileMeta> {
+  const boundary = `allmarks-${crypto.randomUUID()}`
+  const { body, contentType } = buildMultipartRelated(
+    { name, parents: [folderId], mimeType: SYNC_FILE_MIME },
+    content, SYNC_FILE_MIME, boundary,
+  )
+  const url = `${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=${encodeURIComponent('id,name,headRevisionId')}`
+  const json = await readJson(await driveFetch(accessToken, url, {
+    method: 'POST',
+    headers: { 'Content-Type': contentType },
+    body,
+  }))
+  return metaFromUploadResponse(json, 'createTextFile')
+}
+
+/** 既存ファイルの本文だけ差し替える（multipart PATCH・メタは空 {}）。 */
+export async function updateTextFile(
+  accessToken: string,
+  fileId: string,
+  content: string,
+): Promise<DriveFileMeta> {
+  const boundary = `allmarks-${crypto.randomUUID()}`
+  const { body, contentType } = buildMultipartRelated({}, content, SYNC_FILE_MIME, boundary)
+  const url =
+    `${DRIVE_UPLOAD_API}/files/${encodeURIComponent(fileId)}` +
+    `?uploadType=multipart&fields=${encodeURIComponent('id,name,headRevisionId')}`
+  const json = await readJson(await driveFetch(accessToken, url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': contentType },
+    body,
+  }))
+  return metaFromUploadResponse(json, 'updateTextFile')
+}

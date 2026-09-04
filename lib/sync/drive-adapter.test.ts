@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   buildMultipartRelated, findSyncFolder, createSyncFolder, DriveError,
+  listFolderFiles, downloadFileText, getHeadRevisionId, createTextFile, updateTextFile,
 } from './drive-adapter'
 
 afterEach(() => {
@@ -107,5 +108,97 @@ describe('createSyncFolder', () => {
   it('throws DriveError(500) when the response has no id', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
     await expect(createSyncFolder(TOKEN)).rejects.toMatchObject({ status: 500 })
+  })
+})
+
+describe('listFolderFiles', () => {
+  it('queries "<folderId> in parents" and maps to DriveFileMeta[]', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      files: [
+        { id: 'f1', name: 'bookmarks.json', headRevisionId: 'r1' },
+        { id: 'f2', name: 'tags.json' },
+        { name: 'no-id.json' },
+      ],
+    }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const out = await listFolderFiles(TOKEN, 'FOLDER')
+    expect(out).toEqual([
+      { id: 'f1', name: 'bookmarks.json', headRevisionId: 'r1' },
+      { id: 'f2', name: 'tags.json' },
+    ])
+    expect(decodeURIComponent(lastCall(fetchMock)[0])).toContain("'FOLDER' in parents and trashed = false")
+  })
+
+  it('throws DriveError on a non-2xx', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('x', { status: 403 })))
+    await expect(listFolderFiles(TOKEN, 'F')).rejects.toMatchObject({ status: 403 })
+  })
+})
+
+describe('downloadFileText', () => {
+  it('GETs alt=media and returns the raw text', async () => {
+    const fetchMock = vi.fn(async () => new Response('{"bookmarks":[]}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await downloadFileText(TOKEN, 'f1')).toBe('{"bookmarks":[]}')
+    expect(lastCall(fetchMock)[0]).toBe('https://www.googleapis.com/drive/v3/files/f1?alt=media')
+  })
+})
+
+describe('getHeadRevisionId', () => {
+  it('returns the headRevisionId field', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ headRevisionId: 'rev-9' }), { status: 200 })))
+    expect(await getHeadRevisionId(TOKEN, 'f1')).toBe('rev-9')
+  })
+
+  it('throws DriveError(500) when headRevisionId is missing', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
+    await expect(getHeadRevisionId(TOKEN, 'f1')).rejects.toMatchObject({ status: 500 })
+  })
+})
+
+describe('createTextFile', () => {
+  it('POSTs a multipart body to the upload endpoint and maps the result', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      id: 'new', name: 'bookmarks.json', headRevisionId: 'r0',
+    }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const meta = await createTextFile(TOKEN, 'FOLDER', 'bookmarks.json', '{"a":1}')
+    expect(meta).toEqual({ id: 'new', name: 'bookmarks.json', headRevisionId: 'r0' })
+
+    const [url, init] = lastCall(fetchMock)
+    expect(url).toContain('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart')
+    expect(init.method).toBe('POST')
+    expect((init.headers as Record<string, string>)['Content-Type']).toMatch(/^multipart\/related; boundary=/)
+    const bodyStr = init.body as string
+    expect(bodyStr).toContain('"name":"bookmarks.json"')
+    expect(bodyStr).toContain('"parents":["FOLDER"]')
+    expect(bodyStr).toContain('{"a":1}')
+  })
+})
+
+describe('updateTextFile', () => {
+  it('PATCHes the upload endpoint with an empty metadata part', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      id: 'f1', name: 'bookmarks.json', headRevisionId: 'r2',
+    }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const meta = await updateTextFile(TOKEN, 'f1', '{"b":2}')
+    expect(meta.headRevisionId).toBe('r2')
+
+    const [url, init] = lastCall(fetchMock)
+    expect(url).toContain('https://www.googleapis.com/upload/drive/v3/files/f1?uploadType=multipart')
+    expect(init.method).toBe('PATCH')
+    const bodyStr = init.body as string
+    // metadata part is an empty object
+    expect(bodyStr).toContain('Content-Type: application/json; charset=UTF-8\r\n\r\n{}\r\n')
+    expect(bodyStr).toContain('{"b":2}')
+  })
+
+  it('throws DriveError(500) when the response has no id', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
+    await expect(updateTextFile(TOKEN, 'f1', '{}')).rejects.toMatchObject({ status: 500 })
   })
 })
