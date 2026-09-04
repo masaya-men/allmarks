@@ -324,3 +324,58 @@ describe('mergeVault', () => {
     expect(mergeVault(a, b)).toEqual(mergeVault(b, a))
   })
 })
+
+import { mergeAll, type SyncSnapshot } from './merge'
+
+describe('mergeAll', () => {
+  const emptySnap: SyncSnapshot = { bookmarks: [], tags: [], cards: [], boardConfig: null, vault: null }
+
+  it('routes each store through its merge fn', () => {
+    const local: SyncSnapshot = {
+      ...emptySnap,
+      bookmarks: [bm({ id: 'a', updatedAt: 1 })],
+      tags: [tag({ id: 't1' })],
+    }
+    const remote: SyncSnapshot = {
+      ...emptySnap,
+      bookmarks: [bm({ id: 'b', updatedAt: 1 })],
+      cards: [card({ id: 'c1' })],
+    }
+    const out = mergeAll(local, remote)
+    expect(out.bookmarks.map((x) => x.id)).toEqual(['a', 'b'])
+    expect(out.tags.map((x) => x.id)).toEqual(['t1'])
+    expect(out.cards.map((x) => x.id)).toEqual(['c1'])
+  })
+
+  it('is deterministic: mergeAll(L,R) deep-equals mergeAll(R,L)', () => {
+    const L: SyncSnapshot = {
+      bookmarks: [
+        bm({ id: 'a', title: 'LA', tags: ['x'], updatedAt: 100 }),
+        bm({ id: 'b', isDeleted: true, deletedAt: '2026-03-01T00:00:00.000Z' }),
+        bm({ id: 'c', updatedAt: 5 }),
+      ],
+      tags: [tag({ id: 't1', name: 'L', updatedAt: 10 }), tag({ id: 't2', createdAt: 1 })],
+      cards: [card({ id: 'k1', x: 1, updatedAt: 9 }), card({ id: 'k2' })],
+      boardConfig: { config: { ...DEFAULT_BOARD_CONFIG, themeId: 'dotted-notebook' }, updatedAt: 7 },
+      vault: null,
+    }
+    const R: SyncSnapshot = {
+      bookmarks: [
+        bm({ id: 'a', title: 'RA', tags: ['y'], updatedAt: 200 }),
+        bm({ id: 'b', title: 'resurrect?', updatedAt: Date.parse('2026-01-01T00:00:00.000Z') }),
+        bm({ id: 'd', updatedAt: 3 }),
+      ],
+      tags: [tag({ id: 't1', name: 'R', updatedAt: 20 }), tag({ id: 't3' })],
+      cards: [card({ id: 'k1', x: 50, updatedAt: 4 }), card({ id: 'k3' })],
+      boardConfig: { config: { ...DEFAULT_BOARD_CONFIG, themeId: 'paper-atelier' }, updatedAt: 7 },
+      vault: null,
+    }
+    expect(mergeAll(L, R)).toEqual(mergeAll(R, L))
+  })
+
+  it('additions from both sides all survive (3 + 2 disjoint = 5)', () => {
+    const L: SyncSnapshot = { ...emptySnap, bookmarks: [bm({ id: 'a' }), bm({ id: 'b' }), bm({ id: 'c' })] }
+    const R: SyncSnapshot = { ...emptySnap, bookmarks: [bm({ id: 'd' }), bm({ id: 'e' })] }
+    expect(mergeAll(L, R).bookmarks).toHaveLength(5)
+  })
+})

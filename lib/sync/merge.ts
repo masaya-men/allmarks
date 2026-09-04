@@ -228,3 +228,17 @@ export function mergeVault(
   if (stableStringify(local) === stableStringify(remote)) return local
   return pickDeterministic(local, remote)
 }
+
+// ── 全 store（設計 §5 / §6）──────────────────────────────────────────────
+
+/** 2 つの SyncSnapshot を store ごとにマージする。mergeAll(L,R) と mergeAll(R,L)
+ *  は deep-equal（束4 の収束保証の土台）。 */
+export function mergeAll(local: SyncSnapshot, remote: SyncSnapshot): SyncSnapshot {
+  return {
+    bookmarks: mergeBookmarks(local.bookmarks, remote.bookmarks),
+    tags: mergeTags(local.tags, remote.tags),
+    cards: mergeCards(local.cards, remote.cards),
+    boardConfig: mergeBoardConfig(local.boardConfig, remote.boardConfig),
+    vault: mergeVault(local.vault, remote.vault),
+  }
+}
