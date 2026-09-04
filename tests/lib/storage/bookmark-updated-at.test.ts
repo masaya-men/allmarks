@@ -10,6 +10,9 @@ import {
   persistPhotos,
   persistMediaSlots,
   updateBookmarkOrderBatch,
+  updateBookmarkOrderIndex,
+  clearCustomCardWidth,
+  clearAllCustomCardWidths,
   resortByNewestFirst,
   updateBookmarkHealth,
 } from '@/lib/storage/indexeddb'
@@ -48,6 +51,16 @@ describe('touchBookmark (pure)', () => {
     expect(out.updatedAt).toBe(1_234_567)
     expect(out).not.toBe(rec)
     expect(out.id).toBe('b1')
+    vi.restoreAllMocks()
+  })
+
+  it('does not mutate its input', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(9_999_999)
+    const rec = seedBookmark('b1', { updatedAt: 1, tags: ['t'] })
+    const snapshot = JSON.parse(JSON.stringify(rec))
+    touchBookmark(rec)
+    expect(rec.updatedAt).toBe(1)
+    expect(rec).toEqual(snapshot)
     vi.restoreAllMocks()
   })
 })
@@ -113,6 +126,47 @@ describe('bookmark write paths bump updatedAt', () => {
     await persistMediaSlots(db as any, 'b1', slots)
     const b = await db.get('bookmarks', 'b1')
     expect(b.updatedAt).toBe(1000)
+  })
+
+  it('persistMediaSlots bumps updatedAt when it actually writes', async () => {
+    await db.put('bookmarks', seedBookmark('b1', { updatedAt: 1000 }))
+    await persistMediaSlots(db as any, 'b1', [
+      { type: 'photo' as const, url: 'https://img/1', videoUrl: undefined, aspect: 1 },
+    ])
+    const b = await db.get('bookmarks', 'b1')
+    expect(b.updatedAt).toBeGreaterThan(1000)
+  })
+
+  it('clearCustomCardWidth bumps updatedAt when the flag was set', async () => {
+    await db.put('bookmarks', seedBookmark('b1', { updatedAt: 1000, customCardWidth: true }))
+    await clearCustomCardWidth(db as any, 'b1')
+    const b = await db.get('bookmarks', 'b1')
+    expect(b.customCardWidth).toBe(false)
+    expect(b.updatedAt).toBeGreaterThan(1000)
+  })
+
+  it('clearCustomCardWidth does NOT bump when the flag was already unset', async () => {
+    await db.put('bookmarks', seedBookmark('b1', { updatedAt: 1000 }))
+    await clearCustomCardWidth(db as any, 'b1')
+    const b = await db.get('bookmarks', 'b1')
+    expect(b.updatedAt).toBe(1000)
+  })
+
+  it('clearAllCustomCardWidths bumps updatedAt only on rows that had the flag', async () => {
+    await db.put('bookmarks', seedBookmark('b1', { updatedAt: 1000, customCardWidth: true }))
+    await db.put('bookmarks', seedBookmark('b2', { updatedAt: 1000 }))
+    const cleared = await clearAllCustomCardWidths(db as any)
+    expect(cleared).toEqual(['b1'])
+    expect((await db.get('bookmarks', 'b1')).updatedAt).toBeGreaterThan(1000)
+    expect((await db.get('bookmarks', 'b2')).updatedAt).toBe(1000)
+  })
+
+  it('updateBookmarkOrderIndex bumps updatedAt', async () => {
+    await db.put('bookmarks', seedBookmark('b1', { updatedAt: 1000, orderIndex: 0 }))
+    await updateBookmarkOrderIndex(db as any, 'b1', 7)
+    const b = await db.get('bookmarks', 'b1')
+    expect(b.orderIndex).toBe(7)
+    expect(b.updatedAt).toBeGreaterThan(1000)
   })
 
   it('updateBookmarkOrderBatch bumps updatedAt on reordered rows', async () => {

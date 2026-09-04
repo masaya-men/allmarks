@@ -98,7 +98,7 @@ describe('IDB v10 migration', () => {
     expect(bm.cardWidth).toBe(999)
   })
 
-  it('v8→v10 single-hop: tags[] and cardWidth both correct, folderId deleted', async () => {
+  it('v8→current single-hop: tags[] and cardWidth both correct, folderId deleted', async () => {
     // Seed a v8 database (same store layout as idb-v9-migration.test.ts)
     const v8 = await openDB(DB_NAME, 8, {
       upgrade(d, _old, _new, tx) {

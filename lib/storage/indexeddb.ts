@@ -181,6 +181,7 @@ export interface CardRecord {
   isUserResized?: boolean
   /** Cached aspect ratio estimation */
   aspectRatio?: number
+  // v17 additions
   /** v17+: 最後にこのカード(配置・手動リサイズ)を変更した Unix epoch ms。
    *  配置は「装飾」なので migration での backfill はしない — 読み取りは `?? 0`。
    *  updateCard とカード生成時に常にセットされる。 */

@@ -68,6 +68,20 @@ export async function updateTag(
 }
 
 /**
+ * The isDeleted/deletedAt/updatedAt tombstone stamp shared by deleteTag and
+ * deleteTagCascade. Soft-delete instead of physical removal so the
+ * device-sync merge can tell a deleted tag from a not-yet-created one.
+ */
+function tombstone(tag: TagRecord): TagRecord {
+  return {
+    ...tag,
+    isDeleted: true,
+    deletedAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+  }
+}
+
+/**
  * Soft-delete a tag by id — writes an isDeleted/deletedAt tombstone rather
  * than physically removing it, so the device-sync merge can tell a deleted
  * tag from a not-yet-created one. No-op if it doesn't exist. getAllTags
@@ -78,12 +92,7 @@ export async function updateTag(
 export async function deleteTag(db: DbLike, id: string): Promise<void> {
   const existing = (await db.get('tags', id)) as TagRecord | undefined
   if (!existing) return
-  await db.put('tags', {
-    ...existing,
-    isDeleted: true,
-    deletedAt: new Date().toISOString(),
-    updatedAt: Date.now(),
-  })
+  await db.put('tags', tombstone(existing))
 }
 
 /**
@@ -101,12 +110,7 @@ export async function deleteTagCascade(db: DbLike, tagId: string): Promise<void>
   const tagStore = tx.objectStore('tags')
   const existing = (await tagStore.get(tagId)) as TagRecord | undefined
   if (existing) {
-    await tagStore.put({
-      ...existing,
-      isDeleted: true,
-      deletedAt: new Date().toISOString(),
-      updatedAt: Date.now(),
-    })
+    await tagStore.put(tombstone(existing))
   }
   const bookmarkStore = tx.objectStore('bookmarks')
   const all = (await bookmarkStore.getAll()) as BookmarkRecord[]
