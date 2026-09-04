@@ -27,6 +27,10 @@
 
 **s208 (2026-09-02)**: 端末間同期の設計フェーズ完了。設計書=`docs/private/2026-09-02-device-sync-design.md`。方式=BYOS(ユーザー自身のGoogle Drive)・id で足し算マージ・放置運転の自動同期・Private金庫も同期・最小K3ゲートを同時に。
 
+### ★公開前の必須タスク (ローンチ前チェックリスト)
+- **(PL-1) Google OAuth 同意画面のメールを個人 Gmail から専用アドレスへ差し替え** — s210 で束2の OAuth 設定時、Google のドロップダウンが「アカウント自身のメール or 管理する Google グループ」しか受け付けないため、サポートメール・開発者連絡先を一時的にユーザー個人 Gmail にした。ユーザー明示要望「問い合わせが個人アドレスに来るのは困る」。**公開前に Google グループを作って両方差し替える**(ブランディングタブ + 開発者連絡先)。同期の開発/テストはブロックしない。詳細 memory `project_oauth_support_email_swap`。
+- **(PL-2) Google OAuth アプリを「テスト中」→「本番」に公開 + ドメイン検証** — s210: 本番公開には Google Search Console で `allmarks.app` の所有権検証(DNS TXT 等)が必要で、束2/3 のテストには不要なため見送り。「テスト中」だと refresh token が7日で失効 = 放置運転の自動同期(束4)には本番公開が必須。**束4 着手時 or 公開前に**: (a) Search Console で allmarks.app 検証 → (b) ブランディングの「承認済みドメイン」に allmarks.app 追加 + ホームページ/プライバシー/利用規約 URL 記入 → (c) 対象ページで「アプリを公開」。同意画面に「未確認アプリ」警告は出るが `drive.file`+`openid/email/profile` は全て非機密なので Google 審査は不要。
+
 ## 🐛 未対応バグ・改善 (active backlog)
 
 完了済バグは TODO_COMPLETED.md に移動済。 ここはアクティブのみ。
