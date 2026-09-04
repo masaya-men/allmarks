@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import type { BookmarkRecord } from '@/lib/storage/indexeddb'
-import { mergeBookmarks } from './merge'
+import type { BookmarkRecord, TagRecord } from '@/lib/storage/indexeddb'
+import { mergeBookmarks, mergeTags } from './merge'
 
 /** 最小限のフィールドで BookmarkRecord を作る（未使用フィールドは既定で埋める）。 */
 function bm(over: Partial<BookmarkRecord> & Pick<BookmarkRecord, 'id'>): BookmarkRecord {
@@ -149,5 +149,63 @@ describe('mergeBookmarks — Private bookmarks (§9: merge by id, never inspect 
     const remote = [bm({ id: 'p', title: '', encryptedPayload: payloadB, updatedAt: 200 })]
     expect(mergeBookmarks(local, remote)[0].encryptedPayload).toEqual(payloadB)
     expect(mergeBookmarks(remote, local)[0].encryptedPayload).toEqual(payloadB)
+  })
+})
+
+function tag(over: Partial<TagRecord> & Pick<TagRecord, 'id'>): TagRecord {
+  const base: TagRecord = {
+    id: over.id,
+    name: `tag-${over.id}`,
+    color: '#888888',
+    order: 0,
+    createdAt: 1_000,
+  }
+  return { ...base, ...over }
+}
+
+describe('mergeTags', () => {
+  it('union by id, sorted', () => {
+    const out = mergeTags([tag({ id: 'b' }), tag({ id: 'a' })], [tag({ id: 'c' })])
+    expect(out.map((t) => t.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('LWW by updatedAt when both live', () => {
+    const local = [tag({ id: 'a', name: 'old', updatedAt: 10 })]
+    const remote = [tag({ id: 'a', name: 'new', updatedAt: 20 })]
+    expect(mergeTags(local, remote)[0].name).toBe('new')
+    expect(mergeTags(remote, local)[0].name).toBe('new')
+  })
+
+  it('falls back to createdAt when updatedAt is absent', () => {
+    const local = [tag({ id: 'a', name: 'created-later', createdAt: 5_000 })]
+    const remote = [tag({ id: 'a', name: 'created-earlier', createdAt: 1_000 })]
+    expect(mergeTags(local, remote)[0].name).toBe('created-later')
+  })
+
+  it('a live updatedAt beats a createdAt-only tag', () => {
+    const local = [tag({ id: 'a', name: 'stamped', updatedAt: 2_000, createdAt: 1_000 })]
+    const remote = [tag({ id: 'a', name: 'unstamped', createdAt: 9_999 })]
+    // 9_999 (createdAt fallback) > 2_000 -> unstamped actually wins
+    expect(mergeTags(local, remote)[0].name).toBe('unstamped')
+  })
+
+  it('soft-delete tombstone propagates (deletedAt >= other side time)', () => {
+    const tomb = [tag({ id: 'a', isDeleted: true, deletedAt: '2026-06-01T00:00:00.000Z', updatedAt: Date.parse('2026-06-01T00:00:00.000Z') })]
+    const edit = [tag({ id: 'a', name: 'renamed', updatedAt: Date.parse('2026-05-01T00:00:00.000Z') })]
+    expect(mergeTags(edit, tomb)[0].isDeleted).toBe(true)
+  })
+
+  it('a rename newer than the delete wins the tag back', () => {
+    const tomb = [tag({ id: 'a', isDeleted: true, deletedAt: '2026-05-01T00:00:00.000Z' })]
+    const edit = [tag({ id: 'a', name: 'renamed', updatedAt: Date.parse('2026-07-01T00:00:00.000Z') })]
+    const out = mergeTags(tomb, edit)[0]
+    expect(out.isDeleted).not.toBe(true)
+    expect(out.name).toBe('renamed')
+  })
+
+  it('is order-independent on equal time', () => {
+    const l = [tag({ id: 'a', name: 'L', updatedAt: 5 })]
+    const r = [tag({ id: 'a', name: 'R', updatedAt: 5 })]
+    expect(mergeTags(l, r)[0].name).toBe(mergeTags(r, l)[0].name)
   })
 })

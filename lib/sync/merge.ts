@@ -122,3 +122,53 @@ export function mergeBookmarks(
   }
   return out.sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
 }
+
+// ── tags（設計 §6.2）──────────────────────────────────────────────────────
+
+/** タグの時刻源。updatedAt 優先、無ければ createdAt（必須の number）を下限に。 */
+function tagTime(t: TagRecord): number {
+  return numericTime(t.updatedAt) || numericTime(t.createdAt)
+}
+
+function mergeOneTag(a: TagRecord, b: TagRecord): TagRecord {
+  const aDel = a.isDeleted === true
+  const bDel = b.isDeleted === true
+
+  if (aDel && bDel) {
+    const am = deletedAtMs(a.deletedAt)
+    const bm = deletedAtMs(b.deletedAt)
+    if (am > bm) return { ...a, isDeleted: true }
+    if (bm > am) return { ...b, isDeleted: true }
+    return { ...pickDeterministic(a, b), isDeleted: true }
+  }
+
+  if (aDel !== bDel) {
+    const tomb = aDel ? a : b
+    const live = aDel ? b : a
+    if (deletedAtMs(tomb.deletedAt) >= tagTime(live)) return { ...tomb, isDeleted: true }
+    return live
+  }
+
+  const at = tagTime(a)
+  const bt = tagTime(b)
+  if (at > bt) return a
+  if (bt > at) return b
+  return pickDeterministic(a, b)
+}
+
+/** local ∪ remote（id 単位）。id 昇順で返す。設計 §6.2。 */
+export function mergeTags(
+  local: readonly TagRecord[],
+  remote: readonly TagRecord[],
+): TagRecord[] {
+  const l = byId(local)
+  const r = byId(remote)
+  const out: TagRecord[] = []
+  for (const id of new Set([...l.keys(), ...r.keys()])) {
+    const a = l.get(id)
+    const b = r.get(id)
+    if (a && b) out.push(mergeOneTag(a, b))
+    else out.push((a ?? b) as TagRecord)
+  }
+  return out.sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
+}
