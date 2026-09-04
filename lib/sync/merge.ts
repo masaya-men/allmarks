@@ -5,6 +5,10 @@
 //
 // base スナップショット（3-way）と衝突退避（§6.5）は束4 の engine の責務。
 // ここは 2-way で「決定的（引数の順番に依存しない）」だけを保証する。
+// ⚠️ 戻り値は入力レコードと同一のオブジェクト参照を含みうる（LWW で片側を丸ごと
+//    採用する経路・id が片側にしか無い経路）。束4 の engine は merge の結果を
+//    破壊的に変更してはいけない（result.bookmarks[i].tags.push(...) 等は
+//    ローカルスナップショットを汚す）。必要なら engine 側でコピーする。
 import type { BookmarkRecord, TagRecord, CardRecord } from '@/lib/storage/indexeddb'
 import type { BoardConfig } from '@/lib/board/types'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
@@ -17,7 +21,8 @@ export interface SyncBoardConfig {
 }
 
 /** device-sync が Drive 経由で往復させる全 store の in-memory 形（設計 §5）。
- *  束4 の engine がこれを 6 つの JSON ファイルに分解し、また組み立て直す。 */
+ *  束4 の engine がこれを 5 つの store（bookmarks/tags/cards/board-config/vault）
+ *  に分解し、また組み立て直す。manifest.json は engine が別途生成する。 */
 export interface SyncSnapshot {
   readonly bookmarks: readonly BookmarkRecord[]
   readonly tags: readonly TagRecord[]
@@ -96,6 +101,8 @@ function mergeOneBookmark(a: BookmarkRecord, b: BookmarkRecord): BookmarkRecord 
   }
 
   // ケース1: どちらも生存 → LWW（同値は決定的）＋ tags 和集合
+  // bookmarks は savedAt へのフォールバック不要: v17 migration が全既存行を
+  // updatedAt = Date.parse(savedAt) で backfill 済み（tags の createdAt 相当）。
   const at = numericTime(a.updatedAt)
   const bt = numericTime(b.updatedAt)
   let winner: BookmarkRecord
@@ -103,6 +110,17 @@ function mergeOneBookmark(a: BookmarkRecord, b: BookmarkRecord): BookmarkRecord 
   if (at > bt) { winner = a; loser = b }
   else if (bt > at) { winner = b; loser = a }
   else { winner = pickDeterministic(a, b); loser = winner === a ? b : a }
+  // tags[] is written atomically with the Private plaintext/ciphertext state
+  // (lib/private/apply-tag-change.ts). If the two sides disagree on whether
+  // encryptedPayload is present, exactly one has been Private-ized/de-Private-ized
+  // and its tags[] is inseparable from that state — unioning would produce a
+  // record with a Private tag but plaintext fields (leaks to Drive per §9) or a
+  // payload-less Private row (dropped by resolve-visibility). Take the LWW
+  // winner whole; the Private toggle can lose LWW but the record stays consistent.
+  // Intentional deviation from design §6.1 / plan「設計上の判断」§5, to satisfy §9 + §12.
+  const privateStateDiffers =
+    (a.encryptedPayload === undefined) !== (b.encryptedPayload === undefined)
+  if (privateStateDiffers) return winner
   return { ...winner, tags: unionOrdered(winner.tags, loser.tags) }
 }
 
@@ -216,7 +234,15 @@ export function mergeBoardConfig(
 
 // ── vault（設計 §9）──────────────────────────────────────────────────────
 
-/** 「作成一度きり・以後不変」前提。両方あれば内容は同一のはず。違えば決定的 pick。
+/** 「作成一度きり・以後不変」前提。両方あれば内容は同一のはず。
+ *  ⚠️ 束4 の engine へ: 両側の vault が食い違う場合（= 同期を入れる前に2台で
+ *  別々に Private を設定していた）、ここで pickDeterministic すると負けた側の
+ *  wrappedPrivateKey が失われ、その公開鍵で暗号化された encryptedPayload は
+ *  二度と復号できなくなる（暗号文は bookmarks.json に残るのに鍵だけ消える）。
+ *  さらに mergeTags は isPrivateVault タグを2つ残す（use-tags.ts は先頭1件を
+ *  金庫とみなす＝配列順次第）。engine は食い違いを検知したら黙って進めず、
+ *  ユーザーに選ばせる or パスワード再設定を促すこと。ここで pick するのは
+ *  「engine が明示的に許した後」の最終手段。
  *  暗号文は復号しない・見ない。将来パスワード再設定（wrappedPrivateKey 変化）で
  *  LWW が要るときは PrivateVaultRecord に updatedAt を足してここで比較する。 */
 export function mergeVault(

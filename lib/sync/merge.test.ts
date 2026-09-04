@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { BookmarkRecord, TagRecord, CardRecord } from '@/lib/storage/indexeddb'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
-import { mergeBookmarks, mergeTags, mergeCards, mergeBoardConfig, mergeVault, type SyncBoardConfig } from './merge'
+import { mergeBookmarks, mergeTags, mergeCards, mergeBoardConfig, mergeVault, mergeAll, type SyncBoardConfig, type SyncSnapshot } from './merge'
 import { DEFAULT_BOARD_CONFIG } from '@/lib/storage/board-config'
 
 /** 最小限のフィールドで BookmarkRecord を作る（未使用フィールドは既定で埋める）。 */
@@ -152,6 +152,39 @@ describe('mergeBookmarks — Private bookmarks (§9: merge by id, never inspect 
     expect(mergeBookmarks(local, remote)[0].encryptedPayload).toEqual(payloadB)
     expect(mergeBookmarks(remote, local)[0].encryptedPayload).toEqual(payloadB)
   })
+
+  it('C1: when only one side is Private (payload present), does NOT union tags — takes the LWW winner whole', () => {
+    // device A Private-ized: payload set, plaintext blank, Private tag added, updatedAt older
+    const privatized = bm({ id: 'x', title: '', url: '', encryptedPayload: payloadA, tags: ['priv'], updatedAt: 100 })
+    // device B still plaintext, updatedAt newer (e.g. B reordered its board once)
+    const plaintext = bm({ id: 'x', title: 'real title', url: 'https://real', tags: ['work'], updatedAt: 200 })
+    const [out] = mergeBookmarks([privatized], [plaintext])
+    // B wins LWW; result is B unchanged — no 'priv' tag leaked in, no payload
+    expect(out.title).toBe('real title')
+    expect(out.encryptedPayload).toBeUndefined()
+    expect(out.tags).toEqual(['work'])
+  })
+
+  it('C1: when the Private side wins LWW, result is the ciphertext record whole (no plaintext tag unioned in)', () => {
+    const privatized = bm({ id: 'x', title: '', url: '', encryptedPayload: payloadA, tags: ['priv'], updatedAt: 300 })
+    const plaintext = bm({ id: 'x', title: 'real', url: 'https://real', tags: ['work'], updatedAt: 200 })
+    const [out] = mergeBookmarks([privatized], [plaintext])
+    expect(out.encryptedPayload).toEqual(payloadA)
+    expect(out.title).toBe('')
+    expect(out.tags).toEqual(['priv'])
+  })
+
+  it('C1: both sides plaintext (no payload either side) still unions tags as before', () => {
+    const a = bm({ id: 'x', tags: ['a'], updatedAt: 200 })
+    const b = bm({ id: 'x', tags: ['b'], updatedAt: 100 })
+    expect(mergeBookmarks([a], [b])[0].tags.sort()).toEqual(['a', 'b'])
+  })
+
+  it('C1: both sides Private (payload both) still unions tags', () => {
+    const a = bm({ id: 'x', title: '', encryptedPayload: payloadA, tags: ['priv', 'a'], updatedAt: 200 })
+    const b = bm({ id: 'x', title: '', encryptedPayload: payloadB, tags: ['priv', 'b'], updatedAt: 100 })
+    expect(mergeBookmarks([a], [b])[0].tags.sort()).toEqual(['a', 'b', 'priv'])
+  })
 })
 
 function tag(over: Partial<TagRecord> & Pick<TagRecord, 'id'>): TagRecord {
@@ -184,7 +217,7 @@ describe('mergeTags', () => {
     expect(mergeTags(local, remote)[0].name).toBe('created-later')
   })
 
-  it('a live updatedAt beats a createdAt-only tag', () => {
+  it('createdAt fallback can outrank a stale updatedAt (documented edge)', () => {
     const local = [tag({ id: 'a', name: 'stamped', updatedAt: 2_000, createdAt: 1_000 })]
     const remote = [tag({ id: 'a', name: 'unstamped', createdAt: 9_999 })]
     // 9_999 (createdAt fallback) > 2_000 -> unstamped actually wins
@@ -203,6 +236,14 @@ describe('mergeTags', () => {
     const out = mergeTags(tomb, edit)[0]
     expect(out.isDeleted).not.toBe(true)
     expect(out.name).toBe('renamed')
+  })
+
+  it('both tombstones -> keeps the record with the later deletedAt', () => {
+    const early = [tag({ id: 'a', isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z' })]
+    const late = [tag({ id: 'a', isDeleted: true, deletedAt: '2026-02-01T00:00:00.000Z' })]
+    expect(mergeTags(early, late)[0].deletedAt).toBe('2026-02-01T00:00:00.000Z')
+    expect(mergeTags(late, early)[0].deletedAt).toBe('2026-02-01T00:00:00.000Z')
+    expect(mergeTags(early, late)[0].isDeleted).toBe(true)
   })
 
   it('is order-independent on equal time', () => {
@@ -325,8 +366,6 @@ describe('mergeVault', () => {
   })
 })
 
-import { mergeAll, type SyncSnapshot } from './merge'
-
 describe('mergeAll', () => {
   const emptySnap: SyncSnapshot = { bookmarks: [], tags: [], cards: [], boardConfig: null, vault: null }
 
@@ -371,6 +410,9 @@ describe('mergeAll', () => {
       vault: null,
     }
     expect(mergeAll(L, R)).toEqual(mergeAll(R, L))
+    const out = mergeAll(L, R)
+    expect(out.bookmarks.find((x) => x.id === 'b')?.isDeleted).toBe(true) // tombstone held
+    expect(out.boardConfig?.config.themeId).toBe('paper-atelier')          // R won the config tie deterministically
   })
 
   it('additions from both sides all survive (3 + 2 disjoint = 5)', () => {
