@@ -41,6 +41,7 @@ export interface DriveFileMeta {
 /**
  * RFC 2387 multipart/related。part1 = メタデータ JSON、part2 = ファイル本文。
  * boundary は呼び出し側が渡す（テストの決定性のため）。純関数。
+ * boundary は呼び出し側の責任で content と衝突しないものを渡すこと（createTextFile/updateTextFile は allmarks-<randomUUID> を使うので実質衝突なし。content が JSON 文字列なら生の CRLF を含まないため区切り行も構成不能）。
  */
 export function buildMultipartRelated(
   metadata: Readonly<Record<string, unknown>>,
@@ -106,7 +107,9 @@ interface DriveFileListItem {
  * マーカー付きが複数なら id 辞書順で最小（決定的）。無ければ null。
  */
 export async function findSyncFolder(accessToken: string): Promise<string | null> {
-  const q = `name = '${SYNC_FOLDER_NAME}' and mimeType = '${FOLDER_MIME}' and trashed = false`
+  const q =
+    `name = '${SYNC_FOLDER_NAME}' and mimeType = '${FOLDER_MIME}' and trashed = false` +
+    ` and appProperties has { key='${SYNC_MARKER_KEY}' and value='${SYNC_MARKER_VALUE}' }`
   const url =
     `${DRIVE_API}/files?q=${encodeURIComponent(q)}` +
     `&fields=${encodeURIComponent('files(id,appProperties)')}&spaces=drive&pageSize=10`
@@ -165,7 +168,10 @@ export async function listFolderFiles(accessToken: string, folderId: string): Pr
   const json = await readJson(await driveFetch(accessToken, url))
   const files = (json as { files?: unknown }).files
   if (!Array.isArray(files)) return []
-  return files.map(toFileMeta).filter((m): m is DriveFileMeta => m !== null)
+  return files
+    .map(toFileMeta)
+    .filter((m): m is DriveFileMeta => m !== null)
+    .sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
 }
 
 /** ファイル本文をテキストで取得（alt=media）。JSON パースは呼び出し側で。 */

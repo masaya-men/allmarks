@@ -50,6 +50,7 @@ describe('findSyncFolder', () => {
     expect(decodeURIComponent(url)).toContain("name = 'AllMarks'")
     expect(decodeURIComponent(url)).toContain("mimeType = 'application/vnd.google-apps.folder'")
     expect(decodeURIComponent(url)).toContain('trashed = false')
+    expect(decodeURIComponent(url)).toContain("appProperties has { key='allmarksSync' and value='1' }")
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer ya29.test')
   })
 
@@ -112,11 +113,11 @@ describe('createSyncFolder', () => {
 })
 
 describe('listFolderFiles', () => {
-  it('queries "<folderId> in parents" and maps to DriveFileMeta[]', async () => {
+  it('queries "<folderId> in parents", maps to DriveFileMeta[], and sorts by (name, id)', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
       files: [
-        { id: 'f1', name: 'bookmarks.json', headRevisionId: 'r1' },
         { id: 'f2', name: 'tags.json' },
+        { id: 'f1', name: 'bookmarks.json', headRevisionId: 'r1' },
         { name: 'no-id.json' },
       ],
     }), { status: 200 }))
@@ -143,6 +144,12 @@ describe('downloadFileText', () => {
     expect(await downloadFileText(TOKEN, 'f1')).toBe('{"bookmarks":[]}')
     expect(lastCall(fetchMock)[0]).toBe('https://www.googleapis.com/drive/v3/files/f1?alt=media')
   })
+
+  it('throws DriveError with the HTTP status on a non-2xx response', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 404 })))
+    await expect(downloadFileText(TOKEN, 'f1')).rejects.toBeInstanceOf(DriveError)
+    await expect(downloadFileText(TOKEN, 'f1')).rejects.toMatchObject({ status: 404 })
+  })
 })
 
 describe('getHeadRevisionId', () => {
@@ -153,6 +160,12 @@ describe('getHeadRevisionId', () => {
 
   it('throws DriveError(500) when headRevisionId is missing', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
+    await expect(getHeadRevisionId(TOKEN, 'f1')).rejects.toMatchObject({ status: 500 })
+  })
+
+  it('throws DriveError(500) when a 200 response body is not JSON (readJson catch branch)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<html>not json</html>', { status: 200 })))
+    await expect(getHeadRevisionId(TOKEN, 'f1')).rejects.toBeInstanceOf(DriveError)
     await expect(getHeadRevisionId(TOKEN, 'f1')).rejects.toMatchObject({ status: 500 })
   })
 })
@@ -175,6 +188,11 @@ describe('createTextFile', () => {
     expect(bodyStr).toContain('"name":"bookmarks.json"')
     expect(bodyStr).toContain('"parents":["FOLDER"]')
     expect(bodyStr).toContain('{"a":1}')
+  })
+
+  it('throws DriveError(500) when the response has no id', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
+    await expect(createTextFile(TOKEN, 'FOLDER', 'bookmarks.json', '{}')).rejects.toMatchObject({ status: 500 })
   })
 })
 

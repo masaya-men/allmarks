@@ -374,16 +374,23 @@ describe('mergeAll', () => {
       ...emptySnap,
       bookmarks: [bm({ id: 'a', updatedAt: 1 })],
       tags: [tag({ id: 't1' })],
+      boardConfig: { config: { ...DEFAULT_BOARD_CONFIG, themeId: 'dotted-notebook' }, updatedAt: 5 },
     }
     const remote: SyncSnapshot = {
       ...emptySnap,
       bookmarks: [bm({ id: 'b', updatedAt: 1 })],
       cards: [card({ id: 'c1' })],
+      vault: {
+        key: 'private-vault', tagId: 'pv', salt: 's', iterations: 600_000,
+        publicKey: 'PUB', wrappedPrivateKey: { iv: 'i', ciphertext: 'c' },
+      },
     }
     const out = mergeAll(local, remote)
     expect(out.bookmarks.map((x) => x.id)).toEqual(['a', 'b'])
     expect(out.tags.map((x) => x.id)).toEqual(['t1'])
     expect(out.cards.map((x) => x.id)).toEqual(['c1'])
+    expect(out.boardConfig?.config.themeId).toBe('dotted-notebook') // routed from local
+    expect(out.vault?.publicKey).toBe('PUB')                        // routed from remote
   })
 
   it('is deterministic: mergeAll(L,R) deep-equals mergeAll(R,L)', () => {
