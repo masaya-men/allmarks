@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import type { BookmarkRecord, TagRecord } from '@/lib/storage/indexeddb'
-import { mergeBookmarks, mergeTags } from './merge'
+import type { BookmarkRecord, TagRecord, CardRecord } from '@/lib/storage/indexeddb'
+import type { PrivateVaultRecord } from '@/lib/private/vault-store'
+import { mergeBookmarks, mergeTags, mergeCards, mergeBoardConfig, mergeVault, type SyncBoardConfig } from './merge'
+import { DEFAULT_BOARD_CONFIG } from '@/lib/storage/board-config'
 
 /** 最小限のフィールドで BookmarkRecord を作る（未使用フィールドは既定で埋める）。 */
 function bm(over: Partial<BookmarkRecord> & Pick<BookmarkRecord, 'id'>): BookmarkRecord {
@@ -207,5 +209,118 @@ describe('mergeTags', () => {
     const l = [tag({ id: 'a', name: 'L', updatedAt: 5 })]
     const r = [tag({ id: 'a', name: 'R', updatedAt: 5 })]
     expect(mergeTags(l, r)[0].name).toBe(mergeTags(r, l)[0].name)
+  })
+})
+
+function card(over: Partial<CardRecord> & Pick<CardRecord, 'id'>): CardRecord {
+  const base: CardRecord = {
+    id: over.id,
+    bookmarkId: `bm-${over.id}`,
+    folderId: '',
+    x: 0,
+    y: 0,
+    rotation: 0,
+    scale: 1,
+    zIndex: 0,
+    gridIndex: 0,
+    isManuallyPlaced: false,
+    width: 200,
+    height: 200,
+  }
+  return { ...base, ...over }
+}
+
+describe('mergeCards', () => {
+  it('union by id, sorted', () => {
+    expect(mergeCards([card({ id: 'b' })], [card({ id: 'a' })]).map((c) => c.id)).toEqual(['a', 'b'])
+  })
+
+  it('LWW by updatedAt', () => {
+    const local = [card({ id: 'a', x: 10, updatedAt: 1 })]
+    const remote = [card({ id: 'a', x: 99, updatedAt: 2 })]
+    expect(mergeCards(local, remote)[0].x).toBe(99)
+    expect(mergeCards(remote, local)[0].x).toBe(99)
+  })
+
+  it('missing updatedAt treated as 0', () => {
+    const local = [card({ id: 'a', x: 5, updatedAt: 1 })]
+    const remote = [card({ id: 'a', x: 7 })]
+    expect(mergeCards(local, remote)[0].x).toBe(5)
+  })
+
+  it('equal updatedAt -> order-independent', () => {
+    const l = [card({ id: 'a', x: 1, updatedAt: 3 })]
+    const r = [card({ id: 'a', x: 2, updatedAt: 3 })]
+    expect(mergeCards(l, r)[0].x).toBe(mergeCards(r, l)[0].x)
+  })
+})
+
+describe('mergeBoardConfig', () => {
+  const cfg = (over: Partial<SyncBoardConfig['config']>, updatedAt?: number): SyncBoardConfig => ({
+    config: { ...DEFAULT_BOARD_CONFIG, ...over },
+    updatedAt,
+  })
+
+  it('both null -> null', () => {
+    expect(mergeBoardConfig(null, null)).toBeNull()
+  })
+
+  it('one side present -> that side', () => {
+    const only = cfg({ themeId: 'paper-atelier' }, 5)
+    expect(mergeBoardConfig(only, null)).toBe(only)
+    expect(mergeBoardConfig(null, only)).toBe(only)
+  })
+
+  it('LWW by updatedAt', () => {
+    const older = cfg({ themeId: 'dotted-notebook' }, 100)
+    const newer = cfg({ themeId: 'paper-atelier' }, 200)
+    expect(mergeBoardConfig(older, newer)?.config.themeId).toBe('paper-atelier')
+    expect(mergeBoardConfig(newer, older)?.config.themeId).toBe('paper-atelier')
+  })
+
+  it('absent updatedAt treated as 0', () => {
+    const stamped = cfg({ themeId: 'paper-atelier' }, 1)
+    const unstamped = cfg({ themeId: 'dotted-notebook' })
+    expect(mergeBoardConfig(unstamped, stamped)?.config.themeId).toBe('paper-atelier')
+  })
+
+  it('equal updatedAt -> order-independent', () => {
+    const a = cfg({ themeId: 'dotted-notebook' }, 7)
+    const b = cfg({ themeId: 'paper-atelier' }, 7)
+    expect(mergeBoardConfig(a, b)?.config.themeId).toBe(mergeBoardConfig(b, a)?.config.themeId)
+  })
+})
+
+describe('mergeVault', () => {
+  const rec = (pub: string): PrivateVaultRecord => ({
+    key: 'private-vault',
+    tagId: 'priv-tag',
+    salt: 'salt',
+    iterations: 600_000,
+    publicKey: pub,
+    wrappedPrivateKey: { iv: 'iv', ciphertext: 'ct' },
+  })
+
+  it('both null -> null', () => {
+    expect(mergeVault(null, null)).toBeNull()
+  })
+
+  it('one side present -> that side', () => {
+    const v = rec('pubA')
+    expect(mergeVault(v, null)).toBe(v)
+    expect(mergeVault(null, v)).toBe(v)
+  })
+
+  it('identical on both sides -> returns a value (order-independent)', () => {
+    const a = rec('same')
+    const b = rec('same')
+    expect(mergeVault(a, b)).toEqual(a)
+    expect(mergeVault(b, a)).toEqual(a)
+  })
+
+  it('divergent records -> deterministic pick regardless of arg order', () => {
+    const a = rec('pubA')
+    const b = rec('pubB')
+    expect(mergeVault(a, b)).toEqual(mergeVault(b, a))
   })
 })

@@ -172,3 +172,59 @@ export function mergeTags(
   }
   return out.sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
 }
+
+// ── cards（設計 §6.3）─────────────────────────────────────────────────────
+
+/** local ∪ remote（id 単位）。両方に有れば updatedAt LWW（配置は装飾）。id 昇順。 */
+export function mergeCards(
+  local: readonly CardRecord[],
+  remote: readonly CardRecord[],
+): CardRecord[] {
+  const l = byId(local)
+  const r = byId(remote)
+  const out: CardRecord[] = []
+  for (const id of new Set([...l.keys(), ...r.keys()])) {
+    const a = l.get(id)
+    const b = r.get(id)
+    if (a && b) {
+      const at = numericTime(a.updatedAt)
+      const bt = numericTime(b.updatedAt)
+      out.push(at > bt ? a : bt > at ? b : pickDeterministic(a, b))
+    } else {
+      out.push((a ?? b) as CardRecord)
+    }
+  }
+  return out.sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
+}
+
+// ── board-config（設計 §6.4）─────────────────────────────────────────────
+
+/** まるごと 1 個 LWW。updatedAt が無ければ 0 扱い（束4 が saveBoardConfig で
+ *  打つまでの間）。同値は config を安定比較して決定的に。 */
+export function mergeBoardConfig(
+  local: SyncBoardConfig | null,
+  remote: SyncBoardConfig | null,
+): SyncBoardConfig | null {
+  if (!local) return remote
+  if (!remote) return local
+  const lt = numericTime(local.updatedAt)
+  const rt = numericTime(remote.updatedAt)
+  if (lt > rt) return local
+  if (rt > lt) return remote
+  return pickDeterministic(local, remote)
+}
+
+// ── vault（設計 §9）──────────────────────────────────────────────────────
+
+/** 「作成一度きり・以後不変」前提。両方あれば内容は同一のはず。違えば決定的 pick。
+ *  暗号文は復号しない・見ない。将来パスワード再設定（wrappedPrivateKey 変化）で
+ *  LWW が要るときは PrivateVaultRecord に updatedAt を足してここで比較する。 */
+export function mergeVault(
+  local: PrivateVaultRecord | null,
+  remote: PrivateVaultRecord | null,
+): PrivateVaultRecord | null {
+  if (!local) return remote
+  if (!remote) return local
+  if (stableStringify(local) === stableStringify(remote)) return local
+  return pickDeterministic(local, remote)
+}
