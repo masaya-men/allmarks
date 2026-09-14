@@ -29,7 +29,7 @@ function migrateRetiredGridTheme(config: BoardConfig): BoardConfig {
   return { ...config, themeId: 'dotted-notebook', themeCustomizations: customs }
 }
 
-const CONFIG_KEY = 'board-config'
+export const CONFIG_KEY = 'board-config'
 
 export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   frameRatio: { kind: 'preset', presetId: DEFAULT_PRESET_ID },
@@ -44,7 +44,7 @@ export const DEFAULT_BOARD_CONFIG: BoardConfig = {
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
 
-type ConfigRecord = { key: string; config: BoardConfig }
+type ConfigRecord = { key: string; config: BoardConfig; updatedAt?: number }
 
 export async function loadBoardConfig(db: DbLike): Promise<BoardConfig> {
   const record = (await db.get('settings', CONFIG_KEY)) as ConfigRecord | undefined
@@ -54,7 +54,19 @@ export async function loadBoardConfig(db: DbLike): Promise<BoardConfig> {
   return migrateRetiredGridTheme(merged)
 }
 
-export async function saveBoardConfig(db: DbLike, config: BoardConfig): Promise<void> {
-  const record: ConfigRecord = { key: CONFIG_KEY, config }
+export async function saveBoardConfig(
+  db: DbLike,
+  config: BoardConfig,
+  updatedAt: number = Date.now(),
+): Promise<void> {
+  const record: ConfigRecord = { key: CONFIG_KEY, config, updatedAt }
   await db.put('settings', record)
+}
+
+export async function loadBoardConfigRecord(
+  db: DbLike,
+): Promise<{ config: BoardConfig; updatedAt?: number } | null> {
+  const record = (await db.get('settings', CONFIG_KEY)) as ConfigRecord | undefined
+  if (!record) return null
+  return { config: record.config, updatedAt: record.updatedAt }
 }
