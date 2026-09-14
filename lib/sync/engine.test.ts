@@ -20,6 +20,7 @@ let db: IDBPDatabase<AllMarksDB> | null = null
 beforeEach(async () => {
   const databases = await indexedDB.databases()
   for (const info of databases) { if (info.name) indexedDB.deleteDatabase(info.name) }
+  vi.clearAllMocks()
 })
 afterEach(() => { if (db) { db.close(); db = null } })
 
@@ -121,5 +122,88 @@ describe('hasRequiredScopes', () => {
 
   it('false when drive.file is missing (partial consent)', () => {
     expect(hasRequiredScopes('openid email profile')).toBe(false)
+  })
+})
+
+vi.mock('./drive-adapter', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./drive-adapter')>()
+  return {
+    ...actual,
+    findSyncFolder: vi.fn(),
+    createSyncFolder: vi.fn(),
+    listFolderFiles: vi.fn(),
+    downloadFileText: vi.fn(),
+    getHeadRevisionId: vi.fn(),
+    createTextFile: vi.fn(),
+    updateTextFile: vi.fn(),
+  }
+})
+import {
+  findSyncFolder, createSyncFolder, listFolderFiles, downloadFileText,
+  getHeadRevisionId, createTextFile, updateTextFile,
+} from './drive-adapter'
+import { ensureSyncFolder, pullRemoteSnapshot, pushSnapshot, SyncCorruptDataError, SyncConflictError } from './engine'
+
+describe('ensureSyncFolder', () => {
+  it('returns the existing folder id without creating one', async () => {
+    vi.mocked(findSyncFolder).mockResolvedValue('folder1')
+    const id = await ensureSyncFolder('token')
+    expect(id).toBe('folder1')
+    expect(createSyncFolder).not.toHaveBeenCalled()
+  })
+
+  it('creates a folder when none exists', async () => {
+    vi.mocked(findSyncFolder).mockResolvedValue(null)
+    vi.mocked(createSyncFolder).mockResolvedValue('new-folder')
+    expect(await ensureSyncFolder('token')).toBe('new-folder')
+  })
+})
+
+describe('pullRemoteSnapshot', () => {
+  it('treats a missing file as empty/null and records headRevisionId for present files', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bookmarks', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockResolvedValue('[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+
+    const { snapshot, headRevisions } = await pullRemoteSnapshot('token', 'folder1')
+    expect(snapshot).toEqual({ bookmarks: [], tags: [], cards: [], boardConfig: null, vault: null })
+    expect(headRevisions).toEqual({ 'bookmarks.json': 'rev-1' })
+  })
+
+  it('throws SyncCorruptDataError when a downloaded file fails zod validation', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bookmarks', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockResolvedValue('{"not":"an array"}')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+
+    await expect(pullRemoteSnapshot('token', 'folder1')).rejects.toThrow(SyncCorruptDataError)
+  })
+})
+
+describe('pushSnapshot', () => {
+  const snapshot: SyncSnapshot = { bookmarks: [], tags: [], cards: [], boardConfig: null, vault: null }
+
+  it('creates files that do not exist yet', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockResolvedValue({ id: 'new-id', name: 'bookmarks.json', headRevisionId: 'rev-new' })
+    const revisions = await pushSnapshot('token', 'folder1', snapshot, {})
+    expect(revisions['bookmarks.json']).toBe('rev-new')
+    expect(updateTextFile).not.toHaveBeenCalled()
+  })
+
+  it('updates an existing file when the recorded revision still matches', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks.json', headRevisionId: 'rev-2' })
+    const revisions = await pushSnapshot('token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' })
+    expect(revisions['bookmarks.json']).toBe('rev-2')
+  })
+
+  it('throws SyncConflictError when the remote revision changed since the recorded pull', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-DIFFERENT')
+    await expect(
+      pushSnapshot('token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' }),
+    ).rejects.toThrow(SyncConflictError)
+    expect(updateTextFile).not.toHaveBeenCalled()
   })
 })

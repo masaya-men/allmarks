@@ -73,3 +73,124 @@ export function hasRequiredScopes(grantedScope: string): boolean {
   const granted = new Set(grantedScope.split(' ').filter(Boolean))
   return SYNC_OAUTH_SCOPE.split(' ').every(required => granted.has(required))
 }
+
+import {
+  findSyncFolder, createSyncFolder, listFolderFiles,
+  downloadFileText, getHeadRevisionId, createTextFile, updateTextFile,
+} from './drive-adapter'
+import {
+  parseBookmarksFile, parseTagsFile, parseCardsFile, parseBoardConfigFile, parseVaultFile,
+} from './snapshot-schema'
+
+const FILE_NAMES = {
+  bookmarks: 'bookmarks.json',
+  tags: 'tags.json',
+  cards: 'cards.json',
+  boardConfig: 'board-config.json',
+  vault: 'vault.json',
+} as const
+
+export class SyncCorruptDataError extends Error {
+  constructor(fileName: string, detail: string) {
+    super(`${fileName} failed validation: ${detail}`)
+    this.name = 'SyncCorruptDataError'
+  }
+}
+
+export class SyncConflictError extends Error {
+  constructor(fileName: string) {
+    super(`${fileName} changed remotely since last pull (optimistic lock)`)
+    this.name = 'SyncConflictError'
+  }
+}
+
+export async function ensureSyncFolder(accessToken: string): Promise<string> {
+  const existing = await findSyncFolder(accessToken)
+  if (existing) return existing
+  return createSyncFolder(accessToken)
+}
+
+export async function pullRemoteSnapshot(
+  accessToken: string,
+  folderId: string,
+): Promise<{ snapshot: SyncSnapshot; headRevisions: Record<string, string> }> {
+  const files = await listFolderFiles(accessToken, folderId)
+  const byName = new Map(files.map(f => [f.name, f]))
+  const headRevisions: Record<string, string> = {}
+
+  async function readJsonFile(name: string): Promise<unknown | null> {
+    const meta = byName.get(name)
+    if (!meta) return null
+    const [text, headRevisionId] = await Promise.all([
+      downloadFileText(accessToken, meta.id),
+      getHeadRevisionId(accessToken, meta.id),
+    ])
+    headRevisions[name] = headRevisionId
+    return JSON.parse(text)
+  }
+
+  const [bookmarksJson, tagsJson, cardsJson, boardConfigJson, vaultJson] = await Promise.all([
+    readJsonFile(FILE_NAMES.bookmarks),
+    readJsonFile(FILE_NAMES.tags),
+    readJsonFile(FILE_NAMES.cards),
+    readJsonFile(FILE_NAMES.boardConfig),
+    readJsonFile(FILE_NAMES.vault),
+  ])
+
+  const bookmarksResult = parseBookmarksFile(bookmarksJson ?? [])
+  if (!bookmarksResult.ok) throw new SyncCorruptDataError(FILE_NAMES.bookmarks, bookmarksResult.error)
+  const tagsResult = parseTagsFile(tagsJson ?? [])
+  if (!tagsResult.ok) throw new SyncCorruptDataError(FILE_NAMES.tags, tagsResult.error)
+  const cardsResult = parseCardsFile(cardsJson ?? [])
+  if (!cardsResult.ok) throw new SyncCorruptDataError(FILE_NAMES.cards, cardsResult.error)
+  const boardConfigResult = boardConfigJson === null ? null : parseBoardConfigFile(boardConfigJson)
+  if (boardConfigResult && !boardConfigResult.ok) throw new SyncCorruptDataError(FILE_NAMES.boardConfig, boardConfigResult.error)
+  const vaultResult = vaultJson === null ? null : parseVaultFile(vaultJson)
+  if (vaultResult && !vaultResult.ok) throw new SyncCorruptDataError(FILE_NAMES.vault, vaultResult.error)
+
+  return {
+    snapshot: {
+      bookmarks: bookmarksResult.value,
+      tags: tagsResult.value,
+      cards: cardsResult.value,
+      boardConfig: boardConfigResult && boardConfigResult.ok ? boardConfigResult.value : null,
+      vault: vaultResult && vaultResult.ok ? vaultResult.value : null,
+    },
+    headRevisions,
+  }
+}
+
+export async function pushSnapshot(
+  accessToken: string,
+  folderId: string,
+  snapshot: SyncSnapshot,
+  previousHeadRevisions: Readonly<Record<string, string>>,
+): Promise<Record<string, string>> {
+  const files = await listFolderFiles(accessToken, folderId)
+  const byName = new Map(files.map(f => [f.name, f]))
+  const newRevisions: Record<string, string> = {}
+
+  async function writeJsonFile(name: string, content: unknown): Promise<void> {
+    const existing = byName.get(name)
+    if (existing) {
+      const previous = previousHeadRevisions[name]
+      if (previous) {
+        const current = await getHeadRevisionId(accessToken, existing.id)
+        if (current !== previous) throw new SyncConflictError(name)
+      }
+      const meta = await updateTextFile(accessToken, existing.id, JSON.stringify(content))
+      if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
+    } else {
+      const meta = await createTextFile(accessToken, folderId, name, JSON.stringify(content))
+      if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
+    }
+  }
+
+  await writeJsonFile(FILE_NAMES.bookmarks, snapshot.bookmarks)
+  await writeJsonFile(FILE_NAMES.tags, snapshot.tags)
+  await writeJsonFile(FILE_NAMES.cards, snapshot.cards)
+  if (snapshot.boardConfig) await writeJsonFile(FILE_NAMES.boardConfig, snapshot.boardConfig)
+  if (snapshot.vault) await writeJsonFile(FILE_NAMES.vault, snapshot.vault)
+
+  return newRevisions
+}
