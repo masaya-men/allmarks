@@ -1,38 +1,40 @@
-# 次セッションのゴール — 端末間同期 束3(Drive 読み書き + 足し算マージ)
+# 次セッションのゴール — 端末間同期 束4(engine.ts: pull/merge/push)
 
-## ★s210 の到達点(束2 = ログイン受け渡し・完了・本番反映済み)
-- 計画書 `docs/superpowers/plans/2026-09-03-device-sync-bundle-2-auth.md`(tracked)。subagent-driven で5コードタスク・各2段レビュー・opus 全ブランチレビュー・修正1波・再レビュー clean。master マージ `c63d1724`、`allmarks.app` デプロイ済。
-- 出荷: `functions/api/gauth/token.ts`/`refresh.ts`(stateless OAuth 中継・無保存無ログ)＋ `_shared.ts`(`readCappedText`/`jsonResponse`/`postToGoogleToken`/`relayGoogleTokenResponse`/`extractGoogleError`)/ `lib/sync/gauth-types.ts`(zod)/ `lib/sync/google-identity.ts`(GIS ローダ)/ `lib/sync/auth.ts`(`requestAuthCode`/`exchangeCode`/`refreshAccessToken`＋純関数 `computeExpiresAt`/`isAccessTokenExpired`・`SyncTokens{accessToken,expiresAt,scope,refreshToken?,idToken?}`・IDB 非依存)。
-- **同期ロジック・UI はゼロ配線 = 既存挙動は完全不変**(`auth.ts` の import 元が components/app/lib-board/lib-storage に 0 件)。
-- 本番実機確認済: `POST /api/gauth/token` に `{}` → 400 `invalid_request` / ダミー code → 400 `google_rejected:invalid_grant`(= CF シークレット読込 + Google 到達 + 中継の全チェーン生存)。
-- Google Cloud: プロジェクト `allmarks-sync`・OAuth 同意画面(External・**テスト中**)・非機密スコープ `drive.file`/`userinfo.email`/`userinfo.profile`・OAuth クライアント "AllMarks Web"。client_id → `.env.production` + CF env、client_secret → CF 暗号化シークレット + `.dev.vars`。JSON は `docs/private/secrets/`(git 管理外)。
-- tsc 0 / フルスイート **2642/2642** / ビルド OK。`channel.test.ts` の既存 flake も修正済(`vi.waitFor` 化)。
+## ★s211 の到達点(束3 = 足し算マージ + Drive 読み書き)
 
-## ★次セッション = 束3(設計書 §14)
+- ブランチ `feat/device-sync-bundle-3`(commit `d74d56ea`〜`d1aefb02`)。subagent-driven 6コードタスク + 各レビュー + opus 全ブランチレビュー + 修正波1 + 再レビュー clean。フルスイート **2708/2708** / tsc 0 / `rtk pnpm build` OK。**呼び出し元ゼロ = 既存挙動は完全不変**。
+- **★merge/deploy は未実施(ユーザー確認待ち)。** マージ承認と下の C1・I2 の判断が要る。
+- 出荷: `lib/sync/merge.ts`(純関数: `mergeBookmarks`/`mergeTags`/`mergeCards`/`mergeBoardConfig`/`mergeVault`/`mergeAll`・`SyncSnapshot` 型・`updatedAt` は `numericTime` 経由・`pickDeterministic` で決定的) / `lib/sync/drive-adapter.ts`(fetch のみ・token 注入・`DriveError{status}`・`buildMultipartRelated`・`findSyncFolder`/`createSyncFolder`/`listFolderFiles`/`downloadFileText`/`getHeadRevisionId`/`createTextFile`/`updateTextFile`)。
+- 計画書 `docs/superpowers/plans/2026-09-04-device-sync-bundle-3-merge-drive.md`(tracked)。設計書 §15「束3」節に engine への申し送り全部。
 
-### 0. ★ユーザー作業(束3 実装前・1回)— Google Drive API を有効化
-- `console.cloud.google.com` → プロジェクト `AllMarks Sync` を選択 → 検索バーで「Google Drive API」→「**有効にする**」。これをしないと `drive-adapter` の Drive REST 呼び出しが弾かれる。所要1分。**費用は発生しない**(無料枠・カード未登録)。
+## ★マージ前にユーザーが決めること(セッション頭で確認)
 
-### 1. 束3 の計画書を writing-plans で作る
-- `lib/sync/drive-adapter.ts` — Google Drive REST v3 の read/write/list(fetch のみ・認証は**注入**＝`auth.ts` の `SyncTokens.accessToken` を受け取る。`postToGoogleToken` と違い secret は使わない)。可視フォルダ `AllMarks/` の探索(名前 + `appProperties`)、各 `.json` の GET、`files.get(fileId, fields=headRevisionId)` の楽観ロック用取得、multipart PATCH。
-- `lib/sync/merge.ts` — **純関数・IDB 非依存・テストの主戦場**。store 別の足し算マージ(設計 §6)。bookmarks/tags/cards/board-config/vault。
-- 設計 §5(Drive 上のファイル構成)・§6(マージ規則)が下敷き。
+1. **C1 = 承認要**: `mergeBookmarks` は「両端末で `encryptedPayload` の有無が食い違うとき `tags[]` の和集合を取らず LWW 勝者を丸採用」。設計 §6.1「タグは常に和集合」からの**意図的ズレ**(§9 Private 平文非流出 + §12 のため)。代償: Private 化/解除が LWW で負けると同期越しに黙って捨てられる → 束4 engine が race をユーザーに見せる。
+2. **I2 = 仕様判断要(束4着手前)**: ブクマからの「タグ外し」は和集合なので同期で伝わらない(相手の古いコピーが復活・1回収束すると外し操作は永久喪失)。選択肢 (a)「タグ外しは同期しない」割り切り / (b) `tags[]` もレコード丸ごと LWW / (c) ブクマ×タグ単位の墓標。
 
-### 2. 束3 の実装(subagent-driven)
-- テスト厚め: 片側のみ追加 / 両側で別ブクマ追加(3+2=5) / 同一ブクマ scalar 衝突(新しい方) / tags 衝突(集合和) / トゥームストーン vs 編集(時刻境界) / 復元がトゥームストーンに勝つ / **Private ブクマ(`encryptedPayload`)を中身を見ず id 単位でマージ** / 決定性(順序非依存)。
-- `drive-adapter` は fetch モックで単体テスト。
-- deploy 前ゲート: `npx tsc --noEmit && npx vitest run && rtk pnpm build`。
+## ★次セッション = 束4(engine.ts ＋ sync-store ＋ vault.json)
 
-## ★束3 の必須制約(設計書 §15・忘れると手戻り)
-- **`merge.ts` は `updatedAt` を必ず `typeof x === 'number' ? x : 0` で読む**(v17前バックアップ復元で `updatedAt` 無し行が残る・migration 再実行不可・生の値の数値比較は `NaN`)。代替=`importAllStores` に3行 backfill。**どちらか明示的に選ぶ**。
-- 並び替え(`updateBookmarkOrderBatch`/`resortByNewestFirst`)とツイートメディア後追い取得は `updatedAt` を bump する。「device B が板を開いただけ」が「device A のタイトル編集」に LWW で勝ちうる。§6.5 衝突退避の文脈で扱う。
-- `emptyTrash`/`deleteBookmark` はブクマを**墓標なしで物理削除** → 足し算マージだとクラウドから復活する。設計 §6 が「EMPTY TRASH は端末ローカル」を実際にカバーしているか、束4着手前に確認。
+設計書 §4.1(`engine.ts` / `sync-store.ts`)・§7(データフロー)・§8(安全弁)・§9(vault.json 授受)。計画書を writing-plans で作る → subagent-driven。
 
-## ★公開前タスク(束2 で発生・忘れない — 詳細は docs/TODO.md §公開前)
+engine の責務(束3 の申し送りより):
+- **base スナップショット(3-way)** ＋ ローカル/リモート変更の区別(§7.5)。pre-merge バックアップ直近3世代を `sync-store` に。
+- **pull/merge/push オーケストレーション** ＋ **20秒デバウンス push** ＋ visibilitychange/beforeunload flush。
+- **楽観ロック(§7.4)**: pull 時 `headRevisionId` 記録 → push 直前に `getHeadRevisionId` 比較 → 違えば先に pull+再マージ。
+- **安全弁(§8)**: zod 全ファイル検証 / マージが総数の20〜30%超を削除したら一時停止してユーザー確認 / token 失効→「再接続」導線 / ネット不通は静かにスキップ / IDB 書込は 1トランザクション all-or-nothing。
+- **`saveBoardConfig` に `updatedAt` 打刻を配線**(今 `{key,config}` のみ・`mergeBoardConfig` は 0 扱いで動くが engine が打つ)。
+- **merge 結果を破壊的に変更しない**(戻り値は入力レコードと同一参照を含む)。engine 側でコピー。
+- **`emptyTrash`/`deleteBookmark` の物理削除**(墓標なし)対策: 「ローカルに無い ≠ クラウドから消す」を守る or EMPTY TRASH を端末ローカル扱い。§6 の想定を実装前に確認。
+- **`mergeVault` 食い違い**: 黙って進めず ユーザーに選ばせる or パスワード再設定。`isPrivateVault` タグ2つ問題も。
+- **C1 の race をユーザーに見せる**(§6.5 衝突退避と同じ枠)。
+- `hasRequiredScopes(scope)` ヘルパ(束2 申し送り・部分同意で Drive だけ外された検知)。GIS ポップアップ放置タイムアウト経路。
+
+## ★公開前タスク(束2 で発生・継続)
+
 - **PL-1**: OAuth 同意画面のメールを個人 Gmail → 専用アドレス(Google グループ)。memory `project_oauth_support_email_swap`。
 - **PL-2**: OAuth アプリを「テスト中」→「本番」公開 + Search Console で `allmarks.app` ドメイン検証(束4 の放置運転自動同期の前に必須。テスト中だと refresh token が7日で失効)。
 
 ## 恒久ルール(継承)
+
 - 視覚変更は `ui-design.md`「承認後」。`rtk` 前置・`--no-verify` 禁止・vitest/playwright は素の npx(`rtk npx` は既知の不具合)・Framer Motion 禁止。
 - 音(dotted-notebook)/紙(paper-atelier)＝バイト同一を死守。
 - 機微(支援・値付け・戦略)は tracked に書かない＝`docs/private/`。
@@ -43,6 +45,7 @@
 - 大規模調査・実装はサブエージェントに委譲(司令塔は診断・設計・指示書・検収)。
 
 ## 保留中(同期の後 or 並行)
+
 - **N-78**: 画像無しツイート専用カード(見た目案の提示・承認が必要)。
 - **N-64**: カードの＋TAGポップオーバーが再表示後に開けなくなる既存バグ(`CardsLayer.tsx`)。
 - **N-63**: `BackupReminder` の表示位置が ScrollMeter に被る(モック→承認後)。
