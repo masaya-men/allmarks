@@ -207,3 +207,150 @@ describe('pushSnapshot', () => {
     expect(updateTextFile).not.toHaveBeenCalled()
   })
 })
+
+import { runSyncCycle, connectSync } from './engine'
+import { updateSyncStatus, loadSyncStatus } from './sync-store'
+import { mergeAll } from './merge'
+
+function bookmark(id: string, overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id, url: `https://x.com/${id}`, title: id, description: '', thumbnail: '', favicon: '',
+    siteName: '', type: 'website', savedAt: '2026-01-01T00:00:00.000Z', ogpStatus: 'fetched',
+    tags: [], updatedAt: 1, ...overrides,
+  }
+}
+
+describe('runSyncCycle', () => {
+  it('returns not-connected when sync-status has no folderId', async () => {
+    const d = await initDB(); db = d
+    const result = await runSyncCycle(d)
+    expect(result).toEqual({ status: 'not-connected', vaultConflict: false })
+  })
+
+  it('pulls, merges, writes locally, and pushes on a clean cycle', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await d.put('bookmarks', bookmark('local-only') as never)
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d)
+    expect(result.status).toBe('synced')
+    expect(result.mergedCounts?.bookmarks).toBe(1)
+    expect(createTextFile).toHaveBeenCalled() // manifest.json + bookmarks.json etc all created
+    const status = await loadSyncStatus(d)
+    expect(status.lastSyncAt).toBeGreaterThan(0)
+  })
+
+  it('pauses with needs-confirmation when the merge would remove more than 25% of >=10 active bookmarks, and writes nothing', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    for (let i = 0; i < 10; i++) await d.put('bookmarks', bookmark(`local-${i}`) as never)
+
+    // Remote has none of them and tombstones are absent → naive read would look like mass deletion.
+    // Simulate by pulling an empty remote AND asserting the guard triggers off of the *merged* result,
+    // so seed remote with tombstones for 8 of the 10 ids (deletions newer than local's updatedAt).
+    const remoteBookmarks = Array.from({ length: 8 }, (_, i) =>
+      bookmark(`local-${i}`, { isDeleted: true, deletedAt: '2026-06-01T00:00:00.000Z', updatedAt: 999999 }))
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-bm' ? JSON.stringify(remoteBookmarks) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+
+    const result = await runSyncCycle(d)
+    expect(result.status).toBe('needs-confirmation')
+    expect(result.deletionRatio).toBeGreaterThan(0.25)
+    expect(createTextFile).not.toHaveBeenCalled()
+    expect(updateTextFile).not.toHaveBeenCalled()
+    const stillLocal = await d.getAll('bookmarks')
+    expect(stillLocal).toHaveLength(10) // untouched — guard paused before any write
+  })
+
+  it('bypasses the mass-deletion guard when opts.bypassMassDeleteGuard is true', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    for (let i = 0; i < 10; i++) await d.put('bookmarks', bookmark(`local-${i}`) as never)
+    const remoteBookmarks = Array.from({ length: 8 }, (_, i) =>
+      bookmark(`local-${i}`, { isDeleted: true, deletedAt: '2026-06-01T00:00:00.000Z', updatedAt: 999999 }))
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-bm' ? JSON.stringify(remoteBookmarks) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id, _c) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-2' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d, { bypassMassDeleteGuard: true })
+    expect(result.status).toBe('synced')
+  })
+
+  it('flags vaultConflict and keeps the local vault untouched when local and remote vaults differ', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await createVault(d, 'tag1', 'local-password')
+
+    const remoteVault = {
+      key: 'private-vault', tagId: 'tag1', salt: 'different-salt', iterations: 600000,
+      publicKey: 'different-pk', wrappedPrivateKey: { iv: 'iv2', ciphertext: 'ct2' },
+    }
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-vault', name: 'vault.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-vault' ? JSON.stringify(remoteVault) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'x', headRevisionId: 'rev-2' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d)
+    expect(result.vaultConflict).toBe(true)
+    const localVaultAfter = await d.get('settings', 'private-vault')
+    expect((localVaultAfter as { salt?: string } | undefined)?.salt).not.toBe('different-salt')
+  })
+
+  // Not in the plan's Step-1 test list, but the task brief calls out self-heal-on-conflict as one
+  // of four load-bearing safety behaviors — added here so it's actually covered by a test that
+  // would fail if the retry-once logic were removed (result would be 'error' and getHeadRevisionId
+  // would only be called twice instead of four times).
+  it('self-heals a push conflict: re-pulls, re-merges, and pushes again exactly once', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockResolvedValue('[]')
+    vi.mocked(getHeadRevisionId)
+      .mockResolvedValueOnce('rev-1')        // 1st pull records this as the base revision
+      .mockResolvedValueOnce('rev-CONFLICT') // 1st push's optimistic-lock check — mismatches rev-1
+      .mockResolvedValueOnce('rev-2')        // re-pull after the conflict records the new revision
+      .mockResolvedValueOnce('rev-2')        // 2nd push's check — matches the re-pull, so it succeeds
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-3' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d)
+
+    expect(result.status).toBe('synced')
+    // 2 calls from the initial pull+push, 2 more from the retry's re-pull+re-push — proves a
+    // genuine second pull/push cycle happened rather than the first push simply not conflicting.
+    expect(getHeadRevisionId).toHaveBeenCalledTimes(4)
+    expect(updateTextFile).toHaveBeenCalledTimes(1) // the 1st attempt throws before ever calling it
+  })
+})
+
+describe('connectSync', () => {
+  it('saves tokens, finds/creates the folder, and runs a sync cycle', async () => {
+    const d = await initDB(); db = d
+    vi.mocked(findSyncFolder).mockResolvedValue(null)
+    vi.mocked(createSyncFolder).mockResolvedValue('new-folder')
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await connectSync(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    expect(result.status).toBe('synced')
+    const status = await loadSyncStatus(d)
+    expect(status.connected).toBe(true)
+    expect(status.folderId).toBe('new-folder')
+  })
+})

@@ -2,9 +2,14 @@ import type { IDBPDatabase } from 'idb'
 import type { BookmarkRecord, TagRecord, CardRecord } from '@/lib/storage/indexeddb'
 import { CONFIG_KEY, loadBoardConfigRecord } from '@/lib/storage/board-config'
 import { loadVaultRecord } from '@/lib/private/vault-store'
-import type { SyncSnapshot } from './merge'
+import { mergeAll, type SyncSnapshot } from './merge'
 import { refreshAccessToken, isAccessTokenExpired, SYNC_OAUTH_SCOPE, type SyncTokens } from './auth'
-import { loadSyncTokens, saveSyncTokens } from './sync-store'
+import {
+  loadSyncTokens, saveSyncTokens, loadSyncStatus, updateSyncStatus, saveBaseSnapshot, pushBackupGeneration,
+} from './sync-store'
+import { getDeviceId } from './device-id'
+import { DB_VERSION } from '@/lib/constants'
+import type { PrivateVaultRecord } from '@/lib/private/vault-store'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -193,4 +198,128 @@ export async function pushSnapshot(
   if (snapshot.vault) await writeJsonFile(FILE_NAMES.vault, snapshot.vault)
 
   return newRevisions
+}
+
+// ── runSyncCycle / connectSync（安全弁付きオーケストレーション・spec §8）───────
+
+const MASS_DELETE_THRESHOLD = 0.25
+const MASS_DELETE_MIN_COUNT = 10
+
+function activeCount(bookmarks: readonly { isDeleted?: boolean }[]): number {
+  return bookmarks.filter(b => !b.isDeleted).length
+}
+
+function vaultRecordsDiffer(a: PrivateVaultRecord, b: PrivateVaultRecord): boolean {
+  return (
+    a.tagId !== b.tagId ||
+    a.salt !== b.salt ||
+    a.iterations !== b.iterations ||
+    a.publicKey !== b.publicKey ||
+    a.wrappedPrivateKey.iv !== b.wrappedPrivateKey.iv ||
+    a.wrappedPrivateKey.ciphertext !== b.wrappedPrivateKey.ciphertext
+  )
+}
+
+export interface SyncCycleResult {
+  readonly status: 'not-connected' | 'synced' | 'needs-confirmation' | 'error'
+  readonly vaultConflict: boolean
+  readonly deletionRatio?: number
+  readonly mergedCounts?: { readonly bookmarks: number; readonly tags: number; readonly cards: number }
+  readonly errorMessage?: string
+}
+
+async function writeManifest(accessToken: string, folderId: string, db: DbLike, snapshot: SyncSnapshot): Promise<void> {
+  const deviceId = await getDeviceId(db)
+  const manifest = {
+    formatVersion: 1,
+    appDbVersion: DB_VERSION,
+    updatedBy: { deviceId, at: Date.now() },
+    counts: { bookmarks: snapshot.bookmarks.length, tags: snapshot.tags.length, cards: snapshot.cards.length },
+  }
+  const files = await listFolderFiles(accessToken, folderId)
+  const existing = files.find(f => f.name === 'manifest.json')
+  if (existing) {
+    await updateTextFile(accessToken, existing.id, JSON.stringify(manifest))
+  } else {
+    await createTextFile(accessToken, folderId, 'manifest.json', JSON.stringify(manifest))
+  }
+}
+
+export async function runSyncCycle(
+  db: DbLike,
+  opts: { bypassMassDeleteGuard?: boolean } = {},
+): Promise<SyncCycleResult> {
+  const status = await loadSyncStatus(db)
+  if (!status.connected || !status.folderId) {
+    return { status: 'not-connected', vaultConflict: false }
+  }
+  const folderId = status.folderId
+
+  let accessToken: string
+  try {
+    accessToken = await ensureAccessToken(db)
+  } catch (err) {
+    return { status: 'error', vaultConflict: false, errorMessage: err instanceof Error ? err.message : 'auth failed' }
+  }
+
+  let pulled: Awaited<ReturnType<typeof pullRemoteSnapshot>>
+  try {
+    pulled = await pullRemoteSnapshot(accessToken, folderId)
+  } catch (err) {
+    return { status: 'error', vaultConflict: false, errorMessage: err instanceof Error ? err.message : 'pull failed' }
+  }
+
+  const local = await buildLocalSnapshot(db)
+  const vaultConflict = !!(local.vault && pulled.snapshot.vault && vaultRecordsDiffer(local.vault, pulled.snapshot.vault))
+  const merged = mergeAll(local, pulled.snapshot)
+  const finalSnapshot: SyncSnapshot = vaultConflict ? { ...merged, vault: local.vault } : merged
+
+  const localActive = activeCount(local.bookmarks)
+  const mergedActive = activeCount(finalSnapshot.bookmarks)
+  if (!opts.bypassMassDeleteGuard && localActive >= MASS_DELETE_MIN_COUNT) {
+    const deletionRatio = (localActive - mergedActive) / localActive
+    if (deletionRatio > MASS_DELETE_THRESHOLD) {
+      return { status: 'needs-confirmation', vaultConflict, deletionRatio }
+    }
+  }
+
+  await pushBackupGeneration(db, local)
+  await applySnapshotToLocal(db, finalSnapshot)
+
+  let newRevisions: Record<string, string>
+  let pushedSnapshot = finalSnapshot
+  try {
+    newRevisions = await pushSnapshot(accessToken, folderId, finalSnapshot, pulled.headRevisions)
+  } catch (err) {
+    if (!(err instanceof SyncConflictError)) {
+      return { status: 'error', vaultConflict, errorMessage: err instanceof Error ? err.message : 'push failed' }
+    }
+    // Someone else pushed since our pull — re-pull, re-merge once, retry (spec §7.4 self-heal).
+    const rePulled = await pullRemoteSnapshot(accessToken, folderId)
+    const reMerged = mergeAll(finalSnapshot, rePulled.snapshot)
+    pushedSnapshot = vaultConflict ? { ...reMerged, vault: local.vault } : reMerged
+    await applySnapshotToLocal(db, pushedSnapshot)
+    newRevisions = await pushSnapshot(accessToken, folderId, pushedSnapshot, rePulled.headRevisions)
+  }
+
+  await writeManifest(accessToken, folderId, db, pushedSnapshot)
+  await saveBaseSnapshot(db, pushedSnapshot)
+  await updateSyncStatus(db, { headRevisions: newRevisions, lastSyncAt: Date.now() })
+
+  return {
+    status: 'synced',
+    vaultConflict,
+    mergedCounts: {
+      bookmarks: pushedSnapshot.bookmarks.length,
+      tags: pushedSnapshot.tags.length,
+      cards: pushedSnapshot.cards.length,
+    },
+  }
+}
+
+export async function connectSync(db: DbLike, tokens: SyncTokens): Promise<SyncCycleResult> {
+  await saveSyncTokens(db, tokens)
+  const folderId = await ensureSyncFolder(tokens.accessToken)
+  await updateSyncStatus(db, { connected: true, folderId })
+  return runSyncCycle(db)
 }
