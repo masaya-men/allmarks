@@ -10192,3 +10192,66 @@ s208 の設計書を superpowers:writing-plans で実装計画に落とし(`docs
 - **公開前**: PL-1(同意画面メール差替)・PL-2(OAuth 本番公開 + ドメイン検証)。
 
 **★次セッション = 束3(`lib/sync/drive-adapter.ts` + `lib/sync/merge.ts`)。着手前に束3の計画書を writing-plans で作る。冒頭でユーザーに Google Drive API 有効化を依頼。**
+
+---
+
+## セッション 211 (2026-09-04〜09-14) — 端末間同期 束3(足し算マージ + Drive 読み書き)実装・master マージ。opus レビューで重大バグ発見→根本原因を業界調査の上で revise
+
+### スコープ
+
+設計書 §14 の束3 = `lib/sync/merge.ts`(store 別マージの純関数・テストの主戦場)＋ `lib/sync/drive-adapter.ts`(Google Drive REST v3・fetch のみ・token 注入)。同期本体(engine)・UI はまだ作らない(束4〜6)。
+
+### 段取り
+
+1. **ユーザー作業**: Google Cloud Console で Drive API を有効化(1分・無料・スクショで確認済)。
+2. **計画書**(`writing-plans` / `docs/superpowers/plans/2026-09-04-device-sync-bundle-3-merge-drive.md`・tracked): 7タスク。事前に Drive REST v3(multipart upload・files.list の q 構文・appProperties クエリ)を公式ドキュメントで確認。
+3. **subagent-driven で6コードタスク**(haiku 実装・sonnet レビュー・Task3+4/5+6 はバッチ投入):
+   - Task1 `mergeBookmarks`(`06c6004b`)/ Task2 `mergeTags`(`b3e6a625`)/ Task3+4 `mergeCards`/`mergeBoardConfig`/`mergeVault`/`mergeAll`(`580e013f`+`80b5f901`)/ Task5+6 `drive-adapter.ts` 全体(`8b9abcbf`+`8a3aba88`)
+   - 各タスク後に2段レビュー(実装+品質)、全て承認。
+4. **opus 全ブランチレビュー** → **重大バグ「C1」発見**: `mergeBookmarks` のタグ`tags[]`無条件和集合が、Private(金庫)ブクマの「平文空+暗号文+Privateタグ」の原子性(`apply-tag-change.ts` が1トランザクションで書く)を破壊 → 端末Bが板を1回開いて並べ替えただけで平文が Drive に漏れうる状態を発見。他 Important 4件・Minor多数。
+5. **修正波1**(`4ba1f150`+`d1aefb02`): C1 を「Private状態が食い違う時だけタグ和集合をやめる」特別ルールで暫定修正 + 軽微11件。再レビュー clean。
+6. **司令塔からユーザーへ報告・承認依頼**: C1 の設計逸脱(§6.1「タグは常に和集合」からのズレ)の承認と、同時に見つかった設計未決事項「I2=タグ外しが同期で伝わらない」の仕様判断を依頼。
+7. **セッション再開(2026-09-14)**: ユーザーから①C1は承認、②I2は「業界標準は?最も推奨される方法は?」と再質問。**WebSearch で実調査**(Joplin公式issueの暗号化ノート衝突処理・SQLiteData/CloudKit の "field-level last-write-wins" 実例・OR-Set/CRDT文献の add-wins意味論)。根本原因は「和集合(G-Set)は数学的にタグ外しを絶対伝播できない」構造問題と判明 → **`tags[]` を他フィールドと同じ whole-record LWW に統一**(集合和撤廃)を提案・ユーザー承認。
+8. **司令塔が直接実装**(診断済みの外科修正・`mergeOneBookmark` case1 簡略化・`unionOrdered`ヘルパー削除・テスト書き換え)→ フレッシュ agent でレビュー(`267b5fb1`・Critical/Important/Minor ゼロ)。
+9. 設計書 §6.1/§13/§15 を最終状態に更新 → master へ `--no-ff` merge(`1885308d`)→ ブランチ削除・SDD workspace 削除・GitHub push。
+
+### 出荷物
+
+- **`lib/sync/merge.ts`** — 完全な純関数(`Date.now`/`crypto`/`fetch`/IDB/`window` 不使用)。`SyncSnapshot`(5 store の in-memory 形)＋`SyncBoardConfig`。`mergeBookmarks`/`mergeTags`/`mergeCards`/`mergeBoardConfig`/`mergeVault`/`mergeAll`。**`tags[]` は集合和ではなく whole-record LWW**(§6.1改訂・後述)。`updatedAt` は必ず `numericTime`(`typeof x==='number'&&Number.isFinite(x)?x:0`)経由。同値タイブレークは `pickDeterministic`(安定シリアライズの大小比較・引数順非依存)。
+- **`lib/sync/drive-adapter.ts`** — `fetch` のみ・token 注入・secret 無し。`DriveError{status}`/`DriveFileMeta`/`buildMultipartRelated`(純・RFC2387)/`findSyncFolder`(名前+`appProperties`マーカーを**Driveクエリ側でも**絞る+クライアント側でも再確認+id辞書順最小)/`createSyncFolder`/`listFolderFiles`(`(name,id)`ソートで決定的)/`downloadFileText`/`getHeadRevisionId`(楽観ロック用)/`createTextFile`/`updateTextFile`。
+
+### `tags[]` マージ方式の revise(このセッション最大の意思決定)
+
+- **旧方式(集合和)の問題**: (a) G-Set(足すだけの集合)は構造的にタグ外しを絶対に伝播できない (b) Privateの原子性を守るには特別ルールが要る(C1)。
+- **新方式**: `tags[]` も他の scalar フィールドと同じ `updatedAt` LWW で丸ごと採用。実在する業界パターン(CloudKit同期の"field-level last-write-wins"等)。タグ外しが正しく伝播、C1の特別ルールも丸ごと不要に。
+- **代償(ユーザー承認済み)**: 未同期のまま両端末が別々のタグを足すと、片方が LWW で負けて消えることがある。
+- **将来の格上げ余地**: 「1つも失わない」を売りにしたければ OR-Set(CRDT の模範解答・タグ毎の追加印+観測済み削除)に格上げできる(設計 §13)。今のレコード形のままで後乗せ可能。
+- 調査根拠(Joplin/CloudKit/OR-Set)と決定の全文は **memory `project_allmarks_sync_tag_merge_strategy`**(新規)に保存。`project_multidevice_sync`(71日stale だったので同時に更新)からもリンク。**同じ調査を二度しないための恒久記録。**
+
+### 検証・出荷
+
+- tsc 0 / eslint 0 / フルスイート **2706/2706**(束2到達点2642+新規64) / `rtk pnpm build` OK。
+- `git grep` で `lib/sync/merge` `lib/sync/drive-adapter` の呼び出し元ゼロを確認(テストファイル以外) = **既存挙動は完全不変**。
+- レビュー履歴: 各タスク2段レビュー×6 + opus全ブランチレビュー(C1発見) + 修正波1の再レビュー + tags[]revise の追加レビュー、**全てclean/Critical・Importantゼロで着地**。
+- `git merge --no-ff feat/device-sync-bundle-3` → merge commit `1885308d`。ブランチ削除。GitHub(`origin/master`)へ push 済。
+- **デプロイは意図的に保留**(ユーザー判断「ちゃんと出来上がってから出したい」)。呼び出し元ゼロで実害皆無なので、束4以降で同期が実際に使える形になってからまとめて反映する方針に決定。
+
+### 成果物
+
+- `docs/superpowers/plans/2026-09-04-device-sync-bundle-3-merge-drive.md`(実装計画・新規・tracked)
+- `docs/private/2026-09-02-device-sync-design.md` §6.1(改訂)・§13(OR-Set追記)・§15 束3節(最終状態に更新)
+- コード: `lib/sync/{merge,drive-adapter}.ts` + 同 `.test.ts`(新規4ファイル)
+- memory: `project_allmarks_sync_tag_merge_strategy`(新規)・`project_multidevice_sync`(更新)・MEMORY.md索引更新
+- `docs/private/dashboard.html` hero-strip 更新
+
+### 申し送り(束4〜)
+
+- **`saveBoardConfig` に `updatedAt` 打刻を配線**(今 `{key,config}` のみ)。
+- **merge結果は入力レコードと同一参照を含みうる** — engine は破壊的変更禁止(コピーしてから変更)。
+- **`mergeVault` の食い違い**(同期前に2台で別々にPrivate設定)→ 黙って進めずユーザーに選ばせる/パスワード再設定を促す(`mergeVault` JSDoc に明記済み)。`isPrivateVault`タグ2つ問題も。
+- **`emptyTrash`/`deleteBookmark` は墓標なし物理削除** — 足し算マージだとクラウドから復活しうる。engine 実装前に「ローカルに無い≠クラウドから消す」の扱いを確認。
+- 楽観ロック(§7.4): `getHeadRevisionId` は取得のみ、比較・再マージ判断は engine。
+- `hasRequiredScopes(scope)`(束2申し送り)・GISポップアップ放置タイムアウト → 束4/6。
+- **公開前**: PL-1(同意画面メール差替)・PL-2(OAuth本番公開+ドメイン検証・束4の放置運転自動同期の前に必須)。
+
+**★次セッション = 束4(`lib/sync/engine.ts` — pull/merge/push の司令塔 + `sync-store.ts` + `vault.json` 授受)。着手前に計画書を writing-plans で作る。同期機能全体の進捗は体感35%(束1-3/7完了)、束4が最大の山場。**
