@@ -76,23 +76,27 @@ describe('mergeBookmarks — scalar conflict (LWW by updatedAt)', () => {
   })
 })
 
-describe('mergeBookmarks — tags union (both live)', () => {
-  it('unions the tag arrays of both sides onto the LWW winner', () => {
+describe('mergeBookmarks — tags[] follows whole-record LWW, both live (no union — §6.1 revised s211)', () => {
+  it('takes the LWW winner tags whole — the losing side never contributes tags', () => {
     const local = [bm({ id: 'a', tags: ['x'], updatedAt: 200 })]
     const remote = [bm({ id: 'a', tags: ['y'], updatedAt: 100 })]
-    expect(mergeBookmarks(local, remote)[0].tags.sort()).toEqual(['x', 'y'])
+    expect(mergeBookmarks(local, remote)[0].tags).toEqual(['x'])
+    expect(mergeBookmarks(remote, local)[0].tags).toEqual(['x'])
   })
 
-  it('dedupes tags', () => {
-    const local = [bm({ id: 'a', tags: ['x', 'y'], updatedAt: 2 })]
-    const remote = [bm({ id: 'a', tags: ['y', 'z'], updatedAt: 1 })]
-    expect(mergeBookmarks(local, remote)[0].tags).toEqual(['x', 'y', 'z'])
+  it('a tag removed on the winning side stays removed — no resurrection from a stale copy', () => {
+    // device A removed 'old' and is the LWW winner (newer updatedAt)
+    const afterRemoval = [bm({ id: 'a', tags: ['keep'], updatedAt: 200 })]
+    // device B never synced the removal, still has the old tag
+    const stale = [bm({ id: 'a', tags: ['keep', 'old'], updatedAt: 100 })]
+    expect(mergeBookmarks(afterRemoval, stale)[0].tags).toEqual(['keep'])
+    expect(mergeBookmarks(stale, afterRemoval)[0].tags).toEqual(['keep'])
   })
 
-  it('winner tags come first, loser extras appended (deterministic)', () => {
-    const local = [bm({ id: 'a', tags: ['b', 'a'], updatedAt: 9 })]
-    const remote = [bm({ id: 'a', tags: ['c'], updatedAt: 1 })]
-    expect(mergeBookmarks(local, remote)[0].tags).toEqual(['b', 'a', 'c'])
+  it('equal updatedAt -> deterministic tags regardless of arg order', () => {
+    const l = [bm({ id: 'a', tags: ['L'], updatedAt: 50 })]
+    const r = [bm({ id: 'a', tags: ['R'], updatedAt: 50 })]
+    expect(mergeBookmarks(l, r)[0].tags).toEqual(mergeBookmarks(r, l)[0].tags)
   })
 })
 
@@ -153,37 +157,27 @@ describe('mergeBookmarks — Private bookmarks (§9: merge by id, never inspect 
     expect(mergeBookmarks(remote, local)[0].encryptedPayload).toEqual(payloadB)
   })
 
-  it('C1: when only one side is Private (payload present), does NOT union tags — takes the LWW winner whole', () => {
+  it('when Private state diverges (one plaintext, one encrypted), the LWW winner is taken whole — no plaintext/Private-tag mixing', () => {
     // device A Private-ized: payload set, plaintext blank, Private tag added, updatedAt older
     const privatized = bm({ id: 'x', title: '', url: '', encryptedPayload: payloadA, tags: ['priv'], updatedAt: 100 })
     // device B still plaintext, updatedAt newer (e.g. B reordered its board once)
     const plaintext = bm({ id: 'x', title: 'real title', url: 'https://real', tags: ['work'], updatedAt: 200 })
     const [out] = mergeBookmarks([privatized], [plaintext])
-    // B wins LWW; result is B unchanged — no 'priv' tag leaked in, no payload
+    // B wins LWW; result is B unchanged — no 'priv' tag leaked in, no payload.
+    // (This is what the former "C1" bug fix special-cased; whole-record LWW for
+    // tags[] makes it fall out of the general rule instead — regression guard.)
     expect(out.title).toBe('real title')
     expect(out.encryptedPayload).toBeUndefined()
     expect(out.tags).toEqual(['work'])
   })
 
-  it('C1: when the Private side wins LWW, result is the ciphertext record whole (no plaintext tag unioned in)', () => {
+  it('when the Private side wins LWW, result is the ciphertext record whole', () => {
     const privatized = bm({ id: 'x', title: '', url: '', encryptedPayload: payloadA, tags: ['priv'], updatedAt: 300 })
     const plaintext = bm({ id: 'x', title: 'real', url: 'https://real', tags: ['work'], updatedAt: 200 })
     const [out] = mergeBookmarks([privatized], [plaintext])
     expect(out.encryptedPayload).toEqual(payloadA)
     expect(out.title).toBe('')
     expect(out.tags).toEqual(['priv'])
-  })
-
-  it('C1: both sides plaintext (no payload either side) still unions tags as before', () => {
-    const a = bm({ id: 'x', tags: ['a'], updatedAt: 200 })
-    const b = bm({ id: 'x', tags: ['b'], updatedAt: 100 })
-    expect(mergeBookmarks([a], [b])[0].tags.sort()).toEqual(['a', 'b'])
-  })
-
-  it('C1: both sides Private (payload both) still unions tags', () => {
-    const a = bm({ id: 'x', title: '', encryptedPayload: payloadA, tags: ['priv', 'a'], updatedAt: 200 })
-    const b = bm({ id: 'x', title: '', encryptedPayload: payloadB, tags: ['priv', 'b'], updatedAt: 100 })
-    expect(mergeBookmarks([a], [b])[0].tags.sort()).toEqual(['a', 'b', 'priv'])
   })
 })
 

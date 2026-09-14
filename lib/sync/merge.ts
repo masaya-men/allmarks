@@ -61,13 +61,6 @@ function pickDeterministic<T>(a: T, b: T): T {
   return stableStringify(a) >= stableStringify(b) ? a : b
 }
 
-/** winner の順を保ちつつ loser の未含有要素を後ろに足す（重複除去）。 */
-function unionOrdered(winner: readonly string[], loser: readonly string[]): string[] {
-  const out = [...winner]
-  for (const t of loser) if (!out.includes(t)) out.push(t)
-  return out
-}
-
 /** id をキーにした Map。後勝ち（呼び出し側は同一配列内に重複 id を渡さない前提）。 */
 function byId<T extends { id: string }>(rows: readonly T[]): Map<string, T> {
   const m = new Map<string, T>()
@@ -100,28 +93,23 @@ function mergeOneBookmark(a: BookmarkRecord, b: BookmarkRecord): BookmarkRecord 
     return live // 生存側が勝つ（tags 和集合はしない）
   }
 
-  // ケース1: どちらも生存 → LWW（同値は決定的）＋ tags 和集合
+  // ケース1: どちらも生存 → LWW（同値は決定的）。tags[] は他フィールドと同じ
+  // whole-record LWW の一部として扱う（集合和はしない）。設計 §6.1 改訂
+  // (s211 ユーザー確認・memory `project_allmarks_sync_tag_merge_strategy`):
+  // 集合和(G-Set)は構造的に「タグ外し」を伝播できず、かつ Private の
+  // encryptedPayload/plaintext の原子性(lib/private/apply-tag-change.ts)を
+  // tags[] だけ特別扱いしないと壊す(旧 C1 バグ)。record 全体の LWW に一本化
+  // すると両方が自然に解決する — 業界の "field-level last-write-wins" 相当
+  // (CloudKit 同期等で実例あり)。「タグを外す」操作は正しく伝播するが、
+  // 未同期のまま両端末が別々のタグを足すと片方が LWW で負けて消えることがある
+  // (許容済みのトレードオフ)。
   // bookmarks は savedAt へのフォールバック不要: v17 migration が全既存行を
   // updatedAt = Date.parse(savedAt) で backfill 済み（tags の createdAt 相当）。
   const at = numericTime(a.updatedAt)
   const bt = numericTime(b.updatedAt)
-  let winner: BookmarkRecord
-  let loser: BookmarkRecord
-  if (at > bt) { winner = a; loser = b }
-  else if (bt > at) { winner = b; loser = a }
-  else { winner = pickDeterministic(a, b); loser = winner === a ? b : a }
-  // tags[] is written atomically with the Private plaintext/ciphertext state
-  // (lib/private/apply-tag-change.ts). If the two sides disagree on whether
-  // encryptedPayload is present, exactly one has been Private-ized/de-Private-ized
-  // and its tags[] is inseparable from that state — unioning would produce a
-  // record with a Private tag but plaintext fields (leaks to Drive per §9) or a
-  // payload-less Private row (dropped by resolve-visibility). Take the LWW
-  // winner whole; the Private toggle can lose LWW but the record stays consistent.
-  // Intentional deviation from design §6.1 / plan「設計上の判断」§5, to satisfy §9 + §12.
-  const privateStateDiffers =
-    (a.encryptedPayload === undefined) !== (b.encryptedPayload === undefined)
-  if (privateStateDiffers) return winner
-  return { ...winner, tags: unionOrdered(winner.tags, loser.tags) }
+  if (at > bt) return a
+  if (bt > at) return b
+  return pickDeterministic(a, b)
 }
 
 /** local ∪ remote（id 単位）。id 昇順で返す。設計 §6.1。 */
