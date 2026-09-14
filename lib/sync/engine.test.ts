@@ -308,6 +308,59 @@ describe('runSyncCycle', () => {
     expect(result.vaultConflict).toBe(true)
     const localVaultAfter = await d.get('settings', 'private-vault')
     expect((localVaultAfter as { salt?: string } | undefined)?.salt).not.toBe('different-salt')
+    // Fix I3: on conflict the snapshot's vault is null, not local.vault — so vault.json (the only
+    // file present remotely here) is never written back to Drive at all. The local survival above
+    // is because it was genuinely never touched, not because it was re-written with the same value.
+    expect(updateTextFile).not.toHaveBeenCalled()
+  })
+
+  // Fix C1 (senior review, post-Task-8): the retry path used to reuse the FIRST pull's vaultConflict
+  // boolean unchanged, so a vault conflict that only becomes visible on the retry's re-pull (the
+  // realistic two-devices-set-up-Private-independently-then-race-to-sync scenario) was silently
+  // missed — mergeAll's arbitrary pickDeterministic would have won and gotten pushed/applied.
+  it('re-checks the vault conflict on the retry path when the retry re-pull reveals a differing vault', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await createVault(d, 'tag1', 'local-password')
+    const localVaultBefore = await d.get('settings', 'private-vault') as { salt: string }
+
+    const remoteVault = {
+      key: 'private-vault', tagId: 'tag1', salt: 'different-salt', iterations: 600000,
+      publicKey: 'different-pk', wrappedPrivateKey: { iv: 'iv2', ciphertext: 'ct2' },
+    }
+    // The FIRST pull sees no vault at all (so vaultConflict is false on the first attempt) — only
+    // the RETRY's re-pull (after listFolderFiles has been called twice) discovers the other
+    // device's vault, alongside the same bookmarks.json used to force the first push to conflict.
+    let listCalls = 0
+    vi.mocked(listFolderFiles).mockImplementation(async () => {
+      listCalls += 1
+      return listCalls <= 2
+        ? [{ id: 'f-bm', name: 'bookmarks.json' }]
+        : [{ id: 'f-bm', name: 'bookmarks.json' }, { id: 'f-vault', name: 'vault.json' }]
+    })
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-vault' ? JSON.stringify(remoteVault) : '[]')
+    vi.mocked(getHeadRevisionId)
+      .mockResolvedValueOnce('rev-bm-1')        // 1st pull: bookmarks.json base revision
+      .mockResolvedValueOnce('rev-bm-CONFLICT') // 1st push's check on bookmarks.json — mismatches, throws
+      .mockResolvedValueOnce('rev-bm-2')        // retry re-pull: bookmarks.json
+      .mockResolvedValueOnce('rev-vault-1')     // retry re-pull: vault.json (now visible)
+      .mockResolvedValueOnce('rev-bm-2')        // 2nd push's check on bookmarks.json — matches, succeeds
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-bm-3' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d)
+
+    expect(result.status).toBe('synced')
+    expect(result.vaultConflict).toBe(true) // only visible after the retry's re-pull
+    const localVaultAfter = await d.get('settings', 'private-vault') as { salt: string }
+    // Local vault is still exactly what createVault wrote before the cycle — never overwritten by
+    // pickDeterministic's arbitrary choice between local/remote.
+    expect(localVaultAfter.salt).toBe(localVaultBefore.salt)
+    expect(localVaultAfter.salt).not.toBe('different-salt')
+    // Fix I3: Drive's vault.json (id 'f-vault', now visible on the retry) is never written to either.
+    expect(updateTextFile).not.toHaveBeenCalledWith(expect.anything(), 'f-vault', expect.anything())
   })
 
   // Not in the plan's Step-1 test list, but the task brief calls out self-heal-on-conflict as one

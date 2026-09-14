@@ -270,9 +270,13 @@ export async function runSyncCycle(
   }
 
   const local = await buildLocalSnapshot(db)
-  const vaultConflict = !!(local.vault && pulled.snapshot.vault && vaultRecordsDiffer(local.vault, pulled.snapshot.vault))
+  let vaultConflict = !!(local.vault && pulled.snapshot.vault && vaultRecordsDiffer(local.vault, pulled.snapshot.vault))
   const merged = mergeAll(local, pulled.snapshot)
-  const finalSnapshot: SyncSnapshot = vaultConflict ? { ...merged, vault: local.vault } : merged
+  // On conflict, push neither side's vault (null): applySnapshotToLocal/pushSnapshot both skip a
+  // null vault entirely, so the local vault stays untouched AND the other device's vault.json on
+  // Drive is never overwritten. Whoever's vault "wins" arbitrarily (pickDeterministic) is deferred
+  // to a future UI that lets the user choose — not built in this bundle.
+  const finalSnapshot: SyncSnapshot = vaultConflict ? { ...merged, vault: null } : merged
 
   const localActive = activeCount(local.bookmarks)
   const mergedActive = activeCount(finalSnapshot.bookmarks)
@@ -294,12 +298,37 @@ export async function runSyncCycle(
     if (!(err instanceof SyncConflictError)) {
       return { status: 'error', vaultConflict, errorMessage: err instanceof Error ? err.message : 'push failed' }
     }
-    // Someone else pushed since our pull — re-pull, re-merge once, retry (spec §7.4 self-heal).
-    const rePulled = await pullRemoteSnapshot(accessToken, folderId)
+    // Someone else pushed since our pull. Re-pull, re-merge once, then retry the push —
+    // re-running the SAME safety checks as the first attempt (vault conflict, mass-deletion
+    // guard), since the retry's re-pull can surface a conflict or deletions the first pull
+    // never saw. Wrapped in its own try/catch so a second failure still returns a
+    // SyncCycleResult instead of an unhandled rejection.
+    let rePulled: Awaited<ReturnType<typeof pullRemoteSnapshot>>
+    try {
+      rePulled = await pullRemoteSnapshot(accessToken, folderId)
+    } catch (err2) {
+      return { status: 'error', vaultConflict, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)' }
+    }
+
+    const reConflict = vaultConflict || !!(local.vault && rePulled.snapshot.vault && vaultRecordsDiffer(local.vault, rePulled.snapshot.vault))
     const reMerged = mergeAll(finalSnapshot, rePulled.snapshot)
-    pushedSnapshot = vaultConflict ? { ...reMerged, vault: local.vault } : reMerged
+    pushedSnapshot = reConflict ? { ...reMerged, vault: null } : reMerged
+    vaultConflict = reConflict
+
+    const reMergedActive = activeCount(pushedSnapshot.bookmarks)
+    if (!opts.bypassMassDeleteGuard && localActive >= MASS_DELETE_MIN_COUNT) {
+      const reDeletionRatio = (localActive - reMergedActive) / localActive
+      if (reDeletionRatio > MASS_DELETE_THRESHOLD) {
+        return { status: 'needs-confirmation', vaultConflict, deletionRatio: reDeletionRatio }
+      }
+    }
+
     await applySnapshotToLocal(db, pushedSnapshot)
-    newRevisions = await pushSnapshot(accessToken, folderId, pushedSnapshot, rePulled.headRevisions)
+    try {
+      newRevisions = await pushSnapshot(accessToken, folderId, pushedSnapshot, rePulled.headRevisions)
+    } catch (err3) {
+      return { status: 'error', vaultConflict, errorMessage: err3 instanceof Error ? err3.message : 'push failed (retry)' }
+    }
   }
 
   await writeManifest(accessToken, folderId, db, pushedSnapshot)
