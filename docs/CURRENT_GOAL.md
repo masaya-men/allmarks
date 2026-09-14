@@ -1,16 +1,17 @@
 # 次セッションのゴール — 端末間同期 束4(engine.ts: pull/merge/push)
 
-## ★s211 の到達点(束3 = 足し算マージ + Drive 読み書き)
+## ★s211 の到達点(束3 = 足し算マージ + Drive 読み書き。★master マージ済)
 
-- ブランチ `feat/device-sync-bundle-3`(commit `d74d56ea`〜`d1aefb02`)。subagent-driven 6コードタスク + 各レビュー + opus 全ブランチレビュー + 修正波1 + 再レビュー clean。フルスイート **2708/2708** / tsc 0 / `rtk pnpm build` OK。**呼び出し元ゼロ = 既存挙動は完全不変**。
-- **★merge/deploy は未実施(ユーザー確認待ち)。** マージ承認と下の C1・I2 の判断が要る。
+- **master マージ済**（merge commit `1885308d`・`feat/device-sync-bundle-3` は削除済）。**デプロイは未実施**（呼び出し元ゼロ＝既存挙動に影響ゼロだが、ユーザー判断で「同期が実際に使える形（束4以降）になってから本番反映」と決定。単独デプロイは省く）。
+- subagent-driven 6コードタスク + 各レビュー + opus 全ブランチレビュー + 修正波1 + 再レビュー clean → セッション再開後、ユーザーと相談して **`tags[]` のマージ方式を revise**（下記）→ 追加レビュー clean。フルスイート **2706/2706** / tsc 0 / eslint 0 / `rtk pnpm build` OK。
 - 出荷: `lib/sync/merge.ts`(純関数: `mergeBookmarks`/`mergeTags`/`mergeCards`/`mergeBoardConfig`/`mergeVault`/`mergeAll`・`SyncSnapshot` 型・`updatedAt` は `numericTime` 経由・`pickDeterministic` で決定的) / `lib/sync/drive-adapter.ts`(fetch のみ・token 注入・`DriveError{status}`・`buildMultipartRelated`・`findSyncFolder`/`createSyncFolder`/`listFolderFiles`/`downloadFileText`/`getHeadRevisionId`/`createTextFile`/`updateTextFile`)。
 - 計画書 `docs/superpowers/plans/2026-09-04-device-sync-bundle-3-merge-drive.md`(tracked)。設計書 §15「束3」節に engine への申し送り全部。
 
-## ★マージ前にユーザーが決めること(セッション頭で確認)
+### ★s211 途中で解決した2件（もう判断不要・記録のみ）
 
-1. **C1 = 承認要**: `mergeBookmarks` は「両端末で `encryptedPayload` の有無が食い違うとき `tags[]` の和集合を取らず LWW 勝者を丸採用」。設計 §6.1「タグは常に和集合」からの**意図的ズレ**(§9 Private 平文非流出 + §12 のため)。代償: Private 化/解除が LWW で負けると同期越しに黙って捨てられる → 束4 engine が race をユーザーに見せる。
-2. **I2 = 仕様判断要(束4着手前)**: ブクマからの「タグ外し」は和集合なので同期で伝わらない(相手の古いコピーが復活・1回収束すると外し操作は永久喪失)。選択肢 (a)「タグ外しは同期しない」割り切り / (b) `tags[]` もレコード丸ごと LWW / (c) ブクマ×タグ単位の墓標。
+- **旧C1（Private の平文漏洩バグ）** — 当初「Private の状態が食い違うときだけタグの和集合をやめる」特別ルールで暫定修正。ユーザーに「業界標準は？」と問われ調査 → 根本原因は和集合そのもの（タグ外しを原理的に伝播できない）と判明。
+- **旧I2（タグ外しが同期で伝わらない）** — 上と同じ根っこ。
+- → **`tags[]` を他フィールドと同じ whole-record LWW に統一**（集合和をやめる）。実在する業界パターン（CloudKit 等の "field-level last-write-wins"）。タグ外しが正しく伝わるようになり、C1 の特別ルールも丸ごと不要に。代償（ユーザー承認済み）: 未同期のまま両端末が別々のタグを足すと片方が消えることがある。将来「1つも失わない」を売りにしたければ OR-Set（CRDT）に格上げする余地あり（設計 §13）。調査の詳細は **memory `project_allmarks_sync_tag_merge_strategy`**（同じ調査を二度しないための保存）。
 
 ## ★次セッション = 束4(engine.ts ＋ sync-store ＋ vault.json)
 
@@ -24,8 +25,8 @@ engine の責務(束3 の申し送りより):
 - **`saveBoardConfig` に `updatedAt` 打刻を配線**(今 `{key,config}` のみ・`mergeBoardConfig` は 0 扱いで動くが engine が打つ)。
 - **merge 結果を破壊的に変更しない**(戻り値は入力レコードと同一参照を含む)。engine 側でコピー。
 - **`emptyTrash`/`deleteBookmark` の物理削除**(墓標なし)対策: 「ローカルに無い ≠ クラウドから消す」を守る or EMPTY TRASH を端末ローカル扱い。§6 の想定を実装前に確認。
-- **`mergeVault` 食い違い**: 黙って進めず ユーザーに選ばせる or パスワード再設定。`isPrivateVault` タグ2つ問題も。
-- **C1 の race をユーザーに見せる**(§6.5 衝突退避と同じ枠)。
+- **`mergeVault` 食い違い**（同期前に2台で別々に Private 設定）: 黙って進めず ユーザーに選ばせる or パスワード再設定。`isPrivateVault` タグ2つ問題も。
+- 一般の衝突退避(§6.5): 本当に同時編集が起きたとき（Private トグルを含む、あらゆるフィールド）は「負けた版を30日退避 + 静かなトースト」。特定フィールド専用の UI は不要（全フィールド共通の仕組みでカバー）。
 - `hasRequiredScopes(scope)` ヘルパ(束2 申し送り・部分同意で Drive だけ外された検知)。GIS ポップアップ放置タイムアウト経路。
 
 ## ★公開前タスク(束2 で発生・継続)
@@ -39,6 +40,7 @@ engine の責務(束3 の申し送りより):
 - 音(dotted-notebook)/紙(paper-atelier)＝バイト同一を死守。
 - 機微(支援・値付け・戦略)は tracked に書かない＝`docs/private/`。
 - merge/push/deploy は必ずユーザー確認後。ただし deploy は「本番で見たい」等の明示的な合図があれば即実行可。docs だけの push はしない(次の実務 push に同梱)。
+- **束3で決定**: 束1-3 は各々 master マージ済みだが、**本番デプロイは同期が実際に使える形（束4以降）になってからまとめて行う**（単独デプロイは省く）。
 - 選択ボックス(AskUserQuestion)はデザイン判断・意思決定・調査/デバッグ中の質問には使わない。普通の会話で聞く。
 - 文言(UI コピー)を新規/変更するときは、実装前に実際の英語・日本語の文面そのものを見せて確認を得る。
 - IDB/vault など不可逆な本番データに関わる変更は、実行前に必ずユーザーに事実確認する。
