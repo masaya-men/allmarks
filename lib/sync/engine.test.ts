@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import 'fake-indexeddb/auto'
 import type { IDBPDatabase } from 'idb'
 import { initDB, type AllMarksDB } from '@/lib/storage/indexeddb'
@@ -6,6 +6,14 @@ import { saveBoardConfig } from '@/lib/storage/board-config'
 import { createVault } from '@/lib/private/vault-store'
 import { buildLocalSnapshot, applySnapshotToLocal } from './engine'
 import type { SyncSnapshot } from './merge'
+import { saveSyncTokens, loadSyncTokens } from './sync-store'
+import { ensureAccessToken, hasRequiredScopes, SyncNotConnectedError } from './engine'
+
+vi.mock('./auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./auth')>()
+  return { ...actual, refreshAccessToken: vi.fn() }
+})
+import { refreshAccessToken } from './auth'
 
 let db: IDBPDatabase<AllMarksDB> | null = null
 
@@ -77,5 +85,41 @@ describe('applySnapshotToLocal', () => {
     expect((config as { updatedAt?: number } | undefined)?.updatedAt).toBe(7)
     const vault = await d.get('settings', 'private-vault')
     expect((vault as { tagId?: string } | undefined)?.tagId).toBe('tag1')
+  })
+})
+
+describe('ensureAccessToken', () => {
+  it('throws SyncNotConnectedError when no tokens are stored', async () => {
+    const d = await initDB(); db = d
+    await expect(ensureAccessToken(d)).rejects.toThrow(SyncNotConnectedError)
+  })
+
+  it('returns the stored access token when not expired', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100_000, scope: 's', refreshToken: 'rt' })
+    expect(await ensureAccessToken(d, Date.now())).toBe('at')
+    expect(refreshAccessToken).not.toHaveBeenCalled()
+  })
+
+  it('refreshes and persists a new token when expired', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'old', expiresAt: 1, scope: 's', refreshToken: 'rt' })
+    vi.mocked(refreshAccessToken).mockResolvedValue({ accessToken: 'new', expiresAt: 999999999999, scope: 's' })
+    const token = await ensureAccessToken(d, Date.now())
+    expect(token).toBe('new')
+    expect(refreshAccessToken).toHaveBeenCalledWith('rt')
+    const persisted = await loadSyncTokens(d)
+    expect(persisted?.accessToken).toBe('new')
+    expect(persisted?.refreshToken).toBe('rt') // refresh doesn't return a new refresh token — keep the old one
+  })
+})
+
+describe('hasRequiredScopes', () => {
+  it('true when all required scopes are present regardless of order', () => {
+    expect(hasRequiredScopes('email https://www.googleapis.com/auth/drive.file profile openid')).toBe(true)
+  })
+
+  it('false when drive.file is missing (partial consent)', () => {
+    expect(hasRequiredScopes('openid email profile')).toBe(false)
   })
 })

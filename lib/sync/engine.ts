@@ -3,6 +3,8 @@ import type { BookmarkRecord, TagRecord, CardRecord } from '@/lib/storage/indexe
 import { CONFIG_KEY, loadBoardConfigRecord } from '@/lib/storage/board-config'
 import { loadVaultRecord } from '@/lib/private/vault-store'
 import type { SyncSnapshot } from './merge'
+import { refreshAccessToken, isAccessTokenExpired, SYNC_OAUTH_SCOPE, type SyncTokens } from './auth'
+import { loadSyncTokens, saveSyncTokens } from './sync-store'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -47,4 +49,27 @@ export async function applySnapshotToLocal(db: DbLike, snapshot: SyncSnapshot): 
     await settingsStore.put(snapshot.vault)
   }
   await tx.done
+}
+
+export class SyncNotConnectedError extends Error {
+  constructor() {
+    super('Sync is not connected (no refresh token stored)')
+    this.name = 'SyncNotConnectedError'
+  }
+}
+
+export async function ensureAccessToken(db: DbLike, now: number = Date.now()): Promise<string> {
+  const tokens = await loadSyncTokens(db)
+  if (!tokens) throw new SyncNotConnectedError()
+  if (!isAccessTokenExpired(tokens.expiresAt, now)) return tokens.accessToken
+  if (!tokens.refreshToken) throw new SyncNotConnectedError()
+  const refreshed = await refreshAccessToken(tokens.refreshToken)
+  const merged: SyncTokens = { ...refreshed, refreshToken: refreshed.refreshToken ?? tokens.refreshToken }
+  await saveSyncTokens(db, merged)
+  return merged.accessToken
+}
+
+export function hasRequiredScopes(grantedScope: string): boolean {
+  const granted = new Set(grantedScope.split(' ').filter(Boolean))
+  return SYNC_OAUTH_SCOPE.split(' ').every(required => granted.has(required))
 }
