@@ -63,4 +63,39 @@ describe('snapshot-schema', () => {
   it('rejects a vault file with the wrong key literal', () => {
     expect(parseVaultFile({ ...VALID_VAULT, key: 'wrong' }).ok).toBe(false)
   })
+
+  it('keeps unknown extra fields nested in encryptedPayload (nested forward compatibility)', () => {
+    const bookmarkWithEncrypted = {
+      ...VALID_BOOKMARK,
+      encryptedPayload: {
+        ephemeralPublicKey: 'pk',
+        iv: 'iv',
+        ciphertext: 'ct',
+        algorithmVersion: '2', // future field
+      },
+    }
+    const result = parseBookmarksFile([bookmarkWithEncrypted])
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      const payload = (result.value[0] as unknown as Record<string, unknown>).encryptedPayload as Record<string, unknown>
+      expect(payload.algorithmVersion).toBe('2')
+    }
+  })
+
+  it('keeps unknown extra fields nested in wrappedPrivateKey (nested forward compatibility)', () => {
+    const vaultWithExtra = {
+      ...VALID_VAULT,
+      wrappedPrivateKey: {
+        iv: 'iv',
+        ciphertext: 'ct',
+        salt: 'future-salt-field', // future field
+      },
+    }
+    const result = parseVaultFile(vaultWithExtra)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      const wrapped = (result.value as unknown as Record<string, unknown>).wrappedPrivateKey as Record<string, unknown>
+      expect(wrapped.salt).toBe('future-salt-field')
+    }
+  })
 })

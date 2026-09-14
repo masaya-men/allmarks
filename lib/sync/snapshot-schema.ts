@@ -38,7 +38,7 @@ const bookmarkSchema = z.object({
     ephemeralPublicKey: z.string(),
     iv: z.string(),
     ciphertext: z.string(),
-  }).optional(),
+  }).passthrough().optional(),
   dominantColor: z.string().nullable().optional(),
   onboardingDemo: z.boolean().optional(),
 }).passthrough()
@@ -87,7 +87,7 @@ const vaultFileSchema = z.object({
   salt: z.string(),
   iterations: z.number(),
   publicKey: z.string(),
-  wrappedPrivateKey: z.object({ iv: z.string(), ciphertext: z.string() }),
+  wrappedPrivateKey: z.object({ iv: z.string(), ciphertext: z.string() }).passthrough(),
   hint: z.string().optional(),
 }).passthrough()
 
