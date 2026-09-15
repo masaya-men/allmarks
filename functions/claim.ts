@@ -70,18 +70,24 @@ export async function onRequestGet(ctx: PagesContext): Promise<Response> {
     return errorPage('This link is missing or malformed.')
   }
 
+  // Claim-secret rejection (unknown / malformed record / inactive / exhausted)
+  // must all return the exact same message. Otherwise anyone holding a real
+  // claimSecret (even an old/leaked one) could distinguish "never existed"
+  // from "deactivated" from "exhausted" by the message text alone.
+  const claimRejected = (): Response => errorPage('This link is invalid or no longer available.')
+
   const raw = await ctx.env.K3_KV.get(`claim:${secret}`)
-  if (!raw) return errorPage('This link is invalid or has expired.')
+  if (!raw) return claimRejected()
 
   let record: ClaimRecord
   try {
     record = JSON.parse(raw) as ClaimRecord
   } catch {
-    return errorPage('This link is invalid or has expired.')
+    return claimRejected()
   }
 
-  if (!record.active) return errorPage('This link is no longer active.')
-  if (record.issuedCount >= record.maxIssue) return errorPage('This link has reached its limit. Please contact the developer for a new one.')
+  if (!record.active) return claimRejected()
+  if (record.issuedCount >= record.maxIssue) return claimRejected()
   if (!ctx.env.K3_PRIVATE_KEY) return errorPage('Key signing is not configured yet. Please try again later.')
 
   const kid = crypto.randomUUID()
