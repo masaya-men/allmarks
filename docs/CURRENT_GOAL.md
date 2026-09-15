@@ -1,38 +1,41 @@
-# 次セッションのゴール — 端末間同期 束5(最小K3)or 束6(SyncPanel UI)
+# 次セッションのゴール — 端末間同期 束6(SyncPanel UI)
 
-## ★s212 の到達点(束4 = engine.ts オーケストレーション。★master マージ済)
+## ★s213 の到達点(束5 = 最小K3。★master マージ済)
 
-- **master マージ済**（merge commit あり・`feat/device-sync-bundle-4` は削除済）。**デプロイは未実施**（呼び出し元ゼロ＝既存挙動に影響ゼロ。同期が実際に使える形になってから本番反映する方針は継続）。
-- subagent-driven 9コードタスク + 各タスクレビュー（Task4/Task8 は各1回の修正ラウンド） + opus 全ブランチレビュー + 修正波1（6件） + opus 再レビュー。フルスイート **2770/2770** / tsc 0 / eslint 0（新規混入エラーなし・masterに既存の無関係な1件のみ） / `rtk pnpm build` OK。
-- 出荷: `lib/sync/sync-store.ts`（トークン・接続状況・baseスナップショット・直近3世代バックアップ） / `lib/storage/board-config.ts`（`updatedAt`打刻配線） / `lib/sync/snapshot-schema.ts`（zod検証） / `lib/sync/engine.ts`（`buildLocalSnapshot`/`applySnapshotToLocal`/`ensureAccessToken`/`hasRequiredScopes`/`pullRemoteSnapshot`/`pushSnapshot`/`runSyncCycle`/`connectSync`） / `lib/sync/sync-controller.ts`（20秒デバウンスpush・visibilitychange/beforeunload flush・`onResult`コールバック・同時実行ガード）。
-- 計画書 `docs/superpowers/plans/2026-09-14-device-sync-bundle-4-engine.md`（tracked）。設計書 §15「束4」節に束5/6への申し送り全部。
+- **master マージ済**（merge commit あり・`feat/device-sync-bundle-5-k3` は削除済）。**デプロイは未実施**（呼び出し元ゼロ＝既存挙動に影響ゼロ。同期が実際に使える形になってから本番反映する方針は継続）。
+- セッション冒頭で**束4からの最優先申し送り(`connectSync`の`hasRequiredScopes`不具合)を先に修正**（空scopeはスキップ・`drive.file`だけを見る方式に）。commit `314eef60`。
+- subagent-driven 6コードタスク + 各タスクレビュー（Task4 は1回の修正ラウンド） + opus 全ブランチレビュー + 修正波1（3件） + opus 再レビュー。フルスイート **2813/2813** / tsc 0 / eslint 0（このブランチが触ったファイルは新規混入エラーなし） / `pnpm build` OK。
+- 出荷: `lib/board/license-types.ts`（ワイヤーフォーマット・base64url符号化）/ `lib/board/license-crypto.ts`（`verifyLicenseKey`＝オフラインEd25519検証）/ `lib/board/license-store.ts` + `theme-entitlement.ts`の`isSyncUnlocked`（解錠状態の永続化・ゲート判定）/ `functions/claim.ts`（発券）/ `functions/activate.ts`（発動・5台キャップ）/ `lib/board/license-activate.ts`（`activateLicenseKey`＝クライアント側オーケストレーション・フェイルオープン）/ `scripts/generate-k3-keypair.mjs`（鍵ペア生成スクリプト）。
+- 計画書 `docs/superpowers/plans/2026-09-15-device-sync-bundle-5-k3.md`（tracked）。
 
-### ★s212 で発見・修正した重大バグ（もう判断不要・記録のみ）
+### ★s213 最終レビューで発見・修正した重要な指摘（もう判断不要・記録のみ）
 
-- **Task 8実装直後の全ブランチレビュー(opus)で発見**: push衝突後の再試行経路でvault（金庫）の食い違いを再検知しない Critical バグ。「2台の端末がそれぞれ別々にPrivateを設定してから初めて同期する」代表的な初回利用シナリオで、片方の端末の秘密鍵が恒久的に失われうる。同ラウンドで4点まとめて修正（vault食い違い時は`vault:null`にする・再試行経路でも安全弁を再評価・例外を投げずSyncCycleResultで返す）。
-- **束4全体の最終レビュー(2回目のopus・独立)で同じ失敗モードの別経路を発見**: 再試行経路が「サイクル開始時点の古いローカル状態」を参照していた（`buildLocalSnapshot`を都度読み直していなかった）。同ラウンドで修正。あわせて`pushSnapshot`の楽観ロックが「pull時に存在しなかったファイル」を素通ししていた穴も閉じた。
-- 詳細は設計書 §15「束4」節・memory 不要（tracked plan + design doc に全部残してある）。
+- **`/claim`のKVレコードに実行時バリデーションが無く、手入力タイポで発行上限が無効化されうる**（例: `maxIssue`のスペルミス→`NaN>=undefined`は常にfalse→無制限発行）。zod検証を追加し修正済み。
+- **`/activate`へのfetchにタイムアウトが無く、Worker がハングすると「フェイルオープンのはずが永久に固まる」**状態になりうる不具合。`AbortSignal.timeout(10000)`を追加し修正済み。
+- **5台キャップに達した支援者を救う手段が無かった**。`/claim`成功画面に`Key ID`（=`kid`）を表示するよう追加（将来`wrangler kv key delete act:<kid>`で手動リセットする際の窓口）。
 
-## ★次セッション = 束5(最小K3)or 束6(SyncPanel UI) — どちらから着手するかユーザーと相談
+### ★束6着手前に必ず読む・未解決の申し送り（s213で新規発見・低優先度）
 
-設計書 §10（最小K3）・§4.1（SyncPanel）参照。
+- **`verifyLicenseKey`の`'unsupported'`が2つの原因を区別しない**: 「ブラウザがEd25519非対応」と「`K3_PUBLIC_KEY`が未設定（鍵ペア未生成）」が同じ結果になる。今は公開鍵が空文字なので実質全員`'unsupported'`になるが、UIがまだ無いので誰も踏まない。束6でSETTINGSのキー入力欄を作る前に、原因を分けるか少なくとも文言で区別すること。
+- **貼り付けたキー文字列の内部の空白を除去しない**（先頭末尾のtrimのみ）。メール転記等で改行/空白が入ると弾かれる。束6の入力欄実装時に`.replace(/\s+/g, '')`を足す。
 
-### ★★最優先・必ず先に直す（束6でconnectSyncを配線する前に）
+## ★次セッション = 束6（SyncPanel UI）
 
-- **`connectSync`の`hasRequiredScopes`ゲートが実際の接続を弾く不具合**（束4最終レビューの修正波で新規混入・現在は呼び出し元ゼロなので実害ゼロ）。原因: ①Googleは`scope`を返さないことがある（`gauth-types.ts`自身が「緩い確認用」と明記）→ 空文字は必ずfalse ②Googleは`email`/`profile`を短縮形ではなく`userinfo.email`/`userinfo.profile`の正式URLで返す → 完全一致比較が同意済みユーザーでも失敗。直し方: 空scopeはチェックをスキップする（既存の設計意図どおり）／短縮形と正式URLを対応させる／実質必須なのは`drive.file`だけなのでそれだけ見る。詳細=設計書§15「束4」節の申し送り1番。
+設計書 §4.1（SyncPanel）参照。責務（設計書§4.1）+ 束4/5からの申し送り:
 
-### 束5（最小K3）の責務（設計書§10）
-- Worker `/claim?c=<secret>`（発券）・`/activate`（発動・5台キャップ・冪等）
-- `lib/board/license-store.ts`（新規）・`isSyncUnlocked`（`isThemeUnlocked`と同じ土台）
-- フェイルオープン（Worker障害時は署名が本物なら通す）
-
-### 束6（SyncPanel UI）の責務（設計書§4.1）+ 束4からの申し送り
 - 初回接続フロー・同期状態表示・エラー表示（SETTINGS内）
+- **SETTINGSに「キーを入力」欄を新設** → `lib/board/license-activate.ts`の`activateLicenseKey(db, keyString)`を呼ぶだけ（束5で実装済み・呼び出し元ゼロのまま待機中）。戻り値の4状態（`unlocked(verified:true/false)`/`invalid-key`/`unsupported`/`cap-exceeded`）をどう見せるか文言設計が必要（実装前に実際の英語・日本語の文面を提示して確認）。
 - **vault（金庫）食い違い時のUI**: 黙って進めずユーザーに選ばせる or パスワード再設定導線
 - **`isPrivateVault`タグの重複問題**（未対応・merge.ts自身のJSDocが束4に警告していた点）: vault食い違い時、tags[]は通常どおりマージされるためローカルに`isPrivateVault:true`のタグが2つ並びうる。vault食い違いUIと同時に設計。
-- **テーマのバージョン差保護が無い**: 未知の`themeId`を含む`board-config`を取り込むとボード描画が壊れる。`manifest.json`の`appDbVersion`を書いてはいるが読むコードが無い。束5/6の前にガードが必要。
+- **テーマのバージョン差保護が無い**: 未知の`themeId`を含む`board-config`を取り込むとボード描画が壊れる。`manifest.json`の`appDbVersion`を書いてはいるが読むコードが無い。束6の前にガードが必要。
 - **EMPTY TRASHの注意書き文言**（設計書§6.6・ユーザー承認済みの2点を含める）: 「安全のための仕組み」「もう一方の端末でも空にすれば消える」
 - `sync-controller.ts`の`onResult`コールバックをここで初めて使う。コールバック内で例外を投げないこと（`void flushNow()`経由だと未処理rejectionになりうる）。
+
+### ★束6着手前 or 並行の運用セットアップ（ユーザーの手作業・実機確認に必要）
+
+- `wrangler kv namespace create K3_KV`（+`--preview`）→ 出力IDを`wrangler.toml`に反映
+- `node scripts/generate-k3-keypair.mjs`実行 → 公開鍵を`.env.production`の`NEXT_PUBLIC_K3_PUBLIC_KEY=`へ・秘密鍵を`wrangler pages secret put K3_PRIVATE_KEY`へ
+- claimレコードを1件seed: `wrangler kv key put --binding=K3_KV "claim:<合言葉>" '{"label":"launch","issuedCount":0,"maxIssue":50,"active":true}'`
 
 ## ★公開前タスク（束2で発生・継続）
 
@@ -45,7 +48,7 @@
 - 音（dotted-notebook）/紙（paper-atelier）＝バイト同一を死守。
 - 機微（支援・値付け・戦略）はtrackedに書かない＝`docs/private/`。
 - merge/push/deployは必ずユーザー確認後。ただしdeployは「本番で見たい」等の明示的な合図があれば即実行可。docsだけのpushはしない（次の実務pushに同梱）。
-- **束1-4は各々masterマージ済みだが、本番デプロイは同期が実際に使える形（束5/6以降）になってからまとめて行う**（単独デプロイは省く）。
+- **束1-5は各々masterマージ済みだが、本番デプロイは同期が実際に使える形（束6以降）になってからまとめて行う**（単独デプロイは省く）。
 - 選択ボックス（AskUserQuestion）はデザイン判断・意思決定・調査/デバッグ中の質問には使わない。普通の会話で聞く。
 - 文言（UIコピー）を新規/変更するときは、実装前に実際の英語・日本語の文面そのものを見せて確認を得る。
 - IDB/vaultなど不可逆な本番データに関わる変更は、実行前に必ずユーザーに事実確認する。
