@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { PasswordField } from './PasswordField'
 import styles from './PrivateSetupDialog.module.css'
 
 type Props = {
@@ -59,21 +60,21 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
         <div className={styles.explanation} data-testid="private-setup-explanation">
           {t('private.setupExplanation')}
         </div>
-        <label className={styles.label} htmlFor="private-setup-password">{t('private.passwordLabel')}</label>
-        <input
+        <PasswordField
           id="private-setup-password"
-          type="password"
-          className={styles.input}
+          label={t('private.passwordLabel')}
           value={password}
-          onChange={(e): void => setPassword(e.target.value)}
+          onChange={setPassword}
+          showLabel={t('private.showPassword')}
+          hideLabel={t('private.hidePassword')}
         />
-        <label className={styles.label} htmlFor="private-setup-confirm">{t('private.confirmPasswordLabel')}</label>
-        <input
+        <PasswordField
           id="private-setup-confirm"
-          type="password"
-          className={styles.input}
+          label={t('private.confirmPasswordLabel')}
           value={confirm}
-          onChange={(e): void => setConfirm(e.target.value)}
+          onChange={setConfirm}
+          showLabel={t('private.showPassword')}
+          hideLabel={t('private.hidePassword')}
         />
         <label className={styles.label} htmlFor="private-setup-hint">{t('private.hintLabel')}</label>
         <input

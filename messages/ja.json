@@ -277,10 +277,12 @@
     "buttonAria": "Open tag management"
   },
   "private": {
-    "setupExplanation": "このパスワードで、Privateタグを付けたものすべてのタイトル・URL・サムネイル・画像を暗号化します。実際の中身は平文では一切保存されません。下のヒント以外に救済手段はありません。パスワードを忘れると、中身は永久に暗号化されたままになります。",
+    "setupExplanation": "このパスワードで、Privateタグを付けたものすべてのタイトル・URL・サムネイル・画像を暗号化します。実際の中身は平文では一切保存されません。既に解錠済みの端末からは、いつでもパスワードを変更できます。もしどの端末でも忘れてしまった場合は、中身は永久に暗号化されたままです — 下のヒントだけが手がかりです。",
     "passwordLabel": "パスワード",
     "confirmPasswordLabel": "パスワード(確認)",
     "hintLabel": "ヒント(任意)",
+    "showPassword": "パスワードを表示",
+    "hidePassword": "パスワードを隠す",
     "errorTooShort": "パスワードは4文字以上で入力してください。",
     "errorMismatch": "パスワードが一致しません。",
     "errorCreateFailed": "作成に失敗しました。もう一度お試しください。",

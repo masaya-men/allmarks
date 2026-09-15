@@ -277,10 +277,12 @@
     "buttonAria": "Open tag management"
   },
   "private": {
-    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. There is no recovery besides the hint below: if you forget the password, the content stays encrypted forever.",
+    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
     "passwordLabel": "Password",
     "confirmPasswordLabel": "Confirm password",
     "hintLabel": "Hint (optional)",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errorTooShort": "Password must be at least 4 characters.",
     "errorMismatch": "Passwords do not match.",
     "errorCreateFailed": "Could not create the vault. Try again.",

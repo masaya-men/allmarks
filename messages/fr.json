@@ -277,10 +277,12 @@
     "buttonAria": "Ouvrir la gestion des tags"
   },
   "private": {
-    "setupExplanation": "Chiffre le titre, l'URL, la miniature et les photos de tout ce qui est marqué Private avec ce mot de passe — le contenu réel n'est jamais stocké en clair. Il n'existe aucun autre recours que l'indice ci-dessous : si vous oubliez le mot de passe, le contenu reste chiffré pour toujours.",
+    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
     "passwordLabel": "Mot de passe",
     "confirmPasswordLabel": "Confirmer le mot de passe",
     "hintLabel": "Indice (facultatif)",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errorTooShort": "Le mot de passe doit comporter au moins 4 caractères.",
     "errorMismatch": "Les mots de passe ne correspondent pas.",
     "errorCreateFailed": "Impossible de créer le coffre. Réessayez.",

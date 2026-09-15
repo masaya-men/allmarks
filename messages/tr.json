@@ -277,10 +277,12 @@
     "buttonAria": "Etiket yönetimini aç"
   },
   "private": {
-    "setupExplanation": "Bu şifre, Private olarak etiketlenen her şeyin başlığını, URL'sini, küçük resmini ve fotoğraflarını şifreler — gerçek içerik asla düz metin olarak saklanmaz. Aşağıdaki ipucu dışında kurtarma yöntemi yoktur: şifreyi unutursanız içerik sonsuza dek şifreli kalır.",
+    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
     "passwordLabel": "Şifre",
     "confirmPasswordLabel": "Şifreyi onayla",
     "hintLabel": "İpucu (isteğe bağlı)",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errorTooShort": "Şifre en az 4 karakter olmalıdır.",
     "errorMismatch": "Şifreler eşleşmiyor.",
     "errorCreateFailed": "Kasa oluşturulamadı. Tekrar deneyin.",

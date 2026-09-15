@@ -277,10 +277,12 @@
     "buttonAria": "فتح إدارة الوسوم"
   },
   "private": {
-    "setupExplanation": "يشفّر هذا العنوان ورابط URL والصورة المصغّرة والصور الخاصة بكل ما تم وسمه بعلامة Private باستخدام كلمة المرور هذه — لا يُحفظ المحتوى الحقيقي أبدًا كنص عادي. لا توجد وسيلة استرجاع سوى التلميح أدناه: إذا نسيت كلمة المرور، سيبقى المحتوى مشفّرًا إلى الأبد.",
+    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
     "passwordLabel": "كلمة المرور",
     "confirmPasswordLabel": "تأكيد كلمة المرور",
     "hintLabel": "تلميح (اختياري)",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errorTooShort": "يجب أن تتكون كلمة المرور من 4 أحرف على الأقل.",
     "errorMismatch": "كلمتا المرور غير متطابقتين.",
     "errorCreateFailed": "تعذّر إنشاء الخزنة. حاول مرة أخرى.",
