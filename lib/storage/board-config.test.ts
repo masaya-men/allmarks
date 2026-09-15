@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { loadBoardConfig, saveBoardConfig, DEFAULT_BOARD_CONFIG } from './board-config'
+import { loadBoardConfig, saveBoardConfig, DEFAULT_BOARD_CONFIG, loadBoardConfigRecord } from './board-config'
 import type { BoardConfig } from '@/lib/board/types'
 
 // Minimal in-memory fake for SettingsRecord store
@@ -102,5 +102,29 @@ describe('board config storage', () => {
     await saveBoardConfig(db, { ...loaded, roundedCorners: false })
     loaded = await loadBoardConfig(db)
     expect(loaded.roundedCorners).toBe(false)
+  })
+})
+
+describe('board config updatedAt (sync bundle 4)', () => {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  let db: any
+  beforeEach(() => { db = makeFakeDb() })
+
+  it('loadBoardConfigRecord returns null when nothing saved', async () => {
+    expect(await loadBoardConfigRecord(db)).toBeNull()
+  })
+
+  it('stamps updatedAt with Date.now() by default', async () => {
+    const before = Date.now()
+    await saveBoardConfig(db, DEFAULT_BOARD_CONFIG)
+    const record = await loadBoardConfigRecord(db)
+    expect(record?.updatedAt).toBeGreaterThanOrEqual(before)
+    expect(record?.config).toEqual(DEFAULT_BOARD_CONFIG)
+  })
+
+  it('accepts an explicit updatedAt (used when applying a merged sync snapshot)', async () => {
+    await saveBoardConfig(db, DEFAULT_BOARD_CONFIG, 999)
+    const record = await loadBoardConfigRecord(db)
+    expect(record?.updatedAt).toBe(999)
   })
 })
