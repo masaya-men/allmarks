@@ -178,11 +178,14 @@ export async function pushSnapshot(
   async function writeJsonFile(name: string, content: unknown): Promise<void> {
     const existing = byName.get(name)
     if (existing) {
+      // Fix I-6: a file that exists on Drive but has no recorded `previous` revision means THIS
+      // device never saw it at its own pull time (e.g. another device created it in the gap
+      // between this device's pull and this device's push) — treat that as a conflict too,
+      // uniformly across all 5 files, instead of silently blind-overwriting it.
       const previous = previousHeadRevisions[name]
-      if (previous) {
-        const current = await getHeadRevisionId(accessToken, existing.id)
-        if (current !== previous) throw new SyncConflictError(name)
-      }
+      if (!previous) throw new SyncConflictError(name)
+      const current = await getHeadRevisionId(accessToken, existing.id)
+      if (current !== previous) throw new SyncConflictError(name)
       const meta = await updateTextFile(accessToken, existing.id, JSON.stringify(content))
       if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
     } else {
@@ -310,8 +313,14 @@ export async function runSyncCycle(
       return { status: 'error', vaultConflict, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)' }
     }
 
-    const reConflict = vaultConflict || !!(local.vault && rePulled.snapshot.vault && vaultRecordsDiffer(local.vault, rePulled.snapshot.vault))
-    const reMerged = mergeAll(finalSnapshot, rePulled.snapshot)
+    // Fix I-1: re-read IndexedDB instead of reusing the pre-cycle `local` snapshot. By now
+    // applySnapshotToLocal(db, finalSnapshot) already ran once this cycle, and/or the user may
+    // have edited something locally during the failed push's round-trip — `local` is stale on
+    // both counts. `localNow` already subsumes `finalSnapshot` (it was written to IDB already),
+    // so re-deriving from `localNow` alone (not finalSnapshot) is correct and simpler.
+    const localNow = await buildLocalSnapshot(db)
+    const reConflict = vaultConflict || !!(localNow.vault && rePulled.snapshot.vault && vaultRecordsDiffer(localNow.vault, rePulled.snapshot.vault))
+    const reMerged = mergeAll(localNow, rePulled.snapshot)
     pushedSnapshot = reConflict ? { ...reMerged, vault: null } : reMerged
     vaultConflict = reConflict
 
@@ -347,8 +356,26 @@ export async function runSyncCycle(
 }
 
 export async function connectSync(db: DbLike, tokens: SyncTokens): Promise<SyncCycleResult> {
-  await saveSyncTokens(db, tokens)
-  const folderId = await ensureSyncFolder(tokens.accessToken)
-  await updateSyncStatus(db, { connected: true, folderId })
+  // Fix I-2: reject a partial-consent connection (missing scope) up front, before touching
+  // tokens/Drive at all. hasRequiredScopes was built in an earlier task but never called anywhere
+  // — this is the one place holding tokens.scope, and the natural place to enforce it.
+  if (!hasRequiredScopes(tokens.scope)) {
+    return {
+      status: 'error',
+      vaultConflict: false,
+      errorMessage: 'Missing required Google Drive permission. Please reconnect and grant all requested permissions.',
+    }
+  }
+  // Fix I-2: every other path in this module returns Promise<SyncCycleResult> and never rejects.
+  // connectSync used to be the one exception (no try/catch around ensureSyncFolder/updateSyncStatus),
+  // so a Drive error (403, network failure, partial OAuth consent) propagated as an unhandled
+  // rejection instead of the documented contract.
+  try {
+    await saveSyncTokens(db, tokens)
+    const folderId = await ensureSyncFolder(tokens.accessToken)
+    await updateSyncStatus(db, { connected: true, folderId })
+  } catch (err) {
+    return { status: 'error', vaultConflict: false, errorMessage: err instanceof Error ? err.message : 'connect failed' }
+  }
   return runSyncCycle(db)
 }

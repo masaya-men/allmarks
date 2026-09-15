@@ -13,7 +13,7 @@ vi.mock('./auth', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./auth')>()
   return { ...actual, refreshAccessToken: vi.fn() }
 })
-import { refreshAccessToken } from './auth'
+import { refreshAccessToken, SYNC_OAUTH_SCOPE } from './auth'
 
 let db: IDBPDatabase<AllMarksDB> | null = null
 
@@ -206,6 +206,18 @@ describe('pushSnapshot', () => {
     ).rejects.toThrow(SyncConflictError)
     expect(updateTextFile).not.toHaveBeenCalled()
   })
+
+  // Fix I-6: previously, `existing` truthy + no recorded `previous` skipped the revision check
+  // entirely and blind-overwrote the file. That's a real race window (another device created the
+  // file in the gap between this device's pull and this device's push) — it must now be treated
+  // as a conflict, uniformly across all 5 files, not silently passed through.
+  it('throws SyncConflictError when the file exists remotely but this device recorded no previous revision for it', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+    await expect(
+      pushSnapshot('token', 'folder1', snapshot, {}), // no entry for 'bookmarks.json'
+    ).rejects.toThrow(SyncConflictError)
+    expect(updateTextFile).not.toHaveBeenCalled()
+  })
 })
 
 import { runSyncCycle, connectSync } from './engine'
@@ -267,6 +279,10 @@ describe('runSyncCycle', () => {
     expect(updateTextFile).not.toHaveBeenCalled()
     const stillLocal = await d.getAll('bookmarks')
     expect(stillLocal).toHaveLength(10) // untouched — guard paused before any write
+    // Fix I-8: toHaveLength(10) alone passes whether the guard fired OR the merge was silently
+    // applied (same row count either way, since a merge tombstones rather than deletes) — this
+    // genuinely proves none of the local records were touched by the (blocked) merge.
+    expect(stillLocal.every(b => b.isDeleted !== true)).toBe(true)
   })
 
   it('bypasses the mass-deletion guard when opts.bypassMassDeleteGuard is true', async () => {
@@ -390,6 +406,67 @@ describe('runSyncCycle', () => {
     expect(getHeadRevisionId).toHaveBeenCalledTimes(4)
     expect(updateTextFile).toHaveBeenCalledTimes(1) // the 1st attempt throws before ever calling it
   })
+
+  // Fix I-1: the retry path used to reuse the STALE `local` snapshot captured at cycle start.
+  // Here the first pull sees no vault at all (so vaultConflict is false going into the first push
+  // attempt), the first push conflicts on bookmarks.json, and — while the retry's re-pull is "in
+  // flight" — the user sets up Private locally for the first time (simulated by creating the vault
+  // as a side effect of the retry re-pull's own listFolderFiles call, which runs and resolves
+  // before buildLocalSnapshot is ever called). Under the old stale-`local` code, `local.vault` is
+  // null at that point, so the retry's conflict check never fires and mergeAll(finalSnapshot, ...)
+  // silently adopts the remote vault — permanently overwriting the user's brand-new local vault
+  // and losing its wrapped private key. The fix re-reads IndexedDB (`localNow`) right before the
+  // retry's merge, so it must both detect the conflict AND leave the freshly-created local vault
+  // untouched.
+  it('re-derives local from IndexedDB on the retry path so a vault created mid-retry is detected and never overwritten', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    // No vault yet — the first pull genuinely sees none either.
+
+    const remoteVault = {
+      key: 'private-vault', tagId: 'tag1', salt: 'remote-salt', iterations: 600000,
+      publicKey: 'remote-pk', wrappedPrivateKey: { iv: 'iv-remote', ciphertext: 'ct-remote' },
+    }
+    let createdDuringRetry: { salt?: string; publicKey?: string } | null = null
+
+    let listCalls = 0
+    vi.mocked(listFolderFiles).mockImplementation(async () => {
+      listCalls += 1
+      if (listCalls === 3) {
+        // The retry's re-pull is the 3rd call to listFolderFiles (1st pull, 1st push's internal
+        // list, then this). Simulate the user finishing Private setup right as it resolves —
+        // strictly before runSyncCycle ever calls buildLocalSnapshot(db) for the retry.
+        await createVault(d, 'tag1', 'local-during-retry')
+        const created = await d.get('settings', 'private-vault') as { salt?: string; publicKey?: string }
+        createdDuringRetry = { salt: created.salt, publicKey: created.publicKey }
+        return [{ id: 'f-bm', name: 'bookmarks.json' }, { id: 'f-vault', name: 'vault.json' }]
+      }
+      return [{ id: 'f-bm', name: 'bookmarks.json' }]
+    })
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-vault' ? JSON.stringify(remoteVault) : '[]')
+    vi.mocked(getHeadRevisionId)
+      .mockResolvedValueOnce('rev-bm-1')        // 1st pull: bookmarks.json base revision
+      .mockResolvedValueOnce('rev-bm-CONFLICT') // 1st push's check on bookmarks.json — mismatches, throws
+      .mockResolvedValueOnce('rev-bm-2')        // retry re-pull: bookmarks.json
+      .mockResolvedValueOnce('rev-vault-1')     // retry re-pull: vault.json (now visible)
+      .mockResolvedValueOnce('rev-bm-2')        // 2nd push's check on bookmarks.json — matches, succeeds
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-bm-3' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d)
+
+    expect(result.status).toBe('synced')
+    expect(result.vaultConflict).toBe(true) // only visible once localNow is re-read on the retry
+    expect(createdDuringRetry).not.toBeNull()
+    const localVaultAfter = await d.get('settings', 'private-vault') as { salt?: string; publicKey?: string }
+    // The vault the user just created mid-retry survives unchanged — not overwritten by the
+    // remote vault that mergeAll(stale-local, remote) would otherwise have adopted.
+    expect(localVaultAfter?.salt).toBe(createdDuringRetry!.salt)
+    expect(localVaultAfter?.publicKey).toBe(createdDuringRetry!.publicKey)
+    expect(localVaultAfter?.salt).not.toBe('remote-salt')
+  })
 })
 
 describe('connectSync', () => {
@@ -400,10 +477,37 @@ describe('connectSync', () => {
     vi.mocked(listFolderFiles).mockResolvedValue([])
     vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
 
-    const result = await connectSync(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    const result = await connectSync(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: SYNC_OAUTH_SCOPE, refreshToken: 'rt' })
     expect(result.status).toBe('synced')
     const status = await loadSyncStatus(d)
     expect(status.connected).toBe(true)
     expect(status.folderId).toBe('new-folder')
+  })
+
+  // Fix I-2: connectSync is the one place holding tokens.scope, and the natural place to reject a
+  // connection attempt with partial OAuth consent. hasRequiredScopes (Task 6) was dead code before
+  // this fix — never called anywhere.
+  it('returns status:error without saving tokens or touching Drive when the granted scope is missing drive.file', async () => {
+    const d = await initDB(); db = d
+    const result = await connectSync(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'openid email profile', refreshToken: 'rt' })
+    expect(result).toEqual(expect.objectContaining({ status: 'error', vaultConflict: false }))
+    expect(findSyncFolder).not.toHaveBeenCalled()
+    expect(createSyncFolder).not.toHaveBeenCalled()
+    const persistedTokens = await loadSyncTokens(d)
+    expect(persistedTokens).toBeNull()
+    const status = await loadSyncStatus(d)
+    expect(status.connected).not.toBe(true)
+  })
+
+  // Fix I-2: every other path in this module returns Promise<SyncCycleResult> and never rejects.
+  // connectSync used to be the one exception — a Drive error here (403, network failure) propagated
+  // as an unhandled rejection instead of resolving with {status:'error', ...}.
+  it('resolves with status:error instead of rejecting when ensureSyncFolder fails', async () => {
+    const d = await initDB(); db = d
+    vi.mocked(findSyncFolder).mockRejectedValue(new Error('403: insufficient permission'))
+
+    await expect(
+      connectSync(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: SYNC_OAUTH_SCOPE, refreshToken: 'rt' }),
+    ).resolves.toEqual(expect.objectContaining({ status: 'error', vaultConflict: false }))
   })
 })

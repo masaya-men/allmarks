@@ -13,17 +13,40 @@ export interface SyncController {
   stop(): void
 }
 
-export function createSyncController(db: DbLike, debounceMs: number = DEFAULT_DEBOUNCE_MS): SyncController {
+export function createSyncController(
+  db: DbLike,
+  debounceMs: number = DEFAULT_DEBOUNCE_MS,
+  onResult?: (result: SyncCycleResult) => void,
+): SyncController {
   let timer: ReturnType<typeof setTimeout> | null = null
   let started = false
+  // Fix I-4: shared in-flight promise so overlapping triggers (debounce timer, visibilitychange,
+  // beforeunload, a manual flushNow()) never start a second concurrent runSyncCycle — they all
+  // share the result of whichever cycle is already running.
+  let inFlight: Promise<SyncCycleResult> | null = null
 
   function clearTimer(): void {
     if (timer !== null) { clearTimeout(timer); timer = null }
   }
 
+  // Fix I-3: previously 3 of 4 trigger paths discarded flushNow()'s result (`void flushNow()`),
+  // so the bundle's two headline safety-valve outcomes (needs-confirmation, vaultConflict:true)
+  // never reached any caller on an automatic trigger. onResult now fires exactly once per actual
+  // sync cycle, however it was triggered.
   async function flushNow(): Promise<SyncCycleResult> {
     clearTimer()
-    return runSyncCycle(db)
+    if (inFlight) return inFlight
+    const promise = (async () => {
+      const result = await runSyncCycle(db)
+      onResult?.(result)
+      return result
+    })()
+    inFlight = promise
+    try {
+      return await promise
+    } finally {
+      if (inFlight === promise) inFlight = null
+    }
   }
 
   function markDirty(): void {
