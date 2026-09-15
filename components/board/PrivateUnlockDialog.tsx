@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { PasswordField } from './PasswordField'
 import styles from './PrivateUnlockDialog.module.css'
 
 type Props = {
@@ -44,14 +45,15 @@ export function PrivateUnlockDialog({ hint, onSubmit, onCancel }: Props): ReactE
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
         <div id="private-unlock-heading" className={styles.heading}>UNLOCK PRIVATE</div>
         {hint && <div className={styles.hint}>{hint}</div>}
-        <label className={styles.label} htmlFor="private-unlock-password">{t('private.passwordLabel')}</label>
-        <input
+        <PasswordField
           id="private-unlock-password"
-          type="password"
-          className={styles.input}
+          label={t('private.passwordLabel')}
           value={password}
-          onChange={(e): void => setPassword(e.target.value)}
-          onKeyDown={(e): void => { if (e.key === 'Enter') void submit() }}
+          onChange={setPassword}
+          onEnter={(): void => { void submit() }}
+          showLabel={t('private.showPassword')}
+          hideLabel={t('private.hidePassword')}
+          autoComplete="current-password"
         />
         {error && <div className={styles.error}>{error}</div>}
         <div className={styles.actions}>

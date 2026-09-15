@@ -281,6 +281,8 @@
     "passwordLabel": "Contraseña",
     "confirmPasswordLabel": "Confirmar contraseña",
     "hintLabel": "Pista (opcional)",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errorTooShort": "La contraseña debe tener al menos 4 caracteres.",
     "errorMismatch": "Las contraseñas no coinciden.",
     "errorCreateFailed": "No se pudo crear la bóveda. Inténtalo de nuevo.",
@@ -289,7 +291,18 @@
     "shareConfirmBodyMany": "Esta selección incluye {count} elementos de Private. ¿Compartir de todos modos?",
     "setupRequiredNotice": "Primero configura Private en el tablero de AllMarks.",
     "encryptErrorNotice": "No se pudo cifrar. Inténtalo de nuevo.",
-    "shareIncludesPrivateHeading": "ESTE ENVÍO INCLUYE UN ELEMENTO PRIVADO"
+    "shareIncludesPrivateHeading": "ESTE ENVÍO INCLUYE UN ELEMENTO PRIVADO",
+    "manageHeading": "PRIVATE",
+    "unlockedStatus": "Unlocked on this device",
+    "manageHintPrefix": "Hint: {hint}",
+    "changePasswordButton": "CHANGE PASSWORD",
+    "doneButton": "DONE",
+    "changePasswordHeading": "CHANGE PASSWORD",
+    "changePasswordExplanation": "Sets a new password for Private. You'll need it here next time you unlock — and on any other synced device, once it picks up the change.",
+    "newPasswordLabel": "New password",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "changePasswordSuccessToast": "Password updated.",
+    "errorChangeFailed": "Could not update the password. Try again."
   },
   "landing": {
     "hero": {

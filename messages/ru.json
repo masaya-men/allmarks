@@ -281,6 +281,8 @@
     "passwordLabel": "Пароль",
     "confirmPasswordLabel": "Подтвердите пароль",
     "hintLabel": "Подсказка (необязательно)",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errorTooShort": "Пароль должен содержать не менее 4 символов.",
     "errorMismatch": "Пароли не совпадают.",
     "errorCreateFailed": "Не удалось создать хранилище. Попробуйте снова.",
@@ -289,7 +291,18 @@
     "shareConfirmBodyMany": "В этот выбор входит {count} элементов из Private. Всё равно поделиться?",
     "setupRequiredNotice": "Сначала настройте Private на доске AllMarks.",
     "encryptErrorNotice": "Не удалось зашифровать — попробуйте снова.",
-    "shareIncludesPrivateHeading": "ЭТОТ ОБМЕН ВКЛЮЧАЕТ ЛИЧНЫЙ ЭЛЕМЕНТ"
+    "shareIncludesPrivateHeading": "ЭТОТ ОБМЕН ВКЛЮЧАЕТ ЛИЧНЫЙ ЭЛЕМЕНТ",
+    "manageHeading": "PRIVATE",
+    "unlockedStatus": "Unlocked on this device",
+    "manageHintPrefix": "Hint: {hint}",
+    "changePasswordButton": "CHANGE PASSWORD",
+    "doneButton": "DONE",
+    "changePasswordHeading": "CHANGE PASSWORD",
+    "changePasswordExplanation": "Sets a new password for Private. You'll need it here next time you unlock — and on any other synced device, once it picks up the change.",
+    "newPasswordLabel": "New password",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "changePasswordSuccessToast": "Password updated.",
+    "errorChangeFailed": "Could not update the password. Try again."
   },
   "landing": {
     "hero": {

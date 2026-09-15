@@ -89,6 +89,7 @@ const vaultFileSchema = z.object({
   publicKey: z.string(),
   wrappedPrivateKey: z.object({ iv: z.string(), ciphertext: z.string() }).passthrough(),
   hint: z.string().optional(),
+  updatedAt: z.number().optional(),
 }).passthrough()
 
 function toResult<T>(parsed: unknown): ParseResult<T> {

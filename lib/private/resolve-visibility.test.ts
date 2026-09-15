@@ -36,7 +36,7 @@ describe('private/resolve-visibility', () => {
 
   it('decrypts and overlays Private-tagged bookmarks when unlocked', async () => {
     const pair = await generateEcdhKeyPair()
-    const session: PrivateVaultSession = { tagId: 'priv-1', privateKey: pair.privateKey }
+    const session: PrivateVaultSession = { tagId: 'priv-1', privateKey: pair.privateKey, wrappingKey: pair.privateKey }
     const encryptedPayload = await encryptWithPublicKey(pair.publicKey, {
       title: 'Real Title', url: 'https://secret.example', description: 'd', thumbnail: 'th', favicon: 'f', siteName: 's',
     })
@@ -49,7 +49,7 @@ describe('private/resolve-visibility', () => {
   it('drops a Private-tagged bookmark that fails to decrypt (fail closed, not garbage)', async () => {
     const pair = await generateEcdhKeyPair()
     const wrongPair = await generateEcdhKeyPair()
-    const session: PrivateVaultSession = { tagId: 'priv-1', privateKey: wrongPair.privateKey }
+    const session: PrivateVaultSession = { tagId: 'priv-1', privateKey: wrongPair.privateKey, wrappingKey: wrongPair.privateKey }
     const encryptedPayload = await encryptWithPublicKey(pair.publicKey, {
       title: 'x', url: 'y', description: '', thumbnail: '', favicon: '', siteName: '',
     })
@@ -60,7 +60,7 @@ describe('private/resolve-visibility', () => {
 
   it('drops a Private-tagged bookmark that has no encryptedPayload, even when unlocked (fail closed)', async () => {
     const pair = await generateEcdhKeyPair()
-    const session: PrivateVaultSession = { tagId: 'priv-1', privateKey: pair.privateKey }
+    const session: PrivateVaultSession = { tagId: 'priv-1', privateKey: pair.privateKey, wrappingKey: pair.privateKey }
     const b = makeBookmark({ tags: ['priv-1'] })
     const result = await resolvePrivateVisibility([b], 'priv-1', session)
     expect(result).toEqual([])

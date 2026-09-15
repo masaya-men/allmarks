@@ -64,7 +64,7 @@ import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ExtensionEntry } from './ExtensionEntry'
 import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
-import { createVault, unlockVault, loadVaultRecord } from '@/lib/private/vault-store'
+import { createVault, unlockVault, loadVaultRecord, changeVaultPassword } from '@/lib/private/vault-store'
 import {
   addPrivateTag, removePrivateTag, resolvePrivateStatus, executePrivateAction, PRIVATE_DROP_KEY,
   privateActionNeedsUnlock,
@@ -72,6 +72,8 @@ import {
 } from '@/lib/private/apply-tag-change'
 import { PrivateSetupDialog } from './PrivateSetupDialog'
 import { PrivateUnlockDialog } from './PrivateUnlockDialog'
+import { PrivateManageDialog } from './PrivateManageDialog'
+import { PrivateChangePasswordDialog } from './PrivateChangePasswordDialog'
 import { PrivateShareConfirmDialog } from './PrivateShareConfirmDialog'
 import { ThemeModal } from './ThemeModal'
 import { ChromeButton } from './ChromeButton'
@@ -250,7 +252,7 @@ export function BoardRoot() {
   // lock-filtered), which would silently disable every exclusion this feature
   // exists for.
   const privateSession = usePrivateVaultSession()
-  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | null>(null)
+  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | 'manage' | 'change-password' | null>(null)
   const [privateHint, setPrivateHint] = useState<string | undefined>(undefined)
   // Set when a SHARE was attempted while the selection contains Private cards.
   // `resume` records which capture path asked, so the single confirm dialog
@@ -3653,6 +3655,10 @@ export function BoardRoot() {
                         return
                       }
                       setPrivateHint(record.hint)
+                      if (privateSession !== null) {
+                        setPrivateDialog('manage')
+                        return
+                      }
                       setPrivateDialog('unlock')
                     } catch (e) {
                       console.error('[AllMarks] failed to check Private vault state', e)
@@ -4105,8 +4111,12 @@ export function BoardRoot() {
               const session = await unlockVault(db, password)
               if (!session) return false
               setPrivateVaultSession(session)
-              setPrivateDialog(null)
-              if (pendingPrivateAction && privateTagId) void runPrivateAction(pendingPrivateAction, privateTagId, session)
+              if (pendingPrivateAction && privateTagId) {
+                setPrivateDialog(null)
+                void runPrivateAction(pendingPrivateAction, privateTagId, session)
+              } else {
+                setPrivateDialog('manage')
+              }
               return true
             } catch (e) {
               // Returning false (not throwing) re-enables the dialog's submit
@@ -4116,6 +4126,34 @@ export function BoardRoot() {
             }
           }}
           onCancel={(): void => { setPrivateDialog(null); setPendingPrivateAction(null) }}
+        />
+      )}
+      {privateDialog === 'manage' && (
+        <PrivateManageDialog
+          hint={privateHint}
+          onChangePassword={(): void => setPrivateDialog('change-password')}
+          onDone={(): void => setPrivateDialog(null)}
+        />
+      )}
+      {privateDialog === 'change-password' && privateSession && (
+        <PrivateChangePasswordDialog
+          hint={privateHint}
+          onSubmit={async (newPassword, newHint): Promise<boolean> => {
+            try {
+              const db = await initDB()
+              const result = await changeVaultPassword(db, privateSession, newPassword, newHint)
+              if (!result.ok) return false
+              setPrivateVaultSession(result.session)
+              setPrivateHint(newHint)
+              setPrivateDialog(null)
+              setToast({ message: t('private.changePasswordSuccessToast'), nonce: Date.now() })
+              return true
+            } catch (e) {
+              console.error('[AllMarks] failed to change Private password', e)
+              return false
+            }
+          }}
+          onCancel={(): void => setPrivateDialog('manage')}
         />
       )}
       {pendingPrivateShare && (

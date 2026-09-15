@@ -218,15 +218,13 @@ function activeCount(bookmarks: readonly { isDeleted?: boolean }[]): number {
   return bookmarks.filter(b => !b.isDeleted).length
 }
 
+/** 「本当に別々の金庫」かどうかだけを見る。publicKey(ECDH鍵ペアの識別子)と
+ *  tagIdが両方一致していれば、salt/wrappedPrivateKey等が違っていても
+ *  それは同じ金庫のパスワード変更に過ぎない — conflictではなく
+ *  mergeVault(merge.ts)のupdatedAt LWWに解決を委ねる。publicKeyが違う場合
+ *  だけ、本当に別々に作られた金庫として引き続きconflict扱いする。 */
 function vaultRecordsDiffer(a: PrivateVaultRecord, b: PrivateVaultRecord): boolean {
-  return (
-    a.tagId !== b.tagId ||
-    a.salt !== b.salt ||
-    a.iterations !== b.iterations ||
-    a.publicKey !== b.publicKey ||
-    a.wrappedPrivateKey.iv !== b.wrappedPrivateKey.iv ||
-    a.wrappedPrivateKey.ciphertext !== b.wrappedPrivateKey.ciphertext
-  )
+  return a.publicKey !== b.publicKey || a.tagId !== b.tagId
 }
 
 export interface SyncCycleResult {

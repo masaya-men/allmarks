@@ -1,6 +1,6 @@
 import type { IDBPDatabase } from 'idb'
 import {
-  PBKDF2_ITERATIONS, deriveKey, generateSalt,
+  PBKDF2_ITERATIONS, deriveKey, generateSalt, decryptJson, encryptJson,
   generateEcdhKeyPair, exportPublicKeyB64, wrapPrivateKey, unwrapPrivateKey,
 } from './crypto'
 import type { PrivateVaultSession } from './vault-session'
@@ -23,6 +23,9 @@ export type PrivateVaultRecord = {
    *  check — no separate check-blob needed. */
   readonly wrappedPrivateKey: { readonly iv: string; readonly ciphertext: string }
   readonly hint?: string
+  /** パスワード変更のたびに現在時刻を打つ(初回作成時は無し=undefined)。
+   *  同期マージのLWW比較に使う(lib/sync/merge.ts mergeVault)。 */
+  readonly updatedAt?: number
 }
 
 export async function loadVaultRecord(db: DbLike): Promise<PrivateVaultRecord | null> {
@@ -41,7 +44,7 @@ export async function createVault(
   tagId: string,
   password: string,
   hint?: string,
-): Promise<PrivateVaultSession> {
+): Promise<NonNullable<PrivateVaultSession>> {
   const salt = generateSalt()
   const wrappingKey = await deriveKey(password, salt, PBKDF2_ITERATIONS)
   const keyPair = await generateEcdhKeyPair()
@@ -61,20 +64,75 @@ export async function createVault(
   // directly) so the session key is the same non-extractable shape unlockVault
   // produces, and this doubles as a sanity check that wrapping round-trips.
   const privateKey = await unwrapPrivateKey(wrappedPrivateKey, wrappingKey)
-  return { tagId, privateKey }
+  return { tagId, privateKey, wrappingKey }
 }
 
 /** Attempts to unlock with `password`. Returns null (never throws) when
  *  there's no vault yet OR the password is wrong — callers show the same
  *  "wrong password" message either way. */
-export async function unlockVault(db: DbLike, password: string): Promise<PrivateVaultSession | null> {
+export async function unlockVault(db: DbLike, password: string): Promise<PrivateVaultSession> {
   const record = await loadVaultRecord(db)
   if (!record) return null
   const wrappingKey = await deriveKey(password, record.salt, record.iterations)
   try {
     const privateKey = await unwrapPrivateKey(record.wrappedPrivateKey, wrappingKey)
-    return { tagId: record.tagId, privateKey }
+    return { tagId: record.tagId, privateKey, wrappingKey }
   } catch {
     return null
   }
+}
+
+export type ChangeVaultPasswordResult =
+  | { readonly ok: true; readonly session: NonNullable<PrivateVaultSession> }
+  | { readonly ok: false; readonly session?: undefined }
+
+/**
+ * Changes the vault's password WITHOUT requiring the old one — the caller
+ * must already hold a valid, unlocked `session` (its `wrappingKey` proves
+ * access; that's the whole point of this feature: an already-unlocked
+ * device can reset the password for every other synced device too). Only
+ * the password-derived wrapping changes; the ECDH key pair itself (and
+ * therefore every already-encrypted Private bookmark) is untouched.
+ *
+ * Decrypts the CURRENTLY stored wrapped blob with `session.wrappingKey`
+ * (not by re-deriving from a freshly-typed password) to get the raw pkcs8
+ * bytes, then re-wraps them under a freshly-derived key from `newPassword`
+ * (with a new random salt). Stamps `updatedAt` so lib/sync/merge.ts's
+ * mergeVault can resolve this via LWW instead of treating it as a
+ * conflict with another device's copy of the same vault.
+ */
+export async function changeVaultPassword(
+  db: DbLike,
+  session: NonNullable<PrivateVaultSession>,
+  newPassword: string,
+  newHint: string | undefined,
+): Promise<ChangeVaultPasswordResult> {
+  const record = await loadVaultRecord(db)
+  if (!record) return { ok: false }
+
+  let pkcs8: string
+  try {
+    const decrypted = await decryptJson<{ pkcs8: string }>(
+      session.wrappingKey, record.wrappedPrivateKey.iv, record.wrappedPrivateKey.ciphertext,
+    )
+    pkcs8 = decrypted.pkcs8
+  } catch {
+    return { ok: false }
+  }
+
+  const newSalt = generateSalt()
+  const newWrappingKey = await deriveKey(newPassword, newSalt, PBKDF2_ITERATIONS)
+  const newWrapped = await encryptJson(newWrappingKey, { pkcs8 })
+
+  const newRecord: PrivateVaultRecord = {
+    ...record,
+    salt: newSalt,
+    iterations: PBKDF2_ITERATIONS,
+    wrappedPrivateKey: newWrapped,
+    updatedAt: Date.now(),
+    hint: newHint,
+  }
+  await db.put('settings', newRecord)
+
+  return { ok: true, session: { tagId: record.tagId, privateKey: session.privateKey, wrappingKey: newWrappingKey } }
 }

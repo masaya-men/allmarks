@@ -277,10 +277,12 @@
     "buttonAria": "Open tag management"
   },
   "private": {
-    "setupExplanation": "このパスワードで、Privateタグを付けたものすべてのタイトル・URL・サムネイル・画像を暗号化します。実際の中身は平文では一切保存されません。下のヒント以外に救済手段はありません。パスワードを忘れると、中身は永久に暗号化されたままになります。",
+    "setupExplanation": "このパスワードで、Privateタグを付けたものすべてのタイトル・URL・サムネイル・画像を暗号化します。実際の中身は平文では一切保存されません。既に解錠済みの端末からは、いつでもパスワードを変更できます。もしどの端末でも忘れてしまった場合は、中身は永久に暗号化されたままです — 下のヒントだけが手がかりです。",
     "passwordLabel": "パスワード",
     "confirmPasswordLabel": "パスワード(確認)",
     "hintLabel": "ヒント(任意)",
+    "showPassword": "パスワードを表示",
+    "hidePassword": "パスワードを隠す",
     "errorTooShort": "パスワードは4文字以上で入力してください。",
     "errorMismatch": "パスワードが一致しません。",
     "errorCreateFailed": "作成に失敗しました。もう一度お試しください。",
@@ -289,7 +291,18 @@
     "shareConfirmBodyMany": "この選択にはPrivateの{count}件が含まれています。それでも共有しますか？",
     "setupRequiredNotice": "先にAllMarksの盤面でPrivateを設定してください。",
     "encryptErrorNotice": "暗号化できませんでした。もう一度お試しください。",
-    "shareIncludesPrivateHeading": "共有内容に非公開の項目が含まれています"
+    "shareIncludesPrivateHeading": "共有内容に非公開の項目が含まれています",
+    "manageHeading": "PRIVATE",
+    "unlockedStatus": "この端末で解錠済み",
+    "manageHintPrefix": "ヒント: {hint}",
+    "changePasswordButton": "パスワードを変更",
+    "doneButton": "完了",
+    "changePasswordHeading": "パスワードを変更",
+    "changePasswordExplanation": "Privateの新しいパスワードを設定します。次回この端末で解錠するとき、また同期している他の端末が変更を受け取った後は、そちらでも新しいパスワードが必要になります。",
+    "newPasswordLabel": "新しいパスワード",
+    "confirmNewPasswordLabel": "新しいパスワード(確認)",
+    "changePasswordSuccessToast": "パスワードを更新しました。",
+    "errorChangeFailed": "パスワードを更新できませんでした。もう一度お試しください。"
   },
   "landing": {
     "hero": {

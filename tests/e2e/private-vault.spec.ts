@@ -226,6 +226,15 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   await page.locator('#private-unlock-password').fill(PASSWORD)
   await page.getByTestId('private-unlock-submit').click()
   await expect(unlockDialog).toHaveCount(0)
+  // Task 7 (private-password-change): a plain unlock with no pending action
+  // (this is a bare SETTINGS -> PRIVATE -> UNLOCK, not one resumed from a
+  // tag click elsewhere) now lands on the vault-management dialog instead of
+  // closing straight back to the board — BoardRoot.tsx's PrivateUnlockDialog
+  // onSubmit branches on `pendingPrivateAction`, which is null here.
+  const manageDialog = page.getByTestId('private-manage-dialog')
+  await expect(manageDialog).toBeVisible()
+  await page.getByTestId('private-manage-done').click()
+  await expect(manageDialog).toHaveCount(0)
   // Same outside-pointerdown auto-close as step 2 — reopen to observe state.
   await openSettings(page)
   await expect(page.getByTestId('private-entry-button')).toHaveAttribute('data-unlocked', 'true')

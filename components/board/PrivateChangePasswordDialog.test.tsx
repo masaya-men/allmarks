@@ -1,0 +1,65 @@
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { PrivateChangePasswordDialog } from './PrivateChangePasswordDialog'
+
+describe('PrivateChangePasswordDialog', () => {
+  it('shows an error and does not submit when the password is too short', async () => {
+    const onSubmit = vi.fn()
+    render(<PrivateChangePasswordDialog onSubmit={onSubmit} onCancel={() => {}} />)
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: 'abc' } })
+    fireEvent.change(inputs[1], { target: { value: 'abc' } })
+    fireEvent.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(screen.getByText(/at least 4 characters/i)).toBeInTheDocument())
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('shows an error and does not submit when passwords do not match', async () => {
+    const onSubmit = vi.fn()
+    render(<PrivateChangePasswordDialog onSubmit={onSubmit} onCancel={() => {}} />)
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: 'password1' } })
+    fireEvent.change(inputs[1], { target: { value: 'password2' } })
+    fireEvent.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(screen.getByText(/do not match/i)).toBeInTheDocument())
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('submits the new password and hint (undefined when hint left empty)', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(true)
+    render(<PrivateChangePasswordDialog onSubmit={onSubmit} onCancel={() => {}} />)
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: 'password123' } })
+    fireEvent.change(inputs[1], { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('password123', undefined))
+  })
+
+  it('pre-fills the hint field with the existing hint and submits it if unchanged', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(true)
+    render(<PrivateChangePasswordDialog hint="my existing hint" onSubmit={onSubmit} onCancel={() => {}} />)
+    expect(screen.getByDisplayValue('my existing hint')).toBeInTheDocument()
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: 'password123' } })
+    fireEvent.change(inputs[1], { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('password123', 'my existing hint'))
+  })
+
+  it('shows an error when onSubmit resolves false', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(false)
+    render(<PrivateChangePasswordDialog onSubmit={onSubmit} onCancel={() => {}} />)
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: 'password123' } })
+    fireEvent.change(inputs[1], { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(screen.getByText(/could not update/i)).toBeInTheDocument())
+  })
+
+  it('calls onCancel when CANCEL is clicked', () => {
+    const onCancel = vi.fn()
+    render(<PrivateChangePasswordDialog onSubmit={vi.fn()} onCancel={onCancel} />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+})

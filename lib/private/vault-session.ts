@@ -15,7 +15,15 @@ import { useSyncExternalStore } from 'react'
  *  NOT reset this module (same JS runtime) — only a hard reload does, which
  *  is the desired "stays unlocked while you navigate the app this session"
  *  behavior. */
-export type PrivateVaultSession = { readonly tagId: string; readonly privateKey: CryptoKey } | null
+export type PrivateVaultSession = {
+  readonly tagId: string
+  readonly privateKey: CryptoKey
+  /** パスワードから導出した現在の「包み鍵」(AES-256-GCM)。IndexedDB等へは
+   *  絶対に書かない(privateKeyと同じ扱い)。changeVaultPasswordが「古い
+   *  パスワードを聞かずに変更する」ために、保存済みのwrappedPrivateKeyを
+   *  この鍵で復号して使う。 */
+  readonly wrappingKey: CryptoKey
+} | null
 
 let currentSession: PrivateVaultSession = null
 const listeners = new Set<() => void>()

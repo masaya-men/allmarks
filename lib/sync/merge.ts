@@ -222,17 +222,17 @@ export function mergeBoardConfig(
 
 // ── vault（設計 §9）──────────────────────────────────────────────────────
 
-/** 「作成一度きり・以後不変」前提。両方あれば内容は同一のはず。
- *  ⚠️ 束4 の engine へ: 両側の vault が食い違う場合（= 同期を入れる前に2台で
- *  別々に Private を設定していた）、ここで pickDeterministic すると負けた側の
- *  wrappedPrivateKey が失われ、その公開鍵で暗号化された encryptedPayload は
- *  二度と復号できなくなる（暗号文は bookmarks.json に残るのに鍵だけ消える）。
- *  さらに mergeTags は isPrivateVault タグを2つ残す（use-tags.ts は先頭1件を
- *  金庫とみなす＝配列順次第）。engine は食い違いを検知したら黙って進めず、
- *  ユーザーに選ばせる or パスワード再設定を促すこと。ここで pick するのは
- *  「engine が明示的に許した後」の最終手段。
- *  暗号文は復号しない・見ない。将来パスワード再設定（wrappedPrivateKey 変化）で
- *  LWW が要るときは PrivateVaultRecord に updatedAt を足してここで比較する。 */
+/** local/remote の vault は「まるごと1個」扱い。暗号文は復号しない・見ない。
+ *  **食い違い検知(束4のengine.tsのvaultRecordsDiffer)は「本当に別々の金庫」
+ *  だけをconflict扱いする**(publicKeyが一致していれば同じ金庫のパスワード
+ *  変更に過ぎない)。ここではその2ケースを区別する:
+ *  - 同じ金庫(publicKey・tagIdが一致)・中身(wrappedPrivateKey等)が違う
+ *    → パスワード変更。updatedAtが新しい方を丸ごと採用(LWW)。updatedAtが
+ *    無い方(この機能より前に作られたレコード)は0扱いで必ず負ける。
+ *  - それ以外(publicKeyが違う=本当に別の金庫。engineがconflict扱いする
+ *    経路で、ここに来る前にvault:nullに差し替えられるので実運用では
+ *    ほぼ通らないが、この関数は純関数として単体でも正しく振る舞う必要が
+ *    ある) → 決定的タイブレーク(pickDeterministic)。 */
 export function mergeVault(
   local: PrivateVaultRecord | null,
   remote: PrivateVaultRecord | null,
@@ -240,6 +240,11 @@ export function mergeVault(
   if (!local) return remote
   if (!remote) return local
   if (stableStringify(local) === stableStringify(remote)) return local
+  if (local.publicKey === remote.publicKey && local.tagId === remote.tagId) {
+    const lt = numericTime(local.updatedAt)
+    const rt = numericTime(remote.updatedAt)
+    if (lt !== rt) return lt > rt ? local : remote
+  }
   return pickDeterministic(local, remote)
 }
 

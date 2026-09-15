@@ -78,7 +78,7 @@ describe('private/apply-tag-change', () => {
       wrappedPrivateKey,
     })
     const privateKey = await unwrapPrivateKey(wrappedPrivateKey, wrappingKey)
-    return { tagId: 'private-tag-id', privateKey }
+    return { tagId: 'private-tag-id', privateKey, wrappingKey }
   }
 
   it('addPrivateTag encrypts the sensitive fields and blanks the plaintext columns', async () => {

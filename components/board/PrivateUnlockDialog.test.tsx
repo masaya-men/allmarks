@@ -16,7 +16,7 @@ describe('PrivateUnlockDialog', () => {
   it('calls onSubmit with the entered password', async () => {
     const onSubmit = vi.fn().mockResolvedValue(true)
     render(<PrivateUnlockDialog onSubmit={onSubmit} onCancel={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'hunter2' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'hunter2' } })
     fireEvent.click(screen.getByRole('button', { name: /unlock/i }))
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('hunter2'))
   })
@@ -24,7 +24,7 @@ describe('PrivateUnlockDialog', () => {
   it('shows an error and stays open when onSubmit resolves false', async () => {
     const onSubmit = vi.fn().mockResolvedValue(false)
     render(<PrivateUnlockDialog onSubmit={onSubmit} onCancel={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrong' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'wrong' } })
     fireEvent.click(screen.getByRole('button', { name: /unlock/i }))
     await waitFor(() => expect(screen.getByText(/wrong/i)).toBeInTheDocument())
   })

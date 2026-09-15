@@ -281,6 +281,8 @@
     "passwordLabel": "รหัสผ่าน",
     "confirmPasswordLabel": "ยืนยันรหัสผ่าน",
     "hintLabel": "คำใบ้ (ไม่บังคับ)",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errorTooShort": "รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร",
     "errorMismatch": "รหัสผ่านไม่ตรงกัน",
     "errorCreateFailed": "สร้างตู้นิรภัยไม่สำเร็จ ลองอีกครั้ง",
@@ -289,7 +291,18 @@
     "shareConfirmBodyMany": "การเลือกนี้มี {count} รายการจาก Private รวมอยู่ด้วย ยืนยันแชร์หรือไม่?",
     "setupRequiredNotice": "โปรดตั้งค่า Private ในบอร์ด AllMarks ก่อน",
     "encryptErrorNotice": "เข้ารหัสไม่สำเร็จ ลองอีกครั้ง",
-    "shareIncludesPrivateHeading": "การแชร์นี้มีรายการส่วนตัวรวมอยู่ด้วย"
+    "shareIncludesPrivateHeading": "การแชร์นี้มีรายการส่วนตัวรวมอยู่ด้วย",
+    "manageHeading": "PRIVATE",
+    "unlockedStatus": "Unlocked on this device",
+    "manageHintPrefix": "Hint: {hint}",
+    "changePasswordButton": "CHANGE PASSWORD",
+    "doneButton": "DONE",
+    "changePasswordHeading": "CHANGE PASSWORD",
+    "changePasswordExplanation": "Sets a new password for Private. You'll need it here next time you unlock — and on any other synced device, once it picks up the change.",
+    "newPasswordLabel": "New password",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "changePasswordSuccessToast": "Password updated.",
+    "errorChangeFailed": "Could not update the password. Try again."
   },
   "landing": {
     "hero": {
