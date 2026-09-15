@@ -25,3 +25,12 @@ preview_id = "ee3ba0063888495e906a17f42d5a0138"
 binding = "SHARE_OG"
 bucket_name = "allmarks-share-og"
 preview_bucket_name = "allmarks-share-og-preview"
+
+# K3（最小・応援者限定の解錠ゲート）: 発券記録・発動台数のみを持つ。ブクマ/
+# 個人情報は一切書かない（docs/private/2026-07-01-k3-unlock-design.md §4.3）。
+# 作成: `wrangler kv namespace create K3_KV` / `wrangler kv namespace create K3_KV --preview`
+# → 出力されたIDを下記に貼る → commit → deploy。
+[[kv_namespaces]]
+binding = "K3_KV"
+id = "REPLACE_WITH_WRANGLER_OUTPUT_ID"
+preview_id = "REPLACE_WITH_WRANGLER_OUTPUT_PREVIEW_ID"
