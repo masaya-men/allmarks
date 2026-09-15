@@ -6,6 +6,11 @@
 - **束6①(Privateの金庫パスワード変更/再設定)master マージ済**。「解錠済み端末からなら古いパスワード無しで再設定できる」方式(Norton Password Manager型)。詳細=`docs/superpowers/plans/2026-09-15-private-password-change.md`(7タスクplan・subagent-driven実行済)。
 - **本番デプロイ実施済**(`allmarks.app`)。ユーザーが実機で①目のマーク3画面一貫動作②解錠済みSETTINGS→PRIVATEで管理画面③パスワード変更後の再解錠、を確認済。
 - **実機でのみ見つかったCSSバグ2件、修正・再デプロイ済**(自動テストでは検知不可な類のもの・次の似た作業の参考に): (1) Edgeが`type="password"`全部に自前の目アイコンを埋め込み自作トグルと衝突→`::-ms-reveal`/`::-ms-clear`を無効化、(2) ブラウザの自動入力ハイライトで背景が明転し薄色トグルアイコンが同化→`-webkit-autofill`時の背景を強制的に固定し直す定番対策。**新しい入力欄を作るたびにこの2点は要注意**。
+- **束6③の一部(テーマのバージョン差保護)完了・master マージ済**(`lib/storage/board-config.ts`の`guardUnknownThemeId`。未知の`themeId`は`loadBoardConfig`の時点で`DEFAULT_THEME_ID`にフォールバック・IndexedDBの生値は無傷。画面変更なし=承認不要の裏側修正)。
+
+## ★未着手のまま残っているUI設計マター(`isPrivateVault`タグ重複問題)
+
+- **`isPrivateVault`タグの重複問題は「バックエンドだけの修正」では済まない**と判明(調査済): vault(金庫)が食い違ったまま(=publicKeyが違う=別々の金庫)tags[]だけは通常どおりマージされるため、`isPrivateVault:true`のタグが2つ並びうる。根治には「2つのうちどちらが本物の金庫か」をユーザーに選んでもらう画面が要る(自動判定できない=どちらの端末も正当に暗号化していた可能性がある)。**vault食い違いUIと同時に設計すること**(文言の事前提示・承認フロー対象)。
 
 ## ★次セッション = 束6②(SyncPanel UI本体)・③(vault食い違いUI等)
 
