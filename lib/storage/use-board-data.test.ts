@@ -151,7 +151,7 @@ describe('useBoardData — Private vault locked exclusion + decrypt overlay', ()
       ...priv, title: '', url: '', encryptedPayload,
     })
 
-    setPrivateVaultSession({ tagId: 'priv-1', privateKey })
+    setPrivateVaultSession({ tagId: 'priv-1', privateKey, wrappingKey: privateKey })
     const { result } = renderHook(() => useBoardData('priv-1'))
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.items.find((i) => i.tags.includes('priv-1'))?.title).toBe('Real')

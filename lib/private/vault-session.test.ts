@@ -19,7 +19,7 @@ describe('private/vault-session', () => {
   })
 
   it('set then get round-trips the session', () => {
-    const session: PrivateVaultSession = { tagId: 'tag-1', privateKey: fakeKey }
+    const session: PrivateVaultSession = { tagId: 'tag-1', privateKey: fakeKey, wrappingKey: fakeKey }
     setPrivateVaultSession(session)
     expect(getPrivateVaultSession()).toEqual(session)
   })
@@ -28,18 +28,18 @@ describe('private/vault-session', () => {
     const { result } = renderHook(() => usePrivateVaultSession())
     expect(result.current).toBeNull()
     act(() => {
-      setPrivateVaultSession({ tagId: 'tag-2', privateKey: fakeKey })
+      setPrivateVaultSession({ tagId: 'tag-2', privateKey: fakeKey, wrappingKey: fakeKey })
     })
-    expect(result.current).toEqual({ tagId: 'tag-2', privateKey: fakeKey })
+    expect(result.current).toEqual({ tagId: 'tag-2', privateKey: fakeKey, wrappingKey: fakeKey })
   })
 
   it('two independent hook instances (simulating two mounted pages) both see the same session', () => {
     const a = renderHook(() => usePrivateVaultSession())
     const b = renderHook(() => usePrivateVaultSession())
     act(() => {
-      setPrivateVaultSession({ tagId: 'tag-3', privateKey: fakeKey })
+      setPrivateVaultSession({ tagId: 'tag-3', privateKey: fakeKey, wrappingKey: fakeKey })
     })
-    expect(a.result.current).toEqual({ tagId: 'tag-3', privateKey: fakeKey })
-    expect(b.result.current).toEqual({ tagId: 'tag-3', privateKey: fakeKey })
+    expect(a.result.current).toEqual({ tagId: 'tag-3', privateKey: fakeKey, wrappingKey: fakeKey })
+    expect(b.result.current).toEqual({ tagId: 'tag-3', privateKey: fakeKey, wrappingKey: fakeKey })
   })
 })
