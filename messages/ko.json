@@ -304,6 +304,19 @@
     "changePasswordSuccessToast": "Password updated.",
     "errorChangeFailed": "Could not update the password. Try again."
   },
+  "sync": {
+    "lockedExplanation": "Keeps your bookmarks the same on every device. Unlocked for supporters.",
+    "becomeSupporter": "Become a supporter",
+    "haveKeyLabel": "Have a key?",
+    "keyPlaceholder": "Paste your key",
+    "unlockButton": "UNLOCK",
+    "errorInvalidKey": "That key isn't valid. Check you copied the whole thing.",
+    "errorUnsupported": "Your browser can't verify this key. Try updating it, or use a different browser.",
+    "errorCapExceeded": "This key has reached its device limit.",
+    "errorCapExceededContact": "Contact us if you need help.",
+    "unlockedHeading": "Sync unlocked",
+    "connectComingSoon": "Connecting devices is coming in a future update."
+  },
   "landing": {
     "hero": {
       "label": "비주얼 북마크 매니저",

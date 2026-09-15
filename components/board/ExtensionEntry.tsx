@@ -16,6 +16,7 @@ import { ChromeButton } from './ChromeButton'
 import { ChromeDrawer } from './ChromeDrawer'
 import { BackupButton } from './BackupButton'
 import { BackupStatus } from './BackupStatus'
+import { SyncPanel } from './SyncPanel'
 import { getThemeMeta } from '@/lib/board/theme-registry'
 import type { ThemeId } from '@/lib/board/types'
 import styles from './ExtensionEntry.module.css'
@@ -303,6 +304,15 @@ export function ExtensionEntry({
               ? `${PRIVATE_LABEL.toUpperCase()} (UNLOCKED)`
               : PRIVATE_LABEL.toUpperCase()}
           </button>
+        </section>
+
+        {/* ── SYNC ─────────────────────────────────────────────────────────
+            Entry point to unlocking (and, later, connecting) device sync. This
+            drawer owns the section/heading chrome; all data-loading and
+            key-activation logic lives in SyncPanel itself. */}
+        <section className={styles.group}>
+          <div className={styles.groupLabel}>SYNC</div>
+          <SyncPanel />
         </section>
 
         {/* ── THEME ────────────────────────────────────────────────────────

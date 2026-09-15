@@ -304,6 +304,19 @@
     "changePasswordSuccessToast": "パスワードを更新しました。",
     "errorChangeFailed": "パスワードを更新できませんでした。もう一度お試しください。"
   },
+  "sync": {
+    "lockedExplanation": "どの端末でも同じブックマークに。サポーターの方が使える機能です。",
+    "becomeSupporter": "応援する",
+    "haveKeyLabel": "キーをお持ちですか?",
+    "keyPlaceholder": "キーを貼り付け",
+    "unlockButton": "解錠",
+    "errorInvalidKey": "キーが正しくありません。全部コピーできているか確認してください。",
+    "errorUnsupported": "このブラウザではキーを確認できません。ブラウザを最新にするか、別のブラウザをお試しください。",
+    "errorCapExceeded": "このキーは上限台数まで使用済みです。",
+    "errorCapExceededContact": "お困りの場合はお問い合わせください。",
+    "unlockedHeading": "同期を解錠しました",
+    "connectComingSoon": "端末をつなぐ機能は近日公開予定です。"
+  },
   "landing": {
     "hero": {
       "label": "Visual Bookmark Manager",

@@ -1,0 +1,111 @@
+/* components/board/SyncPanel.module.css */
+/* Matches ExtensionEntry.module.css's .body/.soon/.panelCta vocabulary
+   (deliberate duplication across files -- the established convention in
+   this app's dialog/section components, e.g. every Private dialog
+   duplicates .backdrop/.panel rather than sharing a base file). Does NOT
+   define .group/.groupLabel -- see the layout note in the brief for why:
+   ExtensionEntry.tsx owns that chrome for this section. */
+.body {
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 10.5px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: rgba(var(--chrome-ink-rgb), 0.5);
+  margin: 0 0 10px;
+}
+.soon {
+  display: inline-block;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 9px 15px;
+  border-radius: 8px;
+  color: rgba(var(--chrome-ink-rgb), 0.45);
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.12);
+  background: rgba(var(--chrome-ink-rgb), 0.02);
+  cursor: default;
+  margin-bottom: 14px;
+}
+.label {
+  display: block;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: rgba(var(--chrome-ink-rgb), 0.62);
+  margin-bottom: 6px;
+}
+.keyRow {
+  display: flex;
+  gap: 8px;
+}
+.keyInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 12px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.16);
+  background: rgba(var(--chrome-ink-rgb), 0.04);
+  color: rgb(var(--chrome-ink-rgb));
+}
+.unlockBtn {
+  flex: 0 0 auto;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.16);
+  background: rgba(var(--chrome-ink-rgb), 0.04);
+  color: rgba(var(--chrome-ink-rgb), 0.82);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.unlockBtn:hover:not(:disabled) {
+  background: rgba(var(--chrome-ink-rgb), 0.09);
+  border-color: rgba(var(--chrome-ink-rgb), 0.28);
+  color: rgb(var(--chrome-ink-rgb));
+}
+.unlockBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.error {
+  margin-top: 8px;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: #ff6b6b;
+}
+.contactLink {
+  color: inherit;
+  text-decoration: underline;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(var(--chrome-ink-rgb), 0.82);
+}
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #28f100;
+  box-shadow: 0 0 6px rgba(40, 241, 0, 0.55);
+  flex-shrink: 0;
+}
+.note {
+  margin: 8px 0 0;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 10px;
+  line-height: 1.4;
+  color: rgba(var(--chrome-ink-rgb), 0.35);
+}
