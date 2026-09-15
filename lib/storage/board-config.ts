@@ -2,7 +2,7 @@
 import type { IDBPDatabase } from 'idb'
 import type { BoardConfig, ThemeCustomization } from '@/lib/board/types'
 import { BOARD_FILTER_ALL } from '@/lib/board/board-filter-helpers'
-import { DEFAULT_THEME_ID } from '@/lib/board/theme-registry'
+import { DEFAULT_THEME_ID, THEME_REGISTRY } from '@/lib/board/theme-registry'
 import { GRID_MIGRATION_CUSTOMIZATION } from '@/lib/board/theme-customization'
 import { DEFAULT_PRESET_ID } from '@/lib/board/frame-presets'
 
@@ -29,6 +29,19 @@ function migrateRetiredGridTheme(config: BoardConfig): BoardConfig {
   return { ...config, themeId: 'dotted-notebook', themeCustomizations: customs }
 }
 
+/** A themeId this build doesn't recognize at all (not even the specific
+ *  retired Grid case above) — e.g. pulled in via device-sync from a newer
+ *  app build that shipped a theme this one hasn't seen yet. Falls back to
+ *  the default rather than let getThemeMeta's registry lookup throw and
+ *  break board rendering. The raw stored value in IndexedDB is untouched
+ *  by this — only the in-memory config this function returns is adjusted —
+ *  so once this device updates to a build that knows the theme, it renders
+ *  correctly again with nothing lost. */
+function guardUnknownThemeId(config: BoardConfig): BoardConfig {
+  if (config.themeId in THEME_REGISTRY) return config
+  return { ...config, themeId: DEFAULT_THEME_ID }
+}
+
 export const CONFIG_KEY = 'board-config'
 
 export const DEFAULT_BOARD_CONFIG: BoardConfig = {
@@ -51,7 +64,7 @@ export async function loadBoardConfig(db: DbLike): Promise<BoardConfig> {
   const merged = { ...DEFAULT_BOARD_CONFIG, ...(record?.config ?? {}) }
   // Remap the retired Grid theme BEFORE anything reads themeId (getThemeMeta would
   // throw on 'grid-paper' now that it's gone from the registry).
-  return migrateRetiredGridTheme(merged)
+  return guardUnknownThemeId(migrateRetiredGridTheme(merged))
 }
 
 export async function saveBoardConfig(

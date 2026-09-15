@@ -50,6 +50,20 @@ describe('board config storage', () => {
     expect((loaded.themeCustomizations as Record<string, unknown>)?.['grid-paper']).toBeUndefined()
   })
 
+  it('falls back to the default theme for a themeId this build has never heard of (e.g. pulled in via sync from a newer app build)', async () => {
+    // Not the specific retired grid-paper case -- a genuinely unknown value,
+    // the kind a future app version's new theme could sync in.
+    await saveBoardConfig(db, { ...DEFAULT_BOARD_CONFIG, themeId: 'some-future-theme' } as unknown as BoardConfig)
+    const loaded = await loadBoardConfig(db)
+    expect(loaded.themeId).toBe(DEFAULT_BOARD_CONFIG.themeId)
+  })
+
+  it('leaves the raw stored record untouched when falling back an unknown themeId -- only the in-memory read is adjusted', async () => {
+    await saveBoardConfig(db, { ...DEFAULT_BOARD_CONFIG, themeId: 'some-future-theme' } as unknown as BoardConfig)
+    const raw = await loadBoardConfigRecord(db)
+    expect(raw?.config.themeId).toBe('some-future-theme')
+  })
+
   it("carries a grid-paper user's own customization into the Sound Wave slot (base-merged onto the grid)", async () => {
     const tweaked = { boardColor: '#111111', patternType: 'dots' as const, patternSize: 24 }
     await saveBoardConfig(db, {
