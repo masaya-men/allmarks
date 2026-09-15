@@ -15,12 +15,15 @@ type Props = {
   readonly showLabel: string
   /** 目のマークのaria-label。表示中(押すと隠れる)のときの文言。 */
   readonly hideLabel: string
+  /** ブラウザ/パスワードマネージャー向けのヒント。新規設定は'new-password'、
+   *  既存パスワードの入力は'current-password'を渡す。 */
+  readonly autoComplete?: string
 }
 
 /** ラベル+パスワード入力+表示/非表示トグルの共通コンポーネント。
  *  PrivateSetupDialog/PrivateUnlockDialog/PrivateChangePasswordDialogの
  *  全パスワード欄(計5箇所)がこれを使う。 */
-export function PasswordField({ id, label, value, onChange, onEnter, showLabel, hideLabel }: Props): ReactElement {
+export function PasswordField({ id, label, value, onChange, onEnter, showLabel, hideLabel, autoComplete }: Props): ReactElement {
   const [visible, setVisible] = useState(false)
   return (
     <>
@@ -33,6 +36,10 @@ export function PasswordField({ id, label, value, onChange, onEnter, showLabel, 
           value={value}
           onChange={(e): void => onChange(e.target.value)}
           onKeyDown={onEnter ? (e): void => { if (e.key === 'Enter') onEnter() } : undefined}
+          autoComplete={autoComplete}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
         />
         <button
           type="button"

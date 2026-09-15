@@ -110,7 +110,7 @@ describe('private/vault-store', () => {
       expect(result.ok).toBe(true)
       if (!result.ok) throw new Error('unreachable')
 
-      await expect(decryptWithPrivateKey(result.session!.privateKey, envelope)).resolves.toEqual({ secret: 'hello' })
+      await expect(decryptWithPrivateKey(result.session.privateKey, envelope)).resolves.toEqual({ secret: 'hello' })
     })
 
     it('stamps updatedAt, rotates the salt, and keeps publicKey/tagId unchanged', async () => {
@@ -129,9 +129,10 @@ describe('private/vault-store', () => {
       const session = await createVault(db, 'tag-abc', 'old-password123', 'old hint')
       const result = await changeVaultPassword(db, session, 'new-password456', 'new hint')
       expect(result.ok).toBe(true)
+      if (!result.ok) throw new Error('unreachable')
       expect((await loadVaultRecord(db))!.hint).toBe('new hint')
 
-      const result2 = await changeVaultPassword(db, result.session!, 'newer-password789', undefined)
+      const result2 = await changeVaultPassword(db, result.session, 'newer-password789', undefined)
       expect(result2.ok).toBe(true)
       expect((await loadVaultRecord(db))!.hint).toBeUndefined()
     })

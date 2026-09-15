@@ -65,6 +65,7 @@ export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel }: Props)
           onChange={setPassword}
           showLabel={t('private.showPassword')}
           hideLabel={t('private.hidePassword')}
+          autoComplete="new-password"
         />
         <PasswordField
           id="private-change-password-confirm"
@@ -73,6 +74,7 @@ export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel }: Props)
           onChange={setConfirm}
           showLabel={t('private.showPassword')}
           hideLabel={t('private.hidePassword')}
+          autoComplete="new-password"
         />
         <label className={styles.label} htmlFor="private-change-password-hint">{t('private.hintLabel')}</label>
         <input

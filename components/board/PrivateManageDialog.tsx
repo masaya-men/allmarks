@@ -40,7 +40,7 @@ export function PrivateManageDialog({ hint, onChangePassword, onDone }: Props): 
           <span className={styles.statusDot} />
           {t('private.unlockedStatus')}
         </div>
-        {hint && <div className={styles.hint}>{t('private.manageHintPrefix').replace('{hint}', hint)}</div>}
+        {hint && <div className={styles.hint}>{t('private.manageHintPrefix').replace('{hint}', () => hint)}</div>}
         <button type="button" className={styles.changeBtn} onClick={onChangePassword} data-testid="private-manage-change-password">
           {t('private.changePasswordButton')}
         </button>

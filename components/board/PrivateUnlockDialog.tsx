@@ -53,6 +53,7 @@ export function PrivateUnlockDialog({ hint, onSubmit, onCancel }: Props): ReactE
           onEnter={(): void => { void submit() }}
           showLabel={t('private.showPassword')}
           hideLabel={t('private.hidePassword')}
+          autoComplete="current-password"
         />
         {error && <div className={styles.error}>{error}</div>}
         <div className={styles.actions}>

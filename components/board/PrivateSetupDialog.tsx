@@ -67,6 +67,7 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
           onChange={setPassword}
           showLabel={t('private.showPassword')}
           hideLabel={t('private.hidePassword')}
+          autoComplete="new-password"
         />
         <PasswordField
           id="private-setup-confirm"
@@ -75,6 +76,7 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
           onChange={setConfirm}
           showLabel={t('private.showPassword')}
           hideLabel={t('private.hidePassword')}
+          autoComplete="new-password"
         />
         <label className={styles.label} htmlFor="private-setup-hint">{t('private.hintLabel')}</label>
         <input

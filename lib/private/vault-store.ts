@@ -83,7 +83,7 @@ export async function unlockVault(db: DbLike, password: string): Promise<Private
 }
 
 export type ChangeVaultPasswordResult =
-  | { readonly ok: true; readonly session: PrivateVaultSession }
+  | { readonly ok: true; readonly session: NonNullable<PrivateVaultSession> }
   | { readonly ok: false; readonly session?: undefined }
 
 /**
