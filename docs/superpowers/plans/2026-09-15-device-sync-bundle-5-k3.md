@@ -668,7 +668,7 @@ describe('GET /claim', () => {
 
     // 発行されたキーを本文から抽出して署名検証する（デコードして検証まで通すのが
     // 「本当に正しい鍵で署名されたか」の唯一の確実な検証）
-    const match = html.match(/[\w-]+\.[\w-]+/)
+    const match = html.match(/[\w-]{20,}\.[\w-]{20,}/) // length-floored: an unbounded pattern false-matches CSS like "line-height:1.6" in <head> before reaching the real key in <body> (found during Task 4 implementation)
     expect(match).not.toBeNull()
     const keyString = match![0]
     const [payloadB64url, sigB64url] = keyString.split('.')
