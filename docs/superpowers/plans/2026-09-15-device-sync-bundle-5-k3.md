@@ -13,6 +13,7 @@
 ## Global Constraints
 
 - **`scope` は配列 `readonly string[]`**（元spec `k3-unlock-design.md` §3 の単一文字列 `'all-paid'` から変更）。理由: `docs/private/IDEAS.md`（社内メモ）に「K3はper-themeスコープとall-paidスコープの両方を出せる設計」という前提が明記されており、`device-sync-design.md` §10 も「license-storeの`scope`に`'sync'`を含むか」という複数値ゲートで書かれている。この束が発券するキーは常に `scope: ['sync']` のみ（テーマの解錠は別束・`EMPTY_LICENSES`は無傷のまま）。
+- **`crypto.subtle.*`への引数は`new Uint8Array(...)`で明示的に包む**（Task2実装中に判明）: `license-types.ts`のヘルパーはbareな`Uint8Array`戻り値型を宣言しているが、このリポジトリのTSバージョンではそれが`Uint8Array<ArrayBufferLike>`に広がり、Web Cryptoの`BufferSource`に代入不可になる。既存の`lib/private/crypto.ts`と同じ対処＝呼び出し直前で`new Uint8Array(x)`に包み直す（ArrayBuffer裏付けの確定形にする）。`TextEncoder().encode(...)`や`await crypto.subtle.exportKey(...)`の戻り値を直接使う分には問題ない（この widening はカスタム関数のbare宣言戻り値だけで起きる）。
 - **Ed25519 は動作確認済み**（このセッションでNode 24 + jsdom vitest環境で `crypto.subtle.generateKey/exportKey/sign/importKey/verify` の完全な往復を実機テスト済み）。標準名 `'Ed25519'` を使う（Cloudflare Workers公式ドキュメント推奨・`'NODE-ED25519'`はレガシー名で使わない）。ブラウザ対応はChrome137+/Safari17+/Firefox130+（2025年時点で主要ブラウザ全対応・カバレッジ約79%+）。未対応ブラウザは例外を投げるので、`verifyLicenseKey`は`try/catch`で`'unsupported'`ステータスに落とす（クラッシュさせない）。
 - **`deviceId` は新規に作らない**。束1で作った `lib/sync/device-id.ts` の `getDeviceId(db)` を再利用する（そのJSDocに「K3の発動台数カウントに使う」と明記済み＝設計時から想定済みの再利用）。
 - **フェイルオープンの境界を厳密に守る**: Worker/ネットワーク障害時（fetch失敗・タイムアウト・不正なレスポンス・`{ok:false,reason:'unknown-key'}`）は署名検証済みのキーを信頼してローカルで解錠する。**明示的な `{ok:false,reason:'cap-exceeded'}` だけは本物の拒否**（フェイルオープンしない）。この境界をあいまいにしない。
@@ -675,8 +676,8 @@ describe('GET /claim', () => {
       const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/')
       return new Uint8Array(Buffer.from(b64 + '='.repeat((4 - (b64.length % 4)) % 4), 'base64'))
     }
-    const pub = await crypto.subtle.importKey('raw', toBytes(publicKeyB64url), { name: 'Ed25519' }, true, ['verify'])
-    const ok = await crypto.subtle.verify('Ed25519', pub, toBytes(sigB64url), new TextEncoder().encode(payloadB64url))
+    const pub = await crypto.subtle.importKey('raw', new Uint8Array(toBytes(publicKeyB64url)), { name: 'Ed25519' }, true, ['verify'])
+    const ok = await crypto.subtle.verify('Ed25519', pub, new Uint8Array(toBytes(sigB64url)), new TextEncoder().encode(payloadB64url))
     expect(ok).toBe(true)
     const payload = JSON.parse(new TextDecoder().decode(toBytes(payloadB64url)))
     expect(payload.scope).toEqual(['sync'])
@@ -807,9 +808,14 @@ function errorPage(message: string): Response {
 }
 
 async function signPayload(payload: LicensePayload, privateKeyB64url: string): Promise<string> {
-  const privateKey = await crypto.subtle.importKey('pkcs8', base64UrlToBytes(privateKeyB64url), { name: 'Ed25519' }, false, ['sign'])
+  // new Uint8Array(...) re-wraps into a definite ArrayBuffer-backed array:
+  // license-types.ts's helpers declare bare `Uint8Array` returns, which this
+  // TS version widens to `Uint8Array<ArrayBufferLike>` — not assignable to
+  // Web Crypto's `BufferSource`. Same fix as lib/private/crypto.ts and Task2's
+  // license-crypto.ts (discovered during Task 2 implementation).
+  const privateKey = await crypto.subtle.importKey('pkcs8', new Uint8Array(base64UrlToBytes(privateKeyB64url)), { name: 'Ed25519' }, false, ['sign'])
   const payloadB64url = encodeLicensePayload(payload)
-  const signature = new Uint8Array(await crypto.subtle.sign('Ed25519', privateKey, payloadSigningBytes(payloadB64url)))
+  const signature = new Uint8Array(await crypto.subtle.sign('Ed25519', privateKey, new Uint8Array(payloadSigningBytes(payloadB64url))))
   return encodeLicenseKey(payloadB64url, signature)
 }
 
