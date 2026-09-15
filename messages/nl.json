@@ -277,7 +277,7 @@
     "buttonAria": "Tagbeheer openen"
   },
   "private": {
-    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
+    "setupExplanation": "Versleutelt de titel, URL, thumbnail en foto's van alles wat als Private is getagd met dit wachtwoord — de echte inhoud wordt nooit onversleuteld opgeslagen. Er is geen herstel behalve de hint hieronder: als je het wachtwoord vergeet, blijft de inhoud voor altijd versleuteld.",
     "passwordLabel": "Wachtwoord",
     "confirmPasswordLabel": "Wachtwoord bevestigen",
     "hintLabel": "Hint (optioneel)",

@@ -277,7 +277,7 @@
     "buttonAria": "打开标签管理"
   },
   "private": {
-    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
+    "setupExplanation": "此密码会加密所有标记为 Private 的内容的标题、网址、缩略图和图片——真实内容绝不会以明文形式存储。除了下方的提示外没有其他找回方式：如果忘记密码，内容将永远保持加密状态。",
     "passwordLabel": "密码",
     "confirmPasswordLabel": "确认密码",
     "hintLabel": "提示（可选）",

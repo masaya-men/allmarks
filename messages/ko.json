@@ -277,7 +277,7 @@
     "buttonAria": "태그 관리 열기"
   },
   "private": {
-    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
+    "setupExplanation": "이 비밀번호로 Private로 태그된 모든 항목의 제목, URL, 썸네일, 사진이 암호화됩니다 — 실제 내용은 평문으로 저장되지 않습니다. 아래 힌트 외에는 복구 방법이 없습니다. 비밀번호를 잊으면 내용은 영원히 암호화된 채로 남습니다.",
     "passwordLabel": "비밀번호",
     "confirmPasswordLabel": "비밀번호 확인",
     "hintLabel": "힌트 (선택 사항)",

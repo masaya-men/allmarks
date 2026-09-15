@@ -277,7 +277,7 @@
     "buttonAria": "Abrir gestión de etiquetas"
   },
   "private": {
-    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
+    "setupExplanation": "Esto cifra el título, la URL, la miniatura y las fotos de todo lo etiquetado como Private con esta contraseña; el contenido real nunca se almacena en texto plano. No hay más recuperación que la pista de abajo: si olvidas la contraseña, el contenido queda cifrado para siempre.",
     "passwordLabel": "Contraseña",
     "confirmPasswordLabel": "Confirmar contraseña",
     "hintLabel": "Pista (opcional)",

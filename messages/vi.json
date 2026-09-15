@@ -277,7 +277,7 @@
     "buttonAria": "Mở quản lý thẻ"
   },
   "private": {
-    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
+    "setupExplanation": "Mã hoá tiêu đề, URL, ảnh thu nhỏ và ảnh của mọi thứ được gắn thẻ Private bằng mật khẩu này — nội dung thật không bao giờ được lưu dưới dạng văn bản thuần. Không có cách khôi phục nào ngoài gợi ý bên dưới: nếu bạn quên mật khẩu, nội dung sẽ mãi mãi ở trạng thái mã hoá.",
     "passwordLabel": "Mật khẩu",
     "confirmPasswordLabel": "Xác nhận mật khẩu",
     "hintLabel": "Gợi ý (không bắt buộc)",
