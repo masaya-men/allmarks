@@ -291,7 +291,18 @@
     "shareConfirmBodyMany": "Lựa chọn này bao gồm {count} mục từ Private. Vẫn chia sẻ chứ?",
     "setupRequiredNotice": "Hãy thiết lập Private trên bảng AllMarks trước.",
     "encryptErrorNotice": "Không thể mã hoá — hãy thử lại.",
-    "shareIncludesPrivateHeading": "LƯỢT CHIA SẺ NÀY CÓ CHỨA MỘT MỤC RIÊNG TƯ"
+    "shareIncludesPrivateHeading": "LƯỢT CHIA SẺ NÀY CÓ CHỨA MỘT MỤC RIÊNG TƯ",
+    "manageHeading": "PRIVATE",
+    "unlockedStatus": "Unlocked on this device",
+    "manageHintPrefix": "Hint: {hint}",
+    "changePasswordButton": "CHANGE PASSWORD",
+    "doneButton": "DONE",
+    "changePasswordHeading": "CHANGE PASSWORD",
+    "changePasswordExplanation": "Sets a new password for Private. You'll need it here next time you unlock — and on any other synced device, once it picks up the change.",
+    "newPasswordLabel": "New password",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "changePasswordSuccessToast": "Password updated.",
+    "errorChangeFailed": "Could not update the password. Try again."
   },
   "landing": {
     "hero": {

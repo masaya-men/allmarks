@@ -291,7 +291,18 @@
     "shareConfirmBodyMany": "Bu seçim Private'tan {count} öğe içeriyor. Yine de paylaşılsın mı?",
     "setupRequiredNotice": "Önce AllMarks panosunda Private'ı ayarlayın.",
     "encryptErrorNotice": "Şifrelenemedi — tekrar deneyin.",
-    "shareIncludesPrivateHeading": "BU PAYLAŞIM GİZLİ BİR ÖĞE İÇERİYOR"
+    "shareIncludesPrivateHeading": "BU PAYLAŞIM GİZLİ BİR ÖĞE İÇERİYOR",
+    "manageHeading": "PRIVATE",
+    "unlockedStatus": "Unlocked on this device",
+    "manageHintPrefix": "Hint: {hint}",
+    "changePasswordButton": "CHANGE PASSWORD",
+    "doneButton": "DONE",
+    "changePasswordHeading": "CHANGE PASSWORD",
+    "changePasswordExplanation": "Sets a new password for Private. You'll need it here next time you unlock — and on any other synced device, once it picks up the change.",
+    "newPasswordLabel": "New password",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "changePasswordSuccessToast": "Password updated.",
+    "errorChangeFailed": "Could not update the password. Try again."
   },
   "landing": {
     "hero": {

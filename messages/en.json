@@ -291,7 +291,18 @@
     "shareConfirmBodyMany": "This selection includes {count} items from Private. Share anyway?",
     "setupRequiredNotice": "Set up Private in the AllMarks board first.",
     "encryptErrorNotice": "Could not encrypt — try again.",
-    "shareIncludesPrivateHeading": "THIS SHARE INCLUDES A PRIVATE ITEM"
+    "shareIncludesPrivateHeading": "THIS SHARE INCLUDES A PRIVATE ITEM",
+    "manageHeading": "PRIVATE",
+    "unlockedStatus": "Unlocked on this device",
+    "manageHintPrefix": "Hint: {hint}",
+    "changePasswordButton": "CHANGE PASSWORD",
+    "doneButton": "DONE",
+    "changePasswordHeading": "CHANGE PASSWORD",
+    "changePasswordExplanation": "Sets a new password for Private. You'll need it here next time you unlock — and on any other synced device, once it picks up the change.",
+    "newPasswordLabel": "New password",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "changePasswordSuccessToast": "Password updated.",
+    "errorChangeFailed": "Could not update the password. Try again."
   },
   "landing": {
     "hero": {

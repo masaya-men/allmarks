@@ -291,7 +291,18 @@
     "shareConfirmBodyMany": "この選択にはPrivateの{count}件が含まれています。それでも共有しますか？",
     "setupRequiredNotice": "先にAllMarksの盤面でPrivateを設定してください。",
     "encryptErrorNotice": "暗号化できませんでした。もう一度お試しください。",
-    "shareIncludesPrivateHeading": "共有内容に非公開の項目が含まれています"
+    "shareIncludesPrivateHeading": "共有内容に非公開の項目が含まれています",
+    "manageHeading": "PRIVATE",
+    "unlockedStatus": "この端末で解錠済み",
+    "manageHintPrefix": "ヒント: {hint}",
+    "changePasswordButton": "パスワードを変更",
+    "doneButton": "完了",
+    "changePasswordHeading": "パスワードを変更",
+    "changePasswordExplanation": "Privateの新しいパスワードを設定します。次回この端末で解錠するとき、また同期している他の端末が変更を受け取った後は、そちらでも新しいパスワードが必要になります。",
+    "newPasswordLabel": "新しいパスワード",
+    "confirmNewPasswordLabel": "新しいパスワード(確認)",
+    "changePasswordSuccessToast": "パスワードを更新しました。",
+    "errorChangeFailed": "パスワードを更新できませんでした。もう一度お試しください。"
   },
   "landing": {
     "hero": {
