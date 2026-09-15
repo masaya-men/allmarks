@@ -314,6 +314,7 @@
     "errorUnsupported": "このブラウザではキーを確認できません。ブラウザを最新にするか、別のブラウザをお試しください。",
     "errorCapExceeded": "このキーは上限台数まで使用済みです。",
     "errorCapExceededContact": "お困りの場合はお問い合わせください。",
+    "errorActivateFailed": "有効化できませんでした。もう一度お試しください。",
     "unlockedHeading": "同期を解錠しました",
     "connectComingSoon": "端末をつなぐ機能は近日公開予定です。"
   },

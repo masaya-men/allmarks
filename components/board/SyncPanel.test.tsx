@@ -91,4 +91,25 @@ describe('SyncPanel', () => {
     await screen.findByTestId('sync-unlocked')
     expect(screen.queryByTestId('sync-locked')).not.toBeInTheDocument()
   })
+
+  it('falls back to the locked view (not a permanent blank) if reading the license state throws', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockLoadLicense.mockRejectedValue(new Error('indexedDB unavailable'))
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-locked')
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('shows a generic error and re-enables the button if activation itself throws', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockLoadLicense.mockResolvedValue(null)
+    mockActivate.mockRejectedValue(new Error('indexedDB unavailable'))
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-locked')
+    fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'some-key' } })
+    fireEvent.click(screen.getByTestId('sync-key-submit'))
+    await waitFor(() => expect(screen.getByTestId('sync-key-error')).toHaveTextContent(/activate/i))
+    expect(screen.getByTestId('sync-key-submit')).not.toBeDisabled()
+    consoleErrorSpy.mockRestore()
+  })
 })

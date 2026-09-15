@@ -25,9 +25,14 @@ export function SyncPanel(): ReactElement | null {
   useEffect(() => {
     let cancelled = false
     void (async (): Promise<void> => {
-      const db = await initDB()
-      const state = await loadLicense(db)
-      if (!cancelled) setUnlocked(isSyncUnlocked(state))
+      try {
+        const db = await initDB()
+        const state = await loadLicense(db)
+        if (!cancelled) setUnlocked(isSyncUnlocked(state))
+      } catch (e) {
+        console.error('[AllMarks] failed to load sync license state', e)
+        if (!cancelled) setUnlocked(false)
+      }
     })()
     return (): void => { cancelled = true }
   }, [])
@@ -39,18 +44,24 @@ export function SyncPanel(): ReactElement | null {
     setSubmitting(true)
     setError(null)
     setCapExceeded(false)
-    const db = await initDB()
-    const result = await activateLicenseKey(db, cleaned)
-    setSubmitting(false)
-    if (result.status === 'unlocked') {
-      setUnlocked(true)
-      return
-    }
-    if (result.status === 'invalid-key') setError(t('sync.errorInvalidKey'))
-    else if (result.status === 'unsupported') setError(t('sync.errorUnsupported'))
-    else if (result.status === 'cap-exceeded') {
-      setError(t('sync.errorCapExceeded'))
-      setCapExceeded(true)
+    try {
+      const db = await initDB()
+      const result = await activateLicenseKey(db, cleaned)
+      setSubmitting(false)
+      if (result.status === 'unlocked') {
+        setUnlocked(true)
+        return
+      }
+      if (result.status === 'invalid-key') setError(t('sync.errorInvalidKey'))
+      else if (result.status === 'unsupported') setError(t('sync.errorUnsupported'))
+      else if (result.status === 'cap-exceeded') {
+        setError(t('sync.errorCapExceeded'))
+        setCapExceeded(true)
+      }
+    } catch (e) {
+      console.error('[AllMarks] failed to activate sync license key', e)
+      setSubmitting(false)
+      setError(t('sync.errorActivateFailed'))
     }
   }
 

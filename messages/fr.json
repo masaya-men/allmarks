@@ -314,6 +314,7 @@
     "errorUnsupported": "Your browser can't verify this key. Try updating it, or use a different browser.",
     "errorCapExceeded": "This key has reached its device limit.",
     "errorCapExceededContact": "Contact us if you need help.",
+    "errorActivateFailed": "Could not activate. Try again.",
     "unlockedHeading": "Sync unlocked",
     "connectComingSoon": "Connecting devices is coming in a future update."
   },
