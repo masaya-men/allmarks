@@ -360,23 +360,25 @@ describe('mergeVault', () => {
   })
 
   it('same vault (same publicKey + tagId), different wrapping: newer updatedAt wins', () => {
-    const base = {
-      key: 'private-vault' as const, tagId: 'tag1', salt: 'salt-a', iterations: 600000,
-      publicKey: 'same-pk', wrappedPrivateKey: { iv: 'iv-a', ciphertext: 'ct-a' },
-    }
-    const older = { ...base, updatedAt: 1000 }
-    const newer = { ...base, salt: 'salt-b', wrappedPrivateKey: { iv: 'iv-b', ciphertext: 'ct-b' }, updatedAt: 2000 }
+    // salt/iv/ciphertext are deliberately chosen so the OLDER record's fields
+    // sort lexically AFTER the newer record's (older='z*', newer='a*'). This
+    // makes pickDeterministic's stableStringify tie-break pick the WRONG
+    // (older) record if it were used — so this test only passes when the
+    // updatedAt-LWW branch is actually being taken, not by coincidence.
+    const base = { key: 'private-vault' as const, tagId: 'tag1', iterations: 600000, publicKey: 'same-pk' }
+    const older = { ...base, salt: 'salt-z', wrappedPrivateKey: { iv: 'iv-z', ciphertext: 'ct-z' }, updatedAt: 1000 }
+    const newer = { ...base, salt: 'salt-a', wrappedPrivateKey: { iv: 'iv-a', ciphertext: 'ct-a' }, updatedAt: 2000 }
     expect(mergeVault(older, newer)).toEqual(newer)
     expect(mergeVault(newer, older)).toEqual(newer) // 引数順に依存しない
   })
 
   it('same vault, one side has no updatedAt (legacy pre-this-feature record): the stamped side wins', () => {
-    const base = {
-      key: 'private-vault' as const, tagId: 'tag1', salt: 'salt-a', iterations: 600000,
-      publicKey: 'same-pk', wrappedPrivateKey: { iv: 'iv-a', ciphertext: 'ct-a' },
-    }
-    const legacy = base // no updatedAt field at all
-    const changed = { ...base, salt: 'salt-b', wrappedPrivateKey: { iv: 'iv-b', ciphertext: 'ct-b' }, updatedAt: 2000 }
+    // Same anti-coincidence trick: legacy's fields sort lexically AFTER
+    // changed's, so pickDeterministic would wrongly favor legacy if it were
+    // reached — this test only passes via the updatedAt-LWW branch.
+    const base = { key: 'private-vault' as const, tagId: 'tag1', iterations: 600000, publicKey: 'same-pk' }
+    const legacy = { ...base, salt: 'salt-z', wrappedPrivateKey: { iv: 'iv-z', ciphertext: 'ct-z' } } // no updatedAt field at all
+    const changed = { ...base, salt: 'salt-a', wrappedPrivateKey: { iv: 'iv-a', ciphertext: 'ct-a' }, updatedAt: 2000 }
     expect(mergeVault(legacy, changed)).toEqual(changed)
     expect(mergeVault(changed, legacy)).toEqual(changed)
   })
