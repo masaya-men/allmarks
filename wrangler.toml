@@ -32,5 +32,5 @@ preview_bucket_name = "allmarks-share-og-preview"
 # → 出力されたIDを下記に貼る → commit → deploy。
 [[kv_namespaces]]
 binding = "K3_KV"
-id = "REPLACE_WITH_WRANGLER_OUTPUT_ID"
-preview_id = "REPLACE_WITH_WRANGLER_OUTPUT_PREVIEW_ID"
+id = "75b8f0cfa1d147bc960ae00793194932"
+preview_id = "03ded5ff1254441e8301d03f76e67c70"
