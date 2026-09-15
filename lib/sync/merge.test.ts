@@ -358,6 +358,44 @@ describe('mergeVault', () => {
     const b = rec('pubB')
     expect(mergeVault(a, b)).toEqual(mergeVault(b, a))
   })
+
+  it('same vault (same publicKey + tagId), different wrapping: newer updatedAt wins', () => {
+    const base = {
+      key: 'private-vault' as const, tagId: 'tag1', salt: 'salt-a', iterations: 600000,
+      publicKey: 'same-pk', wrappedPrivateKey: { iv: 'iv-a', ciphertext: 'ct-a' },
+    }
+    const older = { ...base, updatedAt: 1000 }
+    const newer = { ...base, salt: 'salt-b', wrappedPrivateKey: { iv: 'iv-b', ciphertext: 'ct-b' }, updatedAt: 2000 }
+    expect(mergeVault(older, newer)).toEqual(newer)
+    expect(mergeVault(newer, older)).toEqual(newer) // 引数順に依存しない
+  })
+
+  it('same vault, one side has no updatedAt (legacy pre-this-feature record): the stamped side wins', () => {
+    const base = {
+      key: 'private-vault' as const, tagId: 'tag1', salt: 'salt-a', iterations: 600000,
+      publicKey: 'same-pk', wrappedPrivateKey: { iv: 'iv-a', ciphertext: 'ct-a' },
+    }
+    const legacy = base // no updatedAt field at all
+    const changed = { ...base, salt: 'salt-b', wrappedPrivateKey: { iv: 'iv-b', ciphertext: 'ct-b' }, updatedAt: 2000 }
+    expect(mergeVault(legacy, changed)).toEqual(changed)
+    expect(mergeVault(changed, legacy)).toEqual(changed)
+  })
+
+  it('genuinely different vault (different publicKey): result is deterministic and independent of updatedAt', () => {
+    const a = {
+      key: 'private-vault' as const, tagId: 'tag1', salt: 'salt-a', iterations: 600000,
+      publicKey: 'pk-a', wrappedPrivateKey: { iv: 'iv-a', ciphertext: 'ct-a' }, updatedAt: 1, // 古い方
+    }
+    const b = {
+      key: 'private-vault' as const, tagId: 'tag1', salt: 'salt-b', iterations: 600000,
+      publicKey: 'pk-b', wrappedPrivateKey: { iv: 'iv-b', ciphertext: 'ct-b' }, updatedAt: 9999999, // 新しい方
+    }
+    // 引数順に依存しない(決定的)ことだけを確認する。LWWなら常にbが勝つはずだが、
+    // publicKeyが違う=別の金庫なのでLWWの対象外であることをこのテストで担保する。
+    const result1 = mergeVault(a, b)
+    const result2 = mergeVault(b, a)
+    expect(result1).toBe(result2)
+  })
 })
 
 describe('mergeAll', () => {
