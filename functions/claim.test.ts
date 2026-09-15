@@ -60,6 +60,20 @@ describe('GET /claim', () => {
     expect(html).not.toMatch(/[\w-]{20,}\.[\w-]{20,}/) // no key-shaped string in the body
   })
 
+  it('returns an error page (not unlimited issuance) when the KV record has a mistyped/missing field', async () => {
+    // Simulates a manually-seeded KV entry (wrangler kv key put) with a typo'd
+    // field name — e.g. "maxIssues" instead of "maxIssue". Without runtime
+    // validation, record.issuedCount >= record.maxIssue becomes
+    // `0 >= undefined` = false, and the cap never triggers.
+    const { privateKeyB64url } = await makeTestKeys()
+    const kvStore = new Map<string, string>([['claim:secret1', JSON.stringify({ label: 'x', issuedCount: 0, maxIssues: 10, active: true })]])
+    const { ctx, K3_KV } = makeCtx('https://allmarks.app/claim?c=secret1', kvStore, privateKeyB64url)
+    const res = await onRequestGet(ctx as never)
+    const html = await res.text()
+    expect(html).not.toMatch(/[\w-]{20,}\.[\w-]{20,}/)
+    expect(K3_KV.put).not.toHaveBeenCalled()
+  })
+
   it('returns an error page when the claim record is inactive', async () => {
     const { privateKeyB64url } = await makeTestKeys()
     const kvStore = new Map<string, string>([['claim:secret1', JSON.stringify({ label: 'x', issuedCount: 0, maxIssue: 10, active: false })]])

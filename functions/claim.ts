@@ -2,6 +2,7 @@
 // GET /claim?c=<claimSecret> — 会員限定リンクを踏んだ支援者にK3ライセンス
 // キーを発券して画面表示する。署名するのはここだけ（秘密鍵はWorker Secret）。
 // 設計: docs/private/2026-07-01-k3-unlock-design.md §4.1。
+import { z } from 'zod'
 import {
   encodeLicensePayload, encodeLicenseKey, base64UrlToBytes, payloadSigningBytes, type LicensePayload,
 } from '../lib/board/license-types'
@@ -23,12 +24,16 @@ interface PagesContext {
   env: Env
 }
 
-interface ClaimRecord {
-  label: string
-  issuedCount: number
-  maxIssue: number
-  active: boolean
-}
+// KVに手動seedされるレコード（wrangler kv key put）。typoしたフィールド名等の
+// 壊れた入力を実行時に弾く（さもないと record.issuedCount >= record.maxIssue が
+// NaN >= undefined = false に化けてmaxIssueキャップが無効になり無制限発行され得る）。
+const claimRecordSchema = z.object({
+  label: z.string(),
+  issuedCount: z.number().int().nonnegative(),
+  maxIssue: z.number().int().nonnegative(),
+  active: z.boolean(),
+})
+type ClaimRecord = z.infer<typeof claimRecordSchema>
 
 const MAX_SECRET_LEN = 128
 const K3_SCOPE: readonly string[] = ['sync']
@@ -66,9 +71,14 @@ async function signPayload(payload: LicensePayload, privateKeyB64url: string): P
 export async function onRequestGet(ctx: PagesContext): Promise<Response> {
   const url = new URL(ctx.request.url)
   const secret = url.searchParams.get('c')
-  if (!secret || secret.length === 0 || secret.length > MAX_SECRET_LEN) {
+  if (!secret || secret.length > MAX_SECRET_LEN) {
     return errorPage('This link is missing or malformed.')
   }
+  // KV読み取り前に確認する: 未設定のままだと、有効な secret を持つ人だけ
+  // "Key signing is not configured yet" という別メッセージを見てしまい、
+  // 「サーバー未設定」と「secretが無効」を判別できてしまう（enumeration
+  // oracle）。KV読み取りより前に置くことでこの区別を完全に消す。
+  if (!ctx.env.K3_PRIVATE_KEY) return errorPage('Key signing is not configured yet. Please try again later.')
 
   // Claim-secret rejection (unknown / malformed record / inactive / exhausted)
   // must all return the exact same message. Otherwise anyone holding a real
@@ -79,16 +89,18 @@ export async function onRequestGet(ctx: PagesContext): Promise<Response> {
   const raw = await ctx.env.K3_KV.get(`claim:${secret}`)
   if (!raw) return claimRejected()
 
-  let record: ClaimRecord
+  let recordJson: unknown
   try {
-    record = JSON.parse(raw) as ClaimRecord
+    recordJson = JSON.parse(raw)
   } catch {
     return claimRejected()
   }
+  const parsedRecord = claimRecordSchema.safeParse(recordJson)
+  if (!parsedRecord.success) return claimRejected()
+  const record: ClaimRecord = parsedRecord.data
 
   if (!record.active) return claimRejected()
   if (record.issuedCount >= record.maxIssue) return claimRejected()
-  if (!ctx.env.K3_PRIVATE_KEY) return errorPage('Key signing is not configured yet. Please try again later.')
 
   const kid = crypto.randomUUID()
   const payload: LicensePayload = { kid, scope: [...K3_SCOPE], v: 1, iat: Date.now() }
@@ -108,6 +120,7 @@ export async function onRequestGet(ctx: PagesContext): Promise<Response> {
 <p>Paste this into AllMarks — SETTINGS — Enter your key.</p>
 <code id="key">${key}</code>
 <button onclick="navigator.clipboard.writeText(document.getElementById('key').textContent)">Copy key</button>
+<p>Key ID: ${kid}</p>
 <p>This key works on up to 5 devices. Save it somewhere — this page won't show it again.</p>
 `)
 }

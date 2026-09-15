@@ -63,6 +63,17 @@ describe('POST /activate', () => {
     expect(JSON.parse(store.get('act:kid-1')!)).toHaveLength(5) // unchanged
   })
 
+  it('idempotent: re-activating a device already in a full (5/5) set still succeeds unchanged', async () => {
+    const kvStore = new Map<string, string>([
+      ['issued:kid-1', JSON.stringify({ claimSecret: 's', iat: 1 })],
+      ['act:kid-1', JSON.stringify(['d1', 'd2', 'd3', 'd4', 'd5'])],
+    ])
+    const { ctx, kvStore: store } = makeCtx({ kid: 'kid-1', deviceId: 'd3' }, kvStore)
+    const res = await onRequestPost(ctx as never)
+    expect(await res.json()).toEqual({ ok: true })
+    expect(JSON.parse(store.get('act:kid-1')!)).toEqual(['d1', 'd2', 'd3', 'd4', 'd5']) // unchanged
+  })
+
   it('unknown kid (never issued): ok:false reason:unknown-key, no KV write', async () => {
     const { ctx, K3_KV } = makeCtx({ kid: 'never-issued', deviceId: 'd1' }, new Map())
     const res = await onRequestPost(ctx as never)
