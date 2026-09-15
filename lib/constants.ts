@@ -16,6 +16,12 @@ export const SITE_URL = APP_URL.startsWith('http://localhost')
  *  Cloud Console client exists; the sync UI (bundle 6) stays gated while empty. */
 export const GOOGLE_OAUTH_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID ?? ''
 
+/** K3ライセンスキーのEd25519公開鍵（base64url, raw 32バイト）。秘密ではない
+ *  （クライアントに同梱して安全）。鍵ペア未生成の間は空文字＝
+ *  scripts/generate-k3-keypair.mjs 実行後に .env.production へ値を貼る
+ *  （NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID と同じ「空default」パターン）。 */
+export const K3_PUBLIC_KEY = process.env.NEXT_PUBLIC_K3_PUBLIC_KEY ?? ''
+
 /** Predefined folder accent colors */
 export const FOLDER_COLORS = [
   '#ff6b6b', '#ff922b', '#ffd43b', '#51cf66', '#20c997',
