@@ -13,8 +13,18 @@ import {
 import { parseGoogleTokenResponse } from './gauth-types'
 import { GOOGLE_OAUTH_CLIENT_ID } from '@/lib/constants'
 
+/**
+ * 同期が実際に依存する唯一のスコープ。Google はこれを常にこの正式URL形で
+ * 返す(リクエスト/レスポンス両方向)。openid/email/profile は SYNC_OAUTH_SCOPE
+ * では要求するが装飾用(接続アカウント表示は idToken 側で行う)— Google は
+ * これらを短縮形ではなく userinfo.email/userinfo.profile の正式URLで返す、
+ * かつ scope フィールド自体を省略することもあるため、hasRequiredScopes
+ * (engine.ts) の判定対象にはしない。
+ */
+export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+
 /** 同期に必要な最小スコープ。drive.file = AllMarks が作ったファイルだけ見える。 */
-export const SYNC_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file openid email profile'
+export const SYNC_OAUTH_SCOPE = `${DRIVE_FILE_SCOPE} openid email profile`
 
 /** access token 期限の安全マージン (秒)。期限ちょうどの手前で更新させる。 */
 const EXPIRY_SAFETY_MARGIN_SEC = 60

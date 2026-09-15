@@ -3,7 +3,7 @@ import type { BookmarkRecord, TagRecord, CardRecord } from '@/lib/storage/indexe
 import { CONFIG_KEY, loadBoardConfigRecord } from '@/lib/storage/board-config'
 import { loadVaultRecord } from '@/lib/private/vault-store'
 import { mergeAll, type SyncSnapshot } from './merge'
-import { refreshAccessToken, isAccessTokenExpired, SYNC_OAUTH_SCOPE, type SyncTokens } from './auth'
+import { refreshAccessToken, isAccessTokenExpired, DRIVE_FILE_SCOPE, type SyncTokens } from './auth'
 import {
   loadSyncTokens, saveSyncTokens, loadSyncStatus, updateSyncStatus, saveBaseSnapshot, pushBackupGeneration,
 } from './sync-store'
@@ -74,9 +74,15 @@ export async function ensureAccessToken(db: DbLike, now: number = Date.now()): P
   return merged.accessToken
 }
 
+// Soft check by design (see DRIVE_FILE_SCOPE doc comment in auth.ts): Google
+// sometimes omits `scope` entirely (empty string here trusts the connection
+// rather than reject it), and only drive.file is checked since it's the one
+// scope sync actually depends on — openid/email/profile are requested but
+// decorative, and Google returns them in forms (aliased or normalized to full
+// userinfo.* URLs) that don't round-trip through an exact string match.
 export function hasRequiredScopes(grantedScope: string): boolean {
-  const granted = new Set(grantedScope.split(' ').filter(Boolean))
-  return SYNC_OAUTH_SCOPE.split(' ').every(required => granted.has(required))
+  if (!grantedScope) return true
+  return grantedScope.split(' ').filter(Boolean).includes(DRIVE_FILE_SCOPE)
 }
 
 import {

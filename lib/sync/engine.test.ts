@@ -116,12 +116,20 @@ describe('ensureAccessToken', () => {
 })
 
 describe('hasRequiredScopes', () => {
-  it('true when all required scopes are present regardless of order', () => {
-    expect(hasRequiredScopes('email https://www.googleapis.com/auth/drive.file profile openid')).toBe(true)
+  it('true when drive.file is present, regardless of how Google formats the other scopes', () => {
+    // Real Google responses normalize openid/email/profile to full userinfo.* URLs,
+    // not the short forms requested — hasRequiredScopes must not depend on those.
+    expect(hasRequiredScopes(
+      'openid https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+    )).toBe(true)
   })
 
   it('false when drive.file is missing (partial consent)', () => {
-    expect(hasRequiredScopes('openid email profile')).toBe(false)
+    expect(hasRequiredScopes('openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile')).toBe(false)
+  })
+
+  it('true when Google omits the scope field entirely (soft check by design)', () => {
+    expect(hasRequiredScopes('')).toBe(true)
   })
 })
 
