@@ -136,3 +136,12 @@ export async function changeVaultPassword(
 
   return { ok: true, session: { tagId: record.tagId, privateKey: session.privateKey, wrappingKey: newWrappingKey } }
 }
+
+/** Deletes the local vault record entirely. Called only after every one of
+ *  its bookmarks has already been re-encrypted under a different vault's
+ *  public key and retagged away from this vault's tag (see
+ *  lib/private/vault-conflict.ts's mergeIntoOtherVault) — by the time this
+ *  runs, nothing local still depends on this record. */
+export async function retireVault(db: DbLike): Promise<void> {
+  await db.delete('settings', VAULT_KEY)
+}

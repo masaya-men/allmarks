@@ -66,6 +66,11 @@ import { ExtensionEntry } from './ExtensionEntry'
 import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
 import { createVault, unlockVault, loadVaultRecord, changeVaultPassword } from '@/lib/private/vault-store'
 import {
+  loadVaultConflict, isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault, clearVaultConflict,
+} from '@/lib/private/vault-conflict'
+import { VaultConflictNoticeDialog } from './VaultConflictNoticeDialog'
+import { VaultConflictMergeDialog } from './VaultConflictMergeDialog'
+import {
   addPrivateTag, removePrivateTag, resolvePrivateStatus, executePrivateAction, PRIVATE_DROP_KEY,
   privateActionNeedsUnlock,
   type PendingPrivateAction, type PrivateStatus,
@@ -253,7 +258,7 @@ export function BoardRoot() {
   // lock-filtered), which would silently disable every exclusion this feature
   // exists for.
   const privateSession = usePrivateVaultSession()
-  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | 'manage' | 'change-password' | null>(null)
+  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | 'manage' | 'change-password' | 'vault-conflict-notice' | 'vault-conflict-merge' | 'vault-conflict-resolved' | null>(null)
   const [privateHint, setPrivateHint] = useState<string | undefined>(undefined)
   // Set when a SHARE was attempted while the selection contains Private cards.
   // `resume` records which capture path asked, so the single confirm dialog
@@ -269,7 +274,7 @@ export function BoardRoot() {
   // Declared before useBoardData because useBoardData(privateTagId) consumes
   // it (the vault-locked exclusion happens inside the data hook).
   const {
-    tags, privateTagId, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
+    tags, privateTagId, allPrivateTagIds: privateTagIds, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
     orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
   } = useTags()
   // Always-current 3-state Private status — drives every "🔒 Private" row's
@@ -294,7 +299,7 @@ export function BoardRoot() {
     resortNewestFirst,
     reload,
     persistLinkStatus,
-  } = useBoardData(privateTagId)
+  } = useBoardData(privateTagIds)
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
@@ -1120,7 +1125,7 @@ export function BoardRoot() {
     // TRASH (= archive) は items に居ない (soft-deleted は別 state)、
     // deletedItems を直接返す。 これによりカード本体がレンダされる + ×
     // ボタンの handler が BoardRoot 側で restore 意味になる。
-    if (activeFilter.kind === 'archive') return applyFilter(deletedItems, activeFilter, privateTagId)
+    if (activeFilter.kind === 'archive') return applyFilter(deletedItems, activeFilter, privateTagIds)
     // Tags filter は CardsLayer 側で matchedBookmarkIds + CRT shutdown
     // アニメ経由で表現する (= 非該当カードを items に残しておく → shutdown
     // 演出 → GSAP-FLIP で該当カードが reflow)。 ここで除外してしまうと
@@ -1134,10 +1139,10 @@ export function BoardRoot() {
       // when the real filter already includes Private — otherwise keep gating
       // so Private stays out of every other tag's view.
       const privateFilterActive = privateTagId !== null && activeFilter.tagIds.includes(privateTagId)
-      return applyFilter(items, BOARD_FILTER_ALL, privateFilterActive ? null : privateTagId)
+      return applyFilter(items, BOARD_FILTER_ALL, privateFilterActive ? new Set() : privateTagIds)
     }
-    return applyFilter(items, activeFilter, privateTagId)
-  }, [items, deletedItems, activeFilter, privateTagId])
+    return applyFilter(items, activeFilter, privateTagIds)
+  }, [items, deletedItems, activeFilter, privateTagId, privateTagIds])
 
   // Tag filter overlay on top of filteredItems. null = no tag filter active
   // (= every card matches). When set, cards whose id is NOT in the set are
@@ -1730,7 +1735,7 @@ export function BoardRoot() {
       // surfaces (C1) and drag-and-drop (M3), reachable from the per-card
       // + TAG popover's new-tag input. Only the board's individual card
       // toggle may attach Private, because only that path encrypts.
-      if (existing && existing.id === privateTagId) return
+      if (existing && privateTagIds.has(existing.id)) return
       const target = existing ?? (await addTag(db, {
         name: trimmed, color: '#28F100', order: tags.length,
         // Flag tags born during the tutorial (e.g. the demo "sample") so they're
@@ -1742,7 +1747,7 @@ export function BoardRoot() {
       await reloadTags()
       await reload()
     },
-    [tags, reload, reloadTags, privateTagId],
+    [tags, reload, reloadTags, privateTagIds],
   )
 
   // Onboarding tag scene: tag the newest card (highest orderIndex = the card the
@@ -2141,7 +2146,7 @@ export function BoardRoot() {
       // useCallback can still be the pre-vault-creation closure when invoked
       // fire-and-forget from PrivateSetupDialog.onCreate / PrivateUnlockDialog
       // .onSubmit, before React re-renders with the new privateTagId/session).
-      await reload(resolvedPrivateTagId, session)
+      await reload(new Set([resolvedPrivateTagId]), session)
     },
     [activeFilter, handleFilterChange, reload],
   )
@@ -3317,8 +3322,8 @@ export function BoardRoot() {
   // there would look protected while leaving title/url/thumbnail in
   // plaintext.
   const tagsExcludingPrivate = useMemo(
-    () => (privateTagId === null ? tags : tags.filter((t) => t.id !== privateTagId)),
-    [tags, privateTagId],
+    () => tags.filter((t) => !privateTagIds.has(t.id)),
+    [tags, privateTagIds],
   )
 
   const sidebarCounts = useMemo(() => {
@@ -3328,7 +3333,7 @@ export function BoardRoot() {
     // Private items are excluded from every count: while unlocked they're in
     // `items`, but the board hides them outside the Private filter, so
     // counting them would leak their existence via an inflated ALL total.
-    const isPrivate = (i: BoardItem): boolean => privateTagId !== null && i.tags.includes(privateTagId)
+    const isPrivate = (i: BoardItem): boolean => i.tags.some((id) => privateTagIds.has(id))
     const visibleItems = items.filter((i) => !isPrivate(i))
     const visibleDeleted = deletedItems.filter((i) => !isPrivate(i))
     return {
@@ -3337,7 +3342,7 @@ export function BoardRoot() {
       archive: visibleDeleted.length,
       dead: visibleItems.filter((i) => i.linkStatus === 'gone').length,
     }
-  }, [items, deletedItems, privateTagId])
+  }, [items, deletedItems, privateTagIds])
 
   // Per-tag bookmark count for the FilterPill dropdown rows. Counts the
   // active (= non-deleted) set only, so the number matches what the user
@@ -3347,14 +3352,14 @@ export function BoardRoot() {
     const m: Record<string, number> = {}
     for (const tag of tags) m[tag.id] = 0
     for (const it of items) {
-      const isPrivate = privateTagId !== null && it.tags.includes(privateTagId)
+      const isPrivate = it.tags.some((id) => privateTagIds.has(id))
       for (const tagId of it.tags) {
-        if (isPrivate && tagId !== privateTagId) continue // don't inflate OTHER tags' counts
+        if (isPrivate && !privateTagIds.has(tagId)) continue // don't inflate OTHER tags' counts
         if (tagId in m) m[tagId] += 1
       }
     }
     return m
-  }, [items, tags, privateTagId])
+  }, [items, tags, privateTagIds])
 
   const contentWidth = Math.max(viewport.w, contentBounds.width)
   const contentHeight = Math.max(viewport.h, contentBounds.height)
@@ -4113,6 +4118,17 @@ export function BoardRoot() {
               const session = await unlockVault(db, password)
               if (!session) return false
               setPrivateVaultSession(session)
+              const conflict = await loadVaultConflict(db)
+              if (conflict) {
+                const localRecord = await loadVaultRecord(db)
+                if (localRecord && isLocalVaultTarget(localRecord, conflict.otherRecord)) {
+                  const resolved = await isVaultConflictResolved(db, conflict.otherRecord.tagId)
+                  setPrivateDialog(resolved ? 'vault-conflict-resolved' : 'vault-conflict-notice')
+                } else {
+                  setPrivateDialog('vault-conflict-merge')
+                }
+                return true
+              }
               if (pendingPrivateAction && privateTagId) {
                 setPrivateDialog(null)
                 void runPrivateAction(pendingPrivateAction, privateTagId, session)
@@ -4123,6 +4139,13 @@ export function BoardRoot() {
             } catch (e) {
               // Returning false (not throwing) re-enables the dialog's submit
               // button — an uncaught throw would leave it stuck disabled.
+              // Also undo setPrivateVaultSession(session) above: the vault-conflict
+              // checks that follow it can throw (e.g. a transient IndexedDB read
+              // failure) after the session was already set, and reporting failure
+              // while leaving the session singleton "unlocked" would desync the
+              // UI (ExtensionEntry's data-unlocked etc.) from what this handler
+              // just told the caller happened.
+              setPrivateVaultSession(null)
               console.error('[AllMarks] failed to unlock Private vault', e)
               return false
             }
@@ -4135,6 +4158,55 @@ export function BoardRoot() {
           hint={privateHint}
           onChangePassword={(): void => setPrivateDialog('change-password')}
           onDone={(): void => setPrivateDialog(null)}
+        />
+      )}
+      {privateDialog === 'vault-conflict-notice' && (
+        <VaultConflictNoticeDialog onDismiss={(): void => setPrivateDialog(null)} />
+      )}
+      {privateDialog === 'vault-conflict-merge' && (
+        <VaultConflictMergeDialog
+          onNotNow={(): void => setPrivateDialog(null)}
+          onConfirm={async (): Promise<boolean> => {
+            const conflict = await loadVaultConflict(await initDB())
+            if (!conflict || !privateSession) return false
+            try {
+              const db = await initDB()
+              await mergeIntoOtherVault(db, privateSession, conflict.otherRecord)
+              await clearVaultConflict(db)
+              await reloadTags()
+              setPrivateVaultSession(null)
+              setPrivateDialog(null)
+              setToast({ message: t('private.vaultConflictResolvedHeading'), nonce: Date.now() })
+              return true
+            } catch (e) {
+              console.error('[AllMarks] failed to merge into the other Private vault', e)
+              return false
+            }
+          }}
+        />
+      )}
+      {privateDialog === 'vault-conflict-resolved' && privateSession && (
+        <PrivateChangePasswordDialog
+          variant="vault-conflict-resolved"
+          onSubmit={async (newPassword, newHint): Promise<boolean> => {
+            if (!privateSession) return false
+            try {
+              const db = await initDB()
+              const result = await changeVaultPassword(db, privateSession, newPassword, newHint)
+              if (!result.ok) return false
+              setPrivateVaultSession(result.session)
+              setPrivateHint(newHint)
+              const conflict = await loadVaultConflict(db)
+              if (conflict) await clearVaultConflict(db)
+              setPrivateDialog(null)
+              setToast({ message: t('private.vaultConflictResolvedHeading'), nonce: Date.now() })
+              return true
+            } catch (e) {
+              console.error('[AllMarks] failed to set the combined Private password', e)
+              return false
+            }
+          }}
+          onCancel={(): void => setPrivateDialog(null)}
         />
       )}
       {privateDialog === 'change-password' && privateSession && (

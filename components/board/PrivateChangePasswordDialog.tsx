@@ -9,9 +9,16 @@ type Props = {
   readonly hint?: string
   readonly onSubmit: (newPassword: string, newHint: string | undefined) => Promise<boolean>
   readonly onCancel: () => void
+  /** 'vault-conflict-resolved': shown once, on the winning device, right
+   *  after lib/private/vault-conflict.ts's isVaultConflictResolved first
+   *  returns true — the two independently-created vaults have now
+   *  converged on this one, and the user picks a single fresh password to
+   *  use everywhere from now on (see this plan's copy table). Default
+   *  'change' is the pre-existing, unchanged password-change flow. */
+  readonly variant?: 'change' | 'vault-conflict-resolved'
 }
 
-export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel }: Props): ReactElement {
+export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel, variant = 'change' }: Props): ReactElement {
   const { t } = useI18n()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -56,8 +63,12 @@ export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel }: Props)
       data-no-capture
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
-        <div id="private-change-password-heading" className={styles.heading}>{t('private.changePasswordHeading')}</div>
-        <div className={styles.explanation}>{t('private.changePasswordExplanation')}</div>
+        <div id="private-change-password-heading" className={styles.heading}>
+          {t(variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedHeading' : 'private.changePasswordHeading')}
+        </div>
+        <div className={styles.explanation}>
+          {t(variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedBody' : 'private.changePasswordExplanation')}
+        </div>
         <PasswordField
           id="private-change-password-new"
           label={t('private.newPasswordLabel')}

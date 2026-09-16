@@ -17,8 +17,8 @@ import styles from './BoardBackdrop.module.css'
  * Sized + dimmed + blurred by CSS so this component stays purely about data.
  */
 export function BoardBackdrop(): ReactElement | null {
-  const { privateTagId } = useTags()
-  const { items, loading } = useBoardData(privateTagId)
+  const { allPrivateTagIds } = useTags()
+  const { items, loading } = useBoardData(allPrivateTagIds)
   const cards = useMemo(
     () => items.filter((it) => !it.isDeleted && it.thumbnail).slice(0, 60),
     [items],

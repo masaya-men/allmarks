@@ -292,11 +292,11 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   // 10. CANCEL -> the gate gets in the way BEFORE proceedCreateHostedShare
   // ever runs (BoardRoot.tsx handleCreateHostedShare), so no network call
   // was made and no link was created — the toast never reaches its "ready"
-  // state and CREATE is still the plain, unclicked label.
+  // state and CREATE LINK is still the plain, unclicked label.
   await page.getByTestId('private-share-confirm-cancel').click()
   await expect(confirmDialog).toHaveCount(0)
   await expect(page.getByTestId('share-toast-ready')).toHaveCount(0)
-  await expect(page.getByTestId('share-toast-create')).toHaveText('CREATE')
+  await expect(page.getByTestId('share-toast-create')).toHaveText('CREATE LINK')
 })
 
 test('FilterPill Private row opens setup when not set up, and resumes as a filter toggle', async ({ page }) => {
@@ -902,4 +902,62 @@ test('extension/bookmarklet quick-save can tag Private via postMessage, matching
   expect(updated?.tags).toContain(privateTagId)
   expect(updated?.encryptedPayload).toBeDefined()
   expect(updated?.title).toBe('')
+})
+
+test('vault-conflict: routes an unlock to the merge dialog when this device is the losing side', async ({ page }) => {
+  // 1. Seed one bookmark, load /board (same baseline every other test in this file uses).
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+
+  // 2. Create the local vault via the real SETUP dialog (real in-page crypto —
+  // this device's vault MUST be genuinely unlockable with PASSWORD, so it
+  // cannot be faked/seeded; mirrors this file's first test's Step 2 exactly).
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+
+  // 3. Seed a vault-conflict record directly — this is plain JSON (no real
+  // crypto needed: saveVaultConflict/loadVaultConflict just store/load a
+  // plain object), representing another device's independently-created
+  // vault that will deterministically WIN the tie-break against this
+  // device's real vault. Real ECDH public keys this codebase produces
+  // always base64-encode starting with "MFk..." (uppercase 'M', char code
+  // 77); 'zzz-pk' starts with lowercase 'z' (char code 122), which sorts
+  // higher, so the remote fixture below reliably wins — making THIS device
+  // the losing/"source" side, which is exactly the scenario this test name
+  // describes. (This exact fixture already appears in an earlier task's
+  // engine-level test for the same reason.)
+  await seedDb(page, [{
+    store: 'settings',
+    value: {
+      key: 'private-vault-conflict',
+      otherRecord: {
+        key: 'private-vault', tagId: 'remote-tag', salt: 'zzz-salt', iterations: 600000,
+        publicKey: 'zzz-pk', wrappedPrivateKey: { iv: 'zzz', ciphertext: 'zzz' },
+      },
+    },
+  }])
+
+  // 4. Reload (the vault's entire re-lock mechanism — resets the in-memory
+  // session from step 2), then unlock via SETTINGS -> PRIVATE -> UNLOCK
+  // with the same real password. The unlock handler's new conflict check
+  // should now route to the merge dialog instead of the ordinary 'manage'
+  // dialog.
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const unlockDialog = page.getByTestId('private-unlock-dialog')
+  await expect(unlockDialog).toBeVisible()
+  await page.locator('#private-unlock-password').fill(PASSWORD)
+  await page.getByTestId('private-unlock-submit').click()
+  await expect(unlockDialog).toHaveCount(0)
+
+  // 5. The merge dialog (not the ordinary manage dialog) should now be showing.
+  await expect(page.getByTestId('vault-conflict-merge-dialog')).toBeVisible()
 })

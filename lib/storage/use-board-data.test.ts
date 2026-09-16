@@ -131,7 +131,7 @@ describe('useBoardData — Private vault locked exclusion + decrypt overlay', ()
       encryptedPayload: { iv: 'x', ciphertext: 'y' },
     })
 
-    const { result } = renderHook(() => useBoardData('priv-1'))
+    const { result } = renderHook(() => useBoardData(new Set(['priv-1'])))
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.items.some((i) => i.tags.includes('priv-1'))).toBe(false)
   })
@@ -152,7 +152,7 @@ describe('useBoardData — Private vault locked exclusion + decrypt overlay', ()
     })
 
     setPrivateVaultSession({ tagId: 'priv-1', privateKey, wrappingKey: privateKey })
-    const { result } = renderHook(() => useBoardData('priv-1'))
+    const { result } = renderHook(() => useBoardData(new Set(['priv-1'])))
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.items.find((i) => i.tags.includes('priv-1'))?.title).toBe('Real')
 
@@ -183,7 +183,7 @@ describe('persistThumbnail / persistTitle — Private (encrypted) record guard',
       encryptedPayload: { iv: 'x', ciphertext: 'y' },
     })
 
-    const { result } = renderHook(() => useBoardData('priv-1'))
+    const { result } = renderHook(() => useBoardData(new Set(['priv-1'])))
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     await result.current.persistThumbnail(priv.id, 'https://evil.example/leak.jpg', true)
@@ -206,7 +206,7 @@ describe('persistThumbnail / persistTitle — Private (encrypted) record guard',
       encryptedPayload: { iv: 'x', ciphertext: 'y' },
     })
 
-    const { result } = renderHook(() => useBoardData('priv-1'))
+    const { result } = renderHook(() => useBoardData(new Set(['priv-1'])))
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     await result.current.persistTitle(priv.id, 'Evil leaked title')

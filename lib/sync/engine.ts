@@ -12,6 +12,7 @@ import { decodeIdTokenEmail } from './id-token'
 import { getDeviceId } from './device-id'
 import { DB_VERSION } from '@/lib/constants'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
+import { saveVaultConflict, isLocalVaultTarget } from '@/lib/private/vault-conflict'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -286,11 +287,38 @@ export async function runSyncCycle(
 
   const local = await buildLocalSnapshot(db)
   let vaultConflict = !!(local.vault && pulled.snapshot.vault && vaultRecordsDiffer(local.vault, pulled.snapshot.vault))
+  if (vaultConflict && local.vault && pulled.snapshot.vault) {
+    // Persist the other side's full record (not just its public data) so the
+    // resolution UI (SETTINGS -> PRIVATE) can act on it later, and so the
+    // deterministic tie-break below and mergeIntoOtherVault (lib/private/
+    // vault-conflict.ts, called from the UI layer, not here) have what they need.
+    await saveVaultConflict(db, pulled.snapshot.vault)
+    // If the LOCAL vault is the deterministic winner, publish it to Drive right
+    // now, unconditionally — bypassing the "skip vault.json during a conflict"
+    // rule below. This never needs a password (publishing only ever needs the
+    // vault's public data, which is always available unlocked-or-not), and it
+    // must not wait for the user to do anything: the losing device's merge
+    // action (Task 5's mergeIntoOtherVault, wired in Task 8) needs vault.json
+    // to already reflect the winner BEFORE it retires its own vault, or a
+    // later sync could resurrect stale content. Uses the same
+    // create-or-update pattern as writeManifest below, not the normal
+    // pushSnapshot/optimistic-lock path (deliberately: this write must happen
+    // even though vaultConflict is about to force finalSnapshot.vault to null).
+    if (isLocalVaultTarget(local.vault, pulled.snapshot.vault)) {
+      const files = await listFolderFiles(accessToken, folderId)
+      const existing = files.find((f) => f.name === 'vault.json')
+      if (existing) {
+        await updateTextFile(accessToken, existing.id, JSON.stringify(local.vault))
+      } else {
+        await createTextFile(accessToken, folderId, 'vault.json', JSON.stringify(local.vault))
+      }
+    }
+  }
   const merged = mergeAll(local, pulled.snapshot)
-  // On conflict, push neither side's vault (null): applySnapshotToLocal/pushSnapshot both skip a
-  // null vault entirely, so the local vault stays untouched AND the other device's vault.json on
-  // Drive is never overwritten. Whoever's vault "wins" arbitrarily (pickDeterministic) is deferred
-  // to a future UI that lets the user choose — not built in this bundle.
+  // On conflict, push neither side's vault via the NORMAL path (null): applySnapshotToLocal/
+  // pushSnapshot both skip a null vault entirely, so the local vault stays untouched here. The
+  // winning side's vault.json is instead published directly above, unconditionally, the moment
+  // the conflict is first detected — see the block above for why.
   const finalSnapshot: SyncSnapshot = vaultConflict ? { ...merged, vault: null } : merged
 
   const localActive = activeCount(local.bookmarks)

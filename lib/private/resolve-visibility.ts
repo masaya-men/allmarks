@@ -13,20 +13,22 @@ type PrivateFields = {
 
 /** Board-load-time gate: drops Private-tagged bookmarks entirely while
  *  locked (they never reach BoardItem/toItem — indistinguishable from not
- *  existing), and overlays decrypted fields onto them while unlocked. Runs
- *  on the raw BookmarkRecord[] BEFORE the toItem mapping so no other code
- *  needs to know about encryptedPayload. Fails closed: a row that can't be
- *  decrypted (wrong key mid-transition, corruption) is dropped, never shown
- *  with garbage content. */
+ *  existing), and overlays decrypted fields onto them while unlocked. Also
+ *  drops any bookmark tagged with an isPrivateVault tag this device's
+ *  current session cannot decrypt (a second, unresolved vault's content),
+ *  regardless of lock state. Runs on the raw BookmarkRecord[] BEFORE the
+ *  toItem mapping so no other code needs to know about encryptedPayload.
+ *  Fails closed: a row that can't be decrypted (wrong key mid-transition,
+ *  corruption) is dropped, never shown with garbage content. */
 export async function resolvePrivateVisibility(
   bookmarks: readonly BookmarkRecord[],
-  privateTagId: string | null,
+  privateTagIds: ReadonlySet<string>,
   session: PrivateVaultSession,
 ): Promise<BookmarkRecord[]> {
-  if (privateTagId === null) return [...bookmarks]
+  if (privateTagIds.size === 0) return [...bookmarks]
   const result: BookmarkRecord[] = []
   for (const b of bookmarks) {
-    if (!b.tags.includes(privateTagId)) {
+    if (!b.tags.some((t) => privateTagIds.has(t))) {
       result.push(b)
       continue
     }
