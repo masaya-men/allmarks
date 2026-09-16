@@ -4140,6 +4140,13 @@ export function BoardRoot() {
             } catch (e) {
               // Returning false (not throwing) re-enables the dialog's submit
               // button — an uncaught throw would leave it stuck disabled.
+              // Also undo setPrivateVaultSession(session) above: the vault-conflict
+              // checks that follow it can throw (e.g. a transient IndexedDB read
+              // failure) after the session was already set, and reporting failure
+              // while leaving the session singleton "unlocked" would desync the
+              // UI (ExtensionEntry's data-unlocked etc.) from what this handler
+              // just told the caller happened.
+              setPrivateVaultSession(null)
               console.error('[AllMarks] failed to unlock Private vault', e)
               return false
             }
