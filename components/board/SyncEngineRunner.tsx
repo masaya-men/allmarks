@@ -41,8 +41,9 @@ export function SyncEngineRunner(): ReactElement | null {
       void (async (): Promise<void> => {
         const db = await initDB()
         const status = await loadSyncStatus(db)
+        if (cancelled || !controller) return
         if (!status.lastSyncAt || Date.now() - status.lastSyncAt >= REVISIT_GAP_MS) {
-          void controller?.flushNow()
+          void controller.flushNow()
         }
       })()
     }

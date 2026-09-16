@@ -50,4 +50,40 @@ describe('SyncEngineRunner', () => {
     unmount()
     expect(controller.stop).toHaveBeenCalledTimes(1)
   })
+
+  it('ignores a visibilitychange recheck that resolves after unmount', async () => {
+    const oldLastSyncAt = Date.now() - 10 * 60 * 1000 // older than the 5-minute revisit gap
+    mockLoadSyncStatus.mockResolvedValueOnce({ connected: true, headRevisions: {}, folderId: 'f1', lastSyncAt: oldLastSyncAt })
+    const controller = fakeController()
+    mockCreateSyncController.mockReturnValue(controller)
+
+    const { unmount } = render(<SyncEngineRunner />)
+    await vi.waitFor(() => expect(controller.start).toHaveBeenCalledTimes(1))
+    expect(controller.flushNow).toHaveBeenCalledTimes(1) // mount-time flush only, so far
+
+    // Queue a loadSyncStatus() implementation for the visibilitychange recheck's call that
+    // stays pending until we resolve it ourselves, so we can unmount mid-flight.
+    let resolvePendingStatus: (value: { connected: boolean; headRevisions: Record<string, string>; lastSyncAt: number }) => void = () => {}
+    mockLoadSyncStatus.mockImplementationOnce(
+      () => new Promise((resolve) => { resolvePendingStatus = resolve }),
+    )
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+
+    // Wait for the recheck's loadSyncStatus() call to actually happen (it's gated behind an
+    // `await initDB()` first) before unmounting, so `resolvePendingStatus` is bound to the real
+    // pending promise rather than firing before that promise even exists.
+    await vi.waitFor(() => expect(mockLoadSyncStatus).toHaveBeenCalledTimes(2))
+
+    // Unmount while the recheck's loadSyncStatus() call is still pending.
+    unmount()
+    expect(controller.stop).toHaveBeenCalledTimes(1)
+
+    // Now let the stale recheck resolve — it must not trigger a second flushNow() post-unmount.
+    resolvePendingStatus({ connected: true, headRevisions: {}, lastSyncAt: oldLastSyncAt })
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(controller.flushNow).toHaveBeenCalledTimes(1)
+  })
 })
