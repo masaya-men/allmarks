@@ -1747,7 +1747,7 @@ export function BoardRoot() {
       await reloadTags()
       await reload()
     },
-    [tags, reload, reloadTags, privateTagId],
+    [tags, reload, reloadTags, privateTagIds],
   )
 
   // Onboarding tag scene: tag the newest card (highest orderIndex = the card the
