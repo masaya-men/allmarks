@@ -57,7 +57,7 @@ function stableStringify(value: unknown): string {
 }
 
 /** 2 つのうち安定シリアライズが文字列として大きい方。引数順に依存しない。 */
-function pickDeterministic<T>(a: T, b: T): T {
+export function pickDeterministic<T>(a: T, b: T): T {
   return stableStringify(a) >= stableStringify(b) ? a : b
 }
 

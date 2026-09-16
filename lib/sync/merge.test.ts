@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { BookmarkRecord, TagRecord, CardRecord } from '@/lib/storage/indexeddb'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
-import { mergeBookmarks, mergeTags, mergeCards, mergeBoardConfig, mergeVault, mergeAll, type SyncBoardConfig, type SyncSnapshot } from './merge'
+import { mergeBookmarks, mergeTags, mergeCards, mergeBoardConfig, mergeVault, mergeAll, pickDeterministic, type SyncBoardConfig, type SyncSnapshot } from './merge'
 import { DEFAULT_BOARD_CONFIG } from '@/lib/storage/board-config'
 
 /** 最小限のフィールドで BookmarkRecord を作る（未使用フィールドは既定で埋める）。 */
@@ -397,6 +397,16 @@ describe('mergeVault', () => {
     const result1 = mergeVault(a, b)
     const result2 = mergeVault(b, a)
     expect(result1).toBe(result2)
+  })
+})
+
+describe('pickDeterministic', () => {
+  it('is exported and picks the same value regardless of argument order', () => {
+    const a = { x: 1 }
+    const b = { x: 2 }
+    const pickAB = pickDeterministic(a, b)
+    const pickBA = pickDeterministic(b, a)
+    expect(pickAB).toBe(pickBA)
   })
 })
 
