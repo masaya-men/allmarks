@@ -148,7 +148,7 @@ vi.mock('./drive-adapter', async (importOriginal) => {
 })
 import {
   findSyncFolder, createSyncFolder, listFolderFiles, downloadFileText,
-  getHeadRevisionId, createTextFile, updateTextFile,
+  getHeadRevisionId, createTextFile, updateTextFile, DriveError,
 } from './drive-adapter'
 import { ensureSyncFolder, pullRemoteSnapshot, pushSnapshot, SyncCorruptDataError, SyncConflictError } from './engine'
 
@@ -309,6 +309,45 @@ describe('runSyncCycle', () => {
 
     const result = await runSyncCycle(d, { bypassMassDeleteGuard: true })
     expect(result.status).toBe('synced')
+  })
+
+  it('persists lastIssue with deletedCount when it pauses for confirmation', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    for (let i = 0; i < 10; i++) await d.put('bookmarks', bookmark(`local-${i}`) as never)
+    const remoteBookmarks = Array.from({ length: 8 }, (_, i) =>
+      bookmark(`local-${i}`, { isDeleted: true, deletedAt: '2026-06-01T00:00:00.000Z', updatedAt: 999999 }))
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-bm' ? JSON.stringify(remoteBookmarks) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+
+    const result = await runSyncCycle(d)
+    expect(result.status).toBe('needs-confirmation')
+    expect(result.deletedCount).toBe(8)
+    const status = await loadSyncStatus(d)
+    expect(status.lastIssue).toEqual({ kind: 'needs-confirmation', deletedCount: 8 })
+  })
+
+  it('persists lastIssue with a classified errorKind on pull failure, and clears it on the next successful cycle', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    vi.mocked(listFolderFiles).mockRejectedValueOnce(new DriveError(0, 'drive fetch failed: network error'))
+
+    const failed = await runSyncCycle(d)
+    expect(failed.status).toBe('error')
+    expect(failed.errorKind).toBe('network')
+    const statusAfterFailure = await loadSyncStatus(d)
+    expect(statusAfterFailure.lastIssue).toEqual({ kind: 'error', errorKind: 'network' })
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+    const succeeded = await runSyncCycle(d)
+    expect(succeeded.status).toBe('synced')
+    const statusAfterSuccess = await loadSyncStatus(d)
+    expect(statusAfterSuccess.lastIssue).toBeUndefined()
   })
 
   it('flags vaultConflict and keeps the local vault untouched when local and remote vaults differ', async () => {
@@ -490,6 +529,20 @@ describe('connectSync', () => {
     const status = await loadSyncStatus(d)
     expect(status.connected).toBe(true)
     expect(status.folderId).toBe('new-folder')
+  })
+
+  it('decodes and persists connectedEmail from the ID token on a successful connect', async () => {
+    const d = await initDB(); db = d
+    vi.mocked(findSyncFolder).mockResolvedValue(null)
+    vi.mocked(createSyncFolder).mockResolvedValue('new-folder')
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+    const base64url = (s: string): string => btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const idToken = `${base64url('{}')}.${base64url(JSON.stringify({ email: 'user@example.com' }))}.sig`
+
+    await connectSync(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: SYNC_OAUTH_SCOPE, refreshToken: 'rt', idToken })
+    const status = await loadSyncStatus(d)
+    expect(status.connectedEmail).toBe('user@example.com')
   })
 
   // Fix I-2: connectSync is the one place holding tokens.scope, and the natural place to reject a

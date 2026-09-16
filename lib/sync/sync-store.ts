@@ -1,6 +1,7 @@
 import type { IDBPDatabase } from 'idb'
 import type { SyncTokens } from './auth'
 import type { SyncSnapshot } from './merge'
+import type { SyncErrorKind } from './error-kind'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -34,11 +35,17 @@ const BASE_SNAPSHOT_KEY = 'sync-base-snapshot'
 const BACKUPS_KEY = 'sync-backups'
 const MAX_BACKUP_GENERATIONS = 3
 
+export type SyncIssue =
+  | { readonly kind: 'needs-confirmation'; readonly deletedCount: number }
+  | { readonly kind: 'error'; readonly errorKind: SyncErrorKind }
+
 export interface SyncStatus {
   readonly connected: boolean
   readonly folderId?: string
   readonly headRevisions: Readonly<Record<string, string>>
   readonly lastSyncAt?: number
+  readonly connectedEmail?: string
+  readonly lastIssue?: SyncIssue
 }
 
 const DEFAULT_SYNC_STATUS: SyncStatus = { connected: false, headRevisions: {} }

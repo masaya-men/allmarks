@@ -109,3 +109,13 @@
   line-height: 1.4;
   color: rgba(var(--chrome-ink-rgb), 0.35);
 }
+.status[data-pending] .statusDot,
+.statusDot[data-pending] {
+  background: rgba(var(--chrome-ink-rgb), 0.4);
+  box-shadow: none;
+  animation: sync-pending-pulse 1.2s ease-in-out infinite;
+}
+@keyframes sync-pending-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.9; }
+}

@@ -7,6 +7,8 @@ import { refreshAccessToken, isAccessTokenExpired, DRIVE_FILE_SCOPE, type SyncTo
 import {
   loadSyncTokens, saveSyncTokens, loadSyncStatus, updateSyncStatus, saveBaseSnapshot, pushBackupGeneration,
 } from './sync-store'
+import { classifySyncError } from './error-kind'
+import { decodeIdTokenEmail } from './id-token'
 import { getDeviceId } from './device-id'
 import { DB_VERSION } from '@/lib/constants'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
@@ -231,8 +233,10 @@ export interface SyncCycleResult {
   readonly status: 'not-connected' | 'synced' | 'needs-confirmation' | 'error'
   readonly vaultConflict: boolean
   readonly deletionRatio?: number
+  readonly deletedCount?: number
   readonly mergedCounts?: { readonly bookmarks: number; readonly tags: number; readonly cards: number }
   readonly errorMessage?: string
+  readonly errorKind?: import('./error-kind').SyncErrorKind
 }
 
 async function writeManifest(accessToken: string, folderId: string, db: DbLike, snapshot: SyncSnapshot): Promise<void> {
@@ -266,14 +270,18 @@ export async function runSyncCycle(
   try {
     accessToken = await ensureAccessToken(db)
   } catch (err) {
-    return { status: 'error', vaultConflict: false, errorMessage: err instanceof Error ? err.message : 'auth failed' }
+    const errorKind = classifySyncError(err)
+    await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'auth failed' }
   }
 
   let pulled: Awaited<ReturnType<typeof pullRemoteSnapshot>>
   try {
     pulled = await pullRemoteSnapshot(accessToken, folderId)
   } catch (err) {
-    return { status: 'error', vaultConflict: false, errorMessage: err instanceof Error ? err.message : 'pull failed' }
+    const errorKind = classifySyncError(err)
+    await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'pull failed' }
   }
 
   const local = await buildLocalSnapshot(db)
@@ -290,7 +298,9 @@ export async function runSyncCycle(
   if (!opts.bypassMassDeleteGuard && localActive >= MASS_DELETE_MIN_COUNT) {
     const deletionRatio = (localActive - mergedActive) / localActive
     if (deletionRatio > MASS_DELETE_THRESHOLD) {
-      return { status: 'needs-confirmation', vaultConflict, deletionRatio }
+      const deletedCount = localActive - mergedActive
+      await updateSyncStatus(db, { lastIssue: { kind: 'needs-confirmation', deletedCount } })
+      return { status: 'needs-confirmation', vaultConflict, deletionRatio, deletedCount }
     }
   }
 
@@ -303,7 +313,9 @@ export async function runSyncCycle(
     newRevisions = await pushSnapshot(accessToken, folderId, finalSnapshot, pulled.headRevisions)
   } catch (err) {
     if (!(err instanceof SyncConflictError)) {
-      return { status: 'error', vaultConflict, errorMessage: err instanceof Error ? err.message : 'push failed' }
+      const errorKind = classifySyncError(err)
+      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+      return { status: 'error', vaultConflict, errorKind, errorMessage: err instanceof Error ? err.message : 'push failed' }
     }
     // Someone else pushed since our pull. Re-pull, re-merge once, then retry the push —
     // re-running the SAME safety checks as the first attempt (vault conflict, mass-deletion
@@ -314,7 +326,9 @@ export async function runSyncCycle(
     try {
       rePulled = await pullRemoteSnapshot(accessToken, folderId)
     } catch (err2) {
-      return { status: 'error', vaultConflict, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)' }
+      const errorKind = classifySyncError(err2)
+      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+      return { status: 'error', vaultConflict, errorKind, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)' }
     }
 
     // Fix I-1: re-read IndexedDB instead of reusing the pre-cycle `local` snapshot. By now
@@ -332,7 +346,9 @@ export async function runSyncCycle(
     if (!opts.bypassMassDeleteGuard && localActive >= MASS_DELETE_MIN_COUNT) {
       const reDeletionRatio = (localActive - reMergedActive) / localActive
       if (reDeletionRatio > MASS_DELETE_THRESHOLD) {
-        return { status: 'needs-confirmation', vaultConflict, deletionRatio: reDeletionRatio }
+        const deletedCount = localActive - reMergedActive
+        await updateSyncStatus(db, { lastIssue: { kind: 'needs-confirmation', deletedCount } })
+        return { status: 'needs-confirmation', vaultConflict, deletionRatio: reDeletionRatio, deletedCount }
       }
     }
 
@@ -340,13 +356,15 @@ export async function runSyncCycle(
     try {
       newRevisions = await pushSnapshot(accessToken, folderId, pushedSnapshot, rePulled.headRevisions)
     } catch (err3) {
-      return { status: 'error', vaultConflict, errorMessage: err3 instanceof Error ? err3.message : 'push failed (retry)' }
+      const errorKind = classifySyncError(err3)
+      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+      return { status: 'error', vaultConflict, errorKind, errorMessage: err3 instanceof Error ? err3.message : 'push failed (retry)' }
     }
   }
 
   await writeManifest(accessToken, folderId, db, pushedSnapshot)
   await saveBaseSnapshot(db, pushedSnapshot)
-  await updateSyncStatus(db, { headRevisions: newRevisions, lastSyncAt: Date.now() })
+  await updateSyncStatus(db, { headRevisions: newRevisions, lastSyncAt: Date.now(), lastIssue: undefined })
 
   return {
     status: 'synced',
@@ -367,6 +385,7 @@ export async function connectSync(db: DbLike, tokens: SyncTokens): Promise<SyncC
     return {
       status: 'error',
       vaultConflict: false,
+      errorKind: 'auth',
       errorMessage: 'Missing required Google Drive permission. Please reconnect and grant all requested permissions.',
     }
   }
@@ -377,9 +396,11 @@ export async function connectSync(db: DbLike, tokens: SyncTokens): Promise<SyncC
   try {
     await saveSyncTokens(db, tokens)
     const folderId = await ensureSyncFolder(tokens.accessToken)
-    await updateSyncStatus(db, { connected: true, folderId })
+    const connectedEmail = tokens.idToken ? decodeIdTokenEmail(tokens.idToken) ?? undefined : undefined
+    await updateSyncStatus(db, { connected: true, folderId, connectedEmail })
   } catch (err) {
-    return { status: 'error', vaultConflict: false, errorMessage: err instanceof Error ? err.message : 'connect failed' }
+    const errorKind = classifySyncError(err)
+    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'connect failed' }
   }
   return runSyncCycle(db)
 }
