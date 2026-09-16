@@ -3,17 +3,29 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { SyncPanel } from './SyncPanel'
 import { loadLicense } from '@/lib/board/license-store'
 import { activateLicenseKey } from '@/lib/board/license-activate'
+import { loadSyncStatus } from '@/lib/sync/sync-store'
+import { runSyncCycle, connectSync } from '@/lib/sync/engine'
+import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 
 vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}) }))
 vi.mock('@/lib/board/license-store', () => ({ loadLicense: vi.fn() }))
 vi.mock('@/lib/board/license-activate', () => ({ activateLicenseKey: vi.fn() }))
+vi.mock('@/lib/sync/sync-store', () => ({ loadSyncStatus: vi.fn() }))
+vi.mock('@/lib/sync/engine', () => ({ runSyncCycle: vi.fn(), connectSync: vi.fn() }))
+vi.mock('@/lib/sync/auth', () => ({ requestAuthCode: vi.fn(), exchangeCode: vi.fn() }))
 
 const mockLoadLicense = vi.mocked(loadLicense)
 const mockActivate = vi.mocked(activateLicenseKey)
+const mockLoadSyncStatus = vi.mocked(loadSyncStatus)
+const mockRunSyncCycle = vi.mocked(runSyncCycle)
+const mockConnectSync = vi.mocked(connectSync)
+const mockRequestAuthCode = vi.mocked(requestAuthCode)
+const mockExchangeCode = vi.mocked(exchangeCode)
 
 describe('SyncPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
   })
 
   it('shows the locked view (explanation, disabled supporter link, key input) when not unlocked', async () => {
@@ -111,5 +123,104 @@ describe('SyncPanel', () => {
     await waitFor(() => expect(screen.getByTestId('sync-key-error')).toHaveTextContent(/activate/i))
     expect(screen.getByTestId('sync-key-submit')).not.toBeDisabled()
     consoleErrorSpy.mockRestore()
+  })
+})
+
+describe('SyncPanel connected states', () => {
+  beforeEach(() => {
+    // Sibling describe block, so it doesn't inherit the `describe('SyncPanel')`
+    // beforeEach above — clear here too so mock.calls counts (e.g.
+    // mockRunSyncCycle) don't leak across tests within this block.
+    vi.clearAllMocks()
+    mockLoadLicense.mockResolvedValue({ kid: 'k1', deviceId: 'd1', scope: ['sync'], validatedAt: 1 })
+  })
+
+  it('shows the connect explanation and button when unlocked but not connected', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connect-button')
+  })
+
+  it('connects: requests a code, exchanges it, calls connectSync, and shows the idle connected view', async () => {
+    mockRequestAuthCode.mockResolvedValue('auth-code')
+    mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
+    mockConnectSync.mockResolvedValue({ status: 'synced', vaultConflict: false })
+    // First call = initial mount (disconnected). Second call = applyResult's re-read after
+    // connectSync resolves 'synced', to pick up the fresh connectedEmail/lastSyncAt.
+    mockLoadSyncStatus
+      .mockResolvedValueOnce({ connected: false, headRevisions: {} })
+      .mockResolvedValueOnce({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connect-button')
+    fireEvent.click(screen.getByTestId('sync-connect-button'))
+    await screen.findByTestId('sync-connected-status')
+    expect(mockRequestAuthCode).toHaveBeenCalledTimes(1)
+    expect(mockExchangeCode).toHaveBeenCalledWith('auth-code')
+    expect(mockConnectSync).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('sync-connected-status').textContent).toContain('user@example.com')
+  })
+
+  it('shows connectFailed and the button again if requestAuthCode rejects (popup closed/cancelled)', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
+    mockRequestAuthCode.mockRejectedValue(new Error('popup closed'))
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connect-button')
+    fireEvent.click(screen.getByTestId('sync-connect-button'))
+    await screen.findByTestId('sync-connect-error')
+    expect(screen.getByTestId('sync-connect-button')).toBeInTheDocument()
+  })
+
+  it('shows the idle connected view with last-synced text and a working sync-now button', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() - 5 * 60_000 })
+    mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connected-status')
+    expect(screen.getByTestId('sync-last-synced').textContent).toMatch(/5/)
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
+  })
+
+  it('shows the SyncMassDeleteConfirmDialog when a manual sync returns needs-confirmation', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await screen.findByTestId('sync-mass-delete-dialog')
+    expect(screen.getByTestId('sync-mass-delete-dialog').textContent).toContain('12')
+  })
+
+  it('CONTINUE on the mass-delete dialog re-runs the cycle with bypassMassDeleteGuard', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    mockRunSyncCycle
+      .mockResolvedValueOnce({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
+      .mockResolvedValueOnce({ status: 'synced', vaultConflict: false })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await screen.findByTestId('sync-mass-delete-dialog')
+    fireEvent.click(screen.getByTestId('sync-mass-delete-continue'))
+    await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(2))
+    expect(mockRunSyncCycle).toHaveBeenLastCalledWith(expect.anything(), { bypassMassDeleteGuard: true })
+  })
+
+  it('shows the reconnect button and copy when the persisted lastIssue is an auth error', async () => {
+    mockLoadSyncStatus.mockResolvedValue({
+      connected: true, headRevisions: {}, connectedEmail: 'user@example.com',
+      lastIssue: { kind: 'error', errorKind: 'auth' },
+    })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-reconnect-button')
+    expect(screen.getByTestId('sync-issue').textContent).toMatch(/reconnect|再接続|接続が切れました/i)
+  })
+
+  it('shows the storage-full message with a retry (sync-now) button', async () => {
+    mockLoadSyncStatus.mockResolvedValue({
+      connected: true, headRevisions: {}, connectedEmail: 'user@example.com',
+      lastIssue: { kind: 'error', errorKind: 'storage-full' },
+    })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+    expect(screen.getByTestId('sync-issue')).toBeInTheDocument()
   })
 })
