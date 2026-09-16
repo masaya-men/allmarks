@@ -302,7 +302,15 @@
     "newPasswordLabel": "新しいパスワード",
     "confirmNewPasswordLabel": "新しいパスワード(確認)",
     "changePasswordSuccessToast": "パスワードを更新しました。",
-    "errorChangeFailed": "パスワードを更新できませんでした。もう一度お試しください。"
+    "errorChangeFailed": "パスワードを更新できませんでした。もう一度お試しください。",
+    "vaultConflictNoticeHeading": "Privateが2つ見つかりました",
+    "vaultConflictNoticeBody": "もう一方でも開くと、1つにまとまります。",
+    "vaultConflictNoticeButton": "わかった",
+    "vaultConflictMergeHeading": "Privateをまとめます",
+    "vaultConflictMergeBody": "続けると、Privateが1つにまとまります。今のパスワードは使われなくなります。",
+    "vaultConflictMergeNotNow": "今はしない",
+    "vaultConflictMergeConfirm": "まとめる",
+    "vaultConflictMergeFailed": "まとめられませんでした。もう一度お試しください。"
   },
   "sync": {
     "lockedExplanation": "どの端末でも同じブックマークに。サポーターの方が使える機能です。",
