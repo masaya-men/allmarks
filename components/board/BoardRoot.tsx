@@ -66,6 +66,11 @@ import { ExtensionEntry } from './ExtensionEntry'
 import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
 import { createVault, unlockVault, loadVaultRecord, changeVaultPassword } from '@/lib/private/vault-store'
 import {
+  loadVaultConflict, isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault, clearVaultConflict,
+} from '@/lib/private/vault-conflict'
+import { VaultConflictNoticeDialog } from './VaultConflictNoticeDialog'
+import { VaultConflictMergeDialog } from './VaultConflictMergeDialog'
+import {
   addPrivateTag, removePrivateTag, resolvePrivateStatus, executePrivateAction, PRIVATE_DROP_KEY,
   privateActionNeedsUnlock,
   type PendingPrivateAction, type PrivateStatus,
@@ -253,7 +258,7 @@ export function BoardRoot() {
   // lock-filtered), which would silently disable every exclusion this feature
   // exists for.
   const privateSession = usePrivateVaultSession()
-  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | 'manage' | 'change-password' | null>(null)
+  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | 'manage' | 'change-password' | 'vault-conflict-notice' | 'vault-conflict-merge' | 'vault-conflict-resolved' | null>(null)
   const [privateHint, setPrivateHint] = useState<string | undefined>(undefined)
   // Set when a SHARE was attempted while the selection contains Private cards.
   // `resume` records which capture path asked, so the single confirm dialog
@@ -4113,6 +4118,18 @@ export function BoardRoot() {
               const session = await unlockVault(db, password)
               if (!session) return false
               setPrivateVaultSession(session)
+              const db2 = db // same db instance, alias for clarity below
+              const conflict = await loadVaultConflict(db2)
+              if (conflict) {
+                const localRecord = await loadVaultRecord(db2)
+                if (localRecord && isLocalVaultTarget(localRecord, conflict.otherRecord)) {
+                  const resolved = await isVaultConflictResolved(db2, conflict.otherRecord.tagId)
+                  setPrivateDialog(resolved ? 'vault-conflict-resolved' : 'vault-conflict-notice')
+                } else {
+                  setPrivateDialog('vault-conflict-merge')
+                }
+                return true
+              }
               if (pendingPrivateAction && privateTagId) {
                 setPrivateDialog(null)
                 void runPrivateAction(pendingPrivateAction, privateTagId, session)
@@ -4135,6 +4152,54 @@ export function BoardRoot() {
           hint={privateHint}
           onChangePassword={(): void => setPrivateDialog('change-password')}
           onDone={(): void => setPrivateDialog(null)}
+        />
+      )}
+      {privateDialog === 'vault-conflict-notice' && (
+        <VaultConflictNoticeDialog onDismiss={(): void => setPrivateDialog(null)} />
+      )}
+      {privateDialog === 'vault-conflict-merge' && (
+        <VaultConflictMergeDialog
+          onNotNow={(): void => setPrivateDialog(null)}
+          onConfirm={async (): Promise<boolean> => {
+            const conflict = await loadVaultConflict(await initDB())
+            if (!conflict || !privateSession) return false
+            try {
+              const db = await initDB()
+              await mergeIntoOtherVault(db, privateSession, conflict.otherRecord)
+              await clearVaultConflict(db)
+              setPrivateVaultSession(null)
+              setPrivateDialog(null)
+              setToast({ message: t('private.vaultConflictMergeConfirm'), nonce: Date.now() })
+              return true
+            } catch (e) {
+              console.error('[AllMarks] failed to merge into the other Private vault', e)
+              return false
+            }
+          }}
+        />
+      )}
+      {privateDialog === 'vault-conflict-resolved' && (
+        <PrivateChangePasswordDialog
+          variant="vault-conflict-resolved"
+          onSubmit={async (newPassword, newHint): Promise<boolean> => {
+            if (!privateSession) return false
+            try {
+              const db = await initDB()
+              const result = await changeVaultPassword(db, privateSession, newPassword, newHint)
+              if (!result.ok) return false
+              setPrivateVaultSession(result.session)
+              setPrivateHint(newHint)
+              const conflict = await loadVaultConflict(db)
+              if (conflict) await clearVaultConflict(db)
+              setPrivateDialog(null)
+              setToast({ message: t('private.vaultConflictResolvedHeading'), nonce: Date.now() })
+              return true
+            } catch (e) {
+              console.error('[AllMarks] failed to set the combined Private password', e)
+              return false
+            }
+          }}
+          onCancel={(): void => setPrivateDialog(null)}
         />
       )}
       {privateDialog === 'change-password' && privateSession && (
