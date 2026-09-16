@@ -303,6 +303,8 @@
     "confirmNewPasswordLabel": "Confirm new password",
     "changePasswordSuccessToast": "Password updated.",
     "errorChangeFailed": "Could not update the password. Try again.",
+    "vaultConflictResolvedHeading": "Private is combined",
+    "vaultConflictResolvedBody": "Set a new password to use from now on.",
     "vaultConflictNoticeHeading": "Two Private setups found",
     "vaultConflictNoticeBody": "Opening Private on the other one will combine them into one.",
     "vaultConflictNoticeButton": "Got it",

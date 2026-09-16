@@ -303,6 +303,8 @@
     "confirmNewPasswordLabel": "新しいパスワード(確認)",
     "changePasswordSuccessToast": "パスワードを更新しました。",
     "errorChangeFailed": "パスワードを更新できませんでした。もう一度お試しください。",
+    "vaultConflictResolvedHeading": "Privateがまとまりました",
+    "vaultConflictResolvedBody": "これから使う、新しいパスワードを1つ決めてください。",
     "vaultConflictNoticeHeading": "Privateが2つ見つかりました",
     "vaultConflictNoticeBody": "もう一方でも開くと、1つにまとまります。",
     "vaultConflictNoticeButton": "わかった",

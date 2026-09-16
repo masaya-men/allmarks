@@ -62,4 +62,12 @@ describe('PrivateChangePasswordDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(onCancel).toHaveBeenCalledOnce()
   })
+
+  it('shows the vault-conflict-resolved heading/explanation when variant is set, and the ordinary ones by default', () => {
+    const { rerender } = render(<PrivateChangePasswordDialog onSubmit={vi.fn()} onCancel={vi.fn()} />)
+    expect(screen.getByTestId('private-change-password-dialog').textContent).not.toMatch(/combined/i)
+
+    rerender(<PrivateChangePasswordDialog onSubmit={vi.fn()} onCancel={vi.fn()} variant="vault-conflict-resolved" />)
+    expect(screen.getByTestId('private-change-password-dialog').textContent).toMatch(/combined|new password/i)
+  })
 })
