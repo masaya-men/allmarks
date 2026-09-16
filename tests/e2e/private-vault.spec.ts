@@ -292,11 +292,11 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   // 10. CANCEL -> the gate gets in the way BEFORE proceedCreateHostedShare
   // ever runs (BoardRoot.tsx handleCreateHostedShare), so no network call
   // was made and no link was created — the toast never reaches its "ready"
-  // state and CREATE is still the plain, unclicked label.
+  // state and CREATE LINK is still the plain, unclicked label.
   await page.getByTestId('private-share-confirm-cancel').click()
   await expect(confirmDialog).toHaveCount(0)
   await expect(page.getByTestId('share-toast-ready')).toHaveCount(0)
-  await expect(page.getByTestId('share-toast-create')).toHaveText('CREATE')
+  await expect(page.getByTestId('share-toast-create')).toHaveText('CREATE LINK')
 })
 
 test('FilterPill Private row opens setup when not set up, and resumes as a filter toggle', async ({ page }) => {
