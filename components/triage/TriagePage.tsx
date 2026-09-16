@@ -71,8 +71,8 @@ export function TriagePage(): ReactElement {
   // feature exists for. Declared before useBoardData because
   // useBoardData(privateTagId) consumes it (the vault-locked exclusion
   // happens inside the data hook, mirroring BoardRoot.tsx).
-  const { tags, privateTagId, create, remove: removeTag, rename: renameTag, reorder: reorderTag } = useTags()
-  const { items, deletedItems, persistTags, reload: reloadBoardData, loading } = useBoardData(privateTagId)
+  const { tags, privateTagId, allPrivateTagIds, create, remove: removeTag, rename: renameTag, reorder: reorderTag } = useTags()
+  const { items, deletedItems, persistTags, reload: reloadBoardData, loading } = useBoardData(allPrivateTagIds)
 
   // Private must never be a swipe-to-tag target — assigning it triggers real
   // per-card encryption and should only happen via the board's own individual

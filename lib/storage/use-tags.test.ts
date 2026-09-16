@@ -70,6 +70,33 @@ describe('useTags — Private vault filtering', () => {
     unmount()
   })
 
+  it('allPrivateTagIds contains every isPrivateVault tag (even a second one), regardless of lock state', async () => {
+    const database = await initDB()
+    db = database as unknown as IDBPDatabase<AllMarksDB>
+    // Simulates the two-devices-each-created-their-own-vault conflict scenario
+    // (lib/private/vault-conflict.ts) — nothing else in the app can create this
+    // state yet, but allPrivateTagIds must still surface both ids correctly.
+    const privateTagA = await addTag(database, { name: 'Private', color: '#000', order: 0, isPrivateVault: true })
+    const privateTagB = await addTag(database, { name: 'Private (2)', color: '#000', order: 1, isPrivateVault: true })
+
+    const { result, unmount } = renderHook(() => useTags())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    // Locked — both ids must still resolve.
+    expect(result.current.allPrivateTagIds.has(privateTagA.id)).toBe(true)
+    expect(result.current.allPrivateTagIds.has(privateTagB.id)).toBe(true)
+    expect(result.current.allPrivateTagIds.size).toBe(2)
+
+    act(() => {
+      setPrivateVaultSession({ tagId: privateTagA.id, privateKey: fakeKey, wrappingKey: fakeKey })
+    })
+    // Unlocked — same two ids, unchanged by lock state.
+    expect(result.current.allPrivateTagIds.has(privateTagA.id)).toBe(true)
+    expect(result.current.allPrivateTagIds.has(privateTagB.id)).toBe(true)
+    expect(result.current.allPrivateTagIds.size).toBe(2)
+    unmount()
+  })
+
   it('privateTagId is null when no Private tag has been created yet', async () => {
     const database = await initDB()
     db = database as unknown as IDBPDatabase<AllMarksDB>

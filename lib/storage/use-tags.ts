@@ -20,6 +20,9 @@ export function useTags(): {
    *  the unfiltered raw tag list — resolves regardless of lock state, unlike
    *  `tags` above (which deliberately hides that row while locked). */
   privateTagId: string | null
+  /** Every isPrivateVault tag's id, lock-independent (unlike `tags`). See
+   *  allPrivateTagIds below for why this can have more than one member. */
+  allPrivateTagIds: ReadonlySet<string>
   loading: boolean
   /** Current ordering mode (auto-asc / auto-desc / manual). */
   orderMode: TagOrderMode
@@ -45,6 +48,17 @@ export function useTags(): {
   // itself already excludes soft-deleted tombstones — getAllTags drops them.)
   const privateTagId = useMemo(
     () => rawTags.find((t) => t.isPrivateVault === true)?.id ?? null,
+    [rawTags],
+  )
+  /** Every tag flagged isPrivateVault, lock-independent (like privateTagId
+   *  above, computed from rawTags, not the lock-filtered `tags`). Normally
+   *  has 0 or 1 members; can briefly have 2 when two devices each
+   *  independently created their own Private vault before ever syncing
+   *  (see lib/private/vault-conflict.ts) — every consumer that needs to
+   *  hide/gate Private content (as opposed to resolving "the one vault I
+   *  can currently interact with") must use this, not privateTagId. */
+  const allPrivateTagIds = useMemo(
+    () => new Set(rawTags.filter((t) => t.isPrivateVault === true).map((t) => t.id)),
     [rawTags],
   )
   const tags = useMemo(() => {
@@ -140,5 +154,5 @@ export function useTags(): {
     if (db) await saveTagOrderMode(db, mode)
   }, [])
 
-  return { tags, privateTagId, loading, orderMode, setOrderMode, create, rename, remove, reorder, reload }
+  return { tags, privateTagId, allPrivateTagIds, loading, orderMode, setOrderMode, create, rename, remove, reorder, reload }
 }

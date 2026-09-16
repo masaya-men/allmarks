@@ -15,13 +15,13 @@ function makeBookmark(overrides: Partial<BookmarkRecord>): BookmarkRecord {
 describe('private/resolve-visibility', () => {
   it('passes through untagged bookmarks unchanged regardless of lock state', async () => {
     const b = makeBookmark({ tags: [] })
-    const result = await resolvePrivateVisibility([b], 'priv-1', null)
+    const result = await resolvePrivateVisibility([b], new Set(['priv-1']), null)
     expect(result).toEqual([b])
   })
 
-  it('returns everything unchanged when no Private tag exists yet (privateTagId null)', async () => {
+  it('returns everything unchanged when no Private tag exists yet (privateTagIds empty)', async () => {
     const b = makeBookmark({ tags: ['other-tag'] })
-    const result = await resolvePrivateVisibility([b], null, null)
+    const result = await resolvePrivateVisibility([b], new Set(), null)
     expect(result).toEqual([b])
   })
 
@@ -30,7 +30,7 @@ describe('private/resolve-visibility', () => {
       tags: ['priv-1'], title: '',
       encryptedPayload: { ephemeralPublicKey: 'e', iv: 'x', ciphertext: 'y' },
     })
-    const result = await resolvePrivateVisibility([b], 'priv-1', null)
+    const result = await resolvePrivateVisibility([b], new Set(['priv-1']), null)
     expect(result).toEqual([])
   })
 
@@ -41,7 +41,7 @@ describe('private/resolve-visibility', () => {
       title: 'Real Title', url: 'https://secret.example', description: 'd', thumbnail: 'th', favicon: 'f', siteName: 's',
     })
     const b = makeBookmark({ tags: ['priv-1'], title: '', url: '', encryptedPayload })
-    const [result] = await resolvePrivateVisibility([b], 'priv-1', session)
+    const [result] = await resolvePrivateVisibility([b], new Set(['priv-1']), session)
     expect(result.title).toBe('Real Title')
     expect(result.url).toBe('https://secret.example')
   })
@@ -54,7 +54,7 @@ describe('private/resolve-visibility', () => {
       title: 'x', url: 'y', description: '', thumbnail: '', favicon: '', siteName: '',
     })
     const b = makeBookmark({ tags: ['priv-1'], title: '', encryptedPayload })
-    const result = await resolvePrivateVisibility([b], 'priv-1', session)
+    const result = await resolvePrivateVisibility([b], new Set(['priv-1']), session)
     expect(result).toEqual([])
   })
 
@@ -62,7 +62,7 @@ describe('private/resolve-visibility', () => {
     const pair = await generateEcdhKeyPair()
     const session: PrivateVaultSession = { tagId: 'priv-1', privateKey: pair.privateKey, wrappingKey: pair.privateKey }
     const b = makeBookmark({ tags: ['priv-1'] })
-    const result = await resolvePrivateVisibility([b], 'priv-1', session)
+    const result = await resolvePrivateVisibility([b], new Set(['priv-1']), session)
     expect(result).toEqual([])
   })
 })

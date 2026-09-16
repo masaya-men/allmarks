@@ -269,7 +269,7 @@ export function BoardRoot() {
   // Declared before useBoardData because useBoardData(privateTagId) consumes
   // it (the vault-locked exclusion happens inside the data hook).
   const {
-    tags, privateTagId, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
+    tags, privateTagId, allPrivateTagIds: privateTagIds, create: createTag, reload: reloadTags, remove: removeTag, rename: renameTag, reorder: reorderTags,
     orderMode: tagOrderMode, setOrderMode: setTagOrderMode,
   } = useTags()
   // Always-current 3-state Private status — drives every "🔒 Private" row's
@@ -294,7 +294,7 @@ export function BoardRoot() {
     resortNewestFirst,
     reload,
     persistLinkStatus,
-  } = useBoardData(privateTagId)
+  } = useBoardData(privateTagIds)
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred
@@ -1115,17 +1115,6 @@ export function BoardRoot() {
       console.error('[AllMarks] failed to persist quick-tag setting', err)
     }
   }, [])
-
-  // Every tag flagged isPrivateVault, not just the single one useTags()
-  // resolves as "the" active Private tag (see lib/private/vault-conflict.ts —
-  // two such tags can coexist locally after two devices each independently
-  // create Private before ever syncing, until the conflict is resolved).
-  // Every "hide Private from the ordinary UI" check below must key off this
-  // set, not the single resolved id, or the second tag's items leak.
-  const privateTagIds = useMemo(
-    () => new Set(tags.filter((t) => t.isPrivateVault === true).map((t) => t.id)),
-    [tags],
-  )
 
   const filteredItems = useMemo(() => {
     // TRASH (= archive) は items に居ない (soft-deleted は別 state)、
@@ -2152,7 +2141,7 @@ export function BoardRoot() {
       // useCallback can still be the pre-vault-creation closure when invoked
       // fire-and-forget from PrivateSetupDialog.onCreate / PrivateUnlockDialog
       // .onSubmit, before React re-renders with the new privateTagId/session).
-      await reload(resolvedPrivateTagId, session)
+      await reload(new Set([resolvedPrivateTagId]), session)
     },
     [activeFilter, handleFilterChange, reload],
   )

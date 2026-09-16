@@ -166,10 +166,10 @@ function toItem(b: BookmarkRecord, c: CardRecord | undefined): BoardItem {
 async function buildBoardItems(
   bookmarks: readonly BookmarkRecord[],
   cardByBookmark: ReadonlyMap<string, CardRecord>,
-  privateTagId: string | null,
+  privateTagIds: ReadonlySet<string>,
   session: PrivateVaultSession,
 ): Promise<{ active: BoardItem[]; trashed: BoardItem[] }> {
-  const visible = await resolvePrivateVisibility(bookmarks, privateTagId, session)
+  const visible = await resolvePrivateVisibility(bookmarks, privateTagIds, session)
   const active = visible
     .filter((b) => !b.isDeleted)
     .map((b) => toItem(b, cardByBookmark.get(b.id)))
@@ -181,7 +181,7 @@ async function buildBoardItems(
   return { active, trashed }
 }
 
-export function useBoardData(privateTagId: string | null = null): {
+export function useBoardData(privateTagIds: ReadonlySet<string> = new Set()): {
   items: BoardItem[]
   /** Soft-deleted bookmarks (= TRASH contents). Sorted newest-first by
    *  `deletedAt`. Mutated in lockstep with `items` by persistSoftDelete /
@@ -229,7 +229,7 @@ export function useBoardData(privateTagId: string | null = null): {
   persistMediaSlots: (bookmarkId: string, mediaSlots: readonly MediaSlot[]) => Promise<void>
   persistTags: (bookmarkId: string, tags: readonly string[]) => Promise<void>
   persistDisplayMode: (bookmarkId: string, displayMode: BoardItem['displayMode']) => Promise<void>
-  reload: (overridePrivateTagId?: string | null, overrideSession?: PrivateVaultSession) => Promise<void>
+  reload: (overridePrivateTagIds?: ReadonlySet<string>, overrideSession?: PrivateVaultSession) => Promise<void>
   /** Write a manual resize: stores the new width AND flips
    *  `customCardWidth` to true so the header SizePicker stops touching
    *  this card. Called from ResizeHandle pointerup. */
@@ -258,16 +258,16 @@ export function useBoardData(privateTagId: string | null = null): {
   const privateSession = usePrivateVaultSession()
   // The mount effect below is deps=[] (runs once, on purpose — it also runs
   // one-shot IDB migrations that must not repeat). Its closure would
-  // otherwise capture render-1's privateTagId/privateSession (usually
-  // null/null, since useTags() resolves privateTagId asynchronously).
+  // otherwise capture render-1's privateTagIds/privateSession (usually
+  // empty/null, since useTags() resolves allPrivateTagIds asynchronously).
   // Reading through these refs instead means the mount effect's FINAL
   // buildBoardItems call (after several awaited IDB steps) always sees
   // whatever value is current by the time it actually runs — closing a
   // race where an existing Private tag could render ungated on first load
-  // if privateTagId resolved before this effect finished (final
+  // if privateTagIds resolved before this effect finished (final
   // whole-branch review finding).
-  const privateTagIdRef = useRef(privateTagId)
-  privateTagIdRef.current = privateTagId
+  const privateTagIdsRef = useRef(privateTagIds)
+  privateTagIdsRef.current = privateTagIds
   const privateSessionRef = useRef(privateSession)
   privateSessionRef.current = privateSession
 
@@ -327,7 +327,7 @@ export function useBoardData(privateTagId: string | null = null): {
       const cardByBookmark = new Map<string, CardRecord>()
       for (const c of cards) cardByBookmark.set(c.bookmarkId, c)
       if (cancelled) return
-      const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, privateTagIdRef.current, privateSessionRef.current)
+      const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, privateTagIdsRef.current, privateSessionRef.current)
       if (cancelled) return
       setItems(active)
       setDeletedItems(trashed)
@@ -672,7 +672,7 @@ export function useBoardData(privateTagId: string | null = null): {
   )
 
   const reload = useCallback(async (
-    overridePrivateTagId?: string | null,
+    overridePrivateTagIds?: ReadonlySet<string>,
     overrideSession?: PrivateVaultSession,
   ): Promise<void> => {
     const db = dbRef.current
@@ -684,23 +684,23 @@ export function useBoardData(privateTagId: string | null = null): {
     // Callers that just created/unlocked the vault (runPrivateAction) already
     // have the FRESH tagId/session as real parameters — React state hasn't
     // re-rendered with them yet at that call site, so this hook's own
-    // privateTagId/privateSession closure can still be stale (null/null).
+    // privateTagIds/privateSession closure can still be stale (empty/null).
     // Passing them through here (instead of relying on this callback's
     // memoized closure) avoids a race where the stale reload wins and
     // renders the just-encrypted bookmark with its blanked-at-rest fields.
-    const effectivePrivateTagId = overridePrivateTagId !== undefined ? overridePrivateTagId : privateTagId
+    const effectivePrivateTagIds = overridePrivateTagIds !== undefined ? overridePrivateTagIds : privateTagIds
     const effectiveSession = overrideSession !== undefined ? overrideSession : privateSession
-    const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, effectivePrivateTagId, effectiveSession)
+    const { active, trashed } = await buildBoardItems(bookmarks, cardByBookmark, effectivePrivateTagIds, effectiveSession)
     setItems(active)
     setDeletedItems(trashed)
-  }, [privateTagId, privateSession])
+  }, [privateTagIds, privateSession])
 
   useEffect(() => {
     if (!dbRef.current) return
     void reload()
     // Only re-run when the lock state itself changes — reload is already
-    // memoized on [privateTagId, privateSession] so this stays in sync.
-  }, [privateSession, privateTagId, reload])
+    // memoized on [privateTagIds, privateSession] so this stays in sync.
+  }, [privateSession, privateTagIds, reload])
 
   const persistCustomWidth = useCallback(
     async (bookmarkId: string, width: number): Promise<void> => {
