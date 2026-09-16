@@ -157,6 +157,7 @@ import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
 import { BoardDecorLayer } from './BoardDecorLayer'
 import { DataHomeCard } from './DataHomeCard'
 import { BackupReminder } from './BackupReminder'
+import { SyncEngineRunner } from './SyncEngineRunner'
 import { exportBackupFile } from '@/lib/board/export-backup'
 import {
   loadDataHomeAck, markDataHomeAck, loadLastBackupAt,
@@ -3447,6 +3448,7 @@ export function BoardRoot() {
 
   return (
     <>
+    <SyncEngineRunner />
     <div
       ref={boardFrameRef}
       className={styles.outerFrame}
