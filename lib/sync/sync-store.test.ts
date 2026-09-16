@@ -67,6 +67,21 @@ describe('sync-store status', () => {
     const status = await updateSyncStatus(d, { headRevisions: { 'bookmarks.json': 'r2' } })
     expect(status.headRevisions).toEqual({ 'bookmarks.json': 'r2' })
   })
+
+  it('round-trips connectedEmail and lastIssue', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await updateSyncStatus(d, { connected: true, connectedEmail: 'user@example.com' })
+    const status = await updateSyncStatus(d, { lastIssue: { kind: 'error', errorKind: 'auth' } })
+    expect(status.connectedEmail).toBe('user@example.com')
+    expect(status.lastIssue).toEqual({ kind: 'error', errorKind: 'auth' })
+  })
+
+  it('a later patch can explicitly clear lastIssue back to undefined', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await updateSyncStatus(d, { lastIssue: { kind: 'needs-confirmation', deletedCount: 5 } })
+    const status = await updateSyncStatus(d, { lastIssue: undefined })
+    expect(status.lastIssue).toBeUndefined()
+  })
 })
 
 describe('sync-store base snapshot + backups', () => {
