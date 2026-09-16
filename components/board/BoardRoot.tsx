@@ -1116,11 +1116,22 @@ export function BoardRoot() {
     }
   }, [])
 
+  // Every tag flagged isPrivateVault, not just the single one useTags()
+  // resolves as "the" active Private tag (see lib/private/vault-conflict.ts —
+  // two such tags can coexist locally after two devices each independently
+  // create Private before ever syncing, until the conflict is resolved).
+  // Every "hide Private from the ordinary UI" check below must key off this
+  // set, not the single resolved id, or the second tag's items leak.
+  const privateTagIds = useMemo(
+    () => new Set(tags.filter((t) => t.isPrivateVault === true).map((t) => t.id)),
+    [tags],
+  )
+
   const filteredItems = useMemo(() => {
     // TRASH (= archive) は items に居ない (soft-deleted は別 state)、
     // deletedItems を直接返す。 これによりカード本体がレンダされる + ×
     // ボタンの handler が BoardRoot 側で restore 意味になる。
-    if (activeFilter.kind === 'archive') return applyFilter(deletedItems, activeFilter, privateTagId)
+    if (activeFilter.kind === 'archive') return applyFilter(deletedItems, activeFilter, privateTagIds)
     // Tags filter は CardsLayer 側で matchedBookmarkIds + CRT shutdown
     // アニメ経由で表現する (= 非該当カードを items に残しておく → shutdown
     // 演出 → GSAP-FLIP で該当カードが reflow)。 ここで除外してしまうと
@@ -1134,10 +1145,10 @@ export function BoardRoot() {
       // when the real filter already includes Private — otherwise keep gating
       // so Private stays out of every other tag's view.
       const privateFilterActive = privateTagId !== null && activeFilter.tagIds.includes(privateTagId)
-      return applyFilter(items, BOARD_FILTER_ALL, privateFilterActive ? null : privateTagId)
+      return applyFilter(items, BOARD_FILTER_ALL, privateFilterActive ? new Set() : privateTagIds)
     }
-    return applyFilter(items, activeFilter, privateTagId)
-  }, [items, deletedItems, activeFilter, privateTagId])
+    return applyFilter(items, activeFilter, privateTagIds)
+  }, [items, deletedItems, activeFilter, privateTagId, privateTagIds])
 
   // Tag filter overlay on top of filteredItems. null = no tag filter active
   // (= every card matches). When set, cards whose id is NOT in the set are
@@ -3317,8 +3328,8 @@ export function BoardRoot() {
   // there would look protected while leaving title/url/thumbnail in
   // plaintext.
   const tagsExcludingPrivate = useMemo(
-    () => (privateTagId === null ? tags : tags.filter((t) => t.id !== privateTagId)),
-    [tags, privateTagId],
+    () => tags.filter((t) => !privateTagIds.has(t.id)),
+    [tags, privateTagIds],
   )
 
   const sidebarCounts = useMemo(() => {
@@ -3328,7 +3339,7 @@ export function BoardRoot() {
     // Private items are excluded from every count: while unlocked they're in
     // `items`, but the board hides them outside the Private filter, so
     // counting them would leak their existence via an inflated ALL total.
-    const isPrivate = (i: BoardItem): boolean => privateTagId !== null && i.tags.includes(privateTagId)
+    const isPrivate = (i: BoardItem): boolean => i.tags.some((id) => privateTagIds.has(id))
     const visibleItems = items.filter((i) => !isPrivate(i))
     const visibleDeleted = deletedItems.filter((i) => !isPrivate(i))
     return {
@@ -3337,7 +3348,7 @@ export function BoardRoot() {
       archive: visibleDeleted.length,
       dead: visibleItems.filter((i) => i.linkStatus === 'gone').length,
     }
-  }, [items, deletedItems, privateTagId])
+  }, [items, deletedItems, privateTagIds])
 
   // Per-tag bookmark count for the FilterPill dropdown rows. Counts the
   // active (= non-deleted) set only, so the number matches what the user
@@ -3347,14 +3358,14 @@ export function BoardRoot() {
     const m: Record<string, number> = {}
     for (const tag of tags) m[tag.id] = 0
     for (const it of items) {
-      const isPrivate = privateTagId !== null && it.tags.includes(privateTagId)
+      const isPrivate = it.tags.some((id) => privateTagIds.has(id))
       for (const tagId of it.tags) {
-        if (isPrivate && tagId !== privateTagId) continue // don't inflate OTHER tags' counts
+        if (isPrivate && !privateTagIds.has(tagId)) continue // don't inflate OTHER tags' counts
         if (tagId in m) m[tagId] += 1
       }
     }
     return m
-  }, [items, tags, privateTagId])
+  }, [items, tags, privateTagIds])
 
   const contentWidth = Math.max(viewport.w, contentBounds.width)
   const contentHeight = Math.max(viewport.h, contentBounds.height)
