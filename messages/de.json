@@ -799,5 +799,8 @@
         "body": "Wir aktualisieren diese Seite, wenn sich Berechtigungen oder Datenflüsse ändern. Das oben angegebene Datum unter „Zuletzt aktualisiert\" gibt die jüngste Änderung wieder."
       }
     }
+  },
+  "trash": {
+    "syncNote": "If you sync with another device, items may come back to the trash — that's a safety feature, not a bug. Empty the trash on both devices to remove them for good."
   }
 }

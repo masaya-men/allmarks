@@ -799,5 +799,8 @@
         "body": "We werken deze pagina bij wanneer machtigingen of gegevensstromen veranderen. De datum \"Laatst bijgewerkt\" hierboven geeft de meest recente wijziging aan."
       }
     }
+  },
+  "trash": {
+    "syncNote": "If you sync with another device, items may come back to the trash — that's a safety feature, not a bug. Empty the trash on both devices to remove them for good."
   }
 }

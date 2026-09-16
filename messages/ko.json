@@ -799,5 +799,8 @@
         "body": "권한이나 데이터 흐름이 변경될 때마다 이 페이지를 업데이트합니다. 위의 \"최종 수정일\"이 가장 최근 변경을 반영합니다."
       }
     }
+  },
+  "trash": {
+    "syncNote": "If you sync with another device, items may come back to the trash — that's a safety feature, not a bug. Empty the trash on both devices to remove them for good."
   }
 }

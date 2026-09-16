@@ -799,5 +799,8 @@
         "body": "每当权限或数据流程发生变化时，我们都会更新本页面。上方的\"最后更新\"日期反映最近一次变更。"
       }
     }
+  },
+  "trash": {
+    "syncNote": "If you sync with another device, items may come back to the trash — that's a safety feature, not a bug. Empty the trash on both devices to remove them for good."
   }
 }

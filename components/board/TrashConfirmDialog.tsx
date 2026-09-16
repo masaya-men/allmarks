@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './TrashConfirmDialog.module.css'
 
 const HOLD_DURATION_MS = 2000
@@ -20,6 +21,7 @@ type Props = {
  *  fill bar back to zero. This guards against accidental hard-deletes
  *  without an extra modal step. */
 export function TrashConfirmDialog({ count, onConfirm, onCancel }: Props): ReactElement {
+  const { t } = useI18n()
   const [holding, setHolding] = useState(false)
   const fillRef = useRef<HTMLSpanElement | null>(null)
   const rafRef = useRef<number | null>(null)
@@ -115,6 +117,7 @@ export function TrashConfirmDialog({ count, onConfirm, onCancel }: Props): React
           Delete {count} {count === 1 ? 'item' : 'items'} forever?
         </div>
         <div className={styles.warn}>This cannot be undone.</div>
+        <div className={styles.syncNote} data-testid="trash-confirm-sync-note">{t('trash.syncNote')}</div>
         <div className={styles.actions}>
           <button
             type="button"
