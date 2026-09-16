@@ -65,4 +65,16 @@ describe('private/resolve-visibility', () => {
     const result = await resolvePrivateVisibility([b], new Set(['priv-1']), session)
     expect(result).toEqual([])
   })
+
+  it('drops a second vault\'s Private-tagged bookmark while unlocked for a different vault (two isPrivateVault tags)', async () => {
+    const vaultAPair = await generateEcdhKeyPair()
+    const vaultBPair = await generateEcdhKeyPair()
+    const session: PrivateVaultSession = { tagId: 'priv-a', privateKey: vaultAPair.privateKey, wrappingKey: vaultAPair.privateKey }
+    const encryptedPayload = await encryptWithPublicKey(vaultBPair.publicKey, {
+      title: 'Vault B secret', url: 'https://vault-b.example', description: '', thumbnail: '', favicon: '', siteName: '',
+    })
+    const b = makeBookmark({ tags: ['priv-b'], title: '', encryptedPayload })
+    const result = await resolvePrivateVisibility([b], new Set(['priv-a', 'priv-b']), session)
+    expect(result).toEqual([])
+  })
 })
