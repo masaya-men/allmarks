@@ -65,19 +65,31 @@ export function SyncPanel(): ReactElement | null {
   useEffect(() => {
     let cancelled = false
     void (async (): Promise<void> => {
+      let db: Awaited<ReturnType<typeof initDB>>
+      let isUnlocked: boolean
       try {
-        const db = await initDB()
+        db = await initDB()
         const state = await loadLicense(db)
-        const isUnlocked = isSyncUnlocked(state)
+        isUnlocked = isSyncUnlocked(state)
         if (cancelled) return
         setUnlocked(isUnlocked)
-        if (isUnlocked) {
-          const status = await loadSyncStatus(db)
-          if (!cancelled) setPhase(phaseFromStatus(status))
-        }
       } catch (e) {
         console.error('[AllMarks] failed to load sync license state', e)
         if (!cancelled) setUnlocked(false)
+        return
+      }
+      if (!isUnlocked) return
+      // Separate try/catch: a status-read failure here is not a license-read
+      // failure. Falling into the same catch as above would incorrectly bounce
+      // an already-unlocked user onto the locked paywall view (regression the
+      // plan explicitly forbids) — instead stay unlocked and degrade to the
+      // connect flow with no cached status.
+      try {
+        const status = await loadSyncStatus(db)
+        if (!cancelled) setPhase(phaseFromStatus(status))
+      } catch (e) {
+        console.error('[AllMarks] failed to load sync status', e)
+        if (!cancelled) setPhase({ kind: 'disconnected' })
       }
     })()
     return (): void => { cancelled = true }

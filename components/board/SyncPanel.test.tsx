@@ -141,6 +141,15 @@ describe('SyncPanel connected states', () => {
     await screen.findByTestId('sync-connect-button')
   })
 
+  it('stays on the connect flow (not the locked paywall) if the status read fails after an already-unlocked license read', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockLoadSyncStatus.mockRejectedValue(new Error('indexedDB transaction error'))
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connect-button')
+    expect(screen.queryByTestId('sync-locked')).not.toBeInTheDocument()
+    consoleErrorSpy.mockRestore()
+  })
+
   it('connects: requests a code, exchanges it, calls connectSync, and shows the idle connected view', async () => {
     mockRequestAuthCode.mockResolvedValue('auth-code')
     mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
