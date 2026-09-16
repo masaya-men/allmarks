@@ -57,9 +57,13 @@ export function useTags(): {
    *  (see lib/private/vault-conflict.ts) — every consumer that needs to
    *  hide/gate Private content (as opposed to resolving "the one vault I
    *  can currently interact with") must use this, not privateTagId. */
-  const allPrivateTagIds = useMemo(
-    () => new Set(rawTags.filter((t) => t.isPrivateVault === true).map((t) => t.id)),
+  const privateTagIdsKey = useMemo(
+    () => rawTags.filter((t) => t.isPrivateVault === true).map((t) => t.id).sort().join(','),
     [rawTags],
+  )
+  const allPrivateTagIds = useMemo(
+    () => new Set(privateTagIdsKey ? privateTagIdsKey.split(',') : []),
+    [privateTagIdsKey],
   )
   const tags = useMemo(() => {
     const sorted = sortTagsByMode(rawTags, orderMode)

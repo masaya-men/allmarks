@@ -114,7 +114,11 @@ describe('mergeIntoOtherVault', () => {
     )
     expect(decrypted.title).toBe('X')
 
-    expect(await loadVaultRecord(d)).toBeNull()
+    // The local vault record is no longer simply absent after a merge — it
+    // now points at the OTHER side's record, adopted immediately instead of
+    // waiting for the next sync cycle to pull vault.json (see
+    // mergeIntoOtherVault's final `db.put('settings', otherRecord)`).
+    expect(await loadVaultRecord(d)).toEqual(otherVault.record)
     const localTag = await d.get('tags', 'local-tag')
     expect((localTag as { isDeleted?: boolean } | undefined)?.isDeleted).toBe(true)
   })

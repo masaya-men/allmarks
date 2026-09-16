@@ -79,8 +79,14 @@ export async function isVaultConflictResolved(db: DbLike, otherTagId: string): P
  *  tagged with this vault's tag: decrypt with this vault's own private key
  *  (already unlocked), re-encrypt under the other vault's public key, swap
  *  the tag reference. Then tombstone this vault's own tag (deleteTagCascade
- *  — safe now, since no bookmark still references it) and delete this
- *  vault's own record (retireVault). Order matters: every bookmark is
+ *  — safe now, since no bookmark still references it), delete this vault's
+ *  own record (retireVault), and immediately adopt the target's public
+ *  vault record locally (`db.put('settings', otherRecord)`) — the same
+ *  "adopt the other side's public vault record" step lib/sync/engine.ts's
+ *  applySnapshotToLocal already performs on an ordinary sync pull, done
+ *  immediately instead of waiting for the next sync cycle. So the local
+ *  vault does NOT end up simply absent after this runs — it ends up
+ *  pointing at the OTHER side's record. Order matters: every bookmark is
  *  re-encrypted and retagged BEFORE the tag/vault are retired, so a failure
  *  partway through never leaves data unreadable — it just leaves some
  *  bookmarks still on the old tag/vault, safely retryable. */
@@ -104,4 +110,5 @@ export async function mergeIntoOtherVault(
 
   await deleteTagCascade(db, session.tagId)
   await retireVault(db)
+  await db.put('settings', otherRecord)
 }

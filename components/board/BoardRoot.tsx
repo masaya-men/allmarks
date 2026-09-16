@@ -1735,7 +1735,7 @@ export function BoardRoot() {
       // surfaces (C1) and drag-and-drop (M3), reachable from the per-card
       // + TAG popover's new-tag input. Only the board's individual card
       // toggle may attach Private, because only that path encrypts.
-      if (existing && existing.id === privateTagId) return
+      if (existing && privateTagIds.has(existing.id)) return
       const target = existing ?? (await addTag(db, {
         name: trimmed, color: '#28F100', order: tags.length,
         // Flag tags born during the tutorial (e.g. the demo "sample") so they're
@@ -4118,12 +4118,11 @@ export function BoardRoot() {
               const session = await unlockVault(db, password)
               if (!session) return false
               setPrivateVaultSession(session)
-              const db2 = db // same db instance, alias for clarity below
-              const conflict = await loadVaultConflict(db2)
+              const conflict = await loadVaultConflict(db)
               if (conflict) {
-                const localRecord = await loadVaultRecord(db2)
+                const localRecord = await loadVaultRecord(db)
                 if (localRecord && isLocalVaultTarget(localRecord, conflict.otherRecord)) {
-                  const resolved = await isVaultConflictResolved(db2, conflict.otherRecord.tagId)
+                  const resolved = await isVaultConflictResolved(db, conflict.otherRecord.tagId)
                   setPrivateDialog(resolved ? 'vault-conflict-resolved' : 'vault-conflict-notice')
                 } else {
                   setPrivateDialog('vault-conflict-merge')
@@ -4174,9 +4173,10 @@ export function BoardRoot() {
               const db = await initDB()
               await mergeIntoOtherVault(db, privateSession, conflict.otherRecord)
               await clearVaultConflict(db)
+              await reloadTags()
               setPrivateVaultSession(null)
               setPrivateDialog(null)
-              setToast({ message: t('private.vaultConflictMergeConfirm'), nonce: Date.now() })
+              setToast({ message: t('private.vaultConflictResolvedHeading'), nonce: Date.now() })
               return true
             } catch (e) {
               console.error('[AllMarks] failed to merge into the other Private vault', e)
@@ -4185,7 +4185,7 @@ export function BoardRoot() {
           }}
         />
       )}
-      {privateDialog === 'vault-conflict-resolved' && (
+      {privateDialog === 'vault-conflict-resolved' && privateSession && (
         <PrivateChangePasswordDialog
           variant="vault-conflict-resolved"
           onSubmit={async (newPassword, newHint): Promise<boolean> => {
