@@ -3,7 +3,9 @@ import 'fake-indexeddb/auto'
 import type { IDBPDatabase } from 'idb'
 import { initDB, type AllMarksDB } from '@/lib/storage/indexeddb'
 import { saveBoardConfig } from '@/lib/storage/board-config'
-import { createVault } from '@/lib/private/vault-store'
+import { createVault, loadVaultRecord } from '@/lib/private/vault-store'
+import { loadVaultConflict } from '@/lib/private/vault-conflict'
+import { pickDeterministic } from './merge'
 import { buildLocalSnapshot, applySnapshotToLocal } from './engine'
 import type { SyncSnapshot } from './merge'
 import { saveSyncTokens, loadSyncTokens } from './sync-store'
@@ -513,6 +515,91 @@ describe('runSyncCycle', () => {
     expect(localVaultAfter?.salt).toBe(createdDuringRetry!.salt)
     expect(localVaultAfter?.publicKey).toBe(createdDuringRetry!.publicKey)
     expect(localVaultAfter?.salt).not.toBe('remote-salt')
+  })
+
+  it('persists the conflicting vault record for later use by the merge-resolution UI', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await createVault(d, 'local-tag', 'local-password', undefined)
+
+    const remoteVault = {
+      key: 'private-vault', tagId: 'remote-tag', salt: 'remote-salt', iterations: 600000,
+      publicKey: 'remote-pk', wrappedPrivateKey: { iv: 'iv', ciphertext: 'ct' },
+    }
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-vault', name: 'vault.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-vault' ? JSON.stringify(remoteVault) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'vault.json', headRevisionId: 'rev-2' }))
+
+    const result = await runSyncCycle(d)
+    expect(result.vaultConflict).toBe(true)
+    const conflict = await loadVaultConflict(d)
+    expect(conflict?.otherRecord).toEqual(remoteVault)
+  })
+
+  it('force-publishes the local vault to Drive when the local vault is the deterministic target, even though a conflict is active', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await createVault(d, 'local-tag', 'local-password', undefined)
+    const localVault = await loadVaultRecord(d)
+
+    // A remote record that loses the deterministic tie-break against localVault.
+    // CONTROLLER CORRECTION (verified empirically, not guessed): stableStringify
+    // sorts object keys alphabetically, and iterations/key are identical between
+    // local and this remote fixture, so the comparison decides at the `publicKey`
+    // field's VALUE. Every real ECDH public key this codebase produces
+    // (exportPublicKeyB64 -> spki DER for P-256) starts with the fixed byte
+    // sequence that base64-encodes to "MFk..." (confirmed by actually generating
+    // a key pair and exporting it: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE...').
+    // Uppercase 'M' (char code 77) sorts BEFORE lowercase 'a' (char code 97), so
+    // a remote publicKey starting with 'a' (the original 'aaa-pk') would make
+    // remote's string compare LARGER, meaning remote wins the tie-break — the
+    // opposite of this test's intent. Using a leading digit '0' (char code 48,
+    // well below 'M') instead reliably makes remote's string compare SMALLER, so
+    // local (any real key, always "MFk...") reliably wins, regardless of the
+    // actual random key bytes generated at test time.
+    const remoteVault = {
+      key: 'private-vault', tagId: '000-remote', salt: 'aaa', iterations: 600000,
+      publicKey: '0aa-pk', wrappedPrivateKey: { iv: 'aaa', ciphertext: 'aaa' },
+    }
+    expect(pickDeterministic(localVault, remoteVault)).toEqual(localVault) // sanity: local really does win here
+
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-vault', name: 'vault.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-vault' ? JSON.stringify(remoteVault) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'vault.json', headRevisionId: 'rev-2' }))
+
+    await runSyncCycle(d)
+    expect(updateTextFile).toHaveBeenCalledWith('at', 'f-vault', JSON.stringify(localVault))
+  })
+
+  it('does NOT force-publish when the local vault loses the deterministic tie-break', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await createVault(d, 'local-tag', 'local-password', undefined)
+    const localVault = await loadVaultRecord(d)
+
+    const remoteVault = {
+      key: 'private-vault', tagId: 'zzz-remote', salt: 'zzz', iterations: 600000,
+      publicKey: 'zzz-pk', wrappedPrivateKey: { iv: 'zzz', ciphertext: 'zzz' },
+    }
+    expect(pickDeterministic(localVault, remoteVault)).toEqual(remoteVault) // sanity: remote wins here
+
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-vault', name: 'vault.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-vault' ? JSON.stringify(remoteVault) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    await runSyncCycle(d)
+    expect(updateTextFile).not.toHaveBeenCalled()
   })
 })
 
