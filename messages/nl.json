@@ -316,7 +316,27 @@
     "errorCapExceededContact": "Contact us if you need help.",
     "errorActivateFailed": "Could not activate. Try again.",
     "unlockedHeading": "Sync unlocked",
-    "connectComingSoon": "Connecting devices is coming in a future update."
+    "connectExplanation": "Use the same bookmarks on every device. Everything is stored in your own Google Drive — we never see it.",
+    "connectButton": "Connect Google",
+    "connecting": "Connecting…",
+    "connectFailed": "Couldn't connect. Try again.",
+    "connectedAs": "Connected as {email}",
+    "connectedGeneric": "Connected",
+    "lastSyncedJustNow": "Synced just now",
+    "lastSyncedMinutesAgo": "Synced {minutes}m ago",
+    "lastSyncedHoursAgo": "Synced {hours}h ago",
+    "lastSyncedDaysAgo": "Synced {days}d ago",
+    "syncNowButton": "Sync now",
+    "syncingNow": "Syncing…",
+    "massDeleteHeading": "Please confirm",
+    "massDeleteBody": "Syncing will delete {count} bookmarks. Continue?",
+    "massDeleteContinue": "Continue",
+    "reconnectNeeded": "Connection lost. Please reconnect to Google.",
+    "reconnectButton": "Reconnect Google",
+    "errorStorageFull": "Not enough space in your Google Drive. Free up space, then try again.",
+    "errorCorrupt": "Couldn't read the synced data. Wait a moment and try again.",
+    "errorOffline": "You seem to be offline. We'll sync automatically once you're back online.",
+    "errorGeneric": "Sync failed. Try again."
   },
   "landing": {
     "hero": {

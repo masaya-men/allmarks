@@ -316,7 +316,27 @@
     "errorCapExceededContact": "お困りの場合はお問い合わせください。",
     "errorActivateFailed": "有効化できませんでした。もう一度お試しください。",
     "unlockedHeading": "同期を解錠しました",
-    "connectComingSoon": "端末をつなぐ機能は近日公開予定です。"
+    "connectExplanation": "他の端末でも同じブックマークが使えるようになります。保存先はあなた自身のGoogleドライブ。運営はデータを見られません。",
+    "connectButton": "Googleで接続",
+    "connecting": "接続しています…",
+    "connectFailed": "接続できませんでした。もう一度お試しください。",
+    "connectedAs": "{email} に接続中",
+    "connectedGeneric": "接続済み",
+    "lastSyncedJustNow": "たった今同期しました",
+    "lastSyncedMinutesAgo": "{minutes}分前に同期",
+    "lastSyncedHoursAgo": "{hours}時間前に同期",
+    "lastSyncedDaysAgo": "{days}日前に同期",
+    "syncNowButton": "今すぐ同期",
+    "syncingNow": "同期中…",
+    "massDeleteHeading": "確認してください",
+    "massDeleteBody": "このまま同期すると、{count}件のブックマークが削除されます。続けますか?",
+    "massDeleteContinue": "続ける",
+    "reconnectNeeded": "接続が切れました。もう一度Googleに接続してください。",
+    "reconnectButton": "Googleに再接続",
+    "errorStorageFull": "Googleドライブの空き容量が足りません。空けてからもう一度お試しください。",
+    "errorCorrupt": "同期データの読み込みに失敗しました。少し待ってからもう一度お試しください。",
+    "errorOffline": "オフラインのようです。接続が戻ったら自動で同期します。",
+    "errorGeneric": "同期に失敗しました。もう一度お試しください。"
   },
   "landing": {
     "hero": {
