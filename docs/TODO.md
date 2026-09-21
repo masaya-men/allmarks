@@ -23,6 +23,8 @@
 
 過去のセッション詳細ログは全て [TODO_COMPLETED.md](./TODO_COMPLETED.md) に移動済み(session207でのクリーンアップ)。**次にやること・直近の到達点は [CURRENT_GOAL.md](./CURRENT_GOAL.md) を参照**(毎回最初に読むファイル)。
 
+**s218 (2026-09-22)**: 端末間同期 **近リアルタイム化の配線を完了・PL-1/PL-2(公開前タスク)完了**。`markDirty`の仕組みはあったが全保存箇所への配線がゼロだった問題を、`lib/storage/indexeddb.ts`の`initDB()`が返す`db`をProxyで包む一箇所配線(`lib/sync/sync-signal.ts`)で解消 — 将来保存処理が増えても追加配線不要。同期自身のローカル書き戻しは`withSyncWritesSuppressed`で除外し無限ループを防止(回帰テストあり)。iPhone Safari対策で`pagehide`リスナーも追加。デバウンスは既存の20秒のまま(秒数よりタブ切替時の確実性を優先する方針にユーザーと合意)。フルスイート**2990/2990**・tsc0・build OK。commit `1322da85`・`allmarks.app`へデプロイ済。続けてPL-1(同意画面メールをGoogleグループへ差替)・PL-2(Search Consoleでドメイン検証+OAuth本番公開)をユーザー本人がGoogle Cloud Console上で実施、スクリーンショットを都度確認しながら完了(`drive.file`等は非機密スコープのため追加審査なしで即時反映)。refresh token 7日失効問題が解消し放置運転の自動同期が実用に。次=運用セットアップ(claimレコードseed・合言葉をユーザーが決める)。詳細 CURRENT_GOAL.md / TODO_COMPLETED.mdのs218節。
+
 **s213 (2026-09-15)**: 端末間同期 **束5(最小K3=同期の有料ゲート)実装・レビュー完了・master マージ済**。セッション冒頭で束4からの最優先申し送り(`connectSync`の`hasRequiredScopes`不具合)を先に修正。subagent-driven 6タスク＋各タスクレビュー(Task4は1回の修正ラウンド)＋opus全ブランチレビュー＋修正波1(3件)＋opus再レビュー。フルスイート **2813/2813**・tsc 0・eslint 0(新規混入なし)・build OK。**呼び出し元ゼロ=既存挙動は完全不変**。出荷: `lib/board/license-types.ts`(ワイヤーフォーマット)＋`lib/board/license-crypto.ts`(`verifyLicenseKey`=オフラインEd25519検証)＋`lib/board/license-store.ts`+`isSyncUnlocked`(解錠状態の永続化)＋`functions/claim.ts`(発券Worker)＋`functions/activate.ts`(発動Worker・5台キャップ)＋`lib/board/license-activate.ts`(`activateLicenseKey`=フェイルオープン込みのクライアント側オーケストレーション)＋`scripts/generate-k3-keypair.mjs`(鍵ペア生成)。**最終レビューで3件の重要な指摘を発見・修正**: (1) `/claim`のKVレコードに実行時バリデーションが無く手入力タイポで発行上限が無効化されうる不具合→zod検証追加、(2) `/activate`へのfetchにタイムアウトが無くWorkerハング時にフェイルオープンが機能しない不具合→`AbortSignal.timeout`追加、(3) 5台キャップ到達後の復旧手段が無かった→`/claim`成功画面に`Key ID`表示を追加。
 
 **s213続き (同日)**: 束6①(Privateの金庫パスワード変更/再設定)**実装・master マージ済**。業界標準調査(Bitwarden/1Password=リセット不可・Norton=解錠済み端末からのリセット方式を採用)→設計→実装。7タスクplan subagent-driven実行＋各タスクレビュー＋opus全ブランチレビュー＋修正波1(4件: PasswordFieldのautoComplete/autoCapitalize硬化・`ChangeVaultPasswordResult`の型を`NonNullable`に締める・ヒント文字列の`{hint}`置換が`$&`等で壊れるバグ・`vaultFileSchema`に`updatedAt`明示)。**実機確認(ユーザー)で2件追加発見・修正**: Edgeの`::-ms-reveal`ネイティブ目アイコンが自作トグルと衝突(無効化)、ブラウザの自動入力ハイライトで背景が明転し薄い色のトグルアイコンが同化して見えなくなる(`-webkit-autofill`の背景を強制的に固定し直す定番対策)。フルスイート**2836/2836**・tsc0・eslint0・build OK。出荷: `lib/private/vault-store.ts`の`changeVaultPassword`(古いパスワード不要・`wrappingKey`のみで再ラップ・秘密鍵本体は不変)、`components/board/PasswordField.tsx`(共通の表示/非表示トグル部品・5箇所に配線)、`PrivateManageDialog`/`PrivateChangePasswordDialog`(新規2画面)、`lib/sync/merge.ts`/`engine.ts`(パスワード変更を金庫の食い違いと誤判定しないよう`vaultRecordsDiffer`を`publicKey+tagId`一致判定に限定)。**同時に束5からの持ち越し運用セットアップも完了**(K3_KVの本番/preview namespace作成・Ed25519鍵ペア生成・秘密鍵をCloudflare Pages Secretへ登録・公開鍵を`.env.production`へ)→**本番デプロイ実施**(`allmarks.app`、ユーザーが実機確認)。
@@ -47,9 +49,9 @@
 
 **s208 (2026-09-02)**: 端末間同期の設計フェーズ完了。設計書=`docs/private/2026-09-02-device-sync-design.md`。方式=BYOS(ユーザー自身のGoogle Drive)・id で足し算マージ・放置運転の自動同期・Private金庫も同期・最小K3ゲートを同時に。
 
-### ★公開前の必須タスク (ローンチ前チェックリスト)
-- **(PL-1) Google OAuth 同意画面のメールを個人 Gmail から専用アドレスへ差し替え** — s210 で束2の OAuth 設定時、Google のドロップダウンが「アカウント自身のメール or 管理する Google グループ」しか受け付けないため、サポートメール・開発者連絡先を一時的にユーザー個人 Gmail にした。ユーザー明示要望「問い合わせが個人アドレスに来るのは困る」。**公開前に Google グループを作って両方差し替える**(ブランディングタブ + 開発者連絡先)。同期の開発/テストはブロックしない。詳細 memory `project_oauth_support_email_swap`。
-- **(PL-2) Google OAuth アプリを「テスト中」→「本番」に公開 + ドメイン検証** — s210: 本番公開には Google Search Console で `allmarks.app` の所有権検証(DNS TXT 等)が必要で、束2/3 のテストには不要なため見送り。「テスト中」だと refresh token が7日で失効 = 放置運転の自動同期(束4)には本番公開が必須。**束4 着手時 or 公開前に**: (a) Search Console で allmarks.app 検証 → (b) ブランディングの「承認済みドメイン」に allmarks.app 追加 + ホームページ/プライバシー/利用規約 URL 記入 → (c) 対象ページで「アプリを公開」。同意画面に「未確認アプリ」警告は出るが `drive.file`+`openid/email/profile` は全て非機密なので Google 審査は不要。
+### ★公開前の必須タスク — PL-1/PL-2 は s218(2026-09-22) 完了
+
+ユーザー本人がGoogle Cloud Console/Search Console上で実施。サポートメール・開発者連絡先を`allmarks-support@googlegroups.com`へ差替(PL-1)、`allmarks.app`のドメイン検証+OAuth本番公開(PL-2、`drive.file`等は非機密スコープのため追加審査なし)。refresh token 7日失効問題が解消。詳細 TODO_COMPLETED.mdのs218節。
 
 ## 🐛 未対応バグ・改善 (active backlog)
 
