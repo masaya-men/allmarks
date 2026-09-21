@@ -70,4 +70,9 @@ describe('PrivateChangePasswordDialog', () => {
     rerender(<PrivateChangePasswordDialog onSubmit={vi.fn()} onCancel={vi.fn()} variant="vault-conflict-resolved" />)
     expect(screen.getByTestId('private-change-password-dialog').textContent).toMatch(/combined|new password/i)
   })
+
+  it('shows the recovered heading/explanation when variant="recovered"', () => {
+    render(<PrivateChangePasswordDialog onSubmit={vi.fn()} onCancel={vi.fn()} variant="recovered" />)
+    expect(screen.getByTestId('private-change-password-dialog').textContent).toMatch(/new password/i)
+  })
 })

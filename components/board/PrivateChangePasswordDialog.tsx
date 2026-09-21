@@ -13,9 +13,11 @@ type Props = {
    *  after lib/private/vault-conflict.ts's isVaultConflictResolved first
    *  returns true — the two independently-created vaults have now
    *  converged on this one, and the user picks a single fresh password to
-   *  use everywhere from now on (see this plan's copy table). Default
+   *  use everywhere from now on (see this plan's copy table).
+   *  'recovered': shown right after a successful unlockVaultWithRecoveryKey
+   *  — the user must pick a new password before continuing. Default
    *  'change' is the pre-existing, unchanged password-change flow. */
-  readonly variant?: 'change' | 'vault-conflict-resolved'
+  readonly variant?: 'change' | 'vault-conflict-resolved' | 'recovered'
 }
 
 export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel, variant = 'change' }: Props): ReactElement {
@@ -64,10 +66,18 @@ export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel, variant 
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
         <div id="private-change-password-heading" className={styles.heading}>
-          {t(variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedHeading' : 'private.changePasswordHeading')}
+          {t(
+            variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedHeading'
+              : variant === 'recovered' ? 'private.recoveredHeading'
+              : 'private.changePasswordHeading',
+          )}
         </div>
         <div className={styles.explanation}>
-          {t(variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedBody' : 'private.changePasswordExplanation')}
+          {t(
+            variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedBody'
+              : variant === 'recovered' ? 'private.recoveredBody'
+              : 'private.changePasswordExplanation',
+          )}
         </div>
         <PasswordField
           id="private-change-password-new"

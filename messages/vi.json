@@ -324,7 +324,9 @@
     "forgotPasswordLink": "Forgot password?",
     "setUpRecoveryKeyButton": "SET UP RECOVERY KEY",
     "regenerateRecoveryKeyButton": "REGENERATE RECOVERY KEY",
-    "recoveryKeySetupFailedToast": "Couldn't set up a recovery key. You can try again from the manage screen."
+    "recoveryKeySetupFailedToast": "Couldn't set up a recovery key. You can try again from the manage screen.",
+    "recoveredHeading": "Set a new password",
+    "recoveredBody": "Unlocked with your recovery key. Set a new password to use from now on."
   },
   "sync": {
     "lockedExplanation": "Keeps your bookmarks the same on every device. Unlocked for supporters.",

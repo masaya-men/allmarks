@@ -324,7 +324,9 @@
     "forgotPasswordLink": "パスワードを忘れた場合",
     "setUpRecoveryKeyButton": "復旧キーを作成",
     "regenerateRecoveryKeyButton": "復旧キーを再発行",
-    "recoveryKeySetupFailedToast": "復旧キーを作成できませんでした。あとで設定画面から作成できます。"
+    "recoveryKeySetupFailedToast": "復旧キーを作成できませんでした。あとで設定画面から作成できます。",
+    "recoveredHeading": "新しいパスワードを決めてください",
+    "recoveredBody": "復旧キーで開けました。これから使う、新しいパスワードを1つ決めてください。"
   },
   "sync": {
     "lockedExplanation": "どの端末でも同じブックマークに。サポーターの方が使える機能です。",
