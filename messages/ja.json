@@ -316,6 +316,7 @@
     "recoveryKeyHeading": "復旧キー",
     "recoveryKeyBody": "このキーがあれば、パスワードを忘れてもPrivateを開けます。今しか表示されません。安全な場所に保存してください。このキーも失うと、二度と開けなくなります。",
     "recoveryKeyCopyButton": "コピー",
+    "recoveryKeyCopiedFeedback": "コピーしました",
     "recoveryKeyDoneButton": "わかった",
     "recoverHeading": "復旧キーで開ける",
     "recoverExplanation": "セットアップ時に保存した復旧キーを入力してください。",

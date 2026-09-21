@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import styles from './PrivateRecoveryKeyDialog.module.css'
 
@@ -15,6 +15,7 @@ type Props = {
  *  に保存先が無い)。 */
 export function PrivateRecoveryKeyDialog({ recoveryKey, onDone }: Props): ReactElement {
   const { t } = useI18n()
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -24,8 +25,21 @@ export function PrivateRecoveryKeyDialog({ recoveryKey, onDone }: Props): ReactE
     return (): void => window.removeEventListener('keydown', onKey)
   }, [onDone])
 
-  const copy = (): void => {
-    void navigator.clipboard.writeText(recoveryKey)
+  // 数秒でラベルを元に戻す — 2回目のコピーができなくなるのを避ける。
+  useEffect(() => {
+    if (!copied) return
+    const id = window.setTimeout(() => setCopied(false), 2000)
+    return (): void => window.clearTimeout(id)
+  }, [copied])
+
+  const copy = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(recoveryKey)
+      setCopied(true)
+    } catch (e) {
+      // 失敗したときに「コピーしました」と嘘をつかない(ラベルは元のまま)。
+      console.error('[AllMarks] failed to copy the Private recovery key', e)
+    }
   }
 
   return (
@@ -43,8 +57,13 @@ export function PrivateRecoveryKeyDialog({ recoveryKey, onDone }: Props): ReactE
         <div className={styles.body}>{t('private.recoveryKeyBody')}</div>
         <div className={styles.keyBox} data-testid="private-recovery-key-value">{recoveryKey}</div>
         <div className={styles.actions}>
-          <button type="button" className={styles.copyBtn} onClick={copy} data-testid="private-recovery-key-copy">
-            {t('private.recoveryKeyCopyButton')}
+          <button
+            type="button"
+            className={styles.copyBtn}
+            onClick={(): void => { void copy() }}
+            data-testid="private-recovery-key-copy"
+          >
+            {copied ? t('private.recoveryKeyCopiedFeedback') : t('private.recoveryKeyCopyButton')}
           </button>
           <button type="button" className={styles.doneBtn} onClick={onDone} data-testid="private-recovery-key-done">
             {t('private.recoveryKeyDoneButton')}
