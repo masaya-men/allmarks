@@ -453,10 +453,48 @@ describe('mergeVault', () => {
       expect(merged).toEqual(mergeVault(winnerWithOwn, withRecovery))
     })
 
-    it('leaves the equal-updatedAt path alone (still the deterministic tie-break)', () => {
+    it('carries the recovery wrap forward on the equal-updatedAt tie-break too', () => {
+      // updatedAt が同値 → 勝者は pickDeterministic(安定シリアライズが大きい方)。
+      // 復旧フィールドを持つ方は "recoveryIterations" が "salt" より前に来るぶん
+      // 文字列として必ず小さくなる = 復旧なしの sameTime が必ず勝つ。それでも
+      // 復旧ラップは捨てずに勝者へ引き継ぐ(最終レビュー再指摘 I-B 続き)。
       const sameTime = { ...passwordChanged, updatedAt: 1000 }
       const merged = mergeVault(withRecovery, sameTime)
-      expect(merged).toBe(mergeVault(sameTime, withRecovery)) // 同一参照 = 従来どおり
+      expect(merged?.salt).toBe('salt-b')                        // タイブレーク勝者のパスワードラップ
+      expect(merged?.wrappedPrivateKey).toEqual({ iv: 'iv-b', ciphertext: 'ct-b' })
+      expect(merged?.recoverySalt).toBe('rsalt')                 // …復旧キーは生き残る
+      expect(merged?.wrappedPrivateKeyByRecoveryKey).toEqual({ iv: 'riv', ciphertext: 'rct' })
+      expect(merged?.recoveryIterations).toBe(600_000)
+      expect(merged).toEqual({
+        ...sameTime,
+        recoverySalt: 'rsalt',
+        wrappedPrivateKeyByRecoveryKey: { iv: 'riv', ciphertext: 'rct' },
+        recoveryIterations: 600_000,
+      })
+      expect(merged).toEqual(mergeVault(sameTime, withRecovery)) // 引数順に依存しない
+    })
+
+    it('the carried-forward wrap survives the NEXT sync cycle (3周期の取りこぼしを塞ぐ)', () => {
+      // 周期1: A(復旧キーあり・1000)と B(復旧キーなし・2000)が出会う → M
+      const m1 = mergeVault(withRecovery, passwordChanged)
+      expect(m1?.updatedAt).toBe(2000)
+      expect(m1?.wrappedPrivateKeyByRecoveryKey).toEqual({ iv: 'riv', ciphertext: 'rct' })
+
+      // 周期2: 端末Bのローカルは手つかずの passwordChanged のまま。M は勝者の
+      // updatedAt をそのまま引き継いでいるので両者は 2000 で同値 = タイブレーク
+      // 経路に入る。復旧ありの方が文字列として小さく必ず負けるため、引き継ぎを
+      // タイブレークにも適用しないとここで復旧キーが消える(=1周期遅れの消失)。
+      const m2 = mergeVault(m1, passwordChanged)
+      expect(m2?.recoverySalt).toBe('rsalt')
+      expect(m2?.wrappedPrivateKeyByRecoveryKey).toEqual({ iv: 'riv', ciphertext: 'rct' })
+      expect(m2?.recoveryIterations).toBe(600_000)
+      expect(m2).toEqual(m1)                                  // 変化しない = 収束
+      expect(mergeVault(passwordChanged, m1)).toEqual(m2)     // 逆向きでも同じ
+
+      // 周期3: もう一度出会っても失われない
+      const m3 = mergeVault(m2, passwordChanged)
+      expect(m3?.wrappedPrivateKeyByRecoveryKey).toEqual({ iv: 'riv', ciphertext: 'rct' })
+      expect(m3).toEqual(m2)
     })
   })
 })

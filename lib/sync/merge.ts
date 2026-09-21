@@ -247,24 +247,28 @@ export function mergeVault(
   if (local.publicKey === remote.publicKey && local.tagId === remote.tagId) {
     const lt = numericTime(local.updatedAt)
     const rt = numericTime(remote.updatedAt)
-    if (lt !== rt) {
-      const winner = lt > rt ? local : remote
-      const loser = lt > rt ? remote : local
-      // publicKey/tagId が一致 = 同じ pkcs8 を包んでいるので、負けた側の復旧
-      // ラップは勝った側に対しても必ず有効。レコード丸ごとの LWW のままだと、
-      // 「A が復旧キーを発行して紙に書いた直後に、まだ同期していない B が先に
-      // パスワードを変更した」だけで、発行済みの復旧キーが無言で消滅する
-      // (最終レビュー指摘 I-B)。捨てずに勝者へ引き継ぐ。
-      if (!winner.wrappedPrivateKeyByRecoveryKey && loser.wrappedPrivateKeyByRecoveryKey) {
-        return {
-          ...winner,
-          recoverySalt: loser.recoverySalt,
-          wrappedPrivateKeyByRecoveryKey: loser.wrappedPrivateKeyByRecoveryKey,
-          recoveryIterations: loser.recoveryIterations,
-        }
+    // updatedAt が同値の場合もpickDeterministicで勝者を決め、以下の復旧キー
+    // 引き継ぎを同じように適用する。引き継ぎ後もwinnerのupdatedAtは変わらない
+    // ため、そのままだと次の同期で元のレコードと同値になりタイブレークに
+    // 入り直す — そこで引き継ぎが効かないと1周期遅れて復旧キーが消える
+    // (最終レビュー再指摘 I-B)。タイブレーク自身にも引き継ぎを適用することで
+    // その周期でも復旧キーが残り、収束する。
+    const winner = lt !== rt ? (lt > rt ? local : remote) : pickDeterministic(local, remote)
+    const loser = winner === local ? remote : local
+    // publicKey/tagId が一致 = 同じ pkcs8 を包んでいるので、負けた側の復旧
+    // ラップは勝った側に対しても必ず有効。レコード丸ごとの LWW のままだと、
+    // 「A が復旧キーを発行して紙に書いた直後に、まだ同期していない B が先に
+    // パスワードを変更した」だけで、発行済みの復旧キーが無言で消滅する
+    // (最終レビュー指摘 I-B)。捨てずに勝者へ引き継ぐ。
+    if (!winner.wrappedPrivateKeyByRecoveryKey && loser.wrappedPrivateKeyByRecoveryKey) {
+      return {
+        ...winner,
+        recoverySalt: loser.recoverySalt,
+        wrappedPrivateKeyByRecoveryKey: loser.wrappedPrivateKeyByRecoveryKey,
+        recoveryIterations: loser.recoveryIterations,
       }
-      return winner
     }
+    return winner
   }
   return pickDeterministic(local, remote)
 }
