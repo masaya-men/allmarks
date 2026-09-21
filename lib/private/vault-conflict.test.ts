@@ -8,6 +8,7 @@ import {
   saveVaultConflict, loadVaultConflict, clearVaultConflict,
   isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault,
   findOtherPrivateVaultTagIds, anyOtherPrivateTagUnresolved,
+  acknowledgeVaultConflict, findUnacknowledgedOtherPrivateVaultTagIds,
 } from './vault-conflict'
 
 let db: IDBPDatabase<unknown> | null = null
@@ -235,6 +236,48 @@ describe('anyOtherPrivateTagUnresolved', () => {
   it('is false for an empty id list', async () => {
     const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
     expect(await anyOtherPrivateTagUnresolved(d, [])).toBe(false)
+  })
+})
+
+describe('acknowledgeVaultConflict / findUnacknowledgedOtherPrivateVaultTagIds', () => {
+  it('returns the same as findOtherPrivateVaultTagIds when nothing has been acknowledged yet', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', { id: 'my-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true } as never)
+    await d.put('tags', {
+      id: 'other-tag', name: 'Private', color: '#000', order: 1, createdAt: 1, updatedAt: 2, theme: null,
+      isPrivateVault: true, isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z',
+    } as never)
+    expect(await findUnacknowledgedOtherPrivateVaultTagIds(d, 'my-tag')).toEqual(await findOtherPrivateVaultTagIds(d, 'my-tag'))
+    expect(await findUnacknowledgedOtherPrivateVaultTagIds(d, 'my-tag')).toEqual(['other-tag'])
+  })
+
+  it('no longer includes a tag id once it has been acknowledged', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', { id: 'my-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true } as never)
+    await d.put('tags', {
+      id: 'other-tag', name: 'Private', color: '#000', order: 1, createdAt: 1, updatedAt: 2, theme: null,
+      isPrivateVault: true, isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z',
+    } as never)
+    await acknowledgeVaultConflict(d, 'other-tag')
+    expect(await findUnacknowledgedOtherPrivateVaultTagIds(d, 'my-tag')).toEqual([])
+    // The raw (unfiltered) view must still see it — acknowledgment is a
+    // separate signal, not a mutation of the tag record itself.
+    expect(await findOtherPrivateVaultTagIds(d, 'my-tag')).toEqual(['other-tag'])
+  })
+
+  it('acknowledging one other tag id does not affect a different other tag id still being reported', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', { id: 'my-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true } as never)
+    await d.put('tags', {
+      id: 'acked-tag', name: 'Private', color: '#000', order: 1, createdAt: 1, updatedAt: 2, theme: null,
+      isPrivateVault: true, isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z',
+    } as never)
+    await d.put('tags', {
+      id: 'unacked-tag', name: 'Private', color: '#000', order: 2, createdAt: 1, updatedAt: 2, theme: null,
+      isPrivateVault: true, isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z',
+    } as never)
+    await acknowledgeVaultConflict(d, 'acked-tag')
+    expect(await findUnacknowledgedOtherPrivateVaultTagIds(d, 'my-tag')).toEqual(['unacked-tag'])
   })
 })
 

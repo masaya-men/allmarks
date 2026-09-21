@@ -68,6 +68,7 @@ import { createVault, unlockVault, loadVaultRecord, changeVaultPassword } from '
 import {
   loadVaultConflict, isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault, clearVaultConflict,
   findOtherPrivateVaultTagIds, anyOtherPrivateTagUnresolved,
+  acknowledgeVaultConflict, findUnacknowledgedOtherPrivateVaultTagIds,
 } from '@/lib/private/vault-conflict'
 import { VaultConflictNoticeDialog } from './VaultConflictNoticeDialog'
 import { VaultConflictMergeDialog } from './VaultConflictMergeDialog'
@@ -4147,7 +4148,7 @@ export function BoardRoot() {
               // findOtherPrivateVaultTagIds's own raw store read (not the
               // allPrivateTagIds hook value) so this keeps working AFTER the
               // other tag is tombstoned — see that function's doc comment.
-              const others = await findOtherPrivateVaultTagIds(db, session.tagId)
+              const others = await findUnacknowledgedOtherPrivateVaultTagIds(db, session.tagId)
               if (others.length > 0) {
                 const stillUnresolved = await anyOtherPrivateTagUnresolved(db, others)
                 setPrivateDialog(stillUnresolved ? 'vault-conflict-notice' : 'vault-conflict-resolved')
@@ -4195,7 +4196,17 @@ export function BoardRoot() {
             if (!conflict || !privateSession) return false
             try {
               const db = await initDB()
+              // Captured BEFORE mergeIntoOtherVault, which tombstones this
+              // device's own tag as part of merging — acknowledging it right
+              // after means that once this device later adopts the other
+              // side's tag id as its own (mergeIntoOtherVault's final
+              // db.put('settings', otherRecord)), its OWN now-tombstoned old
+              // tag no longer looks like an unhandled "other" Private tag on
+              // every future unlock (review round 3 regression; see
+              // vault-conflict.ts's header comment).
+              const myOldTagId = privateSession.tagId
               await mergeIntoOtherVault(db, privateSession, conflict.otherRecord)
+              await acknowledgeVaultConflict(db, myOldTagId)
               await clearVaultConflict(db)
               await reloadTags()
               setPrivateVaultSession(null)
@@ -4222,6 +4233,16 @@ export function BoardRoot() {
               setPrivateHint(newHint)
               const conflict = await loadVaultConflict(db)
               if (conflict) await clearVaultConflict(db)
+              // Marks every other Private tag id this device currently sees
+              // (which will include the other side's now-tombstoned tag) as
+              // acknowledged — otherwise the permanent tombstone would make
+              // this exact screen re-appear on every future unlock forever
+              // (review round 3 regression; see vault-conflict.ts's header
+              // comment). Uses privateSession.tagId (this handler's own
+              // guarded-non-null session), not result.session above — a
+              // password change never changes which tag a vault is keyed to.
+              const others = await findOtherPrivateVaultTagIds(db, privateSession.tagId)
+              for (const id of others) await acknowledgeVaultConflict(db, id)
               setPrivateDialog(null)
               setToast({ message: t('private.vaultConflictResolvedHeading'), nonce: Date.now() })
               return true

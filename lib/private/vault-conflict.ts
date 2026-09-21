@@ -54,6 +54,21 @@
 // keep seeing the other tag AFTER it's tombstoned, so this fallback can
 // actually transition to vault-conflict-resolved instead of just silently
 // stopping once the conflict resolves.
+//
+// Third gap (found in review round 3, 2026-09-21): the raw tag read above
+// needing to keep seeing a tombstoned tag forever, by design, means "other
+// tag exists and is tombstoned" can never itself go back to false once the
+// conflict resolves — tombstone() (lib/storage/tags.ts) never removes the
+// record, permanently, and nothing about the tag distinguishes "just
+// resolved, show vault-conflict-resolved" from "resolved a long time ago,
+// already handled." Confirmed empirically: without a separate signal,
+// BoardRoot.tsx's fallback re-shows the vault-conflict-resolved screen on
+// every future unlock, forever, silently dropping any pendingPrivateAction
+// each time. acknowledgeVaultConflict / findUnacknowledgedOtherPrivateVaultTagIds
+// below add that missing signal: an explicit, persisted "this device has
+// already dealt with this specific other tag id" record, written exactly
+// once per tag id at the moment each side finishes handling it (the target
+// picking one fresh password, or the source completing mergeIntoOtherVault).
 import type { IDBPDatabase } from 'idb'
 import { pickDeterministic } from '@/lib/sync/merge'
 import { decryptWithPrivateKey, encryptWithPublicKey, importPublicKey } from './crypto'
@@ -66,10 +81,16 @@ import type { PrivateVaultSession } from './vault-session'
 type DbLike = IDBPDatabase<any>
 
 const CONFLICT_KEY = 'private-vault-conflict'
+const ACKNOWLEDGED_KEY = 'private-vault-conflict-acknowledged'
 
 export type PrivateVaultConflictRecord = {
   readonly key: typeof CONFLICT_KEY
   readonly otherRecord: PrivateVaultRecord
+}
+
+type AcknowledgedRecord = {
+  readonly key: typeof ACKNOWLEDGED_KEY
+  readonly tagIds: readonly string[]
 }
 
 export async function saveVaultConflict(db: DbLike, otherRecord: PrivateVaultRecord): Promise<void> {
@@ -130,6 +151,34 @@ export async function isVaultConflictResolved(db: DbLike, otherTagId: string): P
 export async function findOtherPrivateVaultTagIds(db: DbLike, myTagId: string): Promise<string[]> {
   const all = (await db.getAll('tags')) as { id: string; isPrivateVault?: boolean }[]
   return all.filter((t) => t.isPrivateVault === true && t.id !== myTagId).map((t) => t.id)
+}
+
+/** Marks `otherTagId`'s conflict as fully handled from THIS device's own
+ *  perspective — call exactly once, at the moment this device finishes
+ *  acting on it (the target picking one fresh password via
+ *  vault-conflict-resolved, or the source completing
+ *  mergeIntoOtherVault). Needed because a tag's tombstone (see
+ *  findOtherPrivateVaultTagIds's own doc comment — tombstone() never
+ *  removes the record) is PERMANENT: with no acknowledgment, "other tag
+ *  exists and is tombstoned" would look like "just resolved, show the
+ *  password screen" on every future unlock, forever, rather than only the
+ *  first time. */
+export async function acknowledgeVaultConflict(db: DbLike, otherTagId: string): Promise<void> {
+  const existing = (await db.get('settings', ACKNOWLEDGED_KEY)) as AcknowledgedRecord | undefined
+  const tagIds = [...new Set([...(existing?.tagIds ?? []), otherTagId])]
+  await db.put('settings', { key: ACKNOWLEDGED_KEY, tagIds })
+}
+
+/** Every id findOtherPrivateVaultTagIds would return, MINUS any already
+ *  acknowledged by this device (see acknowledgeVaultConflict above) — this
+ *  is what BoardRoot.tsx's fallback detection should actually use, so a
+ *  permanently-tombstoned tag stops re-triggering conflict UI once this
+ *  device has genuinely already dealt with it. */
+export async function findUnacknowledgedOtherPrivateVaultTagIds(db: DbLike, myTagId: string): Promise<string[]> {
+  const others = await findOtherPrivateVaultTagIds(db, myTagId)
+  const existing = (await db.get('settings', ACKNOWLEDGED_KEY)) as AcknowledgedRecord | undefined
+  const acknowledged = new Set(existing?.tagIds ?? [])
+  return others.filter((id) => !acknowledged.has(id))
 }
 
 /** True if any of `otherTagIds` has NOT yet been tombstoned — i.e. the

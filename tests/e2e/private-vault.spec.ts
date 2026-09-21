@@ -1063,6 +1063,39 @@ test('vault-conflict: the winning-side fallback still identifies its own tag cor
 
   // Correctly reaches the "set one new password" screen, not stuck on the
   // notice, and not the ordinary manage dialog either.
-  await expect(page.getByTestId('private-change-password-dialog')).toBeVisible()
+  const resolvedDialog = page.getByTestId('private-change-password-dialog')
+  await expect(resolvedDialog).toBeVisible()
+  await expect(page.getByTestId('vault-conflict-notice-dialog')).toHaveCount(0)
+
+  // Regression proof for the review-round-3 bug: without an explicit
+  // per-tag acknowledgment (lib/private/vault-conflict.ts's
+  // acknowledgeVaultConflict), the other side's tombstoned tag NEVER
+  // disappears from IndexedDB, so this exact screen would re-appear on
+  // literally every future unlock, forever. Complete this screen with a new
+  // password (inputs sourced directly from PrivateChangePasswordDialog.tsx:
+  // #private-change-password-new / -confirm, save button
+  // private-change-password-save — no other e2e test in this repo submits
+  // this dialog yet, so these ids come from the component source, not a
+  // sibling test), then reload and unlock again with the NEW password: the
+  // fix must route to the ordinary manage dialog, not back to
+  // vault-conflict-resolved.
+  const NEW_PASSWORD = 'testpass456'
+  await page.locator('#private-change-password-new').fill(NEW_PASSWORD)
+  await page.locator('#private-change-password-confirm').fill(NEW_PASSWORD)
+  await page.getByTestId('private-change-password-save').click()
+  await expect(resolvedDialog).toHaveCount(0)
+
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const secondUnlockDialog = page.getByTestId('private-unlock-dialog')
+  await expect(secondUnlockDialog).toBeVisible()
+  await page.locator('#private-unlock-password').fill(NEW_PASSWORD)
+  await page.getByTestId('private-unlock-submit').click()
+  await expect(secondUnlockDialog).toHaveCount(0)
+
+  await expect(page.getByTestId('private-manage-dialog')).toBeVisible()
+  await expect(page.getByTestId('private-change-password-dialog')).toHaveCount(0)
   await expect(page.getByTestId('vault-conflict-notice-dialog')).toHaveCount(0)
 })
