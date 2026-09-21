@@ -123,6 +123,51 @@ describe('mergeIntoOtherVault', () => {
     const localTag = await d.get('tags', 'local-tag')
     expect((localTag as { isDeleted?: boolean } | undefined)?.isDeleted).toBe(true)
   })
+
+  it('throws before touching anything if the other vault\'s publicKey is malformed (fail-safe, not silent corruption)', async () => {
+    // Guards against the scenario a security review raised: if the target's
+    // record were corrupted/garbled in transit, this must fail loudly and
+    // leave the source device's own vault/tags/bookmarks completely intact
+    // and retryable — never silently "succeed" while producing content
+    // nobody can ever decrypt. importPublicKey is called before any
+    // mutation (see mergeIntoOtherVault's first line), so a malformed key
+    // should throw immediately and nothing below it should ever run.
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    const localSession = await createVault(d, 'local-tag', 'local-password', undefined)
+    await d.put('tags', {
+      id: 'local-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true,
+    } as never)
+    await d.put('bookmarks', {
+      id: 'bm-1', url: 'https://x.com', title: 'X', description: '', thumbnail: '', favicon: '',
+      siteName: '', type: 'website', savedAt: '2026-01-01T00:00:00.000Z', ogpStatus: 'fetched', tags: [],
+    } as never)
+    await addPrivateTag(d, 'bm-1', 'local-tag')
+    // addPrivateTag already encrypts under the LOCAL vault's own (real) key
+    // at this point — capture that as the "untouched" baseline, since a
+    // failed merge attempt below must leave this exact state alone, not
+    // leave encryptedPayload undefined (which was never true to begin with).
+    const before = (await d.get('bookmarks', 'bm-1')) as { tags: string[]; encryptedPayload?: unknown } | undefined
+    expect(before?.encryptedPayload).toBeDefined()
+
+    const malformedOther: PrivateVaultRecord = {
+      key: 'private-vault', tagId: 'other-tag', salt: 's', iterations: 600000,
+      // Valid base64 (so atob() itself doesn't throw) but not a valid
+      // DER-encoded SPKI structure, so crypto.subtle.importKey rejects it
+      // at the ASN.1-parsing stage — this is the failure mode a corrupted
+      // (not merely garbled-in-transit-as-text) record would hit.
+      publicKey: btoa('this is definitely not a real DER-encoded SPKI public key'),
+      wrappedPrivateKey: { iv: 'iv', ciphertext: 'ct' },
+    }
+    await expect(mergeIntoOtherVault(d, localSession, malformedOther)).rejects.toThrow()
+
+    const after = (await d.get('bookmarks', 'bm-1')) as { tags: string[]; encryptedPayload?: unknown } | undefined
+    expect(after?.tags).toEqual(['local-tag'])
+    expect(after?.encryptedPayload).toEqual(before?.encryptedPayload)
+    const localTag = await d.get('tags', 'local-tag')
+    expect((localTag as { isDeleted?: boolean } | undefined)?.isDeleted).toBeUndefined()
+    const stillLocal = await loadVaultRecord(d)
+    expect(stillLocal?.tagId).toBe('local-tag')
+  })
 })
 
 describe('otherPrivateTagIds', () => {
