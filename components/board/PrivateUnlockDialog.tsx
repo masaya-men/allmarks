@@ -44,7 +44,7 @@ export function PrivateUnlockDialog({ onSubmit, onCancel, hasRecoveryKey, onForg
       data-no-capture
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
-        <form onSubmit={(e): void => { e.preventDefault(); void submit() }}>
+        <form className={styles.form} onSubmit={(e): void => { e.preventDefault(); void submit() }}>
           <div id="private-unlock-heading" className={styles.heading}>UNLOCK PRIVATE</div>
           <PasswordField
             id="private-unlock-password"

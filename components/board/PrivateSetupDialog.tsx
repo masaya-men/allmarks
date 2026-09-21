@@ -55,7 +55,7 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
       data-no-capture
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
-        <form onSubmit={(e): void => { e.preventDefault(); void submit() }}>
+        <form className={styles.form} onSubmit={(e): void => { e.preventDefault(); void submit() }}>
           <div id="private-setup-heading" className={styles.heading}>SET UP PRIVATE</div>
           <div className={styles.explanation} data-testid="private-setup-explanation">
             {t('private.setupExplanation')}

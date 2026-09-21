@@ -45,7 +45,13 @@ export function PrivateRecoveryKeyDialog({ recoveryKey, onDone }: Props): ReactE
       setHasCopiedOnce(true)
     } catch (e) {
       // 失敗したときに「コピーしました」と嘘をつかない(ラベルは元のまま)。
+      // ただし閉じる操作までは塞がない — HTTP経由でのLAN内モバイル確認など
+      // navigator.clipboard自体が使えない状況(非secureコンテキスト)では
+      // コピーボタンが原理的に永遠に失敗し続け、閉じる手段が無いまま画面が
+      // 詰んでしまう(最終レビュー指摘)。キー本文は選択してのコピーがまだ
+      // 可能なので、コピー操作を1回試みたことをもって「見た」とみなす。
       console.error('[AllMarks] failed to copy the Private recovery key', e)
+      setHasCopiedOnce(true)
     }
   }
 

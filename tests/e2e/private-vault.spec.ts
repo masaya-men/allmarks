@@ -38,6 +38,13 @@ import { seedDb, firstRunSuppressors, DB_NAME, type SeedRecord } from './helpers
 const PASSWORD = 'testpass123'
 const BOOKMARK_ID = 'priv-b-0'
 
+// Scoped to this file only (not playwright.config.ts's global `use`) — the
+// recovery-key dialog's must-copy-before-dismiss gate needs a real clipboard
+// write to succeed here, but granting clipboard-read globally exposed the
+// host machine's actual clipboard contents to tests/e2e/mobile-save.spec.ts's
+// "(empty clipboard)" test, which depends on the read being empty/denied.
+test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
+
 /** One alive, untagged bookmark + its card. linkStatus:'alive' matches this
  *  repo's established e2e convention (reference_e2e_seed_helper /
  *  triage-flow.spec.ts's seedTwoBookmarks) for a card that's genuinely

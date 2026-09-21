@@ -100,7 +100,13 @@ describe('PrivateRecoveryKeyDialog', () => {
       expect(onDone).not.toHaveBeenCalled()
     })
 
-    it('a failed clipboard write does NOT unlock dismissal', async () => {
+    it('a failed clipboard write still unlocks dismissal (no permanent dead end)', async () => {
+      // navigator.clipboard is unavailable entirely in non-secure contexts
+      // (e.g. testing the board over http://<lan-ip>:3000 on a phone) —
+      // trapping the user behind a button that can never succeed would be
+      // worse than the accidental-dismiss problem this gate exists to
+      // prevent, since the key text is still manually selectable/copyable
+      // (final review finding).
       vi.useFakeTimers()
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
       const onDone = vi.fn()
@@ -113,9 +119,9 @@ describe('PrivateRecoveryKeyDialog', () => {
         await vi.advanceTimersByTimeAsync(0)
       })
 
-      expect(screen.getByTestId('private-recovery-key-done')).toBeDisabled()
+      expect(screen.getByTestId('private-recovery-key-done')).toBeEnabled()
       fireEvent.click(screen.getByTestId('private-recovery-key-done'))
-      expect(onDone).not.toHaveBeenCalled()
+      expect(onDone).toHaveBeenCalledTimes(1)
       consoleError.mockRestore()
     })
   })

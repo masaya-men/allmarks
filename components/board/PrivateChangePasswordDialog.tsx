@@ -63,7 +63,7 @@ export function PrivateChangePasswordDialog({ onSubmit, onCancel, variant = 'cha
       data-no-capture
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
-        <form onSubmit={(e): void => { e.preventDefault(); void submit() }}>
+        <form className={styles.form} onSubmit={(e): void => { e.preventDefault(); void submit() }}>
           <div id="private-change-password-heading" className={styles.heading}>
             {t(
               variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedHeading'
