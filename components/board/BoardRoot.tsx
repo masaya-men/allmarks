@@ -4232,13 +4232,38 @@ export function BoardRoot() {
               const session = await unlockVaultWithRecoveryKey(db, recoveryKeyInput)
               if (!session) return false
               setPrivateVaultSession(session)
+              // Vault-conflict detection takes priority over the recovery
+              // flow's own password-reset step, mirrored verbatim from the
+              // plain-unlock onSubmit above — changeVaultPassword (which
+              // 'recovered' below requires) rewrites the record that
+              // pickDeterministic's tie-break is computed from, so a conflict
+              // must be surfaced and handled BEFORE that rewrite ever happens
+              // (final Task 8 review finding).
+              const conflict = await loadVaultConflict(db)
+              if (conflict) {
+                const localRecord = await loadVaultRecord(db)
+                if (localRecord && isLocalVaultTarget(localRecord, conflict.otherRecord)) {
+                  const resolved = await isVaultConflictResolved(db, conflict.otherRecord.tagId)
+                  setPrivateDialog(resolved ? 'vault-conflict-resolved' : 'vault-conflict-notice')
+                } else {
+                  setPrivateDialog('vault-conflict-merge')
+                }
+                return true
+              }
+              const others = await findUnacknowledgedOtherPrivateVaultTagIds(db, session.tagId)
+              if (others.length > 0) {
+                const stillUnresolved = await anyOtherPrivateTagUnresolved(db, others)
+                setPrivateDialog(stillUnresolved ? 'vault-conflict-notice' : 'vault-conflict-resolved')
+                return true
+              }
               // Mirrors the plain-unlock onSubmit's pendingPrivateAction resume
-              // above (line ~4157) — forgetting the password must not silently
-              // drop a tag-click/batch-encrypt action that was waiting on this
-              // unlock. session.privateKey is already usable for encryption the
-              // moment recovery succeeds, independent of the new-password step
-              // that follows. Always still routes to 'recovered' below: the new
-              // password is mandatory regardless of whether an action resumed.
+              // above — forgetting the password must not silently drop a
+              // tag-click/batch-encrypt action that was waiting on this unlock.
+              // session.privateKey is already usable for encryption the moment
+              // recovery succeeds, independent of the new-password step that
+              // follows. Only reaches 'recovered' when no conflict was found
+              // above — the new password is mandatory in that case, but conflict
+              // resolution always takes priority when both are pending.
               if (pendingPrivateAction && privateTagId) void runPrivateAction(pendingPrivateAction, privateTagId, session)
               setPrivateDialog('recovered')
               return true
@@ -4263,7 +4288,7 @@ export function BoardRoot() {
               setPrivateVaultSession(result.session)
               setPrivateHint(newHint)
               setPrivateDialog(null)
-              setToast({ message: t('private.recoveredHeading'), nonce: Date.now() })
+              setToast({ message: t('private.changePasswordSuccessToast'), nonce: Date.now() })
               return true
             } catch (e) {
               console.error('[AllMarks] failed to set the recovered Private password', e)

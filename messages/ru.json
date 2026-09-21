@@ -277,7 +277,7 @@
     "buttonAria": "Открыть управление тегами"
   },
   "private": {
-    "setupExplanation": "Шифрует заголовок, URL, миниатюру и фото всего, что помечено как Private, этим паролем — настоящее содержимое никогда не хранится в открытом виде. Восстановление возможно только с помощью подсказки ниже: если вы забудете пароль, содержимое останется зашифрованным навсегда.",
+    "setupExplanation": "Шифрует заголовок, URL, миниатюру и фото всего, что помечено как Private, этим паролем — настоящее содержимое никогда не хранится в открытом виде. You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "Пароль",
     "confirmPasswordLabel": "Подтвердите пароль",
     "hintLabel": "Подсказка (необязательно)",

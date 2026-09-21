@@ -277,7 +277,7 @@
     "buttonAria": "Etiket yönetimini aç"
   },
   "private": {
-    "setupExplanation": "Bu şifre, Private olarak etiketlenen her şeyin başlığını, URL'sini, küçük resmini ve fotoğraflarını şifreler — gerçek içerik asla düz metin olarak saklanmaz. Aşağıdaki ipucu dışında kurtarma yöntemi yoktur: şifreyi unutursanız içerik sonsuza dek şifreli kalır.",
+    "setupExplanation": "Bu şifre, Private olarak etiketlenen her şeyin başlığını, URL'sini, küçük resmini ve fotoğraflarını şifreler — gerçek içerik asla düz metin olarak saklanmaz. You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "Şifre",
     "confirmPasswordLabel": "Şifreyi onayla",
     "hintLabel": "İpucu (isteğe bağlı)",

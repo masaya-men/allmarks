@@ -277,7 +277,7 @@
     "buttonAria": "Mở quản lý thẻ"
   },
   "private": {
-    "setupExplanation": "Mã hoá tiêu đề, URL, ảnh thu nhỏ và ảnh của mọi thứ được gắn thẻ Private bằng mật khẩu này — nội dung thật không bao giờ được lưu dưới dạng văn bản thuần. Không có cách khôi phục nào ngoài gợi ý bên dưới: nếu bạn quên mật khẩu, nội dung sẽ mãi mãi ở trạng thái mã hoá.",
+    "setupExplanation": "Mã hoá tiêu đề, URL, ảnh thu nhỏ và ảnh của mọi thứ được gắn thẻ Private bằng mật khẩu này — nội dung thật không bao giờ được lưu dưới dạng văn bản thuần. You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "Mật khẩu",
     "confirmPasswordLabel": "Xác nhận mật khẩu",
     "hintLabel": "Gợi ý (không bắt buộc)",

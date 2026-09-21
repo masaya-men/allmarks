@@ -277,7 +277,7 @@
     "buttonAria": "打开标签管理"
   },
   "private": {
-    "setupExplanation": "此密码会加密所有标记为 Private 的内容的标题、网址、缩略图和图片——真实内容绝不会以明文形式存储。除了下方的提示外没有其他找回方式：如果忘记密码，内容将永远保持加密状态。",
+    "setupExplanation": "此密码会加密所有标记为 Private 的内容的标题、网址、缩略图和图片——真实内容绝不会以明文形式存储。You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "密码",
     "confirmPasswordLabel": "确认密码",
     "hintLabel": "提示（可选）",

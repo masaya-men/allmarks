@@ -187,21 +187,20 @@ export async function setUpRecoveryKey(
 ): Promise<string | null> {
   const record = await loadVaultRecord(db)
   if (!record) return null
-  let pkcs8: string
   try {
-    pkcs8 = await resolveOwnPkcs8(record, session)
+    const pkcs8 = await resolveOwnPkcs8(record, session)
+    const recoveryKey = generateRecoveryKey()
+    const recoverySalt = generateSalt()
+    const recoveryWrappingKey = await deriveKey(normalizeRecoveryKey(recoveryKey), recoverySalt, PBKDF2_ITERATIONS)
+    const wrappedPrivateKeyByRecoveryKey = await encryptJson(recoveryWrappingKey, { pkcs8 })
+    const newRecord: PrivateVaultRecord = {
+      ...record, recoverySalt, wrappedPrivateKeyByRecoveryKey, updatedAt: Date.now(),
+    }
+    await db.put('settings', newRecord)
+    return recoveryKey
   } catch {
     return null
   }
-  const recoveryKey = generateRecoveryKey()
-  const recoverySalt = generateSalt()
-  const recoveryWrappingKey = await deriveKey(normalizeRecoveryKey(recoveryKey), recoverySalt, PBKDF2_ITERATIONS)
-  const wrappedPrivateKeyByRecoveryKey = await encryptJson(recoveryWrappingKey, { pkcs8 })
-  const newRecord: PrivateVaultRecord = {
-    ...record, recoverySalt, wrappedPrivateKeyByRecoveryKey, updatedAt: Date.now(),
-  }
-  await db.put('settings', newRecord)
-  return recoveryKey
 }
 
 /** 復旧キーでの解錠を試みる。unlockVaultのパスワード版と対になる —

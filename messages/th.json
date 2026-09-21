@@ -277,7 +277,7 @@
     "buttonAria": "เปิดการจัดการแท็ก"
   },
   "private": {
-    "setupExplanation": "รหัสผ่านนี้จะเข้ารหัสชื่อเรื่อง, URL, ภาพขนาดย่อ และรูปภาพของทุกอย่างที่ติดแท็ก Private — เนื้อหาจริงจะไม่ถูกเก็บเป็นข้อความธรรมดาเลย ไม่มีวิธีกู้คืนนอกจากคำใบ้ด้านล่าง: หากคุณลืมรหัสผ่าน เนื้อหาจะถูกเข้ารหัสตลอดไป",
+    "setupExplanation": "รหัสผ่านนี้จะเข้ารหัสชื่อเรื่อง, URL, ภาพขนาดย่อ และรูปภาพของทุกอย่างที่ติดแท็ก Private — เนื้อหาจริงจะไม่ถูกเก็บเป็นข้อความธรรมดาเลย. You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "รหัสผ่าน",
     "confirmPasswordLabel": "ยืนยันรหัสผ่าน",
     "hintLabel": "คำใบ้ (ไม่บังคับ)",

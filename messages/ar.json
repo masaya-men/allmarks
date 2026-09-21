@@ -277,7 +277,7 @@
     "buttonAria": "فتح إدارة الوسوم"
   },
   "private": {
-    "setupExplanation": "يشفّر هذا العنوان ورابط URL والصورة المصغّرة والصور الخاصة بكل ما تم وسمه بعلامة Private باستخدام كلمة المرور هذه — لا يُحفظ المحتوى الحقيقي أبدًا كنص عادي. لا توجد وسيلة استرجاع سوى التلميح أدناه: إذا نسيت كلمة المرور، سيبقى المحتوى مشفّرًا إلى الأبد.",
+    "setupExplanation": "يشفّر هذا العنوان ورابط URL والصورة المصغّرة والصور الخاصة بكل ما تم وسمه بعلامة Private باستخدام كلمة المرور هذه — لا يُحفظ المحتوى الحقيقي أبدًا كنص عادي. You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "كلمة المرور",
     "confirmPasswordLabel": "تأكيد كلمة المرور",
     "hintLabel": "تلميح (اختياري)",

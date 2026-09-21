@@ -277,7 +277,7 @@
     "buttonAria": "Ouvrir la gestion des tags"
   },
   "private": {
-    "setupExplanation": "Chiffre le titre, l'URL, la miniature et les photos de tout ce qui est marqué Private avec ce mot de passe — le contenu réel n'est jamais stocké en clair. Il n'existe aucun autre recours que l'indice ci-dessous : si vous oubliez le mot de passe, le contenu reste chiffré pour toujours.",
+    "setupExplanation": "Chiffre le titre, l'URL, la miniature et les photos de tout ce qui est marqué Private avec ce mot de passe — le contenu réel n'est jamais stocké en clair. You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "Mot de passe",
     "confirmPasswordLabel": "Confirmer le mot de passe",
     "hintLabel": "Indice (facultatif)",

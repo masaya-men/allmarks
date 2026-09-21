@@ -277,7 +277,7 @@
     "buttonAria": "Tag-Verwaltung öffnen"
   },
   "private": {
-    "setupExplanation": "Verschlüsselt Titel, URL, Vorschaubild und Fotos von allem, was mit Private markiert ist, mit diesem Passwort — der eigentliche Inhalt wird niemals im Klartext gespeichert. Es gibt keine Wiederherstellung außer dem Hinweis unten: Wenn du das Passwort vergisst, bleibt der Inhalt für immer verschlüsselt.",
+    "setupExplanation": "Verschlüsselt Titel, URL, Vorschaubild und Fotos von allem, was mit Private markiert ist, mit diesem Passwort — der eigentliche Inhalt wird niemals im Klartext gespeichert. You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "Passwort",
     "confirmPasswordLabel": "Passwort bestätigen",
     "hintLabel": "Hinweis (optional)",
