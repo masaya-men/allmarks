@@ -7,6 +7,7 @@ import { addPrivateTag } from '@/lib/private/apply-tag-change'
 import {
   saveVaultConflict, loadVaultConflict, clearVaultConflict,
   isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault,
+  otherPrivateTagIds, anyOtherPrivateTagUnresolved,
 } from './vault-conflict'
 
 let db: IDBPDatabase<unknown> | null = null
@@ -121,6 +122,59 @@ describe('mergeIntoOtherVault', () => {
     expect(await loadVaultRecord(d)).toEqual(otherVault.record)
     const localTag = await d.get('tags', 'local-tag')
     expect((localTag as { isDeleted?: boolean } | undefined)?.isDeleted).toBe(true)
+  })
+})
+
+describe('otherPrivateTagIds', () => {
+  it('returns every id except myTagId', () => {
+    const all = new Set(['tag-a', 'tag-b', 'tag-c'])
+    expect(otherPrivateTagIds(all, 'tag-b').sort()).toEqual(['tag-a', 'tag-c'])
+  })
+
+  it('returns all ids when myTagId is null', () => {
+    const all = new Set(['tag-a', 'tag-b'])
+    expect(otherPrivateTagIds(all, null).sort()).toEqual(['tag-a', 'tag-b'])
+  })
+
+  it('returns an empty array when the set only contains myTagId', () => {
+    const all = new Set(['tag-a'])
+    expect(otherPrivateTagIds(all, 'tag-a')).toEqual([])
+  })
+})
+
+describe('anyOtherPrivateTagUnresolved', () => {
+  it('is true when the other tag exists and is not tombstoned', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', {
+      id: 'other-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true,
+    } as never)
+    expect(await anyOtherPrivateTagUnresolved(d, ['other-tag'])).toBe(true)
+  })
+
+  it('is false once the other tag is tombstoned', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', {
+      id: 'other-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 2, theme: null,
+      isPrivateVault: true, isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z',
+    } as never)
+    expect(await anyOtherPrivateTagUnresolved(d, ['other-tag'])).toBe(false)
+  })
+
+  it('is true when at least one of several ids is still unresolved', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', {
+      id: 'resolved-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 2, theme: null,
+      isPrivateVault: true, isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z',
+    } as never)
+    await d.put('tags', {
+      id: 'unresolved-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true,
+    } as never)
+    expect(await anyOtherPrivateTagUnresolved(d, ['resolved-tag', 'unresolved-tag'])).toBe(true)
+  })
+
+  it('is false for an empty id list', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    expect(await anyOtherPrivateTagUnresolved(d, [])).toBe(false)
   })
 })
 

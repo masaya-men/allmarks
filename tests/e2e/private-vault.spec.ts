@@ -961,3 +961,53 @@ test('vault-conflict: routes an unlock to the merge dialog when this device is t
   // 5. The merge dialog (not the ordinary manage dialog) should now be showing.
   await expect(page.getByTestId('vault-conflict-merge-dialog')).toBeVisible()
 })
+
+test('vault-conflict: the winning side that never saw a vault.json mismatch still shows the notice, purely from tag sync', async ({ page }) => {
+  // 1. Seed one bookmark, load /board.
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+
+  // 2. Create the local vault via the real SETUP dialog (this device is the
+  // one that will never see a vault.json mismatch — simulating "published
+  // first, and happens to also be the eventual winner").
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+
+  // 3. Seed a SECOND isPrivateVault tag directly — simulating that this
+  // device has already received the other side's tag via ordinary tag
+  // sync, WITHOUT ever seeding a private-vault-conflict settings record
+  // (i.e. this device's OWN loadVaultConflict path never fired — the exact
+  // gap this fix closes). Not yet tombstoned, so the conflict is still
+  // open.
+  await seedDb(page, [{
+    store: 'tags',
+    value: {
+      id: 'other-device-tag', name: 'Private', color: '#000000', order: 99,
+      createdAt: Date.now(), updatedAt: Date.now(), isPrivateVault: true,
+    },
+  }])
+
+  // 4. Reload (resets the in-memory session) then unlock via SETTINGS ->
+  // PRIVATE -> UNLOCK with this device's own real password.
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const unlockDialog = page.getByTestId('private-unlock-dialog')
+  await expect(unlockDialog).toBeVisible()
+  await page.locator('#private-unlock-password').fill(PASSWORD)
+  await page.getByTestId('private-unlock-submit').click()
+  await expect(unlockDialog).toHaveCount(0)
+
+  // 5. The notice dialog (not the ordinary manage dialog, and not the merge
+  // dialog) should now be showing — this device correctly inferred it's
+  // the target purely from having 2 Private tags locally, with no
+  // private-vault-conflict settings record ever having been written.
+  await expect(page.getByTestId('vault-conflict-notice-dialog')).toBeVisible()
+})

@@ -16,6 +16,35 @@
 // target device never needs to do anything password-gated at all: engine.ts
 // (Task 6) auto-publishes its vault record to Drive using only public data.
 // Nobody ever types a password meant for a different device.
+//
+// Second detection path (added 2026-09-21, closing a gap found in final
+// whole-branch review): the above relies on a device locally observing a
+// vault.json pulled from Drive that differs from its own (vaultRecordsDiffer
+// in lib/sync/engine.ts), which is what populates saveVaultConflict. But if
+// the eventual deterministic TARGET also happens to be the device that
+// published vault.json to Drive first — a chronological accident unrelated
+// to the tie-break — it never pulls back anything different from what it
+// already has, so loadVaultConflict never fires there and it would
+// otherwise never learn a conflict exists at all. Ordinary tags (including
+// each vault's isPrivateVault tag) sync independently of any vault
+// conflict — engine.ts only ever nulls the `vault` field of a snapshot, tags
+// sync as normal regardless — so every device eventually receives BOTH
+// vaults' isPrivateVault tag via ordinary tag sync no matter which side
+// published first. That gives a second, symmetric signal: if a device's own
+// allPrivateTagIds contains more than just its own resolved privateTagId, a
+// conflict exists even with no loadVaultConflict record. A device in that
+// state can only ever be the deterministic target — the losing side always
+// eventually pulls a vault.json that differs from its own (either the
+// winner already overwrote it, or a later force-publish supersedes what was
+// there when the losing side first synced), so loadVaultConflict is always
+// eventually populated on the losing side by the existing code, with no
+// gap; the only way to hold multiple Private tags locally while never
+// having observed a mismatch is to be the side whose own vault.json was
+// simply never overwritten. So this fallback (otherPrivateTagIds /
+// anyOtherPrivateTagUnresolved below) can safely assume "I am the target"
+// outright, without calling isLocalVaultTarget or reconstructing the other
+// side's full PrivateVaultRecord — it only needs the other tag id(s) and
+// whether they're tombstoned yet.
 import type { IDBPDatabase } from 'idb'
 import { pickDeterministic } from '@/lib/sync/merge'
 import { decryptWithPrivateKey, encryptWithPublicKey, importPublicKey } from './crypto'
@@ -69,6 +98,28 @@ export function isLocalVaultTarget(local: PrivateVaultRecord, other: PrivateVaul
 export async function isVaultConflictResolved(db: DbLike, otherTagId: string): Promise<boolean> {
   const tag = (await db.get('tags', otherTagId)) as { isDeleted?: boolean } | undefined
   return tag?.isDeleted === true
+}
+
+/** Every Private tag id besides `myTagId` — used by the fallback detection
+ *  path below for the device that never locally observed a vault.json
+ *  mismatch (see this module's header comment on the "first publisher who
+ *  also wins" gap: that device is provably always the deterministic
+ *  target, so it never needs loadVaultConflict/isLocalVaultTarget to know
+ *  this — it only needs to know which other tag(s) exist and whether
+ *  they've been tombstoned yet). */
+export function otherPrivateTagIds(allPrivateTagIds: ReadonlySet<string>, myTagId: string | null): string[] {
+  return [...allPrivateTagIds].filter((id) => id !== myTagId)
+}
+
+/** True if any of `otherTagIds` has NOT yet been tombstoned — i.e. the
+ *  other side hasn't combined yet. Reuses isVaultConflictResolved per id;
+ *  designed for the (normally single-element) fallback-detection case
+ *  above, not a general multi-way merge. */
+export async function anyOtherPrivateTagUnresolved(db: DbLike, otherTagIds: readonly string[]): Promise<boolean> {
+  for (const id of otherTagIds) {
+    if (!(await isVaultConflictResolved(db, id))) return true
+  }
+  return false
 }
 
 /** Runs on the LOSING ("source") side only, once its user has explicitly

@@ -67,6 +67,7 @@ import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSessio
 import { createVault, unlockVault, loadVaultRecord, changeVaultPassword } from '@/lib/private/vault-store'
 import {
   loadVaultConflict, isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault, clearVaultConflict,
+  otherPrivateTagIds, anyOtherPrivateTagUnresolved,
 } from '@/lib/private/vault-conflict'
 import { VaultConflictNoticeDialog } from './VaultConflictNoticeDialog'
 import { VaultConflictMergeDialog } from './VaultConflictMergeDialog'
@@ -4127,6 +4128,20 @@ export function BoardRoot() {
                 } else {
                   setPrivateDialog('vault-conflict-merge')
                 }
+                return true
+              }
+              // Fallback detection (final whole-branch review finding): this
+              // device may never have locally observed a vault.json mismatch
+              // (loadVaultConflict null above) yet still hold a SECOND
+              // isPrivateVault tag it received via ordinary tag sync — which
+              // can only happen if this device is the deterministic target
+              // that simply published first (see vault-conflict.ts's header
+              // comment). Route the same way the primary path above would
+              // have, without ever needing isLocalVaultTarget here.
+              const others = otherPrivateTagIds(privateTagIds, privateTagId)
+              if (others.length > 0) {
+                const stillUnresolved = await anyOtherPrivateTagUnresolved(db, others)
+                setPrivateDialog(stillUnresolved ? 'vault-conflict-notice' : 'vault-conflict-resolved')
                 return true
               }
               if (pendingPrivateAction && privateTagId) {
