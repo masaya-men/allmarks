@@ -277,7 +277,7 @@
     "buttonAria": "Open tag management"
   },
   "private": {
-    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. If it's ever forgotten everywhere, the content stays encrypted forever — the hint below is your only clue.",
+    "setupExplanation": "Encrypts the title, URL, thumbnail and photos of anything tagged Private with this password — the real content is never stored in plain text. You can change the password anytime from a device that's already unlocked. A recovery key will also be shown after creation — save that somewhere safe too. It's your only way back in if you forget your password.",
     "passwordLabel": "Password",
     "confirmPasswordLabel": "Confirm password",
     "hintLabel": "Hint (optional)",

@@ -64,7 +64,7 @@ import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ExtensionEntry } from './ExtensionEntry'
 import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
-import { createVault, unlockVault, loadVaultRecord, changeVaultPassword } from '@/lib/private/vault-store'
+import { createVault, unlockVault, loadVaultRecord, changeVaultPassword, setUpRecoveryKey, unlockVaultWithRecoveryKey } from '@/lib/private/vault-store'
 import {
   loadVaultConflict, isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault, clearVaultConflict,
   findOtherPrivateVaultTagIds, anyOtherPrivateTagUnresolved,
@@ -81,6 +81,8 @@ import { PrivateSetupDialog } from './PrivateSetupDialog'
 import { PrivateUnlockDialog } from './PrivateUnlockDialog'
 import { PrivateManageDialog } from './PrivateManageDialog'
 import { PrivateChangePasswordDialog } from './PrivateChangePasswordDialog'
+import { PrivateRecoveryKeyDialog } from './PrivateRecoveryKeyDialog'
+import { PrivateRecoverDialog } from './PrivateRecoverDialog'
 import { PrivateShareConfirmDialog } from './PrivateShareConfirmDialog'
 import { ThemeModal } from './ThemeModal'
 import { ChromeButton } from './ChromeButton'
@@ -260,8 +262,10 @@ export function BoardRoot() {
   // lock-filtered), which would silently disable every exclusion this feature
   // exists for.
   const privateSession = usePrivateVaultSession()
-  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | 'manage' | 'change-password' | 'vault-conflict-notice' | 'vault-conflict-merge' | 'vault-conflict-resolved' | null>(null)
+  const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | 'manage' | 'change-password' | 'vault-conflict-notice' | 'vault-conflict-merge' | 'vault-conflict-resolved' | 'recovery-key' | 'recover' | 'recovered' | null>(null)
   const [privateHint, setPrivateHint] = useState<string | undefined>(undefined)
+  const [privateHasRecoveryKey, setPrivateHasRecoveryKey] = useState(false)
+  const [pendingRecoveryKeyDisplay, setPendingRecoveryKeyDisplay] = useState<string | null>(null)
   // Set when a SHARE was attempted while the selection contains Private cards.
   // `resume` records which capture path asked, so the single confirm dialog
   // can continue the right one.
@@ -2170,14 +2174,17 @@ export function BoardRoot() {
       }
       if (privateActionNeedsUnlock(action) && privateSession === null) {
         setPendingPrivateAction(action)
-        // Mirrors onOpenPrivate's SETTINGS-path hint load below — the hint is
-        // the only recovery mechanism this feature has (no backdoor, by
-        // design), so it must appear on these entry points too, not just
-        // the pre-existing SETTINGS entry (final whole-branch review
-        // finding).
+        // Mirrors onOpenPrivate's SETTINGS-path hint/recovery-key-status
+        // load below — both must appear on these entry points too, not
+        // just the pre-existing SETTINGS entry (final whole-branch review
+        // finding for the hint; recovery-key status follows the same
+        // pattern).
         void (async (): Promise<void> => {
           const record = await loadVaultRecord(await initDB())
-          if (record) setPrivateHint(record.hint)
+          if (record) {
+            setPrivateHint(record.hint)
+            setPrivateHasRecoveryKey(!!record.wrappedPrivateKeyByRecoveryKey)
+          }
         })()
         setPrivateDialog('unlock')
         return
@@ -2186,6 +2193,19 @@ export function BoardRoot() {
     },
     [privateTagId, privateSession, runPrivateAction],
   )
+
+  const handleSetUpRecoveryKey = useCallback(async (): Promise<void> => {
+    if (!privateSession) return
+    const db = await initDB()
+    const recoveryKey = await setUpRecoveryKey(db, privateSession)
+    if (!recoveryKey) {
+      setToast({ message: t('private.recoveryKeySetupFailedToast'), nonce: Date.now() })
+      return
+    }
+    setPrivateHasRecoveryKey(true)
+    setPendingRecoveryKeyDisplay(recoveryKey)
+    setPrivateDialog('recovery-key')
+  }, [privateSession, t])
 
   const handleThemeChange = useCallback((next: ThemeId): void => {
     setThemeId(next)
@@ -3664,6 +3684,7 @@ export function BoardRoot() {
                         return
                       }
                       setPrivateHint(record.hint)
+                      setPrivateHasRecoveryKey(!!record.wrappedPrivateKeyByRecoveryKey)
                       if (privateSession !== null) {
                         setPrivateDialog('manage')
                         return
@@ -4100,8 +4121,16 @@ export function BoardRoot() {
               // sees the stale (null) privateTagId (final whole-branch review
               // finding).
               await reloadTags()
-              setPrivateDialog(null)
+              const recoveryKey = await setUpRecoveryKey(db, session)
               if (pendingPrivateAction) void runPrivateAction(pendingPrivateAction, tag.id, session)
+              if (recoveryKey) {
+                setPrivateHasRecoveryKey(true)
+                setPendingRecoveryKeyDisplay(recoveryKey)
+                setPrivateDialog('recovery-key')
+              } else {
+                setToast({ message: t('private.recoveryKeySetupFailedToast'), nonce: Date.now() })
+                setPrivateDialog(null)
+              }
               return true
             } catch (e) {
               console.error('[AllMarks] failed to create Private vault', e)
@@ -4114,6 +4143,8 @@ export function BoardRoot() {
       {privateDialog === 'unlock' && (
         <PrivateUnlockDialog
           hint={privateHint}
+          hasRecoveryKey={privateHasRecoveryKey}
+          onForgotPassword={(): void => setPrivateDialog('recover')}
           onSubmit={async (password): Promise<boolean> => {
             try {
               const db = await initDB()
@@ -4181,8 +4212,65 @@ export function BoardRoot() {
       {privateDialog === 'manage' && (
         <PrivateManageDialog
           hint={privateHint}
+          hasRecoveryKey={privateHasRecoveryKey}
+          onSetUpRecoveryKey={(): void => { void handleSetUpRecoveryKey() }}
           onChangePassword={(): void => setPrivateDialog('change-password')}
           onDone={(): void => setPrivateDialog(null)}
+        />
+      )}
+      {privateDialog === 'recovery-key' && pendingRecoveryKeyDisplay && (
+        <PrivateRecoveryKeyDialog
+          recoveryKey={pendingRecoveryKeyDisplay}
+          onDone={(): void => { setPendingRecoveryKeyDisplay(null); setPrivateDialog(null) }}
+        />
+      )}
+      {privateDialog === 'recover' && (
+        <PrivateRecoverDialog
+          onSubmit={async (recoveryKeyInput): Promise<boolean> => {
+            try {
+              const db = await initDB()
+              const session = await unlockVaultWithRecoveryKey(db, recoveryKeyInput)
+              if (!session) return false
+              setPrivateVaultSession(session)
+              // Mirrors the plain-unlock onSubmit's pendingPrivateAction resume
+              // above (line ~4157) — forgetting the password must not silently
+              // drop a tag-click/batch-encrypt action that was waiting on this
+              // unlock. session.privateKey is already usable for encryption the
+              // moment recovery succeeds, independent of the new-password step
+              // that follows. Always still routes to 'recovered' below: the new
+              // password is mandatory regardless of whether an action resumed.
+              if (pendingPrivateAction && privateTagId) void runPrivateAction(pendingPrivateAction, privateTagId, session)
+              setPrivateDialog('recovered')
+              return true
+            } catch (e) {
+              setPrivateVaultSession(null)
+              console.error('[AllMarks] failed to unlock Private with a recovery key', e)
+              return false
+            }
+          }}
+          onCancel={(): void => setPrivateDialog('unlock')}
+        />
+      )}
+      {privateDialog === 'recovered' && privateSession && (
+        <PrivateChangePasswordDialog
+          variant="recovered"
+          onSubmit={async (newPassword, newHint): Promise<boolean> => {
+            if (!privateSession) return false
+            try {
+              const db = await initDB()
+              const result = await changeVaultPassword(db, privateSession, newPassword, newHint)
+              if (!result.ok) return false
+              setPrivateVaultSession(result.session)
+              setPrivateHint(newHint)
+              setPrivateDialog(null)
+              setToast({ message: t('private.recoveredHeading'), nonce: Date.now() })
+              return true
+            } catch (e) {
+              console.error('[AllMarks] failed to set the recovered Private password', e)
+              return false
+            }
+          }}
+          onCancel={(): void => setPrivateDialog(null)}
         />
       )}
       {privateDialog === 'vault-conflict-notice' && (
