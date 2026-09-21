@@ -1392,9 +1392,18 @@ const [pendingRecoveryKeyDisplay, setPendingRecoveryKeyDisplay] = useState<strin
               const session = await unlockVaultWithRecoveryKey(db, recoveryKeyInput)
               if (!session) return false
               setPrivateVaultSession(session)
+              // Mirrors the plain-unlock onSubmit's pendingPrivateAction resume
+              // above (line ~4157) — forgetting the password must not silently
+              // drop a tag-click/batch-encrypt action that was waiting on this
+              // unlock. session.privateKey is already usable for encryption the
+              // moment recovery succeeds, independent of the new-password step
+              // that follows. Always still routes to 'recovered' below: the new
+              // password is mandatory regardless of whether an action resumed.
+              if (pendingPrivateAction && privateTagId) void runPrivateAction(pendingPrivateAction, privateTagId, session)
               setPrivateDialog('recovered')
               return true
             } catch (e) {
+              setPrivateVaultSession(null)
               console.error('[AllMarks] failed to unlock Private with a recovery key', e)
               return false
             }
