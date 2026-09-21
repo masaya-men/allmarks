@@ -1104,3 +1104,117 @@ test('vault-conflict: the winning-side fallback still identifies its own tag cor
   await expect(page.getByTestId('private-change-password-dialog')).toHaveCount(0)
   await expect(page.getByTestId('vault-conflict-notice-dialog')).toHaveCount(0)
 })
+
+test('recovery key: new vault shows a recovery key once, and it can unlock after forgetting the password', async ({ page }) => {
+  // 1. 新規vault作成
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+
+  // 2. 復旧キー画面が自動的に出る。値を読み取って保存。
+  const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(recoveryDialog).toBeVisible()
+  const recoveryKey = (await page.getByTestId('private-recovery-key-value').textContent())!.trim()
+  expect(recoveryKey.length).toBeGreaterThan(0)
+  await page.getByTestId('private-recovery-key-done').click()
+  await expect(recoveryDialog).toHaveCount(0)
+
+  // 3. リロードしてロック状態にし、UNLOCK画面から「パスワードを忘れた場合」へ。
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const unlockDialog = page.getByTestId('private-unlock-dialog')
+  await expect(unlockDialog).toBeVisible()
+  await page.getByTestId('private-unlock-forgot-password').click()
+  await expect(unlockDialog).toHaveCount(0)
+
+  // 4. 復旧キーを入力して解錠。
+  const recoverDialog = page.getByTestId('private-recover-dialog')
+  await expect(recoverDialog).toBeVisible()
+  await page.locator('#private-recover-input').fill(recoveryKey)
+  await page.getByTestId('private-recover-submit').click()
+  await expect(recoverDialog).toHaveCount(0)
+
+  // 5. 新しいパスワードを決める画面が出る。
+  const changePasswordDialog = page.getByTestId('private-change-password-dialog')
+  await expect(changePasswordDialog).toBeVisible()
+  const NEW_PASSWORD = 'brand-new-password-456'
+  await page.locator('#private-change-password-new').fill(NEW_PASSWORD)
+  await page.locator('#private-change-password-confirm').fill(NEW_PASSWORD)
+  await page.getByTestId('private-change-password-save').click()
+  await expect(changePasswordDialog).toHaveCount(0)
+
+  // 6. リロードして、新しいパスワードで解錠できることを確認。
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const unlockDialog2 = page.getByTestId('private-unlock-dialog')
+  await expect(unlockDialog2).toBeVisible()
+  await page.locator('#private-unlock-password').fill(NEW_PASSWORD)
+  await page.getByTestId('private-unlock-submit').click()
+  await expect(unlockDialog2).toHaveCount(0)
+  // 既存の挙動(Task 7 private-password-change、既存e2e private-vault.spec.ts
+  // 229-236行で確認済み): 保留中アクションが無い単純なUNLOCKは、閉じずに
+  // MANAGE画面へ遷移する。ここではその画面が出ること自体が「新しいパスワード
+  // で解錠できた」ことの証明であり、閉じるところまでは追わない。
+  await expect(page.getByTestId('private-manage-dialog')).toBeVisible()
+})
+
+test('recovery key: an existing vault (created before this feature) can set one up retroactively', async ({ page }) => {
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+  // 自動生成された復旧キー画面が出る。あとで再発行後の値と比較するため、
+  // ここでも実際の値を読み取っておく(単に「空でない」だけでなく「本当に
+  // 別の値になった」ことまで確認するため)。
+  const firstRecoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(firstRecoveryDialog).toBeVisible()
+  const firstRecoveryKey = (await page.getByTestId('private-recovery-key-value').textContent())!.trim()
+  expect(firstRecoveryKey.length).toBeGreaterThan(0)
+  await page.getByTestId('private-recovery-key-done').click()
+  await expect(firstRecoveryDialog).toHaveCount(0)
+
+  // MANAGE画面を開き、「再発行」ボタンから新しい復旧キーを取得できることを確認。
+  // 注意: private-entry-button は unlocked の間ずっと disabled
+  // (ExtensionEntry.tsx:300 `disabled={privateStatus === 'unlocked'}`) なので、
+  // このまま(リロードなし)もう一度クリックしても何も起きない
+  // (Phase 1にはreload以外の再ロック手段が無いのは既存コメント
+  // (このファイル205-207行)にも明記済み)。実際にMANAGE画面へ辿り着ける
+  // 唯一の経路は「リロードしてロック状態に戻し、パスワードでUNLOCKする」
+  // (BoardRoot.tsxのUNLOCK onSubmit: pendingPrivateActionが無ければ
+  // setPrivateDialog('manage')に着地する、既存テスト148-240行と同じ経路)。
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const unlockDialog = page.getByTestId('private-unlock-dialog')
+  await expect(unlockDialog).toBeVisible()
+  await page.locator('#private-unlock-password').fill(PASSWORD)
+  await page.getByTestId('private-unlock-submit').click()
+  await expect(unlockDialog).toHaveCount(0)
+  const manageDialog = page.getByTestId('private-manage-dialog')
+  await expect(manageDialog).toBeVisible()
+  await page.getByTestId('private-manage-recovery-key').click()
+  const secondRecoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(secondRecoveryDialog).toBeVisible()
+  const secondRecoveryKey = (await page.getByTestId('private-recovery-key-value').textContent())!.trim()
+  expect(secondRecoveryKey.length).toBeGreaterThan(0)
+  // The real point of "re-issue": the old key must no longer be the live one.
+  expect(secondRecoveryKey).not.toBe(firstRecoveryKey)
+})
