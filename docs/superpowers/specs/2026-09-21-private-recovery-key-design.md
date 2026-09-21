@@ -278,13 +278,15 @@ const [pendingRecoveryKeyDisplay, setPendingRecoveryKeyDisplay] = useState<strin
 
 **新規vault作成フロー**([components/board/BoardRoot.tsx:4081](../../../components/board/BoardRoot.tsx#L4081)の`onCreate`)の変更: `createVault`成功直後、`setUpRecoveryKey(db, session)`を呼んで復旧キーを取得し、`setPendingRecoveryKeyDisplay(recoveryKey)` → `setPrivateDialog('recovery-key')`(従来の`setPrivateDialog(null)`の代わり)。`pendingPrivateAction`の再開処理(`runPrivateAction`)はこれまでと同じタイミングで即時実行する(復旧キー画面の表示とは並行、待たせない)。
 
-**既存vaultへの後付け**(`PrivateManageDialog`の新ボタン): `setUpRecoveryKey(db, privateSession)` → 同じく`pendingRecoveryKeyDisplay`+`'recovery-key'`。
+**`setUpRecoveryKey`が`null`を返した場合**(一時的なIndexedDBの失敗など、vault自体は正常に作成済み)の扱いを明示する: 復旧キー画面は出さず、従来通り`setPrivateDialog(null)`(既存vault作成フローと同じ挙動)に進む。ユーザーには「復旧キーの作成に失敗しました。あとで設定画面から作成できます」的な軽いトースト通知を1つ出す(既存の「Could not encrypt N cards」系の失敗通知と同じ、警告はするが処理は止めない方針)。`hasRecoveryKey`は正しく`false`のままなので、6.4の後付け導線から後でいつでも再試行できる — これが「一度だけ表示される」という前提を壊さない唯一の安全な縮退動作(vaultを未完成のまま残したり、作成自体を失敗させたりはしない)。
+
+**既存vaultへの後付け**(`PrivateManageDialog`の新ボタン): `setUpRecoveryKey(db, privateSession)` → 同じく`pendingRecoveryKeyDisplay`+`'recovery-key'`。`null`が返った場合の扱いも新規作成フローと同じ(トースト通知1つ、`PrivateManageDialog`はそのまま表示し続ける — こちらはユーザーが自発的に押した操作なので、画面を閉じずにボタンをもう一度押せる状態を保つ)。
 
 **`'recovery-key'`画面のonDone**: `setPendingRecoveryKeyDisplay(null)` → `setPrivateDialog(null)`。
 
 **パスワードを忘れた場合**(`PrivateUnlockDialog`の`onForgotPassword`): `setPrivateDialog('recover')`。
 
-**`'recover'`画面のonSubmit**: `unlockVaultWithRecoveryKey(db, input)` → 成功なら`setPrivateVaultSession(session)` → `setPrivateDialog('recovered')`。失敗なら`false`を返す(既存のエラー表示パターン)。
+**`'recover'`画面のonSubmit**: `unlockVaultWithRecoveryKey(db, input)` → 成功なら`setPrivateVaultSession(session)` → `setPrivateDialog('recovered')`。失敗なら`false`を返す(既存のエラー表示パターン)。**onCancel**は`setPrivateDialog('unlock')`(完全に閉じるのではなく、パスワード入力画面へ戻す — 「やっぱりパスワードを試したい」という自然な流れを崩さないため)。
 
 **`'recovered'`画面**(`PrivateChangePasswordDialog` variant="recovered"): `onSubmit`は`changeVaultPassword(db, privateSession, newPassword, newHint)`を呼ぶだけ — vault食い違い解決フローの`'vault-conflict-resolved'`画面([components/board/BoardRoot.tsx:4223](../../../components/board/BoardRoot.tsx#L4223)付近)とほぼ同じ配線だが、`loadVaultConflict`/`clearVaultConflict`の呼び出しは無い(無関係な機能のため)。
 
