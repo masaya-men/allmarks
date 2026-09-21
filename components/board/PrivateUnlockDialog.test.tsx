@@ -15,19 +15,6 @@ describe('PrivateUnlockDialog', () => {
     expect(screen.getByRole('dialog').hasAttribute('data-no-capture')).toBe(true)
   })
 
-  it('shows the hint text when provided', () => {
-    render(
-      <PrivateUnlockDialog
-        hint="my hint"
-        onSubmit={vi.fn().mockResolvedValue(true)}
-        onCancel={vi.fn()}
-        hasRecoveryKey={false}
-        onForgotPassword={vi.fn()}
-      />,
-    )
-    expect(screen.getByText('my hint')).toBeInTheDocument()
-  })
-
   it('calls onSubmit with the entered password', async () => {
     const onSubmit = vi.fn().mockResolvedValue(true)
     render(

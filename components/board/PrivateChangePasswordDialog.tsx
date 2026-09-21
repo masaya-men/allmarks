@@ -6,7 +6,6 @@ import { PasswordField } from './PasswordField'
 import styles from './PrivateChangePasswordDialog.module.css'
 
 type Props = {
-  readonly hint?: string
   readonly onSubmit: (newPassword: string, newHint: string | undefined) => Promise<boolean>
   readonly onCancel: () => void
   /** 'vault-conflict-resolved': shown once, on the winning device, right
@@ -20,11 +19,10 @@ type Props = {
   readonly variant?: 'change' | 'vault-conflict-resolved' | 'recovered'
 }
 
-export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel, variant = 'change' }: Props): ReactElement {
+export function PrivateChangePasswordDialog({ onSubmit, onCancel, variant = 'change' }: Props): ReactElement {
   const { t } = useI18n()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [newHint, setNewHint] = useState(hint ?? '')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -39,7 +37,7 @@ export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel, variant 
       return
     }
     setSubmitting(true)
-    const ok = await onSubmit(password, newHint.length > 0 ? newHint : undefined)
+    const ok = await onSubmit(password, undefined)
     if (!ok) {
       setSubmitting(false)
       setError(t('private.errorChangeFailed'))
@@ -65,61 +63,54 @@ export function PrivateChangePasswordDialog({ hint, onSubmit, onCancel, variant 
       data-no-capture
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
-        <div id="private-change-password-heading" className={styles.heading}>
-          {t(
-            variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedHeading'
-              : variant === 'recovered' ? 'private.recoveredHeading'
-              : 'private.changePasswordHeading',
-          )}
-        </div>
-        <div className={styles.explanation}>
-          {t(
-            variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedBody'
-              : variant === 'recovered' ? 'private.recoveredBody'
-              : 'private.changePasswordExplanation',
-          )}
-        </div>
-        <PasswordField
-          id="private-change-password-new"
-          label={t('private.newPasswordLabel')}
-          value={password}
-          onChange={setPassword}
-          showLabel={t('private.showPassword')}
-          hideLabel={t('private.hidePassword')}
-          autoComplete="new-password"
-        />
-        <PasswordField
-          id="private-change-password-confirm"
-          label={t('private.confirmNewPasswordLabel')}
-          value={confirm}
-          onChange={setConfirm}
-          showLabel={t('private.showPassword')}
-          hideLabel={t('private.hidePassword')}
-          autoComplete="new-password"
-        />
-        <label className={styles.label} htmlFor="private-change-password-hint">{t('private.hintLabel')}</label>
-        <input
-          id="private-change-password-hint"
-          type="text"
-          className={styles.input}
-          value={newHint}
-          onChange={(e): void => setNewHint(e.target.value)}
-        />
-        {error && <div className={styles.error}>{error}</div>}
-        <div className={styles.actions}>
-          <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-change-password-cancel">
-            CANCEL
-          </button>
-          <button
-            type="button"
-            className={styles.saveBtn}
-            onClick={(): void => { void submit() }}
-            disabled={submitting}
-            data-testid="private-change-password-save"
-          >
-            SAVE
-          </button>
-        </div>
+        <form onSubmit={(e): void => { e.preventDefault(); void submit() }}>
+          <div id="private-change-password-heading" className={styles.heading}>
+            {t(
+              variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedHeading'
+                : variant === 'recovered' ? 'private.recoveredHeading'
+                : 'private.changePasswordHeading',
+            )}
+          </div>
+          <div className={styles.explanation}>
+            {t(
+              variant === 'vault-conflict-resolved' ? 'private.vaultConflictResolvedBody'
+                : variant === 'recovered' ? 'private.recoveredBody'
+                : 'private.changePasswordExplanation',
+            )}
+          </div>
+          <PasswordField
+            id="private-change-password-new"
+            label={t('private.newPasswordLabel')}
+            value={password}
+            onChange={setPassword}
+            showLabel={t('private.showPassword')}
+            hideLabel={t('private.hidePassword')}
+            autoComplete="new-password"
+          />
+          <PasswordField
+            id="private-change-password-confirm"
+            label={t('private.confirmNewPasswordLabel')}
+            value={confirm}
+            onChange={setConfirm}
+            showLabel={t('private.showPassword')}
+            hideLabel={t('private.hidePassword')}
+            autoComplete="new-password"
+          />
+          {error && <div className={styles.error}>{error}</div>}
+          <div className={styles.actions}>
+            <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-change-password-cancel">
+              CANCEL
+            </button>
+            <button
+              type="submit"
+              className={styles.saveBtn}
+              disabled={submitting}
+              data-testid="private-change-password-save"
+            >
+              SAVE
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

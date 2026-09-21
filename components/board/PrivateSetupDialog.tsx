@@ -14,7 +14,6 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
   const { t } = useI18n()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [hint, setHint] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -29,7 +28,7 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
       return
     }
     setSubmitting(true)
-    const ok = await onCreate(password, hint.length > 0 ? hint : undefined)
+    const ok = await onCreate(password)
     if (!ok) {
       setSubmitting(false)
       setError(t('private.errorCreateFailed'))
@@ -56,51 +55,44 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
       data-no-capture
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
-        <div id="private-setup-heading" className={styles.heading}>SET UP PRIVATE</div>
-        <div className={styles.explanation} data-testid="private-setup-explanation">
-          {t('private.setupExplanation')}
-        </div>
-        <PasswordField
-          id="private-setup-password"
-          label={t('private.passwordLabel')}
-          value={password}
-          onChange={setPassword}
-          showLabel={t('private.showPassword')}
-          hideLabel={t('private.hidePassword')}
-          autoComplete="new-password"
-        />
-        <PasswordField
-          id="private-setup-confirm"
-          label={t('private.confirmPasswordLabel')}
-          value={confirm}
-          onChange={setConfirm}
-          showLabel={t('private.showPassword')}
-          hideLabel={t('private.hidePassword')}
-          autoComplete="new-password"
-        />
-        <label className={styles.label} htmlFor="private-setup-hint">{t('private.hintLabel')}</label>
-        <input
-          id="private-setup-hint"
-          type="text"
-          className={styles.input}
-          value={hint}
-          onChange={(e): void => setHint(e.target.value)}
-        />
-        {error && <div className={styles.error}>{error}</div>}
-        <div className={styles.actions}>
-          <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-setup-cancel">
-            CANCEL
-          </button>
-          <button
-            type="button"
-            className={styles.createBtn}
-            onClick={(): void => { void submit() }}
-            disabled={submitting}
-            data-testid="private-setup-create"
-          >
-            CREATE
-          </button>
-        </div>
+        <form onSubmit={(e): void => { e.preventDefault(); void submit() }}>
+          <div id="private-setup-heading" className={styles.heading}>SET UP PRIVATE</div>
+          <div className={styles.explanation} data-testid="private-setup-explanation">
+            {t('private.setupExplanation')}
+          </div>
+          <PasswordField
+            id="private-setup-password"
+            label={t('private.passwordLabel')}
+            value={password}
+            onChange={setPassword}
+            showLabel={t('private.showPassword')}
+            hideLabel={t('private.hidePassword')}
+            autoComplete="new-password"
+          />
+          <PasswordField
+            id="private-setup-confirm"
+            label={t('private.confirmPasswordLabel')}
+            value={confirm}
+            onChange={setConfirm}
+            showLabel={t('private.showPassword')}
+            hideLabel={t('private.hidePassword')}
+            autoComplete="new-password"
+          />
+          {error && <div className={styles.error}>{error}</div>}
+          <div className={styles.actions}>
+            <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-setup-cancel">
+              CANCEL
+            </button>
+            <button
+              type="submit"
+              className={styles.createBtn}
+              disabled={submitting}
+              data-testid="private-setup-create"
+            >
+              CREATE
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

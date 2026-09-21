@@ -15,14 +15,13 @@ describe('PrivateSetupDialog', () => {
     expect(onCreate).not.toHaveBeenCalled()
   })
 
-  it('calls onCreate with the password and optional hint once confirmed', () => {
+  it('calls onCreate with the password once confirmed', () => {
     const onCreate = vi.fn()
     render(<PrivateSetupDialog onCreate={onCreate} onCancel={vi.fn()} />)
     fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'hunter2' } })
     fireEvent.change(screen.getByLabelText(/confirm/i), { target: { value: 'hunter2' } })
-    fireEvent.change(screen.getByLabelText(/hint/i), { target: { value: 'my hint' } })
     fireEvent.click(screen.getByRole('button', { name: /create/i }))
-    expect(onCreate).toHaveBeenCalledWith('hunter2', 'my hint')
+    expect(onCreate).toHaveBeenCalledWith('hunter2')
   })
 
   it('shows a mismatch error and does not call onCreate when passwords differ', () => {

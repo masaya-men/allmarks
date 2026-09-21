@@ -6,7 +6,7 @@ import { seedDb, firstRunSuppressors, DB_NAME, type SeedRecord } from './helpers
 // directly, not guessed):
 //   - components/board/ExtensionEntry.tsx: private-entry-button (+ data-unlocked)
 //   - components/board/PrivateSetupDialog.tsx: private-setup-dialog/cancel/create,
-//     inputs at #private-setup-password / #private-setup-confirm / #private-setup-hint
+//     inputs at #private-setup-password / #private-setup-confirm
 //   - components/board/PrivateUnlockDialog.tsx: private-unlock-dialog/cancel/submit,
 //     input at #private-unlock-password
 //   - components/board/PrivateShareConfirmDialog.tsx: private-share-confirm-dialog/cancel/share
