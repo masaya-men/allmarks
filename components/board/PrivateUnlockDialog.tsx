@@ -45,6 +45,21 @@ export function PrivateUnlockDialog({ onSubmit, onCancel, hasRecoveryKey, onForg
     >
       <div className={styles.panel} onClick={(e): void => e.stopPropagation()}>
         <form className={styles.form} onSubmit={(e): void => { e.preventDefault(); void submit() }}>
+          {/* Private has no accounts/usernames — this exists only so browser
+             password managers (which key "is this a login form?" off an
+             autocomplete="username" field) recognize this as a real,
+             save-worthy credential. Fixed value, never shown, never typed
+             into (readOnly + visually hidden via .hiddenUsername). */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value="Private"
+            readOnly
+            aria-hidden="true"
+            tabIndex={-1}
+            className={styles.hiddenUsername}
+          />
           <div id="private-unlock-heading" className={styles.heading}>UNLOCK PRIVATE</div>
           <PasswordField
             id="private-unlock-password"
