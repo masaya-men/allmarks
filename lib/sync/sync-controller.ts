@@ -1,5 +1,6 @@
 import type { IDBPDatabase } from 'idb'
 import { runSyncCycle, type SyncCycleResult } from './engine'
+import { withSyncWritesSuppressed } from './sync-signal'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -37,7 +38,10 @@ export function createSyncController(
     clearTimer()
     if (inFlight) return inFlight
     const promise = (async () => {
-      const result = await runSyncCycle(db)
+      // Suppressed: runSyncCycle writes the pulled/merged snapshot back to
+      // IndexedDB, which would otherwise notify itself dirty and loop
+      // forever (see sync-signal.ts).
+      const result = await withSyncWritesSuppressed(() => runSyncCycle(db))
       onResult?.(result)
       return result
     })()
@@ -64,6 +68,14 @@ export function createSyncController(
     void flushNow()
   }
 
+  // pagehide is the more reliable "page is going away" signal on mobile
+  // Safari, where beforeunload is known not to fire on app-switch/tab-close.
+  // Safe to fire alongside visibilitychange/beforeunload — flushNow()'s
+  // inFlight guard already dedupes overlapping triggers.
+  function handlePageHide(): void {
+    void flushNow()
+  }
+
   function start(): void {
     if (started) return
     started = true
@@ -72,6 +84,7 @@ export function createSyncController(
     }
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', handleBeforeUnload)
+      window.addEventListener('pagehide', handlePageHide)
     }
   }
 
@@ -84,6 +97,7 @@ export function createSyncController(
     }
     if (typeof window !== 'undefined') {
       window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handlePageHide)
     }
   }
 

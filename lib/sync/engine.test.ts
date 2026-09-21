@@ -10,6 +10,7 @@ import { buildLocalSnapshot, applySnapshotToLocal } from './engine'
 import type { SyncSnapshot } from './merge'
 import { saveSyncTokens, loadSyncTokens } from './sync-store'
 import { ensureAccessToken, hasRequiredScopes, SyncNotConnectedError } from './engine'
+import { setSyncMarkDirty, withSyncWritesSuppressed } from './sync-signal'
 
 vi.mock('./auth', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./auth')>()
@@ -88,6 +89,37 @@ describe('applySnapshotToLocal', () => {
     expect((config as { updatedAt?: number } | undefined)?.updatedAt).toBe(7)
     const vault = await d.get('settings', 'private-vault')
     expect((vault as { tagId?: string } | undefined)?.tagId).toBe('tag1')
+  })
+
+  // Regression guard for the near-real-time sync wiring (indexeddb.ts's
+  // initDB() notifies sync-signal.ts on every write): applySnapshotToLocal
+  // IS itself a write, so if it weren't run inside withSyncWritesSuppressed
+  // (as sync-controller.ts's flushNow() does), every completed sync would
+  // immediately mark itself dirty again and loop forever.
+  it('does not notify the sync signal when its write runs inside withSyncWritesSuppressed', async () => {
+    const d = await initDB(); db = d
+    let calls = 0
+    setSyncMarkDirty(() => { calls++ })
+    try {
+      const snapshot: SyncSnapshot = {
+        bookmarks: [{
+          id: 'x', url: 'https://a.com', title: 'a', description: '', thumbnail: '', favicon: '',
+          siteName: '', type: 'website', savedAt: '2026-01-01T00:00:00.000Z', ogpStatus: 'fetched', tags: [],
+        } as never],
+        tags: [], cards: [], boardConfig: null, vault: null,
+      }
+      await withSyncWritesSuppressed(() => applySnapshotToLocal(d, snapshot))
+      expect(calls).toBe(0)
+
+      // A genuine, unrelated write outside the suppressed window still notifies.
+      await d.put('bookmarks', {
+        id: 'y', url: 'https://b.com', title: 'b', description: '', thumbnail: '', favicon: '',
+        siteName: '', type: 'website', savedAt: '2026-01-02T00:00:00.000Z', ogpStatus: 'fetched', tags: [],
+      } as never)
+      expect(calls).toBe(1)
+    } finally {
+      setSyncMarkDirty(null)
+    }
   })
 })
 

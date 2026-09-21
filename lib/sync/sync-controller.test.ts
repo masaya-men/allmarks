@@ -67,6 +67,26 @@ describe('createSyncController', () => {
     controller.stop()
   })
 
+  // pagehide is the reliable "page is going away" signal on mobile Safari,
+  // where beforeunload is known not to fire on app-switch/tab-close.
+  it('pagehide triggers a best-effort flush while started', async () => {
+    const controller = createSyncController(fakeDb, 20000)
+    controller.start()
+    window.dispatchEvent(new Event('pagehide'))
+    await Promise.resolve()
+    expect(runSyncCycle).toHaveBeenCalledTimes(1)
+    controller.stop()
+  })
+
+  it('stop() removes the pagehide listener too', async () => {
+    const controller = createSyncController(fakeDb, 20000)
+    controller.start()
+    controller.stop()
+    window.dispatchEvent(new Event('pagehide'))
+    await Promise.resolve()
+    expect(runSyncCycle).not.toHaveBeenCalled()
+  })
+
   // Fix I-4: previously nothing guarded against overlapping flushNow() calls — e.g. a
   // visibilitychange firing while the debounce timer's own flushNow() call was still mid-flight
   // (a Drive round-trip takes real time) could start two concurrent runSyncCycle calls. Calling

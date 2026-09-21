@@ -5,6 +5,7 @@ import { isValidUrl } from '@/lib/utils/url'
 import { generateCardDimensions } from '@/lib/canvas/card-sizing'
 import { MIN_CARD_WIDTH, presetToCardWidth, DEFAULT_CARD_WIDTH } from '@/lib/board/size-migration'
 import type { MediaSlot } from '@/lib/embed/types'
+import { notifySyncDirty } from '@/lib/sync/sync-signal'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -361,6 +362,39 @@ export function handleDBBlocking(
   if (target && typeof (target as IDBDatabase).close === 'function') {
     ;(target as IDBDatabase).close()
   }
+}
+
+const SYNC_DIRTY_METHODS: ReadonlySet<string> = new Set(['put', 'add', 'delete', 'clear'])
+
+/**
+ * Wrap the opened db so every mutating call — put/add/delete/clear, or a
+ * readwrite transaction() — notifies the active SyncController
+ * (lib/sync/sync-signal.ts) that local data changed. This is the single
+ * choke point for near-real-time sync: initDB() is called from every write
+ * site in this app (~15 call sites, ~80 write helpers in this file alone),
+ * so wrapping it here covers every write path — including any added later
+ * — without touching each call site individually.
+ */
+function wrapDbForSyncDirty(db: IDBPDatabase<AllMarksDB>): IDBPDatabase<AllMarksDB> {
+  return new Proxy(db, {
+    get(target, prop) {
+      if (prop === 'transaction') {
+        return (...args: unknown[]) => {
+          if (args[1] === 'readwrite') notifySyncDirty()
+          return (target.transaction as (...a: unknown[]) => unknown).apply(target, args)
+        }
+      }
+      const value = Reflect.get(target, prop, target)
+      if (typeof value !== 'function') return value
+      if (typeof prop === 'string' && SYNC_DIRTY_METHODS.has(prop)) {
+        return (...args: unknown[]) => {
+          notifySyncDirty()
+          return (value as (...a: unknown[]) => unknown).apply(target, args)
+        }
+      }
+      return value.bind(target)
+    },
+  })
 }
 
 /**
@@ -798,7 +832,7 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
   if (typeof window !== 'undefined') {
     window.sessionStorage.removeItem(BLOCKED_RELOAD_KEY)
   }
-  return db
+  return wrapDbForSyncDirty(db)
 }
 
 // ---------------------------------------------------------------------------
