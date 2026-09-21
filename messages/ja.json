@@ -312,7 +312,11 @@
     "vaultConflictMergeBody": "続けると、Privateが1つにまとまります。今のパスワードは使われなくなります。",
     "vaultConflictMergeNotNow": "今はしない",
     "vaultConflictMergeConfirm": "まとめる",
-    "vaultConflictMergeFailed": "まとめられませんでした。もう一度お試しください。"
+    "vaultConflictMergeFailed": "まとめられませんでした。もう一度お試しください。",
+    "recoveryKeyHeading": "復旧キー",
+    "recoveryKeyBody": "このキーがあれば、パスワードを忘れてもPrivateを開けます。今しか表示されません。安全な場所に保存してください。このキーも失うと、二度と開けなくなります。",
+    "recoveryKeyCopyButton": "コピー",
+    "recoveryKeyDoneButton": "わかった"
   },
   "sync": {
     "lockedExplanation": "どの端末でも同じブックマークに。サポーターの方が使える機能です。",
