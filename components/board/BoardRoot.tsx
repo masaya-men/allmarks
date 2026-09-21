@@ -2196,15 +2196,20 @@ export function BoardRoot() {
 
   const handleSetUpRecoveryKey = useCallback(async (): Promise<void> => {
     if (!privateSession) return
-    const db = await initDB()
-    const recoveryKey = await setUpRecoveryKey(db, privateSession)
-    if (!recoveryKey) {
+    try {
+      const db = await initDB()
+      const recoveryKey = await setUpRecoveryKey(db, privateSession)
+      if (!recoveryKey) {
+        setToast({ message: t('private.recoveryKeySetupFailedToast'), nonce: Date.now() })
+        return
+      }
+      setPrivateHasRecoveryKey(true)
+      setPendingRecoveryKeyDisplay(recoveryKey)
+      setPrivateDialog('recovery-key')
+    } catch (e) {
+      console.error('[AllMarks] failed to set up a Private recovery key', e)
       setToast({ message: t('private.recoveryKeySetupFailedToast'), nonce: Date.now() })
-      return
     }
-    setPrivateHasRecoveryKey(true)
-    setPendingRecoveryKeyDisplay(recoveryKey)
-    setPrivateDialog('recovery-key')
   }, [privateSession, t])
 
   const handleThemeChange = useCallback((next: ThemeId): void => {
