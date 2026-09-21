@@ -3,10 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { PrivateManageDialog } from './PrivateManageDialog'
 
 describe('PrivateManageDialog', () => {
-  it('shows the unlocked status and, when provided, the hint', () => {
+  it('shows the unlocked status', () => {
     render(
       <PrivateManageDialog
-        hint="my hint"
         onChangePassword={() => {}}
         onDone={() => {}}
         hasRecoveryKey={false}
@@ -14,19 +13,6 @@ describe('PrivateManageDialog', () => {
       />,
     )
     expect(screen.getByText(/unlocked/i)).toBeInTheDocument()
-    expect(screen.getByText(/my hint/)).toBeInTheDocument()
-  })
-
-  it('does not render a hint line when no hint is set', () => {
-    render(
-      <PrivateManageDialog
-        onChangePassword={() => {}}
-        onDone={() => {}}
-        hasRecoveryKey={false}
-        onSetUpRecoveryKey={() => {}}
-      />,
-    )
-    expect(screen.queryByText(/hint/i)).not.toBeInTheDocument()
   })
 
   it('calls onChangePassword when the button is clicked', () => {

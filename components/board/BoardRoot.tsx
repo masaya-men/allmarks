@@ -263,7 +263,6 @@ export function BoardRoot() {
   // exists for.
   const privateSession = usePrivateVaultSession()
   const [privateDialog, setPrivateDialog] = useState<'setup' | 'unlock' | 'manage' | 'change-password' | 'vault-conflict-notice' | 'vault-conflict-merge' | 'vault-conflict-resolved' | 'recovery-key' | 'recover' | 'recovered' | null>(null)
-  const [privateHint, setPrivateHint] = useState<string | undefined>(undefined)
   const [privateHasRecoveryKey, setPrivateHasRecoveryKey] = useState(false)
   const [pendingRecoveryKeyDisplay, setPendingRecoveryKeyDisplay] = useState<string | null>(null)
   // Set when a SHARE was attempted while the selection contains Private cards.
@@ -2174,15 +2173,12 @@ export function BoardRoot() {
       }
       if (privateActionNeedsUnlock(action) && privateSession === null) {
         setPendingPrivateAction(action)
-        // Mirrors onOpenPrivate's SETTINGS-path hint/recovery-key-status
-        // load below — both must appear on these entry points too, not
-        // just the pre-existing SETTINGS entry (final whole-branch review
-        // finding for the hint; recovery-key status follows the same
-        // pattern).
+        // Mirrors onOpenPrivate's SETTINGS-path recovery-key-status load
+        // below — it must appear on these entry points too, not just the
+        // pre-existing SETTINGS entry (final whole-branch review finding).
         void (async (): Promise<void> => {
           const record = await loadVaultRecord(await initDB())
           if (record) {
-            setPrivateHint(record.hint)
             setPrivateHasRecoveryKey(!!record.wrappedPrivateKeyByRecoveryKey)
           }
         })()
@@ -3701,7 +3697,6 @@ export function BoardRoot() {
                         setPrivateDialog('setup')
                         return
                       }
-                      setPrivateHint(record.hint)
                       setPrivateHasRecoveryKey(!!record.wrappedPrivateKeyByRecoveryKey)
                       if (privateSession !== null) {
                         if (!record.wrappedPrivateKeyByRecoveryKey) {
@@ -4165,7 +4160,6 @@ export function BoardRoot() {
       )}
       {privateDialog === 'unlock' && (
         <PrivateUnlockDialog
-          hint={privateHint}
           hasRecoveryKey={privateHasRecoveryKey}
           onForgotPassword={(): void => setPrivateDialog('recover')}
           onSubmit={async (password): Promise<boolean> => {
@@ -4237,7 +4231,6 @@ export function BoardRoot() {
       )}
       {privateDialog === 'manage' && (
         <PrivateManageDialog
-          hint={privateHint}
           hasRecoveryKey={privateHasRecoveryKey}
           onSetUpRecoveryKey={(): void => { void handleSetUpRecoveryKey() }}
           onChangePassword={(): void => setPrivateDialog('change-password')}
@@ -4312,7 +4305,6 @@ export function BoardRoot() {
               const result = await changeVaultPassword(db, privateSession, newPassword, newHint)
               if (!result.ok) return false
               setPrivateVaultSession(result.session)
-              setPrivateHint(newHint)
               setPrivateDialog(null)
               setToast({ message: t('private.changePasswordSuccessToast'), nonce: Date.now() })
               return true
@@ -4379,7 +4371,6 @@ export function BoardRoot() {
               const result = await changeVaultPassword(db, privateSession, newPassword, newHint)
               if (!result.ok) return false
               setPrivateVaultSession(result.session)
-              setPrivateHint(newHint)
               const conflict = await loadVaultConflict(db)
               if (conflict) await clearVaultConflict(db)
               // Marks only the other Private tag id(s) that are ALREADY
@@ -4413,14 +4404,12 @@ export function BoardRoot() {
       )}
       {privateDialog === 'change-password' && privateSession && (
         <PrivateChangePasswordDialog
-          hint={privateHint}
           onSubmit={async (newPassword, newHint): Promise<boolean> => {
             try {
               const db = await initDB()
               const result = await changeVaultPassword(db, privateSession, newPassword, newHint)
               if (!result.ok) return false
               setPrivateVaultSession(result.session)
-              setPrivateHint(newHint)
               setPrivateDialog(null)
               setToast({ message: t('private.changePasswordSuccessToast'), nonce: Date.now() })
               return true
