@@ -173,13 +173,12 @@ export async function decryptWithPrivateKey<T>(
   return decryptJson<T>(aesKey, envelope.iv, envelope.ciphertext)
 }
 
-// 読み間違えやすい文字(I, L, O, 0, 1)を除いた32文字のアルファベット。
-// 32 = 2^5 なので、1バイト(0-255)を32で割った余りが完全に均一に分布する
-// (256は32の倍数)— 特別な処理をせず crypto.getRandomValues の1バイトを
-// そのまま1文字にマッピングできる。
+// 読み間違えやすい文字(I, L, O, 0, 1)を除いた31文字のアルファベット。
+// 1バイト(0-255)を31で割った余りで文字を選ぶ。分布はほぼ均一
+// (わずかな偏り: 8文字が確率9/256、残り23文字が確率8/256で出現)。
 const RECOVERY_KEY_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 
-/** 30文字(150ビット相当)のランダムな復旧キーを生成し、5文字ごとに
+/** 30文字(約150ビット相当)のランダムな復旧キーを生成し、5文字ごとに
  *  ハイフンで区切って返す(例: "ABCDE-FGHJK-MN234-56789-ABCDE-FGHJK")。
  *  ハイフンは表示・入力のしやすさのためだけで、鍵導出には使わない
  *  (normalizeRecoveryKeyで取り除く)。 */
