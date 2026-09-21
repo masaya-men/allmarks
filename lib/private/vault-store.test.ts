@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import 'fake-indexeddb/auto'
 import { openDB, type IDBPDatabase } from 'idb'
-import { loadVaultRecord, createVault, unlockVault, changeVaultPassword } from './vault-store'
+import { loadVaultRecord, createVault, unlockVault, changeVaultPassword, setUpRecoveryKey, unlockVaultWithRecoveryKey } from './vault-store'
 import { importPublicKey, encryptWithPublicKey, decryptWithPrivateKey } from './crypto'
 
 const TEST_DB = 'allmarks-test-private-vault-store'
@@ -142,6 +142,97 @@ describe('private/vault-store', () => {
       await db.delete('settings', 'private-vault')
       const result = await changeVaultPassword(db, session, 'new-password', undefined)
       expect(result.ok).toBe(false)
+    })
+  })
+
+  describe('setUpRecoveryKey', () => {
+    it('generates a recovery key and stores recoverySalt + wrappedPrivateKeyByRecoveryKey', async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      const recoveryKey = await setUpRecoveryKey(db, session)
+      expect(typeof recoveryKey).toBe('string')
+      expect(recoveryKey!.length).toBeGreaterThan(0)
+      const record = await loadVaultRecord(db)
+      expect(record?.recoverySalt?.length).toBeGreaterThan(0)
+      expect(record?.wrappedPrivateKeyByRecoveryKey?.iv.length).toBeGreaterThan(0)
+      expect(record?.wrappedPrivateKeyByRecoveryKey?.ciphertext.length).toBeGreaterThan(0)
+    })
+
+    it('the returned recovery key can unlock via unlockVaultWithRecoveryKey', async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      const recoveryKey = await setUpRecoveryKey(db, session)
+      const recovered = await unlockVaultWithRecoveryKey(db, recoveryKey!)
+      expect(recovered?.tagId).toBe('tag-abc')
+    })
+
+    it('re-running it overwrites the previous recovery key (old one stops working)', async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      const first = await setUpRecoveryKey(db, session)
+      const second = await setUpRecoveryKey(db, session)
+      expect(second).not.toBe(first)
+      expect(await unlockVaultWithRecoveryKey(db, first!)).toBeNull()
+      expect(await unlockVaultWithRecoveryKey(db, second!)).not.toBeNull()
+    })
+
+    it('returns null when no vault record exists', async () => {
+      await createVault(db, 'tag-abc', 'hunter2')
+      const session = await unlockVault(db, 'hunter2')
+      await db.delete('settings', 'private-vault')
+      expect(await setUpRecoveryKey(db, session!)).toBeNull()
+    })
+
+    it('works even when session came from a recovery-key unlock (resolveOwnPkcs8 fallback)', async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      const firstRecoveryKey = await setUpRecoveryKey(db, session)
+      const recoveredSession = await unlockVaultWithRecoveryKey(db, firstRecoveryKey!)
+      const secondRecoveryKey = await setUpRecoveryKey(db, recoveredSession!)
+      expect(secondRecoveryKey).not.toBeNull()
+      expect(await unlockVaultWithRecoveryKey(db, secondRecoveryKey!)).not.toBeNull()
+    })
+  })
+
+  describe('unlockVaultWithRecoveryKey', () => {
+    it('returns null when no vault exists', async () => {
+      expect(await unlockVaultWithRecoveryKey(db, 'ABCDE-FGHJK-MN234-56789-ABCDE-FGHJK')).toBeNull()
+    })
+
+    it('returns null when the vault exists but has no recovery key set up yet', async () => {
+      await createVault(db, 'tag-abc', 'hunter2')
+      expect(await unlockVaultWithRecoveryKey(db, 'ABCDE-FGHJK-MN234-56789-ABCDE-FGHJK')).toBeNull()
+    })
+
+    it('returns null (not a thrown error) for a wrong recovery key', async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      await setUpRecoveryKey(db, session)
+      expect(await unlockVaultWithRecoveryKey(db, 'ZZZZZ-ZZZZZ-ZZZZZ-ZZZZZ-ZZZZZ-ZZZZZ')).toBeNull()
+    })
+
+    it('is tolerant of lowercase / missing hyphens on re-entry (normalizeRecoveryKey)', async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      const recoveryKey = await setUpRecoveryKey(db, session)
+      const messy = recoveryKey!.toLowerCase().replace(/-/g, ' ')
+      expect(await unlockVaultWithRecoveryKey(db, messy)).not.toBeNull()
+    })
+
+    it("the recovered session's public key still decrypts data encrypted before recovery", async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      const record = await loadVaultRecord(db)
+      const publicKey = await importPublicKey(record!.publicKey)
+      const envelope = await encryptWithPublicKey(publicKey, { secret: 'hello' })
+      const recoveryKey = await setUpRecoveryKey(db, session)
+      const recovered = await unlockVaultWithRecoveryKey(db, recoveryKey!)
+      await expect(decryptWithPrivateKey(recovered!.privateKey, envelope)).resolves.toEqual({ secret: 'hello' })
+    })
+  })
+
+  describe('changeVaultPassword after recovery', () => {
+    it('changing the password works when the session came from unlockVaultWithRecoveryKey', async () => {
+      const session = await createVault(db, 'tag-abc', 'old-password123')
+      const recoveryKey = await setUpRecoveryKey(db, session)
+      const recoveredSession = await unlockVaultWithRecoveryKey(db, recoveryKey!)
+      const result = await changeVaultPassword(db, recoveredSession!, 'brand-new-password789', undefined)
+      expect(result.ok).toBe(true)
+      expect(await unlockVault(db, 'old-password123')).toBeNull()
+      expect(await unlockVault(db, 'brand-new-password789')).not.toBeNull()
     })
   })
 })

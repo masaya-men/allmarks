@@ -2,6 +2,7 @@ import type { IDBPDatabase } from 'idb'
 import {
   PBKDF2_ITERATIONS, deriveKey, generateSalt, decryptJson, encryptJson,
   generateEcdhKeyPair, exportPublicKeyB64, wrapPrivateKey, unwrapPrivateKey,
+  generateRecoveryKey, normalizeRecoveryKey,
 } from './crypto'
 import type { PrivateVaultSession } from './vault-session'
 
@@ -26,6 +27,13 @@ export type PrivateVaultRecord = {
   /** パスワード変更のたびに現在時刻を打つ(初回作成時は無し=undefined)。
    *  同期マージのLWW比較に使う(lib/sync/merge.ts mergeVault)。 */
   readonly updatedAt?: number
+  /** 復旧キー用のPBKDF2 salt。wrappedPrivateKeyByRecoveryKeyと対で存在する。
+   *  無ければ「この端末は復旧キーを未設定」を意味する(既存レコードには
+   *  存在しない — 後付け発行のための任意項目)。 */
+  readonly recoverySalt?: string
+  /** ECDH秘密鍵(pkcs8)の、復旧キー由来の鍵で暗号化したコピー。password用の
+   *  wrappedPrivateKeyとは完全に独立した、もう一つの暗号化コピー。 */
+  readonly wrappedPrivateKeyByRecoveryKey?: { readonly iv: string; readonly ciphertext: string }
 }
 
 export async function loadVaultRecord(db: DbLike): Promise<PrivateVaultRecord | null> {
@@ -86,6 +94,31 @@ export type ChangeVaultPasswordResult =
   | { readonly ok: true; readonly session: NonNullable<PrivateVaultSession> }
   | { readonly ok: false; readonly session?: undefined }
 
+/** session.wrappingKeyが実際にどちらの暗号化コピーを開けるかを気にせず、
+ *  生のpkcs8バイト列を復元する。session.privateKey自体は
+ *  extractable:falseでインポートされているため再書き出し不可能
+ *  (unwrapPrivateKeyの4番目の引数)— 保存済みの暗号化コピーを再度復号する
+ *  のが唯一の経路。まずパスワード用のコピー(既存の唯一の経路)を試し、
+ *  それが失敗したら(= このsessionが復旧キー経由で解錠されたケース)
+ *  復旧キー用のコピーにフォールバックする。 */
+async function resolveOwnPkcs8(
+  record: PrivateVaultRecord,
+  session: NonNullable<PrivateVaultSession>,
+): Promise<string> {
+  try {
+    const { pkcs8 } = await decryptJson<{ pkcs8: string }>(
+      session.wrappingKey, record.wrappedPrivateKey.iv, record.wrappedPrivateKey.ciphertext,
+    )
+    return pkcs8
+  } catch {
+    if (!record.wrappedPrivateKeyByRecoveryKey) throw new Error('no recovery-key wrap to fall back to')
+    const { pkcs8 } = await decryptJson<{ pkcs8: string }>(
+      session.wrappingKey, record.wrappedPrivateKeyByRecoveryKey.iv, record.wrappedPrivateKeyByRecoveryKey.ciphertext,
+    )
+    return pkcs8
+  }
+}
+
 /**
  * Changes the vault's password WITHOUT requiring the old one — the caller
  * must already hold a valid, unlocked `session` (its `wrappingKey` proves
@@ -112,10 +145,7 @@ export async function changeVaultPassword(
 
   let pkcs8: string
   try {
-    const decrypted = await decryptJson<{ pkcs8: string }>(
-      session.wrappingKey, record.wrappedPrivateKey.iv, record.wrappedPrivateKey.ciphertext,
-    )
-    pkcs8 = decrypted.pkcs8
+    pkcs8 = await resolveOwnPkcs8(record, session)
   } catch {
     return { ok: false }
   }
@@ -144,4 +174,49 @@ export async function changeVaultPassword(
  *  runs, nothing local still depends on this record. */
 export async function retireVault(db: DbLike): Promise<void> {
   await db.delete('settings', VAULT_KEY)
+}
+
+/** すでに解錠済みのsessionから、新しい復旧キーを1つ生成して保存する。
+ *  既存の復旧キーがあれば無条件に上書きする(=再発行)ため、「初めて
+ *  設定する」と「前のキーを失くしたので作り直す」の両方をこの1つの
+ *  関数でカバーする。返り値は表示用の復旧キー文字列そのもの — この関数の
+ *  戻り値以外のどこにも平文の復旧キーは残らない。 */
+export async function setUpRecoveryKey(
+  db: DbLike,
+  session: NonNullable<PrivateVaultSession>,
+): Promise<string | null> {
+  const record = await loadVaultRecord(db)
+  if (!record) return null
+  let pkcs8: string
+  try {
+    pkcs8 = await resolveOwnPkcs8(record, session)
+  } catch {
+    return null
+  }
+  const recoveryKey = generateRecoveryKey()
+  const recoverySalt = generateSalt()
+  const recoveryWrappingKey = await deriveKey(normalizeRecoveryKey(recoveryKey), recoverySalt, PBKDF2_ITERATIONS)
+  const wrappedPrivateKeyByRecoveryKey = await encryptJson(recoveryWrappingKey, { pkcs8 })
+  const newRecord: PrivateVaultRecord = {
+    ...record, recoverySalt, wrappedPrivateKeyByRecoveryKey, updatedAt: Date.now(),
+  }
+  await db.put('settings', newRecord)
+  return recoveryKey
+}
+
+/** 復旧キーでの解錠を試みる。unlockVaultのパスワード版と対になる —
+ *  「復旧キーが無い/間違っている」は同じくnullを返す(例外を投げない)。 */
+export async function unlockVaultWithRecoveryKey(
+  db: DbLike,
+  recoveryKeyInput: string,
+): Promise<PrivateVaultSession> {
+  const record = await loadVaultRecord(db)
+  if (!record || !record.wrappedPrivateKeyByRecoveryKey || !record.recoverySalt) return null
+  const wrappingKey = await deriveKey(normalizeRecoveryKey(recoveryKeyInput), record.recoverySalt, record.iterations)
+  try {
+    const privateKey = await unwrapPrivateKey(record.wrappedPrivateKeyByRecoveryKey, wrappingKey)
+    return { tagId: record.tagId, privateKey, wrappingKey }
+  } catch {
+    return null
+  }
 }
