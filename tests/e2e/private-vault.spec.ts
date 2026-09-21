@@ -161,6 +161,14 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   await page.locator('#private-setup-confirm').fill(PASSWORD)
   await page.getByTestId('private-setup-create').click()
   await expect(setupDialog).toHaveCount(0)
+  // Dismiss the recovery-key dialog that now auto-shows once per new vault
+  // (recovery-key feature, task 8's BoardRoot wiring) before continuing —
+  // otherwise its backdrop (data-no-capture="true") intercepts every
+  // subsequent click, including the very next openSettings() below.
+  const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-done').click()
+  await expect(recoveryDialog).toHaveCount(0)
   // The SETTINGS drawer auto-closes the moment we interact with the setup
   // dialog: ChromeDrawer's own outside-pointerdown-close listener (capture
   // phase, ChromeDrawer.tsx ~55-63) treats any pointerdown outside its own
@@ -379,6 +387,13 @@ test('mobile TAG MODE: tapping Private after selecting two cards encrypts them b
   await page.locator('#private-setup-password').fill(PASSWORD)
   await page.locator('#private-setup-confirm').fill(PASSWORD)
   await page.getByTestId('private-setup-create').click()
+  // Dismiss the recovery-key dialog that now auto-shows once per new vault
+  // (recovery-key feature, task 8's BoardRoot wiring) — its backdrop would
+  // otherwise intercept the mobile-nav-tag dispatchEvent below.
+  const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-done').click()
+  await expect(recoveryDialog).toHaveCount(0)
 
   // Now switch to mobile for the TAG MODE tap-to-assign path (< 640px
   // breakpoint, lib/board/use-is-mobile.ts).
@@ -434,6 +449,13 @@ test('Private-tagged card shows its own hover pill, same as any other tag', asyn
   await page.locator('#private-setup-confirm').fill(PASSWORD)
   await page.getByTestId('private-setup-create').click()
   await expect(setupDialog).toHaveCount(0)
+  // Dismiss the recovery-key dialog that now auto-shows once per new vault
+  // (recovery-key feature, task 8's BoardRoot wiring) — its backdrop would
+  // otherwise intercept the card hover/click below.
+  const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-done').click()
+  await expect(recoveryDialog).toHaveCount(0)
 
   // 2. Tag the seeded card Private via the per-card "+ TAG" popover.
   await card.hover()
@@ -606,6 +628,13 @@ test('removing the Private tag while unlocked still decrypts and restores the ca
   await page.locator('#private-setup-confirm').fill(PASSWORD)
   await page.getByTestId('private-setup-create').click()
   await expect(setupDialog).toHaveCount(0)
+  // Dismiss the recovery-key dialog that now auto-shows once per new vault
+  // (recovery-key feature, task 8's BoardRoot wiring) — its backdrop would
+  // otherwise intercept the card hover/click below.
+  const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-done').click()
+  await expect(recoveryDialog).toHaveCount(0)
   await card.hover()
   await card.getByTestId('card-add-tag-button').click({ force: true })
   await card.getByTestId('tag-add-popover-private').click()
@@ -788,7 +817,28 @@ test.describe('stale-reload-closure race (real thumbnail, immediate filter click
     // FilterPill's Private row to filter down to just the Private tag — the
     // exact race trigger. Playwright's own .click() actionability waits are
     // the only "wait" here, matching the live-reproduced sequence.
+    //
+    // CAVEAT (recovery-key feature, task 8's BoardRoot wiring, added after
+    // this test was written): the new recovery-key dialog now auto-shows
+    // once per new vault and is genuinely modal (data-no-capture="true"
+    // backdrop) — it unconditionally intercepts the filter-pill click below
+    // regardless of timing, so it must be dismissed first no matter what.
+    // This does insert a real wait (dismissing it takes actual wall-clock
+    // time) between setup-create and the filter-pill click, which the
+    // original test deliberately avoided. It's the minimum unavoidable
+    // change: no artificial waitForTimeout is added beyond Playwright's own
+    // actionability waits for the dialog and its DONE button, and the
+    // filter-pill click below still fires the instant that resolves, not
+    // after any additional delay. If this race regresses again, it would
+    // most likely still reproduce here since the underlying async chain
+    // (createVault -> reloadTags -> runPrivateAction's reload()) starts
+    // firing the moment private-setup-create is clicked, independent of how
+    // this test's own click sequence proceeds afterward.
     await page.getByTestId('private-setup-create').click()
+    const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
+    await expect(recoveryDialog).toBeVisible()
+    await page.getByTestId('private-recovery-key-done').click()
+    await expect(recoveryDialog).toHaveCount(0)
     await page.getByTestId('filter-pill').click()
     await page.getByTestId('filter-pill-private').click()
 
