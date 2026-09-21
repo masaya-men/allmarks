@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateSalt, deriveKey, encryptJson, decryptJson, PBKDF2_ITERATIONS, generateEcdhKeyPair, exportPublicKeyB64, importPublicKey, wrapPrivateKey, unwrapPrivateKey, encryptWithPublicKey, decryptWithPrivateKey } from './crypto'
+import { generateSalt, deriveKey, encryptJson, decryptJson, PBKDF2_ITERATIONS, generateEcdhKeyPair, exportPublicKeyB64, importPublicKey, wrapPrivateKey, unwrapPrivateKey, encryptWithPublicKey, decryptWithPrivateKey, generateRecoveryKey, normalizeRecoveryKey } from './crypto'
 
 describe('private/crypto', () => {
   it('generateSalt returns a non-empty base64 string, different each call', () => {
@@ -42,6 +42,36 @@ describe('private/crypto', () => {
     const { iv, ciphertext } = await encryptJson(key1, { a: 1 })
     // If key2 isn't byte-identical to key1, this decrypt fails.
     await expect(decryptJson(key2, iv, ciphertext)).resolves.toEqual({ a: 1 })
+  })
+
+  it('generateRecoveryKey returns 30 chars grouped into 6 hyphenated groups of 5, from a restricted alphabet', () => {
+    const key = generateRecoveryKey()
+    expect(key).toMatch(/^[A-Z2-9]{5}(-[A-Z2-9]{5}){5}$/)
+    expect(key.replace(/-/g, '').length).toBe(30)
+  })
+
+  it('generateRecoveryKey never includes ambiguous characters (I, L, O, 0, 1)', () => {
+    for (let i = 0; i < 20; i++) {
+      const key = generateRecoveryKey()
+      expect(key).not.toMatch(/[ILO01]/)
+    }
+  })
+
+  it('generateRecoveryKey returns a different key each call', () => {
+    const a = generateRecoveryKey()
+    const b = generateRecoveryKey()
+    expect(a).not.toBe(b)
+  })
+
+  it('normalizeRecoveryKey strips hyphens/whitespace and uppercases', () => {
+    expect(normalizeRecoveryKey('abcde-fghjk-mn234-56789-abcde-fghjk')).toBe('ABCDEFGHJKMN23456789ABCDEFGHJK')
+    expect(normalizeRecoveryKey('  ABCDE-FGHJK  ')).toBe('ABCDEFGHJK')
+  })
+
+  it('normalizeRecoveryKey is idempotent on an already-generated key', () => {
+    const key = generateRecoveryKey()
+    const normalized = normalizeRecoveryKey(key)
+    expect(normalizeRecoveryKey(normalized)).toBe(normalized)
   })
 })
 

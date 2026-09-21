@@ -172,3 +172,28 @@ export async function decryptWithPrivateKey<T>(
   const aesKey = await deriveAesKeyFromEcdh(privateKey, ephemeralPublicKey)
   return decryptJson<T>(aesKey, envelope.iv, envelope.ciphertext)
 }
+
+// 読み間違えやすい文字(I, L, O, 0, 1)を除いた32文字のアルファベット。
+// 32 = 2^5 なので、1バイト(0-255)を32で割った余りが完全に均一に分布する
+// (256は32の倍数)— 特別な処理をせず crypto.getRandomValues の1バイトを
+// そのまま1文字にマッピングできる。
+const RECOVERY_KEY_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+/** 30文字(150ビット相当)のランダムな復旧キーを生成し、5文字ごとに
+ *  ハイフンで区切って返す(例: "ABCDE-FGHJK-MN234-56789-ABCDE-FGHJK")。
+ *  ハイフンは表示・入力のしやすさのためだけで、鍵導出には使わない
+ *  (normalizeRecoveryKeyで取り除く)。 */
+export function generateRecoveryKey(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(30))
+  const chars = Array.from(bytes, (b) => RECOVERY_KEY_ALPHABET[b % RECOVERY_KEY_ALPHABET.length])
+  const groups: string[] = []
+  for (let i = 0; i < chars.length; i += 5) groups.push(chars.slice(i, i + 5).join(''))
+  return groups.join('-')
+}
+
+/** ユーザーが再入力した復旧キーを、鍵導出にそのまま使える正規形に直す
+ *  (ハイフン・空白を除去し、大文字化)。生成直後の文字列に対しても
+ *  冪等(no-op)。 */
+export function normalizeRecoveryKey(input: string): string {
+  return input.replace(/[\s-]/g, '').toUpperCase()
+}
