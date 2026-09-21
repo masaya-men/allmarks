@@ -279,6 +279,14 @@ describe('acknowledgeVaultConflict / findUnacknowledgedOtherPrivateVaultTagIds',
     await acknowledgeVaultConflict(d, 'acked-tag')
     expect(await findUnacknowledgedOtherPrivateVaultTagIds(d, 'my-tag')).toEqual(['unacked-tag'])
   })
+
+  it('acknowledging the same tag id twice does not duplicate it in the stored record', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await acknowledgeVaultConflict(d, 'other-tag')
+    await acknowledgeVaultConflict(d, 'other-tag')
+    const record = (await d.get('settings', 'private-vault-conflict-acknowledged')) as { tagIds: string[] } | undefined
+    expect(record?.tagIds).toEqual(['other-tag'])
+  })
 })
 
 describe('retireVault', () => {

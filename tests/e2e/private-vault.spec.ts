@@ -1013,16 +1013,21 @@ test('vault-conflict: the winning side that never saw a vault.json mismatch stil
 })
 
 test('vault-conflict: the winning-side fallback still identifies its own tag correctly even when the OTHER tag sorts first', async ({ page }) => {
-  // Regression test for a bug the task review caught: the fallback's "my
-  // tag id" must come from the just-unlocked session (session.tagId), NOT
-  // from useTags()'s privateTagId (which resolves via .find() over tags
-  // sorted by the `order` field — each device assigns `order` independently
-  // at tag-creation time, so it has no relation to "which tag is mine" once
-  // two Private tags coexist). This test deliberately gives the OTHER
-  // device's tag a LOWER order than the local tag's, so a regression to the
-  // old (wrong) `privateTagId`-based logic would misidentify the other
-  // side's tag as "mine" and get stuck showing the notice forever, never
-  // reaching vault-conflict-resolved even after the other side tombstones.
+  // Regression test for two bugs the task reviews caught. What this test
+  // actually exercises (confirmed by trying to construct a fixture where
+  // the other half changes the outcome — none exists): the fallback's
+  // "other tag ids" must come from a RAW tags-store read
+  // (findOtherPrivateVaultTagIds), not from useTags()'s tombstone-filtered
+  // allPrivateTagIds — a tombstoned other tag must still be visible here,
+  // or the dialog would get stuck on vault-conflict-notice instead of ever
+  // reaching vault-conflict-resolved. The fallback ALSO switched from the
+  // React-state privateTagId to session.tagId for "my own tag id" (correct
+  // and worth keeping — privateTagId resolves via .find() over tags sorted
+  // by a per-device `order` field with no relation to "which tag is mine"
+  // once two coexist), but because getAllTags() filters tombstones BEFORE
+  // that order-sort even runs, no fixture in this 2-tag/one-tombstoned
+  // scenario can actually distinguish the two — this test's `order: -1`
+  // is present for documentation/intent, not because it's load-bearing.
   await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
   await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
 

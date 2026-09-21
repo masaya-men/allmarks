@@ -4204,10 +4204,20 @@ export function BoardRoot() {
               // tag no longer looks like an unhandled "other" Private tag on
               // every future unlock (review round 3 regression; see
               // vault-conflict.ts's header comment).
+              // Order matters: clear BEFORE ack, not after. If the process
+              // is interrupted between these two calls, an unacknowledged
+              // tombstoned tag on the next unlock still falls through to
+              // the (self-healing) vault-conflict-resolved fallback screen;
+              // acking BEFORE clearing would instead leave a live conflict
+              // record whose target-side branch can never re-fire (this
+              // device already adopted the target's own tag, so it reads
+              // as the deterministic target on every future unlock, stuck
+              // permanently on the dismiss-only notice dialog with no way
+              // out — found in review round 4).
               const myOldTagId = privateSession.tagId
               await mergeIntoOtherVault(db, privateSession, conflict.otherRecord)
-              await acknowledgeVaultConflict(db, myOldTagId)
               await clearVaultConflict(db)
+              await acknowledgeVaultConflict(db, myOldTagId)
               await reloadTags()
               setPrivateVaultSession(null)
               setPrivateDialog(null)
@@ -4233,16 +4243,24 @@ export function BoardRoot() {
               setPrivateHint(newHint)
               const conflict = await loadVaultConflict(db)
               if (conflict) await clearVaultConflict(db)
-              // Marks every other Private tag id this device currently sees
-              // (which will include the other side's now-tombstoned tag) as
-              // acknowledged — otherwise the permanent tombstone would make
-              // this exact screen re-appear on every future unlock forever
-              // (review round 3 regression; see vault-conflict.ts's header
-              // comment). Uses privateSession.tagId (this handler's own
+              // Marks only the other Private tag id(s) that are ALREADY
+              // tombstoned as acknowledged — otherwise their permanent
+              // tombstone would make this exact screen re-appear on every
+              // future unlock forever (review round 3 regression; see
+              // vault-conflict.ts's header comment). Deliberately does NOT
+              // blanket-ack every other Private tag regardless of resolved
+              // state: in a 3+-device scenario, this screen can be reached
+              // while a DIFFERENT other tag is still genuinely unresolved,
+              // and acking it here (never having actually been "handled")
+              // would permanently blind this device's own fallback
+              // detection to that separate, still-open conflict (review
+              // round 4). Uses privateSession.tagId (this handler's own
               // guarded-non-null session), not result.session above — a
               // password change never changes which tag a vault is keyed to.
               const others = await findOtherPrivateVaultTagIds(db, privateSession.tagId)
-              for (const id of others) await acknowledgeVaultConflict(db, id)
+              for (const id of others) {
+                if (await isVaultConflictResolved(db, id)) await acknowledgeVaultConflict(db, id)
+              }
               setPrivateDialog(null)
               setToast({ message: t('private.vaultConflictResolvedHeading'), nonce: Date.now() })
               return true
