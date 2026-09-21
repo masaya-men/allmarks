@@ -167,6 +167,7 @@ test('Private: create, disappears on reload while locked, reappears when unlocke
   // subsequent click, including the very next openSettings() below.
   const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
   await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-copy').click()
   await page.getByTestId('private-recovery-key-done').click()
   await expect(recoveryDialog).toHaveCount(0)
   // The SETTINGS drawer auto-closes the moment we interact with the setup
@@ -392,6 +393,7 @@ test('mobile TAG MODE: tapping Private after selecting two cards encrypts them b
   // otherwise intercept the mobile-nav-tag dispatchEvent below.
   const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
   await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-copy').click()
   await page.getByTestId('private-recovery-key-done').click()
   await expect(recoveryDialog).toHaveCount(0)
 
@@ -454,6 +456,7 @@ test('Private-tagged card shows its own hover pill, same as any other tag', asyn
   // otherwise intercept the card hover/click below.
   const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
   await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-copy').click()
   await page.getByTestId('private-recovery-key-done').click()
   await expect(recoveryDialog).toHaveCount(0)
 
@@ -633,6 +636,7 @@ test('removing the Private tag while unlocked still decrypts and restores the ca
   // otherwise intercept the card hover/click below.
   const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
   await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-copy').click()
   await page.getByTestId('private-recovery-key-done').click()
   await expect(recoveryDialog).toHaveCount(0)
   await card.hover()
@@ -837,6 +841,7 @@ test.describe('stale-reload-closure race (real thumbnail, immediate filter click
     await page.getByTestId('private-setup-create').click()
     const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
     await expect(recoveryDialog).toBeVisible()
+    await page.getByTestId('private-recovery-key-copy').click()
     await page.getByTestId('private-recovery-key-done').click()
     await expect(recoveryDialog).toHaveCount(0)
     await page.getByTestId('filter-pill').click()
@@ -1173,6 +1178,7 @@ test('recovery key: new vault shows a recovery key once, and it can unlock after
   await expect(recoveryDialog).toBeVisible()
   const recoveryKey = (await page.getByTestId('private-recovery-key-value').textContent())!.trim()
   expect(recoveryKey.length).toBeGreaterThan(0)
+  await page.getByTestId('private-recovery-key-copy').click()
   await page.getByTestId('private-recovery-key-done').click()
   await expect(recoveryDialog).toHaveCount(0)
 
@@ -1237,6 +1243,7 @@ test('recovery key: an existing vault (created before this feature) can set one 
   await expect(firstRecoveryDialog).toBeVisible()
   const firstRecoveryKey = (await page.getByTestId('private-recovery-key-value').textContent())!.trim()
   expect(firstRecoveryKey.length).toBeGreaterThan(0)
+  await page.getByTestId('private-recovery-key-copy').click()
   await page.getByTestId('private-recovery-key-done').click()
   await expect(firstRecoveryDialog).toHaveCount(0)
 
@@ -1291,6 +1298,7 @@ test('recovery key: an existing vault WITHOUT one (created before this feature) 
   await expect(setupDialog).toHaveCount(0)
   const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
   await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-copy').click()
   await page.getByTestId('private-recovery-key-done').click()
   await expect(recoveryDialog).toHaveCount(0)
 
@@ -1337,6 +1345,7 @@ test('recovery key: an existing vault WITHOUT one (created before this feature) 
   await expect(page.getByTestId('private-manage-dialog')).toHaveCount(0)
   const newRecoveryKey = (await page.getByTestId('private-recovery-key-value').textContent())!.trim()
   expect(newRecoveryKey.length).toBeGreaterThan(0)
+  await page.getByTestId('private-recovery-key-copy').click()
   await page.getByTestId('private-recovery-key-done').click()
   await expect(forcedRecoveryDialog).toHaveCount(0)
 })

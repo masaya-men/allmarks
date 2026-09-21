@@ -9,6 +9,11 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'retain-on-failure',
     viewport: { width: 1280, height: 800 },
+    // Private's recovery-key dialog gates its "Got it" button behind a
+    // successful navigator.clipboard.writeText() (must-copy-before-dismiss
+    // fix) — Chromium denies clipboard-write by default in automated
+    // contexts without this.
+    permissions: ['clipboard-read', 'clipboard-write'],
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
