@@ -65,7 +65,7 @@ export function PrivateSetupDialog({ onCreate, onCancel }: Props): ReactElement 
             type="text"
             name="username"
             autoComplete="username"
-            value="Private"
+            value="AllMarks"
             readOnly
             aria-hidden="true"
             tabIndex={-1}
