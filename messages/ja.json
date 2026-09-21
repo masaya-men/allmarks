@@ -316,7 +316,11 @@
     "recoveryKeyHeading": "復旧キー",
     "recoveryKeyBody": "このキーがあれば、パスワードを忘れてもPrivateを開けます。今しか表示されません。安全な場所に保存してください。このキーも失うと、二度と開けなくなります。",
     "recoveryKeyCopyButton": "コピー",
-    "recoveryKeyDoneButton": "わかった"
+    "recoveryKeyDoneButton": "わかった",
+    "recoverHeading": "復旧キーで開ける",
+    "recoverExplanation": "セットアップ時に保存した復旧キーを入力してください。",
+    "recoverInputLabel": "復旧キー",
+    "errorWrongRecoveryKey": "復旧キーが違います。"
   },
   "sync": {
     "lockedExplanation": "どの端末でも同じブックマークに。サポーターの方が使える機能です。",

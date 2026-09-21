@@ -316,7 +316,11 @@
     "recoveryKeyHeading": "RECOVERY KEY",
     "recoveryKeyBody": "This key can unlock Private even if you forget your password. It's shown only once — save it somewhere safe. If you lose this too, Private can never be unlocked again.",
     "recoveryKeyCopyButton": "COPY",
-    "recoveryKeyDoneButton": "Got it"
+    "recoveryKeyDoneButton": "Got it",
+    "recoverHeading": "UNLOCK WITH RECOVERY KEY",
+    "recoverExplanation": "Enter the recovery key you saved when you set up Private.",
+    "recoverInputLabel": "Recovery key",
+    "errorWrongRecoveryKey": "Wrong recovery key."
   },
   "sync": {
     "lockedExplanation": "Keeps your bookmarks the same on every device. Unlocked for supporters.",
