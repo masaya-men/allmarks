@@ -73,6 +73,6 @@ describe('PrivateChangePasswordDialog', () => {
 
   it('shows the recovered heading/explanation when variant="recovered"', () => {
     render(<PrivateChangePasswordDialog onSubmit={vi.fn()} onCancel={vi.fn()} variant="recovered" />)
-    expect(screen.getByTestId('private-change-password-dialog').textContent).toMatch(/new password/i)
+    expect(screen.getByTestId('private-change-password-dialog').textContent).toMatch(/unlocked with your recovery key/i)
   })
 })
