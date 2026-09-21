@@ -398,6 +398,67 @@ describe('mergeVault', () => {
     const result2 = mergeVault(b, a)
     expect(result1).toBe(result2)
   })
+
+  describe('recovery key carry-forward', () => {
+    // 端末Aが復旧キーを発行して紙に書いた(updatedAt=1000)直後、まだ同期して
+    // いない端末Bがパスワードを変更(updatedAt=2000)。レコード丸ごとのLWWだけ
+    // だと、Bが勝った瞬間に発行済みの復旧キーがどこにも存在しなくなる。
+    const base = { key: 'private-vault' as const, tagId: 'tag1', publicKey: 'same-pk' }
+    const withRecovery = {
+      ...base, salt: 'salt-a', iterations: 600_000,
+      wrappedPrivateKey: { iv: 'iv-a', ciphertext: 'ct-a' },
+      recoverySalt: 'rsalt', wrappedPrivateKeyByRecoveryKey: { iv: 'riv', ciphertext: 'rct' },
+      recoveryIterations: 600_000,
+      updatedAt: 1000,
+    }
+    const passwordChanged = {
+      ...base, salt: 'salt-b', iterations: 600_000,
+      wrappedPrivateKey: { iv: 'iv-b', ciphertext: 'ct-b' },
+      updatedAt: 2000, // 新しい = LWWの勝者。復旧フィールドは持っていない
+    }
+
+    it("the LWW winner keeps its own wrapping but inherits the loser's recovery fields", () => {
+      const merged = mergeVault(withRecovery, passwordChanged)
+      expect(merged?.salt).toBe('salt-b')                                    // 勝者のパスワードラップ
+      expect(merged?.wrappedPrivateKey).toEqual({ iv: 'iv-b', ciphertext: 'ct-b' })
+      expect(merged?.updatedAt).toBe(2000)
+      expect(merged?.recoverySalt).toBe('rsalt')                             // 敗者の復旧キーは生き残る
+      expect(merged?.wrappedPrivateKeyByRecoveryKey).toEqual({ iv: 'riv', ciphertext: 'rct' })
+      expect(merged?.recoveryIterations).toBe(600_000)
+    })
+
+    it('is order-independent: mergeVault(A,B) deep-equals mergeVault(B,A)', () => {
+      expect(mergeVault(withRecovery, passwordChanged)).toEqual(mergeVault(passwordChanged, withRecovery))
+    })
+
+    it('mergeAll stays deterministic with this vault pair (commutativity of the whole snapshot)', () => {
+      const snap = (vault: PrivateVaultRecord): SyncSnapshot => ({
+        bookmarks: [], tags: [], cards: [], boardConfig: null, vault,
+      })
+      expect(mergeAll(snap(withRecovery), snap(passwordChanged)))
+        .toEqual(mergeAll(snap(passwordChanged), snap(withRecovery)))
+      expect(mergeAll(snap(withRecovery), snap(passwordChanged)).vault?.wrappedPrivateKeyByRecoveryKey)
+        .toEqual({ iv: 'riv', ciphertext: 'rct' })
+    })
+
+    it('does not overwrite a winner that already has its own (newer) recovery key', () => {
+      const winnerWithOwn = {
+        ...passwordChanged,
+        recoverySalt: 'rsalt-new',
+        wrappedPrivateKeyByRecoveryKey: { iv: 'riv-new', ciphertext: 'rct-new' },
+        recoveryIterations: 600_000,
+      }
+      const merged = mergeVault(withRecovery, winnerWithOwn)
+      expect(merged?.recoverySalt).toBe('rsalt-new')
+      expect(merged).toEqual(mergeVault(winnerWithOwn, withRecovery))
+    })
+
+    it('leaves the equal-updatedAt path alone (still the deterministic tie-break)', () => {
+      const sameTime = { ...passwordChanged, updatedAt: 1000 }
+      const merged = mergeVault(withRecovery, sameTime)
+      expect(merged).toBe(mergeVault(sameTime, withRecovery)) // 同一参照 = 従来どおり
+    })
+  })
 })
 
 describe('pickDeterministic', () => {

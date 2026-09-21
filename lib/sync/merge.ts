@@ -232,7 +232,11 @@ export function mergeBoardConfig(
  *  - それ以外(publicKeyが違う=本当に別の金庫。engineがconflict扱いする
  *    経路で、ここに来る前にvault:nullに差し替えられるので実運用では
  *    ほぼ通らないが、この関数は純関数として単体でも正しく振る舞う必要が
- *    ある) → 決定的タイブレーク(pickDeterministic)。 */
+ *    ある) → 決定的タイブレーク(pickDeterministic)。
+ *  同じ金庫の LWW で勝った側に復旧キーのラップが無く、負けた側にある場合だけ、
+ *  復旧関連フィールド(recoverySalt / wrappedPrivateKeyByRecoveryKey /
+ *  recoveryIterations)を勝者に引き継ぐ。引き継ぎ判定も lt/rt の数値比較だけに
+ *  依存するので mergeVault(L,R) と mergeVault(R,L) は deep-equal のまま。 */
 export function mergeVault(
   local: PrivateVaultRecord | null,
   remote: PrivateVaultRecord | null,
@@ -243,7 +247,24 @@ export function mergeVault(
   if (local.publicKey === remote.publicKey && local.tagId === remote.tagId) {
     const lt = numericTime(local.updatedAt)
     const rt = numericTime(remote.updatedAt)
-    if (lt !== rt) return lt > rt ? local : remote
+    if (lt !== rt) {
+      const winner = lt > rt ? local : remote
+      const loser = lt > rt ? remote : local
+      // publicKey/tagId が一致 = 同じ pkcs8 を包んでいるので、負けた側の復旧
+      // ラップは勝った側に対しても必ず有効。レコード丸ごとの LWW のままだと、
+      // 「A が復旧キーを発行して紙に書いた直後に、まだ同期していない B が先に
+      // パスワードを変更した」だけで、発行済みの復旧キーが無言で消滅する
+      // (最終レビュー指摘 I-B)。捨てずに勝者へ引き継ぐ。
+      if (!winner.wrappedPrivateKeyByRecoveryKey && loser.wrappedPrivateKeyByRecoveryKey) {
+        return {
+          ...winner,
+          recoverySalt: loser.recoverySalt,
+          wrappedPrivateKeyByRecoveryKey: loser.wrappedPrivateKeyByRecoveryKey,
+          recoveryIterations: loser.recoveryIterations,
+        }
+      }
+      return winner
+    }
   }
   return pickDeterministic(local, remote)
 }
