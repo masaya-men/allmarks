@@ -1011,3 +1011,58 @@ test('vault-conflict: the winning side that never saw a vault.json mismatch stil
   // private-vault-conflict settings record ever having been written.
   await expect(page.getByTestId('vault-conflict-notice-dialog')).toBeVisible()
 })
+
+test('vault-conflict: the winning-side fallback still identifies its own tag correctly even when the OTHER tag sorts first', async ({ page }) => {
+  // Regression test for a bug the task review caught: the fallback's "my
+  // tag id" must come from the just-unlocked session (session.tagId), NOT
+  // from useTags()'s privateTagId (which resolves via .find() over tags
+  // sorted by the `order` field — each device assigns `order` independently
+  // at tag-creation time, so it has no relation to "which tag is mine" once
+  // two Private tags coexist). This test deliberately gives the OTHER
+  // device's tag a LOWER order than the local tag's, so a regression to the
+  // old (wrong) `privateTagId`-based logic would misidentify the other
+  // side's tag as "mine" and get stuck showing the notice forever, never
+  // reaching vault-conflict-resolved even after the other side tombstones.
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+
+  // Other side's tag: order -1 (lower than the local tag's order 0), AND
+  // already tombstoned — simulating that the other device already combined
+  // by the time this device (the target) checks. If "my tag id" were still
+  // resolved via the order-sorted privateTagId, this tag (sorting first)
+  // would be wrongly treated as "mine," `others` would incorrectly become
+  // [my real tag], which is never tombstoned, and the dialog would get
+  // stuck on vault-conflict-notice instead of reaching vault-conflict-resolved.
+  await seedDb(page, [{
+    store: 'tags',
+    value: {
+      id: 'other-device-tag', name: 'Private', color: '#000000', order: -1,
+      createdAt: Date.now(), updatedAt: Date.now(), isPrivateVault: true,
+      isDeleted: true, deletedAt: new Date().toISOString(),
+    },
+  }])
+
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const unlockDialog = page.getByTestId('private-unlock-dialog')
+  await expect(unlockDialog).toBeVisible()
+  await page.locator('#private-unlock-password').fill(PASSWORD)
+  await page.getByTestId('private-unlock-submit').click()
+  await expect(unlockDialog).toHaveCount(0)
+
+  // Correctly reaches the "set one new password" screen, not stuck on the
+  // notice, and not the ordinary manage dialog either.
+  await expect(page.getByTestId('private-change-password-dialog')).toBeVisible()
+  await expect(page.getByTestId('vault-conflict-notice-dialog')).toHaveCount(0)
+})

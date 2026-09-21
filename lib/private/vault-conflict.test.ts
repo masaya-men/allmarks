@@ -7,7 +7,7 @@ import { addPrivateTag } from '@/lib/private/apply-tag-change'
 import {
   saveVaultConflict, loadVaultConflict, clearVaultConflict,
   isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault,
-  otherPrivateTagIds, anyOtherPrivateTagUnresolved,
+  findOtherPrivateVaultTagIds, anyOtherPrivateTagUnresolved,
 } from './vault-conflict'
 
 let db: IDBPDatabase<unknown> | null = null
@@ -170,20 +170,35 @@ describe('mergeIntoOtherVault', () => {
   })
 })
 
-describe('otherPrivateTagIds', () => {
-  it('returns every id except myTagId', () => {
-    const all = new Set(['tag-a', 'tag-b', 'tag-c'])
-    expect(otherPrivateTagIds(all, 'tag-b').sort()).toEqual(['tag-a', 'tag-c'])
+describe('findOtherPrivateVaultTagIds', () => {
+  it('returns every isPrivateVault tag id except myTagId', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', { id: 'my-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true } as never)
+    await d.put('tags', { id: 'other-tag', name: 'Private', color: '#000', order: 1, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true } as never)
+    expect(await findOtherPrivateVaultTagIds(d, 'my-tag')).toEqual(['other-tag'])
   })
 
-  it('returns all ids when myTagId is null', () => {
-    const all = new Set(['tag-a', 'tag-b'])
-    expect(otherPrivateTagIds(all, null).sort()).toEqual(['tag-a', 'tag-b'])
+  it('ignores non-Private tags entirely', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', { id: 'my-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true } as never)
+    await d.put('tags', { id: 'ordinary-tag', name: 'Recipes', color: '#111', order: 1, createdAt: 1, updatedAt: 1, theme: null } as never)
+    expect(await findOtherPrivateVaultTagIds(d, 'my-tag')).toEqual([])
   })
 
-  it('returns an empty array when the set only contains myTagId', () => {
-    const all = new Set(['tag-a'])
-    expect(otherPrivateTagIds(all, 'tag-a')).toEqual([])
+  it('returns an empty array when no other Private tag exists', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', { id: 'my-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true } as never)
+    expect(await findOtherPrivateVaultTagIds(d, 'my-tag')).toEqual([])
+  })
+
+  it('STILL sees the other tag after it is tombstoned (the whole point of reading the raw store)', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await d.put('tags', { id: 'my-tag', name: 'Private', color: '#000', order: 0, createdAt: 1, updatedAt: 1, theme: null, isPrivateVault: true } as never)
+    await d.put('tags', {
+      id: 'other-tag', name: 'Private', color: '#000', order: 1, createdAt: 1, updatedAt: 2, theme: null,
+      isPrivateVault: true, isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z',
+    } as never)
+    expect(await findOtherPrivateVaultTagIds(d, 'my-tag')).toEqual(['other-tag'])
   })
 })
 

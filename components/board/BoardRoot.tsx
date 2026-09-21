@@ -67,7 +67,7 @@ import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSessio
 import { createVault, unlockVault, loadVaultRecord, changeVaultPassword } from '@/lib/private/vault-store'
 import {
   loadVaultConflict, isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault, clearVaultConflict,
-  otherPrivateTagIds, anyOtherPrivateTagUnresolved,
+  findOtherPrivateVaultTagIds, anyOtherPrivateTagUnresolved,
 } from '@/lib/private/vault-conflict'
 import { VaultConflictNoticeDialog } from './VaultConflictNoticeDialog'
 import { VaultConflictMergeDialog } from './VaultConflictMergeDialog'
@@ -4138,7 +4138,16 @@ export function BoardRoot() {
               // that simply published first (see vault-conflict.ts's header
               // comment). Route the same way the primary path above would
               // have, without ever needing isLocalVaultTarget here.
-              const others = otherPrivateTagIds(privateTagIds, privateTagId)
+              // Uses session.tagId (the just-unlocked vault's own tag id) —
+              // NOT the React-state privateTagId, which resolves via
+              // useTags()'s `.find()` over tags SORTED BY THE `order` FIELD.
+              // order is assigned independently per device at tag-creation
+              // time, so once two Private tags coexist, "whichever sorts
+              // first" has no relation to "which one is mine." Also uses
+              // findOtherPrivateVaultTagIds's own raw store read (not the
+              // allPrivateTagIds hook value) so this keeps working AFTER the
+              // other tag is tombstoned — see that function's doc comment.
+              const others = await findOtherPrivateVaultTagIds(db, session.tagId)
               if (others.length > 0) {
                 const stillUnresolved = await anyOtherPrivateTagUnresolved(db, others)
                 setPrivateDialog(stillUnresolved ? 'vault-conflict-notice' : 'vault-conflict-resolved')

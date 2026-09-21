@@ -30,21 +30,30 @@
 // conflict — engine.ts only ever nulls the `vault` field of a snapshot, tags
 // sync as normal regardless — so every device eventually receives BOTH
 // vaults' isPrivateVault tag via ordinary tag sync no matter which side
-// published first. That gives a second, symmetric signal: if a device's own
-// allPrivateTagIds contains more than just its own resolved privateTagId, a
-// conflict exists even with no loadVaultConflict record. A device in that
-// state can only ever be the deterministic target — the losing side always
-// eventually pulls a vault.json that differs from its own (either the
-// winner already overwrote it, or a later force-publish supersedes what was
-// there when the losing side first synced), so loadVaultConflict is always
-// eventually populated on the losing side by the existing code, with no
-// gap; the only way to hold multiple Private tags locally while never
-// having observed a mismatch is to be the side whose own vault.json was
-// simply never overwritten. So this fallback (otherPrivateTagIds /
+// published first. That gives a second, symmetric signal: if this device
+// knows about more isPrivateVault tags than just its own (identified by
+// session.tagId, the just-unlocked vault's own tag — NOT any React-hook
+// "resolved" tag id, which sorts by a per-device `order` field with no
+// relation to "which tag is mine" once two coexist), a conflict exists even
+// with no loadVaultConflict record. A device in that state can only ever be
+// the deterministic target — the losing side always eventually pulls a
+// vault.json that differs from its own (either the winner already
+// overwrote it, or a later force-publish supersedes what was there when the
+// losing side first synced), so loadVaultConflict is always eventually
+// populated on the losing side by the existing code, with no gap; the only
+// way to hold multiple Private tags locally while never having observed a
+// mismatch is to be the side whose own vault.json was simply never
+// overwritten. So this fallback (findOtherPrivateVaultTagIds /
 // anyOtherPrivateTagUnresolved below) can safely assume "I am the target"
 // outright, without calling isLocalVaultTarget or reconstructing the other
 // side's full PrivateVaultRecord — it only needs the other tag id(s) and
-// whether they're tombstoned yet.
+// whether they're tombstoned yet. findOtherPrivateVaultTagIds deliberately
+// reads the tags store directly rather than going through getAllTags (or
+// any React-hook value derived from it), since those correctly filter
+// tombstones out for ordinary UI display — but the whole point here is to
+// keep seeing the other tag AFTER it's tombstoned, so this fallback can
+// actually transition to vault-conflict-resolved instead of just silently
+// stopping once the conflict resolves.
 import type { IDBPDatabase } from 'idb'
 import { pickDeterministic } from '@/lib/sync/merge'
 import { decryptWithPrivateKey, encryptWithPublicKey, importPublicKey } from './crypto'
@@ -100,15 +109,27 @@ export async function isVaultConflictResolved(db: DbLike, otherTagId: string): P
   return tag?.isDeleted === true
 }
 
-/** Every Private tag id besides `myTagId` — used by the fallback detection
- *  path below for the device that never locally observed a vault.json
- *  mismatch (see this module's header comment on the "first publisher who
- *  also wins" gap: that device is provably always the deterministic
- *  target, so it never needs loadVaultConflict/isLocalVaultTarget to know
- *  this — it only needs to know which other tag(s) exist and whether
- *  they've been tombstoned yet). */
-export function otherPrivateTagIds(allPrivateTagIds: ReadonlySet<string>, myTagId: string | null): string[] {
-  return [...allPrivateTagIds].filter((id) => id !== myTagId)
+/** Every isPrivateVault tag id besides `myTagId`, INCLUDING tombstoned
+ *  ones — used by the fallback detection path below for the device that
+ *  never locally observed a vault.json mismatch (see this module's header
+ *  comment on the "first publisher who also wins" gap: that device is
+ *  provably always the deterministic target, so it never needs
+ *  loadVaultConflict/isLocalVaultTarget to know this — it only needs to
+ *  know which other tag(s) exist and whether they've been tombstoned yet).
+ *  Deliberately a raw store read, not lib/storage/tags.ts's getAllTags (or
+ *  the allPrivateTagIds React-hook value derived from it) — both correctly
+ *  strip tombstones for ordinary UI display, but this function's entire
+ *  purpose is to notice a tombstone: the moment the other side combines,
+ *  its tag becomes exactly the kind of record getAllTags() is designed to
+ *  hide, and a version keyed off that filtered source would see "others"
+ *  shrink to nothing right when resolution happens — silently falling
+ *  through to the ordinary "manage" dialog instead of ever reaching
+ *  vault-conflict-resolved. Confirmed empirically: tombstone() (tags.ts)
+ *  only sets isDeleted/deletedAt, the record is never removed from the
+ *  tags store, so a raw getAll always sees it. */
+export async function findOtherPrivateVaultTagIds(db: DbLike, myTagId: string): Promise<string[]> {
+  const all = (await db.getAll('tags')) as { id: string; isPrivateVault?: boolean }[]
+  return all.filter((t) => t.isPrivateVault === true && t.id !== myTagId).map((t) => t.id)
 }
 
 /** True if any of `otherTagIds` has NOT yet been tombstoned — i.e. the
