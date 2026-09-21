@@ -320,7 +320,8 @@
     "recoverHeading": "UNLOCK WITH RECOVERY KEY",
     "recoverExplanation": "Enter the recovery key you saved when you set up Private.",
     "recoverInputLabel": "Recovery key",
-    "errorWrongRecoveryKey": "Wrong recovery key."
+    "errorWrongRecoveryKey": "Wrong recovery key.",
+    "forgotPasswordLink": "Forgot password?"
   },
   "sync": {
     "lockedExplanation": "Keeps your bookmarks the same on every device. Unlocked for supporters.",

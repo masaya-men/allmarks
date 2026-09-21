@@ -320,7 +320,8 @@
     "recoverHeading": "復旧キーで開ける",
     "recoverExplanation": "セットアップ時に保存した復旧キーを入力してください。",
     "recoverInputLabel": "復旧キー",
-    "errorWrongRecoveryKey": "復旧キーが違います。"
+    "errorWrongRecoveryKey": "復旧キーが違います。",
+    "forgotPasswordLink": "パスワードを忘れた場合"
   },
   "sync": {
     "lockedExplanation": "どの端末でも同じブックマークに。サポーターの方が使える機能です。",

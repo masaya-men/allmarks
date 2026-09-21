@@ -9,9 +9,11 @@ type Props = {
   readonly hint?: string
   readonly onSubmit: (password: string) => Promise<boolean>
   readonly onCancel: () => void
+  readonly hasRecoveryKey: boolean
+  readonly onForgotPassword: () => void
 }
 
-export function PrivateUnlockDialog({ hint, onSubmit, onCancel }: Props): ReactElement {
+export function PrivateUnlockDialog({ hint, onSubmit, onCancel, hasRecoveryKey, onForgotPassword }: Props): ReactElement {
   const { t } = useI18n()
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +58,16 @@ export function PrivateUnlockDialog({ hint, onSubmit, onCancel }: Props): ReactE
           autoComplete="current-password"
         />
         {error && <div className={styles.error}>{error}</div>}
+        {hasRecoveryKey && (
+          <button
+            type="button"
+            className={styles.forgotPasswordLink}
+            onClick={onForgotPassword}
+            data-testid="private-unlock-forgot-password"
+          >
+            {t('private.forgotPasswordLink')}
+          </button>
+        )}
         <div className={styles.actions}>
           <button type="button" className={styles.cancelBtn} onClick={onCancel} data-testid="private-unlock-cancel">
             CANCEL
