@@ -8,12 +8,14 @@ type Props = {
   readonly hint?: string
   readonly onChangePassword: () => void
   readonly onDone: () => void
+  readonly hasRecoveryKey: boolean
+  readonly onSetUpRecoveryKey: () => void
 }
 
 /** 金庫が既に解錠済みのときにSETTINGSのPRIVATEから開く管理画面。
- *  今のところ「パスワードを変更する」導線だけを持つ(ロック機能等は
- *  スコープ外・YAGNI)。 */
-export function PrivateManageDialog({ hint, onChangePassword, onDone }: Props): ReactElement {
+ *  今のところ「パスワードを変更する」と「復旧キーを設定する」導線を持つ
+ *  (ロック機能等はスコープ外・YAGNI)。 */
+export function PrivateManageDialog({ hint, onChangePassword, onDone, hasRecoveryKey, onSetUpRecoveryKey }: Props): ReactElement {
   const { t } = useI18n()
 
   useEffect(() => {
@@ -43,6 +45,9 @@ export function PrivateManageDialog({ hint, onChangePassword, onDone }: Props): 
         {hint && <div className={styles.hint}>{t('private.manageHintPrefix').replace('{hint}', () => hint)}</div>}
         <button type="button" className={styles.changeBtn} onClick={onChangePassword} data-testid="private-manage-change-password">
           {t('private.changePasswordButton')}
+        </button>
+        <button type="button" className={styles.changeBtn} onClick={onSetUpRecoveryKey} data-testid="private-manage-recovery-key">
+          {t(hasRecoveryKey ? 'private.regenerateRecoveryKeyButton' : 'private.setUpRecoveryKeyButton')}
         </button>
         <div className={styles.actions}>
           <button type="button" className={styles.doneBtn} onClick={onDone} data-testid="private-manage-done">
