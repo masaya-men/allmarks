@@ -34,6 +34,11 @@ export type PrivateVaultRecord = {
   /** ECDH秘密鍵(pkcs8)の、復旧キー由来の鍵で暗号化したコピー。password用の
    *  wrappedPrivateKeyとは完全に独立した、もう一つの暗号化コピー。 */
   readonly wrappedPrivateKeyByRecoveryKey?: { readonly iv: string; readonly ciphertext: string }
+  /** 復旧キー用のPBKDF2繰り返し回数。recoverySaltと対で存在する。
+   *  record.iterations(パスワード用)とは別に、復旧ラップ自身が持つ —
+   *  将来PBKDF2_ITERATIONSが変わってもこの値は既存の復旧キーに対して
+   *  固定されたままなので、既発行の復旧キーが無言で全滅しない。 */
+  readonly recoveryIterations?: number
 }
 
 export async function loadVaultRecord(db: DbLike): Promise<PrivateVaultRecord | null> {
@@ -185,16 +190,16 @@ export async function setUpRecoveryKey(
   db: DbLike,
   session: NonNullable<PrivateVaultSession>,
 ): Promise<string | null> {
-  const record = await loadVaultRecord(db)
-  if (!record) return null
   try {
+    const record = await loadVaultRecord(db)
+    if (!record) return null
     const pkcs8 = await resolveOwnPkcs8(record, session)
     const recoveryKey = generateRecoveryKey()
     const recoverySalt = generateSalt()
     const recoveryWrappingKey = await deriveKey(normalizeRecoveryKey(recoveryKey), recoverySalt, PBKDF2_ITERATIONS)
     const wrappedPrivateKeyByRecoveryKey = await encryptJson(recoveryWrappingKey, { pkcs8 })
     const newRecord: PrivateVaultRecord = {
-      ...record, recoverySalt, wrappedPrivateKeyByRecoveryKey, updatedAt: Date.now(),
+      ...record, recoverySalt, wrappedPrivateKeyByRecoveryKey, recoveryIterations: PBKDF2_ITERATIONS, updatedAt: Date.now(),
     }
     await db.put('settings', newRecord)
     return recoveryKey
@@ -211,7 +216,7 @@ export async function unlockVaultWithRecoveryKey(
 ): Promise<PrivateVaultSession> {
   const record = await loadVaultRecord(db)
   if (!record || !record.wrappedPrivateKeyByRecoveryKey || !record.recoverySalt) return null
-  const wrappingKey = await deriveKey(normalizeRecoveryKey(recoveryKeyInput), record.recoverySalt, record.iterations)
+  const wrappingKey = await deriveKey(normalizeRecoveryKey(recoveryKeyInput), record.recoverySalt, record.recoveryIterations ?? record.iterations)
   try {
     const privateKey = await unwrapPrivateKey(record.wrappedPrivateKeyByRecoveryKey, wrappingKey)
     return { tagId: record.tagId, privateKey, wrappingKey }

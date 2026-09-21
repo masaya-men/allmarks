@@ -180,6 +180,24 @@ describe('private/vault-store', () => {
       expect(await setUpRecoveryKey(db, session!)).toBeNull()
     })
 
+    it('stores recoveryIterations so the recovery wrap owns its own PBKDF2 cost', async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      await setUpRecoveryKey(db, session)
+      const record = await loadVaultRecord(db)
+      expect(typeof record?.recoveryIterations).toBe('number')
+      expect(record!.recoveryIterations!).toBeGreaterThan(0)
+    })
+
+    it('an already-issued recovery key keeps working after the password (and its PBKDF2 iterations) later changes', async () => {
+      // 回帰ガード: 復旧キーの解錠が record.iterations (パスワード用) を流用して
+      // いると、将来 PBKDF2_ITERATIONS を引き上げた日に changeVaultPassword が
+      // record.iterations を書き換えた瞬間、発行済みの復旧キーが全部無言で死ぬ。
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      const recoveryKey = await setUpRecoveryKey(db, session)
+      await changeVaultPassword(db, session, 'brand-new-password789', undefined)
+      expect(await unlockVaultWithRecoveryKey(db, recoveryKey!)).not.toBeNull()
+    })
+
     it('works even when session came from a recovery-key unlock (resolveOwnPkcs8 fallback)', async () => {
       const session = await createVault(db, 'tag-abc', 'hunter2')
       const firstRecoveryKey = await setUpRecoveryKey(db, session)
@@ -211,6 +229,16 @@ describe('private/vault-store', () => {
       const recoveryKey = await setUpRecoveryKey(db, session)
       const messy = recoveryKey!.toLowerCase().replace(/-/g, ' ')
       expect(await unlockVaultWithRecoveryKey(db, messy)).not.toBeNull()
+    })
+
+    it('falls back to record.iterations for a legacy wrap that has no recoveryIterations', async () => {
+      const session = await createVault(db, 'tag-abc', 'hunter2')
+      const recoveryKey = await setUpRecoveryKey(db, session)
+      const record = await loadVaultRecord(db)
+      const { recoveryIterations: _dropped, ...legacy } = record!
+      await db.put('settings', legacy)
+      expect((await loadVaultRecord(db))!.recoveryIterations).toBeUndefined()
+      expect(await unlockVaultWithRecoveryKey(db, recoveryKey!)).not.toBeNull()
     })
 
     it("the recovered session's public key still decrypts data encrypted before recovery", async () => {
