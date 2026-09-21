@@ -63,7 +63,7 @@ import { MotionToggle } from './MotionToggle'
 import { ChromeLedToggle } from './ChromeLedToggle'
 import { TuneTrigger } from './TuneTrigger'
 import { ExtensionEntry } from './ExtensionEntry'
-import { usePrivateVaultSession, setPrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
+import { usePrivateVaultSession, setPrivateVaultSession, getPrivateVaultSession, type PrivateVaultSession } from '@/lib/private/vault-session'
 import { createVault, unlockVault, loadVaultRecord, changeVaultPassword, setUpRecoveryKey, unlockVaultWithRecoveryKey } from '@/lib/private/vault-store'
 import {
   loadVaultConflict, isLocalVaultTarget, isVaultConflictResolved, mergeIntoOtherVault, clearVaultConflict,
@@ -2194,23 +2194,36 @@ export function BoardRoot() {
     [privateTagId, privateSession, runPrivateAction],
   )
 
-  const handleSetUpRecoveryKey = useCallback(async (): Promise<void> => {
-    if (!privateSession) return
+  const handleSetUpRecoveryKey = useCallback(async (): Promise<boolean> => {
+    // Reads the module singleton directly (not the closed-over `privateSession`
+    // hook value) so this works correctly even when called in the same tick as
+    // a just-preceding setPrivateVaultSession(session) — e.g. Site 3's forced
+    // setup right after a plain-password unlock. setPrivateVaultSession updates
+    // vault-session.ts's `currentSession` synchronously; usePrivateVaultSession's
+    // useSyncExternalStore re-render is not synchronous, so `privateSession`
+    // here would otherwise still read the stale (pre-unlock, null) value for
+    // this whole callback's lifetime — the exact same stale-closure bug class
+    // already fixed elsewhere in this branch for runPrivateAction/reload
+    // (see tests/e2e/private-vault.spec.ts's "stale-reload-closure race" test).
+    const session = getPrivateVaultSession()
+    if (!session) return false
     try {
       const db = await initDB()
-      const recoveryKey = await setUpRecoveryKey(db, privateSession)
+      const recoveryKey = await setUpRecoveryKey(db, session)
       if (!recoveryKey) {
         setToast({ message: t('private.recoveryKeySetupFailedToast'), nonce: Date.now() })
-        return
+        return false
       }
       setPrivateHasRecoveryKey(true)
       setPendingRecoveryKeyDisplay(recoveryKey)
       setPrivateDialog('recovery-key')
+      return true
     } catch (e) {
       console.error('[AllMarks] failed to set up a Private recovery key', e)
       setToast({ message: t('private.recoveryKeySetupFailedToast'), nonce: Date.now() })
+      return false
     }
-  }, [privateSession, t])
+  }, [t])
 
   const handleThemeChange = useCallback((next: ThemeId): void => {
     setThemeId(next)
@@ -3691,6 +3704,11 @@ export function BoardRoot() {
                       setPrivateHint(record.hint)
                       setPrivateHasRecoveryKey(!!record.wrappedPrivateKeyByRecoveryKey)
                       if (privateSession !== null) {
+                        if (!record.wrappedPrivateKeyByRecoveryKey) {
+                          const created = await handleSetUpRecoveryKey()
+                          if (!created) setPrivateDialog('manage')
+                          return
+                        }
                         setPrivateDialog('manage')
                         return
                       }
@@ -4190,9 +4208,12 @@ export function BoardRoot() {
                 setPrivateDialog(stillUnresolved ? 'vault-conflict-notice' : 'vault-conflict-resolved')
                 return true
               }
-              if (pendingPrivateAction && privateTagId) {
+              if (pendingPrivateAction && privateTagId) void runPrivateAction(pendingPrivateAction, privateTagId, session)
+              if (!privateHasRecoveryKey) {
+                const created = await handleSetUpRecoveryKey()
+                if (!created) setPrivateDialog(pendingPrivateAction && privateTagId ? null : 'manage')
+              } else if (pendingPrivateAction && privateTagId) {
                 setPrivateDialog(null)
-                void runPrivateAction(pendingPrivateAction, privateTagId, session)
               } else {
                 setPrivateDialog('manage')
               }

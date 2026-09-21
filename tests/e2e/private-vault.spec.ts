@@ -1268,3 +1268,75 @@ test('recovery key: an existing vault (created before this feature) can set one 
   // The real point of "re-issue": the old key must no longer be the live one.
   expect(secondRecoveryKey).not.toBe(firstRecoveryKey)
 })
+
+test('recovery key: an existing vault WITHOUT one (created before this feature) is forced to set one up on next unlock', async ({ page }) => {
+  // Every vault created through the real PrivateSetupDialog on this branch
+  // already auto-generates a recovery key (onCreate's setUpRecoveryKey call),
+  // so there is no UI path left to genuinely reach a "no recovery key" vault
+  // record. Simulate one the only reliable way (per this file's header note:
+  // real Web Crypto is required for a genuinely unlockable vault, so the
+  // record can't be seeded from scratch) — create a real vault via the UI,
+  // then strip only the recovery-key fields directly from the settings
+  // store, leaving salt/iterations/publicKey/wrappedPrivateKey (the
+  // password-unlock path) untouched and still genuinely valid.
+  await seedDb(page, [...firstRunSuppressors(), ...seedOneBookmark()])
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const setupDialog = page.getByTestId('private-setup-dialog')
+  await expect(setupDialog).toBeVisible()
+  await page.locator('#private-setup-password').fill(PASSWORD)
+  await page.locator('#private-setup-confirm').fill(PASSWORD)
+  await page.getByTestId('private-setup-create').click()
+  await expect(setupDialog).toHaveCount(0)
+  const recoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(recoveryDialog).toBeVisible()
+  await page.getByTestId('private-recovery-key-done').click()
+  await expect(recoveryDialog).toHaveCount(0)
+
+  await page.evaluate(async (dbName) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open(dbName)
+      req.onsuccess = () => resolve(req.result)
+      req.onerror = () => reject(req.error)
+    })
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('settings', 'readwrite')
+      const store = tx.objectStore('settings')
+      const getReq = store.get('private-vault')
+      getReq.onsuccess = () => {
+        const record = getReq.result as Record<string, unknown>
+        delete record.wrappedPrivateKeyByRecoveryKey
+        delete record.recoverySalt
+        delete record.recoveryIterations
+        store.put(record)
+      }
+      getReq.onerror = () => reject(getReq.error)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+    db.close()
+  }, DB_NAME)
+
+  // Reload to re-lock (the vault's only re-lock mechanism, per this file's
+  // other tests), then unlock via SETTINGS -> PRIVATE with the real password.
+  await page.reload()
+  await page.locator('[data-theme-id]').first().waitFor({ timeout: 30_000 })
+  await openSettings(page)
+  await page.getByTestId('private-entry-button').click()
+  const unlockDialog = page.getByTestId('private-unlock-dialog')
+  await expect(unlockDialog).toBeVisible()
+  await page.locator('#private-unlock-password').fill(PASSWORD)
+  await page.getByTestId('private-unlock-submit').click()
+  await expect(unlockDialog).toHaveCount(0)
+
+  // Forced: lands on the recovery-key display dialog, not straight to the
+  // ordinary manage dialog — the actual behavior this task implements.
+  const forcedRecoveryDialog = page.getByTestId('private-recovery-key-dialog')
+  await expect(forcedRecoveryDialog).toBeVisible()
+  await expect(page.getByTestId('private-manage-dialog')).toHaveCount(0)
+  const newRecoveryKey = (await page.getByTestId('private-recovery-key-value').textContent())!.trim()
+  expect(newRecoveryKey.length).toBeGreaterThan(0)
+  await page.getByTestId('private-recovery-key-done').click()
+  await expect(forcedRecoveryDialog).toHaveCount(0)
+})
