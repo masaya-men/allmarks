@@ -4,6 +4,20 @@ import { PrivateRecoveryKeyDialog } from './PrivateRecoveryKeyDialog'
 
 const RECOVERY_KEY = 'ABCDE-FGHJK-MN234-56789-ABCDE-FGHJK'
 
+/** Renders the dialog, clicks COPY, and flushes the clipboard promise so
+ *  `hasCopiedOnce` becomes true. Must run under fake timers (mirrors the
+ *  approach already used by the "shows the copied confirmation" test). */
+async function renderAndCopy(onDone = vi.fn()): Promise<ReturnType<typeof vi.fn>> {
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  Object.assign(navigator, { clipboard: { writeText } })
+  render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={onDone} />)
+  await act(async () => {
+    fireEvent.click(screen.getByTestId('private-recovery-key-copy'))
+    await vi.advanceTimersByTimeAsync(0) // clipboard promise resolves
+  })
+  return onDone
+}
+
 describe('PrivateRecoveryKeyDialog', () => {
   afterEach(() => {
     vi.useRealTimers()
@@ -59,24 +73,91 @@ describe('PrivateRecoveryKeyDialog', () => {
     consoleError.mockRestore()
   })
 
-  it('DONE fires onDone', () => {
-    const onDone = vi.fn()
-    render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={onDone} />)
-    fireEvent.click(screen.getByTestId('private-recovery-key-done'))
-    expect(onDone).toHaveBeenCalledTimes(1)
+  describe('before the key has been copied (dismissal must be blocked)', () => {
+    it('the "Got it" button is disabled', () => {
+      render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={vi.fn()} />)
+      expect(screen.getByTestId('private-recovery-key-done')).toBeDisabled()
+    })
+
+    it('clicking "Got it" does NOT fire onDone', () => {
+      const onDone = vi.fn()
+      render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={onDone} />)
+      fireEvent.click(screen.getByTestId('private-recovery-key-done'))
+      expect(onDone).not.toHaveBeenCalled()
+    })
+
+    it('clicking the backdrop does NOT fire onDone', () => {
+      const onDone = vi.fn()
+      render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={onDone} />)
+      fireEvent.click(screen.getByRole('dialog'))
+      expect(onDone).not.toHaveBeenCalled()
+    })
+
+    it('pressing Escape does NOT fire onDone', () => {
+      const onDone = vi.fn()
+      render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={onDone} />)
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(onDone).not.toHaveBeenCalled()
+    })
+
+    it('a failed clipboard write does NOT unlock dismissal', async () => {
+      vi.useFakeTimers()
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const onDone = vi.fn()
+      const writeText = vi.fn().mockRejectedValue(new Error('denied'))
+      Object.assign(navigator, { clipboard: { writeText } })
+      render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={onDone} />)
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('private-recovery-key-copy'))
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      expect(screen.getByTestId('private-recovery-key-done')).toBeDisabled()
+      fireEvent.click(screen.getByTestId('private-recovery-key-done'))
+      expect(onDone).not.toHaveBeenCalled()
+      consoleError.mockRestore()
+    })
   })
 
-  it('backdrop click fires onDone', () => {
-    const onDone = vi.fn()
-    render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={onDone} />)
-    fireEvent.click(screen.getByRole('dialog'))
-    expect(onDone).toHaveBeenCalledTimes(1)
-  })
+  describe('after the key has been copied once (dismissal unlocked)', () => {
+    it('the "Got it" button becomes enabled', async () => {
+      vi.useFakeTimers()
+      await renderAndCopy()
+      expect(screen.getByTestId('private-recovery-key-done')).toBeEnabled()
+    })
 
-  it('Escape key fires onDone', () => {
-    const onDone = vi.fn()
-    render(<PrivateRecoveryKeyDialog recoveryKey={RECOVERY_KEY} onDone={onDone} />)
-    fireEvent.keyDown(window, { key: 'Escape' })
-    expect(onDone).toHaveBeenCalledTimes(1)
+    it('clicking "Got it" fires onDone', async () => {
+      vi.useFakeTimers()
+      const onDone = await renderAndCopy()
+      fireEvent.click(screen.getByTestId('private-recovery-key-done'))
+      expect(onDone).toHaveBeenCalledTimes(1)
+    })
+
+    it('clicking the backdrop fires onDone', async () => {
+      vi.useFakeTimers()
+      const onDone = await renderAndCopy()
+      fireEvent.click(screen.getByRole('dialog'))
+      expect(onDone).toHaveBeenCalledTimes(1)
+    })
+
+    it('pressing Escape fires onDone', async () => {
+      vi.useFakeTimers()
+      const onDone = await renderAndCopy()
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(onDone).toHaveBeenCalledTimes(1)
+    })
+
+    it('stays unlocked even after the "Copied" label reverts (hasCopiedOnce does not revert)', async () => {
+      vi.useFakeTimers()
+      const onDone = await renderAndCopy()
+      // Let the 2s "Copied" → "COPY" label revert happen.
+      await act(async () => { await vi.advanceTimersByTimeAsync(2100) })
+      expect(screen.getByTestId('private-recovery-key-copy')).toHaveTextContent('COPY')
+
+      expect(screen.getByTestId('private-recovery-key-done')).toBeEnabled()
+      fireEvent.click(screen.getByTestId('private-recovery-key-done'))
+      expect(onDone).toHaveBeenCalledTimes(1)
+    })
   })
 })

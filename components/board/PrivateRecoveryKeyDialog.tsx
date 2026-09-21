@@ -16,14 +16,20 @@ type Props = {
 export function PrivateRecoveryKeyDialog({ recoveryKey, onDone }: Props): ReactElement {
   const { t } = useI18n()
   const [copied, setCopied] = useState(false)
+  // コピーが1回でも成功したら true のまま戻らない(=このダイアログを閉じてよくなる)。
+  // `copied` は「Copied」ラベル用に2秒で自動的に false に戻るので、この状態を
+  // 閉じられるかどうかの判定に使うとコピー2秒後に再ロックされてしまう。
+  const [hasCopiedOnce, setHasCopiedOnce] = useState(false)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') { e.preventDefault(); onDone() }
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      if (hasCopiedOnce) onDone()
     }
     window.addEventListener('keydown', onKey)
     return (): void => window.removeEventListener('keydown', onKey)
-  }, [onDone])
+  }, [onDone, hasCopiedOnce])
 
   // 数秒でラベルを元に戻す — 2回目のコピーができなくなるのを避ける。
   useEffect(() => {
@@ -36,6 +42,7 @@ export function PrivateRecoveryKeyDialog({ recoveryKey, onDone }: Props): ReactE
     try {
       await navigator.clipboard.writeText(recoveryKey)
       setCopied(true)
+      setHasCopiedOnce(true)
     } catch (e) {
       // 失敗したときに「コピーしました」と嘘をつかない(ラベルは元のまま)。
       console.error('[AllMarks] failed to copy the Private recovery key', e)
@@ -45,7 +52,7 @@ export function PrivateRecoveryKeyDialog({ recoveryKey, onDone }: Props): ReactE
   return (
     <div
       className={styles.backdrop}
-      onClick={onDone}
+      onClick={(): void => { if (hasCopiedOnce) onDone() }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="private-recovery-key-heading"
@@ -65,7 +72,13 @@ export function PrivateRecoveryKeyDialog({ recoveryKey, onDone }: Props): ReactE
           >
             {copied ? t('private.recoveryKeyCopiedFeedback') : t('private.recoveryKeyCopyButton')}
           </button>
-          <button type="button" className={styles.doneBtn} onClick={onDone} data-testid="private-recovery-key-done">
+          <button
+            type="button"
+            className={styles.doneBtn}
+            onClick={onDone}
+            disabled={!hasCopiedOnce}
+            data-testid="private-recovery-key-done"
+          >
             {t('private.recoveryKeyDoneButton')}
           </button>
         </div>

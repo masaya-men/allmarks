@@ -44,3 +44,4 @@
   cursor: pointer;
 }
 .doneBtn { border-color: rgba(40, 241, 0, 0.55); }
+.doneBtn:disabled { opacity: 0.5; cursor: default; }
