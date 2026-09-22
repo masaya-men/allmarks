@@ -94,15 +94,6 @@ export function SyncConnectDialog({
               placeholder={t('sync.keyPlaceholder')}
               data-testid="sync-key-input"
             />
-            <button
-              type="button"
-              className={styles.primaryBtn}
-              onClick={onSubmitKey}
-              disabled={keySubmitting || keyInput.trim().length === 0}
-              data-testid="sync-key-submit"
-            >
-              {t('sync.unlockButton')}
-            </button>
             {keyError && (
               <div className={styles.error} data-testid="sync-key-error">
                 {keyError}
@@ -131,6 +122,15 @@ export function SyncConnectDialog({
               >
                 {t('sync.setupCancel')}
               </button>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                onClick={onSubmitKey}
+                disabled={keySubmitting || keyInput.trim().length === 0}
+                data-testid="sync-key-submit"
+              >
+                {t('sync.unlockButton')}
+              </button>
             </div>
           </>
         )}
@@ -138,9 +138,6 @@ export function SyncConnectDialog({
         {step.kind === 'connect' && (
           <>
             <p className={styles.explanation}>{t('sync.connectExplanation')}</p>
-            <button type="button" className={styles.primaryBtn} onClick={onConnect} data-testid="sync-connect-button">
-              {t('sync.connectButton')}
-            </button>
             <div className={styles.actions}>
               <button
                 type="button"
@@ -149,6 +146,9 @@ export function SyncConnectDialog({
                 data-testid="sync-connect-dialog-cancel"
               >
                 {t('sync.setupCancel')}
+              </button>
+              <button type="button" className={styles.primaryBtn} onClick={onConnect} data-testid="sync-connect-button">
+                {t('sync.connectButton')}
               </button>
             </div>
           </>
@@ -164,9 +164,6 @@ export function SyncConnectDialog({
         {step.kind === 'connect-failed' && (
           <>
             <div className={styles.error} data-testid="sync-connect-error">{t('sync.connectFailed')}</div>
-            <button type="button" className={styles.primaryBtn} onClick={onConnect} data-testid="sync-connect-button">
-              {t('sync.connectButton')}
-            </button>
             <div className={styles.actions}>
               <button
                 type="button"
@@ -176,6 +173,9 @@ export function SyncConnectDialog({
               >
                 {t('sync.setupCancel')}
               </button>
+              <button type="button" className={styles.primaryBtn} onClick={onConnect} data-testid="sync-connect-button">
+                {t('sync.connectButton')}
+              </button>
             </div>
           </>
         )}
@@ -183,9 +183,11 @@ export function SyncConnectDialog({
         {step.kind === 'done' && (
           <div data-testid="sync-setup-done">
             <p className={styles.explanation}>{t('sync.setupDoneBody')}</p>
-            <button type="button" className={styles.primaryBtn} onClick={onClose} data-testid="sync-setup-done-close">
-              {t('sync.setupDoneClose')}
-            </button>
+            <div className={styles.actions}>
+              <button type="button" className={styles.primaryBtn} onClick={onClose} data-testid="sync-setup-done-close">
+                {t('sync.setupDoneClose')}
+              </button>
+            </div>
           </div>
         )}
       </div>

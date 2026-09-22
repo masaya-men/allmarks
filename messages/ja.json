@@ -332,7 +332,7 @@
     "becomeSupporter": "応援する",
     "haveKeyLabel": "キーをお持ちですか?",
     "keyPlaceholder": "キーを貼り付け",
-    "unlockButton": "解錠",
+    "unlockButton": "つづける",
     "errorInvalidKey": "キーが正しくありません。全部コピーできているか確認してください。",
     "errorUnsupported": "このブラウザではキーを確認できません。ブラウザを最新にするか、別のブラウザをお試しください。",
     "errorCapExceeded": "このキーは上限台数まで使用済みです。",

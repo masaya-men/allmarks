@@ -332,7 +332,7 @@
     "becomeSupporter": "Become a supporter",
     "haveKeyLabel": "Have a key?",
     "keyPlaceholder": "Paste your key",
-    "unlockButton": "UNLOCK",
+    "unlockButton": "Continue",
     "errorInvalidKey": "That key isn't valid. Check you copied the whole thing.",
     "errorUnsupported": "Your browser can't verify this key. Try updating it, or use a different browser.",
     "errorCapExceeded": "This key has reached its device limit.",
