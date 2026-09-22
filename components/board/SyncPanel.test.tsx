@@ -2,20 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { SyncPanel } from './SyncPanel'
 import { loadLicense } from '@/lib/board/license-store'
-import { activateLicenseKey } from '@/lib/board/license-activate'
+import { activateLicenseKey, fetchDeviceCount } from '@/lib/board/license-activate'
 import { loadSyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 
 vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}) }))
 vi.mock('@/lib/board/license-store', () => ({ loadLicense: vi.fn() }))
-vi.mock('@/lib/board/license-activate', () => ({ activateLicenseKey: vi.fn() }))
+vi.mock('@/lib/board/license-activate', () => ({ activateLicenseKey: vi.fn(), fetchDeviceCount: vi.fn().mockResolvedValue(null) }))
 vi.mock('@/lib/sync/sync-store', () => ({ loadSyncStatus: vi.fn() }))
 vi.mock('@/lib/sync/engine', () => ({ runSyncCycle: vi.fn(), connectSync: vi.fn() }))
 vi.mock('@/lib/sync/auth', () => ({ requestAuthCode: vi.fn(), exchangeCode: vi.fn() }))
 
 const mockLoadLicense = vi.mocked(loadLicense)
 const mockActivate = vi.mocked(activateLicenseKey)
+const mockFetchDeviceCount = vi.mocked(fetchDeviceCount)
 const mockLoadSyncStatus = vi.mocked(loadSyncStatus)
 const mockRunSyncCycle = vi.mocked(runSyncCycle)
 const mockConnectSync = vi.mocked(connectSync)
@@ -247,6 +248,23 @@ describe('SyncPanel connected states', () => {
     expect(screen.getByTestId('sync-last-synced').textContent).toMatch(/5/)
     fireEvent.click(screen.getByTestId('sync-now-button'))
     await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
+  })
+
+  it('shows the device count once fetchDeviceCount resolves', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    mockFetchDeviceCount.mockResolvedValue({ count: 2, max: 5 })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connected-status')
+    await waitFor(() => expect(screen.getByTestId('sync-device-count').textContent).toContain('2'))
+    expect(screen.getByTestId('sync-device-count').textContent).toContain('5')
+  })
+
+  it('does not show a device count line if fetchDeviceCount fails (returns null)', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    mockFetchDeviceCount.mockResolvedValue(null)
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connected-status')
+    expect(screen.queryByTestId('sync-device-count')).not.toBeInTheDocument()
   })
 
   it('shows the SyncMassDeleteConfirmDialog when a manual sync returns needs-confirmation', async () => {

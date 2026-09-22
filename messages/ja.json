@@ -360,6 +360,7 @@
     "errorCorrupt": "同期データの読み込みに失敗しました。少し待ってからもう一度お試しください。",
     "errorOffline": "オフラインのようです。接続が戻ったら自動で同期します。",
     "errorGeneric": "同期に失敗しました。もう一度お試しください。",
+    "deviceCount": "端末 {count}/{max}台",
     "setupHeading": "同期の設定",
     "setupCancel": "キャンセル",
     "startButton": "Google Driveで同期する",

@@ -74,3 +74,38 @@ export async function activateLicenseKey(
   await saveLicense(db, state)
   return { status: 'unlocked', scope, verified: confirmed }
 }
+
+export interface DeviceCount {
+  readonly count: number
+  readonly max: number
+}
+
+interface DeviceCountResponseBody {
+  readonly ok: boolean
+  readonly count?: number
+  readonly max?: number
+}
+
+function isDeviceCountResponseBody(v: unknown): v is DeviceCountResponseBody {
+  return typeof v === 'object' && v !== null && typeof (v as { ok?: unknown }).ok === 'boolean'
+}
+
+/**
+ * Read-only lookup of how many devices are currently activated against this
+ * key ("X/5 devices used" in SETTINGS). Never throws and never returns a
+ * value that would look confidently wrong — any network failure, non-ok
+ * response, or malformed body just returns `null`, and the caller should
+ * simply not show the count rather than show a stale or fabricated number.
+ */
+export async function fetchDeviceCount(kid: string): Promise<DeviceCount | null> {
+  try {
+    const res = await fetch(`/activate-status?kid=${encodeURIComponent(kid)}`, { signal: AbortSignal.timeout(10_000) })
+    if (!res.ok) return null
+    const body: unknown = await res.json()
+    if (!isDeviceCountResponseBody(body) || !body.ok) return null
+    if (typeof body.count !== 'number' || typeof body.max !== 'number') return null
+    return { count: body.count, max: body.max }
+  } catch {
+    return null
+  }
+}

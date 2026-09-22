@@ -360,6 +360,7 @@
     "errorCorrupt": "Couldn't read the synced data. Wait a moment and try again.",
     "errorOffline": "You seem to be offline. We'll sync automatically once you're back online.",
     "errorGeneric": "Sync failed. Try again.",
+    "deviceCount": "{count}/{max} devices",
     "setupHeading": "Sync setup",
     "setupCancel": "Cancel",
     "startButton": "Sync with Google Drive",

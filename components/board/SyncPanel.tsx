@@ -5,7 +5,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { initDB } from '@/lib/storage/indexeddb'
 import { loadLicense } from '@/lib/board/license-store'
 import { isSyncUnlocked } from '@/lib/board/theme-entitlement'
-import { activateLicenseKey } from '@/lib/board/license-activate'
+import { activateLicenseKey, fetchDeviceCount, type DeviceCount } from '@/lib/board/license-activate'
 import { loadSyncStatus, type SyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync, type SyncCycleResult } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
@@ -82,6 +82,11 @@ export function SyncPanel(): ReactElement | null {
   // routine "Sync now" click. handleSyncNow/mass-delete handlers never touch
   // this -- only handleConnect does.
   const [justCompletedSetup, setJustCompletedSetup] = useState(false)
+  // "X/5 devices used" in the connected/idle view. Best-effort only --
+  // fetchDeviceCount never throws and returns null on any failure, in which
+  // case this just stays null and the count line doesn't render (never shows
+  // a stale or guessed number).
+  const [deviceCount, setDeviceCount] = useState<DeviceCount | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -94,6 +99,9 @@ export function SyncPanel(): ReactElement | null {
         isUnlocked = isSyncUnlocked(state)
         if (cancelled) return
         setUnlocked(isUnlocked)
+        if (isUnlocked && state) {
+          void fetchDeviceCount(state.kid).then((dc) => { if (!cancelled) setDeviceCount(dc) })
+        }
       } catch (e) {
         console.error('[AllMarks] failed to load sync license state', e)
         if (!cancelled) setUnlocked(false)
@@ -194,6 +202,8 @@ export function SyncPanel(): ReactElement | null {
         setUnlocked(true)
         const status = await loadSyncStatus(db)
         setPhase(phaseFromStatus(status))
+        const licenseState = await loadLicense(db)
+        if (licenseState) void fetchDeviceCount(licenseState.kid).then(setDeviceCount)
         return
       }
       if (result.status === 'invalid-key') setError(t('sync.errorInvalidKey'))
@@ -273,6 +283,11 @@ export function SyncPanel(): ReactElement | null {
             {phase.email ? t('sync.connectedAs').replace('{email}', phase.email) : t('sync.connectedGeneric')}
           </div>
           <p className={styles.note} data-testid="sync-last-synced">{lastSyncedText(t, phase.lastSyncAt)}</p>
+          {deviceCount && (
+            <p className={styles.note} data-testid="sync-device-count">
+              {t('sync.deviceCount').replace('{count}', String(deviceCount.count)).replace('{max}', String(deviceCount.max))}
+            </p>
+          )}
           <button type="button" className={styles.unlockBtn} onClick={(): void => { void handleSyncNow(phase.email) }} data-testid="sync-now-button">
             {t('sync.syncNowButton')}
           </button>
