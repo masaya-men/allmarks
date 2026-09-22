@@ -205,8 +205,12 @@ export function mergeCards(
 
 // ── board-config（設計 §6.4）─────────────────────────────────────────────
 
-/** まるごと 1 個 LWW。updatedAt が無ければ 0 扱い（束4 が saveBoardConfig で
- *  打つまでの間）。同値は config を安定比較して決定的に。 */
+/** まるごと 1 個 LWW（updatedAt が無ければ 0 扱い・同値は config を安定比較
+ *  して決定的に）。ただし themeId/themeCustomizations だけは例外で、常に
+ *  ローカル側（この端末）の値を残す — テーマは端末ごとに独立させる方針
+ *  （s218 ユーザー決定: 「テーマは端末ごとの方がいい」）。新規端末の初回
+ *  同期（local が無い = まだ一度もこの端末で設定していない）は、テーマも
+ *  含めてそのままリモートを初期値として採用する。 */
 export function mergeBoardConfig(
   local: SyncBoardConfig | null,
   remote: SyncBoardConfig | null,
@@ -215,9 +219,15 @@ export function mergeBoardConfig(
   if (!remote) return local
   const lt = numericTime(local.updatedAt)
   const rt = numericTime(remote.updatedAt)
-  if (lt > rt) return local
-  if (rt > lt) return remote
-  return pickDeterministic(local, remote)
+  const winner = lt > rt ? local : rt > lt ? remote : pickDeterministic(local, remote)
+  return {
+    ...winner,
+    config: {
+      ...winner.config,
+      themeId: local.config.themeId,
+      themeCustomizations: local.config.themeCustomizations,
+    },
+  }
 }
 
 // ── vault（設計 §9）──────────────────────────────────────────────────────

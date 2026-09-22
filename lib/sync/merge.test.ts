@@ -306,23 +306,54 @@ describe('mergeBoardConfig', () => {
     expect(mergeBoardConfig(null, only)).toBe(only)
   })
 
-  it('LWW by updatedAt', () => {
-    const older = cfg({ themeId: 'dotted-notebook' }, 100)
-    const newer = cfg({ themeId: 'paper-atelier' }, 200)
-    expect(mergeBoardConfig(older, newer)?.config.themeId).toBe('paper-atelier')
-    expect(mergeBoardConfig(newer, older)?.config.themeId).toBe('paper-atelier')
+  it('LWW by updatedAt (non-theme fields)', () => {
+    const older = cfg({ motionEnabled: false }, 100)
+    const newer = cfg({ motionEnabled: true }, 200)
+    expect(mergeBoardConfig(older, newer)?.config.motionEnabled).toBe(true)
+    expect(mergeBoardConfig(newer, older)?.config.motionEnabled).toBe(true)
   })
 
-  it('absent updatedAt treated as 0', () => {
-    const stamped = cfg({ themeId: 'paper-atelier' }, 1)
-    const unstamped = cfg({ themeId: 'dotted-notebook' })
-    expect(mergeBoardConfig(unstamped, stamped)?.config.themeId).toBe('paper-atelier')
+  it('absent updatedAt treated as 0 (non-theme fields)', () => {
+    const stamped = cfg({ motionEnabled: false }, 1)
+    const unstamped = cfg({ motionEnabled: true })
+    expect(mergeBoardConfig(unstamped, stamped)?.config.motionEnabled).toBe(false)
   })
 
-  it('equal updatedAt -> order-independent', () => {
-    const a = cfg({ themeId: 'dotted-notebook' }, 7)
-    const b = cfg({ themeId: 'paper-atelier' }, 7)
-    expect(mergeBoardConfig(a, b)?.config.themeId).toBe(mergeBoardConfig(b, a)?.config.themeId)
+  it('equal updatedAt -> order-independent (non-theme fields)', () => {
+    const a = cfg({ bgTypoEnabled: false }, 7)
+    const b = cfg({ bgTypoEnabled: true }, 7)
+    expect(mergeBoardConfig(a, b)?.config.bgTypoEnabled).toBe(mergeBoardConfig(b, a)?.config.bgTypoEnabled)
+  })
+
+  // s218: user decided theme should be per-device, not synced. See mergeBoardConfig's
+  // own doc comment.
+  it('themeId/themeCustomizations always stay local, regardless of which side wins on updatedAt', () => {
+    const localOlder = cfg({ themeId: 'dotted-notebook', motionEnabled: false }, 100)
+    const remoteNewer = cfg({ themeId: 'paper-atelier', motionEnabled: true }, 200)
+    const result = mergeBoardConfig(localOlder, remoteNewer)
+    // Non-theme field follows the remote (newer) side, as usual...
+    expect(result?.config.motionEnabled).toBe(true)
+    // ...but theme stays this device's own choice, even though remote "won".
+    expect(result?.config.themeId).toBe('dotted-notebook')
+  })
+
+  it('themeId stays local even when the LOCAL side is older and loses on every other field', () => {
+    const localNewerTheme = cfg({ themeId: 'flat', motionEnabled: false }, 1)
+    const remoteOlder = cfg({ themeId: 'dotted-notebook', motionEnabled: true }, 200)
+    const result = mergeBoardConfig(localNewerTheme, remoteOlder)
+    expect(result?.config.motionEnabled).toBe(true)
+    expect(result?.config.themeId).toBe('flat')
+  })
+
+  it('a brand-new device with no local config yet inherits the remote theme as a starting point', () => {
+    const remoteOnly = cfg({ themeId: 'paper-atelier' }, 5)
+    expect(mergeBoardConfig(null, remoteOnly)?.config.themeId).toBe('paper-atelier')
+  })
+
+  it('themeCustomizations also stay local, not just themeId', () => {
+    const local = cfg({ themeId: 'dotted-notebook', themeCustomizations: { 'dotted-notebook': { patternStroke: 2 } } }, 1)
+    const remote = cfg({ themeId: 'dotted-notebook', themeCustomizations: { 'dotted-notebook': { patternStroke: 5 } } }, 200)
+    expect(mergeBoardConfig(local, remote)?.config.themeCustomizations).toEqual({ 'dotted-notebook': { patternStroke: 2 } })
   })
 })
 
@@ -536,7 +567,12 @@ describe('mergeAll', () => {
     expect(out.vault?.publicKey).toBe('PUB')                        // routed from remote
   })
 
-  it('is deterministic: mergeAll(L,R) deep-equals mergeAll(R,L)', () => {
+  it('is deterministic: mergeAll(L,R) deep-equals mergeAll(R,L) for everything except per-device theme', () => {
+    // Same themeId on both sides here -- theme is intentionally NOT
+    // commutative any more (s218: it always stays whichever side is passed
+    // as "local"), so it's excluded from this check and tested separately
+    // below. Everything else mergeAll routes (bookmarks/tags/cards/config's
+    // non-theme fields/vault) is still required to be fully order-independent.
     const L: SyncSnapshot = {
       bookmarks: [
         bm({ id: 'a', title: 'LA', tags: ['x'], updatedAt: 100 }),
@@ -556,13 +592,20 @@ describe('mergeAll', () => {
       ],
       tags: [tag({ id: 't1', name: 'R', updatedAt: 20 }), tag({ id: 't3' })],
       cards: [card({ id: 'k1', x: 50, updatedAt: 4 }), card({ id: 'k3' })],
-      boardConfig: { config: { ...DEFAULT_BOARD_CONFIG, themeId: 'paper-atelier' }, updatedAt: 7 },
+      boardConfig: { config: { ...DEFAULT_BOARD_CONFIG, themeId: 'dotted-notebook' }, updatedAt: 7 },
       vault: null,
     }
-    expect(mergeAll(L, R)).toEqual(mergeAll(R, L))
-    const out = mergeAll(L, R)
-    expect(out.bookmarks.find((x) => x.id === 'b')?.isDeleted).toBe(true) // tombstone held
-    expect(out.boardConfig?.config.themeId).toBe('paper-atelier')          // R won the config tie deterministically
+    const outLR = mergeAll(L, R)
+    const outRL = mergeAll(R, L)
+    expect(outLR).toEqual(outRL)
+    expect(outLR.bookmarks.find((x) => x.id === 'b')?.isDeleted).toBe(true) // tombstone held
+
+    // Theme's asymmetry, tested explicitly with differing themeIds this time:
+    // each call keeps its own "local" (first-argument) side's theme.
+    const L2 = { ...L, boardConfig: { config: { ...DEFAULT_BOARD_CONFIG, themeId: 'dotted-notebook' as const }, updatedAt: 7 } }
+    const R2 = { ...R, boardConfig: { config: { ...DEFAULT_BOARD_CONFIG, themeId: 'paper-atelier' as const }, updatedAt: 7 } }
+    expect(mergeAll(L2, R2).boardConfig?.config.themeId).toBe('dotted-notebook')
+    expect(mergeAll(R2, L2).boardConfig?.config.themeId).toBe('paper-atelier')
   })
 
   it('additions from both sides all survive (3 + 2 disjoint = 5)', () => {
