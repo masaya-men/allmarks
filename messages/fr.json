@@ -359,7 +359,14 @@
     "errorStorageFull": "Not enough space in your Google Drive. Free up space, then try again.",
     "errorCorrupt": "Couldn't read the synced data. Wait a moment and try again.",
     "errorOffline": "You seem to be offline. We'll sync automatically once you're back online.",
-    "errorGeneric": "Sync failed. Try again."
+    "errorGeneric": "Sync failed. Try again.",
+    "setupHeading": "Sync setup",
+    "setupCancel": "Cancel",
+    "startButton": "Sync with Google Drive",
+    "modalKeyIntro": "Save your bookmarks to your own Google Drive and share them across your devices. One key works on up to 5 devices.",
+    "setupDoneHeading": "Sync is on",
+    "setupDoneBody": "Enter the same key on your other devices to share these bookmarks there too (up to 5 devices).",
+    "setupDoneClose": "Close"
   },
   "landing": {
     "hero": {

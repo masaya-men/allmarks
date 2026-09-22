@@ -12,6 +12,7 @@ import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 import { formatLastSynced } from '@/lib/sync/format-last-sync'
 import type { SyncErrorKind } from '@/lib/sync/error-kind'
 import { SyncMassDeleteConfirmDialog } from './SyncMassDeleteConfirmDialog'
+import { SyncConnectDialog, type ConnectDialogStep } from './SyncConnectDialog'
 import styles from './SyncPanel.module.css'
 
 type PanelPhase =
@@ -53,6 +54,19 @@ function lastSyncedText(t: (key: string) => string, lastSyncAt: number | undefin
   return t('sync.lastSyncedDaysAgo').replace('{days}', String(display.value))
 }
 
+/** Which screen the guided setup dialog shows, derived from the license/phase
+ *  state SyncPanel already tracks. `justCompletedSetup` distinguishes "just
+ *  finished first-time setup, still idle-with-dialog-open" (→ 'done') from
+ *  every later routine idle state (→ no dialog at all, handled by the caller
+ *  not rendering this when modalOpen is false). */
+function connectDialogStep(unlocked: boolean, phase: PanelPhase, justCompletedSetup: boolean): ConnectDialogStep {
+  if (!unlocked) return { kind: 'key-entry' }
+  if (phase.kind === 'connecting') return { kind: 'connecting' }
+  if (phase.kind === 'connect-failed') return { kind: 'connect-failed' }
+  if (justCompletedSetup && phase.kind === 'idle') return { kind: 'done' }
+  return { kind: 'connect' }
+}
+
 export function SyncPanel(): ReactElement | null {
   const { t } = useI18n()
   const [unlocked, setUnlocked] = useState<boolean | null>(null)
@@ -61,6 +75,13 @@ export function SyncPanel(): ReactElement | null {
   const [capExceeded, setCapExceeded] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [phase, setPhase] = useState<PanelPhase>({ kind: 'disconnected' })
+  const [modalOpen, setModalOpen] = useState(false)
+  // Set the instant handleConnect's connectSync call resolves, so the very
+  // next phase transition (idle/connect-failed/whatever applyResult lands on)
+  // is recognized as "the guided first-time flow just finished" rather than a
+  // routine "Sync now" click. handleSyncNow/mass-delete handlers never touch
+  // this -- only handleConnect does.
+  const [justCompletedSetup, setJustCompletedSetup] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -116,6 +137,7 @@ export function SyncPanel(): ReactElement | null {
       const tokens = await exchangeCode(code)
       const db = await initDB()
       const result = await connectSync(db, tokens)
+      setJustCompletedSetup(true)
       await applyResult(result, null)
     } catch (e) {
       console.error('[AllMarks] connect flow failed', e)
@@ -189,6 +211,8 @@ export function SyncPanel(): ReactElement | null {
 
   if (unlocked === null) return null
 
+  const closeModal = (): void => { setModalOpen(false); setJustCompletedSetup(false) }
+
   if (!unlocked) {
     return (
       <div data-testid="sync-locked">
@@ -196,75 +220,53 @@ export function SyncPanel(): ReactElement | null {
         <span className={styles.soon} aria-disabled="true" data-testid="sync-become-supporter">
           {`${t('sync.becomeSupporter')} (${t('board.settings.comingSoon')})`}
         </span>
-        <label className={styles.label} htmlFor="sync-key-input">{t('sync.haveKeyLabel')}</label>
-        <div className={styles.keyRow}>
-          <input
-            id="sync-key-input"
-            type="text"
-            className={styles.keyInput}
-            value={keyInput}
-            onChange={(e): void => setKeyInput(e.target.value)}
-            placeholder={t('sync.keyPlaceholder')}
-            data-testid="sync-key-input"
+        <button
+          type="button"
+          className={styles.unlockBtn}
+          onClick={(): void => setModalOpen(true)}
+          data-testid="sync-start-button"
+        >
+          {t('sync.startButton')}
+        </button>
+        {modalOpen && (
+          <SyncConnectDialog
+            step={connectDialogStep(unlocked, phase, justCompletedSetup)}
+            keyInput={keyInput}
+            onKeyInputChange={setKeyInput}
+            onSubmitKey={(): void => { void submit() }}
+            keySubmitting={submitting}
+            keyError={error}
+            keyCapExceeded={capExceeded}
+            onConnect={(): void => { void handleConnect() }}
+            onClose={closeModal}
           />
-          <button
-            type="button"
-            className={styles.unlockBtn}
-            onClick={(): void => { void submit() }}
-            disabled={submitting || keyInput.trim().length === 0}
-            data-testid="sync-key-submit"
-          >
-            {t('sync.unlockButton')}
-          </button>
-        </div>
-        {error && (
-          <div className={styles.error} data-testid="sync-key-error">
-            {error}
-            {capExceeded && (
-              <>
-                {' '}
-                <a
-                  className={styles.contactLink}
-                  href="/contact"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-testid="sync-cap-exceeded-contact"
-                >
-                  {t('sync.errorCapExceededContact')}
-                </a>
-              </>
-            )}
-          </div>
         )}
       </div>
     )
   }
 
+  // The four phases the guided-setup dialog covers. Written explicitly
+  // (rather than inferred) so the dialog-open condition below never
+  // silently drifts out of sync with connectDialogStep's own branching.
+  const dialogCoversPhase =
+    phase.kind === 'disconnected' ||
+    phase.kind === 'connecting' ||
+    phase.kind === 'connect-failed' ||
+    phase.kind === 'idle'
+
   return (
     <div data-testid="sync-unlocked">
-      {phase.kind === 'disconnected' && (
-        <>
-          <p className={styles.body}>{t('sync.connectExplanation')}</p>
-          <button type="button" className={styles.unlockBtn} onClick={(): void => { void handleConnect() }} data-testid="sync-connect-button">
-            {t('sync.connectButton')}
-          </button>
-        </>
+      {(phase.kind === 'disconnected' || phase.kind === 'connect-failed') && !modalOpen && (
+        <button
+          type="button"
+          className={styles.unlockBtn}
+          onClick={(): void => setModalOpen(true)}
+          data-testid="sync-start-button"
+        >
+          {t('sync.startButton')}
+        </button>
       )}
-      {phase.kind === 'connecting' && (
-        <div className={styles.status} data-testid="sync-connecting">
-          <span className={styles.statusDot} data-pending="true" />
-          {t('sync.connecting')}
-        </div>
-      )}
-      {phase.kind === 'connect-failed' && (
-        <>
-          <div className={styles.error} data-testid="sync-connect-error">{t('sync.connectFailed')}</div>
-          <button type="button" className={styles.unlockBtn} onClick={(): void => { void handleConnect() }} data-testid="sync-connect-button">
-            {t('sync.connectButton')}
-          </button>
-        </>
-      )}
-      {phase.kind === 'idle' && (
+      {phase.kind === 'idle' && !(justCompletedSetup && modalOpen) && (
         <>
           <div className={styles.status} data-testid="sync-connected-status">
             <span className={styles.statusDot} />
@@ -302,6 +304,19 @@ export function SyncPanel(): ReactElement | null {
             </button>
           )}
         </>
+      )}
+      {modalOpen && dialogCoversPhase && (
+        <SyncConnectDialog
+          step={connectDialogStep(unlocked, phase, justCompletedSetup)}
+          keyInput={keyInput}
+          onKeyInputChange={setKeyInput}
+          onSubmitKey={(): void => { void submit() }}
+          keySubmitting={submitting}
+          keyError={error}
+          keyCapExceeded={capExceeded}
+          onConnect={(): void => { void handleConnect() }}
+          onClose={closeModal}
+        />
       )}
     </div>
   )

@@ -28,11 +28,20 @@ describe('SyncPanel', () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
   })
 
-  it('shows the locked view (explanation, disabled supporter link, key input) when not unlocked', async () => {
+  it('shows the locked view (explanation, disabled supporter link) when not unlocked', async () => {
     mockLoadLicense.mockResolvedValue(null)
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
     expect(screen.getByTestId('sync-become-supporter')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('sync-start-button')).toBeInTheDocument()
+  })
+
+  it('opening the dialog from the locked view shows a disabled unlock button until a key is typed', async () => {
+    mockLoadLicense.mockResolvedValue(null)
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-locked')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
     expect(screen.getByTestId('sync-key-submit')).toBeDisabled()
   })
 
@@ -47,6 +56,8 @@ describe('SyncPanel', () => {
     mockLoadLicense.mockResolvedValue(null)
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
     fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'abc' } })
     expect(screen.getByTestId('sync-key-submit')).not.toBeDisabled()
   })
@@ -56,6 +67,8 @@ describe('SyncPanel', () => {
     mockActivate.mockResolvedValue({ status: 'invalid-key' })
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
     fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'ab \n cd\t ef' } })
     fireEvent.click(screen.getByTestId('sync-key-submit'))
     await waitFor(() => expect(mockActivate).toHaveBeenCalledWith(expect.anything(), 'abcdef'))
@@ -66,6 +79,8 @@ describe('SyncPanel', () => {
     mockActivate.mockResolvedValue({ status: 'invalid-key' })
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
     fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'bad-key' } })
     fireEvent.click(screen.getByTestId('sync-key-submit'))
     await waitFor(() => expect(screen.getByTestId('sync-key-error')).toHaveTextContent(/valid/i))
@@ -77,6 +92,8 @@ describe('SyncPanel', () => {
     mockActivate.mockResolvedValue({ status: 'unsupported' })
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
     fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'some-key' } })
     fireEvent.click(screen.getByTestId('sync-key-submit'))
     await waitFor(() => expect(screen.getByTestId('sync-key-error')).toHaveTextContent(/browser/i))
@@ -87,6 +104,8 @@ describe('SyncPanel', () => {
     mockActivate.mockResolvedValue({ status: 'cap-exceeded' })
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
     fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'some-key' } })
     fireEvent.click(screen.getByTestId('sync-key-submit'))
     await waitFor(() => expect(screen.getByTestId('sync-cap-exceeded-contact')).toBeInTheDocument())
@@ -98,6 +117,8 @@ describe('SyncPanel', () => {
     mockActivate.mockResolvedValue({ status: 'unlocked', scope: ['sync'], verified: true })
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
     fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'good-key' } })
     fireEvent.click(screen.getByTestId('sync-key-submit'))
     await screen.findByTestId('sync-unlocked')
@@ -118,6 +139,8 @@ describe('SyncPanel', () => {
     mockActivate.mockRejectedValue(new Error('indexedDB unavailable'))
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
     fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'some-key' } })
     fireEvent.click(screen.getByTestId('sync-key-submit'))
     await waitFor(() => expect(screen.getByTestId('sync-key-error')).toHaveTextContent(/activate/i))
@@ -135,9 +158,19 @@ describe('SyncPanel connected states', () => {
     mockLoadLicense.mockResolvedValue({ kid: 'k1', deviceId: 'd1', scope: ['sync'], validatedAt: 1 })
   })
 
+  it('clicking the start button opens the guided setup dialog', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-start-button')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-dialog')
+  })
+
   it('shows the connect explanation and button when unlocked but not connected', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
     render(<SyncPanel />)
+    await screen.findByTestId('sync-start-button')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
     await screen.findByTestId('sync-connect-button')
   })
 
@@ -145,12 +178,14 @@ describe('SyncPanel connected states', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     mockLoadSyncStatus.mockRejectedValue(new Error('indexedDB transaction error'))
     render(<SyncPanel />)
+    await screen.findByTestId('sync-start-button')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
     await screen.findByTestId('sync-connect-button')
     expect(screen.queryByTestId('sync-locked')).not.toBeInTheDocument()
     consoleErrorSpy.mockRestore()
   })
 
-  it('connects: requests a code, exchanges it, calls connectSync, and shows the idle connected view', async () => {
+  it('connects: requests a code, exchanges it, calls connectSync, and finishes on the guided-setup done screen', async () => {
     mockRequestAuthCode.mockResolvedValue('auth-code')
     mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
     mockConnectSync.mockResolvedValue({ status: 'synced', vaultConflict: false })
@@ -160,19 +195,44 @@ describe('SyncPanel connected states', () => {
       .mockResolvedValueOnce({ connected: false, headRevisions: {} })
       .mockResolvedValueOnce({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     render(<SyncPanel />)
+    await screen.findByTestId('sync-start-button')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
     await screen.findByTestId('sync-connect-button')
     fireEvent.click(screen.getByTestId('sync-connect-button'))
-    await screen.findByTestId('sync-connected-status')
+    // First-time setup lands on the dialog's 'done' screen, not directly on the
+    // inline connected view — the guided flow's whole point is to say "you're
+    // set up, now do your other devices too" before handing back to the drawer.
+    await screen.findByTestId('sync-setup-done')
     expect(mockRequestAuthCode).toHaveBeenCalledTimes(1)
     expect(mockExchangeCode).toHaveBeenCalledWith('auth-code')
     expect(mockConnectSync).toHaveBeenCalledTimes(1)
+    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('sync-setup-done-close'))
+    await screen.findByTestId('sync-connected-status')
     expect(screen.getByTestId('sync-connected-status').textContent).toContain('user@example.com')
+    expect(screen.queryByTestId('sync-connect-dialog')).not.toBeInTheDocument()
+
+    // A later routine "Sync now" click must not reopen the dialog or the done
+    // screen — it's just the existing inline sync-now flow, untouched.
+    mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false })
+    // The two mockResolvedValueOnce values queued above (mount + post-connect)
+    // are both consumed by now; applyResult's re-read after this sync-now call
+    // needs its own resolved value, or the mock has nothing left to return.
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
+    await screen.findByTestId('sync-connected-status')
+    expect(screen.queryByTestId('sync-connect-dialog')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sync-setup-done')).not.toBeInTheDocument()
   })
 
   it('shows connectFailed and the button again if requestAuthCode rejects (popup closed/cancelled)', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
     mockRequestAuthCode.mockRejectedValue(new Error('popup closed'))
     render(<SyncPanel />)
+    await screen.findByTestId('sync-start-button')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
     await screen.findByTestId('sync-connect-button')
     fireEvent.click(screen.getByTestId('sync-connect-button'))
     await screen.findByTestId('sync-connect-error')

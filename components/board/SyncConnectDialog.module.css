@@ -1,0 +1,104 @@
+/* components/board/SyncConnectDialog.module.css */
+/* Sibling of PrivateSetupDialog.module.css / SyncMassDeleteConfirmDialog.module.css --
+   .backdrop/.panel/.heading/.explanation/.error/.actions/.cancelBtn values copied
+   verbatim from PrivateSetupDialog.module.css so this dialog reads as the same
+   family, not a new visual language. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+.panel {
+  width: min(360px, calc(100% - 32px));
+  background: rgba(20, 20, 20, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.heading { font-size: 13px; letter-spacing: 0.08em; color: #f2f2f2; margin-bottom: 8px; }
+.explanation {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(242, 242, 242, 0.6);
+  margin: 0 0 4px;
+}
+.label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(242, 242, 242, 0.6);
+  margin-bottom: 6px;
+}
+.keyInput {
+  font-size: 13px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f2f2f2;
+  margin-bottom: 4px;
+}
+.primaryBtn {
+  align-self: flex-start;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 9px 16px;
+  border-radius: 9px;
+  border: 1px solid rgba(40, 241, 0, 0.55);
+  background: transparent;
+  color: #f2f2f2;
+  cursor: pointer;
+}
+.primaryBtn:disabled { opacity: 0.4; cursor: default; }
+.error { font-size: 12px; color: #ff6b6b; margin-top: 4px; }
+.contactLink { color: inherit; text-decoration: underline; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.cancelBtn {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: #f2f2f2;
+  cursor: pointer;
+}
+
+/* 'connecting' step: a visibly prominent centered waiting state -- much
+   bigger than SyncPanel's small inline .statusDot, so it reads as "something
+   big is happening" rather than a tiny decoration. Local @keyframes since CSS
+   modules don't share animation names across files (adapted from
+   SyncPanel.module.css's sync-pending-pulse, not shared -- see its comment). */
+.connecting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 0 10px;
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #28f100;
+  box-shadow: 0 0 20px rgba(40, 241, 0, 0.6);
+  animation: sync-connect-dialog-pulse 1.2s ease-in-out infinite;
+}
+.connectingText {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(242, 242, 242, 0.75);
+}
+@keyframes sync-connect-dialog-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.82); }
+  50% { opacity: 1; transform: scale(1); }
+}
