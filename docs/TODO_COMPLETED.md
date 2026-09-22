@@ -8123,6 +8123,12 @@ OG画像生成時の Google Fonts CORS(dom-to-image)。現状 fallback でカバ
 
 ---
 
+## セッション 141 (2026-06-30) — N-08 ボード中央上の「よくわからない線」を根治
+
+- ~~**(N-08) ボード中央上に「よくわからない線」がある**~~ ✅ **session 141 完了** — 真因は DOM 実測で確定: paper 化で TUNE/SETTINGS の閉じた drawer に付けた `border:1px`+parchment 背景が、`max-height:0` でも上下ボーダー計2pxの帯として残り横線化（TUNE と SETTINGS が重なる中央が二重で濃い）。SETTINGS drawer は body に portal されるため Lightbox を貫通していた。修正: 羊皮紙サーフェスを `[data-open='true']` のみに限定（閉じ時は default 同様 border:0→高さ0→不可視）。代わりにユーザー要望の**手書き風インク下線**を TopHeader の actions `.group::after`（paper限定）に追加＝ヘッダーの子なので Lightbox で一緒にフェード。
+
+---
+
 ## セッション 142 (2026-06-30) — Paper 台紙リデザイン N-13 完遂 + ドラッグ並べ替えの重大バグ修正
 
 全て `allmarks.app` 反映済・GitHub push 済。**tsc0 / vitest1819 / build OK・default(黒+音波) 無傷**（全変更 paper-scoped か paper-gate）。10コミット。1コミット=1確認で小さく進行。
@@ -8697,6 +8703,12 @@ plan は概念先行だったため、実装時に BoardRoot を読んで以下�
 - N-20（`+ add tag` で新規タグ作成）を入れた **v0.1.24 が審査通過**（ユーザーにメール）。
 - **`EXTENSION_STORE_URL` は v0.1.21 時点で既に投入・本番点灯済**（commit `108e198`「light up store install link」、`lib/board/constants.ts:34` = `https://chromewebstore.google.com/detail/allmarks/gefnpfbjnlbhgomlfcfalnbdlenpmpcg`）。拡張ID はバージョン非依存で固定、ストアが自動で最新の v0.1.24 を配信するため **URL 変更・再デプロイは不要**。URL は HTTP200 実確認済。
 - TODO/release-blocker に残っていた「残作業＝`EXTENSION_STORE_URL` 投入」は**古い記述**だったので訂正（board の GET EXTENSION／`/extension` ページは既にストアリンク点灯中）。
+
+---
+
+## セッション 161 (2026-07-04) — N-25 タグ付けウィンドウが出ない不具合を根治（systematic-debugging）
+
+- ~~**(N-25) タグ付けウィンドウが出ない（タグ0件の初回状態が原因・★ローンチ致命的）**~~ ✅ **コード修正済み（s161・要実機/再審査）**。systematic-debugging で確定：面＝**拡張のフローティングボタン quick-tag 帯**（`getStripAnchor` が画面右端・縦中央＝「別画面で画面中央右」に一致・ホストページ注入）。真因＝**受信側 [floating-button.js:611] の `msg.tags.length > 0` ガードが空配列を捨てていた**（送信側 dispatch.js は0件でも送っている／作成入力欄 `enterInputMode` は0件でも動く）＝**全新規ユーザーが保存時に最初のタグを作れない**。修正＝611 を `Array.isArray(msg.tags) && msg.bookmarkId` に（`tags.length>0` 撤廃）＋源泉 `shouldShowStrip`（tag-strip-model.js）とデッド copy(371) も同期＋テスト更新（tag-strip-model.test.ts）。本体ボード/PiP は0件でも正常（無条件で開く）と確認済。tsc0・拡張テスト131緑・node --check OK。**残＝ユーザー実機（unpacked reload で0件保存→右中央に「+ ADD TAG」帯が出るか）＋ Chrome ストア再審査（他の拡張修正 N-28/29/30 と束ねて1回で出すのが効率的）**。
 
 ---
 
@@ -10253,6 +10265,34 @@ s208 の設計書を superpowers:writing-plans で実装計画に落とし(`docs
 - 楽観ロック(§7.4): `getHeadRevisionId` は取得のみ、比較・再マージ判断は engine。
 - `hasRequiredScopes(scope)`(束2申し送り)・GISポップアップ放置タイムアウト → 束4/6。
 - **公開前**: PL-1(同意画面メール差替)・PL-2(OAuth本番公開+ドメイン検証・束4の放置運転自動同期の前に必須)。
+
+## s212(2026-09-14〜15) — 端末間同期 束4(engine.ts = pull/merge/push オーケストレーション)実装・レビュー完了・master マージ済
+
+**s212 (2026-09-14〜15)**: 端末間同期 **束4(engine.ts = pull/merge/push オーケストレーション)実装・レビュー完了・master マージ済**。subagent-driven 9タスク＋各タスクレビュー＋opus 全ブランチレビュー＋修正波1(6件)＋opus 再レビュー。フルスイート **2770/2770**・tsc 0・eslint 0(新規混入エラーなし)・build OK。**呼び出し元ゼロ=既存挙動は完全不変**。出荷: `lib/sync/sync-store.ts`(トークン・接続状況・baseスナップショット・ロールバック用バックアップ)＋`lib/sync/snapshot-schema.ts`(zod検証)＋`lib/sync/engine.ts`(ローカル⇄Drive読み書き・トークン更新・`runSyncCycle`/`connectSync`の4安全弁)＋`lib/sync/sync-controller.ts`(20秒デバウンスpush)＋`board-config.ts`のupdatedAt配線。**重大バグを2段階で発見・修正**: Task8実装直後のopusレビューで「push衝突後の再試行時にvault(金庫)の食い違いを再検知しない」Criticalバグ発見(2台がそれぞれ別々にPrivate設定→初同期、という代表シナリオで秘密鍵が恒久的に失われうる)→修正。束全体の最終レビュー(2回目の独立opus)で同じ失敗モードの別経路(再試行が古いローカル状態を参照)を追加発見→同時修正。**唯一の残課題**: 最終修正波で新規混入した`connectSync`の`hasRequiredScopes`ゲートが実接続を弾く不具合(現在呼び出し元ゼロで実害なし・束6でUI配線する前に必修正・設計書§15に詳細)。次=束5(最小K3)or束6(SyncPanel UI)。詳細 CURRENT_GOAL.md。
+
+## s213(2026-09-15) — 端末間同期 束5(最小K3=同期の有料ゲート)実装・レビュー完了・master マージ済
+
+**s213 (2026-09-15)**: 端末間同期 **束5(最小K3=同期の有料ゲート)実装・レビュー完了・master マージ済**。セッション冒頭で束4からの最優先申し送り(`connectSync`の`hasRequiredScopes`不具合)を先に修正。subagent-driven 6タスク＋各タスクレビュー(Task4は1回の修正ラウンド)＋opus全ブランチレビュー＋修正波1(3件)＋opus再レビュー。フルスイート **2813/2813**・tsc 0・eslint 0(新規混入なし)・build OK。**呼び出し元ゼロ=既存挙動は完全不変**。出荷: `lib/board/license-types.ts`(ワイヤーフォーマット)＋`lib/board/license-crypto.ts`(`verifyLicenseKey`=オフラインEd25519検証)＋`lib/board/license-store.ts`+`isSyncUnlocked`(解錠状態の永続化)＋`functions/claim.ts`(発券Worker)＋`functions/activate.ts`(発動Worker・5台キャップ)＋`lib/board/license-activate.ts`(`activateLicenseKey`=フェイルオープン込みのクライアント側オーケストレーション)＋`scripts/generate-k3-keypair.mjs`(鍵ペア生成)。**最終レビューで3件の重要な指摘を発見・修正**: (1) `/claim`のKVレコードに実行時バリデーションが無く手入力タイポで発行上限が無効化されうる不具合→zod検証追加、(2) `/activate`へのfetchにタイムアウトが無くWorkerハング時にフェイルオープンが機能しない不具合→`AbortSignal.timeout`追加、(3) 5台キャップ到達後の復旧手段が無かった→`/claim`成功画面に`Key ID`表示を追加。
+
+## s213続き(2026-09-15) — 束6①(Privateの金庫パスワード変更/再設定)実装・master マージ済
+
+**s213続き (同日)**: 束6①(Privateの金庫パスワード変更/再設定)**実装・master マージ済**。業界標準調査(Bitwarden/1Password=リセット不可・Norton=解錠済み端末からのリセット方式を採用)→設計→実装。7タスクplan subagent-driven実行＋各タスクレビュー＋opus全ブランチレビュー＋修正波1(4件: PasswordFieldのautoComplete/autoCapitalize硬化・`ChangeVaultPasswordResult`の型を`NonNullable`に締める・ヒント文字列の`{hint}`置換が`$&`等で壊れるバグ・`vaultFileSchema`に`updatedAt`明示)。**実機確認(ユーザー)で2件追加発見・修正**: Edgeの`::-ms-reveal`ネイティブ目アイコンが自作トグルと衝突(無効化)、ブラウザの自動入力ハイライトで背景が明転し薄い色のトグルアイコンが同化して見えなくなる(`-webkit-autofill`の背景を強制的に固定し直す定番対策)。フルスイート**2836/2836**・tsc0・eslint0・build OK。出荷: `lib/private/vault-store.ts`の`changeVaultPassword`(古いパスワード不要・`wrappingKey`のみで再ラップ・秘密鍵本体は不変)、`components/board/PasswordField.tsx`(共通の表示/非表示トグル部品・5箇所に配線)、`PrivateManageDialog`/`PrivateChangePasswordDialog`(新規2画面)、`lib/sync/merge.ts`/`engine.ts`(パスワード変更を金庫の食い違いと誤判定しないよう`vaultRecordsDiffer`を`publicKey+tagId`一致判定に限定)。**同時に束5からの持ち越し運用セットアップも完了**(K3_KVの本番/preview namespace作成・Ed25519鍵ペア生成・秘密鍵をCloudflare Pages Secretへ登録・公開鍵を`.env.production`へ)→**本番デプロイ実施**(`allmarks.app`、ユーザーが実機確認)。
+
+## s213続き2(2026-09-15) — 束6③の一部(テーマのバージョン差保護)実装 + 束6②のSETTINGS鍵入力欄(SyncPanel)実装・master マージ済
+
+**s213続き2 (同日)**: 束6③の一部(テーマのバージョン差保護)実装・master マージ済(`lib/storage/board-config.ts`の`guardUnknownThemeId`・未知の`themeId`は`DEFAULT_THEME_ID`にフォールバック・画面変更なしの裏側修正)。`isPrivateVault`タグ重複問題は調査の結果「vault食い違いUIと同時設計が必要」と判明・見送り(理由=CURRENT_GOAL.md参照)。続けて束6②のうち「SETTINGSの鍵入力欄(SyncPanel)」を実装・master マージ済(未解錠/解錠済み/4種のエラー表示。ユーザー承認済みの文面で実装・現状は誰も踏めない導線なので実害ゼロで出荷)。レビューで`initDB()`失敗時に画面が永久に固まりうる実質バグを発見・修正(try/catch追加・`BackupStatus`等の既存パターンに統一)。フルスイート**2848/2848**・tsc0・build OK。次=束6②の残り(初回接続フロー・同期状態表示・エラー表示)・束6③のvault食い違いUI。詳細 CURRENT_GOAL.md。
+
+## s214(2026-09-16) — 端末間同期 束6②(SyncPanel UI本体)の残り、全て実装・レビュー完了
+
+**s214 (2026-09-16)**: 端末間同期 **束6②(SyncPanel UI本体)の残り、全て実装・レビュー完了**(`feat/sync-panel-connect-flow`ブランチ、8タスクplan subagent-driven実行・各タスクレビュー、**まだmasterマージ前**)。出荷: `lib/sync/error-kind.ts`(`classifySyncError`/`decodeIdTokenEmail`の純関数)＋`sync-store.ts`の`connectedEmail?`/`lastIssue?`フィールドと`SyncIssue`型＋`engine.ts`が`SyncCycleResult.errorKind?`/`deletedCount?`を永続化＋15言語ぶん21件のi18nキー追加(`connectComingSoon`は撤去)＋`SyncMassDeleteConfirmDialog`(大量削除確認)＋`SyncEngineRunner`(起動時pull・5分超の再訪問時pull・可視性変化/`beforeunload`でのflush、というヘッドレスの背景同期ランナー)＋`SyncPanel.tsx`の状態機械(未接続→接続中→接続済の表示切替・「今すぐ同期」・エラー4種の表示分岐)。最後にTask8で`SyncEngineRunner`を`BoardRoot.tsx`の`return`直下に`loading`/`showOnboarding`等の条件に関係なく常時マウント(初回描画前からバックグラウンド同期を効かせるため)。**最終レビューで見つかったImportant指摘2件**: (1) `SyncPanel`のマウント時`loadSyncStatus`失敗が`loadLicense`失敗と同じcatchに落ちており、状態読み込みエラーだけで支援者(解錠済みユーザー)がロック画面に弾かれる不具合 → mount effectのtry/catchを分割して修正、(2) 大量削除の確認ダイアログを一旦キャンセルしても次にSETTINGSを開くと同じ確認が再表示される点は、レビューで「バグでは無く仕様」と判定(キャンセルはデータの食い違い自体を解決しないため、再度確認を求めるのが正しいUX・plan時にユーザー承認済みの意図と一致) → 修正せず。フルスイート**2892/2892**・tsc0・build OK(Task8時点の最終確認)。次=束6③(vault食い違いUI・`isPrivateVault`タグ重複・EMPTY TRASH文言)が唯一の残り。リアルタイム同期化の検討は今回も未着手のまま`CURRENT_GOAL.md`の「★検討事項」に継続保持(先送りせず記録する方針は維持)。詳細 CURRENT_GOAL.md。
+
+## s215(2026-09-16) — 端末間同期 束6③(vault食い違いUI・isPrivateVaultタグ重複安全網・EMPTY TRASH文言)実装・全タスクレビュー完了
+
+**s215 (2026-09-16)**: 端末間同期 **束6③(vault食い違いUI・isPrivateVaultタグ重複安全網・EMPTY TRASH文言)実装・全タスクレビュー完了**(`feat/vault-conflict-resolution`ブランチ、10タスクplan subagent-driven実行・各タスクレビュー、**まだ最終ブランチレビュー/masterマージ前**)。3つの独立した部分から成る: **(1) プライバシー漏洩の安全網修正**(Task1/2/2b) — `lib/board/filter.ts`の`privateGatePasses`と`BoardRoot.tsx`の`tagsExcludingPrivate`等が単一の`privateTagId`しか見ておらず、2つ目の`isPrivateVault:true`タグ付きブックマークが通常表示に紛れ込む実害あるプライバシー漏洩を発見・修正(全ての`isPrivateVault`タグのSetでチェックするよう拡張)。レビューで「ロック中は修正が無効化されている」バグをさらに発見→データ層(`lib/private/resolve-visibility.ts`の`resolvePrivateVisibility`)も同じ単一ID制限を持つ、より根本的な漏洩と判明→Task2bとして即時追加修正(`use-tags.ts`にロック状態非依存の`allPrivateTagIds`を新設)。**(2) EMPTY TRASHへの同期注意書き追加**(Task3) — 「同期中の端末がある場合、ゴミ箱に戻ってくることがあります(データを守る仕組みで、故障ではありません)」。**(3) vault(金庫)食い違い解決フロー**(Task4-9) — 2台の端末がそれぞれ別々にPrivateを作ってから同期をつなげた場合、決定的タイブレーク(既存`merge.ts`の`pickDeterministic`を再利用)でどちらが「まとめ先」かを自動判定(ユーザーに選ばせない)。まとめ先でない方が解錠時に「まとめる」を選ぶと、既存の暗号プリミティブ(`decryptWithPrivateKey`→`encryptWithPublicKey`)で自分のブックマークを再暗号化・タグを付け替え・自身のvaultとタグを削除。まとめ先側は次に解錠した時(タグのtombstoneで完了検知)に新しいパスワードを1つ決め直す画面を表示。**設計方針(ユーザーとの対話で確定)**: パスワードを他端末に入力させない・どちらが「メイン」という表現を使わない・Google Drive経由の同期であって端末間の直接移動ではないことが伝わる文言・簡潔で事実ベースの文言(「金庫」等の比喩語は使わない)。**レビュー工程で発見・修正した実質的な不具合、計5件**: (a) Task1の事前スキャンが漏らしていた既存テスト`tests/lib/filter.test.ts`(旧シグネチャで7箇所破損)→修正、(b) Task5の指示書自身のテストコードに欠陥(`mergeIntoOtherVault`テストが`tags`ストアへの行投入を忘れていた)→実装者が根本原因まで特定し最小修正、(c) Task6の指示書自身のテストfixtureが逆(`pickDeterministic`の比較で本物の公開鍵は必ず`"MFk..."`で始まる(P-256のSPKI DERヘッダ由来)という事実を実際に鍵を生成して検証→fixture値を修正)、(d) Task9の指示書が存在しないテストファイル(`BoardRoot.test.tsx`)を前提にしていた→実際のテスト基盤(Playwright e2e `tests/e2e/private-vault.spec.ts`)に差し替えて対応、(e) Task9レビューで発見した新規リグレッション(解錠直後の食い違いチェックが例外を投げた場合、セッションが「解錠済み」のまま失敗を報告してしまう)→`catch`節でセッションをnullに戻す修正を追加。**この過程で無関係な既存の壊れたテストアサーション1件も発見・修正**(`share-toast-create`の期待文言が旧copy「CREATE」のまま・実際は別の無関係なi18n変更で「CREATE LINK」に変わっていた)。フルスイート**2922/2922**・tsc0・playwright(`private-vault.spec.ts`)11/11・build OK。**続けて最終ブランチレビュー(opus)を実施**: 「Yes with follow-ups」判定。task毎のレビューでは見えないクロスタスクの問題を3件+設計級の指摘2件を発見。**即時修正した3件**(修正1波・スコープ再レビューで検収): (f) `use-tags.ts`の`allPrivateTagIds`が無関係なタグ編集(改名・並べ替え等)ごとに新しいSetを再生成→`useBoardData`の再読込が全ユーザー(Private未使用者も含む)で毎回発火する性能劣化→内容キーでメモ化するよう修正、(g) `BoardRoot.tsx`の名前一致による「Private」ガードがid比較でなく名前比較のため、2つのvaultタグが両方「Private」という名前を持つ食い違い状態でTask2の見送り判断("idは表示されないから到達不能")が実は誤りだったサイトを発見(idベースの他3箇所は本当に到達不能と再確認)→Setチェックに修正、(h) まとめ完了後、まとめ先のvaultレコードをローカルに取り込む処理が無く、次の同期まで自分の端末でPrivateが完全に使えなくなる不具合→`mergeIntoOtherVault`内で同期の`applySnapshotToLocal`と同じ手順(`otherRecord`をsettingsに書く)を追加+`reloadTags()`呼び出しを追加。スコープ再レビューでさらに1件(未使用になった依存配列の古い参照)を発見・即修正。**未修正のまま公開前必修正として記録**(CURRENT_GOAL.md参照): (i) vault食い違いの検知自体が「どちらが先にvault.jsonをDriveに公開したか」という偶然のタイミングに依存する非対称構造で、まとめ先側が検知を一生見逃す実際の設計ギャップ(調査済みだが再設計が必要)、(j) まとめ先のパスワードが本当に解錠可能か未確認のまま公開鍵だけで自動公開する設計(パスワード復旧手段の追加は製品判断・コード修正の範囲外)。フルスイート**2922/2922**・tsc0・playwright11/11・eslint新規混入なし(全て検収済)。次=最終ブランチレビュー完了→マージ/PR判断、その後は束1〜6③で一区切りとなる端末間同期機能の残る運用タスク(リアルタイム同期化の検討・**上記(i)(j)の解決**・claimレコードseed・PL-1/PL-2)。詳細 CURRENT_GOAL.md。
+
+## s216(2026-09-21) — 端末間同期 公開前必修正2件(I-3/I-5)のうち、I-3(vault食い違い検知の非対称性)を根本解決
+
+**s216 (2026-09-21)**: 端末間同期 **公開前必修正2件(I-3/I-5)のうち、I-3(vault食い違い検知の非対称性)を根本解決**。ユーザーから「解決すべき点を先に解決して」と指示され着手。設計: 検知の起点を`vault.json`の食い違いだけでなく、通常のタグ同期(食い違いに関係なく必ず両端末に伝わる)にも広げる — `lib/private/vault-conflict.ts`に`findOtherPrivateVaultTagIds`(生のタグストアを直接読む、tombstone=論理削除されたタグも見える)を新設。**この修正自体の検証中に、コントローラー自身の作業(テスト先行での動作確認)とレビュー(opus中心、計5回)を通じて実質的な不具合を3件発見・その場で修正**: (1) 「自分のタグID」の取得を`useTags()`の`privateTagId`(端末ごとに独立して決まる`order`フィールドで並べ替えたリストの先頭)から、解錠直後の`session.tagId`(曖昧さが無い)に変更 — 空成功再現テストで実際に誤判定を確認、(2) tombstoneは永久に消えない性質を利用した設計自体は正しかったが、「もう解決済み」の判定にそのまま使うと**解決後もパスワード再設定画面が毎回・永久に出続けてしまう**リグレッションを生んでいた(既存の正常系まで壊す不具合だったため優先度を上げて即修正)→ 明示的な「対応済みタグID」記録の仕組み(`acknowledgeVaultConflict`/新設定キー)を追加、(3) その記録の書き込み方にも粗さが2件(3台以上のケースで未解決の別の食い違いまで誤って対応済みにしてしまう/まとめ処理途中の中断で永久に詰む書き込み順序)→ガード条件追加+書き込み順序の入れ替えで修正。**I-5は2つに分割して対応**: 「壊れた公開鍵で静かに壊れる」懸念はコードで検証済み・安全(`importPublicKey`が最初の行で例外を投げ、何も変更されない)とテストで確認・解決。「パスワードを本当に忘れた場合の復旧手段が無い」「Googleアカウント乗っ取りレベルの攻撃者による誘導」の2点は、Private機能自体が最初から持つ前提(今回新たに生まれたリスクではない)であり製品判断が必要と判断・次回ユーザーと相談する方針でCURRENT_GOAL.mdに記録。フルスイート**2935/2935**・tsc0・playwright(`private-vault.spec.ts`)13/13。スコープは終始4ファイルのみ(`lib/private/vault-conflict.ts`本体+テスト、`BoardRoot.tsx`、e2eテスト)。全てmasterに直接コミット(本番push後の追加修正のため)。次=I-5の方針決め(復旧手段なしを受け入れるか、将来的に復旧コード機能を検討するか)→その後、運用セットアップ(claimレコードseed・専用キー発行)・リアルタイム同期化の検討・PL-1/PL-2。詳細 CURRENT_GOAL.md。
 
 ## s217(2026-09-21) — Private パスワード復旧キー機能・実装〜本番反映〜実機確認まで完了
 
