@@ -245,17 +245,53 @@
 }
 .paperNoteScroll {
   display: flex;
-  /* `safe center` centers SHORT notes vertically, but for a note long enough to
+  /* column: when a tweet's meta strip (avatar+name) renders above the title
+     (see renderMetaStrip in PlaceholderCard.tsx), the two must stack
+     vertically, not sit side by side — flex's default row direction would
+     otherwise place them left-to-right. */
+  flex-direction: column;
+  /* `safe` centers SHORT notes vertically, but for a note long enough to
      overflow it falls back to start (top) alignment instead of clipping the
      first lines above the scroll area — the same "centred overflow eats the top,
      and you can't scroll up to it" bug the plain .titleScroll hit and fixed in
      session 88 (see its comment). Without `safe`, scrollTop:0 still showed the
-     middle and the opening lines were unreachable (N-? user report). */
-  align-items: safe center;
-  justify-content: center;
+     middle and the opening lines were unreachable (N-? user report). Now on
+     `justify-content` (the main axis) instead of `align-items` since the axes
+     swapped with the column direction above. */
+  align-items: center;
+  justify-content: safe center;
   /* generous insets clear the binder holes (graph, left edge) and the spiral
      binding (notepad, top edge) so the title never sits on top of them. */
   padding: 23% 15% 15% 19%;
+}
+
+/* Tweet meta strip (renderMetaStrip in PlaceholderCard.tsx) inside a paper
+   note: same avatar+name/hostname content as every other theme, restyled to
+   sit inline at the top of the note instead of as an absolute overlay (which
+   would land on the spiral-binding artwork), in ink + the note's own
+   handwriting font so it reads as part of the note rather than card chrome. */
+.paperNote .author,
+.paperNote .hostname {
+  position: static;
+  z-index: auto;
+  max-width: 100%;
+  margin-bottom: 10px;
+}
+.paperNote .hostname {
+  color: var(--text-meta, #7a7364);
+  text-shadow: none;
+}
+.paperNote .authorName {
+  font-family: 'Yomogi', var(--font-handwriting, 'Caveat'), cursive;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--text-body, #4a443b);
+  text-shadow: none;
+}
+.paperNote .authorAvatar {
+  width: 26px;
+  height: 26px;
+  box-shadow: 0 2px 5px rgba(26, 22, 17, 0.35);
 }
 .paperNoteTitle {
   color: var(--text-body, #4a443b);

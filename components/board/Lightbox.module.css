@@ -204,6 +204,21 @@
   object-fit: cover;
 }
 
+/* Recurrence of N-23/session 56, same root cause, different <img>: a
+   text-only tweet's PlaceholderCard author avatar (small round photo, s219)
+   is nested inside .media too (via the zoomed LargePlaceholderCardScaler text-
+   card path), so the generic `.media img` rule above silently forced it to a
+   size-derived border-radius (whatever --lightbox-media-radius mirrors from
+   the source card — e.g. 20px on a ~45px box, not a true circle) and
+   object-fit:contain instead of the perfect circle + cover crop every board
+   card shows (2026-09-23 user report: square avatar on paper-atelier, where
+   the mismatch is obvious; dotted-notebook/flat had the same bug but the
+   wrong radius happened to look close enough to round to go unnoticed). */
+.media img[class*="authorAvatar"] {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 /* Flat theme: give the lightbox media a soft floating shadow. .media is the
    universal wrapper (image / video / embed / tweet — see LightboxMedia and
    TweetColumns, both render into this same class), so shadowing it once

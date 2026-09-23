@@ -166,6 +166,36 @@ export function PlaceholderCard({
     lineHeight: `${typography.lineHeight}px`,
   }
 
+  // Single source for "who/where this card is from" (tweet author avatar+name,
+  // or a plain hostname fallback) — called from BOTH the paper and non-paper
+  // return paths below. Before this, the paper branch's `if (paper) { return
+  // ... }` was a fully separate JSX tree that never rendered this at all, so
+  // when the author-strip feature (s219) was added it silently never reached
+  // paper cards (2026-09-23 user report). Keeping one function means any
+  // future change here reaches every theme by construction, not by remembering
+  // to edit both branches. Layout/color is still free to differ per theme via
+  // CSS (paper positions it inline at the top of the scroll area instead of as
+  // an absolute overlay — see .paperNote .author / .hostname).
+  function renderMetaStrip(): ReactNode {
+    if (omitMeta) return null
+    if (hasAuthor) {
+      return (
+        <div className={styles.author}>
+          {item.authorAvatar && (
+            <img src={item.authorAvatar} alt="" className={styles.authorAvatar} />
+          )}
+          {item.authorName && (
+            <span className={styles.authorName}>{item.authorName}</span>
+          )}
+        </div>
+      )
+    }
+    if (hostname) {
+      return <div className={styles.hostname}>{hostname}</div>
+    }
+    return null
+  }
+
   // Paper-atelier text note: a thumbnail-less card rendered as a graph / spiral
   // notepad sheet (background-size:100% 100%) with the title hand-written on it,
   // matching ImageCard's paper face. Falls through to the generated-art card
@@ -189,6 +219,7 @@ export function PlaceholderCard({
             onScroll={updateScrollState}
             onWheel={handleCardWheel}
           >
+            {renderMetaStrip()}
             <div className={`${styles.titleInner} ${styles.paperNoteTitle}`} style={titleStyle}>
               {title}
             </div>
@@ -210,20 +241,7 @@ export function PlaceholderCard({
       ))}
       <div className={styles.scrim} aria-hidden="true" />
 
-      {!omitMeta && hasAuthor ? (
-        <div className={styles.author}>
-          {item.authorAvatar && (
-            <img src={item.authorAvatar} alt="" className={styles.authorAvatar} />
-          )}
-          {item.authorName && (
-            <span className={styles.authorName}>{item.authorName}</span>
-          )}
-        </div>
-      ) : (
-        !omitMeta && hostname && (
-          <div className={styles.hostname}>{hostname}</div>
-        )
-      )}
+      {renderMetaStrip()}
 
       <div
         ref={titleScrollRef}
