@@ -1827,6 +1827,8 @@ function TweetMedia({
       isDeleted: false,
       tags: [],
       displayMode: null,
+      authorAvatar: item.authorAvatar,
+      authorName: item.authorName,
     }
     // session 37 phase 3 + session 88 PlaceholderCard 統合: text-only tweet も
     // 非ツイートのテキストカードと同じ LargePlaceholderCardScaler 経路。 board の

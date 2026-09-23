@@ -239,6 +239,22 @@
   border-radius: var(--lightbox-media-radius);
   overflow: hidden;
 }
+/* PlaceholderCard's dotted-notebook box-shadow (0 20px 50px) is already fully
+   clipped and invisible on the real board card (CardNode's .inner is
+   overflow:hidden), so it costs nothing to drop here — but inside this zoomed
+   text-card path (LargePlaceholderCardScaler wraps it in a `zoom`-scaled div)
+   the shadow's offset/blur scale up 2-3x with it, and .imageBox's own
+   overflow:hidden then hard-clips that oversized, downward-biased shadow into
+   solid black wedges at the bottom corners (user report). Neutralize it only
+   in this zoomed context; the board's own (already invisible) shadow is
+   untouched. */
+/* Specificity must beat PlaceholderCard.module.css's own
+   `html[data-theme-id='dotted-notebook'] .placeholderCard` rule — repeating
+   the theme attribute here (rather than relying on source order between two
+   separate CSS module files, which the bundler doesn't guarantee) does that. */
+:global(html[data-theme-id='dotted-notebook']) .imageBox :global([data-placeholder-card='true']) {
+  box-shadow: none;
+}
 .imageBox > img {
   width: 100%;
   height: 100%;

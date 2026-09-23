@@ -35,6 +35,12 @@ export type LightboxItem = {
    *  font サイズ / padding / レイアウトが完全同一になる (session 32 fix)。
    *  Undefined for share-card view; fallback to a sensible default. */
   readonly cardWidth?: number
+  /** Board-side only: tweet author's avatar/display name, backfilled onto the
+   *  bookmark after the first tweet-meta fetch. Lets the Lightbox's enlarged
+   *  text-only-tweet card show the same avatar+name strip as the board's own
+   *  small card instead of falling back to a generic hostname string. */
+  readonly authorAvatar?: string
+  readonly authorName?: string
 }
 
 function isBoardItem(item: BoardItem | ShareCard): item is BoardItem {
@@ -55,6 +61,8 @@ export function normalizeItem(item: BoardItem | ShareCard): LightboxItem {
       mediaSlots: item.mediaSlots,
       aspectRatio: item.aspectRatio,
       cardWidth: item.cardWidth,
+      authorAvatar: item.authorAvatar,
+      authorName: item.authorName,
     }
   }
   return {

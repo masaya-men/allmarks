@@ -199,7 +199,7 @@ export function PlaceholderCard({
   }
 
   return (
-    <div className={styles.placeholderCard} ref={rootRef}>
+    <div className={styles.placeholderCard} ref={rootRef} data-placeholder-card="true">
       {layerUrls.map((url, i) => (
         <div
           key={i}
