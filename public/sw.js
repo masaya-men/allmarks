@@ -6,7 +6,7 @@
 //   - Skip: API calls, non-GET requests
 
 // Bump on each deploy to force clients to flush old caches.
-const CACHE_VERSION = 'v105-2026-09-23-textcard-glass-background'
+const CACHE_VERSION = 'v106-2026-09-23-lightbox-avatar-shadow-fix'
 const CACHE_NAME = 'booklage-' + CACHE_VERSION
 
 var PRECACHE_URLS = [
