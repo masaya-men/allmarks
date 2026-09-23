@@ -110,10 +110,12 @@
 
 /* Title text — font-size + line-height は pickTitleTypography から inline
    style で注入される (= card 内に typography 計算 ロジックを内包せず、
-   既存 TextCard と同じ helper を経由)。 中央寄せ + 改行可能 + word-break。 */
+   既存 TextCard と同じ helper を経由)。 s219: 中央寄せ→左揃えに変更
+   (user 判断: 中央寄せだと元の改行(white-space: pre-wrap で維持済み)が
+   バラバラに見えて読みにくい)。 改行可能 + word-break は維持。 */
 .titleInner {
   position: relative;
-  text-align: center;
+  text-align: left;
   word-break: break-word;
   white-space: pre-wrap;
   color: rgba(255, 255, 255, 0.94);
