@@ -33,7 +33,15 @@
    自体も使っていない、単なる半透明ではなく本当の「すりガラス」にするのは
    将来の話 — 4K高DPR環境での背景ぼかしはこのプロジェクトで過去に負荷が
    確認されている)。 */
-:global(html[data-theme-id='dotted-notebook']) .placeholderCard {
+/* Flat が dotted-notebook と背景・枠線・影を共有する理由: この背景は
+   「黒く塗った土台に白を乗せた」ものではなく、そもそも土台に色を塗っていない
+   (= background-color 未指定 = 透明)。 薄い白グラデーションを重ねているだけ
+   なので、 下に見えている板の色がそのまま透けて見える構造 — 板が黒
+   (dotted-notebook) でも白系 (flat) でも同じ CSS のまま成立する。 テーマごとに
+   変えるべきは文字色(タイトル・ホスト名・投稿者名)だけ、という user 判断
+   (2026-09-23)。 */
+:global(html[data-theme-id='dotted-notebook']) .placeholderCard,
+:global(html[data-theme-id='flat']) .placeholderCard {
   background:
     radial-gradient(120% 120% at 20% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
@@ -41,19 +49,40 @@
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
 }
 :global(html[data-theme-id='dotted-notebook']) .placeholderCard .bgLayer,
-:global(html[data-theme-id='dotted-notebook']) .placeholderCard .scrim {
+:global(html[data-theme-id='dotted-notebook']) .placeholderCard .scrim,
+:global(html[data-theme-id='flat']) .placeholderCard .bgLayer,
+:global(html[data-theme-id='flat']) .placeholderCard .scrim {
   display: none;
 }
 /* 参考コードの .card::after(斜めの白いハイライト、pointer-events:none で
    テキスト操作を妨げない)。.placeholderCard は overflow:hidden 済みなので
    inset:0 は自動的にカードの角丸で切り取られる。 */
-:global(html[data-theme-id='dotted-notebook']) .placeholderCard::after {
+:global(html[data-theme-id='dotted-notebook']) .placeholderCard::after,
+:global(html[data-theme-id='flat']) .placeholderCard::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 40%);
   opacity: 0.55;
   pointer-events: none;
+}
+
+/* Flat だけ文字色を反転: 板が明るいので dotted-notebook の白文字のままでは
+   読めない。 背景・枠線・影・光沢は上の共有ブロックのまま変えない。 */
+:global(html[data-theme-id='flat']) .placeholderCard {
+  color: var(--text-body, #2c2a25);
+}
+:global(html[data-theme-id='flat']) .placeholderCard .hostname {
+  color: var(--text-meta, #6b675e);
+  text-shadow: none;
+}
+:global(html[data-theme-id='flat']) .placeholderCard .authorName {
+  color: var(--text-primary, #14130f);
+  text-shadow: none;
+}
+:global(html[data-theme-id='flat']) .placeholderCard .titleInner {
+  color: var(--text-body, #2c2a25);
+  text-shadow: none;
 }
 
 /* 生成アート背景レイヤー。 placeholderArtFrames が返す数枚を絶対配置で重ね、
