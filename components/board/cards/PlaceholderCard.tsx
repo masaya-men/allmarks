@@ -227,7 +227,7 @@ export function PlaceholderCard({
 
       <div
         ref={titleScrollRef}
-        className={styles.titleScroll}
+        className={!omitMeta && hasAuthor ? `${styles.titleScroll} ${styles.titleScrollWithAuthor}` : styles.titleScroll}
         data-scroll-edge={scrollEdge}
         data-card-scroll="true"
         onScroll={updateScrollState}

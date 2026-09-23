@@ -15,16 +15,16 @@ type Input = {
  *
  * s219: user 判断で従来の半分のサイズに変更(「とりあえず半分にしていい」)。
  * サクッと読める密度を優先し、テキストカード全種(ツイート含め統一)に適用。
- * 直後のフィードバックで半分だと小さすぎたため、半分サイズの1.1倍に再調整
- * (8 × 1.1 = 8.8)。
+ * 直後のフィードバックで半分(8px)は小さすぎたため8.8pxに再調整、さらに
+ * もう一段階「少しだけ」大きくとの要望で10pxに調整。
  *
  * 入力は signature 互換性のために受け取るが内部では使わない。
  */
 export function pickTitleTypography(_input: Input): TitleTypographyResult {
   return {
     mode: 'editorial',
-    fontSize: 8.8,
-    lineHeight: 13.2, // 8.8 × 1.5
+    fontSize: 10,
+    lineHeight: 15, // 10 × 1.5
     maxLines: 999,  // 実質無制限、 オーバーフローはスクロールで処理
   }
 }

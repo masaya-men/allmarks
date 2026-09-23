@@ -126,6 +126,13 @@
 }
 .titleScroll::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
+/* s219: .author (top:10px, 20px アイコン = 下端30px) の下に、本文がすぐ
+   食い込んで見えた(user報告「窮屈」)ため、通常の28pxより広い上余白を確保。
+   30px(アイコン下端) + 約12pxの明確な隙間 = 42px。 */
+.titleScrollWithAuthor {
+  padding-top: 42px;
+}
+
 /* Edge fade (no-plain-scrollbar house rule): fade the cut-off end(s); the fade
    clears at whichever end you've scrolled to. Mirrors FilterPill's tag list. */
 .titleScroll[data-scroll-edge='middle'] {

@@ -11,8 +11,8 @@ describe('pickTitleTypography (session 55 unified)', () => {
 
     for (const r of [short, medium, long]) {
       expect(r.mode).toBe('editorial')
-      expect(r.fontSize).toBe(8.8)
-      expect(r.lineHeight).toBe(13.2)
+      expect(r.fontSize).toBe(10)
+      expect(r.lineHeight).toBe(15)
       expect(r.maxLines).toBe(999)
     }
   })
@@ -20,7 +20,7 @@ describe('pickTitleTypography (session 55 unified)', () => {
   it('handles empty / emoji / CJK titles with the same unified values', () => {
     for (const title of ['', '🎨🌈✨', 'これは日本語のタイトルです']) {
       const r = pickTitleTypography({ ...baseInput, title })
-      expect(r.fontSize).toBe(8.8)
+      expect(r.fontSize).toBe(10)
       expect(r.mode).toBe('editorial')
     }
   })
