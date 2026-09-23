@@ -31,8 +31,33 @@ describe('checkTweetLiveness', () => {
   // AND blocks opening it (BoardRoot.tsx's linkStatus==='gone' guard) for a
   // link the user can actually still see. 'unknown' is the safe bucket —
   // retried hourly, never visually demoted.
-  it('maps 200 + TweetTombstone to unknown, not gone (suspended / protected / age-restricted — may still be alive to this user)', async () => {
+  it('maps 200 + TweetTombstone with no distinguishing text to unknown, not gone (suspended / protected / age-restricted — may still be alive to this user)', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(res(200, { __typename: 'TweetTombstone', tombstone: { text: {} } }))
+    expect(await checkTweetLiveness('123', fetchImpl)).toEqual({ kind: 'unknown' })
+  })
+
+  // s219 user report: a genuinely deleted tweet (x.com/luciel4949/status/2099396916627030115)
+  // was staying non-dead on the board. Verified empirically against the live
+  // proxy: it's a 200 TweetTombstone, not a 404, with this exact reason text.
+  it('maps 200 + TweetTombstone "deleted by the Post author" to gone (real payload shape)', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(res(200, {
+      __typename: 'TweetTombstone',
+      tombstone: {
+        text: {
+          rtl: false,
+          text: 'This Post was deleted by the Post author. Learn more',
+          entities: [{ from_index: 42, to_index: 52, ref: { __typename: 'TimelineUrl', url: 'https://help.x.com/rules-and-policies/notices-on-x', url_type: 'ExternalUrl' } }],
+        },
+      },
+    }))
+    expect(await checkTweetLiveness('2099396916627030115', fetchImpl)).toEqual({ kind: 'gone' })
+  })
+
+  it('maps 200 + TweetTombstone with a DIFFERENT reason to unknown, not gone (only the author-deleted phrase maps to gone)', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(res(200, {
+      __typename: 'TweetTombstone',
+      tombstone: { text: { text: 'This Post is from a suspended account. Learn more' } },
+    }))
     expect(await checkTweetLiveness('123', fetchImpl)).toEqual({ kind: 'unknown' })
   })
 

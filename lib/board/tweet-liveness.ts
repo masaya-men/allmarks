@@ -39,9 +39,27 @@ function isLiveTweet(data: unknown): boolean {
   return d.__typename === 'Tweet' && typeof d.id_str === 'string' && d.id_str.length > 0
 }
 
+// s219: a TweetTombstone's tombstone.text.text carries a human-readable reason
+// that differs by cause ("This Post was deleted by the Post author." verified
+// empirically against a real deleted tweet's syndication response — see the
+// user report this was added for). Only THAT specific, unambiguous phrase maps
+// to 'gone'; every other tombstone reason (suspended / protected / age-gated —
+// exact wording not verified against a real example) stays 'unknown' exactly
+// as before N-70's original safe-bucket behavior. Narrow substring match, not
+// exact-equality, so incidental whitespace/punctuation drift in the phrase
+// doesn't silently stop matching.
+function isAuthorDeletedTombstone(data: unknown): boolean {
+  if (!data || typeof data !== 'object') return false
+  const d = data as { __typename?: unknown; tombstone?: { text?: { text?: unknown } } }
+  if (d.__typename !== 'TweetTombstone') return false
+  const text = d.tombstone?.text?.text
+  return typeof text === 'string' && text.includes('deleted by the Post author')
+}
+
 // Decide tweet liveness from the syndication proxy response. Network is
-// injected. alive IFF a confirmed live Tweet; everything else 200 is gone;
-// 404 is gone; 5xx / thrown (timeout / network) is unknown (don't change state).
+// injected. alive IFF a confirmed live Tweet; a tombstone explicitly saying
+// the author deleted it is gone; every other 200 is unknown; 404 is gone;
+// 5xx / thrown (timeout / network) is unknown (don't change state).
 export async function checkTweetLiveness(
   tweetId: string,
   fetchImpl: LivenessFetch = defaultLivenessFetch,
@@ -51,7 +69,9 @@ export async function checkTweetLiveness(
     if (res.status === 404) return { kind: 'gone' }
     if (!res.ok) return { kind: 'unknown' }
     const data: unknown = await res.json()
-    return isLiveTweet(data) ? { kind: 'alive' } : { kind: 'unknown' }
+    if (isLiveTweet(data)) return { kind: 'alive' }
+    if (isAuthorDeletedTombstone(data)) return { kind: 'gone' }
+    return { kind: 'unknown' }
   } catch {
     return { kind: 'unknown' }
   }
