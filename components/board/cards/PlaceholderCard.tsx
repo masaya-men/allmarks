@@ -211,15 +211,19 @@ export function PlaceholderCard({
           data-paper-note="true"
           style={{ backgroundImage: `url("${paperUrl}")` }}
         >
+          {renderMetaStrip()}
           <div
             ref={titleScrollRef}
-            className={`${styles.titleScroll} ${styles.paperNoteScroll}`}
+            className={
+              !omitMeta && hasAuthor
+                ? `${styles.titleScroll} ${styles.paperNoteScroll} ${styles.paperNoteScrollWithAuthor}`
+                : `${styles.titleScroll} ${styles.paperNoteScroll}`
+            }
             data-scroll-edge={scrollEdge}
             data-card-scroll="true"
             onScroll={updateScrollState}
             onWheel={handleCardWheel}
           >
-            {renderMetaStrip()}
             <div className={`${styles.titleInner} ${styles.paperNoteTitle}`} style={titleStyle}>
               {title}
             </div>

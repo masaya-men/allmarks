@@ -6,7 +6,7 @@
 //   - Skip: API calls, non-GET requests
 
 // Bump on each deploy to force clients to flush old caches.
-const CACHE_VERSION = 'v108-2026-09-23-paper-textcard-meta-strip'
+const CACHE_VERSION = 'v109-2026-09-23-paper-metastrip-pin-fix'
 const CACHE_NAME = 'booklage-' + CACHE_VERSION
 
 var PRECACHE_URLS = [

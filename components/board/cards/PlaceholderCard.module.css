@@ -245,37 +245,39 @@
 }
 .paperNoteScroll {
   display: flex;
-  /* column: when a tweet's meta strip (avatar+name) renders above the title
-     (see renderMetaStrip in PlaceholderCard.tsx), the two must stack
-     vertically, not sit side by side — flex's default row direction would
-     otherwise place them left-to-right. */
-  flex-direction: column;
-  /* `safe` centers SHORT notes vertically, but for a note long enough to
+  /* `safe center` centers SHORT notes vertically, but for a note long enough to
      overflow it falls back to start (top) alignment instead of clipping the
      first lines above the scroll area — the same "centred overflow eats the top,
      and you can't scroll up to it" bug the plain .titleScroll hit and fixed in
      session 88 (see its comment). Without `safe`, scrollTop:0 still showed the
-     middle and the opening lines were unreachable (N-? user report). Now on
-     `justify-content` (the main axis) instead of `align-items` since the axes
-     swapped with the column direction above. */
-  align-items: center;
-  justify-content: safe center;
+     middle and the opening lines were unreachable (N-? user report). */
+  align-items: safe center;
+  justify-content: center;
   /* generous insets clear the binder holes (graph, left edge) and the spiral
      binding (notepad, top edge) so the title never sits on top of them. */
   padding: 23% 15% 15% 19%;
 }
+/* Same spec as .titleScrollWithAuthor (default theme): when the tweet author
+   strip is showing, push the title down to clear it. Paper's strip sits
+   further down than default's (see .paperNote .author/.hostname top below,
+   offset to clear the spiral-binding artwork), so it needs more clearance
+   than the base 23%. */
+.paperNoteScrollWithAuthor {
+  padding-top: 34%;
+}
 
 /* Tweet meta strip (renderMetaStrip in PlaceholderCard.tsx) inside a paper
-   note: same avatar+name/hostname content as every other theme, restyled to
-   sit inline at the top of the note instead of as an absolute overlay (which
-   would land on the spiral-binding artwork), in ink + the note's own
-   handwriting font so it reads as part of the note rather than card chrome. */
+   note: same content, same fixed-at-top/left-aligned/doesn't-scroll behavior
+   as every other theme (position:absolute is inherited from the shared
+   .author/.hostname rule below — only the offset changes here, to clear the
+   spiral-binding artwork instead of colliding with it) — just recolored to
+   ink + the note's own handwriting font so it reads as part of the note
+   rather than card chrome. */
 .paperNote .author,
 .paperNote .hostname {
-  position: static;
-  z-index: auto;
-  max-width: 100%;
-  margin-bottom: 10px;
+  top: 12%;
+  left: 19%;
+  max-width: 66%;
 }
 .paperNote .hostname {
   color: var(--text-meta, #7a7364);
