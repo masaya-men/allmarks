@@ -113,31 +113,6 @@
     drop-shadow(0 36px 58px rgba(26, 22, 17, 0.40));
 }
 
-/* Default (dotted-notebook) theme: a quiet, refined glass-card frame around
-   each card — a hairline border for definition against the black canvas, a
-   soft dark lift shadow, and a barely-there inner top highlight (the "edge
-   catches light" cue real glass has). Deliberately reductive: no colored
-   glow (this app's house rule bans the blue->purple "AI gradient" look),
-   no hover animation (kept out of scope per user request — the reference
-   design's hover-reveal/float is a content-reveal interaction this app's
-   cards don't use, not a chrome detail). Scoped to .cardNode (NOT
-   overflow:hidden, matching the paper-atelier/flat pattern above) so the
-   shadow isn't clipped by .inner. Applies uniformly to every card type
-   (image / video / placeholder) since they all render inside CardNode. */
-/* Border opacity 0.08 -> 0.16 (s219): verified live that a photo card reads
-   fine at 0.08 (the photo's own contrast defines the edge), but a solid
-   near-black text/placeholder card (#1a1a1c background, close to the board's
-   own black) needed a stronger line since there's no content contrast to
-   lean on. */
-:global(html[data-theme-id='dotted-notebook']) .cardNode {
-  border-radius: var(--card-radius);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 1px 2px rgba(0, 0, 0, 0.35),
-    0 14px 32px rgba(0, 0, 0, 0.38);
-}
-
 .selected {
   outline: 2px solid var(--color-accent-primary);
   outline-offset: 2px;

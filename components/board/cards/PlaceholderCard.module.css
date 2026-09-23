@@ -17,6 +17,22 @@
   color: rgba(255, 255, 255, 0.92);
 }
 
+/* s219: user 判断「自分で作った(生成アート)背景画像がダサい」への対応。
+   テキストカード(=このコンポーネント)だけが対象 — ImageCard/VideoThumbCard
+   (実写真が出ているカード)は含めない。デフォルト(dotted-notebook)テーマ限定。
+   縁取り+影で「質の良い枠」を演出、色や光る演出は使わない(このプロジェクトの
+   「AIグラデーション禁止(青→紫)」ルールに抵触しない引き算のデザイン)。
+   ホバーアニメーションは追加しない(ユーザーが明示的に対象外とした)。
+   box-shadow は要素自身の overflow:hidden には影響されない(clip されるのは
+   子要素のはみ出しだけ)ので、このセレクタに直接付けて問題ない。 */
+:global(html[data-theme-id='dotted-notebook']) .placeholderCard {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 14px 32px rgba(0, 0, 0, 0.38);
+}
+
 /* 生成アート背景レイヤー。 placeholderArtFrames が返す数枚を絶対配置で重ね、
    active 1 枚を opacity:1、 他を opacity:0 にして 800ms クロスフェード (= 複数
    画像ツイート式の巡回)。 巡回しないときは frame[0] 1 枚だけ opacity:1 = 静止。
