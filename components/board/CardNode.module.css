@@ -124,11 +124,16 @@
    overflow:hidden, matching the paper-atelier/flat pattern above) so the
    shadow isn't clipped by .inner. Applies uniformly to every card type
    (image / video / placeholder) since they all render inside CardNode. */
+/* Border opacity 0.08 -> 0.16 (s219): verified live that a photo card reads
+   fine at 0.08 (the photo's own contrast defines the edge), but a solid
+   near-black text/placeholder card (#1a1a1c background, close to the board's
+   own black) needed a stronger line since there's no content contrast to
+   lean on. */
 :global(html[data-theme-id='dotted-notebook']) .cardNode {
   border-radius: var(--card-radius);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 1px 2px rgba(0, 0, 0, 0.35),
     0 14px 32px rgba(0, 0, 0, 0.38);
 }
