@@ -205,29 +205,25 @@ export function mergeCards(
 
 // ── board-config（設計 §6.4）─────────────────────────────────────────────
 
-/** まるごと 1 個 LWW（updatedAt が無ければ 0 扱い・同値は config を安定比較
- *  して決定的に）。ただし themeId/themeCustomizations だけは例外で、常に
- *  ローカル側（この端末）の値を残す — テーマは端末ごとに独立させる方針
- *  （s218 ユーザー決定: 「テーマは端末ごとの方がいい」）。新規端末の初回
- *  同期（local が無い = まだ一度もこの端末で設定していない）は、テーマも
- *  含めてそのままリモートを初期値として採用する。 */
+/** 常にこの端末（local）の値を残す。ボード設定（テーマ・角の丸み・モーション・
+ *  背景文字・縦横比・表示モード・フィルタ等、見た目や挙動に関する設定一式）は
+ *  端末ごとに独立という方針に統一（s218 でテーマのみ先行決定、s219 で全項目に
+ *  拡張 — ユーザー決定: 「見た目は端末ごとに分離するのが普通」）。実データ
+ *  （ブクマ・タグ・カード配置・Private の金庫）だけが同期対象。
+ *  元は themeId/themeCustomizations だけの例外扱いだったが、
+ *  boardConfigFileSchema が z.record(...) の「なんでも入る箱」であるため、
+ *  新しい設定を追加するたびに個別に除外を書かないと自動的に同期されてしまう
+ *  構造上の弱点があった（roundedCorners が実際にこの穴を抜けて同期され続けて
+ *  いた）。個別の例外を積み増す代わりに既定を反転させ、ボード設定は「同期
+ *  しない」を既定にする。新規端末の初回同期（local が無い＝まだ一度もこの
+ *  端末で設定していない）だけは、リモートを初期値として採用する（既存の
+ *  !local 経路、変更なし）。 */
 export function mergeBoardConfig(
   local: SyncBoardConfig | null,
   remote: SyncBoardConfig | null,
 ): SyncBoardConfig | null {
   if (!local) return remote
-  if (!remote) return local
-  const lt = numericTime(local.updatedAt)
-  const rt = numericTime(remote.updatedAt)
-  const winner = lt > rt ? local : rt > lt ? remote : pickDeterministic(local, remote)
-  return {
-    ...winner,
-    config: {
-      ...winner.config,
-      themeId: local.config.themeId,
-      themeCustomizations: local.config.themeCustomizations,
-    },
-  }
+  return local
 }
 
 // ── vault（設計 §9）──────────────────────────────────────────────────────
