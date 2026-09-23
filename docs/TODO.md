@@ -90,38 +90,13 @@ Private Phase 2完了後、ユーザーから次の一括インプット。N-69(
   - **② 共有（SHARE）のくだりが変わっている**: 共有の流れ（選ぶ→CREATE で自動撮影→リンク＝s176 以降）に作り替わっているのに、オンボーディングの共有説明が古いまま。現状フローに合わせて直す。
   - 着手時: `components/onboarding/` の実装（OnboardingController 等）を読み、現状フロー（タグ付け＝s182 下部タグ帯・共有＝s176 自動撮影）と照合してから修正。**規模：小〜中**（主に削除＋共有節の文言差し替え）。
 
-### session 183 で報告（PC盤面＋共有の磨き — ★ローンチ前・s183 で着手）
+### session 183〜188 の残り(N-50/57/59) — 対応記録が途切れており要再確認
 
-> 束B（スマホ保存）実機OK後にユーザーが挙げた5件。s183 で調査（各項目 subagent 並行・事実確認済）→ **①②③④を s183 で着手／⑤(N-28) は来週**。グループ A=共有（②③）／B=PC質感（①④）。
+> N-55/56/58 は解決済み(N-56=canvas直描画レンダラーで恒久修正済・N-58=実装したがユーザー判断でs195に棚上げ)。詳細は TODO_COMPLETED.md「TODO.mdの整理」節。以下3件は「その後どうなったか記録が無い」ため、着手前に現状を実機で確認し直すこと(このnarrative自体が古い可能性が高い)。
 
-- **(N-55) 撮影成功後もコラージュがシートの裏で触れる（s185 最終レビュー発見・非ブロック・実害なし）** — 成功後も `sharePhase` は `'arrange'` のままなので `CollageCanvas` が生きており、帯のカードを指で動かせてしまう（回転ノブも `hover:none` で見えている）。画像は既に撮り終えて R2 に載っているので**共有内容は 1mm も変わらない**が、「動かせるのに何も起きない」のは小さな UX の傷。直すなら成功時に当たり判定を殺す。※**(N-58) を実装するなら消える**（触れて正しくなる）。
-
-### session 185 実機フィードバック（★次セッション最優先・N-56 は致命）
-
-- **(N-56) ★★スマホで共有画像が作成されない（実機・致命・ローンチブロッカー）** — 症状（s186 でユーザー確定）＝**(a) プレビューが出ない・iPhone Safari・4枚でも発生**。
-  - **✅ s188 で「診断可視化＋倍率フォールバック＋真っ白検出」を実装・本番反映済**（計画書 Task 1〜5 完了・opus 全ブランチレビュー READY TO MERGE・Critical/Important ゼロ）。撮影を段階別（no-frame/timeout/render/decode/blank/normalize）に診断し、失敗したら**倍率1で撮り直し**、iOS の「真っ白な成功画像」を失敗扱いにする。結果シートに **NO IMAGE — LINK ONLY** の琥珀枠＋**1行の診断文字列**（例 `#1 x3.08 render 9000ms RangeError… / #2 x1 ok 2100ms`）を出す。**デスクトップはバイト同一**（レビュアーが呼び出し元で検証）・**撮影失敗でもリンクは必ず作る**。
-  - **★次セッション最優先＝実機で診断行を1回読む**: ユーザーに iPhone で `allmarks.app` → SHARE → SELECT ALL → CREATE を実行してもらい、結果シートの診断行（黄枠 or プレビュー下の灰色英数字）を報告してもらう。**その1行で真因が確定**し、恒久対応（下表）を1つ選んで別セッションで実装する:
-    - `#1 x3.08 … → #2 x1 ok`（倍率が犯人）＝ F1: `fallbackScales` を `[2,1]` にして中間画質を確保＋将来「帯だけ撮る」最適化（canvas 面積 1/4）。**この場合は既にフォールバックで救えている**（画像は出る）ので、診断で確定させるだけ。
-    - `blank`（iOS foreignObject 空振り＝真っ白）＝ F4: ユーザーと相談。canvas 直描画のモバイル専用レンダラー（大工事）か、「この端末は画像なし」を正直に出す（現状の NO IMAGE 表示のまま）か。
-    - 両方 `timeout` ＝ F2: `timeoutMs` を 30000 に＋arrange 進入時に proxy URL を先読みして CF edge を温める。
-    - `render SecurityError` ＝ F3: proxy 対象漏れ（srcset/CSS 背景）を特定。**この F3 で診断行の URL 切り詰めも同時に行う**（レビュアー Minor #2・現状は自端末・自データ・非送信なので出荷可）。
-  - **N-58 との関係**: retry は現状「全再実行」（新しい /s リンクを作る）。N-58 実装後に「撮影だけ再実行」へ差し替わる（計画書明記）。
-  - **★s188 実機結果（想定より深刻）＝OOM タブクラッシュ**: 100枚 SELECT ALL で、共有ボードは表示されるが CREATE（撮影）で**タブごと強制終了**（黒画面→再読込→ボードに戻る→繰り返すと Safari が止める）。リンクも作られない＝`createHostedShare` 到達前に死亡＝catch 不能なメモリ枯渇。**画面表示の診断（s188）はページごと消えて読めない**。s188 の倍率フォールバックも**タブが死ぬと土台ごと消えるので効かない**＝1回目の撮影を軽くするしかない。
-  - **★s188.1 出荷済（本番反映）＝クラッシュ耐性パンくず**: `lib/share/capture-breadcrumb.ts`（localStorage 同期）＋`CaptureCrashNotice.tsx`（次回起動時に琥珀枠で読み返し）。撮影直前に `枚数・canvas WxH・元画像総MP(sourceMP)` を記録→無事終われば消す→落ちて残れば次回表示。tsc0 / vitest 2269 / build OK。
-  - **★主犯確定（実機パンくず）**: `100 cards · canvas 1200×1744 (x3.2) · images 78MP`。canvas=210万画素(無害)、**images 78MP=撮影時に全カード画像を原寸展開で約310MB→タブ上限超過が主犯**（canvas の約37倍）。
-  - **★s188.2 恒久修正 出荷済（本番反映）＝撮影時のカード画像 適応縮小**: `lib/share/capture-thumbnails.ts`（`captureThumbnailMaxPx`＝合計約12MP予算・100枚→346px・少数→原寸1200／`buildCaptureThumbnailMap`＝proxy 経由 fetch＋canvas 縮小・同時実行4）。`capture-collage.ts` に `captureThumbnails?` opt（**デスクトップは渡さず byte-identical**）。BoardRoot モバイル多枚数時のみサムネ Map を渡す（少数は原寸＝不変）。tsc0 / vitest 2277 / build OK。
-  - **★s188.2 でクラッシュは解消（実機確認済）**。だが **6枚でも 100枚でも画像が出ない（暗い）＝枚数非依存**。→ **iOS Safari の dom-to-image が foreignObject 内の画像を描けない**制限が確定（PC Chrome では出る＝iOS 固有・候補①/F4 が現実化）。小技では直らない。
-  - **★恒久修正＝canvas 直描画へ移行**（foreignObject 不使用）。計画書 **[2026-07-12-n56-mobile-canvas-renderer.md](superpowers/plans/2026-07-12-n56-mobile-canvas-renderer.md)**（Task 1〜5）。土台 `lib/share/capture-mirror.ts`（既存の canvas 直描画レンダラー・primitives 完成）を流用し、`chosen`＋`collagePositions`＋`band` から直接描く。**デスクトップは dom-to-image のまま触らない**。ユーザー承認済（¥0・安全確認済）。
-  - **★次セッション最優先＝この計画書を subagent-driven-development で実装** → 実機で写真が出るか確認 → 出れば N-56 完了→N-58段階1。
-  - 旧計画 [n56](superpowers/plans/2026-07-11-n56-mobile-share-image-fix.md)（診断・縮小）／ narrative [TODO_COMPLETED.md](./TODO_COMPLETED.md) s188。
-- **(N-57) スマホのボードに背景タイトル（ワードマーク）が出ていない** — **これは s185 のスコープ外**（N-51 の残りとして次に置いてあった）。`BoardBackgroundTypography` の `!isMobile` ゲートを外すだけ。ユーザーの理由＝「ボトムナビの THEME からカスタマイズできるように見えるのに見えないのはおかしい」。出したら**スマホの共有画像にもタイトルを載せるか**を決める（s185 は盤面に無いので `setShareTitle(null)` にしてある）。
-- **(N-58) ★スマホでもコラージュさせたい（＝s185 の「並べる段を出さない」決定を撤回）** — ユーザー曰く「簡素でもコラージュしたい。表現の場なのでスマホでもきちんと表現させたい」。s185 spec §2.1 でユーザー自身が「並べる段は出さない（失うもの＝移動・回転・拡縮・タイトル編集）」を承認していたが、実機で触って**表現できないことが受け入れられないと判明**。
-  - **既に指で動く**（s184 調査）: 並べる段のドラッグ移動／リサイズ（掴めるが弧が hover 依存で見えなかった → s185 で `@media (hover:none)` により**回転ノブは指で触れるようになっている**）。
-  - **要設計**: 帯（画面中央 1.91:1・390px なら高さ 204.75px）は指で編集するには狭すぎる。**「撮る枠」と「編集する画面」を分ける**必要がある（例: 帯だけをピンチズームして編集／編集中は帯を画面いっぱいに拡大して見せ、撮影時に縮める）。撮影の不変条件（帯＝`computeCoverRect` の切り出し）を壊さないこと。
-  - **(N-55) と (N-56) と束ねて考える**。N-56 が直らないと編集しても写らない。
-- **(N-59) スマホでも列数と余白を簡易的に変えたい（新規要望・小）** — 「決められた余白の値だけ動かせるようにしてもいい」。デスクトップの TUNE（W/G フェーダー）はスマホに無い。`MOBILE_LAYOUT.COLUMNS`(3) / `GAP_PX`(14) / `SIDE_MARGIN_PX`(16) は現在ベタ書き定数。**離散的な選択肢**（例: 列数 2/3/4、余白 小/中/大）にして THEME か MORE パネルに置くのが素直。IDB `board-config` に載せれば永続も既存の器で済む。
-- **(N-50) タブレットの作法（s184 発見・ローンチ前）** — **このアプリにタブレット用レイアウトは存在しない**。分岐は `useIsMobile()` の 640px だけで、**744〜1180px は 1489px の PC と同一描画**。結果、iPad では SHARE 60×27 / TITLE 60×27 / TUNE 53×28 / POP OUT 74×27 / MANAGE TAGS 103×27 / メーター 18px と、**主要操作が全て指の最小寸法未満**。合格は「＋」保存ボタン 56×56 のみ。規則は N-48 で確立済（大きさ＝入力／並べ方＝幅）。適用先の棚卸しが要る。
-- **(N-51 の残り) ★スマホのボードに背景タイトル（ワードマーク）を出す（s184 ユーザー確定）** — 現状 `BoardBackgroundTypography` は `!isMobile` ゲートで**スマホでは描画されない**。受け取り画面では出ている。**ユーザーの理由**＝「ボトムナビの THEME からカスタマイズできるように見えるのに、実際は見えないのはおかしい」。s184 で左右16px・すき間14px の余白ができたので出す余地はある。TITLE 色は既に `ThemeCustomization.titleColor` で可変。
+- **(N-50) タブレットの作法** — s184発見。iPadで主要ボタンが指の最小寸法未満(SHARE/TITLE/TUNE/POP OUT/MANAGE TAGSほぼ全て)。`useIsMobile()`の640px分岐しか無く744〜1180pxはPC同一描画。
+- **(N-57/N-51の残り) スマホの盤面に背景タイトル(ワードマーク)が出ていない** — `BoardBackgroundTypography`の`!isMobile`ゲートを外すだけ。受け取り画面では既に出ている。
+- **(N-59) スマホでも列数・余白を簡易調整したい** — `MOBILE_LAYOUT.COLUMNS`/`GAP_PX`/`SIDE_MARGIN_PX`が現状ベタ書き定数。離散的な選択肢(列数2/3/4等)にしてTHEME/MOREパネルへ。優先度低。
 
 ### session 161 で報告（Mac 実機・友人フィードバック ＋ 雑多改善 — ★ローンチ前クロスプラットフォーム）
 
@@ -129,12 +104,12 @@ Private Phase 2完了後、ユーザーから次の一括インプット。N-69(
 
 - **(N-24) ★Mac 対応必須（ローンチ前）** — 友人実機で複数箇所うまく動かない。スマホと並ぶ公開前クロスプラットフォーム項目。**ブラウザ＝Chrome 確定（s161）**＝Safari 非対応ではなく Mac-Chrome の実バグ。**タグ窓が出なかった件は N-25（タグ0件バグ）だった可能性大＝修正済**。残りの「複数箇所」＝下記 N-39 ほか、Mac 実機で1つずつ洗い出し（systematic-debugging Phase1）。
 - **拡張の再審査は束ねる**：拡張本体に関わる修正（**N-25 済／N-28 Pinterest／N-29 設定導線**）は**まとめて manifest 版上げ→1回でストア再審査**（審査サイクルを何度も回さない）。N-30(PopOut) は web(PiP) 側なので拡張再審査には不要。
-- **(N-26/32/33/35) フラット化 — サブ①完了（s163）→ 次はサブ②** — 親 spec [2026-07-05-flat-theme-and-theme-boundary-design.md](superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md)。**白フラットを新default／現・暗い体験は「音波」テーマとして盤面 byte-identical 温存／テーマは盤面5項目だけ／全メニュー中立＋大パネル右ドロワー統一／角丸トグル＋N-35 つまみ／N-33 はサブ④で確定**。分解＝~~①テーマ境界＋メニュー中立化＋右スライド統一~~ ✅ **s163完了**（[spec](superpowers/specs/2026-07-05-flat-sub1-menu-neutrality-right-drawer-design.md)/[plan](superpowers/plans/2026-07-05-flat-sub1-menu-neutrality-right-drawer.md)・`ChromeDrawer` 統一＋メニュー中立化）→ **②白フラット default テーマ（次）** →③カスタマイズ（角丸＋N-35）→④音波命名＋N-33 タグ表記。下記の個別 N-26/32/33/35 はこの spec に統合済み（archive 用に残置）。
+- **(N-26/32) フラット化 — サブ①②完了(s163/s199)**。白フラットはdefaultテーマとして完全に機能中(暗い「音波」テーマは別テーマとしてbyte-identical温存)。残る③カスタマイズ(角丸＋N-35)・④タグ表記(N-33)は下記個別項目のまま未確定。親spec [2026-07-05-flat-theme-and-theme-boundary-design.md](superpowers/specs/2026-07-05-flat-theme-and-theme-boundary-design.md)。
 - **(N-28) ★Pinterest 保存ボタン連動（優先度高・来週着手予定・s183 でユーザー確定）** — s183 調査で確定: **Pinterest の URL を通常保存するのは今でも動く**（Pin ページの `og:image`(i.pinimg)/`og:title`/`og:url` 完備＝きれいなカードになる・実 fetch で確認）。**未対応＝Pinterest 自身の「保存」ボタン押下での自動連動**（X like/YouTube like と同じ per-site 方式）＝**s49 で一度作って実機で動かず外した所**（真因未診断＝保存ボタンの DOM/`data-test-id` が検出できず）。再挑戦は**まず実機で実 DOM をダンプ→本当の属性特定**の1手が必須（note.js/vimeo.js が s49 でやった手法）。code は git history に生存（`TODO_COMPLETED.md:2908`）。scope 小〜中だが不確実。**他の拡張修正（N-25/N-29）と束ねて1回で再審査**。
 - **(N-29) 拡張の設定、入れてすぐ見れる状態に** — インストール直後に設定/使い方が見える導線（初回 options ページ自動表示 or アイコンからの案内）。現状は気づきにくい。
 - **(N-31) タグ体験の作り直し：MANAGE TAGS 画面を廃止 → 「選択してタグにドラッグ＆ドロップ」** — 現状のマネージ/Triage（1枚ずつスワイプ）を廃止し、**ボタンで選択モード→カードを選ぶ→タグへ D&D で付与**に。s157 の SELECT CARDS 選択モード＋s95 の「画像ドラッグでタグ付け＋ガラス演出」構想を土台に流用余地。**大改修＝brainstorm 必須**。関連 memory `project_selective_share_shipped` / `project_tagging_top_priority`。
 - **(N-32) メニュー系を全部フラットに刷新（design 方針・N-26 と一体）** — 全メニュー UI をフラット化。N-26（default テーマをフラットにして LP に寄せる）と同じ「フラット化」方針の一部。**まとめて brainstorm**（視覚言語の再定義＝大物）。
-- **(N-33) タグの大文字表示（＝実は“見た目の設計判断”・brainstorm 合流／s161 調査済）** — **調査結果**：保存側は**既にケース保持**（`applyNewQuickTag` は入力どおり `trimmed` で作成、`addTag` は `input.name` 保存、照合は `toLowerCase()===toLowerCase()` の case-insensitive）＝**機能的に直すものは無い**。「小文字に見える」の正体は**表示側の `text-transform: lowercase` がアプリ全体で一貫**（[CardsLayer.module.css:41] 本体タグ／[FilterPill.module.css:366,419] フィルタ／[TagAddPopover.module.css:89]／triage TagPicker・TriageCard／ShareMirror／拡張 floating-button.css 計8+箇所）＝**意図的な統一デザイン**。→ 大文字を出す＝**アプリ全体の視覚変更**＝**フラット化 brainstorm（N-26/32/35）で「タグの見た目」として決定**（ui-design.md：見た目変更は要ユーザー承認、勝手に剥がさない）。**要確認の小さな別件**：share import (`lib/share/import.ts`) は名を lowercase 保存の疑い（import.test が `'design'` 期待）＝取り込みタグだけケースが落ちる不整合の可能性→ brainstorm 時に確認。
+- **(N-33) タグの大文字表示** — 調査済み(s161): 保存側はケース保持済み・小文字に見えるのは表示側`text-transform: lowercase`がアプリ全体で意図的に統一されているだけ(機能バグではない)。大文字化するなら**アプリ全体の視覚変更**として要ユーザー承認(`ui-design.md`)。未決定のまま。**要確認の別件**: `lib/share/import.ts`の共有取り込みだけタグ名をlowercase保存している疑い(import.testが`'design'`期待)。
 - **(N-35) 見た目の微調整コントロール：タイトルの font/サイズ、背景の格子の太さ・ドット径 等を変えられる** — ユーザーが盤面の見た目を微調整（タイトル書体・サイズ／背景パターンの格子線の太さ・ドット径 等）。既存 theme-customization（`resolveThemeCustomization`/`patternSvgDataUri`）＋TUNE 資産に接続。※N-26/N-32（フラット化・TUNE 見直し）と**方針の擦り合わせが要る**：default は静かに・でもユーザーに“表現の摘み”は残す＝両立可能。どの摘みを新フラット系で残す/露出するかは brainstorm で確定。
 > **【N-34/36/37/38 統合 SHARE 作り直し — フェーズ1 出荷済（s165・本番反映）／フェーズ2・3 残】** [spec](superpowers/specs/2026-07-06-share-collage-screenshot-rebuild-design.md)／[plan](superpowers/plans/2026-07-06-share-collage-screenshot-rebuild.md)（10タスク3フェーズ）。**✅ フェーズ1（Task1-4＝コアモード：SHARE→選ぶ→並べる自由配置→範囲選択スクショ→終了でグリッド復帰／旧ドロワー撤去）出荷**。残：**フェーズ2＝編集/移動できるコラージュ・タイトル（Task5-7・N-37）** → **フェーズ3＝COPY LINK 併記（Task8-10・N-38 の /s 併記）**。以下の N-34/36/37/38 原文は経緯として保持。
 
@@ -146,19 +121,8 @@ Private Phase 2完了後、ユーザーから次の一括インプット。N-69(
   - **正直な技術的壁**：ボードは他サイトのサムネ＝**クロスオリジン画像**を含む→ dom-to-image でキャンバスが tainted になり黒窓/失敗（既知 `reference_dom_to_image_bound_subtree`）。だから今の共有は“データ再構成”になっている。**ピクセル一致の画像化には画像中継（same-origin proxy）が要る**＝ここが本丸（中〜大）。
   - **推奨形**：**「画像で共有（投稿用・WYSIWYG）」と「ボードで共有（/s・取り込み可の従来型）」を別アクションに分ける**。1つに両立を強いない。ユーザー不満は前者で解消。
 
-### session 159 で報告（ユーザー実機メモ・新規）
-
-- **(参考) 高解像度化は s159 で試みて revert 済**（表示時に新URL差し替え→FLIP で未デコード縮小の劣化）。再挑戦時は「元画像を先に表示→裏で先読み→差し替え」or 保存時のみ、＋実機検証。memory `reference_lightbox_flip_content_equivalence` 隣に学びを記録。
-
-### session 150続き で報告（ユーザー実機メモ7件 — 残タスクのみ）
-
-> ✅ 完了（→ TODO_COMPLETED セッション150続き）: **N-17** TRASH の EMPTY TRASH ボタン赤 danger 化（本番反映・確認OK）／ **N-18** 拡張クイックタグ窓の見切れ（1列スクロール化・v0.1.22 パッケージ→**2026-07-02 ストア審査提出済**）。
-> ⏹ 対応不要: **N-14** Lightbox 中のボードモーション（カード/動画/スライドショーは既に `ambientOn` gate で停止済）。
-> 🅿 保留: **N-16** 空ボードの青モーダル＝**スマホ限定**（未対応プラットフォーム）。色トークンだけダーク化済（デスクトップは背景ワードマークに occlude され不可視＝実害なし）。スマホ対応時に再確認。
-
 ### session 132 フォローアップ（Plan 2 で出た非ブロッキング・別タスク）
 
-- **(N-07) e2e シード版数ズレ＝既存テスト債務** — `tests/e2e/board-b0.spec.ts` が IndexedDB を `open(dbName, 9)` で開くが app `DB_VERSION=16`([lib/constants.ts:30](../lib/constants.ts#L30)) のため VersionError → board-b0 全テストが seed 時に失敗。Plan 2 起因ではない(7回の DB 版数更新で蓄積)。テーマ切替 e2e は **構造は正しく un-skip 済**。直すにはシードを現行スキーマに合わせる(版数を 16 にし onupgradeneeded で現行ストアを作る、もしくはアプリのスキーマ生成を流用)。中優先。
 - **`useTweetTranslation` 引数名リネーム** — [use-tweet-translation.ts](../lib/board/use-tweet-translation.ts) の引数 `themeId` は実際は motion キー('ink-underline'/'glitch-crt')を受ける(Lightbox が `getThemeMeta(themeId).motion.text` を渡す)。`textTransitionKey` 等へリネーム。軽微。
 - **perf watch (4K)** — `lib/animation/tag-shutdown/themes/paper.module.css` の `filter: blur(1.5px)` アニメ(tagged-out カードのみ・一回0.46s)と `RulerTrack.module.css .marker { will-change: left }`(非標準)。現状許容、4K でジャンク報告が出たら最初に外す候補。
 
@@ -176,15 +140,11 @@ Private Phase 2完了後、ユーザーから次の一括インプット。N-69(
 ### 表示・サムネ系
 
 - **カードが左端に詰まらず隙間ができることがある** (session 93 報告) — 上記 reshuffle 修正で多くは解消の見込みだが、**残因として F5 = skyline-layout が segment の左端しか試さず右の窪みに詰めない**点が残る（監査 board-layout finder 指摘）。reshuffle のユーザー実機確認で「左すき間まだ出る」なら skyline に右端候補/backfill を追加。別途・低優先。
-- **B-#3 重複 URL でサムネ等が出ない問題** — 同 URL 重複追加時の表示挙動を確認・修正 (セッション 20 では真因未調査、 個別 session で着手)
-- **MinimalCard polish** — 64px favicon が S サイズ (160px) で大きく見える可能性。 Visual Companion でモック比較してサイズ判定 (セッション 20 で実装後、 視覚調整は次回)
 - **Task 12: 全件再 check 設定 UI** — viewport revalidation で日常運用は OK だが、 ユーザーが 「いま全件チェック」 を 1 クリックで kick できる設定パネル。 設定パネル自体が未実装なので別 spec 立ち上げ要
 
 ### Lightbox animation 系 (セッション 23-24 で B-#17 open/close/動画 + 揺れ完成、 残課題あり)
 
 - **B-#17-#3 internal nav (wheel scroll で隣カード) の clone-based 移行** (中期) — open/close は clone-based に移行済だが、 Lightbox 内で wheel scroll した時の隣カード切替は **既存 transform:scale ロジックのまま**。 動作確認まだ。 open/close が本番で安定したのを受けて、 次に着手するならここ
-
-- **角丸 24 → 20 検討** (= B-#17 落ち着いた現時点でやって良い視覚比較) — 短時間タスク
 
 ### カード操作・PiP
 
@@ -198,21 +158,6 @@ Private Phase 2完了後、ユーザーから次の一括インプット。N-69(
 - **B-#12 拡大時 viewport overflow 破綻** (セッション 13 で観測) — 自由リサイズで viewport を超える幅まで拡大すると skyline が破綻、 他カードが画面外に押し出される
    - root cause 仮説: `computeSkylineLayout` の containerWidth clamp が単一カードの超過時に未定義
    - 対策候補: (a) `maxCardWidth` を絞る / (b) skyline 側で width > containerWidth カードを単独行 / (c) ResizeHandle で max を明示
-
-### ★★ 最優先: スマホ本格対応 (2026-07-06 月〜開始・ユーザー指示 s161)
-
-**格上げ理由**: ローンチ告知（動画＋共有ボードのツイート）を見据える。X 流入の大半がスマホで、現状モバイル UX が最大の穴。「最後に回す」→ **最優先**に変更（s161 ユーザー指示）。まず**実機スマホで LP / 空 board / 共有ボード（`/s/xxxx`）がどう見えるか実測**→ brainstorm→spec→plan→サブエージェント駆動。共有受け取り側はオンボ非発火＝摩擦ゼロを確認済み（s161）。
-
-> **★ ローンチ前必須の2本柱（s161 ユーザー決定）**: **(1) スマホ本格対応**（この節）＋ **(2) 端末間同期＝案B（ユーザー自身のクラウド／Googleドライブ等・サーバー無し・ポリシー無違反・課金候補）**。同期は**着手前に必ず1日スパイク**でブラウザだけで OAuth-PKCE 読み書きが完結するか実証してから本実装（緑→実装／赤→手動ファイル同期で先に出し後で自動化）。骨子 `docs/private/IDEAS.md` (SYNC) 節。加えて (3) 見せ用共有ボード作成／(4) 公開前の法務・ネイティブレビュー（13言語規約条項）。
-
-- **ローンチ素材: 見せ用の共有ボードを1枚作る**（個人的でない“魅せ用”の綺麗なボード→共有リンク化。ツイートで押させるのはこの `/s/xxxx`。動画＋このリンクが告知の主役）。※これはコードでなくコンテンツ作業（ユーザー主体）。
-
-- **B-#10 モバイル UX 本格チューニング** (セッション 9 末ユーザー報告・= 最優先の本体)
-   - モバイルでカード列数が多すぎる + テキストカード縦伸び
-   - デフォルトでモバイルは ~3 列にする
-   - ピンチ操作でカード size 変更 (将来機能)
-   - 実装方針: A 案 (即効) = `lib/board/size-levels.ts` で viewport-aware column / B 案 = mobile 起動時 level 2 default / C 案 (本格) = モバイル専用 SizeLevel テーブル
-   - テキストカード縦伸び: `TextCard.tsx` に `max-height` or `aspect-ratio` クランプ + overflow:hidden
 
 ### 拡張機能 連動の最終構成 (= session 49 user 検証後の確定 scope、 5 サイト 8 ボタン)
 
@@ -276,3 +221,8 @@ Private Phase 2完了後、ユーザーから次の一括インプット。N-69(
 ### 拡張機能 sideload
 - `<all_urls>` host_permission を加えたら **再 sideload 必須** (Chrome は既存承認を upgrade しない)
 - 検証手順は TODO_COMPLETED.md にアーカイブ済
+
+### Lightbox 高解像度化は一度試して revert 済み (session 159)
+- 表示時に新URLへ差し替える方式は FLIP で未デコード縮小の劣化が出た
+- 再挑戦するなら「元画像を先に表示→裏で先読み→差し替え」or 保存時のみ生成、＋実機検証必須
+- memory `reference_lightbox_flip_content_equivalence` 隣に学びを記録済み
