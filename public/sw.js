@@ -6,7 +6,7 @@
 //   - Skip: API calls, non-GET requests
 
 // Bump on each deploy to force clients to flush old caches.
-const CACHE_VERSION = 'v103-2026-09-23-card-border-stronger'
+const CACHE_VERSION = 'v104-2026-09-23-card-border-textcard-scope-fix'
 const CACHE_NAME = 'booklage-' + CACHE_VERSION
 
 var PRECACHE_URLS = [
