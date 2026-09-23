@@ -31,4 +31,28 @@ describe('classifyBoardPointerDown', () => {
   it('right button over a card → ignore', () => {
     expect(classifyBoardPointerDown({ ...base, button: 2, isSelfTarget: false })).toBe('ignore')
   })
+
+  it('plain left on empty + marquee enabled → marquee (even when wiggle is also enabled)', () => {
+    expect(classifyBoardPointerDown({ ...base, marqueeEnabled: true })).toBe('marquee')
+  })
+
+  it('marquee takes priority over wiggle', () => {
+    expect(classifyBoardPointerDown({ ...base, wiggleEnabled: true, marqueeEnabled: true })).toBe('marquee')
+  })
+
+  it('marquee enabled but not self-target (over a card) → ignore', () => {
+    expect(classifyBoardPointerDown({ ...base, isSelfTarget: false, marqueeEnabled: true })).toBe('ignore')
+  })
+
+  it('middle button still pans even when marquee is enabled', () => {
+    expect(classifyBoardPointerDown({ ...base, button: 1, marqueeEnabled: true })).toBe('pan')
+  })
+
+  it('left + Space still pans even when marquee is enabled', () => {
+    expect(classifyBoardPointerDown({ ...base, spaceHeld: true, marqueeEnabled: true })).toBe('pan')
+  })
+
+  it('marqueeEnabled defaults to false when omitted', () => {
+    expect(classifyBoardPointerDown({ button: 0, spaceHeld: false, isSelfTarget: true, wiggleEnabled: true })).toBe('wiggle')
+  })
 })

@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useState,
   type PointerEvent,
   type ReactNode,
   type WheelEvent,
@@ -11,7 +12,20 @@ import {
 import { BOARD_Z_INDEX, INTERACTION } from '@/lib/board/constants'
 import type { ScrollDirection } from '@/lib/board/types'
 import { classifyBoardPointerDown } from '@/lib/board/grab-gesture'
+import { normalizeRect, type Rect } from '@/lib/board/marquee-select'
 import type { GrabWiggleController } from './use-grab-wiggle'
+
+/** TAG MODE rubber-band (marquee) multi-select. When active, a plain left-drag
+ *  on the bare layer draws a selection rectangle instead of panning/wiggling.
+ *  onRectChange fires on every rect update (drag start through drag end) with
+ *  viewport-space coordinates; the caller does the DOM hit-test and owns the
+ *  selection set (only adds — never removes on rect shrink, matching SELECT
+ *  ALL's addAllVisible semantics). Nothing fires on release beyond the last
+ *  onRectChange — there is no separate "commit" step. */
+export type MarqueeController = {
+  readonly active: boolean
+  readonly onRectChange: (rect: Rect) => void
+}
 
 type InteractionLayerProps = {
   readonly direction: ScrollDirection
@@ -25,6 +39,8 @@ type InteractionLayerProps = {
   /** Empty-board grab-wiggle controller. When enabled, a plain left-drag on the
    *  bare layer nudges the world and springs back instead of scrolling. */
   readonly wiggle?: GrabWiggleController
+  /** TAG MODE rubber-band multi-select. Takes priority over wiggle when active. */
+  readonly marquee?: MarqueeController
   /** Mobile (touch): the board scrolls natively via a real overflow container
    *  (BoardRoot), so this overlay must NOT swallow touch. When true it drops
    *  touch-action to pan-y and disables its own pointer/wheel handlers, letting
@@ -38,15 +54,39 @@ export function InteractionLayer({
   onScroll,
   spaceHeld,
   wiggle,
+  marquee,
   isMobile = false,
   children,
 }: InteractionLayerProps) {
   const dragRef = useRef<{ lastX: number; lastY: number } | null>(null)
   // Which gesture the current pointer sequence engaged: 'pan' uses dragRef +
-  // onScroll (existing), 'wiggle' delegates to the grab-wiggle controller.
-  const modeRef = useRef<'pan' | 'wiggle' | null>(null)
+  // onScroll (existing), 'wiggle' delegates to the grab-wiggle controller,
+  // 'marquee' draws the rubber-band rect below.
+  const modeRef = useRef<'pan' | 'wiggle' | 'marquee' | null>(null)
   const wiggleRef = useRef<GrabWiggleController | undefined>(wiggle)
   wiggleRef.current = wiggle
+  const marqueeRef = useRef<MarqueeController | undefined>(marquee)
+  marqueeRef.current = marquee
+
+  // Visual rectangle state (drives the overlay render) + a latest-value ref +
+  // rAF throttle so fast pointermoves don't re-render on every event, mirroring
+  // the wheel spring's rAF pattern above.
+  const [marqueeBox, setMarqueeBox] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+  const marqueeLatestRef = useRef<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+  const marqueeRafRef = useRef<number | null>(null)
+  // getBoundingClientRect() of this layer, captured once at pointerdown, so the
+  // rendered box can be positioned relative to it (CSS position:absolute is
+  // scoped to this div's own containing block, not the viewport) while
+  // onRectChange keeps reporting raw viewport (clientX/clientY) coordinates,
+  // matching the card getBoundingClientRect()s the caller hit-tests against.
+  const marqueeOriginRef = useRef<{ left: number; top: number }>({ left: 0, top: 0 })
+  const flushMarquee = useCallback((): void => {
+    marqueeRafRef.current = null
+    const r = marqueeLatestRef.current
+    if (!r) return
+    setMarqueeBox(r)
+    marqueeRef.current?.onRectChange(normalizeRect(r.x1, r.y1, r.x2, r.y2))
+  }, [])
   // Mirror prop in a ref so the pointerdown handler reads the latest value
   // without forcing useCallback to re-bind every time spaceHeld toggles.
   const spaceHeldRef = useRef<boolean>(spaceHeld)
@@ -176,21 +216,31 @@ export function InteractionLayer({
     (e: PointerEvent<HTMLDivElement>): void => {
       // Classify the gesture: pan (middle / Space+left / bare-layer when wiggle
       // off) keeps the original scroll behavior; 'wiggle' is a plain left-drag
-      // on the bare layer when the grab-wiggle interaction is enabled; 'ignore'
-      // is a non-modifier pointer over a card.
+      // on the bare layer when the grab-wiggle interaction is enabled;
+      // 'marquee' is a plain left-drag on the bare layer during TAG MODE
+      // (replaces wiggle); 'ignore' is a non-modifier pointer over a card.
       const w = wiggleRef.current
+      const mq = marqueeRef.current
       const intent = classifyBoardPointerDown({
         button: e.button,
         spaceHeld: spaceHeldRef.current,
         isSelfTarget: e.target === e.currentTarget,
         wiggleEnabled: !!w?.enabled,
+        marqueeEnabled: !!mq?.active,
       })
       if (intent === 'ignore') return
       // Suppress the browser's native dragstart + text/element selection + the
       // middle-button autoscroll, keeping our drag logic in sole control.
       e.preventDefault()
       e.currentTarget.setPointerCapture(e.pointerId)
-      if (intent === 'wiggle' && w) {
+      if (intent === 'marquee') {
+        modeRef.current = 'marquee'
+        marqueeOriginRef.current = e.currentTarget.getBoundingClientRect()
+        const start = { x1: e.clientX, y1: e.clientY, x2: e.clientX, y2: e.clientY }
+        marqueeLatestRef.current = start
+        setMarqueeBox(start)
+        mq?.onRectChange(normalizeRect(start.x1, start.y1, start.x2, start.y2))
+      } else if (intent === 'wiggle' && w) {
         modeRef.current = 'wiggle'
         w.begin(e.clientX, e.clientY)
       } else {
@@ -205,6 +255,15 @@ export function InteractionLayer({
     (e: PointerEvent<HTMLDivElement>): void => {
       if (modeRef.current === 'wiggle') {
         wiggleRef.current?.move(e.clientX, e.clientY)
+        return
+      }
+      if (modeRef.current === 'marquee') {
+        const prev = marqueeLatestRef.current
+        if (!prev) return
+        marqueeLatestRef.current = { ...prev, x2: e.clientX, y2: e.clientY }
+        if (marqueeRafRef.current === null) {
+          marqueeRafRef.current = requestAnimationFrame(flushMarquee)
+        }
         return
       }
       const d = dragRef.current
@@ -237,11 +296,28 @@ export function InteractionLayer({
       if (modeRef.current === 'wiggle') {
         wiggleRef.current?.end()
       }
+      if (modeRef.current === 'marquee') {
+        if (marqueeRafRef.current !== null) {
+          cancelAnimationFrame(marqueeRafRef.current)
+          marqueeRafRef.current = null
+        }
+        marqueeLatestRef.current = null
+        setMarqueeBox(null)
+      }
       modeRef.current = null
       dragRef.current = null
     },
     [],
   )
+
+  // Cancel any in-flight marquee rAF + clear the box if the layer unmounts
+  // mid-drag (e.g. TAG MODE exited some other way while dragging).
+  useEffect(() => (): void => {
+    if (marqueeRafRef.current !== null) {
+      cancelAnimationFrame(marqueeRafRef.current)
+      marqueeRafRef.current = null
+    }
+  }, [])
 
   return (
     <div
@@ -259,10 +335,30 @@ export function InteractionLayer({
         // desktop keeps 'none' so its custom wheel / drag owns the gesture.
         touchAction: isMobile ? 'pan-y' : 'none',
         overflow: 'hidden',
-        cursor: wiggle?.enabled ? (wiggle.grabbing ? 'grabbing' : 'grab') : undefined,
+        cursor: marquee?.active
+          ? 'crosshair'
+          : wiggle?.enabled ? (wiggle.grabbing ? 'grabbing' : 'grab') : undefined,
       }}
     >
       {children}
+      {marqueeBox && (
+        <div
+          data-marquee-select
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: Math.min(marqueeBox.x1, marqueeBox.x2) - marqueeOriginRef.current.left,
+            top: Math.min(marqueeBox.y1, marqueeBox.y2) - marqueeOriginRef.current.top,
+            width: Math.abs(marqueeBox.x2 - marqueeBox.x1),
+            height: Math.abs(marqueeBox.y2 - marqueeBox.y1),
+            zIndex: BOARD_Z_INDEX.SELECTION_OUTLINE,
+            pointerEvents: 'none',
+            background: 'rgba(40,241,0,0.12)',
+            border: '1px solid rgba(40,241,0,0.65)',
+            borderRadius: 3,
+          }}
+        />
+      )}
     </div>
   )
 }

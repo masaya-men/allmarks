@@ -40,7 +40,7 @@ describe('pickCard', () => {
   it('returns VideoThumbCard for youtube URLs regardless of metadata', () => {
     expect(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      pickCard({ ...base, url: 'https://youtube.com/watch?v=x', title: '', thumbnail: '' } as any),
+      pickCard({ ...base, url: 'https://youtube.com/watch?v=dQw4w9WgXcQ', title: '', thumbnail: '' } as any),
     ).toBe(VideoThumbCard)
   })
 

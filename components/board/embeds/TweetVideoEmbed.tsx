@@ -230,9 +230,9 @@ export function TweetVideoEmbed({
         controls={muted === true ? false : variant === 'inline' ? true : hasInteracted}
         autoPlay={variant === 'inline' ? autoStart : false}
         muted={muted === true}
-        // Tier 1 (muted) ambient preview loops so short clips restart instead of
-        // freezing on the last frame. Tier 3 / Lightbox play through once.
-        loop={muted === true}
+        // Every tier loops so short clips restart instead of freezing on the
+        // last frame -- Tier 1 (muted) ambient preview AND Tier 3 / Lightbox.
+        loop
         playsInline
         preload="metadata"
         onPlay={(): void => setIsPlaying(true)}

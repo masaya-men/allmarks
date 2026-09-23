@@ -1,5 +1,5 @@
 import type { IDBPDatabase } from 'idb'
-import { detectUrlType } from '@/lib/utils/url'
+import { detectUrlType, extractYoutubeId } from '@/lib/utils/url'
 import { findActiveDuplicate } from '@/lib/storage/indexeddb'
 import type { saveBookmarkDeduped, getAllBookmarks } from '@/lib/storage/indexeddb'
 import type { AllMarksDB } from '@/lib/storage/indexeddb'
@@ -66,7 +66,12 @@ export async function ingestPastedUrl(url: string, deps: IngestDeps): Promise<In
   if (findActiveDuplicate(all, url)) return { outcome: 'duplicate', bookmarkId: null }
 
   const type = detectUrlType(url)
-  const isEmbeddable = EMBEDDABLE.has(type)
+  // A youtube URL with no extractable video id (e.g. a bare playlist URL,
+  // youtube.com/playlist?list=... with no v= param) can't be rendered by
+  // VideoThumbCard's id-based thumbnail lookup -- fetch real OGP instead so
+  // pickCard falls back to ImageCard with YouTube's actual playlist thumbnail,
+  // rather than saving with an empty thumbnail that can never be filled in.
+  const isEmbeddable = EMBEDDABLE.has(type) && !(type === 'youtube' && !extractYoutubeId(url))
   let meta: OgpMeta | null = null
   if (!isEmbeddable) {
     meta = await deps.fetchOgp(url)

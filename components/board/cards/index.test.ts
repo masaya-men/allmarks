@@ -28,7 +28,7 @@ const baseItem: BoardItem = {
 
 describe('pickCard', () => {
   it('routes YouTube → VideoThumbCard', () => {
-    const result = pickCard({ ...baseItem, url: 'https://youtube.com/watch?v=abc' })
+    const result = pickCard({ ...baseItem, url: 'https://youtube.com/watch?v=dQw4w9WgXcQ' })
     expect(result).toBe(VideoThumbCard)
   })
 
@@ -58,6 +58,26 @@ describe('pickCard', () => {
     const result = pickCard({ ...baseItem, url: 'https://r3f.maximeheckel.com/lens2' })
     expect(result).toBe(PlaceholderCard)
   })
+
+  it('routes a bare YouTube playlist URL (no video id) with a fetched thumbnail → ImageCard, not VideoThumbCard', () => {
+    // youtube.com/playlist?list=... has no v= param, so extractYoutubeId
+    // returns null and VideoThumbCard could never compute a thumbnail for
+    // it. paste-ingest fetches real OGP for this case instead.
+    const result = pickCard({
+      ...baseItem,
+      url: 'https://youtube.com/playlist?list=PLbaAScy1bzdL0mMEtxNoBw2Gg5jYfH1kE',
+      thumbnail: 'playlist-cover.jpg',
+    })
+    expect(result).toBe(ImageCard)
+  })
+
+  it('routes a bare YouTube playlist URL with no thumbnail (OGP fetch failed too) → PlaceholderCard, not VideoThumbCard', () => {
+    const result = pickCard({
+      ...baseItem,
+      url: 'https://youtube.com/playlist?list=PLbaAScy1bzdL0mMEtxNoBw2Gg5jYfH1kE',
+    })
+    expect(result).toBe(PlaceholderCard)
+  })
 })
 
 describe('isPlaceholderCard', () => {
@@ -68,7 +88,7 @@ describe('isPlaceholderCard', () => {
     expect(isPlaceholderCard({ ...baseItem, thumbnail: 'x.jpg' })).toBe(false)
   })
   it('false for video (YouTube/TikTok)', () => {
-    expect(isPlaceholderCard({ ...baseItem, url: 'https://youtube.com/watch?v=a' })).toBe(false)
+    expect(isPlaceholderCard({ ...baseItem, url: 'https://youtube.com/watch?v=dQw4w9WgXcQ' })).toBe(false)
   })
 })
 
@@ -86,7 +106,7 @@ describe('paperCardHasTornBacking', () => {
       const video = paperCardHasTornBacking({
         ...baseItem,
         bookmarkId,
-        url: 'https://youtube.com/watch?v=a',
+        url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
       })
       const image = paperCardHasTornBacking({
         ...baseItem,
@@ -118,7 +138,7 @@ describe('itemSkylineHeight', () => {
   })
 
   it('video card scales by its aspectRatio', () => {
-    const h = itemSkylineHeight({ ...baseItem, url: 'https://youtube.com/watch?v=a', aspectRatio: 1.6 }, 320)
+    const h = itemSkylineHeight({ ...baseItem, url: 'https://youtube.com/watch?v=dQw4w9WgXcQ', aspectRatio: 1.6 }, 320)
     expect(h).toBeCloseTo(200, 5)
   })
 

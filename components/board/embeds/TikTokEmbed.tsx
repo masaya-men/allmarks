@@ -166,6 +166,7 @@ export function TikTokEmbed({
           poster={playback.cover || thumbnail}
           controls
           autoPlay
+          loop
           playsInline
           muted={muted === true}
           onVolumeChange={controlled ? undefined : handleTier1VolumeChange}

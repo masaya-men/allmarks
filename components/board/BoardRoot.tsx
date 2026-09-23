@@ -163,6 +163,7 @@ import { defaultShareTitleConfig, toggleTitleLayer, type ShareTitleConfig } from
 import { usePaperParallax, PAPER_PARALLAX_FACTOR } from './use-paper-parallax'
 import { useGrabWiggle } from './use-grab-wiggle'
 import { GRAB_LAYER_WEIGHTS } from '@/lib/board/rubber-band'
+import { idsWithinRect, type Rect } from '@/lib/board/marquee-select'
 import { BoardDecorLayer } from './BoardDecorLayer'
 import { DataHomeCard } from './DataHomeCard'
 import { BackupReminder } from './BackupReminder'
@@ -2530,6 +2531,30 @@ export function BoardRoot() {
     setSelectedIds(r.ids)
   }, [selectedIds, lightboxNavItems])
 
+  // TAG MODE rubber-band select (N-31-lite, s219 user request): InteractionLayer
+  // reports the live drag rectangle in viewport coordinates on every move; hit-test
+  // it against each rendered card's own getBoundingClientRect() (layout-agnostic —
+  // works under skyline masonry same as any other layout) and add whatever it
+  // covers to the selection. Only adds (addAllVisible never removes), same as
+  // SELECT ALL above and consistent across the whole drag: a card that entered
+  // the rect earlier in this drag stays selected even if the rect shrinks away
+  // from it before release.
+  const handleMarqueeRectChange = useCallback((rect: Rect): void => {
+    const container = canvasRef.current
+    if (!container) return
+    const cardEls = container.querySelectorAll<HTMLElement>('[data-bookmark-id]')
+    const hits: { bookmarkId: string; rect: Rect }[] = []
+    cardEls.forEach((el) => {
+      const id = el.getAttribute('data-bookmark-id')
+      if (!id) return
+      const r = el.getBoundingClientRect()
+      hits.push({ bookmarkId: id, rect: { left: r.left, top: r.top, right: r.right, bottom: r.bottom } })
+    })
+    const ids = idsWithinRect(rect, hits)
+    if (ids.length === 0) return
+    setSelectedIds((prev) => addAllVisible(prev, ids).ids)
+  }, [])
+
   // 連続ジェスチャ開始: 変更前スナップショットを捕捉。移動は掴んだ id を最前面にした
   // 状態を「変更前」とする（選択タップの自動前面化は履歴に含めない）。ピンチは id なし。
   const handleCollageGestureStart = useCallback((reorderId?: string): void => {
@@ -3139,8 +3164,14 @@ export function BoardRoot() {
   // away during a long sweep cancels in-flight tasks cleanly.
   //
   // processedTweetIdsRef dedupes across items.length re-fires so a freshly
-  // arrived bookmark only enqueues if its tweet id has never been touched
-  // in this session.
+  // arrived bookmark only enqueues once. Keyed by bookmarkId, NOT tweetId:
+  // delete a tweet bookmark (soft-delete) then re-save the same tweet URL
+  // in the same session, and the new bookmark gets a brand-new bookmarkId
+  // but the identical tweetId. A tweetId-keyed Set would see that tweetId
+  // as "already processed" from the deleted bookmark's earlier backfill and
+  // skip the new one forever (until a full page reload resets the ref) --
+  // its thumbnail would stay permanently empty. bookmarkId-keying matches
+  // the TikTok backfill below, which never had this bug.
   const processedTweetIdsRef = useRef<Set<string>>(new Set())
   useEffect(() => {
     if (loading || items.length === 0) return
@@ -3154,11 +3185,11 @@ export function BoardRoot() {
       if (detectUrlType(it.url) !== 'tweet') continue
       const tweetId = extractTweetId(it.url)
       if (!tweetId) continue
-      if (processedTweetIdsRef.current.has(tweetId)) continue
+      if (processedTweetIdsRef.current.has(it.bookmarkId)) continue
       // Spec §B-2 visible filter: items[] is already the post-filter,
       // post-soft-delete set produced by useBoardData. Iterating it
       // satisfies the "visible カード限定" requirement.
-      processedTweetIdsRef.current.add(tweetId)
+      processedTweetIdsRef.current.add(it.bookmarkId)
       void queue.add((signal) =>
         backfillTweetMeta(
           { bookmarkId: it.bookmarkId, tweetId },
@@ -3766,6 +3797,7 @@ export function BoardRoot() {
             onScroll={handleScroll}
             spaceHeld={spaceHeld}
             wiggle={grabWiggle}
+            marquee={{ active: tagMode, onRectChange: handleMarqueeRectChange }}
             isMobile={isMobile}
           >
             {/* Pattern themes (Sound Wave / Flat): VIEWPORT-anchored pattern

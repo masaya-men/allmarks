@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react'
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
-import { detectUrlType } from '@/lib/utils/url'
+import { detectUrlType, extractYoutubeId } from '@/lib/utils/url'
 import {
   IMAGE_CARD_BACKING_POOL,
   isPaperSheet,
@@ -55,7 +55,10 @@ export type CardComponent = ComponentType<CardComponentProps>
  * Pure function — easy to test in isolation.
  *
  * 3 経路に整理 (session 88):
- * - 'youtube' or 'tiktok' → VideoThumbCard (常に — サムネは自分で fetch)
+ * - 'tiktok', or 'youtube' with an extractable video id → VideoThumbCard
+ *   (常に — サムネは自分で fetch)。id の無い youtube URL (再生リストの
+ *   bare URL 等) は VideoThumbCard が算出できるサムネを持たないので、
+ *   下の thumbnail 分岐（OGP 由来のサムネ）に委ねる。
  * - thumbnail あり → ImageCard (tweet with media を含む)
  * - それ以外 (= thumbnail 無し / title だけ / 両方無し) → PlaceholderCard
  *
@@ -65,7 +68,8 @@ export type CardComponent = ComponentType<CardComponentProps>
  */
 export function pickCard(item: BoardItem): CardComponent {
   const type = detectUrlType(item.url)
-  if (type === 'youtube' || type === 'tiktok') return VideoThumbCard
+  if (type === 'tiktok') return VideoThumbCard
+  if (type === 'youtube' && extractYoutubeId(item.url)) return VideoThumbCard
   if (item.thumbnail) return ImageCard
   return PlaceholderCard
 }

@@ -29,6 +29,23 @@ describe('ingestPastedUrl', () => {
     expect(d.save).toHaveBeenCalledWith(d.db, expect.objectContaining({ type: 'youtube', title: '', thumbnail: '' }), { dedupe: true })
   })
 
+  it('youtube playlist (no v= param, no extractable video id): fetches OGP instead of skipping', async () => {
+    // A bare playlist URL has no video id, so VideoThumbCard could never
+    // compute a thumbnail for it -- fall back to a real OGP fetch so the
+    // card can still get a thumbnail (routed to ImageCard by pickCard).
+    const d = deps()
+    await ingestPastedUrl('https://youtube.com/playlist?list=PLbaAScy1bzdL0mMEtxNoBw2Gg5jYfH1kE', d)
+    expect(d.fetchOgp).toHaveBeenCalledWith('https://youtube.com/playlist?list=PLbaAScy1bzdL0mMEtxNoBw2Gg5jYfH1kE')
+    expect(d.save).toHaveBeenCalledWith(d.db, expect.objectContaining({ type: 'youtube', title: 'T', thumbnail: 'I' }), { dedupe: true })
+  })
+
+  it('youtube video with a v= param (even alongside list=): still skips OGP fetch as before', async () => {
+    const d = deps()
+    await ingestPastedUrl('https://youtube.com/watch?v=abc12345678&list=PLbaAScy1bzdL0mMEtxNoBw2Gg5jYfH1kE', d)
+    expect(d.fetchOgp).not.toHaveBeenCalled()
+    expect(d.save).toHaveBeenCalledWith(d.db, expect.objectContaining({ type: 'youtube', title: '', thumbnail: '' }), { dedupe: true })
+  })
+
   it('website OGP failure: still saves with fallback (domain title, empty image)', async () => {
     const d = deps({ fetchOgp: vi.fn(async () => null) })
     await ingestPastedUrl('https://blog.example.com/post', d)
