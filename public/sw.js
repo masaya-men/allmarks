@@ -6,7 +6,7 @@
 //   - Skip: API calls, non-GET requests
 
 // Bump on each deploy to force clients to flush old caches.
-const CACHE_VERSION = 'v98-2026-08-26-cross-origin-fetch-skip'
+const CACHE_VERSION = 'v99-2026-09-23-textcard-author-deadlink'
 const CACHE_NAME = 'booklage-' + CACHE_VERSION
 
 var PRECACHE_URLS = [
