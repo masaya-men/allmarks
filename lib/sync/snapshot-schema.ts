@@ -41,6 +41,8 @@ const bookmarkSchema = z.object({
   }).passthrough().optional(),
   dominantColor: z.string().nullable().optional(),
   onboardingDemo: z.boolean().optional(),
+  authorAvatar: z.string().optional(),
+  authorName: z.string().optional(),
 }).passthrough()
 
 const tagSchema = z.object({

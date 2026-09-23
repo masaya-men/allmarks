@@ -71,6 +71,39 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* s219: tweet author strip — same top-left slot as .hostname, shown instead
+   of it for tweets (once avatar/name are backfilled) so a text-only tweet
+   reads as "a tweet" (embed-like) instead of a generic text card. */
+.author {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 70%;
+  pointer-events: none;
+}
+.authorAvatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.authorName {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
 /* Scrollable title area — fills remaining vertical space, scrolls
    internally when title overflows. title は上端から自然に流れ、 overflow
    したら両端 fade で続き示唆 (data-scroll-edge、 下の Edge fade 参照) + scroll

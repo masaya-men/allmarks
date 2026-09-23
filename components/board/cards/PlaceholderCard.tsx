@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import type { BoardItem } from '@/lib/storage/use-board-data'
 import type { DisplayMode } from '@/lib/board/types'
 import { hostnameFromUrl } from '@/lib/embed/favicon'
+import { detectUrlType } from '@/lib/utils/url'
 import { pickTitleTypography } from '@/lib/embed/title-typography'
 import { cleanTitle } from '@/lib/embed/clean-title'
 import { placeholderArtFrames } from '@/lib/board/placeholder-image'
@@ -63,6 +64,11 @@ export function PlaceholderCard({
   const rawTitle = item.title || hostname || item.url
   const title = cleanTitle(rawTitle, item.url)
   const typography = pickTitleTypography({ title, cardWidth, cardHeight })
+  // s219: for a text-only tweet, show the poster's avatar + name (once
+  // backfilled) instead of the generic hostname strip — reads as "a tweet",
+  // embed-like, instead of an anonymous text card.
+  const isTweet = detectUrlType(item.url) === 'tweet'
+  const hasAuthor = isTweet && Boolean(item.authorAvatar || item.authorName)
 
   // 生成アートの巡回 (= 複数画像ツイート式)。frames[0] は pickPlaceholderImage と一致
   // するので、 巡回しないとき (= ambientOn false / 画面外 / 単一フレーム) は B1 の
@@ -204,8 +210,19 @@ export function PlaceholderCard({
       ))}
       <div className={styles.scrim} aria-hidden="true" />
 
-      {!omitMeta && hostname && (
-        <div className={styles.hostname}>{hostname}</div>
+      {!omitMeta && hasAuthor ? (
+        <div className={styles.author}>
+          {item.authorAvatar && (
+            <img src={item.authorAvatar} alt="" className={styles.authorAvatar} />
+          )}
+          {item.authorName && (
+            <span className={styles.authorName}>{item.authorName}</span>
+          )}
+        </div>
+      ) : (
+        !omitMeta && hostname && (
+          <div className={styles.hostname}>{hostname}</div>
+        )
       )}
 
       <div

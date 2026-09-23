@@ -109,6 +109,14 @@ export interface BookmarkRecord {
   /** Onboarding demo card — seeded during the first-run tutorial and swept
    *  on completion/next load. Absent on all real user bookmarks. */
   onboardingDemo?: boolean
+  /** s219: tweet author's small avatar image URL, from the syndication API's
+   *  user object. Backfilled asynchronously alongside thumbnail/hasVideo
+   *  (tweet-backfill.ts). undefined for non-tweets and tweets not yet
+   *  backfilled. Shown on the thumbnail-less text card so a text-only tweet
+   *  reads as "a tweet" (embed-like) instead of a generic text card. */
+  authorAvatar?: string
+  /** s219: tweet author's display name, same source/timing as authorAvatar. */
+  authorName?: string
 }
 
 /** Tag record (v15、 旧 MoodRecord をリネーム) — destefanis pivot の

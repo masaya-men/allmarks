@@ -74,6 +74,10 @@ export type BoardItem = {
   /** True for tutorial demo cards (swept when onboarding ends). Lets the
    *  onboarding /triage screen scope its queue to just the demo cards. */
   readonly onboardingDemo?: boolean
+  /** s219: tweet author avatar/name, backfilled from the syndication API.
+   *  undefined for non-tweets and not-yet-backfilled tweets. */
+  readonly authorAvatar?: string
+  readonly authorName?: string
 }
 
 type DbLike = IDBPDatabase<unknown>
@@ -153,6 +157,8 @@ function toItem(b: BookmarkRecord, c: CardRecord | undefined): BoardItem {
     linkStatus: b.linkStatus,
     lastCheckedAt: b.lastCheckedAt,
     onboardingDemo: b.onboardingDemo,
+    authorAvatar: b.authorAvatar,
+    authorName: b.authorName,
   }
 }
 
@@ -220,6 +226,10 @@ export function useBoardData(privateTagIds: ReadonlySet<string> = new Set()): {
    *  card scroll on the same content (= matching font, no FLIP-time jump).
    *  No-op when the title is already the same string. */
   persistTitle: (bookmarkId: string, title: string) => Promise<void>
+  /** s219: persist the tweet author's avatar URL + display name, backfilled
+   *  alongside thumbnail/hasVideo/title. No-op when both are already the same
+   *  or both args are empty. */
+  persistAuthor: (bookmarkId: string, authorAvatar: string, authorName: string) => Promise<void>
   /** Persist the multi-image photo URL array for a bookmark. Pass an empty
    *  array to clear back to single-image. I-07 Phase 1. */
   persistPhotos: (bookmarkId: string, photos: readonly string[]) => Promise<void>
@@ -607,6 +617,25 @@ export function useBoardData(privateTagIds: ReadonlySet<string> = new Set()): {
     [],
   )
 
+  const persistAuthor = useCallback(
+    async (bookmarkId: string, authorAvatar: string, authorName: string): Promise<void> => {
+      const db = dbRef.current
+      if (!db || !bookmarkId) return
+      if (!authorAvatar && !authorName) return
+      const existing = (await db.get('bookmarks', bookmarkId)) as BookmarkRecord | undefined
+      if (!existing) return
+      if (existing.encryptedPayload) return
+      if (existing.authorAvatar === authorAvatar && existing.authorName === authorName) return
+      await db.put('bookmarks', touchBookmark({ ...existing, authorAvatar, authorName }))
+      setItems((prev) =>
+        prev.map((it) =>
+          it.bookmarkId === bookmarkId ? { ...it, authorAvatar, authorName } : it,
+        ),
+      )
+    },
+    [],
+  )
+
   const persistPhotos = useCallback(
     async (bookmarkId: string, photos: readonly string[]): Promise<void> => {
       const db = dbRef.current
@@ -813,6 +842,7 @@ export function useBoardData(privateTagIds: ReadonlySet<string> = new Set()): {
     persistThumbnail,
     persistVideoFlag,
     persistTitle,
+    persistAuthor,
     persistPhotos,
     persistMediaSlots,
     persistTags,

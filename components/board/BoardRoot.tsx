@@ -296,6 +296,7 @@ export function BoardRoot() {
     persistMediaSlots,
     persistVideoFlag,
     persistTitle,
+    persistAuthor,
     persistTags,
     persistSoftDelete,
     emptyTrash,
@@ -3200,6 +3201,7 @@ export function BoardRoot() {
             persistVideoFlag,
             persistMediaSlots,
             persistTitle,
+            persistAuthor,
           },
         ),
       ).catch(() => {
@@ -3208,7 +3210,7 @@ export function BoardRoot() {
     }
     return (): void => { controller.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, items.length, persistThumbnail, persistVideoFlag, persistMediaSlots, persistTitle])
+  }, [loading, items.length, persistThumbnail, persistVideoFlag, persistMediaSlots, persistTitle, persistAuthor])
 
   // TikTok thumbnail backfill via the public oEmbed endpoint
   // (https://www.tiktok.com/oembed?url=...). The bookmarklet's og:image

@@ -20,6 +20,10 @@ export type TweetBackfillHooks = {
    *  whole tweet body and lets the Lightbox card share the same content so
    *  the FLIP open animation morphs identical typography on both sides. */
   readonly persistTitle?: (bookmarkId: string, title: string) => Promise<void>
+  /** s219: persist the tweet author's avatar + display name so the
+   *  thumbnail-less text card can show them (embed-like). Optional so legacy
+   *  callers (= unit tests) keep working without it. */
+  readonly persistAuthor?: (bookmarkId: string, authorAvatar: string, authorName: string) => Promise<void>
 }
 
 /** Fetch tweet meta once and write through to all three persisted fields.
@@ -83,6 +87,18 @@ export async function backfillTweetMeta(
   if (hooks.persistTitle && meta.text) {
     try {
       await hooks.persistTitle(target.bookmarkId, meta.text)
+    } catch {
+      /* swallow */
+    }
+  }
+  if (signal.aborted) return
+
+  // Author avatar + name (s219): shows the poster on the thumbnail-less text
+  // card so a text-only tweet reads as "a tweet", embed-like. authorName is
+  // always present on a live TweetMeta; authorAvatar can be absent (defensive).
+  if (hooks.persistAuthor && meta.authorName) {
+    try {
+      await hooks.persistAuthor(target.bookmarkId, meta.authorAvatar ?? '', meta.authorName)
     } catch {
       /* swallow */
     }

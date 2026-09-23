@@ -105,6 +105,77 @@ describe('backfillTweetMeta', () => {
     expect(persistThumbnail).not.toHaveBeenCalled()
   })
 
+  it('persists author avatar + name when present (s219)', async () => {
+    const persistAuthor = vi.fn().mockResolvedValue(undefined)
+    const fetchMeta = vi.fn().mockResolvedValue(meta({
+      authorAvatar: 'https://pbs.twimg.com/profile_images/x/avatar.jpg',
+      authorName: 'Jane Doe',
+    }))
+
+    await backfillTweetMeta(
+      { bookmarkId: 'b6', tweetId: '6' },
+      new AbortController().signal,
+      {
+        fetchMeta,
+        persistThumbnail: vi.fn(),
+        persistVideoFlag: vi.fn(),
+        persistMediaSlots: vi.fn(),
+        persistAuthor,
+      },
+    )
+
+    expect(persistAuthor).toHaveBeenCalledWith('b6', 'https://pbs.twimg.com/profile_images/x/avatar.jpg', 'Jane Doe')
+  })
+
+  it('persists author with an empty avatar string when authorAvatar is absent but authorName is present', async () => {
+    const persistAuthor = vi.fn().mockResolvedValue(undefined)
+    const fetchMeta = vi.fn().mockResolvedValue(meta({ authorName: 'Jane Doe' }))
+
+    await backfillTweetMeta(
+      { bookmarkId: 'b7', tweetId: '7' },
+      new AbortController().signal,
+      {
+        fetchMeta,
+        persistThumbnail: vi.fn(),
+        persistVideoFlag: vi.fn(),
+        persistMediaSlots: vi.fn(),
+        persistAuthor,
+      },
+    )
+
+    expect(persistAuthor).toHaveBeenCalledWith('b7', '', 'Jane Doe')
+  })
+
+  it('does not call persistAuthor when authorName is empty', async () => {
+    const persistAuthor = vi.fn()
+    const fetchMeta = vi.fn().mockResolvedValue(meta({ authorName: '' }))
+
+    await backfillTweetMeta(
+      { bookmarkId: 'b8', tweetId: '8' },
+      new AbortController().signal,
+      {
+        fetchMeta,
+        persistThumbnail: vi.fn(),
+        persistVideoFlag: vi.fn(),
+        persistMediaSlots: vi.fn(),
+        persistAuthor,
+      },
+    )
+
+    expect(persistAuthor).not.toHaveBeenCalled()
+  })
+
+  it('works without a persistAuthor hook (legacy caller / optional)', async () => {
+    const fetchMeta = vi.fn().mockResolvedValue(meta({ authorName: 'Jane Doe' }))
+    await expect(
+      backfillTweetMeta(
+        { bookmarkId: 'b9', tweetId: '9' },
+        new AbortController().signal,
+        { fetchMeta, persistThumbnail: vi.fn(), persistVideoFlag: vi.fn(), persistMediaSlots: vi.fn() },
+      ),
+    ).resolves.toBeUndefined()
+  })
+
   it('swallows fetch exceptions (does not throw to queue)', async () => {
     const fetchMeta = vi.fn().mockRejectedValue(new Error('network'))
     await expect(
