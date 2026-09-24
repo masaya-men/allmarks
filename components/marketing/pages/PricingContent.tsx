@@ -6,6 +6,8 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { navHref } from '@/lib/i18n/locale-urls'
 import { renderLinkedText, type RichLinkTarget } from '@/lib/i18n/rich-text'
 import { PLAN_PRICE, formatYen, monthlyEquivalent, type BillingCycle, type PaidPlanId } from '@/lib/pricing/plans'
+import { getPaddleCheckoutConfig, type PaddleCheckoutConfig } from '@/lib/billing/paddle-config'
+import { openPaddleCheckout } from '@/lib/billing/paddle-checkout'
 import styles from './pricing-page.module.css'
 
 const FAQ_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5'] as const
@@ -14,9 +16,11 @@ const SYNC_ITEMS = ['item1', 'item2', 'item3', 'item4'] as const
 
 /**
  * 料金ページ本文(s221)。approved mock の layout A(3カード)のみ実装。
- * 月払い/年払いはページ内 state(billing)で切り替え。Paddle 未導入のため
- * Sync/Supporter の「申し込む」は disabled(TODO(paddle))。Free の CTA は
- * /board へ(他ページの Open Board 導線と同じ、locale 接頭辞なし)。
+ * 月払い/年払いはページ内 state(billing)で切り替え。Sync/Supporter の
+ * 「申し込む」は Paddle Checkout(lib/billing/paddle-*)に接続済み — 対応する
+ * env(NEXT_PUBLIC_PADDLE_*)が未設定の間は getPaddleCheckoutConfig が null を
+ * 返すため、これまで通り disabled のまま。Free の CTA は /board へ
+ * (他ページの Open Board 導線と同じ、locale 接頭辞なし)。
  */
 export function PricingContent(): React.ReactElement {
   const { t, locale } = useI18n()
@@ -47,6 +51,19 @@ export function PricingContent(): React.ReactElement {
       return t(`pages.pricing.${id}.altMonthly`).replace('{price}', formatYen(price.annual))
     }
     return t(`pages.pricing.${id}.altAnnual`).replace('{price}', formatYen(monthlyEquivalent(price.annual)))
+  }
+
+  // Paddle 未設定(env 未投入)の間は null → ボタンは今まで通り disabled のまま。
+  const syncCheckout = getPaddleCheckoutConfig('sync', billing)
+  const supporterCheckout = getPaddleCheckoutConfig('supporter', billing)
+
+  async function handleSubscribe(config: PaddleCheckoutConfig): Promise<void> {
+    try {
+      await openPaddleCheckout(config, locale)
+    } catch {
+      // paddle.js の読み込み失敗等。失敗時専用の表示文言は未確定のため、
+      // 現状はボタンを押せる状態のまま(再クリックで再試行可能)にする。
+    }
   }
 
   return (
@@ -116,8 +133,13 @@ export function PricingContent(): React.ReactElement {
               </li>
             ))}
           </ul>
-          {/* TODO(paddle): open Paddle checkout */}
-          <button type="button" className={`${styles.cta} ${styles.ctaMain} ${styles.ctaDisabled}`} disabled aria-disabled="true">
+          <button
+            type="button"
+            className={`${styles.cta} ${styles.ctaMain}${syncCheckout ? '' : ` ${styles.ctaDisabled}`}`}
+            disabled={!syncCheckout}
+            aria-disabled={!syncCheckout}
+            onClick={syncCheckout ? () => void handleSubscribe(syncCheckout) : undefined}
+          >
             {t('pages.pricing.cta.subscribe')}
           </button>
         </article>
@@ -131,8 +153,13 @@ export function PricingContent(): React.ReactElement {
           </p>
           <p className={styles.alt}>{altLine('supporter')}</p>
           <p className={styles.note}>{t('pages.pricing.supporter.note')}</p>
-          {/* TODO(paddle): open Paddle checkout */}
-          <button type="button" className={`${styles.cta} ${styles.ctaDisabled}`} disabled aria-disabled="true">
+          <button
+            type="button"
+            className={`${styles.cta}${supporterCheckout ? '' : ` ${styles.ctaDisabled}`}`}
+            disabled={!supporterCheckout}
+            aria-disabled={!supporterCheckout}
+            onClick={supporterCheckout ? () => void handleSubscribe(supporterCheckout) : undefined}
+          >
             {t('pages.pricing.cta.subscribe')}
           </button>
         </article>

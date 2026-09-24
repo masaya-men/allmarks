@@ -1031,6 +1031,30 @@
         }
       },
       "taxNote": "Alle Preise verstehen sich inklusive Steuern. Die angezeigte Währung und der Steuerbetrag können je nach Wohnort variieren."
+    },
+    "purchase": {
+      "meta": {
+        "title": "Kauf abgeschlossen",
+        "description": "Bestätige deine AllMarks-Zahlung und sieh dir deinen Sync-Schlüssel an."
+      },
+      "confirming": "Deine Zahlung wird bestätigt…",
+      "success": {
+        "heading": "Danke für dein Abonnement",
+        "subheading": "Dein Sync-Schlüssel",
+        "body": "Gib diesen Schlüssel in AllMarks unter SETTINGS → SYNC ein. Er funktioniert auf bis zu 5 Geräten.",
+        "copy": "Kopieren",
+        "copied": "Kopiert",
+        "open": "AllMarks öffnen",
+        "note": "Bewahre diesen Schlüssel an einem sicheren Ort auf. Falls du ihn verlierst, gib unten die Bestellnummer aus deiner Paddle-Bestätigungsmail ein, um denselben Schlüssel erneut anzuzeigen."
+      },
+      "lost": {
+        "heading": "Schlüssel verloren?",
+        "placeholder": "Bestellnummer (beginnt mit txn_)",
+        "button": "Schlüssel anzeigen"
+      },
+      "processing": "Deine Zahlung wird noch verarbeitet. Lade diese Seite in ein paar Minuten erneut.",
+      "notFound": "Wir konnten diese Zahlung nicht bestätigen. Überprüfe die Bestellnummer. Falls das Problem weiterhin besteht, [[kontaktiere mich|contact]].",
+      "error": "Bei der Bestätigung ist ein Problem aufgetreten. Bitte lade die Seite später erneut."
     }
   },
   "trash": {

@@ -1031,6 +1031,30 @@
         }
       },
       "taxNote": "所有价格均已含税。显示的货币和税额可能因你所在地区而有所不同。"
+    },
+    "purchase": {
+      "meta": {
+        "title": "购买完成",
+        "description": "确认你的 AllMarks 付款并查看同步密钥。"
+      },
+      "confirming": "正在确认你的付款…",
+      "success": {
+        "heading": "感谢你的订阅",
+        "subheading": "你的同步密钥",
+        "body": "请在 AllMarks 的 SETTINGS → SYNC 中输入此密钥。最多可在 5 台设备上使用。",
+        "copy": "复制",
+        "copied": "已复制",
+        "open": "打开 AllMarks",
+        "note": "请妥善保管此密钥。如果丢失，可以在下方输入 Paddle 收据邮件中的订单号，重新显示同一个密钥。"
+      },
+      "lost": {
+        "heading": "忘记密钥了？",
+        "placeholder": "订单号(以 txn_ 开头)",
+        "button": "显示密钥"
+      },
+      "processing": "付款仍在处理中。请几分钟后重新加载此页面。",
+      "notFound": "无法确认此付款。请检查订单号是否正确。如果问题仍未解决，请[[联系我|contact]]。",
+      "error": "确认时出现问题。请稍后重新加载。"
     }
   },
   "trash": {

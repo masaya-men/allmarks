@@ -63,4 +63,7 @@ describe('navHref', () => {
   it('ja + board → /board (app route, never localized)', () => {
     expect(navHref('ja', 'board')).toBe('/board')
   })
+  it('ja + purchase → /ja/purchase (localized, Paddle redirect target)', () => {
+    expect(navHref('ja', 'purchase')).toBe('/ja/purchase')
+  })
 })

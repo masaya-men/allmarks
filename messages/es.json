@@ -1031,6 +1031,30 @@
         }
       },
       "taxNote": "Todos los precios incluyen impuestos. La moneda mostrada y el importe del impuesto pueden variar según tu lugar de residencia."
+    },
+    "purchase": {
+      "meta": {
+        "title": "Compra completada",
+        "description": "Confirma tu pago de AllMarks y consulta tu clave de sincronización."
+      },
+      "confirming": "Confirmando tu pago…",
+      "success": {
+        "heading": "Gracias por suscribirte",
+        "subheading": "Tu clave de sincronización",
+        "body": "Introduce esta clave en AllMarks, en SETTINGS → SYNC. Funciona en hasta 5 dispositivos.",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "open": "Abrir AllMarks",
+        "note": "Guarda esta clave en un lugar seguro. Si la pierdes, introduce el número de pedido del correo de recibo de Paddle a continuación para volver a mostrar la misma clave."
+      },
+      "lost": {
+        "heading": "¿Perdiste tu clave?",
+        "placeholder": "Número de pedido (empieza por txn_)",
+        "button": "Mostrar clave"
+      },
+      "processing": "Tu pago todavía se está procesando. Recarga esta página en unos minutos.",
+      "notFound": "No pudimos confirmar este pago. Comprueba el número de pedido. Si el problema continúa, [[contáctame|contact]].",
+      "error": "Ocurrió un problema al confirmar. Vuelve a cargar la página dentro de un rato."
     }
   },
   "trash": {

@@ -1031,6 +1031,30 @@
         }
       },
       "taxNote": "All prices include tax. The currency shown and the tax amount may vary depending on where you live."
+    },
+    "purchase": {
+      "meta": {
+        "title": "Purchase complete",
+        "description": "Confirm your AllMarks payment and view your sync key."
+      },
+      "confirming": "Confirming your payment…",
+      "success": {
+        "heading": "Thank you for subscribing",
+        "subheading": "Your sync key",
+        "body": "Enter this key in AllMarks under SETTINGS → SYNC. It works on up to 5 devices.",
+        "copy": "Copy",
+        "copied": "Copied",
+        "open": "Open AllMarks",
+        "note": "Keep this key somewhere safe. If you lose it, enter the order number from your Paddle receipt email below to show the same key again."
+      },
+      "lost": {
+        "heading": "Lost your key?",
+        "placeholder": "Order number (starts with txn_)",
+        "button": "Show key"
+      },
+      "processing": "Your payment is still being processed. Reload this page in a few minutes.",
+      "notFound": "We couldn't confirm this payment. Check the order number. If the problem continues, [[contact me|contact]].",
+      "error": "Something went wrong while confirming. Please reload in a while."
     }
   },
   "trash": {

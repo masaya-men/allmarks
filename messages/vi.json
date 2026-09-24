@@ -1031,6 +1031,30 @@
         }
       },
       "taxNote": "Tất cả giá đều đã bao gồm thuế. Đơn vị tiền tệ hiển thị và số tiền thuế có thể khác nhau tùy theo nơi bạn sinh sống."
+    },
+    "purchase": {
+      "meta": {
+        "title": "Hoàn tất mua hàng",
+        "description": "Xác nhận thanh toán AllMarks của bạn và xem khóa đồng bộ của bạn."
+      },
+      "confirming": "Đang xác nhận thanh toán của bạn…",
+      "success": {
+        "heading": "Cảm ơn bạn đã đăng ký",
+        "subheading": "Khóa đồng bộ của bạn",
+        "body": "Nhập khóa này vào AllMarks trong mục SETTINGS → SYNC. Khóa hoạt động trên tối đa 5 thiết bị.",
+        "copy": "Sao chép",
+        "copied": "Đã sao chép",
+        "open": "Mở AllMarks",
+        "note": "Hãy giữ khóa này ở nơi an toàn. Nếu bị mất, hãy nhập mã số đơn hàng trong email biên nhận của Paddle vào ô bên dưới để hiển thị lại cùng một khóa."
+      },
+      "lost": {
+        "heading": "Bị mất khóa?",
+        "placeholder": "Mã số đơn hàng (bắt đầu bằng txn_)",
+        "button": "Hiện khóa"
+      },
+      "processing": "Thanh toán của bạn vẫn đang được xử lý. Hãy tải lại trang này sau vài phút.",
+      "notFound": "Chúng tôi không thể xác nhận khoản thanh toán này. Hãy kiểm tra lại mã số đơn hàng. Nếu sự cố vẫn tiếp diễn, hãy [[liên hệ với tôi|contact]].",
+      "error": "Đã xảy ra sự cố khi xác nhận. Vui lòng tải lại trang sau một lúc."
     }
   },
   "trash": {

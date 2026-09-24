@@ -1031,6 +1031,30 @@
         }
       },
       "taxNote": "Alle prijzen zijn inclusief belasting. De getoonde valuta en het belastingbedrag kunnen variëren afhankelijk van je woonplaats."
+    },
+    "purchase": {
+      "meta": {
+        "title": "Aankoop voltooid",
+        "description": "Bevestig je AllMarks-betaling en bekijk je sync-sleutel."
+      },
+      "confirming": "Je betaling wordt bevestigd…",
+      "success": {
+        "heading": "Bedankt voor je abonnement",
+        "subheading": "Jouw sync-sleutel",
+        "body": "Voer deze sleutel in bij AllMarks onder SETTINGS → SYNC. Werkt op maximaal 5 apparaten.",
+        "copy": "Kopiëren",
+        "copied": "Gekopieerd",
+        "open": "AllMarks openen",
+        "note": "Bewaar deze sleutel op een veilige plek. Ben je hem kwijt? Vul hieronder het bestelnummer uit je Paddle-ontvangstbevestiging in om dezelfde sleutel opnieuw te tonen."
+      },
+      "lost": {
+        "heading": "Sleutel kwijt?",
+        "placeholder": "Bestelnummer (begint met txn_)",
+        "button": "Sleutel tonen"
+      },
+      "processing": "Je betaling wordt nog verwerkt. Laad deze pagina over een paar minuten opnieuw.",
+      "notFound": "We konden deze betaling niet bevestigen. Controleer het bestelnummer. Blijft het probleem bestaan, [[neem dan contact met me op|contact]].",
+      "error": "Er ging iets mis tijdens het bevestigen. Laad de pagina straks opnieuw."
     }
   },
   "trash": {

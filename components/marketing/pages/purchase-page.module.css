@@ -1,0 +1,96 @@
+/* purchase-page.module.css
+   購入完了/キー再表示ページ(s221)。本文レイアウトは legal-page.module.css を
+   共用(.root/.hero/.title/.section/.heading/.subheading/.body/.link/.note)。
+   ここではキーボックス・コピー/開くボタン・キー再表示フォームだけを追加する。 */
+
+.keyBox {
+  margin: clamp(14px, 2vw, 20px) 0;
+  padding: clamp(16px, 2.4vw, 22px) clamp(18px, 2.6vw, 24px);
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 16%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--lp-ink) 4%, transparent);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: clamp(14px, 1.6vw, 16px);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  color: var(--lp-ink);
+  word-break: break-all;
+  user-select: all;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 clamp(10px, 1.4vw, 16px);
+}
+
+.copyButton,
+.openLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.copyButton {
+  border: 1px solid var(--lp-ink);
+  background: transparent;
+  color: var(--lp-ink);
+}
+
+.openLink {
+  border: 1px solid var(--lp-ink);
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+}
+
+.lostForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 70ch;
+  margin: clamp(10px, 1.4vw, 16px) 0 0;
+}
+
+.lostInput {
+  flex: 1 1 260px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent);
+  border-radius: 10px;
+  background: #fff;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 14px;
+  color: var(--lp-ink);
+  box-sizing: border-box;
+}
+.lostInput::placeholder { color: var(--lp-ink-soft); }
+.lostInput:focus { outline: 2px solid var(--lp-accent); outline-offset: 1px; }
+
+.lostButton {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 10px;
+  border: 1px solid var(--lp-ink);
+  background: transparent;
+  color: var(--lp-ink);
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .lostInput, .lostButton { flex-basis: 100%; }
+}
