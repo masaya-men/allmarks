@@ -64,6 +64,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
       changeFrequency: 'monthly' as const,
     })),
+    // Refund policy(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'refund'),
+      priority: 0.5,
+      changeFrequency: 'monthly' as const,
+    })),
+    // Pricing(15言語)
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      path: localePath(locale, 'pricing'),
+      priority: 0.8,
+      changeFrequency: 'monthly' as const,
+    })),
     // Extension Privacy(15言語)
     ...SUPPORTED_LOCALES.map((locale) => ({
       path: localePath(locale, 'extension/privacy'),

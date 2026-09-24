@@ -3,22 +3,32 @@
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { navHref } from '@/lib/i18n/locale-urls'
+import { renderLinkedText, type RichLinkTarget } from '@/lib/i18n/rich-text'
 import styles from './legal-page.module.css'
 
 /** privacy/terms 共通: セクション定義(anchor id = key)。 */
 const SECTIONS = [
-  'philosophy', 'collect', 'local', 'sharing', 'bookmarklet',
-  'extension', 'hosting', 'thirdParty', 'advertising', 'children',
+  'philosophy', 'collect', 'local', 'deviceSync', 'syncKeys', 'payment', 'sharing',
+  'bookmarklet', 'extension', 'hosting', 'thirdParty', 'advertising', 'children',
   'changes', 'contact',
 ] as const
+
+const GOOGLE_DATA_POLICY_URL = 'https://developers.google.com/terms/api-services-user-data-policy'
 
 /**
  * Privacy 本文(法務読み物・目次アンカー付き)。事実は §確定済みプロダクト事実に準拠。
  * 共有は KV/R2 に30日保存される事実を正しく書く(旧ページの「送らない」誤りを継承しない)。
+ * 端末間同期(有料プラン)・同期キーと端末数・お支払いの節を含む(s220)。
  * スクロール演出なし(全要素可視)。
  */
 export function PrivacyContent(): React.ReactElement {
   const { t, locale } = useI18n()
+  const links: Record<string, RichLinkTarget> = {
+    paymentSection: { href: '#payment' },
+    googleDataPolicy: { href: GOOGLE_DATA_POLICY_URL },
+    supportEmail: { href: 'mailto:allmarks-support@googlegroups.com' },
+  }
+
   return (
     <article className={styles.root}>
       <header className={styles.hero}>
@@ -47,18 +57,44 @@ export function PrivacyContent(): React.ReactElement {
       {SECTIONS.map((id) => (
         <section key={id} id={id} className={styles.section}>
           <h2 className={styles.heading}>{t(`pages.privacy.${id}.heading`)}</h2>
-          <p className={styles.body}>{t(`pages.privacy.${id}.body`)}</p>
+
+          {id === 'collect' && (
+            <p className={styles.body}>
+              {renderLinkedText(t('pages.privacy.collect.body'), links, styles.link)}
+            </p>
+          )}
+
+          {id === 'deviceSync' && (
+            <>
+              <p className={styles.body}>{t('pages.privacy.deviceSync.para1')}</p>
+              <p className={styles.body}>{t('pages.privacy.deviceSync.para2')}</p>
+              <p className={styles.body}>
+                {renderLinkedText(t('pages.privacy.deviceSync.para3'), links, styles.link)}
+              </p>
+            </>
+          )}
+
+          {id === 'payment' && (
+            <>
+              <p className={styles.body}>{t('pages.privacy.payment.para1')}</p>
+              <p className={styles.body}>{t('pages.privacy.payment.para2')}</p>
+            </>
+          )}
+
+          {id === 'contact' && (
+            <p className={styles.body}>
+              {renderLinkedText(t('pages.privacy.contact.body'), links, styles.link)}
+            </p>
+          )}
+
+          {id !== 'collect' && id !== 'deviceSync' && id !== 'payment' && id !== 'contact' && (
+            <p className={styles.body}>{t(`pages.privacy.${id}.body`)}</p>
+          )}
+
           {id === 'extension' && (
             <p className={styles.body}>
               <Link href={navHref(locale, 'extension/privacy')} className={styles.link}>
                 {t('pages.extensionPrivacy.hero.kicker')}
-              </Link>
-            </p>
-          )}
-          {id === 'contact' && (
-            <p className={styles.body}>
-              <Link href={navHref(locale, 'contact')} className={styles.link}>
-                {t('pages.contact.hero.kicker')}
               </Link>
             </p>
           )}

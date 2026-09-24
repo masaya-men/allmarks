@@ -43,9 +43,22 @@ describe('sitemap 集客4ページ', () => {
   }
 })
 
-describe('sitemap 法務4ページ', () => {
+describe('sitemap 料金ページ', () => {
   const urls = sitemap().map((e) => e.url)
-  for (const page of ['terms', 'contact'] as const) {
+  it('pricing は英語フラットを含む', () => {
+    expect(urls).toContain(`${SITE_URL}/pricing`)
+  })
+  it('pricing は日本語版を含む', () => {
+    expect(urls).toContain(`${SITE_URL}/ja/pricing`)
+  })
+  it('pricing は15言語ぶん存在する', () => {
+    expect(urls.filter((u) => u.endsWith('/pricing'))).toHaveLength(15)
+  })
+})
+
+describe('sitemap 法務5ページ', () => {
+  const urls = sitemap().map((e) => e.url)
+  for (const page of ['terms', 'contact', 'refund'] as const) {
     it(`${page} は15言語ぶん存在する`, () => {
       expect(urls.filter((u) => u.endsWith(`/${page}`))).toHaveLength(15)
     })

@@ -44,8 +44,8 @@ describe('landing translation parity', () => {
     expect(Object.keys(FILES).sort()).toEqual([...SUPPORTED_LOCALES].sort())
   })
 
-  it('en は29個の landing leaf キーを持つ', () => {
-    expect(enKeys.length).toBe(29)
+  it('en は31個の landing leaf キーを持つ', () => {
+    expect(enKeys.length).toBe(31)
   })
 
   for (const locale of SUPPORTED_LOCALES) {

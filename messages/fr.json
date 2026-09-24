@@ -419,7 +419,9 @@
       "about": "About",
       "privacy": "Privacy",
       "terms": "Terms",
-      "contact": "Contact"
+      "contact": "Contact",
+      "refund": "Refund",
+      "pricing": "Pricing"
     }
   },
   "pages": {
@@ -556,11 +558,11 @@
       },
       "q1": {
         "q": "Est-ce gratuit ?",
-        "a": "Oui — AllMarks est gratuit, sans compte et sans inscription."
+        "a": "Toutes les fonctionnalités principales sont gratuites, sans compte requis. Seule la « synchronisation entre appareils », qui permet d'utiliser le même tableau sur plusieurs appareils, est payante. Consultez la [[page des tarifs|pricing]] pour les détails."
       },
       "q2": {
         "q": "Où sont stockées mes données ?",
-        "a": "Votre tableau est stocké uniquement dans votre navigateur, sur votre appareil — pas sur un serveur. La seule exception, c'est le partage : une copie des informations d'URL des cartes choisies (titre, image d'aperçu, etc.) est conservée environ 30 jours, puis supprimée automatiquement. Comme il n'y a pas de compte, aucune information personnelle n'est jamais incluse. Si vous ne partagez pas, rien ne quitte votre appareil."
+        "a": "Elles sont stockées dans votre navigateur, sur votre appareil. Si vous utilisez la synchronisation entre appareils, elles sont aussi stockées dans votre propre Google Drive. Dans tous les cas, elles ne sont jamais stockées sur mes serveurs. La seule exception est lorsque vous utilisez « Partager » : les informations des cartes choisies (titre, image d'aperçu, etc.) sont conservées environ 30 jours, puis supprimées automatiquement."
       },
       "q3": {
         "q": "Comment enregistrer des choses ?",
@@ -588,11 +590,59 @@
       },
       "q9": {
         "q": "Ai-je besoin d'un compte ?",
-        "a": "Non. Il n'y a aucune création de compte ni connexion, tout simplement."
+        "a": "Il n'existe aucun compte AllMarks. Un compte Google n'est nécessaire que si vous utilisez la synchronisation entre appareils."
       },
       "cta": {
         "heading": "Voyez par vous-même.",
         "button": "Open Board"
+      },
+      "q10": {
+        "q": "Qu'est-ce que la synchronisation entre appareils ? Qu'est-ce qui est synchronisé ?",
+        "a": "C'est une fonctionnalité qui vous permet d'utiliser les mêmes marque-pages sur plusieurs appareils — ordinateur, téléphone, tablette, etc. Ce qui est synchronisé : vos marque-pages, étiquettes, l'ordre et la taille des cartes, et le contenu de Private. Les réglages d'apparence comme le thème restent séparés pour chaque appareil."
+      },
+      "q11": {
+        "q": "À quelle vitesse la synchronisation se met-elle à jour ?",
+        "a": "Une modification est enregistrée sur Google Drive environ 20 secondes plus tard. Les autres appareils récupèrent le contenu le plus récent lorsque vous ouvrez AllMarks ou revenez à l'écran après un moment."
+      },
+      "q12": {
+        "q": "Ai-je besoin d'un compte Google ?",
+        "a": "La synchronisation entre appareils nécessite un compte Google. Vous n'en avez pas besoin si vous n'utilisez pas la synchronisation."
+      },
+      "q13": {
+        "q": "Qu'arrive-t-il à mes données si j'arrête la synchronisation ?",
+        "a": "Les données de chaque appareil restent telles quelles. Le dossier « AllMarks » dans Google Drive reste aussi présent, vous pouvez donc le supprimer vous-même si vous n'en avez plus besoin."
+      },
+      "q14": {
+        "q": "Pouvez-vous voir mes marque-pages ?",
+        "a": "Non. Les données synchronisées sont enregistrées directement depuis votre appareil vers votre propre Google Drive. Elles ne passent jamais par mes serveurs, donc je ne peux pas voir leur contenu."
+      },
+      "q15": {
+        "q": "Quels moyens de paiement puis-je utiliser ?",
+        "a": "Cartes de crédit et de débit, ainsi que PayPal, Apple Pay ou Google Pay selon votre appareil et votre région. Le paiement est traité par mon revendeur, Paddle.com."
+      },
+      "q16": {
+        "q": "Puis-je obtenir un reçu ?",
+        "a": "Oui. Vous pouvez l'obtenir depuis [[paddle.net|paddleHome]] ou l'e-mail que Paddle vous a envoyé lors de l'achat."
+      },
+      "q17": {
+        "q": "Quelle est la différence entre le forfait Sync et le forfait Supporter ?",
+        "a": "Les fonctionnalités sont les mêmes. Le forfait Supporter est destiné à ceux qui souhaitent soutenir davantage le développement d'AllMarks."
+      },
+      "q18": {
+        "q": "Comment résilier ? Que se passe-t-il quand je le fais ?",
+        "a": "Vous pouvez résilier depuis [[paddle.net|paddleHome]] ou le lien « Manage subscription » dans l'e-mail que Paddle vous a envoyé lors de l'achat. Vous pouvez continuer à utiliser la synchronisation jusqu'à la fin de la période déjà payée. Ensuite, la synchronisation s'arrête, mais vos données restent sur vos appareils et dans votre propre Google Drive."
+      },
+      "q19": {
+        "q": "Et si je veux un remboursement ?",
+        "a": "Je rembourse intégralement dans les 14 jours suivant votre premier paiement. Faites la demande via [[paddle.net|paddleHome]]. Consultez la [[politique de remboursement|refund]] pour les détails."
+      },
+      "q20": {
+        "q": "Ma clé ne s'active pas",
+        "a": "Vérifiez que vous avez copié la clé en entier, sans qu'elle soit coupée. Si vous voyez « This key has reached its device limit », la clé est déjà utilisée sur 5 appareils."
+      },
+      "q21": {
+        "q": "La synchronisation ne se met pas à jour",
+        "a": "Appuyez sur « Sync now » dans la section SYNC des Réglages. Si vous voyez « Connection lost », appuyez sur « Reconnect Google »."
       }
     },
     "extension": {
@@ -637,36 +687,36 @@
     "privacy": {
       "meta": {
         "title": "Politique de confidentialité",
-        "description": "AllMarks ne collecte aucune donnée personnelle. Vos favoris restent dans votre navigateur ; rien n'est téléversé sauf si vous choisissez de partager un tableau."
+        "description": "Politique de confidentialité d'AllMarks — je ne collecte jamais vos marque-pages sur mes serveurs. Si vous utilisez la synchronisation entre appareils, vos données sont stockées dans votre propre Google Drive."
       },
       "hero": {
         "kicker": "Confidentialité",
         "title": "Politique de confidentialité",
-        "lead": "AllMarks repose sur un seul principe : vos données vous appartiennent. Nous ne collectons aucune donnée personnelle, et il n'y a pas de compte.",
-        "updated": "Dernière mise à jour : 18 juin 2026"
+        "lead": "AllMarks repose sur un seul principe : vos données vous appartiennent. Je ne collecte pas vos marque-pages sur mes serveurs, et il n'y a aucun compte.",
+        "updated": "Dernière mise à jour : 24 septembre 2026"
       },
       "toc": {
         "title": "Sommaire"
       },
       "philosophy": {
         "heading": "Zéro collecte de données",
-        "body": "Vos favoris, vos tags et la disposition de vos tableaux sont stockés uniquement dans la base de données locale de votre navigateur (IndexedDB). Nous ne collectons, ne stockons ni ne transmettons vos données personnelles à nos serveurs, et il n'y a aucun compte auquel se connecter."
+        "body": "Vos marque-pages, étiquettes et dispositions de tableau sont stockés uniquement dans la base de données locale de votre navigateur (IndexedDB). Je ne collecte, ne stocke ni ne transmets vos données personnelles à mes serveurs, et il n'y a aucun compte auquel se connecter."
       },
       "collect": {
-        "heading": "Ce que nous ne collectons pas",
-        "body": "Nous ne collectons pas votre nom, votre adresse e-mail ni votre adresse postale ; il n'y a pas de compte ni d'identifiants de connexion ; nous ne conservons aucune copie de votre historique de navigation ni de vos favoris sur nos serveurs ; nous n'utilisons aucun cookie de suivi ou publicitaire ; et nous ne recueillons aucune empreinte basée sur l'IP ni aucune analyse liée à vous en tant qu'individu."
+        "heading": "Ce que je ne collecte pas",
+        "body": "Tant que vous utilisez les fonctionnalités gratuites, je ne collecte ni votre nom, ni votre e-mail, ni votre adresse ; il n'y a aucun compte ni identifiants de connexion ; je ne conserve aucune copie de votre historique de navigation ni de vos marque-pages sur mes serveurs ; je n'utilise aucun cookie de suivi ou publicitaire ; et je ne collecte aucune empreinte basée sur l'IP ni d'analyse vous concernant en tant qu'individu. Les informations traitées si vous achetez un forfait payant sont expliquées à la section [[« Paiement »|paymentSection]]."
       },
       "local": {
-        "heading": "Stockage local uniquement",
-        "body": "Tout réside dans votre navigateur sur votre appareil. Cela signifie que nous ne pouvons pas accéder à vos données, les consulter ni les récupérer, qu'il n'existe aucune sauvegarde côté serveur de vos tableaux, et que vider les données de votre navigateur supprime définitivement votre contenu AllMarks. Vous pouvez exporter votre propre sauvegarde à tout moment."
+        "heading": "Lieu de stockage",
+        "body": "Si vous n'utilisez pas la synchronisation, tout reste dans votre navigateur, sur votre appareil. Je ne peux ni accéder à vos données, ni les consulter, ni les récupérer ; aucune sauvegarde de vos tableaux n'existe côté serveur ; et effacer les données de votre navigateur supprime définitivement votre contenu AllMarks. Vous pouvez exporter votre propre sauvegarde à tout moment."
       },
       "sharing": {
         "heading": "Lorsque vous partagez un tableau",
-        "body": "Le partage est le seul cas où des données quittent votre appareil — et uniquement parce que vous le demandez. Lorsque vous créez un lien de partage, les données du tableau (uniquement les cartes que vous avez choisies de partager, sans information personnelle puisqu'il n'y a pas de compte) sont téléversées sur Cloudflare KV, et l'image d'aperçu sur Cloudflare R2, pour que les personnes à qui vous envoyez le lien puissent ouvrir le tableau. Le lien n'est accessible que via l'adresse secrète et est supprimé automatiquement après environ 30 jours — rien ne persiste. Rien n'est téléversé tant que vous ne créez pas de lien de partage, et vos tableaux privés ne sont jamais téléversés. Vous pouvez également exporter un tableau en PNG, généré entièrement dans votre navigateur."
+        "body": "Parmi les fonctionnalités gratuites, le partage est le seul cas où des données quittent votre appareil — et uniquement parce que vous le demandez. Lorsque vous créez un lien de partage, les données du tableau (uniquement les cartes que vous avez choisi de partager, sans aucune information personnelle, puisqu'il n'y a pas de comptes) sont envoyées vers Cloudflare KV, ainsi qu'une image d'aperçu vers Cloudflare R2, afin que les personnes à qui vous envoyez le lien puissent ouvrir le tableau. Il n'est accessible que via le lien secret et est supprimé automatiquement après environ 30 jours, de sorte que rien ne subsiste. Rien n'est envoyé à moins que vous ne créiez un lien de partage, et vos tableaux privés ne sont jamais envoyés. Vous pouvez aussi exporter un tableau au format PNG, généré entièrement dans votre navigateur."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",
-        "body": "Le bookmarklet AllMarks lit les balises méta Open Graph (titre, description, image, nom du site) de la page sur laquelle vous vous trouvez, entièrement dans votre navigateur, et les transmet à votre fenêtre d'enregistrement AllMarks locale. Aucune donnée ne transite par nos serveurs."
+        "body": "Le bookmarklet AllMarks lit les balises meta Open Graph (titre, description, image, nom du site) de la page où vous vous trouvez, entièrement dans votre navigateur, et les transmet à votre fenêtre locale de sauvegarde AllMarks. Aucune donnée ne passe par mes serveurs."
       },
       "extension": {
         "heading": "Extension de navigateur",
@@ -674,39 +724,54 @@
       },
       "hosting": {
         "heading": "Hébergement et analyses",
-        "body": "AllMarks est hébergé sur Cloudflare Pages. Cloudflare peut enregistrer des métriques serveur minimales et anonymisées (comme le nombre total de pages vues) dans le cadre d'un hébergement standard ; celles-ci ne contiennent aucune information permettant d'identifier personnellement un utilisateur. Nous n'utilisons pas Google Analytics, pas de Facebook Pixel, et aucun script de suivi tiers."
+        "body": "AllMarks est hébergé sur Cloudflare Pages. Cloudflare peut enregistrer des indicateurs serveur minimes et anonymisés (comme le nombre total de vues de page) dans le cadre de l'hébergement standard ; ceux-ci ne contiennent aucune information permettant de vous identifier. Je n'utilise ni Google Analytics, ni Facebook Pixel, ni aucun script de suivi tiers."
       },
       "thirdParty": {
         "heading": "Contenu tiers",
-        "body": "AllMarks peut afficher du contenu provenant d'autres sites — par exemple des tweets via react-tweet, ou des vidéos via oEmbed. Ces intégrations peuvent être soumises aux politiques de confidentialité de leurs propres services, que nous vous recommandons de consulter pour tout contenu apparaissant dans vos tableaux."
+        "body": "AllMarks peut afficher du contenu provenant d'autres sites — par exemple des tweets via react-tweet, ou des vidéos via oEmbed. Ces intégrations peuvent être soumises aux politiques de confidentialité de leurs propres services, que je vous recommande de consulter pour tout contenu apparaissant dans vos tableaux."
       },
       "advertising": {
         "heading": "Publicité",
-        "body": "AllMarks est gratuit et n'affiche aucune publicité aujourd'hui. Si nous introduisons un jour de la publicité pour soutenir le service gratuit, nous mettrons à jour cette politique, l'indiquerons clairement, et continuerons à ne collecter aucune donnée personnelle de notre côté."
+        "body": "Les fonctionnalités principales d'AllMarks sont gratuites, et je n'affiche aucune publicité aujourd'hui. Si j'introduis un jour de la publicité pour soutenir le service gratuit, je mettrai à jour cette politique, l'indiquerai clairement, et continuerai à ne collecter aucune donnée personnelle de mon côté."
       },
       "children": {
         "heading": "Confidentialité des enfants",
-        "body": "AllMarks ne collecte sciemment aucune information auprès des enfants de moins de 13 ans. Comme nous ne collectons aucune donnée personnelle de qui que ce soit, cela est inhérent au fonctionnement de l'application."
+        "body": "AllMarks ne collecte pas sciemment d'informations personnelles auprès des enfants de moins de 13 ans."
       },
       "changes": {
         "heading": "Modifications de cette politique",
-        "body": "Nous pouvons mettre à jour cette politique de temps à autre. Les modifications sont publiées sur cette page avec une nouvelle date de « dernière mise à jour ». Comme nous ne collectons aucune donnée personnelle, nous ne pouvons pas vous notifier des modifications directement."
+        "body": "Je peux mettre à jour cette politique de temps à autre. Les modifications sont publiées sur cette page avec une nouvelle date de « dernière mise à jour »."
       },
       "contact": {
         "heading": "Questions",
-        "body": "Si vous avez des questions sur cette politique, veuillez nous contacter via la page de contact."
+        "body": "Si vous avez des questions sur cette politique, contactez-moi à [[allmarks-support@googlegroups.com|supportEmail]]."
+      },
+      "deviceSync": {
+        "heading": "Synchronisation entre appareils (forfait payant)",
+        "para1": "Lorsque vous utilisez la synchronisation entre appareils, vos marque-pages, étiquettes et réglages de tableau sont stockés dans un dossier « AllMarks » créé dans votre propre Google Drive. Les données vont directement de votre appareil à Google Drive ; elles n'atteignent jamais mes serveurs, et je ne peux pas voir leur contenu.",
+        "para2": "AllMarks ne peut accéder dans Google Drive qu'aux fichiers qu'il a lui-même créés. Vos informations de connexion Google sont stockées dans votre navigateur. Elles ne passent par mes serveurs que lors du renouvellement de votre session de connexion, et n'y sont jamais journalisées ni stockées. Les marque-pages que vous placez dans Private sont stockés chiffrés.",
+        "para3": "L'utilisation par AllMarks des informations reçues des API Google, et leur transfert à toute autre application, respecteront la [[Google API Services User Data Policy|googleDataPolicy]], y compris les exigences de Limited Use."
+      },
+      "syncKeys": {
+        "heading": "Clés de synchronisation et nombre d'appareils",
+        "body": "Lorsque vous activez la synchronisation, un identifiant de clé et un identifiant aléatoire généré pour chaque appareil sont envoyés à mon serveur (Cloudflare). Cela sert uniquement à compter combien d'appareils utilisent une clé (jusqu'à 5) et à confirmer que le forfait payant est actif. Aucun des deux identifiants ne contient d'information permettant de vous identifier personnellement."
+      },
+      "payment": {
+        "heading": "Paiement",
+        "para1": "Le paiement des forfaits payants est traité par mon revendeur, Paddle.com. Votre nom, votre e-mail et vos informations de paiement sont collectés par Paddle.com et traités selon la propre politique de confidentialité de Paddle. Je ne reçois jamais votre numéro de carte ni d'autres informations de paiement.",
+        "para2": "Ce que je reçois de Paddle.com, c'est le statut de votre commande et de votre abonnement (actif ou annulé) ainsi que l'adresse e-mail nécessaire pour vous livrer votre clé et répondre aux demandes de support."
       }
     },
     "terms": {
       "meta": {
         "title": "Conditions d'utilisation",
-        "description": "Conditions d'utilisation d'AllMarks — gratuit, sans compte, vos données restent dans votre navigateur."
+        "description": "Conditions d'utilisation d'AllMarks — les fonctionnalités principales sont gratuites, aucun compte n'est requis, et vos données restent dans votre navigateur."
       },
       "hero": {
         "kicker": "Conditions",
         "title": "Conditions d'utilisation",
-        "lead": "AllMarks est une application gratuite sans compte. Ces conditions expliquent les règles de base de son utilisation.",
-        "updated": "Dernière mise à jour : 18 juin 2026"
+        "lead": "AllMarks est une application web que vous pouvez utiliser sans compte. Les fonctionnalités principales sont gratuites ; certaines fonctionnalités (synchronisation entre appareils) sont proposées via un forfait payant. Ces conditions expliquent les bases de son utilisation.",
+        "updated": "Dernière mise à jour : 24 septembre 2026"
       },
       "toc": {
         "title": "Sommaire"
@@ -717,11 +782,11 @@
       },
       "service": {
         "heading": "2. Le service",
-        "body": "AllMarks est une application web gratuite pour enregistrer des favoris et les organiser en tableaux visuels. Toutes les données sont stockées localement dans votre navigateur, et aucun compte ni inscription n'est requis."
+        "body": "AllMarks est une application web pour enregistrer des marque-pages et les organiser en tableaux visuels. Les fonctionnalités principales sont gratuites, et aucun compte ni inscription n'est requis. Vos données sont stockées localement dans votre navigateur. Si vous utilisez le forfait payant de synchronisation entre appareils, elles sont aussi stockées dans votre propre Google Drive. AllMarks est géré par Masaya Maeno à titre individuel (« je » dans ces conditions)."
       },
       "responsibilities": {
         "heading": "3. Vos responsabilités",
-        "body": "Vous êtes responsable du contenu que vous enregistrez et partagez, vous vous engagez à ne pas utiliser le Service à des fins illégales ni à le perturber, et vous comprenez que vos données sont stockées localement — vider les données de votre navigateur supprime définitivement votre contenu AllMarks. Étant donné que vos données sont stockées uniquement dans votre navigateur sur cet appareil et qu'aucune copie n'est conservée sur un serveur, il vous incombe de conserver vos propres sauvegardes : utilisez EXPORT dans les Paramètres pour enregistrer une copie régulièrement, en particulier avant de changer d'appareil, d'effacer les données de votre navigateur ou de réinitialiser AllMarks. Les données perdues suite à l'effacement des données du navigateur, à la perte ou à la panne de l'appareil, à des mises à jour logicielles ou à toute autre cause ne peuvent pas être récupérées."
+        "body": "Vous êtes responsable du contenu que vous enregistrez et partagez, et vous acceptez de ne pas utiliser le Service à des fins illégales ou pour le perturber. Comme vos données sont stockées localement, effacer les données de votre navigateur supprime définitivement votre contenu AllMarks. Vos données ne sont pas stockées sur mes serveurs, il vous incombe donc de conserver vos propres sauvegardes : utilisez EXPORT dans les Réglages pour enregistrer une copie régulièrement, surtout avant de changer d'appareil, d'effacer les données de votre navigateur ou de réinitialiser AllMarks. Les données perdues à cause de l'effacement des données du navigateur, de la perte ou de la panne d'un appareil, de mises à jour logicielles ou de toute autre cause ne peuvent pas être récupérées."
       },
       "ip": {
         "heading": "4. Propriété intellectuelle",
@@ -729,54 +794,80 @@
       },
       "sharing": {
         "heading": "5. Partage de contenu",
-        "body": "Lorsque vous créez un lien de partage, les données du tableau sont téléversées sur notre hébergement pour que le lien puisse les afficher, et sont supprimées automatiquement après environ 30 jours. En partageant, vous déclarez avoir le droit de partager le contenu de cette manière."
+        "body": "Lorsque vous créez un lien de partage, les données du tableau sont envoyées vers mon hébergement afin que le lien puisse les afficher, et sont supprimées automatiquement après environ 30 jours. En partageant, vous déclarez avoir le droit de partager ce contenu de cette manière."
       },
       "warranty": {
-        "heading": "6. Absence de garantie",
+        "heading": "7. Absence de garantie",
         "body": "Le Service est fourni « tel quel » et « selon disponibilité » sans aucune garantie. Nous ne garantissons pas qu'il sera ininterrompu, sécurisé ou exempt d'erreurs, et nous ne sommes pas responsables des pertes de données résultant de la suppression des données du navigateur, d'une défaillance de l'appareil ou de toute autre cause."
       },
       "liability": {
-        "heading": "7. Limitation de responsabilité",
+        "heading": "8. Limitation de responsabilité",
         "body": "Dans la mesure maximale permise par la loi, AllMarks ne saurait être tenu responsable de dommages indirects, accessoires, spéciaux, consécutifs ou punitifs résultant de votre utilisation du Service."
       },
       "modifications": {
-        "heading": "8. Modifications du service et des conditions",
-        "body": "Nous pouvons modifier ou interrompre le Service à tout moment sans préavis, et pouvons mettre à jour ces conditions de temps à autre. La poursuite de l'utilisation après des modifications signifie que vous acceptez les conditions révisées."
+        "heading": "9. Modifications du service et des conditions",
+        "body": "Je peux modifier ou interrompre le Service à tout moment sans préavis, et je peux mettre à jour ces conditions de temps à autre. Continuer à utiliser le Service après des modifications signifie que vous acceptez les conditions révisées."
       },
       "law": {
-        "heading": "9. Droit applicable",
+        "heading": "10. Droit applicable",
         "body": "Ces conditions sont régies par le droit japonais, et tout litige relève de la compétence exclusive des tribunaux de Tokyo, au Japon."
       },
       "language": {
-        "heading": "10. Langue faisant foi",
+        "heading": "11. Langue faisant foi",
         "body": "La version japonaise des présentes conditions constitue le texte faisant foi. Les traductions dans d’autres langues sont fournies à titre indicatif uniquement et, en cas de divergence entre la version japonaise et une traduction, la version japonaise prévaut."
       },
       "contact": {
-        "heading": "11. Questions",
-        "body": "Si vous avez des questions sur ces conditions, veuillez nous contacter via la page de contact."
+        "heading": "13. Questions",
+        "body": "Si vous avez des questions sur ces conditions, contactez-moi à [[allmarks-support@googlegroups.com|supportEmail]]."
+      },
+      "paidPlan": {
+        "heading": "6. Forfait payant",
+        "intro": "La synchronisation entre appareils est proposée via un forfait payant. Les tarifs sont indiqués sur la [[page des tarifs|pricing]].",
+        "list": {
+          "item1": "Les commandes sont traitées par mon revendeur, Paddle.com. Paddle.com agit comme Merchant of Record (vendeur officiel) pour toutes les commandes et gère le paiement, la facturation et les remboursements.",
+          "item2": "Les forfaits payants se renouvellent automatiquement. Vous pouvez résilier à tout moment et continuer à l'utiliser jusqu'à la fin de la période déjà payée. Une fois cette période terminée, la synchronisation s'arrête, mais vos données restent sur vos appareils et dans votre propre Google Drive.",
+          "item3": "Les remboursements suivent la [[politique de remboursement|refund]].",
+          "item4": "La clé qui active la synchronisation est destinée à votre usage personnel, et chaque clé fonctionne sur jusqu'à 5 appareils. Vous ne pouvez pas partager votre clé avec quelqu'un d'autre.",
+          "item5": "Si les tarifs changent, je vous préviendrai à l'avance."
+        }
+      },
+      "operator": {
+        "heading": "12. Exploitant",
+        "intro": "Exploitant : Masaya Maeno",
+        "emailLine": "Contact : [[allmarks-support@googlegroups.com|supportEmail]]"
       }
     },
     "contact": {
       "meta": {
         "title": "Contact",
-        "description": "Contactez-nous au sujet d'AllMarks — questions, retours, signalements de bugs et sécurité, via GitHub."
+        "description": "Point de contact pour AllMarks. La facturation est gérée via Paddle ; pour tout le reste, contactez-moi par e-mail."
       },
       "hero": {
         "kicker": "Contact",
-        "title": "Prenez contact.",
-        "lead": "Questions, idées et signalements de bugs sont les bienvenus. GitHub est le moyen le plus fiable de nous joindre."
+        "title": "Contact",
+        "lead": "Voici le point de contact pour AllMarks. Avant de m'écrire, consultez la [[FAQ|faq]]. Comme il s'agit d'un projet géré par une seule personne, les réponses peuvent prendre quelques jours."
       },
       "github": {
         "label": "GitHub Issues",
-        "body": "Pour les rapports de bugs et les demandes de fonctionnalités, ouvrez une issue sur GitHub — c'est le moyen le plus sûr d'être entendu."
-      },
-      "feedback": {
-        "label": "Retours",
-        "body": "Les idées pour améliorer AllMarks sont toujours les bienvenues — « j'aimerais que ça puisse faire ça » ou « cette partie est maladroite », aussi petites soient-elles."
+        "body": "Les rapports de bugs et demandes de fonctionnalités sont aussi les bienvenus sur GitHub."
       },
       "security": {
         "label": "Sécurité",
         "body": "Vous avez découvert un problème de sécurité ? Veuillez le signaler en privé via GitHub plutôt qu'en issue publique. La divulgation responsable est vivement appréciée."
+      },
+      "billing": {
+        "label": "Facturation, résiliation, remboursements et reçus",
+        "body": "Le paiement des forfaits payants est traité par mon revendeur, Paddle.com. Vous pouvez gérer vous-même ce qui suit via [[paddle.net|paddleHome]] ou le lien « Manage subscription » dans l'e-mail que Paddle vous a envoyé lors de l'achat :",
+        "list": {
+          "item1": "Résiliation",
+          "item2": "Demander un remboursement",
+          "item3": "Changer votre moyen de paiement",
+          "item4": "Obtenir un reçu"
+        }
+      },
+      "email": {
+        "label": "E-mail",
+        "body": "Pour tout le reste, contactez-moi ici."
       }
     },
     "extensionPrivacy": {
@@ -829,6 +920,113 @@
         "heading": "Modifications",
         "body": "Nous mettons à jour cette page chaque fois que les autorisations ou les flux de données changent. La date de « dernière mise à jour » ci-dessus reflète la modification la plus récente."
       }
+    },
+    "refund": {
+      "meta": {
+        "title": "Politique de remboursement",
+        "description": "Politique de remboursement d'AllMarks — les premiers paiements sont intégralement remboursés dans les 14 jours."
+      },
+      "hero": {
+        "kicker": "Remboursement",
+        "title": "Politique de remboursement",
+        "lead": "Les commandes des forfaits payants d'AllMarks sont traitées par mon revendeur, Paddle.com, en tant que vendeur. Les remboursements sont également gérés via Paddle.com.",
+        "updated": "Dernière mise à jour : 24 septembre 2026"
+      },
+      "toc": {
+        "title": "Sommaire"
+      },
+      "firstPayment": {
+        "heading": "Premier paiement",
+        "body": "S'il s'agit de votre premier abonnement à un forfait payant, je vous rembourserai intégralement, sans poser de question, dans les 14 jours suivant le paiement."
+      },
+      "renewalPayment": {
+        "heading": "Paiements de renouvellement",
+        "body": "Les paiements issus du renouvellement automatique (à partir de votre deuxième paiement) ne sont pas éligibles au remboursement. Lorsque la loi de votre lieu de résidence vous accorde un droit au remboursement, cette loi s'applique."
+      },
+      "cancellation": {
+        "heading": "Résiliation",
+        "body": "Vous pouvez résilier à tout moment. Après la résiliation, vous pouvez continuer à utiliser la synchronisation jusqu'à la fin de la période déjà payée. Aucun autre prélèvement n'aura lieu."
+      },
+      "afterRefund": {
+        "heading": "Après un remboursement",
+        "body": "Une fois remboursé, le forfait payant prend fin et la synchronisation s'arrête. Vos marque-pages et autres données restent sur vos appareils et dans votre propre Google Drive."
+      },
+      "howTo": {
+        "heading": "Demander un remboursement",
+        "body": "Faites la demande via [[paddle.net|paddleHome]] ou le lien « Manage subscription » dans l'e-mail que Paddle vous a envoyé lors de l'achat. Si cela ne fonctionne pas, contactez-moi à [[allmarks-support@googlegroups.com|supportEmail]]."
+      }
+    },
+    "pricing": {
+      "meta": {
+        "title": "Tarifs",
+        "description": "Tarifs d'AllMarks — les fonctionnalités principales sont gratuites. La synchronisation entre appareils démarre à ¥500/mois."
+      },
+      "hero": {
+        "kicker": "Tarifs",
+        "title": "Tarifs",
+        "lead": "Les fonctionnalités principales d'AllMarks sont toutes gratuites. Si vous voulez utiliser le même tableau sur plus d'un appareil, choisissez un forfait payant."
+      },
+      "toggle": {
+        "groupLabel": "Facturation",
+        "monthly": "Mensuel",
+        "annual": "Annuel",
+        "badge": "2 mois offerts"
+      },
+      "perMonth": "/mois",
+      "perYear": "/an",
+      "free": {
+        "name": "Gratuit",
+        "list": {
+          "item1": "Enregistrez des marque-pages et consultez votre tableau",
+          "item2": "Toutes les fonctionnalités principales — étiquettes, thèmes, partage, export, et plus",
+          "item3": "Les données restent dans le navigateur de cet appareil"
+        },
+        "cta": "Utiliser maintenant"
+      },
+      "sync": {
+        "name": "Forfait Sync",
+        "list": {
+          "item1": "Tout ce qui est dans Gratuit",
+          "item2": "Synchronisation entre appareils : utilisez le même tableau sur votre ordinateur, téléphone et tablette",
+          "item3": "Jusqu'à 5 appareils par clé",
+          "item4": "Les données sont stockées dans votre propre Google Drive"
+        },
+        "altMonthly": "{price}/an en facturation annuelle",
+        "altAnnual": "Environ {price}/mois"
+      },
+      "supporter": {
+        "name": "Forfait Supporter",
+        "note": "Mêmes fonctionnalités que le forfait Sync. Pour ceux qui souhaitent soutenir encore plus le développement d'AllMarks.",
+        "altMonthly": "{price}/an en facturation annuelle",
+        "altAnnual": "{price}/mois"
+      },
+      "cta": {
+        "subscribe": "S'abonner"
+      },
+      "faq": {
+        "heading": "FAQ",
+        "q1": {
+          "q": "Que se passe-t-il si je résilie ?",
+          "a": "Vous pouvez continuer à utiliser la synchronisation jusqu'à la fin de la période déjà payée. Ensuite, la synchronisation s'arrête, mais vos données restent sur vos appareils et dans votre propre Google Drive."
+        },
+        "q2": {
+          "q": "Puis-je obtenir un remboursement ?",
+          "a": "Oui — je rembourse intégralement le premier paiement dans les 14 jours. Consultez la [[politique de remboursement|refund]] pour les détails."
+        },
+        "q3": {
+          "q": "De quoi ai-je besoin ?",
+          "a": "Un compte Google. Les données que vous synchronisez sont stockées dans votre propre Google Drive."
+        },
+        "q4": {
+          "q": "Où mon paiement est-il traité ?",
+          "a": "Mon revendeur, Paddle.com, le traite en toute sécurité. Je ne reçois jamais les données de votre carte."
+        },
+        "q5": {
+          "q": "Où puis-je résilier ou obtenir un reçu ?",
+          "a": "Vous pouvez le faire vous-même sur [[paddle.net|paddleHome]], ou depuis l'e-mail que Paddle vous a envoyé lors de l'achat."
+        }
+      },
+      "taxNote": "Tous les prix incluent les taxes. La devise affichée et le montant des taxes peuvent varier selon votre lieu de résidence."
     }
   },
   "trash": {

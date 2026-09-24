@@ -419,7 +419,9 @@
       "about": "About",
       "privacy": "Privacy",
       "terms": "Terms",
-      "contact": "Contact"
+      "contact": "Contact",
+      "refund": "Refund",
+      "pricing": "Pricing"
     }
   },
   "pages": {
@@ -556,11 +558,11 @@
       },
       "q1": {
         "q": "Ücretsiz mi?",
-        "a": "Evet — AllMarks ücretsizdir; hesap ve kayıt gerekmez."
+        "a": "Temel özelliklerin tamamı ücretsizdir, hesap gerekmez. Yalnızca aynı panoyu birden fazla cihazda kullanmanızı sağlayan \"cihazlar arası senkronizasyon\" ücretlidir. Ayrıntılar için [[fiyatlandırma sayfasına|pricing]] bakın."
       },
       "q2": {
         "q": "Verilerim nerede saklanır?",
-        "a": "Panonuz yalnızca tarayıcınızda, cihazınızda saklanır — sunucuda değil. Tek istisna paylaşımdır: seçilen kartların URL bilgilerinin (başlık, önizleme görseli vb.) bir kopyası yaklaşık 30 gün boyunca tutulur, ardından otomatik olarak silinir. Hesap olmadığından kişisel bilgi hiçbir zaman eklenmez. Paylaşım yapmazsanız cihazınızdan hiçbir şey çıkmaz."
+        "a": "Tarayıcınızda, cihazınızda saklanır. Cihazlar arası senkronizasyonu kullanırsanız, kendi Google Drive'ınızda da saklanır. Her iki durumda da sunucularımda asla saklanmaz. Tek istisna \"Paylaş\" özelliğini kullandığınızdadır: seçilen kartların bilgileri (başlık, önizleme görseli ve benzerleri) yaklaşık 30 gün saklanır, ardından otomatik olarak silinir."
       },
       "q3": {
         "q": "Bir şeyleri nasıl kaydederim?",
@@ -588,11 +590,59 @@
       },
       "q9": {
         "q": "Hesap gerekiyor mu?",
-        "a": "Hayır. Hesap oluşturma veya giriş yapma diye bir şey yok."
+        "a": "AllMarks hesabı yoktur. Google hesabı yalnızca cihazlar arası senkronizasyonu kullanırsanız gereklidir."
       },
       "cta": {
         "heading": "Kendiniz görün.",
         "button": "Open Board"
+      },
+      "q10": {
+        "q": "Cihazlar arası senkronizasyon nedir? Neler senkronize edilir?",
+        "a": "Bu, aynı yer imlerini bilgisayar, telefon, tablet gibi birden fazla cihazda kullanmanızı sağlayan bir özelliktir. Senkronize edilenler yer imleriniz, etiketleriniz, kart sırası ve boyutu ile Private içeriğidir. Tema gibi görünüm ayarları her cihazda ayrı tutulur."
+      },
+      "q11": {
+        "q": "Senkronizasyon ne kadar hızlı güncellenir?",
+        "a": "Bir değişiklik yaklaşık 20 saniye sonra Google Drive'a kaydedilir. Diğer cihazlar, AllMarks'ı açtığınızda veya bir süre sonra ekrana döndüğünüzde en son içeriği alır."
+      },
+      "q12": {
+        "q": "Google hesabına ihtiyacım var mı?",
+        "a": "Cihazlar arası senkronizasyon bir Google hesabı gerektirir. Senkronizasyonu kullanmıyorsanız buna ihtiyacınız yoktur."
+      },
+      "q13": {
+        "q": "Senkronizasyonu durdurursam verilerime ne olur?",
+        "a": "Her cihazdaki veriler olduğu gibi kalır. Google Drive'daki \"AllMarks\" klasörü de kalmaya devam eder, bu yüzden ihtiyacınız yoksa kendiniz silebilirsiniz."
+      },
+      "q14": {
+        "q": "Yer imlerimi görebilir misiniz?",
+        "a": "Hayır. Senkronize edilen veriler doğrudan cihazınızdan kendi Google Drive'ınıza kaydedilir. Asla sunucularımdan geçmez, bu yüzden içeriğini göremem."
+      },
+      "q15": {
+        "q": "Hangi ödeme yöntemlerini kullanabilirim?",
+        "a": "Kredi ve banka kartlarının yanı sıra, cihazınıza ve bölgenize bağlı olarak PayPal, Apple Pay veya Google Pay. Ödeme, bayim Paddle.com tarafından işlenir."
+      },
+      "q16": {
+        "q": "Makbuz alabilir miyim?",
+        "a": "Evet. [[paddle.net|paddleHome]] üzerinden veya satın alma sırasında Paddle'ın gönderdiği e-postadan alabilirsiniz."
+      },
+      "q17": {
+        "q": "Sync planı ile Supporter planı arasındaki fark nedir?",
+        "a": "Özellikler aynıdır. Supporter planı, AllMarks'ın geliştirilmesini daha fazla desteklemek isteyenler içindir."
+      },
+      "q18": {
+        "q": "Nasıl iptal ederim? İptal ettiğimde ne olur?",
+        "a": "[[paddle.net|paddleHome]] üzerinden veya satın alma sırasında Paddle'ın gönderdiği e-postadaki \"Manage subscription\" bağlantısından iptal edebilirsiniz. Zaten ödediğiniz dönemin sonuna kadar senkronizasyonu kullanmaya devam edebilirsiniz. Sonrasında senkronizasyon durur, ancak verileriniz cihazlarınızda ve kendi Google Drive'ınızda kalmaya devam eder."
+      },
+      "q19": {
+        "q": "İade istersem ne olur?",
+        "a": "İlk ödemenizden itibaren 14 gün içinde tam iade yaparım. [[paddle.net|paddleHome]] üzerinden talep edin. Ayrıntılar için [[iade politikasına|refund]] bakın."
+      },
+      "q20": {
+        "q": "Anahtarım etkinleşmiyor",
+        "a": "Anahtarın tamamını, kesilmeden kopyaladığınızdan emin olun. \"This key has reached its device limit\" mesajını görürseniz, anahtar zaten 5 cihazda kullanılıyor demektir."
+      },
+      "q21": {
+        "q": "Senkronizasyon güncellenmiyor",
+        "a": "Ayarlar'daki SYNC bölümünde \"Sync now\" düğmesine basın. \"Connection lost\" mesajını görürseniz, \"Reconnect Google\" düğmesine basın."
       }
     },
     "extension": {
@@ -637,36 +687,36 @@
     "privacy": {
       "meta": {
         "title": "Gizlilik Politikası",
-        "description": "AllMarks hiçbir kişisel veri toplamaz. Yer imleriniz tarayıcınızda kalır; bir panoyu paylaşmayı seçmediğiniz sürece hiçbir şey yüklenmez."
+        "description": "AllMarks gizlilik politikası — yer imlerinizi asla sunucularımda toplamam. Cihazlar arası senkronizasyonu kullanırsanız, verileriniz kendi Google Drive'ınızda saklanır."
       },
       "hero": {
         "kicker": "Gizlilik",
         "title": "Gizlilik Politikası",
-        "lead": "AllMarks tek bir ilke üzerine inşa edilmiştir: verileriniz size aittir. Kişisel veri toplamıyoruz ve hesap sistemi bulunmuyor.",
-        "updated": "Son güncelleme: 18 Haziran 2026"
+        "lead": "AllMarks tek bir ilke üzerine kuruludur: verileriniz size aittir. Yer imlerinizi sunucularımda toplamam ve hesap bulunmamaktadır.",
+        "updated": "Son güncelleme: 24 Eylül 2026"
       },
       "toc": {
         "title": "İçindekiler"
       },
       "philosophy": {
         "heading": "Sıfır veri toplama",
-        "body": "Yer imleriniz, etiketleriniz ve pano düzenlemeleriniz yalnızca tarayıcınızın yerel veritabanında (IndexedDB) saklanır. Kişisel verilerinizi sunucularımıza toplamıyor, depolamıyor veya iletmiyoruz; ayrıca giriş yapabileceğiniz bir hesap sistemi bulunmuyor."
+        "body": "Yer imleriniz, etiketleriniz ve pano düzenleriniz yalnızca tarayıcınızın yerel veritabanında (IndexedDB) saklanır. Kişisel verilerinizi sunucularıma toplamam, saklamam veya iletmem ve oturum açılacak hesap bulunmamaktadır."
       },
       "collect": {
-        "heading": "Toplamadıklarımız",
-        "body": "Adınızı, e-posta adresinizi veya fiziksel adresinizi toplamıyoruz; hesap ya da oturum açma bilgileriniz yok; tarama geçmişinizin veya yer imlerinizin kopyasını sunucularımızda tutmuyoruz; izleme ya da reklam çerezi kullanmıyoruz; sizi bireysel olarak tanımlayan IP tabanlı parmak izi veya analitik verisi toplamıyoruz."
+        "heading": "Toplamadıklarım",
+        "body": "Ücretsiz özellikleri kullandığınız sürece adınızı, e-postanızı veya adresinizi toplamam; hesap veya oturum açma bilgisi bulunmaz; tarama geçmişinizin veya yer imlerinizin sunucularımda hiçbir kopyasını tutmam; izleme veya reklam çerezleri kullanmam; ve size kişisel olarak bağlı IP tabanlı parmak izi veya analiz toplamam. Ücretli bir plan satın almanız durumunda hangi bilgilerin işlendiği [[\"Ödeme\"|paymentSection]] bölümünde açıklanmıştır."
       },
       "local": {
-        "heading": "Yalnızca yerel depolama",
-        "body": "Her şey cihazınızdaki tarayıcıda yaşar. Bu, verilerinize erişemeyeceğimiz, göremeyeceğimiz veya kurtaramayacağımız anlamına gelir; panolarınızın sunucu tarafında yedeklenmesi söz konusu değildir; tarayıcı verilerinizi temizlemek AllMarks içeriğinizi kalıcı olarak siler. Kendi yedeğinizi istediğiniz zaman dışa aktarabilirsiniz."
+        "heading": "Depolama konumu",
+        "body": "Senkronizasyonu kullanmıyorsanız, her şey cihazınızdaki tarayıcınızda kalır. Verilerinize erişemem, göremem veya kurtaramam; panolarınızın sunucu tarafında yedeği bulunmaz; ve tarayıcı verilerinizi silmek AllMarks içeriğinizi kalıcı olarak kaldırır. Kendi yedeğinizi istediğiniz zaman dışa aktarabilirsiniz."
       },
       "sharing": {
         "heading": "Bir pano paylaştığınızda",
-        "body": "Paylaşım, verilerin cihazınızdan ayrıldığı tek durumadur — ve yalnızca siz istediğiniz için. Bir paylaşım bağlantısı oluşturduğunuzda, pano verileri (yalnızca paylaşmayı seçtiğiniz kartlar; hesap olmadığından kişisel bilgi içermez) bağlantıyı gönderdiğiniz kişilerin panoyu açabilmesi için Cloudflare KV'ye, önizleme görseli ise Cloudflare R2'ye yüklenir. Bunlara yalnızca gizli bağlantıyla erişilebilir ve yaklaşık 30 gün sonra otomatik olarak silinir; hiçbir şey kalıcı olarak saklanmaz. Açıkça bir paylaşım bağlantısı oluşturmadığınız sürece hiçbir şey yüklenmez; özel panolarınız hiçbir zaman yüklenmez. Ayrıca panoyu, tamamen tarayıcınızda oluşturulan bir PNG olarak dışa aktarabilirsiniz."
+        "body": "Ücretsiz özellikler arasında, verilerin cihazınızdan ayrıldığı tek durum paylaşımdır — ve yalnızca siz istediğiniz için. Bir paylaşım bağlantısı oluşturduğunuzda, pano verileri (yalnızca paylaşmayı seçtiğiniz kartlar, hesap bulunmadığından hiçbir kişisel bilgi içermez) Cloudflare KV'ye, bir önizleme görseli de Cloudflare R2'ye yüklenir; böylece bağlantıyı gönderdiğiniz kişiler panoyu açabilir. Yalnızca gizli bağlantı üzerinden erişilebilir ve yaklaşık 30 gün sonra otomatik olarak silinir, böylece hiçbir şey kalıcı olmaz. Bir paylaşım bağlantısı oluşturmadığınız sürece hiçbir şey yüklenmez ve özel panolarınız asla yüklenmez. Ayrıca bir panoyu tamamen tarayıcınızda oluşturulan bir PNG olarak da dışa aktarabilirsiniz."
       },
       "bookmarklet": {
         "heading": "Yer imi düğmesi",
-        "body": "AllMarks yer imi düğmesi, bulunduğunuz sayfanın Open Graph meta etiketlerini (başlık, açıklama, görsel, site adı) tamamen tarayıcınız içinde okur ve bunları yerel AllMarks kayıt pencerenize iletir. Sunucularımız üzerinden hiçbir veri geçmez."
+        "body": "AllMarks yer imi aracı, bulunduğunuz sayfanın Open Graph meta etiketlerini (başlık, açıklama, görsel, site adı) tamamen tarayıcınız içinde okur ve bunları yerel AllMarks kayıt penceresine aktarır. Sunucularımdan hiçbir veri geçmez."
       },
       "extension": {
         "heading": "Tarayıcı uzantısı",
@@ -674,39 +724,54 @@
       },
       "hosting": {
         "heading": "Barındırma ve analitik",
-        "body": "AllMarks, Cloudflare Pages üzerinde barındırılmaktadır. Cloudflare, standart barındırma kapsamında asgari düzeyde anonimleştirilmiş sunucu metrikleri (örneğin toplam sayfa görüntüleme sayısı) kaydedebilir; bunlar kişisel tanımlayıcı bilgi içermez. Google Analytics, Facebook Pixel veya herhangi bir üçüncü taraf izleme betiği kullanmıyoruz."
+        "body": "AllMarks, Cloudflare Pages üzerinde barındırılmaktadır. Cloudflare, standart barındırmanın bir parçası olarak minimum, anonimleştirilmiş sunucu ölçümleri (toplam sayfa görüntüleme sayısı gibi) kaydedebilir; bunlar kişisel olarak tanımlanabilir hiçbir bilgi içermez. Google Analytics, Facebook Pixel veya herhangi bir üçüncü taraf izleme betiği kullanmam."
       },
       "thirdParty": {
         "heading": "Üçüncü taraf içerikler",
-        "body": "AllMarks, diğer sitelerden içerik gösterebilir; örneğin react-tweet aracılığıyla tweetler veya oEmbed aracılığıyla videolar. Bu yerleştirmeler kendi hizmetlerinin gizlilik politikalarına tabi olabilir; panolarınızda görünen her içerik için ilgili politikaların incelenmesini öneririz."
+        "body": "AllMarks, diğer sitelerden içerik gösterebilir — örneğin react-tweet aracılığıyla tweetler veya oEmbed aracılığıyla videolar. Bu gömülü içerikler, kendi hizmetlerinin gizlilik politikalarına tabi olabilir; panolarınızda görünen herhangi bir içerik için bunları incelemenizi öneririm."
       },
       "advertising": {
         "heading": "Reklamlar",
-        "body": "AllMarks bugün ücretsizdir ve reklam göstermez. Ücretsiz hizmeti desteklemek amacıyla ileride reklam sunmayı düşünürsek bu politikayı güncelleyecek, bunu açıkça belirteceğiz ve tarafımızda kişisel veri toplamaya devam etmeyeceğiz."
+        "body": "AllMarks'ın temel özellikleri ücretsizdir ve bugün hiçbir reklam göstermiyorum. Ücretsiz hizmeti desteklemek için bir gün reklam eklersem, bu politikayı güncelleyecek, bunu açıkça belirteceğim ve kendi tarafımdan hiçbir kişisel veri toplamaya devam etmeyeceğim."
       },
       "children": {
         "heading": "Çocukların gizliliği",
-        "body": "AllMarks, 13 yaşın altındaki çocuklardan bilerek herhangi bir bilgi toplamaz. Zaten hiç kimseden kişisel veri toplamadığımız için bu durum uygulamanın çalışma biçimine içkin olarak gerçekleşir."
+        "body": "AllMarks, 13 yaşın altındaki çocuklardan bilerek kişisel bilgi toplamaz."
       },
       "changes": {
         "heading": "Bu politikadaki değişiklikler",
-        "body": "Bu politikayı zaman zaman güncelleyebiliriz. Değişiklikler yeni bir \"son güncelleme\" tarihiyle bu sayfada yayımlanır. Kişisel veri toplamadığımız için değişiklikleri doğrudan size bildiremeyiz."
+        "body": "Bu politikayı zaman zaman güncelleyebilirim. Değişiklikler, bu sayfada yeni bir \"son güncelleme\" tarihiyle yayınlanır."
       },
       "contact": {
         "heading": "Sorularınız",
-        "body": "Bu politikaya ilişkin sorularınız için iletişim sayfamızdan bize ulaşabilirsiniz."
+        "body": "Bu politikayla ilgili sorularınız varsa, [[allmarks-support@googlegroups.com|supportEmail]] adresinden bana ulaşabilirsiniz."
+      },
+      "deviceSync": {
+        "heading": "Cihazlar arası senkronizasyon (ücretli plan)",
+        "para1": "Cihazlar arası senkronizasyonu kullandığınızda, yer imleriniz, etiketleriniz ve pano ayarlarınız kendi Google Drive'ınızda oluşturulan bir \"AllMarks\" klasöründe saklanır. Veriler cihazınızdan doğrudan Google Drive'a gider; sunucularıma asla ulaşmaz ve içeriğini göremem.",
+        "para2": "AllMarks, Google Drive'da yalnızca kendisinin oluşturduğu dosyalara erişebilir. Google oturum açma bilgileriniz tarayıcınızda saklanır. Bu bilgiler yalnızca oturumunuz yenilenirken sunucularımdan geçer ve orada asla kaydedilmez veya saklanmaz. Private'a koyduğunuz yer imleri şifrelenmiş olarak saklanır.",
+        "para3": "AllMarks'ın Google API'lerinden aldığı bilgileri kullanması ve başka herhangi bir uygulamaya aktarması, Limited Use gereklilikleri de dahil olmak üzere [[Google API Services User Data Policy|googleDataPolicy]]'e uygun olacaktır."
+      },
+      "syncKeys": {
+        "heading": "Senkronizasyon anahtarları ve cihaz sayısı",
+        "body": "Senkronizasyonu etkinleştirdiğinizde, bir anahtar tanımlayıcısı ve her cihaz için oluşturulan rastgele bir tanımlayıcı sunucuma (Cloudflare) gönderilir. Bu yalnızca bir anahtarı kaç cihazın kullandığını saymak (en fazla 5) ve ücretli planın etkin olduğunu doğrulamak için kullanılır. Tanımlayıcıların hiçbiri sizi kişisel olarak tanımlayan bir bilgi içermez."
+      },
+      "payment": {
+        "heading": "Ödeme",
+        "para1": "Ücretli planlara ait ödemeler bayim Paddle.com tarafından işlenir. Adınız, e-postanız ve ödeme bilgileriniz Paddle.com tarafından toplanır ve Paddle'ın kendi gizlilik politikasına göre işlenir. Kart numaranızı veya diğer ödeme bilgilerinizi asla almam.",
+        "para2": "Paddle.com'dan aldığım şey, sipariş ve abonelik durumunuzdur (etkin veya iptal edilmiş) ve anahtarınızı teslim etmek ve destek taleplerini yanıtlamak için gereken e-posta adresidir."
       }
     },
     "terms": {
       "meta": {
         "title": "Hizmet Şartları",
-        "description": "AllMarks hizmet şartları — ücretsiz kullanım, hesap gerekmez, verileriniz tarayıcınızda kalır."
+        "description": "AllMarks hizmet şartları — temel özellikler ücretsizdir, hesap gerekmez ve verileriniz tarayıcınızda kalır."
       },
       "hero": {
         "kicker": "Şartlar",
         "title": "Hizmet Şartları",
-        "lead": "AllMarks, hesap gerektirmeyen ücretsiz bir uygulamadır. Bu şartlar, kullanımın temel kurallarını açıklar.",
-        "updated": "Son güncelleme: 18 Haziran 2026"
+        "lead": "AllMarks, hesap açmadan kullanabileceğiniz bir web uygulamasıdır. Temel özellikler ücretsizdir; bazı özellikler (cihazlar arası senkronizasyon) ücretli bir plan üzerinden sunulur. Bu şartlar, kullanımın temellerini açıklar.",
+        "updated": "Son güncelleme: 24 Eylül 2026"
       },
       "toc": {
         "title": "İçindekiler"
@@ -717,11 +782,11 @@
       },
       "service": {
         "heading": "2. Hizmet",
-        "body": "AllMarks, yer imlerini kaydetmenize ve görsel panolar olarak düzenlemenize olanak tanıyan ücretsiz bir web uygulamasıdır. Tüm veriler tarayıcınızda yerel olarak saklanır; hesap veya kayıt gerekmez."
+        "body": "AllMarks, yer imlerini kaydetmek ve görsel panolar halinde düzenlemek için bir web uygulamasıdır. Temel özellikler ücretsizdir ve hesap veya kayıt gerekmez. Verileriniz tarayıcınızda yerel olarak saklanır. Ücretli cihazlar arası senkronizasyon planını kullanırsanız, veriler kendi Google Drive'ınızda da saklanır. AllMarks, Masaya Maeno tarafından bireysel olarak (bu şartlarda \"ben\") işletilmektedir."
       },
       "responsibilities": {
         "heading": "3. Sorumluluklarınız",
-        "body": "Kaydettiğiniz ve paylaştığınız içerikten siz sorumlusunuz; Hizmeti herhangi bir yasadışı amaç için veya Hizmeti kesintiye uğratmak amacıyla kullanmamayı kabul ediyorsunuz; verilerinizin yerel olarak saklandığını ve tarayıcı verilerinizi temizlemenin AllMarks içeriğinizi kalıcı olarak sileceğini anlıyorsunuz. Verileriniz yalnızca bu cihazdaki tarayıcınızda saklandığından ve sunucuda hiçbir kopya tutulmadığından, kendi yedeklerinizi almak sizin sorumluluğunuzdadır: özellikle cihaz değiştirmeden, tarayıcı verilerinizi temizlemeden veya AllMarks'ı sıfırlamadan önce düzenli olarak bir kopya kaydetmek için Ayarlar'daki EXPORT özelliğini kullanın. Tarayıcı verilerinin temizlenmesi, cihazın kaybolması veya arızalanması, yazılım güncellemeleri veya başka herhangi bir nedenle kaybedilen veriler kurtarılamaz."
+        "body": "Kaydettiğiniz ve paylaştığınız içerikten siz sorumlusunuz ve Hizmeti yasa dışı amaçlarla kullanmamayı veya aksatmamayı kabul edersiniz. Verileriniz yerel olarak saklandığından, tarayıcı verilerinizi silmek AllMarks içeriğinizi kalıcı olarak siler. Verileriniz sunucularımda saklanmadığından, kendi yedeklerinizi tutmak sizin sorumluluğunuzdadır: özellikle cihaz değiştirmeden, tarayıcı verilerinizi silmeden veya AllMarks'ı sıfırlamadan önce düzenli olarak bir kopya kaydetmek için Ayarlar'daki EXPORT özelliğini kullanın. Tarayıcı verilerinin silinmesi, cihaz kaybı veya arızası, yazılım güncellemeleri veya başka bir nedenle kaybedilen veriler kurtarılamaz."
       },
       "ip": {
         "heading": "4. Fikri mülkiyet",
@@ -729,54 +794,80 @@
       },
       "sharing": {
         "heading": "5. İçerik paylaşımı",
-        "body": "Bir paylaşım bağlantısı oluşturduğunuzda, bağlantının içeriği görüntüleyebilmesi için pano verileri barındırma platformumuza yüklenir ve yaklaşık 30 gün sonra otomatik olarak silinir. Paylaşım yaparak, içeriği bu şekilde paylaşma hakkına sahip olduğunuzu beyan etmiş olursunuz."
+        "body": "Bir paylaşım bağlantısı oluşturduğunuzda, bağlantının içeriği görüntüleyebilmesi için pano verileri barındırma hizmetime yüklenir ve yaklaşık 30 gün sonra otomatik olarak silinir. Paylaşarak, içeriği bu şekilde paylaşma hakkına sahip olduğunuzu beyan etmiş olursunuz."
       },
       "warranty": {
-        "heading": "6. Garanti yoktur",
+        "heading": "7. Garanti verilmemesi",
         "body": "Hizmet, herhangi bir garanti olmaksızın \"olduğu gibi\" ve \"mevcut haliyle\" sunulmaktadır. Hizmetin kesintisiz, güvenli veya hatasız olacağını garanti etmiyoruz; tarayıcı verisi temizleme, cihaz arızası veya herhangi başka bir nedenden kaynaklanan veri kaybından sorumlu değiliz."
       },
       "liability": {
-        "heading": "7. Sorumluluğun sınırlandırılması",
+        "heading": "8. Sorumluluğun sınırlandırılması",
         "body": "Yasaların izin verdiği azami ölçüde, AllMarks; Hizmetin kullanımından kaynaklanan dolaylı, arızi, özel, sonuçsal veya cezai zararlardan sorumlu tutulamaz."
       },
       "modifications": {
-        "heading": "8. Hizmet ve şartlardaki değişiklikler",
-        "body": "Hizmeti önceden bildirimde bulunmaksızın istediğimiz zaman değiştirebilir veya sonlandırabiliriz; bu şartları da zaman zaman güncelleyebiliriz. Değişikliklerin ardından Hizmeti kullanmaya devam etmeniz, revize edilmiş şartları kabul ettiğiniz anlamına gelir."
+        "heading": "9. Hizmet ve şartlarda değişiklikler",
+        "body": "Hizmeti herhangi bir zamanda bildirimde bulunmaksızın değiştirebilir veya durdurabilirim ve bu şartları zaman zaman güncelleyebilirim. Değişikliklerden sonra kullanıma devam etmeniz, revize edilmiş şartları kabul ettiğiniz anlamına gelir."
       },
       "law": {
-        "heading": "9. Geçerli hukuk",
+        "heading": "10. Geçerli hukuk",
         "body": "Bu şartlar Japonya hukukuna tabidir; tüm anlaşmazlıklar Japonya'nın Tokyo mahkemelerinin münhasır yargı yetkisine tabidir."
       },
       "language": {
-        "heading": "10. Geçerli dil",
+        "heading": "11. Bağlayıcı dil",
         "body": "Bu koşulların Japonca sürümü asıl metindir. Diğer dillere yapılan çeviriler yalnızca bilgilendirme amacıyla sağlanır; Japonca sürüm ile bir çeviri arasında herhangi bir tutarsızlık olması durumunda Japonca sürüm geçerli olur."
       },
       "contact": {
-        "heading": "11. Sorularınız",
-        "body": "Bu şartlara ilişkin sorularınız için iletişim sayfamızdan bize ulaşabilirsiniz."
+        "heading": "13. Sorular",
+        "body": "Bu şartlarla ilgili sorularınız varsa, [[allmarks-support@googlegroups.com|supportEmail]] adresinden bana ulaşabilirsiniz."
+      },
+      "paidPlan": {
+        "heading": "6. Ücretli plan",
+        "intro": "Cihazlar arası senkronizasyon ücretli bir plan üzerinden sunulur. Fiyatlar [[fiyatlandırma sayfasında|pricing]] gösterilir.",
+        "list": {
+          "item1": "Siparişler, bayim Paddle.com tarafından işlenir. Paddle.com, tüm siparişler için Merchant of Record (resmi satıcı) olarak hareket eder ve ödeme, faturalandırma ve iadeleri yönetir.",
+          "item2": "Ücretli planlar otomatik olarak yenilenir. İstediğiniz zaman iptal edebilir ve zaten ödediğiniz dönemin sonuna kadar kullanmaya devam edebilirsiniz. O dönem sona erdiğinde senkronizasyon durur, ancak verileriniz cihazlarınızda ve kendi Google Drive'ınızda kalmaya devam eder.",
+          "item3": "İadeler [[iade politikasına|refund]] tabidir.",
+          "item4": "Senkronizasyonu etkinleştiren anahtar yalnızca kendi kullanımınız içindir ve her anahtar en fazla 5 cihazda çalışır. Anahtarınızı başka kimseyle paylaşamazsınız.",
+          "item5": "Fiyatlar değişirse, sizi önceden bilgilendiririm."
+        }
+      },
+      "operator": {
+        "heading": "12. İşletmeci",
+        "intro": "İşletmeci: Masaya Maeno",
+        "emailLine": "İletişim: [[allmarks-support@googlegroups.com|supportEmail]]"
       }
     },
     "contact": {
       "meta": {
         "title": "İletişim",
-        "description": "AllMarks hakkında bizimle iletişime geçin — sorular, geri bildirimler, hata raporları ve güvenlik konuları GitHub üzerinden iletilebilir."
+        "description": "AllMarks için iletişim noktası. Faturalandırma Paddle üzerinden yürütülür; diğer her şey için e-posta ile ulaşabilirsiniz."
       },
       "hero": {
         "kicker": "İletişim",
-        "title": "Bizimle iletişime geçin.",
-        "lead": "Sorular, fikirler ve hata raporları her zaman hoş karşılanır. Bize ulaşmanın en güvenilir yolu GitHub'dır."
+        "title": "İletişim",
+        "lead": "Bu, AllMarks için iletişim noktasıdır. Bana ulaşmadan önce lütfen [[SSS|faq]] sayfasına göz atın. Bu tek kişilik bir proje olduğundan, yanıtlar birkaç gün sürebilir."
       },
       "github": {
         "label": "GitHub Issues",
-        "body": "Hata raporları ve özellik istekleri için GitHub'da bir konu açın — sesinizin duyulacağından emin olmanın en kesin yolu budur."
-      },
-      "feedback": {
-        "label": "Geri Bildirim",
-        "body": "AllMarks'ı daha iyi hale getirmeye yönelik fikirler her zaman hoş karşılanır — ne kadar küçük olursa olsun \"keşke şunu yapabilseydi\" veya \"bu kısım rahatsız edici\" türünden her görüş değerlidir."
+        "body": "Hata bildirimleri ve özellik istekleri de GitHub üzerinden memnuniyetle karşılanır."
       },
       "security": {
         "label": "Güvenlik",
         "body": "Bir güvenlik açığı mı buldunuz? Lütfen kamuya açık bir konu yerine GitHub üzerinden özel olarak bildirin. Sorumlu ifşaat anlayışına büyük değer veriyoruz."
+      },
+      "billing": {
+        "label": "Faturalandırma, iptal, iade ve makbuzlar",
+        "body": "Ücretli planlara ait ödemeler bayim Paddle.com tarafından işlenir. Aşağıdakileri [[paddle.net|paddleHome]] üzerinden veya satın alma sırasında Paddle'ın gönderdiği e-postadaki \"Manage subscription\" bağlantısından kendiniz halledebilirsiniz:",
+        "list": {
+          "item1": "İptal",
+          "item2": "İade talep etme",
+          "item3": "Ödeme yönteminizi değiştirme",
+          "item4": "Makbuz alma"
+        }
+      },
+      "email": {
+        "label": "E-posta",
+        "body": "Diğer her şey için buradan ulaşabilirsiniz."
       }
     },
     "extensionPrivacy": {
@@ -829,6 +920,113 @@
         "heading": "Değişiklikler",
         "body": "İzinler veya veri akışları değiştiğinde bu sayfayı güncelleriz. Yukarıdaki \"son güncelleme\" tarihi en son değişikliği yansıtır."
       }
+    },
+    "refund": {
+      "meta": {
+        "title": "İade Politikası",
+        "description": "AllMarks iade politikası — ilk ödemeler 14 gün içinde tam olarak iade edilir."
+      },
+      "hero": {
+        "kicker": "İade",
+        "title": "İade Politikası",
+        "lead": "AllMarks ücretli planlarına ait siparişler, satıcı olarak bayim Paddle.com tarafından işlenir. İadeler de Paddle.com üzerinden yapılır.",
+        "updated": "Son güncelleme: 24 Eylül 2026"
+      },
+      "toc": {
+        "title": "İçindekiler"
+      },
+      "firstPayment": {
+        "heading": "İlk ödeme",
+        "body": "Bu, ücretli bir plana ilk kez abone olmanızsa, ödemeden itibaren 14 gün içinde hiçbir soru sormadan tam iade yaparım."
+      },
+      "renewalPayment": {
+        "heading": "Yenileme ödemeleri",
+        "body": "Otomatik yenilemeden kaynaklanan ödemeler (ikinci ödemeden itibaren) iadeye uygun değildir. Yaşadığınız yerin yasaları size iade hakkı tanıyorsa, o yasa geçerli olur."
+      },
+      "cancellation": {
+        "heading": "İptal",
+        "body": "İstediğiniz zaman iptal edebilirsiniz. İptal ettikten sonra, zaten ödediğiniz dönemin sonuna kadar senkronizasyonu kullanmaya devam edebilirsiniz. Başka bir ücret alınmaz."
+      },
+      "afterRefund": {
+        "heading": "İade sonrası",
+        "body": "İade yapıldıktan sonra, ücretli plan sona erer ve senkronizasyon durur. Yer imleriniz ve diğer verileriniz cihazlarınızda ve kendi Google Drive'ınızda kalmaya devam eder."
+      },
+      "howTo": {
+        "heading": "İade talep etme",
+        "body": "[[paddle.net|paddleHome]] üzerinden veya satın alma sırasında Paddle'ın gönderdiği e-postadaki \"Manage subscription\" bağlantısından talep edin. Bu işe yaramazsa, [[allmarks-support@googlegroups.com|supportEmail]] adresinden bana ulaşın."
+      }
+    },
+    "pricing": {
+      "meta": {
+        "title": "Fiyatlandırma",
+        "description": "AllMarks fiyatlandırması — temel özellikler ücretsizdir. Cihazlar arası senkronizasyon aylık ¥500'den başlar."
+      },
+      "hero": {
+        "kicker": "Fiyatlandırma",
+        "title": "Fiyatlandırma",
+        "lead": "AllMarks'ın temel özelliklerinin tamamı ücretsizdir. Aynı panoyu birden fazla cihazda kullanmak isterseniz, ücretli bir plan seçin."
+      },
+      "toggle": {
+        "groupLabel": "Faturalandırma",
+        "monthly": "Aylık",
+        "annual": "Yıllık",
+        "badge": "2 ay ücretsiz"
+      },
+      "perMonth": "/ay",
+      "perYear": "/yıl",
+      "free": {
+        "name": "Ücretsiz",
+        "list": {
+          "item1": "Yer imlerini kaydedin ve panonuzu görüntüleyin",
+          "item2": "Etiketler, temalar, paylaşım, dışa aktarma ve daha fazlası dahil tüm temel özellikler",
+          "item3": "Veriler bu cihazın tarayıcısında kalır"
+        },
+        "cta": "Şimdi kullan"
+      },
+      "sync": {
+        "name": "Sync planı",
+        "list": {
+          "item1": "Ücretsiz plandaki her şey",
+          "item2": "Cihazlar arası senkronizasyon: aynı panoyu bilgisayarınızda, telefonunuzda ve tabletinizde kullanın",
+          "item3": "Anahtar başına 5 cihaza kadar",
+          "item4": "Veriler kendi Google Drive'ınızda saklanır"
+        },
+        "altMonthly": "Yıllık ödemede {price}/yıl",
+        "altAnnual": "Aylık yaklaşık {price}"
+      },
+      "supporter": {
+        "name": "Supporter planı",
+        "note": "Sync planıyla aynı özellikler. AllMarks'ın geliştirilmesini daha fazla desteklemek isteyenler içindir.",
+        "altMonthly": "Yıllık ödemede {price}/yıl",
+        "altAnnual": "Aylık {price}"
+      },
+      "cta": {
+        "subscribe": "Abone ol"
+      },
+      "faq": {
+        "heading": "SSS",
+        "q1": {
+          "q": "İptal edersem ne olur?",
+          "a": "Zaten ödediğiniz dönemin sonuna kadar senkronizasyonu kullanmaya devam edebilirsiniz. Sonrasında senkronizasyon durur, ancak verileriniz cihazlarınızda ve kendi Google Drive'ınızda kalmaya devam eder."
+        },
+        "q2": {
+          "q": "İade alabilir miyim?",
+          "a": "Evet — ilk ödemeyi 14 gün içinde tam olarak iade ederim. Ayrıntılar için [[iade politikasına|refund]] bakın."
+        },
+        "q3": {
+          "q": "Neye ihtiyacım var?",
+          "a": "Bir Google hesabı. Senkronize ettiğiniz veriler kendi Google Drive'ınızda saklanır."
+        },
+        "q4": {
+          "q": "Ödemem nerede işleniyor?",
+          "a": "Bayim Paddle.com, ödemeyi güvenli şekilde işler. Kart bilgilerinizi asla almam."
+        },
+        "q5": {
+          "q": "Nerede iptal edebilir veya makbuz alabilirim?",
+          "a": "Bunu [[paddle.net|paddleHome]] üzerinden kendiniz yapabilir veya satın alma sırasında Paddle'ın gönderdiği e-postadan işlem yapabilirsiniz."
+        }
+      },
+      "taxNote": "Tüm fiyatlara vergi dahildir. Gösterilen para birimi ve vergi tutarı, yaşadığınız yere göre değişebilir."
     }
   },
   "trash": {

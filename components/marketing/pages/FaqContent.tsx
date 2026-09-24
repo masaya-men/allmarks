@@ -3,19 +3,34 @@
 import Link from 'next/link'
 import { useRef } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { navHref } from '@/lib/i18n/locale-urls'
+import { renderLinkedText, type RichLinkTarget } from '@/lib/i18n/rich-text'
 import { useReveal } from '@/lib/scroll/use-reveal'
 import styles from './intro-page.module.css'
+
+// q1..q9 = 既存(一部 s220 で文面更新)。q10-14=同期、q15-19=お支払い・契約、
+// q20-21=うまくいかないとき(s220 で追加)。
+const QUESTION_KEYS = [
+  'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9',
+  'q10', 'q11', 'q12', 'q13', 'q14',
+  'q15', 'q16', 'q17', 'q18', 'q19',
+  'q20', 'q21',
+] as const
 
 /**
  * FAQ 本文(Q&A リスト)。事実は §確定済みプロダクト事実に準拠。
  * 可視性はアニメ非依存。
  */
 export function FaqContent(): React.ReactElement {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const rootRef = useRef<HTMLElement>(null)
   useReveal(rootRef as React.RefObject<HTMLElement>, { y: 22, stagger: 0.08 })
 
-  const qs = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9'] as const
+  const links: Record<string, RichLinkTarget> = {
+    refund: { href: navHref(locale, 'refund') },
+    paddleHome: { href: 'https://paddle.net' },
+    pricing: { href: navHref(locale, 'pricing') },
+  }
 
   return (
     <article ref={rootRef} className={styles.root}>
@@ -29,10 +44,10 @@ export function FaqContent(): React.ReactElement {
       </header>
 
       <div className={styles.qaList}>
-        {qs.map((key) => (
+        {QUESTION_KEYS.map((key) => (
           <section key={key} className={styles.qa} data-reveal>
             <h2 className={styles.qaQ}>{t(`pages.faq.${key}.q`)}</h2>
-            <p className={styles.qaA}>{t(`pages.faq.${key}.a`)}</p>
+            <p className={styles.qaA}>{renderLinkedText(t(`pages.faq.${key}.a`), links, styles.link)}</p>
           </section>
         ))}
       </div>

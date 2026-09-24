@@ -31,6 +31,8 @@ export const LOCALIZED_INTRO_SUBPATHS: ReadonlySet<string> = new Set([
   'contact',
   'privacy',
   'terms',
+  'refund',
+  'pricing',
 ])
 
 /** Header/footer nav href for a subpath: localized when that page exists in

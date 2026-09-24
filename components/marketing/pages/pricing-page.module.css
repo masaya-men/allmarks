@@ -1,0 +1,305 @@
+/* pricing-page.module.css
+   料金ページ(s221)。approved mock (layout A: 3カード) を AllMarks LP のトークン
+   (--lp-bg/--lp-ink/--lp-ink-soft/--lp-accent/--lp-serif/--lp-sans) で再現。
+   3カードが並ぶぶん legal-page/intro-page より root を広め(1100px)に取る。
+   Free / Sync(強調) / Supporter の3枚 + 支払い方法トグル + FAQ。 */
+
+.root {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(72px, 12vw, 132px) 40px clamp(56px, 9vw, 112px);
+  box-sizing: border-box;
+}
+
+/* Hero */
+.hero { margin-bottom: 0; }
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 28px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+}
+
+.kickerDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(38px, 6.6vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+.lead {
+  max-width: 34ch;
+  margin: clamp(24px, 3.6vw, 32px) 0 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(20px, 2.6vw, 26px);
+  line-height: 1.45;
+  letter-spacing: -0.012em;
+  color: var(--lp-ink-soft);
+  text-wrap: pretty;
+}
+
+/* 月払い/年払いトグル */
+.toggle {
+  display: inline-flex;
+  margin: clamp(36px, 5vw, 56px) 0 clamp(28px, 4vw, 40px);
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
+  border-radius: 999px;
+  padding: 4px;
+  background: #fff;
+}
+
+.toggleButton {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--lp-ink-soft);
+  cursor: pointer;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggleButton[aria-pressed='true'] {
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+}
+
+.badge {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--lp-accent);
+  background: var(--lp-ink);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.toggleButton[aria-pressed='true'] .badge {
+  background: var(--lp-accent);
+  color: var(--lp-ink);
+}
+
+/* 3カード */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
+  border-radius: 18px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardMain {
+  border-color: var(--lp-ink);
+  box-shadow: 0 1px 0 var(--lp-ink);
+}
+
+.planName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+}
+
+.planDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  flex: none;
+}
+
+.price {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+}
+
+.per {
+  margin-left: 4px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--lp-ink-soft);
+}
+
+.alt {
+  margin: 10px 0 0;
+  min-height: 1.2em;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  color: var(--lp-ink-soft);
+}
+
+.list {
+  list-style: none;
+  margin: 28px 0 32px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.listItem {
+  padding-left: 22px;
+  position: relative;
+  color: var(--lp-ink-soft);
+}
+
+.listItem::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 10px;
+  height: 1px;
+  background: var(--lp-ink);
+}
+
+.note {
+  margin: 28px 0 32px;
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lp-ink-soft);
+}
+
+.cta {
+  margin-top: auto;
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 14px 18px;
+  border-radius: 999px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid var(--lp-ink);
+  background: transparent;
+  color: var(--lp-ink);
+  min-height: 48px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.ctaMain {
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+}
+
+.ctaDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* FAQ */
+.faq {
+  margin-top: clamp(64px, 9vw, 96px);
+  max-width: 760px;
+}
+
+.faqHeading {
+  margin: 0 0 24px;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: clamp(28px, 3.6vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink);
+}
+
+.qa {
+  padding: 22px 0;
+  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
+}
+
+.qaQ {
+  margin: 0 0 8px;
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--lp-ink);
+}
+
+.qaA {
+  margin: 0;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--lp-ink-soft);
+}
+
+.link {
+  color: var(--lp-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--lp-ink) 35%, transparent);
+  transition: text-decoration-color 0.25s ease;
+}
+.link:hover { text-decoration-color: var(--lp-accent); }
+
+.taxNote {
+  margin-top: 32px;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  color: var(--lp-ink-soft);
+}
+
+@media (max-width: 860px) {
+  .cards { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .root { padding: clamp(56px, 16vw, 96px) 24px 56px; }
+}
+
+@media (max-width: 480px) {
+  .root { padding-left: 16px; padding-right: 16px; }
+}

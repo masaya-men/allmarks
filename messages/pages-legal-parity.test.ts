@@ -8,9 +8,9 @@ function leafKeys(obj: unknown, prefix = ''): string[] {
   )
 }
 
-const PAGE_KEYS = ['privacy', 'terms', 'contact', 'extensionPrivacy'] as const
+const PAGE_KEYS = ['privacy', 'terms', 'contact', 'extensionPrivacy', 'refund'] as const
 
-describe('pages 法務4ページ 15言語キーパリティ', () => {
+describe('pages 法務5ページ 15言語キーパリティ', () => {
   const en = require('./en.json').pages
   for (const page of PAGE_KEYS) {
     const baseKeys = leafKeys(en[page]).sort()

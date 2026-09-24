@@ -419,7 +419,9 @@
       "about": "About",
       "privacy": "Privacy",
       "terms": "Terms",
-      "contact": "Contact"
+      "contact": "Contact",
+      "refund": "Refund",
+      "pricing": "Pricing"
     }
   },
   "pages": {
@@ -556,11 +558,11 @@
       },
       "q1": {
         "q": "Có miễn phí không?",
-        "a": "Có — AllMarks hoàn toàn miễn phí, không cần tài khoản và không cần đăng ký."
+        "a": "Tất cả các tính năng cốt lõi đều miễn phí, không cần tài khoản. Chỉ có \"đồng bộ giữa các thiết bị\", cho phép bạn dùng cùng một bảng trên nhiều thiết bị, là trả phí. Xem [[trang giá|pricing]] để biết chi tiết."
       },
       "q2": {
         "q": "Dữ liệu của tôi được lưu ở đâu?",
-        "a": "Bảng của bạn chỉ được lưu trong trình duyệt, trên thiết bị của bạn — không phải trên máy chủ. Ngoại lệ duy nhất là khi bạn chia sẻ: thông tin URL của những thẻ bạn chọn chia sẻ (tiêu đề, ảnh xem trước, v.v.) được giữ trong khoảng 30 ngày rồi tự động xóa. Vì không có tài khoản, không có thông tin cá nhân nào được đưa vào. Nếu bạn không chia sẻ, không có gì rời khỏi thiết bị của bạn."
+        "a": "Nó được lưu trong trình duyệt của bạn, trên thiết bị của bạn. Nếu bạn dùng đồng bộ giữa các thiết bị, nó cũng được lưu trong Google Drive của riêng bạn. Dù trong trường hợp nào, nó cũng không bao giờ được lưu trên máy chủ của tôi. Ngoại lệ duy nhất là khi bạn dùng \"Chia sẻ\": thông tin các thẻ đã chọn (tiêu đề, hình ảnh xem trước và tương tự) được giữ lại khoảng 30 ngày, sau đó tự động bị xóa."
       },
       "q3": {
         "q": "Làm thế nào để lưu thứ gì đó?",
@@ -588,11 +590,59 @@
       },
       "q9": {
         "q": "Tôi có cần tài khoản không?",
-        "a": "Không. Hoàn toàn không có tạo tài khoản hay đăng nhập gì cả."
+        "a": "Không có tài khoản AllMarks. Tài khoản Google chỉ cần thiết nếu bạn dùng đồng bộ giữa các thiết bị."
       },
       "cta": {
         "heading": "Tự mình trải nghiệm.",
         "button": "Open Board"
+      },
+      "q10": {
+        "q": "Đồng bộ giữa các thiết bị là gì? Những gì được đồng bộ?",
+        "a": "Đây là tính năng cho phép bạn dùng cùng một bộ dấu trang trên nhiều thiết bị — máy tính, điện thoại, máy tính bảng, v.v. Những thứ được đồng bộ là dấu trang, thẻ, thứ tự và kích thước thẻ, và nội dung trong Private. Các cài đặt giao diện như chủ đề được giữ riêng cho từng thiết bị."
+      },
+      "q11": {
+        "q": "Đồng bộ cập nhật nhanh như thế nào?",
+        "a": "Một thay đổi được lưu vào Google Drive khoảng 20 giây sau đó. Các thiết bị khác sẽ nhận nội dung mới nhất khi bạn mở AllMarks hoặc quay lại màn hình sau một lúc."
+      },
+      "q12": {
+        "q": "Tôi có cần tài khoản Google không?",
+        "a": "Đồng bộ giữa các thiết bị yêu cầu tài khoản Google. Bạn không cần nếu không dùng đồng bộ."
+      },
+      "q13": {
+        "q": "Điều gì xảy ra với dữ liệu của tôi nếu tôi ngừng đồng bộ?",
+        "a": "Dữ liệu trên mỗi thiết bị vẫn giữ nguyên. Thư mục \"AllMarks\" trong Google Drive cũng vẫn còn, vì vậy bạn có thể tự xóa nếu không cần nữa."
+      },
+      "q14": {
+        "q": "Bạn có thể xem dấu trang của tôi không?",
+        "a": "Không. Dữ liệu đồng bộ được lưu trực tiếp từ thiết bị của bạn vào Google Drive của riêng bạn. Nó không bao giờ đi qua máy chủ của tôi, nên tôi không thể xem nội dung của nó."
+      },
+      "q15": {
+        "q": "Tôi có thể dùng những phương thức thanh toán nào?",
+        "a": "Thẻ tín dụng và thẻ ghi nợ, cùng với PayPal, Apple Pay hoặc Google Pay tùy vào thiết bị và khu vực của bạn. Thanh toán được xử lý bởi đại lý bán lại của tôi, Paddle.com."
+      },
+      "q16": {
+        "q": "Tôi có thể lấy biên lai không?",
+        "a": "Có. Bạn có thể lấy từ [[paddle.net|paddleHome]] hoặc email mà Paddle gửi cho bạn khi mua hàng."
+      },
+      "q17": {
+        "q": "Sự khác biệt giữa gói Sync và gói Supporter là gì?",
+        "a": "Các tính năng giống nhau. Gói Supporter dành cho những người muốn hỗ trợ việc phát triển AllMarks nhiều hơn."
+      },
+      "q18": {
+        "q": "Tôi hủy như thế nào? Điều gì xảy ra khi tôi làm vậy?",
+        "a": "Bạn có thể hủy tại [[paddle.net|paddleHome]] hoặc liên kết \"Manage subscription\" trong email mà Paddle gửi cho bạn khi mua hàng. Bạn có thể tiếp tục dùng đồng bộ đến hết kỳ đã thanh toán. Sau đó, đồng bộ sẽ dừng lại, nhưng dữ liệu của bạn vẫn còn trên thiết bị của bạn và trong Google Drive của riêng bạn."
+      },
+      "q19": {
+        "q": "Nếu tôi muốn hoàn tiền thì sao?",
+        "a": "Tôi hoàn tiền toàn bộ trong vòng 14 ngày kể từ lần thanh toán đầu tiên của bạn. Yêu cầu qua [[paddle.net|paddleHome]]. Xem [[chính sách hoàn tiền|refund]] để biết chi tiết."
+      },
+      "q20": {
+        "q": "Khóa của tôi không kích hoạt được",
+        "a": "Hãy kiểm tra xem bạn đã sao chép toàn bộ khóa mà không bị cắt bớt hay chưa. Nếu bạn thấy thông báo \"This key has reached its device limit\", nghĩa là khóa đó đã được dùng trên 5 thiết bị."
+      },
+      "q21": {
+        "q": "Đồng bộ không cập nhật",
+        "a": "Nhấn \"Sync now\" trong mục SYNC của Cài đặt. Nếu bạn thấy \"Connection lost\", hãy nhấn \"Reconnect Google\"."
       }
     },
     "extension": {
@@ -637,36 +687,36 @@
     "privacy": {
       "meta": {
         "title": "Chính sách quyền riêng tư",
-        "description": "AllMarks không thu thập dữ liệu cá nhân. Dấu trang của bạn ở lại trong trình duyệt; không có gì được tải lên trừ khi bạn chọn chia sẻ bảng."
+        "description": "Chính sách quyền riêng tư của AllMarks — tôi không bao giờ thu thập dấu trang của bạn trên máy chủ của mình. Nếu bạn dùng đồng bộ giữa các thiết bị, dữ liệu của bạn được lưu trong Google Drive của riêng bạn."
       },
       "hero": {
         "kicker": "Quyền riêng tư",
         "title": "Chính sách quyền riêng tư",
-        "lead": "AllMarks được xây dựng trên một nguyên tắc: dữ liệu của bạn thuộc về bạn. Chúng tôi không thu thập dữ liệu cá nhân, và không có tài khoản nào.",
-        "updated": "Cập nhật lần cuối: ngày 18 tháng 6 năm 2026"
+        "lead": "AllMarks được xây dựng dựa trên một nguyên tắc duy nhất: dữ liệu của bạn thuộc về bạn. Tôi không thu thập dấu trang của bạn trên máy chủ của mình, và không có tài khoản nào cả.",
+        "updated": "Cập nhật lần cuối: ngày 24 tháng 9 năm 2026"
       },
       "toc": {
         "title": "Mục lục"
       },
       "philosophy": {
         "heading": "Không thu thập dữ liệu",
-        "body": "Dấu trang, thẻ và bố cục bảng của bạn chỉ được lưu trong cơ sở dữ liệu cục bộ trên trình duyệt (IndexedDB). Chúng tôi không thu thập, lưu trữ hay truyền dữ liệu cá nhân của bạn lên máy chủ, và không có tài khoản nào để đăng nhập."
+        "body": "Dấu trang, thẻ và bố cục bảng của bạn chỉ được lưu trong cơ sở dữ liệu cục bộ của trình duyệt (IndexedDB). Tôi không thu thập, lưu trữ hay truyền dữ liệu cá nhân của bạn tới máy chủ của mình, và không có tài khoản nào để đăng nhập."
       },
       "collect": {
-        "heading": "Những gì chúng tôi không thu thập",
-        "body": "Chúng tôi không thu thập tên, email hay địa chỉ của bạn; không có tài khoản hay thông tin đăng nhập; không lưu bản sao lịch sử duyệt web hay dấu trang trên máy chủ; không sử dụng cookie theo dõi hay quảng cáo; và không thu thập dấu vân tay IP hay phân tích liên kết đến cá nhân bạn."
+        "heading": "Những gì tôi không thu thập",
+        "body": "Miễn là bạn sử dụng các tính năng miễn phí, tôi không thu thập tên, email hoặc địa chỉ của bạn; không có tài khoản hay thông tin đăng nhập; tôi không lưu bất kỳ bản sao lịch sử duyệt web hay dấu trang nào của bạn trên máy chủ của mình; tôi không dùng cookie theo dõi hay quảng cáo; và tôi không thu thập dấu vân tay dựa trên IP hay dữ liệu phân tích gắn với riêng bạn. Thông tin được xử lý nếu bạn mua gói trả phí được giải thích trong mục [[\"Thanh toán\"|paymentSection]]."
       },
       "local": {
-        "heading": "Chỉ lưu trữ cục bộ",
-        "body": "Mọi thứ tồn tại trong trình duyệt trên thiết bị của bạn. Điều đó có nghĩa chúng tôi không thể truy cập, xem hay khôi phục dữ liệu của bạn, không có bản sao lưu phía máy chủ cho các bảng của bạn, và xóa dữ liệu trình duyệt sẽ xóa vĩnh viễn nội dung AllMarks. Bạn có thể tự xuất bản sao lưu bất cứ lúc nào."
+        "heading": "Vị trí lưu trữ",
+        "body": "Nếu bạn không dùng đồng bộ, mọi thứ đều nằm trong trình duyệt trên thiết bị của bạn. Tôi không thể truy cập, xem hay khôi phục dữ liệu của bạn; không tồn tại bản sao lưu trên máy chủ cho bảng của bạn; và việc xóa dữ liệu trình duyệt sẽ xóa vĩnh viễn nội dung AllMarks của bạn. Bạn có thể xuất bản sao lưu của riêng mình bất cứ lúc nào."
       },
       "sharing": {
         "heading": "Khi bạn chia sẻ bảng",
-        "body": "Chia sẻ là trường hợp duy nhất dữ liệu rời khỏi thiết bị của bạn — và chỉ khi bạn muốn. Khi bạn tạo liên kết chia sẻ, dữ liệu bảng (chỉ những thẻ bạn chọn chia sẻ; không có thông tin cá nhân vì không có tài khoản) được tải lên Cloudflare KV để người nhận liên kết có thể mở, còn ảnh xem trước được tải lên Cloudflare R2. Liên kết chỉ truy cập được qua đường dẫn bí mật và tự động xóa sau khoảng 30 ngày, không có gì lưu lại. Không có gì được tải lên trừ khi bạn tạo liên kết chia sẻ, và các bảng riêng tư của bạn sẽ không bao giờ được tải lên. Bạn cũng có thể xuất bảng dưới dạng PNG, được tạo hoàn toàn trong trình duyệt."
+        "body": "Trong số các tính năng miễn phí, chia sẻ là trường hợp duy nhất dữ liệu rời khỏi thiết bị của bạn — và chỉ vì bạn yêu cầu điều đó. Khi bạn tạo liên kết chia sẻ, dữ liệu bảng (chỉ những thẻ bạn chọn chia sẻ, không có thông tin cá nhân nào vì không có tài khoản) được tải lên Cloudflare KV, cùng với hình ảnh xem trước lên Cloudflare R2, để những người bạn gửi liên kết có thể mở bảng. Nó chỉ có thể truy cập được qua liên kết bí mật và tự động bị xóa sau khoảng 30 ngày, nên không có gì tồn đọng lại. Không có gì được tải lên trừ khi bạn tạo liên kết chia sẻ, và các bảng riêng tư của bạn không bao giờ được tải lên. Bạn cũng có thể xuất bảng dưới dạng PNG, được tạo hoàn toàn trong trình duyệt của bạn."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",
-        "body": "Bookmarklet AllMarks đọc các thẻ meta Open Graph (tiêu đề, mô tả, hình ảnh, tên trang web) của trang bạn đang xem, hoàn toàn trong trình duyệt, và chuyển chúng đến cửa sổ lưu AllMarks cục bộ. Không có dữ liệu nào đi qua máy chủ của chúng tôi."
+        "body": "Bookmarklet của AllMarks đọc các thẻ meta Open Graph (tiêu đề, mô tả, hình ảnh, tên trang) của trang bạn đang xem, hoàn toàn bên trong trình duyệt của bạn, và chuyển chúng tới cửa sổ lưu cục bộ của AllMarks. Không có dữ liệu nào đi qua máy chủ của tôi."
       },
       "extension": {
         "heading": "Tiện ích mở rộng trình duyệt",
@@ -674,39 +724,54 @@
       },
       "hosting": {
         "heading": "Lưu trữ và phân tích",
-        "body": "AllMarks được lưu trữ trên Cloudflare Pages. Cloudflare có thể ghi lại các số liệu máy chủ tối thiểu, ẩn danh (như tổng số lượt xem trang) như một phần của dịch vụ lưu trữ thông thường; những dữ liệu này không chứa thông tin nhận dạng cá nhân. Chúng tôi không sử dụng Google Analytics, Facebook Pixel hay bất kỳ tập lệnh theo dõi của bên thứ ba nào."
+        "body": "AllMarks được lưu trữ trên Cloudflare Pages. Cloudflare có thể ghi lại các số liệu máy chủ tối thiểu, đã ẩn danh (như tổng số lượt xem trang) như một phần của dịch vụ lưu trữ tiêu chuẩn; những số liệu này không chứa thông tin nhận dạng cá nhân. Tôi không dùng Google Analytics, Facebook Pixel, hay bất kỳ tập lệnh theo dõi của bên thứ ba nào."
       },
       "thirdParty": {
         "heading": "Nội dung từ bên thứ ba",
-        "body": "AllMarks có thể hiển thị nội dung từ các trang khác — ví dụ tweet qua react-tweet, hoặc video qua oEmbed. Những nội dung nhúng đó có thể chịu sự điều chỉnh bởi chính sách quyền riêng tư của dịch vụ riêng của chúng, mà chúng tôi khuyến nghị bạn xem xét đối với bất kỳ nội dung nào xuất hiện trong bảng."
+        "body": "AllMarks có thể hiển thị nội dung từ các trang khác — ví dụ như tweet qua react-tweet, hoặc video qua oEmbed. Những nội dung nhúng này có thể tuân theo chính sách quyền riêng tư của dịch vụ tương ứng, tôi khuyên bạn nên xem qua đối với bất kỳ nội dung nào xuất hiện trên bảng của bạn."
       },
       "advertising": {
         "heading": "Quảng cáo",
-        "body": "AllMarks miễn phí và hiện không hiển thị quảng cáo. Nếu chúng tôi có giới thiệu quảng cáo để duy trì dịch vụ miễn phí, chúng tôi sẽ cập nhật chính sách này, ghi nhãn rõ ràng, và tiếp tục không thu thập dữ liệu cá nhân từ phía chúng tôi."
+        "body": "Các tính năng cốt lõi của AllMarks miễn phí, và hiện tại tôi không hiển thị quảng cáo nào. Nếu một ngày nào đó tôi đưa quảng cáo vào để hỗ trợ dịch vụ miễn phí, tôi sẽ cập nhật chính sách này, ghi rõ điều đó, và tiếp tục không thu thập bất kỳ dữ liệu cá nhân nào về phía tôi."
       },
       "children": {
         "heading": "Quyền riêng tư của trẻ em",
-        "body": "AllMarks không cố ý thu thập bất kỳ thông tin nào từ trẻ em dưới 13 tuổi. Vì chúng tôi không thu thập dữ liệu cá nhân của bất kỳ ai, điều này là cố hữu trong cách thức hoạt động của ứng dụng."
+        "body": "AllMarks không cố ý thu thập thông tin cá nhân từ trẻ em dưới 13 tuổi."
       },
       "changes": {
         "heading": "Thay đổi chính sách này",
-        "body": "Chúng tôi có thể cập nhật chính sách này theo thời gian. Các thay đổi được đăng trên trang này với ngày \"cập nhật lần cuối\" mới. Vì chúng tôi không thu thập dữ liệu cá nhân, chúng tôi không thể thông báo trực tiếp cho bạn về các thay đổi."
+        "body": "Tôi có thể cập nhật chính sách này theo thời gian. Các thay đổi sẽ được đăng trên trang này cùng ngày \"cập nhật lần cuối\" mới."
       },
       "contact": {
         "heading": "Câu hỏi",
-        "body": "Nếu bạn có câu hỏi về chính sách này, vui lòng liên hệ qua trang liên hệ."
+        "body": "Nếu bạn có câu hỏi về chính sách này, vui lòng liên hệ với tôi qua [[allmarks-support@googlegroups.com|supportEmail]]."
+      },
+      "deviceSync": {
+        "heading": "Đồng bộ giữa các thiết bị (gói trả phí)",
+        "para1": "Khi bạn dùng đồng bộ giữa các thiết bị, dấu trang, thẻ và cài đặt bảng của bạn được lưu trong một thư mục \"AllMarks\" được tạo trong Google Drive của riêng bạn. Dữ liệu đi trực tiếp từ thiết bị của bạn tới Google Drive; nó không bao giờ đến máy chủ của tôi, và tôi không thể xem nội dung của nó.",
+        "para2": "AllMarks chỉ có thể truy cập những tệp mà chính nó tạo ra trong Google Drive. Thông tin đăng nhập Google của bạn được lưu trong trình duyệt của bạn. Thông tin này chỉ đi qua máy chủ của tôi khi làm mới phiên đăng nhập của bạn, và không bao giờ được ghi lại hay lưu trữ ở đó. Dấu trang bạn đặt trong Private được lưu ở dạng mã hóa.",
+        "para3": "Việc AllMarks sử dụng và chuyển giao thông tin nhận được từ API của Google cho bất kỳ ứng dụng nào khác sẽ tuân thủ [[Google API Services User Data Policy|googleDataPolicy]], bao gồm cả yêu cầu Limited Use."
+      },
+      "syncKeys": {
+        "heading": "Khóa đồng bộ và số lượng thiết bị",
+        "body": "Khi bạn kích hoạt đồng bộ, một mã định danh khóa và một mã định danh ngẫu nhiên được tạo cho từng thiết bị sẽ được gửi tới máy chủ của tôi (Cloudflare). Việc này chỉ nhằm đếm số thiết bị đang dùng một khóa (tối đa 5) và xác nhận gói trả phí đang hoạt động. Cả hai mã định danh đều không chứa thông tin xác định bạn về mặt cá nhân."
+      },
+      "payment": {
+        "heading": "Thanh toán",
+        "para1": "Thanh toán cho gói trả phí được xử lý bởi đại lý bán lại của tôi, Paddle.com. Tên, email và thông tin thanh toán của bạn được Paddle.com thu thập và xử lý theo chính sách quyền riêng tư riêng của Paddle. Tôi không bao giờ nhận được số thẻ hay các thông tin thanh toán khác của bạn.",
+        "para2": "Những gì tôi nhận được từ Paddle.com là trạng thái đơn hàng và đăng ký của bạn (đang hoạt động hay đã hủy) và địa chỉ email cần thiết để gửi khóa và phản hồi các yêu cầu hỗ trợ."
       }
     },
     "terms": {
       "meta": {
         "title": "Điều khoản dịch vụ",
-        "description": "Điều khoản dịch vụ AllMarks — miễn phí sử dụng, không cần tài khoản, dữ liệu ở lại trong trình duyệt."
+        "description": "Điều khoản dịch vụ của AllMarks — các tính năng cốt lõi hoàn toàn miễn phí, không cần tài khoản, và dữ liệu của bạn luôn ở trong trình duyệt của bạn."
       },
       "hero": {
         "kicker": "Điều khoản",
         "title": "Điều khoản dịch vụ",
-        "lead": "AllMarks là ứng dụng miễn phí không cần tài khoản. Các điều khoản này giải thích những điều cơ bản khi sử dụng.",
-        "updated": "Cập nhật lần cuối: ngày 18 tháng 6 năm 2026"
+        "lead": "AllMarks là một ứng dụng web mà bạn có thể sử dụng mà không cần tài khoản. Các tính năng cốt lõi miễn phí; một số tính năng (đồng bộ giữa các thiết bị) được cung cấp qua gói trả phí. Điều khoản này giải thích những điều cơ bản khi sử dụng.",
+        "updated": "Cập nhật lần cuối: ngày 24 tháng 9 năm 2026"
       },
       "toc": {
         "title": "Mục lục"
@@ -717,11 +782,11 @@
       },
       "service": {
         "heading": "2. Dịch vụ",
-        "body": "AllMarks là ứng dụng web miễn phí để lưu dấu trang và sắp xếp chúng thành các bảng hình ảnh. Toàn bộ dữ liệu được lưu cục bộ trong trình duyệt, không cần tài khoản hay đăng ký."
+        "body": "AllMarks là ứng dụng web để lưu dấu trang và sắp xếp chúng thành các bảng trực quan. Các tính năng cốt lõi miễn phí, và không cần tài khoản hay đăng ký. Dữ liệu của bạn được lưu cục bộ trong trình duyệt của bạn. Nếu bạn dùng gói trả phí đồng bộ giữa các thiết bị, dữ liệu cũng được lưu trong Google Drive của riêng bạn. AllMarks do Masaya Maeno vận hành với tư cách cá nhân (\"tôi\" trong điều khoản này)."
       },
       "responsibilities": {
         "heading": "3. Trách nhiệm của bạn",
-        "body": "Bạn chịu trách nhiệm về nội dung bạn lưu và chia sẻ, bạn đồng ý không sử dụng Dịch vụ cho bất kỳ mục đích bất hợp pháp hay làm gián đoạn nó, và bạn hiểu rằng dữ liệu được lưu cục bộ — xóa dữ liệu trình duyệt sẽ xóa vĩnh viễn nội dung AllMarks. Vì dữ liệu của bạn chỉ được lưu trong trình duyệt trên thiết bị này và không có bản sao nào được lưu trên máy chủ, việc tự sao lưu dữ liệu là trách nhiệm của bạn: hãy dùng EXPORT trong Cài đặt để lưu một bản sao thường xuyên, đặc biệt là trước khi đổi thiết bị, xóa dữ liệu trình duyệt, hoặc đặt lại AllMarks. Dữ liệu bị mất do xóa dữ liệu trình duyệt, mất hoặc hỏng thiết bị, cập nhật phần mềm, hay bất kỳ nguyên nhân nào khác đều không thể khôi phục."
+        "body": "Bạn chịu trách nhiệm về nội dung mà bạn lưu và chia sẻ, và bạn đồng ý không sử dụng Dịch vụ cho bất kỳ mục đích bất hợp pháp nào hoặc để gây gián đoạn Dịch vụ. Vì dữ liệu của bạn được lưu cục bộ, việc xóa dữ liệu trình duyệt sẽ xóa vĩnh viễn nội dung AllMarks của bạn. Dữ liệu của bạn không được lưu trên máy chủ của tôi, vì vậy việc sao lưu là trách nhiệm của bạn: hãy dùng EXPORT trong Cài đặt để lưu một bản sao thường xuyên, đặc biệt là trước khi đổi thiết bị, xóa dữ liệu trình duyệt hoặc đặt lại AllMarks. Dữ liệu bị mất do xóa dữ liệu trình duyệt, mất hoặc hỏng thiết bị, cập nhật phần mềm, hoặc bất kỳ nguyên nhân nào khác đều không thể khôi phục."
       },
       "ip": {
         "heading": "4. Sở hữu trí tuệ",
@@ -729,54 +794,80 @@
       },
       "sharing": {
         "heading": "5. Chia sẻ nội dung",
-        "body": "Khi bạn tạo liên kết chia sẻ, dữ liệu bảng được tải lên dịch vụ lưu trữ để liên kết có thể hiển thị, và tự động xóa sau khoảng 30 ngày. Bằng cách chia sẻ, bạn xác nhận rằng bạn có quyền chia sẻ nội dung theo cách này."
+        "body": "Khi bạn tạo liên kết chia sẻ, dữ liệu bảng sẽ được tải lên dịch vụ lưu trữ của tôi để liên kết có thể hiển thị nó, và sẽ tự động bị xóa sau khoảng 30 ngày. Khi chia sẻ, bạn xác nhận rằng mình có quyền chia sẻ nội dung theo cách này."
       },
       "warranty": {
-        "heading": "6. Không có bảo đảm",
+        "heading": "7. Không bảo hành",
         "body": "Dịch vụ được cung cấp \"nguyên trạng\" và \"theo hiện trạng\" mà không có bảo đảm dưới bất kỳ hình thức nào. Chúng tôi không đảm bảo nó sẽ không bị gián đoạn, an toàn hay không có lỗi, và chúng tôi không chịu trách nhiệm về mất mát dữ liệu do xóa dữ liệu trình duyệt, lỗi thiết bị hay bất kỳ nguyên nhân nào khác."
       },
       "liability": {
-        "heading": "7. Giới hạn trách nhiệm",
+        "heading": "8. Giới hạn trách nhiệm",
         "body": "Trong phạm vi tối đa được pháp luật cho phép, AllMarks sẽ không chịu trách nhiệm về bất kỳ thiệt hại gián tiếp, ngẫu nhiên, đặc biệt, hậu quả hay trừng phạt nào phát sinh từ việc bạn sử dụng Dịch vụ."
       },
       "modifications": {
-        "heading": "8. Thay đổi dịch vụ và điều khoản",
-        "body": "Chúng tôi có thể sửa đổi hoặc ngừng Dịch vụ bất kỳ lúc nào mà không cần thông báo, và có thể cập nhật các điều khoản này theo thời gian. Việc tiếp tục sử dụng sau khi có thay đổi có nghĩa là bạn chấp nhận các điều khoản đã sửa đổi."
+        "heading": "9. Thay đổi dịch vụ và điều khoản",
+        "body": "Tôi có thể sửa đổi hoặc ngừng cung cấp Dịch vụ bất kỳ lúc nào mà không cần báo trước, và có thể cập nhật điều khoản này theo thời gian. Việc tiếp tục sử dụng sau khi có thay đổi đồng nghĩa với việc bạn chấp nhận điều khoản đã sửa đổi."
       },
       "law": {
-        "heading": "9. Luật điều chỉnh",
+        "heading": "10. Luật áp dụng",
         "body": "Các điều khoản này được điều chỉnh bởi pháp luật Nhật Bản, và mọi tranh chấp thuộc thẩm quyền xét xử độc quyền của tòa án Tokyo, Nhật Bản."
       },
       "language": {
-        "heading": "10. Ngôn ngữ điều chỉnh",
+        "heading": "11. Ngôn ngữ có hiệu lực",
         "body": "Bản tiếng Nhật của các điều khoản này là văn bản chính thức. Bản dịch sang các ngôn ngữ khác chỉ được cung cấp để tham khảo; trong trường hợp có bất kỳ sự khác biệt nào giữa bản tiếng Nhật và bản dịch, bản tiếng Nhật sẽ được ưu tiên áp dụng."
       },
       "contact": {
-        "heading": "11. Câu hỏi",
-        "body": "Nếu bạn có câu hỏi về các điều khoản này, vui lòng liên hệ qua trang liên hệ."
+        "heading": "13. Câu hỏi",
+        "body": "Nếu bạn có câu hỏi về điều khoản này, vui lòng liên hệ với tôi qua [[allmarks-support@googlegroups.com|supportEmail]]."
+      },
+      "paidPlan": {
+        "heading": "6. Gói trả phí",
+        "intro": "Đồng bộ giữa các thiết bị được cung cấp qua gói trả phí. Giá được hiển thị trên [[trang giá|pricing]].",
+        "list": {
+          "item1": "Đơn hàng được xử lý bởi đại lý bán lại của tôi, Paddle.com. Paddle.com đóng vai trò là Merchant of Record (nhà bán hàng chính thức) cho mọi đơn hàng và phụ trách thanh toán, xuất hóa đơn và hoàn tiền.",
+          "item2": "Gói trả phí tự động gia hạn. Bạn có thể hủy bất cứ lúc nào và tiếp tục sử dụng đến hết kỳ đã thanh toán. Sau khi kỳ đó kết thúc, việc đồng bộ sẽ dừng lại, nhưng dữ liệu của bạn vẫn còn trên thiết bị của bạn và trong Google Drive của riêng bạn.",
+          "item3": "Việc hoàn tiền tuân theo [[chính sách hoàn tiền|refund]].",
+          "item4": "Khóa kích hoạt đồng bộ chỉ dành cho việc sử dụng cá nhân của bạn, và mỗi khóa hoạt động trên tối đa 5 thiết bị. Bạn không được chia sẻ khóa của mình cho người khác.",
+          "item5": "Nếu giá thay đổi, tôi sẽ thông báo trước cho bạn."
+        }
+      },
+      "operator": {
+        "heading": "12. Đơn vị vận hành",
+        "intro": "Đơn vị vận hành: Masaya Maeno",
+        "emailLine": "Liên hệ: [[allmarks-support@googlegroups.com|supportEmail]]"
       }
     },
     "contact": {
       "meta": {
         "title": "Liên hệ",
-        "description": "Liên hệ về AllMarks — câu hỏi, phản hồi, báo cáo lỗi và bảo mật, qua GitHub."
+        "description": "Đầu mối liên hệ của AllMarks. Vấn đề thanh toán được xử lý qua Paddle; các vấn đề khác, vui lòng liên hệ qua email."
       },
       "hero": {
         "kicker": "Liên hệ",
-        "title": "Hãy liên hệ.",
-        "lead": "Câu hỏi, ý tưởng và báo cáo lỗi đều được chào đón. GitHub là cách đáng tin cậy nhất để liên hệ với chúng tôi."
+        "title": "Liên hệ",
+        "lead": "Đây là đầu mối liên hệ của AllMarks. Trước khi liên hệ, vui lòng xem [[câu hỏi thường gặp|faq]]. Vì đây là dự án do một người vận hành, phản hồi có thể mất vài ngày."
       },
       "github": {
         "label": "GitHub Issues",
-        "body": "Để báo cáo lỗi và yêu cầu tính năng, hãy mở một issue trên GitHub — đó là cách chắc chắn nhất để được lắng nghe."
-      },
-      "feedback": {
-        "label": "Phản hồi",
-        "body": "Ý tưởng để cải thiện AllMarks luôn được chào đón — \"Tôi ước nó có thể làm điều này\" hay \"phần này hơi khó dùng,\" dù nhỏ đến đâu."
+        "body": "Báo cáo lỗi và yêu cầu tính năng cũng được hoan nghênh trên GitHub."
       },
       "security": {
         "label": "Bảo mật",
         "body": "Tìm thấy vấn đề bảo mật? Vui lòng báo cáo riêng qua GitHub thay vì issue công khai. Chúng tôi rất trân trọng việc công bố có trách nhiệm."
+      },
+      "billing": {
+        "label": "Thanh toán, hủy, hoàn tiền và biên lai",
+        "body": "Thanh toán cho gói trả phí được xử lý bởi đại lý bán lại của tôi, Paddle.com. Bạn có thể tự xử lý những việc sau qua [[paddle.net|paddleHome]] hoặc liên kết \"Manage subscription\" trong email mà Paddle gửi cho bạn khi mua hàng:",
+        "list": {
+          "item1": "Hủy",
+          "item2": "Yêu cầu hoàn tiền",
+          "item3": "Thay đổi phương thức thanh toán",
+          "item4": "Nhận biên lai"
+        }
+      },
+      "email": {
+        "label": "Email",
+        "body": "Với mọi vấn đề khác, hãy liên hệ tại đây."
       }
     },
     "extensionPrivacy": {
@@ -829,6 +920,113 @@
         "heading": "Thay đổi",
         "body": "Chúng tôi cập nhật trang này bất cứ khi nào quyền hoặc luồng dữ liệu thay đổi. Ngày \"cập nhật lần cuối\" ở trên phản ánh thay đổi gần nhất."
       }
+    },
+    "refund": {
+      "meta": {
+        "title": "Chính sách hoàn tiền",
+        "description": "Chính sách hoàn tiền của AllMarks — lần thanh toán đầu tiên được hoàn lại toàn bộ trong vòng 14 ngày."
+      },
+      "hero": {
+        "kicker": "Hoàn tiền",
+        "title": "Chính sách hoàn tiền",
+        "lead": "Đơn hàng cho các gói trả phí của AllMarks được xử lý bởi đại lý bán lại của tôi, Paddle.com, với vai trò người bán. Việc hoàn tiền cũng được thực hiện qua Paddle.com.",
+        "updated": "Cập nhật lần cuối: ngày 24 tháng 9 năm 2026"
+      },
+      "toc": {
+        "title": "Mục lục"
+      },
+      "firstPayment": {
+        "heading": "Lần thanh toán đầu tiên",
+        "body": "Nếu đây là lần đầu bạn đăng ký gói trả phí, tôi sẽ hoàn lại toàn bộ, không hỏi lý do, trong vòng 14 ngày kể từ khi thanh toán."
+      },
+      "renewalPayment": {
+        "heading": "Thanh toán gia hạn",
+        "body": "Các khoản thanh toán từ gia hạn tự động (từ lần thanh toán thứ hai trở đi) không đủ điều kiện hoàn tiền. Nếu pháp luật nơi bạn sinh sống cho bạn quyền được hoàn tiền, pháp luật đó sẽ được áp dụng."
+      },
+      "cancellation": {
+        "heading": "Hủy",
+        "body": "Bạn có thể hủy bất cứ lúc nào. Sau khi hủy, bạn có thể tiếp tục dùng đồng bộ đến hết kỳ đã thanh toán. Sẽ không có khoản phí nào phát sinh thêm."
+      },
+      "afterRefund": {
+        "heading": "Sau khi hoàn tiền",
+        "body": "Sau khi được hoàn tiền, gói trả phí sẽ kết thúc và việc đồng bộ dừng lại. Dấu trang và các dữ liệu khác của bạn vẫn còn trên thiết bị của bạn và trong Google Drive của riêng bạn."
+      },
+      "howTo": {
+        "heading": "Yêu cầu hoàn tiền",
+        "body": "Yêu cầu qua [[paddle.net|paddleHome]] hoặc liên kết \"Manage subscription\" trong email mà Paddle gửi cho bạn khi mua hàng. Nếu cách đó không hiệu quả, hãy liên hệ với tôi qua [[allmarks-support@googlegroups.com|supportEmail]]."
+      }
+    },
+    "pricing": {
+      "meta": {
+        "title": "Bảng giá",
+        "description": "Bảng giá của AllMarks — các tính năng cốt lõi hoàn toàn miễn phí. Đồng bộ giữa các thiết bị bắt đầu từ ¥500/tháng."
+      },
+      "hero": {
+        "kicker": "Bảng giá",
+        "title": "Bảng giá",
+        "lead": "Các tính năng cốt lõi của AllMarks đều miễn phí. Nếu bạn muốn dùng cùng một bảng trên nhiều hơn một thiết bị, hãy chọn gói trả phí."
+      },
+      "toggle": {
+        "groupLabel": "Thanh toán",
+        "monthly": "Hàng tháng",
+        "annual": "Hàng năm",
+        "badge": "Miễn phí 2 tháng"
+      },
+      "perMonth": "/tháng",
+      "perYear": "/năm",
+      "free": {
+        "name": "Miễn phí",
+        "list": {
+          "item1": "Lưu dấu trang và xem bảng của bạn",
+          "item2": "Tất cả tính năng cốt lõi — thẻ, chủ đề, chia sẻ, xuất dữ liệu và nhiều hơn nữa",
+          "item3": "Dữ liệu nằm trong trình duyệt của thiết bị này"
+        },
+        "cta": "Dùng ngay"
+      },
+      "sync": {
+        "name": "Gói Sync",
+        "list": {
+          "item1": "Mọi thứ trong gói Miễn phí",
+          "item2": "Đồng bộ giữa các thiết bị: dùng cùng một bảng trên máy tính, điện thoại và máy tính bảng của bạn",
+          "item3": "Tối đa 5 thiết bị mỗi khóa",
+          "item4": "Dữ liệu được lưu trong Google Drive của riêng bạn"
+        },
+        "altMonthly": "{price}/năm nếu thanh toán theo năm",
+        "altAnnual": "Khoảng {price}/tháng"
+      },
+      "supporter": {
+        "name": "Gói Supporter",
+        "note": "Tính năng giống gói Sync. Dành cho những người muốn hỗ trợ việc phát triển AllMarks nhiều hơn nữa.",
+        "altMonthly": "{price}/năm nếu thanh toán theo năm",
+        "altAnnual": "{price}/tháng"
+      },
+      "cta": {
+        "subscribe": "Đăng ký"
+      },
+      "faq": {
+        "heading": "FAQ",
+        "q1": {
+          "q": "Điều gì xảy ra nếu tôi hủy?",
+          "a": "Bạn có thể tiếp tục dùng đồng bộ đến hết kỳ đã thanh toán. Sau đó, đồng bộ sẽ dừng lại, nhưng dữ liệu của bạn vẫn còn trên thiết bị của bạn và trong Google Drive của riêng bạn."
+        },
+        "q2": {
+          "q": "Tôi có thể được hoàn tiền không?",
+          "a": "Có — tôi hoàn lại toàn bộ lần thanh toán đầu tiên trong vòng 14 ngày. Xem [[chính sách hoàn tiền|refund]] để biết chi tiết."
+        },
+        "q3": {
+          "q": "Tôi cần gì?",
+          "a": "Một tài khoản Google. Dữ liệu bạn đồng bộ được lưu trong Google Drive của riêng bạn."
+        },
+        "q4": {
+          "q": "Khoản thanh toán của tôi được xử lý ở đâu?",
+          "a": "Đại lý bán lại của tôi, Paddle.com, xử lý một cách an toàn. Tôi không bao giờ nhận được thông tin thẻ của bạn."
+        },
+        "q5": {
+          "q": "Tôi có thể hủy hoặc lấy biên lai ở đâu?",
+          "a": "Bạn có thể tự làm điều đó tại [[paddle.net|paddleHome]], hoặc từ email mà Paddle gửi cho bạn khi mua hàng."
+        }
+      },
+      "taxNote": "Tất cả giá đều đã bao gồm thuế. Đơn vị tiền tệ hiển thị và số tiền thuế có thể khác nhau tùy theo nơi bạn sinh sống."
     }
   },
   "trash": {

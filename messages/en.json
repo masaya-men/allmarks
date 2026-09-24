@@ -419,7 +419,9 @@
       "about": "About",
       "privacy": "Privacy",
       "terms": "Terms",
-      "contact": "Contact"
+      "contact": "Contact",
+      "refund": "Refund",
+      "pricing": "Pricing"
     }
   },
   "pages": {
@@ -556,11 +558,11 @@
       },
       "q1": {
         "q": "Is it free?",
-        "a": "Yes — AllMarks is free, with no account and no sign-up."
+        "a": "The core features are all free, with no account required. Only \"device sync,\" which lets you use the same board on multiple devices, is paid. See the [[pricing page|pricing]] for details."
       },
       "q2": {
         "q": "Where is my data stored?",
-        "a": "Your board is stored only in your browser, on your device — not on a server. The one exception is when you share: a copy of the chosen cards' URL info (title, preview image, and the like) is held for about 30 days, then auto-deleted. Since there's no account, no personal information is ever included. If you don't share, nothing leaves your device."
+        "a": "It's stored in your browser, on your device. If you use device sync, it's also stored in your own Google Drive. Either way, it is never stored on my servers. The one exception is when you use \"Share\": the chosen cards' info (title, preview image, and the like) is held for about 30 days, then auto-deleted."
       },
       "q3": {
         "q": "How do I save things?",
@@ -588,11 +590,59 @@
       },
       "q9": {
         "q": "Do I need an account?",
-        "a": "No. There's no account creation or login at all."
+        "a": "There's no AllMarks account. A Google account is only needed if you use device sync."
       },
       "cta": {
         "heading": "See it for yourself.",
         "button": "Open Board"
+      },
+      "q10": {
+        "q": "What is device sync? What gets synced?",
+        "a": "It's a feature that lets you use the same bookmarks across multiple devices — computer, phone, tablet, and so on. What syncs is your bookmarks, tags, card order and size, and Private contents. Look-and-feel settings like the theme are kept separately per device."
+      },
+      "q11": {
+        "q": "How quickly does sync update?",
+        "a": "A change is saved to Google Drive about 20 seconds later. Other devices pick up the latest content when you open AllMarks or come back to the screen after a while."
+      },
+      "q12": {
+        "q": "Do I need a Google account?",
+        "a": "Device sync requires a Google account. You don't need one if you're not using sync."
+      },
+      "q13": {
+        "q": "What happens to my data if I stop syncing?",
+        "a": "The data on each device stays as it is. The \"AllMarks\" folder in Google Drive also stays, so you can delete it yourself if you don't need it."
+      },
+      "q14": {
+        "q": "Can you see my bookmarks?",
+        "a": "No. Synced data is saved directly from your device to your own Google Drive. It never passes through my servers, so I can't see its contents."
+      },
+      "q15": {
+        "q": "What payment methods can I use?",
+        "a": "Credit and debit cards, plus PayPal, Apple Pay, or Google Pay depending on your device and region. Payment is processed by my reseller, Paddle.com."
+      },
+      "q16": {
+        "q": "Can I get a receipt?",
+        "a": "Yes. You can get one from [[paddle.net|paddleHome]] or the email Paddle sent you at purchase."
+      },
+      "q17": {
+        "q": "What's the difference between the Sync plan and the Supporter plan?",
+        "a": "The features are the same. The Supporter plan is for people who want to support AllMarks's development more."
+      },
+      "q18": {
+        "q": "How do I cancel? What happens when I do?",
+        "a": "You can cancel from [[paddle.net|paddleHome]] or the \"Manage subscription\" link in the email Paddle sent you at purchase. You can keep using sync through the end of the period you already paid for. After that, sync stops, but your data stays on your devices and in your own Google Drive."
+      },
+      "q19": {
+        "q": "What if I want a refund?",
+        "a": "I refund in full within 14 days of your first payment. Request it through [[paddle.net|paddleHome]]. See the [[refund policy|refund]] for details."
+      },
+      "q20": {
+        "q": "My key won't activate",
+        "a": "Check that you copied the whole key without it getting cut off. If you see \"already at the device limit,\" the key is already in use on 5 devices."
+      },
+      "q21": {
+        "q": "Sync isn't updating",
+        "a": "Press \"Sync now\" in the SYNC section of Settings. If you see \"Connection lost,\" press \"Reconnect to Google.\""
       }
     },
     "extension": {
@@ -637,36 +687,51 @@
     "privacy": {
       "meta": {
         "title": "Privacy Policy",
-        "description": "AllMarks collects zero personal data. Your bookmarks stay in your browser; nothing is uploaded unless you choose to share a board."
+        "description": "AllMarks's privacy policy — I never collect your bookmarks on my servers. If you use device sync, your data is stored in your own Google Drive."
       },
       "hero": {
         "kicker": "Privacy",
         "title": "Privacy Policy",
-        "lead": "AllMarks is built on one principle: your data belongs to you. We collect no personal data, and there are no accounts.",
-        "updated": "Last updated: June 18, 2026"
+        "lead": "AllMarks is built on one principle: your data belongs to you. I don't collect your bookmarks on my servers, and there are no accounts.",
+        "updated": "Last updated: September 24, 2026"
       },
       "toc": {
         "title": "Contents"
       },
       "philosophy": {
         "heading": "Zero data collection",
-        "body": "Your bookmarks, tags, and board layouts are stored only in your browser's local database (IndexedDB). We do not collect, store, or transmit your personal data to our servers, and there are no accounts to sign in to."
+        "body": "Your bookmarks, tags, and board layouts are stored only in your browser's local database (IndexedDB). I do not collect, store, or transmit your personal data to my servers, and there are no accounts to sign in to."
       },
       "collect": {
-        "heading": "What we don't collect",
-        "body": "We do not collect your name, email, or address; we have no accounts or login credentials; we keep no copy of your browsing history or your bookmarks on our servers; we use no tracking or advertising cookies; and we gather no IP-based fingerprints or analytics tied to you as an individual."
+        "heading": "What I don't collect",
+        "body": "As long as you use the free features, I do not collect your name, email, or address; there are no accounts or login credentials; I keep no copy of your browsing history or your bookmarks on my servers; I use no tracking or advertising cookies; and I gather no IP-based fingerprints or analytics tied to you as an individual. What information is handled if you purchase a paid plan is explained under [[\"Payment\"|paymentSection]]."
       },
       "local": {
-        "heading": "Local storage only",
-        "body": "Everything lives in your browser on your device. That means we cannot access, view, or recover your data, no server-side backup of your boards exists, and clearing your browser data permanently removes your AllMarks content. You can export your own backup at any time."
+        "heading": "Storage location",
+        "body": "If you don't use sync, everything lives in your browser on your device. I cannot access, view, or recover your data, no server-side backup of your boards exists, and clearing your browser data permanently removes your AllMarks content. You can export your own backup at any time."
+      },
+      "deviceSync": {
+        "heading": "Device sync (paid plan)",
+        "para1": "When you use device sync, your bookmarks, tags, and board settings are stored in an \"AllMarks\" folder created in your own Google Drive. Data goes directly from your device to Google Drive; it never reaches my servers, and I cannot see its contents.",
+        "para2": "AllMarks can only touch files in Google Drive that it created. Your Google sign-in information is stored in your browser. It passes through my servers only when refreshing your sign-in session, and it is never logged or stored there. Bookmarks you place in Private are stored encrypted.",
+        "para3": "AllMarks's use and transfer to any other app of information received from Google APIs will adhere to [[Google API Services User Data Policy|googleDataPolicy]], including the Limited Use requirements."
+      },
+      "syncKeys": {
+        "heading": "Sync keys and device count",
+        "body": "When you activate sync, a key identifier and a random identifier generated for each device are sent to my server (Cloudflare). This is used only to count how many devices are using a key (up to 5) and to confirm the paid plan is active. Neither identifier contains any information that identifies you personally."
+      },
+      "payment": {
+        "heading": "Payment",
+        "para1": "Payment for paid plans is processed by my reseller, Paddle.com. Your name, email, and payment details are collected by Paddle.com and handled under Paddle's own privacy policy. I never receive your card number or other payment details.",
+        "para2": "What I receive from Paddle.com is your order and subscription status (active or canceled) and the email address needed to deliver your key and respond to support requests."
       },
       "sharing": {
         "heading": "When you share a board",
-        "body": "Sharing is the one case where data leaves your device — and only because you ask it to. When you create a share link, the board's data (just the cards you chose to share, with no personal information, since there are no accounts) is uploaded to our hosting (Cloudflare KV) along with a preview image (Cloudflare R2), so the people you send the link to can open the board. It is reachable only through the secret link and is automatically deleted after about 30 days, so nothing lingers. Nothing is uploaded unless you create a share link, and your private boards are never uploaded. You can also export a board as a PNG, generated entirely in your browser."
+        "body": "Among the free features, sharing is the one case where data leaves your device — and only because you ask it to. When you create a share link, the board's data (just the cards you chose to share, with no personal information, since there are no accounts) is uploaded to Cloudflare KV, along with a preview image to Cloudflare R2, so the people you send the link to can open the board. It is reachable only through the secret link and is automatically deleted after about 30 days, so nothing lingers. Nothing is uploaded unless you create a share link, and your private boards are never uploaded. You can also export a board as a PNG, generated entirely in your browser."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",
-        "body": "The AllMarks bookmarklet reads the Open Graph meta tags (title, description, image, site name) of the page you're on, entirely within your browser, and passes them to your local AllMarks save window. No data passes through our servers."
+        "body": "The AllMarks bookmarklet reads the Open Graph meta tags (title, description, image, site name) of the page you're on, entirely within your browser, and passes them to your local AllMarks save window. No data passes through my servers."
       },
       "extension": {
         "heading": "Browser extension",
@@ -674,39 +739,39 @@
       },
       "hosting": {
         "heading": "Hosting and analytics",
-        "body": "AllMarks is hosted on Cloudflare Pages. Cloudflare may record minimal, anonymized server metrics (such as total page views) as part of standard hosting; these contain no personally identifiable information. We use no Google Analytics, no Facebook Pixel, and no third-party tracking scripts."
+        "body": "AllMarks is hosted on Cloudflare Pages. Cloudflare may record minimal, anonymized server metrics (such as total page views) as part of standard hosting; these contain no personally identifiable information. I use no Google Analytics, no Facebook Pixel, and no third-party tracking scripts."
       },
       "thirdParty": {
         "heading": "Third-party content",
-        "body": "AllMarks can display content from other sites — for example tweets via react-tweet, or videos via oEmbed. Those embeds may be subject to the privacy policies of their own services, which we recommend reviewing for any content that appears in your boards."
+        "body": "AllMarks can display content from other sites — for example tweets via react-tweet, or videos via oEmbed. Those embeds may be subject to the privacy policies of their own services, which I recommend reviewing for any content that appears in your boards."
       },
       "advertising": {
         "heading": "Advertising",
-        "body": "AllMarks is free and shows no ads today. If we ever introduce advertising to support the free service, we will update this policy, clearly label it, and continue to collect zero personal data on our end."
+        "body": "AllMarks's core features are free, and I show no ads today. If I ever introduce advertising to support the free service, I will update this policy, clearly label it, and continue to collect zero personal data on my end."
       },
       "children": {
         "heading": "Children's privacy",
-        "body": "AllMarks does not knowingly collect any information from children under 13. Because we collect no personal data from anyone, this is inherent to how the app works."
+        "body": "AllMarks does not knowingly collect personal information from children under 13."
       },
       "changes": {
         "heading": "Changes to this policy",
-        "body": "We may update this policy from time to time. Changes are posted on this page with a new \"last updated\" date. Because we collect no personal data, we cannot notify you of changes directly."
+        "body": "I may update this policy from time to time. Changes are posted on this page with a new \"last updated\" date."
       },
       "contact": {
         "heading": "Questions",
-        "body": "If you have questions about this policy, please reach us through the contact page."
+        "body": "If you have questions about this policy, please reach me at [[allmarks-support@googlegroups.com|supportEmail]]."
       }
     },
     "terms": {
       "meta": {
         "title": "Terms of Service",
-        "description": "AllMarks terms of service — free to use, no account, your data stays in your browser."
+        "description": "AllMarks terms of service — the core features are free, no account needed, and your data stays in your browser."
       },
       "hero": {
         "kicker": "Terms",
         "title": "Terms of Service",
-        "lead": "AllMarks is a free app with no account. These terms explain the basics of using it.",
-        "updated": "Last updated: June 18, 2026"
+        "lead": "AllMarks is a web app you can use without an account. The core features are free; some features (device sync) are offered through a paid plan. These terms explain the basics of using it.",
+        "updated": "Last updated: September 24, 2026"
       },
       "toc": {
         "title": "Contents"
@@ -717,11 +782,11 @@
       },
       "service": {
         "heading": "2. The service",
-        "body": "AllMarks is a free web app for saving bookmarks and arranging them as visual boards. All data is stored locally in your browser, and no account or registration is required."
+        "body": "AllMarks is a web app for saving bookmarks and arranging them as visual boards. The core features are free, and no account or registration is required. Your data is stored locally in your browser. If you use the paid device sync plan, it is also stored in your own Google Drive. AllMarks is run by Masaya Maeno as an individual (\"I\" in these terms)."
       },
       "responsibilities": {
         "heading": "3. Your responsibilities",
-        "body": "You are responsible for the content you save and share, you agree not to use the Service for any unlawful purpose or to disrupt it, and you understand that your data is stored locally — clearing your browser data permanently deletes your AllMarks content. Because your data is stored only in your browser on this device and no copy is kept on a server, keeping your own backups is your responsibility: use EXPORT in Settings to save a copy regularly, especially before you change devices, clear your browser data, or reset AllMarks. Data lost through browser data clearing, device loss or failure, software updates, or any other cause cannot be recovered."
+        "body": "You are responsible for the content you save and share, and you agree not to use the Service for any unlawful purpose or to disrupt it. Because your data is stored locally, clearing your browser data permanently deletes your AllMarks content. Your data is not stored on my servers, so keeping your own backups is your responsibility: use EXPORT in Settings to save a copy regularly, especially before you change devices, clear your browser data, or reset AllMarks. Data lost through browser data clearing, device loss or failure, software updates, or any other cause cannot be recovered."
       },
       "ip": {
         "heading": "4. Intellectual property",
@@ -729,50 +794,76 @@
       },
       "sharing": {
         "heading": "5. Sharing content",
-        "body": "When you create a share link, the board data is uploaded to our hosting so the link can render it, and is deleted automatically after about 30 days. By sharing, you represent that you have the right to share the content in this way."
+        "body": "When you create a share link, the board data is uploaded to my hosting so the link can render it, and is deleted automatically after about 30 days. By sharing, you represent that you have the right to share the content in this way."
+      },
+      "paidPlan": {
+        "heading": "6. Paid plan",
+        "intro": "Device sync is offered through a paid plan. Pricing is shown on the [[pricing page|pricing]].",
+        "list": {
+          "item1": "Orders are processed by my reseller, Paddle.com. Paddle.com acts as the Merchant of Record for all orders and handles payment, invoicing, and refunds.",
+          "item2": "Paid plans renew automatically. You can cancel anytime, and you can keep using it through the end of the period you already paid for. Once that period ends, sync stops, but your data stays on your devices and in your own Google Drive.",
+          "item3": "Refunds follow the [[refund policy|refund]].",
+          "item4": "The key that enables sync is for your own use, and each key works on up to 5 devices. You may not share your key with anyone else.",
+          "item5": "If pricing changes, I will let you know in advance."
+        }
       },
       "warranty": {
-        "heading": "6. No warranty",
-        "body": "The Service is provided \"as is\" and \"as available\" without warranties of any kind. We do not guarantee it will be uninterrupted, secure, or error-free, and we are not responsible for data loss from browser data clearing, device failure, or any other cause."
+        "heading": "7. No warranty",
+        "body": "The Service is provided \"as is\" and \"as available\" without warranties of any kind. I do not guarantee it will be uninterrupted, secure, or error-free, and I am not responsible for data loss from browser data clearing, device failure, or any other cause."
       },
       "liability": {
-        "heading": "7. Limitation of liability",
+        "heading": "8. Limitation of liability",
         "body": "To the maximum extent permitted by law, AllMarks shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service."
       },
       "modifications": {
-        "heading": "8. Changes to the service and terms",
-        "body": "We may modify or discontinue the Service at any time without notice, and may update these terms from time to time. Continued use after changes means you accept the revised terms."
+        "heading": "9. Changes to the service and terms",
+        "body": "I may modify or discontinue the Service at any time without notice, and may update these terms from time to time. Continued use after changes means you accept the revised terms."
       },
       "law": {
-        "heading": "9. Governing law",
+        "heading": "10. Governing law",
         "body": "These terms are governed by the laws of Japan, and any disputes are subject to the exclusive jurisdiction of the courts of Tokyo, Japan."
       },
       "language": {
-        "heading": "10. Governing language",
+        "heading": "11. Governing language",
         "body": "The Japanese version of these terms is the authoritative text. Translations into other languages are provided for reference only, and in the event of any discrepancy between the Japanese version and a translation, the Japanese version prevails."
       },
+      "operator": {
+        "heading": "12. Operator",
+        "intro": "Operator: Masaya Maeno",
+        "emailLine": "Contact: [[allmarks-support@googlegroups.com|supportEmail]]"
+      },
       "contact": {
-        "heading": "11. Questions",
-        "body": "If you have questions about these terms, please reach us through the contact page."
+        "heading": "13. Questions",
+        "body": "If you have questions about these terms, please reach me at [[allmarks-support@googlegroups.com|supportEmail]]."
       }
     },
     "contact": {
       "meta": {
         "title": "Contact",
-        "description": "Get in touch about AllMarks — questions, feedback, bug reports, and security, through GitHub."
+        "description": "Contact point for AllMarks. Billing is handled through Paddle; for anything else, reach out by email."
       },
       "hero": {
         "kicker": "Contact",
-        "title": "Get in touch.",
-        "lead": "Questions, ideas, and bug reports are all welcome. GitHub is the most reliable way to reach us."
+        "title": "Contact",
+        "lead": "This is the contact point for AllMarks. Before reaching out, please check the [[FAQ|faq]]. Since this is a one-person operation, replies can take a few days."
+      },
+      "billing": {
+        "label": "Billing, cancellation, refunds, and receipts",
+        "body": "Payment for paid plans is processed by my reseller, Paddle.com. You can handle the following yourself through [[paddle.net|paddleHome]] or the \"Manage subscription\" link in the email Paddle sent you at purchase:",
+        "list": {
+          "item1": "Cancellation",
+          "item2": "Requesting a refund",
+          "item3": "Changing your payment method",
+          "item4": "Getting a receipt"
+        }
+      },
+      "email": {
+        "label": "Email",
+        "body": "For anything else, reach out here."
       },
       "github": {
         "label": "GitHub Issues",
-        "body": "For bug reports and feature requests, open an issue on GitHub — it's the surest way to be heard."
-      },
-      "feedback": {
-        "label": "Feedback",
-        "body": "Ideas for making AllMarks better are always welcome — \"I wish it could do this\" or \"this part is awkward,\" however small."
+        "body": "Bug reports and feature requests are also welcome on GitHub."
       },
       "security": {
         "label": "Security",
@@ -829,6 +920,113 @@
         "heading": "Changes",
         "body": "We update this page whenever permissions or data flows change. The \"last updated\" date above reflects the most recent change."
       }
+    },
+    "refund": {
+      "meta": {
+        "title": "Refund Policy",
+        "description": "AllMarks refund policy — first payments are refunded in full within 14 days."
+      },
+      "hero": {
+        "kicker": "Refund",
+        "title": "Refund Policy",
+        "lead": "Orders for AllMarks paid plans are processed by my reseller, Paddle.com, as the seller. Refunds are also handled through Paddle.com.",
+        "updated": "Last updated: September 24, 2026"
+      },
+      "toc": {
+        "title": "Contents"
+      },
+      "firstPayment": {
+        "heading": "First payment",
+        "body": "If this is your first time subscribing to a paid plan, I will refund it in full, no questions asked, within 14 days of payment."
+      },
+      "renewalPayment": {
+        "heading": "Renewal payments",
+        "body": "Payments from automatic renewal (your second payment onward) are not eligible for a refund. Where the law where you live grants you a right to a refund, that law applies."
+      },
+      "cancellation": {
+        "heading": "Cancellation",
+        "body": "You can cancel anytime. After canceling, you can keep using sync through the end of the period you already paid for. No further charges will occur."
+      },
+      "afterRefund": {
+        "heading": "After a refund",
+        "body": "Once refunded, the paid plan ends and sync stops. Your bookmarks and other data remain on your devices and in your own Google Drive."
+      },
+      "howTo": {
+        "heading": "Requesting a refund",
+        "body": "Request it through [[paddle.net|paddleHome]] or the \"Manage subscription\" link in the email Paddle sent you at purchase. If that doesn't work, reach me at [[allmarks-support@googlegroups.com|supportEmail]]."
+      }
+    },
+    "pricing": {
+      "meta": {
+        "title": "Pricing",
+        "description": "AllMarks pricing — the core features are free. Device sync starts at ¥500/month."
+      },
+      "hero": {
+        "kicker": "Pricing",
+        "title": "Pricing",
+        "lead": "The core features of AllMarks are all free. If you want to use the same board on more than one device, choose a paid plan."
+      },
+      "toggle": {
+        "groupLabel": "Billing",
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "badge": "2 months free"
+      },
+      "perMonth": "/month",
+      "perYear": "/year",
+      "free": {
+        "name": "Free",
+        "list": {
+          "item1": "Save bookmarks and view your board",
+          "item2": "All core features — tags, themes, sharing, export, and more",
+          "item3": "Data stays in this device's browser"
+        },
+        "cta": "Use it now"
+      },
+      "sync": {
+        "name": "Sync plan",
+        "list": {
+          "item1": "Everything in Free",
+          "item2": "Device sync: use the same board on your computer, phone, and tablet",
+          "item3": "Up to 5 devices per key",
+          "item4": "Data is stored in your own Google Drive"
+        },
+        "altMonthly": "{price}/year if paid annually",
+        "altAnnual": "About {price}/month"
+      },
+      "supporter": {
+        "name": "Supporter plan",
+        "note": "Same features as the Sync plan. For people who want to support AllMarks' development even more.",
+        "altMonthly": "{price}/year if paid annually",
+        "altAnnual": "{price}/month"
+      },
+      "cta": {
+        "subscribe": "Subscribe"
+      },
+      "faq": {
+        "heading": "FAQ",
+        "q1": {
+          "q": "What happens if I cancel?",
+          "a": "You can keep using sync through the end of the period you already paid for. After that, sync stops, but your data stays on your devices and in your own Google Drive."
+        },
+        "q2": {
+          "q": "Can I get a refund?",
+          "a": "Yes — I refund the first payment in full within 14 days. See the [[refund policy|refund]] for details."
+        },
+        "q3": {
+          "q": "What do I need?",
+          "a": "A Google account. The data you sync is stored in your own Google Drive."
+        },
+        "q4": {
+          "q": "Where is my payment processed?",
+          "a": "My reseller, Paddle.com, processes it securely. I never receive your card details."
+        },
+        "q5": {
+          "q": "Where can I cancel or get a receipt?",
+          "a": "You can do this yourself at [[paddle.net|paddleHome]], or from the email Paddle sent you at purchase."
+        }
+      },
+      "taxNote": "All prices include tax. The currency shown and the tax amount may vary depending on where you live."
     }
   },
   "trash": {

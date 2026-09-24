@@ -65,6 +65,11 @@ export function SiteFooter({ locale = 'en' }: { locale?: SupportedLocale }): Rea
                 </Link>
               </li>
               <li>
+                <Link href={navHref(locale, 'pricing')} className={styles.link}>
+                  {t('landing.footer.pricing')}
+                </Link>
+              </li>
+              <li>
                 <Link href="/board" className={styles.link}>
                   Open Board
                 </Link>
@@ -104,6 +109,11 @@ export function SiteFooter({ locale = 'en' }: { locale?: SupportedLocale }): Rea
               <li>
                 <Link href={navHref(locale, 'terms')} className={styles.link}>
                   {t('landing.footer.terms')}
+                </Link>
+              </li>
+              <li>
+                <Link href={navHref(locale, 'refund')} className={styles.link}>
+                  {t('landing.footer.refund')}
                 </Link>
               </li>
             </ul>

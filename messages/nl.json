@@ -419,7 +419,9 @@
       "about": "About",
       "privacy": "Privacy",
       "terms": "Terms",
-      "contact": "Contact"
+      "contact": "Contact",
+      "refund": "Refund",
+      "pricing": "Pricing"
     }
   },
   "pages": {
@@ -556,11 +558,11 @@
       },
       "q1": {
         "q": "Is het gratis?",
-        "a": "Ja — AllMarks is gratis, zonder account en zonder aanmelding."
+        "a": "Alle kernfuncties zijn gratis, zonder dat een account nodig is. Alleen \"synchronisatie tussen apparaten\", waarmee je hetzelfde bord op meerdere apparaten kunt gebruiken, is betaald. Zie de [[prijzenpagina|pricing]] voor details."
       },
       "q2": {
         "q": "Waar worden mijn gegevens opgeslagen?",
-        "a": "Je bord wordt alleen in je browser opgeslagen, op je apparaat — niet op een server. De enige uitzondering is wanneer je deelt: een kopie van de URL-info van de gekozen kaarten (titel, voorbeeldafbeelding en dergelijke) wordt ongeveer 30 dagen bewaard en daarna automatisch verwijderd. Omdat er geen account is, wordt er nooit persoonlijke informatie opgenomen. Als je niet deelt, verlaat er niets je apparaat."
+        "a": "Ze worden opgeslagen in je browser, op je apparaat. Als je synchronisatie tussen apparaten gebruikt, worden ze ook opgeslagen in je eigen Google Drive. In beide gevallen worden ze nooit op mijn servers opgeslagen. De enige uitzondering is wanneer je \"Delen\" gebruikt: de informatie van de gekozen kaarten (titel, voorbeeldafbeelding en dergelijke) wordt ongeveer 30 dagen bewaard en dan automatisch verwijderd."
       },
       "q3": {
         "q": "Hoe sla ik dingen op?",
@@ -588,11 +590,59 @@
       },
       "q9": {
         "q": "Heb ik een account nodig?",
-        "a": "Nee. Er is helemaal geen account aanmaken of inloggen."
+        "a": "Er is geen AllMarks-account. Een Google-account is alleen nodig als je synchronisatie tussen apparaten gebruikt."
       },
       "cta": {
         "heading": "Zie het zelf.",
         "button": "Open Board"
+      },
+      "q10": {
+        "q": "Wat is synchronisatie tussen apparaten? Wat wordt er gesynchroniseerd?",
+        "a": "Het is een functie waarmee je dezelfde bladwijzers op meerdere apparaten kunt gebruiken — computer, telefoon, tablet, enzovoort. Wat wordt gesynchroniseerd zijn je bladwijzers, tags, de volgorde en grootte van kaarten, en de inhoud van Private. Uiterlijkinstellingen zoals het thema worden per apparaat apart bewaard."
+      },
+      "q11": {
+        "q": "Hoe snel wordt de synchronisatie bijgewerkt?",
+        "a": "Een wijziging wordt ongeveer 20 seconden later opgeslagen in Google Drive. Andere apparaten halen de nieuwste content op wanneer je AllMarks opent of na een tijdje terugkeert naar het scherm."
+      },
+      "q12": {
+        "q": "Heb ik een Google-account nodig?",
+        "a": "Synchronisatie tussen apparaten vereist een Google-account. Je hebt er geen nodig als je geen synchronisatie gebruikt."
+      },
+      "q13": {
+        "q": "Wat gebeurt er met mijn gegevens als ik stop met synchroniseren?",
+        "a": "De gegevens op elk apparaat blijven zoals ze zijn. De map \"AllMarks\" in Google Drive blijft ook bestaan, dus je kunt hem zelf verwijderen als je hem niet meer nodig hebt."
+      },
+      "q14": {
+        "q": "Kun je mijn bladwijzers zien?",
+        "a": "Nee. Gesynchroniseerde gegevens worden rechtstreeks vanaf je apparaat opgeslagen in je eigen Google Drive. Ze gaan nooit via mijn servers, dus ik kan de inhoud ervan niet zien."
+      },
+      "q15": {
+        "q": "Welke betaalmethoden kan ik gebruiken?",
+        "a": "Credit- en debitcards, plus PayPal, Apple Pay of Google Pay, afhankelijk van je apparaat en regio. De betaling wordt verwerkt door mijn wederverkoper, Paddle.com."
+      },
+      "q16": {
+        "q": "Kan ik een bon krijgen?",
+        "a": "Ja. Je kunt er een krijgen via [[paddle.net|paddleHome]] of de e-mail die Paddle je bij aankoop stuurde."
+      },
+      "q17": {
+        "q": "Wat is het verschil tussen het Sync-abonnement en het Supporter-abonnement?",
+        "a": "De functies zijn hetzelfde. Het Supporter-abonnement is voor mensen die de ontwikkeling van AllMarks nog meer willen steunen."
+      },
+      "q18": {
+        "q": "Hoe zeg ik op? Wat gebeurt er dan?",
+        "a": "Je kunt opzeggen via [[paddle.net|paddleHome]] of de link \"Manage subscription\" in de e-mail die Paddle je bij aankoop stuurde. Je kunt de synchronisatie blijven gebruiken tot het einde van de al betaalde periode. Daarna stopt de synchronisatie, maar je gegevens blijven op je apparaten en in je eigen Google Drive staan."
+      },
+      "q19": {
+        "q": "Wat als ik een terugbetaling wil?",
+        "a": "Ik betaal volledig terug binnen 14 dagen na je eerste betaling. Vraag dit aan via [[paddle.net|paddleHome]]. Zie het [[terugbetalingsbeleid|refund]] voor details."
+      },
+      "q20": {
+        "q": "Mijn sleutel activeert niet",
+        "a": "Controleer of je de hele sleutel hebt gekopieerd zonder dat deze werd afgekapt. Als je \"This key has reached its device limit\" ziet, wordt de sleutel al op 5 apparaten gebruikt."
+      },
+      "q21": {
+        "q": "Synchronisatie wordt niet bijgewerkt",
+        "a": "Druk in het SYNC-gedeelte van Instellingen op \"Sync now\". Als je \"Connection lost\" ziet, druk dan op \"Reconnect Google\"."
       }
     },
     "extension": {
@@ -637,36 +687,36 @@
     "privacy": {
       "meta": {
         "title": "Privacybeleid",
-        "description": "AllMarks verzamelt geen persoonsgegevens. Je bladwijzers blijven in je browser; er wordt niets geüpload tenzij je zelf kiest een bord te delen."
+        "description": "Privacybeleid van AllMarks — ik verzamel je bladwijzers nooit op mijn servers. Als je synchronisatie tussen apparaten gebruikt, worden je gegevens opgeslagen in je eigen Google Drive."
       },
       "hero": {
         "kicker": "Privacy",
         "title": "Privacybeleid",
-        "lead": "AllMarks is gebouwd op één beginsel: jouw gegevens zijn van jou. We verzamelen geen persoonsgegevens en er zijn geen accounts.",
-        "updated": "Laatst bijgewerkt: 18 juni 2026"
+        "lead": "AllMarks is gebouwd op één principe: je gegevens zijn van jou. Ik verzamel je bladwijzers niet op mijn servers, en er zijn geen accounts.",
+        "updated": "Laatst bijgewerkt: 24 september 2026"
       },
       "toc": {
         "title": "Inhoud"
       },
       "philosophy": {
         "heading": "Nul gegevensverzameling",
-        "body": "Je bladwijzers, tags en bordinrichtingen worden alleen opgeslagen in de lokale database van je browser (IndexedDB). We verzamelen, bewaren en verzenden je persoonsgegevens niet naar onze servers, en er zijn geen accounts om bij in te loggen."
+        "body": "Je bladwijzers, tags en bordindelingen worden alleen opgeslagen in de lokale database van je browser (IndexedDB). Ik verzamel, bewaar of verzend je persoonlijke gegevens niet naar mijn servers, en er zijn geen accounts om op in te loggen."
       },
       "collect": {
-        "heading": "Wat we niet verzamelen",
-        "body": "We verzamelen je naam, e-mailadres of adres niet; we hebben geen accounts of inloggegevens; we bewaren geen kopie van je browsergeschiedenis of je bladwijzers op onze servers; we gebruiken geen tracking- of advertentiecookies; en we verzamelen geen op IP gebaseerde vingerafdrukken of analyses die aan jou als individu zijn gekoppeld."
+        "heading": "Wat ik niet verzamel",
+        "body": "Zolang je de gratis functies gebruikt, verzamel ik je naam, e-mailadres of adres niet; er zijn geen accounts of inloggegevens; ik bewaar geen kopie van je browsegeschiedenis of je bladwijzers op mijn servers; ik gebruik geen tracking- of advertentiecookies; en ik verzamel geen op IP gebaseerde vingerafdrukken of analyses die aan jou als individu gekoppeld zijn. Welke informatie wordt verwerkt als je een betaald abonnement koopt, wordt uitgelegd onder [[\"Betaling\"|paymentSection]]."
       },
       "local": {
-        "heading": "Alleen lokale opslag",
-        "body": "Alles leeft in je browser op je apparaat. Dat betekent dat we je gegevens niet kunnen inzien, bekijken of herstellen, dat er geen serverback-up van je borden bestaat, en dat het wissen van je browsergegevens je AllMarks-inhoud permanent verwijdert. Je kunt altijd zelf een back-up exporteren."
+        "heading": "Opslaglocatie",
+        "body": "Als je geen synchronisatie gebruikt, blijft alles in je browser op je apparaat. Ik kan je gegevens niet benaderen, bekijken of herstellen, er bestaat geen server-side back-up van je borden, en het wissen van je browsergegevens verwijdert je AllMarks-content permanent. Je kunt op elk moment je eigen back-up exporteren."
       },
       "sharing": {
         "heading": "Wanneer je een bord deelt",
-        "body": "Delen is het geval waarbij gegevens je apparaat verlaten — en alleen omdat jij dat kiest. Wanneer je een deellink aanmaakt, worden de bordgegevens (alleen de kaarten die je kiest te delen, zonder persoonsgegevens want er zijn geen accounts) geüpload naar onze hosting (Cloudflare KV), samen met een voorbeeldafbeelding (Cloudflare R2), zodat degene aan wie je de link stuurt het bord kan openen. Het is alleen bereikbaar via de geheime deellink en wordt na ongeveer 30 dagen automatisch verwijderd, zodat er niets achterblijft. Er wordt niets geüpload tenzij je een deellink aanmaakt, en je privéborden worden nooit geüpload. Je kunt een bord ook exporteren als PNG, volledig gegenereerd in je browser."
+        "body": "Van de gratis functies is delen het enige geval waarin gegevens je apparaat verlaten — en alleen omdat je dat vraagt. Als je een deellink maakt, worden de bordgegevens (alleen de kaarten die je koos om te delen, zonder persoonlijke informatie, aangezien er geen accounts zijn) geüpload naar Cloudflare KV, samen met een voorbeeldafbeelding naar Cloudflare R2, zodat de mensen aan wie je de link stuurt het bord kunnen openen. Het is alleen bereikbaar via de geheime link en wordt na ongeveer 30 dagen automatisch verwijderd, zodat er niets blijft hangen. Er wordt niets geüpload tenzij je een deellink maakt, en je privéborden worden nooit geüpload. Je kunt een bord ook exporteren als PNG, volledig gegenereerd in je browser."
       },
       "bookmarklet": {
         "heading": "Bookmarklet",
-        "body": "De AllMarks-bookmarklet leest de Open Graph-metatags (titel, beschrijving, afbeelding, sitenaam) van de pagina waarop je je bevindt, volledig binnen je browser, en geeft ze door aan je lokale AllMarks-opslaanvenster. Er worden geen gegevens via onze servers doorgegeven."
+        "body": "De AllMarks-bookmarklet leest de Open Graph-metatags (titel, beschrijving, afbeelding, sitenaam) van de pagina waarop je je bevindt, volledig binnen je browser, en geeft ze door aan je lokale AllMarks-opslagvenster. Er gaan geen gegevens via mijn servers."
       },
       "extension": {
         "heading": "Browserextensie",
@@ -674,39 +724,54 @@
       },
       "hosting": {
         "heading": "Hosting en analyses",
-        "body": "AllMarks wordt gehost op Cloudflare Pages. Cloudflare kan als onderdeel van standaardhostingactiviteiten minimale, geanonimiseerde serverstatistieken bijhouden (zoals het totale aantal paginaweergaven); deze bevatten geen persoonsidentificeerbare informatie. We gebruiken geen Google Analytics, geen Facebook Pixel en geen externe trackingscripts."
+        "body": "AllMarks wordt gehost op Cloudflare Pages. Cloudflare kan als onderdeel van standaardhosting minimale, geanonimiseerde servergegevens registreren (zoals het totale aantal paginaweergaven); deze bevatten geen persoonlijk identificeerbare informatie. Ik gebruik geen Google Analytics, geen Facebook Pixel en geen trackingscripts van derden."
       },
       "thirdParty": {
         "heading": "Inhoud van derden",
-        "body": "AllMarks kan inhoud van andere sites weergeven — bijvoorbeeld tweets via react-tweet of video's via oEmbed. Die insluitingen kunnen onderworpen zijn aan de privacybeleidsregels van hun eigen diensten, die we aanbevelen te raadplegen voor alle inhoud die in je borden verschijnt."
+        "body": "AllMarks kan content van andere sites tonen — bijvoorbeeld tweets via react-tweet, of video's via oEmbed. Die embeds kunnen onderworpen zijn aan het privacybeleid van hun eigen diensten, dat ik aanraad te bekijken voor alle content die in je borden verschijnt."
       },
       "advertising": {
         "heading": "Reclame",
-        "body": "AllMarks is gratis en vertoont momenteel geen advertenties. Als we ooit reclame zouden introduceren om de gratis dienst te ondersteunen, zullen we dit beleid bijwerken, het duidelijk aangeven en aan onze kant nog steeds geen persoonsgegevens verzamelen."
+        "body": "De kernfuncties van AllMarks zijn gratis, en ik toon vandaag geen advertenties. Als ik ooit advertenties introduceer om de gratis dienst te ondersteunen, werk ik dit beleid bij, geef ik dit duidelijk aan, en blijf ik van mijn kant geen enkele persoonlijke gegevens verzamelen."
       },
       "children": {
         "heading": "Privacy van kinderen",
-        "body": "AllMarks verzamelt bewust geen informatie van kinderen onder de 13 jaar. Omdat we van niemand persoonsgegevens verzamelen, is dit inherent aan de werking van de app."
+        "body": "AllMarks verzamelt niet bewust persoonlijke informatie van kinderen onder de 13 jaar."
       },
       "changes": {
         "heading": "Wijzigingen in dit beleid",
-        "body": "We kunnen dit beleid van tijd tot tijd bijwerken. Wijzigingen worden op deze pagina gepubliceerd met een nieuwe datum \"laatst bijgewerkt\". Omdat we geen persoonsgegevens verzamelen, kunnen we je niet rechtstreeks op de hoogte stellen van wijzigingen."
+        "body": "Ik kan dit beleid van tijd tot tijd bijwerken. Wijzigingen worden op deze pagina geplaatst met een nieuwe \"laatst bijgewerkt\"-datum."
       },
       "contact": {
         "heading": "Vragen",
-        "body": "Als je vragen hebt over dit beleid, kun je ons bereiken via de contactpagina."
+        "body": "Als je vragen hebt over dit beleid, neem dan contact met me op via [[allmarks-support@googlegroups.com|supportEmail]]."
+      },
+      "deviceSync": {
+        "heading": "Synchronisatie tussen apparaten (betaald abonnement)",
+        "para1": "Als je synchronisatie tussen apparaten gebruikt, worden je bladwijzers, tags en bordinstellingen opgeslagen in een map \"AllMarks\" die wordt aangemaakt in je eigen Google Drive. Gegevens gaan rechtstreeks van je apparaat naar Google Drive; ze bereiken mijn servers nooit, en ik kan de inhoud ervan niet zien.",
+        "para2": "AllMarks kan in Google Drive alleen bestanden benaderen die het zelf heeft aangemaakt. Je Google-inloggegevens worden opgeslagen in je browser. Ze gaan alleen via mijn servers wanneer je inlogsessie wordt vernieuwd, en worden daar nooit gelogd of opgeslagen. Bladwijzers die je in Private plaatst, worden versleuteld opgeslagen.",
+        "para3": "Het gebruik en de doorgifte aan een andere app van informatie die AllMarks ontvangt van Google-API's, voldoet aan de [[Google API Services User Data Policy|googleDataPolicy]], inclusief de vereisten van Limited Use."
+      },
+      "syncKeys": {
+        "heading": "Synchronisatiesleutels en aantal apparaten",
+        "body": "Als je synchronisatie activeert, worden een sleutel-identificatie en een willekeurige identificatie die voor elk apparaat wordt gegenereerd, naar mijn server (Cloudflare) gestuurd. Dit wordt alleen gebruikt om te tellen hoeveel apparaten een sleutel gebruiken (maximaal 5) en om te bevestigen dat het betaalde abonnement actief is. Geen van beide identificaties bevat informatie die jou persoonlijk identificeert."
+      },
+      "payment": {
+        "heading": "Betaling",
+        "para1": "Betalingen voor betaalde abonnementen worden verwerkt door mijn wederverkoper, Paddle.com. Je naam, e-mailadres en betaalgegevens worden verzameld door Paddle.com en verwerkt volgens het eigen privacybeleid van Paddle. Ik ontvang nooit je kaartnummer of andere betaalgegevens.",
+        "para2": "Wat ik van Paddle.com ontvang, is de status van je bestelling en abonnement (actief of opgezegd) en het e-mailadres dat nodig is om je sleutel te leveren en te reageren op supportverzoeken."
       }
     },
     "terms": {
       "meta": {
         "title": "Servicevoorwaarden",
-        "description": "Servicevoorwaarden van AllMarks — gratis te gebruiken, geen account, je gegevens blijven in je browser."
+        "description": "Servicevoorwaarden van AllMarks — de kernfuncties zijn gratis, geen account nodig, en je gegevens blijven in je browser."
       },
       "hero": {
         "kicker": "Voorwaarden",
         "title": "Servicevoorwaarden",
-        "lead": "AllMarks is een gratis app zonder account. Deze voorwaarden leggen de basis van het gebruik uit.",
-        "updated": "Laatst bijgewerkt: 18 juni 2026"
+        "lead": "AllMarks is een webapp die je zonder account kunt gebruiken. De kernfuncties zijn gratis; sommige functies (synchronisatie tussen apparaten) worden aangeboden via een betaald abonnement. Deze voorwaarden leggen de basis van het gebruik uit.",
+        "updated": "Laatst bijgewerkt: 24 september 2026"
       },
       "toc": {
         "title": "Inhoud"
@@ -717,11 +782,11 @@
       },
       "service": {
         "heading": "2. De dienst",
-        "body": "AllMarks is een gratis webapplicatie voor het opslaan van bladwijzers en het rangschikken ervan als visuele borden. Alle gegevens worden lokaal in je browser opgeslagen en er is geen account of registratie vereist."
+        "body": "AllMarks is een webapp om bladwijzers op te slaan en te ordenen in visuele borden. De kernfuncties zijn gratis, en er is geen account of registratie vereist. Je gegevens worden lokaal in je browser opgeslagen. Als je het betaalde abonnement voor synchronisatie tussen apparaten gebruikt, worden ze ook opgeslagen in je eigen Google Drive. AllMarks wordt als individu gerund door Masaya Maeno (\"ik\" in deze voorwaarden)."
       },
       "responsibilities": {
         "heading": "3. Jouw verantwoordelijkheden",
-        "body": "Je bent verantwoordelijk voor de inhoud die je opslaat en deelt, je gaat ermee akkoord de Dienst niet te gebruiken voor onrechtmatige doeleinden of de Dienst te verstoren, en je begrijpt dat je gegevens lokaal worden opgeslagen — het wissen van je browsergegevens verwijdert je AllMarks-inhoud permanent. Omdat je gegevens uitsluitend in je browser op dit apparaat worden opgeslagen en er geen kopie op een server wordt bewaard, ben je zelf verantwoordelijk voor het maken van back-ups: gebruik EXPORT in Instellingen om regelmatig een kopie op te slaan, vooral voordat je van apparaat wisselt, je browsergegevens wist of AllMarks reset. Gegevens die verloren gaan door het wissen van browsergegevens, verlies of defect van je apparaat, software-updates of een andere oorzaak kunnen niet worden hersteld."
+        "body": "Je bent verantwoordelijk voor de content die je opslaat en deelt, en je gaat ermee akkoord de Dienst niet te gebruiken voor onwettige doeleinden of om deze te verstoren. Omdat je gegevens lokaal worden opgeslagen, verwijdert het wissen van je browsergegevens je AllMarks-content permanent. Je gegevens worden niet op mijn servers opgeslagen, dus het bijhouden van je eigen back-ups is jouw verantwoordelijkheid: gebruik EXPORT in Instellingen om regelmatig een kopie op te slaan, vooral voordat je van apparaat wisselt, je browsergegevens wist of AllMarks reset. Gegevens die verloren gaan door het wissen van browsergegevens, verlies of defect van een apparaat, software-updates of een andere oorzaak, kunnen niet worden hersteld."
       },
       "ip": {
         "heading": "4. Intellectueel eigendom",
@@ -729,54 +794,80 @@
       },
       "sharing": {
         "heading": "5. Inhoud delen",
-        "body": "Wanneer je een deellink aanmaakt, worden de bordgegevens geüpload naar onze hosting zodat de link ze kan weergeven, en worden ze na ongeveer 30 dagen automatisch verwijderd. Door te delen verklaar je dat je het recht hebt de inhoud op deze manier te delen."
+        "body": "Als je een deellink maakt, worden de bordgegevens naar mijn hosting geüpload zodat de link ze kan tonen, en worden ze na ongeveer 30 dagen automatisch verwijderd. Door te delen verklaar je dat je het recht hebt om de content op deze manier te delen."
       },
       "warranty": {
-        "heading": "6. Geen garantie",
+        "heading": "7. Geen garantie",
         "body": "De Dienst wordt geleverd \"as is\" en \"as available\" zonder garanties van welke aard dan ook. We garanderen niet dat de Dienst ononderbroken, veilig of foutloos zal zijn, en we zijn niet verantwoordelijk voor gegevensverlies als gevolg van het wissen van browsergegevens, apparaatstoringen of enige andere oorzaak."
       },
       "liability": {
-        "heading": "7. Beperking van aansprakelijkheid",
+        "heading": "8. Beperking van aansprakelijkheid",
         "body": "Voor zover wettelijk toegestaan is AllMarks niet aansprakelijk voor indirecte, incidentele, bijzondere, gevolgschade of punitieve schade die voortvloeit uit jouw gebruik van de Dienst."
       },
       "modifications": {
-        "heading": "8. Wijzigingen in de dienst en voorwaarden",
-        "body": "We kunnen de Dienst te allen tijde zonder kennisgeving wijzigen of beëindigen, en we kunnen deze voorwaarden van tijd tot tijd bijwerken. Voortgezet gebruik na wijzigingen betekent dat je de herziene voorwaarden aanvaardt."
+        "heading": "9. Wijzigingen aan de dienst en de voorwaarden",
+        "body": "Ik kan de Dienst op elk moment zonder kennisgeving wijzigen of stopzetten, en ik kan deze voorwaarden van tijd tot tijd bijwerken. Als je de Dienst na wijzigingen blijft gebruiken, betekent dit dat je de herziene voorwaarden accepteert."
       },
       "law": {
-        "heading": "9. Toepasselijk recht",
+        "heading": "10. Toepasselijk recht",
         "body": "Deze voorwaarden worden beheerst door het recht van Japan, en eventuele geschillen zijn onderworpen aan de exclusieve bevoegdheid van de rechtbanken van Tokio, Japan."
       },
       "language": {
-        "heading": "10. Bepalende taal",
+        "heading": "11. Bindende taal",
         "body": "De Japanse versie van deze voorwaarden is de authentieke tekst. Vertalingen in andere talen worden uitsluitend ter referentie verstrekt en bij verschillen tussen de Japanse versie en een vertaling prevaleert de Japanse versie."
       },
       "contact": {
-        "heading": "11. Vragen",
-        "body": "Als je vragen hebt over deze voorwaarden, kun je ons bereiken via de contactpagina."
+        "heading": "13. Vragen",
+        "body": "Als je vragen hebt over deze voorwaarden, neem dan contact met me op via [[allmarks-support@googlegroups.com|supportEmail]]."
+      },
+      "paidPlan": {
+        "heading": "6. Betaald abonnement",
+        "intro": "Synchronisatie tussen apparaten wordt aangeboden via een betaald abonnement. De prijzen staan op de [[prijzenpagina|pricing]].",
+        "list": {
+          "item1": "Bestellingen worden verwerkt door mijn wederverkoper, Paddle.com. Paddle.com treedt op als Merchant of Record (officiële verkoper) voor alle bestellingen en regelt betaling, facturering en terugbetalingen.",
+          "item2": "Betaalde abonnementen worden automatisch verlengd. Je kunt op elk moment opzeggen en het blijven gebruiken tot het einde van de al betaalde periode. Zodra die periode eindigt, stopt de synchronisatie, maar je gegevens blijven op je apparaten en in je eigen Google Drive staan.",
+          "item3": "Terugbetalingen volgen het [[terugbetalingsbeleid|refund]].",
+          "item4": "De sleutel die synchronisatie activeert, is voor je eigen gebruik, en elke sleutel werkt op maximaal 5 apparaten. Je mag je sleutel met niemand anders delen.",
+          "item5": "Als de prijzen veranderen, laat ik je dat vooraf weten."
+        }
+      },
+      "operator": {
+        "heading": "12. Beheerder",
+        "intro": "Beheerder: Masaya Maeno",
+        "emailLine": "Contact: [[allmarks-support@googlegroups.com|supportEmail]]"
       }
     },
     "contact": {
       "meta": {
         "title": "Contact",
-        "description": "Neem contact op over AllMarks — vragen, feedback, bugrapporten en beveiliging, via GitHub."
+        "description": "Contactpunt voor AllMarks. Facturering wordt via Paddle afgehandeld; voor al het andere kun je me e-mailen."
       },
       "hero": {
         "kicker": "Contact",
-        "title": "Neem contact op.",
-        "lead": "Vragen, ideeën en bugrapporten zijn altijd welkom. GitHub is de meest betrouwbare manier om ons te bereiken."
+        "title": "Contact",
+        "lead": "Dit is het contactpunt voor AllMarks. Bekijk voordat je contact opneemt eerst de [[FAQ|faq]]. Omdat dit een eenmansproject is, kan een antwoord een paar dagen duren."
       },
       "github": {
         "label": "GitHub Issues",
-        "body": "Voor bugrapporten en functieverzoeken kun je een issue openen op GitHub — dat is de zekerste manier om gehoord te worden."
-      },
-      "feedback": {
-        "label": "Feedback",
-        "body": "Ideeën om AllMarks beter te maken zijn altijd welkom — \"ik wou dat het dit kon\" of \"dit onderdeel is onhandig,\" hoe klein ook."
+        "body": "Bugmeldingen en verzoeken om functies zijn ook welkom op GitHub."
       },
       "security": {
         "label": "Beveiliging",
         "body": "Een beveiligingsprobleem gevonden? Meld het privé via GitHub in plaats van als openbaar issue. Responsible disclosure wordt zeer gewaardeerd."
+      },
+      "billing": {
+        "label": "Facturering, opzegging, terugbetalingen en bonnen",
+        "body": "Betalingen voor betaalde abonnementen worden verwerkt door mijn wederverkoper, Paddle.com. Je kunt het volgende zelf regelen via [[paddle.net|paddleHome]] of de link \"Manage subscription\" in de e-mail die Paddle je bij aankoop stuurde:",
+        "list": {
+          "item1": "Opzeggen",
+          "item2": "Een terugbetaling aanvragen",
+          "item3": "Je betaalmethode wijzigen",
+          "item4": "Een bon krijgen"
+        }
+      },
+      "email": {
+        "label": "E-mail",
+        "body": "Voor al het andere kun je hier terecht."
       }
     },
     "extensionPrivacy": {
@@ -829,6 +920,113 @@
         "heading": "Wijzigingen",
         "body": "We werken deze pagina bij wanneer machtigingen of gegevensstromen veranderen. De datum \"Laatst bijgewerkt\" hierboven geeft de meest recente wijziging aan."
       }
+    },
+    "refund": {
+      "meta": {
+        "title": "Terugbetalingsbeleid",
+        "description": "Terugbetalingsbeleid van AllMarks — eerste betalingen worden binnen 14 dagen volledig terugbetaald."
+      },
+      "hero": {
+        "kicker": "Terugbetaling",
+        "title": "Terugbetalingsbeleid",
+        "lead": "Bestellingen voor betaalde AllMarks-abonnementen worden verwerkt door mijn wederverkoper, Paddle.com, als verkoper. Terugbetalingen worden ook via Paddle.com afgehandeld.",
+        "updated": "Laatst bijgewerkt: 24 september 2026"
+      },
+      "toc": {
+        "title": "Inhoud"
+      },
+      "firstPayment": {
+        "heading": "Eerste betaling",
+        "body": "Als dit de eerste keer is dat je je abonneert op een betaald abonnement, betaal ik het volledig terug, zonder vragen te stellen, binnen 14 dagen na betaling."
+      },
+      "renewalPayment": {
+        "heading": "Verlengingsbetalingen",
+        "body": "Betalingen van automatische verlenging (vanaf je tweede betaling) komen niet in aanmerking voor terugbetaling. Waar de wet van je woonplaats je recht geeft op terugbetaling, geldt die wet."
+      },
+      "cancellation": {
+        "heading": "Opzegging",
+        "body": "Je kunt op elk moment opzeggen. Na opzegging kun je de synchronisatie blijven gebruiken tot het einde van de al betaalde periode. Er worden geen verdere kosten in rekening gebracht."
+      },
+      "afterRefund": {
+        "heading": "Na een terugbetaling",
+        "body": "Zodra er is terugbetaald, eindigt het betaalde abonnement en stopt de synchronisatie. Je bladwijzers en andere gegevens blijven op je apparaten en in je eigen Google Drive staan."
+      },
+      "howTo": {
+        "heading": "Een terugbetaling aanvragen",
+        "body": "Vraag dit aan via [[paddle.net|paddleHome]] of de link \"Manage subscription\" in de e-mail die Paddle je bij aankoop stuurde. Als dat niet werkt, neem dan contact met me op via [[allmarks-support@googlegroups.com|supportEmail]]."
+      }
+    },
+    "pricing": {
+      "meta": {
+        "title": "Prijzen",
+        "description": "Prijzen van AllMarks — de kernfuncties zijn gratis. Synchronisatie tussen apparaten begint bij ¥500/maand."
+      },
+      "hero": {
+        "kicker": "Prijzen",
+        "title": "Prijzen",
+        "lead": "De kernfuncties van AllMarks zijn allemaal gratis. Als je hetzelfde bord op meer dan één apparaat wilt gebruiken, kies dan een betaald abonnement."
+      },
+      "toggle": {
+        "groupLabel": "Facturering",
+        "monthly": "Maandelijks",
+        "annual": "Jaarlijks",
+        "badge": "2 maanden gratis"
+      },
+      "perMonth": "/maand",
+      "perYear": "/jaar",
+      "free": {
+        "name": "Gratis",
+        "list": {
+          "item1": "Bladwijzers opslaan en je bord bekijken",
+          "item2": "Alle kernfuncties — tags, thema's, delen, exporteren en meer",
+          "item3": "Gegevens blijven in de browser van dit apparaat"
+        },
+        "cta": "Nu gebruiken"
+      },
+      "sync": {
+        "name": "Sync-abonnement",
+        "list": {
+          "item1": "Alles uit Gratis",
+          "item2": "Synchronisatie tussen apparaten: gebruik hetzelfde bord op je computer, telefoon en tablet",
+          "item3": "Tot 5 apparaten per sleutel",
+          "item4": "Gegevens worden opgeslagen in je eigen Google Drive"
+        },
+        "altMonthly": "{price}/jaar bij jaarlijkse betaling",
+        "altAnnual": "Ongeveer {price}/maand"
+      },
+      "supporter": {
+        "name": "Supporter-abonnement",
+        "note": "Dezelfde functies als het Sync-abonnement. Voor mensen die de ontwikkeling van AllMarks nog meer willen steunen.",
+        "altMonthly": "{price}/jaar bij jaarlijkse betaling",
+        "altAnnual": "{price}/maand"
+      },
+      "cta": {
+        "subscribe": "Abonneren"
+      },
+      "faq": {
+        "heading": "FAQ",
+        "q1": {
+          "q": "Wat gebeurt er als ik opzeg?",
+          "a": "Je kunt de synchronisatie blijven gebruiken tot het einde van de al betaalde periode. Daarna stopt de synchronisatie, maar je gegevens blijven op je apparaten en in je eigen Google Drive staan."
+        },
+        "q2": {
+          "q": "Kan ik een terugbetaling krijgen?",
+          "a": "Ja — ik betaal de eerste betaling volledig terug binnen 14 dagen. Zie het [[terugbetalingsbeleid|refund]] voor details."
+        },
+        "q3": {
+          "q": "Wat heb ik nodig?",
+          "a": "Een Google-account. De gegevens die je synchroniseert worden opgeslagen in je eigen Google Drive."
+        },
+        "q4": {
+          "q": "Waar wordt mijn betaling verwerkt?",
+          "a": "Mijn wederverkoper, Paddle.com, verwerkt deze veilig. Ik ontvang nooit je kaartgegevens."
+        },
+        "q5": {
+          "q": "Waar kan ik opzeggen of een bon krijgen?",
+          "a": "Dat kun je zelf doen op [[paddle.net|paddleHome]], of via de e-mail die Paddle je bij aankoop stuurde."
+        }
+      },
+      "taxNote": "Alle prijzen zijn inclusief belasting. De getoonde valuta en het belastingbedrag kunnen variëren afhankelijk van je woonplaats."
     }
   },
   "trash": {
