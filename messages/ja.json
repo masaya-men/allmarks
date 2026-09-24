@@ -367,7 +367,11 @@
     "modalKeyIntro": "あなた専用のGoogleドライブにブックマークを保存し、他の端末とも共有できます。1つの鍵につき、端末5台まで使えます。",
     "setupDoneHeading": "同期をはじめました",
     "setupDoneBody": "他の端末でも同じ鍵を入力すれば、同じブックマークが使えます(端末5台まで)。",
-    "setupDoneClose": "閉じる"
+    "setupDoneClose": "閉じる",
+    "stoppedEnded": "同期プランの期間が終わったため、同期を止めました。ブックマークはこの端末と Google Drive に残っています。再開するには、もう一度申し込んで、届いたキーを入力してください。",
+    "seePricing": "料金を見る",
+    "stoppedDeviceRemoved": "この端末は同期から外されました。キーをもう一度入力すると再開します。",
+    "stoppedGraceExpired": "7日以上プランの状態を確認できなかったため、同期を止めています。インターネットにつながると自動で再開します。"
   },
   "landing": {
     "hero": {

@@ -31,6 +31,9 @@
 
 ### ★ユーザー本人の作業待ち(s220 追加)
 
+- **(s221) Payoneer 審査待ち(約2営業日)→ 承認メールが来たら Paddle 本番の Payouts → Payout Settings を入力**: Payment Method=Payoneer、Payoneer Email=Payoneer 登録メール、Name=Masaya/Maeno、住所ローマ字、VAT 空欄、Threshold $100。名前不一致(身分証=漢字)で追加書類を求められたら内容を見せてもらう。
+- **(s221) Paddle Sandbox MCP 接続(任意・準備ができたら)**: Sandbox の Developer tools → Authentication で `pdl_sdbx_` キー作成 → ターミナルで `claude mcp add --transport http paddle-sandbox https://sandbox-mcp.paddle.com/mcp --header "Authorization: Bearer <key>"` → Claude 再起動。本番は接続しない方針。
+
 - ~~サポート用グループアドレスの受信設定~~ → s220 完了(外部から送信→普段のGmailに着信を確認。会話の閲覧はグループメンバーのみ)。
 - **返信をグループアドレス名義で送る設定(未着手・実際に問い合わせへ返信する前に必須)**: そのまま返信すると個人Gmailのアドレスが相手に見える。Gmail 設定→アカウント→「他のメールアドレスを追加」でグループアドレスを送信元に追加(確認コードはグループ経由で届く想定・未検証)。
 

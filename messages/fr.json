@@ -367,7 +367,11 @@
     "modalKeyIntro": "Save your bookmarks to your own Google Drive and share them across your devices. One key works on up to 5 devices.",
     "setupDoneHeading": "Sync is on",
     "setupDoneBody": "Enter the same key on your other devices to share these bookmarks there too (up to 5 devices).",
-    "setupDoneClose": "Close"
+    "setupDoneClose": "Close",
+    "stoppedEnded": "Your sync plan has ended, so syncing has stopped. Your bookmarks are still on this device and in your Google Drive. To resume, sign up again and enter the new key.",
+    "seePricing": "See pricing",
+    "stoppedDeviceRemoved": "This device was removed from sync. Enter your key again to resume.",
+    "stoppedGraceExpired": "Sync is paused because your plan couldn't be checked for over 7 days. It resumes automatically once you're online."
   },
   "landing": {
     "hero": {

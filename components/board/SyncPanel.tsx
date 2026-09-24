@@ -11,9 +11,17 @@ import { runSyncCycle, connectSync, type SyncCycleResult } from '@/lib/sync/engi
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 import { formatLastSynced } from '@/lib/sync/format-last-sync'
 import type { SyncErrorKind } from '@/lib/sync/error-kind'
+import { checkLicenseForSync, type LicenseInactiveReason } from '@/lib/board/license-check'
+import { navHref } from '@/lib/i18n/locale-urls'
 import { SyncMassDeleteConfirmDialog } from './SyncMassDeleteConfirmDialog'
 import { SyncConnectDialog, type ConnectDialogStep } from './SyncConnectDialog'
 import styles from './SyncPanel.module.css'
+
+/** The subset of `LicenseInactiveReason` that keeps the panel in its own
+ *  "stopped" phase (§ below). `'no-license'` is deliberately excluded here --
+ *  that reason bounces the panel back to the locked paywall view instead
+ *  (`setUnlocked(false)`), it never becomes a `stopped` phase. */
+type StoppedReason = Exclude<LicenseInactiveReason, 'no-license'>
 
 type PanelPhase =
   | { readonly kind: 'disconnected' }
@@ -23,6 +31,7 @@ type PanelPhase =
   | { readonly kind: 'syncing'; readonly email: string | null }
   | { readonly kind: 'needs-confirmation'; readonly email: string | null; readonly deletedCount: number }
   | { readonly kind: 'issue'; readonly email: string | null; readonly errorKind: SyncErrorKind }
+  | { readonly kind: 'stopped'; readonly reason: StoppedReason }
 
 function errorKeyFor(errorKind: SyncErrorKind): string {
   switch (errorKind) {
@@ -54,6 +63,70 @@ function lastSyncedText(t: (key: string) => string, lastSyncAt: number | undefin
   return t('sync.lastSyncedDaysAgo').replace('{days}', String(display.value))
 }
 
+/** The key-paste-and-submit UI: label, input, submit button, and the
+ *  invalid/unsupported/cap-exceeded error copy underneath. This is the same
+ *  markup/behavior the locked view's guided setup dialog (`SyncConnectDialog`'s
+ *  `'key-entry'` step) puts the user through, extracted here as its own small
+ *  piece so the `stopped`/`device-removed` phase can show it inline in the
+ *  panel (no modal -- the user is already deep in the panel, not starting
+ *  fresh) without duplicating the input/button/error JSX a second time. */
+function KeyEntryFields({
+  keyInput, onKeyInputChange, onSubmit, submitting, error, capExceeded, t,
+}: {
+  readonly keyInput: string
+  readonly onKeyInputChange: (value: string) => void
+  readonly onSubmit: () => void
+  readonly submitting: boolean
+  readonly error: string | null
+  readonly capExceeded: boolean
+  readonly t: (key: string) => string
+}): ReactElement {
+  return (
+    <>
+      <label className={styles.label} htmlFor="sync-key-input">{t('sync.haveKeyLabel')}</label>
+      <div className={styles.keyRow}>
+        <input
+          id="sync-key-input"
+          type="text"
+          className={styles.keyInput}
+          value={keyInput}
+          onChange={(e): void => onKeyInputChange(e.target.value)}
+          placeholder={t('sync.keyPlaceholder')}
+          data-testid="sync-key-input"
+        />
+        <button
+          type="button"
+          className={styles.unlockBtn}
+          onClick={onSubmit}
+          disabled={submitting || keyInput.trim().length === 0}
+          data-testid="sync-key-submit"
+        >
+          {t('sync.unlockButton')}
+        </button>
+      </div>
+      {error && (
+        <div className={styles.error} data-testid="sync-key-error">
+          {error}
+          {capExceeded && (
+            <>
+              {' '}
+              <a
+                className={styles.contactLink}
+                href="/contact"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="sync-cap-exceeded-contact"
+              >
+                {t('sync.errorCapExceededContact')}
+              </a>
+            </>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
+
 /** Which screen the guided setup dialog shows, derived from the license/phase
  *  state SyncPanel already tracks. `justCompletedSetup` distinguishes "just
  *  finished first-time setup, still idle-with-dialog-open" (→ 'done') from
@@ -68,7 +141,7 @@ function connectDialogStep(unlocked: boolean, phase: PanelPhase, justCompletedSe
 }
 
 export function SyncPanel(): ReactElement | null {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const [unlocked, setUnlocked] = useState<boolean | null>(null)
   const [keyInput, setKeyInput] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -108,6 +181,22 @@ export function SyncPanel(): ReactElement | null {
         return
       }
       if (!isUnlocked) return
+      // License gate (checked once per mount, throttled internally to one
+      // network call per 24h -- see license-check.ts): a license that's
+      // unlocked in shape (valid signature, right scope) can still be
+      // ended/removed/unconfirmed-too-long. Surface that as the panel's own
+      // `stopped` phase instead of proceeding to the normal connect/idle
+      // flow. Never throws, so no try/catch needed here.
+      const licenseCheck = await checkLicenseForSync(db)
+      if (cancelled) return
+      if (!licenseCheck.allowed) {
+        if (licenseCheck.reason === 'no-license') {
+          setUnlocked(false)
+          return
+        }
+        setPhase({ kind: 'stopped', reason: licenseCheck.reason })
+        return
+      }
       // Separate try/catch: a status-read failure here is not a license-read
       // failure. Falling into the same catch as above would incorrectly bounce
       // an already-unlocked user onto the locked paywall view (regression the
@@ -133,6 +222,18 @@ export function SyncPanel(): ReactElement | null {
       setPhase({ kind: 'needs-confirmation', email: fallbackEmail, deletedCount: result.deletedCount ?? 0 })
     } else if (result.status === 'error') {
       setPhase({ kind: 'issue', email: fallbackEmail, errorKind: result.errorKind ?? 'other' })
+    } else if (result.status === 'license-inactive') {
+      if (result.licenseReason === 'no-license') {
+        setUnlocked(false)
+      } else if (result.licenseReason) {
+        setPhase({ kind: 'stopped', reason: result.licenseReason })
+      } else {
+        // Defensive fallback only -- runSyncCycle always pairs this status
+        // with a licenseReason. Never silently treats a blocked sync as a
+        // plain Drive disconnect if we can help it, but there's nothing more
+        // specific to show without a reason.
+        setPhase({ kind: 'disconnected' })
+      }
     } else {
       setPhase({ kind: 'disconnected' })
     }
@@ -319,6 +420,37 @@ export function SyncPanel(): ReactElement | null {
             </button>
           )}
         </>
+      )}
+      {phase.kind === 'stopped' && phase.reason === 'ended' && (
+        <>
+          <p className={styles.body} data-testid="sync-stopped-ended">{t('sync.stoppedEnded')}</p>
+          <a
+            className={styles.contactLink}
+            href={navHref(locale, 'pricing')}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="sync-pricing-link"
+          >
+            {t('sync.seePricing')}
+          </a>
+        </>
+      )}
+      {phase.kind === 'stopped' && phase.reason === 'device-removed' && (
+        <>
+          <p className={styles.body} data-testid="sync-stopped-device-removed">{t('sync.stoppedDeviceRemoved')}</p>
+          <KeyEntryFields
+            keyInput={keyInput}
+            onKeyInputChange={setKeyInput}
+            onSubmit={(): void => { void submit() }}
+            submitting={submitting}
+            error={error}
+            capExceeded={capExceeded}
+            t={t}
+          />
+        </>
+      )}
+      {phase.kind === 'stopped' && phase.reason === 'grace-expired' && (
+        <p className={styles.body} data-testid="sync-stopped-grace-expired">{t('sync.stoppedGraceExpired')}</p>
       )}
       {modalOpen && dialogCoversPhase && (
         <SyncConnectDialog

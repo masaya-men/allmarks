@@ -6,6 +6,7 @@ import { activateLicenseKey, fetchDeviceCount } from '@/lib/board/license-activa
 import { loadSyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
+import { checkLicenseForSync } from '@/lib/board/license-check'
 
 vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}) }))
 vi.mock('@/lib/board/license-store', () => ({ loadLicense: vi.fn() }))
@@ -13,6 +14,7 @@ vi.mock('@/lib/board/license-activate', () => ({ activateLicenseKey: vi.fn(), fe
 vi.mock('@/lib/sync/sync-store', () => ({ loadSyncStatus: vi.fn() }))
 vi.mock('@/lib/sync/engine', () => ({ runSyncCycle: vi.fn(), connectSync: vi.fn() }))
 vi.mock('@/lib/sync/auth', () => ({ requestAuthCode: vi.fn(), exchangeCode: vi.fn() }))
+vi.mock('@/lib/board/license-check', () => ({ checkLicenseForSync: vi.fn() }))
 
 const mockLoadLicense = vi.mocked(loadLicense)
 const mockActivate = vi.mocked(activateLicenseKey)
@@ -22,11 +24,15 @@ const mockRunSyncCycle = vi.mocked(runSyncCycle)
 const mockConnectSync = vi.mocked(connectSync)
 const mockRequestAuthCode = vi.mocked(requestAuthCode)
 const mockExchangeCode = vi.mocked(exchangeCode)
+const mockCheckLicenseForSync = vi.mocked(checkLicenseForSync)
 
 describe('SyncPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
+    // Default: license (when unlocked) is allowed to sync. Individual tests in
+    // the "stopped" describe block below override this per-case.
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: true })
   })
 
   it('shows the locked view (explanation, disabled supporter link) when not unlocked', async () => {
@@ -157,6 +163,7 @@ describe('SyncPanel connected states', () => {
     // mockRunSyncCycle) don't leak across tests within this block.
     vi.clearAllMocks()
     mockLoadLicense.mockResolvedValue({ kid: 'k1', deviceId: 'd1', scope: ['sync'], validatedAt: 1 })
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: true })
   })
 
   it('clicking the start button opens the guided setup dialog', async () => {
@@ -309,5 +316,65 @@ describe('SyncPanel connected states', () => {
     render(<SyncPanel />)
     await screen.findByTestId('sync-now-button')
     expect(screen.getByTestId('sync-issue')).toBeInTheDocument()
+  })
+})
+
+describe('SyncPanel stopped states (license-check gate)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockLoadLicense.mockResolvedValue({ kid: 'k1', deviceId: 'd1', scope: ['sync'], validatedAt: 1 })
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    // Default: mount-time license check passes. Tests that exercise the mount-
+    // time gate itself override this before rendering.
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: true })
+  })
+
+  it('shows the stopped/ended view (message + pricing link), hiding the connected status and Sync now button', async () => {
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: false, reason: 'ended' })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-stopped-ended')
+    expect(screen.getByTestId('sync-pricing-link')).toHaveAttribute('href', '/pricing')
+    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
+  })
+
+  it('shows the stopped/device-removed view with the key-entry form, and a successful submit leaves the stopped view for the normal connected flow', async () => {
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: false, reason: 'device-removed' })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-stopped-device-removed')
+    expect(screen.getByTestId('sync-key-input')).toBeInTheDocument()
+    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
+
+    mockActivate.mockResolvedValue({ status: 'unlocked', scope: ['sync'], verified: true })
+    fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'new-key' } })
+    fireEvent.click(screen.getByTestId('sync-key-submit'))
+
+    await screen.findByTestId('sync-connected-status')
+    expect(screen.queryByTestId('sync-stopped-device-removed')).not.toBeInTheDocument()
+  })
+
+  it('shows the stopped/grace-expired view with no Sync now button and no key input', async () => {
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: false, reason: 'grace-expired' })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-stopped-grace-expired')
+    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sync-key-input')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the locked view when the license check reports no-license, even though a license record was loaded', async () => {
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: false, reason: 'no-license' })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-locked')
+  })
+
+  it('a license-inactive result from Sync now switches to the stopped view, not disconnected', async () => {
+    mockRunSyncCycle.mockResolvedValue({ status: 'license-inactive', vaultConflict: false, licenseReason: 'ended' })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connected-status')
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await screen.findByTestId('sync-stopped-ended')
+    expect(screen.queryByTestId('sync-start-button')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
   })
 })
