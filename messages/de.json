@@ -762,12 +762,12 @@
       },
       "syncKeys": {
         "heading": "Synchronisierungsschlüssel und Geräteanzahl",
-        "body": "Wenn du die Synchronisierung aktivierst, werden ein Schlüssel-Identifikator und ein für jedes Gerät erzeugter zufälliger Identifikator an meinen Server (Cloudflare) gesendet. Dies dient ausschließlich dazu, zu zählen, wie viele Geräte einen Schlüssel verwenden (bis zu 5), und zu bestätigen, dass der kostenpflichtige Plan aktiv ist. Keiner der beiden Identifikatoren enthält Informationen, die dich persönlich identifizieren."
+        "body": "Wenn du die Synchronisierung aktivierst, werden die ID deines Schlüssels, eine für jedes Gerät erzeugte zufällige ID sowie der Gerätetyp (Name von Browser und Betriebssystem, z. B. „Chrome · Windows“) mit dem Datum, an dem er hinzugefügt wurde, an meinen Server (Cloudflare) gesendet. Diese werden nur verwendet, um Geräte pro Schlüssel zu zählen (bis zu 5), die Geräteliste anzuzeigen, damit du nicht mehr genutzte Geräte entfernen kannst, und um zu prüfen, ob dein kostenpflichtiger Plan aktiv ist. Nichts davon identifiziert dich persönlich."
       },
       "payment": {
         "heading": "Zahlung",
         "para1": "Die Zahlung für kostenpflichtige Pläne wird von meinem Wiederverkäufer Paddle.com abgewickelt. Dein Name, deine E-Mail-Adresse und deine Zahlungsdaten werden von Paddle.com erfasst und gemäß Paddles eigener Datenschutzrichtlinie verarbeitet. Ich erhalte niemals deine Kartennummer oder andere Zahlungsdaten.",
-        "para2": "Was ich von Paddle.com erhalte, ist der Status deiner Bestellung und deines Abonnements (aktiv oder gekündigt) sowie die E-Mail-Adresse, die zur Zustellung deines Schlüssels und zur Beantwortung von Supportanfragen nötig ist."
+        "para2": "Mein Server erhält von Paddle.com nur den Status deiner Zahlung und deines Abonnements (aktiv oder gekündigt) sowie die zugehörigen Transaktions- und Abonnement-IDs. Diese werden verwendet, um deinen Schlüssel auszustellen und erneut anzuzeigen und um zu prüfen, ob die Synchronisierung fortgesetzt werden soll. Er erhält nicht deine E-Mail-Adresse oder andere persönliche Daten. Um Rückerstattungen und Support-Anfragen zu bearbeiten, kann ich deine Bestellung (einschließlich deiner E-Mail-Adresse) im Paddle-Dashboard einsehen."
       }
     },
     "terms": {

@@ -726,12 +726,12 @@
       },
       "syncKeys": {
         "heading": "Sync keys and device count",
-        "body": "When you activate sync, a key identifier and a random identifier generated for each device are sent to my server (Cloudflare). This is used only to count how many devices are using a key (up to 5) and to confirm the paid plan is active. Neither identifier contains any information that identifies you personally."
+        "body": "When you turn on sync, your key's ID, a random ID created for each device, and the device type (browser and OS name, e.g. \"Chrome · Windows\") with the date it was added are sent to my server (Cloudflare). They are used only to count devices per key (up to 5), to show the device list so you can remove devices you no longer use, and to check that your paid plan is active. None of this identifies you personally."
       },
       "payment": {
         "heading": "Payment",
         "para1": "Payment for paid plans is processed by my reseller, Paddle.com. Your name, email, and payment details are collected by Paddle.com and handled under Paddle's own privacy policy. I never receive your card number or other payment details.",
-        "para2": "What I receive from Paddle.com is your order and subscription status (active or canceled) and the email address needed to deliver your key and respond to support requests."
+        "para2": "My server receives only your payment and subscription status (active or canceled) and the related transaction and subscription IDs from Paddle.com. These are used to issue and re-display your key and to check whether sync should continue. It does not receive your email address or other personal details. To handle refunds and support requests, I may view your order (including your email address) in Paddle's dashboard."
       },
       "sharing": {
         "heading": "When you share a board",

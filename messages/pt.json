@@ -762,12 +762,12 @@
       },
       "syncKeys": {
         "heading": "Chaves de sincronização e número de dispositivos",
-        "body": "Quando você ativa a sincronização, um identificador de chave e um identificador aleatório gerado para cada dispositivo são enviados ao meu servidor (Cloudflare). Isso é usado apenas para contar quantos dispositivos estão usando uma chave (até 5) e confirmar que o plano pago está ativo. Nenhum dos identificadores contém informações que identifiquem você pessoalmente."
+        "body": "Quando você ativa a sincronização, o ID da sua chave, um ID aleatório criado para cada dispositivo e o tipo de dispositivo (nome do navegador e do sistema operacional, por exemplo \"Chrome · Windows\") com a data em que foi adicionado são enviados ao meu servidor (Cloudflare). Eles são usados apenas para contar os dispositivos por chave (até 5), mostrar a lista de dispositivos para que você possa remover os que não usa mais, e verificar se seu plano pago está ativo. Nada disso identifica você pessoalmente."
       },
       "payment": {
         "heading": "Pagamento",
         "para1": "O pagamento dos planos pagos é processado pelo meu revendedor, Paddle.com. Seu nome, e-mail e dados de pagamento são coletados pela Paddle.com e tratados segundo a própria política de privacidade da Paddle. Nunca recebo o número do seu cartão ou outros dados de pagamento.",
-        "para2": "O que recebo da Paddle.com é o status do seu pedido e assinatura (ativo ou cancelado) e o endereço de e-mail necessário para entregar sua chave e responder a solicitações de suporte."
+        "para2": "Meu servidor recebe da Paddle.com apenas o status do seu pagamento e assinatura (ativa ou cancelada) e os IDs de transação e assinatura relacionados. Eles são usados para emitir e reexibir sua chave e para verificar se a sincronização deve continuar. Ele não recebe seu endereço de e-mail nem outros dados pessoais. Para lidar com reembolsos e solicitações de suporte, posso ver seu pedido (incluindo seu endereço de e-mail) no painel da Paddle."
       }
     },
     "terms": {

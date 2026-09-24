@@ -762,12 +762,12 @@
       },
       "syncKeys": {
         "heading": "Khóa đồng bộ và số lượng thiết bị",
-        "body": "Khi bạn kích hoạt đồng bộ, một mã định danh khóa và một mã định danh ngẫu nhiên được tạo cho từng thiết bị sẽ được gửi tới máy chủ của tôi (Cloudflare). Việc này chỉ nhằm đếm số thiết bị đang dùng một khóa (tối đa 5) và xác nhận gói trả phí đang hoạt động. Cả hai mã định danh đều không chứa thông tin xác định bạn về mặt cá nhân."
+        "body": "Khi bạn bật đồng bộ, mã khóa của bạn, một mã ngẫu nhiên được tạo cho từng thiết bị, và loại thiết bị (tên trình duyệt và hệ điều hành, ví dụ \"Chrome · Windows\") cùng ngày thêm thiết bị đó sẽ được gửi tới máy chủ của tôi (Cloudflare). Những thông tin này chỉ được dùng để đếm số thiết bị theo từng khóa (tối đa 5), hiển thị danh sách thiết bị để bạn có thể xóa những thiết bị không còn dùng, và kiểm tra xem gói trả phí của bạn có đang hoạt động không. Không thông tin nào trong số này xác định bạn về mặt cá nhân."
       },
       "payment": {
         "heading": "Thanh toán",
         "para1": "Thanh toán cho gói trả phí được xử lý bởi đại lý bán lại của tôi, Paddle.com. Tên, email và thông tin thanh toán của bạn được Paddle.com thu thập và xử lý theo chính sách quyền riêng tư riêng của Paddle. Tôi không bao giờ nhận được số thẻ hay các thông tin thanh toán khác của bạn.",
-        "para2": "Những gì tôi nhận được từ Paddle.com là trạng thái đơn hàng và đăng ký của bạn (đang hoạt động hay đã hủy) và địa chỉ email cần thiết để gửi khóa và phản hồi các yêu cầu hỗ trợ."
+        "para2": "Máy chủ của tôi chỉ nhận từ Paddle.com trạng thái thanh toán và đăng ký của bạn (đang hoạt động hay đã hủy) cùng mã giao dịch và mã đăng ký liên quan. Những thông tin này được dùng để cấp và hiển thị lại khóa của bạn, cũng như để kiểm tra xem có nên tiếp tục đồng bộ hay không. Máy chủ không nhận địa chỉ email hay thông tin cá nhân khác của bạn. Để xử lý hoàn tiền và yêu cầu hỗ trợ, tôi có thể xem đơn hàng của bạn (bao gồm địa chỉ email) trên bảng điều khiển của Paddle."
       }
     },
     "terms": {

@@ -762,12 +762,12 @@
       },
       "syncKeys": {
         "heading": "Synchronisatiesleutels en aantal apparaten",
-        "body": "Als je synchronisatie activeert, worden een sleutel-identificatie en een willekeurige identificatie die voor elk apparaat wordt gegenereerd, naar mijn server (Cloudflare) gestuurd. Dit wordt alleen gebruikt om te tellen hoeveel apparaten een sleutel gebruiken (maximaal 5) en om te bevestigen dat het betaalde abonnement actief is. Geen van beide identificaties bevat informatie die jou persoonlijk identificeert."
+        "body": "Als je synchronisatie inschakelt, worden de ID van je sleutel, een willekeurige ID die voor elk apparaat wordt gemaakt, en het apparaattype (naam van browser en besturingssysteem, bijv. \"Chrome · Windows\") met de datum waarop het is toegevoegd, naar mijn server (Cloudflare) gestuurd. Deze worden alleen gebruikt om apparaten per sleutel te tellen (tot 5), om de apparatenlijst te tonen zodat je apparaten die je niet meer gebruikt kunt verwijderen, en om te controleren of je betaalde abonnement actief is. Niets hiervan identificeert je persoonlijk."
       },
       "payment": {
         "heading": "Betaling",
         "para1": "Betalingen voor betaalde abonnementen worden verwerkt door mijn wederverkoper, Paddle.com. Je naam, e-mailadres en betaalgegevens worden verzameld door Paddle.com en verwerkt volgens het eigen privacybeleid van Paddle. Ik ontvang nooit je kaartnummer of andere betaalgegevens.",
-        "para2": "Wat ik van Paddle.com ontvang, is de status van je bestelling en abonnement (actief of opgezegd) en het e-mailadres dat nodig is om je sleutel te leveren en te reageren op supportverzoeken."
+        "para2": "Mijn server ontvangt van Paddle.com alleen de status van je betaling en abonnement (actief of opgezegd) en de bijbehorende transactie- en abonnements-ID's. Deze worden gebruikt om je sleutel uit te geven en opnieuw te tonen, en om te controleren of synchronisatie moet doorgaan. Hij ontvangt niet je e-mailadres of andere persoonlijke gegevens. Om terugbetalingen en supportverzoeken af te handelen, kan ik je bestelling (inclusief je e-mailadres) bekijken in het dashboard van Paddle."
       }
     },
     "terms": {

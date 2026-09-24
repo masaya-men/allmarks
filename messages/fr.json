@@ -762,12 +762,12 @@
       },
       "syncKeys": {
         "heading": "Clés de synchronisation et nombre d'appareils",
-        "body": "Lorsque vous activez la synchronisation, un identifiant de clé et un identifiant aléatoire généré pour chaque appareil sont envoyés à mon serveur (Cloudflare). Cela sert uniquement à compter combien d'appareils utilisent une clé (jusqu'à 5) et à confirmer que le forfait payant est actif. Aucun des deux identifiants ne contient d'information permettant de vous identifier personnellement."
+        "body": "Lorsque vous activez la synchronisation, l'identifiant de votre clé, un identifiant aléatoire créé pour chaque appareil, ainsi que le type d'appareil (nom du navigateur et du système d'exploitation, par exemple « Chrome · Windows ») et sa date d'ajout sont envoyés à mon serveur (Cloudflare). Cela sert uniquement à compter les appareils par clé (jusqu'à 5), à afficher la liste des appareils pour que vous puissiez retirer ceux que vous n'utilisez plus, et à vérifier que votre forfait payant est actif. Rien de tout cela ne permet de vous identifier personnellement."
       },
       "payment": {
         "heading": "Paiement",
         "para1": "Le paiement des forfaits payants est traité par mon revendeur, Paddle.com. Votre nom, votre e-mail et vos informations de paiement sont collectés par Paddle.com et traités selon la propre politique de confidentialité de Paddle. Je ne reçois jamais votre numéro de carte ni d'autres informations de paiement.",
-        "para2": "Ce que je reçois de Paddle.com, c'est le statut de votre commande et de votre abonnement (actif ou annulé) ainsi que l'adresse e-mail nécessaire pour vous livrer votre clé et répondre aux demandes de support."
+        "para2": "Mon serveur ne reçoit de Paddle.com que le statut de votre paiement et de votre abonnement (actif ou annulé), ainsi que les identifiants de transaction et d'abonnement associés. Ils servent à délivrer et réafficher votre clé, et à vérifier si la synchronisation doit continuer. Il ne reçoit pas votre adresse e-mail ni d'autres informations personnelles. Pour traiter les remboursements et les demandes d'assistance, il se peut que je consulte votre commande (y compris votre adresse e-mail) dans le tableau de bord de Paddle."
       }
     },
     "terms": {

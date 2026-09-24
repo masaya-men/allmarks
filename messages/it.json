@@ -762,12 +762,12 @@
       },
       "syncKeys": {
         "heading": "Chiavi di sincronizzazione e numero di dispositivi",
-        "body": "Quando attivi la sincronizzazione, un identificatore della chiave e un identificatore casuale generato per ogni dispositivo vengono inviati al mio server (Cloudflare). Questo serve solo a contare quanti dispositivi usano una chiave (fino a 5) e a confermare che il piano a pagamento sia attivo. Nessuno dei due identificatori contiene informazioni che ti identificano personalmente."
+        "body": "Quando attivi la sincronizzazione, l'identificativo della tua chiave, un identificativo casuale creato per ogni dispositivo e il tipo di dispositivo (nome del browser e del sistema operativo, ad es. «Chrome · Windows») con la data in cui è stato aggiunto vengono inviati al mio server (Cloudflare). Questi servono solo a contare i dispositivi per chiave (fino a 5), a mostrare l'elenco dei dispositivi in modo che tu possa rimuovere quelli che non usi più, e a verificare che il tuo piano a pagamento sia attivo. Nulla di tutto ciò ti identifica personalmente."
       },
       "payment": {
         "heading": "Pagamento",
         "para1": "Il pagamento dei piani a pagamento è elaborato dal mio rivenditore, Paddle.com. Il tuo nome, la tua email e i dati di pagamento vengono raccolti da Paddle.com e gestiti secondo la privacy policy di Paddle. Non ricevo mai il numero della tua carta né altri dati di pagamento.",
-        "para2": "Quello che ricevo da Paddle.com è lo stato del tuo ordine e abbonamento (attivo o annullato) e l'indirizzo email necessario per consegnare la tua chiave e rispondere alle richieste di supporto."
+        "para2": "Il mio server riceve da Paddle.com solo lo stato del tuo pagamento e abbonamento (attivo o annullato) e gli identificativi di transazione e abbonamento correlati. Questi servono per rilasciare e mostrare di nuovo la tua chiave e per verificare se la sincronizzazione deve continuare. Non riceve il tuo indirizzo email né altri dati personali. Per gestire rimborsi e richieste di assistenza, potrei consultare il tuo ordine (incluso il tuo indirizzo email) nella dashboard di Paddle."
       }
     },
     "terms": {

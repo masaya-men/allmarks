@@ -762,12 +762,12 @@
       },
       "syncKeys": {
         "heading": "Senkronizasyon anahtarları ve cihaz sayısı",
-        "body": "Senkronizasyonu etkinleştirdiğinizde, bir anahtar tanımlayıcısı ve her cihaz için oluşturulan rastgele bir tanımlayıcı sunucuma (Cloudflare) gönderilir. Bu yalnızca bir anahtarı kaç cihazın kullandığını saymak (en fazla 5) ve ücretli planın etkin olduğunu doğrulamak için kullanılır. Tanımlayıcıların hiçbiri sizi kişisel olarak tanımlayan bir bilgi içermez."
+        "body": "Senkronizasyonu etkinleştirdiğinizde, anahtarınızın kimliği, her cihaz için oluşturulan rastgele bir kimlik ve cihaz türü (tarayıcı ve işletim sistemi adı, ör. \"Chrome · Windows\") ile eklendiği tarih sunucuma (Cloudflare) gönderilir. Bunlar yalnızca anahtar başına cihaz sayısını saymak (en fazla 5), artık kullanmadığınız cihazları kaldırabilmeniz için cihaz listesini göstermek ve ücretli planınızın etkin olduğunu doğrulamak için kullanılır. Bunların hiçbiri sizi kişisel olarak tanımlamaz."
       },
       "payment": {
         "heading": "Ödeme",
         "para1": "Ücretli planlara ait ödemeler bayim Paddle.com tarafından işlenir. Adınız, e-postanız ve ödeme bilgileriniz Paddle.com tarafından toplanır ve Paddle'ın kendi gizlilik politikasına göre işlenir. Kart numaranızı veya diğer ödeme bilgilerinizi asla almam.",
-        "para2": "Paddle.com'dan aldığım şey, sipariş ve abonelik durumunuzdur (etkin veya iptal edilmiş) ve anahtarınızı teslim etmek ve destek taleplerini yanıtlamak için gereken e-posta adresidir."
+        "para2": "Sunucum Paddle.com'dan yalnızca ödeme ve abonelik durumunuzu (etkin veya iptal edilmiş) ve ilgili işlem ile abonelik kimliklerini alır. Bunlar anahtarınızı vermek ve yeniden görüntülemek ile senkronizasyonun devam edip etmeyeceğini kontrol etmek için kullanılır. E-posta adresinizi veya diğer kişisel bilgilerinizi almaz. İadeleri ve destek taleplerini yönetmek için Paddle'ın panelinde siparişinizi (e-posta adresiniz dahil) görüntüleyebilirim."
       }
     },
     "terms": {

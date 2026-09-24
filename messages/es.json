@@ -762,12 +762,12 @@
       },
       "syncKeys": {
         "heading": "Claves de sincronización y número de dispositivos",
-        "body": "Cuando activas la sincronización, se envía a mi servidor (Cloudflare) un identificador de clave y un identificador aleatorio generado para cada dispositivo. Esto se usa únicamente para contar cuántos dispositivos usan una clave (hasta 5) y confirmar que el plan de pago está activo. Ninguno de los identificadores contiene información que te identifique personalmente."
+        "body": "Cuando activas la sincronización, se envían a mi servidor (Cloudflare) el identificador de tu clave, un identificador aleatorio creado para cada dispositivo y el tipo de dispositivo (nombre del navegador y del sistema operativo, por ejemplo «Chrome · Windows») junto con la fecha en que se añadió. Esto se usa únicamente para contar los dispositivos por clave (hasta 5), mostrar la lista de dispositivos para que puedas eliminar los que ya no uses, y comprobar que tu plan de pago está activo. Nada de esto te identifica personalmente."
       },
       "payment": {
         "heading": "Pago",
         "para1": "El pago de los planes de pago lo procesa mi revendedor, Paddle.com. Tu nombre, correo electrónico y datos de pago los recopila Paddle.com y se gestionan conforme a la propia política de privacidad de Paddle. Nunca recibo tu número de tarjeta ni otros datos de pago.",
-        "para2": "Lo que recibo de Paddle.com es el estado de tu pedido y suscripción (activa o cancelada) y la dirección de correo electrónico necesaria para entregar tu clave y responder a las solicitudes de soporte."
+        "para2": "Mi servidor solo recibe de Paddle.com el estado de tu pago y suscripción (activa o cancelada) y los identificadores de transacción y suscripción correspondientes. Esto se usa para emitir y volver a mostrar tu clave, y para comprobar si la sincronización debe continuar. No recibe tu dirección de correo electrónico ni otros datos personales. Para gestionar reembolsos y solicitudes de soporte, puedo consultar tu pedido (incluida tu dirección de correo electrónico) en el panel de Paddle."
       }
     },
     "terms": {
