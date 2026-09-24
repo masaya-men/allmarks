@@ -116,27 +116,55 @@ export async function activateLicenseKey(
   return { status: 'unlocked', scope, verified: confirmed }
 }
 
+/** One activated device, as returned by /activate-status (SETTINGS device
+ *  list, §3.4). `label` is the short browser/OS string from buildDeviceLabel
+ *  (empty when unknown), `at` is the activation timestamp (0 = unknown, e.g.
+ *  a legacy record migrated from the old string[] form). */
+export interface DeviceInfo {
+  readonly id: string
+  readonly label: string
+  readonly at: number
+}
+
 export interface DeviceCount {
   readonly count: number
   readonly max: number
+  readonly devices: readonly DeviceInfo[]
 }
 
 interface DeviceCountResponseBody {
   readonly ok: boolean
   readonly count?: number
   readonly max?: number
+  readonly devices?: unknown
 }
 
 function isDeviceCountResponseBody(v: unknown): v is DeviceCountResponseBody {
   return typeof v === 'object' && v !== null && typeof (v as { ok?: unknown }).ok === 'boolean'
 }
 
+function isDeviceInfo(v: unknown): v is DeviceInfo {
+  if (typeof v !== 'object' || v === null) return false
+  const d = v as { id?: unknown; label?: unknown; at?: unknown }
+  return typeof d.id === 'string' && d.id.length > 0 && typeof d.label === 'string' && typeof d.at === 'number'
+}
+
+/** Validates the `devices` field of an /activate-status response. Malformed
+ *  entries (wrong shape, not an array at all) are dropped rather than
+ *  failing the whole lookup -- the count/max numbers are still useful even
+ *  if the device list itself came back odd. */
+function parseDevices(v: unknown): DeviceInfo[] {
+  if (!Array.isArray(v)) return []
+  return v.filter(isDeviceInfo)
+}
+
 /**
  * Read-only lookup of how many devices are currently activated against this
- * key ("X/5 devices used" in SETTINGS). Never throws and never returns a
- * value that would look confidently wrong — any network failure, non-ok
- * response, or malformed body just returns `null`, and the caller should
- * simply not show the count rather than show a stale or fabricated number.
+ * key ("X/5 devices used" + the expandable device list in SETTINGS). Never
+ * throws and never returns a value that would look confidently wrong — any
+ * network failure, non-ok response, or malformed body just returns `null`,
+ * and the caller should simply not show the count rather than show a stale
+ * or fabricated number.
  */
 export async function fetchDeviceCount(kid: string): Promise<DeviceCount | null> {
   try {
@@ -145,8 +173,42 @@ export async function fetchDeviceCount(kid: string): Promise<DeviceCount | null>
     const body: unknown = await res.json()
     if (!isDeviceCountResponseBody(body) || !body.ok) return null
     if (typeof body.count !== 'number' || typeof body.max !== 'number') return null
-    return { count: body.count, max: body.max }
+    return { count: body.count, max: body.max, devices: parseDevices(body.devices) }
   } catch {
     return null
+  }
+}
+
+interface ReleaseResponseBody {
+  readonly ok: boolean
+}
+
+function isReleaseResponseBody(v: unknown): v is ReleaseResponseBody {
+  return typeof v === 'object' && v !== null && typeof (v as { ok?: unknown }).ok === 'boolean'
+}
+
+/**
+ * Removes `target` from `kid`'s activation list (SETTINGS device-list
+ * "remove" button, POST /api/license/release). `deviceId` is this device's
+ * own id -- the server uses it to confirm the caller is itself an activated
+ * device on this key before honoring the removal. Never throws; returns
+ * `true` only on an explicit `{ok:true}`. Any network failure, non-ok
+ * response, malformed body, or explicit `{ok:false}` (e.g.
+ * `not-authorized`) returns `false`, and the caller should leave the row in
+ * place rather than assume it was removed.
+ */
+export async function releaseDevice(kid: string, deviceId: string, target: string): Promise<boolean> {
+  try {
+    const res = await fetch('/api/license/release', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kid, deviceId, target }),
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return false
+    const body: unknown = await res.json()
+    return isReleaseResponseBody(body) && body.ok
+  } catch {
+    return false
   }
 }

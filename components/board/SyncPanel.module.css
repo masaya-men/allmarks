@@ -119,3 +119,96 @@
   0%, 100% { opacity: 0.35; }
   50% { opacity: 0.9; }
 }
+/* Device list (design option A, approved mock): toggle button reusing the
+   .note line's typography, an expandable list below it, remove buttons that
+   only reveal on row hover (pointer devices) so the idle view stays quiet by
+   default. */
+.toggle {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 10px;
+  color: rgba(var(--chrome-ink-rgb), 0.35);
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--chrome-ink-rgb), 0.2);
+  text-underline-offset: 3px;
+}
+.toggle:hover {
+  color: rgba(var(--chrome-ink-rgb), 0.7);
+}
+.list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  border-top: 1px solid rgba(var(--chrome-ink-rgb), 0.08);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  border-bottom: 1px solid rgba(var(--chrome-ink-rgb), 0.08);
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 10.5px;
+  color: rgba(var(--chrome-ink-rgb), 0.7);
+}
+.hd {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.45);
+  flex-shrink: 0;
+}
+.name {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.when {
+  color: rgba(var(--chrome-ink-rgb), 0.35);
+}
+.me {
+  color: rgba(var(--chrome-ink-rgb), 0.45);
+  letter-spacing: 0.06em;
+}
+.rm {
+  flex-shrink: 0;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 8px;
+  min-height: 32px;
+  color: rgba(var(--chrome-ink-rgb), 0.55);
+  cursor: pointer;
+}
+.rm:hover {
+  border-color: rgba(var(--chrome-ink-rgb), 0.2);
+  color: rgb(var(--chrome-ink-rgb));
+}
+.confirm {
+  color: #ffb020;
+  border-color: rgba(255, 176, 32, 0.45);
+}
+.hover .rm {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.hover .row:hover .rm,
+.hover .row:focus-within .rm,
+.hover .confirm {
+  opacity: 1;
+}
+@media (hover: none) {
+  .hover .rm {
+    opacity: 1;
+  }
+}

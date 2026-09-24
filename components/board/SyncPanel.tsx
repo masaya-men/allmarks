@@ -1,11 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState, type ReactElement } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { initDB } from '@/lib/storage/indexeddb'
 import { loadLicense } from '@/lib/board/license-store'
 import { isSyncUnlocked } from '@/lib/board/theme-entitlement'
-import { activateLicenseKey, fetchDeviceCount, type DeviceCount } from '@/lib/board/license-activate'
+import { activateLicenseKey, fetchDeviceCount, releaseDevice, type DeviceCount, type DeviceInfo } from '@/lib/board/license-activate'
 import { loadSyncStatus, type SyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync, type SyncCycleResult } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
@@ -61,6 +61,25 @@ function lastSyncedText(t: (key: string) => string, lastSyncAt: number | undefin
   if (display.kind === 'minutes') return t('sync.lastSyncedMinutesAgo').replace('{minutes}', String(display.value))
   if (display.kind === 'hours') return t('sync.lastSyncedHoursAgo').replace('{hours}', String(display.value))
   return t('sync.lastSyncedDaysAgo').replace('{days}', String(display.value))
+}
+
+/** Puts the current device first in the expandable device list (§ design
+ *  approved option A), leaving the rest in the order /activate-status
+ *  returned them. Falls back to the original order if `currentId` isn't in
+ *  the list at all (e.g. the count/list momentarily disagree). */
+function orderedDevices(devices: readonly DeviceInfo[], currentId: string | null): readonly DeviceInfo[] {
+  if (currentId === null) return devices
+  const current = devices.find((d) => d.id === currentId)
+  if (!current) return devices
+  return [current, ...devices.filter((d) => d.id !== currentId)]
+}
+
+/** "9/20"-style registered date for a device row. `at === 0` means the
+ *  timestamp is unknown (e.g. a legacy activation record) -- omit rather
+ *  than show a fabricated date. */
+function formatDeviceWhen(locale: string, at: number): string | null {
+  if (at === 0) return null
+  return new Intl.DateTimeFormat(locale, { month: 'numeric', day: 'numeric' }).format(new Date(at))
 }
 
 /** The key-paste-and-submit UI: label, input, submit button, and the
@@ -160,6 +179,23 @@ export function SyncPanel(): ReactElement | null {
   // case this just stays null and the count line doesn't render (never shows
   // a stale or guessed number).
   const [deviceCount, setDeviceCount] = useState<DeviceCount | null>(null)
+  // kid + this device's own id, needed to call releaseDevice (the server
+  // confirms the caller is itself an activated device before honoring a
+  // removal). Set alongside deviceCount, wherever a license read happens.
+  const [licenseIds, setLicenseIds] = useState<{ readonly kid: string; readonly deviceId: string } | null>(null)
+  // The "端末 3/5台 ▾" toggle in the idle connected view (design option A) --
+  // collapsed by default, expands to the device list below it.
+  const [deviceListOpen, setDeviceListOpen] = useState(false)
+  // Two-step remove: the device id whose "remove" button is currently
+  // showing the amber "click again to remove" confirm state, or null.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return (): void => {
+      if (confirmTimerRef.current !== null) clearTimeout(confirmTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -173,6 +209,7 @@ export function SyncPanel(): ReactElement | null {
         if (cancelled) return
         setUnlocked(isUnlocked)
         if (isUnlocked && state) {
+          setLicenseIds({ kid: state.kid, deviceId: state.deviceId })
           void fetchDeviceCount(state.kid).then((dc) => { if (!cancelled) setDeviceCount(dc) })
         }
       } catch (e) {
@@ -288,6 +325,34 @@ export function SyncPanel(): ReactElement | null {
     }
   }, [applyResult])
 
+  // Two-step remove for a device row in the expandable list. First click
+  // just arms the confirm state (amber "click again to remove", reverting on
+  // its own after 3s); the second click while still armed actually calls
+  // releaseDevice. A failed release reverts the button silently -- no new
+  // error copy, per the approved design (option A).
+  const handleRemoveClick = useCallback((targetId: string): void => {
+    if (confirmTimerRef.current !== null) {
+      clearTimeout(confirmTimerRef.current)
+      confirmTimerRef.current = null
+    }
+    if (confirmingId !== targetId) {
+      setConfirmingId(targetId)
+      confirmTimerRef.current = setTimeout(() => {
+        setConfirmingId((current) => (current === targetId ? null : current))
+        confirmTimerRef.current = null
+      }, 3000)
+      return
+    }
+    setConfirmingId(null)
+    if (!licenseIds) return
+    void releaseDevice(licenseIds.kid, licenseIds.deviceId, targetId).then((ok) => {
+      if (!ok) return
+      setDeviceCount((prev) => (prev
+        ? { count: prev.count - 1, max: prev.max, devices: prev.devices.filter((d) => d.id !== targetId) }
+        : prev))
+    })
+  }, [confirmingId, licenseIds])
+
   const submit = async (): Promise<void> => {
     if (submitting) return
     const cleaned = keyInput.replace(/\s+/g, '')
@@ -304,7 +369,10 @@ export function SyncPanel(): ReactElement | null {
         const status = await loadSyncStatus(db)
         setPhase(phaseFromStatus(status))
         const licenseState = await loadLicense(db)
-        if (licenseState) void fetchDeviceCount(licenseState.kid).then(setDeviceCount)
+        if (licenseState) {
+          setLicenseIds({ kid: licenseState.kid, deviceId: licenseState.deviceId })
+          void fetchDeviceCount(licenseState.kid).then(setDeviceCount)
+        }
         return
       }
       if (result.status === 'invalid-key') setError(t('sync.errorInvalidKey'))
@@ -385,9 +453,48 @@ export function SyncPanel(): ReactElement | null {
           </div>
           <p className={styles.note} data-testid="sync-last-synced">{lastSyncedText(t, phase.lastSyncAt)}</p>
           {deviceCount && (
-            <p className={styles.note} data-testid="sync-device-count">
-              {t('sync.deviceCount').replace('{count}', String(deviceCount.count)).replace('{max}', String(deviceCount.max))}
+            <p className={styles.note}>
+              <button
+                type="button"
+                className={styles.toggle}
+                onClick={(): void => setDeviceListOpen((open) => !open)}
+                aria-expanded={deviceListOpen}
+                data-testid="sync-device-count"
+              >
+                {`${t('sync.deviceCount').replace('{count}', String(deviceCount.count)).replace('{max}', String(deviceCount.max))} ${deviceListOpen ? '▴' : '▾'}`}
+              </button>
             </p>
+          )}
+          {deviceCount && deviceListOpen && (
+            <ul className={`${styles.list} ${styles.hover}`} data-testid="sync-device-list">
+              {orderedDevices(deviceCount.devices, licenseIds?.deviceId ?? null).map((d) => {
+                const isMe = d.id === licenseIds?.deviceId
+                const displayName = d.label.length > 0 ? d.label : t('sync.unknownDevice')
+                const whenText = isMe ? null : formatDeviceWhen(locale, d.at)
+                const isConfirming = confirmingId === d.id
+                return (
+                  <li key={d.id} className={styles.row} data-testid={`sync-device-row-${d.id}`}>
+                    <span className={styles.hd} />
+                    <span className={styles.name}>{displayName}</span>
+                    {isMe ? (
+                      <span className={styles.me}>{t('sync.thisDevice')}</span>
+                    ) : (
+                      <>
+                        {whenText && <span className={styles.when}>{whenText}</span>}
+                        <button
+                          type="button"
+                          className={isConfirming ? `${styles.rm} ${styles.confirm}` : styles.rm}
+                          onClick={(): void => handleRemoveClick(d.id)}
+                          data-testid={`sync-device-remove-${d.id}`}
+                        >
+                          {isConfirming ? t('sync.removeDeviceConfirm') : t('sync.removeDevice')}
+                        </button>
+                      </>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
           )}
           <button type="button" className={styles.unlockBtn} onClick={(): void => { void handleSyncNow(phase.email) }} data-testid="sync-now-button">
             {t('sync.syncNowButton')}

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import 'fake-indexeddb/auto'
 import type { IDBPDatabase } from 'idb'
 import { initDB } from '@/lib/storage/indexeddb'
-import { activateLicenseKey, buildDeviceLabel } from './license-activate'
+import { activateLicenseKey, buildDeviceLabel, fetchDeviceCount, releaseDevice } from './license-activate'
 import { loadLicense, saveLicense } from './license-store'
 import { encodeLicensePayload, encodeLicenseKey, bytesToBase64Url, type LicensePayload } from './license-types'
 
@@ -170,5 +170,73 @@ describe('buildDeviceLabel', () => {
   it('never exceeds 60 characters', () => {
     const veryLongUa = `Mozilla/5.0 Chrome/${'1'.repeat(100)} Windows`
     expect(buildDeviceLabel(veryLongUa).length).toBeLessThanOrEqual(60)
+  })
+})
+
+describe('fetchDeviceCount', () => {
+  it('returns count/max/devices on a well-formed response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true, count: 2, max: 5,
+      devices: [{ id: 'd1', label: 'Chrome · Windows', at: 100 }, { id: 'd2', label: '', at: 200 }],
+    }), { status: 200 })))
+
+    const result = await fetchDeviceCount('kid-1')
+    expect(result).toEqual({
+      count: 2, max: 5,
+      devices: [{ id: 'd1', label: 'Chrome · Windows', at: 100 }, { id: 'd2', label: '', at: 200 }],
+    })
+  })
+
+  it('drops malformed device entries but keeps the well-formed ones', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true, count: 3, max: 5,
+      devices: [{ id: 'd1', label: 'Chrome · Windows', at: 100 }, { id: '', label: 'bad-id' }, 'not-an-object', { id: 'd2' }],
+    }), { status: 200 })))
+
+    const result = await fetchDeviceCount('kid-1')
+    expect(result?.devices).toEqual([{ id: 'd1', label: 'Chrome · Windows', at: 100 }])
+  })
+
+  it('falls back to an empty devices array when the field is missing entirely', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, count: 0, max: 5 }), { status: 200 })))
+    const result = await fetchDeviceCount('kid-1')
+    expect(result).toEqual({ count: 0, max: 5, devices: [] })
+  })
+
+  it('returns null on a network failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
+    expect(await fetchDeviceCount('kid-1')).toBeNull()
+  })
+})
+
+describe('releaseDevice', () => {
+  it('returns true when the server confirms {ok:true}, sending kid/deviceId/target', async () => {
+    let capturedBody: unknown = null
+    let capturedUrl: string | null = null
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      capturedUrl = url
+      capturedBody = JSON.parse(init!.body as string)
+      return new Response(JSON.stringify({ ok: true }), { status: 200 })
+    }))
+
+    const result = await releaseDevice('kid-1', 'my-device', 'target-device')
+    expect(result).toBe(true)
+    expect(capturedUrl).toBe('/api/license/release')
+    expect(capturedBody).toEqual({ kid: 'kid-1', deviceId: 'my-device', target: 'target-device' })
+  })
+
+  it('returns false on an explicit {ok:false} (e.g. not-authorized)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: false, reason: 'not-authorized' }), { status: 200 })))
+    expect(await releaseDevice('kid-1', 'my-device', 'target-device')).toBe(false)
+  })
+
+  it('returns false and never throws on a network failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
+    await expect(releaseDevice('kid-1', 'my-device', 'target-device')).resolves.toBe(false)
+  })
+
+  it('returns false on a non-ok HTTP response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 500 })))
+    expect(await releaseDevice('kid-1', 'my-device', 'target-device')).toBe(false)
   })
 })

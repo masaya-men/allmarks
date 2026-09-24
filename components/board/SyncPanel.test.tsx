@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { SyncPanel } from './SyncPanel'
 import { loadLicense } from '@/lib/board/license-store'
-import { activateLicenseKey, fetchDeviceCount } from '@/lib/board/license-activate'
+import { activateLicenseKey, fetchDeviceCount, releaseDevice } from '@/lib/board/license-activate'
 import { loadSyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
@@ -10,7 +10,9 @@ import { checkLicenseForSync } from '@/lib/board/license-check'
 
 vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}) }))
 vi.mock('@/lib/board/license-store', () => ({ loadLicense: vi.fn() }))
-vi.mock('@/lib/board/license-activate', () => ({ activateLicenseKey: vi.fn(), fetchDeviceCount: vi.fn().mockResolvedValue(null) }))
+vi.mock('@/lib/board/license-activate', () => ({
+  activateLicenseKey: vi.fn(), fetchDeviceCount: vi.fn().mockResolvedValue(null), releaseDevice: vi.fn(),
+}))
 vi.mock('@/lib/sync/sync-store', () => ({ loadSyncStatus: vi.fn() }))
 vi.mock('@/lib/sync/engine', () => ({ runSyncCycle: vi.fn(), connectSync: vi.fn() }))
 vi.mock('@/lib/sync/auth', () => ({ requestAuthCode: vi.fn(), exchangeCode: vi.fn() }))
@@ -19,6 +21,7 @@ vi.mock('@/lib/board/license-check', () => ({ checkLicenseForSync: vi.fn() }))
 const mockLoadLicense = vi.mocked(loadLicense)
 const mockActivate = vi.mocked(activateLicenseKey)
 const mockFetchDeviceCount = vi.mocked(fetchDeviceCount)
+const mockReleaseDevice = vi.mocked(releaseDevice)
 const mockLoadSyncStatus = vi.mocked(loadSyncStatus)
 const mockRunSyncCycle = vi.mocked(runSyncCycle)
 const mockConnectSync = vi.mocked(connectSync)
@@ -259,7 +262,7 @@ describe('SyncPanel connected states', () => {
 
   it('shows the device count once fetchDeviceCount resolves', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
-    mockFetchDeviceCount.mockResolvedValue({ count: 2, max: 5 })
+    mockFetchDeviceCount.mockResolvedValue({ count: 2, max: 5, devices: [] })
     render(<SyncPanel />)
     await screen.findByTestId('sync-connected-status')
     await waitFor(() => expect(screen.getByTestId('sync-device-count').textContent).toContain('2'))
@@ -272,6 +275,109 @@ describe('SyncPanel connected states', () => {
     render(<SyncPanel />)
     await screen.findByTestId('sync-connected-status')
     expect(screen.queryByTestId('sync-device-count')).not.toBeInTheDocument()
+  })
+
+  describe('device list (toggle + remove)', () => {
+    beforeEach(() => {
+      mockLoadLicense.mockResolvedValue({ kid: 'k1', deviceId: 'me-device', scope: ['sync'], validatedAt: 1 })
+      mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    })
+
+    it('keeps the list hidden until the toggle is clicked, then shows it', async () => {
+      mockFetchDeviceCount.mockResolvedValue({
+        count: 2, max: 5,
+        devices: [{ id: 'me-device', label: 'Chrome · Windows', at: 100 }, { id: 'other-device', label: 'Safari · iOS', at: 200 }],
+      })
+      render(<SyncPanel />)
+      await screen.findByTestId('sync-device-count')
+      expect(screen.queryByTestId('sync-device-list')).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByTestId('sync-device-count'))
+      await screen.findByTestId('sync-device-list')
+      expect(screen.getByTestId('sync-device-count')).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('marks the current device with thisDevice text and no remove button', async () => {
+      mockFetchDeviceCount.mockResolvedValue({
+        count: 2, max: 5,
+        devices: [{ id: 'me-device', label: 'Chrome · Windows', at: 100 }, { id: 'other-device', label: 'Safari · iOS', at: 200 }],
+      })
+      render(<SyncPanel />)
+      fireEvent.click(await screen.findByTestId('sync-device-count'))
+      const meRow = await screen.findByTestId('sync-device-row-me-device')
+      expect(meRow.textContent).toContain('Chrome · Windows')
+      expect(screen.queryByTestId('sync-device-remove-me-device')).not.toBeInTheDocument()
+    })
+
+    it('falls back to the unknownDevice label when a device has an empty label', async () => {
+      mockFetchDeviceCount.mockResolvedValue({
+        count: 2, max: 5,
+        devices: [{ id: 'me-device', label: 'Chrome · Windows', at: 100 }, { id: 'other-device', label: '', at: 200 }],
+      })
+      render(<SyncPanel />)
+      fireEvent.click(await screen.findByTestId('sync-device-count'))
+      const row = await screen.findByTestId('sync-device-row-other-device')
+      expect(row.textContent).toMatch(/unknown|不明/i)
+    })
+
+    it('requires two clicks to remove: first arms confirm, second calls releaseDevice with (kid, myDeviceId, targetId) and removes the row', async () => {
+      mockFetchDeviceCount.mockResolvedValue({
+        count: 2, max: 5,
+        devices: [{ id: 'me-device', label: 'Chrome · Windows', at: 100 }, { id: 'other-device', label: 'Safari · iOS', at: 200 }],
+      })
+      mockReleaseDevice.mockResolvedValue(true)
+      render(<SyncPanel />)
+      fireEvent.click(await screen.findByTestId('sync-device-count'))
+      const removeBtn = await screen.findByTestId('sync-device-remove-other-device')
+
+      fireEvent.click(removeBtn)
+      expect(mockReleaseDevice).not.toHaveBeenCalled()
+
+      fireEvent.click(removeBtn)
+      await waitFor(() => expect(mockReleaseDevice).toHaveBeenCalledWith('k1', 'me-device', 'other-device'))
+      await waitFor(() => expect(screen.queryByTestId('sync-device-row-other-device')).not.toBeInTheDocument())
+      expect(screen.getByTestId('sync-device-count').textContent).toContain('1')
+    })
+
+    it('keeps the row in place if releaseDevice fails', async () => {
+      mockFetchDeviceCount.mockResolvedValue({
+        count: 2, max: 5,
+        devices: [{ id: 'me-device', label: 'Chrome · Windows', at: 100 }, { id: 'other-device', label: 'Safari · iOS', at: 200 }],
+      })
+      mockReleaseDevice.mockResolvedValue(false)
+      render(<SyncPanel />)
+      fireEvent.click(await screen.findByTestId('sync-device-count'))
+      const removeBtn = await screen.findByTestId('sync-device-remove-other-device')
+
+      fireEvent.click(removeBtn)
+      fireEvent.click(removeBtn)
+      await waitFor(() => expect(mockReleaseDevice).toHaveBeenCalledTimes(1))
+      expect(await screen.findByTestId('sync-device-row-other-device')).toBeInTheDocument()
+      expect(screen.getByTestId('sync-device-count').textContent).toContain('2')
+    })
+
+    it('reverts the confirm state back to the normal remove label after 3s if not clicked again', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        mockFetchDeviceCount.mockResolvedValue({
+          count: 2, max: 5,
+          devices: [{ id: 'me-device', label: 'Chrome · Windows', at: 100 }, { id: 'other-device', label: 'Safari · iOS', at: 200 }],
+        })
+        render(<SyncPanel />)
+        fireEvent.click(await screen.findByTestId('sync-device-count'))
+        const removeBtn = await screen.findByTestId('sync-device-remove-other-device')
+
+        fireEvent.click(removeBtn)
+        await waitFor(() => expect(screen.getByTestId('sync-device-remove-other-device').textContent).toBe('Click again to remove'))
+
+        await act(async () => { await vi.advanceTimersByTimeAsync(3100) })
+        expect(screen.getByTestId('sync-device-remove-other-device').textContent).toBe('Remove')
+        expect(mockReleaseDevice).not.toHaveBeenCalled()
+        expect(screen.getByTestId('sync-device-row-other-device')).toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
   })
 
   it('shows the SyncMassDeleteConfirmDialog when a manual sync returns needs-confirmation', async () => {
