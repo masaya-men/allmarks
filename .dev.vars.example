@@ -5,3 +5,8 @@
 GOOGLE_OAUTH_CLIENT_ID=
 GOOGLE_OAUTH_CLIENT_SECRET=
 K3_PRIVATE_KEY=
+# Paddle (transaction.read + subscription.read 権限のみの API key)。
+# 実値は Paddle ダッシュボード → Developer tools → Authentication。
+# PADDLE_ENV は 'sandbox' か 'live'（未設定/それ以外は sandbox 扱い）。
+PADDLE_API_KEY=
+PADDLE_ENV=

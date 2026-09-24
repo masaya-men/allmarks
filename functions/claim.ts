@@ -3,9 +3,8 @@
 // キーを発券して画面表示する。署名するのはここだけ（秘密鍵はWorker Secret）。
 // 設計: docs/private/2026-07-01-k3-unlock-design.md §4.1。
 import { z } from 'zod'
-import {
-  encodeLicensePayload, encodeLicenseKey, base64UrlToBytes, payloadSigningBytes, type LicensePayload,
-} from '../lib/board/license-types'
+import { type LicensePayload } from '../lib/board/license-types'
+import { signPayload } from '../lib/board/license-sign'
 
 interface KVNamespace {
   get(key: string, options?: { type?: 'text' }): Promise<string | null>
@@ -54,18 +53,6 @@ p{color:#999;font-size:14px}
 
 function errorPage(message: string): Response {
   return htmlPage(`<h1>Link not available</h1><p>${message}</p>`)
-}
-
-async function signPayload(payload: LicensePayload, privateKeyB64url: string): Promise<string> {
-  // new Uint8Array(...) re-wraps into a definite ArrayBuffer-backed array:
-  // license-types.ts's helpers declare bare `Uint8Array` returns, which this
-  // TS version widens to `Uint8Array<ArrayBufferLike>` — not assignable to
-  // Web Crypto's `BufferSource`. Same fix as lib/private/crypto.ts and Task2's
-  // license-crypto.ts (discovered during Task 2 implementation).
-  const privateKey = await crypto.subtle.importKey('pkcs8', new Uint8Array(base64UrlToBytes(privateKeyB64url)), { name: 'Ed25519' }, false, ['sign'])
-  const payloadB64url = encodeLicensePayload(payload)
-  const signature = new Uint8Array(await crypto.subtle.sign('Ed25519', privateKey, new Uint8Array(payloadSigningBytes(payloadB64url))))
-  return encodeLicenseKey(payloadB64url, signature)
 }
 
 export async function onRequestGet(ctx: PagesContext): Promise<Response> {

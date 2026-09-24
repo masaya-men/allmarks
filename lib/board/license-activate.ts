@@ -25,6 +25,41 @@ function isActivateResponseBody(v: unknown): v is ActivateResponseBody {
   return typeof v === 'object' && v !== null && typeof (v as { ok?: unknown }).ok === 'boolean'
 }
 
+const MAX_LABEL_LENGTH = 60
+
+function detectBrowserName(ua: string): string {
+  if (/Edg\//.test(ua)) return 'Edge'
+  if (/OPR\//.test(ua) || /Opera/.test(ua)) return 'Opera'
+  if (/Firefox\//.test(ua)) return 'Firefox'
+  if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) return 'Chrome'
+  if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return 'Safari'
+  return 'Browser'
+}
+
+function detectOsName(ua: string): string {
+  if (/Windows/.test(ua)) return 'Windows'
+  if (/iPhone|iPad|iPod/.test(ua)) return 'iOS'
+  if (/Mac OS X|Macintosh/.test(ua)) return 'macOS'
+  if (/Android/.test(ua)) return 'Android'
+  if (/Linux/.test(ua)) return 'Linux'
+  return 'Unknown'
+}
+
+/**
+ * Short, non-identifying device label ("Chrome · Windows") sent to
+ * `/activate` so SETTINGS' device list (design §3.4, later session) can show
+ * something more useful than a bare device id. Browser + OS only — never
+ * anything more specific (no version numbers, no hardware details).
+ */
+export function buildDeviceLabel(userAgent: string): string {
+  const label = `${detectBrowserName(userAgent)} · ${detectOsName(userAgent)}`
+  return label.length > MAX_LABEL_LENGTH ? label.slice(0, MAX_LABEL_LENGTH) : label
+}
+
+function currentUserAgent(): string {
+  return typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string' ? navigator.userAgent : ''
+}
+
 /**
  * キー文字列を発動する。
  *  1. オフラインで署名検証（不正なキーはここで即rejectし、ネットワークに触らない）
@@ -52,7 +87,7 @@ export async function activateLicenseKey(
     const res = await fetch('/activate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kid, deviceId }),
+      body: JSON.stringify({ kid, deviceId, label: buildDeviceLabel(currentUserAgent()) }),
       signal: AbortSignal.timeout(10_000),
     })
     if (res.ok) {
@@ -70,7 +105,13 @@ export async function activateLicenseKey(
     // ネットワーク失敗 — フェイルオープンへフォールスルー
   }
 
-  const state: LicenseState = { kid, deviceId, scope, validatedAt: Date.now() }
+  // (Re-)activation always writes a fresh record — this is also how a device
+  // that had `stopped` set (ended/device-removed) auto-clears it by putting a
+  // new key in: db.put replaces the whole record, so any prior `stopped`
+  // never survives. lastCheckedAt/lastConfirmedAt reset to now so
+  // license-check.ts's next runSyncCycle doesn't immediately re-query.
+  const now = Date.now()
+  const state: LicenseState = { kid, deviceId, scope, validatedAt: now, lastCheckedAt: now, lastConfirmedAt: now }
   await saveLicense(db, state)
   return { status: 'unlocked', scope, verified: confirmed }
 }

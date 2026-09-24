@@ -265,6 +265,17 @@ describe('pushSnapshot', () => {
 import { runSyncCycle, connectSync } from './engine'
 import { updateSyncStatus, loadSyncStatus } from './sync-store'
 import { mergeAll } from './merge'
+import { saveLicense, type LicenseState } from '@/lib/board/license-store'
+
+// Every runSyncCycle/connectSync test below exercises the sync flow itself,
+// not the license gate (that's covered separately in license-check.test.ts)
+// — so each one seeds a license that's already "recently confirmed" (well
+// inside CHECK_INTERVAL_MS/GRACE_MS), meaning checkLicenseForSync resolves
+// {allowed:true} without ever calling fetch. This also proves the gate does
+// not interfere with the pre-existing sync behavior these tests assert on.
+function activeLicenseState(now: number = Date.now()): LicenseState {
+  return { kid: 'kid-1', deviceId: 'device-1', scope: ['sync'], validatedAt: now, lastCheckedAt: now, lastConfirmedAt: now }
+}
 
 function bookmark(id: string, overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -281,10 +292,26 @@ describe('runSyncCycle', () => {
     expect(result).toEqual({ status: 'not-connected', vaultConflict: false })
   })
 
+  // License gate (design §3.2): connected but no license at all -> gated
+  // before any Drive call, with no Drive adapter function ever invoked.
+  it('returns license-inactive and makes no Drive call when connected but unlicensed', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+
+    const result = await runSyncCycle(d)
+    expect(result).toEqual({ status: 'license-inactive', vaultConflict: false, licenseReason: 'no-license' })
+    expect(listFolderFiles).not.toHaveBeenCalled()
+    expect(downloadFileText).not.toHaveBeenCalled()
+    expect(createTextFile).not.toHaveBeenCalled()
+    expect(updateTextFile).not.toHaveBeenCalled()
+  })
+
   it('pulls, merges, writes locally, and pushes on a clean cycle', async () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     await d.put('bookmarks', bookmark('local-only') as never)
 
     vi.mocked(listFolderFiles).mockResolvedValue([])
@@ -302,6 +329,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     for (let i = 0; i < 10; i++) await d.put('bookmarks', bookmark(`local-${i}`) as never)
 
     // Remote has none of them and tombstones are absent → naive read would look like mass deletion.
@@ -331,6 +359,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     for (let i = 0; i < 10; i++) await d.put('bookmarks', bookmark(`local-${i}`) as never)
     const remoteBookmarks = Array.from({ length: 8 }, (_, i) =>
       bookmark(`local-${i}`, { isDeleted: true, deletedAt: '2026-06-01T00:00:00.000Z', updatedAt: 999999 }))
@@ -349,6 +378,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     for (let i = 0; i < 10; i++) await d.put('bookmarks', bookmark(`local-${i}`) as never)
     const remoteBookmarks = Array.from({ length: 8 }, (_, i) =>
       bookmark(`local-${i}`, { isDeleted: true, deletedAt: '2026-06-01T00:00:00.000Z', updatedAt: 999999 }))
@@ -368,6 +398,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     vi.mocked(listFolderFiles).mockRejectedValueOnce(new DriveError(0, 'drive fetch failed: network error'))
 
     const failed = await runSyncCycle(d)
@@ -388,6 +419,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     await createVault(d, 'tag1', 'local-password')
 
     const remoteVault = {
@@ -419,6 +451,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     await createVault(d, 'tag1', 'local-password')
     const localVaultBefore = await d.get('settings', 'private-vault') as { salt: string }
 
@@ -468,6 +501,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
 
     vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
     vi.mocked(downloadFileText).mockResolvedValue('[]')
@@ -503,6 +537,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     // No vault yet — the first pull genuinely sees none either.
 
     const remoteVault = {
@@ -553,6 +588,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     await createVault(d, 'local-tag', 'local-password', undefined)
 
     const remoteVault = {
@@ -576,6 +612,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     await createVault(d, 'local-tag', 'local-password', undefined)
     const localVault = await loadVaultRecord(d)
 
@@ -615,6 +652,7 @@ describe('runSyncCycle', () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
     await createVault(d, 'local-tag', 'local-password', undefined)
     const localVault = await loadVaultRecord(d)
 
@@ -638,6 +676,7 @@ describe('runSyncCycle', () => {
 describe('connectSync', () => {
   it('saves tokens, finds/creates the folder, and runs a sync cycle', async () => {
     const d = await initDB(); db = d
+    await saveLicense(d, activeLicenseState())
     vi.mocked(findSyncFolder).mockResolvedValue(null)
     vi.mocked(createSyncFolder).mockResolvedValue('new-folder')
     vi.mocked(listFolderFiles).mockResolvedValue([])
@@ -652,6 +691,7 @@ describe('connectSync', () => {
 
   it('decodes and persists connectedEmail from the ID token on a successful connect', async () => {
     const d = await initDB(); db = d
+    await saveLicense(d, activeLicenseState())
     vi.mocked(findSyncFolder).mockResolvedValue(null)
     vi.mocked(createSyncFolder).mockResolvedValue('new-folder')
     vi.mocked(listFolderFiles).mockResolvedValue([])

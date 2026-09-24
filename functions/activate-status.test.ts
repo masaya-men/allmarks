@@ -15,25 +15,40 @@ function makeCtx(kid: string | null, kvStore: Map<string, string>) {
 }
 
 describe('GET /activate-status', () => {
-  it('returns the current device count and the max', async () => {
+  it('returns the current device count, max, and the legacy string[] entries upgraded to {id,label,at}', async () => {
     const kvStore = new Map<string, string>([['act:kid-1', JSON.stringify(['d1', 'd2'])]])
     const { ctx } = makeCtx('kid-1', kvStore)
     const res = await onRequestGet(ctx as never)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ ok: true, count: 2, max: 5 })
+    expect(await res.json()).toEqual({
+      ok: true,
+      count: 2,
+      max: 5,
+      devices: [{ id: 'd1', label: '', at: 0 }, { id: 'd2', label: '', at: 0 }],
+    })
   })
 
-  it('a kid with no activations yet returns count:0', async () => {
+  it('returns the new {id,label,at}[] shape unchanged', async () => {
+    const devices = [{ id: 'd1', label: 'Chrome · Windows', at: 1700000000000 }]
+    const kvStore = new Map<string, string>([['act:kid-1', JSON.stringify(devices)]])
+    const { ctx } = makeCtx('kid-1', kvStore)
+    const res = await onRequestGet(ctx as never)
+    expect(await res.json()).toEqual({ ok: true, count: 1, max: 5, devices })
+  })
+
+  it('a kid with no activations yet returns count:0 and an empty devices list', async () => {
     const { ctx } = makeCtx('never-activated', new Map())
     const res = await onRequestGet(ctx as never)
-    expect(await res.json()).toEqual({ ok: true, count: 0, max: 5 })
+    expect(await res.json()).toEqual({ ok: true, count: 0, max: 5, devices: [] })
   })
 
   it('a full (5/5) key reports count:5', async () => {
     const kvStore = new Map<string, string>([['act:kid-1', JSON.stringify(['d1', 'd2', 'd3', 'd4', 'd5'])]])
     const { ctx } = makeCtx('kid-1', kvStore)
     const res = await onRequestGet(ctx as never)
-    expect(await res.json()).toEqual({ ok: true, count: 5, max: 5 })
+    const json = await res.json() as { ok: boolean; count: number; max: number }
+    expect(json.count).toBe(5)
+    expect(json.max).toBe(5)
   })
 
   it('missing kid query param: 400 ok:false', async () => {
@@ -54,6 +69,18 @@ describe('GET /activate-status', () => {
     const kvStore = new Map<string, string>([['act:kid-1', 'not valid json{']])
     const { ctx } = makeCtx('kid-1', kvStore)
     const res = await onRequestGet(ctx as never)
-    expect(await res.json()).toEqual({ ok: true, count: 0, max: 5 })
+    expect(await res.json()).toEqual({ ok: true, count: 0, max: 5, devices: [] })
+  })
+
+  it('a corrupt element inside an otherwise-valid array is dropped, not thrown', async () => {
+    const kvStore = new Map<string, string>([['act:kid-1', JSON.stringify(['d1', 42, { bogus: true }, 'd2'])]])
+    const { ctx } = makeCtx('kid-1', kvStore)
+    const res = await onRequestGet(ctx as never)
+    expect(await res.json()).toEqual({
+      ok: true,
+      count: 2,
+      max: 5,
+      devices: [{ id: 'd1', label: '', at: 0 }, { id: 'd2', label: '', at: 0 }],
+    })
   })
 })

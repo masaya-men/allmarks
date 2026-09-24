@@ -10,6 +10,7 @@ import {
 import { classifySyncError } from './error-kind'
 import { decodeIdTokenEmail } from './id-token'
 import { getDeviceId } from './device-id'
+import { checkLicenseForSync, type LicenseInactiveReason } from '@/lib/board/license-check'
 import { DB_VERSION } from '@/lib/constants'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
 import { saveVaultConflict, isLocalVaultTarget } from '@/lib/private/vault-conflict'
@@ -231,13 +232,14 @@ function vaultRecordsDiffer(a: PrivateVaultRecord, b: PrivateVaultRecord): boole
 }
 
 export interface SyncCycleResult {
-  readonly status: 'not-connected' | 'synced' | 'needs-confirmation' | 'error'
+  readonly status: 'not-connected' | 'synced' | 'needs-confirmation' | 'error' | 'license-inactive'
   readonly vaultConflict: boolean
   readonly deletionRatio?: number
   readonly deletedCount?: number
   readonly mergedCounts?: { readonly bookmarks: number; readonly tags: number; readonly cards: number }
   readonly errorMessage?: string
   readonly errorKind?: import('./error-kind').SyncErrorKind
+  readonly licenseReason?: LicenseInactiveReason
 }
 
 async function writeManifest(accessToken: string, folderId: string, db: DbLike, snapshot: SyncSnapshot): Promise<void> {
@@ -265,6 +267,16 @@ export async function runSyncCycle(
   if (!status.connected || !status.folderId) {
     return { status: 'not-connected', vaultConflict: false }
   }
+
+  // License gate (design §3.2): the one entry point every trigger (auto
+  // debounce, tab-hide, manual "Sync now") passes through, so this is the
+  // only place that needs to enforce it. No Drive calls and no status writes
+  // happen below this point when the license isn't allowed to sync.
+  const licenseCheck = await checkLicenseForSync(db)
+  if (!licenseCheck.allowed) {
+    return { status: 'license-inactive', vaultConflict: false, licenseReason: licenseCheck.reason }
+  }
+
   const folderId = status.folderId
 
   let accessToken: string

@@ -1,9 +1,12 @@
 // functions/activate-status.ts
 // GET /activate-status?kid=<kid> — read-only device-count lookup for the
-// SETTINGS UI ("X/5 devices used"). Never registers or consumes a device
-// slot (only POST /activate does that) — this just reads act:<kid> from KV.
-// Sibling of functions/activate.ts; MAX_ACTIVATIONS must stay in sync with
-// that file's own constant.
+// SETTINGS UI ("X/5 devices used" + per-device list). Never registers or
+// consumes a device slot (only POST /activate does that) — this just reads
+// act:<kid> from KV. Sibling of functions/activate.ts; MAX_ACTIVATIONS must
+// stay in sync with that file's own constant.
+// act:<kid> is {id,label,at}[] (also reads the legacy string[] form) — see
+// docs/private/2026-09-24-paddle-license-lifecycle-design.md §2.1, §2.5.
+import { parseDeviceList } from '../lib/board/license-devices'
 
 interface KVNamespace {
   get(key: string, options?: { type?: 'text' }): Promise<string | null>
@@ -34,14 +37,6 @@ export async function onRequestGet(ctx: PagesContext): Promise<Response> {
   if (!kid || kid.length > MAX_KID_LEN) return jsonResponse(400, { ok: false })
 
   const actRaw = await ctx.env.K3_KV.get(`act:${kid}`)
-  let count = 0
-  if (actRaw) {
-    try {
-      const parsed: unknown = JSON.parse(actRaw)
-      if (Array.isArray(parsed)) count = parsed.length
-    } catch {
-      count = 0
-    }
-  }
-  return jsonResponse(200, { ok: true, count, max: MAX_ACTIVATIONS })
+  const devices = parseDeviceList(actRaw)
+  return jsonResponse(200, { ok: true, count: devices.length, max: MAX_ACTIVATIONS, devices })
 }

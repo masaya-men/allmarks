@@ -12,6 +12,18 @@ export interface LicenseState {
   readonly deviceId: string
   readonly scope: readonly string[]
   readonly validatedAt: number
+  /** Last time this device attempted a server confirmation (lib/board/
+   *  license-check.ts). Absent on records saved before this field existed —
+   *  callers must treat a missing value as 0 ("never checked"). */
+  readonly lastCheckedAt?: number
+  /** Last time the server confirmed the license active. Absent on legacy
+   *  records — callers must treat a missing value as `validatedAt` (the
+   *  original activation already proved a valid signature). */
+  readonly lastConfirmedAt?: number
+  /** Set once the server reports the license is no longer usable from this
+   *  device. Re-activating a key (license-activate.ts) clears this by
+   *  writing a fresh record. */
+  readonly stopped?: 'ended' | 'device-removed'
 }
 
 interface LicenseRecord extends LicenseState {
