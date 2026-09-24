@@ -1045,15 +1045,15 @@
         "copy": "Kopiëren",
         "copied": "Gekopieerd",
         "open": "AllMarks openen",
-        "note": "Bewaar deze sleutel op een veilige plek. Ben je hem kwijt? Vul hieronder het bestelnummer uit je Paddle-ontvangstbevestiging in om dezelfde sleutel opnieuw te tonen."
+        "note": "Bewaar deze sleutel op een veilige plek. Ben je hem kwijt? Vul hieronder het transactie-ID uit je Paddle-ontvangstbevestiging in om dezelfde sleutel opnieuw te tonen."
       },
       "lost": {
         "heading": "Sleutel kwijt?",
-        "placeholder": "Bestelnummer (begint met txn_)",
+        "placeholder": "Transactie-ID (begint met txn_)",
         "button": "Sleutel tonen"
       },
       "processing": "Je betaling wordt nog verwerkt. Laad deze pagina over een paar minuten opnieuw.",
-      "notFound": "We konden deze betaling niet bevestigen. Controleer het bestelnummer. Blijft het probleem bestaan, [[neem dan contact met me op|contact]].",
+      "notFound": "We konden deze betaling niet bevestigen. Controleer het transactie-ID. Blijft het probleem bestaan, [[neem dan contact met me op|contact]].",
       "error": "Er ging iets mis tijdens het bevestigen. Laad de pagina straks opnieuw."
     }
   },

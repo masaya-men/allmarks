@@ -1045,15 +1045,15 @@
         "copy": "Copia",
         "copied": "Copiato",
         "open": "Apri AllMarks",
-        "note": "Conserva questa chiave in un luogo sicuro. Se la perdi, inserisci qui sotto il numero d'ordine dell'email di ricevuta di Paddle per mostrare di nuovo la stessa chiave."
+        "note": "Conserva questa chiave in un luogo sicuro. Se la perdi, inserisci qui sotto il ID transazione dell'email di ricevuta di Paddle per mostrare di nuovo la stessa chiave."
       },
       "lost": {
         "heading": "Hai perso la chiave?",
-        "placeholder": "Numero d'ordine (inizia con txn_)",
+        "placeholder": "ID transazione (inizia con txn_)",
         "button": "Mostra chiave"
       },
       "processing": "Il pagamento è ancora in fase di elaborazione. Ricarica questa pagina tra qualche minuto.",
-      "notFound": "Non siamo riusciti a confermare questo pagamento. Controlla il numero d'ordine. Se il problema persiste, [[scrivimi|contact]].",
+      "notFound": "Non siamo riusciti a confermare questo pagamento. Controlla il ID transazione. Se il problema persiste, [[scrivimi|contact]].",
       "error": "Si è verificato un problema durante la conferma. Ricarica la pagina tra un po'."
     }
   },

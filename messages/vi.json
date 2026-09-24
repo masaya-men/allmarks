@@ -1045,15 +1045,15 @@
         "copy": "Sao chép",
         "copied": "Đã sao chép",
         "open": "Mở AllMarks",
-        "note": "Hãy giữ khóa này ở nơi an toàn. Nếu bị mất, hãy nhập mã số đơn hàng trong email biên nhận của Paddle vào ô bên dưới để hiển thị lại cùng một khóa."
+        "note": "Hãy giữ khóa này ở nơi an toàn. Nếu bị mất, hãy nhập mã giao dịch trong email biên nhận của Paddle vào ô bên dưới để hiển thị lại cùng một khóa."
       },
       "lost": {
         "heading": "Bị mất khóa?",
-        "placeholder": "Mã số đơn hàng (bắt đầu bằng txn_)",
+        "placeholder": "Mã giao dịch (bắt đầu bằng txn_)",
         "button": "Hiện khóa"
       },
       "processing": "Thanh toán của bạn vẫn đang được xử lý. Hãy tải lại trang này sau vài phút.",
-      "notFound": "Chúng tôi không thể xác nhận khoản thanh toán này. Hãy kiểm tra lại mã số đơn hàng. Nếu sự cố vẫn tiếp diễn, hãy [[liên hệ với tôi|contact]].",
+      "notFound": "Chúng tôi không thể xác nhận khoản thanh toán này. Hãy kiểm tra lại mã giao dịch. Nếu sự cố vẫn tiếp diễn, hãy [[liên hệ với tôi|contact]].",
       "error": "Đã xảy ra sự cố khi xác nhận. Vui lòng tải lại trang sau một lúc."
     }
   },

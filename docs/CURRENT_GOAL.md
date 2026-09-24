@@ -13,6 +13,7 @@ Paddle 本番審査 **通過**(live)。Payoneer 申請済(審査待ち約2営業
 1. 再起動後、Paddle プラグインの Sandbox キー入力をユーザーが実施済みか確認 → paddle-sandbox MCP で **商品2つ・価格4つ**(同期 月¥500/年¥5,000、サポーター 月¥1,500/年¥15,000)を Sandbox に作成。client-side token も作成(MCP で不可ならユーザーに画面で)。
 2. サーバー用 Sandbox API キー(transaction.read + subscription.read のみ)をユーザーに作ってもらい `.dev.vars` に `PADDLE_API_KEY` / `PADDLE_ENV=sandbox`(ユーザーが自分で貼る・チャットに出さない)。`.env.local` に `NEXT_PUBLIC_PADDLE_*`(公開値)。
 3. ローカル(`wrangler pages dev`)で偽カード購入 → 鍵表示 → 貼付 → 同期 → Sandbox で解約 → 翌確認で停止。**領収書メールに txn_ が載るか確認**(載らなければ購入完了ページの「注文番号」文言と入力値を変える)。
+3.5 **本番公開時の注意**: ①本番アカウントでも Checkout settings の Default payment link を `https://allmarks.app/pricing` に設定(未設定だと決済が開かない)。②`out/` は現在 Sandbox 値入りのビルド → デプロイ前に必ず素の `pnpm build` で作り直す(`.env.sandbox` は自動読込されない名前にしてある。読み込むのは `set -a; . ./.env.sandbox; set +a` の時だけ)。③ローカル確認は `npx wrangler pages dev out/ --port 8788 --compatibility-date=2026-04-22`(wrangler が古く当日日付に非対応)。④Sandbox 用 K3 鍵ペアは本番と別物(`.dev.vars` / `.env.sandbox`)。⑤テスト完了後、Sandbox API キー(チャット共有済み)を管理画面で削除。
 4. 残り: 端末一覧+「外す」UI(見本→承認)、`応援する(近日公開)`→料金ページ、プライバシーの「Paddle から受け取るもの」修正、本番キー切替は事前確認。
 
 ## ユーザー本人の作業

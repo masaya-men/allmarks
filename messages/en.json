@@ -1045,15 +1045,15 @@
         "copy": "Copy",
         "copied": "Copied",
         "open": "Open AllMarks",
-        "note": "Keep this key somewhere safe. If you lose it, enter the order number from your Paddle receipt email below to show the same key again."
+        "note": "Keep this key somewhere safe. If you lose it, enter the transaction ID from your Paddle receipt email below to show the same key again."
       },
       "lost": {
         "heading": "Lost your key?",
-        "placeholder": "Order number (starts with txn_)",
+        "placeholder": "Transaction ID (starts with txn_)",
         "button": "Show key"
       },
       "processing": "Your payment is still being processed. Reload this page in a few minutes.",
-      "notFound": "We couldn't confirm this payment. Check the order number. If the problem continues, [[contact me|contact]].",
+      "notFound": "We couldn't confirm this payment. Check the transaction ID. If the problem continues, [[contact me|contact]].",
       "error": "Something went wrong while confirming. Please reload in a while."
     }
   },

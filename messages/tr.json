@@ -1045,15 +1045,15 @@
         "copy": "Kopyala",
         "copied": "Kopyalandı",
         "open": "AllMarks'ı aç",
-        "note": "Bu anahtarı güvenli bir yerde saklayın. Kaybederseniz, aynı anahtarı yeniden görüntülemek için aşağıya Paddle makbuz e-postanızdaki sipariş numarasını girin."
+        "note": "Bu anahtarı güvenli bir yerde saklayın. Kaybederseniz, aynı anahtarı yeniden görüntülemek için aşağıya Paddle makbuz e-postanızdaki işlem kimliğini girin."
       },
       "lost": {
         "heading": "Anahtarınızı mı kaybettiniz?",
-        "placeholder": "Sipariş numarası (txn_ ile başlar)",
+        "placeholder": "İşlem kimliği (txn_ ile başlar)",
         "button": "Anahtarı göster"
       },
       "processing": "Ödemeniz hâlâ işleniyor. Bu sayfayı birkaç dakika sonra yeniden yükleyin.",
-      "notFound": "Bu ödemeyi onaylayamadık. Sipariş numarasını kontrol edin. Sorun devam ederse [[benimle iletişime geçin|contact]].",
+      "notFound": "Bu ödemeyi onaylayamadık. İşlem kimliğini kontrol edin. Sorun devam ederse [[benimle iletişime geçin|contact]].",
       "error": "Onaylama sırasında bir sorun oluştu. Lütfen bir süre sonra sayfayı yeniden yükleyin."
     }
   },

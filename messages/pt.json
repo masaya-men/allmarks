@@ -1045,15 +1045,15 @@
         "copy": "Copiar",
         "copied": "Copiado",
         "open": "Abrir AllMarks",
-        "note": "Guarde esta chave em um lugar seguro. Se perdê-la, digite abaixo o número do pedido do e-mail de recibo da Paddle para exibir a mesma chave novamente."
+        "note": "Guarde esta chave em um lugar seguro. Se perdê-la, digite abaixo o ID da transação do e-mail de recibo da Paddle para exibir a mesma chave novamente."
       },
       "lost": {
         "heading": "Perdeu sua chave?",
-        "placeholder": "Número do pedido (começa com txn_)",
+        "placeholder": "ID da transação (começa com txn_)",
         "button": "Mostrar chave"
       },
       "processing": "Seu pagamento ainda está sendo processado. Recarregue esta página em alguns minutos.",
-      "notFound": "Não conseguimos confirmar este pagamento. Verifique o número do pedido. Se o problema continuar, [[entre em contato comigo|contact]].",
+      "notFound": "Não conseguimos confirmar este pagamento. Verifique o ID da transação. Se o problema continuar, [[entre em contato comigo|contact]].",
       "error": "Ocorreu um problema ao confirmar. Recarregue a página daqui a pouco."
     }
   },
