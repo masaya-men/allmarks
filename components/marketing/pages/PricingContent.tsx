@@ -82,7 +82,7 @@ export function PricingContent(): React.ReactElement {
 
       <section className={styles.cards}>
         {/* Free */}
-        <article className={styles.card}>
+        <article className={`${styles.card} ${styles.cardFree}`}>
           <p className={styles.planName}>{planLabel('free')}</p>
           <p className={styles.price}>¥0</p>
           <p className={styles.alt} aria-hidden="true" />
