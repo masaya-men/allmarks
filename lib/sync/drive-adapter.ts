@@ -24,8 +24,9 @@ export const SYNC_FILE_MIME = 'application/json'
  *  増えるため、閾値は余裕を見て 4MB）。 */
 export const RESUMABLE_UPLOAD_THRESHOLD_BYTES = 4 * 1024 * 1024
 
-/** UTF-8 バイト数（文字列長ではない — 日本語等のマルチバイト文字を正しく数える）。 */
-function byteLength(content: string): number {
+/** UTF-8 バイト数（文字列長ではない — 日本語等のマルチバイト文字を正しく数える）。
+ *  engine.ts の同期記録（sync-status の lastCycleTrace）がアップロードのサイズ表示に使うため export。 */
+export function byteLength(content: string): number {
   return new TextEncoder().encode(content).length
 }
 
@@ -33,15 +34,22 @@ function byteLength(content: string): number {
  *  応答が想定外の形なら 500）。束4 が status で分岐する。
  *  `context` は診断用のみ（sync-status の lastIssue.detail に載せる「どの操作の
  *  どのファイルで失敗したか」の短い文字列・例 "upload bookmarks.json"）。
- *  status/name によるエラー分類（error-kind.ts）には一切使わない。 */
+ *  status/name によるエラー分類（error-kind.ts）には一切使わない。
+ *  `timedOut` も診断用のみ: このリクエストがサーバの応答待ちで
+ *  TIMEOUT_*_MS を超えて自前で中断された場合に true（相手が本当に 401/404 等
+ *  を返した場合や、呼び出し側の signal で中断された場合は false のまま）。
+ *  classifySyncError は既存どおり status だけを見るので分類には影響しない —
+ *  sync-status の lastCycleTrace に "timeout" と記録するためだけに使う。 */
 export class DriveError extends Error {
   readonly status: number
   readonly context?: string
-  constructor(status: number, message: string, context?: string) {
+  readonly timedOut: boolean
+  constructor(status: number, message: string, context?: string, timedOut = false) {
     super(message)
     this.name = 'DriveError'
     this.status = status
     this.context = context
+    this.timedOut = timedOut
   }
 }
 
@@ -59,6 +67,17 @@ function wait(ms: number): Promise<void> {
 /** リトライ間の待機時間。最初の失敗から 2 秒待って1回目のリトライ、それも失敗
  *  したら 5 秒待って2回目（最後）のリトライ — 合計で最大3回まで fetch する。 */
 const RETRY_DELAYS_MS = [2000, 5000] as const
+
+/** 1リクエストあたりのタイムアウト。相手が応答を返さないまま固まった fetch を
+ *  無期限に待たない（実害: iPhone Safari で upload bookmarks.json が固まり、
+ *  sync-lock.ts の排他ロックごと後続の同期を巻き添えにした）。
+ *  一覧・メタデータ取得（findSyncFolder/createSyncFolder/listFolderFiles/
+ *  getHeadRevisionId）は軽い呼び出しなので短め、ダウンロードはファイル本文の
+ *  転送があるぶん長め、アップロード（multipart 本体・resumable の開始/PUT
+ *  それぞれ）はさらに長め。 */
+const TIMEOUT_LIST_MS = 20_000
+const TIMEOUT_DOWNLOAD_MS = 60_000
+const TIMEOUT_UPLOAD_MS = 90_000
 
 /** Drive のファイルメタ（この束が使う分だけ）。 */
 export interface DriveFileMeta {
@@ -90,20 +109,43 @@ export function buildMultipartRelated(
   return { body, contentType: `multipart/related; boundary=${boundary}` }
 }
 
-/** Authorization を足して1回だけ fetch。!res.ok は DriveError、fetch throw は DriveError(0)。 */
+/** Authorization を足して1回だけ fetch。!res.ok は DriveError、fetch throw は DriveError(0)。
+ *  `timeoutMs` を過ぎても応答がなければ自前で abort し、DriveError(0, ..., timedOut: true) で
+ *  失敗させる（相手が固まった fetch を無期限に待たない）。`callerSignal` は呼び出し側
+ *  （engine.ts の1サイクル全体の上限や、テストからの明示的な中断）からの中断で、これが
+ *  発火した場合は timedOut は false のまま（"自分のタイムアウトで諦めた"のではなく
+ *  "外から止められた"ため区別する）。 */
 async function driveFetchOnce(
   accessToken: string,
   url: string,
-  init?: RequestInit,
+  init: RequestInit | undefined,
+  timeoutMs: number,
+  callerSignal?: AbortSignal,
 ): Promise<Response> {
+  const controller = new AbortController()
+  let timedOut = false
+  const timer = setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+  const onCallerAbort = (): void => controller.abort()
+  if (callerSignal) {
+    if (callerSignal.aborted) controller.abort()
+    else callerSignal.addEventListener('abort', onCallerAbort)
+  }
   let res: Response
   try {
     res = await fetch(url, {
       ...init,
+      signal: controller.signal,
       headers: { ...(init?.headers as Record<string, string> | undefined), Authorization: `Bearer ${accessToken}` },
     })
   } catch (err) {
+    if (timedOut) throw new DriveError(0, `drive fetch failed: timeout after ${timeoutMs / 1000}s`, undefined, true)
     throw new DriveError(0, `drive fetch failed: ${err instanceof Error ? err.message : String(err)}`)
+  } finally {
+    clearTimeout(timer)
+    if (callerSignal) callerSignal.removeEventListener('abort', onCallerAbort)
   }
   if (!res.ok) {
     let detail = ''
@@ -117,21 +159,25 @@ async function driveFetchOnce(
   return res
 }
 
-/** driveFetchOnce に自動リトライを足したもの。一時的な失敗（fetch 自体の throw、
+/** driveFetchOnce に自動リトライを足したもの。一時的な失敗（fetch 自体の throw、タイムアウト、
  *  429、5xx）は 2秒→5秒待って最大2回まで再試行する（= 最大3回 fetch）。それ以外の
  *  4xx（401/403/404 等）は1回で諦める。アップロードは全文 PATCH/PUT で冪等なので
- *  再試行しても安全（束7 の設計メモ）。 */
+ *  再試行しても安全（束7 の設計メモ）。`signal` が既に中断済み（engine.ts の1サイクル
+ *  上限超過など）ならリトライの待機はせず即座に諦める — 既に失敗が決まっているサイクルで
+ *  何秒も待ってから諦め直す意味がないため。 */
 async function driveFetch(
   accessToken: string,
   url: string,
-  init?: RequestInit,
+  init: RequestInit | undefined,
+  timeoutMs: number,
+  signal?: AbortSignal,
 ): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     try {
-      return await driveFetchOnce(accessToken, url, init)
+      return await driveFetchOnce(accessToken, url, init, timeoutMs, signal)
     } catch (err) {
       const driveErr = err instanceof DriveError ? err : new DriveError(0, err instanceof Error ? err.message : String(err))
-      if (!isRetryableStatus(driveErr.status) || attempt >= RETRY_DELAYS_MS.length) {
+      if (signal?.aborted || !isRetryableStatus(driveErr.status) || attempt >= RETRY_DELAYS_MS.length) {
         throw driveErr
       }
       await wait(RETRY_DELAYS_MS[attempt])
@@ -158,14 +204,14 @@ interface DriveFileListItem {
  * 可視フォルダ `AllMarks/` を名前 + appProperties マーカーで探す。
  * マーカー付きが複数なら id 辞書順で最小（決定的）。無ければ null。
  */
-export async function findSyncFolder(accessToken: string): Promise<string | null> {
+export async function findSyncFolder(accessToken: string, signal?: AbortSignal): Promise<string | null> {
   const q =
     `name = '${SYNC_FOLDER_NAME}' and mimeType = '${FOLDER_MIME}' and trashed = false` +
     ` and appProperties has { key='${SYNC_MARKER_KEY}' and value='${SYNC_MARKER_VALUE}' }`
   const url =
     `${DRIVE_API}/files?q=${encodeURIComponent(q)}` +
     `&fields=${encodeURIComponent('files(id,appProperties)')}&spaces=drive&pageSize=10`
-  const json = await readJson(await driveFetch(accessToken, url))
+  const json = await readJson(await driveFetch(accessToken, url, undefined, TIMEOUT_LIST_MS, signal))
   const files = (json as { files?: unknown }).files
   if (!Array.isArray(files)) return null
   const marked = files.filter((f): f is DriveFileListItem & { id: string } => {
@@ -182,7 +228,7 @@ export async function findSyncFolder(accessToken: string): Promise<string | null
 }
 
 /** マーカー付きで `AllMarks/` フォルダを新規作成し、その id を返す。 */
-export async function createSyncFolder(accessToken: string): Promise<string> {
+export async function createSyncFolder(accessToken: string, signal?: AbortSignal): Promise<string> {
   const url = `${DRIVE_API}/files?fields=id`
   const json = await readJson(await driveFetch(accessToken, url, {
     method: 'POST',
@@ -192,7 +238,7 @@ export async function createSyncFolder(accessToken: string): Promise<string> {
       mimeType: FOLDER_MIME,
       appProperties: { [SYNC_MARKER_KEY]: SYNC_MARKER_VALUE },
     }),
-  }))
+  }, TIMEOUT_LIST_MS, signal))
   const id = (json as { id?: unknown }).id
   if (typeof id !== 'string' || id.length === 0) {
     throw new DriveError(500, 'createSyncFolder: response had no id')
@@ -212,12 +258,12 @@ function toFileMeta(raw: unknown): DriveFileMeta | null {
 
 /** フォルダ直下の（ゴミ箱でない）ファイルを列挙。ページングは扱わない
  *  （AllMarks/ は 6 ファイル程度・設計 §5）。 */
-export async function listFolderFiles(accessToken: string, folderId: string): Promise<DriveFileMeta[]> {
+export async function listFolderFiles(accessToken: string, folderId: string, signal?: AbortSignal): Promise<DriveFileMeta[]> {
   const q = `'${folderId}' in parents and trashed = false`
   const url =
     `${DRIVE_API}/files?q=${encodeURIComponent(q)}` +
     `&fields=${encodeURIComponent('files(id,name,headRevisionId)')}&spaces=drive&pageSize=100`
-  const json = await readJson(await driveFetch(accessToken, url))
+  const json = await readJson(await driveFetch(accessToken, url, undefined, TIMEOUT_LIST_MS, signal))
   const files = (json as { files?: unknown }).files
   if (!Array.isArray(files)) return []
   return files
@@ -227,15 +273,15 @@ export async function listFolderFiles(accessToken: string, folderId: string): Pr
 }
 
 /** ファイル本文をテキストで取得（alt=media）。JSON パースは呼び出し側で。 */
-export async function downloadFileText(accessToken: string, fileId: string): Promise<string> {
+export async function downloadFileText(accessToken: string, fileId: string, signal?: AbortSignal): Promise<string> {
   const url = `${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`
-  return (await driveFetch(accessToken, url)).text()
+  return (await driveFetch(accessToken, url, undefined, TIMEOUT_DOWNLOAD_MS, signal)).text()
 }
 
 /** 現行リビジョン id を取得（楽観ロック・設計 §7.4）。 */
-export async function getHeadRevisionId(accessToken: string, fileId: string): Promise<string> {
+export async function getHeadRevisionId(accessToken: string, fileId: string, signal?: AbortSignal): Promise<string> {
   const url = `${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=headRevisionId`
-  const json = await readJson(await driveFetch(accessToken, url))
+  const json = await readJson(await driveFetch(accessToken, url, undefined, TIMEOUT_LIST_MS, signal))
   const rev = (json as { headRevisionId?: unknown }).headRevisionId
   if (typeof rev !== 'string' || rev.length === 0) {
     throw new DriveError(500, 'getHeadRevisionId: response had no headRevisionId')
@@ -258,12 +304,13 @@ async function initiateResumableUpload(
   url: string,
   method: 'POST' | 'PATCH',
   metadata: Readonly<Record<string, unknown>>,
+  signal?: AbortSignal,
 ): Promise<string> {
   const res = await driveFetch(accessToken, url, {
     method,
     headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': SYNC_FILE_MIME },
     body: JSON.stringify(metadata),
-  })
+  }, TIMEOUT_UPLOAD_MS, signal)
   const location = res.headers.get('Location') ?? res.headers.get('location')
   if (!location) throw new DriveError(500, 'resumable upload: initiate response had no Location header')
   return location
@@ -271,12 +318,12 @@ async function initiateResumableUpload(
 
 /** resumable セッションへ本文を1リクエストで PUT（分割アップロードはしない —
  *  Drive はチャンク分割なしの単発 PUT も許容する）。 */
-async function putResumableContent(accessToken: string, location: string, content: string): Promise<DriveFileMeta> {
+async function putResumableContent(accessToken: string, location: string, content: string, signal?: AbortSignal): Promise<DriveFileMeta> {
   const json = await readJson(await driveFetch(accessToken, location, {
     method: 'PUT',
     headers: { 'Content-Type': SYNC_FILE_MIME },
     body: content,
-  }))
+  }, TIMEOUT_UPLOAD_MS, signal))
   return metaFromUploadResponse(json, 'resumable upload')
 }
 
@@ -287,12 +334,13 @@ export async function createTextFile(
   folderId: string,
   name: string,
   content: string,
+  signal?: AbortSignal,
 ): Promise<DriveFileMeta> {
   const metadata = { name, parents: [folderId], mimeType: SYNC_FILE_MIME }
   if (byteLength(content) > RESUMABLE_UPLOAD_THRESHOLD_BYTES) {
     const url = `${DRIVE_UPLOAD_API}/files?uploadType=resumable&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
-    const location = await initiateResumableUpload(accessToken, url, 'POST', metadata)
-    return putResumableContent(accessToken, location, content)
+    const location = await initiateResumableUpload(accessToken, url, 'POST', metadata, signal)
+    return putResumableContent(accessToken, location, content, signal)
   }
   const boundary = `allmarks-${crypto.randomUUID()}`
   const { body, contentType } = buildMultipartRelated(metadata, content, SYNC_FILE_MIME, boundary)
@@ -301,7 +349,7 @@ export async function createTextFile(
     method: 'POST',
     headers: { 'Content-Type': contentType },
     body,
-  }))
+  }, TIMEOUT_UPLOAD_MS, signal))
   return metaFromUploadResponse(json, 'createTextFile')
 }
 
@@ -311,13 +359,14 @@ export async function updateTextFile(
   accessToken: string,
   fileId: string,
   content: string,
+  signal?: AbortSignal,
 ): Promise<DriveFileMeta> {
   if (byteLength(content) > RESUMABLE_UPLOAD_THRESHOLD_BYTES) {
     const url =
       `${DRIVE_UPLOAD_API}/files/${encodeURIComponent(fileId)}` +
       `?uploadType=resumable&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
-    const location = await initiateResumableUpload(accessToken, url, 'PATCH', {})
-    return putResumableContent(accessToken, location, content)
+    const location = await initiateResumableUpload(accessToken, url, 'PATCH', {}, signal)
+    return putResumableContent(accessToken, location, content, signal)
   }
   const boundary = `allmarks-${crypto.randomUUID()}`
   const { body, contentType } = buildMultipartRelated({}, content, SYNC_FILE_MIME, boundary)
@@ -328,6 +377,6 @@ export async function updateTextFile(
     method: 'PATCH',
     headers: { 'Content-Type': contentType },
     body,
-  }))
+  }, TIMEOUT_UPLOAD_MS, signal))
   return metaFromUploadResponse(json, 'updateTextFile')
 }

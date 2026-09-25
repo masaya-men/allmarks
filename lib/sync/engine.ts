@@ -93,11 +93,12 @@ export function hasRequiredScopes(grantedScope: string): boolean {
 
 import {
   findSyncFolder, createSyncFolder, listFolderFiles,
-  downloadFileText, getHeadRevisionId, createTextFile, updateTextFile, DriveError,
+  downloadFileText, getHeadRevisionId, createTextFile, updateTextFile, DriveError, byteLength,
 } from './drive-adapter'
 import {
   parseBookmarksFile, parseTagsFile, parseCardsFile, parseBoardConfigFile, parseVaultFile,
 } from './snapshot-schema'
+import type { SyncCycleStepTrace, SyncCycleTrace } from './sync-store'
 
 const FILE_NAMES = {
   bookmarks: 'bookmarks.json',
@@ -126,6 +127,68 @@ export class SyncConflictError extends Error {
   }
 }
 
+// ── サイクル記録（診断用・sync-status の lastCycleTrace）─────────────────────────
+//
+// SyncPanel の「同期の記録」トグルに出す、直近1サイクルのステップ別タイムライン。
+// iPhone Safari で upload bookmarks.json (~1.3MB) が固まり、sync-lock.ts の排他
+// ロックごと後続の同期を巻き添えにした実害の再発を、ユーザー自身の端末で
+// 「どのステップで・何秒固まったか」を見えるようにする。ここに積むのは
+// 名前・サイズ・成功/失敗・短い失敗理由だけ — トークン/ファイルID/URL/本文は
+// 一切載せない。
+
+/** 1ステップぶんの計測。`fn` が投げても記録してから同じ err を再 throw する
+ *  （呼び出し側の既存のエラー処理は一切変えない）。 */
+async function traceStep<T>(steps: SyncCycleStepTrace[], name: string, fn: () => T | Promise<T>): Promise<T> {
+  const start = Date.now()
+  try {
+    const result = await fn()
+    steps.push({ name, ms: Date.now() - start, ok: true })
+    return result
+  } catch (err) {
+    const note = stepErrorNote(err)
+    steps.push(note ? { name, ms: Date.now() - start, ok: false, note } : { name, ms: Date.now() - start, ok: false })
+    throw err
+  }
+}
+
+/** 失敗ステップに添える短い理由（診断用のみ）。DriveError.timedOut を最優先で見る —
+ *  status は 0 のまま（リトライ可能扱い）だが、原因は「相手が固まった」であって
+ *  「fetch 自体が例外を投げた」ではないことをここで区別する。 */
+function stepErrorNote(err: unknown): string | undefined {
+  if (err instanceof DriveError) {
+    if (err.timedOut) return 'timeout'
+    return err.status === 0 ? 'network' : `status ${err.status}`
+  }
+  if (err instanceof SyncConflictError) return 'conflict'
+  if (err instanceof Error && err.name) return err.name
+  return undefined
+}
+
+/** バイト数を "1.31MB" のように短く表示。ステップ名に埋め込む（note ではなく
+ *  name 側 — 例 "upload bookmarks.json (1.31MB)"）。 */
+function formatSize(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(2)}MB`
+}
+
+/** 1サイクル全体の上限。iPhone Safari の実害（upload が~10分固まり、排他ロック
+ *  ごと後続の同期を巻き添えにした）を受けて、これを超えたら in-flight の Drive
+ *  リクエストを中断してサイクルを 'network' エラーで失敗させ、ロックを解放する
+ *  （sync-lock.ts はサイクルが例外なく終わりさえすれば次を必ず走らせる — 詳細は
+ *  sync-lock.ts 冒頭のコメント）。 */
+const CYCLE_CEILING_MS = 5 * 60 * 1000
+
+/** サイクル終了時（成功でも失敗でも）に sync-status へ記録を保存する。診断専用の
+ *  ベストエフォート — ここが失敗してもサイクル本体の結果（return値/例外）は
+ *  絶対に上書きしない。 */
+async function persistCycleTrace(db: DbLike, startedAt: number, steps: SyncCycleStepTrace[]): Promise<void> {
+  const trace: SyncCycleTrace = { startedAt, steps, totalMs: Date.now() - startedAt }
+  try {
+    await updateSyncStatus(db, { lastCycleTrace: trace })
+  } catch {
+    // 診断ログの保存失敗はサイクルの成否に影響させない
+  }
+}
+
 export async function ensureSyncFolder(accessToken: string): Promise<string> {
   const existing = await findSyncFolder(accessToken)
   if (existing) return existing
@@ -135,8 +198,16 @@ export async function ensureSyncFolder(accessToken: string): Promise<string> {
 export async function pullRemoteSnapshot(
   accessToken: string,
   folderId: string,
+  // `signal`: this cycle's overall 5-minute ceiling (or a caller/test's own abort), threaded down
+  // to every Drive call below so an abort actually interrupts an in-flight request instead of
+  // being ignored. `trace`: this cycle's step timeline (sync-status's lastCycleTrace) — steps are
+  // pushed into the SAME array the caller holds, so it sees them even if this function throws
+  // partway through. Both optional and unused by default so every pre-existing 2-arg call site
+  // (tests included) keeps compiling and behaving exactly as before.
+  opts: { signal?: AbortSignal; trace?: SyncCycleStepTrace[] } = {},
 ): Promise<{ snapshot: SyncSnapshot; headRevisions: Record<string, string>; remoteTexts: Record<string, string> }> {
-  const files = await listFolderFiles(accessToken, folderId)
+  const { signal, trace = [] } = opts
+  const files = await traceStep(trace, 'list', () => listFolderFiles(accessToken, folderId, signal))
   const byName = new Map(files.map(f => [f.name, f]))
   const headRevisions: Record<string, string> = {}
   // Raw text as downloaded, keyed by file name — kept alongside the parsed snapshot so
@@ -149,8 +220,8 @@ export async function pullRemoteSnapshot(
     if (!meta) return null
     try {
       const [text, headRevisionId] = await Promise.all([
-        downloadFileText(accessToken, meta.id),
-        getHeadRevisionId(accessToken, meta.id),
+        traceStep(trace, `download ${name}`, () => downloadFileText(accessToken, meta.id, signal)),
+        traceStep(trace, `rev ${name}`, () => getHeadRevisionId(accessToken, meta.id, signal)),
       ])
       headRevisions[name] = headRevisionId
       remoteTexts[name] = text
@@ -158,8 +229,8 @@ export async function pullRemoteSnapshot(
     } catch (err) {
       // Attach which file this was to the error's diagnostic-only `context` (sync-status's
       // lastIssue.detail, item 5) — never changes `.status`/`.name`, so classifySyncError's
-      // behavior is unaffected.
-      if (err instanceof DriveError && !err.context) throw new DriveError(err.status, err.message, `download ${name}`)
+      // behavior is unaffected. `timedOut` is carried through unchanged for the same reason.
+      if (err instanceof DriveError && !err.context) throw new DriveError(err.status, err.message, `download ${name}`, err.timedOut)
       throw err
     }
   }
@@ -208,8 +279,12 @@ export async function pushSnapshot(
   // skip the upload entirely (no getHeadRevisionId check either, since there's nothing to write)
   // and keep its already-known headRevisionId in newRevisions. Item 1.
   previousRemoteTexts: Readonly<Record<string, string>> = {},
+  // See pullRemoteSnapshot's matching `opts` param above for what `signal`/`trace` do and why
+  // they're an optional trailing object (backward-compatible with every pre-existing call site).
+  opts: { signal?: AbortSignal; trace?: SyncCycleStepTrace[] } = {},
 ): Promise<Record<string, string>> {
-  const files = await listFolderFiles(accessToken, folderId)
+  const { signal, trace = [] } = opts
+  const files = await traceStep(trace, 'list', () => listFolderFiles(accessToken, folderId, signal))
   const byName = new Map(files.map(f => [f.name, f]))
   const newRevisions: Record<string, string> = {}
 
@@ -228,18 +303,26 @@ export async function pushSnapshot(
           newRevisions[name] = previous
           return
         }
-        const current = await getHeadRevisionId(accessToken, existing.id)
+        const current = await traceStep(trace, `rev ${name}`, () => getHeadRevisionId(accessToken, existing.id, signal))
         if (current !== previous) throw new SyncConflictError(name, previous, current)
-        const meta = await updateTextFile(accessToken, existing.id, serialized)
+        const meta = await traceStep(
+          trace, `upload ${name} (${formatSize(byteLength(serialized))})`,
+          () => updateTextFile(accessToken, existing.id, serialized, signal),
+        )
         if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
       } else {
-        const meta = await createTextFile(accessToken, folderId, name, JSON.stringify(content))
+        const serialized = JSON.stringify(content)
+        const meta = await traceStep(
+          trace, `upload ${name} (${formatSize(byteLength(serialized))})`,
+          () => createTextFile(accessToken, folderId, name, serialized, signal),
+        )
         if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
       }
     } catch (err) {
       // Diagnostic-only context for sync-status's lastIssue.detail (item 5) — never touches
       // `.status`/`.name`, so classifySyncError and the SyncConflictError branch above are unaffected.
-      if (err instanceof DriveError && !err.context) throw new DriveError(err.status, err.message, `upload ${name}`)
+      // `timedOut` is carried through unchanged for the same reason.
+      if (err instanceof DriveError && !err.context) throw new DriveError(err.status, err.message, `upload ${name}`, err.timedOut)
       throw err
     }
   }
@@ -327,8 +410,9 @@ async function isRemoteUnchanged(
   accessToken: string,
   folderId: string,
   previousHeadRevisions: Readonly<Record<string, string>>,
+  signal?: AbortSignal,
 ): Promise<boolean> {
-  const files = await listFolderFiles(accessToken, folderId)
+  const files = await listFolderFiles(accessToken, folderId, signal)
   const current: Record<string, string> = {}
   for (const f of files) {
     if (f.headRevisionId && TRACKED_FILE_NAMES.includes(f.name)) current[f.name] = f.headRevisionId
@@ -366,7 +450,9 @@ export interface SyncCycleResult {
   readonly licenseReason?: LicenseInactiveReason
 }
 
-async function writeManifest(accessToken: string, folderId: string, db: DbLike, snapshot: SyncSnapshot): Promise<void> {
+async function writeManifest(
+  accessToken: string, folderId: string, db: DbLike, snapshot: SyncSnapshot, signal?: AbortSignal,
+): Promise<void> {
   const deviceId = await getDeviceId(db)
   const manifest = {
     formatVersion: 1,
@@ -374,12 +460,12 @@ async function writeManifest(accessToken: string, folderId: string, db: DbLike, 
     updatedBy: { deviceId, at: Date.now() },
     counts: { bookmarks: snapshot.bookmarks.length, tags: snapshot.tags.length, cards: snapshot.cards.length },
   }
-  const files = await listFolderFiles(accessToken, folderId)
+  const files = await listFolderFiles(accessToken, folderId, signal)
   const existing = files.find(f => f.name === 'manifest.json')
   if (existing) {
-    await updateTextFile(accessToken, existing.id, JSON.stringify(manifest))
+    await updateTextFile(accessToken, existing.id, JSON.stringify(manifest), signal)
   } else {
-    await createTextFile(accessToken, folderId, 'manifest.json', JSON.stringify(manifest))
+    await createTextFile(accessToken, folderId, 'manifest.json', JSON.stringify(manifest), signal)
   }
 }
 
@@ -425,169 +511,188 @@ async function runSyncCycleUnlocked(
   if (!status.connected || !status.folderId) {
     return { status: 'not-connected', vaultConflict: false, localChanged: false }
   }
-
-  // License gate (design §3.2): the one entry point every trigger (auto
-  // debounce, tab-hide, manual "Sync now") passes through, so this is the
-  // only place that needs to enforce it. No Drive calls and no status writes
-  // happen below this point when the license isn't allowed to sync.
-  const licenseCheck = await checkLicenseForSync(db)
-  if (!licenseCheck.allowed) {
-    return { status: 'license-inactive', vaultConflict: false, licenseReason: licenseCheck.reason, localChanged: false }
-  }
-
   const folderId = status.folderId
 
-  let accessToken: string
+  // Step timeline (sync-status's lastCycleTrace, item 2) + the cycle's overall 5-minute ceiling
+  // (item 1): `signal` is threaded down through every Drive call below (pull/push/manifest/vault
+  // publish) so the ceiling firing actually aborts an in-flight request instead of being ignored.
+  // `persistCycleTrace` runs in the `finally` below so the trace is written on every exit from
+  // this point on — success, a normal 'error'/'needs-confirmation' return, or (in principle) an
+  // uncaught throw — never just on the happy path. See sync-lock.ts: as long as this function
+  // settles (it always does — every branch below returns, never rethrows), the exclusive lock is
+  // released for the next queued cycle regardless of how this one ended.
+  const trace: SyncCycleStepTrace[] = []
+  const cycleStartedAt = Date.now()
+  const cycleController = new AbortController()
+  const ceilingTimer = setTimeout(() => cycleController.abort(), CYCLE_CEILING_MS)
+  const signal = cycleController.signal
   try {
-    accessToken = await ensureAccessToken(db)
-  } catch (err) {
-    const errorKind = classifySyncError(err)
-    await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('auth', err) } })
-    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'auth failed', localChanged: false }
-  }
-
-  // Fast path for a timer/visibility poll (opts.skipIfUnchanged, set only by those triggers —
-  // never by a dirty write or manual "Sync now"): if nothing changed on Drive since our last
-  // successful cycle, skip the full pull/merge/push below entirely. Any failure here just falls
-  // through to the normal full pull, which has its own error handling.
-  if (opts.skipIfUnchanged) {
-    const unchanged = await isRemoteUnchanged(accessToken, folderId, status.headRevisions).catch(() => false)
-    if (unchanged) {
-      await updateSyncStatus(db, { lastSyncAt: Date.now() })
-      return { status: 'synced', vaultConflict: false, localChanged: false }
+    // License gate (design §3.2): the one entry point every trigger (auto
+    // debounce, tab-hide, manual "Sync now") passes through, so this is the
+    // only place that needs to enforce it. No Drive calls and no status writes
+    // happen below this point when the license isn't allowed to sync.
+    const licenseCheck = await traceStep(trace, 'license-check', () => checkLicenseForSync(db))
+    if (!licenseCheck.allowed) {
+      return { status: 'license-inactive', vaultConflict: false, licenseReason: licenseCheck.reason, localChanged: false }
     }
-  }
 
-  let pulled: Awaited<ReturnType<typeof pullRemoteSnapshot>>
-  try {
-    pulled = await pullRemoteSnapshot(accessToken, folderId)
-  } catch (err) {
-    const errorKind = classifySyncError(err)
-    await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('pull', err) } })
-    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'pull failed', localChanged: false }
-  }
-
-  const local = await buildLocalSnapshot(db)
-  let vaultConflict = !!(local.vault && pulled.snapshot.vault && vaultRecordsDiffer(local.vault, pulled.snapshot.vault))
-  if (vaultConflict && local.vault && pulled.snapshot.vault) {
-    // Persist the other side's full record (not just its public data) so the
-    // resolution UI (SETTINGS -> PRIVATE) can act on it later, and so the
-    // deterministic tie-break below and mergeIntoOtherVault (lib/private/
-    // vault-conflict.ts, called from the UI layer, not here) have what they need.
-    await saveVaultConflict(db, pulled.snapshot.vault)
-    // If the LOCAL vault is the deterministic winner, publish it to Drive right
-    // now, unconditionally — bypassing the "skip vault.json during a conflict"
-    // rule below. This never needs a password (publishing only ever needs the
-    // vault's public data, which is always available unlocked-or-not), and it
-    // must not wait for the user to do anything: the losing device's merge
-    // action (Task 5's mergeIntoOtherVault, wired in Task 8) needs vault.json
-    // to already reflect the winner BEFORE it retires its own vault, or a
-    // later sync could resurrect stale content. Uses the same
-    // create-or-update pattern as writeManifest below, not the normal
-    // pushSnapshot/optimistic-lock path (deliberately: this write must happen
-    // even though vaultConflict is about to force finalSnapshot.vault to null).
-    if (isLocalVaultTarget(local.vault, pulled.snapshot.vault)) {
-      const files = await listFolderFiles(accessToken, folderId)
-      const existing = files.find((f) => f.name === 'vault.json')
-      if (existing) {
-        await updateTextFile(accessToken, existing.id, JSON.stringify(local.vault))
-      } else {
-        await createTextFile(accessToken, folderId, 'vault.json', JSON.stringify(local.vault))
-      }
-    }
-  }
-  const merged = mergeAll(local, pulled.snapshot)
-  // On conflict, push neither side's vault via the NORMAL path (null): applySnapshotToLocal/
-  // pushSnapshot both skip a null vault entirely, so the local vault stays untouched here. The
-  // winning side's vault.json is instead published directly above, unconditionally, the moment
-  // the conflict is first detected — see the block above for why.
-  const finalSnapshot: SyncSnapshot = vaultConflict ? { ...merged, vault: null } : merged
-
-  const localActive = activeCount(local.bookmarks)
-  const mergedActive = activeCount(finalSnapshot.bookmarks)
-  if (!opts.bypassMassDeleteGuard && localActive >= MASS_DELETE_MIN_COUNT) {
-    const deletionRatio = (localActive - mergedActive) / localActive
-    if (deletionRatio > MASS_DELETE_THRESHOLD) {
-      const deletedCount = localActive - mergedActive
-      await updateSyncStatus(db, { lastIssue: { kind: 'needs-confirmation', deletedCount } })
-      return { status: 'needs-confirmation', vaultConflict, deletionRatio, deletedCount, localChanged: false }
-    }
-  }
-
-  await pushBackupGeneration(db, local)
-  await applySnapshotToLocal(db, finalSnapshot)
-
-  let newRevisions: Record<string, string>
-  let pushedSnapshot = finalSnapshot
-  try {
-    newRevisions = await pushSnapshot(accessToken, folderId, finalSnapshot, pulled.headRevisions, pulled.remoteTexts)
-  } catch (err) {
-    if (!(err instanceof SyncConflictError)) {
+    let accessToken: string
+    try {
+      accessToken = await ensureAccessToken(db)
+    } catch (err) {
       const errorKind = classifySyncError(err)
-      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('push', err) } })
-      return { status: 'error', vaultConflict, errorKind, errorMessage: err instanceof Error ? err.message : 'push failed', localChanged: false }
-    }
-    // Someone else pushed since our pull. Re-pull, re-merge once, then retry the push —
-    // re-running the SAME safety checks as the first attempt (vault conflict, mass-deletion
-    // guard), since the retry's re-pull can surface a conflict or deletions the first pull
-    // never saw. Wrapped in its own try/catch so a second failure still returns a
-    // SyncCycleResult instead of an unhandled rejection.
-    let rePulled: Awaited<ReturnType<typeof pullRemoteSnapshot>>
-    try {
-      rePulled = await pullRemoteSnapshot(accessToken, folderId)
-    } catch (err2) {
-      const errorKind = classifySyncError(err2)
-      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('pull (retry)', err2) } })
-      return { status: 'error', vaultConflict, errorKind, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)', localChanged: false }
+      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('auth', err) } })
+      return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'auth failed', localChanged: false }
     }
 
-    // Fix I-1: re-read IndexedDB instead of reusing the pre-cycle `local` snapshot. By now
-    // applySnapshotToLocal(db, finalSnapshot) already ran once this cycle, and/or the user may
-    // have edited something locally during the failed push's round-trip — `local` is stale on
-    // both counts. `localNow` already subsumes `finalSnapshot` (it was written to IDB already),
-    // so re-deriving from `localNow` alone (not finalSnapshot) is correct and simpler.
-    const localNow = await buildLocalSnapshot(db)
-    const reConflict = vaultConflict || !!(localNow.vault && rePulled.snapshot.vault && vaultRecordsDiffer(localNow.vault, rePulled.snapshot.vault))
-    const reMerged = mergeAll(localNow, rePulled.snapshot)
-    pushedSnapshot = reConflict ? { ...reMerged, vault: null } : reMerged
-    vaultConflict = reConflict
-
-    const reMergedActive = activeCount(pushedSnapshot.bookmarks)
-    if (!opts.bypassMassDeleteGuard && localActive >= MASS_DELETE_MIN_COUNT) {
-      const reDeletionRatio = (localActive - reMergedActive) / localActive
-      if (reDeletionRatio > MASS_DELETE_THRESHOLD) {
-        const deletedCount = localActive - reMergedActive
-        await updateSyncStatus(db, { lastIssue: { kind: 'needs-confirmation', deletedCount } })
-        return { status: 'needs-confirmation', vaultConflict, deletionRatio: reDeletionRatio, deletedCount, localChanged: false }
+    // Fast path for a timer/visibility poll (opts.skipIfUnchanged, set only by those triggers —
+    // never by a dirty write or manual "Sync now"): if nothing changed on Drive since our last
+    // successful cycle, skip the full pull/merge/push below entirely. Any failure here just falls
+    // through to the normal full pull, which has its own error handling.
+    if (opts.skipIfUnchanged) {
+      const unchanged = await traceStep(
+        trace, 'skip-check', () => isRemoteUnchanged(accessToken, folderId, status.headRevisions, signal),
+      ).catch(() => false)
+      if (unchanged) {
+        await updateSyncStatus(db, { lastSyncAt: Date.now() })
+        return { status: 'synced', vaultConflict: false, localChanged: false }
       }
     }
 
-    await applySnapshotToLocal(db, pushedSnapshot)
+    let pulled: Awaited<ReturnType<typeof pullRemoteSnapshot>>
     try {
-      newRevisions = await pushSnapshot(accessToken, folderId, pushedSnapshot, rePulled.headRevisions, rePulled.remoteTexts)
-    } catch (err3) {
-      const errorKind = classifySyncError(err3)
-      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('push (retry)', err3) } })
-      return { status: 'error', vaultConflict, errorKind, errorMessage: err3 instanceof Error ? err3.message : 'push failed (retry)', localChanged: false }
+      pulled = await pullRemoteSnapshot(accessToken, folderId, { signal, trace })
+    } catch (err) {
+      const errorKind = classifySyncError(err)
+      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('pull', err) } })
+      return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'pull failed', localChanged: false }
     }
-  }
 
-  await writeManifest(accessToken, folderId, db, pushedSnapshot)
-  await saveBaseSnapshot(db, pushedSnapshot)
-  await updateSyncStatus(db, { headRevisions: newRevisions, lastSyncAt: Date.now(), lastIssue: undefined })
+    const local = await buildLocalSnapshot(db)
+    let vaultConflict = !!(local.vault && pulled.snapshot.vault && vaultRecordsDiffer(local.vault, pulled.snapshot.vault))
+    if (vaultConflict && local.vault && pulled.snapshot.vault) {
+      // Persist the other side's full record (not just its public data) so the
+      // resolution UI (SETTINGS -> PRIVATE) can act on it later, and so the
+      // deterministic tie-break below and mergeIntoOtherVault (lib/private/
+      // vault-conflict.ts, called from the UI layer, not here) have what they need.
+      await saveVaultConflict(db, pulled.snapshot.vault)
+      // If the LOCAL vault is the deterministic winner, publish it to Drive right
+      // now, unconditionally — bypassing the "skip vault.json during a conflict"
+      // rule below. This never needs a password (publishing only ever needs the
+      // vault's public data, which is always available unlocked-or-not), and it
+      // must not wait for the user to do anything: the losing device's merge
+      // action (Task 5's mergeIntoOtherVault, wired in Task 8) needs vault.json
+      // to already reflect the winner BEFORE it retires its own vault, or a
+      // later sync could resurrect stale content. Uses the same
+      // create-or-update pattern as writeManifest below, not the normal
+      // pushSnapshot/optimistic-lock path (deliberately: this write must happen
+      // even though vaultConflict is about to force finalSnapshot.vault to null).
+      if (isLocalVaultTarget(local.vault, pulled.snapshot.vault)) {
+        const files = await traceStep(trace, 'list', () => listFolderFiles(accessToken, folderId, signal))
+        const existing = files.find((f) => f.name === 'vault.json')
+        if (existing) {
+          await traceStep(trace, 'vault-publish', () => updateTextFile(accessToken, existing.id, JSON.stringify(local.vault), signal))
+        } else {
+          await traceStep(trace, 'vault-publish', () => createTextFile(accessToken, folderId, 'vault.json', JSON.stringify(local.vault), signal))
+        }
+      }
+    }
+    const merged = await traceStep(trace, 'merge', () => mergeAll(local, pulled.snapshot))
+    // On conflict, push neither side's vault via the NORMAL path (null): applySnapshotToLocal/
+    // pushSnapshot both skip a null vault entirely, so the local vault stays untouched here. The
+    // winning side's vault.json is instead published directly above, unconditionally, the moment
+    // the conflict is first detected — see the block above for why.
+    const finalSnapshot: SyncSnapshot = vaultConflict ? { ...merged, vault: null } : merged
 
-  return {
-    status: 'synced',
-    vaultConflict,
-    // Compare against the ORIGINAL pre-cycle `local` snapshot (not finalSnapshot, which the retry
-    // branch above may have moved on from) — this is "did IDB end this cycle holding data it
-    // didn't have at the start", regardless of which attempt produced it.
-    localChanged: localDataChanged(local, pushedSnapshot),
-    mergedCounts: {
-      bookmarks: pushedSnapshot.bookmarks.length,
-      tags: pushedSnapshot.tags.length,
-      cards: pushedSnapshot.cards.length,
-    },
+    const localActive = activeCount(local.bookmarks)
+    const mergedActive = activeCount(finalSnapshot.bookmarks)
+    if (!opts.bypassMassDeleteGuard && localActive >= MASS_DELETE_MIN_COUNT) {
+      const deletionRatio = (localActive - mergedActive) / localActive
+      if (deletionRatio > MASS_DELETE_THRESHOLD) {
+        const deletedCount = localActive - mergedActive
+        await updateSyncStatus(db, { lastIssue: { kind: 'needs-confirmation', deletedCount } })
+        return { status: 'needs-confirmation', vaultConflict, deletionRatio, deletedCount, localChanged: false }
+      }
+    }
+
+    await pushBackupGeneration(db, local)
+    await traceStep(trace, 'apply-local', () => applySnapshotToLocal(db, finalSnapshot))
+
+    let newRevisions: Record<string, string>
+    let pushedSnapshot = finalSnapshot
+    try {
+      newRevisions = await pushSnapshot(accessToken, folderId, finalSnapshot, pulled.headRevisions, pulled.remoteTexts, { signal, trace })
+    } catch (err) {
+      if (!(err instanceof SyncConflictError)) {
+        const errorKind = classifySyncError(err)
+        await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('push', err) } })
+        return { status: 'error', vaultConflict, errorKind, errorMessage: err instanceof Error ? err.message : 'push failed', localChanged: false }
+      }
+      // Someone else pushed since our pull. Re-pull, re-merge once, then retry the push —
+      // re-running the SAME safety checks as the first attempt (vault conflict, mass-deletion
+      // guard), since the retry's re-pull can surface a conflict or deletions the first pull
+      // never saw. Wrapped in its own try/catch so a second failure still returns a
+      // SyncCycleResult instead of an unhandled rejection.
+      let rePulled: Awaited<ReturnType<typeof pullRemoteSnapshot>>
+      try {
+        rePulled = await pullRemoteSnapshot(accessToken, folderId, { signal, trace })
+      } catch (err2) {
+        const errorKind = classifySyncError(err2)
+        await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('pull (retry)', err2) } })
+        return { status: 'error', vaultConflict, errorKind, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)', localChanged: false }
+      }
+
+      // Fix I-1: re-read IndexedDB instead of reusing the pre-cycle `local` snapshot. By now
+      // applySnapshotToLocal(db, finalSnapshot) already ran once this cycle, and/or the user may
+      // have edited something locally during the failed push's round-trip — `local` is stale on
+      // both counts. `localNow` already subsumes `finalSnapshot` (it was written to IDB already),
+      // so re-deriving from `localNow` alone (not finalSnapshot) is correct and simpler.
+      const localNow = await buildLocalSnapshot(db)
+      const reConflict = vaultConflict || !!(localNow.vault && rePulled.snapshot.vault && vaultRecordsDiffer(localNow.vault, rePulled.snapshot.vault))
+      const reMerged = await traceStep(trace, 'merge', () => mergeAll(localNow, rePulled.snapshot))
+      pushedSnapshot = reConflict ? { ...reMerged, vault: null } : reMerged
+      vaultConflict = reConflict
+
+      const reMergedActive = activeCount(pushedSnapshot.bookmarks)
+      if (!opts.bypassMassDeleteGuard && localActive >= MASS_DELETE_MIN_COUNT) {
+        const reDeletionRatio = (localActive - reMergedActive) / localActive
+        if (reDeletionRatio > MASS_DELETE_THRESHOLD) {
+          const deletedCount = localActive - reMergedActive
+          await updateSyncStatus(db, { lastIssue: { kind: 'needs-confirmation', deletedCount } })
+          return { status: 'needs-confirmation', vaultConflict, deletionRatio: reDeletionRatio, deletedCount, localChanged: false }
+        }
+      }
+
+      await traceStep(trace, 'apply-local', () => applySnapshotToLocal(db, pushedSnapshot))
+      try {
+        newRevisions = await pushSnapshot(accessToken, folderId, pushedSnapshot, rePulled.headRevisions, rePulled.remoteTexts, { signal, trace })
+      } catch (err3) {
+        const errorKind = classifySyncError(err3)
+        await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('push (retry)', err3) } })
+        return { status: 'error', vaultConflict, errorKind, errorMessage: err3 instanceof Error ? err3.message : 'push failed (retry)', localChanged: false }
+      }
+    }
+
+    await traceStep(trace, 'manifest', () => writeManifest(accessToken, folderId, db, pushedSnapshot, signal))
+    await saveBaseSnapshot(db, pushedSnapshot)
+    await updateSyncStatus(db, { headRevisions: newRevisions, lastSyncAt: Date.now(), lastIssue: undefined })
+
+    return {
+      status: 'synced',
+      vaultConflict,
+      // Compare against the ORIGINAL pre-cycle `local` snapshot (not finalSnapshot, which the retry
+      // branch above may have moved on from) — this is "did IDB end this cycle holding data it
+      // didn't have at the start", regardless of which attempt produced it.
+      localChanged: localDataChanged(local, pushedSnapshot),
+      mergedCounts: {
+        bookmarks: pushedSnapshot.bookmarks.length,
+        tags: pushedSnapshot.tags.length,
+        cards: pushedSnapshot.cards.length,
+      },
+    }
+  } finally {
+    clearTimeout(ceilingTimer)
+    await persistCycleTrace(db, cycleStartedAt, trace)
   }
 }
 

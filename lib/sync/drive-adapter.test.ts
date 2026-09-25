@@ -355,3 +355,171 @@ describe('createTextFile / updateTextFile — resumable upload for large files',
     await expect(createTextFile(TOKEN, 'FOLDER', 'bookmarks.json', bigContent)).rejects.toMatchObject({ status: 500 })
   })
 })
+
+// Per-request timeouts (sync hardening item 1): a fetch that never resolves must not hang a sync
+// cycle forever (production symptom: iPhone Safari's upload bookmarks.json stuck ~10 minutes,
+// holding sync-lock.ts's exclusive lock and starving every later cycle). Each request gets its own
+// AbortController tied to a setTimeout, so it's exercised here the same way as the existing
+// retry-delay tests above: fake timers + advanceTimersByTimeAsync, and a fetch mock that only
+// settles in response to the signal it was given (mirroring what a real aborted fetch does),
+// never on its own.
+describe('per-request timeouts', () => {
+  /** A fetch mock that hangs forever unless its `init.signal` aborts, at which point it rejects
+   *  the same way a real aborted `fetch()` does (name: 'AbortError'). Never resolves on its own —
+   *  exactly the "server never responds" shape driveFetchOnce's timeout exists to interrupt. */
+  function hangingFetchMock(): ReturnType<typeof vi.fn> {
+    return vi.fn((_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {
+      const signal = init?.signal
+      if (signal?.aborted) {
+        reject(Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }))
+        return
+      }
+      signal?.addEventListener('abort', () => {
+        reject(Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }))
+      })
+    }))
+  }
+
+  it('listFolderFiles (20s tier): a hung request is aborted at 20s, retried (2s, 5s), and the final rejection is DriveError(0) with timedOut:true and a "timeout after 20s" message', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = hangingFetchMock()
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = expect(listFolderFiles(TOKEN, 'F')).rejects.toMatchObject({
+        status: 0, timedOut: true, message: 'drive fetch failed: timeout after 20s',
+      })
+      await vi.advanceTimersByTimeAsync(20_000) // attempt 1 times out
+      await vi.advanceTimersByTimeAsync(2_000) // 1st retry wait
+      await vi.advanceTimersByTimeAsync(20_000) // attempt 2 times out
+      await vi.advanceTimersByTimeAsync(5_000) // 2nd (last) retry wait
+      await vi.advanceTimersByTimeAsync(20_000) // attempt 3 times out — gives up
+      await pending
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('getHeadRevisionId also uses the 20s tier', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = hangingFetchMock()
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = expect(getHeadRevisionId(TOKEN, 'f1')).rejects.toMatchObject({ status: 0, timedOut: true })
+      await vi.advanceTimersByTimeAsync(20_000)
+      await vi.advanceTimersByTimeAsync(2_000)
+      await vi.advanceTimersByTimeAsync(20_000)
+      await vi.advanceTimersByTimeAsync(5_000)
+      await vi.advanceTimersByTimeAsync(20_000)
+      await pending
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('downloadFileText (60s tier): times out at 60s, not before, and reports "timeout after 60s"', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = hangingFetchMock()
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = expect(downloadFileText(TOKEN, 'f1')).rejects.toMatchObject({
+        status: 0, timedOut: true, message: 'drive fetch failed: timeout after 60s',
+      })
+      await vi.advanceTimersByTimeAsync(60_000)
+      await vi.advanceTimersByTimeAsync(2_000)
+      await vi.advanceTimersByTimeAsync(60_000)
+      await vi.advanceTimersByTimeAsync(5_000)
+      await vi.advanceTimersByTimeAsync(60_000)
+      await pending
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('createTextFile multipart upload (90s tier): times out at 90s and reports "timeout after 90s"', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = hangingFetchMock()
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = expect(createTextFile(TOKEN, 'FOLDER', 'bookmarks.json', '{}')).rejects.toMatchObject({
+        status: 0, timedOut: true, message: 'drive fetch failed: timeout after 90s',
+      })
+      await vi.advanceTimersByTimeAsync(90_000)
+      await vi.advanceTimersByTimeAsync(2_000)
+      await vi.advanceTimersByTimeAsync(90_000)
+      await vi.advanceTimersByTimeAsync(5_000)
+      await vi.advanceTimersByTimeAsync(90_000)
+      await pending
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('updateTextFile multipart upload (90s tier) also times out at 90s', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = hangingFetchMock()
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = expect(updateTextFile(TOKEN, 'f1', '{}')).rejects.toMatchObject({ status: 0, timedOut: true })
+      await vi.advanceTimersByTimeAsync(90_000)
+      await vi.advanceTimersByTimeAsync(2_000)
+      await vi.advanceTimersByTimeAsync(90_000)
+      await vi.advanceTimersByTimeAsync(5_000)
+      await vi.advanceTimersByTimeAsync(90_000)
+      await pending
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('each resumable-upload request (initiate AND the content PUT) gets its own 90s timeout', async () => {
+    vi.useFakeTimers()
+    try {
+      const bigContent = 'x'.repeat(RESUMABLE_UPLOAD_THRESHOLD_BYTES + 1)
+      // Initiate succeeds immediately; the content PUT hangs and must be timed out on its own.
+      const fetchMock = vi.fn()
+        .mockImplementationOnce(async () => new Response(null, { status: 200, headers: { Location: 'https://upload.example/session-1' } }))
+        .mockImplementation((_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })))
+        }))
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = expect(createTextFile(TOKEN, 'FOLDER', 'bookmarks.json', bigContent)).rejects.toMatchObject({
+        status: 0, timedOut: true, message: 'drive fetch failed: timeout after 90s',
+      })
+      await vi.advanceTimersByTimeAsync(90_000)
+      await vi.advanceTimersByTimeAsync(2_000)
+      await vi.advanceTimersByTimeAsync(90_000)
+      await vi.advanceTimersByTimeAsync(5_000)
+      await vi.advanceTimersByTimeAsync(90_000)
+      await pending
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('an externally-provided signal that aborts is NOT marked timedOut, and stops retries immediately (used by engine.ts for the overall cycle ceiling)', async () => {
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })))
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    const controller = new AbortController()
+    const pending = listFolderFiles(TOKEN, 'F', controller.signal)
+    controller.abort()
+    await expect(pending).rejects.toMatchObject({ status: 0, timedOut: false })
+    // No retry wait was needed — the external abort short-circuits driveFetch's retry loop.
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('a signal that is already aborted before the call is made fails immediately with no retry', async () => {
+    const fetchMock = hangingFetchMock()
+    vi.stubGlobal('fetch', fetchMock)
+    const controller = new AbortController()
+    controller.abort()
+    await expect(listFolderFiles(TOKEN, 'F', controller.signal)).rejects.toMatchObject({ status: 0, timedOut: false })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})

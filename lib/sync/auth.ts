@@ -107,10 +107,12 @@ export async function exchangeCode(
 
 /** stored refresh token で新しい access token を得る。 */
 export async function refreshAccessToken(refreshToken: string): Promise<SyncTokens> {
+  // Bounded like every Drive call: a hung refresh would otherwise hold the sync lock forever.
   const res = await fetch('/api/gauth/refresh', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),
+    signal: AbortSignal.timeout(20_000),
   })
   return toSyncTokens(res)
 }

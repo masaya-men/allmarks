@@ -42,6 +42,27 @@ export type SyncIssue =
   // UI (no new copy) and never contains tokens or Drive's raw error response body.
   | { readonly kind: 'error'; readonly errorKind: SyncErrorKind; readonly detail?: string }
 
+/** One timed step of a sync cycle (engine.ts's traceStep), for the on-device diagnostics log
+ *  (SyncPanel's "sync.diagnostics" toggle). `name` is a short operation label — e.g. "list",
+ *  "download bookmarks.json", "upload bookmarks.json (1.31MB)" — names/sizes/status only, never
+ *  tokens, file ids, URLs, or file content. `note` is set only on failure (e.g. "timeout",
+ *  "status 503", "network"). */
+export interface SyncCycleStepTrace {
+  readonly name: string
+  readonly ms: number
+  readonly ok: boolean
+  readonly note?: string
+}
+
+/** The most recent sync cycle's step-by-step timeline, replaced wholesale on every cycle
+ *  (success or failure — see engine.ts's persistCycleTrace) so it always reflects the LAST
+ *  attempt, not an accumulating history. */
+export interface SyncCycleTrace {
+  readonly startedAt: number
+  readonly steps: readonly SyncCycleStepTrace[]
+  readonly totalMs: number
+}
+
 export interface SyncStatus {
   readonly connected: boolean
   readonly folderId?: string
@@ -49,6 +70,7 @@ export interface SyncStatus {
   readonly lastSyncAt?: number
   readonly connectedEmail?: string
   readonly lastIssue?: SyncIssue
+  readonly lastCycleTrace?: SyncCycleTrace
 }
 
 const DEFAULT_SYNC_STATUS: SyncStatus = { connected: false, headRevisions: {} }

@@ -729,7 +729,10 @@ describe('runSyncCycle', () => {
     vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'vault.json', headRevisionId: 'rev-2' }))
 
     await runSyncCycle(d)
-    expect(updateTextFile).toHaveBeenCalledWith('at', 'f-vault', JSON.stringify(localVault))
+    // 4th arg is this cycle's abort signal (item 1's overall ceiling, threaded through every
+    // Drive call) — any AbortSignal instance is fine here, this test only cares about the vault
+    // publish itself.
+    expect(updateTextFile).toHaveBeenCalledWith('at', 'f-vault', JSON.stringify(localVault), expect.any(AbortSignal))
   })
 
   it('does NOT force-publish when the local vault loses the deterministic tie-break', async () => {
@@ -1018,6 +1021,176 @@ describe('runSyncCycle skipIfUnchanged (poll fast path)', () => {
     const result = await runSyncCycle(d, { skipIfUnchanged: true })
     expect(result.status).toBe('synced')
     expect(downloadFileText).toHaveBeenCalled()
+  })
+})
+
+// Sync hardening item 1: a cycle that exceeds 5 minutes aborts its in-flight Drive calls and
+// fails with a 'network' error, instead of hanging forever and (via sync-lock.ts's exclusive
+// lock) starving every later cycle behind it. Production symptom this guards against: iPhone
+// Safari's "syncing" state stuck ~10 minutes after `upload bookmarks.json` hung with no timeout.
+describe('runSyncCycle overall cycle ceiling (item 1)', () => {
+  it('aborts a hung Drive call after 5 minutes, fails the cycle as a network error, and releases the lock for the next queued cycle', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    // Simulate a hung upload (the production symptom): the mock never settles on its own, only
+    // when the AbortSignal engine.ts threads through pushSnapshot fires -- exactly what a real
+    // Drive request stuck past its own per-request timeout would eventually do too, except here
+    // nothing INSIDE drive-adapter.ts is firing it; only the cycle's own 5-minute ceiling is.
+    vi.mocked(createTextFile).mockImplementation((_t, _f, _n, _c, signal?: AbortSignal) => new Promise((_resolve, reject) => {
+      signal?.addEventListener('abort', () => reject(new DriveError(0, 'drive fetch failed: timeout after 90s', undefined, true)))
+    }))
+
+    vi.useFakeTimers()
+    try {
+      const p1 = runSyncCycle(d)
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+      // The abort has now fired, but everything downstream of it (classifying the error, the
+      // updateSyncStatus/persistCycleTrace IDB writes in the cycle's error-return path and its
+      // `finally`) still runs through fake-indexeddb, which schedules its own internal completion
+      // ticks against the (still-fake) clock -- drain those too before awaiting `p1`, or they'd
+      // never fire.
+      await vi.runAllTimersAsync()
+      const result = await p1
+      expect(result.status).toBe('error')
+      expect(result.errorKind).toBe('network')
+
+      // The lock must be released even though the first cycle was aborted mid-flight -- a second
+      // cycle queued behind it (sync-lock.ts's exclusive lock) runs normally afterward. Switch
+      // back to real timers first: this second cycle never hangs (createTextFile now resolves
+      // immediately), so it doesn't need fake-timer draining, and running it under still-active
+      // fake timers would just reintroduce the fake-indexeddb draining dance above for no reason.
+      vi.useRealTimers()
+      vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+      const result2 = await runSyncCycle(d)
+      expect(result2.status).toBe('synced')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+// Sync hardening item 2: the last cycle's step-by-step timeline (SyncPanel's "sync.diagnostics"
+// toggle). Recorded on every exit from the connected/licensed part of the cycle -- success,
+// a normal error, and (see the ceiling test above) an aborted cycle -- never just the happy path.
+describe('runSyncCycle lastCycleTrace (item 2)', () => {
+  it('records a step timeline on a successful cycle, including a sized upload step, and every step ok', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+    await d.put('bookmarks', bookmark('local-only') as never)
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d)
+    expect(result.status).toBe('synced')
+
+    const status = await loadSyncStatus(d)
+    const trace = status.lastCycleTrace
+    expect(trace).toBeDefined()
+    const names = trace!.steps.map((s) => s.name)
+    expect(names).toContain('license-check')
+    expect(names).toContain('list')
+    expect(names).toContain('merge')
+    expect(names).toContain('apply-local')
+    expect(names).toContain('manifest')
+    // Names/sizes/status only -- the file's own content never leaks into a step name.
+    expect(names.some((n) => /^upload bookmarks\.json \(\d+\.\d\dMB\)$/.test(n))).toBe(true)
+    expect(trace!.steps.every((s) => s.ok)).toBe(true)
+    expect(trace!.steps.every((s) => s.note === undefined)).toBe(true)
+    expect(trace!.totalMs).toBeGreaterThanOrEqual(0)
+    expect(trace!.startedAt).toBeGreaterThan(0)
+  })
+
+  it('records the failing step as ok:false with a short diagnostic note when the cycle fails', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+    vi.mocked(listFolderFiles).mockRejectedValueOnce(new DriveError(503, 'unavailable'))
+
+    const result = await runSyncCycle(d)
+    expect(result.status).toBe('error')
+
+    const status = await loadSyncStatus(d)
+    const listStep = status.lastCycleTrace!.steps.find((s) => s.name === 'list')
+    expect(listStep).toMatchObject({ ok: false, note: 'status 503' })
+  })
+
+  it('records a "timeout" note for the failing step when a DriveError carries timedOut:true', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+    vi.mocked(listFolderFiles).mockRejectedValueOnce(new DriveError(0, 'drive fetch failed: timeout after 20s', undefined, true))
+
+    const result = await runSyncCycle(d)
+    expect(result.status).toBe('error')
+
+    const status = await loadSyncStatus(d)
+    const listStep = status.lastCycleTrace!.steps.find((s) => s.name === 'list')
+    expect(listStep).toMatchObject({ ok: false, note: 'timeout' })
+  })
+
+  it('is still written when the overall cycle ceiling aborts the cycle, with the aborted step marked ok:false', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation((_t, _f, _n, _c, signal?: AbortSignal) => new Promise((_resolve, reject) => {
+      signal?.addEventListener('abort', () => reject(new DriveError(0, 'drive fetch failed: timeout after 90s', undefined, true)))
+    }))
+
+    vi.useFakeTimers()
+    try {
+      const p1 = runSyncCycle(d)
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+      // Drain the fake-indexeddb completion ticks the cycle's own error-return path and its
+      // `finally` (updateSyncStatus/persistCycleTrace) schedule against the still-fake clock —
+      // see the equivalent comment in the "overall cycle ceiling" describe above.
+      await vi.runAllTimersAsync()
+      const result = await p1
+      expect(result.status).toBe('error')
+      vi.useRealTimers()
+
+      const status = await loadSyncStatus(d)
+      const trace = status.lastCycleTrace
+      expect(trace).toBeDefined()
+      const failedStep = trace!.steps.find((s) => !s.ok)
+      expect(failedStep).toBeDefined()
+      expect(failedStep!.name).toMatch(/^upload bookmarks\.json \(\d+\.\d\dMB\)$/)
+      expect(trace!.totalMs).toBeGreaterThanOrEqual(5 * 60 * 1000)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('records a "skip-check" step on the skipIfUnchanged fast path, and nothing else', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, {
+      connected: true, folderId: 'folder1',
+      headRevisions: { 'bookmarks.json': 'rev-1', 'tags.json': 'rev-1', 'cards.json': 'rev-1' },
+    })
+    await saveLicense(d, activeLicenseState())
+    vi.mocked(listFolderFiles).mockResolvedValue([
+      { id: 'f-bm', name: 'bookmarks.json', headRevisionId: 'rev-1' },
+      { id: 'f-tags', name: 'tags.json', headRevisionId: 'rev-1' },
+      { id: 'f-cards', name: 'cards.json', headRevisionId: 'rev-1' },
+    ])
+
+    const result = await runSyncCycle(d, { skipIfUnchanged: true })
+    expect(result.status).toBe('synced')
+
+    const status = await loadSyncStatus(d)
+    expect(status.lastCycleTrace!.steps.map((s) => s.name)).toEqual(['license-check', 'skip-check'])
   })
 })
 

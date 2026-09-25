@@ -9,7 +9,7 @@ import {
   activateLicenseKey, fetchDeviceCount, registerDeviceLabel, releaseDevice,
   type DeviceCount, type DeviceInfo,
 } from '@/lib/board/license-activate'
-import { loadSyncStatus, type SyncStatus } from '@/lib/sync/sync-store'
+import { loadSyncStatus, type SyncStatus, type SyncCycleTrace } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync, type SyncCycleResult } from '@/lib/sync/engine'
 import { withSyncWritesSuppressed } from '@/lib/sync/sync-signal'
 import { onSyncCycleFinished, onSyncCycleStarted, isSyncCycleInFlight } from '@/lib/sync/sync-events'
@@ -227,6 +227,15 @@ export function SyncPanel(): ReactElement | null {
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // On-device sync diagnostics ("sync.diagnostics" toggle, collapsed by default): the most
+  // recent sync cycle's step-by-step timeline (sync-status's lastCycleTrace, engine.ts's
+  // traceStep). Loaded on mount alongside the phase, and refreshed every time a cycle finishes
+  // (background or manual) via the onSyncCycleFinished subscription below and applyResult's own
+  // re-reads -- never via an extra loadSyncStatus call of its own, so it never disturbs the
+  // existing mocked-call-sequence assumptions the phase-loading effects already rely on.
+  const [lastCycleTrace, setLastCycleTrace] = useState<SyncCycleTrace | undefined>(undefined)
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
+
   useEffect(() => {
     return (): void => {
       if (confirmTimerRef.current !== null) clearTimeout(confirmTimerRef.current)
@@ -295,7 +304,10 @@ export function SyncPanel(): ReactElement | null {
       // connect flow with no cached status.
       try {
         const status = await loadSyncStatus(db)
-        if (!cancelled) setPhase(withInFlightOverride(phaseFromStatus(status), isSyncCycleInFlight()))
+        if (!cancelled) {
+          setPhase(withInFlightOverride(phaseFromStatus(status), isSyncCycleInFlight()))
+          setLastCycleTrace(status.lastCycleTrace)
+        }
       } catch (e) {
         console.error('[AllMarks] failed to load sync status', e)
         if (!cancelled) setPhase({ kind: 'disconnected' })
@@ -317,6 +329,7 @@ export function SyncPanel(): ReactElement | null {
       void (async (): Promise<void> => {
         const db = await initDB()
         const status = await loadSyncStatus(db)
+        setLastCycleTrace(status.lastCycleTrace)
         setPhase((current) => {
           if (
             manualCycleInFlightRef.current ||
@@ -354,6 +367,7 @@ export function SyncPanel(): ReactElement | null {
       const db = await initDB()
       const status = await loadSyncStatus(db)
       setPhase({ kind: 'idle', email: status.connectedEmail ?? fallbackEmail, lastSyncAt: status.lastSyncAt })
+      setLastCycleTrace(status.lastCycleTrace)
     } else if (result.status === 'needs-confirmation') {
       setPhase({ kind: 'needs-confirmation', email: fallbackEmail, deletedCount: result.deletedCount ?? 0 })
     } else if (result.status === 'error') {
@@ -362,6 +376,7 @@ export function SyncPanel(): ReactElement | null {
       const status = await loadSyncStatus(db)
       const detail = status.lastIssue?.kind === 'error' ? status.lastIssue.detail : undefined
       setPhase({ kind: 'issue', email: fallbackEmail, errorKind: result.errorKind ?? 'other', detail })
+      setLastCycleTrace(status.lastCycleTrace)
     } else if (result.status === 'license-inactive') {
       if (result.licenseReason === 'no-license') {
         setUnlocked(false)
@@ -675,6 +690,38 @@ export function SyncPanel(): ReactElement | null {
       )}
       {phase.kind === 'stopped' && phase.reason === 'grace-expired' && (
         <p className={styles.body} data-testid="sync-stopped-grace-expired">{t('sync.stoppedGraceExpired')}</p>
+      )}
+      {/* On-device sync diagnostics (last cycle's step timeline) -- visible in any phase except
+          'disconnected' (this whole block is already inside the unlocked branch, so "locked" is
+          already excluded), collapsed by default, same toggle pattern as the device-count list
+          above. Hidden entirely until a cycle has actually produced a trace to show. */}
+      {phase.kind !== 'disconnected' && lastCycleTrace && (
+        <p className={styles.note}>
+          <button
+            type="button"
+            className={styles.toggle}
+            onClick={(): void => setDiagnosticsOpen((open) => !open)}
+            aria-expanded={diagnosticsOpen}
+            data-testid="sync-diagnostics-toggle"
+          >
+            {`${t('sync.diagnostics')} ${diagnosticsOpen ? '▴' : '▾'}`}
+          </button>
+        </p>
+      )}
+      {phase.kind !== 'disconnected' && lastCycleTrace && diagnosticsOpen && (
+        <div data-testid="sync-diagnostics-trace">
+          <p className={styles.note}>
+            {`${new Date(lastCycleTrace.startedAt).toLocaleTimeString(locale)} · ${(lastCycleTrace.totalMs / 1000).toFixed(1)}s total`}
+          </p>
+          {lastCycleTrace.steps.map((step, i) => {
+            const statusText = step.ok ? '✓' : (step.note ? `✗ ${step.note}` : '✗')
+            return (
+              <p className={styles.note} key={i}>
+                {`${step.name} ${(step.ms / 1000).toFixed(1)}s ${statusText}`}
+              </p>
+            )
+          })}
+        </div>
       )}
       {modalOpen && dialogCoversPhase && (
         <SyncConnectDialog

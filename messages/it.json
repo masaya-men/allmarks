@@ -375,7 +375,8 @@
     "stoppedEnded": "Your sync plan has ended, so syncing has stopped. Your bookmarks are still on this device and in your Google Drive. To resume, sign up again and enter the new key.",
     "seePricing": "See pricing",
     "stoppedDeviceRemoved": "This device was removed from sync. Enter your key again to resume.",
-    "stoppedGraceExpired": "Sync is paused because your plan couldn't be checked for over 7 days. It resumes automatically once you're online."
+    "stoppedGraceExpired": "Sync is paused because your plan couldn't be checked for over 7 days. It resumes automatically once you're online.",
+    "diagnostics": "Sync log"
   },
   "landing": {
     "hero": {
