@@ -87,6 +87,11 @@ export const DEVICE_LOCAL_SETTINGS_KEYS = [
   // merge (the "base" it diffs against no longer matches what it actually
   // last agreed with Drive on).
   'sync-base-snapshot',
+  // lib/sync/sync-store.ts — this device's cache of the Drive sync files it
+  // last saw (name → revision + text, sync format v2). Pure download
+  // avoidance for THIS device's connection; a restored stale/foreign copy
+  // would only be wrong or wasted (and it can be several MB).
+  'sync-remote-cache',
 ] as const
 
 export type DeviceLocalSettingsKey = (typeof DEVICE_LOCAL_SETTINGS_KEYS)[number]

@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import 'fake-indexeddb/auto'
 import type { IDBPDatabase } from 'idb'
 import { initDB } from '@/lib/storage/indexeddb'
-import { saveSyncTokens, loadSyncTokens, clearSyncTokens, loadSyncStatus, updateSyncStatus, saveBaseSnapshot, loadBaseSnapshot, pushBackupGeneration, loadBackupGenerations } from './sync-store'
+import { saveSyncTokens, loadSyncTokens, clearSyncTokens, loadSyncStatus, updateSyncStatus, saveBaseSnapshot, loadBaseSnapshot, pushBackupGeneration, loadBackupGenerations, loadRemoteCache, saveRemoteCache, patchRemoteCache } from './sync-store'
+import { DEVICE_LOCAL_SETTINGS_KEYS, exportAllStores } from '@/lib/storage/backup'
 import type { SyncTokens } from './auth'
 import type { SyncSnapshot } from './merge'
 
@@ -105,5 +106,49 @@ describe('sync-store base snapshot + backups', () => {
     expect(generations).toHaveLength(3)
     expect(generations[0].snapshot.boardConfig?.updatedAt).toBe(3)
     expect(generations[2].snapshot.boardConfig?.updatedAt).toBe(1)
+  })
+})
+
+describe('sync-store remote file cache (sync format v2)', () => {
+  it('is empty by default', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    expect(await loadRemoteCache(d, 'folder1')).toEqual({})
+  })
+
+  it('round-trips, scoped to the folder it was saved for', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await saveRemoteCache(d, 'folder1', { 'bookmarks-0.json.gz': { rev: 'r1', text: '[]' } })
+    expect(await loadRemoteCache(d, 'folder1')).toEqual({ 'bookmarks-0.json.gz': { rev: 'r1', text: '[]' } })
+    expect(await loadRemoteCache(d, 'other-folder')).toEqual({})
+  })
+
+  it('patchRemoteCache adds/replaces/removes entries and keeps the rest', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await saveRemoteCache(d, 'folder1', {
+      'a.json.gz': { rev: 'r1', text: '1' },
+      'b.json.gz': { rev: 'r1', text: '2' },
+    })
+    await patchRemoteCache(d, 'folder1', { 'a.json.gz': { rev: 'r2', text: '1b' }, 'b.json.gz': null, 'c.json.gz': { rev: 'r1', text: '3' } })
+    expect(await loadRemoteCache(d, 'folder1')).toEqual({
+      'a.json.gz': { rev: 'r2', text: '1b' },
+      'c.json.gz': { rev: 'r1', text: '3' },
+    })
+  })
+
+  it('patchRemoteCache for a different folder starts from an empty cache', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    await saveRemoteCache(d, 'folder1', { 'a.json.gz': { rev: 'r1', text: '1' } })
+    await patchRemoteCache(d, 'folder2', { 'x.json.gz': { rev: 'r9', text: '9' } })
+    expect(await loadRemoteCache(d, 'folder2')).toEqual({ 'x.json.gz': { rev: 'r9', text: '9' } })
+    expect(await loadRemoteCache(d, 'folder1')).toEqual({})
+  })
+
+  it('is device-local: listed in DEVICE_LOCAL_SETTINGS_KEYS and left out of a backup export', async () => {
+    const d = await initDB(); db = d as unknown as IDBPDatabase<unknown>
+    expect(DEVICE_LOCAL_SETTINGS_KEYS).toContain('sync-remote-cache')
+    await saveRemoteCache(d, 'folder1', { 'a.json.gz': { rev: 'r1', text: '1' } })
+    const backup = await exportAllStores(d)
+    const keys = backup.settings.map((row) => (row as { key?: unknown }).key)
+    expect(keys).not.toContain('sync-remote-cache')
   })
 })

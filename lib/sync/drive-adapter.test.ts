@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   buildMultipartRelated, findSyncFolder, createSyncFolder, DriveError,
   listFolderFiles, downloadFileText, getHeadRevisionId, createTextFile, updateTextFile,
-  RESUMABLE_UPLOAD_THRESHOLD_BYTES,
+  RESUMABLE_UPLOAD_THRESHOLD_BYTES, downloadFileBytes, buildMultipartRelatedBlob, createBinaryFile, updateBinaryFile,
 } from './drive-adapter'
 
 afterEach(() => {
@@ -521,5 +521,143 @@ describe('per-request timeouts', () => {
     controller.abort()
     await expect(listFolderFiles(TOKEN, 'F', controller.signal)).rejects.toMatchObject({ status: 0, timedOut: false })
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ── sync format v2 additions ────────────────────────────────────────────────────
+
+describe('listFolderFiles pagination (sync format v2 has >30 files)', () => {
+  it('follows nextPageToken until the last page and returns every file, sorted', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        files: [{ id: 'b', name: 'cards-0.json.gz', headRevisionId: 'r2' }],
+        nextPageToken: 'PAGE-2',
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        files: [{ id: 'a', name: 'bookmarks-0.json.gz', headRevisionId: 'r1' }],
+      }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const out = await listFolderFiles(TOKEN, 'FOLDER')
+    expect(out).toEqual([
+      { id: 'a', name: 'bookmarks-0.json.gz', headRevisionId: 'r1' },
+      { id: 'b', name: 'cards-0.json.gz', headRevisionId: 'r2' },
+    ])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const firstUrl = decodeURIComponent((fetchMock.mock.calls[0] as [string])[0])
+    const secondUrl = (fetchMock.mock.calls[1] as [string])[0]
+    expect(firstUrl).toContain('nextPageToken,files(id,name,headRevisionId)')
+    expect(firstUrl).not.toContain('pageToken=')
+    expect(secondUrl).toContain('pageToken=PAGE-2')
+  })
+
+  it('stops if Drive repeats the same page token (no infinite loop)', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      files: [{ id: 'x', name: 'x.json' }], nextPageToken: 'SAME',
+    }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await listFolderFiles(TOKEN, 'FOLDER')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('downloadFileBytes', () => {
+  it('GETs alt=media and returns the raw bytes', async () => {
+    const fetchMock = vi.fn(async () => new Response(new Uint8Array([0x1f, 0x8b, 1, 2]), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const bytes = await downloadFileBytes(TOKEN, 'f1')
+    expect([...bytes]).toEqual([0x1f, 0x8b, 1, 2])
+    expect(lastCall(fetchMock)[0]).toBe('https://www.googleapis.com/drive/v3/files/f1?alt=media')
+  })
+
+  it('throws DriveError with the HTTP status on a non-2xx response', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 404 })))
+    await expect(downloadFileBytes(TOKEN, 'f1')).rejects.toMatchObject({ status: 404 })
+  })
+})
+
+describe('buildMultipartRelatedBlob', () => {
+  it('wraps binary content between the metadata part and the closing boundary, byte-exact', async () => {
+    const content = new Uint8Array([0x1f, 0x8b, 0x00, 0xff, 0x0d, 0x0a])
+    const { body, contentType } = buildMultipartRelatedBlob({ name: 'x.json.gz' }, content, 'application/gzip', 'B')
+    expect(contentType).toBe('multipart/related; boundary=B')
+    expect(body).toBeInstanceOf(Blob)
+    const bytes = new Uint8Array(await body.arrayBuffer())
+    const head = new TextEncoder().encode(
+      '--B\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{"name":"x.json.gz"}\r\n--B\r\nContent-Type: application/gzip\r\n\r\n',
+    )
+    const tail = new TextEncoder().encode('\r\n--B--')
+    expect([...bytes]).toEqual([...head, ...content, ...tail])
+  })
+})
+
+describe('createBinaryFile / updateBinaryFile', () => {
+  const gz = new Uint8Array([0x1f, 0x8b, 8, 0, 1, 2, 3])
+
+  it('createBinaryFile POSTs a multipart Blob with an application/gzip media part', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: 'n', name: 'bookmarks-3.json.gz', headRevisionId: 'r0' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const meta = await createBinaryFile(TOKEN, 'FOLDER', 'bookmarks-3.json.gz', gz)
+    expect(meta).toEqual({ id: 'n', name: 'bookmarks-3.json.gz', headRevisionId: 'r0' })
+    const [url, init] = lastCall(fetchMock)
+    expect(url).toContain('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart')
+    expect(init.method).toBe('POST')
+    expect((init.headers as Record<string, string>)['Content-Type']).toMatch(/^multipart\/related; boundary=allmarks-/)
+    expect(init.body).toBeInstanceOf(Blob)
+    const text = new TextDecoder('latin1').decode(await (init.body as Blob).arrayBuffer())
+    expect(text).toContain('"name":"bookmarks-3.json.gz"')
+    expect(text).toContain('"parents":["FOLDER"]')
+    expect(text).toContain('"mimeType":"application/gzip"')
+    expect(text).toContain('Content-Type: application/gzip\r\n\r\n')
+  })
+
+  it('updateBinaryFile PATCHes with an empty metadata part', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: 'f1', name: 'x.json.gz', headRevisionId: 'r2' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const meta = await updateBinaryFile(TOKEN, 'f1', gz)
+    expect(meta.headRevisionId).toBe('r2')
+    const [url, init] = lastCall(fetchMock)
+    expect(url).toContain('https://www.googleapis.com/upload/drive/v3/files/f1?uploadType=multipart')
+    expect(init.method).toBe('PATCH')
+    const text = new TextDecoder('latin1').decode(await (init.body as Blob).arrayBuffer())
+    expect(text).toContain('Content-Type: application/json; charset=UTF-8\r\n\r\n{}\r\n')
+  })
+
+  it('switches to resumable for content over the threshold: the PUT sends the bytes with the gzip content type', async () => {
+    const big = new Uint8Array(RESUMABLE_UPLOAD_THRESHOLD_BYTES + 1)
+    big[0] = 0x1f
+    big[1] = 0x8b
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 200, headers: { Location: 'https://upload.example/s' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'b', name: 'bookmarks-0.json.gz', headRevisionId: 'r1' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await createBinaryFile(TOKEN, 'FOLDER', 'bookmarks-0.json.gz', big)
+    const [initUrl, initInit] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(initUrl).toContain('uploadType=resumable')
+    expect((initInit.headers as Record<string, string>)['X-Upload-Content-Type']).toBe('application/gzip')
+    expect(JSON.parse(initInit.body as string)).toEqual({ name: 'bookmarks-0.json.gz', parents: ['FOLDER'], mimeType: 'application/gzip' })
+    const [putUrl, putInit] = fetchMock.mock.calls[1] as [string, RequestInit]
+    expect(putUrl).toBe('https://upload.example/s')
+    expect(putInit.method).toBe('PUT')
+    expect((putInit.headers as Record<string, string>)['Content-Type']).toBe('application/gzip')
+    expect(putInit.body).toBeInstanceOf(Blob)
+    expect((putInit.body as Blob).size).toBe(big.byteLength)
+  })
+
+  it('updateBinaryFile also uses resumable (PATCH initiate) over the threshold', async () => {
+    const big = new Uint8Array(RESUMABLE_UPLOAD_THRESHOLD_BYTES + 1)
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 200, headers: { Location: 'https://upload.example/s2' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1', name: 'x.json.gz', headRevisionId: 'r9' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const meta = await updateBinaryFile(TOKEN, 'f1', big)
+    expect(meta.headRevisionId).toBe('r9')
+    expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].method).toBe('PATCH')
+  })
+
+  it('throws DriveError(500) when the response has no id', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
+    await expect(createBinaryFile(TOKEN, 'FOLDER', 'x.json.gz', gz)).rejects.toMatchObject({ status: 500 })
   })
 })

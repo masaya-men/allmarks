@@ -8,6 +8,7 @@ import { detectAspectRatioSource, estimateAspectRatio } from '@/lib/board/aspect
 import {
   initDB,
   getAllBookmarks,
+  purgedBookmarkTombstone,
   updateCard,
   updateBookmarkOrderIndex,
   updateBookmarkOrderBatch,
@@ -181,7 +182,7 @@ async function buildBoardItems(
     .map((b) => toItem(b, cardByBookmark.get(b.id)))
     .sort((a, b) => b.orderIndex - a.orderIndex)
   const trashed = visible
-    .filter((b) => b.isDeleted)
+    .filter((b) => b.isDeleted && !b.purged)
     .map((b) => toItem(b, cardByBookmark.get(b.id)))
     .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
   return { active, trashed }
@@ -567,7 +568,9 @@ export function useBoardData(privateTagIds: ReadonlySet<string> = new Set()): {
       // for correctness but keeps cards orphan-free even on partial failures.
       const card = allCards.find((c) => c.bookmarkId === it.bookmarkId)
       if (card?.id) await db.delete('cards', card.id)
-      await db.delete('bookmarks', it.bookmarkId)
+      // Not a hard delete: a purged tombstone keeps device sync from
+      // resurrecting the row from another device's copy (lib/sync/merge.ts).
+      await db.put('bookmarks', purgedBookmarkTombstone(it.bookmarkId))
       try {
         window.postMessage({ type: 'allmarks:url-deleted', url: it.url }, '*')
       } catch { /* ignore */ }

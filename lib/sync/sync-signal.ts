@@ -15,29 +15,71 @@
  */
 
 let activeMarkDirty: (() => void) | null = null
-let suppressDepth = 0
+/** db handles whose writes are the running sync cycle's OWN writes (refcounted). */
+const suppressedHandles = new Map<object, number>()
+let globalDepth = 0
+let queuedWhileSuppressed = false
 
 export function setSyncMarkDirty(fn: (() => void) | null): void {
   activeMarkDirty = fn
 }
 
-export function notifySyncDirty(): void {
-  if (suppressDepth > 0) return
+/**
+ * Called by every IndexedDB write (indexeddb.ts passes the db handle it went through as `source`).
+ * A write through a handle currently registered by withSyncWritesSuppressed(fn, handle) is a sync
+ * cycle's own write and is ignored. Any other write is a user change: it is delivered right away,
+ * or — inside a legacy handle-less withSyncWritesSuppressed(fn) window — queued and delivered once
+ * when that window closes. User writes are never dropped.
+ */
+export function notifySyncDirty(source?: object): void {
+  if (source !== undefined && suppressedHandles.has(source)) return
+  if (globalDepth > 0) {
+    queuedWhileSuppressed = true
+    return
+  }
   activeMarkDirty?.()
 }
 
 /**
- * Wrap a sync cycle's own local-write side effects so they don't re-trigger
- * themselves. Scoped to the cycle's duration only — a genuine user edit
- * that happens to land in that window loses just its near-real-time push
- * (it still writes to IndexedDB normally, and still syncs on the next edit
- * or tab-hide/close), which is no worse than before this feature existed.
+ * True when `source` is a db handle currently registered by withSyncWritesSuppressed(fn, handle) —
+ * i.e. the write about to happen is a sync cycle's OWN write (engine.ts's runSyncCycle, or
+ * sync-controller.ts's markDirty persisting its own pendingPush marker), not a new local user
+ * change. indexeddb.ts's write wrapper uses this (alongside notifySyncDirty) to decide whether to
+ * ALSO persist the device-local "unpushed change" marker (sync-store.ts's markPendingPush) for a
+ * write — a plain user write must mark it even on a page with no SyncController registered
+ * (activeMarkDirty === null there), but a sync cycle applying a pulled/merged snapshot to local
+ * IndexedDB must not, or every pull would immediately flag itself as having an unpushed change.
  */
-export async function withSyncWritesSuppressed<T>(fn: () => Promise<T>): Promise<T> {
-  suppressDepth++
+export function isSyncCycleOwnWrite(source?: object): boolean {
+  return source !== undefined && suppressedHandles.has(source)
+}
+
+/**
+ * Runs `fn` so that the sync cycle's own local writes don't re-trigger a sync.
+ * - With `handle` (what engine.ts's runSyncCycle uses): only writes made through that db handle
+ *   are ignored; user writes through any other handle still notify normally.
+ * - Without `handle`: every notification during `fn` is held back and delivered once afterwards
+ *   (coalesced), so a user write in that window is delayed, never lost.
+ */
+export async function withSyncWritesSuppressed<T>(fn: () => Promise<T>, handle?: object): Promise<T> {
+  if (handle !== undefined) {
+    suppressedHandles.set(handle, (suppressedHandles.get(handle) ?? 0) + 1)
+    try {
+      return await fn()
+    } finally {
+      const left = (suppressedHandles.get(handle) ?? 1) - 1
+      if (left <= 0) suppressedHandles.delete(handle)
+      else suppressedHandles.set(handle, left)
+    }
+  }
+  globalDepth++
   try {
     return await fn()
   } finally {
-    suppressDepth--
+    globalDepth--
+    if (globalDepth === 0 && queuedWhileSuppressed) {
+      queuedWhileSuppressed = false
+      activeMarkDirty?.()
+    }
   }
 }

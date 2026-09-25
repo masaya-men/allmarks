@@ -22,6 +22,7 @@ import { useBoardData, type BoardItem } from '@/lib/storage/use-board-data'
 import { RevalidationQueue, defaultFetcher, shouldRevalidate } from '@/lib/board/revalidate'
 import { createCompositeFetcher } from '@/lib/board/tweet-liveness'
 import { subscribeBookmarkSaved, subscribeBookmarkUpdated, postBookmarkSaved } from '@/lib/board/channel'
+import { notifySyncDirty } from '@/lib/sync/sync-signal'
 import { detectUrlType, extractTweetId } from '@/lib/utils/url'
 import { fetchTweetMeta } from '@/lib/embed/tweet-meta'
 import { createBackfillQueue } from '@/lib/board/backfill-queue'
@@ -3259,6 +3260,11 @@ export function BoardRoot() {
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = []
     const unsub = subscribeBookmarkSaved(async ({ bookmarkId }) => {
+      // The save itself already marks sync-store.ts's pendingPush (lib/storage/indexeddb.ts's
+      // write wrapper does this for every write, from any page), so the next poll would eventually
+      // push it — but that page has no SyncController of its own, so nothing schedules a NEAR-TERM
+      // push. Nudge this tab's controller now so the push happens within its debounce instead.
+      notifySyncDirty()
       await reload()
       setNewlyAddedIds((prev) => {
         const next = new Set(prev)
@@ -3346,6 +3352,9 @@ export function BoardRoot() {
   // up in the board's tag list immediately.
   useEffect(() => {
     const unsub = subscribeBookmarkUpdated(() => {
+      // Same reasoning as the bookmark-saved handler above: nudge this tab's controller so a tag
+      // change made from the extension's quick-tag strip / PiP companion gets pushed promptly.
+      notifySyncDirty()
       void reload()
       void reloadTags()
     })

@@ -22,6 +22,7 @@ const bookmarkSchema = z.object({
   isRead: z.boolean().optional(),
   isDeleted: z.boolean().optional(),
   deletedAt: z.string().optional(),
+  purged: z.boolean().optional(),
   orderIndex: z.number().optional(),
   sizePreset: z.enum(['S', 'M', 'L']).optional(),
   cardWidth: z.number().optional(),

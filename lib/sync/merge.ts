@@ -74,8 +74,12 @@ function mergeOneBookmark(a: BookmarkRecord, b: BookmarkRecord): BookmarkRecord 
   const aDel = a.isDeleted === true
   const bDel = b.isDeleted === true
 
-  // ケース2: どちらも墓標 → deletedAt が新しい方（同値は決定的）
+  // ケース2: どちらも墓標 → 完全削除(purged, EMPTY TRASH)の墓標が常に勝つ
+  // (ゴミ箱に戻さない)。それ以外は deletedAt が新しい方（同値は決定的）
   if (aDel && bDel) {
+    const aPurged = a.purged === true
+    const bPurged = b.purged === true
+    if (aPurged !== bPurged) return aPurged ? { ...a, isDeleted: true } : { ...b, isDeleted: true }
     const am = deletedAtMs(a.deletedAt)
     const bm = deletedAtMs(b.deletedAt)
     if (am > bm) return { ...a, isDeleted: true }

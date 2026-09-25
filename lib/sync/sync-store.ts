@@ -71,6 +71,11 @@ export interface SyncStatus {
   readonly connectedEmail?: string
   readonly lastIssue?: SyncIssue
   readonly lastCycleTrace?: SyncCycleTrace
+  /** Set (to an increasing counter) whenever this device has a local change that may not be on
+   *  Drive yet: every local user write (sync-controller.ts markDirty) and every failed push.
+   *  Cleared only by a cycle that completed a full push and saw no newer mark meanwhile
+   *  (clearPendingPushIf). While set, the poll's skip-if-unchanged fast path never skips. */
+  readonly pendingPush?: number
 }
 
 const DEFAULT_SYNC_STATUS: SyncStatus = { connected: false, headRevisions: {} }
@@ -102,6 +107,33 @@ export async function updateSyncStatus(db: DbLike, patch: Partial<SyncStatus>): 
   await store.put({ key: STATUS_KEY, ...next })
   await tx.done
   return next
+}
+
+/** Marks "this device has an unpushed local change" (see SyncStatus.pendingPush). Returns the new
+ *  marker value. Read-modify-write in one transaction so concurrent marks never collapse. */
+export async function markPendingPush(db: DbLike): Promise<number> {
+  const tx = db.transaction('settings', 'readwrite')
+  const store = tx.objectStore('settings')
+  const existingRecord = (await store.get(STATUS_KEY)) as SyncStatusRecord | undefined
+  const current: SyncStatus = existingRecord ? stripKey(existingRecord) : DEFAULT_SYNC_STATUS
+  const marker = (current.pendingPush ?? 0) + 1
+  await store.put({ key: STATUS_KEY, ...current, pendingPush: marker })
+  await tx.done
+  return marker
+}
+
+/** Clears the pending-push marker only if it still equals `expected` (the value the cycle saw when
+ *  it started) — a local write that re-marked it mid-cycle keeps it set for the next cycle. */
+export async function clearPendingPushIf(db: DbLike, expected: number | undefined): Promise<void> {
+  if (expected === undefined) return
+  const tx = db.transaction('settings', 'readwrite')
+  const store = tx.objectStore('settings')
+  const existingRecord = (await store.get(STATUS_KEY)) as SyncStatusRecord | undefined
+  if (existingRecord && existingRecord.pendingPush === expected) {
+    const { pendingPush: _pending, ...rest } = existingRecord
+    await store.put(rest)
+  }
+  await tx.done
 }
 
 // ── sync-store base snapshot + backups ────────────────────────────────────────
@@ -144,4 +176,60 @@ export async function pushBackupGeneration(db: DbLike, snapshot: SyncSnapshot): 
 export async function loadBackupGenerations(db: DbLike): Promise<readonly BackupGeneration[]> {
   const record = (await db.get('settings', BACKUPS_KEY)) as SyncBackupsRecord | undefined
   return record?.generations ?? []
+}
+
+// ── sync-store remote file cache (sync format v2) ──────────────────────────────
+//
+// Device-local copy of the (decompressed) text of every Drive sync file this device last saw, keyed
+// by file name, together with the headRevisionId it had. A file whose listed revision still equals
+// the cached one is read from here instead of being downloaded again (design §Cycle 2), and the
+// poll's skip-check compares the listing against it (§Cycle 5). Never synced and never part of a
+// backup (lib/storage/backup.ts DEVICE_LOCAL_SETTINGS_KEYS). `folderId` scopes the cache to the
+// Drive folder it came from, so reconnecting to a different account/folder never reuses it.
+
+const REMOTE_CACHE_KEY = 'sync-remote-cache'
+
+export interface RemoteFileCacheEntry {
+  readonly rev: string
+  readonly text: string
+}
+
+export type RemoteFileCache = Readonly<Record<string, RemoteFileCacheEntry>>
+
+interface RemoteCacheRecord {
+  readonly key: typeof REMOTE_CACHE_KEY
+  readonly folderId: string
+  readonly files: RemoteFileCache
+}
+
+/** The cache for `folderId`, or {} when there is none (or it belongs to a different folder). */
+export async function loadRemoteCache(db: DbLike, folderId: string): Promise<RemoteFileCache> {
+  const record = (await db.get('settings', REMOTE_CACHE_KEY)) as RemoteCacheRecord | undefined
+  if (!record || record.folderId !== folderId || typeof record.files !== 'object' || record.files === null) return {}
+  return record.files
+}
+
+/** Replaces the whole cache for `folderId`. */
+export async function saveRemoteCache(db: DbLike, folderId: string, files: RemoteFileCache): Promise<void> {
+  const record: RemoteCacheRecord = { key: REMOTE_CACHE_KEY, folderId, files }
+  await db.put('settings', record)
+}
+
+/** Adds/replaces some entries (e.g. right after each successful upload) without touching the rest.
+ *  A cache for a different folder is discarded first. */
+export async function patchRemoteCache(
+  db: DbLike, folderId: string, patch: Readonly<Record<string, RemoteFileCacheEntry | null>>,
+): Promise<void> {
+  const tx = db.transaction('settings', 'readwrite')
+  const store = tx.objectStore('settings')
+  const existing = (await store.get(REMOTE_CACHE_KEY)) as RemoteCacheRecord | undefined
+  const base: Record<string, RemoteFileCacheEntry> =
+    existing && existing.folderId === folderId && existing.files ? { ...existing.files } : {}
+  for (const [name, entry] of Object.entries(patch)) {
+    if (entry === null) delete base[name]
+    else base[name] = entry
+  }
+  const record: RemoteCacheRecord = { key: REMOTE_CACHE_KEY, folderId, files: base }
+  await store.put(record)
+  await tx.done
 }

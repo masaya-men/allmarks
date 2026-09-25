@@ -9,7 +9,7 @@ import { setSyncMarkDirty } from '@/lib/sync/sync-signal'
 /** How often to poll for remote changes while the tab is visible. Each poll runs the engine's
  *  skipIfUnchanged fast path (engine.ts's isRemoteUnchanged): one cheap Drive folder listing, no
  *  downloads, unless something actually changed remotely — so a short interval here is safe. */
-const POLL_INTERVAL_MS = 30_000
+export const POLL_INTERVAL_MS = 10_000
 
 /** Headless. Mounted once, unconditionally, at board root (regardless of
  *  whether SETTINGS/SyncPanel is open), so an already-connected device keeps

@@ -1,11 +1,14 @@
 import type { IDBPDatabase } from 'idb'
 import { runSyncCycle, type SyncCycleResult } from './engine'
 import { withSyncWritesSuppressed } from './sync-signal'
+import { markPendingPush } from './sync-store'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
 
-const DEFAULT_DEBOUNCE_MS = 20_000
+/** Quiet period after the last local write before a sync cycle runs (sync format v2: uploads are
+ *  now a few KB, so a short debounce keeps devices within ~10s of each other). */
+export const DEFAULT_DEBOUNCE_MS = 3_000
 
 export interface SyncCycleOpts {
   readonly skipIfUnchanged?: boolean
@@ -29,6 +32,9 @@ export function createSyncController(
   // beforeunload, a manual flushNow()) never start a second concurrent runSyncCycle — they all
   // share the result of whichever cycle is already running.
   let inFlight: Promise<SyncCycleResult> | null = null
+  // A local write that landed while a cycle was already running: that cycle may have read local
+  // data before the write, so another (debounced) cycle is scheduled once it finishes.
+  let dirtyWhileInFlight = false
 
   function clearTimer(): void {
     if (timer !== null) { clearTimeout(timer); timer = null }
@@ -42,13 +48,11 @@ export function createSyncController(
     clearTimer()
     if (inFlight) return inFlight
     const promise = (async () => {
-      // Suppressed: runSyncCycle writes the pulled/merged snapshot back to
-      // IndexedDB, which would otherwise notify itself dirty and loop
-      // forever (see sync-signal.ts).
-      // Note: runSyncCycle itself now emits sync-events.ts's started/finished signals (moved
-      // there so a manual "Sync now" cycle, which never goes through this controller, emits too)
-      // — this used to also call notifySyncCycleFinished() here, which would have double-emitted.
-      const result = await withSyncWritesSuppressed(() => runSyncCycle(db, opts))
+      // runSyncCycle suppresses its OWN IndexedDB writes (through `db`) itself, so the
+      // pulled/merged snapshot it writes back never re-triggers a sync — while a user write made
+      // meanwhile (through any other handle) still reaches markDirty (see sync-signal.ts).
+      // Note: runSyncCycle itself emits sync-events.ts's started/finished signals.
+      const result = await runSyncCycle(db, opts)
       onResult?.(result)
       return result
     })()
@@ -57,11 +61,20 @@ export function createSyncController(
       return await promise
     } finally {
       if (inFlight === promise) inFlight = null
+      if (dirtyWhileInFlight) {
+        dirtyWhileInFlight = false
+        markDirty()
+      }
     }
   }
 
   function markDirty(): void {
     clearTimer()
+    if (inFlight) dirtyWhileInFlight = true
+    // Persist "unpushed local change" so a poll never skips it, even across a reload or a failed
+    // cycle (sync-status pendingPush). Written through this controller's own handle, suppressed
+    // so the marker write itself doesn't count as a user change. Best-effort.
+    void withSyncWritesSuppressed(() => markPendingPush(db), db).catch(() => undefined)
     timer = setTimeout(() => { void flushNow() }, debounceMs)
   }
 

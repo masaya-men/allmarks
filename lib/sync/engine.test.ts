@@ -12,6 +12,12 @@ import { saveSyncTokens, loadSyncTokens } from './sync-store'
 import { ensureAccessToken, hasRequiredScopes, SyncNotConnectedError } from './engine'
 import { setSyncMarkDirty, withSyncWritesSuppressed } from './sync-signal'
 import { onSyncCycleStarted, onSyncCycleFinished, isSyncCycleInFlight } from './sync-events'
+import { setGzipCodecForTesting, type GzipCodec } from './gzip-codec'
+import { shardFileName, shardIndexFor, SHARD_COUNT_DEFAULT } from './sync-layout'
+import { saveRemoteCache } from './sync-store'
+
+/** The v2 shard file that bookmark('local-1') lives in. */
+const BM_SHARD = shardFileName('bookmarks', shardIndexFor('local-1', SHARD_COUNT_DEFAULT))
 
 vi.mock('./auth', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./auth')>()
@@ -20,6 +26,17 @@ vi.mock('./auth', async (importOriginal) => {
 import { refreshAccessToken, SYNC_OAUTH_SCOPE } from './auth'
 
 let db: IDBPDatabase<AllMarksDB> | null = null
+
+// This file exercises the engine's orchestration (lock, trace, ceiling, retry, vault, guards). It
+// runs with an identity "gzip" codec (compressed bytes = the UTF-8 text) so the mocked Drive calls
+// can be asserted as plain text; real gzip, migration and the two-device simulation live in
+// engine-v2.test.ts.
+const IDENTITY_CODEC: GzipCodec = {
+  compress: async (text) => new TextEncoder().encode(text),
+  decompress: async (bytes) => new TextDecoder().decode(bytes),
+}
+beforeEach(() => { setGzipCodecForTesting(IDENTITY_CODEC) })
+afterEach(() => { setGzipCodecForTesting(undefined) })
 
 beforeEach(async () => {
   const databases = await indexedDB.databases()
@@ -109,7 +126,7 @@ describe('applySnapshotToLocal', () => {
         } as never],
         tags: [], cards: [], boardConfig: null, vault: null,
       }
-      await withSyncWritesSuppressed(() => applySnapshotToLocal(d, snapshot))
+      await withSyncWritesSuppressed(() => applySnapshotToLocal(d, snapshot), d)
       expect(calls).toBe(0)
 
       // A genuine, unrelated write outside the suppressed window still notifies.
@@ -170,22 +187,35 @@ describe('hasRequiredScopes', () => {
 
 vi.mock('./drive-adapter', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./drive-adapter')>()
+  const downloadFileText = vi.fn()
+  const createTextFile = vi.fn()
+  const updateTextFile = vi.fn()
   return {
     ...actual,
     findSyncFolder: vi.fn(),
     createSyncFolder: vi.fn(),
     listFolderFiles: vi.fn(),
-    downloadFileText: vi.fn(),
+    downloadFileText,
     getHeadRevisionId: vi.fn(),
-    createTextFile: vi.fn(),
-    updateTextFile: vi.fn(),
+    createTextFile,
+    updateTextFile,
+    // v2 data files are gzip/binary. This file runs with IDENTITY_CODEC (bytes = UTF-8 text), and the
+    // binary calls are routed through the text mocks above, so every orchestration test below can
+    // keep mocking/asserting plain text.
+    downloadFileBytes: vi.fn(async (t: string, id: string, signal?: AbortSignal): Promise<Uint8Array> =>
+      new TextEncoder().encode(String(await downloadFileText(t, id, signal)))),
+    createBinaryFile: vi.fn((t: string, f: string, name: string, bytes: Uint8Array, _mime?: string, signal?: AbortSignal) =>
+      createTextFile(t, f, name, new TextDecoder().decode(bytes), signal)),
+    updateBinaryFile: vi.fn((t: string, id: string, bytes: Uint8Array, _mime?: string, signal?: AbortSignal) =>
+      updateTextFile(t, id, new TextDecoder().decode(bytes), signal)),
+    deleteFile: vi.fn(),
   }
 })
 import {
   findSyncFolder, createSyncFolder, listFolderFiles, downloadFileText,
   getHeadRevisionId, createTextFile, updateTextFile, DriveError,
 } from './drive-adapter'
-import { ensureSyncFolder, pullRemoteSnapshot, pushSnapshot, SyncCorruptDataError, SyncConflictError } from './engine'
+import { ensureSyncFolder, pullRemoteSnapshot, pushSnapshot, SyncCorruptDataError, SyncConflictError, canonicalJson } from './engine'
 
 describe('ensureSyncFolder', () => {
   it('returns the existing folder id without creating one', async () => {
@@ -246,28 +276,36 @@ describe('pullRemoteSnapshot', () => {
 
 describe('pushSnapshot', () => {
   const snapshot: SyncSnapshot = { bookmarks: [], tags: [], cards: [], boardConfig: null, vault: null }
+  // An empty snapshot serializes to the v2 layout: bookmarks-0..15.json.gz + cards-0..15.json.gz +
+  // tags.json.gz (boardConfig/vault are null).
+  const createEcho = async (_t: string, _f: string, name: string): Promise<{ id: string; name: string; headRevisionId: string }> =>
+    ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` })
 
   it('creates files that do not exist yet', async () => {
     vi.mocked(listFolderFiles).mockResolvedValue([])
-    vi.mocked(createTextFile).mockResolvedValue({ id: 'new-id', name: 'bookmarks.json', headRevisionId: 'rev-new' })
+    vi.mocked(createTextFile).mockImplementation(createEcho)
     const revisions = await pushSnapshot('token', 'folder1', snapshot, {})
-    expect(revisions['bookmarks.json']).toBe('rev-new')
+    expect(revisions['bookmarks-0.json.gz']).toBe('rev-bookmarks-0.json.gz')
+    expect(revisions['tags.json.gz']).toBe('rev-tags.json.gz')
+    expect(Object.keys(revisions)).toHaveLength(33)
     expect(updateTextFile).not.toHaveBeenCalled()
   })
 
   it('updates an existing file when the recorded revision still matches', async () => {
-    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks-0.json.gz' }])
     vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
-    vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks.json', headRevisionId: 'rev-2' })
-    const revisions = await pushSnapshot('token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' })
-    expect(revisions['bookmarks.json']).toBe('rev-2')
+    vi.mocked(createTextFile).mockImplementation(createEcho)
+    vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks-0.json.gz', headRevisionId: 'rev-2' })
+    const revisions = await pushSnapshot('token', 'folder1', snapshot, { 'bookmarks-0.json.gz': 'rev-1' })
+    expect(revisions['bookmarks-0.json.gz']).toBe('rev-2')
   })
 
   it('throws SyncConflictError when the remote revision changed since the recorded pull', async () => {
-    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks-0.json.gz' }])
     vi.mocked(getHeadRevisionId).mockResolvedValue('rev-DIFFERENT')
+    vi.mocked(createTextFile).mockImplementation(createEcho)
     await expect(
-      pushSnapshot('token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' }),
+      pushSnapshot('token', 'folder1', snapshot, { 'bookmarks-0.json.gz': 'rev-1' }),
     ).rejects.toThrow(SyncConflictError)
     expect(updateTextFile).not.toHaveBeenCalled()
   })
@@ -275,47 +313,51 @@ describe('pushSnapshot', () => {
   // Fix I-6: previously, `existing` truthy + no recorded `previous` skipped the revision check
   // entirely and blind-overwrote the file. That's a real race window (another device created the
   // file in the gap between this device's pull and this device's push) — it must now be treated
-  // as a conflict, uniformly across all 5 files, not silently passed through.
+  // as a conflict, uniformly across every file, not silently passed through.
   it('throws SyncConflictError when the file exists remotely but this device recorded no previous revision for it', async () => {
-    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks-0.json.gz' }])
+    vi.mocked(createTextFile).mockImplementation(createEcho)
     await expect(
-      pushSnapshot('token', 'folder1', snapshot, {}), // no entry for 'bookmarks.json'
+      pushSnapshot('token', 'folder1', snapshot, {}), // no entry for 'bookmarks-0.json.gz'
     ).rejects.toThrow(SyncConflictError)
     expect(updateTextFile).not.toHaveBeenCalled()
   })
 
   // Item 1: skip re-uploading a file whose serialized content is byte-identical to what this
-  // device already downloaded earlier in the SAME cycle (pullRemoteSnapshot's `remoteTexts`,
-  // threaded in as the 5th param here) — no getHeadRevisionId check either, since there's
-  // nothing to write and thus nothing that can conflict.
+  // device already pulled earlier in the SAME cycle (PulledRemote.remoteTexts, threaded in as the
+  // 5th param here) — no getHeadRevisionId check either, since there's nothing to write and thus
+  // nothing that can conflict.
   describe('unchanged-content upload skip (item 1)', () => {
     it('skips the upload and keeps the existing revision when content matches the previously pulled remote text', async () => {
-      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks-0.json.gz' }])
+      vi.mocked(createTextFile).mockImplementation(createEcho)
       const revisions = await pushSnapshot(
-        'token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' }, { 'bookmarks.json': '[]' },
+        'token', 'folder1', snapshot, { 'bookmarks-0.json.gz': 'rev-1' }, { 'bookmarks-0.json.gz': '[]' },
       )
-      expect(revisions['bookmarks.json']).toBe('rev-1')
+      expect(revisions['bookmarks-0.json.gz']).toBe('rev-1')
       expect(getHeadRevisionId).not.toHaveBeenCalled()
       expect(updateTextFile).not.toHaveBeenCalled()
     })
 
     it('uploads when the serialized content differs from the previously pulled remote text', async () => {
-      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks-0.json.gz' }])
       vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
-      vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks.json', headRevisionId: 'rev-2' })
+      vi.mocked(createTextFile).mockImplementation(createEcho)
+      vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks-0.json.gz', headRevisionId: 'rev-2' })
       const revisions = await pushSnapshot(
-        'token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' }, { 'bookmarks.json': '[{"old":true}]' },
+        'token', 'folder1', snapshot, { 'bookmarks-0.json.gz': 'rev-1' }, { 'bookmarks-0.json.gz': '[{"old":true}]' },
       )
-      expect(revisions['bookmarks.json']).toBe('rev-2')
+      expect(revisions['bookmarks-0.json.gz']).toBe('rev-2')
       expect(updateTextFile).toHaveBeenCalledTimes(1)
     })
 
     it('always uploads when no previousRemoteTexts is passed at all (backward compatible default)', async () => {
-      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks-0.json.gz' }])
       vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
-      vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks.json', headRevisionId: 'rev-2' })
-      const revisions = await pushSnapshot('token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' })
-      expect(revisions['bookmarks.json']).toBe('rev-2')
+      vi.mocked(createTextFile).mockImplementation(createEcho)
+      vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks-0.json.gz', headRevisionId: 'rev-2' })
+      const revisions = await pushSnapshot('token', 'folder1', snapshot, { 'bookmarks-0.json.gz': 'rev-1' })
+      expect(revisions['bookmarks-0.json.gz']).toBe('rev-2')
       expect(updateTextFile).toHaveBeenCalledTimes(1)
     })
   })
@@ -325,9 +367,12 @@ describe('pushSnapshot', () => {
   // classification (status/name are untouched).
   it('tags a DriveError thrown during upload with an "upload <name>" context', async () => {
     vi.mocked(listFolderFiles).mockResolvedValue([])
-    vi.mocked(createTextFile).mockRejectedValue(new DriveError(500, 'server error'))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => {
+      if (name === 'bookmarks-0.json.gz') throw new DriveError(500, 'server error')
+      return { id: `id-${name}`, name, headRevisionId: `rev-${name}` }
+    })
     await expect(pushSnapshot('token', 'folder1', snapshot, {}))
-      .rejects.toMatchObject({ status: 500, context: 'upload bookmarks.json' })
+      .rejects.toMatchObject({ status: 500, context: 'upload bookmarks-0.json.gz' })
   })
 })
 
@@ -524,7 +569,7 @@ describe('runSyncCycle', () => {
     await saveLicense(d, activeLicenseState())
     await createVault(d, 'tag1', 'local-password')
     const localVaultBefore = await d.get('settings', 'private-vault') as { salt: string }
-    // See the self-heal test above for why: without a real content diff on bookmarks.json,
+    // See the self-heal test above for why: without a real content diff on the local bookmark's shard,
     // item 1's unchanged-upload skip bypasses the optimistic-lock check entirely and this
     // conflict never occurs at all.
     await d.put('bookmarks', bookmark('local-1') as never)
@@ -535,23 +580,23 @@ describe('runSyncCycle', () => {
     }
     // The FIRST pull sees no vault at all (so vaultConflict is false on the first attempt) — only
     // the RETRY's re-pull (after listFolderFiles has been called twice) discovers the other
-    // device's vault, alongside the same bookmarks.json used to force the first push to conflict.
+    // device's vault, alongside the same the local bookmark's shard used to force the first push to conflict.
     let listCalls = 0
     vi.mocked(listFolderFiles).mockImplementation(async () => {
       listCalls += 1
       return listCalls <= 2
-        ? [{ id: 'f-bm', name: 'bookmarks.json' }]
-        : [{ id: 'f-bm', name: 'bookmarks.json' }, { id: 'f-vault', name: 'vault.json' }]
+        ? [{ id: 'f-bm', name: BM_SHARD }]
+        : [{ id: 'f-bm', name: BM_SHARD }, { id: 'f-vault', name: 'vault.json' }]
     })
     vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
       id === 'f-vault' ? JSON.stringify(remoteVault) : '[]')
     vi.mocked(getHeadRevisionId)
-      .mockResolvedValueOnce('rev-bm-1')        // 1st pull: bookmarks.json base revision
-      .mockResolvedValueOnce('rev-bm-CONFLICT') // 1st push's check on bookmarks.json — mismatches, throws
-      .mockResolvedValueOnce('rev-bm-2')        // retry re-pull: bookmarks.json
+      .mockResolvedValueOnce('rev-bm-1')        // 1st pull: the local bookmark's shard base revision
+      .mockResolvedValueOnce('rev-bm-CONFLICT') // 1st push's check on the local bookmark's shard — mismatches, throws
+      .mockResolvedValueOnce('rev-bm-2')        // retry re-pull: the local bookmark's shard
       .mockResolvedValueOnce('rev-vault-1')     // retry re-pull: vault.json (now visible)
-      .mockResolvedValueOnce('rev-bm-2')        // 2nd push's check on bookmarks.json — matches, succeeds
-    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-bm-3' }))
+      .mockResolvedValueOnce('rev-bm-2')        // 2nd push's check on the local bookmark's shard — matches, succeeds
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: BM_SHARD, headRevisionId: 'rev-bm-3' }))
     vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
 
     const result = await runSyncCycle(d)
@@ -583,14 +628,14 @@ describe('runSyncCycle', () => {
     // conflict-retry machinery) would never execute.
     await d.put('bookmarks', bookmark('local-1') as never)
 
-    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: BM_SHARD }])
     vi.mocked(downloadFileText).mockResolvedValue('[]')
     vi.mocked(getHeadRevisionId)
       .mockResolvedValueOnce('rev-1')        // 1st pull records this as the base revision
       .mockResolvedValueOnce('rev-CONFLICT') // 1st push's optimistic-lock check — mismatches rev-1
       .mockResolvedValueOnce('rev-2')        // re-pull after the conflict records the new revision
       .mockResolvedValueOnce('rev-2')        // 2nd push's check — matches the re-pull, so it succeeds
-    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-3' }))
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: BM_SHARD, headRevisionId: 'rev-3' }))
     vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
 
     const result = await runSyncCycle(d)
@@ -618,7 +663,7 @@ describe('runSyncCycle', () => {
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
     await saveLicense(d, activeLicenseState())
-    // See the self-heal test above for why: without a real content diff on bookmarks.json,
+    // See the self-heal test above for why: without a real content diff on the local bookmark's shard,
     // item 1's unchanged-upload skip bypasses the optimistic-lock check entirely and this
     // conflict never occurs at all.
     await d.put('bookmarks', bookmark('local-1') as never)
@@ -640,19 +685,19 @@ describe('runSyncCycle', () => {
         await createVault(d, 'tag1', 'local-during-retry')
         const created = await d.get('settings', 'private-vault') as { salt?: string; publicKey?: string }
         createdDuringRetry = { salt: created.salt, publicKey: created.publicKey }
-        return [{ id: 'f-bm', name: 'bookmarks.json' }, { id: 'f-vault', name: 'vault.json' }]
+        return [{ id: 'f-bm', name: BM_SHARD }, { id: 'f-vault', name: 'vault.json' }]
       }
-      return [{ id: 'f-bm', name: 'bookmarks.json' }]
+      return [{ id: 'f-bm', name: BM_SHARD }]
     })
     vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
       id === 'f-vault' ? JSON.stringify(remoteVault) : '[]')
     vi.mocked(getHeadRevisionId)
-      .mockResolvedValueOnce('rev-bm-1')        // 1st pull: bookmarks.json base revision
-      .mockResolvedValueOnce('rev-bm-CONFLICT') // 1st push's check on bookmarks.json — mismatches, throws
-      .mockResolvedValueOnce('rev-bm-2')        // retry re-pull: bookmarks.json
+      .mockResolvedValueOnce('rev-bm-1')        // 1st pull: the local bookmark's shard base revision
+      .mockResolvedValueOnce('rev-bm-CONFLICT') // 1st push's check on the local bookmark's shard — mismatches, throws
+      .mockResolvedValueOnce('rev-bm-2')        // retry re-pull: the local bookmark's shard
       .mockResolvedValueOnce('rev-vault-1')     // retry re-pull: vault.json (now visible)
-      .mockResolvedValueOnce('rev-bm-2')        // 2nd push's check on bookmarks.json — matches, succeeds
-    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-bm-3' }))
+      .mockResolvedValueOnce('rev-bm-2')        // 2nd push's check on the local bookmark's shard — matches, succeeds
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: BM_SHARD, headRevisionId: 'rev-bm-3' }))
     vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
 
     const result = await runSyncCycle(d)
@@ -732,7 +777,10 @@ describe('runSyncCycle', () => {
     // 4th arg is this cycle's abort signal (item 1's overall ceiling, threaded through every
     // Drive call) — any AbortSignal instance is fine here, this test only cares about the vault
     // publish itself.
-    expect(updateTextFile).toHaveBeenCalledWith('at', 'f-vault', JSON.stringify(localVault), expect.any(AbortSignal))
+    // Published to the v2 vault file (vault.json.gz — created here since only v1 vault.json exists),
+    // never to v1 vault.json. Binary calls are routed to the text mocks (see the vi.mock above).
+    expect(createTextFile).toHaveBeenCalledWith('at', 'folder1', 'vault.json.gz', canonicalJson(localVault), expect.any(AbortSignal))
+    expect(updateTextFile).not.toHaveBeenCalledWith('at', 'f-vault', expect.anything(), expect.anything())
   })
 
   it('does NOT force-publish when the local vault loses the deterministic tie-break', async () => {
@@ -811,9 +859,9 @@ describe('runSyncCycle concurrency (sync-lock)', () => {
 
     expect(r1.status).toBe('synced')
     expect(r2.status).toBe('synced')
-    // 3x listFolderFiles (pull/push/writeManifest) + 4x createTextFile (bookmarks/tags/cards/manifest)
-    // per cycle, and the two cycles' entries never interleave.
-    const perCycle = 7
+    // 3x listFolderFiles (pull/push/writeManifest) + 34x createTextFile (16 bookmarks shards, 16 cards
+    // shards, tags, manifest) per cycle, and the two cycles' entries never interleave.
+    const perCycle = 37
     expect(log.length).toBe(perCycle * 2)
     expect(log.slice(0, perCycle)).toEqual(log.slice(perCycle, perCycle * 2))
   })
@@ -929,21 +977,33 @@ describe('runSyncCycle localChanged', () => {
 // Item 3/4: a timer/visibility poll passes opts.skipIfUnchanged so a cycle that finds nothing
 // changed on Drive never downloads anything — only a manual "Sync now" or a dirty write does the
 // full pull/push unconditionally.
+/** A v2 (plain, codec-off) folder listing + a matching device-local sync-remote-cache: every
+ *  file a pull would read is cached at exactly its listed revision, so the skip-check (design
+ *  §Cycle 5) must report "unchanged". */
+const UNCHANGED_LISTING = [
+  { id: 'f-m', name: 'manifest.json', headRevisionId: 'rev-m' },
+  { id: 'f-bm', name: 'bookmarks-0.json.gz', headRevisionId: 'rev-1' },
+  { id: 'f-tags', name: 'tags.json.gz', headRevisionId: 'rev-1' },
+  { id: 'f-cards', name: 'cards-0.json.gz', headRevisionId: 'rev-1' },
+]
+async function seedUnchangedRemoteCache(d: IDBPDatabase<AllMarksDB>): Promise<void> {
+  await saveRemoteCache(d, 'folder1', {
+    'manifest.json': { rev: 'rev-m', text: JSON.stringify({ formatVersion: 2, shardCount: 16, updatedAt: 1 }) },
+    'bookmarks-0.json.gz': { rev: 'rev-1', text: '[]' },
+    'tags.json.gz': { rev: 'rev-1', text: '[]' },
+    'cards-0.json.gz': { rev: 'rev-1', text: '[]' },
+  })
+}
+
 describe('runSyncCycle skipIfUnchanged (poll fast path)', () => {
   it('skips the pull/push and makes zero downloads when every tracked revision already matches', async () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
-    await updateSyncStatus(d, {
-      connected: true, folderId: 'folder1',
-      headRevisions: { 'bookmarks.json': 'rev-1', 'tags.json': 'rev-1', 'cards.json': 'rev-1' },
-    })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await seedUnchangedRemoteCache(d)
     await saveLicense(d, activeLicenseState())
 
-    vi.mocked(listFolderFiles).mockResolvedValue([
-      { id: 'f-bm', name: 'bookmarks.json', headRevisionId: 'rev-1' },
-      { id: 'f-tags', name: 'tags.json', headRevisionId: 'rev-1' },
-      { id: 'f-cards', name: 'cards.json', headRevisionId: 'rev-1' },
-    ])
+    vi.mocked(listFolderFiles).mockResolvedValue(UNCHANGED_LISTING)
 
     const result = await runSyncCycle(d, { skipIfUnchanged: true })
     expect(result).toEqual({ status: 'synced', vaultConflict: false, localChanged: false })
@@ -1100,7 +1160,7 @@ describe('runSyncCycle lastCycleTrace (item 2)', () => {
     expect(names).toContain('apply-local')
     expect(names).toContain('manifest')
     // Names/sizes/status only -- the file's own content never leaks into a step name.
-    expect(names.some((n) => /^upload bookmarks\.json \(\d+\.\d\dMB\)$/.test(n))).toBe(true)
+    expect(names.some((n) => /^upload bookmarks-\d+\.json\.gz \(\d+\.\dKB\)$/.test(n))).toBe(true)
     expect(trace!.steps.every((s) => s.ok)).toBe(true)
     expect(trace!.steps.every((s) => s.note === undefined)).toBe(true)
     expect(trace!.totalMs).toBeGreaterThanOrEqual(0)
@@ -1165,7 +1225,7 @@ describe('runSyncCycle lastCycleTrace (item 2)', () => {
       expect(trace).toBeDefined()
       const failedStep = trace!.steps.find((s) => !s.ok)
       expect(failedStep).toBeDefined()
-      expect(failedStep!.name).toMatch(/^upload bookmarks\.json \(\d+\.\d\dMB\)$/)
+      expect(failedStep!.name).toMatch(/^upload .+\.json\.gz \(\d+\.\dKB\)$/)
       expect(trace!.totalMs).toBeGreaterThanOrEqual(5 * 60 * 1000)
     } finally {
       vi.useRealTimers()
@@ -1175,16 +1235,10 @@ describe('runSyncCycle lastCycleTrace (item 2)', () => {
   it('records a "skip-check" step on the skipIfUnchanged fast path, and nothing else', async () => {
     const d = await initDB(); db = d
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
-    await updateSyncStatus(d, {
-      connected: true, folderId: 'folder1',
-      headRevisions: { 'bookmarks.json': 'rev-1', 'tags.json': 'rev-1', 'cards.json': 'rev-1' },
-    })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await seedUnchangedRemoteCache(d)
     await saveLicense(d, activeLicenseState())
-    vi.mocked(listFolderFiles).mockResolvedValue([
-      { id: 'f-bm', name: 'bookmarks.json', headRevisionId: 'rev-1' },
-      { id: 'f-tags', name: 'tags.json', headRevisionId: 'rev-1' },
-      { id: 'f-cards', name: 'cards.json', headRevisionId: 'rev-1' },
-    ])
+    vi.mocked(listFolderFiles).mockResolvedValue(UNCHANGED_LISTING)
 
     const result = await runSyncCycle(d, { skipIfUnchanged: true })
     expect(result.status).toBe('synced')

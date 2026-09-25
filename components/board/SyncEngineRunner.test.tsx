@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
-import { SyncEngineRunner } from './SyncEngineRunner'
+import { SyncEngineRunner, POLL_INTERVAL_MS } from './SyncEngineRunner'
 import { loadSyncStatus } from '@/lib/sync/sync-store'
 import { createSyncController } from '@/lib/sync/sync-controller'
 
@@ -14,6 +14,14 @@ const mockCreateSyncController = vi.mocked(createSyncController)
 function fakeController() {
   return { start: vi.fn(), stop: vi.fn(), markDirty: vi.fn(), flushNow: vi.fn().mockResolvedValue({ status: 'synced', vaultConflict: false }) }
 }
+
+describe('POLL_INTERVAL_MS', () => {
+  // Sync format v2: the skip-if-unchanged poll only lists the folder, so it runs every 10s
+  // (down from 30s) to keep devices within ~10s of each other.
+  it('is 10 seconds', () => {
+    expect(POLL_INTERVAL_MS).toBe(10_000)
+  })
+})
 
 describe('SyncEngineRunner', () => {
   beforeEach(() => { vi.clearAllMocks() })
@@ -90,8 +98,9 @@ describe('SyncEngineRunner', () => {
     expect(controller.flushNow).toHaveBeenLastCalledWith({ skipIfUnchanged: true })
   })
 
-  // Item: 30s poll while visible, paused while hidden, cleared on unmount.
-  it('polls every 30s while visible, pauses while hidden, and stops on unmount', async () => {
+  // Item: POLL_INTERVAL_MS (10s since sync format v2) poll while visible, paused while hidden,
+  // cleared on unmount.
+  it('polls every POLL_INTERVAL_MS while visible, pauses while hidden, and stops on unmount', async () => {
     vi.useFakeTimers()
     try {
       mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, folderId: 'f1' })
@@ -103,28 +112,28 @@ describe('SyncEngineRunner', () => {
       await vi.waitFor(() => expect(controller.start).toHaveBeenCalledTimes(1))
       expect(controller.flushNow).toHaveBeenCalledTimes(1) // mount-time full flush
 
-      await vi.advanceTimersByTimeAsync(30_000)
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
       expect(controller.flushNow).toHaveBeenCalledTimes(2)
       expect(controller.flushNow).toHaveBeenLastCalledWith({ skipIfUnchanged: true })
 
-      await vi.advanceTimersByTimeAsync(30_000)
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
       expect(controller.flushNow).toHaveBeenCalledTimes(3)
 
       // Hidden: polling pauses.
       Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
       document.dispatchEvent(new Event('visibilitychange'))
-      await vi.advanceTimersByTimeAsync(90_000)
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 3)
       expect(controller.flushNow).toHaveBeenCalledTimes(3)
 
       // Visible again: immediate flush + polling resumes.
       Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
       document.dispatchEvent(new Event('visibilitychange'))
       expect(controller.flushNow).toHaveBeenCalledTimes(4)
-      await vi.advanceTimersByTimeAsync(30_000)
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
       expect(controller.flushNow).toHaveBeenCalledTimes(5)
 
       unmount()
-      await vi.advanceTimersByTimeAsync(90_000)
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 3)
       expect(controller.flushNow).toHaveBeenCalledTimes(5) // no more polls post-unmount
     } finally {
       vi.useRealTimers()

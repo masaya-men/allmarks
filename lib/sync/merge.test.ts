@@ -3,6 +3,7 @@ import type { BookmarkRecord, TagRecord, CardRecord } from '@/lib/storage/indexe
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
 import { mergeBookmarks, mergeTags, mergeCards, mergeBoardConfig, mergeVault, mergeAll, pickDeterministic, type SyncBoardConfig, type SyncSnapshot } from './merge'
 import { DEFAULT_BOARD_CONFIG } from '@/lib/storage/board-config'
+import { purgedBookmarkTombstone } from '@/lib/storage/indexeddb'
 
 /** 最小限のフィールドで BookmarkRecord を作る（未使用フィールドは既定で埋める）。 */
 function bm(over: Partial<BookmarkRecord> & Pick<BookmarkRecord, 'id'>): BookmarkRecord {
@@ -597,5 +598,21 @@ describe('mergeAll', () => {
     const L: SyncSnapshot = { ...emptySnap, bookmarks: [bm({ id: 'a' }), bm({ id: 'b' }), bm({ id: 'c' })] }
     const R: SyncSnapshot = { ...emptySnap, bookmarks: [bm({ id: 'd' }), bm({ id: 'e' })] }
     expect(mergeAll(L, R).bookmarks).toHaveLength(5)
+  })
+})
+
+describe('mergeBookmarks — purged tombstones (EMPTY TRASH)', () => {
+  const purged = purgedBookmarkTombstone('p', Date.parse('2026-03-01T00:00:00.000Z'))
+
+  it('a purged tombstone wins over an older live copy, in both argument orders', () => {
+    const live = bm({ id: 'p', updatedAt: Date.parse('2026-02-01T00:00:00.000Z') })
+    expect(mergeBookmarks([purged], [live])[0]).toMatchObject({ purged: true, isDeleted: true })
+    expect(mergeBookmarks([live], [purged])[0]).toMatchObject({ purged: true, isDeleted: true })
+  })
+
+  it('a purged tombstone wins over a plain TRASH tombstone even when that one was deleted later', () => {
+    const trashed = bm({ id: 'p', isDeleted: true, deletedAt: '2026-04-01T00:00:00.000Z', updatedAt: Date.parse('2026-04-01T00:00:00.000Z') })
+    expect(mergeBookmarks([purged], [trashed])[0]).toMatchObject({ purged: true })
+    expect(mergeBookmarks([trashed], [purged])[0]).toMatchObject({ purged: true })
   })
 })

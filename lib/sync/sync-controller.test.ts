@@ -2,12 +2,28 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 vi.mock('./engine', () => ({ runSyncCycle: vi.fn().mockResolvedValue({ status: 'synced', vaultConflict: false }) }))
 import { runSyncCycle } from './engine'
-import { createSyncController } from './sync-controller'
+import { createSyncController, DEFAULT_DEBOUNCE_MS } from './sync-controller'
 
 const fakeDb = {} as never
 
 beforeEach(() => { vi.useFakeTimers(); vi.mocked(runSyncCycle).mockClear() })
 afterEach(() => { vi.useRealTimers() })
+
+describe('DEFAULT_DEBOUNCE_MS', () => {
+  // Sync format v2: a local write uploads only a few KB, so the debounce is 3s (down from 20s).
+  it('is 3 seconds', () => {
+    expect(DEFAULT_DEBOUNCE_MS).toBe(3_000)
+  })
+
+  it('is the delay createSyncController uses when none is passed', async () => {
+    const controller = createSyncController(fakeDb)
+    controller.markDirty()
+    await vi.advanceTimersByTimeAsync(DEFAULT_DEBOUNCE_MS - 1)
+    expect(runSyncCycle).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(runSyncCycle).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('createSyncController', () => {
   it('markDirty triggers a sync cycle after the debounce delay', async () => {
@@ -157,4 +173,24 @@ describe('createSyncController', () => {
   // mocked in this file (it's not the thing under test here), that emission is covered by
   // engine.test.ts instead; this controller no longer calls sync-events directly, so there is
   // nothing left to assert on that pub/sub here.
+})
+
+describe('createSyncController — a local write during an in-flight cycle is not lost', () => {
+  it('schedules another cycle after the in-flight one when markDirty lands mid-cycle', async () => {
+    let release: () => void = () => {}
+    vi.mocked(runSyncCycle).mockImplementationOnce(() => new Promise((resolve) => {
+      release = () => resolve({ status: 'synced', vaultConflict: false, localChanged: false })
+    }))
+    const controller = createSyncController(fakeDb, 1000)
+    const first = controller.flushNow({ skipIfUnchanged: true })
+    await vi.advanceTimersByTimeAsync(0)
+    controller.markDirty() // user write while the poll is running
+    await vi.advanceTimersByTimeAsync(1000) // debounce fires but joins the in-flight cycle
+    expect(runSyncCycle).toHaveBeenCalledTimes(1)
+    release()
+    await first
+    await vi.advanceTimersByTimeAsync(1000) // follow-up cycle after the in-flight one
+    expect(runSyncCycle).toHaveBeenCalledTimes(2)
+    expect(runSyncCycle).toHaveBeenLastCalledWith(fakeDb, {})
+  })
 })

@@ -256,26 +256,51 @@ function toFileMeta(raw: unknown): DriveFileMeta | null {
     : { id: item.id, name: item.name }
 }
 
-/** フォルダ直下の（ゴミ箱でない）ファイルを列挙。ページングは扱わない
- *  （AllMarks/ は 6 ファイル程度・設計 §5）。 */
+/** フォルダ直下の（ゴミ箱でない）ファイルを列挙。nextPageToken を辿って全ページを
+ *  集める（形式 v2 はシャード分割で 30 ファイル超になるため — 設計 §Cycle 1）。 */
 export async function listFolderFiles(accessToken: string, folderId: string, signal?: AbortSignal): Promise<DriveFileMeta[]> {
   const q = `'${folderId}' in parents and trashed = false`
-  const url =
-    `${DRIVE_API}/files?q=${encodeURIComponent(q)}` +
-    `&fields=${encodeURIComponent('files(id,name,headRevisionId)')}&spaces=drive&pageSize=100`
-  const json = await readJson(await driveFetch(accessToken, url, undefined, TIMEOUT_LIST_MS, signal))
-  const files = (json as { files?: unknown }).files
-  if (!Array.isArray(files)) return []
-  return files
-    .map(toFileMeta)
-    .filter((m): m is DriveFileMeta => m !== null)
-    .sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
+  const out: DriveFileMeta[] = []
+  let pageToken: string | undefined
+  // 念のための上限（1000 件/ページ × 50 ページ）。Drive が同じトークンを返し続けても無限ループしない。
+  for (let page = 0; page < 50; page++) {
+    const url =
+      `${DRIVE_API}/files?q=${encodeURIComponent(q)}` +
+      `&fields=${encodeURIComponent('nextPageToken,files(id,name,headRevisionId)')}&spaces=drive&pageSize=1000` +
+      (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '')
+    const json = await readJson(await driveFetch(accessToken, url, undefined, TIMEOUT_LIST_MS, signal))
+    const files = (json as { files?: unknown }).files
+    if (Array.isArray(files)) {
+      for (const raw of files) {
+        const meta = toFileMeta(raw)
+        if (meta) out.push(meta)
+      }
+    }
+    const next = (json as { nextPageToken?: unknown }).nextPageToken
+    if (typeof next !== 'string' || next.length === 0 || next === pageToken) break
+    pageToken = next
+  }
+  return out.sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : x.id < y.id ? -1 : x.id > y.id ? 1 : 0))
 }
 
 /** ファイル本文をテキストで取得（alt=media）。JSON パースは呼び出し側で。 */
 export async function downloadFileText(accessToken: string, fileId: string, signal?: AbortSignal): Promise<string> {
   const url = `${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`
   return (await driveFetch(accessToken, url, undefined, TIMEOUT_DOWNLOAD_MS, signal)).text()
+}
+
+/** ファイル本文をバイト列で取得（alt=media）。gzip の展開は呼び出し側で（engine.ts）。 */
+export async function downloadFileBytes(accessToken: string, fileId: string, signal?: AbortSignal): Promise<Uint8Array> {
+  const url = `${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`
+  const res = await driveFetch(accessToken, url, undefined, TIMEOUT_DOWNLOAD_MS, signal)
+  return new Uint8Array(await res.arrayBuffer())
+}
+
+/** ファイルを削除する（形式 v2 で、同名ファイルが複数できた時の primary 以外のコピーだけに使う —
+ *  v1 のファイルには決して使わない）。タイムアウト/リトライは一覧系と同じ。 */
+export async function deleteFile(accessToken: string, fileId: string, signal?: AbortSignal): Promise<void> {
+  const url = `${DRIVE_API}/files/${encodeURIComponent(fileId)}`
+  await driveFetch(accessToken, url, { method: 'DELETE' }, TIMEOUT_LIST_MS, signal)
 }
 
 /** 現行リビジョン id を取得（楽観ロック・設計 §7.4）。 */
@@ -305,10 +330,11 @@ async function initiateResumableUpload(
   method: 'POST' | 'PATCH',
   metadata: Readonly<Record<string, unknown>>,
   signal?: AbortSignal,
+  contentMime: string = SYNC_FILE_MIME,
 ): Promise<string> {
   const res = await driveFetch(accessToken, url, {
     method,
-    headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': SYNC_FILE_MIME },
+    headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': contentMime },
     body: JSON.stringify(metadata),
   }, TIMEOUT_UPLOAD_MS, signal)
   const location = res.headers.get('Location') ?? res.headers.get('location')
@@ -318,11 +344,18 @@ async function initiateResumableUpload(
 
 /** resumable セッションへ本文を1リクエストで PUT（分割アップロードはしない —
  *  Drive はチャンク分割なしの単発 PUT も許容する）。 */
-async function putResumableContent(accessToken: string, location: string, content: string, signal?: AbortSignal): Promise<DriveFileMeta> {
+async function putResumableContent(
+  accessToken: string,
+  location: string,
+  content: string | Uint8Array | Blob,
+  signal?: AbortSignal,
+  contentMime: string = SYNC_FILE_MIME,
+): Promise<DriveFileMeta> {
+  const body: BodyInit = typeof content === 'string' || content instanceof Blob ? content : toBlob([content], contentMime)
   const json = await readJson(await driveFetch(accessToken, location, {
     method: 'PUT',
-    headers: { 'Content-Type': SYNC_FILE_MIME },
-    body: content,
+    headers: { 'Content-Type': contentMime },
+    body,
   }, TIMEOUT_UPLOAD_MS, signal))
   return metaFromUploadResponse(json, 'resumable upload')
 }
@@ -379,4 +412,92 @@ export async function updateTextFile(
     body,
   }, TIMEOUT_UPLOAD_MS, signal))
   return metaFromUploadResponse(json, 'updateTextFile')
+}
+
+// ── バイナリ（gzip）ファイル — 形式 v2 ─────────────────────────────────────────
+
+/** gzip で圧縮した同期ファイル（形式 v2 の *.json.gz）の MIME。 */
+export const SYNC_GZIP_MIME = 'application/gzip'
+
+function toBlob(parts: ReadonlyArray<string | Uint8Array | Blob>, type: string): Blob {
+  // TS の lib 定義では Uint8Array<ArrayBufferLike> が BlobPart に直接代入できないため、
+  // 実行時には何もしない型の橋渡しだけをする。
+  return new Blob(parts as BlobPart[], { type })
+}
+
+/**
+ * バイナリ本文用の RFC 2387 multipart/related。part1 = メタデータ JSON、part2 = 本文バイト列。
+ * 本文を文字列にせず Blob のまま送る（gzip バイト列を UTF-8 として壊さないため）。純関数。
+ */
+export function buildMultipartRelatedBlob(
+  metadata: Readonly<Record<string, unknown>>,
+  content: Uint8Array,
+  contentMime: string,
+  boundary: string,
+): { body: Blob; contentType: string } {
+  const contentType = `multipart/related; boundary=${boundary}`
+  const head =
+    `--${boundary}\r\n` +
+    'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+    `${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Type: ${contentMime}\r\n\r\n`
+  const tail = `\r\n--${boundary}--`
+  return { body: toBlob([head, content, tail], contentType), contentType }
+}
+
+/** フォルダ内に新規バイナリファイルを作る（multipart・Blob 本文）。
+ *  本文が RESUMABLE_UPLOAD_THRESHOLD_BYTES を超える場合は resumable アップロードを使う。 */
+export async function createBinaryFile(
+  accessToken: string,
+  folderId: string,
+  name: string,
+  content: Uint8Array,
+  contentMime: string = SYNC_GZIP_MIME,
+  signal?: AbortSignal,
+): Promise<DriveFileMeta> {
+  const metadata = { name, parents: [folderId], mimeType: contentMime }
+  if (content.byteLength > RESUMABLE_UPLOAD_THRESHOLD_BYTES) {
+    const url = `${DRIVE_UPLOAD_API}/files?uploadType=resumable&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
+    const location = await initiateResumableUpload(accessToken, url, 'POST', metadata, signal, contentMime)
+    return putResumableContent(accessToken, location, content, signal, contentMime)
+  }
+  const boundary = `allmarks-${crypto.randomUUID()}`
+  const { body, contentType } = buildMultipartRelatedBlob(metadata, content, contentMime, boundary)
+  const url = `${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
+  const json = await readJson(await driveFetch(accessToken, url, {
+    method: 'POST',
+    headers: { 'Content-Type': contentType },
+    body,
+  }, TIMEOUT_UPLOAD_MS, signal))
+  return metaFromUploadResponse(json, 'createBinaryFile')
+}
+
+/** 既存バイナリファイルの本文だけ差し替える（multipart PATCH・メタは空 {}）。
+ *  本文が RESUMABLE_UPLOAD_THRESHOLD_BYTES を超える場合は resumable アップロードを使う。 */
+export async function updateBinaryFile(
+  accessToken: string,
+  fileId: string,
+  content: Uint8Array,
+  contentMime: string = SYNC_GZIP_MIME,
+  signal?: AbortSignal,
+): Promise<DriveFileMeta> {
+  if (content.byteLength > RESUMABLE_UPLOAD_THRESHOLD_BYTES) {
+    const url =
+      `${DRIVE_UPLOAD_API}/files/${encodeURIComponent(fileId)}` +
+      `?uploadType=resumable&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
+    const location = await initiateResumableUpload(accessToken, url, 'PATCH', {}, signal, contentMime)
+    return putResumableContent(accessToken, location, content, signal, contentMime)
+  }
+  const boundary = `allmarks-${crypto.randomUUID()}`
+  const { body, contentType } = buildMultipartRelatedBlob({}, content, contentMime, boundary)
+  const url =
+    `${DRIVE_UPLOAD_API}/files/${encodeURIComponent(fileId)}` +
+    `?uploadType=multipart&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
+  const json = await readJson(await driveFetch(accessToken, url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': contentType },
+    body,
+  }, TIMEOUT_UPLOAD_MS, signal))
+  return metaFromUploadResponse(json, 'updateBinaryFile')
 }

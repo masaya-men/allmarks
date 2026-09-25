@@ -5,7 +5,9 @@ import { isValidUrl } from '@/lib/utils/url'
 import { generateCardDimensions } from '@/lib/canvas/card-sizing'
 import { MIN_CARD_WIDTH, presetToCardWidth, DEFAULT_CARD_WIDTH } from '@/lib/board/size-migration'
 import type { MediaSlot } from '@/lib/embed/types'
-import { notifySyncDirty } from '@/lib/sync/sync-signal'
+import { notifySyncDirty, isSyncCycleOwnWrite } from '@/lib/sync/sync-signal'
+import { markPendingPush } from '@/lib/sync/sync-store'
+import { CONFIG_KEY } from '@/lib/storage/board-config'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,6 +47,10 @@ export interface BookmarkRecord {
   isDeleted?: boolean
   /** ISO 8601 timestamp for 30-day purge (B2) */
   deletedAt?: string
+  /** true = permanently deleted (EMPTY TRASH). The row is kept as a minimal
+   *  tombstone (content fields blanked) so device sync never resurrects it
+   *  from another device's copy; never shown anywhere, including TRASH. */
+  purged?: boolean
   // v8 additions
   /** Board display order (lower = earlier). Dense; rewrite on reorder. */
   orderIndex?: number
@@ -374,6 +380,78 @@ export function handleDBBlocking(
 
 const SYNC_DIRTY_METHODS: ReadonlySet<string> = new Set(['put', 'add', 'delete', 'clear'])
 
+/** Object stores whose rows are part of the sync payload (lib/sync/engine.ts's buildLocalSnapshot) —
+ *  a write to any of these is always relevant to sync-store.ts's pendingPush marker. */
+const SYNCED_STORE_NAMES: ReadonlySet<string> = new Set(['bookmarks', 'tags', 'cards'])
+
+/** The only `settings` store keys that are part of the sync payload (board-config.ts's CONFIG_KEY,
+ *  lib/private/vault-store.ts's VAULT_KEY — hardcoded here rather than imported to avoid a needless
+ *  dependency, same as backup.ts's DEVICE_LOCAL_SETTINGS_KEYS hardcodes its own key strings). Every
+ *  other settings key (onboarding flags, quick-tag toggle, tag-order mode, license, sync's own
+ *  bookkeeping, ...) is either device-local or a local-only preference never uploaded — writing it
+ *  must not flag "this device has an unpushed change" or a trivial local toggle would force a Drive
+ *  round trip. */
+const SYNCED_SETTINGS_KEYS: ReadonlySet<string> = new Set([CONFIG_KEY, 'private-vault'])
+
+function settingsRecordKey(value: unknown): string | undefined {
+  if (typeof value !== 'object' || value === null) return undefined
+  const key = (value as { key?: unknown }).key
+  return typeof key === 'string' ? key : undefined
+}
+
+/** Whether a `db.<method>(storeName, ...)` shortcut call (put/add/delete/clear) touches sync
+ *  payload data — see SYNCED_STORE_NAMES/SYNCED_SETTINGS_KEYS above. `clear('settings')` is rare
+ *  (never called in production code today) and could remove a synced key without us being able to
+ *  tell, so it's treated as relevant conservatively. */
+function isSyncedWrite(prop: string, args: readonly unknown[]): boolean {
+  const storeName = args[0]
+  if (typeof storeName !== 'string') return false
+  if (SYNCED_STORE_NAMES.has(storeName)) return true
+  if (storeName !== 'settings') return false
+  if (prop === 'clear') return true
+  const key = prop === 'delete' ? args[1] : settingsRecordKey(args[1])
+  return typeof key === 'string' && SYNCED_SETTINGS_KEYS.has(key)
+}
+
+/**
+ * Whether a `db.transaction(storeNames, 'readwrite')` call MAY touch sync payload data. The actual
+ * put/delete calls happen on the returned transaction's object stores, invisible to this proxy, so
+ * this only looks at the store name list: relevant iff it includes 'bookmarks'/'tags'/'cards'.
+ * Deliberately NOT "or includes 'settings'" (unlike the existing notifySyncDirty call just above,
+ * which fires for any readwrite transaction regardless of stores): every settings-only readwrite
+ * transaction in this codebase today (lib/sync/sync-store.ts, lib/sync/device-id.ts) is sync's own
+ * internal bookkeeping — none of it is suppressed via isSyncCycleOwnWrite (most of it runs OUTSIDE
+ * runSyncCycle's suppression window, e.g. connectSync's initial updateSyncStatus) — so treating any
+ * settings-only transaction as relevant marked pendingPush on sync's own housekeeping writes,
+ * defeating the skip-if-unchanged fast path's `pendingAtStart === undefined` gate on effectively
+ * every cycle. board-config/vault (the only synced settings keys) are always written through the
+ * single-store `db.put('settings', record)` shortcut in this codebase (isSyncedWrite above), never
+ * through a multi-store transaction, so this stays correct without the 'settings' fallback.
+ */
+function isSyncedTransaction(storeNames: unknown): boolean {
+  const names = Array.isArray(storeNames) ? storeNames : typeof storeNames === 'string' ? [storeNames] : []
+  return names.some((n) => SYNCED_STORE_NAMES.has(n))
+}
+
+/**
+ * Persists sync-store.ts's pendingPush marker for a write to synced data, THROUGH `raw` (the
+ * UNWRAPPED db this proxy wraps — never `proxy`), so the marker's own write never re-enters this
+ * proxy's interceptors (no notifySyncDirty call, no recursion, no risk of double-marking). This is
+ * the fix for writes made from a page with no SyncController registered (activeMarkDirty === null
+ * there — the bookmarklet's /save popup, the extension's save-iframe, quick-tag strip, ...):
+ * notifySyncDirty above is an in-memory, per-page signal that only reaches a controller living in
+ * THIS SAME JS realm, but IndexedDB itself is shared across every page on the origin, so writing the
+ * marker here (keyed off the store/key actually touched, not off which page is running) reaches the
+ * board tab's next poll regardless of which page made the write.
+ * Skipped for a sync cycle's OWN write (isSyncCycleOwnWrite) — applying a pulled/merged snapshot to
+ * local IndexedDB must not flag itself as a new unpushed change. Best-effort: failures are swallowed,
+ * same fire-and-forget contract as notifySyncDirty's own caller here.
+ */
+function maybeMarkPendingPush(raw: IDBPDatabase<AllMarksDB>, proxy: object, relevant: boolean): void {
+  if (!relevant || isSyncCycleOwnWrite(proxy)) return
+  void markPendingPush(raw).catch(() => undefined)
+}
+
 /**
  * Wrap the opened db so every mutating call — put/add/delete/clear, or a
  * readwrite transaction() — notifies the active SyncController
@@ -384,11 +462,16 @@ const SYNC_DIRTY_METHODS: ReadonlySet<string> = new Set(['put', 'add', 'delete',
  * — without touching each call site individually.
  */
 function wrapDbForSyncDirty(db: IDBPDatabase<AllMarksDB>): IDBPDatabase<AllMarksDB> {
-  return new Proxy(db, {
+  // `proxy` (this handle) is passed as the notification source so a sync cycle can ignore only its
+  // own writes (lib/sync/sync-signal.ts withSyncWritesSuppressed(fn, handle)).
+  const proxy: IDBPDatabase<AllMarksDB> = new Proxy(db, {
     get(target, prop) {
       if (prop === 'transaction') {
         return (...args: unknown[]) => {
-          if (args[1] === 'readwrite') notifySyncDirty()
+          if (args[1] === 'readwrite') {
+            notifySyncDirty(proxy)
+            maybeMarkPendingPush(db, proxy, isSyncedTransaction(args[0]))
+          }
           return (target.transaction as (...a: unknown[]) => unknown).apply(target, args)
         }
       }
@@ -396,13 +479,21 @@ function wrapDbForSyncDirty(db: IDBPDatabase<AllMarksDB>): IDBPDatabase<AllMarks
       if (typeof value !== 'function') return value
       if (typeof prop === 'string' && SYNC_DIRTY_METHODS.has(prop)) {
         return (...args: unknown[]) => {
-          notifySyncDirty()
-          return (value as (...a: unknown[]) => unknown).apply(target, args)
+          notifySyncDirty(proxy)
+          const result = (value as (...a: unknown[]) => unknown).apply(target, args) as Promise<unknown>
+          if (isSyncedWrite(prop, args)) {
+            void result.then(
+              () => maybeMarkPendingPush(db, proxy, true),
+              () => undefined, // the write itself failed — nothing to mark
+            )
+          }
+          return result
         }
       }
       return value.bind(target)
     },
   })
+  return proxy
 }
 
 /**
@@ -856,6 +947,22 @@ export async function initDB(): Promise<IDBPDatabase<AllMarksDB>> {
  */
 export function touchBookmark(rec: BookmarkRecord): BookmarkRecord {
   return { ...rec, updatedAt: Date.now() }
+}
+
+/**
+ * The minimal tombstone EMPTY TRASH leaves behind instead of deleting the
+ * row: only the id survives (every content field is blanked to its empty
+ * value so the record still type-checks and passes the sync schema), with
+ * isDeleted + purged + a fresh deletedAt/updatedAt. Device sync's merge
+ * (lib/sync/merge.ts) lets it win over older live copies and over plain
+ * TRASH tombstones, so the bookmark can never come back from another device.
+ */
+export function purgedBookmarkTombstone(id: string, now: number = Date.now()): BookmarkRecord {
+  return {
+    id, url: '', title: '', description: '', thumbnail: '', favicon: '', siteName: '',
+    type: 'website', savedAt: '', ogpStatus: 'fetched', tags: [],
+    isDeleted: true, deletedAt: new Date(now).toISOString(), purged: true, updatedAt: now,
+  }
 }
 
 /**

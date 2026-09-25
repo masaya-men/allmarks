@@ -216,3 +216,42 @@ describe('persistThumbnail / persistTitle — Private (encrypted) record guard',
     expect(stored?.encryptedPayload).toEqual({ iv: 'x', ciphertext: 'y' })
   })
 })
+
+describe('emptyTrash — purged tombstones (device sync must not resurrect them)', () => {
+  afterEach(async () => {
+    const databases = await indexedDB.databases()
+    for (const info of databases) {
+      if (info.name) indexedDB.deleteDatabase(info.name)
+    }
+  })
+
+  it('replaces each trashed bookmark with a minimal purged tombstone that shows up nowhere (not even TRASH)', async () => {
+    const database = await initDB()
+    const kept = await addBookmark(database, {
+      url: 'https://example.com/kept', title: 'Kept', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'website',
+    })
+    const trashed = await addBookmark(database, {
+      url: 'https://example.com/trashed', title: 'Trashed', description: 'secret words',
+      thumbnail: 'https://example.com/t.jpg', favicon: '', siteName: 'Example', type: 'website',
+    })
+    await database.put('bookmarks', { ...trashed, isDeleted: true, deletedAt: '2026-01-01T00:00:00.000Z' })
+
+    const { result } = renderHook(() => useBoardData())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.deletedItems.map((i) => i.bookmarkId)).toEqual([trashed.id])
+
+    const count = await result.current.emptyTrash()
+    expect(count).toBe(1)
+
+    const stored = await database.get('bookmarks', trashed.id)
+    expect(stored).toMatchObject({ id: trashed.id, isDeleted: true, purged: true, url: '', title: '', description: '', thumbnail: '' })
+    expect(typeof stored?.updatedAt).toBe('number')
+
+    // A fresh read (e.g. after a sync reload) keeps it out of both the board and TRASH.
+    const { result: again } = renderHook(() => useBoardData())
+    await waitFor(() => expect(again.current.loading).toBe(false))
+    expect(again.current.items.map((i) => i.bookmarkId)).toEqual([kept.id])
+    expect(again.current.deletedItems).toEqual([])
+  })
+})
