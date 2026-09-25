@@ -113,9 +113,14 @@ export class SyncCorruptDataError extends Error {
 }
 
 export class SyncConflictError extends Error {
-  constructor(fileName: string) {
+  /** Diagnostic-only summary for sync-status lastIssue.detail: file name plus the pulled vs
+   *  just-read head revision ids (short prefixes; revision ids carry no user content). */
+  readonly diagnostic: string
+  constructor(fileName: string, previous?: string, current?: string) {
     super(`${fileName} changed remotely since last pull (optimistic lock)`)
     this.name = 'SyncConflictError'
+    const short = (r: string | undefined): string => (r ? r.slice(0, 10) : 'none')
+    this.diagnostic = `${fileName} pulled=${short(previous)} now=${short(current)}`
   }
 }
 
@@ -222,7 +227,7 @@ export async function pushSnapshot(
           return
         }
         const current = await getHeadRevisionId(accessToken, existing.id)
-        if (current !== previous) throw new SyncConflictError(name)
+        if (current !== previous) throw new SyncConflictError(name, previous, current)
         const meta = await updateTextFile(accessToken, existing.id, serialized)
         if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
       } else {
@@ -262,6 +267,7 @@ function buildIssueDetail(fallbackOperation: string, err: unknown): string {
   const context = err instanceof DriveError && err.context ? err.context : fallbackOperation
   const cause =
     err instanceof DriveError ? (err.status === 0 ? 'drive fetch failed' : `status ${err.status}`) :
+    err instanceof SyncConflictError ? `${err.name} ${err.diagnostic}` :
     err instanceof Error ? err.name : 'unknown error'
   const detail = `${context}: ${cause}`
   return detail.length > ISSUE_DETAIL_MAX_LEN ? detail.slice(0, ISSUE_DETAIL_MAX_LEN) : detail
