@@ -23,6 +23,8 @@
 
 過去のセッション詳細ログは全て [TODO_COMPLETED.md](./TODO_COMPLETED.md) に移動済み(session207でのクリーンアップ)。**次にやること・直近の到達点は [CURRENT_GOAL.md](./CURRENT_GOAL.md) を参照**(毎回最初に読むファイル)。
 
+**s221 (2026-09-24〜25)**: 有料化の仕組み(決済→鍵表示→1日1回の契約確認→解約で停止・端末一覧)を全部完成し Sandbox で通しテスト成功。本番の Paddle 設定・キー登録まで済み、**住所書類の再提出待ちで未公開**。詳細 TODO_COMPLETED.mdの「s221」節。
+
 **s220 (2026-09-24)**: 有料プランの受け皿を整備。決済は Paddle(販売代行)に決定し、**料金ページ・返金ポリシーを新設**、利用規約・プライバシー・問い合わせ・FAQ を有料同期に合わせて全面改訂(15言語)、本番公開済み。Paddle 本番審査を提出(結果待ち)。次は決済→鍵表示→解約で停止の仕組みを Sandbox で設計・実装。詳細 TODO_COMPLETED.mdの「s220」節、判断の正本は `docs/private/2026-09-24-paddle-decisions.md`。
 
 **s219 (2026-09-23)**: テキストカードのガラス化(dotted-notebook)を**Flat・Paper両テーマへ展開**、過程でアバター関連バグ2件(ライトボックスでアイコン欠落・全テーマ共通の角丸崩れ)を発見修正。あわせて**収益化・ローンチ準備の棚卸し**を実施(`docs/private/`の既存計画を読み直し、集金PF=FANBOX確定済み・鍵配布方式=K3の合言葉リンク方式で実証済み・価格¥500/¥1,500確定済み、を再確認)。次セッションはFANBOX受け皿づくりの支援から着手。詳細 TODO_COMPLETED.mdの「s219」節。
@@ -32,7 +34,7 @@
 ### ★ユーザー本人の作業待ち(s220 追加)
 
 - **(s221) Payoneer 審査待ち(約2営業日)→ 承認メールが来たら Paddle 本番の Payouts → Payout Settings を入力**: Payment Method=Payoneer、Payoneer Email=Payoneer 登録メール、Name=Masaya/Maeno、住所ローマ字、VAT 空欄、Threshold $100。名前不一致(身分証=漢字)で追加書類を求められたら内容を見せてもらう。
-- **(s221) Paddle Sandbox MCP 接続(任意・準備ができたら)**: Sandbox の Developer tools → Authentication で `pdl_sdbx_` キー作成 → ターミナルで `claude mcp add --transport http paddle-sandbox https://sandbox-mcp.paddle.com/mcp --header "Authorization: Bearer <key>"` → Claude 再起動。本番は接続しない方針。
+- **(s221) Paddle 住所書類の再提出**: 月曜以降に銀行取引明細(名前+住所入り)を取得して Paddle に提出。載っていなければ住民票の写し(コンビニ・数百円)。
 
 - ~~サポート用グループアドレスの受信設定~~ → s220 完了(外部から送信→普段のGmailに着信を確認。会話の閲覧はグループメンバーのみ)。
 - **返信をグループアドレス名義で送る設定(未着手・実際に問い合わせへ返信する前に必須)**: そのまま返信すると個人Gmailのアドレスが相手に見える。Gmail 設定→アカウント→「他のメールアドレスを追加」でグループアドレスを送信元に追加(確認コードはグループ経由で届く想定・未検証)。
