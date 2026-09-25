@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('./engine', () => ({ runSyncCycle: vi.fn().mockResolvedValue({ status: 'synced', vaultConflict: false }) }))
 import { runSyncCycle } from './engine'
 import { createSyncController } from './sync-controller'
-import { onSyncCycleFinished } from './sync-events'
 
 const fakeDb = {} as never
 
@@ -135,20 +134,11 @@ describe('createSyncController', () => {
     expect(onResult).toHaveBeenCalledWith({ status: 'synced', vaultConflict: false })
   })
 
-  // Item 4: SyncPanel refreshes its displayed phase off this event, since it's mounted
-  // independently of whatever triggered the cycle (auto debounce, tab-hide, the online listener,
-  // or a manual "Sync now" elsewhere).
-  it('emits sync-events notifySyncCycleFinished exactly once per completed cycle', async () => {
-    let finishedCount = 0
-    const unsubscribe = onSyncCycleFinished(() => { finishedCount++ })
-    try {
-      const controller = createSyncController(fakeDb, 20000)
-      await controller.flushNow()
-      expect(finishedCount).toBe(1)
-      await controller.flushNow()
-      expect(finishedCount).toBe(2)
-    } finally {
-      unsubscribe()
-    }
-  })
+  // Item 4 / sync-events refactor: notifySyncCycleFinished() (and its now-paired
+  // notifySyncCycleStarted()) moved from this controller's flushNow() into engine.ts's
+  // runSyncCycle itself, specifically so a manual "Sync now" cycle -- which never goes through
+  // this controller at all -- also emits the signal SyncPanel listens for. Since runSyncCycle is
+  // mocked in this file (it's not the thing under test here), that emission is covered by
+  // engine.test.ts instead; this controller no longer calls sync-events directly, so there is
+  // nothing left to assert on that pub/sub here.
 })

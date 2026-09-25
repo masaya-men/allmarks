@@ -12,7 +12,7 @@ import {
 import { loadSyncStatus, type SyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync, type SyncCycleResult } from '@/lib/sync/engine'
 import { withSyncWritesSuppressed } from '@/lib/sync/sync-signal'
-import { onSyncCycleFinished } from '@/lib/sync/sync-events'
+import { onSyncCycleFinished, onSyncCycleStarted, isSyncCycleInFlight } from '@/lib/sync/sync-events'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 import { formatLastSynced } from '@/lib/sync/format-last-sync'
 import type { SyncErrorKind } from '@/lib/sync/error-kind'
@@ -58,6 +58,28 @@ function phaseFromStatus(status: SyncStatus): PanelPhase {
     return { kind: 'issue', email, errorKind: status.lastIssue.errorKind, detail: status.lastIssue.detail }
   }
   return { kind: 'idle', email, lastSyncAt: status.lastSyncAt }
+}
+
+/** Phase kinds a background sync cycle's started() signal (and the mount-time
+ *  isSyncCycleInFlight() check) is allowed to override into 'syncing'. Excludes
+ *  'disconnected' (nothing can be mid-cycle while not connected),
+ *  'needs-confirmation'/'stopped' (their own dedicated flows own the phase
+ *  until the user acts), and 'connecting'/'connect-failed' (the guided
+ *  first-time setup dialog owns those -- connectSync's own first cycle must
+ *  not flash the dialog away mid-flow). Only 'idle' and 'issue' -- both of
+ *  which carry `email` -- can be safely swapped for 'syncing'. */
+function canShowSyncingOver(phase: PanelPhase): phase is Extract<PanelPhase, { kind: 'idle' | 'issue' }> {
+  return phase.kind === 'idle' || phase.kind === 'issue'
+}
+
+/** Applied once right after computing a phase from freshly-read sync-status (on mount, and inside
+ *  the started-signal handler below): if a cycle is already/now in flight and the computed phase
+ *  is one it may safely override (see canShowSyncingOver), show 'syncing' instead so the panel
+ *  never sits on a stale "connected"/"error" phase while a background cycle the user didn't
+ *  trigger is actually running. */
+function withInFlightOverride(phase: PanelPhase, inFlight: boolean): PanelPhase {
+  if (inFlight && canShowSyncingOver(phase)) return { kind: 'syncing', email: phase.email }
+  return phase
 }
 
 function lastSyncedText(t: (key: string) => string, lastSyncAt: number | undefined): string {
@@ -173,6 +195,15 @@ export function SyncPanel(): ReactElement | null {
   const [submitting, setSubmitting] = useState(false)
   const [phase, setPhase] = useState<PanelPhase>({ kind: 'disconnected' })
   const [modalOpen, setModalOpen] = useState(false)
+  // True for the duration of a manual sync cycle THIS panel itself triggered (handleSyncNow /
+  // handleMassDeleteContinue) -- during which `phase.kind` is 'syncing', the exact same visual
+  // state a cycle started elsewhere also shows via the onSyncCycleStarted handler below. The
+  // finished-signal handler needs to tell the two apart: for a manual cycle, applyResult (called
+  // right after runSyncCycle resolves, in the same function) is the authority on the final phase
+  // and the generic status-re-read below must defer to it; for anything else, the re-read is the
+  // only thing that will ever update the phase. A plain `phase.kind === 'syncing'` check can't
+  // distinguish the two, since a background cycle now also produces that same kind.
+  const manualCycleInFlightRef = useRef(false)
   // Set the instant handleConnect's connectSync call resolves, so the very
   // next phase transition (idle/connect-failed/whatever applyResult lands on)
   // is recognized as "the guided first-time flow just finished" rather than a
@@ -264,7 +295,7 @@ export function SyncPanel(): ReactElement | null {
       // connect flow with no cached status.
       try {
         const status = await loadSyncStatus(db)
-        if (!cancelled) setPhase(phaseFromStatus(status))
+        if (!cancelled) setPhase(withInFlightOverride(phaseFromStatus(status), isSyncCycleInFlight()))
       } catch (e) {
         console.error('[AllMarks] failed to load sync status', e)
         if (!cancelled) setPhase({ kind: 'disconnected' })
@@ -273,11 +304,13 @@ export function SyncPanel(): ReactElement | null {
     return (): void => { cancelled = true }
   }, [])
 
-  // Refresh the displayed phase whenever a background sync cycle finishes (auto debounce,
-  // tab-hide, the new online listener) — not just on this component's own mount. Ignores the
-  // event while this panel's own manual sync is mid-flight (that path already sets its own
-  // phase via applyResult when it resolves), and never clobbers the mass-delete-confirmation or
-  // license-gated "stopped" phases, which only their own dedicated handlers may leave.
+  // Refresh the displayed phase whenever a sync cycle finishes -- a background one (auto debounce,
+  // tab-hide, the new online listener) or this panel's own manual one, now that engine.ts emits
+  // this signal for every cycle regardless of trigger. Defers to manualCycleInFlightRef for a
+  // manual cycle (applyResult, called right after runSyncCycle resolves in the same function, is
+  // the authority on its final phase -- this generic re-read must not race it), and never clobbers
+  // the guided-setup dialog ('connecting'/'connect-failed'), the mass-delete-confirmation, or the
+  // license-gated "stopped" phase, which only their own dedicated handlers may leave.
   useEffect(() => {
     if (!unlocked) return
     const unsubscribe = onSyncCycleFinished(() => {
@@ -285,12 +318,33 @@ export function SyncPanel(): ReactElement | null {
         const db = await initDB()
         const status = await loadSyncStatus(db)
         setPhase((current) => {
-          if (current.kind === 'syncing' || current.kind === 'needs-confirmation' || current.kind === 'stopped') {
+          if (
+            manualCycleInFlightRef.current ||
+            current.kind === 'needs-confirmation' || current.kind === 'stopped' ||
+            current.kind === 'connecting' || current.kind === 'connect-failed'
+          ) {
             return current
           }
           return phaseFromStatus(status)
         })
       })()
+    })
+    return unsubscribe
+  }, [unlocked])
+
+  // Companion to the finished-cycle refresh above: as soon as ANY sync cycle starts (background
+  // debounce/tab-hide/online listener, or a manual cycle triggered elsewhere -- e.g. another open
+  // instance of this panel), show the 'syncing' phase immediately instead of waiting for it to
+  // finish. Guarded the same way as the mount-time isSyncCycleInFlight() check
+  // (canShowSyncingOver): only overrides 'idle'/'issue', never the phases another dedicated flow
+  // already owns. A no-op when already 'syncing' avoids a redundant re-render.
+  useEffect(() => {
+    if (!unlocked) return
+    const unsubscribe = onSyncCycleStarted(() => {
+      setPhase((current) => {
+        if (current.kind === 'syncing') return current
+        return withInFlightOverride(current, true)
+      })
     })
     return unsubscribe
   }, [unlocked])
@@ -346,6 +400,7 @@ export function SyncPanel(): ReactElement | null {
 
   const handleSyncNow = useCallback(async (email: string | null): Promise<void> => {
     setPhase({ kind: 'syncing', email })
+    manualCycleInFlightRef.current = true
     try {
       const db = await initDB()
       // Suppressed: see the connectSync call above — this cycle's own writes must not
@@ -355,6 +410,8 @@ export function SyncPanel(): ReactElement | null {
     } catch (e) {
       console.error('[AllMarks] manual sync failed', e)
       setPhase({ kind: 'issue', email, errorKind: 'other' })
+    } finally {
+      manualCycleInFlightRef.current = false
     }
   }, [applyResult])
 
@@ -370,6 +427,7 @@ export function SyncPanel(): ReactElement | null {
 
   const handleMassDeleteContinue = useCallback(async (email: string | null): Promise<void> => {
     setPhase({ kind: 'syncing', email })
+    manualCycleInFlightRef.current = true
     try {
       const db = await initDB()
       // Suppressed: see handleConnect above.
@@ -378,6 +436,8 @@ export function SyncPanel(): ReactElement | null {
     } catch (e) {
       console.error('[AllMarks] confirmed sync failed', e)
       setPhase({ kind: 'issue', email, errorKind: 'other' })
+    } finally {
+      manualCycleInFlightRef.current = false
     }
   }, [applyResult])
 

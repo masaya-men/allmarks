@@ -15,6 +15,7 @@ import { DB_VERSION } from '@/lib/constants'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
 import { saveVaultConflict, isLocalVaultTarget } from '@/lib/private/vault-conflict'
 import { withSyncLock } from './sync-lock'
+import { notifySyncCycleStarted, notifySyncCycleFinished } from './sync-events'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -322,12 +323,26 @@ async function writeManifest(accessToken: string, folderId: string, db: DbLike, 
  * actual cycle — see sync-lock.ts for why this exists (concurrent cycles racing Drive's
  * optimistic lock). `connectSync` below calls this function (never `runSyncCycleUnlocked`
  * directly), so the lock is still taken exactly once for its own first cycle too.
+ *
+ * This is also the single place that emits sync-events.ts's started/finished signals: started
+ * fires the instant the lock is ACQUIRED (before the unlocked body runs), and finished fires in a
+ * `finally` right after, so every trigger (background or manual) emits exactly one pair per
+ * completed cycle, even one that throws. sync-controller.ts used to call notifySyncCycleFinished()
+ * itself after its own flushNow() — that was moved here so a manual "Sync now" cycle (which never
+ * went through the controller) emits too, not just background cycles.
  */
 export async function runSyncCycle(
   db: DbLike,
   opts: { bypassMassDeleteGuard?: boolean } = {},
 ): Promise<SyncCycleResult> {
-  return withSyncLock(() => runSyncCycleUnlocked(db, opts))
+  return withSyncLock(async () => {
+    notifySyncCycleStarted()
+    try {
+      return await runSyncCycleUnlocked(db, opts)
+    } finally {
+      notifySyncCycleFinished()
+    }
+  })
 }
 
 async function runSyncCycleUnlocked(

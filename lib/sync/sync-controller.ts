@@ -1,7 +1,6 @@
 import type { IDBPDatabase } from 'idb'
 import { runSyncCycle, type SyncCycleResult } from './engine'
 import { withSyncWritesSuppressed } from './sync-signal'
-import { notifySyncCycleFinished } from './sync-events'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -42,9 +41,11 @@ export function createSyncController(
       // Suppressed: runSyncCycle writes the pulled/merged snapshot back to
       // IndexedDB, which would otherwise notify itself dirty and loop
       // forever (see sync-signal.ts).
+      // Note: runSyncCycle itself now emits sync-events.ts's started/finished signals (moved
+      // there so a manual "Sync now" cycle, which never goes through this controller, emits too)
+      // — this used to also call notifySyncCycleFinished() here, which would have double-emitted.
       const result = await withSyncWritesSuppressed(() => runSyncCycle(db))
       onResult?.(result)
-      notifySyncCycleFinished()
       return result
     })()
     inFlight = promise

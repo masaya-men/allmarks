@@ -7,7 +7,7 @@ import { loadSyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 import { checkLicenseForSync } from '@/lib/board/license-check'
-import { notifySyncCycleFinished } from '@/lib/sync/sync-events'
+import { notifySyncCycleFinished, notifySyncCycleStarted } from '@/lib/sync/sync-events'
 import { setSyncMarkDirty, notifySyncDirty } from '@/lib/sync/sync-signal'
 
 vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}) }))
@@ -245,6 +245,32 @@ describe('SyncPanel connected states', () => {
     await screen.findByTestId('sync-connected-status')
     expect(screen.queryByTestId('sync-connect-dialog')).not.toBeInTheDocument()
     expect(screen.queryByTestId('sync-setup-done')).not.toBeInTheDocument()
+  })
+
+  // connectSync's own first cycle now goes through the same runSyncCycle that emits
+  // notifySyncCycleFinished() -- previously it never did (only sync-controller.ts's flushNow()
+  // emitted it). A finished event arriving while the guided dialog is still on its 'connecting'
+  // step must not flash it away before handleConnect's own applyResult runs.
+  it('a stray sync-cycle-finished event during the guided connect flow does not disturb the connecting step', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
+    mockRequestAuthCode.mockResolvedValue('auth-code')
+    mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
+    let resolveConnectSync: (value: { status: 'synced'; vaultConflict: false }) => void = () => {}
+    mockConnectSync.mockImplementation(() => new Promise((resolve) => { resolveConnectSync = resolve }))
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-start-button')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-button')
+    fireEvent.click(screen.getByTestId('sync-connect-button'))
+    await screen.findByTestId('sync-connecting')
+
+    act(() => { notifySyncCycleFinished() })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getByTestId('sync-connecting')).toBeInTheDocument()
+
+    mockLoadSyncStatus.mockResolvedValueOnce({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    resolveConnectSync({ status: 'synced', vaultConflict: false })
+    await screen.findByTestId('sync-setup-done')
   })
 
   it('shows connectFailed and the button again if requestAuthCode rejects (popup closed/cancelled)', async () => {
@@ -540,6 +566,61 @@ describe('SyncPanel connected states', () => {
     expect(screen.getByTestId('sync-connected-status')).toBeInTheDocument()
   })
 
+  // Item: a background cycle (e.g. sync-controller.ts's debounce/tab-hide/online-triggered
+  // flushNow, or a manual cycle from another open instance of this panel) is otherwise invisible
+  // to a mounted, idle SyncPanel -- it just keeps showing the previous "connected" result while
+  // the cycle runs. engine.ts's runSyncCycle now emits notifySyncCycleStarted()/Finished()
+  // around every cycle, and SyncPanel must show 'syncing' for the duration.
+  it('shows sync-in-progress when a background cycle starts elsewhere while idle, and returns to the connected view on finish', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connected-status')
+
+    act(() => { notifySyncCycleStarted() })
+    await screen.findByTestId('sync-in-progress')
+    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
+
+    act(() => { notifySyncCycleFinished() })
+    await screen.findByTestId('sync-connected-status')
+  })
+
+  it('shows sync-in-progress on mount when a background cycle is already running before the panel mounts', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    notifySyncCycleStarted() // simulates a cycle that began before this panel instance existed
+    try {
+      render(<SyncPanel />)
+      await screen.findByTestId('sync-in-progress')
+    } finally {
+      notifySyncCycleFinished()
+    }
+  })
+
+  it('does not show sync-in-progress on mount when disconnected, even if a cycle happens to be in flight', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
+    notifySyncCycleStarted()
+    try {
+      render(<SyncPanel />)
+      await screen.findByTestId('sync-start-button')
+      expect(screen.queryByTestId('sync-in-progress')).not.toBeInTheDocument()
+    } finally {
+      notifySyncCycleFinished()
+    }
+  })
+
+  it('a background cycle starting does not disturb the mass-delete confirmation dialog', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await screen.findByTestId('sync-mass-delete-dialog')
+
+    act(() => { notifySyncCycleStarted() })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getByTestId('sync-mass-delete-dialog')).toBeInTheDocument()
+    notifySyncCycleFinished()
+  })
+
   it('ignores a background cycle-finished event while its own manual sync is in flight', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     let resolveRunSyncCycle: (value: { status: 'synced'; vaultConflict: false }) => void = () => {}
@@ -648,6 +729,18 @@ describe('SyncPanel stopped states (license-check gate)', () => {
     act(() => { notifySyncCycleFinished() })
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.getByTestId('sync-stopped-ended')).toBeInTheDocument()
+  })
+
+  it('ignores a background cycle-started event while showing a stopped phase', async () => {
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: false, reason: 'ended' })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-stopped-ended')
+
+    act(() => { notifySyncCycleStarted() })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getByTestId('sync-stopped-ended')).toBeInTheDocument()
+    expect(screen.queryByTestId('sync-in-progress')).not.toBeInTheDocument()
+    notifySyncCycleFinished()
   })
 
   it('a license-inactive result from Sync now switches to the stopped view, not disconnected', async () => {

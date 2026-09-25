@@ -11,6 +11,7 @@ import type { SyncSnapshot } from './merge'
 import { saveSyncTokens, loadSyncTokens } from './sync-store'
 import { ensureAccessToken, hasRequiredScopes, SyncNotConnectedError } from './engine'
 import { setSyncMarkDirty, withSyncWritesSuppressed } from './sync-signal'
+import { onSyncCycleStarted, onSyncCycleFinished, isSyncCycleInFlight } from './sync-events'
 
 vi.mock('./auth', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./auth')>()
@@ -833,6 +834,151 @@ describe('runSyncCycle concurrency (sync-lock)', () => {
     vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
     const r2 = await p2
     expect(r2.status).toBe('synced')
+  })
+})
+
+// sync-events.ts: runSyncCycle is the single place that emits the started/finished signals
+// SyncPanel listens for (moved here from sync-controller.ts's flushNow() so a manual "Sync now"
+// cycle, which never goes through that controller, emits too). Every scenario below must see
+// exactly one started/finished pair per runSyncCycle call, in order, and isSyncCycleInFlight()
+// must track it accurately -- including across two cycles serialized by sync-lock.ts and a cycle
+// that rejects outright.
+describe('runSyncCycle sync-events (started/finished signals)', () => {
+  it('is not in flight before any cycle runs', () => {
+    expect(isSyncCycleInFlight()).toBe(false)
+  })
+
+  it('emits started then finished exactly once, in order, for a successful cycle', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const order: string[] = []
+    const unsubStart = onSyncCycleStarted(() => order.push('started'))
+    const unsubFinish = onSyncCycleFinished(() => order.push('finished'))
+    try {
+      const result = await runSyncCycle(d)
+      expect(result.status).toBe('synced')
+      expect(order).toEqual(['started', 'finished'])
+    } finally {
+      unsubStart(); unsubFinish()
+    }
+  })
+
+  // Not just the "happy path" cycle -- an early-return result (no Drive calls at all, e.g.
+  // not-connected) still passes through the lock and must still emit its pair, or SyncPanel's
+  // mount-time isSyncCycleInFlight() check could get stuck reading "in flight" forever after one
+  // of these.
+  it('emits exactly one started/finished pair even for an early-return not-connected cycle', async () => {
+    const d = await initDB(); db = d
+    let startedCount = 0
+    let finishedCount = 0
+    const unsubStart = onSyncCycleStarted(() => { startedCount++ })
+    const unsubFinish = onSyncCycleFinished(() => { finishedCount++ })
+    try {
+      const result = await runSyncCycle(d)
+      expect(result.status).toBe('not-connected')
+      expect(startedCount).toBe(1)
+      expect(finishedCount).toBe(1)
+      expect(isSyncCycleInFlight()).toBe(false)
+    } finally {
+      unsubStart(); unsubFinish()
+    }
+  })
+
+  it('isSyncCycleInFlight() is true while a cycle is parked mid-flight and false once it settles', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((resolve) => { releaseGate = resolve })
+    let gateReachedResolve: () => void = () => {}
+    const gateReached = new Promise<void>((resolve) => { gateReachedResolve = resolve })
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => {
+      if (name === 'manifest.json') { gateReachedResolve(); await gate }
+      return { id: `id-${name}`, name, headRevisionId: `rev-${name}` }
+    })
+
+    expect(isSyncCycleInFlight()).toBe(false)
+    const p = runSyncCycle(d)
+    await gateReached
+    expect(isSyncCycleInFlight()).toBe(true) // still parked inside the cycle
+
+    releaseGate()
+    const result = await p
+    expect(result.status).toBe('synced')
+    expect(isSyncCycleInFlight()).toBe(false)
+  })
+
+  it('stays in flight across two cycles serialized by sync-lock, and only clears after both finish', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((resolve) => { releaseGate = resolve })
+    let gateReachedResolve: () => void = () => {}
+    const gateReached = new Promise<void>((resolve) => { gateReachedResolve = resolve })
+    let manifestCallCount = 0
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => {
+      if (name === 'manifest.json') {
+        manifestCallCount++
+        if (manifestCallCount === 1) { gateReachedResolve(); await gate }
+      }
+      return { id: `id-${name}`, name, headRevisionId: `rev-${name}` }
+    })
+
+    const startedCount = { value: 0 }
+    const finishedCount = { value: 0 }
+    const unsubStart = onSyncCycleStarted(() => { startedCount.value++ })
+    const unsubFinish = onSyncCycleFinished(() => { finishedCount.value++ })
+    try {
+      const p1 = runSyncCycle(d)
+      const p2 = runSyncCycle(d) // queued behind sync-lock -- its own started() only fires once p1 releases the lock
+
+      await gateReached
+      expect(isSyncCycleInFlight()).toBe(true)
+      expect(startedCount.value).toBe(1) // p2 hasn't acquired the lock yet
+
+      releaseGate()
+      await Promise.all([p1, p2])
+
+      expect(startedCount.value).toBe(2)
+      expect(finishedCount.value).toBe(2)
+      expect(isSyncCycleInFlight()).toBe(false)
+    } finally {
+      unsubStart(); unsubFinish()
+    }
+  })
+
+  it('emits its finished signal (via a `finally`) even when the cycle rejects outright', async () => {
+    // A db with no methods at all -- loadSyncStatus's very first call (db.get) throws
+    // synchronously (TypeError: db.get is not a function), which is something no branch inside
+    // runSyncCycleUnlocked catches, so the rejection propagates up through runSyncCycle itself.
+    const brokenDb = {} as never
+
+    let startedCount = 0
+    let finishedCount = 0
+    const unsubStart = onSyncCycleStarted(() => { startedCount++ })
+    const unsubFinish = onSyncCycleFinished(() => { finishedCount++ })
+    try {
+      await expect(runSyncCycle(brokenDb)).rejects.toThrow()
+      expect(startedCount).toBe(1)
+      expect(finishedCount).toBe(1)
+      expect(isSyncCycleInFlight()).toBe(false)
+    } finally {
+      unsubStart(); unsubFinish()
+    }
   })
 })
 
