@@ -34,7 +34,7 @@ type PanelPhase =
   | { readonly kind: 'idle'; readonly email: string | null; readonly lastSyncAt: number | undefined }
   | { readonly kind: 'syncing'; readonly email: string | null }
   | { readonly kind: 'needs-confirmation'; readonly email: string | null; readonly deletedCount: number }
-  | { readonly kind: 'issue'; readonly email: string | null; readonly errorKind: SyncErrorKind }
+  | { readonly kind: 'issue'; readonly email: string | null; readonly errorKind: SyncErrorKind; readonly detail?: string }
   | { readonly kind: 'stopped'; readonly reason: StoppedReason }
 
 function errorKeyFor(errorKind: SyncErrorKind): string {
@@ -54,7 +54,7 @@ function phaseFromStatus(status: SyncStatus): PanelPhase {
     return { kind: 'needs-confirmation', email, deletedCount: status.lastIssue.deletedCount }
   }
   if (status.lastIssue?.kind === 'error') {
-    return { kind: 'issue', email, errorKind: status.lastIssue.errorKind }
+    return { kind: 'issue', email, errorKind: status.lastIssue.errorKind, detail: status.lastIssue.detail }
   }
   return { kind: 'idle', email, lastSyncAt: status.lastSyncAt }
 }
@@ -302,7 +302,11 @@ export function SyncPanel(): ReactElement | null {
     } else if (result.status === 'needs-confirmation') {
       setPhase({ kind: 'needs-confirmation', email: fallbackEmail, deletedCount: result.deletedCount ?? 0 })
     } else if (result.status === 'error') {
-      setPhase({ kind: 'issue', email: fallbackEmail, errorKind: result.errorKind ?? 'other' })
+      // Re-read the stored issue so its diagnostic detail (engine.ts buildIssueDetail) shows too.
+      const db = await initDB()
+      const status = await loadSyncStatus(db)
+      const detail = status.lastIssue?.kind === 'error' ? status.lastIssue.detail : undefined
+      setPhase({ kind: 'issue', email: fallbackEmail, errorKind: result.errorKind ?? 'other', detail })
     } else if (result.status === 'license-inactive') {
       if (result.licenseReason === 'no-license') {
         setUnlocked(false)
@@ -561,6 +565,7 @@ export function SyncPanel(): ReactElement | null {
       {phase.kind === 'issue' && (
         <>
           <div className={styles.error} data-testid="sync-issue">{t(errorKeyFor(phase.errorKind))}</div>
+          {phase.detail && <p className={styles.note} data-testid="sync-issue-detail">{phase.detail}</p>}
           {phase.errorKind === 'auth' ? (
             <button type="button" className={styles.unlockBtn} onClick={(): void => { void handleConnect() }} data-testid="sync-reconnect-button">
               {t('sync.reconnectButton')}
