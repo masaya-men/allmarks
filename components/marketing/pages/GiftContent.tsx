@@ -7,12 +7,11 @@ import {
   useRef,
   useState,
   type ReactElement,
+  type ReactNode,
 } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import giftStyles from './gift-page.module.css'
-import legalStyles from './legal-page.module.css'
-import styles from './purchase-page.module.css'
 
 /** functions/api/license/claim.ts の入力上限と同じ(claim secretの最大長)。 */
 const MAX_SECRET_LEN = 128
@@ -27,6 +26,8 @@ const COPY = {
     body: 'このリンクから、AllMarks の端末間同期を無料で使えるキーを受け取れます。キーに期限はありません。',
     note: '同期したデータは、あなた自身の Google ドライブに保存されます(Google アカウントが必要です)。',
     button: 'キーを受け取る',
+    loading: '受け取っています…',
+    fine: 'ボタンを押すと、あなた専用のキーが発行されます。',
   },
   success: {
     heading: 'あなたの同期キー',
@@ -72,11 +73,9 @@ export function GiftContent(): ReactElement {
 
 function LoadingArticle(): ReactElement {
   return (
-    <article className={legalStyles.root} data-testid="gift-state-loading">
-      <header className={legalStyles.hero}>
-        <h1 className={legalStyles.title}><GiftHeading /></h1>
-      </header>
-    </article>
+    <GiftLayout testId="gift-state-loading">
+      <TicketFacts />
+    </GiftLayout>
   )
 }
 
@@ -130,35 +129,29 @@ function GiftInner(): ReactElement {
 
   if (state.kind === 'invalid') {
     return (
-      <article className={legalStyles.root} data-testid="gift-state-invalid">
-        <header className={legalStyles.hero}>
-          <h1 className={legalStyles.title}><GiftHeading /></h1>
-        </header>
-        <section className={legalStyles.section}>
-          <p className={legalStyles.body} data-testid="gift-invalid-message">{COPY.invalid}</p>
-        </section>
-      </article>
+      <GiftLayout testId="gift-state-invalid">
+        <p className={giftStyles.error} data-testid="gift-invalid-message">{COPY.invalid}</p>
+      </GiftLayout>
     )
   }
 
   if (state.kind === 'success') {
     return (
-      <article className={legalStyles.root} data-testid="gift-state-success">
-        <header className={legalStyles.hero}>
-          <h1 className={legalStyles.title}>{COPY.success.heading}</h1>
-        </header>
-        <section className={legalStyles.section}>
-          <p className={legalStyles.body}>{COPY.success.body}</p>
-          <div className={styles.keyBox} data-testid="gift-key-value">{state.key}</div>
-          <div className={styles.actions}>
-            <CopyButton value={state.key} />
-            <Link href="/board" className={styles.openLink} data-testid="gift-open-link">
-              {COPY.success.open}
-            </Link>
-          </div>
-          <p className={legalStyles.note}>{COPY.success.note}</p>
-        </section>
-      </article>
+      <GiftLayout testId="gift-state-success">
+        <div className={`${giftStyles.tkLabel} ${giftStyles.keyLabel}`}>{COPY.success.heading}</div>
+        <div className={giftStyles.keyBox} data-testid="gift-key-value">{state.key}</div>
+        <div className={giftStyles.pair}>
+          <CopyButton value={state.key} />
+          <Link href="/board" className={giftStyles.btnLight} data-testid="gift-open-link">
+            {COPY.success.open} ↗
+          </Link>
+        </div>
+        <p className={giftStyles.warn}>
+          {COPY.success.body}
+          <br />
+          {COPY.success.note}
+        </p>
+      </GiftLayout>
     )
   }
 
@@ -166,29 +159,24 @@ function GiftInner(): ReactElement {
   const networkError = state.kind === 'form' && state.networkError
 
   return (
-    <article className={legalStyles.root} data-testid={loading ? 'gift-state-loading' : 'gift-state-form'}>
-      <header className={legalStyles.hero}>
-        <h1 className={legalStyles.title}><GiftHeading /></h1>
-      </header>
-      <section className={legalStyles.section}>
-        <p className={legalStyles.body}>{COPY.before.body}</p>
-        <p className={legalStyles.note}>{COPY.before.note}</p>
-        {networkError ? (
-          <p className={legalStyles.body} data-testid="gift-error-message">{COPY.error}</p>
-        ) : null}
-        <div className={`${styles.actions} ${giftStyles.receiveActions}`}>
-          <button
-            type="button"
-            className={styles.openLink}
-            onClick={handleReceive}
-            disabled={loading}
-            data-testid="gift-receive-button"
-          >
-            {COPY.before.button}
-          </button>
-        </div>
-      </section>
-    </article>
+    <GiftLayout testId={loading ? 'gift-state-loading' : 'gift-state-form'}>
+      <TicketFacts />
+      {networkError ? (
+        <p className={giftStyles.error} data-testid="gift-error-message">{COPY.error}</p>
+      ) : null}
+      <button
+        type="button"
+        className={giftStyles.cta}
+        onClick={handleReceive}
+        disabled={loading}
+        data-testid="gift-receive-button"
+      >
+        <span className={giftStyles.ctaDot} aria-hidden="true" />
+        {loading ? COPY.before.loading : COPY.before.button}
+        {loading ? null : <span className={giftStyles.ctaArrow} aria-hidden="true">→</span>}
+      </button>
+      <p className={giftStyles.fine}>{COPY.before.fine}</p>
+    </GiftLayout>
   )
 }
 
@@ -214,7 +202,7 @@ function CopyButton({ value }: { value: string }): ReactElement {
   return (
     <button
       type="button"
-      className={styles.copyButton}
+      className={giftStyles.btnDark}
       onClick={(): void => {
         void handleCopy()
       }}
@@ -225,12 +213,57 @@ function CopyButton({ value }: { value: string }): ReactElement {
   )
 }
 
-/** Hero title split as 「AllMarks」 / 「同期キーのプレゼント」 (user-requested two-line layout). */
-function GiftHeading(): ReactElement {
+/**
+ * Page frame: title + lede on the left, the "gift ticket" card on the right
+ * (stacks on narrow screens). `children` is the ticket body for the current state.
+ */
+function GiftLayout({ testId, children }: { testId: string; children: ReactNode }): ReactElement {
   return (
-    <>
-      <span className={giftStyles.titleLine}>AllMarks</span>
-      <span className={giftStyles.titleLine}>同期キーのプレゼント</span>
-    </>
+    <article className={giftStyles.root} data-testid={testId}>
+      <section>
+        <div className={giftStyles.eyebrow}>
+          <span className={giftStyles.eyebrowDot} aria-hidden="true" />
+          GIFT
+        </div>
+        <h1 className={giftStyles.title}>
+          AllMarks
+          <span className={giftStyles.titleJp}>同期キーの<br />プレゼント</span>
+        </h1>
+        <p className={giftStyles.lede}>{COPY.before.body}</p>
+      </section>
+      <section>
+        <div className={giftStyles.ticket}>
+          <div className={giftStyles.shine} aria-hidden="true" />
+          <div className={giftStyles.perf} aria-hidden="true" />
+          <div className={giftStyles.tkTop}>
+            <div>
+              <div className={giftStyles.tkLabel}>SYNC KEY</div>
+              <div className={giftStyles.tkTitle}>端末間同期</div>
+            </div>
+            <span className={giftStyles.tkBadge}>無料・期限なし</span>
+          </div>
+          <div className={giftStyles.tkBody}>{children}</div>
+        </div>
+      </section>
+    </article>
+  )
+}
+
+function TicketFacts(): ReactElement {
+  return (
+    <ul className={giftStyles.facts}>
+      <li className={giftStyles.fact}>
+        <span className={giftStyles.factKey}>期限</span>
+        <span><b className={giftStyles.factStrong}>ありません。</b>ずっと使えます。</span>
+      </li>
+      <li className={giftStyles.fact}>
+        <span className={giftStyles.factKey}>端末</span>
+        <span>1つのキーで<b className={giftStyles.factStrong}>最大5台</b>まで。</span>
+      </li>
+      <li className={giftStyles.fact}>
+        <span className={giftStyles.factKey}>保存先</span>
+        <span>{COPY.before.note}</span>
+      </li>
+    </ul>
   )
 }

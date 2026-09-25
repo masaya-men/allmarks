@@ -1,8 +1,328 @@
-/* /gift only: two-line hero title and breathing room above the receive button. */
-.titleLine {
-  display: block;
+/* /gift — free sync-key gift page (Japanese only).
+   Layout: big title on the left, a "gift ticket" card on the right holding the
+   facts + primary action; stacks on narrow screens. LP tokens only. */
+
+.root {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(40px, 8vh, 96px) clamp(20px, 4vw, 40px) clamp(64px, 10vh, 112px);
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(40px, 6vw, 96px);
+  align-items: center;
+  min-height: calc(100vh - 160px);
 }
 
-.receiveActions {
-  margin-top: clamp(32px, 4vw, 48px);
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--lp-ink-soft);
+  margin-bottom: 28px;
+}
+
+.eyebrowDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #28f100;
+  box-shadow: 0 0 0 4px rgba(40, 241, 0, 0.16);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 400;
+  font-size: clamp(56px, 7.2vw, 104px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+}
+
+.titleJp {
+  display: block;
+  margin-top: 18px;
+  font-weight: 300;
+  font-size: clamp(34px, 4.3vw, 62px);
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+
+.lede {
+  margin: 34px 0 0;
+  max-width: 30em;
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--lp-ink-soft);
+}
+
+/* ── ticket ── */
+.ticket {
+  position: relative;
+  background: #fff;
+  border: 1px solid rgba(18, 18, 16, 0.1);
+  border-radius: 22px;
+  padding: 36px 34px 30px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02), 0 30px 60px -30px rgba(18, 18, 16, 0.28);
+  overflow: hidden;
+  animation: giftRise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* notches + perforation line between the ticket header and body */
+.ticket::before,
+.ticket::after {
+  content: '';
+  position: absolute;
+  top: 118px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--lp-bg);
+  border: 1px solid rgba(18, 18, 16, 0.1);
+}
+.ticket::before { left: -12px; }
+.ticket::after { right: -12px; }
+
+.perf {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 128px;
+  border-top: 1.5px dashed rgba(18, 18, 16, 0.14);
+}
+
+.shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.8) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: giftShine 4.5s ease-in-out 1.2s infinite;
+}
+
+.tkTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  height: 78px;
+}
+
+.tkLabel {
+  font-family: var(--lp-sans);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--lp-ink-soft);
+}
+
+.tkTitle {
+  margin-top: 8px;
+  font-family: var(--lp-serif);
+  font-size: 26px;
+  color: var(--lp-ink);
+}
+
+.tkBadge {
+  flex: 0 0 auto;
+  font-family: var(--lp-sans);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--lp-ink);
+  color: var(--lp-ink);
+}
+
+.tkBody {
+  padding-top: 42px;
+}
+
+.facts {
+  list-style: none;
+  margin: 0 0 30px;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.fact {
+  display: flex;
+  gap: 12px;
+  font-family: var(--lp-sans);
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--lp-ink-soft);
+}
+
+.factKey {
+  flex: 0 0 64px;
+  padding-top: 3px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--lp-ink-soft);
+  opacity: 0.8;
+}
+
+.factStrong {
+  color: var(--lp-ink);
+  font-weight: 600;
+}
+
+.cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 64px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--lp-ink);
+  color: #fff;
+  font-family: var(--lp-sans);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  animation: giftRing 2.6s ease-out infinite;
+}
+.cta:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -12px rgba(18, 18, 16, 0.55);
+}
+.cta:disabled {
+  cursor: default;
+  opacity: 0.75;
+  animation: none;
+}
+
+.ctaDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #28f100;
+}
+
+.ctaArrow {
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+.cta:hover:not(:disabled) .ctaArrow {
+  transform: translateX(5px);
+}
+
+.fine {
+  margin: 16px 0 0;
+  text-align: center;
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  color: var(--lp-ink-soft);
+}
+
+.error {
+  margin: 0 0 16px;
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #b3261e;
+}
+
+/* ── success ── */
+.keyLabel {
+  margin-bottom: 10px;
+}
+
+.keyBox {
+  margin: 0 0 18px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--lp-bg);
+  border: 1px solid rgba(18, 18, 16, 0.1);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--lp-ink);
+  word-break: break-all;
+  user-select: all;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.btnDark,
+.btnLight {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  border-radius: 14px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+.btnDark {
+  background: var(--lp-ink);
+  color: #fff;
+  border: 0;
+}
+.btnLight {
+  background: #fff;
+  color: var(--lp-ink);
+  border: 1px solid var(--lp-ink);
+}
+.btnDark:hover,
+.btnLight:hover {
+  transform: translateY(-1px);
+}
+
+.warn {
+  margin: 16px 0 0;
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--lp-ink-soft);
+}
+
+@keyframes giftRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes giftShine {
+  0% { transform: translateX(-120%); }
+  55%, 100% { transform: translateX(120%); }
+}
+@keyframes giftRing {
+  0% { box-shadow: 0 0 0 0 rgba(18, 18, 16, 0.28); }
+  70% { box-shadow: 0 0 0 14px rgba(18, 18, 16, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(18, 18, 16, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket, .shine, .cta { animation: none; }
+  .cta, .ctaArrow, .btnDark, .btnLight { transition: none; }
+}
+
+@media (max-width: 860px) {
+  .root {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    min-height: 0;
+    padding-top: 32px;
+  }
+  .lede { margin-top: 22px; }
+  .ticket { padding: 30px 22px 24px; }
+  .ticket::before, .ticket::after { top: 112px; }
+  .perf { top: 122px; }
 }
