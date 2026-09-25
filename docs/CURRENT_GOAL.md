@@ -7,6 +7,10 @@
 - 本番準備済み: 商品2・価格4(税込)、Default payment link、Google Pay オン、割引欄オフ、client-side token、Cloudflare Secret `PADDLE_API_KEY`(読み取り2権限・無期限)と `PADDLE_ENV=live`。
 - **`.env.production` の Paddle 6行はコメントアウト中**(書類確認前に誤って公開しないため)。
 
+
+## ★公開の前提条件(s221 ユーザーと合意): 同期の合格ライン
+有料公開は書類承認に加え、次を実機(PC+iPhone)で満たしてから。①片方で追加/編集/削除→もう片方にリロード無しで概ね10〜20秒以内 ②交互に20操作で赤い表示ゼロ ③ほぼ同時操作でも取りこぼしゼロ ④Google アップロード窓口が遅い回線(実測≈20KB/s)でも①〜③。対応中: 同期形式 v2(分割+gzip・差分のみ送受信) — 設計 docs/superpowers/specs/2026-09-25-sync-format-v2-design.md。
+
 ## ★次にやること(書類が通ったら・この順で)
 
 1. ユーザーに Paddle から「確認完了」の連絡が来たか確認(来るまで公開しない)。
