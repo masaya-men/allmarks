@@ -186,8 +186,16 @@ export function FilterPill({
       if (!wrapEl) return
       // Mirrors .menu's `top: calc(100% + 8px)` in FilterPill.module.css.
       const menuTop = wrapEl.getBoundingClientRect().bottom + 8
-      const navEl = document.querySelector('[data-testid="board-mobile-nav"]')
-      const navHeight = navEl ? navEl.getBoundingClientRect().height : 0
+      // Everything floating at the bottom that the menu must end above: the bottom nav AND the
+      // save FAB ("+") that sits above it on the same right-hand side as this menu.
+      const obstacleTops = ['board-mobile-nav', 'mobile-save-button']
+        .map((id) => document.querySelector(`[data-testid="${id}"]`))
+        .filter((el): el is Element => el !== null)
+        .map((el) => el.getBoundingClientRect().top)
+      const viewportH = window.innerHeight
+      const topOfObstacles = obstacleTops.length > 0 ? Math.min(...obstacleTops) : viewportH
+      // Named --fp-nav-h for the existing CSS: the reserved space below the menu.
+      const navHeight = Math.max(0, viewportH - topOfObstacles)
       wrapEl.style.setProperty('--fp-menu-top', `${menuTop}px`)
       wrapEl.style.setProperty('--fp-nav-h', `${navHeight}px`)
     }
