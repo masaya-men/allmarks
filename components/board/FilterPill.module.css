@@ -228,6 +228,13 @@
   max-height: 264px;
   overflow-y: auto;
   scrollbar-width: none;
+  /* Rows are drag-to-reorder handles (useDragReorder), which on touch only
+     grabs after a long-press (see use-drag-reorder.ts) — until then the
+     browser must be free to start a native vertical scroll on the very
+     first touchmove instead of waiting on JS. pan-y still lets the browser
+     handle vertical panning itself; horizontal panning stays blocked (there
+     is none in this list). */
+  touch-action: pan-y;
 }
 .tagScroll::-webkit-scrollbar {
   width: 0;
@@ -271,6 +278,11 @@
   cursor: pointer;
   text-align: left;
   transition: background-color 100ms, color 100ms;
+  /* Tag rows double as touch long-press drag handles (use-drag-reorder.ts) —
+     without these, a held finger triggers iOS's text-selection / callout
+     popover over the row instead of arming the drag. */
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 .item:hover,
 .item:focus-visible {
@@ -556,6 +568,32 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 44vw;
+  }
+
+  /* Clamp the dropdown so it always ends above the fixed bottom nav
+     (BoardMobileNav, z-index 150, opaque) — unclamped, the panel grows
+     downward with no viewport cap and its lower rows (often TRASH / DEAD
+     LINKS) render underneath the nav on short phones. --fp-menu-top (the
+     dropdown's real top offset in the viewport) and --fp-nav-h (the nav's
+     real rendered height, including safe-area-inset-bottom) are measured
+     live in FilterPill.tsx — both depend on runtime DOM geometry (font
+     metrics, safe-area insets) that can't be hardcoded reliably. dvh is
+     preferred (accounts for mobile browser chrome show/hide); vh is the
+     fallback for browsers without dvh support — the second declaration
+     simply wins the cascade where dvh is understood.
+     The cap lives on .menuInner, not .menu: .menu is the grid container
+     driving the 0fr→1fr open animation, and grid track sizing computes from
+     the item's OWN max-content contribution — capping .menuInner's max
+     height here is what actually shrinks it before that computation, so the
+     open animation targets the clamped height instead of overflowing behind
+     it. Inside .menuInner, only .tagScroll carries `min-height: 0` (it's the
+     one row built to shrink under flex pressure), so it's what gives up
+     space; ALL / NO TAGS / TRASH / DEAD LINKS keep their natural size and
+     stay visible, pinned at the bottom. Desktop is untouched — this only
+     applies inside the ≤640px breakpoint. */
+  .menuInner {
+    max-height: calc(100vh - var(--fp-menu-top, 160px) - var(--fp-nav-h, 64px) - 12px);
+    max-height: calc(100dvh - var(--fp-menu-top, 160px) - var(--fp-nav-h, 64px) - 12px);
   }
 }
 

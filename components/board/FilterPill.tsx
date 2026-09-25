@@ -12,6 +12,7 @@ import { PRIVATE_LABEL } from '@/lib/private/ui-labels'
 import type { TagRecord } from '@/lib/storage/indexeddb'
 import { useChromeScramble } from '@/lib/board/use-idle-scramble'
 import { useDragReorder } from '@/lib/board/use-drag-reorder'
+import { useIsMobile } from '@/lib/board/use-is-mobile'
 import { computeTagScrollEdge } from '@/lib/board/tag-scroll-edge'
 import type { TagOrderMode } from '@/lib/board/tag-order'
 import { InlineTagRenameInput } from './InlineTagRenameInput'
@@ -136,6 +137,7 @@ export function FilterPill({
   privateStatus, privateActive, privateTagId, onPrivateClick,
 }: Props): ReactElement {
   const [open, setOpen] = useState(false)
+  const isMobile = useIsMobile()
   /* Sticky-open pin: a click on the pill latches the menu open so it stays
      after the cursor leaves (mouse-leave is the soft path). Mirrors the
      TUNE drawer's click-to-pin. The menu is always mounted now — its
@@ -163,6 +165,40 @@ export function FilterPill({
       maxHeight: parseFloat(getComputedStyle(el).maxHeight),
     }))
   }, [])
+
+  /* Mobile-only: clamp the dropdown so it never spills underneath the fixed
+     bottom nav (BoardMobileNav, always-visible on mobile, opaque, above the
+     dropdown's z-index). The actual clamp is a `calc(100dvh - ... )` rule in
+     FilterPill.module.css (see the ≤640px block there) — this effect only
+     supplies the two pixel measurements that calc needs and that can't be
+     known ahead of time: the dropdown's real top offset (depends on the
+     pill's rendered height/font metrics) and the nav's real height (depends
+     on safe-area-inset-bottom). Both are written as CSS custom properties on
+     the wrap element so the CSS rule (scoped to .menuInner, a descendant)
+     picks them up by inheritance. Re-measured on open and on
+     resize/orientation change while open; desktop never runs this (isMobile
+     gate) and the CSS that reads the vars is itself gated to ≤640px, so
+     desktop layout is unaffected either way. */
+  useEffect(() => {
+    if (!isMobile || !open) return
+    const measure = (): void => {
+      const wrapEl = wrapRef.current
+      if (!wrapEl) return
+      // Mirrors .menu's `top: calc(100% + 8px)` in FilterPill.module.css.
+      const menuTop = wrapEl.getBoundingClientRect().bottom + 8
+      const navEl = document.querySelector('[data-testid="board-mobile-nav"]')
+      const navHeight = navEl ? navEl.getBoundingClientRect().height : 0
+      wrapEl.style.setProperty('--fp-menu-top', `${menuTop}px`)
+      wrapEl.style.setProperty('--fp-nav-h', `${navHeight}px`)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('orientationchange', measure)
+    return (): void => {
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('orientationchange', measure)
+    }
+  }, [isMobile, open])
 
   /* Inline-rename awareness for the auto-close guards. While a row is being
      renamed in place, the dropdown must not auto-close on mouse-leave, Esc, or

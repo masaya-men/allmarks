@@ -6,8 +6,16 @@ import { computeReorder } from './reorder'
 import { gapIndexFromRects, type ItemRect, type ReorderAxis } from './drag-reorder-geometry'
 
 /** Movement (px) before a press becomes a drag. Below this, the press is a
- *  plain click (filter toggle / arm). No long-press wait — grab and move. */
+ *  plain click (filter toggle / arm). No long-press wait — grab and move.
+ *  Mouse / pen only — touch uses the long-press gate below so a vertical
+ *  swipe scrolls the list instead of immediately grabbing a row. */
 const DRAG_THRESHOLD_PX = 6
+/** Touch only: how long a still press must be held before it arms into a
+ *  drag. Below this, native scrolling is left alone (no preventDefault). */
+const TOUCH_LONG_PRESS_MS = 400
+/** Touch only: movement past this many px before the long-press timer fires
+ *  cancels the pending press — the finger is scrolling, not reordering. */
+const TOUCH_CANCEL_MOVE_PX = 8
 /** Pointer within this many px of the scroll container's edge auto-scrolls. */
 const AUTOSCROLL_EDGE_PX = 56
 /** Max px per frame at the very edge; scales down with distance from the edge. */
@@ -78,11 +86,28 @@ export function useDragReorder({
   })
 
   // Gesture bookkeeping.
-  const pendingRef = useRef<{ id: string; startAlong: number; scrollStart: number } | null>(null)
+  const pendingRef = useRef<{
+    id: string
+    startAlong: number
+    scrollStart: number
+    /** Raw PointerEvent.pointerType from the initiating pointerdown ('mouse'
+     *  | 'pen' | 'touch' | ''). Governs which arming rule applies below. */
+    pointerType: string
+    /** True once the press has armed into a drag. Mouse/pen arm immediately
+     *  (armed at creation); touch arms only after the long-press timer fires. */
+    armed: boolean
+    /** Touch only: the pending long-press timer id, so a move-cancel or an
+     *  early pointerup can clear it before it fires. */
+    longPressTimer: ReturnType<typeof setTimeout> | null
+  } | null>(null)
   const draggingRef = useRef(false)
   const suppressClickRef = useRef(false)
   const lastClientRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const latestDragRef = useRef<DragReorderState | null>(null)
+  /** Set by the window-listener effect below so onItemPointerDown's touch
+   *  long-press timer (a separate callback) can trigger the same "picked up
+   *  in place" visual the mouse/pen path gets from its first recompute(). */
+  const recomputeRef = useRef<() => void>(() => {})
 
   const along = useCallback((x: number, y: number): number => (axisRef.current === 'x' ? x : y), [])
   const scrollOf = useCallback((el: HTMLElement): number => (axisRef.current === 'x' ? el.scrollLeft : el.scrollTop), [])
@@ -113,6 +138,18 @@ export function useDragReorder({
       const next = { id: p.id, offset, gapIndex }
       latestDragRef.current = next
       setDrag(next)
+    }
+    recomputeRef.current = recompute
+
+    /** Abandon a pending press without arming it into a drag — the touch
+     *  moved past the cancel threshold before the long-press timer fired, or
+     *  the gesture ended (pointerup) before it fired. Clears the timer so it
+     *  can't still arm afterwards. */
+    const cancelPending = (): void => {
+      const p = pendingRef.current
+      if (p?.longPressTimer != null) clearTimeout(p.longPressTimer)
+      pendingRef.current = null
+      draggingRef.current = false
     }
 
     let raf: number | null = null
@@ -154,7 +191,17 @@ export function useDragReorder({
       if (!p) return
       lastClientRef.current = { x: e.clientX, y: e.clientY }
       if (!draggingRef.current) {
-        if (Math.abs(along(e.clientX, e.clientY) - p.startAlong) < DRAG_THRESHOLD_PX) return
+        const movedPx = Math.abs(along(e.clientX, e.clientY) - p.startAlong)
+        if (p.pointerType === 'touch') {
+          // Touch arms via the long-press timer (started in
+          // onItemPointerDown), never via movement. Moving before it fires
+          // means the finger is scrolling the list, not reordering — cancel
+          // the pending press and leave the event alone (no preventDefault)
+          // so native scroll takes over.
+          if (movedPx > TOUCH_CANCEL_MOVE_PX) cancelPending()
+          return
+        }
+        if (movedPx < DRAG_THRESHOLD_PX) return
         draggingRef.current = true
         document.body.style.userSelect = 'none'
       }
@@ -165,6 +212,7 @@ export function useDragReorder({
 
     const onUp = (): void => {
       const p = pendingRef.current
+      if (p?.longPressTimer != null) clearTimeout(p.longPressTimer)
       const wasDragging = draggingRef.current
       const cur = latestDragRef.current
       stopAuto()
@@ -188,6 +236,7 @@ export function useDragReorder({
       window.removeEventListener('pointerup', onUp)
       stopAuto()
       document.body.style.userSelect = ''
+      if (pendingRef.current?.longPressTimer != null) clearTimeout(pendingRef.current.longPressTimer)
     }
   }, [along, scrollOf])
 
@@ -197,10 +246,35 @@ export function useDragReorder({
     suppressClickRef.current = false
     draggingRef.current = false
     lastClientRef.current = { x: e.clientX, y: e.clientY }
+    const pointerType = e.pointerType
     pendingRef.current = {
       id,
       startAlong: along(e.clientX, e.clientY),
       scrollStart: scrollEl ? scrollOf(scrollEl) : 0,
+      pointerType,
+      // Mouse/pen: armed immediately, same as before (6px threshold in
+      // onMove does the rest). Touch: arms only once the long-press timer
+      // below fires, so a swipe that starts scrolling never gets grabbed.
+      armed: pointerType !== 'touch',
+      longPressTimer: null,
+    }
+    if (pointerType === 'touch') {
+      pendingRef.current.longPressTimer = setTimeout(() => {
+        const p = pendingRef.current
+        if (!p || p.id !== id || p.pointerType !== 'touch') return
+        p.armed = true
+        draggingRef.current = true
+        document.body.style.userSelect = 'none'
+        // Subtle physical feedback that the press has armed — best-effort,
+        // silently absent on devices/browsers without the Vibration API.
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+          navigator.vibrate(10)
+        }
+        // Recompute now (pointer hasn't necessarily moved yet) so the row
+        // immediately picks up the existing `data-dragging` visual — the
+        // same "grabbed" feedback mouse/pen get once their threshold trips.
+        recomputeRef.current()
+      }, TOUCH_LONG_PRESS_MS)
     }
   }, [along, scrollOf])
 
