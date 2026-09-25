@@ -1,0 +1,8 @@
+/* /gift only: two-line hero title and breathing room above the receive button. */
+.titleLine {
+  display: block;
+}
+
+.receiveActions {
+  margin-top: clamp(32px, 4vw, 48px);
+}

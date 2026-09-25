@@ -10,6 +10,7 @@ import {
 } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import giftStyles from './gift-page.module.css'
 import legalStyles from './legal-page.module.css'
 import styles from './purchase-page.module.css'
 
@@ -73,7 +74,7 @@ function LoadingArticle(): ReactElement {
   return (
     <article className={legalStyles.root} data-testid="gift-state-loading">
       <header className={legalStyles.hero}>
-        <h1 className={legalStyles.title}>{COPY.before.heading}</h1>
+        <h1 className={legalStyles.title}><GiftHeading /></h1>
       </header>
     </article>
   )
@@ -131,7 +132,7 @@ function GiftInner(): ReactElement {
     return (
       <article className={legalStyles.root} data-testid="gift-state-invalid">
         <header className={legalStyles.hero}>
-          <h1 className={legalStyles.title}>{COPY.before.heading}</h1>
+          <h1 className={legalStyles.title}><GiftHeading /></h1>
         </header>
         <section className={legalStyles.section}>
           <p className={legalStyles.body} data-testid="gift-invalid-message">{COPY.invalid}</p>
@@ -167,7 +168,7 @@ function GiftInner(): ReactElement {
   return (
     <article className={legalStyles.root} data-testid={loading ? 'gift-state-loading' : 'gift-state-form'}>
       <header className={legalStyles.hero}>
-        <h1 className={legalStyles.title}>{COPY.before.heading}</h1>
+        <h1 className={legalStyles.title}><GiftHeading /></h1>
       </header>
       <section className={legalStyles.section}>
         <p className={legalStyles.body}>{COPY.before.body}</p>
@@ -175,7 +176,7 @@ function GiftInner(): ReactElement {
         {networkError ? (
           <p className={legalStyles.body} data-testid="gift-error-message">{COPY.error}</p>
         ) : null}
-        <div className={styles.actions}>
+        <div className={`${styles.actions} ${giftStyles.receiveActions}`}>
           <button
             type="button"
             className={styles.openLink}
@@ -221,5 +222,15 @@ function CopyButton({ value }: { value: string }): ReactElement {
     >
       {copied ? COPY.success.copied : COPY.success.copy}
     </button>
+  )
+}
+
+/** Hero title split as 「AllMarks」 / 「同期キーのプレゼント」 (user-requested two-line layout). */
+function GiftHeading(): ReactElement {
+  return (
+    <>
+      <span className={giftStyles.titleLine}>AllMarks</span>
+      <span className={giftStyles.titleLine}>同期キーのプレゼント</span>
+    </>
   )
 }
