@@ -1,6 +1,7 @@
+import { createRef } from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import { SyncPanel } from './SyncPanel'
+import { SyncPanel, type SyncPanelHandle } from './SyncPanel'
 import { loadLicense } from '@/lib/board/license-store'
 import { activateLicenseKey, fetchDeviceCount, registerDeviceLabel, releaseDevice } from '@/lib/board/license-activate'
 import { loadSyncStatus } from '@/lib/sync/sync-store'
@@ -10,7 +11,10 @@ import { checkLicenseForSync } from '@/lib/board/license-check'
 import { notifySyncCycleFinished, notifySyncCycleStarted } from '@/lib/sync/sync-events'
 import { setSyncMarkDirty, notifySyncDirty, withSyncWritesSuppressed } from '@/lib/sync/sync-signal'
 
-vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}) }))
+vi.mock('@/lib/storage/indexeddb', () => ({
+  initDB: vi.fn().mockResolvedValue({}),
+  getRecentSyncedWrites: vi.fn().mockReturnValue([]),
+}))
 vi.mock('@/lib/board/license-store', () => ({ loadLicense: vi.fn() }))
 vi.mock('@/lib/board/license-activate', () => ({
   activateLicenseKey: vi.fn(), fetchDeviceCount: vi.fn().mockResolvedValue(null), releaseDevice: vi.fn(),
@@ -241,11 +245,14 @@ describe('SyncPanel connected states', () => {
     expect(mockRequestAuthCode).toHaveBeenCalledTimes(1)
     expect(mockExchangeCode).toHaveBeenCalledWith('auth-code')
     expect(mockConnectSync).toHaveBeenCalledTimes(1)
-    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('sync-setup-done-close'))
-    await screen.findByTestId('sync-connected-status')
-    expect(screen.getByTestId('sync-connected-status').textContent).toContain('user@example.com')
+    // The status bar itself IS the "connected" view now -- its idle/synced
+    // state carries the sync-now-button testid, and the Google-Drive info row
+    // shows which account it's connected as.
+    await screen.findByTestId('sync-now-button')
+    expect(screen.getByTestId('sync-row-google-drive').textContent).toContain('user@example.com')
     expect(screen.queryByTestId('sync-connect-dialog')).not.toBeInTheDocument()
 
     // A later routine "Sync now" click must not reopen the dialog or the done
@@ -257,7 +264,7 @@ describe('SyncPanel connected states', () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     fireEvent.click(screen.getByTestId('sync-now-button'))
     await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
     expect(screen.queryByTestId('sync-connect-dialog')).not.toBeInTheDocument()
     expect(screen.queryByTestId('sync-setup-done')).not.toBeInTheDocument()
   })
@@ -300,14 +307,34 @@ describe('SyncPanel connected states', () => {
     expect(screen.getByTestId('sync-connect-button')).toBeInTheDocument()
   })
 
-  it('shows the idle connected view with last-synced text and a working sync-now button', async () => {
+  it('shows the idle status bar (synced, relative last-synced time, refresh icon) and a working click-to-sync', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() - 5 * 60_000 })
     mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false, localChanged: false })
     render(<SyncPanel />)
-    await screen.findByTestId('sync-connected-status')
-    expect(screen.getByTestId('sync-last-synced').textContent).toMatch(/5/)
-    fireEvent.click(screen.getByTestId('sync-now-button'))
+    const bar = await screen.findByTestId('sync-now-button')
+    expect(bar.textContent).toMatch(/5/) // the relative-time meta ("5 min ago" / "5分前")
+    // Screen-reader name is always "Sync now", regardless of the visible label text.
+    expect(bar).toHaveAttribute('aria-label', 'Sync now')
+    fireEvent.click(bar)
     await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
+  })
+
+  it('the busy status bar is disabled (not clickable) while syncing, then returns to the idle bar', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    let resolveRunSyncCycle: (value: { status: 'synced'; vaultConflict: false, localChanged: false }) => void = () => {}
+    mockRunSyncCycle.mockImplementation(() => new Promise((resolve) => { resolveRunSyncCycle = resolve }))
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    const busyBar = await screen.findByTestId('sync-in-progress')
+    expect(busyBar).toBeDisabled()
+    expect(busyBar).toHaveAttribute('aria-busy', 'true')
+
+    fireEvent.click(busyBar) // no-op: still disabled
+    expect(mockRunSyncCycle).toHaveBeenCalledTimes(1)
+
+    resolveRunSyncCycle({ status: 'synced', vaultConflict: false, localChanged: false })
+    await screen.findByTestId('sync-now-button')
   })
 
   // SyncPanel runs its manual "Sync now" cycle inside withSyncWritesSuppressed. Sync format v2
@@ -325,7 +352,7 @@ describe('SyncPanel connected states', () => {
 
     fireEvent.click(screen.getByTestId('sync-now-button'))
     await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
 
     expect(seen.during).toBe(0) // nothing delivered mid-cycle
     expect(markDirtyCalls).toBe(1) // the user write, delivered once after the cycle (own write never)
@@ -364,7 +391,7 @@ describe('SyncPanel connected states', () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     mockFetchDeviceCount.mockResolvedValue({ count: 2, max: 5, devices: [] })
     render(<SyncPanel />)
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
     await waitFor(() => expect(screen.getByTestId('sync-device-count').textContent).toContain('2'))
     expect(screen.getByTestId('sync-device-count').textContent).toContain('5')
   })
@@ -373,7 +400,7 @@ describe('SyncPanel connected states', () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     mockFetchDeviceCount.mockResolvedValue(null)
     render(<SyncPanel />)
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
     expect(screen.queryByTestId('sync-device-count')).not.toBeInTheDocument()
   })
 
@@ -386,7 +413,7 @@ describe('SyncPanel connected states', () => {
           devices: [{ id: 'other-device', label: 'Safari · iOS', at: 200 }, { id: 'd1', label: 'Chrome · Windows', at: 300 }],
         })
       render(<SyncPanel />)
-      await screen.findByTestId('sync-connected-status')
+      await screen.findByTestId('sync-now-button')
       await waitFor(() => expect(mockRegisterDeviceLabel).toHaveBeenCalledWith('k1', 'd1'))
       await waitFor(() => expect(mockFetchDeviceCount).toHaveBeenCalledTimes(2))
       await waitFor(() => expect(screen.getByTestId('sync-device-count').textContent).toContain('2'))
@@ -405,7 +432,7 @@ describe('SyncPanel connected states', () => {
         .mockResolvedValueOnce({ count: 1, max: 5, devices: [{ id: 'd1', label: '', at: 0 }] })
         .mockResolvedValueOnce({ count: 1, max: 5, devices: [{ id: 'd1', label: 'Chrome · Windows', at: 999 }] })
       render(<SyncPanel />)
-      await screen.findByTestId('sync-connected-status')
+      await screen.findByTestId('sync-now-button')
       await waitFor(() => expect(mockRegisterDeviceLabel).toHaveBeenCalledWith('k1', 'd1'))
       await waitFor(() => expect(mockFetchDeviceCount).toHaveBeenCalledTimes(2))
     })
@@ -417,7 +444,7 @@ describe('SyncPanel connected states', () => {
       mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     })
 
-    it('keeps the list hidden until the toggle is clicked, then shows it', async () => {
+    it('keeps the list hidden until the devices row is clicked, then shows it (whole row is the toggle)', async () => {
       mockFetchDeviceCount.mockResolvedValue({
         count: 2, max: 5,
         devices: [{ id: 'me-device', label: 'Chrome · Windows', at: 100 }, { id: 'other-device', label: 'Safari · iOS', at: 200 }],
@@ -553,7 +580,7 @@ describe('SyncPanel connected states', () => {
 
     fireEvent.click(screen.getByTestId('sync-mass-delete-continue'))
     await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(2))
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
 
     expect(seen.during).toBe(0)
     expect(markDirtyCalls).toBe(1)
@@ -570,12 +597,12 @@ describe('SyncPanel connected states', () => {
   it('re-reads sync status when a background sync cycle finishes elsewhere, while idle', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     render(<SyncPanel />)
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
     const callsBefore = mockLoadSyncStatus.mock.calls.length
 
     act(() => { notifySyncCycleFinished() })
     await waitFor(() => expect(mockLoadSyncStatus.mock.calls.length).toBeGreaterThan(callsBefore))
-    expect(screen.getByTestId('sync-connected-status')).toBeInTheDocument()
+    expect(screen.getByTestId('sync-now-button')).toBeInTheDocument()
   })
 
   // Item: a background cycle (e.g. sync-controller.ts's debounce/tab-hide/online-triggered
@@ -583,10 +610,10 @@ describe('SyncPanel connected states', () => {
   // to a mounted, idle SyncPanel -- it just keeps showing the previous "connected" result while
   // the cycle runs. engine.ts's runSyncCycle now emits notifySyncCycleStarted()/Finished()
   // around every cycle, and SyncPanel must show 'syncing' for the duration.
-  it('shows sync-in-progress when a background cycle starts elsewhere while idle, and returns to the connected view on finish', async () => {
+  it('shows sync-in-progress when a background cycle starts elsewhere while idle, and returns to the idle bar on finish', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     render(<SyncPanel />)
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
 
     act(() => { notifySyncCycleStarted() })
     try {
@@ -596,19 +623,19 @@ describe('SyncPanel connected states', () => {
     } finally {
       act(() => { notifySyncCycleFinished() })
     }
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
   })
 
   it('does not blink to sync-in-progress for a background cycle that finishes quickly', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     render(<SyncPanel />)
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
 
     act(() => { notifySyncCycleStarted() })
     act(() => { notifySyncCycleFinished() })
     await new Promise((resolve) => setTimeout(resolve, 1300))
     expect(screen.queryByTestId('sync-in-progress')).not.toBeInTheDocument()
-    expect(screen.getByTestId('sync-connected-status')).toBeInTheDocument()
+    expect(screen.getByTestId('sync-now-button')).toBeInTheDocument()
   })
 
   it('shows sync-in-progress on mount when a background cycle is already running before the panel mounts', async () => {
@@ -662,7 +689,7 @@ describe('SyncPanel connected states', () => {
     expect(screen.getByTestId('sync-in-progress')).toBeInTheDocument()
 
     resolveRunSyncCycle({ status: 'synced', vaultConflict: false, localChanged: false })
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
   })
 
   it('ignores a background cycle-finished event while showing the mass-delete confirmation dialog', async () => {
@@ -678,24 +705,78 @@ describe('SyncPanel connected states', () => {
     expect(screen.getByTestId('sync-mass-delete-dialog')).toBeInTheDocument()
   })
 
-  it('shows the reconnect button and copy when the persisted lastIssue is an auth error', async () => {
+  it('shows the reconnect copy on the issue bar for an auth error, and clicking it reconnects', async () => {
     mockLoadSyncStatus.mockResolvedValue({
       connected: true, headRevisions: {}, connectedEmail: 'user@example.com',
       lastIssue: { kind: 'error', errorKind: 'auth' },
     })
+    mockRequestAuthCode.mockResolvedValue('auth-code')
+    mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
+    mockConnectSync.mockResolvedValue({ status: 'synced', vaultConflict: false, localChanged: false })
     render(<SyncPanel />)
-    await screen.findByTestId('sync-reconnect-button')
-    expect(screen.getByTestId('sync-issue').textContent).toMatch(/reconnect|再接続|接続が切れました/i)
+    const bar = await screen.findByTestId('sync-issue')
+    expect(bar.textContent).toMatch(/reconnect|再接続|接続が切れました/i)
+    // Same fixed screen-reader name as every other bar state.
+    expect(bar).toHaveAttribute('aria-label', 'Sync now')
+
+    fireEvent.click(bar)
+    await waitFor(() => expect(mockRequestAuthCode).toHaveBeenCalledTimes(1))
   })
 
-  it('shows the storage-full message with a retry (sync-now) button', async () => {
+  it('shows the neutral offline status for a network issue, with no explanation note, and clicking it retries', async () => {
     mockLoadSyncStatus.mockResolvedValue({
       connected: true, headRevisions: {}, connectedEmail: 'user@example.com',
-      lastIssue: { kind: 'error', errorKind: 'storage-full' },
+      lastIssue: { kind: 'error', errorKind: 'network' },
     })
+    mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false, localChanged: false })
     render(<SyncPanel />)
+    const bar = await screen.findByTestId('sync-issue')
+    expect(bar.textContent).toMatch(/offline|オフライン/i)
+    expect(screen.queryByTestId('sync-issue-explain')).not.toBeInTheDocument()
+
+    fireEvent.click(bar)
+    await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
+  })
+
+  it('shows the failed status, the long explanation, and the diagnostic detail line for a non-auth/network issue (e.g. storage-full), and clicking it retries', async () => {
+    mockLoadSyncStatus.mockResolvedValue({
+      connected: true, headRevisions: {}, connectedEmail: 'user@example.com',
+      lastIssue: { kind: 'error', errorKind: 'storage-full', detail: 'upload bookmarks-3.json.gz: quota exceeded' },
+    })
+    mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false, localChanged: false })
+    render(<SyncPanel />)
+    const bar = await screen.findByTestId('sync-issue')
+    expect(bar.textContent).toMatch(/couldn.?t sync|同期できませんでした/i)
+    expect(screen.getByTestId('sync-issue-explain')).toBeInTheDocument()
+    expect(screen.getByTestId('sync-issue-detail').textContent).toContain('quota exceeded')
+
+    fireEvent.click(bar)
+    await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
+  })
+
+  it('keeps the sync log hidden until registerHeadingTap fires 5 times, then toggles it off again on the next 5', async () => {
+    const trace = { startedAt: Date.now(), totalMs: 0.3, steps: [{ name: 'list', ms: 0.3, ok: true }] }
+    mockLoadSyncStatus.mockResolvedValue({
+      connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now(),
+      lastCycleTrace: trace,
+    })
+    const ref = createRef<SyncPanelHandle>()
+    render(<SyncPanel ref={ref} />)
     await screen.findByTestId('sync-now-button')
-    expect(screen.getByTestId('sync-issue')).toBeInTheDocument()
+    expect(screen.queryByTestId('sync-diagnostics-trace')).not.toBeInTheDocument()
+
+    act(() => {
+      for (let i = 0; i < 4; i++) ref.current?.registerHeadingTap()
+    })
+    expect(screen.queryByTestId('sync-diagnostics-trace')).not.toBeInTheDocument()
+
+    act(() => { ref.current?.registerHeadingTap() })
+    await screen.findByTestId('sync-diagnostics-trace')
+
+    act(() => {
+      for (let i = 0; i < 5; i++) ref.current?.registerHeadingTap()
+    })
+    expect(screen.queryByTestId('sync-diagnostics-trace')).not.toBeInTheDocument()
   })
 })
 
@@ -709,12 +790,11 @@ describe('SyncPanel stopped states (license-check gate)', () => {
     mockCheckLicenseForSync.mockResolvedValue({ allowed: true })
   })
 
-  it('shows the stopped/ended view (message + pricing link), hiding the connected status and Sync now button', async () => {
+  it('shows the stopped/ended view (message + pricing link), hiding the status bar', async () => {
     mockCheckLicenseForSync.mockResolvedValue({ allowed: false, reason: 'ended' })
     render(<SyncPanel />)
     await screen.findByTestId('sync-stopped-ended')
     expect(screen.getByTestId('sync-pricing-link')).toHaveAttribute('href', '/pricing')
-    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
     expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
   })
 
@@ -723,13 +803,13 @@ describe('SyncPanel stopped states (license-check gate)', () => {
     render(<SyncPanel />)
     await screen.findByTestId('sync-stopped-device-removed')
     expect(screen.getByTestId('sync-key-input')).toBeInTheDocument()
-    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
 
     mockActivate.mockResolvedValue({ status: 'unlocked', scope: ['sync'], verified: true })
     fireEvent.change(screen.getByTestId('sync-key-input'), { target: { value: 'new-key' } })
     fireEvent.click(screen.getByTestId('sync-key-submit'))
 
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
     expect(screen.queryByTestId('sync-stopped-device-removed')).not.toBeInTheDocument()
   })
 
@@ -739,7 +819,6 @@ describe('SyncPanel stopped states (license-check gate)', () => {
     await screen.findByTestId('sync-stopped-grace-expired')
     expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
     expect(screen.queryByTestId('sync-key-input')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
   })
 
   it('falls back to the locked view when the license check reports no-license, even though a license record was loaded', async () => {
@@ -773,10 +852,10 @@ describe('SyncPanel stopped states (license-check gate)', () => {
   it('a license-inactive result from Sync now switches to the stopped view, not disconnected', async () => {
     mockRunSyncCycle.mockResolvedValue({ status: 'license-inactive', vaultConflict: false, localChanged: false, licenseReason: 'ended' })
     render(<SyncPanel />)
-    await screen.findByTestId('sync-connected-status')
+    await screen.findByTestId('sync-now-button')
     fireEvent.click(screen.getByTestId('sync-now-button'))
     await screen.findByTestId('sync-stopped-ended')
     expect(screen.queryByTestId('sync-start-button')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('sync-connected-status')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
   })
 })

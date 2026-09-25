@@ -16,7 +16,7 @@ import { ChromeButton } from './ChromeButton'
 import { ChromeDrawer } from './ChromeDrawer'
 import { BackupButton } from './BackupButton'
 import { BackupStatus } from './BackupStatus'
-import { SyncPanel } from './SyncPanel'
+import { SyncPanel, type SyncPanelHandle } from './SyncPanel'
 import { getThemeMeta } from '@/lib/board/theme-registry'
 import type { ThemeId } from '@/lib/board/types'
 import styles from './ExtensionEntry.module.css'
@@ -142,6 +142,8 @@ export function ExtensionEntry({
   const { t } = useI18n()
   const installed = useExtensionInstalled()
   const currentThemeName = t(getThemeMeta(themeId).labelKey)
+  // Support-only reveal for SyncPanel's hidden sync log -- see the SYNC groupLabel's onClick below.
+  const syncPanelRef = useRef<SyncPanelHandle>(null)
 
   const openSettings = useCallback((): void => {
     // Mirrors the url-deleted bridge (use-board-data.ts): the content script
@@ -311,8 +313,11 @@ export function ExtensionEntry({
             drawer owns the section/heading chrome; all data-loading and
             key-activation logic lives in SyncPanel itself. */}
         <section className={styles.group}>
-          <div className={styles.groupLabel}>SYNC</div>
-          <SyncPanel />
+          {/* The heading's appearance is unchanged -- tapping it 5 times within ~1.5s
+              (SyncPanel's own debounce/count logic, via registerHeadingTap) reveals its
+              normally-hidden sync log, a support-only diagnostic. No visible affordance. */}
+          <div className={styles.groupLabel} onClick={(): void => syncPanelRef.current?.registerHeadingTap()}>SYNC</div>
+          <SyncPanel ref={syncPanelRef} />
         </section>
 
         {/* ── THEME ────────────────────────────────────────────────────────

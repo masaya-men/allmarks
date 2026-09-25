@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactElement } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { initDB, getRecentSyncedWrites } from '@/lib/storage/indexeddb'
 import { loadLicense } from '@/lib/board/license-store'
@@ -85,12 +85,107 @@ function withInFlightOverride(phase: PanelPhase, inFlight: boolean): PanelPhase 
   return phase
 }
 
-function lastSyncedText(t: (key: string) => string, lastSyncAt: number | undefined): string {
+/** Short relative-time text for the status bar's right-hand meta slot (e.g.
+ *  "2分前" / "2 min ago") -- distinct from the old, longer "Synced 2m ago"
+ *  copy the bar's own "Synced"/"同期済み" label already covers. */
+function relativeTimeText(t: (key: string) => string, lastSyncAt: number | undefined): string {
   const display = formatLastSynced(lastSyncAt, Date.now())
-  if (display.kind === 'never' || display.kind === 'just-now') return t('sync.lastSyncedJustNow')
-  if (display.kind === 'minutes') return t('sync.lastSyncedMinutesAgo').replace('{minutes}', String(display.value))
-  if (display.kind === 'hours') return t('sync.lastSyncedHoursAgo').replace('{hours}', String(display.value))
-  return t('sync.lastSyncedDaysAgo').replace('{days}', String(display.value))
+  if (display.kind === 'never' || display.kind === 'just-now') return t('sync.relJustNow')
+  if (display.kind === 'minutes') return t('sync.relMinutes').replace('{minutes}', String(display.value))
+  if (display.kind === 'hours') return t('sync.relHours').replace('{hours}', String(display.value))
+  return t('sync.relDays').replace('{days}', String(display.value))
+}
+
+/** The small refresh glyph shown on the status bar in its 'idle' and
+ *  red-tinted 'issue' (auth/other) states -- omitted for 'syncing' and the
+ *  neutral offline state (mock: sync-panel-redesign-mock.html). */
+function RefreshIcon(): ReactElement {
+  return (
+    <svg className={styles.barIcon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+      <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" />
+      <path d="M13.5 2.5v3h-3" />
+    </svg>
+  )
+}
+
+/** Everything the status-bar button needs to render for one of the three
+ *  "connected" phase kinds it covers (idle/syncing/issue) -- computed once so
+ *  the JSX below stays a single <button> instead of three near-duplicates. */
+type BarView = {
+  readonly testId: string
+  readonly barClassName: string
+  readonly dotClassName: string
+  readonly label: ReactElement | string
+  readonly meta: string
+  readonly showIcon: boolean
+  readonly disabled: boolean
+  readonly onClick: (() => void) | undefined
+}
+
+function buildBarView(
+  phase: Extract<PanelPhase, { kind: 'idle' | 'syncing' | 'issue' }>,
+  t: (key: string) => string,
+  onSyncNow: () => void,
+  onReconnect: () => void,
+): BarView {
+  if (phase.kind === 'syncing') {
+    return {
+      testId: 'sync-in-progress',
+      barClassName: styles.busy,
+      dotClassName: styles.dotBusy,
+      label: <span className={styles.dots}>{t('sync.statusSyncing')}</span>,
+      meta: '',
+      showIcon: false,
+      disabled: true,
+      onClick: undefined,
+    }
+  }
+  if (phase.kind === 'issue') {
+    if (phase.errorKind === 'network') {
+      return {
+        testId: 'sync-issue',
+        barClassName: '',
+        dotClassName: styles.dotNeutral,
+        label: t('sync.statusOffline'),
+        meta: t('sync.statusOfflineMeta'),
+        showIcon: false,
+        disabled: false,
+        onClick: onSyncNow,
+      }
+    }
+    if (phase.errorKind === 'auth') {
+      return {
+        testId: 'sync-issue',
+        barClassName: styles.err,
+        dotClassName: styles.dotErr,
+        label: t('sync.reconnectNeeded'),
+        meta: t('sync.reconnectButton'),
+        showIcon: true,
+        disabled: false,
+        onClick: onReconnect,
+      }
+    }
+    return {
+      testId: 'sync-issue',
+      barClassName: styles.err,
+      dotClassName: styles.dotErr,
+      label: t('sync.statusFailed'),
+      meta: t('sync.statusRetry'),
+      showIcon: true,
+      disabled: false,
+      onClick: onSyncNow,
+    }
+  }
+  return {
+    testId: 'sync-now-button',
+    barClassName: styles.ok,
+    dotClassName: styles.dotOk,
+    label: t('sync.statusSynced'),
+    meta: relativeTimeText(t, phase.lastSyncAt),
+    showIcon: true,
+    disabled: false,
+    onClick: onSyncNow,
+  }
 }
 
 /** Puts the current device first in the expandable device list (§ design
@@ -189,7 +284,22 @@ function connectDialogStep(unlocked: boolean, phase: PanelPhase, justCompletedSe
   return { kind: 'connect' }
 }
 
-export function SyncPanel(): ReactElement | null {
+/** Imperative handle SyncPanel exposes to its parent (ExtensionEntry.tsx),
+ *  which owns the "SYNC" section heading (§ layout note above SyncPanel.tsx's
+ *  render in ExtensionEntry.tsx). The heading keeps its plain appearance --
+ *  tapping it 5 times within ~1.5s toggles the normally-hidden sync log
+ *  (`registerHeadingTap`, called once per tap; the debounce/count logic lives
+ *  entirely in here, mirroring the approved mock's `data-secret` handler). */
+export type SyncPanelHandle = {
+  readonly registerHeadingTap: () => void
+}
+
+/** Heading taps needed to reveal/hide the sync log, and how long a gap
+ *  between taps resets the count (mock: sync-panel-redesign-mock.html). */
+const LOG_REVEAL_TAP_COUNT = 5
+const LOG_REVEAL_TAP_WINDOW_MS = 1500
+
+export const SyncPanel = forwardRef<SyncPanelHandle, object>(function SyncPanel(_props, ref): ReactElement | null {
   const { t, locale } = useI18n()
   const [unlocked, setUnlocked] = useState<boolean | null>(null)
   const [keyInput, setKeyInput] = useState('')
@@ -237,11 +347,35 @@ export function SyncPanel(): ReactElement | null {
   // re-reads -- never via an extra loadSyncStatus call of its own, so it never disturbs the
   // existing mocked-call-sequence assumptions the phase-loading effects already rely on.
   const [lastCycleTrace, setLastCycleTrace] = useState<SyncCycleTrace | undefined>(undefined)
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
+  // Hidden by default -- revealed only via registerHeadingTap (see SyncPanelHandle above), never
+  // by a visible in-panel toggle. tapCountRef/tapTimerRef back that handle: tapCountRef counts taps
+  // since the last one more than LOG_REVEAL_TAP_WINDOW_MS ago (tapTimerRef resets it), and reaching
+  // LOG_REVEAL_TAP_COUNT flips logOpen and restarts the count from zero.
+  const [logOpen, setLogOpen] = useState(false)
+  const tapCountRef = useRef(0)
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useImperativeHandle(ref, () => ({
+    registerHeadingTap: (): void => {
+      tapCountRef.current += 1
+      if (tapTimerRef.current !== null) clearTimeout(tapTimerRef.current)
+      if (tapCountRef.current >= LOG_REVEAL_TAP_COUNT) {
+        tapCountRef.current = 0
+        tapTimerRef.current = null
+        setLogOpen((open) => !open)
+        return
+      }
+      tapTimerRef.current = setTimeout(() => {
+        tapCountRef.current = 0
+        tapTimerRef.current = null
+      }, LOG_REVEAL_TAP_WINDOW_MS)
+    },
+  }), [])
 
   useEffect(() => {
     return (): void => {
       if (confirmTimerRef.current !== null) clearTimeout(confirmTimerRef.current)
+      if (tapTimerRef.current !== null) clearTimeout(tapTimerRef.current)
     }
   }, [])
 
@@ -591,89 +725,106 @@ export function SyncPanel(): ReactElement | null {
           {t('sync.startButton')}
         </button>
       )}
-      {phase.kind === 'idle' && !(justCompletedSetup && modalOpen) && (
-        <>
-          <div className={styles.status} data-testid="sync-connected-status">
-            <span className={styles.statusDot} />
-            {phase.email ? t('sync.connectedAs').replace('{email}', phase.email) : t('sync.connectedGeneric')}
-          </div>
-          <p className={styles.note} data-testid="sync-last-synced">{lastSyncedText(t, phase.lastSyncAt)}</p>
-          {deviceCount && (
-            <p className={styles.note}>
-              <button
-                type="button"
-                className={styles.toggle}
-                onClick={(): void => setDeviceListOpen((open) => !open)}
-                aria-expanded={deviceListOpen}
-                data-testid="sync-device-count"
-              >
-                {`${t('sync.deviceCount').replace('{count}', String(deviceCount.count)).replace('{max}', String(deviceCount.max))} ${deviceListOpen ? '▴' : '▾'}`}
-              </button>
-            </p>
-          )}
-          {deviceCount && deviceListOpen && (
-            <ul className={`${styles.list} ${styles.hover}`} data-testid="sync-device-list">
-              {orderedDevices(deviceCount.devices, licenseIds?.deviceId ?? null).map((d) => {
-                const isMe = d.id === licenseIds?.deviceId
-                const displayName = d.label.length > 0 ? d.label : t('sync.unknownDevice')
-                const whenText = isMe ? null : formatDeviceWhen(locale, d.at)
-                const isConfirming = confirmingId === d.id
-                return (
-                  <li key={d.id} className={styles.row} data-testid={`sync-device-row-${d.id}`}>
-                    <span className={styles.hd} />
-                    <span className={styles.name}>{displayName}</span>
-                    {isMe ? (
-                      <span className={styles.me}>{t('sync.thisDevice')}</span>
-                    ) : (
-                      <>
-                        {whenText && <span className={styles.when}>{whenText}</span>}
-                        <button
-                          type="button"
-                          className={isConfirming ? `${styles.rm} ${styles.confirm}` : styles.rm}
-                          onClick={(): void => handleRemoveClick(d.id)}
-                          data-testid={`sync-device-remove-${d.id}`}
-                        >
-                          {isConfirming ? t('sync.removeDeviceConfirm') : t('sync.removeDevice')}
-                        </button>
-                      </>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-          <button type="button" className={styles.unlockBtn} onClick={(): void => { void handleSyncNow(phase.email) }} data-testid="sync-now-button">
-            {t('sync.syncNowButton')}
-          </button>
-        </>
-      )}
-      {phase.kind === 'syncing' && (
-        <div className={styles.status} data-testid="sync-in-progress">
-          <span className={styles.statusDot} data-pending="true" />
-          {t('sync.syncingNow')}
-        </div>
-      )}
+      {(phase.kind === 'idle' || phase.kind === 'syncing' || phase.kind === 'issue') && !(justCompletedSetup && modalOpen) && (() => {
+        const connectedPhase = phase as Extract<PanelPhase, { kind: 'idle' | 'syncing' | 'issue' }>
+        const bar = buildBarView(
+          connectedPhase,
+          t,
+          (): void => { void handleSyncNow(connectedPhase.email) },
+          (): void => { void handleConnect() },
+        )
+        // The long explanation + diagnostic detail line only show for the red-tinted
+        // "other" issue kinds (storage-full/corrupt/other) -- network and auth already
+        // say everything they need to on the bar itself (label + meta).
+        const showIssueExplanation =
+          connectedPhase.kind === 'issue' && connectedPhase.errorKind !== 'network' && connectedPhase.errorKind !== 'auth'
+        return (
+          <>
+            <button
+              type="button"
+              className={`${styles.bar} ${bar.barClassName}`.trim()}
+              onClick={bar.onClick}
+              disabled={bar.disabled}
+              aria-busy={connectedPhase.kind === 'syncing' || undefined}
+              aria-label={t('sync.syncNowButton')}
+              data-testid={bar.testId}
+            >
+              <span className={`${styles.dot} ${bar.dotClassName}`} />
+              <span className={styles.barLabel}>{bar.label}</span>
+              {bar.meta && <span className={styles.barMeta}>{bar.meta}</span>}
+              {bar.showIcon && <RefreshIcon />}
+            </button>
+            {showIssueExplanation && connectedPhase.kind === 'issue' && (
+              <>
+                <p className={styles.note} data-testid="sync-issue-explain">{t(errorKeyFor(connectedPhase.errorKind))}</p>
+                {connectedPhase.detail && <p className={styles.note} data-testid="sync-issue-detail">{connectedPhase.detail}</p>}
+              </>
+            )}
+            {(connectedPhase.email || deviceCount) && (
+              <div className={styles.rows}>
+                {connectedPhase.email && (
+                  <div className={styles.infoRow} data-testid="sync-row-google-drive">
+                    <span className={styles.infoKey}>{t('sync.rowGoogleDrive')}</span>
+                    <span className={styles.infoValue}>{connectedPhase.email}</span>
+                  </div>
+                )}
+                {deviceCount && (
+                  <button
+                    type="button"
+                    className={`${styles.infoRow} ${styles.devicesToggle}`}
+                    onClick={(): void => setDeviceListOpen((open) => !open)}
+                    aria-expanded={deviceListOpen}
+                    data-testid="sync-device-count"
+                  >
+                    <span className={styles.infoKey}>{t('sync.rowDevices')}</span>
+                    <span className={styles.infoValue}>{`${deviceCount.count} / ${deviceCount.max}`}</span>
+                    <span className={`${styles.chev} ${deviceListOpen ? styles.chevOpen : ''}`.trim()}>{'›'}</span>
+                  </button>
+                )}
+                {deviceCount && deviceListOpen && (
+                  <div className={styles.devicesPanel}>
+                    <ul className={`${styles.list} ${styles.hover}`} data-testid="sync-device-list">
+                      {orderedDevices(deviceCount.devices, licenseIds?.deviceId ?? null).map((d) => {
+                        const isMe = d.id === licenseIds?.deviceId
+                        const displayName = d.label.length > 0 ? d.label : t('sync.unknownDevice')
+                        const whenText = isMe ? null : formatDeviceWhen(locale, d.at)
+                        const isConfirming = confirmingId === d.id
+                        return (
+                          <li key={d.id} className={styles.row} data-testid={`sync-device-row-${d.id}`}>
+                            <span className={styles.hd} />
+                            <span className={styles.name}>{displayName}</span>
+                            {isMe ? (
+                              <span className={styles.me}>{t('sync.thisDevice')}</span>
+                            ) : (
+                              <>
+                                {whenText && <span className={styles.when}>{whenText}</span>}
+                                <button
+                                  type="button"
+                                  className={isConfirming ? `${styles.rm} ${styles.confirm}` : styles.rm}
+                                  onClick={(): void => handleRemoveClick(d.id)}
+                                  data-testid={`sync-device-remove-${d.id}`}
+                                >
+                                  {isConfirming ? t('sync.removeDeviceConfirm') : t('sync.removeDevice')}
+                                </button>
+                              </>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )
+      })()}
       {phase.kind === 'needs-confirmation' && (
         <SyncMassDeleteConfirmDialog
           count={phase.deletedCount}
           onCancel={(): void => { void handleMassDeleteCancel(phase.email) }}
           onConfirm={(): void => { void handleMassDeleteContinue(phase.email) }}
         />
-      )}
-      {phase.kind === 'issue' && (
-        <>
-          <div className={styles.error} data-testid="sync-issue">{t(errorKeyFor(phase.errorKind))}</div>
-          {phase.detail && <p className={styles.note} data-testid="sync-issue-detail">{phase.detail}</p>}
-          {phase.errorKind === 'auth' ? (
-            <button type="button" className={styles.unlockBtn} onClick={(): void => { void handleConnect() }} data-testid="sync-reconnect-button">
-              {t('sync.reconnectButton')}
-            </button>
-          ) : (
-            <button type="button" className={styles.unlockBtn} onClick={(): void => { void handleSyncNow(phase.email) }} data-testid="sync-now-button">
-              {t('sync.syncNowButton')}
-            </button>
-          )}
-        </>
       )}
       {phase.kind === 'stopped' && phase.reason === 'ended' && (
         <>
@@ -706,25 +857,15 @@ export function SyncPanel(): ReactElement | null {
       {phase.kind === 'stopped' && phase.reason === 'grace-expired' && (
         <p className={styles.body} data-testid="sync-stopped-grace-expired">{t('sync.stoppedGraceExpired')}</p>
       )}
-      {/* On-device sync diagnostics (last cycle's step timeline) -- visible in any phase except
-          'disconnected' (this whole block is already inside the unlocked branch, so "locked" is
-          already excluded), collapsed by default, same toggle pattern as the device-count list
-          above. Hidden entirely until a cycle has actually produced a trace to show. */}
-      {phase.kind !== 'disconnected' && lastCycleTrace && (
-        <p className={styles.note}>
-          <button
-            type="button"
-            className={styles.toggle}
-            onClick={(): void => setDiagnosticsOpen((open) => !open)}
-            aria-expanded={diagnosticsOpen}
-            data-testid="sync-diagnostics-toggle"
-          >
-            {`${t('sync.diagnostics')} ${diagnosticsOpen ? '▴' : '▾'}`}
-          </button>
-        </p>
-      )}
-      {phase.kind !== 'disconnected' && lastCycleTrace && diagnosticsOpen && (
-        <div data-testid="sync-diagnostics-trace">
+      {/* On-device sync log (last cycle's step timeline) -- hidden by default, no visible
+          toggle in the panel itself. Revealed only via registerHeadingTap (5 taps on the
+          "SYNC" section heading in ExtensionEntry.tsx within LOG_REVEAL_TAP_WINDOW_MS), which
+          flips `logOpen`. Shown in any phase except 'disconnected' (already excluded -- this
+          whole block sits inside the unlocked branch, so "locked" is out too), and only once a
+          cycle has actually produced a trace. */}
+      {phase.kind !== 'disconnected' && logOpen && lastCycleTrace && (
+        <div className={styles.log} data-testid="sync-diagnostics-trace">
+          <p className={styles.logTitle}>{t('sync.diagnostics')}</p>
           <p className={styles.note}>
             {`${new Date(lastCycleTrace.startedAt).toLocaleTimeString(locale)} · ${(lastCycleTrace.totalMs / 1000).toFixed(1)}s total`}
           </p>
@@ -756,4 +897,4 @@ export function SyncPanel(): ReactElement | null {
       )}
     </div>
   )
-}
+})

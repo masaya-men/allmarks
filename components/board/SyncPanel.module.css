@@ -84,24 +84,6 @@
   color: inherit;
   text-decoration: underline;
 }
-.status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(var(--chrome-ink-rgb), 0.82);
-}
-.statusDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #28f100;
-  box-shadow: 0 0 6px rgba(40, 241, 0, 0.55);
-  flex-shrink: 0;
-}
 .note {
   margin: 8px 0 0;
   font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
@@ -109,36 +91,181 @@
   line-height: 1.4;
   color: rgba(var(--chrome-ink-rgb), 0.35);
 }
-.status[data-pending] .statusDot,
-.statusDot[data-pending] {
+
+/* ── Status bar = the "Sync now" button (redesign, sync-panel-redesign-mock.html) ──
+   One full-width button that IS the status display: its look reflects the current
+   phase (idle/synced, syncing, network/auth/other issue), and clicking it acts on
+   that phase (sync now / retry / reconnect). Neutral (ink-toned) by default; .ok
+   only tints the dot green, .err tints the whole bar red-ish for auth/other issues.
+   The offline (network-issue) state intentionally stays on the neutral base -- no
+   .ok/.err modifier -- since it isn't a failure the app caused. */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--chrome-ink-rgb), 0.14);
+  background: rgba(var(--chrome-ink-rgb), 0.035);
+  color: rgba(var(--chrome-ink-rgb), 0.9);
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.bar:hover:not(:disabled) {
+  background: rgba(var(--chrome-ink-rgb), 0.07);
+  border-color: rgba(var(--chrome-ink-rgb), 0.26);
+}
+.bar:disabled {
+  cursor: default;
+}
+.barLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.barMeta {
+  flex-shrink: 0;
+  color: rgba(var(--chrome-ink-rgb), 0.45);
+  font-size: 10.5px;
+}
+.barIcon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  opacity: 0.55;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.dotOk {
+  background: #28f100;
+  box-shadow: 0 0 6px rgba(40, 241, 0, 0.55);
+}
+.dotBusy {
   background: rgba(var(--chrome-ink-rgb), 0.4);
-  box-shadow: none;
   animation: sync-pending-pulse 1.2s ease-in-out infinite;
+}
+.dotNeutral {
+  background: rgba(var(--chrome-ink-rgb), 0.4);
+}
+.dotErr {
+  background: #ff6b6b;
+  box-shadow: 0 0 6px rgba(255, 107, 107, 0.5);
 }
 @keyframes sync-pending-pulse {
   0%, 100% { opacity: 0.35; }
   50% { opacity: 0.9; }
 }
-/* Device list (design option A, approved mock): toggle button reusing the
-   .note line's typography, an expandable list below it, remove buttons that
-   only reveal on row hover (pointer devices) so the idle view stays quiet by
-   default. */
-.toggle {
-  background: none;
+/* "Syncing" label's animated ellipsis -- CSS only, not baked into the
+   translated string (sync.statusSyncing is just "Syncing"/"同期しています"). */
+.dots::after {
+  content: '';
+  display: inline-block;
+  width: 1.4em;
+  text-align: left;
+  animation: sync-dots 1.2s steps(4, end) infinite;
+}
+@keyframes sync-dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+.err {
+  border-color: rgba(255, 107, 107, 0.45);
+  background: rgba(255, 107, 107, 0.08);
+}
+.err:hover:not(:disabled) {
+  border-color: rgba(255, 107, 107, 0.7);
+  background: rgba(255, 107, 107, 0.12);
+}
+.err .barMeta {
+  color: #ff9a9a;
+}
+
+/* ── Info rows: label left, value right (redesign) ── */
+.rows {
+  margin-top: 14px;
+  border-top: 1px solid rgba(var(--chrome-ink-rgb), 0.08);
+}
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 2px;
   border: 0;
-  padding: 0;
+  border-bottom: 1px solid rgba(var(--chrome-ink-rgb), 0.08);
+  border-radius: 0;
+  background: none;
+  font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
+  font-size: 10.5px;
+  color: rgba(var(--chrome-ink-rgb), 0.5);
+  text-align: left;
+}
+.devicesToggle {
   cursor: pointer;
-  font: inherit;
+}
+.devicesToggle:hover .infoValue {
+  color: rgb(var(--chrome-ink-rgb));
+}
+.infoKey {
+  flex: 0 0 auto;
+  letter-spacing: 0.06em;
+}
+.infoValue {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  color: rgba(var(--chrome-ink-rgb), 0.78);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chev {
+  flex-shrink: 0;
+  color: rgba(var(--chrome-ink-rgb), 0.4);
+  transition: transform 0.2s ease;
+}
+.chevOpen {
+  transform: rotate(90deg);
+}
+.devicesPanel {
+  padding: 2px 0 6px 14px;
+}
+
+/* ── Sync log (hidden by default, revealed by the 5-tap heading gesture) ── */
+.log {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(var(--chrome-ink-rgb), 0.04);
+}
+.logTitle {
+  margin: 0 0 6px;
   font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
   font-size: 10px;
-  color: rgba(var(--chrome-ink-rgb), 0.35);
-  text-decoration: underline;
-  text-decoration-color: rgba(var(--chrome-ink-rgb), 0.2);
-  text-underline-offset: 3px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(var(--chrome-ink-rgb), 0.45);
 }
-.toggle:hover {
-  color: rgba(var(--chrome-ink-rgb), 0.7);
-}
+
+/* Device list (design option A, approved mock): an expandable list under the
+   devices row, remove buttons that only reveal on row hover (pointer devices)
+   so the idle view stays quiet by default. */
 .list {
   list-style: none;
   margin: 10px 0 0;
