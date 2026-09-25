@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { SyncPanel } from './SyncPanel'
 import { loadLicense } from '@/lib/board/license-store'
@@ -8,6 +8,7 @@ import { runSyncCycle, connectSync } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 import { checkLicenseForSync } from '@/lib/board/license-check'
 import { notifySyncCycleFinished } from '@/lib/sync/sync-events'
+import { setSyncMarkDirty, notifySyncDirty } from '@/lib/sync/sync-signal'
 
 vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}) }))
 vi.mock('@/lib/board/license-store', () => ({ loadLicense: vi.fn() }))
@@ -172,6 +173,11 @@ describe('SyncPanel connected states', () => {
     mockCheckLicenseForSync.mockResolvedValue({ allowed: true })
   })
 
+  // Safety net: individual withSyncWritesSuppressed tests below also clean up their own
+  // setSyncMarkDirty registration inline, but this guarantees no leakage into later tests in
+  // this file even if one of them fails before reaching its own cleanup line.
+  afterEach(() => { setSyncMarkDirty(null) })
+
   it('clicking the start button opens the guided setup dialog', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
     render(<SyncPanel />)
@@ -261,6 +267,61 @@ describe('SyncPanel connected states', () => {
     expect(screen.getByTestId('sync-last-synced').textContent).toMatch(/5/)
     fireEvent.click(screen.getByTestId('sync-now-button'))
     await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
+  })
+
+  // Bug fix: SyncPanel used to call runSyncCycle directly, bypassing sync-controller.ts's
+  // withSyncWritesSuppressed wrapping — so a manual "Sync now" cycle's own IndexedDB writes
+  // (applySnapshotToLocal etc.) would mark sync dirty again and schedule a redundant overlapping
+  // background cycle right behind it. SyncPanel must now suppress notifySyncDirty for the
+  // duration of its own manual cycle, same as sync-controller.ts's flushNow() does.
+  it('wraps the manual "Sync now" cycle in withSyncWritesSuppressed so its own writes do not mark sync dirty again', async () => {
+    let markDirtyCalls = 0
+    setSyncMarkDirty(() => { markDirtyCalls++ })
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    // Simulates runSyncCycle's real behavior of writing the pulled/merged snapshot back to
+    // IndexedDB mid-cycle (which normally fires notifySyncDirty via indexeddb.ts's write hook).
+    mockRunSyncCycle.mockImplementation(async () => {
+      notifySyncDirty()
+      return { status: 'synced', vaultConflict: false }
+    })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(1))
+    await screen.findByTestId('sync-connected-status')
+
+    expect(markDirtyCalls).toBe(0) // suppressed during the manual cycle
+
+    notifySyncDirty() // suppression must not leak past the cycle's end
+    expect(markDirtyCalls).toBe(1)
+
+    setSyncMarkDirty(null)
+  })
+
+  it('wraps handleConnect’s connectSync call in withSyncWritesSuppressed too', async () => {
+    let markDirtyCalls = 0
+    setSyncMarkDirty(() => { markDirtyCalls++ })
+    mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
+    mockRequestAuthCode.mockResolvedValue('auth-code')
+    mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
+    mockConnectSync.mockImplementation(async () => {
+      notifySyncDirty()
+      return { status: 'synced', vaultConflict: false }
+    })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-start-button')
+    fireEvent.click(screen.getByTestId('sync-start-button'))
+    await screen.findByTestId('sync-connect-button')
+    fireEvent.click(screen.getByTestId('sync-connect-button'))
+    await screen.findByTestId('sync-setup-done')
+
+    expect(markDirtyCalls).toBe(0) // suppressed during connectSync's own cycle
+
+    notifySyncDirty()
+    expect(markDirtyCalls).toBe(1)
+
+    setSyncMarkDirty(null)
   })
 
   it('shows the device count once fetchDeviceCount resolves', async () => {
@@ -439,6 +500,30 @@ describe('SyncPanel connected states', () => {
     fireEvent.click(screen.getByTestId('sync-mass-delete-continue'))
     await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(2))
     expect(mockRunSyncCycle).toHaveBeenLastCalledWith(expect.anything(), { bypassMassDeleteGuard: true })
+  })
+
+  it('wraps the mass-delete CONTINUE retry cycle in withSyncWritesSuppressed too', async () => {
+    let markDirtyCalls = 0
+    setSyncMarkDirty(() => { markDirtyCalls++ })
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    mockRunSyncCycle
+      .mockResolvedValueOnce({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
+      .mockImplementationOnce(async () => { notifySyncDirty(); return { status: 'synced', vaultConflict: false } })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await screen.findByTestId('sync-mass-delete-dialog')
+
+    fireEvent.click(screen.getByTestId('sync-mass-delete-continue'))
+    await waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledTimes(2))
+    await screen.findByTestId('sync-connected-status')
+
+    expect(markDirtyCalls).toBe(0) // suppressed during the retry cycle
+
+    notifySyncDirty()
+    expect(markDirtyCalls).toBe(1)
+
+    setSyncMarkDirty(null)
   })
 
   // Item 4: SyncPanel is mounted independently of whatever triggered a background sync cycle

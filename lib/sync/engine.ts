@@ -14,6 +14,7 @@ import { checkLicenseForSync, type LicenseInactiveReason } from '@/lib/board/lic
 import { DB_VERSION } from '@/lib/constants'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
 import { saveVaultConflict, isLocalVaultTarget } from '@/lib/private/vault-conflict'
+import { withSyncLock } from './sync-lock'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -314,7 +315,22 @@ async function writeManifest(accessToken: string, folderId: string, db: DbLike, 
   }
 }
 
+/**
+ * Exported entry point every caller uses (sync-controller.ts's background triggers, connectSync
+ * below, and SyncPanel.tsx's manual "Sync now" / mass-delete "continue anyway" buttons). Takes
+ * the exclusive sync lock exactly once per call and delegates to `runSyncCycleUnlocked` for the
+ * actual cycle — see sync-lock.ts for why this exists (concurrent cycles racing Drive's
+ * optimistic lock). `connectSync` below calls this function (never `runSyncCycleUnlocked`
+ * directly), so the lock is still taken exactly once for its own first cycle too.
+ */
 export async function runSyncCycle(
+  db: DbLike,
+  opts: { bypassMassDeleteGuard?: boolean } = {},
+): Promise<SyncCycleResult> {
+  return withSyncLock(() => runSyncCycleUnlocked(db, opts))
+}
+
+async function runSyncCycleUnlocked(
   db: DbLike,
   opts: { bypassMassDeleteGuard?: boolean } = {},
 ): Promise<SyncCycleResult> {

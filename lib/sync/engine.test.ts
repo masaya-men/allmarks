@@ -756,6 +756,86 @@ describe('runSyncCycle', () => {
   })
 })
 
+// sync-lock.ts: runSyncCycle now takes an exclusive lock around its whole body, so two
+// overlapping callers (e.g. SyncPanel's manual "Sync now" firing while sync-controller.ts's
+// background debounce cycle is still mid-flight) never race Drive's optimistic lock together.
+describe('runSyncCycle concurrency (sync-lock)', () => {
+  it('never interleaves two concurrent calls’ Drive calls -- the second cycle only starts after the first fully finishes', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+
+    const log: string[] = []
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((resolve) => { releaseGate = resolve })
+    let gateReachedResolve: () => void = () => {}
+    const gateReached = new Promise<void>((resolve) => { gateReachedResolve = resolve })
+    let manifestCallCount = 0
+
+    vi.mocked(listFolderFiles).mockImplementation(async () => { log.push('LFF'); return [] })
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => {
+      log.push(`CTF:${name}`)
+      // Gate only the very FIRST cycle's manifest.json write (its last Drive call) so the first
+      // cycle is provably still holding the lock when we check that the second cycle hasn't
+      // made any Drive calls yet.
+      if (name === 'manifest.json') {
+        manifestCallCount++
+        if (manifestCallCount === 1) {
+          gateReachedResolve()
+          await gate
+        }
+      }
+      return { id: `id-${name}`, name, headRevisionId: `rev-${name}` }
+    })
+
+    // Fired back-to-back with no await in between, mirroring a manual "Sync now" click landing
+    // while a background cycle triggered a moment earlier is still running.
+    const p1 = runSyncCycle(d)
+    const p2 = runSyncCycle(d)
+
+    await gateReached
+    // The first cycle is now parked inside its manifest.json write (its last Drive call). If the
+    // lock didn't serialize these two calls, the second cycle's own pull would already have
+    // logged its own 'LFF'/'CTF' entries by now.
+    const logLengthWhileFirstCycleGated = log.length
+    await Promise.resolve(); await Promise.resolve(); await Promise.resolve()
+    expect(log.length).toBe(logLengthWhileFirstCycleGated) // still parked -- second cycle made zero calls
+
+    releaseGate()
+    const [r1, r2] = await Promise.all([p1, p2])
+
+    expect(r1.status).toBe('synced')
+    expect(r2.status).toBe('synced')
+    // 3x listFolderFiles (pull/push/writeManifest) + 4x createTextFile (bookmarks/tags/cards/manifest)
+    // per cycle, and the two cycles' entries never interleave.
+    const perCycle = 7
+    expect(log.length).toBe(perCycle * 2)
+    expect(log.slice(0, perCycle)).toEqual(log.slice(perCycle, perCycle * 2))
+  })
+
+  it('a cycle that fails does not deadlock a queued second cycle', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(listFolderFiles).mockRejectedValueOnce(new DriveError(0, 'drive fetch failed: network error'))
+
+    const p1 = runSyncCycle(d) // this one will fail during pull
+    const p2 = runSyncCycle(d) // must still run afterwards, not hang forever
+
+    const r1 = await p1
+    expect(r1.status).toBe('error')
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+    const r2 = await p2
+    expect(r2.status).toBe('synced')
+  })
+})
+
 describe('connectSync', () => {
   it('saves tokens, finds/creates the folder, and runs a sync cycle', async () => {
     const d = await initDB(); db = d

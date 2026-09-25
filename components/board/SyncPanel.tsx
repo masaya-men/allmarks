@@ -11,6 +11,7 @@ import {
 } from '@/lib/board/license-activate'
 import { loadSyncStatus, type SyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync, type SyncCycleResult } from '@/lib/sync/engine'
+import { withSyncWritesSuppressed } from '@/lib/sync/sync-signal'
 import { onSyncCycleFinished } from '@/lib/sync/sync-events'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 import { formatLastSynced } from '@/lib/sync/format-last-sync'
@@ -330,7 +331,11 @@ export function SyncPanel(): ReactElement | null {
       const code = await requestAuthCode()
       const tokens = await exchangeCode(code)
       const db = await initDB()
-      const result = await connectSync(db, tokens)
+      // Suppressed: connectSync's own first cycle writes the pulled/merged snapshot back to
+      // IndexedDB (same reason sync-controller.ts's flushNow() suppresses runSyncCycle — see
+      // sync-signal.ts), which would otherwise mark sync dirty again and schedule a redundant
+      // background cycle right on top of this one.
+      const result = await withSyncWritesSuppressed(() => connectSync(db, tokens))
       setJustCompletedSetup(true)
       await applyResult(result, null)
     } catch (e) {
@@ -343,7 +348,9 @@ export function SyncPanel(): ReactElement | null {
     setPhase({ kind: 'syncing', email })
     try {
       const db = await initDB()
-      const result = await runSyncCycle(db)
+      // Suppressed: see the connectSync call above — this cycle's own writes must not
+      // re-mark sync dirty and schedule another overlapping cycle right behind it.
+      const result = await withSyncWritesSuppressed(() => runSyncCycle(db))
       await applyResult(result, email)
     } catch (e) {
       console.error('[AllMarks] manual sync failed', e)
@@ -365,7 +372,8 @@ export function SyncPanel(): ReactElement | null {
     setPhase({ kind: 'syncing', email })
     try {
       const db = await initDB()
-      const result = await runSyncCycle(db, { bypassMassDeleteGuard: true })
+      // Suppressed: see handleConnect above.
+      const result = await withSyncWritesSuppressed(() => runSyncCycle(db, { bypassMassDeleteGuard: true }))
       await applyResult(result, email)
     } catch (e) {
       console.error('[AllMarks] confirmed sync failed', e)
