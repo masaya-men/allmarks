@@ -38,6 +38,22 @@ describe('createSyncController', () => {
     expect(runSyncCycle).toHaveBeenCalledTimes(1) // the debounced timer did not also fire
   })
 
+  // SyncEngineRunner's poll/visibility triggers pass { skipIfUnchanged: true } through flushNow so
+  // engine.ts's runSyncCycle can take its cheap no-download fast path; every other trigger (manual
+  // "Sync now", markDirty's debounce, tab-hide/pagehide/beforeunload) keeps calling it bare, which
+  // must remain a full, unaffected cycle.
+  it('flushNow(opts) passes skipIfUnchanged through to runSyncCycle unchanged', async () => {
+    const controller = createSyncController(fakeDb, 20000)
+    await controller.flushNow({ skipIfUnchanged: true })
+    expect(runSyncCycle).toHaveBeenCalledWith(fakeDb, { skipIfUnchanged: true })
+  })
+
+  it('flushNow() with no opts (manual sync / dirty debounce) calls runSyncCycle with an empty opts object', async () => {
+    const controller = createSyncController(fakeDb, 20000)
+    await controller.flushNow()
+    expect(runSyncCycle).toHaveBeenCalledWith(fakeDb, {})
+  })
+
   it('start() flushes on visibilitychange -> hidden', async () => {
     const controller = createSyncController(fakeDb, 20000)
     controller.start()
@@ -114,7 +130,7 @@ describe('createSyncController', () => {
   // debounce timer (not just an explicit manual flushNow()).
   it('onResult fires exactly once with the cycle result when triggered automatically via the debounce timer', async () => {
     const onResult = vi.fn()
-    const result = { status: 'needs-confirmation' as const, vaultConflict: true, deletionRatio: 0.9 }
+    const result = { status: 'needs-confirmation' as const, vaultConflict: true, localChanged: false, deletionRatio: 0.9 }
     vi.mocked(runSyncCycle).mockResolvedValueOnce(result)
     const controller = createSyncController(fakeDb, 20000, onResult)
 

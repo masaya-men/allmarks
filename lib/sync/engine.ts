@@ -279,6 +279,67 @@ function activeCount(bookmarks: readonly { isDeleted?: boolean }[]): number {
   return bookmarks.filter(b => !b.isDeleted).length
 }
 
+/** Per-record JSON, keyed by id — used by localDataChanged below for an order-independent
+ *  content comparison (mergeBookmarks/mergeTags/mergeCards sort their output by id ascending;
+ *  IndexedDB's own getAll() on an `id`-keyPath store also returns ascending-by-id, so the two
+ *  normally already line up, but comparing by id map is robust even if that ever stopped being
+ *  true, at the same cost). */
+function recordsById<T extends { id: string }>(rows: readonly T[]): Map<string, string> {
+  const m = new Map<string, string>()
+  for (const r of rows) m.set(r.id, JSON.stringify(r))
+  return m
+}
+
+function sameRecords<T extends { id: string }>(a: readonly T[], b: readonly T[]): boolean {
+  if (a.length !== b.length) return false
+  const bJson = recordsById(b)
+  for (const rec of a) {
+    if (bJson.get(rec.id) !== JSON.stringify(rec)) return false
+  }
+  return true
+}
+
+/** True when `after`'s bookmarks/tags/cards differ from `before`'s — i.e. this cycle wrote data
+ *  into local IndexedDB (a pull, a merge outcome) that wasn't there a moment ago, and the board
+ *  should re-read IDB to show it. Deliberately scoped to just these 3 stores (per-device
+ *  boardConfig and Private's own vault-conflict UI are out of scope for "should the board
+ *  reload"). Cheap: one JSON.stringify per record, no deep-equal dependency. */
+function localDataChanged(before: SyncSnapshot, after: SyncSnapshot): boolean {
+  return (
+    !sameRecords(before.bookmarks, after.bookmarks) ||
+    !sameRecords(before.tags, after.tags) ||
+    !sameRecords(before.cards, after.cards)
+  )
+}
+
+const TRACKED_FILE_NAMES: readonly string[] = Object.values(FILE_NAMES)
+
+/** Cheap pre-check for a cycle triggered by a timer/visibility poll rather than a real local
+ *  write or a manual "Sync now" (opts.skipIfUnchanged, set only by those triggers — see
+ *  SyncEngineRunner.tsx): lists the Drive folder (no downloads, no per-file revision calls beyond
+ *  what listFolderFiles already returns) and compares each tracked file's headRevisionId against
+ *  what the last successful cycle recorded in sync-status. When every one matches, nothing
+ *  changed on the other end since we last synced, so the caller can skip pullRemoteSnapshot/
+ *  pushSnapshot entirely for this cycle. Callers should treat a thrown error here as "assume
+ *  changed" (fall through to the normal full pull, which has its own error handling) rather than
+ *  surfacing it directly. */
+async function isRemoteUnchanged(
+  accessToken: string,
+  folderId: string,
+  previousHeadRevisions: Readonly<Record<string, string>>,
+): Promise<boolean> {
+  const files = await listFolderFiles(accessToken, folderId)
+  const current: Record<string, string> = {}
+  for (const f of files) {
+    if (f.headRevisionId && TRACKED_FILE_NAMES.includes(f.name)) current[f.name] = f.headRevisionId
+  }
+  const keys = new Set([...Object.keys(previousHeadRevisions), ...Object.keys(current)])
+  for (const key of keys) {
+    if (previousHeadRevisions[key] !== current[key]) return false
+  }
+  return true
+}
+
 /** 「本当に別々の金庫」かどうかだけを見る。publicKey(ECDH鍵ペアの識別子)と
  *  tagIdが両方一致していれば、salt/wrappedPrivateKey等が違っていても
  *  それは同じ金庫のパスワード変更に過ぎない — conflictではなく
@@ -291,6 +352,12 @@ function vaultRecordsDiffer(a: PrivateVaultRecord, b: PrivateVaultRecord): boole
 export interface SyncCycleResult {
   readonly status: 'not-connected' | 'synced' | 'needs-confirmation' | 'error' | 'license-inactive'
   readonly vaultConflict: boolean
+  /** True iff this cycle wrote pulled/merged bookmarks/tags/cards data into local IndexedDB that
+   *  differs from what was there before the cycle started (see localDataChanged above) — the
+   *  signal BoardRoot's useReloadOnSyncChange hook uses to decide whether to re-read IDB. Always
+   *  false for a cycle that never reached a successful write (not-connected/license-inactive/
+   *  error/needs-confirmation) and for the skipIfUnchanged fast path (nothing was pulled). */
+  readonly localChanged: boolean
   readonly deletionRatio?: number
   readonly deletedCount?: number
   readonly mergedCounts?: { readonly bookmarks: number; readonly tags: number; readonly cards: number }
@@ -333,25 +400,30 @@ async function writeManifest(accessToken: string, folderId: string, db: DbLike, 
  */
 export async function runSyncCycle(
   db: DbLike,
-  opts: { bypassMassDeleteGuard?: boolean } = {},
+  opts: { bypassMassDeleteGuard?: boolean; skipIfUnchanged?: boolean } = {},
 ): Promise<SyncCycleResult> {
   return withSyncLock(async () => {
     notifySyncCycleStarted()
+    let result: SyncCycleResult | undefined
     try {
-      return await runSyncCycleUnlocked(db, opts)
+      result = await runSyncCycleUnlocked(db, opts)
+      return result
     } finally {
-      notifySyncCycleFinished()
+      // `result` stays undefined only when runSyncCycleUnlocked itself threw (never a documented
+      // return path) — notifySyncCycleFinished()'s own default (`{ localChanged: false }`) covers
+      // that case, same as the pre-existing bare call did.
+      notifySyncCycleFinished(result ? { localChanged: result.localChanged } : undefined)
     }
   })
 }
 
 async function runSyncCycleUnlocked(
   db: DbLike,
-  opts: { bypassMassDeleteGuard?: boolean } = {},
+  opts: { bypassMassDeleteGuard?: boolean; skipIfUnchanged?: boolean } = {},
 ): Promise<SyncCycleResult> {
   const status = await loadSyncStatus(db)
   if (!status.connected || !status.folderId) {
-    return { status: 'not-connected', vaultConflict: false }
+    return { status: 'not-connected', vaultConflict: false, localChanged: false }
   }
 
   // License gate (design §3.2): the one entry point every trigger (auto
@@ -360,7 +432,7 @@ async function runSyncCycleUnlocked(
   // happen below this point when the license isn't allowed to sync.
   const licenseCheck = await checkLicenseForSync(db)
   if (!licenseCheck.allowed) {
-    return { status: 'license-inactive', vaultConflict: false, licenseReason: licenseCheck.reason }
+    return { status: 'license-inactive', vaultConflict: false, licenseReason: licenseCheck.reason, localChanged: false }
   }
 
   const folderId = status.folderId
@@ -371,7 +443,19 @@ async function runSyncCycleUnlocked(
   } catch (err) {
     const errorKind = classifySyncError(err)
     await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('auth', err) } })
-    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'auth failed' }
+    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'auth failed', localChanged: false }
+  }
+
+  // Fast path for a timer/visibility poll (opts.skipIfUnchanged, set only by those triggers —
+  // never by a dirty write or manual "Sync now"): if nothing changed on Drive since our last
+  // successful cycle, skip the full pull/merge/push below entirely. Any failure here just falls
+  // through to the normal full pull, which has its own error handling.
+  if (opts.skipIfUnchanged) {
+    const unchanged = await isRemoteUnchanged(accessToken, folderId, status.headRevisions).catch(() => false)
+    if (unchanged) {
+      await updateSyncStatus(db, { lastSyncAt: Date.now() })
+      return { status: 'synced', vaultConflict: false, localChanged: false }
+    }
   }
 
   let pulled: Awaited<ReturnType<typeof pullRemoteSnapshot>>
@@ -380,7 +464,7 @@ async function runSyncCycleUnlocked(
   } catch (err) {
     const errorKind = classifySyncError(err)
     await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('pull', err) } })
-    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'pull failed' }
+    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'pull failed', localChanged: false }
   }
 
   const local = await buildLocalSnapshot(db)
@@ -426,7 +510,7 @@ async function runSyncCycleUnlocked(
     if (deletionRatio > MASS_DELETE_THRESHOLD) {
       const deletedCount = localActive - mergedActive
       await updateSyncStatus(db, { lastIssue: { kind: 'needs-confirmation', deletedCount } })
-      return { status: 'needs-confirmation', vaultConflict, deletionRatio, deletedCount }
+      return { status: 'needs-confirmation', vaultConflict, deletionRatio, deletedCount, localChanged: false }
     }
   }
 
@@ -441,7 +525,7 @@ async function runSyncCycleUnlocked(
     if (!(err instanceof SyncConflictError)) {
       const errorKind = classifySyncError(err)
       await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('push', err) } })
-      return { status: 'error', vaultConflict, errorKind, errorMessage: err instanceof Error ? err.message : 'push failed' }
+      return { status: 'error', vaultConflict, errorKind, errorMessage: err instanceof Error ? err.message : 'push failed', localChanged: false }
     }
     // Someone else pushed since our pull. Re-pull, re-merge once, then retry the push —
     // re-running the SAME safety checks as the first attempt (vault conflict, mass-deletion
@@ -454,7 +538,7 @@ async function runSyncCycleUnlocked(
     } catch (err2) {
       const errorKind = classifySyncError(err2)
       await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('pull (retry)', err2) } })
-      return { status: 'error', vaultConflict, errorKind, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)' }
+      return { status: 'error', vaultConflict, errorKind, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)', localChanged: false }
     }
 
     // Fix I-1: re-read IndexedDB instead of reusing the pre-cycle `local` snapshot. By now
@@ -474,7 +558,7 @@ async function runSyncCycleUnlocked(
       if (reDeletionRatio > MASS_DELETE_THRESHOLD) {
         const deletedCount = localActive - reMergedActive
         await updateSyncStatus(db, { lastIssue: { kind: 'needs-confirmation', deletedCount } })
-        return { status: 'needs-confirmation', vaultConflict, deletionRatio: reDeletionRatio, deletedCount }
+        return { status: 'needs-confirmation', vaultConflict, deletionRatio: reDeletionRatio, deletedCount, localChanged: false }
       }
     }
 
@@ -484,7 +568,7 @@ async function runSyncCycleUnlocked(
     } catch (err3) {
       const errorKind = classifySyncError(err3)
       await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('push (retry)', err3) } })
-      return { status: 'error', vaultConflict, errorKind, errorMessage: err3 instanceof Error ? err3.message : 'push failed (retry)' }
+      return { status: 'error', vaultConflict, errorKind, errorMessage: err3 instanceof Error ? err3.message : 'push failed (retry)', localChanged: false }
     }
   }
 
@@ -495,6 +579,10 @@ async function runSyncCycleUnlocked(
   return {
     status: 'synced',
     vaultConflict,
+    // Compare against the ORIGINAL pre-cycle `local` snapshot (not finalSnapshot, which the retry
+    // branch above may have moved on from) — this is "did IDB end this cycle holding data it
+    // didn't have at the start", regardless of which attempt produced it.
+    localChanged: localDataChanged(local, pushedSnapshot),
     mergedCounts: {
       bookmarks: pushedSnapshot.bookmarks.length,
       tags: pushedSnapshot.tags.length,
@@ -513,6 +601,7 @@ export async function connectSync(db: DbLike, tokens: SyncTokens): Promise<SyncC
       vaultConflict: false,
       errorKind: 'auth',
       errorMessage: 'Missing required Google Drive permission. Please reconnect and grant all requested permissions.',
+      localChanged: false,
     }
   }
   // Fix I-2: every other path in this module returns Promise<SyncCycleResult> and never rejects.
@@ -526,7 +615,7 @@ export async function connectSync(db: DbLike, tokens: SyncTokens): Promise<SyncC
     await updateSyncStatus(db, { connected: true, folderId, connectedEmail })
   } catch (err) {
     const errorKind = classifySyncError(err)
-    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'connect failed' }
+    return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'connect failed', localChanged: false }
   }
   return runSyncCycle(db)
 }

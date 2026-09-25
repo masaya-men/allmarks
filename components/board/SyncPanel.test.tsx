@@ -208,7 +208,7 @@ describe('SyncPanel connected states', () => {
   it('connects: requests a code, exchanges it, calls connectSync, and finishes on the guided-setup done screen', async () => {
     mockRequestAuthCode.mockResolvedValue('auth-code')
     mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
-    mockConnectSync.mockResolvedValue({ status: 'synced', vaultConflict: false })
+    mockConnectSync.mockResolvedValue({ status: 'synced', vaultConflict: false, localChanged: false })
     // First call = initial mount (disconnected). Second call = applyResult's re-read after
     // connectSync resolves 'synced', to pick up the fresh connectedEmail/lastSyncAt.
     mockLoadSyncStatus
@@ -235,7 +235,7 @@ describe('SyncPanel connected states', () => {
 
     // A later routine "Sync now" click must not reopen the dialog or the done
     // screen — it's just the existing inline sync-now flow, untouched.
-    mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false })
+    mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false, localChanged: false })
     // The two mockResolvedValueOnce values queued above (mount + post-connect)
     // are both consumed by now; applyResult's re-read after this sync-now call
     // needs its own resolved value, or the mock has nothing left to return.
@@ -255,7 +255,7 @@ describe('SyncPanel connected states', () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
     mockRequestAuthCode.mockResolvedValue('auth-code')
     mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
-    let resolveConnectSync: (value: { status: 'synced'; vaultConflict: false }) => void = () => {}
+    let resolveConnectSync: (value: { status: 'synced'; vaultConflict: false, localChanged: false }) => void = () => {}
     mockConnectSync.mockImplementation(() => new Promise((resolve) => { resolveConnectSync = resolve }))
     render(<SyncPanel />)
     await screen.findByTestId('sync-start-button')
@@ -269,7 +269,7 @@ describe('SyncPanel connected states', () => {
     expect(screen.getByTestId('sync-connecting')).toBeInTheDocument()
 
     mockLoadSyncStatus.mockResolvedValueOnce({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
-    resolveConnectSync({ status: 'synced', vaultConflict: false })
+    resolveConnectSync({ status: 'synced', vaultConflict: false, localChanged: false })
     await screen.findByTestId('sync-setup-done')
   })
 
@@ -287,7 +287,7 @@ describe('SyncPanel connected states', () => {
 
   it('shows the idle connected view with last-synced text and a working sync-now button', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() - 5 * 60_000 })
-    mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false })
+    mockRunSyncCycle.mockResolvedValue({ status: 'synced', vaultConflict: false, localChanged: false })
     render(<SyncPanel />)
     await screen.findByTestId('sync-connected-status')
     expect(screen.getByTestId('sync-last-synced').textContent).toMatch(/5/)
@@ -308,7 +308,7 @@ describe('SyncPanel connected states', () => {
     // IndexedDB mid-cycle (which normally fires notifySyncDirty via indexeddb.ts's write hook).
     mockRunSyncCycle.mockImplementation(async () => {
       notifySyncDirty()
-      return { status: 'synced', vaultConflict: false }
+      return { status: 'synced', vaultConflict: false, localChanged: false }
     })
     render(<SyncPanel />)
     await screen.findByTestId('sync-now-button')
@@ -333,7 +333,7 @@ describe('SyncPanel connected states', () => {
     mockExchangeCode.mockResolvedValue({ accessToken: 'at', expiresAt: Date.now() + 100000, scope: 'drive.file' })
     mockConnectSync.mockImplementation(async () => {
       notifySyncDirty()
-      return { status: 'synced', vaultConflict: false }
+      return { status: 'synced', vaultConflict: false, localChanged: false }
     })
     render(<SyncPanel />)
     await screen.findByTestId('sync-start-button')
@@ -506,7 +506,7 @@ describe('SyncPanel connected states', () => {
 
   it('shows the SyncMassDeleteConfirmDialog when a manual sync returns needs-confirmation', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
-    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
+    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, localChanged: false, deletedCount: 12 })
     render(<SyncPanel />)
     await screen.findByTestId('sync-now-button')
     fireEvent.click(screen.getByTestId('sync-now-button'))
@@ -517,8 +517,8 @@ describe('SyncPanel connected states', () => {
   it('CONTINUE on the mass-delete dialog re-runs the cycle with bypassMassDeleteGuard', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     mockRunSyncCycle
-      .mockResolvedValueOnce({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
-      .mockResolvedValueOnce({ status: 'synced', vaultConflict: false })
+      .mockResolvedValueOnce({ status: 'needs-confirmation', vaultConflict: false, localChanged: false, deletedCount: 12 })
+      .mockResolvedValueOnce({ status: 'synced', vaultConflict: false, localChanged: false })
     render(<SyncPanel />)
     await screen.findByTestId('sync-now-button')
     fireEvent.click(screen.getByTestId('sync-now-button'))
@@ -533,8 +533,8 @@ describe('SyncPanel connected states', () => {
     setSyncMarkDirty(() => { markDirtyCalls++ })
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
     mockRunSyncCycle
-      .mockResolvedValueOnce({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
-      .mockImplementationOnce(async () => { notifySyncDirty(); return { status: 'synced', vaultConflict: false } })
+      .mockResolvedValueOnce({ status: 'needs-confirmation', vaultConflict: false, localChanged: false, deletedCount: 12 })
+      .mockImplementationOnce(async () => { notifySyncDirty(); return { status: 'synced', vaultConflict: false, localChanged: false } })
     render(<SyncPanel />)
     await screen.findByTestId('sync-now-button')
     fireEvent.click(screen.getByTestId('sync-now-button'))
@@ -609,7 +609,7 @@ describe('SyncPanel connected states', () => {
 
   it('a background cycle starting does not disturb the mass-delete confirmation dialog', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
-    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
+    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, localChanged: false, deletedCount: 12 })
     render(<SyncPanel />)
     await screen.findByTestId('sync-now-button')
     fireEvent.click(screen.getByTestId('sync-now-button'))
@@ -623,7 +623,7 @@ describe('SyncPanel connected states', () => {
 
   it('ignores a background cycle-finished event while its own manual sync is in flight', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
-    let resolveRunSyncCycle: (value: { status: 'synced'; vaultConflict: false }) => void = () => {}
+    let resolveRunSyncCycle: (value: { status: 'synced'; vaultConflict: false, localChanged: false }) => void = () => {}
     mockRunSyncCycle.mockImplementation(() => new Promise((resolve) => { resolveRunSyncCycle = resolve }))
     render(<SyncPanel />)
     await screen.findByTestId('sync-now-button')
@@ -634,13 +634,13 @@ describe('SyncPanel connected states', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.getByTestId('sync-in-progress')).toBeInTheDocument()
 
-    resolveRunSyncCycle({ status: 'synced', vaultConflict: false })
+    resolveRunSyncCycle({ status: 'synced', vaultConflict: false, localChanged: false })
     await screen.findByTestId('sync-connected-status')
   })
 
   it('ignores a background cycle-finished event while showing the mass-delete confirmation dialog', async () => {
     mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
-    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
+    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, localChanged: false, deletedCount: 12 })
     render(<SyncPanel />)
     await screen.findByTestId('sync-now-button')
     fireEvent.click(screen.getByTestId('sync-now-button'))
@@ -744,7 +744,7 @@ describe('SyncPanel stopped states (license-check gate)', () => {
   })
 
   it('a license-inactive result from Sync now switches to the stopped view, not disconnected', async () => {
-    mockRunSyncCycle.mockResolvedValue({ status: 'license-inactive', vaultConflict: false, licenseReason: 'ended' })
+    mockRunSyncCycle.mockResolvedValue({ status: 'license-inactive', vaultConflict: false, localChanged: false, licenseReason: 'ended' })
     render(<SyncPanel />)
     await screen.findByTestId('sync-connected-status')
     fireEvent.click(screen.getByTestId('sync-now-button'))

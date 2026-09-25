@@ -358,7 +358,7 @@ describe('runSyncCycle', () => {
   it('returns not-connected when sync-status has no folderId', async () => {
     const d = await initDB(); db = d
     const result = await runSyncCycle(d)
-    expect(result).toEqual({ status: 'not-connected', vaultConflict: false })
+    expect(result).toEqual({ status: 'not-connected', vaultConflict: false, localChanged: false })
   })
 
   // License gate (design §3.2): connected but no license at all -> gated
@@ -369,7 +369,7 @@ describe('runSyncCycle', () => {
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
 
     const result = await runSyncCycle(d)
-    expect(result).toEqual({ status: 'license-inactive', vaultConflict: false, licenseReason: 'no-license' })
+    expect(result).toEqual({ status: 'license-inactive', vaultConflict: false, licenseReason: 'no-license', localChanged: false })
     expect(listFolderFiles).not.toHaveBeenCalled()
     expect(downloadFileText).not.toHaveBeenCalled()
     expect(createTextFile).not.toHaveBeenCalled()
@@ -834,6 +834,190 @@ describe('runSyncCycle concurrency (sync-lock)', () => {
     vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
     const r2 = await p2
     expect(r2.status).toBe('synced')
+  })
+})
+
+// The board-live-refresh feature (BoardRoot's useReloadOnSyncChange, lib/sync/use-reload-on-sync-
+// change.ts) decides whether to reload purely off this field, so it has to be right in both
+// directions: true only when the cycle actually put new-to-this-device data into IDB.
+describe('runSyncCycle localChanged', () => {
+  it('is false when the remote contributed nothing new to what was already local', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+    await d.put('bookmarks', bookmark('local-only') as never)
+
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d)
+    expect(result.status).toBe('synced')
+    expect(result.localChanged).toBe(false)
+  })
+
+  it('is true when a remote-only bookmark gets pulled/merged into local IndexedDB', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+    // local starts empty
+
+    const remoteBookmarks = [bookmark('remote-only')]
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-bm' ? JSON.stringify(remoteBookmarks) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-2' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d)
+    expect(result.status).toBe('synced')
+    expect(result.localChanged).toBe(true)
+  })
+
+  it('is false for every non-synced result (not-connected/license-inactive/error/needs-confirmation)', async () => {
+    const d = await initDB(); db = d
+    expect((await runSyncCycle(d)).localChanged).toBe(false) // not-connected
+
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    expect((await runSyncCycle(d)).localChanged).toBe(false) // license-inactive
+
+    await saveLicense(d, activeLicenseState())
+    vi.mocked(listFolderFiles).mockRejectedValueOnce(new DriveError(0, 'drive fetch failed: network error'))
+    expect((await runSyncCycle(d)).localChanged).toBe(false) // error (pull)
+
+    for (let i = 0; i < 10; i++) await d.put('bookmarks', bookmark(`local-${i}`) as never)
+    const remoteBookmarks = Array.from({ length: 8 }, (_, i) =>
+      bookmark(`local-${i}`, { isDeleted: true, deletedAt: '2026-06-01T00:00:00.000Z', updatedAt: 999999 }))
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-bm' ? JSON.stringify(remoteBookmarks) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    expect((await runSyncCycle(d)).localChanged).toBe(false) // needs-confirmation
+  })
+
+  it('passes localChanged through the sync-events finished signal', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
+    await saveLicense(d, activeLicenseState())
+    const remoteBookmarks = [bookmark('remote-only')]
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockImplementation(async (_t, id) =>
+      id === 'f-bm' ? JSON.stringify(remoteBookmarks) : '[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-2' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    let received: { localChanged: boolean } | undefined
+    const unsub = onSyncCycleFinished((info) => { received = info })
+    try {
+      const result = await runSyncCycle(d)
+      expect(result.localChanged).toBe(true)
+      expect(received).toEqual({ localChanged: true })
+    } finally {
+      unsub()
+    }
+  })
+})
+
+// Item 3/4: a timer/visibility poll passes opts.skipIfUnchanged so a cycle that finds nothing
+// changed on Drive never downloads anything — only a manual "Sync now" or a dirty write does the
+// full pull/push unconditionally.
+describe('runSyncCycle skipIfUnchanged (poll fast path)', () => {
+  it('skips the pull/push and makes zero downloads when every tracked revision already matches', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, {
+      connected: true, folderId: 'folder1',
+      headRevisions: { 'bookmarks.json': 'rev-1', 'tags.json': 'rev-1', 'cards.json': 'rev-1' },
+    })
+    await saveLicense(d, activeLicenseState())
+
+    vi.mocked(listFolderFiles).mockResolvedValue([
+      { id: 'f-bm', name: 'bookmarks.json', headRevisionId: 'rev-1' },
+      { id: 'f-tags', name: 'tags.json', headRevisionId: 'rev-1' },
+      { id: 'f-cards', name: 'cards.json', headRevisionId: 'rev-1' },
+    ])
+
+    const result = await runSyncCycle(d, { skipIfUnchanged: true })
+    expect(result).toEqual({ status: 'synced', vaultConflict: false, localChanged: false })
+    expect(listFolderFiles).toHaveBeenCalledTimes(1)
+    expect(downloadFileText).not.toHaveBeenCalled()
+    expect(getHeadRevisionId).not.toHaveBeenCalled()
+    expect(createTextFile).not.toHaveBeenCalled()
+    expect(updateTextFile).not.toHaveBeenCalled()
+    const status = await loadSyncStatus(d)
+    expect(status.lastSyncAt).toBeGreaterThan(0)
+  })
+
+  it('falls through to a full pull when a tracked revision differs remotely', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1', headRevisions: { 'bookmarks.json': 'rev-1' } })
+    await saveLicense(d, activeLicenseState())
+
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json', headRevisionId: 'rev-2' }])
+    vi.mocked(downloadFileText).mockResolvedValue('[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-2')
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-3' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d, { skipIfUnchanged: true })
+    expect(result.status).toBe('synced')
+    expect(downloadFileText).toHaveBeenCalled()
+  })
+
+  it('falls through to a full pull when a previously-tracked file has disappeared remotely', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1', headRevisions: { 'bookmarks.json': 'rev-1' } })
+    await saveLicense(d, activeLicenseState())
+
+    vi.mocked(listFolderFiles).mockResolvedValue([]) // bookmarks.json no longer listed
+    vi.mocked(downloadFileText).mockResolvedValue('[]')
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d, { skipIfUnchanged: true })
+    expect(result.status).toBe('synced')
+    expect(createTextFile).toHaveBeenCalled() // recreated bookmarks.json via the normal push path
+  })
+
+  it('a manual/dirty cycle (no skipIfUnchanged) always runs the full pull, even with unchanged revisions', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1', headRevisions: { 'bookmarks.json': 'rev-1' } })
+    await saveLicense(d, activeLicenseState())
+
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json', headRevisionId: 'rev-1' }])
+    vi.mocked(downloadFileText).mockResolvedValue('[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d) // no opts at all — same as a manual "Sync now"
+    expect(result.status).toBe('synced')
+    expect(downloadFileText).toHaveBeenCalled()
+  })
+
+  it('treats a failed skip-check as "assume changed" and still completes a full cycle', async () => {
+    const d = await initDB(); db = d
+    await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
+    await updateSyncStatus(d, { connected: true, folderId: 'folder1', headRevisions: { 'bookmarks.json': 'rev-1' } })
+    await saveLicense(d, activeLicenseState())
+
+    vi.mocked(listFolderFiles)
+      .mockRejectedValueOnce(new DriveError(0, 'drive fetch failed: network error')) // the skip-check's own call
+      .mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }]) // every call after that (pull/push/manifest)
+    vi.mocked(downloadFileText).mockResolvedValue('[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+    vi.mocked(updateTextFile).mockImplementation(async (_t, id) => ({ id, name: 'bookmarks.json', headRevisionId: 'rev-1' }))
+    vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
+
+    const result = await runSyncCycle(d, { skipIfUnchanged: true })
+    expect(result.status).toBe('synced')
+    expect(downloadFileText).toHaveBeenCalled()
   })
 })
 

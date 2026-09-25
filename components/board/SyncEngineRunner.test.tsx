@@ -51,9 +51,8 @@ describe('SyncEngineRunner', () => {
     expect(controller.stop).toHaveBeenCalledTimes(1)
   })
 
-  it('ignores a visibilitychange recheck that resolves after unmount', async () => {
-    const oldLastSyncAt = Date.now() - 10 * 60 * 1000 // older than the 5-minute revisit gap
-    mockLoadSyncStatus.mockResolvedValueOnce({ connected: true, headRevisions: {}, folderId: 'f1', lastSyncAt: oldLastSyncAt })
+  it('does not react to a visibilitychange after unmount', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, folderId: 'f1' })
     const controller = fakeController()
     mockCreateSyncController.mockReturnValue(controller)
 
@@ -61,30 +60,75 @@ describe('SyncEngineRunner', () => {
     await vi.waitFor(() => expect(controller.start).toHaveBeenCalledTimes(1))
     expect(controller.flushNow).toHaveBeenCalledTimes(1) // mount-time flush only, so far
 
-    // Queue a loadSyncStatus() implementation for the visibilitychange recheck's call that
-    // stays pending until we resolve it ourselves, so we can unmount mid-flight.
-    let resolvePendingStatus: (value: { connected: boolean; headRevisions: Record<string, string>; lastSyncAt: number }) => void = () => {}
-    mockLoadSyncStatus.mockImplementationOnce(
-      () => new Promise((resolve) => { resolvePendingStatus = resolve }),
-    )
-
-    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
-    document.dispatchEvent(new Event('visibilitychange'))
-
-    // Wait for the recheck's loadSyncStatus() call to actually happen (it's gated behind an
-    // `await initDB()` first) before unmounting, so `resolvePendingStatus` is bound to the real
-    // pending promise rather than firing before that promise even exists.
-    await vi.waitFor(() => expect(mockLoadSyncStatus).toHaveBeenCalledTimes(2))
-
-    // Unmount while the recheck's loadSyncStatus() call is still pending.
     unmount()
     expect(controller.stop).toHaveBeenCalledTimes(1)
 
-    // Now let the stale recheck resolve — it must not trigger a second flushNow() post-unmount.
-    resolvePendingStatus({ connected: true, headRevisions: {}, lastSyncAt: oldLastSyncAt })
-    await new Promise((r) => setTimeout(r, 0))
+    // The visibilitychange listener is removed on unmount, so this must not reach controller at all.
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
 
     expect(controller.flushNow).toHaveBeenCalledTimes(1)
+  })
+
+  // Item: "sooner pickup" — no more 5-minute revisit gap. Every return to the tab triggers an
+  // immediate skip-if-unchanged flush (cheap: no downloads unless something actually changed).
+  it('flushes immediately with skipIfUnchanged the instant the tab becomes visible again', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, folderId: 'f1' })
+    const controller = fakeController()
+    mockCreateSyncController.mockReturnValue(controller)
+    render(<SyncEngineRunner />)
+    await vi.waitFor(() => expect(controller.start).toHaveBeenCalledTimes(1))
+    expect(controller.flushNow).toHaveBeenCalledTimes(1) // mount-time flush only, so far
+
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(controller.flushNow).toHaveBeenCalledTimes(1) // going hidden never flushes
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await vi.waitFor(() => expect(controller.flushNow).toHaveBeenCalledTimes(2))
+    expect(controller.flushNow).toHaveBeenLastCalledWith({ skipIfUnchanged: true })
+  })
+
+  // Item: 30s poll while visible, paused while hidden, cleared on unmount.
+  it('polls every 30s while visible, pauses while hidden, and stops on unmount', async () => {
+    vi.useFakeTimers()
+    try {
+      mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, folderId: 'f1' })
+      const controller = fakeController()
+      mockCreateSyncController.mockReturnValue(controller)
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+
+      const { unmount } = render(<SyncEngineRunner />)
+      await vi.waitFor(() => expect(controller.start).toHaveBeenCalledTimes(1))
+      expect(controller.flushNow).toHaveBeenCalledTimes(1) // mount-time full flush
+
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(controller.flushNow).toHaveBeenCalledTimes(2)
+      expect(controller.flushNow).toHaveBeenLastCalledWith({ skipIfUnchanged: true })
+
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(controller.flushNow).toHaveBeenCalledTimes(3)
+
+      // Hidden: polling pauses.
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+      document.dispatchEvent(new Event('visibilitychange'))
+      await vi.advanceTimersByTimeAsync(90_000)
+      expect(controller.flushNow).toHaveBeenCalledTimes(3)
+
+      // Visible again: immediate flush + polling resumes.
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(controller.flushNow).toHaveBeenCalledTimes(4)
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(controller.flushNow).toHaveBeenCalledTimes(5)
+
+      unmount()
+      await vi.advanceTimersByTimeAsync(90_000)
+      expect(controller.flushNow).toHaveBeenCalledTimes(5) // no more polls post-unmount
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   // Item 4: some Drive fetches fail as a genuine browser-level network error (CORS/

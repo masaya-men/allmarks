@@ -7,9 +7,13 @@ type DbLike = IDBPDatabase<any>
 
 const DEFAULT_DEBOUNCE_MS = 20_000
 
+export interface SyncCycleOpts {
+  readonly skipIfUnchanged?: boolean
+}
+
 export interface SyncController {
   markDirty(): void
-  flushNow(): Promise<SyncCycleResult>
+  flushNow(opts?: SyncCycleOpts): Promise<SyncCycleResult>
   start(): void
   stop(): void
 }
@@ -34,7 +38,7 @@ export function createSyncController(
   // so the bundle's two headline safety-valve outcomes (needs-confirmation, vaultConflict:true)
   // never reached any caller on an automatic trigger. onResult now fires exactly once per actual
   // sync cycle, however it was triggered.
-  async function flushNow(): Promise<SyncCycleResult> {
+  async function flushNow(opts: SyncCycleOpts = {}): Promise<SyncCycleResult> {
     clearTimer()
     if (inFlight) return inFlight
     const promise = (async () => {
@@ -44,7 +48,7 @@ export function createSyncController(
       // Note: runSyncCycle itself now emits sync-events.ts's started/finished signals (moved
       // there so a manual "Sync now" cycle, which never goes through this controller, emits too)
       // — this used to also call notifySyncCycleFinished() here, which would have double-emitted.
-      const result = await withSyncWritesSuppressed(() => runSyncCycle(db))
+      const result = await withSyncWritesSuppressed(() => runSyncCycle(db, opts))
       onResult?.(result)
       return result
     })()

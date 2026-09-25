@@ -168,6 +168,7 @@ import { BoardDecorLayer } from './BoardDecorLayer'
 import { DataHomeCard } from './DataHomeCard'
 import { BackupReminder } from './BackupReminder'
 import { SyncEngineRunner } from './SyncEngineRunner'
+import { useReloadOnSyncChange } from '@/lib/sync/use-reload-on-sync-change'
 import { exportBackupFile } from '@/lib/board/export-backup'
 import {
   loadDataHomeAck, markDataHomeAck, loadLastBackupAt,
@@ -307,6 +308,10 @@ export function BoardRoot() {
     reload,
     persistLinkStatus,
   } = useBoardData(privateTagIds)
+  // Live-refresh: a background sync cycle that actually pulled/merged new data into IDB (another
+  // device's edit) makes it appear on the board right away, without a manual reload. No-op for a
+  // cycle that wrote nothing new (dirty pushes, the unchanged-revisions poll fast path, errors).
+  useReloadOnSyncChange(reload)
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<BoardFilter>(BOARD_FILTER_ALL)
   // Background-typography animation variant. `'static'` (fixed centred

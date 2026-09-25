@@ -17,11 +17,28 @@
 // onSyncCycleFinished to refresh its displayed phase instead of only reading
 // it on mount, and can also poll isSyncCycleInFlight() once on mount to catch
 // a cycle that was already running before the panel existed.
+//
+// The finished event also carries `localChanged` (engine.ts's SyncCycleResult
+// field of the same name): true when the completed cycle actually wrote
+// pulled/merged bookmarks/tags/cards data into local IndexedDB that differs
+// from what was there a moment ago. BoardRoot's useReloadOnSyncChange hook
+// (lib/sync/use-reload-on-sync-change.ts) is the consumer that cares — it
+// reloads the board from IDB only when this is true, so a background sync
+// pulling another device's edits shows up without a manual page reload.
 
-type Listener = () => void
+/** Info passed to onSyncCycleFinished subscribers. Optional on the notify side
+ *  (defaults to `{ localChanged: false }`) so every pre-existing bare
+ *  `notifySyncCycleFinished()` call site keeps compiling and behaving as
+ *  "nothing new was written this cycle". */
+export interface SyncCycleFinishedInfo {
+  readonly localChanged: boolean
+}
 
-const finishedListeners = new Set<Listener>()
-const startedListeners = new Set<Listener>()
+type StartedListener = () => void
+type FinishedListener = (info: SyncCycleFinishedInfo) => void
+
+const finishedListeners = new Set<FinishedListener>()
+const startedListeners = new Set<StartedListener>()
 
 // A counter, not a boolean, so overlapping/queued cycles (e.g. a second
 // runSyncCycle call queued behind sync-lock.ts's exclusive lock) are tracked
@@ -38,22 +55,24 @@ export function notifySyncCycleStarted(): void {
 }
 
 /** Called by engine.ts's runSyncCycle in a `finally`, after the cycle's body settles (resolved or
- *  thrown), exactly once per notifySyncCycleStarted() call. */
-export function notifySyncCycleFinished(): void {
+ *  thrown), exactly once per notifySyncCycleStarted() call. `info` is omitted when the cycle threw
+ *  before producing a SyncCycleResult at all — treated the same as `{ localChanged: false }`. */
+export function notifySyncCycleFinished(info?: SyncCycleFinishedInfo): void {
   if (inFlightCount > 0) inFlightCount--
-  for (const listener of finishedListeners) listener()
+  const resolved: SyncCycleFinishedInfo = info ?? { localChanged: false }
+  for (const listener of finishedListeners) listener(resolved)
 }
 
 /** Subscribe to "a sync cycle just started". Returns an unsubscribe function (mirrors the DOM
  *  addEventListener/removeEventListener pairing so callers can just return it from a useEffect). */
-export function onSyncCycleStarted(callback: Listener): () => void {
+export function onSyncCycleStarted(callback: StartedListener): () => void {
   startedListeners.add(callback)
   return (): void => { startedListeners.delete(callback) }
 }
 
 /** Subscribe to "a sync cycle just finished". Returns an unsubscribe function (mirrors the DOM
  *  addEventListener/removeEventListener pairing so callers can just return it from a useEffect). */
-export function onSyncCycleFinished(callback: Listener): () => void {
+export function onSyncCycleFinished(callback: FinishedListener): () => void {
   finishedListeners.add(callback)
   return (): void => { finishedListeners.delete(callback) }
 }
