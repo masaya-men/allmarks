@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { readStoredLocale, persistLocale, resolveInitialLocale } from './locale-store'
 
 beforeEach(() => {
@@ -33,5 +33,42 @@ describe('locale-store', () => {
   it('対応外ブラウザ言語なら英語フォールバック', () => {
     vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['xx-YY'])
     expect(resolveInitialLocale()).toBe('en')
+  })
+})
+
+describe('persistLocale — cookie 書き込み', () => {
+  let written = ''
+  let originalDescriptor: PropertyDescriptor | undefined
+
+  beforeEach(() => {
+    written = ''
+    originalDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => written,
+      set: (v: string) => {
+        written = v
+      },
+    })
+  })
+
+  afterEach(() => {
+    if (originalDescriptor) {
+      Object.defineProperty(Document.prototype, 'cookie', originalDescriptor)
+    }
+  })
+
+  it('allmarks_locale cookie を Path/Max-Age/SameSite/Secure 付きで書く', () => {
+    persistLocale('ja')
+    expect(written).toContain('allmarks_locale=ja')
+    expect(written).toContain('Path=/')
+    expect(written).toContain('Max-Age=31536000')
+    expect(written).toContain('SameSite=Lax')
+    expect(written).toContain('Secure')
+  })
+
+  it('英語を選んだ場合も en を書く（日本語ブラウザでも英語のまま留まるため）', () => {
+    persistLocale('en')
+    expect(written).toContain('allmarks_locale=en')
   })
 })
