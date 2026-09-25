@@ -18,17 +18,47 @@ const SYNC_MARKER_KEY = 'allmarksSync'
 const SYNC_MARKER_VALUE = '1'
 /** アプリの JSON ファイルの MIME。 */
 export const SYNC_FILE_MIME = 'application/json'
+/** このバイト数を超える本文は multipart でなく resumable アップロードを使う
+ *  （Drive 側は multipart でも大きいファイルを受け付けるが、途中で切れた
+ *  ネットワークからの再開ができない。bookmarks.json は既に ~1.3MB あり今後も
+ *  増えるため、閾値は余裕を見て 4MB）。 */
+export const RESUMABLE_UPLOAD_THRESHOLD_BYTES = 4 * 1024 * 1024
+
+/** UTF-8 バイト数（文字列長ではない — 日本語等のマルチバイト文字を正しく数える）。 */
+function byteLength(content: string): number {
+  return new TextEncoder().encode(content).length
+}
 
 /** Drive API 呼び出しの失敗。status は HTTP ステータス（fetch throw は 0、
- *  応答が想定外の形なら 500）。束4 が status で分岐する。 */
+ *  応答が想定外の形なら 500）。束4 が status で分岐する。
+ *  `context` は診断用のみ（sync-status の lastIssue.detail に載せる「どの操作の
+ *  どのファイルで失敗したか」の短い文字列・例 "upload bookmarks.json"）。
+ *  status/name によるエラー分類（error-kind.ts）には一切使わない。 */
 export class DriveError extends Error {
   readonly status: number
-  constructor(status: number, message: string) {
+  readonly context?: string
+  constructor(status: number, message: string, context?: string) {
     super(message)
     this.name = 'DriveError'
     this.status = status
+    this.context = context
   }
 }
+
+/** 一時的とみなして自動リトライする失敗。fetch 自体が throw した場合（DriveError
+ *  の status は 0 に正規化される）と、429（レート制限）/ 5xx（サーバ側の一時障害）。
+ *  それ以外の 4xx（401/403/404 等）はリトライしない — 再試行しても直らないため。 */
+function isRetryableStatus(status: number): boolean {
+  return status === 0 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** リトライ間の待機時間。最初の失敗から 2 秒待って1回目のリトライ、それも失敗
+ *  したら 5 秒待って2回目（最後）のリトライ — 合計で最大3回まで fetch する。 */
+const RETRY_DELAYS_MS = [2000, 5000] as const
 
 /** Drive のファイルメタ（この束が使う分だけ）。 */
 export interface DriveFileMeta {
@@ -60,8 +90,8 @@ export function buildMultipartRelated(
   return { body, contentType: `multipart/related; boundary=${boundary}` }
 }
 
-/** Authorization を足して fetch。!res.ok は DriveError、fetch throw は DriveError(0)。 */
-async function driveFetch(
+/** Authorization を足して1回だけ fetch。!res.ok は DriveError、fetch throw は DriveError(0)。 */
+async function driveFetchOnce(
   accessToken: string,
   url: string,
   init?: RequestInit,
@@ -85,6 +115,28 @@ async function driveFetch(
     throw new DriveError(res.status, `drive ${res.status}: ${detail}`)
   }
   return res
+}
+
+/** driveFetchOnce に自動リトライを足したもの。一時的な失敗（fetch 自体の throw、
+ *  429、5xx）は 2秒→5秒待って最大2回まで再試行する（= 最大3回 fetch）。それ以外の
+ *  4xx（401/403/404 等）は1回で諦める。アップロードは全文 PATCH/PUT で冪等なので
+ *  再試行しても安全（束7 の設計メモ）。 */
+async function driveFetch(
+  accessToken: string,
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await driveFetchOnce(accessToken, url, init)
+    } catch (err) {
+      const driveErr = err instanceof DriveError ? err : new DriveError(0, err instanceof Error ? err.message : String(err))
+      if (!isRetryableStatus(driveErr.status) || attempt >= RETRY_DELAYS_MS.length) {
+        throw driveErr
+      }
+      await wait(RETRY_DELAYS_MS[attempt])
+    }
+  }
 }
 
 async function readJson(res: Response): Promise<unknown> {
@@ -197,19 +249,54 @@ function metaFromUploadResponse(json: unknown, ctx: string): DriveFileMeta {
   return meta
 }
 
-/** フォルダ内に新規テキストファイルを作る（multipart・メタ + 本文）。 */
+const UPLOAD_RESPONSE_FIELDS = 'id,name,headRevisionId'
+
+/** resumable アップロードの開始リクエスト。メタデータだけを JSON で POST/PATCH し、
+ *  レスポンスの Location ヘッダ（本文アップロード先セッション URI）を返す。 */
+async function initiateResumableUpload(
+  accessToken: string,
+  url: string,
+  method: 'POST' | 'PATCH',
+  metadata: Readonly<Record<string, unknown>>,
+): Promise<string> {
+  const res = await driveFetch(accessToken, url, {
+    method,
+    headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': SYNC_FILE_MIME },
+    body: JSON.stringify(metadata),
+  })
+  const location = res.headers.get('Location') ?? res.headers.get('location')
+  if (!location) throw new DriveError(500, 'resumable upload: initiate response had no Location header')
+  return location
+}
+
+/** resumable セッションへ本文を1リクエストで PUT（分割アップロードはしない —
+ *  Drive はチャンク分割なしの単発 PUT も許容する）。 */
+async function putResumableContent(accessToken: string, location: string, content: string): Promise<DriveFileMeta> {
+  const json = await readJson(await driveFetch(accessToken, location, {
+    method: 'PUT',
+    headers: { 'Content-Type': SYNC_FILE_MIME },
+    body: content,
+  }))
+  return metaFromUploadResponse(json, 'resumable upload')
+}
+
+/** フォルダ内に新規テキストファイルを作る（multipart・メタ + 本文）。
+ *  本文が RESUMABLE_UPLOAD_THRESHOLD_BYTES を超える場合は resumable アップロードを使う。 */
 export async function createTextFile(
   accessToken: string,
   folderId: string,
   name: string,
   content: string,
 ): Promise<DriveFileMeta> {
+  const metadata = { name, parents: [folderId], mimeType: SYNC_FILE_MIME }
+  if (byteLength(content) > RESUMABLE_UPLOAD_THRESHOLD_BYTES) {
+    const url = `${DRIVE_UPLOAD_API}/files?uploadType=resumable&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
+    const location = await initiateResumableUpload(accessToken, url, 'POST', metadata)
+    return putResumableContent(accessToken, location, content)
+  }
   const boundary = `allmarks-${crypto.randomUUID()}`
-  const { body, contentType } = buildMultipartRelated(
-    { name, parents: [folderId], mimeType: SYNC_FILE_MIME },
-    content, SYNC_FILE_MIME, boundary,
-  )
-  const url = `${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=${encodeURIComponent('id,name,headRevisionId')}`
+  const { body, contentType } = buildMultipartRelated(metadata, content, SYNC_FILE_MIME, boundary)
+  const url = `${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
   const json = await readJson(await driveFetch(accessToken, url, {
     method: 'POST',
     headers: { 'Content-Type': contentType },
@@ -218,17 +305,25 @@ export async function createTextFile(
   return metaFromUploadResponse(json, 'createTextFile')
 }
 
-/** 既存ファイルの本文だけ差し替える（multipart PATCH・メタは空 {}）。 */
+/** 既存ファイルの本文だけ差し替える（multipart PATCH・メタは空 {}）。
+ *  本文が RESUMABLE_UPLOAD_THRESHOLD_BYTES を超える場合は resumable アップロードを使う。 */
 export async function updateTextFile(
   accessToken: string,
   fileId: string,
   content: string,
 ): Promise<DriveFileMeta> {
+  if (byteLength(content) > RESUMABLE_UPLOAD_THRESHOLD_BYTES) {
+    const url =
+      `${DRIVE_UPLOAD_API}/files/${encodeURIComponent(fileId)}` +
+      `?uploadType=resumable&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
+    const location = await initiateResumableUpload(accessToken, url, 'PATCH', {})
+    return putResumableContent(accessToken, location, content)
+  }
   const boundary = `allmarks-${crypto.randomUUID()}`
   const { body, contentType } = buildMultipartRelated({}, content, SYNC_FILE_MIME, boundary)
   const url =
     `${DRIVE_UPLOAD_API}/files/${encodeURIComponent(fileId)}` +
-    `?uploadType=multipart&fields=${encodeURIComponent('id,name,headRevisionId')}`
+    `?uploadType=multipart&fields=${encodeURIComponent(UPLOAD_RESPONSE_FIELDS)}`
   const json = await readJson(await driveFetch(accessToken, url, {
     method: 'PATCH',
     headers: { 'Content-Type': contentType },

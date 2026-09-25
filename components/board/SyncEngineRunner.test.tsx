@@ -86,4 +86,38 @@ describe('SyncEngineRunner', () => {
 
     expect(controller.flushNow).toHaveBeenCalledTimes(1)
   })
+
+  // Item 4: some Drive fetches fail as a genuine browser-level network error (CORS/
+  // net::ERR_FAILED when truly offline) with nothing listening for the browser telling us
+  // connectivity came back — this is that listener.
+  it('flushes immediately when the browser reports it is back online', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, folderId: 'f1' })
+    const controller = fakeController()
+    mockCreateSyncController.mockReturnValue(controller)
+    render(<SyncEngineRunner />)
+    await vi.waitFor(() => expect(controller.start).toHaveBeenCalledTimes(1))
+    expect(controller.flushNow).toHaveBeenCalledTimes(1) // mount-time flush only, so far
+
+    window.dispatchEvent(new Event('online'))
+    await vi.waitFor(() => expect(controller.flushNow).toHaveBeenCalledTimes(2))
+  })
+
+  it('ignores an online event before the controller exists (not yet connected)', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: false, headRevisions: {} })
+    render(<SyncEngineRunner />)
+    await vi.waitFor(() => expect(mockLoadSyncStatus).toHaveBeenCalled())
+    expect(() => window.dispatchEvent(new Event('online'))).not.toThrow()
+    expect(mockCreateSyncController).not.toHaveBeenCalled()
+  })
+
+  it('removes the online listener on unmount', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, folderId: 'f1' })
+    const controller = fakeController()
+    mockCreateSyncController.mockReturnValue(controller)
+    const { unmount } = render(<SyncEngineRunner />)
+    await vi.waitFor(() => expect(controller.start).toHaveBeenCalledTimes(1))
+    unmount()
+    window.dispatchEvent(new Event('online'))
+    expect(controller.flushNow).toHaveBeenCalledTimes(1) // mount-time flush only — online ignored post-unmount
+  })
 })

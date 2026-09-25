@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('./engine', () => ({ runSyncCycle: vi.fn().mockResolvedValue({ status: 'synced', vaultConflict: false }) }))
 import { runSyncCycle } from './engine'
 import { createSyncController } from './sync-controller'
+import { onSyncCycleFinished } from './sync-events'
 
 const fakeDb = {} as never
 
@@ -132,5 +133,22 @@ describe('createSyncController', () => {
     await controller.flushNow()
     expect(onResult).toHaveBeenCalledTimes(1)
     expect(onResult).toHaveBeenCalledWith({ status: 'synced', vaultConflict: false })
+  })
+
+  // Item 4: SyncPanel refreshes its displayed phase off this event, since it's mounted
+  // independently of whatever triggered the cycle (auto debounce, tab-hide, the online listener,
+  // or a manual "Sync now" elsewhere).
+  it('emits sync-events notifySyncCycleFinished exactly once per completed cycle', async () => {
+    let finishedCount = 0
+    const unsubscribe = onSyncCycleFinished(() => { finishedCount++ })
+    try {
+      const controller = createSyncController(fakeDb, 20000)
+      await controller.flushNow()
+      expect(finishedCount).toBe(1)
+      await controller.flushNow()
+      expect(finishedCount).toBe(2)
+    } finally {
+      unsubscribe()
+    }
   })
 })

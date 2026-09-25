@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   buildMultipartRelated, findSyncFolder, createSyncFolder, DriveError,
   listFolderFiles, downloadFileText, getHeadRevisionId, createTextFile, updateTextFile,
+  RESUMABLE_UPLOAD_THRESHOLD_BYTES,
 } from './drive-adapter'
 
 afterEach(() => {
@@ -82,9 +83,75 @@ describe('findSyncFolder', () => {
     await expect(findSyncFolder(TOKEN)).rejects.toMatchObject({ status: 401 })
   })
 
-  it('wraps a fetch throw as DriveError(0)', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network') }))
-    await expect(findSyncFolder(TOKEN)).rejects.toMatchObject({ status: 0 })
+  it('wraps a fetch throw as DriveError(0), retrying twice (2s, 5s) before giving up', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = vi.fn(async () => { throw new Error('network') })
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = expect(findSyncFolder(TOKEN)).rejects.toMatchObject({ status: 0 })
+      await vi.advanceTimersByTimeAsync(2000)
+      await vi.advanceTimersByTimeAsync(5000)
+      await pending
+      expect(fetchMock).toHaveBeenCalledTimes(3) // initial attempt + 2 retries, then gives up
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('driveFetch retry behavior (via findSyncFolder)', () => {
+  it('retries a 500 once and succeeds on the 2nd attempt without waiting the 2nd (5s) delay', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response('server error', { status: 500 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ files: [] }), { status: 200 }))
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = findSyncFolder(TOKEN)
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(await pending).toBeNull()
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('exhausts both retries on repeated 503s (2s then 5s) and rejects with the last status', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = vi.fn(async () => new Response('unavailable', { status: 503 }))
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = expect(findSyncFolder(TOKEN)).rejects.toMatchObject({ status: 503 })
+      await vi.advanceTimersByTimeAsync(2000)
+      await vi.advanceTimersByTimeAsync(5000)
+      await pending
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('retries 429 (rate limit) the same way as 5xx', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response('rate limited', { status: 429 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ files: [] }), { status: 200 }))
+      vi.stubGlobal('fetch', fetchMock)
+      const pending = findSyncFolder(TOKEN)
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(await pending).toBeNull()
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('never retries a plain 4xx like 401 or 404', async () => {
+    const fetchMock = vi.fn(async () => new Response('nope', { status: 401 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(findSyncFolder(TOKEN)).rejects.toMatchObject({ status: 401 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -218,5 +285,73 @@ describe('updateTextFile', () => {
   it('throws DriveError(500) when the response has no id', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
     await expect(updateTextFile(TOKEN, 'f1', '{}')).rejects.toMatchObject({ status: 500 })
+  })
+})
+
+describe('createTextFile / updateTextFile — resumable upload for large files', () => {
+  const bigContent = 'x'.repeat(RESUMABLE_UPLOAD_THRESHOLD_BYTES + 1)
+
+  it('createTextFile switches to resumable (initiate then PUT) when content exceeds the threshold', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 200, headers: { Location: 'https://upload.example/session-1' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'big-id', name: 'bookmarks.json', headRevisionId: 'rev-1' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const meta = await createTextFile(TOKEN, 'FOLDER', 'bookmarks.json', bigContent)
+    expect(meta).toEqual({ id: 'big-id', name: 'bookmarks.json', headRevisionId: 'rev-1' })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+
+    const [initiateUrl, initiateInit] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(initiateUrl).toContain('https://www.googleapis.com/upload/drive/v3/files?')
+    expect(initiateUrl).toContain('uploadType=resumable')
+    expect(initiateInit.method).toBe('POST')
+    expect(JSON.parse(initiateInit.body as string)).toEqual({ name: 'bookmarks.json', parents: ['FOLDER'], mimeType: 'application/json' })
+
+    const [putUrl, putInit] = fetchMock.mock.calls[1] as [string, RequestInit]
+    expect(putUrl).toBe('https://upload.example/session-1')
+    expect(putInit.method).toBe('PUT')
+    expect(putInit.body).toBe(bigContent)
+  })
+
+  it('createTextFile stays on multipart (single request) when content is at/under the threshold', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: 'small', name: 'x.json', headRevisionId: 'r' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await createTextFile(TOKEN, 'FOLDER', 'x.json', 'small content')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(lastCall(fetchMock)[0]).toContain('uploadType=multipart')
+  })
+
+  it('updateTextFile switches to resumable (initiate then PUT) when content exceeds the threshold', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 200, headers: { Location: 'https://upload.example/session-2' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1', name: 'bookmarks.json', headRevisionId: 'rev-9' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const meta = await updateTextFile(TOKEN, 'f1', bigContent)
+    expect(meta.headRevisionId).toBe('rev-9')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+
+    const [initiateUrl, initiateInit] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(initiateUrl).toContain('https://www.googleapis.com/upload/drive/v3/files/f1?')
+    expect(initiateUrl).toContain('uploadType=resumable')
+    expect(initiateInit.method).toBe('PATCH')
+    expect(JSON.parse(initiateInit.body as string)).toEqual({})
+
+    const [putUrl, putInit] = fetchMock.mock.calls[1] as [string, RequestInit]
+    expect(putUrl).toBe('https://upload.example/session-2')
+    expect(putInit.method).toBe('PUT')
+  })
+
+  it('updateTextFile stays on multipart (single request) when content is at/under the threshold', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: 'f1', name: 'x.json', headRevisionId: 'r2' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await updateTextFile(TOKEN, 'f1', 'small content')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(lastCall(fetchMock)[0]).toContain('uploadType=multipart')
+  })
+
+  it('throws DriveError(500) when the resumable initiate response has no Location header', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 200 })))
+    await expect(createTextFile(TOKEN, 'FOLDER', 'bookmarks.json', bigContent)).rejects.toMatchObject({ status: 500 })
   })
 })

@@ -219,6 +219,28 @@ describe('pullRemoteSnapshot', () => {
 
     await expect(pullRemoteSnapshot('token', 'folder1')).rejects.toThrow(SyncCorruptDataError)
   })
+
+  // Item 1: the raw downloaded text is kept alongside the parsed snapshot so pushSnapshot can
+  // compare against it later in the same cycle without a second download.
+  it('records the raw downloaded text per file name in remoteTexts', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bookmarks', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockResolvedValue('[]')
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+
+    const { remoteTexts } = await pullRemoteSnapshot('token', 'folder1')
+    expect(remoteTexts).toEqual({ 'bookmarks.json': '[]' })
+  })
+
+  // Item 5: a DriveError thrown while downloading a specific file gets tagged with which file it
+  // was — diagnostic-only (sync-status's lastIssue.detail), never touches status/name.
+  it('tags a DriveError thrown during download with a "download <name>" context', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bookmarks', name: 'bookmarks.json' }])
+    vi.mocked(downloadFileText).mockRejectedValue(new DriveError(0, 'drive fetch failed: network error'))
+    vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+
+    await expect(pullRemoteSnapshot('token', 'folder1'))
+      .rejects.toMatchObject({ status: 0, context: 'download bookmarks.json' })
+  })
 })
 
 describe('pushSnapshot', () => {
@@ -259,6 +281,52 @@ describe('pushSnapshot', () => {
       pushSnapshot('token', 'folder1', snapshot, {}), // no entry for 'bookmarks.json'
     ).rejects.toThrow(SyncConflictError)
     expect(updateTextFile).not.toHaveBeenCalled()
+  })
+
+  // Item 1: skip re-uploading a file whose serialized content is byte-identical to what this
+  // device already downloaded earlier in the SAME cycle (pullRemoteSnapshot's `remoteTexts`,
+  // threaded in as the 5th param here) — no getHeadRevisionId check either, since there's
+  // nothing to write and thus nothing that can conflict.
+  describe('unchanged-content upload skip (item 1)', () => {
+    it('skips the upload and keeps the existing revision when content matches the previously pulled remote text', async () => {
+      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+      const revisions = await pushSnapshot(
+        'token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' }, { 'bookmarks.json': '[]' },
+      )
+      expect(revisions['bookmarks.json']).toBe('rev-1')
+      expect(getHeadRevisionId).not.toHaveBeenCalled()
+      expect(updateTextFile).not.toHaveBeenCalled()
+    })
+
+    it('uploads when the serialized content differs from the previously pulled remote text', async () => {
+      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+      vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+      vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks.json', headRevisionId: 'rev-2' })
+      const revisions = await pushSnapshot(
+        'token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' }, { 'bookmarks.json': '[{"old":true}]' },
+      )
+      expect(revisions['bookmarks.json']).toBe('rev-2')
+      expect(updateTextFile).toHaveBeenCalledTimes(1)
+    })
+
+    it('always uploads when no previousRemoteTexts is passed at all (backward compatible default)', async () => {
+      vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f1', name: 'bookmarks.json' }])
+      vi.mocked(getHeadRevisionId).mockResolvedValue('rev-1')
+      vi.mocked(updateTextFile).mockResolvedValue({ id: 'f1', name: 'bookmarks.json', headRevisionId: 'rev-2' })
+      const revisions = await pushSnapshot('token', 'folder1', snapshot, { 'bookmarks.json': 'rev-1' })
+      expect(revisions['bookmarks.json']).toBe('rev-2')
+      expect(updateTextFile).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  // Item 5: a DriveError thrown while uploading a specific file gets tagged with which file it
+  // was — used only for sync-status's lastIssue.detail diagnostic string, never for
+  // classification (status/name are untouched).
+  it('tags a DriveError thrown during upload with an "upload <name>" context', async () => {
+    vi.mocked(listFolderFiles).mockResolvedValue([])
+    vi.mocked(createTextFile).mockRejectedValue(new DriveError(500, 'server error'))
+    await expect(pushSnapshot('token', 'folder1', snapshot, {}))
+      .rejects.toMatchObject({ status: 500, context: 'upload bookmarks.json' })
   })
 })
 
@@ -405,7 +473,8 @@ describe('runSyncCycle', () => {
     expect(failed.status).toBe('error')
     expect(failed.errorKind).toBe('network')
     const statusAfterFailure = await loadSyncStatus(d)
-    expect(statusAfterFailure.lastIssue).toEqual({ kind: 'error', errorKind: 'network' })
+    // detail (item 5) — operation + status/name, never the raw Drive error message.
+    expect(statusAfterFailure.lastIssue).toEqual({ kind: 'error', errorKind: 'network', detail: 'pull: drive fetch failed' })
 
     vi.mocked(listFolderFiles).mockResolvedValue([])
     vi.mocked(createTextFile).mockImplementation(async (_t, _f, name) => ({ id: `id-${name}`, name, headRevisionId: `rev-${name}` }))
@@ -454,6 +523,10 @@ describe('runSyncCycle', () => {
     await saveLicense(d, activeLicenseState())
     await createVault(d, 'tag1', 'local-password')
     const localVaultBefore = await d.get('settings', 'private-vault') as { salt: string }
+    // See the self-heal test above for why: without a real content diff on bookmarks.json,
+    // item 1's unchanged-upload skip bypasses the optimistic-lock check entirely and this
+    // conflict never occurs at all.
+    await d.put('bookmarks', bookmark('local-1') as never)
 
     const remoteVault = {
       key: 'private-vault', tagId: 'tag1', salt: 'different-salt', iterations: 600000,
@@ -502,6 +575,12 @@ describe('runSyncCycle', () => {
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
     await saveLicense(d, activeLicenseState())
+    // A local bookmark the empty remote ('[]') doesn't have, so the merged content genuinely
+    // differs from what was downloaded — otherwise item 1's unchanged-upload skip (content
+    // matches what pullRemoteSnapshot already downloaded) would short-circuit the push entirely
+    // before ever calling getHeadRevisionId, and this test's whole point (proving the
+    // conflict-retry machinery) would never execute.
+    await d.put('bookmarks', bookmark('local-1') as never)
 
     vi.mocked(listFolderFiles).mockResolvedValue([{ id: 'f-bm', name: 'bookmarks.json' }])
     vi.mocked(downloadFileText).mockResolvedValue('[]')
@@ -538,6 +617,10 @@ describe('runSyncCycle', () => {
     await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 100000, scope: 's', refreshToken: 'rt' })
     await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
     await saveLicense(d, activeLicenseState())
+    // See the self-heal test above for why: without a real content diff on bookmarks.json,
+    // item 1's unchanged-upload skip bypasses the optimistic-lock check entirely and this
+    // conflict never occurs at all.
+    await d.put('bookmarks', bookmark('local-1') as never)
     // No vault yet — the first pull genuinely sees none either.
 
     const remoteVault = {

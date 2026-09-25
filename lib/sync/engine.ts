@@ -91,7 +91,7 @@ export function hasRequiredScopes(grantedScope: string): boolean {
 
 import {
   findSyncFolder, createSyncFolder, listFolderFiles,
-  downloadFileText, getHeadRevisionId, createTextFile, updateTextFile,
+  downloadFileText, getHeadRevisionId, createTextFile, updateTextFile, DriveError,
 } from './drive-adapter'
 import {
   parseBookmarksFile, parseTagsFile, parseCardsFile, parseBoardConfigFile, parseVaultFile,
@@ -128,20 +128,33 @@ export async function ensureSyncFolder(accessToken: string): Promise<string> {
 export async function pullRemoteSnapshot(
   accessToken: string,
   folderId: string,
-): Promise<{ snapshot: SyncSnapshot; headRevisions: Record<string, string> }> {
+): Promise<{ snapshot: SyncSnapshot; headRevisions: Record<string, string>; remoteTexts: Record<string, string> }> {
   const files = await listFolderFiles(accessToken, folderId)
   const byName = new Map(files.map(f => [f.name, f]))
   const headRevisions: Record<string, string> = {}
+  // Raw text as downloaded, keyed by file name — kept alongside the parsed snapshot so
+  // pushSnapshot can compare against it later in the SAME cycle and skip re-uploading a file
+  // whose content hasn't changed (perf: item 1), without any extra download round-trip.
+  const remoteTexts: Record<string, string> = {}
 
   async function readJsonFile(name: string): Promise<unknown | null> {
     const meta = byName.get(name)
     if (!meta) return null
-    const [text, headRevisionId] = await Promise.all([
-      downloadFileText(accessToken, meta.id),
-      getHeadRevisionId(accessToken, meta.id),
-    ])
-    headRevisions[name] = headRevisionId
-    return JSON.parse(text)
+    try {
+      const [text, headRevisionId] = await Promise.all([
+        downloadFileText(accessToken, meta.id),
+        getHeadRevisionId(accessToken, meta.id),
+      ])
+      headRevisions[name] = headRevisionId
+      remoteTexts[name] = text
+      return JSON.parse(text)
+    } catch (err) {
+      // Attach which file this was to the error's diagnostic-only `context` (sync-status's
+      // lastIssue.detail, item 5) — never changes `.status`/`.name`, so classifySyncError's
+      // behavior is unaffected.
+      if (err instanceof DriveError && !err.context) throw new DriveError(err.status, err.message, `download ${name}`)
+      throw err
+    }
   }
 
   const [bookmarksJson, tagsJson, cardsJson, boardConfigJson, vaultJson] = await Promise.all([
@@ -172,6 +185,7 @@ export async function pullRemoteSnapshot(
       vault: vaultResult && vaultResult.ok ? vaultResult.value : null,
     },
     headRevisions,
+    remoteTexts,
   }
 }
 
@@ -180,6 +194,13 @@ export async function pushSnapshot(
   folderId: string,
   snapshot: SyncSnapshot,
   previousHeadRevisions: Readonly<Record<string, string>>,
+  // Raw text this device downloaded for each file EARLIER IN THE SAME CYCLE (pullRemoteSnapshot's
+  // `remoteTexts`). Optional/defaults to {} so every existing caller (and every pre-existing test)
+  // that doesn't pass it keeps behaving exactly as before (always uploads). When a file's
+  // serialized content matches this exactly, the content hasn't changed since we downloaded it —
+  // skip the upload entirely (no getHeadRevisionId check either, since there's nothing to write)
+  // and keep its already-known headRevisionId in newRevisions. Item 1.
+  previousRemoteTexts: Readonly<Record<string, string>> = {},
 ): Promise<Record<string, string>> {
   const files = await listFolderFiles(accessToken, folderId)
   const byName = new Map(files.map(f => [f.name, f]))
@@ -187,20 +208,32 @@ export async function pushSnapshot(
 
   async function writeJsonFile(name: string, content: unknown): Promise<void> {
     const existing = byName.get(name)
-    if (existing) {
-      // Fix I-6: a file that exists on Drive but has no recorded `previous` revision means THIS
-      // device never saw it at its own pull time (e.g. another device created it in the gap
-      // between this device's pull and this device's push) — treat that as a conflict too,
-      // uniformly across all 5 files, instead of silently blind-overwriting it.
-      const previous = previousHeadRevisions[name]
-      if (!previous) throw new SyncConflictError(name)
-      const current = await getHeadRevisionId(accessToken, existing.id)
-      if (current !== previous) throw new SyncConflictError(name)
-      const meta = await updateTextFile(accessToken, existing.id, JSON.stringify(content))
-      if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
-    } else {
-      const meta = await createTextFile(accessToken, folderId, name, JSON.stringify(content))
-      if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
+    try {
+      if (existing) {
+        // Fix I-6: a file that exists on Drive but has no recorded `previous` revision means THIS
+        // device never saw it at its own pull time (e.g. another device created it in the gap
+        // between this device's pull and this device's push) — treat that as a conflict too,
+        // uniformly across all 5 files, instead of silently blind-overwriting it.
+        const previous = previousHeadRevisions[name]
+        if (!previous) throw new SyncConflictError(name)
+        const serialized = JSON.stringify(content)
+        if (previousRemoteTexts[name] === serialized) {
+          newRevisions[name] = previous
+          return
+        }
+        const current = await getHeadRevisionId(accessToken, existing.id)
+        if (current !== previous) throw new SyncConflictError(name)
+        const meta = await updateTextFile(accessToken, existing.id, serialized)
+        if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
+      } else {
+        const meta = await createTextFile(accessToken, folderId, name, JSON.stringify(content))
+        if (meta.headRevisionId) newRevisions[name] = meta.headRevisionId
+      }
+    } catch (err) {
+      // Diagnostic-only context for sync-status's lastIssue.detail (item 5) — never touches
+      // `.status`/`.name`, so classifySyncError and the SyncConflictError branch above are unaffected.
+      if (err instanceof DriveError && !err.context) throw new DriveError(err.status, err.message, `upload ${name}`)
+      throw err
     }
   }
 
@@ -217,6 +250,22 @@ export async function pushSnapshot(
 
 const MASS_DELETE_THRESHOLD = 0.25
 const MASS_DELETE_MIN_COUNT = 10
+const ISSUE_DETAIL_MAX_LEN = 200
+
+/** Short diagnostic string for sync-status's lastIssue.detail (item 5) — operation + file name
+ *  (when known, from DriveError.context set by pullRemoteSnapshot/pushSnapshot above) + a bare
+ *  status code or error name. Deliberately never includes the error's own `.message` — Drive's
+ *  error response bodies can echo back file ids/names in free text, and this string is meant to
+ *  be safe to keep around indefinitely. Not shown anywhere in the UI (no new copy). Truncated to
+ *  200 chars as a hard guarantee even if `fallbackOperation` were ever something longer. */
+function buildIssueDetail(fallbackOperation: string, err: unknown): string {
+  const context = err instanceof DriveError && err.context ? err.context : fallbackOperation
+  const cause =
+    err instanceof DriveError ? (err.status === 0 ? 'drive fetch failed' : `status ${err.status}`) :
+    err instanceof Error ? err.name : 'unknown error'
+  const detail = `${context}: ${cause}`
+  return detail.length > ISSUE_DETAIL_MAX_LEN ? detail.slice(0, ISSUE_DETAIL_MAX_LEN) : detail
+}
 
 function activeCount(bookmarks: readonly { isDeleted?: boolean }[]): number {
   return bookmarks.filter(b => !b.isDeleted).length
@@ -284,7 +333,7 @@ export async function runSyncCycle(
     accessToken = await ensureAccessToken(db)
   } catch (err) {
     const errorKind = classifySyncError(err)
-    await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+    await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('auth', err) } })
     return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'auth failed' }
   }
 
@@ -293,7 +342,7 @@ export async function runSyncCycle(
     pulled = await pullRemoteSnapshot(accessToken, folderId)
   } catch (err) {
     const errorKind = classifySyncError(err)
-    await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+    await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('pull', err) } })
     return { status: 'error', vaultConflict: false, errorKind, errorMessage: err instanceof Error ? err.message : 'pull failed' }
   }
 
@@ -350,11 +399,11 @@ export async function runSyncCycle(
   let newRevisions: Record<string, string>
   let pushedSnapshot = finalSnapshot
   try {
-    newRevisions = await pushSnapshot(accessToken, folderId, finalSnapshot, pulled.headRevisions)
+    newRevisions = await pushSnapshot(accessToken, folderId, finalSnapshot, pulled.headRevisions, pulled.remoteTexts)
   } catch (err) {
     if (!(err instanceof SyncConflictError)) {
       const errorKind = classifySyncError(err)
-      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('push', err) } })
       return { status: 'error', vaultConflict, errorKind, errorMessage: err instanceof Error ? err.message : 'push failed' }
     }
     // Someone else pushed since our pull. Re-pull, re-merge once, then retry the push —
@@ -367,7 +416,7 @@ export async function runSyncCycle(
       rePulled = await pullRemoteSnapshot(accessToken, folderId)
     } catch (err2) {
       const errorKind = classifySyncError(err2)
-      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('pull (retry)', err2) } })
       return { status: 'error', vaultConflict, errorKind, errorMessage: err2 instanceof Error ? err2.message : 'pull failed (retry)' }
     }
 
@@ -394,10 +443,10 @@ export async function runSyncCycle(
 
     await applySnapshotToLocal(db, pushedSnapshot)
     try {
-      newRevisions = await pushSnapshot(accessToken, folderId, pushedSnapshot, rePulled.headRevisions)
+      newRevisions = await pushSnapshot(accessToken, folderId, pushedSnapshot, rePulled.headRevisions, rePulled.remoteTexts)
     } catch (err3) {
       const errorKind = classifySyncError(err3)
-      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind } })
+      await updateSyncStatus(db, { lastIssue: { kind: 'error', errorKind, detail: buildIssueDetail('push (retry)', err3) } })
       return { status: 'error', vaultConflict, errorKind, errorMessage: err3 instanceof Error ? err3.message : 'push failed (retry)' }
     }
   }

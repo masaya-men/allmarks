@@ -13,9 +13,15 @@ import { addTag } from '@/lib/storage/tags'
 import { createVault, unlockVault } from '@/lib/private/vault-store'
 import { saveLicense, loadLicense } from '@/lib/board/license-store'
 import { getDeviceId } from '@/lib/sync/device-id'
-import { saveSyncTokens, loadSyncTokens, updateSyncStatus, loadSyncStatus } from '@/lib/sync/sync-store'
+import {
+  saveSyncTokens, loadSyncTokens, updateSyncStatus, loadSyncStatus,
+  pushBackupGeneration, loadBackupGenerations, saveBaseSnapshot, loadBaseSnapshot,
+} from '@/lib/sync/sync-store'
 import { saveVaultConflict, acknowledgeVaultConflict, loadVaultConflict } from '@/lib/private/vault-conflict'
 import type { PrivateVaultRecord } from '@/lib/private/vault-store'
+import type { SyncSnapshot } from '@/lib/sync/merge'
+
+const emptySnapshot: SyncSnapshot = { bookmarks: [], tags: [], cards: [], boardConfig: null, vault: null }
 
 let db: IDBPDatabase<unknown> | null = null
 
@@ -232,7 +238,7 @@ describe('backup', () => {
     wrappedPrivateKey: { iv: 'aXY=', ciphertext: 'Y3Q=' },
   })
 
-  it('EXPORT omits device-local settings keys (license, sync-device-id, sync tokens/status, vault-conflict state)', async () => {
+  it('EXPORT omits device-local settings keys (license, sync-device-id, sync tokens/status, vault-conflict state, sync backups/base-snapshot)', async () => {
     const d = await initDB()
     db = d as unknown as IDBPDatabase<unknown>
     await d.put('bookmarks', aBookmark('bm-1'))
@@ -242,6 +248,8 @@ describe('backup', () => {
     await updateSyncStatus(d, { connected: true, connectedEmail: 'x@example.com' })
     await saveVaultConflict(d, fakeVaultRecord('other-tag'))
     await acknowledgeVaultConflict(d, 'other-tag')
+    await pushBackupGeneration(d, emptySnapshot) // writes 'sync-backups'
+    await saveBaseSnapshot(d, emptySnapshot) // writes 'sync-base-snapshot'
     await d.put('settings', { key: 'board-config', config: { activeFilter: 'all' } })
 
     const json = await exportAllStores(d)
@@ -250,6 +258,8 @@ describe('backup', () => {
     for (const deviceLocalKey of DEVICE_LOCAL_SETTINGS_KEYS) {
       expect(keys).not.toContain(deviceLocalKey)
     }
+    expect(keys).not.toContain('sync-backups')
+    expect(keys).not.toContain('sync-base-snapshot')
     expect(keys).toContain('board-config')
   })
 
@@ -263,16 +273,22 @@ describe('backup', () => {
     await updateSyncStatus(d, { connected: true, connectedEmail: 'mine@example.com' })
     await saveVaultConflict(d, fakeVaultRecord('mine-tag'))
     await acknowledgeVaultConflict(d, 'mine-tag')
+    const myBaseSnapshot: SyncSnapshot = { ...emptySnapshot, tags: [{ id: 'mine-tag-record' } as never] }
+    await saveBaseSnapshot(d, myBaseSnapshot)
+    await pushBackupGeneration(d, myBaseSnapshot)
 
     // Simulate an OLDER backup (made before this fix) that still carries
     // foreign device-local rows plus one ordinary settings row.
     const dump = await exportAllStores(d)
+    const foreignBaseSnapshot = { ...emptySnapshot, tags: [{ id: 'foreign-tag-record' }] }
     const legacySettings = [
       ...dump.settings,
       { key: 'license', kid: 'kid-foreign', deviceId: 'device-foreign', scope: ['sync'], validatedAt: 2 },
       { key: 'sync-device-id', id: 'foreign-uuid' },
       { key: 'sync-tokens', accessToken: 'foreign', expiresAt: 2, scope: 'x' },
       { key: 'sync-status', connected: true, connectedEmail: 'foreign@example.com', headRevisions: {} },
+      { key: 'sync-base-snapshot', snapshot: foreignBaseSnapshot },
+      { key: 'sync-backups', generations: [{ at: 999, snapshot: foreignBaseSnapshot }] },
       { key: 'board-config', config: { activeFilter: 'private' } },
     ]
     const legacyDump = { ...dump, settings: legacySettings }
@@ -286,6 +302,11 @@ describe('backup', () => {
     expect((await loadVaultConflict(d))?.otherRecord.tagId).toBe('mine-tag')
     const acknowledged = await d.get('settings', 'private-vault-conflict-acknowledged') as { tagIds: string[] } | undefined
     expect(acknowledged?.tagIds).toEqual(['mine-tag'])
+    // This device's own sync bookkeeping survives untouched — the foreign backup's base
+    // snapshot/generations are never imported (importing another device's base snapshot would
+    // corrupt this device's next 3-way merge).
+    expect(await loadBaseSnapshot(d)).toEqual(myBaseSnapshot)
+    expect(await loadBackupGenerations(d)).toEqual([{ at: expect.any(Number), snapshot: myBaseSnapshot }])
 
     // Ordinary settings row from the backup IS restored.
     const boardConfig = await d.get('settings', 'board-config') as { config: { activeFilter: string } } | undefined

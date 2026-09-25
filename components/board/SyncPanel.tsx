@@ -11,6 +11,7 @@ import {
 } from '@/lib/board/license-activate'
 import { loadSyncStatus, type SyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync, type SyncCycleResult } from '@/lib/sync/engine'
+import { onSyncCycleFinished } from '@/lib/sync/sync-events'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 import { formatLastSynced } from '@/lib/sync/format-last-sync'
 import type { SyncErrorKind } from '@/lib/sync/error-kind'
@@ -270,6 +271,28 @@ export function SyncPanel(): ReactElement | null {
     })()
     return (): void => { cancelled = true }
   }, [])
+
+  // Refresh the displayed phase whenever a background sync cycle finishes (auto debounce,
+  // tab-hide, the new online listener) — not just on this component's own mount. Ignores the
+  // event while this panel's own manual sync is mid-flight (that path already sets its own
+  // phase via applyResult when it resolves), and never clobbers the mass-delete-confirmation or
+  // license-gated "stopped" phases, which only their own dedicated handlers may leave.
+  useEffect(() => {
+    if (!unlocked) return
+    const unsubscribe = onSyncCycleFinished(() => {
+      void (async (): Promise<void> => {
+        const db = await initDB()
+        const status = await loadSyncStatus(db)
+        setPhase((current) => {
+          if (current.kind === 'syncing' || current.kind === 'needs-confirmation' || current.kind === 'stopped') {
+            return current
+          }
+          return phaseFromStatus(status)
+        })
+      })()
+    })
+    return unsubscribe
+  }, [unlocked])
 
   const applyResult = useCallback(async (result: SyncCycleResult, fallbackEmail: string | null): Promise<void> => {
     if (result.status === 'synced') {

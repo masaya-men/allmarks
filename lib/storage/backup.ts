@@ -74,6 +74,19 @@ export const DEVICE_LOCAL_SETTINGS_KEYS = [
   // real unresolved one.
   'private-vault-conflict',
   'private-vault-conflict-acknowledged',
+  // lib/sync/sync-store.ts — this device's own 3-generation local backup of
+  // snapshots it has pushed/applied (pushBackupGeneration/loadBackupGenerations).
+  // Bookkeeping for THIS device's own sync history, not restorable user
+  // content — and large (~6.6MB observed in a real backup), so carrying it
+  // across devices/time is pure waste at best.
+  'sync-backups',
+  // lib/sync/sync-store.ts — this device's own last-pushed snapshot, used as
+  // the 3-way merge base on its NEXT sync cycle (saveBaseSnapshot/
+  // loadBaseSnapshot). An old or foreign value here doesn't just go stale —
+  // importing another device's base snapshot corrupts this device's next
+  // merge (the "base" it diffs against no longer matches what it actually
+  // last agreed with Drive on).
+  'sync-base-snapshot',
 ] as const
 
 export type DeviceLocalSettingsKey = (typeof DEVICE_LOCAL_SETTINGS_KEYS)[number]

@@ -37,7 +37,10 @@ const MAX_BACKUP_GENERATIONS = 3
 
 export type SyncIssue =
   | { readonly kind: 'needs-confirmation'; readonly deletedCount: number }
-  | { readonly kind: 'error'; readonly errorKind: SyncErrorKind }
+  // `detail` is a short (<=200 char) diagnostic string (engine.ts's buildIssueDetail) — which
+  // operation + file name + status, e.g. "upload bookmarks.json: status 503". Never shown in the
+  // UI (no new copy) and never contains tokens or Drive's raw error response body.
+  | { readonly kind: 'error'; readonly errorKind: SyncErrorKind; readonly detail?: string }
 
 export interface SyncStatus {
   readonly connected: boolean

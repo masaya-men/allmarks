@@ -1,6 +1,7 @@
 import type { IDBPDatabase } from 'idb'
 import { runSyncCycle, type SyncCycleResult } from './engine'
 import { withSyncWritesSuppressed } from './sync-signal'
+import { notifySyncCycleFinished } from './sync-events'
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 type DbLike = IDBPDatabase<any>
@@ -43,6 +44,7 @@ export function createSyncController(
       // forever (see sync-signal.ts).
       const result = await withSyncWritesSuppressed(() => runSyncCycle(db))
       onResult?.(result)
+      notifySyncCycleFinished()
       return result
     })()
     inFlight = promise

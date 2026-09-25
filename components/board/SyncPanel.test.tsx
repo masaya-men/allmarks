@@ -7,6 +7,7 @@ import { loadSyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
 import { checkLicenseForSync } from '@/lib/board/license-check'
+import { notifySyncCycleFinished } from '@/lib/sync/sync-events'
 
 vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}) }))
 vi.mock('@/lib/board/license-store', () => ({ loadLicense: vi.fn() }))
@@ -440,6 +441,50 @@ describe('SyncPanel connected states', () => {
     expect(mockRunSyncCycle).toHaveBeenLastCalledWith(expect.anything(), { bypassMassDeleteGuard: true })
   })
 
+  // Item 4: SyncPanel is mounted independently of whatever triggered a background sync cycle
+  // (auto debounce, tab-hide, the online listener) — it must refresh its own displayed phase off
+  // that event instead of only ever reading sync-status on its own mount.
+  it('re-reads sync status when a background sync cycle finishes elsewhere, while idle', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connected-status')
+    const callsBefore = mockLoadSyncStatus.mock.calls.length
+
+    act(() => { notifySyncCycleFinished() })
+    await waitFor(() => expect(mockLoadSyncStatus.mock.calls.length).toBeGreaterThan(callsBefore))
+    expect(screen.getByTestId('sync-connected-status')).toBeInTheDocument()
+  })
+
+  it('ignores a background cycle-finished event while its own manual sync is in flight', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    let resolveRunSyncCycle: (value: { status: 'synced'; vaultConflict: false }) => void = () => {}
+    mockRunSyncCycle.mockImplementation(() => new Promise((resolve) => { resolveRunSyncCycle = resolve }))
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await screen.findByTestId('sync-in-progress')
+
+    act(() => { notifySyncCycleFinished() })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getByTestId('sync-in-progress')).toBeInTheDocument()
+
+    resolveRunSyncCycle({ status: 'synced', vaultConflict: false })
+    await screen.findByTestId('sync-connected-status')
+  })
+
+  it('ignores a background cycle-finished event while showing the mass-delete confirmation dialog', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    mockRunSyncCycle.mockResolvedValue({ status: 'needs-confirmation', vaultConflict: false, deletedCount: 12 })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-now-button')
+    fireEvent.click(screen.getByTestId('sync-now-button'))
+    await screen.findByTestId('sync-mass-delete-dialog')
+
+    act(() => { notifySyncCycleFinished() })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getByTestId('sync-mass-delete-dialog')).toBeInTheDocument()
+  })
+
   it('shows the reconnect button and copy when the persisted lastIssue is an auth error', async () => {
     mockLoadSyncStatus.mockResolvedValue({
       connected: true, headRevisions: {}, connectedEmail: 'user@example.com',
@@ -508,6 +553,16 @@ describe('SyncPanel stopped states (license-check gate)', () => {
     mockCheckLicenseForSync.mockResolvedValue({ allowed: false, reason: 'no-license' })
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
+  })
+
+  it('ignores a background cycle-finished event while showing a stopped phase', async () => {
+    mockCheckLicenseForSync.mockResolvedValue({ allowed: false, reason: 'ended' })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-stopped-ended')
+
+    act(() => { notifySyncCycleFinished() })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getByTestId('sync-stopped-ended')).toBeInTheDocument()
   })
 
   it('a license-inactive result from Sync now switches to the stopped view, not disconnected', async () => {

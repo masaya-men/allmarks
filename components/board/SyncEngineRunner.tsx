@@ -55,9 +55,22 @@ export function SyncEngineRunner(): ReactElement | null {
     }
     document.addEventListener('visibilitychange', handleVisible)
 
+    // The evidence behind this task's whole bundle: some Drive fetches fail as a genuine
+    // network error (browser CORS/net::ERR_FAILED when truly offline), which classifySyncError
+    // buckets as 'network' and SyncPanel then shows as "offline, will sync automatically when
+    // back online" — but nothing was actually listening for the browser telling us we're back
+    // online again. This is that listener: as soon as connectivity returns, flush right away
+    // instead of waiting for the next debounced write or tab-hide.
+    function handleOnline(): void {
+      if (!controller) return
+      void controller.flushNow()
+    }
+    window.addEventListener('online', handleOnline)
+
     return (): void => {
       cancelled = true
       document.removeEventListener('visibilitychange', handleVisible)
+      window.removeEventListener('online', handleOnline)
       controller?.stop()
       setSyncMarkDirty(null)
     }
