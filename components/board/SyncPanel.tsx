@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { initDB } from '@/lib/storage/indexeddb'
+import { initDB, getRecentSyncedWrites } from '@/lib/storage/indexeddb'
 import { loadLicense } from '@/lib/board/license-store'
 import { isSyncUnlocked } from '@/lib/board/theme-entitlement'
 import {
@@ -736,6 +736,9 @@ export function SyncPanel(): ReactElement | null {
               </p>
             )
           })}
+          {getRecentSyncedWrites().map((w, i) => (
+            <p className={styles.note} key={`w${i}`}>{`write ${w}`}</p>
+          ))}
         </div>
       )}
       {modalOpen && dialogCoversPhase && (

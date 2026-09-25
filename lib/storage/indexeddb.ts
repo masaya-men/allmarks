@@ -447,9 +447,36 @@ function isSyncedTransaction(storeNames: unknown): boolean {
  * local IndexedDB must not flag itself as a new unpushed change. Best-effort: failures are swallowed,
  * same fire-and-forget contract as notifySyncDirty's own caller here.
  */
-function maybeMarkPendingPush(raw: IDBPDatabase<AllMarksDB>, proxy: object, relevant: boolean): void {
+function maybeMarkPendingPush(raw: IDBPDatabase<AllMarksDB>, proxy: object, relevant: boolean, what = ''): void {
   if (!relevant || isSyncCycleOwnWrite(proxy)) return
+  recordRecentSyncedWrite(what)
   void markPendingPush(raw).catch(() => undefined)
+}
+
+/** Diagnostic-only, in-memory (this page only): the last few local writes that marked the
+ *  unpushed-change flag, shown in SETTINGS → SYNC's sync log. Store/method names only — no data. */
+const RECENT_SYNCED_WRITES_MAX = 20
+const recentSyncedWrites: string[] = []
+function recordRecentSyncedWrite(what: string): void {
+  const time = new Date().toTimeString().slice(0, 8)
+  recentSyncedWrites.unshift(`${time} ${what}`)
+  if (recentSyncedWrites.length > RECENT_SYNCED_WRITES_MAX) recentSyncedWrites.length = RECENT_SYNCED_WRITES_MAX
+}
+export function getRecentSyncedWrites(): readonly string[] {
+  return recentSyncedWrites.slice()
+}
+
+function describeWrite(prop: string, args: readonly unknown[]): string {
+  const store = typeof args[0] === 'string' ? args[0] : Array.isArray(args[0]) ? args[0].join('+') : '?'
+  const key = store === 'settings' ? settingsRecordKey(args[1]) ?? (typeof args[1] === 'string' ? args[1] : '') : ''
+  return `${prop} ${store}${key ? ` ${key}` : ''}`
+}
+
+function describeCaller(): string {
+  // First stack frame outside this module — a hint at which feature wrote (minified in production).
+  const lines = (new Error().stack ?? '').split('\n').slice(1)
+  const frame = lines.find((l) => !/wrapDbForSyncDirty|maybeMarkPendingPush|describeCaller|Proxy|indexeddb/.test(l))
+  return frame ? frame.trim().replace(/^at\s+/, '').slice(0, 80) : ''
 }
 
 /**
@@ -470,7 +497,7 @@ function wrapDbForSyncDirty(db: IDBPDatabase<AllMarksDB>): IDBPDatabase<AllMarks
         return (...args: unknown[]) => {
           if (args[1] === 'readwrite') {
             notifySyncDirty(proxy)
-            maybeMarkPendingPush(db, proxy, isSyncedTransaction(args[0]))
+            maybeMarkPendingPush(db, proxy, isSyncedTransaction(args[0]), `${describeWrite('tx', args)} ← ${describeCaller()}`)
           }
           return (target.transaction as (...a: unknown[]) => unknown).apply(target, args)
         }
@@ -482,8 +509,9 @@ function wrapDbForSyncDirty(db: IDBPDatabase<AllMarksDB>): IDBPDatabase<AllMarks
           notifySyncDirty(proxy)
           const result = (value as (...a: unknown[]) => unknown).apply(target, args) as Promise<unknown>
           if (isSyncedWrite(prop, args)) {
+            const what = `${describeWrite(prop, args)} ← ${describeCaller()}`
             void result.then(
-              () => maybeMarkPendingPush(db, proxy, true),
+              () => maybeMarkPendingPush(db, proxy, true, what),
               () => undefined, // the write itself failed — nothing to mark
             )
           }
