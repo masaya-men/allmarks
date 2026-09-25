@@ -111,9 +111,22 @@ function mergeOneBookmark(a: BookmarkRecord, b: BookmarkRecord): BookmarkRecord 
   // updatedAt = Date.parse(savedAt) で backfill 済み（tags の createdAt 相当）。
   const at = numericTime(a.updatedAt)
   const bt = numericTime(b.updatedAt)
-  if (at > bt) return a
-  if (bt > at) return b
-  return pickDeterministic(a, b)
+  const winner = at > bt ? a : bt > at ? b : pickDeterministic(a, b)
+  return withFreshestHealth(winner, a, b)
+}
+
+/** Link-health fields (linkStatus / lastCheckedAt) are written by the background link checker
+ *  WITHOUT bumping updatedAt (so a health check never out-ranks a real edit made on another
+ *  device). Merge them independently: always keep the side with the newer lastCheckedAt.
+ *  Without this, a tie on updatedAt could keep the stale side, the checker would see the link
+ *  as due again, re-check, re-write, and two devices would loop forever. */
+function withFreshestHealth(winner: BookmarkRecord, a: BookmarkRecord, b: BookmarkRecord): BookmarkRecord {
+  const ac = a.lastCheckedAt ?? -1
+  const bc = b.lastCheckedAt ?? -1
+  if (ac === bc) return winner
+  const fresh = ac > bc ? a : b
+  if (winner.lastCheckedAt === fresh.lastCheckedAt && winner.linkStatus === fresh.linkStatus) return winner
+  return { ...winner, linkStatus: fresh.linkStatus, lastCheckedAt: fresh.lastCheckedAt }
 }
 
 /** local ∪ remote（id 単位）。id 昇順で返す。設計 §6.1。 */

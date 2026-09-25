@@ -616,3 +616,32 @@ describe('mergeBookmarks — purged tombstones (EMPTY TRASH)', () => {
     expect(mergeBookmarks([trashed], [purged])[0]).toMatchObject({ purged: true })
   })
 })
+
+describe('mergeBookmarks — link-health fields merge independently (no checker/sync loop)', () => {
+  it('keeps the newer lastCheckedAt/linkStatus on an updatedAt tie, whichever argument order', () => {
+    const stale = bm({ id: 'b1', updatedAt: 100, linkStatus: 'unknown', lastCheckedAt: 1000 })
+    const fresh = bm({ id: 'b1', updatedAt: 100, linkStatus: 'alive', lastCheckedAt: 5000 })
+    for (const [l, r] of [[stale, fresh], [fresh, stale]] as const) {
+      const [out] = mergeBookmarks([l], [r])
+      expect(out.lastCheckedAt).toBe(5000)
+      expect(out.linkStatus).toBe('alive')
+    }
+  })
+
+  it('a fresher health check never overrides a newer real edit from the other device', () => {
+    const edited = bm({ id: 'b1', updatedAt: 200, title: 'edited on phone', lastCheckedAt: 1000, linkStatus: 'unknown' })
+    const checked = bm({ id: 'b1', updatedAt: 100, title: 'old title', lastCheckedAt: 5000, linkStatus: 'alive' })
+    const [out] = mergeBookmarks([checked], [edited])
+    expect(out.title).toBe('edited on phone')
+    expect(out.lastCheckedAt).toBe(5000)
+    expect(out.linkStatus).toBe('alive')
+  })
+
+  it('is a fixed point: merging the result again with either side changes nothing', () => {
+    const a = bm({ id: 'b1', updatedAt: 100, linkStatus: 'unknown', lastCheckedAt: 1000 })
+    const b = bm({ id: 'b1', updatedAt: 100, linkStatus: 'alive', lastCheckedAt: 5000 })
+    const [m] = mergeBookmarks([a], [b])
+    expect(mergeBookmarks([m], [a])[0]).toEqual(m)
+    expect(mergeBookmarks([b], [m])[0]).toEqual(m)
+  })
+})

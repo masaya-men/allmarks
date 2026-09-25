@@ -472,12 +472,6 @@ function describeWrite(prop: string, args: readonly unknown[]): string {
   return `${prop} ${store}${key ? ` ${key}` : ''}`
 }
 
-function describeCaller(): string {
-  // First stack frame outside this module — a hint at which feature wrote (minified in production).
-  const lines = (new Error().stack ?? '').split('\n').slice(1)
-  const frame = lines.find((l) => !/wrapDbForSyncDirty|maybeMarkPendingPush|describeCaller|Proxy|indexeddb/.test(l))
-  return frame ? frame.trim().replace(/^at\s+/, '').slice(0, 80) : ''
-}
 
 /**
  * Wrap the opened db so every mutating call — put/add/delete/clear, or a
@@ -497,7 +491,7 @@ function wrapDbForSyncDirty(db: IDBPDatabase<AllMarksDB>): IDBPDatabase<AllMarks
         return (...args: unknown[]) => {
           if (args[1] === 'readwrite') {
             notifySyncDirty(proxy)
-            maybeMarkPendingPush(db, proxy, isSyncedTransaction(args[0]), `${describeWrite('tx', args)} ← ${describeCaller()}`)
+            maybeMarkPendingPush(db, proxy, isSyncedTransaction(args[0]), `${describeWrite('tx', args)}`)
           }
           return (target.transaction as (...a: unknown[]) => unknown).apply(target, args)
         }
@@ -509,7 +503,7 @@ function wrapDbForSyncDirty(db: IDBPDatabase<AllMarksDB>): IDBPDatabase<AllMarks
           notifySyncDirty(proxy)
           const result = (value as (...a: unknown[]) => unknown).apply(target, args) as Promise<unknown>
           if (isSyncedWrite(prop, args)) {
-            const what = `${describeWrite(prop, args)} ← ${describeCaller()}`
+            const what = `${describeWrite(prop, args)}`
             void result.then(
               () => maybeMarkPendingPush(db, proxy, true, what),
               () => undefined, // the write itself failed — nothing to mark
