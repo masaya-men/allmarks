@@ -60,6 +60,37 @@ function currentUserAgent(): string {
   return typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string' ? navigator.userAgent : ''
 }
 
+interface PostActivateResult {
+  readonly ok: boolean
+  readonly reason?: 'cap-exceeded'
+}
+
+/**
+ * Shared POST /activate call used by both activateLicenseKey (fresh key
+ * entry) and registerDeviceIfMissingOrUnlabeled (SyncPanel's self-heal).
+ * Never throws: any network failure, non-ok response, or malformed body
+ * is reported as `{ok:false}` with no reason, exactly like
+ * activateLicenseKey's own fail-open handling already treated them.
+ */
+async function postActivate(kid: string, deviceId: string, label: string): Promise<PostActivateResult> {
+  try {
+    const res = await fetch('/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kid, deviceId, label }),
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return { ok: false }
+    const body: unknown = await res.json()
+    if (!isActivateResponseBody(body)) return { ok: false }
+    if (body.ok) return { ok: true }
+    if (body.reason === 'cap-exceeded') return { ok: false, reason: 'cap-exceeded' }
+    return { ok: false }
+  } catch {
+    return { ok: false }
+  }
+}
+
 /**
  * キー文字列を発動する。
  *  1. オフラインで署名検証（不正なキーはここで即rejectし、ネットワークに触らない）
@@ -82,28 +113,10 @@ export async function activateLicenseKey(
   const deviceId = await getDeviceId(db)
   const { kid, scope } = verified.payload
 
-  let confirmed = false
-  try {
-    const res = await fetch('/activate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kid, deviceId, label: buildDeviceLabel(currentUserAgent()) }),
-      signal: AbortSignal.timeout(10_000),
-    })
-    if (res.ok) {
-      const body: unknown = await res.json()
-      if (isActivateResponseBody(body)) {
-        if (body.ok) {
-          confirmed = true
-        } else if (body.reason === 'cap-exceeded') {
-          return { status: 'cap-exceeded' }
-        }
-        // 他の明示的reason（'unknown-key'等）はフェイルオープンへフォールスルー
-      }
-    }
-  } catch {
-    // ネットワーク失敗 — フェイルオープンへフォールスルー
-  }
+  const activateResult = await postActivate(kid, deviceId, buildDeviceLabel(currentUserAgent()))
+  if (activateResult.reason === 'cap-exceeded') return { status: 'cap-exceeded' }
+  // 他の明示的reason（'unknown-key'等）・ネットワーク失敗はフェイルオープンへフォールスルー
+  const confirmed = activateResult.ok
 
   // (Re-)activation always writes a fresh record — this is also how a device
   // that had `stopped` set (ended/device-removed) auto-clears it by putting a
@@ -177,6 +190,24 @@ export async function fetchDeviceCount(kid: string): Promise<DeviceCount | null>
   } catch {
     return null
   }
+}
+
+/**
+ * Best-effort self-heal POST for SETTINGS' SYNC device list
+ * (components/board/SyncPanel.tsx): called once per panel mount, when its
+ * own device list loads and finds THIS device either missing from `devices`
+ * or present with an empty label (a legacy `act:<kid>` entry from before
+ * labels existed, or one that otherwise never got one — root cause: an old
+ * backup restore silently replacing this device's own
+ * `license`/`sync-device-id` rows, see lib/storage/backup.ts's
+ * DEVICE_LOCAL_SETTINGS_KEYS). SyncPanel decides WHETHER to call this
+ * (missing-or-empty-label check); this just makes the call. Never throws
+ * and never returns anything the caller could branch on differently for
+ * `cap-exceeded` vs. any other failure -- the device already holds a
+ * license either way, there is nothing more to do.
+ */
+export async function registerDeviceLabel(kid: string, deviceId: string): Promise<void> {
+  await postActivate(kid, deviceId, buildDeviceLabel(currentUserAgent()))
 }
 
 interface ReleaseResponseBody {

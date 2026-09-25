@@ -5,7 +5,10 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { initDB } from '@/lib/storage/indexeddb'
 import { loadLicense } from '@/lib/board/license-store'
 import { isSyncUnlocked } from '@/lib/board/theme-entitlement'
-import { activateLicenseKey, fetchDeviceCount, releaseDevice, type DeviceCount, type DeviceInfo } from '@/lib/board/license-activate'
+import {
+  activateLicenseKey, fetchDeviceCount, registerDeviceLabel, releaseDevice,
+  type DeviceCount, type DeviceInfo,
+} from '@/lib/board/license-activate'
 import { loadSyncStatus, type SyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync, type SyncCycleResult } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
@@ -210,7 +213,25 @@ export function SyncPanel(): ReactElement | null {
         setUnlocked(isUnlocked)
         if (isUnlocked && state) {
           setLicenseIds({ kid: state.kid, deviceId: state.deviceId })
-          void fetchDeviceCount(state.kid).then((dc) => { if (!cancelled) setDeviceCount(dc) })
+          void fetchDeviceCount(state.kid).then(async (dc) => {
+            if (cancelled) return
+            setDeviceCount(dc)
+            // Self-heal (once per mount): if this device is missing from
+            // its own device list, or listed with an empty label (e.g. a
+            // legacy `act:<kid>` entry, or the license/device-id rows
+            // themselves having been overwritten by an old backup restore —
+            // see lib/storage/backup.ts's DEVICE_LOCAL_SETTINGS_KEYS), ask
+            // the server to (re)register/relabel it, then re-fetch the list.
+            // registerDeviceLabel never throws.
+            if (!dc) return
+            const mine = dc.devices.find((d) => d.id === state.deviceId)
+            const needsSelfHeal = !mine || mine.label === ''
+            if (!needsSelfHeal) return
+            await registerDeviceLabel(state.kid, state.deviceId)
+            if (cancelled) return
+            const refreshed = await fetchDeviceCount(state.kid)
+            if (!cancelled) setDeviceCount(refreshed)
+          })
         }
       } catch (e) {
         console.error('[AllMarks] failed to load sync license state', e)

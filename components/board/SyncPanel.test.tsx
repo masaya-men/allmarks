@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { SyncPanel } from './SyncPanel'
 import { loadLicense } from '@/lib/board/license-store'
-import { activateLicenseKey, fetchDeviceCount, releaseDevice } from '@/lib/board/license-activate'
+import { activateLicenseKey, fetchDeviceCount, registerDeviceLabel, releaseDevice } from '@/lib/board/license-activate'
 import { loadSyncStatus } from '@/lib/sync/sync-store'
 import { runSyncCycle, connectSync } from '@/lib/sync/engine'
 import { requestAuthCode, exchangeCode } from '@/lib/sync/auth'
@@ -12,6 +12,7 @@ vi.mock('@/lib/storage/indexeddb', () => ({ initDB: vi.fn().mockResolvedValue({}
 vi.mock('@/lib/board/license-store', () => ({ loadLicense: vi.fn() }))
 vi.mock('@/lib/board/license-activate', () => ({
   activateLicenseKey: vi.fn(), fetchDeviceCount: vi.fn().mockResolvedValue(null), releaseDevice: vi.fn(),
+  registerDeviceLabel: vi.fn().mockResolvedValue(undefined),
 }))
 vi.mock('@/lib/sync/sync-store', () => ({ loadSyncStatus: vi.fn() }))
 vi.mock('@/lib/sync/engine', () => ({ runSyncCycle: vi.fn(), connectSync: vi.fn() }))
@@ -21,6 +22,7 @@ vi.mock('@/lib/board/license-check', () => ({ checkLicenseForSync: vi.fn() }))
 const mockLoadLicense = vi.mocked(loadLicense)
 const mockActivate = vi.mocked(activateLicenseKey)
 const mockFetchDeviceCount = vi.mocked(fetchDeviceCount)
+const mockRegisterDeviceLabel = vi.mocked(registerDeviceLabel)
 const mockReleaseDevice = vi.mocked(releaseDevice)
 const mockLoadSyncStatus = vi.mocked(loadSyncStatus)
 const mockRunSyncCycle = vi.mocked(runSyncCycle)
@@ -275,6 +277,40 @@ describe('SyncPanel connected states', () => {
     render(<SyncPanel />)
     await screen.findByTestId('sync-connected-status')
     expect(screen.queryByTestId('sync-device-count')).not.toBeInTheDocument()
+  })
+
+  describe('self-heal (registerDeviceLabel)', () => {
+    it('this device missing from its own list: registers it, then re-fetches the device list', async () => {
+      mockFetchDeviceCount
+        .mockResolvedValueOnce({ count: 1, max: 5, devices: [{ id: 'other-device', label: 'Safari · iOS', at: 200 }] })
+        .mockResolvedValueOnce({
+          count: 2, max: 5,
+          devices: [{ id: 'other-device', label: 'Safari · iOS', at: 200 }, { id: 'd1', label: 'Chrome · Windows', at: 300 }],
+        })
+      render(<SyncPanel />)
+      await screen.findByTestId('sync-connected-status')
+      await waitFor(() => expect(mockRegisterDeviceLabel).toHaveBeenCalledWith('k1', 'd1'))
+      await waitFor(() => expect(mockFetchDeviceCount).toHaveBeenCalledTimes(2))
+      await waitFor(() => expect(screen.getByTestId('sync-device-count').textContent).toContain('2'))
+    })
+
+    it('this device present with a real label: does not call registerDeviceLabel, no refetch', async () => {
+      mockFetchDeviceCount.mockResolvedValue({ count: 1, max: 5, devices: [{ id: 'd1', label: 'Chrome · Windows', at: 100 }] })
+      render(<SyncPanel />)
+      await screen.findByTestId('sync-device-count')
+      await waitFor(() => expect(mockFetchDeviceCount).toHaveBeenCalledTimes(1))
+      expect(mockRegisterDeviceLabel).not.toHaveBeenCalled()
+    })
+
+    it('this device present with an empty (legacy) label: calls registerDeviceLabel, then re-fetches', async () => {
+      mockFetchDeviceCount
+        .mockResolvedValueOnce({ count: 1, max: 5, devices: [{ id: 'd1', label: '', at: 0 }] })
+        .mockResolvedValueOnce({ count: 1, max: 5, devices: [{ id: 'd1', label: 'Chrome · Windows', at: 999 }] })
+      render(<SyncPanel />)
+      await screen.findByTestId('sync-connected-status')
+      await waitFor(() => expect(mockRegisterDeviceLabel).toHaveBeenCalledWith('k1', 'd1'))
+      await waitFor(() => expect(mockFetchDeviceCount).toHaveBeenCalledTimes(2))
+    })
   })
 
   describe('device list (toggle + remove)', () => {

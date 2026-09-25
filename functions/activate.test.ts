@@ -158,6 +158,55 @@ describe('POST /activate', () => {
     expect(JSON.parse(store.get('act:kid-1')!)).toEqual(['d1', 'd2', 'd3', 'd4', 'd5']) // unchanged
   })
 
+  it('already-registered device with a legacy blank label: a non-empty label updates it and bumps at from 0', async () => {
+    const kvStore = new Map<string, string>([
+      ['issued:kid-1', JSON.stringify({ claimSecret: 's', iat: 1 })],
+      ['act:kid-1', JSON.stringify([{ id: 'device-a', label: '', at: 0 }])],
+    ])
+    const { ctx, kvStore: store } = makeCtx({ kid: 'kid-1', deviceId: 'device-a', label: 'Chrome · Windows' }, kvStore)
+    const res = await onRequestPost(ctx as never)
+    expect(await res.json()).toEqual({ ok: true })
+    const stored = JSON.parse(store.get('act:kid-1')!) as StoredDevice[]
+    expect(stored).toHaveLength(1)
+    expect(stored[0].label).toBe('Chrome · Windows')
+    expect(stored[0].at).toBeGreaterThan(0)
+  })
+
+  it('already-registered device with a non-empty label unchanged by the request: no KV write', async () => {
+    const kvStore = new Map<string, string>([
+      ['issued:kid-1', JSON.stringify({ claimSecret: 's', iat: 1 })],
+      ['act:kid-1', JSON.stringify([{ id: 'device-a', label: 'Chrome · Windows', at: 123 }])],
+    ])
+    const { ctx, K3_KV, kvStore: store } = makeCtx({ kid: 'kid-1', deviceId: 'device-a', label: 'Chrome · Windows' }, kvStore)
+    const res = await onRequestPost(ctx as never)
+    expect(await res.json()).toEqual({ ok: true })
+    expect(K3_KV.put).not.toHaveBeenCalled()
+    expect(JSON.parse(store.get('act:kid-1')!)).toEqual([{ id: 'device-a', label: 'Chrome · Windows', at: 123 }])
+  })
+
+  it('already-registered device with no label on the request: existing label left untouched, no KV write', async () => {
+    const kvStore = new Map<string, string>([
+      ['issued:kid-1', JSON.stringify({ claimSecret: 's', iat: 1 })],
+      ['act:kid-1', JSON.stringify([{ id: 'device-a', label: 'Chrome · Windows', at: 123 }])],
+    ])
+    const { ctx, K3_KV } = makeCtx({ kid: 'kid-1', deviceId: 'device-a' }, kvStore)
+    const res = await onRequestPost(ctx as never)
+    expect(await res.json()).toEqual({ ok: true })
+    expect(K3_KV.put).not.toHaveBeenCalled()
+  })
+
+  it('already-registered device with an already-nonzero at: label update does not change at', async () => {
+    const kvStore = new Map<string, string>([
+      ['issued:kid-1', JSON.stringify({ claimSecret: 's', iat: 1 })],
+      ['act:kid-1', JSON.stringify([{ id: 'device-a', label: '', at: 999 }])],
+    ])
+    const { ctx, kvStore: store } = makeCtx({ kid: 'kid-1', deviceId: 'device-a', label: 'Safari · macOS' }, kvStore)
+    const res = await onRequestPost(ctx as never)
+    expect(await res.json()).toEqual({ ok: true })
+    const stored = JSON.parse(store.get('act:kid-1')!) as StoredDevice[]
+    expect(stored[0]).toEqual({ id: 'device-a', label: 'Safari · macOS', at: 999 })
+  })
+
   it('unknown kid (never issued): ok:false reason:unknown-key, no KV write', async () => {
     const { ctx, K3_KV } = makeCtx({ kid: 'never-issued', deviceId: 'd1' }, new Map())
     const res = await onRequestPost(ctx as never)

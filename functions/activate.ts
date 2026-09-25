@@ -86,13 +86,30 @@ export async function onRequestPost(ctx: PagesContext): Promise<Response> {
 
   const actRaw = await ctx.env.K3_KV.get(`act:${kid}`)
   const devices = parseDeviceList(actRaw)
-  const alreadyRegistered = devices.some((d) => d.id === deviceId)
+  const existingIndex = devices.findIndex((d) => d.id === deviceId)
+  const alreadyRegistered = existingIndex !== -1
+  let devicesChanged = false
 
   if (!alreadyRegistered) {
     if (devices.length >= MAX_ACTIVATIONS) return jsonResponse(200, { ok: false, reason: 'cap-exceeded' })
 
     const entry: DeviceEntry = { id: deviceId, label: label ?? '', at: Date.now() }
     devices.push(entry)
+    devicesChanged = true
+  } else if (typeof label === 'string' && label.length > 0) {
+    // Self-heal a legacy or otherwise-blank label (e.g. an `act:<kid>` entry
+    // written before labels existed, or before this device last reported
+    // one — see SyncPanel.tsx's self-heal call to /activate). Only touches
+    // KV when the label actually differs, and bumps `at` from 0 (unknown)
+    // to now so the entry stops looking permanently "legacy".
+    const existing = devices[existingIndex]
+    if (existing.label !== label) {
+      devices[existingIndex] = { ...existing, label, at: existing.at === 0 ? Date.now() : existing.at }
+      devicesChanged = true
+    }
+  }
+
+  if (devicesChanged) {
     await ctx.env.K3_KV.put(`act:${kid}`, serializeDeviceList(devices))
   }
 

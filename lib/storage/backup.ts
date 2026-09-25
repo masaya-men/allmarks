@@ -29,6 +29,68 @@ function presentStores(db: DbLike): string[] {
   return KNOWN_STORES.filter((s) => names.includes(s))
 }
 
+/**
+ * `settings` store keys that identify or authenticate THIS SPECIFIC browser
+ * profile rather than holding restorable user content. A full-store
+ * export/import (backup/restore) must never carry these across devices or
+ * across time — doing so is exactly what caused the SYNC device-list bug
+ * this constant exists to fix: repeatedly importing an old backup replaced
+ * the device's own `license`/`sync-device-id`/tokens with whatever that
+ * backup happened to hold, so the device silently lost track of its own
+ * identity and dropped off its own device list.
+ *
+ * Deliberately NOT included: board-config, theme, onboarding/notice flags,
+ * quick-tag/tag-order settings, the migration guard flag, and the private
+ * vault's own record (`private-vault`, lib/private/vault-store.ts). The
+ * vault record is content-equivalent — it syncs across devices by design
+ * (see lib/private/vault-conflict.ts) and must restore together with the
+ * encrypted bookmarks it decrypts, so excluding it here would leave a
+ * restored backup's Private bookmarks undecryptable.
+ */
+export const DEVICE_LOCAL_SETTINGS_KEYS = [
+  // lib/board/license-store.ts — binds this browser to a K3 license
+  // (kid + deviceId). An old value would re-point this device at a
+  // stale/foreign deviceId, breaking its own activation and (per the
+  // reported bug) making it invisible on its own SYNC device list.
+  'license',
+  // lib/sync/device-id.ts — this browser profile's own stable id. Its own
+  // doc comment already calls it out as "device-local ... Never synced to
+  // Drive" — it's the exact value the K3 activation and device list key off.
+  'sync-device-id',
+  // lib/sync/sync-store.ts — this browser's own Drive OAuth tokens. An old
+  // backup's tokens are either stale (useless) or, worse, valid but bound
+  // to a different Google account/session than the one in use now.
+  'sync-tokens',
+  // lib/sync/sync-store.ts — this browser's own sync connection state
+  // (connected/folderId/connectedEmail/headRevisions). Tied to which Drive
+  // account/folder THIS device is connected to right now; an old value
+  // would silently reconnect it to a stale account.
+  'sync-status',
+  // lib/private/vault-conflict.ts — records of a vault conflict THIS
+  // device detected/acknowledged. Device-local detection state (not
+  // content): restoring a stale value can either re-surface an
+  // already-resolved conflict screen (see that file's "third gap" doc
+  // comment on why acknowledgement must be permanent-once-set) or hide a
+  // real unresolved one.
+  'private-vault-conflict',
+  'private-vault-conflict-acknowledged',
+] as const
+
+export type DeviceLocalSettingsKey = (typeof DEVICE_LOCAL_SETTINGS_KEYS)[number]
+
+const DEVICE_LOCAL_SETTINGS_KEY_SET: ReadonlySet<string> = new Set(DEVICE_LOCAL_SETTINGS_KEYS)
+
+function settingsRowKey(row: unknown): string | undefined {
+  if (typeof row !== 'object' || row === null) return undefined
+  const key = (row as { key?: unknown }).key
+  return typeof key === 'string' ? key : undefined
+}
+
+function isDeviceLocalSettingsRow(row: unknown): boolean {
+  const key = settingsRowKey(row)
+  return key !== undefined && DEVICE_LOCAL_SETTINGS_KEY_SET.has(key)
+}
+
 export async function exportAllStores(db: DbLike): Promise<BackupJson> {
   const stores = presentStores(db)
   const entries = await Promise.all(
@@ -36,6 +98,7 @@ export async function exportAllStores(db: DbLike): Promise<BackupJson> {
   )
   const byName: Record<string, ReadonlyArray<unknown>> = {}
   for (const [name, rows] of entries) byName[name] = rows
+  const settings = (byName.settings ?? []).filter((row) => !isDeviceLocalSettingsRow(row))
   return {
     version: DB_VERSION,
     exportedAt: new Date().toISOString(),
@@ -43,7 +106,7 @@ export async function exportAllStores(db: DbLike): Promise<BackupJson> {
     tags: byName.tags ?? [],
     cards: byName.cards ?? [],
     folders: byName.folders ?? [],
-    settings: byName.settings ?? [],
+    settings,
     preferences: byName.preferences ?? [],
   }
 }
@@ -158,11 +221,37 @@ export async function importAllStores(db: DbLike, json: BackupJson): Promise<Imp
     for (const name of targets) {
       const rows = dump[name] as ReadonlyArray<unknown>
       const store = tx.objectStore(name)
-      await store.clear()
-      for (const row of rows) {
-        await store.put(row)
+      if (name === 'settings') {
+        // Preserve THIS device's own identity/credential rows across the
+        // restore (see DEVICE_LOCAL_SETTINGS_KEYS): capture them before
+        // clear() wipes the store, skip any same-keyed row the backup itself
+        // carries (an older/foreign value — older backups made before this
+        // fix may still include one), then put the captured rows back.
+        // Reads+writes all happen inside this same transaction, so a later
+        // failure still rolls this back along with every other store.
+        const preserved: unknown[] = []
+        for (const key of DEVICE_LOCAL_SETTINGS_KEYS) {
+          const existing = await store.get(key)
+          if (existing !== undefined) preserved.push(existing)
+        }
+        await store.clear()
+        let count = 0
+        for (const row of rows) {
+          if (isDeviceLocalSettingsRow(row)) continue
+          await store.put(row)
+          count++
+        }
+        for (const row of preserved) {
+          await store.put(row)
+        }
+        imported[name] = count
+      } else {
+        await store.clear()
+        for (const row of rows) {
+          await store.put(row)
+        }
+        imported[name] = rows.length
       }
-      imported[name] = rows.length
     }
     await tx.done
   } catch (err) {

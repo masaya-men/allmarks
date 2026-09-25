@@ -7,9 +7,15 @@ import {
   exportAllStores,
   importAllStores,
   BackupImportError,
+  DEVICE_LOCAL_SETTINGS_KEYS,
 } from '@/lib/storage/backup'
 import { addTag } from '@/lib/storage/tags'
 import { createVault, unlockVault } from '@/lib/private/vault-store'
+import { saveLicense, loadLicense } from '@/lib/board/license-store'
+import { getDeviceId } from '@/lib/sync/device-id'
+import { saveSyncTokens, loadSyncTokens, updateSyncStatus, loadSyncStatus } from '@/lib/sync/sync-store'
+import { saveVaultConflict, acknowledgeVaultConflict, loadVaultConflict } from '@/lib/private/vault-conflict'
+import type { PrivateVaultRecord } from '@/lib/private/vault-store'
 
 let db: IDBPDatabase<unknown> | null = null
 
@@ -213,6 +219,77 @@ describe('backup', () => {
     await expect(importAllStores(d, dump)).rejects.toBeTruthy()
     const after = await d.getAll('bookmarks')
     expect(after.map((b) => (b as { id: string }).id)).toEqual(['bm-keep'])
+  })
+
+  // ── device-local settings keys (SYNC device-list "Unknown device" bug) ──
+
+  const fakeVaultRecord = (tagId: string): PrivateVaultRecord => ({
+    key: 'private-vault',
+    tagId,
+    salt: 'c2FsdA==',
+    iterations: 100_000,
+    publicKey: 'cHVi',
+    wrappedPrivateKey: { iv: 'aXY=', ciphertext: 'Y3Q=' },
+  })
+
+  it('EXPORT omits device-local settings keys (license, sync-device-id, sync tokens/status, vault-conflict state)', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await d.put('bookmarks', aBookmark('bm-1'))
+    await saveLicense(d, { kid: 'kid-1', deviceId: 'device-1', scope: ['sync'], validatedAt: 1 })
+    await getDeviceId(d) // writes 'sync-device-id'
+    await saveSyncTokens(d, { accessToken: 'a', expiresAt: 1, scope: 'x' })
+    await updateSyncStatus(d, { connected: true, connectedEmail: 'x@example.com' })
+    await saveVaultConflict(d, fakeVaultRecord('other-tag'))
+    await acknowledgeVaultConflict(d, 'other-tag')
+    await d.put('settings', { key: 'board-config', config: { activeFilter: 'all' } })
+
+    const json = await exportAllStores(d)
+    const keys = (json.settings as { key: string }[]).map((r) => r.key)
+
+    for (const deviceLocalKey of DEVICE_LOCAL_SETTINGS_KEYS) {
+      expect(keys).not.toContain(deviceLocalKey)
+    }
+    expect(keys).toContain('board-config')
+  })
+
+  it('IMPORT keeps this device\'s own license/sync-device-id/tokens/status/vault-conflict rows, ignoring an older backup\'s foreign values, while restoring other settings', async () => {
+    const d = await initDB()
+    db = d as unknown as IDBPDatabase<unknown>
+    await d.put('bookmarks', aBookmark('bm-1'))
+    await saveLicense(d, { kid: 'kid-mine', deviceId: 'device-mine', scope: ['sync'], validatedAt: 1 })
+    const myDeviceId = await getDeviceId(d)
+    await saveSyncTokens(d, { accessToken: 'mine', expiresAt: 1, scope: 'x' })
+    await updateSyncStatus(d, { connected: true, connectedEmail: 'mine@example.com' })
+    await saveVaultConflict(d, fakeVaultRecord('mine-tag'))
+    await acknowledgeVaultConflict(d, 'mine-tag')
+
+    // Simulate an OLDER backup (made before this fix) that still carries
+    // foreign device-local rows plus one ordinary settings row.
+    const dump = await exportAllStores(d)
+    const legacySettings = [
+      ...dump.settings,
+      { key: 'license', kid: 'kid-foreign', deviceId: 'device-foreign', scope: ['sync'], validatedAt: 2 },
+      { key: 'sync-device-id', id: 'foreign-uuid' },
+      { key: 'sync-tokens', accessToken: 'foreign', expiresAt: 2, scope: 'x' },
+      { key: 'sync-status', connected: true, connectedEmail: 'foreign@example.com', headRevisions: {} },
+      { key: 'board-config', config: { activeFilter: 'private' } },
+    ]
+    const legacyDump = { ...dump, settings: legacySettings }
+
+    await importAllStores(d, legacyDump)
+
+    expect(await loadLicense(d)).toEqual({ kid: 'kid-mine', deviceId: 'device-mine', scope: ['sync'], validatedAt: 1 })
+    expect(await getDeviceId(d)).toBe(myDeviceId)
+    expect(await loadSyncTokens(d)).toEqual({ accessToken: 'mine', expiresAt: 1, scope: 'x' })
+    expect((await loadSyncStatus(d)).connectedEmail).toBe('mine@example.com')
+    expect((await loadVaultConflict(d))?.otherRecord.tagId).toBe('mine-tag')
+    const acknowledged = await d.get('settings', 'private-vault-conflict-acknowledged') as { tagIds: string[] } | undefined
+    expect(acknowledged?.tagIds).toEqual(['mine-tag'])
+
+    // Ordinary settings row from the backup IS restored.
+    const boardConfig = await d.get('settings', 'board-config') as { config: { activeFilter: string } } | undefined
+    expect(boardConfig?.config.activeFilter).toBe('private')
   })
 
   it('a malformed row in a store does not leave that store half-wiped (atomic per store)', async () => {

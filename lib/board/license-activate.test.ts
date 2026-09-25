@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import 'fake-indexeddb/auto'
 import type { IDBPDatabase } from 'idb'
 import { initDB } from '@/lib/storage/indexeddb'
-import { activateLicenseKey, buildDeviceLabel, fetchDeviceCount, releaseDevice } from './license-activate'
+import {
+  activateLicenseKey, buildDeviceLabel, fetchDeviceCount, registerDeviceLabel, releaseDevice,
+} from './license-activate'
 import { loadLicense, saveLicense } from './license-store'
 import { encodeLicensePayload, encodeLicenseKey, bytesToBase64Url, type LicensePayload } from './license-types'
 
@@ -206,6 +208,37 @@ describe('fetchDeviceCount', () => {
   it('returns null on a network failure', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
     expect(await fetchDeviceCount('kid-1')).toBeNull()
+  })
+})
+
+describe('registerDeviceLabel', () => {
+  it('POSTs /activate with this device\'s id and a fresh User-Agent-derived label', async () => {
+    let capturedUrl: string | null = null
+    let capturedBody: { kid?: string; deviceId?: string; label?: string } = {}
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      capturedUrl = url
+      capturedBody = JSON.parse(init!.body as string)
+      return new Response(JSON.stringify({ ok: true }), { status: 200 })
+    }))
+
+    await registerDeviceLabel('kid-1', 'my-device')
+    expect(capturedUrl).toBe('/activate')
+    expect(capturedBody).toEqual({ kid: 'kid-1', deviceId: 'my-device', label: buildDeviceLabel(navigator.userAgent) })
+  })
+
+  it('never throws on a network failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
+    await expect(registerDeviceLabel('kid-1', 'my-device')).resolves.toBeUndefined()
+  })
+
+  it('never throws on a cap-exceeded response (no special handling — the device already holds a license)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: false, reason: 'cap-exceeded' }), { status: 200 })))
+    await expect(registerDeviceLabel('kid-1', 'my-device')).resolves.toBeUndefined()
+  })
+
+  it('never throws on a malformed response body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('not json', { status: 200 })))
+    await expect(registerDeviceLabel('kid-1', 'my-device')).resolves.toBeUndefined()
   })
 })
 
