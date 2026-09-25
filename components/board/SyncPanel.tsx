@@ -68,6 +68,9 @@ function phaseFromStatus(status: SyncStatus): PanelPhase {
  *  first-time setup dialog owns those -- connectSync's own first cycle must
  *  not flash the dialog away mid-flow). Only 'idle' and 'issue' -- both of
  *  which carry `email` -- can be safely swapped for 'syncing'. */
+/** How long a background cycle must run before the panel shows 'syncing' (see the started-event effect). */
+const SYNCING_INDICATOR_DELAY_MS = 1000
+
 function canShowSyncingOver(phase: PanelPhase): phase is Extract<PanelPhase, { kind: 'idle' | 'issue' }> {
   return phase.kind === 'idle' || phase.kind === 'issue'
 }
@@ -351,15 +354,27 @@ export function SyncPanel(): ReactElement | null {
   // finish. Guarded the same way as the mount-time isSyncCycleInFlight() check
   // (canShowSyncingOver): only overrides 'idle'/'issue', never the phases another dedicated flow
   // already owns. A no-op when already 'syncing' avoids a redundant re-render.
+  // Background polls finish in well under a second (list-only skip path, every 10s); flipping to
+  // 'syncing' for each of them made the panel blink grey/green constantly. Only surface 'syncing'
+  // once a cycle has been running for SYNCING_INDICATOR_DELAY_MS.
   useEffect(() => {
     if (!unlocked) return
+    let timer: ReturnType<typeof setTimeout> | null = null
     const unsubscribe = onSyncCycleStarted(() => {
-      setPhase((current) => {
-        if (current.kind === 'syncing') return current
-        return withInFlightOverride(current, true)
-      })
+      if (timer !== null) clearTimeout(timer)
+      timer = setTimeout(() => {
+        timer = null
+        if (!isSyncCycleInFlight()) return
+        setPhase((current) => {
+          if (current.kind === 'syncing') return current
+          return withInFlightOverride(current, true)
+        })
+      }, SYNCING_INDICATOR_DELAY_MS)
     })
-    return unsubscribe
+    return (): void => {
+      if (timer !== null) clearTimeout(timer)
+      unsubscribe()
+    }
   }, [unlocked])
 
   const applyResult = useCallback(async (result: SyncCycleResult, fallbackEmail: string | null): Promise<void> => {

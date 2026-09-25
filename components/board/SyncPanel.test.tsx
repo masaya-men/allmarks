@@ -589,11 +589,26 @@ describe('SyncPanel connected states', () => {
     await screen.findByTestId('sync-connected-status')
 
     act(() => { notifySyncCycleStarted() })
-    await screen.findByTestId('sync-in-progress')
-    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
-
-    act(() => { notifySyncCycleFinished() })
+    try {
+      // Only surfaced once the cycle has run for ~1s (short polls must not blink the panel).
+      await screen.findByTestId('sync-in-progress', {}, { timeout: 3000 })
+      expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument()
+    } finally {
+      act(() => { notifySyncCycleFinished() })
+    }
     await screen.findByTestId('sync-connected-status')
+  })
+
+  it('does not blink to sync-in-progress for a background cycle that finishes quickly', async () => {
+    mockLoadSyncStatus.mockResolvedValue({ connected: true, headRevisions: {}, connectedEmail: 'user@example.com', lastSyncAt: Date.now() })
+    render(<SyncPanel />)
+    await screen.findByTestId('sync-connected-status')
+
+    act(() => { notifySyncCycleStarted() })
+    act(() => { notifySyncCycleFinished() })
+    await new Promise((resolve) => setTimeout(resolve, 1300))
+    expect(screen.queryByTestId('sync-in-progress')).not.toBeInTheDocument()
+    expect(screen.getByTestId('sync-connected-status')).toBeInTheDocument()
   })
 
   it('shows sync-in-progress on mount when a background cycle is already running before the panel mounts', async () => {
