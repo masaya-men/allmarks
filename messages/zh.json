@@ -1064,5 +1064,12 @@
   },
   "trash": {
     "syncNote": "If you sync with another device, items may come back to the trash — that's a safety feature, not a bug. Empty the trash on both devices to remove them for good."
+  },
+  "trashSelect": {
+    "count": "已选择 {count} 项",
+    "moveToTrash": "移到回收站",
+    "restore": "恢复",
+    "toast": "已将 {count} 项移到回收站",
+    "undo": "撤销"
   }
 }

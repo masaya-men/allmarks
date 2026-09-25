@@ -100,6 +100,7 @@ export const BOARD_Z_INDEX = {
   DRAG_GHOST: 100,
   TOOLBAR: 110,
   SHARE_SELECT_BAR: 401,  // selective-share bottom bar — ABOVE the scroll meter (400) so it isn't covered during the select stage (s170); below CHROME_DRAWER (405). The select stage keeps the meter visible (unlike arrange, which hides it), so the bar must out-stack it.
+  TRASH_SELECT_BAR: 401,  // mobile long-press multi-select bottom bar (move-to-trash / restore) — same tier as SHARE_SELECT_BAR, since the two bars are mutually exclusive and both replace BoardMobileNav in the same fixed slot.
   SHARE_TOAST: 402,  // collage-screenshot SHARE arrange-stage bottom bar — above select-bar + scroll meter, below CHROME_DRAWER (405)
   SHARE_ARRANGE_TOOLBAR: 402,  // mobile collage arrange TOP bar (undo/redo + selection tools). Same tier as SHARE_TOAST (bottom bar) — they don't overlap (top vs bottom). data-no-capture.
   POPOVER: 120,

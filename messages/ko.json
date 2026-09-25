@@ -1064,5 +1064,12 @@
   },
   "trash": {
     "syncNote": "If you sync with another device, items may come back to the trash — that's a safety feature, not a bug. Empty the trash on both devices to remove them for good."
+  },
+  "trashSelect": {
+    "count": "{count}개 선택됨",
+    "moveToTrash": "휴지통으로 이동",
+    "restore": "복원",
+    "toast": "{count}개를 휴지통으로 이동했습니다",
+    "undo": "실행 취소"
   }
 }

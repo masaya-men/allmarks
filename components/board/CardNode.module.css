@@ -12,6 +12,10 @@
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  /* Mobile long-press enters TRASH multi-select (CardsLayer's long-press
+     gesture) — without this, iOS shows its own callout (copy/save-image
+     popup) partway through the hold, fighting the gesture. */
+  -webkit-touch-callout: none;
 }
 
 .cardNode:active {

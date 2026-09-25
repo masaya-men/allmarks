@@ -61,6 +61,12 @@ const CLICK_MAX_MS = 200
  *  has no selectedIds yet, so resolveDropTargets never sees null. */
 const EMPTY_ID_SET: ReadonlySet<string> = new Set()
 
+/** Mobile long-press hold duration (ms) to enter TRASH multi-select. */
+const LONG_PRESS_MS = 500
+/** Movement (px) past which a held pointer reads as a scroll/drag, not a
+ *  long-press — cancels the timer so scrolling never triggers it. */
+const LONG_PRESS_MOVE_THRESHOLD_PX = 10
+
 /** Minimum width for the playback control bar = the DENSE preset card width
  *  (207.80px). The bar tracks the active card's width but never shrinks below
  *  this, so its knob + button stay comfortably operable on tiny cards. */
@@ -385,6 +391,13 @@ type CardsLayerProps = {
      *  "+ NEW TAG" drop target; `cardIds` is the set the drop should tag. */
     readonly onTagDrop?: (targetKey: string, cardIds: readonly string[]) => void
   } | null
+  /** Mobile long-press → enters BoardRoot's TRASH multi-select mode (industry-
+   *  standard "iOS Photos" gesture). Armed only on a plain mobile tap-surface
+   *  card (isMobile && !selectionMode — the same branch that would otherwise
+   *  open the Lightbox), so it never fires during TAG MODE or a SHARE stage,
+   *  which already own the gesture via `selectionMode`. Undefined/receiver
+   *  mode = no long-press at all (byte-identical to before this feature). */
+  readonly onLongPressCard?: (bookmarkId: string) => void
   /** Active board theme id. Drives per-card decorations (meta.decorations)
    *  and, from Task 5, the entry/shutdown motion keys. */
   readonly themeId: ThemeId
@@ -437,6 +450,7 @@ export function CardsLayer({
   entryAnimCycle = 0,
   receiverMode,
   selectionMode,
+  onLongPressCard,
   forceTagButtonVisible = false,
   themeId,
 }: CardsLayerProps): ReactNode {
@@ -1086,6 +1100,70 @@ export function CardsLayer({
     [onClick],
   )
 
+  // Mobile long-press → TRASH multi-select (industry-standard "iOS Photos"
+  // gesture). Armed on plain-tap pointerdown (isMobile && !selectionMode,
+  // see the per-card onPointerDown below) — never while TAG MODE or a SHARE
+  // stage already own the gesture via `selectionMode`. LONG_PRESS_MS hold;
+  // > LONG_PRESS_MOVE_THRESHOLD_PX movement or an early lift cancels it, so
+  // a scroll never fires it. On success: haptic buzz (where supported) +
+  // onLongPressCard(bookmarkId), and longPressFiredRef flags the click that
+  // follows the eventual lift so it's swallowed instead of opening the
+  // Lightbox (see the onClick branches below — selectionMode also flips
+  // true by then, which independently routes the click to a no-op, but the
+  // ref is the explicit, timing-independent guard).
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressFiredRef = useRef<boolean>(false)
+
+  useEffect(() => {
+    return (): void => {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current)
+    }
+  }, [])
+
+  const handleCardLongPressPointerDown = useCallback(
+    (e: PointerEvent<HTMLDivElement>, bookmarkId: string): void => {
+      if (!onLongPressCard) return
+      // Reset any stale "just fired" flag from an earlier long-press whose
+      // resulting click never ran through the ref-check branch below (e.g.
+      // the tap that entered TRASH-select routes through the selectionMode
+      // machinery instead, once active, and never consumes the flag).
+      longPressFiredRef.current = false
+      const startX = e.clientX
+      const startY = e.clientY
+
+      const clearArmedTimer = (): void => {
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current)
+          longPressTimerRef.current = null
+        }
+      }
+      const teardown = (): void => {
+        clearArmedTimer()
+        window.removeEventListener('pointermove', move)
+        window.removeEventListener('pointerup', teardown)
+        window.removeEventListener('pointercancel', teardown)
+      }
+      const move = (ev: globalThis.PointerEvent): void => {
+        const distance = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+        if (distance > LONG_PRESS_MOVE_THRESHOLD_PX) teardown()
+      }
+
+      window.addEventListener('pointermove', move)
+      window.addEventListener('pointerup', teardown)
+      window.addEventListener('pointercancel', teardown)
+
+      longPressTimerRef.current = setTimeout(() => {
+        longPressTimerRef.current = null
+        longPressFiredRef.current = true
+        teardown()
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+          navigator.vibrate(10)
+        }
+        onLongPressCard(bookmarkId)
+      }, LONG_PRESS_MS)
+    },
+    [onLongPressCard],
+  )
 
   // Selective-share / TAG MODE card handler. A genuine tap (< CLICK_MAX_MS,
   // < CLICK_THRESHOLD_PX) toggles selection. In TAG MODE (onTagDrop present) a
@@ -1347,17 +1425,25 @@ export function CardsLayer({
               // Desktop tag-drag and mobile SHARE-select keep the capture path.
               if (isMobile && isTagMode) return
               if (selectionMode) { handleSelectPointerDown(e, it.bookmarkId); return }
-              // Mobile: native scroll owns the gesture; a genuine tap fires the
-              // onClick below (the browser suppresses click during a scroll).
-              if (isMobile) return
+              // Mobile plain-tap surface: native scroll owns the gesture, a
+              // genuine tap fires the onClick below (the browser suppresses
+              // click during a scroll) — and this is also the only surface a
+              // long-press is armed on (no other mode is active here).
+              if (isMobile) { handleCardLongPressPointerDown(e, it.bookmarkId); return }
               if (receiverMode) { handleReceiverPointerDown(e, it.bookmarkId); return }
               handleReorderPointerDown(e, it.bookmarkId)
             }}
             onClick={
               isMobile && isTagMode
-                ? (): void => selectionToggle?.(it.bookmarkId)
+                ? (): void => {
+                    if (longPressFiredRef.current) { longPressFiredRef.current = false; return }
+                    selectionToggle?.(it.bookmarkId)
+                  }
                 : isMobile && !selectionMode
-                  ? (e: ReactMouseEvent<HTMLDivElement>): void => handleMobileCardClick(e, it.bookmarkId)
+                  ? (e: ReactMouseEvent<HTMLDivElement>): void => {
+                      if (longPressFiredRef.current) { longPressFiredRef.current = false; return }
+                      handleMobileCardClick(e, it.bookmarkId)
+                    }
                   : undefined
             }
             onPointerEnter={(): void => onHoverChange(it.bookmarkId)}

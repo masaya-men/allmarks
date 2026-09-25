@@ -1064,5 +1064,12 @@
   },
   "trash": {
     "syncNote": "If you sync with another device, items may come back to the trash — that's a safety feature, not a bug. Empty the trash on both devices to remove them for good."
+  },
+  "trashSelect": {
+    "count": "{count} محدد",
+    "moveToTrash": "نقل إلى المهملات",
+    "restore": "استعادة",
+    "toast": "تم نقل {count} إلى المهملات",
+    "undo": "تراجع"
   }
 }

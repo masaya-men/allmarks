@@ -14,15 +14,29 @@ export type MobileArrangeToastProps = {
   /** Called once the toast should go away, either from the auto-dismiss
    *  timer or (if the caller wires it) an explicit close. */
   readonly onDismiss: () => void
+  /** Translated label for the undo button. Defaults to the literal "UNDO"
+   *  used by the original collage-remove callsite (untranslated there by
+   *  design — kept as the default so that callsite stays byte-identical). */
+  readonly undoLabel?: string
+  /** Auto-dismiss delay in ms. Defaults to the original 4000ms. */
+  readonly durationMs?: number
 }
 
 /** Confirms a card was removed from the collage IMAGE (not the saved link).
  *  Modeled on `UndoToast.tsx`: body portal + SSR-safe mount gate. Unlike
  *  UndoToast this carries its own dismiss timer, since the parent mounts it
- *  once per removal rather than feeding it a stream of messages. */
+ *  once per removal rather than feeding it a stream of messages. Also reused
+ *  by the mobile TRASH multi-select toast (BoardRoot), which passes a
+ *  translated `undoLabel` and a longer `durationMs`. */
 const AUTO_DISMISS_MS = 4000
 
-export function MobileArrangeToast({ message, onUndo, onDismiss }: MobileArrangeToastProps): ReactNode {
+export function MobileArrangeToast({
+  message,
+  onUndo,
+  onDismiss,
+  undoLabel = 'UNDO',
+  durationMs = AUTO_DISMISS_MS,
+}: MobileArrangeToastProps): ReactNode {
   const [mounted, setMounted] = useState<boolean>(false)
   const [visible, setVisible] = useState<boolean>(false)
 
@@ -42,11 +56,12 @@ export function MobileArrangeToast({ message, onUndo, onDismiss }: MobileArrange
     // (no-op visually under prefers-reduced-motion, since the CSS drops the
     // transition there and the pill just appears already-visible).
     const raf = requestAnimationFrame(() => setVisible(true))
-    const dismissTimer = window.setTimeout(() => onDismissRef.current(), AUTO_DISMISS_MS)
+    const dismissTimer = window.setTimeout(() => onDismissRef.current(), durationMs)
     return () => {
       cancelAnimationFrame(raf)
       window.clearTimeout(dismissTimer)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (!mounted) return null
@@ -66,7 +81,7 @@ export function MobileArrangeToast({ message, onUndo, onDismiss }: MobileArrange
           onClick={onUndo}
           data-testid="mobile-arrange-remove-toast-undo"
         >
-          UNDO
+          {undoLabel}
         </button>
       </div>
     </div>,

@@ -151,6 +151,7 @@ import {
 } from '@/lib/share/stage-zoom'
 import { ShareToast } from '@/components/board/ShareToast'
 import { MobileShareSelectBar } from '@/components/board/MobileShareSelectBar'
+import { MobileTrashSelectBar } from '@/components/board/MobileTrashSelectBar'
 import { MobileShareResult } from '@/components/board/MobileShareResult'
 import { CaptureCrashNotice } from '@/components/board/CaptureCrashNotice'
 import { mobileCaptureScale, SHARE_OG_ASPECT, SHARE_PORTRAIT_ASPECT, mobileCollagePortraitBandRect } from '@/lib/share/mobile-band'
@@ -517,6 +518,14 @@ export function BoardRoot() {
   // assigned to once the name is committed. null = the create input is closed.
   const [tagDraft, setTagDraft] = useState<{ readonly cardIds: readonly string[] } | null>(null)
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
+  // Mobile long-press multi-select → move-to-trash (or restore, inside the
+  // TRASH filter). Mutually exclusive with tagMode / sharePhase, and reuses
+  // the SAME selectedIds + handleSelectToggle machinery those already share
+  // (CardsLayer's selectionMode prop). trashUndoEntryRef + trashToast back
+  // the "Moved N to trash · Undo" confirmation (MobileArrangeToast reuse).
+  const [trashSelectActive, setTrashSelectActive] = useState<boolean>(false)
+  const [trashToast, setTrashToast] = useState<{ readonly count: number } | null>(null)
+  const trashUndoEntryRef = useRef<UndoEntry | null>(null)
   // Free-placement layout for the arrange stage (owned here, passed to
   // CollageCanvas). Discarded on exit — the temporary collage is never persisted.
   const [collagePositions, setCollagePositions] = useState<CollagePositions>({})
@@ -2407,6 +2416,83 @@ export function BoardRoot() {
     return (): void => window.removeEventListener('keydown', onKey)
   }, [tagMode, tagDraft, handleExitTagMode])
 
+  // Mobile long-press → TRASH multi-select (CardsLayer's onLongPressCard,
+  // industry-standard "iOS Photos" gesture). Mutually exclusive with TAG MODE
+  // / SHARE — CardsLayer only arms the long-press when neither is active, but
+  // this clears them too as a belt-and-braces guard.
+  const handleEnterTrashSelect = useCallback((bookmarkId: string): void => {
+    setActiveDrawer(null)
+    setSharePhase(null)
+    setTagMode(false)
+    setSelectedIds(new Set([bookmarkId]))
+    setTrashSelectActive(true)
+  }, [])
+
+  const handleExitTrashSelect = useCallback((): void => {
+    setTrashSelectActive(false)
+    setSelectedIds(new Set())
+  }, [])
+
+  // Deselecting the last card exits the mode (matches iOS Photos: the
+  // selection bar disappears once nothing is picked).
+  useEffect((): void => {
+    if (trashSelectActive && selectedIds.size === 0) handleExitTrashSelect()
+  }, [trashSelectActive, selectedIds, handleExitTrashSelect])
+
+  useEffect((): (() => void) | undefined => {
+    if (!trashSelectActive) return undefined
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') handleExitTrashSelect()
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [trashSelectActive, handleExitTrashSelect])
+
+  // Move-to-trash (outside the TRASH filter) or Restore (inside it) for the
+  // whole trash-select working set — ONE bulk undo entry, mirroring
+  // handleTrashDeadLinksRequest above. Move-to-trash additionally surfaces a
+  // MobileArrangeToast with its own Undo button (handleTrashToastUndo) on top
+  // of the normal Ctrl+Z path; Restore has no undo entry (mirrors the single-
+  // card CardCornerActions restore path, which also doesn't push one).
+  const handleTrashSelectPrimary = useCallback(async (): Promise<void> => {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    if (activeFilter.kind === 'archive') {
+      for (const id of ids) {
+        await persistSoftDelete(id, false)
+      }
+      handleExitTrashSelect()
+      return
+    }
+    const entry: UndoEntry = { kind: 'deleteMany', bookmarkIds: ids }
+    pushUndo(entry)
+    trashUndoEntryRef.current = entry
+    for (const id of ids) {
+      await persistSoftDelete(id, true)
+    }
+    handleExitTrashSelect()
+    setTrashToast({ count: ids.length })
+  }, [selectedIds, activeFilter, persistSoftDelete, pushUndo, handleExitTrashSelect])
+
+  // The toast's own Undo button: restores the batch immediately (rather than
+  // waiting on Ctrl+Z) and removes the now-redundant entry from the undo
+  // stack so a later Ctrl+Z doesn't try to restore the same batch again.
+  const handleTrashToastUndo = useCallback((): void => {
+    const entry = trashUndoEntryRef.current
+    if (!entry) { setTrashToast(null); return }
+    trashUndoEntryRef.current = null
+    setUndoStack((prev) => {
+      const idx = prev.lastIndexOf(entry)
+      return idx === -1 ? prev : [...prev.slice(0, idx), ...prev.slice(idx + 1)]
+    })
+    void applyEntry(entry, 'undo')
+    setTrashToast(null)
+  }, [applyEntry])
+
+  const handleTrashToastDismiss = useCallback((): void => {
+    setTrashToast(null)
+  }, [])
+
   // Tap an empty area to leave TAG MODE: the frame edge outside the board, or a
   // gap between cards. "Empty" = a tap (no drag/pan) that isn't on a card, the
   // tag panel, or an interactive control. Capture-phase so it sees the gesture
@@ -3635,9 +3721,10 @@ export function BoardRoot() {
           MORE, FILTER into the top-right header — N-49). Hidden while the Lightbox
           is open (the lightbox surface owns the screen), during onboarding (the
           tutorial drives its own chrome), during TAG MODE (the mobile tag bar
-          takes the floor in its place — s182), and during any SHARE stage (the
-          select bar / result sheet own the bottom). */}
-      {isMobile && !lightboxItemId && !showOnboarding && !tagMode && sharePhase === null && (
+          takes the floor in its place — s182), during any SHARE stage (the
+          select bar / result sheet own the bottom), and during TRASH-select
+          (long-press multi-select — MobileTrashSelectBar owns the bottom). */}
+      {isMobile && !lightboxItemId && !showOnboarding && !tagMode && sharePhase === null && !trashSelectActive && (
         <BoardMobileNav
           onTag={handleEnterTagMode}
           tagActive={tagMode}
@@ -3655,8 +3742,8 @@ export function BoardRoot() {
           isMobile layout gate above so tablets in landscape still get it.
           Hidden under the same conditions as the bottom nav, plus during any
           SHARE stage (select or arrange — the floating + would collide with
-          the select bar / collage canvas). */}
-      {isTouchDevice && !lightboxItemId && !showOnboarding && !tagMode && sharePhase === null && (
+          the select bar / collage canvas) and during TRASH-select. */}
+      {isTouchDevice && !lightboxItemId && !showOnboarding && !tagMode && sharePhase === null && !trashSelectActive && (
         <MobileSaveButton
           themeId={themeId}
           onSave={(url): void => { void mobileSaveUrl(url) }}
@@ -3983,7 +4070,14 @@ export function BoardRoot() {
                       ? { selectedIds, onToggle: handleSelectToggle, onTagDrop: handleTagDrop }
                       : sharePhase === 'select'
                         ? { selectedIds, onToggle: handleSelectToggle }
-                        : null
+                        : trashSelectActive
+                          ? { selectedIds, onToggle: handleSelectToggle }
+                          : null
+                  }
+                  onLongPressCard={
+                    isMobile && !tagMode && sharePhase === null && !lightboxItemId && !showOnboarding
+                      ? handleEnterTrashSelect
+                      : undefined
                   }
                 />
               )
@@ -4572,6 +4666,32 @@ export function BoardRoot() {
           onSelectAll={handleSelectAll}
           onCreate={handleMobileEnterArrange}
           onCancel={handleExitShareMode}
+        />
+      )}
+      {/* Mobile long-press TRASH multi-select bottom bar. Primary action swaps
+          to RESTORE while viewing the TRASH filter (activeFilter.kind ===
+          'archive') — same "context-aware" pattern as CardCornerActions'
+          single-card × / ↺ swap. */}
+      {trashSelectActive && (
+        <MobileTrashSelectBar
+          count={selectedIds.size}
+          inTrash={activeFilter.kind === 'archive'}
+          onPrimary={(): void => { void handleTrashSelectPrimary() }}
+          onCancel={handleExitTrashSelect}
+        />
+      )}
+      {/* "Moved N to trash · Undo" confirmation — reuses MobileArrangeToast
+          (the collage-remove-toast component) with a translated undo label
+          and a longer 5s window (bulk trash is a bigger action than a single
+          collage-card removal). Ctrl+Z still works independently while this
+          is showing; dismissing it early just hides the pill. */}
+      {trashToast && (
+        <MobileArrangeToast
+          message={t('trashSelect.toast').replace('{count}', String(trashToast.count))}
+          undoLabel={t('trashSelect.undo')}
+          durationMs={5000}
+          onUndo={handleTrashToastUndo}
+          onDismiss={handleTrashToastDismiss}
         />
       )}
       {sharePhase === 'arrange' && (
