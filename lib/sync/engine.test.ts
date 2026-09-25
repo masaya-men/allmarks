@@ -1244,7 +1244,7 @@ describe('runSyncCycle lastCycleTrace (item 2)', () => {
     expect(result.status).toBe('synced')
 
     const status = await loadSyncStatus(d)
-    expect(status.lastCycleTrace!.steps.map((s) => s.name)).toEqual(['license-check', 'skip-check'])
+    expect(status.lastCycleTrace!.steps.map((s) => s.name)).toEqual(['license-check', 'start poll pending=-', 'skip-check'])
   })
 })
 

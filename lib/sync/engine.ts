@@ -922,6 +922,13 @@ async function runSyncCycleUnlocked(
     // The unpushed-local-change marker as of this cycle's start. Cleared at the end only if no
     // newer local write re-marked it meanwhile (clearPendingPushIf compares the value).
     const pendingAtStart = status.pendingPush
+    // Diagnostic-only first step for the on-device sync log: why this cycle ran (poll vs full
+    // trigger) and whether an unpushed-change marker was set at its start.
+    trace.push({
+      name: `start ${opts.skipIfUnchanged ? 'poll' : 'full'} pending=${pendingAtStart ?? '-'}`,
+      ms: 0,
+      ok: true,
+    })
 
     // Fast path for a timer/visibility poll (opts.skipIfUnchanged, set only by those triggers —
     // never by a dirty write or manual "Sync now"): if nothing changed on Drive since this device

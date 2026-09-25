@@ -250,7 +250,7 @@ describe('sync format v2 — two devices', () => {
     const idle = await runSyncCycle(b, { skipIfUnchanged: true })
     expect(idle).toEqual({ status: 'synced', vaultConflict: false, localChanged: false })
     expect(drive.calls).toEqual([{ op: 'list' }])
-    expect((await loadSyncStatus(b)).lastCycleTrace!.steps.map((s) => s.name)).toEqual(['license-check', 'skip-check'])
+    expect((await loadSyncStatus(b)).lastCycleTrace!.steps.map((s) => s.name)).toEqual(['license-check', 'start poll pending=-', 'skip-check'])
   })
 
   it('concurrent offline edits on both devices merge exactly like mergeAll and both converge', async () => {
