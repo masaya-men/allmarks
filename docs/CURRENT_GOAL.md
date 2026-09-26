@@ -1,31 +1,23 @@
-# 次セッションのゴール — ユーザーの実機確認 → Paddle 書類が通ったら有料プランを公開
+# 次セッションのゴール — LP v10 の本番実装を Task 3 から続け、15言語で確認して公開
 
-## ★s221(2026-09-24〜25)の到達点
+## ★最初に(s222 の到達点)
+- 作業ブランチ **`feat/lp-v10`**(master は本番と同じ状態のまま・未マージ)。
+- 計画 `docs/superpowers/plans/2026-09-26-lp-v10.md` / 設計 `docs/superpowers/specs/2026-09-26-lp-v10-design.md` / 見本(正本・非公開) `docs/private/lp-v10-mock.html`(ユーザー承認済 v10)。
+- 進み具合の台帳(git 管理外): `.superpowers/sdd/2026-09-26-lp-v10/progress.md` — **Task 1(15言語の文言)・Task 2(動きの計算)は完了・レビュー済**。Task 3 は夜の中断で未着手(ファイル変更なし・`task-3-brief.md` 作成済)。
+- 進め方: `superpowers:subagent-driven-development` で Task 3→9 を直列に(実装 Sonnet・各タスク後にレビュー)→ 最後に全体レビュー → Task 10(全ゲート・見本との見比べ)→ 本番公開(CLAUDE.md の固定手順)→ master へ統合・push。
+- **注意**: このブランチの文言は見出しに改行の印(`\n`)が入っているため、古いトップページでは表示が崩れる。新しい部品が揃うまで**このブランチから本番公開しない**。
 
-有料化の仕組みは**全部完成・Sandbox で通しテスト成功・本番未公開**。詳細は `docs/TODO_COMPLETED.md`「s221」節、設計は `docs/private/2026-09-24-paddle-license-lifecycle-design.md`。
-- 本番 Paddle: 審査通過後、**住所書類の差し戻し**(Paddle 非対応の書類だった)。ユーザーが月曜以降に銀行取引明細(名前+住所入り)を取得して再提出。ダメなら住民票の写し。
-- 本番準備済み: 商品2・価格4(税込)、Default payment link、Google Pay オン、割引欄オフ、client-side token、Cloudflare Secret `PADDLE_API_KEY`(読み取り2権限・無期限)と `PADDLE_ENV=live`。
-- **`.env.production` の Paddle 6行はコメントアウト中**(書類確認前に誤って公開しないため)。
+## Paddle(月曜以降)
+- ユーザーに書類確認の結果を聞く。通っていれば有料公開(手順は下)。LP の同期区画・流れる帯の「Sync」・料金への案内は、公開日に一緒に出す(v10 見本の Sync 区画)。
 
-
-## ★公開の前提条件(s221 ユーザーと合意): 同期の合格ライン — ✅ 2026-09-25 実機で合格(PC↔iPhone 追加が約20秒・同時追加の取りこぼし無し)
-有料公開は書類承認に加え、次を実機(PC+iPhone)で満たしてから。①片方で追加/編集/削除→もう片方にリロード無しで概ね10〜20秒以内 ②交互に20操作で赤い表示ゼロ ③ほぼ同時操作でも取りこぼしゼロ ④Google アップロード窓口が遅い回線(実測≈20KB/s)でも①〜③。対応中: 同期形式 v2(分割+gzip・差分のみ送受信) — 設計 docs/superpowers/specs/2026-09-25-sync-format-v2-design.md。
-
-## ★最初に: ユーザーの実機確認待ち(s221 続きで本番反映済み)
-- 友達への無料キー: `/gift` ページ完成(ユーザー承認済)。リンクは `docs/private/gift-links.md`。1本で最大50人・転送されると他人も受け取れる(1人専用リンクは頼まれたら作る)。
-- SYNC 欄の作り直し(帯=同期ボタン/端末の行/見出し5回で記録)、スマホ長押し→ゴミ箱/復元、スマホ絞り込み一覧(ナビに隠れない・指でスクロール・長押しで並べ替え)。不具合があれば直す。
-- 残タスク: LP の手直し(落ち着いた文体+有料プランを大きく)を見本→承認で作り、公開日に一緒に出す。
-
-## ★次にやること(書類が通ったら・この順で)
-
-1. ユーザーに Paddle から「確認完了」の連絡が来たか確認(来るまで公開しない)。
-2. `.env.production` の `# NEXT_PUBLIC_PADDLE_*` 6行のコメントを外す。SyncPanel の「応援する(近日公開)」→料金ページへのリンクに(`navHref(locale,'pricing')`、新しいタブ)。
-3. **素の** `rtk pnpm build`(`.env.sandbox` を読み込まない)→ tsc+vitest → deploy(CLAUDE.md の固定手順)。`out/` に sandbox の値(`pri_01m39e0`)が無いことを grep で確認してから。
-4. 本番で ¥500 を実購入 → 鍵表示 → 同期 → Paddle 管理画面から返金+解約 → 停止を確認。
-5. 後片付け: Sandbox の API キー(チャットで共有した `claude-mcp`)を Sandbox 管理画面で削除、`claude mcp remove paddle-sandbox-manual`。
+## 有料公開の手順(書類が通ったら・この順で)
+1. `.env.production` の `# NEXT_PUBLIC_PADDLE_*` 6行のコメントを外す。SyncPanel の「応援する(近日公開)」→料金ページへのリンクに(`navHref(locale,'pricing')`、新しいタブ)。
+2. **素の** `rtk pnpm build`(`.env.sandbox` を読み込まない)→ tsc+vitest → deploy。`out/` に sandbox の値(`pri_01m39e0`)が無いことを grep で確認してから。
+3. 本番で ¥500 を実購入 → 鍵表示 → 同期 → Paddle 管理画面から返金+解約 → 停止を確認。
+4. 後片付け: Sandbox の API キー(`claude-mcp`)を Sandbox 管理画面で削除、`claude mcp remove paddle-sandbox-manual`。
 
 ## ユーザー本人の作業
-- 月曜以降: 銀行取引明細 → Paddle 再提出。
+- 月曜以降: 銀行取引明細 → Paddle 再提出(ダメなら住民票の写し)。
 - Payoneer 承認メール → Paddle 本番 Payouts → Payout Settings(TODO「ユーザー本人の作業待ち」に詳細)。
 - グループアドレス名義で返信する Gmail 設定(未)。
 
