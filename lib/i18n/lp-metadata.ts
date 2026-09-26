@@ -22,7 +22,7 @@ export function lpMetadata(locale: SupportedLocale): Metadata {
   const title =
     locale === 'en'
       ? `${APP_NAME} — Bookmark × Collage`
-      : `${APP_NAME} — ${translate(STATIC_MESSAGES[locale], 'landing.hero.headline')}`
+      : `${APP_NAME} — ${translate(STATIC_MESSAGES[locale], 'landing.hero.headline').replace(/\n/g, '')}`
   return {
     title: { absolute: title },
     description,

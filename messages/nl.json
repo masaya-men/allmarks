@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Visuele bladwijzermanager",
-      "headline": "Zet links om in een visueel bord.",
+      "headline": "Zet links om \nin een visueel bord.",
       "description": "Sla video's, sociale berichten, artikelen en afbeeldingen op met één klik en leg ze op één bord vast. Bladwijzers die in een lijst verdwijnen, zijn zo in één oogopslag te zien. Gratis te gebruiken, zonder aanmelding.",
       "ctaPrimary": "Open het bord",
       "ctaGhost": "Bekijk hoe het werkt",
       "scrollHint": "scrollen"
     },
     "problem": {
-      "headline": "Je stapelt ze op en kijkt er nooit meer naar.",
-      "body": "In een lijst met links of een scrollende feed raakt wat je opslaat begraven."
+      "headline": "Je stapelt ze op \nen kijkt er nooit meer naar.",
+      "body": "In een lijst met links of een scrollende feed raakt wat je opslaat begraven.",
+      "chipList": "De gebruikelijke lijst"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Exporteer een bord als afbeelding, of deel het als link die de indeling behoudt."
     },
     "cta": {
-      "headline": "Werkt direct in je browser.",
+      "headline": "Werkt direct \nin je browser.",
       "button": "Bord openen (geen aanmelding)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Plak een link om die op te slaan",
+      "saved": "Opgeslagen",
+      "inBrowser": "Opgeslagen in deze browser",
+      "noSignup": "Geen aanmelding",
+      "saveImage": "Afbeelding opslaan",
+      "copyLink": "Link kopiëren",
+      "copied": "Gekopieerd",
+      "tweet1": "Op regenachtige dagen zit ik het liefst bij het raam.\n\nIk zette drie rustige cafés op één bord. Overal draaien zachtjes oude platen.",
+      "tweet2": "In het weekend kijk ik terug naar links die ik opsloeg en weer vergat.\n\nIn een lijst scrol ik eraan voorbij. Op een bord uitgestald, vallen ze wél op.",
+      "tweet3": "Een keuken in eiken en witte tegels.\n\nAls ik de foto's naast elkaar leg, zie ik langzaam wat de dingen die ik mooi vind gemeen hebben."
     }
   },
   "pages": {

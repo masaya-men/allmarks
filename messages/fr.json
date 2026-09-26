@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Gestionnaire visuel de favoris",
-      "headline": "Transformez vos liens en tableau visuel.",
+      "headline": "Transformez vos liens en \ntableau visuel.",
       "description": "Enregistrez vidéos, publications, articles et images en un clic et disposez-les sur un tableau. Les liens qui se perdent dans une liste deviennent visibles d'un coup d'œil. Gratuit, sans inscription.",
       "ctaPrimary": "Ouvrir le tableau",
       "ctaGhost": "Voir comment ça marche",
       "scrollHint": "défiler"
     },
     "problem": {
-      "headline": "Vous les accumulez sans jamais y revenir.",
-      "body": "Dans une liste de liens ou un fil qui défile, ce que vous enregistrez finit par se perdre."
+      "headline": "Vous les accumulez \nsans jamais y revenir.",
+      "body": "Dans une liste de liens ou un fil qui défile, ce que vous enregistrez finit par se perdre.",
+      "chipList": "La liste habituelle"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Exportez un tableau en image, ou partagez-le sous forme de lien qui conserve votre mise en page."
     },
     "cta": {
-      "headline": "Fonctionne directement dans votre navigateur.",
+      "headline": "Fonctionne directement \ndans votre navigateur.",
       "button": "Ouvrir le tableau (sans inscription)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Collez un lien pour l'enregistrer",
+      "saved": "Enregistré",
+      "inBrowser": "Enregistré dans ce navigateur",
+      "noSignup": "Sans inscription",
+      "saveImage": "Enregistrer l'image",
+      "copyLink": "Copier le lien",
+      "copied": "Copié",
+      "tweet1": "Les jours de pluie, je préfère une place près de la fenêtre.\n\nJ'ai réuni trois cafés tranquilles sur un même tableau. Partout, de vieux disques tournent, en sourdine.",
+      "tweet2": "Le week-end, je reviens sur des liens que j'avais enregistrés puis oubliés.\n\nDans une liste, je passe à côté. Disposés sur un tableau, ils attirent mon regard.",
+      "tweet3": "Une cuisine en chêne et carrelage blanc.\n\nEn plaçant les photos côte à côte, je vois peu à peu ce que les choses que j'aime ont en commun."
     }
   },
   "pages": {

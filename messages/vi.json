@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Trình quản lý dấu trang trực quan",
-      "headline": "Biến liên kết thành bảng hình ảnh.",
+      "headline": "Biến liên kết thành \nbảng hình ảnh.",
       "description": "Lưu video, bài đăng mạng xã hội, bài viết và hình ảnh chỉ bằng một cú nhấp, rồi sắp xếp chúng trên một bảng. Các mục đã lưu bị chìm trong danh sách giờ có thể thấy ngay trong nháy mắt. Miễn phí, không cần đăng ký.",
       "ctaPrimary": "Mở bảng",
       "ctaGhost": "Xem cách hoạt động",
       "scrollHint": "cuộn xuống"
     },
     "problem": {
-      "headline": "Bạn cứ tích góp mà chẳng bao giờ xem lại.",
-      "body": "Trong một danh sách liên kết hay một luồng cuộn qua, những gì bạn lưu sẽ bị chôn vùi."
+      "headline": "Bạn cứ tích góp \nmà chẳng bao giờ xem lại.",
+      "body": "Trong một danh sách liên kết hay một luồng cuộn qua, những gì bạn lưu sẽ bị chôn vùi.",
+      "chipList": "Danh sách quen thuộc"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Xuất một bảng dưới dạng hình ảnh, hoặc chia sẻ dưới dạng liên kết vẫn giữ nguyên bố cục."
     },
     "cta": {
-      "headline": "Hoạt động ngay trong trình duyệt của bạn.",
+      "headline": "Hoạt động ngay \ntrong trình duyệt của bạn.",
       "button": "Mở bảng (không cần đăng ký)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Dán một liên kết để lưu lại",
+      "saved": "Đã lưu",
+      "inBrowser": "Đã lưu trong trình duyệt này",
+      "noSignup": "Không cần đăng ký",
+      "saveImage": "Lưu hình ảnh",
+      "copyLink": "Sao chép liên kết",
+      "copied": "Đã sao chép",
+      "tweet1": "Những ngày mưa, tôi thích ngồi cạnh cửa sổ.\n\nTôi gom ba quán cà phê yên tĩnh vào một bảng. Ở đâu cũng vang khe khẽ tiếng đĩa than cũ.",
+      "tweet2": "Cuối tuần, tôi xem lại những liên kết đã lưu rồi quên mất.\n\nTrong một danh sách, tôi thường lướt qua chúng. Khi xếp trên một bảng, chúng lại thu hút ánh nhìn.",
+      "tweet3": "Một căn bếp gỗ sồi và gạch men trắng.\n\nKhi đặt các bức ảnh cạnh nhau, tôi dần nhận ra điểm chung giữa những thứ mình thích."
     }
   },
   "pages": {

@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Görsel Yer İmi Yöneticisi",
-      "headline": "Bağlantıları görsel bir panoya dönüştürün.",
+      "headline": "Bağlantıları \ngörsel bir panoya dönüştürün.",
       "description": "Videoları, sosyal paylaşımları, makaleleri ve görselleri tek tıkla kaydedip tek bir panoya yerleştirin. Bir listede kaybolan yer imleri tek bakışta görülebilir hale gelir. Ücretsiz kullanılır, kayıt gerekmez.",
       "ctaPrimary": "Panoyu aç",
       "ctaGhost": "Nasıl çalıştığını gör",
       "scrollHint": "kaydır"
     },
     "problem": {
-      "headline": "Biriktiriyorsunuz ama bir daha bakmıyorsunuz.",
-      "body": "Bir bağlantı listesinde ya da kaydırılan bir akışta, kaydettikleriniz gömülüp kalır."
+      "headline": "Biriktiriyorsunuz ama \nbir daha bakmıyorsunuz.",
+      "body": "Bir bağlantı listesinde ya da kaydırılan bir akışta, kaydettikleriniz gömülüp kalır.",
+      "chipList": "Her zamanki liste"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Bir panoyu görsel olarak dışa aktarın veya düzeninizi koruyan bir bağlantı olarak paylaşın."
     },
     "cta": {
-      "headline": "Doğrudan tarayıcınızda çalışır.",
+      "headline": "Doğrudan \ntarayıcınızda çalışır.",
       "button": "Panoyu aç (kayıt gerekmez)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Kaydetmek için bir bağlantı yapıştırın",
+      "saved": "Kaydedildi",
+      "inBrowser": "Bu tarayıcıda kaydedildi",
+      "noSignup": "Kayıt gerekmez",
+      "saveImage": "Görseli kaydet",
+      "copyLink": "Bağlantıyı kopyala",
+      "copied": "Kopyalandı",
+      "tweet1": "Yağmurlu günlerde pencere kenarını severim.\n\nSessiz üç kafeyi tek bir panoda topladım. Hepsinde eski plaklar hafifçe çalıyor.",
+      "tweet2": "Hafta sonları, kaydedip unuttuğum bağlantılara geri dönüyorum.\n\nListede gözden kaçıyorlar. Bir panoya yerleştirilince hemen dikkatimi çekiyorlar.",
+      "tweet3": "Meşe ve beyaz fayanslı bir mutfak.\n\nFotoğrafları yan yana koyunca, sevdiğim şeylerin ortak noktasını yavaş yavaş görüyorum."
     }
   },
   "pages": {

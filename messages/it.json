@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Gestore visivo di segnalibri",
-      "headline": "Trasforma i link in una bacheca visiva.",
+      "headline": "Trasforma i link in \nuna bacheca visiva.",
       "description": "Salva video, post social, articoli e immagini con un clic e disponili su una bacheca. I segnalibri che si perdono in un elenco diventano visibili a colpo d'occhio. Gratuito, senza registrazione.",
       "ctaPrimary": "Apri la bacheca",
       "ctaGhost": "Scopri come funziona",
       "scrollHint": "scorri"
     },
     "problem": {
-      "headline": "Li accumuli e non li guardi mai più.",
-      "body": "In un elenco di link o in un feed che scorre, ciò che salvi finisce per perdersi."
+      "headline": "Li accumuli \ne non li guardi mai più.",
+      "body": "In un elenco di link o in un feed che scorre, ciò che salvi finisce per perdersi.",
+      "chipList": "La solita lista"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Esporta una bacheca come immagine, oppure condividila come link che mantiene il layout."
     },
     "cta": {
-      "headline": "Funziona direttamente nel browser.",
+      "headline": "Funziona direttamente \nnel browser.",
       "button": "Apri la bacheca (senza registrazione)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Incolla un link per salvarlo",
+      "saved": "Salvato",
+      "inBrowser": "Salvato in questo browser",
+      "noSignup": "Senza registrazione",
+      "saveImage": "Salva immagine",
+      "copyLink": "Copia link",
+      "copied": "Copiato",
+      "tweet1": "Nei giorni di pioggia preferisco un posto vicino alla finestra.\n\nHo raccolto tre caffetterie tranquille in un'unica bacheca. Ovunque suonano dischi vecchi, a basso volume.",
+      "tweet2": "Nei weekend torno sui link che avevo salvato e poi dimenticato.\n\nIn un elenco mi scorrono davanti senza notarli. Disposti su una bacheca, invece, attirano lo sguardo.",
+      "tweet3": "Una cucina in rovere e piastrelle bianche.\n\nMettendo le foto una accanto all'altra, scopro poco a poco cosa hanno in comune le cose che mi piacciono."
     }
   },
   "pages": {

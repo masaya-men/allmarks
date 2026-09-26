@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Visueller Lesezeichen-Manager",
-      "headline": "Links in ein visuelles Board verwandeln.",
+      "headline": "Links \nin ein visuelles Board verwandeln.",
       "description": "Videos, Social-Posts, Artikel und Bilder mit einem Klick speichern und auf einem Board anordnen. Lesezeichen, die in einer Liste untergehen, sind so auf einen Blick zu sehen. Kostenlos nutzbar, ohne Anmeldung.",
       "ctaPrimary": "Board öffnen",
       "ctaGhost": "So funktioniert es",
       "scrollHint": "scrollen"
     },
     "problem": {
-      "headline": "Du sammelst alles – und schaust nie wieder rein.",
-      "body": "In einer Liste von Links oder einem endlosen Feed geht das Gespeicherte unter."
+      "headline": "Du sammelst alles – \nund schaust nie wieder rein.",
+      "body": "In einer Liste von Links oder einem endlosen Feed geht das Gespeicherte unter.",
+      "chipList": "Die übliche Liste"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Ein Board als Bild exportieren oder als Link teilen, der das Layout beibehält."
     },
     "cta": {
-      "headline": "Funktioniert direkt im Browser.",
+      "headline": "Funktioniert direkt \nim Browser.",
       "button": "Board öffnen (keine Anmeldung)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Link zum Speichern einfügen",
+      "saved": "Gespeichert",
+      "inBrowser": "In diesem Browser gespeichert",
+      "noSignup": "Keine Anmeldung",
+      "saveImage": "Bild speichern",
+      "copyLink": "Link kopieren",
+      "copied": "Kopiert",
+      "tweet1": "An regnerischen Tagen sitze ich am liebsten am Fenster.\n\nIch habe drei ruhige Cafés auf einem Board zusammengestellt. Überall dort laufen leise alte Schallplatten.",
+      "tweet2": "Am Wochenende schaue ich mir Links an, die ich gespeichert und dann vergessen habe.\n\nIn einer Liste scrolle ich einfach daran vorbei. Auf einem Board angeordnet, fallen sie mir sofort auf.",
+      "tweet3": "Eine Küche aus Eiche und weißen Fliesen.\n\nWenn ich die Fotos nebeneinanderlege, erkenne ich nach und nach, was die Dinge, die ich mag, gemeinsam haben."
     }
   },
   "pages": {

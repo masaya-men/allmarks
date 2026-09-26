@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Visual Bookmark Manager",
-      "headline": "Turn links into a visual board.",
+      "headline": "Turn links into \na visual board.",
       "description": "Save videos, social posts, articles, and images in one click and lay them out on one board. Bookmarks that get lost in a list are easy to see at a glance. Free to use, with no sign-up.",
       "ctaPrimary": "Open the board",
       "ctaGhost": "See how it works",
       "scrollHint": "scroll"
     },
     "problem": {
-      "headline": "You pile them up and never look again.",
-      "body": "In a list of links or a scrolling feed, the things you save get buried."
+      "headline": "You pile them up \nand never look again.",
+      "body": "In a list of links or a scrolling feed, the things you save get buried.",
+      "chipList": "The usual list"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Export a board as an image, or share it as a link that keeps your layout."
     },
     "cta": {
-      "headline": "Works right in your browser.",
+      "headline": "Works right \nin your browser.",
       "button": "Open the board (no sign-up)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Paste a link to save",
+      "saved": "Saved",
+      "inBrowser": "Saved in this browser",
+      "noSignup": "No sign-up",
+      "saveImage": "Save image",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "tweet1": "On rainy days, I like a window seat.\n\nI put three quiet cafés on one board. All of them play old records, softly.",
+      "tweet2": "On weekends, I look back at links I saved and forgot.\n\nIn a list I scroll past them. Laid out on a board, they catch my eye.",
+      "tweet3": "A kitchen in oak and white tile.\n\nWhen I put the photos side by side, I slowly see what the things I like have in common."
     }
   },
   "pages": {

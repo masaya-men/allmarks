@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Gerenciador visual de favoritos",
-      "headline": "Transforme links em um quadro visual.",
+      "headline": "Transforme links em \num quadro visual.",
       "description": "Salve vídeos, publicações, artigos e imagens com um clique e organize-os em um quadro. Marcadores que se perdem em uma lista ficam visíveis rapidamente. Gratuito, sem cadastro.",
       "ctaPrimary": "Abrir o quadro",
       "ctaGhost": "Ver como funciona",
       "scrollHint": "rolar"
     },
     "problem": {
-      "headline": "Você acumula e nunca mais olha.",
-      "body": "Em uma lista de links ou em um feed que rola, o que você salva acaba se perdendo."
+      "headline": "Você acumula \ne nunca mais olha.",
+      "body": "Em uma lista de links ou em um feed que rola, o que você salva acaba se perdendo.",
+      "chipList": "A lista de sempre"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Exporte um quadro como imagem, ou compartilhe-o como um link que mantém o layout."
     },
     "cta": {
-      "headline": "Funciona direto no seu navegador.",
+      "headline": "Funciona direto \nno seu navegador.",
       "button": "Abrir o quadro (sem cadastro)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Cole um link para salvá-lo",
+      "saved": "Salvo",
+      "inBrowser": "Salvo neste navegador",
+      "noSignup": "Sem cadastro",
+      "saveImage": "Salvar imagem",
+      "copyLink": "Copiar link",
+      "copied": "Copiado",
+      "tweet1": "Em dias de chuva, prefiro um lugar perto da janela.\n\nReuni três cafés tranquilos em um só quadro. Em todos eles, discos antigos tocam bem baixinho.",
+      "tweet2": "Nos fins de semana, volto a olhar links que salvei e esqueci.\n\nNuma lista, eu passava direto por eles. Organizados num quadro, eles chamam a atenção.",
+      "tweet3": "Uma cozinha de carvalho e azulejo branco.\n\nAo colocar as fotos lado a lado, vou percebendo aos poucos o que as coisas de que gosto têm em comum."
     }
   },
   "pages": {

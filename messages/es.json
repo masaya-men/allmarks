@@ -386,15 +386,16 @@
   "landing": {
     "hero": {
       "label": "Gestor visual de marcadores",
-      "headline": "Convierte tus enlaces en un tablero visual.",
+      "headline": "Convierte tus enlaces en \nun tablero visual.",
       "description": "Guarda vídeos, publicaciones, artículos e imágenes con un clic y colócalos en un tablero. Los marcadores que se pierden en una lista se ven de un vistazo. Gratis, sin necesidad de registro.",
       "ctaPrimary": "Abrir el tablero",
       "ctaGhost": "Ver cómo funciona",
       "scrollHint": "desplazar"
     },
     "problem": {
-      "headline": "Los acumulas y nunca vuelves a verlos.",
-      "body": "En una lista de enlaces o en un feed que se desplaza, lo que guardas queda enterrado."
+      "headline": "Los acumulas \ny nunca vuelves a verlos.",
+      "body": "En una lista de enlaces o en un feed que se desplaza, lo que guardas queda enterrado.",
+      "chipList": "La lista habitual"
     },
     "features": {
       "capture": {
@@ -423,7 +424,7 @@
       "body": "Exporta un tablero como imagen, o compártelo como un enlace que conserva tu disposición."
     },
     "cta": {
-      "headline": "Funciona directamente en tu navegador.",
+      "headline": "Funciona directamente \nen tu navegador.",
       "button": "Abrir el tablero (sin registro)"
     },
     "footer": {
@@ -436,6 +437,18 @@
       "contact": "Contact",
       "refund": "Refund",
       "pricing": "Pricing"
+    },
+    "demo": {
+      "pasteHint": "Pega un enlace para guardarlo",
+      "saved": "Guardado",
+      "inBrowser": "Guardado en este navegador",
+      "noSignup": "Sin registro",
+      "saveImage": "Guardar imagen",
+      "copyLink": "Copiar enlace",
+      "copied": "Copiado",
+      "tweet1": "Los días de lluvia, prefiero un asiento junto a la ventana.\n\nReuní tres cafeterías tranquilas en un tablero. En todas ellas suenan discos antiguos, muy bajito.",
+      "tweet2": "Los fines de semana, vuelvo a los enlaces que guardé y olvidé.\n\nEn una lista los paso por alto. Colocados en un tablero, me llaman la atención.",
+      "tweet3": "Una cocina de roble y azulejo blanco.\n\nAl poner las fotos una junto a otra, voy viendo poco a poco qué tienen en común las cosas que me gustan."
     }
   },
   "pages": {
