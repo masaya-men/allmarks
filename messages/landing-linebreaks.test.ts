@@ -55,3 +55,17 @@ describe.each(Object.keys(FILES))('landing copy (%s)', (lc) => {
     }
   })
 })
+
+// ja / zh / th don't put spaces between words, so the approved source text has
+// no space anywhere in these headlines. The line break must be inserted at a
+// bare character boundary — adding a space next to it would silently change
+// the approved copy (removing \n must reproduce the exact approved string).
+const NO_SPACE_LOCALES = ['ja', 'zh', 'th']
+
+describe.each(NO_SPACE_LOCALES)('no-space script headlines (%s) add no space at the break', (lc) => {
+  const m = FILES[lc]
+  it.each(HEADLINES)('%s has no space adjacent to the line break', (key) => {
+    const s = get(m, key) as string
+    expect(s).not.toMatch(/ \n|\n /)
+  })
+})
