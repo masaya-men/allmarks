@@ -49,10 +49,11 @@
 
 /* ── Scrolled state: translucent bar with hairline ── */
 .header[data-scrolled='true'] {
-  /* Off-white translucent — echoes --lp-bg (#faf9f6) at 88% opacity */
-  background: color-mix(in srgb, #faf9f6 88%, transparent);
-  border-bottom-color: color-mix(in srgb, #14130f 8%, transparent);
-  backdrop-filter: blur(12px) saturate(160%);
+  /* Glass — content shows through clearly (--lp-bg at 30%); strong blur keeps text readable */
+  background: color-mix(in srgb, #faf9f6 30%, transparent);
+  border-bottom-color: color-mix(in srgb, #ffffff 50%, transparent);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, #14130f 6%, transparent);
+  backdrop-filter: blur(22px) saturate(180%);
 }
 
 /* ── Wordmark / logo ── */

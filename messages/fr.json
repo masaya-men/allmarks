@@ -387,44 +387,44 @@
     "hero": {
       "label": "Gestionnaire visuel de favoris",
       "headline": "Transformez vos liens en tableau visuel.",
-      "description": "Enregistrez vidéos, publications, articles et images en un clic, puis arrangez-les librement. Transformez une simple liste en un tableau d'inspiration que vous saisissez d'un coup d'œil. Gratuit, sans inscription.",
+      "description": "Enregistrez vidéos, publications, articles et images en un clic et disposez-les sur un tableau. Les liens qui se perdent dans une liste deviennent visibles d'un coup d'œil. Gratuit, sans inscription.",
       "ctaPrimary": "Ouvrir le tableau",
       "ctaGhost": "Voir comment ça marche",
       "scrollHint": "défiler"
     },
     "problem": {
       "headline": "Vous les accumulez sans jamais y revenir.",
-      "body": "Rien que des liens. Des fils que vous faites défiler sans vous arrêter. Ne laissez pas ce que vous avez sauvegardé se noyer dans l'oubli."
+      "body": "Dans une liste de liens ou un fil qui défile, ce que vous enregistrez finit par se perdre."
     },
     "features": {
       "capture": {
         "title": "Sur votre tableau, depuis n'importe où.",
-        "body": "Collez simplement une URL — X, YouTube, articles, boutiques, images, tout ce qui est sur le web. Vous voulez sauvegarder en un clic ? L'extension navigateur et le bookmarklet sont là pour ça."
+        "body": "Collez une URL pour l'enregistrer. X, YouTube, articles, boutiques en ligne, images et la plupart des autres pages web fonctionnent. Pour un enregistrement en un clic, utilisez l'extension de navigateur ou le bookmarklet."
       },
       "layout": {
-        "title": "Arrangez librement.",
-        "body": "Glissez-déposez pour définir taille et position exactement comme vous le souhaitez."
+        "title": "Disposez librement.",
+        "body": "Faites glisser pour changer la position et la taille de chaque carte."
       },
       "live": {
-        "title": "Un tableau qui prend vie.",
-        "body": "La vidéo au premier plan joue vraiment tandis que les autres scintillent en images fixes — pas une liste d'images figées, mais un tableau vivant. Un seul interrupteur, MOTION, le ramène au calme d'un moodboard."
+        "title": "Les vidéos se lisent sur le tableau.",
+        "body": "La vidéo au premier plan se lit, et les autres défilent en images fixes. Désactivez MOTION pour garder le tableau immobile."
       },
       "organize": {
         "title": "Un tag pour trier.",
-        "body": "Filtrez par tag pour ne voir que ce que vous cherchez. D'autres styles et thèmes arrivent bientôt."
+        "body": "Filtrez par tag pour n'afficher que ce que vous voulez voir. Choisissez l'apparence parmi plusieurs thèmes."
       },
       "privacy": {
-        "title": "Sans compte. Entièrement local.",
-        "body": "Tout vit dans votre navigateur. Pas de compte, rien à créer — votre vie privée reste la vôtre."
+        "title": "Aucun compte nécessaire.",
+        "body": "Vos favoris sont enregistrés dans votre navigateur. Il n'y a pas de compte à créer."
       }
     },
     "share": {
       "headline": "Partagez-le comme un tableau complet.",
-      "body": "Exportez votre tableau terminé en image ou partagez un lien — votre mise en page exacte arrive telle que vous l'avez créée."
+      "body": "Exportez un tableau en image, ou partagez-le sous forme de lien qui conserve votre mise en page."
     },
     "cta": {
-      "headline": "Commencez à construire votre tableau.",
-      "button": "Démarrer maintenant — sans inscription"
+      "headline": "Fonctionne directement dans votre navigateur.",
+      "button": "Ouvrir le tableau (sans inscription)"
     },
     "footer": {
       "features": "Features",

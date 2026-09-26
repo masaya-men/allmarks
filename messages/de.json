@@ -387,44 +387,44 @@
     "hero": {
       "label": "Visueller Lesezeichen-Manager",
       "headline": "Links in ein visuelles Board verwandeln.",
-      "description": "Videos, Social-Posts, Artikel und Bilder mit einem Klick speichern, dann frei anordnen. Verwandle eine dröge Linkliste in ein Inspirations-Board, das du auf einen Blick erfasst. Kostenlos, keine Anmeldung.",
+      "description": "Videos, Social-Posts, Artikel und Bilder mit einem Klick speichern und auf einem Board anordnen. Lesezeichen, die in einer Liste untergehen, sind so auf einen Blick zu sehen. Kostenlos nutzbar, ohne Anmeldung.",
       "ctaPrimary": "Board öffnen",
       "ctaGhost": "So funktioniert es",
       "scrollHint": "scrollen"
     },
     "problem": {
       "headline": "Du sammelst alles – und schaust nie wieder rein.",
-      "body": "Nur Links. Feeds, die du einfach durchscrollst. Lass nicht zu, dass das, was du gespeichert hast, im Chaos versinkt."
+      "body": "In einer Liste von Links oder einem endlosen Feed geht das Gespeicherte unter."
     },
     "features": {
       "capture": {
         "title": "Auf dein Board, von überall.",
-        "body": "Einfach eine URL einfügen – X, YouTube, Artikel, Shops, Bilder, alles im Web. Du möchtest mit einem Klick speichern? Die Browser-Erweiterung und das Bookmarklet machen es möglich."
+        "body": "Eine URL einfügen, um sie zu speichern. X, YouTube, Artikel, Onlineshops, Bilder und die meisten anderen Webseiten funktionieren. Für das Speichern mit einem Klick die Browser-Erweiterung oder das Bookmarklet verwenden."
       },
       "layout": {
         "title": "Frei anordnen.",
-        "body": "Per Drag & Drop Größe und Position genau so setzen, wie es dir gefällt."
+        "body": "Per Drag & Drop Position und Größe jeder Karte ändern."
       },
       "live": {
-        "title": "Ein Board, das lebendig wird.",
-        "body": "Das fokussierte Video spielt wirklich ab, während die anderen als Standbilder schimmern — keine Liste statischer Vorschaubilder, sondern ein lebendiges Board. Ein Schalter, MOTION, bringt es zur Ruhe, wann immer du ein ruhiges Moodboard möchtest."
+        "title": "Videos spielen auf dem Board.",
+        "body": "Das fokussierte Video spielt ab, die anderen wechseln durch Standbilder. MOTION ausschalten, damit das ganze Board still bleibt."
       },
       "organize": {
         "title": "Taggen zum Sortieren.",
-        "body": "Nach Tags filtern, um genau das zu finden, was du brauchst. Weitere Looks und Themes sind in Arbeit."
+        "body": "Nach Tag filtern, um nur das Gewünschte zu sehen. Das Aussehen lässt sich aus mehreren Themes wählen."
       },
       "privacy": {
-        "title": "Kein Account. Vollständig lokal.",
-        "body": "Alles lebt in deinem Browser. Kein Account, keine Anmeldung — deine Privatsphäre bleibt deine."
+        "title": "Kein Konto nötig.",
+        "body": "Die Lesezeichen werden im Browser gespeichert. Es ist kein Konto anzulegen."
       }
     },
     "share": {
       "headline": "Als ganzes Board teilen.",
-      "body": "Fertige Boards als Bild exportieren oder einen Link teilen – dein exaktes Layout kommt genauso an, wie du es erstellt hast."
+      "body": "Ein Board als Bild exportieren oder als Link teilen, der das Layout beibehält."
     },
     "cta": {
-      "headline": "Fang an, dein Board zu bauen.",
-      "button": "Jetzt starten – ohne Anmeldung"
+      "headline": "Funktioniert direkt im Browser.",
+      "button": "Board öffnen (keine Anmeldung)"
     },
     "footer": {
       "features": "Features",

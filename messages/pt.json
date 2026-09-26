@@ -387,44 +387,44 @@
     "hero": {
       "label": "Gerenciador visual de favoritos",
       "headline": "Transforme links em um quadro visual.",
-      "description": "Salve vídeos, publicações, artigos e imagens com um clique e organize-os livremente. Transforme uma lista simples em um quadro de inspiração que você entende de relance. Gratuito, sem cadastro.",
+      "description": "Salve vídeos, publicações, artigos e imagens com um clique e organize-os em um quadro. Marcadores que se perdem em uma lista ficam visíveis rapidamente. Gratuito, sem cadastro.",
       "ctaPrimary": "Abrir o quadro",
       "ctaGhost": "Ver como funciona",
       "scrollHint": "rolar"
     },
     "problem": {
       "headline": "Você acumula e nunca mais olha.",
-      "body": "Só links. Feeds que você rola sem parar. Não deixe o que você salvou ficar soterrado."
+      "body": "Em uma lista de links ou em um feed que rola, o que você salva acaba se perdendo."
     },
     "features": {
       "capture": {
         "title": "Para o seu quadro, de qualquer lugar.",
-        "body": "Basta colar uma URL — X, YouTube, artigos, lojas, imagens, qualquer coisa da web. Quer salvar com um clique? A extensão do navegador e o bookmarklet resolvem."
+        "body": "Cole uma URL para salvá-la. X, YouTube, artigos, lojas on-line, imagens e a maioria das outras páginas da web funcionam. Para salvar com um clique, use a extensão do navegador ou o bookmarklet."
       },
       "layout": {
         "title": "Organize livremente.",
-        "body": "Arraste e solte para definir tamanho e posição exatamente como você quer."
+        "body": "Arraste para mudar a posição e o tamanho de cada cartão."
       },
       "live": {
-        "title": "Um quadro que ganha vida.",
-        "body": "O vídeo em foco toca de verdade enquanto os outros pulsam como imagens estáticas — não uma lista de estáticas, mas um quadro visual vivo. Um botão, MOTION, acalma tudo e vira um moodboard tranquilo."
+        "title": "Os vídeos são reproduzidos no quadro.",
+        "body": "O vídeo em foco é reproduzido, e os demais alternam entre quadros estáticos. Desative o MOTION para manter todo o quadro parado."
       },
       "organize": {
         "title": "Tags para organizar.",
-        "body": "Filtre por tag para encontrar exatamente o que você quer. Mais visuais e temas estão a caminho."
+        "body": "Filtre por tag para mostrar apenas o que você quer ver. Escolha a aparência entre vários temas."
       },
       "privacy": {
-        "title": "Sem conta. Totalmente local.",
-        "body": "Tudo fica dentro do seu navegador. Sem conta, sem cadastro — sua privacidade é sua."
+        "title": "Nenhuma conta necessária.",
+        "body": "Seus marcadores são salvos no navegador. Não há conta para criar."
       }
     },
     "share": {
       "headline": "Compartilhe como um quadro completo.",
-      "body": "Exporte o quadro finalizado como imagem ou compartilhe um link — o seu layout exato chega exatamente como você criou."
+      "body": "Exporte um quadro como imagem, ou compartilhe-o como um link que mantém o layout."
     },
     "cta": {
-      "headline": "Comece a montar o seu quadro.",
-      "button": "Começar agora — sem cadastro"
+      "headline": "Funciona direto no seu navegador.",
+      "button": "Abrir o quadro (sem cadastro)"
     },
     "footer": {
       "features": "Features",

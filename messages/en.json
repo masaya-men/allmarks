@@ -387,44 +387,44 @@
     "hero": {
       "label": "Visual Bookmark Manager",
       "headline": "Turn links into a visual board.",
-      "description": "Save videos, social posts, articles, and images in one click, then arrange them freely. Turn a plain list into an inspiration board you grasp at a glance. Free, no sign-up.",
+      "description": "Save videos, social posts, articles, and images in one click and lay them out on one board. Bookmarks that get lost in a list are easy to see at a glance. Free to use, with no sign-up.",
       "ctaPrimary": "Open the board",
       "ctaGhost": "See how it works",
       "scrollHint": "scroll"
     },
     "problem": {
       "headline": "You pile them up and never look again.",
-      "body": "Just links. Feeds you scroll right past. Don't let what you save get buried."
+      "body": "In a list of links or a scrolling feed, the things you save get buried."
     },
     "features": {
       "capture": {
         "title": "To your board, from anywhere.",
-        "body": "Just paste a URL — X, YouTube, articles, shops, images, anything on the web. Want one-click saving? The browser extension and bookmarklet have you covered."
+        "body": "Paste a URL to save it. X, YouTube, articles, online shops, images, and most other web pages work. For one-click saving, use the browser extension or the bookmarklet."
       },
       "layout": {
-        "title": "Arrange it freely.",
-        "body": "Drag and drop to set size and position exactly how you like."
+        "title": "Arrange freely.",
+        "body": "Drag to change the position and size of each card."
       },
       "live": {
-        "title": "A board that comes alive.",
-        "body": "The video in focus plays for real while the others shimmer as stills — not a list of stills, but a living visual board. One switch, MOTION, settles it back into a quiet moodboard."
+        "title": "Videos play on the board.",
+        "body": "The video in focus plays, and the others cycle through still frames. Turn MOTION off to keep the whole board still."
       },
       "organize": {
         "title": "Tag to sort.",
-        "body": "Filter by tag to surface just what you want. More looks and themes are on the way."
+        "body": "Filter by tag to show only what you want to see. Choose the look from several themes."
       },
       "privacy": {
-        "title": "No account. Fully local.",
-        "body": "Everything lives inside your browser. No account, nothing to sign up for — your privacy stays yours."
+        "title": "No account needed.",
+        "body": "Your bookmarks are saved in your browser. There is no account to create."
       }
     },
     "share": {
       "headline": "Share it as one board.",
-      "body": "Export your finished board as an image, or share a link — your exact layout arrives just as you made it."
+      "body": "Export a board as an image, or share it as a link that keeps your layout."
     },
     "cta": {
-      "headline": "Start building your board.",
-      "button": "Start now — no sign-up"
+      "headline": "Works right in your browser.",
+      "button": "Open the board (no sign-up)"
     },
     "footer": {
       "features": "Features",

@@ -387,44 +387,44 @@
     "hero": {
       "label": "Visuele bladwijzermanager",
       "headline": "Zet links om in een visueel bord.",
-      "description": "Sla video's, sociale berichten, artikelen en afbeeldingen op met één klik en rangschik ze daarna vrij. Verander een saaie lijst in een inspiratiebord dat je in één oogopslag begrijpt. Gratis, geen aanmelding.",
+      "description": "Sla video's, sociale berichten, artikelen en afbeeldingen op met één klik en leg ze op één bord vast. Bladwijzers die in een lijst verdwijnen, zijn zo in één oogopslag te zien. Gratis te gebruiken, zonder aanmelding.",
       "ctaPrimary": "Open het bord",
       "ctaGhost": "Bekijk hoe het werkt",
       "scrollHint": "scrollen"
     },
     "problem": {
       "headline": "Je stapelt ze op en kijkt er nooit meer naar.",
-      "body": "Alleen links. Feeds die je zo doorscrollt. Laat niet toe dat wat je opslaat begraven raakt."
+      "body": "In een lijst met links of een scrollende feed raakt wat je opslaat begraven."
     },
     "features": {
       "capture": {
         "title": "Naar je bord, van overal.",
-        "body": "Plak gewoon een URL — X, YouTube, artikelen, winkels, afbeeldingen, alles op het web. Wil je met één klik opslaan? De browserextensie en de bookmarklet zorgen daarvoor."
+        "body": "Plak een URL om deze op te slaan. X, YouTube, artikelen, webwinkels, afbeeldingen en de meeste andere webpagina's werken. Gebruik voor opslaan met één klik de browserextensie of de bookmarklet."
       },
       "layout": {
         "title": "Vrij rangschikken.",
-        "body": "Slepen en neerzetten om formaat en positie precies naar wens in te stellen."
+        "body": "Sleep om de positie en grootte van elke kaart te wijzigen."
       },
       "live": {
-        "title": "Een bord dat tot leven komt.",
-        "body": "De video in focus speelt echt af terwijl de andere als stilstaande beelden flikkeren — geen lijst met stilstaande beelden, maar een levend visueel bord. Met één schakelaar, MOTION, breng je alles terug naar een rustig moodboard."
+        "title": "Video's spelen af op het bord.",
+        "body": "De video in focus speelt af, en de andere wisselen tussen stilstaande beelden. Zet MOTION uit om het hele bord stil te houden."
       },
       "organize": {
         "title": "Tag om te sorteren.",
-        "body": "Filter op tag om precies te zien wat je zoekt. Er zijn meer looks en thema's onderweg."
+        "body": "Filter op tag om alleen te tonen wat je wilt zien. Kies de look uit meerdere thema's."
       },
       "privacy": {
-        "title": "Geen account. Volledig lokaal.",
-        "body": "Alles leeft in je browser. Geen account, niets om je voor aan te melden — jouw privacy blijft van jou."
+        "title": "Geen account nodig.",
+        "body": "Je bladwijzers worden opgeslagen in je browser. Er is geen account om aan te maken."
       }
     },
     "share": {
       "headline": "Deel het als één bord.",
-      "body": "Exporteer je afgeronde bord als afbeelding of deel een link — jouw exacte indeling arriveert precies zoals je het gemaakt hebt."
+      "body": "Exporteer een bord als afbeelding, of deel het als link die de indeling behoudt."
     },
     "cta": {
-      "headline": "Begin met het bouwen van je bord.",
-      "button": "Nu beginnen — geen aanmelding"
+      "headline": "Werkt direct in je browser.",
+      "button": "Bord openen (geen aanmelding)"
     },
     "footer": {
       "features": "Features",

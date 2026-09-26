@@ -387,44 +387,44 @@
     "hero": {
       "label": "Görsel Yer İmi Yöneticisi",
       "headline": "Bağlantıları görsel bir panoya dönüştürün.",
-      "description": "Videoları, sosyal paylaşımları, makaleleri ve görselleri tek tıkla kaydedin, ardından özgürce düzenleyin. Sıradan bir listeyi tek bakışta kavrayabileceğiniz bir ilham panosuna çevirin. Ücretsiz, kayıt gerekmez.",
+      "description": "Videoları, sosyal paylaşımları, makaleleri ve görselleri tek tıkla kaydedip tek bir panoya yerleştirin. Bir listede kaybolan yer imleri tek bakışta görülebilir hale gelir. Ücretsiz kullanılır, kayıt gerekmez.",
       "ctaPrimary": "Panoyu aç",
       "ctaGhost": "Nasıl çalıştığını gör",
       "scrollHint": "kaydır"
     },
     "problem": {
       "headline": "Biriktiriyorsunuz ama bir daha bakmıyorsunuz.",
-      "body": "Sadece bağlantılar. Hızla geçip geçtiğiniz akışlar. Kaydettiğiniz şeylerin gömülü kalmasına izin vermeyin."
+      "body": "Bir bağlantı listesinde ya da kaydırılan bir akışta, kaydettikleriniz gömülüp kalır."
     },
     "features": {
       "capture": {
         "title": "Her yerden, panonuza.",
-        "body": "Bir URL yapıştırmanız yeterli — X, YouTube, makaleler, mağazalar, görseller, web'deki her şey. Tek tıkla kaydetmek ister misiniz? Tarayıcı uzantısı ve yer imi aracı tam bunun için var."
+        "body": "Kaydetmek için bir URL yapıştırın. X, YouTube, makaleler, çevrimiçi mağazalar, görseller ve diğer web sayfalarının çoğu çalışır. Tek tıkla kaydetmek için tarayıcı uzantısını veya yer imi aracını kullanın."
       },
       "layout": {
         "title": "Özgürce düzenleyin.",
-        "body": "Boyutu ve konumu tam istediğiniz gibi ayarlamak için sürükleyip bırakın."
+        "body": "Her kartın konumunu ve boyutunu değiştirmek için sürükleyin."
       },
       "live": {
-        "title": "Hayat bulan bir pano.",
-        "body": "Odaktaki video gerçekten oynarken diğerleri durağan kareler olarak parldar — durağan görseller listesi değil, canlı bir görsel pano. Bir geçişle, MOTION, her şeyi sessiz bir moodboard'a taşır."
+        "title": "Videolar pano üzerinde oynatılır.",
+        "body": "Odaktaki video oynatılır, diğerleri durağan kareler arasında geçiş yapar. Tüm panoyu durgun tutmak için MOTION'ı kapatın."
       },
       "organize": {
         "title": "Etiketle sırala.",
-        "body": "İstediğinizi bulmak için etikete göre filtreleyin. Daha fazla görünüm ve tema geliyor."
+        "body": "İstediğinizi görmek için etikete göre filtreleyin. Görünümü birkaç temadan seçin."
       },
       "privacy": {
-        "title": "Hesap yok. Tamamen yerel.",
-        "body": "Her şey yalnızca tarayıcınızda saklanır. Hesap yok, kayıt yok — gizliliğiniz size ait kalır."
+        "title": "Hesap gerekmez.",
+        "body": "Yer imleriniz tarayıcınızda saklanır. Oluşturulacak bir hesap yoktur."
       }
     },
     "share": {
       "headline": "Tek bir pano olarak paylaşın.",
-      "body": "Tamamlanan panoyu görsel olarak dışa aktarın veya bir bağlantı paylaşın — tam düzeniniz tam olarak oluşturduğunuz şekilde ulaşır."
+      "body": "Bir panoyu görsel olarak dışa aktarın veya düzeninizi koruyan bir bağlantı olarak paylaşın."
     },
     "cta": {
-      "headline": "Pano oluşturmaya başlayın.",
-      "button": "Hemen başla — kayıt yok"
+      "headline": "Doğrudan tarayıcınızda çalışır.",
+      "button": "Panoyu aç (kayıt gerekmez)"
     },
     "footer": {
       "features": "Features",

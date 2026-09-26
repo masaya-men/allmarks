@@ -387,44 +387,44 @@
     "hero": {
       "label": "Gestore visivo di segnalibri",
       "headline": "Trasforma i link in una bacheca visiva.",
-      "description": "Salva video, post social, articoli e immagini con un clic, poi disponili liberamente. Trasforma una semplice lista in una bacheca d'ispirazione che capisci a colpo d'occhio. Gratuito, senza registrazione.",
+      "description": "Salva video, post social, articoli e immagini con un clic e disponili su una bacheca. I segnalibri che si perdono in un elenco diventano visibili a colpo d'occhio. Gratuito, senza registrazione.",
       "ctaPrimary": "Apri la bacheca",
       "ctaGhost": "Scopri come funziona",
       "scrollHint": "scorri"
     },
     "problem": {
       "headline": "Li accumuli e non li guardi mai più.",
-      "body": "Solo link. Feed che scorrono via. Non lasciare che ciò che salvi venga sepolto."
+      "body": "In un elenco di link o in un feed che scorre, ciò che salvi finisce per perdersi."
     },
     "features": {
       "capture": {
         "title": "Sulla tua bacheca, da ovunque.",
-        "body": "Basta incollare un URL — X, YouTube, articoli, negozi, immagini, qualsiasi cosa sul web. Vuoi salvare con un clic? L'estensione del browser e il bookmarklet ci pensano loro."
+        "body": "Incolla un URL per salvarlo. X, YouTube, articoli, negozi online, immagini e la maggior parte delle altre pagine web funzionano. Per salvare con un clic, usa l'estensione del browser o il bookmarklet."
       },
       "layout": {
         "title": "Disponi liberamente.",
-        "body": "Trascina e rilascia per impostare dimensione e posizione esattamente come vuoi."
+        "body": "Trascina per cambiare posizione e dimensione di ogni scheda."
       },
       "live": {
-        "title": "Una bacheca che prende vita.",
-        "body": "Il video in primo piano si riproduce davvero mentre gli altri brillano come fotogrammi fermi — non una lista di immagini statiche, ma una bacheca viva. Un solo interruttore, MOTION, la riporta alla quiete di un moodboard."
+        "title": "I video si riproducono sulla bacheca.",
+        "body": "Il video in primo piano si riproduce, mentre gli altri passano tra fotogrammi fermi. Disattiva MOTION per mantenere ferma tutta la bacheca."
       },
       "organize": {
         "title": "Tag per ordinare.",
-        "body": "Filtra per tag per trovare esattamente quello che cerchi. Altre visualizzazioni e temi sono in arrivo."
+        "body": "Filtra per tag per mostrare solo quello che vuoi vedere. Scegli l'aspetto tra diversi temi."
       },
       "privacy": {
-        "title": "Nessun account. Completamente locale.",
-        "body": "Tutto risiede nel tuo browser. Nessun account, nessuna registrazione — la tua privacy rimane tua."
+        "title": "Nessun account necessario.",
+        "body": "I tuoi segnalibri vengono salvati nel browser. Non c'è nessun account da creare."
       }
     },
     "share": {
       "headline": "Condividila come un'unica bacheca.",
-      "body": "Esporta la bacheca finita come immagine o condividi un link — il tuo layout esatto arriva esattamente come l'hai creato."
+      "body": "Esporta una bacheca come immagine, oppure condividila come link che mantiene il layout."
     },
     "cta": {
-      "headline": "Inizia a costruire la tua bacheca.",
-      "button": "Inizia ora — senza registrazione"
+      "headline": "Funziona direttamente nel browser.",
+      "button": "Apri la bacheca (senza registrazione)"
     },
     "footer": {
       "features": "Features",

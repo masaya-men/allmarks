@@ -387,44 +387,44 @@
     "hero": {
       "label": "Trình quản lý dấu trang trực quan",
       "headline": "Biến liên kết thành bảng hình ảnh.",
-      "description": "Lưu video, bài đăng mạng xã hội, bài viết và hình ảnh chỉ bằng một cú nhấp, rồi sắp xếp tự do. Biến danh sách thông thường thành bảng cảm hứng nắm bắt ngay từ cái nhìn đầu tiên. Miễn phí, không cần đăng ký.",
+      "description": "Lưu video, bài đăng mạng xã hội, bài viết và hình ảnh chỉ bằng một cú nhấp, rồi sắp xếp chúng trên một bảng. Các mục đã lưu bị chìm trong danh sách giờ có thể thấy ngay trong nháy mắt. Miễn phí, không cần đăng ký.",
       "ctaPrimary": "Mở bảng",
       "ctaGhost": "Xem cách hoạt động",
       "scrollHint": "cuộn xuống"
     },
     "problem": {
       "headline": "Bạn cứ tích góp mà chẳng bao giờ xem lại.",
-      "body": "Chỉ là những liên kết. Feed thì cứ cuộn qua. Đừng để những gì bạn lưu bị chôn vùi."
+      "body": "Trong một danh sách liên kết hay một luồng cuộn qua, những gì bạn lưu sẽ bị chôn vùi."
     },
     "features": {
       "capture": {
         "title": "Từ bất kỳ đâu, thẳng vào bảng.",
-        "body": "Chỉ cần dán URL là xong — X, YouTube, bài viết kỹ thuật, cửa hàng, hình ảnh, bất cứ thứ gì trên web. Muốn lưu một chạm? Tiện ích mở rộng và bookmarklet luôn sẵn sàng."
+        "body": "Dán một URL để lưu lại. X, YouTube, bài viết, cửa hàng trực tuyến, hình ảnh và hầu hết các trang web khác đều hoạt động. Để lưu chỉ bằng một cú nhấp, hãy dùng tiện ích mở rộng trình duyệt hoặc bookmarklet."
       },
       "layout": {
         "title": "Sắp xếp tự do.",
-        "body": "Kéo và thả để đặt kích thước và vị trí chính xác theo ý bạn."
+        "body": "Kéo để thay đổi vị trí và kích thước của từng thẻ."
       },
       "live": {
-        "title": "Bảng sống động.",
-        "body": "Video đang được chọn phát thật sự trong khi những video khác lấp lánh như ảnh tĩnh — không phải danh sách ảnh đứng yên, mà là bảng hình ảnh thực sự sống. Một công tắc duy nhất, MOTION, đưa tất cả về yên tĩnh."
+        "title": "Video được phát ngay trên bảng.",
+        "body": "Video đang được chọn sẽ phát, còn lại sẽ chuyển qua các khung hình tĩnh. Tắt MOTION để giữ toàn bộ bảng đứng yên."
       },
       "organize": {
         "title": "Gắn thẻ để phân loại.",
-        "body": "Lọc theo thẻ để tìm đúng thứ bạn cần. Thêm nhiều giao diện và chủ đề đang được phát triển."
+        "body": "Lọc theo thẻ để chỉ hiển thị những gì bạn muốn xem. Chọn giao diện từ nhiều chủ đề."
       },
       "privacy": {
-        "title": "Không cần tài khoản. Hoàn toàn cục bộ.",
-        "body": "Mọi thứ đều ở trong trình duyệt của bạn. Không cần tài khoản, không cần đăng ký — quyền riêng tư là của bạn."
+        "title": "Không cần tài khoản.",
+        "body": "Các mục đã lưu của bạn được lưu trong trình duyệt. Không có tài khoản nào cần tạo."
       }
     },
     "share": {
       "headline": "Chia sẻ như một bảng hoàn chỉnh.",
-      "body": "Xuất bảng hoàn chỉnh dưới dạng hình ảnh hoặc chia sẻ liên kết — bố cục chính xác của bạn được gửi đến đúng như bạn đã tạo."
+      "body": "Xuất một bảng dưới dạng hình ảnh, hoặc chia sẻ dưới dạng liên kết vẫn giữ nguyên bố cục."
     },
     "cta": {
-      "headline": "Bắt đầu xây dựng bảng của bạn.",
-      "button": "Bắt đầu ngay — không cần đăng ký"
+      "headline": "Hoạt động ngay trong trình duyệt của bạn.",
+      "button": "Mở bảng (không cần đăng ký)"
     },
     "footer": {
       "features": "Features",

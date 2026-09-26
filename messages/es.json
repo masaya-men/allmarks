@@ -387,44 +387,44 @@
     "hero": {
       "label": "Gestor visual de marcadores",
       "headline": "Convierte tus enlaces en un tablero visual.",
-      "description": "Guarda vídeos, publicaciones, artículos e imágenes con un clic y ordénalos libremente. Transforma una lista simple en un tablero de inspiración que entiendes de un vistazo. Gratis, sin registro.",
+      "description": "Guarda vídeos, publicaciones, artículos e imágenes con un clic y colócalos en un tablero. Los marcadores que se pierden en una lista se ven de un vistazo. Gratis, sin necesidad de registro.",
       "ctaPrimary": "Abrir el tablero",
       "ctaGhost": "Ver cómo funciona",
       "scrollHint": "desplazar"
     },
     "problem": {
       "headline": "Los acumulas y nunca vuelves a verlos.",
-      "body": "Solo enlaces. Feeds que pasas de largo. No dejes que lo que guardas quede enterrado."
+      "body": "En una lista de enlaces o en un feed que se desplaza, lo que guardas queda enterrado."
     },
     "features": {
       "capture": {
         "title": "A tu tablero, desde donde sea.",
-        "body": "Solo pega una URL — X, YouTube, artículos, tiendas, imágenes, lo que sea de la web. ¿Quieres guardar con un clic? La extensión del navegador y el marcador rápido lo hacen por ti."
+        "body": "Pega una URL para guardarla. X, YouTube, artículos, tiendas en línea, imágenes y la mayoría de las demás páginas web funcionan. Para guardar con un clic, usa la extensión del navegador o el marcador rápido."
       },
       "layout": {
-        "title": "Ordénalos libremente.",
-        "body": "Arrastra y suelta para ajustar tamaño y posición exactamente como quieras."
+        "title": "Ordena con libertad.",
+        "body": "Arrastra para cambiar la posición y el tamaño de cada tarjeta."
       },
       "live": {
-        "title": "Un tablero que cobra vida.",
-        "body": "El vídeo en foco se reproduce de verdad mientras los demás brillan como imágenes fijas — no es una lista estática, es un tablero visual que vive. Un solo interruptor, MOTION, lo devuelve a la calma de un moodboard."
+        "title": "Los vídeos se reproducen en el tablero.",
+        "body": "El vídeo en foco se reproduce, y los demás pasan por fotogramas fijos. Desactiva MOTION para mantener todo el tablero quieto."
       },
       "organize": {
         "title": "Etiqueta para ordenar.",
-        "body": "Filtra por etiqueta para ver solo lo que quieres. Hay más estilos y temas en camino."
+        "body": "Filtra por etiqueta para mostrar solo lo que quieres ver. Elige el aspecto entre varios temas."
       },
       "privacy": {
-        "title": "Sin cuenta. Completamente local.",
-        "body": "Todo vive dentro de tu navegador. Sin cuenta, sin registro — tu privacidad es tuya."
+        "title": "No se necesita cuenta.",
+        "body": "Tus marcadores se guardan en tu navegador. No hay cuenta que crear."
       }
     },
     "share": {
       "headline": "Compártelo como un tablero completo.",
-      "body": "Exporta tu tablero terminado como imagen o comparte un enlace — tu disposición exacta llega tal como la creaste."
+      "body": "Exporta un tablero como imagen, o compártelo como un enlace que conserva tu disposición."
     },
     "cta": {
-      "headline": "Empieza a construir tu tablero.",
-      "button": "Comenzar ahora — sin registro"
+      "headline": "Funciona directamente en tu navegador.",
+      "button": "Abrir el tablero (sin registro)"
     },
     "footer": {
       "features": "Features",
