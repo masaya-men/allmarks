@@ -25,6 +25,10 @@
   color-scheme: light;
 }
 
+/* LP v10 (lib/marketing/lp/*, components/marketing/lp-art.css) placeholder
+   for --sans until Task 9 defines the real token here. */
+.lpRoot{--sans: var(--font-geist), system-ui, sans-serif}
+
 /* ── N-05 nav-dock: 語が旅の間、本文 kicker は場所だけ残して隠す ──
    html[data-nav-dock] は NavDockTraveler が mount 後にのみ書く(SSR では無属性)。 */
 html[data-nav-dock='traveling'] [data-nav-dock-anchor],

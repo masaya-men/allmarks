@@ -1,0 +1,654 @@
+/* ══════════════════════════════════════════════════════════════════════
+   LP v10 — shared global styles, ported from docs/private/lp-v10-mock.html.
+   Every selector is scoped under .lpRoot (the LandingPage wrapper class,
+   see components/marketing/LandingPage.tsx) so nothing leaks outside the
+   marketing page. Section-specific styles live in their own CSS Modules;
+   this file only holds the cross-section foundation: tokens, page chrome,
+   common text/button primitives, the rule divider, and the board cards
+   (tweet card + the self-drawn "art" thumbnails) used across sections.
+   @keyframes are prefixed lp- to avoid colliding with unrelated keyframes
+   of the same short name elsewhere in the app's global CSS.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── design tokens (mock :root, lines 8–16) ──
+   --sans is intentionally NOT defined here: Task 9 defines it in
+   landing-tokens.css once the real Geist font-family token is wired up.
+   Until then landing-tokens.css carries a one-line placeholder. */
+.lpRoot {
+  --paper: #fbfbfa;
+  --panel: #ffffff;
+  --ink: #0f0f0f;
+  --soft: #6a6a66;
+  --mute: #b9b8b3;
+  --hair: rgba(15,15,15,.12);
+  --faint: rgba(15,15,15,.05);
+  --green: #28F100;
+  --acc: #28F100;
+  --mono: var(--font-geist-mono), ui-monospace, Consolas, monospace;
+  --ex: cubic-bezier(.16,1,.3,1);
+  --io: cubic-bezier(.65,0,.35,1);
+  --maxw: 1320px;
+  --gut: clamp(16px,3.2vw,44px);
+  --cardShadow: 0 0 0 1px rgba(15,15,15,.07),0 1px 2px rgba(15,15,15,.05),0 12px 24px -14px rgba(15,15,15,.22);
+}
+
+/* ── page chrome (mock body/.wrap/.bggrid, lines 19–26) ── */
+.lpRoot {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.lpRoot .wrap {
+  width: min(var(--maxw), calc(100% - 2 * var(--gut)));
+  margin-inline: auto;
+}
+.lpRoot main,
+.lpRoot .site,
+.lpRoot .foot {
+  position: relative;
+  z-index: 1;
+}
+
+/* 背景の方眼(細い縦線) */
+.lpRoot .bggrid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.lpRoot .bggrid .wrap {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  border-left: 1px solid var(--faint);
+}
+.lpRoot .bggrid i {
+  border-right: 1px solid var(--faint);
+  transform-origin: top;
+}
+
+/* ── 共通の文字(mock lines 29–33, 67, 197) ── */
+.lpRoot .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font: 500 11px var(--mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+.lpRoot .label .ln {
+  display: block;
+  width: 22px;
+  height: 1px;
+  background: var(--ink);
+  transform-origin: left;
+}
+.lpRoot .ml {
+  display: block;
+  overflow: hidden;
+  padding-bottom: .08em;
+  margin-bottom: -.08em;
+}
+.lpRoot .ml > span {
+  display: block;
+  white-space: nowrap;
+}
+.lpRoot .body {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.9;
+  color: var(--soft);
+  max-width: 30em;
+}
+.lpRoot .h1 {
+  margin: 24px 0 24px;
+  font: 800 clamp(32px,3.6vw,60px)/1.06 var(--sans);
+  letter-spacing: -.05em;
+}
+.lpRoot .h2 {
+  margin: 22px 0 18px;
+  font: 800 clamp(28px,3.3vw,52px)/1.1 var(--sans);
+  letter-spacing: -.045em;
+  word-break: auto-phrase;
+  text-wrap: balance;
+}
+
+/* ── ボタン(mock lines 36–45) ── */
+.lpRoot .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font: 600 15px var(--sans);
+  text-decoration: none;
+}
+.lpRoot .btn .arr {
+  display: inline-block;
+  transition: transform .5s var(--ex);
+}
+.lpRoot .btn:hover .arr {
+  transform: translate(3px,-3px);
+}
+.lpRoot .roll:hover .rl > span:first-child,
+.lpRoot .roll:focus-visible .rl > span:first-child {
+  transform: translateY(-115%);
+}
+.lpRoot .roll:hover .rl > span + span,
+.lpRoot .roll:focus-visible .rl > span + span {
+  transform: none;
+}
+.lpRoot .btn:focus-visible,
+.lpRoot .link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.lpRoot .link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  color: var(--ink);
+  font: 500 15px var(--sans);
+  text-decoration: none;
+}
+.lpRoot .link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 11px;
+  height: 1px;
+  background: var(--ink);
+  transform-origin: left;
+}
+.lpRoot .link:hover::after {
+  animation: lp-uline .7s var(--ex);
+}
+@keyframes lp-uline {
+  0% { transform: scaleX(1); transform-origin: right; }
+  45% { transform: scaleX(0); transform-origin: right; }
+  46% { transform: scaleX(0); transform-origin: left; }
+  100% { transform: scaleX(1); transform-origin: left; }
+}
+
+/* ── 区切りの線(mock lines 190–191) ── */
+.lpRoot .rule {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.lpRoot .rule i {
+  flex: 1;
+  height: 1px;
+  background: var(--ink);
+  transform-origin: left;
+}
+
+/* ══ cards(mock lines 121–187) ══ */
+.lpRoot .card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  container-type: inline-size;
+  box-shadow: var(--cardShadow);
+  background: #fff;
+}
+.lpRoot .card.just {
+  animation: lp-saved 1.6s var(--ex);
+}
+@keyframes lp-saved {
+  0% { box-shadow: 0 0 0 2px rgba(40,241,0,.95), 0 0 26px rgba(40,241,0,.5); }
+  100% { box-shadow: var(--cardShadow); }
+}
+.lpRoot .art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: inline-size;
+}
+.lpRoot .art > svg,
+.lpRoot .art > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.lpRoot .px {
+  image-rendering: pixelated;
+}
+
+/* tweet text card(本物のテキストカードと同じ組み立て) */
+.lpRoot .tcard {
+  background: #fff;
+}
+.lpRoot .tw-author {
+  position: absolute;
+  top: clamp(7px,5.4cqw,10px);
+  left: clamp(8px,6.5cqw,12px);
+  display: flex;
+  align-items: center;
+  gap: clamp(4px,3.2cqw,6px);
+}
+.lpRoot .tw-av {
+  display: grid;
+  place-items: center;
+  width: clamp(14px,10.8cqw,20px);
+  height: clamp(14px,10.8cqw,20px);
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font: 700 clamp(7px,5.4cqw,10px)/1 'Geist', sans-serif;
+}
+.lpRoot .tw-name {
+  font: 600 clamp(9px,6cqw,11px) var(--sans);
+  color: var(--ink);
+}
+.lpRoot .tw-body {
+  position: absolute;
+  inset: 0;
+  padding: clamp(28px,22.7cqw,42px) clamp(10px,8.6cqw,16px) clamp(10px,8.6cqw,16px);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 80%, transparent);
+  mask-image: linear-gradient(#000 80%, transparent);
+}
+.lpRoot .tw-body p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: 500 clamp(9px,6.75cqw,12.5px)/1.6 var(--sans);
+  color: #2c2a25;
+}
+
+/* arts */
+.lpRoot .tru {
+  position: absolute;
+  inset: 9%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+.lpRoot .tru i {
+  display: block;
+  aspect-ratio: 1;
+  transition: transform .8s var(--io);
+}
+.lpRoot .tru svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.lpRoot .sw {
+  position: absolute;
+  inset: 0;
+  background: #f2f1ed;
+  color: #111;
+  padding: 8%;
+  display: flex;
+  flex-direction: column;
+}
+.lpRoot .sw-top,
+.lpRoot .sw-bot {
+  display: flex;
+  justify-content: space-between;
+  font: 500 max(7px,4.6cqw) var(--mono);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.lpRoot .sw-word {
+  font: 900 33cqw/.78 'Geist', sans-serif;
+  letter-spacing: -.075em;
+  margin: 9% 0 0 -1.5cqw;
+}
+.lpRoot .sw-grid {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2.6cqw;
+  width: 58%;
+  margin-bottom: 7%;
+}
+.lpRoot .sw-grid b {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px solid #111;
+  transition: background .3s, border-color .3s;
+}
+.lpRoot .sw-grid b.on {
+  background: var(--acc);
+  border-color: var(--acc);
+}
+.lpRoot .sw-bot {
+  border-top: 1.5px solid #111;
+  padding-top: 4%;
+}
+.lpRoot .tk {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  background: #111;
+}
+.lpRoot .tk > div {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.lpRoot .tk span {
+  display: inline-block;
+  font: 900 9.5cqw/1 'Geist', sans-serif;
+  letter-spacing: -.03em;
+  text-transform: uppercase;
+}
+.lpRoot .tk span.mq {
+  animation: lp-mq linear infinite;
+}
+.lpRoot .tk .r span.mq {
+  animation-direction: reverse;
+}
+.lpRoot .tk .b1 { background: #111; color: #f2f1ed; }
+.lpRoot .tk .b2 { background: #f2f1ed; color: #111; }
+.lpRoot .tk .b3 { background: var(--acc); color: #111; }
+.lpRoot .tk .b4 { background: #111; color: transparent; -webkit-text-stroke: 1px #f2f1ed; }
+@keyframes lp-mq {
+  to { transform: translateX(-50%); }
+}
+.lpRoot .arcW {
+  position: absolute;
+  inset: 0;
+  background: #f2f1ed;
+}
+.lpRoot .arcL {
+  position: absolute;
+  top: 7%;
+  left: 8%;
+  font: 500 max(7px,4.6cqw) var(--mono);
+  letter-spacing: .04em;
+  color: #111;
+  text-transform: uppercase;
+}
+.lpRoot .arc path {
+  fill: none;
+  stroke: #111;
+  stroke-width: .55;
+}
+.lpRoot .arc path.a {
+  stroke: var(--acc);
+  stroke-width: 1.8;
+}
+.lpRoot .gd {
+  position: absolute;
+  inset: 0;
+  background: var(--acc);
+  padding: 9%;
+  display: flex;
+  flex-direction: column;
+  gap: 7%;
+}
+.lpRoot .gd-l {
+  font: 500 max(7px,4.6cqw) var(--mono);
+  letter-spacing: .06em;
+  color: #111;
+}
+.lpRoot .gd-g {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  border-top: 1px solid #111;
+  border-left: 1px solid #111;
+}
+.lpRoot .gd-g i {
+  position: relative;
+  border-right: 1px solid #111;
+  border-bottom: 1px solid #111;
+}
+.lpRoot .gd-g i.f {
+  background: #111;
+}
+.lpRoot .gd-g i.o::after {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  background: #111;
+}
+.lpRoot .ru {
+  position: absolute;
+  inset: 0;
+  background: #f2f1ed;
+  padding: 9% 9% 8%;
+  display: flex;
+  flex-direction: column;
+}
+.lpRoot .ru-l {
+  font: 500 max(7px,4.6cqw) var(--mono);
+  letter-spacing: .08em;
+  color: #111;
+  margin-bottom: 7%;
+}
+.lpRoot .ru-r {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.lpRoot .ru-r i {
+  display: flex;
+  align-items: center;
+  gap: 6%;
+  font: 500 max(6px,3.4cqw) var(--mono);
+  color: #8a8983;
+  font-style: normal;
+}
+.lpRoot .ru-r i::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #111;
+}
+.lpRoot .ru-r i.a::after {
+  height: 3px;
+  background: var(--acc);
+}
+.lpRoot .eq-w {
+  position: absolute;
+  inset: 0;
+  background: #111;
+  padding: 9%;
+  display: flex;
+  flex-direction: column;
+}
+.lpRoot .eq-l {
+  font: 500 max(7px,4.4cqw) var(--mono);
+  color: #8a8983;
+  letter-spacing: .06em;
+}
+.lpRoot .eq-b {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 5%;
+  margin-top: 9%;
+  border-bottom: 1px solid #444;
+}
+.lpRoot .eq-b i {
+  flex: 1;
+  background: #f2f1ed;
+  transform-origin: bottom;
+}
+.lpRoot .eq-b i.a {
+  background: var(--acc);
+}
+.lpRoot .eq-b i.eq {
+  animation: lp-eq 1.5s var(--io) infinite alternate;
+}
+@keyframes lp-eq {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(.3); }
+}
+.lpRoot .spin {
+  transform-box: view-box;
+  transform-origin: 62px 50px;
+  animation: lp-spin 9s linear infinite;
+}
+@keyframes lp-spin {
+  to { transform: rotate(360deg); }
+}
+.lpRoot .tgW {
+  position: absolute;
+  inset: 0;
+  background: #e6e5e0;
+}
+.lpRoot .tg {
+  position: absolute;
+  left: 21%;
+  right: 21%;
+  top: 24%;
+  bottom: 9%;
+  background: #fbfbf8;
+  box-shadow: 0 8px 18px rgba(0,0,0,.14);
+  padding: 15% 10% 11%;
+  display: flex;
+  flex-direction: column;
+  color: #111;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.lpRoot .tg .hole {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  width: 7cqw;
+  height: 7cqw;
+  margin-left: -3.5cqw;
+  border-radius: 50%;
+  background: #e6e5e0;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
+}
+.lpRoot .tg-b {
+  font: 900 10cqw/1 'Geist', sans-serif;
+  letter-spacing: -.05em;
+}
+.lpRoot .tg-l {
+  font: 500 max(6px,3.6cqw) var(--mono);
+  letter-spacing: .08em;
+  color: #777;
+  margin-top: 7%;
+}
+.lpRoot .tg-v {
+  font: 700 6.4cqw/1.1 'Geist', sans-serif;
+}
+.lpRoot .tg-bar {
+  margin-top: auto;
+  height: 11%;
+}
+.lpRoot .tg-code {
+  font: 500 max(6px,3.2cqw) var(--mono);
+  letter-spacing: .14em;
+  margin-top: 3%;
+}
+.lpRoot .tg-acc {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4.5%;
+  background: var(--acc);
+}
+.lpRoot .is-off * {
+  animation-play-state: paused !important;
+}
+
+/* ── カード内部の部品(mock lines 287–296: onair の動画UI・静止画切替・バッジ) ── */
+.lpRoot .card.onair {
+  box-shadow: 0 0 0 1px rgba(15,15,15,.1), 0 20px 38px -16px rgba(15,15,15,.55);
+}
+.lpRoot .fl-play {
+  position: absolute;
+  left: 7px;
+  top: 6px;
+  z-index: 2;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  font: 600 8.5px var(--sans);
+}
+.lpRoot .fl-ui {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.lpRoot .fl-ui::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  bottom: -6px;
+  height: 34px;
+  background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.72));
+  z-index: -1;
+}
+.lpRoot .fl-bar {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  background: rgba(255,255,255,.35);
+  overflow: hidden;
+  border-radius: 1px;
+}
+.lpRoot .fl-fill {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  transform: scaleX(.125);
+  transform-origin: left;
+}
+.lpRoot .fl-tc {
+  font: 500 8.5px var(--mono);
+  color: #fff;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.lpRoot .sl {
+  opacity: 0;
+  transition: opacity .55s var(--io);
+}
+.lpRoot .sl.on {
+  opacity: 1;
+}
+.lpRoot .vbadge {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  z-index: 3;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(15,15,15,.72);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 7.5px;
+  opacity: 0;
+}
