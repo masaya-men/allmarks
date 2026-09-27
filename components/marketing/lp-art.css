@@ -1,11 +1,16 @@
 /* ══════════════════════════════════════════════════════════════════════
    LP v10 — shared global styles, ported from docs/private/lp-v10-mock.html.
-   Every selector is scoped under .lpRoot (the LandingPage wrapper class,
-   see components/marketing/LandingPage.tsx) so nothing leaks outside the
-   marketing page. Section-specific styles live in their own CSS Modules;
-   this file only holds the cross-section foundation: tokens, page chrome,
-   common text/button primitives, the rule divider, and the board cards
-   (tweet card + the self-drawn "art" thumbnails) used across sections.
+   Every selector is scoped under .lpRoot.lpHome, not just .lpRoot: the
+   plain "lpRoot" class is also rendered by MarketingShell.tsx on the
+   about/contact/faq/extension/etc. marketing pages, and this stylesheet
+   stays in the document after client-side navigation — so a bare .lpRoot
+   prefix would restyle those other pages too, once the landing page had
+   been visited. "lpHome" is added to the landing page root only (see the
+   task that wires it up) so these rules stay landing-only.
+   Section-specific styles live in their own CSS Modules; this file only
+   holds the cross-section foundation: tokens, page chrome, common
+   text/button primitives, the rule divider, and the board cards (tweet
+   card + the self-drawn "art" thumbnails) used across sections.
    @keyframes are prefixed lp- to avoid colliding with unrelated keyframes
    of the same short name elsewhere in the app's global CSS.
    ══════════════════════════════════════════════════════════════════════ */
@@ -14,7 +19,7 @@
    --sans is intentionally NOT defined here: Task 9 defines it in
    landing-tokens.css once the real Geist font-family token is wired up.
    Until then landing-tokens.css carries a one-line placeholder. */
-.lpRoot {
+.lpRoot.lpHome {
   --paper: #fbfbfa;
   --panel: #ffffff;
   --ink: #0f0f0f;
@@ -33,7 +38,7 @@
 }
 
 /* ── page chrome (mock body/.wrap/.bggrid, lines 19–26) ── */
-.lpRoot {
+.lpRoot.lpHome {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
@@ -41,37 +46,37 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
-.lpRoot .wrap {
+.lpRoot.lpHome .wrap {
   width: min(var(--maxw), calc(100% - 2 * var(--gut)));
   margin-inline: auto;
 }
-.lpRoot main,
-.lpRoot .site,
-.lpRoot .foot {
+.lpRoot.lpHome main,
+.lpRoot.lpHome .site,
+.lpRoot.lpHome .foot {
   position: relative;
   z-index: 1;
 }
 
 /* 背景の方眼(細い縦線) */
-.lpRoot .bggrid {
+.lpRoot.lpHome .bggrid {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
 }
-.lpRoot .bggrid .wrap {
+.lpRoot.lpHome .bggrid .wrap {
   height: 100%;
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   border-left: 1px solid var(--faint);
 }
-.lpRoot .bggrid i {
+.lpRoot.lpHome .bggrid i {
   border-right: 1px solid var(--faint);
   transform-origin: top;
 }
 
 /* ── 共通の文字(mock lines 29–33, 67, 197) ── */
-.lpRoot .label {
+.lpRoot.lpHome .label {
   display: inline-flex;
   align-items: center;
   gap: 12px;
@@ -81,36 +86,36 @@
   text-transform: uppercase;
   color: var(--soft);
 }
-.lpRoot .label .ln {
+.lpRoot.lpHome .label .ln {
   display: block;
   width: 22px;
   height: 1px;
   background: var(--ink);
   transform-origin: left;
 }
-.lpRoot .ml {
+.lpRoot.lpHome .ml {
   display: block;
   overflow: hidden;
   padding-bottom: .08em;
   margin-bottom: -.08em;
 }
-.lpRoot .ml > span {
+.lpRoot.lpHome .ml > span {
   display: block;
   white-space: nowrap;
 }
-.lpRoot .body {
+.lpRoot.lpHome .body {
   margin: 0;
   font-size: 15.5px;
   line-height: 1.9;
   color: var(--soft);
   max-width: 30em;
 }
-.lpRoot .h1 {
+.lpRoot.lpHome .h1 {
   margin: 24px 0 24px;
   font: 800 clamp(32px,3.6vw,60px)/1.06 var(--sans);
   letter-spacing: -.05em;
 }
-.lpRoot .h2 {
+.lpRoot.lpHome .h2 {
   margin: 22px 0 18px;
   font: 800 clamp(28px,3.3vw,52px)/1.1 var(--sans);
   letter-spacing: -.045em;
@@ -119,7 +124,7 @@
 }
 
 /* ── ボタン(mock lines 36–45) ── */
-.lpRoot .btn {
+.lpRoot.lpHome .btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -131,27 +136,27 @@
   font: 600 15px var(--sans);
   text-decoration: none;
 }
-.lpRoot .btn .arr {
+.lpRoot.lpHome .btn .arr {
   display: inline-block;
   transition: transform .5s var(--ex);
 }
-.lpRoot .btn:hover .arr {
+.lpRoot.lpHome .btn:hover .arr {
   transform: translate(3px,-3px);
 }
-.lpRoot .roll:hover .rl > span:first-child,
-.lpRoot .roll:focus-visible .rl > span:first-child {
+.lpRoot.lpHome .roll:hover .rl > span:first-child,
+.lpRoot.lpHome .roll:focus-visible .rl > span:first-child {
   transform: translateY(-115%);
 }
-.lpRoot .roll:hover .rl > span + span,
-.lpRoot .roll:focus-visible .rl > span + span {
+.lpRoot.lpHome .roll:hover .rl > span + span,
+.lpRoot.lpHome .roll:focus-visible .rl > span + span {
   transform: none;
 }
-.lpRoot .btn:focus-visible,
-.lpRoot .link:focus-visible {
+.lpRoot.lpHome .btn:focus-visible,
+.lpRoot.lpHome .link:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 3px;
 }
-.lpRoot .link {
+.lpRoot.lpHome .link {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -160,7 +165,7 @@
   font: 500 15px var(--sans);
   text-decoration: none;
 }
-.lpRoot .link::after {
+.lpRoot.lpHome .link::after {
   content: "";
   position: absolute;
   left: 0;
@@ -170,7 +175,7 @@
   background: var(--ink);
   transform-origin: left;
 }
-.lpRoot .link:hover::after {
+.lpRoot.lpHome .link:hover::after {
   animation: lp-uline .7s var(--ex);
 }
 @keyframes lp-uline {
@@ -181,12 +186,12 @@
 }
 
 /* ── 区切りの線(mock lines 190–191) ── */
-.lpRoot .rule {
+.lpRoot.lpHome .rule {
   display: flex;
   align-items: center;
   gap: 16px;
 }
-.lpRoot .rule i {
+.lpRoot.lpHome .rule i {
   flex: 1;
   height: 1px;
   background: var(--ink);
@@ -194,7 +199,7 @@
 }
 
 /* ══ cards(mock lines 121–187) ══ */
-.lpRoot .card {
+.lpRoot.lpHome .card {
   position: absolute;
   left: 0;
   top: 0;
@@ -204,36 +209,36 @@
   box-shadow: var(--cardShadow);
   background: #fff;
 }
-.lpRoot .card.just {
+.lpRoot.lpHome .card.just {
   animation: lp-saved 1.6s var(--ex);
 }
 @keyframes lp-saved {
   0% { box-shadow: 0 0 0 2px rgba(40,241,0,.95), 0 0 26px rgba(40,241,0,.5); }
   100% { box-shadow: var(--cardShadow); }
 }
-.lpRoot .art {
+.lpRoot.lpHome .art {
   position: absolute;
   inset: 0;
   overflow: hidden;
   container-type: inline-size;
 }
-.lpRoot .art > svg,
-.lpRoot .art > canvas {
+.lpRoot.lpHome .art > svg,
+.lpRoot.lpHome .art > canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
 }
-.lpRoot .px {
+.lpRoot.lpHome .px {
   image-rendering: pixelated;
 }
 
 /* tweet text card(本物のテキストカードと同じ組み立て) */
-.lpRoot .tcard {
+.lpRoot.lpHome .tcard {
   background: #fff;
 }
-.lpRoot .tw-author {
+.lpRoot.lpHome .tw-author {
   position: absolute;
   top: clamp(7px,5.4cqw,10px);
   left: clamp(8px,6.5cqw,12px);
@@ -241,7 +246,7 @@
   align-items: center;
   gap: clamp(4px,3.2cqw,6px);
 }
-.lpRoot .tw-av {
+.lpRoot.lpHome .tw-av {
   display: grid;
   place-items: center;
   width: clamp(14px,10.8cqw,20px);
@@ -251,11 +256,11 @@
   color: #fff;
   font: 700 clamp(7px,5.4cqw,10px)/1 'Geist', sans-serif;
 }
-.lpRoot .tw-name {
+.lpRoot.lpHome .tw-name {
   font: 600 clamp(9px,6cqw,11px) var(--sans);
   color: var(--ink);
 }
-.lpRoot .tw-body {
+.lpRoot.lpHome .tw-body {
   position: absolute;
   inset: 0;
   padding: clamp(28px,22.7cqw,42px) clamp(10px,8.6cqw,16px) clamp(10px,8.6cqw,16px);
@@ -263,7 +268,7 @@
   -webkit-mask-image: linear-gradient(#000 80%, transparent);
   mask-image: linear-gradient(#000 80%, transparent);
 }
-.lpRoot .tw-body p {
+.lpRoot.lpHome .tw-body p {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
@@ -272,23 +277,23 @@
 }
 
 /* arts */
-.lpRoot .tru {
+.lpRoot.lpHome .tru {
   position: absolute;
   inset: 9%;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
 }
-.lpRoot .tru i {
+.lpRoot.lpHome .tru i {
   display: block;
   aspect-ratio: 1;
   transition: transform .8s var(--io);
 }
-.lpRoot .tru svg {
+.lpRoot.lpHome .tru svg {
   display: block;
   width: 100%;
   height: 100%;
 }
-.lpRoot .sw {
+.lpRoot.lpHome .sw {
   position: absolute;
   inset: 0;
   background: #f2f1ed;
@@ -297,20 +302,20 @@
   display: flex;
   flex-direction: column;
 }
-.lpRoot .sw-top,
-.lpRoot .sw-bot {
+.lpRoot.lpHome .sw-top,
+.lpRoot.lpHome .sw-bot {
   display: flex;
   justify-content: space-between;
   font: 500 max(7px,4.6cqw) var(--mono);
   letter-spacing: .04em;
   text-transform: uppercase;
 }
-.lpRoot .sw-word {
+.lpRoot.lpHome .sw-word {
   font: 900 33cqw/.78 'Geist', sans-serif;
   letter-spacing: -.075em;
   margin: 9% 0 0 -1.5cqw;
 }
-.lpRoot .sw-grid {
+.lpRoot.lpHome .sw-grid {
   margin-top: auto;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -318,58 +323,58 @@
   width: 58%;
   margin-bottom: 7%;
 }
-.lpRoot .sw-grid b {
+.lpRoot.lpHome .sw-grid b {
   aspect-ratio: 1;
   border-radius: 50%;
   border: 1.5px solid #111;
   transition: background .3s, border-color .3s;
 }
-.lpRoot .sw-grid b.on {
+.lpRoot.lpHome .sw-grid b.on {
   background: var(--acc);
   border-color: var(--acc);
 }
-.lpRoot .sw-bot {
+.lpRoot.lpHome .sw-bot {
   border-top: 1.5px solid #111;
   padding-top: 4%;
 }
-.lpRoot .tk {
+.lpRoot.lpHome .tk {
   position: absolute;
   inset: 0;
   display: grid;
   grid-template-rows: repeat(4, 1fr);
   background: #111;
 }
-.lpRoot .tk > div {
+.lpRoot.lpHome .tk > div {
   overflow: hidden;
   display: flex;
   align-items: center;
   white-space: nowrap;
 }
-.lpRoot .tk span {
+.lpRoot.lpHome .tk span {
   display: inline-block;
   font: 900 9.5cqw/1 'Geist', sans-serif;
   letter-spacing: -.03em;
   text-transform: uppercase;
 }
-.lpRoot .tk span.mq {
+.lpRoot.lpHome .tk span.mq {
   animation: lp-mq linear infinite;
 }
-.lpRoot .tk .r span.mq {
+.lpRoot.lpHome .tk .r span.mq {
   animation-direction: reverse;
 }
-.lpRoot .tk .b1 { background: #111; color: #f2f1ed; }
-.lpRoot .tk .b2 { background: #f2f1ed; color: #111; }
-.lpRoot .tk .b3 { background: var(--acc); color: #111; }
-.lpRoot .tk .b4 { background: #111; color: transparent; -webkit-text-stroke: 1px #f2f1ed; }
+.lpRoot.lpHome .tk .b1 { background: #111; color: #f2f1ed; }
+.lpRoot.lpHome .tk .b2 { background: #f2f1ed; color: #111; }
+.lpRoot.lpHome .tk .b3 { background: var(--acc); color: #111; }
+.lpRoot.lpHome .tk .b4 { background: #111; color: transparent; -webkit-text-stroke: 1px #f2f1ed; }
 @keyframes lp-mq {
   to { transform: translateX(-50%); }
 }
-.lpRoot .arcW {
+.lpRoot.lpHome .arcW {
   position: absolute;
   inset: 0;
   background: #f2f1ed;
 }
-.lpRoot .arcL {
+.lpRoot.lpHome .arcL {
   position: absolute;
   top: 7%;
   left: 8%;
@@ -378,16 +383,16 @@
   color: #111;
   text-transform: uppercase;
 }
-.lpRoot .arc path {
+.lpRoot.lpHome .arc path {
   fill: none;
   stroke: #111;
   stroke-width: .55;
 }
-.lpRoot .arc path.a {
+.lpRoot.lpHome .arc path.a {
   stroke: var(--acc);
   stroke-width: 1.8;
 }
-.lpRoot .gd {
+.lpRoot.lpHome .gd {
   position: absolute;
   inset: 0;
   background: var(--acc);
@@ -396,12 +401,12 @@
   flex-direction: column;
   gap: 7%;
 }
-.lpRoot .gd-l {
+.lpRoot.lpHome .gd-l {
   font: 500 max(7px,4.6cqw) var(--mono);
   letter-spacing: .06em;
   color: #111;
 }
-.lpRoot .gd-g {
+.lpRoot.lpHome .gd-g {
   flex: 1;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -409,22 +414,22 @@
   border-top: 1px solid #111;
   border-left: 1px solid #111;
 }
-.lpRoot .gd-g i {
+.lpRoot.lpHome .gd-g i {
   position: relative;
   border-right: 1px solid #111;
   border-bottom: 1px solid #111;
 }
-.lpRoot .gd-g i.f {
+.lpRoot.lpHome .gd-g i.f {
   background: #111;
 }
-.lpRoot .gd-g i.o::after {
+.lpRoot.lpHome .gd-g i.o::after {
   content: "";
   position: absolute;
   inset: 18%;
   border-radius: 50%;
   background: #111;
 }
-.lpRoot .ru {
+.lpRoot.lpHome .ru {
   position: absolute;
   inset: 0;
   background: #f2f1ed;
@@ -432,19 +437,19 @@
   display: flex;
   flex-direction: column;
 }
-.lpRoot .ru-l {
+.lpRoot.lpHome .ru-l {
   font: 500 max(7px,4.6cqw) var(--mono);
   letter-spacing: .08em;
   color: #111;
   margin-bottom: 7%;
 }
-.lpRoot .ru-r {
+.lpRoot.lpHome .ru-r {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
-.lpRoot .ru-r i {
+.lpRoot.lpHome .ru-r i {
   display: flex;
   align-items: center;
   gap: 6%;
@@ -452,17 +457,17 @@
   color: #8a8983;
   font-style: normal;
 }
-.lpRoot .ru-r i::after {
+.lpRoot.lpHome .ru-r i::after {
   content: "";
   flex: 1;
   height: 1px;
   background: #111;
 }
-.lpRoot .ru-r i.a::after {
+.lpRoot.lpHome .ru-r i.a::after {
   height: 3px;
   background: var(--acc);
 }
-.lpRoot .eq-w {
+.lpRoot.lpHome .eq-w {
   position: absolute;
   inset: 0;
   background: #111;
@@ -470,12 +475,12 @@
   display: flex;
   flex-direction: column;
 }
-.lpRoot .eq-l {
+.lpRoot.lpHome .eq-l {
   font: 500 max(7px,4.4cqw) var(--mono);
   color: #8a8983;
   letter-spacing: .06em;
 }
-.lpRoot .eq-b {
+.lpRoot.lpHome .eq-b {
   flex: 1;
   display: flex;
   align-items: flex-end;
@@ -483,22 +488,22 @@
   margin-top: 9%;
   border-bottom: 1px solid #444;
 }
-.lpRoot .eq-b i {
+.lpRoot.lpHome .eq-b i {
   flex: 1;
   background: #f2f1ed;
   transform-origin: bottom;
 }
-.lpRoot .eq-b i.a {
+.lpRoot.lpHome .eq-b i.a {
   background: var(--acc);
 }
-.lpRoot .eq-b i.eq {
+.lpRoot.lpHome .eq-b i.eq {
   animation: lp-eq 1.5s var(--io) infinite alternate;
 }
 @keyframes lp-eq {
   from { transform: scaleY(1); }
   to { transform: scaleY(.3); }
 }
-.lpRoot .spin {
+.lpRoot.lpHome .spin {
   transform-box: view-box;
   transform-origin: 62px 50px;
   animation: lp-spin 9s linear infinite;
@@ -506,12 +511,12 @@
 @keyframes lp-spin {
   to { transform: rotate(360deg); }
 }
-.lpRoot .tgW {
+.lpRoot.lpHome .tgW {
   position: absolute;
   inset: 0;
   background: #e6e5e0;
 }
-.lpRoot .tg {
+.lpRoot.lpHome .tg {
   position: absolute;
   left: 21%;
   right: 21%;
@@ -526,7 +531,7 @@
   border-radius: 3px;
   overflow: hidden;
 }
-.lpRoot .tg .hole {
+.lpRoot.lpHome .tg .hole {
   position: absolute;
   top: 5%;
   left: 50%;
@@ -537,29 +542,29 @@
   background: #e6e5e0;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
 }
-.lpRoot .tg-b {
+.lpRoot.lpHome .tg-b {
   font: 900 10cqw/1 'Geist', sans-serif;
   letter-spacing: -.05em;
 }
-.lpRoot .tg-l {
+.lpRoot.lpHome .tg-l {
   font: 500 max(6px,3.6cqw) var(--mono);
   letter-spacing: .08em;
   color: #777;
   margin-top: 7%;
 }
-.lpRoot .tg-v {
+.lpRoot.lpHome .tg-v {
   font: 700 6.4cqw/1.1 'Geist', sans-serif;
 }
-.lpRoot .tg-bar {
+.lpRoot.lpHome .tg-bar {
   margin-top: auto;
   height: 11%;
 }
-.lpRoot .tg-code {
+.lpRoot.lpHome .tg-code {
   font: 500 max(6px,3.2cqw) var(--mono);
   letter-spacing: .14em;
   margin-top: 3%;
 }
-.lpRoot .tg-acc {
+.lpRoot.lpHome .tg-acc {
   position: absolute;
   left: 0;
   right: 0;
@@ -567,15 +572,15 @@
   height: 4.5%;
   background: var(--acc);
 }
-.lpRoot .is-off * {
+.lpRoot.lpHome .is-off * {
   animation-play-state: paused !important;
 }
 
 /* ── カード内部の部品(mock lines 287–296: onair の動画UI・静止画切替・バッジ) ── */
-.lpRoot .card.onair {
+.lpRoot.lpHome .card.onair {
   box-shadow: 0 0 0 1px rgba(15,15,15,.1), 0 20px 38px -16px rgba(15,15,15,.55);
 }
-.lpRoot .fl-play {
+.lpRoot.lpHome .fl-play {
   position: absolute;
   left: 7px;
   top: 6px;
@@ -589,7 +594,7 @@
   color: #fff;
   font: 600 8.5px var(--sans);
 }
-.lpRoot .fl-ui {
+.lpRoot.lpHome .fl-ui {
   position: absolute;
   left: 8px;
   right: 8px;
@@ -599,7 +604,7 @@
   align-items: center;
   gap: 7px;
 }
-.lpRoot .fl-ui::before {
+.lpRoot.lpHome .fl-ui::before {
   content: "";
   position: absolute;
   left: -8px;
@@ -609,7 +614,7 @@
   background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.72));
   z-index: -1;
 }
-.lpRoot .fl-bar {
+.lpRoot.lpHome .fl-bar {
   position: relative;
   flex: 1;
   height: 2px;
@@ -617,27 +622,27 @@
   overflow: hidden;
   border-radius: 1px;
 }
-.lpRoot .fl-fill {
+.lpRoot.lpHome .fl-fill {
   position: absolute;
   inset: 0;
   background: #fff;
   transform: scaleX(.125);
   transform-origin: left;
 }
-.lpRoot .fl-tc {
+.lpRoot.lpHome .fl-tc {
   font: 500 8.5px var(--mono);
   color: #fff;
   letter-spacing: .04em;
   white-space: nowrap;
 }
-.lpRoot .sl {
+.lpRoot.lpHome .sl {
   opacity: 0;
   transition: opacity .55s var(--io);
 }
-.lpRoot .sl.on {
+.lpRoot.lpHome .sl.on {
   opacity: 1;
 }
-.lpRoot .vbadge {
+.lpRoot.lpHome .vbadge {
   position: absolute;
   right: 7px;
   top: 7px;
