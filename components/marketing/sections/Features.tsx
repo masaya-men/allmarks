@@ -1,467 +1,596 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { useHorizontalPin } from '@/lib/scroll/use-horizontal-pin'
-import { panelProgress } from '@/lib/scroll/horizontal-pin-math'
-import { DEMO_COLLAGE, DEMO_VIDEOS } from '@/lib/marketing/demo-collage'
+import { makeCard, filmOf, slidesOf } from '@/lib/marketing/lp/art'
+import { useModKey } from '@/lib/marketing/lp/use-mod-key'
+import { tweetKey } from '@/lib/marketing/lp/tweet-key'
+import {
+  FEATURE_CARDS,
+  CARD_NEW,
+  CARD_FILM,
+  CARD_DRAG,
+  CARD_SLIDES,
+  featureLayouts,
+  featState,
+  featTarget,
+  type FeatureGeometry,
+  type FeatureState,
+  type PillBox,
+} from '@/lib/marketing/lp/feature-timeline'
+import type { Pt } from '@/lib/marketing/lp/types'
 import styles from './Features.module.css'
 
-/**
- * One image card shown inside a beat visual. The artwork IS the card — clean,
- * label-free, axis-aligned, exactly matching the real board's ImageCard (which
- * renders only the image, no domain/host strip, no favicon). NEVER rotated.
- */
-type VisualCard = {
-  /** Index into DEMO_COLLAGE for the thumbnail. */
-  readonly asset: number
-  /** When true, draw a play-triangle overlay so the card reads as "video".
-   *  This is an honest TYPE signal via shape, never a fabricated domain. */
-  readonly video?: boolean
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
 }
 
 /**
- * A single feature "beat" in the 01–05 editorial sequence. The number + English
- * label kicker are HARDCODED here (intentionally not translated) — they are the
- * sequence's spine. The title/body are i18n keys under `landing.features.<key>`.
+ * Features — the pinned six-step demo, ported from docs/private/lp-v10-mock.html
+ * (markup 447–476, CSS 213–297 minus the card-internal parts already in
+ * ../lp-art.css, motion 680–776 + divider tween 798–799, resize 861). One demo
+ * board changes as the section is scrolled through: a cursor clicks, cards
+ * move, a video card really plays, MOTION stops it, tags filter, an entry
+ * screen appears, and the board is shared as an image. All of the maths
+ * (masonry layouts, easing, waypoints) lives in feature-timeline.ts — this
+ * component only measures geometry (once, never in the scroll ticker) and
+ * writes the resulting FeatureState to the DOM every frame.
  */
-type Beat = {
-  /** Two-digit sequence number, e.g. "01". */
-  readonly num: string
-  /** English label kicker, e.g. "CAPTURE". Hardcoded, not translated. */
-  readonly label: string
-  /** i18n sub-key under landing.features (capture|layout|live|organize|privacy). */
-  readonly key: string
-  /** Which supporting visual to render in the visual slot. */
-  readonly visual: 'capture' | 'layout' | 'live' | 'organize' | 'privacy'
+
+/** English design word — same in every locale, never `landing.features.label` (mock line 448). */
+const FEATURES_LABEL = 'Features'
+
+/** English wordmark — mock's literal "AllMarks" text (pchrome watermark + entry screen). Never translated. */
+const WORDMARK = 'AllMarks'
+
+type StepId = 'capture' | 'layout' | 'live' | 'organize' | 'privacy' | 'share'
+
+/** The six steps: nav short name (English, hardcoded) + i18n source for title/body. */
+const STEPS: readonly { readonly num: string; readonly name: string; readonly id: StepId }[] = [
+  { num: '01', name: 'Capture', id: 'capture' },
+  { num: '02', name: 'Layout', id: 'layout' },
+  { num: '03', name: 'Live', id: 'live' },
+  { num: '04', name: 'Organize', id: 'organize' },
+  { num: '05', name: 'Privacy', id: 'privacy' },
+  { num: '06', name: 'Share', id: 'share' },
+]
+
+/** 06 uses landing.share.* (all one line, no split); 01–05 use landing.features.<id>.* (mock 453–458). */
+function stepTitleKey(id: StepId): string {
+  return id === 'share' ? 'landing.share.headline' : `landing.features.${id}.title`
+}
+function stepBodyKey(id: StepId): string {
+  return id === 'share' ? 'landing.share.body' : `landing.features.${id}.body`
 }
 
-/**
- * The five beats, in order. Numbers + labels are the hardcoded spine of the
- * sequence; titles/bodies come from i18n.
- */
-const BEATS: readonly Beat[] = [
-  { num: '01', label: 'CAPTURE', key: 'capture', visual: 'capture' },
-  { num: '02', label: 'LAYOUT', key: 'layout', visual: 'layout' },
-  { num: '03', label: 'LIVE GRID', key: 'live', visual: 'live' },
-  { num: '04', label: 'ORGANIZE', key: 'organize', visual: 'organize' },
-  { num: '05', label: 'PRIVACY', key: 'privacy', visual: 'privacy' },
-] as const
+/** The tag filter pills (mock 466) — English design words, never translated. */
+const TAGS: readonly { readonly tag: 'all' | 'music' | 'design'; readonly label: string }[] = [
+  { tag: 'all', label: 'all' },
+  { tag: 'music', label: 'music' },
+  { tag: 'design', label: 'design' },
+]
 
-/** 01 CAPTURE — a few clean cards of DIFFERENT shapes (wide / tall / square)
- *  plus ONE card flagged as video (play-triangle overlay, no domain text).
- *  "Variety of sources" is carried by shape + the copy, never fake labels. */
-const CAPTURE_CARDS: readonly VisualCard[] = [
-  { asset: 5 }, // Monet stacks — wide landscape
-  { asset: 3, video: true }, // Van Gogh self-portrait — tall, marked as video
-  { asset: 14 }, // Cézanne apples — near-square
-] as const
-
-/** 02 LAYOUT — a clean masonry like the real AllMarks board. Mixed formats so
- *  the columns balance; clean image cards only, no labels. */
-const LAYOUT_CARDS: readonly VisualCard[] = [
-  { asset: 0 }, // Hokusai wave (landscape)
-  { asset: 6 }, // Renoir sisters (portrait)
-  { asset: 9 }, // Caillebotte Paris street
-  { asset: 8 }, // Moulin Rouge
-  { asset: 12 }, // Tiffany lilies (tall thin)
-  { asset: 1 }, // Hiroshige Tokaido (landscape)
-] as const
-
-/** 04 ORGANIZE — theme-agnostic swatches. Neutral inks + one green accent so
- *  no single theme is branded. Paired with a few text tag pills. */
-const THEME_SWATCHES: readonly string[] = [
-  '#14130f',
-  '#faf9f6',
-  '#28f100',
-  '#9a958a',
-  '#3b3a35',
-] as const
-
-/** 04 ORGANIZE — example tag chips. Plain, lowercase, neutral text. */
-const TAG_PILLS: readonly string[] = ['inspo', 'video', 'shop', 'read'] as const
-
-/** 05 PRIVACY — short typographic reassurance rows. */
-const PRIVACY_ROWS: readonly string[] = [
-  'No account',
-  'Stored locally',
-  'Always free',
-] as const
-
-/**
- * 03 LIVE GRID — the AllMarks differentiator: multiple real videos playing at
- * once. Three NASA public-domain clips in a 2+1 grid layout; all autoplay
- * only while in the viewport (IntersectionObserver) and respect reduced-motion.
- *
- * Grid: large aurora (top-left, 2×1 cell wide) + earth + nebula stacked in the
- * right column. Covers the cells with object-fit:cover so the low-res 320px
- * clips look clean and never letterboxed.
- */
-function LiveGrid(): React.ReactElement {
-  const slotRef = useRef<HTMLDivElement>(null)
-  // Stable refs to the three video elements — avoids stale closure issues
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([null, null, null])
-
-  useEffect(() => {
-    const slot = slotRef.current
-    if (!slot) return
-
-    // Reduced-motion: check once. If user prefers-reduced-motion, never autoplay.
-    const reducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-    if (reducedMotion) return
-
-    const videos = videoRefs.current.filter((v): v is HTMLVideoElement => v !== null)
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            for (const v of videos) {
-              // play() returns a Promise; ignore the rejection if interrupted
-              v.play().catch(() => {})
-            }
-          } else {
-            for (const v of videos) {
-              v.pause()
-            }
-          }
-        }
-      },
-      { threshold: 0.25 },
-    )
-
-    observer.observe(slot)
-    return () => observer.disconnect()
-  }, [])
-
-  return (
-    <div
-      ref={slotRef}
-      className={styles.liveGrid}
-      data-livegrid-slot
-      aria-hidden="true"
-    >
-      {DEMO_VIDEOS.map((vid, i) => (
-        <figure
-          key={vid.src}
-          className={`${styles.liveCell} ${styles[`liveCell${i}`]}`}
-        >
-          <video
-            ref={(el) => {
-              videoRefs.current[i] = el
-            }}
-            src={`/${vid.src}`}
-            poster={`/${vid.poster}`}
-            muted
-            loop
-            playsInline
-            preload="none"
-            className={styles.liveCellVideo}
-          />
-        </figure>
-      ))}
-      {/* Sound-wave pulse bars for the LIVE panel micro-anim.
-          Three vertical bars that pulse via scaleY driven by onProgress. */}
-      <div className={styles.livePulse} aria-hidden="true">
-        <span className={styles.liveBar} data-live-bar="0" />
-        <span className={styles.liveBar} data-live-bar="1" />
-        <span className={styles.liveBar} data-live-bar="2" />
-        <span className={styles.liveBar} data-live-bar="3" />
-        <span className={styles.liveBar} data-live-bar="4" />
-      </div>
-    </div>
-  )
-}
-
-/**
- * Renders the supporting visual for a given beat. All cards are clean image
- * thumbnails (no labels, no fabricated domains) and strictly axis-aligned.
- */
-function BeatVisual({ visual }: { visual: Beat['visual'] }): React.ReactElement {
-  if (visual === 'capture') {
-    return (
-      <div className={styles.captureRow} data-panel-visual="capture">
-        {CAPTURE_CARDS.map((card, i) => {
-          const art = DEMO_COLLAGE[card.asset]
-          if (!art) return null
-          return (
-            <figure key={i} className={styles.card} data-capture-card={i}>
-              <img
-                src={`/${art.src}`}
-                alt=""
-                width={art.w}
-                height={art.h}
-                className={styles.cardImg}
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-              {card.video ? (
-                <span className={styles.playBadge} aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="20" height="20">
-                    <path d="M8 5v14l11-7z" fill="currentColor" />
-                  </svg>
-                </span>
-              ) : null}
-            </figure>
-          )
-        })}
-      </div>
-    )
-  }
-
-  if (visual === 'layout') {
-    return (
-      <div className={styles.masonry} data-panel-visual="layout">
-        {LAYOUT_CARDS.map((card, i) => {
-          const art = DEMO_COLLAGE[card.asset]
-          if (!art) return null
-          return (
-            <figure key={i} className={styles.card} data-layout-card={i}>
-              <img
-                src={`/${art.src}`}
-                alt=""
-                width={art.w}
-                height={art.h}
-                className={styles.cardImg}
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-            </figure>
-          )
-        })}
-      </div>
-    )
-  }
-
-  if (visual === 'live') {
-    return <LiveGrid />
-  }
-
-  if (visual === 'organize') {
-    return (
-      <div className={styles.organize} data-panel-visual="organize">
-        <div className={styles.pillRow} aria-hidden="true">
-          {TAG_PILLS.map((tag, i) => (
-            <span key={tag} className={styles.pill} data-organize-pill={i}>
-              <span className={styles.pillHash}>#</span>
-              {tag}
-            </span>
-          ))}
-        </div>
-        <div className={styles.swatchRow} aria-hidden="true">
-          {THEME_SWATCHES.map((c, i) => (
-            <span
-              key={i}
-              className={styles.swatch}
-              style={{ background: c }}
-              data-organize-swatch={i}
-            />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  // privacy — quiet typographic rows, minimal visual
-  return (
-    <ul className={styles.privacyList} aria-hidden="true" data-panel-visual="privacy">
-      {PRIVACY_ROWS.map((row, i) => (
-        <li key={row} className={styles.privacyRow} data-privacy-row={i}>
-          <span className={styles.privacyDot} />
-          {row}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-/**
- * Features — the FEATURES section of the LP, as a numbered editorial sequence
- * (01–05), NOT a boxed SaaS grid.
- *
- * On PC widths (≥1024px) with no reduced-motion preference the five beats are
- * laid out horizontally and the section is pinned while the track scrolls
- * laterally (scroll-jack via useHorizontalPin). On narrow widths and under
- * prefers-reduced-motion the beats stack vertically in the classic alternating
- * text-left / visual-right two-column layout (CSS fallback).
- *
- * Hard rules honored: every card/image is AXIS-ALIGNED (never tilted), and NO
- * fabricated source domains/favicons appear anywhere — source variety is shown
- * through card shape/type (e.g. a play-triangle = video) and through the copy.
- *
- * The 03 LIVE GRID visual renders real autoplaying NASA public-domain video
- * loops via the `LiveGrid` component — in-view-only (IntersectionObserver)
- * with poster fallbacks under prefers-reduced-motion.
- */
 export function Features(): React.ReactElement {
   const { t } = useI18n()
+  // Synced via its own effect (never written during render — react-hooks/refs,
+  // task-6 ruling R21) so the mount-time effect below always sees the latest
+  // translator without needing `t` in its dependency array — same pattern as
+  // Hero.tsx / Problem.tsx.
+  const tRef = useRef(t)
+  useEffect(() => {
+    tRef.current = t
+  }, [t])
+
+  // Mac/iOS paste-shortcut label (R19) — the Features paste chip shows this
+  // instead of the mock's hard-coded "Ctrl".
+  const modKey = useModKey()
+
   const sectionRef = useRef<HTMLElement>(null)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const progressFillRef = useRef<HTMLSpanElement>(null)
+  const ruleLineRef = useRef<HTMLElement>(null)
+  const fpinRef = useRef<HTMLDivElement>(null)
+  const fnavRefs = useRef<(HTMLLIElement | null)[]>([])
+  const railFillRef = useRef<HTMLElement>(null)
+  const ftextsRef = useRef<HTMLDivElement>(null)
+  const ftextRefs = useRef<(HTMLElement | null)[]>([])
+  const fpanelRef = useRef<HTMLDivElement>(null)
+  const fshareRef = useRef<HTMLSpanElement>(null)
+  const fmotionRef = useRef<HTMLSpanElement>(null)
+  const fpasteRef = useRef<HTMLDivElement>(null)
+  const fpsRef = useRef<HTMLDivElement>(null)
+  const allBtnRef = useRef<HTMLButtonElement>(null)
+  const musicBtnRef = useRef<HTMLButtonElement>(null)
+  const designBtnRef = useRef<HTMLButtonElement>(null)
+  const fpuRef = useRef<HTMLElement>(null)
+  const fbwRef = useRef<HTMLDivElement>(null)
+  const fboardRef = useRef<HTMLDivElement>(null)
+  const frectRef = useRef<SVGRectElement>(null)
+  const pchipRef = useRef<HTMLSpanElement>(null)
+  const fstartRef = useRef<HTMLDivElement>(null)
+  const fsbtnRef = useRef<HTMLSpanElement>(null)
+  const schipsRef = useRef<HTMLDivElement>(null)
+  const scpRef = useRef<HTMLSpanElement>(null)
+  const fclickRef = useRef<HTMLElement>(null)
+  const fflashRef = useRef<HTMLElement>(null)
+  const fcurRef = useRef<HTMLDivElement>(null)
 
-  /**
-   * Drive all per-panel micro-animations from the single 0..1 global progress.
-   * Only called in the PC + no-preference branch (matchMedia inside the hook).
-   * Uses gsap.set / quickSetter for zero-overhead per-frame updates.
-   * Default visual state is always "visible" — animations only add polish.
-   */
-  const handleProgress = useCallback((p: number): void => {
-    const section = sectionRef.current
-    if (!section) return
-
-    // ── Sound-wave progress bar ──────────────────────────────────────────────
-    const fill = progressFillRef.current
-    if (fill) {
-      gsap.set(fill, { scaleX: p })
-    }
-
-    // Helper: ease a 0..1 value through expo-out-ish curve
-    const easeOut = (v: number): number => 1 - Math.pow(1 - v, 3)
-
-    // ── Panel 0 (CAPTURE): 3 cards scale+opacity + slight x convergence ──────
-    const lp0 = panelProgress(p, 5, 0)
-    const e0 = easeOut(Math.min(1, lp0 / 0.55))
-    const captureCards = section.querySelectorAll<HTMLElement>('[data-capture-card]')
-    captureCards.forEach((el, i) => {
-      // Center card (i=1) converges from right; outer cards from their sides
-      const xFrom = i === 0 ? -14 : i === 2 ? 14 : 0
-      gsap.set(el, {
-        scale: 0.8 + 0.2 * e0,
-        opacity: e0,
-        x: xFrom * (1 - e0),
-      })
-    })
-
-    // ── Panel 1 (LAYOUT): masonry cards stagger in from y:24 ─────────────────
-    const lp1 = panelProgress(p, 5, 1)
-    const layoutCards = section.querySelectorAll<HTMLElement>('[data-layout-card]')
-    layoutCards.forEach((el, i) => {
-      // Each card gets its own offset so they feel like a stagger
-      const staggerOffset = i * 0.12
-      const raw = Math.max(0, Math.min(1, (lp1 - staggerOffset) / (0.55 - staggerOffset * 0.5)))
-      const e1 = easeOut(raw)
-      gsap.set(el, {
-        y: 24 * (1 - e1),
-        opacity: e1,
-      })
-    })
-
-    // ── Panel 2 (LIVE): pulse bars scaleY driven by progress ─────────────────
-    const lp2 = panelProgress(p, 5, 2)
-    const liveBars = section.querySelectorAll<HTMLElement>('[data-live-bar]')
-    liveBars.forEach((el, i) => {
-      // Each bar oscillates at a different phase / amplitude
-      const phase = i * 0.18
-      const wave = 0.35 + 0.65 * Math.abs(Math.sin((lp2 * 2.4 + phase) * Math.PI))
-      const e2 = easeOut(Math.min(1, lp2 / 0.4))
-      gsap.set(el, { scaleY: wave * e2 })
-    })
-
-    // ── Panel 3 (ORGANIZE): pills x+opacity, then swatches ───────────────────
-    const lp3 = panelProgress(p, 5, 3)
-    const pills = section.querySelectorAll<HTMLElement>('[data-organize-pill]')
-    pills.forEach((el, i) => {
-      const offset = i * 0.09
-      const raw = Math.max(0, Math.min(1, (lp3 - offset) / (0.45 - offset * 0.3)))
-      const e3p = easeOut(raw)
-      gsap.set(el, { x: -16 * (1 - e3p), opacity: e3p })
-    })
-    const swatches = section.querySelectorAll<HTMLElement>('[data-organize-swatch]')
-    swatches.forEach((el, i) => {
-      // Swatches lag behind pills
-      const offset = 0.22 + i * 0.06
-      const raw = Math.max(0, Math.min(1, (lp3 - offset) / 0.35))
-      const e3s = easeOut(raw)
-      gsap.set(el, { x: -16 * (1 - e3s), opacity: e3s })
-    })
-
-    // ── Panel 4 (PRIVACY): rows fade in + slight x slide ─────────────────────
-    const lp4 = panelProgress(p, 5, 4)
-    const rows = section.querySelectorAll<HTMLElement>('[data-privacy-row]')
-    rows.forEach((el, i) => {
-      const offset = i * 0.13
-      const raw = Math.max(0, Math.min(1, (lp4 - offset) / (0.5 - offset * 0.2)))
-      const e4 = easeOut(raw)
-      gsap.set(el, { x: -12 * (1 - e4), opacity: e4 })
-    })
-  }, [])
-
-  /**
-   * In the PC + no-preference branch, set the "before animation" initial state
-   * for all animated elements so they start invisible (opacity:0 etc.) and
-   * onProgress builds them in. In the static fallback (reduced-motion / non-PC)
-   * this block never runs and all elements stay fully visible (their CSS default).
-   */
   useEffect(() => {
     const section = sectionRef.current
-    if (!section) return
-    const mm = gsap.matchMedia()
-    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
-      gsap.set(section.querySelectorAll('[data-capture-card]'), { opacity: 0, scale: 0.8 })
-      gsap.set(section.querySelectorAll('[data-layout-card]'), { opacity: 0, y: 24 })
-      gsap.set(section.querySelectorAll('[data-organize-pill]'), { opacity: 0, x: -16 })
-      gsap.set(section.querySelectorAll('[data-organize-swatch]'), { opacity: 0, x: -16 })
-      gsap.set(section.querySelectorAll('[data-privacy-row]'), { opacity: 0, x: -12 })
-      gsap.set(section.querySelectorAll('[data-live-bar]'), { scaleY: 0 })
-      return () => {
-        // Restore visible state on unmount / breakpoint revert
-        gsap.set(section.querySelectorAll('[data-capture-card]'), { clearProps: 'opacity,scale,x' })
-        gsap.set(section.querySelectorAll('[data-layout-card]'), { clearProps: 'opacity,y' })
-        gsap.set(section.querySelectorAll('[data-organize-pill]'), { clearProps: 'opacity,x' })
-        gsap.set(section.querySelectorAll('[data-organize-swatch]'), { clearProps: 'opacity,x' })
-        gsap.set(section.querySelectorAll('[data-privacy-row]'), { clearProps: 'opacity,x' })
-        gsap.set(section.querySelectorAll('[data-live-bar]'), { clearProps: 'scaleY' })
+    const ruleLine = ruleLineRef.current
+    const fpin = fpinRef.current
+    const railFill = railFillRef.current
+    const ftextsEl = ftextsRef.current
+    const fpanel = fpanelRef.current
+    const fshare = fshareRef.current
+    const fmotion = fmotionRef.current
+    const fpaste = fpasteRef.current
+    const fps = fpsRef.current
+    const allBtn = allBtnRef.current
+    const musicBtn = musicBtnRef.current
+    const designBtn = designBtnRef.current
+    const fpu = fpuRef.current
+    const fbw = fbwRef.current
+    const fboard = fboardRef.current
+    const frect = frectRef.current
+    const pchip = pchipRef.current
+    const fstart = fstartRef.current
+    const fsbtn = fsbtnRef.current
+    const schips = schipsRef.current
+    const scp = scpRef.current
+    const fclick = fclickRef.current
+    const fflash = fflashRef.current
+    const fcur = fcurRef.current
+    const fnavEls = fnavRefs.current
+    const ftextEls = ftextRefs.current
+
+    if (
+      !section || !ruleLine || !fpin || !railFill || !ftextsEl || !fpanel || !fshare || !fmotion || !fpaste || !fps ||
+      !allBtn || !musicBtn || !designBtn || !fpu || !fbw || !fboard || !frect || !pchip || !fstart || !fsbtn ||
+      !schips || !scp || !fclick || !fflash || !fcur ||
+      fnavEls.length !== STEPS.length || ftextEls.length !== STEPS.length ||
+      fnavEls.some((el) => el === null) || ftextEls.some((el) => el === null)
+    ) {
+      return undefined
+    }
+    const navEls = fnavEls as HTMLLIElement[]
+    const textEls = ftextEls as HTMLElement[]
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let disposed = false
+
+    // ── board: 10 cards (mock 683–687) ──
+    const fCards: HTMLDivElement[] = FEATURE_CARDS.map((spec, i) => {
+      const el = makeCard(spec, {
+        amb: false,
+        tweetText: spec.tweet != null ? tRef.current(tweetKey(spec.tweet)) : undefined,
+      })
+      if (i === CARD_SLIDES) {
+        const vb = document.createElement('i')
+        vb.className = 'vbadge'
+        vb.textContent = '▶'
+        el.appendChild(vb)
       }
+      if (i === CARD_FILM) {
+        el.style.transition = 'box-shadow .45s'
+        el.setAttribute('data-film-card', '')
+      }
+      fboard.appendChild(el)
+      return el
     })
-    return () => mm.revert()
+    const vbadgeEl = fCards[CARD_SLIDES]?.querySelector<HTMLElement>('.vbadge') ?? null
+    const filmCardEl = fCards[CARD_FILM]
+    const dragCardEl = fCards[CARD_DRAG]
+    const newCardEl = fCards[CARD_NEW]
+    const film = filmCardEl ? filmOf(filmCardEl) : null
+    const slideEls = fCards[CARD_SLIDES] ? slidesOf(fCards[CARD_SLIDES]) : null
+    let filmAcc = 0
+    let slideT = 0
+    let slideI = 0
+    let livePlaying = false
+
+    // ── geometry (measure() / ftH() — init, resize, fonts.ready ONLY; the
+    //    ticker below never reads layout, only the cached `geo`) ──
+    function rc(el: HTMLElement): Pt {
+      const r = el.getBoundingClientRect()
+      const p = fpanel!.getBoundingClientRect()
+      return { x: r.left - p.left - fpanel!.clientLeft + r.width / 2, y: r.top - p.top - fpanel!.clientTop + r.height / 2 }
+    }
+    function measureTargets(): FeatureGeometry['to'] {
+      const savedSchips = schips!.style.transform
+      const savedFbw = fbw!.style.transform
+      schips!.style.transform = 'none'
+      fbw!.style.transform = 'none'
+      const to = {
+        motion: rc(fmotion!),
+        share: rc(fshare!),
+        music: rc(musicBtn!),
+        design: rc(designBtn!),
+        start: rc(fsbtn!),
+        copy: rc(scp!),
+        rest: { x: fpanel!.clientWidth * 0.9, y: fpanel!.clientHeight * 0.96 },
+      }
+      schips!.style.transform = savedSchips
+      fbw!.style.transform = savedFbw
+      return to
+    }
+    function pillBox(btn: HTMLButtonElement): PillBox {
+      return { x: btn.offsetLeft + 8, w: btn.offsetWidth - 16 }
+    }
+    function measure(): FeatureGeometry {
+      const L = featureLayouts(fboard!.clientWidth)
+      const cw = L.A.cw
+      fCards.forEach((el, i) => {
+        el.style.width = `${cw}px`
+        el.style.height = `${cw / FEATURE_CARDS[i]!.a}px`
+      })
+      frect!.setAttribute('width', String(Math.max(0, fbw!.clientWidth - 2)))
+      frect!.setAttribute('height', String(Math.max(0, fbw!.clientHeight - 2)))
+      const pills = { all: pillBox(allBtn!), music: pillBox(musicBtn!), design: pillBox(designBtn!) }
+      const bw = fboard!.clientWidth
+      const bh = fboard!.clientHeight
+      const bx = fbw!.offsetLeft
+      const by = fbw!.offsetTop
+      const shotK = fpanel!.clientWidth < 560 ? 0.28 : 0.2
+      return { L, bw, bh, bx, by, shotK, pills, to: measureTargets() }
+    }
+    function ftH(): void {
+      let m = 0
+      textEls.forEach((el) => {
+        m = Math.max(m, el.offsetHeight)
+      })
+      ftextsEl!.style.height = `${m}px`
+    }
+
+    let geo = measure()
+
+    // ── setActive: toggles which step's nav-entry + text block is "on" ──
+    let fActive = -1
+    function setActive(k: number): void {
+      if (k === fActive) return
+      fActive = k
+      textEls.forEach((el, i) => el.classList.toggle(styles.on!, i === k))
+      navEls.forEach((el, i) => el.classList.toggle(styles.on!, i === k))
+    }
+
+    // ── setCls: mirrors the mock's setCls/fState — only classList.toggle
+    //    when the boolean actually changed (mock 707) ──
+    const clsState = new Map<string, boolean>()
+    function setCls(el: Element, cls: string, on: boolean, key: string): void {
+      if (clsState.get(key) === on) return
+      clsState.set(key, on)
+      el.classList.toggle(cls, on)
+    }
+
+    // ── apply: the mock's DOM writes (741–763), driven entirely by an
+    //    already-computed FeatureState — no maths here, only writes ──
+    function apply(s: FeatureState): void {
+      for (let i = 0; i < FEATURE_CARDS.length; i++) {
+        const el = fCards[i]!
+        const c = s.cards[i]!
+        el.style.transform = `translate(${c.x.toFixed(1)}px,${c.y.toFixed(1)}px) scale(${c.scale.toFixed(3)})`
+        el.style.opacity = c.opacity.toFixed(3)
+        el.style.visibility = c.visible ? 'visible' : 'hidden'
+      }
+      if (vbadgeEl) vbadgeEl.style.opacity = s.focus.toFixed(3)
+
+      dragCardEl!.style.zIndex = s.lift > 0 ? '5' : ''
+      dragCardEl!.style.boxShadow =
+        s.lift > 0
+          ? `0 0 0 1px rgba(15,15,15,.08),0 ${(12 + 18 * s.lift).toFixed(1)}px ${(24 + 26 * s.lift).toFixed(1)}px -12px rgba(15,15,15,${(0.22 + 0.2 * s.lift).toFixed(2)})`
+          : ''
+
+      newCardEl!.style.zIndex = s.newOnTop ? '6' : ''
+
+      setCls(filmCardEl!, 'onair', s.focus > 0.5, 'oa')
+      filmCardEl!.style.zIndex = s.focus > 0 ? '4' : ''
+
+      fcur!.style.opacity = s.cursor.opacity.toFixed(3)
+      fcur!.style.transform = `translate(${(s.cursor.x - 4).toFixed(1)}px,${(s.cursor.y - 2).toFixed(1)}px)`
+      setCls(fcur!, styles.press!, s.cursor.pressed, 'cpress')
+
+      if (s.ring) {
+        fclick!.style.opacity = s.ring.opacity.toFixed(3)
+        fclick!.style.transform = `translate(${s.ring.x.toFixed(1)}px,${s.ring.y.toFixed(1)}px) scale(${s.ring.scale.toFixed(3)})`
+      } else {
+        fclick!.style.opacity = '0'
+      }
+
+      setCls(fmotion!, styles.on!, s.motionOn, 'mo')
+      setCls(fpaste!, styles.isPress!, s.pastePress, 'pr')
+      setCls(fpaste!, styles.isDone!, s.pasteDone, 'dn')
+      setCls(fshare!, styles.press!, s.sharePress, 'sh')
+      setCls(fsbtn!, styles.press!, s.startPress, 'sb')
+
+      fpaste!.style.opacity = (1 - s.pillsOpacity).toFixed(3)
+      fps!.style.opacity = s.pillsOpacity.toFixed(3)
+
+      fpu!.style.transform = `translateX(${s.underline.x.toFixed(1)}px) scaleX(${s.underline.w.toFixed(1)})`
+      ;[allBtn!, musicBtn!, designBtn!].forEach((b) => {
+        b.classList.toggle(styles.on!, b.dataset.t === s.activeTag)
+      })
+
+      fstart!.style.opacity = s.startOpacity.toFixed(3)
+      fstart!.style.visibility = s.startVisible ? 'visible' : 'hidden'
+      fstart!.style.clipPath = `inset(0 0 ${(s.startWipe * 100).toFixed(2)}% 0)`
+
+      frect!.style.strokeDashoffset = (1 - s.frameT).toFixed(3)
+      frect!.style.opacity = s.frameOpacity.toFixed(3)
+
+      pchip!.style.opacity = s.chipOpacity.toFixed(3)
+      pchip!.style.transform = `translateY(${(8 * (1 - s.chipOpacity)).toFixed(1)}px)`
+
+      fflash!.style.opacity = (0.7 * s.flash).toFixed(3)
+
+      fbw!.style.transform = `scale(${s.boardScale.toFixed(4)})`
+      fbw!.style.boxShadow =
+        s.shot > 0
+          ? `0 0 0 ${(12 * s.shot).toFixed(1)}px #fff,0 0 0 ${(12 * s.shot + 1).toFixed(1)}px rgba(15,15,15,${(0.14 * s.shot).toFixed(3)}),0 24px 44px -20px rgba(15,15,15,${(0.35 * s.shot).toFixed(3)})`
+          : ''
+
+      schips!.style.opacity = s.chipsT.toFixed(3)
+      schips!.style.transform = `translateY(${(14 * (1 - s.chipsT)).toFixed(1)}px)`
+      setCls(scp!, styles.done!, s.copied, 'cp')
+
+      railFill!.style.transform = `scaleY(${s.rail.toFixed(4)})`
+
+      livePlaying = s.playing
+    }
+
+    // ── film + slideshow tick (mock 764–767): only while actually playing,
+    //    never while the tab is hidden. dt is pre-clamped by featFrame. ──
+    function liveTick(dt: number): void {
+      if (!livePlaying || document.hidden) return
+      if (film) {
+        film.t += dt / 1000
+        filmAcc += dt
+        if (filmAcc >= 41) {
+          filmAcc = 0
+          film.draw(film.t)
+          const tt = film.t % film.dur
+          film.fill.style.transform = `scaleX(${(tt / film.dur).toFixed(4)})`
+          film.tc.textContent = `0:${tt < 10 ? '0' : ''}${Math.floor(tt)} / 0:24`
+        }
+      }
+      if (slideEls && slideEls.length > 0) {
+        slideT += dt
+        if (slideT > 1300) {
+          slideT = 0
+          slideI = (slideI + 1) % slideEls.length
+          slideEls.forEach((c, k) => c.classList.toggle('on', k === slideI))
+        }
+      }
+    }
+
+    // ── initial paint (mock 768: renderFeat(0), before ST/ticker exist) ──
+    ftH()
+    let cur = 0
+    let lastReducedP: number | null = null
+    apply(featState(0, geo))
+    if (reduce) lastReducedP = 0
+
+    // ── scroll-driven ticker (mock 773–776) ──
+    let fST: ScrollTrigger | undefined
+    const ctx = gsap.context(() => {
+      fST = ScrollTrigger.create({ trigger: fpin, start: 'top top', end: 'bottom bottom' })
+      // R18: this section's own divider line (mock 798–799), motion-gated.
+      if (!reduce) {
+        gsap.fromTo(
+          ruleLine,
+          { scaleX: 0 },
+          { scaleX: 1, ease: 'none', scrollTrigger: { trigger: ruleLine, start: 'top 92%', end: 'top 58%', scrub: 0.4 } },
+        )
+      }
+    }, sectionRef)
+
+    function featFrame(_time: number, deltaTime: number): void {
+      if (disposed || !fST) return
+      const target = featTarget(fST.progress)
+      if (reduce) {
+        // R17: reduced motion shows each step's finished pose, no smoothing.
+        const P = Math.min(6, Math.floor(target) + 1)
+        if (P !== lastReducedP) {
+          lastReducedP = P
+          apply(featState(P, geo))
+        }
+        setActive(Math.min(5, Math.floor(target)))
+        return
+      }
+      const d = target - cur
+      if (Math.abs(d) < 0.0008) {
+        if (cur !== target) {
+          cur = target
+          apply(featState(cur, geo))
+        }
+      } else {
+        cur += d * 0.14
+        apply(featState(cur, geo))
+      }
+      setActive(Math.max(0, Math.min(5, Math.floor(cur))))
+      liveTick(Math.min(deltaTime || 16, 64))
+    }
+    gsap.ticker.add(featFrame)
+
+    // ── resize (R16, mock 861 Features slice): re-measure + full apply.
+    //    ScrollTrigger re-measures itself on resize; no explicit refresh here. ──
+    function fullApply(): void {
+      const p = reduce ? (lastReducedP ?? 0) : cur
+      apply(featState(p, geo))
+    }
+    let resizeTimer: number | undefined
+    const onResize = (): void => {
+      window.clearTimeout(resizeTimer)
+      resizeTimer = window.setTimeout(() => {
+        if (disposed) return
+        geo = measure()
+        ftH()
+        fullApply()
+      }, 160)
+    }
+    window.addEventListener('resize', onResize)
+
+    // Features owns the page's one global ScrollTrigger.refresh() — fonts
+    // settling can reflow the text column without firing a resize event.
+    if (document.fonts?.ready) {
+      void document.fonts.ready.then(() => {
+        if (disposed) return
+        geo = measure()
+        ftH()
+        fullApply()
+        ScrollTrigger.refresh()
+      })
+    }
+
+    return () => {
+      disposed = true
+      ctx.revert()
+      gsap.ticker.remove(featFrame)
+      window.clearTimeout(resizeTimer)
+      window.removeEventListener('resize', onResize)
+      fCards.forEach((el) => el.remove())
+    }
   }, [])
 
-  useHorizontalPin({
-    sectionRef: sectionRef as React.RefObject<HTMLElement>,
-    trackRef: trackRef as React.RefObject<HTMLElement>,
-    onProgress: handleProgress,
-  })
-
   return (
-    <section ref={sectionRef} id="features" className={styles.features}>
-      <div className={styles.stage}>
-        <p className={styles.kicker}>
-          <span className={styles.kickerDash} aria-hidden="true" />
-          FEATURES
-        </p>
-
-        {/* Sound-wave progress bar — PC + no-preference only (CSS hides on mobile/reduced) */}
-        <div className={styles.progress} aria-hidden="true">
-          <span ref={progressFillRef} className={styles.progressFill} />
-        </div>
-
-        <div ref={trackRef} className={styles.track}>
-          {BEATS.map((beat) => (
-            <article key={beat.num} className={styles.beat} data-panel>
-              <div className={styles.beatText}>
-                <p className={styles.beatNum}>
-                  <span className={styles.num}>{beat.num}</span>
-                  <span className={styles.numLabel}>{beat.label}</span>
-                </p>
-                <h3 className={styles.beatTitle}>
-                  {t(`landing.features.${beat.key}.title`)}
-                </h3>
-                <p className={styles.beatBody}>
-                  {t(`landing.features.${beat.key}.body`)}
-                </p>
+    <section ref={sectionRef} id="features" className={styles.feat}>
+      <div className="wrap rule" aria-hidden="true">
+        <span className="label">{FEATURES_LABEL}</span>
+        <i ref={ruleLineRef as React.RefObject<HTMLElement>} />
+      </div>
+      <div ref={fpinRef} className={styles.fpin} data-fpin>
+        <div className={styles.fstick}>
+          <div className={`wrap ${styles.fgrid}`}>
+            <div className={styles.fleft}>
+              <ol className={styles.fnav} aria-hidden="true">
+                {STEPS.map((step, i) => (
+                  <li
+                    key={step.num}
+                    ref={(el) => {
+                      fnavRefs.current[i] = el
+                    }}
+                    className={styles.fnavLi}
+                  >
+                    <span>{step.num}</span>
+                    {step.name}
+                  </li>
+                ))}
+                <i className={styles.fnavRail}>
+                  <i ref={railFillRef as React.RefObject<HTMLElement>} className={styles.fnavRailFill} />
+                </i>
+              </ol>
+              <div ref={ftextsRef} className={styles.ftexts}>
+                {STEPS.map((step, i) => (
+                  <article
+                    key={step.num}
+                    ref={(el) => {
+                      ftextRefs.current[i] = el
+                    }}
+                    className={styles.ftext}
+                  >
+                    <p className={`label ${styles.ftextLabel}`}>
+                      <i className={`ln ${styles.ftextLn}`} />
+                      {step.num} — {step.name}
+                    </p>
+                    <h3 className={styles.fh}>
+                      <span data-lp-text>{t(stepTitleKey(step.id))}</span>
+                    </h3>
+                    <p className={`body ${styles.ftextBody}`} data-lp-text>
+                      {t(stepBodyKey(step.id))}
+                    </p>
+                  </article>
+                ))}
               </div>
+            </div>
 
-              <div className={styles.beatVisual}>
-                <BeatVisual visual={beat.visual} />
+            <div className={styles.fvis} aria-hidden="true">
+              <div ref={fpanelRef} className={styles.fpanel}>
+                <div className={styles.pchrome}>
+                  <span className={styles.wmS}>{WORDMARK}</span>
+                  <span className={styles.fright}>
+                    <span ref={fshareRef} className={styles.fshare}>
+                      Share
+                    </span>
+                    <span ref={fmotionRef} className={`${styles.motion} ${styles.on}`}>
+                      <i />
+                      Motion
+                    </span>
+                  </span>
+                </div>
+                <div className={styles.slot}>
+                  <div ref={fpasteRef} className={styles.paste}>
+                    <span className={styles.idle}>
+                      <span className={styles.kbd}>{modKey}</span>
+                      <span className={styles.kbd}>V</span>
+                      <span className={styles.pl} data-lp-text>
+                        {t('landing.demo.pasteHint')}
+                      </span>
+                    </span>
+                    <span className={styles.done}>
+                      <span className={styles.ok}>✓</span>
+                      <span data-lp-text>{t('landing.demo.saved')}</span>
+                    </span>
+                  </div>
+                  <div ref={fpsRef} className={styles.fps}>
+                    {TAGS.map((tg) => (
+                      <button
+                        key={tg.tag}
+                        ref={tg.tag === 'all' ? allBtnRef : tg.tag === 'music' ? musicBtnRef : designBtnRef}
+                        type="button"
+                        tabIndex={-1}
+                        data-t={tg.tag}
+                        className={styles.fpsButton}
+                      >
+                        {tg.label}
+                      </button>
+                    ))}
+                    <i ref={fpuRef as React.RefObject<HTMLElement>} className={styles.fpUnder} />
+                  </div>
+                </div>
+                <div ref={fbwRef} className={styles.fbw}>
+                  <div ref={fboardRef} className={styles.fboard} data-features-board />
+                  <svg className={styles.frame} aria-hidden="true">
+                    <rect ref={frectRef} pathLength={1} x={1} y={1} rx={13} />
+                  </svg>
+                  <span ref={pchipRef} className={styles.pchip} data-lp-text>
+                    {t('landing.demo.inBrowser')}
+                  </span>
+                </div>
+                <div ref={fstartRef} className={styles.fstart}>
+                  <span className={styles.fsWm}>{WORDMARK}</span>
+                  <span ref={fsbtnRef} className={styles.fsBtn}>
+                    <span data-lp-text>{t('landing.hero.ctaPrimary')}</span> <span aria-hidden="true">↗</span>
+                  </span>
+                  <span className={styles.fsNote} data-lp-text>
+                    {t('landing.demo.noSignup')}
+                  </span>
+                </div>
+                <div ref={schipsRef} className={styles.schips}>
+                  <span className={styles.sc} data-lp-text>
+                    ↓ {t('landing.demo.saveImage')}
+                  </span>
+                  <span ref={scpRef} className={styles.sc}>
+                    <span className="rl">
+                      <span data-lp-text>{t('landing.demo.copyLink')}</span>
+                      <span data-lp-text>✓ {t('landing.demo.copied')}</span>
+                    </span>
+                  </span>
+                </div>
+                <i ref={fclickRef as React.RefObject<HTMLElement>} className={styles.fclick} />
+                <i ref={fflashRef as React.RefObject<HTMLElement>} className={styles.fflash} />
+                <div ref={fcurRef} className={styles.fcur} data-fcur>
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M5 2.5 L5 19.5 L9.3 15.6 L12.2 22 L15.1 20.7 L12.3 14.4 L18.4 14.2 Z"
+                      fill="#111"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
               </div>
-            </article>
-          ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

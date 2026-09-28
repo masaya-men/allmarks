@@ -1,607 +1,601 @@
-/* Features.module.css — the FEATURES section as a numbered editorial sequence
-   (01–05), NOT a boxed SaaS grid. White off-white ground, Fraunces serif titles,
-   Geist body, soft ink, green accent used sparingly. Five full-width beats stack
-   vertically; each is a two-column moment that alternates text-left/visual-right.
-   Every card/image is AXIS-ALIGNED — NO tilt, NO rotation (hard AllMarks rule).
-   No fabricated source labels anywhere. Reflows to a clean single column at
-   narrow widths; must never look broken. */
+/* Features.module.css — ported from docs/private/lp-v10-mock.html.
+   Scope: mock CSS 213–297 minus the card-internal parts (mock 287–296,
+   already shared in ../lp-art.css: .card.onair .fl-play .fl-ui .fl-bar
+   .fl-fill .fl-tc .sl .vbadge) and minus the dead/superseded ".step/.rail"
+   rules (mock 216–224, not used by any element in the mock's actual Features
+   markup — superseded by .fnav/.ftext/.fh below), plus the Features-only
+   slice of the 370–404 media queries.
 
-.features {
-  width: 100%;
-  padding: 128px 40px 140px;
-  box-sizing: border-box;
-  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
+   Panel chrome shared with Hero's panel (.pchrome .wmS .fright .fshare
+   .motion .slot .paste .idle .done .kbd .ok — mock 76, 78–93, a combined
+   `.panel,.fpanel{...}` rule and bare rules that apply to both panels in the
+   flat mock) is intentionally re-declared here: CSS Modules scope Hero's
+   copies to Hero.module.css only, so Features needs its own local copies for
+   its own elements. Values are transcribed 1:1 from the mock (cross-checked
+   against Hero.module.css, which already ported the identical mock rules).
+
+   `.rl`'s own grid-stack base (mock 244–246: `.rl{display:inline-grid;...}`,
+   `.rl > span{grid-area:1/1;...}`, `.rl > span + span{transform:...}`) is
+   used here as the shared global class per the task brief ("already has ...
+   .rl ... use as plain class names; do not re-declare") — only the
+   Features-specific `.sc.done` override (mock 247–248) is declared below,
+   via a `:global(.rl)` island (the codebase's convention for reaching a
+   global descendant from a local ancestor without redeclaring the ancestor
+   or descendant as local — see Hero.module.css's file-level comment). */
+
+/* ── section + divider (mock line 214; the "wrap rule" divider itself is
+   global classes .wrap/.rule/.label, styled in ../lp-art.css) ── */
+.feat {
+  padding-top: clamp(40px, 8vh, 90px);
 }
 
-.stage {
-  width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-}
-
-/* ── Section kicker — mono "FEATURES" with a short green dash ── */
-.kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 84px;
-  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--lp-ink-soft);
-}
-
-.kickerDash {
-  width: 32px;
-  height: 2px;
-  border-radius: 999px;
-  background: var(--lp-accent);
-}
-
-/* ── The vertical sequence of beats (default / fallback layout) ── */
-.sequence,
-.track {
-  display: flex;
-  flex-direction: column;
-}
-
-/* One beat — a two-column editorial row. Text + visual. Hairline rule between
-   beats ties the sequence; generous vertical padding gives each beat air. */
-.beat {
-  display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  align-items: center;
-  gap: clamp(40px, 6vw, 96px);
-  padding: 72px 0;
-  border-top: 1px solid color-mix(in srgb, var(--lp-ink) 9%, transparent);
-}
-
-.beat:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.beat:last-child {
-  padding-bottom: 0;
-}
-
-/* Alternate the rhythm: even beats put the visual on the LEFT. Achieved by
-   swapping the grid column order — content stays in DOM order for a11y. */
-.beat:nth-child(even) .beatText {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.beat:nth-child(even) .beatVisual {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-/* ── Text column ── */
-.beatText {
-  min-width: 0;
-}
-
-/* number + label kicker — the spine of the sequence */
-.beatNum {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  margin: 0 0 22px;
-}
-
-.num {
-  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
-  font-size: clamp(28px, 3vw, 40px);
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.01em;
-  color: var(--lp-ink);
-}
-
-.numLabel {
-  font-family: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--lp-accent);
-  /* keep on the number's baseline-ish line; nudge optically */
-  transform: translateY(-2px);
-}
-
-.beatTitle {
-  margin: 0;
-  font-family: var(--lp-serif);
-  font-weight: 300;
-  font-size: clamp(28px, 3.6vw, 46px);
-  line-height: 1.06;
-  letter-spacing: -0.025em;
-  color: var(--lp-ink);
-  text-wrap: balance;
-}
-
-.beatBody {
-  margin: 20px 0 0;
-  font-family: var(--lp-sans);
-  font-size: 17px;
-  line-height: 1.65;
-  letter-spacing: -0.005em;
-  color: var(--lp-ink-soft);
-  max-width: 460px;
-  text-wrap: pretty;
-}
-
-/* ── Visual column ── */
-.beatVisual {
-  min-width: 0;
-}
-
-/* Shared card chrome — clean image thumbnail, soft editorial shadow, ~18px
-   radius echoing the real board. Axis-aligned, never rotated. */
-.card {
+/* ── pin + sticky stage (mock 253–254) ── */
+.fpin {
   position: relative;
-  margin: 0;
-  border-radius: 18px;
-  overflow: hidden;
-  background: var(--lp-bg);
-  border: 1px solid color-mix(in srgb, var(--lp-ink) 8%, transparent);
-  box-shadow:
-    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 5%, transparent),
-    0 18px 42px -22px color-mix(in srgb, var(--lp-ink) 30%, transparent),
-    0 5px 12px -8px color-mix(in srgb, var(--lp-ink) 14%, transparent);
-  transition:
-    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  height: calc(6.6 * 112vh + 100vh);
 }
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 6%, transparent),
-    0 26px 56px -22px color-mix(in srgb, var(--lp-ink) 36%, transparent),
-    0 8px 16px -8px color-mix(in srgb, var(--lp-ink) 18%, transparent);
-}
-
-.cardImg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-/* Play-triangle overlay — reads as "video" via SHAPE, not via any fake domain
-   text. A frosted disc with a centered triangle. */
-.playBadge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  display: inline-flex;
+.fstick {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  color: var(--lp-bg);
-  background: color-mix(in srgb, var(--lp-ink) 64%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  /* nudge the triangle to look optically centered */
+  padding-top: 60px;
 }
-
-.playBadge svg {
-  transform: translateX(1px);
-}
-
-/* ── 01 CAPTURE visual — three cards of DIFFERENT shapes side by side.
-   align-items:center lets the differing aspect ratios read as "variety". ── */
-.captureRow {
+.fgrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(28px, 4vw, 64px);
+}
+.fleft {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(22px, 3vw, 48px);
   align-items: center;
-  gap: 16px;
 }
 
-/* ── 02 LAYOUT visual — a clean masonry, like the real AllMarks board. ── */
-.masonry {
-  columns: 3;
-  column-gap: 16px;
-}
-
-.masonry .card {
-  margin: 0 0 16px;
-  break-inside: avoid;
-}
-
-/* ── 03 LIVE GRID visual — real autoplaying video grid (3 NASA clips).
-   2-column asymmetric grid: aurora spans the full left half (large),
-   earth-from-space + nebula stack in the right column (small pair).
-   object-fit:cover ensures the low-res 320px clips are always cropped
-   clean — never letterboxed, never stretched. ── */
-
-.liveGrid {
-  display: grid;
-  /* left column = large aurora card, right column = two small stacked cards */
-  grid-template-columns: 1.28fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 14px;
-  /* fixed height so both columns align; cards fill their cells */
-  height: 340px;
-  max-width: 560px;
-}
-
-/* Shared figure chrome — match the editorial .card style */
-.liveCell {
+/* ── step nav (mock 256–260) ── */
+.fnav {
   position: relative;
-  margin: 0;
-  border-radius: 16px;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--lp-ink) 6%, transparent);
-  border: 1px solid color-mix(in srgb, var(--lp-ink) 9%, transparent);
-  box-shadow:
-    0 1px 0 0 color-mix(in srgb, var(--lp-ink) 5%, transparent),
-    0 18px 42px -22px color-mix(in srgb, var(--lp-ink) 30%, transparent),
-    0 5px 12px -8px color-mix(in srgb, var(--lp-ink) 14%, transparent);
-}
-
-/* Cell 0 (aurora): span both rows in the left column — the hero tile */
-.liveCell0 {
-  grid-column: 1;
-  grid-row: 1 / 3;
-}
-
-/* Cell 1 (earth-from-space): top of right column */
-.liveCell1 {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-/* Cell 2 (nebula): bottom of right column */
-.liveCell2 {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-/* Video element fills the cell; object-fit:cover crops low-res clips cleanly */
-.liveCellVideo {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Responsive: on narrow screens collapse to a single large + two side-by-side */
-@media (max-width: 560px) {
-  .liveGrid {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 200px 140px;
-    height: auto;
-    max-width: 100%;
-  }
-  .liveCell0 {
-    grid-column: 1 / 3;
-    grid-row: 1;
-  }
-  .liveCell1 {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .liveCell2 {
-    grid-column: 2;
-    grid-row: 2;
-  }
-}
-
-/* ── Reduced motion: videos stay as posters (no autoplay enforced via JS too) ── */
-@media (prefers-reduced-motion: reduce) {
-  .liveCellVideo {
-    /* pointer-events and visibility stay normal; the JS never calls .play() */
-  }
-}
-
-/* ── 04 ORGANIZE visual — tag pills + theme swatches, theme-agnostic. ── */
-.organize {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  padding: 8px 0;
-}
-
-.pillRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 40px;
-  padding: 0 18px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--lp-ink) 16%, transparent);
-  background: color-mix(in srgb, var(--lp-ink) 3%, transparent);
-  font-family: var(--lp-sans);
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--lp-ink);
-}
-
-.pillHash {
-  color: var(--lp-accent);
-  font-weight: 600;
-}
-
-.swatchRow {
-  display: flex;
-  gap: 14px;
-}
-
-.swatch {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
-  box-shadow: 0 6px 16px -10px color-mix(in srgb, var(--lp-ink) 30%, transparent);
-}
-
-/* ── 05 PRIVACY visual — quiet typographic rows, minimal. ── */
-.privacyList {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 2px 0 2px 16px;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 16px;
+}
+.fnavLi {
+  display: flex;
+  gap: 10px;
+  font: 500 10.5px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+  transition: color 0.4s;
+}
+.fnavLi.on {
+  color: var(--ink);
+}
+.fnavRail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--hair);
+}
+.fnavRailFill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleY(0);
+  transform-origin: top;
 }
 
-.privacyRow {
+/* ── step texts (mock 261–271) ── */
+.ftexts {
+  position: relative;
+  min-height: 260px;
+}
+.ftext {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s var(--ex), visibility 0s linear 0.4s;
+}
+.ftext.on {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.4s var(--ex), visibility 0s;
+}
+.ftextLabel {
+  color: var(--ink);
+}
+.ftextLn {
+  width: 30px;
+  transform: scaleX(0);
+  transition: transform 0.7s var(--ex);
+}
+.ftext.on .ftextLn {
+  transform: none;
+}
+.fh {
+  margin: 16px 0 14px;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  font: 800 clamp(26px, 2.8vw, 44px) / 1.15 var(--sans);
+  letter-spacing: -0.04em;
+  word-break: auto-phrase;
+  text-wrap: balance;
+}
+.fh > span {
+  display: block;
+  transform: translateY(106%);
+  transition: transform 0.85s var(--ex) 0.05s;
+}
+.ftext.on .fh > span {
+  transform: none;
+}
+.ftextBody {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.7s var(--ex) 0.14s, transform 0.7s var(--ex) 0.14s;
+}
+.ftext.on .ftextBody {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── demo panel (mock 225, 76, 272) ── */
+.fvis {
+  position: relative;
+}
+.fpanel {
+  /* base chrome shared with Hero's .panel (mock 76: `.panel,.fpanel{...}`) */
+  position: relative;
+  border-radius: 22px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04), 0 40px 70px -40px rgba(15, 15, 15, 0.28);
+  /* Features' own height — always inside .fstick, so this is mock 272
+     (`.fstick .fpanel`), the value that actually applies; mock 227's bare
+     `.fpanel{height:min(520px,72vh)}` never wins once nested and is not
+     ported. */
+  height: min(540px, calc(100vh - 150px));
+}
+
+/* ── panel chrome: watermark + share/motion row (mock 78–82, 274) ── */
+.pchrome {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 22px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--lp-ink) 9%, transparent);
-  font-family: var(--lp-serif);
-  font-weight: 300;
-  font-size: clamp(22px, 2.6vw, 30px);
-  letter-spacing: -0.02em;
-  color: var(--lp-ink);
+  justify-content: space-between;
+  padding: 0 18px;
+  z-index: 6;
 }
-
-.privacyRow:first-child {
-  padding-top: 0;
+.wmS {
+  font: 700 13px var(--sans);
+  letter-spacing: -0.04em;
 }
-
-.privacyRow:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
+.fright {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
 }
-
-.privacyDot {
-  flex: none;
-  width: 8px;
-  height: 8px;
+.fshare {
+  font: 600 10.5px var(--sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  padding: 5px 11px;
+  transition: background 0.15s, color 0.15s;
+}
+.fshare.press {
+  background: var(--ink);
+  color: #fff;
+}
+.motion {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 10.5px var(--sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.motion i {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--lp-accent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+  border: 1.5px solid currentColor;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.motion.on i {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 8px rgba(40, 241, 0, 0.7);
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────────
-   At ≤920px each beat stacks to a single column: text first, visual below,
-   always. Reset the even-row swap so order stays text → visual. ── */
-@media (max-width: 920px) {
-  .features {
-    padding: 104px 32px 112px;
-  }
-  .kicker {
-    margin-bottom: 60px;
-  }
-  .beat {
-    grid-template-columns: 1fr;
-    gap: 36px;
-    padding: 60px 0;
-  }
-  .beat:nth-child(even) .beatText,
-  .beat:nth-child(even) .beatVisual {
-    grid-column: 1;
-  }
-  .beat:nth-child(even) .beatText {
-    grid-row: 1;
-  }
-  .beat:nth-child(even) .beatVisual {
-    grid-row: 2;
-  }
-  .beatBody {
-    max-width: 560px;
-  }
-  .liveGrid {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 560px) {
-  .features {
-    padding: 80px 22px 88px;
-  }
-  .beat {
-    padding: 48px 0;
-  }
-  .captureRow {
-    gap: 12px;
-  }
-  .masonry {
-    columns: 2;
-    column-gap: 12px;
-  }
-  .masonry .card {
-    margin-bottom: 12px;
-  }
-  .swatch {
-    width: 44px;
-    height: 44px;
-  }
-}
-
-/* ── Sound-wave progress bar (PC + no-preference only; hidden elsewhere) ──
-   A thin horizontal line at the bottom of the features section that grows
-   from left to right as the user scrolls through the panels. Green accent
-   (--lp-accent) gives it the "sound wave" identity. transform-origin:left
-   lets gsap.set(fill, {scaleX: p}) drive the width smoothly. */
-.progress {
-  display: none; /* hidden by default; shown only in the PC+no-preference media query below */
-}
-
-.progressFill {
-  display: block;
-  height: 100%;
-  background: var(--lp-accent);
-  transform-origin: left center;
-  transform: scaleX(0);
-  border-radius: 999px;
-}
-
-/* ── 03 LIVE pulse bars — animated in handleProgress, always mounted ──
-   Five thin vertical bars overlaid on the liveGrid corner. Default scaleY=0
-   in JS-driven mode (PC+no-pref), but CSS gives them a base height so they're
-   visible statically in the reduced-motion / non-PC fallback. */
-.livePulse {
+/* ── paste chip (mock 83–93) ── */
+.slot {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 28px;
-  pointer-events: none;
+  left: 50%;
+  top: 11px;
+  transform: translateX(-50%);
+  display: grid;
+  z-index: 7;
 }
-
-.liveBar {
-  display: block;
-  width: 3px;
+.paste {
+  height: 34px;
+  min-width: 236px;
   border-radius: 999px;
-  background: var(--lp-accent);
-  /* Static fallback height (reduced-motion / non-PC): bars are visible at 40–100% */
-  height: 40%;
-  transform-origin: bottom center;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font: 500 12.5px var(--sans);
+  transition: background 0.35s, color 0.35s, box-shadow 0.4s, border-color 0.4s;
+}
+.idle,
+.done {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  transition: opacity 0.3s, transform 0.45s var(--io);
+}
+.done {
+  opacity: 0;
+  transform: translateY(110%);
+}
+.isDone {
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(40, 241, 0, 0.5), 0 0 18px rgba(40, 241, 0, 0.35);
+  border-color: rgba(40, 241, 0, 0.9);
+}
+.isDone .idle {
+  opacity: 0;
+  transform: translateY(-110%);
+}
+.isDone .done {
+  opacity: 1;
+  transform: none;
+}
+.kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 5px;
+  font: 500 10.5px var(--mono);
+  border: 1px solid currentColor;
+  transition: transform 0.12s;
+}
+.isPress .kbd {
+  transform: translateY(1.5px);
+}
+.ok {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #0a0a0a;
+  font-size: 10.5px;
+  font-weight: 800;
 }
 
-/* Stagger the static heights so the bar group looks like a mini equalizer */
-.liveBar:nth-child(1) { height: 55%; }
-.liveBar:nth-child(2) { height: 80%; }
-.liveBar:nth-child(3) { height: 100%; }
-.liveBar:nth-child(4) { height: 70%; }
-.liveBar:nth-child(5) { height: 45%; }
-
-/* ── Reduced motion: keep everything visible, skip card hover lift ── */
-@media (prefers-reduced-motion: reduce) {
-  .kicker,
-  .beat {
-    opacity: 1;
-  }
-  .card,
-  .card:hover {
-    transition: none;
-    transform: none;
-  }
+/* ── tag filter pills (mock 228–233) ── */
+.fps {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  background: #fff;
+  position: relative;
+  opacity: 0;
+}
+.fpsButton {
+  all: unset;
+  padding: 0 10px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 11px var(--mono);
+  color: var(--soft);
+  transition: color 0.3s;
+}
+.fpsButton::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1.2px solid currentColor;
+  transition: background 0.3s;
+}
+.fpsButton.on {
+  color: var(--ink);
+}
+.fpsButton.on::before {
+  background: currentColor;
+}
+.fpUnder {
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  width: 1px;
+  height: 1.5px;
+  background: var(--ink);
+  transform-origin: left;
 }
 
-/* ── Horizontal scroll-jack: PC width (≥1024px) + no reduced-motion only ──
-   The section is pinned by GSAP useHorizontalPin while the .track slides left.
-   Each .beat occupies exactly one full viewport width as a panel. The section
-   needs overflow:hidden to clip the offscreen panels during the pin. ── */
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-  .features {
-    overflow: hidden; /* clip panels that are off to the right */
-    position: relative; /* anchor the floating kicker overlay */
-    /* Zero the section's vertical padding while pinned: the 128/140px top/bottom
-       padding would push the 100vh panels down, putting content below the fold's
-       center. With 0 here, each panel == the viewport exactly and centers true. */
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-  .stage {
-    max-width: 100%; /* track must be full-viewport-width, not 1180px-capped */
-    overflow: visible;
-  }
-  .track {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: stretch; /* each panel fills the pinned viewport height */
-    gap: 0;
-  }
-  .beat {
-    flex: 0 0 100vw; /* one panel = full viewport width */
-    box-sizing: border-box;
-    height: 100vh; /* EXACTLY one viewport — no overflow past the fold */
-    align-content: center; /* center the text/visual row vertically */
-    padding: 0 clamp(48px, 8vw, 160px);
-    margin: 0;
-  }
-  /* In horizontal mode beats no longer alternate columns, so reset the swap.
-     The grid columns still give text/visual side-by-side within each panel. */
-  .beat:nth-child(even) .beatText {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .beat:nth-child(even) .beatVisual {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  /* Visuals must not exceed the panel height on short viewports (the dev's
-     own CSS viewport is ~679px tall). Cap them so the bottom never clips. */
-  .beatVisual {
-    max-height: 78vh;
-    overflow: hidden;
-  }
-  /* The kicker floats in the top-left corner OVER the track instead of sitting
-     above it (which stole vertical space and pushed panels below the fold).
-     It stays put while the track slides — a persistent FEATURES label. */
-  .kicker {
-    position: absolute;
-    top: clamp(20px, 4.5vh, 44px);
-    left: clamp(48px, 8vw, 160px);
-    z-index: 1;
-    margin: 0;
-    opacity: 1;
-  }
-
-  /* ── Sound-wave progress bar (PC + no-preference only) ── */
-  .progress {
-    display: block;
-    position: absolute;
-    bottom: clamp(14px, 3vh, 28px);
-    left: clamp(48px, 8vw, 160px);
-    right: clamp(48px, 8vw, 160px);
-    height: 2px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--lp-accent) 18%, transparent);
-    z-index: 2; /* above track panels, below nothing critical */
-    overflow: hidden;
-  }
-
-  /* Per-panel initial states are set via JavaScript (gsap.set) when the
-     PC+no-preference branch initialises. CSS Modules does not allow bare
-     [data-*] attribute selectors (not pure). JS handles opacity:0 / scale
-     setup inside useEffect so reduced-motion / non-PC users always see the
-     default visible state below. */
-
-  /* Live bars: in PC+no-pref mode, GSAP drives scaleY from 0 on first update.
-     Start them collapsed so the first progress callback builds them up. */
-  .liveBar {
-    height: 100%; /* full height, scaleY=0 via JS at first paint */
-    transform: scaleY(0);
-  }
+/* ── board frame (mock 234–239) ── */
+.fbw {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 58px;
+  bottom: 16px;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+  transform-origin: 50% 38%;
+}
+.fboard {
+  position: absolute;
+  inset: 0;
+}
+.frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 5;
+}
+.frame rect {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+}
+.pchip {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font: 600 11.5px var(--sans);
+  opacity: 0;
+}
+.pchip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(40, 241, 0, 0.8);
 }
 
-/* ── Non-PC fallback: keep classic vertical stack ──
-   .track behaves exactly like the former .sequence — no flex-row override. ── */
-@media (max-width: 1023px), (prefers-reduced-motion: reduce) {
-  .track {
+/* ── share chips (mock 241–248) ── */
+.schips {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  z-index: 8;
+  opacity: 0;
+}
+.sc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 15px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--ink);
+  font: 500 12.5px var(--sans);
+  transition: box-shadow 0.4s, border-color 0.4s;
+}
+.sc.done {
+  border-color: rgba(40, 241, 0, 0.9);
+  box-shadow: 0 0 0 1px rgba(40, 241, 0, 0.5), 0 0 16px rgba(40, 241, 0, 0.35);
+}
+/* the "copy link" → "✓ copied" roll swap: .rl's own grid-stack base is the
+   shared global class (see file-level comment); only this section's
+   completed-state override is local. */
+.sc.done :global(.rl) > span:first-child {
+  transform: translateY(-115%);
+}
+.sc.done :global(.rl) > span + span {
+  transform: none;
+}
+
+/* ── cursor + click ring + flash (mock 249–250, 278–281) ── */
+.fcur {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  z-index: 9;
+  pointer-events: none;
+  opacity: 0;
+}
+.fcur svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+  transition: transform 0.12s;
+  transform-origin: 21% 10%;
+}
+.fcur.press svg {
+  transform: scale(0.84);
+}
+.fclick {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.fflash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9;
+}
+
+/* ── entry screen (mock 282–286) ── */
+.fstart {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 56px;
+  bottom: 14px;
+  border-radius: 16px;
+  z-index: 8;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  opacity: 0;
+  visibility: hidden;
+}
+.fsWm {
+  font: 700 22px var(--sans);
+  letter-spacing: -0.045em;
+}
+.fsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font: 600 14px var(--sans);
+  transition: transform 0.12s;
+}
+.fsBtn.press {
+  transform: scale(0.93);
+}
+.fsNote {
+  font: 500 11px var(--sans);
+  letter-spacing: 0.06em;
+  color: var(--soft);
+}
+
+/* ── media queries (mock 370–404): Features-relevant lines only ── */
+@media (max-width: 980px) {
+  /* mock line 372 */
+  .fgrid {
     display: flex;
     flex-direction: column;
+    gap: 14px;
+  }
+  /* mock line 373 */
+  .fvis {
+    order: -1;
+  }
+  /* mock line 374 */
+  .fstick {
+    align-items: flex-start;
+    padding-top: 70px;
+  }
+  /* mock line 375 */
+  .fpanel {
+    height: 44vh;
+  }
+  /* mock line 376 */
+  .fnav {
+    display: none;
+  }
+  /* mock line 377 */
+  .fleft {
+    display: block;
+  }
+  /* mock line 378 */
+  .ftexts {
+    min-height: 34vh;
+  }
+  /* mock line 379 */
+  .fpin {
+    height: calc(6.6 * 90vh + 100vh);
+  }
+}
+@media (max-width: 560px) {
+  /* mock lines 391–392 + 395, shared with Hero's own .paste (that copy
+     lives in Hero.module.css; this is Features' own local .paste). */
+  .paste {
+    min-width: 0;
+    font-size: 11.5px;
+    justify-self: center;
+  }
+  .pl {
+    display: none;
+  }
+  /* mock line 394 — the paste/tag-filter row moves to its own row so it
+     never overlaps SHARE/MOTION */
+  .slot {
+    top: 50px;
+  }
+  /* mock line 396 */
+  .fbw {
+    top: 92px;
+    transform-origin: 50% 30%;
+  }
+  /* mock line 397 */
+  .schips {
+    bottom: 14px;
+  }
+  /* mock line 398 */
+  .fstart {
+    top: 90px;
   }
 }
