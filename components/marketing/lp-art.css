@@ -125,6 +125,11 @@
 .lpRoot.lpHome .btn:hover .arr {
   transform: translate(3px,-3px);
 }
+/* .rl の重ね基礎(mock lines 244–246)。直後のホバー入れ替えと、Features の
+   共有チップ(コピー済み表示)の両方がこの上に乗る。 */
+.lpRoot.lpHome .rl { display: inline-grid; overflow: hidden; line-height: 1.3; }
+.lpRoot.lpHome .rl > span { grid-area: 1 / 1; transition: transform .5s var(--io); }
+.lpRoot.lpHome .rl > span + span { transform: translateY(115%); }
 .lpRoot.lpHome .roll:hover .rl > span:first-child,
 .lpRoot.lpHome .roll:focus-visible .rl > span:first-child {
   transform: translateY(-115%);

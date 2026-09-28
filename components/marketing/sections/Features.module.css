@@ -16,12 +16,14 @@
 
    `.rl`'s own grid-stack base (mock 244–246: `.rl{display:inline-grid;...}`,
    `.rl > span{grid-area:1/1;...}`, `.rl > span + span{transform:...}`) is
-   used here as the shared global class per the task brief ("already has ...
-   .rl ... use as plain class names; do not re-declare") — only the
-   Features-specific `.sc.done` override (mock 247–248) is declared below,
-   via a `:global(.rl)` island (the codebase's convention for reaching a
-   global descendant from a local ancestor without redeclaring the ancestor
-   or descendant as local — see Hero.module.css's file-level comment). */
+   the shared global class, declared once in ../lp-art.css (pre-review fix
+   R23 — it was missing there until this task surfaced the gap) and used
+   here as-is, never re-declared. Only the Features-specific `.sc.done`
+   override (mock 247–248) is declared below, via a `:global(.rl)` island
+   (the codebase's convention for reaching a global descendant from a local
+   ancestor without redeclaring the ancestor or descendant as local — see
+   Hero.module.css's file-level comment). See that rule's own comment for
+   why it also needs a `:global(.lpRoot.lpHome)` prefix (R23). */
 
 /* ── section + divider (mock line 214; the "wrap rule" divider itself is
    global classes .wrap/.rule/.label, styled in ../lp-art.css) ── */
@@ -436,11 +438,19 @@
 }
 /* the "copy link" → "✓ copied" roll swap: .rl's own grid-stack base is the
    shared global class (see file-level comment); only this section's
-   completed-state override is local. */
-.sc.done :global(.rl) > span:first-child {
+   completed-state override is local. R23: the shared base rule
+   (`.lpRoot.lpHome .rl > span + span`, ../lp-art.css) has the same
+   specificity as a bare `.sc.done :global(.rl) > span + span` — (0,3,2)
+   either way — so without this, the winner would depend on stylesheet
+   order (LandingPage.tsx imports the sections before lp-art.css, so
+   lp-art.css's rule would land later in the cascade and win on a tie).
+   Prefixing with `:global(.lpRoot.lpHome)` (always true — Features only
+   ever renders inside that root) raises this to (0,5,2), so it always
+   wins regardless of import order. */
+:global(.lpRoot.lpHome) .sc.done :global(.rl) > span:first-child {
   transform: translateY(-115%);
 }
-.sc.done :global(.rl) > span + span {
+:global(.lpRoot.lpHome) .sc.done :global(.rl) > span + span {
   transform: none;
 }
 
