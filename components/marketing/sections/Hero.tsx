@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { gsap } from 'gsap'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { makeCard, createStepRunner } from '@/lib/marketing/lp/art'
+import { useModKey } from '@/lib/marketing/lp/use-mod-key'
 import type { CardSpec } from '@/lib/marketing/lp/types'
 import styles from './Hero.module.css'
 
@@ -91,14 +92,10 @@ export function Hero(): React.ReactElement {
   const scueRef = useRef<HTMLSpanElement>(null)
   const heroReadyRef = useRef(false)
 
-  const [modKey, setModKey] = useState<'Ctrl' | '⌘'>('Ctrl')
-
-  // Mac/iOS paste-shortcut label (mock line 529).
-  useEffect(() => {
-    if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
-      setModKey('⌘')
-    }
-  }, [])
+  // Mac/iOS paste-shortcut label (mock line 529), via useSyncExternalStore
+  // instead of useState+effect (task-6 ruling R22 — avoids
+  // react-hooks/set-state-in-effect).
+  const modKey = useModKey()
 
   const handleSeeHow = (): void => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
