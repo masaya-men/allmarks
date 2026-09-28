@@ -1,0 +1,38 @@
+/* Tape.module.css — ported from docs/private/lp-v10-mock.html (CSS lines
+   115–120, markup line 445). Not yet inserted into the page — a later task
+   renders <Tape /> in LandingPage.tsx. Tokens (--ink, --paper, --green,
+   --sans) come from .lpRoot.lpHome in ../lp-art.css and cascade down once
+   Tape is mounted inside that root. */
+
+.tape {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding-block: clamp(14px, 2.2vh, 22px);
+  background: var(--paper);
+}
+
+.tapeIn {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.word {
+  display: inline-flex;
+  align-items: center;
+  font: 800 clamp(38px, 5.6vw, 92px)/1 var(--sans);
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+.dot {
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  margin: 0 0.42em;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0.25em rgba(40, 241, 0, 0.6);
+}
