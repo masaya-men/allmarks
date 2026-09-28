@@ -83,12 +83,15 @@ function tweetTextFor(spec: CardSpec, t: (key: string) => string): string | unde
 
 export function Problem(): React.ReactElement {
   const { t } = useI18n()
-  // Read on every render so the mount-time effect below always sees the
-  // latest translator without needing `t` in its dependency array (which
-  // would restart the whole scrub/board setup on every locale swap) — same
-  // pattern as Hero.tsx.
+  // Synced via its own effect (never written during render — react-hooks/refs,
+  // task-6 ruling R21) so the mount-time effect below always sees the latest
+  // translator without needing `t` in its dependency array (which would
+  // restart the whole scrub/board setup on every locale swap) — same pattern
+  // as Hero.tsx.
   const tRef = useRef(t)
-  tRef.current = t
+  useEffect(() => {
+    tRef.current = t
+  }, [t])
 
   const sectionRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
