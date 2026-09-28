@@ -7,6 +7,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { makeCard } from '@/lib/marketing/lp/art'
 import { masonry } from '@/lib/marketing/lp/masonry'
 import { E } from '@/lib/marketing/lp/motion-math'
+import { tweetKey } from '@/lib/marketing/lp/tweet-key'
 import type { CardSpec } from '@/lib/marketing/lp/types'
 import styles from './Problem.module.css'
 
@@ -75,12 +76,6 @@ type ProblemBoardItem = {
   col: number
 }
 
-function tweetTextFor(spec: CardSpec, t: (key: string) => string): string | undefined {
-  if (spec.tweet === 1) return t('landing.demo.tweet1')
-  if (spec.tweet === 2) return t('landing.demo.tweet2')
-  return undefined
-}
-
 export function Problem(): React.ReactElement {
   const { t } = useI18n()
   // Synced via its own effect (never written during render — react-hooks/refs,
@@ -141,7 +136,10 @@ export function Problem(): React.ReactElement {
 
     // ── board: 8 cards, imperative like Hero's (mock 661) ──
     const pCards: ProblemBoardItem[] = PROBLEM_CARDS.map((spec) => {
-      const el = makeCard(spec, { amb: false, tweetText: tweetTextFor(spec, tRef.current) })
+      const el = makeCard(spec, {
+        amb: false,
+        tweetText: spec.tweet != null ? tRef.current(tweetKey(spec.tweet)) : undefined,
+      })
       sboard.appendChild(el)
       return { el, spec, x: 0, y: 0, h: 0, col: 0 }
     })

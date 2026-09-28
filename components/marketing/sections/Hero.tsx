@@ -6,6 +6,7 @@ import { gsap } from 'gsap'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { makeCard, createStepRunner } from '@/lib/marketing/lp/art'
 import { useModKey } from '@/lib/marketing/lp/use-mod-key'
+import { tweetKey } from '@/lib/marketing/lp/tweet-key'
 import type { CardSpec } from '@/lib/marketing/lp/types'
 import styles from './Hero.module.css'
 
@@ -61,13 +62,6 @@ type HeroBoardItem = { readonly el: HTMLDivElement; readonly s: CardSpec; x: num
 
 /** Cached layout metrics (mock M) — recomputed only at init/resize (R11), never per frame. */
 type HeroBoardMetrics = { n: number; gap: number; cw: number; visH: number }
-
-function tweetTextFor(spec: CardSpec, t: (key: string) => string): string | undefined {
-  if (spec.tweet === 1) return t('landing.demo.tweet1')
-  if (spec.tweet === 2) return t('landing.demo.tweet2')
-  if (spec.tweet === 3) return t('landing.demo.tweet3')
-  return undefined
-}
 
 export function Hero(): React.ReactElement {
   const { t } = useI18n()
@@ -125,7 +119,11 @@ export function Hero(): React.ReactElement {
     // ── board: 14 cards, masonry-ish columns, ambient art (mock 625–641) ──
     const steps = createStepRunner()
     const hItems: HeroBoardItem[] = HERO_CARDS.map((spec) => {
-      const el = makeCard(spec, { amb: true, tweetText: tweetTextFor(spec, tRef.current), steps })
+      const el = makeCard(spec, {
+        amb: true,
+        tweetText: spec.tweet != null ? tRef.current(tweetKey(spec.tweet)) : undefined,
+        steps,
+      })
       board.appendChild(el)
       return { el, s: spec, x: 0, y: 0, h: 0 }
     })
