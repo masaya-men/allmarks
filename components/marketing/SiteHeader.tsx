@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import type { SupportedLocale } from '@/lib/i18n/config'
 import { localePath, navHref } from '@/lib/i18n/locale-urls'
+import { AllMarksMark } from '@/components/onboarding/AllMarksMark'
 import { LanguageMenu } from './LanguageMenu'
 import styles from './SiteHeader.module.css'
 
@@ -71,7 +72,8 @@ export function SiteHeader({
   return (
     <header ref={headerRef} className={styles.header} data-scrolled="false">
       <Link href={localePath(locale)} className={styles.logo} aria-label="AllMarks home">
-        AllMarks
+        <AllMarksMark className={styles.mark} />
+        <span>AllMarks</span>
       </Link>
 
       <nav className={styles.nav} aria-label="Primary navigation">
@@ -96,8 +98,16 @@ export function SiteHeader({
           )
         })}
         <Link href="/board" className={styles.openApp}>
-          Open Board
-          <span className={styles.openArrow} aria-hidden="true">↗</span>
+          <span className={styles.rollLabel}>
+            <span className={styles.rollFace}>
+              Open Board
+              <span className={styles.openArrow} aria-hidden="true">↗</span>
+            </span>
+            <span className={styles.rollFace} aria-hidden="true">
+              Open Board
+              <span className={styles.openArrow} aria-hidden="true">↗</span>
+            </span>
+          </span>
         </Link>
         <LanguageMenu current={locale} subpath={subpath} />
       </nav>

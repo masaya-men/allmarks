@@ -28,12 +28,14 @@
   /* backdrop-filter is inert until the translucent background kicks in */
   backdrop-filter: blur(0px);
 
-  /* Smooth transition when scrolled class is toggled */
+  /* Smooth transition when scrolled class is toggled. opacity is shared by
+     the scroll-linked finale-covered fade below and the data-lp-finale fade
+     (Task 8) — one combined duration (.45s) covers both. */
   transition:
     background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
     border-color     0.4s cubic-bezier(0.16, 1, 0.3, 1),
     backdrop-filter  0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity          0.25s ease;
+    opacity          0.45s ease;
 }
 
 /* ── 最下部: footer の黒幕(finale)が画面を覆ったらヘッダーも退場 ──
@@ -47,6 +49,15 @@
   }
 }
 
+/* ── LP finale: Task 8 toggles html[data-lp-finale='1'] during the closing
+   moment and the header hides completely. No viewport/motion gate here —
+   unlike the scroll-linked fade above, Task 8 controls exactly when this
+   attribute is set, so the CSS just reacts to it unconditionally. ── */
+:global(html[data-lp-finale='1']) .header {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ── Scrolled state: translucent bar with hairline ── */
 .header[data-scrolled='true'] {
   /* Glass — content shows through clearly (--lp-bg at 30%); strong blur keeps text readable */
@@ -56,22 +67,29 @@
   backdrop-filter: blur(22px) saturate(180%);
 }
 
-/* ── Wordmark / logo ── */
+/* ── Wordmark / logo (mock .wm, lines 51–52). No tick hover on the mark:
+   AllMarksMark exposes no .ck class to animate — out of this task's scope. */
 .logo {
-  font-family: var(--lp-serif, Georgia, serif);
-  font-size: 20px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 18px var(--font-geist), system-ui, sans-serif;
+  letter-spacing: -0.045em;
+  font-style: normal;
   color: var(--lp-ink, #14130f);
   text-decoration: none;
-  /* Subtle italic for editorial flair */
-  font-style: italic;
   transition: opacity 0.2s ease;
   white-space: nowrap;
 }
 
 .logo:hover {
   opacity: 0.6;
+}
+
+.mark {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 /* ── Navigation row ── */
@@ -83,6 +101,7 @@
 
 /* Regular nav links */
 .navLink {
+  position: relative;
   display: inline-flex;
   align-items: center;
   height: 36px;
@@ -102,6 +121,25 @@
 .navLink:hover {
   color: var(--lp-ink, #14130f);
   background: color-mix(in srgb, var(--lp-ink, #14130f) 5%, transparent);
+}
+
+/* Hover underline growing from the left (mock .site nav a, lines 47–61) */
+.navLink::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 1px;
+  background: var(--lp-ink, #14130f);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.navLink:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 /* ── "Open Board" action pill ── */
@@ -144,6 +182,37 @@
 
 .openApp:hover .openArrow {
   transform: translate(2px, -2px);
+}
+
+/* Rolling text swap on hover/focus (mock .roll + .rl, lines 35–46, 244–248):
+   two stacked identical faces; hovering rolls the first face up and out
+   while the second (aria-hidden duplicate) rolls up into view. */
+.rollLabel {
+  display: inline-grid;
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.rollFace {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.rollFace + .rollFace {
+  transform: translateY(115%);
+}
+
+.openApp:hover .rollFace:first-child,
+.openApp:focus-visible .rollFace:first-child {
+  transform: translateY(-115%);
+}
+
+.openApp:hover .rollFace + .rollFace,
+.openApp:focus-visible .rollFace + .rollFace {
+  transform: none;
 }
 
 /* ── Responsive ── */

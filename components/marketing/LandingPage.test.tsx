@@ -2,15 +2,13 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, cleanup } from '@testing-library/react'
 import { LandingPage } from './LandingPage'
 
-// Stub scroll hooks (Lenis / GSAP) — they rely on browser APIs unavailable in jsdom
-vi.mock('@/lib/scroll/use-smooth-scroll', () => ({
-  useSmoothScroll: () => ({ current: null }),
-}))
+// Stub scroll hooks (GSAP) — they rely on browser APIs unavailable in jsdom
 vi.mock('@/lib/scroll/use-scroll-trigger', () => ({
   useScrollTrigger: () => undefined,
 }))
 
-// Stub all section/child components so GSAP/Lenis never imports into jsdom
+// Stub all section/child components so GSAP never imports into jsdom
+vi.mock('./BackgroundGrid', () => ({ BackgroundGrid: () => null }))
 vi.mock('./SiteHeader', () => ({ SiteHeader: () => null }))
 vi.mock('./SiteFooter', () => ({ SiteFooter: () => null }))
 vi.mock('./sections/Hero', () => ({ Hero: () => null }))
@@ -34,4 +32,9 @@ describe('LandingPage locale', () => {
     render(<LandingPage />)
     expect(document.documentElement.getAttribute('lang')).toBe('en')
   })
+})
+
+it('LP は Lenis(useSmoothScroll)を使わない', async () => {
+  const src = await import('node:fs').then((fs) => fs.readFileSync('components/marketing/LandingPage.tsx', 'utf8'))
+  expect(src).not.toMatch(/useSmoothScroll/)
 })

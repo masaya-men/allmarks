@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react'
 import type { SupportedLocale } from '@/lib/i18n/config'
-import { useSmoothScroll } from '@/lib/scroll/use-smooth-scroll'
 import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
+import { BackgroundGrid } from './BackgroundGrid'
 import { LocaleSuggestBanner } from './LocaleSuggestBanner'
 import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
@@ -13,14 +13,15 @@ import { Features } from './sections/Features'
 import { ShareIt } from './sections/ShareIt'
 import { FinalCta } from './sections/FinalCta'
 import './landing-tokens.css'
+import './lp-art.css'
 import styles from './LandingPage.module.css'
 
 /**
  * LandingPage — root client component for the AllMarks marketing LP.
  *
- * Initialises Lenis smooth scrolling and GSAP ScrollTrigger, then renders
- * the full editorial flow:
+ * Initialises GSAP ScrollTrigger, then renders the full editorial flow:
  *
+ *   BackgroundGrid (fixed, 12-column hairline grid behind everything)
  *   SiteHeader (fixed, transparent → scrolled)
  *   ─── white editorial ground (#faf9f6) ──────────────────────────────
  *   Hero        — product board-mock visual + headline + CTAs
@@ -33,7 +34,6 @@ import styles from './LandingPage.module.css'
  *   SiteFooter  — dark editorial footer (#0a0a0a)
  */
 export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): React.ReactElement {
-  useSmoothScroll()
   useScrollTrigger()
 
   // LP は意図的に LIGHT。app 既定 <html data-theme="dark"> + ブラウザ自動ダーク対策。
@@ -51,7 +51,8 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
   }, [locale])
 
   return (
-    <div className={`${styles.wrapper} lpRoot`}>
+    <div className={`${styles.wrapper} lpRoot lpHome`} data-locale={locale}>
+      <BackgroundGrid />
       <LocaleSuggestBanner current={locale} />
       <SiteHeader locale={locale} />
       <div className={styles.content}>

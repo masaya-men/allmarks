@@ -1,0 +1,28 @@
+/* components/marketing/BackgroundGrid.module.css
+   Fixed 12-column hairline grid behind all landing-page content
+   (mock lines 20, 23–27). Stacking: z-index:0 keeps it above the page's
+   paper background and below .content (z-index:1, LandingPage.module.css)
+   and the fixed header (z-index:100, SiteHeader.module.css).
+   --maxw / --gut / --faint are defined on .lpRoot.lpHome by lp-art.css and
+   inherit down into this module — referenced via var(), never copied. */
+
+.bggrid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.wrap {
+  width: min(var(--maxw), calc(100% - 2 * var(--gut)));
+  height: 100%;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  border-left: 1px solid var(--faint);
+}
+
+.wrap i {
+  border-right: 1px solid var(--faint);
+  transform-origin: top;
+}
