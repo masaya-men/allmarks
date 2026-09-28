@@ -114,15 +114,20 @@
   visibility: visible;
   transition: opacity 0.4s var(--ex), visibility 0s;
 }
-.ftextLabel {
+/* fix round 1 — specificity: .ftextLabel/.ftextLn alone are (0,1,0), which
+   loses outright to ../lp-art.css's `.lpRoot.lpHome .label{color:var(--soft)}`
+   (0,3,0) and `.lpRoot.lpHome .label .ln{width:22px}` (0,4,0) — mock 264–265
+   want ink/30px here, so these three rules are raised above those shared
+   ones (never tied, so import order can't flip the winner). */
+:global(.lpRoot.lpHome) .ftext .ftextLabel {
   color: var(--ink);
 }
-.ftextLn {
+:global(.lpRoot.lpHome) .ftext .ftextLabel .ftextLn {
   width: 30px;
   transform: scaleX(0);
   transition: transform 0.7s var(--ex);
 }
-.ftext.on .ftextLn {
+:global(.lpRoot.lpHome) .ftext.on .ftextLabel .ftextLn {
   transform: none;
 }
 .fh {
@@ -238,6 +243,12 @@
   display: grid;
   z-index: 7;
 }
+/* mock line 84 — without this, .paste and .fps (the two direct children of
+   .slot) fall into two separate implicit grid rows instead of stacking on
+   top of each other, so .fps ends up drawn low enough to overlap .fbw. */
+.slot > * {
+  grid-area: 1 / 1;
+}
 .paste {
   height: 34px;
   min-width: 236px;
@@ -250,8 +261,14 @@
   font: 500 12.5px var(--sans);
   transition: background 0.35s, color 0.35s, box-shadow 0.4s, border-color 0.4s;
 }
-.idle,
-.done {
+/* fix round 1: .idle/.done/.isDone/.isPress must stay scoped under .paste
+   (mock 86–92 scope these to the paste chip specifically, e.g. `.paste
+   .done`). Features.tsx reuses the same `done` token as a state class on
+   the unrelated `.sc` share chip (setCls(scp, styles.done, ...)); a bare
+   `.done{opacity:0;...}` here would also match that chip and hide it right
+   when it should show "✓ copied". Restored to the same shape as
+   Hero.module.css's identical paste chip (Hero.module.css:178–232). */
+.paste > span {
   grid-area: 1 / 1;
   display: inline-flex;
   align-items: center;
@@ -259,21 +276,21 @@
   padding: 0 14px;
   transition: opacity 0.3s, transform 0.45s var(--io);
 }
-.done {
+.paste .done {
   opacity: 0;
   transform: translateY(110%);
 }
-.isDone {
+.paste.isDone {
   background: var(--ink);
   color: #fff;
   box-shadow: 0 0 0 1px rgba(40, 241, 0, 0.5), 0 0 18px rgba(40, 241, 0, 0.35);
   border-color: rgba(40, 241, 0, 0.9);
 }
-.isDone .idle {
+.paste.isDone .idle {
   opacity: 0;
   transform: translateY(-110%);
 }
-.isDone .done {
+.paste.isDone .done {
   opacity: 1;
   transform: none;
 }
@@ -288,7 +305,7 @@
   border: 1px solid currentColor;
   transition: transform 0.12s;
 }
-.isPress .kbd {
+.paste.isPress .kbd {
   transform: translateY(1.5px);
 }
 .ok {
