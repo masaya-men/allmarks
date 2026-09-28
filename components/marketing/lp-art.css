@@ -57,24 +57,6 @@
   z-index: 1;
 }
 
-/* 背景の方眼(細い縦線) */
-.lpRoot.lpHome .bggrid {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-.lpRoot.lpHome .bggrid .wrap {
-  height: 100%;
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  border-left: 1px solid var(--faint);
-}
-.lpRoot.lpHome .bggrid i {
-  border-right: 1px solid var(--faint);
-  transform-origin: top;
-}
-
 /* ── 共通の文字(mock lines 29–33, 67, 197) ── */
 .lpRoot.lpHome .label {
   display: inline-flex;
