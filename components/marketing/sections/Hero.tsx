@@ -420,7 +420,7 @@ export function Hero(): React.ReactElement {
             <i className={styles.bl} />
             <i className={styles.br} />
           </div>
-          <div ref={panelRef} className={styles.panel}>
+          <div ref={panelRef} className={styles.panel} aria-hidden="true">
             <div className={styles.pchrome}>
               <span className={styles.wmS}>AllMarks</span>
               <span className={`${styles.motion} ${styles.on}`}>

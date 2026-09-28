@@ -437,7 +437,7 @@
    (prefers-reduced-motion: no-preference): reduced motion never runs the
    intro, so the finished state must be the default from first paint. */
 @media (prefers-reduced-motion: no-preference) {
-  :global(.lpRoot.lpHome:not([data-lp-intro='done'])) header {
+  :global(.lpRoot.lpHome:not([data-lp-intro='done']) > header) {
     transform: translateY(-100%);
   }
   :global(.lpRoot.lpHome:not([data-lp-intro='done'])) [data-lp-bggrid] i {
