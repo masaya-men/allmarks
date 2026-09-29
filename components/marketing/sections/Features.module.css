@@ -102,6 +102,9 @@
   position: relative;
   min-height: 260px;
 }
+/* I2/R32: inactive steps are hidden with opacity + pointer-events only (no
+   visibility toggling) so every step's text stays in the accessibility
+   tree — visibility:hidden was pulling all but the active step out of it. */
 .ftext {
   position: absolute;
   left: 0;
@@ -109,13 +112,12 @@
   top: 50%;
   transform: translateY(-50%);
   opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.4s var(--ex), visibility 0s linear 0.4s;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ex);
 }
 .ftext.on {
   opacity: 1;
-  visibility: visible;
-  transition: opacity 0.4s var(--ex), visibility 0s;
+  pointer-events: auto;
 }
 /* fix round 1 — specificity: .ftextLabel/.ftextLn alone are (0,1,0), which
    loses outright to ../lp-art.css's `.lpRoot.lpHome .label{color:var(--soft)}`
