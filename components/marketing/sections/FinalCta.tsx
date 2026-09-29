@@ -5,145 +5,281 @@ import Link from 'next/link'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { useReveal } from '@/lib/scroll/use-reveal'
+import { createMarquee } from '@/lib/marketing/lp/marquee'
 import styles from './FinalCta.module.css'
 
-// Register ScrollTrigger at import time — idempotent, safe to call multiple times.
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
 }
 
 /**
- * FinalCta — the climax section of the AllMarks LP.
+ * FinalCta — the closing section of the AllMarks LP, ported from
+ * docs/private/lp-v10-mock.html (markup 495–507; CSS 320–352 plus the
+ * .kbadge/.kb-ic mobile override at 387–388; motion 801–809 for the scrub
+ * timeline + header hide, and 835–844 for the circle hover grow). A
+ * 12-column hairline grid draws in, the label/rule/headline reveal, and a
+ * circular "OPEN THE BOARD" badge pops in. Touching it grows the badge into
+ * a huge arc that sweeps the near-black ground white, inverting the
+ * headline/links (mix-blend-mode: difference) as it passes beneath them. A
+ * large outlined "AllMarks" marquee (createMarquee, shared with Tape.tsx)
+ * runs along the bottom edge.
  *
- * Transitions the white LP ground (#faf9f6) into the near-black of the app
- * (#0a0a0a) via a GSAP ScrollTrigger scrub on an absolute overlay layer.
- * By the time the CTA content is centered in the viewport the ground is fully
- * black, making the transition into the board feel seamless.
- *
- * Reduced-motion: skip the scrub — start already on the black end-state via
- * gsap.matchMedia(), so reduced-motion users never see a broken half-state.
- *
- * Hard rules honoured:
- * - No rotation/tilt anywhere (AllMarks hard rule)
- * - Vanilla CSS Modules only (no Tailwind)
- * - px/clamp only (no rem)
- * - GSAP + ScrollTrigger only (no Framer Motion)
- * - Static-export-safe
+ * The section itself also owns the header's hide/show: while it is on
+ * screen, <html data-lp-finale="1"> hides SiteHeader (see
+ * SiteHeader.module.css, task 4) so the finale reads as a full black
+ * takeover with no floating light-ground header. This is a state change,
+ * not an animation, so it runs in both motion modes (R20); only the
+ * decorative scrub timeline below is skipped under reduced motion.
  */
+
+/** SVG path id for the circular textPath — there is only one finale per page. */
+const RING_PATH_ID = 'lp-fin-ring-path'
+
+/** English design word — same in every locale, never `landing.cta.label` (mock line 498: literal "Start" text node, no inner span). */
+const LABEL_TEXT = 'Start'
+
+/** English constant circling the badge (mock line 502), never translated. Trailing space matches the mock's own textLength spacing. */
+const RING_TEXT = 'OPEN THE BOARD ✦ OPEN THE BOARD ✦ '
+
+/** English wordmark repeated to build the two-half marquee loop (mock line 506). */
+const MARQUEE_WORD = 'AllMarks'
+const MARQUEE_REPEATS = 6
+
+/** Matches the shared `.wrap` 12-column grid (mock line 496 / lp-art.css). */
+const GRID_LINE_COUNT = 12
+
 export function FinalCta(): React.ReactElement {
   const { t } = useI18n()
 
-  /** Root section ref — also the ScrollTrigger trigger element. */
   const sectionRef = useRef<HTMLElement>(null)
-
-  /** The full-bleed black overlay whose opacity is scrubbed 0 → 1. */
-  const overlayRef = useRef<HTMLDivElement>(null)
-
-  // Reveal headline + button via the shared useReveal hook.
-  // data-reveal items start opacity:0 and are revealed via useReveal.
-  // On reduced-motion useReveal immediately sets opacity:1 so everything
-  // stays visible regardless of the overlay state.
-  useReveal(sectionRef as React.RefObject<HTMLElement>, { y: 24, stagger: 0.12 })
+  const stickyRef = useRef<HTMLDivElement>(null)
+  const gridLineRefs = useRef<(HTMLElement | null)[]>([])
+  const labelRef = useRef<HTMLParagraphElement>(null)
+  const lineRef = useRef<HTMLElement>(null)
+  const headlineRef = useRef<HTMLHeadingElement>(null)
+  const ctaWrapperRef = useRef<HTMLDivElement>(null)
+  const circleRef = useRef<HTMLAnchorElement>(null)
+  const textLinkRef = useRef<HTMLAnchorElement>(null)
+  const marqueeRootRef = useRef<HTMLDivElement>(null)
+  const marqueeInnerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const section = sectionRef.current
-    const overlay = overlayRef.current
-    if (!section || !overlay) return
+    const sticky = stickyRef.current
+    const label = labelRef.current
+    const line = lineRef.current
+    const headline = headlineRef.current
+    const ctaWrapper = ctaWrapperRef.current
+    const circle = circleRef.current
+    const textLink = textLinkRef.current
+    const marqueeRoot = marqueeRootRef.current
+    const marqueeInner = marqueeInnerRef.current
+    const gridLines = gridLineRefs.current
 
-    // Collect [data-cta-rise] elements within this section.
-    const ctaRiseEls = section.querySelectorAll<HTMLElement>('[data-cta-rise]')
+    if (
+      !section || !sticky || !label || !line || !headline || !ctaWrapper || !circle || !textLink ||
+      !marqueeRoot || !marqueeInner ||
+      gridLines.length !== GRID_LINE_COUNT || gridLines.some((el) => el === null)
+    ) {
+      return undefined
+    }
+    const gridEls = gridLines as HTMLElement[]
 
-    const mm = gsap.matchMedia()
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // Scoped to this section's own headline — `.ml` is the shared masking
+    // wrapper (lp-art.css); `> span` is the inner text span the mock
+    // animates (mock's own `.fin-h .ml > span` selector, scoped here from
+    // `headline` instead of a document-wide query).
+    const headlineSpans = headline.querySelectorAll<HTMLElement>('.ml > span')
 
-    // Reduced-motion: lock the overlay at full opacity (black) immediately
-    // and make CTA elements fully visible — no animation, no hidden state.
-    mm.add('(prefers-reduced-motion: reduce)', () => {
-      gsap.set(overlay, { opacity: 1 })
-      if (ctaRiseEls.length > 0) {
-        gsap.set(ctaRiseEls, { y: 0, opacity: 1 })
-      }
-    })
-
-    // Normal motion — PC (≥1024px) + reduced-motion: no-preference only.
-    // On mobile the CSS default opacity:1 keeps CTA visible; no animation runs.
-    //
-    // Scrub phase 1 (0→50%): overlay opacity 0 → 1 (white → black transition).
-    // Scrub phase 2 (50→100%): CTA elements rise y:40→0, opacity:0→1.
-    // Both driven by a single scrubbed GSAP timeline so they share one
-    // ScrollTrigger instance.
-    //
-    // gsap.set() initialises the CTA elements to opacity:0 / y:40 INSIDE this
-    // matchMedia guard — so mobile and reduced-motion users never see opacity:0.
-    // clearProps on cleanup restores CSS-default opacity:1.
-    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
-      // Set initial hidden state for CTA elements (CSS default is opacity:1)
-      if (ctaRiseEls.length > 0) {
-        gsap.set(ctaRiseEls, { y: 40, opacity: 0 })
-      }
-
-      const tl = gsap.timeline()
-
-      // Phase 1: black overlay fades in (full timeline duration)
-      tl.fromTo(overlay, { opacity: 0 }, { opacity: 1, ease: 'none' })
-
-      // Phase 2: CTA rises during the second half of the scrub (offset 0.5 on
-      // the timeline = 50% scrub progress). If there are no [data-cta-rise]
-      // elements this tween is a harmless no-op.
-      if (ctaRiseEls.length > 0) {
-        tl.to(
-          ctaRiseEls,
-          { y: 0, opacity: 1, ease: 'power2.out', stagger: 0.1 },
-          0.5, // start this tween at 50% into the timeline
-        )
-      }
-
-      const st = ScrollTrigger.create({
+    // ── header hide (R20, always) + scrub timeline (motion-gated) ──
+    const ctx = gsap.context(() => {
+      // R20: state change, not an animation — created regardless of
+      // prefers-reduced-motion. Cleanup (below) always removes the attribute.
+      ScrollTrigger.create({
         trigger: section,
-        start: 'top bottom',   // overlay starts fading in as section enters viewport
-        end: 'center center',  // fully settled once centre of section hits viewport centre
-        scrub: true,
-        animation: tl,
+        start: 'top 60px',
+        end: 'bottom top',
+        onToggle: (self) => {
+          if (self.isActive) {
+            document.documentElement.setAttribute('data-lp-finale', '1')
+          } else {
+            document.documentElement.removeAttribute('data-lp-finale')
+          }
+        },
       })
 
-      return () => {
-        st.kill()
-        tl.kill()
-        // Restore CSS-default visibility so no element stays hidden after cleanup
-        if (ctaRiseEls.length > 0) {
-          gsap.set(ctaRiseEls, { clearProps: 'opacity,y,transform' })
-        }
+      if (!reduce) {
+        const tl = gsap.timeline({
+          scrollTrigger: { trigger: section, start: 'top 30%', end: '+=90%', scrub: 0.5 },
+        })
+        tl.fromTo(gridEls, { scaleY: 0 }, { scaleY: 1, ease: 'none', stagger: 0.03, duration: 0.5 }, 0)
+          .fromTo(label, { autoAlpha: 0 }, { autoAlpha: 1, ease: 'none', duration: 0.15 }, 0.08)
+          .fromTo(line, { scaleX: 0 }, { scaleX: 1, ease: 'none', duration: 0.4 }, 0.12)
+          .fromTo(
+            headlineSpans,
+            { yPercent: 105 },
+            { yPercent: 0, ease: 'none', duration: 0.3, stagger: 0.08 },
+            0.4,
+          )
+          .fromTo(
+            circle,
+            { scale: 0, rotation: -120 },
+            { scale: 1, rotation: 0, ease: 'none', duration: 0.25 },
+            0.62,
+          )
+          .fromTo(textLink, { autoAlpha: 0, x: -10 }, { autoAlpha: 1, x: 0, ease: 'none', duration: 0.2 }, 0.74)
       }
-    })
+      // Under reduced motion no timeline is created at all: none of these
+      // elements ever receive an inline scaleY(0)/autoAlpha(0)/yPercent(105)
+      // "from" state, so their static CSS (already the finished pose) is
+      // what renders from first paint — same pattern as Problem.tsx/R17.
+    }, sectionRef)
 
-    return () => mm.revert()
+    // ── circle hover/focus: grows into a huge arc (mock 835–844) ──
+    function finGeo(): void {
+      // Reading rects here is an interaction (hover/focus), not a scroll
+      // tick — the ruling explicitly allows it. Non-null assertions below:
+      // TS control-flow narrowing from the guard above doesn't persist into
+      // nested function declarations (same reasoning as Hero.tsx's `board!`).
+      const st = sticky!.getBoundingClientRect()
+      const b = circle!.getBoundingClientRect()
+      const cx = b.left + b.width / 2 - st.left
+      const cy = b.top + b.height / 2 - st.top
+      // Distance from the badge centre to the sticky stage's top-right
+      // corner — the radius that lets the circle's edge pass just short of
+      // that corner, so only its top-right arc ever crosses the screen.
+      const tr = Math.hypot(st.width - cx, cy)
+      const big = Math.max(5, (tr * 0.74) / (circle!.offsetWidth / 2))
+      section!.style.setProperty('--big', big.toFixed(2))
+    }
+    function addHot(): void {
+      finGeo()
+      section!.classList.add(styles.hot!)
+    }
+    function removeHot(): void {
+      section!.classList.remove(styles.hot!)
+    }
+    const onPointerEnter = (e: PointerEvent): void => {
+      if (e.pointerType !== 'mouse') return
+      addHot()
+    }
+    const onPointerLeave = (): void => {
+      removeHot()
+    }
+    const onFocusIn = (): void => {
+      addHot()
+    }
+    const onFocusOut = (): void => {
+      removeHot()
+    }
+    ctaWrapper.addEventListener('pointerenter', onPointerEnter)
+    ctaWrapper.addEventListener('pointerleave', onPointerLeave)
+    ctaWrapper.addEventListener('focusin', onFocusIn)
+    ctaWrapper.addEventListener('focusout', onFocusOut)
+
+    // ── outlined "AllMarks" marquee (lib/marketing/lp/marquee.ts, shared with Tape.tsx) ──
+    let disposed = false
+    const marquee = createMarquee(marqueeRoot, marqueeInner, 0.55)
+
+    function relayout(): void {
+      if (disposed) return
+      marquee.measure()
+    }
+    let resizeTimer: number | undefined
+    const onResize = (): void => {
+      window.clearTimeout(resizeTimer)
+      resizeTimer = window.setTimeout(relayout, 160)
+    }
+    window.addEventListener('resize', onResize)
+
+    if (document.fonts?.ready) {
+      void document.fonts.ready.then(() => {
+        relayout()
+      })
+    }
+
+    return () => {
+      disposed = true
+      ctx.revert()
+      // R20: cleanup always removes the attribute, regardless of which
+      // branch of the toggle it was last set by.
+      document.documentElement.removeAttribute('data-lp-finale')
+      ctaWrapper.removeEventListener('pointerenter', onPointerEnter)
+      ctaWrapper.removeEventListener('pointerleave', onPointerLeave)
+      ctaWrapper.removeEventListener('focusin', onFocusIn)
+      ctaWrapper.removeEventListener('focusout', onFocusOut)
+      window.clearTimeout(resizeTimer)
+      window.removeEventListener('resize', onResize)
+      marquee.destroy()
+    }
   }, [])
 
+  const headlineLines = t('landing.cta.headline').split('\n')
+
   return (
-    <section ref={sectionRef} id="cta" className={styles.cta}>
-      {/*
-        Black overlay — scrolled in via GSAP scrub. Sits below the content
-        via z-index so it never captures pointer events or blocks the CTA.
-        On reduced-motion this is immediately opacity:1 (pure black ground).
-      */}
-      <div ref={overlayRef} className={styles.overlay} aria-hidden="true" />
+    <section ref={sectionRef} className={styles.fin}>
+      <div ref={stickyRef} className={styles.finSt}>
+        <div className={styles.finGrid} aria-hidden="true">
+          <div className={`wrap ${styles.finGridWrap}`}>
+            {Array.from({ length: GRID_LINE_COUNT }, (_, i) => (
+              <i
+                key={i}
+                ref={(el) => {
+                  gridLineRefs.current[i] = el
+                }}
+              />
+            ))}
+          </div>
+        </div>
 
-      {/* CTA content — centred, light ink on black, revealed by useReveal. */}
-      <div className={styles.stage}>
-        <div className={styles.inner}>
-
-          {/* Small accent line above the headline — green --lp-accent rule */}
-          <span className={styles.rule} aria-hidden="true" />
-
-          <h2 className={styles.headline} data-cta-rise>
-            {t('landing.cta.headline')}
+        <div className={`wrap ${styles.finIn}`}>
+          <p ref={labelRef} className={`label ${styles.blend}`}>
+            <i className="ln" />
+            {LABEL_TEXT}
+          </p>
+          <i ref={lineRef as React.RefObject<HTMLElement>} className={`${styles.finLine} ${styles.blend}`} />
+          <h2 ref={headlineRef} className={`${styles.finH} ${styles.blend}`}>
+            {headlineLines.map((line, i) => (
+              <span className="ml" key={i}>
+                <span data-lp-text>{line}</span>
+              </span>
+            ))}
           </h2>
+          <div ref={ctaWrapperRef} className={styles.finCta} data-finale-cta>
+            <Link
+              ref={circleRef}
+              href="/board"
+              className={styles.kbadge}
+              aria-label={t('landing.hero.ctaPrimary')}
+            >
+              <span className={styles.kbBg} />
+              <span className={styles.kbRing} aria-hidden="true">
+                <svg viewBox="0 0 200 200">
+                  <defs>
+                    <path id={RING_PATH_ID} d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" />
+                  </defs>
+                  <text>
+                    <textPath href={`#${RING_PATH_ID}`} textLength={489} lengthAdjust="spacing">
+                      {RING_TEXT}
+                    </textPath>
+                  </text>
+                </svg>
+              </span>
+              <span className={styles.kbIc} aria-hidden="true">↗</span>
+            </Link>
+            <Link ref={textLinkRef} href="/board" className={`${styles.finLink} ${styles.blend}`} data-lp-text>
+              {t('landing.cta.button')}
+            </Link>
+          </div>
+        </div>
 
-          <Link href="/board" className={styles.button} data-cta-rise>
-            {t('landing.cta.button')}
-            <span className={styles.arrow} aria-hidden="true">→</span>
-          </Link>
-
+        <div ref={marqueeRootRef} className={styles.finTk} aria-hidden="true">
+          <div ref={marqueeInnerRef} className={styles.finTkIn}>
+            {Array.from({ length: MARQUEE_REPEATS }, (_, i) => (
+              <span key={i}>{MARQUEE_WORD}</span>
+            ))}
+          </div>
         </div>
       </div>
     </section>

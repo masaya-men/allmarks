@@ -7,15 +7,18 @@ vi.mock('@/lib/scroll/use-scroll-trigger', () => ({
   useScrollTrigger: () => undefined,
 }))
 
-// Stub all section/child components so GSAP never imports into jsdom
+// Stub all section/child components so GSAP never imports into jsdom.
+// The section + footer mocks render a data-testid so the composition-order
+// test below can assert on document order without depending on each
+// section's real (GSAP-heavy) internals.
 vi.mock('./BackgroundGrid', () => ({ BackgroundGrid: () => null }))
 vi.mock('./SiteHeader', () => ({ SiteHeader: () => null }))
-vi.mock('./SiteFooter', () => ({ SiteFooter: () => null }))
-vi.mock('./sections/Hero', () => ({ Hero: () => null }))
-vi.mock('./sections/Problem', () => ({ Problem: () => null }))
-vi.mock('./sections/Features', () => ({ Features: () => null }))
-vi.mock('./sections/ShareIt', () => ({ ShareIt: () => null }))
-vi.mock('./sections/FinalCta', () => ({ FinalCta: () => null }))
+vi.mock('./SiteFooter', () => ({ SiteFooter: () => <div data-testid="SiteFooter" /> }))
+vi.mock('./sections/Hero', () => ({ Hero: () => <div data-testid="Hero" /> }))
+vi.mock('./sections/Problem', () => ({ Problem: () => <div data-testid="Problem" /> }))
+vi.mock('./sections/Tape', () => ({ Tape: () => <div data-testid="Tape" /> }))
+vi.mock('./sections/Features', () => ({ Features: () => <div data-testid="Features" /> }))
+vi.mock('./sections/FinalCta', () => ({ FinalCta: () => <div data-testid="FinalCta" /> }))
 
 afterEach(() => {
   cleanup()
@@ -31,6 +34,21 @@ describe('LandingPage locale', () => {
   it('locale 未指定なら en', () => {
     render(<LandingPage />)
     expect(document.documentElement.getAttribute('lang')).toBe('en')
+  })
+})
+
+describe('LandingPage composition', () => {
+  it('renders Hero, Problem, Tape, Features, FinalCta, SiteFooter in that order', () => {
+    const { container } = render(<LandingPage />)
+    const order = Array.from(container.querySelectorAll('[data-testid]')).map((el) =>
+      el.getAttribute('data-testid'),
+    )
+    expect(order).toEqual(['Hero', 'Problem', 'Tape', 'Features', 'FinalCta', 'SiteFooter'])
+  })
+
+  it('does not render ShareIt', async () => {
+    const src = await import('node:fs').then((fs) => fs.readFileSync('components/marketing/LandingPage.tsx', 'utf8'))
+    expect(src).not.toMatch(/ShareIt/)
   })
 })
 

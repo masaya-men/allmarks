@@ -9,8 +9,8 @@ import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
 import { Hero } from './sections/Hero'
 import { Problem } from './sections/Problem'
+import { Tape } from './sections/Tape'
 import { Features } from './sections/Features'
-import { ShareIt } from './sections/ShareIt'
 import { FinalCta } from './sections/FinalCta'
 import './landing-tokens.css'
 import './lp-art.css'
@@ -22,14 +22,14 @@ import styles from './LandingPage.module.css'
  * Initialises GSAP ScrollTrigger, then renders the full editorial flow:
  *
  *   BackgroundGrid (fixed, 12-column hairline grid behind everything)
- *   SiteHeader (fixed, transparent → scrolled)
+ *   SiteHeader (fixed, transparent → scrolled; hidden during FinalCta)
  *   ─── white editorial ground (#faf9f6) ──────────────────────────────
  *   Hero        — product board-mock visual + headline + CTAs
  *   Problem     — the problem we solve
- *   Features    — 01-05 feature cards with live video grid
- *   ShareIt     — share / export story
- *   ─── white fades to black (FinalCta GSAP scrub) ──────────────────
- *   FinalCta    — climax CTA on near-black ground
+ *   Tape        — scrolling word band (Save · Arrange · Play · Tag · Share)
+ *   Features    — 01-06 feature cards with live video grid
+ *   ─── white gives way to the finale's near-black ground (#0b0b0b) ──
+ *   FinalCta    — rotating-circle "OPEN THE BOARD" climax + AllMarks marquee
  *   ─── black continues seamlessly ──────────────────────────────────
  *   SiteFooter  — dark editorial footer (#0a0a0a)
  */
@@ -58,8 +58,8 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
       <div className={styles.content}>
         <Hero />
         <Problem />
+        <Tape />
         <Features />
-        <ShareIt />
         <FinalCta />
         <SiteFooter locale={locale} />
       </div>
