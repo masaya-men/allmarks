@@ -1,8 +1,7 @@
 /* Tape.module.css — ported from docs/private/lp-v10-mock.html (CSS lines
-   115–120, markup line 445). Not yet inserted into the page — a later task
-   renders <Tape /> in LandingPage.tsx. Tokens (--ink, --paper, --green,
-   --sans) come from .lpRoot.lpHome in ../lp-art.css and cascade down once
-   Tape is mounted inside that root. */
+   115–120, markup line 445). Tokens (--ink, --paper, --green, --sans) come
+   from .lpRoot.lpHome in ../lp-art.css and cascade down once Tape is
+   mounted inside that root. */
 
 .tape {
   position: relative;

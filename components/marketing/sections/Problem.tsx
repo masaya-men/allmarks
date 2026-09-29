@@ -32,7 +32,7 @@ const CHIP_ALLMARKS = 'AllMarks'
 
 /**
  * The board's 8 cards (mock PB array, line 660). `tw:0/1` map to `tweet:1/2`
- * (task-6 ruling) — text comes from landing.demo.tweet1/2 via tweetTextFor().
+ * (task-6 ruling) — text comes from landing.demo.tweet1/2 via tweetKey().
  */
 const PROBLEM_CARDS: readonly CardSpec[] = [
   { art: 'halftone', a: 1 },
