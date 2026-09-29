@@ -15,6 +15,9 @@
      The language menu dropdown must float above the header chrome. */
   --lp-z-locale-banner: 105;   /* above header(100), below language menu(110) */
   --lp-z-language-menu: 110;
+  /* PageScrollMeter (right-edge scroll meter): above the page content (.content = 1) so its
+     difference blend sees the page, below SiteHeader(100). */
+  --lp-z-scroll-meter: 50;
 
   /* Declare the LP an explicit LIGHT surface so browsers (Chrome Auto Dark
      Mode for web contents, dark-mode extensions) do NOT force-darken this
@@ -56,6 +59,26 @@
 }
 .lpRoot[data-locale='vi'] {
   --sans: 'Noto Sans', sans-serif;
+}
+
+/* ── LP だけ標準のスクロールバーを隠す ──
+   右端の PageScrollMeter が代わりを務める。属性は LandingPage.tsx が LP のマウント中だけ <html> に付ける
+   ので、ほかのページには影響しない(ホイール・キー・タッチのスクロールはそのまま使える)。
+   app/globals.css の `* { scrollbar-width: thin }` と `::-webkit-scrollbar { width: 6px }` より詳細度が高い。 */
+html[data-lp-scrollbar='custom'] {
+  scrollbar-width: none;
+}
+html[data-lp-scrollbar='custom']::-webkit-scrollbar {
+  display: none;
+}
+/* 静的 HTML の最初の描画から隠す(上の属性は hydration 後に付くので、それまで標準バーが一瞬出て
+   本文の幅が数 px ずれるのを防ぐ)。.lpHome は LP の入れ物(LandingPage.tsx)にだけ付く。
+   :has() 非対応の古いブラウザは、上の属性の規則で hydration 後に隠れる。 */
+html:has(.lpHome) {
+  scrollbar-width: none;
+}
+html:has(.lpHome)::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── N-05 nav-dock: 語が旅の間、本文 kicker は場所だけ残して隠す ──

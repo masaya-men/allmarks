@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import type { SupportedLocale } from '@/lib/i18n/config'
 import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
 import { BackgroundGrid } from './BackgroundGrid'
 import { LandingFonts } from './LandingFonts'
 import { LocaleSuggestBanner } from './LocaleSuggestBanner'
-import { ScrollRail } from './ScrollRail'
+import { PageScrollMeter } from './PageScrollMeter'
 import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
 import { Hero } from './sections/Hero'
@@ -24,7 +24,8 @@ import styles from './LandingPage.module.css'
  * Initialises GSAP ScrollTrigger, then renders the full editorial flow:
  *
  *   BackgroundGrid (fixed, 12-column hairline grid behind everything)
- *   ScrollRail (fixed z-index 50: scroll-progress line + grid tilt/ticks; outside .content on purpose)
+ *   PageScrollMeter (fixed z-index 50, right edge: page scroll meter — stands in for the standard
+ *     scrollbar this page hides; outside .content on purpose so its difference blend sees the page)
  *   SiteHeader (fixed, transparent → scrolled; hidden during FinalCta)
  *   ─── white editorial ground (#faf9f6) ──────────────────────────────
  *   Hero        — product board-mock visual + headline + CTAs
@@ -53,11 +54,23 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
     }
   }, [locale])
 
+  // LP だけ標準のスクロールバーを隠す(右端の PageScrollMeter が代わりを務める)。マウント中だけ <html> に
+  // 属性を付け、アンマウントで外すので、ほかのページには影響しない(landing-tokens.css の
+  // html[data-lp-scrollbar='custom'])。useLayoutEffect なのは、バーが消えると本文の幅が変わる(リサイズ
+  // イベントは飛ばない)ので、子の各区画が useEffect で寸法を測る「前」に消しておくため。
+  useLayoutEffect(() => {
+    const html = document.documentElement
+    html.setAttribute('data-lp-scrollbar', 'custom')
+    return () => {
+      html.removeAttribute('data-lp-scrollbar')
+    }
+  }, [])
+
   return (
     <div className={`${styles.wrapper} lpRoot lpHome`} data-locale={locale}>
       <LandingFonts locale={locale} />
       <BackgroundGrid />
-      <ScrollRail />
+      <PageScrollMeter />
       <LocaleSuggestBanner current={locale} />
       <SiteHeader locale={locale} />
       <div className={styles.content}>

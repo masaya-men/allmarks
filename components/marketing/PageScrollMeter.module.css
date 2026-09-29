@@ -1,0 +1,98 @@
+/* components/marketing/PageScrollMeter.module.css
+   LP の右端のスクロールメーター。LP だけ標準のスクロールバーを隠す(landing-tokens.css の
+   html[data-lp-scrollbar='custom'])代わりに、ページ全体の進み具合をまっすぐな細い線で見せる。
+   主役(文章・ボード)の邪魔をしない控えめさが要件で、ふつうのスクロールバーの見た目にはしない。
+
+   構造(PageScrollMeter.tsx):
+     .meter  … position: fixed の入れ物。mix-blend-mode: difference はここにだけ付ける(部品には付けない)。
+               白い紙の上では黒、黒い締めとフッターの上では白に見える。
+       .track … 幅 2px の下地(白・不透明度 .22)
+       .fill  … 幅 2px の線(白 100%)。進んだ分だけ上から伸びる(transform: scaleY(進み)、原点は上)
+       .tick  … 区切りの目盛り(Problem / Features / 最後の黒い区画が始まる位置)。下地の左に長さ 8px・太さ 1px
+       .hit   … 見えない当たり判定(幅 20px)。押した位置へスクロール、つまんだまま動かすと追従
+   マウスを乗せている間とつまんでいる間(.active)は、線を 3px にする。 */
+
+.meter {
+  position: fixed;
+  right: 6px;
+  top: calc(var(--lp-header-h, 64px) + 10px);
+  bottom: 10px;
+  /* 線がいちばん太い時(.active)の 3px。線は右端そろえなので、太くなるのは左側だけ。 */
+  width: 3px;
+  /* 本文(.content = 1)より上、SiteHeader(100)より下。値は landing-tokens.css の --lp-z-scroll-meter。
+     .content の外に置いているのは、mix-blend-mode: difference が本文の描画結果と混ざるようにするため。 */
+  z-index: var(--lp-z-scroll-meter, 50);
+  mix-blend-mode: difference;
+  /* 入れ物自体は何も受けない。受けるのは .hit だけ。 */
+  pointer-events: none;
+}
+
+.track,
+.fill {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  transition: width 0.18s var(--ex, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.track {
+  background: rgba(255, 255, 255, 0.22);
+}
+.fill {
+  background: #fff;
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+/* 区切りの目盛り。位置(top・整数 px)は PageScrollMeter.tsx がレイアウト時に測って書く。それまでは出さない。 */
+.tick {
+  position: absolute;
+  right: 2px;
+  width: 8px;
+  height: 1px;
+  background: #fff;
+  display: none;
+  transition: right 0.18s var(--ex, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+/* マウスを乗せている間・つまんでいる間。線が 3px になった分、目盛りも左へ 1px 寄せてすき間を作らない。 */
+.active .track,
+.active .fill {
+  width: 3px;
+}
+.active .tick {
+  right: 3px;
+}
+
+/* 当たり判定: 幅 20px(スマホも同じ)。画面の右端から内側へ 20px。線は右端から 6px(スマホ 3px)の所にある。 */
+.hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -6px;
+  width: 20px;
+  pointer-events: auto;
+  /* 指でつまんだ時に、ブラウザの縦スクロールに横取りされない(pointercancel にならない)ように。 */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 640px) {
+  .meter {
+    right: 3px;
+  }
+  .hit {
+    right: -3px;
+  }
+}
+
+/* 動きを減らす設定: 太さの変化に transition を付けない(線の伸びは元から scroll に直結で、演出は無い)。 */
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .fill,
+  .tick {
+    transition: none;
+  }
+}

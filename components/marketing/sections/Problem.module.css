@@ -7,20 +7,14 @@
    ../lp-art.css and cascade down since Problem always renders inside that
    root. */
 
-/* mock line 194 (".prob") — renamed ".problem"; CSS Modules scope it uniquely. */
+/* mock line 194 (".prob") — renamed ".problem"; CSS Modules scope it uniquely.
+   An ordinary block: nothing is pinned any more (the mock's 320vh scroll track and
+   its sticky 100vh stage are gone — the stage on the right plays on a clock, see
+   Problem.tsx / lib/marketing/lp/problem-loop.ts). The vertical breathing room
+   is padding, so the section is as tall as its content. */
 .problem {
   position: relative;
-  height: 320vh;
-}
-
-/* mock line 195 (".prob .sticky") */
-.sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  padding-top: 60px;
+  padding-block: clamp(56px, 10vh, 120px);
 }
 
 /* mock line 196 — combined with the global "wrap" class in JSX (see Hero's
@@ -149,11 +143,6 @@
      (".hero .wrap" / ".sgrid" belong to other sections' own modules). */
   .pgrid {
     grid-template-columns: 1fr;
-  }
-  /* mock line 381 */
-  .sticky {
-    align-items: flex-start;
-    padding-top: 84px;
   }
   /* mock line 382 */
   .stage {

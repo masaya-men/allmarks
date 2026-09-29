@@ -34,18 +34,13 @@
   padding-top: clamp(40px, 8vh, 90px);
 }
 
-/* ── pin + sticky stage (mock 253–254) ── */
-.fpin {
+/* ── section body: a normal-height block (no pin, no sticky stage) — the demo
+   plays on a clock, so the section simply scrolls past like any other. The
+   [data-fpin] attribute stays on this wrapper for tests / other code that
+   looks the block up. ── */
+.fbody {
   position: relative;
-  height: calc(6.6 * 112vh + 100vh);
-}
-.fstick {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  padding-top: 60px;
+  padding-block: clamp(56px, 10vh, 120px);
 }
 .fgrid {
   display: grid;
@@ -59,7 +54,10 @@
   align-items: center;
 }
 
-/* ── step nav (mock 256–260) ── */
+/* ── chapter list (mock 256–260): now real buttons — pressing one jumps the
+   demo to the head of that chapter. The current chapter carries
+   aria-current (set by Features.tsx); the rail fill on the left is the
+   overall progress (P / 6). ── */
 .fnav {
   position: relative;
   list-style: none;
@@ -67,22 +65,40 @@
   padding: 2px 0 2px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
+}
+.fnavLi {
+  display: block;
 }
 /* R27: the nav names (num + Capture/Layout/Live/Organize/Privacy/Share) are
    English design constants, never translated — hardcoded to Geist Mono
-   instead of piped through --mono. */
-.fnavLi {
+   instead of piped through --mono. Click target is at least 32px tall. */
+.fnavBtn {
+  all: unset;
+  box-sizing: border-box;
   display: flex;
+  align-items: center;
   gap: 10px;
+  min-height: 32px;
+  padding-right: 14px;
+  cursor: pointer;
   font: 500 10.5px var(--font-geist-mono), ui-monospace, Consolas, monospace;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--mute);
   transition: color 0.4s;
 }
-.fnavLi.on {
+@media (hover: hover) {
+  .fnavBtn:hover {
+    color: var(--soft);
+  }
+}
+.fnavBtn[aria-current='true'] {
   color: var(--ink);
+}
+.fnavBtn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
 }
 .fnavRail {
   position: absolute;
@@ -177,11 +193,19 @@
   border: 1px solid var(--hair);
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04), 0 40px 70px -40px rgba(15, 15, 15, 0.28);
-  /* Features' own height — always inside .fstick, so this is mock 272
-     (`.fstick .fpanel`), the value that actually applies; mock 227's bare
-     `.fpanel{height:min(520px,72vh)}` never wins once nested and is not
-     ported. */
+  /* Features' own height — mock 272 (`.fstick .fpanel`), the value that
+     actually applies; mock 227's bare `.fpanel{height:min(520px,72vh)}`
+     never wins once nested and is not ported. */
   height: min(540px, calc(100vh - 150px));
+}
+/* Everything inside the panel (chrome, paste chip, board, entry screen,
+   chips, cursor …) sits in this one layer so the whole board can be faded
+   out and back in at the loop boundary without touching the panel frame.
+   It covers the panel's padding box exactly, so every absolutely placed
+   child keeps the same origin it had when it hung off .fpanel directly. */
+.fstage {
+  position: absolute;
+  inset: 0;
 }
 
 /* ── panel chrome: watermark + share/motion row (mock 78–82, 274) ── */
@@ -642,16 +666,12 @@
   .fvis {
     order: -1;
   }
-  /* mock line 374 */
-  .fstick {
-    align-items: flex-start;
-    padding-top: 70px;
-  }
   /* mock line 375 */
   .fpanel {
     height: 44vh;
   }
-  /* mock line 376 */
+  /* mock line 376 — the chapter list stays hidden here; the text still
+     follows the chapter that is playing. */
   .fnav {
     display: none;
   }
@@ -662,10 +682,6 @@
   /* mock line 378 */
   .ftexts {
     min-height: 34vh;
-  }
-  /* mock line 379 */
-  .fpin {
-    height: calc(6.6 * 90vh + 100vh);
   }
 }
 @media (max-width: 560px) {

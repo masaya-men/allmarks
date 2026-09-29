@@ -20,18 +20,22 @@
    Tokens (--io, --ex, --sans) come from .lpRoot.lpHome in ../lp-art.css and
    cascade down since FinalCta always renders inside that root. */
 
-/* ── finale section + sticky stage (mock 321–322) ── */
+/* ── finale section + stage (mock 321–322) ──
+   Nothing is pinned: .fin is an ordinary block whose height is its one child,
+   and .finSt is a full-screen stage (min-height: 100vh — it grows only if a
+   translation makes the content taller). .finSt stays `position: relative`
+   on purpose: it is the containing block of the absolutely positioned grid,
+   hot zone and marquee, and the offsetParent that FinalCta.tsx's layoutZone()
+   measures against. The entrance is played on a clock by FinalCta.tsx. */
 .fin {
   position: relative;
-  height: 240vh;
   background: #0b0b0b;
   color: #f4f4f2;
   z-index: 1;
 }
 .finSt {
-  position: sticky;
-  top: 0;
-  height: 100vh;
+  position: relative;
+  min-height: 100vh;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -39,7 +43,7 @@
   background: #0b0b0b;
 }
 
-/* ── 12-column hairline grid, drawn in via the scrub timeline (mock 323–325) ── */
+/* ── 12-column hairline grid, drawn in by the entrance timeline (mock 323–325) ── */
 .finGrid {
   position: absolute;
   inset: 0;
@@ -51,9 +55,6 @@
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   border-left: 1px solid rgba(255, 255, 255, 0.07);
-  /* ScrollRail tilts this box with the same skewX as the background grid (v11 mock
-     line 318) and writes it every scroll frame. Nothing inside is position:fixed. */
-  will-change: transform;
 }
 .finGridWrap i {
   border-right: 1px solid rgba(255, 255, 255, 0.07);

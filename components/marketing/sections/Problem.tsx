@@ -7,6 +7,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { makeCard } from '@/lib/marketing/lp/art'
 import { masonry } from '@/lib/marketing/lp/masonry'
 import { E } from '@/lib/marketing/lp/motion-math'
+import { problemLoopAt } from '@/lib/marketing/lp/problem-loop'
 import { tweetKey } from '@/lib/marketing/lp/tweet-key'
 import type { CardSpec } from '@/lib/marketing/lp/types'
 import styles from './Problem.module.css'
@@ -20,8 +21,15 @@ if (typeof window !== 'undefined') {
  * docs/private/lp-v10-mock.html (markup 435–444, CSS 189–212 minus the
  * shared .rule/.h2 already in ../lp-art.css, motion 656–679 + label-line
  * tween 800, resize 861). Eight decorative list rows lose their text, fold
- * into one middle line, and a masonry board of cards opens from that line —
- * driven by a single scrubbed ScrollTrigger tied to page scroll.
+ * into one middle line, and a masonry board of cards opens from that line.
+ *
+ * The section is an ordinary block (nothing is pinned) and the stage on the
+ * right plays on a clock, not on scroll: lib/marketing/lp/problem-loop.ts maps
+ * elapsed time to the progress `p` fed to renderProb() — hold the list, run
+ * p 0→1, hold the board, fade the stage out, reset p, fade it back in, repeat.
+ * It only advances while the stage is on screen and the tab is visible, and
+ * the first time it comes on screen it starts from the list. Reduced motion
+ * never repeats: it just shows the finished state (p = 1, "AllMarks" chip on).
  */
 
 /** English design word — same in every locale, never `landing.problem.label` (mock line 437: literal "Problem" text node, no wrapper). */
@@ -29,6 +37,16 @@ const LABEL_TEXT = 'Problem'
 
 /** English constant for the "AllMarks" chip (mock line 440, data-s="1"). Never translated. */
 const CHIP_ALLMARKS = 'AllMarks'
+
+/**
+ * The loop starts once the stage has come this far up from the bottom edge of
+ * the screen (the viewport's bottom is shrunk by this much for the observer),
+ * so the first thing a visitor sees is the list, not a half-folded board.
+ */
+const STAGE_ON_SCREEN_MARGIN = '0px 0px -15% 0px'
+
+/** One frame may advance the loop by at most this many ms — a stalled frame must not skip a whole phase. */
+const MAX_FRAME_MS = 100
 
 /**
  * The board's 8 cards (mock PB array, line 660). `tw:0/1` map to `tweet:1/2`
@@ -57,7 +75,7 @@ const ROW_BARS: readonly { readonly t: number; readonly u: number }[] = Array.fr
   (_, r) => ({ t: 34 + ((r * 37) % 30), u: 12 + ((r * 23) % 12) }),
 )
 
-/** One row's 4 children, resolved once at mount (mock's `row.children[0..3]`) — avoids re-querying every scrub frame. */
+/** One row's 4 children, resolved once at mount (mock's `row.children[0..3]`) — avoids re-querying every frame. */
 type ProblemRowEls = {
   readonly row: HTMLDivElement
   readonly fv: HTMLElement
@@ -81,7 +99,7 @@ export function Problem(): React.ReactElement {
   // Synced via its own effect (never written during render — react-hooks/refs,
   // task-6 ruling R21) so the mount-time effect below always sees the latest
   // translator without needing `t` in its dependency array (which would
-  // restart the whole scrub/board setup on every locale swap) — same pattern
+  // restart the whole loop/board setup on every locale swap) — same pattern
   // as Hero.tsx.
   const tRef = useRef(t)
   useEffect(() => {
@@ -146,7 +164,7 @@ export function Problem(): React.ReactElement {
 
     // Layout reads (clientWidth/clientHeight/offsetTop) happen only here —
     // called at init, from the debounced resize handler, and once fonts
-    // settle (R11/R13), never per scrub frame.
+    // settle (R11/R13), never per frame.
     function pLayout(): void {
       const W = sboard!.clientWidth
       const n = W < 520 ? 2 : 4
@@ -170,7 +188,7 @@ export function Problem(): React.ReactElement {
     }
 
     // Writes transform/opacity/clip-path/visibility only, from cached
-    // numbers — safe to call every scrub frame (mock renderProb, line 668).
+    // numbers — safe to call every frame (mock renderProb, line 668).
     function renderProb(p: number): void {
       currentP = p
       const cy = stageH / 2
@@ -203,21 +221,12 @@ export function Problem(): React.ReactElement {
     pLayout()
     renderProb(currentP)
 
-    // ── scrub trigger + label-line tween (R16): reduced motion gets neither
-    //    — renderProb(1) above already drew the final "board open" state,
-    //    and the label line stays at its CSS default (fully drawn, no
-    //    scaleX(0) is ever applied) (mock 798/800, guarded by motionOK). ──
+    // ── label-line tween (R16): reduced motion gets none — the label line
+    //    stays at its CSS default (fully drawn, no scaleX(0) is ever applied)
+    //    (mock 800, guarded by motionOK). ──
     let ctx: ReturnType<typeof gsap.context> | undefined
     if (!reduce) {
       ctx = gsap.context(() => {
-        const px = { p: 0 }
-        gsap.to(px, {
-          p: 1,
-          ease: 'none',
-          onUpdate: () => renderProb(px.p),
-          scrollTrigger: { trigger: section, start: 'top top', end: 'bottom bottom', scrub: 0.5 },
-        })
-
         const labelLn = section.querySelector<HTMLElement>('.label .ln')
         if (labelLn) {
           gsap.fromTo(
@@ -232,6 +241,58 @@ export function Problem(): React.ReactElement {
           )
         }
       }, sectionRef)
+    }
+
+    // ── the stage plays on a clock (problem-loop.ts), not on scroll ──
+    // Elapsed time only advances while the stage is on screen and the tab is
+    // visible: leaving pauses it, coming back continues from the same spot,
+    // and before the stage has ever been on screen it sits in the list state
+    // drawn above. Reduced motion never repeats — renderProb(1) above already
+    // drew the finished state (board open, "AllMarks" chip on) and it stays.
+    // Per frame this writes only what changed: renderProb (transform / opacity
+    // / clip-path / classes, from cached numbers) and the stage's opacity.
+    let elapsedMs = 0
+    let lastNow: number | null = null // null = no previous frame: the first frame after a (re)start adds no time
+    let rafId = 0
+    let stageOnScreen = false
+    let stageOpacity = 1
+
+    const tick = (now: number): void => {
+      rafId = requestAnimationFrame(tick)
+      if (lastNow !== null) elapsedMs += Math.min(now - lastNow, MAX_FRAME_MS)
+      lastNow = now
+      const frame = problemLoopAt(elapsedMs)
+      if (frame.p !== currentP) renderProb(frame.p)
+      const o = Math.round(frame.opacity * 1000) / 1000
+      if (o !== stageOpacity) {
+        stageOpacity = o
+        stage.style.opacity = String(o)
+      }
+    }
+    const syncLoop = (): void => {
+      const run = !disposed && stageOnScreen && !document.hidden
+      if (run && rafId === 0) {
+        lastNow = null
+        rafId = requestAnimationFrame(tick)
+      } else if (!run && rafId !== 0) {
+        cancelAnimationFrame(rafId)
+        rafId = 0
+      }
+    }
+
+    let io: IntersectionObserver | undefined
+    if (!reduce) {
+      io = new IntersectionObserver(
+        (entries) => {
+          const latest = entries[entries.length - 1]
+          if (!latest) return
+          stageOnScreen = latest.isIntersecting
+          syncLoop()
+        },
+        { rootMargin: STAGE_ON_SCREEN_MARGIN },
+      )
+      io.observe(stage)
+      document.addEventListener('visibilitychange', syncLoop)
     }
 
     // ── resize (R13): debounced 160ms, re-measure then redraw at the last
@@ -259,9 +320,13 @@ export function Problem(): React.ReactElement {
 
     return () => {
       disposed = true
+      if (rafId !== 0) cancelAnimationFrame(rafId)
+      io?.disconnect()
+      document.removeEventListener('visibilitychange', syncLoop)
       ctx?.revert()
       window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
+      stage.style.opacity = ''
       pCards.forEach((c) => c.el.remove())
     }
   }, [])
@@ -275,41 +340,39 @@ export function Problem(): React.ReactElement {
 
   return (
     <section ref={sectionRef} id="problem" className={styles.problem}>
-      <div className={styles.sticky}>
-        <div className={`wrap ${styles.pgrid}`}>
-          <div>
-            <p className="label">
-              <i className="ln" />
-              {LABEL_TEXT}
-            </p>
-            <h2 className="h2">{headlineNodes}</h2>
-            <p className="body" data-lp-text>
-              {t('landing.problem.body')}
-            </p>
-            <div className={styles.chips}>
-              <span ref={chip0Ref} className={`${styles.chip} ${styles.on}`} data-s="0" data-lp-text>
-                {t('landing.problem.chipList')}
-              </span>
-              <span ref={chip1Ref} className={styles.chip} data-s="1" data-lp-text>
-                {CHIP_ALLMARKS}
-              </span>
-            </div>
+      <div className={`wrap ${styles.pgrid}`}>
+        <div>
+          <p className="label">
+            <i className="ln" />
+            {LABEL_TEXT}
+          </p>
+          <h2 className="h2">{headlineNodes}</h2>
+          <p className="body" data-lp-text>
+            {t('landing.problem.body')}
+          </p>
+          <div className={styles.chips}>
+            <span ref={chip0Ref} className={`${styles.chip} ${styles.on}`} data-s="0" data-lp-text>
+              {t('landing.problem.chipList')}
+            </span>
+            <span ref={chip1Ref} className={styles.chip} data-s="1" data-lp-text>
+              {CHIP_ALLMARKS}
+            </span>
           </div>
+        </div>
 
-          <div ref={stageRef} className={styles.stage} aria-hidden="true" data-lp-rail-board>
-            <div ref={listRef} className={styles.list}>
-              {ROW_BARS.map((bar, i) => (
-                <div className={styles.lrow} key={i}>
-                  <i className={styles.fv} />
-                  <i className={styles.t} style={{ width: `${bar.t}%` }} />
-                  <i className={styles.u} style={{ width: `${bar.u}%` }} />
-                  <i className={styles.d} />
-                </div>
-              ))}
-            </div>
-            <i ref={midRef as React.RefObject<HTMLElement>} className={styles.mid} />
-            <div ref={sboardRef} className={styles.sboard} data-problem-board />
+        <div ref={stageRef} className={styles.stage} aria-hidden="true">
+          <div ref={listRef} className={styles.list}>
+            {ROW_BARS.map((bar, i) => (
+              <div className={styles.lrow} key={i}>
+                <i className={styles.fv} />
+                <i className={styles.t} style={{ width: `${bar.t}%` }} />
+                <i className={styles.u} style={{ width: `${bar.u}%` }} />
+                <i className={styles.d} />
+              </div>
+            ))}
           </div>
+          <i ref={midRef as React.RefObject<HTMLElement>} className={styles.mid} />
+          <div ref={sboardRef} className={styles.sboard} data-problem-board />
         </div>
       </div>
     </section>

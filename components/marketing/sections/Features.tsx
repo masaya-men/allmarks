@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { makeCard, filmOf, slidesOf } from '@/lib/marketing/lp/art'
+import { E } from '@/lib/marketing/lp/motion-math'
 import { useModKey } from '@/lib/marketing/lp/use-mod-key'
 import { tweetKey } from '@/lib/marketing/lp/tweet-key'
 import {
@@ -13,12 +14,13 @@ import {
   CARD_FILM,
   CARD_DRAG,
   CARD_SLIDES,
+  FEAT_CHAPTER_MS,
   FEAT_DT_MAX_MS,
+  FEAT_FADE_MS,
   cursorTip,
-  featFollow,
+  featClock,
   featureLayouts,
   featState,
-  featTarget,
   type FeatureGeometry,
   type FeatureHover,
   type FeatureState,
@@ -32,19 +34,29 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Features — the pinned six-step demo, ported from docs/private/lp-v10-mock.html
+ * Features — the six-chapter demo, ported from docs/private/lp-v10-mock.html
  * (markup 447–476, CSS 213–297 minus the card-internal parts already in
  * ../lp-art.css, motion 680–776 + divider tween 798–799, resize 861) plus the
  * v11 cursor choreography from docs/private/lp-v11-mock.html (large green
  * cursor that stays on from 02 to 06, stops on each target to "hover" before
- * it presses, and rings green the moment it first appears). One demo board
- * changes as the section is scrolled through: a cursor clicks, cards move, a
- * video card really plays, MOTION stops it, tags filter, an entry screen
- * appears, and the board is shared as an image. All of the maths
- * (masonry layouts, easing, waypoints, which target is hovered, how fast the
- * shown position follows the scroll) lives in feature-timeline.ts — this
- * component only measures geometry (once, never in the scroll ticker) and
- * writes the resulting FeatureState to the DOM every frame.
+ * it presses, and rings green the moment it first appears).
+ *
+ * The section scrolls like any other. The demo board on the right plays by
+ * itself, like a short video with chapters 01–06: a clock (featClock, one
+ * chapter per FEAT_CHAPTER_MS) drives P, a cursor clicks, cards move, a video
+ * card really plays, MOTION stops it, tags filter, an entry screen appears,
+ * and the board is shared as an image. After 06 the board fades out, goes back
+ * to 01 and fades in again (a loop). It runs only while the board is on screen
+ * and the tab is visible, and is held while a mouse pointer is over the
+ * chapter list or the board. The 01–06 list is a set of buttons: pressing one
+ * jumps to the head of that chapter and keeps playing. With reduced motion
+ * nothing advances by itself — each chapter shows its finished pose and the
+ * list buttons switch chapters.
+ *
+ * All of the maths (masonry layouts, easing, waypoints, which target is
+ * hovered, the clock) lives in feature-timeline.ts — this component only
+ * measures geometry (at layout time, never per frame) and writes the resulting
+ * FeatureState to the DOM every frame.
  */
 
 /** English design word — same in every locale, never `landing.features.label` (mock line 448). */
@@ -53,9 +65,12 @@ const FEATURES_LABEL = 'Features'
 /** English wordmark — mock's literal "AllMarks" text (pchrome watermark + entry screen). Never translated. */
 const WORDMARK = 'AllMarks'
 
+/** The demo plays only while at least this share of the board is on screen (IntersectionObserver threshold). */
+const PLAY_VISIBLE_RATIO = 0.35
+
 type StepId = 'capture' | 'layout' | 'live' | 'organize' | 'privacy' | 'share'
 
-/** The six steps: nav short name (English, hardcoded) + i18n source for title/body. */
+/** The six steps: list-button name (English, hardcoded) + i18n source for title/body. */
 const STEPS: readonly { readonly num: string; readonly name: string; readonly id: StepId }[] = [
   { num: '01', name: 'Capture', id: 'capture' },
   { num: '02', name: 'Layout', id: 'layout' },
@@ -80,6 +95,12 @@ const TAGS: readonly { readonly tag: 'all' | 'music' | 'design'; readonly label:
   { tag: 'design', label: 'design' },
 ]
 
+/** Which part of the section a mouse pointer can hold (pause) the demo from. */
+type HoldZone = 'nav' | 'board'
+
+/** What the demo is doing: playing chapters, fading the board out at the loop boundary, or fading it back in. */
+type Phase = 'play' | 'out' | 'in'
+
 export function Features(): React.ReactElement {
   const { t } = useI18n()
   // Synced via its own effect (never written during render — react-hooks/refs,
@@ -97,12 +118,13 @@ export function Features(): React.ReactElement {
 
   const sectionRef = useRef<HTMLElement>(null)
   const ruleLineRef = useRef<HTMLElement>(null)
-  const fpinRef = useRef<HTMLDivElement>(null)
-  const fnavRefs = useRef<(HTMLLIElement | null)[]>([])
+  const fnavRef = useRef<HTMLOListElement>(null)
+  const fnavRefs = useRef<(HTMLButtonElement | null)[]>([])
   const railFillRef = useRef<HTMLElement>(null)
   const ftextsRef = useRef<HTMLDivElement>(null)
   const ftextRefs = useRef<(HTMLElement | null)[]>([])
   const fpanelRef = useRef<HTMLDivElement>(null)
+  const fstageRef = useRef<HTMLDivElement>(null)
   const fshareRef = useRef<HTMLSpanElement>(null)
   const fmotionRef = useRef<HTMLSpanElement>(null)
   const fpasteRef = useRef<HTMLDivElement>(null)
@@ -127,10 +149,11 @@ export function Features(): React.ReactElement {
   useEffect(() => {
     const section = sectionRef.current
     const ruleLine = ruleLineRef.current
-    const fpin = fpinRef.current
+    const fnav = fnavRef.current
     const railFill = railFillRef.current
     const ftextsEl = ftextsRef.current
     const fpanel = fpanelRef.current
+    const fstage = fstageRef.current
     const fshare = fshareRef.current
     const fmotion = fmotionRef.current
     const fpaste = fpasteRef.current
@@ -155,15 +178,15 @@ export function Features(): React.ReactElement {
     const ftextEls = ftextRefs.current
 
     if (
-      !section || !ruleLine || !fpin || !railFill || !ftextsEl || !fpanel || !fshare || !fmotion || !fpaste || !fps ||
-      !allBtn || !musicBtn || !designBtn || !fpu || !fbw || !fboard || !frect || !pchip || !fstart || !fsbtn ||
+      !section || !ruleLine || !fnav || !railFill || !ftextsEl || !fpanel || !fstage || !fshare || !fmotion || !fpaste ||
+      !fps || !allBtn || !musicBtn || !designBtn || !fpu || !fbw || !fboard || !frect || !pchip || !fstart || !fsbtn ||
       !schips || !scp || !fclick || !fring || !fflash || !fcur ||
       fnavEls.length !== STEPS.length || ftextEls.length !== STEPS.length ||
       fnavEls.some((el) => el === null) || ftextEls.some((el) => el === null)
     ) {
       return undefined
     }
-    const navEls = fnavEls as HTMLLIElement[]
+    const navBtns = fnavEls as HTMLButtonElement[]
     const textEls = ftextEls as HTMLElement[]
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -256,13 +279,16 @@ export function Features(): React.ReactElement {
 
     let geo = measure()
 
-    // ── setActive: toggles which step's nav-entry + text block is "on" ──
+    // ── setActive: which chapter's list button (aria-current) + text block is "on" ──
     let fActive = -1
     function setActive(k: number): void {
       if (k === fActive) return
       fActive = k
       textEls.forEach((el, i) => el.classList.toggle(styles.on!, i === k))
-      navEls.forEach((el, i) => el.classList.toggle(styles.on!, i === k))
+      navBtns.forEach((el, i) => {
+        if (i === k) el.setAttribute('aria-current', 'true')
+        else el.removeAttribute('aria-current')
+      })
     }
 
     // ── setCls: mirrors the mock's setCls/fState — only classList.toggle
@@ -391,7 +417,7 @@ export function Features(): React.ReactElement {
     }
 
     // ── film + slideshow tick (mock 764–767): only while actually playing,
-    //    never while the tab is hidden. dt is pre-clamped by featFrame. ──
+    //    never while the tab is hidden. dt is pre-clamped by the frame below. ──
     function liveTick(dt: number): void {
       if (!livePlaying || document.hidden) return
       if (film) {
@@ -415,18 +441,28 @@ export function Features(): React.ReactElement {
       }
     }
 
-    // ── initial paint (mock 768: renderFeat(0), before ST/ticker exist) ──
-    ftH()
-    let cur = 0
-    let lastReducedP: number | null = null
-    apply(featState(0, geo))
-    if (reduce) lastReducedP = 0
+    // ── the demo's position: P (0..6) = chapter number + how far into it.
+    //    It is written in exactly one place (show) so the picture, the rail
+    //    fill and the highlighted chapter can never disagree. With reduced
+    //    motion P is only ever the finished pose of a chapter (k + 1). ──
+    const LAST = STEPS.length - 1
+    let P = reduce ? 1 : 0
+    function show(p: number, chapter: number): void {
+      P = p
+      apply(featState(P, geo))
+      setActive(chapter)
+    }
+    function fullApply(): void {
+      apply(featState(P, geo))
+    }
 
-    // ── scroll-driven ticker (mock 773–776) ──
-    let fST: ScrollTrigger | undefined
+    // ── initial paint (mock 768: renderFeat(0), before the clock exists) ──
+    ftH()
+    show(P, 0)
+
+    // R18: this section's own divider line (mock 798–799), motion-gated. It is
+    // the only scroll-linked thing left here (the demo itself runs on a clock).
     const ctx = gsap.context(() => {
-      fST = ScrollTrigger.create({ trigger: fpin, start: 'top top', end: 'bottom bottom' })
-      // R18: this section's own divider line (mock 798–799), motion-gated.
       if (!reduce) {
         gsap.fromTo(
           ruleLine,
@@ -436,44 +472,127 @@ export function Features(): React.ReactElement {
       }
     }, sectionRef)
 
-    function featFrame(_time: number, deltaTime: number): void {
-      if (disposed || !fST) return
-      const target = featTarget(fST.progress)
-      if (reduce) {
-        // R17: reduced motion shows each step's finished pose, no smoothing.
-        const P = Math.min(6, Math.floor(target) + 1)
-        if (P !== lastReducedP) {
-          lastReducedP = P
-          apply(featState(P, geo))
+    // ── hold: a mouse pointer over the chapter list or the board pauses the
+    //    demo (touch / pen never do). Pressing a chapter button means "play this
+    //    one", so it plays on even though the pointer is still over the list —
+    //    until the pointer next enters the list or the board. ──
+    const over: Record<HoldZone, boolean> = { nav: false, board: false }
+    let clickedPlay = false
+    const isHeld = (): boolean => (over.nav || over.board) && !clickedPlay
+    function watchMouse(el: HTMLElement, zone: HoldZone): () => void {
+      const enter = (e: PointerEvent): void => {
+        if (e.pointerType !== 'mouse') return
+        over[zone] = true
+        clickedPlay = false
+      }
+      const leave = (e: PointerEvent): void => {
+        if (e.pointerType !== 'mouse') return
+        over[zone] = false
+      }
+      el.addEventListener('pointerenter', enter)
+      el.addEventListener('pointerleave', leave)
+      return () => {
+        el.removeEventListener('pointerenter', enter)
+        el.removeEventListener('pointerleave', leave)
+      }
+    }
+
+    // ── the clock's frame. While playing: featClock advances P; when P reaches
+    //    6 the board fades out (FEAT_FADE_MS), P goes back to 0 while it is
+    //    invisible, and it fades back in (FEAT_FADE_MS). The fade always runs to
+    //    the end even if a pointer arrives meanwhile — the hold applies to the
+    //    playing part only, so the board is never left half faded. ──
+    let phase: Phase = 'play'
+    let phaseMs = 0
+    const frame = (_time: number, deltaTime: number): void => {
+      if (disposed) return
+      const dt = Math.min(deltaTime > 0 ? deltaTime : 16, FEAT_DT_MAX_MS)
+      if (phase === 'play') {
+        if (isHeld()) return
+        const c = featClock(P, dt, FEAT_CHAPTER_MS)
+        show(c.P, Math.min(LAST, Math.floor(c.P)))
+        liveTick(dt)
+        if (c.wrapped) {
+          phase = 'out'
+          phaseMs = 0
         }
-        setActive(Math.min(5, Math.floor(target)))
         return
       }
-      const dt = Math.min(deltaTime || 16, FEAT_DT_MAX_MS)
-      const d = target - cur
-      if (Math.abs(d) < 0.0008) {
-        if (cur !== target) {
-          cur = target
-          apply(featState(cur, geo))
+      phaseMs += dt
+      const raw = phaseMs / FEAT_FADE_MS
+      const u = E(raw, 0, 1)
+      if (phase === 'out') {
+        fstage.style.opacity = (1 - u).toFixed(3)
+        if (raw >= 1) {
+          show(0, 0)
+          phase = 'in'
+          phaseMs = 0
         }
       } else {
-        // Catch up with the scroll at a frame-rate-independent pace with a speed
-        // cap that loosens as the lag grows (featFollow): every step is shown
-        // (never skipped) and the lag stays small enough for 06 to play out.
-        cur = featFollow(cur, target, dt)
-        apply(featState(cur, geo))
+        fstage.style.opacity = u.toFixed(3)
+        if (raw >= 1) {
+          fstage.style.opacity = ''
+          phase = 'play'
+          phaseMs = 0
+        }
       }
-      setActive(Math.max(0, Math.min(5, Math.floor(cur))))
-      liveTick(dt)
     }
-    gsap.ticker.add(featFrame)
+
+    // ── run only while the board is on screen and the tab is visible ──
+    let inView = false
+    let ticking = false
+    const sync = (): void => {
+      const want = !disposed && inView && !document.hidden
+      if (want === ticking) return
+      ticking = want
+      if (want) gsap.ticker.add(frame)
+      else gsap.ticker.remove(frame)
+    }
+
+    // ── chapter buttons: jump to the head of chapter k (P = k) and keep playing.
+    //    Reduced motion shows that chapter's finished pose (P = k + 1) instead. ──
+    const jumpTo = (k: number): void => {
+      phase = 'play'
+      phaseMs = 0
+      fstage.style.opacity = ''
+      if (reduce) {
+        show(k + 1, k)
+        return
+      }
+      clickedPlay = true
+      show(k, k)
+    }
+    const onNavClick = (e: MouseEvent): void => {
+      if (!(e.target instanceof Element)) return
+      const btn = e.target.closest<HTMLButtonElement>('button[data-chapter]')
+      if (!btn || !fnav.contains(btn)) return
+      const k = Number(btn.dataset.chapter)
+      if (Number.isInteger(k) && k >= 0 && k <= LAST) jumpTo(k)
+    }
+    fnav.addEventListener('click', onNavClick)
+
+    let io: IntersectionObserver | null = null
+    let unwatchNav: (() => void) | null = null
+    let unwatchBoard: (() => void) | null = null
+    if (!reduce) {
+      // isIntersecting is true for ANY overlap, so the ratio is what says "35% visible".
+      io = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[entries.length - 1]
+          if (!entry) return
+          inView = entry.isIntersecting && entry.intersectionRatio >= PLAY_VISIBLE_RATIO - 1e-4
+          sync()
+        },
+        { threshold: PLAY_VISIBLE_RATIO },
+      )
+      io.observe(fpanel)
+      document.addEventListener('visibilitychange', sync)
+      unwatchNav = watchMouse(fnav, 'nav')
+      unwatchBoard = watchMouse(fpanel, 'board')
+    }
 
     // ── resize (R16, mock 861 Features slice): re-measure + full apply.
     //    ScrollTrigger re-measures itself on resize; no explicit refresh here. ──
-    function fullApply(): void {
-      const p = reduce ? (lastReducedP ?? 0) : cur
-      apply(featState(p, geo))
-    }
     let resizeTimer: number | undefined
     const onResize = (): void => {
       window.clearTimeout(resizeTimer)
@@ -486,8 +605,9 @@ export function Features(): React.ReactElement {
     }
     window.addEventListener('resize', onResize)
 
-    // Features owns the page's one global ScrollTrigger.refresh() — fonts
-    // settling can reflow the text column without firing a resize event.
+    // Features owns the page's one global ScrollTrigger.refresh() (the divider
+    // tween above and the other sections' triggers) — fonts settling can
+    // reflow the page without firing a resize event.
     if (document.fonts?.ready) {
       void document.fonts.ready.then(() => {
         if (disposed) return
@@ -501,11 +621,17 @@ export function Features(): React.ReactElement {
     return () => {
       disposed = true
       ctx.revert()
-      gsap.ticker.remove(featFrame)
+      gsap.ticker.remove(frame)
+      io?.disconnect()
+      document.removeEventListener('visibilitychange', sync)
+      unwatchNav?.()
+      unwatchBoard?.()
+      fnav.removeEventListener('click', onNavClick)
       window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
       setHover(null)
       fring.classList.remove(styles.go!)
+      fstage.style.opacity = ''
       fCards.forEach((el) => el.remove())
     }
   }, [])
@@ -516,53 +642,56 @@ export function Features(): React.ReactElement {
         <span className="label">{FEATURES_LABEL}</span>
         <i ref={ruleLineRef as React.RefObject<HTMLElement>} />
       </div>
-      <div ref={fpinRef} className={styles.fpin} data-fpin>
-        <div className={styles.fstick}>
-          <div className={`wrap ${styles.fgrid}`}>
-            <div className={styles.fleft}>
-              <ol className={styles.fnav} aria-hidden="true">
-                {STEPS.map((step, i) => (
-                  <li
-                    key={step.num}
+      <div className={styles.fbody} data-fpin>
+        <div className={`wrap ${styles.fgrid}`}>
+          <div className={styles.fleft}>
+            <ol ref={fnavRef} className={styles.fnav}>
+              {STEPS.map((step, i) => (
+                <li key={step.num} className={styles.fnavLi}>
+                  <button
+                    type="button"
                     ref={(el) => {
                       fnavRefs.current[i] = el
                     }}
-                    className={styles.fnavLi}
+                    data-chapter={i}
+                    aria-current={i === 0 ? 'true' : undefined}
+                    className={styles.fnavBtn}
                   >
-                    <span>{step.num}</span>
-                    {step.name}
-                  </li>
-                ))}
-                <i className={styles.fnavRail}>
-                  <i ref={railFillRef as React.RefObject<HTMLElement>} className={styles.fnavRailFill} />
-                </i>
-              </ol>
-              <div ref={ftextsRef} className={styles.ftexts}>
-                {STEPS.map((step, i) => (
-                  <article
-                    key={step.num}
-                    ref={(el) => {
-                      ftextRefs.current[i] = el
-                    }}
-                    className={styles.ftext}
-                  >
-                    <p className={`label ${styles.ftextLabel}`}>
-                      <i className={`ln ${styles.ftextLn}`} />
-                      {step.num} — {step.name}
-                    </p>
-                    <h3 className={styles.fh}>
-                      <span data-lp-text>{t(stepTitleKey(step.id))}</span>
-                    </h3>
-                    <p className={`body ${styles.ftextBody}`} data-lp-text>
-                      {t(stepBodyKey(step.id))}
-                    </p>
-                  </article>
-                ))}
-              </div>
+                    <span>{step.num}</span> {step.name}
+                  </button>
+                </li>
+              ))}
+              <li className={styles.fnavRail} aria-hidden="true">
+                <i ref={railFillRef as React.RefObject<HTMLElement>} className={styles.fnavRailFill} />
+              </li>
+            </ol>
+            <div ref={ftextsRef} className={styles.ftexts}>
+              {STEPS.map((step, i) => (
+                <article
+                  key={step.num}
+                  ref={(el) => {
+                    ftextRefs.current[i] = el
+                  }}
+                  className={i === 0 ? `${styles.ftext} ${styles.on}` : styles.ftext}
+                >
+                  <p className={`label ${styles.ftextLabel}`}>
+                    <i className={`ln ${styles.ftextLn}`} />
+                    {step.num} — {step.name}
+                  </p>
+                  <h3 className={styles.fh}>
+                    <span data-lp-text>{t(stepTitleKey(step.id))}</span>
+                  </h3>
+                  <p className={`body ${styles.ftextBody}`} data-lp-text>
+                    {t(stepBodyKey(step.id))}
+                  </p>
+                </article>
+              ))}
             </div>
+          </div>
 
-            <div className={styles.fvis} aria-hidden="true">
-              <div ref={fpanelRef} className={styles.fpanel} data-lp-rail-board>
+          <div className={styles.fvis} aria-hidden="true">
+            <div ref={fpanelRef} className={styles.fpanel}>
+              <div ref={fstageRef} className={styles.fstage}>
                 <div className={styles.pchrome}>
                   <span className={styles.wmS}>{WORDMARK}</span>
                   <span className={styles.fright}>

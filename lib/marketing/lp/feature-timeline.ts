@@ -2,19 +2,17 @@ import { E, clamp01, isPress, lerp, wp } from './motion-math'
 import { masonry, type MasonryLayout } from './masonry'
 import type { CardSpec, Pt } from './types'
 
-/* ── 追従: スクロールが決める目標 P に、表示する P が追いつく速さ ──
-   目で追える速さを保ちつつ、遅れすぎて 06(SHARE → 画像 → リンクをコピー)が
-   出ないまま区画が終わることがないようにする。数字を変えるのはここだけ。 */
-/** 1フレームで詰める割合 = 1 − exp(−dt / この値)。フレームレートに依らず同じ手触りにするための時定数(ms)。 */
-export const FEAT_FOLLOW_TAU_MS = 200
-/** 遅れが小さいうちの速さの上限(段/秒)。デモを 1 段 1.25 秒より速くは進めない = 目で追える速さ。 */
-export const FEAT_SPEED_BASE = 0.8
-/** 遅れ(段)がこの値以下なら、速さの上限は FEAT_SPEED_BASE のまま。 */
-export const FEAT_LAG_FREE = 0.35
-/** 遅れが FEAT_LAG_FREE を 1 段超えるごとに、上限を何段/秒ずつ引き上げるか。速く回した時も遅れが 0.5 段前後で頭打ちになり、すぐ追いつく。 */
-export const FEAT_SPEED_GAIN = 2.5
-/** 1フレームの dt の上限(ms)。タブ復帰などの長い空白で一気に跳ばない。 */
-export const FEAT_DT_MAX_MS = 64
+/* ── 時計: デモはスクロールではなく時間で進む(章 01〜06 のある短い動画のように自動再生して繰り返す) ──
+   P(0〜6)= 章番号 + その章の中の経過割合。各章の中の振り付けは章内の割合 f で書いてあるので、
+   速さを変える数字はここだけ。 */
+/** 章の数。P は 0〜FEAT_CHAPTERS を動く。 */
+export const FEAT_CHAPTERS = 6
+/** 1章にかける時間(ms)。6000 = 1章 6 秒で、6 章 36 秒が 1 ループ。 */
+export const FEAT_CHAPTER_MS = 6000
+/** 繰り返しの境目(P=6 → P=0)で、ボードを薄くする時間と、薄い状態から戻す時間(ms、それぞれ片道)。切り替わりのカクつきを見せないための間。 */
+export const FEAT_FADE_MS = 250
+/** 1フレームの dt の上限(ms)。タブ復帰などの長い空白があっても章を飛ばさない。 */
+export const FEAT_DT_MAX_MS = 100
 
 export type FeatureTag = 'life' | 'music' | 'design'
 export type FeatureCardSpec = CardSpec & { readonly tag: FeatureTag }
@@ -297,22 +295,20 @@ export function featState(Pin: number, g: FeatureGeometry): FeatureState {
   }
 }
 
-/** 固定区間の進み(0..1)→ P(0..6)。見本と同じずらし(-0.2)と伸ばし(6.6)。 */
-export function featTarget(progress: number): number { return Math.max(0, Math.min(6, progress * 6.6 - 0.2)) }
-
-/** 遅れ lag(段。正負どちらでも)のときの、追従の速さの上限(段/秒)。遅れが大きいほど速い(FEAT_LAG_FREE までは一定)。 */
-export function featSpeedCap(lag: number): number {
-  return FEAT_SPEED_BASE + FEAT_SPEED_GAIN * Math.max(0, Math.abs(lag) - FEAT_LAG_FREE)
+export type FeatClock = {
+  /** 進めたあとの P(0..FEAT_CHAPTERS)。 */
+  readonly P: number
+  /** 繰り返しの境目(P が 6 に達した/またいだ)。true の時は P を 6 で止めてある = 06 の完成形のまま、ボードを薄くして P=0 に戻し、また戻せる。 */
+  readonly wrapped: boolean
 }
 
 /**
- * 表示位置 cur を目標 target へ 1 フレームぶん進めて返す(dtMs は gsap.ticker のミリ秒)。
- * 遅れの 1 − exp(−dt/τ) だけ詰めるが、速さは featSpeedCap を超えない。目標は追い越さず、常に途中の状態を通る。
+ * 時計を dtMs(ms、gsap.ticker のミリ秒)だけ進める。1 章 = chapterMs で P が 1 進む。
+ * dtMs は 0〜FEAT_DT_MAX_MS に丸める = 長い空白(タブ復帰など)の直後でも章を飛ばさず、逆戻りもしない。
+ * DOM には触らない純関数(表示は featState(P, geo))。
  */
-export function featFollow(cur: number, target: number, dtMs: number): number {
+export function featClock(P: number, dtMs: number, chapterMs: number): FeatClock {
   const dt = Math.max(0, Math.min(dtMs, FEAT_DT_MAX_MS))
-  const d = target - cur
-  const want = d * (1 - Math.exp(-dt / FEAT_FOLLOW_TAU_MS))
-  const cap = (featSpeedCap(d) * dt) / 1000
-  return cur + Math.max(-cap, Math.min(cap, want))
+  const next = P + dt / chapterMs
+  return next >= FEAT_CHAPTERS ? { P: FEAT_CHAPTERS, wrapped: true } : { P: next, wrapped: false }
 }
