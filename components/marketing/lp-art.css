@@ -36,7 +36,12 @@
   --cardShadow: 0 0 0 1px rgba(15,15,15,.07),0 1px 2px rgba(15,15,15,.05),0 12px 24px -14px rgba(15,15,15,.22);
 }
 
-/* ── page chrome (mock body/.wrap/.bggrid, lines 19–26) ── */
+/* ── page chrome (mock body/.wrap, lines 19–20) — body background/color/font
+   and the centred .wrap container. Mock line 21 (`main,.site,.foot{...}`) is
+   not ported: this app's markup has no bare <main>/.site/.foot inside
+   .lpRoot.lpHome, so the rule would match nothing here. The mock's .bggrid
+   (a separate block, lines 23–26) is ported to its own component/module —
+   BackgroundGrid.tsx / BackgroundGrid.module.css — not this file. ── */
 .lpRoot.lpHome {
   margin: 0;
   background: var(--paper);
@@ -48,12 +53,6 @@
 .lpRoot.lpHome .wrap {
   width: min(var(--maxw), calc(100% - 2 * var(--gut)));
   margin-inline: auto;
-}
-.lpRoot.lpHome main,
-.lpRoot.lpHome .site,
-.lpRoot.lpHome .foot {
-  position: relative;
-  z-index: 1;
 }
 
 /* ── 共通の文字(mock lines 29–33, 67, 197) ── */
@@ -86,7 +85,13 @@
 }
 .lpRoot.lpHome .ml > span {
   display: block;
-  white-space: nowrap;
+  /* R33: a long translation must wrap instead of clipping — nowrap cut 11/15
+     locales' headlines against the band's fixed width. Authored `\n` still
+     splits the bands (one <span class="ml"> per line); the yPercent reveal
+     still works because the band's height grows with its own span. */
+  white-space: normal;
+  text-wrap: balance;
+  word-break: auto-phrase;
 }
 .lpRoot.lpHome .body {
   margin: 0;
