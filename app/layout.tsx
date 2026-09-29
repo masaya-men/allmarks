@@ -22,7 +22,11 @@ const caveat = Caveat({
 })
 
 const geist = Geist({
-  subsets: ['latin'],
+  // latin-ext covers vi/tr/… accented Latin; cyrillic covers ru — both are
+  // in this font's subsets type (checked against the installed next/font/
+  // google types: Array<'cyrillic' | 'latin' | 'latin-ext'>), so ru renders
+  // in Geist too and needs no separate Google Fonts link (LandingFonts.tsx).
+  subsets: ['latin', 'latin-ext', 'cyrillic'],
   variable: '--font-geist',
   display: 'swap',
 })

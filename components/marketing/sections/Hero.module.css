@@ -139,8 +139,10 @@
   padding: 0 18px;
   z-index: 6;
 }
+/* R27: "AllMarks" (panel wordmark) and "Motion" (board button) are English
+   design constants, never translated — hardcoded to Geist. */
 .wmS {
-  font: 700 13px var(--sans);
+  font: 700 13px var(--font-geist), system-ui, sans-serif;
   letter-spacing: -0.04em;
 }
 .motion {
@@ -148,7 +150,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font: 600 10.5px var(--sans);
+  font: 600 10.5px var(--font-geist), system-ui, sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink);
@@ -270,11 +272,14 @@
   align-items: center;
   gap: 16px;
 }
+/* R27: wraps only the "Scroll" rolling word (an English design constant,
+   never translated) — hardcoded to Geist Mono instead of piped through
+   --mono, so it stays Geist regardless of locale. */
 .scue {
   display: inline-flex;
   align-items: center;
   gap: 14px;
-  font: 500 11px var(--mono);
+  font: 500 11px var(--font-geist-mono), ui-monospace, Consolas, monospace;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink);

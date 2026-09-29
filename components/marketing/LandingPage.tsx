@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import type { SupportedLocale } from '@/lib/i18n/config'
 import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
 import { BackgroundGrid } from './BackgroundGrid'
+import { LandingFonts } from './LandingFonts'
 import { LocaleSuggestBanner } from './LocaleSuggestBanner'
 import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
@@ -52,6 +53,7 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
 
   return (
     <div className={`${styles.wrapper} lpRoot lpHome`} data-locale={locale}>
+      <LandingFonts locale={locale} />
       <BackgroundGrid />
       <LocaleSuggestBanner current={locale} />
       <SiteHeader locale={locale} />

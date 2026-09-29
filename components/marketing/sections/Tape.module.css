@@ -19,10 +19,12 @@
   will-change: transform;
 }
 
+/* R27: the tape words (Save/Arrange/Play/Tag/Share) are English design
+   constants, never translated — hardcoded to Geist. */
 .word {
   display: inline-flex;
   align-items: center;
-  font: 800 clamp(38px, 5.6vw, 92px)/1 var(--sans);
+  font: 800 clamp(38px, 5.6vw, 92px)/1 var(--font-geist), system-ui, sans-serif;
   letter-spacing: -0.045em;
   white-space: nowrap;
 }

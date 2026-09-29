@@ -25,9 +25,32 @@
   color-scheme: light;
 }
 
-/* LP v10 (lib/marketing/lp/*, components/marketing/lp-art.css) placeholder
-   for --sans until Task 9 defines the real token here. */
-.lpRoot{--sans: var(--font-geist), system-ui, sans-serif}
+/* LP v10 (lib/marketing/lp/*, components/marketing/lp-art.css) per-language
+   body typeface. --sans is defined ONLY here — Geist by default (latin,
+   latin-ext and cyrillic subsets, app/layout.tsx, so `ru` needs no rule of
+   its own), overridden per [data-locale] for the six scripts Geist doesn't
+   cover. Each href lives in LandingFonts.tsx, rendered by LandingPage.tsx. */
+.lpRoot {
+  --sans: var(--font-geist), system-ui, sans-serif;
+}
+.lpRoot[data-locale='ja'] {
+  --sans: 'Noto Sans JP', sans-serif;
+}
+.lpRoot[data-locale='zh'] {
+  --sans: 'Noto Sans SC', sans-serif;
+}
+.lpRoot[data-locale='ko'] {
+  --sans: 'Noto Sans KR', sans-serif;
+}
+.lpRoot[data-locale='th'] {
+  --sans: 'Noto Sans Thai', 'Noto Sans', sans-serif;
+}
+.lpRoot[data-locale='ar'] {
+  --sans: 'Noto Sans Arabic', 'Noto Sans', sans-serif;
+}
+.lpRoot[data-locale='vi'] {
+  --sans: 'Noto Sans', sans-serif;
+}
 
 /* ── N-05 nav-dock: 語が旅の間、本文 kicker は場所だけ残して隠す ──
    html[data-nav-dock] は NavDockTraveler が mount 後にのみ書く(SSR では無属性)。 */

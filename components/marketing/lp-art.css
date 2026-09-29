@@ -16,9 +16,8 @@
    ══════════════════════════════════════════════════════════════════════ */
 
 /* ── design tokens (mock :root, lines 8–16) ──
-   --sans is intentionally NOT defined here: Task 9 defines it in
-   landing-tokens.css once the real Geist font-family token is wired up.
-   Until then landing-tokens.css carries a one-line placeholder. */
+   --sans is intentionally NOT defined here: it is defined once, per locale,
+   in landing-tokens.css (Task 9). */
 .lpRoot.lpHome {
   --paper: #fbfbfa;
   --panel: #ffffff;
@@ -58,12 +57,16 @@
 }
 
 /* ── 共通の文字(mock lines 29–33, 67, 197) ── */
+/* R27: every .label text is an English design constant (Visual Bookmark
+   Manager / Problem / Features / Start) — never translated — so its font is
+   hardcoded to Geist Mono instead of piped through --mono, and stays Geist
+   regardless of locale even if --mono ever grows a per-locale override. */
 .lpRoot.lpHome .label {
   display: inline-flex;
   align-items: center;
   gap: 12px;
   margin: 0;
-  font: 500 11px var(--mono);
+  font: 500 11px var(--font-geist-mono), ui-monospace, Consolas, monospace;
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--soft);
@@ -243,8 +246,10 @@
   color: #fff;
   font: 700 clamp(7px,5.4cqw,10px)/1 'Geist', sans-serif;
 }
+/* R27: the tweet card's author name is always the literal "AllMarks"
+   (lib/marketing/lp/art.ts), never translated — hardcoded to Geist. */
 .lpRoot.lpHome .tw-name {
-  font: 600 clamp(9px,6cqw,11px) var(--sans);
+  font: 600 clamp(9px,6cqw,11px) var(--font-geist), system-ui, sans-serif;
   color: var(--ink);
 }
 .lpRoot.lpHome .tw-body {

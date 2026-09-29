@@ -54,6 +54,14 @@
   color: #fff;
   border-color: var(--ink);
 }
+/* R27: this class is shared with the translated chipList chip (data-s="0"),
+   which must keep --mono/--sans as-is — only the "AllMarks" chip
+   (data-s="1", CHIP_ALLMARKS in Problem.tsx, never translated) is pinned to
+   Geist Mono here, via the extra attribute selector so it doesn't touch the
+   base .chip rule's font for the translated sibling. */
+.chip[data-s='1'] {
+  font-family: var(--font-geist-mono), ui-monospace, Consolas, monospace;
+}
 
 /* ── stage: list → line → board (mock lines 201–211) ── */
 .stage {
