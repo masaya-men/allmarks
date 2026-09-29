@@ -3,10 +3,12 @@ import type { SupportedLocale } from '@/lib/i18n/config'
 /**
  * LandingFonts — the one Google Fonts stylesheet a locale needs, or none.
  *
- * Geist (self-hosted via next/font/google, app/layout.tsx) is loaded with
- * the latin, latin-ext and cyrillic subsets, so every Latin-script locale
- * and `ru` render fully in Geist and need no extra link here. The six
- * locales below use a script Geist doesn't cover; each maps to exactly one
+ * Geist (self-hosted via next/font/google, app/layout.tsx) ships its full
+ * unicode-range — including cyrillic and latin-ext — regardless of the
+ * `subsets` option there (that option only controls which subset gets
+ * preloaded), so every Latin-script locale and `ru` render fully in Geist
+ * and need no extra link here. The six locales below use a script Geist has
+ * no glyphs for at all; each maps to exactly one
  * Google Fonts CSS2 stylesheet, matched to the `--sans` override for that
  * locale in landing-tokens.css. `th`/`ar` also pull in plain "Noto Sans" as
  * their own fallback for any Latin text mixed into the translation.

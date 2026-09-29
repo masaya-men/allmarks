@@ -26,10 +26,12 @@
 }
 
 /* LP v10 (lib/marketing/lp/*, components/marketing/lp-art.css) per-language
-   body typeface. --sans is defined ONLY here — Geist by default (latin,
-   latin-ext and cyrillic subsets, app/layout.tsx, so `ru` needs no rule of
-   its own), overridden per [data-locale] for the six scripts Geist doesn't
-   cover. Each href lives in LandingFonts.tsx, rendered by LandingPage.tsx. */
+   body typeface. --sans is defined ONLY here — Geist by default (its
+   self-hosted font file ships full unicode-range coverage including
+   cyrillic regardless of app/layout.tsx's `subsets` preload option, so `ru`
+   needs no rule of its own), overridden per [data-locale] for the six
+   scripts Geist doesn't cover. Each href lives in LandingFonts.tsx, rendered
+   by LandingPage.tsx. */
 .lpRoot {
   --sans: var(--font-geist), system-ui, sans-serif;
 }
