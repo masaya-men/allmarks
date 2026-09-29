@@ -4,7 +4,13 @@
   position: relative;
   width: 100%;
   min-height: 100vh;
-  overflow-x: hidden;
+  /* R29: "clip", not "hidden". A single non-visible overflow-x with no
+     overflow-y set makes overflow-y compute to "auto" (CSS Overflow spec),
+     turning .wrapper into a scroll container — and every position:sticky
+     descendant (Problem/Features/FinalCta's pinned panels) then resolves
+     against that instead of the real viewport and never sticks. "clip"
+     still clips horizontal overflow but never creates a scroll container. */
+  overflow-x: clip;
   /* Background and color are owned by the lpRoot class in landing-tokens.css.
      Do NOT set background/color here — that would override the LP off-white token
      with the dark board theme's --color-bg-primary. */
