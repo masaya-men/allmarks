@@ -12,6 +12,43 @@ async function gotoLp(page: Page, lc: string): Promise<string[]> {
   return errors
 }
 
+/** I1/C2: every `.ml > span` headline band (hero H1 + finale H2) must wrap
+ *  instead of overflowing its own band's width (R33's `text-wrap: balance` /
+ *  `word-break: auto-phrase` fallback replacing `white-space: nowrap`).
+ *  Returns a description of each violation; empty when every band fits. */
+async function headlineOverflows(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const bad: string[] = []
+    document.querySelectorAll<HTMLElement>('.ml > span').forEach((span, i) => {
+      const parent = span.parentElement
+      if (!parent) return
+      if (span.scrollWidth > parent.clientWidth + 1) {
+        bad.push(`#${i}: scrollWidth=${span.scrollWidth} clientWidth=${parent.clientWidth}`)
+      }
+    })
+    return bad
+  })
+}
+
+/** I1/C1: once the intro has settled (or been skipped), every hero headline
+ *  span must sit flush with its own band — no leftover GSAP-parsed pixel
+ *  offset from the CSS pre-state (R31) — and the header must be pinned at
+ *  the very top of the viewport. */
+async function headlineAligned(page: Page): Promise<{ maxOffset: number; headerTop: number }> {
+  return page.evaluate(() => {
+    const spans = Array.from(document.querySelectorAll<HTMLElement>('h1 .ml > span'))
+    const offsets = spans.map((span) => {
+      const parent = span.parentElement as HTMLElement
+      return Math.abs(span.getBoundingClientRect().top - parent.getBoundingClientRect().top)
+    })
+    const header = document.querySelector<HTMLElement>('.lpRoot.lpHome > header')
+    return {
+      maxOffset: offsets.length > 0 ? Math.max(...offsets) : NaN,
+      headerTop: header ? header.getBoundingClientRect().top : NaN,
+    }
+  })
+}
+
 for (const lc of LOCALES) {
   test(`LP ${lc}: no errors and no horizontal scroll at 390px`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
@@ -19,8 +56,42 @@ for (const lc of LOCALES) {
     expect(errors).toEqual([])
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)
+
+    // I1/C2: headline bands must never clip. Check at this size, then again
+    // at desktop breakpoints after a resize + re-layout settle.
+    expect(await headlineOverflows(page)).toEqual([])
+    for (const [w, h] of [[1489, 679], [1920, 1080]] as const) {
+      await page.setViewportSize({ width: w, height: h })
+      await page.waitForTimeout(600)
+      expect(await headlineOverflows(page)).toEqual([])
+    }
   })
 }
+
+for (const lc of ['en', 'de'] as const) {
+  test(`LP ${lc} at 1489×679: headline visible after the intro (normal motion)`, async ({ page }) => {
+    await page.setViewportSize({ width: 1489, height: 679 })
+    await gotoLp(page, lc)
+    await page.waitForTimeout(2600)
+    const { maxOffset, headerTop } = await headlineAligned(page)
+    expect(maxOffset).toBeLessThanOrEqual(1)
+    expect(Math.abs(headerTop)).toBeLessThanOrEqual(1)
+  })
+}
+
+test('LP en at 1489×679: headline visible after the intro (skip path)', async ({ page }) => {
+  await page.setViewportSize({ width: 1489, height: 679 })
+  await gotoLp(page, 'en')
+  // Dispatch a wheel event right after load to trigger the intro's skip
+  // handler (progress(1)), then scroll back to 0 so the hero is still the
+  // section in view for the assertions below.
+  await page.mouse.wheel(0, 1)
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.waitForTimeout(300)
+  const { maxOffset, headerTop } = await headlineAligned(page)
+  expect(maxOffset).toBeLessThanOrEqual(1)
+  expect(Math.abs(headerTop)).toBeLessThanOrEqual(1)
+})
 
 test('LP en at 1489×679: the film plays in step 03 and stops after MOTION', async ({ page }) => {
   await page.setViewportSize({ width: 1489, height: 679 })
