@@ -24,7 +24,11 @@
 
 /* ── hero (mock line 65) ── */
 .hero {
-  padding-block: clamp(36px, 7vh, 80px) clamp(40px, 7vh, 72px);
+  /* The production SiteHeader is position:fixed, i.e. outside the document flow
+     (the mock's header was sticky and took up its own space), so the top
+     padding includes the header's height (--lp-header-h, landing-tokens.css) to
+     keep the board on the right and the four crop marks from sliding under it. */
+  padding-block: calc(var(--lp-header-h) + clamp(20px, 4.5vh, 48px)) clamp(40px, 7vh, 72px);
 }
 
 /* Hero's own two-column grid — carries the mock's ".hero .wrap" declarations
@@ -418,6 +422,16 @@
   /* mock line 371, hero portion only (.pgrid/.sgrid belong to other sections) */
   .heroGrid {
     grid-template-columns: 1fr;
+  }
+}
+/* Two columns (981px and up) only: size the panel so that everything from just
+   under the header down to the SCROLL row fits on one screen. 150px = an
+   allowance for the SCROLL row (.hrule) below it: its top margin + its height +
+   the hero's bottom padding. One column (980px and below) keeps the
+   clamp(440px, 70vh, 620px) above. */
+@media (min-width: 981px) {
+  .panel {
+    height: clamp(380px, calc(100svh - var(--lp-header-h) - clamp(20px, 4.5vh, 48px) - 150px), 620px);
   }
 }
 @media (max-width: 560px) {

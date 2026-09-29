@@ -6,10 +6,9 @@ import styles from './Tape.module.css'
 
 /**
  * Tape — the scrolling word band, ported from docs/private/lp-v10-mock.html
- * (markup line 445, CSS 115–120). Reads faster/slower with scroll speed and
- * reverses when scrolling up (see lib/marketing/lp/marquee.ts's
- * createMarquee — this component only wires it to the DOM and to
- * resize/fonts-ready).
+ * (markup line 445, CSS 115–120). Always flows right to left and speeds up
+ * with scroll speed (see lib/marketing/lp/marquee.ts's createMarquee — this
+ * component only wires it to the DOM and to resize/fonts-ready).
  */
 
 /** The tape's words — English design vocabulary, same in every locale, never

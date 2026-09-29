@@ -18,11 +18,14 @@ if (typeof window !== 'undefined') {
  * .kbadge/.kb-ic mobile override at 387–388; motion 801–809 for the scrub
  * timeline + header hide, and 835–844 for the circle hover grow). A
  * 12-column hairline grid draws in, the label/rule/headline reveal, and a
- * circular "OPEN THE BOARD" badge pops in. Touching it grows the badge into
+ * circular "OPEN THE BOARD" badge pops in. Touching it — or moving the mouse
+ * into the "zone" under the headline (see layoutZone) — grows the badge into
  * a huge arc that sweeps the near-black ground white, inverting the
- * headline/links (mix-blend-mode: difference) as it passes beneath them. A
- * large outlined "AllMarks" marquee (createMarquee, shared with Tape.tsx)
- * runs along the bottom edge.
+ * headline/links (mix-blend-mode: difference) as it passes beneath them.
+ * While it is grown the whole white circle is itself the "open the board"
+ * button; it shrinks again once the mouse is outside both the zone and the
+ * white circle. A large outlined "AllMarks" marquee (createMarquee, shared
+ * with Tape.tsx) runs along the bottom edge.
  *
  * The section itself also owns the header's hide/show: while it is on
  * screen, <html data-lp-finale="1"> hides SiteHeader (see
@@ -48,6 +51,27 @@ const MARQUEE_REPEATS = 6
 /** Matches the shared `.wrap` 12-column grid (mock line 496 / lp-art.css). */
 const GRID_LINE_COUNT = 12
 
+/** The hot "zone" reaches this far (px) past the text link's right edge. */
+const ZONE_PAD_RIGHT = 64
+
+/**
+ * Position of `el` inside `root` (top-left of the border box, px), summed from
+ * offsetLeft/offsetTop up the offsetParent chain. Unlike getBoundingClientRect
+ * this ignores CSS transforms (the scrub timeline moves the headline spans
+ * and the text link), so the result only changes when the layout does.
+ */
+function offsetWithin(el: HTMLElement, root: HTMLElement): { left: number; top: number } {
+  let left = 0
+  let top = 0
+  let node: HTMLElement | null = el
+  while (node && node !== root) {
+    left += node.offsetLeft
+    top += node.offsetTop
+    node = node.offsetParent as HTMLElement | null
+  }
+  return { left, top }
+}
+
 export function FinalCta(): React.ReactElement {
   const { t } = useI18n()
 
@@ -60,6 +84,7 @@ export function FinalCta(): React.ReactElement {
   const ctaWrapperRef = useRef<HTMLDivElement>(null)
   const circleRef = useRef<HTMLAnchorElement>(null)
   const textLinkRef = useRef<HTMLAnchorElement>(null)
+  const zoneRef = useRef<HTMLAnchorElement>(null)
   const marqueeRootRef = useRef<HTMLDivElement>(null)
   const marqueeInnerRef = useRef<HTMLDivElement>(null)
 
@@ -72,12 +97,13 @@ export function FinalCta(): React.ReactElement {
     const ctaWrapper = ctaWrapperRef.current
     const circle = circleRef.current
     const textLink = textLinkRef.current
+    const zone = zoneRef.current
     const marqueeRoot = marqueeRootRef.current
     const marqueeInner = marqueeInnerRef.current
     const gridLines = gridLineRefs.current
 
     if (
-      !section || !sticky || !label || !line || !headline || !ctaWrapper || !circle || !textLink ||
+      !section || !sticky || !label || !line || !headline || !ctaWrapper || !circle || !textLink || !zone ||
       !marqueeRoot || !marqueeInner ||
       gridLines.length !== GRID_LINE_COUNT || gridLines.some((el) => el === null)
     ) {
@@ -137,6 +163,10 @@ export function FinalCta(): React.ReactElement {
     }, sectionRef)
 
     // ── circle hover/focus: grows into a huge arc (mock 835–844) ──
+    let isHot = false
+    // The current --big: the white circle's radius is the badge's radius ×
+    // bigScale. finGeo writes it; the pointer hit-test below reads it.
+    let bigScale = 0
     function finGeo(): void {
       // Reading rects here is an interaction (hover/focus), not a scroll
       // tick — the ruling explicitly allows it. Non-null assertions below:
@@ -150,21 +180,68 @@ export function FinalCta(): React.ReactElement {
       // corner — the radius that lets the circle's edge pass just short of
       // that corner, so only its top-right arc ever crosses the screen.
       const tr = Math.hypot(st.width - cx, cy)
-      const big = Math.max(5, (tr * 0.74) / (circle!.offsetWidth / 2))
-      section!.style.setProperty('--big', big.toFixed(2))
+      bigScale = Math.max(5, (tr * 0.74) / (circle!.offsetWidth / 2))
+      section!.style.setProperty('--big', bigScale.toFixed(2))
     }
     function addHot(): void {
+      if (isHot) return
+      isHot = true
       finGeo()
       section!.classList.add(styles.hot!)
+      // Mirrors .hot as a plain attribute (state, not animation) for tests.
+      section!.setAttribute('data-hot', '1')
     }
     function removeHot(): void {
+      if (!isHot) return
+      isHot = false
       section!.classList.remove(styles.hot!)
+      section!.removeAttribute('data-hot')
     }
+
+    // ── the "zone": a transparent /board link that also triggers .hot ──
+    // A rectangle in stage-local coordinates (origin = .finSt's top-left, so
+    // it doesn't depend on scroll): from the headline's bottom edge to the
+    // stage's bottom edge, and from the stage's left edge to the text link's
+    // right edge + ZONE_PAD_RIGHT. Measured only at layout time (mount,
+    // resize, fonts ready), never while scrolling.
+    let zoneTop = 0
+    let zoneW = 0
+    function layoutZone(): void {
+      const h = offsetWithin(headline!, sticky!)
+      const l = offsetWithin(textLink!, sticky!)
+      zoneTop = h.top + headline!.offsetHeight
+      zoneW = Math.min(sticky!.clientWidth, l.left + textLink!.offsetWidth + ZONE_PAD_RIGHT)
+      zone!.style.top = zoneTop + 'px'
+      zone!.style.width = zoneW + 'px'
+      zone!.style.height = Math.max(0, sticky!.clientHeight - zoneTop) + 'px'
+    }
+    layoutZone()
+
     const onPointerEnter = (e: PointerEvent): void => {
       if (e.pointerType !== 'mouse') return
       addHot()
     }
-    const onPointerLeave = (): void => {
+    // Hot starts when the mouse is in the zone and ends only once it is
+    // outside BOTH the zone and the grown white circle (centre = badge
+    // centre, radius = badge radius × the current --big). Rects are read here
+    // on pointer moves (an interaction), never on scroll ticks.
+    const onStageMove = (e: PointerEvent): void => {
+      if (e.pointerType !== 'mouse') return
+      const st = sticky!.getBoundingClientRect()
+      const px = e.clientX - st.left
+      const py = e.clientY - st.top
+      if (px >= 0 && px <= zoneW && py >= zoneTop && py <= st.height) {
+        addHot()
+        return
+      }
+      if (!isHot) return
+      const b = circle!.getBoundingClientRect()
+      const r = (circle!.offsetWidth / 2) * bigScale
+      if (Math.hypot(e.clientX - (b.left + b.width / 2), e.clientY - (b.top + b.height / 2)) > r) {
+        removeHot()
+      }
+    }
+    const onStageLeave = (): void => {
       removeHot()
     }
     const onFocusIn = (): void => {
@@ -174,9 +251,10 @@ export function FinalCta(): React.ReactElement {
       removeHot()
     }
     ctaWrapper.addEventListener('pointerenter', onPointerEnter)
-    ctaWrapper.addEventListener('pointerleave', onPointerLeave)
     ctaWrapper.addEventListener('focusin', onFocusIn)
     ctaWrapper.addEventListener('focusout', onFocusOut)
+    sticky.addEventListener('pointermove', onStageMove)
+    sticky.addEventListener('pointerleave', onStageLeave)
 
     // ── outlined "AllMarks" marquee (lib/marketing/lp/marquee.ts, shared with Tape.tsx) ──
     let disposed = false
@@ -185,6 +263,7 @@ export function FinalCta(): React.ReactElement {
     function relayout(): void {
       if (disposed) return
       marquee.measure()
+      layoutZone()
     }
     let resizeTimer: number | undefined
     const onResize = (): void => {
@@ -206,9 +285,11 @@ export function FinalCta(): React.ReactElement {
       // branch of the toggle it was last set by.
       document.documentElement.removeAttribute('data-lp-finale')
       ctaWrapper.removeEventListener('pointerenter', onPointerEnter)
-      ctaWrapper.removeEventListener('pointerleave', onPointerLeave)
       ctaWrapper.removeEventListener('focusin', onFocusIn)
       ctaWrapper.removeEventListener('focusout', onFocusOut)
+      sticky.removeEventListener('pointermove', onStageMove)
+      sticky.removeEventListener('pointerleave', onStageLeave)
+      removeHot()
       window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
       marquee.destroy()
@@ -273,6 +354,11 @@ export function FinalCta(): React.ReactElement {
             </Link>
           </div>
         </div>
+
+        {/* Hot zone (see layoutZone): a transparent /board link, placed after
+            .finIn and outside [data-finale-cta] on purpose. Its size is set by
+            the effect, so it is 0×0 until then. */}
+        <Link ref={zoneRef} href="/board" tabIndex={-1} aria-hidden="true" className={styles.finZone} />
 
         <div ref={marqueeRootRef} className={styles.finTk} aria-hidden="true">
           <div ref={marqueeInnerRef} className={styles.finTkIn}>

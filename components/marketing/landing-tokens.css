@@ -6,14 +6,13 @@
   --lp-serif: var(--font-serif-display), Georgia, 'Times New Roman', serif;
   --lp-sans: var(--font-geist), system-ui, sans-serif;
   --lp-maxw: 1489px;
+  /* SiteHeader.module.css の .header の height と一致させること(固定ヘッダーの高さ)。 */
+  --lp-header-h: 64px;
   background: var(--lp-bg);
   color: var(--lp-ink);
   /* ── Z-index scale ── */
   /* SiteHeader sits at z-index: 100 (literal in SiteHeader.module.css).
-     The language menu dropdown must float above the header chrome.
-     The footer finale curtain must cover the header so the full-black effect
-     is truly full-screen — it sits above header(100) and language-menu(110). */
-  --lp-z-footer-finale: 120;   /* full-screen finale curtain — ABOVE header(100) and language-menu(110) */
+     The language menu dropdown must float above the header chrome. */
   --lp-z-locale-banner: 105;   /* above header(100), below language menu(110) */
   --lp-z-language-menu: 110;
 
@@ -23,6 +22,11 @@
      light world. Paired with data-theme="light" set on <html> while the LP
      is mounted (see LandingPage.tsx). */
   color-scheme: light;
+}
+@media (max-width: 640px) {
+  .lpRoot {
+    --lp-header-h: 56px;
+  }
 }
 
 /* LP v10 (lib/marketing/lp/*, components/marketing/lp-art.css) per-language

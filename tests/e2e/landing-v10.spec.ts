@@ -185,3 +185,150 @@ test('LP links: the finale badge and button open the board', async ({ page }) =>
   expect(hrefs.length).toBeGreaterThan(0)
   for (const h of hrefs) expect(h).toBe('/board')
 })
+
+/** s224: the hero must clear the fixed SiteHeader. Measured once the intro has
+ *  settled: the top-left crop mark and (desktop) the SCROLL row, in viewport px. */
+async function heroClearance(page: Page): Promise<{
+  vh: number
+  headerBottom: number
+  cropTop: number
+  labelTop: number
+  hruleBottom: number
+}> {
+  return page.evaluate(() => {
+    const top = (sel: string): number => document.querySelector<HTMLElement>(sel)?.getBoundingClientRect().top ?? NaN
+    const bottom = (sel: string): number => document.querySelector<HTMLElement>(sel)?.getBoundingClientRect().bottom ?? NaN
+    return {
+      vh: window.innerHeight,
+      headerBottom: bottom('.lpRoot.lpHome > header'),
+      cropTop: top('#hero [class*="crop"] > i:first-child'),
+      labelTop: top('#hero .label'),
+      hruleBottom: bottom('#hero [class*="hrule"]'),
+    }
+  })
+}
+
+for (const [w, h] of [[1489, 679], [1920, 1080]] as const) {
+  test(`LP hero at ${w}×${h}: clears the fixed header, and the SCROLL row fits on one screen`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h })
+    await gotoLp(page, 'en')
+    await page.waitForTimeout(2600)
+    const m = await heroClearance(page)
+    expect(m.cropTop).toBeGreaterThanOrEqual(m.headerBottom + 16)
+    expect(m.hruleBottom).toBeLessThanOrEqual(m.vh)
+  })
+}
+
+test('LP hero at 390×844: the label clears the fixed header', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await gotoLp(page, 'en')
+  await page.waitForTimeout(2600)
+  const m = await heroClearance(page)
+  expect(m.labelTop).toBeGreaterThanOrEqual(m.headerBottom + 16)
+})
+
+/** s224: scroll to where the finale stage is pinned, and wait until its scrub-in
+ *  has finished (the badge is fully scaled: 168px wide, unrotated). */
+async function scrollToFinale(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const section = document.querySelector('[data-finale-cta]')?.closest('section')
+    if (!section) throw new Error('no finale section')
+    window.scrollTo(0, section.getBoundingClientRect().top + window.scrollY + window.innerHeight)
+  })
+  await expect
+    .poll(() => page.evaluate(() => Math.round(document.querySelector('[data-finale-cta] a')?.getBoundingClientRect().width ?? 0)))
+    .toBe(168)
+}
+
+/** Rects (viewport px) that the finale zone test needs, read after scrollToFinale. */
+async function finaleGeometry(page: Page): Promise<{
+  h2: { left: number; top: number; bottom: number }
+  h2Bottom: number
+  link: { cx: number; bottom: number; right: number }
+  badge: { cx: number; cy: number; w: number }
+  viewportW: number
+}> {
+  return page.evaluate(() => {
+    const cta = document.querySelector('[data-finale-cta]') as HTMLElement
+    const section = cta.closest('section') as HTMLElement
+    const h2 = section.querySelector('h2') as HTMLElement
+    const badge = cta.querySelector('a:first-child') as HTMLElement
+    const link = cta.querySelector('a:last-child') as HTMLElement
+    const hb = h2.getBoundingClientRect()
+    const bb = badge.getBoundingClientRect()
+    const lb = link.getBoundingClientRect()
+    return {
+      h2: { left: hb.left, top: hb.top, bottom: hb.bottom },
+      h2Bottom: hb.bottom,
+      link: { cx: lb.left + lb.width / 2, bottom: lb.bottom, right: lb.right },
+      badge: { cx: bb.left + bb.width / 2, cy: bb.top + bb.height / 2, w: bb.width },
+      viewportW: window.innerWidth,
+    }
+  })
+}
+
+test('LP finale at 1489×679: the hot zone opens the white circle, and the whole white circle opens the board', async ({ page }) => {
+  test.setTimeout(150_000)
+  await page.setViewportSize({ width: 1489, height: 679 })
+  await gotoLp(page, 'en')
+  const section = page.locator('section', { has: page.locator('[data-finale-cta]') })
+  await scrollToFinale(page)
+  const g = await finaleGeometry(page)
+  // What a click at (x, y) would land on: the enclosing link's href and the cursor.
+  const hitAt = (x: number, y: number): Promise<{ href: string | null; cursor: string }> =>
+    page.evaluate(({ x: hx, y: hy }) => {
+      const el = document.elementFromPoint(hx, hy)
+      return { href: el?.closest('a')?.getAttribute('href') ?? null, cursor: el ? getComputedStyle(el).cursor : '' }
+    }, { x, y })
+
+  // Even before it turns white, the zone itself is a /board link.
+  expect((await hitAt(g.link.cx, g.link.bottom + 80)).href).toBe('/board')
+
+  // Just above the headline's bottom edge, and far past the text link's right
+  // edge + 64px: both outside the zone, so still not hot.
+  await page.mouse.move(g.link.cx, g.h2Bottom - 12)
+  await page.mouse.move(g.link.right + 90, g.link.bottom + 80)
+  await page.waitForTimeout(150)
+  await expect(section).not.toHaveAttribute('data-hot', '1')
+
+  // (1) The empty area 80px under the text link is inside the zone → hot.
+  await page.mouse.move(g.link.cx, g.link.bottom + 80)
+  await expect(section).toHaveAttribute('data-hot', '1')
+
+  // (2) A point inside the grown white circle but outside the zone (up and to
+  // the right of the badge centre, at 0.4 × the circle's radius) stays hot.
+  const big = Number(await section.evaluate((el) => (el as HTMLElement).style.getPropertyValue('--big')))
+  expect(big).toBeGreaterThan(5)
+  const d = 0.4 * (g.badge.w / 2) * big
+  const px = g.badge.cx + d / Math.SQRT2
+  const py = g.badge.cy - d / Math.SQRT2
+  const inZone = px <= g.link.right + 64 && py >= g.h2Bottom
+  expect(inZone).toBe(false)
+  await page.mouse.move(px, py)
+  await page.waitForTimeout(300)
+  await expect(section).toHaveAttribute('data-hot', '1')
+
+  // The white area is a button: once it has grown over that point, the point
+  // hits the badge's /board link and shows the pointer cursor. The headline
+  // sits over the white circle too, and lets clicks fall through to it.
+  await expect.poll(async () => (await hitAt(px, py)).href).toBe('/board')
+  expect((await hitAt(px, py)).cursor).toBe('pointer')
+  const headlineY = (g.h2.top + g.h2.bottom) / 2
+  expect((await hitAt(g.h2.left + 200, headlineY)).href).toBe('/board')
+
+  // (3) Clicking there opens the board.
+  await Promise.all([page.waitForURL(/\/board/, { timeout: 90_000 }), page.mouse.click(px, py)])
+
+  // (4) Back on the LP: the zone (which reaches 64px past the text link's right
+  // edge) makes it hot again, and leaving both the zone and the white circle
+  // (the screen's top-right corner) turns it off.
+  await page.goBack()
+  await page.waitForURL(url('en'))
+  await expect(page.locator('[data-finale-cta]')).toBeAttached()
+  await scrollToFinale(page)
+  const g2 = await finaleGeometry(page)
+  await page.mouse.move(g2.link.right + 40, g2.link.bottom + 80)
+  await expect(section).toHaveAttribute('data-hot', '1')
+  await page.mouse.move(g2.viewportW - 6, 6)
+  await expect(section).not.toHaveAttribute('data-hot', '1')
+})

@@ -12,14 +12,9 @@ import styles from './SiteFooter.module.css'
  * Background: #0a0a0a (same as the FinalCta overlay end-state).
  * Text: off-white #f0efe9 / muted rgba variant.
  *
- * Footer Finale — the closing CTA:
- * A full-viewport #0a0a0a panel with a large "Open Board →" button, placed AFTER
- * the nav as the very last thing on the page. On PC it is `position: relative`
- * with a z-index above the fixed header, so once you reach the bottom the whole
- * screen — header included — is black and the page closes on the CTA. Pure CSS
- * (no GSAP) keeps it robust. On non-PC / reduced-motion it renders as a compact
- * static CTA block (no full-screen takeover). The Open Board button is always
- * visible and clickable — visibility never depends on animation.
+ * The footer is the last thing on the page: the page ends at the © row of the
+ * bottom strip. There is no closing full-screen "Open Board" panel after it
+ * (removed) — the Product column still links to /board.
  *
  * Nav labels sourced from useI18n() landing.footer.* keys — correctly shows
  * English when the LP runs without an I18nProvider (FALLBACK is English).
@@ -128,21 +123,6 @@ export function SiteFooter({ locale = 'en' }: { locale?: SupportedLocale }): Rea
         <p className={styles.bottomRight}>
           Made with care. Designed for everyone.
         </p>
-      </div>
-
-      {/*
-        Footer Finale — the closing CTA. A full-viewport #0a0a0a screen with the
-        large "Open Board →" button as the very last thing on the page (after the
-        nav). z-index above the fixed header so the closing screen is fully black.
-        Plain link — always visible and clickable, no animation dependency.
-      */}
-      <div className={styles.finale} data-footer-finale>
-        <div className={styles.finaleInner}>
-          <Link href="/board" className={styles.finaleButton}>
-            Open Board
-            <span className={styles.finaleArrow} aria-hidden="true">→</span>
-          </Link>
-        </div>
       </div>
     </footer>
   )

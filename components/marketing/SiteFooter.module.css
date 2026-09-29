@@ -2,110 +2,17 @@
    Background: #0a0a0a — exactly the FinalCta overlay end-state, so the
    FinalCta black flows seamlessly into the footer with zero visible seam.
    Text: #f0efe9 (near-white) and muted variants.
-   Uses --lp-sans/--lp-serif tokens. No rem, no Tailwind, no tilt. */
+   Uses the --lp-sans token (the brand name uses --font-geist, like the header logo).
+   No rem, no Tailwind, no tilt. */
 
 .footer {
   background: #0a0a0a;
   color: #f0efe9;
   font-family: var(--lp-sans, system-ui, sans-serif);
-  /* No top padding — the finale curtain provides the visual buffer.
-     position:relative creates the stacking context for the absolute finale. */
+  /* No top padding — .inner supplies the top spacing (padding-top). */
   position: relative;
   padding: 0 40px 48px;
   box-sizing: border-box;
-}
-
-/* ── Footer Finale — the closing CTA screen ──────────────────────────────────
-   A full-viewport #0a0a0a panel placed AFTER the nav as the very last thing on
-   the page. The large "Open Board →" button is the LP's closing call to action.
-   z-index sits above the fixed header so that when you reach the bottom the
-   whole screen — header included — is black. Plain CSS, no GSAP: it can't break.
-
-   Visibility never depends on animation — the Open Board button is a plain link,
-   visible and clickable at all times.
-
-   z-index: var(--lp-z-footer-finale) = 120 > header(100) > language-menu(110).  */
-.finale {
-  position: relative;
-  min-height: 100vh;
-  background: #0a0a0a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* z-index token — ABOVE SiteHeader(100) so the closing screen is fully black */
-  z-index: var(--lp-z-footer-finale, 120);
-  /* .footer の横 padding(40px) を突き抜けて全幅に。これが無いと左右の溝に
-     fixed ヘッダーの半透明バー端が白い矩形として露出する（ヘッダーごと黒にする意図が崩れる） */
-  margin: 0 -40px;
-}
-
-.finaleInner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
-
-/* Large Open Board button — the climax CTA */
-.finaleButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 20px;
-  /* Tall, generous pill — prominent hero CTA */
-  height: clamp(64px, 7vw, 96px);
-  padding: 0 clamp(40px, 5vw, 72px);
-  border-radius: 999px;
-  /* White button on black — maximum contrast */
-  background: #f0efe9;
-  color: #14130f;
-  font-family: var(--lp-sans, system-ui, sans-serif);
-  font-size: clamp(20px, 2.5vw, 32px);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  text-decoration: none;
-  transition:
-    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.3s ease,
-    color 0.3s ease;
-  /* Minimum 32×32 click target (always satisfied by the height above) */
-  min-width: 200px;
-  justify-content: center;
-}
-
-.finaleButton:hover {
-  transform: translateY(-3px);
-  background: var(--lp-accent, #28f100);
-  color: #0a0a0a;
-}
-
-.finaleArrow {
-  display: inline-block;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.finaleButton:hover .finaleArrow {
-  transform: translateX(6px);
-}
-
-/* Reduced-motion: no sticky full-screen takeover — show a calm compact static
-   CTA block in normal flow. */
-@media (prefers-reduced-motion: reduce) {
-  .finale {
-    position: static;
-    min-height: auto;
-    padding: 60px 40px;
-    margin: 0; /* 全画面化しない静的ブロックでは全幅化も不要（従来どおり） */
-  }
-}
-
-/* Non-PC (below 1024px): static compact CTA block, no full-screen sticky. */
-@media (max-width: 1023px) {
-  .finale {
-    position: static;
-    min-height: auto;
-    padding: 60px 24px;
-    margin: 0; /* 全画面化しない静的ブロックでは全幅化も不要（従来どおり） */
-  }
 }
 
 /* ── Main row: brand + 3 nav columns ── */
@@ -128,11 +35,12 @@
 }
 
 .brand {
-  font-family: var(--lp-serif, Georgia, serif);
-  font-size: 22px;
-  font-weight: 400;
-  font-style: italic;
-  letter-spacing: -0.02em;
+  /* Same typeface as the header logo (.logo in SiteHeader.module.css); no A mark here. */
+  font-family: var(--font-geist), system-ui, sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: -0.045em;
+  font-size: 20px;
   color: #f0efe9;
   text-decoration: none;
   transition: opacity 0.2s ease;

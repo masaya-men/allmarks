@@ -1,8 +1,8 @@
 import { gsap } from 'gsap'
 
 /**
- * 流れる文字の帯(見本 850–858 行の Marquee/mqFrame)。右から左へ流れ、
- * スクロールの速さで加速し、上へ戻すと逆向きに流れる。
+ * 流れる文字の帯(見本 850–858 行の Marquee/mqFrame)。常に右から左へ流れ、
+ * スクロールの速さ(上下どちら向きでも)で加速する。上へ戻しても逆向きには流れない。
  *
  * 見本はティッカー関数と速度状態(mqY/mqV)を全インスタンスで共有していたが、
  * ここでは呼び出し側ごとに完全に独立させる(インスタンスごとに own ticker /
@@ -11,7 +11,6 @@ import { gsap } from 'gsap'
 export function createMarquee(el: HTMLElement, inner: HTMLElement, base: number): { measure(): void; destroy(): void } {
   let x = 0
   let w = 0
-  let dir = -1
   let on = true
   let lastY = window.scrollY
   let v = 0
@@ -32,11 +31,9 @@ export function createMarquee(el: HTMLElement, inner: HTMLElement, base: number)
     lastY = y
     v += (d - v) * 0.14
     if (!on || !w) return
-    if (Math.abs(v) > 0.6) dir = v > 0 ? -1 : 1
     const step = base + Math.min(24, Math.abs(v) * 0.45)
-    x += dir * step
+    x -= step
     if (x <= -w) x += w
-    if (x > 0) x -= w
     inner.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0)'
   }
 

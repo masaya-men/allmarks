@@ -213,6 +213,16 @@
    state rule caused a bug in a previous task). ── */
 .fin.hot .kbBg {
   transform: scale(var(--big, 14));
+  /* While hot, the whole grown white circle is the "open the board" button:
+     .kbBg is a child of the badge's <Link>, so clicking it follows that link. */
+  pointer-events: auto;
+  cursor: pointer;
+}
+/* The label, rule and headline sit over the white circle: let clicks fall
+   through to it. The text link (.finLink, inside .finCta) is left alone — it
+   goes to the same place and keeps its own hover underline. */
+.fin.hot .finIn > .blend {
+  pointer-events: none;
 }
 .fin.hot .kbRing {
   transform: scale(var(--big, 8));
@@ -224,6 +234,28 @@
 }
 .fin.hot .kbadge::after {
   opacity: 0;
+}
+
+/* ── hot zone: a transparent /board link (see layoutZone in FinalCta.tsx, which
+   sets its top/width/height; until then it is 0×0). It comes after .finGrid
+   and .finIn in the DOM at z-index 0, so it sits above them and below the
+   badge (z-index 1) and the .blend texts (z-index 3). Purely a hit area. ── */
+.finZone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 0;
+  display: block;
+  outline: none;
+}
+/* Touch-first devices never get .hot from a pointer, and a big invisible link
+   would only catch stray taps while scrolling. */
+@media (hover: none) {
+  .finZone {
+    pointer-events: none;
+  }
 }
 
 .kbadge:focus-visible,

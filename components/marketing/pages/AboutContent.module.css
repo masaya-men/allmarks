@@ -161,9 +161,8 @@
 }
 
 /* ── Closing CTA ─────────────────────────────────────────────────────────────
-   Deliberately calm: the dark full-viewport footer finale ("Open Board →") is
-   the page's loud climax, so the in-page CTA is a quiet ghost link — green rule
-   + a small serif line + an underline-draw link. It invites without competing. */
+   Deliberately calm: a quiet ghost link — green rule + a small serif line + an
+   underline-draw link. It invites without shouting. */
 .cta {
   margin-top: clamp(72px, 12vw, 132px);
   text-align: center;

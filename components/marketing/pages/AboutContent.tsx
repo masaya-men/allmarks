@@ -15,8 +15,7 @@ const GITHUB_URL = 'https://github.com/masaya-men/allmarks'
  *  - hero: mono kicker(緑ドット付き) + Fraunces 大見出し + soft lead。緑の短い rule で錨。
  *  - 三つの価値: 装飾的な serif 連番(01/02/03)を伴う heading/body の二段組み。
  *    ハイラインで区切る編集的シーケンス(カードグリッドではない)。
- *  - CTA: footer の黒 finale と競合しないよう、重い黒 pill ではなく
- *    緑 rule + 静かな下線 ghost link に。
+ *  - CTA: 重い黒 pill ではなく、緑 rule + 静かな下線 ghost link に。
  *
  * 文章は全て pages.about.* キーから(15言語キー整合のため新規コピー追加なし)。
  * 数字・rule・記号は装飾(翻訳対象外)。GitHub URL は allmarks リポ。
