@@ -261,7 +261,13 @@ export function Hero(): React.ReactElement {
       if (introTl && introTl.isActive()) introTl.progress(1)
     }
 
-    if (reduce) {
+    // M1: if the hero isn't the section actually in view at mount (e.g. the
+    // browser restored mid-page scroll on a back-navigation), skip the intro
+    // exactly like reduced motion — otherwise it replays over content the
+    // user is no longer looking at. Reading layout here (at init) is allowed.
+    const heroOutOfView = window.scrollY > section.offsetHeight * 0.5
+
+    if (reduce || heroOutOfView) {
       // No intro: finished state immediately, no timeline, no listeners.
       root?.setAttribute('data-lp-intro', 'done')
       heroReadyRef.current = true
@@ -269,6 +275,16 @@ export function Hero(): React.ReactElement {
       const vw = window.innerWidth
       const vh = window.innerHeight
       const pr = panel.getBoundingClientRect() // init-time read — allowed
+
+      // R31: flip the CSS pre-state gate off in this same synchronous task,
+      // BEFORE the timeline below builds its immediate "from" states. If
+      // this ran after (as it did previously), GSAP's first parse of each
+      // target would read the CSS's translateY(105%)/-100% and cache it as
+      // a pixel `y` that the yPercent tweens never undo, leaving a residual
+      // offset (measured: translate(0px, 59.65px) on the headline spans
+      // after the intro). Nothing paints between this line and the
+      // timeline's fromTo() calls, so the hero stays visually hidden.
+      root?.setAttribute('data-lp-intro', 'done')
 
       const tl = gsap.timeline({
         paused: true,
@@ -339,7 +355,6 @@ export function Hero(): React.ReactElement {
         .fromTo(scue, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, 1.5)
 
       introTl = tl
-      root?.setAttribute('data-lp-intro', 'done')
       tl.play(0)
 
       skipEvents.forEach((ev) => {

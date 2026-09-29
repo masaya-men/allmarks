@@ -436,12 +436,18 @@
    effect runs, so without this the finished hero would flash before the
    intro plays. Each intro target gets its GSAP "from" value here as plain
    CSS, gated by :not([data-lp-intro='done']) on the page root. The effect
-   sets data-lp-intro="done" right after building the timeline (whose
-   fromTo() calls already applied the same values inline), so the switch
+   sets data-lp-intro="done" immediately BEFORE building the timeline (R31 —
+   GSAP must never parse this CSS transform into its transform cache as a
+   pixel value, or the yPercent tweens built on top of it end up with a
+   residual offset), and the timeline's own fromTo() "from" states (which
+   render immediately) reapply the same hidden values inline, so the switch
    from CSS-owned to JS-owned hidden state is visually seamless. Only inside
    (prefers-reduced-motion: no-preference): reduced motion never runs the
-   intro, so the finished state must be the default from first paint. */
-@media (prefers-reduced-motion: no-preference) {
+   intro, so the finished state must be the default from first paint.
+   M3: also requires (scripting: enabled) — a no-JS visitor never runs the
+   effect that flips data-lp-intro to "done", so without this the header nav
+   and hero copy would stay hidden forever for them. */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
   :global(.lpRoot.lpHome:not([data-lp-intro='done']) > header) {
     transform: translateY(-100%);
   }
