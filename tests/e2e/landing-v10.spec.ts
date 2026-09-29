@@ -36,15 +36,24 @@ test('LP en at 1489×679: the film plays in step 03 and stops after MOTION', asy
     await page.waitForTimeout(1400)
   }
   const film = page.locator('[data-film-card]')
+  // R28: film.screenshot() scrolls the element into view first, which moves
+  // this pinned/scroll-jacked section off the position scrollToStep just
+  // set. Measure the card's box once per pair (no scrolling) and clip a
+  // plain page screenshot to it instead, so both shots of a pair are read
+  // from the exact same screen region at the scroll position we intended.
+  const shotPair = async (): Promise<[Buffer, Buffer]> => {
+    const box = await film.boundingBox()
+    if (!box) throw new Error('[data-film-card] has no bounding box (not visible?)')
+    const first = await page.screenshot({ clip: box })
+    await page.waitForTimeout(700)
+    const second = await page.screenshot({ clip: box })
+    return [first, second]
+  }
   await scrollToStep(2, 0.3)
-  const a = await film.screenshot()
-  await page.waitForTimeout(700)
-  const b = await film.screenshot()
+  const [a, b] = await shotPair()
   expect(Buffer.compare(a, b)).not.toBe(0)
   await scrollToStep(2, 0.9)
-  const c = await film.screenshot()
-  await page.waitForTimeout(700)
-  const d = await film.screenshot()
+  const [c, d] = await shotPair()
   expect(Buffer.compare(c, d)).toBe(0)
 })
 
@@ -64,12 +73,19 @@ test('LP: leaving and coming back does not duplicate cards', async ({ page }) =>
     ['[data-hero-board]', '[data-problem-board]', '[data-features-board]'].map((sel) => document.querySelectorAll(`${sel} .card`).length))
   const first = await count()
   expect(first).toEqual([14, 8, 10])
-  await page.locator('header a[href*="features"]').first().click()
-  await page.waitForLoadState('networkidle')
+  // R28: waitForLoadState('networkidle') right after click() can resolve on
+  // the *old* document before the async client-side route transition to
+  // /features even starts, so goBack() could fire while still on '/' and
+  // land on about:blank instead. Wait for the URL itself to change instead,
+  // both ways, then poll the counts until the remounted LP has repopulated
+  // its boards rather than trusting one read after a fixed delay.
+  await Promise.all([
+    page.waitForURL(/\/features/),
+    page.locator('header a[href*="features"]').first().click(),
+  ])
   await page.goBack()
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(800)
-  expect(await count()).toEqual(first)
+  await page.waitForURL(url('en'))
+  await expect.poll(count, { timeout: 10_000 }).toEqual(first)
   expect(errors).toEqual([])
 })
 
