@@ -1,4 +1,7 @@
-/* Features.module.css — ported from docs/private/lp-v10-mock.html.
+/* Features.module.css — ported from docs/private/lp-v10-mock.html, plus the
+   v11 cursor look (docs/private/lp-v11-mock.html 253–256, 280–296): large
+   green cursor, click ripple, first-appearance ring, and the ".hov" hover
+   state that only the one target the cursor is stopped on carries.
    Scope: mock CSS 213–297 minus the card-internal parts (mock 287–296,
    already shared in ../lp-art.css: .card.onair .fl-play .fl-ui .fl-bar
    .fl-fill .fl-tc .sl .vbadge) and minus the dead/superseded ".step/.rail"
@@ -212,7 +215,12 @@
   border: 1px solid var(--ink);
   border-radius: 999px;
   padding: 5px 11px;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.25s, color 0.15s;
+}
+/* hover = "the cursor is stopped on it, about to press" (v11 .fshare.hov);
+   declared before .press so the pressed look always wins. */
+.fshare.hov {
+  background: rgba(15, 15, 15, 0.08);
 }
 .fshare.press {
   background: var(--ink);
@@ -227,6 +235,12 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink);
+  transition: background 0.25s, box-shadow 0.25s;
+}
+.motion.hov {
+  border-radius: 999px;
+  background: rgba(15, 15, 15, 0.07);
+  box-shadow: 0 0 0 6px rgba(15, 15, 15, 0.07);
 }
 .motion i {
   width: 7px;
@@ -352,7 +366,12 @@
   gap: 6px;
   font: 500 11px var(--font-geist-mono), ui-monospace, Consolas, monospace;
   color: var(--soft);
-  transition: color 0.3s;
+  transition: color 0.3s, background 0.25s;
+}
+.fpsButton.hov {
+  color: var(--ink);
+  border-radius: 999px;
+  background: rgba(15, 15, 15, 0.06);
 }
 .fpsButton::before {
   content: '';
@@ -457,11 +476,16 @@
   background: #fff;
   border: 1px solid var(--ink);
   font: 500 12.5px var(--sans);
-  transition: box-shadow 0.4s, border-color 0.4s;
+  transition: box-shadow 0.4s, border-color 0.4s, background 0.25s;
 }
 .sc.done {
   border-color: rgba(40, 241, 0, 0.9);
   box-shadow: 0 0 0 1px rgba(40, 241, 0, 0.5), 0 0 16px rgba(40, 241, 0, 0.35);
+}
+/* hover on the "copy link" chip; never once it is done (keeps the green glow). */
+.sc.hov:not(.done) {
+  background: #f3f3f1;
+  box-shadow: 0 0 0 3px rgba(15, 15, 15, 0.07);
 }
 /* the "copy link" → "✓ copied" roll swap: .rl's own grid-stack base is the
    shared global class (see file-level comment); only this section's
@@ -481,13 +505,16 @@
   transform: none;
 }
 
-/* ── cursor + click ring + flash (mock 249–250, 278–281) ── */
+/* ── cursor + click ripple + first-appearance ring + flash (v11 mock
+   253–256, 280–296). The cursor must be the first thing the eye finds:
+   large, brand green, dark edge. Its tip (the click point) is the
+   viewBox's (5, 2.5); Features.tsx offsets it by cursorTip(size). ── */
 .fcur {
   position: absolute;
   left: 0;
   top: 0;
-  width: 22px;
-  height: 22px;
+  width: 40px;
+  height: 40px;
   z-index: 9;
   pointer-events: none;
   opacity: 0;
@@ -496,7 +523,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.28));
   transition: transform 0.12s;
   transform-origin: 21% 10%;
 }
@@ -507,14 +534,43 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 30px;
-  height: 30px;
-  margin: -15px 0 0 -15px;
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
   border-radius: 50%;
-  border: 1.5px solid var(--ink);
+  border: 2px solid var(--green);
   opacity: 0;
   pointer-events: none;
   z-index: 10;
+}
+/* The moment the cursor first appears: a green ring spreads from its tip,
+   48px → 96px and fades (0.7s, once). Features.tsx sets --rx/--ry (the tip)
+   and adds .go only when the cursor flips from hidden to shown. */
+.fring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  border: 2px solid var(--green);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.fring.go {
+  animation: fring 0.7s var(--ex) 1 both;
+}
+@keyframes fring {
+  0% {
+    transform: translate(var(--rx), var(--ry)) scale(1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(var(--rx), var(--ry)) scale(2);
+    opacity: 0;
+  }
 }
 .fflash {
   position: absolute;
@@ -559,7 +615,11 @@
   background: var(--ink);
   color: #fff;
   font: 600 14px var(--sans);
-  transition: transform 0.12s;
+  transition: transform 0.12s, background 0.25s, box-shadow 0.25s;
+}
+.fsBtn.hov {
+  background: #2b2b2b;
+  box-shadow: 0 0 0 5px rgba(15, 15, 15, 0.1);
 }
 .fsBtn.press {
   transform: scale(0.93);
@@ -609,6 +669,12 @@
   }
 }
 @media (max-width: 560px) {
+  /* v11 mock: smaller cursor on narrow screens (Features.tsx re-measures its
+     size on resize, so the tip offset follows). */
+  .fcur {
+    width: 30px;
+    height: 30px;
+  }
   /* mock lines 391–392 + 395, shared with Hero's own .paste (that copy
      lives in Hero.module.css; this is Features' own local .paste). */
   .paste {

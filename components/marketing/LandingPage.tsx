@@ -6,6 +6,7 @@ import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
 import { BackgroundGrid } from './BackgroundGrid'
 import { LandingFonts } from './LandingFonts'
 import { LocaleSuggestBanner } from './LocaleSuggestBanner'
+import { ScrollRail } from './ScrollRail'
 import { SiteHeader } from './SiteHeader'
 import { SiteFooter } from './SiteFooter'
 import { Hero } from './sections/Hero'
@@ -23,6 +24,7 @@ import styles from './LandingPage.module.css'
  * Initialises GSAP ScrollTrigger, then renders the full editorial flow:
  *
  *   BackgroundGrid (fixed, 12-column hairline grid behind everything)
+ *   ScrollRail (fixed z-index 50: scroll-progress line + grid tilt/ticks; outside .content on purpose)
  *   SiteHeader (fixed, transparent → scrolled; hidden during FinalCta)
  *   ─── white editorial ground (#faf9f6) ──────────────────────────────
  *   Hero        — product board-mock visual + headline + CTAs
@@ -55,6 +57,7 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
     <div className={`${styles.wrapper} lpRoot lpHome`} data-locale={locale}>
       <LandingFonts locale={locale} />
       <BackgroundGrid />
+      <ScrollRail />
       <LocaleSuggestBanner current={locale} />
       <SiteHeader locale={locale} />
       <div className={styles.content}>

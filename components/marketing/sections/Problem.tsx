@@ -296,7 +296,7 @@ export function Problem(): React.ReactElement {
             </div>
           </div>
 
-          <div ref={stageRef} className={styles.stage} aria-hidden="true">
+          <div ref={stageRef} className={styles.stage} aria-hidden="true" data-lp-rail-board>
             <div ref={listRef} className={styles.list}>
               {ROW_BARS.map((bar, i) => (
                 <div className={styles.lrow} key={i}>

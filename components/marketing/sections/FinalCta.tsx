@@ -299,10 +299,12 @@ export function FinalCta(): React.ReactElement {
   const headlineLines = t('landing.cta.headline').split('\n')
 
   return (
-    <section ref={sectionRef} className={styles.fin}>
+    // data-lp-fin / data-lp-fingrid: hooks for ScrollRail (measures this section — its top is where the
+    // rail's progress reaches 1 — and tilts the grid's .wrap in step with the background grid).
+    <section ref={sectionRef} className={styles.fin} data-lp-fin>
       <div ref={stickyRef} className={styles.finSt}>
         <div className={styles.finGrid} aria-hidden="true">
-          <div className={`wrap ${styles.finGridWrap}`}>
+          <div className={`wrap ${styles.finGridWrap}`} data-lp-fingrid>
             {Array.from({ length: GRID_LINE_COUNT }, (_, i) => (
               <i
                 key={i}

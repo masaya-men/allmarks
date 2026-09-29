@@ -51,6 +51,9 @@
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   border-left: 1px solid rgba(255, 255, 255, 0.07);
+  /* ScrollRail tilts this box with the same skewX as the background grid (v11 mock
+     line 318) and writes it every scroll frame. Nothing inside is position:fixed. */
+  will-change: transform;
 }
 .finGridWrap i {
   border-right: 1px solid rgba(255, 255, 255, 0.07);

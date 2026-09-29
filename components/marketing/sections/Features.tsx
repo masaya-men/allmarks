@@ -13,10 +13,14 @@ import {
   CARD_FILM,
   CARD_DRAG,
   CARD_SLIDES,
+  FEAT_DT_MAX_MS,
+  cursorTip,
+  featFollow,
   featureLayouts,
   featState,
   featTarget,
   type FeatureGeometry,
+  type FeatureHover,
   type FeatureState,
   type PillBox,
 } from '@/lib/marketing/lp/feature-timeline'
@@ -30,11 +34,15 @@ if (typeof window !== 'undefined') {
 /**
  * Features — the pinned six-step demo, ported from docs/private/lp-v10-mock.html
  * (markup 447–476, CSS 213–297 minus the card-internal parts already in
- * ../lp-art.css, motion 680–776 + divider tween 798–799, resize 861). One demo
- * board changes as the section is scrolled through: a cursor clicks, cards
- * move, a video card really plays, MOTION stops it, tags filter, an entry
- * screen appears, and the board is shared as an image. All of the maths
- * (masonry layouts, easing, waypoints) lives in feature-timeline.ts — this
+ * ../lp-art.css, motion 680–776 + divider tween 798–799, resize 861) plus the
+ * v11 cursor choreography from docs/private/lp-v11-mock.html (large green
+ * cursor that stays on from 02 to 06, stops on each target to "hover" before
+ * it presses, and rings green the moment it first appears). One demo board
+ * changes as the section is scrolled through: a cursor clicks, cards move, a
+ * video card really plays, MOTION stops it, tags filter, an entry screen
+ * appears, and the board is shared as an image. All of the maths
+ * (masonry layouts, easing, waypoints, which target is hovered, how fast the
+ * shown position follows the scroll) lives in feature-timeline.ts — this
  * component only measures geometry (once, never in the scroll ticker) and
  * writes the resulting FeatureState to the DOM every frame.
  */
@@ -112,6 +120,7 @@ export function Features(): React.ReactElement {
   const schipsRef = useRef<HTMLDivElement>(null)
   const scpRef = useRef<HTMLSpanElement>(null)
   const fclickRef = useRef<HTMLElement>(null)
+  const fringRef = useRef<HTMLElement>(null)
   const fflashRef = useRef<HTMLElement>(null)
   const fcurRef = useRef<HTMLDivElement>(null)
 
@@ -139,6 +148,7 @@ export function Features(): React.ReactElement {
     const schips = schipsRef.current
     const scp = scpRef.current
     const fclick = fclickRef.current
+    const fring = fringRef.current
     const fflash = fflashRef.current
     const fcur = fcurRef.current
     const fnavEls = fnavRefs.current
@@ -147,7 +157,7 @@ export function Features(): React.ReactElement {
     if (
       !section || !ruleLine || !fpin || !railFill || !ftextsEl || !fpanel || !fshare || !fmotion || !fpaste || !fps ||
       !allBtn || !musicBtn || !designBtn || !fpu || !fbw || !fboard || !frect || !pchip || !fstart || !fsbtn ||
-      !schips || !scp || !fclick || !fflash || !fcur ||
+      !schips || !scp || !fclick || !fring || !fflash || !fcur ||
       fnavEls.length !== STEPS.length || ftextEls.length !== STEPS.length ||
       fnavEls.some((el) => el === null) || ftextEls.some((el) => el === null)
     ) {
@@ -208,7 +218,6 @@ export function Features(): React.ReactElement {
         design: rc(designBtn!),
         start: rc(fsbtn!),
         copy: rc(scp!),
-        rest: { x: fpanel!.clientWidth * 0.9, y: fpanel!.clientHeight * 0.96 },
       }
       schips!.style.transform = savedSchips
       fbw!.style.transform = savedFbw
@@ -232,7 +241,10 @@ export function Features(): React.ReactElement {
       const bx = fbw!.offsetLeft
       const by = fbw!.offsetTop
       const shotK = fpanel!.clientWidth < 560 ? 0.28 : 0.2
-      return { L, bw, bh, bx, by, shotK, pills, to: measureTargets() }
+      // The cursor image is 40px (30px on narrow screens); its tip must land on the
+      // pointed-at coordinate, so the tip offset scales with the measured size.
+      const tip = cursorTip(fcur!.offsetWidth || 40)
+      return { L, bw, bh, bx, by, shotK, pills, tip, to: measureTargets() }
     }
     function ftH(): void {
       let m = 0
@@ -262,6 +274,43 @@ export function Features(): React.ReactElement {
       el.classList.toggle(cls, on)
     }
 
+    // ── hover: featState names the ONE target the cursor is stopped on just
+    //    before it presses (or null). Only that element carries the hover
+    //    class, and only class add/remove happens, and only when it changes. ──
+    const hoverEls: Record<FeatureHover, HTMLElement> = {
+      motion: fmotion,
+      share: fshare,
+      music: musicBtn,
+      design: designBtn,
+      start: fsbtn,
+      copy: scp,
+    }
+    let hovered: FeatureHover | null = null
+    function setHover(next: FeatureHover | null): void {
+      if (next === hovered) return
+      if (hovered) hoverEls[hovered].classList.remove(styles.hov!)
+      if (next) hoverEls[next].classList.add(styles.hov!)
+      hovered = next
+    }
+
+    // ── first appearance: the moment the cursor becomes visible, a green ring
+    //    spreads once from its tip (CSS animation; the position is written only
+    //    on that flip, never per frame). It plays again if the cursor hides and
+    //    reappears. Not with reduced motion. ──
+    let cursorShown = false
+    function setCursorShown(shown: boolean, x: number, y: number): void {
+      if (shown === cursorShown) return
+      cursorShown = shown
+      if (shown) {
+        if (reduce) return
+        fring!.style.setProperty('--rx', `${x.toFixed(1)}px`)
+        fring!.style.setProperty('--ry', `${y.toFixed(1)}px`)
+        fring!.classList.add(styles.go!)
+      } else {
+        fring!.classList.remove(styles.go!)
+      }
+    }
+
     // ── apply: the mock's DOM writes (741–763), driven entirely by an
     //    already-computed FeatureState — no maths here, only writes ──
     function apply(s: FeatureState): void {
@@ -285,9 +334,13 @@ export function Features(): React.ReactElement {
       setCls(filmCardEl!, 'onair', s.focus > 0.5, 'oa')
       filmCardEl!.style.zIndex = s.focus > 0 ? '4' : ''
 
-      fcur!.style.opacity = s.cursor.opacity.toFixed(3)
-      fcur!.style.transform = `translate(${(s.cursor.x - 4).toFixed(1)}px,${(s.cursor.y - 2).toFixed(1)}px)`
+      // Reduced motion shows only each step's finished pose, and the cursor is a
+      // moving actor, not part of the result — so it stays hidden there (as before v11).
+      fcur!.style.opacity = (reduce ? 0 : s.cursor.opacity).toFixed(3)
+      fcur!.style.transform = `translate(${(s.cursor.x - geo.tip.x).toFixed(1)}px,${(s.cursor.y - geo.tip.y).toFixed(1)}px)`
       setCls(fcur!, styles.press!, s.cursor.pressed, 'cpress')
+      setCursorShown(s.cursor.shown, s.cursor.x, s.cursor.y)
+      setHover(s.hover)
 
       if (s.ring) {
         fclick!.style.opacity = s.ring.opacity.toFixed(3)
@@ -396,6 +449,7 @@ export function Features(): React.ReactElement {
         setActive(Math.min(5, Math.floor(target)))
         return
       }
+      const dt = Math.min(deltaTime || 16, FEAT_DT_MAX_MS)
       const d = target - cur
       if (Math.abs(d) < 0.0008) {
         if (cur !== target) {
@@ -403,11 +457,14 @@ export function Features(): React.ReactElement {
           apply(featState(cur, geo))
         }
       } else {
-        cur += d * 0.14
+        // Catch up with the scroll at a frame-rate-independent pace with a speed
+        // cap that loosens as the lag grows (featFollow): every step is shown
+        // (never skipped) and the lag stays small enough for 06 to play out.
+        cur = featFollow(cur, target, dt)
         apply(featState(cur, geo))
       }
       setActive(Math.max(0, Math.min(5, Math.floor(cur))))
-      liveTick(Math.min(deltaTime || 16, 64))
+      liveTick(dt)
     }
     gsap.ticker.add(featFrame)
 
@@ -447,6 +504,8 @@ export function Features(): React.ReactElement {
       gsap.ticker.remove(featFrame)
       window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
+      setHover(null)
+      fring.classList.remove(styles.go!)
       fCards.forEach((el) => el.remove())
     }
   }, [])
@@ -503,7 +562,7 @@ export function Features(): React.ReactElement {
             </div>
 
             <div className={styles.fvis} aria-hidden="true">
-              <div ref={fpanelRef} className={styles.fpanel}>
+              <div ref={fpanelRef} className={styles.fpanel} data-lp-rail-board>
                 <div className={styles.pchrome}>
                   <span className={styles.wmS}>{WORDMARK}</span>
                   <span className={styles.fright}>
@@ -576,14 +635,15 @@ export function Features(): React.ReactElement {
                   </span>
                 </div>
                 <i ref={fclickRef as React.RefObject<HTMLElement>} className={styles.fclick} />
+                <i ref={fringRef as React.RefObject<HTMLElement>} className={styles.fring} />
                 <i ref={fflashRef as React.RefObject<HTMLElement>} className={styles.fflash} />
                 <div ref={fcurRef} className={styles.fcur} data-fcur>
                   <svg viewBox="0 0 24 24">
                     <path
                       d="M5 2.5 L5 19.5 L9.3 15.6 L12.2 22 L15.1 20.7 L12.3 14.4 L18.4 14.2 Z"
-                      fill="#111"
-                      stroke="#fff"
-                      strokeWidth="1.5"
+                      fill="#28F100"
+                      stroke="#0f0f0f"
+                      strokeWidth="1.4"
                       strokeLinejoin="round"
                     />
                   </svg>

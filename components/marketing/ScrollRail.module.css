@@ -1,0 +1,169 @@
+/* components/marketing/ScrollRail.module.css
+   進み具合の線(あみだくじ)。docs/private/lp-v11-mock.html 359〜384 行(.trace)の移植。
+   部品はぜんぶ白。入れ物(.rail)にだけ mix-blend-mode: difference を付けるので(部品には付けない)、
+   白い紙の上では黒い線、黒い文字・カード・締めの上では白く反転して見える。
+   部品(i / span)は ScrollRail.tsx が effect の中で作り、位置と動きはすべて inline の
+   transform / opacity で書く。入れ物の clip-path は、締めのあと線が下へ抜けて消える時だけ書く。 */
+
+/* 重なり順: 本文(.content = z-index 1 の stacking context)< この線(50)< SiteHeader(100)。
+   .content の外・BackgroundGrid の直後に置くので、本文のどの部品よりも上で、ヘッダーのガラスの下に入る
+   (線の上端はヘッダーの高さ + 3px から)。 */
+.rail {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  transform: skewX(0deg);
+  will-change: transform;
+}
+
+.rail i,
+.rail span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+/* 縦線: 通ってきた線(薄い 1px)と、今の線(2px・100%) */
+.rail .rvt {
+  width: 1px;
+  background: #fff;
+  opacity: 0.22;
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+.rail .rvb {
+  width: 2px;
+  background: #fff;
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+/* 横の渡り: 薄い軌跡(1px)と、走る棒(2px) */
+.rail .rht {
+  height: 1px;
+  background: #fff;
+  opacity: 0.22;
+  will-change: transform;
+}
+.rail .rhb {
+  height: 2px;
+  background: #fff;
+  transform-origin: 0 50%;
+  will-change: transform;
+}
+
+/* 角の印(8px の L 字)。data-m: 1 = 左下 / 2 = 右下 / 3 = 右上 / 4 = 左上 の角 */
+.rail .rmk {
+  width: 8px;
+  height: 8px;
+  border: 0 solid #fff;
+  will-change: transform;
+}
+.rail .rmk[data-m='1'] {
+  border-left-width: 1px;
+  border-bottom-width: 1px;
+  transform-origin: 0 100%;
+}
+.rail .rmk[data-m='2'] {
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  transform-origin: 100% 100%;
+}
+.rail .rmk[data-m='3'] {
+  border-right-width: 1px;
+  border-top-width: 1px;
+  transform-origin: 100% 0;
+}
+.rail .rmk[data-m='4'] {
+  border-left-width: 1px;
+  border-top-width: 1px;
+  transform-origin: 0 0;
+}
+
+/* 札(全言語共通の英語の定数。R27 と同じく Geist Mono を直書き) */
+.rail .rlb {
+  white-space: nowrap;
+  font: 500 10px/13px var(--font-geist-mono), ui-monospace, Consolas, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* 着いた角から画面の下端まで走り抜けるスキャン */
+.rail .rscn {
+  width: 2px;
+  height: 120px;
+  background: linear-gradient(to bottom, #fff, rgba(255, 255, 255, 0));
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* 先端の四角(まっすぐに保つ)と、「続きがある」合図 */
+.rail .rtip {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  background: #fff;
+  will-change: transform;
+}
+.rail .rcuew {
+  width: 1.5px;
+  height: 22px;
+  transition: opacity 0.25s;
+}
+.rail .rcuew.off {
+  opacity: 0;
+}
+.rail .rcue {
+  width: 1.5px;
+  height: 22px;
+  background: #fff;
+  opacity: 0;
+  animation: railCue 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes railCue {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+}
+
+/* 進み 1(画面が全部黒になった)以降: 先端の四角と合図は消す */
+.rail.end .rtip {
+  opacity: 0;
+}
+.rail.end .rcuew {
+  display: none;
+}
+
+/* 導入(hero の intro)に合わせて遅れて現れる。ScrollRail が opacity を tween するので、
+   その tween が走る環境(動きを減らさない + JS あり)でだけ最初は隠す。 */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  .rail {
+    opacity: 0;
+  }
+}
+
+/* 動きを減らす設定: 合図・スキャン・角の印・札は出さない(線の伸びと渡りの位置は残す) */
+@media (prefers-reduced-motion: reduce) {
+  .rail .rcuew,
+  .rail .rscn,
+  .rail .rmk,
+  .rail .rlb {
+    display: none;
+  }
+}

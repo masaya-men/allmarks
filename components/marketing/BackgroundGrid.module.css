@@ -1,8 +1,9 @@
 /* components/marketing/BackgroundGrid.module.css
    Fixed 12-column hairline grid behind all landing-page content
-   (mock lines 20, 23–27). Stacking: z-index:0 keeps it above the page's
-   paper background and below .content (z-index:1, LandingPage.module.css)
-   and the fixed header (z-index:100, SiteHeader.module.css).
+   (mock lines 20, 23–27; v11 mock lines 25–30 for the tilt + ruler ticks).
+   Stacking: z-index:0 keeps it above the page's paper background and below
+   .content (z-index:1, LandingPage.module.css), ScrollRail (50) and the fixed
+   header (z-index:100, SiteHeader.module.css).
    --maxw / --gut / --faint are defined on .lpRoot.lpHome by lp-art.css and
    inherit down into this module — referenced via var(), never copied. */
 
@@ -13,16 +14,50 @@
   pointer-events: none;
 }
 
+/* ScrollRail tilts this box (skewX about the vertical centre of the screen) and
+   slides the ruler ticks; it is also the containing block of the absolutely
+   positioned ticks (.rtk). will-change: transform because it is written every
+   scroll frame; nothing inside is position:fixed, so no containing-block trap. */
 .wrap {
+  position: relative;
   width: min(var(--maxw), calc(100% - 2 * var(--gut)));
   height: 100%;
   margin-inline: auto;
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   border-left: 1px solid var(--faint);
+  will-change: transform;
 }
 
 .wrap i {
   border-right: 1px solid var(--faint);
   transform-origin: top;
+}
+
+/* Ruler ticks: one 7px-wide dash every 96px, centred on each of the 13 lines
+   (--k = 0..12). The element is 96px taller than the screen so sliding it up
+   by 0..96px never uncovers a gap at the bottom. ScrollRail writes its
+   translateY. Absolutely positioned, so it takes no grid cell. */
+.rtk {
+  position: absolute;
+  top: 0;
+  left: calc(var(--k) * 100% / 12 - 4px);
+  width: 7px;
+  height: calc(100% + 96px);
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(15, 15, 15, 0.09) 0 1px,
+    transparent 1px 96px
+  );
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* The ticks fade in with the hero intro (ScrollRail tweens their opacity), so
+   they start hidden — only where that tween will run. Reduced motion and
+   no-JS visitors get the static ticks from first paint. */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  .rtk {
+    opacity: 0;
+  }
 }
