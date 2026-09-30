@@ -9,6 +9,9 @@ import { masonry } from '@/lib/marketing/lp/masonry'
 import { E } from '@/lib/marketing/lp/motion-math'
 import { tweetKey } from '@/lib/marketing/lp/tweet-key'
 import type { CardSpec } from '@/lib/marketing/lp/types'
+import { SectionScrollRule } from '../SectionScrollRule'
+import { createScrollRuleDriver } from '@/lib/marketing/lp/scroll-rule'
+import { FEATURES_LABEL } from './Features'
 import styles from './Problem.module.css'
 
 if (typeof window !== 'undefined') {
@@ -90,6 +93,7 @@ export function Problem(): React.ReactElement {
 
   const sectionRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
+  const scrollRuleRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const midRef = useRef<HTMLElement>(null)
   const sboardRef = useRef<HTMLDivElement>(null)
@@ -207,15 +211,37 @@ export function Problem(): React.ReactElement {
     //    — renderProb(1) above already drew the final "board open" state,
     //    and the label line stays at its CSS default (fully drawn, no
     //    scaleX(0) is ever applied) (mock 798/800, guarded by motionOK). ──
+    // The bottom scroll rule reads the RAW progress of this same start/end
+    // ('top top' → 'bottom bottom') so it is exactly 0 at pin start and 1 at pin end.
+    // It is information, so it also runs under reduced motion (own trigger there).
+    const ruleEl = scrollRuleRef.current
+    const rule = ruleEl ? createScrollRuleDriver(ruleEl) : undefined
+    const ruleTrigger = {
+      onUpdate: (self: ScrollTrigger): void => rule?.set(self.progress),
+      onRefresh: (self: ScrollTrigger): void => {
+        rule?.measure()
+        rule?.set(self.progress)
+      },
+    }
     let ctx: ReturnType<typeof gsap.context> | undefined
-    if (!reduce) {
+    if (reduce) {
+      ctx = gsap.context(() => {
+        ScrollTrigger.create({ trigger: section, start: 'top top', end: 'bottom bottom', ...ruleTrigger })
+      }, sectionRef)
+    } else {
       ctx = gsap.context(() => {
         const px = { p: 0 }
         gsap.to(px, {
           p: 1,
           ease: 'none',
           onUpdate: () => renderProb(px.p),
-          scrollTrigger: { trigger: section, start: 'top top', end: 'bottom bottom', scrub: 0.5 },
+          scrollTrigger: {
+            trigger: section,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 0.5,
+            ...ruleTrigger,
+          },
         })
 
         const labelLn = section.querySelector<HTMLElement>('.label .ln')
@@ -242,6 +268,7 @@ export function Problem(): React.ReactElement {
       if (disposed) return
       pLayout()
       renderProb(currentP)
+      rule?.measure()
     }
 
     let resizeTimer: number | undefined
@@ -311,6 +338,7 @@ export function Problem(): React.ReactElement {
             <div ref={sboardRef} className={styles.sboard} data-problem-board />
           </div>
         </div>
+        <SectionScrollRule nextLabel={FEATURES_LABEL} ruleRef={scrollRuleRef} />
       </div>
     </section>
   )

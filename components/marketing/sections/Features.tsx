@@ -25,6 +25,9 @@ import {
   type PillBox,
 } from '@/lib/marketing/lp/feature-timeline'
 import type { Pt } from '@/lib/marketing/lp/types'
+import { SectionScrollRule } from '../SectionScrollRule'
+import { createScrollRuleDriver } from '@/lib/marketing/lp/scroll-rule'
+import { LABEL_TEXT as FINAL_CTA_LABEL } from './FinalCta'
 import styles from './Features.module.css'
 
 if (typeof window !== 'undefined') {
@@ -48,7 +51,7 @@ if (typeof window !== 'undefined') {
  */
 
 /** English design word — same in every locale, never `landing.features.label` (mock line 448). */
-const FEATURES_LABEL = 'Features'
+export const FEATURES_LABEL = 'Features'
 
 /** English wordmark — mock's literal "AllMarks" text (pchrome watermark + entry screen). Never translated. */
 const WORDMARK = 'AllMarks'
@@ -98,6 +101,7 @@ export function Features(): React.ReactElement {
   const sectionRef = useRef<HTMLElement>(null)
   const ruleLineRef = useRef<HTMLElement>(null)
   const fpinRef = useRef<HTMLDivElement>(null)
+  const scrollRuleRef = useRef<HTMLDivElement>(null)
   const fnavRefs = useRef<(HTMLLIElement | null)[]>([])
   const railFillRef = useRef<HTMLElement>(null)
   const ftextsRef = useRef<HTMLDivElement>(null)
@@ -425,7 +429,19 @@ export function Features(): React.ReactElement {
     // ── scroll-driven ticker (mock 773–776) ──
     let fST: ScrollTrigger | undefined
     const ctx = gsap.context(() => {
-      fST = ScrollTrigger.create({ trigger: fpin, start: 'top top', end: 'bottom bottom' })
+      // The bottom scroll rule follows this same pin trigger (0 at pin start, 1 at pin end).
+      const ruleEl = scrollRuleRef.current
+      const rule = ruleEl ? createScrollRuleDriver(ruleEl) : undefined
+      fST = ScrollTrigger.create({
+        trigger: fpin,
+        start: 'top top',
+        end: 'bottom bottom',
+        onUpdate: (self) => rule?.set(self.progress),
+        onRefresh: (self) => {
+          rule?.measure()
+          rule?.set(self.progress)
+        },
+      })
       // R18: this section's own divider line (mock 798–799), motion-gated.
       if (!reduce) {
         gsap.fromTo(
@@ -518,6 +534,7 @@ export function Features(): React.ReactElement {
       </div>
       <div ref={fpinRef} className={styles.fpin} data-fpin>
         <div className={styles.fstick}>
+          <SectionScrollRule nextLabel={FINAL_CTA_LABEL} ruleRef={scrollRuleRef} />
           <div className={`wrap ${styles.fgrid}`}>
             <div className={styles.fleft}>
               <ol className={styles.fnav} aria-hidden="true">

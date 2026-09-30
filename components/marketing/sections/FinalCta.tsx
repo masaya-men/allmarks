@@ -39,7 +39,7 @@ if (typeof window !== 'undefined') {
 const RING_PATH_ID = 'lp-fin-ring-path'
 
 /** English design word — same in every locale, never `landing.cta.label` (mock line 498: literal "Start" text node, no inner span). */
-const LABEL_TEXT = 'Start'
+export const LABEL_TEXT = 'Start'
 
 /** English constant circling the badge (mock line 502), never translated. Trailing space matches the mock's own textLength spacing. */
 const RING_TEXT = 'OPEN THE BOARD ✦ OPEN THE BOARD ✦ '

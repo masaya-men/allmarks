@@ -1,0 +1,119 @@
+/* Per-section scroll rule. Look copied from Hero.module.css (.hrule/.scue/.sroll/.trk/.base/.tk).
+   --sr-fill (0..1) and --sr-lf (0%..100%) are written from JS (lib/marketing/lp/scroll-rule.ts). */
+.rule {
+  --sr-fill: 0;
+  --sr-lf: 0%;
+  --sr-gap: 16px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(16px, 3.5vh, 36px);
+  display: flex;
+  align-items: center;
+  gap: var(--sr-gap);
+  font: 500 11px var(--font-geist-mono), ui-monospace, Consolas, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  pointer-events: none;
+}
+.roll {
+  display: inline-flex;
+}
+.roll b {
+  display: inline-grid;
+  overflow: hidden;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.roll b > s {
+  grid-area: 1 / 1;
+  text-decoration: none;
+  animation: rollA 4.6s var(--io) infinite;
+}
+.roll b > s + s {
+  animation-name: rollB;
+}
+/* the next-section label loops slowly so it stays calm */
+.slow b > s {
+  animation-duration: 11s;
+}
+@keyframes rollA {
+  0%, 72% {
+    transform: translateY(0);
+  }
+  86%, 100% {
+    transform: translateY(-110%);
+  }
+}
+@keyframes rollB {
+  0%, 72% {
+    transform: translateY(110%);
+  }
+  86%, 100% {
+    transform: translateY(0);
+  }
+}
+.trk {
+  position: relative;
+  flex: 1;
+  height: 1px;
+  align-self: center;
+}
+.base {
+  position: absolute;
+  inset: 0;
+  background: var(--hair);
+}
+/* runs on across the gap so the line touches the label box */
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: calc(-1 * var(--sr-gap));
+  background: var(--ink);
+  transform: scaleX(var(--sr-fill));
+  transform-origin: left;
+}
+.tk {
+  position: absolute;
+  top: -5px;
+  width: 1px;
+  height: 11px;
+  margin-left: -0.5px;
+  background: var(--ink);
+  transform: scaleY(0.3);
+}
+.next {
+  position: relative;
+  display: inline-block;
+  padding: 5px 9px;
+  margin-right: -9px;
+}
+/* inverted copy: black plate + paper text, revealed left to right by --sr-lf */
+.inv {
+  position: absolute;
+  inset: 0;
+  padding: 5px 9px;
+  background: var(--ink);
+  color: var(--paper);
+  clip-path: inset(0 calc(100% - var(--sr-lf)) 0 0);
+}
+
+@media (max-width: 560px) {
+  .rule {
+    --sr-gap: 12px;
+  }
+  .tk {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .roll b > s {
+    animation: none;
+  }
+  .roll b > s + s {
+    display: none;
+  }
+}
