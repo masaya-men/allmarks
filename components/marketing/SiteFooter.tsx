@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { SupportedLocale } from '@/lib/i18n/config'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { localePath, navHref } from '@/lib/i18n/locale-urls'
+import { useHomeLinkClick } from './use-home-link-click'
 import styles from './SiteFooter.module.css'
 
 /**
@@ -22,6 +23,8 @@ import styles from './SiteFooter.module.css'
  */
 export function SiteFooter({ locale = 'en' }: { locale?: SupportedLocale }): React.ReactElement {
   const { t } = useI18n()
+  // LP 上で押したら先頭へスクロール(ヘッダーのロゴと同じ動き)。
+  const onBrandClick = useHomeLinkClick(localePath(locale))
 
   return (
     <footer className={styles.footer}>
@@ -30,7 +33,7 @@ export function SiteFooter({ locale = 'en' }: { locale?: SupportedLocale }): Rea
 
         {/* Brand column */}
         <div className={styles.brandColumn}>
-          <Link href={localePath(locale)} className={styles.brand} aria-label="AllMarks home">
+          <Link href={localePath(locale)} className={styles.brand} aria-label="AllMarks home" onClick={onBrandClick}>
             AllMarks
           </Link>
           <p className={styles.tagline}>
