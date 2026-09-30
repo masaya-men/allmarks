@@ -46,6 +46,9 @@
   display: flex;
   align-items: center;
   padding-top: 60px;
+  /* room for the SectionScrollRule row at the bottom (its bottom offset + row height) */
+  --sr-reserve: calc(clamp(16px, 3.5vh, 36px) + 40px);
+  padding-bottom: var(--sr-reserve);
 }
 .fgrid {
   display: grid;
@@ -181,7 +184,7 @@
      (`.fstick .fpanel`), the value that actually applies; mock 227's bare
      `.fpanel{height:min(520px,72vh)}` never wins once nested and is not
      ported. */
-  height: min(540px, calc(100vh - 150px));
+  height: min(540px, calc(100vh - 110px - var(--sr-reserve, 40px)));
 }
 
 /* ── panel chrome: watermark + share/motion row (mock 78–82, 274) ── */
