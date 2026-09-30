@@ -217,8 +217,12 @@ export function FinalCta(): React.ReactElement {
     }
     layoutZone()
 
+    // The browser also fires pointer events when the page scrolls under a
+    // still mouse (movement 0). Those must not grow/shrink the circle — only
+    // a real mouse move does, so scrolling never makes it jump.
+    const isRealMove = (e: PointerEvent): boolean => e.movementX !== 0 || e.movementY !== 0
     const onPointerEnter = (e: PointerEvent): void => {
-      if (e.pointerType !== 'mouse') return
+      if (e.pointerType !== 'mouse' || !isRealMove(e)) return
       addHot()
     }
     // Hot starts when the mouse is in the zone and ends only once it is
@@ -226,7 +230,7 @@ export function FinalCta(): React.ReactElement {
     // centre, radius = badge radius × the current --big). Rects are read here
     // on pointer moves (an interaction), never on scroll ticks.
     const onStageMove = (e: PointerEvent): void => {
-      if (e.pointerType !== 'mouse') return
+      if (e.pointerType !== 'mouse' || !isRealMove(e)) return
       const st = sticky!.getBoundingClientRect()
       const px = e.clientX - st.left
       const py = e.clientY - st.top
