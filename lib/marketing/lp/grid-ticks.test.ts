@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { TICK_GAP, tickStep, tickWrap } from './grid-ticks'
 
 describe('tickStep', () => {
-  it('scales by 3.0', () => expect(tickStep(4)).toBe(12))
+  it('moves 1:1 with scroll', () => expect(tickStep(4)).toBe(4))
   it('clamps to +-38.4', () => {
     expect(tickStep(1000)).toBeCloseTo(38.4)
     expect(tickStep(-1000)).toBeCloseTo(-38.4)

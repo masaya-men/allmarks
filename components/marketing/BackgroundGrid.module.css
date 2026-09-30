@@ -41,12 +41,12 @@
 .rtk {
   position: absolute;
   top: 0;
-  left: calc(var(--k) * 100% / 12 - 4px);
-  width: 7px;
+  left: calc(var(--k) * 100% / 12 - 6px);
+  width: 11px;
   height: calc(100% + 96px);
   background: repeating-linear-gradient(
     to bottom,
-    rgba(15, 15, 15, 0.09) 0 1px,
+    rgba(15, 15, 15, 0.3) 0 1px,
     transparent 1px 96px
   );
   will-change: transform;

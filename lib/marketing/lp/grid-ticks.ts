@@ -4,11 +4,11 @@
 /** 目盛りの間隔(px)。BackgroundGrid.module.css の repeating-linear-gradient と同じ値。 */
 export const TICK_GAP = 96
 /** スクロール量に掛ける倍率。 */
-export const TICK_GAIN = 3.0
+export const TICK_GAIN = 1.0
 /** 1 フレームの動きの上限(間隔 × 0.4)。 */
 export const TICK_MAX_STEP = TICK_GAP * 0.4
 
-/** 1 フレームぶんの目盛りの動き(px)。ΔY × 3.0 を ±38.4 に制限する(戻せば逆向き)。 */
+/** 1 フレームぶんの目盛りの動き(px)。ΔY × TICK_GAIN を ±38.4 に制限する(戻せば逆向き)。 */
 export function tickStep(dY: number): number {
   return Math.max(-TICK_MAX_STEP, Math.min(TICK_MAX_STEP, dY * TICK_GAIN))
 }
