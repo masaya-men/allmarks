@@ -23,6 +23,7 @@ vi.mock('./sections/Problem', () => ({ Problem: () => <div data-testid="Problem"
 vi.mock('./sections/Tape', () => ({ Tape: () => <div data-testid="Tape" /> }))
 vi.mock('./sections/Features', () => ({ Features: () => <div data-testid="Features" /> }))
 vi.mock('./sections/FinalCta', () => ({ FinalCta: () => <div data-testid="FinalCta" /> }))
+vi.mock('./sections/SyncPlan', () => ({ SyncPlan: () => <div data-mock="SyncPlan" /> }))
 
 afterEach(() => {
   cleanup()

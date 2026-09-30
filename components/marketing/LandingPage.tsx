@@ -82,7 +82,7 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
         <Problem />
         <Tape />
         <Features />
-        {locale === 'ja' && <SyncPlan />}
+        {(locale === 'ja' || locale === 'en') && <SyncPlan locale={locale} />}
         <FinalCta />
         <SiteFooter locale={locale} />
       </div>
