@@ -12,8 +12,8 @@ import styles from './Tape.module.css'
  */
 
 /** The tape's words — English design vocabulary, same in every locale, never
- *  translated (mock line 445 minus "Sync", per task-6 ruling). */
-const TAPE_WORDS: readonly string[] = ['Save', 'Arrange', 'Play', 'Tag', 'Share']
+ *  translated (mock line 445; "Sync" restored on paid launch, s226). */
+const TAPE_WORDS: readonly string[] = ['Save', 'Arrange', 'Play', 'Tag', 'Share', 'Sync']
 
 /** 4 identical cycles so createMarquee's "wrap at half scroll width" trick
  *  (lib/marketing/lp/marquee.ts) sees two identical halves of content. */

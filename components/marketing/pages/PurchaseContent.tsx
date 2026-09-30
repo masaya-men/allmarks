@@ -197,14 +197,23 @@ function PurchaseInner(): ReactElement {
         <h1 className={legalStyles.title}>{t('pages.purchase.success.heading')}</h1>
       </header>
       <section className={legalStyles.section}>
-        <h2 className={legalStyles.subheading}>{t('pages.purchase.success.subheading')}</h2>
-        <p className={legalStyles.body}>{t('pages.purchase.success.body')}</p>
-        <div className={styles.keyBox} data-testid="purchase-key-value">{state.key}</div>
-        <div className={styles.actions}>
-          <CopyButton t={t} value={state.key} />
-          <Link href="/board" className={styles.openLink} data-testid="purchase-open-link">
-            {t('pages.purchase.success.open')}
-          </Link>
+        <div className={styles.ticket}>
+          <div className={styles.shine} aria-hidden="true" />
+          <div className={styles.perf} aria-hidden="true" />
+          <div className={styles.tkTop}>
+            <div className={styles.tkLabel}>SYNC KEY</div>
+            <h2 className={styles.tkTitle}>{t('pages.purchase.success.subheading')}</h2>
+          </div>
+          <div className={styles.tkBody}>
+            <p className={legalStyles.body}>{t('pages.purchase.success.body')}</p>
+            <div className={styles.keyBox} data-testid="purchase-key-value">{state.key}</div>
+            <div className={styles.actions}>
+              <CopyButton t={t} value={state.key} />
+              <Link href="/board" className={styles.openLink} data-testid="purchase-open-link">
+                {t('pages.purchase.success.open')}
+              </Link>
+            </div>
+          </div>
         </div>
         <p className={legalStyles.note}>{t('pages.purchase.success.note')}</p>
       </section>

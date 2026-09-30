@@ -3,6 +3,83 @@
    共用(.root/.hero/.title/.section/.heading/.subheading/.body/.link/.note)。
    ここではキーボックス・コピー/開くボタン・キー再表示フォームだけを追加する。 */
 
+/* Key "ticket" (s226) — same visual language as the /gift ticket
+   (gift-page.module.css .ticket/.shine/.perf; duplicated per the page-CSS
+   convention): white card, side notches, dashed tear line, a light sweep. */
+.ticket {
+  position: relative;
+  margin-top: clamp(8px, 1.4vw, 14px);
+  background: #fff;
+  border: 1px solid rgba(18, 18, 16, 0.1);
+  border-radius: 22px;
+  padding: 32px 34px 28px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02), 0 30px 60px -30px rgba(18, 18, 16, 0.28);
+  overflow: hidden;
+  animation: purchaseRise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.ticket::before,
+.ticket::after {
+  content: '';
+  position: absolute;
+  top: 110px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--lp-bg);
+  border: 1px solid rgba(18, 18, 16, 0.1);
+}
+.ticket::before { left: -12px; }
+.ticket::after { right: -12px; }
+.perf {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 120px;
+  border-top: 1.5px dashed rgba(18, 18, 16, 0.14);
+}
+.shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.8) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: purchaseShine 4.5s ease-in-out 1.2s infinite;
+}
+.tkTop {
+  height: 74px;
+}
+.tkLabel {
+  font-family: var(--lp-sans);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--lp-ink-soft);
+}
+.tkTitle {
+  margin: 8px 0 0;
+  font-family: var(--lp-serif);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--lp-ink);
+}
+.tkBody {
+  position: relative;
+  padding-top: 38px;
+}
+@keyframes purchaseRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes purchaseShine {
+  0% { transform: translateX(-120%); }
+  55%, 100% { transform: translateX(120%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticket, .shine { animation: none; }
+}
+@media (max-width: 860px) {
+  .ticket { padding: 28px 22px 24px; }
+}
+
 .keyBox {
   margin: clamp(14px, 2vw, 20px) 0;
   padding: clamp(16px, 2.4vw, 22px) clamp(18px, 2.6vw, 24px);

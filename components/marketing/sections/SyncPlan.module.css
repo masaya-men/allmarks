@@ -1,0 +1,102 @@
+/* SyncPlan — LP paid-plan section (s226). Text side uses the shared LP
+   classes (.wrap/.label/.h2/.body/.btn in ../lp-art.css); this file only adds
+   the grid and the price ticket (same language as the /gift ticket). */
+.sync {
+  padding: clamp(110px, 16vh, 180px) 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: clamp(28px, 5vw, 80px);
+  align-items: center;
+}
+.cta {
+  margin-top: 28px;
+}
+.ticket {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: 460px;
+  justify-self: center;
+  width: 100%;
+  padding: 34px 34px 30px;
+  background: #fff;
+  border: 1px solid rgba(18, 18, 16, 0.1);
+  border-radius: 22px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02), 0 30px 60px -30px rgba(18, 18, 16, 0.28);
+  overflow: hidden;
+  color: var(--lp-ink);
+  text-decoration: none;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.5s ease;
+}
+.ticket:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02), 0 40px 70px -30px rgba(18, 18, 16, 0.34);
+}
+.ticket:focus-visible {
+  outline: 2px solid var(--lp-ink);
+  outline-offset: 4px;
+}
+.shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.85) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: syncShine 4.5s ease-in-out 1.2s infinite;
+  z-index: 1;
+}
+.tkLabel {
+  font-family: var(--lp-sans);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--lp-ink-soft);
+}
+.price {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 18px 0 26px;
+}
+.price strong {
+  font: 800 64px/0.9 var(--lp-sans);
+  letter-spacing: -0.05em;
+}
+.price span {
+  font-size: 13.5px;
+  color: var(--lp-ink-soft);
+}
+.perf {
+  display: block;
+  margin: 0 -10px 22px;
+  border-top: 1.5px dashed rgba(18, 18, 16, 0.14);
+}
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
+@keyframes syncShine {
+  0% { transform: translateX(-120%); }
+  55%, 100% { transform: translateX(120%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shine { animation: none; }
+  .ticket { transition: none; }
+}
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .ticket {
+    justify-self: stretch;
+    padding: 28px 24px 24px;
+  }
+  .price strong {
+    font-size: 52px;
+  }
+}

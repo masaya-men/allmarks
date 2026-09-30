@@ -15,6 +15,7 @@ import { Problem } from './sections/Problem'
 import { Tape } from './sections/Tape'
 import { Features } from './sections/Features'
 import { FinalCta } from './sections/FinalCta'
+import { SyncPlan } from './sections/SyncPlan'
 import './landing-tokens.css'
 import './lp-art.css'
 import styles from './LandingPage.module.css'
@@ -33,6 +34,7 @@ import styles from './LandingPage.module.css'
  *   Problem     — the problem we solve
  *   Tape        — scrolling word band (Save · Arrange · Play · Tag · Share)
  *   Features    — 01-06 feature cards with live video grid
+ *   SyncPlan    — paid sync plan + pricing link (ja only until translated)
  *   ─── white gives way to the finale's near-black ground (#0b0b0b) ──
  *   FinalCta    — rotating-circle "OPEN THE BOARD" climax + AllMarks marquee
  *   ─── black continues seamlessly ──────────────────────────────────
@@ -80,6 +82,7 @@ export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): Re
         <Problem />
         <Tape />
         <Features />
+        {locale === 'ja' && <SyncPlan />}
         <FinalCta />
         <SiteFooter locale={locale} />
       </div>
