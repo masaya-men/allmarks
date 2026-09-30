@@ -672,6 +672,11 @@
   }
 }
 @media (max-width: 560px) {
+  /* keep the bottom scroll rule clear of the text on short phones (375x635:
+     the Capture body ran ~5px into the rule) */
+  .fpanel {
+    height: 41vh;
+  }
   /* v11 mock: smaller cursor on narrow screens (Features.tsx re-measures its
      size on resize, so the tip offset follows). */
   .fcur {

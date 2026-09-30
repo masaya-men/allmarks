@@ -45,4 +45,11 @@ describe('layoutMarks', () => {
     expect(r.fits).toBe(true)
     expect(layoutMarks([0.1, 0.11], [80, 80], 1000, 250, 10).fits).toBe(false)
   })
+  it('pulls the last marks back inside the limit when they overflow', () => {
+    const r = layoutMarks([0.1, 0.9], [80, 80], 1000, 500, 10)
+    expect(r.fits).toBe(false)
+    expect(r.lefts).toEqual([100, 420])
+    const r2 = layoutMarks([0.5, 0.9], [80, 80], 1000, 500, 10)
+    expect(r2.lefts).toEqual([330, 420])
+  })
 })

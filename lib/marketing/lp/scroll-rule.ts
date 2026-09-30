@@ -63,6 +63,16 @@ export function layoutMarks(
   })
   const last = lefts.length - 1
   const fits = last < 0 || lefts[last] + (widths[last] ?? 0) <= limit
+  if (!fits) {
+    // Pull marks back left (last to first) so the last one ends at `limit` and
+    // neighbours keep `gap`; never past the track's left end.
+    let right = limit
+    for (let i = last; i >= 0; i--) {
+      const w = widths[i] ?? 0
+      lefts[i] = Math.max(0, Math.min(lefts[i], right - w))
+      right = lefts[i] - gap
+    }
+  }
   return { lefts, fits }
 }
 

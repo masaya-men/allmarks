@@ -1,0 +1,269 @@
+/* PricingPlans — billing toggle + 3 plan cards, shared by the pricing page and the LP Sync section. */
+
+/* 月払い/年払いトグル */
+.toggle {
+  display: inline-flex;
+  margin: clamp(36px, 5vw, 56px) 0 clamp(28px, 4vw, 40px);
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
+  border-radius: 999px;
+  padding: 4px;
+  background: #fff;
+}
+
+.toggleButton {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--lp-ink-soft);
+  cursor: pointer;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggleButton[aria-pressed='true'] {
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+}
+
+.badge {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--lp-accent);
+  background: var(--lp-ink);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.toggleButton[aria-pressed='true'] .badge {
+  background: var(--lp-accent);
+  color: var(--lp-ink);
+}
+
+/* 3カード */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent);
+  border-radius: 18px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardMain {
+  border-color: var(--lp-ink);
+  box-shadow: 0 1px 0 var(--lp-ink);
+}
+
+.planName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+}
+
+.planDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  flex: none;
+}
+
+.price {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-weight: 300;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+}
+
+.per {
+  margin-left: 4px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--lp-ink-soft);
+}
+
+.alt {
+  margin: 10px 0 0;
+  min-height: 1.2em;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  color: var(--lp-ink-soft);
+}
+
+.list {
+  list-style: none;
+  margin: 28px 0 32px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.listItem {
+  padding-left: 22px;
+  position: relative;
+  color: var(--lp-ink-soft);
+}
+
+.listItem::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 10px;
+  height: 1px;
+  background: var(--lp-ink);
+}
+
+.note {
+  margin: 28px 0 32px;
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lp-ink-soft);
+}
+
+.cta {
+  margin-top: auto;
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 14px 18px;
+  border-radius: 999px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid var(--lp-ink);
+  background: transparent;
+  color: var(--lp-ink);
+  min-height: 48px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.ctaMain {
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+}
+
+.ctaDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 860px) {
+  .cards { grid-template-columns: 1fr; }
+
+  /* 1列に積むと Free が先頭で Sync が画面外に押し出されるため、Free を
+     「名前+¥0 / 右に CTA / 要約1行」の細いカードに畳む(s220 承認・並び順は不変)。 */
+  .cardFree {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 16px;
+    padding: 20px;
+  }
+  .cardFree .planName { grid-column: 1; margin: 0 0 6px; }
+  .cardFree .price { grid-column: 1; font-size: 32px; }
+  .cardFree .alt { display: none; }
+  .cardFree .list { grid-column: 1 / -1; display: block; margin: 12px 0 0; }
+  .cardFree .listItem { display: none; }
+  .cardFree .listItem:nth-child(2) { display: block; padding-left: 0; font-size: 14px; }
+  .cardFree .listItem:nth-child(2)::before { display: none; }
+  .cardFree .cta {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    width: auto;
+    margin: 0;
+    padding: 10px 16px;
+    font-size: 14px;
+    min-height: 40px;
+  }
+}
+
+/* ---- s227: light sheen + pointer tilt (black/white only) ---- */
+.cards { perspective: 900px; }
+.card {
+  position: relative;
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+.card[data-tilting='true'] { transition: transform 0.12s ease-out; }
+.card::before,
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* soft silver band sweeping across the face */
+.card::after {
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(20, 19, 15, 0.055) 47%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(20, 19, 15, 0.055) 53%,
+    transparent 62%
+  );
+  background-size: 300% 100%;
+  background-position: 130% 0;
+  animation: planSheen 6s ease-in-out var(--sheen-delay, 0s) infinite;
+}
+/* foil glint travelling along the border */
+.card::before {
+  padding: 1.5px;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(20, 19, 15, 0.55) 50%,
+    transparent 60%
+  );
+  background-size: 300% 100%;
+  background-position: 130% 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: planSheen 6s ease-in-out var(--sheen-delay, 0s) infinite;
+}
+.cards > .card:nth-child(2) { --sheen-delay: 0.9s; }
+.cards > .card:nth-child(3) { --sheen-delay: 1.8s; }
+@keyframes planSheen {
+  0% { background-position: 130% 0; }
+  45%, 100% { background-position: -30% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card { transform: none; transition: none; will-change: auto; }
+  .card::before, .card::after { animation: none; display: none; }
+}

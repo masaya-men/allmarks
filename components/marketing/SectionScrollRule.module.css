@@ -130,6 +130,11 @@
   .tk {
     display: none;
   }
+  /* slimmer plates so six numbers fit on a 375px track without touching "Start" */
+  .mark,
+  .mark .inv {
+    padding: 4px 3px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .roll b > s {

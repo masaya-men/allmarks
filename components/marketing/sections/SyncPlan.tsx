@@ -10,6 +10,7 @@ import { makeCard } from '@/lib/marketing/lp/art'
 import { masonry } from '@/lib/marketing/lp/masonry'
 import type { MasonryLayout } from '@/lib/marketing/lp/masonry'
 import { E, lerp } from '@/lib/marketing/lp/motion-math'
+import { PricingPlans } from '../pages/PricingPlans'
 import { tweetKey } from '@/lib/marketing/lp/tweet-key'
 import type { CardSpec } from '@/lib/marketing/lp/types'
 import styles from './SyncPlan.module.css'
@@ -23,7 +24,7 @@ if (typeof window !== 'undefined') {
  * docs/private/lp-v10-mock.html (markup 477–492, CSS 298–318 + 385–386/399,
  * JS 778–800). A card lands on the laptop board, travels along a straight
  * dashed line as a green dot, and lands on the phone board. Scrubbed over the
- * pinned wrapper on wide screens, over the device stage on narrow ones;
+ * pinned wrapper on every screen size (shorter pin on narrow ones);
  * reduced motion draws the end state only. The mock's "paid plan" badge is
  * intentionally omitted (mock-only note).
  */
@@ -187,16 +188,13 @@ export function SyncPlan({ locale }: { locale: Locale }): React.ReactElement {
 
     let ctx: ReturnType<typeof gsap.context> | undefined
     if (!reduce) {
-      const wide = window.matchMedia('(min-width: 981px)').matches
       ctx = gsap.context(() => {
         const sp = { p: 0 }
         gsap.to(sp, {
           p: 1,
           ease: 'none',
           onUpdate: () => render(sp.p),
-          scrollTrigger: wide
-            ? { trigger: pin, start: 'top top', end: 'bottom bottom', scrub: 0.5 }
-            : { trigger: devs, start: 'top 78%', end: 'bottom 45%', scrub: 0.5 },
+          scrollTrigger: { trigger: pin, start: 'top top', end: 'bottom bottom', scrub: 0.5 },
         })
         const labelLn = section.querySelector<HTMLElement>('.label .ln')
         if (labelLn) {
@@ -255,7 +253,6 @@ export function SyncPlan({ locale }: { locale: Locale }): React.ReactElement {
               </h2>
               <p className="body">{copy.body}</p>
               <div className={styles.price}>
-                <span className={styles.shine} aria-hidden="true" />
                 <strong>{copy.price}</strong>
                 <span>
                   {copy.priceA}
@@ -287,6 +284,9 @@ export function SyncPlan({ locale }: { locale: Locale }): React.ReactElement {
             </div>
           </div>
         </div>
+      </div>
+      <div className={`wrap ${styles.plans}`}>
+        <PricingPlans />
       </div>
     </section>
   )
