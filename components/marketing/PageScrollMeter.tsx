@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { meterProgress, meterTickAt, scrollFromPointer } from '@/lib/marketing/lp/page-scroll-meter'
+import { meterProgress, meterTickAt, scrollFromDrag, scrollFromPointer } from '@/lib/marketing/lp/page-scroll-meter'
 import { getActiveLenis } from '@/lib/scroll/use-smooth-scroll'
 import styles from './PageScrollMeter.module.css'
 
@@ -27,8 +27,9 @@ const RESIZE_DEBOUNCE_MS = 160
  * 長さ 8px の目盛り。入れ物にだけ mix-blend-mode: difference を付けるので、白い紙の上では黒、黒い締めと
  * フッターの上では白に見える。.content の外(BackgroundGrid の直後)に置くのは、本文の描画結果と混ぜるため。
  *
- * 操作: 幅 20px の見えない当たり判定を押すとその位置へ瞬時にスクロールし、つまんだまま動かすと追従する
- * (pointer capture)。飾りの補助なので aria-hidden(ホイール・キーボードの普通のスクロールはそのまま使える)。
+ * 操作(マウスのみ): 幅 20px の見えない当たり判定で、線の先端(つまみ)をつかむと飛ばずに相対移動で動かせ、
+ * 空いている所を押すと 1 回だけそこへ飛んでから相対移動になる(pointer capture、書き込みは rAF で 1 フレーム 1 回)。
+ * タッチ(pointer: coarse / hover: none)は表示専用で、当たり判定は pointer-events: none(ふつうのスクロールに任せる)。飾りの補助なので aria-hidden(ホイール・キーボードの普通のスクロールはそのまま使える)。
  * 位置 → スクロール位置の変換と、進み・目盛りの計算は lib/marketing/lp/page-scroll-meter.ts の純関数。
  *
  * 寸法(ページの高さ・目盛りの位置・メーターの位置)は、レイアウト時・リサイズ時(160ms デバウンス)・
@@ -115,29 +116,74 @@ export function PageScrollMeter(): React.ReactElement {
     // ── 操作: 押した位置へスクロール / つまんだまま動かすと追従 / 離すと終わり ──
     let dragging = false
     let hovering = false
+    let coarse = false
     const paintActive = (): void => {
       root.classList.toggle(styles.active, hovering || dragging)
     }
-    const scrollToPointer = (clientY: number): void => {
-      const top = scrollFromPointer(clientY, trackTop, trackH, maxScroll)
-      const lenis = getActiveLenis()
-      if (lenis) lenis.scrollTo(top, { immediate: true })
-      else window.scrollTo({ top, left: 0, behavior: 'instant' })
+    // タッチ主体の端末(pointer: coarse / hover: none)では表示専用。当たり判定は CSS (.coarse .hit) で無効にする。
+    const mq = typeof window.matchMedia === 'function' ? window.matchMedia('(pointer: coarse), (hover: none)') : null
+    const onCoarseChange = (): void => {
+      coarse = mq?.matches ?? false
+      root.classList.toggle(styles.coarse, coarse)
+      if (coarse && dragging) {
+        dragging = false
+        cancelQueued()
+        hovering = false
+        paintActive()
+      }
     }
+    onCoarseChange()
+    mq?.addEventListener('change', onCoarseChange)
+    // スクロール位置の書き込みは rAF で 1 フレーム 1 回にまとめる(pointermove は目標値を覚えるだけ)。
+    const THUMB_GRAB_PX = 12
+    let dragRaf = 0
+    let pendingTarget = 0
+    let startY = 0
+    let startScroll = 0
+    const applyTarget = (): void => {
+      dragRaf = 0
+      const lenis = getActiveLenis()
+      if (lenis) lenis.scrollTo(pendingTarget, { immediate: true })
+      else window.scrollTo({ top: pendingTarget, left: 0, behavior: 'instant' })
+    }
+    const queueTarget = (top: number): void => {
+      pendingTarget = top
+      if (dragRaf === 0) dragRaf = window.requestAnimationFrame(applyTarget)
+    }
+    const cancelQueued = (): void => {
+      if (dragRaf !== 0) window.cancelAnimationFrame(dragRaf)
+      dragRaf = 0
+    }
+    // タッチ・ペンは何もしない(ブラウザ標準のスクロールに任せる)。pointerType が無い環境はマウス扱い。
+    const isMouseLike = (e: PointerEvent): boolean => e.pointerType !== 'touch' && e.pointerType !== 'pen'
     const onPointerDown = (e: PointerEvent): void => {
-      if (e.pointerType === 'mouse' && e.button !== 0) return
+      if (!isMouseLike(e) || coarse) return
+      if (e.button !== 0) return
       e.preventDefault()
       dragging = true
       hit.setPointerCapture(e.pointerId)
       paintActive()
-      scrollToPointer(e.clientY)
+      const thumbY = trackTop + meterProgress(window.scrollY, pageH, viewH) * trackH
+      if (Math.abs(e.clientY - thumbY) <= THUMB_GRAB_PX) {
+        // つまみをつかんだ: 飛ばずに、ここからの相対移動で動かす
+        startY = e.clientY
+        startScroll = window.scrollY
+      } else {
+        // 空いている所を押した: 1 回だけそこへ飛び、その後は相対移動
+        const top = scrollFromPointer(e.clientY, trackTop, trackH, maxScroll)
+        startY = e.clientY
+        startScroll = top
+        queueTarget(top)
+      }
     }
     const onPointerMove = (e: PointerEvent): void => {
-      if (dragging) scrollToPointer(e.clientY)
+      if (!dragging || !isMouseLike(e)) return
+      queueTarget(scrollFromDrag(startScroll, e.clientY - startY, trackH, maxScroll))
     }
     const onPointerEnd = (e: PointerEvent): void => {
       if (!dragging) return
       dragging = false
+      cancelQueued()
       if (hit.hasPointerCapture(e.pointerId)) hit.releasePointerCapture(e.pointerId)
       paintActive()
     }
@@ -181,6 +227,8 @@ export function PageScrollMeter(): React.ReactElement {
       hit.removeEventListener('pointerenter', onPointerEnter)
       hit.removeEventListener('pointerleave', onPointerLeave)
       resizeObserver?.disconnect()
+      mq?.removeEventListener('change', onCoarseChange)
+      cancelQueued()
       window.clearTimeout(resizeTimer)
       if (rafId !== 0) window.cancelAnimationFrame(rafId)
       root.classList.remove(styles.active)

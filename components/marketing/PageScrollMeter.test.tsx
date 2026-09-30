@@ -70,7 +70,10 @@ beforeEach(() => {
     frames.push(cb)
     return frames.length
   })
-  vi.stubGlobal('cancelAnimationFrame', () => undefined)
+  // cancel は「そのコールバックを捨てる」(id = 登録順の 1 始まり。flush で配列が空になるので、実行済みの id は無視される)
+  vi.stubGlobal('cancelAnimationFrame', (id: number): void => {
+    if (id >= 1 && id <= frames.length) frames[id - 1] = () => undefined
+  })
   stubRects()
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   // jsdom には pointer capture が無い
@@ -154,37 +157,93 @@ describe('PageScrollMeter', () => {
     expect(frames).toHaveLength(1)
   })
 
-  it('押した位置へ瞬時にスクロールし、つまんだまま動かすと追従し、離すと終わる', () => {
+  it('空いている所を押すと 1 回だけ飛び、その後は相対移動。move は rAF で 1 フレーム 1 回にまとまり、離すと予約を捨てる', () => {
     const { container } = render(<Page />)
     const { root, hit } = parts(container)
     const scrollTo = vi.mocked(window.scrollTo)
+    const flush = (): void => {
+      act(() => {
+        flushFrames()
+      })
+    }
 
     act(() => {
       hit.dispatchEvent(pointer('pointerdown', TRACK_TOP + TRACK_H / 2))
     })
+    flush()
     expect(scrollTo).toHaveBeenLastCalledWith({ top: MAX_SCROLL / 2, left: 0, behavior: 'instant' })
     expect(root.classList.contains(styles.active)).toBe(true)
 
+    // 10px 動かす → 開始位置(飛んだ先)から 10 × 4200/596 だけ相対移動。3 回動かしても書き込みは 1 回
+    scrollTo.mockClear()
     act(() => {
-      hit.dispatchEvent(pointer('pointermove', TRACK_TOP + TRACK_H))
+      hit.dispatchEvent(pointer('pointermove', TRACK_TOP + TRACK_H / 2 + 5))
+      hit.dispatchEvent(pointer('pointermove', TRACK_TOP + TRACK_H / 2 + 8))
+      hit.dispatchEvent(pointer('pointermove', TRACK_TOP + TRACK_H / 2 + 10))
     })
-    expect(scrollTo).toHaveBeenLastCalledWith({ top: MAX_SCROLL, left: 0, behavior: 'instant' })
+    flush()
+    expect(scrollTo).toHaveBeenCalledTimes(1)
+    const expected = MAX_SCROLL / 2 + 10 * (MAX_SCROLL / TRACK_H)
+    expect(scrollTo.mock.calls[0][0]).toMatchObject({ behavior: 'instant' })
+    expect((scrollTo.mock.calls[0][0] as ScrollToOptions).top).toBeCloseTo(expected, 6)
 
     // メーターの外へ出ても、端に丸めて追従し続ける
     act(() => {
-      hit.dispatchEvent(pointer('pointermove', 0))
+      hit.dispatchEvent(pointer('pointermove', 5000))
     })
-    expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, left: 0, behavior: 'instant' })
+    flush()
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: MAX_SCROLL, left: 0, behavior: 'instant' })
 
+    // 予約中に離したら、書き込まない
+    scrollTo.mockClear()
     act(() => {
+      hit.dispatchEvent(pointer('pointermove', 0))
       hit.dispatchEvent(pointer('pointerup', 0))
     })
     expect(root.classList.contains(styles.active)).toBe(false)
-    const calls = scrollTo.mock.calls.length
+    expect(scrollTo).not.toHaveBeenCalled()
     act(() => {
       hit.dispatchEvent(pointer('pointermove', TRACK_TOP + 100))
     })
-    expect(scrollTo.mock.calls.length).toBe(calls)
+    flush()
+    expect(scrollTo).not.toHaveBeenCalled()
+  })
+
+  it('つまみ(線の先端)をつかんだ時は飛ばず、相対移動で動く', () => {
+    const { container } = render(<Page />)
+    const { hit } = parts(container)
+    const scrollTo = vi.mocked(window.scrollTo)
+    setScrollY(MAX_SCROLL / 2)
+    act(() => {
+      window.dispatchEvent(new Event('scroll'))
+      flushFrames()
+    })
+    const thumbY = TRACK_TOP + TRACK_H / 2
+    act(() => {
+      hit.dispatchEvent(pointer('pointerdown', thumbY + 8))
+      flushFrames()
+    })
+    expect(scrollTo).not.toHaveBeenCalled()
+    act(() => {
+      hit.dispatchEvent(pointer('pointermove', thumbY + 18))
+      flushFrames()
+    })
+    expect((scrollTo.mock.calls[0][0] as ScrollToOptions).top).toBeCloseTo(MAX_SCROLL / 2 + 10 * (MAX_SCROLL / TRACK_H), 6)
+  })
+
+  it('タッチ・ペンの pointerdown は何もしない', () => {
+    const { container } = render(<Page />)
+    const { root, hit } = parts(container)
+    const scrollTo = vi.mocked(window.scrollTo)
+    const ev = new MouseEvent('pointerdown', { bubbles: true, clientY: TRACK_TOP + 200, cancelable: true })
+    Object.defineProperty(ev, 'pointerType', { value: 'touch' })
+    act(() => {
+      hit.dispatchEvent(ev)
+      flushFrames()
+    })
+    expect(scrollTo).not.toHaveBeenCalled()
+    expect(ev.defaultPrevented).toBe(false)
+    expect(root.classList.contains(styles.active)).toBe(false)
   })
 
   it('マウスを乗せている間だけ線が太くなる(active)', () => {

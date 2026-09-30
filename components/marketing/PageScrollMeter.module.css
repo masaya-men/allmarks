@@ -79,6 +79,18 @@
   -webkit-user-select: none;
 }
 
+/* タッチ主体の端末は表示専用: 当たり判定を無効にし、ブラウザ標準のスクロールに任せる(.coarse は tsx が matchMedia で付ける)。 */
+.coarse .hit {
+  pointer-events: none;
+  touch-action: auto;
+}
+@media (pointer: coarse), (hover: none) {
+  .hit {
+    pointer-events: none;
+    touch-action: auto;
+  }
+}
+
 @media (max-width: 640px) {
   .meter {
     right: 3px;

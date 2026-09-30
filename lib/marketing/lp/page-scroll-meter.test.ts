@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { meterProgress, meterTickAt, scrollFromPointer } from './page-scroll-meter'
+import { meterProgress, meterTickAt, scrollFromDrag, scrollFromPointer } from './page-scroll-meter'
 
 describe('meterProgress', () => {
   // ページ 5000px・画面 800px → スクロールできる範囲は 4200px
@@ -87,5 +87,25 @@ describe('scrollFromPointer', () => {
       const y = scrollFromPointer(top + f * height, top, height, page - vh)
       expect(meterProgress(y, page, vh)).toBeCloseTo(f, 10)
     }
+  })
+})
+
+describe('scrollFromDrag', () => {
+  const height = 600
+  const max = 4200
+  it('動かした量にページ/メーター比(7 倍)を掛けて、開始位置に足す', () => {
+    expect(scrollFromDrag(1000, 10, height, max)).toBeCloseTo(1070, 6)
+    expect(scrollFromDrag(1000, -10, height, max)).toBeCloseTo(930, 6)
+    expect(scrollFromDrag(1000, 0, height, max)).toBe(1000)
+  })
+  it('0..maxScroll に丸める', () => {
+    expect(scrollFromDrag(100, -50, height, max)).toBe(0)
+    expect(scrollFromDrag(4100, 50, height, max)).toBe(max)
+  })
+  it('メーターの高さ 0 以下・NaN・スクロールできないページは安全な値', () => {
+    expect(scrollFromDrag(1000, 10, 0, max)).toBe(1000)
+    expect(scrollFromDrag(1000, Number.NaN, height, max)).toBe(1000)
+    expect(scrollFromDrag(1000, 10, height, 0)).toBe(0)
+    expect(scrollFromDrag(Number.NaN, 10, height, max)).toBeCloseTo(70, 6)
   })
 })

@@ -35,3 +35,15 @@ export function scrollFromPointer(pointerY: number, trackTop: number, trackHeigh
   if (!(trackHeight > 0) || !(maxScroll > 0) || !Number.isFinite(pointerY)) return 0
   return clamp01((pointerY - trackTop) / trackHeight) * maxScroll
 }
+
+/**
+ * つまみ(線の先端)をつかんで動かす時の相対変換。つかんだ時のスクロール位置(startScroll)に、指(マウス)の
+ * 縦の移動量(deltaY)をメーターの高さに対する割合でページ側へ換算した分を足す。結果は 0..maxScroll に丸める。
+ * メーターの高さが 0 以下・スクロールできないページ・NaN は startScroll をそのまま(範囲内に丸めて)返す。
+ */
+export function scrollFromDrag(startScroll: number, deltaY: number, trackHeight: number, maxScroll: number): number {
+  if (!(maxScroll > 0)) return 0
+  const start = Number.isFinite(startScroll) ? Math.min(Math.max(startScroll, 0), maxScroll) : 0
+  if (!(trackHeight > 0) || !Number.isFinite(deltaY)) return start
+  return Math.min(Math.max(start + deltaY * (maxScroll / trackHeight), 0), maxScroll)
+}
