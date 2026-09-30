@@ -10482,3 +10482,14 @@ s208 の設計書を superpowers:writing-plans で実装計画に落とし(`docs
 - 60174d44 で進み具合の線(あみだ)・背景の傾き・流れる目盛り・緑カーソルを入れたが、ユーザー判断「思ったより良くならない」→ 83618906 で線・傾き・目盛りを撤去し、Problem/Features/締めの固定(scrub)をやめて時間で繰り返す再生へ。機能紹介は 01〜06 の章つき自動再生(1章6秒・一覧で飛ぶ・ホバーで一時停止)、右端に PageScrollMeter(LP だけ標準バーを隠す)。緑カーソルは継続。
 - 教訓: 根本原因(固定の長さ)を飾りでごまかさない/要素を足し続けない。重い確認(Playwright 等)は回さずユーザーが実機で見る。
 - 調査(次の s225 の土台): 同期・Private の暗号化状況、公開窓口に回数制限なし、robots、Cloudflare/Vercel のプラン(請求の入口は R2 のみ)。詳細は docs/private/2026-09-30-s225-security-plan.md。繁体字の追加を TODO に登録。
+
+## s225 (2026-09-30) — AI クローラー対策・回数制限・同期ファイル暗号化 / LP の固定と横線
+
+- s224 ブランチを master に早送り統合 → 作業ブランチ `s225-security-lp`。実装は Sonnet、司令塔は設計・検収。
+- **robots.txt**(`app/robots.ts`): `*` は従来どおり。学習専用 11種(GPTBot・ClaudeBot・anthropic-ai・CCBot・Google-Extended・Applebot-Extended・Bytespider・Meta-ExternalAgent・cohere-training-data-crawler・Amazonbot・FacebookBot)を全拒否、検索・回答用 6種(OAI-SearchBot・ChatGPT-User・Claude-SearchBot・Claude-User・PerplexityBot・Perplexity-User)を明示許可。Amazonbot/FacebookBot は公式ドキュメントの調査(学習利用あり・プレビューは別ボット)で追加。
+- **Cloudflare 管理画面(ユーザー操作)**: AI Crawl Control → セキュリティで 7種をブロック(GPTBot・ClaudeBot・Amazonbot・CCBot・Bytespider・FacebookBot・Meta-ExternalAgent)。Bot Preference Sync・Bot Fight・AI ラビリンスはオフのまま。請求予算アラート $0.01 は設定済みを確認。lopoly.app はオレンジの雲(プロキシ)を確認。
+- **回数制限**: `functions/api/_middleware.ts` + `functions/_lib/rate-limit.ts`。共有作成=1時間60回・1日300回(D1 `allmarks-rate-limit`、失敗時は作成を止める側)、ライセンス・Google 認証の書き込み系=1時間60回(D1、失敗時は通す)、他は isolate メモリの緩い上限。Pages Functions では Rate Limiting binding が使えず、WAF 無料枠は10秒窓のみ → D1 を選択(Workers Free=超過で停止、請求なし)。本番で D1 に回数が記録されることを確認。
+- **同期ファイル暗号化**: `lib/sync/file-crypto.ts`(HKDF-SHA256(kid) → AES-GCM-256、封筒 = 'AMSE1'+鍵ヒント8B+IV12B、AAD=ファイル名)。ファイル名は据え置き(古い版は「壊れている」で止まり上書きしない)。**初版の見落とし**: 端末の控え(sync-remote-cache)に目印が無い既存ファイルは暗号化し直されなかった → `sealed: true` の目印+目印なしは1回だけ送り直す+10秒ごとの確認も未暗号化が残る間はスキップしない、で修正(ユーザーの「一瞬で終わるの?」という疑問がきっかけ)。本番で全暗号化後にスキップへ戻ることを確認。鍵は kid 由来=サーバーは知りうる(目的は Google の自動検査に読ませないこと)。
+- **同期が数秒ごとに走り続ける不具合**: 文字だけのツイートの後埋めが `persistThumbnail(id,'',true)` を毎回呼び、`(existing.thumbnail ?? undefined) === undefined` が '' を別物と判定 → 同じ中身を updatedAt だけ更新して書き直していた。`||` に修正+テスト。同期ログに put bookmarks の短い id と状態を出す診断を残した(中身の差分を読む診断は撤去)。
+- **LP**: 区画の固定(scrub)を 60174d44 の形に戻す/Lenis 復帰/流れる目盛りは試して撤去/Problem・機能紹介の固定画面の下に横線(`SectionScrollRule`)= 左 SCROLL・右に次の区画名、スクロールで黒い線が伸び名前が反転、機能紹介は 01〜06 の章名も反転/機能紹介のボードが線と重なる件を修正/ロゴとフッターの AllMarks で LP 先頭へ/締めの円はスクロールで勝手に広がらずマウス移動時だけ/ボードの AllMarks は言語つきトップへ(クライアント遷移でサーバーの言語振り分けが走らなかった)。
+- 記録: LoPo にも同じ AI 対策(memory)、ローンチ動画(IDEAS.md)、Payoneer は住民票を先方が代理提出・審査中(docs/private)。
