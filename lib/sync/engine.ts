@@ -103,6 +103,8 @@ import {
 } from './snapshot-schema'
 import type { SyncCycleStepTrace, SyncCycleTrace } from './sync-store'
 import { getGzipCodec, looksGzipped, type GzipCodec } from './gzip-codec'
+import { createSyncCrypto, isSealed, openSyncFile, sealSyncFile, SyncSealOpenError, type SyncCrypto } from './file-crypto'
+import { loadLicense } from '@/lib/board/license-store'
 import {
   MANIFEST_FILE_NAME, SYNC_FORMAT_VERSION, V1_KEYS,
   parseV2FileName, v1KeyForName, parseManifest, sameMigratedFromV1, inferShardCount, planShardCount,
@@ -355,6 +357,9 @@ export interface PulledRemote {
   readonly v1RevisionsRead: MigratedFromV1
   /** Non-primary copies of v2 files / the manifest — deleted after a successful push. */
   readonly v2Duplicates: readonly DriveFileMeta[]
+  /** v2 data files that were read as legacy (unencrypted) this cycle. push writes them even when
+   *  their content is unchanged, so they end up sealed (encryption migration). */
+  readonly legacyNames: ReadonlySet<string>
 }
 
 function parseJsonText(name: string, text: string): unknown {
@@ -396,10 +401,26 @@ function partialSnapshotFor(name: string, kind: 'bookmarks' | 'cards' | 'tags' |
   }
 }
 
-async function decodeGzipBytes(name: string, bytes: Uint8Array, codec: GzipCodec): Promise<string> {
-  if (!looksGzipped(bytes)) return new TextDecoder().decode(bytes)
+/** Decodes a downloaded `.gz` file. Sealed (encrypted) bytes are opened first; `legacy` is true
+ *  when the file was NOT sealed (old plaintext gzip / plain text). */
+async function decodeGzipBytes(
+  name: string, bytes: Uint8Array, codec: GzipCodec, crypto?: SyncCrypto,
+): Promise<{ text: string; legacy: boolean }> {
+  let gz = bytes
+  let legacy = true
+  if (isSealed(bytes)) {
+    if (!crypto) throw new SyncCorruptDataError(name, 'file is encrypted but no key is available')
+    try {
+      gz = await openSyncFile(crypto.key, crypto.keyHint, name, bytes)
+    } catch (err) {
+      if (err instanceof SyncSealOpenError) throw new SyncCorruptDataError(name, 'encrypted data could not be opened')
+      throw err // SyncKeyMismatchError: classified 'corrupt' by error-kind.ts
+    }
+    legacy = false
+  }
+  if (!looksGzipped(gz)) return { text: new TextDecoder().decode(gz), legacy }
   try {
-    return await codec.decompress(bytes)
+    return { text: await codec.decompress(gz), legacy }
   } catch {
     throw new SyncCorruptDataError(name, 'gzip data could not be decompressed')
   }
@@ -421,15 +442,16 @@ export async function pullRemoteSnapshot(
   // pushed into the SAME array the caller holds. `cache`: sync-remote-cache as loaded by the caller
   // (defaults to empty = download everything). `codec`: gzip codec (defaults to getGzipCodec();
   // none available → SyncUnsupportedError before any Drive call).
-  opts: { signal?: AbortSignal; trace?: SyncCycleStepTrace[]; cache?: RemoteFileCache; codec?: GzipCodec | null } = {},
+  opts: { signal?: AbortSignal; trace?: SyncCycleStepTrace[]; cache?: RemoteFileCache; codec?: GzipCodec | null; crypto?: SyncCrypto } = {},
 ): Promise<PulledRemote> {
-  const { signal, trace = [], cache = {} } = opts
+  const { signal, trace = [], cache = {}, crypto } = opts
   const codec = requireCodec(opts.codec)
   const files = await traceStep(trace, 'list', () => listFolderFiles(accessToken, folderId, signal))
   const index = indexListing(files)
   const headRevisions: Record<string, string> = {}
   const remoteTexts: Record<string, string> = {}
   const nextCache: Record<string, RemoteFileCacheEntry> = {}
+  const legacyNames = new Set<string>()
 
   async function readText(meta: DriveFileMeta): Promise<string> {
     const name = meta.name
@@ -438,14 +460,17 @@ export async function pullRemoteSnapshot(
     const cached = listedRev ? cache[key] : undefined
     let text: string
     let rev: string
+    let legacy = false
     try {
       if (cached && cached.rev === listedRev && typeof cached.text === 'string') {
         text = cached.text
         rev = cached.rev
+        legacy = cached.legacy === true
       } else {
-        const download = name.endsWith('.gz')
+        const download: Promise<string> = name.endsWith('.gz')
           ? traceStep(trace, `download ${name}`, () => downloadFileBytes(accessToken, meta.id, signal))
-            .then((bytes) => decodeGzipBytes(name, bytes, codec))
+            .then((bytes) => decodeGzipBytes(name, bytes, codec, crypto))
+            .then((r) => { legacy = r.legacy; return r.text })
           : traceStep(trace, `download ${name}`, () => downloadFileText(accessToken, meta.id, signal))
         const revision = listedRev
           ? Promise.resolve(listedRev)
@@ -458,8 +483,11 @@ export async function pullRemoteSnapshot(
       if (err instanceof DriveError && !err.context) throw new DriveError(err.status, err.message, `download ${name}`, err.timedOut)
       throw err
     }
-    nextCache[key] = { rev, text }
+    // Only v2 data files (gzip) are migrated to sealed, and only when this cycle can seal them.
+    const markLegacy = legacy && !!crypto && name.endsWith('.gz') && parseV2FileName(name) !== null
+    nextCache[key] = markLegacy ? { rev, text, legacy: true } : { rev, text }
     if (key === name) {
+      if (markLegacy) legacyNames.add(name)
       headRevisions[name] = rev
       remoteTexts[name] = text
     }
@@ -503,7 +531,7 @@ export async function pullRemoteSnapshot(
   const shardCount = isV2 && manifest?.shardCount ? Math.max(manifest.shardCount, inferred) : inferred
   const v2Duplicates = index.duplicates.filter((f) => f.name === MANIFEST_FILE_NAME || parseV2FileName(f.name) !== null)
 
-  return { snapshot, headRevisions, remoteTexts, cache: nextCache, manifest, isV2, shardCount, v1RevisionsRead, v2Duplicates }
+  return { snapshot, headRevisions, remoteTexts, cache: nextCache, manifest, isV2, shardCount, v1RevisionsRead, v2Duplicates, legacyNames }
 }
 
 /** One file the v2 layout wants on Drive: name + the exact (canonical) JSON text it should hold. */
@@ -549,9 +577,10 @@ export function serializeSnapshotV2(snapshot: SyncSnapshot, shardCount: number):
  *  The trace step is `upload <name> (<size>)`, size = compressed bytes actually sent. */
 async function uploadSyncFile(
   accessToken: string, folderId: string, name: string, text: string, existing: DriveFileMeta | undefined,
-  codec: GzipCodec, trace: SyncCycleStepTrace[], signal?: AbortSignal,
+  codec: GzipCodec, trace: SyncCycleStepTrace[], signal?: AbortSignal, crypto?: SyncCrypto,
 ): Promise<DriveFileMeta> {
-  const bytes = await codec.compress(text)
+  const gz = await codec.compress(text)
+  const bytes = crypto ? await sealSyncFile(crypto.key, crypto.keyHint, name, gz) : gz
   return traceStep(trace, `upload ${name} (${formatSize(bytes.byteLength)})`, () => existing
     ? updateBinaryFile(accessToken, existing.id, bytes, SYNC_GZIP_MIME, signal)
     : createBinaryFile(accessToken, folderId, name, bytes, SYNC_GZIP_MIME, signal))
@@ -580,10 +609,14 @@ export async function pushSnapshot(
     /** Shard count to write with (PulledRemote.shardCount); doubled here if rows outgrow it. */
     shardCount?: number
     codec?: GzipCodec | null
+    /** When set, every file is uploaded encrypted (sealed). */
+    crypto?: SyncCrypto
+    /** PulledRemote.legacyNames: files to rewrite (sealed) even when their content is unchanged. */
+    legacyNames?: ReadonlySet<string>
     onFileWritten?: (name: string, rev: string, text: string) => Promise<void>
   } = {},
 ): Promise<Record<string, string>> {
-  const { signal, trace = [], onFileWritten } = opts
+  const { signal, trace = [], onFileWritten, crypto, legacyNames } = opts
   const codec = requireCodec(opts.codec)
   const shardCount = planShardCount(opts.shardCount ?? 0, maxRowCount(snapshot))
   const desired = serializeSnapshotV2(snapshot, shardCount)
@@ -591,10 +624,14 @@ export async function pushSnapshot(
   const byName = indexListing(files).primary
   const newRevisions: Record<string, string> = {}
 
-  await runPool(desired, WRITE_CONCURRENCY, async ({ name, text, createOnly }) => {
+  await runPool(desired, WRITE_CONCURRENCY, async (file) => {
+    const { name, createOnly } = file
     const existing = byName.get(name)
+    const legacy = !!existing && !!legacyNames?.has(name) && previousRemoteTexts[name] !== undefined
+    // A create-only legacy file (board-config) is re-sealed with the remote's own text, never overwritten.
+    const text = legacy && createOnly ? (previousRemoteTexts[name] as string) : file.text
     try {
-      if (existing && createOnly) {
+      if (existing && createOnly && !legacy) {
         const known = previousHeadRevisions[name] ?? existing.headRevisionId
         if (known) newRevisions[name] = known
         return
@@ -602,14 +639,14 @@ export async function pushSnapshot(
       if (existing) {
         const previous = previousHeadRevisions[name]
         if (!previous) throw new SyncConflictError(name)
-        if (previousRemoteTexts[name] === text) {
+        if (previousRemoteTexts[name] === text && !legacy) {
           newRevisions[name] = previous
           return
         }
         const current = await traceStep(trace, `rev ${name}`, () => getHeadRevisionId(accessToken, existing.id, signal))
         if (current !== previous) throw new SyncConflictError(name, previous, current)
       }
-      const meta = await uploadSyncFile(accessToken, folderId, name, text, existing, codec, trace, signal)
+      const meta = await uploadSyncFile(accessToken, folderId, name, text, existing, codec, trace, signal, crypto)
       if (meta.headRevisionId) {
         newRevisions[name] = meta.headRevisionId
         if (onFileWritten) await onFileWritten(name, meta.headRevisionId, text)
@@ -909,6 +946,13 @@ async function runSyncCycleUnlocked(
       return { status: 'error', vaultConflict: false, errorKind, errorMessage: err.message, localChanged: false }
     }
 
+    // Encryption key from the stored license's kid (same on every device of this user).
+    const license = await loadLicense(db)
+    if (!license) {
+      return { status: 'license-inactive', vaultConflict: false, licenseReason: 'no-license', localChanged: false }
+    }
+    const crypto = await createSyncCrypto(license.kid)
+
     let accessToken: string
     try {
       accessToken = await ensureAccessToken(db)
@@ -949,7 +993,7 @@ async function runSyncCycleUnlocked(
     // the cycle never forces the same downloads again next time.
     async function pullAndCache(): Promise<PulledRemote> {
       const current = await loadRemoteCache(db, folderId)
-      const result = await pullRemoteSnapshot(accessToken, folderId, { signal, trace, cache: current, codec })
+      const result = await pullRemoteSnapshot(accessToken, folderId, { signal, trace, cache: current, codec, crypto })
       await saveRemoteCache(db, folderId, result.cache)
       return result
     }
@@ -995,7 +1039,7 @@ async function runSyncCycleUnlocked(
         const vaultName = singleFileName('vault')
         const files = await traceStep(trace, 'list', () => listFolderFiles(accessToken, folderId, signal))
         const existing = indexListing(files).primary.get(vaultName)
-        const bytes = await codec.compress(canonicalJson(local.vault))
+        const bytes = await sealSyncFile(crypto.key, crypto.keyHint, vaultName, await codec.compress(canonicalJson(local.vault)))
         await traceStep(trace, 'vault-publish', () => existing
           ? updateBinaryFile(accessToken, existing.id, bytes, SYNC_GZIP_MIME, signal)
           : createBinaryFile(accessToken, folderId, vaultName, bytes, SYNC_GZIP_MIME, signal))
@@ -1029,7 +1073,7 @@ async function runSyncCycleUnlocked(
     try {
       newRevisions = await pushSnapshot(
         accessToken, folderId, finalSnapshot, pulled.headRevisions, pulled.remoteTexts,
-        { signal, trace, shardCount, codec, onFileWritten },
+        { signal, trace, shardCount, codec, crypto, legacyNames: pulled.legacyNames, onFileWritten },
       )
     } catch (err) {
       if (!(err instanceof SyncConflictError)) {
@@ -1081,7 +1125,7 @@ async function runSyncCycleUnlocked(
       try {
         newRevisions = await pushSnapshot(
           accessToken, folderId, pushedSnapshot, rePulled.headRevisions, rePulled.remoteTexts,
-          { signal, trace, shardCount, codec, onFileWritten },
+          { signal, trace, shardCount, codec, crypto, legacyNames: rePulled.legacyNames, onFileWritten },
         )
       } catch (err3) {
         await markPendingPush(db)

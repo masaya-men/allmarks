@@ -10,7 +10,7 @@ export type SyncErrorKind = 'network' | 'auth' | 'storage-full' | 'corrupt' | 'o
 
 export function classifySyncError(err: unknown): SyncErrorKind {
   if (!(err instanceof Error)) return 'other'
-  if (err.name === 'SyncCorruptDataError') return 'corrupt'
+  if (err.name === 'SyncCorruptDataError' || err.name === 'SyncKeyMismatchError' || err.name === 'SyncSealOpenError') return 'corrupt'
   if (err.name === 'SyncNotConnectedError' || err.name === 'GauthError') return 'auth'
   if (err.name === 'DriveError') {
     const status = (err as Error & { status?: unknown }).status

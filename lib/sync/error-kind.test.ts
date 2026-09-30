@@ -39,4 +39,8 @@ describe('classifySyncError', () => {
   it('classifies a plain Error as other', () => {
     expect(classifySyncError(new Error('something else'))).toBe('other')
   })
+  it('classifies SyncKeyMismatchError and SyncSealOpenError as corrupt', () => {
+    expect(classifySyncError(fakeError('SyncKeyMismatchError', 'x'))).toBe('corrupt')
+    expect(classifySyncError(fakeError('SyncSealOpenError', 'x'))).toBe('corrupt')
+  })
 })

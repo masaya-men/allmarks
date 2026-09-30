@@ -17,6 +17,7 @@ import { mergeAll, pickDeterministic, type SyncSnapshot } from './merge'
 import { setGzipCodecForTesting, createStreamGzipCodec, looksGzipped, type GzipCodec } from './gzip-codec'
 import { shardFileName, shardIndexFor, parseManifest, SHARD_COUNT_DEFAULT, RESHARD_AVG_ROWS } from './sync-layout'
 import { FakeDrive, installFakeDrive } from './fake-drive.testutil'
+import { isSealed, createSyncCrypto } from './file-crypto'
 
 vi.mock('./drive-adapter', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./drive-adapter')>()
@@ -55,19 +56,19 @@ afterEach(() => {
   for (const d of openDbs.splice(0)) d.close()
 })
 
-function activeLicenseState(now: number = Date.now()): LicenseState {
-  return { kid: 'kid-1', deviceId: 'device-1', scope: ['sync'], validatedAt: now, lastCheckedAt: now, lastConfirmedAt: now }
+function activeLicenseState(now: number = Date.now(), kid = 'kid-1'): LicenseState {
+  return { kid, deviceId: 'device-1', scope: ['sync'], validatedAt: now, lastCheckedAt: now, lastConfirmedAt: now }
 }
 
 /** One simulated device = its own, fully separate IndexedDB (its own fake-indexeddb factory),
  *  already connected to the shared fake Drive folder and licensed. */
-async function newDevice(): Promise<Db> {
+async function newDevice(kid = 'kid-1'): Promise<Db> {
   ;(globalThis as { indexedDB: IDBFactory }).indexedDB = new IDBFactory()
   const d = await initDB()
   openDbs.push(d)
   await saveSyncTokens(d, { accessToken: 'at', expiresAt: Date.now() + 10_000_000, scope: 's', refreshToken: 'rt' })
   await updateSyncStatus(d, { connected: true, folderId: 'folder1' })
-  await saveLicense(d, activeLicenseState())
+  await saveLicense(d, activeLicenseState(Date.now(), kid))
   return d
 }
 
@@ -142,7 +143,7 @@ describe('sync format v2 — fresh folder', () => {
 
     // Real gzip bytes, uploaded as application/gzip.
     const shard = drive.byName(bmShard('b1'))!
-    expect(looksGzipped(shard.bytes)).toBe(true)
+    expect(isSealed(shard.bytes)).toBe(true)
     expect(shard.mime).toBe('application/gzip')
     expect(((await drive.json(bmShard('b1'))) as Array<{ id: string }>).map((r) => r.id)).toContain('b1')
     expect(await driveBookmarkIds()).toEqual(['b1', 'b2', 'b3'])
@@ -303,7 +304,7 @@ describe('sync format v2 — two devices', () => {
         await addBookmark(b, theirs, { updatedAt: 6 })
         // B pushes through the real engine functions against the same fake Drive (no lock needed here).
         const { pushSnapshot } = await import('./engine')
-        const pulledB = await pullRemoteSnapshot('at', 'folder1', { cache: await loadRemoteCache(b, 'folder1') })
+        const pulledB = await pullRemoteSnapshot('at', 'folder1', { cache: await loadRemoteCache(b, 'folder1'), crypto: await createSyncCrypto('kid-1') })
         const mergedB = mergeAll(await buildLocalSnapshot(b), pulledB.snapshot)
         await pushSnapshot('at', 'folder1', mergedB, pulledB.headRevisions, pulledB.remoteTexts, { shardCount: pulledB.shardCount })
       }
@@ -371,7 +372,7 @@ describe('sync format v2 — migration from v1', () => {
 
     // v2 files hold exactly the merged data.
     // (A v2 pull now skips the v1 files: their revisions equal manifest.migratedFromV1.)
-    const v2Only = await pullRemoteSnapshot('at', 'folder1', { codec })
+    const v2Only = await pullRemoteSnapshot('at', 'folder1', { codec, crypto: await createSyncCrypto('kid-1') })
     expect(v2Only.isV2).toBe(true)
     expect(Object.keys(v2Only.headRevisions).filter((n) => !n.endsWith('.gz') && n !== 'manifest.json')).toEqual([])
     expect(v2Only.snapshot.bookmarks).toEqual(expected.bookmarks)
@@ -514,7 +515,7 @@ describe('sync format v2 — reshard', () => {
     }
 
     // A reader assembles every row back from the 32 shards.
-    const pulled = await pullRemoteSnapshot('at', 'folder1', {})
+    const pulled = await pullRemoteSnapshot('at', 'folder1', { crypto: await createSyncCrypto('kid-1') })
     expect(pulled.shardCount).toBe(32)
     expect(pulled.snapshot.bookmarks).toHaveLength(total)
   }, 60_000)
@@ -537,6 +538,7 @@ describe('sync format v2 — vault conflict', () => {
     expect(result.vaultConflict).toBe(true)
     expect(updateBinaryFile).toHaveBeenCalledWith('at', vaultFile.id, expect.any(Uint8Array), 'application/gzip', expect.any(AbortSignal))
     expect(JSON.parse(await drive.text('vault.json.gz'))).toEqual(localVault)
+    expect(isSealed(drive.byName('vault.json.gz')!.bytes)).toBe(true)
     expect(drive.byName('vault.json')).toBeUndefined()
   })
 })
@@ -797,5 +799,87 @@ describe('review regressions — EMPTY TRASH stays empty across devices', () => 
     }
     const onDrive = ((await drive.json(bmShard('gone'))) as Array<{ id: string; purged?: boolean }>).find((r) => r.id === 'gone')
     expect(onDrive?.purged).toBe(true)
+  })
+})
+
+describe('sync file encryption', () => {
+  const dataFiles = (): string[] => drive.names().filter((n) => n.endsWith('.json.gz'))
+
+  it('seals every data file on Drive; manifest stays plain JSON', async () => {
+    const a = await newDevice()
+    await addBookmark(a, 'b1')
+    await a.put('tags', tag('t1') as never)
+    await saveBoardConfig(a, { theme: 'dark' } as never)
+    expect((await runSyncCycle(a)).status).toBe('synced')
+    expect(dataFiles().length).toBeGreaterThan(30)
+    for (const n of dataFiles()) expect(isSealed(drive.byName(n)!.bytes), n).toBe(true)
+    expect(JSON.parse(await drive.text('manifest.json'))).toMatchObject({ formatVersion: 2 })
+  })
+
+  it('two devices with the same kid sync sealed files both ways', async () => {
+    const a = await newDevice()
+    const b = await newDevice()
+    await addBookmark(a, 'from-a')
+    await runSyncCycle(a)
+    await runSyncCycle(b)
+    expect(await localBookmarkIds(b)).toEqual(['from-a'])
+    await addBookmark(b, 'from-b', { updatedAt: 5 })
+    await runSyncCycle(b)
+    await runSyncCycle(a)
+    expect(await localBookmarkIds(a)).toEqual(['from-a', 'from-b'])
+  })
+
+  it('a legacy plaintext remote is read, then rewritten sealed (even unchanged files and create-only board-config)', async () => {
+    drive.put('manifest.json', JSON.stringify({ formatVersion: 2, shardCount: 16, updatedAt: 1 }))
+    const rows = [bookmark('legacy-1')]
+    drive.put(bmShard('legacy-1'), await codec.compress(JSON.stringify(rows)), 'application/gzip')
+    const cfgText = JSON.stringify({ config: { theme: 'light' }, updatedAt: 1 })
+    drive.put('board-config.json.gz', await codec.compress(cfgText), 'application/gzip')
+    const a = await newDevice()
+    const r0 = await runSyncCycle(a)
+    expect(r0.errorMessage).toBeUndefined()
+    expect(r0.status).toBe('synced')
+    expect(await localBookmarkIds(a)).toEqual(['legacy-1'])
+    for (const n of dataFiles()) expect(isSealed(drive.byName(n)!.bytes), n).toBe(true)
+    expect(await drive.text('board-config.json.gz')).toBe(cfgText)
+    expect(await driveBookmarkIds()).toEqual(['legacy-1'])
+    // Second cycle is a no-op again (legacy flag cleared by the write).
+    drive.clearCalls()
+    await runSyncCycle(a)
+    expect(drive.callsOf('create')).toEqual([])
+    expect(drive.callsOf('update')).toEqual([])
+  })
+
+  it('legacy flag survives a failed push: a later cycle still seals from the cache', async () => {
+    drive.put('manifest.json', JSON.stringify({ formatVersion: 2, shardCount: 16, updatedAt: 1 }))
+    drive.put(bmShard('legacy-1'), await codec.compress(JSON.stringify([bookmark('legacy-1')])), 'application/gzip')
+    const a = await newDevice()
+    vi.mocked(updateBinaryFile).mockRejectedValueOnce(new Error('boom'))
+    expect((await runSyncCycle(a)).status).toBe('error')
+    expect(isSealed(drive.byName(bmShard('legacy-1'))!.bytes)).toBe(false)
+    expect((await runSyncCycle(a)).status).toBe('synced')
+    expect(isSealed(drive.byName(bmShard('legacy-1'))!.bytes)).toBe(true)
+  })
+
+  it('a remote sealed with a different kid fails as corrupt and writes nothing', async () => {
+    const a = await newDevice('kid-1')
+    await addBookmark(a, 'b1')
+    await runSyncCycle(a)
+    const b = await newDevice('kid-2')
+    await addBookmark(b, 'b2')
+    drive.clearCalls()
+    const result = await runSyncCycle(b)
+    expect(result.status).toBe('error')
+    expect(result.errorKind).toBe('corrupt')
+    expect(drive.callsOf('create')).toEqual([])
+    expect(drive.callsOf('update')).toEqual([])
+    expect(drive.callsOf('delete')).toEqual([])
+  })
+
+  it('pullRemoteSnapshot without a crypto context throws SyncCorruptDataError on a sealed file', async () => {
+    const a = await newDevice()
+    await addBookmark(a, 'b1')
+    await runSyncCycle(a)
+    await expect(pullRemoteSnapshot('at', 'folder1', { codec })).rejects.toBeInstanceOf(SyncCorruptDataError)
   })
 })

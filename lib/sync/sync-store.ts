@@ -192,6 +192,8 @@ const REMOTE_CACHE_KEY = 'sync-remote-cache'
 export interface RemoteFileCacheEntry {
   readonly rev: string
   readonly text: string
+  /** Set when the file on Drive was read as legacy (unencrypted); push rewrites it sealed. */
+  readonly legacy?: boolean
 }
 
 export type RemoteFileCache = Readonly<Record<string, RemoteFileCacheEntry>>

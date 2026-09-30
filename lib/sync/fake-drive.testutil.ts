@@ -10,6 +10,7 @@ import {
   DriveError, type DriveFileMeta,
 } from './drive-adapter'
 import { createStreamGzipCodec, looksGzipped } from './gzip-codec'
+import { createSyncCrypto, isSealed, openSyncFile } from './file-crypto'
 
 export interface FakeDriveFile {
   readonly id: string
@@ -64,18 +65,23 @@ export class FakeDrive {
     return [...this.files.values()].map((f) => f.name).sort()
   }
 
-  /** The decoded (gunzipped when needed) text of a file. */
-  async text(name: string): Promise<string> {
+  /** The decoded (unsealed with `kid`'s key when encrypted, then gunzipped when needed) text of a file. */
+  async text(name: string, kid = 'kid-1'): Promise<string> {
     const f = this.byName(name)
     if (!f) throw new Error(`no such fake file: ${name}`)
-    if (!looksGzipped(f.bytes)) return decoder.decode(f.bytes)
+    let bytes = f.bytes
+    if (isSealed(bytes)) {
+      const c = await createSyncCrypto(kid)
+      bytes = await openSyncFile(c.key, c.keyHint, name, bytes)
+    }
+    if (!looksGzipped(bytes)) return decoder.decode(bytes)
     const codec = createStreamGzipCodec()
     if (!codec) throw new Error('no gzip codec in this environment')
-    return codec.decompress(f.bytes)
+    return codec.decompress(bytes)
   }
 
-  async json(name: string): Promise<unknown> {
-    return JSON.parse(await this.text(name))
+  async json(name: string, kid = 'kid-1'): Promise<unknown> {
+    return JSON.parse(await this.text(name, kid))
   }
 
   clearCalls(): void {

@@ -13,6 +13,7 @@ import { ensureAccessToken, hasRequiredScopes, SyncNotConnectedError } from './e
 import { setSyncMarkDirty, withSyncWritesSuppressed } from './sync-signal'
 import { onSyncCycleStarted, onSyncCycleFinished, isSyncCycleInFlight } from './sync-events'
 import { setGzipCodecForTesting, type GzipCodec } from './gzip-codec'
+import { isSealed, SEAL_MAGIC } from './file-crypto'
 import { shardFileName, shardIndexFor, SHARD_COUNT_DEFAULT } from './sync-layout'
 import { saveRemoteCache } from './sync-store'
 
@@ -26,6 +27,29 @@ vi.mock('./auth', async (importOriginal) => {
 import { refreshAccessToken, SYNC_OAUTH_SCOPE } from './auth'
 
 let db: IDBPDatabase<AllMarksDB> | null = null
+
+// Real AES-GCM resolves on the libuv threadpool, which the fake-timer tests below (advanceTimersByTimeAsync)
+// cannot flush. This file tests orchestration only, so file-crypto is replaced by a microtask-only
+// stand-in (seal = magic + bytes). The real cipher is covered by file-crypto.test.ts / engine-v2.test.ts.
+vi.mock('./file-crypto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./file-crypto')>()
+  return {
+    ...actual,
+    createSyncCrypto: async () => ({ key: {} as CryptoKey, keyHint: new Uint8Array(8) }),
+    sealSyncFile: async (_k: CryptoKey, _h: Uint8Array, _n: string, bytes: Uint8Array) => {
+      const out = new Uint8Array(actual.SEAL_MAGIC.length + bytes.length)
+      out.set(actual.SEAL_MAGIC, 0)
+      out.set(bytes, actual.SEAL_MAGIC.length)
+      return out
+    },
+    openSyncFile: async (_k: CryptoKey, _h: Uint8Array, _n: string, bytes: Uint8Array) => bytes.slice(actual.SEAL_MAGIC.length),
+  }
+})
+
+/** Test helper: sealed (stand-in) upload bytes -> plain text (identity codec). */
+async function unsealForText(_name: string | undefined, bytes: Uint8Array): Promise<string> {
+  return new TextDecoder().decode(isSealed(bytes) ? bytes.slice(SEAL_MAGIC.length) : bytes)
+}
 
 // This file exercises the engine's orchestration (lock, trace, ceiling, retry, vault, guards). It
 // runs with an identity "gzip" codec (compressed bytes = the UTF-8 text) so the mocked Drive calls
@@ -204,10 +228,12 @@ vi.mock('./drive-adapter', async (importOriginal) => {
     // keep mocking/asserting plain text.
     downloadFileBytes: vi.fn(async (t: string, id: string, signal?: AbortSignal): Promise<Uint8Array> =>
       new TextEncoder().encode(String(await downloadFileText(t, id, signal)))),
-    createBinaryFile: vi.fn((t: string, f: string, name: string, bytes: Uint8Array, _mime?: string, signal?: AbortSignal) =>
-      createTextFile(t, f, name, new TextDecoder().decode(bytes), signal)),
-    updateBinaryFile: vi.fn((t: string, id: string, bytes: Uint8Array, _mime?: string, signal?: AbortSignal) =>
-      updateTextFile(t, id, new TextDecoder().decode(bytes), signal)),
+    // Uploads are sealed (encrypted) by the engine; unseal with this file's test license kid
+    // ('kid-1') so the assertions below keep seeing plain text.
+    createBinaryFile: vi.fn(async (t: string, f: string, name: string, bytes: Uint8Array, _mime?: string, signal?: AbortSignal) =>
+      createTextFile(t, f, name, await unsealForText(name, bytes), signal)),
+    updateBinaryFile: vi.fn(async (t: string, id: string, bytes: Uint8Array, _mime?: string, signal?: AbortSignal) =>
+      updateTextFile(t, id, await unsealForText(undefined, bytes), signal)),
     deleteFile: vi.fn(),
   }
 })
@@ -863,7 +889,8 @@ describe('runSyncCycle concurrency (sync-lock)', () => {
     // shards, tags, manifest) per cycle, and the two cycles' entries never interleave.
     const perCycle = 37
     expect(log.length).toBe(perCycle * 2)
-    expect(log.slice(0, perCycle)).toEqual(log.slice(perCycle, perCycle * 2))
+    // Order inside one cycle's parallel upload pool is scheduling-dependent; the point is no interleaving.
+    expect([...log.slice(0, perCycle)].sort()).toEqual([...log.slice(perCycle, perCycle * 2)].sort())
   })
 
   it('a cycle that fails does not deadlock a queued second cycle', async () => {
