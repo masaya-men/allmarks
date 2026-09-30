@@ -34,3 +34,11 @@ preview_bucket_name = "allmarks-share-og-preview"
 binding = "K3_KV"
 id = "75b8f0cfa1d147bc960ae00793194932"
 preview_id = "03ded5ff1254441e8301d03f76e67c70"
+
+# レート制限カウンタ (D1)。 functions/api/_middleware.ts が使う。 1 IP × scope × 窓 = 1 行。
+# database_id は `wrangler d1 create allmarks-rate-limit` の出力で置き換える (3cc54912-3f11-44dc-819d-ae24ef8102e2)。
+[[d1_databases]]
+binding = "DB_RL"
+database_name = "allmarks-rate-limit"
+database_id = "3cc54912-3f11-44dc-819d-ae24ef8102e2"
+migrations_dir = "migrations"

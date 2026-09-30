@@ -111,7 +111,7 @@ export type CreateShareResponse = {
 export type GetShareResponse = KVShareEntry
 
 export type ShareErrorResponse = {
-  readonly error: 'not_found' | 'expired' | 'invalid' | 'rate_limit' | 'server'
+  readonly error: 'not_found' | 'expired' | 'invalid' | 'rate_limit' | 'rate_limited' | 'server'
   readonly message: string
 }
 
