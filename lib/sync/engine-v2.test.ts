@@ -9,7 +9,7 @@ import { initDB, type AllMarksDB } from '@/lib/storage/indexeddb'
 import { saveBoardConfig } from '@/lib/storage/board-config'
 import { createVault, loadVaultRecord } from '@/lib/private/vault-store'
 import { saveLicense, type LicenseState } from '@/lib/board/license-store'
-import { saveSyncTokens, updateSyncStatus, loadSyncStatus, loadRemoteCache } from './sync-store'
+import { saveSyncTokens, updateSyncStatus, loadSyncStatus, loadRemoteCache, patchRemoteCache } from './sync-store'
 import { createSyncController } from './sync-controller'
 import { setSyncMarkDirty } from './sync-signal'
 import { purgedBookmarkTombstone } from '@/lib/storage/indexeddb'
@@ -882,4 +882,51 @@ describe('sync file encryption', () => {
     await runSyncCycle(a)
     await expect(pullRemoteSnapshot('at', 'folder1', { codec })).rejects.toBeInstanceOf(SyncCorruptDataError)
   })
+
+  describe('pre-release cache entries (no sealed marker)', () => {
+    async function seedPreReleaseCache(d: Db): Promise<void> {
+      const patch: Record<string, { rev: string; text: string }> = {}
+      for (const name of drive.names()) patch[name] = { rev: drive.byName(name)!.rev, text: await drive.text(name) }
+      await patchRemoteCache(d, 'folder1', patch)
+    }
+    async function seedPlaintextRemote(): Promise<void> {
+      drive.put('manifest.json', JSON.stringify({ formatVersion: 2, shardCount: 16, updatedAt: 1 }))
+      drive.put(bmShard('legacy-1'), await codec.compress(JSON.stringify([bookmark('legacy-1')])), 'application/gzip')
+      drive.put('tags.json.gz', await codec.compress('[]'), 'application/gzip')
+    }
+
+    it('a poll on an unflagged cache still runs a full cycle and seals every file; then polls skip; then no rewrites', async () => {
+      await seedPlaintextRemote()
+      const a = await newDevice()
+      await seedPreReleaseCache(a)
+      // Unchanged listing + cache hits, but entries carry no sealed marker -> poll must NOT skip.
+      const r1 = await runSyncCycle(a, { skipIfUnchanged: true })
+      expect(r1.status).toBe('synced')
+      for (const n of dataFiles()) expect(isSealed(drive.byName(n)!.bytes), n).toBe(true)
+      expect(await driveBookmarkIds()).toEqual(['legacy-1'])
+
+      // (b) migrated: a poll now skips (trace ends at skip-check, no writes).
+      drive.clearCalls()
+      await runSyncCycle(a, { skipIfUnchanged: true })
+      const steps = (await loadSyncStatus(a)).lastCycleTrace!.steps.map((s) => s.name)
+      expect(steps).toEqual(['license-check', 'start poll pending=-', 'skip-check'])
+      expect(drive.callsOf('update')).toEqual([])
+
+      // (c) a full cycle after that writes nothing either.
+      await runSyncCycle(a)
+      expect(drive.callsOf('create')).toEqual([])
+      expect(drive.callsOf('update')).toEqual([])
+    })
+
+    it('a full cycle on an unflagged cache seals files without re-downloading them', async () => {
+      await seedPlaintextRemote()
+      const a = await newDevice()
+      await seedPreReleaseCache(a)
+      drive.clearCalls()
+      expect((await runSyncCycle(a)).status).toBe('synced')
+      expect(downloads()).toEqual([])
+      for (const n of dataFiles()) expect(isSealed(drive.byName(n)!.bytes), n).toBe(true)
+    })
+  })
 })
+

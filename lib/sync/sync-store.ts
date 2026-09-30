@@ -192,8 +192,10 @@ const REMOTE_CACHE_KEY = 'sync-remote-cache'
 export interface RemoteFileCacheEntry {
   readonly rev: string
   readonly text: string
-  /** Set when the file on Drive was read as legacy (unencrypted); push rewrites it sealed. */
-  readonly legacy?: boolean
+  /** Set once the file on Drive is known to be sealed (encrypted): read sealed, or written sealed by
+   *  this device. Entries from before encryption shipped lack it, so v2 data files without it are
+   *  treated as legacy and rewritten sealed once. */
+  readonly sealed?: true
 }
 
 export type RemoteFileCache = Readonly<Record<string, RemoteFileCacheEntry>>

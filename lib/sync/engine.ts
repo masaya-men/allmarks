@@ -465,7 +465,7 @@ export async function pullRemoteSnapshot(
       if (cached && cached.rev === listedRev && typeof cached.text === 'string') {
         text = cached.text
         rev = cached.rev
-        legacy = cached.legacy === true
+        legacy = cached.sealed !== true
       } else {
         const download: Promise<string> = name.endsWith('.gz')
           ? traceStep(trace, `download ${name}`, () => downloadFileBytes(accessToken, meta.id, signal))
@@ -484,8 +484,10 @@ export async function pullRemoteSnapshot(
       throw err
     }
     // Only v2 data files (gzip) are migrated to sealed, and only when this cycle can seal them.
-    const markLegacy = legacy && !!crypto && name.endsWith('.gz') && parseV2FileName(name) !== null
-    nextCache[key] = markLegacy ? { rev, text, legacy: true } : { rev, text }
+    const isDataFile = name.endsWith('.gz') && parseV2FileName(name) !== null
+    const markLegacy = legacy && !!crypto && isDataFile
+    // `sealed` only for data files known sealed (a legacy read, or no crypto to judge, leaves it unset).
+    nextCache[key] = isDataFile && !legacy ? { rev, text, sealed: true } : { rev, text }
     if (key === name) {
       if (markLegacy) legacyNames.add(name)
       headRevisions[name] = rev
@@ -828,6 +830,11 @@ export function isRemoteListingUnchanged(files: readonly DriveFileMeta[], cache:
     if (!meta.headRevisionId) return false
     if (cache[cacheKeyFor(meta, index)]?.rev !== meta.headRevisionId) return false
   }
+  // Pre-encryption cache entries (no `sealed` marker) mean plaintext files still on Drive: run a
+  // full cycle so they get migrated to sealed.
+  for (const [key, entry] of Object.entries(cache)) {
+    if (key.endsWith('.gz') && parseV2FileName(key) !== null && entry.sealed !== true) return false
+  }
   return true
 }
 
@@ -1004,7 +1011,7 @@ async function runSyncCycleUnlocked(
     // file pushSnapshot writes here is v2-named, so recording it there would desync the v1 tab's
     // comparison forever (see v1OnlyHeadRevisions below for the full explanation).
     async function onFileWritten(name: string, rev: string, text: string): Promise<void> {
-      await patchRemoteCache(db, folderId, { [name]: { rev, text } })
+      await patchRemoteCache(db, folderId, { [name]: { rev, text, sealed: true } })
     }
 
     let pulled: PulledRemote

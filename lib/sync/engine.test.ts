@@ -1016,9 +1016,9 @@ const UNCHANGED_LISTING = [
 async function seedUnchangedRemoteCache(d: IDBPDatabase<AllMarksDB>): Promise<void> {
   await saveRemoteCache(d, 'folder1', {
     'manifest.json': { rev: 'rev-m', text: JSON.stringify({ formatVersion: 2, shardCount: 16, updatedAt: 1 }) },
-    'bookmarks-0.json.gz': { rev: 'rev-1', text: '[]' },
-    'tags.json.gz': { rev: 'rev-1', text: '[]' },
-    'cards-0.json.gz': { rev: 'rev-1', text: '[]' },
+    'bookmarks-0.json.gz': { rev: 'rev-1', text: '[]', sealed: true },
+    'tags.json.gz': { rev: 'rev-1', text: '[]', sealed: true },
+    'cards-0.json.gz': { rev: 'rev-1', text: '[]', sealed: true },
   })
 }
 
