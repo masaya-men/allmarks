@@ -19,13 +19,14 @@ import {
   featureLayouts,
   featState,
   featTarget,
+  featChapterProgress,
   type FeatureGeometry,
   type FeatureHover,
   type FeatureState,
   type PillBox,
 } from '@/lib/marketing/lp/feature-timeline'
 import type { Pt } from '@/lib/marketing/lp/types'
-import { SectionScrollRule } from '../SectionScrollRule'
+import { SectionScrollRule, type ScrollRuleMark } from '../SectionScrollRule'
 import { createScrollRuleDriver } from '@/lib/marketing/lp/scroll-rule'
 import { LABEL_TEXT as FINAL_CTA_LABEL } from './FinalCta'
 import styles from './Features.module.css'
@@ -67,6 +68,13 @@ const STEPS: readonly { readonly num: string; readonly name: string; readonly id
   { num: '05', name: 'Privacy', id: 'privacy' },
   { num: '06', name: 'Share', id: 'share' },
 ]
+
+/** Chapter labels on the bottom scroll rule: same num/name as the nav, at each chapter's start progress. */
+const CHAPTER_MARKS: readonly ScrollRuleMark[] = STEPS.map((step, i) => ({
+  num: step.num,
+  name: step.name,
+  at: featChapterProgress(i),
+}))
 
 /** 06 uses landing.share.* (all one line, no split); 01–05 use landing.features.<id>.* (mock 453–458). */
 function stepTitleKey(id: StepId): string {
@@ -534,7 +542,7 @@ export function Features(): React.ReactElement {
       </div>
       <div ref={fpinRef} className={styles.fpin} data-fpin>
         <div className={styles.fstick}>
-          <SectionScrollRule nextLabel={FINAL_CTA_LABEL} ruleRef={scrollRuleRef} />
+          <SectionScrollRule nextLabel={FINAL_CTA_LABEL} marks={CHAPTER_MARKS} ruleRef={scrollRuleRef} />
           <div className={`wrap ${styles.fgrid}`}>
             <div className={styles.fleft}>
               <ol className={styles.fnav} aria-hidden="true">

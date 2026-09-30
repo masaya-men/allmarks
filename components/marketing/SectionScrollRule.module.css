@@ -101,6 +101,28 @@
   clip-path: inset(0 calc(100% - var(--sr-lf)) 0 0);
 }
 
+/* chapter labels: sit on the track, base copy has a paper plate so the line
+   breaks behind it; the inverted copy is clipped by this mark's own --sr-lf */
+.mark {
+  --sr-lf: 0%;
+  position: absolute;
+  top: 0;
+  transform: translateY(-50%);
+  padding: 4px 7px;
+  background: var(--paper);
+  white-space: nowrap;
+}
+.mark .inv {
+  padding: 4px 7px;
+}
+.markTxt {
+  display: inline-block;
+  line-height: 1.3;
+}
+:global([data-sr-compact]) .markName {
+  display: none;
+}
+
 @media (max-width: 560px) {
   .rule {
     --sr-gap: 12px;

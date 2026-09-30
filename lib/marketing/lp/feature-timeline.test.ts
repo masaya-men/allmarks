@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   featState,
   featTarget,
+  featChapterProgress,
   featureLayouts,
   featFollow,
   featSpeedCap,
@@ -268,5 +269,13 @@ describe('follow (how the shown position catches up with the scroll)', () => {
     expect(segs).toEqual([0, 1, 2, 3, 4, 5])
     expect(maxStep).toBeLessThan(0.3)
     expect(frames * FRAME).toBeLessThan(2000)
+  })
+})
+
+describe('featChapterProgress', () => {
+  it('is the inverse of featTarget at each chapter start and increases', () => {
+    for (let i = 0; i < 6; i++) expect(featTarget(featChapterProgress(i))).toBeCloseTo(i)
+    for (let i = 1; i < 6; i++) expect(featChapterProgress(i)).toBeGreaterThan(featChapterProgress(i - 1))
+    expect(featChapterProgress(5)).toBeLessThan(1)
   })
 })

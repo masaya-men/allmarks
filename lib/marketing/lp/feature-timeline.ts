@@ -300,6 +300,9 @@ export function featState(Pin: number, g: FeatureGeometry): FeatureState {
 /** 固定区間の進み(0..1)→ P(0..6)。見本と同じずらし(-0.2)と伸ばし(6.6)。 */
 export function featTarget(progress: number): number { return Math.max(0, Math.min(6, progress * 6.6 - 0.2)) }
 
+/** featTarget の逆: 章 chapter(0..5)が始まる時の固定区間の進み(0..1)。featTarget(featChapterProgress(i)) === i。 */
+export function featChapterProgress(chapter: number): number { return (chapter + 0.2) / 6.6 }
+
 /** 遅れ lag(段。正負どちらでも)のときの、追従の速さの上限(段/秒)。遅れが大きいほど速い(FEAT_LAG_FREE までは一定)。 */
 export function featSpeedCap(lag: number): number {
   return FEAT_SPEED_BASE + FEAT_SPEED_GAIN * Math.max(0, Math.abs(lag) - FEAT_LAG_FREE)

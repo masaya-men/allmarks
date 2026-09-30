@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { scrollRuleSplit } from './scroll-rule'
+import { layoutMarks, markFractions, scrollRuleSplit } from './scroll-rule'
 
 describe('scrollRuleSplit', () => {
   it('is empty at 0 and full at 1', () => {
@@ -19,5 +19,30 @@ describe('scrollRuleSplit', () => {
     expect(scrollRuleSplit(-1, 300, 100).track).toBe(0)
     expect(scrollRuleSplit(Number.NaN, 300, 100).track).toBe(0)
     expect(scrollRuleSplit(0.4, 0, 0)).toEqual({ track: 0.4, label: 0.4 })
+  })
+})
+
+describe('markFractions', () => {
+  it('covers each mark once the fill front passes it', () => {
+    const lefts = [100, 400]
+    const widths = [100, 100]
+    expect(markFractions(0, 1000, lefts, widths)).toEqual([0, 0])
+    expect(markFractions(0.15, 1000, lefts, widths)).toEqual([0.5, 0])
+    expect(markFractions(0.45, 1000, lefts, widths)).toEqual([1, 0.5])
+    expect(markFractions(1, 1000, lefts, widths)).toEqual([1, 1])
+  })
+})
+
+describe('layoutMarks', () => {
+  it('keeps natural positions when there is room', () => {
+    const r = layoutMarks([0.1, 0.5], [80, 80], 1000, 900, 10)
+    expect(r.lefts).toEqual([100, 500])
+    expect(r.fits).toBe(true)
+  })
+  it('pushes neighbours apart minimally and reports overflow', () => {
+    const r = layoutMarks([0.1, 0.11], [80, 80], 1000, 900, 10)
+    expect(r.lefts).toEqual([100, 190])
+    expect(r.fits).toBe(true)
+    expect(layoutMarks([0.1, 0.11], [80, 80], 1000, 250, 10).fits).toBe(false)
   })
 })
