@@ -193,6 +193,23 @@ describe('persistThumbnail / persistTitle — Private (encrypted) record guard',
     expect(stored?.encryptedPayload).toEqual({ iv: 'x', ciphertext: 'y' })
   })
 
+  it('persistThumbnail(id, "", true) on an already-empty thumbnail writes nothing (no updatedAt bump)', async () => {
+    const database = await initDB()
+    const bm = await addBookmark(database, {
+      url: 'https://x.com/a/status/1', title: 't', description: '',
+      thumbnail: '', favicon: '', siteName: '', type: 'tweet', tags: [],
+    })
+    const before = await database.get('bookmarks', bm.id)
+
+    const { result } = renderHook(() => useBoardData())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await result.current.persistThumbnail(bm.id, '', true)
+
+    const after = await database.get('bookmarks', bm.id)
+    expect(after?.updatedAt).toBe(before?.updatedAt)
+  })
+
   it('persistTitle is a no-op on a Private (encrypted) record', async () => {
     const database = await initDB()
     const priv = await addBookmark(database, {

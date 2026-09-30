@@ -473,21 +473,6 @@ function describeWrite(prop: string, args: readonly unknown[]): string {
   return `${prop} ${store}${key ? ` ${key}` : ''}${hint}`
 }
 
-/** Diagnostic (local sync log only): names of the fields a bookmarks put changes, updatedAt excluded. */
-function diffBookmarkFields(prev: unknown, next: unknown): string {
-  if (typeof next !== 'object' || next === null) return ''
-  if (typeof prev !== 'object' || prev === null) return ' diff=new'
-  const a = prev as Record<string, unknown>
-  const b = next as Record<string, unknown>
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)])
-  const changed: string[] = []
-  for (const k of keys) {
-    if (k === 'updatedAt') continue
-    if (JSON.stringify(a[k]) !== JSON.stringify(b[k])) changed.push(k)
-  }
-  return ` diff=${changed.length ? changed.join(',') : 'none'}`
-}
-
 /** Diagnostic hint for a bookmarks put (local sync log only): short id + the fields the automatic
  *  writers touch, so a repeating writer can be told apart. Hostname only for the thumbnail. */
 function describeBookmarkPut(rec: unknown): string {
@@ -533,22 +518,11 @@ function wrapDbForSyncDirty(db: IDBPDatabase<AllMarksDB>): IDBPDatabase<AllMarks
       if (typeof prop === 'string' && SYNC_DIRTY_METHODS.has(prop)) {
         return (...args: unknown[]) => {
           notifySyncDirty(proxy)
-          // Diagnostic (local sync log only): which fields a bookmarks put actually changes.
-          const beforePut: Promise<unknown> | null =
-            prop === 'put' && args[0] === 'bookmarks' && typeof (args[1] as { id?: unknown } | undefined)?.id === 'string'
-              ? target.get('bookmarks', (args[1] as { id: string }).id).catch(() => undefined)
-              : null
-          let putDiff = ''
-          const result = beforePut
-            ? beforePut.then((prev) => {
-                putDiff = diffBookmarkFields(prev, args[1])
-                return (value as (...a: unknown[]) => unknown).apply(target, args) as Promise<unknown>
-              })
-            : (value as (...a: unknown[]) => unknown).apply(target, args) as Promise<unknown>
+          const result = (value as (...a: unknown[]) => unknown).apply(target, args) as Promise<unknown>
           if (isSyncedWrite(prop, args)) {
             const what = `${describeWrite(prop, args)}`
             void result.then(
-              () => maybeMarkPendingPush(db, proxy, true, `${what}${putDiff}`),
+              () => maybeMarkPendingPush(db, proxy, true, what),
               () => undefined, // the write itself failed — nothing to mark
             )
           }

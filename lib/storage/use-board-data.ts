@@ -492,7 +492,9 @@ export function useBoardData(privateTagIds: ReadonlySet<string> = new Set()): {
       // useMemo([items, ...]) downstream and can re-trigger effects that
       // call back into persistThumbnail. Cheap O(1) check, defense in depth.
       const normalized = thumbnail || undefined
-      if ((existing.thumbnail ?? undefined) === normalized) return
+      // `||` not `??`: a stored '' and an incoming '' are the same "no thumbnail" — with `??` the
+      // text-only tweet backfill rewrote every such record on every load (updatedAt bump → sync).
+      if ((existing.thumbnail || undefined) === normalized) return
       await db.put('bookmarks', touchBookmark({ ...existing, thumbnail }))
       setItems((prev) =>
         prev.map((it) =>
