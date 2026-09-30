@@ -13,6 +13,7 @@ vi.mock('@/lib/scroll/use-scroll-trigger', () => ({
 // section's real (GSAP-heavy) internals.
 // BackgroundGrid / PageScrollMeter carry a data-mock marker (not data-testid, so the order test below
 // is unaffected) — the scroll-meter placement test needs to see where they sit.
+vi.mock('@/lib/scroll/use-smooth-scroll', () => ({ useSmoothScroll: () => ({ current: null }) }))
 vi.mock('./BackgroundGrid', () => ({ BackgroundGrid: () => <div data-mock="BackgroundGrid" /> }))
 vi.mock('./PageScrollMeter', () => ({ PageScrollMeter: () => <div data-mock="PageScrollMeter" /> }))
 vi.mock('./SiteHeader', () => ({ SiteHeader: () => null }))
@@ -82,9 +83,4 @@ describe('LandingPage scroll meter', () => {
     expect(css).toMatch(/html\[data-lp-scrollbar='custom'\]\s*\{\s*scrollbar-width:\s*none;\s*\}/)
     expect(css).toMatch(/html\[data-lp-scrollbar='custom'\]::-webkit-scrollbar\s*\{\s*display:\s*none;\s*\}/)
   })
-})
-
-it('LP は Lenis(useSmoothScroll)を使わない', async () => {
-  const src = await import('node:fs').then((fs) => fs.readFileSync('components/marketing/LandingPage.tsx', 'utf8'))
-  expect(src).not.toMatch(/useSmoothScroll/)
 })

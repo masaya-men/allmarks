@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import type { SupportedLocale } from '@/lib/i18n/config'
 import { localePath, navHref } from '@/lib/i18n/locale-urls'
 import { AllMarksMark } from '@/components/onboarding/AllMarksMark'
 import { LanguageMenu } from './LanguageMenu'
+import { getActiveLenis } from '@/lib/scroll/use-smooth-scroll'
 import styles from './SiteHeader.module.css'
 
 /**
@@ -62,9 +64,26 @@ export function SiteHeader({
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const homeHref = localePath(locale)
+  const pathname = usePathname()
+  const trimSlash = (p: string): string => (p.length > 1 ? p.replace(/\/+$/, '') : p)
+  // LP 上でロゴを押したら、再読み込みせず先頭へスクロールする(他のページからは通常の遷移)。
+  const onLogoClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    if (trimSlash(pathname ?? '') !== trimSlash(homeHref)) return
+    e.preventDefault()
+    const lenis = getActiveLenis()
+    if (lenis) {
+      lenis.scrollTo(0)
+      return
+    }
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: 0, behavior: reduced ? 'instant' : 'smooth' })
+  }
+
   return (
     <header ref={headerRef} className={styles.header} data-scrolled="false">
-      <Link href={localePath(locale)} className={styles.logo} aria-label="AllMarks home">
+      <Link href={homeHref} className={styles.logo} aria-label="AllMarks home" onClick={onLogoClick}>
         <AllMarksMark className={styles.mark} />
         <span>AllMarks</span>
       </Link>

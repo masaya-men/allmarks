@@ -1,5 +1,7 @@
 'use client'
 
+import { useI18n } from '@/lib/i18n/I18nProvider'
+import { localePath } from '@/lib/i18n/locale-urls'
 import { ChromeButton } from './ChromeButton'
 import styles from './BoardChrome.module.css'
 
@@ -19,9 +21,11 @@ import styles from './BoardChrome.module.css'
  * future footer redesign. The top-left wordmark needs no bottom margin.
  */
 export function BoardChrome({ hidden = false }: { readonly hidden?: boolean }): React.ReactElement {
+  const { locale } = useI18n()
+  // 言語つきのホーム(例 /ja)へ直接飛ぶ。'/' だと client 遷移でサーバーの言語振り分けが走らず英語 LP に着く。
   return (
     <div className={hidden ? `${styles.brandSlot} ${styles.brandHidden}` : styles.brandSlot}>
-      <ChromeButton href="/" label="AllMarks" aria-label="AllMarks home" />
+      <ChromeButton href={localePath(locale)} label="AllMarks" aria-label="AllMarks home" />
     </div>
   )
 }

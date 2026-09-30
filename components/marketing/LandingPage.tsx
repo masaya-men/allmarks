@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect } from 'react'
 import type { SupportedLocale } from '@/lib/i18n/config'
 import { useScrollTrigger } from '@/lib/scroll/use-scroll-trigger'
+import { useSmoothScroll } from '@/lib/scroll/use-smooth-scroll'
 import { BackgroundGrid } from './BackgroundGrid'
 import { LandingFonts } from './LandingFonts'
 import { LocaleSuggestBanner } from './LocaleSuggestBanner'
@@ -39,6 +40,7 @@ import styles from './LandingPage.module.css'
  */
 export function LandingPage({ locale = 'en' }: { locale?: SupportedLocale }): React.ReactElement {
   useScrollTrigger()
+  useSmoothScroll()
 
   // LP は意図的に LIGHT。app 既定 <html data-theme="dark"> + ブラウザ自動ダーク対策。
   // 併せて各言語ページの <html lang> を locale に合わせる(root layout は en 固定のため)。

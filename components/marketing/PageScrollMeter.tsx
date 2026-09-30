@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { meterProgress, meterTickAt, scrollFromPointer } from '@/lib/marketing/lp/page-scroll-meter'
+import { getActiveLenis } from '@/lib/scroll/use-smooth-scroll'
 import styles from './PageScrollMeter.module.css'
 
 /**
@@ -118,7 +119,10 @@ export function PageScrollMeter(): React.ReactElement {
       root.classList.toggle(styles.active, hovering || dragging)
     }
     const scrollToPointer = (clientY: number): void => {
-      window.scrollTo({ top: scrollFromPointer(clientY, trackTop, trackH, maxScroll), left: 0, behavior: 'instant' })
+      const top = scrollFromPointer(clientY, trackTop, trackH, maxScroll)
+      const lenis = getActiveLenis()
+      if (lenis) lenis.scrollTo(top, { immediate: true })
+      else window.scrollTo({ top, left: 0, behavior: 'instant' })
     }
     const onPointerDown = (e: PointerEvent): void => {
       if (e.pointerType === 'mouse' && e.button !== 0) return

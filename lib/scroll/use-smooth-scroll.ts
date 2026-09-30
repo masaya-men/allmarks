@@ -6,6 +6,13 @@ import Lenis from 'lenis'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
+let activeLenis: Lenis | null = null
+
+/** 現在動いている Lenis(なければ null)。ページ内のスクロール操作が Lenis 経由で動かすために使う。 */
+export function getActiveLenis(): Lenis | null {
+  return activeLenis
+}
+
 /**
  * Initialize Lenis smooth scrolling and wire it to GSAP ScrollTrigger so that
  * pin/scrub animations stay in sync with the smooth scroll position. Both run
@@ -27,6 +34,7 @@ export function useSmoothScroll(): React.RefObject<Lenis | null> {
       touchMultiplier: 2,
     })
     lenisRef.current = lenis
+    activeLenis = lenis
 
     lenis.on('scroll', ScrollTrigger.update)
 
@@ -41,6 +49,7 @@ export function useSmoothScroll(): React.RefObject<Lenis | null> {
       gsap.ticker.remove(tick)
       lenis.destroy()
       lenisRef.current = null
+      if (activeLenis === lenis) activeLenis = null
     }
   }, [])
 

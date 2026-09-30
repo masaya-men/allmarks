@@ -93,6 +93,41 @@ test('LP en at 1489×679: headline visible after the intro (skip path)', async (
   expect(Math.abs(headerTop)).toBeLessThanOrEqual(1)
 })
 
+test('LP en at 1489×679: the film plays in step 03 and stops after MOTION', async ({ page }) => {
+  await page.setViewportSize({ width: 1489, height: 679 })
+  await gotoLp(page, 'en')
+  const scrollToStep = async (seg: number, f: number): Promise<void> => {
+    await page.evaluate(([s, ff]) => {
+      const el = document.getElementById('features')?.querySelector<HTMLElement>('[data-fpin]')
+      if (!el) throw new Error('no [data-fpin]')
+      const top = el.getBoundingClientRect().top + window.scrollY
+      const P = s + 0.08 + 0.72 * ff
+      window.scrollTo(0, top + ((P + 0.2) / 6.6) * (el.offsetHeight - window.innerHeight))
+    }, [seg, f])
+    await page.waitForTimeout(1400)
+  }
+  const film = page.locator('[data-film-card]')
+  // R28: film.screenshot() scrolls the element into view first, which moves
+  // this pinned/scroll-jacked section off the position scrollToStep just
+  // set. Measure the card's box once per pair (no scrolling) and clip a
+  // plain page screenshot to it instead, so both shots of a pair are read
+  // from the exact same screen region at the scroll position we intended.
+  const shotPair = async (): Promise<[Buffer, Buffer]> => {
+    const box = await film.boundingBox()
+    if (!box) throw new Error('[data-film-card] has no bounding box (not visible?)')
+    const first = await page.screenshot({ clip: box })
+    await page.waitForTimeout(700)
+    const second = await page.screenshot({ clip: box })
+    return [first, second]
+  }
+  await scrollToStep(2, 0.3)
+  const [a, b] = await shotPair()
+  expect(Buffer.compare(a, b)).not.toBe(0)
+  await scrollToStep(2, 0.9)
+  const [c, d] = await shotPair()
+  expect(Buffer.compare(c, d)).toBe(0)
+})
+
 test('LP reduced motion: no errors and the headline is visible immediately', async ({ browser }) => {
   const ctx = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1489, height: 679 } })
   const page = await ctx.newPage()
@@ -122,6 +157,25 @@ test('LP: leaving and coming back does not duplicate cards', async ({ page }) =>
   await page.goBack()
   await page.waitForURL(url('en'))
   await expect.poll(count, { timeout: 10_000 }).toEqual(first)
+  expect(errors).toEqual([])
+})
+
+test('LP: resizing keeps the features demo valid', async ({ page }) => {
+  await page.setViewportSize({ width: 1489, height: 679 })
+  const errors = await gotoLp(page, 'en')
+  await page.evaluate(() => {
+    const el = document.querySelector<HTMLElement>('[data-fpin]')
+    if (!el) throw new Error('no [data-fpin]')
+    const top = el.getBoundingClientRect().top + window.scrollY
+    window.scrollTo(0, top + ((3 + 0.08 + 0.72 * 0.45 + 0.2) / 6.6) * (el.offsetHeight - window.innerHeight))
+  })
+  await page.waitForTimeout(1200)
+  for (const w of [390, 1489]) {
+    await page.setViewportSize({ width: w, height: w === 390 ? 844 : 679 })
+    await page.waitForTimeout(900)
+    const tf = await page.locator('[data-fcur]').evaluate((el) => (el as HTMLElement).style.transform)
+    expect(tf).not.toContain('NaN')
+  }
   expect(errors).toEqual([])
 })
 
@@ -173,15 +227,13 @@ test('LP hero at 390×844: the label clears the fixed header', async ({ page }) 
   expect(m.labelTop).toBeGreaterThanOrEqual(m.headerBottom + 16)
 })
 
-/** s224: scroll so the finale stage fills the screen (nothing is pinned any more: its
- *  top sits at the top of the viewport), and wait until its entrance has finished
- *  (the badge is fully scaled: 168px wide, unrotated). The entrance plays on a clock
- *  (~1.6s) once the section reaches 70% of the viewport. */
+/** s224: scroll to where the finale stage is pinned, and wait until its scrub-in
+ *  has finished (the badge is fully scaled: 168px wide, unrotated). */
 async function scrollToFinale(page: Page): Promise<void> {
   await page.evaluate(() => {
     const section = document.querySelector('[data-finale-cta]')?.closest('section')
     if (!section) throw new Error('no finale section')
-    window.scrollTo(0, section.getBoundingClientRect().top + window.scrollY)
+    window.scrollTo(0, section.getBoundingClientRect().top + window.scrollY + window.innerHeight)
   })
   await expect
     .poll(() => page.evaluate(() => Math.round(document.querySelector('[data-finale-cta] a')?.getBoundingClientRect().width ?? 0)))

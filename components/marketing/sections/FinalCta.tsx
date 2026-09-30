@@ -15,15 +15,10 @@ if (typeof window !== 'undefined') {
 /**
  * FinalCta — the closing section of the AllMarks LP, ported from
  * docs/private/lp-v10-mock.html (markup 495–507; CSS 320–352 plus the
- * .kbadge/.kb-ic mobile override at 387–388; motion 801–809 for the entrance
+ * .kbadge/.kb-ic mobile override at 387–388; motion 801–809 for the scrub
  * timeline + header hide, and 835–844 for the circle hover grow). A
  * 12-column hairline grid draws in, the label/rule/headline reveal, and a
- * circular "OPEN THE BOARD" badge pops in. The section is an ordinary
- * full-screen block (min-height: 100vh) — nothing is pinned — and that
- * entrance plays once on a clock (~1.6s, same order and proportions as the
- * old scroll-scrubbed timeline) when the section reaches 70% of the
- * viewport, then reverses if the page is scrolled back up past that line.
- * Touching the badge — or moving the mouse
+ * circular "OPEN THE BOARD" badge pops in. Touching it — or moving the mouse
  * into the "zone" under the headline (see layoutZone) — grows the badge into
  * a huge arc that sweeps the near-black ground white, inverting the
  * headline/links (mix-blend-mode: difference) as it passes beneath them.
@@ -37,8 +32,7 @@ if (typeof window !== 'undefined') {
  * SiteHeader.module.css, task 4) so the finale reads as a full black
  * takeover with no floating light-ground header. This is a state change,
  * not an animation, so it runs in both motion modes (R20); only the
- * decorative entrance timeline below is skipped under reduced motion (the
- * finished pose is simply there from the first paint).
+ * decorative scrub timeline below is skipped under reduced motion.
  */
 
 /** SVG path id for the circular textPath — there is only one finale per page. */
@@ -60,17 +54,10 @@ const GRID_LINE_COUNT = 12
 /** The hot "zone" reaches this far (px) past the text link's right edge. */
 const ZONE_PAD_RIGHT = 64
 
-/** The whole entrance takes this many seconds; the timeline's own relative timings (order and proportions) are kept. */
-const ENTER_SECONDS = 1.6
-/** The entrance starts when the section's top reaches this line (`top 70%` = 70% of the way down the viewport). */
-const ENTER_START = 'top 70%'
-/** One soft ease for every reveal: played on a clock, the old scrubbed version's linear curve would feel mechanical. */
-const ENTER_EASE = 'power3.out'
-
 /**
  * Position of `el` inside `root` (top-left of the border box, px), summed from
  * offsetLeft/offsetTop up the offsetParent chain. Unlike getBoundingClientRect
- * this ignores CSS transforms (the entrance timeline moves the headline spans
+ * this ignores CSS transforms (the scrub timeline moves the headline spans
  * and the text link), so the result only changes when the layout does.
  */
 function offsetWithin(el: HTMLElement, root: HTMLElement): { left: number; top: number } {
@@ -89,7 +76,7 @@ export function FinalCta(): React.ReactElement {
   const { t } = useI18n()
 
   const sectionRef = useRef<HTMLElement>(null)
-  const stageRef = useRef<HTMLDivElement>(null)
+  const stickyRef = useRef<HTMLDivElement>(null)
   const gridLineRefs = useRef<(HTMLElement | null)[]>([])
   const labelRef = useRef<HTMLParagraphElement>(null)
   const lineRef = useRef<HTMLElement>(null)
@@ -103,7 +90,7 @@ export function FinalCta(): React.ReactElement {
 
   useEffect(() => {
     const section = sectionRef.current
-    const stage = stageRef.current
+    const sticky = stickyRef.current
     const label = labelRef.current
     const line = lineRef.current
     const headline = headlineRef.current
@@ -116,7 +103,7 @@ export function FinalCta(): React.ReactElement {
     const gridLines = gridLineRefs.current
 
     if (
-      !section || !stage || !label || !line || !headline || !ctaWrapper || !circle || !textLink || !zone ||
+      !section || !sticky || !label || !line || !headline || !ctaWrapper || !circle || !textLink || !zone ||
       !marqueeRoot || !marqueeInner ||
       gridLines.length !== GRID_LINE_COUNT || gridLines.some((el) => el === null)
     ) {
@@ -131,7 +118,7 @@ export function FinalCta(): React.ReactElement {
     // `headline` instead of a document-wide query).
     const headlineSpans = headline.querySelectorAll<HTMLElement>('.ml > span')
 
-    // ── header hide (R20, always) + entrance timeline (motion-gated) ──
+    // ── header hide (R20, always) + scrub timeline (motion-gated) ──
     const ctx = gsap.context(() => {
       // R20: state change, not an animation — created regardless of
       // prefers-reduced-motion. Cleanup (below) always removes the attribute.
@@ -149,25 +136,25 @@ export function FinalCta(): React.ReactElement {
       })
 
       if (!reduce) {
-        // Plays once on a clock when the section reaches ENTER_START and
-        // reverses when scrolled back above that line (the ScrollTrigger only
-        // toggles it — nothing is scrubbed). A page loaded, or jumped, already
-        // past the section still plays it: when the enter and leave points are
-        // crossed in one go, ScrollTrigger prefers the enter action if the
-        // leave action is "none".
         const tl = gsap.timeline({
-          defaults: { ease: ENTER_EASE },
-          scrollTrigger: { trigger: section, start: ENTER_START, toggleActions: 'play none none reverse' },
+          scrollTrigger: { trigger: section, start: 'top 30%', end: '+=90%', scrub: 0.5 },
         })
-        tl.fromTo(gridEls, { scaleY: 0 }, { scaleY: 1, stagger: 0.03, duration: 0.5 }, 0)
-          .fromTo(label, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, 0.08)
-          .fromTo(line, { scaleX: 0 }, { scaleX: 1, duration: 0.4 }, 0.12)
-          .fromTo(headlineSpans, { yPercent: 105 }, { yPercent: 0, duration: 0.3, stagger: 0.08 }, 0.4)
-          .fromTo(circle, { scale: 0, rotation: -120 }, { scale: 1, rotation: 0, duration: 0.25 }, 0.62)
-          .fromTo(textLink, { autoAlpha: 0, x: -10 }, { autoAlpha: 1, x: 0, duration: 0.2 }, 0.74)
-        // The relative timings above keep the old order and proportions; this
-        // stretches their total (≈0.94 units) to ENTER_SECONDS.
-        tl.timeScale(tl.duration() / ENTER_SECONDS)
+        tl.fromTo(gridEls, { scaleY: 0 }, { scaleY: 1, ease: 'none', stagger: 0.03, duration: 0.5 }, 0)
+          .fromTo(label, { autoAlpha: 0 }, { autoAlpha: 1, ease: 'none', duration: 0.15 }, 0.08)
+          .fromTo(line, { scaleX: 0 }, { scaleX: 1, ease: 'none', duration: 0.4 }, 0.12)
+          .fromTo(
+            headlineSpans,
+            { yPercent: 105 },
+            { yPercent: 0, ease: 'none', duration: 0.3, stagger: 0.08 },
+            0.4,
+          )
+          .fromTo(
+            circle,
+            { scale: 0, rotation: -120 },
+            { scale: 1, rotation: 0, ease: 'none', duration: 0.25 },
+            0.62,
+          )
+          .fromTo(textLink, { autoAlpha: 0, x: -10 }, { autoAlpha: 1, x: 0, ease: 'none', duration: 0.2 }, 0.74)
       }
       // Under reduced motion no timeline is created at all: none of these
       // elements ever receive an inline scaleY(0)/autoAlpha(0)/yPercent(105)
@@ -185,11 +172,11 @@ export function FinalCta(): React.ReactElement {
       // tick — the ruling explicitly allows it. Non-null assertions below:
       // TS control-flow narrowing from the guard above doesn't persist into
       // nested function declarations (same reasoning as Hero.tsx's `board!`).
-      const st = stage!.getBoundingClientRect()
+      const st = sticky!.getBoundingClientRect()
       const b = circle!.getBoundingClientRect()
       const cx = b.left + b.width / 2 - st.left
       const cy = b.top + b.height / 2 - st.top
-      // Distance from the badge centre to the stage's top-right
+      // Distance from the badge centre to the sticky stage's top-right
       // corner — the radius that lets the circle's edge pass just short of
       // that corner, so only its top-right arc ever crosses the screen.
       const tr = Math.hypot(st.width - cx, cy)
@@ -213,20 +200,20 @@ export function FinalCta(): React.ReactElement {
 
     // ── the "zone": a transparent /board link that also triggers .hot ──
     // A rectangle in stage-local coordinates (origin = .finSt's top-left, so
-    // it doesn't depend on where the page is scrolled): from the headline's bottom edge to the
+    // it doesn't depend on scroll): from the headline's bottom edge to the
     // stage's bottom edge, and from the stage's left edge to the text link's
     // right edge + ZONE_PAD_RIGHT. Measured only at layout time (mount,
     // resize, fonts ready), never while scrolling.
     let zoneTop = 0
     let zoneW = 0
     function layoutZone(): void {
-      const h = offsetWithin(headline!, stage!)
-      const l = offsetWithin(textLink!, stage!)
+      const h = offsetWithin(headline!, sticky!)
+      const l = offsetWithin(textLink!, sticky!)
       zoneTop = h.top + headline!.offsetHeight
-      zoneW = Math.min(stage!.clientWidth, l.left + textLink!.offsetWidth + ZONE_PAD_RIGHT)
+      zoneW = Math.min(sticky!.clientWidth, l.left + textLink!.offsetWidth + ZONE_PAD_RIGHT)
       zone!.style.top = zoneTop + 'px'
       zone!.style.width = zoneW + 'px'
-      zone!.style.height = Math.max(0, stage!.clientHeight - zoneTop) + 'px'
+      zone!.style.height = Math.max(0, sticky!.clientHeight - zoneTop) + 'px'
     }
     layoutZone()
 
@@ -240,7 +227,7 @@ export function FinalCta(): React.ReactElement {
     // on pointer moves (an interaction), never on scroll ticks.
     const onStageMove = (e: PointerEvent): void => {
       if (e.pointerType !== 'mouse') return
-      const st = stage!.getBoundingClientRect()
+      const st = sticky!.getBoundingClientRect()
       const px = e.clientX - st.left
       const py = e.clientY - st.top
       if (px >= 0 && px <= zoneW && py >= zoneTop && py <= st.height) {
@@ -266,8 +253,8 @@ export function FinalCta(): React.ReactElement {
     ctaWrapper.addEventListener('pointerenter', onPointerEnter)
     ctaWrapper.addEventListener('focusin', onFocusIn)
     ctaWrapper.addEventListener('focusout', onFocusOut)
-    stage.addEventListener('pointermove', onStageMove)
-    stage.addEventListener('pointerleave', onStageLeave)
+    sticky.addEventListener('pointermove', onStageMove)
+    sticky.addEventListener('pointerleave', onStageLeave)
 
     // ── outlined "AllMarks" marquee (lib/marketing/lp/marquee.ts, shared with Tape.tsx) ──
     let disposed = false
@@ -300,8 +287,8 @@ export function FinalCta(): React.ReactElement {
       ctaWrapper.removeEventListener('pointerenter', onPointerEnter)
       ctaWrapper.removeEventListener('focusin', onFocusIn)
       ctaWrapper.removeEventListener('focusout', onFocusOut)
-      stage.removeEventListener('pointermove', onStageMove)
-      stage.removeEventListener('pointerleave', onStageLeave)
+      sticky.removeEventListener('pointermove', onStageMove)
+      sticky.removeEventListener('pointerleave', onStageLeave)
       removeHot()
       window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
@@ -312,10 +299,12 @@ export function FinalCta(): React.ReactElement {
   const headlineLines = t('landing.cta.headline').split('\n')
 
   return (
-    <section ref={sectionRef} className={styles.fin}>
-      <div ref={stageRef} className={styles.finSt}>
+    // data-lp-fin / data-lp-fingrid: hooks for ScrollRail (measures this section — its top is where the
+    // rail's progress reaches 1 — and tilts the grid's .wrap in step with the background grid).
+    <section ref={sectionRef} className={styles.fin} data-lp-fin>
+      <div ref={stickyRef} className={styles.finSt}>
         <div className={styles.finGrid} aria-hidden="true">
-          <div className={`wrap ${styles.finGridWrap}`}>
+          <div className={`wrap ${styles.finGridWrap}`} data-lp-fingrid>
             {Array.from({ length: GRID_LINE_COUNT }, (_, i) => (
               <i
                 key={i}

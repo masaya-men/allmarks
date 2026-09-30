@@ -1,16 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import {
   featState,
-  featClock,
+  featTarget,
   featureLayouts,
+  featFollow,
+  featSpeedCap,
   cursorTip,
   FEATURE_CARDS,
   CARD_FILM,
   CARD_DRAG,
-  FEAT_CHAPTERS,
-  FEAT_CHAPTER_MS,
-  FEAT_FADE_MS,
+  FEAT_SPEED_BASE,
+  FEAT_LAG_FREE,
+  FEAT_SPEED_GAIN,
   FEAT_DT_MAX_MS,
+  FEAT_FOLLOW_TAU_MS,
   type FeatureGeometry,
   type FeatureHover,
   type FeatureState,
@@ -187,90 +190,83 @@ describe('hover (only the current target, only while stopped on it just before t
   })
 })
 
-
-describe('featClock (the demo runs on a clock, not on the scroll)', () => {
-  /** 16ms ずつのフレームを frames 回ぶん進める(丸めの影響を避けるため整数 ms で刻む)。 */
-  function runFrames(from: number, frames: number, frameMs = 16): number {
-    let P = from
-    for (let k = 0; k < frames; k++) P = featClock(P, frameMs, FEAT_CHAPTER_MS).P
-    return P
-  }
-
-  it('a chapter is 6 seconds: 6000ms of frames moves P by exactly one, from anywhere', () => {
-    expect(FEAT_CHAPTER_MS).toBe(6000)
-    expect(runFrames(0, 375)).toBeCloseTo(1, 9)
-    expect(runFrames(2.25, 375)).toBeCloseTo(3.25, 9)
+describe('featTarget', () => {
+  it('maps pin progress to P with the same offset as the mock and clamps', () => {
+    expect(featTarget(0)).toBe(0); expect(featTarget(1)).toBe(6); expect(featTarget(0.5)).toBeCloseTo(3.1)
   })
-  it('chapterMs is the only speed knob, and the frame rate does not change the pace', () => {
-    expect(featClock(0, 100, 1000).P).toBeCloseTo(0.1, 12)
-    expect(featClock(0, 100, 12000).P).toBeCloseTo(100 / 12000, 12)
-    /* 1 秒ぶん: 60fps(16ms×62.5 ≒ 20ms×50)でも 30fps でも同じだけ進む */
-    expect(runFrames(0, 50, 20)).toBeCloseTo(runFrames(0, 25, 40), 12)
-    expect(runFrames(0, 50, 20)).toBeCloseTo(1000 / FEAT_CHAPTER_MS, 12)
-  })
-  it('raises the loop mark when P reaches or passes 6, and stops P at 6 (06 keeps its finished pose)', () => {
-    expect(featClock(5.9, 100, FEAT_CHAPTER_MS)).toEqual({ P: 5.9 + 100 / FEAT_CHAPTER_MS, wrapped: false })
-    expect(featClock(5.999, 16, FEAT_CHAPTER_MS)).toEqual({ P: FEAT_CHAPTERS, wrapped: true })
-    expect(featClock(5.99, FEAT_DT_MAX_MS, FEAT_CHAPTER_MS)).toEqual({ P: FEAT_CHAPTERS, wrapped: true })
-    /* すでに端にいる時は、時間が進んでいなくても境目のまま */
-    expect(featClock(FEAT_CHAPTERS, 0, FEAT_CHAPTER_MS)).toEqual({ P: FEAT_CHAPTERS, wrapped: true })
-    /* どんなに大きな dt でも 6 を超えた値は返さない */
-    expect(featClock(5.99, 1e9, FEAT_CHAPTER_MS).P).toBe(FEAT_CHAPTERS)
-  })
-  it('clamps dt to 100ms: coming back to a tab never skips a chapter', () => {
-    expect(FEAT_DT_MAX_MS).toBe(100)
-    expect(featClock(2, 5000, FEAT_CHAPTER_MS)).toEqual(featClock(2, FEAT_DT_MAX_MS, FEAT_CHAPTER_MS))
-    const after = featClock(2.5, 600000, FEAT_CHAPTER_MS)
-    expect(after.wrapped).toBe(false)
-    expect(after.P).toBeCloseTo(2.5 + FEAT_DT_MAX_MS / FEAT_CHAPTER_MS, 12)
-    expect(Math.floor(after.P)).toBe(2)
-  })
-  it('never moves backwards: dt of 0 or less leaves P where it is', () => {
-    expect(featClock(3, 0, FEAT_CHAPTER_MS).P).toBe(3)
-    expect(featClock(3, -50, FEAT_CHAPTER_MS).P).toBe(3)
-  })
-  it('one loop plays 01 → 06 in order, 6 seconds each (36s in all), and ends on the finished pose of 06', () => {
-    let P = 0, ms = 0, wrapped = false
-    const order: number[] = []
-    const frames: number[] = [0, 0, 0, 0, 0, 0]
-    while (!wrapped && ms < 60000) {
-      const c = featClock(P, 16, FEAT_CHAPTER_MS)
-      P = c.P
-      wrapped = c.wrapped
-      ms += 16
-      const seg = featState(P, g).seg
-      if (order[order.length - 1] !== seg) order.push(seg)
-      frames[seg]++
-    }
-    expect(wrapped).toBe(true)
-    expect(order).toEqual([0, 1, 2, 3, 4, 5])
-    for (const n of frames) expect(Math.abs(n * 16 - FEAT_CHAPTER_MS)).toBeLessThanOrEqual(32)
-    expect(Math.abs(ms - FEAT_CHAPTERS * FEAT_CHAPTER_MS)).toBeLessThanOrEqual(16)
-    expect(P).toBe(FEAT_CHAPTERS)
-    const end = featState(P, g)
-    expect(end.copied).toBe(true); expect(end.cursor.opacity).toBe(0)
-    /* 繰り返しは P=0(何も保存していない最初の状態)から。ボードを薄くする間に切り替える */
-    expect(featState(0, g).cards[0].visible).toBe(false)
-  })
-  it('the loop fade is 250ms each way', () => { expect(FEAT_FADE_MS).toBe(250) })
 })
 
-describe('chapters (the 01–06 list buttons)', () => {
-  it('the head of chapter k is P = k: the picture the previous chapter left, which is how chapter k starts', () => {
-    const look = (P: number): unknown => {
-      const s = featState(P, g)
-      return { visible: s.cards.map((c) => c.visible), pills: s.pillsOpacity, motion: s.motionOn, frame: s.frameT, start: s.startVisible }
+describe('follow (how the shown position catches up with the scroll)', () => {
+  const FRAME = 1000 / 60
+  /** 固定区間を一定の速さ(段/秒)で最後まで回す間の追従を 60fps で再現する。 */
+  function scrollThrough(stepsPerSec: number, afterSec = 0): { maxLag: number; atPinEnd: number; final: number } {
+    const total = 6.6 / stepsPerSec
+    let cur = 0, maxLag = 0, atPinEnd = 0
+    for (let t = 0; t <= total + afterSec; t += FRAME / 1000) {
+      const target = featTarget(Math.min(1, t / total))
+      cur = featFollow(cur, target, FRAME)
+      maxLag = Math.max(maxLag, Math.abs(target - cur))
+      if (t <= total) atPinEnd = cur
     }
-    for (let k = 1; k <= 5; k++) {
-      expect(look(k)).toEqual(look(k + 1e-6))
-      expect(featState(k, g).rail).toBeCloseTo(k / 6, 12)
-    }
-    expect(featState(0, g).rail).toBe(0)
+    return { maxLag, atPinEnd, final: cur }
+  }
+
+  it('featSpeedCap: the base speed while the lag is small, faster the more it lags (either direction)', () => {
+    expect(featSpeedCap(0)).toBe(FEAT_SPEED_BASE)
+    expect(featSpeedCap(FEAT_LAG_FREE)).toBe(FEAT_SPEED_BASE)
+    expect(featSpeedCap(-0.2)).toBe(FEAT_SPEED_BASE)
+    expect(featSpeedCap(0.85)).toBeCloseTo(FEAT_SPEED_BASE + FEAT_SPEED_GAIN * (0.85 - FEAT_LAG_FREE))
+    expect(featSpeedCap(1)).toBeGreaterThan(featSpeedCap(0.6))
+    expect(featSpeedCap(3)).toBeGreaterThan(featSpeedCap(1))
+    expect(featSpeedCap(-1)).toBe(featSpeedCap(1))
   })
-  it('reduced motion shows the finished pose of chapter k at P = k + 1', () => {
-    for (let k = 0; k <= 5; k++) {
-      const s = featState(k + 1, g)
-      expect(s.seg).toBe(k); expect(s.f).toBe(1)
+  it('never passes the target, and always moves toward it, in both directions', () => {
+    for (const [cur, target] of [[0, 6], [6, 0], [2.5, 2.6], [2.6, 2.5], [0, 0.001]] as const) {
+      const next = featFollow(cur, target, FRAME)
+      expect(next).toBeGreaterThanOrEqual(Math.min(cur, target)); expect(next).toBeLessThanOrEqual(Math.max(cur, target))
+      expect(Math.abs(target - next)).toBeLessThan(Math.abs(target - cur))
     }
+  })
+  it('one frame never moves more than the speed cap allows (no skipping)', () => {
+    for (const lag of [0.05, 0.3, 0.35, 0.6, 1, 3, 6]) {
+      expect(featFollow(0, lag, FRAME)).toBeLessThanOrEqual((featSpeedCap(lag) * FRAME) / 1000 + 1e-12)
+    }
+  })
+  it('a small lag closes 1 - exp(-dt/tau) of the gap per frame, the same at any frame rate', () => {
+    const one = featFollow(0, 0.1, 16)
+    expect(one).toBeCloseTo(0.1 * (1 - Math.exp(-16 / FEAT_FOLLOW_TAU_MS)), 10)
+    expect(featFollow(featFollow(0, 0.1, 8), 0.1, 8)).toBeCloseTo(one, 10)
+  })
+  it('clamps dt so a long pause (tab switch) does not jump, and dt=0 does not move', () => {
+    expect(featFollow(0, 6, 5000)).toBe(featFollow(0, 6, FEAT_DT_MAX_MS))
+    expect(featFollow(2, 6, 0)).toBe(2)
+  })
+  it('a brisk scroll (1 step/s) lags by at most about half a step and 06 finishes before the pin ends', () => {
+    const r = scrollThrough(1)
+    expect(r.maxLag).toBeLessThanOrEqual(0.5)
+    expect(featState(r.atPinEnd, g).copied).toBe(true)
+  })
+  it('a slow scroll (0.6 step/s) stays right behind the scroll', () => {
+    const r = scrollThrough(0.6)
+    expect(r.maxLag).toBeLessThan(0.2)
+    expect(featState(r.atPinEnd, g).copied).toBe(true)
+  })
+  it('a hard flick (2 steps/s) still plays 06 to the end within 0.6s of the scroll ending', () => {
+    expect(featState(scrollThrough(2, 0.6).final, g).copied).toBe(true)
+  })
+  it('a sudden jump to the end is replayed through every step in order, and is done in about a second or two', () => {
+    let cur = 0, frames = 0, maxStep = 0
+    const segs: number[] = []
+    while (!featState(cur, g).copied && frames < 600) {
+      const next = featFollow(cur, 6, FRAME)
+      maxStep = Math.max(maxStep, next - cur)
+      cur = next
+      frames++
+      const seg = featState(cur, g).seg
+      if (segs[segs.length - 1] !== seg) segs.push(seg)
+    }
+    expect(segs).toEqual([0, 1, 2, 3, 4, 5])
+    expect(maxStep).toBeLessThan(0.3)
+    expect(frames * FRAME).toBeLessThan(2000)
   })
 })
