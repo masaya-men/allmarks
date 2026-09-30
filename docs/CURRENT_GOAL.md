@@ -1,10 +1,11 @@
-# 次セッションのゴール(s226)— 次の機能の相談から
+# 次セッションのゴール(s226)— 有料公開の可否確認 → 次の機能の相談
 
 ## 最初に
 - s225 で セキュリティ3点(AI クローラー・回数制限・同期ファイル暗号化)と LP の磨き込みを完了、本番反映・master 統合済み。詳細は TODO.md「現在の状態」と TODO_COMPLETED.md「s225」。
-- **Payoneer 審査待ち(2営業日程度)**: 承認メールが来ていたら Paddle 本番の Payout Settings 入力を案内(`docs/private/2026-09-29-paddle-user-tasks.md`)。
+- **決済の本人作業**: 受け取り口座の登録は s225 で完了。残りは Paddle の住所書類の審査結果 → 通っていれば有料公開の手順(`docs/private/2026-09-29-paddle-user-tasks.md`「有料公開の手順」・不可逆なので事前確認)。
 
 ## やること(候補・ユーザーと相談して1つ選ぶ)
+0. AIO 診断で見つかった実害の修正(/ja などで html lang が en のまま・og:type/og:url 不足)。仕分け済みメモ: docs/private/2026-09-30-aio-check-results.md。構造化データ(JSON-LD)・llms.txt は相談。
 1. ボード UI・デフォルトテーマの刷新(このとき回数制限に当たった時の一言+同期の「別ライセンス」文言もまとめて作る)。
 2. スマホの操作(TODO.md「スマホの操作」)。
 3. Cloudflare 悪用面の残り(N-62 バッチ1: img のキャッシュ・oembed・cache key)。
