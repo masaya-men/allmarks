@@ -469,7 +469,24 @@ export function getRecentSyncedWrites(): readonly string[] {
 function describeWrite(prop: string, args: readonly unknown[]): string {
   const store = typeof args[0] === 'string' ? args[0] : Array.isArray(args[0]) ? args[0].join('+') : '?'
   const key = store === 'settings' ? settingsRecordKey(args[1]) ?? (typeof args[1] === 'string' ? args[1] : '') : ''
-  return `${prop} ${store}${key ? ` ${key}` : ''}`
+  const hint = store === 'bookmarks' ? describeBookmarkPut(args[1]) : ''
+  return `${prop} ${store}${key ? ` ${key}` : ''}${hint}`
+}
+
+/** Diagnostic hint for a bookmarks put (local sync log only): short id + the fields the automatic
+ *  writers touch, so a repeating writer can be told apart. Hostname only for the thumbnail. */
+function describeBookmarkPut(rec: unknown): string {
+  if (typeof rec !== 'object' || rec === null) return ''
+  const r = rec as Record<string, unknown>
+  const id = typeof r.id === 'string' ? r.id.slice(0, 6) : '?'
+  const ls = typeof r.linkStatus === 'string' ? r.linkStatus : '-'
+  const chk = typeof r.lastCheckedAt === 'number' ? `${Math.round((Date.now() - r.lastCheckedAt) / 1000)}s` : '-'
+  let th = '-'
+  if (typeof r.thumbnail === 'string' && r.thumbnail) {
+    try { th = new URL(r.thumbnail, 'https://x.invalid').hostname } catch { th = '?' }
+  }
+  const upd = typeof r.updatedAt === 'number' ? `${Math.round((Date.now() - r.updatedAt) / 1000)}s` : '-'
+  return ` ${id} ls=${ls} chk=${chk} upd=${upd} th=${th}`
 }
 
 
