@@ -10493,3 +10493,10 @@ s208 の設計書を superpowers:writing-plans で実装計画に落とし(`docs
 - **同期が数秒ごとに走り続ける不具合**: 文字だけのツイートの後埋めが `persistThumbnail(id,'',true)` を毎回呼び、`(existing.thumbnail ?? undefined) === undefined` が '' を別物と判定 → 同じ中身を updatedAt だけ更新して書き直していた。`||` に修正+テスト。同期ログに put bookmarks の短い id と状態を出す診断を残した(中身の差分を読む診断は撤去)。
 - **LP**: 区画の固定(scrub)を 60174d44 の形に戻す/Lenis 復帰/流れる目盛りは試して撤去/Problem・機能紹介の固定画面の下に横線(`SectionScrollRule`)= 左 SCROLL・右に次の区画名、スクロールで黒い線が伸び名前が反転、機能紹介は 01〜06 の章名も反転/機能紹介のボードが線と重なる件を修正/ロゴとフッターの AllMarks で LP 先頭へ/締めの円はスクロールで勝手に広がらずマウス移動時だけ/ボードの AllMarks は言語つきトップへ(クライアント遷移でサーバーの言語振り分けが走らなかった)。
 - 記録: LoPo にも同じ AI 対策(memory)、ローンチ動画(IDEAS.md)、Payoneer は住民票を先方が代理提出・審査中(docs/private)。
+
+## s226 (2026-09-30) — 有料プランを本番公開
+
+- **公開**: `.env.production` の本番 Paddle 値6行を有効化、SYNC 欄の「応援する(近日公開)」→料金ページへのリンク(新しいタブ)。ビルド出力に Sandbox の価格 ID が無いこと・管理画面の4価格(Sync ¥500/¥5,000・Supporter ¥1,500/¥15,000)と ID 一致を確認。commit 5be8a49c、フル 3885/3885。
+- **本番の通しテスト**: 別プロフィールで ¥500 実購入→キー表示→同期成功→管理画面で即時解約→`/api/license/status` が active→ended に変化→全額返金申請(5営業日)。Paddle 手数料 ¥103 は返金しても戻らない。
+- **後片付け**: Sandbox API キー `claude-mcp` を revoke、`paddle-sandbox-manual` MCP を削除。
+- **ユーザー指摘(TODO へ)**: LP に Sync 区画(料金への入口)を戻し忘れていた/料金カード・LP・購入完了のキーにもっと特別感を/アプリ内に解約の入口/LP 以外のページのフォント・文章を LP にそろえる。
