@@ -676,9 +676,15 @@ export const SyncPanel = forwardRef<SyncPanelHandle, object>(function SyncPanel(
     return (
       <div data-testid="sync-locked">
         <p className={styles.body}>{t('sync.lockedExplanation')}</p>
-        <span className={styles.soon} aria-disabled="true" data-testid="sync-become-supporter">
-          {`${t('sync.becomeSupporter')} (${t('board.settings.comingSoon')})`}
-        </span>
+        <a
+          className={`${styles.soon} ${styles.supportLink}`}
+          href={navHref(locale, 'pricing')}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="sync-become-supporter"
+        >
+          {t('sync.becomeSupporter')}
+        </a>
         <button
           type="button"
           className={styles.unlockBtn}

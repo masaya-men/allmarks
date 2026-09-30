@@ -61,11 +61,13 @@ describe('SyncPanel', () => {
     mockCheckLicenseForSync.mockResolvedValue({ allowed: true })
   })
 
-  it('shows the locked view (explanation, disabled supporter link) when not unlocked', async () => {
+  it('shows the locked view (explanation, supporter link to pricing) when not unlocked', async () => {
     mockLoadLicense.mockResolvedValue(null)
     render(<SyncPanel />)
     await screen.findByTestId('sync-locked')
-    expect(screen.getByTestId('sync-become-supporter')).toHaveAttribute('aria-disabled', 'true')
+    const supporter = screen.getByTestId('sync-become-supporter')
+    expect(supporter.getAttribute('href')).toMatch(/pricing/)
+    expect(supporter).toHaveAttribute('target', '_blank')
     expect(screen.getByTestId('sync-start-button')).toBeInTheDocument()
   })
 

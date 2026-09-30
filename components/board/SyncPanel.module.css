@@ -27,6 +27,18 @@
   cursor: default;
   margin-bottom: 14px;
 }
+/* Live variant of .soon (paid launch): same pill, full-strength ink + pointer. */
+.supportLink {
+  color: rgba(var(--chrome-ink-rgb), 0.85);
+  border-color: rgba(var(--chrome-ink-rgb), 0.28);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.supportLink:hover {
+  background: rgba(var(--chrome-ink-rgb), 0.08);
+  border-color: rgba(var(--chrome-ink-rgb), 0.45);
+}
 .label {
   display: block;
   font-family: var(--chrome-font, ui-monospace, "SF Mono", Consolas, monospace);
