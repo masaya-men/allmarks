@@ -25,6 +25,8 @@ export const AI_TRAINING_BOTS: string[] = [
   'Bytespider',
   'Meta-ExternalAgent',
   'cohere-training-data-crawler',
+  'Amazonbot',
+  'FacebookBot',
 ]
 
 /** AI 検索・回答ボット: 明示的に許可 (非公開パスのみ除外) */

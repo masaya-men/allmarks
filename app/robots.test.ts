@@ -25,7 +25,7 @@ describe('robots', () => {
 
   it.each([
     'GPTBot', 'ClaudeBot', 'anthropic-ai', 'CCBot', 'Google-Extended',
-    'Applebot-Extended', 'Bytespider', 'Meta-ExternalAgent', 'cohere-training-data-crawler',
+    'Applebot-Extended', 'Bytespider', 'Meta-ExternalAgent', 'cohere-training-data-crawler', 'Amazonbot', 'FacebookBot',
   ])('学習用クローラー %s は全面拒否', (ua) => {
     expect(ruleFor(ua)?.disallow).toBe('/')
     expect(ruleFor(ua)?.allow).toBeUndefined()
